@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.12.4.24 2010/02/09 17:53:07 dgp Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.12.4.25 2010/02/10 02:56:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -871,9 +871,9 @@ HashStringKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {
-    register const char *string = (const char *) keyPtr;
-    register unsigned result = 0;
-    register int c;
+    const unsigned char *string = keyPtr;
+    unsigned result = 0;
+    unsigned c;
 
     /*
      * This is the (32-bit) Fowler/Noll/Vo hash algorithm. This has the

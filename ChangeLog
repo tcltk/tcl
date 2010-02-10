@@ -1,6 +1,16 @@
+2010-02-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileTryCmd, IssueTryInstructions)
+	(IssueTryFinallyInstructions): Added compiler for the [try] command.
+	It is split into three pieces that handle the parsing of the tokens,
+	the issuing of instructions for finally-free [try], and the issuing of
+	instructions for [try] with finally; there are enough differences
+	between the all cases that it was easier to split the code rather than
+	have a single function do the whole thing.
+
 2010-02-09  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* tools/genStubs.tcl: remove  dependency  on 8.5+  idiom "in"  in
+	* tools/genStubs.tcl: Remove dependency on 8.5+ idiom "in" in
 	expressions.
 
 2010-02-08  Donal K. Fellows  <dkf@users.sf.net>
