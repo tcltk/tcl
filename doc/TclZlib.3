@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TclZlib.3,v 1.5 2010/02/10 16:12:11 dkf Exp $
+'\" RCS: @(#) $Id: TclZlib.3,v 1.6 2010/02/10 23:17:06 dkf Exp $
 '\" 
 .so man.macros
 .TH TclZlib 3 8.6 Tcl "Tcl Library Procedures"
@@ -16,10 +16,10 @@ Tcl_ZlibAdler32, Tcl_ZlibCRC32, Tcl_ZlibDeflate, Tcl_ZlibInflate, Tcl_ZlibStream
 .nf
 #include <tcl.h>
 .sp
-Tcl_Obj *
+int
 \fBTcl_ZlibDeflate\fR(\fIinterp, format, dataObj, level, dictObj\fR)
 .sp
-Tcl_Obj *
+int
 \fBTcl_ZlibInflate\fR(\fIinterp, format, dataObj, dictObj\fR)
 .sp
 unsigned int
@@ -39,6 +39,9 @@ int
 .sp
 int
 \fBTcl_ZlibStreamClose\fR(\fIzshandle\fR)
+.sp
+int
+\fBTcl_ZlibStreamReset\fR(\fIzshandle\fR)
 .sp
 int
 \fBTcl_ZlibStreamChecksum\fR(\fIzshandle\fR)
@@ -112,19 +115,33 @@ bytes from the stream's buffers.
 These functions form the interface from the Tcl library to the Zlib
 library by Jean-loup Gailly and Mark Adler.
 .PP
-\fBTcl_ZlibDeflate\fR and \fBTcl_ZlibInflate\fR compress and decompress data
-respectively. Upon success, they leave the resulting compressed or
-decompressed data in a byte-array object that is the Tcl interpreter's
-result. Note that the \fIdictObj\fR parameter is only used when the
-\fIformat\fR parameter is \fBTCL_ZLIB_FORMAT_GZIP\fR or
-\fBTCL_ZLIB_FORMAT_AUTO\fR.
+\fBTcl_ZlibDeflate\fR and \fBTcl_ZlibInflate\fR respectively compress and
+decompress the data contained in the \fIdataObj\fR argument, according to the
+\fIformat\fR and, for compression, \fIlevel\fR arguments. The dictionary in
+the \fIdictObj\fR parameter is used to convey additional header information
+about the compressed data when the compression format supports it; currently,
+the dictionary is only used when the \fIformat\fR parameter is
+\fBTCL_ZLIB_FORMAT_GZIP\fR or \fBTCL_ZLIB_FORMAT_AUTO\fR. For details of the
+contents of the dictionary, see the \fBGZIP OPTIONS DICTIONARY\fR section
+below. Upon success, both functions leave the resulting compressed or
+decompressed data in a byte-array object that is the Tcl interpreter's result;
+the returned value is a standard Tcl result code.
 .PP
 \fBTcl_ZlibAdler32\fR and \fBTcl_ZlibCRC32\fR compute checksums on arrays of
-bytes. Typical usage is:
+bytes, returning the computed checksum. Checksums are computed incrementally,
+allowing data to be processed one block at a time, but this requires the
+caller to maintain the current checksum and pass it in as the \fIinitValue\fR
+parameter; the initial value to use for this can be obtained by using NULL for
+the \fIbytes\fR parameter instead of a pointer to the array of bytes to
+compute the checksum over. Thus, typical usage in the single data block case
+is like this:
 .PP
 .CS
 checksum = \fBTcl_ZlibCRC32\fR(\fBTcl_ZlibCRC32\fR(0,NULL,0), data, length);
 .CE
+.PP
+Note that the Adler-32 algorithm is not a real checksum, but instead is a
+related type of hash that works best on longer data.
 .SS "ZLIB STREAMS"
 .PP
 \fBTcl_ZlibStreamInit\fR creates a compressing or decompressing stream that is
@@ -133,11 +150,20 @@ token for the stream and returns a normal Tcl result code;
 \fBTcl_ZlibStreamGetCommandName\fR returns the name of that command given the
 stream token, or NULL if the stream has no command. Streams are not designed
 to be thread-safe; each stream should only ever be used from the thread that
-created it.
+created it. When working with gzip streams, a dictionary (fields as given in
+the \fBGZIP OPTIONS DICTIONARY\fR section below) can be given via the
+\fIdictObj\fR parameter that on compression allows control over the generated
+headers, and on decompression allows discovery of the existing headers. Note
+that the dictionary will be written to on decompression once sufficient data
+has been read to have a complete header. This means that the dictionary must
+be an unshared object in that case; a blank object created with
+\fBTcl_NewObj\fR is suggested.
 .PP
 Once a stream has been constructed, \fBTcl_ZlibStreamPut\fR is used to add
 data to the stream and \fBTcl_ZlibStreamGet\fR is used to retrieve data from
-the stream after processing. Both return normal Tcl result codes. With
+the stream after processing. Both return normal Tcl result codes and leave an
+error message in the result of the interpreter that the stream is registered
+with in the error case (if such a registration has been performed). With
 \fBTcl_ZlibStreamPut\fR, the data buffer object passed to it should not be
 modified afterwards. With \fBTcl_ZlibStreamGet\fR, the data buffer object
 passed to it will have the data bytes appended to it. Internally to the
@@ -145,8 +171,14 @@ stream, data is kept compressed so as to minimize the cost of buffer space.
 .PP
 \fBTcl_ZlibStreamChecksum\fR returns the checksum computed over the
 uncompressed data according to the format, and \fBTcl_ZlibStreamEof\fR returns
-whether the end of the uncompressed data has been reached.
+a boolean value indicating whether the end of the uncompressed data has been
+reached.
 .PP
+If you wish to clear a stream and reuse it for a new compression or
+decompression action, \fBTcl_ZlibStreamReset\fR will do this and return a
+normal Tcl result code to indicate whether it was successful; if the stream is
+registered with an interpreter, an error message will be left in the
+interpreter result when this function returns TCL_ERROR.
 Finally, \fBTcl_ZlibStreamClose\fR will clean up the stream and delete the
 associated command: using \fBTcl_DeleteCommand\fR on the stream's command is
 equivalent (when such a command exists).
