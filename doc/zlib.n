@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: zlib.n,v 1.7 2009/01/24 00:03:18 dkf Exp $
+'\" RCS: @(#) $Id: zlib.n,v 1.8 2010/02/10 16:12:11 dkf Exp $
 '\" 
 .so man.macros
 .TH zlib n 8.6 Tcl "Tcl Built-In Commands"
@@ -75,8 +75,8 @@ The size of the uncompressed data.
 \fBtime\fR
 .
 The time field from the header if non-zero, expected to be time that the file
-named by the \fBfilename\fR field was modified. Suitable for use with \fBclock
-format\fR.
+named by the \fBfilename\fR field was modified. Suitable for use with
+\fBclock format\fR.
 .TP
 \fBtype\fR
 .
