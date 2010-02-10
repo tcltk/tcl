@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: upvar.test,v 1.19 2009/03/24 09:30:07 dkf Exp $
+# RCS: @(#) $Id: upvar.test,v 1.20 2010/02/10 23:28:39 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -148,7 +148,7 @@ test upvar-3.5 {unsetting array elements with upvar} {
 	array names a
     }
     proc p2 {} {upvar a(0) x; unset x}
-    p1
+    lsort [p1]
 } {1 2}
 test upvar-3.6 {unsetting then resetting array elements with upvar} {
     proc p1 {} {
@@ -156,7 +156,7 @@ test upvar-3.6 {unsetting then resetting array elements with upvar} {
 	set a(1) first
 	set a(2) second
 	p2
-	list [array names a] [catch {set a(0)} msg] $msg
+	list [lsort [array names a]] [catch {set a(0)} msg] $msg
     }
     proc p2 {} {upvar a(0) x; unset x; set x 12345}
     p1
