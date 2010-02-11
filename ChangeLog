@@ -1,3 +1,9 @@
+2010-02-11  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCompile.c: [Bug 2949302]: Fixed leak of support
+	structures for [info frame] which occured when bytecode
+	compilation fails.
+
 2010-02-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/regexec.c (ccondissect, crevdissect): [Bug 2942697]: Rework
