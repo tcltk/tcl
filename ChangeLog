@@ -1,3 +1,9 @@
+2010-02-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (ObjectRenamedTrace): [Bug 2949397]: Prevent
+	destructors from running on the two core class objects when the whole
+	interpreter is being destroyed.
+
 2010-02-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileTryCmd, IssueTryInstructions)
