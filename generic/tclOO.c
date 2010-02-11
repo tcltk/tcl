@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.30 2010/02/05 20:53:12 nijtmans Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.31 2010/02/11 09:00:55 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -660,13 +660,20 @@ ObjectRenamedTrace(
      * command. Because of that case, we must take care here to mark the
      * command as being deleted so that if we return here we don't run into
      * reentrancy problems.
+     *
+     * We also do not run destructors on the core class objects when the
+     * interpreter is being deleted; their incestuous nature causes problems
+     * in that case when the destructor is partially deleted before the uses
+     * of it have gone. [Bug 2949397]
      */
 
     AddRef(oPtr);
     oPtr->command = NULL;
     oPtr->flags |= OBJECT_DELETED;
 
-    if (!(oPtr->flags & DESTRUCTOR_CALLED)) {
+    if (!(oPtr->flags & DESTRUCTOR_CALLED) && (!Tcl_InterpDeleted(interp)
+	    || (oPtr != oPtr->fPtr->objectCls->thisPtr
+	    && oPtr != oPtr->fPtr->classCls->thisPtr))) {
 	contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
 	oPtr->flags |= DESTRUCTOR_CALLED;
 	if (contextPtr != NULL) {
