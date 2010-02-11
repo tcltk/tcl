@@ -1,3 +1,15 @@
+2010-02-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	[Bug 2826551, Patch 2948425]: Assorted regexp bugs related to -all,
+	-line and -start options and newlines.
+	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd): If -offset is given, treat it
+	as the start of the line if the previous character was a newline. Fix
+	nasty edge case where a zero length match would not advance the index.
+	* tests/regexp.test: Add regression tests back ported from Jacl.
+	Checks for a number of issues related to -line and newline handling. A
+	few of tests were broken before the patch and continue to be broken,
+	marked as knownBug.
+
 2010-02-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (ObjectRenamedTrace): [Bug 2949397]: Prevent
