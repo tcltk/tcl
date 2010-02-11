@@ -3,7 +3,7 @@
 	* generic/tclIOCmd.c (Tcl_OpenObjCmd): [Bug 2949740]: Make sure that
 	we do not try to put a NULL pipeline channel into binary mode.
 
-2010-02-09  Mo DeJong  <mdejong@users.sourceforge.net>
+2010-02-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	[Bug 2826551, Patch 2948425]: Assorted regexp bugs related to -all,
 	-line and -start options and newlines.
