@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.43.2.17 2009/08/26 02:25:47 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.43.2.18 2010/02/11 19:51:49 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -308,6 +308,7 @@ static void		EnterCmdWordData _ANSI_ARGS_((
     			    ExtCmdLoc *eclPtr, int srcOffset, Tcl_Token* tokenPtr,
 			    CONST char* cmd, int len, int numWords, int line,
 			    int* clNext, int** lines, CompileEnv* envPtr));
+static void             ReleaseCmdWordData _ANSI_ARGS_((ExtCmdLoc* eclPtr));
 #endif
 
 
@@ -721,22 +722,8 @@ TclCleanupByteCode(codePtr)
 	Tcl_HashEntry* hePtr = Tcl_FindHashEntry (iPtr->lineBCPtr, (char *) codePtr);
 	if (hePtr) {
 	    ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
-	    int        i;
 
-	    if (eclPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount (eclPtr->path);
-	    }
-	    for (i=0; i < eclPtr->nuloc; i++) {
-		ckfree ((char*) eclPtr->loc[i].line);
-	    }
-
-	    if (eclPtr->loc != NULL) {
-		ckfree ((char*) eclPtr->loc);
-	    }
-
-	    Tcl_DeleteHashTable (&eclPtr->litInfo);
-
-	    ckfree ((char*) eclPtr);
+	    ReleaseCmdWordData (eclPtr);
 	    Tcl_DeleteHashEntry (hePtr);
 	}
     }
@@ -745,6 +732,30 @@ TclCleanupByteCode(codePtr)
     TclHandleRelease(codePtr->interpHandle);
     ckfree((char *) codePtr);
 }
+
+#ifdef TCL_TIP280
+static void
+ReleaseCmdWordData (eclPtr)
+     ExtCmdLoc* eclPtr;
+{
+    int        i;
+
+    if (eclPtr->type == TCL_LOCATION_SOURCE) {
+	Tcl_DecrRefCount (eclPtr->path);
+    }
+    for (i=0; i < eclPtr->nuloc; i++) {
+	ckfree ((char*) eclPtr->loc[i].line);
+    }
+
+    if (eclPtr->loc != NULL) {
+	ckfree ((char*) eclPtr->loc);
+    }
+
+    Tcl_DeleteHashTable (&eclPtr->litInfo);
+
+    ckfree ((char*) eclPtr);
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -960,6 +971,9 @@ TclFreeCompileEnv(envPtr)
     if (envPtr->clLoc) {
 	Tcl_Release (envPtr->clLoc);
     }
+    if (envPtr->extCmdMapPtr) {
+	ReleaseCmdWordData (envPtr->extCmdMapPtr);
+    }
 #endif
 }
 
@@ -1068,7 +1082,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 #ifdef TCL_TIP280
     /* TIP #280 */
     ExtCmdLoc* eclPtr = envPtr->extCmdMapPtr;
-    int* wlines;
+    int* wlines = NULL;
     int  wlineat, cmdLine;
     int* clNext;
 #endif
@@ -1376,6 +1390,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	    ckfree ((char*) eclPtr->loc [wlineat].next);
 	    eclPtr->loc [wlineat].line = wlines;
 	    eclPtr->loc [wlineat].next = NULL;
+	    wlines = NULL;
 #endif
 	} /* end if parse.numWords > 0 */
 
@@ -1449,7 +1464,21 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	commandLength -= 1;
     }
 
-    log:
+ log:
+#ifdef TCL_TIP280
+    /* TIP #280: Free the per-word line data left over from parsing an
+     * erroneous command, if any.
+     */
+    if (wlines) {
+	ckfree ((char*) eclPtr->loc [wlineat].line);
+	ckfree ((char*) eclPtr->loc [wlineat].next);
+	ckfree ((char*) wlines);
+	eclPtr->loc [wlineat].line = NULL;
+	eclPtr->loc [wlineat].next = NULL;
+	wlines = NULL;
+    }
+#endif
+
     LogCompilationInfo(interp, script, parse.commandStart, commandLength);
     if (gotParse) {
 	Tcl_FreeParse(&parse);
