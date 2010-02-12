@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.12.4.25 2010/02/10 02:56:48 dgp Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.12.4.26 2010/02/12 03:06:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -872,7 +872,7 @@ HashStringKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     const unsigned char *string = keyPtr;
-    unsigned result = 0;
+    unsigned result = 0x811c9dc5;
     unsigned c;
 
     /*

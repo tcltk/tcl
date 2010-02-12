@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.25.2.25 2010/01/13 18:47:39 dgp Exp $
+# RCS: @(#) $Id: info.test,v 1.25.2.26 2010/02/12 03:06:21 dgp Exp $
 
 if {{::tcltest} ni [namespace children]} {
     package require tcltest 2
@@ -491,7 +491,7 @@ test info-15.4 {info procs option} -setup {
     namespace eval test_ns_info2 {
         namespace import ::test_ns_info1::*
         proc r {} {}
-        list [info procs] [info procs p*]
+        list [lsort [info procs]] [info procs p*]
     }
 } -result {{p q r} p}
 test info-15.5 {info procs option with a proc in a namespace} -setup {

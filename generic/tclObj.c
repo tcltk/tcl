@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.68 2010/02/09 17:53:09 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.69 2010/02/12 03:06:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4038,7 +4038,7 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = keyPtr;
-    register unsigned result = 0;
+    register unsigned result = 0x811c9dc5;
     const unsigned char *string = (unsigned char *) TclGetString(objPtr);
     const unsigned char *last = string + objPtr->length;
 

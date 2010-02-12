@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: zlib.n,v 1.1.2.6 2009/01/26 21:17:37 dgp Exp $
+'\" RCS: @(#) $Id: zlib.n,v 1.1.2.7 2010/02/12 03:06:20 dgp Exp $
 '\" 
 .so man.macros
 .TH zlib n 8.6 Tcl "Tcl Built-In Commands"
@@ -75,8 +75,8 @@ The size of the uncompressed data.
 \fBtime\fR
 .
 The time field from the header if non-zero, expected to be time that the file
-named by the \fBfilename\fR field was modified. Suitable for use with \fBclock
-format\fR.
+named by the \fBfilename\fR field was modified. Suitable for use with
+\fBclock format\fR.
 .TP
 \fBtype\fR
 .
@@ -126,9 +126,9 @@ The type of the data being compressed, being \fBbinary\fR or \fBtext\fR.
 Returns the uncompressed version of the raw compressed binary data in
 \fIstring\fR. If present, \fIbufferSize\fR is a hint as to what size of buffer
 is to be used to receive the data.
-.SS "STREAMING AND CHANNEL SUBCOMMANDS"
+.SS "CHANNEL SUBCOMMAND"
 .TP
-\fBzlib push\fI mode channel\fR ?\fIoptions ...\fR
+\fBzlib push\fI mode channel\fR ?\fIoptions ...\fR?
 .
 Pushes a compressing or decompressing transformation onto the channel
 \fIchannel\fR.
@@ -167,7 +167,10 @@ gzip-format data on \fIchannel\fR, which must be writable.
 The transformation will be a decompressing transformation that reads raw
 compressed data from \fIchannel\fR, which must be readable.
 .PP
-The following options may be set when creating a transformation:
+The following options may be set when creating a transformation via
+the
+.QW "\fIoptions ...\fR"
+to the \fBzlib push\fR command:
 .TP
 \fB\-header\fI dictionary\fR
 .
@@ -184,15 +187,18 @@ How hard to compress the data. Must be an integer from 0 (uncompressed) to 9
 '\"The maximum number of bytes ahead to read.
 '\"\fITODO: not yet implemented!\fR
 .PP
-Both compressing and decompressing channel transformations add extra options
-that may be accessed through \fBchan configure\fR. These are:
+Both compressing and decompressing channel transformations add extra
+configuration options that may be accessed through \fBchan configure\fR. Each
+option is either a read-only or a write-only option. The options are:
 .TP
 \fB\-flush\fI type\fR
 .
 This write-only operation flushes the current state of the compressor to the
 underlying channel. It is only valid for compressing transformations. The
 \fItype\fR must be either \fBsync\fR or \fBfull\fR for a normal flush or an
-expensive flush respectively. Note that flushing degrades compression.
+expensive flush respectively. Flushing degrades the compression ratio, but
+makes it easier for a decompressor to recover more of the file in the case of
+data corruption.
 .TP
 \fB\-checksum\fR
 .
@@ -207,6 +213,7 @@ This read-only option, only valid for decompressing transforms that are
 processing gzip-format data, returns the dictionary describing the header read
 off the data stream.
 .RE
+.SS "STREAMING SUBCOMMAND"
 .TP
 \fBzlib stream\fI mode\fR ?\fIlevel\fR?
 .

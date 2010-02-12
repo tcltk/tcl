@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.33 2009/11/19 16:51:26 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.34 2010/02/12 03:06:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1171,7 +1171,7 @@ Tcl_OpenObjCmd(
 		break;
 	    }
 	    chan = Tcl_OpenCommandChannel(interp, cmdObjc, cmdArgv, flags);
-	    if (binary) {
+	    if (binary && chan) {
 		Tcl_SetChannelOption(interp, chan, "-translation", "binary");
 	    }
 	}

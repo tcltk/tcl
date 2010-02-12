@@ -18,9 +18,9 @@ package require Tcl 8.6
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 #
-# CVS: $Id: tcltk-man2html.tcl,v 1.6.2.25 2010/01/15 14:56:20 dgp Exp $
+# CVS: $Id: tcltk-man2html.tcl,v 1.6.2.26 2010/02/12 03:06:21 dgp Exp $
 
-regexp {\d+\.\d+} {$Revision: 1.6.2.25 $} ::Version
+regexp {\d+\.\d+} {$Revision: 1.6.2.26 $} ::Version
 set ::CSSFILE "docs.css"
 
 ##
@@ -813,6 +813,7 @@ array set exclude_refs_map {
     clock.n		{next}
     history.n		{exec}
     next.n		{unknown}
+    zlib.n		{binary close filename text}
     canvas.n		{bitmap text}
     checkbutton.n	{image}
     clipboard.n		{string}
@@ -838,6 +839,7 @@ array set exclude_refs_map {
     ttk_spinbox.n	{format}
     ttk_treeview.n	{text open}
     ttk_widget.n	{image text variable}
+    TclZlib.3		{binary flush filename text}
 }
 array set exclude_when_followed_by_map {
     canvas.n {
