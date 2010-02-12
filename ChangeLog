@@ -1,3 +1,8 @@
+2010-02-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/list.test: Add tests for explicit \0 in
+	a string argument to the list command.
+
 2010-02-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclIOCmd.c (Tcl_OpenObjCmd): [Bug 2949740]: Make sure that
