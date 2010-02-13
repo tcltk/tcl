@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.460 2010/02/09 20:51:54 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.461 2010/02/13 18:11:06 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -423,10 +423,91 @@ typedef struct {
 } EnsembleCmdRep;
 
 /*
- * Flag to enable bytecode compilation of an ensemble.
+ * The client data for an ensemble command. This consists of the table of
+ * commands that are actually exported by the namespace, and an epoch counter
+ * that, combined with the exportLookupEpoch field of the namespace structure,
+ * defines whether the table contains valid data or will need to be recomputed
+ * next time the ensemble command is called.
  */
 
-#define ENSEMBLE_COMPILE 0x4
+typedef struct EnsembleConfig {
+    Namespace *nsPtr;		/* The namspace backing this ensemble up. */
+    Tcl_Command token;		/* The token for the command that provides
+				 * ensemble support for the namespace, or NULL
+				 * if the command has been deleted (or never
+				 * existed; the global namespace never has an
+				 * ensemble command.) */
+    int epoch;			/* The epoch at which this ensemble's table of
+				 * exported commands is valid. */
+    char **subcommandArrayPtr;	/* Array of ensemble subcommand names. At all
+				 * consistent points, this will have the same
+				 * number of entries as there are entries in
+				 * the subcommandTable hash. */
+    Tcl_HashTable subcommandTable;
+				/* Hash table of ensemble subcommand names,
+				 * which are its keys so this also provides
+				 * the storage management for those subcommand
+				 * names. The contents of the entry values are
+				 * object version the prefix lists to use when
+				 * substituting for the command/subcommand to
+				 * build the ensemble implementation command.
+				 * Has to be stored here as well as in
+				 * subcommandDict because that field is NULL
+				 * when we are deriving the ensemble from the
+				 * namespace exports list. FUTURE WORK: use
+				 * object hash table here. */
+    struct EnsembleConfig *next;/* The next ensemble in the linked list of
+				 * ensembles associated with a namespace. If
+				 * this field points to this ensemble, the
+				 * structure has already been unlinked from
+				 * all lists, and cannot be found by scanning
+				 * the list from the namespace's ensemble
+				 * field. */
+    int flags;			/* ORed combo of TCL_ENSEMBLE_PREFIX,
+				 * ENSEMBLE_DEAD and ENSEMBLE_COMPILE. */
+
+    /* OBJECT FIELDS FOR ENSEMBLE CONFIGURATION */
+
+    Tcl_Obj *subcommandDict;	/* Dictionary providing mapping from
+				 * subcommands to their implementing command
+				 * prefixes, or NULL if we are to build the
+				 * map automatically from the namespace
+				 * exports. */
+    Tcl_Obj *subcmdList;	/* List of commands that this ensemble
+				 * actually provides, and whose implementation
+				 * will be built using the subcommandDict (if
+				 * present and defined) and by simple mapping
+				 * to the namespace otherwise. If NULL,
+				 * indicates that we are using the (dynamic)
+				 * list of currently exported commands. */
+    Tcl_Obj *unknownHandler;	/* Script prefix used to handle the case when
+				 * no match is found (according to the rule
+				 * defined by flag bit TCL_ENSEMBLE_PREFIX) or
+				 * NULL to use the default error-generating
+				 * behaviour. The script execution gets all
+				 * the arguments to the ensemble command
+				 * (including objv[0]) and will have the
+				 * results passed directly back to the caller
+				 * (including the error code) unless the code
+				 * is TCL_CONTINUE in which case the
+				 * subcommand will be reparsed by the ensemble
+				 * core, presumably because the ensemble
+				 * itself has been updated. */
+    Tcl_Obj *parameterList;	/* List of ensemble parameter names. */
+    int numParameters;		/* Cached number of parameters. This is either
+				 * 0 (if the parameterList field is NULL) or
+				 * the length of the list in the parameterList
+				 * field. */
+} EnsembleConfig;
+
+/*
+ * Various bits for the EnsembleConfig.flags field.
+ */
+
+#define ENSEMBLE_DEAD	0x1	/* Flag value to say that the ensemble is dead
+				 * and on its way out. */
+#define ENSEMBLE_COMPILE 0x4	/* Flag to enable bytecode compilation of an
+				 * ensemble. */
 
 /*
  *----------------------------------------------------------------
@@ -2859,6 +2940,7 @@ MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
 MODULE_SCOPE int	TclNokia770Doubles();
+MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
 			    const char *reason, int index);
@@ -3176,6 +3258,9 @@ MODULE_SCOPE int	Tcl_LsortObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_NamespaceObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	TclNamespaceEnsembleCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_OpenObjCmd(ClientData clientData,
