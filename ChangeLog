@@ -1,3 +1,8 @@
+2010-02-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+    * win/tcl.m4           use -pipe for gcc on win32
+    * win/configure        (mingw/cygwin) (regenerated)
+
 2010-02-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/list.test: Add tests for explicit \0 in
