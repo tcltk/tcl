@@ -2,6 +2,7 @@
 
     * win/tcl.m4           use -pipe for gcc on win32
     * win/configure        (mingw/cygwin) (regenerated)
+    * win/.cvsignore       Add .lib, .exp and .res here
 
 2010-02-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
