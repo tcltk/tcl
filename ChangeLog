@@ -1,13 +1,23 @@
+2010-02-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Divided the [switch]
+	compiler into three pieces (after the model of [try]): a parser, an
+	instruction-issuer for chained tests, and an instruction-issuer for
+	jump tables.
+
+	* generic/tclEnsemble.c: Split the ensemble engine out into its own
+	file rather than keeping it mashed together with the namespace code.
+
 2010-02-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * win/tcl.m4           use -pipe for gcc on win32
-    * win/configure        (mingw/cygwin) (regenerated)
-    * win/.cvsignore       Add .lib, .exp and .res here
+	* win/tcl.m4:		Use -pipe for gcc on win32
+	* win/configure:	(mingw/cygwin) (regenerated)
+	* win/.cvsignore:	Add .lib, .exp and .res here
 
 2010-02-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
-	* tests/list.test: Add tests for explicit \0 in
-	a string argument to the list command.
+	* tests/list.test: Add tests for explicit \0 in a string argument to
+	the list command.
 
 2010-02-11  Donal K. Fellows  <dkf@users.sf.net>
 
