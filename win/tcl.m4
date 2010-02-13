@@ -477,13 +477,8 @@ file for information about building with Mingw.])
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"
 
-	#if test "$ac_cv_cygwin" = "yes"; then
-	#    extra_cflags="-mno-cygwin"
-	#    extra_ldflags="-mno-cygwin"
-	#else
-	#    extra_cflags=""
-	#    extra_ldflags=""
-	#fi
+	extra_cflags="-pipe"
+	extra_ldflags="-pipe"
 
 	if test "$ac_cv_cygwin" = "yes"; then
 	  touch ac$$.c
@@ -498,9 +493,6 @@ file for information about building with Mingw.])
 	    esac
 	  fi
 	  rm -f ac$$.o ac$$.c
-	else
-	  extra_cflags=''
-	  extra_ldflags=''
 	fi
 
 	if test "${SHARED_BUILD}" = "0" ; then
