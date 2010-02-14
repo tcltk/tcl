@@ -5,8 +5,7 @@
  *	commands and global variables. The global :: namespace is the
  *	traditional Tcl "global" scope. Other namespaces are created as
  *	children of the global namespace. These other namespaces contain
- *	special-purpose commands and variables for packages. Also includes the
- *	TIP#112 ensemble machinery.
+ *	special-purpose commands and variables for packages.
  *
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1997 Sun Microsystems, Inc.
@@ -23,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.200 2010/02/13 18:11:06 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.201 2010/02/14 13:23:03 dkf Exp $
  */
 
 #include "tclInt.h"
