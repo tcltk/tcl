@@ -1,15 +1,15 @@
 /*
  * tclEnsemble.c --
  *
- *	Contains support for ensembles, which provide simple mechanism
- *	for creating composite commands on top of namespaces.
+ *	Contains support for ensembles (see TIP#112), which provide simple
+ *	mechanism for creating composite commands on top of namespaces.
  *
  * Copyright (c) 2005-2010 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnsemble.c,v 1.1 2010/02/13 18:11:06 dkf Exp $
+ * RCS: @(#) $Id: tclEnsemble.c,v 1.2 2010/02/14 13:37:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -36,6 +36,34 @@ static void		MakeCachedEnsembleCommand(Tcl_Obj *objPtr,
 static void		FreeEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		StringOfEnsembleCmdRep(Tcl_Obj *objPtr);
+
+/*
+ * The lists of subcommands and options for the [namespace ensemble] command.
+ */
+
+static const char *const ensembleSubcommands[] = {
+    "configure", "create", "exists", NULL
+};
+enum EnsSubcmds {
+    ENS_CONFIG, ENS_CREATE, ENS_EXISTS
+};
+
+static const char *const ensembleCreateOptions[] = {
+    "-command", "-map", "-parameters", "-prefixes", "-subcommands",
+    "-unknown", NULL
+};
+enum EnsCreateOpts {
+    CRT_CMD, CRT_MAP, CRT_PARAM, CRT_PREFIX, CRT_SUBCMDS, CRT_UNKNOWN
+};
+
+static const char *const ensembleConfigOptions[] = {
+    "-map", "-namespace", "-parameters", "-prefixes", "-subcommands",
+    "-unknown", NULL
+};
+enum EnsConfigOpts {
+    CONF_MAP, CONF_NAMESPACE, CONF_PARAM, CONF_PREFIX, CONF_SUBCMDS,
+    CONF_UNKNOWN
+};
 
 /*
  * This structure defines a Tcl object type that contains a reference to an
@@ -81,36 +109,18 @@ TclNamespaceEnsembleCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Namespace *nsPtr;
+    Tcl_Namespace *namespacePtr;
+    Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     Tcl_Command token;
-    static const char *const subcommands[] = {
-	"configure", "create", "exists", NULL
-    };
-    enum EnsSubcmds {
-	ENS_CONFIG, ENS_CREATE, ENS_EXISTS
-    };
-    static const char *const createOptions[] = {
-	"-command", "-map", "-parameters", "-prefixes", "-subcommands",
-	"-unknown", NULL
-    };
-    enum EnsCreateOpts {
-	CRT_CMD, CRT_MAP, CRT_PARAM, CRT_PREFIX, CRT_SUBCMDS, CRT_UNKNOWN
-    };
-    static const char *const configOptions[] = {
-	"-map", "-namespace", "-parameters", "-prefixes", "-subcommands",
-	"-unknown", NULL
-    };
-    enum EnsConfigOpts {
-	CONF_MAP, CONF_NAMESPACE, CONF_PARAM, CONF_PREFIX, CONF_SUBCMDS,
-	CONF_UNKNOWN
-    };
-    int index;
+    Tcl_DictSearch search;
+    Tcl_Obj *listObj;
+    int index, done;
 
-    nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     if (nsPtr == NULL || nsPtr->flags & NS_DYING) {
 	if (!Tcl_InterpDeleted(interp)) {
 	    Tcl_AppendResult(interp,
-		    "tried to manipulate ensemble of deleted namespace", NULL);
+		    "tried to manipulate ensemble of deleted namespace",
+		    NULL);
 	}
 	return TCL_ERROR;
     }
@@ -119,17 +129,15 @@ TclNamespaceEnsembleCmd(
 	Tcl_WrongNumArgs(interp, 2, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[2], subcommands, "subcommand", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[2], ensembleSubcommands,
+	    "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     switch ((enum EnsSubcmds) index) {
     case ENS_CREATE: {
 	const char *name;
-	Tcl_DictSearch search;
-	Tcl_Obj *listObj;
-	int done, len, allocatedMapFlag = 0;
+	int len, allocatedMapFlag = 0;
 	/*
 	 * Defaults
 	 */
@@ -166,8 +174,8 @@ TclNamespaceEnsembleCmd(
 	 */
 
 	for (; objc>1 ; objc-=2,objv+=2) {
-	    if (Tcl_GetIndexFromObj(interp, objv[0], createOptions, "option",
-		    0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[0], ensembleCreateOptions,
+		    "option", 0, &index) != TCL_OK) {
 		if (allocatedMapFlag) {
 		    Tcl_DecrRefCount(mapObj);
 		}
@@ -337,8 +345,8 @@ TclNamespaceEnsembleCmd(
 	if (objc == 5) {
 	    Tcl_Obj *resultObj = NULL;		/* silence gcc 4 warning */
 
-	    if (Tcl_GetIndexFromObj(interp, objv[4], configOptions, "option",
-		    0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[4], ensembleConfigOptions,
+		    "option", 0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum EnsConfigOpts) index) {
@@ -360,14 +368,12 @@ TclNamespaceEnsembleCmd(
 		    Tcl_SetObjResult(interp, resultObj);
 		}
 		break;
-	    case CONF_NAMESPACE: {
-		Tcl_Namespace *namespacePtr = NULL; /* silence gcc 4 warning */
-
+	    case CONF_NAMESPACE:
+		namespacePtr = NULL;		/* silence gcc 4 warning */
 		Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
 		Tcl_SetResult(interp, ((Namespace *) namespacePtr)->fullName,
 			TCL_VOLATILE);
 		break;
-	    }
 	    case CONF_PREFIX: {
 		int flags = 0;			/* silence gcc 4 warning */
 
@@ -383,68 +389,64 @@ TclNamespaceEnsembleCmd(
 		}
 		break;
 	    }
-	    return TCL_OK;
-
 	} else if (objc == 4) {
 	    /*
 	     * Produce list of all information.
 	     */
 
 	    Tcl_Obj *resultObj, *tmpObj = NULL;	/* silence gcc 4 warning */
-	    Tcl_Namespace *namespacePtr = NULL;	/* silence gcc 4 warning */
 	    int flags = 0;			/* silence gcc 4 warning */
 
 	    TclNewObj(resultObj);
 
 	    /* -map option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(configOptions[CONF_MAP], -1));
+		    Tcl_NewStringObj(ensembleConfigOptions[CONF_MAP], -1));
 	    Tcl_GetEnsembleMappingDict(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -namespace option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(configOptions[CONF_NAMESPACE], -1));
+		    Tcl_NewStringObj(ensembleConfigOptions[CONF_NAMESPACE],
+			    -1));
+	    namespacePtr = NULL;		/* silence gcc 4 warning */
 	    Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(((Namespace *) namespacePtr)->fullName,
-		    -1));
+			    -1));
 
 	    /* -parameters option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(configOptions[CONF_PARAM], -1));
+		    Tcl_NewStringObj(ensembleConfigOptions[CONF_PARAM], -1));
 	    Tcl_GetEnsembleParameterList(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -prefix option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(configOptions[CONF_PREFIX], -1));
+		    Tcl_NewStringObj(ensembleConfigOptions[CONF_PREFIX], -1));
 	    Tcl_GetEnsembleFlags(NULL, token, &flags);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewBooleanObj(flags & TCL_ENSEMBLE_PREFIX));
 
 	    /* -subcommands option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(configOptions[CONF_SUBCMDS], -1));
+		    Tcl_NewStringObj(ensembleConfigOptions[CONF_SUBCMDS],-1));
 	    Tcl_GetEnsembleSubcommandList(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -unknown option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(configOptions[CONF_UNKNOWN], -1));
+		    Tcl_NewStringObj(ensembleConfigOptions[CONF_UNKNOWN],-1));
 	    Tcl_GetEnsembleUnknownHandler(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    Tcl_SetObjResult(interp, resultObj);
-	    return TCL_OK;
 	} else {
-	    Tcl_DictSearch search;
-	    Tcl_Obj *listObj;
-	    int done, len, allocatedMapFlag = 0;
+	    int len, allocatedMapFlag = 0;
 	    Tcl_Obj *subcmdObj = NULL, *mapObj = NULL, *paramObj = NULL,
 		    *unknownObj = NULL; /* Defaults, silence gcc 4 warnings */
 	    int permitPrefix, flags = 0;	/* silence gcc 4 warning */
@@ -467,8 +469,9 @@ TclNamespaceEnsembleCmd(
 	     */
 
 	    for (; objc>0 ; objc-=2,objv+=2) {
-		if (Tcl_GetIndexFromObj(interp, objv[0], configOptions,
+		if (Tcl_GetIndexFromObj(interp, objv[0],ensembleConfigOptions,
 			"option", 0, &index) != TCL_OK) {
+		freeMapAndError:
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -477,24 +480,19 @@ TclNamespaceEnsembleCmd(
 		switch ((enum EnsConfigOpts) index) {
 		case CONF_SUBCMDS:
 		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
-			if (allocatedMapFlag) {
-			    Tcl_DecrRefCount(mapObj);
-			}
-			return TCL_ERROR;
+			goto freeMapAndError;
 		    }
 		    subcmdObj = (len > 0 ? objv[1] : NULL);
 		    continue;
 		case CONF_PARAM:
 		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
-			if (allocatedMapFlag) {
-			    Tcl_DecrRefCount(mapObj);
-			}
-			return TCL_ERROR;
+			goto freeMapAndError;
 		    }
 		    paramObj = (len > 0 ? objv[1] : NULL);
 		    continue;
 		case CONF_MAP: {
-		    Tcl_Obj *patchedDict = NULL, *subcmdObj;
+		    Tcl_Obj *patchedDict = NULL, *subcmdObj, **listv;
+		    const char *cmd;
 
 		    /*
 		     * Verify that the map is sensible.
@@ -502,29 +500,20 @@ TclNamespaceEnsembleCmd(
 
 		    if (Tcl_DictObjFirst(interp, objv[1], &search,
 			    &subcmdObj, &listObj, &done) != TCL_OK) {
-			if (allocatedMapFlag) {
-			    Tcl_DecrRefCount(mapObj);
-			}
-			return TCL_ERROR;
+			goto freeMapAndError;
 		    }
 		    if (done) {
 			mapObj = NULL;
 			continue;
 		    }
 		    do {
-			Tcl_Obj **listv;
-			const char *cmd;
-
 			if (TclListObjGetElements(interp, listObj, &len,
 				&listv) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
 				Tcl_DecrRefCount(patchedDict);
 			    }
-			    if (allocatedMapFlag) {
-				Tcl_DecrRefCount(mapObj);
-			    }
-			    return TCL_ERROR;
+			    goto freeMapAndError;
 			}
 			if (len < 1) {
 			    Tcl_SetResult(interp,
@@ -534,14 +523,11 @@ TclNamespaceEnsembleCmd(
 			    if (patchedDict) {
 				Tcl_DecrRefCount(patchedDict);
 			    }
-			    if (allocatedMapFlag) {
-				Tcl_DecrRefCount(mapObj);
-			    }
-			    return TCL_ERROR;
+			    goto freeMapAndError;
 			}
 			cmd = TclGetString(listv[0]);
 			if (!(cmd[0] == ':' && cmd[1] == ':')) {
-			    Tcl_Obj *newList = Tcl_NewListObj(len, listv);
+			    Tcl_Obj *newList = Tcl_DuplicateObj(listObj);
 			    Tcl_Obj *newCmd =
 				    Tcl_NewStringObj(nsPtr->fullName, -1);
 
@@ -568,27 +554,18 @@ TclNamespaceEnsembleCmd(
 		    continue;
 		}
 		case CONF_NAMESPACE:
-		    if (allocatedMapFlag) {
-			Tcl_DecrRefCount(mapObj);
-		    }
 		    Tcl_AppendResult(interp, "option -namespace is read-only",
 			    NULL);
-		    return TCL_ERROR;
+		    goto freeMapAndError;
 		case CONF_PREFIX:
 		    if (Tcl_GetBooleanFromObj(interp, objv[1],
 			    &permitPrefix) != TCL_OK) {
-			if (allocatedMapFlag) {
-			    Tcl_DecrRefCount(mapObj);
-			}
-			return TCL_ERROR;
+			goto freeMapAndError;
 		    }
 		    continue;
 		case CONF_UNKNOWN:
 		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
-			if (allocatedMapFlag) {
-			    Tcl_DecrRefCount(mapObj);
-			}
-			return TCL_ERROR;
+			goto freeMapAndError;
 		    }
 		    unknownObj = (len > 0 ? objv[1] : NULL);
 		    continue;
@@ -606,8 +583,8 @@ TclNamespaceEnsembleCmd(
 	    Tcl_SetEnsembleParameterList(interp, token, paramObj);
 	    Tcl_SetEnsembleUnknownHandler(interp, token, unknownObj);
 	    Tcl_SetEnsembleFlags(interp, token, flags);
-	    return TCL_OK;
 	}
+	return TCL_OK;
 
     default:
 	Tcl_Panic("unexpected ensemble command");
@@ -2692,7 +2669,8 @@ TclCompileEnsemble(
     Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
     Tcl_Parse synthetic;
-    int len, numBytes, result, flags = 0, i;
+    int len, result, flags = 0, i;
+    unsigned numBytes;
     const char *word;
 
     if (parsePtr->numWords < 2) {
@@ -2742,7 +2720,8 @@ TclCompileEnsemble(
     }
 
     /*
-     * Next, get the flags. We need them on several code paths.
+     * Next, get the flags. We need them on several code paths so that we can
+     * know whether we're to do prefix matching.
      */
 
     (void) Tcl_GetEnsembleFlags(NULL, ensemble, &flags);
@@ -2764,7 +2743,7 @@ TclCompileEnsemble(
 	}
 	for (i=0 ; i<len ; i++) {
 	    str = Tcl_GetStringFromObj(elems[i], &sclen);
-	    if (sclen==numBytes && !memcmp(word, str, (unsigned) numBytes)) {
+	    if ((sclen == numBytes) && !memcmp(word, str, numBytes)) {
 		/*
 		 * Exact match! Excellent!
 		 */
@@ -2786,27 +2765,30 @@ TclCompileEnsemble(
 	     */
 
 	    if ((flags & TCL_ENSEMBLE_PREFIX)
-		    && strncmp(word, str, (unsigned) numBytes) == 0) {
+		    && strncmp(word, str, numBytes) == 0) {
 		if (matchObj != NULL) {
 		    return TCL_ERROR;
 		}
 		matchObj = elems[i];
 	    }
 	}
-	if (matchObj != NULL) {
-	    result = Tcl_DictObjGet(NULL, mapObj, matchObj, &targetCmdObj);
-	    if (result != TCL_OK || targetCmdObj == NULL) {
-		return TCL_ERROR;
-	    }
-	    goto doneMapLookup;
+	if (matchObj == NULL) {
+	    return TCL_ERROR;
 	}
-	return TCL_ERROR;
+	result = Tcl_DictObjGet(NULL, mapObj, matchObj, &targetCmdObj);
+	if (result != TCL_OK || targetCmdObj == NULL) {
+	    return TCL_ERROR;
+	}
     } else {
+	Tcl_DictSearch s;
+	int done, matched;
+	Tcl_Obj *tmpObj;
+
 	/*
 	 * No map, so check the dictionary directly.
 	 */
 
-	TclNewStringObj(subcmdObj, word, numBytes);
+	TclNewStringObj(subcmdObj, word, (int) numBytes);
 	result = Tcl_DictObjGet(NULL, mapObj, subcmdObj, &targetCmdObj);
 	TclDecrRefCount(subcmdObj);
 	if (result == TCL_OK && targetCmdObj != NULL) {
@@ -2822,44 +2804,39 @@ TclCompileEnsemble(
 	 * prefix. Check if prefix matches are allowed.
 	 */
 
-	if (flags & TCL_ENSEMBLE_PREFIX) {
-	    Tcl_DictSearch s;
-	    int done, matched;
-	    Tcl_Obj *tmpObj;
+	if (!(flags & TCL_ENSEMBLE_PREFIX)) {
+	    return TCL_ERROR;
+	}
 
-	    /*
-	     * Iterate over the keys in the dictionary, checking to see if
-	     * we're a prefix.
-	     */
+	/*
+	 * Iterate over the keys in the dictionary, checking to see if we're a
+	 * prefix.
+	 */
 
-	    Tcl_DictObjFirst(NULL,mapObj,&s,&subcmdObj,&tmpObj,&done);
-	    matched = 0;
-	    while (!done) {
-		if (strncmp(TclGetString(subcmdObj), word,
-			(unsigned) numBytes) == 0) {
-		    if (matched++) {
-			/*
-			 * Must have matched twice! Not unique, so no point
-			 * looking further.
-			 */
+	Tcl_DictObjFirst(NULL, mapObj, &s, &subcmdObj, &tmpObj, &done);
+	matched = 0;
+	while (!done) {
+	    if (strncmp(TclGetString(subcmdObj), word, numBytes) == 0) {
+		if (matched++) {
+		    /*
+		     * Must have matched twice! Not unique, so no point
+		     * looking further.
+		     */
 
-			break;
-		    }
-		    targetCmdObj = tmpObj;
+		    break;
 		}
-		Tcl_DictObjNext(&s, &subcmdObj, &tmpObj, &done);
+		targetCmdObj = tmpObj;
 	    }
-	    Tcl_DictObjDone(&s);
+	    Tcl_DictObjNext(&s, &subcmdObj, &tmpObj, &done);
+	}
+	Tcl_DictObjDone(&s);
 
-	    /*
-	     * If we have anything other than a single match, we've failed the
-	     * unique prefix check.
-	     */
+	/*
+	 * If we have anything other than a single match, we've failed the
+	 * unique prefix check.
+	 */
 
-	    if (matched != 1) {
-		return TCL_ERROR;
-	    }
-	} else {
+	if (matched != 1) {
 	    return TCL_ERROR;
 	}
     }
