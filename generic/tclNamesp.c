@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.201 2010/02/14 13:23:03 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.202 2010/02/15 11:53:44 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -733,6 +733,7 @@ Tcl_CreateNamespace(
     nsPtr->commandPathLength = 0;
     nsPtr->commandPathArray = NULL;
     nsPtr->commandPathSourceList = NULL;
+    nsPtr->earlyDeleteProc = NULL;
 
     if (parentPtr != NULL) {
 	entryPtr = Tcl_CreateHashEntry(
@@ -842,6 +843,26 @@ Tcl_DeleteNamespace(
     Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Command *cmdPtr;
+
+    /*
+     * Give anyone interested - notably TclOO - a chance to use this namespace
+     * normally despite the fact that the namespace is going to go. Allows the
+     * calling of destructors. Will only be called once (unless re-established
+     * by the called function). [Bug 2950259]
+     *
+     * Note that setting this field requires access to the internal definition
+     * of namespaces, so it should only be accessed by code that knows about
+     * being careful with reentrancy.
+     */
+
+    if (nsPtr->earlyDeleteProc != NULL) {
+	Tcl_NamespaceDeleteProc *earlyDeleteProc = nsPtr->earlyDeleteProc;
+
+	nsPtr->earlyDeleteProc = NULL;
+	nsPtr->activationCount++;
+	earlyDeleteProc(nsPtr->clientData);
+	nsPtr->activationCount--;
+    }
 
     /*
      * Delete all coroutine commands now: break the circular ref cycle between
