@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.461 2010/02/13 18:11:06 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.462 2010/02/15 11:53:44 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -339,6 +339,12 @@ typedef struct Namespace {
     NamespacePathEntry *commandPathSourceList;
 				/* Linked list of path entries that point to
 				 * this namespace. */
+    Tcl_NamespaceDeleteProc *earlyDeleteProc;
+				/* Just like the deleteProc field (and called
+				 * with the same clientData) but called at the
+				 * start of the deletion process, so there is
+				 * a chance for code to do stuff inside the
+				 * namespace before deletion completes. */
 } Namespace;
 
 /*
