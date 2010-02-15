@@ -24,3 +24,5 @@ tcl.suo
 *.res
 *.exp
 *.lib
+*.pdb
+*.ilk

@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubInit.c,v 1.9 2010/02/05 20:53:12 nijtmans Exp $
+ * $Id: tclOOStubInit.c,v 1.10 2010/02/15 22:56:20 nijtmans Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
@@ -10,11 +10,11 @@
 #endif
 #include "tclOOInt.h"
 
-MODULE_SCOPE const TclOOStubs tclOOConstStubs;
+MODULE_SCOPE const TclOOStubs tclOOStubs;
 
 /* !BEGIN!: Do not edit below this line. */
 
-static const TclOOIntStubs tclOOIntConstStubs = {
+static const TclOOIntStubs tclOOIntStubs = {
     TCL_STUB_MAGIC,
     NULL,
     TclOOGetDefineCmdContext, /* 0 */
@@ -36,10 +36,10 @@ static const TclOOIntStubs tclOOIntConstStubs = {
 };
 
 static const TclOOStubHooks tclOOStubHooks = {
-    &tclOOIntConstStubs
+    &tclOOIntStubs
 };
 
-const TclOOStubs tclOOConstStubs = {
+const TclOOStubs tclOOStubs = {
     TCL_STUB_MAGIC,
     &tclOOStubHooks,
     Tcl_CopyObjectInstance, /* 0 */

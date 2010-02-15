@@ -8,21 +8,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.33 2010/02/05 10:03:24 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.34 2010/02/15 22:56:19 nijtmans Exp $
  */
 
 #ifndef _TCLWININT
 #define _TCLWININT
 
 #include "tclInt.h"
-
-/*
- * The following specifies how much stack space TclpCheckStackSpace()
- * ensures is available.  TclpCheckStackSpace() is called by Tcl_EvalObj()
- * to help avoid overflowing the stack in the case of infinite recursion.
- */
-
-#define TCL_WIN_STACK_THRESHOLD 0x8000
 
 /*
  * Some versions of Borland C have a define for the OSVERSIONINFO for
@@ -50,7 +42,6 @@ typedef union {
 
 typedef struct TclWinProcs {
     int useWide;
-
     BOOL (WINAPI *buildCommDCBProc)(const TCHAR *, LPDCB);
     TCHAR * (WINAPI *charLowerProc)(TCHAR *);
     BOOL (WINAPI *copyFileProc)(const TCHAR *, const TCHAR *, BOOL);
@@ -66,8 +57,8 @@ typedef struct TclWinProcs {
     BOOL (WINAPI *getComputerNameProc)(WCHAR *, LPDWORD);
     DWORD (WINAPI *getCurrentDirectoryProc)(DWORD, WCHAR *);
     DWORD (WINAPI *getFileAttributesProc)(const TCHAR *);
-    DWORD (WINAPI *getFullPathNameProc)(const TCHAR *, DWORD nBufferLength,
-	    WCHAR *, TCHAR **);
+    DWORD (WINAPI *getFullPathNameProc)(const TCHAR *, DWORD, WCHAR *,
+	    TCHAR **);
     DWORD (WINAPI *getModuleFileNameProc)(HMODULE, WCHAR *, int);
     DWORD (WINAPI *getShortPathNameProc)(const TCHAR *, WCHAR *, DWORD);
     UINT (WINAPI *getTempFileNameProc)(const TCHAR *, const TCHAR *, UINT,
@@ -92,62 +83,39 @@ typedef struct TclWinProcs {
      */
     BOOL (WINAPI *getFileAttributesExProc)(const TCHAR *,
 	    GET_FILEEX_INFO_LEVELS, LPVOID);
-    BOOL (WINAPI *createHardLinkProc)(const TCHAR*, const TCHAR*,
-				      LPSECURITY_ATTRIBUTES);
+    BOOL (WINAPI *createHardLinkProc)(const TCHAR *, const TCHAR *,
+	    LPSECURITY_ATTRIBUTES);
 
-    /* deleted INT (__cdecl *utimeProc)(const TCHAR*, struct _utimbuf *); */
     /* These two are also NULL at start; see comment above */
-    HANDLE (WINAPI *findFirstFileExProc)(const TCHAR*, UINT,
-					 LPVOID, UINT,
-					 LPVOID, DWORD);
-    BOOL (WINAPI *getVolumeNameForVMPProc)(const TCHAR*, TCHAR*, DWORD);
-    DWORD (WINAPI *getLongPathNameProc)(const TCHAR*, TCHAR*, DWORD);
+    HANDLE (WINAPI *findFirstFileExProc)(const TCHAR *, UINT,
+	    LPVOID, UINT, LPVOID, DWORD);
+    BOOL (WINAPI *getVolumeNameForVMPProc)(const TCHAR *, TCHAR *, DWORD);
+    DWORD (WINAPI *getLongPathNameProc)(const TCHAR *, TCHAR *, DWORD);
     /*
      * These six are for the security sdk to get correct file
      * permissions on NT, 2000, XP, etc.  On 95,98,ME they are
      * always null.
      */
-    BOOL (WINAPI *getFileSecurityProc)(LPCTSTR lpFileName,
-		     SECURITY_INFORMATION RequestedInformation,
-		     PSECURITY_DESCRIPTOR pSecurityDescriptor,
-		     DWORD nLength,
-		     LPDWORD lpnLengthNeeded);
-    BOOL (WINAPI *impersonateSelfProc) (SECURITY_IMPERSONATION_LEVEL
-		      ImpersonationLevel);
-    BOOL (WINAPI *openThreadTokenProc) (HANDLE ThreadHandle,
-		      DWORD DesiredAccess, BOOL OpenAsSelf,
-		      PHANDLE TokenHandle);
+    BOOL (WINAPI *getFileSecurityProc)(LPCTSTR, SECURITY_INFORMATION,
+	    PSECURITY_DESCRIPTOR, DWORD, LPDWORD);
+    BOOL (WINAPI *impersonateSelfProc) (SECURITY_IMPERSONATION_LEVEL);
+    BOOL (WINAPI *openThreadTokenProc) (HANDLE, DWORD, BOOL, PHANDLE);
     BOOL (WINAPI *revertToSelfProc) (void);
-    void (WINAPI *mapGenericMaskProc) (PDWORD AccessMask,
-		      PGENERIC_MAPPING GenericMapping);
-    BOOL (WINAPI *accessCheckProc)(PSECURITY_DESCRIPTOR pSecurityDescriptor,
-		    HANDLE ClientToken, DWORD DesiredAccess,
-		    PGENERIC_MAPPING GenericMapping,
-		    PPRIVILEGE_SET PrivilegeSet,
-		    LPDWORD PrivilegeSetLength,
-		    LPDWORD GrantedAccess,
-		    LPBOOL AccessStatus);
+    void (WINAPI *mapGenericMaskProc) (PDWORD, PGENERIC_MAPPING);
+    BOOL (WINAPI *accessCheckProc)(PSECURITY_DESCRIPTOR, HANDLE, DWORD,
+		    PGENERIC_MAPPING, PPRIVILEGE_SET, LPDWORD, LPDWORD, LPBOOL);
     /*
      * Unicode console support. WriteConsole and ReadConsole
      */
-    BOOL (WINAPI *readConsoleProc)(
-      HANDLE hConsoleInput,
-      LPVOID lpBuffer,
-      DWORD nNumberOfCharsToRead,
-      LPDWORD lpNumberOfCharsRead,
-      LPVOID lpReserved
-    );
-    BOOL (WINAPI *writeConsoleProc)(
-      HANDLE hConsoleOutput,
-      const void* lpBuffer,
-      DWORD nNumberOfCharsToWrite,
-      LPDWORD lpNumberOfCharsWritten,
-      LPVOID lpReserved
-    );
-    BOOL (WINAPI *getUserName)(LPTSTR lpBuffer, LPDWORD lpnSize);
+    BOOL (WINAPI *readConsoleProc)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID);
+    BOOL (WINAPI *writeConsoleProc)(HANDLE, const void *, DWORD, LPDWORD,
+	    LPVOID);
+    BOOL (WINAPI *getUserName)(LPTSTR, LPDWORD);
+    const TCHAR *(*utf2tchar)(const char *, int, Tcl_DString *);
+    const char *(*tchar2utf)(const TCHAR *, int, Tcl_DString *);
 } TclWinProcs;
 
-MODULE_SCOPE TclWinProcs *tclWinProcs;
+MODULE_SCOPE const TclWinProcs *tclWinProcs;
 
 /*
  * Declarations of functions that are not accessible by way of the
@@ -167,9 +135,9 @@ MODULE_SCOPE Tcl_Channel TclWinOpenSerialChannel(HANDLE handle,
 			    char *channelName, int permissions);
 MODULE_SCOPE HANDLE	TclWinSerialReopen(HANDLE handle, const TCHAR *name,
 			    DWORD access);
-MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const TCHAR* LinkOriginal,
-			    const TCHAR* LinkCopy);
-MODULE_SCOPE int	TclWinSymLinkDelete(const TCHAR* LinkOriginal,
+MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const TCHAR *LinkOriginal,
+			    const TCHAR *LinkCopy);
+MODULE_SCOPE int	TclWinSymLinkDelete(const TCHAR *LinkOriginal,
 			    int linkOnly);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 MODULE_SCOPE void	TclWinFreeAllocCache(void);
