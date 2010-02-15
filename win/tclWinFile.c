@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.103 2010/02/15 22:56:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.104 2010/02/15 23:10:47 nijtmans Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -667,7 +667,7 @@ WinReadLinkDirectory(
 	    }
 	}
 
-	Tcl_WinTCharToUtf((const char *)
+	tclWinProcs->tchar2utf((const char *)
 		reparseBuffer->MountPointReparseBuffer.PathBuffer,
 		(int) reparseBuffer->MountPointReparseBuffer
 		.SubstituteNameLength, &ds);
@@ -1083,7 +1083,7 @@ TclpMatchInDirectory(
 		attr = data.a.dwFileAttributes;
 	    }
 
-	    utfname = Tcl_WinTCharToUtf(native, -1, &ds);
+	    utfname = tclWinProcs->tchar2utf(native, -1, &ds);
 
 	    if (!matchSpecialDots) {
 		/*
@@ -1858,7 +1858,7 @@ TclpObjChdir(
      * Cygwin chdir only groks POSIX path.
      */
 
-    path = Tcl_WinTCharToUtf(nativePath, -1, &ds);
+    path = tclWinProcs->tchar2utf(nativePath, -1, &ds);
     cygwin_conv_to_posix_path(path, posixPath);
     result = (chdir(posixPath) == 0 ? 1 : 0);
     Tcl_DStringFree(&ds);
@@ -1970,7 +1970,7 @@ TclpGetCwd(
 		&& (native[2] == '\\') && (native[3] == '\\')) {
 	    native += 2;
 	}
-	Tcl_WinTCharToUtf((TCHAR *) native, -1, bufferPtr);
+	tclWinProcs->tchar2utf((TCHAR *) native, -1, bufferPtr);
     } else {
 	char *native;
 
@@ -1979,7 +1979,7 @@ TclpGetCwd(
 		&& (native[2] == '\\') && (native[3] == '\\')) {
 	    native += 2;
 	}
-	Tcl_WinTCharToUtf((TCHAR *) native, -1, bufferPtr);
+	tclWinProcs->tchar2utf((TCHAR *) native, -1, bufferPtr);
     }
 
     /*
@@ -2204,7 +2204,7 @@ NativeDev(
     tclWinProcs->getFullPathNameProc(nativePath, MAX_PATH, nativeFullPath,
 	    &nativePart);
 
-    fullPath = Tcl_WinTCharToUtf((TCHAR *) nativeFullPath, -1, &ds);
+    fullPath = tclWinProcs->tchar2utf((TCHAR *) nativeFullPath, -1, &ds);
 
     if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
 	const char *p;
@@ -2523,7 +2523,7 @@ TclpFilesystemPathType(
 	Tcl_DString ds;
 	Tcl_Obj *objPtr;
 
-	Tcl_WinTCharToUtf((const char *) volType, -1, &ds);
+	tclWinProcs->tchar2utf((const char *) volType, -1, &ds);
 	objPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		Tcl_DStringLength(&ds));
 	Tcl_DStringFree(&ds);
@@ -2976,7 +2976,7 @@ TclpObjNormalizePath(
 
 	Tcl_DString dsTemp;
 
-	Tcl_WinTCharToUtf(Tcl_DStringValue(&dsNorm),
+	tclWinProcs->tchar2utf(Tcl_DStringValue(&dsNorm),
 		Tcl_DStringLength(&dsNorm), &dsTemp);
 	nextCheckpoint = Tcl_DStringLength(&dsTemp);
 	if (*lastValidPathEnd != 0) {
@@ -3154,7 +3154,7 @@ TclpNativeToNormalized(
     int len;
     char *copy, *p;
 
-    Tcl_WinTCharToUtf((const char *) clientData, -1, &ds);
+    tclWinProcs->tchar2utf((const char *) clientData, -1, &ds);
     copy = Tcl_DStringValue(&ds);
     len = Tcl_DStringLength(&ds);
 
