@@ -9,8 +9,9 @@
     * generic/tclEnsemble.c Fix signed-unsigned mismatch
     * win/tclWinInt.h       make tclWinProcs "const"
     * win/tclWin32Dll.c
-    * win/tclWinFCmd.c
-    * win/tclWinFile.c
+    * win/tclWinFCmd.c      Eliminate all internal Tcl_WinUtfToTChar
+    * win/tclWinFile.c      and Tcl_WinTCharToUtf calls, needed
+    * win/tclWinInit.c      for mslu support.
     * win/tclWinLoad.c
     * win/tclWinPipe.c
     * win/tclWinSerial.c
