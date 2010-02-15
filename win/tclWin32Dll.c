@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.60 2009/08/02 10:41:09 nijtmans Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.61 2010/02/15 22:56:19 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -63,6 +63,53 @@ typedef struct EXCEPTION_REGISTRATION {
 #define cpuid	__asm __emit 0fh __asm __emit 0a2h
 #endif
 
+static Tcl_Encoding winTCharEncoding = NULL;
+
+static const TCHAR *utf2win(
+    const char *string,		/* Source string in UTF-8. */
+    int len,			/* Source string length in bytes, or < 0 for
+				 * strlen(). */
+    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
+				 * converted string is stored. */
+{
+    return (const TCHAR *) Tcl_UtfToExternalDString(NULL, string, len, dsPtr);
+}
+
+static const TCHAR *utf2wchar(
+    const char *string,		/* Source string in UTF-8. */
+    int len,			/* Source string length in bytes, or < 0 for
+				 * strlen(). */
+    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
+				 * converted string is stored. */
+{
+    return (const TCHAR *) Tcl_UtfToExternalDString(winTCharEncoding,
+	    string, len, dsPtr);
+}
+
+static const char *win2utf(
+    const TCHAR *string,	/* Source string in Unicode when running NT,
+				 * ANSI when running 95. */
+    int len,			/* Source string length in bytes, or < 0 for
+				 * platform-specific string length. */
+    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
+				 * converted string is stored. */
+{
+    return Tcl_ExternalToUtfDString(NULL,
+	    (const char *) string, len, dsPtr);
+}
+
+static const char *wchar2utf(
+    const TCHAR *string,	/* Source string in Unicode when running NT,
+				 * ANSI when running 95. */
+    int len,			/* Source string length in bytes, or < 0 for
+				 * platform-specific string length. */
+    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
+				 * converted string is stored. */
+{
+    return Tcl_ExternalToUtfDString(winTCharEncoding,
+	    (const char *) string, len, dsPtr);
+}
+
 /*
  * The following function tables are used to dispatch to either the
  * wide-character or multi-byte versions of the operating system calls,
@@ -71,7 +118,6 @@ typedef struct EXCEPTION_REGISTRATION {
 
 static TclWinProcs asciiProcs = {
     0,
-
     (BOOL (WINAPI *)(const TCHAR *, LPDCB)) BuildCommDCBA,
     (TCHAR *(WINAPI *)(TCHAR *)) CharLowerA,
     (BOOL (WINAPI *)(const TCHAR *, const TCHAR *, BOOL)) CopyFileA,
@@ -115,7 +161,6 @@ static TclWinProcs asciiProcs = {
 
     NULL,
     NULL,
-    /* deleted (int (__cdecl*)(const TCHAR *, struct _utimbuf *)) _utime, */
     NULL,
     NULL,
     /* getLongPathNameProc */
@@ -125,12 +170,13 @@ static TclWinProcs asciiProcs = {
     /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleA,
     (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsoleA,
-    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserNameA
+    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserNameA,
+    utf2win,
+    win2utf
 };
 
 static TclWinProcs unicodeProcs = {
     1,
-
     (BOOL (WINAPI *)(const TCHAR *, LPDCB)) BuildCommDCBW,
     (TCHAR *(WINAPI *)(TCHAR *)) CharLowerW,
     (BOOL (WINAPI *)(const TCHAR *, const TCHAR *, BOOL)) CopyFileW,
@@ -174,7 +220,6 @@ static TclWinProcs unicodeProcs = {
 
     NULL,
     NULL,
-    /* deleted (int (__cdecl*)(const TCHAR *, struct _utimbuf *)) _wutime, */
     NULL,
     NULL,
     /* getLongPathNameProc */
@@ -184,11 +229,12 @@ static TclWinProcs unicodeProcs = {
     /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleW,
     (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsoleW,
-    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserNameW
+    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserNameW,
+    utf2wchar,
+    wchar2utf
 };
 
-TclWinProcs *tclWinProcs = &asciiProcs;
-static Tcl_Encoding tclWinTCharEncoding;
+const TclWinProcs *tclWinProcs = &asciiProcs;
 
 /*
  * The following declaration is for the VC++ DLL entry point.
@@ -446,54 +492,53 @@ TclWinSetInterfaces(
 	TclWinResetInterfaces();
 
     if (wide) {
-	tclWinProcs = &unicodeProcs;
-	tclWinTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
-	if (tclWinProcs->getFileAttributesExProc == NULL) {
+	winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
+	if (unicodeProcs.getFileAttributesExProc == NULL) {
 	    HINSTANCE hInstance = LoadLibraryA("kernel32");
 
 	    if (hInstance != NULL) {
-		tclWinProcs->getFileAttributesExProc =
+		unicodeProcs.getFileAttributesExProc =
 			(BOOL (WINAPI *)(const TCHAR *, GET_FILEEX_INFO_LEVELS,
 			LPVOID)) GetProcAddress(hInstance,
 			"GetFileAttributesExW");
-		tclWinProcs->createHardLinkProc =
+		unicodeProcs.createHardLinkProc =
 			(BOOL (WINAPI *)(const TCHAR *, const TCHAR*,
 			LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance,
 			"CreateHardLinkW");
-		tclWinProcs->findFirstFileExProc =
+		unicodeProcs.findFirstFileExProc =
 			(HANDLE (WINAPI *)(const TCHAR*, UINT, LPVOID, UINT,
 			LPVOID, DWORD)) GetProcAddress(hInstance,
 			"FindFirstFileExW");
-		tclWinProcs->getVolumeNameForVMPProc =
+		unicodeProcs.getVolumeNameForVMPProc =
 			(BOOL (WINAPI *)(const TCHAR*, TCHAR*,
 			DWORD)) GetProcAddress(hInstance,
 			"GetVolumeNameForVolumeMountPointW");
-		tclWinProcs->getLongPathNameProc =
+		unicodeProcs.getLongPathNameProc =
 			(DWORD (WINAPI *)(const TCHAR*, TCHAR*,
 			DWORD)) GetProcAddress(hInstance, "GetLongPathNameW");
 		FreeLibrary(hInstance);
 	    }
 	    hInstance = LoadLibraryA("advapi32");
 	    if (hInstance != NULL) {
-		tclWinProcs->getFileSecurityProc = (BOOL (WINAPI *)(
+		unicodeProcs.getFileSecurityProc = (BOOL (WINAPI *)(
 			LPCTSTR lpFileName,
 			SECURITY_INFORMATION RequestedInformation,
 			PSECURITY_DESCRIPTOR pSecurityDescriptor,
 			DWORD nLength, LPDWORD lpnLengthNeeded))
 			GetProcAddress(hInstance, "GetFileSecurityW");
-		tclWinProcs->impersonateSelfProc = (BOOL (WINAPI *) (
+		unicodeProcs.impersonateSelfProc = (BOOL (WINAPI *) (
 			SECURITY_IMPERSONATION_LEVEL ImpersonationLevel))
 			GetProcAddress(hInstance, "ImpersonateSelf");
-		tclWinProcs->openThreadTokenProc = (BOOL (WINAPI *) (
+		unicodeProcs.openThreadTokenProc = (BOOL (WINAPI *) (
 			HANDLE ThreadHandle, DWORD DesiredAccess,
 			BOOL OpenAsSelf, PHANDLE TokenHandle))
 			GetProcAddress(hInstance, "OpenThreadToken");
-		tclWinProcs->revertToSelfProc = (BOOL (WINAPI *) (void))
+		unicodeProcs.revertToSelfProc = (BOOL (WINAPI *) (void))
 			GetProcAddress(hInstance, "RevertToSelf");
-		tclWinProcs->mapGenericMaskProc = (void (WINAPI *) (
+		unicodeProcs.mapGenericMaskProc = (void (WINAPI *) (
 			PDWORD AccessMask, PGENERIC_MAPPING GenericMapping))
 			GetProcAddress(hInstance, "MapGenericMask");
-		tclWinProcs->accessCheckProc = (BOOL (WINAPI *)(
+		unicodeProcs.accessCheckProc = (BOOL (WINAPI *)(
 			PSECURITY_DESCRIPTOR pSecurityDescriptor,
 			HANDLE ClientToken, DWORD DesiredAccess,
 			PGENERIC_MAPPING GenericMapping,
@@ -504,20 +549,21 @@ TclWinSetInterfaces(
 		FreeLibrary(hInstance);
 	    }
 	}
+	tclWinProcs = &unicodeProcs;
     } else {
-	if (tclWinProcs->getFileAttributesExProc == NULL) {
+	if (asciiProcs.getFileAttributesExProc == NULL) {
 	    HINSTANCE hInstance = LoadLibraryA("kernel32");
 	    if (hInstance != NULL) {
-		tclWinProcs->getFileAttributesExProc =
+		asciiProcs.getFileAttributesExProc =
 			(BOOL (WINAPI *)(const TCHAR *, GET_FILEEX_INFO_LEVELS,
 			LPVOID)) GetProcAddress(hInstance,
 			"GetFileAttributesExA");
-		tclWinProcs->createHardLinkProc =
+		asciiProcs.createHardLinkProc =
 			(BOOL (WINAPI *)(const TCHAR *, const TCHAR*,
 			LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance,
 			"CreateHardLinkA");
-		tclWinProcs->findFirstFileExProc = NULL;
-		tclWinProcs->getLongPathNameProc = NULL;
+		asciiProcs.findFirstFileExProc = NULL;
+		asciiProcs.getLongPathNameProc = NULL;
 		/*
 		 * The 'findFirstFileExProc' function exists on some of
 		 * 95/98/ME, but it seems not to work as anticipated.
@@ -529,7 +575,7 @@ TclWinSetInterfaces(
 		 * LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance,
 		 * "FindFirstFileExA");
 		 */
-		tclWinProcs->getVolumeNameForVMPProc =
+		asciiProcs.getVolumeNameForVMPProc =
 			(BOOL (WINAPI *)(const TCHAR*, TCHAR*,
 			DWORD)) GetProcAddress(hInstance,
 			"GetVolumeNameForVolumeMountPointA");
@@ -603,9 +649,9 @@ TclWinEncodingsCleanup(void)
 void
 TclWinResetInterfaces(void)
 {
-    if (tclWinTCharEncoding != NULL) {
-	Tcl_FreeEncoding(tclWinTCharEncoding);
-	tclWinTCharEncoding = NULL;
+    if (winTCharEncoding != NULL) {
+	Tcl_FreeEncoding(winTCharEncoding);
+	winTCharEncoding = NULL;
     }
 	tclWinProcs = &asciiProcs;
 }
@@ -826,7 +872,11 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    return (TCHAR *) Tcl_UtfToExternalDString(tclWinTCharEncoding,
+    Tcl_Encoding encoding = NULL;
+    if (platformId != VER_PLATFORM_WIN32_WINDOWS) {
+	encoding = winTCharEncoding;
+	}
+    return (TCHAR *) Tcl_UtfToExternalDString(encoding,
 	    string, len, dsPtr);
 }
 
@@ -839,7 +889,11 @@ Tcl_WinTCharToUtf(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    return Tcl_ExternalToUtfDString(tclWinTCharEncoding,
+    Tcl_Encoding encoding = NULL;
+    if (platformId != VER_PLATFORM_WIN32_WINDOWS) {
+	encoding = winTCharEncoding;
+	}
+    return Tcl_ExternalToUtfDString(encoding,
 	    (const char *) string, len, dsPtr);
 }
 

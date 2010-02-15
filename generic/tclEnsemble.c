@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnsemble.c,v 1.2 2010/02/14 13:37:33 dkf Exp $
+ * RCS: @(#) $Id: tclEnsemble.c,v 1.3 2010/02/15 22:56:20 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -2743,7 +2743,7 @@ TclCompileEnsemble(
 	}
 	for (i=0 ; i<len ; i++) {
 	    str = Tcl_GetStringFromObj(elems[i], &sclen);
-	    if ((sclen == numBytes) && !memcmp(word, str, numBytes)) {
+	    if ((sclen == (int) numBytes) && !memcmp(word, str, numBytes)) {
 		/*
 		 * Exact match! Excellent!
 		 */
