@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.75 2010/02/15 22:56:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.76 2010/02/15 23:10:47 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -1417,7 +1417,7 @@ ApplicationType(
 	if ((attr == 0xffffffff) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	    continue;
 	}
-	strcpy(fullName, Tcl_WinTCharToUtf((TCHAR *) nativeFullPath, -1, &ds));
+	strcpy(fullName, tclWinProcs->tchar2utf((TCHAR *) nativeFullPath, -1, &ds));
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
@@ -1508,7 +1508,7 @@ ApplicationType(
 
 	tclWinProcs->getShortPathNameProc((TCHAR *) nativeFullPath,
 		nativeFullPath, MAX_PATH);
-	strcpy(fullName, Tcl_WinTCharToUtf((TCHAR *) nativeFullPath, -1, &ds));
+	strcpy(fullName, tclWinProcs->tchar2utf((TCHAR *) nativeFullPath, -1, &ds));
 	Tcl_DStringFree(&ds);
     }
     return applType;

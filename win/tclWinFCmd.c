@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.59 2010/02/15 22:56:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.60 2010/02/15 23:10:47 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -346,8 +346,8 @@ DoRenameFile(
 	    tclWinProcs->charLowerProc((TCHAR *) nativeSrcPath);
 	    tclWinProcs->charLowerProc((TCHAR *) nativeDstPath);
 
-	    src = Tcl_WinTCharToUtf((TCHAR *) nativeSrcPath, -1, &srcString);
-	    dst = Tcl_WinTCharToUtf((TCHAR *) nativeDstPath, -1, &dstString);
+	    src = tclWinProcs->tchar2utf((TCHAR *) nativeSrcPath, -1, &srcString);
+	    dst = tclWinProcs->tchar2utf((TCHAR *) nativeDstPath, -1, &dstString);
 
 	    /*
 	     * Check whether the destination path is actually inside the
@@ -1171,7 +1171,7 @@ DoRemoveJustDirectory(
 
   end:
     if (errorPtr != NULL) {
-	Tcl_WinTCharToUtf(nativePath, -1, errorPtr);
+	tclWinProcs->tchar2utf(nativePath, -1, errorPtr);
     }
     return TCL_ERROR;
 
@@ -1409,7 +1409,7 @@ TraverseWinTree(
     if (nativeErrfile != NULL) {
 	TclWinConvertError(GetLastError());
 	if (errorPtr != NULL) {
-	    Tcl_WinTCharToUtf(nativeErrfile, -1, errorPtr);
+	    tclWinProcs->tchar2utf(nativeErrfile, -1, errorPtr);
 	}
 	result = TCL_ERROR;
     }
@@ -1474,7 +1474,7 @@ TraversalCopy(
      */
 
     if (errorPtr != NULL) {
-	Tcl_WinTCharToUtf(nativeDst, -1, errorPtr);
+	tclWinProcs->tchar2utf(nativeDst, -1, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1529,7 +1529,7 @@ TraversalDelete(
     }
 
     if (errorPtr != NULL) {
-	Tcl_WinTCharToUtf(nativeSrc, -1, errorPtr);
+	tclWinProcs->tchar2utf(nativeSrc, -1, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1799,7 +1799,7 @@ ConvertFileNameFormat(
 	     */
 
 	    Tcl_DStringInit(&dsTemp);
-	    Tcl_WinTCharToUtf(nativeName, -1, &dsTemp);
+	    tclWinProcs->tchar2utf(nativeName, -1, &dsTemp);
 
 	    /*
 	     * Deal with issues of tildes being absolute.

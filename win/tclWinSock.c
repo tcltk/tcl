@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.68 2010/01/10 22:58:40 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.69 2010/02/15 23:10:47 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -2432,7 +2432,7 @@ InitializeHostName(
 	 * Convert string from native to UTF then change to lowercase.
 	 */
 
-	Tcl_UtfToLower(Tcl_WinTCharToUtf((TCHAR *) wbuf, -1, &ds));
+	Tcl_UtfToLower((char *) tclWinProcs->tchar2utf((TCHAR *) wbuf, -1, &ds));
 
     } else {
 	Tcl_DStringInit(&ds);
