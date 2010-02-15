@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.102 2010/01/13 06:46:56 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.103 2010/02/15 22:56:19 nijtmans Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -1003,7 +1003,7 @@ TclpMatchInDirectory(
 	    dirName = Tcl_DStringAppend(&dsOrig, "*.*", 3);
 	}
 
-	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
+	native = tclWinProcs->utf2tchar(dirName, -1, &ds);
 	if (tclWinProcs->findFirstFileExProc == NULL || (types == NULL)
 		|| (types->type != TCL_GLOB_TYPE_DIR)) {
 	    handle = tclWinProcs->findFirstFileProc(native, &data);
@@ -2225,7 +2225,7 @@ NativeDev(
 	} else {
 	    p++;
 	}
-	nativeVol = Tcl_WinUtfToTChar(fullPath, p - fullPath, &volString);
+	nativeVol = tclWinProcs->utf2tchar(fullPath, p - fullPath, &volString);
 	dw = (DWORD) -1;
 	tclWinProcs->getVolumeInformationProc(nativeVol, NULL, 0, &dw, NULL,
 		NULL, NULL, 0);
@@ -2750,7 +2750,7 @@ TclpObjNormalizePath(
 		 */
 
 		WIN32_FILE_ATTRIBUTE_DATA data;
-		const char *nativePath = Tcl_WinUtfToTChar(path,
+		const char *nativePath = tclWinProcs->utf2tchar(path,
 			currentPathEndPosition - path, &ds);
 
 		if (tclWinProcs->getFileAttributesExProc(nativePath,
@@ -2945,7 +2945,7 @@ TclpObjNormalizePath(
 	if (1) {
 	    WCHAR wpath[MAX_PATH];
 	    const char *nativePath =
-		    Tcl_WinUtfToTChar(path, lastValidPathEnd - path, &ds);
+	    		tclWinProcs->utf2tchar(path, lastValidPathEnd - path, &ds);
 	    DWORD wpathlen = tclWinProcs->getLongPathNameProc(nativePath,
 		    (TCHAR *) wpath, MAX_PATH);
 
@@ -3248,7 +3248,7 @@ TclNativeCreateNativeRep(
 	    }
 	}
     }
-    Tcl_WinUtfToTChar(str, len, &ds);
+    tclWinProcs->utf2tchar(str, len, &ds);
     if (tclWinProcs->useWide) {
 	len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
     } else {

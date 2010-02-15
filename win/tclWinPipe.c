@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.74 2010/01/22 13:02:50 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.75 2010/02/15 22:56:19 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -597,7 +597,7 @@ TclpOpenFile(
 	break;
     }
 
-    nativePath = Tcl_WinUtfToTChar(path, -1, &ds);
+    nativePath = tclWinProcs->utf2tchar(path, -1, &ds);
 
     /*
      * If the file is not being created, use the existing file attributes.
@@ -1399,7 +1399,7 @@ ApplicationType(
     for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
 	Tcl_DStringSetLength(&nameBuf, nameLen);
 	Tcl_DStringAppend(&nameBuf, extensions[i], -1);
-	nativeName = Tcl_WinUtfToTChar(Tcl_DStringValue(&nameBuf),
+	nativeName = tclWinProcs->utf2tchar(Tcl_DStringValue(&nameBuf),
 		Tcl_DStringLength(&nameBuf), &ds);
 	found = tclWinProcs->searchPathProc(NULL, nativeName, NULL, MAX_PATH,
 		nativeFullPath, &rest);
@@ -1624,7 +1624,7 @@ BuildCommandLine(
 	}
     }
     Tcl_DStringFree(linePtr);
-    Tcl_WinUtfToTChar(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds), linePtr);
+    tclWinProcs->utf2tchar(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds), linePtr);
     Tcl_DStringFree(&ds);
 }
 
@@ -3196,7 +3196,7 @@ TclpOpenTemporaryFile(
     if (basenameObj) {
 	const char *string = Tcl_GetStringFromObj(basenameObj, &length);
 
-	Tcl_WinUtfToTChar(string, length, &buf);
+	tclWinProcs->utf2tchar(string, length, &buf);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);
@@ -3217,7 +3217,7 @@ TclpOpenTemporaryFile(
 
 	sprintf(number, "%d.TMP", counter);
 	counter = (unsigned short) (counter + 1);
-	Tcl_WinUtfToTChar(number, strlen(number), &buf);
+	tclWinProcs->utf2tchar(number, strlen(number), &buf);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
 	if (tclWinProcs->useWide) {
 	    *(WCHAR *)(namePtr + Tcl_DStringLength(&buf) + 1) = '\0';

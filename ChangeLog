@@ -1,3 +1,24 @@
+2010-02-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+    * tools/genStubs.tcl    reverted earlier rename from tcl*Stubs to
+    * generic/tclBasic.c    tcl*ConstStubs, it's not necessary at all.
+    * generic/tclOO.c
+    * generic/tclTomMathInterface.c
+    * generic/tclStubInit.c (regenerated)
+    * generic/tclOOStubInit.c (regenerated)
+    * generic/tclEnsemble.c Fix signed-unsigned mismatch
+    * win/tclWinInt.h       make tclWinProcs "const"
+    * win/tclWin32Dll.c
+    * win/tclWinFCmd.c
+    * win/tclWinFile.c
+    * win/tclWinLoad.c
+    * win/tclWinPipe.c
+    * win/tclWinSerial.c
+    * win/.cvsignore
+    * compat/unicows/readme.txt   Add first part of mslu support
+    * compat/unicows/license.txt  See [Feature Request #2819611]
+    * compat/unicows/unicows.lib
+
 2010-02-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (AllocObject, SquelchedNsFirst, ObjectRenamedTrace):
