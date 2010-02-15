@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.58 2009/08/02 10:41:09 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.59 2010/02/15 22:56:19 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -930,8 +930,8 @@ TclpObjCopyDirectory(
 	return TCL_ERROR;
     }
 
-    Tcl_WinUtfToTChar(Tcl_GetString(normSrcPtr), -1, &srcString);
-    Tcl_WinUtfToTChar(Tcl_GetString(normDestPtr), -1, &dstString);
+    tclWinProcs->utf2tchar(Tcl_GetString(normSrcPtr), -1, &srcString);
+    tclWinProcs->utf2tchar(Tcl_GetString(normDestPtr), -1, &dstString);
 
     ret = TraverseWinTree(TraversalCopy, &srcString, &dstString, &ds);
 
@@ -1003,7 +1003,7 @@ TclpObjRemoveDirectory(
 	if (normPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_WinUtfToTChar(Tcl_GetString(normPtr), -1, &native);
+	tclWinProcs->utf2tchar(Tcl_GetString(normPtr), -1, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
@@ -1720,7 +1720,7 @@ ConvertFileNameFormat(
 	    Tcl_Obj *tempPath;
 	    Tcl_DString ds;
 	    Tcl_DString dsTemp;
-	    TCHAR *nativeName;
+	    const TCHAR *nativeName;
 	    const char *tempString;
 	    int tempLen;
 	    WIN32_FIND_DATAT data;
@@ -1737,7 +1737,7 @@ ConvertFileNameFormat(
 
 	    Tcl_DStringInit(&ds);
 	    tempString = Tcl_GetStringFromObj(tempPath,&tempLen);
-	    nativeName = Tcl_WinUtfToTChar(tempString, tempLen, &ds);
+	    nativeName = tclWinProcs->utf2tchar(tempString, tempLen, &ds);
 	    Tcl_DecrRefCount(tempPath);
 	    handle = tclWinProcs->findFirstFileProc(nativeName, &data);
 	    if (handle == INVALID_HANDLE_VALUE) {

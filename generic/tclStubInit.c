@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.186 2010/02/05 20:53:12 nijtmans Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.187 2010/02/15 22:56:20 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -41,11 +41,11 @@
  * below should be made in the generic/tcl.decls script.
  */
 
-MODULE_SCOPE const TclStubs tclConstStubs;
+MODULE_SCOPE const TclStubs tclStubs;
 
 /* !BEGIN!: Do not edit below this line. */
 
-static const TclIntStubs tclIntConstStubs = {
+static const TclIntStubs tclIntStubs = {
     TCL_STUB_MAGIC,
     NULL,
     NULL, /* 0 */
@@ -298,7 +298,7 @@ static const TclIntStubs tclIntConstStubs = {
     TclResetRewriteEnsemble, /* 247 */
 };
 
-static const TclIntPlatStubs tclIntPlatConstStubs = {
+static const TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
@@ -374,7 +374,7 @@ static const TclIntPlatStubs tclIntPlatConstStubs = {
 #endif /* MACOSX */
 };
 
-static const TclPlatStubs tclPlatConstStubs = {
+static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
 #ifdef __WIN32__ /* WIN */
@@ -387,7 +387,7 @@ static const TclPlatStubs tclPlatConstStubs = {
 #endif /* MACOSX */
 };
 
-const TclTomMathStubs tclTomMathConstStubs = {
+const TclTomMathStubs tclTomMathStubs = {
     TCL_STUB_MAGIC,
     NULL,
     TclBN_epoch, /* 0 */
@@ -454,12 +454,12 @@ const TclTomMathStubs tclTomMathConstStubs = {
 };
 
 static const TclStubHooks tclStubHooks = {
-    &tclPlatConstStubs,
-    &tclIntConstStubs,
-    &tclIntPlatConstStubs
+    &tclPlatStubs,
+    &tclIntStubs,
+    &tclIntPlatStubs
 };
 
-const TclStubs tclConstStubs = {
+const TclStubs tclStubs = {
     TCL_STUB_MAGIC,
     &tclStubHooks,
     Tcl_PkgProvideEx, /* 0 */
