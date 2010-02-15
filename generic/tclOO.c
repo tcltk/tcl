@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.31 2010/02/11 09:00:55 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.32 2010/02/15 11:53:45 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -90,6 +90,7 @@ static void		ObjectRenamedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
 static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
+static void		SquelchedNsFirst(ClientData clientData);
 
 static int		PublicObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -518,6 +519,14 @@ AllocObject(
     ((Namespace *) oPtr->namespacePtr)->flags |= NS_SUPPRESS_COMPILATION;
 
     /*
+     * Set up a callback to get notification of the deletion of a namespace
+     * when enough of the namespace still remains to execute commands and
+     * access variables in it. [Bug 2950259]
+     */
+
+    ((Namespace *) oPtr->namespacePtr)->earlyDeleteProc = SquelchedNsFirst;
+
+    /*
      * Fill in the rest of the non-zero/NULL parts of the structure.
      */
 
@@ -616,6 +625,30 @@ MyDeleted(
 /*
  * ----------------------------------------------------------------------
  *
+ * SquelchedNsFirst --
+ *
+ *	This callback is triggered when the object's namespace is deleted by
+ *	any mechanism. It deletes the object's public command if it has not
+ *	already been deleted, so ensuring that destructors get run at an
+ *	appropriate time. [Bug 2950259]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+SquelchedNsFirst(
+    ClientData clientData)
+{
+    Object *oPtr = clientData;
+
+    if (oPtr->command) {
+	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * ObjectRenamedTrace --
  *
  *	This callback is triggered when the object is deleted by any
@@ -697,6 +730,9 @@ ObjectRenamedTrace(
      * OK, the destructor's been run. Time to splat the class data (if any)
      * and nuke the namespace (which triggers the final crushing of the object
      * structure itself).
+     *
+     * The namespace is only deleted if it hasn't already been deleted. [Bug
+     * 2950259]
      */
 
     clsPtr = oPtr->classPtr;
@@ -704,7 +740,9 @@ ObjectRenamedTrace(
 	AddRef(clsPtr);
 	ReleaseClassContents(interp, oPtr);
     }
-    Tcl_DeleteNamespace(oPtr->namespacePtr);
+    if (((Namespace *) oPtr->namespacePtr)->earlyDeleteProc != NULL) {
+	Tcl_DeleteNamespace(oPtr->namespacePtr);
+    }
     if (clsPtr) {
 	DelRef(clsPtr);
     }
