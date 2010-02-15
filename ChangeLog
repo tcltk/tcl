@@ -1,3 +1,15 @@
+2010-02-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (AllocObject, SquelchedNsFirst, ObjectRenamedTrace):
+	* generic/tclNamesp.c (Tcl_DeleteNamespace): [Bug 2950259]: Revised
+	the namespace deletion code to provide an additional internal callback
+	that gets triggered early enough in namespace deletion to allow TclOO
+	destructors to run sanely. Adjusted TclOO to take advantage of this,
+	so making tearing down an object by killing its namespace appear to
+	work seamlessly, which is needed for Itcl. (Note that this is not a
+	feature that will ever be backported to 8.5, and it remains not a
+	recommended way of deleting an object.)
+
 2010-02-13  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileSwitchCmd): Divided the [switch]
