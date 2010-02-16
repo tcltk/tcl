@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.462 2010/02/15 11:53:44 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.463 2010/02/16 21:34:30 nijtmans Exp $
  */
 
 #ifndef _TCLINT
@@ -37,13 +37,7 @@
  * declaration in tcl.h is needed by stdlib.h in some configurations.
  */
 
-#ifdef HAVE_TCL_CONFIG_H
-#include "tclConfig.h"
-#endif
 #include "tclPort.h"
-#ifndef _TCL
-#include "tcl.h"
-#endif
 
 #include <stdio.h>
 
@@ -1206,18 +1200,11 @@ typedef struct CmdFrame {
     int type;			/* Values see below. */
     int level;			/* Number of frames in stack, prevent O(n)
 				 * scan of list. */
-    int numLevels;		/* Value of interp's numLevels when the frame
-				 * was pushed. */
     int *line;			/* Lines the words of the command start on. */
     int nline;
     CallFrame *framePtr;	/* Procedure activation record, may be
 				 * NULL. */
     struct CmdFrame *nextPtr;	/* Link to calling frame. */
-    const struct CFWordBC *litarg;
-				/* Link to set of literal arguments which have
-				 * ben pushed on the lineLABCPtr stack by
-				 * TclArgumentBCEnter(). These will be removed
-				 * by TclArgumentBCRelease. */
     /*
      * Data needed for Eval vs TEBC
      *
@@ -1265,6 +1252,13 @@ typedef struct CmdFrame {
 	} str;
 	Tcl_Obj *listPtr;	/* Tcl_EvalObjEx, cmd list. */
     } cmd;
+    int numLevels;		/* Value of interp's numLevels when the frame
+				 * was pushed. */
+    const struct CFWordBC *litarg;
+				/* Link to set of literal arguments which have
+				 * ben pushed on the lineLABCPtr stack by
+				 * TclArgumentBCEnter(). These will be removed
+				 * by TclArgumentBCRelease. */
 } CmdFrame;
 
 typedef struct CFWord {
@@ -1275,7 +1269,6 @@ typedef struct CFWord {
 } CFWord;
 
 typedef struct CFWordBC {
-    Tcl_Obj *obj;		/* Back reference to hashtable key */
     CmdFrame *framePtr;		/* CmdFrame to access. */
     int pc;			/* Instruction pointer of a command in
 				 * ExtCmdLoc.loc[.] */
@@ -1284,6 +1277,7 @@ typedef struct CFWordBC {
     struct CFWordBC *prevPtr;	/* Previous entry in stack for same Tcl_Obj. */
     struct CFWordBC *nextPtr;	/* Next entry for same command call. See
 				 * CmdFrame litarg field for the list start. */
+    Tcl_Obj *obj;		/* Back reference to hashtable key */
 } CFWordBC;
 
 /*
@@ -2058,19 +2052,6 @@ typedef struct Interp {
 				 * code returned by a channel operation. */
 
     /*
-     * TIP #285, Script cancellation support.
-     */
-
-    Tcl_AsyncHandler asyncCancel;
-				/* Async handler token for Tcl_CancelEval. */
-    Tcl_Obj *asyncCancelMsg;	/* Error message set by async cancel handler
-				 * for the propagation of arbitrary Tcl
-				 * errors. This information, if present
-				 * (asyncCancelMsg not NULL), takes precedence
-				 * over the default error messages returned by
-				 * a script cancellation operation. */
-
-    /*
      * Source code origin information (TIP #280).
      */
 
@@ -2152,23 +2133,14 @@ typedef struct Interp {
 				 * tclObj.c and tclThreadAlloc.c */
     int *asyncReadyPtr;		/* Pointer to the asyncReady indicator for
 				 * this interp's thread; see tclAsync.c */
-
     /*
      * The pointer to the object system root ekeko. c.f. TIP #257.
      */
-
     void *objectFoundation;	/* Pointer to the Foundation structure of the
 				 * object system, which contains things like
 				 * references to key namespaces. See
 				 * tclOOInt.h and tclOO.c for real definition
 				 * and setup. */
-
-    struct TEOV_callback *deferredCallbacks;
-				/* Callbacks that are set previous to a call
-				 * to some Eval function but that actually
-				 * belong to the command that is about to be
-				 * called - i.e., they should be run *before*
-				 * any tailcall is invoked. */
 
 #ifdef TCL_COMPILE_STATS
     /*
@@ -2179,6 +2151,26 @@ typedef struct Interp {
     ByteCodeStats stats;	/* Holds compilation and execution statistics
 				 * for this interpreter. */
 #endif /* TCL_COMPILE_STATS */
+    struct TEOV_callback *deferredCallbacks;
+				/* Callbacks that are set previous to a call
+				 * to some Eval function but that actually
+				 * belong to the command that is about to be
+				 * called - i.e., they should be run *before*
+				 * any tailcall is invoked. */
+
+    /*
+     * TIP #285, Script cancellation support.
+     */
+
+    Tcl_AsyncHandler asyncCancel;
+				/* Async handler token for Tcl_CancelEval. */
+    Tcl_Obj *asyncCancelMsg;	/* Error message set by async cancel handler
+				 * for the propagation of arbitrary Tcl
+				 * errors. This information, if present
+				 * (asyncCancelMsg not NULL), takes precedence
+				 * over the default error messages returned by
+				 * a script cancellation operation. */
+
 } Interp;
 
 /*
@@ -2810,7 +2802,7 @@ MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
 			    int ptnLen, int flags);
 MODULE_SCOPE double	TclCeil(mp_int *a);
-MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,const char *value);
+MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp, const char *value);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE int	TclClearRootEnsemble(ClientData data[],
@@ -3763,19 +3755,19 @@ typedef const char *TclDTraceStr;
  */
 
 # define TclDecrRefCount(objPtr) \
-    if (--(objPtr)->refCount > 0) ; else {				\
-	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) {	\
-	    TCL_DTRACE_OBJ_FREE(objPtr);				\
-	    if ((objPtr)->bytes						\
-		    && ((objPtr)->bytes != tclEmptyStringRep)) {	\
-		ckfree((char *) (objPtr)->bytes);			\
-	    }								\
-	    (objPtr)->length = -1;					\
-	    TclFreeObjStorage(objPtr);					\
-	    TclIncrObjsFreed();						\
-	} else {							\
-	    TclFreeObj(objPtr);						\
-	}								\
+    if (--(objPtr)->refCount > 0) ; else { \
+	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) { \
+	    TCL_DTRACE_OBJ_FREE(objPtr); \
+	    if ((objPtr)->bytes \
+		    && ((objPtr)->bytes != tclEmptyStringRep)) { \
+		ckfree((char *) (objPtr)->bytes); \
+	    } \
+	    (objPtr)->length = -1; \
+	    TclFreeObjStorage(objPtr); \
+	    TclIncrObjsFreed(); \
+	} else { \
+	    TclFreeObj(objPtr); \
+	} \
     }
 
 #if defined(PURIFY)
@@ -3910,14 +3902,14 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInitStringRep(objPtr, bytePtr, len) \
-    if ((len) == 0) {							\
-	(objPtr)->bytes	 = tclEmptyStringRep;				\
-	(objPtr)->length = 0;						\
-    } else {								\
-	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1));	\
-	memcpy((objPtr)->bytes, (bytePtr), (unsigned) (len));		\
-	(objPtr)->bytes[len] = '\0';					\
-	(objPtr)->length = (len);					\
+    if ((len) == 0) { \
+	(objPtr)->bytes	 = tclEmptyStringRep; \
+	(objPtr)->length = 0; \
+    } else { \
+	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
+	memcpy((objPtr)->bytes, (bytePtr), (unsigned) (len)); \
+	(objPtr)->bytes[len] = '\0'; \
+	(objPtr)->length = (len); \
     }
 
 /*
@@ -3967,11 +3959,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateStringRep(objPtr) \
-    if (objPtr->bytes != NULL) {			\
-	if (objPtr->bytes != tclEmptyStringRep) {	\
-	    ckfree((char *) objPtr->bytes);		\
-	}						\
-	objPtr->bytes = NULL;				\
+    if (objPtr->bytes != NULL) { \
+	if (objPtr->bytes != tclEmptyStringRep) { \
+	    ckfree((char *) objPtr->bytes); \
+	} \
+	objPtr->bytes = NULL; \
     }
 
 /*
