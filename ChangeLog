@@ -1,24 +1,29 @@
+2010-02-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclLiteral.c (HashString): Missed updating to FNV in one
+	place; the literal table (a copy of the hash table code...)
+
 2010-02-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * tools/genStubs.tcl    reverted earlier rename from tcl*Stubs to
-    * generic/tclBasic.c    tcl*ConstStubs, it's not necessary at all.
-    * generic/tclOO.c
-    * generic/tclTomMathInterface.c
-    * generic/tclStubInit.c (regenerated)
-    * generic/tclOOStubInit.c (regenerated)
-    * generic/tclEnsemble.c Fix signed-unsigned mismatch
-    * win/tclWinInt.h       make tclWinProcs "const"
-    * win/tclWin32Dll.c
-    * win/tclWinFCmd.c      Eliminate all internal Tcl_WinUtfToTChar
-    * win/tclWinFile.c      and Tcl_WinTCharToUtf calls, needed
-    * win/tclWinInit.c      for mslu support.
-    * win/tclWinLoad.c
-    * win/tclWinPipe.c
-    * win/tclWinSerial.c
-    * win/.cvsignore
-    * compat/unicows/readme.txt   Add first part of mslu support
-    * compat/unicows/license.txt  See [Feature Request #2819611]
-    * compat/unicows/unicows.lib
+	* tools/genStubs.tcl:   Reverted earlier rename from tcl*Stubs to
+	* generic/tclBasic.c:   tcl*ConstStubs, it's not necessary at all.
+	* generic/tclOO.c:
+	* generic/tclTomMathInterface.c:
+	* generic/tclStubInit.c: (regenerated)
+	* generic/tclOOStubInit.c: (regenerated)
+	* generic/tclEnsemble.c:Fix signed-unsigned mismatch
+	* win/tclWinInt.h:      make tclWinProcs "const"
+	* win/tclWin32Dll.c:
+	* win/tclWinFCmd.c:     Eliminate all internal Tcl_WinUtfToTChar
+	* win/tclWinFile.c:     and Tcl_WinTCharToUtf calls, needed
+	* win/tclWinInit.c:     for mslu support.
+	* win/tclWinLoad.c:
+	* win/tclWinPipe.c:
+	* win/tclWinSerial.c:
+	* win/.cvsignore:
+	* compat/unicows/readme.txt:  [FRQ 2819611]: Add first part of MSLU
+	* compat/unicows/license.txt: support.
+	* compat/unicows/unicows.lib:
 
 2010-02-15  Donal K. Fellows  <dkf@users.sf.net>
 
