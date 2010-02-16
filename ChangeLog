@@ -1,5 +1,9 @@
 2010-02-16  Donal K. Fellows  <dkf@users.sf.net>
 
+	* unix/configure.in, generic/tclIOUtil.c (Tcl_Stat): Updated so that
+	we do not assume that all unix systems have the POSIX blkcnt_t type,
+	since OpenBSD apparently does not.
+
 	* generic/tclLiteral.c (HashString): Missed updating to FNV in one
 	place; the literal table (a copy of the hash table code...)
 
