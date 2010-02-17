@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.180 2010/01/30 16:33:25 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.181 2010/02/17 15:59:24 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -355,9 +355,9 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Create the variables (described in the aux data referred to by the
 	 * second immediate argument) to mirror the state of the dictionary in
 	 * the variable referred to by the first immediate argument. The list
-	 * of keys (popped from the stack) must be the same length as the list
-	 * of variables.
-	 * Stack:  ... keyList => ... */
+	 * of keys (top of the stack, not poppsed) must be the same length as
+	 * the list of variables.
+	 * Stack:  ... keyList => ... keyList */
     {"dictUpdateEnd",	  9,    -1,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
 	/* Reflect the state of local variables (described in the aux data
 	 * referred to by the second immediate argument) back to the state of
