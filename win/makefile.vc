@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.52 2009/12/12 03:06:57 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.53 2010/02/17 15:37:00 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -268,6 +268,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclDate.obj \
 	$(TMP_DIR)\tclDictObj.obj \
 	$(TMP_DIR)\tclEncoding.obj \
+	$(TMP_DIR)\tclEnsemble.obj \
 	$(TMP_DIR)\tclEnv.obj \
 	$(TMP_DIR)\tclEvent.obj \
 	$(TMP_DIR)\tclExecute.obj \

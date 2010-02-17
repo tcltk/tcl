@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.26.2.12 2010/01/13 18:47:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.26.2.13 2010/02/17 15:37:02 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1682,7 +1682,7 @@ SerialSetOptionProc(
 	    }
 	    return TCL_ERROR;
 	}
-	native = Tcl_WinUtfToTChar(value, -1, &ds);
+	native = tclWinProcs->utf2tchar(value, -1, &ds);
 	result = tclWinProcs->buildCommDCBProc(native, &dcb);
 	Tcl_DStringFree(&ds);
 

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.28 2010/02/02 15:56:31 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.29 2010/02/17 15:36:55 dgp Exp $
 
 package require -exact TclOO 0.6.2 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -379,17 +379,36 @@ test oo-3.4 {basic test of OO functionality: my exists in destructor} -setup {
     obj destroy
     lappend result [info commands ::objmy]
 } -match glob -result {0 ok *::state localcmdexists {}}
-# Compare with previous test; the differences are because here the destructor
-# is run with the namespace partially squelched.
-test oo-3.5 {basic test of OO functionality: my exists in destructor} -setup {
+test oo-3.4a {basic test of OO functionality: my exists in destructor} -setup {
     oo::class create cls
     set result {}
 } -cleanup {
     cls destroy
 } -body {
-    # Order of destruction of commands relative to namespace is complex, but
-    # we want to make sure that the order from the perspective of TclOO is
-    # solid.
+    oo::define cls {
+	variable state
+	constructor {} {
+	    proc localcmdexists {} {}
+	    set state ok
+	}
+	forward Report lappend ::result
+	destructor {
+	    objmy Report [catch {set state} msg] $msg
+	    objmy Report [namespace which -var state]
+	    objmy Report [info commands localcmdexists]
+	}
+    }
+    cls create obj
+    rename [info object namespace obj]::my ::objmy
+    rename obj {}
+    lappend result [info commands ::objmy]
+} -match glob -result {0 ok *::state localcmdexists {}}
+test oo-3.5 {basic test of OO functionality: destructor: evil case for Itcl} -setup {
+    oo::class create cls
+    set result {}
+} -cleanup {
+    cls destroy
+} -body {
     oo::define cls {
 	variable state
 	constructor {} {
@@ -407,7 +426,32 @@ test oo-3.5 {basic test of OO functionality: my exists in destructor} -setup {
     rename [info object namespace obj]::my ::objmy
     namespace delete [info object namespace obj]
     lappend result [info commands ::objmy]
-} -match glob -result {1 {can't read "state": no such variable} *::state {} {}}
+} -match glob -result {0 ok *::state localcmdexists {}}
+test oo-3.5a {basic test of OO functionality: destructor: evil case for Itcl} -setup {
+    oo::class create cls
+    set result {}
+} -cleanup {
+    cls destroy
+} -body {
+    oo::define cls {
+	variable state result
+	constructor {} {
+	    proc localcmdexists {} {}
+	    set state ok
+	    my eval {upvar 0 ::result result}
+	}
+	method nuke {} {
+	    namespace delete [namespace current]
+	    return $result
+	}
+	destructor {
+	    lappend result [self] $state [info commands localcmdexists]
+	}
+    }
+    cls create obj
+    namespace delete [info object namespace obj]
+    [cls create obj2] nuke
+} -match glob -result {::obj ok localcmdexists ::obj2 ok localcmdexists}
 test oo-3.6 {basic test of OO functionality: errors in destructor} -setup {
     oo::class create cls
 } -cleanup {

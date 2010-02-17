@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.21 2009/11/19 16:51:27 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.22 2010/02/17 15:37:02 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -555,7 +555,7 @@ TclpSetVariables(
 	if (tclWinProcs->getUserName((LPTSTR)szUserName, &cchUserNameLen) != 0) {
 	    int cbUserNameLen = cchUserNameLen - 1;
 	    if (tclWinProcs->useWide) cbUserNameLen *= sizeof(WCHAR);
-	    Tcl_WinTCharToUtf((LPTSTR)szUserName, cbUserNameLen, &ds);
+	    tclWinProcs->tchar2utf((LPTSTR)szUserName, cbUserNameLen, &ds);
 	}
     }
     Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),

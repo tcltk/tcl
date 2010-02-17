@@ -1,3 +1,72 @@
+2010-02-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.h:  Change order of various struct members,
+	     restoring potential binary incompatibility with Tcl 8.5
+
+2010-02-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/configure.in, generic/tclIOUtil.c (Tcl_Stat): Updated so that
+	we do not assume that all unix systems have the POSIX blkcnt_t type,
+	since OpenBSD apparently does not.
+
+	* generic/tclLiteral.c (HashString): Missed updating to FNV in one
+	place; the literal table (a copy of the hash table code...)
+
+2010-02-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:   Reverted earlier rename from tcl*Stubs to
+	* generic/tclBasic.c:   tcl*ConstStubs, it's not necessary at all.
+	* generic/tclOO.c:
+	* generic/tclTomMathInterface.c:
+	* generic/tclStubInit.c: (regenerated)
+	* generic/tclOOStubInit.c: (regenerated)
+	* generic/tclEnsemble.c:Fix signed-unsigned mismatch
+	* win/tclWinInt.h:      make tclWinProcs "const"
+	* win/tclWin32Dll.c:
+	* win/tclWinFCmd.c:     Eliminate all internal Tcl_WinUtfToTChar
+	* win/tclWinFile.c:     and Tcl_WinTCharToUtf calls, needed
+	* win/tclWinInit.c:     for mslu support.
+	* win/tclWinLoad.c:
+	* win/tclWinPipe.c:
+	* win/tclWinSerial.c:
+	* win/.cvsignore:
+	* compat/unicows/readme.txt:  [FRQ 2819611]: Add first part of MSLU
+	* compat/unicows/license.txt: support.
+	* compat/unicows/unicows.lib:
+
+2010-02-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (AllocObject, SquelchedNsFirst, ObjectRenamedTrace):
+	* generic/tclNamesp.c (Tcl_DeleteNamespace): [Bug 2950259]: Revised
+	the namespace deletion code to provide an additional internal callback
+	that gets triggered early enough in namespace deletion to allow TclOO
+	destructors to run sanely. Adjusted TclOO to take advantage of this,
+	so making tearing down an object by killing its namespace appear to
+	work seamlessly, which is needed for Itcl. (Note that this is not a
+	feature that will ever be backported to 8.5, and it remains not a
+	recommended way of deleting an object.)
+
+2010-02-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Divided the [switch]
+	compiler into three pieces (after the model of [try]): a parser, an
+	instruction-issuer for chained tests, and an instruction-issuer for
+	jump tables.
+
+	* generic/tclEnsemble.c: Split the ensemble engine out into its own
+	file rather than keeping it mashed together with the namespace code.
+
+2010-02-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4:		Use -pipe for gcc on win32
+	* win/configure:	(mingw/cygwin) (regenerated)
+	* win/.cvsignore:	Add .lib, .exp and .res here
+
+2010-02-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/list.test: Add tests for explicit \0 in a string argument to
+	the list command.
+
 2010-02-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclIOCmd.c (Tcl_OpenObjCmd): [Bug 2949740]: Make sure that

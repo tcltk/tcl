@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.18 2009/08/03 14:14:25 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.19 2010/02/17 15:37:01 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -346,8 +346,8 @@ DoRenameFile(
 	    tclWinProcs->charLowerProc((TCHAR *) nativeSrcPath);
 	    tclWinProcs->charLowerProc((TCHAR *) nativeDstPath);
 
-	    src = Tcl_WinTCharToUtf((TCHAR *) nativeSrcPath, -1, &srcString);
-	    dst = Tcl_WinTCharToUtf((TCHAR *) nativeDstPath, -1, &dstString);
+	    src = tclWinProcs->tchar2utf((TCHAR *) nativeSrcPath, -1, &srcString);
+	    dst = tclWinProcs->tchar2utf((TCHAR *) nativeDstPath, -1, &dstString);
 
 	    /*
 	     * Check whether the destination path is actually inside the
@@ -930,8 +930,8 @@ TclpObjCopyDirectory(
 	return TCL_ERROR;
     }
 
-    Tcl_WinUtfToTChar(Tcl_GetString(normSrcPtr), -1, &srcString);
-    Tcl_WinUtfToTChar(Tcl_GetString(normDestPtr), -1, &dstString);
+    tclWinProcs->utf2tchar(Tcl_GetString(normSrcPtr), -1, &srcString);
+    tclWinProcs->utf2tchar(Tcl_GetString(normDestPtr), -1, &dstString);
 
     ret = TraverseWinTree(TraversalCopy, &srcString, &dstString, &ds);
 
@@ -1003,7 +1003,7 @@ TclpObjRemoveDirectory(
 	if (normPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_WinUtfToTChar(Tcl_GetString(normPtr), -1, &native);
+	tclWinProcs->utf2tchar(Tcl_GetString(normPtr), -1, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
@@ -1171,7 +1171,7 @@ DoRemoveJustDirectory(
 
   end:
     if (errorPtr != NULL) {
-	Tcl_WinTCharToUtf(nativePath, -1, errorPtr);
+	tclWinProcs->tchar2utf(nativePath, -1, errorPtr);
     }
     return TCL_ERROR;
 
@@ -1409,7 +1409,7 @@ TraverseWinTree(
     if (nativeErrfile != NULL) {
 	TclWinConvertError(GetLastError());
 	if (errorPtr != NULL) {
-	    Tcl_WinTCharToUtf(nativeErrfile, -1, errorPtr);
+	    tclWinProcs->tchar2utf(nativeErrfile, -1, errorPtr);
 	}
 	result = TCL_ERROR;
     }
@@ -1474,7 +1474,7 @@ TraversalCopy(
      */
 
     if (errorPtr != NULL) {
-	Tcl_WinTCharToUtf(nativeDst, -1, errorPtr);
+	tclWinProcs->tchar2utf(nativeDst, -1, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1529,7 +1529,7 @@ TraversalDelete(
     }
 
     if (errorPtr != NULL) {
-	Tcl_WinTCharToUtf(nativeSrc, -1, errorPtr);
+	tclWinProcs->tchar2utf(nativeSrc, -1, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1720,7 +1720,7 @@ ConvertFileNameFormat(
 	    Tcl_Obj *tempPath;
 	    Tcl_DString ds;
 	    Tcl_DString dsTemp;
-	    TCHAR *nativeName;
+	    const TCHAR *nativeName;
 	    const char *tempString;
 	    int tempLen;
 	    WIN32_FIND_DATAT data;
@@ -1737,7 +1737,7 @@ ConvertFileNameFormat(
 
 	    Tcl_DStringInit(&ds);
 	    tempString = Tcl_GetStringFromObj(tempPath,&tempLen);
-	    nativeName = Tcl_WinUtfToTChar(tempString, tempLen, &ds);
+	    nativeName = tclWinProcs->utf2tchar(tempString, tempLen, &ds);
 	    Tcl_DecrRefCount(tempPath);
 	    handle = tclWinProcs->findFirstFileProc(nativeName, &data);
 	    if (handle == INVALID_HANDLE_VALUE) {
@@ -1799,7 +1799,7 @@ ConvertFileNameFormat(
 	     */
 
 	    Tcl_DStringInit(&dsTemp);
-	    Tcl_WinTCharToUtf(nativeName, -1, &dsTemp);
+	    tclWinProcs->tchar2utf(nativeName, -1, &dsTemp);
 
 	    /*
 	     * Deal with issues of tildes being absolute.

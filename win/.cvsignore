@@ -21,3 +21,8 @@ config.status
 tcl.sln
 tcl.suo
 *.manifest
+*.res
+*.exp
+*.lib
+*.pdb
+*.ilk

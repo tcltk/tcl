@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.138 2010/02/10 02:56:48 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.139 2010/02/17 15:36:54 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -37,13 +37,7 @@
  * declaration in tcl.h is needed by stdlib.h in some configurations.
  */
 
-#ifdef HAVE_TCL_CONFIG_H
-#include "tclConfig.h"
-#endif
 #include "tclPort.h"
-#ifndef _TCL
-#include "tcl.h"
-#endif
 
 #include <stdio.h>
 
@@ -339,6 +333,12 @@ typedef struct Namespace {
     NamespacePathEntry *commandPathSourceList;
 				/* Linked list of path entries that point to
 				 * this namespace. */
+    Tcl_NamespaceDeleteProc *earlyDeleteProc;
+				/* Just like the deleteProc field (and called
+				 * with the same clientData) but called at the
+				 * start of the deletion process, so there is
+				 * a chance for code to do stuff inside the
+				 * namespace before deletion completes. */
 } Namespace;
 
 /*
@@ -423,10 +423,91 @@ typedef struct {
 } EnsembleCmdRep;
 
 /*
- * Flag to enable bytecode compilation of an ensemble.
+ * The client data for an ensemble command. This consists of the table of
+ * commands that are actually exported by the namespace, and an epoch counter
+ * that, combined with the exportLookupEpoch field of the namespace structure,
+ * defines whether the table contains valid data or will need to be recomputed
+ * next time the ensemble command is called.
  */
 
-#define ENSEMBLE_COMPILE 0x4
+typedef struct EnsembleConfig {
+    Namespace *nsPtr;		/* The namspace backing this ensemble up. */
+    Tcl_Command token;		/* The token for the command that provides
+				 * ensemble support for the namespace, or NULL
+				 * if the command has been deleted (or never
+				 * existed; the global namespace never has an
+				 * ensemble command.) */
+    int epoch;			/* The epoch at which this ensemble's table of
+				 * exported commands is valid. */
+    char **subcommandArrayPtr;	/* Array of ensemble subcommand names. At all
+				 * consistent points, this will have the same
+				 * number of entries as there are entries in
+				 * the subcommandTable hash. */
+    Tcl_HashTable subcommandTable;
+				/* Hash table of ensemble subcommand names,
+				 * which are its keys so this also provides
+				 * the storage management for those subcommand
+				 * names. The contents of the entry values are
+				 * object version the prefix lists to use when
+				 * substituting for the command/subcommand to
+				 * build the ensemble implementation command.
+				 * Has to be stored here as well as in
+				 * subcommandDict because that field is NULL
+				 * when we are deriving the ensemble from the
+				 * namespace exports list. FUTURE WORK: use
+				 * object hash table here. */
+    struct EnsembleConfig *next;/* The next ensemble in the linked list of
+				 * ensembles associated with a namespace. If
+				 * this field points to this ensemble, the
+				 * structure has already been unlinked from
+				 * all lists, and cannot be found by scanning
+				 * the list from the namespace's ensemble
+				 * field. */
+    int flags;			/* ORed combo of TCL_ENSEMBLE_PREFIX,
+				 * ENSEMBLE_DEAD and ENSEMBLE_COMPILE. */
+
+    /* OBJECT FIELDS FOR ENSEMBLE CONFIGURATION */
+
+    Tcl_Obj *subcommandDict;	/* Dictionary providing mapping from
+				 * subcommands to their implementing command
+				 * prefixes, or NULL if we are to build the
+				 * map automatically from the namespace
+				 * exports. */
+    Tcl_Obj *subcmdList;	/* List of commands that this ensemble
+				 * actually provides, and whose implementation
+				 * will be built using the subcommandDict (if
+				 * present and defined) and by simple mapping
+				 * to the namespace otherwise. If NULL,
+				 * indicates that we are using the (dynamic)
+				 * list of currently exported commands. */
+    Tcl_Obj *unknownHandler;	/* Script prefix used to handle the case when
+				 * no match is found (according to the rule
+				 * defined by flag bit TCL_ENSEMBLE_PREFIX) or
+				 * NULL to use the default error-generating
+				 * behaviour. The script execution gets all
+				 * the arguments to the ensemble command
+				 * (including objv[0]) and will have the
+				 * results passed directly back to the caller
+				 * (including the error code) unless the code
+				 * is TCL_CONTINUE in which case the
+				 * subcommand will be reparsed by the ensemble
+				 * core, presumably because the ensemble
+				 * itself has been updated. */
+    Tcl_Obj *parameterList;	/* List of ensemble parameter names. */
+    int numParameters;		/* Cached number of parameters. This is either
+				 * 0 (if the parameterList field is NULL) or
+				 * the length of the list in the parameterList
+				 * field. */
+} EnsembleConfig;
+
+/*
+ * Various bits for the EnsembleConfig.flags field.
+ */
+
+#define ENSEMBLE_DEAD	0x1	/* Flag value to say that the ensemble is dead
+				 * and on its way out. */
+#define ENSEMBLE_COMPILE 0x4	/* Flag to enable bytecode compilation of an
+				 * ensemble. */
 
 /*
  *----------------------------------------------------------------
@@ -1119,18 +1200,11 @@ typedef struct CmdFrame {
     int type;			/* Values see below. */
     int level;			/* Number of frames in stack, prevent O(n)
 				 * scan of list. */
-    int numLevels;		/* Value of interp's numLevels when the frame
-				 * was pushed. */
     int *line;			/* Lines the words of the command start on. */
     int nline;
     CallFrame *framePtr;	/* Procedure activation record, may be
 				 * NULL. */
     struct CmdFrame *nextPtr;	/* Link to calling frame. */
-    const struct CFWordBC *litarg;
-				/* Link to set of literal arguments which have
-				 * ben pushed on the lineLABCPtr stack by
-				 * TclArgumentBCEnter(). These will be removed
-				 * by TclArgumentBCRelease. */
     /*
      * Data needed for Eval vs TEBC
      *
@@ -1178,6 +1252,13 @@ typedef struct CmdFrame {
 	} str;
 	Tcl_Obj *listPtr;	/* Tcl_EvalObjEx, cmd list. */
     } cmd;
+    int numLevels;		/* Value of interp's numLevels when the frame
+				 * was pushed. */
+    const struct CFWordBC *litarg;
+				/* Link to set of literal arguments which have
+				 * ben pushed on the lineLABCPtr stack by
+				 * TclArgumentBCEnter(). These will be removed
+				 * by TclArgumentBCRelease. */
 } CmdFrame;
 
 typedef struct CFWord {
@@ -1188,7 +1269,6 @@ typedef struct CFWord {
 } CFWord;
 
 typedef struct CFWordBC {
-    Tcl_Obj *obj;		/* Back reference to hashtable key */
     CmdFrame *framePtr;		/* CmdFrame to access. */
     int pc;			/* Instruction pointer of a command in
 				 * ExtCmdLoc.loc[.] */
@@ -1197,6 +1277,7 @@ typedef struct CFWordBC {
     struct CFWordBC *prevPtr;	/* Previous entry in stack for same Tcl_Obj. */
     struct CFWordBC *nextPtr;	/* Next entry for same command call. See
 				 * CmdFrame litarg field for the list start. */
+    Tcl_Obj *obj;		/* Back reference to hashtable key */
 } CFWordBC;
 
 /*
@@ -1971,19 +2052,6 @@ typedef struct Interp {
 				 * code returned by a channel operation. */
 
     /*
-     * TIP #285, Script cancellation support.
-     */
-
-    Tcl_AsyncHandler asyncCancel;
-				/* Async handler token for Tcl_CancelEval. */
-    Tcl_Obj *asyncCancelMsg;	/* Error message set by async cancel handler
-				 * for the propagation of arbitrary Tcl
-				 * errors. This information, if present
-				 * (asyncCancelMsg not NULL), takes precedence
-				 * over the default error messages returned by
-				 * a script cancellation operation. */
-
-    /*
      * Source code origin information (TIP #280).
      */
 
@@ -2065,23 +2133,14 @@ typedef struct Interp {
 				 * tclObj.c and tclThreadAlloc.c */
     int *asyncReadyPtr;		/* Pointer to the asyncReady indicator for
 				 * this interp's thread; see tclAsync.c */
-
     /*
      * The pointer to the object system root ekeko. c.f. TIP #257.
      */
-
     void *objectFoundation;	/* Pointer to the Foundation structure of the
 				 * object system, which contains things like
 				 * references to key namespaces. See
 				 * tclOOInt.h and tclOO.c for real definition
 				 * and setup. */
-
-    struct TEOV_callback *deferredCallbacks;
-				/* Callbacks that are set previous to a call
-				 * to some Eval function but that actually
-				 * belong to the command that is about to be
-				 * called - i.e., they should be run *before*
-				 * any tailcall is invoked. */
 
 #ifdef TCL_COMPILE_STATS
     /*
@@ -2092,6 +2151,26 @@ typedef struct Interp {
     ByteCodeStats stats;	/* Holds compilation and execution statistics
 				 * for this interpreter. */
 #endif /* TCL_COMPILE_STATS */
+    struct TEOV_callback *deferredCallbacks;
+				/* Callbacks that are set previous to a call
+				 * to some Eval function but that actually
+				 * belong to the command that is about to be
+				 * called - i.e., they should be run *before*
+				 * any tailcall is invoked. */
+
+    /*
+     * TIP #285, Script cancellation support.
+     */
+
+    Tcl_AsyncHandler asyncCancel;
+				/* Async handler token for Tcl_CancelEval. */
+    Tcl_Obj *asyncCancelMsg;	/* Error message set by async cancel handler
+				 * for the propagation of arbitrary Tcl
+				 * errors. This information, if present
+				 * (asyncCancelMsg not NULL), takes precedence
+				 * over the default error messages returned by
+				 * a script cancellation operation. */
+
 } Interp;
 
 /*
@@ -2799,7 +2878,7 @@ MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
 			    int ptnLen, int flags);
 MODULE_SCOPE double	TclCeil(mp_int *a);
-MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,const char *value);
+MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp, const char *value);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE int	TclClearRootEnsemble(ClientData data[],
@@ -2941,6 +3020,7 @@ MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
 MODULE_SCOPE int	TclNokia770Doubles();
+MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
 			    const char *reason, int index);
@@ -3261,6 +3341,9 @@ MODULE_SCOPE int	Tcl_LsortObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_NamespaceObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	TclNamespaceEnsembleCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_OpenObjCmd(ClientData clientData,
@@ -3757,19 +3840,19 @@ typedef const char *TclDTraceStr;
  */
 
 # define TclDecrRefCount(objPtr) \
-    if (--(objPtr)->refCount > 0) ; else {				\
-	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) {	\
-	    TCL_DTRACE_OBJ_FREE(objPtr);				\
-	    if ((objPtr)->bytes						\
-		    && ((objPtr)->bytes != tclEmptyStringRep)) {	\
-		ckfree((char *) (objPtr)->bytes);			\
-	    }								\
-	    (objPtr)->length = -1;					\
-	    TclFreeObjStorage(objPtr);					\
-	    TclIncrObjsFreed();						\
-	} else {							\
-	    TclFreeObj(objPtr);						\
-	}								\
+    if (--(objPtr)->refCount > 0) ; else { \
+	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) { \
+	    TCL_DTRACE_OBJ_FREE(objPtr); \
+	    if ((objPtr)->bytes \
+		    && ((objPtr)->bytes != tclEmptyStringRep)) { \
+		ckfree((char *) (objPtr)->bytes); \
+	    } \
+	    (objPtr)->length = -1; \
+	    TclFreeObjStorage(objPtr); \
+	    TclIncrObjsFreed(); \
+	} else { \
+	    TclFreeObj(objPtr); \
+	} \
     }
 
 #if defined(PURIFY)
@@ -3904,14 +3987,14 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInitStringRep(objPtr, bytePtr, len) \
-    if ((len) == 0) {							\
-	(objPtr)->bytes	 = tclEmptyStringRep;				\
-	(objPtr)->length = 0;						\
-    } else {								\
-	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1));	\
-	memcpy((objPtr)->bytes, (bytePtr), (unsigned) (len));		\
-	(objPtr)->bytes[len] = '\0';					\
-	(objPtr)->length = (len);					\
+    if ((len) == 0) { \
+	(objPtr)->bytes	 = tclEmptyStringRep; \
+	(objPtr)->length = 0; \
+    } else { \
+	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
+	memcpy((objPtr)->bytes, (bytePtr), (unsigned) (len)); \
+	(objPtr)->bytes[len] = '\0'; \
+	(objPtr)->length = (len); \
     }
 
 /*
@@ -3961,11 +4044,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateStringRep(objPtr) \
-    if (objPtr->bytes != NULL) {			\
-	if (objPtr->bytes != tclEmptyStringRep) {	\
-	    ckfree((char *) objPtr->bytes);		\
-	}						\
-	objPtr->bytes = NULL;				\
+    if (objPtr->bytes != NULL) { \
+	if (objPtr->bytes != tclEmptyStringRep) { \
+	    ckfree((char *) objPtr->bytes); \
+	} \
+	objPtr->bytes = NULL; \
     }
 
 /*

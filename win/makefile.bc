@@ -208,6 +208,7 @@ TCLOBJS	= \
 	$(TMPDIR)\tclDate.obj \
 	$(TMPDIR)\tclDictObj.obj \
 	$(TMPDIR)\tclEncoding.obj \
+	$(TMPDIR)\tclEnsemble.obj \
 	$(TMPDIR)\tclEnv.obj \
 	$(TMPDIR)\tclEvent.obj \
 	$(TMPDIR)\tclExecute.obj \

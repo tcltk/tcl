@@ -12,136 +12,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.54 2010/02/10 02:56:48 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.55 2010/02/17 15:36:53 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
-
-/*
- * Macro that encapsulates an efficiency trick that avoids a function call for
- * the simplest of compiles. The ANSI C "prototype" for this macro is:
- *
- * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
- *			    Tcl_Interp *interp, int word);
- */
-
-#define CompileWord(envPtr, tokenPtr, interp, word) \
-    if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) {			\
-	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
-		(tokenPtr)[1].size), (envPtr));				\
-    } else {								\
-	envPtr->line = mapPtr->loc[eclIndex].line[word];		\
-	envPtr->clNext = mapPtr->loc[eclIndex].next[word];		\
-	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-		(envPtr));						\
-    }
-
-/*
- * TIP #280: Remember the per-word line information of the current command. An
- * index is used instead of a pointer as recursive compilation may reallocate,
- * i.e. move, the array. This is also the reason to save the nuloc now, it may
- * change during the course of the function.
- *
- * Macro to encapsulate the variable definition and setup.
- */
-
-#define DefineLineInformation \
-    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr; \
-    int eclIndex = mapPtr->nuloc - 1
-
-#define SetLineInformation(word) \
-    envPtr->line   = mapPtr->loc [eclIndex].line [(word)]; \
-    envPtr->clNext = mapPtr->loc [eclIndex].next [(word)]
-
-/*
- * Convenience macro for use when compiling bodies of commands. The ANSI C
- * "prototype" for this macro is:
- *
- * static void		CompileBody(CompileEnv *envPtr, Tcl_Token *tokenPtr,
- *			    Tcl_Interp *interp);
- */
-
-#define CompileBody(envPtr, tokenPtr, interp) \
-    TclCompileCmdWord((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-	    (envPtr))
-
-/*
- * Convenience macro for use when compiling tokens to be pushed. The ANSI C
- * "prototype" for this macro is:
- *
- * static void		CompileTokens(CompileEnv *envPtr, Tcl_Token *tokenPtr,
- *			    Tcl_Interp *interp);
- */
-
-#define CompileTokens(envPtr, tokenPtr, interp) \
-    TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-	    (envPtr));
-/*
- * Convenience macro for use when pushing literals. The ANSI C "prototype" for
- * this macro is:
- *
- * static void		PushLiteral(CompileEnv *envPtr,
- *			    const char *string, int length);
- */
-
-#define PushLiteral(envPtr, string, length) \
-    TclEmitPush(TclRegisterNewLiteral((envPtr), (string), (length)), (envPtr))
-
-/*
- * Macro to advance to the next token; it is more mnemonic than the address
- * arithmetic that it replaces. The ANSI C "prototype" for this macro is:
- *
- * static Tcl_Token *	TokenAfter(Tcl_Token *tokenPtr);
- */
-
-#define TokenAfter(tokenPtr) \
-    ((tokenPtr) + ((tokenPtr)->numComponents + 1))
-
-/*
- * Macro to get the offset to the next instruction to be issued. The ANSI C
- * "prototype" for this macro is:
- *
- * static int	CurrentOffset(CompileEnv *envPtr);
- */
-
-#define CurrentOffset(envPtr) \
-    ((envPtr)->codeNext - (envPtr)->codeStart)
-
-/*
- * Note: the exceptDepth is a bit of a misnomer: TEBC only needs the
- * maximal depth of nested CATCH ranges in order to alloc runtime
- * memory. These macros should compute precisely that? OTOH, the nesting depth
- * of LOOP ranges is an interesting datum for debugging purposes, and that is
- * what we compute now.
- *
- * static int	DeclareExceptionRange(CompileEnv *envPtr, int type);
- * static int	ExceptionRangeStarts(CompileEnv *envPtr, int index);
- * static void	ExceptionRangeEnds(CompileEnv *envPtr, int index);
- * static void	ExceptionRangeTarget(CompileEnv *envPtr, int index, LABEL);
- */
-
-#define DeclareExceptionRange(envPtr, type) \
-    (TclCreateExceptRange((type), (envPtr)))
-#define ExceptionRangeStarts(envPtr, index) \
-    (((envPtr)->exceptDepth++),						\
-    ((envPtr)->maxExceptDepth =						\
-	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)),	\
-    ((envPtr)->exceptArrayPtr[(index)].codeOffset = CurrentOffset(envPtr)))
-#define ExceptionRangeEnds(envPtr, index) \
-    (((envPtr)->exceptDepth--),						\
-    ((envPtr)->exceptArrayPtr[(index)].numCodeBytes =			\
-	CurrentOffset(envPtr) - (envPtr)->exceptArrayPtr[(index)].codeOffset))
-#define ExceptionRangeTarget(envPtr, index, targetType) \
-    ((envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr))
-
-/*
- * Check if there is an LVT for compiled locals
- */
-
-#define EnvHasLVT(envPtr) \
-    (envPtr->procPtr || envPtr->iPtr->varFramePtr->localCachePtr)
-
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -182,6 +57,18 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 static void		CompileReturnInternal(CompileEnv *envPtr,
 			    unsigned char op, int code, int level,
 			    Tcl_Obj *returnOpts);
+static void		IssueSwitchChainedTests(Tcl_Interp *interp,
+			    CompileEnv *envPtr, ExtCmdLoc *mapPtr,
+			    int eclIndex, int mode, int noCase,
+			    int valueIndex, Tcl_Token *valueTokenPtr,
+			    int numWords, Tcl_Token **bodyToken,
+			    int *bodyLines, int **bodyNext);
+static void		IssueSwitchJumpTable(Tcl_Interp *interp,
+			    CompileEnv *envPtr, ExtCmdLoc *mapPtr,
+			    int eclIndex, int valueIndex,
+			    Tcl_Token *valueTokenPtr, int numWords,
+			    Tcl_Token **bodyToken, int *bodyLines,
+			    int **bodyContLines);
 static int		IssueTryFinallyInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,
@@ -193,6 +80,42 @@ static int		IssueTryInstructions(Tcl_Interp *interp,
 			    int numHandlers, int *matchCodes,
 			    Tcl_Obj **matchClauses, int *resultVarIndices,
 			    int *optionVarIndices, Tcl_Token **handlerTokens);
+
+/*
+ * Macro that encapsulates an efficiency trick that avoids a function call for
+ * the simplest of compiles. The ANSI C "prototype" for this macro is:
+ *
+ * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
+ *			    Tcl_Interp *interp, int word);
+ */
+
+#define CompileWord(envPtr, tokenPtr, interp, word) \
+    if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) {			\
+	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
+		(tokenPtr)[1].size), (envPtr));				\
+    } else {								\
+	envPtr->line = mapPtr->loc[eclIndex].line[word];		\
+	envPtr->clNext = mapPtr->loc[eclIndex].next[word];		\
+	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
+		(envPtr));						\
+    }
+
+/*
+ * TIP #280: Remember the per-word line information of the current command. An
+ * index is used instead of a pointer as recursive compilation may reallocate,
+ * i.e. move, the array. This is also the reason to save the nuloc now, it may
+ * change during the course of the function.
+ *
+ * Macro to encapsulate the variable definition and setup.
+ */
+
+#define DefineLineInformation \
+    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
+    int eclIndex = mapPtr->nuloc - 1
+
+#define SetLineInformation(word) \
+    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
+    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
 
 #define PushVarNameWord(i,v,e,f,l,s,sc,word) \
     PushVarName(i,v,e,f,l,s,sc,						\
@@ -4230,33 +4153,19 @@ TclCompileSwitchCmd(
 {
     Tcl_Token *tokenPtr;	/* Pointer to tokens in command. */
     int numWords;		/* Number of words in command. */
-
     Tcl_Token *valueTokenPtr;	/* Token for the value to switch on. */
     enum {Switch_Exact, Switch_Glob, Switch_Regexp} mode;
 				/* What kind of switch are we doing? */
-
     Tcl_Token *bodyTokenArray;	/* Array of real pattern list items. */
     Tcl_Token **bodyToken;	/* Array of pointers to pattern list items. */
     int *bodyLines;		/* Array of line numbers for body list
 				 * items. */
-    int **bodyNext;
-    int foundDefault;		/* Flag to indicate whether a "default" clause
-				 * is present. */
-
-    JumpFixup *fixupArray;	/* Array of forward-jump fixup records. */
-    int *fixupTargetArray;	/* Array of places for fixups to point at. */
-    int fixupCount;		/* Number of places to fix up. */
-    int contFixIndex;		/* Where the first of the jumps due to a group
-				 * of continuation bodies starts, or -1 if
-				 * there aren't any. */
-    int contFixCount;		/* Number of continuation bodies pointing to
-				 * the current (or next) real body. */
-
-    int savedStackDepth = envPtr->currStackDepth;
+    int **bodyContLines;	/* Array of continuation line info. */
     int noCase;			/* Has the -nocase flag been given? */
     int foundMode = 0;		/* Have we seen a mode flag yet? */
     int isListedArms = 0;
     int i, valueIndex;
+    int result = TCL_ERROR;
     DefineLineInformation;	/* TIP #280 */
     int *clNext = envPtr->clNext;
 
@@ -4437,7 +4346,7 @@ TclCompileSwitchCmd(
 	bodyTokenArray = (Tcl_Token *) ckalloc(sizeof(Tcl_Token) * numWords);
 	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numWords);
 	bodyLines = (int *) ckalloc(sizeof(int) * numWords);
-	bodyNext = (int **) ckalloc(sizeof(int*) * numWords);
+	bodyContLines = (int **) ckalloc(sizeof(int*) * numWords);
 
 	/*
 	 * Locate the start of the arms within the overall word.
@@ -4478,11 +4387,7 @@ TclCompileSwitchCmd(
 		    (tokenStartPtr < tokenPtr[1].start+tokenPtr[1].size
 		    && !isspace(UCHAR(*tokenStartPtr)))) {
 		ckfree((char *) argv);
-		ckfree((char *) bodyToken);
-		ckfree((char *) bodyTokenArray);
-		ckfree((char *) bodyLines);
-		ckfree((char *) bodyNext);
-		return TCL_ERROR;
+		goto freeTemporaries;
 	    }
 
 	    /*
@@ -4495,7 +4400,7 @@ TclCompileSwitchCmd(
 	    TclAdvanceContinuations(&bline, &clNext,
 		    bodyTokenArray[i].start - envPtr->source);
 	    bodyLines[i] = bline;
-	    bodyNext[i] = clNext;
+	    bodyContLines[i] = clNext;
 	    p = bodyTokenArray[i].start;
 
 	    while (isspace(UCHAR(*tokenStartPtr))) {
@@ -4520,11 +4425,7 @@ TclCompileSwitchCmd(
 	 */
 
 	if (tokenStartPtr != tokenPtr[1].start+tokenPtr[1].size) {
-	    ckfree((char *) bodyToken);
-	    ckfree((char *) bodyTokenArray);
-	    ckfree((char *) bodyLines);
-	    ckfree((char *) bodyNext);
-	    return TCL_ERROR;
+	    goto freeTemporaries;
 	}
 
     } else if (numWords % 2 || numWords == 0) {
@@ -4544,7 +4445,7 @@ TclCompileSwitchCmd(
 
 	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numWords);
 	bodyLines = (int *) ckalloc(sizeof(int) * numWords);
-	bodyNext = (int **) ckalloc(sizeof(int*) * numWords);
+	bodyContLines = (int **) ckalloc(sizeof(int*) * numWords);
 	bodyTokenArray = NULL;
 	for (i=0 ; i<numWords ; i++) {
 	    /*
@@ -4555,10 +4456,7 @@ TclCompileSwitchCmd(
 
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
 		    tokenPtr->numComponents != 1) {
-		ckfree((char *) bodyToken);
-		ckfree((char *) bodyLines);
-		ckfree((char *) bodyNext);
-		return TCL_ERROR;
+		goto freeTemporaries;
 	    }
 	    bodyToken[i] = tokenPtr+1;
 
@@ -4567,7 +4465,7 @@ TclCompileSwitchCmd(
 	     */
 
 	    bodyLines[i] = mapPtr->loc[eclIndex].line[valueIndex+1+i];
-	    bodyNext[i] = mapPtr->loc[eclIndex].next[valueIndex+1+i];
+	    bodyContLines[i] = mapPtr->loc[eclIndex].next[valueIndex+1+i];
 	    tokenPtr = TokenAfter(tokenPtr);
 	}
     }
@@ -4579,17 +4477,93 @@ TclCompileSwitchCmd(
 
     if (bodyToken[numWords-1]->size == 1 &&
 	    bodyToken[numWords-1]->start[0] == '-') {
-	ckfree((char *) bodyToken);
-	ckfree((char *) bodyLines);
-	ckfree((char *) bodyNext);
-	if (bodyTokenArray != NULL) {
-	    ckfree((char *) bodyTokenArray);
-	}
-	return TCL_ERROR;
+	goto freeTemporaries;
     }
 
     /*
      * Now we commit to generating code; the parsing stage per se is done.
+     * Check if we can generate a jump table, since if so that's faster than
+     * doing an explicit compare with each body. Note that we're definitely
+     * over-conservative with determining whether we can do the jump table,
+     * but it handles the most common case well enough.
+     */
+
+    if ((isListedArms) && (mode == Switch_Exact) && (!noCase)) {
+	IssueSwitchJumpTable(interp, envPtr, mapPtr, eclIndex, valueIndex,
+		valueTokenPtr, numWords, bodyToken, bodyLines, bodyContLines);
+    } else {
+	IssueSwitchChainedTests(interp, envPtr, mapPtr, eclIndex, mode,noCase,
+		valueIndex, valueTokenPtr, numWords, bodyToken, bodyLines,
+		bodyContLines);
+    }
+    result = TCL_OK;
+
+    /*
+     * Clean up all our temporary space and return.
+     */
+
+  freeTemporaries:
+    ckfree((char *) bodyToken);
+    ckfree((char *) bodyLines);
+    ckfree((char *) bodyContLines);
+    if (bodyTokenArray != NULL) {
+	ckfree((char *) bodyTokenArray);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IssueSwitchChainedTests --
+ *
+ *	Generate instructions for a [switch] command that is to be compiled
+ *	into a sequence of tests. This is the generic handle-everything mode
+ *	that inherently has performance that is (on average) linear in the
+ *	number of tests. It is the only mode that can handle -glob and -regexp
+ *	matches, or anything that is case-insensitive. It does not handle the
+ *	wild-and-wooly end of regexp matching (i.e., capture of match results)
+ *	so that's when we spill to the interpreted version.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+IssueSwitchChainedTests(
+    Tcl_Interp *interp,		/* Context for compiling script bodies. */
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    ExtCmdLoc *mapPtr,		/* For mapping tokens to their source code
+				 * location. */
+    int eclIndex,
+    int mode,			/* Exact, Glob or Regexp */
+    int noCase,			/* Case-insensitivity flag. */
+    int valueIndex,		/* The value to match against. */
+    Tcl_Token *valueTokenPtr,
+    int numBodyTokens,		/* Number of tokens describing things the
+				 * switch can match against and bodies to
+				 * execute when the match succeeds. */
+    Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
+    int *bodyLines,		/* Array of line numbers for body list
+				 * items. */
+    int **bodyContLines)	/* Array of continuation line info. */
+{
+    enum {Switch_Exact, Switch_Glob, Switch_Regexp};
+    int savedStackDepth = envPtr->currStackDepth;
+    int foundDefault;		/* Flag to indicate whether a "default" clause
+				 * is present. */
+    JumpFixup *fixupArray;	/* Array of forward-jump fixup records. */
+    int *fixupTargetArray;	/* Array of places for fixups to point at. */
+    int fixupCount;		/* Number of places to fix up. */
+    int contFixIndex;		/* Where the first of the jumps due to a group
+				 * of continuation bodies starts, or -1 if
+				 * there aren't any. */
+    int contFixCount;		/* Number of continuation bodies pointing to
+				 * the current (or next) real body. */
+    int nextArmFixupIndex;
+    int simple, exact;		/* For extracting the type of regexp. */
+    int i;
+
+    /*
      * First, we push the value we're matching against on the stack.
      */
 
@@ -4597,217 +4571,38 @@ TclCompileSwitchCmd(
     CompileTokens(envPtr, valueTokenPtr, interp);
 
     /*
-     * Check if we can generate a jump table, since if so that's faster than
-     * doing an explicit compare with each body. Note that we're definitely
-     * over-conservative with determining whether we can do the jump table,
-     * but it handles the most common case well enough.
-     */
-
-    if (isListedArms && mode == Switch_Exact && !noCase) {
-	JumptableInfo *jtPtr;
-	int infoIndex, isNew, *finalFixups, numRealBodies = 0, jumpLocation;
-	int mustGenerate, jumpToDefault;
-	Tcl_DString buffer;
-	Tcl_HashEntry *hPtr;
-
-	/*
-	 * Compile the switch by using a jump table, which is basically a
-	 * hashtable that maps from literal values to match against to the
-	 * offset (relative to the INST_JUMP_TABLE instruction) to jump to.
-	 * The jump table itself is independent of any invokation of the
-	 * bytecode, and as such is stored in an auxData block.
-	 *
-	 * Start by allocating the jump table itself, plus some workspace.
-	 */
-
-	jtPtr = (JumptableInfo *) ckalloc(sizeof(JumptableInfo));
-	Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
-	infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
-	finalFixups = (int *) ckalloc(sizeof(int) * (numWords/2));
-	foundDefault = 0;
-	mustGenerate = 1;
-
-	/*
-	 * Next, issue the instruction to do the jump, together with what we
-	 * want to do if things do not work out (jump to either the default
-	 * clause or the "default" default, which just sets the result to
-	 * empty). Note that we will come back and rewrite the jump's offset
-	 * parameter when we know what it should be, and that all jumps we
-	 * issue are of the wide kind because that makes the code much easier
-	 * to debug!
-	 */
-
-	jumpLocation = CurrentOffset(envPtr);
-	TclEmitInstInt4(INST_JUMP_TABLE, infoIndex, envPtr);
-	jumpToDefault = CurrentOffset(envPtr);
-	TclEmitInstInt4(INST_JUMP4, 0, envPtr);
-
-	for (i=0 ; i<numWords ; i+=2) {
-	    /*
-	     * For each arm, we must first work out what to do with the match
-	     * term.
-	     */
-
-	    if (i!=numWords-2 || bodyToken[numWords-2]->size != 7 ||
-		    memcmp(bodyToken[numWords-2]->start, "default", 7)) {
-		/*
-		 * This is not a default clause, so insert the current
-		 * location as a target in the jump table (assuming it isn't
-		 * already there, which would indicate that this clause is
-		 * probably masked by an earlier one). Note that we use a
-		 * Tcl_DString here simply because the hash API does not let
-		 * us specify the string length.
-		 */
-
-		Tcl_DStringInit(&buffer);
-		Tcl_DStringAppend(&buffer, bodyToken[i]->start,
-			bodyToken[i]->size);
-		hPtr = Tcl_CreateHashEntry(&jtPtr->hashTable,
-			Tcl_DStringValue(&buffer), &isNew);
-		if (isNew) {
-		    /*
-		     * First time we've encountered this match clause, so it
-		     * must point to here.
-		     */
-
-		    Tcl_SetHashValue(hPtr, (ClientData)
-			    (CurrentOffset(envPtr) - jumpLocation));
-		}
-		Tcl_DStringFree(&buffer);
-	    } else {
-		/*
-		 * This is a default clause, so patch up the fallthrough from
-		 * the INST_JUMP_TABLE instruction to here.
-		 */
-
-		foundDefault = 1;
-		isNew = 1;
-		TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
-			envPtr->codeStart+jumpToDefault+1);
-	    }
-
-	    /*
-	     * Now, for each arm we must deal with the body of the clause.
-	     *
-	     * If this is a continuation body (never true of a final clause,
-	     * whether default or not) we're done because the next jump target
-	     * will also point here, so we advance to the next clause.
-	     */
-
-	    if (bodyToken[i+1]->size == 1 && bodyToken[i+1]->start[0] == '-') {
-		mustGenerate = 1;
-		continue;
-	    }
-
-	    /*
-	     * Also skip this arm if its only match clause is masked. (We
-	     * could probably be more aggressive about this, but that would be
-	     * much more difficult to get right.)
-	     */
-
-	    if (!isNew && !mustGenerate) {
-		continue;
-	    }
-	    mustGenerate = 0;
-
-	    /*
-	     * Compile the body of the arm.
-	     */
-
-	    envPtr->line = bodyLines[i+1];	/* TIP #280 */
-	    envPtr->clNext = bodyNext[i+1];	/* TIP #280 */
-	    TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
-
-	    /*
-	     * Compile a jump in to the end of the command if this body is
-	     * anything other than a user-supplied default arm (to either skip
-	     * over the remaining bodies or the code that generates an empty
-	     * result).
-	     */
-
-	    if (i+2 < numWords || !foundDefault) {
-		finalFixups[numRealBodies++] = CurrentOffset(envPtr);
-
-		/*
-		 * Easier by far to issue this jump as a fixed-width jump.
-		 * Otherwise we'd need to do a lot more (and more awkward)
-		 * rewriting when we fixed this all up.
-		 */
-
-		TclEmitInstInt4(INST_JUMP4, 0, envPtr);
-	    }
-	}
-
-	/*
-	 * We're at the end. If we've not already done so through the
-	 * processing of a user-supplied default clause, add in a "default"
-	 * default clause now.
-	 */
-
-	if (!foundDefault) {
-	    TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
-		    envPtr->codeStart+jumpToDefault+1);
-	    PushLiteral(envPtr, "", 0);
-	}
-
-	/*
-	 * No more instructions to be issued; everything that needs to jump to
-	 * the end of the command is fixed up at this point.
-	 */
-
-	for (i=0 ; i<numRealBodies ; i++) {
-	    TclStoreInt4AtPtr(CurrentOffset(envPtr)-finalFixups[i],
-		    envPtr->codeStart+finalFixups[i]+1);
-	}
-
-	/*
-	 * Clean up all our temporary space and return.
-	 */
-
-	ckfree((char *) finalFixups);
-	ckfree((char *) bodyToken);
-	ckfree((char *) bodyLines);
-	ckfree((char *) bodyNext);
-	if (bodyTokenArray != NULL) {
-	    ckfree((char *) bodyTokenArray);
-	}
-	return TCL_OK;
-    }
-
-    /*
      * Generate a test for each arm.
      */
 
     contFixIndex = -1;
     contFixCount = 0;
-    fixupArray = (JumpFixup *) ckalloc(sizeof(JumpFixup) * numWords);
-    fixupTargetArray = (int *) ckalloc(sizeof(int) * numWords);
-    memset(fixupTargetArray, 0, numWords * sizeof(int));
+    fixupArray = TclStackAlloc(interp, sizeof(JumpFixup) * numBodyTokens);
+    fixupTargetArray = TclStackAlloc(interp, sizeof(int) * numBodyTokens);
+    memset(fixupTargetArray, 0, numBodyTokens * sizeof(int));
     fixupCount = 0;
     foundDefault = 0;
-    for (i=0 ; i<numWords ; i+=2) {
-	int nextArmFixupIndex = -1;
-
+    for (i=0 ; i<numBodyTokens ; i+=2) {
+	nextArmFixupIndex = -1;
 	envPtr->currStackDepth = savedStackDepth + 1;
-	if (i!=numWords-2 || bodyToken[numWords-2]->size != 7 ||
-		memcmp(bodyToken[numWords-2]->start, "default", 7)) {
+	if (i!=numBodyTokens-2 || bodyToken[numBodyTokens-2]->size != 7 ||
+		memcmp(bodyToken[numBodyTokens-2]->start, "default", 7)) {
 	    /*
 	     * Generate the test for the arm.
 	     */
 
 	    switch (mode) {
 	    case Switch_Exact:
-		TclEmitOpcode(INST_DUP, envPtr);
-		TclCompileTokens(interp, bodyToken[i], 1, envPtr);
-		TclEmitOpcode(INST_STR_EQ, envPtr);
+		TclEmitOpcode(INST_DUP,				envPtr);
+		TclCompileTokens(interp, bodyToken[i], 1,	envPtr);
+		TclEmitOpcode(INST_STR_EQ,			envPtr);
 		break;
 	    case Switch_Glob:
-		TclCompileTokens(interp, bodyToken[i], 1, envPtr);
-		TclEmitInstInt4(INST_OVER, 1, envPtr);
-		TclEmitInstInt1(INST_STR_MATCH, noCase, envPtr);
+		TclCompileTokens(interp, bodyToken[i], 1,	envPtr);
+		TclEmitInstInt4(INST_OVER, 1,			envPtr);
+		TclEmitInstInt1(INST_STR_MATCH, noCase,		envPtr);
 		break;
-	    case Switch_Regexp: {
-		int simple = 0, exact = 0;
+	    case Switch_Regexp:
+		simple = exact = 0;
 
 		/*
 		 * Keep in sync with TclCompileRegexpCmd.
@@ -4843,14 +4638,8 @@ TclCompileSwitchCmd(
 		    TclCompileTokens(interp, bodyToken[i], 1, envPtr);
 		}
 
-		TclEmitInstInt4(INST_OVER, 1, envPtr);
-		if (simple) {
-		    if (exact && !noCase) {
-			TclEmitOpcode(INST_STR_EQ, envPtr);
-		    } else {
-			TclEmitInstInt1(INST_STR_MATCH, noCase, envPtr);
-		    }
-		} else {
+		TclEmitInstInt4(INST_OVER, 1,			envPtr);
+		if (!simple) {
 		    /*
 		     * Pass correct RE compile flags. We use only Int1
 		     * (8-bit), but that handles all the flags we want to
@@ -4861,10 +4650,13 @@ TclCompileSwitchCmd(
 		    int cflags = TCL_REG_ADVANCED
 			    | (noCase ? TCL_REG_NOCASE : 0);
 
-		    TclEmitInstInt1(INST_REGEXP, cflags, envPtr);
+		    TclEmitInstInt1(INST_REGEXP, cflags,	envPtr);
+		} else if (exact && !noCase) {
+		    TclEmitOpcode(INST_STR_EQ,			envPtr);
+		} else {
+		    TclEmitInstInt1(INST_STR_MATCH, noCase,	envPtr);
 		}
 		break;
-	    }
 	    default:
 		Tcl_Panic("unknown switch mode: %d", mode);
 	    }
@@ -4881,13 +4673,14 @@ TclCompileSwitchCmd(
 		    contFixCount = 0;
 		}
 		TclEmitForwardJump(envPtr, TCL_TRUE_JUMP,
-			fixupArray+contFixIndex+contFixCount);
+			&fixupArray[contFixIndex+contFixCount]);
 		fixupCount++;
 		contFixCount++;
 		continue;
 	    }
 
-	    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, fixupArray+fixupCount);
+	    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
+		    &fixupArray[fixupCount]);
 	    nextArmFixupIndex = fixupCount;
 	    fixupCount++;
 	} else {
@@ -4926,29 +4719,18 @@ TclCompileSwitchCmd(
 	 * pattern.
 	 */
 
-	TclEmitOpcode(INST_POP, envPtr);
+	TclEmitOpcode(INST_POP,					envPtr);
 	envPtr->currStackDepth = savedStackDepth + 1;
 	envPtr->line = bodyLines[i+1];		/* TIP #280 */
-	envPtr->clNext = bodyNext[i+1];		/* TIP #280 */
+	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
 	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
 
 	if (!foundDefault) {
 	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-		    fixupArray+fixupCount);
+		    &fixupArray[fixupCount]);
 	    fixupCount++;
 	    fixupTargetArray[nextArmFixupIndex] = CurrentOffset(envPtr);
 	}
-    }
-
-    /*
-     * Clean up all our temporary space and return.
-     */
-
-    ckfree((char *) bodyToken);
-    ckfree((char *) bodyLines);
-    ckfree((char *) bodyNext);
-    if (bodyTokenArray != NULL) {
-	ckfree((char *) bodyTokenArray);
     }
 
     /*
@@ -4959,7 +4741,7 @@ TclCompileSwitchCmd(
      */
 
     if (!foundDefault) {
-	TclEmitOpcode(INST_POP, envPtr);
+	TclEmitOpcode(INST_POP,					envPtr);
 	PushLiteral(envPtr, "", 0);
     }
 
@@ -4994,11 +4776,208 @@ TclCompileSwitchCmd(
 	    }
 	}
     }
-    ckfree((char *) fixupArray);
-    ckfree((char *) fixupTargetArray);
+    TclStackFree(interp, fixupTargetArray);
+    TclStackFree(interp, fixupArray);
 
     envPtr->currStackDepth = savedStackDepth + 1;
-    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IssueSwitchJumpTable --
+ *
+ *	Generate instructions for a [switch] command that is to be compiled
+ *	into a jump table. This only handles the case where case-sensitive,
+ *	exact matching is used, but this is actually the most common case in
+ *	real code.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+IssueSwitchJumpTable(
+    Tcl_Interp *interp,		/* Context for compiling script bodies. */
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    ExtCmdLoc *mapPtr,		/* For mapping tokens to their source code
+				 * location. */
+    int eclIndex,
+    int valueIndex,		/* The value to match against. */
+    Tcl_Token *valueTokenPtr,
+    int numBodyTokens,		/* Number of tokens describing things the
+				 * switch can match against and bodies to
+				 * execute when the match succeeds. */
+    Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
+    int *bodyLines,		/* Array of line numbers for body list
+				 * items. */
+    int **bodyContLines)	/* Array of continuation line info. */
+{
+    JumptableInfo *jtPtr;
+    int infoIndex, isNew, *finalFixups, numRealBodies = 0, jumpLocation;
+    int mustGenerate, foundDefault, jumpToDefault, i;
+    Tcl_DString buffer;
+    Tcl_HashEntry *hPtr;
+
+    /*
+     * First, we push the value we're matching against on the stack.
+     */
+
+    SetLineInformation(valueIndex);
+    CompileTokens(envPtr, valueTokenPtr, interp);
+
+    /*
+     * Compile the switch by using a jump table, which is basically a
+     * hashtable that maps from literal values to match against to the offset
+     * (relative to the INST_JUMP_TABLE instruction) to jump to. The jump
+     * table itself is independent of any invokation of the bytecode, and as
+     * such is stored in an auxData block.
+     *
+     * Start by allocating the jump table itself, plus some workspace.
+     */
+
+    jtPtr = (JumptableInfo *) ckalloc(sizeof(JumptableInfo));
+    Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
+    infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
+    finalFixups = TclStackAlloc(interp, sizeof(int) * (numBodyTokens/2));
+    foundDefault = 0;
+    mustGenerate = 1;
+
+    /*
+     * Next, issue the instruction to do the jump, together with what we want
+     * to do if things do not work out (jump to either the default clause or
+     * the "default" default, which just sets the result to empty). Note that
+     * we will come back and rewrite the jump's offset parameter when we know
+     * what it should be, and that all jumps we issue are of the wide kind
+     * because that makes the code much easier to debug!
+     */
+
+    jumpLocation = CurrentOffset(envPtr);
+    TclEmitInstInt4(INST_JUMP_TABLE, infoIndex,			envPtr);
+    jumpToDefault = CurrentOffset(envPtr);
+    TclEmitInstInt4(INST_JUMP4, 0,				envPtr);
+
+    for (i=0 ; i<numBodyTokens ; i+=2) {
+	/*
+	 * For each arm, we must first work out what to do with the match
+	 * term.
+	 */
+
+	if (i!=numBodyTokens-2 || bodyToken[numBodyTokens-2]->size != 7 ||
+		memcmp(bodyToken[numBodyTokens-2]->start, "default", 7)) {
+	    /*
+	     * This is not a default clause, so insert the current location as
+	     * a target in the jump table (assuming it isn't already there,
+	     * which would indicate that this clause is probably masked by an
+	     * earlier one). Note that we use a Tcl_DString here simply
+	     * because the hash API does not let us specify the string length.
+	     */
+
+	    Tcl_DStringInit(&buffer);
+	    Tcl_DStringAppend(&buffer, bodyToken[i]->start,
+		    bodyToken[i]->size);
+	    hPtr = Tcl_CreateHashEntry(&jtPtr->hashTable,
+		    Tcl_DStringValue(&buffer), &isNew);
+	    if (isNew) {
+		/*
+		 * First time we've encountered this match clause, so it must
+		 * point to here.
+		 */
+
+		Tcl_SetHashValue(hPtr, (ClientData)
+			(CurrentOffset(envPtr) - jumpLocation));
+	    }
+	    Tcl_DStringFree(&buffer);
+	} else {
+	    /*
+	     * This is a default clause, so patch up the fallthrough from the
+	     * INST_JUMP_TABLE instruction to here.
+	     */
+
+	    foundDefault = 1;
+	    isNew = 1;
+	    TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
+		    envPtr->codeStart+jumpToDefault+1);
+	}
+
+	/*
+	 * Now, for each arm we must deal with the body of the clause.
+	 *
+	 * If this is a continuation body (never true of a final clause,
+	 * whether default or not) we're done because the next jump target
+	 * will also point here, so we advance to the next clause.
+	 */
+
+	if (bodyToken[i+1]->size == 1 && bodyToken[i+1]->start[0] == '-') {
+	    mustGenerate = 1;
+	    continue;
+	}
+
+	/*
+	 * Also skip this arm if its only match clause is masked. (We could
+	 * probably be more aggressive about this, but that would be much more
+	 * difficult to get right.)
+	 */
+
+	if (!isNew && !mustGenerate) {
+	    continue;
+	}
+	mustGenerate = 0;
+
+	/*
+	 * Compile the body of the arm.
+	 */
+
+	envPtr->line = bodyLines[i+1];		/* TIP #280 */
+	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
+	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
+
+	/*
+	 * Compile a jump in to the end of the command if this body is
+	 * anything other than a user-supplied default arm (to either skip
+	 * over the remaining bodies or the code that generates an empty
+	 * result).
+	 */
+
+	if (i+2 < numBodyTokens || !foundDefault) {
+	    finalFixups[numRealBodies++] = CurrentOffset(envPtr);
+
+	    /*
+	     * Easier by far to issue this jump as a fixed-width jump, since
+	     * otherwise we'd need to do a lot more (and more awkward)
+	     * rewriting when we fixed this all up.
+	     */
+
+	    TclEmitInstInt4(INST_JUMP4, 0,			envPtr);
+	}
+    }
+
+    /*
+     * We're at the end. If we've not already done so through the processing
+     * of a user-supplied default clause, add in a "default" default clause
+     * now.
+     */
+
+    if (!foundDefault) {
+	TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
+		envPtr->codeStart+jumpToDefault+1);
+	PushLiteral(envPtr, "", 0);
+    }
+
+    /*
+     * No more instructions to be issued; everything that needs to jump to the
+     * end of the command is fixed up at this point.
+     */
+
+    for (i=0 ; i<numRealBodies ; i++) {
+	TclStoreInt4AtPtr(CurrentOffset(envPtr)-finalFixups[i],
+		envPtr->codeStart+finalFixups[i]+1);
+    }
+
+    /*
+     * Clean up all our temporary space and return.
+     */
+
+    TclStackFree(interp, finalFixups);
 }
 
 /*
@@ -7259,304 +7238,6 @@ TclCompileVariableCmd(
 
     PushLiteral(envPtr, "", 0);
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileEnsemble --
- *
- *	Procedure called to compile an ensemble command. Note that most
- *	ensembles are not compiled, since modifying a compiled ensemble causes
- *	a invalidation of all existing bytecode (expensive!) which is not
- *	normally warranted.
- *
- * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the subcommands of the
- *	ensemble at runtime if a compile-time mapping is possible.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclCompileEnsemble(
-    Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
-				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
-    CompileEnv *envPtr)		/* Holds resulting instructions. */
-{
-    Tcl_Token *tokenPtr;
-    Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
-    Tcl_Command ensemble = (Tcl_Command) cmdPtr;
-    Tcl_Parse synthetic;
-    int len, numBytes, result, flags = 0, i;
-    const char *word;
-
-    if (parsePtr->numWords < 2) {
-	return TCL_ERROR;
-    }
-
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	/*
-	 * Too hard.
-	 */
-
-	return TCL_ERROR;
-    }
-
-    word = tokenPtr[1].start;
-    numBytes = tokenPtr[1].size;
-
-    /*
-     * There's a sporting chance we'll be able to compile this. But now we
-     * must check properly. To do that, check that we're compiling an ensemble
-     * that has a compilable command as its appropriate subcommand.
-     */
-
-    if (Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj) != TCL_OK
-	    || mapObj == NULL) {
-	/*
-	 * Either not an ensemble or a mapping isn't installed. Crud. Too hard
-	 * to proceed.
-	 */
-
-	return TCL_ERROR;
-    }
-
-    /*
-     * Also refuse to compile anything that uses a formal parameter list for
-     * now, on the grounds that it is too complex.
-     */
-
-    if (Tcl_GetEnsembleParameterList(NULL, ensemble, &listObj) != TCL_OK
-	    || listObj != NULL) {
-	/*
-	 * Figuring out how to compile this has become too much. Bail out.
-	 */
-
-	return TCL_ERROR;
-    }
-
-    /*
-     * Next, get the flags. We need them on several code paths.
-     */
-
-    (void) Tcl_GetEnsembleFlags(NULL, ensemble, &flags);
-
-    /*
-     * Check to see if there's also a subcommand list; must check to see if
-     * the subcommand we are calling is in that list if it exists, since that
-     * list filters the entries in the map.
-     */
-
-    (void) Tcl_GetEnsembleSubcommandList(NULL, ensemble, &listObj);
-    if (listObj != NULL) {
-	int sclen;
-	const char *str;
-	Tcl_Obj *matchObj = NULL;
-
-	if (Tcl_ListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	for (i=0 ; i<len ; i++) {
-	    str = Tcl_GetStringFromObj(elems[i], &sclen);
-	    if (sclen==numBytes && !memcmp(word, str, (unsigned) numBytes)) {
-		/*
-		 * Exact match! Excellent!
-		 */
-
-		result = Tcl_DictObjGet(NULL, mapObj,elems[i], &targetCmdObj);
-		if (result != TCL_OK || targetCmdObj == NULL) {
-		    return TCL_ERROR;
-		}
-		goto doneMapLookup;
-	    }
-
-	    /*
-	     * Check to see if we've got a prefix match. A single prefix match
-	     * is fine, and allows us to refine our dictionary lookup, but
-	     * multiple prefix matches is a Bad Thing and will prevent us from
-	     * making progress. Note that we cannot do the lookup immediately
-	     * in the prefix case; might be another entry later in the list
-	     * that causes things to fail.
-	     */
-
-	    if ((flags & TCL_ENSEMBLE_PREFIX)
-		    && strncmp(word, str, (unsigned) numBytes) == 0) {
-		if (matchObj != NULL) {
-		    return TCL_ERROR;
-		}
-		matchObj = elems[i];
-	    }
-	}
-	if (matchObj != NULL) {
-	    result = Tcl_DictObjGet(NULL, mapObj, matchObj, &targetCmdObj);
-	    if (result != TCL_OK || targetCmdObj == NULL) {
-		return TCL_ERROR;
-	    }
-	    goto doneMapLookup;
-	}
-	return TCL_ERROR;
-    } else {
-	/*
-	 * No map, so check the dictionary directly.
-	 */
-
-	TclNewStringObj(subcmdObj, word, numBytes);
-	result = Tcl_DictObjGet(NULL, mapObj, subcmdObj, &targetCmdObj);
-	TclDecrRefCount(subcmdObj);
-	if (result == TCL_OK && targetCmdObj != NULL) {
-	    /*
-	     * Got it. Skip the fiddling around with prefixes.
-	     */
-
-	    goto doneMapLookup;
-	}
-
-	/*
-	 * We've not literally got a valid subcommand. But maybe we have a
-	 * prefix. Check if prefix matches are allowed.
-	 */
-
-	if (flags & TCL_ENSEMBLE_PREFIX) {
-	    Tcl_DictSearch s;
-	    int done, matched;
-	    Tcl_Obj *tmpObj;
-
-	    /*
-	     * Iterate over the keys in the dictionary, checking to see if
-	     * we're a prefix.
-	     */
-
-	    Tcl_DictObjFirst(NULL,mapObj,&s,&subcmdObj,&tmpObj,&done);
-	    matched = 0;
-	    while (!done) {
-		if (strncmp(TclGetString(subcmdObj), word,
-			(unsigned) numBytes) == 0) {
-		    if (matched++) {
-			/*
-			 * Must have matched twice! Not unique, so no point
-			 * looking further.
-			 */
-
-			break;
-		    }
-		    targetCmdObj = tmpObj;
-		}
-		Tcl_DictObjNext(&s, &subcmdObj, &tmpObj, &done);
-	    }
-	    Tcl_DictObjDone(&s);
-
-	    /*
-	     * If we have anything other than a single match, we've failed the
-	     * unique prefix check.
-	     */
-
-	    if (matched != 1) {
-		return TCL_ERROR;
-	    }
-	} else {
-	    return TCL_ERROR;
-	}
-    }
-
-    /*
-     * OK, we definitely map to something. But what?
-     *
-     * The command we map to is the first word out of the map element. Note
-     * that we also reject dealing with multi-element rewrites if we are in a
-     * safe interpreter, as there is otherwise a (highly gnarly!) way to make
-     * Tcl crash open to exploit.
-     */
-
-  doneMapLookup:
-    if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (len > 1 && Tcl_IsSafe(interp)) {
-	return TCL_ERROR;
-    }
-    targetCmdObj = elems[0];
-
-    Tcl_IncrRefCount(targetCmdObj);
-    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, targetCmdObj);
-    TclDecrRefCount(targetCmdObj);
-    if (cmdPtr == NULL || cmdPtr->compileProc == NULL) {
-	/*
-	 * Maps to an undefined command or a command without a compiler.
-	 * Cannot compile.
-	 */
-
-	return TCL_ERROR;
-    }
-
-    /*
-     * Now we've done the mapping process, can now actually try to compile.
-     * We do this by handing off to the subcommand's actual compiler. But to
-     * do that, we have to perform some trickery to rewrite the arguments.
-     */
-
-    TclParseInit(interp, NULL, 0, &synthetic);
-    synthetic.numWords = parsePtr->numWords - 2 + len;
-    TclGrowParseTokenArray(&synthetic, 2*len);
-    synthetic.numTokens = 2*len;
-
-    /*
-     * Now we have the space to work in, install something rewritten. Note
-     * that we are here praying for all our might that none of these words are
-     * a script; the error detection code will crash if that happens and there
-     * is nothing we can do to avoid it!
-     */
-
-    for (i=0 ; i<len ; i++) {
-	int sclen;
-	const char *str = Tcl_GetStringFromObj(elems[i], &sclen);
-
-	synthetic.tokenPtr[2*i].type = TCL_TOKEN_SIMPLE_WORD;
-	synthetic.tokenPtr[2*i].start = str;
-	synthetic.tokenPtr[2*i].size = sclen;
-	synthetic.tokenPtr[2*i].numComponents = 1;
-
-	synthetic.tokenPtr[2*i+1].type = TCL_TOKEN_TEXT;
-	synthetic.tokenPtr[2*i+1].start = str;
-	synthetic.tokenPtr[2*i+1].size = sclen;
-	synthetic.tokenPtr[2*i+1].numComponents = 0;
-    }
-
-    /*
-     * Copy over the real argument tokens.
-     */
-
-    for (i=len; i<synthetic.numWords; i++) {
-	int toCopy;
-
-	tokenPtr = TokenAfter(tokenPtr);
-	toCopy = tokenPtr->numComponents + 1;
-	TclGrowParseTokenArray(&synthetic, toCopy);
-	memcpy(synthetic.tokenPtr + synthetic.numTokens, tokenPtr,
-		sizeof(Tcl_Token) * toCopy);
-	synthetic.numTokens += toCopy;
-    }
-
-    /*
-     * Hand off compilation to the subcommand compiler. At last!
-     */
-
-    result = cmdPtr->compileProc(interp, &synthetic, cmdPtr, envPtr);
-
-    /*
-     * Clean up if necessary.
-     */
-
-    Tcl_FreeParse(&synthetic);
-    return result;
 }
 
 /*

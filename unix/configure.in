@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.67 2009/12/30 17:24:10 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.68 2010/02/17 15:37:00 dgp Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -279,10 +279,12 @@ SC_TIME_HANDLER
 
 #--------------------------------------------------------------------
 #	Some systems (e.g., IRIX 4.0.5) lack some fields in struct stat. But
-#	we might be able to use fstatfs instead.
+#	we might be able to use fstatfs instead. Some systems (OpenBSD?) also
+#	lack blkcnt_t.
 #--------------------------------------------------------------------
 
 AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
+AC_CHECK_TYPES([blkcnt_t])
 AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS, 1, [Do we have fstatfs()?])])
 
 #--------------------------------------------------------------------
