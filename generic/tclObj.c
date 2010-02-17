@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.168 2010/02/10 16:29:49 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.169 2010/02/17 21:58:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4038,24 +4038,44 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = keyPtr;
-    register unsigned result = 0x811c9dc5;
-    const unsigned char *string = (unsigned char *) TclGetString(objPtr);
-    const unsigned char *last = string + objPtr->length;
+    const char *string = TclGetString(objPtr);
+    unsigned int result = 0;
+    const char *end = string + objPtr->length;
 
     /*
-     * This is the (32-bit) Fowler/Noll/Vo hash algorithm. This has the
-     * property of being a reasonably good non-cryptographic hash function for
-     * short string words, i.e., virtually all names used in practice. It is
-     * also faster than Tcl's original algorithm on Intel x86, where there is
-     * a fast built-in multiply assembly instruction.
+     * I tried a zillion different hash functions and asked many other people
+     * for advice. Many people had their own favorite functions, all
+     * different, but no-one had much idea why they were good ones. I chose
+     * the one below (multiply by 9 and add new character) because of the
+     * following reasons:
      *
-     * Derived from Public Domain implementation by Landon Curt Noll at:
-     * http://www.isthe.com/chongo/src/fnv/hash_32.c
+     * 1. Multiplying by 10 is perfect for keys that are decimal strings, and
+     *    multiplying by 9 is just about as good.
+     * 2. Times-9 is (shift-left-3) plus (old). This means that each
+     *    character's bits hang around in the low-order bits of the hash value
+     *    for ever, plus they spread fairly rapidly up to the high-order bits
+     *    to fill out the hash value. This seems works well both for decimal
+     *    and non-decimal strings.
+     *
+     * Note that this function is very weak against malicious strings; it's
+     * very easy to generate multiple keys that have the same hashcode. On the
+     * other hand, that hardly ever actually occurs and this function *is*
+     * very cheap, even by comparison with industry-standard hashes like FNV.
+     * If real strength of hash is required though, use a custom hash based on
+     * Bob Jenkins's lookup3(), but be aware that it's significantly slower.
+     * Tcl does not use that level of strength because it typically does not
+     * need it (and some of the aspects of that strength are genuinely
+     * unnecessary given the rest of Tcl's hash machinery, and the fact that
+     * we do not either transfer hashes to another machine, use them as a true
+     * substitute for equality, or attempt to minimize work in rebuilding the
+     * hash table).
+     *
+     * See also HashStringKey in tclHash.c.
+     * See also HashString in tclLiteral.c.
      */
 
-#define FNV_32_PRIME	((unsigned) 0x01000193)
-    while (string < last) {
-	result = (result * FNV_32_PRIME) ^ (*string++);
+    while (string < end) {
+        result += (result << 3) + UCHAR(*string++);
     }
     return result;
 }
