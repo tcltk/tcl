@@ -1,5 +1,13 @@
 2010-02-17  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclHash.c (HashStringKey):	Restore these hash functions
+	* generic/tclLiteral.c (HashString):	to use the classic algorithm.
+	* generic/tclObj.c (TclHashObjKey):	Community felt normal case
+	speed to be more important than resistance to malicious cases. For
+	now, hashes that need to deal with the malicious case can use a custom
+	hash table and install their own hash function, though that is not
+	functionality exposed to the script level.
+
 	* generic/tclCompCmds.c (TclCompileDictUpdateCmd): Stack depth must be
 	correctly described when compiling a body to prevent crashes in some
 	debugging modes.
