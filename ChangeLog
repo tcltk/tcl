@@ -1,7 +1,13 @@
+2010-02-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictUpdateCmd): Stack depth must be
+	correctly described when compiling a body to prevent crashes in some
+	debugging modes.
+
 2010-02-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.h:  Change order of various struct members,
-	     restoring potential binary incompatibility with Tcl 8.5
+	* generic/tclInt.h: Change order of various struct members, restoring
+	potential binary incompatibility with Tcl 8.5
 
 2010-02-16  Donal K. Fellows  <dkf@users.sf.net>
 

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.17 2010/02/17 15:36:54 dgp Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.18 2010/02/17 16:02:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -315,7 +315,7 @@ TclCreateLiteral(
 #ifdef TCL_COMPILE_DEBUG
     if (TclLookupLiteralEntry((Tcl_Interp *) iPtr, objPtr) != NULL) {
 	Tcl_Panic("%s: literal \"%.*s\" found globally but shouldn't be",
-		"TclRegisterLiteral" (length>60? 60 : length), bytes);
+		"TclRegisterLiteral", (length>60? 60 : length), bytes);
     }
 #endif
 

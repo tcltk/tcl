@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.55 2010/02/17 15:36:53 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.56 2010/02/17 16:02:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -978,6 +978,7 @@ TclCompileDictUpdateCmd(
     const char *name;
     int i, nameChars, dictIndex, numVars, range, infoIndex;
     Tcl_Token **keyTokenPtrs, *dictVarTokenPtr, *bodyTokenPtr, *tokenPtr;
+    int savedStackDepth = envPtr->currStackDepth;
     DictUpdateInfo *duiPtr;
     JumpFixup jumpFixup;
 
@@ -1095,7 +1096,9 @@ TclCompileDictUpdateCmd(
     TclEmitInstInt4( INST_BEGIN_CATCH4, range,			envPtr);
 
     ExceptionRangeStarts(envPtr, range);
+    envPtr->currStackDepth++;
     CompileBody(envPtr, bodyTokenPtr, interp);
+    envPtr->currStackDepth = savedStackDepth;
     ExceptionRangeEnds(envPtr, range);
 
     /*
