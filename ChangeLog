@@ -1,3 +1,8 @@
+2010-02-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4, unix/configure: Fix sh quoting error reported in
+	bash-3.1+ [Bug 1377619] (schafer)
+
 2003-10-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCompile.c (TclCompileScript): backport fix for crash
