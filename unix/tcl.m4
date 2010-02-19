@@ -1547,7 +1547,12 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AS_IF([test $tcl_cv_ld_elf = yes], [
 		LDFLAGS=-Wl,-export-dynamic
 	    ], [LDFLAGS=""])
-
+	    AS_IF([test "${TCL_THREADS}" = "1"], [
+		# OpenBSD builds and links with -pthread, never -lpthread.
+		LIBS=`echo $LIBS | sed s/-lpthread//`
+		CFLAGS="$CFLAGS -pthread"
+		SHLIB_CFLAGS="$SHLIB_CFLAGS -pthread"
+	    ])
 	    # OpenBSD doesn't do version numbers with dots.
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
@@ -2084,7 +2089,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	    BSD/OS*) ;;
 	    CYGWIN_*) ;;
 	    IRIX*) ;;
-	    NetBSD-*|FreeBSD-*) ;;
+	    NetBSD-*|FreeBSD-*|OpenBSD-*) ;;
 	    Darwin-*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
