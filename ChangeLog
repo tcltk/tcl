@@ -1,3 +1,8 @@
+2010-02-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4: Fix sh quoting error reported in
+	bash-3.1+ [Bug 1377619] (schafer)
+
 1999-12-13  Jennifer Hom  <jenn@scriptics.com>
 
 	* library/tcltest1.0/tcltest.tcl: Modified testConstraint(root)
