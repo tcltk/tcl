@@ -1,3 +1,15 @@
+2010-02-19  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* tcl.m4: Correct compiler/linker flags
+	for threaded builds on OpenBSD.
+	* configure: (regenerated).
+
+2010-02-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/installManPage: [Bug 2954638]: Correct behaviour of manual page
+	installer. Also added armouring to check that assumptions about the
+	initial state are actually valid (e.g., look for existing input file).
+
 2010-02-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclHash.c (HashStringKey):	Restore these hash functions
