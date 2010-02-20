@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.163 2010/02/17 15:59:24 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.164 2010/02/20 15:38:41 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -161,8 +161,8 @@ const AuxDataType tclDictUpdateInfoType = {
  *	Procedure called to compile the "append" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "append" command at
@@ -262,8 +262,8 @@ TclCompileAppendCmd(
  *	Procedure called to compile the "break" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "break" command at
@@ -301,8 +301,8 @@ TclCompileBreakCmd(
  *	Procedure called to compile the "catch" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "catch" command at
@@ -403,7 +403,7 @@ TclCompileCatchCmd(
      * catching, a catch instruction that resets the stack to what it was
      * before substituting the body, and then an instruction to eval the body.
      * Care has to be taken to register the correct startOffset for the catch
-     * range so that errors in the substitution are not catched [Bug 219184]
+     * range so that errors in the substitution are not caught. [Bug 219184]
      */
 
     SetLineInformation(1);
@@ -507,8 +507,8 @@ TclCompileCatchCmd(
  *	Procedure called to compile the "continue" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "continue" command at
@@ -550,8 +550,8 @@ TclCompileContinueCmd(
  *	Functions called to compile "dict" sucommands.
  *
  * Results:
- * 	All return TCL_OK for a successful compile, and TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	All return TCL_OK for a successful compile, and TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "dict" subcommand at
@@ -1029,7 +1029,7 @@ TclCompileDictUpdateCmd(
     duiPtr = (DictUpdateInfo *)
 	    ckalloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
     duiPtr->length = numVars;
-    keyTokenPtrs = (Tcl_Token **) TclStackAlloc(interp,
+    keyTokenPtrs = TclStackAlloc(interp,
 	    sizeof(Tcl_Token *) * numVars);
     tokenPtr = TokenAfter(dictVarTokenPtr);
 
@@ -1046,16 +1046,12 @@ TclCompileDictUpdateCmd(
 
 	tokenPtr = TokenAfter(tokenPtr);
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    ckfree((char *) duiPtr);
-	    TclStackFree(interp, keyTokenPtrs);
-	    return TCL_ERROR;
+	    goto failedUpdateInfoAssembly;
 	}
 	name = tokenPtr[1].start;
 	nameChars = tokenPtr[1].size;
 	if (!TclIsLocalScalar(name, nameChars)) {
-	    ckfree((char *) duiPtr);
-	    TclStackFree(interp, keyTokenPtrs);
-	    return TCL_ERROR;
+	    goto failedUpdateInfoAssembly;
 	}
 
 	/*
@@ -1065,13 +1061,12 @@ TclCompileDictUpdateCmd(
 	duiPtr->varIndices[i] =
 		TclFindCompiledLocal(name, nameChars, 1, envPtr);
 	if (duiPtr->varIndices[i] < 0) {
-	    ckfree((char *) duiPtr);
-	    TclStackFree(interp, keyTokenPtrs);
-	    return TCL_ERROR;
+	    goto failedUpdateInfoAssembly;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    failedUpdateInfoAssembly:
 	ckfree((char *) duiPtr);
 	TclStackFree(interp, keyTokenPtrs);
 	return TCL_ERROR;
@@ -1316,8 +1311,8 @@ PrintDictUpdateInfo(
  *	Procedure called to compile the "error" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "error" command at
@@ -1361,8 +1356,8 @@ TclCompileErrorCmd(
  *	Procedure called to compile the "expr" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "expr" command at
@@ -1406,8 +1401,8 @@ TclCompileExprCmd(
  *	Procedure called to compile the "for" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "for" command at
@@ -1572,8 +1567,8 @@ TclCompileForCmd(
  *	Procedure called to compile the "foreach" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "foreach" command at
@@ -2036,8 +2031,8 @@ PrintForeachInfo(
  *	Procedure called to compile the "if" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "if" command at
@@ -2056,7 +2051,7 @@ TclCompileIfCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     JumpFixupArray jumpFalseFixupArray;
-    				/* Used to fix the ifFalse jump after each
+				/* Used to fix the ifFalse jump after each
 				 * test when its target PC is determined. */
     JumpFixupArray jumpEndFixupArray;
 				/* Used to fix the jump after each "then" body
@@ -2353,8 +2348,8 @@ TclCompileIfCmd(
  *	Procedure called to compile the "incr" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "incr" command at
@@ -2472,8 +2467,8 @@ TclCompileIncrCmd(
  *	Procedure called to compile the "lappend" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "lappend" command at
@@ -2581,8 +2576,8 @@ TclCompileLappendCmd(
  *	Procedure called to compile the "lassign" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "lassign" command at
@@ -2696,8 +2691,8 @@ TclCompileLassignCmd(
  *	Procedure called to compile the "lindex" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "lindex" command at
@@ -2779,7 +2774,7 @@ TclCompileLindexCmd(
     if (numWords == 3) {
 	TclEmitOpcode(INST_LIST_INDEX, envPtr);
     } else {
- 	TclEmitInstInt4(INST_LIST_INDEX_MULTI, numWords-1, envPtr);
+	TclEmitInstInt4(INST_LIST_INDEX_MULTI, numWords-1, envPtr);
     }
 
     return TCL_OK;
@@ -2793,8 +2788,8 @@ TclCompileLindexCmd(
  *	Procedure called to compile the "list" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "list" command at
@@ -2857,8 +2852,8 @@ TclCompileListCmd(
  *	Procedure called to compile the "llength" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "llength" command at
@@ -2897,8 +2892,8 @@ TclCompileLlengthCmd(
  *	Procedure called to compile the "lset" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "lset" command at
@@ -3076,8 +3071,8 @@ TclCompileLsetCmd(
  *	Procedure called to compile the "regexp" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "regexp" command at
@@ -3241,8 +3236,8 @@ TclCompileRegexpCmd(
  *	Procedure called to compile the "return" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "return" command at
@@ -3297,8 +3292,7 @@ TclCompileReturnCmd(
      * Allocate some working space.
      */
 
-    objv = (Tcl_Obj **) TclStackAlloc(interp,
-	    numOptionWords * sizeof(Tcl_Obj *));
+    objv = TclStackAlloc(interp, numOptionWords * sizeof(Tcl_Obj *));
 
     /*
      * Scan through the return options. If any are unknown at compile time,
@@ -3436,8 +3430,8 @@ TclCompileSyntaxError(
  *	Procedure called to compile the "set" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "set" command at
@@ -3535,8 +3529,8 @@ TclCompileSetCmd(
  *	"string compare" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "string compare"
@@ -3586,8 +3580,8 @@ TclCompileStringCmpCmd(
  *	"string equal" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "string equal" command
@@ -3637,8 +3631,8 @@ TclCompileStringEqualCmd(
  *	"string index" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "string index" command
@@ -3684,8 +3678,8 @@ TclCompileStringIndexCmd(
  *	"string match" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "string match" command
@@ -3784,8 +3778,8 @@ TclCompileStringMatchCmd(
  *	"string length" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "string length"
@@ -3805,20 +3799,23 @@ TclCompileStringLenCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
+    Tcl_Obj *objPtr;
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
     }
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+    TclNewObj(objPtr);
+    if (TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	/*
-	 * Here someone is asking for the length of a static string. Just push
-	 * the actual character (not byte) length.
+	 * Here someone is asking for the length of a static string (or
+	 * something with backslashes). Just push the actual character (not
+	 * byte) length.
 	 */
 
 	char buf[TCL_INTEGER_SPACE];
-	int len = Tcl_NumUtfChars(tokenPtr[1].start, tokenPtr[1].size);
+	int len = Tcl_GetCharLength(objPtr);
 
 	len = sprintf(buf, "%d", len);
 	PushLiteral(envPtr, buf, len);
@@ -3827,6 +3824,7 @@ TclCompileStringLenCmd(
 	CompileTokens(envPtr, tokenPtr, interp);
 	TclEmitOpcode(INST_STR_LEN, envPtr);
     }
+    TclDecrRefCount(objPtr);
     return TCL_OK;
 }
 
@@ -3838,10 +3836,10 @@ TclCompileStringLenCmd(
  *	Procedure called to compile the "subst" command.
  *
  * Results:
- * 	Returns TCL_OK for successful compile, or TCL_ERROR to defer
- * 	evaluation to runtime (either when it is too complex to get the
- * 	semantics right, or when we know for sure that it is an error but need
- * 	the error to happen at the right time).
+ *	Returns TCL_OK for successful compile, or TCL_ERROR to defer
+ *	evaluation to runtime (either when it is too complex to get the
+ *	semantics right, or when we know for sure that it is an error but need
+ *	the error to happen at the right time).
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "subst" command at
@@ -3891,7 +3889,7 @@ TclCompileSubstCmd(
 */
 
     /* TODO: Figure out expansion to cover WordKnownAtCompileTime
-     * 	The difficulty is that WKACT makes a copy, and if TclSubstParse
+     *	The difficulty is that WKACT makes a copy, and if TclSubstParse
      *	below parses the copy of the original source string, some deep
      *	parts of the compile machinery get upset.  They want all pointers
      *	stored in Tcl_Tokens to point back to the same original string.
@@ -4127,10 +4125,10 @@ TclSubstCompile(
  *	Procedure called to compile the "switch" command.
  *
  * Results:
- * 	Returns TCL_OK for successful compile, or TCL_ERROR to defer
- * 	evaluation to runtime (either when it is too complex to get the
- * 	semantics right, or when we know for sure that it is an error but need
- * 	the error to happen at the right time).
+ *	Returns TCL_OK for successful compile, or TCL_ERROR to defer
+ *	evaluation to runtime (either when it is too complex to get the
+ *	semantics right, or when we know for sure that it is an error but need
+ *	the error to happen at the right time).
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "switch" command at
@@ -5069,8 +5067,8 @@ PrintJumptableInfo(
  *	Procedure called to compile the "try" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "try" command at
@@ -5697,8 +5695,8 @@ IssueTryFinallyInstructions(
  *	Procedure called to compile the "unset" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "unset" command at
@@ -5795,8 +5793,8 @@ TclCompileUnsetCmd(
  *	Procedure called to compile the "while" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "while" command at
@@ -5975,8 +5973,8 @@ TclCompileWhileCmd(
  *	necessary (append, lappend, set).
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "set" command at
@@ -6057,8 +6055,7 @@ PushVarName(
 		 * assemble the corresponding token.
 		 */
 
-		elemTokenPtr = (Tcl_Token *) TclStackAlloc(interp,
-			sizeof(Tcl_Token));
+		elemTokenPtr = TclStackAlloc(interp, sizeof(Tcl_Token));
 		allocedTokens = 1;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
@@ -6215,8 +6212,8 @@ PushVarName(
  *	Utility routine to compile the unary operator commands.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the compiled command at
@@ -6256,8 +6253,8 @@ CompileUnaryOpCmd(
  *	after substitutions are completed.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the compiled command at
@@ -6309,8 +6306,8 @@ CompileAssociativeBinaryOpCmd(
  *	accept exactly two arguments.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the compiled command at
@@ -6437,8 +6434,8 @@ CompileComparisonOpCmd(
  *	division, which are special.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the compiled command at
@@ -6797,7 +6794,7 @@ TclCompileDivOpCmd(
  *	is known at compile time, defines a corresponding local variable.
  *
  * Results:
- * 	Returns the variable's index in the table of compiled locals if the
+ *	Returns the variable's index in the table of compiled locals if the
  *	tail is known at compile time, or -1 otherwise.
  *
  * Side effects:
@@ -6891,8 +6888,8 @@ IndexTailVarIfKnown(
  *	Procedure called to compile the "upvar" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "upvar" command at
@@ -7001,8 +6998,8 @@ TclCompileUpvarCmd(
  *	the subcommand "namespace upvar" is compiled to bytecodes.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "namespace upvar"
@@ -7092,8 +7089,8 @@ TclCompileNamespaceCmd(
  *	Procedure called to compile the "global" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "global" command at
@@ -7167,8 +7164,8 @@ TclCompileGlobalCmd(
  *	Procedure called to compile the "variable" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "variable" command at
@@ -7248,8 +7245,8 @@ TclCompileVariableCmd(
  *	Procedure called to compile the "info exists" subcommand.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "info exists"
