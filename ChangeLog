@@ -1,7 +1,12 @@
+2010-02-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileStringLenCmd): Make [string length]
+	of a constant string be handled better (i.e., handle backslashes too).
+
 2010-02-19  Stuart Cassoff  <stwo@users.sourceforge.net>
 
-	* tcl.m4: Correct compiler/linker flags
-	for threaded builds on OpenBSD.
+	* tcl.m4: Correct compiler/linker flags for threaded builds on
+	OpenBSD.
 	* configure: (regenerated).
 
 2010-02-19  Donal K. Fellows  <dkf@users.sf.net>
