@@ -1,3 +1,8 @@
+2010-02-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c:   Fix [Bug 2954959] expr abs(0.0) is -0.0
+	* tests/expr.test
+
 2010-02-19  Stuart Cassoff  <stwo@users.sourceforge.net>
 
 	* tcl.m4: Correct compiler/linker flags
