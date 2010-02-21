@@ -5,6 +5,11 @@
 
 2010-02-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* generic/tclDate.c     Some more const tables.
+	* generic/tclGetDate.y
+	* generic/regc_lex.c
+	* generic/regerror.c
+	* generic/tclStubLib.c
 	* generic/tclBasic.c:   Fix [Bug 2954959] expr abs(0.0) is -0.0
 	* tests/expr.test
 
