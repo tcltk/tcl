@@ -1,3 +1,8 @@
+2010-02-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c:   Fix [Bug 2954959] expr abs(0.0) is -0.0
+	* tests/expr.test
+
 2010-02-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileStringLenCmd): Make [string length]
@@ -31,8 +36,8 @@
 
 2010-02-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.h: Change order of various struct members, restoring
-	potential binary incompatibility with Tcl 8.5
+	* generic/tclInt.h: Change order of various struct members,
+	fixing potential binary incompatibility with Tcl 8.5
 
 2010-02-16  Donal K. Fellows  <dkf@users.sf.net>
 
