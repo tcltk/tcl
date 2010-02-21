@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.162 2010/02/17 15:36:53 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.163 2010/02/21 14:31:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -7412,9 +7412,13 @@ ExprAbsFunc(
 
     if (type == TCL_NUMBER_DOUBLE) {
 	double d = *((const double *) ptr);
+	static const double poszero = 0.0;
 
-	if (d <= 0.0) {
-	    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
+	/* We need to distinguish here between positive 0.0 and
+	 * negative -0.0, see Bug ID #2954959.
+	 */
+	if ((d <= -0.0) && memcmp(&d, &poszero, sizeof(double))) {
+		Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
 	} else {
 	    Tcl_SetObjResult(interp, objv[1]);
 	}

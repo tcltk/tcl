@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.18.2.31 2009/08/12 16:10:58 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.18.2.32 2010/02/21 14:31:12 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -6684,6 +6684,12 @@ test expr-38.6 {abs and -0 [Bug 1893815]} {
 } 0.0
 test expr-38.7 {abs and -0 [Bug 1893815]} {
     ::tcl::mathfunc::abs -1e-324
+} 0.0
+test expr-38.8 {abs and 0.0 [Bug 2954959]} {
+    ::tcl::mathfunc::abs 0.0
+} 0.0
+test expr-38.9 {abs and 0.0 [Bug 2954959]} {
+    expr {abs(0.0)}
 } 0.0
 
 testConstraint testexprlongobj   [llength [info commands testexprlongobj]]
