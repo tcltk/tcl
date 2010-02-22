@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.70 2009/07/22 19:54:50 nijtmans Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.71 2010/02/22 23:31:41 nijtmans Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -251,7 +251,7 @@ MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 #endif
 
 #ifdef GETTOD_NOT_DECLARED
-EXTERN int		gettimeofday(struct timeval *tp, struct timezone *tzp);
+MODULE_SCOPE int		gettimeofday(struct timeval *tp, struct timezone *tzp);
 #endif
 
 /*
@@ -588,11 +588,6 @@ typedef int socklen_t;
 #define TclpExit		exit
 
 #ifdef TCL_THREADS
-EXTERN struct tm *     	TclpLocaltime(const time_t *);
-EXTERN struct tm *     	TclpGmtime(const time_t *);
-EXTERN char *          	TclpInetNtoa(struct in_addr);
-/* #define localtime(x)	TclpLocaltime(x)
- * #define gmtime(x)	TclpGmtime(x)    */
 #   undef inet_ntoa
 #   define inet_ntoa(x)	TclpInetNtoa(x)
 #endif /* TCL_THREADS */
