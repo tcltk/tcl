@@ -75,7 +75,7 @@ Names=`sed -n '
 	p;q
     }' $ManPage`
 
-if test -z $Names ; then
+if test -z "$Names" ; then
     echo "warning: no target names found in $ManPage"
 fi
 
