@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.33 2010/02/08 13:21:42 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.34 2010/02/22 23:54:24 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2412,7 +2412,15 @@ ZlibTransformInput(
 	if ((e == Z_STREAM_END) || (e==Z_OK && cd->inStream.avail_out==0)) {
 	    return toRead - cd->inStream.avail_out;
 	}
-	if (e != Z_OK) {
+
+	/*
+	 * Z_BUF_ERROR can be ignored as per http://www.zlib.net/zlib_how.html
+	 *
+	 * Just indicates that the zlib couldn't consume input/produce output,
+	 * and is fixed by supplying more input.
+	 */
+
+	if ((e != Z_OK) && (e != Z_BUF_ERROR)) {
 	    Tcl_Obj *errObj = Tcl_NewListObj(0, NULL);
 
 	    Tcl_ListObjAppendElement(NULL, errObj,
@@ -2436,7 +2444,18 @@ ZlibTransformInput(
 	 */
 
     doReadFirst:
-	read = Tcl_ReadRaw(cd->parent, cd->inBuffer, cd->inAllocated);
+	/*
+	 * Hack for Bug 2762041. Disable pre-reading of lots of input, read
+	 * only one character. This way the Z_END_OF_STREAM can be read
+	 * without triggering an EOF in the base channel. The higher input
+	 * loops in DoReadChars() would react to that by stopping, despite the
+	 * transform still having data which could be read.
+	 *
+	 * This is only a hack because other transforms may not be able to
+	 * work around the general problem in this way.
+	 */
+
+	read = Tcl_ReadRaw(cd->parent, cd->inBuffer, 1);
 	if (read < 0) {
 	    *errorCodePtr = Tcl_GetErrno();
 	    return -1;
