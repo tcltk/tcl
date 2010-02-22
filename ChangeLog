@@ -1,3 +1,17 @@
+2010-02-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixPort.h    Remove unnecessary EXTERN's, which already
+	                        are in the global stub table.
+	* unix/configure.in     Use @EXEEXT@ in stead of @EXT_SUFFIX@
+	* unix/tcl.m4
+	* unix/Makefile.in      Use -DBUILD_tcl for CYGWIN
+	* unix/configure        (regenerated)
+	* unix/dltest/pkg*.c    Use EXTERN to control CYGWIN exported symbols
+	* generic/tclCmdMZ.c    Remove some unnecessary type casts.
+	* generic/tclCompCmds.c
+	* generic/tclTest.c
+	* generic/tclUtil.c
+
 2010-02-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/regexp.test: Add test cases back ported from

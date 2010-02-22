@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.164 2010/02/20 15:38:41 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.165 2010/02/22 23:31:41 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -4881,8 +4881,7 @@ IssueSwitchJumpTable(
 		 * point to here.
 		 */
 
-		Tcl_SetHashValue(hPtr, (ClientData)
-			(CurrentOffset(envPtr) - jumpLocation));
+		Tcl_SetHashValue(hPtr, CurrentOffset(envPtr) - jumpLocation);
 	    }
 	    Tcl_DStringFree(&buffer);
 	} else {
