@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.111 2009/07/12 18:04:33 dkf Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.112 2010/02/22 23:31:41 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -3012,7 +3012,7 @@ TclSetProcessGlobalValue(
     ClearHash(cacheMap);
     hPtr = Tcl_CreateHashEntry(cacheMap,
 	    (char *) INT2PTR(pgvPtr->epoch), &dummy);
-    Tcl_SetHashValue(hPtr, (ClientData) newValue);
+    Tcl_SetHashValue(hPtr, newValue);
     Tcl_MutexUnlock(&pgvPtr->mutex);
 }
 
