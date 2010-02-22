@@ -1,8 +1,8 @@
 2010-02-22  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclZlib.c (ZlibTransformInput): [Bug 2742041]: Added a
-	hack to work around the general problem, early EOF recoginition
-	based on the base-chgannel, instead of the data we have ready for
+	* generic/tclZlib.c (ZlibTransformInput): [Bug 2762041]: Added a
+	hack to work around the general problem, early EOF recognition
+	based on the base-channel, instead of the data we have ready for
 	reading in the transform. Long-term we need a proper general fix
 	(likely tracking EOF on each level of the channel stack), with
 	attendant complexity. Further: Z_BUF_ERROR can be ignored, and
