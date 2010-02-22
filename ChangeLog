@@ -1,3 +1,13 @@
+2010-02-22  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclZlib.c (ZlibTransformInput): [Bug 2742041]: Added a
+	hack to work around the general problem, early EOF recoginition
+	based on the base-chgannel, instead of the data we have ready for
+	reading in the transform. Long-term we need a proper general fix
+	(likely tracking EOF on each level of the channel stack), with
+	attendant complexity. Further: Z_BUF_ERROR can be ignored, and
+	must be when feeding the zlib code with single characters.
+
 2010-02-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclUnixPort.h    Remove unnecessary EXTERN's, which already
