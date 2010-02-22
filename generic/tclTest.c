@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.144 2010/02/05 20:53:12 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.145 2010/02/22 23:31:41 nijtmans Exp $
  */
 
 #undef STATIC_BUILD
@@ -6563,7 +6563,7 @@ TestHashSystemHashCmd(
 	    Tcl_DeleteHashTable(&hash);
 	    return TCL_ERROR;
 	}
-	Tcl_SetHashValue(hPtr, (ClientData) INT2PTR(i+42));
+	Tcl_SetHashValue(hPtr, INT2PTR(i+42));
     }
 
     if (hash.numEntries != limit) {

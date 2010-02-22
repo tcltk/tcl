@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.199 2010/02/11 11:14:22 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.200 2010/02/22 23:31:41 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1075,7 +1075,7 @@ Tcl_SplitObjCmd(
 		 * Don't need to fiddle with refcount...
 		 */
 
-		Tcl_SetHashValue(hPtr, (ClientData) objPtr);
+		Tcl_SetHashValue(hPtr, objPtr);
 	    } else {
 		objPtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
 	    }
