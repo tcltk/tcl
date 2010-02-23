@@ -8,7 +8,7 @@
 	attendant complexity. Further: Z_BUF_ERROR can be ignored, and
 	must be when feeding the zlib code with single characters.
 
-2010-02-17  Jan Nijtmans  <nijtmans@users.sf.net>
+2010-02-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclUnixPort.h    Remove unnecessary EXTERN's, which already
 	                        are in the global stub table.
