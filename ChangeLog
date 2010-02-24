@@ -1,41 +1,45 @@
+2010-02-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/socket.n: [Bug 2957688]: Clarified that [socket -server] works
+	with a command prefix. Extended example to show this in action.
+
 2010-02-22  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclZlib.c (ZlibTransformInput): [Bug 2762041]: Added a
-	hack to work around the general problem, early EOF recognition
-	based on the base-channel, instead of the data we have ready for
-	reading in the transform. Long-term we need a proper general fix
-	(likely tracking EOF on each level of the channel stack), with
-	attendant complexity. Further: Z_BUF_ERROR can be ignored, and
-	must be when feeding the zlib code with single characters.
+	* generic/tclZlib.c (ZlibTransformInput): [Bug 2762041]: Added a hack
+	to work around the general problem, early EOF recognition based on the
+	base-channel, instead of the data we have ready for reading in the
+	transform. Long-term we need a proper general fix (likely tracking EOF
+	on each level of the channel stack), with attendant complexity.
+	Furthermore, Z_BUF_ERROR can be ignored, and must be when feeding the
+	zlib code with single characters.
 
 2010-02-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/tclUnixPort.h    Remove unnecessary EXTERN's, which already
-	                        are in the global stub table.
-	* unix/configure.in     Use @EXEEXT@ in stead of @EXT_SUFFIX@
-	* unix/tcl.m4
-	* unix/Makefile.in      Use -DBUILD_tcl for CYGWIN
-	* unix/configure        (regenerated)
-	* unix/dltest/pkg*.c    Use EXTERN to control CYGWIN exported symbols
-	* generic/tclCmdMZ.c    Remove some unnecessary type casts.
-	* generic/tclCompCmds.c
-	* generic/tclTest.c
-	* generic/tclUtil.c
+	* unix/tclUnixPort.h:   Remove unnecessary EXTERN's, which already are
+	                        in the global stub table.
+	* unix/configure.in:    Use @EXEEXT@ in stead of @EXT_SUFFIX@
+	* unix/tcl.m4:
+	* unix/Makefile.in:     Use -DBUILD_tcl for CYGWIN
+	* unix/configure:       (regenerated)
+	* unix/dltest/pkg*.c:   Use EXTERN to control CYGWIN exported symbols
+	* generic/tclCmdMZ.c:   Remove some unnecessary type casts.
+	* generic/tclCompCmds.c:
+	* generic/tclTest.c:
+	* generic/tclUtil.c:
 
 2010-02-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
-	* tests/regexp.test: Add test cases back ported from
-        Jacl regexp work.
+	* tests/regexp.test: Add test cases back ported from Jacl regexp work.
 
 2010-02-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclDate.c     Some more const tables.
-	* generic/tclGetDate.y
-	* generic/regc_lex.c
-	* generic/regerror.c
-	* generic/tclStubLib.c
+	* generic/tclDate.c:    Some more const tables.
+	* generic/tclGetDate.y:
+	* generic/regc_lex.c:
+	* generic/regerror.c:
+	* generic/tclStubLib.c:
 	* generic/tclBasic.c:   Fix [Bug 2954959] expr abs(0.0) is -0.0
-	* tests/expr.test
+	* tests/expr.test:
 
 2010-02-20  Donal K. Fellows  <dkf@users.sf.net>
 
