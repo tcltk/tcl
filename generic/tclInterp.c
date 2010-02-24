@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.110 2009/12/29 14:55:42 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.111 2010/02/24 10:45:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -664,23 +664,24 @@ Tcl_InterpObjCmd(
 	    }
 
 	    switch ((enum option) index) {
-		case OPT_UNWIND:
-		    /*
-		     * The evaluation stack in the target interp is to be
-		     * unwound.
-		     */
-		    flags |= TCL_CANCEL_UNWIND;
-		    break;
-		case OPT_LAST:
-		    i++;
-		    goto endOfForLoop;
+	    case OPT_UNWIND:
+		/*
+		 * The evaluation stack in the target interp is to be unwound.
+		 */
+
+		flags |= TCL_CANCEL_UNWIND;
+		break;
+	    case OPT_LAST:
+		i++;
+		goto endOfForLoop;
 	    }
 	}
 
 	endOfForLoop:
 
 	if ((i + 2) < objc) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "?-unwind? ?--? ?path? ?result?");
+	    Tcl_WrongNumArgs(interp, 2, objv,
+		    "?-unwind? ?--? ?path? ?result?");
 	    return TCL_ERROR;
 	}
 
@@ -699,7 +700,12 @@ Tcl_InterpObjCmd(
 	if (slaveInterp != NULL) {
 	    if (i < objc) {
 		resultObjPtr = objv[i];
-		Tcl_IncrRefCount(resultObjPtr); /* Tcl_CancelEval removes this ref. */
+
+		/*
+		 * Tcl_CancelEval removes this reference.
+		 */
+
+		Tcl_IncrRefCount(resultObjPtr);
 		i++;
 	    } else {
 		resultObjPtr = NULL;
@@ -1143,8 +1149,7 @@ Tcl_CreateAlias(
     int i;
     int result;
 
-    objv = (Tcl_Obj **)
-	    TclStackAlloc(slaveInterp, (unsigned) sizeof(Tcl_Obj *) * argc);
+    objv = TclStackAlloc(slaveInterp, (unsigned) sizeof(Tcl_Obj *) * argc);
     for (i = 0; i < argc; i++) {
 	objv[i] = Tcl_NewStringObj(argv[i], -1);
 	Tcl_IncrRefCount(objv[i]);
@@ -1839,7 +1844,7 @@ AliasObjCmd(
     if (cmdc <= ALIAS_CMDV_PREALLOC) {
 	cmdv = cmdArr;
     } else {
-	cmdv = (Tcl_Obj **) TclStackAlloc(interp, cmdc*(int)sizeof(Tcl_Obj*));
+	cmdv = TclStackAlloc(interp, cmdc * sizeof(Tcl_Obj *));
     }
 
     prefv = &aliasPtr->objPtr;
