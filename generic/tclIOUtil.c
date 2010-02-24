@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.167 2010/02/16 16:01:33 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.168 2010/02/24 10:32:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -50,7 +50,7 @@ static void		FsRecacheFilesystemList(void);
  * they are not (and should not be) used anywhere else.
  */
 
-MODULE_SCOPE const char *const     	tclpFileAttrStrings[];
+MODULE_SCOPE const char *const		tclpFileAttrStrings[];
 MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 /*
@@ -652,7 +652,7 @@ FsUpdateCwd(
 	 */
 
 	cwdPathPtr = Tcl_NewStringObj(str, len);
-    	Tcl_IncrRefCount(cwdPathPtr);
+	Tcl_IncrRefCount(cwdPathPtr);
 	cwdClientData = TclNativeDupInternalRep(clientData);
     }
 

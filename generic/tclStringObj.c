@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.132 2010/01/18 09:49:13 dkf Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.133 2010/02/24 10:32:17 dkf Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2333,7 +2333,7 @@ Tcl_AppendFormatToObj(
  *	A refcount zero Tcl_Obj.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */
@@ -2508,7 +2508,7 @@ AppendPrintfToObjVA(
  *	A standard Tcl result.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */
@@ -2535,7 +2535,7 @@ Tcl_AppendPrintfToObj(
  *	A refcount zero Tcl_Obj.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */

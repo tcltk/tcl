@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.50 2009/09/07 07:28:38 das Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.51 2010/02/24 10:32:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -959,7 +959,7 @@ TclFileAttrsCmd(
 
     filePtr = objv[2];
     if (Tcl_FSConvertToPathType(interp, filePtr) != TCL_OK) {
-    	return TCL_ERROR;
+	return TCL_ERROR;
     }
 
     objc -= 3;
@@ -1048,7 +1048,7 @@ TclFileAttrsCmd(
 	    goto end;
 	}
 
-    	Tcl_SetObjResult(interp, listPtr);
+	Tcl_SetObjResult(interp, listPtr);
     } else if (objc == 1) {
 	/*
 	 * Get one attribute.
@@ -1087,21 +1087,21 @@ TclFileAttrsCmd(
 	    goto end;
 	}
 
-    	for (i = 0; i < objc ; i += 2) {
-    	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
+	for (i = 0; i < objc ; i += 2) {
+	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
 		    "option", 0, &index) != TCL_OK) {
 		goto end;
-    	    }
+	    }
 	    if (i + 1 == objc) {
 		Tcl_AppendResult(interp, "value for \"",
 			TclGetString(objv[i]), "\" missing", NULL);
 		goto end;
 	    }
-    	    if (Tcl_FSFileAttrsSet(interp, index, filePtr,
-    	    	    objv[i + 1]) != TCL_OK) {
+	    if (Tcl_FSFileAttrsSet(interp, index, filePtr,
+		    objv[i + 1]) != TCL_OK) {
 		goto end;
-    	    }
-    	}
+	    }
+	}
     }
     result = TCL_OK;
 
@@ -1111,7 +1111,7 @@ TclFileAttrsCmd(
 	 * Free up the array we allocated.
 	 */
 
-	TclStackFree(interp, (void *)attributeStringsAllocated);
+	TclStackFree(interp, (void *) attributeStringsAllocated);
 
 	/*
 	 * We don't need this object that was passed to us any more.

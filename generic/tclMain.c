@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.47 2008/12/15 15:48:33 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.48 2010/02/24 10:32:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -133,10 +133,10 @@ Tcl_SetStartupScript(
  *	The path of the startup script; NULL if none has been set.
  *
  * Side effects:
- * 	If encodingPtr is not NULL, stores a (const char *) in it pointing to
- * 	the encoding name registered for the startup script. Tcl retains
- * 	ownership of the string, and may free it. Caller should make a copy
- * 	for long-term use.
+ *	If encodingPtr is not NULL, stores a (const char *) in it pointing to
+ *	the encoding name registered for the startup script. Tcl retains
+ *	ownership of the string, and may free it. Caller should make a copy
+ *	for long-term use.
  *
  *----------------------------------------------------------------------
  */
@@ -212,9 +212,9 @@ Tcl_SourceRCFile(
 		    if (errChannel) {
 			Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
 			Tcl_WriteChars(errChannel, "\n", 1);
- 		    }
- 		}
- 	    }
+		    }
+		}
+	    }
 	}
 	Tcl_DStringFree(&temp);
     }
@@ -269,9 +269,9 @@ Tcl_Main(
     if (NULL == Tcl_GetStartupScript(NULL)) {
 	/*
 	 * Check whether first 3 args (argv[1] - argv[3]) look like
-	 * 	-encoding ENCODING FILENAME
+	 *	-encoding ENCODING FILENAME
 	 * or like
-	 * 	FILENAME
+	 *	FILENAME
 	 */
 
 	if ((argc > 3) && (0 == strcmp("-encoding", argv[1]))
@@ -477,7 +477,7 @@ Tcl_Main(
 		    Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
 		    Tcl_WriteChars(errChannel, "\n", 1);
 		}
- 	    } else if (tty) {
+	    } else if (tty) {
 		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(resultPtr);
 		Tcl_GetStringFromObj(resultPtr, &length);

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.54 2010/01/29 16:17:20 nijtmans Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.55 2010/02/24 10:32:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -21,7 +21,7 @@
  * Prototypes for functions defined later in this file:
  */
 
-static int 		GetIndexFromObjList(Tcl_Interp *interp,
+static int		GetIndexFromObjList(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Obj *tableObjPtr,
 			    const char *msg, int flags, int *indexPtr);
 static int		SetIndexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -105,7 +105,7 @@ typedef struct {
 
 int
 Tcl_GetIndexFromObj(
-    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
     const char *const*tablePtr,	/* Array of strings to compare against the
 				 * value of objPtr; last entry must be NULL
@@ -168,7 +168,7 @@ Tcl_GetIndexFromObj(
 
 int
 GetIndexFromObjList(
-    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
     Tcl_Obj *tableObjPtr,	/* List of strings to compare against the
 				 * value of objPtr. */
@@ -254,7 +254,7 @@ GetIndexFromObjList(
 
 int
 Tcl_GetIndexFromObjStruct(
-    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
     const void *tablePtr,	/* The first string in the table. The second
 				 * string will be at this address plus the
@@ -340,12 +340,12 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (objPtr->typePtr == &indexType) {
- 	indexRep = objPtr->internalRep.otherValuePtr;
+	indexRep = objPtr->internalRep.otherValuePtr;
     } else {
 	TclFreeIntRep(objPtr);
- 	indexRep = (IndexRep *) ckalloc(sizeof(IndexRep));
- 	objPtr->internalRep.otherValuePtr = indexRep;
- 	objPtr->typePtr = &indexType;
+	indexRep = (IndexRep *) ckalloc(sizeof(IndexRep));
+	objPtr->internalRep.otherValuePtr = indexRep;
+	objPtr->typePtr = &indexType;
     }
     indexRep->tablePtr = (void *) tablePtr;
     indexRep->offset   = offset;

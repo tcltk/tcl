@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.182 2010/02/19 14:22:00 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.183 2010/02/24 10:32:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -365,7 +365,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * argument. The list of keys (popped from the stack) must be the same
 	 * length as the list of variables.
 	 * Stack:  ... keyList => ... */
-    {"jumpTable",	  5,	-1,	   1,	{OPERAND_AUX4}},
+    {"jumpTable",	 5,	-1,	   1,	{OPERAND_AUX4}},
 	/* Jump according to the jump-table (in AuxData as indicated by the
 	 * operand) and the argument popped from the list. Always executes the
 	 * next instruction if no match against the table's entries was found.
@@ -373,15 +373,15 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Note that the jump table contains offsets relative to the PC when
 	 * it points to this instruction; the code is relocatable. */
     {"upvar",            5,     0,        1,   {OPERAND_LVT4}},
-         /* finds level and otherName in stack, links to local variable at
-	  * index op1. Leaves the level on stack. */
+	/* finds level and otherName in stack, links to local variable at
+	 * index op1. Leaves the level on stack. */
     {"nsupvar",          5,     0,        1,   {OPERAND_LVT4}},
-         /* finds namespace and otherName in stack, links to local variable at
-	  * index op1. Leaves the namespace on stack. */
+	/* finds namespace and otherName in stack, links to local variable at
+	 * index op1. Leaves the namespace on stack. */
     {"variable",         5,     0,        1,   {OPERAND_LVT4}},
-         /* finds namespace and otherName in stack, links to local variable at
-	  * index op1. Leaves the namespace on stack. */
-    {"syntax",	 	 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
+	/* finds namespace and otherName in stack, links to local variable at
+	 * index op1. Leaves the namespace on stack. */
+    {"syntax",		 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
 	/* Compiled bytecodes to signal syntax error. */
     {"reverse",		 5,    0,         1,	{OPERAND_UINT4}},
 	/* Reverse the order of the arg elements at the top of stack */
@@ -1433,9 +1433,9 @@ TclCompileScript(
 {
     Interp *iPtr = (Interp *) interp;
     int lastTopLevelCmdIndex = -1;
-    				/* Index of most recent toplevel command in
- 				 * the command location table. Initialized to
- 				 * avoid compiler warning. */
+				/* Index of most recent toplevel command in
+				 * the command location table. Initialized to
+				 * avoid compiler warning. */
     int startCodeOffset = -1;	/* Offset of first byte of current command's
 				 * code. Init. to avoid compiler warning. */
     unsigned char *entryCodeNext = envPtr->codeNext;
@@ -3425,7 +3425,7 @@ TclRegisterAuxDataType(
 
 const AuxDataType *
 TclGetAuxDataType(
-    const char *typeName)		/* Name of AuxData type to look up. */
+    const char *typeName)	/* Name of AuxData type to look up. */
 {
     register Tcl_HashEntry *hPtr;
     const AuxDataType *typePtr = NULL;
@@ -3552,7 +3552,7 @@ GetCmdLocEncodingSize(
 	} else if (codeDelta <= 127) {
 	    codeDeltaNext++;
 	} else {
-	    codeDeltaNext += 5;	 /* 1 byte for 0xFF, 4 for positive delta */
+	    codeDeltaNext += 5;	/* 1 byte for 0xFF, 4 for positive delta */
 	}
 	prevCodeOffset = mapPtr[i].codeOffset;
 
@@ -3562,14 +3562,14 @@ GetCmdLocEncodingSize(
 	} else if (codeLen <= 127) {
 	    codeLengthNext++;
 	} else {
-	    codeLengthNext += 5; /* 1 byte for 0xFF, 4 for length */
+	    codeLengthNext += 5;/* 1 byte for 0xFF, 4 for length */
 	}
 
 	srcDelta = mapPtr[i].srcOffset - prevSrcOffset;
 	if ((-127 <= srcDelta) && (srcDelta <= 127) && (srcDelta != -1)) {
 	    srcDeltaNext++;
 	} else {
-	    srcDeltaNext += 5;	 /* 1 byte for 0xFF, 4 for delta */
+	    srcDeltaNext += 5;	/* 1 byte for 0xFF, 4 for delta */
 	}
 	prevSrcOffset = mapPtr[i].srcOffset;
 
@@ -3579,7 +3579,7 @@ GetCmdLocEncodingSize(
 	} else if (srcLen <= 127) {
 	    srcLengthNext++;
 	} else {
-	    srcLengthNext += 5;	 /* 1 byte for 0xFF, 4 for length */
+	    srcLengthNext += 5;	/* 1 byte for 0xFF, 4 for length */
 	}
     }
 
@@ -4039,7 +4039,7 @@ TclDisassembleByteCodeObj(
 	}
 
 	Tcl_AppendPrintfToObj(bufferObj, "%s%4d: pc %d-%d, src %d-%d",
-		((i % 2)? "   	" : "\n   "),
+		((i % 2)? "     " : "\n   "),
 		(i+1), codeOffset, (codeOffset + codeLen - 1),
 		srcOffset, (srcOffset + srcLen - 1));
     }
