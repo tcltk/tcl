@@ -13,19 +13,21 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.34 2010/02/22 23:54:24 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.35 2010/02/24 10:45:04 dkf Exp $
  */
 
 #include "tclInt.h"
 #ifdef HAVE_ZLIB
 #ifdef _WIN32
 #   ifndef STATIC_BUILD
-/* HACK needed for zlib1.dll version 1.2.3 on Win32. See comment below.
- * As soon as zlib 1.2.4 is reasonable mainstream, remove this hack! */
-#       include "../compat/zlib/zutil.h"
-#       include "../compat/zlib/inftrees.h"
-#       include "../compat/zlib/deflate.h"
-#       include "../compat/zlib/inflate.h"
+/*
+ * HACK needed for zlib1.dll version 1.2.3 on Win32. See comment below. As
+ * soon as zlib 1.2.4 is reasonable mainstream, remove this hack!
+ */
+#	include "../compat/zlib/zutil.h"
+#	include "../compat/zlib/inftrees.h"
+#	include "../compat/zlib/deflate.h"
+#	include "../compat/zlib/inflate.h"
 #   endif /* !STATIC_BUILD */
 #endif /* _WIN32 */
 #include <zlib.h>
@@ -2664,7 +2666,8 @@ ZlibTransformWatch(
 
     watchProc = Tcl_ChannelWatchProc(Tcl_GetChannelType(cd->parent));
     watchProc(Tcl_GetChannelInstanceData(cd->parent), mask);
-    if (!(mask & TCL_READABLE) || (cd->inStream.avail_in==(uInt)cd->inAllocated)) {
+    if (!(mask & TCL_READABLE)
+	    || (cd->inStream.avail_in == (uInt) cd->inAllocated)) {
 	ZlibTransformTimerKill(cd);
     } else {
 	ZlibTransformTimerSetup(cd);

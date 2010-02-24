@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.30 2009/07/23 10:07:05 mistachkin Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.31 2010/02/24 10:45:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -97,7 +97,7 @@ TCL_DECLARE_MUTEX(listLock)
  */
 
 static void		QueueEvent(ThreadSpecificData *tsdPtr,
-			    Tcl_Event* evPtr, Tcl_QueuePosition position);
+			    Tcl_Event *evPtr, Tcl_QueuePosition position);
 
 /*
  *----------------------------------------------------------------------
@@ -355,7 +355,7 @@ Tcl_DeleteEventSource(
 
 void
 Tcl_QueueEvent(
-    Tcl_Event* evPtr,		/* Event to add to queue. The storage space
+    Tcl_Event *evPtr,		/* Event to add to queue. The storage space
 				 * must have been allocated the caller with
 				 * malloc (ckalloc), and it becomes the
 				 * property of the event queue. It will be
@@ -517,14 +517,13 @@ QueueEvent(
 void
 Tcl_DeleteEvents(
     Tcl_EventDeleteProc *proc,	/* The function to call. */
-    ClientData clientData)    	/* The type-specific data. */
+    ClientData clientData)	/* The type-specific data. */
 {
     Tcl_Event *evPtr;		/* Pointer to the event being examined */
     Tcl_Event *prevPtr;		/* Pointer to evPtr's predecessor, or NULL if
 				 * evPtr designates the first event in the
 				 * queue for the thread. */
-    Tcl_Event* hold;
-
+    Tcl_Event *hold;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));

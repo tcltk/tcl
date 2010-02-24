@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.169 2010/02/17 21:58:11 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.170 2010/02/24 10:45:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -576,7 +576,7 @@ TclContinuationsEnter(
     int newEntry;
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
-	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, (char *) objPtr, &newEntry);
+	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, (char*) objPtr, &newEntry);
     ContLineLoc *clLocPtr = (ContLineLoc *)
             ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
 
@@ -602,7 +602,7 @@ TclContinuationsEnter(
 	 * doing.
 	 */
 
-	ckfree((char *) Tcl_GetHashValue(hPtr));
+	ckfree(Tcl_GetHashValue(hPtr));
     }
 
     clLocPtr->num = num;
@@ -638,6 +638,9 @@ TclContinuationsEnterDerived(
     int start,
     int *clNext)
 {
+    int length, end, num;
+    int *wordCLLast = clNext;
+
     /*
      * We have to handle invisible continuations lines here as well, despite
      * the code we have in TclSubstTokens (TST) for that. Why ?  Nesting. If
@@ -658,15 +661,11 @@ TclContinuationsEnterDerived(
      */
 
     /*
-     * First compute the range of the word within the script.
+     * First compute the range of the word within the script. (Is there a
+     * better way which doesn't shimmer?)
      */
 
-    int length, end, num;
-    int *wordCLLast = clNext;
-
     Tcl_GetStringFromObj(objPtr, &length);
-    /* Is there a better way which doesn't shimmer ? */
-
     end = start + length;       /* First char after the word */
 
     /*
@@ -690,7 +689,7 @@ TclContinuationsEnterDerived(
 	 * Re-base the locations.
 	 */
 
-	for (i=0;i<num;i++) {
+	for (i=0 ; i<num ; i++) {
 	    clLocPtr->loc[i] -= start;
 
 	    /*
@@ -1867,7 +1866,7 @@ Tcl_SetBooleanObj(
 
 int
 Tcl_GetBooleanFromObj(
-    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr,	/* The object from which to get boolean. */
     register int *boolPtr)	/* Place to store resulting boolean. */
 {
@@ -2259,7 +2258,7 @@ Tcl_SetDoubleObj(
 
 int
 Tcl_GetDoubleFromObj(
-    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr,	/* The object from which to get a double. */
     register double *dblPtr)	/* Place to store resulting double. */
 {
@@ -2472,7 +2471,7 @@ Tcl_SetIntObj(
 
 int
 Tcl_GetIntFromObj(
-    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr,	/* The object from which to get a int. */
     register int *intPtr)	/* Place to store resulting int. */
 {
@@ -2734,7 +2733,7 @@ Tcl_SetLongObj(
 
 int
 Tcl_GetLongFromObj(
-    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr,	/* The object from which to get a long. */
     register long *longPtr)	/* Place to store resulting long. */
 {
@@ -3051,7 +3050,7 @@ Tcl_SetWideIntObj(
 
 int
 Tcl_GetWideIntFromObj(
-    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr,	/* Object from which to get a wide int. */
     register Tcl_WideInt *wideIntPtr)
 				/* Place to store resulting long. */

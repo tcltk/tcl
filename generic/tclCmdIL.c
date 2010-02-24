@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.176 2009/12/22 19:49:29 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.177 2010/02/24 10:45:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -144,7 +144,7 @@ static int		InfoSharedlibCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoTclVersionCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static SortElement *    MergeLists(SortElement *leftPtr, SortElement *rightPtr,
+static SortElement *	MergeLists(SortElement *leftPtr, SortElement *rightPtr,
 			    SortInfo *infoPtr);
 static int		SortCompare(SortElement *firstPtr, SortElement *second,
 			    SortInfo *infoPtr);
@@ -2629,7 +2629,7 @@ Tcl_LreplaceObjCmd(
     }
 
     if (first < 0) {
-    	first = 0;
+	first = 0;
     }
 
     /*
@@ -2645,7 +2645,7 @@ Tcl_LreplaceObjCmd(
 	return TCL_ERROR;
     }
     if (last >= listLen) {
-    	last = listLen - 1;
+	last = listLen - 1;
     }
     if (first <= last) {
 	numToDelete = last - first + 1;
@@ -3680,9 +3680,8 @@ Tcl_LsortObjCmd(
 	    break;
 	case LSORT_STRIDE:
 	    if (i == objc-2) {
-		Tcl_AppendResult(interp,
-		       "\"-stride\" option must be followed by stride length",
-			NULL);
+		Tcl_AppendResult(interp, "\"-stride\" option must be ",
+			"followed by stride length", NULL);
 		sortInfo.resultCode = TCL_ERROR;
 		goto done2;
 	    }
