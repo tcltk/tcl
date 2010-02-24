@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.80 2009/11/18 21:59:51 nijtmans Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.81 2010/02/24 14:30:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -612,6 +612,14 @@ SetDictFromAny(
 	    hPtr = CreateChainEntry(dict, objv[i], &isNew);
 	    if (!isNew) {
 		Tcl_Obj *discardedValue = Tcl_GetHashValue(hPtr);
+
+		/*
+		 * Not really a well-formed dictionary as there are duplicate
+		 * keys, so better get the string rep here so that we can
+		 * convert back.
+		 */
+
+		(void) Tcl_GetString(objPtr);
 
 		TclDecrRefCount(discardedValue);
 	    }
