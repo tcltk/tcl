@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.112 2010/02/22 23:31:41 nijtmans Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.113 2010/02/24 10:45:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -44,11 +44,11 @@ static ProcessGlobalValue executableName = {
  * BRACES_UNMATCHED -		1 means that braces aren't properly matched in
  *				the argument.
  * TCL_DONT_QUOTE_HASH -	1 means the caller insists that a leading hash
- * 				character ('#') should *not* be quoted. This
- * 				is appropriate when the caller can guarantee
- * 				the element is not the first element of a
- * 				list, so [eval] cannot mis-parse the element
- * 				as a comment.
+ *				character ('#') should *not* be quoted. This
+ *				is appropriate when the caller can guarantee
+ *				the element is not the first element of a
+ *				list, so [eval] cannot mis-parse the element
+ *				as a comment.
  */
 
 #define USE_BRACES		2
@@ -69,9 +69,9 @@ static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(ClientData clientData);
 static void		FreeThreadHash(ClientData clientData);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
-static int		SetEndOffsetFromAny(Tcl_Interp* interp,
-			    Tcl_Obj* objPtr);
-static void		UpdateStringOfEndOffset(Tcl_Obj* objPtr);
+static int		SetEndOffsetFromAny(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
+static void		UpdateStringOfEndOffset(Tcl_Obj *objPtr);
 
 /*
  * The following is the Tcl object type definition for an object that
@@ -676,7 +676,7 @@ Tcl_ScanCountedElement(
      *	  "{abc": the leading brace will have to be backslashed. For each
      *	  element, one of three things must be done:
      *
-     * 	  (a) Use the element as-is (it doesn't contain any special
+     *	  (a) Use the element as-is (it doesn't contain any special
      *	      characters). This is the most desirable option.
      *
      *	  (b) Enclose the element in braces, but leave the contents alone.
@@ -2069,7 +2069,7 @@ Tcl_DStringResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the
 				 * result of interp. */
 {
-    Interp* iPtr = (Interp*) interp;
+    Interp *iPtr = (Interp *) interp;
     Tcl_ResetResult(interp);
 
     if (dsPtr->string != dsPtr->staticSpace) {
@@ -2390,7 +2390,7 @@ TclPrecTraceProc(
     const char *name2,		/* Second part of variable name. */
     int flags)			/* Information about what happened. */
 {
-    Tcl_Obj* value;
+    Tcl_Obj *value;
     int prec;
     int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int) sizeof(int));
 
@@ -2427,13 +2427,13 @@ TclPrecTraceProc(
      */
 
     if (Tcl_IsSafe(interp)) {
-	return (char *)"can't modify precision from a safe interpreter";
+	return (char *) "can't modify precision from a safe interpreter";
     }
     value = Tcl_GetVar2Ex(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
     if (value == NULL
-	    || Tcl_GetIntFromObj((Tcl_Interp*) NULL, value, &prec) != TCL_OK
+	    || Tcl_GetIntFromObj(NULL, value, &prec) != TCL_OK
 	    || prec < 0 || prec > TCL_MAX_PREC) {
-	return (char *)"improper value for precision";
+	return (char *) "improper value for precision";
     }
     *precisionPtr = prec;
     return NULL;
@@ -2667,7 +2667,7 @@ TclGetIntForIndex(
 
 static void
 UpdateStringOfEndOffset(
-    register Tcl_Obj* objPtr)
+    register Tcl_Obj *objPtr)
 {
     char buffer[TCL_INTEGER_SPACE + sizeof("end") + 1];
     register int len;
@@ -2707,7 +2707,7 @@ SetEndOffsetFromAny(
     Tcl_Obj *objPtr)		/* Pointer to the object to parse */
 {
     int offset;			/* Offset in the "end-offset" expression */
-    register const char* bytes;	/* String rep of the object */
+    register const char *bytes;	/* String rep of the object */
     int length;			/* Length of the object's string rep */
 
     /*
@@ -3123,7 +3123,7 @@ TclGetProcessGlobalValue(
  *	(normally as computed by TclpFindExecutable).
  *
  * Results:
- * 	None.
+ *	None.
  *
  * Side effects:
  *	Stores the executable name.
@@ -3154,7 +3154,7 @@ TclSetObjNameOfExecutable(
  *	pathname of the application is unknown.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -3173,15 +3173,15 @@ TclGetObjNameOfExecutable(void)
  *	This function retrieves the absolute pathname of the application in
  *	which the Tcl library is running, and returns it in string form.
  *
- * 	The returned string belongs to Tcl and should be copied if the caller
- * 	plans to keep it, to guard against it becoming invalid.
+ *	The returned string belongs to Tcl and should be copied if the caller
+ *	plans to keep it, to guard against it becoming invalid.
  *
  * Results:
  *	A pointer to the internal string or NULL if the internal full path
  *	name has not been computed or unknown.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */

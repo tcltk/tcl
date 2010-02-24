@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.33 2009/09/07 07:28:38 das Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.34 2010/02/24 10:45:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -45,7 +45,7 @@ typedef struct CharSet {
  * Declarations for functions used only in this file.
  */
 
-static const char * BuildCharSet(CharSet *cset, const char *format);
+static const char *	BuildCharSet(CharSet *cset, const char *format);
 static int		CharInSet(CharSet *cset, int ch);
 static void		ReleaseCharSet(CharSet *cset);
 static int		ValidateFormat(Tcl_Interp *interp, const char *format,
@@ -262,7 +262,7 @@ ValidateFormat(
     char *end;
     Tcl_UniChar ch;
     int objIndex, xpgSize, nspace = numVars;
-    int *nassign = (int *) TclStackAlloc(interp, nspace * sizeof(int));
+    int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
     char buf[TCL_UTF_MAX+1];
 
     /*
@@ -472,7 +472,7 @@ ValidateFormat(
 		} else {
 		    nspace += 16;	/* formerly STATIC_LIST_SIZE */
 		}
-		nassign = (int *) TclStackRealloc(interp, nassign,
+		nassign = TclStackRealloc(interp, nassign,
 			nspace * sizeof(int));
 		for (i = value; i < nspace; i++) {
 		    nassign[i] = 0;
@@ -554,7 +554,7 @@ ValidateFormat(
 	/* ARGSUSED */
 int
 Tcl_ScanObjCmd(
-    ClientData dummy,    	/* Not used. */
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

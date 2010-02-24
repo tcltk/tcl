@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.446 2010/02/21 20:09:38 nijtmans Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.447 2010/02/24 10:45:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2280,7 +2280,7 @@ TclInvokeStringCommand(
 
     result = cmdPtr->proc(cmdPtr->clientData, interp, objc, argv);
 
-    TclStackFree(interp, (char **)argv);
+    TclStackFree(interp, (void *) argv);
     return result;
 }
 
@@ -7445,17 +7445,17 @@ ExprAbsFunc(
 	double d = *((const double *) ptr);
 	static const double poszero = 0.0;
 
-	/* We need to distinguish here between positive 0.0 and
-	 * negative -0.0, see Bug ID #2954959.
+	/*
+	 * We need to distinguish here between positive 0.0 and negative -0.0.
+	 * [Bug 2954959]
 	 */
+
 	if (d == -0.0) {
-		if (!memcmp(&d, &poszero, sizeof(double))) {
-	    goto unChanged;
-	    }
-	} else {
-	    if (d > -0.0) {
+	    if (!memcmp(&d, &poszero, sizeof(double))) {
 		goto unChanged;
 	    }
+	} else if (d > -0.0) {
+	    goto unChanged;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
 	return TCL_OK;
