@@ -1,5 +1,10 @@
 2010-02-24  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclDictObj.c (SetDictFromAny): Prevent the list<->dict
+	* generic/tclListObj.c (SetListFromAny): conversion code from taking
+	too many liberties. Stops loss of duplicate keys in some scenarios.
+	Many thanks to Jean-Claude Wippler for finding this.
+
 	* generic/tclExecute.c (TclExecuteByteCode): Reduce ifdef-fery and
 	size of activation record. More variables shared across instructions
 	than before.
