@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.23 2010/02/05 10:03:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.24 2010/02/24 10:45:04 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -686,7 +686,7 @@ InvokeProcedureMethod(
      * Allocate the special frame data.
      */
 
-    fdPtr = (PMFrameData *) TclStackAlloc(interp, sizeof(PMFrameData));
+    fdPtr = TclStackAlloc(interp, sizeof(PMFrameData));
 
     /*
      * Create a call frame for this method.

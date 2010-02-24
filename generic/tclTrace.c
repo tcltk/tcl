@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.57 2009/10/21 13:36:23 dkf Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.58 2010/02/24 10:45:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -843,6 +843,7 @@ TraceVariableObjCmd(
     int commandLength, index;
     const char *name, *command;
     size_t length;
+    ClientData clientData;
     enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
     static const char *const opStrings[] = {
 	"array", "read", "unset", "write", NULL
@@ -903,6 +904,7 @@ TraceVariableObjCmd(
 	    CombinedTraceVarInfo *ctvarPtr = (CombinedTraceVarInfo *)
 		    ckalloc((unsigned) (sizeof(CombinedTraceVarInfo)
 		    + length + 1 - sizeof(ctvarPtr->traceCmdInfo.command)));
+
 	    ctvarPtr->traceCmdInfo.flags = flags;
 	    if (objv[0] == NULL) {
 		ctvarPtr->traceCmdInfo.flags |= TCL_TRACE_OLD_STYLE;
@@ -926,8 +928,6 @@ TraceVariableObjCmd(
 	     * first one that matches.
 	     */
 
-	    ClientData clientData;
-
 	    name = Tcl_GetString(objv[3]);
 	    FOREACH_VAR_TRACE(interp, name, clientData) {
 		TraceVarInfo *tvarPtr = clientData;
@@ -946,7 +946,6 @@ TraceVariableObjCmd(
 	break;
     }
     case TRACE_INFO: {
-	ClientData clientData;
 	Tcl_Obj *resultListPtr;
 
 	if (objc != 4) {
