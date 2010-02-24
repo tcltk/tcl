@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.66 2010/02/11 15:20:37 dkf Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.67 2010/02/24 10:32:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -956,7 +956,7 @@ Tcl_ExecObjCmd(
      * Free the argv array.
      */
 
-    TclStackFree(interp, (void *)argv);
+    TclStackFree(interp, (void *) argv);
 
     if (chan == NULL) {
 	return TCL_ERROR;
