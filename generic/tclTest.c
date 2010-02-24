@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.145 2010/02/22 23:31:41 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.146 2010/02/24 10:32:17 dkf Exp $
  */
 
 #undef STATIC_BUILD
@@ -3131,7 +3131,7 @@ TestlocaleCmd(
     const char *locale;
 
     static const char *const optionStrings[] = {
-    	"ctype", "numeric", "time", "collate", "monetary",
+	"ctype", "numeric", "time", "collate", "monetary",
 	"all",	NULL
     };
     static int lcTypes[] = {
@@ -5089,7 +5089,7 @@ TestmainthreadCmd(
  *	A main loop set by TestsetmainloopCmd below.
  *
  * Results:
- * 	None.
+ *	None.
  *
  * Side effects:
  *	Event handlers could do anything.
