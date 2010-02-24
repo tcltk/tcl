@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.40 2010/02/17 21:58:11 dkf Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.41 2010/02/24 10:32:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -926,7 +926,7 @@ HashString(
      */
 
     for (i=0; i<length ; i++) {
-        result += (result<<3) + UCHAR(bytes[i]);
+	result += (result<<3) + UCHAR(bytes[i]);
     }
     return result;
 }

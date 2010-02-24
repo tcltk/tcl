@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnsemble.c,v 1.3 2010/02/15 22:56:20 nijtmans Exp $
+ * RCS: @(#) $Id: tclEnsemble.c,v 1.4 2010/02/24 10:32:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2646,8 +2646,8 @@ StringOfEnsembleCmdRep(
  *	normally warranted.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the subcommands of the

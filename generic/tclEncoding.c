@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.69 2010/02/05 11:47:22 dkf Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.70 2010/02/24 10:32:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -295,7 +295,7 @@ static const Tcl_ObjType encodingType = {
  *	Standard Tcl return code.
  *
  * Side effects:
- * 	Caches the Tcl_Encoding value as the internal rep of (*objPtr).
+ *	Caches the Tcl_Encoding value as the internal rep of (*objPtr).
  *
  *----------------------------------------------------------------------
  */
@@ -454,8 +454,8 @@ TclSetLibraryPath(
  *
  * FillEncodingFileMap --
  *
- * 	Called to bring the encoding file map in sync with the current value
- * 	of the encoding search path.
+ *	Called to bring the encoding file map in sync with the current value
+ *	of the encoding search path.
  *
  *	Scan the directories on the encoding search path, find the *.enc
  *	files, and store the found pathnames in a map associated with the
@@ -676,15 +676,15 @@ TclFinalizeEncodingSubsystem(void)
  *
  * Tcl_GetDefaultEncodingDir --
  *
- * 	Legacy public interface to retrieve first directory in the encoding
- * 	searchPath.
+ *	Legacy public interface to retrieve first directory in the encoding
+ *	searchPath.
  *
  * Results:
  *	The directory pathname, as a string, or NULL for an empty encoding
  *	search path.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *-------------------------------------------------------------------------
  */
@@ -709,14 +709,14 @@ Tcl_GetDefaultEncodingDir(void)
  *
  * Tcl_SetDefaultEncodingDir --
  *
- * 	Legacy public interface to set the first directory in the encoding
- * 	search path.
+ *	Legacy public interface to set the first directory in the encoding
+ *	search path.
  *
  * Results:
- * 	None.
+ *	None.
  *
  * Side effects:
- * 	Modifies the encoding search path.
+ *	Modifies the encoding search path.
  *
  *-------------------------------------------------------------------------
  */
@@ -1446,9 +1446,9 @@ Tcl_FindExecutable(
  *	Open the file believed to hold data for the encoding, "name".
  *
  * Results:
- * 	Returns the readable Tcl_Channel from opening the file, or NULL if the
- * 	file could not be successfully opened. If NULL was returned, an error
- * 	message is left in interp's result object, unless interp was NULL.
+ *	Returns the readable Tcl_Channel from opening the file, or NULL if the
+ *	file could not be successfully opened. If NULL was returned, an error
+ *	message is left in interp's result object, unless interp was NULL.
  *
  * Side effects:
  *	Channel may be opened. Information about the filesystem may be cached
@@ -3288,7 +3288,7 @@ EscapeFromUtfProc(
 	    for (state = 0; state < dataPtr->numSubTables; state++) {
 		encodingPtr = GetTableEncoding(dataPtr, state);
 		tableDataPtr = encodingPtr->clientData;
-	    	word = tableDataPtr->fromUnicode[(ch >> 8)][ch & 0xff];
+		word = tableDataPtr->fromUnicode[(ch >> 8)][ch & 0xff];
 		if (word != 0) {
 		    break;
 		}

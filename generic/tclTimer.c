@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.41 2009/12/28 09:53:36 dkf Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.42 2010/02/24 10:32:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -847,7 +847,7 @@ Tcl_AfterObjCmd(
 	if (objc == 3) {
 	    afterPtr->commandPtr = objv[2];
 	} else {
- 	    afterPtr->commandPtr = Tcl_ConcatObj(objc-2, objv+2);
+	    afterPtr->commandPtr = Tcl_ConcatObj(objc-2, objv+2);
 	}
 	Tcl_IncrRefCount(afterPtr->commandPtr);
 
@@ -964,7 +964,7 @@ Tcl_AfterObjCmd(
 	resultListPtr = Tcl_NewObj();
 	Tcl_ListObjAppendElement(interp, resultListPtr, afterPtr->commandPtr);
 	Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
- 		(afterPtr->token == NULL) ? "idle" : "timer", -1));
+		(afterPtr->token == NULL) ? "idle" : "timer", -1));
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
