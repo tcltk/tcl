@@ -1,5 +1,9 @@
 2010-02-24  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclExecute.c (TclExecuteByteCode): Reduce ifdef-fery and
+	size of activation record. More variables shared across instructions
+	than before.
+
 	* doc/socket.n: [Bug 2957688]: Clarified that [socket -server] works
 	with a command prefix. Extended example to show this in action.
 
