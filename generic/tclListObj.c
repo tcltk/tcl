@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.58 2009/09/30 03:11:26 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.59 2010/02/24 14:30:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1684,10 +1684,12 @@ SetListFromAny(
     /*
      * Dictionaries are a special case; they have a string representation such
      * that *all* valid dictionaries are valid lists. Hence we can convert
-     * more directly.
+     * more directly. Only do this when there's no existing string rep; if
+     * there is, it is the string rep that's authoritative (because it could
+     * describe duplicate keys).
      */
 
-    if (objPtr->typePtr == &tclDictType) {
+    if (objPtr->typePtr == &tclDictType && !objPtr->bytes) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;
