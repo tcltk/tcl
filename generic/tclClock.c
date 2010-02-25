@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.28 2009/11/12 18:16:21 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.29 2010/02/25 21:53:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -221,7 +221,7 @@ static const struct ClockCommand clockCommands[] = {
     { "GetJulianDayFromEraYearMonthDay",
 		ClockGetjuliandayfromerayearmonthdayObjCmd },
     { "GetJulianDayFromEraYearWeekDay",
-    		ClockGetjuliandayfromerayearweekdayObjCmd },
+		ClockGetjuliandayfromerayearweekdayObjCmd },
     { "ParseFormatArgs",	ClockParseformatargsObjCmd },
     { NULL, NULL }
 };
@@ -251,7 +251,7 @@ TclClockInit(
     const struct ClockCommand *clockCmdPtr;
     char cmdName[50];		/* Buffer large enough to hold the string
 				 *::tcl::clock::GetJulianDayFromEraYearMonthDay
-				 * plus a terminating NULL. */
+				 * plus a terminating NUL. */
     ClockClientData *data;
     int i;
 
@@ -261,7 +261,7 @@ TclClockInit(
      */
 
     if (Tcl_IsSafe(interp)) {
-        return;
+	return;
     }
 
     /*

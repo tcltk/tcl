@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7.4.14 2009/07/24 13:16:43 dgp Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.4.15 2010/02/25 21:53:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -102,14 +102,15 @@ FileForRedirect(
 	}
 	file = TclpMakeFile(chan, writing ? TCL_WRITABLE : TCL_READABLE);
 	if (file == NULL) {
-	    Tcl_Obj* msg;
+	    Tcl_Obj *msg;
+
 	    Tcl_GetChannelError(chan, &msg);
 	    if (msg) {
-		Tcl_SetObjResult (interp, msg);
+		Tcl_SetObjResult(interp, msg);
 	    } else {
-		Tcl_AppendResult(interp, "channel \"", Tcl_GetChannelName(chan),
-				 "\" wasn't opened for ",
-				 ((writing) ? "writing" : "reading"), NULL);
+		Tcl_AppendResult(interp, "channel \"",
+			Tcl_GetChannelName(chan), "\" wasn't opened for ",
+			((writing) ? "writing" : "reading"), NULL);
 	    }
 	    return NULL;
 	}
@@ -475,19 +476,19 @@ TclCreatePipeline(
 				 * first process in pipeline (specified via <
 				 * or <@). */
     int inputClose = 0;		/* If non-zero, then inputFile should be
-    				 * closed when cleaning up. */
+				 * closed when cleaning up. */
     int inputRelease = 0;
     TclFile outputFile = NULL;	/* Writable file for output from last command
 				 * in pipeline (could be file or pipe). NULL
 				 * means use stdout. */
     int outputClose = 0;	/* If non-zero, then outputFile should be
-    				 * closed when cleaning up. */
+				 * closed when cleaning up. */
     int outputRelease = 0;
     TclFile errorFile = NULL;	/* Writable file for error output from all
 				 * commands in pipeline. NULL means use
 				 * stderr. */
     int errorClose = 0;		/* If non-zero, then errorFile should be
-    				 * closed when cleaning up. */
+				 * closed when cleaning up. */
     int errorRelease = 0;
     const char *p;
     const char *nextArg;

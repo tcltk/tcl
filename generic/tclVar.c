@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.67 2010/02/09 17:53:09 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.68 2010/02/25 21:53:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1931,7 +1931,7 @@ TclPtrSetVar(
 		if (Tcl_IsShared(oldValuePtr)) {	/* Append to copy. */
 		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
 
-		    TclContinuationsCopy (varPtr->value.objPtr, oldValuePtr);
+		    TclContinuationsCopy(varPtr->value.objPtr, oldValuePtr);
 
 		    TclDecrRefCount(oldValuePtr);
 		    oldValuePtr = varPtr->value.objPtr;

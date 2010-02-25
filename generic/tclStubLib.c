@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.16 2008/10/23 15:51:10 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.17 2010/02/25 21:53:08 dgp Exp $
  */
 
 /*
@@ -175,7 +175,7 @@ TclTomMathInitializeStubs(
     ClientData pkgClientData = NULL;
     const char *actualVersion =
 	Tcl_PkgRequireEx(interp, packageName, version, exact, &pkgClientData);
-    TclTomMathStubs *stubsPtr = pkgClientData;
+    const TclTomMathStubs *stubsPtr = pkgClientData;
 
     if (actualVersion == NULL) {
 	return NULL;

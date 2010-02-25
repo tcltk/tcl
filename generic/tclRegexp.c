@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.14 2010/01/02 16:32:30 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.15 2010/02/25 21:53:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -55,8 +55,8 @@
  *
  * *** NOTE: this code has been altered slightly for use in Tcl: ***
  * *** 1. Names have been changed, e.g. from re_comp to		 ***
- * ***    TclRegComp, to avoid clashes with other 		 ***
- * ***    regexp implementations used by applications. 		 ***
+ * ***    TclRegComp, to avoid clashes with other		 ***
+ * ***    regexp implementations used by applications.		 ***
  */
 
 /*

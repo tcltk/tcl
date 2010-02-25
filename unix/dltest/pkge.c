@@ -10,10 +10,18 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkge.c,v 1.6.2.3 2009/08/17 14:00:43 dgp Exp $
+ * RCS: @(#) $Id: pkge.c,v 1.6.2.4 2010/02/25 21:53:12 dgp Exp $
  */
 
 #include "tcl.h"
+
+/*
+ * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
+ * Pkge_Init declaration is in the source file itself, which is only
+ * accessed when we are building a library.
+ */
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLEXPORT
 
 
 /*
@@ -33,7 +41,7 @@
  *----------------------------------------------------------------------
  */
 
-int
+EXTERN int
 Pkge_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.57 2010/02/21 14:31:12 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.58 2010/02/25 21:53:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4043,9 +4043,9 @@ TclSubstCompile(
 
 	breakJump = CurrentOffset(envPtr) - breakOffset;
 	if (breakJump > 127) {
-	    TclEmitInstInt4(INST_JUMP4, -breakJump, envPtr)
+	    TclEmitInstInt4(INST_JUMP4, -breakJump, envPtr);
 	} else {
-	    TclEmitInstInt1(INST_JUMP1, -breakJump, envPtr)
+	    TclEmitInstInt1(INST_JUMP1, -breakJump, envPtr);
 	}
 
 	/* CONTINUE destination */
@@ -4884,8 +4884,7 @@ IssueSwitchJumpTable(
 		 * point to here.
 		 */
 
-		Tcl_SetHashValue(hPtr, (ClientData)
-			(CurrentOffset(envPtr) - jumpLocation));
+		Tcl_SetHashValue(hPtr, CurrentOffset(envPtr) - jumpLocation);
 	    }
 	    Tcl_DStringFree(&buffer);
 	} else {

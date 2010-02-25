@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.2.2.20 2009/10/29 11:51:40 dgp Exp $
+# RCS: @(#) $Id: dict.test,v 1.2.2.21 2010/02/25 21:53:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -29,7 +29,7 @@ if {[testConstraint memory]} {
 	expr {$end - $tmp}
     }
 }
-
+
 test dict-1.1 {dict command basic syntax} -returnCodes error -body {
     dict
 } -result {wrong # args: should be "dict subcommand ?arg ...?"}
@@ -938,6 +938,18 @@ test dict-18.2 {dict-list relationship} -body {
 } -cleanup {
     unset d t
 } -result 6
+test dict-18.3 {dict-list relationship} -body {
+    set ld [list a b c d c e f g]
+    list [string length $ld] [dict size $ld] [llength $ld]
+} -cleanup {
+    unset ld
+} -result {15 3 8}
+test dict-18.4 {dict-list relationship} -body {
+    set ld [list a b c d c e f g]
+    list [llength $ld] [dict size $ld] [llength $ld]
+} -cleanup {
+    unset ld
+} -result {8 3 8}
 
 # This is a test for a specific bug.
 # It shows a bad ref counter when running with memdebug on.
@@ -1340,7 +1352,7 @@ test dict-22.11 {dict with command: no recursive structures [Bug 1786481]} -body
 } -cleanup {
     unset foo t inner
 } -result OK
-
+
 # cleanup
 ::tcltest::cleanupTests
 return

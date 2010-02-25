@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.70 2010/02/12 03:06:20 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.71 2010/02/25 21:53:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -23,7 +23,7 @@
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
-static int		SwitchPostProc(ClientData data[], Tcl_Interp* interp,
+static int		SwitchPostProc(ClientData data[], Tcl_Interp *interp,
 			    int result);
 static int		TryPostBody(ClientData data[], Tcl_Interp *interp,
 			    int result);
@@ -1075,7 +1075,7 @@ Tcl_SplitObjCmd(
 		 * Don't need to fiddle with refcount...
 		 */
 
-		Tcl_SetHashValue(hPtr, (ClientData) objPtr);
+		Tcl_SetHashValue(hPtr, objPtr);
 	    } else {
 		objPtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
 	    }
@@ -3923,9 +3923,9 @@ SwitchPostProc(
     /* Unpack the preserved data */
 
     int splitObjs = PTR2INT(data[0]);
-    CmdFrame* ctxPtr = (CmdFrame*) data[1];
+    CmdFrame *ctxPtr = data[1];
     int pc = PTR2INT(data[2]);
-    const char* pattern = (const char*) data[3];
+    const char *pattern = data[3];
     int patternLength = strlen(pattern);
 
     /*
@@ -4679,7 +4679,7 @@ TclNRWhileObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    ForIterData* iterPtr;
+    ForIterData *iterPtr;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "test command");
@@ -4720,33 +4720,30 @@ TclNRWhileObjCmd(
 
 void
 TclListLines(
-    Tcl_Obj* listObj,          /* Pointer to obj holding a string with list
-				* structure.  Assumed to be valid. Assumed to
-				* contain n elements.
-				*/
+    Tcl_Obj *listObj,		/* Pointer to obj holding a string with list
+				 * structure. Assumed to be valid. Assumed to
+				 * contain n elements. */
     int line,			/* Line the list as a whole starts on. */
     int n,			/* #elements in lines */
     int *lines,			/* Array of line numbers, to fill. */
-    Tcl_Obj* const* elems)      /* The list elems as Tcl_Obj*, in need of
+    Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
-    const char*  listStr  = Tcl_GetString (listObj);
-    const char*  listHead = listStr;
+    const char *listStr = Tcl_GetString(listObj);
+    const char *listHead = listStr;
     int i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;
-    ContLineLoc* clLocPtr = TclContinuationsGet(listObj);
-    int* clNext   = (clLocPtr ? &clLocPtr->loc[0] : NULL);
+    ContLineLoc *clLocPtr = TclContinuationsGet(listObj);
+    int *clNext= (clLocPtr ? &clLocPtr->loc[0] : NULL);
 
     for (i = 0; i < n; i++) {
 	TclFindElement(NULL, listStr, length, &element, &next, NULL, NULL);
 
 	TclAdvanceLines(&line, listStr, element);
 				/* Leading whitespace */
-	TclAdvanceContinuations (&line, &clNext, element - listHead);
+	TclAdvanceContinuations(&line, &clNext, element - listHead);
 	if (elems && clNext) {
-	    TclContinuationsEnterDerived (elems[i],
-					  element - listHead,
-					  clNext);
+	    TclContinuationsEnterDerived(elems[i], element-listHead, clNext);
 	}
 	lines[i] = line;
 	length -= (next - listStr);

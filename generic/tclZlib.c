@@ -13,19 +13,21 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.25 2010/02/09 17:53:09 dgp Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4.2.26 2010/02/25 21:53:08 dgp Exp $
  */
 
 #include "tclInt.h"
 #ifdef HAVE_ZLIB
 #ifdef _WIN32
 #   ifndef STATIC_BUILD
-/* HACK needed for zlib1.dll version 1.2.3 on Win32. See comment below.
- * As soon as zlib 1.2.4 is reasonable mainstream, remove this hack! */
-#       include "../compat/zlib/zutil.h"
-#       include "../compat/zlib/inftrees.h"
-#       include "../compat/zlib/deflate.h"
-#       include "../compat/zlib/inflate.h"
+/*
+ * HACK needed for zlib1.dll version 1.2.3 on Win32. See comment below. As
+ * soon as zlib 1.2.4 is reasonable mainstream, remove this hack!
+ */
+#	include "../compat/zlib/zutil.h"
+#	include "../compat/zlib/inftrees.h"
+#	include "../compat/zlib/deflate.h"
+#	include "../compat/zlib/inflate.h"
 #   endif /* !STATIC_BUILD */
 #endif /* _WIN32 */
 #include <zlib.h>
@@ -2412,7 +2414,15 @@ ZlibTransformInput(
 	if ((e == Z_STREAM_END) || (e==Z_OK && cd->inStream.avail_out==0)) {
 	    return toRead - cd->inStream.avail_out;
 	}
-	if (e != Z_OK) {
+
+	/*
+	 * Z_BUF_ERROR can be ignored as per http://www.zlib.net/zlib_how.html
+	 *
+	 * Just indicates that the zlib couldn't consume input/produce output,
+	 * and is fixed by supplying more input.
+	 */
+
+	if ((e != Z_OK) && (e != Z_BUF_ERROR)) {
 	    Tcl_Obj *errObj = Tcl_NewListObj(0, NULL);
 
 	    Tcl_ListObjAppendElement(NULL, errObj,
@@ -2436,7 +2446,18 @@ ZlibTransformInput(
 	 */
 
     doReadFirst:
-	read = Tcl_ReadRaw(cd->parent, cd->inBuffer, cd->inAllocated);
+	/*
+	 * Hack for Bug 2762041. Disable pre-reading of lots of input, read
+	 * only one character. This way the Z_END_OF_STREAM can be read
+	 * without triggering an EOF in the base channel. The higher input
+	 * loops in DoReadChars() would react to that by stopping, despite the
+	 * transform still having data which could be read.
+	 *
+	 * This is only a hack because other transforms may not be able to
+	 * work around the general problem in this way.
+	 */
+
+	read = Tcl_ReadRaw(cd->parent, cd->inBuffer, 1);
 	if (read < 0) {
 	    *errorCodePtr = Tcl_GetErrno();
 	    return -1;
@@ -2645,7 +2666,8 @@ ZlibTransformWatch(
 
     watchProc = Tcl_ChannelWatchProc(Tcl_GetChannelType(cd->parent));
     watchProc(Tcl_GetChannelInstanceData(cd->parent), mask);
-    if (!(mask & TCL_READABLE) || (cd->inStream.avail_in==(uInt)cd->inAllocated)) {
+    if (!(mask & TCL_READABLE)
+	    || (cd->inStream.avail_in == (uInt) cd->inAllocated)) {
 	ZlibTransformTimerKill(cd);
     } else {
 	ZlibTransformTimerSetup(cd);

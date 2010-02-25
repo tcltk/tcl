@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.22.4.9 2010/02/12 03:06:21 dgp Exp $
+# RCS: @(#) $Id: regexp.test,v 1.22.4.10 2010/02/25 21:53:09 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -121,6 +121,28 @@ test regexp-2.10 {getting substrings back from regexp} {
     set f2 {}
     list [regexp f\352te(b*)c eff\352tebbbbc foo f2] $foo $f2
 } [list 1 f\352tebbbbc bbbb]
+test regexp-2.11 {non-capturing subgroup} {
+    set foo {}
+    set f2 {}
+    list [regexp {str(?:a+)} straa foo f2] $foo $f2
+} [list 1 straa {}]
+test regexp-2.12 {non-capturing subgroup with -inline} {
+    regexp -inline {str(?:a+)} straa
+} {straa}
+test regexp-2.13 {non-capturing and capturing subgroups} {
+    set foo {}
+    set f2 {}
+    set f3 {}
+    list [regexp {str(?:a+)(c+)} straacc foo f2 f3] $foo $f2 $f3
+} [list 1 straacc cc {}]
+test regexp-2.14 {non-capturing and capturing subgroups} {
+    regexp -inline {str(?:a+)(c+)} straacc
+} {straacc cc}
+test regexp-2.15 {getting substrings back from regexp} {
+    set foo NA
+    set f2 NA
+    list [regexp {str(?:a+)} straa foo f2] $foo $f2
+} [list 1 straa {}]
 
 test regexp-3.1 {-indices option to regexp} {
     set foo {}
@@ -543,6 +565,10 @@ test regexp-15.10 {regexp -start, end relative index} {
     catch {unset x}
     list [regexp -start end-1 {\d} 1abc2de3 x] [info exists x] $x
 } {1 1 3}
+test regexp-15.11 {regexp -start, over end of string} {
+    set x NA
+    list [regexp -start 2 {.*} ab x] $x
+} {1 {}}
 
 test regexp-16.1 {regsub -start} {
     catch {unset x}
@@ -573,6 +599,62 @@ test regexp-16.7 {regexp -start, end relative index} {
 test regexp-16.8 {regexp -start, end relative index} {
     list [regsub -start end-1 a aaa b x] $x
 } {1 aab}
+test regexp-16.9 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 0 -all x+ axxxbxx |&| foo] $foo
+} {2 a|xxx|b|xx|}
+test regexp-16.10 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 1 -all x+ axxxbxx |&| foo] $foo
+} {2 a|xxx|b|xx|}
+test regexp-16.11 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 4 -all x+ axxxbxx |&| foo] $foo
+} {1 axxxb|xx|}
+test regexp-16.12 {regsub -start} {
+    set foo {}
+    list [regsub -start 4 x+ axxxbxx |&| foo] $foo
+} {1 axxxb|xx|}
+test regexp-16.13 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 1 -all a+ "" & foo] $foo
+} {0 {}}
+test regexp-16.14 {regsub -start} {
+    set foo {}
+    list [regsub -start 1 a+ "" & foo] $foo
+} {0 {}}
+test regexp-16.15 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 2 -all a+ "xy" & foo] $foo
+} {0 xy}
+test regexp-16.16 {regsub -start} {
+    set foo {}
+    list [regsub -start 2 a+ "xy" & foo] $foo
+} {0 xy}
+test regexp-16.17 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 1 -all y+ "xy" & foo] $foo
+} {1 xy}
+test regexp-16.18 {regsub -start} {
+    set foo {}
+    list [regsub -start 1 y+ "xy" & foo] $foo
+} {1 xy}
+test regexp-16.19 {regsub -start} {
+    set foo {}
+    list [regsub -start -1 a+ "" & foo] $foo
+} {0 {}}
+test regexp-16.20 {regsub -start, loss of ^$ behavior} {
+    set foo NA
+    list [regsub -start 1 {^$} {} & foo] $foo
+} {0 {}}
+test regexp-16.21 {regsub -start, loss of ^$ behavior} {
+    set foo NA
+    list [regsub -start 1 {^.*$} abc & foo] $foo
+} {0 abc}
+test regexp-16.22 {regsub -start, loss of ^$ behavior} {
+    set foo NA
+    list [regsub -all -start 1 {^.*$} abc & foo] $foo
+} {0 abc}
 
 test regexp-17.1 {regexp -inline} {
     regexp -inline b ababa
@@ -652,6 +734,12 @@ test regexp-19.1 {regsub null replacement} {
     list $result [string length $result]
 } "\0a\0hel\0a\0lo\0a\0 14"
 
+test regexp-19.2 {regsub null replacement} {
+    regsub -all {@} {@hel@lo@} "\0a\0" result
+    set expected "\0a\0hel\0a\0lo\0a\0"
+    string equal $result $expected
+} 1
+
 test regexp-20.1 {regsub shared object shimmering} {
     # Bug #461322
     set a abcdefghijklmnopqurstuvwxyz 
@@ -703,6 +791,27 @@ test regexp-21.12 {multiple matches handle newlines} {
 test regexp-21.13 {multiple matches handle newlines} {
     regexp -all -inline -indices -line -- ^ "a\nb\nc"
 } {{0 -1} {2 1} {4 3}}
+test regexp-21.14 {regsub works with empty string} {
+    regsub -- ^ {} &
+} {}
+test regexp-21.15 {regsub works with empty string} {
+    regsub -- ^ {} foo&
+} {foo}
+test regexp-21.16 {regsub works with empty string} {
+    regsub -all -- ^ {} foo&
+} {foo}
+test regexp-21.17 {regsub works with empty string} {
+    regsub -- ^ {} {foo\0}
+} {foo}
+test regexp-21.18 {regsub works with empty string} {
+    regsub -- ^.* {} {foo$0}
+} {foo$0}
+test regexp-21.19 {regsub works with empty string} {
+    regsub -- ^ {input} {}
+} {input}
+test regexp-21.20 {regsub works with empty string} {
+    regsub -- x {} {foo}
+} {}
 
 test regexp-22.1 {Bug 1810038} {
     regexp ($|^X)* {}
@@ -957,3 +1066,4 @@ test regexp-26.13 {regexp without -line option} {
 # cleanup
 ::tcltest::cleanupTests
 return
+

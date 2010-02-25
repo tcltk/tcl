@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.16.4.11 2009/09/29 05:05:40 dgp Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.16.4.12 2010/02/25 21:53:06 dgp Exp $
  */
 
 /*
@@ -80,7 +80,7 @@ union overhead {
 #define RMAGIC		0x5555	/* magic # on range info */
 
 #ifdef RCHECK
-#define	RSLOP		sizeof (unsigned short)
+#define	RSLOP		sizeof(unsigned short)
 #else
 #define	RSLOP		0
 #endif
@@ -157,7 +157,7 @@ static	unsigned int numMallocs[NBUCKETS+1];
  * Prototypes for functions used only in this file.
  */
 
-static void 		MoreCore(int bucket);
+static void		MoreCore(int bucket);
 
 /*
  *-------------------------------------------------------------------------
@@ -466,7 +466,7 @@ TclpFree(
     }
 
     Tcl_MutexLock(allocMutexPtr);
-    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof (union overhead));
+    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof(union overhead));
 
     ASSERT(overPtr->overMagic0 == MAGIC);	/* make sure it was in use */
     ASSERT(overPtr->overMagic1 == MAGIC);
@@ -535,7 +535,7 @@ TclpRealloc(
 
     Tcl_MutexLock(allocMutexPtr);
 
-    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof (union overhead));
+    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof(union overhead));
 
     ASSERT(overPtr->overMagic0 == MAGIC);	/* make sure it was in use */
     ASSERT(overPtr->overMagic1 == MAGIC);

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadJoin.c,v 1.4.4.3 2005/12/02 18:42:08 dgp Exp $
+ * RCS: @(#) $Id: tclThreadJoin.c,v 1.4.4.4 2010/02/25 21:53:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -54,7 +54,7 @@ typedef struct JoinableThread {
 
 TCL_DECLARE_MUTEX(joinMutex)
 
-static JoinableThread* firstThreadPtr;
+static JoinableThread *firstThreadPtr;
 
 /*
  *----------------------------------------------------------------------

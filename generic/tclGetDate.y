@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.16 2009/11/19 16:51:26 dgp Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.17 2010/02/25 21:53:07 dgp Exp $
  */
 
 %parse-param {DateInfo* info}
@@ -512,7 +512,7 @@ MODULE_SCOPE int yynerrs;
  * Month and day table.
  */
 
-static TABLE MonthDayTable[] = {
+static const TABLE MonthDayTable[] = {
     { "january",	tMONTH,	 1 },
     { "february",	tMONTH,	 2 },
     { "march",		tMONTH,	 3 },
@@ -544,7 +544,7 @@ static TABLE MonthDayTable[] = {
  * Time units table.
  */
 
-static TABLE UnitsTable[] = {
+static const TABLE UnitsTable[] = {
     { "year",		tMONTH_UNIT,	12 },
     { "month",		tMONTH_UNIT,	 1 },
     { "fortnight",	tDAY_UNIT,	14 },
@@ -562,7 +562,7 @@ static TABLE UnitsTable[] = {
  * Assorted relative-time words.
  */
 
-static TABLE OtherTable[] = {
+static const TABLE OtherTable[] = {
     { "tomorrow",	tDAY_UNIT,	1 },
     { "yesterday",	tDAY_UNIT,	-1 },
     { "today",		tDAY_UNIT,	0 },
@@ -595,7 +595,7 @@ static TABLE OtherTable[] = {
  * point constants to work around an SGI compiler bug).
  */
 
-static TABLE TimezoneTable[] = {
+static const TABLE TimezoneTable[] = {
     { "gmt",	tZONE,	   HOUR( 0) },	    /* Greenwich Mean */
     { "ut",	tZONE,	   HOUR( 0) },	    /* Universal (Coordinated) */
     { "utc",	tZONE,	   HOUR( 0) },
@@ -680,7 +680,7 @@ static TABLE TimezoneTable[] = {
  * Military timezone table.
  */
 
-static TABLE	MilitaryTable[] = {
+static const TABLE MilitaryTable[] = {
     { "a",	tZONE,	-HOUR( 1) },
     { "b",	tZONE,	-HOUR( 2) },
     { "c",	tZONE,	-HOUR( 3) },
@@ -773,7 +773,7 @@ LookupWord(
 {
     register char *p;
     register char *q;
-    register TABLE *tp;
+    register const TABLE *tp;
     int i, abbrev;
 
     /*

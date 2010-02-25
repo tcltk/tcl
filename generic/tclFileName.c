@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.40 2009/12/30 17:24:07 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.41 2010/02/25 21:53:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1424,8 +1424,7 @@ Tcl_GlobObjCmd(
 	if (length <= 0) {
 	    goto skipTypes;
 	}
-	globTypes = (Tcl_GlobTypeData *)
-		TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
+	globTypes = TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
 	globTypes->type = 0;
 	globTypes->perm = 0;
 	globTypes->macType = NULL;

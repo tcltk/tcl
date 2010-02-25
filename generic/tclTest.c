@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.53 2010/02/09 17:53:09 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.54 2010/02/25 21:53:08 dgp Exp $
  */
 
 #undef STATIC_BUILD
@@ -3131,7 +3131,7 @@ TestlocaleCmd(
     const char *locale;
 
     static const char *const optionStrings[] = {
-    	"ctype", "numeric", "time", "collate", "monetary",
+	"ctype", "numeric", "time", "collate", "monetary",
 	"all",	NULL
     };
     static int lcTypes[] = {
@@ -5089,7 +5089,7 @@ TestmainthreadCmd(
  *	A main loop set by TestsetmainloopCmd below.
  *
  * Results:
- * 	None.
+ *	None.
  *
  * Side effects:
  *	Event handlers could do anything.
@@ -6563,7 +6563,7 @@ TestHashSystemHashCmd(
 	    Tcl_DeleteHashTable(&hash);
 	    return TCL_ERROR;
 	}
-	Tcl_SetHashValue(hPtr, (ClientData) INT2PTR(i+42));
+	Tcl_SetHashValue(hPtr, INT2PTR(i+42));
     }
 
     if (hash.numEntries != limit) {

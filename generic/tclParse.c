@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.51 2009/12/30 17:24:07 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.52 2010/02/25 21:53:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -511,13 +511,13 @@ ParseScript(script, numBytes, flags, parsePtr)
  *
  * TclParseInit --
  *
- * 	Initialize the fields of a Tcl_Parse struct.
+ *	Initialize the fields of a Tcl_Parse struct.
  *
  * Results:
- * 	None.
+ *	None.
  *
  * Side effects:
- * 	The Tcl_Parse struct pointed to by parsePtr gets initialized.
+ *	The Tcl_Parse struct pointed to by parsePtr gets initialized.
  *
  *----------------------------------------------------------------------
  */
@@ -599,7 +599,7 @@ ParseCommand(
 				 * Only the PARSE_NESTED flag has an effect
 				 * here.  Other flags are passed along. */
     register Tcl_Parse *parsePtr)
-    				/* Structure to fill in with information about
+				/* Structure to fill in with information about
 				 * the parsed command; any previous
 				 * information in the structure is ignored. */
 {
@@ -861,6 +861,7 @@ ParseCommand(
 
 		    int growthNeeded = wordIndex + 2*elemCount
 			    - parsePtr->numTokens;
+
 		    numWords += elemCount - 1;
 		    if (growthNeeded > 0) {
 			TclGrowParseTokenArray(parsePtr, growthNeeded);
@@ -1126,14 +1127,14 @@ TclParseHex(
  *	sequence as defined by Tcl's parsing rules.
  *
  * Results:
- * 	Records at readPtr the number of bytes making up the backslash
- * 	sequence. Records at dst the UTF-8 encoded equivalent of that
- * 	backslash sequence. Returns the number of bytes written to dst, at
- * 	most TCL_UTF_MAX. Either readPtr or dst may be NULL, if the results
- * 	are not needed, but the return value is the same either way.
+ *	Records at readPtr the number of bytes making up the backslash
+ *	sequence. Records at dst the UTF-8 encoded equivalent of that
+ *	backslash sequence. Returns the number of bytes written to dst, at
+ *	most TCL_UTF_MAX. Either readPtr or dst may be NULL, if the results
+ *	are not needed, but the return value is the same either way.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -1302,11 +1303,11 @@ TclParseBackslash(
  *	defined by Tcl's parsing rules.
  *
  * Results:
- * 	Records in parsePtr information about the parse. Returns the number of
- * 	bytes consumed.
+ *	Records in parsePtr information about the parse. Returns the number of
+ *	bytes consumed.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -1513,8 +1514,7 @@ ParseTokens(
 		continue;
 	    }
 
-	    nestedPtr = (Tcl_Parse *)
-		    TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
+	    nestedPtr = TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
 	    while (1) {
 		if (TCL_OK != ParseCommand(parsePtr->interp, src, numBytes,
 			(flags | PARSE_NESTED) & ~PARSE_APPEND, nestedPtr)) {
@@ -1934,8 +1934,7 @@ Tcl_ParseVar(
 {
     register Tcl_Obj *objPtr;
     int code;
-    Tcl_Parse *parsePtr = (Tcl_Parse *)
-	    TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
 
     if (Tcl_ParseVarName(interp, start, -1, parsePtr, 0) != TCL_OK) {
 	TclStackFree(interp, parsePtr);
@@ -2040,7 +2039,7 @@ ParseBraces(
 				 * the string consists of all bytes up to the
 				 * first null character. */
     register Tcl_Parse *parsePtr,
-    				/* Structure to fill in with information about
+				/* Structure to fill in with information about
 				 * the string. */
     int flags,			/* Bit flags to control details of the parsing.
 				 * Only the PARSE_APPEND flag has an effect
@@ -2261,7 +2260,7 @@ ParseQuotedString(
 				 * the string consists of all bytes up to the
 				 * first null character. */
     register Tcl_Parse *parsePtr,
-    				/* Structure to fill in with information about
+				/* Structure to fill in with information about
 				 * the string. */
     int flags,			/* Bit flags to control details of the parsing.
 				 * Only the PARSE_APPEND flag has an effect
@@ -2311,19 +2310,20 @@ ParseQuotedString(
  *
  * TclSubstParse --
  *
- *	Token parser used by the [subst] command.  Parses the string made
- *	up of 'numBytes' bytes starting at 'bytes'.  Parsing is controlled
- *	by the flags argument to provide support for the -nobackslashes,
- *	-nocommands, and -novariables options, as represented by the flag
- * 	values TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES.
+ *	Token parser used by the [subst] command. Parses the string made up of
+ *	'numBytes' bytes starting at 'bytes'. Parsing is controlled by the
+ *	flags argument to provide support for the -nobackslashes, -nocommands,
+ *	and -novariables options, as represented by the flag values
+ *	TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES.
  *	
  * Results:
  *	None.
  *
  * Side effects:
+
  *	The Tcl_Parse struct '*parsePtr' is filled with parse results.
- *	The caller is expected to eventually call Tcl_FreeParse() to
- *	properly cleanup the value written there.
+ *	The caller is expected to eventually call Tcl_FreeParse() to properly
+ *	cleanup the value written there.
  *
  *----------------------------------------------------------------------
  */
@@ -2353,13 +2353,13 @@ TclSubstParse(
  *	non-TCL_OK completion code arises.
  *
  * Results:
- * 	The return value is a standard Tcl completion code. The result in
- * 	interp is the substituted value, or an error message if TCL_ERROR is
- * 	returned. If tokensLeftPtr is not NULL, then it points to an int where
- * 	the number of tokens remaining to be processed is written.
+ *	The return value is a standard Tcl completion code. The result in
+ *	interp is the substituted value, or an error message if TCL_ERROR is
+ *	returned. If tokensLeftPtr is not NULL, then it points to an int where
+ *	the number of tokens remaining to be processed is written.
  *
  * Side effects:
- * 	Can be anything, depending on the types of substitution done.
+ *	Can be anything, depending on the types of substitution done.
  *
  *----------------------------------------------------------------------
  */
@@ -2377,22 +2377,23 @@ TclSubstTokens(
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
     int line,			/* The line the script starts on. */
-    int*  clNextOuter,       /* Information about an outer context for */
-    const char* outerScript, /* continuation line data. This is set by
-			      * EvalEx() to properly handle [...]-nested
-			      * commands. The 'outerScript' refers to the
-			      * most-outer script containing the embedded
-			      * command, which is refered to by 'script'. The
-			      * 'clNextOuter' refers to the current entry in
-			      * the table of continuation lines in this
-			      * "master script", and the character offsets are
-			      * relative to the 'outerScript' as well.
-			      *
-			      * If outerScript == script, then this call is for
-			      * words in the outer-most script/command. See
-			      * Tcl_EvalEx() and TclEvalObjEx() for the places
-			      * generating arguments for which this is true.
-			      */
+    int *clNextOuter,		/* Information about an outer context for */
+    const char *outerScript,	/* continuation line data. This is set by
+				 * EvalEx() to properly handle [...]-nested
+				 * commands. The 'outerScript' refers to the
+				 * most-outer script containing the embedded
+				 * command, which is refered to by 'script'.
+				 * The 'clNextOuter' refers to the current
+				 * entry in the table of continuation lines in
+				 * this "master script", and the character
+				 * offsets are relative to the 'outerScript'
+				 * as well.
+				 *
+				 * If outerScript == script, then this call is
+				 * for words in the outer-most script or
+				 * command. See Tcl_EvalEx and TclEvalObjEx
+				 * for the places generating arguments for
+				 * which this is true. */
     int flags)
 {
     Tcl_Obj *result;
@@ -2400,7 +2401,7 @@ TclSubstTokens(
 #define NUM_STATIC_POS 20
     int isLiteral, maxNumCL, numCL, i, adjust;
     int *clPosition = NULL;
-    Interp* iPtr = (Interp*) interp;
+    Interp *iPtr = (Interp *) interp;
     int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
 
     /*
@@ -2417,24 +2418,24 @@ TclSubstTokens(
      * For the handling of continuation lines in literals we first check if
      * this is actually a literal. For if not we can forego the additional
      * processing. Otherwise we pre-allocate a small table to store the
-     * locations of all continuation lines we find in this literal, if
-     * any. The table is extended if needed.
+     * locations of all continuation lines we find in this literal, if any.
+     * The table is extended if needed.
      */
 
-    numCL     = 0;
-    maxNumCL  = 0;
+    numCL = 0;
+    maxNumCL = 0;
     isLiteral = 1;
     for (i=0 ; i < count; i++) {
-	if ((tokenPtr[i].type != TCL_TOKEN_TEXT) &&
-	    (tokenPtr[i].type != TCL_TOKEN_BS)) {
+	if ((tokenPtr[i].type != TCL_TOKEN_TEXT)
+		&& (tokenPtr[i].type != TCL_TOKEN_BS)) {
 	    isLiteral = 0;
 	    break;
 	}
     }
 
     if (isLiteral) {
-	maxNumCL   = NUM_STATIC_POS;
-	clPosition = (int*) ckalloc (maxNumCL*sizeof(int));
+	maxNumCL = NUM_STATIC_POS;
+	clPosition = (int *) ckalloc(maxNumCL * sizeof(int));
     }
 
     adjust = 0;
@@ -2471,10 +2472,11 @@ TclSubstTokens(
 	     * correction.
 	     */
 
-	    if ((appendByteLength == 1) && (utfCharBytes[0] == ' ') &&
-		(tokenPtr->start[1] == '\n')) {
+	    if ((appendByteLength == 1) && (utfCharBytes[0] == ' ')
+		    && (tokenPtr->start[1] == '\n')) {
 		if (isLiteral) {
 		    int clPos;
+
 		    if (result == 0) {
 			clPos = 0;
 		    } else {
@@ -2483,28 +2485,29 @@ TclSubstTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = (int*) ckrealloc ((char*)clPosition,
-						       maxNumCL*sizeof(int));
+			clPosition = (int *) ckrealloc((char *) clPosition,
+				maxNumCL * sizeof(int));
 		    }
 		    clPosition[numCL] = clPos;
-		    numCL ++;
+		    numCL++;
 		}
-		adjust ++;
+		adjust++;
 	    }
 	    break;
 
 	case TCL_TOKEN_COMMAND: {
 	    /* TIP #280: Transfer line information to nested command */
- 	    iPtr->numLevels++;
-  	    code = TclInterpReady(interp);
-  	    if (code == TCL_OK) {
+	    iPtr->numLevels++;
+	    code = TclInterpReady(interp);
+	    if (code == TCL_OK) {
 		/*
 		 * Test cases: info-30.{6,8,9}
 		 */
 
 		int theline;
-		TclAdvanceContinuations (&line, &clNextOuter,
-					 tokenPtr->start - outerScript);
+
+		TclAdvanceContinuations(&line, &clNextOuter,
+			tokenPtr->start - outerScript);
 		theline = line + adjust;
 		code = TclEvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
 			flags, theline, clNextOuter, outerScript);
@@ -2516,7 +2519,8 @@ TclSubstTokens(
 		 * Restore flag reset by nested eval for future bracketed
 		 * commands and their cmdframe setup
 		 */
-	        if (inFile) {
+
+		if (inFile) {
 		    iPtr->evalFlags |= TCL_EVAL_FILE;
 		}
 	    }
@@ -2665,6 +2669,7 @@ TclSubstTokens(
     if (code != TCL_ERROR) {		/* Keep error message in result! */
 	if (result != NULL) {
 	    Tcl_SetObjResult(interp, result);
+
 	    /*
 	     * If the code found continuation lines (which implies that this
 	     * word is a literal), then we store the accumulated table of
@@ -2683,7 +2688,7 @@ TclSubstTokens(
 	     */
 
 	    if (maxNumCL) {
-		ckfree ((char*) clPosition);
+		ckfree((char *) clPosition);
 	    }
 	} else {
 	    Tcl_ResetResult(interp);
@@ -2826,8 +2831,8 @@ TclIsLocalScalar(
     const char *lastChar = src + (len - 1);
 
     for (p=src ; p<=lastChar ; p++) {
-	if ((CHAR_TYPE(*p) != TYPE_NORMAL) &&
-		(CHAR_TYPE(*p) != TYPE_COMMAND_END)) {
+	if ((CHAR_TYPE(*p) != TYPE_NORMAL)
+		&& (CHAR_TYPE(*p) != TYPE_COMMAND_END)) {
 	    /*
 	     * TCL_COMMAND_END is returned for the last character of the
 	     * string. By this point we know it isn't an array or namespace

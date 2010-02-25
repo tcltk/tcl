@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.9 2010/01/13 18:47:39 dgp Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.10 2010/02/25 21:53:07 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -74,7 +74,7 @@ static const Tcl_ChannelType tclRTransformType = {
     ReflectGetOption,		/* Get options. */
     ReflectWatch,		/* Initialize notifier. */
     ReflectHandle,		/* Get OS handle from the channel. */
-    NULL,			/* No close2 support. NULL'able  */
+    NULL,			/* No close2 support. NULL'able. */
     ReflectBlock,		/* Set blocking/nonblocking. */
     NULL,			/* Flush channel. Not used by core.
 				 * NULL'able. */
@@ -90,9 +90,9 @@ static const Tcl_ChannelType tclRTransformType = {
  */
 
 typedef struct _ResultBuffer_ {
-  unsigned char *buf;		/* Reference to the buffer area. */
-  int allocated;		/* Allocated size of the buffer area. */
-  int used;			/* Number of bytes in the buffer,
+    unsigned char *buf;		/* Reference to the buffer area. */
+    int allocated;		/* Allocated size of the buffer area. */
+    int used;			/* Number of bytes in the buffer,
 				 * <= allocated. */
 } ResultBuffer;
 
@@ -444,15 +444,14 @@ static const char *msg_dstlost =
 
 #define FLUSH_DELAY (5)
 
-static void TimerKill(ReflectedTransform* rtPtr);
-static void TimerSetup(ReflectedTransform* rtPtr);
-static void TimerRun(ClientData clientData);
-
 /*
  * Helper functions encapsulating some of the thread forwarding to make the
  * control flow in callers easier.
  */
 
+static void		TimerKill(ReflectedTransform *rtPtr);
+static void		TimerSetup(ReflectedTransform *rtPtr);
+static void		TimerRun(ClientData clientData);
 static int		TransformRead(ReflectedTransform *rtPtr,
 			    int *errorCodePtr, unsigned char *buf,
 			    int toRead);
@@ -467,9 +466,12 @@ static void		TransformClear(ReflectedTransform *rtPtr);
 static int		TransformLimit(ReflectedTransform *rtPtr,
 			    int *errorCodePtr, int *maxPtr);
 
-/* op'codes for TransformFlush */
-#define FLUSH_WRITE   1
-#define FLUSH_DISCARD 0
+/*
+ * Operation codes for TransformFlush().
+ */
+
+#define FLUSH_WRITE	1
+#define FLUSH_DISCARD	0
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================
@@ -576,7 +578,7 @@ TclChanPushObjCmd(
      * Now create the transformation (channel).
      */
 
-    rtId  = NextHandle();
+    rtId = NextHandle();
     rtPtr = NewReflectedTransform(interp, cmdObj, mode, rtId, parentChan);
 
     /*
@@ -585,7 +587,7 @@ TclChanPushObjCmd(
      */
 
     modeObj = DecodeEventMask(mode);
-    result  = InvokeTclMethod(rtPtr, "initialize", modeObj, NULL, &resObj);
+    result = InvokeTclMethod(rtPtr, "initialize", modeObj, NULL, &resObj);
     Tcl_DecrRefCount(modeObj);
     if (result != TCL_OK) {
 	UnmarshallErrorResult(interp, resObj);
@@ -1329,8 +1331,9 @@ ReflectSeekWide(
      * request down and the result back up unchanged.
      */
 
-    if (((seekMode != SEEK_CUR) || (offset != 0)) &&
-	  (HAS(rtPtr->methods,METH_CLEAR) || HAS(rtPtr->methods,METH_FLUSH))){
+    if (((seekMode != SEEK_CUR) || (offset != 0))
+	    && (HAS(rtPtr->methods, METH_CLEAR)
+	    || HAS(rtPtr->methods, METH_FLUSH))) {
 	/*
 	 * Neither a tell request, nor clear/flush both not supported. We have
 	 * to go through the Tcl level to clear and/or flush the
@@ -2654,7 +2657,7 @@ ForwardProc(
     }
 
     case ForwardedLimit: {
-	Tcl_Obj* resObj;
+	Tcl_Obj *resObj;
 
 	if (InvokeTclMethod(rtPtr, "limit?", NULL, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
@@ -3196,7 +3199,7 @@ TransformFlush(
     int *errorCodePtr,
     int op)
 {
-    Tcl_Obj* resObj;
+    Tcl_Obj *resObj;
     int bytec;			/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     int res;

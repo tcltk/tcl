@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.163 2010/02/21 14:31:12 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.164 2010/02/25 21:53:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2280,7 +2280,7 @@ TclInvokeStringCommand(
 
     result = cmdPtr->proc(cmdPtr->clientData, interp, objc, argv);
 
-    TclStackFree(interp, (char **)argv);
+    TclStackFree(interp, (void *) argv);
     return result;
 }
 
@@ -7398,15 +7398,25 @@ ExprAbsFunc(
     if (type == TCL_NUMBER_LONG) {
 	long l = *((const long *) ptr);
 
-	if (l <= (long)0) {
-	    if (l == LONG_MIN) {
-		TclBNInitBignumFromLong(&big, l);
-		goto tooLarge;
+	if (l > (long)0) {
+	    goto unChanged;
+	} else if (l == (long)0) {
+	    const char *string = objv[1]->bytes;
+	    if (!string) {
+	    /* There is no string representation, so internal one is correct */
+		goto unChanged;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_NewLongObj(-l));
-	} else {
-	    Tcl_SetObjResult(interp, objv[1]);
+	    while (isspace(UCHAR(*string))) {
+	    	++string;
+	    }
+	    if (*string != '-') {
+		goto unChanged;
+	    }
+	} else if (l == LONG_MIN) {
+	    TclBNInitBignumFromLong(&big, l);
+	    goto tooLarge;
 	}
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(-l));
 	return TCL_OK;
     }
 
@@ -7414,14 +7424,19 @@ ExprAbsFunc(
 	double d = *((const double *) ptr);
 	static const double poszero = 0.0;
 
-	/* We need to distinguish here between positive 0.0 and
-	 * negative -0.0, see Bug ID #2954959.
+	/*
+	 * We need to distinguish here between positive 0.0 and negative -0.0.
+	 * [Bug 2954959]
 	 */
-	if ((d <= -0.0) && memcmp(&d, &poszero, sizeof(double))) {
-		Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
-	} else {
-	    Tcl_SetObjResult(interp, objv[1]);
+
+	if (d == -0.0) {
+	    if (!memcmp(&d, &poszero, sizeof(double))) {
+		goto unChanged;
+	    }
+	} else if (d > -0.0) {
+	    goto unChanged;
 	}
+	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
 	return TCL_OK;
     }
 
@@ -7429,15 +7444,14 @@ ExprAbsFunc(
     if (type == TCL_NUMBER_WIDE) {
 	Tcl_WideInt w = *((const Tcl_WideInt *) ptr);
 
-	if (w < (Tcl_WideInt)0) {
-	    if (w == LLONG_MIN) {
-		TclBNInitBignumFromWideInt(&big, w);
-		goto tooLarge;
-	    }
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-w));
-	} else {
-	    Tcl_SetObjResult(interp, objv[1]);
+	if (w >= (Tcl_WideInt)0) {
+	    goto unChanged;
 	}
+	if (w == LLONG_MIN) {
+	    TclBNInitBignumFromWideInt(&big, w);
+	    goto tooLarge;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-w));
 	return TCL_OK;
     }
 #endif
@@ -7450,6 +7464,7 @@ ExprAbsFunc(
 	    mp_neg(&big, &big);
 	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
 	} else {
+	unChanged:
 	    Tcl_SetObjResult(interp, objv[1]);
 	}
 	return TCL_OK;

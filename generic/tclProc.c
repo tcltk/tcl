@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.62 2010/02/09 17:53:09 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.63 2010/02/25 21:53:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -440,7 +440,7 @@ TclCreateProc(
 	 */
 
 	if (Tcl_IsShared(bodyPtr)) {
-	    Tcl_Obj* sharedBodyPtr = bodyPtr;
+	    Tcl_Obj *sharedBodyPtr = bodyPtr;
 
 	    bytes = TclGetStringFromObj(bodyPtr, &length);
 	    bodyPtr = Tcl_NewStringObj(bytes, length);
@@ -451,7 +451,7 @@ TclCreateProc(
 	     * not lost and applies to the new body as well.
 	     */
 
-	    TclContinuationsCopy (bodyPtr, sharedBodyPtr);
+	    TclContinuationsCopy(bodyPtr, sharedBodyPtr);
 	}
 
 	/*
@@ -1578,7 +1578,7 @@ InitArgsAndLocals(
 
 static int
 PushProcCallFrame(
-    ClientData clientData, 	/* Record describing procedure to be
+    ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
     register Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
@@ -1615,7 +1615,7 @@ PushProcCallFrame(
 	 */
 
 	codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
- 	if (((Interp *) *codePtr->interpHandle != iPtr)
+	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
 		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)) {
@@ -1673,7 +1673,7 @@ PushProcCallFrame(
 
 int
 TclObjInterpProc(
-    ClientData clientData, 	/* Record describing procedure to be
+    ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
     register Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
@@ -1690,7 +1690,7 @@ TclObjInterpProc(
 
 int
 TclNRInterpProc(
-    ClientData clientData, 	/* Record describing procedure to be
+    ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
     register Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
@@ -1941,8 +1941,8 @@ TclProcCompileProc(
     Tcl_Interp *interp,		/* Interpreter containing procedure. */
     Proc *procPtr,		/* Data associated with procedure. */
     Tcl_Obj *bodyPtr,		/* Body of proc. (Usually procPtr->bodyPtr,
- 				 * but could be any code fragment compiled in
- 				 * the context of this procedure.) */
+				 * but could be any code fragment compiled in
+				 * the context of this procedure.) */
     Namespace *nsPtr,		/* Namespace containing procedure. */
     const char *description,	/* string describing this body of code. */
     const char *procName)	/* Name of this procedure. */
@@ -1966,7 +1966,7 @@ TclProcCompileProc(
      */
 
     if (bodyPtr->typePtr == &tclByteCodeType) {
- 	if (((Interp *) *codePtr->interpHandle == iPtr)
+	if (((Interp *) *codePtr->interpHandle == iPtr)
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == nsPtr)
 		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)) {
@@ -1984,18 +1984,18 @@ TclProcCompileProc(
 	} else {
 	    bodyPtr->typePtr->freeIntRepProc(bodyPtr);
 	    bodyPtr->typePtr = NULL;
- 	}
+	}
     }
 
     if (bodyPtr->typePtr != &tclByteCodeType) {
 	Tcl_HashEntry *hePtr;
 
 #ifdef TCL_COMPILE_DEBUG
- 	if (tclTraceCompile >= 1) {
- 	    /*
- 	     * Display a line summarizing the top level command we are about
- 	     * to compile.
- 	     */
+	if (tclTraceCompile >= 1) {
+	    /*
+	     * Display a line summarizing the top level command we are about
+	     * to compile.
+	     */
 
 	    Tcl_Obj *message;
 
@@ -2003,22 +2003,22 @@ TclProcCompileProc(
 	    Tcl_IncrRefCount(message);
 	    Tcl_AppendStringsToObj(message, description, " \"", NULL);
 	    Tcl_AppendLimitedToObj(message, procName, -1, 50, NULL);
- 	    fprintf(stdout, "%s\"\n", TclGetString(message));
+	    fprintf(stdout, "%s\"\n", TclGetString(message));
 	    Tcl_DecrRefCount(message);
- 	}
+	}
 #endif
 
- 	/*
- 	 * Plug the current procPtr into the interpreter and coerce the code
- 	 * body to byte codes. The interpreter needs to know which proc it's
- 	 * compiling so that it can access its list of compiled locals.
- 	 *
- 	 * TRICKY NOTE: Be careful to push a call frame with the proper
- 	 *   namespace context, so that the byte codes are compiled in the
- 	 *   appropriate class context.
- 	 */
+	/*
+	 * Plug the current procPtr into the interpreter and coerce the code
+	 * body to byte codes. The interpreter needs to know which proc it's
+	 * compiling so that it can access its list of compiled locals.
+	 *
+	 * TRICKY NOTE: Be careful to push a call frame with the proper
+	 *   namespace context, so that the byte codes are compiled in the
+	 *   appropriate class context.
+	 */
 
- 	iPtr->compiledProcPtr = procPtr;
+	iPtr->compiledProcPtr = procPtr;
 
 	if (procPtr->numCompiledLocals > procPtr->numArgs) {
 	    CompiledLocal *clPtr = procPtr->firstLocalPtr;
@@ -2044,7 +2044,7 @@ TclProcCompileProc(
 	    procPtr->numCompiledLocals = procPtr->numArgs;
 	}
 
- 	TclPushStackFrame(interp, &framePtr, (Tcl_Namespace *) nsPtr,
+	TclPushStackFrame(interp, &framePtr, (Tcl_Namespace *) nsPtr,
 		/* isProcCallFrame */ 0);
 
 	/*

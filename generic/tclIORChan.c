@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.28 2010/01/13 18:47:39 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.29 2010/02/25 21:53:07 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -448,7 +448,7 @@ static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 static ReflectedChannelMap *	GetReflectedChannelMap(Tcl_Interp *interp);
 static void		DeleteReflectedChannelMap(ClientData clientData,
 			    Tcl_Interp *interp);
-static int              ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj* resObj);
+static int		ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj *resObj);
 
 /*
  * Global constant strings (messages). ==================
@@ -857,7 +857,7 @@ TclChanPostEventObjCmd(
 	Tcl_Panic("TclChanPostEventObjCmd: channel is not a reflected channel");
     }
 
-    rcPtr = (ReflectedChannel *) Tcl_GetChannelInstanceData(chan);
+    rcPtr = Tcl_GetChannelInstanceData(chan);
 
     if (rcPtr->interp != interp) {
 	Tcl_Panic("TclChanPostEventObjCmd: postevent accepted for call from outside interpreter");
@@ -958,7 +958,7 @@ UnmarshallErrorResult(
     }
 
     (void) Tcl_SetReturnOptions(interp, Tcl_NewListObj(numOptions, lv));
-    ((Interp *)interp)->flags &= ~ERR_ALREADY_LOGGED;
+    ((Interp *) interp)->flags &= ~ERR_ALREADY_LOGGED;
 }
 
 int
@@ -1043,7 +1043,7 @@ ReflectClose(
     ClientData clientData,
     Tcl_Interp *interp)
 {
-    ReflectedChannel *rcPtr = (ReflectedChannel *) clientData;
+    ReflectedChannel *rcPtr = clientData;
     int result;			/* Result code for 'close' */
     Tcl_Obj *resObj;		/* Result data for 'close' */
     ReflectedChannelMap *rcmPtr;/* Map of reflected channels with handlers in
@@ -1147,7 +1147,7 @@ ReflectClose(
 	if (rcPtr->interp) {
 	    rcmPtr = GetReflectedChannelMap(rcPtr->interp);
 	    hPtr = Tcl_FindHashEntry(&rcmPtr->map,
-				     Tcl_GetChannelName(rcPtr->chan));
+		    Tcl_GetChannelName(rcPtr->chan));
 	    if (hPtr) {
 		Tcl_DeleteHashEntry(hPtr);
 	    }
@@ -1191,7 +1191,7 @@ ReflectInput(
     int toRead,
     int *errorCodePtr)
 {
-    ReflectedChannel *rcPtr = (ReflectedChannel *) clientData;
+    ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *toReadObj;
     int bytec;			/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
@@ -1244,7 +1244,7 @@ ReflectInput(
 
     toReadObj = Tcl_NewIntObj(toRead);
     if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj)!=TCL_OK) {
-	int code = ErrnoReturn (rcPtr, resObj);
+	int code = ErrnoReturn(rcPtr, resObj);
 
 	if (code < 0) {
 	    Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
@@ -1300,7 +1300,7 @@ ReflectOutput(
     int toWrite,
     int *errorCodePtr)
 {
-    ReflectedChannel *rcPtr = (ReflectedChannel *) clientData;
+    ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *bufObj;
     Tcl_Obj *resObj;		/* Result data for 'write' */
     int written;
@@ -1411,7 +1411,7 @@ ReflectSeekWide(
     int seekMode,
     int *errorCodePtr)
 {
-    ReflectedChannel *rcPtr = (ReflectedChannel *) clientData;
+    ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *offObj, *baseObj;
     Tcl_Obj *resObj;		/* Result for 'seek' */
     Tcl_WideInt newLoc;
@@ -1512,7 +1512,7 @@ ReflectWatch(
     ClientData clientData,
     int mask)
 {
-    ReflectedChannel *rcPtr = (ReflectedChannel *) clientData;
+    ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *maskObj;
 
     /* ASSERT rcPtr->methods & FLAG(METH_WATCH) */
@@ -1582,7 +1582,7 @@ ReflectBlock(
     ClientData clientData,
     int nonblocking)
 {
-    ReflectedChannel *rcPtr = (ReflectedChannel *) clientData;
+    ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *blockObj;
     int errorNum;		/* EINVAL or EOK (success). */
     Tcl_Obj *resObj;		/* Result data for 'blocking' */
@@ -1644,7 +1644,7 @@ ReflectSetOption(
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
 {
-    ReflectedChannel *rcPtr = (ReflectedChannel *) clientData;
+    ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *optionObj, *valueObj;
     int result;			/* Result code for 'configure' */
     Tcl_Obj *resObj;		/* Result data for 'configure' */
@@ -2302,7 +2302,9 @@ InvokeTclMethod(
  */
 
 static int
-ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj* resObj)
+ErrnoReturn(
+    ReflectedChannel *rcPtr,
+    Tcl_Obj *resObj)
 {
     int code;
     Tcl_InterpState sr;		/* State of handler interp */
@@ -2316,8 +2318,9 @@ ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj* resObj)
 
     resObj = Tcl_GetObjResult(rcPtr->interp);
 
-    if (((Tcl_GetIntFromObj(rcPtr->interp, resObj, &code) != TCL_OK) || (code >= 0))) {
-	if (strcmp ("EAGAIN",Tcl_GetString(resObj)) == 0) {
+    if (((Tcl_GetIntFromObj(rcPtr->interp, resObj, &code) != TCL_OK)
+	    || (code >= 0))) {
+	if (strcmp("EAGAIN", Tcl_GetString(resObj)) == 0) {
 	    code = - EAGAIN;
 	} else {
 	    code = 0;
@@ -2385,12 +2388,12 @@ DeleteReflectedChannelMap(
     ClientData clientData,	/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
-    ReflectedChannelMap *rcmPtr; /* The map */
+    ReflectedChannelMap *rcmPtr = clientData;
+				/* The map */
     Tcl_HashSearch hSearch;	 /* Search variable. */
     Tcl_HashEntry *hPtr;	 /* Search variable. */
     ReflectedChannel *rcPtr;
     Tcl_Channel chan;
-
 #ifdef TCL_THREADS
     ForwardingResult *resultPtr;
     ForwardingEvent *evPtr;
@@ -2409,12 +2412,11 @@ DeleteReflectedChannelMap(
      * this interp.
      */
 
-    rcmPtr = clientData;
     for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch)) {
 	chan = Tcl_GetHashValue(hPtr);
-	rcPtr = (ReflectedChannel *) Tcl_GetChannelInstanceData(chan);
+	rcPtr = Tcl_GetChannelInstanceData(chan);
 
 	rcPtr->interp = NULL;
 	Tcl_DeleteHashEntry(hPtr);
@@ -2475,7 +2477,7 @@ DeleteReflectedChannelMap(
 	    hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&hSearch)) {
 	chan = Tcl_GetHashValue(hPtr);
-	rcPtr = (ReflectedChannel *) Tcl_GetChannelInstanceData(chan);
+	rcPtr = Tcl_GetChannelInstanceData(chan);
 
 	if (rcPtr->interp != interp) {
 	    /*
@@ -2608,9 +2610,8 @@ DeleteThreadReflectedChannelMap(
     for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch)) {
-	Tcl_Channel chan = (Tcl_Channel) Tcl_GetHashValue(hPtr);
-	ReflectedChannel *rcPtr = (ReflectedChannel *)
-		Tcl_GetChannelInstanceData(chan);
+	Tcl_Channel chan = Tcl_GetHashValue(hPtr);
+	ReflectedChannel *rcPtr = Tcl_GetChannelInstanceData(chan);
 
 	rcPtr->interp = NULL;
 	Tcl_DeleteHashEntry(hPtr);
@@ -2683,13 +2684,13 @@ ForwardOpToOwnerThread(
      * (see above) for.
      */
 
-    Tcl_CreateThreadExitHandler(SrcExitProc, (ClientData) evPtr);
+    Tcl_CreateThreadExitHandler(SrcExitProc, evPtr);
 
     /*
      * Queue the event and poke the other thread's notifier.
      */
 
-    Tcl_ThreadQueueEvent(dst, (Tcl_Event *)evPtr, TCL_QUEUE_TAIL);
+    Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
     Tcl_ThreadAlert(dst);
 
     /*
@@ -2730,7 +2731,7 @@ ForwardOpToOwnerThread(
      * Note: The event structure has already been deleted.
      */
 
-    Tcl_DeleteThreadExitHandler(SrcExitProc, (ClientData) evPtr);
+    Tcl_DeleteThreadExitHandler(SrcExitProc, evPtr);
 
     result = resultPtr->result;
     ckfree((char *) resultPtr);
@@ -2820,7 +2821,7 @@ ForwardProc(
 	Tcl_Obj *toReadObj = Tcl_NewIntObj(paramPtr->input.toRead);
 
 	if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj)!=TCL_OK){
-	    int code = ErrnoReturn (rcPtr, resObj);
+	    int code = ErrnoReturn(rcPtr, resObj);
 
 	    if (code < 0) {
 		paramPtr->base.code = code;
@@ -3035,7 +3036,7 @@ static void
 SrcExitProc(
     ClientData clientData)
 {
-    ForwardingEvent *evPtr = (ForwardingEvent *) clientData;
+    ForwardingEvent *evPtr = clientData;
     ForwardingResult *resultPtr;
     ForwardParam *paramPtr;
 

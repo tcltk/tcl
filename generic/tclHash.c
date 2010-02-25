@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.12.4.27 2010/02/17 22:33:02 dgp Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.12.4.28 2010/02/25 21:53:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -353,7 +353,7 @@ Tcl_CreateHashEntry(
     hPtr->nextPtr = tablePtr->buckets[index];
     tablePtr->buckets[index] = hPtr;
 #else
-    hPtr->bucketPtr = &(tablePtr->buckets[index]);
+    hPtr->bucketPtr = &tablePtr->buckets[index];
     hPtr->nextPtr = *hPtr->bucketPtr;
     *hPtr->bucketPtr = hPtr;
 #endif
@@ -416,12 +416,12 @@ Tcl_DeleteHashEntry(
 #if TCL_HASH_KEY_STORE_HASH
     if (typePtr->hashKeyProc == NULL
 	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-	index = RANDOM_INDEX (tablePtr, entryPtr->hash);
+	index = RANDOM_INDEX(tablePtr, entryPtr->hash);
     } else {
 	index = PTR2UINT(entryPtr->hash) & tablePtr->mask;
     }
 
-    bucketPtr = &(tablePtr->buckets[index]);
+    bucketPtr = &tablePtr->buckets[index];
 #else
     bucketPtr = entryPtr->bucketPtr;
 #endif
@@ -1063,7 +1063,7 @@ RebuildTable(
 		index = RANDOM_INDEX(tablePtr, key);
 	    }
 
-	    hPtr->bucketPtr = &(tablePtr->buckets[index]);
+	    hPtr->bucketPtr = &tablePtr->buckets[index];
 	    hPtr->nextPtr = *hPtr->bucketPtr;
 	    *hPtr->bucketPtr = hPtr;
 #endif
