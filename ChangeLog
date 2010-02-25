@@ -1,3 +1,16 @@
+2010-02-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+    * generic/tclHash.c      [ tcl-Feature Requests-2958832 ] Further
+    * generic/tclLiteral.c   speed-up of ouster-hash function.
+    * generic/tclObj.c
+    * generic/tclCkalloc.c   Eliminate various unnecessary (ClientData)
+    * generic/tclTest.c      type casts.
+    * generic/tclTestObj.c
+    * generic/tclTestProcBodyObj.c
+    * unix/tclUnixTest.c
+    * unix/tclUnixTime.c
+    * unix/tclXtTest.c
+
 2010-02-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (SetDictFromAny): Prevent the list<->dict
