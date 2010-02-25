@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.165 2010/02/22 23:31:41 nijtmans Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.166 2010/02/25 10:56:16 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4039,9 +4039,9 @@ TclSubstCompile(
 
 	breakJump = CurrentOffset(envPtr) - breakOffset;
 	if (breakJump > 127) {
-	    TclEmitInstInt4(INST_JUMP4, -breakJump, envPtr)
+	    TclEmitInstInt4(INST_JUMP4, -breakJump, envPtr);
 	} else {
-	    TclEmitInstInt1(INST_JUMP1, -breakJump, envPtr)
+	    TclEmitInstInt1(INST_JUMP1, -breakJump, envPtr);
 	}
 
 	/* CONTINUE destination */
