@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.36 2009/11/19 21:17:36 nijtmans Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.37 2010/02/25 22:20:10 nijtmans Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -91,18 +91,18 @@ TclObjTest_Init(
     }
 
     Tcl_CreateObjCommand(interp, "testbignumobj", TestbignumobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbooleanobj", TestbooleanobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testdoubleobj", TestdoubleobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testintobj", TestintobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testindexobj", TestindexobjCmd,
-	    (ClientData) 0, NULL);
-    Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, (ClientData) 0, NULL);
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringobj", TeststringobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     return TCL_OK;
 }
 

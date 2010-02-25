@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.44 2010/02/24 10:45:04 dkf Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.45 2010/02/25 22:20:10 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -871,8 +871,8 @@ HashStringKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {
-    register const char *string = (const char *) keyPtr;
-    register unsigned int result = 0;
+    register const char *string = keyPtr;
+    register unsigned int result;
     register char c;
 
     /*
@@ -903,10 +903,14 @@ HashStringKey(
      *
      * See also HashString in tclLiteral.c.
      * See also TclObjHashKey in tclObj.c.
+     *
+     * See [tcl-Feature Request #2958832]
      */
 
-    for (; (c=*string++) != 0 ;) {
-        result += (result<<3) + UCHAR(c);
+    if ((result = UCHAR(*string)) != 0) {
+	while ((c = *++string) != 0) {
+	    result += (result << 3) + UCHAR(c);
+	}
     }
     return result;
 }

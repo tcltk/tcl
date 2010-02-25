@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.37 2009/09/29 05:03:46 dgp Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.38 2010/02/25 22:20:10 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1010,8 +1010,8 @@ Tcl_InitMemory(
 				 * added */
 {
     TclInitDbCkalloc();
-    Tcl_CreateCommand(interp, "memory", MemoryCmd, (ClientData) NULL, NULL);
-    Tcl_CreateCommand(interp, "checkmem", CheckmemCmd, (ClientData) 0, NULL);
+    Tcl_CreateCommand(interp, "memory", MemoryCmd, NULL, NULL);
+    Tcl_CreateCommand(interp, "checkmem", CheckmemCmd, NULL, NULL);
 }
 
 
