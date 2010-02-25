@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtTest.c,v 1.9 2009/11/18 23:46:05 nijtmans Exp $
+ * RCS: @(#) $Id: tclXtTest.c,v 1.10 2010/02/25 22:20:10 nijtmans Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -62,7 +62,7 @@ Tclxttest_Init(
     XtToolkitInitialize();
     InitNotifier();
     Tcl_CreateCommand(interp, "testeventloop", TesteventloopCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     return TCL_OK;
 }
 
