@@ -1,21 +1,26 @@
+2010-02-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/installManPage: Remap non-alphanumeric sequences in filenames
+	to single underscores (especially colons).
+
 2010-02-26  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* tests/zlib.test: Add tests for [Bug 2818131] which was crashing
-	with mismatched zlib algorithms used in combination with
-	gets. This issue has been fixed by Andreas last commit.
+	* tests/zlib.test: Add tests for [Bug 2818131] which was crashing with
+	mismatched zlib algorithms used in combination with gets. This issue
+	has been fixed by Andreas's last commit.
 
 2010-02-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * generic/tclHash.c      [ tcl-Feature Requests-2958832 ] Further
-    * generic/tclLiteral.c   speed-up of ouster-hash function.
-    * generic/tclObj.c
-    * generic/tclCkalloc.c   Eliminate various unnecessary (ClientData)
-    * generic/tclTest.c      type casts.
-    * generic/tclTestObj.c
-    * generic/tclTestProcBodyObj.c
-    * unix/tclUnixTest.c
-    * unix/tclUnixTime.c
-    * unix/tclXtTest.c
+	* generic/tclHash.c:	[FRQ 2958832]: Further speed-up of the
+	* generic/tclLiteral.c:	ouster-hash function.
+	* generic/tclObj.c:
+	* generic/tclCkalloc.c:	Eliminate various unnecessary (ClientData)
+	* generic/tclTest.c:	type casts.
+	* generic/tclTestObj.c:
+	* generic/tclTestProcBodyObj.c:
+	* unix/tclUnixTest.c:
+	* unix/tclUnixTime.c:
+	* unix/tclXtTest.c:
 
 2010-02-24  Donal K. Fellows  <dkf@users.sf.net>
 
