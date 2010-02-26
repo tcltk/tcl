@@ -1,3 +1,9 @@
+2010-02-26  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/zlib.test: Add tests for [Bug 2818131] which was crashing
+	with mismatched zlib algorithms used in combination with
+	gets. This issue has been fixed by Andreas last commit.
+
 2010-02-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
     * generic/tclHash.c      [ tcl-Feature Requests-2958832 ] Further
