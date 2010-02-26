@@ -6,6 +6,10 @@
 
 2010-02-26  Donal K. Fellows  <dkf@users.sf.net>
 
+	* unix/Makefile.in (NATIVE_TCLSH): Added this variable to allow for
+	better control of what tclsh to use for various scripts when doing
+	cross compiling. An imperfect solution, but works.
+
 	* unix/installManPage: Remap non-alphanumeric sequences in filenames
 	to single underscores (especially colons).
 
