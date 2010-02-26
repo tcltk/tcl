@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.54 2010/02/25 21:53:08 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.55 2010/02/26 01:21:08 dgp Exp $
  */
 
 #undef STATIC_BUILD
@@ -170,11 +170,11 @@ static void		CmdTraceDeleteProc(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int level, char *command, Tcl_CmdProc *cmdProc,
 			    ClientData cmdClientData, int argc,
-			    char **argv);
+			    const char *argv[]);
 static void		CmdTraceProc(ClientData clientData,
 			    Tcl_Interp *interp, int level, char *command,
 			    Tcl_CmdProc *cmdProc, ClientData cmdClientData,
-			    int argc, char **argv);
+			    int argc, const char *argv[]);
 static int		CreatedCommandProc(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int argc, const char **argv);
@@ -552,132 +552,132 @@ Tcltest_Init(
      * Create additional commands and math functions for testing Tcl.
      */
 
-    Tcl_CreateCommand(interp, "gettimes", GetTimesCmd, (ClientData) 0, NULL);
-    Tcl_CreateCommand(interp, "noop", NoopCmd, (ClientData) 0, NULL);
-    Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, (ClientData) 0, NULL);
+    Tcl_CreateCommand(interp, "gettimes", GetTimesCmd, NULL, NULL);
+    Tcl_CreateCommand(interp, "noop", NoopCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfilesystem", TestFilesystemObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsimplefilesystem", TestSimpleFilesystemObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testgetindexfromobjstruct",
-	    TestGetIndexFromObjStructObjCmd, (ClientData) 0, NULL);
-    Tcl_CreateCommand(interp, "testasync", TestasyncCmd, (ClientData) 0, NULL);
+	    TestGetIndexFromObjStructObjCmd, NULL, NULL);
+    Tcl_CreateCommand(interp, "testasync", TestasyncCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testchannel", TestChannelCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testchannelevent", TestChannelEventCmd,
-	    (ClientData) 0, NULL);
-    Tcl_CreateCommand(interp, "testcmdtoken", TestcmdtokenCmd, (ClientData) 0,
+	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testcmdtoken", TestcmdtokenCmd, NULL,
 	    NULL);
-    Tcl_CreateCommand(interp, "testcmdinfo", TestcmdinfoCmd, (ClientData) 0,
+    Tcl_CreateCommand(interp, "testcmdinfo", TestcmdinfoCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testcmdtrace", TestcmdtraceCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testconcatobj", TestconcatobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testcreatecommand", TestcreatecommandCmd,
-	    (ClientData) 0, NULL);
-    Tcl_CreateCommand(interp, "testdcall", TestdcallCmd, (ClientData) 0, NULL);
-    Tcl_CreateCommand(interp, "testdel", TestdelCmd, (ClientData) 0, NULL);
+	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testdcall", TestdcallCmd, NULL, NULL);
+    Tcl_CreateCommand(interp, "testdel", TestdelCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testdelassocdata", TestdelassocdataCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_DStringInit(&dstring);
-    Tcl_CreateCommand(interp, "testdstring", TestdstringCmd, (ClientData) 0,
+    Tcl_CreateCommand(interp, "testdstring", TestdstringCmd, NULL,
 	    NULL);
-    Tcl_CreateObjCommand(interp, "testencoding", TestencodingObjCmd, (ClientData) 0,
+    Tcl_CreateObjCommand(interp, "testencoding", TestencodingObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand(interp, "testevalex", TestevalexObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testevalobjv", TestevalobjvObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testevent", TesteventObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testexithandler", TestexithandlerCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testexprlong", TestexprlongCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testexprlongobj", TestexprlongobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testexprdouble", TestexprdoubleCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testexprdoubleobj", TestexprdoubleobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testexprparser", TestexprparserObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testexprstring", TestexprstringCmd,
-	    (ClientData) 0, NULL);
-    Tcl_CreateCommand(interp, "testfevent", TestfeventCmd, (ClientData) 0,
+	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testfevent", TestfeventCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand(interp, "testfilelink", TestfilelinkCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfile", TestfileCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testhashsystemhash",
-	    TestHashSystemHashCmd, (ClientData) 0, NULL);
+	    TestHashSystemHashCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testgetassocdata", TestgetassocdataCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetint", TestgetintCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetplatform", TestgetplatformCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testgetvarfullname",
-	    TestgetvarfullnameCmd, (ClientData) 0, NULL);
+	    TestgetvarfullnameCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testinterpdelete", TestinterpdeleteCmd,
-	    (ClientData) 0, NULL);
-    Tcl_CreateCommand(interp, "testlink", TestlinkCmd, (ClientData) 0, NULL);
-    Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, (ClientData) 0,
+	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testlink", TestlinkCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
 	    NULL);
-    Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, (ClientData) 0, NULL);
-    Tcl_CreateObjCommand(interp, "testfinexit", TestfinexitObjCmd, (ClientData) 0, NULL);
+    Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testfinexit", TestfinexitObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparser", TestparserObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparsevar", TestparsevarObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparsevarname", TestparsevarnameObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testregexp", TestregexpObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetnoerr", TestsetCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testseterr", TestsetCmd,
 	    (ClientData) TCL_LEAVE_ERR_MSG, NULL);
     Tcl_CreateCommand(interp, "testset2", Testset2Cmd,
 	    (ClientData) TCL_LEAVE_ERR_MSG, NULL);
     Tcl_CreateCommand(interp, "testseterrorcode", TestseterrorcodeCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsetobjerrorcode",
-	    TestsetobjerrorcodeCmd, (ClientData) 0, NULL);
+	    TestsetobjerrorcodeCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
-	    TestNumUtfCharsCmd, (ClientData) 0, NULL);
+	    TestNumUtfCharsCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "teststaticpkg", TeststaticpkgCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testtranslatefilename",
-	    TesttranslatefilenameCmd, (ClientData) 0, NULL);
-    Tcl_CreateCommand(interp, "testupvar", TestupvarCmd, (ClientData) 0, NULL);
+	    TesttranslatefilenameCmd, NULL, NULL);
+    Tcl_CreateCommand(interp, "testupvar", TestupvarCmd, NULL, NULL);
     Tcl_CreateMathFunc(interp, "T1", 0, NULL, TestMathFunc, (ClientData) 123);
     Tcl_CreateMathFunc(interp, "T2", 0, NULL, TestMathFunc, (ClientData) 345);
-    Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, (ClientData) 0,
+    Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testsetmainloop", TestsetmainloopCmd,
-	    (ClientData) NULL, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testexitmainloop", TestexitmainloopCmd,
-	    (ClientData) NULL, NULL);
+	    NULL, NULL);
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
-	    (ClientData) 0);
+	    NULL);
 
     Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
-	    (ClientData) NULL, NULL);
+	    NULL, NULL);
 
     if (TclObjTest_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
@@ -1024,7 +1024,7 @@ TestcmdinfoCmd(
 	info.proc = CmdProc2;
 	info.clientData = (ClientData) "new_command_data";
 	info.objProc = NULL;
-	info.objClientData = (ClientData) NULL;
+	info.objClientData = NULL;
 	info.deleteProc = CmdDelProc2;
 	info.deleteData = (ClientData) "new_delete_data";
 	if (Tcl_SetCommandInfo(interp, argv[2], &info) == 0) {
@@ -1182,8 +1182,7 @@ TestcmdtraceCmd(
 
     if (strcmp(argv[1], "tracetest") == 0) {
 	Tcl_DStringInit(&buffer);
-	cmdTrace = Tcl_CreateTrace(interp, 50000,
-		(Tcl_CmdTraceProc *) CmdTraceProc, (ClientData) &buffer);
+	cmdTrace = Tcl_CreateTrace(interp, 50000, CmdTraceProc, &buffer);
 	result = Tcl_Eval(interp, argv[2]);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
@@ -1199,14 +1198,13 @@ TestcmdtraceCmd(
 	 * TclExecuteByteCode.
 	 */
 
-	cmdTrace = Tcl_CreateTrace(interp, 50000,
-		(Tcl_CmdTraceProc *) CmdTraceDeleteProc, (ClientData) NULL);
+	cmdTrace = Tcl_CreateTrace(interp, 50000, CmdTraceDeleteProc, NULL);
 	Tcl_Eval(interp, argv[2]);
     } else if (strcmp(argv[1], "leveltest") == 0) {
 	Interp *iPtr = (Interp *) interp;
 	Tcl_DStringInit(&buffer);
-	cmdTrace = Tcl_CreateTrace(interp, iPtr->numLevels + 4,
-		(Tcl_CmdTraceProc *) CmdTraceProc, (ClientData) &buffer);
+	cmdTrace = Tcl_CreateTrace(interp, iPtr->numLevels + 4, CmdTraceProc,
+		&buffer);
 	result = Tcl_Eval(interp, argv[2]);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
@@ -1237,10 +1235,8 @@ TestcmdtraceCmd(
 	Tcl_Trace t1, t2;
 
 	Tcl_DStringInit(&buffer);
-	t1 = Tcl_CreateTrace(interp, 1,
-		(Tcl_CmdTraceProc *) CmdTraceProc, (ClientData) &buffer);
-	t2 = Tcl_CreateTrace(interp, 50000,
-		(Tcl_CmdTraceProc *) CmdTraceProc, (ClientData) &buffer);
+	t1 = Tcl_CreateTrace(interp, 1, CmdTraceProc, &buffer);
+	t2 = Tcl_CreateTrace(interp, 50000, CmdTraceProc, &buffer);
 	result = Tcl_Eval(interp, argv[2]);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
@@ -1270,7 +1266,7 @@ CmdTraceProc(
     ClientData cmdClientData,	/* Client data associated with command
 				 * procedure. */
     int argc,			/* Number of arguments. */
-    char **argv)		/* Argument strings. */
+    const char *argv[])		/* Argument strings. */
 {
     Tcl_DString *bufPtr = (Tcl_DString *) clientData;
     int i;
@@ -1295,7 +1291,7 @@ CmdTraceDeleteProc(
     ClientData cmdClientData,	/* Client data associated with command
 				 * procedure. */
     int argc,			/* Number of arguments. */
-    char **argv)		/* Argument strings. */
+    const char *argv[])		/* Argument strings. */
 {
     /*
      * Remove ourselves to test whether calling Tcl_DeleteTrace within a trace
@@ -1377,12 +1373,12 @@ TestcreatecommandCmd(
     }
     if (strcmp(argv[1], "create") == 0) {
 	Tcl_CreateCommand(interp, "test_ns_basic::createdcommand",
-		CreatedCommandProc, (ClientData) NULL, NULL);
+		CreatedCommandProc, NULL, NULL);
     } else if (strcmp(argv[1], "delete") == 0) {
 	Tcl_DeleteCommand(interp, "test_ns_basic::createdcommand");
     } else if (strcmp(argv[1], "create2") == 0) {
 	Tcl_CreateCommand(interp, "value:at:",
-		CreatedCommandProc2, (ClientData) NULL, NULL);
+		CreatedCommandProc2, NULL, NULL);
     } else if (strcmp(argv[1], "delete2") == 0) {
 	Tcl_DeleteCommand(interp, "value:at:");
     } else {

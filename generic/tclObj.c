@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.71 2010/02/25 21:53:08 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.72 2010/02/26 01:21:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4037,9 +4037,9 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = keyPtr;
-    const char *string = TclGetString(objPtr);
+    int length;
+    const char *string = TclGetStringFromObj(objPtr, &length);
     unsigned int result = 0;
-    const char *end = string + objPtr->length;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -4071,10 +4071,15 @@ TclHashObjKey(
      *
      * See also HashStringKey in tclHash.c.
      * See also HashString in tclLiteral.c.
+     *
+     * See [tcl-Feature Request #2958832]
      */
 
-    while (string < end) {
-        result += (result << 3) + UCHAR(*string++);
+    if (length > 0) {
+	result = UCHAR(*string);
+	while (--length) {
+	    result += (result << 3) + UCHAR(*++string);
+	}
     }
     return result;
 }

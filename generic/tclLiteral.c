@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.20 2010/02/25 21:53:08 dgp Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.21 2010/02/26 01:21:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -33,7 +33,7 @@
 static int		AddLocalLiteralEntry(CompileEnv *envPtr,
 			    Tcl_Obj *objPtr, int localHash);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
-static unsigned		HashString(const char *bytes, int length);
+static unsigned		HashString(const char *string, int length);
 static void		RebuildLiteralTable(LiteralTable *tablePtr);
 
 /*
@@ -891,11 +891,10 @@ TclReleaseLiteral(
 
 static unsigned
 HashString(
-    register const char *bytes,	/* String for which to compute hash value. */
+    register const char *string,	/* String for which to compute hash value. */
     int length)			/* Number of bytes in the string. */
 {
     register unsigned int result = 0;
-    register int i;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -923,10 +922,15 @@ HashString(
      *
      * See also HashStringKey in tclHash.c.
      * See also TclObjHashKey in tclObj.c.
+     *
+     * See [tcl-Feature Request #2958832]
      */
 
-    for (i=0; i<length ; i++) {
-	result += (result<<3) + UCHAR(bytes[i]);
+    if (length > 0) {
+	result = UCHAR(*string);
+	while (--length) {
+	    result += (result << 3) + UCHAR(*++string);
+	}
     }
     return result;
 }

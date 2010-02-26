@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.16 2008/11/10 02:18:42 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.17 2010/02/26 01:21:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -639,7 +639,7 @@ SetTZIfNecessary(void)
     if (lastTZ == NULL || strcmp(lastTZ, newTZ)) {
 	tzset();
 	if (lastTZ == NULL) {
-	    Tcl_CreateExitHandler(CleanupMemory, (ClientData) NULL);
+	    Tcl_CreateExitHandler(CleanupMemory, NULL);
 	} else {
 	    Tcl_Free(lastTZ);
 	}

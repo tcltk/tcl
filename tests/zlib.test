@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: zlib.test,v 1.1.2.10 2009/07/10 18:18:04 dgp Exp $
+# RCS: @(#) $Id: zlib.test,v 1.1.2.11 2010/02/26 01:21:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -458,7 +458,7 @@ test zlib-9.11 "bug #2818131 (deflate mismatch)" -constraints zlib -setup {
     rename bgerror {}
 } -result {error {incorrect header check}}
 
-test zlib-10.1 "bug #2818131 (close with null interp)" -constraints {
+test zlib-10.0 "bug #2818131 (close with null interp)" -constraints {
     zlib
 } -setup {
     proc bgerror {s} {set ::total [list error $s]}
@@ -497,6 +497,80 @@ test zlib-10.1 "bug #2818131 (close with null interp)" -constraints {
     rename bgerror {}
 } -returnCodes error \
   -result {bad event name "xyzzy": must be readable or writable}
+test zlib-10.1 "bug #2818131 (mismatch read)" -constraints {
+    zlib
+} -setup {
+    proc bgerror {s} {set ::total [list error $s]}
+    proc zlibRead {c} {
+        set d [read $c]
+        if {[eof $c]} {
+            chan event $c readable {}
+            close $c
+            set ::total [list eof [string length $d]]
+        }
+    }
+    set srv [socket -myaddr localhost -server {apply {{c a p} {
+        chan configure $c -translation binary -buffering none
+        zlib push inflate $c
+        chan event $c readable [list zlibRead $c]
+    }}} 0]
+} -body {
+    lassign [chan configure $srv -sockname] addr name port
+    after 1000 {set ::total timeout}
+    set s [socket $addr $port]
+    chan configure $s -translation binary -buffering none
+    zlib push gzip $s
+    chan event $s readable [list zlibRead $s]
+    after idle [list apply {{s} {
+        puts $s test
+        chan close $s
+        after 100 {set ::total done}
+    }} $s]
+    vwait ::total
+    set ::total
+} -cleanup {
+    close $srv
+    rename bgerror {}
+    rename zlibRead {}
+} -result {error {invalid block type}}
+test zlib-10.2 "bug #2818131 (mismatch gets)" -constraints {
+    zlib
+} -setup {
+    proc bgerror {s} {set ::total [list error $s]}
+    proc zlibRead {c} {
+        if {[gets $c line] < 0} {
+            close $c
+            set ::total [list error -1]
+        } elseif {[eof $c]} {
+            chan event $c readable {}
+            close $c
+            set ::total [list eof 0]
+        }
+    }
+    set srv [socket -myaddr localhost -server {apply {{c a p} {
+        chan configure $c -translation binary -buffering none
+        zlib push inflate $c
+        chan event $c readable [list zlibRead $c]
+    }}} 0]
+} -body {
+    lassign [chan configure $srv -sockname] addr name port
+    after 1000 {set ::total timeout}
+    set s [socket $addr $port]
+    chan configure $s -translation binary -buffering none
+    zlib push gzip $s
+    chan event $s readable [list zlibRead $s]
+    after idle [list apply {{s} {
+        puts $s test
+        chan close $s
+        after 100 {set ::total done}
+    }} $s]
+    vwait ::total
+    set ::total
+} -cleanup {
+    close $srv
+    rename bgerror {}
+    rename zlibRead {}
+} -result {error {invalid block type}}
 
 ::tcltest::cleanupTests
 return

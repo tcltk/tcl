@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.18 2009/11/19 16:51:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.19 2010/02/26 01:21:08 dgp Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -107,23 +107,23 @@ TclplatformtestInit(
     Tcl_Interp *interp)		/* Interpreter to add commands to. */
 {
     Tcl_CreateCommand(interp, "testchmod", TestchmodCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testfilehandler", TestfilehandlerCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testfilewait", TestfilewaitCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testfindexecutable", TestfindexecutableCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetdefenc", TestgetdefencdirCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetdefenc", TestsetdefencdirCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testalarm", TestalarmCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgotsig", TestgotsigCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     return TCL_OK;
 }
 
@@ -496,7 +496,7 @@ TestgetopenfileCmd(
 	    == TCL_ERROR) {
         return TCL_ERROR;
     }
-    if (filePtr == (ClientData) NULL) {
+    if (filePtr == NULL) {
         Tcl_AppendResult(interp,
 		"Tcl_GetOpenFile succeeded but FILE * NULL!", NULL);
         return TCL_ERROR;

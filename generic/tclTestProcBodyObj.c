@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.2.42.8 2009/11/19 16:51:27 dgp Exp $
+ * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.2.42.9 2010/02/26 01:21:08 dgp Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -298,7 +298,7 @@ ProcBodyTestProcObjCmd(
     myobjv[3] = bodyObjPtr;
     myobjv[4] = NULL;
 
-    result = Tcl_ProcObjCmd((ClientData) NULL, interp, objc, myobjv);
+    result = Tcl_ProcObjCmd(NULL, interp, objc, myobjv);
     Tcl_DecrRefCount(bodyObjPtr);
 
     return result;
