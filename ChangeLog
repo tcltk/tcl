@@ -1,3 +1,9 @@
+2010-02-26  Reinhard Max  <max@suse.de>
+
+	* doc/safe.n: Name the installed file after the command it
+	documents. Use "Safe Tcl" instead of the "Safe Base", "Safe Tcl"
+	mixture.
+
 2010-02-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/installManPage: Remap non-alphanumeric sequences in filenames
