@@ -1,5 +1,10 @@
 2010-02-27  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclCmdMZ.c (StringFirstCmd, StringLastCmd): [Bug 2960021]:
+	Only search for the needle in the haystack when the needle isn't
+	larger than the haystack. Prevents an odd crash from sometimes
+	happening when things get mixed up (a common programming error).
+
 	* generic/tclMain.c (Tcl_Main): [Bug 801429]: Factor out the holding
 	of the client-installed main loop function into thread-specific data.
 
