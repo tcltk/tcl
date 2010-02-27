@@ -1,8 +1,13 @@
+2010-02-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c:   Split this file into two pieces to make it
+	* generic/tclCompCmdsSZ.c: easier to work with. It's still two very
+				   long files even after the split.
+
 2010-02-26  Reinhard Max  <max@suse.de>
 
-	* doc/safe.n: Name the installed file after the command it
-	documents. Use "Safe Tcl" instead of the "Safe Base", "Safe Tcl"
-	mixture.
+	* doc/safe.n: Name the installed file after the command it documents.
+	Use "Safe Tcl" instead of the "Safe Base", "Safe Tcl" mixture.
 
 2010-02-26  Donal K. Fellows  <dkf@users.sf.net>
 
