@@ -1,3 +1,15 @@
+2010-02-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclMain.c (Tcl_Main): [Bug 801429]: Factor out the holding
+	of the client-installed main loop function into thread-specific data.
+
+	***POTENTIAL INCOMPATIBILITY***
+	Code that previously tried to set the main loop from another thread
+	will now fail. On the other hand, there is a fairly high probability
+	that such programs would have been failing before due to the lack of
+	any kind of inter-thread memory barriers guarding accesses to this
+	part of Tcl's state.
+
 2010-02-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c:   Split this file into two pieces to make it
