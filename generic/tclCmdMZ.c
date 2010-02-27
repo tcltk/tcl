@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.71 2010/02/25 21:53:06 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.72 2010/02/27 22:37:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1208,7 +1208,12 @@ StringFirstCmd(
 	}
     }
 
-    if (needleLen > 0) {
+    /*
+     * If the length of the needle is more than the length of the haystack, it
+     * cannot be contained in there so we can avoid searching. [Bug 2960021]
+     */
+
+    if (needleLen > 0 && needleLen <= haystackLen) {
 	register Tcl_UniChar *p, *end;
 
 	end = haystackStr + haystackLen - needleLen + 1;
@@ -1313,7 +1318,12 @@ StringLastCmd(
 	p = haystackStr + haystackLen - needleLen;
     }
 
-    if (needleLen > 0) {
+    /*
+     * If the length of the needle is more than the length of the haystack, it
+     * cannot be contained in there so we can avoid searching. [Bug 2960021]
+     */
+
+    if (needleLen > 0 && needleLen <= haystackLen) {
 	for (; p >= haystackStr; p--) {
 	    /*
 	     * Scan backwards to find the first character.
