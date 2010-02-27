@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.48 2010/02/24 10:32:17 dkf Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.49 2010/02/27 12:07:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -32,16 +32,21 @@
 
 extern CRTIMPORT int	isatty(int fd);
 
-typedef struct StartupScript {
-    Tcl_Obj *path;	/* The filename of the script for *_Main() routines
-			 * to [source] as a startup script, or NULL for
-			 * none set, meaning enter interactive mode. */
-    Tcl_Obj *encoding;	/* The encoding of the startup script file. */
-} StartupScript;
+/*
+ * The thread-local variables for this file's functions.
+ */
 
-static Tcl_ThreadDataKey startupScriptKey;
-
-static Tcl_MainLoopProc *mainLoopProc = NULL;
+typedef struct {
+    Tcl_Obj *path;		/* The filename of the script for *_Main()
+				 * routines to [source] as a startup script,
+				 * or NULL for none set, meaning enter
+				 * interactive mode. */
+    Tcl_Obj *encoding;		/* The encoding of the startup script file. */
+    Tcl_MainLoopProc *mainLoopProc;
+				/* Any installed main loop handler. The main
+				 * extension that installs these is Tk. */
+} ThreadSpecificData;
+static Tcl_ThreadDataKey dataKey;
 
 /*
  * Structure definition for information used to keep the state of an
@@ -72,6 +77,7 @@ typedef struct InteractiveState {
  * Forward declarations for functions defined later in this file.
  */
 
+static Tcl_MainLoopProc * GetMainLoop(void);
 static void		Prompt(Tcl_Interp *interp, PromptType *promptPtr);
 static void		StdinProc(ClientData clientData, int mask);
 
@@ -96,28 +102,27 @@ Tcl_SetStartupScript(
     Tcl_Obj *path,		/* Filesystem path of startup script file */
     const char *encoding)	/* Encoding of the data in that file */
 {
-    StartupScript *scriptPtr = Tcl_GetThreadData(&startupScriptKey,
-	    (int) sizeof(StartupScript));
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_Obj *newEncoding = NULL;
 
     if (encoding != NULL) {
 	newEncoding = Tcl_NewStringObj(encoding, -1);
     }
 
-    if (scriptPtr->path != NULL) {
-	Tcl_DecrRefCount(scriptPtr->path);
+    if (tsdPtr->path != NULL) {
+	Tcl_DecrRefCount(tsdPtr->path);
     }
-    scriptPtr->path = path;
-    if (scriptPtr->path != NULL) {
-	Tcl_IncrRefCount(scriptPtr->path);
+    tsdPtr->path = path;
+    if (tsdPtr->path != NULL) {
+	Tcl_IncrRefCount(tsdPtr->path);
     }
 
-    if (scriptPtr->encoding != NULL) {
-	Tcl_DecrRefCount(scriptPtr->encoding);
+    if (tsdPtr->encoding != NULL) {
+	Tcl_DecrRefCount(tsdPtr->encoding);
     }
-    scriptPtr->encoding = newEncoding;
-    if (scriptPtr->encoding != NULL) {
-	Tcl_IncrRefCount(scriptPtr->encoding);
+    tsdPtr->encoding = newEncoding;
+    if (tsdPtr->encoding != NULL) {
+	Tcl_IncrRefCount(tsdPtr->encoding);
     }
 }
 
@@ -146,19 +151,18 @@ Tcl_GetStartupScript(
     const char **encodingPtr)	/* When not NULL, points to storage for the
 				 * (const char *) that points to the
 				 * registered encoding name for the startup
-				 * script */
+				 * script. */
 {
-    StartupScript *scriptPtr = Tcl_GetThreadData(&startupScriptKey,
-	    (int) sizeof(StartupScript));
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (encodingPtr != NULL) {
-	if (scriptPtr->encoding == NULL) {
+	if (tsdPtr->encoding == NULL) {
 	    *encodingPtr = NULL;
 	} else {
-	    *encodingPtr = Tcl_GetString(scriptPtr->encoding);
+	    *encodingPtr = Tcl_GetString(tsdPtr->encoding);
 	}
     }
-    return scriptPtr->path;
+    return tsdPtr->path;
 }
 
 /*----------------------------------------------------------------------
@@ -251,6 +255,7 @@ Tcl_Main(
     const char *encodingName = NULL;
     PromptType prompt = PROMPT_START;
     int code, length, tty, exitCode = 0;
+    Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel inChannel, outChannel, errChannel;
     Tcl_Interp *interp;
     Tcl_DString appName;
@@ -399,6 +404,7 @@ Tcl_Main(
     inChannel = Tcl_GetStdChannel(TCL_STDIN);
     outChannel = Tcl_GetStdChannel(TCL_STDOUT);
     while ((inChannel != NULL) && !Tcl_InterpDeleted(interp)) {
+	mainLoopProc = GetMainLoop();
 	if (mainLoopProc == NULL) {
 	    if (tty) {
 		Prompt(interp, &prompt);
@@ -509,7 +515,7 @@ Tcl_Main(
 		isPtr->interp = interp;
 
 		Tcl_UnlinkVar(interp, "tcl_interactive");
-		Tcl_LinkVar(interp, "tcl_interactive", (char *) &(isPtr->tty),
+		Tcl_LinkVar(interp, "tcl_interactive", (char *) &isPtr->tty,
 			TCL_LINK_BOOLEAN);
 
 		Tcl_CreateChannelHandler(inChannel, TCL_READABLE, StdinProc,
@@ -517,7 +523,7 @@ Tcl_Main(
 	    }
 
 	    mainLoopProc();
-	    mainLoopProc = NULL;
+	    Tcl_SetMainLoop(NULL);
 
 	    if (inChannel) {
 		tty = isPtr->tty;
@@ -543,13 +549,14 @@ Tcl_Main(
 	 */
 
 	if (tclMemDumpFileName != NULL) {
-	    mainLoopProc = NULL;
+	    Tcl_SetMainLoop(NULL);
 	    Tcl_DeleteInterp(interp);
 	}
 #endif
     }
 
   done:
+    mainLoopProc = GetMainLoop();
     if ((exitCode == 0) && (mainLoopProc != NULL)
 	    && !Tcl_LimitExceeded(interp)) {
 	/*
@@ -559,7 +566,7 @@ Tcl_Main(
 	 */
 
 	mainLoopProc();
-	mainLoopProc = NULL;
+	Tcl_SetMainLoop(NULL);
     }
     if (commandPtr != NULL) {
 	Tcl_DecrRefCount(commandPtr);
@@ -610,7 +617,7 @@ Tcl_Main(
  *	Sets an alternative main loop function.
  *
  * Results:
- *	Returns the previously defined main loop function.
+ *	None.
  *
  * Side effects:
  *	This function will be called before Tcl exits, allowing for the
@@ -623,7 +630,36 @@ void
 Tcl_SetMainLoop(
     Tcl_MainLoopProc *proc)
 {
-    mainLoopProc = proc;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    tsdPtr->mainLoopProc = proc;
+}
+
+/*
+ *---------------------------------------------------------------
+ *
+ * GetMainLoop --
+ *
+ *	Returns the current alternative main loop function.
+ *
+ * Results:
+ *	Returns the previously defined main loop function, or NULL to indicate
+ *	that no such function has been installed and standard tclsh behaviour
+ *	(i.e., exit once the script is evaluated if not interactive) is
+ *	requested..
+ *
+ * Side effects:
+ *	None (other than possible creation of this file's TSD block).
+ *
+ *---------------------------------------------------------------
+ */
+
+static Tcl_MainLoopProc *
+GetMainLoop(void)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    return tsdPtr->mainLoopProc;
 }
 
 /*
