@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.1.2.2 2010/02/27 03:46:54 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.1.2.3 2010/02/27 15:03:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -651,7 +651,6 @@ TclSubstCompile(
     Tcl_Token *endTokenPtr, *tokenPtr;
     int breakOffset = 0, count = 0, bline = line;
     Tcl_Parse parse;
-    Tcl_InterpState state = NULL;
 
     TclSubstParse(interp, bytes, numBytes, flags, &parse);
 
