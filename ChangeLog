@@ -1,3 +1,10 @@
+2010-02-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (StringFirstCmd, StringLastCmd): [Bug 2960021]:
+	Only search for the needle in the haystack when the needle isn't
+	larger than the haystack. Prevents an odd crash from sometimes
+	happening when things get mixed up (a common programming error).
+
 2010-02-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclBasic.c:   Fix [Bug 2954959] expr abs(0.0) is -0.0
@@ -5,8 +12,7 @@
 
 2010-02-19  Stuart Cassoff  <stwo@users.sourceforge.net>
 
-	* tcl.m4: Correct compiler/linker flags
-	for threaded builds on OpenBSD.
+	* tcl.m4: Correct compiler/linker flags for threaded builds on OpenBSD
 	* configure: (regenerated).
 
 2010-02-19  Donal K. Fellows  <dkf@users.sf.net>
