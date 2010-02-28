@@ -1,6 +1,12 @@
+2010-02-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c: More additions of {TCL LOOKUP} error-code
+	generation to various subcommands of [info] as part of long-term
+	project to classify all Tcl's generated errors.
+
 2010-02-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
-   * generic/tclStubInit.c    Fix Bug #2959713:   Link error with gcc 4.1
+	* generic/tclStubInit.c: [Bug 2959713]: Link error with gcc 4.1
 
 2010-02-27  Donal K. Fellows  <dkf@users.sf.net>
 
