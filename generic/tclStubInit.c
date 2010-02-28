@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.187 2010/02/15 22:56:20 nijtmans Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.188 2010/02/28 09:05:56 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -42,6 +42,7 @@
  */
 
 MODULE_SCOPE const TclStubs tclStubs;
+MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
 
 /* !BEGIN!: Do not edit below this line. */
 
