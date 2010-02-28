@@ -1,3 +1,7 @@
+2010-02-28  Jan Nijtmans  <nijtmans@users.sf.net>
+
+   * generic/tclStubInit.c    Fix Bug #2959713:   Link error with gcc 4.1
+
 2010-02-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (StringFirstCmd, StringLastCmd): [Bug 2960021]:
