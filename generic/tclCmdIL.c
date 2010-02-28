@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.178 2010/02/28 20:12:48 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.179 2010/02/28 21:15:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -977,7 +977,8 @@ InfoDefaultCmd(
     procPtr = TclFindProc(iPtr, procName);
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp, "\"", procName, "\" isn't a procedure",NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", name, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", procName,
+		NULL);
 	return TCL_ERROR;
     }
 
@@ -1133,7 +1134,7 @@ InfoFrameCmd(
 	Tcl_AppendResult(interp, "bad level \"", TclGetString(objv[1]), "\"",
 		NULL);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_FRAME",
-		TclGetString(obj[1]), NULL);
+		TclGetString(objv[1]), NULL);
 	return TCL_ERROR;
     }
 
@@ -3995,12 +3996,14 @@ Tcl_LsortObjCmd(
  *	"repeated" elements in each of the left and right lists. In that case,
  *	if any element of the left list is equivalent to one in the right list
  *	it is omitted from the merged list.
- *	This simplified mechanism works because of the special way
- *	our MergeSort creates the sublists to be merged and will fail to
- *	eliminate all repeats in the general case where they are already
- *	present in either the left or right list. A general code would need to
- *	skip adjacent initial repeats in the left and right lists before
- *	comparing their initial elements, at each step.
+ *
+ *	This simplified mechanism works because of the special way our
+ *	MergeSort creates the sublists to be merged and will fail to eliminate
+ *	all repeats in the general case where they are already present in
+ *	either the left or right list. A general code would need to skip
+ *	adjacent initial repeats in the left and right lists before comparing
+ *	their initial elements, at each step.
+ *
  *----------------------------------------------------------------------
  */
 
