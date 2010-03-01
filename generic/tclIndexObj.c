@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.56 2010/03/01 22:20:51 ferrieux Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.57 2010/03/01 23:19:36 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -367,7 +367,7 @@ Tcl_GetIndexFromObjStruct(
 	Tcl_AppendStringsToObj(resultPtr, (numAbbrev > 1) &&
 			       !(flags & TCL_EXACT) ? "ambiguous " : "bad ", msg, " \"", key, NULL);
 	if (STRING_AT(tablePtr, offset, 0) == NULL) {
-	    Tcl_AppendStringsToObj(resultPtr, "\": empty table !", NULL);
+	    Tcl_AppendStringsToObj(resultPtr, "\": no valid options", NULL);
 	} else {
 	    Tcl_AppendStringsToObj(resultPtr, "\": must be ", STRING_AT(tablePtr, offset, 0), NULL);
 	    for (entryPtr = NEXT_ENTRY(tablePtr, offset), count = 0;
