@@ -1,8 +1,8 @@
 2010-03-01  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* unix/tclUnixSock.c: Refrain  from a possibly lengthy reverse-DNS
-	lookup  on  0.0.0.0  when  calling [fconfigure  -sockname]  on  an
-	universally-bound (default) server socket.
+	* unix/tclUnixChan.c: [backported] Refrain from a possibly lengthy
+	reverse-DNS lookup on 0.0.0.0 when calling [fconfigure -sockname]
+	on an universally-bound (default) server socket.
 
 2010-02-27  Donal K. Fellows  <dkf@users.sf.net>
 
