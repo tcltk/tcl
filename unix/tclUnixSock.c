@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.24 2010/03/01 14:57:47 ferrieux Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.25 2010/03/01 15:00:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -686,11 +686,16 @@ TcpGetOptionProc(
 	    }
 	    Tcl_DStringAppendElement(dsPtr, inet_ntoa(sockname.sin_addr));
             if (sockname.sin_addr.s_addr == INADDR_ANY) {
-                hostEntPtr = NULL;   /* we don't want to resolve INADDR_ANY */
+		/*
+		 * We don't want to resolve INADDR_ANY; it can sometimes cause
+		 * problems (and never has a name).
+		 */
+
+                hostEntPtr = NULL;
             } else {
-                hostEntPtr = TclpGetHostByAddr(			/* INTL: Native. */
-                                               (char *) &sockname.sin_addr,
-                                               sizeof(sockname.sin_addr), AF_INET);
+                hostEntPtr = TclpGetHostByAddr(		/* INTL: Native. */
+			(char *) &sockname.sin_addr,
+			sizeof(sockname.sin_addr), AF_INET);
             }
 	    if (hostEntPtr != NULL) {
 		Tcl_DString ds;
