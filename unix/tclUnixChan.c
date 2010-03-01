@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.93.2.3 2009/07/16 20:50:54 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.93.2.4 2010/03/01 15:14:15 ferrieux Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2138,9 +2138,13 @@ TcpGetOptionProc(
 		Tcl_DStringStartSublist(dsPtr);
 	    }
 	    Tcl_DStringAppendElement(dsPtr, inet_ntoa(sockname.sin_addr));
-	    hostEntPtr = TclpGetHostByAddr(			/* INTL: Native. */
-		    (char *) &sockname.sin_addr,
-		    sizeof(sockname.sin_addr), AF_INET);
+            if (sockname.sin_addr.s_addr == INADDR_ANY) {
+                hostEntPtr = NULL;   /* we don't want to resolve INADDR_ANY */
+            } else {
+                hostEntPtr = TclpGetHostByAddr(			/* INTL: Native. */
+                                               (char *) &sockname.sin_addr,
+                                               sizeof(sockname.sin_addr), AF_INET);
+            }
 	    if (hostEntPtr != NULL) {
 		Tcl_DString ds;
 
@@ -3192,5 +3196,7 @@ FileTruncateProc(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
