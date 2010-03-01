@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.55 2010/02/24 10:32:17 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.56 2010/03/01 22:20:51 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -365,16 +365,20 @@ Tcl_GetIndexFromObjStruct(
 	TclNewObj(resultPtr);
 	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_AppendStringsToObj(resultPtr, (numAbbrev > 1) &&
-		!(flags & TCL_EXACT) ? "ambiguous " : "bad ", msg, " \"", key,
-		"\": must be ", STRING_AT(tablePtr, offset, 0), NULL);
-	for (entryPtr = NEXT_ENTRY(tablePtr, offset), count = 0;
-		*entryPtr != NULL;
-		entryPtr = NEXT_ENTRY(entryPtr, offset), count++) {
-	    if (*NEXT_ENTRY(entryPtr, offset) == NULL) {
-		Tcl_AppendStringsToObj(resultPtr, ((count > 0) ? "," : ""),
-			" or ", *entryPtr, NULL);
-	    } else {
-		Tcl_AppendStringsToObj(resultPtr, ", ", *entryPtr, NULL);
+			       !(flags & TCL_EXACT) ? "ambiguous " : "bad ", msg, " \"", key, NULL);
+	if (STRING_AT(tablePtr, offset, 0) == NULL) {
+	    Tcl_AppendStringsToObj(resultPtr, "\": empty table !", NULL);
+	} else {
+	    Tcl_AppendStringsToObj(resultPtr, "\": must be ", STRING_AT(tablePtr, offset, 0), NULL);
+	    for (entryPtr = NEXT_ENTRY(tablePtr, offset), count = 0;
+		 *entryPtr != NULL;
+		 entryPtr = NEXT_ENTRY(entryPtr, offset), count++) {
+		if (*NEXT_ENTRY(entryPtr, offset) == NULL) {
+		    Tcl_AppendStringsToObj(resultPtr, ((count > 0) ? "," : ""),
+					   " or ", *entryPtr, NULL);
+		} else {
+		    Tcl_AppendStringsToObj(resultPtr, ", ", *entryPtr, NULL);
+		}
 	    }
 	}
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, NULL);
