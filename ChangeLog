@@ -4,6 +4,9 @@
 	lookup  on  0.0.0.0  when  calling [fconfigure  -sockname]  on  an
 	universally-bound (default) server socket.
 
+	* generic/tclIndexObj.c: fix [AT 86258]: special-casing of empty
+	tables when generating error messages for [::tcl::prefix match].
+
 2010-02-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c: More additions of {TCL LOOKUP} error-code
