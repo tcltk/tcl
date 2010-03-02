@@ -1,3 +1,8 @@
+2010-03-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+    * unix/tcl.m4      [Enh 2959069] Support for -fvisibility=hidden
+    * unix/configure   (regenerated with autoconf-2.59)
+
 2010-03-01  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* unix/tclUnixSock.c: Refrain  from a possibly lengthy reverse-DNS
