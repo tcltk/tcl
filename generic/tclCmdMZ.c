@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.202 2010/02/27 19:02:26 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.203 2010/03/02 08:47:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1067,7 +1067,7 @@ Tcl_SplitObjCmd(
 	     * Assume Tcl_UniChar is an integral type...
 	     */
 
-	    hPtr = Tcl_CreateHashEntry(&charReuseTable, (char*)0+ch, &isNew);
+	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
 
@@ -1077,7 +1077,7 @@ Tcl_SplitObjCmd(
 
 		Tcl_SetHashValue(hPtr, objPtr);
 	    } else {
-		objPtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+		objPtr = Tcl_GetHashValue(hPtr);
 	    }
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	}
