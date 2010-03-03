@@ -1052,16 +1052,24 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     AC_CACHE_CHECK([if compiler supports visibility "hidden"],
 	tcl_cv_cc_visibility_hidden, [
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fvisibility=hidden"
+	AC_TRY_COMPILE(,, tcl_cv_cc_visibility_hidden=yes,
+	    tcl_cv_cc_visibility_hidden=no)
+	CFLAGS=$hold_cflags])
+    AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
+	CFLAGS="$CFLAGS -fvisibility=hidden"
+    ], [
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	AC_TRY_LINK([
 	    extern __attribute__((__visibility__("hidden"))) void f(void);
 	    void f(void) {}], [f();], tcl_cv_cc_visibility_hidden=yes,
 	    tcl_cv_cc_visibility_hidden=no)
-	CFLAGS=$hold_cflags])
-    AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
-	AC_DEFINE(MODULE_SCOPE,
-	    [extern __attribute__((__visibility__("hidden")))],
-	    [Compiler support for module scope symbols])
+	CFLAGS=$hold_cflags
+	AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
+	    AC_DEFINE(MODULE_SCOPE,
+		[extern __attribute__((__visibility__("hidden")))],
+		[Compiler support for module scope symbols])
+	])
     ])
 
     # Step 0.d: Disable -rpath support?
