@@ -1,3 +1,10 @@
+2010-03-03  Andreas Kupries <andreask@activestate.com>
+
+	* doc/refchan.n: Followup to ChangeLog entry 2009-10-07
+	(generic/tclIORChan.c). Fixed the documentation to explain that
+	errno numbers are operating system dependent, and reworked the
+	associated example.
+
 2010-03-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
     * unix/tcl.m4      [Enh 2959069] Support for -fvisibility=hidden
