@@ -1,11 +1,11 @@
 2010-03-04  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclOO.c (ObjectRenamedTrace): Add special handling so that
-	when the class of classes is deleted, so is the class of objects.
-	Immediately. [Bug 2962664]
+	* generic/tclOO.c (ObjectRenamedTrace): [Bug 2962664]: Add special
+	handling so that when the class of classes is deleted, so is the class
+	of objects. Immediately.
 
 	* generic/tclOOInt.h (ROOT_CLASS): Add new flag for specially marking
-	the root class. Simpler than the  
+	the root class. Simpler and more robust than the previous technique.
 
 2010-03-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
