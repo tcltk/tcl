@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.15 2010/01/29 16:17:20 nijtmans Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.16 2010/03/04 23:42:54 dkf Exp $
  */
 
 #ifndef TCL_OO_INTERNAL_H
@@ -212,6 +212,10 @@ typedef struct Object {
 				 * instance of the class, and has had nothing
 				 * added that changes the dispatch chain (i.e.
 				 * no methods, mixins, or filters. */
+#define ROOT_CLASS 0x8000	/* Flag to say that this object is the root
+				 * class of classes, and should be treated
+				 * specially during teardown (and in a few
+				 * other spots). */
 
 /*
  * And the definition of a class. Note that every class also has an associated

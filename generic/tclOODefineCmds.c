@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.11 2009/05/04 17:39:51 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.12 2010/03/04 23:42:54 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1043,12 +1043,12 @@ TclOODefineClassObjCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    if (oPtr == fPtr->objectCls->thisPtr) {
+    if (oPtr->flags & ROOT_OBJECT) {
 	Tcl_AppendResult(interp,
-		"may not modify the class of the root object", NULL);
+		"may not modify the class of the root object class", NULL);
 	return TCL_ERROR;
     }
-    if (oPtr == fPtr->classCls->thisPtr) {
+    if (oPtr->flags & ROOT_CLASS) {
 	Tcl_AppendResult(interp,
 		"may not modify the class of the class of classes", NULL);
 	return TCL_ERROR;
@@ -1679,7 +1679,7 @@ TclOODefineSuperclassObjCmd(
 		NULL);
 	return TCL_ERROR;
     }
-    if (oPtr == fPtr->objectCls->thisPtr) {
+    if (oPtr->flags & ROOT_OBJECT) {
 	Tcl_AppendResult(interp,
 		"may not modify the superclass of the root object", NULL);
 	return TCL_ERROR;
