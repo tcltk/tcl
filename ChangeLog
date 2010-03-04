@@ -1,3 +1,18 @@
+2010-03-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclStubLib.c     Split tommath stub lib
+	* generic/tclTomMathStubLib.c   in separate file.
+	* win/makefile.bc
+	* win/Makefile.in
+	* win/makefile.vc
+	* win/tcl.dsp
+	* unix/Makefile.in
+	* unix/tcl.m4           Cygwin only gives warning
+	* unix/configure        using -fvisibility=hidden
+	* compat/strncasecmp.c     A few more const's
+	* compat/strtod.c
+	* compat/strtoul.c
+
 2010-03-03  Andreas Kupries <andreask@activestate.com>
 
 	* doc/refchan.n: Followup to ChangeLog entry 2009-10-07
