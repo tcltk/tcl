@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.33 2010/02/15 22:56:20 nijtmans Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.34 2010/03/04 23:42:53 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -297,6 +297,7 @@ InitFoundation(
     ckfree((char *) fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
     fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
+    fPtr->classCls->thisPtr->flags |= ROOT_CLASS;
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
     TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
     AddRef(fPtr->objectCls->thisPtr);
@@ -705,8 +706,7 @@ ObjectRenamedTrace(
     oPtr->flags |= OBJECT_DELETED;
 
     if (!(oPtr->flags & DESTRUCTOR_CALLED) && (!Tcl_InterpDeleted(interp)
-	    || (oPtr != oPtr->fPtr->objectCls->thisPtr
-	    && oPtr != oPtr->fPtr->classCls->thisPtr))) {
+	    || (oPtr->flags & (ROOT_OBJECT|ROOT_CLASS)))) {
 	contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
 	oPtr->flags |= DESTRUCTOR_CALLED;
 	if (contextPtr != NULL) {
@@ -731,15 +731,33 @@ ObjectRenamedTrace(
      * and nuke the namespace (which triggers the final crushing of the object
      * structure itself).
      *
-     * The namespace is only deleted if it hasn't already been deleted. [Bug
-     * 2950259]
+     * The class of classes needs some special care; if it is deleted (and
+     * we're not killing the whole interpreter) we force the delete of the
+     * class of objects now as well. Due to the incestuous nature of those two
+     * classes, if one goes the other must too and yet the tangle can
+     * sometimes not go away automatically; we force it here. [Bug 2962664]
      */
+
+    if (!Tcl_InterpDeleted(interp)) {
+	if ((oPtr->flags & ROOT_OBJECT) && oPtr->fPtr->classCls != NULL) {
+	    Tcl_DeleteCommandFromToken(interp,
+		    oPtr->fPtr->classCls->thisPtr->command);
+	} else if (oPtr->flags & ROOT_CLASS) {
+	    oPtr->fPtr->classCls = NULL;
+	}
+    }
 
     clsPtr = oPtr->classPtr;
     if (clsPtr != NULL) {
 	AddRef(clsPtr);
 	ReleaseClassContents(interp, oPtr);
     }
+
+    /*
+     * The namespace is only deleted if it hasn't already been deleted. [Bug
+     * 2950259]
+     */
+
     if (((Namespace *) oPtr->namespacePtr)->earlyDeleteProc != NULL) {
 	Tcl_DeleteNamespace(oPtr->namespacePtr);
     }
@@ -1644,7 +1662,7 @@ Tcl_CopyObjectInstance(
 		NULL);
 	return NULL;
     }
-    if (oPtr->classPtr == GetFoundation(interp)->classCls) {
+    if (oPtr->flags & ROOT_CLASS) {
 	Tcl_AppendResult(interp, "may not clone the class of classes", NULL);
 	return NULL;
     }
