@@ -1,36 +1,45 @@
+2010-03-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (ObjectRenamedTrace): Add special handling so that
+	when the class of classes is deleted, so is the class of objects.
+	Immediately. [Bug 2962664]
+
+	* generic/tclOOInt.h (ROOT_CLASS): Add new flag for specially marking
+	the root class. Simpler than the  
+
 2010-03-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclGetDate.y     3 unnecessary MODULE_SCOPE
-	* generic/tclDate.c        symbols
-	* generic/tclStubLib.c     Split tommath stub lib
-	* generic/tclTomMathStubLib.c   in separate file.
-	* win/makefile.bc
-	* win/Makefile.in
-	* win/makefile.vc
-	* win/tcl.dsp
-	* unix/Makefile.in
-	* unix/tcl.m4           Cygwin only gives warning
-	* unix/configure        using -fvisibility=hidden
-	* compat/strncasecmp.c     A few more const's
-	* compat/strtod.c
-	* compat/strtoul.c
+	* generic/tclGetDate.y:    3 unnecessary MODULE_SCOPE
+	* generic/tclDate.c:       symbols
+	* generic/tclStubLib.c:    Split tommath stub lib
+	* generic/tclTomMathStubLib.c:  in separate file.
+	* win/makefile.bc:
+	* win/Makefile.in:
+	* win/makefile.vc:
+	* win/tcl.dsp:
+	* unix/Makefile.in:
+	* unix/tcl.m4:          Cygwin only gives warning
+	* unix/configure:       using -fvisibility=hidden
+	* compat/strncasecmp.c: A few more const's
+	* compat/strtod.c:
+	* compat/strtoul.c:
 
 2010-03-03  Andreas Kupries <andreask@activestate.com>
 
 	* doc/refchan.n: Followup to ChangeLog entry 2009-10-07
-	(generic/tclIORChan.c). Fixed the documentation to explain that
-	errno numbers are operating system dependent, and reworked the
-	associated example.
+	(generic/tclIORChan.c). Fixed the documentation to explain that errno
+	numbers are operating system dependent, and reworked the associated
+	example.
 
 2010-03-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * unix/tcl.m4      [Enh 2959069] Support for -fvisibility=hidden
-    * unix/configure   (regenerated with autoconf-2.59)
+	* unix/tcl.m4:     [FRQ 2959069]: Support for -fvisibility=hidden
+	* unix/configure   (regenerated with autoconf-2.59)
 
 2010-03-01  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* unix/tclUnixSock.c: Refrain  from a possibly lengthy reverse-DNS
-	lookup  on  0.0.0.0  when  calling [fconfigure  -sockname]  on  an
+	* unix/tclUnixSock.c: Refrain from a possibly lengthy reverse-DNS
+	lookup on 0.0.0.0 when calling [fconfigure -sockname] on an
 	universally-bound (default) server socket.
 
 	* generic/tclIndexObj.c: fix [AT 86258]: special-casing of empty
