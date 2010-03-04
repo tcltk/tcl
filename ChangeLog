@@ -1,5 +1,7 @@
-2010-03-03  Jan Nijtmans  <nijtmans@users.sf.net>
+2010-03-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* generic/tclGetDate.y     3 unnecessary MODULE_SCOPE
+	* generic/tclDate.c        symbols
 	* generic/tclStubLib.c     Split tommath stub lib
 	* generic/tclTomMathStubLib.c   in separate file.
 	* win/makefile.bc
