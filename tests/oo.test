@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.37 2010/02/15 11:53:45 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.38 2010/03/04 23:42:54 dkf Exp $
 
 package require -exact TclOO 0.6.2 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -72,6 +72,30 @@ test oo-0.5 {testing literal leak on interp delete} memory {
 	interp delete foo
     }
 } 0
+test oo-0.6 {cleaning the core class pair; way #1} -setup {
+    interp create t
+    initInterpreter t
+} -body {
+    t eval {
+	package require TclOO
+	namespace path oo
+	list [catch {class destroy} m] $m [catch {object destroy} m] $m
+    }
+} -cleanup {
+    interp delete t
+} -result {0 {} 1 {invalid command name "object"}}
+test oo-0.7 {cleaning the core class pair; way #2} -setup {
+    interp create t
+    initInterpreter t
+} -body {
+    t eval {
+	package require TclOO
+	namespace path oo
+	list [catch {object destroy} m] $m [catch {class destroy} m] $m
+    }
+} -cleanup {
+    interp delete t
+} -result {0 {} 1 {invalid command name "class"}}
 
 test oo-1.1 {basic test of OO functionality: no classes} {
     set result {}
