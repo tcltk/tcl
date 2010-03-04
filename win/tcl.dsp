@@ -1300,6 +1300,14 @@ SOURCE=..\generic\tclStubLib.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\generic\tclOOStubLib.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\generic\tclTomMathStubLib.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\generic\tclTest.c
 # End Source File
 # Begin Source File
