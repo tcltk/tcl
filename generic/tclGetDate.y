@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.44 2010/02/21 20:09:37 nijtmans Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.45 2010/03/04 23:16:56 nijtmans Exp $
  */
 
 %parse-param {DateInfo* info}
@@ -504,10 +504,6 @@ o_merid : /* NULL */ {
 	;
 
 %%
-MODULE_SCOPE int yychar;
-MODULE_SCOPE YYSTYPE yylval;
-MODULE_SCOPE int yynerrs;
-
 /*
  * Month and day table.
  */
