@@ -1,5 +1,10 @@
 2010-03-05  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclIORTrans.c (ForwardProc): [Bug 2964425]: When cleaning
+	the stables, it is sometimes necessary to do more than the minimum. In
+	this case, rationalizing the variables for a forwarded limit? method
+	required removing an extra Tcl_DecrRefCount too.
+
 	* generic/tclOO.h, generic/tclOOInt.h: [Patch 2961556]: Change TclOO
 	to use the same style of function typedefs as Tcl, as this is about
 	the last chance to get this right.
