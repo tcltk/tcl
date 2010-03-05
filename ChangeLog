@@ -1,3 +1,14 @@
+2010-03-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.h, generic/tclOOInt.h: [Patch 2961556]: Change TclOO
+	to use the same style of function typedefs as Tcl, as this is about
+	the last chance to get this right.
+
+	***POTENTIAL INCOMPATIBILITY***
+	Source code that uses function typedefs from TclOO will need to update
+	variables and argument definitions so that pointers to the function
+	values are used instead. Binary compatibility is not affected.
+
 2010-03-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (ObjectRenamedTrace): [Bug 2962664]: Add special

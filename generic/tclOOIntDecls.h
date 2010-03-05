@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOIntDecls.h,v 1.12 2010/02/05 10:03:23 nijtmans Exp $
+ * $Id: tclOOIntDecls.h,v 1.13 2010/03/05 15:32:16 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -101,8 +101,8 @@ EXTERN Method *		TclOONewForwardInstanceMethod(Tcl_Interp *interp,
 /* 9 */
 EXTERN Tcl_Method	TclOONewProcInstanceMethodEx(Tcl_Interp *interp,
 				Tcl_Object oPtr,
-				TclOO_PreCallProc preCallPtr,
-				TclOO_PostCallProc postCallPtr,
+				TclOO_PreCallProc *preCallPtr,
+				TclOO_PostCallProc *postCallPtr,
 				ProcErrorProc *errProc,
 				ClientData clientData, Tcl_Obj *nameObj,
 				Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
@@ -113,8 +113,8 @@ EXTERN Tcl_Method	TclOONewProcInstanceMethodEx(Tcl_Interp *interp,
 /* 10 */
 EXTERN Tcl_Method	TclOONewProcMethodEx(Tcl_Interp *interp,
 				Tcl_Class clsPtr,
-				TclOO_PreCallProc preCallPtr,
-				TclOO_PostCallProc postCallPtr,
+				TclOO_PreCallProc *preCallPtr,
+				TclOO_PostCallProc *postCallPtr,
 				ProcErrorProc *errProc,
 				ClientData clientData, Tcl_Obj *nameObj,
 				Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
@@ -168,8 +168,8 @@ typedef struct TclOOIntStubs {
     int (*tclOOIsReachable) (Class *targetPtr, Class *startPtr); /* 6 */
     Method * (*tclOONewForwardMethod) (Tcl_Interp *interp, Class *clsPtr, int isPublic, Tcl_Obj *nameObj, Tcl_Obj *prefixObj); /* 7 */
     Method * (*tclOONewForwardInstanceMethod) (Tcl_Interp *interp, Object *oPtr, int isPublic, Tcl_Obj *nameObj, Tcl_Obj *prefixObj); /* 8 */
-    Tcl_Method (*tclOONewProcInstanceMethodEx) (Tcl_Interp *interp, Tcl_Object oPtr, TclOO_PreCallProc preCallPtr, TclOO_PostCallProc postCallPtr, ProcErrorProc *errProc, ClientData clientData, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, int flags, void **internalTokenPtr); /* 9 */
-    Tcl_Method (*tclOONewProcMethodEx) (Tcl_Interp *interp, Tcl_Class clsPtr, TclOO_PreCallProc preCallPtr, TclOO_PostCallProc postCallPtr, ProcErrorProc *errProc, ClientData clientData, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, int flags, void **internalTokenPtr); /* 10 */
+    Tcl_Method (*tclOONewProcInstanceMethodEx) (Tcl_Interp *interp, Tcl_Object oPtr, TclOO_PreCallProc *preCallPtr, TclOO_PostCallProc *postCallPtr, ProcErrorProc *errProc, ClientData clientData, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, int flags, void **internalTokenPtr); /* 9 */
+    Tcl_Method (*tclOONewProcMethodEx) (Tcl_Interp *interp, Tcl_Class clsPtr, TclOO_PreCallProc *preCallPtr, TclOO_PostCallProc *postCallPtr, ProcErrorProc *errProc, ClientData clientData, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, int flags, void **internalTokenPtr); /* 10 */
     int (*tclOOInvokeObject) (Tcl_Interp *interp, Tcl_Object object, Tcl_Class startCls, int publicPrivate, int objc, Tcl_Obj *const *objv); /* 11 */
     void (*tclOOObjectSetFilters) (Object *oPtr, int numFilters, Tcl_Obj *const *filters); /* 12 */
     void (*tclOOClassSetFilters) (Tcl_Interp *interp, Class *classPtr, int numFilters, Tcl_Obj *const *filters); /* 13 */

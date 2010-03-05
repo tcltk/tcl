@@ -1,5 +1,5 @@
 /*
- * $Id: tclOODecls.h,v 1.14 2010/02/05 10:03:23 nijtmans Exp $
+ * $Id: tclOODecls.h,v 1.15 2010/03/05 15:32:16 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -186,14 +186,14 @@ EXTERN int		Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
 #ifndef Tcl_ObjectGetMethodNameMapper_TCL_DECLARED
 #define Tcl_ObjectGetMethodNameMapper_TCL_DECLARED
 /* 24 */
-EXTERN Tcl_ObjectMapMethodNameProc Tcl_ObjectGetMethodNameMapper(
+EXTERN Tcl_ObjectMapMethodNameProc * Tcl_ObjectGetMethodNameMapper(
 				Tcl_Object object);
 #endif
 #ifndef Tcl_ObjectSetMethodNameMapper_TCL_DECLARED
 #define Tcl_ObjectSetMethodNameMapper_TCL_DECLARED
 /* 25 */
 EXTERN void		Tcl_ObjectSetMethodNameMapper(Tcl_Object object,
-				Tcl_ObjectMapMethodNameProc mapMethodNameProc);
+				Tcl_ObjectMapMethodNameProc *mapMethodNameProc);
 #endif
 #ifndef Tcl_ClassSetConstructor_TCL_DECLARED
 #define Tcl_ClassSetConstructor_TCL_DECLARED
@@ -246,8 +246,8 @@ typedef struct TclOOStubs {
     ClientData (*tcl_ObjectGetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType *typePtr); /* 21 */
     void (*tcl_ObjectSetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType *typePtr, ClientData metadata); /* 22 */
     int (*tcl_ObjectContextInvokeNext) (Tcl_Interp *interp, Tcl_ObjectContext context, int objc, Tcl_Obj *const *objv, int skip); /* 23 */
-    Tcl_ObjectMapMethodNameProc (*tcl_ObjectGetMethodNameMapper) (Tcl_Object object); /* 24 */
-    void (*tcl_ObjectSetMethodNameMapper) (Tcl_Object object, Tcl_ObjectMapMethodNameProc mapMethodNameProc); /* 25 */
+    Tcl_ObjectMapMethodNameProc * (*tcl_ObjectGetMethodNameMapper) (Tcl_Object object); /* 24 */
+    void (*tcl_ObjectSetMethodNameMapper) (Tcl_Object object, Tcl_ObjectMapMethodNameProc *mapMethodNameProc); /* 25 */
     void (*tcl_ClassSetConstructor) (Tcl_Interp *interp, Tcl_Class clazz, Tcl_Method method); /* 26 */
     void (*tcl_ClassSetDestructor) (Tcl_Interp *interp, Tcl_Class clazz, Tcl_Method method); /* 27 */
     Tcl_Obj * (*tcl_GetObjectName) (Tcl_Interp *interp, Tcl_Object object); /* 28 */
