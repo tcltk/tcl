@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.12 2010/03/04 23:42:54 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.13 2010/03/05 11:36:19 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1657,7 +1657,6 @@ TclOODefineSuperclassObjCmd(
     Tcl_Obj *const *objv)
 {
     Object *oPtr;
-    Foundation *fPtr = TclOOGetFoundation(interp);
     Class **superclasses, *superPtr;
     int i, j;
 
