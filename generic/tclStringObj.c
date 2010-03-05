@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.133 2010/02/24 10:32:17 dkf Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.134 2010/03/05 14:34:04 dkf Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2376,7 +2376,6 @@ AppendPrintfToObjVA(
     int code, objc;
     Tcl_Obj **objv, *list = Tcl_NewObj();
     const char *p;
-    char *end;
 
     p = format;
     Tcl_IncrRefCount(list);
@@ -2469,10 +2468,13 @@ AppendPrintfToObjVA(
 		p++;
 		break;
 	    case '0': case '1': case '2': case '3': case '4':
-	    case '5': case '6': case '7': case '8': case '9':
+	    case '5': case '6': case '7': case '8': case '9': {
+		char *end;
+
 		lastNum = (int) strtoul(p, &end, 10);
 		p = end;
 		break;
+	    }
 	    case '.':
 		gotPrecision = 1;
 		p++;
