@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.12 2010/02/24 10:45:04 dkf Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.13 2010/03/05 14:34:04 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -1058,7 +1058,7 @@ ReflectInput(
     int *errorCodePtr)
 {
     ReflectedTransform *rtPtr = clientData;
-    int gotBytes, copied, read;
+    int gotBytes, copied, readBytes;
 
     /*
      * The following check can be done before thread redirection, because we
@@ -1124,8 +1124,8 @@ ReflectInput(
 	    return gotBytes;
 	}
 
-	read = Tcl_ReadRaw(rtPtr->parent, buf, toRead);
-	if (read < 0) {
+	readBytes = Tcl_ReadRaw(rtPtr->parent, buf, toRead);
+	if (readBytes < 0) {
 	    /*
 	     * Report errors to caller. The state of the seek system is
 	     * unchanged!
@@ -1144,7 +1144,7 @@ ReflectInput(
 	    return -1;
 	}
 
-	if (read == 0) {
+	if (readBytes == 0) {
 	    /*
 	     * Check wether we hit on EOF in 'parent' or not. If not
 	     * differentiate between blocking and non-blocking modes. In
@@ -1200,7 +1200,7 @@ ReflectInput(
 		((Channel *) rtPtr->parent)->state->flags &= ~CHANNEL_EOF;
 		continue; /* at: while (toRead > 0) */
 	    }
-	} /* read == 0 */
+	} /* readBytes == 0 */
 
 	/*
 	 * Transform the read chunk, which was not empty. Anything we got back
@@ -1208,7 +1208,7 @@ ReflectInput(
 	 * iteration will put it into the result.
 	 */
 
-	if (!TransformRead(rtPtr, errorCodePtr, UCHARP(buf), read)) {
+	if (!TransformRead(rtPtr, errorCodePtr, UCHARP(buf), readBytes)) {
 	    return -1;
 	}
     } /* while toRead > 0 */
@@ -2656,9 +2656,7 @@ ForwardProc(
 	break;
     }
 
-    case ForwardedLimit: {
-	Tcl_Obj *resObj;
-
+    case ForwardedLimit:
 	if (InvokeTclMethod(rtPtr, "limit?", NULL, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	    paramPtr->limit.max = -1;
@@ -2670,7 +2668,6 @@ ForwardProc(
 
 	Tcl_DecrRefCount(resObj);
 	break;
-    }
 
     default:
 	/*

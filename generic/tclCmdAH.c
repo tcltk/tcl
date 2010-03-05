@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.123 2009/12/28 12:55:48 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.124 2010/03/05 14:34:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1121,7 +1121,6 @@ Tcl_FileObjCmd(
     }
     case FCMD_LINK: {
 	Tcl_Obj *contents;
-	int index;
 
 	if (objc < 3 || objc > 5) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "?-linktype? linkname ?target?");

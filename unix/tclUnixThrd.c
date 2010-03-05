@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixThrd.c,v 1.61 2009/08/16 10:20:20 nijtmans Exp $
+ * RCS: @(#) $Id: tclUnixThrd.c,v 1.62 2010/03/05 14:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -56,7 +56,6 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
 #define MASTER_UNLOCK	pthread_mutex_unlock(&masterLock)
 
 #endif /* TCL_THREADS */
-
 
 /*
  *----------------------------------------------------------------------
@@ -110,17 +109,18 @@ TclpThreadCreate(
 	 */
 
 	size_t size;
+
 	result = pthread_attr_getstacksize(&attr, &size);
 	if (!result && (size < TCL_THREAD_STACK_MIN)) {
 	    pthread_attr_setstacksize(&attr, (size_t) TCL_THREAD_STACK_MIN);
 	}
-#endif
+#endif /* TCL_THREAD_STACK_MIN */
     }
-#endif
+#endif /* HAVE_PTHREAD_ATTR_SETSTACKSIZE */
+
     if (! (flags & TCL_THREAD_JOINABLE)) {
 	pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_DETACHED);
     }
-
 
     if (pthread_create(&theThread, &attr,
 	    (void * (*)(void *))proc, (void *)clientData) &&
@@ -424,6 +424,7 @@ Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* Really (pthread_mutex_t **) */
 {
     pthread_mutex_t *pmutexPtr;
+
     if (*mutexPtr == NULL) {
 	MASTER_LOCK;
 	if (*mutexPtr == NULL) {
@@ -431,7 +432,7 @@ Tcl_MutexLock(
 	     * Double inside master lock check to avoid a race condition.
 	     */
 
-	    pmutexPtr = (pthread_mutex_t *)ckalloc(sizeof(pthread_mutex_t));
+	    pmutexPtr = (pthread_mutex_t *) ckalloc(sizeof(pthread_mutex_t));
 	    pthread_mutex_init(pmutexPtr, NULL);
 	    *mutexPtr = (Tcl_Mutex)pmutexPtr;
 	    TclRememberMutex(mutexPtr);
@@ -463,7 +464,8 @@ void
 Tcl_MutexUnlock(
     Tcl_Mutex *mutexPtr)	/* Really (pthread_mutex_t **) */
 {
-    pthread_mutex_t *pmutexPtr = *(pthread_mutex_t **)mutexPtr;
+    pthread_mutex_t *pmutexPtr = *(pthread_mutex_t **) mutexPtr;
+
     pthread_mutex_unlock(pmutexPtr);
 }
 
@@ -490,7 +492,8 @@ void
 TclpFinalizeMutex(
     Tcl_Mutex *mutexPtr)
 {
-    pthread_mutex_t *pmutexPtr = *(pthread_mutex_t **)mutexPtr;
+    pthread_mutex_t *pmutexPtr = *(pthread_mutex_t **) mutexPtr;
+
     if (pmutexPtr != NULL) {
 	pthread_mutex_destroy(pmutexPtr);
 	ckfree((char *) pmutexPtr);
@@ -760,45 +763,55 @@ TclpSetAllocCache(
 }
 #endif /* USE_THREAD_ALLOC */
 
+void *
+TclpThreadCreateKey(void)
+{
+    pthread_key_t *ptkeyPtr;
 
-
-void *TclpThreadCreateKey(void) {
-    pthread_key_t *key;
-
-    key = TclpSysAlloc(sizeof *key, 0);
-    if (NULL == key) {
+    ptkeyPtr = TclpSysAlloc(sizeof *ptkeyPtr, 0);
+    if (NULL == ptkeyPtr) {
 	Tcl_Panic("unable to allocate thread key!");
     }
 
-    if (pthread_key_create(key, NULL)) {
+    if (pthread_key_create(ptkeyPtr, NULL)) {
 	Tcl_Panic("unable to create pthread key!");
     }
 
-    return key;
+    return ptkeyPtr;
 }
 
-void TclpThreadDeleteKey(void *keyPtr) {
-    pthread_key_t *key = keyPtr;
+void
+TclpThreadDeleteKey(
+    void *keyPtr)
+{
+    pthread_key_t *ptkeyPtr = keyPtr;
 
-    if (pthread_key_delete(*key)) {
+    if (pthread_key_delete(*ptkeyPtr)) {
 	Tcl_Panic("unable to delete key!");
     }
 
     TclpSysFree(keyPtr);
 }
 
-void TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr) {
-    pthread_key_t *key = tsdKeyPtr;
+void
+TclpThreadSetMasterTSD(
+    void *tsdKeyPtr,
+    void *ptr)
+{
+    pthread_key_t *ptkeyPtr = tsdKeyPtr;
 
-    if (pthread_setspecific(*key, ptr)) {
+    if (pthread_setspecific(*ptkeyPtr, ptr)) {
 	Tcl_Panic("unable to set master TSD value");
     }
 }
 
-void *TclpThreadGetMasterTSD(void *tsdKeyPtr) {
-    pthread_key_t *key = tsdKeyPtr;
+void *
+TclpThreadGetMasterTSD(
+    void *tsdKeyPtr)
+{
+    pthread_key_t *ptkeyPtr = tsdKeyPtr;
 
-    return pthread_getspecific(*key);
+    return pthread_getspecific(*ptkeyPtr);
 }
 
 #endif /* TCL_THREADS */
