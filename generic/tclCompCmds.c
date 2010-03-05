@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.167 2010/02/26 14:38:36 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.168 2010/03/05 14:34:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4028,9 +4028,9 @@ PushVarName(
 	     */
 
 	    if (varTokenPtr[n].size == 1) {
-		--n;
+		n--;
 	    } else {
-		--varTokenPtr[n].size;
+		varTokenPtr[n].size--;
 		removedParen = n;
 	    }
 
@@ -4131,7 +4131,7 @@ PushVarName(
     }
 
     if (removedParen) {
-	++varTokenPtr[removedParen].size;
+	varTokenPtr[removedParen].size++;
     }
     if (allocedTokens) {
 	TclStackFree(interp, elemTokenPtr);

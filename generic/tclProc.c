@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.178 2010/02/24 10:32:17 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.179 2010/03/05 14:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -332,8 +332,8 @@ Tcl_ProcObjCmd(
     }
 
     if ((procArgs[0] == 'a') && (strncmp(procArgs, "args", 4) == 0)) {
-	procArgs +=4;
-	while(*procArgs != '\0') {
+	procArgs += 4;
+	while (*procArgs != '\0') {
 	    if (*procArgs != ' ') {
 		goto done;
 	    }
@@ -973,11 +973,11 @@ TclNRUplevelObjCmd(
     if (result == -1) {
 	return TCL_ERROR;
     }
-    objc -= (result+1);
+    objc -= result + 1;
     if (objc == 0) {
 	goto uplevelSyntax;
     }
-    objv += (result+1);
+    objv += result + 1;
 
     /*
      * Modify the interpreter state to execute in the given frame.
@@ -1390,7 +1390,7 @@ InitLocalCache(
 	    i++;
 	}
 	namePtr++;
-	localPtr=localPtr->nextPtr;
+	localPtr = localPtr->nextPtr;
     }
     codePtr->localCachePtr = localCachePtr;
     localCachePtr->refCount = 1;

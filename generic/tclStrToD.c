@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.40 2010/02/24 10:32:17 dkf Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.41 2010/03/05 14:34:04 dkf Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -143,7 +143,7 @@ static int n770_fp;		/* Flag is 1 on Nokia N770 floating point.
 static double		AbsoluteValue(double v, int *signum);
 static int		AccumulateDecimalDigit(unsigned, int, 
 			    Tcl_WideUInt *, mp_int *, int);
-static double		BignumToBiasedFrExp(mp_int *big, int* machexp);
+static double		BignumToBiasedFrExp(mp_int *big, int *machexp);
 static int		GetIntegerTimesPower(double v, mp_int *r, int *e);
 static double		MakeHighPrecisionDouble(int signum,
 			    mp_int *significand, int nSigDigs, int exponent);
@@ -456,7 +456,7 @@ TclParseNumber(
 	case ZERO_O:
 	zeroo:
 	    if (c == '0') {
-		++numTrailZeros;
+		numTrailZeros++;
 		state = OCTAL;
 		break;
 	    } else if (c >= '1' && c <= '7') {
@@ -529,7 +529,7 @@ TclParseNumber(
 	     */
 
 	    if (c == '0') {
-		++numTrailZeros;
+		numTrailZeros++;
 		state = BAD_OCTAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -572,7 +572,7 @@ TclParseNumber(
 	case ZERO_X:
 	zerox:
 	    if (c == '0') {
-		++numTrailZeros;
+		numTrailZeros++;
 		state = HEXADECIMAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -619,7 +619,7 @@ TclParseNumber(
 	case ZERO_B:
 	zerob:
 	    if (c == '0') {
-		++numTrailZeros;
+		numTrailZeros++;
 		state = BINARY;
 		break;
 	    } else if (c != '1') {
@@ -666,7 +666,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == '0') {
-		++numTrailZeros;
+		numTrailZeros++;
 		state = DECIMAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -709,12 +709,12 @@ TclParseNumber(
 
 	case LEADING_RADIX_POINT:
 	    if (c == '0') {
-		++numDigitsAfterDp;
-		++numTrailZeros;
+		numDigitsAfterDp++;
+		numTrailZeros++;
 		state = FRACTION;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
-		++numDigitsAfterDp;
+		numDigitsAfterDp++;
 		if (objPtr != NULL) {
 		    significandOverflow = AccumulateDecimalDigit(
 			    (unsigned)(c-'0'), numTrailZeros,
@@ -894,8 +894,8 @@ TclParseNumber(
 	    acceptLen = len;
 	    goto endgame;
 	}
-	++p;
-	--len;
+	p++;
+	len--;
     }
 
   endgame:
@@ -921,8 +921,8 @@ TclParseNumber(
 	     */
 
 	    while (len != 0 && isspace(UCHAR(*p))) {
-		++p;
-		--len;
+		p++;
+		len--;
 	    }
 	}
 	if (endPtrPtr == NULL) {
@@ -1924,7 +1924,7 @@ TclDoubleDigits(
     i = mp_cmp_mag(&temp, &s);
     if (i>0 || (highOK && i==0)) {
 	mp_mul_d(&s, 10, &s);
-	++k;
+	k++;
     } else {
 	mp_mul_d(&temp, 10, &temp);
 	i = mp_cmp_mag(&temp, &s);
@@ -1932,7 +1932,7 @@ TclDoubleDigits(
 	    mp_mul_d(&r, 10, &r);
 	    mp_mul_d(&mplus, 10, &mplus);
 	    mp_mul_d(&mminus, 10, &mminus);
-	    --k;
+	    k--;
 	}
     }
 
@@ -1961,7 +1961,7 @@ TclDoubleDigits(
 	if (highOK) {
 	    tc2 = (tc2 >= 0);
 	} else {
-	    tc2= (tc2 > 0);
+	    tc2 = (tc2 > 0);
 	}
 	if (!tc1) {
 	    if (!tc2) {
@@ -2206,7 +2206,7 @@ TclInitDoubleConversion(void)
     if (frexp((double) FLT_RADIX, &log2FLT_RADIX) != 0.5) {
 	Tcl_Panic("This code doesn't work on a decimal machine!");
     }
-    --log2FLT_RADIX;
+    log2FLT_RADIX--;
     mantBits = DBL_MANT_DIG * log2FLT_RADIX;
     d = 1.0;
 

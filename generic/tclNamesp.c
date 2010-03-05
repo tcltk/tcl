@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.203 2010/02/24 10:45:04 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.204 2010/03/05 14:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1638,13 +1638,12 @@ DoImport(
 	cmdPtr = Tcl_GetHashValue(hPtr);
 	if (found != NULL && cmdPtr->deleteProc == DeleteImportedCmd) {
 	    Command *overwrite = Tcl_GetHashValue(found);
-	    Command *link = cmdPtr;
+	    Command *linkCmd = cmdPtr;
 
-	    while (link->deleteProc == DeleteImportedCmd) {
-		ImportedCmdData *dataPtr = link->objClientData;
-
-		link = dataPtr->realCmdPtr;
-		if (overwrite == link) {
+	    while (linkCmd->deleteProc == DeleteImportedCmd) {
+		dataPtr = linkCmd->objClientData;
+		linkCmd = dataPtr->realCmdPtr;
+		if (overwrite == linkCmd) {
 		    Tcl_AppendResult(interp, "import pattern \"", pattern,
 			    "\" would create a loop containing command \"",
 			    Tcl_DStringValue(&ds), "\"", NULL);

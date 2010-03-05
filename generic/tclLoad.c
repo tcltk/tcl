@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.23 2008/12/19 09:33:16 nijtmans Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.24 2010/03/05 14:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -443,9 +443,9 @@ Tcl_LoadObjCmd(
 
 	Tcl_MutexLock(&packageMutex);
 	if (Tcl_IsSafe(target)) {
-	    ++pkgPtr->safeInterpRefCount;
+	    pkgPtr->safeInterpRefCount++;
 	} else {
-	    ++pkgPtr->interpRefCount;
+	    pkgPtr->interpRefCount++;
 	}
 	Tcl_MutexUnlock(&packageMutex);
 
@@ -725,9 +725,9 @@ Tcl_UnloadObjCmd(
 	Tcl_MutexUnlock(&packageMutex);
 
 	if (Tcl_IsSafe(target)) {
-	    --safeRefCount;
+	    safeRefCount--;
 	} else {
-	    --trustedRefCount;
+	    trustedRefCount--;
 	}
 
 	if (safeRefCount <= 0 && trustedRefCount <= 0) {
@@ -747,7 +747,7 @@ Tcl_UnloadObjCmd(
 
     Tcl_MutexLock(&packageMutex);
     if (Tcl_IsSafe(target)) {
-	--pkgPtr->safeInterpRefCount;
+	pkgPtr->safeInterpRefCount--;
 
 	/*
 	 * Do not let counter get negative.
@@ -757,7 +757,7 @@ Tcl_UnloadObjCmd(
 	    pkgPtr->safeInterpRefCount = 0;
 	}
     } else {
-	--pkgPtr->interpRefCount;
+	pkgPtr->interpRefCount--;
 
 	/*
 	 * Do not let counter get negative.

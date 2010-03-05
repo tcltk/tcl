@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.81 2010/02/24 14:30:34 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.82 2010/03/05 14:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -405,7 +405,7 @@ FreeDictInternalRep(
 {
     Dict *dict = dictPtr->internalRep.otherValuePtr;
 
-    --dict->refcount;
+    dict->refcount--;
     if (dict->refcount <= 0) {
 	DeleteDict(dict);
     }
