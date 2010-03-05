@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.31 2009/11/26 17:37:26 das Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.32 2010/03/05 14:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -325,7 +325,7 @@ TclpAlloc(
     blockPtr = NULL;
     size = reqSize + sizeof(Block);
 #if RCHECK
-    ++size;
+    size++;
 #endif
     if (size > MAXALLOC) {
 	bucket = NBUCKETS;
@@ -336,13 +336,13 @@ TclpAlloc(
     } else {
 	bucket = 0;
 	while (bucketInfo[bucket].blockSize < size) {
-	    ++bucket;
+	    bucket++;
 	}
 	if (cachePtr->buckets[bucket].numFree || GetBlocks(cachePtr, bucket)) {
 	    blockPtr = cachePtr->buckets[bucket].firstPtr;
 	    cachePtr->buckets[bucket].firstPtr = blockPtr->nextBlock;
-	    --cachePtr->buckets[bucket].numFree;
-	    ++cachePtr->buckets[bucket].numRemoves;
+	    cachePtr->buckets[bucket].numFree--;
+	    cachePtr->buckets[bucket].numRemoves++;
 	    cachePtr->buckets[bucket].totalAssigned += reqSize;
 	}
     }
@@ -402,8 +402,8 @@ TclpFree(
     cachePtr->buckets[bucket].totalAssigned -= blockPtr->blockReqSize;
     blockPtr->nextBlock = cachePtr->buckets[bucket].firstPtr;
     cachePtr->buckets[bucket].firstPtr = blockPtr;
-    ++cachePtr->buckets[bucket].numFree;
-    ++cachePtr->buckets[bucket].numInserts;
+    cachePtr->buckets[bucket].numFree++;
+    cachePtr->buckets[bucket].numInserts++;
 
     if (cachePtr != sharedPtr &&
 	    cachePtr->buckets[bucket].numFree > bucketInfo[bucket].maxBlocks) {
@@ -469,7 +469,7 @@ TclpRealloc(
     blockPtr = Ptr2Block(ptr);
     size = reqSize + sizeof(Block);
 #if RCHECK
-    ++size;
+    size++;
 #endif
     bucket = blockPtr->sourceBucket;
     if (bucket != NBUCKETS) {
@@ -578,7 +578,7 @@ TclThreadAllocObj(void)
 
     objPtr = cachePtr->firstObjPtr;
     cachePtr->firstObjPtr = objPtr->internalRep.otherValuePtr;
-    --cachePtr->numObjects;
+    cachePtr->numObjects--;
     return objPtr;
 }
 
@@ -618,7 +618,7 @@ TclThreadFreeObj(
 
     objPtr->internalRep.otherValuePtr = cachePtr->firstObjPtr;
     cachePtr->firstObjPtr = objPtr;
-    ++cachePtr->numObjects;
+    cachePtr->numObjects++;
 
     /*
      * If the number of free objects has exceeded the high water mark, move
@@ -810,14 +810,14 @@ LockBucket(
 #if 0
     if (Tcl_MutexTryLock(bucketInfo[bucket].lockPtr) != TCL_OK) {
 	Tcl_MutexLock(bucketInfo[bucket].lockPtr);
-	++cachePtr->buckets[bucket].numWaits;
-	++sharedPtr->buckets[bucket].numWaits;
+	cachePtr->buckets[bucket].numWaits++;
+	sharedPtr->buckets[bucket].numWaits++;
     }
 #else
     Tcl_MutexLock(bucketInfo[bucket].lockPtr);
 #endif
-    ++cachePtr->buckets[bucket].numLocks;
-    ++sharedPtr->buckets[bucket].numLocks;
+    cachePtr->buckets[bucket].numLocks++;
+    sharedPtr->buckets[bucket].numLocks++;
 }
 
 static void
@@ -956,7 +956,7 @@ GetBlocks(
 		size = bucketInfo[n].blockSize;
 		blockPtr = cachePtr->buckets[n].firstPtr;
 		cachePtr->buckets[n].firstPtr = blockPtr->nextBlock;
-		--cachePtr->buckets[n].numFree;
+		cachePtr->buckets[n].numFree--;
 		break;
 	    }
 	}

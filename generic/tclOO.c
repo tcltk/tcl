@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.34 2010/03/04 23:42:53 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.35 2010/03/05 14:34:04 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1006,10 +1006,9 @@ ObjectNamespaceDeleted(
     }
 
     if (clsPtr != NULL) {
-	Class *superPtr, *mixinPtr;
+	Class *superPtr;
 
 	if (clsPtr->metadataPtr != NULL) {
-	    FOREACH_HASH_DECLS;
 	    Tcl_ObjectMetadataType *metadataTypePtr;
 	    ClientData value;
 

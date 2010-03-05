@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.41 2010/01/13 06:46:56 nijtmans Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.42 2010/03/05 14:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -722,8 +722,7 @@ TclCygwinPutenv(
 	/* Can't happen. */
 	return;
     }
-    *value = '\0';
-    ++value;
+    *(value++) = '\0';
     if (*value == '\0') {
 	value = NULL;
     }

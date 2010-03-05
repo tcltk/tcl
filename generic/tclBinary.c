@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.59 2009/12/29 01:43:23 patthoyts Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.60 2010/03/05 14:34:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1303,7 +1303,6 @@ BinaryScanCmd(
 	case 'H': {
 	    char *dest;
 	    unsigned char *src;
-	    int i;
 	    static const char hexdigit[] = "0123456789abcdef";
 
 	    if (arg >= objc) {
@@ -2303,13 +2302,15 @@ BinaryDecodeHex(
 		value |= (c & 0xf);
 	    } else {
 		value <<= 4;
-		++cut;
+		cut++;
 	    }
 	}
 	*cursor++ = UCHAR(value);
 	value = 0;
     }
-    if (cut > size) cut = size;
+    if (cut > size) {
+	cut = size;
+    }
     Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
@@ -2344,7 +2345,7 @@ BinaryDecodeHex(
 #define OUTPUT(c) \
     do {						\
 	*cursor++ = (c);				\
-	++outindex;					\
+	outindex++;					\
 	if (maxlen > 0 && cursor != limit) {		\
 	    if (outindex == maxlen) {			\
 		memcpy(cursor, wrapchar, wrapcharlen);	\
@@ -2505,10 +2506,12 @@ BinaryDecodeUu(
 		    continue;
 		}
 	    } else {
-		++cut;
+		cut++;
 	    }
 	}
-	if (cut>3) cut=3;
+	if (cut > 3) {
+	    cut = 3;
+	}
 	*cursor++ = (((d[0] - 0x20) & 0x3f) << 2)
 		| (((d[1] - 0x20) & 0x3f) >> 4);
 	*cursor++ = (((d[1] - 0x20) & 0x3f) << 4)
@@ -2516,7 +2519,9 @@ BinaryDecodeUu(
 	*cursor++ = (((d[2] - 0x20) & 0x3f) << 6)
 		| (((d[3] - 0x20) & 0x3f));
     }
-    if (cut > size) cut = size;
+    if (cut > size) {
+	cut = size;
+    }
     Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
@@ -2584,7 +2589,6 @@ BinaryDecode64(
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
     while (data < dataend) {
-	int i;
 	unsigned long value = 0;
 
 	for (i=0 ; i<4 ; i++) {
@@ -2604,7 +2608,7 @@ BinaryDecode64(
 		} else if (c == '=') {
 		    value <<= 6;
 		    if (cut < 2) {
-			++cut;
+			cut++;
 		    }
 		} else {
 		    if (strict || !isspace(c)) {
@@ -2615,14 +2619,16 @@ BinaryDecode64(
 		}
 	    } else {
 		value <<= 6;
-		++cut;
+		cut++;
 	    }
 	}
 	*cursor++ = UCHAR((value >> 16) & 0xff);
 	*cursor++ = UCHAR((value >> 8) & 0xff);
 	*cursor++ = UCHAR(value & 0xff);
     }
-    if (cut > size) cut = size;
+    if (cut > size) {
+	cut = size;
+    }
     Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
