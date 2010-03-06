@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.1.2.13 2009/02/04 14:16:52 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.1.2.14 2010/03/06 03:40:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -89,7 +89,7 @@ enum {
    kIsInvisible = 0x4000,
 };
 
-#define kFinfoIsInvisible (OSSwapHostToBigConstInt16(kIsInvisible))
+#define kFinfoIsInvisible	(OSSwapHostToBigConstInt16(kIsInvisible))
 
 typedef	struct finderinfo {
     u_int32_t type;
@@ -568,7 +568,7 @@ GetOSTypeFromObj(
 
     if (objPtr->typePtr != &tclOSTypeType) {
 	result = tclOSTypeType.setFromAnyProc(interp, objPtr);
-    };
+    }
     *osTypePtr = (OSType) objPtr->internalRep.longValue;
     return result;
 }
@@ -635,16 +635,17 @@ SetOSTypeFromAny(
     if (Tcl_DStringLength(&ds) > 4) {
 	Tcl_AppendResult(interp, "expected Macintosh OS type but got \"",
 		string, "\": ", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "MAC_OSTYPE", NULL);
 	result = TCL_ERROR;
     } else {
 	OSType osType;
-	char string[4] = {'\0','\0','\0','\0'};
+	char bytes[4] = {'\0','\0','\0','\0'};
 
-	memcpy(string, Tcl_DStringValue(&ds), (size_t)Tcl_DStringLength(&ds));
-	osType = (OSType) string[0] << 24 |
-		 (OSType) string[1] << 16 |
-		 (OSType) string[2] <<  8 |
-		 (OSType) string[3];
+	memcpy(bytes, Tcl_DStringValue(&ds), (size_t)Tcl_DStringLength(&ds));
+	osType = (OSType) bytes[0] << 24 |
+		 (OSType) bytes[1] << 16 |
+		 (OSType) bytes[2] <<  8 |
+		 (OSType) bytes[3];
 	TclFreeIntRep(objPtr);
 	objPtr->internalRep.longValue = (long) osType;
 	objPtr->typePtr = &tclOSTypeType;

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.41 2010/02/25 21:53:06 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.42 2010/03/06 03:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1477,7 +1477,7 @@ ConvertTreeToTokens(
 
 	    /* Skip any white space that comes before the literal */
 	    scanned = TclParseAllWhiteSpace(start, numBytes);
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 
 	    /*
@@ -1498,7 +1498,7 @@ ConvertTreeToTokens(
 	    subExprTokenPtr[1].numComponents = 0;
 
 	    parsePtr->numTokens += 2;
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 	    break;
 
@@ -1550,7 +1550,7 @@ ConvertTreeToTokens(
 	    }
 
 	    scanned = tokenPtr->start + tokenPtr->size - start;
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 	    tokenPtr += toCopy;
 	    break;
@@ -1566,7 +1566,7 @@ ConvertTreeToTokens(
 	     */
 
 	    scanned = TclParseAllWhiteSpace(start, numBytes);
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 
 	    /*
@@ -1641,7 +1641,7 @@ ConvertTreeToTokens(
 
 	    /* Skip any white space that comes before the operator */
 	    scanned = TclParseAllWhiteSpace(start, numBytes);
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 
 	    /*
@@ -1672,7 +1672,7 @@ ConvertTreeToTokens(
 		break;
 	    }
 
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 	    break;
 
@@ -1693,10 +1693,10 @@ ConvertTreeToTokens(
 
 		/* Skip past matching close paren. */
 		scanned = TclParseAllWhiteSpace(start, numBytes);
-		start +=scanned;
+		start += scanned;
 		numBytes -= scanned;
 		scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
-		start +=scanned;
+		start += scanned;
 		numBytes -= scanned;
 		break;
 

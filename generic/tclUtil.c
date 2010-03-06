@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.43 2010/02/25 21:53:08 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.44 2010/03/06 03:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -435,7 +435,7 @@ Tcl_SplitList(
 		if (next == '\0') {
 		    break;
 		}
-		++l;
+		l++;
 		if (isspace(UCHAR(next))) {		/* INTL: ISO space. */
 		    continue;
 		}
@@ -553,7 +553,7 @@ TclMarkList(
 		if ((l+1) == end) {
 		    break;
 		}
-		++l;
+		l++;
 		if (isspace(UCHAR(next))) {		/* INTL: ISO space. */
 		    continue;
 		}
@@ -2238,7 +2238,7 @@ Tcl_PrintDouble(
 				 * at least TCL_DOUBLE_SPACE characters. */
 {
     char *p, c;
-    int exp;
+    int exponent;
     int signum;
     char buffer[TCL_DOUBLE_SPACE];
     Tcl_UniChar ch;
@@ -2279,12 +2279,12 @@ Tcl_PrintDouble(
 	 * Ordinary (normal and denormal) values.
 	 */
 
-	exp = TclDoubleDigits(buffer, value, &signum);
+	exponent = TclDoubleDigits(buffer, value, &signum);
 	if (signum) {
 	    *dst++ = '-';
 	}
 	p = buffer;
-	if (exp < -3 || exp > 17) {
+	if (exponent < -3 || exponent > 17) {
 	    /*
 	     * E format for numbers < 1e-3 or >= 1e17.
 	     */
@@ -2298,17 +2298,17 @@ Tcl_PrintDouble(
 		    c = *++p;
 		}
 	    }
-	    sprintf(dst, "e%+d", exp-1);
+	    sprintf(dst, "e%+d", exponent-1);
 	} else {
 	    /*
 	     * F format for others.
 	     */
 
-	    if (exp <= 0) {
+	    if (exponent <= 0) {
 		*dst++ = '0';
 	    }
 	    c = *p;
-	    while (exp-- > 0) {
+	    while (exponent-- > 0) {
 		if (c != '\0') {
 		    *dst++ = c;
 		    c = *++p;
@@ -2320,7 +2320,7 @@ Tcl_PrintDouble(
 	    if (c == '\0') {
 		*dst++ = '0';
 	    } else {
-		while (++exp < 0) {
+		while (++exponent < 0) {
 		    *dst++ = '0';
 		}
 		while (c != '\0') {
@@ -2624,14 +2624,13 @@ TclGetIntForIndex(
 
   parseError:
     if (interp != NULL) {
-	const char *bytes = Tcl_GetString(objPtr);
-
 	/*
 	 * The result might not be empty; this resets it which should be both
 	 * a cheap operation, and of little problem because this is an
 	 * error-generation path anyway.
 	 */
 
+	bytes = Tcl_GetString(objPtr);
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "bad index \"", bytes,
 		"\": must be integer?[+-]integer? or end?[+-]integer?", NULL);
@@ -2820,7 +2819,7 @@ TclCheckBadOctal(
     }
     if (*p == '0') {
 	if ((p[1] == 'o') || p[1] == 'O') {
-	    p+=2;
+	    p += 2;
 	}
 	while (isdigit(UCHAR(*p))) {	/* INTL: digit. */
 	    p++;

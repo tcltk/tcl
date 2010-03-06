@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.73 2010/03/02 16:29:16 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.74 2010/03/06 03:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1067,7 +1067,8 @@ Tcl_SplitObjCmd(
 	     * Assume Tcl_UniChar is an integral type...
 	     */
 
-	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
+	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR((int) ch),
+		    &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
 
@@ -2513,7 +2514,7 @@ StringEqualCmd(
 	    if (i+1 >= objc-2) {
 		goto str_cmp_args;
 	    }
-	    ++i;
+	    i++;
 	    if (TclGetIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -2660,7 +2661,7 @@ StringCmpCmd(
 	    if (i+1 >= objc-2) {
 		goto str_cmp_args;
 	    }
-	    ++i;
+	    i++;
 	    if (TclGetIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -3927,7 +3928,7 @@ TclNRSwitchObjCmd(
 static int
 SwitchPostProc(
     ClientData data[],		/* Data passed from Tcl_NRAddCallback above */
-    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Interp *interp,		/* Tcl interpreter */
     int result)			/* Result to return*/
 {
     /* Unpack the preserved data */

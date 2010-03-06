@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.21 2010/02/25 21:53:08 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.22 2010/03/06 03:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -449,14 +449,10 @@ ValidateFormat(
 		    TCL_STATIC);
 	    goto error;
 	default:
-	    {
-		char buf[TCL_UTF_MAX+1];
-
-		buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-		Tcl_AppendResult(interp, "bad scan conversion character \"",
-			buf, "\"", NULL);
-		goto error;
-	    }
+	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
+	    Tcl_AppendResult(interp, "bad scan conversion character \"", buf,
+		    "\"", NULL);
+	    goto error;
 	}
 	if (!(flags & SCAN_SUPPRESS)) {
 	    if (objIndex >= nspace) {

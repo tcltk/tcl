@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.44 2010/02/25 21:53:08 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.45 2010/03/06 03:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -645,7 +645,7 @@ Tcl_InterpObjCmd(
 	int i, flags;
 	Tcl_Interp *slaveInterp;
 	Tcl_Obj *resultObjPtr;
-	static const char *const options[] = {
+	static const char *const cancelOptions[] = {
 	    "-unwind",	"--",	NULL
 	};
 	enum option {
@@ -658,8 +658,8 @@ Tcl_InterpObjCmd(
 	    if (TclGetString(objv[i])[0] != '-') {
 		break;
 	    }
-	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-		    &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[i], cancelOptions, "option",
+		    0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 
@@ -720,7 +720,7 @@ Tcl_InterpObjCmd(
 	int i, last, safe;
 	Tcl_Obj *slavePtr;
 	char buf[16 + TCL_INTEGER_SPACE];
-	static const char *const options[] = {
+	static const char *const createOptions[] = {
 	    "-safe",	"--", NULL
 	};
 	enum option {
@@ -737,8 +737,8 @@ Tcl_InterpObjCmd(
 	last = 0;
 	for (i = 2; i < objc; i++) {
 	    if ((last == 0) && (Tcl_GetString(objv[i])[0] == '-')) {
-		if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-			&index) != TCL_OK) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], createOptions,
+			"option", 0, &index) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (index == OPT_SAFE) {
@@ -879,7 +879,7 @@ Tcl_InterpObjCmd(
 	return TCL_OK;
     }
     case OPT_INVOKEHID: {
-	int i, index;
+	int i;
 	const char *namespaceName;
 	Tcl_Interp *slaveInterp;
 	static const char *const hiddenOptions[] = {
@@ -2460,7 +2460,7 @@ SlaveObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Tcl_IsSafe(slaveInterp)));
 	return TCL_OK;
     case OPT_INVOKEHIDDEN: {
-	int i, index;
+	int i;
 	const char *namespaceName;
 	static const char *const hiddenOptions[] = {
 	    "-global",	"-namespace",	"--", NULL

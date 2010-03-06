@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.164 2010/02/25 21:53:06 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.165 2010/03/06 03:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1310,6 +1310,7 @@ DeleteInterpProc(
     Tcl_HashSearch search;
     Tcl_HashTable *hTablePtr;
     ResolverScheme *resPtr, *nextResPtr;
+    int i;
 
     /*
      * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup.
@@ -1503,89 +1504,87 @@ DeleteInterpProc(
      * contents.
      */
 
-    {
-	Tcl_HashEntry *hPtr;
-	Tcl_HashSearch hSearch;
-	int i;
+    for (hPtr = Tcl_FirstHashEntry(iPtr->linePBodyPtr, &search);
+	    hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	CmdFrame *cfPtr = Tcl_GetHashValue(hPtr);
 
-	for (hPtr = Tcl_FirstHashEntry(iPtr->linePBodyPtr, &hSearch);
-		hPtr != NULL;
-		hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    CmdFrame *cfPtr = Tcl_GetHashValue(hPtr);
-
-	    if (cfPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(cfPtr->data.eval.path);
-	    }
-	    ckfree((char *) cfPtr->line);
-	    ckfree((char *) cfPtr);
-	    Tcl_DeleteHashEntry(hPtr);
+	if (cfPtr->type == TCL_LOCATION_SOURCE) {
+	    Tcl_DecrRefCount(cfPtr->data.eval.path);
 	}
-	Tcl_DeleteHashTable(iPtr->linePBodyPtr);
-	ckfree((char *) iPtr->linePBodyPtr);
-	iPtr->linePBodyPtr = NULL;
-
-	/*
-	 * See also tclCompile.c, TclCleanupByteCode
-	 */
-
-	for (hPtr = Tcl_FirstHashEntry(iPtr->lineBCPtr, &hSearch);
-		hPtr != NULL;
-		hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    ExtCmdLoc *eclPtr = Tcl_GetHashValue(hPtr);
-
-	    if (eclPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(eclPtr->path);
-	    }
-	    for (i=0; i< eclPtr->nuloc; i++) {
-		ckfree((char *) eclPtr->loc[i].line);
-	    }
-
-	    if (eclPtr->loc != NULL) {
-		ckfree((char *) eclPtr->loc);
-	    }
-
-	    Tcl_DeleteHashTable(&eclPtr->litInfo);
-
-	    ckfree((char *) eclPtr);
-	    Tcl_DeleteHashEntry(hPtr);
-	}
-	Tcl_DeleteHashTable(iPtr->lineBCPtr);
-	ckfree((char *) iPtr->lineBCPtr);
-	iPtr->lineBCPtr = NULL;
-
-	/*
-	 * Location stack for uplevel/eval/... scripts which were passed
-	 * through proc arguments. Actually we track all arguments as we do
-	 * not and cannot know which arguments will be used as scripts and
-	 * which will not.
-	 */
-
-	if (iPtr->lineLAPtr->numEntries) {
-	    /*
-	     * When the interp goes away we have nothing on the stack, so
-	     * there are no arguments, so this table has to be empty.
-	     */
-
-	    Tcl_Panic("Argument location tracking table not empty");
-	}
-
-	Tcl_DeleteHashTable(iPtr->lineLAPtr);
-	ckfree((char *) iPtr->lineLAPtr);
-	iPtr->lineLAPtr = NULL;
-
-	if (iPtr->lineLABCPtr->numEntries) {
-	    /*
-	     * When the interp goes away we have nothing on the stack, so
-	     * there are no arguments, so this table has to be empty.
-	     */
-
-	    Tcl_Panic("Argument location tracking table not empty");
-	}
-
-	Tcl_DeleteHashTable(iPtr->lineLABCPtr);
-	ckfree((char *) iPtr->lineLABCPtr);
-	iPtr->lineLABCPtr = NULL;
+	ckfree((char *) cfPtr->line);
+	ckfree((char *) cfPtr);
+	Tcl_DeleteHashEntry(hPtr);
     }
+    Tcl_DeleteHashTable(iPtr->linePBodyPtr);
+    ckfree((char *) iPtr->linePBodyPtr);
+    iPtr->linePBodyPtr = NULL;
+
+    /*
+     * See also tclCompile.c, TclCleanupByteCode
+     */
+
+    for (hPtr = Tcl_FirstHashEntry(iPtr->lineBCPtr, &search);
+	    hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	ExtCmdLoc *eclPtr = Tcl_GetHashValue(hPtr);
+
+	if (eclPtr->type == TCL_LOCATION_SOURCE) {
+	    Tcl_DecrRefCount(eclPtr->path);
+	}
+	for (i=0; i< eclPtr->nuloc; i++) {
+	    ckfree((char *) eclPtr->loc[i].line);
+	}
+
+	if (eclPtr->loc != NULL) {
+	    ckfree((char *) eclPtr->loc);
+	}
+
+	Tcl_DeleteHashTable(&eclPtr->litInfo);
+
+	ckfree((char *) eclPtr);
+	Tcl_DeleteHashEntry(hPtr);
+    }
+    Tcl_DeleteHashTable(iPtr->lineBCPtr);
+    ckfree((char *) iPtr->lineBCPtr);
+    iPtr->lineBCPtr = NULL;
+
+    /*
+     * Location stack for uplevel/eval/... scripts which were passed through
+     * proc arguments. Actually we track all arguments as we do not and cannot
+     * know which arguments will be used as scripts and which will not.
+     */
+
+    if (iPtr->lineLAPtr->numEntries) {
+	/*
+	 * When the interp goes away we have nothing on the stack, so there
+	 * are no arguments, so this table has to be empty.
+	 */
+
+	Tcl_Panic("Argument location tracking table not empty");
+    }
+
+    Tcl_DeleteHashTable(iPtr->lineLAPtr);
+    ckfree((char *) iPtr->lineLAPtr);
+    iPtr->lineLAPtr = NULL;
+
+    if (iPtr->lineLABCPtr->numEntries) {
+	/*
+	 * When the interp goes away we have nothing on the stack, so there
+	 * are no arguments, so this table has to be empty.
+	 */
+
+	Tcl_Panic("Argument location tracking table not empty");
+    }
+
+    Tcl_DeleteHashTable(iPtr->lineLABCPtr);
+    ckfree((char *) iPtr->lineLABCPtr);
+    iPtr->lineLABCPtr = NULL;
+
+    /*
+     * Squelch the tables of traces on variables and searches over arrays in
+     * the in the interpreter.
+     */
 
     Tcl_DeleteHashTable(&iPtr->varTraces);
     Tcl_DeleteHashTable(&iPtr->varSearches);
@@ -7402,12 +7401,17 @@ ExprAbsFunc(
 	    goto unChanged;
 	} else if (l == (long)0) {
 	    const char *string = objv[1]->bytes;
+
 	    if (!string) {
-	    /* There is no string representation, so internal one is correct */
+		/*
+		 * There is no string representation, so internal one is
+		 * correct.
+		 */
+
 		goto unChanged;
 	    }
 	    while (isspace(UCHAR(*string))) {
-	    	++string;
+	    	string++;
 	    }
 	    if (*string != '-') {
 		goto unChanged;
@@ -7906,7 +7910,7 @@ MathFuncWrongNumArgs(
     const char *tail = name + strlen(name);
 
     while (tail > name+1) {
-	--tail;
+	tail--;
 	if (*tail == ':' && tail[-1] == ':') {
 	    name = tail+1;
 	    break;

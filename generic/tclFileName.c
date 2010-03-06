@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.41 2010/02/25 21:53:07 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.42 2010/03/06 03:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -421,7 +421,7 @@ TclpGetNativePathType(
 		    && (path[1] == '/') && isdigit(UCHAR(path[2]))) {
 		path += 3;
 		while (isdigit(UCHAR(*path))) {
-		    ++path;
+		    path++;
 		}
 	    }
 #endif
@@ -647,11 +647,12 @@ SplitUnixPath(
     /*
      * Check for QNX //<node id> prefix
      */
+
     if ((path[0] == '/') && (path[1] == '/')
 	    && isdigit(UCHAR(path[2]))) { /* INTL: digit */
 	path += 3;
 	while (isdigit(UCHAR(*path))) { /* INTL: digit */
-	    ++path;
+	    path++;
 	}
     }
 #endif
@@ -1823,7 +1824,7 @@ TclGlob(
 		if (tail[0] == '/') {
 		    tail++;
 		} else {
-		    tail+=2;
+		    tail += 2;
 		}
 		Tcl_IncrRefCount(pathPrefix);
 		break;

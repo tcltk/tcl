@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.29 2010/02/25 21:53:06 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.30 2010/03/06 03:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -796,8 +796,7 @@ ConvertLocalToUTCUsingTable(
 	    if (nHave == 8) {
 		Tcl_Panic("loop in ConvertLocalToUTCUsingTable");
 	    }
-	    have[nHave] = fields->tzOffset;
-	    ++nHave;
+	    have[nHave++] = fields->tzOffset;
 	}
 	fields->seconds = fields->localSeconds - fields->tzOffset;
     }
@@ -844,7 +843,7 @@ ConvertLocalToUTCUsingC(
     secondOfDay = (int)(jsec % SECONDS_PER_DAY);
     if (secondOfDay < 0) {
 	secondOfDay += SECONDS_PER_DAY;
-	--fields->julianDay;
+	fields->julianDay--;
     }
     GetGregorianEraYearDay(fields, changeover);
     GetMonthDay(fields);
@@ -1257,7 +1256,7 @@ GetGregorianEraYearDay(
 	day %= FOUR_CENTURIES;
 	if (day < 0) {
 	    day += FOUR_CENTURIES;
-	    --n;
+	    n--;
 	}
 	year += 400 * n;
 
@@ -1295,7 +1294,7 @@ GetGregorianEraYearDay(
     day %= FOUR_YEARS;
     if (day < 0) {
 	day += FOUR_YEARS;
-	--n;
+	n--;
     }
     year += 4 * n;
 
@@ -1476,15 +1475,15 @@ GetJulianDayFromEraYearMonthDay(
 
     ym1o4 = ym1 / 4;
     if (ym1 % 4 < 0) {
-	--ym1o4;
+	ym1o4--;
     }
     ym1o100 = ym1 / 100;
     if (ym1 % 100 < 0) {
-	--ym1o100;
+	ym1o100--;
     }
     ym1o400 = ym1 / 400;
     if (ym1 % 400 < 0) {
-	--ym1o400;
+	ym1o400--;
     }
     fields->julianDay = JDAY_1_JAN_1_CE_GREGORIAN - 1
 	    + fields->dayOfMonth
@@ -2022,7 +2021,7 @@ ClockDeleteCmdProc(
     ClockClientData *data = clientData;
     int i;
 
-    --data->refCount;
+    data->refCount--;
     if (data->refCount == 0) {
 	for (i = 0; i < LIT__END; ++i) {
 	    Tcl_DecrRefCount(data->literals[i]);

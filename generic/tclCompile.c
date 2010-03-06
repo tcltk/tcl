@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.80 2010/02/25 21:53:06 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.81 2010/03/06 03:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -864,7 +864,6 @@ TclCleanupByteCode(
 
 	if (hePtr) {
 	    ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
-	    int i;
 
 	    if (eclPtr->type == TCL_LOCATION_SOURCE) {
 		Tcl_DecrRefCount(eclPtr->path);

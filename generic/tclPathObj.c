@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.46 2010/02/25 21:53:08 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.47 2010/03/06 03:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -251,7 +251,7 @@ TclFSNormalizeAbsolutePath(
 		continue;
 	    }
 	    if (dirSep[2] == '.' && IsSeparatorOrNull(dirSep[3])) {
-		Tcl_Obj *link;
+		Tcl_Obj *linkObj;
 		int curLen;
 		char *linkStr;
 
@@ -261,6 +261,7 @@ TclFSNormalizeAbsolutePath(
 
 		if (retVal == NULL) {
 		    const char *path = TclGetString(pathPtr);
+
 		    retVal = Tcl_NewStringObj(path, dirSep - path);
 		    Tcl_IncrRefCount(retVal);
 		}
@@ -269,16 +270,17 @@ TclFSNormalizeAbsolutePath(
 		    Tcl_AppendToObj(retVal, dirSep, 1);
 		}
 		if (!first || (tclPlatform == TCL_PLATFORM_UNIX)) {
-		    link = Tcl_FSLink(retVal, NULL, 0);
-		    if (link != NULL) {
+		    linkObj = Tcl_FSLink(retVal, NULL, 0);
+		    if (linkObj != NULL) {
 			/*
 			 * Got a link. Need to check if the link is relative
 			 * or absolute, for those platforms where relative
 			 * links exist.
 			 */
 
-			if (tclPlatform != TCL_PLATFORM_WINDOWS &&
-				Tcl_FSGetPathType(link) == TCL_PATH_RELATIVE) {
+			if (tclPlatform != TCL_PLATFORM_WINDOWS
+				&& Tcl_FSGetPathType(linkObj)
+					== TCL_PATH_RELATIVE) {
 			    /*
 			     * We need to follow this link which is relative
 			     * to retVal's directory. This means concatenating
@@ -304,8 +306,8 @@ TclFSNormalizeAbsolutePath(
 			     */
 
 			    Tcl_SetObjLength(retVal, curLen+1);
-			    Tcl_AppendObjToObj(retVal, link);
-			    TclDecrRefCount(link);
+			    Tcl_AppendObjToObj(retVal, linkObj);
+			    TclDecrRefCount(linkObj);
 			    linkStr = Tcl_GetStringFromObj(retVal, &curLen);
 			} else {
 			    /*
@@ -313,7 +315,7 @@ TclFSNormalizeAbsolutePath(
 			     */
 
 			    TclDecrRefCount(retVal);
-			    retVal = link;
+			    retVal = linkObj;
 			    linkStr = Tcl_GetStringFromObj(retVal, &curLen);
 
 			    /*
@@ -878,18 +880,18 @@ Tcl_FSJoinPath(
 	 * could expand that in the future.
 	 */
 
-	if ((i == (elements-2)) && (i == 0) && (elt->typePtr == &tclFsPathType)
-		&& !(elt->bytes != NULL && (elt->bytes[0] == '\0'))) {
-	    Tcl_Obj *tail;
-	    Tcl_PathType type;
+	if ((i == (elements-2)) && (i == 0)
+		&& (elt->typePtr == &tclFsPathType)
+		&& !((elt->bytes != NULL) && (elt->bytes[0] == '\0'))) {
+	    Tcl_Obj *tailObj;
 
-	    Tcl_ListObjIndex(NULL, listObj, i+1, &tail);
-	    type = TclGetPathType(tail, NULL, NULL, NULL);
+	    Tcl_ListObjIndex(NULL, listObj, i+1, &tailObj);
+	    type = TclGetPathType(tailObj, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
 		const char *str;
 		int len;
 
-		str = Tcl_GetStringFromObj(tail, &len);
+		str = Tcl_GetStringFromObj(tailObj, &len);
 		if (len == 0) {
 		    /*
 		     * This happens if we try to handle the root volume '/'.
@@ -931,22 +933,22 @@ Tcl_FSJoinPath(
 
 		/*
 		 * Otherwise we don't have an easy join, and we must let the
-		 * more general code below handle things
+		 * more general code below handle things.
 		 */
 	    } else if (tclPlatform == TCL_PLATFORM_UNIX) {
 		if (res != NULL) {
 		    TclDecrRefCount(res);
 		}
-		return tail;
+		return tailObj;
 	    } else {
-		const char *str = Tcl_GetString(tail);
+		const char *str = TclGetString(tailObj);
 
 		if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 		    if (strchr(str, '\\') == NULL) {
 			if (res != NULL) {
 			    TclDecrRefCount(res);
 			}
-			return tail;
+			return tailObj;
 		    }
 		}
 	    }
@@ -2752,7 +2754,7 @@ TclNativePathInFilesystem(
 
 	int len;
 
-	Tcl_GetStringFromObj(pathPtr, &len);
+	(void) Tcl_GetStringFromObj(pathPtr, &len);
 	if (len == 0) {
 	    /*
 	     * We reject the empty path "".

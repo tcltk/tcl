@@ -1,3 +1,28 @@
+2010-03-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIORTrans.c (ForwardProc): [Bug 2964425]: When cleaning
+	the stables, it is sometimes necessary to do more than the minimum. In
+	this case, rationalizing the variables for a forwarded limit? method
+	required removing an extra Tcl_DecrRefCount too.
+
+	* generic/tclOO.h, generic/tclOOInt.h: [Patch 2961556]: Change TclOO
+	to use the same style of function typedefs as Tcl, as this is about
+	the last chance to get this right.
+
+	***POTENTIAL INCOMPATIBILITY***
+	Source code that uses function typedefs from TclOO will need to update
+	variables and argument definitions so that pointers to the function
+	values are used instead. Binary compatibility is not affected.
+
+	* generic/*.c, generic/tclInt.h, unix/*.c, macosx/*.c: Applied results
+	of doing a Code Audit. Principal changes:
+	  * Use do { ... } while (0) in macros
+	  * Avoid shadowing one local variable with another
+	  * Use clearer 'foo.bar++;' instead of '++foo.bar;' where result not
+	    required (i.e., semantically equivalent); clarity is increased
+	    because it is bar that is incremented, not foo.
+	  * Follow Engineering Manual rules on spacing and declarations
+
 2010-03-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (ObjectRenamedTrace): [Bug 2962664]: Add special

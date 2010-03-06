@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.52 2010/02/25 21:53:08 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.53 2010/03/06 03:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -821,7 +821,7 @@ ParseCommand(
 
 			for(s=elemStart;size>0;s++,size--) {
 			    if ((*s)=='\\') {
-				nakedbs=1;
+				nakedbs = 1;
 				break;
 			    }
 			}
@@ -1017,7 +1017,7 @@ ParseWhiteSpace(
 	    if (p[1] != '\n') {
 		break;
 	    }
-	    p+=2;
+	    p += 2;
 	    if (--numBytes == 0) {
 		*incompletePtr = 1;
 		break;
@@ -1102,7 +1102,7 @@ TclParseHex(
 	    break;
 	}
 
-	++p;
+	p++;
 	result <<= 4;
 
 	if (digit >= 'a') {

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.64 2010/03/01 12:55:48 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.65 2010/03/06 03:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3610,7 +3610,7 @@ Tcl_LsortObjCmd(
 	    sortInfo.isIncreasing = 1;
 	    break;
 	case LSORT_INDEX: {
-	    Tcl_Obj **indices;
+	    Tcl_Obj **indexv;
 
 	    /* === START SPECIAL CASE ===
 	     *
@@ -3634,7 +3634,7 @@ Tcl_LsortObjCmd(
 	     */
 
 	    if (TclListObjGetElements(interp, objv[i+1], &sortInfo.indexc,
-		    &indices) != TCL_OK) {
+		    &indexv) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    /* === END SPECIAL CASE === */
@@ -3661,7 +3661,7 @@ Tcl_LsortObjCmd(
 	     */
 
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		if (TclGetIntForIndexM(interp, indices[j], SORTIDX_END,
+		if (TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
 			&sortInfo.indexv[j]) != TCL_OK) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
@@ -3922,7 +3922,6 @@ Tcl_LsortObjCmd(
     if (sortInfo.resultCode == TCL_OK) {
 	List *listRepPtr;
 	Tcl_Obj **newArray, *objPtr;
-	int i;
 
 	resultPtr = Tcl_NewListObj(sortInfo.numElements * groupSize, NULL);
 	listRepPtr = resultPtr->internalRep.twoPtrValue.ptr1;

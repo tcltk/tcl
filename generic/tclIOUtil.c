@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.52 2010/02/25 21:53:07 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.53 2010/03/06 03:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1511,7 +1511,7 @@ TclGetOpenModeEx(
 	default:
 	    goto error;
 	}
-	i=1;
+	i = 1;
 	while (i<3 && modeString[i]) {
 	    if (modeString[i] == modeString[i-1]) {
 		goto error;

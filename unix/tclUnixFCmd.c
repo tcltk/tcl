@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.34 2009/11/25 16:20:15 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.35 2010/03/06 03:40:57 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -456,15 +456,16 @@ DoCopyFile(
     switch ((int) (statBufPtr->st_mode & S_IFMT)) {
 #ifndef DJGPP
     case S_IFLNK: {
-	char link[MAXPATHLEN];
+	char linkBuf[MAXPATHLEN];
 	int length;
 
-	length = readlink(src, link, sizeof(link));	/* INTL: Native. */
+	length = readlink(src, linkBuf, sizeof(linkBuf));
+							/* INTL: Native. */
 	if (length == -1) {
 	    return TCL_ERROR;
 	}
-	link[length] = '\0';
-	if (symlink(link, dst) < 0) {			/* INTL: Native. */
+	linkBuf[length] = '\0';
+	if (symlink(linkBuf, dst) < 0) {		/* INTL: Native. */
 	    return TCL_ERROR;
 	}
 #ifdef MAC_OSX_TCL
@@ -1907,10 +1908,10 @@ TclpObjNormalizePath(
     int pathLen;
     char cur;
     const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
-#ifndef NO_REALPATH
-    char normPath[MAXPATHLEN];
     Tcl_DString ds;
     const char *nativePath;
+#ifndef NO_REALPATH
+    char normPath[MAXPATHLEN];
 #endif
 
     /*
@@ -1962,8 +1963,6 @@ TclpObjNormalizePath(
 	     * Reached directory separator.
 	     */
 
-	    Tcl_DString ds;
-	    const char *nativePath;
 	    int accessOk;
 
 	    nativePath = Tcl_UtfToExternalDString(NULL, path,
@@ -2014,7 +2013,7 @@ TclpObjNormalizePath(
 	    return 0;
 	}
 
-	nativePath = Tcl_UtfToExternalDString(NULL, path, nextCheckpoint, &ds);
+	nativePath = Tcl_UtfToExternalDString(NULL, path,nextCheckpoint, &ds);
 	if (Realpath(nativePath, normPath) != NULL) {
 	    int newNormLen;
 
