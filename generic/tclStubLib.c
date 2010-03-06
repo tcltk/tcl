@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.31 2010/03/04 22:29:05 nijtmans Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.32 2010/03/06 06:29:24 nijtmans Exp $
  */
 
 /*
@@ -28,13 +28,11 @@ MODULE_SCOPE const TclStubs *tclStubsPtr;
 MODULE_SCOPE const TclPlatStubs *tclPlatStubsPtr;
 MODULE_SCOPE const TclIntStubs *tclIntStubsPtr;
 MODULE_SCOPE const TclIntPlatStubs *tclIntPlatStubsPtr;
-MODULE_SCOPE const TclTomMathStubs *tclTomMathStubsPtr;
 
 const TclStubs *tclStubsPtr = NULL;
 const TclPlatStubs *tclPlatStubsPtr = NULL;
 const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
-const TclTomMathStubs *tclTomMathStubsPtr = NULL;
 
 static const TclStubs *
 HasStubSupport(
