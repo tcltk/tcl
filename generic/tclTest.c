@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.147 2010/02/25 22:20:10 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.148 2010/03/06 06:29:24 nijtmans Exp $
  */
 
 #undef STATIC_BUILD
@@ -539,7 +539,10 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
+	return TCL_ERROR;
+    }
+    if (Tcl_TomMath_InitStubs(interp, "8.5") == NULL) {
 	return TCL_ERROR;
     }
     /* TIP #268: Full patchlevel instead of just major.minor */

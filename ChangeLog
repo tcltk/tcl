@@ -1,3 +1,8 @@
+2010-03-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclStubLib.c  remove presence of tclTomMathStubsPtr here
+	* generic/tclTest.c     test that tommath stubs are present in stub library
+
 2010-03-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclIORTrans.c (ForwardProc): [Bug 2964425]: When cleaning
