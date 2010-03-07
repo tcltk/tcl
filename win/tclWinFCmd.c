@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.60 2010/02/15 23:10:47 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.61 2010/03/07 14:39:25 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -328,8 +328,8 @@ DoRenameFile(
 	    TCHAR *nativeSrcRest, *nativeDstRest;
 	    const char **srcArgv, **dstArgv;
 	    int size, srcArgc, dstArgc;
-	    WCHAR nativeSrcPath[MAX_PATH];
-	    WCHAR nativeDstPath[MAX_PATH];
+	    TCHAR nativeSrcPath[MAX_PATH*2];
+	    TCHAR nativeDstPath[MAX_PATH*2];
 	    Tcl_DString srcString, dstString;
 	    const char *src, *dst;
 
@@ -343,11 +343,11 @@ DoRenameFile(
 	    if ((size == 0) || (size > MAX_PATH)) {
 		return TCL_ERROR;
 	    }
-	    tclWinProcs->charLowerProc((TCHAR *) nativeSrcPath);
-	    tclWinProcs->charLowerProc((TCHAR *) nativeDstPath);
+	    tclWinProcs->charLowerProc(nativeSrcPath);
+	    tclWinProcs->charLowerProc(nativeDstPath);
 
-	    src = tclWinProcs->tchar2utf((TCHAR *) nativeSrcPath, -1, &srcString);
-	    dst = tclWinProcs->tchar2utf((TCHAR *) nativeDstPath, -1, &dstString);
+	    src = tclWinProcs->tchar2utf(nativeSrcPath, -1, &srcString);
+	    dst = tclWinProcs->tchar2utf(nativeDstPath, -1, &dstString);
 
 	    /*
 	     * Check whether the destination path is actually inside the
@@ -465,7 +465,7 @@ DoRenameFile(
 
 		TCHAR *nativeRest, *nativeTmp, *nativePrefix;
 		int result, size;
-		WCHAR tempBuf[MAX_PATH];
+		TCHAR tempBuf[MAX_PATH*2];
 
 		size = tclWinProcs->getFullPathNameProc(nativeDst, MAX_PATH,
 			tempBuf, &nativeRest);
