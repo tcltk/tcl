@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.76 2010/02/15 23:10:47 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.77 2010/03/07 14:39:25 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -196,7 +196,7 @@ static DWORD WINAPI	PipeReaderThread(LPVOID arg);
 static void		PipeSetupProc(ClientData clientData, int flags);
 static void		PipeWatchProc(ClientData instanceData, int mask);
 static DWORD WINAPI	PipeWriterThread(LPVOID arg);
-static int		TempFileName(WCHAR name[MAX_PATH]);
+static int		TempFileName(TCHAR name[MAX_PATH*2]);
 static int		WaitForRead(PipeInfo *infoPtr, int blocking);
 static void		PipeThreadActionProc(ClientData instanceData,
 			    int action);
@@ -474,15 +474,14 @@ TclWinMakeFile(
 
 static int
 TempFileName(
-    WCHAR name[MAX_PATH])	/* Buffer in which name for temporary file
+    TCHAR name[MAX_PATH*2])	/* Buffer in which name for temporary file
 				 * gets stored. */
 {
     TCHAR *prefix;
 
     prefix = (tclWinProcs->useWide) ? (TCHAR *) L"TCL" : (TCHAR *) "TCL";
     if (tclWinProcs->getTempPathProc(MAX_PATH, name) != 0) {
-	if (tclWinProcs->getTempFileNameProc((TCHAR *) name, prefix, 0,
-		name) != 0) {
+	if (tclWinProcs->getTempFileNameProc(name, prefix, 0, name) != 0) {
 	    return 1;
 	}
     }
@@ -493,7 +492,7 @@ TempFileName(
 	((char *) name)[0] = '.';
 	((char *) name)[1] = '\0';
     }
-    return tclWinProcs->getTempFileNameProc((TCHAR *) name, prefix, 0, name);
+    return tclWinProcs->getTempFileNameProc(name, prefix, 0, name);
 }
 
 /*
@@ -669,7 +668,7 @@ TclFile
 TclpCreateTempFile(
     const char *contents)	/* String to write into temp file, or NULL. */
 {
-    WCHAR name[MAX_PATH];
+    TCHAR name[MAX_PATH*2];
     const char *native;
     Tcl_DString dstring;
     HANDLE handle;
@@ -761,7 +760,7 @@ TclpCreateTempFile(
 Tcl_Obj *
 TclpTempFileName(void)
 {
-    WCHAR fileName[MAX_PATH];
+    TCHAR fileName[MAX_PATH*2];
 
     if (TempFileName(fileName) == 0) {
 	return NULL;
@@ -1375,7 +1374,7 @@ ApplicationType(
     IMAGE_DOS_HEADER header;
     Tcl_DString nameBuf, ds;
     const TCHAR *nativeName;
-    WCHAR nativeFullPath[MAX_PATH];
+    TCHAR nativeFullPath[MAX_PATH*2];
     static char extensions[][5] = {"", ".com", ".exe", ".bat"};
 
     /*
@@ -1413,11 +1412,11 @@ ApplicationType(
 	 * known type.
 	 */
 
-	attr = tclWinProcs->getFileAttributesProc((TCHAR *) nativeFullPath);
+	attr = tclWinProcs->getFileAttributesProc(nativeFullPath);
 	if ((attr == 0xffffffff) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	    continue;
 	}
-	strcpy(fullName, tclWinProcs->tchar2utf((TCHAR *) nativeFullPath, -1, &ds));
+	strcpy(fullName, tclWinProcs->tchar2utf(nativeFullPath, -1, &ds));
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
@@ -1426,7 +1425,7 @@ ApplicationType(
 	    break;
 	}
 
-	hFile = tclWinProcs->createFileProc((TCHAR *) nativeFullPath,
+	hFile = tclWinProcs->createFileProc(nativeFullPath,
 		GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) {
@@ -3172,7 +3171,7 @@ TclpOpenTemporaryFile(
     Tcl_Obj *extensionObj,
     Tcl_Obj *resultingNameObj)
 {
-    WCHAR name[MAX_PATH];
+    TCHAR name[MAX_PATH*2];
     char *namePtr;
     HANDLE handle;
     DWORD flags = FILE_ATTRIBUTE_TEMPORARY;
