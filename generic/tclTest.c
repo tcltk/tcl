@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.55 2010/02/26 01:21:08 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.56 2010/03/08 14:34:04 dgp Exp $
  */
 
 #undef STATIC_BUILD
@@ -22,7 +22,7 @@
 #   define USE_TCL_STUBS
 #endif
 #include "tclInt.h"
-
+#include "tclOO.h"
 /*
  * Required for Testregexp*Cmd
  */
@@ -539,7 +539,13 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
+	return TCL_ERROR;
+    }
+    if (Tcl_TomMath_InitStubs(interp, "8.5") == NULL) {
+	return TCL_ERROR;
+    }
+    if (Tcl_OOInitStubs(interp) == NULL) {
 	return TCL_ERROR;
     }
     /* TIP #268: Full patchlevel instead of just major.minor */
@@ -754,7 +760,7 @@ int
 Tcltest_SafeInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
 	return TCL_ERROR;
     }
     return Procbodytest_SafeInit(interp);

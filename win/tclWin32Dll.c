@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.21 2010/02/17 15:37:01 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.22 2010/03/08 14:34:04 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -130,24 +130,24 @@ static TclWinProcs asciiProcs = {
     (BOOL (WINAPI *)(const TCHAR *)) DeleteFileA,
     (HANDLE (WINAPI *)(const TCHAR *, WIN32_FIND_DATAT *)) FindFirstFileA,
     (BOOL (WINAPI *)(HANDLE, WIN32_FIND_DATAT *)) FindNextFileA,
-    (BOOL (WINAPI *)(WCHAR *, LPDWORD)) GetComputerNameA,
-    (DWORD (WINAPI *)(DWORD, WCHAR *)) GetCurrentDirectoryA,
+    (BOOL (WINAPI *)(TCHAR *, LPDWORD)) GetComputerNameA,
+    (DWORD (WINAPI *)(DWORD, TCHAR *)) GetCurrentDirectoryA,
     (DWORD (WINAPI *)(const TCHAR *)) GetFileAttributesA,
-    (DWORD (WINAPI *)(const TCHAR *, DWORD nBufferLength, WCHAR *,
+    (DWORD (WINAPI *)(const TCHAR *, DWORD nBufferLength, TCHAR *,
 	    TCHAR **)) GetFullPathNameA,
-    (DWORD (WINAPI *)(HMODULE, WCHAR *, int)) GetModuleFileNameA,
-    (DWORD (WINAPI *)(const TCHAR *, WCHAR *, DWORD)) GetShortPathNameA,
+    (DWORD (WINAPI *)(HMODULE, TCHAR *, int)) GetModuleFileNameA,
+    (DWORD (WINAPI *)(const TCHAR *, TCHAR *, DWORD)) GetShortPathNameA,
     (UINT (WINAPI *)(const TCHAR *, const TCHAR *, UINT uUnique,
-	    WCHAR *)) GetTempFileNameA,
-    (DWORD (WINAPI *)(DWORD, WCHAR *)) GetTempPathA,
-    (BOOL (WINAPI *)(const TCHAR *, WCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
-	    WCHAR *, DWORD)) GetVolumeInformationA,
+	    TCHAR *)) GetTempFileNameA,
+    (DWORD (WINAPI *)(DWORD, TCHAR *)) GetTempPathA,
+    (BOOL (WINAPI *)(const TCHAR *, TCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
+	    TCHAR *, DWORD)) GetVolumeInformationA,
     (HINSTANCE (WINAPI *)(const TCHAR *)) LoadLibraryA,
-    (TCHAR (WINAPI *)(WCHAR *, const TCHAR *)) lstrcpyA,
+    (TCHAR (WINAPI *)(TCHAR *, const TCHAR *)) lstrcpyA,
     (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFileA,
     (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectoryA,
     (DWORD (WINAPI *)(const TCHAR *, const TCHAR *, const TCHAR *, DWORD,
-	    WCHAR *, TCHAR **)) SearchPathA,
+	    TCHAR *, TCHAR **)) SearchPathA,
     (BOOL (WINAPI *)(const TCHAR *)) SetCurrentDirectoryA,
     (BOOL (WINAPI *)(const TCHAR *, DWORD)) SetFileAttributesA,
 
@@ -189,24 +189,24 @@ static TclWinProcs unicodeProcs = {
     (BOOL (WINAPI *)(const TCHAR *)) DeleteFileW,
     (HANDLE (WINAPI *)(const TCHAR *, WIN32_FIND_DATAT *)) FindFirstFileW,
     (BOOL (WINAPI *)(HANDLE, WIN32_FIND_DATAT *)) FindNextFileW,
-    (BOOL (WINAPI *)(WCHAR *, LPDWORD)) GetComputerNameW,
-    (DWORD (WINAPI *)(DWORD, WCHAR *)) GetCurrentDirectoryW,
+    (BOOL (WINAPI *)(TCHAR *, LPDWORD)) GetComputerNameW,
+    (DWORD (WINAPI *)(DWORD, TCHAR *)) GetCurrentDirectoryW,
     (DWORD (WINAPI *)(const TCHAR *)) GetFileAttributesW,
-    (DWORD (WINAPI *)(const TCHAR *, DWORD nBufferLength, WCHAR *,
+    (DWORD (WINAPI *)(const TCHAR *, DWORD nBufferLength, TCHAR *,
 	    TCHAR **)) GetFullPathNameW,
-    (DWORD (WINAPI *)(HMODULE, WCHAR *, int)) GetModuleFileNameW,
-    (DWORD (WINAPI *)(const TCHAR *, WCHAR *, DWORD)) GetShortPathNameW,
+    (DWORD (WINAPI *)(HMODULE, TCHAR *, int)) GetModuleFileNameW,
+    (DWORD (WINAPI *)(const TCHAR *, TCHAR *, DWORD)) GetShortPathNameW,
     (UINT (WINAPI *)(const TCHAR *, const TCHAR *, UINT uUnique,
-	    WCHAR *)) GetTempFileNameW,
-    (DWORD (WINAPI *)(DWORD, WCHAR *)) GetTempPathW,
-    (BOOL (WINAPI *)(const TCHAR *, WCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
-	    WCHAR *, DWORD)) GetVolumeInformationW,
+	    TCHAR *)) GetTempFileNameW,
+    (DWORD (WINAPI *)(DWORD, TCHAR *)) GetTempPathW,
+    (BOOL (WINAPI *)(const TCHAR *, TCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
+	    TCHAR *, DWORD)) GetVolumeInformationW,
     (HINSTANCE (WINAPI *)(const TCHAR *)) LoadLibraryW,
-    (TCHAR (WINAPI *)(WCHAR *, const TCHAR *)) lstrcpyW,
+    (TCHAR (WINAPI *)(TCHAR *, const TCHAR *)) lstrcpyW,
     (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFileW,
     (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectoryW,
     (DWORD (WINAPI *)(const TCHAR *, const TCHAR *, const TCHAR *, DWORD,
-	    WCHAR *, TCHAR **)) SearchPathW,
+	    TCHAR *, TCHAR **)) SearchPathW,
     (BOOL (WINAPI *)(const TCHAR *)) SetCurrentDirectoryW,
     (BOOL (WINAPI *)(const TCHAR *, DWORD)) SetFileAttributesW,
 
@@ -250,7 +250,7 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
  */
 
 typedef struct MountPointMap {
-    const WCHAR *volumeName;	/* Native wide string volume name. */
+    const TCHAR *volumeName;	/* Native wide string volume name. */
     char driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
@@ -695,7 +695,7 @@ TclWinDriveLetterForVolMountPoint(
     Tcl_MutexLock(&mountPointMap);
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
-	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (wcscmp((WCHAR *)dlIter->volumeName, mountPoint) == 0) {
 	    /*
 	     * We need to check whether this information is still valid, since
 	     * either the user or various programs could have adjusted the
@@ -794,7 +794,7 @@ TclWinDriveLetterForVolMountPoint(
 
     for (dlIter = driveLetterLookup; dlIter != NULL;
 	    dlIter = dlIter->nextPtr) {
-	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (wcscmp((WCHAR *)dlIter->volumeName, mountPoint) == 0) {
 	    Tcl_MutexUnlock(&mountPointMap);
 	    return dlIter->driveLetter;
 	}
