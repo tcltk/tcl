@@ -1,3 +1,17 @@
+2010-03-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tzdata/America/Matamoros: New locale
+	* library/tzdata/America/Ojinaga: New locale
+	* library/tzdata/America/Santa_Isabel: New locale
+	* library/tzdata/America/Asuncion:
+	* library/tzdata/America/Tijuana:
+	* library/tzdata/Antarctica/Casey:
+	* library/tzdata/Antarctica/Davis:
+	* library/tzdata/Antarctica/Mawson:
+	* library/tzdata/Asia/Dhaka:
+	* library/tzdata/Pacific/Fiji:
+	Olson tzdata2010c.
+
 2010-03-01  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* unix/tclUnixChan.c: [backported] Refrain from a possibly lengthy
