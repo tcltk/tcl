@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.17.2.21 2010/02/12 03:06:21 dgp Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.17.2.22 2010/03/09 21:30:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1190,6 +1190,40 @@ test iocmd-24.13 {chan write, failed write, level is ignored} -match glob -body 
     rename foo {}
     set res
 } -result {{write rc* snarfsnarfsnarf} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "write"*}}
+test iocmd-24.14 {chan write, no EAGAIN means that writing is allowed at this time, bug 2936225} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return 3
+    }
+    set c [chan create {r w} foo]
+} -body {
+    note [puts -nonewline $c ABC ; flush $c]
+    set res
+} -cleanup {
+    close $c
+    rename foo {}
+    unset res
+} -result {{write rc* ABC} {}}
+test iocmd-24.15 {chan write, EAGAIN means that writing is not allowed at this time, bug 2936225} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	# Note: The EAGAIN signals that the channel cannot accept
+	# write requests right now, this in turn causes the IO core to
+	# request the generation of writable events (see expected
+	# result below, and compare to case 24.14 above).
+	error EAGAIN
+    }
+    set c [chan create {r w} foo]
+} -body {
+    note [puts -nonewline $c ABC ; flush $c]
+    set res
+} -cleanup {
+    close $c
+    rename foo {}
+    unset res
+} -result {{write rc* ABC} {watch rc* write} {}}
 
 # --- === *** ###########################
 # method cgetall
@@ -2506,6 +2540,48 @@ test iocmd.tf-24.13 {chan write, failed write, level is ignored} -match glob -bo
     rename foo {}
     set res
 } -result {{write rc* snarfsnarfsnarf} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "write"*}} \
+    -constraints {testchannel testthread}
+test iocmd.tf-24.14 {chan write, no EAGAIN means that writing is allowed at this time, bug 2936225} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return 3
+    }
+    set c [chan create {r w} foo]
+} -body {
+    notes [inthread $c {
+	note [puts -nonewline $c ABC ; flush $c]
+	close $c
+	notes
+    } c]
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {{write rc* ABC} {}} \
+    -constraints {testchannel testthread}
+test iocmd.tf-24.15 {chan write, EAGAIN means that writing is not allowed at this time, bug 2936225} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	# Note: The EAGAIN signals that the channel cannot accept
+	# write requests right now, this in turn causes the IO core to
+	# request the generation of writable events (see expected
+	# result below, and compare to case 24.14 above).
+	error EAGAIN
+    }
+    set c [chan create {r w} foo]
+} -body {
+    notes [inthread $c {
+	note [puts -nonewline $c ABC ; flush $c]
+	close $c
+	notes
+    } c]
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {{write rc* ABC} {watch rc* write} {}} \
     -constraints {testchannel testthread}
 
 # --- === *** ###########################
