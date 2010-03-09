@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.45 2010/02/24 10:45:04 dkf Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.46 2010/03/09 21:15:19 andreas_kupries Exp $
  */
 
 #include <tclInt.h>
@@ -1331,8 +1331,13 @@ ReflectOutput(
 	ForwardOpToOwnerThread(rcPtr, ForwardedOutput, &p);
 
 	if (p.base.code != TCL_OK) {
-	    PassReceivedError(rcPtr->chan, &p);
-	    *errorCodePtr = EINVAL;
+	    if (p.base.code < 0) {
+		/* No error message, this is an errno signal. */
+		*errorCodePtr = -p.base.code;
+	    } else {
+                PassReceivedError(rcPtr->chan, &p);
+                *errorCodePtr = EINVAL;
+            }
 	    p.output.toWrite = -1;
 	} else {
 	    *errorCodePtr = EOK;
@@ -1347,6 +1352,14 @@ ReflectOutput(
 
     bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toWrite);
     if (InvokeTclMethod(rcPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
+	int code = ErrnoReturn(rcPtr, resObj);
+
+	if (code < 0) {
+	    Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
+	    *errorCodePtr = -code;
+	    return -1;
+	}
+
 	Tcl_SetChannelError(rcPtr->chan, resObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	*errorCodePtr = EINVAL;
@@ -2295,8 +2308,8 @@ InvokeTclMethod(
  *	None.
  *
  * Users:
- *	Currently only ReflectInput(), to enable the signaling of EAGAIN.
- *	by non-blocking channels at buffer-empty, but not EOF.
+ *	ReflectInput/Output(), to enable the signaling of EAGAIN
+ *	on 0-sized short reads/writes.
  *
  *----------------------------------------------------------------------
  */
@@ -2857,7 +2870,13 @@ ForwardProc(
 		paramPtr->output.buf, paramPtr->output.toWrite);
 
 	if (InvokeTclMethod(rcPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
-	    ForwardSetObjError(paramPtr, resObj);
+	    int code = ErrnoReturn(rcPtr, resObj);
+
+	    if (code < 0) {
+		paramPtr->base.code = code;
+	    } else {
+		ForwardSetObjError(paramPtr, resObj);
+	    }
 	    paramPtr->output.toWrite = -1;
 	} else {
 	    /*
@@ -3099,5 +3118,7 @@ ForwardSetObjError(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
