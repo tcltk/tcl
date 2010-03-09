@@ -1,3 +1,10 @@
+2010-03-09  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORChan.c: [Bug 2936225]: Thanks to Alexandre Ferrieux
+	* doc/refchan.n: <ferrieux@users.sourceforge.net> for debugging and fixing
+	* tests/ioCmd.test: the problem. It is the write-side equivalent
+	to the bug fixed 2009-08-06.
+
 2010-03-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tzdata/America/Matamoros: New locale
