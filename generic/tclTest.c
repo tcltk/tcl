@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.56 2010/03/08 14:34:04 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.57 2010/03/11 15:19:39 dgp Exp $
  */
 
 #undef STATIC_BUILD
@@ -428,41 +428,41 @@ static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
-    &TestReportInFilesystem, /* path in */
-    &TestReportDupInternalRep,
-    &TestReportFreeInternalRep,
+    TestReportInFilesystem, /* path in */
+    TestReportDupInternalRep,
+    TestReportFreeInternalRep,
     NULL, /* native to norm */
     NULL, /* convert to native */
-    &TestReportNormalizePath,
+    TestReportNormalizePath,
     NULL, /* path type */
     NULL, /* separator */
-    &TestReportStat,
-    &TestReportAccess,
-    &TestReportOpenFileChannel,
-    &TestReportMatchInDirectory,
-    &TestReportUtime,
-    &TestReportLink,
+    TestReportStat,
+    TestReportAccess,
+    TestReportOpenFileChannel,
+    TestReportMatchInDirectory,
+    TestReportUtime,
+    TestReportLink,
     NULL /* list volumes */,
-    &TestReportFileAttrStrings,
-    &TestReportFileAttrsGet,
-    &TestReportFileAttrsSet,
-    &TestReportCreateDirectory,
-    &TestReportRemoveDirectory,
-    &TestReportDeleteFile,
-    &TestReportCopyFile,
-    &TestReportRenameFile,
-    &TestReportCopyDirectory,
-    &TestReportLstat,
-    &TestReportLoadFile,
+    TestReportFileAttrStrings,
+    TestReportFileAttrsGet,
+    TestReportFileAttrsSet,
+    TestReportCreateDirectory,
+    TestReportRemoveDirectory,
+    TestReportDeleteFile,
+    TestReportCopyFile,
+    TestReportRenameFile,
+    TestReportCopyDirectory,
+    TestReportLstat,
+    TestReportLoadFile,
     NULL /* cwd */,
-    &TestReportChdir
+    TestReportChdir
 };
 
 static const Tcl_Filesystem simpleFilesystem = {
     "simple",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
-    &SimplePathInFilesystem,
+    SimplePathInFilesystem,
     NULL,
     NULL,
     /* No internal to normalized, since we don't create any
@@ -476,14 +476,14 @@ static const Tcl_Filesystem simpleFilesystem = {
     NULL,
     NULL,
     NULL,
-    &SimpleStat,
-    &SimpleAccess,
-    &SimpleOpenFileChannel,
-    &SimpleMatchInDirectory,
+    SimpleStat,
+    SimpleAccess,
+    SimpleOpenFileChannel,
+    SimpleMatchInDirectory,
     NULL,
     /* We choose not to support symbolic links inside our vfs's */
     NULL,
-    &SimpleListVolumes,
+    SimpleListVolumes,
     NULL,
     NULL,
     NULL,

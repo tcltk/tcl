@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.53 2010/03/06 03:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.54 2010/03/11 15:19:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -111,39 +111,39 @@ const Tcl_Filesystem tclNativeFilesystem = {
     "native",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_2,
-    &TclNativePathInFilesystem,
-    &TclNativeDupInternalRep,
-    &NativeFreeInternalRep,
-    &TclpNativeToNormalized,
-    &TclNativeCreateNativeRep,
-    &TclpObjNormalizePath,
-    &TclpFilesystemPathType,
-    &NativeFilesystemSeparator,
-    &TclpObjStat,
-    &TclpObjAccess,
-    &TclpOpenFileChannel,
-    &TclpMatchInDirectory,
-    &TclpUtime,
+    TclNativePathInFilesystem,
+    TclNativeDupInternalRep,
+    NativeFreeInternalRep,
+    TclpNativeToNormalized,
+    TclNativeCreateNativeRep,
+    TclpObjNormalizePath,
+    TclpFilesystemPathType,
+    NativeFilesystemSeparator,
+    TclpObjStat,
+    TclpObjAccess,
+    TclpOpenFileChannel,
+    TclpMatchInDirectory,
+    TclpUtime,
 #ifndef S_IFLNK
     NULL,
 #else
-    &TclpObjLink,
+    TclpObjLink,
 #endif /* S_IFLNK */
-    &TclpObjListVolumes,
-    &NativeFileAttrStrings,
-    &NativeFileAttrsGet,
-    &NativeFileAttrsSet,
-    &TclpObjCreateDirectory,
-    &TclpObjRemoveDirectory,
-    &TclpObjDeleteFile,
-    &TclpObjCopyFile,
-    &TclpObjRenameFile,
-    &TclpObjCopyDirectory,
-    &TclpObjLstat,
-    &TclpDlopen,
+    TclpObjListVolumes,
+    NativeFileAttrStrings,
+    NativeFileAttrsGet,
+    NativeFileAttrsSet,
+    TclpObjCreateDirectory,
+    TclpObjRemoveDirectory,
+    TclpObjDeleteFile,
+    TclpObjCopyFile,
+    TclpObjRenameFile,
+    TclpObjCopyDirectory,
+    TclpObjLstat,
+    TclpDlopen,
     /* Needs a cast since we're using version_2. */
-    (Tcl_FSGetCwdProc *) &TclpGetNativeCwd,
-    &TclpObjChdir
+    (Tcl_FSGetCwdProc *) TclpGetNativeCwd,
+    TclpObjChdir
 };
 
 /*

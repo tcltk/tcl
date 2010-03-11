@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.22 2010/03/08 14:34:04 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.23 2010/03/11 15:19:40 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -269,8 +269,6 @@ TCL_DECLARE_MUTEX(mountPointMap)
 /*
  * We will need this below.
  */
-
-extern Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 
 #ifdef __WIN32__
 #ifndef STATIC_BUILD
