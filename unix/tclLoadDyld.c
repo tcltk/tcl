@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.33 2010/03/11 13:35:25 nijtmans Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.34 2010/03/11 15:02:33 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -308,7 +308,7 @@ TclpDlopen(
 	dyldLoadHandle->modulePtr = modulePtr;
 #endif
 	*loadHandle = (Tcl_LoadHandle) dyldLoadHandle;
-	*unloadProcPtr = TclpUnloadFile;
+	*unloadProcPtr = &TclpUnloadFile;
 	result = TCL_OK;
     } else {
 	Tcl_AppendResult(interp, errMsg, NULL);
@@ -758,7 +758,7 @@ TclpLoadMemory(
     dyldLoadHandle->dyldLibHeader = NULL;
     dyldLoadHandle->modulePtr = modulePtr;
     *loadHandle = (Tcl_LoadHandle) dyldLoadHandle;
-    *unloadProcPtr = TclpUnloadFile;
+    *unloadProcPtr = &TclpUnloadFile;
     return TCL_OK;
 }
 #endif /* TCL_LOAD_FROM_MEMORY */
