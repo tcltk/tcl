@@ -31,7 +31,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadOSF.c,v 1.15 2010/03/11 13:35:25 nijtmans Exp $
+ * RCS: @(#) $Id: tclLoadOSF.c,v 1.16 2010/03/11 15:02:33 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -120,7 +120,7 @@ TclpDlopen(
 	pkg++;
     }
     *loadHandle = pkg;
-    *unloadProcPtr = TclpUnloadFile;
+    *unloadProcPtr = &TclpUnloadFile;
     return TCL_OK;
 }
 

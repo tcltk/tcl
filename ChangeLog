@@ -3,13 +3,7 @@
 	* generic/tclTest.c       Remove unnecessary '&' decoration for function
 	* generic/tclIOUtil.c     pointers
 	* win/tclWin32Dll.c       Double declaration of TclNativeDupInternalRep
-	* win/tclWinLoad.c
 	* unix/tclIOUtil.c
-	* unix/tclLoadDl.c
-	* unix/tclLoadDyld.c
-	* unix/tclLoadNext.c
-	* unix/tclLoadOSF.c
-	* unix/tclLoadShl.c
 	* unix/dltest/.cvsignore Ignore *.so here
 
 2010-03-09  Andreas Kupries  <andreask@activestate.com>
