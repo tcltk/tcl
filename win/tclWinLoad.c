@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.24 2010/02/15 22:56:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.25 2010/03/11 13:35:23 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -130,7 +130,7 @@ TclpDlopen(
 	}
 	return TCL_ERROR;
     } else {
-	*unloadProcPtr = &TclpUnloadFile;
+	*unloadProcPtr = TclpUnloadFile;
     }
     return TCL_OK;
 }
