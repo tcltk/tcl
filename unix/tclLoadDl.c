@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDl.c,v 1.17 2008/04/27 22:21:33 dkf Exp $
+ * RCS: @(#) $Id: tclLoadDl.c,v 1.18 2010/03/11 13:35:25 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -104,7 +104,7 @@ TclpDlopen(
 	return TCL_ERROR;
     }
 
-    *unloadProcPtr = &TclpUnloadFile;
+    *unloadProcPtr = TclpUnloadFile;
     *loadHandle = (Tcl_LoadHandle) handle;
     return TCL_OK;
 }
