@@ -22,3 +22,6 @@ config.status
 *.lib
 *.exp
 *.res
+*.pch
+*.x
+*.vc
