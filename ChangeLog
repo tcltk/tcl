@@ -1,3 +1,9 @@
+2010-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/zlib/*           Upgrade zlib to version 1.2.4
+	* win/makefile.vc
+	* unix/Makefile.in
+
 2010-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/makefile.vc         Fix [Bug 2967340]: Static build failure
