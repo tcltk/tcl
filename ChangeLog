@@ -3,6 +3,7 @@
 	* compat/zlib/*           Upgrade zlib to version 1.2.4
 	* win/makefile.vc
 	* unix/Makefile.in
+	* win/tclWinChan.c        don't cast away "const" without reason.
 
 2010-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
 

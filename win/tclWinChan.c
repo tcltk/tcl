@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.20 2010/01/13 18:47:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.21 2010/03/16 17:12:53 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -856,7 +856,7 @@ TclpOpenFileChannel(
     char channelName[16 + TCL_INTEGER_SPACE];
     TclFile readFile = NULL, writeFile = NULL;
 
-    nativeName = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
+    nativeName = (const TCHAR *) Tcl_FSGetNativePath(pathPtr);
     if (nativeName == NULL) {
 	return NULL;
     }
