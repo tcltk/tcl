@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.209 2010/03/12 15:18:42 nijtmans Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.210 2010/03/16 09:01:37 nijtmans Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -335,7 +335,6 @@ ZLIBOBJS = \
 	$(TMP_DIR)\compress.obj \
 	$(TMP_DIR)\crc32.obj \
 	$(TMP_DIR)\deflate.obj \
-	$(TMP_DIR)\gzio.obj \
 	$(TMP_DIR)\infback.obj \
 	$(TMP_DIR)\inffast.obj \
 	$(TMP_DIR)\inflate.obj \
