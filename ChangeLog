@@ -1,3 +1,17 @@
+2010-03-17  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORTrans.c (ReflectInput, ReflectOutput,
+	ReflectSeekWide): [Bug 2921116]: Added missing TclEventuallyFree
+	calls for preserved ReflectedTransform* structures. Reworked
+	ReflectInput to preserve the structure for its whole life, not
+	only in InvokeTclMethod.
+
+	* generic/tclIO.c (Tcl_GetsObj): [Bug 2921116]: Regenerate
+	topChan, may have been changed by a self-modifying transformation.
+
+	* tests/ioTrans/test (iortrans-4.8, iortrans-4.9, iortrans-5.11,
+	iortrans-7.4, iortrans-8.3): New test cases.
+
 2010-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* compat/zlib/*           Upgrade zlib to version 1.2.4
