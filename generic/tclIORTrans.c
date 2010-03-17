@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.14 2010/03/05 22:50:32 dkf Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.15 2010/03/17 16:35:42 andreas_kupries Exp $
  */
 
 #include <tclInt.h>
@@ -721,7 +721,7 @@ TclChanPushObjCmd(
      * structure.
      */
 
-    FreeReflectedTransform(rtPtr);
+    Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
     return TCL_ERROR;
 
 #undef CHAN
@@ -931,7 +931,7 @@ ReflectClose(
 	}
 #endif
 
-	FreeReflectedTransform(rtPtr);
+	Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
 	return EOK;
     }
 
@@ -1030,7 +1030,7 @@ ReflectClose(
     }
 #endif
 
-    FreeReflectedTransform(rtPtr);
+    Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
     return (result == TCL_OK) ? EOK : EINVAL;
 }
 
@@ -1072,8 +1072,9 @@ ReflectInput(
 	return -1;
     }
 
-    gotBytes = 0;
+    Tcl_Preserve(rtPtr);
 
+    gotBytes = 0;
     while (toRead > 0) {
 	/*
 	 * Loop until the request is satisfied (or no data available from
@@ -1086,7 +1087,7 @@ ReflectInput(
 	gotBytes += copied;
 
 	if (toRead == 0) {
-	    return gotBytes;
+	    goto stop;
 	}
 
 	/*
@@ -1109,10 +1110,10 @@ ReflectInput(
 	    int maxRead = -1;
 
 	    if (!TransformLimit(rtPtr, errorCodePtr, &maxRead)) {
-		return -1;
+		goto error;
 	    }
 	    if (maxRead == 0) {
-		return gotBytes;
+		goto stop;
 	    } else if (maxRead > 0) {
 		if (maxRead < toRead) {
 		    toRead = maxRead;
@@ -1121,7 +1122,7 @@ ReflectInput(
 	}
 
 	if (toRead <= 0) {
-	    return gotBytes;
+	    goto stop;
 	}
 
 	readBytes = Tcl_ReadRaw(rtPtr->parent, buf, toRead);
@@ -1137,11 +1138,11 @@ ReflectInput(
 		 * we report that instead of the request to re-try.
 		 */
 
-		return gotBytes;
+		goto stop;
 	    }
 
 	    *errorCodePtr = Tcl_GetErrno();
-	    return -1;
+	    goto error;
 	}
 
 	if (readBytes == 0) {
@@ -1162,16 +1163,16 @@ ReflectInput(
 
 		if ((gotBytes == 0) && rtPtr->nonblocking) {
 		    *errorCodePtr = EWOULDBLOCK;
-		    return -1;
+		    goto error;
 		}
-		return gotBytes;
+		goto stop;
 	    } else {
 		/*
 		 * Eof in parent.
 		 */
 
 		if (rtPtr->readIsDrained) {
-		    return gotBytes;
+		    goto stop;
 		}
 
 		/*
@@ -1181,7 +1182,7 @@ ReflectInput(
 
 		if (HAS(rtPtr->methods, METH_DRAIN)) {
 		    if (!TransformDrain(rtPtr, errorCodePtr)) {
-			return -1;
+			goto error;
 		    }
 		}
 
@@ -1190,7 +1191,7 @@ ReflectInput(
 		     * The drain delivered nothing.
 		     */
 
-		    return gotBytes;
+		    goto stop;
 		}
 
 		/*
@@ -1209,11 +1210,17 @@ ReflectInput(
 	 */
 
 	if (!TransformRead(rtPtr, errorCodePtr, UCHARP(buf), readBytes)) {
-	    return -1;
+	    goto error;
 	}
     } /* while toRead > 0 */
 
+ stop:
+    Tcl_Release(rtPtr);
     return gotBytes;
+
+ error:
+    gotBytes = -1;
+    goto stop;
 }
 
 /*
@@ -1266,6 +1273,8 @@ ReflectOutput(
      * we do when explicitly seeking as well.
      */
 
+    Tcl_Preserve(rtPtr);
+
     if ((rtPtr->methods & FLAG(METH_CLEAR))) {
 	TransformClear(rtPtr);
     }
@@ -1277,10 +1286,12 @@ ReflectOutput(
      */
 
     if (!TransformWrite(rtPtr, errorCodePtr, UCHARP(buf), toWrite)) {
+	Tcl_Release(rtPtr);
 	return -1;
     }
 
     *errorCodePtr = EOK;
+    Tcl_Release(rtPtr);
     return toWrite;
 }
 
@@ -1331,6 +1342,8 @@ ReflectSeekWide(
      * request down and the result back up unchanged.
      */
 
+    Tcl_Preserve(rtPtr);
+
     if (((seekMode != SEEK_CUR) || (offset != 0))
 	    && (HAS(rtPtr->methods, METH_CLEAR)
 	    || HAS(rtPtr->methods, METH_FLUSH))) {
@@ -1353,6 +1366,7 @@ ReflectSeekWide(
 
 	if (HAS(rtPtr->methods, METH_FLUSH)) {
 	    if (!TransformFlush(rtPtr, errorCodePtr, FLUSH_DISCARD)) {
+		Tcl_Release(rtPtr);
 		return -1;
 	    }
 	}
@@ -1382,6 +1396,7 @@ ReflectSeekWide(
     }
 
     *errorCodePtr = EOK;
+    Tcl_Release(rtPtr);
     return curPos;
 }
 
@@ -1971,7 +1986,7 @@ InvokeTclMethod(
      */
 
     sr = Tcl_SaveInterpState(rtPtr->interp, 0 /* Dummy */);
-    Tcl_Preserve(rtPtr->interp);
+    Tcl_Preserve(rtPtr);
     result = Tcl_EvalObjv(rtPtr->interp, cmdc, rtPtr->argv, TCL_EVAL_GLOBAL);
 
     /*
@@ -2016,7 +2031,7 @@ InvokeTclMethod(
 	Tcl_IncrRefCount(resObj);
     }
     Tcl_RestoreInterpState(rtPtr->interp, sr);
-    Tcl_Release(rtPtr->interp);
+    Tcl_Release(rtPtr);
 
     /*
      * Cleanup of the dynamic parts of the command.
@@ -2531,7 +2546,8 @@ ForwardProc(
 	rtmPtr = GetThreadReflectedTransformMap();
 	hPtr = Tcl_FindHashEntry(&rtmPtr->map, Tcl_GetString(rtPtr->handle));
 	Tcl_DeleteHashEntry(hPtr);
-	FreeReflectedTransform(rtPtr);
+
+	Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
 	break;
 
     case ForwardedInput: {
