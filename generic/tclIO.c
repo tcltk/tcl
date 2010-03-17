@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.172 2010/02/24 10:45:04 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.173 2010/03/17 16:35:42 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -4715,6 +4715,13 @@ Tcl_GetsObj(
      */
 
   gotEOL:
+    /*
+     * Regenerate the top channel, in case it was changed due to
+     * self-modifying reflected transforms.
+     */
+
+    chanPtr = statePtr->topChanPtr;
+
     bufPtr = gs.bufPtr;
     if (bufPtr == NULL) {
 	Tcl_Panic("Tcl_GetsObj: gotEOL reached with bufPtr==NULL");
@@ -4743,6 +4750,13 @@ Tcl_GetsObj(
      */
 
   restore:
+    /*
+     * Regenerate the top channel, in case it was changed due to
+     * self-modifying reflected transforms.
+     */
+
+    chanPtr = statePtr->topChanPtr;
+
     bufPtr = statePtr->inQueueHead;
     if (bufPtr == NULL) {
 	Tcl_Panic("Tcl_GetsObj: restore reached with bufPtr==NULL");
@@ -4778,6 +4792,13 @@ Tcl_GetsObj(
      */
 
   done:
+    /*
+     * Regenerate the top channel, in case it was changed due to
+     * self-modifying reflected transforms.
+     */
+
+    chanPtr = statePtr->topChanPtr;
+
     UpdateInterest(chanPtr);
     return copiedTotal;
 }
@@ -5776,6 +5797,13 @@ DoReadChars(
      */
 
   done:
+    /*
+     * Regenerate the top channel, in case it was changed due to
+     * self-modifying reflected transforms.
+     */
+
+    chanPtr = statePtr->topChanPtr;
+
     UpdateInterest(chanPtr);
     return copied;
 }
