@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.26 2010/03/18 10:59:48 dkf Exp $
+# RCS: @(#) $Id: error.test,v 1.27 2010/03/18 14:35:04 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -803,11 +803,11 @@ test error-19.5 {multiple unrelated fallthroughs #2} {
     } 
     set RES
 } {err}
+proc addmsg msg {
+    variable RES
+    lappend RES $msg
+}
 test error-19.6 {compiled try executes all clauses} -setup {
-    proc addmsg msg {
-	variable RES
-	lappend RES $msg
-    }
     set RES {}
 } -body {
     apply {{} {
@@ -822,9 +822,58 @@ test error-19.6 {compiled try executes all clauses} -setup {
 	addmsg d
     } ::tcl::test::error}
 } -cleanup {
-    rename addmsg {}
     unset RES
 } -result {a b c d}
+test error-19.7 {compiled try executes all clauses} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	try {
+	    addmsg a
+	} on error {res opt} {
+	    addmsg b
+	} on ok {} {
+	    addmsg c
+	} finally {
+	    addmsg d
+	}
+	addmsg e
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {a c d e}
+test error-19.8 {compiled try executes all clauses} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	try {
+	    addmsg a
+	    throw bar hello
+	} trap bar {res opt} {
+	    addmsg b
+	}
+	addmsg c
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {a b c}
+test error-19.9 {compiled try executes all clauses} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	try {
+	    addmsg a
+	} on error {res opt} {
+	    addmsg b
+	} on ok {} {
+	    addmsg c
+	}
+	addmsg d
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {a c d}
+rename addmsg {}
 
 # FIXME test what vars get set on fallthough ... what is the correct behavior?
 # It would seem appropriate to set at least those for the matching handler and
