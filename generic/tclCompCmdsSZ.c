@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.3 2010/03/18 10:59:48 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.4 2010/03/18 14:35:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2077,6 +2077,7 @@ IssueTryInstructions(
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
     PUSH(				"0");
+    OP4(				REVERSE, 2);
     OP1(				JUMP1, 4);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
@@ -2224,6 +2225,7 @@ IssueTryFinallyInstructions(
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
     PUSH(				"0");
+    OP4(				REVERSE, 2);
     OP1(				JUMP1, 4);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
