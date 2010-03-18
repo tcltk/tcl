@@ -1,3 +1,9 @@
+2010-03-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclListObj.c: Prevent in overflow trouble in [lreplace]
+	* generic/tclTestObj.c: operations.  Thanks to kbk for fix and test.
+	* tests/listObj.test:   [Bug 2971669].
+
 2010-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/makefile.vc         Fix [Bug 2967340]: Static build failure
