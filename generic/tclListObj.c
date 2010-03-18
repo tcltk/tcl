@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.59 2010/02/24 14:30:34 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.60 2010/03/18 20:34:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -832,7 +832,11 @@ Tcl_ListObjReplace(
     }
     if (count < 0) {
 	count = 0;
-    } else if (numElems < first+count) {
+    } else if (numElems < first+count || first+count < 0) {
+	/*
+	 * The 'first+count < 0' condition here guards agains integer
+	 * overflow in determining 'first+count'
+	 */
 	count = numElems - first;
     }
 
