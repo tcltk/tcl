@@ -1,6 +1,6 @@
 2010-03-18  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclListObj.c:	Prevent in overflow trouble in [lreplace]
+	* generic/tclListObj.c:	Prevent in overflow trouble in ListObjReplace
 	* generic/tclTestObj.c:	operations.  Thanks to kbk for fix and test.
 	* tests/listObj.test:	[Bug 2971669].
 
