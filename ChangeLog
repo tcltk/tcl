@@ -3,7 +3,8 @@
 	* generic/tclCompCmdsSZ.c (IssueTryFinallyInstructions):
 	[Bug 2971921]: Corrected jump so that it doesn't skip into the middle
 	of an instruction! Tightened the instruction issuing. Moved endCatch
-	calls closer to their point that they guard.
+	calls closer to their point that they guard, ensuring correct ordering
+	of result values.
 
 2010-03-17  Andreas Kupries  <andreask@activestate.com>
 
