@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.1.2.4 2010/03/06 03:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.1.2.5 2010/03/18 14:29:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -145,6 +145,10 @@ const AuxDataType tclJumptableInfoType = {
     (var) = CurrentOffset(envPtr);TclEmitInstInt4(INST_##name,0,envPtr)
 #define FIXJUMP(var) \
     TclStoreInt4AtPtr(CurrentOffset(envPtr)-(var),envPtr->codeStart+(var)+1)
+#define LOAD(idx) \
+    if ((idx)<256) {OP1(LOAD_SCALAR1,(idx));} else {OP4(LOAD_SCALAR4,(idx));}
+#define STORE(idx) \
+    if ((idx)<256) {OP1(STORE_SCALAR1,(idx));} else {OP4(STORE_SCALAR4,(idx));}
 
 /*
  *----------------------------------------------------------------------
@@ -2075,16 +2079,17 @@ IssueTryInstructions(
     ExceptionRangeStarts(envPtr, range);
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
-    OP1(				JUMP1, 3);
+    PUSH(				"0");
+    OP1(				JUMP1, 4);
     ExceptionRangeTarget(envPtr, range, catchOffset);
-    OP(					PUSH_RESULT);
-    OP4(				STORE_SCALAR4, resultVar);
-    OP(					POP);
-    OP(					PUSH_RETURN_OPTIONS);
-    OP4(				STORE_SCALAR4, optionsVar);
-    OP(					POP);
     OP(					PUSH_RETURN_CODE);
+    OP(					PUSH_RESULT);
+    OP(					PUSH_RETURN_OPTIONS);
     OP(					END_CATCH);
+    STORE(				optionsVar);
+    OP(					POP);
+    STORE(				resultVar);
+    OP(					POP);
 
     /*
      * Now we handle all the registered 'on' and 'trap' handlers in order.
@@ -2109,7 +2114,7 @@ IssueTryInstructions(
 	     * Match the errorcode according to try/trap rules.
 	     */
 
-	    OP4(			LOAD_SCALAR4, optionsVar);
+	    LOAD(			optionsVar);
 	    PUSH(			"-errorcode");
 	    OP4(			DICT_GET, 1);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
@@ -2128,12 +2133,12 @@ IssueTryInstructions(
 	 */
 
 	if (resultVars[i] >= 0) {
-	    OP4(			LOAD_SCALAR4, resultVar);
-	    OP4(			STORE_SCALAR4, resultVars[i]);
+	    LOAD(			resultVar);
+	    STORE(			resultVars[i]);
 	    OP(				POP);
 	    if (optionVars[i] >= 0) {
-		OP4(			LOAD_SCALAR4, optionsVar);
-		OP4(			STORE_SCALAR4, optionVars[i]);
+		LOAD(			optionsVar);
+		STORE(			optionVars[i]);
 		OP(			POP);
 	    }
 	}
@@ -2169,8 +2174,8 @@ IssueTryInstructions(
      */
 
     OP(					POP);
-    OP4(				LOAD_SCALAR4, optionsVar);
-    OP4(				LOAD_SCALAR4, resultVar);
+    LOAD(				optionsVar);
+    LOAD(				resultVar);
     OP(					RETURN_STK);
 
     /*
@@ -2221,16 +2226,17 @@ IssueTryFinallyInstructions(
     ExceptionRangeStarts(envPtr, range);
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
-    OP1(				JUMP1, 3);
+    PUSH(				"0");
+    OP1(				JUMP1, 4);
     ExceptionRangeTarget(envPtr, range, catchOffset);
-    OP(					PUSH_RESULT);
-    OP4(				STORE_SCALAR4, resultVar);
-    OP(					POP);
-    OP(					PUSH_RETURN_OPTIONS);
-    OP4(				STORE_SCALAR4, optionsVar);
-    OP(					POP);
     OP(					PUSH_RETURN_CODE);
+    OP(					PUSH_RESULT);
+    OP(					PUSH_RETURN_OPTIONS);
     OP(					END_CATCH);
+    STORE(				optionsVar);
+    OP(					POP);
+    STORE(				resultVar);
+    OP(					POP);
     envPtr->currStackDepth = savedStackDepth + 1;
 
     /*
@@ -2258,7 +2264,7 @@ IssueTryFinallyInstructions(
 		 * Match the errorcode according to try/trap rules.
 		 */
 
-		OP4(			LOAD_SCALAR4, optionsVar);
+		LOAD(			optionsVar);
 		PUSH(			"-errorcode");
 		OP4(			DICT_GET, 1);
 		OP44(			LIST_RANGE_IMM, 0, len-1);
@@ -2282,12 +2288,12 @@ IssueTryFinallyInstructions(
 		ExceptionRangeStarts(envPtr, range);
 	    }
 	    if (resultVars[i] >= 0) {
-		OP4(			LOAD_SCALAR4, resultVar);
-		OP4(			STORE_SCALAR4, resultVars[i]);
+		LOAD(			resultVar);
+		STORE(			resultVars[i]);
 		OP(			POP);
 		if (optionVars[i] >= 0) {
-		    OP4(		LOAD_SCALAR4, optionsVar);
-		    OP4(		STORE_SCALAR4, optionVars[i]);
+		    LOAD(		optionsVar);
+		    STORE(		optionVars[i]);
 		    OP(			POP);
 		}
 	    }
@@ -2324,8 +2330,9 @@ IssueTryFinallyInstructions(
 		}
 		BODY(			handlerTokens[i], 5+i*4);
 		ExceptionRangeEnds(envPtr, range);
-		OP(			POP);
-		OP1(			JUMP1, 6);
+		OP(			PUSH_RETURN_OPTIONS);
+		OP4(			REVERSE, 2);
+		OP1(			JUMP1, 4);
 		forwardsToFix[i] = -1;
 
 		/*
@@ -2337,13 +2344,13 @@ IssueTryFinallyInstructions(
 
 	    finishTrapCatchHandling:
 		ExceptionRangeTarget(envPtr, range, catchOffset);
-		OP(			PUSH_RESULT);
-		OP4(			STORE_SCALAR4, resultVar);
-		OP(			POP);
 		OP(			PUSH_RETURN_OPTIONS);
-		OP4(			STORE_SCALAR4, optionsVar);
-		OP(			POP);
+		OP(			PUSH_RESULT);
 		OP(			END_CATCH);
+		STORE(			resultVar);
+		OP(			POP);
+		STORE(			optionsVar);
+		OP(			POP);
 	    }
 	    if (i+1 < numHandlers) {
 		JUMP(addrsToFix[i],	JUMP4);
@@ -2383,8 +2390,8 @@ IssueTryFinallyInstructions(
 
     BODY(				finallyToken, 3 + 4*numHandlers);
     OP(					POP);
-    OP4(				LOAD_SCALAR4, optionsVar);
-    OP4(				LOAD_SCALAR4, resultVar);
+    LOAD(				optionsVar);
+    LOAD(				resultVar);
     OP(					RETURN_STK);
 
     return TCL_OK;

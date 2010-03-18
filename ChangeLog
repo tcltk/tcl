@@ -1,43 +1,50 @@
+2010-03-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmdsSZ.c (IssueTryFinallyInstructions):
+	[Bug 2971921]: Corrected jump so that it doesn't skip into the middle
+	of an instruction! Tightened the instruction issuing. Moved endCatch
+	calls closer to their point that they guard.
+
 2010-03-17  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclIORTrans.c (ReflectInput, ReflectOutput,
-	ReflectSeekWide): [Bug 2921116]: Added missing TclEventuallyFree
+	* generic/tclIORTrans.c (ReflectInput, ReflectOutput)
+	(ReflectSeekWide): [Bug 2921116]: Added missing TclEventuallyFree
 	calls for preserved ReflectedTransform* structures. Reworked
-	ReflectInput to preserve the structure for its whole life, not
-	only in InvokeTclMethod.
+	ReflectInput to preserve the structure for its whole life, not only in
+	InvokeTclMethod.
 
-	* generic/tclIO.c (Tcl_GetsObj): [Bug 2921116]: Regenerate
-	topChan, may have been changed by a self-modifying transformation.
+	* generic/tclIO.c (Tcl_GetsObj): [Bug 2921116]: Regenerate topChan,
+	may have been changed by a self-modifying transformation.
 
-	* tests/ioTrans/test (iortrans-4.8, iortrans-4.9, iortrans-5.11,
-	iortrans-7.4, iortrans-8.3): New test cases.
+	* tests/ioTrans/test (iortrans-4.8, iortrans-4.9, iortrans-5.11)
+	(iortrans-7.4, iortrans-8.3): New test cases.
 
 2010-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* compat/zlib/*           Upgrade zlib to version 1.2.4
-	* win/makefile.vc
-	* unix/Makefile.in
-	* win/tclWinChan.c        don't cast away "const" without reason.
+	* compat/zlib/*:	Upgrade zlib to version 1.2.4.
+	* win/makefile.vc:
+	* unix/Makefile.in:
+	* win/tclWinChan.c:	Don't cast away "const" without reason.
 
 2010-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/makefile.vc         Fix [Bug 2967340]: Static build failure
-	* win/.cvsignore
+	* win/makefile.vc: [Bug 2967340]: Static build was failing.
+	* win/.cvsignore:
 
 2010-03-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclTest.c       Remove unnecessary '&' decoration for function
-	* generic/tclIOUtil.c     pointers
-	* win/tclWin32Dll.c       Double declaration of TclNativeDupInternalRep
-	* unix/tclIOUtil.c
-	* unix/dltest/.cvsignore Ignore *.so here
+	* generic/tclTest.c:	Remove unnecessary '&' decoration for
+	* generic/tclIOUtil.c:	function pointers
+	* win/tclWin32Dll.c:	Double declaration of TclNativeDupInternalRep
+	* unix/tclIOUtil.c:
+	* unix/dltest/.cvsignore: Ignore *.so here
 
 2010-03-09  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c: [Bug 2936225]: Thanks to Alexandre Ferrieux
-	* doc/refchan.n: <ferrieux@users.sourceforge.net> for debugging and fixing
-	* tests/ioCmd.test: the problem. It is the write-side equivalent
-	to the bug fixed 2009-08-06.
+	* doc/refchan.n:    <ferrieux@users.sourceforge.net> for debugging and
+	* tests/ioCmd.test: fixing the problem. It is the write-side
+	equivalent to the bug fixed 2009-08-06.
 
 2010-03-09  Don Porter  <dgp@users.sourceforge.net>
 
@@ -55,20 +62,22 @@
 
 2010-03-07  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclTest.c       test that tclOO stubs are present in stub library
-	* generic/tclOOMethod.c   Applied missing part of [Patch 2961556]
-	* win/tclWinInt.h         Change all tclWinProcs signatures to use
-	* win/tclWin32Dll.c       TCHAR* in stead of WCHAR*. This is meant
-	* win/tclWinDde.c         as preparation to make [Enh 2965056]
-	* win/tclWinFCmd.c        possible at all.
-	* win/tclWinFile.c
-	* win/tclWinPipe.c
-	* win/tclWinSock.c
+	* generic/tclTest.c:	  Test that tclOO stubs are present in stub
+				  library
+	* generic/tclOOMethod.c:  Applied missing part of [Patch 2961556]
+	* win/tclWinInt.h:	  Change all tclWinProcs signatures to use
+	* win/tclWin32Dll.c:	  TCHAR* in stead of WCHAR*. This is meant
+	* win/tclWinDde.c:	  as preparation to make [Enh 2965056]
+	* win/tclWinFCmd.c:	  possible at all.
+	* win/tclWinFile.c:
+	* win/tclWinPipe.c:
+	* win/tclWinSock.c:
 
 2010-03-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclStubLib.c  remove presence of tclTomMathStubsPtr here
-	* generic/tclTest.c     test that tommath stubs are present in stub library
+	* generic/tclStubLib.c:	Remove presence of tclTomMathStubsPtr here.
+	* generic/tclTest.c:	Test that tommath stubs are present in stub
+				library.
 
 2010-03-05  Donal K. Fellows  <dkf@users.sf.net>
 
