@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.448 2010/03/05 14:34:03 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.449 2010/03/19 11:54:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -238,7 +238,7 @@ static const CmdInfo builtInCmds[] = {
     {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,	TclNRSubstObjCmd,	1},
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, 1},
     {"tailcall",	NULL,			NULL,			TclNRTailcallObjCmd,	1},
-    {"throw",		Tcl_ThrowObjCmd,	NULL,			NULL,	1},
+    {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,	NULL,	1},
     {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	1},
     {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	TclNRTryObjCmd,	1},
     {"unset",		Tcl_UnsetObjCmd,	TclCompileUnsetCmd,	NULL,	1},
