@@ -1,8 +1,13 @@
+2010-03-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmdsSZ.c (TclCompileThrowCmd): Added compilation for
+	the [throw] command.
+
 2010-03-18  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclListObj.c:	Prevent in overflow trouble in ListObjReplace
-	* generic/tclTestObj.c:	operations.  Thanks to kbk for fix and test.
-	* tests/listObj.test:	[Bug 2971669].
+	* generic/tclListObj.c:	[Bug 2971669]: Prevent in overflow trouble in
+	* generic/tclTestObj.c:	ListObjReplace operations. Thanks to kbk for
+	* tests/listObj.test:	fix and test.
 
 2010-03-18  Donal K. Fellows  <dkf@users.sf.net>
 
