@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.1.2.6 2010/03/18 14:39:15 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.1.2.7 2010/03/19 15:26:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1787,6 +1787,116 @@ PrintJumptableInfo(
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %d",
 		keyPtr, pcOffset + offset);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileThrowCmd --
+ *
+ *	Procedure called to compile the "throw" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "throw" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileThrowCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    int numWords = parsePtr->numWords;
+    Tcl_Token *codeToken, *msgToken;
+    Tcl_Obj *objPtr;
+
+    if (numWords != 3) {
+	return TCL_ERROR;
+    }
+    codeToken = TokenAfter(parsePtr->tokenPtr);
+    msgToken = TokenAfter(codeToken);
+
+    TclNewObj(objPtr);
+    Tcl_IncrRefCount(objPtr);
+    if (TclWordKnownAtCompileTime(codeToken, objPtr)) {
+	Tcl_Obj *errPtr, *dictPtr;
+	const char *string;
+	int len;
+
+	/*
+	 * The code is known at compilation time. This allows us to issue a
+	 * very efficient sequence of instructions.
+	 */
+
+	if (Tcl_ListObjLength(interp, objPtr, &len) != TCL_OK) {
+	    /*
+	     * Must still do this; might generate an error when getting this
+	     * "ignored" value prepared as an argument.
+	     */
+
+	    CompileWord(envPtr, msgToken, interp, 2);
+	    TclCompileSyntaxError(interp, envPtr);
+	    return TCL_OK;
+	}
+	if (len == 0) {
+	    /*
+	     * Must still do this; might generate an error when getting this
+	     * "ignored" value prepared as an argument.
+	     */
+
+	    CompileWord(envPtr, msgToken, interp, 2);
+	    goto issueErrorForEmptyCode;
+	}
+	TclNewLiteralStringObj(errPtr, "-errorcode");
+	TclNewObj(dictPtr);
+	Tcl_DictObjPut(NULL, dictPtr, errPtr, objPtr);
+	Tcl_IncrRefCount(dictPtr);
+	string = Tcl_GetStringFromObj(dictPtr, &len);
+	CompileWord(envPtr, msgToken, interp, 2);
+	PushLiteral(envPtr, string, len);
+	TclDecrRefCount(dictPtr);
+	OP44(				RETURN_IMM, 1, 0);
+    } else {
+	/*
+	 * When the code token is not known at compilation time, we need to do
+	 * a little bit more work. The main tricky bit here is that the error
+	 * code has to be a list (a [throw] restriction) so we must emit extra
+	 * instructions to enforce that condition.
+	 */
+
+	CompileWord(envPtr, codeToken, interp, 1);
+	PUSH(				"-errorcode");
+	CompileWord(envPtr, msgToken, interp, 2);
+	OP4(				REVERSE, 3);
+	OP(				DUP);
+	OP(				LIST_LENGTH);
+	OP1(				JUMP_FALSE1, 16);
+	OP4(				LIST, 2);
+	OP44(				RETURN_IMM, 1, 0);
+
+	/*
+	 * Generate an error for being an empty list. Can't leverage anything
+	 * else to do this for us.
+	 */
+
+    issueErrorForEmptyCode:
+	PUSH(				"type must be non-empty list");
+	PUSH(				"");
+	OP44(				RETURN_IMM, 1, 0);
+    }
+    TclDecrRefCount(objPtr);
+    return TCL_OK;
 }
 
 /*
