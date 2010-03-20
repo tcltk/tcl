@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.64 2010/03/20 15:58:37 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.65 2010/03/20 18:00:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -9345,7 +9345,7 @@ CopyData(
 		result = TCL_ERROR;
 	    } else {
 		Tcl_ResetResult(interp);
-		Tcl_SetObjResult(interp, Tcl_NewIntObj(total));
+		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(total));
 	    }
 	}
     }
