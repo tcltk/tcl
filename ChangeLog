@@ -1,8 +1,18 @@
+2010-03-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIOCmd.c (Tcl_FcopyObjCmd):		Lift the restriction
+	* generic/tclIO.c (TclCopyChannel, CopyData):	on the [fcopy] command
+	* generic/tclIO.h (CopyState):			that forced it to only
+	copy up to 2GB per script-level callback. Now it is anything that can
+	fit in a (signed) 64-bit integer. Problem identified by Frederic
+	Bonnet on comp.lang.tcl. Note that individual low-level reads and
+	writes are still smaller as the optimal buffer size is smaller.
+
 2010-03-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/stub16.c          Don't hide that we use the ASCII API here.
+	* win/stub16.c:         Don't hide that we use the ASCII API here.
 	                        (does someone still use that?)
-	* win/tclWinPipe.c      2 unnecessary type casts.
+	* win/tclWinPipe.c:     2 unnecessary type casts.
 
 2010-03-19  Donal K. Fellows  <dkf@users.sf.net>
 
