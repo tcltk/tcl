@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.137.2.16 2010/01/18 22:20:56 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.137.2.17 2010/03/20 17:53:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -8605,7 +8605,8 @@ CopyData(
     Tcl_Obj *cmdPtr, *errObj = NULL, *bufObj = NULL, *msg = NULL;
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
-    int result = TCL_OK, size, total, sizeb;
+    int result = TCL_OK, size, sizeb;
+    Tcl_WideInt total;
     char *buffer;
     int inBinary, outBinary, sameEncoding;
 				/* Encoding control */
@@ -8863,7 +8864,7 @@ CopyData(
 	StopCopy(csPtr);
 	Tcl_Preserve(interp);
 
-	Tcl_ListObjAppendElement(interp, cmdPtr, Tcl_NewIntObj(total));
+	Tcl_ListObjAppendElement(interp, cmdPtr, Tcl_NewWideIntObj(total));
 	if (errObj) {
 	    Tcl_ListObjAppendElement(interp, cmdPtr, errObj);
 	}
@@ -8882,7 +8883,7 @@ CopyData(
 		result = TCL_ERROR;
 	    } else {
 		Tcl_ResetResult(interp);
-		Tcl_SetObjResult(interp, Tcl_NewIntObj(total));
+		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(total));
 	    }
 	}
     }
