@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: stub16.c,v 1.4.36.1 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: stub16.c,v 1.4.36.2 2010/03/20 15:58:37 dgp Exp $
  */
 
 #define STRICT
@@ -61,7 +61,7 @@ main(void)
     char *cmdLine;
     HANDLE hStdInput, hStdOutput, hStdError;
     HANDLE hFileInput, hFileOutput, hFileError;
-    STARTUPINFO si;
+    STARTUPINFOA si;
     PROCESS_INFORMATION pi;
     char buf[8192];
     DWORD result;
@@ -81,7 +81,7 @@ main(void)
      * stub16.exe program arg1 arg2 ...
      */
 
-    cmdLine = strchr(GetCommandLine(), ' ');
+    cmdLine = strchr(GetCommandLineA(), ' ');
     if (cmdLine == NULL) {
 	return 1;
     }
@@ -124,7 +124,7 @@ main(void)
 
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
-    if (CreateProcess(NULL, cmdLine, NULL, NULL, TRUE, 0, NULL, NULL, &si,
+    if (CreateProcessA(NULL, cmdLine, NULL, NULL, TRUE, 0, NULL, NULL, &si,
 	    &pi) == FALSE) {
 	goto cleanup;
     }
@@ -181,17 +181,17 @@ CreateTempFile(void)
     char name[MAX_PATH];
     SECURITY_ATTRIBUTES sa;
 
-    if (GetTempPath(sizeof(name), name) == 0) {
+    if (GetTempPathA(MAX_PATH, name) == 0) {
 	return INVALID_HANDLE_VALUE;
     }
-    if (GetTempFileName(name, "tcl", 0, name) == 0) {
+    if (GetTempFileNameA(name, "tcl", 0, name) == 0) {
 	return INVALID_HANDLE_VALUE;
     }
 
     sa.nLength = sizeof(sa);
     sa.lpSecurityDescriptor = NULL;
     sa.bInheritHandle = TRUE;
-    return CreateFile(name, GENERIC_READ | GENERIC_WRITE, 0, &sa,
+    return CreateFileA(name, GENERIC_READ | GENERIC_WRITE, 0, &sa,
 	    CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE,
 	    NULL);
 }

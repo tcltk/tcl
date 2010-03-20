@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.35 2010/02/25 21:53:07 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.36 2010/03/20 15:58:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1462,7 +1462,7 @@ Tcl_SocketObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const socketOptions[] = {
-	"-async", "-myaddr", "-myport","-server", NULL
+	"-async", "-myaddr", "-myport", "-server", NULL
     };
     enum socketOptions {
 	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_SERVER
@@ -1640,7 +1640,8 @@ Tcl_FcopyObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel inChan, outChan;
-    int mode, i, toRead, index;
+    int mode, i, index;
+    Tcl_WideInt toRead;
     Tcl_Obj *cmdPtr;
     static const char *const switches[] = { "-size", "-command", NULL };
     enum { FcopySize, FcopyCommand };
@@ -1682,16 +1683,17 @@ Tcl_FcopyObjCmd(
 	}
 	switch (index) {
 	case FcopySize:
-	    if (TclGetIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (toRead<0) {
+	    if (toRead < 0) {
 		/*
 		 * Handle all negative sizes like -1, meaning 'copy all'. By
 		 * resetting toRead we avoid changes in the core copying
 		 * functions (which explicitly check for -1 and crash on any
 		 * other negative value).
 		 */
+
 		toRead = -1;
 	    }
 	    break;

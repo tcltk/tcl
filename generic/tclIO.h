@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.5.6.10 2009/03/03 05:59:40 dgp Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.5.6.11 2010/03/20 15:58:37 dgp Exp $
  */
 
 /*
@@ -42,8 +42,8 @@ typedef struct CopyState {
     struct Channel *writePtr;	/* Pointer to output channel. */
     int readFlags;		/* Original read channel flags. */
     int writeFlags;		/* Original write channel flags. */
-    int toRead;			/* Number of bytes to copy, or -1. */
-    int total;			/* Total bytes transferred (written). */
+    Tcl_WideInt toRead;		/* Number of bytes to copy, or -1. */
+    Tcl_WideInt total;		/* Total bytes transferred (written). */
     Tcl_Interp *interp;		/* Interp that started the copy. */
     Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
     int bufSize;		/* Size of appended buffer. */

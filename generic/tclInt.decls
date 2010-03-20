@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.49 2010/02/09 17:53:07 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.50 2010/03/20 15:58:37 dgp Exp $
 
 library tcl
 
@@ -54,7 +54,7 @@ declare 7 generic {
     int TclCopyAndCollapse(int count, const char *src, char *dst)
 }
 declare 8 generic {
-    int TclCopyChannel(Tcl_Interp *interp, Tcl_Channel inChan,
+    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
 	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
 }
 
@@ -989,6 +989,11 @@ declare 246 generic {
 }
 declare 247 generic {
     void TclResetRewriteEnsemble(Tcl_Interp *interp, int isRootEnsemble)
+}
+
+declare 248 generic {
+    int TclCopyChannel(Tcl_Interp *interp, Tcl_Channel inChan,
+	    Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr)
 }
 
 ##############################################################################

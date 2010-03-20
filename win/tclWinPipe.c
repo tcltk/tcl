@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.25 2010/03/08 14:34:04 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.26 2010/03/20 15:58:37 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1505,9 +1505,9 @@ ApplicationType(
 	 * application name from the arguments.
 	 */
 
-	tclWinProcs->getShortPathNameProc((TCHAR *) nativeFullPath,
+	tclWinProcs->getShortPathNameProc(nativeFullPath,
 		nativeFullPath, MAX_PATH);
-	strcpy(fullName, tclWinProcs->tchar2utf((TCHAR *) nativeFullPath, -1, &ds));
+	strcpy(fullName, tclWinProcs->tchar2utf(nativeFullPath, -1, &ds));
 	Tcl_DStringFree(&ds);
     }
     return applType;
