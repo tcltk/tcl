@@ -1,20 +1,25 @@
+2010-03-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIO.c (CopyData): Allow the total number of bytes copied
+	by [fcopy] to exceed 2GB. Can happen when no -size parameter given.
+
 2010-03-18  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclListObj.c: Prevent in overflow trouble in ListObjReplace 
-	* generic/tclTestObj.c: operations.  Thanks to kbk for fix and test.
-	* tests/listObj.test:   [Bug 2971669].
+	* generic/tclListObj.c: [Bug 2971669]: Prevent in overflow trouble in
+	* generic/tclTestObj.c: ListObjReplace operations.  Thanks to kbk for
+	* tests/listObj.test:   fix and test.
 
 2010-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/makefile.vc         Fix [Bug 2967340]: Static build failure
+	* win/makefile.vc:      Fix [Bug 2967340]: Static build failure
 	* win/.cvsignore
 
 2010-03-09  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c: [Bug 2936225]: Thanks to Alexandre Ferrieux
-	* doc/refchan.n: <ferrieux@users.sourceforge.net> for debugging and fixing
-	* tests/ioCmd.test: the problem. It is the write-side equivalent
-	to the bug fixed 2009-08-06.
+	* doc/refchan.n:	<ferrieux@users.sourceforge.net> for debugging
+	* tests/ioCmd.test:	and fixing the problem. It is the write-side
+				equivalent to the bug fixed 2009-08-06.
 
 2010-03-09  Don Porter  <dgp@users.sourceforge.net>
 
