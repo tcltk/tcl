@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.188 2010/02/28 09:05:56 nijtmans Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.189 2010/03/20 15:40:14 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -57,7 +57,7 @@ static const TclIntStubs tclIntStubs = {
     TclCleanupChildren, /* 5 */
     TclCleanupCommand, /* 6 */
     TclCopyAndCollapse, /* 7 */
-    TclCopyChannel, /* 8 */
+    TclCopyChannelOld, /* 8 */
     TclCreatePipeline, /* 9 */
     TclCreateProc, /* 10 */
     TclDeleteCompiledLocalVars, /* 11 */
@@ -297,6 +297,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetNamespaceCommandTable, /* 245 */
     TclInitRewriteEnsemble, /* 246 */
     TclResetRewriteEnsemble, /* 247 */
+    TclCopyChannel, /* 248 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
