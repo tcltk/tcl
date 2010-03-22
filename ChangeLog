@@ -1,3 +1,9 @@
+2010-03-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:	[Bug 2973361]: Compute the correct integer
+	values to identify the argument indices of the various script arguments
+	to [try].  Passing in -1 led to invalid memory reads.
+
 2010-03-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/exec.n: Make it a bit clearer that there is an option to run a
