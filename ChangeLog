@@ -1,5 +1,8 @@
 2010-03-20  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/exec.n: Make it a bit clearer that there is an option to run a
+	pipeline in the background.
+
 	* generic/tclIOCmd.c (Tcl_FcopyObjCmd):		Lift the restriction
 	* generic/tclIO.c (TclCopyChannel, CopyData):	on the [fcopy] command
 	* generic/tclIO.h (CopyState):			that forced it to only
