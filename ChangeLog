@@ -1,3 +1,8 @@
+2010-03-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:	[Bug 2973361] Revised fix for computing
+	indices of script arguments to [try].
+
 2010-03-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCmdMZ.c      Make error message in "try" implementation
