@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.207 2010/03/23 12:58:38 nijtmans Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.208 2010/03/23 23:25:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4288,8 +4288,8 @@ TclNRTryObjCmd(
      * Execute the body.
      */
 
-    Tcl_NRAddCallback(interp, TryPostBody, handlersObj, finallyObj, objv[0],
-	    NULL);
+    Tcl_NRAddCallback(interp, TryPostBody, handlersObj, finallyObj,
+	    (ClientData)objv, INT2PTR(objc));
     return TclNREvalObjEx(interp, bodyObj, 0,
 	    ((Interp *) interp)->cmdFramePtr, 1);
 }
@@ -4351,13 +4351,16 @@ TryPostBody(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj *resultObj, *options, *handlersObj, *finallyObj, *cmdObj;
-    int i, dummy, code;
+    Tcl_Obj *resultObj, *options, *handlersObj, *finallyObj, *cmdObj, **objv;
+    int i, dummy, code, objc;
     int numHandlers = 0;
 
     handlersObj = data[0];
     finallyObj = data[1];
-    cmdObj = data[2];
+    objv = data[2];
+    objc = PTR2INT(data[3]);
+
+    cmdObj = objv[0];
 
     /*
      * Basic processing of the outcome of the script, including adding of
@@ -4486,8 +4489,8 @@ TryPostBody(
 	     */
 
 	    handlerBodyObj = info[4];
-	    Tcl_NRAddCallback(interp, TryPostHandler, cmdObj, options,
-		    info[0], finallyObj);
+	    Tcl_NRAddCallback(interp, TryPostHandler, objv, options, info[0],
+		    INT2PTR((finallyObj == NULL) ? 0 : objc - 1));
 	    Tcl_DecrRefCount(handlersObj);
 	    return TclNREvalObjEx(interp, handlerBodyObj, 0,
 		    ((Interp *) interp)->cmdFramePtr, 4*i + 5);
@@ -4512,10 +4515,10 @@ TryPostBody(
      */
 
     if (finallyObj != NULL) {
-	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, INT2PTR(result),
-		options, cmdObj);
+	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
+		NULL);
 	return TclNREvalObjEx(interp, finallyObj, 0,
-		((Interp *) interp)->cmdFramePtr, numHandlers*4 + 3);
+		((Interp *) interp)->cmdFramePtr, objc - 1);
     }
 
     /*
@@ -4547,13 +4550,18 @@ TryPostHandler(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj *resultObj, *cmdObj, *options, *handlerKindObj;
+    Tcl_Obj *resultObj, *cmdObj, *options, *handlerKindObj, **objv;
     Tcl_Obj *finallyObj;
+    int finally;
 
-    cmdObj = data[0];
+
+    objv = data[0];
     options = data[1];
     handlerKindObj = data[2];
-    finallyObj = data[3];
+    finally = PTR2INT(data[3]);
+
+    cmdObj = objv[0];
+    finallyObj = finally ? objv[finally] : 0;
 
     /*
      * The handler result completely substitutes for the result of the body.
@@ -4579,12 +4587,12 @@ TryPostHandler(
     if (finallyObj != NULL) {
 	Interp *iPtr = (Interp *) interp;
 
-	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, INT2PTR(result),
-		options, cmdObj);
+	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
+		NULL);
 
 	/* The 'finally' script is always the last argument word. */
 	return TclNREvalObjEx(interp, finallyObj, 0, iPtr->cmdFramePtr,
-		iPtr->cmdFramePtr->nline - 1);
+		finally);
     }
 
     /*
@@ -4614,24 +4622,21 @@ static int
 TryPostFinal(
     ClientData data[],
     Tcl_Interp *interp,
-    int finalResult)
+    int result)
 {
     Tcl_Obj *resultObj, *options, *cmdObj;
-    int result;
 
     resultObj = data[0];
-    result = PTR2INT(data[1]);
-    options = data[2];
-    cmdObj = data[3];
+    options = data[1];
+    cmdObj = data[2];
 
     /*
      * If the result wasn't OK, we need to adjust the result options.
      */
 
-    if (finalResult != TCL_OK) {
+    if (result != TCL_OK) {
 	Tcl_DecrRefCount(resultObj);
 	resultObj = NULL;
-	result = finalResult;
 	if (result == TCL_ERROR) {
 	    options = During(interp, result, options, Tcl_ObjPrintf(
 		    "\n    (\"%s ... finally\" body line %d)",
