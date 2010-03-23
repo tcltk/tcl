@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.75 2010/03/22 22:55:07 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.76 2010/03/23 14:07:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4159,13 +4159,13 @@ TclNRTryObjCmd(
 {
     Tcl_Obj *bodyObj, *handlersObj, *finallyObj = NULL;
     int i, bodyShared, haveHandlers, dummy, code;
-    static const char *handlerNames[] = {
+    static const char *const handlerNames[] = {
 	"finally", "on", "trap", NULL
     };
     enum Handlers {
 	TryFinally, TryOn, TryTrap
     };
-    static const char *exceptionNames[] = {
+    static const char *const returnCodes[] = {
 	"ok", "error", "return", "break", "continue", NULL
     };
 
@@ -4218,12 +4218,14 @@ TclNRTryObjCmd(
 		return TCL_ERROR;
 	    }
 	    if (Tcl_GetIntFromObj(NULL, objv[i+1], &code) != TCL_OK
-		    && Tcl_GetIndexFromObj(NULL, objv[i+1], exceptionNames,
+		    && Tcl_GetIndexFromObj(NULL, objv[i+1], returnCodes,
 			    "code", 0, &code) != TCL_OK) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad code '%s': must be integer, \"ok\", \"error\", "
-			"\"return\", \"break\" or \"continue\"",
-			Tcl_GetString(objv[i+1])));
+		Tcl_ResetResult(interp);
+		Tcl_AppendResult(interp, "bad completion code \"",
+			TclGetString(objv[i+1]),
+			"\": must be ok, error, return, break, "
+			"continue, or an integer", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", NULL);
 		Tcl_DecrRefCount(handlersObj);
 		return TCL_ERROR;
 	    }

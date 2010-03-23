@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.1.2.7 2010/03/19 15:26:56 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.1.2.8 2010/03/23 14:07:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1995,7 +1995,7 @@ TclCompileTryCmd(
 	    } else if (tokenPtr[1].size == 2
 		    && !strncmp(tokenPtr[1].start, "on", 2)) {
 		int code;
-		static const char *codes[] = {
+		static const char *const returnCodes[] = {
 		    "ok", "error", "return", "break", "continue", NULL
 		};
 
@@ -2011,7 +2011,7 @@ TclCompileTryCmd(
 		    goto failedToCompile;
 		}
 		if (Tcl_GetIntFromObj(NULL, tmpObj, &code) != TCL_OK
-			&& Tcl_GetIndexFromObj(NULL, tmpObj, codes, "",
+			&& Tcl_GetIndexFromObj(NULL, tmpObj, returnCodes, "",
 				TCL_EXACT, &code) != TCL_OK) {
 		    TclDecrRefCount(tmpObj);
 		    goto failedToCompile;
