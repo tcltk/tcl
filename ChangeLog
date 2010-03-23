@@ -1,4 +1,4 @@
-2010-03-??  Jan Nijtmans  <nijtmans@users.sf.net>
+2010-03-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCmdMZ.c      Make error message in "try" implementation
 	* generic/tclCompCmdsSZ.c exactly the same as the one in "return"
