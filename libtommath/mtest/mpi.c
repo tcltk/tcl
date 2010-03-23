@@ -6,7 +6,7 @@
 
     Arbitrary precision integer arithmetic library
 
-    $Id: mpi.c,v 1.1.1.2 2005/09/26 16:32:17 kennykb Exp $
+    $Id: mpi.c,v 1.2 2010/03/23 12:58:41 nijtmans Exp $
  */
 
 #include "mpi.h"
@@ -91,7 +91,7 @@ static unsigned int s_mp_defprec = MP_DEFPREC;
 /* {{{ Constant strings */
 
 /* Constant strings returned by mp_strerror() */
-static const char *mp_err_string[] = {
+static const char *const mp_err_string[] = {
   "unknown result code",     /* say what?            */
   "boolean true",            /* MP_OKAY, MP_YES      */
   "boolean false",           /* MP_NO                */
@@ -3981,5 +3981,5 @@ int      s_mp_outlen(int bits, int r)
 /* crc==4242132123, version==2, Sat Feb 02 06:43:52 2002 */
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/mtest/mpi.c,v $ */
-/* $Revision: 1.1.1.2 $ */
-/* $Date: 2005/09/26 16:32:17 $ */
+/* $Revision: 1.2 $ */
+/* $Date: 2010/03/23 12:58:41 $ */
