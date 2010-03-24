@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.35 2009/11/16 18:00:11 dgp Exp $
+'\" RCS: @(#) $Id: info.n,v 1.36 2010/03/24 13:21:11 dkf Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -443,6 +443,15 @@ mixins, if \fB\-all\fR is also given).
 .RE
 .VE 8.6
 .TP
+\fBinfo class methodtype\fI class method\fR
+.VS 8.6
+This subcommand returns a description of the type of implementation used for
+the method named \fImethod\fR of class \fIclass\fR. When the result is
+\fBmethod\fR, further information can be discovered with \fBinfo class
+definition\fR, and when the result is \fBforward\fR, further information can
+be discovered with \fBinfo class forward\fR.
+.VE 8.6
+.TP
 \fBinfo class mixins\fI class\fR
 .VS 8.6
 This subcommand returns a list of all classes that have been mixed into the
@@ -559,6 +568,15 @@ If the \fB\-private\fR flag is given, the list of methods will also include
 the private (i.e. non-exported) methods of the object (and classes, if
 \fB\-all\fR is also given).
 .RE
+.VE 8.6
+.TP
+\fBinfo object methodtype\fI object method\fR
+.VS 8.6
+This subcommand returns a description of the type of implementation used for
+the method named \fImethod\fR of object \fIobject\fR. When the result is
+\fBmethod\fR, further information can be discovered with \fBinfo object
+definition\fR, and when the result is \fBforward\fR, further information can
+be discovered with \fBinfo object forward\fR.
 .VE 8.6
 .TP
 \fBinfo object mixins\fI object\fR
