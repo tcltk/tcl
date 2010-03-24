@@ -1,20 +1,25 @@
+2010-03-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (TryPostBody, TryPostHandler): Make sure that the
+	[try] command does not trap unwinding due to limits.
+
 2010-03-24  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdMZ.c:	[Bug 2973361] Revised fix for computing
+	* generic/tclCmdMZ.c:	[Bug 2973361]: Revised fix for computing
 	indices of script arguments to [try].
 
 2010-03-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclCmdMZ.c      Make error message in "try" implementation
-	* generic/tclCompCmdsSZ.c exactly the same as the one in "return"
-	* tests/error.test
-	* libtommath/mtests/mpi.c Single "const" addition
+	* generic/tclCmdMZ.c:      Make error message in "try" implementation
+	* generic/tclCompCmdsSZ.c: exactly the same as the one in "return"
+	* tests/error.test:
+	* libtommath/mtests/mpi.c: Single "const" addition
 
 2010-03-22  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:	[Bug 2973361]: Compute the correct integer
-	values to identify the argument indices of the various script arguments
-	to [try].  Passing in -1 led to invalid memory reads.
+	values to identify the argument indices of the various script
+	arguments to [try]. Passing in -1 led to invalid memory reads.
 
 2010-03-20  Donal K. Fellows  <dkf@users.sf.net>
 
