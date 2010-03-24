@@ -10,12 +10,12 @@
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 Scriptics Corporation.
  * Copyright (c) 2002 ActiveState Corporation.
- * Copyright (c) 2003 Donal K. Fellows.
+ * Copyright (c) 2003-2009 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.77 2010/03/23 23:28:45 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.78 2010/03/24 13:03:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4363,17 +4363,31 @@ TryPostBody(
     cmdObj = objv[0];
 
     /*
+     * Check for limits/rewinding, which override normal trapping behaviour.
+     */
+
+    if (((Interp*) interp)->execEnvPtr->rewind || Tcl_LimitExceeded(interp)) {
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
+		Tcl_GetErrorLine(interp)));
+	if (handlersObj != NULL) {
+	    Tcl_DecrRefCount(handlersObj);
+	}
+	return TCL_ERROR;
+    }
+
+    /*
      * Basic processing of the outcome of the script, including adding of
      * errorinfo trace.
      */
 
-    resultObj = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(resultObj);
     if (result == TCL_ERROR) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
 		Tcl_GetErrorLine(interp)));
     }
+    resultObj = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(resultObj);
     options = Tcl_GetReturnOptions(interp, result);
     Tcl_IncrRefCount(options);
     Tcl_ResetResult(interp);
@@ -4554,7 +4568,6 @@ TryPostHandler(
     Tcl_Obj *finallyObj;
     int finally;
 
-
     objv = data[0];
     options = data[1];
     handlerKindObj = data[2];
@@ -4562,6 +4575,19 @@ TryPostHandler(
 
     cmdObj = objv[0];
     finallyObj = finally ? objv[finally] : 0;
+
+    /*
+     * Check for limits/rewinding, which override normal trapping behaviour.
+     */
+
+    if (((Interp*) interp)->execEnvPtr->rewind || Tcl_LimitExceeded(interp)) {
+	options = During(interp, result, options, Tcl_ObjPrintf(
+		"\n    (\"%s ... %s\" handler line %d)",
+		TclGetString(cmdObj), TclGetString(handlerKindObj),
+		Tcl_GetErrorLine(interp)));
+	Tcl_DecrRefCount(options);
+	return TCL_ERROR;
+    }
 
     /*
      * The handler result completely substitutes for the result of the body.
