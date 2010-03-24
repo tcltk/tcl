@@ -1,3 +1,8 @@
+2010-03-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclResult.c:  [Bug 2383005] Revise [return -errorcode] so
+	* tests/result.test:    that it rejects illegal non-list values.
+
 2010-03-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOInfo.c (InfoObjectMethodTypeCmd)
@@ -14,7 +19,7 @@
 	* generic/tclCmdMZ.c (TryPostBody, TryPostHandler): Make sure that the
 	[try] command does not trap unwinding due to limits.
 
-2010-03-24  Don Porter  <dgp@users.sourceforge.net>
+2010-03-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:	[Bug 2973361]: Revised fix for computing
 	indices of script arguments to [try].
