@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.47 2008/03/07 22:42:49 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.47.2.1 2010/03/24 15:31:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1376,6 +1376,26 @@ TclMergeReturnOptions(
 	    goto error;
 	}
 	Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_LEVEL]);
+    }
+
+    /*
+     * Check for bogus -errorcode value.
+     */
+
+    Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORCODE], &valuePtr);
+    if (valuePtr != NULL) {
+	int length;
+
+	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length )) {
+	    /*
+	     * Value is not a list, which is illegal for -errorcode.
+	     */
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "bad -errorcode value: "
+			     "expected a list but got \"",
+			     TclGetString(valuePtr), "\"", NULL);
+	    goto error;
+	}
     }
 
     /*
