@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.30 2010/03/05 04:21:34 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.31 2010/03/24 13:29:17 dgp Exp $
 
 package require -exact TclOO 0.6.2 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1514,7 +1514,7 @@ test oo-16.2 {OO: object introspection} -body {
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, mixins, namespace, variables, or vars}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, methodtype, mixins, namespace, variables, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
     [meta create instance1] create instance2
@@ -1555,10 +1555,11 @@ test oo-16.7 {OO: object introspection} -setup {
 } -body {
     oo::objdefine foo method bar {a {b c} args} {the body}
     set result [info object methods foo]
-    lappend result [info object definition foo bar]
+    lappend result [info object methodtype foo bar] \
+	[info object definition foo bar]
 } -cleanup {
     foo destroy
-} -result {bar {{a {b c} args} {the body}}}
+} -result {bar method {{a {b c} args} {the body}}}
 test oo-16.8 {OO: object introspection} {
     oo::object create foo
     oo::class create bar
@@ -1635,7 +1636,7 @@ test oo-17.3 {OO: class introspection} -setup {
 } -result {"foo" is not a class}
 test oo-17.4 {OO: class introspection} -body {
     info class gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, mixins, subclasses, superclasses, or variables}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, methodtype, mixins, subclasses, superclasses, or variables}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
 } -body {
@@ -1651,10 +1652,11 @@ test oo-17.6 {OO: class introspection} -setup {
 } -body {
     oo::define foo method bar {a {b c} args} {the body}
     set result [info class methods foo]
-    lappend result [info class definition foo bar]
+    lappend result [info class methodtype foo bar] \
+	[info class definition foo bar]
 } -cleanup {
     foo destroy
-} -result {bar {{a {b c} args} {the body}}}
+} -result {bar method {{a {b c} args} {the body}}}
 test oo-17.7 {OO: class introspection} {
     info class superclasses oo::class
 } ::oo::object

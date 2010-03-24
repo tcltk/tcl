@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.16 2010/03/08 14:34:04 dgp Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.17 2010/03/24 13:29:17 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -108,7 +108,7 @@ static int		ProcedureMethodCompiledVarResolver(Tcl_Interp *interp,
  */
 
 static const Tcl_MethodType procMethodType = {
-    TCL_OO_METHOD_VERSION_CURRENT, "procedural method",
+    TCL_OO_METHOD_VERSION_CURRENT, "method",
     InvokeProcedureMethod, DeleteProcedureMethod, CloneProcedureMethod
 };
 static const Tcl_MethodType fwdMethodType = {

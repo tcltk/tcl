@@ -1,5 +1,12 @@
 2010-03-24  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOOInfo.c (InfoObjectMethodTypeCmd)
+	(InfoClassMethodTypeCmd): Added introspection of method types so that
+	it is possible to find this info out without using errors.
+	* generic/tclOOMethod.c (procMethodType): Now that introspection can
+	reveal the name of method types, regularize the name of normal methods
+	to be the name of the definition type used to create them.
+
 	* tests/async.test (async-4.*): Reduce obscurity of these tests by
 	putting the bulk of the code for them inside the test body with the
 	help of [apply].
