@@ -1,5 +1,9 @@
 2010-03-24  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tests/async.test (async-4.*): Reduce obscurity of these tests by
+	putting the bulk of the code for them inside the test body with the
+	help of [apply].
+
 	* generic/tclCmdMZ.c (TryPostBody, TryPostHandler): Make sure that the
 	[try] command does not trap unwinding due to limits.
 
