@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.65.2.2 2009/11/25 14:31:40 stwo Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.65.2.3 2010/03/25 14:52:34 dkf Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -550,7 +550,7 @@ TclUnixCopyFile(
     {
 	struct statfs fs;
 
-	if (fstatfs(srcFd, &fs, sizeof(fs), 0) == 0) {
+	if (fstatfs(srcFd, &fs) == 0) {
 	    blockSize = fs.f_bsize;
 	} else {
 	    blockSize = 4096;
