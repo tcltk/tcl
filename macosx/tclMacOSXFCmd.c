@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.18 2010/03/05 14:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.19 2010/03/25 14:02:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -24,7 +24,7 @@
 #ifdef HAVE_COPYFILE
 #ifdef HAVE_COPYFILE_H
 #include <copyfile.h>
-#if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
+#if defined(HAVE_WEAK_IMPORT) && (MAC_OS_X_VERSION_MIN_REQUIRED < 1040)
 /* Support for weakly importing copyfile. */
 #define WEAK_IMPORT_COPYFILE
 extern int		copyfile(const char *from, const char *to,
@@ -34,10 +34,10 @@ extern int		copyfile(const char *from, const char *to,
 #else /* HAVE_COPYFILE_H */
 int			copyfile(const char *from, const char *to,
 			    void *state, uint32_t flags);
-#define COPYFILE_ACL            (1<<0)
-#define COPYFILE_XATTR          (1<<2)
-#define COPYFILE_NOFOLLOW_SRC   (1<<18)
-#if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
+#define COPYFILE_ACL		(1<<0)
+#define COPYFILE_XATTR		(1<<2)
+#define COPYFILE_NOFOLLOW_SRC	(1<<18)
+#if defined(HAVE_WEAK_IMPORT) && (MAC_OS_X_VERSION_MIN_REQUIRED < 1040)
 /* Support for weakly importing copyfile. */
 #define WEAK_IMPORT_COPYFILE
 extern int		copyfile(const char *from, const char *to,
@@ -46,6 +46,14 @@ extern int		copyfile(const char *from, const char *to,
 #endif /* HAVE_WEAK_IMPORT */
 #endif /* HAVE_COPYFILE_H */
 #endif /* HAVE_COPYFILE */
+
+#ifdef WEAK_IMPORT_COPYFILE
+#define MayUseCopyFile()	(copyfile != NULL)
+#elif defined(HAVE_COPYFILE)
+#define MayUseCopyFile()	(1)
+#else
+#define MayUseCopyFile()	(0)
+#endif
 
 #include <libkern/OSByteOrder.h>
 
@@ -86,7 +94,7 @@ static const Tcl_ObjType tclOSTypeType = {
 };
 
 enum {
-   kIsInvisible = 0x4000,
+    kIsInvisible = 0x4000,
 };
 
 #define kFinfoIsInvisible	(OSSwapHostToBigConstInt16(kIsInvisible))
@@ -142,8 +150,8 @@ TclMacOSXGetFileAttribute(
     result = TclpObjStat(fileName, &statBuf);
 
     if (result != 0) {
-	Tcl_AppendResult(interp, "could not read \"",
-		TclGetString(fileName), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_AppendResult(interp, "could not read \"", TclGetString(fileName),
+		"\": ", Tcl_PosixError(interp), NULL);
 	return TCL_ERROR;
     }
 
@@ -234,8 +242,8 @@ TclMacOSXSetFileAttribute(
     result = TclpObjStat(fileName, &statBuf);
 
     if (result != 0) {
-	Tcl_AppendResult(interp, "could not read \"",
-		TclGetString(fileName), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_AppendResult(interp, "could not read \"", TclGetString(fileName),
+		"\": ", Tcl_PosixError(interp), NULL);
 	return TCL_ERROR;
     }
 
@@ -300,8 +308,8 @@ TclMacOSXSetFileAttribute(
 
 	if (result != 0) {
 	    Tcl_AppendResult(interp, "could not set attributes of \"",
-		    TclGetString(fileName), "\": ",
-		    Tcl_PosixError(interp), NULL);
+		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
+		    NULL);
 	    return TCL_ERROR;
 	}
     } else {
@@ -320,7 +328,7 @@ TclMacOSXSetFileAttribute(
 	     * supported.
 	     */
 
-	    if(newRsrcForkSize != 0) {
+	    if (newRsrcForkSize != 0) {
 		Tcl_AppendResult(interp,
 			"setting nonzero rsrclength not supported", NULL);
 		return TCL_ERROR;
@@ -337,11 +345,13 @@ TclMacOSXSetFileAttribute(
 	    result = truncate(Tcl_DStringValue(&ds), (off_t)0);
 	    if (result != 0) {
 		/*
-		 * truncate() on a valid resource fork path may fail with
-		 * a permission error in some OS releases, try truncating
-		 * with open() instead:
+		 * truncate() on a valid resource fork path may fail with a
+		 * permission error in some OS releases, try truncating with
+		 * open() instead:
 		 */
+
 		int fd = open(Tcl_DStringValue(&ds), O_WRONLY | O_TRUNC);
+
 		if (fd > 0) {
 		    result = close(fd);
 		}
@@ -390,25 +400,21 @@ TclMacOSXCopyFileAttributes(
     const Tcl_StatBuf *statBufPtr)
 				/* Stat info for source file */
 {
-#ifdef WEAK_IMPORT_COPYFILE
-    if (copyfile != NULL) {
-#endif
+    if (MayUseCopyFile()) {
 #ifdef HAVE_COPYFILE
-	if (copyfile(src, dst, NULL, COPYFILE_XATTR |
-		(S_ISLNK(statBufPtr->st_mode)
-			? COPYFILE_NOFOLLOW_SRC : COPYFILE_ACL)) < 0) {
-	    return TCL_ERROR;
+	if (0 == copyfile(src, dst, NULL, (S_ISLNK(statBufPtr->st_mode)
+		? COPYFILE_XATTR | COPYFILE_NOFOLLOW_SRC
+		: COPYFILE_XATTR | COPYFILE_ACL))) {
+	    return TCL_OK;
 	}
-	return TCL_OK;
 #endif /* HAVE_COPYFILE */
-#ifdef WEAK_IMPORT_COPYFILE
     } else {
-#endif
-#if !defined(HAVE_COPYFILE) || defined(WEAK_IMPORT_COPYFILE)
-#ifdef HAVE_GETATTRLIST
+#if (!defined(HAVE_COPYFILE) || defined(WEAK_IMPORT_COPYFILE)) && defined(HAVE_GETATTRLIST)
 	struct attrlist alist;
 	fileinfobuf finfo;
 	off_t *rsrcForkSize = (off_t *) &finfo.data;
+	Tcl_DString srcBuf, dstBuf;
+	int result;
 
 	bzero(&alist, sizeof(struct attrlist));
 	alist.bitmapcount = ATTR_BIT_MAP_COUNT;
@@ -417,57 +423,56 @@ TclMacOSXCopyFileAttributes(
 	if (getattrlist(src, &alist, &finfo, sizeof(fileinfobuf), 0)) {
 	    return TCL_ERROR;
 	}
-
 	if (setattrlist(dst, &alist, &finfo.data, sizeof(finfo.data), 0)) {
 	    return TCL_ERROR;
 	}
 
-	if (!S_ISDIR(statBufPtr->st_mode)) {
-	    /*
-	     * Only copy non-empty resource fork.
-	     */
+	/*
+	 * If we're a directory, we're done as they never have resource forks.
+	 */
 
-	    alist.commonattr = 0;
-	    alist.fileattr = ATTR_FILE_RSRCLENGTH;
-
-	    if (getattrlist(src, &alist, &finfo, sizeof(fileinfobuf), 0)) {
-		return TCL_ERROR;
-	    }
-
-	    if (*rsrcForkSize > 0) {
-		int result;
-		Tcl_DString ds_src, ds_dst;
-
-		/*
-		 * Construct paths to resource forks.
-		 */
-
-		Tcl_DStringInit(&ds_src);
-		Tcl_DStringAppend(&ds_src, src, -1);
-		Tcl_DStringAppend(&ds_src, _PATH_RSRCFORKSPEC, -1);
-		Tcl_DStringInit(&ds_dst);
-		Tcl_DStringAppend(&ds_dst, dst, -1);
-		Tcl_DStringAppend(&ds_dst, _PATH_RSRCFORKSPEC, -1);
-
-		result = TclUnixCopyFile(Tcl_DStringValue(&ds_src),
-			Tcl_DStringValue(&ds_dst), statBufPtr, 1);
-
-		Tcl_DStringFree(&ds_src);
-		Tcl_DStringFree(&ds_dst);
-
-		if (result != 0) {
-		    return TCL_ERROR;
-		}
-	    }
+	if (S_ISDIR(statBufPtr->st_mode)) {
+	    return TCL_OK;
 	}
-	return TCL_OK;
-#else
-	return TCL_ERROR;
-#endif /* HAVE_GETATTRLIST */
-#endif /* !defined(HAVE_COPYFILE) || defined(WEAK_IMPORT_COPYFILE) */
-#ifdef WEAK_IMPORT_COPYFILE
+
+	/*
+	 * We only copy a non-empty resource fork, so determine if that's the
+	 * case first.
+	 */
+
+	alist.commonattr = 0;
+	alist.fileattr = ATTR_FILE_RSRCLENGTH;
+	if (getattrlist(src, &alist, &finfo, sizeof(fileinfobuf), 0)) {
+	    return TCL_ERROR;
+	} else if (*rsrcForkSize == 0) {
+	    return TCL_OK;
+	}
+
+	/*
+	 * Construct paths to resource forks.
+	 */
+
+	Tcl_DStringInit(&srcBuf);
+	Tcl_DStringAppend(&srcBuf, src, -1);
+	Tcl_DStringAppend(&srcBuf, _PATH_RSRCFORKSPEC, -1);
+	Tcl_DStringInit(&dstBuf);
+	Tcl_DStringAppend(&dstBuf, dst, -1);
+	Tcl_DStringAppend(&dstBuf, _PATH_RSRCFORKSPEC, -1);
+
+	/*
+	 * Do the copy.
+	 */
+
+	result = TclUnixCopyFile(Tcl_DStringValue(&srcBuf),
+		Tcl_DStringValue(&dstBuf), statBufPtr, 1);
+	Tcl_DStringFree(&srcBuf);
+	Tcl_DStringFree(&dstBuf);
+	if (result == 0) {
+	    return TCL_OK;
+	}
+#endif /* (!HAVE_COPYFILE || WEAK_IMPORT_COPYFILE) && HAVE_GETATTRLIST */
     }
-#endif
+    return TCL_ERROR;
 }
 
 /*
@@ -491,11 +496,11 @@ TclMacOSXCopyFileAttributes(
 
 int
 TclMacOSXMatchType(
-    Tcl_Interp *interp,       /* Interpreter to receive errors. */
-    const char *pathName,     /* Native path to check. */
-    const char *fileName,     /* Native filename to check. */
-    Tcl_StatBuf *statBufPtr,  /* Stat info for file to check */
-    Tcl_GlobTypeData *types)  /* Type description to match against. */
+    Tcl_Interp *interp,		/* Interpreter to receive errors. */
+    const char *pathName,	/* Native path to check. */
+    const char *fileName,	/* Native filename to check. */
+    Tcl_StatBuf *statBufPtr,	/* Stat info for file to check */
+    Tcl_GlobTypeData *types)	/* Type description to match against. */
 {
 #ifdef HAVE_GETATTRLIST
     struct attrlist alist;
@@ -676,7 +681,8 @@ SetOSTypeFromAny(
 
 static void
 UpdateStringOfOSType(
-    register Tcl_Obj *objPtr)	/* OSType object whose string rep to update. */
+    register Tcl_Obj *objPtr)	/* OSType object whose string rep to
+				 * update. */
 {
     char string[5];
     OSType osType = (OSType) objPtr->internalRep.longValue;
