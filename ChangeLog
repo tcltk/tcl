@@ -1,6 +1,11 @@
+2010-03-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixFCmd.c (TclUnixCopyFile): [Bug 2976504]: Corrected
+	number of arguments to fstatfs() call.
+
 2010-03-24  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclResult.c:	[Bug 2383005] Revise [return -errorcode] so
+	* generic/tclResult.c:	[Bug 2383005]: Revise [return -errorcode] so
 	* tests/result.test:	that it rejects illegal non-list values.
 
 2010-03-20  Donal K. Fellows  <dkf@users.sf.net>
