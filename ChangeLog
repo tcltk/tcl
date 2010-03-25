@@ -1,6 +1,14 @@
+2010-03-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* macosx/tclMacOSXBundle.c, macosx/tclMacOSXFCmd.c: 
+	* macosx/tclMacOSXNotify.c: Reduce the level of ifdeffery in the
+	functions of these files to improve readability. They need to be
+	audited for whether complexity can be removed based on the minimum
+	supported version of OSX, but that requires a real expert.
+
 2010-03-24  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclResult.c:  [Bug 2383005] Revise [return -errorcode] so
+	* generic/tclResult.c:  [Bug 2383005]: Revise [return -errorcode] so
 	* tests/result.test:    that it rejects illegal non-list values.
 
 2010-03-24  Donal K. Fellows  <dkf@users.sf.net>
