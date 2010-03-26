@@ -1,4 +1,11 @@
+2010-03-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclExecute.c   [Bug 2976508] tcl HEAD fails on HP-UX
+
 2010-03-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixFCmd.c (TclUnixCopyFile): [Bug 2976504]: Corrected
+	number of arguments to fstatfs() call.
 
 	* macosx/tclMacOSXBundle.c, macosx/tclMacOSXFCmd.c: 
 	* macosx/tclMacOSXNotify.c: Reduce the level of ifdeffery in the
