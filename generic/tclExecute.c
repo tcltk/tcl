@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.474 2010/02/24 10:49:04 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.475 2010/03/26 09:43:51 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1922,7 +1922,7 @@ TclExecuteByteCode(
 	NULL,
 	NULL,
 	NULL,
-	&iPtr->execEnvPtr->constants[0],
+	NULL,
 	0,
 	0,
 	NULL,
@@ -1977,6 +1977,7 @@ TclExecuteByteCode(
     char cmdNameBuf[21];
 #endif
 
+    TAUX.constants = &iPtr->execEnvPtr->constants[0];
     if (!codePtr) {
 	CoroutineData *corPtr;
 
