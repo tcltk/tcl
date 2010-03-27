@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkgua.c,v 1.9 2010/02/22 23:31:41 nijtmans Exp $
+ * RCS: @(#) $Id: pkgua.c,v 1.10 2010/03/27 22:47:04 nijtmans Exp $
  */
 
 #include "tcl.h"
@@ -209,7 +209,7 @@ Pkgua_Init(
     int code, cmdIndex = 0;
     Tcl_Command *cmdTokens;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
 	return TCL_ERROR;
     }
 
