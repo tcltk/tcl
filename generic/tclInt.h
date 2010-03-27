@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.465 2010/03/19 11:54:07 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.466 2010/03/27 22:40:14 nijtmans Exp $
  */
 
 #ifndef _TCLINT
@@ -2870,6 +2870,8 @@ MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
 MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Channel *chanPtr,
 			    int *modePtr, int flags);
+MODULE_SCOPE int TclGetCompletionCodeFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *value, int *code);
 MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, ClientData *clientDataPtr,
 			    int *typePtr);
