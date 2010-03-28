@@ -4,9 +4,6 @@
 	* generic/tclResult.c
 	* generic/tclCmdMZ.c
 	* generic/tclCompCmdsSZ.c
-	* unix/dltest/*.c         Provide "lowest supported Tcl version" to
-	                          the Tcl_InitStubs functions, in stead of
-	                          "current Tcl version"
 
 2010-03-26  Jan Nijtmans  <nijtmans@users.sf.net>
 
