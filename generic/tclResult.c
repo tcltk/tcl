@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.31 2010/03/24 16:12:31 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.32 2010/03/28 03:24:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1292,12 +1292,61 @@ TclProcessReturn(
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetCompletionCodeFromObj --
+ *
+ *	Parses Completion code Code
+ *
+ * Results:
+ *	Returns TCL_ERROR if the value is an invalid completion code.
+ *	Otherwise, returns TCL_OK, and writes the completion code to
+ *  the pointer provided.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclGetCompletionCodeFromObj(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Obj *value,
+    int *code)	/* Argument objects. */
+{
+    if (TCL_ERROR == TclGetIntFromObj(NULL, value, code)) {
+	static const char *const returnCodes[] = {
+	    "ok", "error", "return", "break", "continue", NULL
+	};
+
+	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, value, returnCodes,
+		NULL, TCL_EXACT, code)) {
+	    /*
+	     * Value is not a legal return code.
+	     */
+
+	    if (interp != NULL) {
+		Tcl_ResetResult(interp);
+		Tcl_AppendResult(interp, "bad completion code \"",
+			TclGetString(value),
+			"\": must be ok, error, return, break, "
+			"continue, or an integer", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclMergeReturnOptions --
  *
  *	Parses, checks, and stores the options to the [return] command.
  *
  * Results:
- *	Returns TCL_ERROR is any of the option values are invalid. Otherwise,
+ *	Returns TCL_ERROR if any of the option values are invalid. Otherwise,
  *	returns TCL_OK, and writes the returnOpts, code, and level values to
  *	the pointers provided.
  *
@@ -1377,28 +1426,10 @@ TclMergeReturnOptions(
      */
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_CODE], &valuePtr);
-    if ((valuePtr != NULL)
-	    && (TCL_ERROR == TclGetIntFromObj(NULL, valuePtr, &code))) {
-	static const char *const returnCodes[] = {
-	    "ok", "error", "return", "break", "continue", NULL
-	};
-
-	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, valuePtr, returnCodes,
-		NULL, TCL_EXACT, &code)) {
-	    /*
-	     * Value is not a legal return code.
-	     */
-
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "bad completion code \"",
-		    TclGetString(valuePtr),
-		    "\": must be ok, error, return, break, "
-		    "continue, or an integer", NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", NULL);
+    if (valuePtr != NULL) {
+	if (TCL_ERROR == TclGetCompletionCodeFromObj(interp, valuePtr, &code)) {
 	    goto error;
 	}
-    }
-    if (valuePtr != NULL) {
 	Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_CODE]);
     }
 
