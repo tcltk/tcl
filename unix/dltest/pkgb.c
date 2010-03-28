@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkgb.c,v 1.12 2010/03/27 22:47:04 nijtmans Exp $
+ * RCS: @(#) $Id: pkgb.c,v 1.13 2010/03/28 03:17:50 dgp Exp $
  */
 
 #include "tcl.h"
@@ -122,7 +122,7 @@ Pkgb_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvide(interp, "Pkgb", "2.3");
@@ -159,7 +159,7 @@ Pkgb_SafeInit(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvide(interp, "Pkgb", "2.3");
