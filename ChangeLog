@@ -1,3 +1,8 @@
+2010-03-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Fix array overrun in test format-1.12
+	caught by valgrind testing.
+
 2010-03-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclUnixFCmd.c (TclUnixCopyFile): [Bug 2976504]: Corrected
