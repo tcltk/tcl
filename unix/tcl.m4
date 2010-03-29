@@ -1052,10 +1052,15 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     AC_CACHE_CHECK([if compiler supports visibility "hidden"],
 	tcl_cv_cc_visibility_hidden, [
-	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fvisibility=hidden -Werror"
-	AC_TRY_COMPILE(,, tcl_cv_cc_visibility_hidden=yes,
-	    tcl_cv_cc_visibility_hidden=no)
-	CFLAGS=$hold_cflags])
+	    AS_IF([test "$GCC" = yes], [
+		hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fvisibility=hidden -Werror"
+		AC_TRY_COMPILE(,, tcl_cv_cc_visibility_hidden=yes,
+		    tcl_cv_cc_visibility_hidden=no)
+		CFLAGS=$hold_cflags
+	    ], [
+		tcl_cv_cc_visibility_hidden=no
+	    ])
+    ])
     AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
 	CFLAGS="$CFLAGS -fvisibility=hidden"
     ], [

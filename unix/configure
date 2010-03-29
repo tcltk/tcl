@@ -6434,8 +6434,10 @@ if test "${tcl_cv_cc_visibility_hidden+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
-	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fvisibility=hidden -Werror"
-	cat >conftest.$ac_ext <<_ACEOF
+	    if test "$GCC" = yes; then
+
+		hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fvisibility=hidden -Werror"
+		cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -6480,7 +6482,15 @@ sed 's/^/| /' conftest.$ac_ext >&5
 tcl_cv_cc_visibility_hidden=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-	CFLAGS=$hold_cflags
+		CFLAGS=$hold_cflags
+
+else
+
+		tcl_cv_cc_visibility_hidden=no
+
+fi
+
+
 fi
 echo "$as_me:$LINENO: result: $tcl_cv_cc_visibility_hidden" >&5
 echo "${ECHO_T}$tcl_cv_cc_visibility_hidden" >&6
@@ -6489,7 +6499,6 @@ echo "${ECHO_T}$tcl_cv_cc_visibility_hidden" >&6
 	CFLAGS="$CFLAGS -fvisibility=hidden"
 
 else
-
 
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	cat >conftest.$ac_ext <<_ACEOF
