@@ -1,3 +1,8 @@
+2010-03-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:       Fix array overrun in test format-1.12
+	caught by valgrind testing.
+
 2010-03-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.h:	[FRQ 2974744]: share exception codes
