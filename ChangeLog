@@ -1,13 +1,13 @@
 2010-03-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.h        [Freq 2974744] share exception codes (ObjType?)
-	* generic/tclResult.c
-	* generic/tclCmdMZ.c
-	* generic/tclCompCmdsSZ.c
+	* generic/tclInt.h:	[FRQ 2974744]: share exception codes
+	* generic/tclResult.c:	(ObjType?)
+	* generic/tclCmdMZ.c:
+	* generic/tclCompCmdsSZ.c:
 
 2010-03-26  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclExecute.c   [Bug 2976508] tcl HEAD fails on HP-UX
+	* generic/tclExecute.c: [Bug 2976508]: Tcl HEAD fails on HP-UX
 
 2010-03-25  Donal K. Fellows  <dkf@users.sf.net>
 
