@@ -1,3 +1,9 @@
+2010-03-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4             Only test for -visibility=hidden with gcc
+	                          (Second remark in [Bug 2976508])
+	* unix/configure          regen
+
 2010-03-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:       Fix array overrun in test format-1.12
