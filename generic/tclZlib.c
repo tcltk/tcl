@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.36 2010/03/05 14:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.37 2010/03/30 14:16:11 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -619,19 +619,11 @@ Tcl_ZlibStreamInit(
     zshPtr->wbits = wbits;
     zshPtr->currentInput = NULL;
     zshPtr->streamEnd = 0;
-    zshPtr->stream.avail_in = 0;
-    zshPtr->stream.next_in = 0;
-    zshPtr->stream.zalloc = 0;
-    zshPtr->stream.zfree = 0;
-    zshPtr->stream.opaque = 0;		/* Must be initialized before calling
-					 * (de|in)flateInit2 */
+    memset(&zshPtr->stream, 0, sizeof(z_stream));
 
     /*
      * No output buffer available yet
      */
-
-    zshPtr->stream.avail_out = 0;
-    zshPtr->stream.next_out = NULL;
 
     if (mode == TCL_ZLIB_STREAM_DEFLATE) {
 	e = deflateInit2(&zshPtr->stream, level, Z_DEFLATED, wbits,
@@ -852,19 +844,11 @@ Tcl_ZlibStreamReset(
 
     zshPtr->outPos = 0;
     zshPtr->streamEnd = 0;
-    zshPtr->stream.avail_in = 0;
-    zshPtr->stream.next_in = 0;
-    zshPtr->stream.zalloc = 0;
-    zshPtr->stream.zfree = 0;
-    zshPtr->stream.opaque = 0;		/* Must be initialized before calling
-					 * (de|in)flateInit2 */
+    memset(&zshPtr->stream, 0, sizeof(z_stream));
 
     /*
      * No output buffer available yet.
      */
-
-    zshPtr->stream.avail_out = 0;
-    zshPtr->stream.next_out = NULL;
 
     if (zshPtr->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	e = deflateInit2(&zshPtr->stream, zshPtr->level, Z_DEFLATED,
@@ -1370,19 +1354,13 @@ Tcl_ZlibDeflate(
      */
 
     inData = Tcl_GetByteArrayFromObj(data, &inLen);
+    memset(&stream, 0, sizeof(z_stream));
     stream.avail_in = (uInt) inLen;
     stream.next_in = inData;
-    stream.zalloc = 0;
-    stream.zfree = 0;
-    stream.opaque = 0;			/* Must be initialized before calling
-					 * deflateInit2 */
 
     /*
      * No output buffer available yet, will alloc after deflateInit2.
      */
-
-    stream.avail_out = 0;
-    stream.next_out = NULL;
 
     e = deflateInit2(&stream, level, Z_DEFLATED, wbits, MAX_MEM_LEVEL,
 	    Z_DEFAULT_STRATEGY);
@@ -1541,8 +1519,7 @@ Tcl_ZlibInflate(
     }
 
     outData = Tcl_SetByteArrayLength(obj, bufferSize);
-    stream.zalloc = 0;
-    stream.zfree = 0;
+    memset(&stream, 0, sizeof(z_stream));
     stream.avail_in = (uInt) inLen+1;	/* +1 because zlib can "over-request"
 					 * input (but ignore it!) */
     stream.next_in = inData;
