@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.51 2010/03/30 12:33:47 dkf Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.52 2010/03/30 12:38:30 dkf Exp $
  */
 
 #undef STATIC_BUILD
@@ -252,7 +252,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvide(interp, "registry", "1.2.1");
+    return Tcl_PkgProvide(interp, "registry", "1.3");
 }
 
 /*

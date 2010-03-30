@@ -4,7 +4,8 @@
 
 	* win/tclWinReg.c: [Patch 2960976]: Apply patch from Damon Courtney to
 	* tests/registry.test:	allow the registry command to be told to work
-				with both 32-bit and 64-bit registries.
+				with both 32-bit and 64-bit registries. Bump
+				version of registry package to 1.3.
 
 2010-03-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
