@@ -1,3 +1,9 @@
+2010-03-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclObj.c (Tcl_GetCommandFromObj):     [Bug 2979402]: Reorder
+	the validity tests on internal rep of a "cmdName" value to avoid
+	invalid reads reported by valgrind.
+
 2010-03-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIndexObj:	[FRQ 2974744]: share exception codes (ObjType?):
