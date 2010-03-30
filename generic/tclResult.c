@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.59 2010/03/27 22:40:14 nijtmans Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.60 2010/03/30 13:17:18 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1289,55 +1289,6 @@ TclProcessReturn(
     return code;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * TclGetCompletionCodeFromObj --
- *
- *	Parses Completion code Code
- *
- * Results:
- *	Returns TCL_ERROR if the value is an invalid completion code.
- *	Otherwise, returns TCL_OK, and writes the completion code to
- *  the pointer provided.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGetCompletionCodeFromObj(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Obj *value,
-    int *code)	/* Argument objects. */
-{
-    if (TCL_ERROR == TclGetIntFromObj(NULL, value, code)) {
-	static const char *const returnCodes[] = {
-	    "ok", "error", "return", "break", "continue", NULL
-	};
-
-	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, value, returnCodes,
-		NULL, TCL_EXACT, code)) {
-	    /*
-	     * Value is not a legal return code.
-	     */
-
-	    if (interp != NULL) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "bad completion code \"",
-			TclGetString(value),
-			"\": must be ok, error, return, break, "
-			"continue, or an integer", NULL);
-		Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", NULL);
-	    }
-	    return TCL_ERROR;
-	}
-    }
-    return TCL_OK;
-}
-
 /*
  *----------------------------------------------------------------------
  *
