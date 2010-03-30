@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.24 2008/11/29 14:44:24 patthoyts Exp $
+# RCS: @(#) $Id: registry.test,v 1.25 2010/03/30 12:33:47 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35,17 +35,32 @@ testConstraint english [expr {
     [llength [info commands testlocale]]
     && [string match "English*" [testlocale all ""]]
 }]
-
+
 test registry-1.1 {argument parsing for registry command} {win reg} {
     list [catch {registry} msg] $msg
-} {1 {wrong # args: should be "registry option ?arg ...?"}}
+} {1 {wrong # args: should be "registry ?-32bit|-64bit? option ?arg ...?"}}
+test registry-1.1a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit} msg] $msg
+} {1 {wrong # args: should be "registry ?-32bit|-64bit? option ?arg ...?"}}
+test registry-1.1b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit} msg] $msg
+} {1 {wrong # args: should be "registry ?-32bit|-64bit? option ?arg ...?"}}
 test registry-1.2 {argument parsing for registry command} {win reg} {
     list [catch {registry foo} msg] $msg
 } {1 {bad option "foo": must be broadcast, delete, get, keys, set, type, or values}}
+test registry-1.2a {argument parsing for registry command} {win reg} {
+    list [catch {registry -33bit foo} msg] $msg
+} {1 {bad option "-33bit": must be broadcast, delete, get, keys, set, type, or values}}
 
 test registry-1.3 {argument parsing for registry command} {win reg} {
     list [catch {registry d} msg] $msg
 } {1 {wrong # args: should be "registry delete keyName ?valueName?"}}
+test registry-1.3a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit d} msg] $msg
+} {1 {wrong # args: should be "registry -32bit delete keyName ?valueName?"}}
+test registry-1.3b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit d} msg] $msg
+} {1 {wrong # args: should be "registry -64bit delete keyName ?valueName?"}}
 test registry-1.4 {argument parsing for registry command} {win reg} {
     list [catch {registry delete} msg] $msg
 } {1 {wrong # args: should be "registry delete keyName ?valueName?"}}
@@ -56,6 +71,12 @@ test registry-1.5 {argument parsing for registry command} {win reg} {
 test registry-1.6 {argument parsing for registry command} {win reg} {
     list [catch {registry g} msg] $msg
 } {1 {wrong # args: should be "registry get keyName valueName"}}
+test registry-1.6a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit g} msg] $msg
+} {1 {wrong # args: should be "registry -32bit get keyName valueName"}}
+test registry-1.6b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit g} msg] $msg
+} {1 {wrong # args: should be "registry -64bit get keyName valueName"}}
 test registry-1.7 {argument parsing for registry command} {win reg} {
     list [catch {registry get} msg] $msg
 } {1 {wrong # args: should be "registry get keyName valueName"}}
@@ -69,6 +90,12 @@ test registry-1.9 {argument parsing for registry command} {win reg} {
 test registry-1.10 {argument parsing for registry command} {win reg} {
     list [catch {registry k} msg] $msg
 } {1 {wrong # args: should be "registry keys keyName ?pattern?"}}
+test registry-1.10a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit k} msg] $msg
+} {1 {wrong # args: should be "registry -32bit keys keyName ?pattern?"}}
+test registry-1.10b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit k} msg] $msg
+} {1 {wrong # args: should be "registry -64bit keys keyName ?pattern?"}}
 test registry-1.11 {argument parsing for registry command} {win reg} {
     list [catch {registry keys} msg] $msg
 } {1 {wrong # args: should be "registry keys keyName ?pattern?"}}
@@ -79,6 +106,12 @@ test registry-1.12 {argument parsing for registry command} {win reg} {
 test registry-1.13 {argument parsing for registry command} {win reg} {
     list [catch {registry s} msg] $msg
 } {1 {wrong # args: should be "registry set keyName ?valueName data ?type??"}}
+test registry-1.13a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit s} msg] $msg
+} {1 {wrong # args: should be "registry -32bit set keyName ?valueName data ?type??"}}
+test registry-1.13b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit s} msg] $msg
+} {1 {wrong # args: should be "registry -64bit set keyName ?valueName data ?type??"}}
 test registry-1.14 {argument parsing for registry command} {win reg} {
     list [catch {registry set} msg] $msg
 } {1 {wrong # args: should be "registry set keyName ?valueName data ?type??"}}
@@ -92,6 +125,12 @@ test registry-1.16 {argument parsing for registry command} {win reg} {
 test registry-1.17 {argument parsing for registry command} {win reg} {
     list [catch {registry t} msg] $msg
 } {1 {wrong # args: should be "registry type keyName valueName"}}
+test registry-1.17a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit t} msg] $msg
+} {1 {wrong # args: should be "registry -32bit type keyName valueName"}}
+test registry-1.17b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit t} msg] $msg
+} {1 {wrong # args: should be "registry -64bit type keyName valueName"}}
 test registry-1.18 {argument parsing for registry command} {win reg} {
     list [catch {registry type} msg] $msg
 } {1 {wrong # args: should be "registry type keyName valueName"}}
@@ -105,6 +144,12 @@ test registry-1.20 {argument parsing for registry command} {win reg} {
 test registry-1.21 {argument parsing for registry command} {win reg} {
     list [catch {registry v} msg] $msg
 } {1 {wrong # args: should be "registry values keyName ?pattern?"}}
+test registry-1.21a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit v} msg] $msg
+} {1 {wrong # args: should be "registry -32bit values keyName ?pattern?"}}
+test registry-1.21b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit v} msg] $msg
+} {1 {wrong # args: should be "registry -64bit values keyName ?pattern?"}}
 test registry-1.22 {argument parsing for registry command} {win reg} {
     list [catch {registry values} msg] $msg
 } {1 {wrong # args: should be "registry values keyName ?pattern?"}}
@@ -630,7 +675,7 @@ test registry-12.4 {BroadcastValue} -constraints {win reg} -body {
 test registry-12.5 {BroadcastValue} -constraints {win reg} -body {
     registry b {}
 } -result {1 0}
-
+
 # cleanup
 ::tcltest::cleanupTests
 return
