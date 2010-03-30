@@ -2,6 +2,7 @@
 
 	* generic/tclIndexObj:	[FRQ 2974744]: share exception codes (ObjType?):
 	* generic/tclResult.c:	further optimization, making use of indexType.
+	* generic/tclZlib.c     [Bug 2979399] uninitialized value troubles
 
 2010-03-30  Donal K. Fellows  <dkf@users.sf.net>
 
