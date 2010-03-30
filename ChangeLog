@@ -1,3 +1,12 @@
+2010-03-30  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORChan.c (ReflectClose, ReflectInput, ReflectOutput,
+	ReflectSeekWide, ReflectWatch, ReflectBlock, ReflectSetOption,
+	ReflectGetOption, ForwardProc): [Bug 2978773]: Preserve
+	ReflectedChannel* structures across handler invokations, to avoid
+	crashes when the handler implementation induces nested callbacks
+	and destruction of the channel deep inside such a nesting.
+
 2010-03-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclObj.c (Tcl_GetCommandFromObj):	[Bug 2979402]: Reorder
