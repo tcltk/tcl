@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.28 2010/03/23 12:58:39 nijtmans Exp $
+# RCS: @(#) $Id: error.test,v 1.29 2010/03/31 10:29:22 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -882,11 +882,11 @@ rename addmsg {}
 # negative case try tests - bad "on" handler
 
 test error-20.1 {bad code name in on handler} -body {
-    try { list a b c } on foo {} {}
-} -returnCodes error -match glob -result {bad completion code *}
+    try { list a b c } on err {} {}
+} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
 test error-20.2 {bad code value in on handler} -body {
     try { list a b c } on 34985723094872345 {} {}
-} -returnCodes error -match glob -result {bad completion code *}
+} -returnCodes error -match glob -result {bad completion code "34985723094872345": must be ok, error, return, break, continue*, or an integer}
 
 test error-21.1 {memory leaks in try: Bug 2910044} memory {
     leaktest {
