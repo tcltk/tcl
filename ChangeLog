@@ -1,3 +1,10 @@
+2010-03-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* test/cmdMZ.test:    [FRQ 2974744]: share exception codes (ObjType?):
+	* test/error.test:    Revised test cases, making sure that abbreviated
+	* test/proc-old.test: codes are checked resulting in an error, and
+	                      checking for the exact error message.
+
 2010-03-30  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c (ReflectClose, ReflectInput, ReflectOutput,
