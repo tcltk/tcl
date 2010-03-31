@@ -1,3 +1,9 @@
+2010-03-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/Thread.3: Added some better documentation of how to create and
+	use a thread using the C-level thread API, based on realization that
+	no such tutorial appeared to exist.
+
 2010-03-31  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* test/cmdMZ.test:    [FRQ 2974744]: share exception codes (ObjType?):
@@ -8,11 +14,11 @@
 2010-03-30  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c (ReflectClose, ReflectInput, ReflectOutput,
-	ReflectSeekWide, ReflectWatch, ReflectBlock, ReflectSetOption,
-	ReflectGetOption, ForwardProc): [Bug 2978773]: Preserve
+	(ReflectSeekWide, ReflectWatch, ReflectBlock, ReflectSetOption,
+	(ReflectGetOption, ForwardProc): [Bug 2978773]: Preserve
 	ReflectedChannel* structures across handler invokations, to avoid
-	crashes when the handler implementation induces nested callbacks
-	and destruction of the channel deep inside such a nesting.
+	crashes when the handler implementation induces nested callbacks and
+	destruction of the channel deep inside such a nesting.
 
 2010-03-30  Don Porter  <dgp@users.sourceforge.net>
 
@@ -22,9 +28,9 @@
 
 2010-03-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclIndexObj:	[FRQ 2974744]: share exception codes (ObjType?):
+	* generic/tclIndexObj:	[FRQ 2974744]: share exception codes
 	* generic/tclResult.c:	further optimization, making use of indexType.
-	* generic/tclZlib.c     [Bug 2979399] uninitialized value troubles
+	* generic/tclZlib.c     [Bug 2979399]: uninitialized value troubles
 
 2010-03-30  Donal K. Fellows  <dkf@users.sf.net>
 
