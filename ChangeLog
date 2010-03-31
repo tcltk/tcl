@@ -1,3 +1,8 @@
+2010-03-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/package.n: [Bug 2980210]: Document the arguments taken by
+	the [package present] command correctly.
+
 2010-03-30  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c (ReflectClose, ReflectInput, ReflectOutput,
