@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.14.4.9 2008/07/29 20:13:26 dgp Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.14.4.10 2010/03/31 20:58:17 dgp Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -188,6 +188,53 @@ manage, or join threads, nor any script-level access to mutex or
 condition variables.  It provides such facilities only via C
 interfaces, and leaves it up to packages to expose these matters to
 the script level.  One such package is the \fBThread\fR package.
+.SH EXAMPLE
+.PP
+To create a thread with portable code, its implementation function should be
+declared as follows:
+.PP
+.CS
+static \fBTcl_ThreadCreateProc\fR MyThreadImplFunc;
+.CE
+.PP
+It should then be defined like this example, which just counts up to a given
+value and then finishes.
+.PP
+.CS
+static \fBTcl_ThreadCreateType\fR
+MyThreadImplFunc(
+    ClientData clientData)
+{
+    int i, limit = (int) clientData;
+    for (i=0 ; i<limit ; i++) {
+        /* doing nothing at all here */
+    }
+    \fBTCL_THREAD_CREATE_RETURN\fR;
+}
+.CE
+.PP
+To create the above thread, make it execute, and wait for it to finish, we
+would do this:
+.PP
+.CS
+int limit = 1000000000;
+ClientData limitData = (void*)((intptr_t) limit);
+Tcl_ThreadId id;    \fI/* holds identity of thread created */\fR
+int result;
+
+if (\fBTcl_CreateThread\fR(&id, MyThreadImplFunc, limitData,
+        \fBTCL_THREAD_STACK_DEFAULT\fR,
+        \fBTCL_THREAD_JOINABLE\fR) != TCL_OK) {
+    \fI/* Thread did not create correctly */\fR
+    return;
+}
+\fI/* Do something else for a while here */\fR
+if (\fBTcl_JoinThread\fR(id, &result) != TCL_OK) {
+    \fI/* Thread did not finish properly */\fR
+    return;
+}
+\fI/* All cleaned up nicely */\fR
+.CE
 .SH "SEE ALSO"
 Tcl_GetCurrentThread(3), Tcl_ThreadQueueEvent(3), Tcl_ThreadAlert(3),
 Tcl_ExitThread(3), Tcl_FinalizeThread(3), Tcl_CreateThreadExitHandler(3),
