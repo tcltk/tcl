@@ -1,5 +1,8 @@
 2010-03-31  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/package.n: [Bug 2980210]: Document the arguments taken by
+	the [package present] command correctly.
+
 	* doc/Thread.3: Added some better documentation of how to create and
 	use a thread using the C-level thread API, based on realization that
 	no such tutorial appeared to exist.
