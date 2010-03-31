@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc-old.test,v 1.17 2008/09/25 19:26:39 dgp Exp $
+# RCS: @(#) $Id: proc-old.test,v 1.18 2010/03/31 10:29:22 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -408,12 +408,12 @@ test proc-old-7.5 {return with special completion code} {
 test proc-old-7.6 {return with special completion code} {
     list [catch {tproc -14} msg] $msg
 } {-14 abc}
-test proc-old-7.7 {return with special completion code} {
-    list [catch {tproc gorp} msg] $msg
-} {1 {bad completion code "gorp": must be ok, error, return, break, continue, or an integer}}
-test proc-old-7.8 {return with special completion code} {
-    list [catch {tproc 10b} msg] $msg
-} {1 {bad completion code "10b": must be ok, error, return, break, continue, or an integer}}
+test proc-old-7.7 {return with special completion code} -body {
+    tproc err
+} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
+test proc-old-7.8 {return with special completion code} -body {
+    tproc 10b
+} -returnCodes error -match glob -result {bad completion code "10b": must be ok, error, return, break, continue*, or an integer}
 test proc-old-7.9 {return with special completion code} {
     proc tproc2 {} {
 	tproc return
