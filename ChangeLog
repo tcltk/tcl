@@ -1,3 +1,10 @@
+2010-04-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c: [Bug 2952904]: Defer creation of the smallest 
+	floating point number until it is actually used. (This change avoids
+	a bogus syslog message regarding a 'floating point software assist
+	fault' on SGI systems.)
+	
 2010-03-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/registry.n: Added missing documentation of TIP#362 flags.
