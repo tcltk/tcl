@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.52 2010/03/30 12:38:30 dkf Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.53 2010/04/02 19:27:44 kennykb Exp $
  */
 
 #undef STATIC_BUILD
@@ -409,13 +409,13 @@ RegistryObjCmd(
 	if (argc == 1) {
 	    return DeleteKey(interp, objv[n], mode);
 	} else if (argc == 2) {
-	    return DeleteValue(interp, objv[n], objv[++n], mode);
+	    return DeleteValue(interp, objv[n], objv[n+1], mode);
 	}
 	errString = "keyName ?valueName?";
 	break;
     case GetIdx:		/* get */
 	if (argc == 2) {
-	    return GetValue(interp, objv[n], objv[++n], mode);
+	    return GetValue(interp, objv[n], objv[n+1], mode);
 	}
 	errString = "keyName valueName";
 	break;
@@ -423,7 +423,7 @@ RegistryObjCmd(
 	if (argc == 1) {
 	    return GetKeyNames(interp, objv[n], NULL, mode);
 	} else if (argc == 2) {
-	    return GetKeyNames(interp, objv[n], objv[++n], mode);
+	    return GetKeyNames(interp, objv[n], objv[n+1], mode);
 	}
 	errString = "keyName ?pattern?";
 	break;
@@ -442,17 +442,17 @@ RegistryObjCmd(
 	    RegCloseKey(key);
 	    return TCL_OK;
 	} else if (argc == 3) {
-	    return SetValue(interp, objv[n], objv[++n], objv[++n], NULL,
+	    return SetValue(interp, objv[n], objv[n+1], objv[n+2], NULL,
 		    mode);
 	} else if (argc == 4) {
-	    return SetValue(interp, objv[n], objv[++n], objv[++n], objv[++n],
+	    return SetValue(interp, objv[n], objv[n+1], objv[n+2], objv[n+3],
 		    mode);
 	}
 	errString = "keyName ?valueName data ?type??";
 	break;
     case TypeIdx:		/* type */
 	if (argc == 2) {
-	    return GetType(interp, objv[n], objv[++n], mode);
+	    return GetType(interp, objv[n], objv[n+1], mode);
 	}
 	errString = "keyName valueName";
 	break;
@@ -460,7 +460,7 @@ RegistryObjCmd(
 	if (argc == 1) {
 	    return GetValueNames(interp, objv[n], NULL, mode);
 	} else if (argc == 2) {
-	    return GetValueNames(interp, objv[n], objv[++n], mode);
+	    return GetValueNames(interp, objv[n], objv[n+1], mode);
 	}
 	errString = "keyName ?pattern?";
 	break;
