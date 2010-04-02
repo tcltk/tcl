@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.35 2010/04/02 21:21:06 kennykb Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.36 2010/04/02 22:52:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -86,21 +86,23 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
 #endif
 
 #ifdef TCL_DEBUG_LOAD
-#define TclLoadDbgMsg(m, ...) do { \
-	    fprintf(stderr, "%s:%d: %s(): " m ".\n", \
-	    strrchr(__FILE__, '/')+1, __LINE__, __func__, ##__VA_ARGS__); \
-	} while (0)
+#define TclLoadDbgMsg(m, ...) \
+    do {								\
+	fprintf(stderr, "%s:%d: %s(): " m ".\n",			\
+		strrchr(__FILE__, '/')+1, __LINE__, __func__,		\
+		##__VA_ARGS__);						\
+    } while (0)
 #else
 #define TclLoadDbgMsg(m, ...)
 #endif
-
-/* Static functions defined in this file */
 
-static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
-			const char* symbol);
-static void UnloadFile(Tcl_LoadHandle handle);
+/*
+ * Static functions defined in this file.
+ */
 
-
+static void *		FindSymbol(Tcl_Interp *interp,
+			    Tcl_LoadHandle loadHandle, const char *symbol);
+static void		UnloadFile(Tcl_LoadHandle handle);
 
 #if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
 /*
@@ -120,7 +122,7 @@ static void UnloadFile(Tcl_LoadHandle handle);
  *----------------------------------------------------------------------
  */
 
-static const char*
+static const char *
 DyldOFIErrorMsg(
     int err)
 {
@@ -175,7 +177,7 @@ TclpDlopen(
 				 * file. */
 {
     Tcl_DyldLoadHandle *dyldLoadHandle;
-    Tcl_LoadHandle* newHandle;
+    Tcl_LoadHandle newHandle;
 #if TCL_DYLD_USE_DLFCN
     void *dlHandle = NULL;
 #endif
@@ -319,7 +321,7 @@ TclpDlopen(
 	newHandle = (Tcl_LoadHandle) ckalloc(sizeof(*newHandle));
 	newHandle->clientData = dyldLoadHandle;
 	newHandle->findSymbolProcPtr = &FindSymbol;
-	newHandle->unloadProcPtr = &UnloadFile;
+	newHandle->unloadFileProcPtr = &UnloadFile;
 	*unloadProcPtr = &UnloadFile;
 	*loadHandle = newHandle;
 	result = TCL_OK;
@@ -355,14 +357,13 @@ TclpDlopen(
  *----------------------------------------------------------------------
  */
 
-static void*
+static void *
 FindSymbol(
     Tcl_Interp *interp,		/* For error reporting. */
     Tcl_LoadHandle loadHandle,	/* Handle from TclpDlopen. */
     const char *symbol)		/* Symbol name to look up. */
 {
-    Tcl_DyldLoadHandle *dyldLoadHandle =
-	(Tcl_DyldLoadHandle *) (loadHandle->clientData);
+    Tcl_DyldLoadHandle *dyldLoadHandle = loadHandle->clientData;
     Tcl_PackageInitProc *proc = NULL;
     const char *errMsg = NULL;
     Tcl_DString ds;
@@ -452,7 +453,8 @@ FindSymbol(
     Tcl_DStringFree(&ds);
     if (errMsg && (interp != NULL)) {
 	Tcl_AppendResult(interp, errMsg, NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
+		NULL);
     }
     return proc;
 }
@@ -483,8 +485,7 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    Tcl_DyldLoadHandle *dyldLoadHandle = 
-	(Tcl_DyldLoadHandle *) (loadHandle->clientData);
+    Tcl_DyldLoadHandle *dyldLoadHandle = loadHandle->clientData;
 
 #if TCL_DYLD_USE_DLFCN
     if (dyldLoadHandle->dlHandle) {
@@ -519,8 +520,8 @@ UnloadFile(
 	}
 #endif /* TCL_DYLD_USE_NSMODULE */
     }
-    ckfree((char*) dyldLoadHandle);
-    ckfree((char*) loadHandle);
+    ckfree((char *) dyldLoadHandle);
+    ckfree((char *) loadHandle);
 }
 
 /*
