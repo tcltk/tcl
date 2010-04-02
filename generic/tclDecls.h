@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.174 2010/02/05 10:03:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.175 2010/04/02 21:21:05 kennykb Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3684,6 +3684,25 @@ EXTERN int		Tcl_NRExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 EXTERN int		Tcl_NRSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags);
 #endif
+#ifndef Tcl_LoadFile_TCL_DECLARED
+#define Tcl_LoadFile_TCL_DECLARED
+/* 627 */
+EXTERN int		Tcl_LoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+				const char *symv[], int flags, void*procPtrs,
+				Tcl_LoadHandle*handlePtr);
+#endif
+#ifndef Tcl_FindSymbol_TCL_DECLARED
+#define Tcl_FindSymbol_TCL_DECLARED
+/* 628 */
+EXTERN void*		Tcl_FindSymbol(Tcl_Interp*interp,
+				Tcl_LoadHandle handle, const char*symbol);
+#endif
+#ifndef Tcl_FSUnloadFile_TCL_DECLARED
+#define Tcl_FSUnloadFile_TCL_DECLARED
+/* 629 */
+EXTERN int		Tcl_FSUnloadFile(Tcl_Interp*interp,
+				Tcl_LoadHandle handlePtr);
+#endif
 
 typedef struct TclStubHooks {
     const struct TclPlatStubs *tclPlatStubs;
@@ -4346,6 +4365,9 @@ typedef struct TclStubs {
     int (*tcl_CloseEx) (Tcl_Interp *interp, Tcl_Channel chan, int flags); /* 624 */
     int (*tcl_NRExprObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *resultPtr); /* 625 */
     int (*tcl_NRSubstObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 626 */
+    int (*tcl_LoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *symv[], int flags, void*procPtrs, Tcl_LoadHandle*handlePtr); /* 627 */
+    void* (*tcl_FindSymbol) (Tcl_Interp*interp, Tcl_LoadHandle handle, const char*symbol); /* 628 */
+    int (*tcl_FSUnloadFile) (Tcl_Interp*interp, Tcl_LoadHandle handlePtr); /* 629 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6883,6 +6905,18 @@ extern const TclStubs *tclStubsPtr;
 #ifndef Tcl_NRSubstObj
 #define Tcl_NRSubstObj \
 	(tclStubsPtr->tcl_NRSubstObj) /* 626 */
+#endif
+#ifndef Tcl_LoadFile
+#define Tcl_LoadFile \
+	(tclStubsPtr->tcl_LoadFile) /* 627 */
+#endif
+#ifndef Tcl_FindSymbol
+#define Tcl_FindSymbol \
+	(tclStubsPtr->tcl_FindSymbol) /* 628 */
+#endif
+#ifndef Tcl_FSUnloadFile
+#define Tcl_FSUnloadFile \
+	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
