@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.172 2010/04/02 22:52:26 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.173 2010/04/02 23:11:55 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -3031,7 +3031,7 @@ Tcl_LoadFile(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Obj *pathPtr,		/* Name of the file containing the desired
 				 * code. */
-    const char *symbols[],	/* Names of functions to look up in the file's
+    const char *const symbols[],	/* Names of functions to look up in the file's
 				 * symbol table. */
     int flags,			/* Flags (unused) */
     void *procVPtrs,		/* Where to return the addresses corresponding
