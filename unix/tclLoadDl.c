@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDl.c,v 1.19 2010/03/11 15:02:33 nijtmans Exp $
+ * RCS: @(#) $Id: tclLoadDl.c,v 1.20 2010/04/02 21:21:06 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -33,6 +33,12 @@
 #ifndef RTLD_GLOBAL
 #   define RTLD_GLOBAL 0
 #endif
+
+/* Static procedures defined within this file */
+
+static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
+			const char* symbol);
+static void UnloadFile(Tcl_LoadHandle loadHandle);
 
 /*
  *---------------------------------------------------------------------------
@@ -66,6 +72,7 @@ TclpDlopen(
 				 * file. */
 {
     void *handle;
+    Tcl_LoadHandle newHandle;
     const char *native;
 
     /*
@@ -103,16 +110,20 @@ TclpDlopen(
 		Tcl_GetString(pathPtr), "\": ", errorStr, NULL);
 	return TCL_ERROR;
     }
+    newHandle = (Tcl_LoadHandle) ckalloc(sizeof(*newHandle));
+    newHandle->clientData = (ClientData) handle;
+    newHandle->findSymbolProcPtr = &FindSymbol;
+    newHandle->unloadFileProcPtr = &UnloadFile;
+    *unloadProcPtr = &UnloadFile;
+    *loadHandle = newHandle;
 
-    *unloadProcPtr = &TclpUnloadFile;
-    *loadHandle = (Tcl_LoadHandle) handle;
     return TCL_OK;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpFindSymbol --
+ * FindSymbol --
  *
  *	Looks up a symbol, by name, through a handle associated with a
  *	previously loaded piece of code (shared library).
@@ -125,15 +136,15 @@ TclpDlopen(
  *----------------------------------------------------------------------
  */
 
-Tcl_PackageInitProc *
-TclpFindSymbol(
+static void *
+FindSymbol(
     Tcl_Interp *interp,		/* Place to put error messages. */
     Tcl_LoadHandle loadHandle,	/* Value from TcpDlopen(). */
     const char *symbol)		/* Symbol to look up. */
 {
     const char *native;
     Tcl_DString newName, ds;
-    void *handle = (void *) loadHandle;
+    void *handle = (void *)(loadHandle->clientData);
     Tcl_PackageInitProc *proc;
 
     /*
@@ -154,14 +165,20 @@ TclpFindSymbol(
 	Tcl_DStringFree(&newName);
     }
     Tcl_DStringFree(&ds);
-
+    if (proc == NULL && interp != NULL) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "cannot find symbol \"", symbol, "\": ",
+			 dlerror(), NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
+			 NULL);
+    }
     return proc;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpUnloadFile --
+ * UnloadFile --
  *
  *	Unloads a dynamically loaded binary code file from memory. Code
  *	pointers in the formerly loaded file are no longer valid after calling
@@ -176,16 +193,17 @@ TclpFindSymbol(
  *----------------------------------------------------------------------
  */
 
-void
-TclpUnloadFile(
+static void
+UnloadFile(
     Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
     void *handle;
 
-    handle = (void *) loadHandle;
+    handle = (void *)(loadHandle->clientData);
     dlclose(handle);
+    ckfree((char*)loadHandle);
 }
 
 /*
