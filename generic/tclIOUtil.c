@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.171 2010/04/02 21:21:06 kennykb Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.172 2010/04/02 22:52:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3126,7 +3126,6 @@ Tcl_LoadFile(
 	ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr,
 		&unloadProcPtr);
 	if (ret == TCL_OK && *handlePtr != NULL) {
-	    *clientDataPtr = *handlePtr;
 	    goto resolveSymbols;
 	}
     }
