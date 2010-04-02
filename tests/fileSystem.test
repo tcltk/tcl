@@ -619,7 +619,7 @@ if {[testConstraint testfilesystem]} {
     while {![catch {testfilesystem 0}]} {}
 }
 
-test filesystem-7.1 {load from vfs} -setup {
+test filesystem-7.1.1 {load from vfs} -setup {
     set dir [pwd]
 } -constraints {win testsimplefilesystem} -body {
     # This may cause a crash on exit
@@ -628,6 +628,22 @@ test filesystem-7.1 {load from vfs} -setup {
     testsimplefilesystem 1
     # This loads dde via a complex copy-to-temp operation
     load simplefs:/$dde dde
+    testsimplefilesystem 0
+    return ok
+    # The real result of this test is what happens when Tcl exits.
+} -cleanup {
+    cd $dir
+} -result ok
+test filesystem-7.1.2 {load from vfs, and then unload again} -setup {
+    set dir [pwd]
+} -constraints {win testsimplefilesystem} -body {
+    # This may cause a crash on exit
+    cd [file dirname [info nameof]]
+    set reg [lindex [glob tclreg*[info sharedlib]] 0]
+    testsimplefilesystem 1
+    # This loads reg via a complex copy-to-temp operation
+    load simplefs:/$reg Registry
+    unload simplefs:/$reg
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.
