@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unload.test,v 1.1.2.7 2008/07/29 20:14:09 dgp Exp $
+# RCS: @(#) $Id: unload.test,v 1.1.2.8 2010/04/02 23:48:14 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -39,6 +39,10 @@ set alreadyTotalLoaded [info loaded]
 
 # Certain tests require the 'teststaticpkg' command from tcltest
 testConstraint teststaticpkg [llength [info commands teststaticpkg]]
+
+# Certain tests need the 'testsimplefilsystem' in tcltest
+testConstraint testsimplefilesystem \
+	[llength [info commands testsimplefilesystem]]
 
 # Basic tests: parameter testing...
 test unload-1.1 {basic errors} -returnCodes error -body {
@@ -213,9 +217,28 @@ test unload-4.6 {basic unloading of unloadable package from a safe interpreter, 
 	    [child-trusted eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
 } {{. {} {}} {} {} {. . .}}
 
+test unload-5.1 {unload a module loaded from vfs} \
+     -constraints [list $dll $loaded testsimplefilesystem] \
+     -setup {
+	 set dir [pwd]
+	 cd $testDir
+	 testsimplefilesystem 1
+	 load simplefs:/pkgua$ext pkgua
+     } \
+    -body {
+	list [catch {unload simplefs:/pkgua$ext} msg] $msg
+    } \
+    -result {0 {}}
+
+
+
 # cleanup
 interp delete child
 interp delete child-trusted
 unset ext
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

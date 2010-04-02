@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.26 2010/03/06 03:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.27 2010/04/02 23:48:14 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -110,7 +110,6 @@ static int log2FLT_RADIX;	/* Logarithm of the floating point radix. */
 static int mantBits;		/* Number of bits in a double's significand */
 static mp_int pow5[9];		/* Table of powers of 5**(2**n), up to
 				 * 5**256 */
-static double tiny;		/* The smallest representable double */
 static int maxDigits;		/* The maximum number of digits to the left of
 				 * the decimal point of a double. */
 static int minDigits;		/* The maximum number of digits to the right
@@ -1490,8 +1489,8 @@ MakeHighPrecisionDouble(
 	goto returnValue;
     }
     retval = SafeLdExp(retval, machexp);
-    if (retval < tiny) {
-	retval = tiny;
+    if (retval <= 0.0) {
+	retval = SafeLdExp(1.0, DBL_MIN_EXP * log2FLT_RADIX - mantBits);
     }
 
     /*
@@ -2245,7 +2244,6 @@ TclInitDoubleConversion(void)
      * the significand of a double.
      */
 
-    tiny = SafeLdExp(1.0, DBL_MIN_EXP * log2FLT_RADIX - mantBits);
     maxDigits = (int) ((DBL_MAX_EXP * log((double) FLT_RADIX)
 	    + 0.5 * log(10.)) / log(10.));
     minDigits = (int) floor((DBL_MIN_EXP - DBL_MANT_DIG)

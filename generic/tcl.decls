@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.47 2010/02/01 15:34:29 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.48 2010/04/02 23:48:14 dgp Exp $
 
 library tcl
 
@@ -2303,6 +2303,20 @@ declare 625 generic {
 # TIP #356 (NR-enabled substitution) dgp
 declare 626 generic {
     int Tcl_NRSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
+}
+
+# TIP #357 (Export TclLoadFile and TclpFindSymbol) kbk
+declare 627 generic {
+    int Tcl_LoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+		     const char *const symv[], int flags, void *procPtrs,
+		     Tcl_LoadHandle *handlePtr)
+}
+declare 628 generic {
+    void* Tcl_FindSymbol(Tcl_Interp *interp, Tcl_LoadHandle handle,
+			 const char *symbol)
+}
+declare 629 generic {
+    int Tcl_FSUnloadFile(Tcl_Interp *interp, Tcl_LoadHandle handlePtr)
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #

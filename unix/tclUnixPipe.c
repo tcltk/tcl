@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.22 2010/01/13 18:47:42 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.23 2010/04/02 23:48:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -266,6 +266,40 @@ TclpTempFileName(void)
     result = TclpNativeToNormalized((ClientData) fileName);
     close(fd);
     return result;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * TclpTempFileNameForLibrary --
+ *
+ *	Constructs a file name in the native file system where a
+ *	dynamically loaded library may be placed.
+ *
+ * Results:
+ *	Returns the constructed file name. If an error occurs,
+ *	returns NULL and leaves an error message in the interpreter
+ *	result.
+ *
+ * On Unix, it works to load a shared object from a file of any
+ * name, so this function is merely a thin wrapper around
+ * TclpTempFileName().
+ *	
+ *-----------------------------------------------------------------------------
+ */
+
+Tcl_Obj*
+TclpTempFileNameForLibrary(Tcl_Interp* interp, /* Tcl interpreter */
+			   Tcl_Obj* path)      /* Path name of the library
+						* in the VFS */
+{
+    Tcl_Obj* retval;
+    retval = TclpTempFileName();
+    if (retval == NULL) {
+	Tcl_AppendResult(interp, "couldn't create temporary file: ",
+		Tcl_PosixError(interp), NULL);
+    }
+    return retval;
 }
 
 /*
