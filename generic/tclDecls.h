@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.175 2010/04/02 21:21:05 kennykb Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.176 2010/04/02 23:11:55 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3688,19 +3688,19 @@ EXTERN int		Tcl_NRSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 #define Tcl_LoadFile_TCL_DECLARED
 /* 627 */
 EXTERN int		Tcl_LoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
-				const char *symv[], int flags, void*procPtrs,
-				Tcl_LoadHandle*handlePtr);
+				const char *const symv[], int flags,
+				void *procPtrs, Tcl_LoadHandle *handlePtr);
 #endif
 #ifndef Tcl_FindSymbol_TCL_DECLARED
 #define Tcl_FindSymbol_TCL_DECLARED
 /* 628 */
-EXTERN void*		Tcl_FindSymbol(Tcl_Interp*interp,
-				Tcl_LoadHandle handle, const char*symbol);
+EXTERN void*		Tcl_FindSymbol(Tcl_Interp *interp,
+				Tcl_LoadHandle handle, const char *symbol);
 #endif
 #ifndef Tcl_FSUnloadFile_TCL_DECLARED
 #define Tcl_FSUnloadFile_TCL_DECLARED
 /* 629 */
-EXTERN int		Tcl_FSUnloadFile(Tcl_Interp*interp,
+EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
 				Tcl_LoadHandle handlePtr);
 #endif
 
@@ -4365,9 +4365,9 @@ typedef struct TclStubs {
     int (*tcl_CloseEx) (Tcl_Interp *interp, Tcl_Channel chan, int flags); /* 624 */
     int (*tcl_NRExprObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *resultPtr); /* 625 */
     int (*tcl_NRSubstObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 626 */
-    int (*tcl_LoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *symv[], int flags, void*procPtrs, Tcl_LoadHandle*handlePtr); /* 627 */
-    void* (*tcl_FindSymbol) (Tcl_Interp*interp, Tcl_LoadHandle handle, const char*symbol); /* 628 */
-    int (*tcl_FSUnloadFile) (Tcl_Interp*interp, Tcl_LoadHandle handlePtr); /* 629 */
+    int (*tcl_LoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *const symv[], int flags, void *procPtrs, Tcl_LoadHandle *handlePtr); /* 627 */
+    void* (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
+    int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
