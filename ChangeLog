@@ -1,8 +1,12 @@
 2010-04-02  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclStringObj.c: (SetStringFromAny): avoid trampling
-	over the tclEmptyStringRep->bytes as it is thread-shared
-	(thx to Gustaf Neumann for the (hard) work of locating this one).
+	over the tclEmptyStringRep as it is thread-shared.
+
+	* generic/tclThreadStorage.c (ThreadStorageGetHashTable):
+	avoid accessing shared table index w/o mutex protection.
+
+	Thanks to Gustaf Neumann for the (hard) work.
 
 2010-03-31  Donal K. Fellows  <dkf@users.sf.net>
 

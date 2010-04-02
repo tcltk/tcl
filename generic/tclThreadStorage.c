@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.15 2007/12/13 15:23:20 dgp Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.15.2.1 2010/04/02 15:53:53 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -172,8 +172,7 @@ FreeThreadStorageEntry(
  * ThreadStorageGetHashTable --
  *
  *	This procedure returns a hash table pointer to be used for thread
- *	storage for the specified thread. This assumes that thread storage
- *	lock is held.
+ *	storage for the specified thread.
  *
  * Results:
  *	A hash table pointer for the specified thread, or NULL if the hash
@@ -193,17 +192,13 @@ ThreadStorageGetHashTable(
     int index = PTR2UINT(id) % STORAGE_CACHE_SLOTS;
     Tcl_HashEntry *hPtr;
     int isNew;
+    Tcl_HashTable *hashTablePtr;
 
-    /*
-     * It's important that we pick up the hash table pointer BEFORE comparing
-     * thread Id in case another thread is in the critical region changing
-     * things out from under you.
-     */
+    Tcl_MutexLock(&threadStorageLock);
 
-    Tcl_HashTable *hashTablePtr = threadStorageCache[index].hashTablePtr;
+    hashTablePtr = threadStorageCache[index].hashTablePtr;
 
     if (threadStorageCache[index].id != id) {
-	Tcl_MutexLock(&threadStorageLock);
 
 	/*
 	 * It's not in the cache, so we look it up...
@@ -257,9 +252,9 @@ ThreadStorageGetHashTable(
 
 	threadStorageCache[index].id = id;
 	threadStorageCache[index].hashTablePtr = hashTablePtr;
-
-	Tcl_MutexUnlock(&threadStorageLock);
     }
+
+    Tcl_MutexUnlock(&threadStorageLock);
 
     return hashTablePtr;
 }
