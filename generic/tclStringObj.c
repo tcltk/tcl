@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.2.12 2009/04/22 17:21:10 andreas_kupries Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.2.13 2010/04/02 14:36:46 vasiljevic Exp $ */
 
 #include "tclInt.h"
 
@@ -1869,7 +1869,9 @@ SetStringFromAny(interp, objPtr)
 
 	if (objPtr->bytes != NULL) {
 	    stringPtr->allocated = objPtr->length;	    
- 	    objPtr->bytes[objPtr->length] = 0;
+	    if (objPtr->bytes != tclEmptyStringRep) {
+		objPtr->bytes[objPtr->length] = 0;
+	    }
 	} else {
 	    objPtr->length = 0;
 	}

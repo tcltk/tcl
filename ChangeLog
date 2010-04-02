@@ -1,3 +1,9 @@
+2010-04-02  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclStringObj.c: (SetStringFromAny): avoid trampling
+	over the tclEmptyStringRep->bytes as it is thread-shared
+	(thx to Gustaf Neumann for the (hard) work of locating this one).
+
 2010-03-01  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* unix/tclUnixChan.c: [backported] Refrain from a possibly lengthy
