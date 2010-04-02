@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.466 2010/03/27 22:40:14 nijtmans Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.467 2010/04/02 21:21:06 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -2772,6 +2772,25 @@ typedef struct ForIterData {
     int word;			/* Index of the body script in the command */
 } ForIterData;
 
+/* TIP #357 - Structure doing the bookkeeping of handles for Tcl_LoadFile
+ *            and Tcl_FindSymbol. This structure corresponds to an opaque
+ *            typedef in tcl.h */
+
+typedef void* TclFindSymbolProc(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
+				const char* symbol);
+struct Tcl_LoadHandle_ {
+    ClientData clientData;	/* Client data is the load handle in the
+				 * native filesystem if a module was loaded
+				 * there, or an opaque pointer to a structure
+				 * for further bookkeeping on load-from-VFS
+				 * and load-from-memory */
+    TclFindSymbolProc* findSymbolProcPtr;
+				/* Procedure that resolves symbols in a
+				 * loaded module */
+    Tcl_FSUnloadFileProc* unloadFileProcPtr;
+				/* Procedure that unloads a loaded module */
+};
+
 /*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world:
@@ -2922,12 +2941,6 @@ MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 			    int *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
-MODULE_SCOPE int	TclLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
-			    int symc, const char *symbols[],
-			    Tcl_PackageInitProc **procPtrs[],
-			    Tcl_LoadHandle *handlePtr,
-			    ClientData *clientDataPtr,
-			    Tcl_FSUnloadFileProc **unloadProcPtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
@@ -2965,6 +2978,7 @@ MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
+MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp, Tcl_Obj* pathPtr);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    int len);
 MODULE_SCOPE int	TclpDeleteFile(const char *path);
@@ -3017,7 +3031,6 @@ MODULE_SCOPE char *	TclpReadlink(const char *fileName,
 			    Tcl_DString *linkPtr);
 MODULE_SCOPE void	TclpSetInterfaces(void);
 MODULE_SCOPE void	TclpSetVariables(Tcl_Interp *interp);
-MODULE_SCOPE void	TclpUnloadFile(Tcl_LoadHandle loadHandle);
 MODULE_SCOPE void *	TclThreadStorageKeyGet(Tcl_ThreadDataKey *keyPtr);
 MODULE_SCOPE void	TclThreadStorageKeySet(Tcl_ThreadDataKey *keyPtr,
 			    void *data);
@@ -3058,8 +3071,6 @@ MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
-MODULE_SCOPE Tcl_PackageInitProc *TclpFindSymbol(Tcl_Interp *interp,
-			    Tcl_LoadHandle loadHandle, const char *symbol);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_LoadHandle *loadHandle,
 			    Tcl_FSUnloadFileProc **unloadProcPtr);
