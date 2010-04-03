@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.15.2.1 2010/04/02 15:53:53 vasiljevic Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.15.2.2 2010/04/03 09:38:47 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -172,7 +172,7 @@ FreeThreadStorageEntry(
  * ThreadStorageGetHashTable --
  *
  *	This procedure returns a hash table pointer to be used for thread
- *	storage for the specified thread.
+ *	storage for the specified thread. 
  *
  * Results:
  *	A hash table pointer for the specified thread, or NULL if the hash
@@ -181,6 +181,11 @@ FreeThreadStorageEntry(
  * Side effects:
  *	May change an entry in the master thread storage cache to point to the
  *	specified thread and it's associated hash table.
+ *
+ * Thread safety:
+ *	This function assumes that integer operations are safe (atomic)
+ *	on all (currently) supported Tcl platforms.  Hence there are 
+ * 	places where shared integer arithmetic is done w/o protective locks.    
  *
  *----------------------------------------------------------------------
  */
@@ -194,11 +199,31 @@ ThreadStorageGetHashTable(
     int isNew;
     Tcl_HashTable *hashTablePtr;
 
-    Tcl_MutexLock(&threadStorageLock);
+    /*
+     * It's important that we pick up the hash table pointer BEFORE comparing
+     * thread Id in case another thread is in the critical region changing
+     * things out from under you.
+     *
+     * Thread safety: threadStorageCache is accessed w/o locks in order to
+     * avoid serialization of all threads at this hot-spot. It is safe to
+     * do this here because (threadStorageCache[index].id != id) test below
+     * should be atomic on all (currently) supported platforms and there 
+     * are no devastatig side effects of the test.
+     *
+     * Note Valgrind users: this place will show up as a race-condition in
+     * helgrind-tool output. To silence this warnings, define VALGRIND
+     * symbol at compilation time. 
+     */
 
+#if !defined(VALGRIND)
     hashTablePtr = threadStorageCache[index].hashTablePtr;
-
     if (threadStorageCache[index].id != id) {
+	Tcl_MutexLock(&threadStorageLock);
+#else
+    Tcl_MutexLock(&threadStorageLock);
+    hashTablePtr = threadStorageCache[index].hashTablePtr;
+    if (threadStorageCache[index].id != id) {
+#endif
 
 	/*
 	 * It's not in the cache, so we look it up...
@@ -252,9 +277,13 @@ ThreadStorageGetHashTable(
 
 	threadStorageCache[index].id = id;
 	threadStorageCache[index].hashTablePtr = hashTablePtr;
+#if !defined(VALGRIND)
+	Tcl_MutexUnlock(&threadStorageLock);
     }
-
+#else
+    }
     Tcl_MutexUnlock(&threadStorageLock);
+#endif
 
     return hashTablePtr;
 }
