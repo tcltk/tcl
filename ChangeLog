@@ -1,10 +1,13 @@
-2010-04-02  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+2010-04-03  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclStringObj.c: (SetStringFromAny): avoid trampling
 	over the tclEmptyStringRep as it is thread-shared.
 
 	* generic/tclThreadStorage.c (ThreadStorageGetHashTable):
-	avoid accessing shared table index w/o mutex protection.
+	avoid accessing shared table index w/o mutex protection
+	if VALGRIND defined on compilation time. This rules out
+	helgrind complains about potential race-conditions at
+	that place.
 
 	Thanks to Gustaf Neumann for the (hard) work.
 
