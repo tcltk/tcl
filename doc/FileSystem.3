@@ -1,17 +1,17 @@
 '\"
 '\" Copyright (c) 2001 Vincent Darley
-'\" Copyright (c) 2008 Donal K. Fellows
+'\" Copyright (c) 2008-2010 Donal K. Fellows
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.70 2010/01/14 11:47:07 dkf Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.71 2010/04/04 15:03:07 dkf Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_FSRegister, Tcl_FSUnregister, Tcl_FSData, Tcl_FSMountsChanged, Tcl_FSGetFileSystemForPath, Tcl_FSGetPathType, Tcl_FSCopyFile, Tcl_FSCopyDirectory, Tcl_FSCreateDirectory, Tcl_FSDeleteFile, Tcl_FSRemoveDirectory, Tcl_FSRenameFile, Tcl_FSListVolumes, Tcl_FSEvalFile, Tcl_FSEvalFileEx, Tcl_FSLoadFile, Tcl_FSMatchInDirectory, Tcl_FSLink, Tcl_FSLstat, Tcl_FSUtime, Tcl_FSFileAttrsGet, Tcl_FSFileAttrsSet, Tcl_FSFileAttrStrings, Tcl_FSStat, Tcl_FSAccess, Tcl_FSOpenFileChannel, Tcl_FSGetCwd, Tcl_FSChdir, Tcl_FSPathSeparator, Tcl_FSJoinPath, Tcl_FSSplitPath, Tcl_FSEqualPaths, Tcl_FSGetNormalizedPath, Tcl_FSJoinToPath, Tcl_FSConvertToPathType, Tcl_FSGetInternalRep, Tcl_FSGetTranslatedPath, Tcl_FSGetTranslatedStringPath, Tcl_FSNewNativePath, Tcl_FSGetNativePath, Tcl_FSFileSystemInfo, Tcl_GetAccessTimeFromStat, Tcl_GetBlockSizeFromStat, Tcl_GetBlocksFromStat, Tcl_GetChangeTimeFromStat, Tcl_GetDeviceTypeFromStat, Tcl_GetFSDeviceFromStat, Tcl_GetFSInodeFromStat, Tcl_GetGroupIdFromStat, Tcl_GetLinkCountFromStat, Tcl_GetModeFromStat, Tcl_GetModificationTimeFromStat, Tcl_GetSizeFromStat, Tcl_GetUserIdFromStat, Tcl_AllocStatBuf \- procedures to interact with any filesystem
+Tcl_FSRegister, Tcl_FSUnregister, Tcl_FSData, Tcl_FSMountsChanged, Tcl_FSGetFileSystemForPath, Tcl_FSGetPathType, Tcl_FSCopyFile, Tcl_FSCopyDirectory, Tcl_FSCreateDirectory, Tcl_FSDeleteFile, Tcl_FSRemoveDirectory, Tcl_FSRenameFile, Tcl_FSListVolumes, Tcl_FSEvalFile, Tcl_FSEvalFileEx, Tcl_FSLoadFile, Tcl_FSUnloadFile, Tcl_FSMatchInDirectory, Tcl_FSLink, Tcl_FSLstat, Tcl_FSUtime, Tcl_FSFileAttrsGet, Tcl_FSFileAttrsSet, Tcl_FSFileAttrStrings, Tcl_FSStat, Tcl_FSAccess, Tcl_FSOpenFileChannel, Tcl_FSGetCwd, Tcl_FSChdir, Tcl_FSPathSeparator, Tcl_FSJoinPath, Tcl_FSSplitPath, Tcl_FSEqualPaths, Tcl_FSGetNormalizedPath, Tcl_FSJoinToPath, Tcl_FSConvertToPathType, Tcl_FSGetInternalRep, Tcl_FSGetTranslatedPath, Tcl_FSGetTranslatedStringPath, Tcl_FSNewNativePath, Tcl_FSGetNativePath, Tcl_FSFileSystemInfo, Tcl_GetAccessTimeFromStat, Tcl_GetBlockSizeFromStat, Tcl_GetBlocksFromStat, Tcl_GetChangeTimeFromStat, Tcl_GetDeviceTypeFromStat, Tcl_GetFSDeviceFromStat, Tcl_GetFSInodeFromStat, Tcl_GetGroupIdFromStat, Tcl_GetLinkCountFromStat, Tcl_GetModeFromStat, Tcl_GetModificationTimeFromStat, Tcl_GetSizeFromStat, Tcl_GetUserIdFromStat, Tcl_AllocStatBuf \- procedures to interact with any filesystem
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -63,7 +63,12 @@ int
 .sp
 int
 \fBTcl_FSLoadFile\fR(\fIinterp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
-               handlePtr, unloadProcPtr\fR)
+               loadHandlePtr, unloadProcPtr\fR)
+.sp
+.VS 8.6
+int
+\fBTcl_FSUnloadFile\fR(\fIinterp, loadHandle\fR)
+.VE 8.6
 .sp
 int
 \fBTcl_FSMatchInDirectory\fR(\fIinterp, resultPtr, pathPtr, pattern, types\fR)
@@ -249,10 +254,12 @@ Filled with the safe-init function for this code.
 .AP ClientData *clientDataPtr out
 Filled with the clientData value to pass to this code's unload
 function when it is called.
-.AP Tcl_LoadHandle *handlePtr out
+.AP Tcl_LoadHandle *loadHandlePtr out
 Filled with an abstract token representing the loaded file.
 .AP Tcl_FSUnloadFileProc **unloadProcPtr out
 Filled with the function to use to unload this piece of code.
+.AP Tcl_LoadHandle loadHandle in
+Handle to the loaded library to be unloaded.
 .AP utimbuf *tval in
 The access and modification times in this structure are read and
 used to set those values for a given file.
@@ -439,9 +446,20 @@ belongs will be called. If that filesystem does not implement this
 function (most virtual filesystems will not, because of OS limitations
 in dynamically loading binary code), Tcl will attempt to copy the file
 to a temporary directory and load that temporary file.
+.VS 8.6
+\fBTcl_FSUnloadFile\fR reverses the operation, asking for the library
+indicated by the \fIloadHandle\fR to be removed from the process. Note that,
+unlike with the \fBunload\fR command, this does not give the library any
+opportunity to clean up.
+.VE 8.6
 .PP
-Returns a standard Tcl completion code. If an error occurs, an error
-message is left in the \fIinterp\fR's result.
+Both the above functions return a standard Tcl completion code. If an error
+occurs, an error message is left in the \fIinterp\fR's result.
+.PP
+.VS 8.6
+The token provided via the variable indicated by \fIloadHandlePtr\fR may be
+used with \fBTcl_FindSymbol\fR.
+.VE 8.6
 .PP
 \fBTcl_FSMatchInDirectory\fR is used by the globbing code to search a
 directory for all files which match a given pattern. The appropriate
