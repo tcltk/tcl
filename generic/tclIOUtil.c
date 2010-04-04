@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.55 2010/04/02 23:48:14 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.56 2010/04/04 17:37:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -42,9 +42,8 @@ static void		FsUpdateCwd(Tcl_Obj *cwdObj, ClientData clientData);
 #ifdef TCL_THREADS
 static void		FsRecacheFilesystemList(void);
 #endif
-static void*		DivertFindSymbol(Tcl_Interp* interp,
-					 Tcl_LoadHandle loadHandle,
-					 const char* symbol);
+static void *		DivertFindSymbol(Tcl_Interp *interp,
+			    Tcl_LoadHandle loadHandle, const char *symbol);
 static void		DivertUnloadFile(Tcl_LoadHandle loadHandle);
 
 /*
@@ -2987,8 +2986,8 @@ Tcl_FSLoadFile(
 
     res = Tcl_LoadFile(interp, pathPtr, symbols, 0, procPtrs, handlePtr);
     if (res == TCL_OK) {
-	*proc1Ptr = (Tcl_PackageInitProc*) procPtrs[0];
-	*proc2Ptr = (Tcl_PackageInitProc*) procPtrs[1];
+	*proc1Ptr = (Tcl_PackageInitProc *) procPtrs[0];
+	*proc2Ptr = (Tcl_PackageInitProc *) procPtrs[1];
     } else {
 	*proc1Ptr = *proc2Ptr = NULL;
     }
@@ -3029,7 +3028,7 @@ Tcl_LoadFile(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Obj *pathPtr,		/* Name of the file containing the desired
 				 * code. */
-    const char *const symbols[],	/* Names of functions to look up in the file's
+    const char *const symbols[],/* Names of functions to look up in the file's
 				 * symbol table. */
     int flags,			/* Flags (unused) */
     void *procVPtrs,		/* Where to return the addresses corresponding
@@ -3038,10 +3037,10 @@ Tcl_LoadFile(
 				 * information which can be used in
 				 * TclpFindSymbol. */
 {
-    void** procPtrs = (void**) procVPtrs;
+    void **procPtrs = (void **) procVPtrs;
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     const Tcl_Filesystem *copyFsPtr;
-    Tcl_FSUnloadFileProc* unloadProcPtr;
+    Tcl_FSUnloadFileProc *unloadProcPtr;
     Tcl_Obj *copyToPtr;
     Tcl_LoadHandle newLoadHandle = NULL;
     Tcl_LoadHandle divertedLoadHandle = NULL;
@@ -3150,7 +3149,8 @@ Tcl_LoadFile(
 
 	Tcl_FSDeleteFile(copyToPtr);
 	Tcl_DecrRefCount(copyToPtr);
-	Tcl_AppendResult(interp, "couldn't load from current filesystem",NULL);
+	Tcl_AppendResult(interp, "couldn't load from current filesystem",
+		NULL);
 	return TCL_ERROR;
     }
 
@@ -3164,7 +3164,7 @@ Tcl_LoadFile(
 	return TCL_ERROR;
     }
 
-#if !defined(__WIN32__)
+#ifndef __WIN32__
     /*
      * Do we need to set appropriate permissions on the file? This may be
      * required on some systems. On Unix we could loop over the file
@@ -3193,7 +3193,7 @@ Tcl_LoadFile(
     Tcl_ResetResult(interp);
 
     retVal = Tcl_LoadFile(interp, copyToPtr, symbols, 0, procPtrs,
-			 &newLoadHandle);
+	    &newLoadHandle);
     if (retVal != TCL_OK) {
 	/*
 	 * The file didn't load successfully.
@@ -3277,7 +3277,7 @@ Tcl_LoadFile(
 
     
     divertedLoadHandle = (Tcl_LoadHandle)
-	ckalloc(sizeof (struct Tcl_LoadHandle_));
+	    ckalloc(sizeof (struct Tcl_LoadHandle_));
     divertedLoadHandle->clientData = (ClientData) tvdlPtr;
     divertedLoadHandle->findSymbolProcPtr = DivertFindSymbol;
     divertedLoadHandle->unloadFileProcPtr = DivertUnloadFile;
@@ -3291,16 +3291,18 @@ Tcl_LoadFile(
      * At this point, *handlePtr is already set up to the handle for the
      * loaded library. We now try to resolve the symbols.
      */
+
     if (symbols != NULL) {
 	for (i=0 ; symbols[i] != NULL; i++) {
 	    procPtrs[i] = Tcl_FindSymbol(interp, *handlePtr, symbols[i]);
 	    if (procPtrs[i] == NULL) {
 		/* 
-		 * At least one symbol in the list was not found.
-		 * Unload the file, and report the problem back to the 
-		 * caller. (Tcl_FindSymbol should already have left an
-		 * appropriate error message.)
-		 */	
+		 * At least one symbol in the list was not found.  Unload the
+		 * file, and report the problem back to the caller.
+		 * (Tcl_FindSymbol should already have left an appropriate
+		 * error message.)
+		 */
+
 		(*handlePtr)->unloadFileProcPtr(*handlePtr);
 		*handlePtr = NULL;
 		return TCL_ERROR;
@@ -3311,44 +3313,47 @@ Tcl_LoadFile(
 }
 
 /*
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
  * DivertFindSymbol --
  *	
  *	Find a symbol in a shared library loaded by copy-from-VFS.
  *
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
-static void*
-DivertFindSymbol(Tcl_Interp* interp, 	    /* Tcl interpreter */
-		 Tcl_LoadHandle loadHandle, /* Handle to the diverted module */
-		 const char* symbol)	    /* Symbol to resolve */
+static void *
+DivertFindSymbol(
+    Tcl_Interp *interp, 	/* Tcl interpreter */
+    Tcl_LoadHandle loadHandle,	/* Handle to the diverted module */
+    const char *symbol)		/* Symbol to resolve */
 {
-    FsDivertLoad* tvdlPtr = (FsDivertLoad*) (loadHandle->clientData);
+    FsDivertLoad *tvdlPtr = (FsDivertLoad *) loadHandle->clientData;
     Tcl_LoadHandle originalHandle = tvdlPtr->loadHandle;
+
     return originalHandle->findSymbolProcPtr(interp, originalHandle, symbol);
 }
 
 /*
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
  * DivertUnloadFile --
  *
- *	Unloads a file that has been loaded by copying from VFS to the
- *	native filesystem.
+ *	Unloads a file that has been loaded by copying from VFS to the native
+ *	filesystem.
  *
  * Parameters:
  *	loadHandle -- Handle of the file to unload
  *
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
 static void
-DivertUnloadFile(Tcl_LoadHandle loadHandle)
+DivertUnloadFile(
+    Tcl_LoadHandle loadHandle)
 {
-    FsDivertLoad* tvdlPtr = (FsDivertLoad*) (loadHandle->clientData);
-    Tcl_LoadHandle originalHandle = tvdlPtr->loadHandle;
+    FsDivertLoad *tvdlPtr = (FsDivertLoad *) loadHandle->clientData;
+    Tcl_LoadHandle originalHandle;
 
     /*
      * This test should never trigger, since we give the client data in the
@@ -3358,6 +3363,7 @@ DivertUnloadFile(Tcl_LoadHandle loadHandle)
     if (tvdlPtr == NULL) {
 	return;
     }
+    originalHandle = tvdlPtr->loadHandle;
 
     /*
      * Call the real 'unloadfile' proc we actually used. It is very important
@@ -3368,7 +3374,9 @@ DivertUnloadFile(Tcl_LoadHandle loadHandle)
 
     originalHandle->unloadFileProcPtr(originalHandle);
 
-    /* What filesystem contains the temp copy of the library? */
+    /*
+     * What filesystem contains the temp copy of the library?
+     */
 
     if (tvdlPtr->divertedFilesystem == NULL) {
 	/*
@@ -3413,8 +3421,8 @@ DivertUnloadFile(Tcl_LoadHandle loadHandle)
 	Tcl_DecrRefCount(tvdlPtr->divertedFile);
     }
 
-    ckfree((void*)tvdlPtr);
-    ckfree((void*)loadHandle);
+    ckfree((void *) tvdlPtr);
+    ckfree((void *) loadHandle);
 }
 
 /*
@@ -3462,82 +3470,83 @@ TclpLoadFile(
 }
 
 /*
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
  * Tcl_FindSymbol --
  *
  *	Find a symbol in a loaded library
  *
  * Results:
- *	Returns a pointer to the symbol if found. If not found, returns
- *	NULL and leaves an error message in the interpreter result.
+ *	Returns a pointer to the symbol if found. If not found, returns NULL
+ *	and leaves an error message in the interpreter result.
  *
- * This function was once filesystem-specific, but has been made portable
- * by having TclpDlopen return a structure that includes procedure pointers.
+ * This function was once filesystem-specific, but has been made portable by
+ * having TclpDlopen return a structure that includes procedure pointers.
  *
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
-void*
-Tcl_FindSymbol(Tcl_Interp* interp,	  /* Tcl interpreter */
-	       Tcl_LoadHandle loadHandle, /* Handle to the loaded library */
-	       const char* symbol)        /* Name of the symbol to resolve */
+void *
+Tcl_FindSymbol(
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    Tcl_LoadHandle loadHandle,	/* Handle to the loaded library */
+    const char *symbol)		/* Name of the symbol to resolve */
 {
-    return (*(loadHandle->findSymbolProcPtr))(interp, loadHandle, symbol);
+    return loadHandle->findSymbolProcPtr(interp, loadHandle, symbol);
 }
 
 /*
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
  * Tcl_FSUnloadFile --
  *
  *	Unloads a library given its handle. Checks first that the library
  *	supports unloading.
  *
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
 int
-Tcl_FSUnloadFile(Tcl_Interp* interp, /* Tcl interpreter */
-		 Tcl_LoadHandle handle) /* Handle of the file to unload */
+Tcl_FSUnloadFile(
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    Tcl_LoadHandle handle)	/* Handle of the file to unload */
 {
     if (handle->unloadFileProcPtr == NULL) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp,
-			     Tcl_NewStringObj("cannot unload: filesystem "
-					      "does not support unloading",
-					      -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "cannot unload: filesystem does not support unloading",
+		    -1));
 	}
 	return TCL_ERROR;
-    } else {
-	TclpUnloadFile(handle);
-    return TCL_OK;
     }
+    TclpUnloadFile(handle);
+    return TCL_OK;
 }
 
 /*
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
  * TclpUnloadFile --
  *
  *	Unloads a library given its handle
  *
- * This function was once filesystem-specific, but has been made portable
- * by having TclpDlopen return a structure that includes procedure pointers.
+ * This function was once filesystem-specific, but has been made portable by
+ * having TclpDlopen return a structure that includes procedure pointers.
  *
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
 void
-TclpUnloadFile(Tcl_LoadHandle handle)
+TclpUnloadFile(
+    Tcl_LoadHandle handle)
 {
     if (handle->unloadFileProcPtr != NULL) {
-	(*(handle->unloadFileProcPtr))(handle);
+	handle->unloadFileProcPtr(handle);
     }
 }
 
 /*
- *---------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
  * TclFSUnloadTempFile --
  *
@@ -3552,7 +3561,7 @@ TclpUnloadFile(Tcl_LoadHandle handle)
  *	The effects of the 'unload' function called, and of course the
  *	temporary file will be deleted.
  *
- *---------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
 void
