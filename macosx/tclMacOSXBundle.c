@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.17 2010/03/25 14:02:11 dkf Exp $
+ * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.18 2010/04/04 11:59:23 dkf Exp $
  */
 
 #include "tclPort.h"
@@ -72,13 +72,13 @@ MODULE_SCOPE long	tclMacOSXDarwinRelease;
 #define TclLoadDbgMsg(m, ...)
 #endif /* TCL_DEBUG_LOAD */
 
-#endif /* HAVE_COREFOUNDATION */
-
 /*
  * Forward declaration of functions defined in this file:
  */
 
 static short		OpenResourceMap(CFBundleRef bundleRef);
+
+#endif /* HAVE_COREFOUNDATION */
 
 /*
  *----------------------------------------------------------------------
@@ -92,6 +92,8 @@ static short		OpenResourceMap(CFBundleRef bundleRef);
  *
  *----------------------------------------------------------------------
  */
+
+#ifdef HAVE_COREFOUNDATION
 
 static short
 OpenResourceMap(
@@ -139,6 +141,8 @@ OpenResourceMap(
     }
     return -1;
 }
+
+#endif /* HAVE_COREFOUNDATION */
 
 /*
  *----------------------------------------------------------------------
@@ -282,7 +286,10 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	}
 	if (versionedBundleRef) {
 #if MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-	    /* Workaround CFBundle bug in Tiger and earlier. [Bug 2569449] */
+	    /*
+	     * Workaround CFBundle bug in Tiger and earlier. [Bug 2569449]
+	     */
+
 	    if (tclMacOSXDarwinRelease >= 9)
 #endif
 	    {
