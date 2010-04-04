@@ -1,8 +1,13 @@
+2010-04-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* macosx/tclMacOSXBundle.c (OpenResourceMap): [Bug 2981528]: Only
+	define this function when HAVE_COREFOUNDATION is defined.
+
 2010-04-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.decls (Tcl_LoadFile): Add missing "const" in signature,
 	* generic/tclIOUtil.c (Tcl_LoadFile): and some formatting fixes
-	* generic/tclDecls.h   (regenerated)
+	* generic/tclDecls.h:  (regenerated)
 
 2010-04-02  Donal K. Fellows  <dkf@users.sf.net>
 
