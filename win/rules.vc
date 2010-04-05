@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2007 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.40 2009/04/10 14:19:45 patthoyts Exp $
+# RCS: @(#) $Id: rules.vc,v 1.41 2010/04/05 12:45:27 dkf Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -212,7 +212,7 @@ _VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -ou
 
 !if "$(OPTS)" == "" || [nmakehlp -f "$(OPTS)" "none"]
 STATIC_BUILD	= 0
-TCL_THREADS	= 0
+TCL_THREADS	= 1
 DEBUG		= 0
 SYMBOLS		= 0
 PROFILE		= 0
@@ -220,7 +220,7 @@ PGO		= 0
 MSVCRT		= 0
 LOIMPACT	= 0
 TCL_USE_STATIC_PACKAGES	= 0
-USE_THREAD_ALLOC = 0
+USE_THREAD_ALLOC = 1
 UNCHECKED	= 0
 !else
 !if [nmakehlp -f $(OPTS) "static"]
@@ -241,12 +241,12 @@ TCL_USE_STATIC_PACKAGES	= 1
 !else
 TCL_USE_STATIC_PACKAGES	= 0
 !endif
-!if [nmakehlp -f $(OPTS) "threads"]
+!if [nmakehlp -f $(OPTS) "nothreads"]
+TCL_THREADS	= 0
+!else
 !message *** Doing threads
 TCL_THREADS	= 1
 USE_THREAD_ALLOC= 1
-!else
-TCL_THREADS	= 0
 !endif
 !if [nmakehlp -f $(OPTS) "symbols"]
 !message *** Doing symbols
