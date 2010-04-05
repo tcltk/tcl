@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.467 2010/04/02 21:21:06 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.468 2010/04/05 19:44:45 ferrieux Exp $
  */
 
 #ifndef _TCLINT
@@ -1984,6 +1984,10 @@ typedef struct Interp {
     Tcl_Obj *eiVar;		/* cached ref to ::errorInfo variable. */
     Tcl_Obj *errorCode;		/* errorCode value (now as a Tcl_Obj). */
     Tcl_Obj *ecVar;		/* cached ref to ::errorInfo variable. */
+    Tcl_Obj *errorStack;	/* [info errorstack] value (as a Tcl_Obj). */
+    Tcl_Obj *upLiteral;		/* "UP" literal for [info errorstack] */
+    Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
+    int resetErrorStack;        /* controls cleaning up of ::errorStack */
     int returnLevel;		/* [return -level] parameter. */
 
     /*

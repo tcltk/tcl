@@ -1,3 +1,22 @@
+2010-04-05  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	TIP #348 IMPLEMENTATION  -  Substituted error stack
+
+	* generic/tclBasic.c
+	* generic/tclCmdIL.c
+	* generic/tclInt.h
+	* generic/tclNamesp.c
+	* generic/tclResult.c
+	* doc/catch.n
+	* doc/info.n
+	* doc/return.n
+	* tests/cmdMZ.test
+	* tests/error.test
+	* tests/execute.test
+	* tests/info.test
+	* tests/init.test
+	* tests/result.test
+
 2010-04-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tcl.m4 (SC_ENABLE_THREADS): Flip the default for whether to
