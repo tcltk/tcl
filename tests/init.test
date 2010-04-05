@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: init.test,v 1.9.4.9 2009/07/27 19:01:32 dgp Exp $
+# RCS: @(#) $Id: init.test,v 1.9.4.10 2010/04/05 21:46:42 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -181,7 +181,7 @@ test init-5.0 {return options passed through ::unknown} -setup {
     list $code $foo $bar $code2 $foo2 $bar2
 } -cleanup {
     unset ::auto_index(::xxx)
-} -result {2 xxx {-errorcode NONE -code 1 -level 1} 2 xxx {-code 1 -level 1 -errorcode NONE}}
+} -match glob -result {2 xxx {-errorcode NONE -code 1 -level 1} 2 xxx {-code 1 -level 1 -errorcode NONE}}
 
 cleanupTests
 }	;#  End of [interp eval $testInterp]

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.166 2010/03/19 15:26:56 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.167 2010/04/05 21:46:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -529,6 +529,13 @@ Tcl_CreateInterp(void)
     iPtr->errorInfo = NULL;
     TclNewLiteralStringObj(iPtr->eiVar, "::errorInfo");
     Tcl_IncrRefCount(iPtr->eiVar);
+    iPtr->errorStack = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(iPtr->errorStack);
+    iPtr->resetErrorStack = 1;
+    TclNewLiteralStringObj(iPtr->upLiteral,"UP");
+    Tcl_IncrRefCount(iPtr->upLiteral);
+    TclNewLiteralStringObj(iPtr->callLiteral,"CALL");
+    Tcl_IncrRefCount(iPtr->callLiteral);
     iPtr->errorCode = NULL;
     TclNewLiteralStringObj(iPtr->ecVar, "::errorCode");
     Tcl_IncrRefCount(iPtr->ecVar);
@@ -1467,6 +1474,10 @@ DeleteInterpProc(
 	Tcl_DecrRefCount(iPtr->errorInfo);
 	iPtr->errorInfo = NULL;
     }
+    Tcl_DecrRefCount(iPtr->errorStack);
+    iPtr->errorStack = NULL;
+    Tcl_DecrRefCount(iPtr->upLiteral);
+    Tcl_DecrRefCount(iPtr->callLiteral);
     if (iPtr->returnOpts) {
 	Tcl_DecrRefCount(iPtr->returnOpts);
     }
@@ -8922,5 +8933,7 @@ TclInfoCoroutineCmd(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.65 2010/03/06 03:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.66 2010/04/05 21:46:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -118,6 +118,9 @@ static int		InfoCompleteCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoDefaultCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+/* TIP #348 - New 'info' subcommand 'errorstack' */
+static int		InfoErrorStackCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 /* TIP #280 - New 'info' subcommand 'frame' */
 static int		InfoFrameCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -164,6 +167,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"complete",	   InfoCompleteCmd,	    NULL, NULL, NULL},
     {"coroutine",	   TclInfoCoroutineCmd,     NULL, NULL, NULL},
     {"default",		   InfoDefaultCmd,	    NULL, NULL, NULL},
+    {"errorstack",	   InfoErrorStackCmd,	    NULL, NULL, NULL},
     {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL},
     {"frame",		   InfoFrameCmd,	    NULL, NULL, NULL},
     {"functions",	   InfoFunctionsCmd,	    NULL, NULL, NULL},
@@ -1017,6 +1021,55 @@ InfoDefaultCmd(
     Tcl_AppendResult(interp, "couldn't store default value in variable \"",
 	    varName, "\"", NULL);
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InfoErrorStackCmd --
+ *
+ *	Called to implement the "info errorstack" command that returns information
+ *	about the last error's call stack. Handles the following syntax:
+ *
+ *	    info errorstack ?interp?
+ *
+ * Results:
+ *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
+ *
+ * Side effects:
+ *	Returns a result in the interpreter's result object. If there is an
+ *	error, the result is an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+InfoErrorStackCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Interp *target;
+    Interp *iPtr;
+
+    if ((objc != 1) && (objc != 2)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?interp?");
+	return TCL_ERROR;
+    }
+    
+    target = interp;
+    if (objc == 2) {
+        target = Tcl_GetSlave(interp, Tcl_GetString(objv[1]));
+        if (target == NULL) {
+            return TCL_ERROR;
+        }
+    }
+
+    iPtr = (Interp *) target;
+    Tcl_SetObjResult(interp, iPtr->errorStack);
+    
+    return TCL_OK;
 }
 
 /*
@@ -4401,5 +4454,7 @@ SelectObjFromSublist(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
