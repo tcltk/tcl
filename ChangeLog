@@ -1,5 +1,9 @@
 2010-04-05  Donal K. Fellows  <dkf@users.sf.net>
 
+	* unix/tcl.m4 (SC_ENABLE_THREADS): Flip the default for whether to
+	* win/tcl.m4 (SC_ENABLE_THREADS):  build in threaded mode. Part of
+	* win/rules.vc:			   TIP #364.
+
 	* unix/tclLoadDyld.c (FindSymbol): Better human-readable error message
 	generation to match code in tclLoadDl.c.
 
