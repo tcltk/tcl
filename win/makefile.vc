@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.211 2010/03/30 14:05:53 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.212 2010/04/05 12:45:27 dkf Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -76,7 +76,7 @@ the build instructions.
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=static,msvcrt,staticpkg,threads,symbols,profile,loimpact,unchecked,pdbs,none
+#	OPTS=static,msvcrt,staticpkg,nothreads,symbols,profile,loimpact,unchecked,pdbs,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -90,7 +90,7 @@ the build instructions.
 #		staticpkg = Affects the static option only to switch
 #			   tclshXX.exe to have the dde and reg extension linked
 #			   inside it.
-#		threads =  Turns on full multithreading support.
+#		nothreads = Turns off full multithreading support.
 #		thrdalloc = Use the thread allocator (shared global free pool)
 #			   This is the default on threaded builds.
 #		tclalloc = Use the old non-thread allocator
