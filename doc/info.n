@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.36 2010/03/24 13:21:11 dkf Exp $
+'\" RCS: @(#) $Id: info.n,v 1.37 2010/04/05 19:44:45 ferrieux Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -93,6 +93,16 @@ must be the name of an argument to that procedure.  If \fIarg\fR
 does not have a default value then the command returns \fB0\fR.
 Otherwise it returns \fB1\fR and places the default value of \fIarg\fR
 into variable \fIvarname\fR.
+.TP
+\fBinfo errorstack \fR?\fIinterp\fR?
+.
+Returns a list of lists made of the function names and arguments at
+each level from the call stack of the last error in the given
+\fIinterp\fR, or in the current one if not specified.  This
+information is also present in the -errorstack entry of the options
+dictionary returned by 3-arg \fBcatch\fR; \fBinfo errorstack\fR is a
+convenient way of retrieving it for uncaught errors at toplevel in an
+interactive tclsh.
 .TP
 \fBinfo exists \fIvarName\fR
 .
