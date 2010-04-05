@@ -618,8 +618,8 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
 AC_DEFUN([SC_ENABLE_THREADS], [
     AC_ARG_ENABLE(threads,
 	AC_HELP_STRING([--enable-threads],
-	    [build with threads (default: off)]),
-	[tcl_ok=$enableval], [tcl_ok=no])
+	    [build with threads (default: on)]),
+	[tcl_ok=$enableval], [tcl_ok=yes])
 
     if test "${TCL_THREADS}" = 1; then
 	tcl_threaded_core=1;
@@ -690,7 +690,7 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 	    AC_MSG_RESULT([yes])
 	fi
     else
-	AC_MSG_RESULT([no (default)])
+	AC_MSG_RESULT([no])
     fi
 
     AC_SUBST(TCL_THREADS)

@@ -248,7 +248,7 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 AC_DEFUN([SC_ENABLE_THREADS], [
     AC_MSG_CHECKING(for building with threads)
     AC_ARG_ENABLE(threads, [  --enable-threads        build with threads],
-	[tcl_ok=$enableval], [tcl_ok=no])
+	[tcl_ok=$enableval], [tcl_ok=yes])
 
     if test "$tcl_ok" = "yes"; then
 	AC_MSG_RESULT(yes)
@@ -259,7 +259,7 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 	AC_DEFINE(USE_THREAD_ALLOC)
     else
 	TCL_THREADS=0
-	AC_MSG_RESULT([no (default)])
+	AC_MSG_RESULT(no)
     fi
     AC_SUBST(TCL_THREADS)
 ])
