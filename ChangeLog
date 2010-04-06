@@ -1,3 +1,7 @@
+2010-04-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c: (Tcl_RegexpObjCmd): Fixed object leak.
+
 2010-04-03  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclStringObj.c: (SetStringFromAny): avoid trampling
