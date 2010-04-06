@@ -62,10 +62,21 @@
 2010-04-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	TIP #357 IMPLEMENTATION
+	TIP #362 IMPLEMENTATION
+	
+	* generic/tclStrToD.c: [Bug 2952904]: Defer creation of the smallest
+	floating point number until it is actually used. (This change avoids a
+	bogus syslog message regarding a 'floating point software assist
+	fault' on SGI systems.)
 
-	* generic/tcl.decls:		First round of changes to export
-	* generic/tclDecls.h:		Tcl_LoadFile, Tcl_FindSymbol, and
-	* generic/tclIOUtil.c:		Tcl_FSUnloadFile to the public API.
+	* library/reg/pkgIndex.tcl:	[TIP #362]: Fixed first round of bugs
+	* tests/registry.test:		resulting from the recent commits of
+	* win/tclWinReg.c:		changes in support of the referenced
+					TIP.
+
+	* generic/tcl.decls:		[TIP #357]: First round of changes
+	* generic/tclDecls.h:		to export Tcl_LoadFile, Tcl_FindSymbol,
+	* generic/tclIOUtil.c:		and Tcl_FSUnloadFile to the public API.
 	* generic/tclInt.h:
 	* generic/tclLoad.c:
 	* generic/tclLoadNone.c:
@@ -81,16 +92,6 @@
 	* unix/tclUnixPipe.c:
 	* win/Makefile.in:
 	* win/tclWinLoad.c:
-
-	* generic/tclStrToD.c: [Bug 2952904]: Defer creation of the smallest
-	floating point number until it is actually used. (This change avoids a
-	bogus syslog message regarding a 'floating point software assist
-	fault' on SGI systems.)
-
-	* library/reg/pkgIndex.tcl:	[TIP #362]: Fixed first round of bugs
-	* tests/registry.test:		resulting from the recent commits of
-	* win/tclWinReg.c:		changes in support of the referenced
-					TIP.
 	
 2010-03-31  Donal K. Fellows  <dkf@users.sf.net>
 
