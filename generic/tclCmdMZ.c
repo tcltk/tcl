@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.210 2010/03/27 22:40:13 nijtmans Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.211 2010/04/06 07:50:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -391,6 +391,7 @@ Tcl_RegexpObjCmd(
 		if (valuePtr == NULL) {
 		    Tcl_AppendResult(interp, "couldn't set variable \"",
 			    TclGetString(objv[i]), "\"", NULL);
+		    Tcl_DecrRefCount(newPtr);
 		    return TCL_ERROR;
 		}
 	    }
