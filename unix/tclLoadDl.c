@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDl.c,v 1.13.4.5 2010/04/02 23:48:14 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDl.c,v 1.13.4.6 2010/04/06 02:37:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -34,11 +34,13 @@
 #   define RTLD_GLOBAL 0
 #endif
 
-/* Static procedures defined within this file */
+/*
+ * Static procedures defined within this file.
+ */
 
-static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
-			const char* symbol);
-static void UnloadFile(Tcl_LoadHandle loadHandle);
+static void *		FindSymbol(Tcl_Interp *interp,
+			    Tcl_LoadHandle loadHandle, const char *symbol);
+static void		UnloadFile(Tcl_LoadHandle loadHandle);
 
 /*
  *---------------------------------------------------------------------------
@@ -144,7 +146,7 @@ FindSymbol(
 {
     const char *native;
     Tcl_DString newName, ds;
-    void *handle = (void *)(loadHandle->clientData);
+    void *handle = (void *) loadHandle->clientData;
     Tcl_PackageInitProc *proc;
 
     /*
@@ -154,23 +156,21 @@ FindSymbol(
      */
 
     native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
-    proc = (Tcl_PackageInitProc *) dlsym(handle,	/* INTL: Native. */
-	    native);
+    proc = (Tcl_PackageInitProc *) dlsym(handle, native);	/* INTL: Native. */
     if (proc == NULL) {
 	Tcl_DStringInit(&newName);
 	Tcl_DStringAppend(&newName, "_", 1);
 	native = Tcl_DStringAppend(&newName, native, -1);
-	proc = (Tcl_PackageInitProc *) dlsym(handle,	/* INTL: Native. */
-		native);
+	proc = (Tcl_PackageInitProc *) dlsym(handle, native);	/* INTL: Native. */
 	Tcl_DStringFree(&newName);
     }
     Tcl_DStringFree(&ds);
     if (proc == NULL && interp != NULL) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "cannot find symbol \"", symbol, "\": ",
-			 dlerror(), NULL);
+		dlerror(), NULL);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
-			 NULL);
+		NULL);
     }
     return proc;
 }
@@ -199,11 +199,10 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    void *handle;
+    void *handle = (void *) loadHandle->clientData;
 
-    handle = (void *)(loadHandle->clientData);
     dlclose(handle);
-    ckfree((char*)loadHandle);
+    ckfree((char *) loadHandle);
 }
 
 /*

@@ -1,3 +1,8 @@
+2010-04-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclLoadDyld.c (FindSymbol): Better human-readable error message
+	generation to match code in tclLoadDl.c.
+
 2010-04-05  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	TIP #348 IMPLEMENTATION  -  Substituted error stack
@@ -28,8 +33,8 @@
 
 2010-04-04  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclIOUtil.c: Minor changes to enforce Engineering Manual
-	style rules.
+	* generic/tclIOUtil.c, unix/tclLoadDl.c: Minor changes to enforce
+	Engineering Manual style rules.
 
 	* doc/FileSystem.3, doc/Load.3: Documentation for TIP#357.
 

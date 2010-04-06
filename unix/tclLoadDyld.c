@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.4.15 2010/04/02 23:48:14 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.4.16 2010/04/06 02:37:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -452,7 +452,8 @@ FindSymbol(
     }
     Tcl_DStringFree(&ds);
     if (errMsg && (interp != NULL)) {
-	Tcl_AppendResult(interp, errMsg, NULL);
+	Tcl_AppendResult(interp, "cannot find symbol \"", symbol, "\": ",
+		errMsg, NULL);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
 		NULL);
     }
