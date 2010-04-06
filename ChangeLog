@@ -4,6 +4,7 @@
 	* unix/configure
 	* unix/installManPage [Bug 2982540] configure and install* script files
 	* unix/install-sh     should always have LF
+	* doc/Load.3          Fix signature of Tcl_LoadFile in documentation
 
 2010-04-05  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
