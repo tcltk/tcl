@@ -1,10 +1,14 @@
+2010-04-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/Load.3: Minor corrections of formatting and cross links.
+
 2010-04-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/configure       (regenerate with autoconf-2.59)
-	* unix/configure
-	* unix/installManPage [Bug 2982540] configure and install* script files
-	* unix/install-sh     should always have LF
-	* doc/Load.3          Fix signature of Tcl_LoadFile in documentation
+	* win/configure:       (regenerate with autoconf-2.59)
+	* unix/configure:
+	* unix/installManPage: [Bug 2982540]: configure and install* script
+	* unix/install-sh:     files should always have LF line ending.
+	* doc/Load.3:          Fix signature of Tcl_LoadFile in documentation.
 
 2010-04-05  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
