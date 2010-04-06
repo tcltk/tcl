@@ -1,3 +1,8 @@
+2010-04-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd): Plug leak of object when
+	setting a variable fails.
+
 2010-04-05  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	TIP #348 IMPLEMENTATION  -  Substituted error stack
