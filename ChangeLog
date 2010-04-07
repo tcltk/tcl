@@ -1,3 +1,7 @@
+2010-04-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/catch.n, doc/info.n, doc/return.n: Formatting.
+
 2010-04-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/Load.3: Minor corrections of formatting and cross links.
@@ -12,22 +16,22 @@
 
 2010-04-05  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	TIP #348 IMPLEMENTATION  -  Substituted error stack
+	TIP #348 IMPLEMENTATION
 
-	* generic/tclBasic.c
-	* generic/tclCmdIL.c
-	* generic/tclInt.h
-	* generic/tclNamesp.c
-	* generic/tclResult.c
-	* doc/catch.n
-	* doc/info.n
-	* doc/return.n
-	* tests/cmdMZ.test
-	* tests/error.test
-	* tests/execute.test
-	* tests/info.test
-	* tests/init.test
-	* tests/result.test
+	* generic/tclBasic.c: [Patch 2868499]: Substituted error stack
+	* generic/tclCmdIL.c:
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* generic/tclResult.c:
+	* doc/catch.n:
+	* doc/info.n:
+	* doc/return.n:
+	* tests/cmdMZ.test:
+	* tests/error.test:
+	* tests/execute.test:
+	* tests/info.test:
+	* tests/init.test:
+	* tests/result.test:
 
 2010-04-05  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -75,9 +79,9 @@
 					TIP.
 
 	* generic/tcl.decls:		[TIP #357]: First round of changes
-	* generic/tclDecls.h:		to export Tcl_LoadFile, Tcl_FindSymbol,
-	* generic/tclIOUtil.c:		and Tcl_FSUnloadFile to the public API.
-	* generic/tclInt.h:
+	* generic/tclDecls.h:		to export Tcl_LoadFile,
+	* generic/tclIOUtil.c:		Tcl_FindSymbol, and Tcl_FSUnloadFile
+	* generic/tclInt.h:		to the public API.
 	* generic/tclLoad.c:
 	* generic/tclLoadNone.c:
 	* generic/tclStubInit.c:
