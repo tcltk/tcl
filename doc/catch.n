@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: catch.n,v 1.24 2010/04/05 19:44:45 ferrieux Exp $
+'\" RCS: @(#) $Id: catch.n,v 1.25 2010/04/07 09:51:31 dkf Exp $
 '\" 
 .so man.macros
 .TH catch n "8.5" Tcl "Tcl Built-In Commands"
@@ -34,7 +34,7 @@ by a return code of \fBTCL_ERROR\fR.  The other exceptional return codes are
 returned by the \fBreturn\fR, \fBbreak\fR, and \fBcontinue\fR commands
 and in other special situations as documented.  Tcl packages can define
 new commands that return other integer values as return codes as well,
-and scripts that make use of the \fBreturn -code\fR command can also
+and scripts that make use of the \fBreturn \-code\fR command can also
 have return codes other than the five defined by Tcl.
 .PP
 If the \fIresultVarName\fR argument is given, then the variable it names is
@@ -57,33 +57,46 @@ further described in the documentation for the \fBreturn\fR command.
 When the return code from evaluation of \fIscript\fR is
 \fBTCL_ERROR\fR, four additional entries are defined in the dictionary
 of return options stored in \fIoptionsVarName\fR: \fB\-errorinfo\fR,
-\fB\-errorcode\fR, \fB\-errorline\fR, and \fB\-errorstack\fR.  The
-value of the \fB\-errorinfo\fR entry is a formatted stack trace
-containing more information about the context in which the error
-happened.  The formatted stack trace is meant to be read by a person.
-The value of the \fB\-errorcode\fR entry is additional information
-about the error stored as a list.  The \fB\-errorcode\fR value is
-meant to be further processed by programs, and may not be particularly
-readable by people.  The value of the \fB\-errorline\fR entry is an
-integer indicating which line of \fIscript\fR was being evaluated when
-the error occurred.  The value of the \fB\-errorstack\fR entry is an
+\fB\-errorcode\fR, \fB\-errorline\fR, and
+.VS 8.6
+\fB\-errorstack\fR.
+.VE 8.6
+The value of the \fB\-errorinfo\fR entry is a formatted stack trace containing
+more information about the context in which the error happened.  The formatted
+stack trace is meant to be read by a person.  The value of the
+\fB\-errorcode\fR entry is additional information about the error stored as a
+list.  The \fB\-errorcode\fR value is meant to be further processed by
+programs, and may not be particularly readable by people.  The value of the
+\fB\-errorline\fR entry is an integer indicating which line of \fIscript\fR
+was being evaluated when the error occurred.
+.VS 8.6
+The value of the \fB\-errorstack\fR entry is an
 even-sized list made of token-parameter pairs accumulated while
-unwinding the stack. The token may be "CALL", in which case the
-parameter is a list made of the proc name and arguments at the
-corresponding level; or it may be "UP", in which case the parameter is
-the relative [uplevel] of the previous CALL. The salient differences
-wrt -errorinfo are that (1) it is a machine-readable form amenable to
-[foreach {tok prm} ...], (2) it contains the true (substituted) values
-passed to the functions, instead of the static text of the calling
-sites, and (3) it is coarser-grained, with only one element per stack
-frame (like procs; no separate elements for [foreach] constructs for
-example).
-
+unwinding the stack. The token may be
+.QW \fBCALL\fR ,
+in which case the parameter is a list made of the proc name and arguments at
+the corresponding level; or it may be
+.QW \fBUP\fR ,
+in which case the parameter is
+the relative level (as in \fBuplevel\fR) of the previous \fBCALL\fR. The
+salient differences wrt \fB\-errorinfo\fR are that:
+.IP (1)
+it is a machine-readable form that is amenable to processing with
+[\fBforeach\fR {tok prm} ...],
+.IP (2)
+it contains the true (substituted) values passed to the functions, instead of
+the static text of the calling sites, and
+.IP (3)
+it is coarser-grained, with only one element per stack frame (like procs; no
+separate elements for \fBforeach\fR constructs for example).
+.VE 8.6
+.PP
 The values of the \fB\-errorinfo\fR and \fB\-errorcode\fR entries of
 the most recent error are also available as values of the global
-variables \fB::errorInfo\fR and \fB::errorCode\fR respectively. The
-value of the \fB\-errorstack\fR entry surfaces as \fBinfo
-errorstack\fR.
+variables \fB::errorInfo\fR and \fB::errorCode\fR respectively.
+.VS 8.6
+The value of the \fB\-errorstack\fR entry surfaces as \fBinfo errorstack\fR.
+.VE 8.6
 .PP
 Tcl packages may provide commands that set other entries in the
 dictionary of return options, and the \fBreturn\fR command may be
@@ -104,6 +117,10 @@ if { [\fBcatch\fR {open $someFile w} fid] } {
 There are more complex examples of \fBcatch\fR usage in the
 documentation for the \fBreturn\fR command.
 .SH "SEE ALSO" 
-break(n), continue(n), dict(n), error(n), return(n), tclvars(n)
+break(n), continue(n), dict(n), error(n), info(n), return(n), tclvars(n)
 .SH KEYWORDS
 catch, error, exception
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:
