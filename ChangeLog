@@ -1,3 +1,12 @@
+2010-04-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmdsSZ.c (TclSubstCompile): If the first token does
+	not result in a *guaranteed* push of a Tcl_Obj on the stack, we must
+	push an empty object. Otherwise it is possible to get to a 'concat1'
+	or 'done' without enough values on the stack, resulting in a crash.
+	Thanks to Joe Mistachkin for identifying a script that could trigger
+	this case.
+
 2010-04-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/catch.n, doc/info.n, doc/return.n: Formatting.
