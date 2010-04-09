@@ -11,13 +11,13 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.14.2.2 2008/04/24 04:56:39 dgp Exp $
+# RCS: @(#) $Id: subst.test,v 1.14.2.3 2010/04/09 02:05:01 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
-
+
 test subst-1.1 {basics} -returnCodes error -body {
     subst
 } -result {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}
@@ -261,7 +261,21 @@ test subst-12.5 {nasty case, Bug 1036649} {
     }
     lappend res $x
 } {1 {missing close-bracket} 0}
-
+test subst-12.6 {nasty case with compilation} {
+    set x unset
+    set y unset
+    list [eval [list subst {[set x 1;break;incr x][set y $x]}]] $x $y
+} {{} 1 unset}
+test subst-12.7 {nasty case with compilation} {
+    set x unset
+    set y unset
+    list [eval [list subst {[set x 1;continue;incr x][set y $x]}]] $x $y
+} {1 1 1}
+
 # cleanup
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

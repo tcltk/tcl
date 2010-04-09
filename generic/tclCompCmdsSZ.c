@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.1.2.9 2010/03/28 03:24:07 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.1.2.10 2010/04/09 02:05:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -658,7 +658,21 @@ TclSubstCompile(
 
     TclSubstParse(interp, bytes, numBytes, flags, &parse);
 
-    for (tokenPtr = parse.tokenPtr, endTokenPtr = tokenPtr + parse.numTokens;
+    /*
+     * Tricky point! If the first token does not result in a *guaranteed* push
+     * of a Tcl_Obj on the stack, we must push an empty object. Otherwise it
+     * is possible to get to an INST_CONCAT1 or INST_DONE without enough
+     * values on the stack, resulting in a crash. Thanks to Joe Mistachkin for
+     * identifying a script that could trigger this case.
+     */
+
+    tokenPtr = parse.tokenPtr;
+    if (tokenPtr->type != TCL_TOKEN_TEXT && tokenPtr->type != TCL_TOKEN_BS) {
+	PushLiteral(envPtr, "", 0);
+	count++;
+    }
+
+    for (endTokenPtr = tokenPtr + parse.numTokens;
 	    tokenPtr < endTokenPtr; tokenPtr = TokenAfter(tokenPtr)) {
 	int length, literal, catchRange, breakJump;
 	char buf[TCL_UTF_MAX];
@@ -794,7 +808,11 @@ TclSubstCompile(
 	    Tcl_Panic("TclCompileSubstCmd: bad other jump distance %d",
 		    CurrentOffset(envPtr) - otherFixup.codeOffset);
 	}
-	/* Pull the result to top of stack, discard options dict */
+
+	/*
+	 * Pull the result to top of stack, discard options dict.
+	 */
+
 	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
 	TclEmitOpcode(INST_POP, envPtr);
 
@@ -806,6 +824,7 @@ TclSubstCompile(
 	 * through them all.  So, we now have a stack requirements estimate
 	 * that is too low.  Here we manually fix that up.
 	 */
+
 	TclAdjustStackDepth(5, envPtr);
 
 	/* OK destination */
