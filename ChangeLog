@@ -1,3 +1,10 @@
+2010-04-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h  Fix [Patch 2986105]: conditionally defining
+	* win/tclWinFile.c  strcasecmp/strncasecmp
+	* win/tclWinLoad.c  Fix gcc warning: comparison of unsigned expression
+	>= 0 is always true
+
 2010-04-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmdsSZ.c (TclSubstCompile): If the first token does
