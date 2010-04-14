@@ -1,8 +1,9 @@
 2010-04-14  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Linux platform identification:
-	Check /lib64 for existence of files matching libc* before
-	accepting it as base directory. This can happen on weirdly
+	* library/platform/pkgIndex.tcl: Check /lib64 for existence of
+	* unix/Makefile.in: files matching libc* before accepting it as
+	* win/Makefile.in: base directory. This can happen on weirdly
 	installed 32bit systems which have an empty or partially filled
 	/lib64 without an actual libc. Bumped to version 1.0.6.
 
