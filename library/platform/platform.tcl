@@ -175,7 +175,10 @@ proc ::platform::identify {} {
 
 	    set v unknown
 
-	    if {[file exists /lib64] && [file isdirectory /lib64]} {
+	    if {[file exists /lib64] &&
+		[file isdirectory /lib64] &&
+		[llength [glob -nocomplain -directory /lib64 libc*]]
+	    } {
 		set base /lib64
 	    } else {
 		set base /lib
@@ -289,7 +292,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.5
+package provide platform 1.0.6
 
 # ### ### ### ######### ######### #########
 ## Demo application
