@@ -1,17 +1,21 @@
+2010-04-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/try.n: [Bug 2987551]: Fix typo.
+
 2010-04-14  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Linux platform identification:
-	* library/platform/pkgIndex.tcl: Check /lib64 for existence of
-	* unix/Makefile.in: files matching libc* before accepting it as
-	* win/Makefile.in: base directory. This can happen on weirdly
-	installed 32bit systems which have an empty or partially filled
-	/lib64 without an actual libc. Bumped to version 1.0.6.
+	* library/platform/pkgIndex.tcl: Check /lib64 for existence of files
+	* unix/Makefile.in: matching libc* before accepting it as base
+	* win/Makefile.in:  directory. This can happen on weirdly installed
+	32bit systems which have an empty or partially filled /lib64 without
+	an actual libc. Bumped to version 1.0.6.
 
 2010-04-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h  Fix [Patch 2986105]: conditionally defining
-	* win/tclWinFile.c  strcasecmp/strncasecmp
-	* win/tclWinLoad.c  Fix gcc warning: comparison of unsigned expression
+	* win/tclWinPort.h: Fix [Patch 2986105]: conditionally defining
+	* win/tclWinFile.c: strcasecmp/strncasecmp
+	* win/tclWinLoad.c: Fix gcc warning: comparison of unsigned expression
 	>= 0 is always true
 
 2010-04-08  Donal K. Fellows  <dkf@users.sf.net>
