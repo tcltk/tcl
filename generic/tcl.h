@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.302 2010/02/16 16:30:52 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.303 2010/04/15 13:58:44 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -2375,6 +2375,12 @@ EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #endif
 
+#if !defined(_TCHAR_DEFINED)
+#   if defined(__WIN32__)
+	typedef char TCHAR;
+#	define _TCHAR_DEFINED
+#   endif
+#endif
 /*
  *----------------------------------------------------------------------------
  * Include the public function declarations that are accessible via the stubs
