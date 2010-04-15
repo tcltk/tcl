@@ -1,3 +1,10 @@
+2010-04-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h:       Move inclusion of <tchar.h> from
+	* generic/tcl.h           tclPlatDecls.h to tclWinPort.h,
+	* generic/tclPlatDecls.h  where it belongs. Add fallback in
+	tcl.h, so TCHAR is available in win32 always
+
 2010-04-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/try.n: [Bug 2987551]: Fix typo.
