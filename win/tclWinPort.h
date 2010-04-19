@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.50.2.1 2010/01/31 23:51:37 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.50.2.2 2010/04/19 07:40:41 nijtmans Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -58,14 +58,18 @@
 #include <signal.h>
 #include <string.h>
 
-/*
- * These string functions are not defined with the same names on Windows.
- */
-
-#ifndef __CYGWIN__
-#define wcscasecmp _wcsicmp
-#define strcasecmp stricmp
-#define strncasecmp strnicmp
+#ifdef __CYGWIN__
+#   include <unistd.h>
+#   ifndef _wcsicmp
+#	define _wcsicmp wcscasecmp
+#   endif
+#else
+#   ifndef strncasecmp
+#	define strncasecmp strnicmp
+#   endif
+#   ifndef strcasecmp
+#	define strcasecmp stricmp
+#   endif
 #endif
 
 /*
@@ -305,7 +309,7 @@
  */
 
 #ifndef S_IFLNK
-#define S_IFLNK        0120000  /* Symbolic Link */
+#   define S_IFLNK        0120000  /* Symbolic Link */
 #endif
 
 #ifndef S_ISREG
@@ -357,11 +361,11 @@
  */
 
 #ifndef MAXPATH
-#define MAXPATH MAX_PATH
+#   define MAXPATH MAX_PATH
 #endif /* MAXPATH */
 
 #ifndef MAXPATHLEN
-#define MAXPATHLEN MAXPATH
+#   define MAXPATHLEN MAXPATH
 #endif /* MAXPATHLEN */
 
 /*
@@ -382,13 +386,13 @@
  */
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
-#    define environ _environ
-#    define hypot _hypot
-#    define exception _exception
-#    undef EDEADLOCK
-#    if defined(__MINGW32__) && !defined(__MSVCRT__)
+#   define environ _environ
+#   define hypot _hypot
+#   define exception _exception
+#   undef EDEADLOCK
+#   if defined(__MINGW32__) && !defined(__MSVCRT__)
 #	define timezone _timezone
-#    endif
+#   endif
 #endif /* _MSC_VER || __MINGW32__ */
 
 /*
@@ -402,8 +406,8 @@
 
 #ifdef __CYGWIN__
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
-#    define putenv TclCygwinPutenv
-#    define timezone _timezone
+#   define putenv TclCygwinPutenv
+#   define timezone _timezone
 #endif /* __CYGWIN__ */
 
 
