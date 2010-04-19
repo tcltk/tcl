@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.9 2010/04/02 23:48:14 dgp Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.10 2010/04/19 15:58:52 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -305,14 +305,13 @@ TclpTempFileNameForLibrary(Tcl_Interp* interp, /* Tcl interpreter */
     if (dllDirectoryName == NULL) {
 	Tcl_MutexLock(&loadMutex);
 	if (dllDirectoryName == NULL) {
-	    if ((nameLen = GetTempPathW(MAX_PATH, name)) >= 0) {
-		if (nameLen >= MAX_PATH-12) {
-		    Tcl_SetErrno(ENAMETOOLONG);
-		    nameLen = 0;
-		} else {
-		    wcscpy(name+nameLen, L"TCLXXXXXXXX");
-		    nameLen += 11;
-		}
+	    nameLen = GetTempPathW(MAX_PATH, name);
+	    if (nameLen >= MAX_PATH-12) {
+		Tcl_SetErrno(ENAMETOOLONG);
+		nameLen = 0;
+	    } else {
+		wcscpy(name+nameLen, L"TCLXXXXXXXX");
+		nameLen += 11;
 	    }
 	    status = 1;
 	    if (nameLen != 0) {
