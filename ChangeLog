@@ -1,3 +1,8 @@
+2010-04-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Improve commenting and
+	reduce indentation for the Invocation Block.
+
 2010-04-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/unset.n: [Bug 2988940]: Fix typo.
