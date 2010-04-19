@@ -1,3 +1,8 @@
+2010-04-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h  Fix [Patch 2986105]: conditionally defining
+	* win/tclWinFile.c  strcasecmp/strncasecmp
+
 2010-04-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/unset.n: [Bug 2988940]: Fix typo.
