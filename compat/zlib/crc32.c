@@ -1,5 +1,5 @@
 /* crc32.c -- compute the CRC-32 of a data stream
- * Copyright (C) 1995-2006 Mark Adler
+ * Copyright (C) 1995-2006, 2010 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  *
  * Thanks to Rodney Brown <rbrown64@csc.com.au> for his contribution of faster
@@ -9,7 +9,7 @@
  * factor of two increase in speed on a Power PC G4 (PPC7455) using gcc -O3.
  */
 
-/* @(#) $Id: crc32.c,v 1.2 2010/03/16 09:01:04 nijtmans Exp $ */
+/* @(#) $Id: crc32.c,v 1.3 2010/04/20 14:50:10 nijtmans Exp $ */
 
 /*
   Note on the use of DYNAMIC_CRC_TABLE: there is no mutex or semaphore
@@ -221,7 +221,7 @@ const unsigned long FAR * ZEXPORT get_crc_table()
 unsigned long ZEXPORT crc32(crc, buf, len)
     unsigned long crc;
     const unsigned char FAR *buf;
-    unsigned len;
+    uInt len;
 {
     if (buf == Z_NULL) return 0UL;
 

@@ -1,6 +1,7 @@
 2010-04-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclTest.c   Use function prototypes from the FS API.
+	* compat/zlib/*       Upgrade to zlib 1.2.5
 
 2010-04-19  Donal K. Fellows  <dkf@users.sf.net>
 
