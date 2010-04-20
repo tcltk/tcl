@@ -25,19 +25,21 @@ CFLAGS=-O
 #           -Wstrict-prototypes -Wmissing-prototypes
 
 SFLAGS=-O
-
-LDFLAGS=-L. libz.a
+LDFLAGS=
+TEST_LDFLAGS=-L. libz.a
 LDSHARED=$(CC)
 CPP=$(CC) -E
 
 STATICLIB=libz.a
 SHAREDLIB=libz.so
-SHAREDLIBV=libz.so.1.2.4
+SHAREDLIBV=libz.so.1.2.5
 SHAREDLIBM=libz.so.1
-LIBS=$(STATICLIB) $(SHAREDLIB) $(SHAREDLIBV)
+LIBS=$(STATICLIB) $(SHAREDLIBV)
 
 AR=ar rc
 RANLIB=ranlib
+LDCONFIG=ldconfig
+LDSHAREDLIBC=-lc
 TAR=tar
 SHELL=/bin/sh
 EXE=
@@ -45,6 +47,7 @@ EXE=
 prefix = /usr/local
 exec_prefix = ${prefix}
 libdir = ${exec_prefix}/lib
+sharedlibdir = ${libdir}
 includedir = ${prefix}/include
 mandir = ${prefix}/share/man
 man3dir = ${mandir}/man3
@@ -129,22 +132,22 @@ minigzip64.o: minigzip.c zlib.h zconf.h
 .SUFFIXES: .lo
 
 .c.lo:
-	-@if [ ! -d objs ]; then mkdir objs; fi
+	-@mkdir objs 2>/dev/null || test -d objs
 	$(CC) $(SFLAGS) -DPIC -c -o objs/$*.o $<
 	-@mv objs/$*.o $@
 
 $(SHAREDLIBV): $(PIC_OBJS)
-	$(LDSHARED) $(SFLAGS) -o $@ $(PIC_OBJS) -lc
+	$(LDSHARED) $(SFLAGS) -o $@ $(PIC_OBJS) $(LDSHAREDLIBC) $(LDFLAGS)
 	rm -f $(SHAREDLIB) $(SHAREDLIBM)
 	ln -s $@ $(SHAREDLIB)
 	ln -s $@ $(SHAREDLIBM)
 	-@rmdir objs
 
 example$(EXE): example.o $(STATICLIB)
-	$(CC) $(CFLAGS) -o $@ example.o $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ example.o $(TEST_LDFLAGS)
 
 minigzip$(EXE): minigzip.o $(STATICLIB)
-	$(CC) $(CFLAGS) -o $@ minigzip.o $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ minigzip.o $(TEST_LDFLAGS)
 
 examplesh$(EXE): example.o $(SHAREDLIBV)
 	$(CC) $(CFLAGS) -o $@ example.o -L. $(SHAREDLIBV)
@@ -153,25 +156,27 @@ minigzipsh$(EXE): minigzip.o $(SHAREDLIBV)
 	$(CC) $(CFLAGS) -o $@ minigzip.o -L. $(SHAREDLIBV)
 
 example64$(EXE): example64.o $(STATICLIB)
-	$(CC) $(CFLAGS) -o $@ example64.o $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ example64.o $(TEST_LDFLAGS)
 
 minigzip64$(EXE): minigzip64.o $(STATICLIB)
-	$(CC) $(CFLAGS) -o $@ minigzip64.o $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ minigzip64.o $(TEST_LDFLAGS)
 
 install-libs: $(LIBS)
 	-@if [ ! -d $(DESTDIR)$(exec_prefix)  ]; then mkdir -p $(DESTDIR)$(exec_prefix); fi
 	-@if [ ! -d $(DESTDIR)$(libdir)       ]; then mkdir -p $(DESTDIR)$(libdir); fi
+	-@if [ ! -d $(DESTDIR)$(sharedlibdir) ]; then mkdir -p $(DESTDIR)$(sharedlibdir); fi
 	-@if [ ! -d $(DESTDIR)$(man3dir)      ]; then mkdir -p $(DESTDIR)$(man3dir); fi
 	-@if [ ! -d $(DESTDIR)$(pkgconfigdir) ]; then mkdir -p $(DESTDIR)$(pkgconfigdir); fi
-	cp $(LIBS) $(DESTDIR)$(libdir)
+	cp $(STATICLIB) $(DESTDIR)$(libdir)
+	cp $(SHAREDLIBV) $(DESTDIR)$(sharedlibdir)
 	cd $(DESTDIR)$(libdir); chmod u=rw,go=r $(STATICLIB)
 	-@(cd $(DESTDIR)$(libdir); $(RANLIB) libz.a || true) >/dev/null 2>&1
-	-@cd $(DESTDIR)$(libdir); if test "$(SHAREDLIBV)" -a -f $(SHAREDLIBV); then \
+	-@cd $(DESTDIR)$(sharedlibdir); if test "$(SHAREDLIBV)" -a -f $(SHAREDLIBV); then \
 	  chmod 755 $(SHAREDLIBV); \
 	  rm -f $(SHAREDLIB) $(SHAREDLIBM); \
 	  ln -s $(SHAREDLIBV) $(SHAREDLIB); \
 	  ln -s $(SHAREDLIBV) $(SHAREDLIBM); \
-	  (ldconfig || true)  >/dev/null 2>&1; \
+	  ($(LDCONFIG) || true)  >/dev/null 2>&1; \
 	fi
 	cp zlib.3 $(DESTDIR)$(man3dir)
 	chmod 644 $(DESTDIR)$(man3dir)/zlib.3

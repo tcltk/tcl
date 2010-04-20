@@ -13,18 +13,43 @@
 # If you have problems, try without defining CC and CFLAGS before reporting
 # an error.
 
+if [ -n "${CHOST}" ]; then
+    uname="$(echo "${CHOST}" | sed -e 's/^[^-]*-\([^-]*\)$/\1/' -e 's/^[^-]*-[^-]*-\([^-]*\)$/\1/' -e 's/^[^-]*-[^-]*-\([^-]*\)-.*$/\1/')"
+    CROSS_PREFIX="${CHOST}-"
+fi
+
 STATICLIB=libz.a
 LDFLAGS="${LDFLAGS} -L. ${STATICLIB}"
 VER=`sed -n -e '/VERSION "/s/.*"\(.*\)".*/\1/p' < zlib.h`
 VER3=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\\.[0-9]*\).*/\1/p' < zlib.h`
 VER2=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\)\\..*/\1/p' < zlib.h`
 VER1=`sed -n -e '/VERSION "/s/.*"\([0-9]*\)\\..*/\1/p' < zlib.h`
-AR=${AR-"ar"}
+if "${CROSS_PREFIX}ar" --version >/dev/null 2>/dev/null || test $? -lt 126; then
+    AR=${AR-"${CROSS_PREFIX}ar"}
+    test -n "${CROSS_PREFIX}" && echo Using ${AR}
+else
+    AR=${AR-"ar"}
+    test -n "${CROSS_PREFIX}" && echo Using ${AR}
+fi
 AR_RC="${AR} rc"
-RANLIB=${RANLIB-"ranlib"}
+if "${CROSS_PREFIX}ranlib" --version >/dev/null 2>/dev/null || test $? -lt 126; then
+    RANLIB=${RANLIB-"${CROSS_PREFIX}ranlib"}
+    test -n "${CROSS_PREFIX}" && echo Using ${RANLIB}
+else
+    RANLIB=${RANLIB-"ranlib"}
+fi
+if "${CROSS_PREFIX}nm" --version >/dev/null 2>/dev/null || test $? -lt 126; then
+    NM=${NM-"${CROSS_PREFIX}nm"}
+    test -n "${CROSS_PREFIX}" && echo Using ${NM}
+else
+    NM=${NM-"nm"}
+fi
+LDCONFIG=${LDCONFIG-"ldconfig"}
+LDSHAREDLIBC="${LDSHAREDLIBC--lc}"
 prefix=${prefix-/usr/local}
 exec_prefix=${exec_prefix-'${prefix}'}
 libdir=${libdir-'${exec_prefix}/lib'}
+sharedlibdir=${sharedlibdir-'${libdir}'}
 includedir=${includedir-'${prefix}/include'}
 mandir=${mandir-'${prefix}/share/man'}
 shared_ext='.so'
@@ -41,13 +66,15 @@ case "$1" in
     -h* | --help)
       echo 'usage:'
       echo '  configure [--zprefix] [--prefix=PREFIX]  [--eprefix=EXPREFIX]'
-      echo '    [--static] [--64] [--libdir=LIBDIR] [--includedir=INCLUDEDIR]'
+      echo '    [--static] [--64] [--libdir=LIBDIR] [--sharedlibdir=LIBDIR]'
+      echo '    [--includedir=INCLUDEDIR]'
         exit 0 ;;
-    -p*=* | --prefix=*) prefix=`echo $1 | sed 's/[-a-z_]*=//'`; shift ;;
-    -e*=* | --eprefix=*) exec_prefix=`echo $1 | sed 's/[-a-z_]*=//'`; shift ;;
-    -l*=* | --libdir=*) libdir=`echo $1 | sed 's/[-a-z_]*=//'`; shift ;;
-    -i*=* | --includedir=*) includedir=`echo $1 | sed 's/[-a-z_]*=//'`;shift ;;
-    -u*=* | --uname=*) uname=`echo $1 | sed 's/[-a-z_]*=//'`;shift ;;
+    -p*=* | --prefix=*) prefix=`echo $1 | sed 's/.*=//'`; shift ;;
+    -e*=* | --eprefix=*) exec_prefix=`echo $1 | sed 's/.*=//'`; shift ;;
+    -l*=* | --libdir=*) libdir=`echo $1 | sed 's/.*=//'`; shift ;;
+    --sharedlibdir=*) sharedlibdir=`echo $1 | sed 's/.*=//'`; shift ;;
+    -i*=* | --includedir=*) includedir=`echo $1 | sed 's/.*=//'`;shift ;;
+    -u*=* | --uname=*) uname=`echo $1 | sed 's/.*=//'`;shift ;;
     -p* | --prefix) prefix="$2"; shift; shift ;;
     -e* | --eprefix) exec_prefix="$2"; shift; shift ;;
     -l* | --libdir) libdir="$2"; shift; shift ;;
@@ -68,8 +95,8 @@ extern int getchar();
 int hello() {return getchar();}
 EOF
 
-test -z "$CC" && echo Checking for gcc...
-cc=${CC-gcc}
+test -z "$CC" && echo Checking for ${CROSS_PREFIX}gcc...
+cc=${CC-${CROSS_PREFIX}gcc}
 cflags=${CFLAGS-"-O3"}
 # to force the asm version use: CFLAGS="-O3 -DASMV" ./configure
 case "$cc" in
@@ -78,8 +105,8 @@ esac
 
 if test "$gcc" -eq 1 && ($cc -c $cflags $test.c) 2>/dev/null; then
   CC="$cc"
-  SFLAGS="${CFLAGS-"-O3"} -fPIC"
-  CFLAGS="${CFLAGS-"-O3"}"
+  SFLAGS="${CFLAGS--O3} -fPIC"
+  CFLAGS="${CFLAGS--O3}"
   if test $build64 -eq 1; then
     CFLAGS="${CFLAGS} -m64"
     SFLAGS="${SFLAGS} -m64"
@@ -91,9 +118,17 @@ if test "$gcc" -eq 1 && ($cc -c $cflags $test.c) 2>/dev/null; then
     uname=`(uname -s || echo unknown) 2>/dev/null`
   fi
   case "$uname" in
-  Linux | linux | GNU | GNU/* | *BSD | DragonFly) LDSHARED=${LDSHARED-"$cc -shared -Wl,-soname,libz.so.1,--version-script,zlib.map"} ;;
-  CYGWIN* | Cygwin* | cygwin* | OS/2* )
-             EXE='.exe' ;;
+  Linux* | linux* | GNU | GNU/* | *BSD | DragonFly) LDSHARED=${LDSHARED-"$cc -shared -Wl,-soname,libz.so.1,--version-script,zlib.map"} ;;
+  CYGWIN* | Cygwin* | cygwin* | OS/2*)
+        EXE='.exe' ;;
+  MINGW*|mingw*)
+# temporary bypass
+        rm -f $test.[co] $test $test$shared_ext
+        echo "Please use win32/Makefile.gcc instead."
+        exit 1
+        LDSHARED=${LDSHARED-"$cc -shared"}
+        LDSHAREDLIBC=""
+        EXE='.exe' ;;
   QNX*)  # This is for QNX6. I suppose that the QNX rule below is for QNX2,QNX4
          # (alain.bonnefoy@icbt.com)
                  LDSHARED=${LDSHARED-"$cc -shared -Wl,-hlibz.so.1"} ;;
@@ -117,6 +152,7 @@ if test "$gcc" -eq 1 && ($cc -c $cflags $test.c) 2>/dev/null; then
 else
   # find system name and corresponding cc options
   CC=${CC-cc}
+  gcc=0
   if test -z "$uname"; then
     uname=`(uname -sr || echo unknown) 2>/dev/null`
   fi
@@ -474,22 +510,32 @@ EOF
   fi
 fi
 
-cat >$test.c <<EOF
-#include <errno.h>
-int main() { return 0; }
+if test "$gcc" -eq 1; then
+  cat > $test.c <<EOF
+#if ((__GNUC__-0) * 10 + __GNUC_MINOR__-0 >= 33)
+#  define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
+#else
+#  define ZLIB_INTERNAL
+#endif
+int ZLIB_INTERNAL foo;
+int main()
+{
+  return 0;
+}
 EOF
-if test "`($CC -c $CFLAGS $test.c) 2>&1`" = ""; then
-  echo "Checking for errno.h... Yes."
-else
-  echo "Checking for errno.h... No."
-  CFLAGS="$CFLAGS -DNO_ERRNO_H"
-  SFLAGS="$SFLAGS -DNO_ERRNO_H"
+  if test "`($CC -c $CFLAGS $test.c) 2>&1`" = ""; then
+    echo "Checking for attribute(visibility) support... Yes."
+  else
+    CFLAGS="$CFLAGS -DNO_VIZ"
+    SFLAGS="$SFLAGS -DNO_VIZ"
+    echo "Checking for attribute(visibility) support... No."
+  fi
 fi
 
 CPP=${CPP-"$CC -E"}
 case $CFLAGS in
   *ASMV*)
-    if test "`nm $test.o | grep _hello`" = ""; then
+    if test "`$NM $test.o | grep _hello`" = ""; then
       CPP="$CPP -DNO_UNDERLINE"
       echo Checking for underline in external names... No.
     else
@@ -513,10 +559,13 @@ sed < Makefile.in "
 /^SHAREDLIBM *=/s#=.*#=$SHAREDLIBM#
 /^AR *=/s#=.*#=$AR_RC#
 /^RANLIB *=/s#=.*#=$RANLIB#
+/^LDCONFIG *=/s#=.*#=$LDCONFIG#
+/^LDSHAREDLIBC *=/s#=.*#=$LDSHAREDLIBC#
 /^EXE *=/s#=.*#=$EXE#
 /^prefix *=/s#=.*#=$prefix#
 /^exec_prefix *=/s#=.*#=$exec_prefix#
 /^libdir *=/s#=.*#=$libdir#
+/^sharedlibdir *=/s#=.*#=$sharedlibdir#
 /^includedir *=/s#=.*#=$includedir#
 /^mandir *=/s#=.*#=$mandir#
 /^all: */s#:.*#: $ALL#
@@ -538,6 +587,7 @@ sed < zlib.pc.in "
 /^prefix *=/s#=.*#=$prefix#
 /^exec_prefix *=/s#=.*#=$exec_prefix#
 /^libdir *=/s#=.*#=$libdir#
+/^sharedlibdir *=/s#=.*#=$sharedlibdir#
 /^includedir *=/s#=.*#=$includedir#
 /^mandir *=/s#=.*#=$mandir#
 /^LDFLAGS *=/s#=.*#=$LDFLAGS#

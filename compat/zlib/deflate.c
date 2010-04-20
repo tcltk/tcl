@@ -47,12 +47,12 @@
  *
  */
 
-/* @(#) $Id: deflate.c,v 1.2 2010/03/16 09:01:03 nijtmans Exp $ */
+/* @(#) $Id: deflate.c,v 1.3 2010/04/20 14:50:10 nijtmans Exp $ */
 
 #include "deflate.h"
 
 const char deflate_copyright[] =
-   " deflate 1.2.4 Copyright 1995-2010 Jean-loup Gailly and Mark Adler ";
+   " deflate 1.2.5 Copyright 1995-2010 Jean-loup Gailly and Mark Adler ";
 /*
   If you use the zlib library in a product, an acknowledgment is welcome
   in the documentation of your product. If for some reason you cannot
