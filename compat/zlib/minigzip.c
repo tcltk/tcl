@@ -13,7 +13,7 @@
  * or in pipe mode.
  */
 
-/* @(#) $Id: minigzip.c,v 1.2 2010/03/16 09:01:03 nijtmans Exp $ */
+/* @(#) $Id: minigzip.c,v 1.3 2010/04/20 14:50:10 nijtmans Exp $ */
 
 #include "zlib.h"
 #include <stdio.h>
@@ -32,6 +32,9 @@
 #if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
 #  include <fcntl.h>
 #  include <io.h>
+#  ifdef UNDER_CE
+#    include <stdlib.h>
+#  endif
 #  define SET_BINARY_MODE(file) setmode(fileno(file), O_BINARY)
 #else
 #  define SET_BINARY_MODE(file)
@@ -50,11 +53,13 @@
 #  include <unix.h> /* for fileno */
 #endif
 
+#if !defined(Z_HAVE_UNISTD_H) && !defined(_LARGEFILE64_SOURCE)
 #ifndef WIN32 /* unlink already in stdio.h for WIN32 */
   extern int unlink OF((const char *));
 #endif
+#endif
 
-#if defined(UNDER_CE) && defined(NO_ERRNO_H)
+#if defined(UNDER_CE)
 #  include <windows.h>
 #  define perror(s) pwinerror(s)
 
@@ -116,7 +121,7 @@ static void pwinerror (s)
         fprintf(stderr, "%s\n", strwinerror(GetLastError ()));
 }
 
-#endif /* UNDER_CE && NO_ERRNO_H */
+#endif /* UNDER_CE */
 
 #ifndef GZ_SUFFIX
 #  define GZ_SUFFIX ".gz"
