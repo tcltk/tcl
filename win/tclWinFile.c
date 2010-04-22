@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.106 2010/04/13 13:37:29 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.107 2010/04/22 11:40:32 nijtmans Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -667,7 +667,7 @@ WinReadLinkDirectory(
 	    }
 	}
 
-	tclWinProcs->tchar2utf((const char *)
+	tclWinProcs->tchar2utf((const TCHAR *)
 		reparseBuffer->MountPointReparseBuffer.PathBuffer,
 		(int) reparseBuffer->MountPointReparseBuffer
 		.SubstituteNameLength, &ds);
@@ -908,7 +908,7 @@ TclpMatchInDirectory(
 	    DWORD attr;
 	    const char *str = Tcl_GetStringFromObj(norm,&len);
 
-	    native = (const TCHAR *) Tcl_FSGetNativePath(pathPtr);
+	    native = Tcl_FSGetNativePath(pathPtr);
 
 	    if (tclWinProcs->getFileAttributesExProc == NULL) {
 		attr = tclWinProcs->getFileAttributesProc(native);
@@ -1851,7 +1851,7 @@ TclpObjChdir(
     Tcl_DString ds;
 #endif /* __CYGWIN__ */
 
-    nativePath = (const TCHAR *) Tcl_FSGetNativePath(pathPtr);
+    nativePath = Tcl_FSGetNativePath(pathPtr);
 
 #ifdef __CYGWIN__
     /*
@@ -2003,7 +2003,7 @@ TclpObjStat(
 
     TclWinFlushDirtyChannels();
 
-    return NativeStat((const TCHAR *) Tcl_FSGetNativePath(pathPtr),
+    return NativeStat(Tcl_FSGetNativePath(pathPtr),
 	    statPtr, 0);
 }
 
@@ -2394,7 +2394,7 @@ TclpGetNativeCwd(
 	}
     }
 
-    return TclNativeDupInternalRep((ClientData) buffer);
+    return TclNativeDupInternalRep(buffer);
 }
 
 int
@@ -2402,7 +2402,7 @@ TclpObjAccess(
     Tcl_Obj *pathPtr,
     int mode)
 {
-    return NativeAccess((const TCHAR *) Tcl_FSGetNativePath(pathPtr), mode);
+    return NativeAccess(Tcl_FSGetNativePath(pathPtr), mode);
 }
 
 int
@@ -2418,7 +2418,7 @@ TclpObjLstat(
 
     TclWinFlushDirtyChannels();
 
-    return NativeStat((const TCHAR *) Tcl_FSGetNativePath(pathPtr),
+    return NativeStat(Tcl_FSGetNativePath(pathPtr),
 	    statPtr, 1);
 }
 
@@ -2431,15 +2431,15 @@ TclpObjLink(
 {
     if (toPtr != NULL) {
 	int res;
-	TCHAR *LinkTarget;
-	TCHAR *LinkSource = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
+	const TCHAR *LinkTarget;
+	const TCHAR *LinkSource = Tcl_FSGetNativePath(pathPtr);
 	Tcl_Obj *normalizedToPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
 
 	if (normalizedToPtr == NULL) {
 	    return NULL;
 	}
 
-	LinkTarget = (TCHAR *) Tcl_FSGetNativePath(normalizedToPtr);
+	LinkTarget = Tcl_FSGetNativePath(normalizedToPtr);
 
 	if (LinkSource == NULL || LinkTarget == NULL) {
 	    return NULL;
@@ -2451,7 +2451,7 @@ TclpObjLink(
 	    return NULL;
 	}
     } else {
-	TCHAR *LinkSource = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
+	const TCHAR *LinkSource = Tcl_FSGetNativePath(pathPtr);
 
 	if (LinkSource == NULL) {
 	    return NULL;
@@ -2501,14 +2501,14 @@ TclpFilesystemPathType(
     firstSeparator = strchr(path, '/');
     if (firstSeparator == NULL) {
 	found = tclWinProcs->getVolumeInformationProc(
-		Tcl_FSGetNativePath(pathPtr), NULL, 0, NULL, NULL, NULL,
+			Tcl_FSGetNativePath(pathPtr), NULL, 0, NULL, NULL, NULL,
 		volType, VOL_BUF_SIZE);
     } else {
 	Tcl_Obj *driveName = Tcl_NewStringObj(path, firstSeparator - path+1);
 
 	Tcl_IncrRefCount(driveName);
 	found = tclWinProcs->getVolumeInformationProc(
-		Tcl_FSGetNativePath(driveName), NULL, 0, NULL, NULL, NULL,
+			Tcl_FSGetNativePath(driveName), NULL, 0, NULL, NULL, NULL,
 		volType, VOL_BUF_SIZE);
 	Tcl_DecrRefCount(driveName);
     }
@@ -2519,7 +2519,7 @@ TclpFilesystemPathType(
 	Tcl_DString ds;
 	Tcl_Obj *objPtr;
 
-	tclWinProcs->tchar2utf((const char *) volType, -1, &ds);
+	tclWinProcs->tchar2utf(volType, -1, &ds);
 	objPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		Tcl_DStringLength(&ds));
 	Tcl_DStringFree(&ds);
@@ -2667,7 +2667,7 @@ TclpObjNormalizePath(
 			 * path segment and continue
 			 */
 
-			Tcl_DStringAppend(&dsNorm, (TCHAR *)
+			Tcl_DStringAppend(&dsNorm, (const char *)
 				(nativePath + Tcl_DStringLength(&ds)-dotLen),
 				dotLen);
 		    } else {
@@ -2675,7 +2675,7 @@ TclpObjNormalizePath(
 			 * Normal path.
 			 */
 
-			WIN32_FIND_DATA fData;
+			WIN32_FIND_DATAA fData;
 			HANDLE handle;
 
 			handle = FindFirstFileA(nativePath, &fData);
@@ -2746,7 +2746,7 @@ TclpObjNormalizePath(
 		 */
 
 		WIN32_FILE_ATTRIBUTE_DATA data;
-		const char *nativePath = tclWinProcs->utf2tchar(path,
+		const TCHAR *nativePath = tclWinProcs->utf2tchar(path,
 			currentPathEndPosition - path, &ds);
 
 		if (tclWinProcs->getFileAttributesExProc(nativePath,
@@ -2773,7 +2773,7 @@ TclpObjNormalizePath(
 				    ((WCHAR *) nativePath)[i] = wc;
 				}
 			    }
-			    Tcl_DStringAppend(&dsNorm, nativePath,
+			    Tcl_DStringAppend(&dsNorm, (const char *)nativePath,
 				    (int)(sizeof(WCHAR) * len));
 			    lastValidPathEnd = currentPathEndPosition;
 			}
@@ -2855,7 +2855,7 @@ TclpObjNormalizePath(
 			drive -= (L'a' - L'A');
 			((WCHAR *) nativePath)[0] = drive;
 		    }
-		    Tcl_DStringAppend(&dsNorm, nativePath,
+		    Tcl_DStringAppend(&dsNorm, (const char *)nativePath,
 			    Tcl_DStringLength(&ds));
 		} else {
 		    char *checkDots = NULL;
@@ -2880,8 +2880,8 @@ TclpObjNormalizePath(
 			 * path segment and continue.
 			 */
 
-			Tcl_DStringAppend(&dsNorm, (TCHAR *)
-				((WCHAR*)(nativePath + Tcl_DStringLength(&ds))
+			Tcl_DStringAppend(&dsNorm, (const char *)
+				((WCHAR *)(nativePath + Tcl_DStringLength(&ds))
 				- dotLen), (int)(dotLen * sizeof(WCHAR)));
 		    } else {
 			/*
@@ -2911,7 +2911,7 @@ TclpObjNormalizePath(
 			    FindClose(handle);
 			    Tcl_DStringAppend(&dsNorm, (const char *) L"/",
 				    sizeof(WCHAR));
-			    Tcl_DStringAppend(&dsNorm, (TCHAR *) nativeName,
+			    Tcl_DStringAppend(&dsNorm, (const char *) nativeName,
 				    (int) (wcslen(nativeName)*sizeof(WCHAR)));
 			}
 		    }
@@ -2940,7 +2940,7 @@ TclpObjNormalizePath(
 
 	if (1) {
 	    WCHAR wpath[MAX_PATH];
-	    const char *nativePath =
+	    const TCHAR *nativePath =
 	    		tclWinProcs->utf2tchar(path, lastValidPathEnd - path, &ds);
 	    DWORD wpathlen = tclWinProcs->getLongPathNameProc(nativePath,
 		    (TCHAR *) wpath, MAX_PATH);
@@ -2952,7 +2952,7 @@ TclpObjNormalizePath(
 	    if (wpath[0] >= L'a') {
 		wpath[0] -= (L'a' - L'A');
 	    }
-	    Tcl_DStringAppend(&dsNorm, (TCHAR*)wpath, wpathlen*sizeof(WCHAR));
+	    Tcl_DStringAppend(&dsNorm, (const char *)wpath, wpathlen*sizeof(WCHAR));
 	    Tcl_DStringFree(&ds);
 	}
 #endif
@@ -2972,7 +2972,7 @@ TclpObjNormalizePath(
 
 	Tcl_DString dsTemp;
 
-	tclWinProcs->tchar2utf(Tcl_DStringValue(&dsNorm),
+	tclWinProcs->tchar2utf((const TCHAR *)Tcl_DStringValue(&dsNorm),
 		Tcl_DStringLength(&dsNorm), &dsTemp);
 	nextCheckpoint = Tcl_DStringLength(&dsTemp);
 	if (*lastValidPathEnd != 0) {
@@ -3150,7 +3150,7 @@ TclpNativeToNormalized(
     int len;
     char *copy, *p;
 
-    tclWinProcs->tchar2utf((const char *) clientData, -1, &ds);
+    tclWinProcs->tchar2utf((const TCHAR *) clientData, -1, &ds);
     copy = Tcl_DStringValue(&ds);
     len = Tcl_DStringLength(&ds);
 
@@ -3255,7 +3255,7 @@ TclNativeCreateNativeRep(
     memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
 
     Tcl_DStringFree(&ds);
-    return (ClientData) nativePathPtr;
+    return nativePathPtr;
 }
 
 /*
@@ -3302,7 +3302,7 @@ TclNativeDupInternalRep(
 
     copy = (char *) ckalloc(len);
     memcpy(copy, clientData, len);
-    return (ClientData) copy;
+    return copy;
 }
 
 /*
@@ -3337,7 +3337,7 @@ TclpUtime(
     FromCTime(tval->actime, &lastAccessTime);
     FromCTime(tval->modtime, &lastModTime);
 
-    native = (const TCHAR *) Tcl_FSGetNativePath(pathPtr);
+    native = Tcl_FSGetNativePath(pathPtr);
 
     attr = tclWinProcs->getFileAttributesProc(native);
 
