@@ -1,3 +1,17 @@
+2010-04-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPlatDecls.h   Move TCHAR fallback typedef from tcl.h to
+	* generic/tcl.h            tclPlatDecls.h (as suggested by dgp)
+	* generic/tclInt.h         fix typo
+	* generic/tclIOUtil.c      Eliminate various unnecessary
+	* unix/tclUnixFile.c       type casts.
+	* unix/tclUnixPipe.c
+	* win/tclWinChan.c
+	* win/tclWinFCmd.c
+	* win/tclWinFile.c
+	* win/tclWinLoad.c
+	* win/tclWinPipe.c
+
 2010-04-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclTest.c   Use function prototypes from the FS API.

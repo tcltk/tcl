@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.174 2010/04/04 15:11:51 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.175 2010/04/22 11:40:31 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -4568,7 +4568,7 @@ const char *
 Tcl_FSGetNativePath(
     Tcl_Obj *pathPtr)
 {
-    return (const char *) Tcl_FSGetInternalRep(pathPtr, &tclNativeFilesystem);
+    return Tcl_FSGetInternalRep(pathPtr, &tclNativeFilesystem);
 }
 
 /*
