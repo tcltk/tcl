@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.468 2010/04/05 19:44:45 ferrieux Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.469 2010/04/22 11:40:31 nijtmans Exp $
  */
 
 #ifndef _TCLINT
@@ -64,7 +64,7 @@ typedef int ptrdiff_t;
 #endif
 
 /*
- * Ensure WORDS_BIGENDIAN is defined correcly:
+ * Ensure WORDS_BIGENDIAN is defined correctly:
  * Needs to happen here in addition to configure to work with fat compiles on
  * Darwin (where configure runs only once for multiple architectures).
  */
