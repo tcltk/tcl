@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.56 2009/12/16 23:26:00 nijtmans Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.57 2010/04/22 11:40:32 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -232,9 +232,9 @@ TclpMatchInDirectory(
 	Tcl_Obj *tailPtr;
 	const char *nativeTail;
 
-	native = (const char *) Tcl_FSGetNativePath(pathPtr);
+	native = Tcl_FSGetNativePath(pathPtr);
 	tailPtr = TclPathPart(interp, pathPtr, TCL_PATH_TAIL);
-	nativeTail = (const char *) Tcl_FSGetNativePath(tailPtr);
+	nativeTail = Tcl_FSGetNativePath(tailPtr);
 	matchResult = NativeMatchType(interp, native, nativeTail, types);
 	if (matchResult == 1) {
 	    Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
@@ -1115,7 +1115,7 @@ TclNativeCreateNativeRep(
     memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
 
     Tcl_DStringFree(&ds);
-    return (ClientData)nativePathPtr;
+    return nativePathPtr;
 }
 
 /*
@@ -1154,7 +1154,7 @@ TclNativeDupInternalRep(
 
     copy = ckalloc(len);
     memcpy(copy, clientData, len);
-    return (ClientData) copy;
+    return copy;
 }
 
 /*

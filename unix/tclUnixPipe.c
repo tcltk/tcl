@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.52 2010/04/02 21:21:06 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.53 2010/04/22 11:40:32 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -263,7 +263,7 @@ TclpTempFileName(void)
     fcntl(fd, F_SETFD, FD_CLOEXEC);
     unlink(fileName);			/* INTL: Native. */
 
-    result = TclpNativeToNormalized((ClientData) fileName);
+    result = TclpNativeToNormalized(fileName);
     close(fd);
     return result;
 }
