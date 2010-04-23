@@ -1,3 +1,7 @@
+2010-04-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixPort.h Fix [Bug #2991415] tclport.h #included before limits.h
+
 2010-04-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPlatDecls.h   Move TCHAR fallback typedef from tcl.h to
