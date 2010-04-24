@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.450 2010/04/05 19:44:45 ferrieux Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.451 2010/04/24 17:07:31 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8270,25 +8270,25 @@ Tcl_NRCmdSwap(
 void
 TclSpliceTailcall(
     Tcl_Interp *interp,
-    TEOV_callback *tailcallPtr)
+    TEOV_callback *tailcallPtr,
+    int skip)
 {
     /*
      * Find the splicing spot: right before the NRCommand of the thing
      * being tailcalled. Note that we skip NRCommands marked in data[1]
      * (used by command redirectors), and we skip the first command that we
-     * find: it corresponds to [tailcall] itself.
+     * find if requested to do so: it corresponds to [tailcall] itself.
      */
 
     Interp *iPtr = (Interp *) interp;
     TEOV_callback *runPtr;
     ExecEnv *eePtr = NULL;
-    int second = 0;
 
   restart:
     for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
 	if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
-	    if (second) break;
-	    second = 1;
+	    if (!skip) break;
+            skip = 0;
 	}
     }
     if (!runPtr) {
@@ -8566,7 +8566,7 @@ YieldToCallback(
     cbPtr = TOP_CB(interp);
     TOP_CB(interp) = cbPtr->nextPtr;
 
-    TclSpliceTailcall(interp, cbPtr);
+    TclSpliceTailcall(interp, cbPtr, 0);
     return TCL_OK;
 }
 
