@@ -1,6 +1,11 @@
+2010-04-25  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:    add unsupported [yieldm] command. 
+	* generic/tclInt.h:      
+
 2010-04-24  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.test: modify api of TclSpliceTailcall() 
+	* generic/tclBasic.c:    modify api of TclSpliceTailcall() 
 	* generic/tclExecute.c:  to fix yieldTo, which had not survived 
 	* generic/tclInt.h:      the latest mods to tailcall. Thanks kbk
 	for detecting the problem.

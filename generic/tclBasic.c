@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.451 2010/04/24 17:07:31 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.452 2010/04/25 13:39:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -800,6 +800,8 @@ Tcl_CreateInterp(void)
 
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldTo", NULL,
 	    TclNRYieldToObjCmd, NULL, NULL);
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldm", NULL,
+	    TclNRYieldmObjCmd, NULL, NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -8486,10 +8488,26 @@ TclNRYieldObjCmd(
 
     iPtr->numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
-
+    corPtr->nargs = -2;
+    
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
 	    NULL, NULL, NULL);
     return TCL_OK;
+}
+
+int
+TclNRYieldmObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+    int result;
+
+    result = TclNRYieldObjCmd(clientData, interp, objc, objv);
+    corPtr->nargs = -1;
+    return result;
 }
 
 int
@@ -8500,7 +8518,6 @@ TclNRYieldToObjCmd(
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-    int numLevels = iPtr->numLevels;
 
     Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
@@ -8518,10 +8535,9 @@ TclNRYieldToObjCmd(
 	return TCL_ERROR;
     }
 
-    iPtr->numLevels = corPtr->auxNumLevels;
-    corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
-
     /*
+     * Add the tailcall in the caller env, then just yield.
+     *
      * This is essentially code from TclNRTailcallObjCmd
      */
 
@@ -8544,9 +8560,7 @@ TclNRYieldToObjCmd(
 	    NULL);
     iPtr->execEnvPtr = corPtr->eePtr;
 
-    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
-	    NULL, NULL, NULL);
-    return TCL_OK;
+    return TclNRYieldObjCmd(clientData, interp, objc-1, objv+1);
 }
 
 static int
@@ -8716,16 +8730,8 @@ NRInterpCoroutine(
 {
     CoroutineData *corPtr = clientData;
     int nestNumLevels = corPtr->auxNumLevels;
-
-    /*
-     * objc==0 indicates a call to rewind the coroutine
-     */
-
-    if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?arg?");
-	return TCL_ERROR;
-    }
-
+    int nargs = corPtr->nargs;
+    
     if (!COR_IS_SUSPENDED(corPtr)) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "coroutine \"", Tcl_GetString(objv[0]),
@@ -8734,15 +8740,29 @@ NRInterpCoroutine(
 	return TCL_ERROR;
     }
 
+    if (nargs == -2) {
+        if (objc > 2) {
+            Tcl_WrongNumArgs(interp, 1, objv, "?arg?");
+            return TCL_ERROR;
+        } else if (objc == 2) {
+            Tcl_SetObjResult(interp, objv[1]);
+        }
+    } else {
+        if ((nargs != -1) && (nargs != (objc-1))) {
+            Tcl_SetObjResult(interp,
+                    Tcl_NewStringObj("wrong coro nargs; how did we get here? not implemeted!", -1));
+            return TCL_ERROR;            
+        }
+        if (objc > 1) {
+            Tcl_SetObjResult(interp, Tcl_NewListObj(objc-1, objv+1));
+        }
+    }
+
     /*
      * Swap the interp's environment to make it suitable to run this
      * coroutine. TEBC needs no info to resume executing after a suspension:
      * the codePtr will be read from the execEnv's saved bottomPtr.
      */
-
-    if (objc == 2) {
-	Tcl_SetObjResult(interp, objv[1]);
-    }
 
     SAVE_CONTEXT(corPtr->caller);
     RESTORE_CONTEXT(corPtr->running);

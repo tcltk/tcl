@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.470 2010/04/24 17:07:32 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.471 2010/04/25 13:39:25 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1494,6 +1494,9 @@ typedef struct CoroutineData {
                                 /* Where to stash the caller's bottomPointer,
 				 * if the coro is running in the caller's TEBC 
 				 * instance. Put a NULL in there otherwise. */
+    int nargs;                  /* Number of args required for resuming this
+				 * coroutine; -2 means "0 or 1" (default), -1
+				 * means "any" */
 } CoroutineData;
 
 typedef struct ExecEnv {
@@ -2751,6 +2754,7 @@ MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRTailcallObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
 MODULE_SCOPE void	TclClearTailcall(Tcl_Interp *interp,
