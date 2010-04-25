@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.87 2010/04/19 15:58:51 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.88 2010/04/25 15:40:54 dgp Exp $
  */
 
 #ifndef _TCL
@@ -2375,18 +2375,6 @@ EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #endif
 
-/*
- * Unfortunately, TCHAR is needed in tclPlatDecls.h for
- * win32, so if TCHAR is not defined yet do it here.
- * This way, we don't need to include <tchar.h> just
- * for one define.
- */
-#if !defined(_TCHAR_DEFINED)
-#   if defined(__WIN32__)
-	typedef char TCHAR;
-#	define _TCHAR_DEFINED
-#   endif
-#endif
 /*
  *----------------------------------------------------------------------------
  * Include the public function declarations that are accessible via the stubs

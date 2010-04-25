@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.10 2010/04/19 15:58:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.11 2010/04/25 15:40:55 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -347,7 +347,7 @@ TclpTempFileNameForLibrary(Tcl_Interp* interp, /* Tcl interpreter */
 	Tcl_AppendResult(interp, "couldn't create temporary directory: ",
 			 Tcl_PosixError(interp), NULL);
     }
-    fileName = TclpNativeToNormalized((ClientData) dllDirectoryName);
+    fileName = TclpNativeToNormalized(dllDirectoryName);
     tail = TclPathPart(interp, path, TCL_PATH_TAIL);
     if (tail == NULL) {
 	Tcl_DecrRefCount(fileName);

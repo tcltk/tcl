@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.140 2010/04/19 15:58:52 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.141 2010/04/25 15:40:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2872,7 +2872,7 @@ TclExecuteByteCode(
 		    goto checkForCatch;
 		}
 		iPtr->varFramePtr->tailcallPtr = param;
-		TclSpliceTailcall(interp, param);
+		TclSpliceTailcall(interp, param, 1);
 		goto abnormalReturn;
 	    case TCL_NR_YIELD_TYPE: {		/* [yield] */
 		CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;

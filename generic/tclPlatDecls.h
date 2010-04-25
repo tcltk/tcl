@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.19.2.14 2010/04/19 15:58:52 dgp Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.19.2.15 2010/04/25 15:40:54 dgp Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -28,6 +28,19 @@
  * script.  Any modifications to the function declarations below should be made
  * in the generic/tcl.decls script.
  */
+
+/*
+ * TCHAR is needed here for win32, so if it is not defined yet do it here.
+ * This way, we don't need to include <tchar.h> just for one define.
+ */
+#if defined(_WIN32) && !defined(_TCHAR_DEFINED)
+#   if defined(_UNICODE)
+	typedef wchar_t TCHAR;
+#   else
+	typedef char TCHAR;
+#   endif
+#   define _TCHAR_DEFINED
+#endif
 
 /* !BEGIN!: Do not edit below this line. */
 

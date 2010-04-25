@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.28 2010/02/25 21:53:12 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.29 2010/04/25 15:40:54 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -103,6 +103,11 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 #if HAVE_INTTYPES_H
 #   include <inttypes.h>
+#endif
+#ifdef NO_LIMITS_H
+#   include "../compat/limits.h"
+#else
+#   include <limits.h>
 #endif
 #if HAVE_STDINT_H
 #   include <stdint.h>

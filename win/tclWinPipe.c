@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.26 2010/03/20 15:58:37 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.27 2010/04/25 15:40:55 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -766,7 +766,7 @@ TclpTempFileName(void)
 	return NULL;
     }
 
-    return TclpNativeToNormalized((ClientData) fileName);
+    return TclpNativeToNormalized(fileName);
 }
 
 /*

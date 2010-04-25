@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.167 2010/04/05 21:46:41 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.168 2010/04/25 15:40:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -800,6 +800,8 @@ Tcl_CreateInterp(void)
 
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldTo", NULL,
 	    TclNRYieldToObjCmd, NULL, NULL);
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldm", NULL,
+	    TclNRYieldmObjCmd, NULL, NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -8249,25 +8251,25 @@ Tcl_NRCmdSwap(
 void
 TclSpliceTailcall(
     Tcl_Interp *interp,
-    TEOV_callback *tailcallPtr)
+    TEOV_callback *tailcallPtr,
+    int skip)
 {
     /*
      * Find the splicing spot: right before the NRCommand of the thing
      * being tailcalled. Note that we skip NRCommands marked in data[1]
      * (used by command redirectors), and we skip the first command that we
-     * find: it corresponds to [tailcall] itself.
+     * find if requested to do so: it corresponds to [tailcall] itself.
      */
 
     Interp *iPtr = (Interp *) interp;
     TEOV_callback *runPtr;
     ExecEnv *eePtr = NULL;
-    int second = 0;
 
   restart:
     for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
 	if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
-	    if (second) break;
-	    second = 1;
+	    if (!skip) break;
+            skip = 0;
 	}
     }
     if (!runPtr) {
@@ -8465,10 +8467,26 @@ TclNRYieldObjCmd(
 
     iPtr->numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
-
+    corPtr->nargs = -2;
+    
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
 	    NULL, NULL, NULL);
     return TCL_OK;
+}
+
+int
+TclNRYieldmObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+    int result;
+
+    result = TclNRYieldObjCmd(clientData, interp, objc, objv);
+    corPtr->nargs = -1;
+    return result;
 }
 
 int
@@ -8479,7 +8497,6 @@ TclNRYieldToObjCmd(
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-    int numLevels = iPtr->numLevels;
 
     Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
@@ -8497,10 +8514,9 @@ TclNRYieldToObjCmd(
 	return TCL_ERROR;
     }
 
-    iPtr->numLevels = corPtr->auxNumLevels;
-    corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
-
     /*
+     * Add the tailcall in the caller env, then just yield.
+     *
      * This is essentially code from TclNRTailcallObjCmd
      */
 
@@ -8523,9 +8539,7 @@ TclNRYieldToObjCmd(
 	    NULL);
     iPtr->execEnvPtr = corPtr->eePtr;
 
-    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
-	    NULL, NULL, NULL);
-    return TCL_OK;
+    return TclNRYieldObjCmd(clientData, interp, objc-1, objv+1);
 }
 
 static int
@@ -8545,7 +8559,7 @@ YieldToCallback(
     cbPtr = TOP_CB(interp);
     TOP_CB(interp) = cbPtr->nextPtr;
 
-    TclSpliceTailcall(interp, cbPtr);
+    TclSpliceTailcall(interp, cbPtr, 0);
     return TCL_OK;
 }
 
@@ -8695,16 +8709,8 @@ NRInterpCoroutine(
 {
     CoroutineData *corPtr = clientData;
     int nestNumLevels = corPtr->auxNumLevels;
-
-    /*
-     * objc==0 indicates a call to rewind the coroutine
-     */
-
-    if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?arg?");
-	return TCL_ERROR;
-    }
-
+    int nargs = corPtr->nargs;
+    
     if (!COR_IS_SUSPENDED(corPtr)) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "coroutine \"", Tcl_GetString(objv[0]),
@@ -8713,15 +8719,29 @@ NRInterpCoroutine(
 	return TCL_ERROR;
     }
 
+    if (nargs == -2) {
+        if (objc > 2) {
+            Tcl_WrongNumArgs(interp, 1, objv, "?arg?");
+            return TCL_ERROR;
+        } else if (objc == 2) {
+            Tcl_SetObjResult(interp, objv[1]);
+        }
+    } else {
+        if ((nargs != -1) && (nargs != (objc-1))) {
+            Tcl_SetObjResult(interp,
+                    Tcl_NewStringObj("wrong coro nargs; how did we get here? not implemeted!", -1));
+            return TCL_ERROR;            
+        }
+        if (objc > 1) {
+            Tcl_SetObjResult(interp, Tcl_NewListObj(objc-1, objv+1));
+        }
+    }
+
     /*
      * Swap the interp's environment to make it suitable to run this
      * coroutine. TEBC needs no info to resume executing after a suspension:
      * the codePtr will be read from the execEnv's saved bottomPtr.
      */
-
-    if (objc == 2) {
-	Tcl_SetObjResult(interp, objv[1]);
-    }
 
     SAVE_CONTEXT(corPtr->caller);
     RESTORE_CONTEXT(corPtr->running);

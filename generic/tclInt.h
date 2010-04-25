@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.144 2010/04/05 21:46:42 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.145 2010/04/25 15:40:54 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -64,7 +64,7 @@ typedef int ptrdiff_t;
 #endif
 
 /*
- * Ensure WORDS_BIGENDIAN is defined correcly:
+ * Ensure WORDS_BIGENDIAN is defined correctly:
  * Needs to happen here in addition to configure to work with fat compiles on
  * Darwin (where configure runs only once for multiple architectures).
  */
@@ -1494,6 +1494,9 @@ typedef struct CoroutineData {
                                 /* Where to stash the caller's bottomPointer,
 				 * if the coro is running in the caller's TEBC 
 				 * instance. Put a NULL in there otherwise. */
+    int nargs;                  /* Number of args required for resuming this
+				 * coroutine; -2 means "0 or 1" (default), -1
+				 * means "any" */
 } CoroutineData;
 
 typedef struct ExecEnv {
@@ -2827,12 +2830,14 @@ MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRTailcallObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
 MODULE_SCOPE void	TclClearTailcall(Tcl_Interp *interp,
 			    struct TEOV_callback *tailcallPtr);
 MODULE_SCOPE void       TclSpliceTailcall(Tcl_Interp *interp,
-			    struct TEOV_callback *tailcallPtr);
+	                    struct TEOV_callback *tailcallPtr,
+	                    int skip);
 
 /*
  * This structure holds the data for the various iteration callbacks used to
