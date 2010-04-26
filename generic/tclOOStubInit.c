@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubInit.c,v 1.1.2.8 2010/02/17 15:36:55 dgp Exp $
+ * $Id: tclOOStubInit.c,v 1.1.2.9 2010/04/26 13:46:11 dgp Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
@@ -11,6 +11,10 @@
 #include "tclOOInt.h"
 
 MODULE_SCOPE const TclOOStubs tclOOStubs;
+
+#ifdef __GNUC__
+#pragma GCC dependency "tclOO.decls"
+#endif
 
 /* !BEGIN!: Do not edit below this line. */
 

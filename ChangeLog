@@ -1,18 +1,25 @@
+2010-04-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclStubInit.c:   Add a small amount of gcc-isms (with #ifdef
+	* generic/tclOOStubInit.c: guards) to ensure that warnings are issued
+	when these files are older than the various *.decls files.
+
 2010-04-25  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:    add unsupported [yieldm] command. 
+	* generic/tclBasic.c:    Add unsupported [yieldm] command. 
 	* generic/tclInt.h:      
 
 2010-04-24  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:    modify api of TclSpliceTailcall() 
-	* generic/tclExecute.c:  to fix yieldTo, which had not survived 
-	* generic/tclInt.h:      the latest mods to tailcall. Thanks kbk
-	for detecting the problem.
+	* generic/tclBasic.c:    Modify api of TclSpliceTailcall() to fix
+	* generic/tclExecute.c:  yieldTo, which had not survived the latest
+	* generic/tclInt.h:      mods to tailcall. Thanks kbk for detecting
+	the problem.
 
 2010-04-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/tclUnixPort.h Fix [Bug #2991415] tclport.h #included before limits.h
+	* unix/tclUnixPort.h: [Bug 2991415]: tclport.h #included before
+	limits.h
 
 2010-04-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
