@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDl.c,v 1.21 2010/04/05 07:38:08 dkf Exp $
+ * RCS: @(#) $Id: tclLoadDl.c,v 1.22 2010/04/26 13:49:12 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -172,7 +172,7 @@ FindSymbol(
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
 		NULL);
     }
-    return proc;
+    return (void *) proc;
 }
 
 /*
