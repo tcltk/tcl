@@ -1,5 +1,9 @@
 2010-04-26  Donal K. Fellows  <dkf@users.sf.net>
 
+	* unix/tclLoadDl.c (FindSymbol): [Bug 2992295]: Added an explicit cast
+	because auto-casting between function and non-function types is never
+	naturally warning-free.
+
 	* generic/tclStubInit.c:   Add a small amount of gcc-isms (with #ifdef
 	* generic/tclOOStubInit.c: guards) to ensure that warnings are issued
 	when these files are older than the various *.decls files.
