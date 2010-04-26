@@ -1,3 +1,9 @@
+2010-04-27  Kevin B. Kenny  <kennykb@acm.org>
+
+	* unix/tclLoadDl.c (FindSymbol): [Bug 2992295]: Simplified the
+	logic so that the casts added in Donal Fellows's change for the
+	same bug are no longer necessary.
+	
 2010-04-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclLoadDl.c (FindSymbol): [Bug 2992295]: Added an explicit cast
