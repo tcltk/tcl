@@ -1,3 +1,8 @@
+2010-04-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIOUtil.c (Tcl_FSGetNativePath): [Bug 2992292]:
+	tclIOUtil.c assignment type mismatch compiler warning
+
 2010-04-27  Kevin B. Kenny  <kennykb@acm.org>
 
 	* unix/tclLoadDl.c (FindSymbol): [Bug 2992295]: Simplified the
