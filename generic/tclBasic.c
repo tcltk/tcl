@@ -16,16 +16,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.452 2010/04/25 13:39:25 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.453 2010/04/27 12:36:21 nijtmans Exp $
  */
 
 #include "tclInt.h"
 #include "tclOOInt.h"
 #include "tclCompile.h"
-#include <float.h>
-#include <limits.h>
-#include <math.h>
 #include "tommath.h"
+#include <math.h>
 
 #if NRE_ENABLE_ASSERTS
 #include <assert.h>
