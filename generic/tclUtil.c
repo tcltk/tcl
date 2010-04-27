@@ -11,11 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.114 2010/03/05 14:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.115 2010/04/27 12:36:22 nijtmans Exp $
  */
 
 #include "tclInt.h"
-#include <float.h>
 #include <math.h>
 
 /*
