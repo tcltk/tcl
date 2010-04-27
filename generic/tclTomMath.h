@@ -15,16 +15,11 @@
 #ifndef BN_H_
 #define BN_H_
 
+#include "tclInt.h"
 #include <tclTomMathDecls.h>
 #ifndef MODULE_SCOPE
 #define MODULE_SCOPE extern
 #endif
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <limits.h>
 
 #ifndef MIN
    #define MIN(x,y) ((x)<(y)?(x):(y))
@@ -830,7 +825,7 @@ MODULE_SCOPE const char *mp_s_rmap;
 #endif
 
 #ifdef __cplusplus
-   }
+}
 #endif
 
 #endif
@@ -838,6 +833,6 @@ MODULE_SCOPE const char *mp_s_rmap;
 
 /* $Source: /root/tcl/repos-to-convert/tcl/generic/tclTomMath.h,v $ */
 /* Based on Tom's version 1.8 */
-/* $Revision: 1.11 $ */
-/* $Date: 2009/10/06 16:31:01 $ */
+/* $Revision: 1.12 $ */
+/* $Date: 2010/04/27 12:36:21 $ */
 
