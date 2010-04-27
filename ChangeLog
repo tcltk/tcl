@@ -1,26 +1,31 @@
+2010-04-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Rearrange location of an
+	assignment to shorten the object code.
+
 2010-04-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIOUtil.c (Tcl_FSGetNativePath): [Bug 2992292]:
 	tclIOUtil.c assignment type mismatch compiler warning
-	* generic/regguts.h      If tclInt.h or tclPort.h is already
-	* generic/tclBasic.c     included, don't include <limits.h>
-	* generic/tclExecute.c   again. Follow-up to [Bug 2991415]: 
-	* generic/tclIORChan.c   tclport.h #included before limits.h
-	* generic/tclIORTrans.c  See comments in [Bug 2991415]
-	* generic/tclObj.c
-	* generic/tclOOInt.h
-	* generic/tclStrToD.c
-	* generic/tclTomMath.h
-	* generic/tclTomMathInterface.c
-	* generic/tclUtil.c
-	* compat/strtod.c
-	* compat/strtol.c
+	* generic/regguts.h:     If tclInt.h or tclPort.h is already
+	* generic/tclBasic.c:    included, don't include <limits.h>
+	* generic/tclExecute.c:  again. Follow-up to [Bug 2991415]: 
+	* generic/tclIORChan.c:  tclport.h #included before limits.h
+	* generic/tclIORTrans.c: See comments in [Bug 2991415]
+	* generic/tclObj.c:
+	* generic/tclOOInt.h:
+	* generic/tclStrToD.c:
+	* generic/tclTomMath.h:
+	* generic/tclTomMathInterface.c:
+	* generic/tclUtil.c:
+	* compat/strtod.c:
+	* compat/strtol.c:
 
 2010-04-27  Kevin B. Kenny  <kennykb@acm.org>
 
-	* unix/tclLoadDl.c (FindSymbol): [Bug 2992295]: Simplified the
-	logic so that the casts added in Donal Fellows's change for the
-	same bug are no longer necessary.
+	* unix/tclLoadDl.c (FindSymbol): [Bug 2992295]: Simplified the logic
+	so that the casts added in Donal Fellows's change for the same bug are
+	no longer necessary.
 	
 2010-04-26  Donal K. Fellows  <dkf@users.sf.net>
 
