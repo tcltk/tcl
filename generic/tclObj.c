@@ -13,12 +13,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.172 2010/03/30 16:31:09 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.173 2010/04/27 12:36:21 nijtmans Exp $
  */
 
 #include "tclInt.h"
 #include "tommath.h"
-#include <float.h>
 #include <math.h>
 
 /*

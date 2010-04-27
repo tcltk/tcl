@@ -15,10 +15,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.47 2010/03/30 21:17:13 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.48 2010/04/27 12:36:22 nijtmans Exp $
  */
 
-#include <tclInt.h>
+#include "tclInt.h"
 #include <tclIO.h>
 #include <assert.h>
 

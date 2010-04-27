@@ -39,15 +39,6 @@
  * Things that regcustom.h might override.
  */
 
-/* standard header files (NULL is a reasonable indicator for them) */
-#ifndef NULL
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <limits.h>
-#include <string.h>
-#endif
-
 /* assertions */
 #ifndef assert
 #ifndef REG_DEBUG
@@ -96,9 +87,6 @@
 #endif
 
 /* want size of a char in bits, and max value in bounded quantifiers */
-#ifndef CHAR_BIT
-#include <limits.h>
-#endif
 #ifndef _POSIX2_RE_DUP_MAX
 #define	_POSIX2_RE_DUP_MAX 255	/* normally from <limits.h> */
 #endif

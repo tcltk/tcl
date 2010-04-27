@@ -11,12 +11,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathInterface.c,v 1.14 2010/02/24 10:45:04 dkf Exp $
+ * RCS: @(#) $Id: tclTomMathInterface.c,v 1.15 2010/04/27 12:36:21 nijtmans Exp $
  */
 
 #include "tclInt.h"
 #include "tommath.h"
-#include <limits.h>
 
 MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
 
