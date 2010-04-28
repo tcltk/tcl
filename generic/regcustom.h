@@ -30,7 +30,7 @@
  * Headers if any.
  */
 
-#include "tclInt.h"
+#include "regex.h"
 
 /*
  * Overrides for regguts.h definitions, if any.
@@ -155,7 +155,9 @@ typedef int celt;		/* Type to hold chr, or NOCELT */
 #endif
 
 /*
- * And pick up the standard header.
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
  */
-
-#include "regex.h"

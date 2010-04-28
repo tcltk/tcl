@@ -1,3 +1,17 @@
+2010-04-28  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in      Remove unused @MAN2TCLFLAGS@
+	* win/tclWinPort.h     Move <limits.h> include from
+	* generic/tclInt.h     tclInt.h to tclWinPort.h, and
+	* generic/tclEnv.c     eliminate unneeded <stdlib.h>,
+	<stdio.h> and <string.h>, which are already in
+	tclInt.h
+	* generic/regcustom.h  Move "tclInt.h" from regcustom.h
+	* generic/regex.h      up to regex.h.
+	* generic/tclAlloc.c   Unneeded <stdio.h> include
+	* generic/tclExecute.c Fix gcc warning: comparison between
+	signed and unsigned
+
 2010-04-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInt.h (TclIsVarDirectUnsettable): Corrected flags so that
