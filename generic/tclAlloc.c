@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.29 2010/02/24 10:32:17 dkf Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.30 2010/04/28 11:50:54 nijtmans Exp $
  */
 
 /*
@@ -142,7 +142,6 @@ static int allocInit = 0;
  */
 
 static	unsigned int numMallocs[NBUCKETS+1];
-#include <stdio.h>
 #endif
 
 #if defined(DEBUG) || defined(RCHECK)
