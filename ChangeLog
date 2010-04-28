@@ -1,3 +1,17 @@
+2010-04-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h (TclIsVarDirectUnsettable): Corrected flags so that
+	deletion of traces is not optimized out...
+
+	* generic/tclExecute.c (ExecuteExtendedBinaryMathOp)
+	(TclCompareTwoNumbers,ExecuteExtendedUnaryMathOp,TclExecuteByteCode):
+	[Patch 2981677]: Move the less common arithmetic operations (i.e.,
+	exponentiation and operations on non-longs) out of TEBC for a big drop
+	in the overall size of the stack frame for most code. Net effect on
+	speed is minimal (slightly faster overall in tclbench). Also extended
+	the number of places where TRESULT handling is replaced with a jump to
+	dedicated code.
+
 2010-04-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Rearrange location of an
@@ -45,7 +59,7 @@
 2010-04-24  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    Modify api of TclSpliceTailcall() to fix
-	* generic/tclExecute.c:  yieldTo, which had not survived the latest
+	* generic/tclExecute.c:  [yieldTo], which had not survived the latest
 	* generic/tclInt.h:      mods to tailcall. Thanks kbk for detecting
 	the problem.
 
