@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.42 2010/03/05 14:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.43 2010/04/28 11:50:54 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -755,13 +755,13 @@ TclCygwinPutenv(
 
 	if (strcmp(name, "Path") == 0) {
 #ifdef __WIN32__
-	    SetEnvironmentVariable("PATH", NULL);
+	    SetEnvironmentVariableA("PATH", NULL);
 #endif
 	    unsetenv("PATH");
 	}
 
 #ifdef __WIN32__
-	SetEnvironmentVariable(name, value);
+	SetEnvironmentVariableA(name, value);
 #endif
     } else {
 	char *buf;
@@ -771,7 +771,7 @@ TclCygwinPutenv(
 	 */
 
 #ifdef __WIN32__
-	SetEnvironmentVariable("Path", NULL);
+	SetEnvironmentVariableA("Path", NULL);
 #endif
 	unsetenv("Path");
 
@@ -786,7 +786,7 @@ TclCygwinPutenv(
 	}
 
 #ifdef __WIN32__
-	SetEnvironmentVariable(name, buf);
+	SetEnvironmentVariableA(name, buf);
 #endif
     }
 }

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.480 2010/04/28 10:50:34 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.481 2010/04/28 11:50:53 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -5081,7 +5081,7 @@ TclExecuteByteCode(
 		     * Quickly force large right shifts to 0 or -1.
 		     */
 
-		    if (l2 >= CHAR_BIT*sizeof(long)) {
+		    if (l2 >= (long)(CHAR_BIT*sizeof(long))) {
 			/*
 			 * We assume that INT_MAX is much larger than the
 			 * number of bits in a long. This is a pretty safe
