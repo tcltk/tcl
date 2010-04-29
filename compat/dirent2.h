@@ -10,15 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: dirent2.h,v 1.3 2008/09/03 05:43:31 dgp Exp $
+ * RCS: @(#) $Id: dirent2.h,v 1.4 2010/04/29 09:23:57 nijtmans Exp $
  */
 
 #ifndef _DIRENT
 #define _DIRENT
 
-#ifndef _TCL
-#include <tcl.h>
-#endif
+#include "tcl.h"
 
 /*
  * Dirent structure, which holds information about a single
