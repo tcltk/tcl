@@ -175,13 +175,30 @@ proc ::platform::identify {} {
 
 	    set v unknown
 
-	    if {[file exists /lib64] &&
-		[file isdirectory /lib64] &&
-		[llength [glob -nocomplain -directory /lib64 libc*]]
-	    } {
-		set base /lib64
-	    } else {
-		set base /lib
+	    # Determine in which directory to look. /lib, or /lib64.
+	    # For that we use the tcl_platform(wordSize).
+	    #
+	    # We could use the 'cpu' info, per the equivalence below,
+	    # that however would be restricted to intel. And this may
+	    # be a arm, mips, etc. system. The wordsize is more
+	    # fundamental.
+	    #
+	    # ix86   <=> (wordSize == 4) <=> 32 bit ==> /lib
+	    # x86_64 <=> (wordSize == 8) <=> 64 bit ==> /lib64
+	    #
+	    # Do not look into /lib64 even if present, if the cpu
+	    # doesn't fit.
+
+	    switch -exact -- $tcl_platform(wordSize) {
+		4 {
+		    set base /lib
+		}
+		8 {
+		    set base /lib64
+		}
+		default {
+		    return -code error "Bad wordSize $tcl_platform(wordSize), expected 4 or 8"
+		}
 	    }
 
 	    set libclist [lsort [glob -nocomplain -directory $base libc*]]
@@ -292,7 +309,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.6
+package provide platform 1.0.7
 
 # ### ### ### ######### ######### #########
 ## Demo application
