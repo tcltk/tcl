@@ -1,3 +1,11 @@
+2010-04-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/dirent2.h    Include "tcl.h",  not <tcl.h>,
+	* compat/dlfcn.h      like everywhere else, to insure
+	* compat/stdlib.h     that the version in the Tcl
+	* compat/string.h     distribution is used, not some
+	* compat/unistd.h     version from somewhere else.
+
 2010-04-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/Makefile.in      Remove unused @MAN2TCLFLAGS@
