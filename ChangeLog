@@ -1,7 +1,7 @@
 2010-04-29  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Another stab at getting the /lib,
-	* library/platform/pkgIndex.tcl: /lib674 difference right for
+	* library/platform/pkgIndex.tcl: /lib64 difference right for
 	* unix/Makefile.in: linux. Package updated to version 1.0.7.
 	* win/Makefile.in:
 
