@@ -75,8 +75,8 @@
 
 2010-04-25  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:    Add unsupported [yieldm] command. 
-	* generic/tclInt.h:      
+	* generic/tclBasic.c:    Add unsupported [yieldm] command. Credit
+	* generic/tclInt.h:      Lars Hellstrom for the basic idea.
 
 2010-04-24  Miguel Sofer  <msofer@users.sf.net>
 
