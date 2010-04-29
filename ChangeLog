@@ -1,3 +1,10 @@
+2010-04-29  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl: Another stab at getting the /lib,
+	* library/platform/pkgIndex.tcl: /lib674 difference right for
+	* unix/Makefile.in: linux. Package updated to version 1.0.7.
+	* win/Makefile.in:
+
 2010-04-29  Kevin B. Kenny  <kennykb@acm.org>
 	
 	* library/tzdata/Antarctica/Macquarie:
