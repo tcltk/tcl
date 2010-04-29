@@ -1,3 +1,24 @@
+2010-04-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Antarctica/Macquarie:
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/Africa/Tunis:
+	* library/tzdata/America/Santiago:
+	* library/tzdata/America/Argentina/San_Luis:
+	* library/tzdata/Antarctica/Casey:
+	* library/tzdata/Antarctica/Davis:
+	* library/tzdata/Asia/Anadyr:
+	* library/tzdata/Asia/Damascus:
+	* library/tzdata/Asia/Dhaka:
+	* library/tzdata/Asia/Gaza:
+	* library/tzdata/Asia/Kamchatka:
+	* library/tzdata/Asia/Karachi:
+	* library/tzdata/Asia/Taipei:
+	* library/tzdata/Europe/Samara:
+	* library/tzdata/Pacific/Apia:
+	* library/tzdata/Pacific/Easter:
+	* library/tzdata/Pacific/Fiji:   Olson's tzdata2010i.
+	
 2010-04-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinPort.h  Fix [Patch 2986105]: conditionally defining
