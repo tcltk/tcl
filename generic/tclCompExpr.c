@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.104 2010/03/05 14:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.105 2010/04/29 23:39:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2209,7 +2209,7 @@ CompileExprTree(
 		p = TclGetStringFromObj(*funcObjv, &length);
 		funcObjv++;
 		Tcl_DStringAppend(&cmdName, p, length);
-		TclEmitPush(TclRegisterNewNSLiteral(envPtr,
+		TclEmitPush(TclRegisterNewCmdLiteral(envPtr,
 			Tcl_DStringValue(&cmdName),
 			Tcl_DStringLength(&cmdName)), envPtr);
 		Tcl_DStringFree(&cmdName);
