@@ -14,19 +14,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.27 2010/04/02 23:48:14 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.28 2010/04/29 23:32:24 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
 
-#include <tclInt.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <float.h>
-#include <limits.h>
+#include "tclInt.h"
+#include "tommath.h"
 #include <math.h>
-#include <ctype.h>
-#include <tommath.h>
 
 /*
  * Define KILL_OCTAL to suppress interpretation of numbers with leading zero

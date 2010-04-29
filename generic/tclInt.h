@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.145 2010/04/25 15:40:54 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.146 2010/04/29 23:32:24 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -42,11 +42,6 @@
 #include <stdio.h>
 
 #include <ctype.h>
-#ifdef NO_LIMITS_H
-#   include "../compat/limits.h"
-#else
-#   include <limits.h>
-#endif
 #ifdef NO_STDLIB_H
 #   include "../compat/stdlib.h"
 #else
@@ -890,7 +885,7 @@ typedef struct VarInHash {
     !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_WRITE|VAR_DEAD_HASH))
 
 #define TclIsVarDirectUnsettable(varPtr) \
-    !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_UNSET|VAR_DEAD_HASH))
+    !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH))
 
 #define TclIsVarDirectModifyable(varPtr) \
     (   !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_READ|VAR_TRACED_WRITE)) \
@@ -2882,6 +2877,8 @@ struct Tcl_LoadHandle_ {
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
+			    const unsigned char *bytes, unsigned len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
 MODULE_SCOPE void	TclPushTailcallPoint(Tcl_Interp *interp);

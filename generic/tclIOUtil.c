@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.57 2010/04/25 15:40:54 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.58 2010/04/29 23:32:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3464,8 +3464,8 @@ TclpLoadFile(
 
     *clientDataPtr = handle;
 
-    *proc1Ptr = Tcl_FindSymbol(interp, handle, sym1);
-    *proc2Ptr = Tcl_FindSymbol(interp, handle, sym2);
+    *proc1Ptr = (Tcl_PackageInitProc*) Tcl_FindSymbol(interp, handle, sym1);
+    *proc2Ptr = (Tcl_PackageInitProc*) Tcl_FindSymbol(interp, handle, sym2);
     return TCL_OK;
 }
 
@@ -4548,7 +4548,7 @@ Tcl_FSGetFileSystemForPath(
  *	functions not in this file), then one cannot necessarily guarantee
  *	that the path object pointer is from the correct filesystem.
  *
- *	Note: in the future it might be desireable to have separate versions
+ *	Note: in the future it might be desirable to have separate versions
  *	of this function with different signatures, for example
  *	Tcl_FSGetNativeWinPath, Tcl_FSGetNativeUnixPath etc. Right now, since
  *	native paths are all string based, we use just one function.

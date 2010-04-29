@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDl.c,v 1.13.4.6 2010/04/06 02:37:49 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDl.c,v 1.13.4.7 2010/04/29 23:32:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -144,10 +144,15 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,	/* Value from TcpDlopen(). */
     const char *symbol)		/* Symbol to look up. */
 {
-    const char *native;
-    Tcl_DString newName, ds;
+    const char *native;		/* Name of the library to be loaded, in
+				 * system encoding */
+    Tcl_DString newName, ds;	/* Buffers for converting the name to
+				 * system encoding and prepending an 
+				 * underscore*/
     void *handle = (void *) loadHandle->clientData;
-    Tcl_PackageInitProc *proc;
+				/* Native handle to the loaded library */
+    void *proc;			/* Address corresponding to the resolved
+				 * symbol */
 
     /*
      * Some platforms still add an underscore to the beginning of symbol
@@ -156,12 +161,12 @@ FindSymbol(
      */
 
     native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
-    proc = (Tcl_PackageInitProc *) dlsym(handle, native);	/* INTL: Native. */
+    proc = dlsym(handle, native);	/* INTL: Native. */
     if (proc == NULL) {
 	Tcl_DStringInit(&newName);
 	Tcl_DStringAppend(&newName, "_", 1);
 	native = Tcl_DStringAppend(&newName, native, -1);
-	proc = (Tcl_PackageInitProc *) dlsym(handle, native);	/* INTL: Native. */
+	proc = dlsym(handle, native);	/* INTL: Native. */
 	Tcl_DStringFree(&newName);
     }
     Tcl_DStringFree(&ds);

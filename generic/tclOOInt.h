@@ -9,13 +9,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.15 2010/03/06 03:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.16 2010/04/29 23:32:24 dgp Exp $
  */
 
 #ifndef TCL_OO_INTERNAL_H
 #define TCL_OO_INTERNAL_H 1
 
-#include <tclInt.h>
+#include "tclInt.h"
 #include "tclOO.h"
 
 /*
