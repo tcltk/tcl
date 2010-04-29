@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.135 2010/03/29 21:58:58 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.136 2010/04/29 15:08:07 dkf Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1235,7 +1235,7 @@ Tcl_AppendObjToObj(
      */
 
     if (TclIsPureByteArray(objPtr) && TclIsPureByteArray(appendObjPtr)) {
-	unsigned char *bytesDst, *bytesSrc;
+	unsigned char *bytesSrc;
 	int lengthSrc, lengthTotal;
 
 	/*
@@ -1250,9 +1250,8 @@ Tcl_AppendObjToObj(
 	if (((length > lengthSrc) ? length : lengthSrc) > lengthTotal) {
 	    Tcl_Panic("overflow when calculating byte array size");
 	}
-	bytesDst = Tcl_SetByteArrayLength(objPtr, lengthTotal);
 	bytesSrc = Tcl_GetByteArrayFromObj(appendObjPtr, NULL);
-	memcpy(bytesDst + length, bytesSrc, lengthSrc);
+	TclAppendBytesToByteArray(objPtr, bytesSrc, (unsigned) lengthSrc);
 	return;
     }
 
