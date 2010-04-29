@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.60 2010/03/05 14:34:03 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.61 2010/04/29 15:08:05 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -571,6 +571,81 @@ UpdateStringOfByteArray(
 	    dst += Tcl_UniCharToUtf(src[i], dst);
 	}
 	*dst = '\0';
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAppendBytesToByteArray --
+ *
+ *	This function appends an array of bytes to a byte array object. Note
+ *	that the object *must* be unshared, and the array of bytes *must not*
+ *	refer to the object being appended to.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocates enough memory for an array of bytes of the requested total
+ *	size, or possibly larger. [Bug 2992970]
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclAppendBytesToByteArray(
+    Tcl_Obj *objPtr,
+    const unsigned char *bytes,
+    unsigned len)
+{
+    ByteArray *byteArrayPtr;
+
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
+    }
+    if (objPtr->typePtr != &tclByteArrayType) {
+	SetByteArrayFromAny(NULL, objPtr);
+    }
+    byteArrayPtr = GET_BYTEARRAY(objPtr);
+
+    /*
+     * If we need to, resize the allocated space in the byte array.
+     */
+
+    if (byteArrayPtr->used+len > byteArrayPtr->allocated) {
+	unsigned int attempt, used = byteArrayPtr->used;
+	ByteArray *tmpByteArrayPtr;
+
+	attempt = byteArrayPtr->allocated;
+	do {
+	    attempt *= 2;
+	} while (attempt < used+len);
+
+	tmpByteArrayPtr = (ByteArray *)
+		attemptckrealloc((char *) byteArrayPtr,
+			BYTEARRAY_SIZE(attempt));
+
+	if (tmpByteArrayPtr == NULL) {
+	    attempt = used + len;
+	    tmpByteArrayPtr = (ByteArray *) ckrealloc((char *) byteArrayPtr,
+		    BYTEARRAY_SIZE(attempt));
+	}
+
+	byteArrayPtr = tmpByteArrayPtr;
+	byteArrayPtr->allocated = attempt;
+	byteArrayPtr->used = used;
+	SET_BYTEARRAY(objPtr, byteArrayPtr);
+    }
+
+    /*
+     * Do the append if there's any point.
+     */
+
+    if (len > 0) {
+	memcpy(byteArrayPtr->bytes + byteArrayPtr->used, bytes, len);
+	byteArrayPtr->used += len;
+	Tcl_InvalidateStringRep(objPtr);
     }
 }
 

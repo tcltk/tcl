@@ -1,24 +1,30 @@
+2010-04-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBinary.c (TclAppendBytesToByteArray): [Bug 2992970]: Make
+	* generic/tclStringObj.c (Tcl_AppendObjToObj): an append of a byte
+	array to another into an efficent operation. The problem was the (lack
+	of) a proper growth management strategy for the byte array.
+
 2010-04-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* compat/dirent2.h    Include "tcl.h",  not <tcl.h>,
-	* compat/dlfcn.h      like everywhere else, to insure
-	* compat/stdlib.h     that the version in the Tcl
-	* compat/string.h     distribution is used, not some
-	* compat/unistd.h     version from somewhere else.
+	* compat/dirent2.h:	Include "tcl.h", not <tcl.h>, like everywhere
+	* compat/dlfcn.h:	else, to ensure that the version in the Tcl
+	* compat/stdlib.h:	distribution is used, not some version from
+	* compat/string.h:	somewhere else.
+	* compat/unistd.h:
 
 2010-04-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/Makefile.in      Remove unused @MAN2TCLFLAGS@
-	* win/tclWinPort.h     Move <limits.h> include from
-	* generic/tclInt.h     tclInt.h to tclWinPort.h, and
-	* generic/tclEnv.c     eliminate unneeded <stdlib.h>,
-	<stdio.h> and <string.h>, which are already in
-	tclInt.h
-	* generic/regcustom.h  Move "tclInt.h" from regcustom.h
-	* generic/regex.h      up to regex.h.
-	* generic/tclAlloc.c   Unneeded <stdio.h> include
-	* generic/tclExecute.c Fix gcc warning: comparison between
-	signed and unsigned
+	* win/Makefile.in:	Remove unused @MAN2TCLFLAGS@
+	* win/tclWinPort.h:	Move <limits.h> include from tclInt.h to
+	* generic/tclInt.h:	tclWinPort.h, and eliminate unneeded
+	* generic/tclEnv.c:	<stdlib.h>, <stdio.h> and <string.h>, which
+				are already in tclInt.h
+	* generic/regcustom.h:	Move "tclInt.h" from regcustom.h up to
+	* generic/regex.h:	regex.h.
+	* generic/tclAlloc.c:	Unneeded <stdio.h> include.
+	* generic/tclExecute.c:	Fix gcc warning: comparison between signed and
+				unsigned.
 
 2010-04-28  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -45,7 +51,7 @@
 	tclIOUtil.c assignment type mismatch compiler warning
 	* generic/regguts.h:     If tclInt.h or tclPort.h is already
 	* generic/tclBasic.c:    included, don't include <limits.h>
-	* generic/tclExecute.c:  again. Follow-up to [Bug 2991415]: 
+	* generic/tclExecute.c:  again. Follow-up to [Bug 2991415]:
 	* generic/tclIORChan.c:  tclport.h #included before limits.h
 	* generic/tclIORTrans.c: See comments in [Bug 2991415]
 	* generic/tclObj.c:
@@ -62,7 +68,7 @@
 	* unix/tclLoadDl.c (FindSymbol): [Bug 2992295]: Simplified the logic
 	so that the casts added in Donal Fellows's change for the same bug are
 	no longer necessary.
-	
+
 2010-04-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclLoadDl.c (FindSymbol): [Bug 2992295]: Added an explicit cast
@@ -75,8 +81,13 @@
 
 2010-04-25  Miguel Sofer  <msofer@users.sf.net>
 
+<<<<<<< ChangeLog
+	* generic/tclBasic.c:    Add unsupported [yieldm] command.
+	* generic/tclInt.h:
+=======
 	* generic/tclBasic.c:    Add unsupported [yieldm] command. Credit
 	* generic/tclInt.h:      Lars Hellstrom for the basic idea.
+>>>>>>> 1.5083
 
 2010-04-24  Miguel Sofer  <msofer@users.sf.net>
 
@@ -223,7 +234,7 @@
 
 	TIP #357 IMPLEMENTATION
 	TIP #362 IMPLEMENTATION
-	
+
 	* generic/tclStrToD.c: [Bug 2952904]: Defer creation of the smallest
 	floating point number until it is actually used. (This change avoids a
 	bogus syslog message regarding a 'floating point software assist
@@ -252,7 +263,7 @@
 	* unix/tclUnixPipe.c:
 	* win/Makefile.in:
 	* win/tclWinLoad.c:
-	
+
 2010-03-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/registry.n: Added missing documentation of TIP#362 flags.
@@ -331,7 +342,7 @@
 	* unix/tclUnixFCmd.c (TclUnixCopyFile): [Bug 2976504]: Corrected
 	number of arguments to fstatfs() call.
 
-	* macosx/tclMacOSXBundle.c, macosx/tclMacOSXFCmd.c: 
+	* macosx/tclMacOSXBundle.c, macosx/tclMacOSXFCmd.c:
 	* macosx/tclMacOSXNotify.c: Reduce the level of ifdeffery in the
 	functions of these files to improve readability. They need to be
 	audited for whether complexity can be removed based on the minimum
@@ -949,7 +960,7 @@
 
 	* tools/genStubs.tcl:	No longer generate a space after "*" and
 				immediately after a function name, so the
-				format of function definitions in tcl*Decls.h 
+				format of function definitions in tcl*Decls.h
 				match all other tcl*.h header files.
 	* doc/ParseArgs.3:	Change Tcl_ArgvFuncProc, Tcl_ArgvGenFuncProc
 	* generic/tcl.h:	and GetFrameInfoValueProc to be function
@@ -1012,7 +1023,7 @@
 
 2010-01-21  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompile.h: NRE-enable direct eval on BC spoilage 
+	* generic/tclCompile.h: NRE-enable direct eval on BC spoilage
 	* generic/tclExecute.c: [Bug 2910748]
 	* tests/nre.test:
 
@@ -1124,7 +1135,7 @@
 	* generic/tclNamesp.c:	leak, and also a test for leaks on namespace
 	* tests/coroutine.test: deletion.
 	* tests/namespace.test:
-	
+
 2009-12-30  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/safe.tcl (AliasSource): [Bug 2923613]: Make the safer
@@ -1186,7 +1197,7 @@
 
 2009-12-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/tcl.m4:		Install libtcl8.6.dll in bin directory 
+	* unix/tcl.m4:		Install libtcl8.6.dll in bin directory
 	* unix/Makefile.in:
 	* unix/configure:	(regenerated)
 
