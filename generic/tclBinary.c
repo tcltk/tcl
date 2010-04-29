@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.61 2010/04/29 15:08:05 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.62 2010/04/29 15:14:33 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -613,7 +613,7 @@ TclAppendBytesToByteArray(
      * If we need to, resize the allocated space in the byte array.
      */
 
-    if (byteArrayPtr->used+len > byteArrayPtr->allocated) {
+    if (byteArrayPtr->used + (int)len > byteArrayPtr->allocated) {
 	unsigned int attempt, used = byteArrayPtr->used;
 	ByteArray *tmpByteArrayPtr;
 
