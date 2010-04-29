@@ -13,14 +13,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: stdlib.h,v 1.4 2008/05/02 10:27:04 dkf Exp $
+ * RCS: @(#) $Id: stdlib.h,v 1.5 2010/04/29 09:23:57 nijtmans Exp $
  */
 
 #ifndef _STDLIB
 #define _STDLIB
-
-#include <tcl.h>
-/* TODO: Do we need tcl.h any more? */
 
 extern void		abort(void);
 extern double		atof(const char *string);

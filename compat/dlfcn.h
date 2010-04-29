@@ -17,7 +17,7 @@
  *	for any results of using the software, alterations are clearly marked
  *	as such, and this notice is not modified.
  *
- * RCS: @(#) $Id: dlfcn.h,v 1.4 2008/12/18 06:40:03 nijtmans Exp $
+ * RCS: @(#) $Id: dlfcn.h,v 1.5 2010/04/29 09:23:57 nijtmans Exp $
  */
 
 /*
@@ -29,9 +29,7 @@
 #ifndef __dlfcn_h__
 #define __dlfcn_h__
 
-#ifndef _TCL
-#include <tcl.h>
-#endif
+#include "tcl.h"
 
 #ifdef __cplusplus
 extern "C" {
