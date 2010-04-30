@@ -1,5 +1,13 @@
 2010-04-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tcl.h:	Bump patchlevel to 8.6b1.2 to distinguish
+	* library/init.tcl:	CVS snapshots from earlier snapshots as well
+	* unix/configure.in:	as the 8.6b1 and 8.6b2 releases.
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 	* generic/tclBinary.c (TclAppendBytesToByteArray):	Add comments
 	* generic/tclInt.h (TclAppendBytesToByteArray):	placing overflow
 	protection responsibility on caller.  Convert "len" argument to signed
