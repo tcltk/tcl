@@ -1,9 +1,18 @@
+2010-04-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (NRInterpCoroutine): Corrected handling of
+	* tests/coroutine.test (coroutine-6.4):   arguments to deal with
+						  trickier cases.
+
 2010-04-30  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/coroutine.test: testing coroutine arguments after [yield]:
 	check that only 0/1 allowed
 
 2010-04-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (NRInterpCoroutine): Corrected handling of
+	arguments to deal with trickier cases.
 
 	* generic/tclCompCmds.c (TclCompileVariableCmd): Slightly tighter
 	issuing of instructions.
