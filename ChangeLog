@@ -1,3 +1,9 @@
+2010-04-30  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclMain.c. Unnecessary TCL_STORAGE_CLASS re-definition.
+	It was used for an ancient dummy reference to Tcl_LinkVar(),
+	but that's already gone since 2002-05-29.
+
 2010-04-29  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompExpr.c: Slight change in the literal sharing 
