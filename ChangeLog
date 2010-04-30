@@ -1,5 +1,9 @@
 2010-04-30  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclExecute.c (TclExecuteByteCode): Add peephole optimization
+	of the fact that INST_DICT_FIRST and INST_DICT_NEXT always have a
+	conditional jump afterwards.
+
 	* generic/tclBasic.c (TclNRYieldObjCmd, TclNRYieldmObjCmd)
 	(NRInterpCoroutine): Replace magic values for formal argument counts
 	for coroutine command implementations with #defines, for an increase

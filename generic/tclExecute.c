@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.481 2010/04/28 11:50:53 nijtmans Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.482 2010/04/30 08:29:40 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -6088,6 +6088,31 @@ TclExecuteByteCode(
 	    PUSH_OBJECT(valuePtr);
 	    PUSH_OBJECT(keyPtr);
 	}
+
+#ifndef TCL_COMPILE_DEBUG
+	/*
+	 * The INST_DICT_FIRST and INST_DICT_NEXT instructsions are always
+	 * followed by a conditional jump, so we can take advantage of this to
+	 * do some peephole optimization (note that we're careful to not close
+	 * out someone doing something else).
+	 */
+
+	pc += 5;
+	switch (*pc) {
+	case INST_JUMP_FALSE1:
+	    NEXT_INST_F((done ? 2 : TclGetInt1AtPtr(pc+1)), 0, 0);
+	case INST_JUMP_FALSE4:
+	    NEXT_INST_F((done ? 5 : TclGetInt4AtPtr(pc+1)), 0, 0);
+	case INST_JUMP_TRUE1:
+	    NEXT_INST_F((done ? TclGetInt1AtPtr(pc+1) : 2), 0, 0);
+	case INST_JUMP_TRUE4:
+	    NEXT_INST_F((done ? TclGetInt4AtPtr(pc+1) : 5), 0, 0);
+	default:
+	    pc -= 5;
+	    /* fall through to non-debug handling */
+	}
+#endif
+
 	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), done));
 	objResultPtr = TCONST(done);
