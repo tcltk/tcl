@@ -10,13 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.49 2010/02/27 12:07:04 dkf Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.50 2010/04/30 07:07:06 nijtmans Exp $
  */
 
 #include "tclInt.h"
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
 
 /*
  * The default prompt used when the user has not overridden it.
