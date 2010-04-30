@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.453 2010/04/27 12:36:21 nijtmans Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.454 2010/04/30 07:56:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -166,6 +166,14 @@ static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	YieldToCallback;
 
 MODULE_SCOPE const TclStubs tclStubs;
+
+/*
+ * Magical counts for the number of arguments accepted by a coroutine command
+ * after particular kinds of [yield].
+ */
+
+#define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL     (-1)
+#define COROUTINE_ARGUMENTS_ARBITRARY           (-2)
 
 /*
  * The following structure define the commands in the Tcl core.
@@ -8486,8 +8494,8 @@ TclNRYieldObjCmd(
 
     iPtr->numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
-    corPtr->nargs = -2;
-    
+    corPtr->nargs = COROUTINE_ARGUMENTS_ARBITRARY;
+
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
 	    NULL, NULL, NULL);
     return TCL_OK;
@@ -8504,7 +8512,7 @@ TclNRYieldmObjCmd(
     int result;
 
     result = TclNRYieldObjCmd(clientData, interp, objc, objv);
-    corPtr->nargs = -1;
+    corPtr->nargs = COROUTINE_ARGUMENTS_SINGLE_OPTIONAL;
     return result;
 }
 
@@ -8728,8 +8736,7 @@ NRInterpCoroutine(
 {
     CoroutineData *corPtr = clientData;
     int nestNumLevels = corPtr->auxNumLevels;
-    int nargs = corPtr->nargs;
-    
+
     if (!COR_IS_SUSPENDED(corPtr)) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "coroutine \"", Tcl_GetString(objv[0]),
@@ -8738,22 +8745,33 @@ NRInterpCoroutine(
 	return TCL_ERROR;
     }
 
-    if (nargs == -2) {
-        if (objc > 2) {
+    switch (corPtr->nargs) {
+    case COROUTINE_ARGUMENTS_SINGLE_OPTIONAL:
+        switch (objc) {
+        case 1:
+            Tcl_SetObjResult(interp, objv[1]);
+            /* fallthrough */
+        case 0:
+            break;
+        default:
             Tcl_WrongNumArgs(interp, 1, objv, "?arg?");
             return TCL_ERROR;
-        } else if (objc == 2) {
-            Tcl_SetObjResult(interp, objv[1]);
         }
-    } else {
-        if ((nargs != -1) && (nargs != (objc-1))) {
+        break;
+    default:
+        if (corPtr->nargs != objc-1) {
             Tcl_SetObjResult(interp,
-                    Tcl_NewStringObj("wrong coro nargs; how did we get here? not implemeted!", -1));
-            return TCL_ERROR;            
+                    Tcl_NewStringObj("wrong coro nargs; how did we get here? "
+                    "not implemented!", -1));
+            Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
+            return TCL_ERROR;
         }
+        /* fallthrough */
+    case COROUTINE_ARGUMENTS_ARBITRARY:
         if (objc > 1) {
             Tcl_SetObjResult(interp, Tcl_NewListObj(objc-1, objv+1));
         }
+        break;
     }
 
     /*
@@ -8916,7 +8934,6 @@ TclNRCoroutineObjCmd(
     TclFreeIntRep(cmdObjPtr);
     cmdObjPtr->typePtr = NULL;
 
-
     /*
      * Create the coro's execEnv and switch to it so that any CallFrames or
      * callbacks refer to the new execEnv's stack. Add the exit callback, then
@@ -8931,7 +8948,7 @@ TclNRCoroutineObjCmd(
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
     iPtr->evalFlags |= TCL_EVAL_REDIRECT;
-    iPtr->lookupNsPtr = iPtr->varFramePtr->nsPtr;    
+    iPtr->lookupNsPtr = iPtr->varFramePtr->nsPtr;
     TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
 
     return TCL_OK;
