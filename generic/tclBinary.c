@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.62 2010/04/29 15:14:33 nijtmans Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.63 2010/04/30 14:06:41 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -615,19 +615,24 @@ TclAppendBytesToByteArray(
 
     if (byteArrayPtr->used + (int)len > byteArrayPtr->allocated) {
 	unsigned int attempt, used = byteArrayPtr->used;
-	ByteArray *tmpByteArrayPtr;
+	ByteArray *tmpByteArrayPtr = NULL;
 
 	attempt = byteArrayPtr->allocated;
 	do {
 	    attempt *= 2;
 	} while (attempt < used+len);
 
-	tmpByteArrayPtr = (ByteArray *)
-		attemptckrealloc((char *) byteArrayPtr,
-			BYTEARRAY_SIZE(attempt));
+	if (BYTEARRAY_SIZE(attempt) > BYTEARRAY_SIZE(used)) {
+	    tmpByteArrayPtr = (ByteArray *)
+		    attemptckrealloc((char *) byteArrayPtr,
+			    BYTEARRAY_SIZE(attempt));
+	}
 
 	if (tmpByteArrayPtr == NULL) {
 	    attempt = used + len;
+	    if (BYTEARRAY_SIZE(attempt) < BYTEARRAY_SIZE(used)) {
+		Tcl_Panic("attempt to allocate a bigger buffer than we can handle");
+	    }
 	    tmpByteArrayPtr = (ByteArray *) ckrealloc((char *) byteArrayPtr,
 		    BYTEARRAY_SIZE(attempt));
 	}
@@ -1118,7 +1123,7 @@ BinaryFormatCmd(
 		 * this is safe since we aren't going to modify the array.
 		 */
 
-		listv = (Tcl_Obj**)(objv + arg);
+		listv = (Tcl_Obj **) (objv + arg);
 		listc = 1;
 		count = 1;
 	    } else {
