@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: coroutine.test,v 1.1.2.9 2010/01/04 03:39:25 dgp Exp $
+# RCS: @(#) $Id: coroutine.test,v 1.1.2.10 2010/04/30 14:16:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -515,10 +515,44 @@ test coroutine-5.2 {right numLevels within coro} -constraints {testnrelevels} \
     rename relativeLevel {}
     unset res
 } -result {0 0 0 0}
-
-unset lambda
 
+test coroutine-6.1 {coroutine nargs} -body {
+    coroutine a ::apply $lambda
+    a
+} -cleanup {
+    rename a {}
+} -result 0
+test coroutine-6.2 {coroutine nargs} -body {
+    coroutine a ::apply $lambda
+    a a
+} -cleanup {
+    rename a {}
+} -result 0
+test coroutine-6.3 {coroutine nargs} -body {
+    coroutine a ::apply $lambda
+    a a a
+} -cleanup {
+    rename a {}
+} -returnCodes error -result {wrong # args: should be "a ?arg?"}
+test coroutine-6.4 {unsupported: multi-argument yield} -body {
+    proc corobody {} {
+	set a 1
+	while 1 {
+	    set a [yield $a]
+	    set a [::tcl::unsupported::yieldm $a]
+	    lappend a [llength $a]
+	}
+    }
+    coroutine a corobody
+    coroutine b corobody
+    list [a x] [a y z] [a \{p] [a \{q r] [a] [a] [rename a {}] \
+	[b ok] [rename b {}] 
+} -cleanup {
+    rename corobody {}
+} -result {x {y z 2} \{p {\{q r 2} {} 0 {} ok {}}
+
 # cleanup
+unset lambda
 ::tcltest::cleanupTests
 
 return
