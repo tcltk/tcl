@@ -1,25 +1,32 @@
+2010-04-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (TclNRYieldObjCmd, TclNRYieldmObjCmd)
+	(NRInterpCoroutine): Replace magic values for formal argument counts
+	for coroutine command implementations with #defines, for an increase
+	in readability.
+
 2010-04-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclMain.c. Unnecessary TCL_STORAGE_CLASS re-definition.
-	It was used for an ancient dummy reference to Tcl_LinkVar(),
-	but that's already gone since 2002-05-29.
+	* generic/tclMain.c: Unnecessary TCL_STORAGE_CLASS re-definition. It
+	was used for an ancient dummy reference to Tcl_LinkVar(), but that's
+	already gone since 2002-05-29.
 
 2010-04-29  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompExpr.c: Slight change in the literal sharing 
-	* generic/tclCompile.c:  mechanism to avoid shimmering of 
+	* generic/tclCompExpr.c: Slight change in the literal sharing
+	* generic/tclCompile.c:  mechanism to avoid shimmering of
 	* generic/tclCompile.h:  command names.
 	* generic/tclLiteral.c:
 
 2010-04-29  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Another stab at getting the /lib,
-	* library/platform/pkgIndex.tcl: /lib64 difference right for
-	* unix/Makefile.in: linux. Package updated to version 1.0.7.
+	* library/platform/pkgIndex.tcl: /lib64 difference right for linux.
+	* unix/Makefile.in:		 Package updated to version 1.0.7.
 	* win/Makefile.in:
 
 2010-04-29  Kevin B. Kenny  <kennykb@acm.org>
-	
+
 	* library/tzdata/Antarctica/Macquarie:
 	* library/tzdata/Africa/Casablanca:
 	* library/tzdata/Africa/Tunis:
@@ -38,7 +45,7 @@
 	* library/tzdata/Pacific/Apia:
 	* library/tzdata/Pacific/Easter:
 	* library/tzdata/Pacific/Fiji:   Olson's tzdata2010i.
-	
+
 2010-04-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBinary.c (TclAppendBytesToByteArray): [Bug 2992970]: Make
