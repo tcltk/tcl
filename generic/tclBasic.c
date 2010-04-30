@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.454 2010/04/30 07:56:31 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.455 2010/04/30 12:38:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -8494,7 +8494,7 @@ TclNRYieldObjCmd(
 
     iPtr->numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
-    corPtr->nargs = COROUTINE_ARGUMENTS_ARBITRARY;
+    corPtr->nargs = COROUTINE_ARGUMENTS_SINGLE_OPTIONAL;
 
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
 	    NULL, NULL, NULL);
@@ -8511,8 +8511,15 @@ TclNRYieldmObjCmd(
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
     int result;
 
+    if (!corPtr) {
+	Tcl_SetResult(interp, "yieldm can only be called in a coroutine",
+		TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", NULL);
+	return TCL_ERROR;
+    }
+
     result = TclNRYieldObjCmd(clientData, interp, objc, objv);
-    corPtr->nargs = COROUTINE_ARGUMENTS_SINGLE_OPTIONAL;
+    corPtr->nargs = COROUTINE_ARGUMENTS_ARBITRARY;
     return result;
 }
 
@@ -8524,7 +8531,6 @@ TclNRYieldToObjCmd(
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-
     Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
     Tcl_Namespace *ns1Ptr;
@@ -8558,7 +8564,7 @@ TclNRYieldToObjCmd(
     Tcl_IncrRefCount(nsObjPtr);
 
     /*
-     * Add the callback in the caller's env, then instruct TEBC to yield
+     * Add the callback in the caller's env, then instruct TEBC to yield.
      */
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
@@ -8578,9 +8584,11 @@ YieldToCallback(
     /* CoroutineData *corPtr = data[0];*/
     Tcl_Obj *listPtr = data[1];
     ClientData nsPtr = data[2];
-
-    /* yieldTo: invoke the command using tailcall tech */
     TEOV_callback *cbPtr;
+
+    /*
+     * yieldTo: invoke the command using tailcall tech.
+     */
 
     TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr, NULL, NULL);
     cbPtr = TOP_CB(interp);
@@ -8745,15 +8753,17 @@ NRInterpCoroutine(
 	return TCL_ERROR;
     }
 
+    /*
+     * Parse all the arguments to work out what to feed as the result of the
+     * [yield]. TRICKY POINT: objc==0 happens here! It occurs when a coroutine
+     * is deleted!
+     */
+
     switch (corPtr->nargs) {
     case COROUTINE_ARGUMENTS_SINGLE_OPTIONAL:
-        switch (objc) {
-        case 1:
+        if (objc == 2) {
             Tcl_SetObjResult(interp, objv[1]);
-            /* fallthrough */
-        case 0:
-            break;
-        default:
+        } else if (objc > 2) {
             Tcl_WrongNumArgs(interp, 1, objv, "?arg?");
             return TCL_ERROR;
         }
