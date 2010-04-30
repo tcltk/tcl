@@ -1,5 +1,8 @@
 2010-04-30  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclBinary.c (TclAppendBytesToByteArray): Add extra armour
+	against buffer overflows.
+
 	* generic/tclBasic.c (NRInterpCoroutine): Corrected handling of
 	* tests/coroutine.test (coroutine-6.4):   arguments to deal with
 						  trickier cases.
