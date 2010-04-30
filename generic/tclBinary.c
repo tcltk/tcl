@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.41 2008/03/24 03:10:06 patthoyts Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.41.2.1 2010/04/30 20:59:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -518,10 +518,13 @@ UpdateStringOfByteArray(
      */
 
     size = length;
-    for (i = 0; i < length; i++) {
+    for (i = 0; i < length && size >= 0; i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
 	    size++;
 	}
+    }
+    if (size < 0) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
     dst = (char *) ckalloc((unsigned) (size + 1));
