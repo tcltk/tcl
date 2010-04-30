@@ -1,3 +1,9 @@
+2010-04-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBinary.c (UpdateStringOfByteArray):        Add panic
+	when the generated string representation would grow beyond Tcl's
+	size limits.  [Bug 2994924]
+
 2010-04-29  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Another stab at getting the /lib,
