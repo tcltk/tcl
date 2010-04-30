@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.60 2010/02/25 21:53:07 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.61 2010/04/30 00:19:31 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -990,7 +990,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
  */
 
 #define LITERAL_ON_HEAP		0x01
-#define LITERAL_NS_SCOPE	0x02
+#define LITERAL_CMD_NAME	0x02
 
 /*
  * Form of TclRegisterLiteral with flags == 0. In that case, it is safe to
@@ -1004,7 +1004,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
     TclRegisterLiteral(envPtr, (char *)(bytes), length, /*flags*/ 0)
 
 /*
- * Form of TclRegisterLiteral with flags == LITERAL_NS_SCOPE. In that case, it
+ * Form of TclRegisterLiteral with flags == LITERAL_CMD_NAME. In that case, it
  * is safe to cast away constness, and it is cleanest to do that here, all in
  * one place.
  *
@@ -1012,8 +1012,8 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
  *			       int length);
  */
 
-#define TclRegisterNewNSLiteral(envPtr, bytes, length) \
-    TclRegisterLiteral(envPtr, (char *)(bytes), length, LITERAL_NS_SCOPE)
+#define TclRegisterNewCmdLiteral(envPtr, bytes, length) \
+    TclRegisterLiteral(envPtr, (char *)(bytes), length, LITERAL_CMD_NAME)
 
 /*
  * Macro used to manually adjust the stack requirements; used in cases where

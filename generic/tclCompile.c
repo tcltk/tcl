@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.81 2010/03/06 03:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.82 2010/04/30 00:19:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1579,7 +1579,12 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 
 	if (!expand && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    Interp *iPtr = (Interp *) interp;
-	    int objIndex = TclRegisterNewNSLiteral(envPtr, tokenPtr[1].start,
+
+	    /*
+	     * Command name literals get special treatment to reduce
+	     * shimmering.  [Bug 458361]
+	     */
+	    int objIndex = TclRegisterNewCmdLiteral(envPtr, tokenPtr[1].start,
 		    tokenPtr[1].size);
 	    Tcl_Obj *cmdName = envPtr->literalArrayPtr[objIndex].objPtr;
 	    Command *cmdPtr = 
@@ -1683,15 +1688,6 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 
 		envPtr->numCommands = savedNumCmds;
 		envPtr->codeNext = envPtr->codeStart + savedCodeNext;
-		if (numWords == 1) {
-		    /*
-		     * Single word script: unshare the command name to
-		     * avoid shimmering between bytecode and cmdName
-		     * representations. [Bug 458361]
-		     */
-
-		    TclHideLiteral(interp, envPtr, objIndex);
-		}
 		TclEmitPush(objIndex, envPtr);
 		wordIndex++;
 		tokenPtr += tokenPtr->numComponents + 1;

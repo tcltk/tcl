@@ -1,3 +1,10 @@
+2010-04-29  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompExpr.c: Slight change in the literal sharing 
+	* generic/tclCompile.c:  mechanism to avoid shimmering of 
+	* generic/tclCompile.h:  command names.
+	* generic/tclLiteral.c:
+
 2010-04-29  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Another stab at getting the /lib,
