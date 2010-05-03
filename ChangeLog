@@ -8,6 +8,23 @@
 	* win/tclAppInit.c        For MINGW/CYGWIN, use GetCommandLineA explicitely
 	* unix/.cvsignore         Add pkg, *.dll
 
+	* libtommath/tommath.h        CONSTify various useful internal functions
+	* libtommath/bn_mp_cmp_d.c    (TclBignumToDouble, TclCeil, TclFloor), and
+	* libtommath/bn_mp_cmp_mag.c  related tommath functions.
+	* libtommath/bn_mp_cmp.c
+	* libtommath/bn_mp_copy.c
+	* libtommath/bn_mp_count_bits.c
+	* libtommath/bn_mp_div_2d.c
+	* libtommath/bn_mp_mod_2d.c
+	* libtommath/bn_mp_mul_2d.c
+	* libtommath/bn_mp_neg.c
+	* generic/tclBasic.c         Handle TODO: const correctness ?
+	* generic/tclInt.h
+	* generic/tclStrToD.c
+	* generic/tclTomMath.decls
+	* generic/tclTomMath.h
+	* generic/tclTomMathDecls.h
+
 2010-04-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump patchlevel to 8.6b1.2 to distinguish
