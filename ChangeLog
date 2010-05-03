@@ -5,6 +5,7 @@
 	* generic/tclTomMath.h
 	* tools/fix_tommath_h.tcl
 	* libtommath/tommath.h    Formatting (# should always be first char on line)
+	* win/tclAppInit.c        For MINGW/CYGWIN, use GetCommandLineA explicitely
 
 2010-04-30  Don Porter  <dgp@users.sourceforge.net>
 

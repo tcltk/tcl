@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.30 2009/11/27 21:44:01 kennykb Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.31 2010/05/03 13:20:39 nijtmans Exp $
  */
 
 #include "tcl.h"
@@ -218,7 +218,7 @@ setargv(
     char **argv;
     int argc, size, inquote, copy, slashes;
 
-    cmdLine = GetCommandLine();	/* INTL: BUG */
+    cmdLine = GetCommandLineA();	/* INTL: BUG */
 
     /*
      * Precompute an overly pessimistic guess at the number of arguments in
