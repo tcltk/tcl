@@ -16,7 +16,7 @@
  */
 
 /* b = -a */
-int mp_neg (mp_int * a, mp_int * b)
+int mp_neg (const mp_int * a, mp_int * b)
 {
   int     res;
   if (a != b) {
@@ -36,5 +36,5 @@ int mp_neg (mp_int * a, mp_int * b)
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_neg.c,v $ */
-/* $Revision: 1.1.1.2.2.2 $ */
-/* $Date: 2008/01/22 16:55:26 $ */
+/* $Revision: 1.1.1.2.2.3 $ */
+/* $Date: 2010/05/03 16:30:38 $ */

@@ -17,7 +17,7 @@
 
 /* compare two ints (signed)*/
 int
-mp_cmp (mp_int * a, mp_int * b)
+mp_cmp (const mp_int * a, const mp_int * b)
 {
   /* compare based on sign */
   if (a->sign != b->sign) {
@@ -39,5 +39,5 @@ mp_cmp (mp_int * a, mp_int * b)
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_cmp.c,v $ */
-/* $Revision: 1.1.1.1.4.2 $ */
-/* $Date: 2008/01/22 16:55:25 $ */
+/* $Revision: 1.1.1.1.4.3 $ */
+/* $Date: 2010/05/03 16:30:38 $ */

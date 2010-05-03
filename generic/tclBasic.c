@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.170 2010/04/30 14:16:16 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.171 2010/05/03 16:30:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -7480,8 +7480,7 @@ ExprAbsFunc(
 #endif
 
     if (type == TCL_NUMBER_BIG) {
-	/* TODO: const correctness ? */
-	if (mp_cmp_d((mp_int *) ptr, 0) == MP_LT) {
+	if (mp_cmp_d((const mp_int *) ptr, 0) == MP_LT) {
 	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
 	tooLarge:
 	    mp_neg(&big, &big);

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.28 2010/04/29 23:32:24 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.29 2010/05/03 16:30:38 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -137,7 +137,7 @@ static int n770_fp;		/* Flag is 1 on Nokia N770 floating point.
 static double		AbsoluteValue(double v, int *signum);
 static int		AccumulateDecimalDigit(unsigned, int, 
 			    Tcl_WideUInt *, mp_int *, int);
-static double		BignumToBiasedFrExp(mp_int *big, int *machexp);
+static double		BignumToBiasedFrExp(const mp_int *big, int *machexp);
 static int		GetIntegerTimesPower(double v, mp_int *r, int *e);
 static double		MakeHighPrecisionDouble(int signum,
 			    mp_int *significand, int nSigDigs, int exponent);
@@ -2369,7 +2369,7 @@ Tcl_InitBignumFromDouble(
 
 double
 TclBignumToDouble(
-    mp_int *a)			/* Integer to convert. */
+    const mp_int *a)			/* Integer to convert. */
 {
     mp_int b;
     int bits, shift, i;
@@ -2430,7 +2430,7 @@ TclBignumToDouble(
 
 double
 TclCeil(
-    mp_int *a)			/* Integer to convert. */
+    const mp_int *a)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
@@ -2473,7 +2473,7 @@ TclCeil(
 
 double
 TclFloor(
-    mp_int *a)			/* Integer to convert. */
+    const mp_int *a)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
@@ -2529,7 +2529,7 @@ TclFloor(
 
 static double
 BignumToBiasedFrExp(
-    mp_int *a,			/* Integer to convert */
+    const mp_int *a,	/* Integer to convert */
     int *machexp)		/* Power of two */
 {
     mp_int b;

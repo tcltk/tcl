@@ -17,7 +17,7 @@
 
 /* returns the number of bits in an int */
 int
-mp_count_bits (mp_int * a)
+mp_count_bits (const mp_int * a)
 {
   int     r;
   mp_digit q;
@@ -41,5 +41,5 @@ mp_count_bits (mp_int * a)
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_count_bits.c,v $ */
-/* $Revision: 1.1.1.1.4.2 $ */
-/* $Date: 2008/01/22 16:55:25 $ */
+/* $Revision: 1.1.1.1.4.3 $ */
+/* $Date: 2010/05/03 16:30:38 $ */

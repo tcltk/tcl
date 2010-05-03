@@ -1,3 +1,50 @@
+2010-05-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIORChan.c    Use "tclIO.h" and "tclTomMathDecls.h"
+	* generic/tclIORTrans.c   everywhere
+	* generic/tclTomMath.h
+	* tools/fix_tommath_h.tcl
+	* libtommath/tommath.h    Formatting (# should always be first char on line)
+	* win/tclAppInit.c        For MINGW/CYGWIN, use GetCommandLineA explicitely
+	* unix/.cvsignore         Add pkg, *.dll
+
+	* libtommath/tommath.h        CONSTify various useful internal functions
+	* libtommath/bn_mp_cmp_d.c    (TclBignumToDouble, TclCeil, TclFloor), and
+	* libtommath/bn_mp_cmp_mag.c  related tommath functions.
+	* libtommath/bn_mp_cmp.c
+	* libtommath/bn_mp_copy.c
+	* libtommath/bn_mp_count_bits.c
+	* libtommath/bn_mp_div_2d.c
+	* libtommath/bn_mp_mod_2d.c
+	* libtommath/bn_mp_mul_2d.c
+	* libtommath/bn_mp_neg.c
+	* generic/tclBasic.c         Handle TODO: const correctness ?
+	* generic/tclInt.h
+	* generic/tclStrToD.c
+	* generic/tclTomMath.decls
+	* generic/tclTomMath.h
+	* generic/tclTomMathDecls.h
+
+2010-04-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump patchlevel to 8.6b1.2 to distinguish
+	* library/init.tcl:	CVS snapshots from earlier snapshots as well
+	* unix/configure.in:	as the 8.6b1 and 8.6b2 releases.
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
+	* generic/tclBinary.c (TclAppendBytesToByteArray):	Add comments
+	* generic/tclInt.h (TclAppendBytesToByteArray):	placing overflow
+	protection responsibility on caller.  Convert "len" argument to signed
+	int which any value already vetted for overflow issues will fit into.
+	* generic/tclStringObj.c:	Update caller; standardize panic msg. 
+
+	* generic/tclBinary.c (UpdateStringOfByteArray):	Add panic
+	when the generated string representation would grow beyond Tcl's
+	size limits.  [Bug 2994924]
+
 2010-04-30  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBinary.c (TclAppendBytesToByteArray): Add extra armour

@@ -17,7 +17,7 @@
 
 /* calc a value mod 2**b */
 int
-mp_mod_2d (mp_int * a, int b, mp_int * c)
+mp_mod_2d (const mp_int * a, int b, mp_int * c)
 {
   int     x, res;
 
@@ -51,5 +51,5 @@ mp_mod_2d (mp_int * a, int b, mp_int * c)
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_mod_2d.c,v $ */
-/* $Revision: 1.1.1.1.4.2 $ */
-/* $Date: 2008/01/22 16:55:26 $ */
+/* $Revision: 1.1.1.1.4.3 $ */
+/* $Date: 2010/05/03 16:30:38 $ */

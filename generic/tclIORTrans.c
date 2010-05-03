@@ -15,11 +15,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.13 2010/04/29 23:32:24 dgp Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.14 2010/05/03 16:30:38 dgp Exp $
  */
 
 #include "tclInt.h"
-#include <tclIO.h>
+#include "tclIO.h"
 #include <assert.h>
 
 #ifndef EINVAL

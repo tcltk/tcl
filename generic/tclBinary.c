@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.35 2010/04/30 14:16:17 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.36 2010/05/03 16:30:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -553,10 +553,13 @@ UpdateStringOfByteArray(
      */
 
     size = length;
-    for (i = 0; i < length; i++) {
+    for (i = 0; i < length && size >= 0; i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
 	    size++;
 	}
+    }
+    if (size < 0) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
     dst = (char *) ckalloc((unsigned) (size + 1));
@@ -581,7 +584,9 @@ UpdateStringOfByteArray(
  *
  *	This function appends an array of bytes to a byte array object. Note
  *	that the object *must* be unshared, and the array of bytes *must not*
- *	refer to the object being appended to.
+ *	refer to the object being appended to.  Also the caller must have
+ *	already checked that the final length of the bytearray after the
+ *	append operations is complete will not overflow the int range.
  *
  * Results:
  *	None.
@@ -597,7 +602,7 @@ void
 TclAppendBytesToByteArray(
     Tcl_Obj *objPtr,
     const unsigned char *bytes,
-    unsigned len)
+    int len)
 {
     ByteArray *byteArrayPtr;
 
@@ -613,7 +618,7 @@ TclAppendBytesToByteArray(
      * If we need to, resize the allocated space in the byte array.
      */
 
-    if (byteArrayPtr->used + (int)len > byteArrayPtr->allocated) {
+    if (byteArrayPtr->used + len > byteArrayPtr->allocated) {
 	unsigned int attempt, used = byteArrayPtr->used;
 	ByteArray *tmpByteArrayPtr = NULL;
 

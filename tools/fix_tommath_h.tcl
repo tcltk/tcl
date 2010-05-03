@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fix_tommath_h.tcl,v 1.2.2.5 2007/04/08 15:00:34 dgp Exp $
+# RCS: @(#) $Id: fix_tommath_h.tcl,v 1.2.2.6 2010/05/03 16:30:38 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -25,7 +25,8 @@ foreach line [split $data \n] {
 	    {#define BN_H_} {
 		puts $line
 		puts {}
-		puts "\#include <tclTomMathDecls.h>"
+		puts "\#include \"tclInt.h\""
+		puts "\#include \"tclTomMathDecls.h\""
 		puts "\#ifndef MODULE_SCOPE"
 		puts "\#define MODULE_SCOPE extern"
 		puts "\#endif"
@@ -78,6 +79,9 @@ foreach line [split $data \n] {
 	    {__x86_64__} {
 		puts "[string map {__x86_64__ NEVER} $line]\
                       /* 128-bit ints fail in too many places */"
+	    }
+	    {#include} {
+		# remove all includes
 	    }
 	    default {
 		puts $line
