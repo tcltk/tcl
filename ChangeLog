@@ -1,3 +1,11 @@
+2010-05-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIORChan.c    Use "tclIO.h" and "tclTomMathDecls.h"
+	* generic/tclIORTrans.c   everywhere
+	* generic/tclTomMath.h
+	* tools/fix_tommath_h.tcl
+	* libtommath/tommath.h    Formatting (# should always be first char on line)
+
 2010-04-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump patchlevel to 8.6b1.2 to distinguish
