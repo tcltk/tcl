@@ -17,3 +17,5 @@ test1
 test2
 confdefs.h
 *.so
+pkg
+*.dll
