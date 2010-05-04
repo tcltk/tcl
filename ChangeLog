@@ -1,3 +1,9 @@
+2010-05-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinNotify.c    TCHAR-related fixes, making those two
+	* win/tclWinSock.c      files compile fine when TCHAR != char
+	Please see comments in [Freq 2965056] (2965056-1.patch).
+
 2010-05-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIORChan.c    Use "tclIO.h" and "tclTomMathDecls.h"
