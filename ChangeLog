@@ -1,3 +1,8 @@
+2010-05-07  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl: Fix cpu name for Solaris/Intel 64bit.
+	* library/platform/pkgIndex.tcl: Package updated to version 1.0.8.
+
 2010-04-29  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Another stab at getting the /lib,
