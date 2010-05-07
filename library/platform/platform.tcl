@@ -103,7 +103,12 @@ proc ::platform::generic {} {
 	}
 	sunos {
 	    set plat solaris
-	    if {![string match "ia64*" $cpu]} {
+	    if {[string match "ix86" $cpu]} {
+		if {$tcl_platform(wordSize) == 8} {
+		    set cpu x86_64
+		}
+	    } elseif {![string match "ia64*" $cpu]} {
+		# sparc
 		if {$tcl_platform(wordSize) == 8} {
 		    append cpu 64
 		}
@@ -309,7 +314,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.7
+package provide platform 1.0.8
 
 # ### ### ### ######### ######### #########
 ## Demo application
