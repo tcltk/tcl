@@ -1,3 +1,10 @@
+2010-05-07  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl: Fix cpu name for Solaris/Intel 64bit.
+	* library/platform/pkgIndex.tcl: Package updated to version 1.0.8.
+	* unix/Makefile.in:		
+	* win/Makefile.in:
+
 2010-04-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBinary.c (UpdateStringOfByteArray):        Add panic
