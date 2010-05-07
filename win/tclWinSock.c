@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.22 2010/03/08 14:34:04 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.23 2010/05/07 01:16:07 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -41,6 +41,7 @@
  */
 
 static int initialized = 0;
+static const TCHAR classname[] = TEXT("TclSocket");
 TCL_DECLARE_MUTEX(socketMutex)
 
 /*
@@ -247,12 +248,12 @@ InitSockets(void)
 	windowClass.hInstance = TclWinGetTclInstance();
 	windowClass.hbrBackground = NULL;
 	windowClass.lpszMenuName = NULL;
-	windowClass.lpszClassName = "TclSocket";
+	windowClass.lpszClassName = classname;
 	windowClass.lpfnWndProc = SocketProc;
 	windowClass.hIcon = NULL;
 	windowClass.hCursor = NULL;
 
-	if (!RegisterClassA(&windowClass)) {
+	if (!RegisterClass(&windowClass)) {
 	    TclWinConvertError(GetLastError());
 	    goto initFailure;
 	}
@@ -394,7 +395,7 @@ SocketExitHandler(
      */
 
     TclpFinalizeSockets();
-    UnregisterClass("TclSocket", TclWinGetTclInstance());
+    UnregisterClass(classname, TclWinGetTclInstance());
     WSACleanup();
     initialized = 0;
     Tcl_MutexUnlock(&socketMutex);
@@ -2192,7 +2193,7 @@ SocketThread(
      * Create a dummy window receiving socket events.
      */
 
-    tsdPtr->hwnd = CreateWindow("TclSocket", "TclSocket",
+    tsdPtr->hwnd = CreateWindow(classname, classname,
 	    WS_TILED, 0, 0, 0, 0, NULL, NULL, windowClass.hInstance, arg);
 
     /*

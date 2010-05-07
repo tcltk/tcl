@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.13 2009/11/19 16:51:27 dgp Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.14 2010/05/07 01:16:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -52,6 +52,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static int notifierCount = 0;
+static const TCHAR classname[] = TEXT("TclNotifier");
 TCL_DECLARE_MUTEX(notifierMutex)
 
 /*
@@ -99,12 +100,12 @@ Tcl_InitNotifier(void)
 	    class.hInstance = TclWinGetTclInstance();
 	    class.hbrBackground = NULL;
 	    class.lpszMenuName = NULL;
-	    class.lpszClassName = "TclNotifier";
+	    class.lpszClassName = classname;
 	    class.lpfnWndProc = NotifierProc;
 	    class.hIcon = NULL;
 	    class.hCursor = NULL;
 
-	    if (!RegisterClassA(&class)) {
+	    if (!RegisterClass(&class)) {
 		Tcl_Panic("Unable to register TclNotifier window class");
 	    }
 	}
@@ -187,7 +188,7 @@ Tcl_FinalizeNotifier(
 	Tcl_MutexLock(&notifierMutex);
 	notifierCount--;
 	if (notifierCount == 0) {
-	    UnregisterClassA("TclNotifier", TclWinGetTclInstance());
+	    UnregisterClass(classname, TclWinGetTclInstance());
 	}
 	Tcl_MutexUnlock(&notifierMutex);
     }
@@ -351,7 +352,7 @@ Tcl_ServiceModeHook(
 	 */
 
 	if (mode == TCL_SERVICE_ALL && !tsdPtr->hwnd) {
-	    tsdPtr->hwnd = CreateWindowA("TclNotifier", "TclNotifier",
+	    tsdPtr->hwnd = CreateWindow(classname, classname,
 		    WS_TILED, 0, 0, 0, 0, NULL, NULL, TclWinGetTclInstance(),
 		    NULL);
 
