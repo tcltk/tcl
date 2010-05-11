@@ -1,4 +1,4 @@
-2010-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
+2010-05-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinConsole.c    Unnecessary type casts, See Tcl [Patch #2997087]
 	* win/tclWinDde.c
