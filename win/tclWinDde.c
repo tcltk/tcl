@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.42 2010/03/07 14:39:25 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.43 2010/05/11 14:47:12 nijtmans Exp $
  */
 
 #undef STATIC_BUILD
@@ -404,7 +404,7 @@ DdeSetServerName(
     }
 
     Tcl_CreateObjCommand(interp, "dde", DdeObjCmd,
-	    (ClientData) riPtr, DeleteProc);
+	    riPtr, DeleteProc);
     if (Tcl_IsSafe(interp)) {
 	Tcl_HideCommand(interp, "dde", "dde");
     }
@@ -1522,9 +1522,9 @@ DdeObjCmd(
 	     * server.
 	     */
 
-	    Tcl_Preserve((ClientData) riPtr);
+	    Tcl_Preserve(riPtr);
 	    sendInterp = riPtr->interp;
-	    Tcl_Preserve((ClientData) sendInterp);
+	    Tcl_Preserve(sendInterp);
 
 	    /*
 	     * Don't exchange objects between interps. The target interp would
@@ -1589,8 +1589,8 @@ DdeObjCmd(
 		}
 		Tcl_SetObjResult(interp, Tcl_GetObjResult(sendInterp));
 	    }
-	    Tcl_Release((ClientData) riPtr);
-	    Tcl_Release((ClientData) sendInterp);
+	    Tcl_Release(riPtr);
+	    Tcl_Release(sendInterp);
 	} else {
 	    /*
 	     * This is a non-local request. Send the script to the server and
