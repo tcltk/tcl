@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.27 2010/05/04 11:05:34 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.28 2010/05/11 14:47:12 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -122,7 +122,7 @@ Tcl_InitNotifier(void)
 	tsdPtr->event = CreateEvent(NULL, TRUE /* manual */,
 		FALSE /* !signaled */, NULL);
 
-	return (ClientData) tsdPtr;
+	return tsdPtr;
     }
 }
 
@@ -363,7 +363,7 @@ Tcl_ServiceModeHook(
 	     * if one is needed.
 	     */
 
-	    Tcl_AlertNotifier((ClientData)tsdPtr);
+	    Tcl_AlertNotifier(tsdPtr);
 	}
     }
 }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.23 2010/01/13 06:46:56 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.24 2010/05/11 14:47:12 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -1367,7 +1367,7 @@ TclWinOpenConsoleChannel(
     wsprintfA(channelName, "file%lx", (int) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&consoleChannelType, channelName,
-	    (ClientData) infoPtr, permissions);
+	    infoPtr, permissions);
 
     if (permissions & TCL_READABLE) {
 	/*

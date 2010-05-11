@@ -1,3 +1,14 @@
+2010-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinConsole.c    Unnecessary type casts, See Tcl [Patch #2997087]
+	* win/tclWinDde.c
+	* win/tclWinLoad.c
+	* win/tclWinNotify.c
+	* win/tclWinSerial.c
+	* win/tclWinSock.c
+	* win/tclWinTime.c
+	* win/tclWinPort.h      Don't duplicate CYGWIN timezone #define from tclPort.h
+
 2010-05-07  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Fix cpu name for Solaris/Intel 64bit.
