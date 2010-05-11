@@ -1,3 +1,10 @@
+2010-05-07  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl: Fix cpu name for Solaris/Intel 64bit.
+	* library/platform/pkgIndex.tcl: Package updated to version 1.0.8.
+	* unix/Makefile.in:		
+	* win/Makefile.in:
+
 2010-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPkg.c    Unnecessary type casts, See Tcl [Patch #2997087]
