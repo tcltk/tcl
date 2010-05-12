@@ -1037,9 +1037,9 @@
 	* generic/tclProc.c:	indicating that errorProc is a function,
 	* generic/tclOOMethod.c:pointer, and other formatting
 	* generic/tcl*Decls.h:	(regenerated)
-	* generic/tclVar.c:	gcc warning(line 3703): ‘pattern’ may be used
+	* generic/tclVar.c:	gcc warning(line 3703): 'pattern' may be used
 				uninitialized in this function
-				gcc warning(line 3788): ‘matched’ may be used
+				gcc warning(line 3788): 'matched' may be used
 				uninitialized in this function
 
 2010-02-04  Donal K. Fellows  <dkf@users.sf.net>
