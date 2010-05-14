@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.15 2010/01/13 18:47:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.16 2010/05/14 13:31:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -416,7 +416,7 @@ NativeGetTime(
 
 		WaitForSingleObject(timeInfo.readyEvent, INFINITE);
 		CloseHandle(timeInfo.readyEvent);
-		Tcl_CreateExitHandler(StopCalibration, (ClientData) NULL);
+		Tcl_CreateExitHandler(StopCalibration, NULL);
 	    }
 	    timeInfo.initialized = TRUE;
 	}

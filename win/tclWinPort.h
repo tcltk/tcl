@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.17 2010/04/29 23:32:25 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.18 2010/05/14 13:31:52 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -409,11 +409,6 @@
 #   define timezone _timezone
 #   define environ  _environ
 #endif /* __BORLANDC__ */
-
-#ifdef __CYGWIN__
-#   define timezone _timezone
-#endif /* __CYGWIN__ */
-
 
 #ifdef __WATCOMC__
     /*

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.23 2010/05/07 01:16:07 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.24 2010/05/14 13:31:52 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -233,7 +233,7 @@ InitSockets(void)
 
     if (!initialized) {
 	initialized = 1;
-	TclCreateLateExitHandler(SocketExitHandler, (ClientData) NULL);
+	TclCreateLateExitHandler(SocketExitHandler, NULL);
 
 	/*
 	 * Create the async notification window with a new class. We must
@@ -1296,7 +1296,7 @@ Tcl_OpenTcpClient(
     wsprintfA(channelName, "sock%d", infoPtr->socket);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
+	    infoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(interp, infoPtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
 	Tcl_Close((Tcl_Interp *) NULL, infoPtr->channel);
@@ -1360,7 +1360,7 @@ Tcl_MakeTcpClientChannel(
 
     wsprintfA(channelName, "sock%d", infoPtr->socket);
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
+	    infoPtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
     return infoPtr->channel;
 }
@@ -1414,7 +1414,7 @@ Tcl_OpenTcpServer(
     wsprintfA(channelName, "sock%d", infoPtr->socket);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    (ClientData) infoPtr, 0);
+	    infoPtr, 0);
     if (Tcl_SetChannelOption(interp, infoPtr->channel, "-eofchar", "")
 	    == TCL_ERROR) {
 	Tcl_Close((Tcl_Interp *) NULL, infoPtr->channel);
@@ -1509,7 +1509,7 @@ TcpAccept(
 
     wsprintfA(channelName, "sock%d", newInfoPtr->socket);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    (ClientData) newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
+	    newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
 	Tcl_Close((Tcl_Interp *) NULL, newInfoPtr->channel);
@@ -2162,7 +2162,7 @@ TcpGetHandleProc(
 {
     SocketInfo *statePtr = (SocketInfo *) instanceData;
 
-    *handlePtr = (ClientData) statePtr->socket;
+    *handlePtr = INT2PTR(statePtr->socket);
     return TCL_OK;
 }
 

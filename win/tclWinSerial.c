@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.26.2.13 2010/02/17 15:37:02 dgp Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.26.2.14 2010/05/14 13:31:52 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1506,7 +1506,7 @@ TclWinOpenSerialChannel(
     wsprintfA(channelName, "file%lx", (int) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
-	    (ClientData) infoPtr, permissions);
+	    infoPtr, permissions);
 
 
     SetupComm(handle, infoPtr->sysBufRead, infoPtr->sysBufWrite);
