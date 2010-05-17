@@ -1,13 +1,20 @@
+2010-05-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (TclInfoFrame): Change this code to use
+	Tcl_GetCommandFullName rather than rolling its own. Discovered during
+	the hunting of [Bug 3001438] but unlikely to be a fix.
+
 2010-05-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinConsole.c    Unnecessary type casts, See Tcl [Patch #2997087]
-	* win/tclWinDde.c
-	* win/tclWinLoad.c
-	* win/tclWinNotify.c
-	* win/tclWinSerial.c
-	* win/tclWinSock.c
-	* win/tclWinTime.c
-	* win/tclWinPort.h      Don't duplicate CYGWIN timezone #define from tclPort.h
+	* win/tclWinConsole.c: [Patch 2997087]: Unnecessary type casts.
+	* win/tclWinDde.c:
+	* win/tclWinLoad.c:
+	* win/tclWinNotify.c:
+	* win/tclWinSerial.c:
+	* win/tclWinSock.c:
+	* win/tclWinTime.c:
+	* win/tclWinPort.h: Don't duplicate CYGWIN timezone #define from
+			    tclPort.h
 
 2010-05-07  Andreas Kupries  <andreask@activestate.com>
 
@@ -22,36 +29,38 @@
 
 2010-05-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinNotify.c    TCHAR-related fixes, making those two
-	* win/tclWinSock.c      files compile fine when TCHAR != char
-	Please see comments in [Freq 2965056] (2965056-1.patch).
+	* win/tclWinNotify.c:	TCHAR-related fixes, making those two files
+	* win/tclWinSock.c:	compile fine when TCHAR != char. Please see
+	comments in [FRQ 2965056] (2965056-1.patch).
 
 2010-05-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclIORChan.c    Use "tclIO.h" and "tclTomMathDecls.h"
-	* generic/tclIORTrans.c   everywhere
-	* generic/tclTomMath.h
-	* tools/fix_tommath_h.tcl
-	* libtommath/tommath.h    Formatting (# should always be first char on line)
-	* win/tclAppInit.c        For MINGW/CYGWIN, use GetCommandLineA explicitely
-	* unix/.cvsignore         Add pkg, *.dll
+	* generic/tclIORChan.c:   Use "tclIO.h" and "tclTomMathDecls.h"
+	* generic/tclIORTrans.c:  everywhere
+	* generic/tclTomMath.h:
+	* tools/fix_tommath_h.tcl:
+	* libtommath/tommath.h:   Formatting (# should always be first char on
+				  line)
+	* win/tclAppInit.c:       For MINGW/CYGWIN, use GetCommandLineA
+				  explicitly.
+	* unix/.cvsignore:        Add pkg, *.dll
 
-	* libtommath/tommath.h        CONSTify various useful internal functions
-	* libtommath/bn_mp_cmp_d.c    (TclBignumToDouble, TclCeil, TclFloor), and
-	* libtommath/bn_mp_cmp_mag.c  related tommath functions.
-	* libtommath/bn_mp_cmp.c
-	* libtommath/bn_mp_copy.c
-	* libtommath/bn_mp_count_bits.c
-	* libtommath/bn_mp_div_2d.c
-	* libtommath/bn_mp_mod_2d.c
-	* libtommath/bn_mp_mul_2d.c
-	* libtommath/bn_mp_neg.c
-	* generic/tclBasic.c         Handle TODO: const correctness ?
-	* generic/tclInt.h
-	* generic/tclStrToD.c
-	* generic/tclTomMath.decls
-	* generic/tclTomMath.h
-	* generic/tclTomMathDecls.h
+	* libtommath/tommath.h:       CONSTify various useful internal
+	* libtommath/bn_mp_cmp_d.c:   functions (TclBignumToDouble, TclCeil,
+	* libtommath/bn_mp_cmp_mag.c: TclFloor), and related tommath functions
+	* libtommath/bn_mp_cmp.c:
+	* libtommath/bn_mp_copy.c:
+	* libtommath/bn_mp_count_bits.c:
+	* libtommath/bn_mp_div_2d.c:
+	* libtommath/bn_mp_mod_2d.c:
+	* libtommath/bn_mp_mul_2d.c:
+	* libtommath/bn_mp_neg.c:
+	* generic/tclBasic.c:        Handle TODO: const correctness ?
+	* generic/tclInt.h:
+	* generic/tclStrToD.c:
+	* generic/tclTomMath.decls:
+	* generic/tclTomMath.h:
+	* generic/tclTomMathDecls.h:
 
 2010-04-30  Don Porter  <dgp@users.sourceforge.net>
 
@@ -69,9 +78,9 @@
 	int which any value already vetted for overflow issues will fit into.
 	* generic/tclStringObj.c:	Update caller; standardize panic msg. 
 
-	* generic/tclBinary.c (UpdateStringOfByteArray):	Add panic
-	when the generated string representation would grow beyond Tcl's
-	size limits.  [Bug 2994924]
+	* generic/tclBinary.c (UpdateStringOfByteArray): [Bug 2994924]:	Add
+	panic when the generated string representation would grow beyond Tcl's
+	size limits.
 
 2010-04-30  Donal K. Fellows  <dkf@users.sf.net>
 
