@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.181 2010/04/05 19:44:45 ferrieux Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.182 2010/05/17 09:46:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1371,19 +1371,16 @@ TclInfoFrame(
 	Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
 
 	if (namePtr) {
-	    char *procName = Tcl_GetHashKey(namePtr->tablePtr, namePtr);
-	    char *nsName = procPtr->cmdPtr->nsPtr->fullName;
+            Tcl_Obj *procNameObj;
 
 	    /*
 	     * This is a regular command.
 	     */
 
-	    ADD_PAIR("proc", Tcl_NewStringObj(nsName, -1));
-
-	    if (strcmp(nsName, "::") != 0) {
-		Tcl_AppendToObj(lv[lc-1], "::", -1);
-	    }
-	    Tcl_AppendToObj(lv[lc-1], procName, -1);
+            TclNewObj(procNameObj);
+            Tcl_GetCommandFullName(interp, (Tcl_Command) procPtr->cmdPtr,
+                    procNameObj);
+	    ADD_PAIR("proc", procNameObj);
 	} else if (procPtr->cmdPtr->clientData) {
 	    ExtraFrameInfo *efiPtr = procPtr->cmdPtr->clientData;
 	    int i;
