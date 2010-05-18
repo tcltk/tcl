@@ -1,3 +1,7 @@
+2010-05-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclStrToD.c: Fix [Bug 2996549]: Failure in expr.test on Win32
+
 2010-05-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c (TclInfoFrame): Change this code to use

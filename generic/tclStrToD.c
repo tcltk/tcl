@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.29 2010/05/03 16:30:38 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.30 2010/05/18 14:08:37 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -105,6 +105,7 @@ static int log2FLT_RADIX;	/* Logarithm of the floating point radix. */
 static int mantBits;		/* Number of bits in a double's significand */
 static mp_int pow5[9];		/* Table of powers of 5**(2**n), up to
 				 * 5**256 */
+static double tiny = 0.0;		/* The smallest representable double */
 static int maxDigits;		/* The maximum number of digits to the left of
 				 * the decimal point of a double. */
 static int minDigits;		/* The maximum number of digits to the right
@@ -1484,8 +1485,11 @@ MakeHighPrecisionDouble(
 	goto returnValue;
     }
     retval = SafeLdExp(retval, machexp);
-    if (retval <= 0.0) {
-	retval = SafeLdExp(1.0, DBL_MIN_EXP * log2FLT_RADIX - mantBits);
+	if (tiny == 0.0) {
+	    tiny = SafeLdExp(1.0, DBL_MIN_EXP * log2FLT_RADIX - mantBits);
+	}
+    if (retval < tiny) {
+	retval = tiny;
     }
 
     /*
