@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.25 2010/04/02 21:21:06 kennykb Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.26 2010/05/19 08:23:09 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -129,7 +129,7 @@ Tcl_LoadObjCmd(
     InterpPackage *ipFirstPtr, *ipPtr;
     int code, namesMatch, filesMatch, offset;
     const char *symbols[2];
-    void* procPtrs[1];
+    Tcl_PackageInitProc *initProc;
     const char *p, *fullFileName, *packageName;
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch;
@@ -354,7 +354,7 @@ Tcl_LoadObjCmd(
 	symbols[1] = NULL;
 
 	Tcl_MutexLock(&packageMutex);
-	code = Tcl_LoadFile(interp, objv[1], symbols, 0, procPtrs, &loadHandle);
+	code = Tcl_LoadFile(interp, objv[1], symbols, 0, &initProc, &loadHandle);
 	Tcl_MutexUnlock(&packageMutex);
 	if (code != TCL_OK) {
 	    goto done;
@@ -372,7 +372,7 @@ Tcl_LoadObjCmd(
 		ckalloc((unsigned) (Tcl_DStringLength(&pkgName) + 1));
 	strcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName));
 	pkgPtr->loadHandle	   = loadHandle;
-	pkgPtr->initProc	   = (Tcl_PackageInitProc*) procPtrs[0];
+	pkgPtr->initProc	   = initProc;
 	pkgPtr->safeInitProc	   = (Tcl_PackageInitProc*)
 	    Tcl_FindSymbol(interp, loadHandle, Tcl_DStringValue(&safeInitName));
 	pkgPtr->unloadProc	   = (Tcl_PackageUnloadProc*)

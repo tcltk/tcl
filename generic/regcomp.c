@@ -1458,7 +1458,7 @@ brackpart(
     celt startc, endc;
     struct cvec *cv;
     const chr *startp, *endp;
-    chr c[1];
+    chr c;
 
     /*
      * Parse something, get rid of special cases, take shortcuts.
@@ -1470,7 +1470,7 @@ brackpart(
 	return;
 	break;
     case PLAIN:
-	c[0] = v->nextvalue;
+	c = v->nextvalue;
 	NEXT();
 
 	/*
@@ -1478,10 +1478,10 @@ brackpart(
 	 */
 
 	if (!SEE(RANGE)) {
-	    onechr(v, c[0], lp, rp);
+	    onechr(v, c, lp, rp);
 	    return;
 	}
-	startc = element(v, c, c+1);
+	startc = element(v, &c, &c+1);
 	NOERR();
 	break;
     case COLLEL:
@@ -1525,9 +1525,9 @@ brackpart(
 	switch (v->nexttype) {
 	case PLAIN:
 	case RANGE:
-	    c[0] = v->nextvalue;
+	    c = v->nextvalue;
 	    NEXT();
-	    endc = element(v, c, c+1);
+	    endc = element(v, &c, &c+1);
 	    NOERR();
 	    break;
 	case COLLEL:

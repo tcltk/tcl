@@ -1,3 +1,9 @@
+2010-05-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regcomp.c      Don't use arrays of length 1, just use a single
+	* generic/tclFileName.c  element then, it makes code more readable.
+	* generic/tclLoad.c      (here it even prevents a type cast)
+
 2010-05-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclStrToD.c: Fix [Bug 2996549]: Failure in expr.test on Win32
