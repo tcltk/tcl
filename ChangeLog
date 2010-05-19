@@ -1,3 +1,8 @@
+2010-05-19 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclDictObj.c: Backport of fix for [Bug 3004007], EIAS
+	* tests/dict.test:      violation in list-dict conversions.
+
 2010-05-07  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Fix cpu name for Solaris/Intel 64bit.
