@@ -1,3 +1,9 @@
+2010-05-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* tests/dict.test: Add missing test for [Bug 3004007], fixed under
+	                   the radar on 2010-02-24 (dkf): EIAS violation in
+	                   list-dict conversions.
+
 2010-05-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/regcomp.c      Don't use arrays of length 1, just use a single
