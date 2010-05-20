@@ -1,6 +1,6 @@
 2010-05-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* tests/dict.test: Add missing test for [Bug 3004007], fixed under
+	* tests/dict.test: Add missing tests for [Bug 3004007], fixed under
 	                   the radar on 2010-02-24 (dkf): EIAS violation in
 	                   list-dict conversions.
 
