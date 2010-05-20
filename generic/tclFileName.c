@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.42 2010/03/06 03:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.43 2010/05/20 04:17:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1983,19 +1983,19 @@ TclGlob(
 	for (i = 0; i< objc; i++) {
 	    int len;
 	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
-	    Tcl_Obj *elems[1];
+	    Tcl_Obj *elem;
 
 	    if (len == prefixLen) {
 		if ((pattern[0] == '\0')
 			|| (strchr(separators, pattern[0]) == NULL)) {
-		    TclNewLiteralStringObj(elems[0], ".");
+		    TclNewLiteralStringObj(elem, ".");
 		} else {
-		    TclNewLiteralStringObj(elems[0], "/");
+		    TclNewLiteralStringObj(elem, "/");
 		}
 	    } else {
-		elems[0] = Tcl_NewStringObj(oldStr+prefixLen, len-prefixLen);
+		elem = Tcl_NewStringObj(oldStr+prefixLen, len-prefixLen);
 	    }
-	    Tcl_ListObjReplace(interp, filenamesObj, i, 1, 1, elems);
+	    Tcl_ListObjReplace(interp, filenamesObj, i, 1, 1, &elem);
 	}
     }
 
