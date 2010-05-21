@@ -1,3 +1,9 @@
+2010-05-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/installData.tcl   Make sure that copyDir only receives normalized
+	paths, otherwise it might result in a crash on CYGWIN. restyle according
+	to the Tcl style guide (http://www.tcl.tk/doc/styleGuide.pdf)
+
 2010-05-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* tests/dict.test: Add missing tests for [Bug 3004007], fixed under
