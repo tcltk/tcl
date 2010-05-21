@@ -3,6 +3,7 @@
 	* tools/installData.tcl   Make sure that copyDir only receives normalized
 	paths, otherwise it might result in a crash on CYGWIN. restyle according
 	to the Tcl style guide (http://www.tcl.tk/doc/styleGuide.pdf)
+	* generic/tclStrToD.c: [Bug #3005233] fix for build on OpenBSD vax
 
 2010-05-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
