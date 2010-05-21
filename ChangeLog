@@ -12,6 +12,7 @@
 	* win/tclWinConsole.c     signed<->unsigned mismatch. Backported from
 	* win/tclWinDde.c         trunk.
 	* win/tclWinNotify.c
+	* generic/tclStrToD.c:    [Bug #3005233] fix for build on OpenBSD vax
 
 2010-05-19 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
