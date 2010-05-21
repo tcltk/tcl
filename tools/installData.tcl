@@ -16,38 +16,38 @@ exec tclsh "$0" ${1+"$@"}
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: installData.tcl,v 1.1.2.2 2009/03/26 13:28:00 dgp Exp $
+# RCS: @(#) $Id: installData.tcl,v 1.1.2.3 2010/05/21 14:00:55 dgp Exp $
 #
 #----------------------------------------------------------------------
 
-proc copyDir { d1 d2 } {
+proc copyDir {d1 d2} {
 
-    puts [format {%*sCreating %s} [expr { 4 * [info level] }] {} \
+    puts [format {%*sCreating %s} [expr {4 * [info level]}] {} \
 	      [file tail $d2]]
 
     file delete -force -- $d2
     file mkdir $d2
-    
+
     foreach ftail [glob -directory $d1 -nocomplain -tails *] {
 	set f [file join $d1 $ftail]
-	if { [file isdirectory $f] && [string compare CVS $ftail] } {
+	if {[file isdirectory $f] && [string compare CVS $ftail]} {
 	    copyDir $f [file join $d2 $ftail]
-	} elseif { [file isfile $f] } {
+	} elseif {[file isfile $f]} {
 	    file copy -force $f [file join $d2 $ftail]
-	    if { $::tcl_platform(platform) eq {unix} } {
+	    if {$::tcl_platform(platform) eq {unix}} {
 		file attributes [file join $d2 $ftail] -permissions 0644
 	    } else {
 		file attributes [file join $d2 $ftail] -readonly 1
 	    }
 	}
     }
-	    
-    if { $::tcl_platform(platform) eq {unix} } {
+
+    if {$::tcl_platform(platform) eq {unix}} {
 	file attributes $d2 -permissions 0755
     } else {
 	file attributes $d2 -readonly 1
     }
 
-}	
-    
-copyDir [lindex $argv 0] [lindex $argv 1]
+}
+
+copyDir [file normalize [lindex $argv 0]] [file normalize [lindex $argv 1]]
