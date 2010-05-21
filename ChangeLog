@@ -1,3 +1,18 @@
+2010-05-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/installData.tcl   Make sure that copyDir only receives normalized
+	paths. Backported from trunk.
+	* generic/tclPlatDecls.h. Fix <tchar.h> inclusion for CYGWIN. Backported
+	from trunk (although for trunk this was moved to tclWinPort.h)
+	* generic/tclPathObj.c    Fix Tcl_SetStringObj usage for CYGWIN. This
+	function can only be used with unshared objects. This causes a crash
+	on CYGWIN. (backported from trunk)
+	* generic/tclFileName.c   Don't declare cygwin_conv_to_win32_path here.
+	* win/tclWinChan.c        Fix various minor other gcc warnings, like
+	* win/tclWinConsole.c     signed<->unsigned mismatch. Backported from
+	* win/tclWinDde.c         trunk.
+	* win/tclWinNotify.c
+
 2010-05-19 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclDictObj.c: Backport of fix for [Bug 3004007], EIAS
