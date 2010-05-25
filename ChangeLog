@@ -1,3 +1,9 @@
+2010-05-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixPort.h: [Bug 2991415]: tclport.h #included before limits.h
+	* win/tclWinPort.h
+	* generic/tclInt.h
+
 2010-05-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/installData.tcl   Make sure that copyDir only receives normalized

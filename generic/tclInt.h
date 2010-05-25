@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.362.2.11 2010/01/31 23:51:36 nijtmans Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.362.2.12 2010/05/25 10:37:18 nijtmans Exp $
  */
 
 #ifndef _TCLINT
@@ -40,11 +40,6 @@
 #include <stdio.h>
 
 #include <ctype.h>
-#ifdef NO_LIMITS_H
-#   include "../compat/limits.h"
-#else
-#   include <limits.h>
-#endif
 #ifdef NO_STDLIB_H
 #   include "../compat/stdlib.h"
 #else
@@ -62,7 +57,7 @@ typedef int ptrdiff_t;
 #endif
 
 /*
- * Ensure WORDS_BIGENDIAN is defined correcly:
+ * Ensure WORDS_BIGENDIAN is defined correctly:
  * Needs to happen here in addition to configure to work with fat compiles on
  * Darwin (where configure runs only once for multiple architectures).
  */
