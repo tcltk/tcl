@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.65 2008/03/11 22:26:27 das Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.65.2.1 2010/05/25 10:37:18 nijtmans Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -103,6 +103,11 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 #if HAVE_INTTYPES_H
 #   include <inttypes.h>
+#endif
+#ifdef NO_LIMITS_H
+#   include "../compat/limits.h"
+#else
+#   include <limits.h>
 #endif
 #if HAVE_STDINT_H
 #   include <stdint.h>
@@ -627,10 +632,9 @@ EXTERN int pthread_getattr_np _ANSI_ARGS_((pthread_t, pthread_attr_t *));
  * known-to-be-MT-unsafe library calls.
  * Instead of returning pointers to the
  * static storage, those return pointers
- * to the TSD data. 
+ * to the TSD data.
  */
 
-#include <pwd.h>
 #include <grp.h>
 
 MODULE_SCOPE struct passwd*  TclpGetPwNam(const char *name);
