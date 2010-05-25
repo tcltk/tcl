@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.50.2.2 2010/04/19 07:40:41 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.50.2.3 2010/05/25 10:37:18 nijtmans Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -57,6 +57,7 @@
 #include <process.h>
 #include <signal.h>
 #include <string.h>
+#include <limits.h>
 
 #ifdef __CYGWIN__
 #   include <unistd.h>
@@ -403,13 +404,6 @@
 #   define timezone _timezone
 #   define environ  _environ
 #endif /* __BORLANDC__ */
-
-#ifdef __CYGWIN__
-/* On Cygwin, the environment is imported from the Cygwin DLL. */
-#   define putenv TclCygwinPutenv
-#   define timezone _timezone
-#endif /* __CYGWIN__ */
-
 
 #ifdef __WATCOMC__
     /*
