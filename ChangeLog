@@ -1,24 +1,30 @@
+2010-05-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/socket.n: [Bug 3007442]: Server sockets never took a host
+	argument, so the list of options must precede the port argument.
+
 2010-05-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/tclUnixPort.h: [Bug 2991415]: tclport.h #included before limits.h
-	* win/tclWinPort.h
-	* generic/tclInt.h
+	* unix/tclUnixPort.h: [Bug 2991415]: tclport.h #included before
+	* win/tclWinPort.h:		     limits.h
+	* generic/tclInt.h:
 
 2010-05-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tools/installData.tcl   Make sure that copyDir only receives normalized
-	paths. Backported from trunk.
-	* generic/tclPlatDecls.h. Fix <tchar.h> inclusion for CYGWIN. Backported
-	from trunk (although for trunk this was moved to tclWinPort.h)
-	* generic/tclPathObj.c    Fix Tcl_SetStringObj usage for CYGWIN. This
+	* tools/installData.tcl:  Make sure that copyDir only receives
+	normalized paths. Backported from trunk.
+	* generic/tclPlatDecls.h: Fix <tchar.h> inclusion for CYGWIN.
+	Backported from trunk (although for trunk this was moved to
+	tclWinPort.h)
+	* generic/tclPathObj.c:   Fix Tcl_SetStringObj usage for CYGWIN. This
 	function can only be used with unshared objects. This causes a crash
 	on CYGWIN. (backported from trunk)
-	* generic/tclFileName.c   Don't declare cygwin_conv_to_win32_path here.
-	* win/tclWinChan.c        Fix various minor other gcc warnings, like
-	* win/tclWinConsole.c     signed<->unsigned mismatch. Backported from
-	* win/tclWinDde.c         trunk.
-	* win/tclWinNotify.c
-	* generic/tclStrToD.c:    [Bug #3005233] fix for build on OpenBSD vax
+	* generic/tclFileName.c:  Don't declare cygwin_conv_to_win32_path here
+	* win/tclWinChan.c:       Fix various minor other gcc warnings, like
+	* win/tclWinConsole.c:    signed<->unsigned mismatch. Backported from
+	* win/tclWinDde.c:        trunk.
+	* win/tclWinNotify.c:
+	* generic/tclStrToD.c:    [Bug 3005233]: fix for build on OpenBSD vax
 
 2010-05-19 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
@@ -34,15 +40,15 @@
 
 2010-04-30  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBinary.c (UpdateStringOfByteArray):        Add panic
-	when the generated string representation would grow beyond Tcl's
-	size limits.  [Bug 2994924]
+	* generic/tclBinary.c (UpdateStringOfByteArray): [Bug 2994924]: Add
+	panic when the generated string representation would grow beyond Tcl's
+	size limits.
 
 2010-04-29  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Another stab at getting the /lib,
-	* library/platform/pkgIndex.tcl: /lib64 difference right for
-	* unix/Makefile.in: linux. Package updated to version 1.0.7.
+	* library/platform/pkgIndex.tcl: /lib64 difference right for linux.
+	* unix/Makefile.in:		 Package updated to version 1.0.7.
 	* win/Makefile.in:
 
 2010-04-29  Kevin B. Kenny  <kennykb@acm.org>
@@ -68,8 +74,8 @@
 	
 2010-04-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h  Fix [Patch 2986105]: conditionally defining
-	* win/tclWinFile.c  strcasecmp/strncasecmp
+	* win/tclWinPort.h: [Patch 2986105]: Conditionally defining
+	* win/tclWinFile.c: strcasecmp/strncasecmp
 
 2010-04-18  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -735,8 +741,8 @@
 
 2009-08-24  Daniel Steffen  <das@users.sourceforge.net>
 
-	* macosx/tclMacOSXNotify.c: Fix multiple issues with nested event loops
-	when CoreFoundation notifier is running in embedded mode. (Fixes
+	* macosx/tclMacOSXNotify.c: Fix multiple issues with nested event
+	loops when CoreFoundation notifier is running in embedded mode. (Fixes
 	problems in TkAqua Cocoa reported by Youness Alaoui on tcl-mac)
 
 2009-08-21  Don Porter  <dgp@users.sourceforge.net>
