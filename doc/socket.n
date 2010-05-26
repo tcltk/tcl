@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: socket.n,v 1.15 2007/12/13 15:22:33 dgp Exp $
+'\" RCS: @(#) $Id: socket.n,v 1.15.2.1 2010/05/26 21:56:25 dkf Exp $
 .so man.macros
 .TH socket n 8.0 Tcl "Tcl Built-In Commands"
 .BS
@@ -101,7 +101,7 @@ with three additional arguments: the name of the new channel, the
 address, in network address notation, of the client's host, and
 the client's port number.
 .PP
-The following additional option may also be specified before \fIhost\fR:
+The following additional option may also be specified before \fIport\fR:
 .TP
 \fB\-myaddr\fI addr\fR
 \fIAddr\fR gives the domain-style name or numerical IP address of
