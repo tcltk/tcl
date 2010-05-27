@@ -1,6 +1,8 @@
 2010-05-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/opt/optParse.tcl    Don't generate spaces at the end of a line.
+	* tools/uniParse.tcl
+	* generic/tclUniData.c
 	* tests/opt.test
 	* tests/safe.test
 
