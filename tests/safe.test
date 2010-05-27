@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.32 2009/12/30 22:26:43 dkf Exp $
+# RCS: @(#) $Id: safe.test,v 1.33 2010/05/27 08:32:23 nijtmans Exp $
 
 package require Tcl 8.5
 
@@ -41,7 +41,7 @@ test safe-1.2 {safe::interpCreate syntax} -returnCodes error -body {
 } -result {Usage information:
     Var/FlagName  Type     Value   Help
     ------------  ----     -----   ----
-    ( -help                        gives this help )
+    (-help                         gives this help)
     ?slave?       name     ()      name of the slave (optional)
     -accessPath   list     ()      access path for the slave
     -noStatics    boolflag (false) prevent loading of statically linked pkgs
@@ -183,22 +183,22 @@ test safe-6.3 {test safe interpreters knowledge of the world} {
 
 # high level general test
 test safe-7.1 {tests that everything works at high level} {
-    set i [safe::interpCreate];
+    set i [safe::interpCreate]
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs
     #  so package require in a slave works like in the master)
     set v [interp eval $i {package require http 1}]
     # no error shall occur:
-    interp eval $i {http_config};
+    interp eval $i {http_config}
     safe::interpDelete $i
     set v
 } 1.0
 test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -body {
-    set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]];
+    set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
     # should add as p1
-    set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"];
+    set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
     # an error shall occur (http is not anymore in the secure 0-level
     # provided deep path)
     list $token1 $token2 \
@@ -248,8 +248,8 @@ test safe-8.4 {safe source control on file} -setup {
     proc safe-test-log {str} {global log; lappend log $str}
     set prevlog [safe::setLogCmd]
 } -body {
-    safe::interpCreate $i;
-    safe::setLogCmd safe-test-log;
+    safe::interpCreate $i
+    safe::setLogCmd safe-test-log
     list [catch {$i eval {source /abc/def}} msg] $msg $log
 } -cleanup {
     safe::setLogCmd $prevlog
@@ -387,16 +387,16 @@ test safe-9.6 {interpConfigure widget like behaviour} -body {
    list [set i [safe::interpCreate \
 		    -noStatics \
 		    -nestedLoadOk \
-		    -deleteHook {foo bar}];
-         safe::interpConfigure $i -accessPath /foo/bar ;
+		    -deleteHook {foo bar}]
+         safe::interpConfigure $i -accessPath /foo/bar
          safe::interpConfigure $i]\
 	[safe::interpConfigure $i -aCCess]\
 	[safe::interpConfigure $i -nested]\
 	[safe::interpConfigure $i -statics]\
 	[safe::interpConfigure $i -DEL]\
-	[safe::interpConfigure $i -accessPath /blah -statics 1;
+	[safe::interpConfigure $i -accessPath /blah -statics 1
 	 safe::interpConfigure $i]\
-	[safe::interpConfigure $i -deleteHook toto -nosta -nested 0;
+	[safe::interpConfigure $i -deleteHook toto -nosta -nested 0
 	 safe::interpConfigure $i]
 } -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar}} {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}} {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}} {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
 
