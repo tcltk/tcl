@@ -8,7 +8,7 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 #
-# RCS: @(#) $Id: optparse.tcl,v 1.11 2009/11/18 21:45:37 nijtmans Exp $
+# RCS: @(#) $Id: optparse.tcl,v 1.12 2010/05/27 08:32:23 nijtmans Exp $
 
 package require Tcl 8.2
 # When this version number changes, update the pkgIndex.tcl file
@@ -892,22 +892,22 @@ proc ::tcl::OptKeyError {prefix descKey {header 0}} {
     }
     # output the tree
     proc OptTree {desc nl tl dl} {
-	set res "";
+	set res ""
 	foreach item $desc {
-	    if {[OptIsCounter $item]} continue;
+	    if {[OptIsCounter $item]} continue
 	    if {[OptIsPrg $item]} {
-		append res [OptTree $item $nl $tl $dl];
+		append res [OptTree $item $nl $tl $dl]
 	    } else {
-		set dv [OptTypeArgs $item];
+		set dv [OptTypeArgs $item]
 		if {[OptState $item] != "header"} {
-		    set dv "($dv)";
+		    set dv "($dv)"
 		}
-		append res [format "\n    %-*s %-*s %-*s %s" \
+		append res [string trimright [format "\n    %-*s %-*s %-*s %s" \
 			$nl [OptName $item] $tl [OptType $item] \
-			$dl $dv [OptHelp $item]]
+			$dl $dv [OptHelp $item]]]
 	    }
 	}
-	return $res;
+	return $res
     }
 
 # Give nice usage string
@@ -915,9 +915,9 @@ proc ::tcl::OptError {prefix desc {header 0}} {
     # determine length
     if {$header} {
 	# add faked instruction
-	set h [list [OptNewInst header Var/FlagName Type Value Help]];
-	lappend h   [OptNewInst header ------------ ---- ----- ----];
-	lappend h   [OptNewInst header {( -help} "" "" {gives this help )}]
+	set h [list [OptNewInst header Var/FlagName Type Value Help]]
+	lappend h   [OptNewInst header ------------ ---- ----- ----]
+	lappend h   [OptNewInst header {(-help} "" "" {gives this help)}]
 	set desc [concat $h $desc]
     }
     OptLengths $desc nl tl dl
