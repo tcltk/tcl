@@ -1,3 +1,9 @@
+2010-05-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/opt/optParse.tcl    Don't generate spaces at the end of a line.
+	* tests/opt.test
+	* tests/safe.test
+
 2010-05-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/installData.tcl   Make sure that copyDir only receives normalized
@@ -43,7 +49,7 @@
 
 	* library/platform/platform.tcl: Fix cpu name for Solaris/Intel 64bit.
 	* library/platform/pkgIndex.tcl: Package updated to version 1.0.8.
-	* unix/Makefile.in:		
+	* unix/Makefile.in:
 	* win/Makefile.in:
 
 2010-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
@@ -99,7 +105,7 @@
 	* generic/tclInt.h (TclAppendBytesToByteArray):	placing overflow
 	protection responsibility on caller.  Convert "len" argument to signed
 	int which any value already vetted for overflow issues will fit into.
-	* generic/tclStringObj.c:	Update caller; standardize panic msg. 
+	* generic/tclStringObj.c:	Update caller; standardize panic msg.
 
 	* generic/tclBinary.c (UpdateStringOfByteArray): [Bug 2994924]:	Add
 	panic when the generated string representation would grow beyond Tcl's
