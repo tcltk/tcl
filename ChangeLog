@@ -1,18 +1,23 @@
+2010-05-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Restore correct operation
+	of instruction-level execution tracing (had been broken by NRE).
+
 2010-05-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* library/opt/optParse.tcl    Don't generate spaces at the end of a line,
-	* library/opt/pkgIndex.tcl    eliminate ';' at line end, bump to v0.4.6
-	* tools/uniParse.tcl
-	* generic/tclUniData.c
-	* tests/opt.test
-	* tests/safe.test
+	* library/opt/optParse.tcl: Don't generate spaces at the end of a
+	* library/opt/pkgIndex.tcl: line, eliminate ';' at line end, bump to
+	* tools/uniParse.tcl:       v0.4.6
+	* generic/tclUniData.c:
+	* tests/opt.test:
+	* tests/safe.test:
 
 2010-05-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tools/installData.tcl   Make sure that copyDir only receives normalized
-	paths, otherwise it might result in a crash on CYGWIN. restyle according
-	to the Tcl style guide (http://www.tcl.tk/doc/styleGuide.pdf)
-	* generic/tclStrToD.c: [Bug #3005233] fix for build on OpenBSD vax
+	* tools/installData.tcl: Make sure that copyDir only receives
+	normalized paths, otherwise it might result in a crash on CYGWIN.
+	Restyle according to the Tcl style guide.
+	* generic/tclStrToD.c: [Bug 3005233]: Fix for build on OpenBSD vax
 
 2010-05-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
@@ -22,13 +27,13 @@
 
 2010-05-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/regcomp.c      Don't use arrays of length 1, just use a single
-	* generic/tclFileName.c  element then, it makes code more readable.
-	* generic/tclLoad.c      (here it even prevents a type cast)
+	* generic/regcomp.c:     Don't use arrays of length 1, just use a
+	* generic/tclFileName.c: single element then, it makes code more
+	* generic/tclLoad.c:     readable. (Here it even prevents a type cast)
 
 2010-05-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclStrToD.c: Fix [Bug 2996549]: Failure in expr.test on Win32
+	* generic/tclStrToD.c: [Bug 2996549]: Failure in expr.test on Win32
 
 2010-05-17  Donal K. Fellows  <dkf@users.sf.net>
 
