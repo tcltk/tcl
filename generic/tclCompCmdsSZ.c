@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.8 2010/04/08 13:26:24 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.9 2010/05/28 09:11:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2419,62 +2419,74 @@ IssueTryFinallyInstructions(
 		    STORE(		optionVars[i]);
 		    OP(			POP);
 		}
-	    }
-	    if (!handlerTokens[i]) {
+
+		if (!handlerTokens[i]) {
+		    /*
+		     * No handler. Will not be the last handler (that is a
+		     * condition that is checked by the caller). Chain to the
+		     * next one.
+		     */
+
+		    ExceptionRangeEnds(envPtr, range);
+		    OP(			END_CATCH);
+		    forwardsNeedFixing = 1;
+		    JUMP(forwardsToFix[i], JUMP4);
+		    goto finishTrapCatchHandling;
+		}
+	    } else if (!handlerTokens[i]) {
 		/*
 		 * No handler. Will not be the last handler (that condition is
 		 * checked by the caller). Chain to the next one.
 		 */
 
-		ExceptionRangeEnds(envPtr, range);
 		forwardsNeedFixing = 1;
 		JUMP(forwardsToFix[i],	JUMP4);
-		if (resultVars[i] >= 0) {
-		    goto finishTrapCatchHandling;
-		}
-	    } else {
-		/*
-		 * Got a handler. Make sure that any pending patch-up actions
-		 * from previous unprocessed handlers are dealt with now that
-		 * we know where they are to jump to.
-		 */
-
-		if (forwardsNeedFixing) {
-		    forwardsNeedFixing = 0;
-		    OP1(		JUMP1, 7);
-		    for (j=0 ; j<i ; j++) {
-			if (forwardsToFix[j] == -1) {
-			    continue;
-			}
-			FIXJUMP(forwardsToFix[j]);
-			forwardsToFix[j] = -1;
-		    }
-		    OP4(		BEGIN_CATCH4, range);
-		}
-		BODY(			handlerTokens[i], 5+i*4);
-		ExceptionRangeEnds(envPtr, range);
-		OP(			PUSH_RETURN_OPTIONS);
-		OP4(			REVERSE, 2);
-		OP1(			JUMP1, 4);
-		forwardsToFix[i] = -1;
-
-		/*
-		 * Error in handler or setting of variables; replace the
-		 * stored exception with the new one. Note that we only push
-		 * this if we have either a body or some variable setting
-		 * here. Otherwise this code is unreachable.
-		 */
-
-	    finishTrapCatchHandling:
-		ExceptionRangeTarget(envPtr, range, catchOffset);
-		OP(			PUSH_RETURN_OPTIONS);
-		OP(			PUSH_RESULT);
-		OP(			END_CATCH);
-		STORE(			resultVar);
-		OP(			POP);
-		STORE(			optionsVar);
-		OP(			POP);
+		goto endOfThisArm;
 	    }
+
+	    /*
+	     * Got a handler. Make sure that any pending patch-up actions from
+	     * previous unprocessed handlers are dealt with now that we know
+	     * where they are to jump to.
+	     */
+
+	    if (forwardsNeedFixing) {
+		forwardsNeedFixing = 0;
+		OP1(			JUMP1, 7);
+		for (j=0 ; j<i ; j++) {
+		    if (forwardsToFix[j] == -1) {
+			continue;
+		    }
+		    FIXJUMP(forwardsToFix[j]);
+		    forwardsToFix[j] = -1;
+		}
+		OP4(			BEGIN_CATCH4, range);
+	    }
+	    BODY(			handlerTokens[i], 5+i*4);
+	    ExceptionRangeEnds(envPtr, range);
+	    OP(				PUSH_RETURN_OPTIONS);
+	    OP4(			REVERSE, 2);
+	    OP1(			JUMP1, 4);
+	    forwardsToFix[i] = -1;
+
+	    /*
+	     * Error in handler or setting of variables; replace the stored
+	     * exception with the new one. Note that we only push this if we
+	     * have either a body or some variable setting here. Otherwise
+	     * this code is unreachable.
+	     */
+
+	finishTrapCatchHandling:
+	    ExceptionRangeTarget(envPtr, range, catchOffset);
+	    OP(				PUSH_RETURN_OPTIONS);
+	    OP(				PUSH_RESULT);
+	    OP(				END_CATCH);
+	    STORE(			resultVar);
+	    OP(				POP);
+	    STORE(			optionsVar);
+	    OP(				POP);
+
+	endOfThisArm:
 	    if (i+1 < numHandlers) {
 		JUMP(addrsToFix[i],	JUMP4);
 	    }
