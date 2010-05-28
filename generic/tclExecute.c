@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.143 2010/04/30 14:16:17 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.144 2010/05/28 20:42:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -359,7 +359,7 @@ VarHashCreateVar(
 
 #ifdef TCL_COMPILE_DEBUG
 #   define TRACE(a) \
-    while (traceInstructions) {					\
+    while (TAUX.traceInstructions) {				\
 	fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels,	\
 		(int) CURR_DEPTH,				\
 		(unsigned) (pc - codePtr->codeStart),		\
@@ -368,12 +368,12 @@ VarHashCreateVar(
 	break;							\
     }
 #   define TRACE_APPEND(a) \
-    while (traceInstructions) {		\
+    while (TAUX.traceInstructions) {	\
 	printf a;			\
 	break;				\
     }
 #   define TRACE_WITH_OBJ(a, objPtr) \
-    while (traceInstructions) {					\
+    while (TAUX.traceInstructions) {				\
 	fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels,	\
 		(int) CURR_DEPTH,				\
 		(unsigned) (pc - codePtr->codeStart),		\
@@ -1930,6 +1930,10 @@ TclExecuteByteCode(
 				 * Result variable - needed only when going to
 				 * checkForCatch or other error handlers; also
 				 * used as local in some opcodes. */
+#ifdef TCL_COMPILE_DEBUG
+	int traceInstructions;	/* Whether we are doing instruction-level
+				 * tracing or not. */
+#endif
     } TAUX = {
 	NULL,
 	NULL,
@@ -1987,7 +1991,6 @@ TclExecuteByteCode(
     int opnd, objc, length, pcAdjustment;
     Var *varPtr, *arrayPtr;
 #ifdef TCL_COMPILE_DEBUG
-    int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
 #endif
 
@@ -2033,6 +2036,9 @@ TclExecuteByteCode(
      */
 
   nonRecursiveCallStart:
+#ifdef TCL_COMPILE_DEBUG
+    TAUX.traceInstructions = (tclTraceExec == 3);
+#endif
     codePtr->refCount++;
     BP = (BottomData *) GrowEvaluationStack(iPtr->execEnvPtr,
 	    sizeof(BottomData) + codePtr->maxExceptDepth + sizeof(CmdFrame)
@@ -2177,7 +2183,7 @@ TclExecuteByteCode(
 
     ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH, 0,
 	    /*checkStack*/ auxObjList == NULL);
-    if (traceInstructions) {
+    if (TAUX.traceInstructions) {
 	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
 	TclPrintInstruction(codePtr, pc);
 	fflush(stdout);
@@ -2287,7 +2293,7 @@ TclExecuteByteCode(
 #ifdef TCL_COMPILE_DEBUG
 	    TRACE_WITH_OBJ(("=> return code=%d, result=", TRESULT),
 		    iPtr->objResultPtr);
-	    if (traceInstructions) {
+	    if (TAUX.traceInstructions) {
 		fprintf(stdout, "\n");
 	    }
 #endif
@@ -2773,7 +2779,7 @@ TclExecuteByteCode(
 	if (tclTraceExec >= 2) {
 	    int i;
 
-	    if (traceInstructions) {
+	    if (TAUX.traceInstructions) {
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 		TRACE(("%u => call ", objc));
 	    } else {
@@ -2853,7 +2859,7 @@ TclExecuteByteCode(
 		 */
 
 #ifdef TCL_COMPILE_DEBUG
-		if (traceInstructions) {
+		if (TAUX.traceInstructions) {
 		    fprintf(stdout, "   Tailcall request received\n");
 		}
 #endif /* TCL_COMPILE_DEBUG */
@@ -6359,7 +6365,7 @@ TclExecuteByteCode(
 	    NEXT_INST_F(0, 0, 0);
 	}
 #if TCL_COMPILE_DEBUG
-	if (traceInstructions) {
+	if (TAUX.traceInstructions) {
 	    objPtr = Tcl_GetObjResult(interp);
 	    if ((TRESULT != TCL_ERROR) && (TRESULT != TCL_RETURN)) {
 		TRACE_APPEND(("OTHER RETURN CODE %d, result= \"%s\"\n ",
@@ -6447,7 +6453,7 @@ TclExecuteByteCode(
 
 	if (Tcl_Canceled(interp, 0) == TCL_ERROR) {
 #ifdef TCL_COMPILE_DEBUG
-	    if (traceInstructions) {
+	    if (TAUX.traceInstructions) {
 		fprintf(stdout, "   ... cancel with unwind, returning %s\n",
 			StringForResultCode(TRESULT));
 	    }
@@ -6463,7 +6469,7 @@ TclExecuteByteCode(
 
 	if (TclLimitExceeded(iPtr->limit)) {
 #ifdef TCL_COMPILE_DEBUG
-	    if (traceInstructions) {
+	    if (TAUX.traceInstructions) {
 		fprintf(stdout, "   ... limit exceeded, returning %s\n",
 			StringForResultCode(TRESULT));
 	    }
@@ -6472,7 +6478,7 @@ TclExecuteByteCode(
 	}
 	if (catchTop == initCatchTop) {
 #ifdef TCL_COMPILE_DEBUG
-	    if (traceInstructions) {
+	    if (TAUX.traceInstructions) {
 		fprintf(stdout, "   ... no enclosing catch, returning %s\n",
 			StringForResultCode(TRESULT));
 	    }
@@ -6488,7 +6494,7 @@ TclExecuteByteCode(
 	     */
 
 #ifdef TCL_COMPILE_DEBUG
-	    if (traceInstructions) {
+	    if (TAUX.traceInstructions) {
 		fprintf(stdout, "   ... no enclosing catch, returning %s\n",
 			StringForResultCode(TRESULT));
 	    }
@@ -6510,7 +6516,7 @@ TclExecuteByteCode(
 	    TclDecrRefCount(valuePtr);
 	}
 #ifdef TCL_COMPILE_DEBUG
-	if (traceInstructions) {
+	if (TAUX.traceInstructions) {
 	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
 		    "unwound to %ld, new pc %u\n",
 		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),

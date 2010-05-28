@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.10.2.15 2010/04/05 21:46:42 dgp Exp $
+# RCS: @(#) $Id: error.test,v 1.10.2.16 2010/05/28 20:43:00 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -895,6 +895,23 @@ test error-19.9 {compiled try executes all clauses} -setup {
 } -cleanup {
     unset RES
 } -result {a c d}
+test error-19.10 {compiled try with chained clauses} -setup {
+    set RES {}
+} -body {
+    list [apply {{} {
+	try {
+	    return good
+	} on return {res} - on ok {res} {
+	    addmsg ok
+	    addmsg $res
+	    return handler
+	} finally {
+	    addmsg finally
+	}
+    } ::tcl::test::error}] $RES
+} -cleanup {
+    unset RES
+} -result {handler {ok good finally}}
 rename addmsg {}
 
 # FIXME test what vars get set on fallthough ... what is the correct behavior?
