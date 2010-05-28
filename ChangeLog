@@ -1,5 +1,9 @@
 2010-05-28  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclCompCmdsSZ.c (IssueTryFinallyInstructions): [3007374]:
+	Corrected error in handling of catch contexts to prevent crash with
+	chained handlers.
+
 	* generic/tclExecute.c (TclExecuteByteCode): Restore correct operation
 	of instruction-level execution tracing (had been broken by NRE).
 
