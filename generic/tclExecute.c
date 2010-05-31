@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.483 2010/05/28 08:30:49 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.484 2010/05/31 08:54:15 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -232,7 +232,7 @@ VarHashCreateVar(
     Tcl_Obj *key,
     int *newPtr)
 {
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) tablePtr,
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&tablePtr->table,
 	    (char *) key, newPtr);
 
     if (!hPtr) {
