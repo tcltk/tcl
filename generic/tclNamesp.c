@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.205 2010/04/05 19:44:45 ferrieux Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.206 2010/05/31 22:58:56 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -4961,7 +4961,7 @@ Tcl_LogCommandInfo(
 
         for (n=0, frame=iPtr->framePtr;
 		(frame && (frame != iPtr->varFramePtr));
-		n++, frame=frame->callerVarPtr);
+		n++, frame=frame->callerPtr);
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(n));
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
