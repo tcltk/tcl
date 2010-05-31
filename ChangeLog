@@ -1,3 +1,9 @@
+2010-06-101  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclNamesp.c: Fix computation of [uplevel] offsets in TIP 341.
+	* tests/error.test:    Only depend on callerPtr chaining now.
+	* tests/result.test:   Needed for upcoming coro patch.
+
 2010-05-31  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclVar.c         Eliminate some casts to (Tcl_HashTable *)
