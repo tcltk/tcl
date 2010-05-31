@@ -2,6 +2,7 @@
 
 	* generic/tclVar.c         Eliminate some casts to (Tcl_HashTable *)
 	* generic/tclExecute.c
+	* tests/fileSystem.test    Fix filesystem-5.1 test failure on CYGWIN
 
 2010-05-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
