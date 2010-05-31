@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.198 2010/03/05 14:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.199 2010/05/31 08:54:14 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -54,7 +54,7 @@ VarHashCreateVar(
     Tcl_Obj *key,
     int *newPtr)
 {
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) tablePtr,
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&tablePtr->table,
 	    (char *) key, newPtr);
 
     if (hPtr) {
@@ -74,7 +74,7 @@ VarHashCreateVar(
     Tcl_DeleteHashEntry(&(((VarInHash *) varPtr)->entry))
 
 #define VarHashFirstEntry(tablePtr, searchPtr) \
-    Tcl_FirstHashEntry((Tcl_HashTable *) (tablePtr), (searchPtr))
+    Tcl_FirstHashEntry(&(tablePtr)->table, (searchPtr))
 
 #define VarHashNextEntry(searchPtr) \
     Tcl_NextHashEntry((searchPtr))
@@ -110,7 +110,7 @@ VarHashNextVar(
     (((VarInHash *)(varPtr))->entry.key.objPtr)
 
 #define VarHashDeleteTable(tablePtr) \
-    Tcl_DeleteHashTable((Tcl_HashTable *) (tablePtr))
+    Tcl_DeleteHashTable(&(tablePtr)->table)
 
 /*
  * The strings below are used to indicate what went wrong when a variable
