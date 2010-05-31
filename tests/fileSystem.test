@@ -546,7 +546,7 @@ test filesystem-5.1 {cache and ~} -constraints testfilesystem -setup {
     list $res1 $res2
 } -cleanup {
     set ::env(HOME) $orig
-} -match regexp -result {{Parent of ~ \(/foo/bar/blah\) is ([a-zA-Z]:)?(/foo/bar|foo:bar)} {Parent of ~ \(/a/b/c\) is ([a-zA-Z]:)?(/a/b|a:b)}}
+} -match regexp -result {{Parent of ~ \(/foo/bar/blah\) is ([a-zA-Z]:)?(/cygwin)?(/foo/bar|foo:bar)} {Parent of ~ \(/a/b/c\) is ([a-zA-Z]:)?(/cygwin)?(/a/b|a:b)}}
 
 test filesystem-6.1 {empty file name} -returnCodes error -body {
     open ""
