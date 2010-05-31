@@ -1,3 +1,8 @@
+2010-05-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclVar.c         Eliminate some casts to (Tcl_HashTable *)
+	* generic/tclExecute.c
+
 2010-05-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.h:  [tcl-Patches-3008541] order of TIP #348 fields
