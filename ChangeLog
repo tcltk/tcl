@@ -1,4 +1,10 @@
-2010-06-101  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+2010-05-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclOO.h   BUILD_tcloo is never defined (leftover)
+	* win/makefile.bc   Don't set BUILD_tcloo (leftover)
+	See also entry below: 2008-06-01  Joe Mistachkin
+
+2010-06-01  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclNamesp.c: Fix computation of [uplevel] offsets in TIP 348.
 	* tests/error.test:    Only depend on callerPtr chaining now.
