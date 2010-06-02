@@ -138,11 +138,11 @@ test result-6.3 {Bug 2383005} {
 test result-6.4 {non-list -errorstack} {
      catch {return -code error -errorstack {{}a} eek} m o
      list $m [dict get $o -errorcode] [dict get $o -errorstack]
-} {{bad -errorstack value: expected a list but got "{}a"} {TCL RESULT NONLIST_ERRORSTACK} {UP 3}}
+} {{bad -errorstack value: expected a list but got "{}a"} {TCL RESULT NONLIST_ERRORSTACK} {UP 1}}
 test result-6.5 {odd-sized-list -errorstack} {
      catch {return -code error -errorstack a eek} m o
      list $m [dict get $o -errorcode] [dict get $o -errorstack]
-} {{forbidden odd-sized list for -errorstack: "a"} {TCL RESULT ODDSIZEDLIST_ERRORSTACK} {UP 3}}
+} {{forbidden odd-sized list for -errorstack: "a"} {TCL RESULT ODDSIZEDLIST_ERRORSTACK} {UP 1}}
 # cleanup
 cleanupTests
 return

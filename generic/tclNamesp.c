@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.206 2010/05/31 22:58:56 ferrieux Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.207 2010/06/02 23:36:23 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -4954,22 +4954,19 @@ Tcl_LogCommandInfo(
         Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
     } 
 
-    if (iPtr->varFramePtr != iPtr->framePtr) {
+    if (!iPtr->framePtr->objc) {
+        /* special frame, nothing to report */
+    } else if (iPtr->varFramePtr != iPtr->framePtr) {
         /* uplevel case, [lappend errorstack UP $relativelevel] */
-        struct CallFrame *frame;
-        int n;
 
-        for (n=0, frame=iPtr->framePtr;
-		(frame && (frame != iPtr->varFramePtr));
-		n++, frame=frame->callerPtr);
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
-        Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(n));
+        Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(iPtr->framePtr->level - iPtr->varFramePtr->level));
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
         /* normal case, [lappend errorstack CALL [info level 0]] */
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->callLiteral);
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
-                                 Tcl_NewListObj(iPtr->varFramePtr->objc,
-                                                iPtr->varFramePtr->objv));
+                                 Tcl_NewListObj(iPtr->framePtr->objc,
+                                                iPtr->framePtr->objv));
     }
 }
 
