@@ -9,19 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.4.2.8 2010/03/06 03:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.4.2.9 2010/06/02 12:58:01 dgp Exp $
  */
 
 #ifndef TCLOO_H_INCLUDED
 #define TCLOO_H_INCLUDED
 #include "tcl.h"
-
-#if defined(BUILD_tcloo)
-#	define TCLOOAPI DLLEXPORT
-#	undef USE_TCLOO_STUBS
-#else
-#	define TCLOOAPI DLLIMPORT
-#endif
 
 /*
  * Be careful when it comes to versioning; need to make sure that the

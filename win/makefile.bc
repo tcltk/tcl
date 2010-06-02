@@ -574,7 +574,7 @@ $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
 
 {$(GENERICDIR)}.c{$(TMPDIR)}.obj:
-	$(cc32) -DBUILD_tcl -DBUILD_tcloo $(TCL_CFLAGS) -o$@ $<
+	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
 
 {$(ROOT)\compat}.c{$(TMPDIR)}.obj:
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
