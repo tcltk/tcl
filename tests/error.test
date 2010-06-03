@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.10.2.17 2010/06/01 13:08:49 dgp Exp $
+# RCS: @(#) $Id: error.test,v 1.10.2.18 2010/06/03 12:48:28 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -174,13 +174,13 @@ test error-4.6 {errorstack via info } -body {
     proc g x {error G:$x}
     catch {f 12}
     info errorstack
-} -match glob -result {CALL {g 1212} CALL {f 12} UP 3}
+} -match glob -result {CALL {g 1212} CALL {f 12} UP 1}
 test error-4.7 {errorstack via options dict } -body {
     proc f x {g $x$x}
     proc g x {error G:$x}
     catch {f 12} m d
     dict get $d -errorstack
-} -match glob -result {CALL {g 1212} CALL {f 12} UP 3}
+} -match glob -result {CALL {g 1212} CALL {f 12} UP 1}
 
 # Errors in error command itself
 
@@ -244,7 +244,7 @@ test error-6.10 {catch must reset errorstack} -body {
 	catch {f 13}
 	set e2 [info errorstack]
 	list $e1 $e2
-} -match glob -result {{CALL {g 1212} CALL {f 12} UP 3} {CALL {g 1313} CALL {f 13} UP 3}}
+} -match glob -result {{CALL {g 1212} CALL {f 12} UP 1} {CALL {g 1313} CALL {f 13} UP 1}}
 
 test error-7.1 {Bug 1397843} -body {
     variable cmds

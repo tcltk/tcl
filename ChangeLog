@@ -1,3 +1,9 @@
+2010-06-03  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclNamesp.c: Safer (and faster) computation of [uplevel]
+	* tests/error.test:    offsets in TIP 348. Toplevel offsets no longer
+	* tests/result.test:   overestimated.
+
 2010-06-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclOO.h   BUILD_tcloo is never defined (leftover)
