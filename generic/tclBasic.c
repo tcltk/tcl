@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.456 2010/05/03 14:36:41 nijtmans Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.457 2010/06/05 16:24:26 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8710,6 +8710,7 @@ NRCoroutineExitCallback(
     TclCleanupCommandMacro(cmdPtr);
 
     corPtr->eePtr->corPtr = NULL;
+    TclPopStackFrame(interp);
     TclDeleteExecEnv(corPtr->eePtr);
     corPtr->eePtr = NULL;
 
@@ -8790,6 +8791,7 @@ NRInterpCoroutine(
      */
 
     SAVE_CONTEXT(corPtr->caller);
+    corPtr->base.framePtr->callerPtr = iPtr->framePtr;
     RESTORE_CONTEXT(corPtr->running);
     corPtr->auxNumLevels = iPtr->numLevels;
     iPtr->numLevels += nestNumLevels;
@@ -8819,6 +8821,8 @@ TclNRCoroutineObjCmd(
     const char *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
+    Tcl_CallFrame *framePtr;
+    
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
@@ -8922,11 +8926,31 @@ TclNRCoroutineObjCmd(
     }
 
     /*
+     * Create the coro's execEnv and switch to it so that any CallFrames or
+     * callbacks refer to the new execEnv's stack. 
+     */
+
+    corPtr->eePtr = TclCreateExecEnv(interp, CORO_STACK_INITIAL_SIZE);
+    corPtr->callerEEPtr = iPtr->execEnvPtr;
+    corPtr->eePtr->corPtr = corPtr;
+    iPtr->execEnvPtr = corPtr->eePtr;
+
+    /* push a base call frame; save the current namespace to do a correct
+     * command lookup.
+     */
+
+    nsPtr = iPtr->varFramePtr->nsPtr;
+    TclPushStackFrame(interp, &framePtr,
+	    (Tcl_Namespace *) iPtr->globalNsPtr, 0);
+    iPtr->varFramePtr = iPtr->rootFramePtr;
+    
+    /*
      * Save the base context. The base cmdFramePtr is unknown at this time: it
      * will be allocated in the Tcl stack. So signal TEBC that it has to
      * initialize the base cmdFramePtr by setting it to NULL.
      */
 
+    SAVE_CONTEXT(corPtr->base);
     corPtr->base.cmdFramePtr = NULL;
     corPtr->running = NULL_CONTEXT;
     corPtr->stackLevel = NULL;
@@ -8944,20 +8968,13 @@ TclNRCoroutineObjCmd(
     cmdObjPtr->typePtr = NULL;
 
     /*
-     * Create the coro's execEnv and switch to it so that any CallFrames or
-     * callbacks refer to the new execEnv's stack. Add the exit callback, then
-     * the callback to eval the coro body.
+     * Add the exit callback, then the callback to eval the coro body
      */
-
-    corPtr->eePtr = TclCreateExecEnv(interp, CORO_STACK_INITIAL_SIZE);
-    corPtr->callerEEPtr = iPtr->execEnvPtr;
-    corPtr->eePtr->corPtr = corPtr;
-    iPtr->execEnvPtr = corPtr->eePtr;
 
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
     iPtr->evalFlags |= TCL_EVAL_REDIRECT;
-    iPtr->lookupNsPtr = iPtr->varFramePtr->nsPtr;
+    iPtr->lookupNsPtr = nsPtr;
     TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
 
     return TCL_OK;
