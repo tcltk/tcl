@@ -1,3 +1,13 @@
+2010-06-05  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:   Fix for #3008307: make callerPtr chains
+	* generic/tclExecute.c: be traversable accross coro
+	boundaries. Add the special coroutine CallFrame (partially
+	reverting commit of 2009-12-10), as it is needed for coroutines
+	that do not push a CF - eg, those with [eval] as command. Thanks
+	to Colin McCormack (coldstore) and Alexandre Ferrieux for the
+	hard work on this.
+
 2010-06-03  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclNamesp.c: Safer (and faster) computation of [uplevel]

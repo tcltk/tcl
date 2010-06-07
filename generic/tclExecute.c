@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.145 2010/06/01 13:08:49 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.146 2010/06/07 13:28:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2084,13 +2084,11 @@ TclExecuteByteCode(
 	     *  - base.cmdFramePtr not set
 	     *  - need to monkey-patch the BP chain
 	     *  - set the running level for the coroutine
-	     *  - insure that the coro runs in #0
 	     */
 
 	    corPtr->base.cmdFramePtr = bcFramePtr;
 	    corPtr->callerBPPtr = &BP->prevBottomPtr;
 	    corPtr->stackLevel = &TAUX;
-	    iPtr->varFramePtr = iPtr->rootFramePtr;
 	}
 
 	if (iPtr->execEnvPtr->rewind) {
