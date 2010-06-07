@@ -1,3 +1,8 @@
+2010-06-07  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclExecute.c: Ensure proper reset of [info errorstack] even
+	* generic/tclNamesp.c:  when compiling constant expr's with errors.
+
 2010-06-05  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:   Fix for #3008307: make callerPtr chains
