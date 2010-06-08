@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.77 2010/06/03 12:48:27 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.78 2010/06/08 12:55:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4885,52 +4885,56 @@ Tcl_LogCommandInfo(
 	return;
     }
 
-    /*
-     * Compute the line number where the error occurred.
-     */
+    if (command != NULL) {
+        /*
+         * Compute the line number where the error occurred.
+         */
 
-    iPtr->errorLine = 1;
-    for (p = script; p != command; p++) {
-	if (*p == '\n') {
-	    iPtr->errorLine++;
-	}
-    }
+        iPtr->errorLine = 1;
+        for (p = script; p != command; p++) {
+            if (*p == '\n') {
+                iPtr->errorLine++;
+            }
+        }
 
-    if (length < 0) {
-	length = strlen(command);
-    }
-    overflow = (length > limit);
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    %s\n\"%.*s%s\"", ((iPtr->errorInfo == NULL)
-	    ? "while executing" : "invoked from within"),
-	    (overflow ? limit : length), command, (overflow ? "..." : "")));
+        if (length < 0) {
+            length = strlen(command);
+        }
+        overflow = (length > limit);
+        Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    %s\n\"%.*s%s\"", ((iPtr->errorInfo == NULL)
+		? "while executing" : "invoked from within"),
+		(overflow ? limit : length), command,
+		(overflow ? "..." : "")));
 
-    varPtr = TclObjLookupVarEx(interp, iPtr->eiVar, NULL, TCL_GLOBAL_ONLY,
-	    NULL, 0, 0, &arrayPtr);
-    if ((varPtr == NULL) || !TclIsVarTraced(varPtr)) {
-	/*
-	 * Should not happen.
-	 */
+        varPtr = TclObjLookupVarEx(interp, iPtr->eiVar, NULL, TCL_GLOBAL_ONLY,
+		NULL, 0, 0, &arrayPtr);
+        if ((varPtr == NULL) || !TclIsVarTraced(varPtr)) {
+            /*
+             * Should not happen.
+             */
 
-	return;
-    } else {
-	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&iPtr->varTraces,
-		(char *) varPtr);
-	VarTrace *tracePtr = Tcl_GetHashValue(hPtr);
+            return;
+        } else {
+            Tcl_HashEntry *hPtr
+		    = Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
+            VarTrace *tracePtr = Tcl_GetHashValue(hPtr);
 
-	if (tracePtr->traceProc != EstablishErrorInfoTraces) {
-	    /*
-	     * The most recent trace set on ::errorInfo is not the one the
-	     * core itself puts on last. This means some other code is tracing
-	     * the variable, and the additional trace(s) might be write traces
-	     * that expect the timing of writes to ::errorInfo that existed
-	     * Tcl releases before 8.5. To satisfy that compatibility need, we
-	     * write the current -errorinfo value to the ::errorInfo variable.
-	     */
+            if (tracePtr->traceProc != EstablishErrorInfoTraces) {
+                /*
+                 * The most recent trace set on ::errorInfo is not the one the
+                 * core itself puts on last. This means some other code is
+		 * tracing the variable, and the additional trace(s) might be
+		 * write traces that expect the timing of writes to
+		 * ::errorInfo that existed Tcl releases before 8.5. To
+		 * satisfy that compatibility need, we write the current
+		 * -errorinfo value to the ::errorInfo variable.
+                 */
 
-	    Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL, iPtr->errorInfo,
-		    TCL_GLOBAL_ONLY);
-	}
+                Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL, iPtr->errorInfo,
+			TCL_GLOBAL_ONLY);
+            }
+        }
     }
 
     /*
@@ -4960,13 +4964,13 @@ Tcl_LogCommandInfo(
         /* uplevel case, [lappend errorstack UP $relativelevel] */
 
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
-        Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(iPtr->framePtr->level - iPtr->varFramePtr->level));
+        Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(
+		iPtr->framePtr->level - iPtr->varFramePtr->level));
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
         /* normal case, [lappend errorstack CALL [info level 0]] */
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->callLiteral);
-        Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
-                                 Tcl_NewListObj(iPtr->framePtr->objc,
-                                                iPtr->framePtr->objv));
+        Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewListObj(
+		iPtr->framePtr->objc, iPtr->framePtr->objv));
     }
 }
 
