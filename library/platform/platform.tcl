@@ -281,6 +281,13 @@ proc ::platform::patterns {id} {
 	macosx*-*    {
 	    # 10.5+ 
 	    if {[regexp {macosx([^-]*)-(.*)} $id -> v cpu]} {
+
+		switch -exact -- $cpu {
+		    ix86    -
+		    x86_64  { set alt i386-x86_64 }
+		    default { set alt {} }
+		}
+
 		if {$v ne ""} {
 		    foreach {major minor} [split $v .] break
 
@@ -289,21 +296,33 @@ proc ::platform::patterns {id} {
 		    for {set j $minor} {$j >= 5} {incr j -1} {
 			lappend res macosx${major}.${j}-${cpu}
 			lappend res macosx${major}.${j}-universal
+			if {$alt ne {}} {
+			    lappend res macosx${major}.${j}-$alt
+			}
 		    }
 
 		    # Add unversioned patterns for 10.3/10.4 builds.
 		    lappend res macosx-${cpu}
 		    lappend res macosx-universal
+		    if {$alt ne {}} {
+			lappend res macosx-$alt
+		    }
 		} else {
 		    lappend res macosx-universal
+		    if {$alt ne {}} {
+			lappend res macosx-$alt
+		    }
 		}
 	    } else {
 		lappend res macosx-universal
 	    }
 	}
-	macosx-powerpc -
-	macosx-ix86    {
+	macosx-powerpc {
 	    lappend res macosx-universal
+	}
+	macosx-x86_64 -
+	macosx-ix86 {
+	    lappend res macosx-universal macosx-i386-x86_64
 	}
     }
     lappend res tcl ; # Pure tcl packages are always compatible.
@@ -314,7 +333,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.8
+package provide platform 1.0.9
 
 # ### ### ### ######### ######### #########
 ## Demo application
