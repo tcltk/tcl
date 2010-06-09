@@ -1,3 +1,12 @@
+2010-06-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/tsdPerf.c:    Fix export of symbol Tsdperf_Init, when
+	using -fvisibility=hidden. Make two functions static, eliminate
+	some unnecessary type casts.
+	* tools/configure.in: Update to Tcl 8.6
+	* tools/configure:    (regenerated)
+	* tools/.cvsignore    new file
+
 2010-06-07  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclExecute.c: Ensure proper reset of [info errorstack] even
