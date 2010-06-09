@@ -1,3 +1,10 @@
+2010-06-09  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl: Added OSX Intel 64bit
+	* library/platform/pkgIndex.tcl: Package updated to version 1.0.9.
+	* unix/Makefile.in:
+	* win/Makefile.in:
+
 2010-06-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/tsdPerf.c:    Fix export of symbol Tsdperf_Init, when
