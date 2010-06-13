@@ -1,11 +1,10 @@
 2010-06-13  Donal K. Fellows  <dkf@users.sf.net>
 
-	* tools/tcltk-man2html.tcl: [Bug 3015327]: Add hack to stop Itcl C
-	docs from interfering with Tcl docs during HTML generation. This is a
-	band-aid since it just prevents the generation of the HTML version of
-	the Itcl C docs (since they're not installed during 'make install')
-	rather than improving the code to not have problems with the clash
-	between two Object.3 files.
+	* tools/tcltk-man2html.tcl (make-man-pages): [Bug 3015327]: Make the
+	title of a manual page be stored relative to its resulting directory
+	name as well as its source filename. This was caused by both Tcl and a
+	contributed package ([incr Tcl]) defining an Object.3. Also corrected
+	the joining of strings in titles to avoid extra braces.
 
 2010-06-09  Andreas Kupries  <andreask@activestate.com>
 
