@@ -1,3 +1,12 @@
+2010-06-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl: [Bug 3015327]: Add hack to stop Itcl C
+	docs from interfering with Tcl docs during HTML generation. This is a
+	band-aid since it just prevents the generation of the HTML version of
+	the Itcl C docs (since they're not installed during 'make install')
+	rather than improving the code to not have problems with the clash
+	between two Object.3 files.
+
 2010-06-09  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Added OSX Intel 64bit
@@ -7,9 +16,9 @@
 
 2010-06-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tools/tsdPerf.c:    Fix export of symbol Tsdperf_Init, when
-	using -fvisibility=hidden. Make two functions static, eliminate
-	some unnecessary type casts.
+	* tools/tsdPerf.c:    Fix export of symbol Tsdperf_Init, when using
+	-fvisibility=hidden. Make two functions static, eliminate some
+	unnecessary type casts.
 	* tools/configure.in: Update to Tcl 8.6
 	* tools/configure:    (regenerated)
 	* tools/.cvsignore    new file
@@ -21,13 +30,12 @@
 
 2010-06-05  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:   Fix for #3008307: make callerPtr chains
-	* generic/tclExecute.c: be traversable accross coro
-	boundaries. Add the special coroutine CallFrame (partially
-	reverting commit of 2009-12-10), as it is needed for coroutines
-	that do not push a CF - eg, those with [eval] as command. Thanks
-	to Colin McCormack (coldstore) and Alexandre Ferrieux for the
-	hard work on this.
+	* generic/tclBasic.c:   [Bug 3008307]: make callerPtr chains be
+	* generic/tclExecute.c: traversable accross coro boundaries. Add the
+	special coroutine CallFrame (partially reverting commit of
+	2009-12-10), as it is needed for coroutines that do not push a CF, eg,
+	those with [eval] as command. Thanks to Colin McCormack (coldstore)
+	and Alexandre Ferrieux for the hard work on this.
 
 2010-06-03  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
@@ -37,26 +45,26 @@
 
 2010-06-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclOO.h   BUILD_tcloo is never defined (leftover)
-	* win/makefile.bc   Don't set BUILD_tcloo (leftover)
+	* generic/tclOO.h:  BUILD_tcloo is never defined (leftover)
+	* win/makefile.bc:  Don't set BUILD_tcloo (leftover)
 	See also entry below: 2008-06-01  Joe Mistachkin
 
 2010-06-01  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclNamesp.c: Fix computation of [uplevel] offsets in TIP 348.
+	* generic/tclNamesp.c: Fix computation of [uplevel] offsets in TIP 348
 	* tests/error.test:    Only depend on callerPtr chaining now.
 	* tests/result.test:   Needed for upcoming coro patch.
 
 2010-05-31  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclVar.c         Eliminate some casts to (Tcl_HashTable *)
-	* generic/tclExecute.c
-	* tests/fileSystem.test    Fix filesystem-5.1 test failure on CYGWIN
+	* generic/tclVar.c:        Eliminate some casts to (Tcl_HashTable *)
+	* generic/tclExecute.c:
+	* tests/fileSystem.test:   Fix filesystem-5.1 test failure on CYGWIN
 
 2010-05-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.h:  [tcl-Patches-3008541] order of TIP #348 fields
-	in Interp structure
+	* generic/tclInt.h: [Patch 3008541]: Order of TIP #348 fields in
+	Interp structure
 
 2010-05-28  Donal K. Fellows  <dkf@users.sf.net>
 

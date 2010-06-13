@@ -18,9 +18,9 @@ package require Tcl 8.6
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 #
-# CVS: $Id: tcltk-man2html.tcl,v 1.46 2010/02/10 23:17:07 dkf Exp $
+# CVS: $Id: tcltk-man2html.tcl,v 1.47 2010/06/13 10:24:45 dkf Exp $
 
-regexp {\d+\.\d+} {$Revision: 1.46 $} ::Version
+regexp {\d+\.\d+} {$Revision: 1.47 $} ::Version
 set ::CSSFILE "docs.css"
 
 ##
@@ -918,7 +918,7 @@ try {
 	     "The C functions which a Tcl extended C program may use."] \
 	[plus-base $build_tk $tkdir/doc/*.3 {Tk Library} TkLib \
 	     "The additional C functions which a Tk extended C program may use."] \
-	{*}[plus-pkgs 3 {*}$packageDirNameMap]
+	{*}[plus-pkgs 3 {*}[dict remove $packageDirNameMap itcl]]
 } on error {msg opts} {
     # On failure make sure we show what went wrong. We're not supposed
     # to get here though; it represents a bug in the script.
