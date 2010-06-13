@@ -18,9 +18,9 @@ package require Tcl 8.6
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 #
-# CVS: $Id: tcltk-man2html.tcl,v 1.47 2010/06/13 10:24:45 dkf Exp $
+# CVS: $Id: tcltk-man2html.tcl,v 1.48 2010/06/13 22:19:54 dkf Exp $
 
-regexp {\d+\.\d+} {$Revision: 1.47 $} ::Version
+regexp {\d+\.\d+} {$Revision: 1.48 $} ::Version
 set ::CSSFILE "docs.css"
 
 ##
@@ -541,10 +541,11 @@ proc make-man-pages {html args} {
 	    open-text
 	    set haserror 0
 	    if {[next-op-is .HS rest]} {
-		set manual($manual(name)-title) \
-			"[lrange $rest 1 end] [lindex $rest 0] manual page"
+		set manual($manual(wing-file)-$manual(name)-title) \
+		    "[join [lrange $rest 1 end] { }] [lindex $rest 0] manual page"
 	    } elseif {[next-op-is .TH rest]} {
-		set manual($manual(name)-title) "[lindex $rest 0] manual page - [lrange $rest 4 end]"
+		set manual($manual(wing-file)-$manual(name)-title) \
+		    "[lindex $rest 0] manual page - [join [lrange $rest 4 end] { }]"
 	    } else {
 		set haserror 1
 		if {!$verbose} {
@@ -712,7 +713,7 @@ proc make-man-pages {html args} {
 		puts -nonewline stderr .
 	    }
 	    set outfd [open $html/$manual(wing-file)/$manual(name).htm w]
-	    puts $outfd [htmlhead "$manual($manual(name)-title)" \
+	    puts $outfd [htmlhead "$manual($manual(wing-file)-$manual(name)-title)" \
 		    $manual(name) $manual(wing-file) "[indexfile]" \
 		    $overall_title "../[indexfile]"]
 	    if {($ntext > 60) && ($ntoc > 32)} {
@@ -918,7 +919,7 @@ try {
 	     "The C functions which a Tcl extended C program may use."] \
 	[plus-base $build_tk $tkdir/doc/*.3 {Tk Library} TkLib \
 	     "The additional C functions which a Tk extended C program may use."] \
-	{*}[plus-pkgs 3 {*}[dict remove $packageDirNameMap itcl]]
+	{*}[plus-pkgs 3 {*}$packageDirNameMap]
 } on error {msg opts} {
     # On failure make sure we show what went wrong. We're not supposed
     # to get here though; it represents a bug in the script.
