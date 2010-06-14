@@ -1,3 +1,10 @@
+2010-06-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/Makefile.in     Fix compilation of xttest with 8.6 changes
+	* unix/tclXtNotify.c
+	* unix/tclXtTest.c
+	* generic/tclPipe.c    Fix gcc warning (with -fstrict-aliasing=2)
+
 2010-06-13  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl (make-man-pages): [Bug 3015327]: Make the
