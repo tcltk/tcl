@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.124 2010/06/14 13:48:25 nijtmans Exp $
+# RCS: @(#) $Id: init.tcl,v 1.125 2010/06/14 14:56:50 nijtmans Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -693,7 +693,7 @@ proc auto_execok name {
 
     foreach dir [split $path {;}] {
 	# Skip already checked directories
-	if {[info exists checked($dir)] || ($dir eq {})} {
+	if {[info exists checked($dir)] || ($dir eq "")} {
 	    continue
 	}
 	set checked($dir) {}
