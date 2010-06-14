@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtTest.c,v 1.10 2010/02/25 22:20:10 nijtmans Exp $
+ * RCS: @(#) $Id: tclXtTest.c,v 1.11 2010/06/14 12:58:11 nijtmans Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -19,19 +19,13 @@
 
 static int	TesteventloopCmd(ClientData clientData,
 		    Tcl_Interp *interp, int argc, const char **argv);
-extern void	InitNotifier(void);
-
+extern DLLEXPORT Tcl_PackageInitProc Tclxttest_Init;
 /*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Tcltest_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
+ * Functions defined in tclXtNotify.c for use by users of the Xt Notifier:
  */
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-EXTERN int		Tclxttest_Init(Tcl_Interp *interp);
-
-
+extern void	InitNotifier(void);
+extern XtAppContext	TclSetAppContext(XtAppContext ctx);
 
 /*
  *----------------------------------------------------------------------
