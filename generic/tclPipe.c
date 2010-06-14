@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7.4.15 2010/02/25 21:53:08 dgp Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.4.16 2010/06/14 13:42:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -275,7 +275,7 @@ TclCleanupChildren(
     int result = TCL_OK;
     int i, abnormalExit, anyErrorInfo;
     Tcl_Pid pid;
-    WAIT_STATUS_TYPE waitStatus;
+    int waitStatus;
     const char *msg;
     unsigned long resolvedPid;
 
@@ -288,7 +288,7 @@ TclCleanupChildren(
 	 */
 
 	resolvedPid = TclpGetPid(pidPtr[i]);
-	pid = Tcl_WaitPid(pidPtr[i], (int *) &waitStatus, 0);
+	pid = Tcl_WaitPid(pidPtr[i], &waitStatus, 0);
 	if (pid == (Tcl_Pid) -1) {
 	    result = TCL_ERROR;
 	    if (interp != NULL) {
@@ -323,8 +323,7 @@ TclCleanupChildren(
 	    sprintf(msg1, "%lu", resolvedPid);
 	    if (WIFEXITED(waitStatus)) {
 		if (interp != NULL) {
-		    sprintf(msg2, "%lu",
-			    (unsigned long) WEXITSTATUS(waitStatus));
+		    sprintf(msg2, "%u", WEXITSTATUS(waitStatus));
 		    Tcl_SetErrorCode(interp, "CHILDSTATUS", msg1, msg2, NULL);
 		}
 		abnormalExit = 1;
@@ -332,16 +331,14 @@ TclCleanupChildren(
 		const char *p;
 
 		if (WIFSIGNALED(waitStatus)) {
-		    p = Tcl_SignalMsg((int) (WTERMSIG(waitStatus)));
+		    p = Tcl_SignalMsg(WTERMSIG(waitStatus));
 		    Tcl_SetErrorCode(interp, "CHILDKILLED", msg1,
-			    Tcl_SignalId((int) (WTERMSIG(waitStatus))), p,
-			    NULL);
+			    Tcl_SignalId(WTERMSIG(waitStatus)), p, NULL);
 		    Tcl_AppendResult(interp, "child killed: ", p, "\n", NULL);
 		} else if (WIFSTOPPED(waitStatus)) {
-		    p = Tcl_SignalMsg((int) (WSTOPSIG(waitStatus)));
+		    p = Tcl_SignalMsg(WSTOPSIG(waitStatus));
 		    Tcl_SetErrorCode(interp, "CHILDSUSP", msg1,
-			    Tcl_SignalId((int) (WSTOPSIG(waitStatus))), p,
-			    NULL);
+			    Tcl_SignalId(WSTOPSIG(waitStatus)), p, NULL);
 		    Tcl_AppendResult(interp, "child suspended: ", p, "\n",
 			    NULL);
 		} else {
