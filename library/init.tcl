@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.123 2010/04/30 21:15:42 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.124 2010/06/14 13:48:25 nijtmans Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -78,7 +78,7 @@ namespace eval tcl {
     # TIP #255 min and max functions
     namespace eval mathfunc {
 	proc min {args} {
-	    if {[llength $args] == 0} {
+	    if {![llength $args]} {
 		return -code error \
 		    "too few arguments to math function \"min\""
 	    }
@@ -89,12 +89,12 @@ namespace eval tcl {
 		if {[catch {expr {double($arg)}} err]} {
 		    return -code error $err
 		}
-		if {$arg < $val} { set val $arg }
+		if {$arg < $val} {set val $arg}
 	    }
 	    return $val
 	}
 	proc max {args} {
-	    if {[llength $args] == 0} {
+	    if {![llength $args]} {
 		return -code error \
 		    "too few arguments to math function \"max\""
 	    }
@@ -105,7 +105,7 @@ namespace eval tcl {
 		if {[catch {expr {double($arg)}} err]} {
 		    return -code error $err
 		}
-		if {$arg > $val} { set val $arg }
+		if {$arg > $val} {set val $arg}
 	    }
 	    return $val
 	}
@@ -252,13 +252,13 @@ proc unknown args {
 	#
 	if {[info exists UnknownPending($name)]} {
 	    return -code error "self-referential recursion\
-		    in \"unknown\" for command \"$name\"";
+		    in \"unknown\" for command \"$name\""
 	}
-	set UnknownPending($name) pending;
+	set UnknownPending($name) pending
 	set ret [catch {
 		auto_load $name [uplevel 1 {::namespace current}]
 	} msg opts]
-	unset UnknownPending($name);
+	unset UnknownPending($name)
 	if {$ret != 0} {
 	    dict append opts -errorinfo "\n    (autoloading \"$name\")"
 	    return -options $opts $msg
@@ -546,14 +546,14 @@ proc auto_qualify {cmd namespace} {
 
     # Before each return case we give an example of which category it is
     # with the following form :
-    # ( inputCmd, inputNameSpace) -> output
+    # (inputCmd, inputNameSpace) -> output
 
     if {[string match ::* $cmd]} {
 	if {$n > 1} {
-	    # ( ::foo::bar , * ) -> ::foo::bar
+	    # (::foo::bar , *) -> ::foo::bar
 	    return [list $cmd]
 	} else {
-	    # ( ::global , * ) -> global
+	    # (::global , *) -> global
 	    return [list [string range $cmd 2 end]]
 	}
     }
@@ -563,17 +563,17 @@ proc auto_qualify {cmd namespace} {
 
     if {$n == 0} {
 	if {$namespace eq "::"} {
-	    # ( nocolons , :: ) -> nocolons
+	    # (nocolons , ::) -> nocolons
 	    return [list $cmd]
 	} else {
-	    # ( nocolons , ::sub ) -> ::sub::nocolons nocolons
+	    # (nocolons , ::sub) -> ::sub::nocolons nocolons
 	    return [list ${namespace}::$cmd $cmd]
 	}
     } elseif {$namespace eq "::"} {
-	#  ( foo::bar , :: ) -> ::foo::bar
+	#  (foo::bar , ::) -> ::foo::bar
 	return [list ::$cmd]
     } else {
-	# ( foo::bar , ::sub ) -> ::sub::foo::bar ::foo::bar
+	# (foo::bar , ::sub) -> ::sub::foo::bar ::foo::bar
 	return [list ${namespace}::$cmd ::$cmd]
     }
 }
@@ -693,7 +693,9 @@ proc auto_execok name {
 
     foreach dir [split $path {;}] {
 	# Skip already checked directories
-	if {[info exists checked($dir)] || ($dir eq {})} { continue }
+	if {[info exists checked($dir)] || ($dir eq {})} {
+	    continue
+	}
 	set checked($dir) {}
 	foreach ext $execExtensions {
 	    set file [file join $dir ${name}${ext}]
