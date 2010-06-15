@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution of commands
 # and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.13.2.11 2009/11/19 16:51:27 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.13.2.12 2010/06/15 12:41:36 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -25,7 +25,9 @@ proc auto_reset {} {
     if {[array exists ::auto_index]} {
 	foreach cmdName [array names ::auto_index] {
 	    set fqcn [namespace which $cmdName]
-	    if {$fqcn eq ""} {continue}
+	    if {$fqcn eq ""} {
+		continue
+	    }
 	    rename $fqcn {}
 	}
     }
@@ -132,8 +134,10 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	} else {
 	    set norm [file normalize $i]
 	}
-	if {[info exists seen($norm)]} { continue }
-	set seen($norm) ""
+	if {[info exists seen($norm)]} {
+	    continue
+	}
+	set seen($norm) {}
 	lappend uniqdirs $i
     }
     set dirs $uniqdirs
@@ -202,7 +206,7 @@ proc auto_mkindex {dir args} {
     append index "# sets an element in the auto_index array, where the\n"
     append index "# element name is the name of a command and the value is\n"
     append index "# a script that loads the command.\n\n"
-    if {[llength $args] == 0} {
+    if {![llength $args]} {
 	set args *.tcl
     }
 
@@ -237,7 +241,7 @@ proc auto_mkindex_old {dir args} {
     append index "# sets an element in the auto_index array, where the\n"
     append index "# element name is the name of a command and the value is\n"
     append index "# a script that loads the command.\n\n"
-    if {[llength $args] == 0} {
+    if {![llength $args]} {
 	set args *.tcl
     }
     foreach file [glob -- {*}$args] {

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.10.2.16 2010/01/02 16:32:30 dgp Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.10.2.17 2010/06/15 12:41:36 dgp Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -153,10 +153,18 @@ proc ::safe::interpConfigure {args} {
 	    set item [::tcl::OptCurDesc $desc]
 	    set name [::tcl::OptName $item]
 	    switch -exact -- $name {
-		-accessPath {return [list -accessPath $state(access_path)]}
-		-statics    {return [list -statics    $state(staticsok)]}
-		-nested     {return [list -nested     $state(nestedok)]}
-		-deleteHook {return [list -deleteHook $state(cleanupHook)]}
+		-accessPath {
+		    return [list -accessPath $state(access_path)]
+		}
+		-statics    {
+		    return [list -statics $state(staticsok)]
+		}
+		-nested     {
+		    return [list -nested $state(nestedok)]
+		}
+		-deleteHook {
+		    return [list -deleteHook $state(cleanupHook)]
+		}
 		-noStatics {
 		    # it is most probably a set in fact but we would need
 		    # then to jump to the set part and it is not *sure*
@@ -1011,7 +1019,7 @@ proc ::safe::AliasEncoding {slave option args} {
     }
 
     if {[string equal -length [string length $option] $option "system"]} {
-	if {[llength $args] == 0} {
+	if {![llength $args]} {
 	    # passed all the tests , lets source it:
 	    try {
 		return [::interp invokehidden $slave encoding system]

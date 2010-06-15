@@ -2,7 +2,7 @@
 #
 # Implementation of the history command.
 #
-# RCS: @(#) $Id: history.tcl,v 1.6.2.2 2009/07/27 19:01:32 dgp Exp $
+# RCS: @(#) $Id: history.tcl,v 1.6.2.3 2010/06/15 12:41:36 dgp Exp $
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
 #
@@ -50,7 +50,7 @@ proc ::history {args} {
     # ensemble unknown handler, as those don't fire when no subcommand is
     # given at all.
 
-    if {[llength $args] == 0} {
+    if {![llength $args]} {
 	set args info
     }
 
@@ -230,10 +230,10 @@ proc ::tcl::HistIndex {event} {
 	for {set i [expr {$history(nextid)-1}]} {[info exists history($i)]} \
 		{incr i -1} {
 	    if {[string match $event* $history($i)]} {
-		return $i;
+		return $i
 	    }
 	    if {[string match $event $history($i)]} {
-		return $i;
+		return $i
 	    }
 	}
 	return -code error "no event matches \"$event\""
