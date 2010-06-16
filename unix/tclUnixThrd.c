@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixThrd.c,v 1.25.2.23 2010/03/06 03:40:57 dgp Exp $
+ * RCS: @(#) $Id: tclUnixThrd.c,v 1.25.2.24 2010/06/16 16:17:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -77,7 +77,7 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
 int
 TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
-    Tcl_ThreadCreateProc proc,	/* Main() function of the thread */
+    Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
     ClientData clientData,	/* The one argument to Main() */
     int stackSize,		/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new

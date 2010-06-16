@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.1.2.6 2009/12/08 18:39:18 dgp Exp $
+'\" RCS: @(#) $Id: Class.3,v 1.1.2.7 2010/06/16 16:17:03 dgp Exp $
 '\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
@@ -146,8 +146,8 @@ The contents of the Tcl_ObjectMetadataType structure are as follows:
 typedef const struct {
     int \fIversion\fR;
     const char *\fIname\fR;
-    Tcl_ObjectMetadataDeleteProc \fIdeleteProc\fR;
-    Tcl_CloneProc \fIcloneProc\fR;
+    Tcl_ObjectMetadataDeleteProc *\fIdeleteProc\fR;
+    Tcl_CloneProc *\fIcloneProc\fR;
 } \fBTcl_ObjectMetadataType\fR;
 .CE
 .PP

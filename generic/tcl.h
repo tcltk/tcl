@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.89 2010/05/03 16:30:37 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.90 2010/06/16 16:17:04 dgp Exp $
  */
 
 #ifndef _TCL
@@ -312,9 +312,9 @@ typedef long LONG;
  */
 
 #ifndef NO_VOID
-#define VOID	void
+#   define VOID void
 #else
-#define VOID	char
+#   define VOID char
 #endif
 
 /*
@@ -1019,8 +1019,8 @@ typedef struct Tcl_DString {
  *	TCL_CANCEL_UNWIND:	Magical Tcl_CancelEval mode that causes the
  *				stack for the script in progress to be
  *				completely unwound.
- *      TCL_EVAL_NOERR:         Do no exception reporting at all, just return
- *	                        as the caller will report.
+ *	TCL_EVAL_NOERR:	Do no exception reporting at all, just return
+ *				as the caller will report.
  */
 
 #define TCL_NO_EVAL		0x010000
@@ -2566,13 +2566,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * neither DLLEXPORT nor DLLIMPORT.
  */
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS
-
-EXTERN int		Tcl_AppInit(Tcl_Interp *interp);
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLIMPORT
+extern Tcl_AppInitProc Tcl_AppInit;
 
 #endif /* RC_INVOKED */
 

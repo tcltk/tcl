@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.48 2010/04/02 23:48:14 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.49 2010/06/16 16:17:03 dgp Exp $
 
 library tcl
 
@@ -1391,7 +1391,7 @@ declare 392 generic {
     void Tcl_MutexFinalize(Tcl_Mutex *mutex)
 }
 declare 393 generic {
-    int Tcl_CreateThread(Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc proc,
+    int Tcl_CreateThread(Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc,
 	    ClientData clientData, int stackSize, int flags)
 }
 

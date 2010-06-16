@@ -19,3 +19,4 @@ confdefs.h
 *.so
 pkg
 *.dll
+xttest

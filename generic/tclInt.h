@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.148 2010/05/28 20:43:00 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.149 2010/06/16 16:17:05 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -3082,7 +3082,7 @@ MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
-			    Tcl_ThreadCreateProc proc, ClientData clientData,
+			    Tcl_ThreadCreateProc *proc, ClientData clientData,
 			    int stackSize, int flags);
 MODULE_SCOPE int	TclpFindVariable(const char *name, int *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
@@ -4242,7 +4242,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclTommath_Init(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_PackageInitProc TclTommath_Init;
 MODULE_SCOPE void	TclBNInitBignumFromLong(mp_int *bignum, long initVal);
 MODULE_SCOPE void	TclBNInitBignumFromWideInt(mp_int *bignum,
 			    Tcl_WideInt initVal);
@@ -4259,11 +4259,11 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclplatformtestInit(Tcl_Interp *interp);
-MODULE_SCOPE int	TclObjTest_Init(Tcl_Interp *interp);
-MODULE_SCOPE int	TclThread_Init(Tcl_Interp *interp);
-MODULE_SCOPE int	Procbodytest_Init(Tcl_Interp *interp);
-MODULE_SCOPE int	Procbodytest_SafeInit(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_PackageInitProc TclplatformtestInit;
+MODULE_SCOPE Tcl_PackageInitProc TclObjTest_Init;
+MODULE_SCOPE Tcl_PackageInitProc TclThread_Init;
+MODULE_SCOPE Tcl_PackageInitProc Procbodytest_Init;
+MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 /*
  *----------------------------------------------------------------

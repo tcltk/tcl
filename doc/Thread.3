@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.14.4.10 2010/03/31 20:58:17 dgp Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.14.4.11 2010/06/16 16:17:03 dgp Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -38,12 +38,12 @@ void
 \fBTcl_MutexFinalize\fR(\fImutexPtr\fR)
 .sp
 int
-\fBTcl_CreateThread\fR(\fIidPtr, threadProc, clientData, stackSize, flags\fR)
+\fBTcl_CreateThread\fR(\fIidPtr, proc, clientData, stackSize, flags\fR)
 .sp
 int
 \fBTcl_JoinThread\fR(\fIid, result\fR)
 .SH ARGUMENTS
-.AS Tcl_CreateThreadProc threadProc out
+.AS Tcl_CreateThreadProc proc out
 .AP Tcl_Condition *condPtr in
 A condition variable, which must be associated with a mutex lock.
 .AP Tcl_Mutex *mutexPtr in
@@ -64,11 +64,11 @@ The referred storage will contain the id of the newly created thread as
 returned by the operating system.
 .AP Tcl_ThreadId id in
 Id of the thread waited upon.
-.AP Tcl_ThreadCreateProc threadProc in
+.AP Tcl_ThreadCreateProc *proc in
 This procedure will act as the \fBmain()\fR of the newly created
 thread. The specified \fIclientData\fR will be its sole argument.
 .AP ClientData clientData in
-Arbitrary information. Passed as sole argument to the \fIthreadProc\fR.
+Arbitrary information. Passed as sole argument to the \fIproc\fR.
 .AP int stackSize in
 The size of the stack given to the new thread.
 .AP int flags in
