@@ -26,7 +26,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: loadICU.tcl,v 1.3 2007/04/20 02:23:35 kennykb Exp $
+# RCS: @(#) $Id: loadICU.tcl,v 1.3.4.1 2010/06/16 10:40:20 nijtmans Exp $
 #
 #----------------------------------------------------------------------
 
@@ -591,7 +591,7 @@ proc backslashify { string } {
     set retval {}
     foreach char [split $string {}] {
 	scan $char %c ccode
-	if { $ccode >= 0x0020 && $ccode < 0x007f
+	if { $ccode >= 0x0020 && $ccode < 0x007f && $char ne "\"" 
 	     && $char ne "\{" && $char ne "\}" && $char ne "\["
 	     && $char ne "\]" && $char ne "\\" && $char ne "\$" } {
 	    append retval $char
