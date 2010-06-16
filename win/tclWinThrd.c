@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.52 2010/01/13 06:46:56 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.53 2010/06/16 14:49:51 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -145,7 +145,7 @@ typedef struct allocMutex {
 int
 TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread. */
-    Tcl_ThreadCreateProc proc,	/* Main() function of the thread. */
+    Tcl_ThreadCreateProc *proc,	/* Main() function of the thread. */
     ClientData clientData,	/* The one argument to Main(). */
     int stackSize,		/* Size of stack for the new thread. */
     int flags)			/* Flags controlling behaviour of the new

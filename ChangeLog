@@ -2,6 +2,16 @@
 
 	* tools/loadICU.tcl    [Bug 3016135] traceback using clock format with
 	* library/msgs/he.msg  locale of he_IL
+	* generic/tcl.h        Simplify Tcl_AppInit and *_Init definitions,
+	* generic/tclInt.h     spacing. Change TclpThreadCreate and Tcl_CreateThread
+	* generic/tcl.decls    signature, making clear that "proc" is a function
+	* generic/tclDecls.h   pointer, as in all other "proc" function parameters.
+	* generic/tclEvent.c
+	* generic/tclTestProcBodyObj.c
+	* win/tclWinThrd.c
+	* unix/tclUnixThrd.c
+	* doc/Thread.3
+	* doc/Class.3          Fix Tcl_ObjectMetadataType definition
 
 2010-06-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
