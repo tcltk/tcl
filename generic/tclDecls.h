@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.176 2010/04/02 23:11:55 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.177 2010/06/16 14:49:51 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -2319,7 +2319,7 @@ EXTERN void		Tcl_MutexFinalize(Tcl_Mutex *mutex);
 #define Tcl_CreateThread_TCL_DECLARED
 /* 393 */
 EXTERN int		Tcl_CreateThread(Tcl_ThreadId *idPtr,
-				Tcl_ThreadCreateProc proc,
+				Tcl_ThreadCreateProc *proc,
 				ClientData clientData, int stackSize,
 				int flags);
 #endif
@@ -4131,7 +4131,7 @@ typedef struct TclStubs {
     int (*tcl_ProcObjCmd) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 390 */
     void (*tcl_ConditionFinalize) (Tcl_Condition *condPtr); /* 391 */
     void (*tcl_MutexFinalize) (Tcl_Mutex *mutex); /* 392 */
-    int (*tcl_CreateThread) (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc proc, ClientData clientData, int stackSize, int flags); /* 393 */
+    int (*tcl_CreateThread) (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc, ClientData clientData, int stackSize, int flags); /* 393 */
     int (*tcl_ReadRaw) (Tcl_Channel chan, char *dst, int bytesToRead); /* 394 */
     int (*tcl_WriteRaw) (Tcl_Channel chan, const char *src, int srcLen); /* 395 */
     Tcl_Channel (*tcl_GetTopChannel) (Tcl_Channel chan); /* 396 */
