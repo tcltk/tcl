@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.92 2010/02/24 10:45:04 dkf Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.93 2010/06/16 14:49:50 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -263,7 +263,7 @@ HandleBgErrors(
 	} else if ((code == TCL_ERROR) && !Tcl_IsSafe(interp)) {
 	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
 
-	    if (errChannel != (Tcl_Channel) NULL) {
+	    if (errChannel != NULL) {
 		Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);
 		Tcl_Obj *keyPtr, *valuePtr;
 
@@ -454,7 +454,7 @@ TclDefaultBgErrorHandlerObjCmd(
 	} else {
 	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
 
-	    if (errChannel != (Tcl_Channel) NULL) {
+	    if (errChannel != NULL) {
 		Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 
 		Tcl_IncrRefCount(resultPtr);
@@ -1579,7 +1579,7 @@ NewThreadProc(
 int
 Tcl_CreateThread(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
-    Tcl_ThreadCreateProc proc,	/* Main() function of the thread */
+    Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
     ClientData clientData,	/* The one argument to Main() */
     int stackSize,		/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
