@@ -1,3 +1,8 @@
+2010-06-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/loadICU.tcl    [Bug 3016135] traceback using clock format with
+	* library/msgs/he.msg  locale of he_IL
+
 2010-06-09  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Added OSX Intel 64bit
@@ -276,7 +281,7 @@
 	* generic/rege_dfa.c:	Fix macro conflict on CYGWIN: don't use
 				"small".
 	* generic/tclTest.c:	Fix gcc 4.4 warning: ignoring return value of
-	* unix/tclUnixPipe.c:	‘write’
+	* unix/tclUnixPipe.c:	'write'
 	* unix/tclUnixNotify.c:
 
 2010-01-19  Donal K. Fellows  <dkf@users.sf.net>
