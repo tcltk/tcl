@@ -2,3 +2,4 @@
 *.bundle
 Makefile
 *.dll
+*.so
