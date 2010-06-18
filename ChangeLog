@@ -1,30 +1,36 @@
+2010-06-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/init.tcl (auto_execok): [Bug 3017997]: Add .cmd to the
+	default list of extensions that we can execute interactively.
+
 2010-06-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tools/loadICU.tcl    [Bug 3016135] traceback using clock format with
-	* library/msgs/he.msg  locale of he_IL
-	* generic/tcl.h        Simplify Tcl_AppInit and *_Init definitions,
-	* generic/tclInt.h     spacing. Change TclpThreadCreate and Tcl_CreateThread
-	* generic/tcl.decls    signature, making clear that "proc" is a function
-	* generic/tclDecls.h   pointer, as in all other "proc" function parameters.
-	* generic/tclEvent.c
-	* generic/tclTestProcBodyObj.c
-	* win/tclWinThrd.c
-	* unix/tclUnixThrd.c
-	* doc/Thread.3
-	* doc/Class.3          Fix Tcl_ObjectMetadataType definition
+	* tools/loadICU.tcl:   [Bug 3016135]: Traceback using clock format
+	* library/msgs/he.msg: with locale of he_IL.
+
+	* generic/tcl.h:       Simplify Tcl_AppInit and *_Init definitions,
+	* generic/tclInt.h:    spacing. Change TclpThreadCreate and
+	* generic/tcl.decls:   Tcl_CreateThread signature, making clear that
+	* generic/tclDecls.h:  "proc" is a function pointer, as in all other
+	* generic/tclEvent.c:  "proc" function parameters.
+	* generic/tclTestProcBodyObj.c:
+	* win/tclWinThrd.c:
+	* unix/tclUnixThrd.c:
+	* doc/Thread.3:
+	* doc/Class.3:         Fix Tcl_ObjectMetadataType definition.
 
 2010-06-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/Makefile.in     Fix compilation of xttest with 8.6 changes
-	* unix/tclXtNotify.c
-	* unix/tclXtTest.c
-	* generic/tclPipe.c    Fix gcc warning (with -fstrict-aliasing=2)
-	* library/auto.tcl     Spacing and style fixes.
-	* library/history.tcl
-	* library/init.tcl
-	* library/package.tcl
-	* library/safe.tcl
-	* library/tm.tcl
+	* unix/Makefile.in:    Fix compilation of xttest with 8.6 changes
+	* unix/tclXtNotify.c:
+	* unix/tclXtTest.c:
+	* generic/tclPipe.c:   Fix gcc warning (with -fstrict-aliasing=2)
+	* library/auto.tcl:    Spacing and style fixes.
+	* library/history.tcl:
+	* library/init.tcl:
+	* library/package.tcl:
+	* library/safe.tcl:
+	* library/tm.tcl:
 
 2010-06-13  Donal K. Fellows  <dkf@users.sf.net>
 
