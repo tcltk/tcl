@@ -6,10 +6,10 @@
  *
  * Copyright (c) 1995-1998 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.57 2010/04/22 11:40:32 nijtmans Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.58 2010/06/21 11:23:23 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -710,7 +710,7 @@ TclpGetNativeCwd(
 	char *newCd = ckalloc((unsigned) strlen(buffer) + 1);
 
 	strcpy(newCd, buffer);
-	return (ClientData) newCd;
+	return newCd;
     }
 
     /*
