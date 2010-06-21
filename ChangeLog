@@ -1,3 +1,14 @@
+2010-06-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclLoadDl.c     Eliminate various unnecessary type casts, use
+	* unix/tclLoadNext.c   function typedefs whenever possible
+	* unix/tclUnixChan.c
+	* unix/tclUnixFile.c
+	* unix/tclUnixNotfy.c
+	* unix/tclUnixSock.c
+	* unix/tclUnixTest.c
+	* unix/tclXtTest.c
+
 2010-06-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/init.tcl (auto_execok): [Bug 3017997]: Add .cmd to the
