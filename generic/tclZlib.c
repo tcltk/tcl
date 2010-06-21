@@ -13,23 +13,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.28 2010/03/30 14:28:14 dgp Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4.2.29 2010/06/21 20:23:42 dgp Exp $
  */
 
 #include "tclInt.h"
 #ifdef HAVE_ZLIB
-#ifdef _WIN32
-#   ifndef STATIC_BUILD
-/*
- * HACK needed for zlib1.dll version 1.2.3 on Win32. See comment below. As
- * soon as zlib 1.2.4 is reasonable mainstream, remove this hack!
- */
-#	include "../compat/zlib/zutil.h"
-#	include "../compat/zlib/inftrees.h"
-#	include "../compat/zlib/deflate.h"
-#	include "../compat/zlib/inflate.h"
-#   endif /* !STATIC_BUILD */
-#endif /* _WIN32 */
 #include <zlib.h>
 
 /*
@@ -136,41 +124,30 @@ typedef struct {
  * Prototypes for private procedures defined later in this file:
  */
 
-static int		ZlibTransformClose(ClientData instanceData,
-			    Tcl_Interp *interp);
-static int		ZlibTransformInput(ClientData instanceData, char *buf,
-			    int toRead, int *errorCodePtr);
-static int		ZlibTransformOutput(ClientData instanceData,
-			    const char *buf, int toWrite, int*errorCodePtr);
-static int		ZlibTransformSetOption(ClientData instanceData,
-			    Tcl_Interp *interp, const char *optionName,
-			    const char *value);
-static int		ZlibTransformGetOption(ClientData instanceData,
-			    Tcl_Interp *interp, const char *optionName,
-			    Tcl_DString *dsPtr);
-static void		ZlibTransformWatch(ClientData instanceData, int mask);
-static int		ZlibTransformGetHandle(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		ZlibTransformBlockMode(ClientData instanceData,
-			    int mode);
-static int		ZlibTransformHandler(ClientData instanceData,
-			    int interestMask);
-static void		ZlibTransformTimerSetup(ZlibChannelData *cd);
-static void		ZlibTransformTimerKill(ZlibChannelData *cd);
-static void		ZlibTransformTimerRun(ClientData clientData);
-static void		ConvertError(Tcl_Interp *interp, int code);
-static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
-static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
-			    GzipHeader *headerPtr, int *extraSizePtr);
-static int		TclZlibCmd(ClientData dummy, Tcl_Interp *ip, int objc,
-			    Tcl_Obj *const objv[]);
-static int		ZlibStreamCmd(ClientData cd, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static void		ZlibStreamCmdDelete(ClientData cd);
-static void		ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
-static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
-			    int mode, int format, int level,
-			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr);
+static Tcl_CmdDeleteProc ZlibStreamCmdDelete;
+static Tcl_DriverBlockModeProc ZlibTransformBlockMode;
+static Tcl_DriverCloseProc ZlibTransformClose;
+static Tcl_DriverGetHandleProc ZlibTransformGetHandle;
+static Tcl_DriverGetOptionProc ZlibTransformGetOption;
+static Tcl_DriverHandlerProc ZlibTransformHandler;
+static Tcl_DriverInputProc ZlibTransformInput;
+static Tcl_DriverOutputProc ZlibTransformOutput;
+static Tcl_DriverSetOptionProc ZlibTransformSetOption;
+static Tcl_DriverWatchProc ZlibTransformWatch;
+static Tcl_ObjCmdProc ZlibCmd;
+static Tcl_ObjCmdProc ZlibStreamCmd;
+
+static void ConvertError(Tcl_Interp *interp, int code);
+static void ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
+static int GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
+	GzipHeader *headerPtr, int *extraSizePtr);
+static Tcl_Channel ZlibStackChannelTransform(Tcl_Interp *interp,
+	int mode, int format, int level,
+	Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr);
+static void ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
+static void ZlibTransformTimerKill(ZlibChannelData *cd);
+static void ZlibTransformTimerRun(ClientData clientData);
+static void ZlibTransformTimerSetup(ZlibChannelData *cd);
 
 /*
  * Type of zlib-based compressing and decompressing channels.
@@ -195,58 +172,6 @@ static const Tcl_ChannelType zlibChannelType = {
     NULL,
     NULL
 };
-
-/*
- * zlib 1.2.3 on Windows has a bug that the functions deflateSetHeader and
- * inflateGetHeader are not exported from the dll. Hopefully, this bug will be
- * fixed in zlib 1.2.4 and higher. It is already reported to the zlib people.
- * The functions deflateSetHeader and inflateGetHeader here are just copied
- * from the zlib 1.2.3 source. This is dangerous, but works. In practice, the
- * only fields used from the internal state are "wrap" and "head", which are
- * rather at the beginning of the structure. As long as the offsets of those
- * fields don't change, this code will continue to work.
- */
-
-#if defined(_WIN32) && !defined(STATIC_BUILD)
-#define deflateSetHeader dsetheader
-#define inflateGetHeader igetheader
-
-static int
-deflateSetHeader(
-    z_streamp strm,
-    gz_headerp head)
-{
-    struct internal_state *state;
-
-    if (strm == Z_NULL) {
-	return Z_STREAM_ERROR;
-    }
-    state = (struct internal_state *) strm->state;
-    if ((state == Z_NULL) || (state->wrap != 2)) {
-	return Z_STREAM_ERROR;
-    }
-    state->gzhead = head;
-    return Z_OK;
-}
-
-static int inflateGetHeader(
-    z_streamp strm,
-    gz_headerp head)
-{
-    struct inflate_state *state;
-
-    if (strm == Z_NULL) {
-	return Z_STREAM_ERROR;
-    }
-    state = (struct inflate_state *) strm->state;
-    if ((state == Z_NULL) || ((state->wrap & 2) == 0)) {
-	return Z_STREAM_ERROR;
-    }
-    state->head = head;
-    head->done = 0;
-    return Z_OK;
-}
-#endif /* _WIN32 && !STATIC_BUILD */
 
 /*
  *----------------------------------------------------------------------
@@ -1650,7 +1575,7 @@ Tcl_ZlibAdler32(
 /*
  *----------------------------------------------------------------------
  *
- * TclZlibCmd --
+ * ZlibCmd --
  *
  *	Implementation of the [zlib] command.
  *
@@ -1658,7 +1583,7 @@ Tcl_ZlibAdler32(
  */
 
 static int
-TclZlibCmd(
+ZlibCmd(
     ClientData notUsed,
     Tcl_Interp *interp,
     int objc,
@@ -2879,7 +2804,7 @@ TclZlibInit(
      * Create the public scripted interface to this file's functionality.
      */
 
-    Tcl_CreateObjCommand(interp, "zlib", TclZlibCmd, 0, 0);
+    Tcl_CreateObjCommand(interp, "zlib", ZlibCmd, 0, 0);
     return TCL_OK;
 }
 

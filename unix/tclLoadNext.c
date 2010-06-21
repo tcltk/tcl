@@ -6,10 +6,10 @@
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadNext.c,v 1.11.4.4 2010/04/02 23:48:14 dgp Exp $
+ * RCS: @(#) $Id: tclLoadNext.c,v 1.11.4.5 2010/06/21 20:23:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -104,7 +104,7 @@ TclpDlopen(
     NXCloseMemory(errorStream, NX_FREEBUFFER);
 
     newHandle = (Tcl_LoadHandle) ckalloc(sizeof(*newHandle));
-    newHandle->clientData = (ClientData) 1;
+    newHandle->clientData = INT2PTR(1);
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
     *loadHandle = newHandle;

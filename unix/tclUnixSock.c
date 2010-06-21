@@ -5,10 +5,10 @@
  *
  * Copyright (c) 1995 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.14 2010/03/02 02:32:48 dgp Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.15 2010/06/21 20:23:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -799,7 +799,7 @@ TcpGetHandleProc(
 {
     TcpState *statePtr = (TcpState *) instanceData;
 
-    *handlePtr = (ClientData) INT2PTR(statePtr->fd);
+    *handlePtr = INT2PTR(statePtr->fd);
     return TCL_OK;
 }
 
@@ -1143,7 +1143,7 @@ Tcl_OpenTcpClient(
     sprintf(channelName, "sock%d", statePtr->fd);
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    (ClientData) statePtr, (TCL_READABLE | TCL_WRITABLE));
+	    statePtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(interp, statePtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
 	Tcl_Close(NULL, statePtr->channel);
@@ -1210,7 +1210,7 @@ TclpMakeTcpClientChannelMode(
     sprintf(channelName, "sock%d", statePtr->fd);
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    (ClientData) statePtr, mode);
+	    statePtr, mode);
     if (Tcl_SetChannelOption(NULL, statePtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
 	Tcl_Close(NULL, statePtr->channel);
@@ -1267,10 +1267,10 @@ Tcl_OpenTcpServer(
      */
 
     Tcl_CreateFileHandler(statePtr->fd, TCL_READABLE, TcpAccept,
-	    (ClientData) statePtr);
+	    statePtr);
     sprintf(channelName, "sock%d", statePtr->fd);
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    (ClientData) statePtr, 0);
+	    statePtr, 0);
     return statePtr->channel;
 }
 
@@ -1327,7 +1327,7 @@ TcpAccept(
 
     sprintf(channelName, "sock%d", newsock);
     newSockState->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    (ClientData) newSockState, (TCL_READABLE | TCL_WRITABLE));
+	    newSockState, (TCL_READABLE | TCL_WRITABLE));
 
     Tcl_SetChannelOption(NULL, newSockState->channel, "-translation",
 	    "auto crlf");

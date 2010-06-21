@@ -6,10 +6,10 @@
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDl.c,v 1.13.4.7 2010/04/29 23:32:25 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDl.c,v 1.13.4.8 2010/06/21 20:23:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -93,7 +93,7 @@ TclpDlopen(
 	 */
 
 	Tcl_DString ds;
-	char *fileName = Tcl_GetString(pathPtr);
+	const char *fileName = Tcl_GetString(pathPtr);
 
 	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
 	handle = dlopen(native, RTLD_NOW | RTLD_GLOBAL);
@@ -113,7 +113,7 @@ TclpDlopen(
 	return TCL_ERROR;
     }
     newHandle = (Tcl_LoadHandle) ckalloc(sizeof(*newHandle));
-    newHandle->clientData = (ClientData) handle;
+    newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
     *unloadProcPtr = &UnloadFile;

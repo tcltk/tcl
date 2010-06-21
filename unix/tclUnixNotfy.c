@@ -7,10 +7,10 @@
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.23 2009/12/17 15:17:58 dgp Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.24 2010/06/21 20:23:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -232,7 +232,7 @@ Tcl_InitNotifier(void)
 
 	Tcl_MutexUnlock(&notifierMutex);
 #endif
-	return (ClientData) tsdPtr;
+	return tsdPtr;
     }
 }
 
@@ -344,7 +344,8 @@ Tcl_AlertNotifier(
 	return;
     } else {
 #ifdef TCL_THREADS
-	ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
+	ThreadSpecificData *tsdPtr = clientData;
+
 	Tcl_MutexLock(&notifierMutex);
 	tsdPtr->eventReady = 1;
 	Tcl_ConditionNotify(&tsdPtr->waitCV);
