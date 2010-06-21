@@ -5,10 +5,10 @@
  *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtTest.c,v 1.11 2010/06/14 12:58:11 nijtmans Exp $
+ * RCS: @(#) $Id: tclXtTest.c,v 1.12 2010/06/21 11:23:23 nijtmans Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -17,9 +17,9 @@
 #include <X11/Intrinsic.h>
 #include "tcl.h"
 
-static int	TesteventloopCmd(ClientData clientData,
-		    Tcl_Interp *interp, int argc, const char **argv);
+static Tcl_CmdProc TesteventloopCmd;
 extern DLLEXPORT Tcl_PackageInitProc Tclxttest_Init;
+
 /*
  * Functions defined in tclXtNotify.c for use by users of the Xt Notifier:
  */
@@ -89,10 +89,10 @@ TesteventloopCmd(
 				 * innermost invocation of the "wait"
 				 * subcommand. */
 
-   if (argc < 2) {
+    if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
 		" option ... \"", NULL);
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
     if (strcmp(argv[1], "done") == 0) {
 	*framePtr = 1;
