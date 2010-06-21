@@ -8,6 +8,7 @@
 	* unix/tclUnixSock.c
 	* unix/tclUnixTest.c
 	* unix/tclXtTest.c
+	* generic/tclZlib.c    Remove hack needed for zlib 1.2.3 on win32
 
 2010-06-18  Donal K. Fellows  <dkf@users.sf.net>
 
