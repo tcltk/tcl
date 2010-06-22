@@ -1,14 +1,19 @@
+2010-06-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (Tcl_LsetObjCmd): [Bug 3019351]: Corrected wrong
+	args message.
+
 2010-06-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/tclLoadDl.c     Eliminate various unnecessary type casts, use
-	* unix/tclLoadNext.c   function typedefs whenever possible
-	* unix/tclUnixChan.c
-	* unix/tclUnixFile.c
-	* unix/tclUnixNotfy.c
-	* unix/tclUnixSock.c
-	* unix/tclUnixTest.c
-	* unix/tclXtTest.c
-	* generic/tclZlib.c    Remove hack needed for zlib 1.2.3 on win32
+	* unix/tclLoadDl.c:    Eliminate various unnecessary type casts, use
+	* unix/tclLoadNext.c:  function typedefs whenever possible
+	* unix/tclUnixChan.c:
+	* unix/tclUnixFile.c:
+	* unix/tclUnixNotfy.c:
+	* unix/tclUnixSock.c:
+	* unix/tclUnixTest.c:
+	* unix/tclXtTest.c:
+	* generic/tclZlib.c:   Remove hack needed for zlib 1.2.3 on win32
 
 2010-06-18  Donal K. Fellows  <dkf@users.sf.net>
 

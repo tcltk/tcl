@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.67 2010/05/17 15:58:12 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.68 2010/06/22 12:47:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3508,7 +3508,8 @@ Tcl_LsetObjCmd(
      */
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "listVar index ?index ...? value");
+	Tcl_WrongNumArgs(interp, 1, objv,
+                "listVar ?index? ?index ...? value");
 	return TCL_ERROR;
     }
 
