@@ -3,6 +3,11 @@
 	* win/tclWinPort.h   [Bug 3019634] errno.h and tclWinPort.h have
 	conflicting definitions.
 
+		***POTENTIAL INCOMPATIBILITY***
+	On win32, the correspondence between errno and the related error
+	message, as handled by Tcl_ErrnoMsg() changes. The error message
+	is kept the same, but the corresponding errno value might change.
+
 2010-06-22  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c (Tcl_LsetObjCmd): [Bug 3019351]: Corrected wrong
