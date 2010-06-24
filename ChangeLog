@@ -1,3 +1,8 @@
+2010-06-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h   [Bug 3019634] errno.h and tclWinPort.h have
+	conflicting definitions.
+
 2010-06-22  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c (Tcl_LsetObjCmd): [Bug 3019351]: Corrected wrong
