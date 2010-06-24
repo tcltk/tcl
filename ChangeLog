@@ -1,6 +1,6 @@
 2010-06-24  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h   [Bug 3019634] errno.h and tclWinPort.h have
+	* generic/tclPosixStr.c   [Bug 3019634] errno.h and tclWinPort.h have
 	conflicting definitions.
 
 2010-06-22  Donal K. Fellows  <dkf@users.sf.net>
