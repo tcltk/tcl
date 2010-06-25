@@ -1,6 +1,12 @@
+2010-06-25  Reinhard Max  <max@suse.de>
+
+	* tests/socket.test: Prevent a race condition during shutdown of
+	the remote test server that can cause a hang when the server is
+	being run in verbose mode.
+
 2010-06-24  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h   [Bug 3019634] errno.h and tclWinPort.h have
+	* win/tclWinPort.h [Bug 3019634] errno.h and tclWinPort.h have
 	conflicting definitions.
 
 		***POTENTIAL INCOMPATIBILITY***
