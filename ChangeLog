@@ -1,3 +1,10 @@
+2010-06-28  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPosixStr.c [Bug 3019634] errno.h and tclWinPort.h have
+	conflicting definitions. Added messages for ECANCELED, ENOTRECOVERABLE,
+	EOTHER and EOWNERDEAD, and fixed various typing mistakes in
+	other messages.
+
 2010-06-25  Reinhard Max  <max@suse.de>
 
 	* tests/socket.test: Prevent a race condition during shutdown of
