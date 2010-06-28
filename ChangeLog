@@ -1,4 +1,4 @@
-2010-06-24  Jan Nijtmans  <nijtmans@users.sf.net>
+2010-06-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPosixStr.c   [Bug 3019634] errno.h and tclWinPort.h have
 	conflicting definitions.
