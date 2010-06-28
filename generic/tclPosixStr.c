@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPosixStr.c,v 1.12.10.3 2010/06/24 14:21:12 nijtmans Exp $
+ * RCS: @(#) $Id: tclPosixStr.c,v 1.12.10.4 2010/06/28 08:24:44 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -720,7 +720,7 @@ Tcl_ErrnoMsg(
     case ENOLCK: return "no locks available";
 #endif
 #if defined(ENOLINK) && (!defined(ESOCKTNOSUPPORT) || (ESOCKTNOSUPPORT != ENOLINK))
-    case ENOLINK: return "link has be severed";
+    case ENOLINK: return "link has been severed";
 #endif
 #ifdef ENOMEM
     case ENOMEM: return "not enough memory";
@@ -849,7 +849,7 @@ Tcl_ErrnoMsg(
     case ERREMOTE: return "object is remote";
 #endif
 #ifdef ESHUTDOWN
-    case ESHUTDOWN: return "can't send afer socket shutdown";
+    case ESHUTDOWN: return "can't send after socket shutdown";
 #endif
 #ifdef ESOCKTNOSUPPORT
     case ESOCKTNOSUPPORT: return "socket type not supported";
@@ -906,7 +906,7 @@ Tcl_ErrnoMsg(
 #ifdef NO_STRERROR
 	return "unknown POSIX error";
 #else
-	return strerror(errno);
+	return strerror(err);
 #endif
     }
 }
