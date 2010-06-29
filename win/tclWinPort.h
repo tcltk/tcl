@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.18 2010/05/14 13:31:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.19 2010/06/29 12:12:35 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -96,142 +96,165 @@
 #include <time.h>
 
 /*
- * Define EINPROGRESS in terms of WSAEINPROGRESS.
- */
-
-#ifndef	EINPROGRESS
-#   define EINPROGRESS	WSAEINPROGRESS
-#endif
-
-/*
- * If ENOTSUP is not defined, define it to a value that will never occur.
- */
-
-#ifndef ENOTSUP
-#   define ENOTSUP	-1030507
-#endif
-
-/*
  * The following defines redefine the Windows Socket errors as
  * BSD errors so Tcl_PosixError can do the right thing.
  */
 
-#ifndef EWOULDBLOCK
-#   define EWOULDBLOCK	EAGAIN
-#endif
-#ifndef EALREADY
-#   define EALREADY	149	/* operation already in progress */
-#endif
-#ifndef ENOTSOCK
-#   define ENOTSOCK	95	/* Socket operation on non-socket */
-#endif
-#ifndef EDESTADDRREQ
-#   define EDESTADDRREQ	96	/* Destination address required */
-#endif
-#ifndef EMSGSIZE
-#   define EMSGSIZE	97	/* Message too long */
-#endif
-#ifndef EPROTOTYPE
-#   define EPROTOTYPE	98	/* Protocol wrong type for socket */
-#endif
-#ifndef ENOPROTOOPT
-#   define ENOPROTOOPT	99	/* Protocol not available */
-#endif
-#ifndef EPROTONOSUPPORT
-#   define EPROTONOSUPPORT 120	/* Protocol not supported */
-#endif
-#ifndef ESOCKTNOSUPPORT
-#   define ESOCKTNOSUPPORT 121	/* Socket type not supported */
-#endif
-#ifndef EOPNOTSUPP
-#   define EOPNOTSUPP	122	/* Operation not supported on socket */
-#endif
-#ifndef EPFNOSUPPORT
-#   define EPFNOSUPPORT	123	/* Protocol family not supported */
-#endif
-#ifndef EAFNOSUPPORT
-#   define EAFNOSUPPORT	124	/* Address family not supported */
-#endif
-#ifndef EADDRINUSE
-#   define EADDRINUSE	125	/* Address already in use */
-#endif
-#ifndef EADDRNOTAVAIL
-#   define EADDRNOTAVAIL 126	/* Can't assign requested address */
-#endif
-#ifndef ENETDOWN
-#   define ENETDOWN	127	/* Network is down */
-#endif
-#ifndef ENETUNREACH
-#   define ENETUNREACH	128	/* Network is unreachable */
-#endif
-#ifndef ENETRESET
-#   define ENETRESET	129	/* Network dropped connection on reset */
-#endif
-#ifndef ECONNABORTED
-#   define ECONNABORTED	130	/* Software caused connection abort */
-#endif
-#ifndef ECONNRESET
-#   define ECONNRESET	131	/* Connection reset by peer */
-#endif
-#ifndef ENOBUFS
-#   define ENOBUFS	132	/* No buffer space available */
-#endif
-#ifndef EISCONN
-#   define EISCONN	133	/* Socket is already connected */
-#endif
-#ifndef ENOTCONN
-#   define ENOTCONN	134	/* Socket is not connected */
-#endif
-#ifndef ESHUTDOWN
-#   define ESHUTDOWN	143	/* Can't send after socket shutdown */
-#endif
-#ifndef ETOOMANYREFS
-#   define ETOOMANYREFS	144	/* Too many references: can't splice */
-#endif
-#ifndef ETIMEDOUT
-#   define ETIMEDOUT	145	/* Connection timed out */
-#endif
-#ifndef ECONNREFUSED
-#   define ECONNREFUSED	146	/* Connection refused */
-#endif
-#ifndef ELOOP
-#   define ELOOP	90	/* Symbolic link loop */
-#endif
-#ifndef EHOSTDOWN
-#   define EHOSTDOWN	147	/* Host is down */
-#endif
-#ifndef EHOSTUNREACH
-#   define EHOSTUNREACH	148	/* No route to host */
-#endif
 #ifndef ENOTEMPTY
-#   define ENOTEMPTY 	93	/* directory not empty */
-#endif
-#ifndef EUSERS
-#   define EUSERS	94	/* Too many users (for UFS) */
-#endif
-#ifndef EDQUOT
-#   define EDQUOT	69	/* Disc quota exceeded */
-#endif
-#ifndef ESTALE
-#   define ESTALE	151	/* Stale NFS file handle */
+#   define ENOTEMPTY 	41	/* Directory not empty */
 #endif
 #ifndef EREMOTE
 #   define EREMOTE	66	/* The object is remote */
 #endif
-
-/*
- * It is very hard to determine how Windows reacts to attempting to
- * set a file pointer outside the input datatype's representable
- * region.  So we fake the error code ourselves.
- */
-
+#ifndef EPFNOSUPPORT
+#   define EPFNOSUPPORT	96	/* Protocol family not supported */
+#endif
+#ifndef EADDRINUSE
+#   define EADDRINUSE	100	/* Address already in use */
+#endif
+#ifndef EADDRNOTAVAIL
+#   define EADDRNOTAVAIL 101	/* Can't assign requested address */
+#endif
+#ifndef EAFNOSUPPORT
+#   define EAFNOSUPPORT	102	/* Address family not supported */
+#endif
+#ifndef EALREADY
+#   define EALREADY	103	/* Operation already in progress */
+#endif
+#ifndef EBADMSG
+#   define EBADMSG	104	/* Not a data message */
+#endif
+#ifndef ECANCELED
+#   define ECANCELED	105	/* Canceled */
+#endif
+#ifndef ECONNABORTED
+#   define ECONNABORTED	106	/* Software caused connection abort */
+#endif
+#ifndef ECONNREFUSED
+#   define ECONNREFUSED	107	/* Connection refused */
+#endif
+#ifndef ECONNRESET
+#   define ECONNRESET	108	/* Connection reset by peer */
+#endif
+#ifndef EDESTADDRREQ
+#   define EDESTADDRREQ	109	/* Destination address required */
+#endif
+#ifndef EHOSTUNREACH
+#   define EHOSTUNREACH	110	/* No route to host */
+#endif
+#ifndef EIDRM
+#   define EIDRM	111	/* Identifier removed */
+#endif
+#ifndef EINPROGRESS
+#   define EINPROGRESS	112	/* Operation now in progress */
+#endif
+#ifndef EISCONN
+#   define EISCONN	113	/* Socket is already connected */
+#endif
+#ifndef ELOOP
+#   define ELOOP	114	/* Symbolic link loop */
+#endif
+#ifndef EMSGSIZE
+#   define EMSGSIZE	115	/* Message too long */
+#endif
+#ifndef ENETDOWN
+#   define ENETDOWN	116	/* Network is down */
+#endif
+#ifndef ENETRESET
+#   define ENETRESET	117	/* Network dropped connection on reset */
+#endif
+#ifndef ENETUNREACH
+#   define ENETUNREACH	118	/* Network is unreachable */
+#endif
+#ifndef ENOBUFS
+#   define ENOBUFS	119	/* No buffer space available */
+#endif
+#ifndef ENODATA
+#   define ENODATA	120	/* No data available */
+#endif
+#ifndef ENOLINK
+#   define ENOLINK	121	/* Link has be severed */
+#endif
+#ifndef ENOMSG
+#   define ENOMSG	122	/* No message of desired type */
+#endif
+#ifndef ENOPROTOOPT
+#   define ENOPROTOOPT	123	/* Protocol not available */
+#endif
+#ifndef ENOSR
+#   define ENOSR	124	/* Out of stream resources */
+#endif
+#ifndef ENOSTR
+#   define ENOSTR	125	/* Not a stream device */
+#endif
+#ifndef ENOTCONN
+#   define ENOTCONN	126	/* Socket is not connected */
+#endif
+#ifndef ENOTRECOVERABLE
+#   define ENOTRECOVERABLE	127	/* Not recoverable */
+#endif
+#ifndef ENOTSOCK
+#   define ENOTSOCK	128	/* Socket operation on non-socket */
+#endif
+#ifndef ENOTSUP
+#   define ENOTSUP	129	/* Operation not supported */
+#endif
+#ifndef EOPNOTSUPP
+#   define EOPNOTSUPP	130	/* Operation not supported on socket */
+#endif
+#ifndef EOTHER
+#   define EOTHER	131	/* Other error */
+#endif
 #ifndef EOVERFLOW
-#   ifdef EFBIG
-#      define EOVERFLOW	EFBIG	/* The object couldn't fit in the datatype */
-#   else /* !EFBIG */
-#      define EOVERFLOW	EINVAL	/* Better than nothing! */
-#   endif /* EFBIG */
-#endif /* !EOVERFLOW */
+#   define EOVERFLOW	132	/* File too big */
+#endif
+#ifndef EOWNERDEAD
+#   define EOWNERDEAD	133	/* File too big */
+#endif
+#ifndef EPROTO
+#   define EPROTO	134	/* Protocol error */
+#endif
+#ifndef EPROTONOSUPPORT
+#   define EPROTONOSUPPORT 135	/* Protocol not supported */
+#endif
+#ifndef EPROTOTYPE
+#   define EPROTOTYPE	136	/* Protocol wrong type for socket */
+#endif
+#ifndef ETIME
+#   define ETIME	137	/* Timer expired */
+#endif
+#ifndef ETIMEDOUT
+#   define ETIMEDOUT	138	/* Connection timed out */
+#endif
+#ifndef ETXTBSY
+#   define ETXTBSY	139	/* Text file or pseudo-device busy */
+#endif
+#ifndef EWOULDBLOCK
+#   define EWOULDBLOCK	140	/* Operation would block */
+#endif
+
+
+#ifndef ESOCKTNOSUPPORT
+#   define ESOCKTNOSUPPORT WSAESOCKTNOSUPPORT	/* Socket type not supported */
+#endif
+#ifndef ESHUTDOWN
+#   define ESHUTDOWN	WSAESHUTDOWN	/* Can't send after socket shutdown */
+#endif
+#ifndef ETOOMANYREFS
+#   define ETOOMANYREFS	WSAETOOMANYREFS	/* Too many references: can't splice */
+#endif
+#ifndef EHOSTDOWN
+#   define EHOSTDOWN	WSAEHOSTDOWN	/* Host is down */
+#endif
+#ifndef EUSERS
+#   define EUSERS	WSAEUSERS	/* Too many users (for UFS) */
+#endif
+#ifndef EDQUOT
+#   define EDQUOT	WSAEDQUOT	/* Disc quota exceeded */
+#endif
+#ifndef ESTALE
+#   define ESTALE	WSAESTALE	/* Stale NFS file handle */
+#endif
 
 /*
  * Signals not known to the standard ANSI signal.h.  These are used

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.26.4.13 2008/09/02 17:52:43 dgp Exp $
+# RCS: @(#) $Id: socket.test,v 1.26.4.14 2010/06/29 12:12:35 dgp Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -1651,8 +1651,7 @@ removeFile script2
 
 # cleanup
 if {[string match sock* $commandSocket] == 1} {
-   puts $commandSocket exit
-   flush $commandSocket
+    catch {sendCommand exit}
 }
 catch {close $commandSocket}
 catch {close $remoteProcChan}
