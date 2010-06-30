@@ -1,25 +1,30 @@
+2010-07-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/mathop.n: [Bug 3023165]: Fix typo that was preventing proper
+	rendering of the exclusive-or operator.
+
 2010-06-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclPosixStr.c [Bug 3019634] errno.h and tclWinPort.h have
-	conflicting definitions. Added messages for ECANCELED, ENOTRECOVERABLE,
-	EOTHER and EOWNERDEAD, and fixed various typing mistakes in
-	other messages.
+	* generic/tclPosixStr.c: [Bug 3019634]: errno.h and tclWinPort.h have
+	conflicting definitions. Added messages for ENOTRECOVERABLE, EOTHER,
+	ECANCELED and EOWNERDEAD, and fixed various typing mistakes in other
+	messages.
 
 2010-06-25  Reinhard Max  <max@suse.de>
 
-	* tests/socket.test: Prevent a race condition during shutdown of
-	the remote test server that can cause a hang when the server is
-	being run in verbose mode.
+	* tests/socket.test: Prevent a race condition during shutdown of the
+	remote test server that can cause a hang when the server is being run
+	in verbose mode.
 
 2010-06-24  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h [Bug 3019634] errno.h and tclWinPort.h have
+	* win/tclWinPort.h: [Bug 3019634]: errno.h and tclWinPort.h have
 	conflicting definitions.
 
 		***POTENTIAL INCOMPATIBILITY***
 	On win32, the correspondence between errno and the related error
-	message, as handled by Tcl_ErrnoMsg() changes. The error message
-	is kept the same, but the corresponding errno value might change.
+	message, as handled by Tcl_ErrnoMsg() changes. The error message is
+	kept the same, but the corresponding errno value might change.
 
 2010-06-22  Donal K. Fellows  <dkf@users.sf.net>
 
