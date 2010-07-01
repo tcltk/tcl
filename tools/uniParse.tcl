@@ -9,7 +9,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: uniParse.tcl,v 1.5 2010/05/27 08:38:06 nijtmans Exp $
+# RCS: @(#) $Id: uniParse.tcl,v 1.6 2010/07/01 21:28:15 nijtmans Exp $
 
 
 namespace eval uni {
@@ -66,7 +66,7 @@ proc uni::getValue {items index} {
     if {$categoryIndex < 0} {
 	puts "Unexpected character category: $index($category)"
 	set categoryIndex 0
-    } elseif {$category == "Lt"} {
+    } elseif {$category eq "Lt"} {
 	incr titleCount
     }
 
@@ -110,7 +110,7 @@ proc uni::buildTables {data} {
     set next 0
 
     foreach line [split $data \n] {
-	if {$line == ""} {
+	if {$line eq ""} {
 	    set line "FFFF;;Cn;0;ON;;;;;N;;;;;\n"
 	}
 
@@ -278,12 +278,12 @@ static int groups\[\] = {"
 
 	# Compute the case conversion type and delta
 
-	if {$totitle != ""} {
+	if {$totitle ne ""} {
 	    if {$totitle == $toupper} {
 		# subtract delta for title or upper
 		set case 4
 		set delta $toupper
-	    } elseif {$toupper != ""} {
+	    } elseif {$toupper ne ""} {
 		# subtract delta for upper, subtract 1 for title
 		set case 5
 		set delta $toupper
@@ -292,11 +292,11 @@ static int groups\[\] = {"
 		set case 3
 		set delta $tolower
 	    }
-	} elseif {$toupper != ""} {
+	} elseif {$toupper ne ""} {
 	    # subtract delta for upper, add delta for lower
 	    set case 6
 	    set delta $toupper
-	} elseif {$tolower != ""} {
+	} elseif {$tolower ne ""} {
 	    # add delta for lower
 	    set case 2
 	    set delta $tolower
