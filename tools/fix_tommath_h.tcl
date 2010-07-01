@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fix_tommath_h.tcl,v 1.7 2010/05/03 11:40:06 nijtmans Exp $
+# RCS: @(#) $Id: fix_tommath_h.tcl,v 1.8 2010/07/01 21:28:15 nijtmans Exp $
 #
 #----------------------------------------------------------------------
 
@@ -20,7 +20,7 @@ set eat_endif 0
 set eat_semi 0
 set def_count 0
 foreach line [split $data \n] {
-    if { !$eat_semi && !$eat_endif } {
+    if {!$eat_semi && !$eat_endif} {
 	switch -regexp -- $line {
 	    {#define BN_H_} {
 		puts $line

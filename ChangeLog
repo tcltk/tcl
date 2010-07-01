@@ -1,3 +1,17 @@
+2010-07-01  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/rules.vc              [Bug #3020677] wish can't link reg1.2
+	* tools/checkLibraryDoc.tcl formatting, spacing, cleanup unused variables
+	* tools/eolFix.tcl          no change in generated output
+	* tools/fix_tommath_h.tcl
+	* tools/genStubs.tcl
+	* tools/index.tcl
+	* tools/man2help2.tcl
+	* tools/regexpTestLib.tcl
+	* tools/tsdPerf.tcl
+	* tools/uniClass.tcl
+	* tools/uniParse.tcl
+
 2010-07-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/mathop.n: [Bug 3023165]: Fix typo that was preventing proper
