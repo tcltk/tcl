@@ -8,14 +8,14 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
-# RCS: @(#) $Id: man2help2.tcl,v 1.20 2008/12/22 13:04:32 mistachkin Exp $
-# 
+#
+# RCS: @(#) $Id: man2help2.tcl,v 1.21 2010/07/01 21:28:15 nijtmans Exp $
+#
 
 # Global variables used by these scripts:
 #
 # state -	state variable that controls action of text proc.
-#				
+#
 # topics -	array indexed by (package,section,topic) with value
 # 		of topic ID.
 #
@@ -179,12 +179,12 @@ proc text {string} {
     }
 
     switch $state(textState) {
-	REF { 
+	REF {
 	    if {$state(inTP) == 0} {
 		set string [insertRef $string]
 	    }
 	}
-	SEE { 
+	SEE {
 	    global topics curPkg curSect
 	    foreach i [split $string] {
 		if {![regexp -nocase {^[a-z_0-9]+} [string trim $i] i ]} {
@@ -234,7 +234,7 @@ proc insertRef {string} {
 	}
     }
 
-    if {($ref != {}) && ($ref != $curID)} {
+    if {($ref != "") && ($ref != $curID)} {
 	set string [link $string $ref]
     }
     return $string
@@ -276,7 +276,7 @@ proc macro {name args} {
 	    # next page and previous page
 	}
 	br {
-	    lineBreak	
+	    lineBreak
 	}
 	BS {}
 	BE {}
@@ -391,12 +391,12 @@ proc macro {name args} {
 	    set state(noFill) 1
 	}
 	so {
-	    if {$args != "man.macros"} {
+	    if {$args ne "man.macros"} {
 		puts stderr "Unknown macro: .$name [join $args " "]"
 	    }
 	}
 	sp {					;# needs work
-	    if {$args == ""} {
+	    if {$args eq ""} {
 		set count 1
 	    } else {
 		set count [lindex $args 0]
@@ -475,14 +475,14 @@ proc font {type} {
 	P -
 	R {
 	    endFont
-	    if {$state(textState) == "REF"} {
+	    if {$state(textState) eq "REF"} {
 		set state(textState) INSERT
 	    }
 	}
 	C -
 	B {
 	    beginFont Code
-	    if {$state(textState) == "INSERT"} {
+	    if {$state(textState) eq "INSERT"} {
 		set state(textState) REF
 	    }
 	}
@@ -510,7 +510,7 @@ proc font {type} {
 proc formattedText {text} {
     global chars
 
-    while {$text != ""} {
+    while {$text ne ""} {
 	set index [string first \\ $text]
 	if {$index < 0} {
 	    text $text
@@ -767,7 +767,7 @@ proc SHmacro {argList {style section}} {
     }
 
     # control what the text proc does with text
-    
+
     switch $args {
 	NAME {set state(textState) NAME}
 	DESCRIPTION {set state(textState) INSERT}
@@ -892,7 +892,7 @@ proc THmacro {argList} {
     set curVer	[lindex $argList 2]		;# 7.4
     set curPkg	[lindex $argList 3]		;# Tcl
     set curSect	[lindex $argList 4]		;# {Tcl Library Procedures}
-    
+
     regsub -all {\\ } $curSect { } curSect	;# Clean up for [incr\ Tcl]
 
     puts $file "#{\\footnote $curID}"		;# Context string
@@ -957,7 +957,7 @@ proc newPara {leftIndent {firstIndent 0i}} {
     if $state(paragraph) {
 	puts -nonewline $file "\\line\n"
     }
-    if {$leftIndent != ""} {
+    if {$leftIndent ne ""} {
 	set state(leftIndent) [expr {$state(leftMargin) \
 		+ ($state(offset) * $state(nestingLevel)) \
 		+ [getTwips $leftIndent]}]
@@ -1027,7 +1027,7 @@ proc incrNestingLevel {} {
 
 proc decrNestingLevel {} {
     global state
-    
+
     if {$state(nestingLevel) == 0} {
 	puts stderr "Nesting level decremented below 0"
     } else {
