@@ -64,13 +64,13 @@ proc genTable {type} {
 
     set ranges [string trimright $ranges "\t\n ,"]
     set chars  [string trimright $chars "\t\n ,"]
-    if {$ranges != ""} {
+    if {$ranges ne ""} {
 	puts "static crange ${type}RangeTable\[\] = {\n$ranges\n};\n"
 	puts "#define NUM_[string toupper $type]_RANGE (sizeof(${type}RangeTable)/sizeof(crange))\n"
     } else {
 	puts "/* no contiguous ranges of $type characters */\n"
     }
-    if {$chars != ""} {
+    if {$chars ne ""} {
 	puts "static chr ${type}CharTable\[\] = {\n$chars\n};\n"
 	puts "#define NUM_[string toupper $type]_CHAR (sizeof(${type}CharTable)/sizeof(chr))\n"
     } else {
