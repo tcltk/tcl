@@ -1,3 +1,8 @@
+2010-07-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIntDecls.h [Bug #803489] Tcl_FindNamespace problem in the
+	Stubs table
+
 2010-07-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/mathop.n: [Bug 3023165]: Fix typo that was preventing proper
