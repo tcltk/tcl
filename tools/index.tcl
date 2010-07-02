@@ -9,13 +9,13 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: index.tcl,v 1.3.42.2 2004/05/27 14:29:23 dgp Exp $
+# RCS: @(#) $Id: index.tcl,v 1.3.42.3 2010/07/02 13:14:46 dgp Exp $
 # 
 
 # Global variables used by these scripts:
 #
 # state -	state variable that controls action of text proc.
-#				
+#
 # topics -	array indexed by (package,section,topic) with value
 # 		of topic ID.
 #
@@ -138,7 +138,7 @@ proc macro {name args} {
 
 	    switch $args {
 		NAME {
-		    if {$state == "INIT" } {
+		    if {$state eq "INIT" } {
 			set state NAME
 		    }
 		}
@@ -147,7 +147,7 @@ proc macro {name args} {
 		KEYWORDS {set state KEY}
 		default {set state OFF}
 	    }
-	    
+
 	}
 	TH {
 	    global state curID curPkg curSect topics keywords
@@ -179,7 +179,7 @@ proc macro {name args} {
 
 proc dash {} {
     global state
-    if {$state == "NAME"} {
+    if {$state eq "NAME"} {
 	set state DASH
     }
 }
@@ -188,7 +188,7 @@ proc dash {} {
 
 # initGlobals, tab, font, char, macro2 --
 #
-# These procedures do nothing during the first pass. 
+# These procedures do nothing during the first pass.
 #
 # Arguments:
 # None.
