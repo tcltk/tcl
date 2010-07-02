@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.147 2010/06/08 12:55:09 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.148 2010/07/02 22:45:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8191,6 +8191,7 @@ IllegalExprOperandType(
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "can't use %s as operand of \"%s\"", description, operator));
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, NULL);
 }
 
 /*
