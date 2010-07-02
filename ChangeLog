@@ -1,3 +1,9 @@
+2010-07-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls  [Bug #803489] Tcl_FindNamespace problem in the
+	* generic/tclIntDecls.h Stubs table
+	* generic/tclStubInit.c
+
 2010-07-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclExecute.c (IllegalExprOperandType): [Bug 3024379]: Made
@@ -7,17 +13,17 @@
 
 2010-07-01  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/rules.vc:              [Bug 3020677]: wish can't link reg1.2
-	* tools/checkLibraryDoc.tcl: Formatting, spacing, cleanup unused
-	* tools/eolFix.tcl:          variables no change in generated output.
-	* tools/fix_tommath_h.tcl:
-	* tools/genStubs.tcl:
-	* tools/index.tcl:
-	* tools/man2help2.tcl:
-	* tools/regexpTestLib.tcl:
-	* tools/tsdPerf.tcl:
-	* tools/uniClass.tcl:
-	* tools/uniParse.tcl:
+	* win/rules.vc              [Bug #3020677] wish can't link reg1.2
+	* tools/checkLibraryDoc.tcl formatting, spacing, cleanup unused variables
+	* tools/eolFix.tcl          no change in generated output
+	* tools/fix_tommath_h.tcl
+	* tools/genStubs.tcl
+	* tools/index.tcl
+	* tools/man2help2.tcl
+	* tools/regexpTestLib.tcl
+	* tools/tsdPerf.tcl
+	* tools/uniClass.tcl
+	* tools/uniParse.tcl
 
 2010-07-01  Donal K. Fellows  <dkf@users.sf.net>
 
