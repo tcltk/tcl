@@ -1,3 +1,11 @@
+2010-07-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.decs:	Reverted to the original TIP 337 implementation
+	on what to do with the obsolete internal stub for
+	TclBackgroundException() (eliminate it!)
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
 2010-07-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.decls  [Bug #803489] Tcl_FindNamespace problem in the

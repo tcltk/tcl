@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.139 2010/07/02 20:48:55 nijtmans Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.140 2010/07/02 22:31:50 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -984,11 +984,7 @@ EXTERN Var *		TclVarHashCreateVar(TclVarHashTable *tablePtr,
 EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
 				Namespace *nsPtr);
 #endif
-#ifndef TclBackgroundException_TCL_DECLARED
-#define TclBackgroundException_TCL_DECLARED
-/* 236 */
-EXTERN void		TclBackgroundException(Tcl_Interp *interp, int code);
-#endif
+/* Slot 236 is reserved */
 #ifndef TclResetCancellation_TCL_DECLARED
 #define TclResetCancellation_TCL_DECLARED
 /* 237 */
@@ -1303,7 +1299,7 @@ typedef struct TclIntStubs {
     void (*tclGetSrcInfoForPc) (CmdFrame *contextPtr); /* 233 */
     Var * (*tclVarHashCreateVar) (TclVarHashTable *tablePtr, const char *key, int *newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
-    void (*tclBackgroundException) (Tcl_Interp *interp, int code); /* 236 */
+    void *reserved236;
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
     int (*tclNRInterpProc) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, int skip, ProcErrorProc *errorProc); /* 239 */
@@ -1990,10 +1986,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclInitVarHashTable \
 	(tclIntStubsPtr->tclInitVarHashTable) /* 235 */
 #endif
-#ifndef TclBackgroundException
-#define TclBackgroundException \
-	(tclIntStubsPtr->tclBackgroundException) /* 236 */
-#endif
+/* Slot 236 is reserved */
 #ifndef TclResetCancellation
 #define TclResetCancellation \
 	(tclIntStubsPtr->tclResetCancellation) /* 237 */
@@ -2049,10 +2042,5 @@ extern const TclIntStubs *tclIntStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
-
-/* restore source compatibility for TIP #337 */
-#ifndef TclBackgroundException
-#   define TclBackgroundException Tcl_BackgroundException
-#endif
 
 #endif /* _TCLINTDECLS */
