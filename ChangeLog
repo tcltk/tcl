@@ -1,3 +1,10 @@
+2010-07-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (IllegalExprOperandType): [Bug 3024379]: Made
+	sure that errors caused by an argument to an operator being outside
+	the domain of the operator all result in ::errorCode being ARITH
+	DOMAIN and not NONE.
+
 2010-07-01  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/rules.vc:              [Bug 3020677]: wish can't link reg1.2
