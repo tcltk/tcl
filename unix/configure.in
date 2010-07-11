@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.212 2010/04/30 21:15:42 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.213 2010/07/11 16:12:45 patthoyts Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -132,6 +132,17 @@ SC_TCL_LINK_LIBS
 LIBS="$LIBS$THREADS_LIBS"
 
 SC_ENABLE_SHARED
+
+#--------------------------------------------------------------------
+# Look for a native installed tclsh binary (if available)
+# If one cannot be found then use the binary we build (fails for
+# cross compiling). This is used for NATIVE_TCLSH in Makefile.
+#--------------------------------------------------------------------
+
+SC_PROG_TCLSH
+if test "$TCLSH_PROG" = ""; then
+  TCLSH_PROG='./${TCL_EXE}'
+fi
 
 #------------------------------------------------------------------------
 #	Add stuff for zlib
