@@ -1,3 +1,11 @@
+2010-07-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* unix/configure: (regenerated)
+	* unix/configure.in: For the NATIVE_TCLSH variable use the autoconf
+	* unix/Makefile.in:  SC_PROG_TCLSH to try and find a locally
+	installed native binary. This avoids manually fixing up when cross
+	compiling. If there is not one, revert to using the build product.
+
 2010-07-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.decs:	Reverted to the original TIP 337 implementation
