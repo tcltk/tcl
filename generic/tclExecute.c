@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.487 2010/07/02 20:37:10 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.488 2010/07/15 21:00:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5818,6 +5818,8 @@ TclExecuteByteCode(
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "key \"", TclGetString(OBJ_AT_TOS),
 		    "\" not known in dictionary", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
+		    TclGetString(OBJ_AT_TOS), NULL);
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
 	} else {
 	    TRACE_WITH_OBJ((
