@@ -1,3 +1,7 @@
+2010-07-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c: Added more errorCode setting.
+
 2010-07-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Ensure that [dict get]
