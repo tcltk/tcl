@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.457 2010/06/05 16:24:26 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.458 2010/07/16 15:29:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1677,6 +1677,7 @@ Tcl_HideCommand(
 	Tcl_AppendResult(interp,
 		"cannot use namespace qualifiers in hidden command"
 		" token (rename)", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "HIDDENTOKEN", NULL);
 	return TCL_ERROR;
     }
 
@@ -1700,6 +1701,7 @@ Tcl_HideCommand(
     if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
 	Tcl_AppendResult(interp, "can only hide global namespace commands"
 		" (use rename then hide)", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "HIDE", "NON_GLOBAL", NULL);
 	return TCL_ERROR;
     }
 
@@ -1725,6 +1727,7 @@ Tcl_HideCommand(
     if (!isNew) {
 	Tcl_AppendResult(interp, "hidden command named \"", hiddenCmdToken,
 		"\" already exists", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "HIDE", "ALREADY_HIDDEN", NULL);
 	return TCL_ERROR;
     }
 
@@ -1827,6 +1830,7 @@ Tcl_ExposeCommand(
     if (strstr(cmdName, "::") != NULL) {
 	Tcl_AppendResult(interp, "cannot expose to a namespace "
 		"(use expose to toplevel, then rename)", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "EXPOSE", "NON_GLOBAL", NULL);
 	return TCL_ERROR;
     }
 
@@ -1842,6 +1846,8 @@ Tcl_ExposeCommand(
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "unknown hidden command \"", hiddenCmdToken,
 		"\"", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "HIDDENTOKEN",
+                hiddenCmdToken, NULL);
 	return TCL_ERROR;
     }
     cmdPtr = Tcl_GetHashValue(hPtr);
@@ -1859,7 +1865,7 @@ Tcl_ExposeCommand(
 	 */
 
 	Tcl_AppendResult(interp,
-		"trying to expose a non global command name space command",
+		"trying to expose a non-global command namespace command",
 		NULL);
 	return TCL_ERROR;
     }
@@ -1879,6 +1885,7 @@ Tcl_ExposeCommand(
     if (!isNew) {
 	Tcl_AppendResult(interp, "exposed command \"", cmdName,
 		"\" already exists", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "EXPOSE", "COMMAND_EXISTS", NULL);
 	return TCL_ERROR;
     }
 
@@ -2425,6 +2432,7 @@ TclRenameCommand(
 	Tcl_AppendResult(interp, "can't ",
 		((newName == NULL)||(*newName == '\0'))? "delete":"rename",
 		" \"", oldName, "\": command doesn't exist", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", oldName, NULL);
 	return TCL_ERROR;
     }
     cmdNsPtr = cmdPtr->nsPtr;
@@ -2455,12 +2463,14 @@ TclRenameCommand(
     if ((newNsPtr == NULL) || (newTail == NULL)) {
 	Tcl_AppendResult(interp, "can't rename to \"", newName,
 		"\": bad command name", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", NULL);
 	result = TCL_ERROR;
 	goto done;
     }
     if (Tcl_FindHashEntry(&newNsPtr->cmdTable, newTail) != NULL) {
 	Tcl_AppendResult(interp, "can't rename to \"", newName,
 		 "\": command already exists", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "RENAME", "TARGET_EXISTS", NULL);
 	result = TCL_ERROR;
 	goto done;
     }
@@ -3765,6 +3775,7 @@ TclInterpReady(
 
     Tcl_AppendResult(interp,
 	    "too many nested evaluations (infinite loop?)", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", NULL);
     return TCL_ERROR;
 }
 
@@ -4615,8 +4626,12 @@ TEOV_NotFound(
     if (cmdPtr == NULL) {
 	Tcl_AppendResult(interp, "invalid command name \"",
 		TclGetString(objv[0]), "\"", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
+                TclGetString(objv[0]), NULL);
+
 	/*
-	 * Release any resources we locked and allocated during the handler call.
+	 * Release any resources we locked and allocated during the handler
+	 * call.
 	 */
 
 	for (i = 0; i < handlerObjc; ++i) {
@@ -6639,6 +6654,8 @@ TclObjInvoke(
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "invalid hidden command name \"",
 		cmdName, "\"", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "HIDDENTOKEN", cmdName,
+                NULL);
 	return TCL_ERROR;
     }
     cmdPtr = Tcl_GetHashValue(hPtr);
@@ -8294,8 +8311,10 @@ TclSpliceTailcall(
   restart:
     for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
 	if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
-	    if (!skip) break;
-            skip = 0;
+	    if (!skip) {
+		break;
+	    }
+	    skip = 0;
 	}
     }
     if (!runPtr) {
@@ -8817,13 +8836,11 @@ TclNRCoroutineObjCmd(
     Command *cmdPtr;
     CoroutineData *corPtr;
     Tcl_Obj *cmdObjPtr;
-    const char *fullName;
-    const char *procName;
+    const char *fullName, *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
     Tcl_CallFrame *framePtr;
     
-
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
 	return TCL_ERROR;
@@ -8841,11 +8858,13 @@ TclNRCoroutineObjCmd(
     if (nsPtr == NULL) {
 	Tcl_AppendResult(interp, "can't create procedure \"", fullName,
 		"\": unknown namespace", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", NULL);
 	return TCL_ERROR;
     }
     if (procName == NULL) {
 	Tcl_AppendResult(interp, "can't create procedure \"", fullName,
 		"\": bad procedure name", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", fullName, NULL);
 	return TCL_ERROR;
     }
     if ((nsPtr != iPtr->globalNsPtr)
@@ -8853,6 +8872,7 @@ TclNRCoroutineObjCmd(
 	Tcl_AppendResult(interp, "can't create procedure \"", procName,
 		"\" in non-global namespace with name starting with \":\"",
 		NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", procName, NULL);
 	return TCL_ERROR;
     }
 
