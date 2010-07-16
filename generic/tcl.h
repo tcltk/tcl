@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.153.2.36 2009/02/06 08:14:55 das Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.153.2.37 2010/07/16 21:18:52 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -70,10 +70,13 @@ extern "C" {
  */
 
 #ifndef __WIN32__
-#   if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__) || defined(__BORLANDC__)
+#   if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__) || defined(__BORLANDC__) || (defined(__WATCOMC__) && defined(__WINDOWS_386__))
 #	define __WIN32__
 #	ifndef WIN32
 #	    define WIN32
+#	endif
+#	ifndef _WIN32
+#	    define _WIN32
 #	endif
 #   endif
 #endif
@@ -190,16 +193,20 @@ extern "C" {
  * macro STATIC_BUILD should be defined.
  */
 
-#ifdef STATIC_BUILD
-#   define DLLIMPORT
-#   define DLLEXPORT
-#else
-#   if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || (defined(__GNUC__) && defined(__declspec)))) || (defined(MAC_TCL) && FUNCTION_DECLSPEC)
-#	define DLLIMPORT __declspec(dllimport)
-#	define DLLEXPORT __declspec(dllexport)
+#if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
+#   ifdef STATIC_BUILD
+#       define DLLIMPORT
+#       define DLLEXPORT
 #   else
-#	define DLLIMPORT
-#	define DLLEXPORT
+#       define DLLIMPORT __declspec(dllimport)
+#       define DLLEXPORT __declspec(dllexport)
+#   endif
+#else
+#   define DLLIMPORT
+#   if defined(__GNUC__) && __GNUC__ > 3
+#       define DLLEXPORT __attribute__ ((visibility("default")))
+#   else
+#       define DLLEXPORT
 #   endif
 #endif
 
@@ -326,7 +333,7 @@ typedef long LONG;
 #endif
 
 /*
- * Darwin specifc configure overrides (to support fat compiles, where
+ * Darwin specific configure overrides (to support fat compiles, where
  * configure runs only once for multiple architectures):
  */
 
@@ -373,8 +380,8 @@ typedef long LONG;
 #         define TCL_LL_MODIFIER        "I64"
 #         define TCL_LL_MODIFIER_SIZE   3
 #      else
-#      define TCL_LL_MODIFIER	"L"
-#      define TCL_LL_MODIFIER_SIZE	1
+#      define TCL_LL_MODIFIER	"ll"
+#      define TCL_LL_MODIFIER_SIZE	2
 #      endif
 typedef struct stat	Tcl_StatBuf;
 #   elif defined(__WIN32__)
@@ -446,7 +453,7 @@ typedef struct stat	Tcl_StatBuf;
 #   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* TCL_WIDE_INT_IS_LONG */
-
+
 
 /*
  * This flag controls whether binary compatability is maintained with
@@ -737,8 +744,7 @@ typedef void (Tcl_ServiceModeHookProc) _ANSI_ARGS_((int mode));
 typedef ClientData (Tcl_InitNotifierProc) _ANSI_ARGS_((VOID));
 typedef void (Tcl_FinalizeNotifierProc) _ANSI_ARGS_((ClientData clientData));
 typedef void (Tcl_MainLoopProc) _ANSI_ARGS_((void));
-
-
+
 /*
  * The following structure represents a type of object, which is a
  * particular internal representation for an object plus a set of
@@ -816,7 +822,7 @@ typedef struct Tcl_Obj {
 void		Tcl_IncrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
 void		Tcl_DecrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
 int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
-
+
 #ifdef TCL_MEM_DEBUG
 #   define Tcl_IncrRefCount(objPtr) \
 	Tcl_DbIncrRefCount(objPtr, __FILE__, __LINE__)
