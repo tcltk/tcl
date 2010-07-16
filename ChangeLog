@@ -1,3 +1,8 @@
+2010-07-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h   (Backport) take over definitions of _WIN32,
+	DLLIMPORT, DLLEXPORT and TCL_LL_MODIFIER macros from Tcl8.5/8.6
+
 2010-06-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPosixStr.c   [Bug 3019634] errno.h and tclWinPort.h have
