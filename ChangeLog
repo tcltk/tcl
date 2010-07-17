@@ -1,3 +1,8 @@
+2010-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h   [Bug 3030870] make itcl 3.x built with pre-8.6 work in 8.6
+	* generic/tclInt.h
+
 2010-07-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h   (Backport) take over definitions of _WIN32,
