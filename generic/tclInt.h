@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.35 2009/08/25 20:59:11 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.36 2010/07/17 07:43:46 nijtmans Exp $
  */
 
 #ifndef _TCLINT
@@ -803,6 +803,9 @@ typedef struct CallFrame {
 				 * recognized by the compiler. The compiler
 				 * emits code that refers to these variables
 				 * using an index into this array. */
+    VOID *dummy11;
+    VOID *dummy12;
+    VOID *dummy13;
 } CallFrame;
 
 #ifdef TCL_TIP280
