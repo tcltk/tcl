@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.153.2.38 2010/07/17 07:43:46 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.153.2.39 2010/07/18 21:39:19 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -945,7 +945,6 @@ typedef struct Tcl_CallFrame {
     VOID *dummy7;
     VOID *dummy8;
     int dummy9;
-    VOID *dummy10;
     VOID *dummy10;
     VOID *dummy11;
     VOID *dummy12;
