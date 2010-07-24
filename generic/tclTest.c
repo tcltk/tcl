@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.151 2010/04/20 14:24:34 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.152 2010/07/24 06:39:52 nijtmans Exp $
  */
 
 #undef STATIC_BUILD
@@ -4112,8 +4112,8 @@ TeststaticpkgCmd(
     if (Tcl_GetInt(interp, argv[3], &loaded) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage((loaded) ? interp : NULL, argv[1], StaticInitProc,
-	    (safe) ? StaticInitProc : NULL);
+    tclStubsPtr->tcl_StaticPackage((loaded) ? interp : NULL, argv[1],
+	    StaticInitProc, (safe) ? StaticInitProc : NULL);
     return TCL_OK;
 }
 
