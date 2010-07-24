@@ -1,3 +1,8 @@
+2010-07-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h  [Bug 3029891] Functions that don't belong in the
+	* generic/tclTest.c   stub table.
+
 2010-07-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBasic.c: Added more errorCode setting.
