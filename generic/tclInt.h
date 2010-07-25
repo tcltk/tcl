@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.362.2.13 2010/07/17 07:42:44 nijtmans Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.362.2.14 2010/07/25 10:13:48 nijtmans Exp $
  */
 
 #ifndef _TCLINT
@@ -1041,7 +1041,6 @@ typedef struct CallFrame {
 				 * meaning of the value is, which we do not
 				 * specify. */
     LocalCache *localCachePtr;
-    VOID *dummy13;
 } CallFrame;
 
 #define FRAME_IS_PROC	0x1
