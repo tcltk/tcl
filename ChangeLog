@@ -1,9 +1,15 @@
+2010-07-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/http.n: Corrected description of location of one of the entries
+	in the state array.
+
 2010-07-24  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclDecls.h  [Bug 3029891] Functions that don't belong in the
-	* generic/tclTest.c   stub table.
-	* generic/tclBasic.c  From [Bug 3030870] make itcl 3.x built with pre-8.6
-	work in 8.6: Relax the relation between Tcl_CallFrame and CallFrame.
+	* generic/tclDecls.h: [Bug 3029891]: Functions that don't belong in
+	* generic/tclTest.c:  the stub table.
+	* generic/tclBasic.c: From [Bug 3030870] make itcl 3.x built with
+	pre-8.6 work in 8.6: Relax the relation between Tcl_CallFrame and
+	CallFrame.
 
 2010-07-16  Donal K. Fellows  <dkf@users.sf.net>
 
