@@ -1,3 +1,9 @@
+2010-07-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.h    [Bug 3030870] make itcl 3.x built with pre-8.6 work in 8.6
+	* generic/tclBasic.c  revert tclInt.h to what it was before, and relax the relation
+    between Tcl_CallFrame and CallFrame.
+
 2010-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h   [Bug 3030870] make itcl 3.x built with pre-8.6 work in 8.6
