@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.27 2000/04/15 17:34:09 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.27.2.1 2010/07/25 10:16:42 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -285,9 +285,9 @@ Tcl_CreateInterp()
      * also updating the Tcl_CallFrame structure (or vice versa).
      */  
 
-    if (sizeof(Tcl_CallFrame) != sizeof(CallFrame)) {
+    if (sizeof(Tcl_CallFrame) < sizeof(CallFrame)) {
 	/*NOTREACHED*/
-        panic("Tcl_CallFrame and CallFrame are not the same size");
+	panic("Tcl_CallFrame must not be smaller than CallFrame");
     }
 
     /*
