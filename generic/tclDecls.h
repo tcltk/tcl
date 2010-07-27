@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.50 2010/06/16 16:17:04 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.51 2010/07/27 12:58:07 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -6925,6 +6925,18 @@ extern const TclStubs *tclStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
+
+#if defined(USE_TCL_STUBS)
+#   undef Tcl_CreateInterp
+#   undef Tcl_FindExecutable
+#   undef Tcl_Init
+#   undef Tcl_SetVar
+#   undef Tcl_StaticPackage
+#   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
+#   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
+#   define Tcl_SetVar(interp, varName, newValue, flags) \
+	    (tclStubsPtr->tcl_SetVar(interp, varName, newValue, flags))
+#endif
 
 #endif /* _TCLDECLS */
 

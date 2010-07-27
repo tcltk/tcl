@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.149 2010/07/16 17:55:26 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.150 2010/07/27 12:58:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6712,7 +6712,7 @@ ExecuteExtendedBinaryMathOp(
     ClientData ptr1, ptr2;
     double d1, d2, dResult;
     long l1, l2, lResult;
-    Tcl_WideInt w1, w2, wResult, wQuotient, wRemainder;
+    Tcl_WideInt w1, w2, wResult;
     mp_int big1, big2, bigResult, bigRemainder;
     Tcl_Obj *objResultPtr;
     int invalid, numPos, zero;
@@ -6743,6 +6743,7 @@ ExecuteExtendedBinaryMathOp(
 	if (type1 == TCL_NUMBER_WIDE) {
 	    w1 = *((const Tcl_WideInt *)ptr1);
 	    if (type2 != TCL_NUMBER_BIG) {
+		Tcl_WideInt wQuotient, wRemainder;
 		Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
 		wQuotient = w1 / w2;
 
@@ -7787,7 +7788,9 @@ TclCompareTwoNumbers(
     mp_int big1, big2;
     double d1, d2, tmp;
     long l1, l2;
+#ifndef NO_WIDE_TYPE
     Tcl_WideInt w1, w2;
+#endif
 
     (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
     (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
