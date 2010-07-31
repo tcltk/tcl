@@ -1,3 +1,8 @@
+2010-07-28  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c: fix for crash [Bug 3037525]: lose fickle
+	optimisation in TclDeleteVars (used for runtime-created locals)
+
 2010-07-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* compat/zlib/win32/README.txt  Official build of zlib1.dll 1.2.5 is

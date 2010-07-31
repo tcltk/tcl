@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.199 2010/05/31 08:54:14 nijtmans Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.200 2010/07/31 20:28:04 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5330,14 +5330,9 @@ TclDeleteVars(
 
     for (varPtr = VarHashFirstVar(tablePtr, &search); varPtr != NULL;
 	    varPtr = VarHashNextVar(&search)) {
-	/*
-	 * Lie about the validity of the hashtable entry. In this way the
-	 * variables will be deleted by VarHashDeleteTable.
-	 */
-
-	VarHashInvalidateEntry(varPtr);
 	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr), NULL, flags,
 		-1);
+	VarHashDeleteEntry(varPtr);
     }
     VarHashDeleteTable(tablePtr);
 }
