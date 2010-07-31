@@ -1,3 +1,8 @@
+2010-07-28  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c: fix for crash [Bug 3037525]: lose fickle
+	optimisation in TclDeleteVars (used for runtime-created locals)
+
 2010-07-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.h    [Bug 3030870] make itcl 3.x built with pre-8.6 work in 8.6
