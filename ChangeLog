@@ -1,3 +1,14 @@
+2010-08-02  Kevin B. Kenny  <kennykb@users.sf.net>
+
+	* library/tzdata/America/Bahia_Banderas:
+	* library/tzdata/Pacific/Chuuk:
+	* library/tzdata/Pacific/Pohnpei:
+	* library/tzdata/Africa/Cairo:
+	* library/tzdata/Europe/Helsinki:
+	* library/tzdata/Pacific/Ponape:
+	* library/tzdata/Pacific/Truk:
+	* library/tzdata/Pacific/Yap:			Olson's tzdata2010k.
+
 2010-07-28  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c: fix for crash [Bug 3037525]: lose fickle
