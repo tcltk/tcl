@@ -1,3 +1,7 @@
+2010-08-02  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c: correcting bad port of [Bug 3037525] fix
+
 2010-07-28  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c: fix for crash [Bug 3037525]: lose fickle
