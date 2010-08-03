@@ -1,3 +1,11 @@
+2010-08-03  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/info.test (info-39.1, test_info_frame): Changed absolute
+	to relative frame adressing to handle difference between testing
+	with -singleproc 1 vs. the default -singleproc 0. Plus comment
+	fix. The test and issue are not relevant to the trunk, forward
+	porting is not required.
+
 2010-08-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* changes:	Update for 8.5.9 release.
