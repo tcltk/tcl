@@ -1,3 +1,9 @@
+2010-08-03  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/info.test (info-39.1): Added forward copy of test in 8.5
+	branch about [Bug 2933089]. Should not fail, and doesn't, after
+	updating the line numbers to the changed position.
+
 2010-08-02  Kevin B. Kenny  <kennykb@users.sf.net>
 
 	* library/tzdata/America/Bahia_Banderas:
