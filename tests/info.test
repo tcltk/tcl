@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.47.2.11 2010/02/02 20:51:47 andreas_kupries Exp $
+# RCS: @(#) $Id: info.test,v 1.47.2.12 2010/08/03 16:50:49 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1723,11 +1723,11 @@ test info-39.1 {location information not confused by literal sharing, bug 293308
 	} ;#line 1722^
 	# Do not put the comments listing the line numbers into the
 	# branches. We need shared literals, and the comments would
-	# them different, thus unshared.
+	# make them different, thus unshared.
     }
 
     proc get_frame_info { cmd_str op } {
-	lappend ::result [reduce [eval {info frame 9}]]
+	lappend ::result [reduce [eval {info frame -3}]]
     }
     trace add execution print_one enter get_frame_info
 } -body {
