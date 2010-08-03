@@ -1,5 +1,10 @@
 2010-08-03  Andreas Kupries  <andreask@activestate.com>
 
+	* tests/var.test (var-19.1): [Bug 3037525]: Added test
+	demonstrating the local hashtable deletion crash and fix.
+
+2010-08-03  Andreas Kupries  <andreask@activestate.com>
+
 	* tests/info.test (info-39.1): Added forward copy of test in 8.5
 	branch about [Bug 2933089]. Should not fail, and doesn't, after
 	updating the line numbers to the changed position.
