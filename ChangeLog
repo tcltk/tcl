@@ -1,5 +1,8 @@
 2010-08-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/tclUnixFCmd.c: adjust license header as per
+	ftp://ftp.cs.berkeley.edu/pub/4bsd/README.Impt.License.Change
+
 	* license.terms: fix DFARs note for number-adjusted rights clause
 
 	* win/tclWin32Dll.c (asciiProcs, unicodeProcs):
