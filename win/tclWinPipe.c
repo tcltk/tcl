@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.79 2010/04/22 11:40:32 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.80 2010/08/04 21:37:19 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -1142,82 +1142,10 @@ TclpCreateProcess(
 	}
 
 	if (applType == APPL_DOS) {
-	    /*
-	     * Under Windows 95, 16-bit DOS applications do not work well with
-	     * pipes:
-	     *
-	     * 1. EOF on a pipe between a detached 16-bit DOS application and
-	     * another application is not seen at the other end of the pipe,
-	     * so the listening process blocks forever on reads. This inablity
-	     * to detect EOF happens when either a 16-bit app or the 32-bit
-	     * app is the listener.
-	     *
-	     * 2. If a 16-bit DOS application (detached or not) blocks when
-	     * writing to a pipe, it will never wake up again, and it
-	     * eventually brings the whole system down around it.
-	     *
-	     * The 16-bit application is run as a normal process inside of a
-	     * hidden helper console app, and this helper may be run as a
-	     * detached process. If any of the stdio handles is a pipe, the
-	     * helper application accumulates information into temp files and
-	     * forwards it to or from the DOS application as appropriate.
-	     * This means that DOS apps must receive EOF from a stdin pipe
-	     * before they will actually begin, and must finish generating
-	     * stdout or stderr before the data will be sent to the next stage
-	     * of the pipe.
-	     *
-	     * The helper app should be located in the same directory as the
-	     * tcl dll.
-	     */
-	    Tcl_Obj *tclExePtr, *pipeDllPtr;
-	    const char *start, *end;
-	    int i, fileExists;
-	    Tcl_DString pipeDll;
-
-	    if (createFlags != 0) {
-		startInfo.wShowWindow = SW_HIDE;
-		startInfo.dwFlags |= STARTF_USESHOWWINDOW;
-		createFlags = CREATE_NEW_CONSOLE;
-	    }
-
-	    Tcl_DStringInit(&pipeDll);
-	    Tcl_DStringAppend(&pipeDll, TCL_PIPE_DLL, -1);
-	    tclExePtr = TclGetObjNameOfExecutable();
-	    Tcl_IncrRefCount(tclExePtr);
-	    start = Tcl_GetStringFromObj(tclExePtr, &i);
-	    for (end = start + (i-1); end > start; end--) {
-		if (*end == '/') {
-		    break;
-		}
-	    }
-	    if (*end != '/') {
-		Tcl_AppendResult(interp, "no / in executable path name \"",
-			start, "\"", (char *) NULL);
-		Tcl_DecrRefCount(tclExePtr);
-		Tcl_DStringFree(&pipeDll);
-		goto end;
-	    }
-	    i = (end - start) + 1;
-	    pipeDllPtr = Tcl_NewStringObj(start, i);
-	    Tcl_AppendToObj(pipeDllPtr, Tcl_DStringValue(&pipeDll), -1);
-	    Tcl_IncrRefCount(pipeDllPtr);
-	    if (Tcl_FSConvertToPathType(interp, pipeDllPtr) != TCL_OK) {
-		Tcl_Panic("Tcl_FSConvertToPathType failed");
-	    }
-	    fileExists = (Tcl_FSAccess(pipeDllPtr, F_OK) == 0);
-	    if (!fileExists) {
-		Tcl_AppendResult(interp, "Tcl pipe dll \"",
-			Tcl_DStringValue(&pipeDll), "\" not found",
-			(char *) NULL);
-		Tcl_DecrRefCount(tclExePtr);
-		Tcl_DecrRefCount(pipeDllPtr);
-		Tcl_DStringFree(&pipeDll);
-		goto end;
-	    }
-	    Tcl_DStringAppend(&cmdLine, Tcl_DStringValue(&pipeDll), -1);
-	    Tcl_DecrRefCount(tclExePtr);
-	    Tcl_DecrRefCount(pipeDllPtr);
-	    Tcl_DStringFree(&pipeDll);
+	    Tcl_AppendResult(interp,
+		    "DOS application process not supported on this platform",
+		    (char *) NULL);
+	    goto end;
 	}
     }
 

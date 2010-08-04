@@ -159,8 +159,6 @@ TCLPLUGINDLLNAME	= $(NAMEPREFIX)$(VERSION)p$(DBGX).dll
 TCLPLUGINDLL	= $(OUTDIR)\$(TCLPLUGINDLLNAME)
 TCLSH		= $(OUTDIR)\$(NAMEPREFIX)sh$(VERSION)$(DBGX).exe
 TCLSHP		= $(OUTDIR)\$(NAMEPREFIX)shp$(VERSION)$(DBGX).exe
-TCLPIPEDLLNAME	= $(NAMEPREFIX)pip$(VERSION)$(DBGX).dll
-TCLPIPEDLL	= $(OUTDIR)\$(TCLPIPEDLLNAME)
 TCLREGDLLNAME	= $(NAMEPREFIX)reg$(REGVERSION)$(DBGX).dll
 TCLREGDLL	= $(OUTDIR)\$(TCLREGDLLNAME)
 TCLDDEDLLNAME	= $(NAMEPREFIX)dde$(DDEVERSION)$(DBGX).dll
@@ -342,7 +340,7 @@ LNLIBS	= import32 cw32mt
 ######################################################################
 
 release:	setup $(TCLSH) dlls
-dlls:		setup $(TCLPIPEDLL) $(TCLREGDLL) $(TCLDDEDLL)
+dlls:		setup $(TCLREGDLL) $(TCLDDEDLL)
 all:		setup $(TCLSH) dlls $(CAT32)
 tcltest:	setup $(TCLTEST) dlls $(CAT32)
 plugin:		setup $(TCLPLUGINDLL) $(TCLSHP)
@@ -391,11 +389,6 @@ $(TCLTEST): $(TCLTESTOBJS) $(TCLLIB) $(TMPDIR)\$(NAMEPREFIX)sh.res
 		$(TCLTESTOBJS), $@, -x, $(LNLIBS) $(TCLLIB),, $(TMPDIR)\$(NAMEPREFIX)sh.res
 !
 
-$(TCLPIPEDLL): $(WINDIR)\stub16.c
-	$(cc32) $(CFLAGS) -o$(TMPDIR)\stub16.obj $(WINDIR)\stub16.c
-	$(link32) $(ldebug) $(LNFLAGS) $(LNFLAGS_CONS) $(TOOLS32)\lib\c0x32 \
-		$(TMPDIR)\stub16.obj, $@, -x, $(LNLIBS),, $(TMPDIR)\$(NAMEPREFIX).res
-
 $(TCLDDEDLL): $(TMPDIR)\tclWinDde.obj $(TCLSTUBLIB)
 	$(link32) $(ldebug) $(LNFLAGS) $(LNFLAGS_DLL) $(TOOLS32)\lib\c0d32 \
 		$(TMPDIR)\tclWinDde.obj, $@, -x, $(LNLIBS) $(TCLSTUBLIB),, \
@@ -419,8 +412,6 @@ install-binaries: $(TCLSH)
 	@copy "$(TCLLIB)" "$(LIB_INSTALL_DIR)"
 	@echo installing "$(TCLSH)"
 	@copy "$(TCLSH)" "$(BIN_INSTALL_DIR)"
-	@echo installing $(TCLPIPEDLLNAME)
-	@copy "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)"
 	@echo installing $(TCLSTUBLIBNAME)
 	@copy "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)"
 	@echo installing $(WINDIR)\tclooConfig.sh
