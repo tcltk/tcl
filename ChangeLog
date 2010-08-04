@@ -1,9 +1,12 @@
+2010-08-04  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORChan.c: [Bug 3034840]: Fixed reference counting
+	* tests/ioCmd.test: in InvokeTclMethod and callers.
+
 2010-08-03  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/var.test (var-19.1): [Bug 3037525]: Added test
 	demonstrating the local hashtable deletion crash and fix.
-
-2010-08-03  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/info.test (info-39.1, test_info_frame): Changed absolute
 	to relative frame adressing to handle difference between testing
