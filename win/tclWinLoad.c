@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.20 2007/04/20 06:11:00 kennykb Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.20.4.1 2010/08/04 19:17:29 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -57,7 +57,8 @@ TclpDlopen(
      */
 
     nativeName = Tcl_FSGetNativePath(pathPtr);
-    handle = (*tclWinProcs->loadLibraryProc)(nativeName);
+    handle = (*tclWinProcs->loadLibraryExProc)(nativeName, NULL,
+	    LOAD_WITH_ALTERED_SEARCH_PATH);
     if (handle == NULL) {
 	/*
 	 * Let the OS loader examine the binary search path for whatever
@@ -69,7 +70,8 @@ TclpDlopen(
 	char *fileName = Tcl_GetString(pathPtr);
 
 	nativeName = Tcl_WinUtfToTChar(fileName, -1, &ds);
-	handle = (*tclWinProcs->loadLibraryProc)(nativeName);
+	handle = (*tclWinProcs->loadLibraryExProc)(nativeName, NULL,
+		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);
     }
 
