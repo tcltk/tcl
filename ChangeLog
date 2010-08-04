@@ -1,3 +1,7 @@
+2010-08-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/Makefile.in (%.${OBJEXT}): better implicit rules support
+
 2010-08-04  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c: [Bug 3034840]: Fixed reference counting
