@@ -1,5 +1,10 @@
 2010-08-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWin32Dll.c (asciiProcs, unicodeProcs):
+	* win/tclWinLoad.c (TclpDlopen): 'load' use LoadLibraryEx with
+	* win/tclWinInt.h (TclWinProcs): LOAD_WITH_ALTERED_SEARCH_PATH to
+	prefer dependent DLLs in same dir as loaded DLL.
+
 	* win/Makefile.in (%.${OBJEXT}): better implicit rules support
 
 2010-08-04  Don Porter  <dgp@users.sourceforge.net>
