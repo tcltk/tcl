@@ -1,3 +1,20 @@
+2010-08-04  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.5.9 TAGGED FOR RELEASE ***
+
+	* generic/tcl.h:	Bump to 8.5.9 for release.
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
+	* changes:	Update for 8.5.9 release.
+
 2010-08-04  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c: [Bug 3034840]: Fixed reference counting

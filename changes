@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.22 2010/08/03 13:19:20 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.23 2010/08/04 17:02:39 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7446,7 +7446,7 @@ among multiple interps (kupries)
 2010-03-09 (bug fix)[2936225] stop [chan copy] to slow channel consuming all
 memory with buffer backup (ferrieux)
 
-2010-03-20 (enhancement) permit [fcopy] of > 2^31 bytes (fellows)
+2010-03-20 (enhancement) permit [fcopy] of > 2**31 bytes (fellows)
 
 2010-03-24 (bug fix)[2383005] [return -errorcode] reject non-list (porter)
 
@@ -7469,4 +7469,6 @@ memory with buffer backup (ferrieux)
 
 2010-08-02 tzdata updated to Olson's tzdata2010k (kenny)
 
---- Released 8.5.9, August ??, 2010 --- See ChangeLog for details ---
+2010-08-04 (bug fix)[3034840] mem corrupt when refchan loses interp (kupries)
+
+--- Released 8.5.9, August 13, 2010 --- See ChangeLog for details ---
