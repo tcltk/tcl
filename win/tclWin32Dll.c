@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.63 2010/03/11 13:35:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.64 2010/08/04 19:35:22 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -142,7 +142,7 @@ static TclWinProcs asciiProcs = {
     (DWORD (WINAPI *)(DWORD, TCHAR *)) GetTempPathA,
     (BOOL (WINAPI *)(const TCHAR *, TCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
 	    TCHAR *, DWORD)) GetVolumeInformationA,
-    (HINSTANCE (WINAPI *)(const TCHAR *)) LoadLibraryA,
+    (HINSTANCE (WINAPI *)(const TCHAR *, HANDLE, DWORD)) LoadLibraryExA,
     (TCHAR (WINAPI *)(TCHAR *, const TCHAR *)) lstrcpyA,
     (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFileA,
     (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectoryA,
@@ -201,7 +201,7 @@ static TclWinProcs unicodeProcs = {
     (DWORD (WINAPI *)(DWORD, TCHAR *)) GetTempPathW,
     (BOOL (WINAPI *)(const TCHAR *, TCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
 	    TCHAR *, DWORD)) GetVolumeInformationW,
-    (HINSTANCE (WINAPI *)(const TCHAR *)) LoadLibraryW,
+    (HINSTANCE (WINAPI *)(const TCHAR *, HANDLE, DWORD)) LoadLibraryExW,
     (TCHAR (WINAPI *)(TCHAR *, const TCHAR *)) lstrcpyW,
     (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFileW,
     (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectoryW,
