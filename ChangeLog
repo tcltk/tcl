@@ -1,5 +1,10 @@
 2010-08-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWin32Dll.c (TclWinInit): hard-enforce Windows 9x as an
+	unsupported platform with a panic.  Code to support it still
+	exists in other files (to go away in time), but new APIs are being
+	used that don't exist on Win9x.
+
 	* unix/tclUnixFCmd.c: adjust license header as per
 	ftp://ftp.cs.berkeley.edu/pub/4bsd/README.Impt.License.Change
 

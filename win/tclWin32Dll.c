@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.64 2010/08/04 19:35:22 hobbs Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.65 2010/08/04 21:28:00 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -390,12 +390,15 @@ TclWinInit(
     platformId = os.dwPlatformId;
 
     /*
-     * We no longer support Win32s, so just in case someone manages to get a
-     * runtime there, make sure they know that.
+     * We no longer support Win32s or Win9x, so just in case someone manages
+     * to get a runtime there, make sure they know that.
      */
 
     if (platformId == VER_PLATFORM_WIN32s) {
 	Tcl_Panic("Win32s is not a supported platform");
+    }
+    if (platformId == VER_PLATFORM_WIN32_WINDOWS) {
+	Tcl_Panic("Windows 9x is not a supported platform");
     }
 
     TclWinResetInterfaces();
@@ -411,10 +414,10 @@ TclWinInit(
  *
  * Results:
  *	The return value is one of:
- *	    VER_PLATFORM_WIN32s		Win32s on Windows 3.1. (not supported)
- *	    VER_PLATFORM_WIN32_WINDOWS	Win32 on Windows 95, 98, ME.
- *	    VER_PLATFORM_WIN32_NT	Win32 on Windows NT, 2000, XP
- *	    VER_PLATFORM_WIN32_CE	Win32 on Windows CE
+ *	VER_PLATFORM_WIN32s	   Win32s on Windows 3.1 (not supported)
+ *	VER_PLATFORM_WIN32_WINDOWS Win32 on Windows 95, 98, ME (not supported)
+ *	VER_PLATFORM_WIN32_NT	Win32 on Windows NT, 2000, XP
+ *	VER_PLATFORM_WIN32_CE	Win32 on Windows CE
  *
  * Side effects:
  *	None.
