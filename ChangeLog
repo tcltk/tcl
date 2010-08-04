@@ -1,5 +1,7 @@
 2010-08-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* license.terms: fix DFARs note for number-adjusted rights clause
+
 	* win/tclWin32Dll.c (asciiProcs, unicodeProcs):
 	* win/tclWinLoad.c (TclpDlopen): 'load' use LoadLibraryEx with
 	* win/tclWinInt.h (TclWinProcs): LOAD_WITH_ALTERED_SEARCH_PATH to
