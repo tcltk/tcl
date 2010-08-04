@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.23 2010/03/11 15:19:40 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.24 2010/08/04 21:48:23 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -142,7 +142,7 @@ static TclWinProcs asciiProcs = {
     (DWORD (WINAPI *)(DWORD, TCHAR *)) GetTempPathA,
     (BOOL (WINAPI *)(const TCHAR *, TCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
 	    TCHAR *, DWORD)) GetVolumeInformationA,
-    (HINSTANCE (WINAPI *)(const TCHAR *)) LoadLibraryA,
+    (HINSTANCE (WINAPI *)(const TCHAR *, HANDLE, DWORD)) LoadLibraryExA,
     (TCHAR (WINAPI *)(TCHAR *, const TCHAR *)) lstrcpyA,
     (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFileA,
     (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectoryA,
@@ -201,7 +201,7 @@ static TclWinProcs unicodeProcs = {
     (DWORD (WINAPI *)(DWORD, TCHAR *)) GetTempPathW,
     (BOOL (WINAPI *)(const TCHAR *, TCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
 	    TCHAR *, DWORD)) GetVolumeInformationW,
-    (HINSTANCE (WINAPI *)(const TCHAR *)) LoadLibraryW,
+    (HINSTANCE (WINAPI *)(const TCHAR *, HANDLE, DWORD)) LoadLibraryExW,
     (TCHAR (WINAPI *)(TCHAR *, const TCHAR *)) lstrcpyW,
     (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFileW,
     (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectoryW,
@@ -390,12 +390,15 @@ TclWinInit(
     platformId = os.dwPlatformId;
 
     /*
-     * We no longer support Win32s, so just in case someone manages to get a
-     * runtime there, make sure they know that.
+     * We no longer support Win32s or Win9x, so just in case someone manages
+     * to get a runtime there, make sure they know that.
      */
 
     if (platformId == VER_PLATFORM_WIN32s) {
 	Tcl_Panic("Win32s is not a supported platform");
+    }
+    if (platformId == VER_PLATFORM_WIN32_WINDOWS) {
+	Tcl_Panic("Windows 9x is not a supported platform");
     }
 
     TclWinResetInterfaces();
@@ -411,10 +414,10 @@ TclWinInit(
  *
  * Results:
  *	The return value is one of:
- *	    VER_PLATFORM_WIN32s		Win32s on Windows 3.1. (not supported)
- *	    VER_PLATFORM_WIN32_WINDOWS	Win32 on Windows 95, 98, ME.
- *	    VER_PLATFORM_WIN32_NT	Win32 on Windows NT, 2000, XP
- *	    VER_PLATFORM_WIN32_CE	Win32 on Windows CE
+ *	VER_PLATFORM_WIN32s	   Win32s on Windows 3.1 (not supported)
+ *	VER_PLATFORM_WIN32_WINDOWS Win32 on Windows 95, 98, ME (not supported)
+ *	VER_PLATFORM_WIN32_NT	Win32 on Windows NT, 2000, XP
+ *	VER_PLATFORM_WIN32_CE	Win32 on Windows CE
  *
  * Side effects:
  *	None.

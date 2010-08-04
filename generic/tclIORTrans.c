@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.14 2010/05/03 16:30:38 dgp Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.15 2010/08/04 21:48:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -587,6 +587,7 @@ TclChanPushObjCmd(
      */
 
     modeObj = DecodeEventMask(mode);
+    /* assert modeObj.refCount == 1 */
     result = InvokeTclMethod(rtPtr, "initialize", modeObj, NULL, &resObj);
     Tcl_DecrRefCount(modeObj);
     if (result != TCL_OK) {
@@ -1913,6 +1914,11 @@ FreeReflectedTransform(
  * Side effects:
  *	Arbitrary, as it calls upon a Tcl script.
  *
+ * Contract:
+ *	argOneObj.refCount >= 1 on entry and exit, if argOneObj != NULL
+ *	argTwoObj.refCount >= 1 on entry and exit, if argTwoObj != NULL
+ *	resObj.refCount in {0, 1, ...}
+ *
  *----------------------------------------------------------------------
  * Semi-DUPLICATE of 'InvokeTclMethod' in tclIORChan.c
  * - Semi because different structures are used.
@@ -1966,15 +1972,16 @@ InvokeTclMethod(
     /*
      * Append the additional argument containing method specific details
      * behind the channel id. If specified.
+     *
+     * Because of the contract there is no need to increment the refcounts.
+     * The objects will survive the Tcl_EvalObjv without change.
      */
 
     cmdc = rtPtr->argc;
     if (argOneObj) {
-	Tcl_IncrRefCount(argOneObj);
 	rtPtr->argv[cmdc] = argOneObj;
 	cmdc++;
 	if (argTwoObj) {
-	    Tcl_IncrRefCount(argTwoObj);
 	    rtPtr->argv[cmdc] = argTwoObj;
 	    cmdc++;
 	}
@@ -2035,15 +2042,13 @@ InvokeTclMethod(
 
     /*
      * Cleanup of the dynamic parts of the command.
+     *
+     * The detail objects survived the Tcl_EvalObjv without change because of
+     * the contract. Therefore there is no need to decrement the refcounts. Only
+     * the internal method object has to be disposed of.
      */
 
     Tcl_DecrRefCount(methObj);
-    if (argOneObj) {
-	Tcl_DecrRefCount(argOneObj);
-	if (argTwoObj) {
-	    Tcl_DecrRefCount(argTwoObj);
-	}
-    }
 
     /*
      * The resObj has a ref count of 1 at this location. This means that the
@@ -2553,6 +2558,7 @@ ForwardProc(
     case ForwardedInput: {
 	Tcl_Obj *bufObj = Tcl_NewByteArrayObj((unsigned char *)
 		paramPtr->transform.buf, paramPtr->transform.size);
+	Tcl_IncrRefCount(bufObj);
 
 	if (InvokeTclMethod(rtPtr, "read", bufObj, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
@@ -2578,12 +2584,15 @@ ForwardProc(
 		paramPtr->transform.buf = NULL;
 	    }
 	}
+
+	Tcl_DecrRefCount(bufObj);
 	break;
     }
 
     case ForwardedOutput: {
 	Tcl_Obj *bufObj = Tcl_NewByteArrayObj((unsigned char *)
 		paramPtr->transform.buf, paramPtr->transform.size);
+	Tcl_IncrRefCount(bufObj);
 
 	if (InvokeTclMethod(rtPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
@@ -2609,6 +2618,8 @@ ForwardProc(
 		paramPtr->transform.buf = NULL;
 	    }
 	}
+
+	Tcl_DecrRefCount(bufObj);
 	break;
     }
 
@@ -3078,8 +3089,11 @@ TransformRead(
     /* ASSERT: rtPtr->mode & TCL_READABLE */
 
     bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toRead);
+    Tcl_IncrRefCount(bufObj);
+
     if (InvokeTclMethod(rtPtr, "read", bufObj, NULL, &resObj) != TCL_OK) {
 	Tcl_SetChannelError(rtPtr->chan, resObj);
+	Tcl_DecrRefCount(bufObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	*errorCodePtr = EINVAL;
 	return 0;
@@ -3087,6 +3101,8 @@ TransformRead(
 
     bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
     ResultAdd(&rtPtr->result, bytev, bytec);
+
+    Tcl_DecrRefCount(bufObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     return 1;
 }
@@ -3134,9 +3150,12 @@ TransformWrite(
 	/* ASSERT: rtPtr->mode & TCL_WRITABLE */
 
 	bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toWrite);
+	Tcl_IncrRefCount(bufObj);
 	if (InvokeTclMethod(rtPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
 	    *errorCodePtr = EINVAL;
 	    Tcl_SetChannelError(rtPtr->chan, resObj);
+
+	    Tcl_DecrRefCount(bufObj);
 	    Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	    return 0;
 	}
@@ -3145,6 +3164,8 @@ TransformWrite(
 
 	bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 	res = Tcl_WriteRaw(rtPtr->parent, (char *) bytev, bytec);
+
+	Tcl_DecrRefCount(bufObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
     }
 

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioTrans.test,v 1.2.2.6 2010/03/17 17:26:33 dgp Exp $
+# RCS: @(#) $Id: ioTrans.test,v 1.2.2.7 2010/08/04 21:48:23 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -853,6 +853,28 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
     set res
 } -constraints {testchannel impossible} \
     -result {Owner lost}
+
+
+test iortrans-11.2 {delete interp of reflected transform} -body {
+    interp create slave
+
+    # Magic to get the test* commands into the slave
+    load {} Tcltest slave
+
+    # Get base channel into the slave
+    set c [tempchan]
+    testchannel cut $c
+    interp eval slave [list testchannel splice $c]
+    interp eval slave [list set c $c]
+
+    slave eval {
+        proc no-op args {}
+        proc driver {c sub args} {return {initialize finalize read write}}
+	set t [chan push $c [list driver $c]]
+        chan event $c readable no-op
+    }
+    interp delete slave
+} -result {} -constraints {testchannel}
 
 # ### ### ### ######### ######### #########
 ## Same tests as above, but exercising the code forwarding and

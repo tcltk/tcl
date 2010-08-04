@@ -1460,10 +1460,6 @@ SOURCE=.\rules.vc
 # End Source File
 # Begin Source File
 
-SOURCE=.\stub16.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\tcl.hpj.in
 # End Source File
 # Begin Source File

@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.59 2010/04/05 21:46:46 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.60 2010/08/04 21:48:23 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -47,8 +47,7 @@ the build instructions.
 #
 # 3)  Targets are:
 #	release  -- Builds the core, the shell and the dlls. (default)
-#	dlls     -- Just builds the windows extensions and the 16-bit DOS
-#		    pipe/thunk helper app.
+#	dlls     -- Just builds the windows extensions
 #	shell    -- Just builds the shell and the core.
 #	core     -- Only builds the core [tclXX.(dll|lib)].
 #	all      -- Builds everything.
@@ -208,8 +207,6 @@ TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
 
 TCLSHNAME	= $(PROJECT)sh$(VERSION)$(SUFX).exe
 TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
-TCLPIPEDLLNAME	= $(PROJECT)pip$(VERSION)$(SUFX:t=).dll
-TCLPIPEDLL	= $(OUT_DIR)\$(TCLPIPEDLLNAME)
 
 TCLREGLIBNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX:t=).$(EXT)
 TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
@@ -482,8 +479,7 @@ crt = -MT
 !endif
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
-TCL_DEFINES	= -DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\" -DTCL_TOMMATH -DMP_PREC=4 \
-		  -Dinline=__inline -DHAVE_ZLIB=1
+TCL_DEFINES	= -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline -DHAVE_ZLIB=1
 BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) $(TCL_DEFINES)
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 TCL_CFLAGS	= $(BASE_CFLAGS) $(OPTDEFINES)
@@ -551,7 +547,7 @@ TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 release:    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
-dlls:	    setup $(TCLPIPEDLL) $(TCLREGLIB) $(TCLDDELIB)
+dlls:	    setup $(TCLREGLIB) $(TCLDDELIB)
 all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) pkgs
 tcltest:    setup $(TCLTEST) dlls $(CAT32)
 install:    install-binaries install-libraries install-docs install-pkgs
@@ -612,11 +608,6 @@ $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
 	$(_VC_MANIFEST_EMBED_EXE)
-
-$(TCLPIPEDLL): $(WINDIR)\stub16.c
-	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $(WINDIR)\stub16.c
-	$(link32) $(conlflags) -out:$@ $(TMP_DIR)\stub16.obj $(baselibs)
-	$(_VC_MANIFEST_EMBED_DLL)
 
 !if $(STATIC_BUILD)
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
@@ -1058,10 +1049,6 @@ install-binaries:
 !if exist($(TCLSH))
 	@echo Installing $(TCLSHNAME)
 	@$(CPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
-!endif
-!if exist($(TCLPIPEDLL))
-	@echo Installing $(TCLPIPEDLLNAME)
-	@$(CPY) "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)\"
 !endif
 	@echo Installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
