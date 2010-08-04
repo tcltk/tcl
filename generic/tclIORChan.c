@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.49 2010/05/03 11:37:56 nijtmans Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.50 2010/08/04 16:49:02 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -589,8 +589,10 @@ TclChanCreateObjCmd(
      */
 
     modeObj = DecodeEventMask(mode);
+    /* assert modeObj.refCount == 1 */
     result = InvokeTclMethod(rcPtr, "initialize", modeObj, NULL, &resObj);
     Tcl_DecrRefCount(modeObj);
+
     if (result != TCL_OK) {
 	UnmarshallErrorResult(interp, resObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
@@ -1245,6 +1247,8 @@ ReflectInput(
     Tcl_Preserve(rcPtr);
 
     toReadObj = Tcl_NewIntObj(toRead);
+    Tcl_IncrRefCount(toReadObj);
+
     if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj)!=TCL_OK) {
 	int code = ErrnoReturn(rcPtr, resObj);
 
@@ -1271,6 +1275,7 @@ ReflectInput(
     }
 
  stop:
+    Tcl_DecrRefCount(toReadObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return bytec;
@@ -1357,6 +1362,8 @@ ReflectOutput(
     Tcl_Preserve(rcPtr);
 
     bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toWrite);
+    Tcl_IncrRefCount(bufObj);
+
     if (InvokeTclMethod(rcPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
 	int code = ErrnoReturn(rcPtr, resObj);
 
@@ -1396,6 +1403,7 @@ ReflectOutput(
 
     *errorCodePtr = EOK;
  stop:
+    Tcl_DecrRefCount(bufObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return written;
@@ -1463,9 +1471,12 @@ ReflectSeekWide(
 
     Tcl_Preserve(rcPtr);
 
-    offObj = Tcl_NewWideIntObj(offset);
+    offObj  = Tcl_NewWideIntObj(offset);
     baseObj = Tcl_NewStringObj((seekMode == SEEK_SET) ? "start" :
                                ((seekMode == SEEK_CUR) ? "current" : "end"), -1);
+    Tcl_IncrRefCount(offObj);
+    Tcl_IncrRefCount(baseObj);
+
     if (InvokeTclMethod(rcPtr, "seek", offObj, baseObj, &resObj)!=TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, resObj);
         goto invalid;
@@ -1483,6 +1494,8 @@ ReflectSeekWide(
 
     *errorCodePtr = EOK;
  stop:
+    Tcl_DecrRefCount(offObj);
+    Tcl_DecrRefCount(baseObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return newLoc;
@@ -1578,6 +1591,7 @@ ReflectWatch(
     Tcl_Preserve(rcPtr);
 
     maskObj = DecodeEventMask(mask);
+    /* assert maskObj.refCount == 1 */
     (void) InvokeTclMethod(rcPtr, "watch", maskObj, NULL, NULL);
     Tcl_DecrRefCount(maskObj);
 
@@ -1633,6 +1647,7 @@ ReflectBlock(
 #endif
 
     blockObj = Tcl_NewBooleanObj(!nonblocking);
+    Tcl_IncrRefCount(blockObj);
 
     Tcl_Preserve(rcPtr);
 
@@ -1643,6 +1658,7 @@ ReflectBlock(
 	errorNum = EOK;
     }
 
+    Tcl_DecrRefCount(blockObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
 
     Tcl_Release(rcPtr);
@@ -1705,11 +1721,17 @@ ReflectSetOption(
 
     optionObj = Tcl_NewStringObj(optionName, -1);
     valueObj = Tcl_NewStringObj(newValue, -1);
+
+    Tcl_IncrRefCount(optionObj);
+    Tcl_IncrRefCount(valueObj);
+
     result = InvokeTclMethod(rcPtr, "configure",optionObj,valueObj, &resObj);
     if (result != TCL_OK) {
 	UnmarshallErrorResult(interp, resObj);
     }
 
+    Tcl_DecrRefCount(optionObj);
+    Tcl_DecrRefCount(valueObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return result;
@@ -1746,7 +1768,7 @@ ReflectGetOption(
     ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *optionObj;
     Tcl_Obj *resObj;		/* Result data for 'configure' */
-    int listc;
+    int listc, result = TCL_OK;
     Tcl_Obj **listv;
     const char *method;
 
@@ -1796,6 +1818,7 @@ ReflectGetOption(
 
 	method = "cget";
 	optionObj = Tcl_NewStringObj(optionName, -1);
+        Tcl_IncrRefCount(optionObj);
     }
 
     Tcl_Preserve(rcPtr);
@@ -1853,13 +1876,17 @@ ReflectGetOption(
     }
 
  ok:
+    result = TCL_OK;
+ stop:
+    if (optionObj) {
+        Tcl_DecrRefCount(optionObj);
+    }
     Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
-    return TCL_OK;
+    return result;
  error:
-    Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
-    Tcl_Release(rcPtr);
-    return TCL_ERROR;
+    result = TCL_ERROR;
+    goto stop;
 }
 
 /*
@@ -1939,7 +1966,7 @@ EncodeEventMask(
  *	This function takes an internal bitmask of events and constructs the
  *	equivalent list of event items.
  *
- * Results:
+ * Results, Contract:
  *	A Tcl_Obj reference. The object will have a refCount of one. The user
  *	has to decrement it to release the object.
  *
@@ -1973,6 +2000,7 @@ DecodeEventMask(
 
     evObj = Tcl_NewStringObj(eventStr, -1);
     Tcl_IncrRefCount(evObj);
+    /* assert evObj.refCount == 1 */
     return evObj;
 }
 
@@ -2157,6 +2185,11 @@ FreeReflectedChannel(
  * Side effects:
  *	Arbitrary, as it calls upon a Tcl script.
  *
+ * Contract:
+ *	argOneObj.refCount >= 1 on entry and exit, if argOneObj != NULL
+ *	argTwoObj.refCount >= 1 on entry and exit, if argTwoObj != NULL
+ *	resObj.refCount in {0, 1, ...}
+ *
  *----------------------------------------------------------------------
  */
 
@@ -2186,16 +2219,10 @@ InvokeTclMethod(
 	    Tcl_IncrRefCount(resObj);
 	}
 
-	/*
-	 * Cleanup of the dynamic parts of the command.
-	 */
-
-	if (argOneObj) {
-	    Tcl_DecrRefCount(argOneObj);
-	    if (argTwoObj) {
-		Tcl_DecrRefCount(argTwoObj);
-	    }
-	}
+        /*
+         * Not touching argOneObj, argTwoObj, they have not been used.
+         * See the contract as well.
+         */
 
 	return TCL_ERROR;
     }
@@ -2218,15 +2245,16 @@ InvokeTclMethod(
     /*
      * Append the additional argument containing method specific details
      * behind the channel id. If specified.
+     *
+     * Because of the contract there is no need to increment the refcounts.
+     * The objects will survive the Tcl_EvalObjv without change.
      */
 
     cmdc = rcPtr->argc;
     if (argOneObj) {
-	Tcl_IncrRefCount(argOneObj);
 	rcPtr->argv[cmdc] = argOneObj;
 	cmdc++;
 	if (argTwoObj) {
-	    Tcl_IncrRefCount(argTwoObj);
 	    rcPtr->argv[cmdc] = argTwoObj;
 	    cmdc++;
 	}
@@ -2289,15 +2317,13 @@ InvokeTclMethod(
 
     /*
      * Cleanup of the dynamic parts of the command.
+     *
+     * The detail objects survived the Tcl_EvalObjv without change because of
+     * the contract. Therefore there is no need to decrement the refcounts. Only
+     * the internal method object has to be disposed of.
      */
 
     Tcl_DecrRefCount(methObj);
-    if (argOneObj) {
-	Tcl_DecrRefCount(argOneObj);
-	if (argTwoObj) {
-	    Tcl_DecrRefCount(argTwoObj);
-	}
-    }
 
     /*
      * The resObj has a ref count of 1 at this location. This means that the
@@ -2855,6 +2881,7 @@ ForwardProc(
 
     case ForwardedInput: {
 	Tcl_Obj *toReadObj = Tcl_NewIntObj(paramPtr->input.toRead);
+        Tcl_IncrRefCount(toReadObj);
 
         Tcl_Preserve(rcPtr);
 	if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj)!=TCL_OK){
@@ -2887,12 +2914,14 @@ ForwardProc(
 	    }
 	}
         Tcl_Release(rcPtr);
+        Tcl_DecrRefCount(toReadObj);
 	break;
     }
 
     case ForwardedOutput: {
 	Tcl_Obj *bufObj = Tcl_NewByteArrayObj((unsigned char *)
                                               paramPtr->output.buf, paramPtr->output.toWrite);
+        Tcl_IncrRefCount(bufObj);
 
         Tcl_Preserve(rcPtr);
 	if (InvokeTclMethod(rcPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
@@ -2922,6 +2951,7 @@ ForwardProc(
 	    }
 	}
         Tcl_Release(rcPtr);
+        Tcl_DecrRefCount(bufObj);
 	break;
     }
 
@@ -2930,6 +2960,9 @@ ForwardProc(
 	Tcl_Obj *baseObj = Tcl_NewStringObj(
                                             (paramPtr->seek.seekMode==SEEK_SET) ? "start" :
                                             (paramPtr->seek.seekMode==SEEK_CUR) ? "current" : "end", -1);
+
+        Tcl_IncrRefCount(offObj);
+        Tcl_IncrRefCount(baseObj);
 
         Tcl_Preserve(rcPtr);
 	if (InvokeTclMethod(rcPtr, "seek", offObj, baseObj, &resObj)!=TCL_OK){
@@ -2956,11 +2989,14 @@ ForwardProc(
 	    }
 	}
         Tcl_Release(rcPtr);
+        Tcl_DecrRefCount(offObj);
+        Tcl_DecrRefCount(baseObj);
 	break;
     }
 
     case ForwardedWatch: {
 	Tcl_Obj *maskObj = DecodeEventMask(paramPtr->watch.mask);
+        /* assert maskObj.refCount == 1 */
 
         Tcl_Preserve(rcPtr);
 	(void) InvokeTclMethod(rcPtr, "watch", maskObj, NULL, NULL);
@@ -2971,6 +3007,7 @@ ForwardProc(
 
     case ForwardedBlock: {
 	Tcl_Obj *blockObj = Tcl_NewBooleanObj(!paramPtr->block.nonblocking);
+        Tcl_IncrRefCount(blockObj);
 
         Tcl_Preserve(rcPtr);
 	if (InvokeTclMethod(rcPtr, "blocking", blockObj, NULL,
@@ -2978,19 +3015,24 @@ ForwardProc(
 	    ForwardSetObjError(paramPtr, resObj);
 	}
         Tcl_Release(rcPtr);
+        Tcl_DecrRefCount(blockObj);
 	break;
     }
 
     case ForwardedSetOpt: {
 	Tcl_Obj *optionObj = Tcl_NewStringObj(paramPtr->setOpt.name, -1);
-	Tcl_Obj *valueObj = Tcl_NewStringObj(paramPtr->setOpt.value, -1);
+	Tcl_Obj *valueObj  = Tcl_NewStringObj(paramPtr->setOpt.value, -1);
 
+        Tcl_IncrRefCount(optionObj);
+        Tcl_IncrRefCount(valueObj);
         Tcl_Preserve(rcPtr);
 	if (InvokeTclMethod(rcPtr, "configure", optionObj, valueObj,
                             &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	}
         Tcl_Release(rcPtr);
+        Tcl_DecrRefCount(optionObj);
+        Tcl_DecrRefCount(valueObj);
 	break;
     }
 
@@ -3000,6 +3042,7 @@ ForwardProc(
 	 */
 
 	Tcl_Obj *optionObj = Tcl_NewStringObj(paramPtr->getOpt.name, -1);
+        Tcl_IncrRefCount(optionObj);
 
         Tcl_Preserve(rcPtr);
 	if (InvokeTclMethod(rcPtr, "cget", optionObj, NULL, &resObj)!=TCL_OK){
@@ -3009,6 +3052,7 @@ ForwardProc(
                               TclGetString(resObj), -1);
 	}
         Tcl_Release(rcPtr);
+        Tcl_DecrRefCount(optionObj);
 	break;
     }
 
