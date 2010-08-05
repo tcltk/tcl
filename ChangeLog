@@ -1,3 +1,9 @@
+2010-08-05  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.5.9 TAGGED FOR RELEASE ***
+
+	* changes:	Update for 8.5.9 release.
+
 2010-08-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixFCmd.c: adjust license header as per
@@ -13,8 +19,6 @@
 	* win/Makefile.in (%.${OBJEXT}): better implicit rules support
 
 2010-08-04  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.5.9 TAGGED FOR RELEASE ***
 
 	* generic/tcl.h:	Bump to 8.5.9 for release.
 	* library/init.tcl:
