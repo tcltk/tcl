@@ -1,3 +1,8 @@
+2010-08-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclUtil.c (TclByteArrayMatch): patterns may not be
+	null-terminated, so account for that.
+
 2010-08-05  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.9 TAGGED FOR RELEASE ***
