@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.459 2010/07/24 06:45:01 nijtmans Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.460 2010/08/11 23:13:50 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8590,7 +8590,7 @@ TclNRYieldToObjCmd(
 	    NULL);
     iPtr->execEnvPtr = corPtr->eePtr;
 
-    return TclNRYieldObjCmd(clientData, interp, objc-1, objv+1);
+    return TclNRYieldObjCmd(clientData, interp, 1, objv);
 }
 
 static int
