@@ -1,3 +1,7 @@
+2010-08-11  Miguel Sofer  <msofer@users.sf.net>
+	* generic/tclBasic.c (TclNRYieldToObjCmd): fixed bad copypasta
+	snafu. Thanks to Andy Goth for finding the bug.
+
 2010-08-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclUtil.c (TclByteArrayMatch): patterns may not be
