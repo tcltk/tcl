@@ -1,9 +1,18 @@
+2010-08-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/ldAix: remove ancient (pre-4.2) AIX support
+	* unix/configure: regen with ac-2.59
+	* unix/configure.in, unix/tclConfig.sh.in, unix/Makefile.in:
+	* unix/tcl.m4 (AIX): remove the need for ldAIX, replace with
+	-bexpall/-brtl.  Remove TCL_EXP_FILE (export file) and other
+	baggage that went with it.  Remove pre-4 AIX build support.
+
 2010-08-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TclNRYieldToObjCmd): 
 	* tests/coroutine.test: fixed bad copypasta snafu. 
 	Thanks to Andy Goth for finding the bug.
-	
+
 2010-08-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclUtil.c (TclByteArrayMatch): patterns may not be
