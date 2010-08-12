@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.45 2010/04/29 23:32:24 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.46 2010/08/12 12:34:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1612,7 +1612,7 @@ TclByteArrayMatch(
 	     * Skip all successive *'s in the pattern.
 	     */
 
-	    while (*(++pattern) == '*') {
+	    while ((++pattern < patternEnd) && (*pattern == '*')) {
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
