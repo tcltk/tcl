@@ -1,15 +1,20 @@
+2010-08-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd): [Bug 2826551, Patch 2948425]:
+	Backport of updates to make handling of RE line anchors correct.
+
 2010-08-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* unix/ldAix: remove ancient (pre-4.2) AIX support
+	* unix/ldAix: Remove ancient (pre-4.2) AIX support
 	* unix/configure: regen with ac-2.59
 	* unix/configure.in, unix/tclConfig.sh.in, unix/Makefile.in:
-	* unix/tcl.m4 (AIX): remove the need for ldAIX, replace with
-	-bexpall/-brtl.  Remove TCL_EXP_FILE (export file) and other
-	baggage that went with it.  Remove pre-4 AIX build support.
+	* unix/tcl.m4 (AIX): Remove the need for ldAIX, replace with
+	-bexpall/-brtl.  Remove TCL_EXP_FILE (export file) and other baggage
+	that went with it.  Remove pre-4 AIX build support.
 
 2010-08-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclUtil.c (TclByteArrayMatch): patterns may not be
+	* generic/tclUtil.c (TclByteArrayMatch): Patterns may not be
 	null-terminated, so account for that.
 
 2010-08-05  Don Porter  <dgp@users.sourceforge.net>
@@ -20,10 +25,10 @@
 
 2010-08-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* unix/tclUnixFCmd.c: adjust license header as per
+	* unix/tclUnixFCmd.c: Adjust license header as per
 	ftp://ftp.cs.berkeley.edu/pub/4bsd/README.Impt.License.Change
 
-	* license.terms: fix DFARs note for number-adjusted rights clause
+	* license.terms: Fix DFARs note for number-adjusted rights clause
 
 	* win/tclWin32Dll.c (asciiProcs, unicodeProcs):
 	* win/tclWinLoad.c (TclpDlopen): 'load' use LoadLibraryEx with
@@ -54,14 +59,14 @@
 
 2010-08-03  Andreas Kupries  <andreask@activestate.com>
 
-	* tests/var.test (var-19.1): [Bug 3037525]: Added test
-	demonstrating the local hashtable deletion crash and fix.
+	* tests/var.test (var-19.1): [Bug 3037525]: Added test demonstrating
+	the local hashtable deletion crash and fix.
 
-	* tests/info.test (info-39.1, test_info_frame): Changed absolute
-	to relative frame adressing to handle difference between testing
-	with -singleproc 1 vs. the default -singleproc 0. Plus comment
-	fix. The test and issue are not relevant to the trunk, forward
-	porting is not required.
+	* tests/info.test (info-39.1, test_info_frame): Changed absolute to
+	relative frame adressing to handle difference between testing with
+	-singleproc 1 vs. the default -singleproc 0. Plus comment fix. The
+	test and issue are not relevant to the trunk, forward porting is not
+	required.
 
 2010-08-03  Don Porter  <dgp@users.sourceforge.net>
 
@@ -80,19 +85,19 @@
 
 2010-07-28  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c: fix for crash [Bug 3037525]: lose fickle
-	optimisation in TclDeleteVars (used for runtime-created locals)
+	* generic/tclVar.c: [Bug 3037525]: lose fickle optimisation in
+	TclDeleteVars (used for runtime-created locals) that caused crashes.
 
 2010-07-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.h:	[Bug 3030870] make itcl 3.x built with pre-8.6
-	* generic/tclBasic.c:	work in 8.6 revert tclInt.h to what it was
+	* generic/tclInt.h: [Bug 3030870]: Make itcl 3.x built with pre-8.6
+	* generic/tclBasic.c: work in 8.6 revert tclInt.h to what it was
 	before, and relax the relation between Tcl_CallFrame and CallFrame.
 
 2010-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h:	[Bug 3030870] make itcl 3.x built with
-	* generic/tclInt.h:	pre-8.6 work in 8.6
+	* generic/tcl.h: [Bug 3030870]: Make itcl 3.x built with pre-8.6
+	* generic/tclInt.h:		work in 8.6
 
 2010-07-02  Donal K. Fellows  <dkf@users.sf.net>
 
