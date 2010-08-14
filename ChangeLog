@@ -9,6 +9,8 @@
 	* generic/tclInt.h
 	* unix/tclUnixFCmd.c
 	* win/tclWinFCmd.c
+	* doc/Hash.3         [Patch 3009403] Signature of Tcl_GetHashKey,
+	* generic/tcl.h      Tcl_(Create|Find)HashEntry
 
 2010-08-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
