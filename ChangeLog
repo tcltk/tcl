@@ -1,3 +1,7 @@
+2010-08-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/unicows  Remove completely, see Feature Req #2819611
+
 2010-08-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/ldAix: remove ancient (pre-4.2) AIX support
