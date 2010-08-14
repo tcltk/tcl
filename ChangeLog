@@ -1,6 +1,14 @@
 2010-08-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* compat/unicows  Remove completely, see Feature Req #2819611
+	* compat/unicows     Remove completely, see Feature Req #2819611
+	* doc/FileSystem.3   [Patch #2994165] Change signature of
+	* generic/tcl.decls  Tcl_FSGetNativePath and TclpDeleteFile
+	* generic/tclDecls.h
+	* generic/tclIOUtil.c
+	* generic/tclStubInit.c
+	* generic/tclInt.h
+	* unix/tclUnixFCmd.c
+	* win/tclWinFCmd.c
 
 2010-08-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
