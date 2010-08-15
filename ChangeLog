@@ -1,3 +1,9 @@
+2010-08-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclProc.c (ProcWrongNumArgs): [Bug 3045010]: Make the
+	handling of passing the wrong number of arguments to [apply] somewhat
+	less verbose when a lambda term is present.
+
 2010-08-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd): [Bug 2826551, Patch 2948425]:
