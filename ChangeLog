@@ -1,35 +1,41 @@
+2010-08-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclProc.c (ProcWrongNumArgs): [Bug 3045010]: Make the
+	handling of passing the wrong number of arguments to [apply] somewhat
+	less verbose when a lambda term is present.
+
 2010-08-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* compat/unicows     Remove completely, see Feature Req #2819611
-	* doc/FileSystem.3   [Patch #2994165] Change signature of
+	* compat/unicows:    Remove completely, see [FRQ 2819611].
+	* doc/FileSystem.3: [Patch 2994165]: Change signature of
 	* generic/tcl.decls  Tcl_FSGetNativePath and TclpDeleteFile
-	* generic/tclDecls.h
-	* generic/tclIOUtil.c
-	* generic/tclStubInit.c
-	* generic/tclInt.h
-	* unix/tclUnixFCmd.c
-	* win/tclWinFCmd.c
-	* doc/Hash.3         [Patch 3009403] Signature of Tcl_GetHashKey,
-	* generic/tcl.h      Tcl_(Create|Find)HashEntry
+	* generic/tclDecls.h:
+	* generic/tclIOUtil.c:
+	* generic/tclStubInit.c:
+	* generic/tclInt.h:
+	* unix/tclUnixFCmd.c:
+	* win/tclWinFCmd.c:
+	* doc/Hash.3: [Patch 3009403]: Signature of Tcl_GetHashKey,
+	* generic/tcl.h:     Tcl_(Create|Find)HashEntry
 
 2010-08-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* unix/ldAix: remove ancient (pre-4.2) AIX support
-	* unix/configure: regen with ac-2.59
+	* unix/ldAix: Remove ancient (pre-4.2) AIX support
+	* unix/configure: Regen with ac-2.59
 	* unix/configure.in, unix/tclConfig.sh.in, unix/Makefile.in:
-	* unix/tcl.m4 (AIX): remove the need for ldAIX, replace with
-	-bexpall/-brtl.  Remove TCL_EXP_FILE (export file) and other
-	baggage that went with it.  Remove pre-4 AIX build support.
+	* unix/tcl.m4 (AIX): Remove the need for ldAIX, replace with
+	-bexpall/-brtl.  Remove TCL_EXP_FILE (export file) and other baggage
+	that went with it.  Remove pre-4 AIX build support.
 
 2010-08-11  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c (TclNRYieldToObjCmd): 
-	* tests/coroutine.test: fixed bad copypasta snafu. 
-	Thanks to Andy Goth for finding the bug.
+	* generic/tclBasic.c (TclNRYieldToObjCmd):
+	* tests/coroutine.test: Fixed bad copypasta snafu. Thanks to Andy Goth
+	for finding the bug.
 
 2010-08-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclUtil.c (TclByteArrayMatch): patterns may not be
+	* generic/tclUtil.c (TclByteArrayMatch): Patterns may not be
 	null-terminated, so account for that.
 
 2010-08-09  Don Porter  <dgp@users.sourceforge.net>
@@ -40,19 +46,18 @@
 
 	* win/Makefile.in, win/makefile.bc, win/makefile.vc, win/tcl.dsp:
 	* win/tclWinPipe.c (TclpCreateProcess):
-	* win/stub16.c (removed): removed Win9x tclpip8x.dll build and
-	16-bit application loader stub support.  Win9x is no longer
-	supported.
+	* win/stub16.c (removed): Removed Win9x tclpip8x.dll build and 16-bit
+	application loader stub support.  Win9x is no longer supported.
 
-	* win/tclWin32Dll.c (TclWinInit): hard-enforce Windows 9x as an
-	unsupported platform with a panic.  Code to support it still
-	exists in other files (to go away in time), but new APIs are being
-	used that don't exist on Win9x.
+	* win/tclWin32Dll.c (TclWinInit): Hard-enforce Windows 9x as an
+	unsupported platform with a panic.  Code to support it still exists in
+	other files (to go away in time), but new APIs are being used that
+	don't exist on Win9x.
 
-	* unix/tclUnixFCmd.c: adjust license header as per
+	* unix/tclUnixFCmd.c: Adjust license header as per
 	ftp://ftp.cs.berkeley.edu/pub/4bsd/README.Impt.License.Change
 
-	* license.terms: fix DFARs note for number-adjusted rights clause
+	* license.terms: Fix DFARs note for number-adjusted rights clause
 
 	* win/tclWin32Dll.c (asciiProcs, unicodeProcs):
 	* win/tclWinLoad.c (TclpDlopen): 'load' use LoadLibraryEx with
@@ -63,14 +68,14 @@
 
 2010-08-04  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclIORChan.c: [Bug 3034840]: Fixed reference counting
-	* generic/tclIORTrans.c: in InvokeTclMethod and callers.
+	* generic/tclIORChan.c: [Bug 3034840]: Fixed reference counting in
+	* generic/tclIORTrans.c: InvokeTclMethod and callers.
 	* tests/ioTrans.test:
 
 2010-08-03  Andreas Kupries  <andreask@activestate.com>
 
-	* tests/var.test (var-19.1): [Bug 3037525]: Added test
-	demonstrating the local hashtable deletion crash and fix.
+	* tests/var.test (var-19.1): [Bug 3037525]: Added test demonstrating
+	the local hashtable deletion crash and fix.
 
 	* tests/info.test (info-39.1): Added forward copy of test in 8.5
 	branch about [Bug 2933089]. Should not fail, and doesn't, after
@@ -86,21 +91,21 @@
 	* library/tzdata/Pacific/Ponape:
 	* library/tzdata/Pacific/Truk:
 	* library/tzdata/Pacific/Yap:			Olson's tzdata2010k.
-	
+
 2010-08-02  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c: correcting bad port of [Bug 3037525] fix
+	* generic/tclVar.c: Correcting bad port of [Bug 3037525] fix
 
 2010-07-28  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c: fix for crash [Bug 3037525]: lose fickle
-	optimisation in TclDeleteVars (used for runtime-created locals)
+	* generic/tclVar.c: [Bug 3037525]: Lose fickle optimisation in
+	TclDeleteVars (used for runtime-created locals) that caused crash.
 
 2010-07-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* compat/zlib/win32/README.txt  Official build of zlib1.dll 1.2.5 is
-	* compat/zlib/win32/USAGE.txt   finally available, so put it in.
-	* compat/zlib/win32/zlib1.dll
+	* compat/zlib/win32/README.txt: Official build of zlib1.dll 1.2.5 is
+	* compat/zlib/win32/USAGE.txt:  finally available, so put it in.
+	* compat/zlib/win32/zlib1.dll:
 
 2010-07-25  Donal K. Fellows  <dkf@users.sf.net>
 
