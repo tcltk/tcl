@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.149 2010/06/16 16:17:05 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.150 2010/08/17 02:16:11 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -3076,7 +3076,7 @@ MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp, Tcl_Obj* pathPtr);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    int len);
-MODULE_SCOPE int	TclpDeleteFile(const char *path);
+MODULE_SCOPE int	TclpDeleteFile(const void *path);
 MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);
 MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
 MODULE_SCOPE void	TclpFinalizePipes(void);

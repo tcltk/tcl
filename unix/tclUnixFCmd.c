@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.37 2010/08/04 21:48:23 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.38 2010/08/17 02:16:11 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -632,9 +632,9 @@ TclpObjDeleteFile(
 
 int
 TclpDeleteFile(
-    const char *path)		/* Pathname of file to be removed (native). */
+    const void *path)		/* Pathname of file to be removed (native). */
 {
-    if (unlink(path) != 0) {				/* INTL: Native. */
+    if (unlink((const char *)path) != 0) {
 	return TCL_ERROR;
     }
     return TCL_OK;

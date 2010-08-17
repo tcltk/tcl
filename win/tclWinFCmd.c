@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.21 2010/04/25 15:40:54 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.22 2010/08/17 02:16:11 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -766,34 +766,35 @@ TclpObjDeleteFile(
 
 int
 TclpDeleteFile(
-    const TCHAR *nativePath)	/* Pathname of file to be removed (native). */
+    const void *nativePath)	/* Pathname of file to be removed (native). */
 {
     DWORD attr;
+    const TCHAR *path = nativePath;
 
     /*
      * The DeleteFile API acts differently under Win95/98 and NT WRT NULL and
      * "". Avoid passing these values.
      */
 
-    if (nativePath == NULL || nativePath[0] == '\0') {
+    if (path == NULL || path[0] == '\0') {
 	Tcl_SetErrno(ENOENT);
 	return TCL_ERROR;
     }
 
-    if (tclWinProcs->deleteFileProc(nativePath) != FALSE) {
+    if (tclWinProcs->deleteFileProc(path) != FALSE) {
 	return TCL_OK;
     }
     TclWinConvertError(GetLastError());
 
     if (Tcl_GetErrno() == EACCES) {
-	attr = tclWinProcs->getFileAttributesProc(nativePath);
+	attr = tclWinProcs->getFileAttributesProc(path);
 	if (attr != 0xffffffff) {
 	    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 		if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
 		    /*
 		     * It is a symbolic link - remove it.
 		     */
-		    if (TclWinSymLinkDelete(nativePath, 0) == 0) {
+		    if (TclWinSymLinkDelete(path, 0) == 0) {
 			return TCL_OK;
 		    }
 		}
@@ -807,21 +808,21 @@ TclpDeleteFile(
 
 		Tcl_SetErrno(EISDIR);
 	    } else if (attr & FILE_ATTRIBUTE_READONLY) {
-		int res = tclWinProcs->setFileAttributesProc(nativePath,
+		int res = tclWinProcs->setFileAttributesProc(path,
 			attr & ~((DWORD) FILE_ATTRIBUTE_READONLY));
 
 		if ((res != 0) &&
-			(tclWinProcs->deleteFileProc(nativePath) != FALSE)) {
+			(tclWinProcs->deleteFileProc(path) != FALSE)) {
 		    return TCL_OK;
 		}
 		TclWinConvertError(GetLastError());
 		if (res != 0) {
-		    tclWinProcs->setFileAttributesProc(nativePath, attr);
+		    tclWinProcs->setFileAttributesProc(path, attr);
 		}
 	    }
 	}
     } else if (Tcl_GetErrno() == ENOENT) {
-	attr = tclWinProcs->getFileAttributesProc(nativePath);
+	attr = tclWinProcs->getFileAttributesProc(path);
 	if (attr != 0xffffffff) {
 	    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 		/*

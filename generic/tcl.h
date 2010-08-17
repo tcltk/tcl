@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.90 2010/06/16 16:17:04 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.91 2010/08/17 02:16:10 dgp Exp $
  */
 
 #ifndef _TCL
@@ -2494,7 +2494,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #define Tcl_GetHashValue(h) ((h)->clientData)
 #define Tcl_SetHashValue(h, value) ((h)->clientData = (ClientData) (value))
 #define Tcl_GetHashKey(tablePtr, h) \
-	((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
+	((void *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
 		    (tablePtr)->keyType == TCL_CUSTOM_PTR_KEYS) \
 		   ? (h)->key.oneWordValue \
 		   : (h)->key.string))
@@ -2506,10 +2506,10 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 
 #undef  Tcl_FindHashEntry
 #define Tcl_FindHashEntry(tablePtr, key) \
-	(*((tablePtr)->findProc))(tablePtr, key)
+	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
 #undef  Tcl_CreateHashEntry
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
-	(*((tablePtr)->createProc))(tablePtr, key, newPtr)
+	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
 
 /*
  *----------------------------------------------------------------------------
