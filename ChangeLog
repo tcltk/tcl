@@ -1,3 +1,12 @@
+2010-08-18  Miguel Sofer  <msofer@users.sf.net>
+	* generic/tclBasic.c:    Redesign of [tailcall] to
+	* generic/tclCmdAH.c:    (a) fix #3047235
+	* generic/tclCompile.h:  (b) enable fix for #3046594
+	* generic/tclExecute.c:  (c) enable recursive tailcalls
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* tests/tailcall.test:
+	
 2010-08-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/safe.tcl (AliasGlob): [Bug 3004191]: Restore safe [glob] to

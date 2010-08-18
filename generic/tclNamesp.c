@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.209 2010/06/08 12:54:38 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.210 2010/08/18 15:44:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -391,6 +391,10 @@ Tcl_PopCallFrame(
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
+
+    if (framePtr->tailcallPtr) {
+        TclSpliceTailcall(interp, framePtr->tailcallPtr);
+    }
 }
 
 /*
