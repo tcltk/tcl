@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.490 2010/08/18 15:44:12 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.491 2010/08/18 22:33:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2905,13 +2905,13 @@ TclExecuteByteCode(
 	 * If the CallFrame is marked as tailcalling, keep tailcalling
 	 */
 
-	if (iPtr->varFramePtr->tailcallPtr) {
+	if (iPtr->varFramePtr->isProcCallFrame & FRAME_TAILCALLING) {
 	    if (catchTop == initCatchTop) {
 		goto abnormalReturn;
 	    }
 
-	    TclClearTailcall(interp, iPtr->varFramePtr->tailcallPtr);
-	    iPtr->varFramePtr->tailcallPtr = NULL;
+	    iPtr->varFramePtr->isProcCallFrame &= ~FRAME_TAILCALLING;
+	    TclRemoveTailcall(interp);
 	    Tcl_SetResult(interp,
 		    "tailcall called from within a catch environment",
 		    TCL_STATIC);
