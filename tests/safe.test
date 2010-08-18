@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.13.4.15 2010/05/27 13:47:46 dgp Exp $
+# RCS: @(#) $Id: safe.test,v 1.13.4.16 2010/08/18 14:43:21 dgp Exp $
 
 package require Tcl 8.5
 
@@ -544,6 +544,13 @@ test safe-12.6 {glob is restricted [Bug 2906841]} -setup {
 } -cleanup {
     safe::interpDelete $i
 } -result {}
+test safe-12.7 {glob is restricted} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob *
+} -cleanup {
+    safe::interpDelete $i
+} -match glob -result *
 
 set ::auto_path $saveAutoPath
 # cleanup

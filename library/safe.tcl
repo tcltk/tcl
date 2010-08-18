@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.10.2.17 2010/06/15 12:41:36 dgp Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.10.2.18 2010/08/18 14:43:21 dgp Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -775,18 +775,18 @@ proc ::safe::AliasGlob {slave args} {
 	return
     }
     try {
-	::interp invokehidden $slave glob {*}$cmd
+	set entries [::interp invokehidden $slave glob {*}$cmd]
     } on error msg {
 	Log $slave $msg
 	return -code error "script error"
     }
 
-    Log $slave "GLOB @ $msg" NOTICE
+    Log $slave "GLOB @ $entries" NOTICE
 
     # Translate path back to what the slave should see.
     set res {}
     set l [string length $dir]
-    foreach p $msg {
+    foreach p $entries {
 	if {[string equal -length $l $dir $p]} {
 	    set p [string replace $p 0 [expr {$l-1}] $virtualdir]
 	}
@@ -933,13 +933,11 @@ proc ::safe::AliasLoad {slave file args} {
     }
 
     try {
-	::interp invokehidden $slave load $file $package $target
+	return [::interp invokehidden $slave load $file $package $target]
     } on error msg {
 	Log $slave $msg
 	return -code error $msg
     }
-
-    return $msg
 }
 
 # FileInAccessPath raises an error if the file is not found in the list of
