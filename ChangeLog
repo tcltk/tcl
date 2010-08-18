@@ -1,10 +1,15 @@
 2010-08-18  Miguel Sofer  <msofer@users.sf.net>
+	* generic/tclBasic.c:   New redesign of [tailcall]: find
+	* generic/tclExecute.c: errors early on, so that errorInfo
+	* generic/tclInt.h:     contains the proper info [Bug 3047235]
+	* generic/tclNamesp.c:
+
 	* generic/tclCmdAH.c (TclNRTryObjCmd): block tailcalling out of
-	the body of a non-bc'ed [try], #3046594
+	the body of a non-bc'ed [try], [Bug 3046594]
 
 	* generic/tclBasic.c:    Redesign of [tailcall] to
-	* generic/tclCmdAH.c:    (a) fix #3047235
-	* generic/tclCompile.h:  (b) enable fix for #3046594
+	* generic/tclCmdAH.c:    (a) fix [Bug 3047235]
+	* generic/tclCompile.h:  (b) enable fix for [Bug 3046594]
 	* generic/tclExecute.c:  (c) enable recursive tailcalls
 	* generic/tclInt.h:
 	* generic/tclNamesp.c:
