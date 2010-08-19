@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.16 2010/07/02 13:14:46 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.17 2010/08/19 12:31:59 dgp Exp $
 
 package require Tcl 8.4
 
@@ -469,9 +469,7 @@ proc genStubs::makeDecl {name decl index} {
 	    append line ")"
 	}
     }
-    append text $line ";"
-    format "#ifndef %s_TCL_DECLARED\n#define %s_TCL_DECLARED\n%s\n#endif\n" \
-	    $fname $fname $text
+    return "$text$line;\n"
 }
 
 # genStubs::makeMacro --
@@ -492,14 +490,12 @@ proc genStubs::makeMacro {name decl index} {
     set lfname [string tolower [string index $fname 0]]
     append lfname [string range $fname 1 end]
 
-    set text "#ifndef $fname\n#define $fname"
+    set text "#define $fname \\\n\t("
     if {$args eq ""} {
-	append text " \\\n\t(*${name}StubsPtr->$lfname)"
-	append text " /* $index */\n#endif\n"
-	return $text
+	append text "*"
     }
-    append text " \\\n\t(${name}StubsPtr->$lfname)"
-    append text " /* $index */\n#endif\n"
+    append text "${name}StubsPtr->$lfname)"
+    append text " /* $index */\n"
     return $text
 }
 
@@ -890,14 +886,12 @@ proc genStubs::emitMacros {name textVar} {
     upvar $textVar text
 
     set upName [string toupper $libraryName]
-    append text "\n#if defined(USE_${upName}_STUBS) &&\
-	    !defined(USE_${upName}_STUB_PROCS)\n"
+    append text "\n#if defined(USE_${upName}_STUBS)\n"
     append text "\n/*\n * Inline function declarations:\n */\n\n"
 
     forAllStubs $name makeMacro 0 text
 
-    append text "\n#endif /* defined(USE_${upName}_STUBS) &&\
-	    !defined(USE_${upName}_STUB_PROCS) */\n"
+    append text "\n#endif /* defined(USE_${upName}_STUBS) */\n"
     return
 }
 
@@ -915,7 +909,6 @@ proc genStubs::emitMacros {name textVar} {
 proc genStubs::emitHeader {name} {
     variable outDir
     variable hooks
-    variable libraryName
 
     set capName [string toupper [string index $name 0]]
     append capName [string range $name 1 end]
@@ -939,10 +932,9 @@ proc genStubs::emitHeader {name} {
 
     append text "} ${capName}Stubs;\n\n"
 
-    set upName [string toupper $libraryName]
-    append text "#if defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS)\n"
+    append text "#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
     append text "extern const ${capName}Stubs *${name}StubsPtr;\n"
-    append text "#endif /* defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS) */\n"
+    append text "#ifdef __cplusplus\n}\n#endif\n"
 
     emitMacros $name text
 
