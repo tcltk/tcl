@@ -1,3 +1,10 @@
+2010-08-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclTrace.c (TraceExecutionObjCmd, TraceCommandObjCmd)
+	(TraceVariableObjCmd): [Patch 3048354]: Use memcpy() instead of
+	strcpy() to avoid buffer overflow; we have the correct length of data
+	to copy anyway since we've just allocated the target buffer.
+
 2010-08-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclProc.c (ProcWrongNumArgs): [Bug 3045010]: Make the
