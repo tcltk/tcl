@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.58 2010/02/24 10:45:04 dkf Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.59 2010/08/19 10:07:43 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -478,7 +478,7 @@ TraceExecutionObjCmd(
 		    TCL_TRACE_LEAVE_DURING_EXEC)) {
 		flags |= (TCL_TRACE_ENTER_EXEC | TCL_TRACE_LEAVE_EXEC);
 	    }
-	    strcpy(tcmdPtr->command, command);
+	    memcpy(tcmdPtr->command, command, length+1);
 	    name = Tcl_GetString(objv[3]);
 	    if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 		    tcmdPtr) != TCL_OK) {
@@ -711,7 +711,7 @@ TraceCommandObjCmd(
 	    tcmdPtr->length = length;
 	    tcmdPtr->refCount = 1;
 	    flags |= TCL_TRACE_DELETE;
-	    strcpy(tcmdPtr->command, command);
+	    memcpy(tcmdPtr->command, command, length+1);
 	    name = Tcl_GetString(objv[3]);
 	    if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 		    tcmdPtr) != TCL_OK) {
@@ -911,7 +911,7 @@ TraceVariableObjCmd(
 	    }
 	    ctvarPtr->traceCmdInfo.length = length;
 	    flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
-	    strcpy(ctvarPtr->traceCmdInfo.command, command);
+	    memcpy(ctvarPtr->traceCmdInfo.command, command, length+1);
 	    ctvarPtr->traceInfo.traceProc = TraceVarProc;
 	    ctvarPtr->traceInfo.clientData = &ctvarPtr->traceCmdInfo;
 	    ctvarPtr->traceInfo.flags = flags;
