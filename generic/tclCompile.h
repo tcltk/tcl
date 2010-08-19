@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.61 2010/04/30 00:19:31 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.62 2010/08/19 01:57:43 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -869,8 +869,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	NRInterpCoroutine;
 
 #define TCL_NR_BC_TYPE		0
 #define TCL_NR_ATEXIT_TYPE	1
-#define TCL_NR_TAILCALL_TYPE	2
-#define TCL_NR_YIELD_TYPE	3
+#define TCL_NR_YIELD_TYPE	2
 
 /*
  *----------------------------------------------------------------

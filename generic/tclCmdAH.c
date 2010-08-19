@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.53 2010/03/06 03:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.54 2010/08/19 01:57:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -290,12 +290,14 @@ TclNRCatchObjCmd(
 	optionVarNamePtr = objv[3];
     }
 
+    TclNRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
+	    varNamePtr, optionVarNamePtr, NULL);
+    TclNRAddCallback(interp, TclNRBlockTailcall, NULL, NULL, NULL,
+	    NULL);
+
     /*
      * TIP #280. Make invoking context available to caught script.
      */
-
-    TclNRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
-	    varNamePtr, optionVarNamePtr, NULL);
 
     return TclNREvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr, 1);
 }
@@ -311,19 +313,6 @@ CatchObjCmdCallback(
     Tcl_Obj *varNamePtr = data[1];
     Tcl_Obj *optionVarNamePtr = data[2];
     int rewind = iPtr->execEnvPtr->rewind;
-
-    /*
-     * catch has to disable any tailcall
-     */
-
-    if (iPtr->varFramePtr->tailcallPtr) {
-	TclClearTailcall(interp, iPtr->varFramePtr->tailcallPtr);
-	iPtr->varFramePtr->tailcallPtr = NULL;
-	result = TCL_ERROR;
-	Tcl_SetResult(interp,"Tailcall called from within a catch environment",
-		TCL_STATIC);
-    }
-
 
     /*
      * We disable catch in interpreters where the limit has been exceeded.

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.150 2010/08/17 02:16:11 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.151 2010/08/19 01:57:43 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1152,10 +1152,10 @@ typedef struct CallFrame {
 				 * meaning of the value is, which we do not
 				 * specify. */
     LocalCache *localCachePtr;
-    struct TEOV_callback *tailcallPtr;
-				/* The callback implementing the call to be
-				 * executed by the command that pushed this
-				 * frame. */
+    struct TEOV_callback *wherePtr;
+				/* The top of the callback stack when this
+				 * frame was pushed; used to find the spot
+				 * where to tailcall to. */
 } CallFrame;
 
 #define FRAME_IS_PROC	0x1
@@ -1168,6 +1168,8 @@ typedef struct CallFrame {
 				 * field contains an Object reference that has
 				 * been confirmed to refer to a class. Part of
 				 * TIP#257. */
+#define FRAME_TAILCALLING 0x10  /* Flag is set while the CallFrame is winding
+				 * down to process a tailcall */
 
 /*
  * TIP #280
@@ -2832,11 +2834,10 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
-MODULE_SCOPE void	TclClearTailcall(Tcl_Interp *interp,
-			    struct TEOV_callback *tailcallPtr);
-MODULE_SCOPE void       TclSpliceTailcall(Tcl_Interp *interp,
-	                    struct TEOV_callback *tailcallPtr,
-	                    int skip);
+MODULE_SCOPE void       TclRemoveTailcall(Tcl_Interp *interp);
+
+MODULE_SCOPE Tcl_NRPostProc TclNRBlockTailcall;
+
 
 /*
  * This structure holds the data for the various iteration callbacks used to
