@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.39 2010/04/22 11:40:31 nijtmans Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.40 2010/08/19 04:26:03 nijtmans Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -49,36 +49,24 @@
  */
 
 #ifdef __WIN32__ /* WIN */
-#ifndef Tcl_WinUtfToTChar_TCL_DECLARED
-#define Tcl_WinUtfToTChar_TCL_DECLARED
 /* 0 */
 EXTERN TCHAR *		Tcl_WinUtfToTChar(const char *str, int len,
 				Tcl_DString *dsPtr);
-#endif
-#ifndef Tcl_WinTCharToUtf_TCL_DECLARED
-#define Tcl_WinTCharToUtf_TCL_DECLARED
 /* 1 */
 EXTERN char *		Tcl_WinTCharToUtf(const TCHAR *str, int len,
 				Tcl_DString *dsPtr);
-#endif
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-#ifndef Tcl_MacOSXOpenBundleResources_TCL_DECLARED
-#define Tcl_MacOSXOpenBundleResources_TCL_DECLARED
 /* 0 */
 EXTERN int		Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
 				const char *bundleName, int hasResourceFile,
 				int maxPathLen, char *libraryPath);
-#endif
-#ifndef Tcl_MacOSXOpenVersionedBundleResources_TCL_DECLARED
-#define Tcl_MacOSXOpenVersionedBundleResources_TCL_DECLARED
 /* 1 */
 EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
 				Tcl_Interp *interp, const char *bundleName,
 				const char *bundleVersion,
 				int hasResourceFile, int maxPathLen,
 				char *libraryPath);
-#endif
 #endif /* MACOSX */
 
 typedef struct TclPlatStubs {
@@ -95,38 +83,34 @@ typedef struct TclPlatStubs {
 #endif /* MACOSX */
 } TclPlatStubs;
 
-#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern const TclPlatStubs *tclPlatStubsPtr;
-#endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
+#ifdef __cplusplus
+}
+#endif
 
-#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#if defined(USE_TCL_STUBS)
 
 /*
  * Inline function declarations:
  */
 
 #ifdef __WIN32__ /* WIN */
-#ifndef Tcl_WinUtfToTChar
 #define Tcl_WinUtfToTChar \
 	(tclPlatStubsPtr->tcl_WinUtfToTChar) /* 0 */
-#endif
-#ifndef Tcl_WinTCharToUtf
 #define Tcl_WinTCharToUtf \
 	(tclPlatStubsPtr->tcl_WinTCharToUtf) /* 1 */
-#endif
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-#ifndef Tcl_MacOSXOpenBundleResources
 #define Tcl_MacOSXOpenBundleResources \
 	(tclPlatStubsPtr->tcl_MacOSXOpenBundleResources) /* 0 */
-#endif
-#ifndef Tcl_MacOSXOpenVersionedBundleResources
 #define Tcl_MacOSXOpenVersionedBundleResources \
 	(tclPlatStubsPtr->tcl_MacOSXOpenVersionedBundleResources) /* 1 */
-#endif
 #endif /* MACOSX */
 
-#endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
+#endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
 
