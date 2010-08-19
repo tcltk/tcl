@@ -1,3 +1,10 @@
+2010-08-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl [Patch 3034251] backport ttkGenStubs.tcl features to
+	genStubs.tcl, partly: remove unneeded ifdeffery and put C++ guard around
+	stubs pointer definition.
+	* generic/*Decls.h   (regenerated)
+
 2010-08-18  Miguel Sofer  <msofer@users.sf.net>
 	* generic/tclBasic.c:   New redesign of [tailcall]: find
 	* generic/tclExecute.c: errors early on, so that errorInfo
