@@ -1,3 +1,12 @@
+2010-08-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl: [Patch 3034251]: Backport ttkGenStubs.tcl
+	features to genStubs.tcl, partly: Use void (*reserved$i)(void) = 0
+	instead of void *reserved$i = NULL for unused stub entries, in case
+	pointer-to-function and pointer-to-object are different sizes.
+	* generic/tcl*Decls.h:   (regenerated)
+	* generic/tcl*StubInit.c:(regenerated)
+
 2010-08-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/Method.3    Fix definition of Tcl_MethodType
