@@ -1,3 +1,8 @@
+2010-08-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/linsert.n: [Bug 3045123]: Make description of what is actually
+	happening more accurate.
+
 2010-08-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/genStubs.tcl: [Patch 3034251]: Backport ttkGenStubs.tcl
@@ -9,7 +14,7 @@
 
 2010-08-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* doc/Method.3    Fix definition of Tcl_MethodType
+	* doc/Method.3:   Fix definition of Tcl_MethodType.
 
 2010-08-19  Donal K. Fellows  <dkf@users.sf.net>
 
