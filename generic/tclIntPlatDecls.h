@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.43 2010/08/19 04:26:03 nijtmans Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.44 2010/08/21 16:30:26 nijtmans Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -212,7 +212,7 @@ typedef struct TclIntPlatStubs {
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
     int (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 4 */
-    void *reserved5;
+    void (*reserved5)(void);
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 6 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
@@ -229,27 +229,27 @@ typedef struct TclIntPlatStubs {
     struct servent * (*tclWinGetServByName) (const char *nm, const char *proto); /* 2 */
     int (*tclWinGetSockOpt) (int s, int level, int optname, char FAR *optval, int FAR *optlen); /* 3 */
     HINSTANCE (*tclWinGetTclInstance) (void); /* 4 */
-    void *reserved5;
+    void (*reserved5)(void);
     u_short (*tclWinNToHS) (u_short ns); /* 6 */
     int (*tclWinSetSockOpt) (int s, int level, int optname, const char FAR *optval, int optlen); /* 7 */
     unsigned long (*tclpGetPid) (Tcl_Pid pid); /* 8 */
     int (*tclWinGetPlatformId) (void); /* 9 */
-    void *reserved10;
+    void (*reserved10)(void);
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 11 */
     int (*tclpCloseFile) (TclFile file); /* 12 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 13 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 14 */
     int (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 15 */
-    void *reserved16;
-    void *reserved17;
+    void (*reserved16)(void);
+    void (*reserved17)(void);
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 18 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 19 */
     void (*tclWinAddProcess) (void *hProcess, unsigned long id); /* 20 */
-    void *reserved21;
+    void (*reserved21)(void);
     TclFile (*tclpCreateTempFile) (const char *contents); /* 22 */
     char * (*tclpGetTZName) (int isdst); /* 23 */
     char * (*tclWinNoBackslash) (char *path); /* 24 */
-    void *reserved25;
+    void (*reserved25)(void);
     void (*tclWinSetInterfaces) (int wide); /* 26 */
     void (*tclWinFlushDirtyChannels) (void); /* 27 */
     void (*tclWinResetInterfaces) (void); /* 28 */
@@ -261,7 +261,7 @@ typedef struct TclIntPlatStubs {
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
     int (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 4 */
-    void *reserved5;
+    void (*reserved5)(void);
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 6 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
