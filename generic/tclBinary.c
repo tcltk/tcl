@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.64 2010/04/30 20:52:51 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.65 2010/08/22 18:53:26 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -2114,7 +2114,7 @@ ScanNumber(
 	    register Tcl_HashEntry *hPtr;
 	    int isNew;
 
-	    hPtr = Tcl_CreateHashEntry(tablePtr, (char *)value, &isNew);
+	    hPtr = Tcl_CreateHashEntry(tablePtr, INT2PTR(value), &isNew);
 	    if (!isNew) {
 		return Tcl_GetHashValue(hPtr);
 	    }

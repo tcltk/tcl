@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.183 2010/06/22 12:25:16 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.184 2010/08/22 18:53:26 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -830,7 +830,7 @@ InfoCommandsCmd(
 		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
 		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		(void) Tcl_CreateHashEntry(&addedCommandsTable,
-			(char *)elemObjPtr, &isNew);
+			elemObjPtr, &isNew);
 	    }
 	    entryPtr = Tcl_NextHashEntry(&search);
 	}
@@ -855,7 +855,7 @@ InfoCommandsCmd(
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
 		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
 		    (void) Tcl_CreateHashEntry(&addedCommandsTable,
-			    (char *) elemObjPtr, &isNew);
+			    elemObjPtr, &isNew);
 		    if (isNew) {
 			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		    } else {

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.68 2010/03/20 15:39:46 dkf Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.69 2010/08/22 18:53:26 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1271,7 +1271,7 @@ RegisterTcpServerInterpCleanup(
 		TcpAcceptCallbacksDeleteProc, hTblPtr);
     }
 
-    hPtr = Tcl_CreateHashEntry(hTblPtr, (char *) acceptCallbackPtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(hTblPtr, acceptCallbackPtr, &isNew);
     if (!isNew) {
 	Tcl_Panic("RegisterTcpServerCleanup: damaged accept record table");
     }
