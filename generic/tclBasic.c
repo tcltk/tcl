@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.462 2010/08/18 22:33:26 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.463 2010/08/22 18:53:26 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -656,7 +656,7 @@ Tcl_CreateInterp(void)
     cancelInfo->length = 0;
 
     Tcl_MutexLock(&cancelLock);
-    hPtr = Tcl_CreateHashEntry(&cancelTable, (char *) iPtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(&cancelTable, iPtr, &isNew);
     Tcl_SetHashValue(hPtr, cancelInfo);
     Tcl_MutexUnlock(&cancelLock);
 
@@ -5519,7 +5519,7 @@ TclArgumentEnter(
 	if (cfPtr->line[i] < 0) {
 	    continue;
 	}
-	hPtr = Tcl_CreateHashEntry(iPtr->lineLAPtr, (char *) objv[i], &new);
+	hPtr = Tcl_CreateHashEntry(iPtr->lineLAPtr, objv[i], &new);
 	if (new) {
 	    /*
 	     * The word is not on the stack yet, remember the current location
@@ -5652,7 +5652,7 @@ TclArgumentBCEnter(
 		int isnew;
 		Tcl_HashEntry *hPtr =
 			Tcl_CreateHashEntry(iPtr->lineLABCPtr,
-				(char *) objv[word], &isnew);
+				objv[word], &isnew);
 		CFWordBC *cfwPtr = (CFWordBC *) ckalloc(sizeof(CFWordBC));
 
 		cfwPtr->framePtr = cfPtr;
@@ -8976,7 +8976,7 @@ TclNRCoroutineObjCmd(
 	    int isNew;
 	    Tcl_HashEntry *newPtr =
 		    Tcl_CreateHashEntry(corPtr->base.lineLABCPtr,
-		    (char *) Tcl_GetHashKey(iPtr->lineLABCPtr, hePtr),
+		    Tcl_GetHashKey(iPtr->lineLABCPtr, hePtr),
 		    &isNew);
 
 	    Tcl_SetHashValue(newPtr, Tcl_GetHashValue(hePtr));

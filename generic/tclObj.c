@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.173 2010/04/27 12:36:21 nijtmans Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.174 2010/08/22 18:53:26 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -575,7 +575,7 @@ TclContinuationsEnter(
     int newEntry;
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
-	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, (char*) objPtr, &newEntry);
+	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
     ContLineLoc *clLocPtr = (ContLineLoc *)
             ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
 
@@ -731,7 +731,7 @@ TclContinuationsCopy(
 {
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
-            Tcl_FindHashEntry(tsdPtr->lineCLPtr, (char *) originObjPtr);
+            Tcl_FindHashEntry(tsdPtr->lineCLPtr, originObjPtr);
 
     if (hPtr) {
 	ContLineLoc *clLocPtr = Tcl_GetHashValue(hPtr);
@@ -765,7 +765,7 @@ TclContinuationsGet(
 {
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
-            Tcl_FindHashEntry(tsdPtr->lineCLPtr, (char *) objPtr);
+            Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 
     if (!hPtr) {
         return NULL;
@@ -962,7 +962,7 @@ Tcl_GetObjType(
     Tcl_MutexLock(&tableMutex);
     hPtr = Tcl_FindHashEntry(&typeTable, typeName);
     if (hPtr != NULL) {
-	typePtr = (const Tcl_ObjType *) Tcl_GetHashValue(hPtr);
+	typePtr = Tcl_GetHashValue(hPtr);
     }
     Tcl_MutexUnlock(&tableMutex);
     return typePtr;
@@ -1111,7 +1111,7 @@ TclDbInitNewObj(
 	    Tcl_InitHashTable(tsdPtr->objThreadMap, TCL_ONE_WORD_KEYS);
 	}
 	tablePtr = tsdPtr->objThreadMap;
-	hPtr = Tcl_CreateHashEntry(tablePtr, (char *) objPtr, &isNew);
+	hPtr = Tcl_CreateHashEntry(tablePtr, objPtr, &isNew);
 	if (!isNew) {
 	    Tcl_Panic("expected to create new entry for object map");
 	}
@@ -1387,7 +1387,7 @@ TclFreeObj(
         Tcl_HashEntry *hPtr;
 
 	if (tsdPtr->lineCLPtr) {
-            hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, (char *) objPtr);
+            hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 	    if (hPtr) {
 		Tcl_EventuallyFree(Tcl_GetHashValue(hPtr), ContLineLocFree);
 		Tcl_DeleteHashEntry(hPtr);
@@ -1478,7 +1478,7 @@ TclFreeObj(
         Tcl_HashEntry *hPtr;
 
 	if (tsdPtr->lineCLPtr) {
-            hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, (char *) objPtr);
+            hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 	    if (hPtr) {
 		Tcl_EventuallyFree(Tcl_GetHashValue(hPtr), ContLineLocFree);
 		Tcl_DeleteHashEntry(hPtr);
@@ -3694,7 +3694,7 @@ Tcl_DbIncrRefCount(
 	if (!tablePtr) {
 	    Tcl_Panic("object table not initialized");
 	}
-	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("%s%s",
 		    "Trying to incr ref count of "
@@ -3759,7 +3759,7 @@ Tcl_DbDecrRefCount(
 	if (!tablePtr) {
 	    Tcl_Panic("object table not initialized");
 	}
-	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("%s%s",
 		    "Trying to decr ref count of "
@@ -3838,7 +3838,7 @@ Tcl_DbIsShared(
 	if (!tablePtr) {
 	    Tcl_Panic("object table not initialized");
 	}
-	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("%s%s",
 		    "Trying to check shared status of"
