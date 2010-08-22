@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.201 2010/08/02 11:08:28 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.202 2010/08/22 18:53:25 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -55,7 +55,7 @@ VarHashCreateVar(
     int *newPtr)
 {
     Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&tablePtr->table,
-	    (char *) key, newPtr);
+	    key, newPtr);
 
     if (hPtr) {
 	return VarHashGetValue(hPtr);
@@ -2455,13 +2455,13 @@ UnsetVarStruct(
 
 	    int isNew;
 
-	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
+	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
 	    tracePtr = Tcl_GetHashValue(tPtr);
 	    varPtr->flags &= ~VAR_ALL_TRACES;
 	    Tcl_DeleteHashEntry(tPtr);
 	    if (dummyVar.flags & VAR_TRACED_UNSET) {
 		tPtr = Tcl_CreateHashEntry(&iPtr->varTraces,
-			(char *) &dummyVar, &isNew);
+			&dummyVar, &isNew);
 		Tcl_SetHashValue(tPtr, tracePtr);
 	    }
 	}
@@ -2481,8 +2481,7 @@ UnsetVarStruct(
 
 	    tracePtr = NULL;
 	    if (TclIsVarTraced(&dummyVar)) {
-		tPtr = Tcl_FindHashEntry(&iPtr->varTraces,
-			(char *) &dummyVar);
+		tPtr = Tcl_FindHashEntry(&iPtr->varTraces, &dummyVar);
 		tracePtr = Tcl_GetHashValue(tPtr);
 		if (tPtr) {
 		    Tcl_DeleteHashEntry(tPtr);
@@ -3076,7 +3075,7 @@ ArrayStartSearchCmd(
      */
 
     searchPtr = (ArraySearch *) ckalloc(sizeof(ArraySearch));
-    hPtr = Tcl_CreateHashEntry(&iPtr->varSearches, (char *) varPtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(&iPtr->varSearches, varPtr, &isNew);
     if (isNew) {
 	searchPtr->id = 1;
 	Tcl_AppendResult(interp, "s-1-", varName, NULL);
@@ -3401,7 +3400,7 @@ ArrayDoneSearchCmd(
      * variable.
      */
 
-    hPtr = Tcl_FindHashEntry(&iPtr->varSearches, (char *) varPtr);
+    hPtr = Tcl_FindHashEntry(&iPtr->varSearches, varPtr);
     if (searchPtr == Tcl_GetHashValue(hPtr)) {
 	if (searchPtr->nextPtr) {
 	    Tcl_SetHashValue(hPtr, searchPtr->nextPtr);
@@ -5148,7 +5147,7 @@ ParseSearchId(
 
     if (varPtr->flags & VAR_SEARCH_ACTIVE) {
 	Tcl_HashEntry *hPtr =
-		Tcl_FindHashEntry(&iPtr->varSearches, (char *) varPtr);
+		Tcl_FindHashEntry(&iPtr->varSearches, varPtr);
 
 	for (searchPtr = Tcl_GetHashValue(hPtr); searchPtr != NULL;
 		searchPtr = searchPtr->nextPtr) {
@@ -5190,7 +5189,7 @@ DeleteSearches(
     Tcl_HashEntry *sPtr;
 
     if (arrayVarPtr->flags & VAR_SEARCH_ACTIVE) {
-	sPtr = Tcl_FindHashEntry(&iPtr->varSearches, (char *) arrayVarPtr);
+	sPtr = Tcl_FindHashEntry(&iPtr->varSearches, arrayVarPtr);
 	for (searchPtr = Tcl_GetHashValue(sPtr); searchPtr != NULL;
 		searchPtr = nextPtr) {
 	    nextPtr = searchPtr->nextPtr;
@@ -5258,8 +5257,7 @@ TclDeleteNamespaceVars(
 	 */
 
 	if (TclIsVarTraced(varPtr)) {
-	    Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces,
-		    (char *) varPtr);
+	    Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
 	    VarTrace *tracePtr = Tcl_GetHashValue(tPtr);
 	    ActiveVarTrace *activePtr;
 
@@ -5448,7 +5446,7 @@ DeleteArray(
 		TclObjCallVarTraces(iPtr, NULL, elPtr, arrayNamePtr,
 			elNamePtr, flags,/* leaveErrMsg */ 0, index);
 	    }
-	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) elPtr);
+	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, elPtr);
 	    tracePtr = Tcl_GetHashValue(tPtr);
 	    while (tracePtr) {
 		VarTrace *prevPtr = tracePtr;
