@@ -1,3 +1,21 @@
+2010-08-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c   [Patch 3009403]: Signature of Tcl_GetHashKey,
+	* generic/tclBinary.c: Tcl_(Create|Find)HashEntry follow-up:
+	* generic/tclCmdIL.c   Remove many type casts which are no longer
+	* generic/tclCompile.c necessary as a result of this signature change.
+	* generic/tclDictObj.c
+	* generic/tclEncoding.c
+	* generic/tclExecute.c
+	* generic/tclInterp.c
+	* generic/tclIOCmd.c
+	* generic/tclObj.c
+	* generic/tclProc.c
+	* generic/tclTest.c
+	* generic/tclTrace.c
+	* generic/tclUtil.c
+	* generic/tclVar.c
+
 2010-08-21  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/linsert.n: [Bug 3045123]: Make description of what is actually
