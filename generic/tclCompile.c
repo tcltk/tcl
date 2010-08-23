@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.83 2010/05/14 13:31:51 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.84 2010/08/23 01:46:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2484,7 +2484,7 @@ TclInitByteCodeObj(
      * byte code object (internal rep), for use with the bc compiler.
      */
 
-    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, (char *) codePtr,
+    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, codePtr,
 	    &isNew), envPtr->extCmdMapPtr);
     envPtr->extCmdMapPtr = NULL;
 

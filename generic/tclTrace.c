@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.2.2.40 2010/08/19 12:31:59 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.2.2.41 2010/08/23 01:46:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3198,7 +3198,7 @@ TraceVarEx(
 #endif
     tracePtr->flags = tracePtr->flags & flagMask;
 
-    hPtr = Tcl_CreateHashEntry(&iPtr->varTraces, (char *) varPtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(&iPtr->varTraces, varPtr, &isNew);
     if (isNew) {
 	tracePtr->nextPtr = NULL;
     } else {

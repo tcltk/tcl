@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.17 2010/08/19 12:31:59 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.18 2010/08/23 01:46:40 dgp Exp $
 
 package require Tcl 8.4
 
@@ -137,6 +137,7 @@ proc genStubs::declare {args} {
 
     if {[llength $args] != 3} {
 	puts stderr "wrong # args: declare $args"
+	return
     }
     lassign $args index platformList decl
 
@@ -300,7 +301,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}}} {
 proc genStubs::emitSlots {name textVar} {
     upvar $textVar text
 
-    forAllStubs $name makeSlot 1 text {"    void *reserved$i;\n"}
+    forAllStubs $name makeSlot 1 text {"    void (*reserved$i)(void);\n"}
     return
 }
 
@@ -988,10 +989,10 @@ proc genStubs::emitInit {name textVar} {
     if {[info exists hooks($name)]} {
 	append text "    &${name}StubHooks,\n"
     } else {
-	append text "    NULL,\n"
+	append text "    0,\n"
     }
 
-    forAllStubs $name makeInit 1 text {"    NULL, /* $i */\n"}
+    forAllStubs $name makeInit 1 text {"    0, /* $i */\n"}
 
     append text "\};\n"
     return

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.45 2010/03/06 03:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.46 2010/08/23 01:46:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4008,7 +4008,7 @@ SetScriptLimitCallback(
 	return;
     }
 
-    hashPtr = Tcl_CreateHashEntry(&iPtr->limit.callbacks, (char *) &key,
+    hashPtr = Tcl_CreateHashEntry(&iPtr->limit.callbacks, &key,
 	    &isNew);
     if (!isNew) {
 	limitCBPtr = Tcl_GetHashValue(hashPtr);

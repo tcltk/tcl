@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.59 2010/07/27 12:58:07 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.60 2010/08/23 01:46:40 dgp Exp $
  */
 
 #undef STATIC_BUILD
@@ -6539,7 +6539,7 @@ TestHashSystemHashCmd(
     }
 
     for (i=0 ; i<limit ; i++) {
-	hPtr = Tcl_CreateHashEntry(&hash, (char *) INT2PTR(i), &isNew);
+	hPtr = Tcl_CreateHashEntry(&hash, INT2PTR(i), &isNew);
 	if (!isNew) {
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," creation problem",-1);

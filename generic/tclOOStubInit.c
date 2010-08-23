@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubInit.c,v 1.1.2.9 2010/04/26 13:46:11 dgp Exp $
+ * $Id: tclOOStubInit.c,v 1.1.2.10 2010/08/23 01:46:40 dgp Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
@@ -20,7 +20,7 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 
 static const TclOOIntStubs tclOOIntStubs = {
     TCL_STUB_MAGIC,
-    NULL,
+    0,
     TclOOGetDefineCmdContext, /* 0 */
     TclOOMakeProcInstanceMethod, /* 1 */
     TclOOMakeProcMethod, /* 2 */

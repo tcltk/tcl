@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.65 2010/08/17 02:16:11 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.66 2010/08/23 01:46:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -272,7 +272,7 @@ Tcl_ProcObjCmd(
 		cfPtr->cmd.str.len = 0;
 
 		hePtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew);
+			procPtr, &isNew);
 		if (!isNew) {
 		    /*
 		     * Get the old command frame and release it. See also
@@ -2568,7 +2568,7 @@ SetLambdaFromAny(
 		cfPtr->cmd.str.len = 0;
 
 		Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew), cfPtr);
+			procPtr, &isNew), cfPtr);
 	    }
 
 	    /*

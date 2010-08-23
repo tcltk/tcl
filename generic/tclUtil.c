@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.46 2010/08/12 12:34:14 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.47 2010/08/23 01:46:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3009,7 +3009,7 @@ TclSetProcessGlobalValue(
     cacheMap = GetThreadHash(&pgvPtr->key);
     ClearHash(cacheMap);
     hPtr = Tcl_CreateHashEntry(cacheMap,
-	    (char *) INT2PTR(pgvPtr->epoch), &dummy);
+	    INT2PTR(pgvPtr->epoch), &dummy);
     Tcl_SetHashValue(hPtr, newValue);
     Tcl_MutexUnlock(&pgvPtr->mutex);
 }
@@ -3104,7 +3104,7 @@ TclGetProcessGlobalValue(
 
 	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
 	hPtr = Tcl_CreateHashEntry(cacheMap,
-		(char *) INT2PTR(pgvPtr->epoch), &dummy);
+		INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
 	Tcl_SetHashValue(hPtr, value);
 	Tcl_IncrRefCount(value);

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.43 2010/07/16 17:55:26 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.44 2010/08/23 01:46:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -259,7 +259,7 @@ CreateChainEntry(
     int *newPtr)
 {
     ChainEntry *cPtr = (ChainEntry *)
-	    Tcl_CreateHashEntry(&dict->table, (char *) keyPtr, newPtr);
+	    Tcl_CreateHashEntry(&dict->table, keyPtr, newPtr);
 
     /*
      * If this is a new entry in the hash table, stitch it into the chain.
@@ -287,7 +287,7 @@ DeleteChainEntry(
     Tcl_Obj *keyPtr)
 {
     ChainEntry *cPtr = (ChainEntry *)
-	    Tcl_FindHashEntry(&dict->table, (char *) keyPtr);
+	    Tcl_FindHashEntry(&dict->table, keyPtr);
 
     if (cPtr == NULL) {
 	return 0;
@@ -352,7 +352,7 @@ DupDictInternalRep(
 
     InitChainTable(newDict);
     for (cPtr=oldDict->entryChainHead ; cPtr!=NULL ; cPtr=cPtr->nextPtr) {
-	void *key = Tcl_GetHashKey(&oldDict->table, &cPtr->entry);
+	Tcl_Obj *key = Tcl_GetHashKey(&oldDict->table, &cPtr->entry);
 	Tcl_Obj *valuePtr = Tcl_GetHashValue(&cPtr->entry);
 	int n;
 	Tcl_HashEntry *hPtr = CreateChainEntry(newDict, key, &n);
@@ -500,7 +500,7 @@ UpdateStringOfDict(
 	 * elements already.
 	 */
 
-	keyPtr = (Tcl_Obj *) Tcl_GetHashKey(&dict->table, &cPtr->entry);
+	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	elem = TclGetStringFromObj(keyPtr, &length);
 	dictPtr->length += Tcl_ScanCountedElement(elem, length,
 		&flagPtr[i]) + 1;
@@ -518,7 +518,7 @@ UpdateStringOfDict(
     dictPtr->bytes = ckalloc((unsigned) dictPtr->length);
     dst = dictPtr->bytes;
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
-	keyPtr = (Tcl_Obj *) Tcl_GetHashKey(&dict->table, &cPtr->entry);
+	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	elem = TclGetStringFromObj(keyPtr, &length);
 	dst += Tcl_ConvertCountedElement(elem, length, dst,
 		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH));
@@ -814,7 +814,7 @@ TclTraceDictPath(
     }
 
     for (i=0 ; i<keyc ; i++) {
-	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&dict->table, (char *)keyv[i]);
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&dict->table, keyv[i]);
 	Tcl_Obj *tmpObj;
 
 	if (hPtr == NULL) {
@@ -1004,7 +1004,7 @@ Tcl_DictObjGet(
     }
 
     dict = dictPtr->internalRep.otherValuePtr;
-    hPtr = Tcl_FindHashEntry(&dict->table, (char *) keyPtr);
+    hPtr = Tcl_FindHashEntry(&dict->table, keyPtr);
     if (hPtr == NULL) {
 	*valuePtrPtr = NULL;
     } else {
@@ -1161,8 +1161,7 @@ Tcl_DictObjFirst(
 	searchPtr->next = cPtr->nextPtr;
 	dict->refcount++;
 	if (keyPtrPtr != NULL) {
-	    *keyPtrPtr = (Tcl_Obj *) Tcl_GetHashKey(&dict->table,
-		    &cPtr->entry);
+	    *keyPtrPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	}
 	if (valuePtrPtr != NULL) {
 	    *valuePtrPtr = Tcl_GetHashValue(&cPtr->entry);
@@ -1238,7 +1237,7 @@ Tcl_DictObjNext(
     searchPtr->next = cPtr->nextPtr;
     *donePtr = 0;
     if (keyPtrPtr != NULL) {
-	*keyPtrPtr = (Tcl_Obj *) Tcl_GetHashKey(
+	*keyPtrPtr = Tcl_GetHashKey(
 		&((Dict *)searchPtr->dictionaryPtr)->table, &cPtr->entry);
     }
     if (valuePtrPtr != NULL) {

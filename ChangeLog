@@ -1,3 +1,39 @@
+2010-08-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c   [Patch 3009403]: Signature of Tcl_GetHashKey,
+	* generic/tclBinary.c: Tcl_(Create|Find)HashEntry follow-up:
+	* generic/tclCmdIL.c   Remove many type casts which are no longer
+	* generic/tclCompile.c necessary as a result of this signature change.
+	* generic/tclDictObj.c
+	* generic/tclEncoding.c
+	* generic/tclExecute.c
+	* generic/tclInterp.c
+	* generic/tclIOCmd.c
+	* generic/tclObj.c
+	* generic/tclProc.c
+	* generic/tclTest.c
+	* generic/tclTrace.c
+	* generic/tclUtil.c
+	* generic/tclVar.c
+
+2010-08-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/linsert.n: [Bug 3045123]: Make description of what is actually
+	happening more accurate.
+
+2010-08-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl: [Patch 3034251]: Backport ttkGenStubs.tcl
+	features to genStubs.tcl, partly: Use void (*reserved$i)(void) = 0
+	instead of void *reserved$i = NULL for unused stub entries, in case
+	pointer-to-function and pointer-to-object are different sizes.
+	* generic/tcl*Decls.h:   (regenerated)
+	* generic/tcl*StubInit.c:(regenerated)
+
+2010-08-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* doc/Method.3:   Fix definition of Tcl_MethodType.
+
 2010-08-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclTrace.c (TraceExecutionObjCmd, TraceCommandObjCmd)
