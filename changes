@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.24 2010/08/05 17:12:51 uid37551 Exp $
+RCS: @(#) $Id: changes,v 1.136.2.25 2010/08/24 18:30:30 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7467,10 +7467,14 @@ memory with buffer backup (ferrieux)
 
 2010-07-28 (bug fix)[3037525] crash deleting vars @ callframe pop (sofer)
 
-2010-08-02 tzdata updated to Olson's tzdata2010k (kenny)
-
 2010-08-04 (bug fix)[3034840] mem corrupt when refchan loses interp (kupries)
 
 2010-08-04 (enhancement) Win [load] use LOAD_WITH_ALTERED_SEARCH_PATH (hobbs)
 
---- Released 8.5.9, August 13, 2010 --- See ChangeLog for details ---
+2010-08-12 (bug fix)[2826551] line-sensitive matching in regexp (dejong)
+
+2010-08-19 (bug fix)[3048354] buffer overflow detect in Fortify build (fellows)
+
+2010-08-23 tzdata updated to Olson's tzdata2010l (kenny)
+
+--- Released 8.5.9, August 31, 2010 --- See ChangeLog for details ---
