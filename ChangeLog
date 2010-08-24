@@ -1,3 +1,9 @@
+2010-08-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.decls  [Bug 3007895] Tcl_(Find|Create)HashEntry
+	* generic/tclHash.c  stub entries can never be called.
+	* generic/tclDecls.h
+
 2010-08-23  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Africa/Cairo:
