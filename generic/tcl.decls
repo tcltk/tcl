@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.176 2010/08/14 17:13:02 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.177 2010/08/24 06:17:55 nijtmans Exp $
 
 library tcl
 
@@ -1495,11 +1495,11 @@ declare 420 generic {
 	    const Tcl_UniChar *uniPattern, int nocase)
 }
 declare 421 generic {
-    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const char *key)
+    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
 }
 declare 422 generic {
     Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
-	    const char *key, int *newPtr)
+	    const void *key, int *newPtr)
 }
 declare 423 generic {
     void Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr, int keyType,
