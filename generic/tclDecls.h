@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.181 2010/08/21 16:30:26 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.182 2010/08/24 06:17:55 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1214,10 +1214,10 @@ EXTERN int		Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
 				const Tcl_UniChar *uniPattern, int nocase);
 /* 421 */
 EXTERN Tcl_HashEntry *	Tcl_FindHashEntry(Tcl_HashTable *tablePtr,
-				const char *key);
+				const void *key);
 /* 422 */
 EXTERN Tcl_HashEntry *	Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
-				const char *key, int *newPtr);
+				const void *key, int *newPtr);
 /* 423 */
 EXTERN void		Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr,
 				int keyType, const Tcl_HashKeyType *typePtr);
@@ -2268,8 +2268,8 @@ typedef struct TclStubs {
     int (*tcl_IsChannelExisting) (const char *channelName); /* 418 */
     int (*tcl_UniCharNcasecmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned long numChars); /* 419 */
     int (*tcl_UniCharCaseMatch) (const Tcl_UniChar *uniStr, const Tcl_UniChar *uniPattern, int nocase); /* 420 */
-    Tcl_HashEntry * (*tcl_FindHashEntry) (Tcl_HashTable *tablePtr, const char *key); /* 421 */
-    Tcl_HashEntry * (*tcl_CreateHashEntry) (Tcl_HashTable *tablePtr, const char *key, int *newPtr); /* 422 */
+    Tcl_HashEntry * (*tcl_FindHashEntry) (Tcl_HashTable *tablePtr, const void *key); /* 421 */
+    Tcl_HashEntry * (*tcl_CreateHashEntry) (Tcl_HashTable *tablePtr, const void *key, int *newPtr); /* 422 */
     void (*tcl_InitCustomHashTable) (Tcl_HashTable *tablePtr, int keyType, const Tcl_HashKeyType *typePtr); /* 423 */
     void (*tcl_InitObjHashTable) (Tcl_HashTable *tablePtr); /* 424 */
     ClientData (*tcl_CommandTraceInfo) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *procPtr, ClientData prevClientData); /* 425 */
