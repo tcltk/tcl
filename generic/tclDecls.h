@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.182 2010/08/24 06:17:55 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.183 2010/08/25 01:00:10 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1356,7 +1356,7 @@ EXTERN Tcl_Obj *	Tcl_FSNewNativePath(
 				const Tcl_Filesystem *fromFilesystem,
 				ClientData clientData);
 /* 469 */
-EXTERN const char *	TclFSGetNativePath(Tcl_Obj *pathPtr);
+EXTERN const void *	Tcl_FSGetNativePath(Tcl_Obj *pathPtr);
 /* 470 */
 EXTERN Tcl_Obj *	Tcl_FSFileSystemInfo(Tcl_Obj *pathPtr);
 /* 471 */
@@ -1810,8 +1810,6 @@ EXTERN void*		Tcl_FindSymbol(Tcl_Interp *interp,
 /* 629 */
 EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
 				Tcl_LoadHandle handlePtr);
-/* 630 */
-EXTERN const void *	Tcl_FSGetNativePath(Tcl_Obj *pathPtr);
 
 typedef struct TclStubHooks {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2316,7 +2314,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_FSGetTranslatedPath) (Tcl_Interp *interp, Tcl_Obj *pathPtr); /* 466 */
     int (*tcl_FSEvalFile) (Tcl_Interp *interp, Tcl_Obj *fileName); /* 467 */
     Tcl_Obj * (*tcl_FSNewNativePath) (const Tcl_Filesystem *fromFilesystem, ClientData clientData); /* 468 */
-    const char * (*tclFSGetNativePath) (Tcl_Obj *pathPtr); /* 469 */
+    const void * (*tcl_FSGetNativePath) (Tcl_Obj *pathPtr); /* 469 */
     Tcl_Obj * (*tcl_FSFileSystemInfo) (Tcl_Obj *pathPtr); /* 470 */
     Tcl_Obj * (*tcl_FSPathSeparator) (Tcl_Obj *pathPtr); /* 471 */
     Tcl_Obj * (*tcl_FSListVolumes) (void); /* 472 */
@@ -2477,7 +2475,6 @@ typedef struct TclStubs {
     int (*tcl_LoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *const symv[], int flags, void *procPtrs, Tcl_LoadHandle *handlePtr); /* 627 */
     void* (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
-    const void * (*tcl_FSGetNativePath) (Tcl_Obj *pathPtr); /* 630 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3448,8 +3445,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FSEvalFile) /* 467 */
 #define Tcl_FSNewNativePath \
 	(tclStubsPtr->tcl_FSNewNativePath) /* 468 */
-#define TclFSGetNativePath \
-	(tclStubsPtr->tclFSGetNativePath) /* 469 */
+#define Tcl_FSGetNativePath \
+	(tclStubsPtr->tcl_FSGetNativePath) /* 469 */
 #define Tcl_FSFileSystemInfo \
 	(tclStubsPtr->tcl_FSFileSystemInfo) /* 470 */
 #define Tcl_FSPathSeparator \
@@ -3770,8 +3767,6 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FindSymbol) /* 628 */
 #define Tcl_FSUnloadFile \
 	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
-#define Tcl_FSGetNativePath \
-	(tclStubsPtr->tcl_FSGetNativePath) /* 630 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

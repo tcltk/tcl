@@ -3,6 +3,9 @@
 	* generic/tcl.decls  [Bug 3007895] Tcl_(Find|Create)HashEntry
 	* generic/tclHash.c  stub entries can never be called.
 	* generic/tclDecls.h
+	* generic/tclStubInit.c [Patch 2994165]: Change signature of
+	Tcl_FSGetNativePath and TclpDeleteFile follow-up: move
+	stub entry back to original location.
 
 2010-08-23  Kevin B. Kenny  <kennykb@acm.org>
 
