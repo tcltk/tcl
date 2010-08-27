@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.51 2010/08/24 18:10:09 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.52 2010/08/27 14:29:45 dgp Exp $
 
 library tcl
 
@@ -1671,7 +1671,7 @@ declare 468 generic {
 	    ClientData clientData)
 }
 declare 469 generic {
-    const char *TclFSGetNativePath(Tcl_Obj *pathPtr)
+    const void *Tcl_FSGetNativePath(Tcl_Obj *pathPtr)
 }
 declare 470 generic {
     Tcl_Obj *Tcl_FSFileSystemInfo(Tcl_Obj *pathPtr)
@@ -2317,10 +2317,6 @@ declare 628 generic {
 }
 declare 629 generic {
     int Tcl_FSUnloadFile(Tcl_Interp *interp, Tcl_LoadHandle handlePtr)
-}
-
-declare 630 generic {
-    const void *Tcl_FSGetNativePath(Tcl_Obj *pathPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
