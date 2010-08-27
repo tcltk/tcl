@@ -8379,7 +8379,7 @@ else
 
 fi
 
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
