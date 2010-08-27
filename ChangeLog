@@ -1,3 +1,11 @@
+2010-08-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/Makefile.in (VC_MANIFEST_EMBED_DLL VC_MANIFEST_EMBED_EXE):
+	* win/configure, win/configure.in, win/tcl.m4: SC_EMBED_MANIFEST
+	macro and --enable-embedded-manifest configure arg added to
+	support manifest embedding where we know the magic.  Help prevents
+	DLL hell with MSVC8+.
+
 2010-08-24  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.9 TAGGED FOR RELEASE ***
