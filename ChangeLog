@@ -1,6 +1,6 @@
 2010-08-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* unix/tcl.m4: SHLIB_LD_LIBS='${LIBS}' for OSF1-V*.
+	* unix/configure, unix/tcl.m4: SHLIB_LD_LIBS='${LIBS}' for OSF1-V*.
 	Add /usr/lib64 to set of auto-search dirs. [Bug 1230554]
 	(SC_PATH_X): Correct syntax error when xincludes not found.
 
