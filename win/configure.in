@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.122 2010/04/30 21:15:42 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.123 2010/08/27 00:50:51 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -360,6 +360,12 @@ AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 SC_ENABLE_SYMBOLS
 
 TCL_DBGX=${DBGX}
+
+#--------------------------------------------------------------------
+# Embed the manifest if we can determine how
+#--------------------------------------------------------------------
+
+SC_EMBED_MANIFEST
 
 #------------------------------------------------------------------------
 # tclConfig.sh refers to this by a different name
