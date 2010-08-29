@@ -1,3 +1,8 @@
+2010-08-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/dict.n: [Bug 3046999]: Corrected cross reference to array
+	manpage to refer to (correct) existing subcommand.
+
 2010-08-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure, unix/tcl.m4: SHLIB_LD_LIBS='${LIBS}' for OSF1-V*.
