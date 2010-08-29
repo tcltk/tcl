@@ -1,3 +1,8 @@
+2010-08-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/dict.n: [Bug 3046999]: Corrected cross reference to array
+	manpage to refer to (correct) existing subcommand.
+
 2010-08-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure, unix/tcl.m4: SHLIB_LD_LIBS='${LIBS}' for OSF1-V*.
@@ -6,18 +11,18 @@
 
 	* win/Makefile.in (VC_MANIFEST_EMBED_DLL VC_MANIFEST_EMBED_EXE):
 	* win/configure, win/configure.in, win/tcl.m4: SC_EMBED_MANIFEST
-	macro and --enable-embedded-manifest configure arg added to
-	support manifest embedding where we know the magic.  Help prevents
-	DLL hell with MSVC8+.
+	macro and --enable-embedded-manifest configure arg added to support
+	manifest embedding where we know the magic.  Help prevents DLL hell
+	with MSVC8+.
 
 2010-08-24  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.decls  [Bug 3007895] Tcl_(Find|Create)HashEntry
-	* generic/tclHash.c  stub entries can never be called.
-	* generic/tclDecls.h
-	* generic/tclStubInit.c [Patch 2994165]: Change signature of
-	Tcl_FSGetNativePath and TclpDeleteFile follow-up: move
-	stub entry back to original location.
+	* generic/tcl.decls: [Bug 3007895]: Tcl_(Find|Create)HashEntry
+	* generic/tclHash.c: stub entries can never be called.
+	* generic/tclDecls.h:
+	* generic/tclStubInit.c: [Patch 2994165]: Change signature of
+	Tcl_FSGetNativePath and TclpDeleteFile follow-up: move stub entry back
+	to original location.
 
 2010-08-23  Kevin B. Kenny  <kennykb@acm.org>
 
@@ -26,21 +31,21 @@
 
 2010-08-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclBasic.c   [Patch 3009403]: Signature of Tcl_GetHashKey,
+	* generic/tclBasic.c:  [Patch 3009403]: Signature of Tcl_GetHashKey,
 	* generic/tclBinary.c: Tcl_(Create|Find)HashEntry follow-up:
-	* generic/tclCmdIL.c   Remove many type casts which are no longer
-	* generic/tclCompile.c necessary as a result of this signature change.
-	* generic/tclDictObj.c
-	* generic/tclEncoding.c
-	* generic/tclExecute.c
-	* generic/tclInterp.c
-	* generic/tclIOCmd.c
-	* generic/tclObj.c
-	* generic/tclProc.c
-	* generic/tclTest.c
-	* generic/tclTrace.c
-	* generic/tclUtil.c
-	* generic/tclVar.c
+	* generic/tclCmdIL.c:  Remove many type casts which are no longer
+	* generic/tclCompile.c:necessary as a result of this signature change.
+	* generic/tclDictObj.c:
+	* generic/tclEncoding.c:
+	* generic/tclExecute.c:
+	* generic/tclInterp.c:
+	* generic/tclIOCmd.c:
+	* generic/tclObj.c:
+	* generic/tclProc.c:
+	* generic/tclTest.c:
+	* generic/tclTrace.c:
+	* generic/tclUtil.c:
+	* generic/tclVar.c:
 
 2010-08-21  Donal K. Fellows  <dkf@users.sf.net>
 
