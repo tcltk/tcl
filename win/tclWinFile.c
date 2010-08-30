@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.107 2010/04/22 11:40:32 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.108 2010/08/30 09:19:38 nijtmans Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -224,7 +224,7 @@ WinLink(
     const TCHAR *linkTargetPath,
     int linkAction)
 {
-    TCHAR tempFileName[MAX_PATH*2];
+    TCHAR tempFileName[MAX_PATH];
     TCHAR *tempFilePart;
     DWORD attr;
 
@@ -345,7 +345,7 @@ static Tcl_Obj *
 WinReadLink(
     const TCHAR *linkSourcePath)
 {
-    TCHAR tempFileName[MAX_PATH*2];
+    TCHAR tempFileName[MAX_PATH];
     TCHAR *tempFilePart;
     DWORD attr;
 
@@ -1946,7 +1946,7 @@ TclpGetCwd(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name of current directory. */
 {
-    TCHAR buffer[MAX_PATH*2];
+    TCHAR buffer[MAX_PATH];
     char *p;
 
     if (tclWinProcs->getCurrentDirectoryProc(MAX_PATH, buffer) == 0) {
@@ -2193,7 +2193,7 @@ NativeDev(
 {
     int dev;
     Tcl_DString ds;
-    TCHAR nativeFullPath[MAX_PATH*2];
+    TCHAR nativeFullPath[MAX_PATH];
     TCHAR *nativePart;
     const char *fullPath;
 
@@ -2367,7 +2367,7 @@ ClientData
 TclpGetNativeCwd(
     ClientData clientData)
 {
-    TCHAR buffer[MAX_PATH*2];
+    TCHAR buffer[MAX_PATH];
 
     if (tclWinProcs->getCurrentDirectoryProc(MAX_PATH, buffer) == 0) {
 	TclWinConvertError(GetLastError());
@@ -2485,7 +2485,7 @@ TclpFilesystemPathType(
 {
 #define VOL_BUF_SIZE 32
     int found;
-    TCHAR volType[VOL_BUF_SIZE*2];
+    TCHAR volType[VOL_BUF_SIZE];
     char *firstSeparator;
     const char *path;
     Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
