@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.211 2010/08/18 22:33:27 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.212 2010/08/30 14:02:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -313,18 +313,7 @@ Tcl_PushCallFrame(
     framePtr->compiledLocals = NULL;
     framePtr->clientData = NULL;
     framePtr->localCachePtr = NULL;
-
-    /*
-     * Record the top of the callback stack, so that tailcall can identify
-     * the spot where to splice the new command.
-     */
-
-    if (iPtr->execEnvPtr) {
-        framePtr->wherePtr = TOP_CB(interp);
-    } else {
-        framePtr->wherePtr = NULL;
-    }
-    
+    framePtr->tailcallPtr = NULL;
     
     /*
      * Push the new call frame onto the interpreter's stack of procedure call
@@ -403,6 +392,10 @@ Tcl_PopCallFrame(
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
+
+    if (framePtr->tailcallPtr) {
+        TclSpliceTailcall(interp, framePtr->tailcallPtr);
+    }
 }
 
 /*
