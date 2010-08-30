@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: PkgRequire.3,v 1.13 2009/11/27 14:35:10 dkf Exp $
+'\" RCS: @(#) $Id: PkgRequire.3,v 1.14 2010/08/30 13:56:22 nijtmans Exp $
 '\" 
 .so man.macros
 .TH Tcl_PkgRequire 3 7.5 Tcl "Tcl Library Procedures"
@@ -52,10 +52,11 @@ acceptable as long as they have the same major version number
 as \fIversion\fR.
 .AP ClientData clientData in
 Arbitrary value to be associated with the package.
-.AP ClientData *clientDataPtr out
+.AP void *clientDataPtr out
 Pointer to place to store the value associated with the matching
 package. It is only changed if the pointer is not NULL and the
-function completed successfully.
+function completed successfully. The storage can be any pointer
+type with the same size as ClientData.
 .AP int objc in
 Number of requirements.
 .AP Tcl_Obj* objv[] in
