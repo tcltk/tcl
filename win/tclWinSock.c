@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.72 2010/05/11 14:47:12 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.73 2010/08/30 09:19:37 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -2424,7 +2424,7 @@ InitializeHostName(
     int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    TCHAR tbuf[(MAX_COMPUTERNAME_LENGTH + 1)*2];
+    TCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD length = MAX_COMPUTERNAME_LENGTH + 1;
     Tcl_DString ds;
 
