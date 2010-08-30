@@ -1,3 +1,12 @@
+2010-08-30  Miguel Sofer  <msofer@users.sf.net>
+	* generic/tclBasic.c:    New implementation for [tailcall]:
+	* generic/tclCmdAH.c:    it now schedules the command and returns 
+	* generic/tclCmdMZ.c:    TCL_RETURN. This fixes all issues with
+	* generic/tclExecute.c:  [catch] and [try] - [Bug 3046594],  
+	* generic/tclInt.h:      [Bug 3047235] and [Bug 3048771]. Thanks
+	* generic/tclNamesp.c:   dgp for exploring the dark corners. 
+	* tests/tailcall.test:   More thorough testing is required.
+
 2010-08-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/Makefile.in:   [Freq 2965056]: Windows build with -DUNICODE

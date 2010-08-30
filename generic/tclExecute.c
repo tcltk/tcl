@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.492 2010/08/22 18:53:26 nijtmans Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.493 2010/08/30 14:02:09 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2900,25 +2900,6 @@ TclExecuteByteCode(
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 	TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
-
-	/*
-	 * If the CallFrame is marked as tailcalling, keep tailcalling
-	 */
-
-	if (iPtr->varFramePtr->isProcCallFrame & FRAME_TAILCALLING) {
-	    if (catchTop == initCatchTop) {
-		goto abnormalReturn;
-	    }
-
-	    iPtr->varFramePtr->isProcCallFrame &= ~FRAME_TAILCALLING;
-	    TclRemoveTailcall(interp);
-	    Tcl_SetResult(interp,
-		    "tailcall called from within a catch environment",
-		    TCL_STATIC);
-	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
-	    pc--;
-	    goto gotError;
-	}
 
 	if (iPtr->execEnvPtr->rewind) {
 	    TRESULT = TCL_ERROR;
