@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2007 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.42 2010/07/01 21:28:16 nijtmans Exp $
+# RCS: @(#) $Id: rules.vc,v 1.43 2010/08/30 09:19:38 nijtmans Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -130,7 +130,7 @@ DEBUGFLAGS     = $(DEBUGFLAGS) -RTC1
 DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 !endif
 
-COMPILERFLAGS  =-W3
+COMPILERFLAGS  =-W3 -DUNICODE -D_UNICODE
 
 # In v13 -GL and -YX are incompatible.
 !if [nmakehlp -c -YX]
