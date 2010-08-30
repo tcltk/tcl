@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.56 2010/08/27 14:29:45 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.57 2010/08/30 14:11:01 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -44,7 +44,7 @@ EXTERN int		Tcl_PkgProvideEx(Tcl_Interp *interp,
 /* 1 */
 EXTERN CONST84_RETURN char * Tcl_PkgRequireEx(Tcl_Interp *interp,
 				const char *name, const char *version,
-				int exact, ClientData *clientDataPtr);
+				int exact, void *clientDataPtr);
 /* 2 */
 EXTERN void		Tcl_Panic(const char *format, ...);
 /* 3 */
@@ -817,7 +817,7 @@ EXTERN CONST84_RETURN char * Tcl_PkgPresent(Tcl_Interp *interp,
 /* 272 */
 EXTERN CONST84_RETURN char * Tcl_PkgPresentEx(Tcl_Interp *interp,
 				const char *name, const char *version,
-				int exact, ClientData *clientDataPtr);
+				int exact, void *clientDataPtr);
 /* 273 */
 EXTERN int		Tcl_PkgProvide(Tcl_Interp *interp, const char *name,
 				const char *version);
@@ -1648,8 +1648,7 @@ EXTERN const char *	Tcl_GetEncodingNameFromEnvironment(
 /* 573 */
 EXTERN int		Tcl_PkgRequireProc(Tcl_Interp *interp,
 				const char *name, int objc,
-				Tcl_Obj *const objv[],
-				ClientData *clientDataPtr);
+				Tcl_Obj *const objv[], void *clientDataPtr);
 /* 574 */
 EXTERN void		Tcl_AppendObjToErrorInfo(Tcl_Interp *interp,
 				Tcl_Obj *objPtr);
@@ -1822,7 +1821,7 @@ typedef struct TclStubs {
     const struct TclStubHooks *hooks;
 
     int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, ClientData clientData); /* 0 */
-    CONST84_RETURN char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, ClientData *clientDataPtr); /* 1 */
+    CONST84_RETURN char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
     void (*tcl_Panic) (const char *format, ...); /* 2 */
     char * (*tcl_Alloc) (unsigned int size); /* 3 */
     void (*tcl_Free) (char *ptr); /* 4 */
@@ -2117,7 +2116,7 @@ typedef struct TclStubs {
     char * (*tcl_HashStats) (Tcl_HashTable *tablePtr); /* 269 */
     CONST84_RETURN char * (*tcl_ParseVar) (Tcl_Interp *interp, const char *start, CONST84 char **termPtr); /* 270 */
     CONST84_RETURN char * (*tcl_PkgPresent) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 271 */
-    CONST84_RETURN char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, ClientData *clientDataPtr); /* 272 */
+    CONST84_RETURN char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 272 */
     int (*tcl_PkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
     CONST84_RETURN char * (*tcl_PkgRequire) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 274 */
     void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
@@ -2418,7 +2417,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_GetEncodingSearchPath) (void); /* 570 */
     int (*tcl_SetEncodingSearchPath) (Tcl_Obj *searchPath); /* 571 */
     const char * (*tcl_GetEncodingNameFromEnvironment) (Tcl_DString *bufPtr); /* 572 */
-    int (*tcl_PkgRequireProc) (Tcl_Interp *interp, const char *name, int objc, Tcl_Obj *const objv[], ClientData *clientDataPtr); /* 573 */
+    int (*tcl_PkgRequireProc) (Tcl_Interp *interp, const char *name, int objc, Tcl_Obj *const objv[], void *clientDataPtr); /* 573 */
     void (*tcl_AppendObjToErrorInfo) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 574 */
     void (*tcl_AppendLimitedToObj) (Tcl_Obj *objPtr, const char *bytes, int length, int limit, const char *ellipsis); /* 575 */
     Tcl_Obj * (*tcl_Format) (Tcl_Interp *interp, const char *format, int objc, Tcl_Obj *const objv[]); /* 576 */

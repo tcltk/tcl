@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tailcall.test,v 1.1.2.9 2010/08/19 01:57:44 dgp Exp $
+# RCS: @(#) $Id: tailcall.test,v 1.1.2.10 2010/08/30 14:11:02 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -384,6 +384,20 @@ test tailcall-11b {tailcall and uplevel} -setup {
     unset -nocomplain ::x
 } -match glob -result *tailcall* -returnCodes error
 
+test tailcall-11c {tailcall and uplevel} -setup {
+    proc a {} {
+	uplevel 1 {tailcall lappend ::x 2}
+	set ::x 1
+    }
+    proc b {} {set ::x 0; a; lappend ::x 3}
+} -body {
+    list [b] $::x
+} -cleanup {
+    rename a {}
+    rename b {}
+    unset -nocomplain ::x
+} -result {{0 3 2} {0 3 2}}
+
 test tailcall-12.1 {[Bug 2649975]} -setup {
     proc dump {{text {}}} {
 	set text [uplevel 1 [list subst $text]]
@@ -545,47 +559,77 @@ test tailcall-12.2 {[Bug 2649975]} -setup {
 1: exiting from foo's alpha
 }
 
-test tailcall-12.3a {[Bug 2695587]} {
+test tailcall-12.3a0 {[Bug 2695587]} -body {
     apply {{} {
-	list [catch [list tailcall foo] msg opt] $msg [errorcode $opt]
+	catch [list tailcall foo]
     }}
-} {1 {tailcall called from within a catch environment} {TCL TAILCALL ILLEGAL}}
+} -returnCodes 1 -result {invalid command name "foo"}
 
-test tailcall-12.3b {[Bug 2695587]} {
+test tailcall-12.3a1 {[Bug 2695587]} -body {
     apply {{} {
-	list [catch {tailcall foo} msg opt] $msg [errorcode $opt]
+	catch [list tailcall foo]
+	tailcall
     }}
-} {1 {tailcall called from within a catch environment} {TCL TAILCALL ILLEGAL}}
+} -result {}
 
-test tailcall-12.3c {[Bug 3046594]} {
+test tailcall-12.3a2 {[Bug 2695587]} -body {
     apply {{} {
-	list [[subst catch] {tailcall foo} msg opt] $msg [errorcode $opt]
+	catch [list tailcall foo]
+	tailcall moo
     }}
-} {1 {tailcall called from within a catch environment} {TCL TAILCALL ILLEGAL}}
+} -returnCodes 1 -result {invalid command name "moo"}
 
-test tailcall-12.3d {[Bug 3046594]} {
+test tailcall-12.3a3 {[Bug 2695587]} -body {
+    set x 0
     apply {{} {
-	list [[subst catch] [list tailcall foo] msg opt] $msg [errorcode $opt]
+	catch [list tailcall foo]
+	tailcall lappend x 1
     }}
-} {1 {tailcall called from within a catch environment} {TCL TAILCALL ILLEGAL}}
-
-test tailcall-13.1 {tailcall and coroutine} -setup {
-    set lambda {i {
-	if {$i == 1} {
-	    depthDiff
-	}
-	if {[incr i] > 10} {
-	    return [depthDiff]
-	}
-	tailcall coroutine foo ::apply $::lambda $i
-    }}
-} -body {
-    coroutine moo ::apply $::lambda 0
+    set x
 } -cleanup {
-    unset lambda 
-} -result {0 0 0 0 0 0}
+    unset x
+} -result {0 1} 
 
-test tailcall-14.1 {directly tailcalling the tailcall command is ok} {
+test tailcall-12.3b0 {[Bug 2695587]} -body {
+    apply {{} {
+	set catch catch
+	$catch [list tailcall foo]
+    }}
+} -returnCodes 1 -result {invalid command name "foo"}
+
+test tailcall-12.3b1 {[Bug 2695587]} -body {
+    apply {{} {
+	set catch catch
+	$catch [list tailcall foo]
+	tailcall
+    }}
+} -result {}
+
+test tailcall-12.3b2 {[Bug 2695587]} -body {
+    apply {{} {
+	set catch catch
+	$catch [list tailcall foo]
+	tailcall moo
+    }}
+} -returnCodes 1 -result {invalid command name "moo"}
+
+test tailcall-12.3b3 {[Bug 2695587]} -body {
+    set x 0
+    apply {{} {
+	set catch catch
+	$catch [list tailcall foo]
+	tailcall lappend x 1
+    }}
+    set x
+} -cleanup {
+    unset x
+} -result {0 1} 
+
+# MORE VARIANTS MISSING: bc'ed caught script vs (bc'ed, not-bc'ed)
+# catch. Actually superfluous now, as tailcall just returns TCL_RETURN so that
+# standard catch behaviour is required.
+
+test tailcall-13.1 {directly tailcalling the tailcall command is ok} {
     list [catch {
 	apply {{} {
 	    apply {{} {
@@ -596,7 +640,7 @@ test tailcall-14.1 {directly tailcalling the tailcall command is ok} {
 	}}
     } msg opt] $msg [errorcode $opt]
 } {0 ok NONE}
-test tailcall-14.2 {indirectly tailcalling the tailcall command is ok} {
+test tailcall-13.2 {indirectly tailcalling the tailcall command is ok} {
     list [catch {
 	apply {{} {
 	    apply {{} {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.19 2010/03/08 14:34:04 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.20 2010/08/30 14:11:02 dgp Exp $
  */
 
 /*
@@ -84,7 +84,7 @@ Tcl_InitStubs(
     int exact)
 {
     const char *actualVersion = NULL;
-    ClientData pkgData = NULL;
+    const TclStubs *stubsPtr;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -97,7 +97,7 @@ Tcl_InitStubs(
 	return NULL;
     }
 
-    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
+    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 0, &stubsPtr);
     if (actualVersion == NULL) {
 	return NULL;
     }
@@ -127,7 +127,7 @@ Tcl_InitStubs(
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs *) pkgData;
+    tclStubsPtr = stubsPtr;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;

@@ -9,8 +9,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.24 2010/05/14 13:31:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.25 2010/08/30 14:11:02 dgp Exp $
  */
+
+/* TODO: This file does not compile in UNICODE mode.
+ * See [Freq 2965056]: Windows build with -DUNICODE
+ */
+#undef UNICODE
+#undef _UNICODE
 
 #undef STATIC_BUILD
 #ifndef USE_TCL_STUBS

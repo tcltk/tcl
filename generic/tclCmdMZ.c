@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.80 2010/08/19 01:57:43 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.81 2010/08/30 14:11:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4274,13 +4274,11 @@ TclNRTryObjCmd(
     }
 
     /*
-     * Execute the body; block tailcalling out of it.
+     * Execute the body.
      */
 
     Tcl_NRAddCallback(interp, TryPostBody, handlersObj, finallyObj,
 	    (ClientData)objv, INT2PTR(objc));
-    TclNRAddCallback(interp, TclNRBlockTailcall, NULL, NULL, NULL,
-	    NULL);    
     return TclNREvalObjEx(interp, bodyObj, 0,
 	    ((Interp *) interp)->cmdFramePtr, 1);
 }

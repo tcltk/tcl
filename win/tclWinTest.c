@@ -8,8 +8,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.9.2.12 2009/11/19 16:51:27 dgp Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.9.2.13 2010/08/30 14:11:02 dgp Exp $
  */
+
+/* TODO: This file does not compile in UNICODE mode.
+ * See [Freq 2965056]: Windows build with -DUNICODE
+ */
+#undef UNICODE
+#undef _UNICODE
 
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS

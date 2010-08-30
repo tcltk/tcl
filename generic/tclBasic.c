@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.177 2010/08/23 01:46:39 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.178 2010/08/30 14:11:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -167,10 +167,6 @@ static Tcl_NRPostProc	YieldToCallback;
 
 static void	        ClearTailcall(Tcl_Interp *interp,
 			    struct TEOV_callback *tailcallPtr);
-static int              SpliceTailcall(Tcl_Interp *interp,
-	                    struct TEOV_callback *tailcallPtr,
-                            int skip);
-
 
 MODULE_SCOPE const TclStubs tclStubs;
 
@@ -8270,30 +8266,10 @@ Tcl_NRCmdSwap(
  * FIXME NRE!
  */
 
-void TclRemoveTailcall(
-    Tcl_Interp *interp)
-{
-    TEOV_callback *runPtr, *tailcallPtr;
-    
-    for (runPtr = TOP_CB(interp); runPtr->nextPtr; runPtr = runPtr->nextPtr) {
-        if (runPtr->nextPtr->procPtr == NRTailcallEval) {
-            break;
-        }
-    }
-    if (!runPtr->nextPtr) {
-        Tcl_Panic("TclRemoveTailcall did not find a tailcall");
-    }
-
-    tailcallPtr = runPtr->nextPtr;
-    runPtr->nextPtr = tailcallPtr->nextPtr;
-    ClearTailcall(interp, tailcallPtr);
-}
-
-static int
-SpliceTailcall(
+void
+TclSpliceTailcall(
     Tcl_Interp *interp,
-    TEOV_callback *tailcallPtr,
-    int skip)
+    TEOV_callback *tailcallPtr)
 {
     /*
      * Find the splicing spot: right before the NRCommand of the thing
@@ -8301,53 +8277,19 @@ SpliceTailcall(
      * (used by command redirectors).
      */
 
-    Interp *iPtr = (Interp *) interp;
     TEOV_callback *runPtr;
 
-    runPtr = TOP_CB(interp);
-    if (skip) {
-        while (runPtr && (runPtr != iPtr->varFramePtr->wherePtr)) {
-            if ((runPtr->procPtr) == TclNRBlockTailcall) {
-                ClearTailcall(interp, tailcallPtr);
-                Tcl_SetResult(interp,"tailcall called from within a catch environment",
-                        TCL_STATIC);
-                Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL",
-                        NULL);
-                return TCL_ERROR;
-            }
-            runPtr = runPtr->nextPtr;
-        }
-    }
-
-    restart:
-    for (; runPtr; runPtr = runPtr->nextPtr) {
+    for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
 	if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
             break;
         }
     }
     if (!runPtr) {
-	/*
-	 * If we are tailcalling out of a coroutine, the splicing spot is in
-	 * the caller's execEnv: go find it!
-	 */
-
-	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-
-	if (corPtr) {
-            runPtr = corPtr->callerEEPtr->callbackPtr;
-	    goto restart;
-	}
-        
-        Tcl_SetResult(interp,
-                "tailcall cannot find the right splicing spot: should not happen!",
-                TCL_STATIC);
-        Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "UNKNOWN", NULL);
-        return TCL_ERROR;
+        Tcl_Panic("tailcall cannot find the right splicing spot: should not happen!");
     }
 
     tailcallPtr->nextPtr = runPtr->nextPtr;
     runPtr->nextPtr = tailcallPtr;
-    return TCL_OK;
 }
 
 int
@@ -8358,18 +8300,13 @@ TclNRTailcallObjCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *listPtr, *nsObjPtr;
-    Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
-    Tcl_Namespace *ns1Ptr;
-    TEOV_callback *tailcallPtr;
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
+    if (objc < 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?command? ?arg ...?");
 	return TCL_ERROR;
     }
 
-    if (!iPtr->varFramePtr->isProcCallFrame ||		/* is not a body */
-	    (iPtr->framePtr != iPtr->varFramePtr)) {	/* or is upleveled */
+    if (!iPtr->varFramePtr->isProcCallFrame) {	/* or is upleveled */
         Tcl_SetResult(interp,
                 "tailcall can only be called from a proc or lambda",
                 TCL_STATIC);
@@ -8377,33 +8314,45 @@ TclNRTailcallObjCmd(
 	return TCL_ERROR;
     }
 
-    listPtr = Tcl_NewListObj(objc-1, objv+1);
-    Tcl_IncrRefCount(listPtr);
+    /*
+     * Invocation without args just clears a scheduled tailcall; invocation
+     * with an argument replaces any previously scheduled tailcall.
+     */
 
-    nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
-    if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
-	    || (nsPtr != ns1Ptr)) {
-	Tcl_Panic("Tailcall failed to find the proper namespace");
+    if (iPtr->varFramePtr->tailcallPtr) {
+        ClearTailcall(interp, iPtr->varFramePtr->tailcallPtr);
+        iPtr->varFramePtr->tailcallPtr = NULL;
     }
-    Tcl_IncrRefCount(nsObjPtr);
 
     /*
      * Create the callback to actually evaluate the tailcalled
-     * command, then pass it to tebc so that it is stashed at the proper
-     * place. Being lazy: exploit the TclNRAddCallBack macro to build the
-     * callback.
+     * command, then set it in the varFrame so that PopCallFrame can use it
+     * at the proper time. Being lazy: exploit the TclNRAddCallBack macro to
+     * build the callback.
      */
 
-    TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
-    tailcallPtr = TOP_CB(interp);
-    TOP_CB(interp) = tailcallPtr->nextPtr;
+    if (objc > 1) {
+        Tcl_Obj *listPtr, *nsObjPtr;
+        Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
+        Tcl_Namespace *ns1Ptr;
+        TEOV_callback *tailcallPtr;
+        
+        listPtr = Tcl_NewListObj(objc-1, objv+1);
+        Tcl_IncrRefCount(listPtr);
 
-    if (SpliceTailcall(interp, tailcallPtr, 1) == TCL_ERROR) {
-        return TCL_ERROR;
+        nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
+        if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
+                || (nsPtr != ns1Ptr)) {
+            Tcl_Panic("Tailcall failed to find the proper namespace");
+        }
+        Tcl_IncrRefCount(nsObjPtr);
+
+        TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
+        tailcallPtr = TOP_CB(interp);
+        TOP_CB(interp) = tailcallPtr->nextPtr;
+        iPtr->varFramePtr->tailcallPtr = tailcallPtr;
     }
-    
-    iPtr->varFramePtr->isProcCallFrame |= FRAME_TAILCALLING;
-    return TCL_OK;
+    return TCL_RETURN;
 }
 
 int
@@ -8461,15 +8410,6 @@ ClearTailcall(
 {
     TailcallCleanup(tailcallPtr->data, interp, TCL_OK);
     TCLNR_FREE(interp, tailcallPtr);
-}
-
-int
-TclNRBlockTailcall(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    return result;
 }
 
 
@@ -8640,7 +8580,7 @@ YieldToCallback(
     cbPtr = TOP_CB(interp);
     TOP_CB(interp) = cbPtr->nextPtr;
 
-    SpliceTailcall(interp, cbPtr, 0);
+    TclSpliceTailcall(interp, cbPtr);
     return TCL_OK;
 }
 
@@ -9021,7 +8961,6 @@ TclNRCoroutineObjCmd(
 
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
-    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     iPtr->lookupNsPtr = nsPtr;
     TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
 

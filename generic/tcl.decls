@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.52 2010/08/27 14:29:45 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.53 2010/08/30 14:11:01 dgp Exp $
 
 library tcl
 
@@ -35,7 +35,7 @@ declare 0 generic {
 declare 1 generic {
     CONST84_RETURN char *Tcl_PkgRequireEx(Tcl_Interp *interp,
 	    const char *name, const char *version, int exact,
-	    ClientData *clientDataPtr)
+	    void *clientDataPtr)
 }
 declare 2 generic {
     void Tcl_Panic(const char *format, ...)
@@ -966,7 +966,7 @@ declare 271 generic {
 declare 272 generic {
     CONST84_RETURN char *Tcl_PkgPresentEx(Tcl_Interp *interp,
 	    const char *name, const char *version, int exact,
-	    ClientData *clientDataPtr)
+	    void *clientDataPtr)
 }
 declare 273 generic {
     int Tcl_PkgProvide(Tcl_Interp *interp, const char *name,
@@ -2085,7 +2085,7 @@ declare 572 generic {
 # TIP#268 (extended version numbers and requirements) akupries
 declare 573 generic {
     int Tcl_PkgRequireProc(Tcl_Interp *interp, const char *name,
-	    int objc, Tcl_Obj *const objv[], ClientData *clientDataPtr)
+	    int objc, Tcl_Obj *const objv[], void *clientDataPtr)
 }
 
 # TIP#270 (utility C routines for string formatting) dgp
