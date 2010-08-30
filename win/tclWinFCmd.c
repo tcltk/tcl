@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.63 2010/08/14 17:13:02 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.64 2010/08/30 09:19:38 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -328,8 +328,8 @@ DoRenameFile(
 	    TCHAR *nativeSrcRest, *nativeDstRest;
 	    const char **srcArgv, **dstArgv;
 	    int size, srcArgc, dstArgc;
-	    TCHAR nativeSrcPath[MAX_PATH*2];
-	    TCHAR nativeDstPath[MAX_PATH*2];
+	    TCHAR nativeSrcPath[MAX_PATH];
+	    TCHAR nativeDstPath[MAX_PATH];
 	    Tcl_DString srcString, dstString;
 	    const char *src, *dst;
 
@@ -465,7 +465,7 @@ DoRenameFile(
 
 		TCHAR *nativeRest, *nativeTmp, *nativePrefix;
 		int result, size;
-		TCHAR tempBuf[MAX_PATH*2];
+		TCHAR tempBuf[MAX_PATH];
 
 		size = tclWinProcs->getFullPathNameProc(nativeDst, MAX_PATH,
 			tempBuf, &nativeRest);
@@ -473,8 +473,7 @@ DoRenameFile(
 		    return TCL_ERROR;
 		}
 		nativeTmp = (TCHAR *) tempBuf;
-		((char *) nativeRest)[0] = '\0';
-		((char *) nativeRest)[1] = '\0';    /* In case it's Unicode. */
+		nativeRest[0] = '\0';
 
 		result = TCL_ERROR;
 		nativePrefix = (tclWinProcs->useWide)

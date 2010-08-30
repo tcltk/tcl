@@ -1,3 +1,15 @@
+2010-08-30  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in:   [Freq 2965056]: Windows build with -DUNICODE
+	* win/rules.vc:
+	* win/tclWinFCmd.c:  Make sure that allocated TCHAR arrays are
+	* win/tclWinFile.c:  always properly aligned as wchar_t, and
+	* win/tclWinPipe.c:  not bigger than necessary.
+	* win/tclWinSock.c:
+	* win/tclWinDde.c:   Those 3 files are not converted yet to be
+	* win/tclWinReg.c:   built with -DUNICODE, so add a TODO.
+	* win/tclWinTest.c:
+
 2010-08-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/dict.n: [Bug 3046999]: Corrected cross reference to array

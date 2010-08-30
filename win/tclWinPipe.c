@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.80 2010/08/04 21:37:19 hobbs Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.81 2010/08/30 09:19:38 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -196,7 +196,7 @@ static DWORD WINAPI	PipeReaderThread(LPVOID arg);
 static void		PipeSetupProc(ClientData clientData, int flags);
 static void		PipeWatchProc(ClientData instanceData, int mask);
 static DWORD WINAPI	PipeWriterThread(LPVOID arg);
-static int		TempFileName(TCHAR name[MAX_PATH*2]);
+static int		TempFileName(TCHAR name[MAX_PATH]);
 static int		WaitForRead(PipeInfo *infoPtr, int blocking);
 static void		PipeThreadActionProc(ClientData instanceData,
 			    int action);
@@ -474,7 +474,7 @@ TclWinMakeFile(
 
 static int
 TempFileName(
-    TCHAR name[MAX_PATH*2])	/* Buffer in which name for temporary file
+    TCHAR name[MAX_PATH])	/* Buffer in which name for temporary file
 				 * gets stored. */
 {
     TCHAR *prefix;
@@ -668,7 +668,7 @@ TclFile
 TclpCreateTempFile(
     const char *contents)	/* String to write into temp file, or NULL. */
 {
-    TCHAR name[MAX_PATH*2];
+    TCHAR name[MAX_PATH];
     const char *native;
     Tcl_DString dstring;
     HANDLE handle;
@@ -760,7 +760,7 @@ TclpCreateTempFile(
 Tcl_Obj *
 TclpTempFileName(void)
 {
-    TCHAR fileName[MAX_PATH*2];
+    TCHAR fileName[MAX_PATH];
 
     if (TempFileName(fileName) == 0) {
 	return NULL;
@@ -1302,7 +1302,7 @@ ApplicationType(
     IMAGE_DOS_HEADER header;
     Tcl_DString nameBuf, ds;
     const TCHAR *nativeName;
-    TCHAR nativeFullPath[MAX_PATH*2];
+    TCHAR nativeFullPath[MAX_PATH];
     static char extensions[][5] = {"", ".com", ".exe", ".bat"};
 
     /*
@@ -3099,7 +3099,7 @@ TclpOpenTemporaryFile(
     Tcl_Obj *extensionObj,
     Tcl_Obj *resultingNameObj)
 {
-    TCHAR name[MAX_PATH*2];
+    TCHAR name[MAX_PATH];
     char *namePtr;
     HANDLE handle;
     DWORD flags = FILE_ATTRIBUTE_TEMPORARY;
