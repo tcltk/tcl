@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.42 2010/05/05 22:43:46 nijtmans Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.43 2010/08/30 13:49:27 nijtmans Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -73,7 +73,7 @@ static void		AddRequirementsToDString(Tcl_DString *dstring,
 static Package *	FindPackage(Tcl_Interp *interp, const char *name);
 static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
 			    int reqc, Tcl_Obj *const reqv[],
-			    ClientData *clientDataPtr);
+			    void *clientDataPtr);
 
 /*
  * Helper macros.
@@ -212,7 +212,7 @@ Tcl_PkgRequireEx(
     int exact,			/* Non-zero means that only the particular
 				 * version given is acceptable. Zero means use
 				 * the latest compatible version. */
-    ClientData *clientDataPtr)	/* Used to return the client data for this
+    void *clientDataPtr)	/* Used to return the client data for this
 				 * package. If it is NULL then the client data
 				 * is not returned. This is unchanged if this
 				 * call fails for any reason. */
@@ -323,7 +323,7 @@ Tcl_PkgRequireProc(
 				 * version. */
     Tcl_Obj *const reqv[],	/* 0 means to use the latest version
 				 * available. */
-    ClientData *clientDataPtr)
+    void *clientDataPtr)
 {
     const char *result =
 	    PkgRequireCore(interp, name, reqc, reqv, clientDataPtr);
@@ -344,7 +344,7 @@ PkgRequireCore(
 				 * version. */
     Tcl_Obj *const reqv[],	/* 0 means to use the latest version
 				 * available. */
-    ClientData *clientDataPtr)
+    void *clientDataPtr)
 {
     Interp *iPtr = (Interp *) interp;
     Package *pkgPtr;
@@ -621,7 +621,8 @@ PkgRequireCore(
 
     if (satisfies) {
 	if (clientDataPtr) {
-	    *clientDataPtr = pkgPtr->clientData;
+		ClientData *ptr = clientDataPtr;
+	    *ptr = pkgPtr->clientData;
 	}
 	return pkgPtr->version;
     }
@@ -677,7 +678,7 @@ Tcl_PkgPresentEx(
     int exact,			/* Non-zero means that only the particular
 				 * version given is acceptable. Zero means use
 				 * the latest compatible version. */
-    ClientData *clientDataPtr)	/* Used to return the client data for this
+    void *clientDataPtr)	/* Used to return the client data for this
 				 * package. If it is NULL then the client data
 				 * is not returned. This is unchanged if this
 				 * call fails for any reason. */

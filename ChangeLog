@@ -9,6 +9,11 @@
 	* win/tclWinDde.c:   Those 3 files are not converted yet to be
 	* win/tclWinReg.c:   built with -DUNICODE, so add a TODO.
 	* win/tclWinTest.c:
+	* generic/tcl.decls:  [Patch 2997642] many type casts needed when
+	* generic/tclDecls.h: using Tcl_Pkg* API. Partly.
+	* generic/tclPkg.c:
+	* generic/tclStubLib.c: demonstration how this change can benefit code.
+	* generic/tclTomMathStubLib.c:
 
 2010-08-29  Donal K. Fellows  <dkf@users.sf.net>
 
