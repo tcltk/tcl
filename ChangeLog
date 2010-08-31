@@ -8,6 +8,7 @@
 	* generic/tclPkg.c:
 	* generic/tclBasic.c:
 	* generic/tclTomMathInterface.c:
+	* doc/PkgRequire.3
 
 2010-08-31  Andreas Kupries  <andreask@activestate.com>
 
