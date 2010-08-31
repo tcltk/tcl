@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.179 2010/08/30 13:49:27 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.180 2010/08/31 20:48:16 nijtmans Exp $
 
 library tcl
 
@@ -30,7 +30,7 @@ hooks {tclPlat tclInt tclIntPlat}
 
 declare 0 generic {
     int Tcl_PkgProvideEx(Tcl_Interp *interp, const char *name,
-	    const char *version, ClientData clientData)
+	    const char *version, const void *clientData)
 }
 declare 1 generic {
     CONST84_RETURN char *Tcl_PkgRequireEx(Tcl_Interp *interp,
