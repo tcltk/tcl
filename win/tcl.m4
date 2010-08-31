@@ -962,8 +962,10 @@ print("manifest needed")
 	# Could add 'if test -f' check, but manifest should be created
 	# in this compiler case
 	# Add in a manifest argument that may be specified
-	VC_MANIFEST_EMBED_DLL="mt.exe -nologo -manifest \[$]@.manifest $1 -outputresource:\[$]@\;2"
-	VC_MANIFEST_EMBED_EXE="mt.exe -nologo -manifest \[$]@.manifest $1 -outputresource:\[$]@\;1"
+	# XXX Needs improvement so that the test for existence accounts
+	# XXX for a provided (known) manifest
+	VC_MANIFEST_EMBED_DLL="if test -f \[$]@.manifest ; then mt.exe -nologo -manifest \[$]@.manifest $1 -outputresource:\[$]@\;2 ; fi"
+	VC_MANIFEST_EMBED_EXE="if test -f \[$]@.manifest ; then mt.exe -nologo -manifest \[$]@.manifest $1 -outputresource:\[$]@\;1 ; fi"
 	result=yes
 	if test "x$1" != x ; then
 	    result="yes ($1)"
