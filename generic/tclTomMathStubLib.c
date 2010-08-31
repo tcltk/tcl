@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathStubLib.c,v 1.2 2010/08/30 13:49:28 nijtmans Exp $
+ * RCS: @(#) $Id: tclTomMathStubLib.c,v 1.3 2010/08/31 20:48:17 nijtmans Exp $
  */
 
 /*
@@ -57,14 +57,15 @@ TclTomMathInitializeStubs(
     int exact = 0;
     const char *packageName = "tcl::tommath";
     const char *errMsg = NULL;
-    const TclTomMathStubs *stubsPtr;
+    ClientData pkgClientData = NULL;
     const char *actualVersion =
-	Tcl_PkgRequireEx(interp, packageName, version, exact, &stubsPtr);
+	Tcl_PkgRequireEx(interp, packageName, version, exact, &pkgClientData);
+    const TclTomMathStubs *stubsPtr = pkgClientData;
 
     if (actualVersion == NULL) {
 	return NULL;
     }
-    if (stubsPtr == NULL) {
+    if (pkgClientData == NULL) {
 	errMsg = "missing stub table pointer";
     } else if ((stubsPtr->tclBN_epoch)() != epoch) {
 	errMsg = "epoch number mismatch";
