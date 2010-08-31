@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.43 2010/08/30 13:49:27 nijtmans Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.44 2010/08/31 20:48:17 nijtmans Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -48,7 +48,7 @@ typedef struct Package {
 				 * exist in this interpreter yet. */
     PkgAvail *availPtr;		/* First in list of all available versions of
 				 * this package. */
-    ClientData clientData;	/* Client data. */
+    const void *clientData;	/* Client data. */
 } Package;
 
 /*
@@ -124,7 +124,7 @@ Tcl_PkgProvideEx(
 				 * available. */
     const char *name,		/* Name of package. */
     const char *version,	/* Version string for package. */
-    ClientData clientData)	/* clientdata for this package (normally used
+    const void *clientData)	/* clientdata for this package (normally used
 				 * for C callback function table) */
 {
     Package *pkgPtr;
@@ -621,7 +621,7 @@ PkgRequireCore(
 
     if (satisfies) {
 	if (clientDataPtr) {
-		ClientData *ptr = clientDataPtr;
+		const void **ptr = (const void **) clientDataPtr;
 	    *ptr = pkgPtr->clientData;
 	}
 	return pkgPtr->version;
