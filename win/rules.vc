@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2007 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.43 2010/08/30 09:19:38 nijtmans Exp $
+# RCS: @(#) $Id: rules.vc,v 1.44 2010/08/31 20:48:17 nijtmans Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -143,7 +143,7 @@ OPTIMIZATIONS  = $(OPTIMIZATIONS) -YX
 ### test for pentium errata
 !if [nmakehlp -c -QI0f]
 !message *** Compiler has 'Pentium 0x0f fix'
-COMPILERFLAGS  = $(COMPILERFLAGSS) -QI0f
+COMPILERFLAGS  = $(COMPILERFLAGS) -QI0f
 !else
 !message *** Compiler does not have 'Pentium 0x0f fix'
 !endif
