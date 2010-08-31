@@ -1,3 +1,9 @@
+2010-08-31  Andreas Kupries  <andreask@activestate.com>
+
+	* win/tcl.m4: Applied patch by Jeff fixing issues with the
+	manifest handling on Win64.
+	* win/configure: Regenerated.
+
 2010-08-30  Miguel Sofer  <msofer@users.sf.net>
 	* generic/tclBasic.c:    New implementation for [tailcall]:
 	* generic/tclCmdAH.c:    it now schedules the command and returns 
