@@ -1,27 +1,37 @@
+2010-09-01  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclExecute.c: [Bug 3057639]. Applied patch by Jeff to
+	* generic/tclVar.c: make the behaviour of lappend in bytecompiled
+	* tests/append.test: mode consistent with direct-eval and 'append'
+	* tests/appendComp.test: generally. Added tests (append*-9.*)
+	showing the difference.
+
 2010-07-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.h    [Bug 3030870] make itcl 3.x built with pre-8.6 work in 8.6
-	* generic/tclBasic.c  revert tclInt.h to what it was before, and relax the relation
-    between Tcl_CallFrame and CallFrame.
+	* generic/tclInt.h: [Bug 3030870] make itcl 3.x built with pre-8.6
+	* generic/tclBasic.c: work in 8.6 revert tclInt.h to what it was
+	before, and relax the relation between Tcl_CallFrame and
+	CallFrame.
 
 2010-07-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h   [Bug 3031278] fixed merge problem in previous commit.
+	* generic/tcl.h: [Bug 3031278] fixed merge problem in previous
+	commit.
 
 2010-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h   [Bug 3030870] make itcl 3.x built with pre-8.6 work in 8.6
-	* generic/tclInt.h
+	* generic/tcl.h: [Bug 3030870] make itcl 3.x built with pre-8.6
+	* generic/tclInt.h: work in 8.6
 
 2010-07-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h   (Backport) take over definitions of _WIN32,
+	* generic/tcl.h: (Backport) take over definitions of _WIN32,
 	DLLIMPORT, DLLEXPORT and TCL_LL_MODIFIER macros from Tcl8.5/8.6
 
 2010-06-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclPosixStr.c   [Bug 3019634] errno.h and tclWinPort.h have
-	conflicting definitions.
+	* generic/tclPosixStr.c: [Bug 3019634] errno.h and tclWinPort.h
+	have conflicting definitions.
 
 2010-06-09  Andreas Kupries  <andreask@activestate.com>
 
