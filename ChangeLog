@@ -1,12 +1,12 @@
 2010-08-31  Andreas Kupries  <andreask@activestate.com>
 
+	*** 8.5.9 TAGGED FOR RELEASE ***
+
 	* win/tcl.m4: Applied patch by Jeff fixing issues with the
 	manifest handling on Win64.
 	* win/configure: Regenerated.
 
 2010-08-29  Donal K. Fellows  <dkf@users.sf.net>
-
-	*** 8.5.9 TAGGED FOR RELEASE ***
 
 	* doc/dict.n: [Bug 3046999]: Corrected cross reference to array
 	manpage to refer to (correct) existing subcommand.
