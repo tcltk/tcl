@@ -1,5 +1,8 @@
 2010-09-01  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tools/tcltk-man2html.tcl: Improve handling of cross-links for
+	options between Ttk manual pages.
+
 	* doc/Tcl.n: Avoid nroff hazards when generating documentation.
 
 2010-08-31  Andreas Kupries  <andreask@activestate.com>
