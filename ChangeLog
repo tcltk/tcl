@@ -1,13 +1,13 @@
 2010-09-01  Donal K. Fellows  <dkf@users.sf.net>
 
+	*** 8.5.9 TAGGED FOR RELEASE ***
+
 	* tools/tcltk-man2html.tcl: Improve handling of cross-links for
 	options between Ttk manual pages.
 
 	* doc/Tcl.n: Avoid nroff hazards when generating documentation.
 
 2010-08-31  Andreas Kupries  <andreask@activestate.com>
-
-	*** 8.5.9 TAGGED FOR RELEASE ***
 
 	* win/tcl.m4: Applied patch by Jeff fixing issues with the
 	manifest handling on Win64.
