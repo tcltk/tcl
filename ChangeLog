@@ -1,3 +1,11 @@
+2010-09-01  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclExecute.c: [Bug 3057639]. Applied patch by Jeff to
+	* generic/tclVar.c: make the behaviour of lappend in bytecompiled
+	* tests/append.test: mode consistent with direct-eval and 'append'
+	* tests/appendComp.test: generally. Added tests (append*-9.*)
+	showing the difference.
+
 2010-08-31  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/rules.vc:               Typo (thanks to Twylite discovering this)
