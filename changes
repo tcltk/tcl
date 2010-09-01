@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.25 2010/08/24 18:30:30 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.26 2010/09/01 20:07:55 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7477,4 +7477,7 @@ memory with buffer backup (ferrieux)
 
 2010-08-23 tzdata updated to Olson's tzdata2010l (kenny)
 
---- Released 8.5.9, August 31, 2010 --- See ChangeLog for details ---
+2010-09-01 (bug fix)[3057639] no read traces [lappend arr(elem) ...] (hobbs)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+--- Released 8.5.9, September 6, 2010 --- See ChangeLog for details ---
