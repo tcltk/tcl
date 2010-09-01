@@ -1,3 +1,9 @@
+2010-09-01  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.5.9 TAGGED FOR RELEASE ***
+
+	* changes:	Update for 8.5.9 release.
+
 2010-09-01  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclExecute.c: [Bug 3057639]. Applied patch by Jeff to
@@ -5,10 +11,9 @@
 	* tests/append.test: mode consistent with direct-eval and 'append'
 	* tests/appendComp.test: generally. Added tests (append*-9.*)
 	showing the difference.
+	***POTENTIAL INCOMPATIBILITY***
 
 2010-09-01  Donal K. Fellows  <dkf@users.sf.net>
-
-	*** 8.5.9 TAGGED FOR RELEASE ***
 
 	* tools/tcltk-man2html.tcl: Improve handling of cross-links for
 	options between Ttk manual pages.
