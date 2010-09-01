@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.160.2.10 2010/07/31 18:10:11 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.160.2.11 2010/09/01 19:42:40 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1815,8 +1815,10 @@ TclPtrSetVar(
 
     /*
      * Invoke any read traces that have been set for the variable if it is
-     * requested; this is only done in the core by the INST_LAPPEND_*
-     * instructions.
+     * requested. This was done for INST_LAPPEND_* but that was inconsistent
+     * with the non-bc instruction, and would cause failures trying to
+     * lappend to any non-existing ::env var, which is inconsistent with
+     * documented behavior.  [Bug #3057639]
      */
 
     if ((flags & TCL_TRACE_READS) && ((varPtr->flags & VAR_TRACED_READ)
