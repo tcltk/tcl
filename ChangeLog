@@ -1,3 +1,7 @@
+2010-09-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/Tcl.n: Avoid nroff hazards when generating documentation.
+
 2010-08-31  Andreas Kupries  <andreask@activestate.com>
 
 	*** 8.5.9 TAGGED FOR RELEASE ***
