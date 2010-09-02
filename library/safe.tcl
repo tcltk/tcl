@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.10.2.18 2010/08/18 14:43:21 dgp Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.10.2.19 2010/09/02 12:18:38 dgp Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -708,7 +708,6 @@ proc ::safe::AliasGlob {slave args} {
 		set got($opt) 1
 		set virtualdir [lindex $args [incr at]]
 		incr at
-		lappend cmd -directory $dir
 	    }
 	    pkgIndex.tcl {
 		# Oops, this is globbing a subdirectory in regular package
@@ -742,6 +741,7 @@ proc ::safe::AliasGlob {slave args} {
 	    }
 	    return -code error "permission denied"
 	}
+	lappend cmd -directory $dir
     }
 
     # Apply the -join semantics ourselves

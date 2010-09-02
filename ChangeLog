@@ -1,4 +1,37 @@
+2010-09-01  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* library/safe.tcl (::safe::AliasGlob): Moved the command
+	extending the actual glob command with a -directory flag to when
+	we actually have a proper untranslated path,
+
+2010-09-01  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclExecute.c: [Bug 3057639]. Applied patch by Jeff to
+	* generic/tclVar.c: make the behaviour of lappend in bytecompiled
+	* tests/append.test: mode consistent with direct-eval and 'append'
+	* tests/appendComp.test: generally. Added tests (append*-9.*)
+	showing the difference.
+
+2010-08-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/rules.vc:               Typo (thanks to Twylite discovering this)
+	* generic/tclStubLib.c:       Revert to previous version: MSVC++ 6.0
+	* generic/tclTomMathStubLib.c:cannot handle the new construct.
+	* generic/tcl.decls           [Patch 2997642] many type casts needed when
+	* generic/tclDecls.h:         using Tcl_Pkg* API. Remaining part.
+	* generic/tclPkg.c:
+	* generic/tclBasic.c:
+	* generic/tclTomMathInterface.c:
+	* doc/PkgRequire.3
+
+2010-08-31  Andreas Kupries  <andreask@activestate.com>
+
+	* win/tcl.m4: Applied patch by Jeff fixing issues with the
+	manifest handling on Win64.
+	* win/configure: Regenerated.
+
 2010-08-30  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclBasic.c:    New implementation for [tailcall]:
 	* generic/tclCmdAH.c:    it now schedules the command and returns 
 	* generic/tclCmdMZ.c:    TCL_RETURN. This fixes all issues with
