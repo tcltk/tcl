@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: glob.n,v 1.22 2007/12/13 15:22:32 dgp Exp $
+'\" RCS: @(#) $Id: glob.n,v 1.22.2.1 2010/09/02 19:50:29 andreas_kupries Exp $
 '\" 
 .so man.macros
 .TH glob n 8.3 Tcl "Tcl Built-In Commands"
@@ -40,8 +40,9 @@ characters explicitly.  This option may not be used in conjunction with
 whose names may contain glob-sensitive characters.
 .TP
 \fB\-join\fR
-The remaining pattern arguments are treated as a single pattern
-obtained by joining the arguments with directory separators.
+The remaining pattern arguments, after option processing, are treated
+as a single pattern obtained by joining the arguments with directory
+separators.
 .TP
 \fB\-nocomplain\fR
 Allows an empty list to be returned without error;  without this
