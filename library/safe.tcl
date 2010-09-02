@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.40 2010/09/02 04:53:34 andreas_kupries Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.41 2010/09/02 18:31:00 andreas_kupries Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -724,7 +724,7 @@ proc ::safe::AliasGlob {slave args} {
 		break
 	    }
 	}
-	if {$got(--) || $got(-join)} break
+	if {$got(--)} break
     }
 
     # Get the real path from the virtual one and check that the path is in the
