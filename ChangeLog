@@ -1,3 +1,9 @@
+2010-09-02  Andreas Kupries  <andreask@activestate.com>
+
+	* library/safe.tcl (::safe::AliasGlob): Fixed another problem, the
+	option -join does not stop option processing in the core builtin,
+	so the emulation must not do that either.
+
 2010-09-01  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	*** 8.5.9 TAGGED FOR RELEASE ***
