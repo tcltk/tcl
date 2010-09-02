@@ -1,5 +1,7 @@
 2010-09-02  Andreas Kupries  <andreask@activestate.com>
 
+	*** 8.5.9 TAGGED FOR RELEASE ***
+
 	* doc/glob.n: Fixed documentation ambiguity regarding the handling
 	of -join.
 
@@ -8,8 +10,6 @@
 	so the emulation must not do that either.
 
 2010-09-01  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
-
-	*** 8.5.9 TAGGED FOR RELEASE ***
 
 	* library/safe.tcl (::safe::AliasGlob): Moved the command
 	extending the actual glob command with a -directory flag to when
