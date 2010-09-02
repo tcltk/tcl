@@ -1,3 +1,9 @@
+2010-09-01  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* library/safe.tcl (::safe::AliasGlob): Moved the command
+	extending the actual glob command with a -directory flag to when
+	we actually have a proper untranslated path,
+
 2010-09-01  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclExecute.c: [Bug 3057639]. Applied patch by Jeff to
