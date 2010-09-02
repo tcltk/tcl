@@ -1,5 +1,8 @@
 2010-09-02  Andreas Kupries  <andreask@activestate.com>
 
+	* doc/glob.n: Fixed documentation ambiguity regarding the handling
+	of -join.
+
 	* library/safe.tcl (::safe::AliasGlob): Fixed another problem, the
 	option -join does not stop option processing in the core builtin,
 	so the emulation must not do that either.
