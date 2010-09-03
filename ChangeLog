@@ -1,33 +1,43 @@
+2010-09-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (plus-pkgs): Improve the package
+	documentation search pattern to support the doctoos-generated
+	directory structure.
+	* tools/tcltk-man2html-utils.tcl (output-name): Made this more
+	resilient against misformatted NAME sections, induced by import of
+	Thread package documentation into Tcl doc tree.
+
 2010-09-02  Andreas Kupries  <andreask@activestate.com>
 
 	* doc/glob.n: Fixed documentation ambiguity regarding the handling
 	of -join.
 
-	* library/safe.tcl (::safe::AliasGlob): Fixed another problem, the
-	option -join does not stop option processing in the core builtin,
-	so the emulation must not do that either.
+	* library/safe.tcl (safe::AliasGlob): Fixed another problem, the
+	option -join does not stop option processing in the core builtin, so
+	the emulation must not do that either.
 
 2010-09-01  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
-	* library/safe.tcl (::safe::AliasGlob): Moved the command
-	extending the actual glob command with a -directory flag to when
-	we actually have a proper untranslated path,
+	* library/safe.tcl (safe::AliasGlob): Moved the command extending the
+	actual glob command with a -directory flag to when we actually have a
+	proper untranslated path,
 
 2010-09-01  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclExecute.c: [Bug 3057639]. Applied patch by Jeff to
-	* generic/tclVar.c: make the behaviour of lappend in bytecompiled
-	* tests/append.test: mode consistent with direct-eval and 'append'
+	* generic/tclExecute.c: [Bug 3057639]: Applied patch by Jeff to make
+	* generic/tclVar.c:	the behaviour of lappend in bytecompiled mode
+	* tests/append.test:	consistent with direct-eval and 'append'
 	* tests/appendComp.test: generally. Added tests (append*-9.*)
 	showing the difference.
 
 2010-08-31  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/rules.vc:               Typo (thanks to Twylite discovering this)
+	* win/rules.vc:               Typo (thanks to Twylite discovering
+				      this)
 	* generic/tclStubLib.c:       Revert to previous version: MSVC++ 6.0
 	* generic/tclTomMathStubLib.c:cannot handle the new construct.
-	* generic/tcl.decls           [Patch 2997642] many type casts needed when
-	* generic/tclDecls.h:         using Tcl_Pkg* API. Remaining part.
+	* generic/tcl.decls           [Patch 2997642]: Many type casts needed
+	* generic/tclDecls.h:         when using Tcl_Pkg* API. Remaining part.
 	* generic/tclPkg.c:
 	* generic/tclBasic.c:
 	* generic/tclTomMathInterface.c:
@@ -35,23 +45,23 @@
 
 2010-08-31  Andreas Kupries  <andreask@activestate.com>
 
-	* win/tcl.m4: Applied patch by Jeff fixing issues with the
-	manifest handling on Win64.
+	* win/tcl.m4: Applied patch by Jeff fixing issues with the manifest
+	handling on Win64.
 	* win/configure: Regenerated.
 
 2010-08-30  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:    New implementation for [tailcall]:
-	* generic/tclCmdAH.c:    it now schedules the command and returns 
-	* generic/tclCmdMZ.c:    TCL_RETURN. This fixes all issues with
-	* generic/tclExecute.c:  [catch] and [try] - [Bug 3046594],  
-	* generic/tclInt.h:      [Bug 3047235] and [Bug 3048771]. Thanks
-	* generic/tclNamesp.c:   dgp for exploring the dark corners. 
-	* tests/tailcall.test:   More thorough testing is required.
+	* generic/tclBasic.c:    [Bugs 3046594,3047235,3048771]: New
+	* generic/tclCmdAH.c:    implementation for [tailcall] command: it now
+	* generic/tclCmdMZ.c:    schedules the command and returns TCL_RETURN.
+	* generic/tclExecute.c:  This fixes all issues with [catch] and [try].
+	* generic/tclInt.h:      Thanks dgp for exploring the dark corners.
+	* generic/tclNamesp.c:   More thorough testing is required.
+	* tests/tailcall.test:
 
 2010-08-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/Makefile.in:   [Freq 2965056]: Windows build with -DUNICODE
+	* win/Makefile.in:   [FRQ 2965056]: Windows build with -DUNICODE
 	* win/rules.vc:
 	* win/tclWinFCmd.c:  Make sure that allocated TCHAR arrays are
 	* win/tclWinFile.c:  always properly aligned as wchar_t, and
@@ -60,12 +70,13 @@
 	* win/tclWinDde.c:   Those 3 files are not converted yet to be
 	* win/tclWinReg.c:   built with -DUNICODE, so add a TODO.
 	* win/tclWinTest.c:
-	* generic/tcl.decls:  [Patch 2997642] many type casts needed when
+	* generic/tcl.decls:  [Patch 2997642]: Many type casts needed when
 	* generic/tclDecls.h: using Tcl_Pkg* API. Partly.
 	* generic/tclPkg.c:
-	* generic/tclStubLib.c: demonstration how this change can benefit code.
+	* generic/tclStubLib.c: Demonstration how this change can benefit
+				code.
 	* generic/tclTomMathStubLib.c:
-	* doc/PkgRequire.3
+	* doc/PkgRequire.3:
 
 2010-08-29  Donal K. Fellows  <dkf@users.sf.net>
 

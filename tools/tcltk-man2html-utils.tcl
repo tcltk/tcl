@@ -6,7 +6,7 @@
 ## Copyright (c) 1995-1997 Roger E. Critchlow Jr
 ## Copyright (c) 2004-2010 Donal K. Fellows
 ##
-## CVS: $Id: tcltk-man2html-utils.tcl,v 1.6 2010/01/14 13:59:05 dkf Exp $
+## CVS: $Id: tcltk-man2html-utils.tcl,v 1.7 2010/09/03 09:38:53 dkf Exp $
 
 set ::manual(report-level) 1
 
@@ -592,7 +592,7 @@ proc output-IP-list {context code rest} {
 proc output-name {line} {
     global manual
     # split name line into pieces
-    regexp {^([^-]+) - (.*)$} $line all head tail
+    regexp {^([^-]+) - (.*)$} [regsub -all {[ \n\r\t]+} $line " "] -> head tail
     # output line to manual page untouched
     man-puts "$head &mdash; $tail"
     # output line to long table of contents
