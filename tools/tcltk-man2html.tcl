@@ -18,9 +18,9 @@ package require Tcl 8.6
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 #
-# CVS: $Id: tcltk-man2html.tcl,v 1.48 2010/06/13 22:19:54 dkf Exp $
+# CVS: $Id: tcltk-man2html.tcl,v 1.49 2010/09/03 09:38:53 dkf Exp $
 
-regexp {\d+\.\d+} {$Revision: 1.48 $} ::Version
+regexp {\d+\.\d+} {$Revision: 1.49 $} ::Version
 set ::CSSFILE "docs.css"
 
 ##
@@ -769,7 +769,13 @@ proc plus-pkgs {type args} {
     set result {}
     foreach {dir name} $args {
 	set globpat $tcltkdir/$tcldir/pkgs/$dir/doc/*.$type
-	if {![llength [glob -nocomplain $globpat]]} continue
+	if {![llength [glob -nocomplain $globpat]]} {
+	    # Fallback for manpages generated using doctools
+	    set globpat $tcltkdir/$tcldir/pkgs/$dir/doc/man/*.$type
+	    if {![llength [glob -nocomplain $globpat]]} {
+		continue
+	    }
+	}
 	switch $type {
 	    n {
 		set title "$name Package Commands"
@@ -901,6 +907,7 @@ try {
 	set packageDirNameMap {
 	    itcl {[incr Tcl]}
 	    tdbc {TDBC}
+	    Thread Thread
 	}
     }
 
