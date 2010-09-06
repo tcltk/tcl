@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.151.2.2 2009/12/28 13:53:40 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.151.2.3 2010/09/06 12:57:33 stwo Exp $
  */
 
 #include "tclInt.h"
@@ -134,7 +134,11 @@ Tcl_Stat(
 	oldStyleBuf->st_blksize	= buf.st_blksize;
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
+#ifdef HAVE_BLKCNT_T
 	oldStyleBuf->st_blocks	= (blkcnt_t) buf.st_blocks;
+#else
+	oldStyleBuf->st_blocks	= (unsigned long) buf.st_blocks;
+#endif
 #endif
     }
     return ret;
