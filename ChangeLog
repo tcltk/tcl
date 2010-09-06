@@ -1,3 +1,10 @@
+2010-09-06  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/configure.in, generic/tclIOUtil.c (Tcl_Stat): Updated so that
+	we do not assume that all unix systems have the POSIX blkcnt_t type,
+	since OpenBSD apparently does not. Backported from HEAD (2010-02-16).
+	* unix/configure:	autoconf-2.59
+
 2010-09-02  Andreas Kupries  <andreask@activestate.com>
 
 	*** 8.5.9 TAGGED FOR RELEASE ***
