@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.54.2.2 2010/08/04 19:17:29 hobbs Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.54.2.3 2010/09/08 15:42:13 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -319,7 +319,7 @@ DllMain(
 	 * an exception handler and the state of the stack might be unstable.
 	 */
 
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
 	__asm__ __volatile__ (
 
 	    /*
@@ -389,12 +389,16 @@ DllMain(
 	    "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory"
 	    );
 
-#else /* HAVE_NO_SEH */
+#else
+#ifndef HAVE_NO_SEH
 	__try {
+#endif
 	    Tcl_Finalize();
+#ifndef HAVE_NO_SEH
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 	    /* empty handler body. */
 	}
+#endif
 #endif
 
 	break;
