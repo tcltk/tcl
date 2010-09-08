@@ -1,10 +1,14 @@
 2010-09-08  Andreas Kupries  <andreask@activestate.com>
 
+	*** 8.5.9 TAGGED FOR RELEASE ***
+
 	* doc/tm.n: Added underscore to the set of characters accepted in
 	module names. This is true for quite some time in the code, this
 	change catches up the documentation.
 
 2010-09-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Update for 8.5.9 release.
 
 	* win/tclWin32Dll.c:	#ifdef protections to permit builds with
 	* win/tclWinChan.c:	mingw on amd64 systems.  Thanks to "mescalinum"
@@ -18,8 +22,6 @@
 	* unix/configure:	autoconf-2.59
 
 2010-09-02  Andreas Kupries  <andreask@activestate.com>
-
-	*** 8.5.9 TAGGED FOR RELEASE ***
 
 	* doc/glob.n: Fixed documentation ambiguity regarding the handling
 	of -join.
@@ -133,6 +135,7 @@
 	* win/tclWinLoad.c (TclpDlopen): 'load' use LoadLibraryEx with
 	* win/tclWinInt.h (TclWinProcs): LOAD_WITH_ALTERED_SEARCH_PATH to
 	prefer dependent DLLs in same dir as loaded DLL.
+	***POTENTIAL INCOMPATIBILITY***
 
 	* win/Makefile.in (%.${OBJEXT}): better implicit rules support
 
