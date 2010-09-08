@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.26 2010/09/01 20:07:55 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.27 2010/09/08 17:38:32 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7470,6 +7470,7 @@ memory with buffer backup (ferrieux)
 2010-08-04 (bug fix)[3034840] mem corrupt when refchan loses interp (kupries)
 
 2010-08-04 (enhancement) Win [load] use LOAD_WITH_ALTERED_SEARCH_PATH (hobbs)
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2010-08-12 (bug fix)[2826551] line-sensitive matching in regexp (dejong)
 
@@ -7480,4 +7481,4 @@ memory with buffer backup (ferrieux)
 2010-09-01 (bug fix)[3057639] no read traces [lappend arr(elem) ...] (hobbs)
 	*** POTENTIAL INCOMPATIBILITY ***
 
---- Released 8.5.9, September 6, 2010 --- See ChangeLog for details ---
+--- Released 8.5.9, September 8, 2010 --- See ChangeLog for details ---
