@@ -1,3 +1,9 @@
+2010-09-08  Andreas Kupries  <andreask@activestate.com>
+
+	* doc/tm.n: Added underscore to the set of characters accepted in
+	module names. This is true for quite some time in the code, this
+	change catches up the documentation.
+
 2010-09-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* win/tclWin32Dll.c:	#ifdef protections to permit builds with
