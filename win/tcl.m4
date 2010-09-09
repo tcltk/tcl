@@ -27,7 +27,7 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
     else
 	TCL_BIN_DIR_DEFAULT=../../tcl/win
     fi
-    
+
     AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.6 binaries from DIR],
 	    TCL_BIN_DIR=$withval, TCL_BIN_DIR=`cd $TCL_BIN_DIR_DEFAULT; pwd`)
     if test ! -d $TCL_BIN_DIR; then
@@ -67,7 +67,7 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
     else
 	TK_BIN_DIR_DEFAULT=../../tk/win
     fi
-    
+
     AC_ARG_WITH(tk, [  --with-tk=DIR          use Tk 8.6 binaries from DIR],
 	    TK_BIN_DIR=$withval, TK_BIN_DIR=`cd $TK_BIN_DIR_DEFAULT; pwd`)
     if test ! -d $TK_BIN_DIR; then
@@ -86,7 +86,7 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 #	Load the tclConfig.sh file.
 #
 # Arguments:
-#	
+#
 #	Requires the following vars to be set:
 #		TCL_BIN_DIR
 #
@@ -158,7 +158,7 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
 #	Currently a no-op for Windows
 #
 # Arguments:
-#	
+#
 #	Requires the following vars to be set:
 #		TK_BIN_DIR
 #
@@ -191,7 +191,7 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 #
 # Arguments:
 #	none
-#	
+#
 # Results:
 #
 #	Adds the following arguments to configure:
@@ -235,7 +235,7 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 #
 # Arguments:
 #	none
-#	
+#
 # Results:
 #
 #	Adds the following arguments to configure:
@@ -273,11 +273,11 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 #
 # Arguments:
 #	none
-#	
+#
 #	Requires the following vars to be set in the Makefile:
 #		CFLAGS_DEBUG
 #		CFLAGS_OPTIMIZE
-#	
+#
 # Results:
 #
 #	Adds the following arguments to configure:
@@ -463,7 +463,7 @@ file for information about building with Mingw.])
 	fi
 	SHLIB_LD=""
 	SHLIB_LD_LIBS='${LIBS}'
-	LIBS="-lws2_32"
+	LIBS="-lkernel32 -luser32 -ladvapi32 -lws2_32"
 	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
 	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32"
 	STLIB_LD='${AR} cr'
@@ -543,7 +543,7 @@ file for information about building with Mingw.])
 	CC_OBJNAME="-o \[$]@"
 	CC_EXENAME="-o \[$]@"
 
-	# Specify linker flags depending on the type of app being 
+	# Specify linker flags depending on the type of app being
 	# built -- Console vs. Window.
 	#
 	# ORIGINAL COMMENT:
@@ -554,7 +554,7 @@ file for information about building with Mingw.])
 	# cross compiling. Remove this -e workaround once we
 	# require a gcc that does not have this bug.
 	#
-	# MK NOTE: Tk should use a different mechanism. This causes 
+	# MK NOTE: Tk should use a different mechanism. This causes
 	# interesting problems, such as wish dying at startup.
 	#LDFLAGS_WINDOW="-mwindows -e _WinMain@16 ${extra_ldflags}"
 	LDFLAGS_CONSOLE="-mconsole ${extra_ldflags}"
@@ -760,12 +760,12 @@ file for information about building with Mingw.])
 	CFLAGS_WARNING="-W3"
 	LDFLAGS_DEBUG="-debug:full"
 	LDFLAGS_OPTIMIZE="-release"
-	
+
 	# Specify the CC output file names based on the target name
 	CC_OBJNAME="-Fo\[$]@"
 	CC_EXENAME="-Fe\"\$(shell \$(CYGPATH) '\[$]@')\""
 
-	# Specify linker flags depending on the type of app being 
+	# Specify linker flags depending on the type of app being
 	# built -- Console vs. Window.
 	if test "$doWince" != "no" -a "${TARGETCPU}" != "X86"; then
 	    LDFLAGS_CONSOLE="-link ${lflags}"
@@ -810,7 +810,7 @@ AC_DEFUN([SC_WITH_TCL], [
     else
 	TCL_BIN_DEFAULT=../../tcl8.6/win
     fi
-    
+
     AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.6 binaries from DIR],
 	    TCL_BIN_DIR=$withval, TCL_BIN_DIR=`cd $TCL_BIN_DEFAULT; pwd`)
     if test ! -d $TCL_BIN_DIR; then

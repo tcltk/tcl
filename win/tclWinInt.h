@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.36 2010/08/04 19:35:22 hobbs Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.37 2010/09/09 14:30:20 nijtmans Exp $
  */
 
 #ifndef _TCLWININT
@@ -50,7 +50,7 @@ typedef struct TclWinProcs {
 	    LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
     BOOL (WINAPI *createProcessProc)(const TCHAR *, TCHAR *,
 	    LPSECURITY_ATTRIBUTES, LPSECURITY_ATTRIBUTES, BOOL, DWORD,
-	    LPVOID, const TCHAR *, LPSTARTUPINFOA, LPPROCESS_INFORMATION);
+	    LPVOID, const TCHAR *, LPSTARTUPINFO, LPPROCESS_INFORMATION);
     BOOL (WINAPI *deleteFileProc)(const TCHAR *);
     HANDLE (WINAPI *findFirstFileProc)(const TCHAR *, WIN32_FIND_DATAT *);
     BOOL (WINAPI *findNextFileProc)(HANDLE, WIN32_FIND_DATAT *);
@@ -59,7 +59,6 @@ typedef struct TclWinProcs {
     DWORD (WINAPI *getFileAttributesProc)(const TCHAR *);
     DWORD (WINAPI *getFullPathNameProc)(const TCHAR *, DWORD, TCHAR *,
 	    TCHAR **);
-    DWORD (WINAPI *getModuleFileNameProc)(HMODULE, TCHAR *, int);
     DWORD (WINAPI *getShortPathNameProc)(const TCHAR *, TCHAR *, DWORD);
     UINT (WINAPI *getTempFileNameProc)(const TCHAR *, const TCHAR *, UINT,
 	    TCHAR *);
@@ -67,7 +66,6 @@ typedef struct TclWinProcs {
     BOOL (WINAPI *getVolumeInformationProc)(const TCHAR *, TCHAR *, DWORD,
 	    LPDWORD, LPDWORD, LPDWORD, TCHAR *, DWORD);
     HINSTANCE (WINAPI *loadLibraryExProc)(const TCHAR *, HANDLE, DWORD);
-    TCHAR (WINAPI *lstrcpyProc)(TCHAR *, const TCHAR *);
     BOOL (WINAPI *moveFileProc)(const TCHAR *, const TCHAR *);
     BOOL (WINAPI *removeDirectoryProc)(const TCHAR *);
     DWORD (WINAPI *searchPathProc)(const TCHAR *, const TCHAR *,
@@ -115,7 +113,7 @@ typedef struct TclWinProcs {
     const char *(*tchar2utf)(const TCHAR *, int, Tcl_DString *);
 } TclWinProcs;
 
-MODULE_SCOPE const TclWinProcs *tclWinProcs;
+MODULE_SCOPE const TclWinProcs *const tclWinProcs;
 
 /*
  * Declarations of functions that are not accessible by way of the
