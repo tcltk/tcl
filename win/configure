@@ -3908,7 +3908,7 @@ echo "$as_me: WARNING: 64bit mode not supported with GCC on Windows" >&2;}
 	fi
 	SHLIB_LD=""
 	SHLIB_LD_LIBS='${LIBS}'
-	LIBS="-lws2_32"
+	LIBS="-lkernel32 -luser32 -ladvapi32 -lws2_32"
 	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
 	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32"
 	STLIB_LD='${AR} cr'

@@ -1,3 +1,16 @@
+2010-09-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/makefile.vc:   mingw should always link with -ladvapi32
+	* win/tcl.m4:
+	* win/configure:     (regenerated)
+	* win/tclWinInt.h:   Remove ascii variant of tkWinPocs table,
+	* win/tclWin32Dll.c: it is no longer necessary. Fix CreateProcess
+	* win/tclWinPipe.c:  signature and remove unused GetModuleFileName
+	and lstrcpy
+	* win/tclWinPort.h:  mingw/cygwin fixes: <tchar.h> should always
+	be included, and fix conflict in various macro values: Always force
+	the same values as in VC++.
+
 2010-09-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* win/tclWinChan.c:    #ifdef protections to permit builds with
