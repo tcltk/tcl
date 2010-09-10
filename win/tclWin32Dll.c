@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.24 2010/08/04 21:48:23 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.25 2010/09/10 13:27:53 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -65,117 +65,19 @@ typedef struct EXCEPTION_REGISTRATION {
 
 static Tcl_Encoding winTCharEncoding = NULL;
 
-static const TCHAR *utf2win(
-    const char *string,		/* Source string in UTF-8. */
-    int len,			/* Source string length in bytes, or < 0 for
-				 * strlen(). */
-    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
-				 * converted string is stored. */
-{
-    return (const TCHAR *) Tcl_UtfToExternalDString(NULL, string, len, dsPtr);
-}
-
-static const TCHAR *utf2wchar(
-    const char *string,		/* Source string in UTF-8. */
-    int len,			/* Source string length in bytes, or < 0 for
-				 * strlen(). */
-    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
-				 * converted string is stored. */
-{
-    return (const TCHAR *) Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
-}
-
-static const char *win2utf(
-    const TCHAR *string,	/* Source string in Unicode when running NT,
-				 * ANSI when running 95. */
-    int len,			/* Source string length in bytes, or < 0 for
-				 * platform-specific string length. */
-    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
-				 * converted string is stored. */
-{
-    return Tcl_ExternalToUtfDString(NULL,
-	    (const char *) string, len, dsPtr);
-}
-
-static const char *wchar2utf(
-    const TCHAR *string,	/* Source string in Unicode when running NT,
-				 * ANSI when running 95. */
-    int len,			/* Source string length in bytes, or < 0 for
-				 * platform-specific string length. */
-    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
-				 * converted string is stored. */
-{
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    (const char *) string, len, dsPtr);
-}
+#ifndef _MSC_VER
+/* Missing from mingw/cygwin headers */
+BOOL WINAPI CreateHardLinkW(LPCTSTR, LPCTSTR, LPSECURITY_ATTRIBUTES);
+BOOL WINAPI GetVolumeNameForVolumeMountPointW(LPCTSTR, LPTSTR,	DWORD);
+DWORD WINAPI GetLongPathNameW(LPCTSTR, LPTSTR,	DWORD);
+#endif
 
 /*
- * The following function tables are used to dispatch to either the
- * wide-character or multi-byte versions of the operating system calls,
- * depending on whether the Unicode calls are available.
+ * The following function table is used to dispatch to wide-character
+ * versions of the operating system calls.
  */
 
-static TclWinProcs asciiProcs = {
-    0,
-    (BOOL (WINAPI *)(const TCHAR *, LPDCB)) BuildCommDCBA,
-    (TCHAR *(WINAPI *)(TCHAR *)) CharLowerA,
-    (BOOL (WINAPI *)(const TCHAR *, const TCHAR *, BOOL)) CopyFileA,
-    (BOOL (WINAPI *)(const TCHAR *, LPSECURITY_ATTRIBUTES)) CreateDirectoryA,
-    (HANDLE (WINAPI *)(const TCHAR *, DWORD, DWORD, SECURITY_ATTRIBUTES *,
-	    DWORD, DWORD, HANDLE)) CreateFileA,
-    (BOOL (WINAPI *)(const TCHAR *, TCHAR *, LPSECURITY_ATTRIBUTES,
-	    LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, const TCHAR *,
-	    LPSTARTUPINFOA, LPPROCESS_INFORMATION)) CreateProcessA,
-    (BOOL (WINAPI *)(const TCHAR *)) DeleteFileA,
-    (HANDLE (WINAPI *)(const TCHAR *, WIN32_FIND_DATAT *)) FindFirstFileA,
-    (BOOL (WINAPI *)(HANDLE, WIN32_FIND_DATAT *)) FindNextFileA,
-    (BOOL (WINAPI *)(TCHAR *, LPDWORD)) GetComputerNameA,
-    (DWORD (WINAPI *)(DWORD, TCHAR *)) GetCurrentDirectoryA,
-    (DWORD (WINAPI *)(const TCHAR *)) GetFileAttributesA,
-    (DWORD (WINAPI *)(const TCHAR *, DWORD nBufferLength, TCHAR *,
-	    TCHAR **)) GetFullPathNameA,
-    (DWORD (WINAPI *)(HMODULE, TCHAR *, int)) GetModuleFileNameA,
-    (DWORD (WINAPI *)(const TCHAR *, TCHAR *, DWORD)) GetShortPathNameA,
-    (UINT (WINAPI *)(const TCHAR *, const TCHAR *, UINT uUnique,
-	    TCHAR *)) GetTempFileNameA,
-    (DWORD (WINAPI *)(DWORD, TCHAR *)) GetTempPathA,
-    (BOOL (WINAPI *)(const TCHAR *, TCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
-	    TCHAR *, DWORD)) GetVolumeInformationA,
-    (HINSTANCE (WINAPI *)(const TCHAR *, HANDLE, DWORD)) LoadLibraryExA,
-    (TCHAR (WINAPI *)(TCHAR *, const TCHAR *)) lstrcpyA,
-    (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFileA,
-    (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectoryA,
-    (DWORD (WINAPI *)(const TCHAR *, const TCHAR *, const TCHAR *, DWORD,
-	    TCHAR *, TCHAR **)) SearchPathA,
-    (BOOL (WINAPI *)(const TCHAR *)) SetCurrentDirectoryA,
-    (BOOL (WINAPI *)(const TCHAR *, DWORD)) SetFileAttributesA,
-
-    /*
-     * The three NULL function pointers will only be set when
-     * Tcl_FindExecutable is called. If you don't ever call that function, the
-     * application will crash whenever WinTcl tries to call functions through
-     * these null pointers. That is not a bug in Tcl - Tcl_FindExecutable is
-     * mandatory in recent Tcl releases.
-     */
-
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    /* getLongPathNameProc */
-    NULL,
-    /* Security SDK - not available on 95,98,ME */
-    NULL, NULL, NULL, NULL, NULL, NULL,
-    /* ReadConsole and WriteConsole */
-    (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleA,
-    (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsoleA,
-    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserNameA,
-    utf2win,
-    win2utf
-};
-
-static TclWinProcs unicodeProcs = {
+static const TclWinProcs winProcs = {
     1,
     (BOOL (WINAPI *)(const TCHAR *, LPDCB)) BuildCommDCBW,
     (TCHAR *(WINAPI *)(TCHAR *)) CharLowerW,
@@ -185,7 +87,7 @@ static TclWinProcs unicodeProcs = {
 	    DWORD, DWORD, HANDLE)) CreateFileW,
     (BOOL (WINAPI *)(const TCHAR *, TCHAR *, LPSECURITY_ATTRIBUTES,
 	    LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, const TCHAR *,
-	    LPSTARTUPINFOA, LPPROCESS_INFORMATION)) CreateProcessW,
+	    LPSTARTUPINFO, LPPROCESS_INFORMATION)) CreateProcessW,
     (BOOL (WINAPI *)(const TCHAR *)) DeleteFileW,
     (HANDLE (WINAPI *)(const TCHAR *, WIN32_FIND_DATAT *)) FindFirstFileW,
     (BOOL (WINAPI *)(HANDLE, WIN32_FIND_DATAT *)) FindNextFileW,
@@ -194,7 +96,6 @@ static TclWinProcs unicodeProcs = {
     (DWORD (WINAPI *)(const TCHAR *)) GetFileAttributesW,
     (DWORD (WINAPI *)(const TCHAR *, DWORD nBufferLength, TCHAR *,
 	    TCHAR **)) GetFullPathNameW,
-    (DWORD (WINAPI *)(HMODULE, TCHAR *, int)) GetModuleFileNameW,
     (DWORD (WINAPI *)(const TCHAR *, TCHAR *, DWORD)) GetShortPathNameW,
     (UINT (WINAPI *)(const TCHAR *, const TCHAR *, UINT uUnique,
 	    TCHAR *)) GetTempFileNameW,
@@ -202,39 +103,33 @@ static TclWinProcs unicodeProcs = {
     (BOOL (WINAPI *)(const TCHAR *, TCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
 	    TCHAR *, DWORD)) GetVolumeInformationW,
     (HINSTANCE (WINAPI *)(const TCHAR *, HANDLE, DWORD)) LoadLibraryExW,
-    (TCHAR (WINAPI *)(TCHAR *, const TCHAR *)) lstrcpyW,
     (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFileW,
     (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectoryW,
     (DWORD (WINAPI *)(const TCHAR *, const TCHAR *, const TCHAR *, DWORD,
 	    TCHAR *, TCHAR **)) SearchPathW,
     (BOOL (WINAPI *)(const TCHAR *)) SetCurrentDirectoryW,
     (BOOL (WINAPI *)(const TCHAR *, DWORD)) SetFileAttributesW,
-
-    /*
-     * The three NULL function pointers will only be set when
-     * Tcl_FindExecutable is called. If you don't ever call that function, the
-     * application will crash whenever WinTcl tries to call functions through
-     * these null pointers. That is not a bug in Tcl - Tcl_FindExecutable is
-     * mandatory in recent Tcl releases.
-     */
-
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    /* getLongPathNameProc */
-    NULL,
+	(BOOL (WINAPI *)(const TCHAR *, GET_FILEEX_INFO_LEVELS,
+		LPVOID)) GetFileAttributesExW,
+	(BOOL (WINAPI *)(const TCHAR *, const TCHAR*,
+		LPSECURITY_ATTRIBUTES)) CreateHardLinkW,
+	(HANDLE (WINAPI *)(const TCHAR*, UINT, LPVOID, UINT,
+		LPVOID, DWORD)) FindFirstFileExW,
+	(BOOL (WINAPI *)(const TCHAR*, TCHAR*,
+		DWORD)) GetVolumeNameForVolumeMountPointW,
+	(DWORD (WINAPI *)(const TCHAR*, TCHAR*,
+		DWORD)) GetLongPathNameW,
     /* Security SDK - will be filled in on NT,XP,2000,2003 */
-    NULL, NULL, NULL, NULL, NULL, NULL,
+    GetFileSecurityW, ImpersonateSelf, OpenThreadToken, RevertToSelf, MapGenericMask, AccessCheck,
     /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleW,
     (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsoleW,
     (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserNameW,
-    utf2wchar,
-    wchar2utf
+    (const TCHAR *(*)(const char *, int, Tcl_DString *)) Tcl_WinUtfToTChar,
+    (const char *(*)(const TCHAR *, int, Tcl_DString *)) Tcl_WinTCharToUtf
 };
 
-const TclWinProcs *tclWinProcs = &asciiProcs;
+const TclWinProcs *const tclWinProcs = &winProcs;
 
 /*
  * The following declaration is for the VC++ DLL entry point.
@@ -492,98 +387,11 @@ TclWinSetInterfaces(
 {
 	TclWinResetInterfaces();
 
+#ifdef _UNICODE
     if (wide) {
 	winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
-	if (unicodeProcs.getFileAttributesExProc == NULL) {
-	    HINSTANCE hInstance = LoadLibraryA("kernel32");
-
-	    if (hInstance != NULL) {
-		unicodeProcs.getFileAttributesExProc =
-			(BOOL (WINAPI *)(const TCHAR *, GET_FILEEX_INFO_LEVELS,
-			LPVOID)) GetProcAddress(hInstance,
-			"GetFileAttributesExW");
-		unicodeProcs.createHardLinkProc =
-			(BOOL (WINAPI *)(const TCHAR *, const TCHAR*,
-			LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance,
-			"CreateHardLinkW");
-		unicodeProcs.findFirstFileExProc =
-			(HANDLE (WINAPI *)(const TCHAR*, UINT, LPVOID, UINT,
-			LPVOID, DWORD)) GetProcAddress(hInstance,
-			"FindFirstFileExW");
-		unicodeProcs.getVolumeNameForVMPProc =
-			(BOOL (WINAPI *)(const TCHAR*, TCHAR*,
-			DWORD)) GetProcAddress(hInstance,
-			"GetVolumeNameForVolumeMountPointW");
-		unicodeProcs.getLongPathNameProc =
-			(DWORD (WINAPI *)(const TCHAR*, TCHAR*,
-			DWORD)) GetProcAddress(hInstance, "GetLongPathNameW");
-		FreeLibrary(hInstance);
-	    }
-	    hInstance = LoadLibraryA("advapi32");
-	    if (hInstance != NULL) {
-		unicodeProcs.getFileSecurityProc = (BOOL (WINAPI *)(
-			LPCTSTR lpFileName,
-			SECURITY_INFORMATION RequestedInformation,
-			PSECURITY_DESCRIPTOR pSecurityDescriptor,
-			DWORD nLength, LPDWORD lpnLengthNeeded))
-			GetProcAddress(hInstance, "GetFileSecurityW");
-		unicodeProcs.impersonateSelfProc = (BOOL (WINAPI *) (
-			SECURITY_IMPERSONATION_LEVEL ImpersonationLevel))
-			GetProcAddress(hInstance, "ImpersonateSelf");
-		unicodeProcs.openThreadTokenProc = (BOOL (WINAPI *) (
-			HANDLE ThreadHandle, DWORD DesiredAccess,
-			BOOL OpenAsSelf, PHANDLE TokenHandle))
-			GetProcAddress(hInstance, "OpenThreadToken");
-		unicodeProcs.revertToSelfProc = (BOOL (WINAPI *) (void))
-			GetProcAddress(hInstance, "RevertToSelf");
-		unicodeProcs.mapGenericMaskProc = (void (WINAPI *) (
-			PDWORD AccessMask, PGENERIC_MAPPING GenericMapping))
-			GetProcAddress(hInstance, "MapGenericMask");
-		unicodeProcs.accessCheckProc = (BOOL (WINAPI *)(
-			PSECURITY_DESCRIPTOR pSecurityDescriptor,
-			HANDLE ClientToken, DWORD DesiredAccess,
-			PGENERIC_MAPPING GenericMapping,
-			PPRIVILEGE_SET PrivilegeSet,
-			LPDWORD PrivilegeSetLength, LPDWORD GrantedAccess,
-			LPBOOL AccessStatus)) GetProcAddress(hInstance,
-			"AccessCheck");
-		FreeLibrary(hInstance);
-	    }
-	}
-	tclWinProcs = &unicodeProcs;
-    } else {
-	if (asciiProcs.getFileAttributesExProc == NULL) {
-	    HINSTANCE hInstance = LoadLibraryA("kernel32");
-	    if (hInstance != NULL) {
-		asciiProcs.getFileAttributesExProc =
-			(BOOL (WINAPI *)(const TCHAR *, GET_FILEEX_INFO_LEVELS,
-			LPVOID)) GetProcAddress(hInstance,
-			"GetFileAttributesExA");
-		asciiProcs.createHardLinkProc =
-			(BOOL (WINAPI *)(const TCHAR *, const TCHAR*,
-			LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance,
-			"CreateHardLinkA");
-		asciiProcs.findFirstFileExProc = NULL;
-		asciiProcs.getLongPathNameProc = NULL;
-		/*
-		 * The 'findFirstFileExProc' function exists on some of
-		 * 95/98/ME, but it seems not to work as anticipated.
-		 * Therefore we don't set this function pointer. The relevant
-		 * code will fall back on a slower approach using the normal
-		 * findFirstFileProc.
-		 *
-		 * (HANDLE (WINAPI *)(const TCHAR*, UINT,
-		 * LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance,
-		 * "FindFirstFileExA");
-		 */
-		asciiProcs.getVolumeNameForVMPProc =
-			(BOOL (WINAPI *)(const TCHAR*, TCHAR*,
-			DWORD)) GetProcAddress(hInstance,
-			"GetVolumeNameForVolumeMountPointA");
-		FreeLibrary(hInstance);
-	    }
-	}
     }
+#endif
 }
 
 /*
@@ -654,7 +462,6 @@ TclWinResetInterfaces(void)
 	Tcl_FreeEncoding(winTCharEncoding);
 	winTCharEncoding = NULL;
     }
-	tclWinProcs = &asciiProcs;
 }
 
 /*
@@ -873,11 +680,7 @@ Tcl_WinUtfToTChar(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_Encoding encoding = NULL;
-    if (platformId != VER_PLATFORM_WIN32_WINDOWS) {
-	encoding = winTCharEncoding;
-	}
-    return (TCHAR *) Tcl_UtfToExternalDString(encoding,
+    return (TCHAR *) Tcl_UtfToExternalDString(winTCharEncoding,
 	    string, len, dsPtr);
 }
 
@@ -890,11 +693,7 @@ Tcl_WinTCharToUtf(
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_Encoding encoding = NULL;
-    if (platformId != VER_PLATFORM_WIN32_WINDOWS) {
-	encoding = winTCharEncoding;
-	}
-    return Tcl_ExternalToUtfDString(encoding,
+    return Tcl_ExternalToUtfDString(winTCharEncoding,
 	    (const char *) string, len, dsPtr);
 }
 

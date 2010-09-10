@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.29 2010/08/30 14:11:02 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.30 2010/09/10 13:27:53 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -953,7 +953,7 @@ TclpCreateProcess(
 {
     int result, applType, createFlags;
     Tcl_DString cmdLine;	/* Complete command line (TCHAR). */
-    STARTUPINFOA startInfo;
+    STARTUPINFO startInfo;
     PROCESS_INFORMATION procInfo;
     SECURITY_ATTRIBUTES secAtts;
     HANDLE hProcess, h, inputHandle, outputHandle, errorHandle;

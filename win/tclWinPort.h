@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.19 2010/06/29 12:12:35 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.20 2010/09/10 13:27:53 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -38,13 +38,11 @@
 /*
  *  Pull in the typedef of TCHAR for windows.
  */
-#if !defined(_TCHAR_DEFINED)
-#   include <tchar.h>
-#   ifndef _TCHAR_DEFINED
-	/* Borland seems to forget to set this. */
-	typedef _TCHAR TCHAR;
-#	define _TCHAR_DEFINED
-#   endif
+#include <tchar.h>
+#ifndef _TCHAR_DEFINED
+    /* Borland seems to forget to set this. */
+    typedef _TCHAR TCHAR;
+#   define _TCHAR_DEFINED
 #endif
 
 /*
@@ -234,27 +232,20 @@
 #endif
 
 
-#ifndef ESOCKTNOSUPPORT
-#   define ESOCKTNOSUPPORT WSAESOCKTNOSUPPORT	/* Socket type not supported */
-#endif
-#ifndef ESHUTDOWN
-#   define ESHUTDOWN	WSAESHUTDOWN	/* Can't send after socket shutdown */
-#endif
-#ifndef ETOOMANYREFS
-#   define ETOOMANYREFS	WSAETOOMANYREFS	/* Too many references: can't splice */
-#endif
-#ifndef EHOSTDOWN
-#   define EHOSTDOWN	WSAEHOSTDOWN	/* Host is down */
-#endif
-#ifndef EUSERS
-#   define EUSERS	WSAEUSERS	/* Too many users (for UFS) */
-#endif
-#ifndef EDQUOT
-#   define EDQUOT	WSAEDQUOT	/* Disc quota exceeded */
-#endif
-#ifndef ESTALE
-#   define ESTALE	WSAESTALE	/* Stale NFS file handle */
-#endif
+#undef ESOCKTNOSUPPORT
+#define ESOCKTNOSUPPORT WSAESOCKTNOSUPPORT	/* Socket type not supported */
+#undef ESHUTDOWN
+#define ESHUTDOWN	WSAESHUTDOWN	/* Can't send after socket shutdown */
+#undef ETOOMANYREFS
+#define ETOOMANYREFS	WSAETOOMANYREFS	/* Too many references: can't splice */
+#undef EHOSTDOWN
+#define EHOSTDOWN	WSAEHOSTDOWN	/* Host is down */
+#undef EUSERS
+#define EUSERS	WSAEUSERS	/* Too many users (for UFS) */
+#undef EDQUOT
+#define EDQUOT	WSAEDQUOT	/* Disc quota exceeded */
+#undef ESTALE
+#define ESTALE	WSAESTALE	/* Stale NFS file handle */
 
 /*
  * Signals not known to the standard ANSI signal.h.  These are used
