@@ -1,3 +1,8 @@
+2010-09-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWin32Dll.c: Partly revert yesterday's change, to make it
+	work on VC++ 6.0 again.
+
 2010-09-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/regsub.n: [Bug 3063568]: Fix for gotcha in example due to Tcl's
