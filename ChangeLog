@@ -1,3 +1,9 @@
+2010-09-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/regsub.n: [Bug 3063568]: Fix for gotcha in example due to Tcl's
+	special handling of backslash-newline. Makes example slightly less
+	pure, but more useful.
+
 2010-09-08  Andreas Kupries  <andreask@activestate.com>
 
 	*** 8.5.9 TAGGED FOR RELEASE ***
@@ -11,7 +17,7 @@
 	* changes:	Update for 8.5.9 release.
 
 	* win/tclWin32Dll.c:	#ifdef protections to permit builds with
-	* win/tclWinChan.c:	mingw on amd64 systems.  Thanks to "mescalinum"
+	* win/tclWinChan.c:	mingw on amd64 systems. Thanks to "mescalinum"
 	* win/tclWinFCmd.c:	for reporting and testing.
 
 2010-09-06  Stuart Cassoff  <stwo@users.sourceforge.net>
