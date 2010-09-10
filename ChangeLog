@@ -1,21 +1,26 @@
+2010-09-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/regsub.n: [Bug 3063568]: Fix for gotcha in example due to Tcl's
+	special handling of backslash-newline. Makes example slightly less
+	pure, but more useful.
+
 2010-09-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/makefile.vc:   mingw should always link with -ladvapi32
+	* win/makefile.vc:   Mingw should always link with -ladvapi32.
 	* win/tcl.m4:
 	* win/configure:     (regenerated)
-	* win/tclWinInt.h:   Remove ascii variant of tkWinPocs table,
-	* win/tclWin32Dll.c: it is no longer necessary. Fix CreateProcess
-	* win/tclWinPipe.c:  signature and remove unused GetModuleFileName
-	and lstrcpy
-	* win/tclWinPort.h:  mingw/cygwin fixes: <tchar.h> should always
-	be included, and fix conflict in various macro values: Always force
-	the same values as in VC++.
+	* win/tclWinInt.h:   Remove ascii variant of tkWinPocs table, it is
+	* win/tclWin32Dll.c: no longer necessary. Fix CreateProcess signature
+	* win/tclWinPipe.c:  and remove unused GetModuleFileName and lstrcpy.
+	* win/tclWinPort.h:  Mingw/cygwin fixes: <tchar.h> should always be
+	included, and fix conflict in various macro values: Always force the
+	same values as in VC++.
 
 2010-09-08  Don Porter  <dgp@users.sourceforge.net>
 
-	* win/tclWinChan.c:    #ifdef protections to permit builds with
-	* win/tclWinFCmd.c:     mingw on amd64 systems.  Thanks to "mescalinum"
-	for reporting and testing.	[Bug 3059922]
+	* win/tclWinChan.c:	[Bug 3059922]: #ifdef protections to permit
+	* win/tclWinFCmd.c:     builds with mingw on amd64 systems. Thanks to
+				"mescalinum" for reporting and testing.
 
 2010-09-08  Andreas Kupries  <andreask@activestate.com>
 
