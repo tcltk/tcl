@@ -6,6 +6,8 @@
 	* win/tclWinLoad.c:
 	* win/tclWinSerial.c:
 	* win/tclWinSock.c:
+	* tools/genStubs.tcl     Add scspec feature from ttkGenStubs.tcl
+	  (no change in output for *Decls.h files)
 
 2010-09-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
