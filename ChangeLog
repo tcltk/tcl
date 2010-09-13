@@ -1,3 +1,12 @@
+2010-09-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinChan.c:      Various clean-ups, converting from
+	* win/tclWinConsole.c:   tclWinProc->xxxProc directly to Xxx
+	* win/tclWinInit.c:      (no change in functionality)
+	* win/tclWinLoad.c:
+	* win/tclWinSerial.c:
+	* win/tclWinSock.c:
+
 2010-09-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWin32Dll.c: Partly revert yesterday's change, to make it
