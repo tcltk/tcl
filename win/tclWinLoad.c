@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.13 2010/08/04 21:48:24 dgp Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.14 2010/09/13 16:57:03 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -77,7 +77,7 @@ TclpDlopen(
      */
 
     nativeName = Tcl_FSGetNativePath(pathPtr);
-    hInstance = tclWinProcs->loadLibraryExProc(nativeName, NULL,
+    hInstance = LoadLibraryEx(nativeName, NULL,
 	    LOAD_WITH_ALTERED_SEARCH_PATH);
     if (hInstance == NULL) {
 	/*
@@ -89,8 +89,8 @@ TclpDlopen(
 	Tcl_DString ds;
 	const char *fileName = Tcl_GetString(pathPtr);
 
-	nativeName = tclWinProcs->utf2tchar(fileName, -1, &ds);
-	hInstance = tclWinProcs->loadLibraryExProc(nativeName, NULL,
+	nativeName = Tcl_WinUtfToTChar(fileName, -1, &ds);
+	hInstance = LoadLibraryEx(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);
     }
@@ -150,7 +150,7 @@ TclpDlopen(
 	}
 	return TCL_ERROR;
     } else {
-	handlePtr = 
+	handlePtr =
 	    (Tcl_LoadHandle) ckalloc(sizeof(struct Tcl_LoadHandle_));
 	handlePtr->clientData = (ClientData) hInstance;
 	handlePtr->findSymbolProcPtr = &FindSymbol;
@@ -358,7 +358,7 @@ TclpTempFileNameForLibrary(Tcl_Interp* interp, /* Tcl interpreter */
 	Tcl_AppendToObj(fileName, "/", 1);
 	Tcl_AppendObjToObj(fileName, tail);
 	return fileName;
-    }    
+    }
 }
 
 /*

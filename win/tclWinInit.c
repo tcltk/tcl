@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.22 2010/02/17 15:37:02 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.23 2010/09/13 16:57:03 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -478,7 +478,7 @@ TclpSetVariables(
     } sys;
     OSVERSIONINFOA osInfo;
     Tcl_DString ds;
-    WCHAR szUserName[UNLEN+1];
+    TCHAR szUserName[UNLEN+1];
     DWORD cchUserNameLen = UNLEN;
 
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
@@ -552,10 +552,10 @@ TclpSetVariables(
 
     Tcl_DStringInit(&ds);
     if (TclGetEnv("USERNAME", &ds) == NULL) {
-	if (tclWinProcs->getUserName((LPTSTR)szUserName, &cchUserNameLen) != 0) {
+	if (GetUserName(szUserName, &cchUserNameLen) != 0) {
 	    int cbUserNameLen = cchUserNameLen - 1;
-	    if (tclWinProcs->useWide) cbUserNameLen *= sizeof(WCHAR);
-	    tclWinProcs->tchar2utf((LPTSTR)szUserName, cbUserNameLen, &ds);
+	    cbUserNameLen *= sizeof(TCHAR);
+	    Tcl_WinTCharToUtf(szUserName, cbUserNameLen, &ds);
 	}
     }
     Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),

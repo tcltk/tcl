@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.11.4.11 2010/05/14 13:31:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.11.4.12 2010/09/13 16:57:03 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -197,9 +197,8 @@ readConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize;
-    tcharsize = tclWinProcs->useWide? 2 : 1;
-    result = tclWinProcs->readConsoleProc(
+    int tcharsize = sizeof(TCHAR);
+    result = ReadConsole(
 	    hConsole, lpBuffer, nbytes / tcharsize, &ntchars, NULL);
     if (nbytesread)
 	*nbytesread = (ntchars*tcharsize);
@@ -215,9 +214,8 @@ writeConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize;
-    tcharsize = tclWinProcs->useWide? 2 : 1;
-    result = tclWinProcs->writeConsoleProc(
+    int tcharsize = sizeof(TCHAR);
+    result = WriteConsole(
 	    hConsole, lpBuffer, nbytes / tcharsize, &ntchars, NULL);
     if (nbyteswritten)
 	*nbyteswritten = (ntchars*tcharsize);
@@ -1405,11 +1403,11 @@ TclWinOpenConsoleChannel(
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
-    if (tclWinProcs->useWide)
-	Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", "unicode");
-    else
-	Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
-
+#ifdef UNICODE
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", "unicode");
+#else
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
+#endif
     return infoPtr->channel;
 }
 

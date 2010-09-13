@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.25 2010/09/10 13:27:53 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.26 2010/09/13 16:57:03 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -65,19 +65,12 @@ typedef struct EXCEPTION_REGISTRATION {
 
 static Tcl_Encoding winTCharEncoding = NULL;
 
-#ifndef _MSC_VER
-/* Missing from mingw/cygwin headers */
-BOOL WINAPI CreateHardLinkW(LPCTSTR, LPCTSTR, LPSECURITY_ATTRIBUTES);
-BOOL WINAPI GetVolumeNameForVolumeMountPointW(LPCTSTR, LPTSTR,	DWORD);
-DWORD WINAPI GetLongPathNameW(LPCTSTR, LPTSTR,	DWORD);
-#endif
-
 /*
  * The following function table is used to dispatch to wide-character
  * versions of the operating system calls.
  */
 
-static const TclWinProcs winProcs = {
+static TclWinProcs winProcs = {
     1,
     (BOOL (WINAPI *)(const TCHAR *, LPDCB)) BuildCommDCBW,
     (TCHAR *(WINAPI *)(TCHAR *)) CharLowerW,
@@ -109,18 +102,23 @@ static const TclWinProcs winProcs = {
 	    TCHAR *, TCHAR **)) SearchPathW,
     (BOOL (WINAPI *)(const TCHAR *)) SetCurrentDirectoryW,
     (BOOL (WINAPI *)(const TCHAR *, DWORD)) SetFileAttributesW,
-	(BOOL (WINAPI *)(const TCHAR *, GET_FILEEX_INFO_LEVELS,
-		LPVOID)) GetFileAttributesExW,
-	(BOOL (WINAPI *)(const TCHAR *, const TCHAR*,
-		LPSECURITY_ATTRIBUTES)) CreateHardLinkW,
-	(HANDLE (WINAPI *)(const TCHAR*, UINT, LPVOID, UINT,
-		LPVOID, DWORD)) FindFirstFileExW,
-	(BOOL (WINAPI *)(const TCHAR*, TCHAR*,
-		DWORD)) GetVolumeNameForVolumeMountPointW,
-	(DWORD (WINAPI *)(const TCHAR*, TCHAR*,
-		DWORD)) GetLongPathNameW,
+
+    /*
+     * The three NULL function pointers will only be set when
+     * Tcl_FindExecutable is called. If you don't ever call that function, the
+     * application will crash whenever WinTcl tries to call functions through
+     * these null pointers. That is not a bug in Tcl - Tcl_FindExecutable is
+     * mandatory in recent Tcl releases.
+     */
+
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    /* getLongPathNameProc */
+    NULL,
     /* Security SDK - will be filled in on NT,XP,2000,2003 */
-    GetFileSecurityW, ImpersonateSelf, OpenThreadToken, RevertToSelf, MapGenericMask, AccessCheck,
+    NULL, NULL, NULL, NULL, NULL, NULL,
     /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleW,
     (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsoleW,
@@ -387,11 +385,65 @@ TclWinSetInterfaces(
 {
 	TclWinResetInterfaces();
 
-#ifdef _UNICODE
     if (wide) {
 	winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
+	if (winProcs.getFileAttributesExProc == NULL) {
+	    HINSTANCE hInstance = LoadLibrary(TEXT("kernel32"));
+
+	    if (hInstance != NULL) {
+		winProcs.getFileAttributesExProc =
+			(BOOL (WINAPI *)(const TCHAR *, GET_FILEEX_INFO_LEVELS,
+			LPVOID)) GetProcAddress(hInstance,
+			"GetFileAttributesExW");
+		winProcs.createHardLinkProc =
+			(BOOL (WINAPI *)(const TCHAR *, const TCHAR*,
+			LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance,
+			"CreateHardLinkW");
+		winProcs.findFirstFileExProc =
+			(HANDLE (WINAPI *)(const TCHAR*, UINT, LPVOID, UINT,
+			LPVOID, DWORD)) GetProcAddress(hInstance,
+			"FindFirstFileExW");
+		winProcs.getVolumeNameForVMPProc =
+			(BOOL (WINAPI *)(const TCHAR*, TCHAR*,
+			DWORD)) GetProcAddress(hInstance,
+			"GetVolumeNameForVolumeMountPointW");
+		winProcs.getLongPathNameProc =
+			(DWORD (WINAPI *)(const TCHAR*, TCHAR*,
+			DWORD)) GetProcAddress(hInstance, "GetLongPathNameW");
+		FreeLibrary(hInstance);
+	    }
+	    hInstance = LoadLibrary(TEXT("advapi32"));
+	    if (hInstance != NULL) {
+		winProcs.getFileSecurityProc = (BOOL (WINAPI *)(
+			LPCTSTR lpFileName,
+			SECURITY_INFORMATION RequestedInformation,
+			PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			DWORD nLength, LPDWORD lpnLengthNeeded))
+			GetProcAddress(hInstance, "GetFileSecurityW");
+		winProcs.impersonateSelfProc = (BOOL (WINAPI *) (
+			SECURITY_IMPERSONATION_LEVEL ImpersonationLevel))
+			GetProcAddress(hInstance, "ImpersonateSelf");
+		winProcs.openThreadTokenProc = (BOOL (WINAPI *) (
+			HANDLE ThreadHandle, DWORD DesiredAccess,
+			BOOL OpenAsSelf, PHANDLE TokenHandle))
+			GetProcAddress(hInstance, "OpenThreadToken");
+		winProcs.revertToSelfProc = (BOOL (WINAPI *) (void))
+			GetProcAddress(hInstance, "RevertToSelf");
+		winProcs.mapGenericMaskProc = (void (WINAPI *) (
+			PDWORD AccessMask, PGENERIC_MAPPING GenericMapping))
+			GetProcAddress(hInstance, "MapGenericMask");
+		winProcs.accessCheckProc = (BOOL (WINAPI *)(
+			PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			HANDLE ClientToken, DWORD DesiredAccess,
+			PGENERIC_MAPPING GenericMapping,
+			PPRIVILEGE_SET PrivilegeSet,
+			LPDWORD PrivilegeSetLength, LPDWORD GrantedAccess,
+			LPBOOL AccessStatus)) GetProcAddress(hInstance,
+			"AccessCheck");
+		FreeLibrary(hInstance);
+	    }
+	}
     }
-#endif
 }
 
 /*
