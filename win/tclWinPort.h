@@ -10,11 +10,24 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.20 2010/09/10 13:27:53 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.21 2010/09/14 12:38:34 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
+
+/*
+ * We must specify the lower version we intend to support.
+ *
+ * WINVER = 0x0500 means Windows 2000 and above
+ */
+
+#ifndef WINVER
+#   define WINVER 0x0500
+#endif
+#ifndef _WIN32_WINNT
+#   define _WIN32_WINNT 0x0500
+#endif
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

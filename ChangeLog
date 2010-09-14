@@ -1,3 +1,9 @@
+2010-09-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h:  Allow all Win2000+ API entries in Tcl
+	* win/tclWin32Dll.c: Eliminate dynamical loading of
+	advapi23 and kernal32 symbols.
+
 2010-09-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinChan.c:      Various clean-ups, converting from
@@ -6,6 +12,8 @@
 	* win/tclWinLoad.c:
 	* win/tclWinSerial.c:
 	* win/tclWinSock.c:
+	* tools/genStubs.tcl     Add scspec feature from ttkGenStubs.tcl
+	  (no change in output for *Decls.h files)
 
 2010-09-10  Jan Nijtmans  <nijtmans@users.sf.net>
 

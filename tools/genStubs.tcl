@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.18 2010/08/23 01:46:40 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.19 2010/09/14 12:38:34 dgp Exp $
 
 package require Tcl 8.4
 
@@ -34,6 +34,13 @@ namespace eval genStubs {
     #	The name of the interface currently being defined.
 
     variable curName "UNKNOWN"
+
+    # scspec --
+    #
+    #	Storage class specifier for external function declarations.
+    #	Normally "EXTERN", may be set to something like XYZAPI
+    #
+    variable scspec "EXTERN"
 
     # hooks --
     #
@@ -94,6 +101,17 @@ proc genStubs::interface {name} {
 
     set interfaces($name) {}
     return
+}
+
+# genStubs::scspec --
+#
+#	Define the storage class macro used for external function declarations.
+#	Typically, this will be a macro like XYZAPI or EXTERN that
+#	expands to either DLLIMPORT or DLLEXPORT, depending on whether
+#	-DBUILD_XYZ has been set.
+#
+proc genStubs::scspec {value} {
+    variable scspec $value
 }
 
 # genStubs::hooks --
@@ -403,10 +421,11 @@ proc genStubs::parseArg {arg} {
 #	Returns the formatted declaration string.
 
 proc genStubs::makeDecl {name decl index} {
+    variable scspec
     lassign $decl rtype fname args
 
     append text "/* $index */\n"
-    set line "EXTERN $rtype"
+    set line "$scspec $rtype"
     set count [expr {2 - ([string length $line] / 8)}]
     append line [string range "\t\t\t" 0 $count]
     set pad [expr {24 - [string length $line]}]
