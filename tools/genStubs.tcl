@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.43 2010/09/13 21:17:03 nijtmans Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.44 2010/09/15 07:33:56 nijtmans Exp $
 
 package require Tcl 8.4
 
@@ -41,6 +41,15 @@ namespace eval genStubs {
     #	Normally "EXTERN", may be set to something like XYZAPI
     #
     variable scspec "EXTERN"
+
+    # epoch, revision --
+    #
+    #	The epoch and revision numbers of the interface currently being defined.
+    #   (@@@TODO: should be an array mapping interface names -> numbers)
+    #
+
+    variable epoch {}
+    variable revision 0
 
     # hooks --
     #
@@ -114,6 +123,16 @@ proc genStubs::scspec {value} {
     variable scspec $value
 }
 
+# genStubs::epoch --
+#
+#	Define the epoch number for this library.  The epoch
+#	should be incrememented when a release is made that
+#	contains incompatible changes to the public API.
+#
+proc genStubs::epoch {value} {
+    variable epoch $value
+}
+
 # genStubs::hooks --
 #
 #	This function defines the subinterface hooks for the current
@@ -152,12 +171,18 @@ proc genStubs::hooks {names} {
 proc genStubs::declare {args} {
     variable stubs
     variable curName
+    variable revision
 
-    if {[llength $args] != 3} {
+    incr revision
+    if {[llength $args] == 2} {
+	lassign $args index decl
+	set platformList generic
+    } elseif {[llength $args] == 3} {
+	lassign $args index platformList decl
+    } else {
 	puts stderr "wrong # args: declare $args"
 	return
     }
-    lassign $args index platformList decl
 
     # Check for duplicate declarations, then add the declaration and
     # bump the lastNum counter if necessary.
@@ -929,9 +954,18 @@ proc genStubs::emitMacros {name textVar} {
 proc genStubs::emitHeader {name} {
     variable outDir
     variable hooks
+    variable epoch
+    variable revision
 
     set capName [string toupper [string index $name 0]]
     append capName [string range $name 1 end]
+
+    if {$epoch ne ""} {
+	set CAPName [string toupper $name]
+	append text "\n"
+	append text "#define ${CAPName}_STUBS_EPOCH $epoch\n"
+	append text "#define ${CAPName}_STUBS_REVISION $revision\n"
+    }
 
     emitDeclarations $name text
 
@@ -946,6 +980,10 @@ proc genStubs::emitHeader {name} {
     }
     append text "\ntypedef struct ${capName}Stubs {\n"
     append text "    int magic;\n"
+    if {$epoch ne ""} {
+	append text "    int epoch;\n"
+	append text "    int revision;\n"
+    }
     append text "    const struct ${capName}StubHooks *hooks;\n\n"
 
     emitSlots $name text
@@ -976,6 +1014,7 @@ proc genStubs::emitHeader {name} {
 proc genStubs::emitInit {name textVar} {
     variable hooks
     variable interfaces
+    variable epoch
     upvar $textVar text
     set root 1
 
@@ -1005,6 +1044,11 @@ proc genStubs::emitInit {name textVar} {
 	append text "static "
     }
     append text "const ${capName}Stubs ${name}Stubs = \{\n    TCL_STUB_MAGIC,\n"
+    if {$epoch ne ""} {
+	set CAPName [string toupper $name]
+	append text "    ${CAPName}_STUBS_EPOCH,\n"
+	append text "    ${CAPName}_STUBS_REVISION,\n"
+    }
     if {[info exists hooks($name)]} {
 	append text "    &${name}StubHooks,\n"
     } else {
