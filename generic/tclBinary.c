@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.65 2010/08/22 18:53:26 nijtmans Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.66 2010/09/15 22:12:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -609,6 +609,10 @@ TclAppendBytesToByteArray(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
     }
+    if (len < 0) {
+	Tcl_Panic("%s must be called with definite number of bytes to append",
+		"TclAppendBytesToByteArray");
+    }
     if (objPtr->typePtr != &tclByteArrayType) {
 	SetByteArrayFromAny(NULL, objPtr);
     }
@@ -623,9 +627,20 @@ TclAppendBytesToByteArray(
 	ByteArray *tmpByteArrayPtr = NULL;
 
 	attempt = byteArrayPtr->allocated;
-	do {
-	    attempt *= 2;
-	} while (attempt < used+len);
+	if (attempt < 1) {
+	    /*
+	     * No allocated bytes, so must be none used too. We use this
+	     * method to calculate how many bytes to allocate because we can
+	     * end up with a zero-length buffer otherwise, when doubling can
+	     * cause trouble. [Bug 3067036]
+	     */
+
+	    attempt = len + 1;
+	} else {
+	    do {
+		attempt *= 2;
+	    } while (attempt < used+len);
+	}
 
 	if (BYTEARRAY_SIZE(attempt) > BYTEARRAY_SIZE(used)) {
 	    tmpByteArrayPtr = (ByteArray *)
