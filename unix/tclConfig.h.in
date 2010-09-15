@@ -10,6 +10,9 @@
 /* Define to 1 if you have the <AvailabilityMacros.h> header file. */
 #undef HAVE_AVAILABILITYMACROS_H
 
+/* Define to 1 if the system has the type `blkcnt_t'. */
+#undef HAVE_BLKCNT_T
+
 /* Do we have BSDgettimeofday()? */
 #undef HAVE_BSDGETTIMEOFDAY
 
@@ -183,6 +186,9 @@
 
 /* Define to 1 if `st_blksize' is member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
+
+/* Define to 1 if `st_blocks' is member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_BLOCKS
 
 /* Define to 1 if you have the <sys/filio.h> header file. */
 #undef HAVE_SYS_FILIO_H
@@ -381,9 +387,6 @@
 
 /* Is getcwd Posix-compliant? */
 #undef USEGETWD
-
-/* Do we need a special AIX hack for timezones? */
-#undef USE_DELTA_FOR_TZ
 
 /* May we include <dirent2.h>? */
 #undef USE_DIRENT2_H
