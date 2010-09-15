@@ -1,3 +1,13 @@
+2010-09-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl   [Patch 3034251] backport ttkGenStubs.tcl
+	* generic/tcl.decls    features to genStubs.tcl. Make the "generic"
+	* generic/tclInt.decls argument in the *.decls files optional
+	* generic/tclOO.decls  (no change to any tcl*Decls.h files)
+	* generic/tclTomMath.decls
+	This allows genStubs.tcl to generate the ttk stub files as well,
+	while keeping full compatibility with existing *.decls files.
+
 2010-09-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinPort.h:  Allow all Win2000+ API entries in Tcl
