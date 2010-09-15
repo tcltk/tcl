@@ -16,6 +16,9 @@
 /* Define to 1 if you have the <AvailabilityMacros.h> header file. */
 #undef HAVE_AVAILABILITYMACROS_H
 
+/* Define to 1 if the system has the type `blkcnt_t'. */
+#undef HAVE_BLKCNT_T
+
 /* Do we have BSDgettimeofday()? */
 #undef HAVE_BSDGETTIMEOFDAY
 
