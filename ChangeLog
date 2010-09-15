@@ -1,3 +1,9 @@
+2010-09-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBinary.c (TclAppendBytesToByteArray): [Bug 3067036]: Make
+	sure we never try to double zero repeatedly to get a buffer size. Also
+	added a check for sanity on the size of buffer being appended.
+
 2010-09-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/Makefile.in:	Revise `make dist` target to tolerate the
@@ -5,19 +11,19 @@
 
 2010-09-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tools/genStubs.tcl   [Patch 3034251] backport ttkGenStubs.tcl
-	* generic/tcl.decls    features to genStubs.tcl. Make the "generic"
-	* generic/tclInt.decls argument in the *.decls files optional
-	* generic/tclOO.decls  (no change to any tcl*Decls.h files)
-	* generic/tclTomMath.decls
-	This allows genStubs.tcl to generate the ttk stub files as well,
-	while keeping full compatibility with existing *.decls files.
+	* tools/genStubs.tcl:   [Patch 3034251]: Backport ttkGenStubs.tcl
+	* generic/tcl.decls:    features to genStubs.tcl. Make the "generic"
+	* generic/tclInt.decls: argument in the *.decls files optional
+	* generic/tclOO.decls:  (no change to any tcl*Decls.h files)
+	* generic/tclTomMath.decls:
+	This allows genStubs.tcl to generate the ttk stub files as well, while
+	keeping full compatibility with existing *.decls files.
 
 2010-09-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinPort.h:  Allow all Win2000+ API entries in Tcl
-	* win/tclWin32Dll.c: Eliminate dynamical loading of
-	advapi23 and kernal32 symbols.
+	* win/tclWin32Dll.c: Eliminate dynamical loading of advapi23 and
+	kernel32 symbols.
 
 2010-09-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -27,13 +33,13 @@
 	* win/tclWinLoad.c:
 	* win/tclWinSerial.c:
 	* win/tclWinSock.c:
-	* tools/genStubs.tcl     Add scspec feature from ttkGenStubs.tcl
+	* tools/genStubs.tcl:    Add scspec feature from ttkGenStubs.tcl
 	  (no change in output for *Decls.h files)
 
 2010-09-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWin32Dll.c: Partly revert yesterday's change, to make it
-	work on VC++ 6.0 again.
+	* win/tclWin32Dll.c: Partly revert yesterday's change, to make it work
+	on VC++ 6.0 again.
 
 2010-09-10  Donal K. Fellows  <dkf@users.sf.net>
 
