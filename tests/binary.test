@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.11.4.22 2009/12/30 17:24:07 dgp Exp $
+# RCS: @(#) $Id: binary.test,v 1.11.4.23 2010/09/16 03:02:24 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -76,7 +76,7 @@ proc testIEEE {} {
 }
 
 testConstraint ieeeFloatingPoint [testIEEE]
-
+
 # ----------------------------------------------------------------------
 
 test binary-0.1 {DupByteArrayInternalRep} {
@@ -2736,7 +2736,28 @@ test binary-75.26 {binary decode uuencode} -body {
     string length [binary decode uuencode " "]
 } -result 0
 
+test binary-76.1 {binary string appending growth algorithm} unix {
+    # Create zero-length byte array first
+    set f [open /dev/null rb]
+    chan configure $f -blocking 0
+    set str [read $f 2]
+    close $f
+    # Append to it
+    string length [append str [binary format a* foo]]
+} 3
+test binary-76.2 {binary string appending growth algorithm} win {
+    # Create zero-length byte array first
+    set f [open NUL rb]
+    chan configure $f -blocking 0
+    set str [read $f 2]
+    close $f
+    # Append to it
+    string length [append str [binary format a* foo]]
+} 3
+
+# ----------------------------------------------------------------------
 # cleanup
+
 ::tcltest::cleanupTests
 return
 
