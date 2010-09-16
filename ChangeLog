@@ -1,5 +1,8 @@
 2010-09-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWinFile.c: remove define of FINDEX_INFO_LEVELS as all
+	supported versions of compilers should now have it.
+
 	* unix/Makefile.in: do not pass current build env vars when using
 	NATIVE_TCLSH in targets.
 
