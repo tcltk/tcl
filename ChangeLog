@@ -1,3 +1,8 @@
+2010-09-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/Makefile.in: do not pass current build env vars when using
+	NATIVE_TCLSH in targets.
+
 2010-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclDecls.h     Make Tcl_FindExecutable() work in UNICODE
