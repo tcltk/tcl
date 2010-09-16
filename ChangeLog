@@ -1,3 +1,10 @@
+2010-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h     Make Tcl_FindExecutable() work in UNICODE
+	* generic/tclEncoding.c  compiles (windows-only) as well as ASCII.
+	* generic/tclStubInit.c  Needed for [FRQ 491789]: setargv() doesn't
+	support a unicode cmdline
+
 2010-09-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBinary.c (TclAppendBytesToByteArray): [Bug 3067036]: Make
