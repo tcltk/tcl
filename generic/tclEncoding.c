@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.34 2010/08/23 01:46:39 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.35 2010/09/17 13:10:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1427,7 +1427,7 @@ Tcl_UtfToExternal(
  *
  *---------------------------------------------------------------------------
  */
-
+#undef Tcl_FindExecutable
 void
 Tcl_FindExecutable(
     const char *argv0)		/* The value of the application's argv[0]

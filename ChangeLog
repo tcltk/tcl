@@ -1,3 +1,18 @@
+2010-09-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinFile.c: remove define of FINDEX_INFO_LEVELS as all
+	supported versions of compilers should now have it.
+
+	* unix/Makefile.in: do not pass current build env vars when using
+	NATIVE_TCLSH in targets.
+
+2010-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h     Make Tcl_FindExecutable() work in UNICODE
+	* generic/tclEncoding.c  compiles (windows-only) as well as ASCII.
+	* generic/tclStubInit.c  Needed for [FRQ 491789]: setargv() doesn't
+	support a unicode cmdline
+
 2010-09-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBinary.c (TclAppendBytesToByteArray): [Bug 3067036]: Make
