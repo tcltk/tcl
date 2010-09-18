@@ -1,3 +1,9 @@
+2010-09-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFCmd.c [Bug 3069278]: breakage on head Windows triggered
+	by install-tzdata. Temporary don't compile this with -DUNICODE,
+	while investigating this bug.
+
 2010-09-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinFile.c: remove define of FINDEX_INFO_LEVELS as all
