@@ -11,16 +11,8 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.110 2010/09/18 05:40:30 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.111 2010/09/18 05:56:17 nijtmans Exp $
  */
-
-/* TODO: This file does not compile in UNICODE mode.
- * See [Freq 2965056]: Windows build with -DUNICODE
- * and
- * [Bug 3069278]: breakage on head Windows triggered by install-tzdata
- */
-#undef UNICODE
-#undef _UNICODE
 
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
@@ -208,7 +200,7 @@ WinLink(
     const TCHAR *linkTargetPath,
     int linkAction)
 {
-    TCHAR tempFileName[MAX_PATH * 2];
+    TCHAR tempFileName[MAX_PATH];
     TCHAR *tempFilePart;
     DWORD attr;
 
@@ -329,7 +321,7 @@ static Tcl_Obj *
 WinReadLink(
     const TCHAR *linkSourcePath)
 {
-    TCHAR tempFileName[MAX_PATH * 2];
+    TCHAR tempFileName[MAX_PATH];
     TCHAR *tempFilePart;
     DWORD attr;
 
@@ -1930,7 +1922,7 @@ TclpGetCwd(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name of current directory. */
 {
-    TCHAR buffer[MAX_PATH * 2];
+    TCHAR buffer[MAX_PATH];
     char *p;
 
     if (tclWinProcs->getCurrentDirectoryProc(MAX_PATH, buffer) == 0) {
@@ -2177,7 +2169,7 @@ NativeDev(
 {
     int dev;
     Tcl_DString ds;
-    TCHAR nativeFullPath[MAX_PATH * 2];
+    TCHAR nativeFullPath[MAX_PATH];
     TCHAR *nativePart;
     const char *fullPath;
 
@@ -2351,7 +2343,7 @@ ClientData
 TclpGetNativeCwd(
     ClientData clientData)
 {
-    TCHAR buffer[MAX_PATH * 2];
+    TCHAR buffer[MAX_PATH];
 
     if (tclWinProcs->getCurrentDirectoryProc(MAX_PATH, buffer) == 0) {
 	TclWinConvertError(GetLastError());
@@ -2469,7 +2461,7 @@ TclpFilesystemPathType(
 {
 #define VOL_BUF_SIZE 32
     int found;
-    TCHAR volType[VOL_BUF_SIZE * 2];
+    TCHAR volType[VOL_BUF_SIZE];
     char *firstSeparator;
     const char *path;
     Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
