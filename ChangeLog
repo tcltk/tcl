@@ -1,3 +1,7 @@
+2010-09-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/file.n (file readlink): [Bug 3070580]: Typofix.
+
 2010-09-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/regsub.n: [Bug 3063568]: Fix for gotcha in example due to Tcl's
