@@ -1,15 +1,19 @@
+2010-09-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/file.n (file readlink): [Bug 3070580]: Typofix.
+
 2010-09-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinFCmd.c [Bug 3069278]: breakage on head Windows triggered
-	by install-tzdata. Temporary don't compile this with -DUNICODE,
-	while investigating this bug.
+	* win/tclWinFCmd.c [Bug 3069278]: Breakage on head Windows triggered
+	by install-tzdata. Temporary don't compile this with -DUNICODE, while
+	investigating this bug.
 
 2010-09-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* win/tclWinFile.c: remove define of FINDEX_INFO_LEVELS as all
+	* win/tclWinFile.c: Remove define of FINDEX_INFO_LEVELS as all
 	supported versions of compilers should now have it.
 
-	* unix/Makefile.in: do not pass current build env vars when using
+	* unix/Makefile.in: Do not pass current build env vars when using
 	NATIVE_TCLSH in targets.
 
 2010-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
