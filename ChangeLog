@@ -1,3 +1,9 @@
+2010-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFCmd.c: Eliminate tclWinProcs->useWide everywhere, since
+	* win/tclWinFile.c: the value is always "1" on platforms >win95
+	* win/tclWinPipe.c:
+
 2010-09-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/file.n (file readlink): [Bug 3070580]: Typofix.

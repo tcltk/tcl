@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.111 2010/09/18 05:56:17 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.112 2010/09/20 14:28:13 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -1051,14 +1051,8 @@ TclpMatchInDirectory(
 	    int checkDrive = 0, isDrive;
 	    DWORD attr;
 
-	    if (tclWinProcs->useWide) {
-		native = (const TCHAR *) data.w.cFileName;
-		attr = data.w.dwFileAttributes;
-	    } else {
-		native = (const TCHAR *) data.a.cFileName;
-		attr = data.a.dwFileAttributes;
-	    }
-
+	    native = (const TCHAR *) data.w.cFileName;
+	    attr = data.w.dwFileAttributes;
 	    utfname = tclWinProcs->tchar2utf(native, -1, &ds);
 
 	    if (!matchSpecialDots) {
@@ -1745,55 +1739,22 @@ NativeAccess(
 
 static int
 NativeIsExec(
-    const TCHAR *nativePath)
+    const TCHAR *path)
 {
-    if (tclWinProcs->useWide) {
-	const WCHAR *path = (const WCHAR *) nativePath;
-	int len = wcslen(path);
+    int len = wcslen(path);
 
-	if (len < 5) {
-	    return 0;
-	}
+    if (len < 5) {
+	return 0;
+    }
 
-	if (path[len-4] != L'.') {
-	    return 0;
-	}
+    if (path[len-4] != L'.') {
+	return 0;
+    }
 
-	/*
-	 * Use wide-char case-insensitive comparison
-	 */
-
-	if ((_wcsicmp(path+len-3, L"exe") == 0)
-		|| (_wcsicmp(path+len-3, L"com") == 0)
-		|| (_wcsicmp(path+len-3, L"bat") == 0)) {
-	    return 1;
-	}
-    } else {
-	const char *p;
-
-	/*
-	 * We are only looking for pure ascii.
-	 */
-
-	p = strrchr((const char *) nativePath, '.');
-	if (p != NULL) {
-	    p++;
-
-	    /*
-	     * Note: in the old code, stat considered '.pif' files as
-	     * executable, whereas access did not.
-	     */
-
-	    if ((strcasecmp(p, "exe") == 0)
-		    || (strcasecmp(p, "com") == 0)
-		    || (strcasecmp(p, "bat") == 0)) {
-		/*
-		 * File that ends with .exe, .com, or .bat is executable.
-		 */
-
-		return 1;
-	    }
-	}
+    if ((_wcsicmp(path+len-3, L"exe") == 0)
+	    || (_wcsicmp(path+len-3, L"com") == 0)
+	    || (_wcsicmp(path+len-3, L"bat") == 0)) {
+	return 1;
     }
     return 0;
 }
@@ -1938,21 +1899,12 @@ TclpGetCwd(
      * Watch for the weird Windows c:\\UNC syntax.
      */
 
-    if (tclWinProcs->useWide) {
-	WCHAR *native = (WCHAR *) buffer;
-	if ((native[0] != '\0') && (native[1] == ':')
-		&& (native[2] == '\\') && (native[3] == '\\')) {
-	    native += 2;
-	}
-	tclWinProcs->tchar2utf((TCHAR *) native, -1, bufferPtr);
-    } else {
-	char *native = (char *) buffer;
-	if ((native[0] != '\0') && (native[1] == ':')
-		&& (native[2] == '\\') && (native[3] == '\\')) {
-	    native += 2;
-	}
-	tclWinProcs->tchar2utf((TCHAR *) native, -1, bufferPtr);
+    WCHAR *native = (WCHAR *) buffer;
+    if ((native[0] != '\0') && (native[1] == ':')
+	    && (native[2] == '\\') && (native[3] == '\\')) {
+	native += 2;
     }
+    tclWinProcs->tchar2utf((TCHAR *) native, -1, bufferPtr);
 
     /*
      * Convert to forward slashes for easier use in scripts.
@@ -2351,22 +2303,8 @@ TclpGetNativeCwd(
     }
 
     if (clientData != NULL) {
-	if (tclWinProcs->useWide) {
-	    /*
-	     * Unicode representation when running on NT/2K/XP.
-	     */
-
-	    if (wcscmp((const WCHAR*)clientData, (const WCHAR*)buffer) == 0) {
-		return clientData;
-	    }
-	} else {
-	    /*
-	     * ANSI representation when running on 95/98/ME.
-	     */
-
-	    if (strcmp((const char*) clientData, (const char*) buffer) == 0) {
-		return clientData;
-	    }
+	if (wcscmp((const WCHAR*)clientData, (const WCHAR*)buffer) == 0) {
+	    return clientData;
 	}
     }
 
@@ -3221,11 +3159,7 @@ TclNativeCreateNativeRep(
 	}
     }
     tclWinProcs->utf2tchar(str, len, &ds);
-    if (tclWinProcs->useWide) {
-	len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
-    } else {
-	len = Tcl_DStringLength(&ds) + sizeof(char);
-    }
+    len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
     Tcl_DecrRefCount(validPathPtr);
     nativePathPtr = ckalloc((unsigned) len);
     memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
@@ -3262,19 +3196,7 @@ TclNativeDupInternalRep(
 	return NULL;
     }
 
-    if (tclWinProcs->useWide) {
-	/*
-	 * Unicode representation when running on NT/2K/XP.
-	 */
-
-	len = sizeof(WCHAR) * (wcslen((const WCHAR *) clientData) + 1);
-    } else {
-	/*
-	 * ANSI representation when running on 95/98/ME.
-	 */
-
-	len = sizeof(char) * (strlen((const char *) clientData) + 1);
-    }
+    len = sizeof(TCHAR) * (_tcslen((const WCHAR *) clientData) + 1);
 
     copy = (char *) ckalloc(len);
     memcpy(copy, clientData, len);
