@@ -11,10 +11,8 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.38 2010/09/17 13:10:56 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.39 2010/09/20 12:09:07 dgp Exp $
  */
-
-/* #define _WIN32_WINNT	0x0500 */
 
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
