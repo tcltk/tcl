@@ -3,6 +3,8 @@
 	* win/tclWinFile.c:   Fix declaration after statement.
 	* win/tcl.m4:         Add -Wdeclaration-after-statement, so
 	* win/configure:      this mistake cannot happen again.
+	* win/tclWinFCmd.c:   [Bug 3069278]: Breakage on head Windows triggered
+	* win/tclWinPipe.c:   by install-tzdata, final fix
 
 2010-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
