@@ -1,3 +1,19 @@
+2010-09-21  Kevin B. Kenny  <kennykb@acm.org>
+
+	[BRANCH: dogeen-assembler-branch]
+
+	* generic/tclAssembly.c (new file): 
+	* generic/tclAssembly.h:
+	* generic/tclBasic.c (builtInCmds, Tcl_CreateInterp):
+	* generic/tclInt.h:
+	* tests/assemble.test (new file):
+	* tests/assemble1.bench (new file):
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/Makefile.vc:
+		Initial commit of Ozgur Dogan Ugurlu's (SF user: dogeen)
+		assembler for the Tcl bytecode language.
+
 2010-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinFCmd.c: Eliminate tclWinProcs->useWide everywhere, since
