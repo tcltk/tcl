@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.214 2010/09/09 14:30:20 nijtmans Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.214.2.1 2010/09/21 19:32:26 kennykb Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -250,6 +250,7 @@ COREOBJS = \
 	$(TMP_DIR)\regexec.obj \
 	$(TMP_DIR)\regfree.obj \
 	$(TMP_DIR)\tclAlloc.obj \
+	$(TMP_DIR)\tclAssembly.obj \
 	$(TMP_DIR)\tclAsync.obj \
 	$(TMP_DIR)\tclBasic.obj \
 	$(TMP_DIR)\tclBinary.obj \
