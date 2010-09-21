@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.112 2010/09/20 14:28:13 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.113 2010/09/21 20:22:51 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -1885,6 +1885,7 @@ TclpGetCwd(
 {
     TCHAR buffer[MAX_PATH];
     char *p;
+    WCHAR *native;
 
     if (tclWinProcs->getCurrentDirectoryProc(MAX_PATH, buffer) == 0) {
 	TclWinConvertError(GetLastError());
@@ -1899,7 +1900,7 @@ TclpGetCwd(
      * Watch for the weird Windows c:\\UNC syntax.
      */
 
-    WCHAR *native = (WCHAR *) buffer;
+    native = (WCHAR *) buffer;
     if ((native[0] != '\0') && (native[1] == ':')
 	    && (native[2] == '\\') && (native[3] == '\\')) {
 	native += 2;
