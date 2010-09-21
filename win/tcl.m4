@@ -535,7 +535,7 @@ file for information about building with Mingw.])
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall"
+	CFLAGS_WARNING="-Wall -Wdeclaration-after-statement"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 

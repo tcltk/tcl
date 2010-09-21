@@ -1,3 +1,9 @@
+2010-09-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c:   Fix declaration after statement.
+	* win/tcl.m4:         Add -Wdeclaration-after-statement, so
+	* win/configure:      this mistake cannot happen again.
+
 2010-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinFCmd.c: Eliminate tclWinProcs->useWide everywhere, since
