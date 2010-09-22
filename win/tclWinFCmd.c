@@ -9,16 +9,8 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.67 2010/09/20 14:28:15 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.67.2.1 2010/09/22 01:08:49 kennykb Exp $
  */
-
-/* TODO: This file does not compile in UNICODE mode.
- * See [Freq 2965056]: Windows build with -DUNICODE
- * and
- * [Bug 3069278]: breakage on head Windows triggered by install-tzdata
- */
-#undef UNICODE
-#undef _UNICODE
 
 #include "tclWinInt.h"
 
@@ -339,8 +331,8 @@ DoRenameFile(
 	    TCHAR *nativeSrcRest, *nativeDstRest;
 	    const char **srcArgv, **dstArgv;
 	    int size, srcArgc, dstArgc;
-	    TCHAR nativeSrcPath[MAX_PATH * 2];
-	    TCHAR nativeDstPath[MAX_PATH * 2];
+	    TCHAR nativeSrcPath[MAX_PATH];
+	    TCHAR nativeDstPath[MAX_PATH];
 	    Tcl_DString srcString, dstString;
 	    const char *src, *dst;
 
@@ -476,7 +468,7 @@ DoRenameFile(
 
 		TCHAR *nativeRest, *nativeTmp, *nativePrefix;
 		int result, size;
-		TCHAR tempBuf[MAX_PATH * 2];
+		TCHAR tempBuf[MAX_PATH];
 
 		size = tclWinProcs->getFullPathNameProc(nativeDst, MAX_PATH,
 			tempBuf, &nativeRest);
@@ -484,7 +476,7 @@ DoRenameFile(
 		    return TCL_ERROR;
 		}
 		nativeTmp = (TCHAR *) tempBuf;
-		nativeRest[0] = '\0';
+		nativeRest[0] = L'\0';
 
 		result = TCL_ERROR;
 		nativePrefix = (TCHAR *) L"tclr";
@@ -1304,7 +1296,7 @@ TraverseWinTree(
 	goto end;
     }
 
-    nativeSource[oldSourceLen + 1] = '\0';
+    Tcl_DStringSetLength(sourcePtr, oldSourceLen + 1);
     Tcl_DStringSetLength(sourcePtr, oldSourceLen);
     result = traverseProc(nativeSource, nativeTarget, DOTREE_PRED,
 	    errorPtr);
