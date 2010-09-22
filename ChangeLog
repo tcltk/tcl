@@ -1,5 +1,8 @@
 2010-09-22  Miguel Sofer  <msofer@users.sf.net>
 
+	* tests/execute.test: added execute-10.3 for [Bug 3072640]. The
+	test causes a mem failure.
+
 	* generic/tclExecute: protect all possible writes to ::errorInfo
 	or ::errorCode with DECACHE_STACK_INFO(), as they could run
 	traces. The new calls to be protected are Tcl_ResetResult(),
