@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.61 2010/04/05 19:44:45 ferrieux Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.62 2010/09/22 00:57:11 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1378,7 +1378,7 @@ TclMergeReturnOptions(
 	const char *compare =
 		TclGetStringFromObj(keys[KEY_OPTIONS], &compareLen);
 
-	if ((optLen == compareLen) && (strcmp(opt, compare) == 0)) {
+	if ((optLen == compareLen) && (memcmp(opt, compare, optLen) == 0)) {
 	    Tcl_DictSearch search;
 	    int done = 0;
 	    Tcl_Obj *keyPtr;
