@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.83 2010/09/20 14:28:15 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.83.2.1 2010/09/22 01:08:49 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -3133,8 +3133,8 @@ TclpOpenTemporaryFile(
 	sprintf(number, "%d.TMP", counter);
 	counter = (unsigned short) (counter + 1);
 	tclWinProcs->utf2tchar(number, strlen(number), &buf);
-	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
-	*(WCHAR *)(namePtr + Tcl_DStringLength(&buf) + 1) = '\0';
+	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf) + 1);
+	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf) + 1);
 	Tcl_DStringFree(&buf);
 
 	handle = tclWinProcs->createFileProc((TCHAR *) name,

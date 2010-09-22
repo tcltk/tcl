@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.203 2010/09/01 20:35:33 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.203.2.1 2010/09/22 01:08:49 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -880,8 +880,8 @@ TclLookupSimpleVar(
 				 * the variable. */
     Namespace *varNsPtr, *cxtNsPtr, *dummy1Ptr, *dummy2Ptr;
     ResolverScheme *resPtr;
-    int isNew, i, result;
-    const char *varName = TclGetString(varNamePtr);
+    int isNew, i, result, varLen;
+    const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
 
     varPtr = NULL;
     varNsPtr = NULL;		/* Set non-NULL if a nonlocal variable. */
@@ -1006,17 +1006,18 @@ TclLookupSimpleVar(
 	    }
 	}
     } else {			/* Local var: look in frame varFramePtr. */
-	int localCt = varFramePtr->numCompiledLocals;
+	int localLen, localCt = varFramePtr->numCompiledLocals;
 	Tcl_Obj **objPtrPtr = &varFramePtr->localCachePtr->varName0;
+	const char *localNameStr;
 
 	for (i=0 ; i<localCt ; i++, objPtrPtr++) {
 	    register Tcl_Obj *objPtr = *objPtrPtr;
 
 	    if (objPtr) {
-		const char *localNameStr = TclGetString(objPtr);
+		localNameStr = TclGetStringFromObj(objPtr, &localLen);
 
-		if ((varName[0] == localNameStr[0])
-			&& (strcmp(varName, localNameStr) == 0)) {
+		if ((varLen == localLen) && (varName[0] == localNameStr[0])
+			&& !memcmp(varName, localNameStr, varLen)) {
 		    *indexPtr = i;
 		    return (Var *) &varFramePtr->compiledLocals[i];
 		}
@@ -6428,21 +6429,10 @@ CompareVarKeys(
     l2 = objPtr2->length;
 
     /*
-     * Only compare if the string representations are of the same length.
+     * Only compare string representations of the same length.
      */
 
-    if (l1 == l2) {
-	for (;; p1++, p2++, l1--) {
-	    if (*p1 != *p2) {
-		break;
-	    }
-	    if (l1 == 0) {
-		return 1;
-	    }
-	}
-    }
-
-    return 0;
+    return ((l1 == l2) && !memcmp(p1, p2, l1));
 }
 
 /*
