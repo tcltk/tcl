@@ -1,3 +1,11 @@
+2010-09-22  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute: protect all possible writes to ::errorInfo
+	or ::errorCode with DECACHE_STACK_INFO(), as they could run
+	traces. The new calls to be protected are Tcl_ResetResult(),
+	Tcl_SetErrorCode(), IllegalExprOperandType(),
+	TclExprFloatError(). The error was triggered by [Patch 3072080].
+
 2010-09-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tcl.m4:         Add kernel32 to LIBS, so the link line for mingw
