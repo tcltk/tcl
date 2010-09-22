@@ -1,3 +1,13 @@
+2010-09-21  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclExecute.c (TclExecuteByteCode):
+	* generic/tclOOMethod.c (ProcedureMethodCompiledVarConnect):
+	* generic/tclVar.c (TclLookupSimpleVar, CompareVarKeys):
+	* generic/tclPathObj.c (Tcl_FSGetNormalizedPath, Tcl_FSEqualPaths):
+	* generic/tclIOUtil.c (TclFSCwdPointerEquals): peephole opt
+	* generic/tclResult.c (TclMergeReturnOptions): use memcmp where
+	applicable as possible speedup on some libc variants.
+
 2010-09-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinFile.c:   Fix declaration after statement.
