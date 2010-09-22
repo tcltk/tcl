@@ -9,16 +9,8 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.25 2010/09/20 12:09:07 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.26 2010/09/22 02:42:51 dgp Exp $
  */
-
-/* TODO: This file does not compile in UNICODE mode.
- * See [Freq 2965056]: Windows build with -DUNICODE
- * and
- * [Bug 3069278]: breakage on head Windows triggered by install-tzdata
- */
-#undef UNICODE
-#undef _UNICODE
 
 #include "tclWinInt.h"
 
@@ -339,8 +331,8 @@ DoRenameFile(
 	    TCHAR *nativeSrcRest, *nativeDstRest;
 	    const char **srcArgv, **dstArgv;
 	    int size, srcArgc, dstArgc;
-	    TCHAR nativeSrcPath[MAX_PATH * 2];
-	    TCHAR nativeDstPath[MAX_PATH * 2];
+	    TCHAR nativeSrcPath[MAX_PATH];
+	    TCHAR nativeDstPath[MAX_PATH];
 	    Tcl_DString srcString, dstString;
 	    const char *src, *dst;
 
@@ -476,7 +468,7 @@ DoRenameFile(
 
 		TCHAR *nativeRest, *nativeTmp, *nativePrefix;
 		int result, size;
-		TCHAR tempBuf[MAX_PATH * 2];
+		TCHAR tempBuf[MAX_PATH];
 
 		size = tclWinProcs->getFullPathNameProc(nativeDst, MAX_PATH,
 			tempBuf, &nativeRest);
@@ -484,11 +476,10 @@ DoRenameFile(
 		    return TCL_ERROR;
 		}
 		nativeTmp = (TCHAR *) tempBuf;
-		nativeRest[0] = '\0';
+		nativeRest[0] = L'\0';
 
 		result = TCL_ERROR;
-		nativePrefix = (tclWinProcs->useWide)
-			? (TCHAR *) L"tclr" : (TCHAR *) "tclr";
+		nativePrefix = (TCHAR *) L"tclr";
 		if (tclWinProcs->getTempFileNameProc(nativeTmp, nativePrefix,
 			0, tempBuf) != 0) {
 		    /*
@@ -1290,12 +1281,8 @@ TraverseWinTree(
 	return traverseProc(nativeSource, nativeTarget, DOTREE_F, errorPtr);
     }
 
-    if (tclWinProcs->useWide) {
-	Tcl_DStringAppend(sourcePtr, (char *) L"\\*.*", 4 * sizeof(WCHAR) + 1);
-	Tcl_DStringSetLength(sourcePtr, Tcl_DStringLength(sourcePtr) - 1);
-    } else {
-	Tcl_DStringAppend(sourcePtr, "\\*.*", 4);
-    }
+    Tcl_DStringAppend(sourcePtr, (char *) L"\\*.*", 4 * sizeof(WCHAR) + 1);
+    Tcl_DStringSetLength(sourcePtr, Tcl_DStringLength(sourcePtr) - 1);
 
     nativeSource = (TCHAR *) Tcl_DStringValue(sourcePtr);
     handle = tclWinProcs->findFirstFileProc(nativeSource, &data);
@@ -1309,7 +1296,7 @@ TraverseWinTree(
 	goto end;
     }
 
-    nativeSource[oldSourceLen + 1] = '\0';
+    Tcl_DStringSetLength(sourcePtr, oldSourceLen + 1);
     Tcl_DStringSetLength(sourcePtr, oldSourceLen);
     result = traverseProc(nativeSource, nativeTarget, DOTREE_PRED,
 	    errorPtr);
@@ -1318,28 +1305,16 @@ TraverseWinTree(
 	return result;
     }
 
-    sourceLen = oldSourceLen;
-
-    if (tclWinProcs->useWide) {
-	sourceLen += sizeof(WCHAR);
-	Tcl_DStringAppend(sourcePtr, (char *) L"\\", sizeof(WCHAR) + 1);
-	Tcl_DStringSetLength(sourcePtr, sourceLen);
-    } else {
-	sourceLen += 1;
-	Tcl_DStringAppend(sourcePtr, "\\", 1);
-    }
+    sourceLen = oldSourceLen + sizeof(WCHAR);
+    Tcl_DStringAppend(sourcePtr, (char *) L"\\", sizeof(WCHAR) + 1);
+    Tcl_DStringSetLength(sourcePtr, sourceLen);
     if (targetPtr != NULL) {
 	oldTargetLen = Tcl_DStringLength(targetPtr);
 
 	targetLen = oldTargetLen;
-	if (tclWinProcs->useWide) {
-	    targetLen += sizeof(WCHAR);
-	    Tcl_DStringAppend(targetPtr, (char *) L"\\", sizeof(WCHAR) + 1);
-	    Tcl_DStringSetLength(targetPtr, targetLen);
-	} else {
-	    targetLen += 1;
-	    Tcl_DStringAppend(targetPtr, "\\", 1);
-	}
+	targetLen += sizeof(WCHAR);
+	Tcl_DStringAppend(targetPtr, (char *) L"\\", sizeof(WCHAR) + 1);
+	Tcl_DStringSetLength(targetPtr, targetLen);
     }
 
     found = 1;
@@ -1347,29 +1322,18 @@ TraverseWinTree(
 	TCHAR *nativeName;
 	int len;
 
-	if (tclWinProcs->useWide) {
-	    WCHAR *wp;
-
-	    wp = data.w.cFileName;
+	WCHAR *wp = data.w.cFileName;
+	if (*wp == '.') {
+	    wp++;
 	    if (*wp == '.') {
 		wp++;
-		if (*wp == '.') {
-		    wp++;
-		}
-		if (*wp == '\0') {
-		    continue;
-		}
 	    }
-	    nativeName = (TCHAR *) data.w.cFileName;
-	    len = wcslen(data.w.cFileName) * sizeof(WCHAR);
-	} else {
-	    if ((strcmp(data.a.cFileName, ".") == 0)
-		    || (strcmp(data.a.cFileName, "..") == 0)) {
+	    if (*wp == '\0') {
 		continue;
 	    }
-	    nativeName = (TCHAR *) data.a.cFileName;
-	    len = strlen(data.a.cFileName);
 	}
+	nativeName = (TCHAR *) data.w.cFileName;
+	len = wcslen(data.w.cFileName) * sizeof(WCHAR);
 
 	/*
 	 * Append name after slash, and recurse on the file.
@@ -1776,27 +1740,14 @@ ConvertFileNameFormat(
 		}
 		goto cleanup;
 	    }
-	    if (tclWinProcs->useWide) {
-		nativeName = (TCHAR *) data.w.cAlternateFileName;
-		if (longShort) {
-		    if (data.w.cFileName[0] != '\0') {
-			nativeName = (TCHAR *) data.w.cFileName;
-		    }
-		} else {
-		    if (data.w.cAlternateFileName[0] == '\0') {
-			nativeName = (TCHAR *) data.w.cFileName;
-		    }
+	    nativeName = (TCHAR *) data.w.cAlternateFileName;
+	    if (longShort) {
+		if (data.w.cFileName[0] != '\0') {
+		    nativeName = (TCHAR *) data.w.cFileName;
 		}
 	    } else {
-		nativeName = (TCHAR *) data.a.cAlternateFileName;
-		if (longShort) {
-		    if (data.a.cFileName[0] != '\0') {
-			nativeName = (TCHAR *) data.a.cFileName;
-		    }
-		} else {
-		    if (data.a.cAlternateFileName[0] == '\0') {
-			nativeName = (TCHAR *) data.a.cFileName;
-		    }
+		if (data.w.cAlternateFileName[0] == '\0') {
+		    nativeName = (TCHAR *) data.w.cFileName;
 		}
 	    }
 

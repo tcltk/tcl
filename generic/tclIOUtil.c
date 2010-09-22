@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.59 2010/08/17 02:16:11 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.60 2010/09/22 02:42:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -506,7 +506,7 @@ TclFSCwdPointerEquals(
 
 	str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
 	str2 = Tcl_GetStringFromObj(*pathPtrPtr, &len2);
-	if (len1 == len2 && !strcmp(str1,str2)) {
+	if ((len1 == len2) && !memcmp(str1, str2, len1)) {
 	    /*
 	     * They are equal, but different objects. Update so they will be
 	     * the same object in the future.

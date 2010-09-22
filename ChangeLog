@@ -1,3 +1,27 @@
+2010-09-21  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclExecute.c (TclExecuteByteCode):
+	* generic/tclOOMethod.c (ProcedureMethodCompiledVarConnect):
+	* generic/tclVar.c (TclLookupSimpleVar, CompareVarKeys):
+	* generic/tclPathObj.c (Tcl_FSGetNormalizedPath, Tcl_FSEqualPaths):
+	* generic/tclIOUtil.c (TclFSCwdPointerEquals): peephole opt
+	* generic/tclResult.c (TclMergeReturnOptions): use memcmp where
+	applicable as possible speedup on some libc variants.
+
+2010-09-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c:   Fix declaration after statement.
+	* win/tcl.m4:         Add -Wdeclaration-after-statement, so
+	* win/configure:      this mistake cannot happen again.
+	* win/tclWinFCmd.c:   [Bug 3069278]: Breakage on head Windows triggered
+	* win/tclWinPipe.c:   by install-tzdata, final fix
+
+2010-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFCmd.c: Eliminate tclWinProcs->useWide everywhere, since
+	* win/tclWinFile.c: the value is always "1" on platforms >win95
+	* win/tclWinPipe.c:
+
 2010-09-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/file.n (file readlink): [Bug 3070580]: Typofix.

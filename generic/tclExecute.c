@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.154 2010/09/02 12:18:37 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.155 2010/09/22 02:42:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4454,7 +4454,6 @@ TclExecuteByteCode(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	/* TODO: Consider more efficient tests than strcmp() */
 	s1 = TclGetStringFromObj(valuePtr, &s1len);
 	if (TclListObjLength(interp, value2Ptr, &length) != TCL_OK) {
 	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ERROR: ", O2S(valuePtr),
@@ -4479,7 +4478,7 @@ TclExecuteByteCode(
 		    s2len = 0;
 		}
 		if (s1len == s2len) {
-		    match = (strcmp(s1, s2) == 0);
+		    match = (memcmp(s1, s2, s1len) == 0);
 		}
 		i++;
 	    } while (i < length && match == 0);
@@ -4545,10 +4544,10 @@ TclExecuteByteCode(
 		 */
 
 		if (*pc == INST_STR_NEQ) {
-		    match = (strcmp(s1, s2) != 0);
+		    match = (memcmp(s1, s2, s1len) != 0);
 		} else {
 		    /* INST_STR_EQ */
-		    match = (strcmp(s1, s2) == 0);
+		    match = (memcmp(s1, s2, s1len) == 0);
 		}
 	    } else {
 		match = (*pc == INST_STR_NEQ);

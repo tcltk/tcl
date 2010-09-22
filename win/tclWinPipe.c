@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.30 2010/09/10 13:27:53 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.31 2010/09/22 02:42:51 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -477,21 +477,14 @@ TempFileName(
     TCHAR name[MAX_PATH])	/* Buffer in which name for temporary file
 				 * gets stored. */
 {
-    TCHAR *prefix;
-
-    prefix = (tclWinProcs->useWide) ? (TCHAR *) L"TCL" : (TCHAR *) "TCL";
+    TCHAR *prefix = TEXT("TCL");
     if (tclWinProcs->getTempPathProc(MAX_PATH, name) != 0) {
 	if (tclWinProcs->getTempFileNameProc(name, prefix, 0, name) != 0) {
 	    return 1;
 	}
     }
-    if (tclWinProcs->useWide) {
-	((WCHAR *) name)[0] = '.';
-	((WCHAR *) name)[1] = '\0';
-    } else {
-	((char *) name)[0] = '.';
-	((char *) name)[1] = '\0';
-    }
+    name[0] = '.';
+    name[1] = '\0';
     return tclWinProcs->getTempFileNameProc(name, prefix, 0, name);
 }
 
@@ -3115,11 +3108,7 @@ TclpOpenTemporaryFile(
     if (length == 0) {
 	goto gotError;
     }
-    if (tclWinProcs->useWide) {
-	namePtr += length * sizeof(WCHAR);
-    } else {
-	namePtr += length;
-    }
+    namePtr += length * sizeof(TCHAR);
     if (basenameObj) {
 	const char *string = Tcl_GetStringFromObj(basenameObj, &length);
 
@@ -3128,9 +3117,8 @@ TclpOpenTemporaryFile(
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);
     } else {
-	TCHAR *baseStr = tclWinProcs->useWide ?
-		(TCHAR *) L"TCL" : (TCHAR *) "TCL";
-	int length = tclWinProcs->useWide ? 3*sizeof(WCHAR) : 3;
+	TCHAR *baseStr = TEXT("TCL");
+	int length = 3 * sizeof(TCHAR);
 
 	memcpy(namePtr, baseStr, length);
 	namePtr += length;
@@ -3145,12 +3133,8 @@ TclpOpenTemporaryFile(
 	sprintf(number, "%d.TMP", counter);
 	counter = (unsigned short) (counter + 1);
 	tclWinProcs->utf2tchar(number, strlen(number), &buf);
-	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
-	if (tclWinProcs->useWide) {
-	    *(WCHAR *)(namePtr + Tcl_DStringLength(&buf) + 1) = '\0';
-	} else {
-	    namePtr[Tcl_DStringLength(&buf) + 1] = '\0';
-	}
+	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf) + 1);
+	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf) + 1);
 	Tcl_DStringFree(&buf);
 
 	handle = tclWinProcs->createFileProc((TCHAR *) name,
