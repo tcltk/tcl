@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.496 2010/09/22 15:49:01 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.497 2010/09/22 18:37:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2878,12 +2878,12 @@ TclExecuteByteCode(
 		    pc--;
 		    goto gotError;
 		}
-		NRE_ASSERT(BP == corPtr->eePtr->bottomPtr);
 
 		/*
 		 * Mark suspended, save our state and return
 		 */
 
+		DECACHE_STACK_INFO();
 		corPtr->stackLevel = NULL;
 		iPtr->execEnvPtr = corPtr->callerEEPtr;
 		OBP = *corPtr->callerBPPtr;
