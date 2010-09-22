@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.88 2010/03/05 14:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.89 2010/09/22 00:57:11 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2028,8 +2028,12 @@ Tcl_FSGetNormalizedPath(
 	 */
 
 	if (pureNormalized) {
-	    if (!strcmp(TclGetString(fsPathPtr->normPathPtr),
-		    TclGetString(pathPtr))) {
+	    int normPathLen, pathLen;
+	    const char *normPath;
+
+	    path = TclGetStringFromObj(pathPtr, &pathLen);
+	    normPath = TclGetStringFromObj(fsPathPtr->normPathPtr, &normPathLen);
+	    if ((pathLen == normPathLen) && !memcmp(path, normPath, pathLen)) {
 		/*
 		 * The path was already normalized. Get rid of the duplicate.
 		 */
@@ -2301,9 +2305,9 @@ Tcl_FSEqualPaths(
     if (firstPtr == NULL || secondPtr == NULL) {
 	return 0;
     }
-    firstStr = Tcl_GetStringFromObj(firstPtr, &firstLen);
-    secondStr = Tcl_GetStringFromObj(secondPtr, &secondLen);
-    if ((firstLen == secondLen) && (strcmp(firstStr, secondStr) == 0)) {
+    firstStr = TclGetStringFromObj(firstPtr, &firstLen);
+    secondStr = TclGetStringFromObj(secondPtr, &secondLen);
+    if ((firstLen == secondLen) && !memcmp(firstStr, secondStr, firstLen)) {
 	return 1;
     }
 
@@ -2321,9 +2325,9 @@ Tcl_FSEqualPaths(
 	return 0;
     }
 
-    firstStr = Tcl_GetStringFromObj(firstPtr, &firstLen);
-    secondStr = Tcl_GetStringFromObj(secondPtr, &secondLen);
-    return (firstLen == secondLen) && (strcmp(firstStr, secondStr) == 0);
+    firstStr = TclGetStringFromObj(firstPtr, &firstLen);
+    secondStr = TclGetStringFromObj(secondPtr, &secondLen);
+    return ((firstLen == secondLen) && !memcmp(firstStr, secondStr, firstLen));
 }
 
 /*
