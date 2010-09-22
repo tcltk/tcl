@@ -1,3 +1,8 @@
+2010-09-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4:         Add kernel32 to LIBS, so the link line for mingw
+	* win/configure:      is exactly the same as for MSVC++.
+
 2010-09-21  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclExecute.c (TclExecuteByteCode):
