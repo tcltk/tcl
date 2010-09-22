@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.155 2010/09/22 02:42:50 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.156 2010/09/22 20:13:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2858,20 +2858,23 @@ TclExecuteByteCode(
 		    Tcl_SetResult(interp,
 			    "yield can only be called in a coroutine",
 			    TCL_STATIC);
+		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "TCL", "COROUTINE",
 			    "ILLEGAL_YIELD", NULL);
+		    CACHE_STACK_INFO();
 		    pc--;
 		    goto gotError;
 		}
 
 		NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
 		NRE_ASSERT(corPtr->stackLevel != NULL);
-		NRE_ASSERT(BP == corPtr->eePtr->bottomPtr);
 		if (corPtr->stackLevel != &TAUX) {
 		    Tcl_SetResult(interp, "cannot yield: C stack busy",
 			    TCL_STATIC);
+		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
 			    NULL);
+		    CACHE_STACK_INFO();
 		    pc--;
 		    goto gotError;
 		}
@@ -2880,6 +2883,7 @@ TclExecuteByteCode(
 		 * Mark suspended, save our state and return
 		 */
 
+		DECACHE_STACK_INFO();
 		corPtr->stackLevel = NULL;
 		iPtr->execEnvPtr = corPtr->callerEEPtr;
 		OBP = *corPtr->callerBPPtr;
@@ -4146,14 +4150,18 @@ TclExecuteByteCode(
 	if (TclGetBooleanFromObj(NULL, valuePtr, &i1) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();	    
 	    goto gotError;
 	}
 
 	if (TclGetBooleanFromObj(NULL, value2Ptr, &i2) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    CACHE_STACK_INFO();	    
 	    goto gotError;
 	}
 
@@ -4956,7 +4964,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (valuePtr->typePtr?
 		    valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 
@@ -4965,7 +4975,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (value2Ptr->typePtr?
 		    value2Ptr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 
@@ -5023,9 +5035,11 @@ TclExecuteByteCode(
 		    Tcl_SetResult(interp, "negative shift argument",
 			    TCL_STATIC);
 #if 0
+		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
 			    NULL);
+		    CACHE_STACK_INFO();
 #endif
 		    goto gotError;
 		} else if (l1 == 0) {
@@ -5069,9 +5083,11 @@ TclExecuteByteCode(
 		    Tcl_SetResult(interp, "negative shift argument",
 			    TCL_STATIC);
 #if 0
+		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
 			    NULL);
+		    CACHE_STACK_INFO();
 #endif
 		    goto gotError;
 		} else if (l1 == 0) {
@@ -5091,8 +5107,10 @@ TclExecuteByteCode(
 			    "integer value too large to represent",
 			    TCL_STATIC);
 #if 0
+		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			    "integer value too large to represent", NULL);
+		    CACHE_STACK_INFO();
 #endif
 		    goto gotError;
 		} else {
@@ -5175,7 +5193,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name: "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 
@@ -5194,7 +5214,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name: "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 
@@ -5341,7 +5363,9 @@ TclExecuteByteCode(
 	if (TclGetBooleanFromObj(NULL, valuePtr, &b) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 	/* TODO: Consider peephole opt. */
@@ -5359,7 +5383,9 @@ TclExecuteByteCode(
 
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 	if (type1 == TCL_NUMBER_LONG) {
@@ -5384,7 +5410,9 @@ TclExecuteByteCode(
 		|| IsErroringNaNType(type1)) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 	switch (type1) {
@@ -5428,7 +5456,9 @@ TclExecuteByteCode(
 
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 			(valuePtr->typePtr? valuePtr->typePtr->name:"null")));
+		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
+		CACHE_STACK_INFO();
 		goto gotError;
 	    }
 
@@ -5444,7 +5474,9 @@ TclExecuteByteCode(
 
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 			(valuePtr->typePtr? valuePtr->typePtr->name:"null")));
+		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
+		CACHE_STACK_INFO();
 	    } else {
 		/*
 		 * Numeric conversion of NaN -> error.
@@ -5452,7 +5484,9 @@ TclExecuteByteCode(
 
 		TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
 			O2S(objResultPtr)));
+		DECACHE_STACK_INFO();
 		TclExprFloatError(interp, *((const double *) ptr1));
+		CACHE_STACK_INFO();
 	    }
 	    goto gotError;
 	}
@@ -5692,7 +5726,9 @@ TclExecuteByteCode(
 
     case INST_END_CATCH:
 	catchTop--;
+	DECACHE_STACK_INFO();
 	Tcl_ResetResult(interp);
+	CACHE_STACK_INFO();
 	TRESULT = TCL_OK;
 	TRACE(("=> catchTop=%d\n", (int) (catchTop - initCatchTop - 1)));
 	NEXT_INST_F(1, 0, 0);
@@ -5768,11 +5804,13 @@ TclExecuteByteCode(
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		NEXT_INST_V(5, opnd+1, 1);
 	    }
+	    DECACHE_STACK_INFO();
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "key \"", TclGetString(OBJ_AT_TOS),
 		    "\" not known in dictionary", NULL);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		    TclGetString(OBJ_AT_TOS), NULL);
+	    CACHE_STACK_INFO();
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
 	} else {
 	    TRACE_WITH_OBJ((
@@ -6337,8 +6375,10 @@ TclExecuteByteCode(
 	 */
 
     divideByZero:
+	DECACHE_STACK_INFO();	
 	Tcl_SetResult(interp, "divide by zero", TCL_STATIC);
 	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+	CACHE_STACK_INFO();	
 	goto gotError;
 
 	/*
@@ -6347,10 +6387,12 @@ TclExecuteByteCode(
 	 */
 
     exponOfZero:
+	DECACHE_STACK_INFO();	
 	Tcl_SetResult(interp, "exponentiation of zero by negative power",
 		TCL_STATIC);
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"exponentiation of zero by negative power", NULL);
+	CACHE_STACK_INFO();
 
 	/*
 	 * Almost all error paths feed through here rather than assigning to
