@@ -1,3 +1,10 @@
+2010-09-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdAH.c:   Fix cases where value returned by
+	* generic/tclEvent.c:   Tcl_GetReturnOptions() was leaked.
+	* generic/tclMain.c:    Thanks to Jeff Hobbs for discovery of the
+	anti-pattern to seek and destroy.
+
 2010-09-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclAppInit.c:  Make compilable with -DUNICODE (not

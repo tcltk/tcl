@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.55 2010/08/30 14:11:01 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.56 2010/09/23 18:33:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -336,6 +336,7 @@ CatchObjCmdCallback(
 
 	if (NULL == Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL,
 		options, 0)) {
+	    Tcl_DecrRefCount(options);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp,
 		    "couldn't save return options in variable", NULL);
