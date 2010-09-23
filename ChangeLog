@@ -1,3 +1,10 @@
+2010-09-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdAH.c:	Fix cases where value returned by 
+	* generic/tclEvent.c:	Tcl_GetReturnOptions() was leaked.
+	* generic/tclMain.c:	Thanks to Jeff Hobbs for discovery of the
+	anti-pattern to seek and destroy.
+
 2010-09-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/file.n (file readlink): [Bug 3070580]: Typofix.
