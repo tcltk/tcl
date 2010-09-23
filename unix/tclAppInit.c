@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.23 2010/09/23 09:18:59 nijtmans Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.24 2010/09/23 21:40:46 nijtmans Exp $
  */
 
 #include "tcl.h"
@@ -104,7 +104,7 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_Init(interp) == TCL_ERROR) {
+    if ((Tcl_Init)(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
