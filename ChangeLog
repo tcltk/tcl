@@ -1,3 +1,8 @@
+2010-09-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclAppInit.c:  Make compilable with -DUNICODE (not
+	* win/tclAppInit.c:   actived yet), many clean-ups in comments.
+
 2010-09-22  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute: one more DECACHE_STACK_INFO() missing; this
