@@ -1,3 +1,9 @@
+2010-09-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Make Tcl_SetPanicProc and Tcl_GetStringResult
+	* unix/tclAppInit.c:  callable without stubs, just as Tcl_SetVar.
+	* win/tclAppInit.c:
+
 2010-09-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdAH.c:   Fix cases where value returned by
