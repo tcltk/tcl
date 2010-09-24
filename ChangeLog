@@ -1,3 +1,10 @@
+2010-09-24  Andreas Kupries  <andreask@activestate.com>
+
+	* tclWinsock.c: [Bug 3056775]: Fixed race condition between thread
+	and internal co-thread access of a socket's structure because of
+	the thread not using the socketListLock in TcpAccept(). Added
+	documentation on how the module works to the top.
+
 2010-09-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclDecls.h: Make Tcl_SetPanicProc and Tcl_GetStringResult
