@@ -8,7 +8,43 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.36.2.10 2009/04/27 22:10:28 ferrieux Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.36.2.11 2010/09/24 17:53:14 andreas_kupries Exp $
+ *
+ * -----------------------------------------------------------------------
+ *
+ * General information on how this module works.
+ *
+ * - Each Tcl-thread with its sockets maintains an internal window to receive
+ *   socket messages from the OS.
+ *
+ * - To ensure that message reception is always running this window is
+ *   actually owned and handled by an internal thread. This we call the
+ *   co-thread of Tcl's thread.
+ *
+ * - The whole structure is set up by InitSockets() which is called for each
+ *   Tcl thread. The implementation of the co-thread is in SocketThread(),
+ *   and the messages are handled by SocketProc(). The connection between
+ *   both is not directly visible, it is done through a Win32 window class.
+ *   This class is initialized by InitSockets() as well, and used in the
+ *   creation of the message receiver windows.
+ *
+ * - An important thing to note is that *both* thread and co-thread have
+ *   access to the list of sockets maintained in the private TSD data of the
+ *   thread. The co-thread was given access to it upon creation through the
+ *   new thread's client-data.
+ *
+ *   Because of this dual access the TSD data contains an OS mutex, the
+ *   "socketListLock", to mediate exclusion between thread and co-thread.
+ *
+ *   The co-thread's access is all in SocketProc(). The thread's access is
+ *   through SocketEventProc() (1) and the functions called by it.
+ *
+ *   (Ad 1) This is the handler function for all queued socket events, which
+ *          all the OS messages are translated to through the EventSource (2)
+ *          driven by the OS messages.
+ *
+ *   (Ad 2) The main functions for this are SocketSetupProc() and
+ *          SocketCheckProc().
  */
 
 #include "tclWinInt.h"
@@ -1601,6 +1637,12 @@ TcpAccept(infoPtr)
 	    &len);
 
     /*
+     * Protect access to sockets (acceptEventCount, readyEvents) in socketList
+     * by the lock.  Fix for SF Tcl Bug 3056775.
+     */
+    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+
+    /*
      * Clear the ready mask so we can detect the next connection request.
      * Note that connection requests are level triggered, so if there is
      * a request already pending, a new event will be generated.
@@ -1609,6 +1651,8 @@ TcpAccept(infoPtr)
     if (newSocket == INVALID_SOCKET) {
 	infoPtr->acceptEventCount = 0;
 	infoPtr->readyEvents &= ~(FD_ACCEPT);
+
+	SetEvent(tsdPtr->socketListLock);
 	return;
     }
 
@@ -1623,6 +1667,8 @@ TcpAccept(infoPtr)
     if (infoPtr->acceptEventCount <= 0) {
 	infoPtr->readyEvents &= ~(FD_ACCEPT);
     }
+
+    SetEvent(tsdPtr->socketListLock);
 
     /*
      * Win-NT has a misfeature that sockets are inherited in child
