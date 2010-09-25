@@ -1,3 +1,11 @@
+2010-09-24  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/stringComp.test: improved string eq/cmp test coverage
+	* generic/tclExecute.c (TclExecuteByteCode): merge INST_STR_CMP
+	and INST_STR_EQ/INST_STR_NEQ paths.  Speeds up eq/ne/[string eq]
+	with obj-aware comparisons and eq/==/ne/!= with length equality
+	check.
+
 2010-09-24  Andreas Kupries  <andreask@activestate.com>
 
 	* tclWinsock.c: [Bug 3056775]: Fixed race condition between thread
