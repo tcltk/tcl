@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.494.2.1 2010/09/22 01:08:49 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.494.2.2 2010/09/25 14:51:12 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2858,20 +2858,23 @@ TclExecuteByteCode(
 		    Tcl_SetResult(interp,
 			    "yield can only be called in a coroutine",
 			    TCL_STATIC);
+		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "TCL", "COROUTINE",
 			    "ILLEGAL_YIELD", NULL);
+		    CACHE_STACK_INFO();
 		    pc--;
 		    goto gotError;
 		}
 
 		NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
 		NRE_ASSERT(corPtr->stackLevel != NULL);
-		NRE_ASSERT(BP == corPtr->eePtr->bottomPtr);
 		if (corPtr->stackLevel != &TAUX) {
 		    Tcl_SetResult(interp, "cannot yield: C stack busy",
 			    TCL_STATIC);
+		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
 			    NULL);
+		    CACHE_STACK_INFO();
 		    pc--;
 		    goto gotError;
 		}
@@ -2880,6 +2883,7 @@ TclExecuteByteCode(
 		 * Mark suspended, save our state and return
 		 */
 
+		DECACHE_STACK_INFO();
 		corPtr->stackLevel = NULL;
 		iPtr->execEnvPtr = corPtr->callerEEPtr;
 		OBP = *corPtr->callerBPPtr;
@@ -4146,14 +4150,18 @@ TclExecuteByteCode(
 	if (TclGetBooleanFromObj(NULL, valuePtr, &i1) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();	    
 	    goto gotError;
 	}
 
 	if (TclGetBooleanFromObj(NULL, value2Ptr, &i2) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    CACHE_STACK_INFO();	    
 	    goto gotError;
 	}
 
@@ -4520,114 +4528,90 @@ TclExecuteByteCode(
 
     case INST_STR_EQ:
     case INST_STR_NEQ:		/* String (in)equality check */
-	/*
-	 * TODO: Consider merging into INST_STR_CMP
-	 */
-
+    case INST_STR_CMP:		/* String compare. */
+    stringCompare:
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
 	if (valuePtr == value2Ptr) {
-	    /*
-	     * On the off-chance that the objects are the same, we don't
-	     * really have to think hard about equality.
-	     */
-
-	    match = (*pc == INST_STR_EQ);
+	    match = 0;
 	} else {
-	    s1 = TclGetStringFromObj(valuePtr, &s1len);
-	    s2 = TclGetStringFromObj(value2Ptr, &s2len);
-	    if (s1len == s2len) {
+	    /*
+	     * We only need to check (in)equality when we have equal length
+	     * strings.  We can use memcmp in all (n)eq cases because we
+	     * don't need to worry about lexical LE/BE variance.
+	     */
+	    typedef int (*memCmpFn_t)(const void*, const void*, size_t);
+	    memCmpFn_t memCmpFn;
+	    int checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
+		    || (*pc == INST_STR_EQ) || (*pc == INST_STR_NEQ));
+
+	    if (TclIsPureByteArray(valuePtr)
+		    && TclIsPureByteArray(value2Ptr)) {
+		s1 = (char *) Tcl_GetByteArrayFromObj(valuePtr, &s1len);
+		s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
+		memCmpFn = memcmp;
+	    } else if (((valuePtr->typePtr == &tclStringType)
+			    && (value2Ptr->typePtr == &tclStringType))) {
 		/*
-		 * We only need to check (in)equality when we have equal
-		 * length strings.
+		 * Do a unicode-specific comparison if both of the args are of
+		 * String type. If the char length == byte length, we can do a
+		 * memcmp. In benchmark testing this proved the most efficient
+		 * check between the unicode and string comparison operations.
 		 */
 
-		if (*pc == INST_STR_NEQ) {
-		    match = (memcmp(s1, s2, s1len) != 0);
+		s1len = Tcl_GetCharLength(valuePtr);
+		s2len = Tcl_GetCharLength(value2Ptr);
+		if ((s1len == valuePtr->length)
+			&& (s2len == value2Ptr->length)) {
+		    s1 = valuePtr->bytes;
+		    s2 = value2Ptr->bytes;
+		    memCmpFn = memcmp;
 		} else {
-		    /* INST_STR_EQ */
-		    match = (memcmp(s1, s2, s1len) == 0);
+		    s1 = (char *) Tcl_GetUnicode(valuePtr);
+		    s2 = (char *) Tcl_GetUnicode(value2Ptr);
+		    if (
+#ifdef WORDS_BIGENDIAN
+			1
+#else
+			checkEq
+#endif
+			) {
+			memCmpFn = memcmp;
+			s1len *= sizeof(Tcl_UniChar);
+			s2len *= sizeof(Tcl_UniChar);
+		    } else {
+			memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
+		    }
 		}
 	    } else {
-		match = (*pc == INST_STR_NEQ);
+		/*
+		 * strcmp can't do a simple memcmp in order to handle the
+		 * special Tcl \xC0\x80 null encoding for utf-8.
+		 */
+
+		s1 = TclGetStringFromObj(valuePtr, &s1len);
+		s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		if (checkEq) {
+		    memCmpFn = memcmp;
+		} else {
+		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
+		}
 	    }
-	}
 
-	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr),O2S(value2Ptr),match));
-
-	/*
-	 * Peep-hole optimisation: if you're about to jump, do jump from here.
-	 */
-
-	pc++;
-#ifndef TCL_COMPILE_DEBUG
-	switch (*pc) {
-	case INST_JUMP_FALSE1:
-	    NEXT_INST_F((match? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE1:
-	    NEXT_INST_F((match? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
-	case INST_JUMP_FALSE4:
-	    NEXT_INST_F((match? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE4:
-	    NEXT_INST_F((match? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
-	}
-#endif
-	objResultPtr = TCONST(match);
-	NEXT_INST_F(0, 2, 1);
-
-    stringCompare:
-    case INST_STR_CMP:		/* String compare. */
-	value2Ptr = OBJ_AT_TOS;
-	valuePtr = OBJ_UNDER_TOS;
-
-	/*
-	 * The comparison function should compare up to the minimum byte
-	 * length only.
-	 */
-
-	if (valuePtr == value2Ptr) {
-	    /*
-	     * In the pure equality case, set lengths too for the checks below
-	     * (or we could goto beyond it).
-	     */
-
-	    match = s1len = s2len = 0;
-	} else if (TclIsPureByteArray(valuePtr)
-		&& TclIsPureByteArray(value2Ptr)) {
-	    s1 = (char *) Tcl_GetByteArrayFromObj(valuePtr, &s1len);
-	    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
-	    match = memcmp(s1, s2,
-		    (size_t) ((s1len < s2len) ? s1len : s2len));
-	} else if (((valuePtr->typePtr == &tclStringType)
-		&& (value2Ptr->typePtr == &tclStringType))) {
-	    /*
-	     * Do a unicode-specific comparison if both of the args are of
-	     * String type. If the char length == byte length, we can do a
-	     * memcmp. In benchmark testing this proved the most efficient
-	     * check between the unicode and string comparison operations.
-	     */
-
-	    s1len = Tcl_GetCharLength(valuePtr);
-	    s2len = Tcl_GetCharLength(value2Ptr);
-	    if ((s1len == valuePtr->length) && (s2len == value2Ptr->length)) {
-		match = memcmp(valuePtr->bytes, value2Ptr->bytes,
-			(unsigned) ((s1len < s2len) ? s1len : s2len));
+	    if (checkEq && (s1len != s2len)) {
+		match = 1;
 	    } else {
-		match = TclUniCharNcmp(Tcl_GetUnicode(valuePtr),
-			Tcl_GetUnicode(value2Ptr),
-			(unsigned) ((s1len < s2len) ? s1len : s2len));
+		/*
+		 * The comparison function should compare up to the minimum
+		 * byte length only.
+		 */
+		match = memCmpFn(s1, s2,
+			(size_t) ((s1len < s2len) ? s1len : s2len));
+		if (match == 0) {
+		    match = s1len - s2len;
+		}
 	    }
-	} else {
-	    /*
-	     * We can't do a simple memcmp in order to handle the special Tcl
-	     * \xC0\x80 null encoding for utf-8.
-	     */
-
-	    s1 = TclGetStringFromObj(valuePtr, &s1len);
-	    s2 = TclGetStringFromObj(value2Ptr, &s2len);
-	    match = TclpUtfNcmp2(s1, s2,
-		    (size_t) ((s1len < s2len) ? s1len : s2len));
 	}
 
 	/*
@@ -4635,19 +4619,17 @@ TclExecuteByteCode(
 	 * TODO: consider peephole opt.
 	 */
 
-	if (match == 0) {
-	    match = s1len - s2len;
-	}
-
 	if (*pc != INST_STR_CMP) {
 	    /*
 	     * Take care of the opcodes that goto'ed into here.
 	     */
 
 	    switch (*pc) {
+	    case INST_STR_EQ:
 	    case INST_EQ:
 		match = (match == 0);
 		break;
+	    case INST_STR_NEQ:
 	    case INST_NEQ:
 		match = (match != 0);
 		break;
@@ -4956,7 +4938,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (valuePtr->typePtr?
 		    valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 
@@ -4965,7 +4949,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (value2Ptr->typePtr?
 		    value2Ptr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 
@@ -5023,9 +5009,11 @@ TclExecuteByteCode(
 		    Tcl_SetResult(interp, "negative shift argument",
 			    TCL_STATIC);
 #if 0
+		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
 			    NULL);
+		    CACHE_STACK_INFO();
 #endif
 		    goto gotError;
 		} else if (l1 == 0) {
@@ -5069,9 +5057,11 @@ TclExecuteByteCode(
 		    Tcl_SetResult(interp, "negative shift argument",
 			    TCL_STATIC);
 #if 0
+		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
 			    NULL);
+		    CACHE_STACK_INFO();
 #endif
 		    goto gotError;
 		} else if (l1 == 0) {
@@ -5091,8 +5081,10 @@ TclExecuteByteCode(
 			    "integer value too large to represent",
 			    TCL_STATIC);
 #if 0
+		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			    "integer value too large to represent", NULL);
+		    CACHE_STACK_INFO();
 #endif
 		    goto gotError;
 		} else {
@@ -5175,7 +5167,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name: "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 
@@ -5194,7 +5188,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name: "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 
@@ -5341,7 +5337,9 @@ TclExecuteByteCode(
 	if (TclGetBooleanFromObj(NULL, valuePtr, &b) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 	/* TODO: Consider peephole opt. */
@@ -5359,7 +5357,9 @@ TclExecuteByteCode(
 
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 	if (type1 == TCL_NUMBER_LONG) {
@@ -5384,7 +5384,9 @@ TclExecuteByteCode(
 		|| IsErroringNaNType(type1)) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 	switch (type1) {
@@ -5428,7 +5430,9 @@ TclExecuteByteCode(
 
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 			(valuePtr->typePtr? valuePtr->typePtr->name:"null")));
+		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
+		CACHE_STACK_INFO();
 		goto gotError;
 	    }
 
@@ -5444,7 +5448,9 @@ TclExecuteByteCode(
 
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 			(valuePtr->typePtr? valuePtr->typePtr->name:"null")));
+		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
+		CACHE_STACK_INFO();
 	    } else {
 		/*
 		 * Numeric conversion of NaN -> error.
@@ -5452,7 +5458,9 @@ TclExecuteByteCode(
 
 		TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
 			O2S(objResultPtr)));
+		DECACHE_STACK_INFO();
 		TclExprFloatError(interp, *((const double *) ptr1));
+		CACHE_STACK_INFO();
 	    }
 	    goto gotError;
 	}
@@ -5692,7 +5700,9 @@ TclExecuteByteCode(
 
     case INST_END_CATCH:
 	catchTop--;
+	DECACHE_STACK_INFO();
 	Tcl_ResetResult(interp);
+	CACHE_STACK_INFO();
 	TRESULT = TCL_OK;
 	TRACE(("=> catchTop=%d\n", (int) (catchTop - initCatchTop - 1)));
 	NEXT_INST_F(1, 0, 0);
@@ -5768,11 +5778,13 @@ TclExecuteByteCode(
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		NEXT_INST_V(5, opnd+1, 1);
 	    }
+	    DECACHE_STACK_INFO();
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "key \"", TclGetString(OBJ_AT_TOS),
 		    "\" not known in dictionary", NULL);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		    TclGetString(OBJ_AT_TOS), NULL);
+	    CACHE_STACK_INFO();
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
 	} else {
 	    TRACE_WITH_OBJ((
@@ -6337,8 +6349,10 @@ TclExecuteByteCode(
 	 */
 
     divideByZero:
+	DECACHE_STACK_INFO();	
 	Tcl_SetResult(interp, "divide by zero", TCL_STATIC);
 	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+	CACHE_STACK_INFO();	
 	goto gotError;
 
 	/*
@@ -6347,10 +6361,12 @@ TclExecuteByteCode(
 	 */
 
     exponOfZero:
+	DECACHE_STACK_INFO();	
 	Tcl_SetResult(interp, "exponentiation of zero by negative power",
 		TCL_STATIC);
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"exponentiation of zero by negative power", NULL);
+	CACHE_STACK_INFO();
 
 	/*
 	 * Almost all error paths feed through here rather than assigning to
