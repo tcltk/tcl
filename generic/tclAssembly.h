@@ -3,18 +3,11 @@
 
 #include "tclCompile.h"
 
-typedef struct StackCheckerState {
-    Tcl_Interp* interp;
-    CompileEnv* envPtr;
-    int maxDepth;
-    Tcl_Obj* bcList;
-} StackCheckerState;
-
 typedef struct BasicBlock {
     /* FIXME: start needs to be an offset from envPtr->codeStart */
     unsigned char * start;	/* Instruction address of the start
 				 * of the block */
-    int bcIndex;		/* Index in the input instruction
+    int startLine;		/* Index in the input instruction
 				 * list of the start of the block */
     int may_fall_thru;      	/* Flag == 1 if control passes from this
 				 * block to its successor. */
@@ -77,7 +70,7 @@ typedef struct label {
     int offset;    
 } label;
 
-MODULE_SCOPE int TclAssembleCode(Tcl_Interp* interp, Tcl_Obj* code,
-				 CompileEnv* compEnv, int flags);
+MODULE_SCOPE int TclAssembleCode(CompileEnv* compEnv, const char* codePtr,
+				 int codeLen, int flags);
 
 #endif 
