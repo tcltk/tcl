@@ -3,37 +3,72 @@
 #include "tclAssembly.h"
 #include "tclOOInt.h"
 
+
+/* Structure that holds the state of the assembler while generating code */
+
+typedef struct AssembleEnv {
+    CompileEnv* envPtr;		/* Compilation environment being used
+				 * for code generation */
+    Tcl_Parse* parsePtr;        /* Parse of the current line of source */
+    Tcl_HashTable labelHash;	/* Hash table whose keys are labels and
+				 * whose values are 'label' objects storing 
+				 * the code offsets of the labels. */
+
+    int cmdLine;		/* Current line number within the assembly 
+				 * code */
+    int* clNext;		/* Invisible continuation line for
+				 * [info frame] */
+
+    /* TODO: Next table could be a simple list keyed off memory address?
+     * Or the BB pointers could be in the 'label' struct */
+    Tcl_HashTable BBHash;	/* Hash table whose keys are labels and
+				 * whose values are BasicBlock structure 
+				 * pointers for the basic blocks at those
+				 * locations */
+    BasicBlock* head_bb;	/* First basic block in the code */
+    BasicBlock* curr_bb;	/* Current basic block */
+
+    int maxDepth;	     	/* Maximum stack depth encountered */
+    int flags;			/* Compilation flags (TCL_EVAL_DIRECT) */
+} AssembleEnv;
+
 /* Static functions defined in this file */
 
-static void AddBasicBlockRangeToErrorInfo(Tcl_Interp* interp, Tcl_Obj* bcList,
-					  BasicBlock* bbPtr);
+static void AddBasicBlockRangeToErrorInfo(AssembleEnv*, BasicBlock*);
 static void AddInstructionToErrorInfo(Tcl_Interp* interp, Tcl_Obj* bcList,
 				      int index);
-static BasicBlock * AllocBB(CompileEnv*, int); 
-static int CheckNamespaceQualifiers(Tcl_Interp*, const char*);
+static BasicBlock * AllocBB(AssembleEnv*); 
+static int AssembleOneLine(AssembleEnv* envPtr);
+static int CheckNamespaceQualifiers(Tcl_Interp*, const char*, int);
 static int CheckOneByte(Tcl_Interp*, int);
 static int CheckSignedOneByte(Tcl_Interp*, int);
-static int StackCheckBasicBlock(StackCheckerState* , BasicBlock *, BasicBlock *, int);
-static BasicBlock* StartBasicBlock(CompileEnv* envPtr, 	Tcl_HashTable* BBHash,
-				   BasicBlock* currBB, int fallsThrough,
-				   int bcIndex, const char* jumpLabel);
-
-static int CheckStack(Tcl_Interp*, CompileEnv*, BasicBlock *, Tcl_Obj*);
-static void FreeAssembleCodeInternalRep(Tcl_Obj *objPtr);
+static int CheckStack(AssembleEnv*);
 static ByteCode * CompileAssembleObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static int DefineLabel(Tcl_Interp* interp, CompileEnv* envPtr,
-		       const char* label, Tcl_HashTable* labelHash);
+static int DefineLabel(AssembleEnv* envPtr, const char* label);
+static int FindLocalVar(AssembleEnv* envPtr, Tcl_Token** tokenPtrPtr);
+static int FinishAssembly(AssembleEnv*);
+static void FreeAssembleCodeInternalRep(Tcl_Obj *objPtr);
+static void FreeAssembleEnv(AssembleEnv*);
+static int GetBooleanOperand(AssembleEnv*, Tcl_Token**, int*);
+static int GetIntegerOperand(AssembleEnv*, Tcl_Token**, int*);
+static int GetNextOperand(AssembleEnv*, Tcl_Token**, Tcl_Obj**);
+static AssembleEnv* NewAssembleEnv(CompileEnv*, int);
+static int StackCheckBasicBlock(AssembleEnv*, BasicBlock *, BasicBlock *, int);
+static BasicBlock* StartBasicBlock(AssembleEnv*, int fallthrough,
+				   const char* jumpLabel);
+/* static int AdvanceIp(const unsigned char *pc); */
+static int StackCheckBasicBlock(AssembleEnv*, BasicBlock *, BasicBlock *, int);
+static void SyncStackDepth(AssembleEnv*);
+
+/* Tcl_ObjType that describes bytecode emitted by the assembler */
 
 static const Tcl_ObjType assembleCodeType = {
     "assemblecode",
-    FreeAssembleCodeInternalRep,	/* freeIntRepProc */
-    NULL,	/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    NULL			/* setFromAnyProc */
+    FreeAssembleCodeInternalRep, /* freeIntRepProc */
+    NULL,			 /* dupIntRepProc */
+    NULL,			 /* updateStringProc */
+    NULL			 /* setFromAnyProc */
 };
-
-/* static int AdvanceIp(const unsigned char *pc); */
-static int StackCheckBasicBlock(StackCheckerState* , BasicBlock *, BasicBlock *, int);
 
 /*
  * TIP #280: Remember the per-word line information of the current command. An
@@ -80,8 +115,9 @@ talInstDesc talInstructionTable[] = {
                 ASSEM_1BYTE,    INST_APPEND_STK, 
                                                 2,      1}, 
     {"concat",	ASSEM_CONCAT1,	INST_CONCAT1,	INT_MIN,1},
-    {"eval",	ASSEM_EVAL,	0,		0,	1},
+    {"eval",	ASSEM_EVAL,	INST_EVAL_STK,	0,	1},
     {"evalStk",	ASSEM_1BYTE,	INST_EVAL_STK,	1,	1},
+    {"expr",	ASSEM_EVAL,	INST_EXPR_STK,	0,	1},
     {"exprStk", ASSEM_1BYTE,	INST_EXPR_STK,	1,	1},
     {"exist",	ASSEM_LVT4,	INST_EXIST_SCALAR,
                                                 0,      1},
@@ -336,11 +372,15 @@ BBUpdateStackReqs(BasicBlock* bbPtr,
  */
 
 static void
-BBEmitOpcode(CompileEnv* envPtr,/* Compilation environment */
-	     BasicBlock* bbPtr,	/* Basic block to which the op belongs */
+BBEmitOpcode(AssembleEnv* assemEnvPtr,
+				/* Assembly environment */
 	     int tblind,	/* Table index in talInstructionTable of op */
 	     int count)		/* Operand count for variadic ops */
 {
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    BasicBlock* bbPtr = assemEnvPtr->curr_bb;
+				/* Current basic block */
     int op = talInstructionTable[tblind].tclInstCode & 0xff;
 #if 0
     fprintf(stderr, "Emit %s (%d)\n", tclInstructionTable[op].name, count);
@@ -351,29 +391,25 @@ BBEmitOpcode(CompileEnv* envPtr,/* Compilation environment */
     BBUpdateStackReqs(bbPtr, tblind, count);
 }
 static void
-BBEmitInstInt1(CompileEnv* envPtr,
-				/* Compilation environment */
-	       BasicBlock* bbPtr,
-				/* basic block to which the op belongs */
+BBEmitInstInt1(AssembleEnv* assemEnvPtr,
+				/* Assembly environment */
 	       int tblind,	/* Index in talInstructionTable of op */
 	       unsigned char opnd,
 				/* 1-byte operand */
 	       int count)	/* Operand count for variadic ops */
 {
-    BBEmitOpcode(envPtr, bbPtr, tblind, count);
-    TclEmitInt1(opnd, envPtr);
+    BBEmitOpcode(assemEnvPtr, tblind, count);
+    TclEmitInt1(opnd, assemEnvPtr->envPtr);
 }
 static void
-BBEmitInstInt4(CompileEnv* envPtr,
-				/* Compilation environment */
-	       BasicBlock* bbPtr,
-				/* basic block to which the op belongs */
+BBEmitInstInt4(AssembleEnv* assemEnvPtr,
+				/* Assembly environment */
 	       int tblind,	/* Index in talInstructionTable of op */
 	       int opnd,	/* 4-byte operand */
 	       int count)	/* Operand count for variadic ops */
 {
-    BBEmitOpcode(envPtr, bbPtr, tblind, count);
-    TclEmitInt4(opnd, envPtr);
+    BBEmitOpcode(assemEnvPtr, tblind, count);
+    TclEmitInt4(opnd, assemEnvPtr->envPtr);
 }
 
 /*
@@ -388,14 +424,16 @@ BBEmitInstInt4(CompileEnv* envPtr,
  */
 
 static void
-BBEmitInst1or4(CompileEnv* envPtr,
-				/* Compilation environment */
-	       BasicBlock* bbPtr,
-				/* Basic block under construction */
+BBEmitInst1or4(AssembleEnv* assemEnvPtr,
+				/* Assembly environment */
 	       int tblind,	/* Index in talInstructionTable of op */
 	       int param,	/* Variable-length parameter */
 	       int count)	/* Arity if variadic */
 {
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    BasicBlock* bbPtr = assemEnvPtr->curr_bb;
+				/* Current basic block */
 
     int op = talInstructionTable[tblind].tclInstCode;
     if (param <= 0xff) {
@@ -417,6 +455,23 @@ BBEmitInst1or4(CompileEnv* envPtr,
     BBUpdateStackReqs(bbPtr, tblind, count);
 }
 
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * Tcl_AssembleObjCmd, TclNRAssembleObjCmd --
+ *
+ *	Direct evaluation path for tcl::unsupported::assemble
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	Assembles the code in objv[1], and executes it, so side effects
+ *	include whatever the code does.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
 int
 Tcl_AssembleObjCmd(
     ClientData dummy,		/* Not used. */
@@ -424,9 +479,13 @@ Tcl_AssembleObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    /* 
+     * Boilerplate - make sure that there is an NRE trampoline on the
+     * C stack because there needs to be one in place to execute bytecode.
+     */
+        
     return Tcl_NRCallObjProc(interp, TclNRAssembleObjCmd, dummy, objc, objv);
 }
-
 int
 TclNRAssembleObjCmd(
     ClientData dummy,		/* Not used. */
@@ -434,50 +493,75 @@ TclNRAssembleObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *objPtr;
-    ByteCode *codePtr;
+    ByteCode *codePtr;		/* Pointer to the bytecode to execute */
+    Tcl_Obj* backtrace;		/* Object where extra error information
+				 * is constructed. */
 
-#if 0
-    int i;
-    fprintf(stderr, "TclNRAssembleObjCmd:");
-    for (i=0; i < objc; ++i) {
-	fprintf(stderr, " {%s}", Tcl_GetString(objv[i]));
-    }
-    fprintf(stderr, "\n"); fflush(stderr);
-#endif
+    /* Check args */
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytecodeList");
 	return TCL_ERROR;
     }
 
-    objPtr = objv[1];
-    codePtr = CompileAssembleObj(interp, objPtr);
+    /* Assemble the source to bytecode */
+
+    codePtr = CompileAssembleObj(interp, objv[1]);
+
+    /* On failure, report error line */
+
     if (codePtr == NULL) {
+	Tcl_AddErrorInfo(interp, "\n    (\"");
+	Tcl_AddErrorInfo(interp, Tcl_GetString(objv[0]));
+	Tcl_AddErrorInfo(interp, "\" body, line ");
+	backtrace = Tcl_NewIntObj(Tcl_GetErrorLine(interp));
+	Tcl_IncrRefCount(backtrace);
+	Tcl_AddErrorInfo(interp, Tcl_GetString(backtrace));
+	Tcl_DecrRefCount(backtrace);
+	Tcl_AddErrorInfo(interp, ")");
 	return TCL_ERROR;
     }
 
-#if 0
-    fprintf(stderr, "bytecode: %p\n", codePtr);
-#endif
+    /* Use NRE to evaluate the bytecode from the trampoline */
+
     Tcl_NRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), codePtr,
 	    NULL, NULL);
 
     return TCL_OK;
 }
-
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * CompileAssembleObj --
+ *
+ *	Sets up and assembles Tcl bytecode for the direct-execution path
+ *	in the Tcl bytecode assembler.
+ *
+ * Results:
+ *	Returns a pointer to the assembled code. Returns NULL if the
+ *	assembly fails for any reason, with an appropriate error message
+ *	in the interpreter.
+ *
+ *-----------------------------------------------------------------------------
+ */
+ 
 static ByteCode *
 CompileAssembleObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr)
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    Tcl_Obj *objPtr)		/* Source code to assemble */
 {
     Interp *iPtr = (Interp *) interp;
-    CompileEnv compEnv;		/* Compilation environment structure allocated
-				 * in frame. */
+				/* Internals of the interpreter */
+    CompileEnv compEnv;		/* Compilation environment structure */
     register ByteCode *codePtr = NULL;
-				/* Tcl Internal type of bytecode. Initialized
-				 * to avoid compiler warning. */
+				/* Bytecode resulting from the assembly */
+    Namespace* namespacePtr;	/* Namespace in which variable and
+				 * command names in the bytecode resolve */
     int status;			/* Status return from Tcl_AssembleCode */
+    const char* source;		/* String representation of the
+				 * source code */
+    int sourceLen;			/* Length of the source code in bytes */
 
     /*
      * Get the expression ByteCode from the object. If it exists, make sure it
@@ -485,8 +569,7 @@ CompileAssembleObj(
      */
      
     if (objPtr->typePtr == &assembleCodeType) {
-	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
-
+	namespacePtr = iPtr->varFramePtr->nsPtr;
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 	    || (codePtr->compileEpoch != iPtr->compileEpoch)
@@ -499,34 +582,17 @@ CompileAssembleObj(
     }
     if (objPtr->typePtr != &assembleCodeType) {
 
-	int length;
-		
-	const char *string = TclGetStringFromObj(objPtr, &length);
-	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
-#if 0
-	fprintf(stderr, "assembling: %s\n", string); fflush(stderr);
-#endif
-	status = TclAssembleCode(interp, objPtr, &compEnv, TCL_EVAL_DIRECT);
+	/* Set up the compilation environment, and assemble the code */
+
+	source = TclGetStringFromObj(objPtr, &sourceLen);
+	TclInitCompileEnv(interp, &compEnv, source, sourceLen, NULL, 0);
+	status = TclAssembleCode(&compEnv, source, sourceLen, TCL_EVAL_DIRECT);
 	if (status != TCL_OK) {
-#if 0
-	    fprintf(stderr, "assembly failed: %s\n", 
-		    Tcl_GetString(Tcl_GetObjResult(interp)));
-	    fflush(stderr);
-#endif
-	    /* FIXME - there's memory to clean up */
+
+	    /* Assembly failed. Clean up and report the error */
+
+	    TclFreeCompileEnv(&compEnv);
 	    return NULL;
-	}
-
-	/*
-	 * Successful compilation. If the expression yielded no instructions,
-	 * push an zero object as the expression's result.
-	 */
-
-	if (compEnv.codeNext == compEnv.codeStart) {
-	    fprintf(stderr, "empty bytecode, why did this happen?\n");
-	    fflush(stderr);
-	    TclEmitPush(TclRegisterNewLiteral(&compEnv, "0", 1),
-		    &compEnv);
 	}
 
 	/*
@@ -539,11 +605,19 @@ CompileAssembleObj(
 	TclInitByteCodeObj(objPtr, &compEnv);
 	objPtr->typePtr = &assembleCodeType;
 	TclFreeCompileEnv(&compEnv);
+
+	/*
+	 * Record the local variable context to which the bytecode pertains
+	 */
+
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
 	}
+
+	/* Report on what the assembler did. */
+
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceCompile >= 2) {
 	    TclPrintByteCodeObj(interp, objPtr);
@@ -553,7 +627,7 @@ CompileAssembleObj(
     }
     return codePtr;
 }
-
+
 /*
  *-----------------------------------------------------------------------------
  *
@@ -585,7 +659,6 @@ int TclCompileAssembleCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 { 
     Tcl_Token *tokenPtr;	/* Token in the input script */
-    Tcl_Obj *bcList;		/* List of assembly instructions to process */
     int status;			/* Status return from assembling the code */
 
     /* Make sure that the command has a single arg */
@@ -603,10 +676,7 @@ int TclCompileAssembleCmd(
 
     /* Compile the code and return any error from the compilation */
 
-    bcList = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    Tcl_IncrRefCount(bcList);
-    status = TclAssembleCode(interp, bcList, envPtr, 0);
-    Tcl_DecrRefCount(bcList);
+    status = TclAssembleCode(envPtr, tokenPtr[1].start, tokenPtr[1].size, 0);
     return status;
 
 }
@@ -632,472 +702,806 @@ int TclCompileAssembleCmd(
  */
 
 MODULE_SCOPE int
-TclAssembleCode(Tcl_Interp *interp, 
-				/* Tcl interpreter */
-		Tcl_Obj * bcList, 
-				/* List of assembly instructions */
-		CompileEnv *envPtr, 	
+TclAssembleCode(CompileEnv *envPtr, 	
 				/* Compilation environment that is to
 				 * receive the generated bytecode */
+		const char* codePtr,
+				/* Assembly-language code to be processed */
+		int codeLen,	/* Length of the code */
 		int flags)	/* OR'ed combination of flags */
 {
-
-    int bcListLen = 0;		/* Length of the assembly code list */
-    Tcl_HashTable labelHash;	/* Hashtable storing information about
-				 * labels in the assembly code */
-    Tcl_HashTable BBHash;	/* Hashtable storing information about
-				 * the basic blocks in the bytecode */
-
-    BasicBlock* curr_bb = NULL;	/* Structure describing the current basic 
-				 * block */
-    BasicBlock* head_bb = NULL;	/* Structure describing the first basic
-				 * block in the code */
-    int ind;			/* Index in the list of instructions */
-    int result;			/* Return value from this function */
-    Tcl_Obj* bc;		/* One assembly instruction from the list */
-    int bcSize = 0;		/* Length of the instruction sublist */
-    Tcl_Obj ** bcArgs;		/* Arguments to the instruction */
-    char * instName; 		/* Name of the instruction */
-    enum talInstType instType;	/* Type of the current assembly instruction */
-    unsigned char instCode;	/* Opcode of the current assembly instruction */
-    const char* operand1;	/* First operand passed to the instruction */
-    int operand1Len;		/* Length of the first operand */
-    int tblind = 0;		/* Index in the instruction table of the
-				 * current instruction */
-    int isNew;			/* Flag == 1 if a JUMP is the first
-				 * occurrence of its associated label */
-    Tcl_Obj* resultObj;		/* Error message */
-    int savedMaxStackDepth;	/* Max stack depth saved around compilation
-				 * calls */
-    int savedCurrStackDepth;	/* Current stack depth saved around
-				 * compilation calls. */
-
-    int localVar, opnd = 0;
-    label *l;
-    Tcl_HashEntry * entry;
-    int litIndex;
-     
-    DefineLineInformation;	/* TIP #280 */ /* eclIndex? */
-     
-#if 0
-    fprintf(stderr, "Assembling: %s\n", Tcl_GetString(bcList));
-    fflush(stderr);
-#endif
-
-    /* Test that the bytecode that we're given is a well formed list */
-
-    if (Tcl_ListObjLength(interp, bcList, &bcListLen) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-  
-    /* Initialize the symbol table and the table of basic blocks */
-
-    Tcl_InitHashTable(&labelHash, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&BBHash, TCL_STRING_KEYS);
-
-    /* Allocate a structure to describe the first basic block */
-
-    curr_bb = AllocBB(envPtr, 0);
-    head_bb = curr_bb;
-     
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
     /* 
-     * Index through the assembly directives and instructions, generating code.
+     * Walk through the assembly script using the Tcl parser.
+     * Each 'command' will be an instruction or assembly directive.
      */
 
-    for (ind = 0; ind < bcListLen; ind++) {
+    const char* instPtr = codePtr;
+				/* Where to start looking for a line of code */
+    int instLen;		/* Length in bytes of the current line of 
+				 * code */
+    const char* nextPtr;	/* Pointer to the end of the line of code */
+    int bytesLeft = codeLen;	/* Number of bytes of source code remaining 
+				 * to be parsed */
+    int status;			/* Tcl status return */
 
-	/* Extract the instruction name from a list element */
+    AssembleEnv* assemEnvPtr = NewAssembleEnv(envPtr, flags);
+    Tcl_Parse* parsePtr = assemEnvPtr->parsePtr;
 
-	result = TCL_OK;
-	if (Tcl_ListObjIndex(interp, bcList, ind, &bc) != TCL_OK
-	    || Tcl_ListObjGetElements(interp, bc, &bcSize, &bcArgs) != TCL_OK) {
-	    goto cleanup;
+    do {
+
+	/* Parse out one command line from the assembly script */
+
+	status = Tcl_ParseCommand(interp, instPtr, bytesLeft, 0, parsePtr);
+	instLen = parsePtr->commandSize;
+	if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
+	    --instLen;
 	}
-	if (bcSize == 0) {
-	    continue;
+
+	/* Report errors in the parse */
+
+	if (status != TCL_OK) {
+	    if (flags & TCL_EVAL_DIRECT) {
+		Tcl_LogCommandInfo(interp, codePtr, parsePtr->commandStart, 
+				   instLen);
+	    }
+	    FreeAssembleEnv(assemEnvPtr);
+	    return TCL_ERROR;
 	}
-	instName = Tcl_GetStringFromObj(bcArgs[0], NULL);
-#if 0
-	fprintf(stderr, "[%d] %s\n",
-		envPtr->codeNext - envPtr->codeStart, instName); 
-	fflush(stderr);
+
+	/* Advance the pointers around any leading commentary */
+
+	TclAdvanceLines(&assemEnvPtr->cmdLine, instPtr, parsePtr->commandStart);
+	TclAdvanceContinuations(&assemEnvPtr->cmdLine, &assemEnvPtr->clNext, 
+				parsePtr->commandStart - envPtr->source);
+
+	/* Process the line of code  */
+
+	if (parsePtr->numWords > 0) {
+
+	    /* If tracing, show each line assembled as it happens */
+
+#ifdef TCL_COMPILE_DEBUG
+	    if ((tclTraceCompile >= 1) && (envPtr->procPtr == NULL)) {
+		printf("  Assembling: ");
+		TclPrintSource(stdout, parsePtr->commandStart,
+			       TclMin(instLen, 55));
+		printf("\n");
+	    }
 #endif
-
-	/* 
-	 * Extract the first operand, if there is one, and get its string
-       	 * representation 
-	 */
-
-	if (bcSize >= 2) {
-	    operand1 = Tcl_GetStringFromObj(bcArgs[1], &operand1Len);
-	} else {
-	    operand1 = NULL; 
-	    operand1Len = 0;
+	    if (AssembleOneLine(assemEnvPtr) != TCL_OK) {
+		if (flags & TCL_EVAL_DIRECT) {
+		    Tcl_LogCommandInfo(interp, codePtr, parsePtr->commandStart, 
+				       instLen);
+		}
+		Tcl_FreeParse(parsePtr);
+		FreeAssembleEnv(assemEnvPtr);
+		return TCL_ERROR;
+	    }
 	}
 
-	/* Look up the instruction in the table of instructions */
+	/* Advance to the next line of code */
 
-	if (Tcl_GetIndexFromObjStruct(interp, bcArgs[0],
-				      &talInstructionTable[0].name,
-				      sizeof(talInstDesc), "instruction",
-				      TCL_EXACT, &tblind) != TCL_OK) {
-	    goto cleanup;
-	}
+	nextPtr = parsePtr->commandStart + parsePtr->commandSize;
+	bytesLeft -= (nextPtr - instPtr);
+	instPtr = nextPtr;
+	TclAdvanceLines(&assemEnvPtr->cmdLine, parsePtr->commandStart, instPtr);
+	TclAdvanceContinuations(&assemEnvPtr->cmdLine, &assemEnvPtr->clNext,
+				instPtr - envPtr->source);
+	Tcl_FreeParse(parsePtr);
+    } while (bytesLeft > 0);
 
-	/* Vector on the type of instruction being processed */
+    /* Done with parsing the code */
 
-	instType = talInstructionTable[tblind].instType;
-	instCode = talInstructionTable[tblind].tclInstCode;
-	switch (instType) {
+    status = FinishAssembly(assemEnvPtr);
+    FreeAssembleEnv(assemEnvPtr);
+    return status;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * NewAssembleEnv --
+ *
+ *	Creates an environment for the assembler to run in.
+ *
+ * Results:
+ *	Allocates, initialises and returns an assembler environment
+ *
+ *-----------------------------------------------------------------------------
+ */
 
-	case ASSEM_LABEL:
+static AssembleEnv*
+NewAssembleEnv(CompileEnv* envPtr,
+				/* Compilation environment being used
+				 * for code generation*/
+	       int flags)	/* Compilation flags (TCL_EVAL_DIRECT) */
+{
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    AssembleEnv* assemEnvPtr = TclStackAlloc(interp, sizeof(AssembleEnv));
+				/* Assembler environment under construction */
+    Tcl_Parse* parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+				/* Parse of one line of assembly code */
 
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "name");
-		goto cleanup;
-	    }
-	    /* Add the (label_name, address) pair to the hash table */
-	    if (DefineLabel(interp, envPtr, operand1, &labelHash) != TCL_OK) {
-		goto cleanup;
-	    }
-                    
-	    /* End the current basic block and start a new one */ 
+    assemEnvPtr->envPtr = envPtr;
+    assemEnvPtr->parsePtr = parsePtr;
+    assemEnvPtr->cmdLine = envPtr->line;
+    assemEnvPtr->clNext = envPtr->clNext;
 
-	    curr_bb = StartBasicBlock(envPtr, &BBHash, curr_bb, 1, ind, NULL);
+    /* Make the hashtables that store symbol resolution */
 
-	    /* Attach the label to the new basic block */
+    Tcl_InitHashTable(&assemEnvPtr->labelHash, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&assemEnvPtr->BBHash, TCL_STRING_KEYS);
 
-	    entry = Tcl_CreateHashEntry(&BBHash, operand1, &opnd);
-	    Tcl_SetHashValue(entry, curr_bb);
-                    
-	    break;
-                
-	case ASSEM_1BYTE:
-	    if (bcSize != 1) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "");
-		goto cleanup;
-	    }
-	    BBEmitOpcode(envPtr, curr_bb, tblind, 0);
-	    break;
+    /* Start the first basic block */
 
-	case ASSEM_INVOKE:
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "count");
-		goto cleanup;
-	    }
-	    if (Tcl_GetIntFromObj(interp, bcArgs[1], &opnd) != TCL_OK) {
-		goto cleanup;
-	    }
-	    BBEmitInst1or4(envPtr, curr_bb, tblind, opnd, opnd);
-	    break;
-		 
-	case ASSEM_JUMP: 
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "label");
-		goto cleanup;
-	    }
-	    entry = Tcl_CreateHashEntry(&labelHash, operand1, &isNew);
-	    if (isNew) {
-		l = (label *) ckalloc(sizeof(label));
-		l -> isDefined = 0;
-		l -> offset = -1;
-		Tcl_SetHashValue(entry, l);
-	    } else {
-		l = Tcl_GetHashValue(entry);
-	    }
-	    if (l -> isDefined) {
-		BBEmitInst1or4(envPtr, curr_bb, tblind, 
-			       l->offset + envPtr->codeStart
-			       - envPtr->codeNext, 0);
-	    } else {
-		int here = envPtr->codeNext - envPtr->codeStart;
-		BBEmitInstInt4(envPtr, curr_bb, tblind,
-			       l->offset, 0);
-#if 0
-		fprintf(stderr, "forward ref to %s, prev at %d, link %d\n",
-			operand1, l->offset, here);
-#endif
-		l->offset = here;
-	    }   
-                    
-	    /* Start a new basic block at the instruction following the jump */
+    assemEnvPtr->head_bb = AllocBB(assemEnvPtr);
+    assemEnvPtr->curr_bb = assemEnvPtr->head_bb;
 
-	    curr_bb = 
-		StartBasicBlock(envPtr, &BBHash, curr_bb,
-				talInstructionTable[tblind].operandsConsumed,
-				ind+1, operand1);
+    /* Stash compilation flags */
 
-	    break;
-                             
-	case ASSEM_LVT:
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "varname");
-		goto cleanup;
-	    }
-	    if (CheckNamespaceQualifiers(interp, operand1)) {
-		goto cleanup;
-	    }
-	    localVar = TclFindCompiledLocal(operand1, operand1Len, 1, envPtr);
-	    if (localVar == -1) {
-		Tcl_SetObjResult(interp,
-				 Tcl_NewStringObj("cannot use this instruction"
-						  " in non-proc context", -1));
-		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "LVT", NULL);
-		goto cleanup;
-	    }
-	    fprintf(stderr, "operand %s in slot %d\n", operand1, localVar);
-	    BBEmitInst1or4(envPtr, curr_bb, tblind, localVar, 0);
-	    break;
+    assemEnvPtr->flags = flags;
 
-	case ASSEM_LVT1:
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "varname");
-		goto cleanup;
-	    }
-	    if (CheckNamespaceQualifiers(interp, operand1)) {
-		goto cleanup;
-	    }
-	    localVar = TclFindCompiledLocal(operand1, operand1Len, 1, envPtr);
-	    if (localVar == -1) {
-		Tcl_SetObjResult(interp,
-				 Tcl_NewStringObj("cannot use this instruction"
-						  " in non-proc context", -1));
-		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "LVT", NULL);
-		goto cleanup;
-	    }
-	    if (CheckOneByte(interp, localVar)) {
-		goto cleanup;
-	    }
-	    BBEmitInstInt1(envPtr, curr_bb, tblind, localVar, 0);
-	    break;
+    return assemEnvPtr;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * FreeAssembleEnv --
+ *
+ *	Cleans up the assembler environment when assembly is complete.
+ *
+ *-----------------------------------------------------------------------------
+ */
 
-	case ASSEM_LVT4:
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "varname");
-		goto cleanup;
-	    }
-	    if (CheckNamespaceQualifiers(interp, operand1)) {
-		goto cleanup;
-	    }
-	    localVar = TclFindCompiledLocal(operand1, operand1Len, 1, envPtr);
-	    if (localVar == -1) {
-		Tcl_SetObjResult(interp,
-				 Tcl_NewStringObj("cannot use this instruction"
-						  " in non-proc context", -1));
-		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "LVT", NULL);
-		goto cleanup;
-	    }
-	    BBEmitInstInt4(envPtr, curr_bb, tblind, localVar, 0);
-	    break;
+static void
+FreeAssembleEnv(AssembleEnv* assemEnvPtr)
+				/* Environment to free */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment being used
+				 * for code generation */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
 
-	case ASSEM_BOOL:
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "boolean");
-		goto cleanup;
-	    }
-	    if (Tcl_GetBooleanFromObj(interp, bcArgs[1], &opnd) != TCL_OK) {
-		goto cleanup;
-	    }
-	    BBEmitInstInt1(envPtr, curr_bb, tblind, opnd, 0);
-	    break;
+    BasicBlock* thisBB;		/* Pointer to a basic block being deleted */
+    BasicBlock* nextBB;		/* Pointer to a deleted basic block's 
+				 * successor */
+    Tcl_HashEntry* hashEntry;
+    Tcl_HashSearch hashSearch;
+    label* labelPtr;
 
-	case ASSEM_BOOL_LVT4:
-	    if (bcSize != 3) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "boolean varName");
-		goto cleanup;
-	    }
-	    if (Tcl_GetBooleanFromObj(interp, bcArgs[1], &opnd) != TCL_OK) {
-		goto cleanup;
-	    }
-	    operand1 = Tcl_GetStringFromObj(bcArgs[2], &operand1Len);
-	    if (CheckNamespaceQualifiers(interp, operand1)) {
-		goto cleanup;
-	    }
-	    localVar = TclFindCompiledLocal(operand1, operand1Len, 1, envPtr);
-	    if (localVar == -1) {
-		Tcl_SetObjResult(interp,
-				 Tcl_NewStringObj("cannot use this instruction"
-						  " in non-proc context", -1));
-		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "LVT", NULL);
-		goto cleanup;
-	    }
-	    BBEmitInstInt1(envPtr, curr_bb, tblind, opnd, 0);
-	    TclEmitInt4(localVar, envPtr);
-	    break;
-
-        case ASSEM_LVT1_SINT1:
-	    if (bcSize != 3) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "varName imm8");
-		goto cleanup;
-	    }
-	    if (CheckNamespaceQualifiers(interp, operand1)) {
-		goto cleanup;
-	    }
-	    localVar = TclFindCompiledLocal(operand1, operand1Len, 1, envPtr);
-	    if (localVar == -1) {
-		Tcl_SetObjResult(interp,
-				 Tcl_NewStringObj("cannot use this instruction"
-						  " in non-proc context", -1));
-		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "LVT", NULL);
-		goto cleanup;
-	    }
-	    if (CheckOneByte(interp, localVar)) {
-		goto cleanup;
-	    }
-	    if (Tcl_GetIntFromObj(interp, bcArgs[2], &opnd) != TCL_OK) {
-		goto cleanup;
-	    }
-	    if (CheckSignedOneByte(interp, opnd)) {
-		goto cleanup;
-	    }
-	    BBEmitInstInt1(envPtr, curr_bb, tblind, localVar, 0);
-	    TclEmitInt1(opnd, envPtr);
-	    break;
-
-	case ASSEM_OVER:
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "count");
-		goto cleanup;
-	    }
-	    if (Tcl_GetIntFromObj(interp, bcArgs[1], &opnd) != TCL_OK) {
-		goto cleanup;
-	    }
-	    BBEmitInstInt4(envPtr, curr_bb, tblind, opnd, opnd+1);
-	    break;
-
-	case ASSEM_PUSH:
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "value");
-		goto cleanup;
-	    }
-	    litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
-	    BBEmitInst1or4(envPtr, curr_bb, tblind, litIndex, 0);
-	    break;
-
-	case ASSEM_REVERSE:
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "count");
-		goto cleanup;
-	    }
-	    if (Tcl_GetIntFromObj(interp, bcArgs[1], &opnd) != TCL_OK) {
-		goto cleanup;
-	    }
-	    BBEmitInstInt4(envPtr, curr_bb, tblind, opnd, opnd);
-	    break;
-		 
-        case ASSEM_SINT1:
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "imm8");
-		goto cleanup;
-	    }
-	    if (Tcl_GetIntFromObj(interp, bcArgs[1], &opnd) != TCL_OK) {
-		goto cleanup;
-	    }
-	    if (CheckSignedOneByte(interp, opnd)) {
-		goto cleanup;
-	    }
-	    BBEmitInstInt1(envPtr, curr_bb, tblind, opnd, 0);
-	    break;
-
-        case ASSEM_CONCAT1:
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "imm8");
-		goto cleanup;
-	    }
-	    if (Tcl_GetIntFromObj(interp, bcArgs[1], &opnd) != TCL_OK) {
-		goto cleanup;
-	    }
-	    if (CheckOneByte(interp, opnd)) {
-		goto cleanup;
-	    }
-	    BBEmitInstInt1(envPtr, curr_bb, tblind, opnd, opnd);
-	    break;
-
-	case ASSEM_EVAL:
-	    if (bcSize != 2) {
-		Tcl_WrongNumArgs(interp, 1, bcArgs, "script");
-		goto cleanup;
-	    }
-	    fprintf(stderr, "compiling: %s\n", operand1); fflush(stderr);
-	    savedMaxStackDepth = envPtr->maxStackDepth;
-	    savedCurrStackDepth = envPtr->currStackDepth;
-	    envPtr->maxStackDepth = 0;
-	    envPtr->currStackDepth = 0;
-	    TclCompileScript(interp, operand1, operand1Len, envPtr);
-	    if (curr_bb->finalStackDepth + envPtr->maxStackDepth
-		> curr_bb->maxStackDepth) {
-		curr_bb->maxStackDepth =
-		    curr_bb->finalStackDepth + envPtr->maxStackDepth;
-	    }
-	    curr_bb->finalStackDepth += envPtr->currStackDepth;
-	    envPtr->maxStackDepth = savedMaxStackDepth;
-	    envPtr->currStackDepth = savedCurrStackDepth;
-	    fprintf(stderr, "compilation returns\n"); fflush(stderr);
-	    break;
-
-	default:
-	    Tcl_Panic("Instruction \"%s\" could not be found, can't happen\n",
-		      instName);
-	}
-            
+    /* Free the basic block hash index and all the basic block structures */
+    Tcl_DeleteHashTable(&assemEnvPtr->BBHash);
+    for (thisBB = assemEnvPtr->head_bb; thisBB != NULL; thisBB = nextBB) {
+	nextBB = thisBB->successor1;
+	ckfree((char*)thisBB);
     }
 
-    /* Tie off the last basic block */
-
-    curr_bb->may_fall_thru = 0;
-    curr_bb->jumpTargetLabelHashEntry = NULL;
-    result = CheckStack(interp, envPtr, head_bb, bcList);
-    if (result != TCL_OK) {
-	goto cleanup;
+    /* Free all the labels */
+    while ((hashEntry = Tcl_FirstHashEntry(&assemEnvPtr->labelHash,
+					    &hashSearch)) != NULL) {
+	labelPtr = (label*) Tcl_GetHashValue(hashEntry);
+	ckfree((char*) labelPtr);
+	Tcl_DeleteHashEntry(hashEntry);
     }
-    if (curr_bb->visited) {
-	int depth = curr_bb->finalStackDepth + curr_bb->initialStackDepth;
-	if (depth == 0) {
-	    /* Emit a 'push' of the empty literal */
-	    litIndex = TclRegisterNewLiteral(envPtr, "", 0);
-	    /* Assumes that 'push' is at slot 0 in talInstructionTable */
-	    BBEmitInst1or4(envPtr, curr_bb, 0, litIndex, 0);
-	    ++depth;
-	}
-	if (depth != 1) {
-	    Tcl_Obj* depthObj = Tcl_NewIntObj(depth);
-	    Tcl_IncrRefCount(depthObj);
-	    resultObj = Tcl_NewStringObj("stack is unbalanced on exit "
-					 "from the code (depth=", -1);
-	    Tcl_AppendObjToObj(resultObj, depthObj);
-	    Tcl_DecrRefCount(depthObj);
-	    Tcl_AppendToObj(resultObj, ")", -1);
-	    Tcl_SetObjResult(interp, resultObj);
-	    goto cleanup;
-	}
-#if 0
-	fprintf(stderr, "before: stackDepth %d\n", envPtr->currStackDepth);
-#endif
-	envPtr->currStackDepth += depth;
-#if 0
-	fprintf(stderr, "after: stackDepth %d\n", envPtr->currStackDepth);
-#endif
-	fflush(stderr);
-    }
+    Tcl_DeleteHashTable(&assemEnvPtr->labelHash);
 
-    Tcl_DeleteHashTable(&labelHash); // Actually, we need to free each label as well.
+    TclStackFree(interp, assemEnvPtr->parsePtr);
+    TclStackFree(interp, assemEnvPtr);
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * AssembleOneLine --
+ *
+ *	Assembles a single command from an assembly language source.
+ *
+ * Results:
+ *	Returns TCL_ERROR with an appropriate error message if the
+ *	assembly fails. Returns TCL_OK if the assembly succeeds. Updates
+ *	the assembly environment with the state of the assembly.
+ *
+ *-----------------------------------------------------------------------------
+ */
 
-    return result;
-
- cleanup:
+static int
+AssembleOneLine(AssembleEnv* assemEnvPtr)
+				/* State of the assembly */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment being used for
+				 * code gen */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    Tcl_Parse* parsePtr = assemEnvPtr->parsePtr;
+				/* Parse of the line of code */
+    Tcl_Token* tokenPtr;	/* Current token within the line of code */
+    Tcl_Obj* instNameObj = NULL;
+				/* Name of the instruction */
+    int tblind;			/* Index in talInstructionTable of the 
+				 * instruction */
+    enum talInstType instType;	/* Type of the instruction */
+    Tcl_Obj* operand1Obj = NULL;
+    				/* First operand to the instruction */
+    const char* operand1;	/* String rep of the operand */
+    int operand1Len;		/* String length of the operand  */
+    Tcl_HashEntry* entry;	/* Hash entry from label and basic
+				 * block operations */
+    int isNew;		    	/* Flag indicating that a new hash entry
+				 * has been created */
+    label* l;		        /* Structure descibing a label in the
+				 * assembly code */
+    int opnd;			/* Integer representation of an operand */
+    int litIndex;		/* Literal pool index of a constant */
+    int localVar;		/* LVT index of a local variable */
+    int status = TCL_ERROR;	/* Return value from this function */
     
-    /* FIXME: Need to make sure that allocated memory gets freed. */
+    /* Make sure that the instruction name is known at compile time. */
 
-    if (ind >= 0 && ind < bcSize) {
-	Tcl_AddErrorInfo(interp, "\n    processing ");
-	AddInstructionToErrorInfo(interp, bcList, ind);
+    tokenPtr = parsePtr->tokenPtr;
+    instNameObj = Tcl_NewObj();
+    Tcl_IncrRefCount(instNameObj);
+    if (GetNextOperand(assemEnvPtr, &tokenPtr, &instNameObj) != TCL_OK) {
+	return TCL_ERROR;
     }
 
-    /* TODO: If ind != -1, add error info indicating where in the
-     * instruction stream things went wrong */
+    /* Look up the instruction name */
+    
+    if (Tcl_GetIndexFromObjStruct(interp, instNameObj,
+				  &talInstructionTable[0].name,
+				  sizeof(talInstDesc), "instruction",
+				  TCL_EXACT, &tblind) != TCL_OK) {
+	return TCL_ERROR;
+    }
 
-    return TCL_ERROR;
+    /* Vector on the type of instruction being processed */
 
+    instType = talInstructionTable[tblind].instType;
+    switch (instType) {
+
+    case ASSEM_PUSH:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "value");
+	    goto cleanup;
+	}
+	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
+	    goto cleanup;
+	}
+	operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
+	litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
+	BBEmitInst1or4(assemEnvPtr, tblind, litIndex, 0);
+	break;
+
+    case ASSEM_1BYTE:
+	if (parsePtr->numWords != 1) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "");
+	    goto cleanup;
+	}
+	BBEmitOpcode(assemEnvPtr, tblind, 0);
+	break;
+
+    case ASSEM_BOOL:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "boolean");
+	    goto cleanup;
+	}
+	if (GetBooleanOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	BBEmitInstInt1(assemEnvPtr, tblind, opnd, 0);
+	break;
+
+    case ASSEM_BOOL_LVT4:
+	if (parsePtr->numWords != 3) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "boolean varName");
+	    goto cleanup;
+	}
+	if (GetBooleanOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
+	    || (localVar = FindLocalVar(assemEnvPtr, &tokenPtr)) < 0) {
+	    goto cleanup;
+	}
+	BBEmitInstInt1(assemEnvPtr, tblind, opnd, 0);
+	TclEmitInt4(localVar, envPtr);
+	break;
+
+    case ASSEM_CONCAT1:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "imm8");
+	    goto cleanup;
+	}
+	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK
+	    || Tcl_GetIntFromObj(interp, operand1Obj, &opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	if (CheckOneByte(interp, opnd)) {
+	    goto cleanup;
+	}
+	BBEmitInstInt1(assemEnvPtr, tblind, opnd, opnd);
+	break;
+
+    case ASSEM_EVAL:
+	/* TODO - Refactor this stuff into a subroutine
+	 * that takes the inst code, the message ("script" or "expression")
+	 * and an evaluator callback that calls TclCompileScript or
+	 * TclCompileExpr. 
+	 */
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, 
+			     ((talInstructionTable[tblind].tclInstCode
+			       == INST_EVAL_STK) ? "script" : "expression"));
+	    goto cleanup;
+	}
+	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    /*
+	     * The expression or script is not only known at compile time,
+	     * but actually a "simple word". It can be compiled inline by
+	     * invoking the compiler recursively.
+	     */
+	    int savedStackDepth = envPtr->currStackDepth;
+	    int savedMaxStackDepth = envPtr->maxStackDepth;
+	    envPtr->currStackDepth = 0;
+	    envPtr->maxStackDepth = 0;
+	    switch(talInstructionTable[tblind].tclInstCode) {
+	    case INST_EVAL_STK:
+		TclCompileScript(interp, tokenPtr[1].start,
+				 tokenPtr[1].size, envPtr);
+		break;
+	    case INST_EXPR_STK:
+		TclCompileExpr(interp, tokenPtr[1].start,
+			       tokenPtr[1].size, envPtr, 1);
+		break;
+	    default:
+		Tcl_Panic("no ASSEM_EVAL case for %s (%d), can't happen",
+			  talInstructionTable[tblind].name,
+			  talInstructionTable[tblind].tclInstCode);
+	    }
+	    SyncStackDepth(assemEnvPtr);
+	    envPtr->currStackDepth = savedStackDepth;
+	    envPtr->maxStackDepth = savedMaxStackDepth;
+	} else if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj)
+		   != TCL_OK) {
+	    goto cleanup;
+	} else {
+	    operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
+	    litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
+	    /* Assumes that PUSH is the first slot! */
+	    BBEmitInst1or4(assemEnvPtr, 0, litIndex, 0);
+	    BBEmitOpcode(assemEnvPtr, tblind, 0);
+	}
+	break;
+
+    case ASSEM_INVOKE:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
+	    goto cleanup;
+	}
+	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK
+	    || Tcl_GetIntFromObj(interp, operand1Obj, &opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	BBEmitInst1or4(assemEnvPtr, tblind, opnd, opnd);
+	break;
+		 
+    case ASSEM_JUMP: 
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "label");
+	    goto cleanup;
+	}
+	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
+	    goto cleanup;
+	}
+	entry = Tcl_CreateHashEntry(&assemEnvPtr->labelHash,
+				    Tcl_GetString(operand1Obj), &isNew);
+	if (isNew) {
+	    l = (label *) ckalloc(sizeof(label));
+	    l -> isDefined = 0;
+	    l -> offset = -1;
+	    Tcl_SetHashValue(entry, l);
+	} else {
+	    l = Tcl_GetHashValue(entry);
+	}
+	if (l -> isDefined) {
+	    BBEmitInst1or4(assemEnvPtr, tblind, 
+			   (l->offset + envPtr->codeStart
+			    - envPtr->codeNext), 0);
+	} else {
+	    int here = envPtr->codeNext - envPtr->codeStart;
+	    BBEmitInstInt4(assemEnvPtr, tblind, l->offset, 0);
+	    l->offset = here;
+	}   
+                    
+	/* Start a new basic block at the instruction following the jump */
+
+	StartBasicBlock(assemEnvPtr,
+			talInstructionTable[tblind].operandsConsumed,
+			Tcl_GetString(operand1Obj));
+
+	break;
+                             
+    case ASSEM_LABEL:
+
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "name");
+	    goto cleanup;
+	}
+	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
+	    goto cleanup;
+	}
+	/* Add the (label_name, address) pair to the hash table */
+	if (DefineLabel(assemEnvPtr, Tcl_GetString(operand1Obj)) != TCL_OK) {
+	    goto cleanup;
+	}
+	StartBasicBlock(assemEnvPtr, 1, NULL);
+
+	/* Attach the label to the new basic block */
+
+	/* TODO - do this in DefineLable and make the BB a field in the
+	 * label struct */
+	entry = Tcl_CreateHashEntry(&assemEnvPtr->BBHash,
+				    Tcl_GetString(operand1Obj), &opnd);
+	Tcl_SetHashValue(entry, assemEnvPtr->curr_bb);
+	break;
+
+    case ASSEM_LVT:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
+	    goto cleanup;
+	}
+	if ((localVar = FindLocalVar(assemEnvPtr, &tokenPtr)) < 0) {
+	    goto cleanup;
+	}
+	BBEmitInst1or4(assemEnvPtr, tblind, localVar, 0);
+	break;
+
+    case ASSEM_LVT1:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
+	    goto cleanup;
+	}
+	if ((localVar = FindLocalVar(assemEnvPtr, &tokenPtr)) < 0
+	    || CheckOneByte(interp, localVar)) {
+	    goto cleanup;
+	}
+	BBEmitInstInt1(assemEnvPtr, tblind, localVar, 0);
+	break;
+
+    case ASSEM_LVT1_SINT1:
+	if (parsePtr->numWords != 3) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varName imm8");
+	    goto cleanup;
+	}
+	if ((localVar = FindLocalVar(assemEnvPtr, &tokenPtr)) < 0
+	    || CheckOneByte(interp, localVar)
+	    || GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
+	    || CheckSignedOneByte(interp, opnd)) {
+	    goto cleanup;
+	}
+	BBEmitInstInt1(assemEnvPtr, tblind, localVar, 0);
+	TclEmitInt1(opnd, envPtr);
+	break;
+
+    case ASSEM_LVT4:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
+	    goto cleanup;
+	}
+	if ((localVar = FindLocalVar(assemEnvPtr, &tokenPtr)) < 0) {
+	    goto cleanup;
+	}
+	BBEmitInstInt4(assemEnvPtr, tblind, localVar, 0);
+	break;
+
+    case ASSEM_OVER:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd+1);
+	break;
+
+    case ASSEM_REVERSE:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd);
+	break;
+		 
+    case ASSEM_SINT1:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "imm8");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
+	    || CheckSignedOneByte(interp, opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	BBEmitInstInt1(assemEnvPtr, tblind, opnd, 0);
+	break;
+
+    default:
+	Tcl_Panic("Instruction \"%s\" could not be found, can't happen\n",
+		  Tcl_GetString(instNameObj));
+    }
+
+    status = TCL_OK;
+ cleanup:
+    if (instNameObj) {
+	Tcl_DecrRefCount(instNameObj);
+    }
+    if (operand1Obj) {
+	Tcl_DecrRefCount(operand1Obj);
+    }
+    return status;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * GetNextOperand --
+ *
+ *	Retrieves the next operand in sequence from an assembly
+ *	instruction, and makes sure that its value is known at
+ *	compile time.
+ *
+ * Results:
+ *	If successful, returns TCL_OK and leaves a Tcl_Obj with
+ *	the operand text in *operandObjPtr. In case of failure,
+ *	returns TCL_ERROR and leaves *operandObjPtr untouched.
+ *
+ * Side effects:
+ *	Advances *tokenPtrPtr around the token just processed.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+GetNextOperand(AssembleEnv* assemEnvPtr,
+				/* Assembler environment */
+	       Tcl_Token** tokenPtrPtr,
+				/* INPUT/OUTPUT: Pointer to the token
+				 * holding the operand */
+	       Tcl_Obj** operandObjPtr)
+				/* OUTPUT: Tcl object holding the
+				 * operand text with \-substitutions 
+				 * done. */
+{
+    Tcl_Interp* interp = (Tcl_Interp*) assemEnvPtr->envPtr->iPtr;
+    Tcl_Obj* operandObj = Tcl_NewObj();
+    if (!TclWordKnownAtCompileTime(*tokenPtrPtr, operandObj)) {
+	Tcl_DecrRefCount(operandObj);
+	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj("assembly code may not "
+					      "contain substitutions", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NOSUBST", NULL);
+	}
+	return TCL_ERROR;
+    }
+    *tokenPtrPtr = TokenAfter(*tokenPtrPtr);
+    Tcl_IncrRefCount(operandObj);
+    *operandObjPtr = operandObj;
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * GetBooleanOperand --
+ *
+ *	Retrieves a Boolean operand from the input stream and advances
+ *	the token pointer.
+ *
+ * Results:
+ *	Returns a standard Tcl result (with an error message in the
+ *	interpreter on failure).
+ *
+ * Side effects:
+ *	Stores the Boolean value in (*result) and advances (*tokenPtrPtr)
+ *	to the next token.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+GetBooleanOperand(AssembleEnv* assemEnvPtr,
+				/* Assembly environment */
+		  Tcl_Token** tokenPtrPtr,
+				/* Current token from the parser */
+		  int* result)
+				/* OUTPUT: Integer extracted from the token */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    Tcl_Token* tokenPtr = *tokenPtrPtr;
+				/* INOUT: Pointer to the next token
+				 * in the source code */
+    Tcl_Obj* intObj = Tcl_NewObj();
+				/* Integer from the source code */
+    int status;			/* Tcl status return */
+
+    /* Extract the next token as a string */
+
+    Tcl_IncrRefCount(intObj);
+    if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &intObj) != TCL_OK) {
+	Tcl_DecrRefCount(intObj);
+	return TCL_ERROR;
+    }
+    
+    /* Convert to an integer, advance to the next token and return */
+
+    status = Tcl_GetBooleanFromObj(interp, intObj, result);
+    Tcl_DecrRefCount(intObj);
+    *tokenPtrPtr = TokenAfter(tokenPtr);
+    return status;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * GetIntegerOperand --
+ *
+ *	Retrieves an integer operand from the input stream and advances
+ *	the token pointer.
+ *
+ * Results:
+ *	Returns a standard Tcl result (with an error message in the
+ *	interpreter on failure).
+ *
+ * Side effects:
+ *	Stores the integer value in (*result) and advances (*tokenPtrPtr)
+ *	to the next token.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+GetIntegerOperand(AssembleEnv* assemEnvPtr,
+				/* Assembly environment */
+		  Tcl_Token** tokenPtrPtr,
+				/* Current token from the parser */
+		  int* result)
+				/* OUTPUT: Integer extracted from the token */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    Tcl_Token* tokenPtr = *tokenPtrPtr;
+				/* INOUT: Pointer to the next token
+				 * in the source code */
+    Tcl_Obj* intObj = Tcl_NewObj();
+				/* Integer from the source code */
+    int status;			/* Tcl status return */
+
+    /* Extract the next token as a string */
+
+    Tcl_IncrRefCount(intObj);
+    if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &intObj) != TCL_OK) {
+	Tcl_DecrRefCount(intObj);
+	return TCL_ERROR;
+    }
+    
+    /* Convert to an integer, advance to the next token and return */
+
+    status = Tcl_GetIntFromObj(interp, intObj, result);
+    Tcl_DecrRefCount(intObj);
+    *tokenPtrPtr = TokenAfter(tokenPtr);
+    return status;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * FindLocalVar --
+ *
+ *	Gets the name of a local variable from the input stream and advances
+ *	the token pointer.
+ *
+ * Results:
+ *	Returns the LVT index of the local variable.  Returns -1 if
+ *	the variable is non-local, not known at compile time, or
+ *	cannot be installed in the LVT (leaving an error message in
+ *	the interpreter result if necessary).
+ *
+ * Side effects:
+ *	Advances the token pointer.  May define a new LVT slot if the
+ *	variable has not yet been seen and the execution context allows
+ *	for it.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+FindLocalVar(AssembleEnv* assemEnvPtr,
+	     Tcl_Token** tokenPtrPtr)
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    Tcl_Token* tokenPtr = *tokenPtrPtr;
+				/* INOUT: Pointer to the next token
+				 * in the source code */
+    Tcl_Obj* varNameObj = Tcl_NewObj();
+				/* Name of the variable */
+    const char* varNameStr;
+    int varNameLen;
+    int localVar;		/* Index of the variable in the LVT */
+
+    Tcl_IncrRefCount(varNameObj);
+    if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
+	Tcl_DecrRefCount(varNameObj);
+	return -1;
+    }
+    varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
+    if (CheckNamespaceQualifiers(interp, varNameStr, varNameLen)) {
+	return -1;
+    }
+    localVar = TclFindCompiledLocal(varNameStr, varNameLen, 1, envPtr);
+    Tcl_DecrRefCount(varNameObj);
+    if (localVar == -1) {
+	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj("cannot use this instruction"
+					      " in non-proc context", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "LVT", NULL);
+	}
+	return -1;
+    }
+    *tokenPtrPtr = TokenAfter(tokenPtr);
+    return localVar;
+}
+
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * SyncStackDepth --
+ *
+ *	Copies the stack depth from the compile environment to a basic
+ *	block.
+ *
+ * Side effects:
+ *	Current and max stack depth in the current basic block are
+ *	adjusted.
+ *
+ * This procedure is called on return from invoking the compiler for
+ * the 'eval' and 'expr' operations. It adjusts the stack depth of the
+ * current basic block to reflect the stack required by the just-compiled
+ * code.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static void
+SyncStackDepth(AssembleEnv* assemEnvPtr)
+				/* Assembly environment */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    BasicBlock* curr_bb = assemEnvPtr->curr_bb;
+				/* Current basic block */
+    int maxStackDepth = curr_bb->finalStackDepth + envPtr->maxStackDepth;
+				/* Max stack depth in the basic block */
+
+    if (maxStackDepth > curr_bb->maxStackDepth) {
+	curr_bb->maxStackDepth = maxStackDepth;
+    }
+    curr_bb->finalStackDepth += envPtr->currStackDepth;
 }
 
 /*
@@ -1118,12 +1522,14 @@ TclAssembleCode(Tcl_Interp *interp,
 static int
 CheckNamespaceQualifiers(Tcl_Interp* interp,
 				/* Tcl interpreter for error reporting */
-			 const char* name)
+			 const char* name,
 				/* Variable name to check */
+			 int nameLen)
+				/* Length of the variable */
 {
     Tcl_Obj* result;		/* Error message */
     const char* p;
-    for (p = name; *p;  p++) {      
+    for (p = name; p+2 < name+nameLen;  p++) {      
 	if ((*p == ':') && (p[1] == ':')) {
 	    result = Tcl_NewStringObj("variable \"", -1);
 	    Tcl_AppendToObj(result, name, -1);
@@ -1220,11 +1626,13 @@ CheckSignedOneByte(Tcl_Interp* interp,
  */
 
 static int
-DefineLabel(Tcl_Interp* interp, 	/* Tcl interpreter */
-	    CompileEnv* envPtr,		/* Compilation environment */
-	    const char* labelName,	/* Label being defined */
-	    Tcl_HashTable* labelHash)	/* Symbol table */
+DefineLabel(AssembleEnv* assemEnvPtr,	/* Assembly environment */
+	    const char* labelName)	/* Label being defined */
 {
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
     Tcl_HashEntry* entry;	/* Label's entry in the symbol table */
     int isNew;			/* Flag == 1 iff the label was previously
 				 * undefined */
@@ -1233,7 +1641,7 @@ DefineLabel(Tcl_Interp* interp, 	/* Tcl interpreter */
 
     /* Look up the newly-defined label in the symbol table */
 
-    entry = Tcl_CreateHashEntry(labelHash, labelName, &isNew);
+    entry = Tcl_CreateHashEntry(&assemEnvPtr->labelHash, labelName, &isNew);
     if (isNew) {
 
 	/* This is the first appearance of the label in the code */
@@ -1294,25 +1702,21 @@ DefineLabel(Tcl_Interp* interp, 	/* Tcl interpreter */
  */
 
 static BasicBlock*
-StartBasicBlock(CompileEnv* envPtr, 
-				/* Compilation environment */
-		Tcl_HashTable* BBHashPtr,
-				/* Hash table where basic blocks are recorded */
-		BasicBlock* currBB,
-				/* Pointer to the BasicBlock structure
-				 * of the block being closed. */
+StartBasicBlock(AssembleEnv* assemEnvPtr,
+				/* Assembly environment */
 		int fallsThrough,
 				/* 1 if execution falls through into
 				 * the following block, 0 otherwise */
-		int bcIndex,	/* Index of the current insn in the
-				 * assembly stream */
 		const char* jumpLabel)
 				/* Label of the location that the
 				 * block jumps to, or NULL if the block
 				 * does not jump */
 {
-    int isNew;		 /* Unused return from Tcl_CreateHashEntry */
-    BasicBlock* newBB;	 /* BasicBlock structure for the new basic block */
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    int isNew;	       		/* Unused return from Tcl_CreateHashEntry */
+    BasicBlock* newBB;	 	/* BasicBlock structure for the new block */
+    BasicBlock* currBB = assemEnvPtr->curr_bb;
 
     /* Coalesce zero-length blocks */
 
@@ -1322,13 +1726,13 @@ StartBasicBlock(CompileEnv* envPtr,
 
     /* Make the new basic block */
 
-    newBB = AllocBB(envPtr, bcIndex);
+    newBB = AllocBB(assemEnvPtr);
 
     /* Record the jump target if there is one. */
 
     if (jumpLabel) {
 	currBB->jumpTargetLabelHashEntry =
-	    Tcl_CreateHashEntry(BBHashPtr, jumpLabel, &isNew);
+	    Tcl_CreateHashEntry(&assemEnvPtr->BBHash, jumpLabel, &isNew);
     } else {
 	currBB->jumpTargetLabelHashEntry = NULL;
     }
@@ -1340,6 +1744,7 @@ StartBasicBlock(CompileEnv* envPtr,
     /* Record the successor block */
 
     currBB->successor1 = newBB;
+    assemEnvPtr->curr_bb = newBB;
     return newBB;
 }
 
@@ -1358,15 +1763,14 @@ StartBasicBlock(CompileEnv* envPtr,
  */
 
 static BasicBlock * 
-AllocBB(CompileEnv* envPtr,	/* Compile environment containing the
-				 * current instruction pointer */
-	int bcIndex)		/* Current index in the list of
-				 * assembly instructions */
+AllocBB(AssembleEnv* assemEnvPtr)
+				/* Assembly environment */
 {
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
     BasicBlock * bb = (BasicBlock *) ckalloc(sizeof(BasicBlock));
 
     bb->start = envPtr->codeNext;
-    bb->bcIndex = bcIndex;
+    bb->startLine = assemEnvPtr->cmdLine;
     bb->initialStackDepth = 0;
     bb->minStackDepth = 0;
     bb->maxStackDepth = 0;
@@ -1380,89 +1784,291 @@ AllocBB(CompileEnv* envPtr,	/* Compile environment containing the
 
     return bb;
 }
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * FinishAssembly --
+ *
+ *	Postprocessing after all bytecode has been generated for a block
+ *	of assembly code.
+ *
+ * Results:
+ *	Returns a standard Tcl result, with an error message left in the
+ *	interpreter if appropriate.
+ *
+ * Side effects:
+ *	The program is checked to see if any undefined labels remain.
+ *	The initial stack depth of all the basic blocks in the flow graph
+ *	is calculated and saved.  The stack balance on exit is computed,
+ *	checked and saved.
+ *
+ *-----------------------------------------------------------------------------
+ */
 
-static int
-CheckStack(Tcl_Interp* interp,
-	   CompileEnv* envPtr,
-	   BasicBlock * head,
-	   Tcl_Obj* bcList) {
-    StackCheckerState st;
-    st.interp = interp;
-    st.maxDepth = 0;
-    st.envPtr = envPtr;
-    st.bcList = bcList;
-    if(StackCheckBasicBlock(&st, head, NULL, 0) == TCL_ERROR) {
-        return TCL_ERROR;
+static int 
+FinishAssembly(AssembleEnv* assemEnvPtr)
+				/* Assembly environment */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    BasicBlock* curr_bb = assemEnvPtr->curr_bb;
+				/* Last basic block in the program */
+    Tcl_Obj* depthObj;		/* Depth of the stack on exit */
+    Tcl_Obj* resultObj;		/* Error message from this function */
+    int litIndex;		/* Index of the empty literal {} */
+
+    /* TODO - Check for undefined labels */
+
+    /* Tie off the last basic block */
+
+    curr_bb->may_fall_thru = 0;
+    curr_bb->jumpTargetLabelHashEntry = NULL;
+
+    /* Compute stack balance throughout the program */
+
+    if (CheckStack(assemEnvPtr) != TCL_OK) {
+	return TCL_ERROR;
     }
-#if 0
-    fprintf(stderr, "Max stack anywhere is %d\n", st->maxDepth);
-#endif
-    if (st.maxDepth + envPtr->currStackDepth > envPtr->maxStackDepth) {
-	envPtr->maxStackDepth = st.maxDepth + envPtr->currStackDepth;
+
+    /* TODO - Check for unreachable code */
+
+    /* If the exit is reachable, make sure that the program exits with
+     * 1 operand on the stack. */
+
+    if (curr_bb->visited) {
+
+	/* Exit with no operands; push an empty one. */
+
+	int depth = curr_bb->finalStackDepth + curr_bb->initialStackDepth;
+	if (depth == 0) {
+	    /* Emit a 'push' of the empty literal */
+	    litIndex = TclRegisterNewLiteral(envPtr, "", 0);
+	    /* Assumes that 'push' is at slot 0 in talInstructionTable */
+	    BBEmitInst1or4(assemEnvPtr, 0, litIndex, 0);
+	    ++depth;
+	}
+
+	/* Exit with unbalanced stack */
+
+	if (depth != 1) {
+	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+		depthObj = Tcl_NewIntObj(depth);
+		Tcl_IncrRefCount(depthObj);
+		resultObj = Tcl_NewStringObj("stack is unbalanced on exit "
+					     "from the code (depth=", -1);
+		Tcl_AppendObjToObj(resultObj, depthObj);
+		Tcl_DecrRefCount(depthObj);
+		Tcl_AppendToObj(resultObj, ")", -1);
+		Tcl_SetObjResult(interp, resultObj);
+		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACK", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+
+	/* Record stack usage */
+
+	envPtr->currStackDepth += depth;
     }
     return TCL_OK;
 }
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * CheckStack --
+ *
+ *	Audit stack usage in a block of assembly code.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	Updates stack depth on entry for all basic blocks in the flowgraph.
+ *	Calculates the max stack depth used in the program, and updates the
+ *	compilation environment to reflect it.
+ *
+ *-----------------------------------------------------------------------------
+ */
 
 static int
-StackCheckBasicBlock(StackCheckerState *st, BasicBlock * blockPtr, BasicBlock * predecessor, int initialStackDepth) { 
-#if 0
-    CompileEnv* envPtr = st->envPtr;
-    fprintf(stderr, "stack check basic block %p at depth %d\n", 
-	    blockPtr, initialStackDepth);
-    fprintf(stderr, "  start %d may_fall_thru %d visited %d\n",
-	    blockPtr->start - envPtr->codeStart,
-	    blockPtr->may_fall_thru, blockPtr->visited);
-    fprintf(stderr, "  predecessor %p successor1 %p\n", 
-	    blockPtr->predecessor, blockPtr->successor1);
-    fprintf(stderr, "  stack: init %d min %d max %d final %d\n",
-	    blockPtr->initialStackDepth, blockPtr->minStackDepth,
-	    blockPtr->maxStackDepth, blockPtr->finalStackDepth);
-    fflush(stderr);
-#endif    
+CheckStack(AssembleEnv* assemEnvPtr)
+				/* Assembly environment */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    int maxDepth;		/* Maximum stack depth overall */
+
+    /* Checking the head block will check all the other blocks  recursively. */
+
+    assemEnvPtr->maxDepth = 0;
+    if(StackCheckBasicBlock(assemEnvPtr,
+			    assemEnvPtr->head_bb, NULL, 0) == TCL_ERROR) {
+        return TCL_ERROR;
+    }
+
+    /* Post the max stack depth back to the compilation environment */
+
+    maxDepth = assemEnvPtr->maxDepth + envPtr->currStackDepth;
+    if (maxDepth > envPtr->maxStackDepth) {
+	envPtr->maxStackDepth = maxDepth;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * StackCheckBasicBlock --
+ *
+ *	Checks stack consumption for a basic block (and recursively for
+ *	its successors).
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	Updates initial stack depth for the basic block and its
+ *	successors. (Final and maximum stack depth are relative to
+ *	initial, and are not touched).
+ *
+ * This procedure eventually checks, for the entire flow graph, whether
+ * stack balance is consistent.  It is an error for a given basic block
+ * to be reachable along multiple flow paths with different stack depths.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+StackCheckBasicBlock(AssembleEnv* assemEnvPtr,
+				/* Assembly environment */
+		     BasicBlock* blockPtr,
+				/* Pointer to the basic block being checked */
+		     BasicBlock* predecessor,
+				/* Pointer to the block that passed control
+				 * to this one. */
+		     int initialStackDepth) 
+				/* Stack depth on entry to the block */
+{ 
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    int stackDepth;		/* Current stack depth */
+    int maxDepth;		/* Maximum stack depth so far */
+    int result;			/* Tcl status return */
+
     if (blockPtr->visited) {
+
+	/* 
+	 * If the block is already visited, check stack depth for consistency
+	 * among the paths that reach it.
+	 */
         if (blockPtr->initialStackDepth != initialStackDepth) {
-	    Tcl_SetObjResult(st->interp, Tcl_NewStringObj("inconsistent stack depths on two execution paths", -1));
-            /* Trace the offending BasicBlock */
-	    Tcl_AddErrorInfo(st->interp, "\n    to ");
-	    AddInstructionToErrorInfo(st->interp, st->bcList, 
-				      blockPtr->bcIndex);
-	    /* TODO - add execution trace of both paths */
+	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+		Tcl_SetObjResult(interp,
+				 Tcl_NewStringObj("inconsistent stack depths "
+						  "on two execution paths",
+						  -1));
+		/* TODO - add execution trace of both paths */
+		Tcl_SetErrorLine(interp, blockPtr->startLine);
+		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACK", NULL);
+	    }
             return TCL_ERROR;
         } else {
             return TCL_OK;
         }
-    } else {
-
-        blockPtr->visited = 1;
-        blockPtr->predecessor = predecessor;
-        blockPtr->initialStackDepth = initialStackDepth;
-        if (initialStackDepth + blockPtr->minStackDepth < 0) {
-	    Tcl_SetObjResult(st->interp,
-			     Tcl_NewStringObj("stack underflow", -1));
-	    AddBasicBlockRangeToErrorInfo(st->interp, st->bcList, blockPtr);
-            return TCL_ERROR;
-        }
-        if (initialStackDepth + blockPtr->maxStackDepth > st->maxDepth) {
-            st->maxDepth = initialStackDepth + blockPtr->maxStackDepth;
-        }
     }
-    int stackDepth = initialStackDepth + blockPtr->finalStackDepth;
-    int result = TCL_OK;
-#if 0
-    fprintf(stderr, "on exit from block, depth will be %d\n", stackDepth);
-    fflush(stderr);
-#endif
+
+    /*
+     * If the block is not already visited, set the 'predecessor'
+     * link to indicate how control got to it. Set the initial stack
+     * depth to the current stack depth in the flow of control.
+     * Calculate max and min stack depth, flag an error if the
+     * block underflows the stack, and update max stack depth in the
+     * assembly environment.
+     */
+    blockPtr->visited = 1;
+    blockPtr->predecessor = predecessor;
+    blockPtr->initialStackDepth = initialStackDepth;
+    if (initialStackDepth + blockPtr->minStackDepth < 0) {
+	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj("stack underflow", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACK", NULL);
+	    AddBasicBlockRangeToErrorInfo(assemEnvPtr, blockPtr);
+	    Tcl_SetErrorLine(interp, blockPtr->startLine);
+	}
+	return TCL_ERROR;
+    }
+    maxDepth = initialStackDepth + blockPtr->maxStackDepth;
+    if (maxDepth > assemEnvPtr->maxDepth) {
+	assemEnvPtr->maxDepth = maxDepth;
+    }
+    
+    /*
+     * Calculate stack depth on exit from the block, and invoke this
+     * procedure recursively to check successor blocks
+     */
+
+    stackDepth = initialStackDepth + blockPtr->finalStackDepth;
+    result = TCL_OK;
     if (blockPtr->may_fall_thru) {
-        result = StackCheckBasicBlock(st, blockPtr->successor1, blockPtr, stackDepth);        
+        result = StackCheckBasicBlock(assemEnvPtr, blockPtr->successor1,
+				      blockPtr, stackDepth);        
         
     }
-    /* FIXME Have we checked for undefined labels yet ? */
     if (result == TCL_OK && blockPtr->jumpTargetLabelHashEntry != NULL) {
-        BasicBlock * targetBlock = (BasicBlock *) Tcl_GetHashValue(blockPtr->jumpTargetLabelHashEntry);
-        result = StackCheckBasicBlock(st, targetBlock, blockPtr, stackDepth);
+        BasicBlock * targetBlock = (BasicBlock *)
+	    Tcl_GetHashValue(blockPtr->jumpTargetLabelHashEntry);
+        result = StackCheckBasicBlock(assemEnvPtr, targetBlock, blockPtr,
+				      stackDepth);
     }
     return result;
-    
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * AddBasicBlockRangeToErrorInfo --
+ *
+ *	Updates the error info of the Tcl interpreter to show a given
+ *	basic block in the code.
+ *
+ * This procedure is used to label the callstack with source location
+ * information when reporting an error in stack checking.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static void
+AddBasicBlockRangeToErrorInfo(AssembleEnv* assemEnvPtr,
+				/* Assembly environment */
+			      BasicBlock* bbPtr)
+				/* Basic block in which the error is
+				 * found */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    Tcl_Obj* lineNo;		/* Line number in the source */
+
+    Tcl_AddErrorInfo(interp, "\n    in assembly code between lines ");
+    lineNo = Tcl_NewIntObj(bbPtr->startLine);
+    Tcl_IncrRefCount(lineNo);
+    Tcl_AddErrorInfo(interp, Tcl_GetString(lineNo));
+    Tcl_AddErrorInfo(interp, " and ");
+    if (bbPtr->successor1 != NULL) {
+	Tcl_SetIntObj(lineNo, bbPtr->successor1->startLine);
+	Tcl_AddErrorInfo(interp, Tcl_GetString(lineNo));
+    } else {
+	Tcl_AddErrorInfo(interp, "end of assembly code");
+    }
+    Tcl_DecrRefCount(lineNo);
 }
 
 /*
@@ -1496,42 +2102,4 @@ FreeAssembleCodeInternalRep(
     objPtr->typePtr = NULL;
     objPtr->internalRep.otherValuePtr = NULL;
 }
-
-static void
-AddBasicBlockRangeToErrorInfo(Tcl_Interp* interp,
-			      Tcl_Obj* bcList,
-			      BasicBlock* bbPtr)
-{
-    Tcl_AddErrorInfo(interp, "\n    between ");
-    AddInstructionToErrorInfo(interp, bcList, bbPtr->bcIndex);
-    Tcl_AddErrorInfo(interp, "\n    and ");
-    if (bbPtr->successor1 != NULL) {
-	AddInstructionToErrorInfo(interp, bcList,
-				  bbPtr->successor1->bcIndex);
-    } else {
-	Tcl_AddErrorInfo(interp, "end of assembly code");
-    }
-}
-
-static void
-AddInstructionToErrorInfo(Tcl_Interp* interp,
-			  Tcl_Obj* bcList,
-			  int bcIndex)
-{
-    Tcl_Obj* msgObj;
-    int msgLen;
-    const char* msgPtr;
-
-    Tcl_AddErrorInfo(interp, "source instruction at list index ");
-    msgObj = Tcl_NewIntObj(bcIndex);
-    Tcl_IncrRefCount(msgObj);
-    msgPtr = Tcl_GetStringFromObj(msgObj, &msgLen);
-    Tcl_AddObjErrorInfo(interp, msgPtr, msgLen);
-    Tcl_DecrRefCount(msgObj);
-    Tcl_AddErrorInfo(interp, " (\"");
-    Tcl_ListObjIndex(NULL, bcList, bcIndex, &msgObj);
-    msgPtr = Tcl_GetStringFromObj(msgObj, &msgLen);
-    Tcl_AddObjErrorInfo(interp, msgPtr, msgLen);
-    Tcl_AddErrorInfo(interp, "\")");
-}	    
 	    

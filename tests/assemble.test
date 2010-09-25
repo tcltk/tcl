@@ -33,69 +33,118 @@ test assemble-1.4 {empty body} {
     -result {}
 }
 
+test assemble-1.4.1 {unknown assembly instruction} {
+    -body {
+	list [catch {
+	    tcl::unsupported::assemble {
+		push 2
+		push 2
+		rubbish
+	    }
+	} result] $result $errorCode $errorInfo
+    }
+    -match glob
+    -result {1 {bad instruction "rubbish":*} {bad instruction "rubbish":*
+    while executing
+"rubbish"
+    ("tcl::unsupported::assemble" body, line 4)*}}
+}
+
 test assemble-1.5 {Testing push and add} {
-    -body { tcl::unsupported::assemble {{push 2} {push 2} {add}} }
+    -body { tcl::unsupported::assemble {
+	push 2
+	push 2
+	add
+    } 
+    }
     -result {4}
 }
 
 test assemble-1.6 {Testing push, dup, add} {
-    -body { tcl::unsupported::assemble {{push 2} {dup} {add}} }
+    -body { 
+	tcl::unsupported::assemble {
+	    push 2
+	    dup
+	    add
+	}
+    }
     -result {4}
 }
 
 test assemble-1.6a {wrong # args} {
     -body {
 	catch {
-	    tcl::unsupported::assemble {{push 2 2} {dup} {add}}
+	    tcl::unsupported::assemble {
+		push 2 2
+		dup
+		add
+	    }
 	}
 	set ::errorInfo
     }
     -match glob
     -result {wrong # args: should be "push value"
-    processing source instruction at list index 0 ("push 2 2")*}
+    while executing
+"push 2 2"
+    ("tcl::unsupported::assemble" body, line 2)*
+    }
 }
 
-test assemble-1.7 { Testing push, dup, mul, push, dup, mult, push, expon sequence } {
-    -body { tcl::unsupported::assemble {{push 3} dup mult {push 4} dup mult expon}}
+test assemble-1.7 {longer sequence} {
+    -body {
+	tcl::unsupported::assemble {
+	    push 3
+	    dup
+	    mult
+	    push 4
+	    dup
+	    mult
+	    expon
+	}
+    }
     -result {1853020188851841}
 }
 
-test assemble-1.8 { Testing push, dup, mul, push, dup, mult, push, expon, pop sequence with unbalanced stack } {*}{
+test assemble-1.8 {unbalanced stack} {
     -body {
 	list \
 	    [catch {
 		tcl::unsupported::assemble {
-		    {push 3} 
+		    push 3
 		    dup 
 		    mult 
-		    {push 4} 
+		    push 4
 		    dup 
 		    mult 
 		    pop 
-		    expon}
+		    expon
+		}
 	    } result] $result $::errorInfo
     }
     -result {1 {stack underflow} {stack underflow
-    between source instruction at list index 0 ("push 3")
-    and end of assembly code*}}
+    in assembly code between lines 1 and end of assembly code*}}
     -match glob
    -returnCodes ok
 }
+
 test assemble-1.8a {unbalanced stack} {*}{
     -body {
 	list \
 	    [catch {
 		tcl::unsupported::assemble {
-		    {label a}
-		    {pop}
-		    {label b}
-		    {pop}
+		    label a
+		    push {}
+		    label b
+		    pop
+		    label c
+		    pop
+		    label d
+		    push {}
 		}
 	    } result] $result $::errorInfo
     }
     -result {1 {stack underflow} {stack underflow
-    between source instruction at list index 0 ("label a")
-    and source instruction at list index 2 ("label b")*}}
+    in assembly code between lines 6 and 8*}}
     -match glob
    -returnCodes ok
 }
@@ -103,35 +152,46 @@ test assemble-1.8a {unbalanced stack} {*}{
 # Tests for load and store
 
 test assemble-1.9 { Testing load within a proc } {
-    -body { proc x y { tcl::unsupported::assemble {{load y} dup mult }}
+    -body { 
+	proc x y { 
+	    tcl::unsupported::assemble {
+		load y
+		dup 
+		mult
+	    }
+	}
 	x 10
     }
     -result {100}
 }
 
-test assemble-1.10 { Testing store and load, saving the string "aString" to a variable and then 
-    loading it from variable } {
-	-body {  
-	    proc x arg { 
-		tcl::unsupported::assemble {
-		    {push aString} {store arg} {pop} {load arg}} 
+test assemble-1.10 {store and load again} {
+    -body {  
+	proc x arg { 
+	    tcl::unsupported::assemble {
+		push aString
+		store arg
+		pop
+		load arg
 	    } 
-	    x "not_aString"	
-	}
-	-result {aString}
+	    } 
+	x "not_aString"	
     }
+    -result {aString}
+}
 
-test assemble-1.11 { Testing storeArray and loadArray } {
-    -body { set anArray(1,2) "not_aString" 
+test assemble-1.11 {Testing storeArray and loadArray} {
+    -body { 
+	set anArray(1,2) "not_aString" 
 	proc x arg { 
 	    upvar $arg anArray
 	    tcl::unsupported::assemble {
-		{push 1,2} 
-		{push aString} 
-		{storeArray anArray} 
+		push 1,2
+		push aString
+		storeArray anArray
 		pop
-		{push 1,2}
-		{loadArray anArray}
+		push 1,2
+		loadArray anArray
 	    } 
 	}
 	x anArray 
@@ -140,30 +200,51 @@ test assemble-1.11 { Testing storeArray and loadArray } {
     -result {aString}
 }
 
-test assemble-1.12 { Testing loadStk with a variable } {
-    -body { set vara 10
-	tcl::unsupported::assemble {{push vara} loadStk dup mult {push 4} dup mult add}}
+test assemble-1.12 {Testing loadStk with a variable} {
+    -body { 
+	set vara 10
+	tcl::unsupported::assemble {
+	    push vara
+	    loadStk
+	    dup
+	    mult
+	    push 4
+	    dup 
+	    mult 
+	    add
+	}
+    }
     -cleanup {unset vara}
     -result {116}
 }
 
-test assemble-1.13 { Testing loadStk with an array variable } {
-    -body { set vararr(1,2) 10
-	tcl::unsupported::assemble {{push vararr(1,2)} loadStk dup mult {push 4} dup mult add}}
+test assemble-1.13 {Testing loadStk with an array variable} {
+    -body { 
+	set vararr(1,2) 10
+	tcl::unsupported::assemble {
+	    push vararr(1,2)
+	    loadStk
+	    dup
+	    mult
+	    push 4
+	    dup
+	    mult
+	    add
+	}
+    }
     -cleanup {unset vararr}
     -result {116}
 }
 
-
-test assemble-1.14 { Testing loadStk and storeStk } {
-    -body { 
+test assemble-1.14 {Testing loadStk and storeStk} {
+    -body {
 	set aVar 5
 	tcl::unsupported::assemble {
-	    {push aVar} 
-	    {push aString} 
-	    {storeStk} 
+	    push aVar
+	    push aString
+	    storeStk
 	    pop
-	    {push aVar} 
+	    push aVar
 	    loadStk 
 	}
     }
@@ -171,17 +252,17 @@ test assemble-1.14 { Testing loadStk and storeStk } {
     -result {aString}
 }
 
-test assemble-1.15 { Testing loadArrayStk and storeArrayStk } {
+test assemble-1.15 {Testing loadArrayStk and storeArrayStk} {
     -body { 
 	set aVar(1,2) 5
 	tcl::unsupported::assemble {
-	    {push aVar} 
-	    {push 1,2} 
-	    {push aString} 
-	    {storeArrayStk}
+	    push aVar
+	    push 1,2
+	    push aString
+	    storeArrayStk
 	    pop
-	    {push aVar} 
-	    {push 1,2} 
+	    push aVar
+	    push 1,2
 	    loadArrayStk 
 	}
     }
@@ -192,81 +273,130 @@ test assemble-1.15 { Testing loadArrayStk and storeArrayStk } {
 # Tests for incr instructions 
 
 test assemble-1.16 { Testing incr } {
-    -body { proc x arg { set i 5 
-	tcl::unsupported::assemble {{push 5} {incr i}}
-    } 
+    -body {
+	proc x arg {
+	    set i 5 
+	    tcl::unsupported::assemble {
+		push 5
+		incr i
+	    }
+	}
 	x 1
     }
     -result {10}
 }
 
 test assemble-1.17 { Testing incrImm } {
-    -body { proc x arg { set i 5 
-	tcl::unsupported::assemble {{incrImm i 5}}
-    } 
+    -body { 
+	proc x arg {
+	    set i 5 
+	    tcl::unsupported::assemble {
+		incrImm i 5
+	    }
+	} 
 	x 1
     }
     -result {10}
 }
 
 test assemble-1.18 { Testing incrStk } {
-    -body { proc x arg { set i 5 
-	tcl::unsupported::assemble {{push i} {push 5} {incrStk}}
-    } 
+    -body {
+	proc x arg {
+	    set i 5 
+	    tcl::unsupported::assemble {
+		push i
+		push 5
+		incrStk
+	    }
+	}
 	x 1
     }
     -result {10}
 }
 
 test assemble-1.19 { Testing incrStkImm } {
-    -body { proc x arg { set i 5 
-	tcl::unsupported::assemble {{push i} {incrStkImm 5}}
-    } 
+    -body {
+	proc x arg {
+	    set i 5 
+	    tcl::unsupported::assemble {
+		push i
+		incrStkImm 5
+	    }
+	} 
 	x 1
     }
     -result {10}
 }
 
 test assemble-1.20 { Testing incrStkImm } {
-    -body { proc x arg { set i 5 
-	tcl::unsupported::assemble {{push i} {incrStkImm 5}}
-    } 
+    -body {
+	proc x arg {
+	    set i 5 
+	    tcl::unsupported::assemble {
+		push i
+		incrStkImm 5
+	    }
+	} 
 	x 1
     }
     -result {10}
 }
 
 test assemble-1.21 { Testing incrArray } {
-    -body { proc x arg { set i(1,2) 5 
-	tcl::unsupported::assemble {{push 1,2} {push 5} {incrArray i}}
-    } 
+    -body {
+	proc x arg {
+	    set i(1,2) 5 
+	    tcl::unsupported::assemble {
+		push 1,2
+		push 5
+		incrArray i
+	    }
+	} 
 	x 1
     }
     -result {10}
 }
 
 test assemble-1.22 { Testing incrArrayImm } {
-    -body { proc x arg { set i(1,2) 5 
-	tcl::unsupported::assemble {{push 1,2} {incrArrayImm i 5}}
-    } 
+    -body { 
+	proc x arg {
+	    set i(1,2) 5 
+	    tcl::unsupported::assemble {
+		push 1,2
+		incrArrayImm i 5
+	    }
+	} 
 	x 1
     }
     -result {10}
 }
 
 test assemble-1.23 { Testing incrArrayStk } {
-    -body { proc x arg { set i(1,2) 5 
-	tcl::unsupported::assemble {{push i} {push 1,2} {push 5} {incrArrayStk}}
-    } 
+    -body {
+	proc x arg {
+	    set i(1,2) 5 
+	    tcl::unsupported::assemble {
+		push i
+		push 1,2
+		push 5
+		incrArrayStk
+	    }
+	} 
 	x 1
     }
     -result {10}
 }
 
 test assemble-1.24 { Testing incrArrayStkImm } {
-    -body { proc x arg { set i(1,2) 5 
-	tcl::unsupported::assemble {{push i} {push 1,2} {incrArrayStkImm 5}}
-    } 
+    -body {
+	proc x arg {
+	    set i(1,2) 5 
+	    tcl::unsupported::assemble {
+		push i
+		push 1,2
+		incrArrayStkImm 5
+	    }
+	} 
 	x 1
     }
     -result {10}
@@ -279,9 +409,24 @@ test assemble-1.24 { Testing incrArrayStkImm } {
 
 test assemble-1.25 { Testing label and jumpTrue  } {
     -body { 
-	proc x {arg1 arg2} { tcl::unsupported::assemble {{label a} {load arg2} 
-	    {push 2} {mult} {store arg2} pop {load arg1} {push 1} {sub} {store arg1} 
-	    {push 0} {neq}  {jumpTrue a} {load arg2}}} 
+	proc x {arg1 arg2} {
+	    tcl::unsupported::assemble {
+		label a
+		load arg2 
+		push 2
+		mult
+		store arg2
+		pop
+		load arg1
+		push 1
+		sub
+		store arg1
+		push 0
+		neq
+		jumpTrue a
+		load arg2
+	    }
+	} 
 	x 4 2
     }
     -result {32}
@@ -289,39 +434,99 @@ test assemble-1.25 { Testing label and jumpTrue  } {
 
 test assemble-1.26 { Testing label and jumpFalse } {
     -body { 
-	proc x {arg1 arg2} { tcl::unsupported::assemble {{label a} {load arg2} 
-	    {push 2} {mult} {store arg2} pop {load arg1} {push 1} {sub} {store arg1} 
-	    {push 0} {eq}  {jumpFalse a} {load arg2}}} 
+	proc x {arg1 arg2} {
+	    tcl::unsupported::assemble {
+		label a
+		load arg2
+		push 2
+		mult
+		store arg2
+		pop
+		load arg1
+		push 1
+		sub
+		store arg1 
+		push 0
+		eq
+		jumpFalse a
+		load arg2
+	    }
+	} 
 	x 4 2
     }
     -result {32}
 }
 
-test assemble-1.27 { Testing trampoline undefined label and jump } {
+test assemble-1.27 {forward jumps} {
     -body { 
-	proc x {arg1 arg2 arg3} { tcl::unsupported::assemble {{jump a} {push aString} 
-	    {store arg1} pop {label a} {jump b} {push aString} {store arg2} {label b} {jump c} 
-	    {push aString} {store arg3} {label c} {load arg1} }}
+	proc x {arg1 arg2 arg3} {
+	    tcl::unsupported::assemble {
+		jump a
+		push aString
+		store arg1
+		pop
+		label a
+		jump b
+		push aString
+		store arg2
+		label b
+		jump c
+		push aString
+		store arg3
+		label c
+		load arg1
+	    }
+	}
 	x 1 2 3
     }
     -result {1}
 }
 
-test assemble-1.28 { Testing trampoline undefined label and jump } {
+test assemble-1.28 {forward jumps} {
     -body { 
-	proc x {arg1 arg2 arg3} { tcl::unsupported::assemble {{jump a} {push aString} 
-	    {store arg1} pop {label a} {jump b} {push aString} {store arg2} {label b} {jump c} 
-	    {push aString} {store arg3} {label c} {load arg2} }}
+	proc x {arg1 arg2 arg3} {
+	    tcl::unsupported::assemble {
+		jump a
+		push aString 
+		store arg1
+		pop
+		label a
+		jump b
+		push aString
+		store arg2
+		label b
+		jump c 
+		push aString
+		store arg3
+		label c
+		load arg2
+	    }
+	}
 	x 1 2 3
     }
     -result {2}
 }
 
-test assemble-1.29 { Testing trampoline undefined label and jump } {
+test assemble-1.29 {forward jumps} {
     -body { 
-	proc x {arg1 arg2 arg3} { tcl::unsupported::assemble {{jump a} {push aString} 
-	    {store arg1} pop {label a} {jump b} {push aString} {store arg2} {label b} {jump c} 
-	    {push aString} {store arg3} {label c} {load arg3} }}
+	proc x {arg1 arg2 arg3} {
+	    tcl::unsupported::assemble {
+		jump a
+		push aString 
+		store arg1
+		pop
+		label a
+		jump b
+		push aString
+		store arg2
+		label b
+		jump c
+		push aString
+		store arg3
+		label c
+		load arg3
+	    }
+	}
 	x 1 2 3
     }
     -result {3}
@@ -331,14 +536,14 @@ test assemble-1.30 {Inconsistent stack usage} {*}{
     -body {
 	proc x {y} {
 	    tcl::unsupported::assemble {
-		{load y}
-		{jumpFalse else}
-		{push 0}
-		{jump then}
-	      {label else}
-		{push 1}
-		{push 2}
-	      {label then}
+		load y
+		jumpFalse else
+		push 0
+		jump then
+	      label else
+		push 1
+		push 2
+	      label then
 		pop
 	    }
 	}
@@ -347,67 +552,67 @@ test assemble-1.30 {Inconsistent stack usage} {*}{
     }
     -match glob
     -result {inconsistent stack depths on two execution paths
-    to source instruction at list index 7 ("label then")*}
+    ("tcl::unsupported::assemble" body, line 9)*}
 }
 
 test assemble-1.31 {unset, exists, lappend - smoke test} {
     -body {
 	proc x {y} {
 	    tcl::unsupported::assemble {
-		{exist result}
-		{store result}
-		{pop}
+		exist result
+		store result
+		pop
 
-		{exist result}
-		{lappend result}
-		{pop}
+		exist result
+		lappend result
+		pop
 
-		{push result}
-		{push y}
-		{existStk}
-		{lappendStk}
-		{pop}
+		push result
+		push y
+		existStk
+		lappendStk
+		pop
 
-		{push y}
-		{unsetStk true}
-		{exist y}
-		{lappend result}
-		{pop}
+		push y
+		unsetStk true
+		exist y
+		lappend result
+		pop
 
-		{push {}}
-		{store foo}
-		{pop}
-		{exist foo}
-		{lappend result}
-		{pop}
+		push {}
+		store foo
+		pop
+		exist foo
+		lappend result
+		pop
 
-		{unset true foo}
-		{exist foo}
-		{lappend result}
-		{pop}
+		unset true foo
+		exist foo
+		lappend result
+		pop
 
-		{push a}
-		{existArray z}
-		{lappend result}
-		{pop}
+		push a
+		existArray z
+		lappend result
+		pop
 
-		{push a}
-		{push b}
-		{lappendArray z}
-		{lappend result}
-		{pop}
+		push a
+		push b
+		lappendArray z
+		lappend result
+		pop
 
-		{push z}
-		{push a}
-		{existArrayStk}
-		{lappend result}
-		{pop}
+		push z
+		push a
+		existArrayStk
+		lappend result
+		pop
 
-		{push z}
-		{push a}
-		{push c}
-		{lappendArrayStk}
-		{lappend result}
+		push z
+		push a
+		push c
+		lappendArrayStk
+		lappend result
 
 	    }
 	}
@@ -419,10 +624,10 @@ test assemble-1.31 {unset, exists, lappend - smoke test} {
 test assemble-2.1 {concat} {
     -body {
 	::tcl::unsupported::assemble {
-	    {push a}
-	    {push b}
-	    {push c}
-	    {concat 3}
+	    push a
+	    push b
+	    push c
+	    concat 3
 	}
     }
     -result abc
@@ -431,8 +636,8 @@ test assemble-2.1 {concat} {
 test assemble-3.1 {expr} {
     -body {
 	::tcl::unsupported::assemble {
-	    {push {1+2+3+4+5}}
-	    {exprStk}
+	    push {1+2+3+4+5}
+	    exprStk
 	}
     }
     -result 15
@@ -440,72 +645,89 @@ test assemble-3.1 {expr} {
 test assemble-4.1 {eval} {
     -body {
 	::tcl::unsupported::assemble {
-	    {push {join [list [expr {1+2+3+4+5}] a] {}}}
-	    {evalStk}
+	    push {join [list [expr {1+2+3+4+5}] a] {}}
+	    evalStk
 	}
     }
     -result 15a
 }
-set ::tcl_traceCompile 2
 test assemble-4.2 {eval} {
     -body {
 	proc x {} {
 	    ::tcl::unsupported::assemble {
-		{push 3}
-		{store n}
+		push 3
+		store n
 		pop
-		{eval {expr {3*$n + 1}}}
+		eval {expr {3*$n + 1}}
+		push 1
+		add
 	    }
 	}
 	x
     }
-    -result 10
+    -result 11
 }
-set ::tcl_traceCompile 0
 
+test assemble-4.3 {expr} {
+    -body {
+	proc x {} {
+	    ::tcl::unsupported::assemble {
+		push 3
+		store n
+		pop
+		expr {3*$n + 1}
+		push 1
+		add
+	    }
+	}
+	x
+    }
+    -result 11
+}
+		
 test assemble-30.1 {Ulam's 3n+1 problem, TAL implementation} {
     -body {
-	regsub -all {\#[^\n]*} {
-	    {load n}	     # max
-	    {dup}	     # max n
-	    {jump start}     # max n
+	proc ulam {n} {
+	    tcl::unsupported::assemble {
+		load n;		# max
+		dup;		# max n
+		jump start;     # max n
 	    
-	  {label loop}       # max n
-	    {over 1}         # max n max
-	    {over 1}         # max n max n
-	    {ge}             # man n max>=n
-	    {jumpTrue skip}  # max n
+		label loop;	# max n
+		over 1;         # max n max
+		over 1;		# max in max n
+		ge;             # man n max>=n
+		jumpTrue skip;  # max n
 
-	    {reverse 2}      # n max
-	    {pop}            # n
-	    {dup}            # n n
+		reverse 2;      # n max
+		pop;            # n
+		dup;            # n n
 	    
-	  {label skip}       # max n
-	    {dup}            # max n n
-	    {push 2}         # max n n 2
-	    {mod}            # max n n%2
-	    {jumpTrue odd}   # max n
+		label skip;	# max n
+		dup;            # max n n
+		push 2;         # max n n 2
+		mod;            # max n n%2
+		jumpTrue odd;   # max n
 	    
-	    {push 2}         # max n 2
-	    {div}            # max n/2 -> max n
-	    {jump start}     # max n
+		push 2;         # max n 2
+		div;            # max n/2 -> max n
+		jump start;     # max n
 	     
-	  {label odd}        # max n
-	    {push 3}         # max n 3
-	    {mult}           # max 3*n
-	    {push 1}         # max 3*n 1
-	    {add}            # max 3*n+1
+		label odd;	# max n
+		push 3;         # max n 3
+		mult;           # max 3*n
+		push 1;         # max 3*n 1
+		add;            # max 3*n+1
 	    
-	  {label start}     # max n
-	    {dup}           # max n n
-	    {push 1}        # max n n 1
-	    {neq}           # max n n>1
-	    {jumpTrue loop} # max n
+		label start;	# max n
+		dup;		# max n n
+		push 1;		# max n n 1
+		neq;		# max n n>1
+		jumpTrue loop;	# max n
 	    
-	    {pop}           # max
-	    						
-	} {} code
-	proc ulam n [list tcl::unsupported::assemble $code]
+		pop;		# max
+	    }
+	}
 	set result {}
 	for {set i 1} {$i < 30} {incr i} {
 	    lappend result [ulam $i]
@@ -514,3 +736,10 @@ test assemble-30.1 {Ulam's 3n+1 problem, TAL implementation} {
     }
     -result {1 2 16 4 16 16 52 8 52 16 52 16 40 52 160 16 52 52 88 20 64 52 160 24 88 40 9232 52 88}
 }
+
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:
