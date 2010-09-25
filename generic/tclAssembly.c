@@ -39,6 +39,15 @@ static void AddInstructionToErrorInfo(Tcl_Interp* interp, Tcl_Obj* bcList,
 				      int index);
 static BasicBlock * AllocBB(AssembleEnv*); 
 static int AssembleOneLine(AssembleEnv* envPtr);
+static void BBAdjustStackDepth(BasicBlock* bbPtr, int consumed, int produced);
+static void BBUpdateStackReqs(BasicBlock* bbPtr, int tblind, int count);
+static void BBEmitInstInt1(AssembleEnv* assemEnvPtr, int tblind,
+			   unsigned char opnd, int count);
+static void BBEmitInstInt4(AssembleEnv* assemEnvPtr, int tblind, int opnd,
+			   int count);
+static void BBEmitInst1or4(AssembleEnv* assemEnvPtr, int tblind, int param,
+			   int count);
+static void BBEmitOpcode(AssembleEnv* assemEnvPtr, int tblind, int count);
 static int CheckNamespaceQualifiers(Tcl_Interp*, const char*, int);
 static int CheckOneByte(Tcl_Interp*, int);
 static int CheckSignedOneByte(Tcl_Interp*, int);
@@ -1779,6 +1788,7 @@ AllocBB(AssembleEnv* assemEnvPtr)
     bb->visited = 0;
 
     bb->predecessor = NULL;
+    bb->may_fall_thru = 0;
     bb->jumpTargetLabelHashEntry = NULL;
     bb->successor1 = NULL;
 
