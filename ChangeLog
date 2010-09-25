@@ -1,3 +1,67 @@
+2010-09-25  Kevin B. Kenny   <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* tclAssembly.c:		Massive refactoring of the assembler
+	* tclAssembly.h:		to use a Tcl-like syntax (and use
+	* tests/assemble.test:		Tcl_ParseCommand to parse it). The
+	* tests/assemble1.bench:	refactoring also ensures that
+	Tcl_Tokens in the assembler have string ranges inside the source
+	code, which allows for [eval] and [expr] assembler directives
+	that simply call TclCompileScript and TclCompileExpr recursively.
+
+2010-09-24  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/stringComp.test: improved string eq/cmp test coverage
+	* generic/tclExecute.c (TclExecuteByteCode): merge INST_STR_CMP
+	and INST_STR_EQ/INST_STR_NEQ paths.  Speeds up eq/ne/[string eq]
+	with obj-aware comparisons and eq/==/ne/!= with length equality
+	check.
+
+2010-09-24  Andreas Kupries  <andreask@activestate.com>
+
+	* tclWinsock.c: [Bug 3056775]: Fixed race condition between thread
+	and internal co-thread access of a socket's structure because of
+	the thread not using the socketListLock in TcpAccept(). Added
+	documentation on how the module works to the top.
+
+2010-09-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Make Tcl_SetPanicProc and Tcl_GetStringResult
+	* unix/tclAppInit.c:  callable without stubs, just as Tcl_SetVar.
+	* win/tclAppInit.c:
+
+2010-09-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdAH.c:   Fix cases where value returned by
+	* generic/tclEvent.c:   Tcl_GetReturnOptions() was leaked.
+	* generic/tclMain.c:    Thanks to Jeff Hobbs for discovery of the
+	anti-pattern to seek and destroy.
+
+2010-09-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclAppInit.c:  Make compilable with -DUNICODE (not
+	* win/tclAppInit.c:   actived yet), many clean-ups in comments.
+
+2010-09-22  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute: one more DECACHE_STACK_INFO() missing; this
+	fixes [Bug 3072640]
+
+	* tests/execute.test: added execute-10.3 for [Bug 3072640]. The
+	test causes a mem failure.
+
+	* generic/tclExecute: protect all possible writes to ::errorInfo
+	or ::errorCode with DECACHE_STACK_INFO(), as they could run
+	traces. The new calls to be protected are Tcl_ResetResult(),
+	Tcl_SetErrorCode(), IllegalExprOperandType(),
+	TclExprFloatError(). The error was triggered by [Patch 3072080].
+
+2010-09-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4:         Add kernel32 to LIBS, so the link line for mingw
+	* win/configure:      is exactly the same as for MSVC++.
+
 2010-09-21  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclExecute.c (TclExecuteByteCode):
