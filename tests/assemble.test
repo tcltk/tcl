@@ -6,18 +6,113 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 set assemble tcl::unsupported::assemble
 
-test assemble-1.1 {wrong # args} {
-    -body { $assemble 1 2 } 
-    -result {wrong # args: should be "tcl::unsupported::assemble bytecodeList"}
+test assemble-1.1 {wrong # args, direct eval} {
+    -body {
+	eval [list ::tcl::unsupported::assemble]
+    }
     -returnCodes error
+    -result {wrong # args*}
+    -match glob
 }
 
-test assemble-1.2 {wrong arg formatting} {
-    -body { $assemble 1 }
-    -match glob
+test assemble-1.2 {wrong # args, direct eval} {
+    -body {
+	eval [list ::tcl::unsupported::assemble too many]
+    }
     -returnCodes error
-    -result {bad instruction "1"*}
+    -result {wrong # args*}
+    -match glob
 }
+
+test assemble-1.3 {error reporting, direct eval} {
+    -body {
+	list [catch {
+	    eval [list ::tcl::unsupported::assemble {
+		# bad opcode
+		rubbish
+	    }]
+	} result] $result $errorInfo
+    }
+    -match glob
+    -result {1 {bad instruction "rubbish":*} {bad instruction "rubbish":*
+    while executing
+"rubbish"
+    ("::tcl::unsupported::assemble" body, line 3)*}}
+    -cleanup {unset result}
+}
+
+test assemble-1.4 {simple direct eval} {
+    -body {
+	eval [list ::tcl::unsupported::assemble {push {this is a test}}]
+    }
+    -result {this is a test}
+}
+
+test assemble-2.1 {bytecode reuse, direct eval} {
+    -body {
+	set x {push "this is a test"}
+	list [eval [list ::tcl::unsupported::assemble $x]] \
+	    [eval [list ::tcl::unsupported::assemble $x]]
+    }
+    -result {{this is a test} {this is a test}}
+}
+
+test assemble-2.2 {bytecode discard, direct eval} {
+    -body {
+	set x {load value}
+	proc p1 {x} {
+	    set value value1
+	    tcl::unsupported::assemble $x
+	}
+	proc p2 {x} {
+	    set a b
+	    set value value2
+	    tcl::unsupported::assemble $x
+	}
+	list [p1 $x] [p2 $x]
+    }
+    -result {value1 value2}
+    -cleanup {
+	unset x
+	rename p1 {}
+	rename p2 {}
+    }
+}
+
+test assemble-2.3 {null script, direct eval} {
+    -body {
+	set x {}
+	tcl::unsupported::assemble $x
+    }
+    -result {}
+    -cleanup {unset x}
+}
+
+test assemble-3.1 {wrong # args, compiled path} {
+    -body {
+	proc x {} {
+	    tcl::unsupported::assemble
+	}
+	x
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args:*}
+}
+
+test assemble-3.2 {wrong # args, compiled path} {
+    -body {
+	proc x {} {
+	    tcl::unsupported::assemble too many
+	}
+	x
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args:*}
+}
+
+if 0 {
 
 test assemble-1.3 {empty body} {
     -body { $assemble "" }
@@ -735,6 +830,8 @@ test assemble-30.1 {Ulam's 3n+1 problem, TAL implementation} {
 	set result
     }
     -result {1 2 16 4 16 16 52 8 52 16 52 16 40 52 160 16 52 52 88 20 64 52 160 24 88 40 9232 52 88}
+}
+
 }
 
 ::tcltest::cleanupTests
