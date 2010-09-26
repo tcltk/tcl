@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.15 2010/09/23 13:35:43 dgp Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.16 2010/09/26 14:33:46 dgp Exp $
  */
 
 /* TODO: This file does not compile in UNICODE mode.
@@ -139,7 +139,7 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_Init(interp) == TCL_ERROR) {
+    if ((Tcl_Init)(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
