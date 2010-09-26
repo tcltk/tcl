@@ -35,8 +35,6 @@ typedef struct AssembleEnv {
 /* Static functions defined in this file */
 
 static void AddBasicBlockRangeToErrorInfo(AssembleEnv*, BasicBlock*);
-static void AddInstructionToErrorInfo(Tcl_Interp* interp, Tcl_Obj* bcList,
-				      int index);
 static BasicBlock * AllocBB(AssembleEnv*); 
 static int AssembleOneLine(AssembleEnv* envPtr);
 static void BBAdjustStackDepth(BasicBlock* bbPtr, int consumed, int produced);
@@ -54,6 +52,7 @@ static int CheckSignedOneByte(Tcl_Interp*, int);
 static int CheckStack(AssembleEnv*);
 static ByteCode * CompileAssembleObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int DefineLabel(AssembleEnv* envPtr, const char* label);
+static void DupAssembleCodeInternalRep(Tcl_Obj* src, Tcl_Obj* dest);
 static int FindLocalVar(AssembleEnv* envPtr, Tcl_Token** tokenPtrPtr);
 static int FinishAssembly(AssembleEnv*);
 static void FreeAssembleCodeInternalRep(Tcl_Obj *objPtr);
@@ -74,7 +73,7 @@ static void SyncStackDepth(AssembleEnv*);
 static const Tcl_ObjType assembleCodeType = {
     "assemblecode",
     FreeAssembleCodeInternalRep, /* freeIntRepProc */
-    NULL,			 /* dupIntRepProc */
+    DupAssembleCodeInternalRep,	 /* dupIntRepProc */
     NULL,			 /* updateStringProc */
     NULL			 /* setFromAnyProc */
 };
@@ -123,11 +122,16 @@ talInstDesc talInstructionTable[] = {
     {"appendStk", 
                 ASSEM_1BYTE,    INST_APPEND_STK, 
                                                 2,      1}, 
+    {"bitand",  ASSEM_1BYTE ,   INST_BITAND ,   2   ,   1},
+    {"bitnot",	ASSEM_1BYTE,    INST_BITNOT,    1,      1},
+    {"bitor",   ASSEM_1BYTE ,   INST_BITOR  ,   2   ,   1},
+    {"bitxor",  ASSEM_1BYTE ,   INST_BITXOR ,   2   ,   1},
     {"concat",	ASSEM_CONCAT1,	INST_CONCAT1,	INT_MIN,1},
+    {"div",     ASSEM_1BYTE,    INST_DIV,       2,      1},
+    {"dup",     ASSEM_1BYTE ,   INST_DUP    ,   1   ,   2}, 
+    {"eq",      ASSEM_1BYTE ,   INST_EQ     ,   2   ,   1},
     {"eval",	ASSEM_EVAL,	INST_EVAL_STK,	0,	1},
     {"evalStk",	ASSEM_1BYTE,	INST_EVAL_STK,	1,	1},
-    {"expr",	ASSEM_EVAL,	INST_EXPR_STK,	0,	1},
-    {"exprStk", ASSEM_1BYTE,	INST_EXPR_STK,	1,	1},
     {"exist",	ASSEM_LVT4,	INST_EXIST_SCALAR,
                                                 0,      1},
     {"existArray",
@@ -138,14 +142,9 @@ talInstDesc talInstructionTable[] = {
 						2,	1},
     {"existStk",
 		ASSEM_1BYTE,	INST_EXIST_STK,	1,	1},
-    {"bitand",  ASSEM_1BYTE ,   INST_BITAND ,   2   ,   1},
-    {"bitnot",	ASSEM_1BYTE,    INST_BITNOT,    2,      1},
-    {"bitor",   ASSEM_1BYTE ,   INST_BITOR  ,   2   ,   1},
-    {"bitxor",  ASSEM_1BYTE ,   INST_BITXOR ,   2   ,   1},
-    {"div",     ASSEM_1BYTE,    INST_DIV,       2,      1},
-    {"dup",     ASSEM_1BYTE ,   INST_DUP    ,   1   ,   2}, 
-    {"eq",      ASSEM_1BYTE ,   INST_EQ     ,   2   ,   1},
     {"expon",   ASSEM_1BYTE,    INST_EXPON,     2,      1},
+    {"expr",	ASSEM_EVAL,	INST_EXPR_STK,	0,	1},
+    {"exprStk", ASSEM_1BYTE,	INST_EXPR_STK,	1,	1},
     {"ge",      ASSEM_1BYTE ,   INST_GE     ,   2   ,   1},
     {"gt",      ASSEM_1BYTE ,   INST_GT     ,   2   ,   1},
     {"incr",    ASSEM_LVT1,     INST_INCR_SCALAR1,
@@ -225,7 +224,7 @@ talInstDesc talInstructionTable[] = {
     {"mod",     ASSEM_1BYTE,    INST_MOD,       2,      1},
     {"mult",    ASSEM_1BYTE ,   INST_MULT   ,   2   ,   1},
     {"neq",     ASSEM_1BYTE ,   INST_NEQ    ,   2   ,   1},
-    {"not",     ASSEM_1BYTE,    INST_LNOT,      2,      1},
+    {"not",     ASSEM_1BYTE,    INST_LNOT,      1,      1},
     {"over",    ASSEM_OVER,     INST_OVER,      INT_MIN, -1-1},
     {"pop",     ASSEM_1BYTE ,   INST_POP    ,   1   ,   0},
     {"reverse", ASSEM_REVERSE,  INST_REVERSE,   INT_MIN, -1-0},
@@ -1023,11 +1022,16 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "imm8");
 	    goto cleanup;
 	}
-	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK
-	    || Tcl_GetIntFromObj(interp, operand1Obj, &opnd) != TCL_OK) {
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
+	    || CheckOneByte(interp, opnd) != TCL_OK) {
 	    goto cleanup;
 	}
-	if (CheckOneByte(interp, opnd)) {
+	if (opnd == 0) {
+	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("cannot concatenate "
+							  "zero objects", -1));
+		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "EMPTYCONCAT", NULL);
+	    }
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblind, opnd, opnd);
@@ -1466,7 +1470,8 @@ FindLocalVar(AssembleEnv* assemEnvPtr,
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp,
 			     Tcl_NewStringObj("cannot use this instruction"
-					      " in non-proc context", -1));
+					      " to create a variable"
+					      " in a non-proc context", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "LVT", NULL);
 	}
 	return -1;
@@ -1474,7 +1479,6 @@ FindLocalVar(AssembleEnv* assemEnvPtr,
     *tokenPtrPtr = TokenAfter(tokenPtr);
     return localVar;
 }
-
 
 /*
  *-----------------------------------------------------------------------------
@@ -1544,7 +1548,7 @@ CheckNamespaceQualifiers(Tcl_Interp* interp,
 	    Tcl_AppendToObj(result, name, -1);
 	    Tcl_AppendToObj(result, "\" is not local", -1);
 	    Tcl_SetObjResult(interp, result);
-	    Tcl_SetErrorCode(interp, "TCL", "ASSEMBLE", "NONLOCAL", name,
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NONLOCAL", name,
 			     NULL);
 	    return TCL_ERROR;
 	}
@@ -1577,7 +1581,7 @@ CheckOneByte(Tcl_Interp* interp,
 {
     Tcl_Obj* result;		/* Error message */
     if (value < 0 || value > 0xff) {
-	result = Tcl_NewStringObj("operand does not fit in 1 byte", -1);
+	result = Tcl_NewStringObj("operand does not fit in one byte", -1);
 	Tcl_SetObjResult(interp, result);
 	Tcl_SetErrorCode(interp, "TCL", "ASSEMBLE", "1BYTE", NULL);
 	return TCL_ERROR;
@@ -2082,7 +2086,42 @@ AddBasicBlockRangeToErrorInfo(AssembleEnv* assemEnvPtr,
 }
 
 /*
- *----------------------------------------------------------------------
+ *-----------------------------------------------------------------------------
+ *
+ * DupAssembleCodeInternalRep --
+ *
+ *	Part of the Tcl object type implementation for Tcl assembly language
+ *	bytecode. We do not copy the bytecode intrep. Instead, we return
+ *	without setting copyPtr->typePtr, so the copy is a plain string copy
+ *	of the assembly source, and if it is to be used as a compiled
+ *	expression, it will need to be reprocessed.
+ *
+ *	This makes sense, because with Tcl's copy-on-write practices, the
+ *	usual (only?) time Tcl_DuplicateObj() will be called is when the copy
+ *	is about to be modified, which would invalidate any copied bytecode
+ *	anyway. The only reason it might make sense to copy the bytecode is if
+ *	we had some modifying routines that operated directly on the intrep,
+ *	as we do for lists and dicts.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+  
+static void
+DupAssembleCodeInternalRep(
+    Tcl_Obj *srcPtr,
+    Tcl_Obj *copyPtr)
+{
+    return;
+}
+
+/*
+ *-----------------------------------------------------------------------------
  *
  * FreeAssembleCodeInternalRep --
  *
@@ -2096,7 +2135,7 @@ AddBasicBlockRangeToErrorInfo(AssembleEnv* assemEnvPtr,
  * Side effects:
  *	May free allocated memory. Leaves objPtr untyped.
  *
- *----------------------------------------------------------------------
+ *-----------------------------------------------------------------------------
  */
 
 static void
