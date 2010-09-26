@@ -1,9 +1,20 @@
+2010-09-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/assemble.test:	Added many new tests moving toward a more
+	comprehensive test suite for the assembler.
+	* generic/tclAssembly.c:	Fixed bugs exposed by the new tests:
+	(a) [bitnot] and [not] had incorrect operand counts. (b)
+	INST_CONCAT cannot concatenate zero objects. (c) misspelt error
+	messages. (d) the "assembly code" internal representation lacked
+	a duplicator, which caused double-frees of the Bytecode object
+	if assembly code ever was duplicated.
+
 2010-09-25  Kevin B. Kenny   <kennykb@acm.org>
 
 	[dogeen-assembler-branch]
 
-	* tclAssembly.c:		Massive refactoring of the assembler
-	* tclAssembly.h:		to use a Tcl-like syntax (and use
+	* generic/tclAssembly.c:	Massive refactoring of the assembler
+	* generic/tclAssembly.h:	to use a Tcl-like syntax (and use
 	* tests/assemble.test:		Tcl_ParseCommand to parse it). The
 	* tests/assemble1.bench:	refactoring also ensures that
 	Tcl_Tokens in the assembler have string ranges inside the source
