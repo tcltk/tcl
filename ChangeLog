@@ -1,3 +1,9 @@
+2010-09-26  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclOOMethod.c (ProcedureMethodVarResolver): avoid code
+	duplication, let the runtime var resolver call the compiled var
+	resolver.
+
 2010-09-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/stringComp.test: improved string eq/cmp test coverage
