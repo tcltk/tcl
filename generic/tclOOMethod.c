@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.27 2010/09/22 00:57:11 hobbs Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.28 2010/09/26 14:16:26 msofer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -928,59 +928,18 @@ ProcedureMethodVarResolver(
     int flags,
     Tcl_Var *varPtr)
 {
-    Interp *iPtr = (Interp *) interp;
-    CallFrame *framePtr = iPtr->varFramePtr;
-    CallContext *contextPtr;
-    Tcl_Obj *variableObj;
-    Tcl_HashEntry *hPtr;
-    int i, isNew;
+    int result;
+    Tcl_ResolvedVarInfo *rPtr;
+    
+    result = ProcedureMethodCompiledVarResolver(interp, varName,
+	    strlen(varName), contextNs, &rPtr);
 
-    /*
-     * Check that the variable is being requested in a context that is also a
-     * method call; if not (i.e. we're evaluating in the object's namespace or
-     * in a procedure of that namespace) then we do nothing.
-     */
-
-    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
-	return TCL_CONTINUE;
+    if (result != TCL_OK) {
+	return result;
     }
-    contextPtr = framePtr->clientData;
 
-    /*
-     * Check if the variable is one we want to resolve at all (i.e. whether it
-     * is in the list provided by the user). If not, we mustn't do anything
-     * either.
-     */
-
-    if (contextPtr->callPtr->chain[contextPtr->index]
-	    .mPtr->declaringClassPtr != NULL) {
-	FOREACH(variableObj, contextPtr->callPtr->chain[contextPtr->index]
-		.mPtr->declaringClassPtr->variables) {
-	    if (!strcmp(Tcl_GetString(variableObj), varName)) {
-		goto gotMatch;
-	    }
-	}
-    } else {
-	FOREACH(variableObj, contextPtr->oPtr->variables) {
-	    if (!strcmp(Tcl_GetString(variableObj), varName)) {
-		goto gotMatch;
-	    }
-	}
-    }
-    return TCL_CONTINUE;
-
-    /*
-     * It is a variable we want to resolve, so resolve it.
-     */
-
-  gotMatch:
-    hPtr = Tcl_CreateHashEntry(TclVarTable(contextNs), (char *) variableObj,
-	    &isNew);
-    if (isNew) {
-	TclSetVarNamespaceVar((Var *) TclVarHashGetValue(hPtr));
-    }
-    *varPtr = TclVarHashGetValue(hPtr);
-    return TCL_OK;
+    *varPtr = rPtr->fetchProc(interp, rPtr);
+    return (*varPtr? TCL_OK : TCL_CONTINUE);
 }
 
 static Tcl_Var
