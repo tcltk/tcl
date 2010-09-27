@@ -1,5 +1,19 @@
 2010-09-26  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:    [Patch 3072080] (minus the itcl
+	* generic/tclCmdIL.c:    update): a saner NRE.
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:  This makes TclNRExecuteByteCode 
+	* generic/tclCompile.h:  (ex TEBC) to be a normal NRE
+	* generic/tclExecute.c:  citizen: it loses its special status. 
+	* generic/tclInt.decls:  The logic flow within the BC engine is
+	* generic/tclInt.h:      simplified considerably.
+	* generic/tclIntDecls.h:
+	* generic/tclObj.c:
+	* generic/tclProc.c:
+	* generic/tclTest.c:
+	
+	
 	* generic/tclVar.c: use the macro HasLocalVars everywhere
 	
 2010-09-26  Miguel Sofer  <msofer@users.sf.net>
