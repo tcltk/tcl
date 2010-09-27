@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.105 2010/04/29 23:39:32 msofer Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.106 2010/09/27 19:42:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2101,6 +2101,7 @@ ExecConstantExprTree(
     ByteCode *byteCodePtr;
     int code;
     Tcl_Obj *byteCodeObj = Tcl_NewObj();
+    TEOV_callback *rootPtr = TOP_CB(interp);
 
     /*
      * Note we are compiling an expression with literal arguments. This means
@@ -2118,7 +2119,8 @@ ExecConstantExprTree(
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
     byteCodePtr = (ByteCode *) byteCodeObj->internalRep.otherValuePtr;
-    code = TclExecuteByteCode(interp, byteCodePtr);
+    TclNRExecuteByteCode(interp, byteCodePtr);
+    code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
     Tcl_DecrRefCount(byteCodeObj);
     return code;
 }

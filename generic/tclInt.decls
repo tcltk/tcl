@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.148 2010/09/15 07:33:55 nijtmans Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.149 2010/09/27 19:42:38 msofer Exp $
 
 library tcl
 
@@ -961,7 +961,7 @@ declare 239 {
 }
 declare 240 {
     int TclNRRunCallbacks(Tcl_Interp *interp, int result,
-	      struct TEOV_callback *rootPtr, int tebcCall)
+	      struct TEOV_callback *rootPtr)
 }
 declare 241 {
     int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
