@@ -12,10 +12,9 @@
 	* generic/tclObj.c:
 	* generic/tclProc.c:
 	* generic/tclTest.c:
-	
-	
+
 	* generic/tclVar.c: use the macro HasLocalVars everywhere
-	
+
 2010-09-26  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclOOMethod.c (ProcedureMethodVarResolver): avoid code
