@@ -1,3 +1,12 @@
+2010-09-27  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/assemble.test: Added more "white box" tests.
+	* generic/tclAssembly.c: Fixed bugs exposed by the new tests.
+	(a) [eval] and [expr] had incorrect stack balance computed if
+	the arg was not a simple word. (b) [concat] accepted a negative
+	operand count. (c) [invoke] accepted a zero or negative operand
+	count. (d) more misspelt error messages.
+
 2010-09-26  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/assemble.test:	Added many new tests moving toward a more
