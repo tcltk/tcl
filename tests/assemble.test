@@ -797,19 +797,6 @@ test assemble-7.40 {uplus} {
     -result 42
 }
 
-test assemble-7.8 {exist} {
-    -body {
-	proc x {} {
-	    set y z
-	    list [assemble {exist y}] \
-		[assemble {exist z}]
-	}
-	x
-    }
-    -result {1 0}
-    -cleanup {rename x {}}
-}
-
 # assemble-8 ASSEM_LVT and FindLocalVar
 
 test assemble-8.1 {load, wrong # args} {
@@ -1129,9 +1116,466 @@ test assemble-9.7 {concat} {
     -body {
 	list [catch {assemble {concat 0}} result] $result $::errorCode
     }
-    -result {1 {cannot concatenate zero objects} {TCL ASSEM EMPTYCONCAT}}
+    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
     -cleanup {unset result}
 }
+
+# assemble-10 -- eval and expr
+
+test assemble-10.1 {eval - wrong # args} {
+    -body {
+	assemble {eval}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-10.2 {eval - wrong # args} {
+    -body {
+	assemble {eval too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-10.3 {eval} {
+    -body {
+	proc x {} {
+	    assemble {
+		push 3
+		store n
+		pop
+		eval {expr {3*$n + 1}}
+		push 1
+		add
+	    }
+	}
+	x
+    }
+    -result 11
+    -cleanup {rename x {}}
+}
+
+test assemble-10.4 {expr} {
+    -body {
+	proc x {} {
+	    assemble {
+		push 3
+		store n
+		pop
+		expr {3*$n + 1}
+		push 1
+		add
+	    }
+	}
+	x
+    }
+    -result 11
+    -cleanup {rename x {}}
+}
+
+test assemble-10.5 {eval and expr - nonsimple} {
+    -body {
+	proc x {} {
+	    assemble {
+		eval "s\x65t n 3"
+		pop
+		expr "\x33*\$n + 1"
+		push 1
+		add
+	    }
+	}
+	x
+    }
+    -result 11
+    -cleanup {
+	rename x {}
+    }
+}
+
+test assemble-10.6 {eval - noncompilable} {
+    -body {
+	list [catch {assemble {eval $x}} result] $result $::errorCode
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+}
+
+test assemble-10.7 {expr - noncompilable} {
+    -body {
+	list [catch {assemble {expr $x}} result] $result $::errorCode
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+}
+
+# assemble-11 - ASSEM_LVT4 (exist and existArray)
+		
+test assemble-11.1 {exist - wrong # args} {
+    -body {
+	assemble {exist}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-11.2 {exist - wrong # args} {
+    -body {
+	assemble {exist too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-11.3 {nonlocal var} {
+    -body {
+	list [catch {assemble {exist ::env}} result] $result $errorCode
+    }
+    -result {1 {variable "::env" is not local} {TCL ASSEM NONLOCAL ::env}}
+    -cleanup {unset result}
+}
+
+test assemble-11.4 {exist} {
+    -body {
+	proc x {} {
+	    set y z
+	    list [assemble {exist y}] \
+		[assemble {exist z}]
+	}
+	x
+    }
+    -result {1 0}
+    -cleanup {rename x {}}
+}
+
+test assemble-11.5 {existArray} {
+    -body {
+	proc x {} {
+	    set a(b) c
+	    list [assemble {push b; existArray a}] \
+		[assemble {push c; existArray a}] \
+		[assemble {push a; existArray b}]
+	}
+	x
+    }
+    -result {1 0 0}
+    -cleanup {rename x {}}
+}
+
+# assemble-12 - ASSEM_LVT1 (incr and incrArray)
+		
+test assemble-12.1 {incr - wrong # args} {
+    -body {
+	assemble {incr}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-12.2 {incr - wrong # args} {
+    -body {
+	assemble {incr too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-12.3 {incr nonlocal var} {
+    -body {
+	list [catch {assemble {incr ::env}} result] $result $errorCode
+    }
+    -result {1 {variable "::env" is not local} {TCL ASSEM NONLOCAL ::env}}
+    -cleanup {unset result}
+}
+
+test assemble-12.4 {incr} {
+    -body {
+	proc x {} {
+	    set y 5
+	    assemble {push 3; incr y}
+	}
+	x
+    }
+    -result 8
+    -cleanup {rename x {}}
+}
+
+test assemble-12.5 {incrArray} {
+    -body {
+	proc x {} {
+	    set a(b) 5
+	    assemble {push b; push 3; incrArray a}
+	}
+	x
+    }
+    -result 8
+    -cleanup {rename x {}}
+}
+
+test assemble-12.6 {incr, stupid stack restriction} {
+    -body {
+	proc x {} "
+	    [fillTables]
+            set y 5
+            assemble {push 3; incr y}
+        "
+	list [catch {x} result] $result $errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {unset result; rename x {}}
+}
+
+# assemble-13 -- ASSEM_LVT1_SINT1 - incrImm and incrArrayImm
+
+test assemble-13.1 {incrImm - wrong # args} {
+    -body {
+	assemble {incrImm x}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-13.2 {incrImm - wrong # args} {
+    -body {
+	assemble {incrImm too many args}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-13.3 {incrImm nonlocal var} {
+    -body {
+	list [catch {assemble {incrImm ::env 2}} result] $result $errorCode
+    }
+    -result {1 {variable "::env" is not local} {TCL ASSEM NONLOCAL ::env}}
+    -cleanup {unset result}
+}
+
+test assemble-13.4 {incrImm not a number} {
+    -body {
+	proc x {} {
+	    assemble {incrImm x rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-13.5 {incrImm too big} {
+    -body {
+	proc x {} {
+	    assemble {incrImm x 0x80}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {rename x {}; unset result}
+}
+    
+test assemble-13.6 {incrImm too small} {
+    -body {
+	proc x {} {
+	    assemble {incrImm x -0x81}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {rename x {}; unset result}
+}
+
+test assemble-13.7 {incrImm} {
+    -body {
+	proc x {} {
+	    set y 1
+	    list [assemble {incrImm y -0x80}] [assemble {incrImm y 0x7f}]
+	}
+	x
+    }
+    -result {-127 0}
+    -cleanup {rename x {}}
+}
+
+test assemble-13.8 {incrArrayImm} {
+    -body {
+	proc x {} {
+	    set a(b) 5
+	    assemble {push b; incrArrayImm a 3}
+	}
+	x
+    }
+    -result 8
+    -cleanup {rename x {}}
+}
+
+test assemble-13.9 {incrImm, stupid stack restriction} {
+    -body {
+	proc x {} "
+	    [fillTables]
+            set y 5
+            assemble {incrImm y 3}
+        "
+	list [catch {x} result] $result $errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {unset result; rename x {}}
+}
+
+# assemble-14 -- ASSEM_SINT1 (incrArrayStkImm and incrStkImm)
+
+test assemble-14.1 {incrStkImm - wrong # args} {
+    -body {
+	assemble {incrStkImm}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-14.2 {incrStkImm - wrong # args} {
+    -body {
+	assemble {incrStkImm too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-14.3 {incrStkImm not a number} {
+    -body {
+	proc x {} {
+	    assemble {incrStkImm rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-14.4 {incrStkImm too big} {
+    -body {
+	proc x {} {
+	    assemble {incrStkImm 0x80}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {rename x {}; unset result}
+}
+    
+test assemble-14.5 {incrStkImm too small} {
+    -body {
+	proc x {} {
+	    assemble {incrStkImm -0x81}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {rename x {}; unset result}
+}
+
+test assemble-14.6 {incrStkImm} {
+    -body {
+	proc x {} {
+	    set y 1
+	    list [assemble {push y; incrStkImm -0x80}] \
+		[assemble {push y; incrStkImm 0x7f}]
+	}
+	x
+    }
+    -result {-127 0}
+    -cleanup {rename x {}}
+}
+
+test assemble-14.7 {incrArrayStkImm} {
+    -body {
+	proc x {} {
+	    set a(b) 5
+	    assemble {push a; push b; incrArrayStkImm 3}
+	}
+	x
+    }
+    -result 8
+    -cleanup {rename x {}}
+}
+
+# assemble-15 - invokeStk
+
+test assemble-15.1 {invokeStk - wrong # args} {
+    -body {
+	assemble {invokeStk}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-15.2 {invokeStk - wrong # args} {
+    -body {
+	assemble {invokeStk too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-15.3 {invokeStk - not a number} {
+    -body {
+	proc x {} {
+	    assemble {invokeStk rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-15.4 {invokeStk - no operands} {
+    -body {
+	proc x {} {
+	    assemble {invokeStk 0}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -cleanup {rename x {}; unset result}
+}
+
+test assemble-15.5 {invokeStk1} {
+    -body {
+	tcl::unsupported::assemble {push concat; push 1; push 2; invokeStk 3}
+    }
+    -result {1 2}
+}
+
+test assemble-15.6 {invokeStk4} {
+    -body {
+	proc x {n} {
+	    set code {push concat}
+	    set shouldbe {}
+	    for {set i 1} {$i < $n} {incr i} {
+		append code \n {push a} $i
+		lappend shouldbe a$i
+	    }
+	    append code \n {invokeStk} { } $n
+	    set is [assemble $code]
+	    expr {$is eq $shouldbe}
+	}
+	list [x 254] [x 255] [x 256] [x 257]
+    }
+    -result {1 1 1 1}
+    -cleanup {rename x {}}
+}
+
 
 test assemble-1.6 {Testing push, dup, add} {
     -body { 
