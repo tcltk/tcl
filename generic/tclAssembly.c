@@ -533,10 +533,13 @@ TclNRAssembleObjCmd(
 
     /* Use NRE to evaluate the bytecode from the trampoline */
 
+    /*
     Tcl_NRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), codePtr,
 	    NULL, NULL);
-
     return TCL_OK;
+    */
+    return TclNRExecuteByteCode(interp, codePtr);
+
 }
 
 /*

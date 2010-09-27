@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.174 2010/08/22 18:53:26 nijtmans Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.174.2.1 2010/09/27 20:33:37 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -4180,7 +4180,7 @@ Tcl_GetCommandFromObj(
  *	The object's old internal rep is freed. It's string rep is not
  *	changed. The refcount in the Command structure is incremented to keep
  *	it from being freed if the command is later deleted until
- *	TclExecuteByteCode has a chance to recognize that it was deleted.
+ *	TclNRExecuteByteCode has a chance to recognize that it was deleted.
  *
  *----------------------------------------------------------------------
  */

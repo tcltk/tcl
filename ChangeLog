@@ -1,13 +1,41 @@
 2010-09-27  Kevin B. Kenny  <kennykb@acm.org>
 
+	[dogeen-assembler-branch]
+
 	* tests/assemble.test: Added more "white box" tests.
 	* generic/tclAssembly.c: Fixed bugs exposed by the new tests.
 	(a) [eval] and [expr] had incorrect stack balance computed if
 	the arg was not a simple word. (b) [concat] accepted a negative
 	operand count. (c) [invoke] accepted a zero or negative operand
 	count. (d) more misspelt error messages.
+	Also replaced a funky NRCallTEBC with the new call
+	TclNRExecuteByteCode, necessitated by a merge with changes on the
+	HEAD.
+
+2010-09-26  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:    [Patch 3072080] (minus the itcl
+	* generic/tclCmdIL.c:    update): a saner NRE.
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:  This makes TclNRExecuteByteCode
+	* generic/tclCompile.h:  (ex TEBC) to be a normal NRE
+	* generic/tclExecute.c:  citizen: it loses its special status.
+	* generic/tclInt.decls:  The logic flow within the BC engine is
+	* generic/tclInt.h:      simplified considerably.
+	* generic/tclIntDecls.h:
+	* generic/tclObj.c:
+	* generic/tclProc.c:
+	* generic/tclTest.c:
+
+	* generic/tclVar.c: use the macro HasLocalVars everywhere
+
+	* generic/tclOOMethod.c (ProcedureMethodVarResolver): avoid code
+	duplication, let the runtime var resolver call the compiled var
+	resolver.
 
 2010-09-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
 
 	* tests/assemble.test:	Added many new tests moving toward a more
 	comprehensive test suite for the assembler.

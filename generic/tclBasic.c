@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.465.2.1 2010/09/21 19:32:26 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.465.2.2 2010/09/27 20:33:37 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -135,6 +135,7 @@ static Tcl_Obj *	GetCommandSource(Interp *iPtr, int objc,
 			    Tcl_Obj *const objv[], int lookup);
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
+static Tcl_NRPostProc	NRCoroutineActivateCallback;
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRRunObjProc;
@@ -174,6 +175,9 @@ MODULE_SCOPE const TclStubs tclStubs;
  * Magical counts for the number of arguments accepted by a coroutine command
  * after particular kinds of [yield].
  */
+
+#define CORO_ACTIVATE_YIELD    PTR2INT(NULL)
+#define CORO_ACTIVATE_YIELDM   PTR2INT(NULL)+1
 
 #define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL     (-1)
 #define COROUTINE_ARGUMENTS_ARBITRARY           (-2)
@@ -817,7 +821,7 @@ Tcl_CreateInterp(void)
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldTo", NULL,
 	    TclNRYieldToObjCmd, NULL, NULL);
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldm", NULL,
-	    TclNRYieldmObjCmd, NULL, NULL);
+	    TclNRYieldObjCmd, INT2PTR(CORO_ACTIVATE_YIELDM), NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -3056,7 +3060,7 @@ Tcl_DeleteCommandFromToken(
      * from a CmdName Tcl object in some ByteCode code sequence. In that case,
      * delay the cleanup until all references are either discarded (when a
      * ByteCode is freed) or replaced by a new reference (when a cached
-     * CmdName Command reference is found to be invalid and TclExecuteByteCode
+     * CmdName Command reference is found to be invalid and TclNRExecuteByteCode
      * looks up the command in the command hashtable).
      */
 
@@ -4102,7 +4106,7 @@ Tcl_EvalObjv(
     TEOV_callback *rootPtr = TOP_CB(interp);
 
     result = TclNREvalObjv(interp, objc, objv, flags, NULL);
-    return TclNRRunCallbacks(interp, result, rootPtr, 0);
+    return TclNRRunCallbacks(interp, result, rootPtr);
 }
 
 int
@@ -4286,11 +4290,9 @@ int
 TclNRRunCallbacks(
     Tcl_Interp *interp,
     int result,
-    struct TEOV_callback *rootPtr,
+    struct TEOV_callback *rootPtr)
 				/* All callbacks down to rootPtr not inclusive
 				 * are to be run. */
-    int tebcCall)		/* Normal callers set this to 0; only TEBC
-				 * sets it to 1. */
 {
     Interp *iPtr = (Interp *) interp;
     TEOV_callback *callbackPtr;
@@ -4312,23 +4314,7 @@ TclNRRunCallbacks(
 
     while (TOP_CB(interp) != rootPtr) {
 	callbackPtr = TOP_CB(interp);
-
 	procPtr = callbackPtr->procPtr;
-
-	if (tebcCall && (procPtr == NRCallTEBC)) {
-	    NRE_ASSERT(result==TCL_OK);
-	    return TCL_OK;
-	}
-
-	/*
-	 * IMPLEMENTATION REMARKS (FIXME)
-	 *
-	 * Add here other direct handling possibilities for optimisation? One
-	 * could handle the very frequent NRCommand and NRRunObjProc right
-	 * here to save an indirect function call and improve icache
-	 * management. Would it? Test it, time it ...
-	 */
-
 	TOP_CB(interp) = callbackPtr->nextPtr;
 	result = procPtr(callbackPtr->data, interp, result);
 	TCLNR_FREE(interp, callbackPtr);
@@ -4388,41 +4374,6 @@ NRRunObjProc(
     return result;
 }
 
-int
-NRCallTEBC(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    /*
-     * This is not run normally, the callback is passed up to tebc. This
-     * function is only called when no tebc is above.
-     */
-
-    int type = PTR2INT(data[0]);
-    Interp *iPtr = ((Interp *) interp);
-
-    NRE_ASSERT(result == TCL_OK);
-
-    switch (type) {
-    case TCL_NR_BC_TYPE:
-	return TclExecuteByteCode(interp, data[1]);
-    case TCL_NR_YIELD_TYPE:
-	if (iPtr->execEnvPtr->corPtr) {
-	    Tcl_SetResult(interp, "cannot yield: C stack busy", TCL_STATIC);
-	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD", NULL);
-	} else {
-	    Tcl_SetResult(interp, "yield can only be called in a coroutine",
-		    TCL_STATIC);
-	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
-		    NULL);
-	}
-	return TCL_ERROR;
-    default:
-	Tcl_Panic("unknown call type to TEBC");
-    }
-    return result; /* not reached */
-}
 
 /*
  *----------------------------------------------------------------------
@@ -5940,7 +5891,7 @@ TclEvalObjEx(
     TEOV_callback *rootPtr = TOP_CB(interp);
 
     result = TclNREvalObjEx(interp, objPtr, flags, invoker, word);
-    return TclNRRunCallbacks(interp, result, rootPtr, 0);
+    return TclNRRunCallbacks(interp, result, rootPtr);
 }
 
 int
@@ -6067,9 +6018,7 @@ TclNREvalObjEx(
 
 	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
 		objPtr, INT2PTR(allowExceptions), NULL);
-	TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), codePtr,
-		NULL, NULL);
-	return TCL_OK;
+        return TclNRExecuteByteCode(interp, codePtr);
     }
 
     {
@@ -8173,7 +8122,7 @@ Tcl_NRCallObjProc(
 		(Tcl_Obj **)(objv + 1));
     }
     result = objProc(clientData, interp, objc, objv);
-    return TclNRRunCallbacks(interp, result, rootPtr, 0);
+    return TclNRRunCallbacks(interp, result, rootPtr);
 }
 
 /*
@@ -8487,8 +8436,6 @@ TclNRYieldObjCmd(
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-    int numLevels = iPtr->numLevels;
-
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?returnValue?");
 	return TCL_ERROR;
@@ -8505,35 +8452,10 @@ TclNRYieldObjCmd(
 	Tcl_SetObjResult(interp, objv[1]);
     }
 
-    iPtr->numLevels = corPtr->auxNumLevels;
-    corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
-    corPtr->nargs = COROUTINE_ARGUMENTS_SINGLE_OPTIONAL;
-
-    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
-	    NULL, NULL, NULL);
+    NRE_ASSERT(!COR_IS_SUSPENDED(corPtr));
+    TclNRAddCallback(interp, NRCoroutineActivateCallback, corPtr,
+            clientData, NULL, NULL);
     return TCL_OK;
-}
-
-int
-TclNRYieldmObjCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-    int result;
-
-    if (!corPtr) {
-	Tcl_SetResult(interp, "yieldm can only be called in a coroutine",
-		TCL_STATIC);
-	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", NULL);
-	return TCL_ERROR;
-    }
-
-    result = TclNRYieldObjCmd(clientData, interp, objc, objv);
-    corPtr->nargs = COROUTINE_ARGUMENTS_ARBITRARY;
-    return result;
 }
 
 int
@@ -8630,7 +8552,6 @@ RewindCoroutine(
 
     NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
     NRE_ASSERT(corPtr->eePtr != NULL);
-    NRE_ASSERT(corPtr->eePtr->bottomPtr != NULL);
     NRE_ASSERT(corPtr->eePtr != iPtr->execEnvPtr);
 
     corPtr->eePtr->rewind = 1;
@@ -8648,7 +8569,7 @@ DeleteCoroutine(
     TEOV_callback *rootPtr = TOP_CB(interp);
 
     if (COR_IS_SUSPENDED(corPtr)) {
-	TclNRRunCallbacks(interp, RewindCoroutine(corPtr,TCL_OK), rootPtr, 0);
+	TclNRRunCallbacks(interp, RewindCoroutine(corPtr,TCL_OK), rootPtr);
     }
 }
 
@@ -8684,7 +8605,7 @@ NRCoroutineCallerCallback(
     NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
     SAVE_CONTEXT(corPtr->running);
     RESTORE_CONTEXT(corPtr->caller);
-
+    
     if (cmdPtr->flags & CMD_IS_DELETED) {
 	/*
 	 * The command was deleted while it was running: wind down the
@@ -8724,17 +8645,10 @@ NRCoroutineExitCallback(
     TclCleanupCommandMacro(cmdPtr);
 
     corPtr->eePtr->corPtr = NULL;
-    TclPopStackFrame(interp);
     TclDeleteExecEnv(corPtr->eePtr);
     corPtr->eePtr = NULL;
 
-    RESTORE_CONTEXT(corPtr->caller);
-
-    NRE_ASSERT(iPtr->framePtr == corPtr->caller.framePtr);
-    NRE_ASSERT(iPtr->varFramePtr = corPtr->caller.varFramePtr);
-    NRE_ASSERT(iPtr->cmdFramePtr == corPtr->caller.cmdFramePtr);
-
-    iPtr->execEnvPtr = corPtr->callerEEPtr;
+    corPtr->stackLevel = NULL;
 
     /*
      * #280.
@@ -8742,11 +8656,96 @@ NRCoroutineExitCallback(
      * command arguments in bytecode.
      */
 
-    Tcl_DeleteHashTable(corPtr->base.lineLABCPtr);
-    ckfree((char *) corPtr->base.lineLABCPtr);
-    corPtr->base.lineLABCPtr = NULL;
+    Tcl_DeleteHashTable(corPtr->lineLABCPtr);
+    ckfree((char *) corPtr->lineLABCPtr);
+    corPtr->lineLABCPtr = NULL;
+
+    RESTORE_CONTEXT(corPtr->caller);
+    iPtr->execEnvPtr = corPtr->callerEEPtr;
+    iPtr->numLevels++;
 
     return result;
+}
+
+
+/*
+ * NRCoroutineActivateCallback --
+ *
+ * This is the workhorse for coroutines: it implements both yield and resume.
+ *
+ * It is important that both be implemented in the same callback: the
+ * detection of the impossibility to suspend due to a busy C-stack relies on
+ * the precise position of a local variable in the stack. We do not want the
+ * compiler to play tricks on us, either by moving things around or inlining.
+ */
+
+static int
+NRCoroutineActivateCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CoroutineData *corPtr = data[0];
+    int type = PTR2INT(data[1]);
+    int numLevels, unused;
+    int *stackLevel = &unused;
+
+    if (!corPtr->stackLevel) {
+        /*
+         * -- Coroutine is suspended --
+         * Push the callback to restore the caller's context on yield or return
+         */
+
+        TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
+                NULL);
+
+        /*
+         * Record the stackLevel at which the resume is happening, then swap
+         * the interp's environment to make it suitable to run this
+         * coroutine. 
+         */
+        
+        corPtr->stackLevel = stackLevel;
+        numLevels = corPtr->auxNumLevels;
+        corPtr->auxNumLevels = iPtr->numLevels;
+
+        SAVE_CONTEXT(corPtr->caller);
+        corPtr->callerEEPtr = iPtr->execEnvPtr;
+        RESTORE_CONTEXT(corPtr->running);
+        iPtr->execEnvPtr = corPtr->eePtr;
+        iPtr->numLevels += numLevels;
+        
+        return TCL_OK;
+    } else {
+        /*
+         * Coroutine is active: yield
+         */
+
+        if (corPtr->stackLevel != stackLevel) {
+            Tcl_SetResult(interp, "cannot yield: C stack busy",
+                    TCL_STATIC);
+            Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
+                    NULL);
+            return TCL_ERROR;
+        }
+        
+        if (type == CORO_ACTIVATE_YIELD) { 
+            corPtr->nargs = COROUTINE_ARGUMENTS_SINGLE_OPTIONAL;
+        } else if (type == CORO_ACTIVATE_YIELDM) {
+            corPtr->nargs = COROUTINE_ARGUMENTS_ARBITRARY;
+        } else {
+            Tcl_Panic("Yield received an option which is not implemented");
+        }
+        
+        corPtr->stackLevel = NULL;
+
+        numLevels = iPtr->numLevels;
+        iPtr->numLevels = corPtr->auxNumLevels;
+        corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
+
+        iPtr->execEnvPtr = corPtr->callerEEPtr;
+        return TCL_OK;
+    }
 }
 
 int
@@ -8757,7 +8756,6 @@ NRInterpCoroutine(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     CoroutineData *corPtr = clientData;
-    int nestNumLevels = corPtr->auxNumLevels;
 
     if (!COR_IS_SUSPENDED(corPtr)) {
 	Tcl_ResetResult(interp);
@@ -8798,26 +8796,8 @@ NRInterpCoroutine(
         break;
     }
 
-    /*
-     * Swap the interp's environment to make it suitable to run this
-     * coroutine. TEBC needs no info to resume executing after a suspension:
-     * the codePtr will be read from the execEnv's saved bottomPtr.
-     */
-
-    SAVE_CONTEXT(corPtr->caller);
-    corPtr->base.framePtr->callerPtr = iPtr->framePtr;
-    RESTORE_CONTEXT(corPtr->running);
-    corPtr->auxNumLevels = iPtr->numLevels;
-    iPtr->numLevels += nestNumLevels;
-
-    TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
-	    NULL);
-
-    corPtr->callerEEPtr = iPtr->execEnvPtr;
-    iPtr->execEnvPtr = corPtr->eePtr;
-
-    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), NULL,
-	    NULL, NULL);
+    TclNRAddCallback(interp, NRCoroutineActivateCallback, corPtr,
+            NULL, NULL, NULL);
     return TCL_OK;
 }
 
@@ -8830,11 +8810,9 @@ TclNRCoroutineObjCmd(
 {
     Command *cmdPtr;
     CoroutineData *corPtr;
-    Tcl_Obj *cmdObjPtr;
     const char *fullName, *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
-    Tcl_CallFrame *framePtr;
     
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
@@ -8873,18 +8851,10 @@ TclNRCoroutineObjCmd(
 
     /*
      * We ARE creating the coroutine command: allocate the corresponding
-     * struct, add the callback in caller's env and record the caller's
-     * frames.
+     * struct and create the corresponding command.
      */
 
     corPtr = (CoroutineData *) ckalloc(sizeof(CoroutineData));
-    TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
-	    NULL);
-    SAVE_CONTEXT(corPtr->caller);
-
-    /*
-     * Create the coroutine command.
-     */
 
     Tcl_DStringInit(&ds);
     if (nsPtr != iPtr->globalNsPtr) {
@@ -8913,84 +8883,59 @@ TclNRCoroutineObjCmd(
 	Tcl_HashSearch hSearch;
 	Tcl_HashEntry *hePtr;
 
-	corPtr->base.lineLABCPtr = (Tcl_HashTable *)
+	corPtr->lineLABCPtr = (Tcl_HashTable *)
 		ckalloc(sizeof(Tcl_HashTable));
-	Tcl_InitHashTable(corPtr->base.lineLABCPtr, TCL_ONE_WORD_KEYS);
+	Tcl_InitHashTable(corPtr->lineLABCPtr, TCL_ONE_WORD_KEYS);
 
 	for (hePtr = Tcl_FirstHashEntry(iPtr->lineLABCPtr,&hSearch);
 		hePtr; hePtr = Tcl_NextHashEntry(&hSearch)) {
 	    int isNew;
 	    Tcl_HashEntry *newPtr =
-		    Tcl_CreateHashEntry(corPtr->base.lineLABCPtr,
+		    Tcl_CreateHashEntry(corPtr->lineLABCPtr,
 		    Tcl_GetHashKey(iPtr->lineLABCPtr, hePtr),
 		    &isNew);
 
 	    Tcl_SetHashValue(newPtr, Tcl_GetHashValue(hePtr));
 	}
-
-	/*
-	 * The new copy is immediately plugged interpreter for use by the
-	 * first coroutine commands (see below). The interp's copy of the
-	 * table is already saved, see the SAVE_CONTEXT found just above this
-	 * whole code block. This also properly prepares us for the
-	 * SAVE/RESTORE dances during yields which swizzle the pointers
-	 * around.
-	 */
-
-	iPtr->lineLABCPtr = corPtr->base.lineLABCPtr;
     }
 
     /*
-     * Create the coro's execEnv and switch to it so that any CallFrames or
-     * callbacks refer to the new execEnv's stack. 
+     * Save the base context.
+     */
+
+    corPtr->running.framePtr = iPtr->rootFramePtr;
+    corPtr->running.varFramePtr = iPtr->rootFramePtr;
+    corPtr->running.cmdFramePtr = NULL;
+    corPtr->running.lineLABCPtr = corPtr->lineLABCPtr;
+    corPtr->stackLevel = NULL;
+    corPtr->auxNumLevels = 0;
+    iPtr->numLevels--;
+    
+    /*
+     * Create the coro's execEnv, switch to it to push the exit and coro
+     * command callbacks, then switch back. 
      */
 
     corPtr->eePtr = TclCreateExecEnv(interp, CORO_STACK_INITIAL_SIZE);
     corPtr->callerEEPtr = iPtr->execEnvPtr;
     corPtr->eePtr->corPtr = corPtr;
-    iPtr->execEnvPtr = corPtr->eePtr;
-
-    /* push a base call frame; save the current namespace to do a correct
-     * command lookup.
-     */
-
-    nsPtr = iPtr->varFramePtr->nsPtr;
-    TclPushStackFrame(interp, &framePtr,
-	    (Tcl_Namespace *) iPtr->globalNsPtr, 0);
-    iPtr->varFramePtr = iPtr->rootFramePtr;
     
-    /*
-     * Save the base context. The base cmdFramePtr is unknown at this time: it
-     * will be allocated in the Tcl stack. So signal TEBC that it has to
-     * initialize the base cmdFramePtr by setting it to NULL.
-     */
-
-    SAVE_CONTEXT(corPtr->base);
-    corPtr->base.cmdFramePtr = NULL;
-    corPtr->running = NULL_CONTEXT;
-    corPtr->stackLevel = NULL;
-    corPtr->auxNumLevels = iPtr->numLevels;
-
-    /*
-     * Create the command that will run at the bottom of the coroutine.
-     * Be sure not to pass a canonical list for the command so that we insure
-     * the body is bytecompiled: we need a TEBC instance to handle [yield]
-     */
-
-    cmdObjPtr = Tcl_NewListObj(objc-2, &objv[2]);
-    TclGetString(cmdObjPtr);
-    TclFreeIntRep(cmdObjPtr);
-    cmdObjPtr->typePtr = NULL;
-
-    /*
-     * Add the exit callback, then the callback to eval the coro body
-     */
+    iPtr->execEnvPtr = corPtr->eePtr;
 
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
-    iPtr->lookupNsPtr = nsPtr;
-    TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
 
+    iPtr->lookupNsPtr = iPtr->varFramePtr->nsPtr;
+    Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);
+    iPtr->execEnvPtr = corPtr->callerEEPtr;
+    
+    /*
+     * Now just resume the coroutine. Take care to insure that the command is
+     * looked up in the correct namespace.
+     */
+
+    TclNRAddCallback(interp, NRCoroutineActivateCallback, corPtr,
+            NULL, NULL, NULL);
     return TCL_OK;
 }
 
