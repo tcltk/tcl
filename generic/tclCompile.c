@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.84 2010/08/23 01:46:39 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.85 2010/09/27 20:46:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -918,7 +918,7 @@ Tcl_SubstObj(
     TEOV_callback *rootPtr = TOP_CB(interp);
 
     if (TclNRRunCallbacks(interp, Tcl_NRSubstObj(interp, objPtr, flags),
-	    rootPtr, 0) != TCL_OK) {
+	    rootPtr) != TCL_OK) {
 	return NULL;
     }
     return Tcl_GetObjResult(interp);
@@ -952,9 +952,7 @@ Tcl_NRSubstObj(
 
     /* TODO: Confirm we do not need this. */
     /* Tcl_ResetResult(interp); */
-    Tcl_NRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), codePtr,
-	    NULL, NULL);
-    return TCL_OK;
+    return TclNRExecuteByteCode(interp, codePtr);
 }
 
 /*
@@ -1604,7 +1602,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		 * Mark the start of the command; the proper bytecode length
 		 * will be updated later.  There is no need to do this for
 		 * the first bytecode in the compile env, as the check is done
-		 * before calling TclExecuteByteCode().  Do emit an
+		 * before calling TclNRExecuteByteCode().  Do emit an
 		 * INST_START_CMD in special cases where the first bytecode is
 		 * in a loop, to insure that the corresponding command is
 		 * counted properly.  Compilers for commands able to produce

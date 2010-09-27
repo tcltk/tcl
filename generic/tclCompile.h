@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.62 2010/08/19 01:57:43 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.63 2010/09/27 20:46:12 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -863,13 +863,8 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_NRPostProc	NRCallTEBC;
 MODULE_SCOPE Tcl_NRPostProc	NRCommand;
 MODULE_SCOPE Tcl_ObjCmdProc	NRInterpCoroutine;
-
-#define TCL_NR_BC_TYPE		0
-#define TCL_NR_ATEXIT_TYPE	1
-#define TCL_NR_YIELD_TYPE	2
 
 /*
  *----------------------------------------------------------------
@@ -923,7 +918,7 @@ MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
-MODULE_SCOPE int	TclExecuteByteCode(Tcl_Interp *interp,
+MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,

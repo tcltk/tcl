@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.74 2010/09/22 02:42:51 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.75 2010/09/27 20:46:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5998,8 +5998,7 @@ TclInfoVarsCmd(
 
     listPtr = Tcl_NewListObj(0, NULL);
 
-    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)
-	    || specificNsInPattern) {
+    if (!HasLocalVars(iPtr->varFramePtr) || specificNsInPattern) {
 	/*
 	 * There is no frame pointer, the frame pointer was pushed only to
 	 * activate a namespace, or we are in a procedure call frame but a
@@ -6235,7 +6234,7 @@ TclInfoLocalsCmd(
 	return TCL_ERROR;
     }
 
-    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
+    if (!HasLocalVars(iPtr->varFramePtr)) {
 	return TCL_OK;
     }
 

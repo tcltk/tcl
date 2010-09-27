@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.69 2010/08/23 01:46:39 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.70 2010/09/27 20:46:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1155,11 +1155,22 @@ InfoFrameCmd(
 
     if (iPtr->execEnvPtr->corPtr) {
 	/*
-	 * A coroutine: must fix the level computations
+	 * A coroutine: must fix the level computations AND the cmdFrame chain,
+	 * which is interrupted at the base.
 	 */
 
-	topLevel += iPtr->execEnvPtr->corPtr->caller.cmdFramePtr->level -
-		iPtr->execEnvPtr->corPtr->base.cmdFramePtr->level;
+        CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+        CmdFrame *runPtr = iPtr->cmdFramePtr;
+        CmdFrame *lastPtr = NULL;
+        
+        topLevel += corPtr->caller.cmdFramePtr->level;
+        while (runPtr && (runPtr != corPtr->caller.cmdFramePtr)) {
+            lastPtr = runPtr;
+            runPtr = runPtr->nextPtr;
+        }
+        if (lastPtr && !runPtr) {
+            lastPtr->nextPtr = corPtr->caller.cmdFramePtr;
+        }
     }
 
     if (objc == 1) {
