@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.142 2010/08/21 16:30:26 nijtmans Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.142.2.1 2010/09/27 20:33:37 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -571,7 +571,7 @@ EXTERN int		TclNRInterpProcCore(Tcl_Interp *interp,
 				ProcErrorProc *errorProc);
 /* 240 */
 EXTERN int		TclNRRunCallbacks(Tcl_Interp *interp, int result,
-				struct TEOV_callback *rootPtr, int tebcCall);
+				struct TEOV_callback *rootPtr);
 /* 241 */
 EXTERN int		TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags, const CmdFrame *invoker, int word);
@@ -841,7 +841,7 @@ typedef struct TclIntStubs {
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
     int (*tclNRInterpProc) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, int skip, ProcErrorProc *errorProc); /* 239 */
-    int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct TEOV_callback *rootPtr, int tebcCall); /* 240 */
+    int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct TEOV_callback *rootPtr); /* 240 */
     int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 241 */
     int (*tclNREvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags, Command *cmdPtr); /* 242 */
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.482.2.1 2010/09/21 19:32:26 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.482.2.2 2010/09/27 20:33:37 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1477,16 +1477,12 @@ typedef struct CoroutineData {
 				 * coroutine. */
     CorContext caller;
     CorContext running;
-    CorContext base;
+    Tcl_HashTable *lineLABCPtr;    /* See Interp.lineLABCPtr */
     void *stackLevel;
     int auxNumLevels;		/* While the coroutine is running the
 				 * numLevels of the create/resume command is
 				 * stored here; for suspended coroutines it
 				 * holds the nesting numLevels at yield. */
-    struct BottomData **callerBPPtr;
-                                /* Where to stash the caller's bottomPointer,
-				 * if the coro is running in the caller's TEBC 
-				 * instance. Put a NULL in there otherwise. */
     int nargs;                  /* Number of args required for resuming this
 				 * coroutine; -2 means "0 or 1" (default), -1
 				 * means "any" */
@@ -1500,7 +1496,6 @@ typedef struct ExecEnv {
     struct TEOV_callback *callbackPtr;
 				/* Top callback in TEOV's stack. */
     struct CoroutineData *corPtr;
-    struct BottomData *bottomPtr;
     int rewind;
 } ExecEnv;
 
