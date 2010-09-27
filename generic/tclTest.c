@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.153 2010/08/22 18:53:26 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.153.2.1 2010/09/27 20:33:37 kennykb Exp $
  */
 
 #undef STATIC_BUILD
@@ -1182,7 +1182,7 @@ TestcmdtraceCmd(
 	 * Create a command trace then eval a script to check whether it is
 	 * called. Note that this trace procedure removes itself as a further
 	 * check of the robustness of the trace proc calling code in
-	 * TclExecuteByteCode.
+	 * TclNRExecuteByteCode.
 	 */
 
 	cmdTrace = Tcl_CreateTrace(interp, 50000, CmdTraceDeleteProc, NULL);
@@ -1282,7 +1282,7 @@ CmdTraceDeleteProc(
 {
     /*
      * Remove ourselves to test whether calling Tcl_DeleteTrace within a trace
-     * callback causes the for loop in TclExecuteByteCode that calls traces to
+     * callback causes the for loop in TclNRExecuteByteCode that calls traces to
      * reference freed memory.
      */
 
