@@ -1,5 +1,9 @@
 2010-09-26  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclVar.c: use the macro HasLocalVars everywhere
+	
+2010-09-26  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclOOMethod.c (ProcedureMethodVarResolver): avoid code
 	duplication, let the runtime var resolver call the compiled var
 	resolver.
