@@ -50,6 +50,7 @@ static int CheckNamespaceQualifiers(Tcl_Interp*, const char*, int);
 static int CheckOneByte(Tcl_Interp*, int);
 static int CheckSignedOneByte(Tcl_Interp*, int);
 static int CheckStack(AssembleEnv*);
+static int CheckStrictlyPositive(Tcl_Interp*, int);
 static ByteCode * CompileAssembleObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int DefineLabel(AssembleEnv* envPtr, const char* label);
 static void DupAssembleCodeInternalRep(Tcl_Obj* src, Tcl_Obj* dest);
@@ -130,7 +131,7 @@ talInstDesc talInstructionTable[] = {
     {"div",     ASSEM_1BYTE,    INST_DIV,       2,      1},
     {"dup",     ASSEM_1BYTE ,   INST_DUP    ,   1   ,   2}, 
     {"eq",      ASSEM_1BYTE ,   INST_EQ     ,   2   ,   1},
-    {"eval",	ASSEM_EVAL,	INST_EVAL_STK,	0,	1},
+    {"eval",	ASSEM_EVAL,	INST_EVAL_STK,	1,	1},
     {"evalStk",	ASSEM_1BYTE,	INST_EVAL_STK,	1,	1},
     {"exist",	ASSEM_LVT4,	INST_EXIST_SCALAR,
                                                 0,      1},
@@ -143,7 +144,7 @@ talInstDesc talInstructionTable[] = {
     {"existStk",
 		ASSEM_1BYTE,	INST_EXIST_STK,	1,	1},
     {"expon",   ASSEM_1BYTE,    INST_EXPON,     2,      1},
-    {"expr",	ASSEM_EVAL,	INST_EXPR_STK,	0,	1},
+    {"expr",	ASSEM_EVAL,	INST_EXPR_STK,	1,	1},
     {"exprStk", ASSEM_1BYTE,	INST_EXPR_STK,	1,	1},
     {"ge",      ASSEM_1BYTE ,   INST_GE     ,   2   ,   1},
     {"gt",      ASSEM_1BYTE ,   INST_GT     ,   2   ,   1},
@@ -1023,15 +1024,8 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	    goto cleanup;
 	}
 	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
-	    || CheckOneByte(interp, opnd) != TCL_OK) {
-	    goto cleanup;
-	}
-	if (opnd == 0) {
-	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj("cannot concatenate "
-							  "zero objects", -1));
-		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "EMPTYCONCAT", NULL);
-	    }
+	    || CheckOneByte(interp, opnd) != TCL_OK
+	    || CheckStrictlyPositive(interp, opnd) != TCL_OK) {
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblind, opnd, opnd);
@@ -1093,10 +1087,11 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;
 	}
-	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK
-	    || Tcl_GetIntFromObj(interp, operand1Obj, &opnd) != TCL_OK) {
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
+	    || CheckStrictlyPositive(interp, opnd) != TCL_OK) {
 	    goto cleanup;
 	}
+	
 	BBEmitInst1or4(assemEnvPtr, tblind, opnd, opnd);
 	break;
 		 
@@ -1583,7 +1578,7 @@ CheckOneByte(Tcl_Interp* interp,
     if (value < 0 || value > 0xff) {
 	result = Tcl_NewStringObj("operand does not fit in one byte", -1);
 	Tcl_SetObjResult(interp, result);
-	Tcl_SetErrorCode(interp, "TCL", "ASSEMBLE", "1BYTE", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "1BYTE", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1615,9 +1610,41 @@ CheckSignedOneByte(Tcl_Interp* interp,
 {
     Tcl_Obj* result;		/* Error message */
     if (value > 0x7f || value < -0x80) {
-	result = Tcl_NewStringObj("operand does not fit in 1 byte", -1);
+	result = Tcl_NewStringObj("operand does not fit in one byte", -1);
 	Tcl_SetObjResult(interp, result);
-	Tcl_SetErrorCode(interp, "TCL", "ASSEMBLE", "1BYTE", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "1BYTE", NULL);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * CheckStrictlyPositive --
+ *
+ *	Verify that a constant is positive
+ *
+ * Results:
+ *	On success, returns TCL_OK. On failure, returns TCL_ERROR and
+ *	stores an error message in the interpreter result.
+ *
+ * This code is here primarily to verify that instructions like INCR_INVOKE
+ * are consuming a positive number of operands
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+CheckStrictlyPositive(Tcl_Interp* interp,
+				/* Tcl interpreter for error reporting */
+		      int value)	/* Value to check */
+{
+    Tcl_Obj* result;		/* Error message */
+    if (value <= 0) {
+	result = Tcl_NewStringObj("operand must be positive", -1);
+	Tcl_SetObjResult(interp, result);
+	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "POSITIVE", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
