@@ -3,35 +3,6 @@
 #include "tclAssembly.h"
 #include "tclOOInt.h"
 
-
-/* Structure that holds the state of the assembler while generating code */
-
-typedef struct AssembleEnv {
-    CompileEnv* envPtr;		/* Compilation environment being used
-				 * for code generation */
-    Tcl_Parse* parsePtr;        /* Parse of the current line of source */
-    Tcl_HashTable labelHash;	/* Hash table whose keys are labels and
-				 * whose values are 'label' objects storing 
-				 * the code offsets of the labels. */
-
-    int cmdLine;		/* Current line number within the assembly 
-				 * code */
-    int* clNext;		/* Invisible continuation line for
-				 * [info frame] */
-
-    /* TODO: Next table could be a simple list keyed off memory address?
-     * Or the BB pointers could be in the 'label' struct */
-    Tcl_HashTable BBHash;	/* Hash table whose keys are labels and
-				 * whose values are BasicBlock structure 
-				 * pointers for the basic blocks at those
-				 * locations */
-    BasicBlock* head_bb;	/* First basic block in the code */
-    BasicBlock* curr_bb;	/* Current basic block */
-
-    int maxDepth;	     	/* Maximum stack depth encountered */
-    int flags;			/* Compilation flags (TCL_EVAL_DIRECT) */
-} AssembleEnv;
-
 /* Static functions defined in this file */
 
 static void AddBasicBlockRangeToErrorInfo(AssembleEnv*, BasicBlock*);
@@ -51,6 +22,7 @@ static int CheckOneByte(Tcl_Interp*, int);
 static int CheckSignedOneByte(Tcl_Interp*, int);
 static int CheckStack(AssembleEnv*);
 static int CheckStrictlyPositive(Tcl_Interp*, int);
+static int CheckUndefinedLabels(AssembleEnv*);
 static ByteCode * CompileAssembleObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int DefineLabel(AssembleEnv* envPtr, const char* label);
 static void DupAssembleCodeInternalRep(Tcl_Obj* src, Tcl_Obj* dest);
@@ -64,7 +36,7 @@ static int GetNextOperand(AssembleEnv*, Tcl_Token**, Tcl_Obj**);
 static AssembleEnv* NewAssembleEnv(CompileEnv*, int);
 static int StackCheckBasicBlock(AssembleEnv*, BasicBlock *, BasicBlock *, int);
 static BasicBlock* StartBasicBlock(AssembleEnv*, int fallthrough,
-				   const char* jumpLabel);
+				   Tcl_Obj* jumpLabel);
 /* static int AdvanceIp(const unsigned char *pc); */
 static int StackCheckBasicBlock(AssembleEnv*, BasicBlock *, BasicBlock *, int);
 static void SyncStackDepth(AssembleEnv*);
@@ -102,7 +74,7 @@ static const Tcl_ObjType assembleCodeType = {
 
 #define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
 
-talInstDesc talInstructionTable[] = {
+TalInstDesc TalInstructionTable[] = {
 
     /* PUSH must be first, see the code near the end of TclAssembleCode */
 
@@ -307,13 +279,6 @@ BBAdjustStackDepth(BasicBlock* bbPtr,
 	bbPtr->maxStackDepth = depth;
     }
     bbPtr->finalStackDepth = depth;
-#if 0
-    fprintf(stderr, "update bb: consumed %d produced %d"
-	    " min %d max %d final %d\n",
-	    consumed, produced, bbPtr->minStackDepth, bbPtr->maxStackDepth,
-	    bbPtr->finalStackDepth);
-    fflush(stderr);
-#endif
 }
 
 /*
@@ -344,12 +309,12 @@ BBAdjustStackDepth(BasicBlock* bbPtr,
 static void
 BBUpdateStackReqs(BasicBlock* bbPtr,
 				/* Structure describing the basic block */
-		  int tblind,   /* Index in talInstructionTable of the
+		  int tblind,   /* Index in TalInstructionTable of the
 				 * operation being assembled */
 		  int count)	/* Count of operands for variadic insts */
 {
-    int consumed = talInstructionTable[tblind].operandsConsumed;
-    int produced = talInstructionTable[tblind].operandsProduced;
+    int consumed = TalInstructionTable[tblind].operandsConsumed;
+    int produced = TalInstructionTable[tblind].operandsProduced;
     if (consumed == INT_MIN) {
 	/* The instruction is variadic; it consumes 'count' operands. */
 	consumed = count;
@@ -383,18 +348,22 @@ BBUpdateStackReqs(BasicBlock* bbPtr,
 static void
 BBEmitOpcode(AssembleEnv* assemEnvPtr,
 				/* Assembly environment */
-	     int tblind,	/* Table index in talInstructionTable of op */
+	     int tblind,	/* Table index in TalInstructionTable of op */
 	     int count)		/* Operand count for variadic ops */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
     BasicBlock* bbPtr = assemEnvPtr->curr_bb;
 				/* Current basic block */
-    int op = talInstructionTable[tblind].tclInstCode & 0xff;
-#if 0
-    fprintf(stderr, "Emit %s (%d)\n", tclInstructionTable[op].name, count);
-    fflush(stderr);
-#endif
+    int op = TalInstructionTable[tblind].tclInstCode & 0xff;
+
+    /* If this is the first instruction in a basic block, record its
+     * line number. */
+
+    if (bbPtr->startOffset == envPtr->codeNext - envPtr->codeStart) {
+	bbPtr->startLine = assemEnvPtr->cmdLine;
+    }
+
     TclEmitInt1(op, envPtr);
     envPtr->atCmdStart = ((op) == INST_START_CMD);
     BBUpdateStackReqs(bbPtr, tblind, count);
@@ -402,7 +371,7 @@ BBEmitOpcode(AssembleEnv* assemEnvPtr,
 static void
 BBEmitInstInt1(AssembleEnv* assemEnvPtr,
 				/* Assembly environment */
-	       int tblind,	/* Index in talInstructionTable of op */
+	       int tblind,	/* Index in TalInstructionTable of op */
 	       unsigned char opnd,
 				/* 1-byte operand */
 	       int count)	/* Operand count for variadic ops */
@@ -413,7 +382,7 @@ BBEmitInstInt1(AssembleEnv* assemEnvPtr,
 static void
 BBEmitInstInt4(AssembleEnv* assemEnvPtr,
 				/* Assembly environment */
-	       int tblind,	/* Index in talInstructionTable of op */
+	       int tblind,	/* Index in TalInstructionTable of op */
 	       int opnd,	/* 4-byte operand */
 	       int count)	/* Operand count for variadic ops */
 {
@@ -435,7 +404,7 @@ BBEmitInstInt4(AssembleEnv* assemEnvPtr,
 static void
 BBEmitInst1or4(AssembleEnv* assemEnvPtr,
 				/* Assembly environment */
-	       int tblind,	/* Index in talInstructionTable of op */
+	       int tblind,	/* Index in TalInstructionTable of op */
 	       int param,	/* Variable-length parameter */
 	       int count)	/* Arity if variadic */
 {
@@ -444,16 +413,12 @@ BBEmitInst1or4(AssembleEnv* assemEnvPtr,
     BasicBlock* bbPtr = assemEnvPtr->curr_bb;
 				/* Current basic block */
 
-    int op = talInstructionTable[tblind].tclInstCode;
+    int op = TalInstructionTable[tblind].tclInstCode;
     if (param <= 0xff) {
 	op >>= 8;
     } else {
 	op &= 0xff;
     }
-#if 0
-    fprintf(stderr, "Emit %s (%d)\n", tclInstructionTable[op].name, count);
-    fflush(stderr);
-#endif
     TclEmitInt1(op, envPtr);
     if (param <= 0xff) {
 	TclEmitInt1(param, envPtr);
@@ -845,7 +810,6 @@ NewAssembleEnv(CompileEnv* envPtr,
     /* Make the hashtables that store symbol resolution */
 
     Tcl_InitHashTable(&assemEnvPtr->labelHash, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&assemEnvPtr->BBHash, TCL_STRING_KEYS);
 
     /* Start the first basic block */
 
@@ -884,11 +848,13 @@ FreeAssembleEnv(AssembleEnv* assemEnvPtr)
 				 * successor */
     Tcl_HashEntry* hashEntry;
     Tcl_HashSearch hashSearch;
-    label* labelPtr;
+    JumpLabel* labelPtr;
 
-    /* Free the basic block hash index and all the basic block structures */
-    Tcl_DeleteHashTable(&assemEnvPtr->BBHash);
+    /* Free all the basic block structures */
     for (thisBB = assemEnvPtr->head_bb; thisBB != NULL; thisBB = nextBB) {
+	if (thisBB->jumpTarget != NULL) {
+	    Tcl_DecrRefCount(thisBB->jumpTarget);
+	}
 	nextBB = thisBB->successor1;
 	ckfree((char*)thisBB);
     }
@@ -896,7 +862,7 @@ FreeAssembleEnv(AssembleEnv* assemEnvPtr)
     /* Free all the labels */
     while ((hashEntry = Tcl_FirstHashEntry(&assemEnvPtr->labelHash,
 					    &hashSearch)) != NULL) {
-	labelPtr = (label*) Tcl_GetHashValue(hashEntry);
+	labelPtr = (JumpLabel*) Tcl_GetHashValue(hashEntry);
 	ckfree((char*) labelPtr);
 	Tcl_DeleteHashEntry(hashEntry);
     }
@@ -935,9 +901,9 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
     Tcl_Token* tokenPtr;	/* Current token within the line of code */
     Tcl_Obj* instNameObj = NULL;
 				/* Name of the instruction */
-    int tblind;			/* Index in talInstructionTable of the 
+    int tblind;			/* Index in TalInstructionTable of the 
 				 * instruction */
-    enum talInstType instType;	/* Type of the instruction */
+    enum TalInstType instType;	/* Type of the instruction */
     Tcl_Obj* operand1Obj = NULL;
     				/* First operand to the instruction */
     const char* operand1;	/* String rep of the operand */
@@ -946,7 +912,7 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 				 * block operations */
     int isNew;		    	/* Flag indicating that a new hash entry
 				 * has been created */
-    label* l;		        /* Structure descibing a label in the
+    JumpLabel* l;		        /* Structure descibing a label in the
 				 * assembly code */
     int opnd;			/* Integer representation of an operand */
     int litIndex;		/* Literal pool index of a constant */
@@ -965,15 +931,15 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
     /* Look up the instruction name */
     
     if (Tcl_GetIndexFromObjStruct(interp, instNameObj,
-				  &talInstructionTable[0].name,
-				  sizeof(talInstDesc), "instruction",
+				  &TalInstructionTable[0].name,
+				  sizeof(TalInstDesc), "instruction",
 				  TCL_EXACT, &tblind) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     /* Vector on the type of instruction being processed */
 
-    instType = talInstructionTable[tblind].instType;
+    instType = TalInstructionTable[tblind].instType;
     switch (instType) {
 
     case ASSEM_PUSH:
@@ -1042,7 +1008,7 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	 */
 	if (parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, 
-			     ((talInstructionTable[tblind].tclInstCode
+			     ((TalInstructionTable[tblind].tclInstCode
 			       == INST_EVAL_STK) ? "script" : "expression"));
 	    goto cleanup;
 	}
@@ -1056,7 +1022,7 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	    int savedMaxStackDepth = envPtr->maxStackDepth;
 	    envPtr->currStackDepth = 0;
 	    envPtr->maxStackDepth = 0;
-	    switch(talInstructionTable[tblind].tclInstCode) {
+	    switch(TalInstructionTable[tblind].tclInstCode) {
 	    case INST_EVAL_STK:
 		TclCompileScript(interp, tokenPtr[1].start,
 				 tokenPtr[1].size, envPtr);
@@ -1067,8 +1033,8 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 		break;
 	    default:
 		Tcl_Panic("no ASSEM_EVAL case for %s (%d), can't happen",
-			  talInstructionTable[tblind].name,
-			  talInstructionTable[tblind].tclInstCode);
+			  TalInstructionTable[tblind].name,
+			  TalInstructionTable[tblind].tclInstCode);
 	    }
 	    SyncStackDepth(assemEnvPtr);
 	    envPtr->currStackDepth = savedStackDepth;
@@ -1109,7 +1075,7 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	entry = Tcl_CreateHashEntry(&assemEnvPtr->labelHash,
 				    Tcl_GetString(operand1Obj), &isNew);
 	if (isNew) {
-	    l = (label *) ckalloc(sizeof(label));
+	    l = (JumpLabel*) ckalloc(sizeof(JumpLabel));
 	    l -> isDefined = 0;
 	    l -> offset = -1;
 	    Tcl_SetHashValue(entry, l);
@@ -1118,19 +1084,20 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	}
 	if (l -> isDefined) {
 	    BBEmitInst1or4(assemEnvPtr, tblind, 
-			   (l->offset + envPtr->codeStart
-			    - envPtr->codeNext), 0);
+			   l->offset - (envPtr->codeNext - envPtr->codeStart),
+			   0);
 	} else {
 	    int here = envPtr->codeNext - envPtr->codeStart;
 	    BBEmitInstInt4(assemEnvPtr, tblind, l->offset, 0);
 	    l->offset = here;
-	}   
+	}
                     
 	/* Start a new basic block at the instruction following the jump */
 
+	assemEnvPtr->curr_bb->jumpLine = assemEnvPtr->cmdLine;
 	StartBasicBlock(assemEnvPtr,
-			talInstructionTable[tblind].operandsConsumed,
-			Tcl_GetString(operand1Obj));
+			TalInstructionTable[tblind].operandsConsumed,
+			operand1Obj);
 
 	break;
                              
@@ -1147,15 +1114,6 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	if (DefineLabel(assemEnvPtr, Tcl_GetString(operand1Obj)) != TCL_OK) {
 	    goto cleanup;
 	}
-	StartBasicBlock(assemEnvPtr, 1, NULL);
-
-	/* Attach the label to the new basic block */
-
-	/* TODO - do this in DefineLable and make the BB a field in the
-	 * label struct */
-	entry = Tcl_CreateHashEntry(&assemEnvPtr->BBHash,
-				    Tcl_GetString(operand1Obj), &opnd);
-	Tcl_SetHashValue(entry, assemEnvPtr->curr_bb);
 	break;
 
     case ASSEM_LVT:
@@ -1679,8 +1637,11 @@ DefineLabel(AssembleEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_HashEntry* entry;	/* Label's entry in the symbol table */
     int isNew;			/* Flag == 1 iff the label was previously
 				 * undefined */
-    label* l;			/*  */
-    Tcl_Obj* result;
+    JumpLabel* l;		/* 'JumpLabel' struct describing the
+				 * newly defined label */
+    Tcl_Obj* result;		/* Error message */
+
+    StartBasicBlock(assemEnvPtr, 1, NULL);
 
     /* Look up the newly-defined label in the symbol table */
 
@@ -1689,21 +1650,27 @@ DefineLabel(AssembleEnv* assemEnvPtr,	/* Assembly environment */
 
 	/* This is the first appearance of the label in the code */
 
-	l = (label *)ckalloc(sizeof(label));
+	l = (JumpLabel*)ckalloc(sizeof(JumpLabel));
 	l->isDefined = 1;
 	l->offset = envPtr->codeNext - envPtr->codeStart; 
+	l->basicBlock = assemEnvPtr->curr_bb;
 	Tcl_SetHashValue(entry, l);
 
     } else {
 
 	/* The label has appeared earlier. Make sure that it's not defined. */
 
-	l = (label *) Tcl_GetHashValue(entry);
+	l = (JumpLabel*) Tcl_GetHashValue(entry);
 	if (l->isDefined) {
-	    result = Tcl_NewStringObj("duplicate definition of label \"", -1);
-	    Tcl_AppendToObj(result, labelName, -1);
-	    Tcl_AppendToObj(result, "\"", -1);
-	    Tcl_SetObjResult(interp, result);
+	    if (assemEnvPtr-> flags & (TCL_EVAL_DIRECT)) {
+		result = Tcl_NewStringObj("duplicate definition "
+					  "of label \"", -1);
+		Tcl_AppendToObj(result, labelName, -1);
+		Tcl_AppendToObj(result, "\"", -1);
+		Tcl_SetObjResult(interp, result);
+		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "DUPLABEL", 
+				 labelName, NULL);
+	    }
 	    return TCL_ERROR;
 	} else {
 
@@ -1715,18 +1682,16 @@ DefineLabel(AssembleEnv* assemEnvPtr,	/* Assembly environment */
 	    int jump = l->offset;
 	    while (jump >= 0) {
 		int prevJump = TclGetInt4AtPtr(envPtr->codeStart + jump + 1);
-#if 0
-		fprintf(stderr, "fixup jump at %d to refer to %d\n",
-			jump, envPtr->codeNext - envPtr->codeStart);
-#endif
 		TclStoreInt4AtPtr(envPtr->codeNext - envPtr->codeStart - jump,
 				  envPtr->codeStart + jump + 1);
 		jump = prevJump;
 	    }
 	    l->offset = envPtr->codeNext - envPtr->codeStart;
+	    l->basicBlock = assemEnvPtr->curr_bb;
 	    l->isDefined = 1;
 	}   
     }
+
     return TCL_OK;
 }
 
@@ -1750,20 +1715,19 @@ StartBasicBlock(AssembleEnv* assemEnvPtr,
 		int fallsThrough,
 				/* 1 if execution falls through into
 				 * the following block, 0 otherwise */
-		const char* jumpLabel)
+		Tcl_Obj* jumpLabel)
 				/* Label of the location that the
 				 * block jumps to, or NULL if the block
 				 * does not jump */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    int isNew;	       		/* Unused return from Tcl_CreateHashEntry */
     BasicBlock* newBB;	 	/* BasicBlock structure for the new block */
     BasicBlock* currBB = assemEnvPtr->curr_bb;
 
     /* Coalesce zero-length blocks */
 
-    if (currBB->start == envPtr->codeNext) {
+    if (currBB->startOffset == envPtr->codeNext - envPtr->codeStart) {
 	return currBB;
     }
 
@@ -1773,11 +1737,8 @@ StartBasicBlock(AssembleEnv* assemEnvPtr,
 
     /* Record the jump target if there is one. */
 
-    if (jumpLabel) {
-	currBB->jumpTargetLabelHashEntry =
-	    Tcl_CreateHashEntry(&assemEnvPtr->BBHash, jumpLabel, &isNew);
-    } else {
-	currBB->jumpTargetLabelHashEntry = NULL;
+    if ((currBB->jumpTarget = jumpLabel) != NULL) { 
+	Tcl_IncrRefCount(currBB->jumpTarget);
     }
 
     /* Record the fallthrough if there is one. */
@@ -1812,8 +1773,9 @@ AllocBB(AssembleEnv* assemEnvPtr)
     CompileEnv* envPtr = assemEnvPtr->envPtr;
     BasicBlock * bb = (BasicBlock *) ckalloc(sizeof(BasicBlock));
 
-    bb->start = envPtr->codeNext;
+    bb->startOffset = envPtr->codeNext - envPtr->codeStart;
     bb->startLine = assemEnvPtr->cmdLine;
+    bb->jumpLine = -1;
     bb->initialStackDepth = 0;
     bb->minStackDepth = 0;
     bb->maxStackDepth = 0;
@@ -1823,7 +1785,7 @@ AllocBB(AssembleEnv* assemEnvPtr)
 
     bb->predecessor = NULL;
     bb->may_fall_thru = 0;
-    bb->jumpTargetLabelHashEntry = NULL;
+    bb->jumpTarget = NULL;
     bb->successor1 = NULL;
 
     return bb;
@@ -1864,12 +1826,16 @@ FinishAssembly(AssembleEnv* assemEnvPtr)
     Tcl_Obj* resultObj;		/* Error message from this function */
     int litIndex;		/* Index of the empty literal {} */
 
-    /* TODO - Check for undefined labels */
-
     /* Tie off the last basic block */
 
     curr_bb->may_fall_thru = 0;
-    curr_bb->jumpTargetLabelHashEntry = NULL;
+    curr_bb->jumpTarget = NULL;
+
+    /* Make sure there are no undefined labels */
+
+    if (CheckUndefinedLabels(assemEnvPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
 
     /* Compute stack balance throughout the program */
 
@@ -1890,7 +1856,7 @@ FinishAssembly(AssembleEnv* assemEnvPtr)
 	if (depth == 0) {
 	    /* Emit a 'push' of the empty literal */
 	    litIndex = TclRegisterNewLiteral(envPtr, "", 0);
-	    /* Assumes that 'push' is at slot 0 in talInstructionTable */
+	    /* Assumes that 'push' is at slot 0 in TalInstructionTable */
 	    BBEmitInst1or4(assemEnvPtr, 0, litIndex, 0);
 	    ++depth;
 	}
@@ -1916,6 +1882,58 @@ FinishAssembly(AssembleEnv* assemEnvPtr)
 
 	envPtr->currStackDepth += depth;
     }
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * CheckUndefinedLabels --
+ *
+ *	Check to make sure that the assembly code contains no undefined
+ *	labels.
+ *
+ * Results:
+ *	Returns a standard Tcl result, with an appropriate error message
+ *	if undefined labels exist.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+CheckUndefinedLabels(AssembleEnv* assemEnvPtr)
+				/* Assembly environment */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    BasicBlock* bbPtr;		/* Pointer to a basic block being checked */
+    Tcl_HashEntry* entry;	/* Exit label's entry in the symbol table */
+    JumpLabel* l;		/* Exit label of the block */
+    Tcl_Obj* result;		/* Error message */
+
+    for (bbPtr = assemEnvPtr->head_bb; bbPtr != NULL; bbPtr=bbPtr->successor1)
+	{
+	    if (bbPtr->jumpTarget != NULL) {
+		entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash, 
+					  Tcl_GetString(bbPtr->jumpTarget));
+		l = (JumpLabel*) Tcl_GetHashValue(entry);
+		if (!(l->isDefined)) {
+		    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+			result = Tcl_NewStringObj("undefined label \"", -1);
+			Tcl_AppendObjToObj(result, bbPtr->jumpTarget);
+			Tcl_AppendToObj(result, "\"", -1);
+			Tcl_SetObjResult(interp, result);
+			Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NOLABEL",
+					 Tcl_GetString(bbPtr->jumpTarget),
+					 NULL);
+			Tcl_SetErrorLine(interp, bbPtr->jumpLine);
+		    }
+		    return TCL_ERROR;
+		}
+	    }
+	}
     return TCL_OK;
 }
 
@@ -2065,11 +2083,13 @@ StackCheckBasicBlock(AssembleEnv* assemEnvPtr,
 				      blockPtr, stackDepth);        
         
     }
-    if (result == TCL_OK && blockPtr->jumpTargetLabelHashEntry != NULL) {
-        BasicBlock * targetBlock = (BasicBlock *)
-	    Tcl_GetHashValue(blockPtr->jumpTargetLabelHashEntry);
-        result = StackCheckBasicBlock(assemEnvPtr, targetBlock, blockPtr,
-				      stackDepth);
+    if (result == TCL_OK && blockPtr->jumpTarget != NULL) {
+	Tcl_HashEntry* entry =
+	    Tcl_FindHashEntry(&assemEnvPtr->labelHash,
+			      Tcl_GetString(blockPtr->jumpTarget));
+	JumpLabel* targetLabel = (JumpLabel*) Tcl_GetHashValue(entry);
+        result = StackCheckBasicBlock(assemEnvPtr, targetLabel->basicBlock,
+				      blockPtr, stackDepth);
     }
     return result;
 }

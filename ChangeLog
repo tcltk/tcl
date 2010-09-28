@@ -1,3 +1,18 @@
+2010-09-28  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* tests/assemble.test: Added more "white box" tests.
+	* generic/tclAssembly.c: Added the error checking and reporting
+	for undefined labels. Revised code so that no pointers into the
+	bytecode sequence are held (because the sequence can move!),
+	that no Tcl_HashEntry pointers are held (because the hash table
+	doesn't guarantee their stability!) and to eliminate the BBHash
+	table, which is merely additional information indexed by jump
+	labels and can just as easily be held in the 'label' structure.
+	Renamed shared structures to CamelCase, and renamed 'label' to
+	JumpLabel because other types of labels may eventually be possible.
+
 2010-09-27  Kevin B. Kenny  <kennykb@acm.org>
 
 	[dogeen-assembler-branch]
