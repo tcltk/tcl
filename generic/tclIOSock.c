@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOSock.c,v 1.11 2007/02/20 23:24:04 nijtmans Exp $
+ * RCS: @(#) $Id: tclIOSock.c,v 1.12 2010/09/28 15:13:54 rmax Exp $
  */
 
 #include "tclInt.h"
@@ -104,6 +104,151 @@ TclSockMinimumBuffers(
 	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&size, len);
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCreateSocketAddress --
+ *
+ *	This function initializes a sockaddr structure for a host and port.
+ *
+ * Results:
+ *	1 if the host was valid, 0 if the host could not be converted to an IP
+ *	address.
+ *
+ * Side effects:
+ *	Fills in the *sockaddrPtr structure.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCreateSocketAddress(
+    Tcl_Interp *interp,                 /* Interpreter for querying
+					 * the desired socket family */
+    struct addrinfo **addrlist,		/* Socket address list */
+    const char *host,			/* Host. NULL implies INADDR_ANY */
+    int port,				/* Port number */
+    int willBind,			/* Is this an address to bind() to or
+					 * to connect() to? */
+    const char **errorMsgPtr)		/* Place to store the error message
+					 * detail, if available. */
+{
+    struct addrinfo hints;
+    struct addrinfo *p;
+    struct addrinfo *v4head = NULL, *v4ptr = NULL;
+    struct addrinfo *v6head = NULL, *v6ptr = NULL;
+    char *native = NULL, portstring[TCL_INTEGER_SPACE];
+    const char *family;
+    Tcl_DString ds;
+    int result, i;
+
+    TclFormatInt(portstring, port);
+
+    if (host != NULL) {
+	native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
+    }
+    
+    (void) memset(&hints, 0, sizeof(hints));
+    
+    hints.ai_family = AF_UNSPEC;
+    /* Magic variable to enforce a certain address family */
+    family = Tcl_GetVar(interp, "::tcl::unsupported::socketAF", 0);
+    if (family != NULL) {
+        if (strcmp(family, "inet") == 0) {
+            hints.ai_family = AF_INET;
+        } else if (strcmp(family, "inet6") == 0) {
+            hints.ai_family = AF_INET6;
+        }
+    }
+
+    hints.ai_socktype = SOCK_STREAM;
+#if defined(AI_ADDRCONFIG) && !defined(_AIX)
+    /* Missing on: OpenBSD, NetBSD.  Causes failure when used on AIX 5.1 */
+    hints.ai_flags |= AI_ADDRCONFIG;
+#endif
+    if (willBind) {
+	hints.ai_flags |= AI_PASSIVE;
+    } 
+
+    result = getaddrinfo(native, portstring, &hints, addrlist);
+
+    if (host != NULL) {
+	Tcl_DStringFree(&ds);
+    }
+
+    if (result != 0) {
+	goto error;
+    }
+
+    /*
+     * Put IPv4 addresses before IPv6 addresses to maximize backwards
+     * compatibility of [fconfigure -sockname] output.
+     *
+     * There might be more elegant/efficient ways to do this.
+     */
+    if (willBind) {
+	for (p = *addrlist; p != NULL; p = p->ai_next) {
+	    if (p->ai_family == AF_INET) {
+		if (v4head == NULL) {
+		    v4head = p;
+		} else {
+		    v4ptr->ai_next = p;
+		}
+		v4ptr = p;
+	    } else {
+		if (v6head == NULL) {
+		    v6head = p;
+		} else {
+		    v6ptr->ai_next = p;
+		}
+		v6ptr = p;
+	    }
+	}
+	*addrlist = NULL;
+	if (v6head != NULL) {
+	    *addrlist = v6head;
+	    v6ptr->ai_next = NULL;
+	}
+	if (v4head != NULL) {
+	    v4ptr->ai_next = *addrlist;
+	    *addrlist = v4head;
+	}
+    }
+    i = 0;
+    for (p = *addrlist; p != NULL; p = p->ai_next) {
+	i++;
+    }
+    
+    return 1;
+	
+    /*
+     * Ought to use gai_strerror() here...
+     */
+
+error:
+    switch (result) {
+    case EAI_NONAME:
+    case EAI_SERVICE:
+#if defined(EAI_ADDRFAMILY) && EAI_ADDRFAMILY != EAI_NONAME
+    case EAI_ADDRFAMILY:
+#endif
+#if defined(EAI_NODATA) && EAI_NODATA != EAI_NONAME
+    case EAI_NODATA:
+#endif
+	*errorMsgPtr = gai_strerror(result);
+	errno = EHOSTUNREACH;
+	return 0;
+#ifdef EAI_SYSTEM
+    case EAI_SYSTEM:
+	return 0;
+#endif
+    default:
+	*errorMsgPtr = gai_strerror(result);
+	errno = ENXIO;
+	return 0;
+    }
 }
 
 /*
