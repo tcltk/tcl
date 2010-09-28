@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.72 2010/04/23 15:45:15 nijtmans Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.73 2010/09/28 15:13:55 rmax Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -132,7 +132,10 @@ MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 #endif
 #include <netinet/in.h>		/* struct in_addr, struct sockaddr_in */
 #include <arpa/inet.h>		/* inet_ntoa() */
-#include <netdb.h>		/* gethostbyname() */
+#include <netdb.h>		/* getaddrinfo() */
+#ifdef NEED_FAKE_RFC2553
+# include "../compat/fake-rfc2553.h"
+#endif
 
 /*
  * Some platforms (e.g. SunOS) don't define FLT_MAX and FLT_MIN, so we
@@ -596,6 +599,11 @@ typedef int socklen_t;
 #   undef inet_ntoa
 #   define inet_ntoa(x)	TclpInetNtoa(x)
 #endif /* TCL_THREADS */
+
+/* FIXME */
+#ifndef AF_INET6
+#define AF_INET6 10
+#endif
 
 /*
  * Set of MT-safe implementations of some
