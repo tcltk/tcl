@@ -3,12 +3,20 @@
 
 #include "tclCompile.h"
 
+/* 
+ * Structure that defines a basic block - a linear sequence of bytecode
+ * instructions with no jumps in or out.
+ */
+
 typedef struct BasicBlock {
-    /* FIXME: start needs to be an offset from envPtr->codeStart */
-    unsigned char * start;	/* Instruction address of the start
-				 * of the block */
-    int startLine;		/* Index in the input instruction
-				 * list of the start of the block */
+
+    int startOffset;		/* Instruction offset of the start of 
+				 * the block */
+    int startLine;		/* Line number in the input script of the
+				 * instruction at the  start of the block */
+    int jumpLine;	        /* Line number in the input script of the
+				 * 'jump' instruction that ends the block,
+				 * or -1 if there is no jump */
     int may_fall_thru;      	/* Flag == 1 if control passes from this
 				 * block to its successor. */
     int visited;		/* Flag==1 if this block has been visited
@@ -21,8 +29,7 @@ typedef struct BasicBlock {
 				 * block:  NULL at the end of the bytecode 
 				 * sequence or if the block ends in an
 				 * unconditional jump */ 
-    Tcl_HashEntry * jumpTargetLabelHashEntry;
-				/* Jump target label if the jump target 
+    Tcl_Obj * jumpTarget;	/* Jump target label if the jump target 
 				 * is unresolved */
     
     int initialStackDepth;	/* Absolute stack depth on entry */
@@ -32,7 +39,9 @@ typedef struct BasicBlock {
 
 } BasicBlock;
 
-typedef enum talInstType {
+/* Source instruction type recognized by the assembler */
+
+typedef enum TalInstType {
 
     ASSEM_1BYTE,    /* The instructions that are directly mapped to tclInstructionTable in tclCompile.c*/
     ASSEM_BOOL,	    /* One Boolean operand */
@@ -54,21 +63,56 @@ typedef enum talInstType {
     ASSEM_PUSH,     /* These instructions will be looked up from talInstructionTable */
     ASSEM_REVERSE,  /* REVERSE: consumes n operands and produces n */
     ASSEM_SINT1,    /* One 1-byte signed-integer operand (INCR_STK_IMM) */
-} talInstType;
+} TalInstType;
 
-typedef struct talInstDesc {
+/* Description of an instruction recognized by the assembler. */
+
+typedef struct TalInstDesc {
     const char *name;		/* Name of instruction. */
-    talInstType instType; 	/* The type of instruction */
-    int tclInstCode;
-    int operandsConsumed;
-    int operandsProduced;
+    TalInstType instType; 	/* The type of instruction */
+    int tclInstCode;		/* Instruction code. For instructions having
+				 * 1- and 4-byte variables, tclInstCode is
+				 * ((1byte)<<8) || (4byte) */
+    int operandsConsumed;	/* Number of operands consumed by the
+				 * operation, or INT_MIN if the operation
+				 * is variadic */
+    int operandsProduced;	/* Number of operands produced by the
+				 * operation. If negative, the operation
+				 * has a net stack effect of 
+				 * -1-operandsProduced */
+} TalInstDesc;
 
-} talInstDesc;
+/* Description of a label in the assembly code */
 
-typedef struct label {
-    int isDefined;
-    int offset;    
-} label;
+typedef struct JumpLabel {
+    int isDefined;		/* Flag == 1 if label is defined */
+    int offset;			/* Offset in the code where the label starts,
+				 * or head of a linked list of jump target
+				 * addresses if the label is undefined */
+    BasicBlock* basicBlock;	/* Basic block that begins at the label */
+} JumpLabel;
+
+/* Structure that holds the state of the assembler while generating code */
+
+typedef struct AssembleEnv {
+    CompileEnv* envPtr;		/* Compilation environment being used
+				 * for code generation */
+    Tcl_Parse* parsePtr;        /* Parse of the current line of source */
+    Tcl_HashTable labelHash;	/* Hash table whose keys are labels and
+				 * whose values are 'label' objects storing 
+				 * the code offsets of the labels. */
+
+    int cmdLine;		/* Current line number within the assembly 
+				 * code */
+    int* clNext;		/* Invisible continuation line for
+				 * [info frame] */
+
+    BasicBlock* head_bb;	/* First basic block in the code */
+    BasicBlock* curr_bb;	/* Current basic block */
+
+    int maxDepth;	     	/* Maximum stack depth encountered */
+    int flags;			/* Compilation flags (TCL_EVAL_DIRECT) */
+} AssembleEnv;
 
 MODULE_SCOPE int TclAssembleCode(CompileEnv* compEnv, const char* codePtr,
 				 int codeLen, int flags);
