@@ -1576,6 +1576,237 @@ test assemble-15.6 {invokeStk4} {
     -cleanup {rename x {}}
 }
 
+# assemble-16 -- jumps and labels
+
+test assemble-16.1 {label, wrong # args} {
+    -body {
+	assemble {label}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-16.2 {label, wrong # args} {
+    -body {
+	assemble {label too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-16.3 {label, bad subst} {
+    -body {
+	list [catch {assemble {label $foo}} result] $result $::errorCode
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+    -cleanup {unset result}
+}
+
+test assemble-16.4 {duplicate label} {
+    -body {
+	list [catch {assemble {label foo; label foo}} result] \
+	    $result $::errorCode
+    }
+    -result {1 {duplicate definition of label "foo"} {TCL ASSEM DUPLABEL foo}}
+}
+
+test assemble-16.5 {jump, wrong # args} {
+    -body {
+	assemble {jump}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-16.6 {jump, wrong # args} {
+    -body {
+	assemble {jump too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-16.7 {jump, bad subst} {
+    -body {
+	list [catch {assemble {jump $foo}} result] $result $::errorCode
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+    -cleanup {unset result}
+}
+
+test assemble-16.8 {jump - ahead and back} {
+    -body {
+	assemble {
+	    jump three
+
+	    label one
+	    push a
+	    jump four
+
+	    label two
+	    push b
+	    jump six
+
+	    label three
+	    push c
+	    jump five
+
+	    label four
+	    push d
+	    jump two
+
+	    label five
+	    push e
+	    jump one
+
+	    label six
+	    push f
+	    concat 6
+	}
+    }
+    -result ceadbf
+}
+
+test assemble-16.9 {jump - resolve a label multiple times} {
+    -body {
+	proc x {} {
+	    set case 0
+	    set result {}
+	    assemble {
+		jump common
+		
+		label zero
+		pop		
+		incrImm case 1
+		pop
+		push a
+		append result
+		pop
+		jump common
+		
+		label one
+		pop
+		incrImm case 1
+		pop
+		push b
+		append result
+		pop
+		jump common
+		
+		label common
+		load case
+		dup
+		push 0
+		eq
+		jumpTrue zero
+		dup
+		push 1
+		eq
+		jumpTrue one
+		dup
+		push 2
+		eq
+		jumpTrue two
+		dup
+		push 3
+		eq
+		jumpTrue three
+		
+		label two
+		pop
+		incrImm case 1
+		pop
+		push c
+		append result
+		pop
+		jump common
+		
+		label three
+		pop
+		incrImm case 1
+		pop
+		push d
+		append result
+	    }
+	}
+	x
+    }
+    -result abcd
+    -cleanup {rename x {}}
+}
+
+test assemble-16.10 {jump4} {
+    -body {
+	assemble "push x; jump one; label two; [string repeat {dup; pop;} 128]
+	      jump three; label one; jump two; label three"
+    }
+    -result x
+}
+
+test assemble-16.11 {jumpTrue} {
+    -body {
+	proc x {y} {
+	    assemble {
+		load y
+		jumpTrue then
+		push no
+		jump else
+		label then
+		push yes
+		label else
+	    }
+	}
+	list [x 0] [x 1]
+    }
+    -result {no yes}
+    -cleanup {rename x {}}
+}
+
+test assemble-16.12 {jumpFalse} {
+    -body {
+	proc x {y} {
+	    assemble {
+		load y
+		jumpFalse then
+		push no
+		jump else
+		label then
+		push yes
+		label else
+	    }
+	}
+	list [x 0] [x 1]
+    }
+    -result {yes no}
+    -cleanup {rename x {}}
+}
+
+test assemble-16.13 {jump to undefined label} {
+    -body {
+	list [catch {assemble {jump nowhere}} result] $result $::errorCode
+    }
+    -result {1 {undefined label "nowhere"} {TCL ASSEM NOLABEL nowhere}}
+}
+
+test assemble-16.14 {jump to undefined label, line number correct?} {
+    -body {
+	catch {assemble {#1
+	    #2
+	    #3
+	    jump nowhere
+	    #5
+	    #6
+	}}
+	set ::errorInfo
+    }
+    -match glob
+    -result {*"assemble" body, line 4*}
+}
+	    
 
 test assemble-1.6 {Testing push, dup, add} {
     -body { 
@@ -1661,7 +1892,7 @@ test assemble-1.8a {unbalanced stack} {*}{
 	    } result] $result $::errorInfo
     }
     -result {1 {stack underflow} {stack underflow
-    in assembly code between lines 6 and 8*}}
+    in assembly code between lines 7 and 8*}}
     -match glob
    -returnCodes ok
 }
@@ -2069,7 +2300,7 @@ test assemble-1.30 {Inconsistent stack usage} {*}{
     }
     -match glob
     -result {inconsistent stack depths on two execution paths
-    ("assemble" body, line 9)*}
+    ("assemble" body, line 10)*}
 }
 
 test assemble-1.31 {unset, exists, lappend - smoke test} {
