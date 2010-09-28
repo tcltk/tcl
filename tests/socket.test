@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.43 2010/06/25 15:20:06 rmax Exp $
+# RCS: @(#) $Id: socket.test,v 1.43.2.1 2010/09/28 15:43:01 kennykb Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -69,6 +69,10 @@ namespace import -force ::tcltest::*
 testConstraint testthread [llength [info commands testthread]]
 testConstraint exec [llength [info commands exec]]
 
+# Produce a random port number in the Dynamic/Private range
+# from 49152 through 65535.
+proc randport {} { expr {int(rand()*16383+49152)} }
+
 # If remoteServerIP or remoteServerPort are not set, check in the environment
 # variables for externally set values.
 #
@@ -79,7 +83,7 @@ if {![info exists remoteServerIP]} {
     }
 }
 if {![info exists remoteServerPort]} {
-    if {[info exists env(remoteServerIP)]} {
+    if {[info exists env(remoteServerPort)]} {
 	set remoteServerPort $env(remoteServerPort)
     } else {
         if {[info exists remoteServerIP]} {
@@ -97,7 +101,7 @@ if {![info exists remoteServerIP]} {
     set remoteServerIP 127.0.0.1
 }
 if {($doTestsWithRemoteServer == 1) && (![info exists remoteServerPort])} {
-    set remoteServerPort 2048
+    set remoteServerPort [randport]
 }
 
 # Attempt to connect to a remote server if one is already running. If it is
@@ -173,24 +177,24 @@ if {[testConstraint doTestsWithRemoteServer]} {
 	    error "remote server disappeared: $msg"
 	}
 
-	set resp ""
 	while {1} {
 	    set line [gets $commandSocket]
 	    if {[eof $commandSocket]} {
 		error "remote server disappaered"
 	    }
-	    if {[string compare $line "--Marker--Marker--Marker--"] == 0} {
-		if {[string compare [lindex $resp 0] error] == 0} {
-		    error [lindex $resp 1]
-		} else {
-		    return [lindex $resp 1]
-		}
-	    } else {
-		append resp $line "\n"
+	    if {$line eq "--Marker--Marker--Marker--"} {
+		lassign $result code info value
+                return -code $code -errorinfo $info $value
 	    }
+            append result $line "\n"
 	}
     }
 }
+
+proc getPort sock {
+    lindex [fconfigure $sock -sockname] 2
+}
+
 
 # ----------------------------------------------------------------------
 
@@ -270,12 +274,8 @@ test socket-2.1 {tcp connection} -constraints {socket stdio} -setup {
 } -cleanup {
     close $f
 } -result {ready done {}}
-if {[info exists port]} {
-    incr port
-} else {
-    set port [expr {2048 + [pid]%1024}]
-}
 test socket-2.2 {tcp connection with client port specified} -setup {
+    set port [randport]
     file delete $path(script)
     set f [open $path(script) w]
     puts $f {
@@ -299,29 +299,29 @@ test socket-2.2 {tcp connection with client port specified} -setup {
     gets $f listen
 } -constraints {socket stdio} -body {
     # $x == "ready" at this point
-    global port
     set sock [socket -myport $port 127.0.0.1 $listen]
     puts $sock hello
     flush $sock
-    lappend x [gets $f]
+    lappend x [expr {[gets $f] eq "hello $port"}]
     close $sock
     return $x
 } -cleanup {
     catch {close [socket 127.0.0.1 $listen]}
     close $f
-} -result [list ready "hello $port"]
+} -result {ready 1}
 test socket-2.3 {tcp connection with client interface specified} -setup {
     file delete $path(script)
     set f [open $path(script) w]
     puts $f {
 	set timer [after 2000 "set x done"]
-        set f [socket  -server accept 2830]
+        set f [socket  -server accept 0]
 	proc accept {file addr port} {
             global x
             puts "[gets $file] $addr"
             close $file
             set x done
 	}
+	puts [lindex [fconfigure $f -sockname] 2]
 	puts ready
 	vwait x
 	after cancel $timer
@@ -329,10 +329,11 @@ test socket-2.3 {tcp connection with client interface specified} -setup {
     }
     close $f
     set f [open "|[list [interpreter] $path(script)]" r]
+    gets $f listen
     gets $f x
 } -constraints {socket stdio} -body {
     # $x == "ready" at this point
-    set sock [socket -myaddr 127.0.0.1 127.0.0.1 2830]
+    set sock [socket -myaddr 127.0.0.1 127.0.0.1 $listen]
     puts $sock hello
     flush $sock
     lappend x [gets $f]
@@ -409,7 +410,7 @@ test socket-2.5 {tcp connection with redundant server port} -setup {
 } -result {ready hello}
 test socket-2.6 {tcp connection} -constraints socket -body {
     set status ok
-    if {![catch {set sock [socket 127.0.0.1 2833]}]} {
+    if {![catch {set sock [socket 127.0.0.1 [randport]]}]} {
 	if {![catch {gets $sock}]} {
 	    set status broken
 	}
@@ -810,7 +811,7 @@ test socket-7.2 {testing socket specific options} -setup {
     file delete $path(script)
     set f [open $path(script) w]
     puts $f {
-	set ss [socket -server accept 2821]
+	set ss [socket -server accept 0]
 	proc accept args {
 	    global x
 	    set x done
@@ -1061,44 +1062,42 @@ test socket-10.1 {testing socket accept callback error handling} -constraints {
 } -result 1
 
 test socket-11.1 {tcp connection} -setup {
-    sendCommand {
-	set socket9_1_test_server [socket -server accept 2834]
+    set port [sendCommand {
+	set server [socket -server accept 0]
 	proc accept {s a p} {
 	    puts $s done
 	    close $s
 	}
-    }
+	getPort $server
+    }]
 } -constraints {socket doTestsWithRemoteServer} -body {
-    set s [socket $remoteServerIP 2834]
+    set s [socket $remoteServerIP $port]
     gets $s
 } -cleanup {
     close $s
-    sendCommand {close $socket9_1_test_server}
+    sendCommand {close $server}
 } -result done
 test socket-11.2 {client specifies its port} -setup {
-    if {[info exists port]} {
-	incr port
-    } else {
-	set port [expr 2048 + [pid]%1024]
-    }
-    sendCommand {
-	set socket9_2_test_server [socket -server accept 2835]
+    set lport [randport]
+    set rport [sendCommand {
+	set server [socket -server accept 0]
 	proc accept {s a p} {
 	    puts $s $p
 	    close $s
 	}
-    }
+	getPort $server
+    }]
 } -constraints {socket doTestsWithRemoteServer} -body {
-    set s [socket -myport $port $remoteServerIP 2835]
+    set s [socket -myport $lport $remoteServerIP $rport]
     set r [gets $s]
-    expr {$r==$port ? "ok" : "broken: $r != $port"}
+    expr {$r==$lport ? "ok" : "broken: $r != $port"}
 } -cleanup {
     close $s
-    sendCommand {close $socket9_2_test_server}
+    sendCommand {close $server}
 } -result ok
 test socket-11.3 {trying to connect, no server} -body {
     set status ok
-    if {![catch {set s [socket $remoteServerIp 2836]}]} {
+    if {![catch {set s [socket $remoteServerIp [randport]]}]} {
 	if {![catch {gets $s}]} {
 	    set status broken
 	}
@@ -1107,8 +1106,8 @@ test socket-11.3 {trying to connect, no server} -body {
     return $status
 } -constraints {socket doTestsWithRemoteServer} -result ok
 test socket-11.4 {remote echo, one line} -setup {
-    sendCommand {
-	set socket10_6_test_server [socket -server accept 2836]
+    set port [sendCommand {
+	set server [socket -server accept 0]
 	proc accept {s a p} {
 	    fileevent $s readable [list echo $s]
 	    fconfigure $s -buffering line -translation crlf
@@ -1121,19 +1120,20 @@ test socket-11.4 {remote echo, one line} -setup {
 		puts $s $l
 	    }
 	}
-    }
+	getPort $server
+    }]
 } -constraints {socket doTestsWithRemoteServer} -body {
-    set f [socket $remoteServerIP 2836]
+    set f [socket $remoteServerIP $port]
     fconfigure $f -translation crlf -buffering line
     puts $f hello
     gets $f
 } -cleanup {
     catch {close $f}
-    sendCommand {close $socket10_6_test_server}
+    sendCommand {close $server}
 } -result hello
 test socket-11.5 {remote echo, 50 lines} -setup {
-    sendCommand {
-	set socket10_7_test_server [socket -server accept 2836]
+    set port [sendCommand {
+	set server [socket -server accept 0]
 	proc accept {s a p} {
 	    fileevent $s readable [list echo $s]
 	    fconfigure $s -buffering line -translation crlf
@@ -1146,9 +1146,10 @@ test socket-11.5 {remote echo, 50 lines} -setup {
 		puts $s $l
 	    }
 	}
-    }
+	getPort $server
+    }]
 } -constraints {socket doTestsWithRemoteServer} -body {
-    set f [socket $remoteServerIP 2836]
+    set f [socket $remoteServerIP $port]
     fconfigure $f -translation crlf -buffering line
     for {set cnt 0} {$cnt < 50} {incr cnt} {
 	puts $f "hello, $cnt"
@@ -1159,19 +1160,19 @@ test socket-11.5 {remote echo, 50 lines} -setup {
     return $cnt
 } -cleanup {
     close $f
-    sendCommand {close $socket10_7_test_server}
+    sendCommand {close $server}
 } -result 50
 test socket-11.6 {socket conflict} -setup {
-    set s1 [socket -server accept -myaddr 127.0.0.1 2836]
+    set s1 [socket -server accept -myaddr 127.0.0.1 0]
 } -constraints {socket doTestsWithRemoteServer} -body {
-    set s2 [socket -server accept -myaddr 127.0.0.1 2836]
-    list [lindex [fconfigure $s2 -sockname] 2] [close $s2]
+    set s2 [socket -server accept -myaddr 127.0.0.1 [getPort $s1]]
+    list [getPort $s2] [close $s2]
 } -cleanup {
     close $s1
 } -returnCodes error -result {couldn't open socket: address already in use}
 test socket-11.7 {server with several clients} -setup {
-    sendCommand {
-	set socket10_9_test_server [socket -server accept 2836]
+    set port [sendCommand {
+	set server [socket -server accept 0]
 	proc accept {s a p} {
 	    fconfigure $s -buffering line
 	    fileevent $s readable [list echo $s]
@@ -1184,13 +1185,14 @@ test socket-11.7 {server with several clients} -setup {
 		puts $s $l
 	    }
 	}
-    }
+	getPort $server
+    }]
 } -constraints {socket doTestsWithRemoteServer} -body {
-    set s1 [socket $remoteServerIP 2836]
+    set s1 [socket $remoteServerIP $port]
     fconfigure $s1 -buffering line
-    set s2 [socket $remoteServerIP 2836]
+    set s2 [socket $remoteServerIP $port]
     fconfigure $s2 -buffering line
-    set s3 [socket $remoteServerIP 2836]
+    set s3 [socket $remoteServerIP $port]
     fconfigure $s3 -buffering line
     for {set i 0} {$i < 100} {incr i} {
 	puts $s1 hello,s1
@@ -1205,22 +1207,23 @@ test socket-11.7 {server with several clients} -setup {
     close $s1
     close $s2
     close $s3
-    sendCommand {close $socket10_9_test_server}
+    sendCommand {close $server}
 } -result 100
 test socket-11.8 {client with several servers} -setup {
-    sendCommand {
-	set s1 [socket -server "accept 4003" 4003]
-	set s2 [socket -server "accept 4004" 4004]
-	set s3 [socket -server "accept 4005" 4005]
+    lassign [sendCommand {
+	set s1 [socket -server "accept server1" 0]
+	set s2 [socket -server "accept server2" 0]
+	set s3 [socket -server "accept server3" 0]
 	proc accept {mp s a p} {
 	    puts $s $mp
 	    close $s
 	}
-    }
+	list [getPort $s1] [getPort $s2] [getPort $s3]
+    }] p1 p2 p3
 } -constraints {socket doTestsWithRemoteServer} -body {
-    set s1 [socket $remoteServerIP 4003]
-    set s2 [socket $remoteServerIP 4004]
-    set s3 [socket $remoteServerIP 4005]
+    set s1 [socket $remoteServerIP $p1]
+    set s2 [socket $remoteServerIP $p2]
+    set s3 [socket $remoteServerIP $p3]
     list [gets $s1] [gets $s1] [eof $s1] [gets $s2] [gets $s2] [eof $s2] \
 	[gets $s3] [gets $s3] [eof $s3]
 } -cleanup {
@@ -1232,7 +1235,7 @@ test socket-11.8 {client with several servers} -setup {
 	close $s2
 	close $s3
     }
-} -result {4003 {} 1 4004 {} 1 4005 {} 1}
+} -result {server1 {} 1 server2 {} 1 server3 {} 1}
 test socket-11.9 {accept callback error} -constraints {
     socket doTestsWithRemoteServer
 } -setup {
@@ -1243,12 +1246,13 @@ test socket-11.9 {accept callback error} -constraints {
     interp bgerror {} [namespace which myHandler]
     set timer [after 10000 "set x timed_out"]
 } -body {
-    set s [socket -server accept 2836]
-    proc accept {s a p} {expr 10 / 0}
+    set s [socket -server accept 0]
+    proc accept {s a p} {expr {10 / 0}}
+    sendCommand "set port [getPort $s]"
     if {[catch {
 	sendCommand {
 	    set peername [fconfigure $callerSocket -peername]
-	    set s [socket [lindex $peername 0] 2836]
+	    set s [socket [lindex $peername 0] $port]
 	    close $s
     	 }
     } msg]} then {
@@ -1263,22 +1267,23 @@ test socket-11.9 {accept callback error} -constraints {
     interp bgerror {} $handler
 } -result {divide by zero}
 test socket-11.10 {testing socket specific options} -setup {
-    sendCommand {
-	set socket10_12_test_server [socket -server accept 2836]
+    set port [sendCommand {
+	set server [socket -server accept 0]
 	proc accept {s a p} {close $s}
-    }
+	getPort $server
+    }]
 } -constraints {socket doTestsWithRemoteServer} -body {
-    set s [socket $remoteServerIP 2836]
+    set s [socket $remoteServerIP $port]
     set p [fconfigure $s -peername]
     set n [fconfigure $s -sockname]
-    list [lindex $p 2] [llength $p] [llength $n]
+    list [expr {[lindex $p 2] == $port}] [llength $p] [llength $n]
 } -cleanup {
     close $s
-    sendCommand {close $socket10_12_test_server}
-} -result {2836 3 3}
+    sendCommand {close $server}
+} -result {1 3 3}
 test socket-11.11 {testing spurious events} -setup {
-    sendCommand {
-	set socket10_13_test_server [socket -server accept 2836]
+    set port [sendCommand {
+	set server [socket -server accept 0]
 	proc accept {s a p} {
 	    fconfigure $s -translation "auto lf"
 	    after 100 writesome $s
@@ -1289,7 +1294,8 @@ test socket-11.11 {testing spurious events} -setup {
 	    }
 	    close $s
 	}
-    }
+	getPort $server
+    }]
     set len 0
     set spurious 0
     set done 0
@@ -1309,23 +1315,24 @@ test socket-11.11 {testing spurious events} -setup {
 	    incr len [string length $l]
 	}
     }
-    set c [socket $remoteServerIP 2836]
+    set c [socket $remoteServerIP $port]
     fileevent $c readable "readlittle $c"
     vwait done
     list $spurious $len $done
 } -cleanup {
     after cancel $timer
-    sendCommand {close $socket10_13_test_server}
+    sendCommand {close $server}
 } -result {0 2690 1}
 test socket-11.12 {testing EOF stickyness} -constraints {socket doTestsWithRemoteServer} -setup {
     set counter 0
     set done 0
-    sendCommand {
-	set socket10_14_test_server [socket -server accept 2836]
+    set port [sendCommand {
+	set server [socket -server accept 0]
 	proc accept {s a p} {
 	    after 100 close $s
 	}
-    }
+	getPort $server
+    }]
     proc timed_out {} {
 	global c done
 	set done {timed_out, EOF is not sticky}
@@ -1344,16 +1351,16 @@ test socket-11.12 {testing EOF stickyness} -constraints {socket doTestsWithRemot
 	    }
 	}
     }
-    set c [socket $remoteServerIP 2836]
+    set c [socket $remoteServerIP $port]
     fileevent $c readable [list count_up $c]
     vwait done
     return $done
 } -cleanup {
     after cancel $after_id
-    sendCommand {close $socket10_14_test_server}
+    sendCommand {close $server}
 } -result {EOF is sticky}
 test socket-11.13 {testing async write, async flush, async close} -setup {
-    sendCommand {
+    set port [sendCommand {
 	set firstblock ""
 	for {set i 0} {$i < 5} {incr i} {
 		set firstblock "a$firstblock$firstblock"
@@ -1362,7 +1369,7 @@ test socket-11.13 {testing async write, async flush, async close} -setup {
 	for {set i 0} {$i < 16} {incr i} {
 	    set secondblock "b$secondblock$secondblock"
 	}
-	set l [socket -server accept 2845]
+	set l [socket -server accept 0]
 	proc accept {s a p} {
 	    fconfigure $s -blocking 0 -translation lf -buffersize 16384 \
 		-buffering line
@@ -1383,7 +1390,8 @@ test socket-11.13 {testing async write, async flush, async close} -setup {
 	    puts -nonewline $s $secondblock
 	    close $s
 	}
-    }
+	getPort $l
+    }]
     set timer [after 10000 "set done timed_out"]
 } -constraints {socket doTestsWithRemoteServer} -body {
     proc readit {s} {
@@ -1395,7 +1403,7 @@ test socket-11.13 {testing async write, async flush, async close} -setup {
 	    set done 1
 	}
     }
-    set s [socket $remoteServerIP 2845]
+    set s [socket $remoteServerIP $port]
     fconfigure $s -blocking 0 -trans lf -buffering line
     set count 0
     puts $s hello
@@ -1650,7 +1658,7 @@ removeFile script1
 removeFile script2
 
 # cleanup
-if {[string match sock* $commandSocket] == 1} {
+if {$remoteProcChan ne ""} {
     catch {sendCommand exit}
 }
 catch {close $commandSocket}
