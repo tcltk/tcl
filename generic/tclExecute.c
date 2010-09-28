@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.500 2010/09/27 20:16:30 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.501 2010/09/28 15:20:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -721,7 +721,6 @@ static Tcl_NRPostProc	CopyCallback;
 static Tcl_NRPostProc	ExprObjCallback;
 
 static Tcl_NRPostProc   TEBCresume;
-static Tcl_NRPostProc   TEBCreturn;
 
 /*
  * The structure below defines a bytecode Tcl object type to hold the
@@ -1939,37 +1938,13 @@ TclNRExecuteByteCode(
 #endif
 
     /*
-     * Push the callbacks for
-     *  - exception handling and cleanup
-     *  - bytecode execution
+     * Push the callback for bytecode execution
      */
     
-    TclNRAddCallback(interp, TEBCreturn, BP, NULL,
-	    NULL, NULL);
     TclNRAddCallback(interp, TEBCresume, BP,
 	    /*resume*/ INT2PTR(0), NULL, NULL);
     
     return TCL_OK;
-}
-
-static int
-TEBCreturn(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    BottomData *BP = data[0];
-    ByteCode *codePtr = BP->codePtr;
-
-    if (--codePtr->refCount <= 0) {
-	TclCleanupByteCode(codePtr);
-    }
-    while (BP->expanded) {
-	BP = BP->expanded;
-    }
-    TclStackFree(interp, BP);	/* free my stack */
-
-    return result;
 }
 
 static int
@@ -2074,7 +2049,6 @@ TEBCresume(
 	    result = TCL_ERROR;
 	}
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
-	NRE_ASSERT(TOP_CB(interp)->procPtr == TEBCreturn);
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 	TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
 	
@@ -6352,11 +6326,18 @@ TEBCresume(
 	CLANG_ASSERT(bcFramePtr);
     }
 
+    
     /*
-     * Store the previous bottomPtr for returning to it, then free all
-     * resources used by this bytecode and process callbacks until you return
-     * to the previous bytecode (if any).
+     * Free all resources associated with this execution
      */
+    
+    if (--codePtr->refCount <= 0) {
+	TclCleanupByteCode(codePtr);
+    }
+    while (BP->expanded) {
+	BP = BP->expanded;
+    }
+    TclStackFree(interp, BP);	/* free my stack */
 
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
     return result;

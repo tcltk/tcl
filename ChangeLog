@@ -1,3 +1,8 @@
+2010-09-27  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: remove TEBCreturn() callback, the job can
+	be accomplished by TEBCresume()
+
 2010-09-28  Reinhard Max  <max@suse.de>
 
 	Implementation of TIP #162, "IPv6 Sockets for Tcl"
@@ -20,14 +25,14 @@
 	* unix/configure.in:	 Test whether the fake-implementation is
 	* unix/tcl.m4:		 needed.
 	* unix/Makefile.in:	 Add a compile target for fake-rfc2553.
-	 
+ 
 	* win/configure.in:      Allow cross-compilation by default
 
 	* tests/socket.test: Improve the test suite to make more use of
 	* tests/remote.tcl:  randomized ports to reduce interference with
 			     tests running in parallel or other services
 			     on the machine.
-	
+
 2010-09-26  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    [Patch 3072080] (minus the itcl
