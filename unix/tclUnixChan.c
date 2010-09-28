@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.43 2010/06/21 20:23:42 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.44 2010/09/28 17:30:18 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1681,8 +1681,9 @@ Tcl_MakeFileChannel(
 	sprintf(channelName, "serial%d", fd);
     } else
 #endif /* SUPPORTS_TTY */
-    if ((getsockname(fd, &sockaddr, &sockaddrLen) == 0)
-	    && (sockaddrLen > 0) && (sockaddr.sa_family == AF_INET)) {
+    if ((getsockname(fd, (struct sockaddr *)&sockaddr, &sockaddrLen) == 0)
+	&& (sockaddrLen > 0)
+	&& (sockaddr.sa_family == AF_INET || sockaddr.sa_family == AF_INET6)) {
 	return TclpMakeTcpClientChannelMode(INT2PTR(fd), mode);
     } else {
 	channelTypePtr = &fileChannelType;

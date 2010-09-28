@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74.2.44 2010/08/27 14:29:51 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.45 2010/09/28 17:30:18 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -60,31 +60,9 @@ AC_PROG_CC
 AC_C_INLINE
 AC_HEADER_STDC
 
-# To properly support cross-compilation, one would
-# need to use these tool checks instead of
-# the ones below and reconfigure with
-# autoconf 2.50. You can also just set
-# the CC, AR, RANLIB, and RC environment
-# variables if you want to cross compile.
-dnl AC_CHECK_TOOL(AR, ar)
-dnl AC_CHECK_TOOL(RANLIB, ranlib)
-dnl AC_CHECK_TOOL(RC, windres)
-
-if test "${GCC}" = "yes" ; then
-    AC_CHECK_PROG(AR, ar, ar)
-    AC_CHECK_PROG(RANLIB, ranlib, ranlib)
-    AC_CHECK_PROG(RC, windres, windres)
-
-    if test "${AR}" = "" ; then
-	AC_MSG_ERROR([Required archive tool 'ar' not found on PATH.])
-    fi
-    if test "${RANLIB}" = "" ; then
-	AC_MSG_ERROR([Required archive index tool 'ranlib' not found on PATH.])
-    fi
-    if test "${RC}" = "" ; then
-	AC_MSG_ERROR([Required resource tool 'windres' not found on PATH.])
-    fi
-fi
+AC_CHECK_TOOL(AR, ar)
+AC_CHECK_TOOL(RANLIB, ranlib)
+AC_CHECK_TOOL(RC, windres)
 
 #--------------------------------------------------------------------
 # Checks to see if the make program sets the $MAKE variable.

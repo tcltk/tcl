@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.72 2010/08/12 12:34:18 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.73 2010/09/28 17:30:18 dgp Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -216,7 +216,7 @@ if test "`uname -s`" = "Darwin" && test "${TCL_THREADS}" = 1 && \
 fi
 AC_CHECK_FUNC(realpath, , [AC_DEFINE(NO_REALPATH, 1, [Do we have realpath()])])
 
-SC_TCL_GETADDRINFO
+SC_TCL_IPV6
 
 #-------------------------------------------------------------------- 
 #	Look for thread-safe variants of some library functions.
