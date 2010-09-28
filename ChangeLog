@@ -1,3 +1,33 @@
+2010-09-28  Reinhard Max  <max@suse.de>
+
+	Implementation of TIP #162, "IPv6 Sockets for Tcl"
+	
+	* doc/socket.n:         Document the changes to the [socket] and
+			        [fconfiguyre] commands.
+
+	* generic/tclInt.h:     Introduce TclCreateSocketAddress() as a
+	* generic/tclIOSock.c:  replacement for the platform-dependent
+	* unix/tclUnixSock.c:   TclpCreateSocketAddress() functions.
+	* unix/tclUnixChan.c:   Extend the [socket] and [fconfigure]
+	* unix/tclUnixPort.h:   commands to behave as proposed in
+	* win/tclWinSock.c:     TIP #162.
+	* win/tclWinPort.h: 
+
+	* compat/fake-rfc2553.c: A compat implementation of the APIs
+	* compat/fake-rfc2553.h: defined in RFC-2553 (getaddrinfo() and
+				 friends) on top of the existing
+				 gethostbyname() etc.
+	* unix/configure.in:	 Test whether the fake-implementation is
+	* unix/tcl.m4:		 needed.
+	* unix/Makefile.in:	 Add a compile target for fake-rfc2553.
+	 
+	* win/configure.in:      Allow cross-compilation by default
+
+	* tests/socket.test: Improve the test suite to make more use of
+	* tests/remote.tcl:  randomized ports to reduce interference with
+			     tests running in parallel or other services
+			     on the machine.
+	
 2010-09-26  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    [Patch 3072080] (minus the itcl
