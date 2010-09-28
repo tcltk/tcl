@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.61 2010/09/14 08:53:49 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.62 2010/09/28 15:13:55 rmax Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -23,10 +23,10 @@
  */
 
 #ifndef WINVER
-#   define WINVER 0x0500
+#   define WINVER 0x0501
 #endif
 #ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0500
+#   define _WIN32_WINNT 0x0501
 #endif
 
 #define WIN32_LEAN_AND_MEAN
@@ -38,6 +38,7 @@
  */
 #define INCL_WINSOCK_API_TYPEDEFS   1
 #include <winsock2.h>
+#include <ws2tcpip.h>
 
 #ifdef CHECK_UNICODE_CALLS
 #   define _UNICODE
