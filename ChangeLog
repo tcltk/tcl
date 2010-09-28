@@ -1,8 +1,3 @@
-2010-09-27  Miguel Sofer  <msofer@users.sf.net>
-
-	* generic/tclExecute.c: remove TEBCreturn() callback, the job can
-	be accomplished by TEBCresume()
-
 2010-09-28  Reinhard Max  <max@suse.de>
 
 	Implementation of TIP #162, "IPv6 Sockets for Tcl"
