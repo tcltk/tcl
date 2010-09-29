@@ -1,3 +1,12 @@
+2010-09-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* tests/assemble.test:   Completed conversion of tests to a
+	* generic/tclAssemble.c: "white box" structure that follows the
+	C code. Added missing safety checks on the operands of 'over' and
+	'reverse' so that negative operand counts don't smash the stack.
+
 2010-09-28  Reinhard Max  <max@suse.de>
 
 	Implementation of TIP #162, "IPv6 Sockets for Tcl"
