@@ -10,8 +10,18 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.51 2010/09/23 18:08:35 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.52 2010/09/29 20:04:09 nijtmans Exp $
  */
+
+/**
+ * On Windows, this file needs to be compiled twice, once with
+ * TCL_ASCII_MAIN defined. This way both Tcl_Main and Tcl_MainExW
+ * can be implemented, sharing the same source code.
+ */
+#ifndef TCL_ASCII_MAIN
+#   undef UNICODE
+#   undef _UNICODE
+#endif
 
 #include "tclInt.h"
 
@@ -20,6 +30,36 @@
  */
 
 #define DEFAULT_PRIMARY_PROMPT	"% "
+
+/*
+ * This file can be compiled on Windows in UNICODE mode, as well as
+ * on all other platforms using the native encoding. This is done
+ * by using the normal Windows functions like _tcscmp, but on
+ * platforms which don't have <tchar.h> we have to translate that
+ * to strcmp here.
+ */
+#ifndef __WIN32__
+#   define TCHAR char
+#   define TEXT(arg) arg
+#   define _tcscmp strcmp
+#   define _tcslen strlen
+#   define _tcsncmp strncmp
+#endif
+
+/*
+ * Further on, in UNICODE mode, we need to use functions like
+ * Tcl_GetUnicodeFromObj, while otherwise Tcl_GetStringFromObj
+ * is needed. Those macro's assure that the right functions
+ * are used depending on the mode.
+ */
+#ifndef UNICODE
+#   undef Tcl_GetUnicodeFromObj
+#   define Tcl_GetUnicodeFromObj Tcl_GetStringFromObj
+#   undef Tcl_NewUnicodeObj
+#   define Tcl_NewUnicodeObj Tcl_NewStringObj
+#   undef Tcl_WinTCharToUtf
+#   define Tcl_WinTCharToUtf(a,b,c) Tcl_ExternalToUtfDString(NULL,a,b,c)
+#endif /* !UNICODE */
 
 /*
  * Declarations for various library functions and variables (don't want to
@@ -43,7 +83,6 @@ typedef struct {
 				/* Any installed main loop handler. The main
 				 * extension that installs these is Tk. */
 } ThreadSpecificData;
-static Tcl_ThreadDataKey dataKey;
 
 /*
  * Structure definition for information used to keep the state of an
@@ -74,10 +113,12 @@ typedef struct InteractiveState {
  * Forward declarations for functions defined later in this file.
  */
 
-static Tcl_MainLoopProc * GetMainLoop(void);
+MODULE_SCOPE Tcl_MainLoopProc *TclGetMainLoop(void);
 static void		Prompt(Tcl_Interp *interp, PromptType *promptPtr);
 static void		StdinProc(ClientData clientData, int mask);
 
+#ifndef TCL_ASCII_MAIN
+static Tcl_ThreadDataKey dataKey;
 /*
  *----------------------------------------------------------------------
  *
@@ -220,6 +261,7 @@ Tcl_SourceRCFile(
 	Tcl_DStringFree(&temp);
     }
 }
+#endif /* !TCL_ASCII_MAIN */
 
 /*----------------------------------------------------------------------
  *
@@ -242,7 +284,7 @@ Tcl_SourceRCFile(
 void
 Tcl_Main(
     int argc,			/* Number of arguments. */
-    char **argv,		/* Array of argument strings. */
+    TCHAR **argv,		/* Array of argument strings. */
     Tcl_AppInitProc *appInitProc)
 				/* Application-specific initialization
 				 * function to call after most initialization
@@ -271,18 +313,20 @@ Tcl_Main(
     if (NULL == Tcl_GetStartupScript(NULL)) {
 	/*
 	 * Check whether first 3 args (argv[1] - argv[3]) look like
-	 *	-encoding ENCODING FILENAME
+	 *  -encoding ENCODING FILENAME
 	 * or like
-	 *	FILENAME
+	 *  FILENAME
 	 */
 
-	if ((argc > 3) && (0 == strcmp("-encoding", argv[1]))
-		&& ('-' != argv[3][0])) {
-	    Tcl_SetStartupScript(Tcl_NewStringObj(argv[3], -1), argv[2]);
+	if ((argc > 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
+		&& (TEXT('-') != argv[3][0])) {
+		Tcl_Obj *value = Tcl_NewUnicodeObj(argv[2], -1);
+	    Tcl_SetStartupScript(Tcl_NewUnicodeObj(argv[3], -1), Tcl_GetString(value));
+	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    argv += 3;
-	} else if ((argc > 1) && ('-' != argv[1][0])) {
-	    Tcl_SetStartupScript(Tcl_NewStringObj(argv[1], -1), NULL);
+	} else if ((argc > 1) && (TEXT('-') != argv[1][0])) {
+	    Tcl_SetStartupScript(Tcl_NewUnicodeObj(argv[1], -1), NULL);
 	    argc--;
 	    argv++;
 	}
@@ -290,11 +334,11 @@ Tcl_Main(
 
     path = Tcl_GetStartupScript(&encodingName);
     if (path == NULL) {
-	Tcl_ExternalToUtfDString(NULL, argv[0], -1, &appName);
+	Tcl_WinTCharToUtf(argv[0], -1, &appName);
     } else {
-	const char *pathName = Tcl_GetStringFromObj(path, &length);
+	const TCHAR *pathName = Tcl_GetUnicodeFromObj(path, &length);
 
-	Tcl_ExternalToUtfDString(NULL, pathName, length, &appName);
+	Tcl_WinTCharToUtf(pathName, length * sizeof(TCHAR), &appName);
 	path = Tcl_NewStringObj(Tcl_DStringValue(&appName), -1);
 	Tcl_SetStartupScript(path, encodingName);
     }
@@ -309,7 +353,7 @@ Tcl_Main(
     while (argc--) {
 	Tcl_DString ds;
 
-	Tcl_ExternalToUtfDString(NULL, *argv++, -1, &ds);
+	Tcl_WinTCharToUtf(*argv++, -1, &ds);
 	Tcl_ListObjAppendElement(NULL, argvPtr, Tcl_NewStringObj(
 		Tcl_DStringValue(&ds), Tcl_DStringLength(&ds)));
 	Tcl_DStringFree(&ds);
@@ -402,7 +446,7 @@ Tcl_Main(
     inChannel = Tcl_GetStdChannel(TCL_STDIN);
     outChannel = Tcl_GetStdChannel(TCL_STDOUT);
     while ((inChannel != NULL) && !Tcl_InterpDeleted(interp)) {
-	mainLoopProc = GetMainLoop();
+	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
 	    if (tty) {
 		Prompt(interp, &prompt);
@@ -554,7 +598,7 @@ Tcl_Main(
     }
 
   done:
-    mainLoopProc = GetMainLoop();
+    mainLoopProc = TclGetMainLoop();
     if ((exitCode == 0) && (mainLoopProc != NULL)
 	    && !Tcl_LimitExceeded(interp)) {
 	/*
@@ -607,6 +651,7 @@ Tcl_Main(
     Tcl_Exit(exitCode);
 }
 
+#ifndef TCL_ASCII_MAIN
 /*
  *---------------------------------------------------------------
  *
@@ -636,7 +681,7 @@ Tcl_SetMainLoop(
 /*
  *---------------------------------------------------------------
  *
- * GetMainLoop --
+ * TclGetMainLoop --
  *
  *	Returns the current alternative main loop function.
  *
@@ -652,13 +697,14 @@ Tcl_SetMainLoop(
  *---------------------------------------------------------------
  */
 
-static Tcl_MainLoopProc *
-GetMainLoop(void)
+Tcl_MainLoopProc *
+TclGetMainLoop(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     return tsdPtr->mainLoopProc;
 }
+#endif /* !TCL_ASCII_MAIN */
 
 /*
  *----------------------------------------------------------------------
@@ -816,10 +862,12 @@ Prompt(
     }
     if (promptCmdPtr == NULL) {
     defaultPrompt:
-	outChannel = Tcl_GetStdChannel(TCL_STDOUT);
-	if ((*promptPtr == PROMPT_START) && (outChannel != NULL)) {
-	    Tcl_WriteChars(outChannel, DEFAULT_PRIMARY_PROMPT,
-		    strlen(DEFAULT_PRIMARY_PROMPT));
+	if (*promptPtr == PROMPT_START) {
+	    outChannel = Tcl_GetStdChannel(TCL_STDOUT);
+	    if (outChannel != NULL) {
+		Tcl_WriteChars(outChannel, DEFAULT_PRIMARY_PROMPT,
+			strlen(DEFAULT_PRIMARY_PROMPT));
+	    }
 	}
     } else {
 	code = Tcl_EvalObjEx(interp, promptCmdPtr, TCL_EVAL_GLOBAL);
