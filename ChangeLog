@@ -1,9 +1,14 @@
+2010-09-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/configure:      re-generate with autoconf-2.59
+	* win/configure:
+
 2010-09-28  Reinhard Max  <max@suse.de>
 
 	Implementation of TIP #162, "IPv6 Sockets for Tcl"
-	
+
 	* doc/socket.n:         Document the changes to the [socket] and
-			        [fconfiguyre] commands.
+			        [fconfigure] commands.
 
 	* generic/tclInt.h:     Introduce TclCreateSocketAddress() as a
 	* generic/tclIOSock.c:  replacement for the platform-dependent
@@ -11,7 +16,7 @@
 	* unix/tclUnixChan.c:   Extend the [socket] and [fconfigure]
 	* unix/tclUnixPort.h:   commands to behave as proposed in
 	* win/tclWinSock.c:     TIP #162.
-	* win/tclWinPort.h: 
+	* win/tclWinPort.h:
 
 	* compat/fake-rfc2553.c: A compat implementation of the APIs
 	* compat/fake-rfc2553.h: defined in RFC-2553 (getaddrinfo() and
@@ -20,7 +25,7 @@
 	* unix/configure.in:	 Test whether the fake-implementation is
 	* unix/tcl.m4:		 needed.
 	* unix/Makefile.in:	 Add a compile target for fake-rfc2553.
- 
+
 	* win/configure.in:      Allow cross-compilation by default
 
 	* tests/socket.test: Improve the test suite to make more use of
@@ -33,9 +38,9 @@
 	* generic/tclBasic.c:    [Patch 3072080] (minus the itcl
 	* generic/tclCmdIL.c:    update): a saner NRE.
 	* generic/tclCompExpr.c:
-	* generic/tclCompile.c:  This makes TclNRExecuteByteCode 
+	* generic/tclCompile.c:  This makes TclNRExecuteByteCode
 	* generic/tclCompile.h:  (ex TEBC) to be a normal NRE
-	* generic/tclExecute.c:  citizen: it loses its special status. 
+	* generic/tclExecute.c:  citizen: it loses its special status.
 	* generic/tclInt.decls:  The logic flow within the BC engine is
 	* generic/tclInt.h:      simplified considerably.
 	* generic/tclIntDecls.h:
