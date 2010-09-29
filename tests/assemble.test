@@ -1806,54 +1806,467 @@ test assemble-16.14 {jump to undefined label, line number correct?} {
     -match glob
     -result {*"assemble" body, line 4*}
 }
-	    
 
-test assemble-1.6 {Testing push, dup, add} {
-    -body { 
-	assemble {
-	    push 2
-	    dup
-	    add
-	}
+# assemble-17 - over
+
+test assemble-17.1 {over - wrong # args} {
+    -body {
+	assemble {over}
     }
-    -result {4}
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
 }
 
-test assemble-1.6a {wrong # args} {
+test assemble-17.2 {over - wrong # args} {
     -body {
-	catch {
+	assemble {over too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-17.3 {over - bad subst} {
+    -body {
+	assemble {over $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+
+test assemble-17.4 {over - not a number} {
+    -body {
+	proc x {} {
+	    assemble {over rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-17.5 {over - negative operand count} {
+    -body {
+	proc x {} {
+	    assemble {over -1}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be nonnegative} {TCL ASSEM NONNEGATIVE}}
+    -cleanup {rename x {}; unset result}
+}
+
+test assemble-17.6 {over} {
+    -body {
+	proc x {} {
 	    assemble {
-		push 2 2
-		dup
-		add
+		push 1
+		push 2
+		push 3
+		over 0
+		store x
+		pop
+		pop
+		pop
+		pop
+		load x
 	    }
 	}
-	set ::errorInfo
+	x
     }
-    -match glob
-    -result {wrong # args: should be "push value"
-    while executing
-"push 2 2"
-    ("assemble" body, line 2)*
-    }
+    -result 3
+    -cleanup {rename x {}}
 }
 
-test assemble-1.7 {longer sequence} {
+test assemble-17.7 {over} {
     -body {
-	assemble {
-	    push 3
-	    dup
-	    mult
-	    push 4
-	    dup
-	    mult
-	    expon
+	proc x {} {
+	    assemble {
+		push 1
+		push 2
+		push 3
+		over 2
+		store x
+		pop
+		pop
+		pop
+		pop
+		load x
+	    }
 	}
+	x
     }
-    -result {1853020188851841}
+    -result 1
+    -cleanup {rename x {}}
 }
 
-test assemble-1.8 {unbalanced stack} {
+# assemble-18 - reverse
+
+test assemble-18.1 {reverse - wrong # args} {
+    -body {
+	assemble {reverse}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-18.2 {reverse - wrong # args} {
+    -body {
+	assemble {reverse too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-18.3 {reverse - bad subst} {
+    -body {
+	assemble {reverse $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+
+test assemble-18.4 {reverse - not a number} {
+    -body {
+	proc x {} {
+	    assemble {reverse rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-18.5 {reverse - negative operand count} {
+    -body {
+	proc x {} {
+	    assemble {reverse -1}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be nonnegative} {TCL ASSEM NONNEGATIVE}}
+    -cleanup {rename x {}; unset result}
+}
+
+test assemble-18.6 {reverse - zero operand count} {
+    -body {
+	proc x {} {
+	    assemble {push 1; reverse 0}
+	}
+	x
+    }
+    -result 1
+    -cleanup {rename x {}}
+}
+
+test assemble-18.7 {reverse} {
+    -body {
+	proc x {} {
+	    assemble {
+		push 1
+		push 2
+		push 3
+		reverse 1
+		store x
+		pop
+		pop
+		pop
+		load x
+	    }
+	}
+	x
+    }
+    -result 3
+    -cleanup {rename x {}}
+}
+
+test assemble-18.8 {reverse} {
+    -body {
+	proc x {} {
+	    assemble {
+		push 1
+		push 2
+		push 3
+		reverse 3
+		store x
+		pop
+		pop
+		pop
+		load x
+	    }
+	}
+	x
+    }
+    -result 1
+    -cleanup {rename x {}}
+}
+
+# assemble-19 - ASSEM_BOOL (strmatch, unsetStk, unsetArrayStk)
+
+test assemble-19.1 {strmatch - wrong # args} {
+    -body {
+	assemble {strmatch}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-19.2 {strmatch - wrong # args} {
+    -body {
+	assemble {strmatch too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-19.3 {strmatch - bad subst} {
+    -body {
+	assemble {strmatch $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+
+test assemble-18.4 {strmatch - not a boolean} {
+    -body {
+	proc x {} {
+	    assemble {strmatch rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected boolean value but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-18.5 {strmatch} {
+    -body {
+	proc x {a b} {
+	    list [assemble {load a; load b; strmatch 0}] \
+		[assemble {load a; load b; strmatch 1}]
+	}
+	list [x foo*.grill fengbar.grill] [x foo*.grill foobar.grill] [x foo*.grill FOOBAR.GRILL]
+    }
+    -result {{0 0} {1 1} {0 1}}
+    -cleanup {rename x {}}
+}
+
+test assemble-18.6 {unsetStk} {
+    -body {
+	proc x {} {
+	    set a {}
+	    assemble {push a; unsetStk false}
+	    info exists a
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+
+test assemble-18.7 {unsetStk} {
+    -body {
+	proc x {} {
+	    assemble {push a; unsetStk false}
+	    info exists a
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-18.8 {unsetStk} {
+    -body {
+	proc x {} {
+	    assemble {push a; unsetStk true}
+	    info exists a
+	}
+	x
+    }
+    -returnCodes error
+    -result {can't unset "a": no such variable}
+    -cleanup {rename x {}}
+}
+
+test assemble-18.9 {unsetArrayStk} {
+    -body {
+	proc x {} {
+	    set a(b) {}
+	    assemble {push a; push b; unsetArrayStk false}
+	    info exists a(b)
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+
+test assemble-18.10 {unsetArrayStk} {
+    -body {
+	proc x {} {
+	    assemble {push a; push b; unsetArrayStk false}
+	    info exists a(b)
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-18.11 {unsetArrayStk} {
+    -body {
+	proc x {} {
+	    assemble {push a; push b; unsetArrayStk true}
+	    info exists a(b)
+	}
+	x
+    }
+    -returnCodes error
+    -result {can't unset "a(b)": no such variable}
+    -cleanup {rename x {}}
+}
+
+# assemble-19 -- ASSEM_BOOL_LVT4 (unset; unsetArray)
+
+test assemble-19.1 {unset - wrong # args} {
+    -body {
+	assemble {unset one}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-19.2 {unset - wrong # args} {
+    -body {
+	assemble {unset too many args}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-19.3 {unset - bad subst -arg 1} {
+    -body {
+	assemble {unset $foo bar}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+
+test assemble-19.4 {unset - not a boolean} {
+    -body {
+	proc x {} {
+	    assemble {unset rubbish trash}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected boolean value but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-19.5 {unset - bad subst - arg 2} {
+    -body {
+	assemble {unset true $bar}
+    }
+    -returnCodes error
+    -result {assembly code may not contain substitutions}
+}
+
+test assemble-19.6 {unset - nonlocal var} {
+    -body {
+	assemble {unset true ::foo::bar}
+    }
+    -returnCodes error
+    -result {variable "::foo::bar" is not local}
+}
+
+test assemble-19.7 {unset} {
+    -body {
+	proc x {} {
+	    set a {}
+	    assemble {unset false a}
+	    info exists a
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+
+test assemble-19.8 {unset} {
+    -body {
+	proc x {} {
+	    assemble {unset false a}
+	    info exists a
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-19.9 {unset} {
+    -body {
+	proc x {} {
+	    assemble {unset true a}
+	    info exists a
+	}
+	x
+    }
+    -returnCodes error
+    -result {can't unset "a": no such variable}
+    -cleanup {rename x {}}
+}
+
+test assemble-19.10 {unsetArray} {
+    -body {
+	proc x {} {
+	    set a(b) {}
+	    assemble {push b; unsetArray false a}
+	    info exists a(b)
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+
+test assemble-19.11 {unsetArray} {
+    -body {
+	proc x {} {
+	    assemble {push b; unsetArray false a}
+	    info exists a(b)
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-19.12 {unsetArray} {
+    -body {
+	proc x {} {
+	    assemble {push b; unsetArray true a}
+	    info exists a(b)
+	}
+	x
+    }
+    -returnCodes error
+    -result {can't unset "a(b)": no such variable}
+    -cleanup {rename x {}}
+}
+
+test assemble-20.1 {unbalanced stack} {
     -body {
 	list \
 	    [catch {
@@ -1875,7 +2288,7 @@ test assemble-1.8 {unbalanced stack} {
    -returnCodes ok
 }
 
-test assemble-1.8a {unbalanced stack} {*}{
+test assemble-20.2 {unbalanced stack} {*}{
     -body {
 	list \
 	    [catch {
@@ -1897,390 +2310,7 @@ test assemble-1.8a {unbalanced stack} {*}{
    -returnCodes ok
 }
 
-# Tests for load and store
-
-test assemble-1.9 { Testing load within a proc } {
-    -body { 
-	proc x y { 
-	    assemble {
-		load y
-		dup 
-		mult
-	    }
-	}
-	x 10
-    }
-    -result {100}
-}
-
-test assemble-1.10 {store and load again} {
-    -body {  
-	proc x arg { 
-	    assemble {
-		push aString
-		store arg
-		pop
-		load arg
-	    } 
-	    } 
-	x "not_aString"	
-    }
-    -result {aString}
-}
-
-test assemble-1.11 {Testing storeArray and loadArray} {
-    -body { 
-	set anArray(1,2) "not_aString" 
-	proc x arg { 
-	    upvar $arg anArray
-	    assemble {
-		push 1,2
-		push aString
-		storeArray anArray
-		pop
-		push 1,2
-		loadArray anArray
-	    } 
-	}
-	x anArray 
-    }
-    -cleanup {unset anArray}
-    -result {aString}
-}
-
-test assemble-1.12 {Testing loadStk with a variable} {
-    -body { 
-	set vara 10
-	assemble {
-	    push vara
-	    loadStk
-	    dup
-	    mult
-	    push 4
-	    dup 
-	    mult 
-	    add
-	}
-    }
-    -cleanup {unset vara}
-    -result {116}
-}
-
-test assemble-1.13 {Testing loadStk with an array variable} {
-    -body { 
-	set vararr(1,2) 10
-	assemble {
-	    push vararr(1,2)
-	    loadStk
-	    dup
-	    mult
-	    push 4
-	    dup
-	    mult
-	    add
-	}
-    }
-    -cleanup {unset vararr}
-    -result {116}
-}
-
-test assemble-1.14 {Testing loadStk and storeStk} {
-    -body {
-	set aVar 5
-	assemble {
-	    push aVar
-	    push aString
-	    storeStk
-	    pop
-	    push aVar
-	    loadStk 
-	}
-    }
-    -cleanup {unset aVar}
-    -result {aString}
-}
-
-test assemble-1.15 {Testing loadArrayStk and storeArrayStk} {
-    -body { 
-	set aVar(1,2) 5
-	assemble {
-	    push aVar
-	    push 1,2
-	    push aString
-	    storeArrayStk
-	    pop
-	    push aVar
-	    push 1,2
-	    loadArrayStk 
-	}
-    }
-    -cleanup {unset aVar}
-    -result {aString}
-}
-
-# Tests for incr instructions 
-
-test assemble-1.16 { Testing incr } {
-    -body {
-	proc x arg {
-	    set i 5 
-	    assemble {
-		push 5
-		incr i
-	    }
-	}
-	x 1
-    }
-    -result {10}
-}
-
-test assemble-1.17 { Testing incrImm } {
-    -body { 
-	proc x arg {
-	    set i 5 
-	    assemble {
-		incrImm i 5
-	    }
-	} 
-	x 1
-    }
-    -result {10}
-}
-
-test assemble-1.18 { Testing incrStk } {
-    -body {
-	proc x arg {
-	    set i 5 
-	    assemble {
-		push i
-		push 5
-		incrStk
-	    }
-	}
-	x 1
-    }
-    -result {10}
-}
-
-test assemble-1.19 { Testing incrStkImm } {
-    -body {
-	proc x arg {
-	    set i 5 
-	    assemble {
-		push i
-		incrStkImm 5
-	    }
-	} 
-	x 1
-    }
-    -result {10}
-}
-
-test assemble-1.20 { Testing incrStkImm } {
-    -body {
-	proc x arg {
-	    set i 5 
-	    assemble {
-		push i
-		incrStkImm 5
-	    }
-	} 
-	x 1
-    }
-    -result {10}
-}
-
-test assemble-1.21 { Testing incrArray } {
-    -body {
-	proc x arg {
-	    set i(1,2) 5 
-	    assemble {
-		push 1,2
-		push 5
-		incrArray i
-	    }
-	} 
-	x 1
-    }
-    -result {10}
-}
-
-test assemble-1.22 { Testing incrArrayImm } {
-    -body { 
-	proc x arg {
-	    set i(1,2) 5 
-	    assemble {
-		push 1,2
-		incrArrayImm i 5
-	    }
-	} 
-	x 1
-    }
-    -result {10}
-}
-
-test assemble-1.23 { Testing incrArrayStk } {
-    -body {
-	proc x arg {
-	    set i(1,2) 5 
-	    assemble {
-		push i
-		push 1,2
-		push 5
-		incrArrayStk
-	    }
-	} 
-	x 1
-    }
-    -result {10}
-}
-
-test assemble-1.24 { Testing incrArrayStkImm } {
-    -body {
-	proc x arg {
-	    set i(1,2) 5 
-	    assemble {
-		push i
-		push 1,2
-		incrArrayStkImm 5
-	    }
-	} 
-	x 1
-    }
-    -result {10}
-}
-
-# Tests for STRs -NOT HERE YET
-# Tests for LIST BYTECODES -NOT HERE YET
-
-# Tests for label and jump  {push NotEqual}
-
-test assemble-1.25 { Testing label and jumpTrue  } {
-    -body { 
-	proc x {arg1 arg2} {
-	    assemble {
-		label a
-		load arg2 
-		push 2
-		mult
-		store arg2
-		pop
-		load arg1
-		push 1
-		sub
-		store arg1
-		push 0
-		neq
-		jumpTrue a
-		load arg2
-	    }
-	} 
-	x 4 2
-    }
-    -result {32}
-}	
-
-test assemble-1.26 { Testing label and jumpFalse } {
-    -body { 
-	proc x {arg1 arg2} {
-	    assemble {
-		label a
-		load arg2
-		push 2
-		mult
-		store arg2
-		pop
-		load arg1
-		push 1
-		sub
-		store arg1 
-		push 0
-		eq
-		jumpFalse a
-		load arg2
-	    }
-	} 
-	x 4 2
-    }
-    -result {32}
-}
-
-test assemble-1.27 {forward jumps} {
-    -body { 
-	proc x {arg1 arg2 arg3} {
-	    assemble {
-		jump a
-		push aString
-		store arg1
-		pop
-		label a
-		jump b
-		push aString
-		store arg2
-		label b
-		jump c
-		push aString
-		store arg3
-		label c
-		load arg1
-	    }
-	}
-	x 1 2 3
-    }
-    -result {1}
-}
-
-test assemble-1.28 {forward jumps} {
-    -body { 
-	proc x {arg1 arg2 arg3} {
-	    assemble {
-		jump a
-		push aString 
-		store arg1
-		pop
-		label a
-		jump b
-		push aString
-		store arg2
-		label b
-		jump c 
-		push aString
-		store arg3
-		label c
-		load arg2
-	    }
-	}
-	x 1 2 3
-    }
-    -result {2}
-}
-
-test assemble-1.29 {forward jumps} {
-    -body { 
-	proc x {arg1 arg2 arg3} {
-	    assemble {
-		jump a
-		push aString 
-		store arg1
-		pop
-		label a
-		jump b
-		push aString
-		store arg2
-		label b
-		jump c
-		push aString
-		store arg3
-		label c
-		load arg3
-	    }
-	}
-	x 1 2 3
-    }
-    -result {3}
-}
-
-test assemble-1.30 {Inconsistent stack usage} {*}{
+test assemble-21.1 {Inconsistent stack usage} {*}{
     -body {
 	proc x {y} {
 	    assemble {
@@ -2303,137 +2333,7 @@ test assemble-1.30 {Inconsistent stack usage} {*}{
     ("assemble" body, line 10)*}
 }
 
-test assemble-1.31 {unset, exists, lappend - smoke test} {
-    -body {
-	proc x {y} {
-	    assemble {
-		exist result
-		store result
-		pop
-
-		exist result
-		lappend result
-		pop
-
-		push result
-		push y
-		existStk
-		lappendStk
-		pop
-
-		push y
-		unsetStk true
-		exist y
-		lappend result
-		pop
-
-		push {}
-		store foo
-		pop
-		exist foo
-		lappend result
-		pop
-
-		unset true foo
-		exist foo
-		lappend result
-		pop
-
-		push a
-		existArray z
-		lappend result
-		pop
-
-		push a
-		push b
-		lappendArray z
-		lappend result
-		pop
-
-		push z
-		push a
-		existArrayStk
-		lappend result
-		pop
-
-		push z
-		push a
-		push c
-		lappendArrayStk
-		lappend result
-
-	    }
-	}
-	x 1
-    }
-    -result {0 1 1 0 1 0 0 b 1 {b c}}
-}
-
-test assemble-2.1 {concat} {
-    -body {
-	assemble {
-	    push a
-	    push b
-	    push c
-	    concat 3
-	}
-    }
-    -result abc
-}
-
-test assemble-3.1 {expr} {
-    -body {
-	assemble {
-	    push {1+2+3+4+5}
-	    exprStk
-	}
-    }
-    -result 15
-}
-test assemble-4.1 {eval} {
-    -body {
-	assemble {
-	    push {join [list [expr {1+2+3+4+5}] a] {}}
-	    evalStk
-	}
-    }
-    -result 15a
-}
-test assemble-4.2 {eval} {
-    -body {
-	proc x {} {
-	    assemble {
-		push 3
-		store n
-		pop
-		eval {expr {3*$n + 1}}
-		push 1
-		add
-	    }
-	}
-	x
-    }
-    -result 11
-}
-
-test assemble-4.3 {expr} {
-    -body {
-	proc x {} {
-	    assemble {
-		push 3
-		store n
-		pop
-		expr {3*$n + 1}
-		push 1
-		add
-	    }
-	}
-	x
-    }
-    -result 11
-}
-		
-test assemble-30.1 {Ulam's 3n+1 problem, TAL implementation} {
+test assemble-22.1 {Ulam's 3n+1 problem, TAL implementation} {
     -body {
 	proc ulam {n} {
 	    assemble {
