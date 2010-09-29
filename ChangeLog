@@ -2,6 +2,7 @@
 
 	* unix/configure:      re-generate with autoconf-2.59
 	* win/configure:
+	* generic/tclMain.c    make compilable with -DUNICODE as well
 
 2010-09-28  Reinhard Max  <max@suse.de>
 
