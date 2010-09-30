@@ -15,12 +15,18 @@
 	C code. Added missing safety checks on the operands of 'over' and
 	'reverse' so that negative operand counts don't smash the stack.
 
+2010-09-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/configure:      re-generate with autoconf-2.59
+	* win/configure:
+	* generic/tclMain.c    make compilable with -DUNICODE as well
+
 2010-09-28  Reinhard Max  <max@suse.de>
 
 	Implementation of TIP #162, "IPv6 Sockets for Tcl"
 
 	* doc/socket.n:         Document the changes to the [socket] and
-			        [fconfiguyre] commands.
+			        [fconfigure] commands.
 
 	* generic/tclInt.h:     Introduce TclCreateSocketAddress() as a
 	* generic/tclIOSock.c:  replacement for the platform-dependent
