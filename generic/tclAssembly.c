@@ -32,6 +32,7 @@ static int FinishAssembly(AssembleEnv*);
 static void FreeAssembleCodeInternalRep(Tcl_Obj *objPtr);
 static void FreeAssembleEnv(AssembleEnv*);
 static int GetBooleanOperand(AssembleEnv*, Tcl_Token**, int*);
+static int GetListIndexOperand(AssembleEnv*, Tcl_Token**, int*);
 static int GetIntegerOperand(AssembleEnv*, Tcl_Token**, int*);
 static int GetNextOperand(AssembleEnv*, Tcl_Token**, Tcl_Obj**);
 static AssembleEnv* NewAssembleEnv(CompileEnv*, int);
@@ -173,11 +174,19 @@ TalInstDesc TalInstructionTable[] = {
                 ASSEM_1BYTE,    INST_LAPPEND_STK, 
                                                 2,      1}, 
     {"le",      ASSEM_1BYTE ,   INST_LE     ,   2   ,   1},
+    {"lindexMulti",
+	     	ASSEM_LINDEX_MULTI,
+     				INST_LIST_INDEX_MULTI,
+     						INT_MIN,1},
+    {"list",	ASSEM_LIST,	INST_LIST,	INT_MIN,1},
     {"listIndex", 
      		ASSEM_1BYTE,    INST_LIST_INDEX,2,      1},
+    {"listIndexImm",
+     		ASSEM_INDEX,	INST_LIST_INDEX_IMM,
+     						1,	1},
     {"listLength",
                 ASSEM_1BYTE,    INST_LIST_LENGTH,
-                                                1,    1},
+                                                1,      1},
     {"load",    ASSEM_LVT,      (INST_LOAD_SCALAR1 << 8
 	                         | INST_LOAD_SCALAR4), 
                                                 0,      1}, 
@@ -191,6 +200,8 @@ TalInstDesc TalInstructionTable[] = {
     {"loadStk", ASSEM_1BYTE,    INST_LOAD_SCALAR_STK,
                                                 1,      1},
     {"lor",     ASSEM_1BYTE ,   INST_LOR    ,   2   ,   1},
+    {"lsetFlat",
+     		ASSEM_LSET_FLAT,INST_LSET_FLAT,	INT_MIN,1},
     {"lsetList", 
                 ASSEM_1BYTE,    INST_LSET_LIST, 3,      1},
     {"lshift",  ASSEM_1BYTE ,   INST_LSHIFT ,   2   ,   1},
@@ -225,6 +236,9 @@ TalInstDesc TalInstructionTable[] = {
                 ASSEM_BOOL,     INST_STR_MATCH, 2,      1},
     {"strneq",  ASSEM_1BYTE,    INST_STR_NEQ,   2,      1},
     {"sub",     ASSEM_1BYTE ,   INST_SUB    ,   2   ,   1},
+    {"tryCvtToNumeric",
+     		ASSEM_1BYTE,    INST_TRY_CVT_TO_NUMERIC,
+     						1,      1},
     {"uminus",  ASSEM_1BYTE,    INST_UMINUS,    1,      1},
     {"unset",	ASSEM_BOOL_LVT4,
 				INST_UNSET_SCALAR,
@@ -1117,6 +1131,60 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	}
 	break;
 
+    case ASSEM_LINDEX_MULTI:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
+	    || CheckStrictlyPositive(interp, opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd);
+	break;
+		 
+    case ASSEM_LIST:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
+	    || CheckNonNegative(interp, opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd);
+	break;
+		 
+    case ASSEM_INDEX:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
+	    goto cleanup;
+	}
+	if (GetListIndexOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd);
+	break;
+
+    case ASSEM_LSET_FLAT:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	if (opnd < 2) {
+	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+		Tcl_SetObjResult(interp,
+				 Tcl_NewStringObj("operand must be >=2", -1));
+		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND>=2", NULL);
+	    }
+	    goto cleanup;
+	}
+	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd);
+	break;
+		 
     case ASSEM_LVT:
 	if (parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
@@ -1370,6 +1438,61 @@ GetIntegerOperand(AssembleEnv* assemEnvPtr,
     /* Convert to an integer, advance to the next token and return */
 
     status = Tcl_GetIntFromObj(interp, intObj, result);
+    Tcl_DecrRefCount(intObj);
+    *tokenPtrPtr = TokenAfter(tokenPtr);
+    return status;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * GetListIndexOperand --
+ *
+ *	Gets the value of an operand intended to serve as a list index.
+ *
+ * Results:
+ *	Returns a standard Tcl result: TCL_OK if the parse is successful
+ *	and TCL_ERROR (with an appropriate error message) if the parse fails.
+ *
+ * Side effects:
+ *	Stores the list index at '*index'. Values between -1 and 0x7fffffff
+ *	have their natural meaning; values between -2 and -0x80000000
+ *	represent 'end-2-N'.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+GetListIndexOperand(
+		    AssembleEnv* assemEnvPtr,
+				/* Assembly environment */
+		    Tcl_Token** tokenPtrPtr,
+				/* Current token from the parser */
+		    int* result)
+				/* OUTPUT: Integer extracted from the token */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    Tcl_Token* tokenPtr = *tokenPtrPtr;
+				/* INOUT: Pointer to the next token
+				 * in the source code */
+    Tcl_Obj* intObj = Tcl_NewObj();
+				/* Integer from the source code */
+    int status;			/* Tcl status return */
+
+    /* Extract the next token as a string */
+
+    Tcl_IncrRefCount(intObj);
+    if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &intObj) != TCL_OK) {
+	Tcl_DecrRefCount(intObj);
+	return TCL_ERROR;
+    }
+
+    /* Convert to an integer, advance to the next token and return */
+
+    status = TclGetIntForIndex(interp, intObj, -2, result);
     Tcl_DecrRefCount(intObj);
     *tokenPtrPtr = TokenAfter(tokenPtr);
     return status;

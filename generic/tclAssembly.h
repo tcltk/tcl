@@ -43,25 +43,34 @@ typedef struct BasicBlock {
 
 typedef enum TalInstType {
 
-    ASSEM_1BYTE,    /* The instructions that are directly mapped to tclInstructionTable in tclCompile.c*/
+    ASSEM_1BYTE,    /* Fixed arity, 1-byte instruction */
     ASSEM_BOOL,	    /* One Boolean operand */
     ASSEM_BOOL_LVT4,/* One Boolean, one 4-byte LVT ref. */
-    ASSEM_CONCAT1,  /* One 1-byte unsigned-integer operand count (CONCAT1) */
+    ASSEM_CONCAT1,  /* 1-byte unsigned-integer operand count, must be 
+		     * strictly positive, consumes N, produces 1 */
     ASSEM_EVAL,	    /* 'eval' - evaluate a constant script (by compiling it
 		     * in line with the assembly code! I love Tcl!) */
-    ASSEM_INVOKE,   /* Command invocation, 1- or 4-byte unsigned operand
-		     * count */
+    ASSEM_INDEX,    /* 4 byte operand, integer or end-integer */
+    ASSEM_INVOKE,   /* 1- or 4-byte operand count, must be strictly positive,
+		     * consumes N, produces 1. */
     ASSEM_JUMP,	    /* Jump instructions */
     ASSEM_LABEL,    /* The assembly directive that defines a label */
+    ASSEM_LINDEX_MULTI,
+		    /* 4-byte operand count, must be strictly positive,
+		     * consumes N, produces 1 */
+    ASSEM_LIST,     /* 4-byte operand count, must be nonnegative, consumses N,
+		     * produces 1 */
+    ASSEM_LSET_FLAT,/* 4-byte operand count, must be >= 3, consumes N,
+		     * produces 1 */
     ASSEM_LVT,      /* One operand that references a local variable */
     ASSEM_LVT1,     /* One 1-byte operand that references a local variable */
     ASSEM_LVT1_SINT1,
 		    /* One 1-byte operand that references a local variable,
 		     * one signed-integer 1-byte operand */
     ASSEM_LVT4,     /* One 4-byte operand that references a local variable */
-    ASSEM_OVER,	    /* OVER: consumes n+1 operands and produces n+2 */
-    ASSEM_PUSH,     /* These instructions will be looked up from talInstructionTable */
-    ASSEM_REVERSE,  /* REVERSE: consumes n operands and produces n */
+    ASSEM_OVER,	    /* OVER: 4-byte operand count, consumes N+1, produces N+2 */
+    ASSEM_PUSH,     /* one literal operand */
+    ASSEM_REVERSE,  /* REVERSE: 4-byte operand count, consumes N, produces N */
     ASSEM_SINT1,    /* One 1-byte signed-integer operand (INCR_STK_IMM) */
 } TalInstType;
 
