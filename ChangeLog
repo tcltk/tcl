@@ -4,6 +4,7 @@
 
 	* tests/assemble.test:   Added tryCvtToNumeric and several more list
 	* generic/tclAssemble.c: operations.
+	* generic/tclAssemble.h: 
 
 2010-09-29  Kevin B. Kenny  <kennykb@acm.org>
 
