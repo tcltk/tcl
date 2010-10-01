@@ -787,15 +787,7 @@ test assemble-7.39 {tryCvtToNumeric} {
     }
     -result 42
 }
-test assemble-7.43 {tryCvtToNumeric} {
-    -body {
-	assemble {
-	    push NaN; tryCvtToNumeric
-	}
-    }
-    -returnCodes error
-    -result {domain error: argument not in valid range}
-}
+
 test assemble-7.41 {uminus} {
     -body {
 	assemble {
@@ -821,6 +813,34 @@ test assemble-7.43 {uplus} {
     }
     -returnCodes error
     -result {can't use non-numeric floating-point value as operand of "+"}
+}
+
+test assemble-7.43 {tryCvtToNumeric} {
+    -body {
+	assemble {
+	    push NaN; tryCvtToNumeric
+	}
+    }
+    -returnCodes error
+    -result {domain error: argument not in valid range}
+}
+
+test assemble-7.44 {listIn} {
+    -body {
+	assemble {
+	    push b; push {a b c}; listIn
+	}
+    }
+    -result 1
+}
+
+test assemble-7.45 {listNotIn} {
+    -body {
+	assemble {
+	    push d; push {a b c}; listNotIn
+	}
+    }
+    -result 1
 }
 
 # assemble-8 ASSEM_LVT and FindLocalVar
@@ -2561,6 +2581,65 @@ test assemble-24.12 {unsetArray} {
     -returnCodes error
     -result {can't unset "a(b)": no such variable}
     -cleanup {rename x {}}
+}
+
+# assemble-25 - dict get
+
+test assemble-25.1 {dict get - wrong # args} {
+    -body {
+	assemble {dictGet}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-25.2 {dict get - wrong # args} {
+    -body {
+	assemble {dictGet too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-25.3 {dictGet - bad subst} {
+    -body {
+	assemble {dictGet $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+
+test assemble-25.4 {dict get - not a number} {
+    -body {
+	proc x {} {
+	    assemble {dictGet rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-25.5 {dictGet - negative operand count} {
+    -body {
+	proc x {} {
+	    assemble {dictGet 0}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -cleanup {rename x {}; unset result}
+}
+
+test assemble-25.6 {dictGet - 1 index} {
+    -body {
+	assemble {push {a 1 b 2}; push a; dictGet 1}
+    }
+    -result 1
 }
 
 test assemble-30.1 {unbalanced stack} {

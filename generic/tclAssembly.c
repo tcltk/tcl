@@ -102,6 +102,7 @@ TalInstDesc TalInstructionTable[] = {
     {"bitor",   ASSEM_1BYTE ,   INST_BITOR  ,   2   ,   1},
     {"bitxor",  ASSEM_1BYTE ,   INST_BITXOR ,   2   ,   1},
     {"concat",	ASSEM_CONCAT1,	INST_CONCAT1,	INT_MIN,1},
+    {"dictGet", ASSEM_DICT_GET, INST_DICT_GET,  INT_MIN,1},
     {"div",     ASSEM_1BYTE,    INST_DIV,       2,      1},
     {"dup",     ASSEM_1BYTE ,   INST_DUP    ,   1   ,   2}, 
     {"eq",      ASSEM_1BYTE ,   INST_EQ     ,   2   ,   1},
@@ -179,6 +180,7 @@ TalInstDesc TalInstructionTable[] = {
      				INST_LIST_INDEX_MULTI,
      						INT_MIN,1},
     {"list",	ASSEM_LIST,	INST_LIST,	INT_MIN,1},
+    {"listIn",	ASSEM_1BYTE,	INST_LIST_IN,	2,	1},
     {"listIndex", 
      		ASSEM_1BYTE,    INST_LIST_INDEX,2,      1},
     {"listIndexImm",
@@ -187,6 +189,9 @@ TalInstDesc TalInstructionTable[] = {
     {"listLength",
                 ASSEM_1BYTE,    INST_LIST_LENGTH,
                                                 1,      1},
+    {"listNotIn",
+	        ASSEM_1BYTE,	INST_LIST_NOT_IN,
+						2,	1},
     {"load",    ASSEM_LVT,      (INST_LOAD_SCALAR1 << 8
 	                         | INST_LOAD_SCALAR4), 
                                                 0,      1}, 
@@ -335,7 +340,7 @@ BBUpdateStackReqs(BasicBlock* bbPtr,
 	consumed = count;
     }
     if (produced < 0) {
-	/* The instruction leaves some of its operations on the stack,
+	/* The instruction leaves some of its variadic operands on the stack,
 	 * with net stack effect of '-1-produced' */
 	produced = consumed - produced - 1;
     }
@@ -1013,6 +1018,18 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblind, opnd, opnd);
+	break;
+
+    case ASSEM_DICT_GET:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
+	    || CheckStrictlyPositive(interp, opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd+1);
 	break;
 
     case ASSEM_EVAL:
