@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.43 2010/04/28 11:50:54 nijtmans Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.43.2.1 2010/10/01 13:34:09 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -163,7 +163,8 @@ TclSetEnv(
     const char *value)		/* New value for variable (UTF-8). */
 {
     Tcl_DString envString;
-    int index, length, nameLength;
+    unsigned nameLength, valueLength;
+    int index, length;
     char *p, *oldValue;
     const char *p2;
 
@@ -220,7 +221,7 @@ TclSetEnv(
 	Tcl_DStringFree(&envString);
 
 	oldValue = environ[index];
-	nameLength = length;
+	nameLength = (unsigned) length;
     }
 
     /*
@@ -229,18 +230,19 @@ TclSetEnv(
      * and set the environ array value.
      */
 
-    p = ckalloc((unsigned) nameLength + strlen(value) + 2);
-    strcpy(p, name);
+    valueLength = strlen(value);
+    p = ckalloc(nameLength + valueLength + 2);
+    memcpy(p, name, nameLength);
     p[nameLength] = '=';
-    strcpy(p+nameLength+1, value);
+    memcpy(p+nameLength+1, value, valueLength+1);
     p2 = Tcl_UtfToExternalDString(NULL, p, -1, &envString);
 
     /*
      * Copy the native string to heap memory.
      */
 
-    p = ckrealloc(p, strlen(p2) + 1);
-    strcpy(p, p2);
+    p = ckrealloc(p, (unsigned) Tcl_DStringLength(&envString) + 1);
+    memcpy(p, p2, (unsigned) Tcl_DStringLength(&envString) + 1);
     Tcl_DStringFree(&envString);
 
 #ifdef USE_PUTENV
@@ -412,7 +414,8 @@ TclUnsetEnv(
 
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
     string = ckrealloc(string, (unsigned) Tcl_DStringLength(&envString)+1);
-    strcpy(string, Tcl_DStringValue(&envString));
+    memcpy(string, Tcl_DStringValue(&envString),
+	    (unsigned) Tcl_DStringLength(&envString)+1);
     Tcl_DStringFree(&envString);
 
     putenv(string);
