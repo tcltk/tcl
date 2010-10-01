@@ -1,10 +1,18 @@
-2010-09-30  Kevin B, Kenny  <kennykb@acm.org>
+2010-10-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* tests/assemble.test:
+	* generic/tclAssemble.h:
+	* generic/tclAssemble.c:  Added listIn, listNotIn, and dictGet.
+
+2010-09-30  Kevin B. Kenny  <kennykb@acm.org>
 
 	[dogeen-assembler-branch]
 
 	* tests/assemble.test:   Added tryCvtToNumeric and several more list
 	* generic/tclAssemble.c: operations.
-	* generic/tclAssemble.h: 
+	* generic/tclAssemble.h:
 
 2010-09-29  Kevin B. Kenny  <kennykb@acm.org>
 

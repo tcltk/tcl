@@ -48,6 +48,8 @@ typedef enum TalInstType {
     ASSEM_BOOL_LVT4,/* One Boolean, one 4-byte LVT ref. */
     ASSEM_CONCAT1,  /* 1-byte unsigned-integer operand count, must be 
 		     * strictly positive, consumes N, produces 1 */
+    ASSEM_DICT_GET, /* 'dict get' and related - consumes N+1 operands,
+		     * produces 1, N >= 0 */
     ASSEM_EVAL,	    /* 'eval' - evaluate a constant script (by compiling it
 		     * in line with the assembly code! I love Tcl!) */
     ASSEM_INDEX,    /* 4 byte operand, integer or end-integer */
