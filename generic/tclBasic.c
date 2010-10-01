@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.466 2010/09/27 19:42:37 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.467 2010/10/01 12:52:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -832,8 +832,8 @@ Tcl_CreateInterp(void)
     if (mathfuncNSPtr == NULL) {
 	Tcl_Panic("Can't create math function namespace");
     }
-    strcpy(mathFuncName, "::tcl::mathfunc::");
 #define MATH_FUNC_PREFIX_LEN 17 /* == strlen("::tcl::mathfunc::") */
+    memcpy(mathFuncName, "::tcl::mathfunc::", MATH_FUNC_PREFIX_LEN);
     for (builtinFuncPtr = BuiltinFuncTable; builtinFuncPtr->name != NULL;
 	    builtinFuncPtr++) {
 	strcpy(mathFuncName+MATH_FUNC_PREFIX_LEN, builtinFuncPtr->name);
@@ -847,12 +847,12 @@ Tcl_CreateInterp(void)
      */
 
     mathopNSPtr = Tcl_CreateNamespace(interp, "::tcl::mathop", NULL, NULL);
-#define MATH_OP_PREFIX_LEN 15 /* == strlen("::tcl::mathop::") */
     if (mathopNSPtr == NULL) {
 	Tcl_Panic("can't create math operator namespace");
     }
     Tcl_Export(interp, mathopNSPtr, "*", 1);
-    strcpy(mathFuncName, "::tcl::mathop::");
+#define MATH_OP_PREFIX_LEN 15 /* == strlen("::tcl::mathop::") */
+    memcpy(mathFuncName, "::tcl::mathop::", MATH_OP_PREFIX_LEN);
     for (opcmdInfoPtr=mathOpCmds ; opcmdInfoPtr->name!=NULL ; opcmdInfoPtr++){
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)
 		ckalloc(sizeof(TclOpCmdClientData));
