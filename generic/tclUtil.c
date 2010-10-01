@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.117 2010/08/22 18:53:26 nijtmans Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.118 2010/10/01 12:52:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1835,8 +1835,6 @@ Tcl_DStringAppend(
 				 * at end. */
 {
     int newSize;
-    char *dst;
-    const char *end;
 
     if (length < 0) {
 	length = strlen(bytes);
@@ -1866,12 +1864,9 @@ Tcl_DStringAppend(
      * Copy the new string into the buffer at the end of the old one.
      */
 
-    for (dst = dsPtr->string + dsPtr->length, end = bytes+length;
-	    bytes < end; bytes++, dst++) {
-	*dst = *bytes;
-    }
-    *dst = '\0';
+    memcpy(dsPtr->string + dsPtr->length, bytes, length);
     dsPtr->length += length;
+    dsPtr->string[dsPtr->length] = '\0';
     return dsPtr->string;
 }
 
@@ -2076,7 +2071,7 @@ Tcl_DStringResult(
 	iPtr->freeProc = TCL_DYNAMIC;
     } else if (dsPtr->length < TCL_RESULT_SIZE) {
 	iPtr->result = iPtr->resultSpace;
-	strcpy(iPtr->result, dsPtr->string);
+	memcpy(iPtr->result, dsPtr->string, dsPtr->length + 1);
     } else {
 	Tcl_SetResult(interp, dsPtr->string, TCL_VOLATILE);
     }
@@ -2266,10 +2261,14 @@ Tcl_PrintDouble(
 	 */
 
 	if (TclIsInfinite(value)) {
+	    /*
+	     * Remember to copy the terminating NUL too.
+	     */
+
 	    if (value < 0) {
-		strcpy(dst, "-Inf");
+		memcpy(dst, "-Inf", 5);
 	    } else {
-		strcpy(dst, "Inf");
+		memcpy(dst, "Inf", 4);
 	    }
 	    return;
 	}
@@ -2670,7 +2669,7 @@ UpdateStringOfEndOffset(
     char buffer[TCL_INTEGER_SPACE + sizeof("end") + 1];
     register int len;
 
-    strcpy(buffer, "end");
+    memcpy(buffer, "end", sizeof("end") + 1);
     len = sizeof("end") - 1;
     if (objPtr->internalRep.longValue != 0) {
 	buffer[len++] = '-';
