@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.80 2010/08/30 14:11:02 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.81 2010/10/01 13:14:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -706,8 +706,9 @@ Tcl_CreateNamespace(
      */
 
     nsPtr = (Namespace *) ckalloc(sizeof(Namespace));
-    nsPtr->name = ckalloc((unsigned) (strlen(simpleName)+1));
-    strcpy(nsPtr->name, simpleName);
+    nameLen = strlen(simpleName) + 1;
+    nsPtr->name = ckalloc((unsigned) nameLen);
+    memcpy(nsPtr->name, simpleName, nameLen);
     nsPtr->fullName = NULL;		/* Set below. */
     nsPtr->clientData = clientData;
     nsPtr->deleteProc = deleteProc;

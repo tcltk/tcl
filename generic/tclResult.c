@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.35 2010/09/22 02:42:51 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.36 2010/10/01 13:14:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -436,7 +436,7 @@ Tcl_SetResult(
 	    iPtr->result = iPtr->resultSpace;
 	    iPtr->freeProc = 0;
 	}
-	strcpy(iPtr->result, result);
+	memcpy(iPtr->result, result, (unsigned) length+1);
     } else {
 	iPtr->result = (char *) result;
 	iPtr->freeProc = freeProc;

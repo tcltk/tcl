@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.15 2010/02/25 21:53:08 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.16 2010/10/01 13:14:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -990,7 +990,7 @@ CompileRegexp(
 	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
     }
     tsdPtr->patterns[0] = ckalloc((unsigned) length+1);
-    strcpy(tsdPtr->patterns[0], string);
+    memcpy(tsdPtr->patterns[0], string, (unsigned) length + 1);
     tsdPtr->patLengths[0] = length;
     tsdPtr->regexps[0] = regexpPtr;
 

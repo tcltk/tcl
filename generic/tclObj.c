@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.76 2010/09/27 20:46:13 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.77 2010/10/01 13:14:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2355,7 +2355,7 @@ UpdateStringOfDouble(
     len = strlen(buffer);
 
     objPtr->bytes = (char *) ckalloc((unsigned) len + 1);
-    strcpy(objPtr->bytes, buffer);
+    memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
     objPtr->length = len;
 }
 
@@ -2551,7 +2551,7 @@ UpdateStringOfInt(
     len = TclFormatInt(buffer, objPtr->internalRep.longValue);
 
     objPtr->bytes = ckalloc((unsigned) len + 1);
-    strcpy(objPtr->bytes, buffer);
+    memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
     objPtr->length = len;
 }
 
