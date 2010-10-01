@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.19 2010/03/25 14:02:11 dkf Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.20 2010/10/01 12:52:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -688,6 +688,7 @@ UpdateStringOfOSType(
     OSType osType = (OSType) objPtr->internalRep.longValue;
     Tcl_DString ds;
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
+    unsigned len;
 
     string[0] = (char) (osType >> 24);
     string[1] = (char) (osType >> 16);
@@ -695,8 +696,9 @@ UpdateStringOfOSType(
     string[3] = (char) (osType);
     string[4] = '\0';
     Tcl_ExternalToUtfDString(encoding, string, -1, &ds);
-    objPtr->bytes = ckalloc((unsigned) Tcl_DStringLength(&ds) + 1);
-    strcpy(objPtr->bytes, Tcl_DStringValue(&ds));
+    len = (unsigned) Tcl_DStringLength(&ds) + 1;
+    objPtr->bytes = ckalloc(len);
+    memcpy(objPtr->bytes, Tcl_DStringValue(&ds), len);
     objPtr->length = Tcl_DStringLength(&ds);
     Tcl_DStringFree(&ds);
     Tcl_FreeEncoding(encoding);

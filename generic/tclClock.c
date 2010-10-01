@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.75 2010/03/05 14:34:03 dkf Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.76 2010/10/01 12:52:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -280,8 +280,8 @@ TclClockInit(
      * Install the commands.
      */
 
-    strcpy(cmdName, "::tcl::clock::");
 #define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
+    memcpy(cmdName, "::tcl::clock::", TCL_CLOCK_PREFIX_LEN);
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
 	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
 	data->refCount++;
