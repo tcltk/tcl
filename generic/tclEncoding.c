@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.72 2010/09/16 14:49:37 nijtmans Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.73 2010/10/01 12:52:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2019,9 +2019,9 @@ LoadEscapeEncoding(
 	    + Tcl_DStringLength(&escapeData);
     dataPtr = (EscapeEncodingData *) ckalloc(size);
     dataPtr->initLen = strlen(init);
-    strcpy(dataPtr->init, init);
+    memcpy(dataPtr->init, init, (unsigned) dataPtr->initLen + 1);
     dataPtr->finalLen = strlen(final);
-    strcpy(dataPtr->final, final);
+    memcpy(dataPtr->final, final, (unsigned) dataPtr->finalLen + 1);
     dataPtr->numSubTables =
 	    Tcl_DStringLength(&escapeData) / sizeof(EscapeSubTable);
     memcpy(dataPtr->subTables, Tcl_DStringValue(&escapeData),

@@ -1,3 +1,12 @@
+2010-10-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c, generic/tclClock.c, generic/tclEncoding.c,
+	* generic/tclEnv.c, generic/tclLoad.c, generic/tclNamesp.c,
+	* generic/tclObj.c, generic/tclRegexp.c, generic/tclResolve.c,
+	* generic/tclResult.c, generic/tclUtil.c, macosx/tclMacOSXFCmd.c:
+	More purging of strcpy() from locations where we already know the
+	length of the data being copied.
+
 2010-09-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/configure:      re-generate with autoconf-2.59
