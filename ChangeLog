@@ -5,8 +5,7 @@
 	* generic/tclAssembly.c:
 	* generic/tclAssembly.h:
 	* tests/assemble.test: Added dictAppend, dictIncrImm, dictLappend,
-	dictSet, dictUnset, nsupvar, upvar, and variable. (Still need tests
-	for the last three.)
+	dictSet, dictUnset, nsupvar, upvar, and variable.
 
 2010-10-02  Donal K. Fellows  <dkf@users.sf.net>
 
