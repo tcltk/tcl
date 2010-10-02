@@ -229,7 +229,7 @@ TalInstDesc TalInstructionTable[] = {
     {"mult",    ASSEM_1BYTE ,   INST_MULT   ,   2   ,   1},
     {"neq",     ASSEM_1BYTE ,   INST_NEQ    ,   2   ,   1},
     {"not",     ASSEM_1BYTE,    INST_LNOT,      1,      1},
-    {"nsupvar",	ASSEM_LVT4,	INST_NSUPVAR,	2,	1}.
+    {"nsupvar",	ASSEM_LVT4,	INST_NSUPVAR,	2,	1},
     {"over",    ASSEM_OVER,     INST_OVER,      INT_MIN, -1-1},
     {"pop",     ASSEM_1BYTE ,   INST_POP    ,   1   ,   0},
     {"reverse", ASSEM_REVERSE,  INST_REVERSE,   INT_MIN, -1-0},
@@ -273,8 +273,8 @@ TalInstDesc TalInstructionTable[] = {
     {"unsetStk",
 		ASSEM_BOOL,	INST_UNSET_STK,	1,	0},
     {"uplus",   ASSEM_1BYTE,    INST_UPLUS,     1,      1},
-    {"upvar",	ASSEM_LVT4,	INST_UPVAR,	2,	1}.
-    {"variable",ASSEM_LVT4,	INST_VARIABLE,	2,	1}.
+    {"upvar",	ASSEM_LVT4,	INST_UPVAR,	2,	1},
+    {"variable",ASSEM_LVT4,	INST_VARIABLE,	1,	0},
     {NULL, 0, 0,0}
 };
 

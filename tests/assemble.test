@@ -1255,7 +1255,8 @@ test assemble-10.7 {expr - noncompilable} {
     -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
 }
 
-# assemble-11 - ASSEM_LVT4 (exist, existArray, dictAppend, dictLappend)
+# assemble-11 - ASSEM_LVT4 (exist, existArray, dictAppend, dictLappend,
+#			    nsupvar, variable, upvar)
 		
 test assemble-11.1 {exist - wrong # args} {
     -body {
@@ -1332,6 +1333,45 @@ test assemble-11.7 {dictLappend} {
     }
     -result {a 1 b {2 2} c 3}
     -cleanup {rename x {}}
+}
+
+test assemble-11.8 {upvar} {
+    -body {
+	proc x {v} {
+	    assemble {push 1; load v; upvar w; pop; load w}
+	}
+	proc y {} {
+	    set z 123
+	    x z
+	}
+	y
+    }
+    -result 123
+    -cleanup {rename x {}; rename y {}}
+}
+
+test assemble-11.9 {nsupvar} {
+    -body {
+	namespace eval q { variable v 123 }
+	proc x {} {
+	    assemble {push q; push v; nsupvar y; pop; load y}
+	}
+	x
+    }
+    -result 123
+    -cleanup {namespace delete q; rename x {}}
+}
+
+test assemble-11.10 {variable} {
+    -body {
+	namespace eval q { namespace eval r {variable v 123}}
+	proc x {} {
+	    assemble {push q::r::v; variable y; load y}
+	}
+	x
+    }
+    -result 123
+    -cleanup {namespace delete q; rename x {}}
 }
 
 # assemble-12 - ASSEM_LVT1 (incr and incrArray)
