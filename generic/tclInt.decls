@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.149 2010/09/27 19:42:38 msofer Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.150 2010/10/02 00:23:44 hobbs Exp $
 
 library tcl
 
@@ -83,7 +83,7 @@ declare 12 {
 #	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
 #}
 declare 14 {
-    void TclDumpMemoryInfo(FILE *outFile)
+    int TclDumpMemoryInfo(ClientData clientData, int flags)
 }
 # Removed in 8.1:
 #  declare 15 {
