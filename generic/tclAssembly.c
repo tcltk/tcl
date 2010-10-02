@@ -228,10 +228,12 @@ TalInstDesc TalInstructionTable[] = {
     {"mod",     ASSEM_1BYTE,    INST_MOD,       2,      1},
     {"mult",    ASSEM_1BYTE ,   INST_MULT   ,   2   ,   1},
     {"neq",     ASSEM_1BYTE ,   INST_NEQ    ,   2   ,   1},
+    {"nop",	ASSEM_1BYTE,	INST_NOP,	0,	0},
     {"not",     ASSEM_1BYTE,    INST_LNOT,      1,      1},
     {"nsupvar",	ASSEM_LVT4,	INST_NSUPVAR,	2,	1},
     {"over",    ASSEM_OVER,     INST_OVER,      INT_MIN, -1-1},
     {"pop",     ASSEM_1BYTE ,   INST_POP    ,   1   ,   0},
+    {"regexp",	ASSEM_REGEXP,	INST_REGEXP,	2,	1},
     {"reverse", ASSEM_REVERSE,  INST_REVERSE,   INT_MIN, -1-0},
     {"rshift",  ASSEM_1BYTE ,   INST_RSHIFT ,   2   ,   1},
     {"store",   ASSEM_LVT,      (INST_STORE_SCALAR1<<8
@@ -1306,6 +1308,20 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd+1);
+	break;
+
+    case ASSEM_REGEXP:
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "boolean");
+	    goto cleanup;
+	}
+	if (GetBooleanOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	    goto cleanup;
+	}
+	{
+	    int flags = TCL_REG_ADVANCED | (opnd ? TCL_REG_NOCASE : 0);
+	    BBEmitInstInt1(assemEnvPtr, tblind, flags, 0);
+	}
 	break;
 
     case ASSEM_REVERSE:

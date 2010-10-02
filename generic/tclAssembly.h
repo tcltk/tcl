@@ -77,6 +77,7 @@ typedef enum TalInstType {
     ASSEM_LVT4,     /* One 4-byte operand that references a local variable */
     ASSEM_OVER,	    /* OVER: 4-byte operand count, consumes N+1, produces N+2 */
     ASSEM_PUSH,     /* one literal operand */
+    ASSEM_REGEXP,   /* One Boolean operand, but weird mapping to call flags */
     ASSEM_REVERSE,  /* REVERSE: 4-byte operand count, consumes N, produces N */
     ASSEM_SINT1,    /* One 1-byte signed-integer operand (INCR_STK_IMM) */
     ASSEM_SINT4_LVT4,

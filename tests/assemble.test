@@ -843,6 +843,13 @@ test assemble-7.45 {listNotIn} {
     -result 1
 }
 
+test assemble-7.46 {nop} {
+    -body {
+	assemble { push x; nop; nop; nop}
+    }
+    -result x
+}
+
 # assemble-8 ASSEM_LVT and FindLocalVar
 
 test assemble-8.1 {load, wrong # args} {
@@ -2918,6 +2925,68 @@ test assemble-28.6 {dictIncrImm} {
     }
     -result {a 1 b 44 c 3}
     -cleanup {rename x {}}
+}
+
+# assemble-29 - ASSEM_REGEXP
+
+test assemble-29.1 {regexp - wrong # args} {
+    -body {
+	assemble {regexp}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-29.2 {regexp - wrong # args} {
+    -body {
+	assemble {regexp too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-29.3 {regexp - bad subst} {
+    -body {
+	assemble {regexp $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+
+test assemble-29.4 {regexp - not a boolean} {
+    -body {
+	proc x {} {
+	    assemble {regexp rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected boolean value but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-29.5 {regexp} {
+    -body {
+	assemble {push br.*br; push abracadabra; regexp false}
+    }
+    -result 1
+}
+
+test assemble-29.6 {regexp} {
+    -body {
+	assemble {push br.*br; push aBRacadabra; regexp false}
+    }
+    -result 0
+}
+
+test assemble-29.7 {regexp} {
+    -body {
+	assemble {push br.*br; push aBRacadabra; regexp true}
+    }
+    -result 1
 }
 
 test assemble-30.1 {unbalanced stack} {
