@@ -1255,7 +1255,7 @@ test assemble-10.7 {expr - noncompilable} {
     -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
 }
 
-# assemble-11 - ASSEM_LVT4 (exist and existArray)
+# assemble-11 - ASSEM_LVT4 (exist, existArray, dictAppend, dictLappend)
 		
 test assemble-11.1 {exist - wrong # args} {
     -body {
@@ -1307,6 +1307,30 @@ test assemble-11.5 {existArray} {
 	x
     }
     -result {1 0 0}
+    -cleanup {rename x {}}
+}
+
+test assemble-11.6 {dictAppend} {
+    -body {
+	proc x {} {
+	    set dict {a 1 b 2 c 3}
+	    assemble {push b; push 22; dictAppend dict}
+	}
+	x
+    }
+    -result {a 1 b 222 c 3}
+    -cleanup {rename x {}}
+}
+
+test assemble-11.7 {dictLappend} {
+    -body {
+	proc x {} {
+	    set dict {a 1 b 2 c 3}
+	    assemble {push b; push 2; dictLappend dict}
+	}
+	x
+    }
+    -result {a 1 b {2 2} c 3}
     -cleanup {rename x {}}
 }
 
@@ -2640,6 +2664,220 @@ test assemble-25.6 {dictGet - 1 index} {
 	assemble {push {a 1 b 2}; push a; dictGet 1}
     }
     -result 1
+}
+
+# assemble-26 - dict set
+
+test assemble-26.1 {dict set - wrong # args} {
+    -body {
+	assemble {dictSet 1}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-26.2 {dict get - wrong # args} {
+    -body {
+	assemble {dictSet too many args}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-26.3 {dictSet - bad subst} {
+    -body {
+	assemble {dictSet 1 $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+
+test assemble-26.4 {dictSet - not a number} {
+    -body {
+	proc x {} {
+	    assemble {dictSet rubbish foo}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-26.5 {dictSet - zero operand count} {
+    -body {
+	proc x {} {
+	    assemble {dictSet 0 foo}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -cleanup {rename x {}; unset result}
+}
+
+test assemble-26.6 {dictSet - bad local} {
+    -body {
+	proc x {} {
+	    assemble {dictSet 1 ::foo::bar}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {variable "::foo::bar" is not local} {TCL ASSEM NONLOCAL ::foo::bar}}
+    -cleanup {rename x {}; unset result}
+}
+
+test assemble-26.7 {dictSet} {
+    -body {
+	proc x {} {
+	    set dict {a 1 b 2 c 3}
+	    assemble {push b; push 4; dictSet 1 dict}
+	}
+	x
+    }
+    -result {a 1 b 4 c 3}
+    -cleanup {rename x {}}
+}
+
+# assemble-27 - dictUnset
+
+test assemble-27.1 {dictUnset - wrong # args} {
+    -body {
+	assemble {dictUnset 1}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-27.2 {dictUnset - wrong # args} {
+    -body {
+	assemble {dictUnset too many args}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-27.3 {dictUnset - bad subst} {
+    -body {
+	assemble {dictUnset 1 $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+
+test assemble-27.4 {dictUnset - not a number} {
+    -body {
+	proc x {} {
+	    assemble {dictUnset rubbish foo}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-27.5 {dictUnset - zero operand count} {
+    -body {
+	proc x {} {
+	    assemble {dictUnset 0 foo}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -cleanup {rename x {}; unset result}
+}
+
+test assemble-27.6 {dictUnset - bad local} {
+    -body {
+	proc x {} {
+	    assemble {dictUnset 1 ::foo::bar}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {variable "::foo::bar" is not local} {TCL ASSEM NONLOCAL ::foo::bar}}
+    -cleanup {rename x {}; unset result}
+}
+
+test assemble-27.7 {dictUnset} {
+    -body {
+	proc x {} {
+	    set dict {a 1 b 2 c 3}
+	    assemble {push b; dictUnset 1 dict}
+	}
+	x
+    }
+    -result {a 1 c 3}
+    -cleanup {rename x {}}
+}
+
+# assemble-28 - dictIncrImm
+
+test assemble-28.1 {dictIncrImm - wrong # args} {
+    -body {
+	assemble {dictIncrImm 1}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-28.2 {dictIncrImm - wrong # args} {
+    -body {
+	assemble {dictIncrImm too many args}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-28.3 {dictIncrImm - bad subst} {
+    -body {
+	assemble {dictIncrImm 1 $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+
+test assemble-28.4 {dictIncrImm - not a number} {
+    -body {
+	proc x {} {
+	    assemble {dictIncrImm rubbish foo}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+
+test assemble-28.5 {dictIncrImm - bad local} {
+    -body {
+	proc x {} {
+	    assemble {dictIncrImm 1 ::foo::bar}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {variable "::foo::bar" is not local} {TCL ASSEM NONLOCAL ::foo::bar}}
+    -cleanup {rename x {}; unset result}
+}
+
+test assemble-28.6 {dictIncrImm} {
+    -body {
+	proc x {} {
+	    set dict {a 1 b 2 c 3}
+	    assemble {push b; dictIncrImm 42 dict}
+	}
+	x
+    }
+    -result {a 1 b 44 c 3}
+    -cleanup {rename x {}}
 }
 
 test assemble-30.1 {unbalanced stack} {
