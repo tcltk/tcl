@@ -102,7 +102,21 @@ TalInstDesc TalInstructionTable[] = {
     {"bitor",   ASSEM_1BYTE ,   INST_BITOR  ,   2   ,   1},
     {"bitxor",  ASSEM_1BYTE ,   INST_BITXOR ,   2   ,   1},
     {"concat",	ASSEM_CONCAT1,	INST_CONCAT1,	INT_MIN,1},
+    {"dictAppend",
+     		ASSEM_LVT4,	INST_DICT_APPEND,
+     						2,      1},
     {"dictGet", ASSEM_DICT_GET, INST_DICT_GET,  INT_MIN,1},
+    {"dictIncrImm",
+                ASSEM_SINT4_LVT4,
+     				INST_DICT_INCR_IMM,
+						1,	1},
+    {"dictLappend",
+     		ASSEM_LVT4,	INST_DICT_LAPPEND,
+     						2,      1},
+    {"dictSet", ASSEM_DICT_SET, INST_DICT_SET,	INT_MIN,1},
+    {"dictUnset",
+		ASSEM_DICT_UNSET,
+     				INST_DICT_UNSET,INT_MIN,1},
     {"div",     ASSEM_1BYTE,    INST_DIV,       2,      1},
     {"dup",     ASSEM_1BYTE ,   INST_DUP    ,   1   ,   2}, 
     {"eq",      ASSEM_1BYTE ,   INST_EQ     ,   2   ,   1},
@@ -215,6 +229,7 @@ TalInstDesc TalInstructionTable[] = {
     {"mult",    ASSEM_1BYTE ,   INST_MULT   ,   2   ,   1},
     {"neq",     ASSEM_1BYTE ,   INST_NEQ    ,   2   ,   1},
     {"not",     ASSEM_1BYTE,    INST_LNOT,      1,      1},
+    {"nsupvar",	ASSEM_LVT4,	INST_NSUPVAR,	2,	1}.
     {"over",    ASSEM_OVER,     INST_OVER,      INT_MIN, -1-1},
     {"pop",     ASSEM_1BYTE ,   INST_POP    ,   1   ,   0},
     {"reverse", ASSEM_REVERSE,  INST_REVERSE,   INT_MIN, -1-0},
@@ -258,6 +273,8 @@ TalInstDesc TalInstructionTable[] = {
     {"unsetStk",
 		ASSEM_BOOL,	INST_UNSET_STK,	1,	0},
     {"uplus",   ASSEM_1BYTE,    INST_UPLUS,     1,      1},
+    {"upvar",	ASSEM_LVT4,	INST_UPVAR,	2,	1}.
+    {"variable",ASSEM_LVT4,	INST_VARIABLE,	2,	1}.
     {NULL, 0, 0,0}
 };
 
@@ -1032,6 +1049,34 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd+1);
 	break;
 
+    case ASSEM_DICT_SET:
+	if (parsePtr->numWords != 3) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count varName");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
+	    || CheckStrictlyPositive(interp, opnd) != TCL_OK
+	    || (localVar = FindLocalVar(assemEnvPtr, &tokenPtr)) == -1) {
+	    goto cleanup;
+	}
+	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd+1);
+	TclEmitInt4(localVar, envPtr);
+	break;
+
+    case ASSEM_DICT_UNSET:
+	if (parsePtr->numWords != 3) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count varName");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
+	    || CheckStrictlyPositive(interp, opnd) != TCL_OK
+	    || (localVar = FindLocalVar(assemEnvPtr, &tokenPtr)) == -1) {
+	    goto cleanup;
+	}
+	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd);
+	TclEmitInt4(localVar, envPtr);
+	break;
+
     case ASSEM_EVAL:
 	/* TODO - Refactor this stuff into a subroutine
 	 * that takes the inst code, the message ("script" or "expression")
@@ -1285,6 +1330,19 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblind, opnd, 0);
+	break;
+
+    case ASSEM_SINT4_LVT4:
+	if (parsePtr->numWords != 3) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count varName");
+	    goto cleanup;
+	}
+	if (GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
+	    || (localVar = FindLocalVar(assemEnvPtr, &tokenPtr)) == -1) {
+	    goto cleanup;
+	}
+	BBEmitInstInt4(assemEnvPtr, tblind, opnd, 0);
+	TclEmitInt4(localVar, envPtr);
 	break;
 
     default:
