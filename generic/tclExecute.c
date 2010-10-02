@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.503 2010/10/02 00:23:44 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.504 2010/10/02 12:38:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5768,6 +5768,16 @@ TEBCresume(
 		Tcl_DictObjPut(NULL, dictPtr, OBJ_UNDER_TOS, valuePtr);
 	    } else {
 		Tcl_AppendObjToObj(valuePtr, OBJ_AT_TOS);
+
+		/*
+		 * Must invalidate the string representation of dictionary
+		 * here because we have directly updated the internal
+		 * representation; if we don't, callers could see the wrong
+		 * string rep despite the internal version of the dictionary
+		 * having the correct value. [Bug 3079830]
+		 */
+
+		TclInvalidateStringRep(dictPtr);
 	    }
 	    break;
 	case INST_DICT_LAPPEND:
@@ -5798,6 +5808,16 @@ TEBCresume(
 		    }
 		    goto gotError;
 		}
+
+		/*
+		 * Must invalidate the string representation of dictionary
+		 * here because we have directly updated the internal
+		 * representation; if we don't, callers could see the wrong
+		 * string rep despite the internal version of the dictionary
+		 * having the correct value. [Bug 3079830]
+		 */
+
+		TclInvalidateStringRep(dictPtr);
 	    }
 	    break;
 	default:
@@ -6020,6 +6040,9 @@ TEBCresume(
 	allocdict = Tcl_IsShared(dictPtr);
 	if (allocdict) {
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
+	}
+	if (length > 0) {
+	    TclInvalidateStringRep(dictPtr);
 	}
 	for (i=0 ; i<length ; i++) {
 	    Var *var2Ptr = LOCAL(duiPtr->varIndices[i]);
