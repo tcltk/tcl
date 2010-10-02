@@ -49,7 +49,12 @@ typedef enum TalInstType {
     ASSEM_CONCAT1,  /* 1-byte unsigned-integer operand count, must be 
 		     * strictly positive, consumes N, produces 1 */
     ASSEM_DICT_GET, /* 'dict get' and related - consumes N+1 operands,
-		     * produces 1, N >= 0 */
+		     * produces 1, N > 0 */
+    ASSEM_DICT_SET, /* specifies key count and LVT index, consumes N+1 operands,
+		     * produces 1, N > 0 */
+    ASSEM_DICT_UNSET,
+		    /* specifies key count and LVT index, consumes N operands,
+		     * produces 1, N > 0 */
     ASSEM_EVAL,	    /* 'eval' - evaluate a constant script (by compiling it
 		     * in line with the assembly code! I love Tcl!) */
     ASSEM_INDEX,    /* 4 byte operand, integer or end-integer */
@@ -74,6 +79,9 @@ typedef enum TalInstType {
     ASSEM_PUSH,     /* one literal operand */
     ASSEM_REVERSE,  /* REVERSE: 4-byte operand count, consumes N, produces N */
     ASSEM_SINT1,    /* One 1-byte signed-integer operand (INCR_STK_IMM) */
+    ASSEM_SINT4_LVT4,
+                    /* Signed 4-byte integer operand followed by LVT entry. 
+		     * Fixed arity */
 } TalInstType;
 
 /* Description of an instruction recognized by the assembler. */
