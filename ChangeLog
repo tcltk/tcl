@@ -1,3 +1,13 @@
+2010-10-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclExecute.c (EvalStatsCmd): change 'evalstats' to
+	return data to interp by default, or if given an arg, use that as
+	filename to output to (accepts 'stdout' and 'stderr').
+	Fix output to print used inst count data.
+	* generic/tclCkalloc.c: change TclDumpMemoryInfo sig to allow
+	* generic/tclInt.decls: objPtr as well as FILE* as output.
+	* generic/tclIntDecls.h:
+
 2010-09-24  Andreas Kupries  <andreask@activestate.com>
 
 	* tclWinsock.c: [Bug 3056775]: Fixed race condition between thread
