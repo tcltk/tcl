@@ -1,11 +1,16 @@
+2010-10-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TEBCresume): [Bug 3079830]: Added invalidation
+	of string representations of dictionaries in some cases.
+
 2010-10-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclExecute.c (EvalStatsCmd): change 'evalstats' to
-	return data to interp by default, or if given an arg, use that as
-	filename to output to (accepts 'stdout' and 'stderr').
-	Fix output to print used inst count data.
-	* generic/tclCkalloc.c: change TclDumpMemoryInfo sig to allow
-	* generic/tclInt.decls: objPtr as well as FILE* as output.
+	* generic/tclExecute.c (EvalStatsCmd): change 'evalstats' to return
+	data to interp by default, or if given an arg, use that as filename to
+	output to (accepts 'stdout' and 'stderr').  Fix output to print used
+	inst count data.
+	* generic/tclCkalloc.c: Change TclDumpMemoryInfo sig to allow objPtr
+	* generic/tclInt.decls: as well as FILE* as output.
 	* generic/tclIntDecls.h:
 
 2010-10-01  Donal K. Fellows  <dkf@users.sf.net>
@@ -19,48 +24,47 @@
 
 2010-09-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/configure:      re-generate with autoconf-2.59
+	* unix/configure:	Re-generate with autoconf-2.59
 	* win/configure:
-	* generic/tclMain.c    make compilable with -DUNICODE as well
+	* generic/tclMain.c:	Make compilable with -DUNICODE as well
 
 2010-09-28  Reinhard Max  <max@suse.de>
 
-	Implementation of TIP #162, "IPv6 Sockets for Tcl"
+	TIP #162 IMPLEMENTATION
 
-	* doc/socket.n:         Document the changes to the [socket] and
-			        [fconfigure] commands.
+	* doc/socket.n:		Document the changes to the [socket] and
+				[fconfigure] commands.
 
-	* generic/tclInt.h:     Introduce TclCreateSocketAddress() as a
-	* generic/tclIOSock.c:  replacement for the platform-dependent
-	* unix/tclUnixSock.c:   TclpCreateSocketAddress() functions.
-	* unix/tclUnixChan.c:   Extend the [socket] and [fconfigure]
-	* unix/tclUnixPort.h:   commands to behave as proposed in
-	* win/tclWinSock.c:     TIP #162.
-	* win/tclWinPort.h:
+	* generic/tclInt.h:	Introduce TclCreateSocketAddress() as a
+	* generic/tclIOSock.c:	replacement for the platform-dependent
+	* unix/tclUnixSock.c:	TclpCreateSocketAddress() functions. Extend
+	* unix/tclUnixChan.c:	the [socket] and [fconfigure] commands to
+	* unix/tclUnixPort.h:	behave as proposed in TIP #162. This is the
+	* win/tclWinSock.c:	core of what is required to support the use of
+	* win/tclWinPort.h:	IPv6 sockets in Tcl.
 
-	* compat/fake-rfc2553.c: A compat implementation of the APIs
-	* compat/fake-rfc2553.h: defined in RFC-2553 (getaddrinfo() and
-				 friends) on top of the existing
-				 gethostbyname() etc.
+	* compat/fake-rfc2553.c: A compat implementation of the APIs defined
+	* compat/fake-rfc2553.h: in RFC-2553 (getaddrinfo() and friends) on
+				 top of the existing gethostbyname() etc.
 	* unix/configure.in:	 Test whether the fake-implementation is
 	* unix/tcl.m4:		 needed.
 	* unix/Makefile.in:	 Add a compile target for fake-rfc2553.
 
-	* win/configure.in:      Allow cross-compilation by default
+	* win/configure.in:	Allow cross-compilation by default.
 
-	* tests/socket.test: Improve the test suite to make more use of
-	* tests/remote.tcl:  randomized ports to reduce interference with
-			     tests running in parallel or other services
-			     on the machine.
+	* tests/socket.test:	Improve the test suite to make more use of
+	* tests/remote.tcl:	randomized ports to reduce interference with
+				tests running in parallel or other services on
+				the machine.
 
 2010-09-26  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    [Patch 3072080] (minus the itcl
 	* generic/tclCmdIL.c:    update): a saner NRE.
 	* generic/tclCompExpr.c:
-	* generic/tclCompile.c:  This makes TclNRExecuteByteCode
-	* generic/tclCompile.h:  (ex TEBC) to be a normal NRE
-	* generic/tclExecute.c:  citizen: it loses its special status.
+	* generic/tclCompile.c:  This makes TclNRExecuteByteCode (ex TEBC)
+	* generic/tclCompile.h:  to be a normal NRE citizen: it loses its
+	* generic/tclExecute.c:  special status.
 	* generic/tclInt.decls:  The logic flow within the BC engine is
 	* generic/tclInt.h:      simplified considerably.
 	* generic/tclIntDecls.h:
@@ -68,7 +72,7 @@
 	* generic/tclProc.c:
 	* generic/tclTest.c:
 
-	* generic/tclVar.c: use the macro HasLocalVars everywhere
+	* generic/tclVar.c: Use the macro HasLocalVars everywhere
 
 2010-09-26  Miguel Sofer  <msofer@users.sf.net>
 
@@ -79,16 +83,15 @@
 2010-09-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/stringComp.test: improved string eq/cmp test coverage
-	* generic/tclExecute.c (TclExecuteByteCode): merge INST_STR_CMP
-	and INST_STR_EQ/INST_STR_NEQ paths.  Speeds up eq/ne/[string eq]
-	with obj-aware comparisons and eq/==/ne/!= with length equality
-	check.
+	* generic/tclExecute.c (TclExecuteByteCode): merge INST_STR_CMP and
+	INST_STR_EQ/INST_STR_NEQ paths.  Speeds up eq/ne/[string eq] with
+	obj-aware comparisons and eq/==/ne/!= with length equality check.
 
 2010-09-24  Andreas Kupries  <andreask@activestate.com>
 
-	* tclWinsock.c: [Bug 3056775]: Fixed race condition between thread
-	and internal co-thread access of a socket's structure because of
-	the thread not using the socketListLock in TcpAccept(). Added
+	* tclWinsock.c: [Bug 3056775]: Fixed race condition between thread and
+	internal co-thread access of a socket's structure because of the
+	thread not using the socketListLock in TcpAccept(). Added
 	documentation on how the module works to the top.
 
 2010-09-23  Jan Nijtmans  <nijtmans@users.sf.net>
@@ -106,27 +109,27 @@
 
 2010-09-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/tclAppInit.c:  Make compilable with -DUNICODE (not
-	* win/tclAppInit.c:   actived yet), many clean-ups in comments.
+	* unix/tclAppInit.c:  Make compilable with -DUNICODE (not activated
+	* win/tclAppInit.c:   yet), many clean-ups in comments.
 
 2010-09-22  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute: one more DECACHE_STACK_INFO() missing; this
-	fixes [Bug 3072640]
+	* generic/tclExecute: [Bug 3072640]: One more DECACHE_STACK_INFO() was
+	missing.
 
-	* tests/execute.test: added execute-10.3 for [Bug 3072640]. The
-	test causes a mem failure.
+	* tests/execute.test: Added execute-10.3 for [Bug 3072640]. The test
+	causes a mem failure.
 
-	* generic/tclExecute: protect all possible writes to ::errorInfo
-	or ::errorCode with DECACHE_STACK_INFO(), as they could run
-	traces. The new calls to be protected are Tcl_ResetResult(),
-	Tcl_SetErrorCode(), IllegalExprOperandType(),
-	TclExprFloatError(). The error was triggered by [Patch 3072080].
+	* generic/tclExecute: Protect all possible writes to ::errorInfo or
+	::errorCode with DECACHE_STACK_INFO(), as they could run traces. The
+	new calls to be protected are Tcl_ResetResult(), Tcl_SetErrorCode(),
+	IllegalExprOperandType(), TclExprFloatError(). The error was triggered
+	by [Patch 3072080].
 
 2010-09-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tcl.m4:         Add kernel32 to LIBS, so the link line for mingw
-	* win/configure:      is exactly the same as for MSVC++.
+	* win/tcl.m4:		Add kernel32 to LIBS, so the link line for
+	* win/configure:	mingw is exactly the same as for MSVC++.
 
 2010-09-21  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -135,16 +138,16 @@
 	* generic/tclVar.c (TclLookupSimpleVar, CompareVarKeys):
 	* generic/tclPathObj.c (Tcl_FSGetNormalizedPath, Tcl_FSEqualPaths):
 	* generic/tclIOUtil.c (TclFSCwdPointerEquals): peephole opt
-	* generic/tclResult.c (TclMergeReturnOptions): use memcmp where
+	* generic/tclResult.c (TclMergeReturnOptions): Use memcmp where
 	applicable as possible speedup on some libc variants.
 
 2010-09-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinFile.c:   Fix declaration after statement.
-	* win/tcl.m4:         Add -Wdeclaration-after-statement, so
-	* win/configure:      this mistake cannot happen again.
-	* win/tclWinFCmd.c:   [Bug 3069278]: Breakage on head Windows triggered
-	* win/tclWinPipe.c:   by install-tzdata, final fix
+	* win/tcl.m4:         Add -Wdeclaration-after-statement, so this
+	* win/configure:      mistake cannot happen again.
+	* win/tclWinFCmd.c:   [Bug 3069278]: Breakage on head Windows
+	* win/tclWinPipe.c:   triggered by install-tzdata, final fix
 
 2010-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -172,10 +175,10 @@
 
 2010-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclDecls.h     Make Tcl_FindExecutable() work in UNICODE
-	* generic/tclEncoding.c  compiles (windows-only) as well as ASCII.
-	* generic/tclStubInit.c  Needed for [FRQ 491789]: setargv() doesn't
-	support a unicode cmdline
+	* generic/tclDecls.h:    Make Tcl_FindExecutable() work in UNICODE
+	* generic/tclEncoding.c: compiles (windows-only) as well as ASCII.
+	* generic/tclStubInit.c: Needed for [FRQ 491789]: setargv() doesn't
+	support a unicode cmdline.
 
 2010-09-15  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -822,7 +825,7 @@
 
 2010-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclPkg.c    Unnecessary type casts, See Tcl [Patch #2997087]
+	* generic/tclPkg.c:   Unnecessary type casts, see [Patch 2997087]
 
 2010-05-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -1249,7 +1252,7 @@
 
 	* generic/tclIndexObj:	[FRQ 2974744]: share exception codes
 	* generic/tclResult.c:	further optimization, making use of indexType.
-	* generic/tclZlib.c     [Bug 2979399]: uninitialized value troubles
+	* generic/tclZlib.c:    [Bug 2979399]: uninitialized value troubles
 
 2010-03-30  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -2533,23 +2536,23 @@
 
 2009-11-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.h       Make all internal initialization
-	* generic/tclTest.c      routines MODULE_SCOPE
-	* generic/tclTestObj.c
-	* generic/tclTestProcBodyObj.c
-	* generic/tclThreadTest.c
-	* unix/Makefile.in       Fix [Bug 2883850]: pkgIndex.tcl doesn't
-	* unix/tclAppInit.c      get created with static Tcl build
-	* unix/tclXtTest.c
-	* unix/tclXtNotify.c
-	* unix/tclUnixTest.c
-	* win/Makefile.in
-	* win/tcl.m4
-	* win/configure          (regenerated)
-	* win/tclAppInit.c
-	* win/tclWinDde.c        Always compile with Stubs.
-	* win/tclWinReg.c
-	* win/tclWinTest.c
+	* generic/tclInt.h:      Make all internal initialization
+	* generic/tclTest.c:     routines MODULE_SCOPE
+	* generic/tclTestObj.c:
+	* generic/tclTestProcBodyObj.c:
+	* generic/tclThreadTest.c:
+	* unix/Makefile.in:      Fix [Bug 2883850]: pkgIndex.tcl doesn't
+	* unix/tclAppInit.c:     get created with static Tcl build
+	* unix/tclXtTest.c:
+	* unix/tclXtNotify.c:
+	* unix/tclUnixTest.c:
+	* win/Makefile.in:
+	* win/tcl.m4:
+	* win/configure:         (regenerated)
+	* win/tclAppInit.c:
+	* win/tclWinDde.c:       Always compile with Stubs.
+	* win/tclWinReg.c:
+	* win/tclWinTest.c:
 
 2009-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -3207,9 +3210,9 @@
 	* unix/dltest/pkge.c:  const addition
 	* unix/tclUnixThrd.c:  Use <pthread.h> in stead of "pthread.h"
 	* win/tclWinDde.c:     Eliminate some more gcc warnings
-	* win/tclWinReg.c
-	* generic/tclInt.h     Change ForIterData, make it const-safe.
-	* generic/tclCmdAH.c
+	* win/tclWinReg.c:
+	* generic/tclInt.h:    Change ForIterData, make it const-safe.
+	* generic/tclCmdAH.c:
 
 2009-08-12  Don Porter  <dgp@users.sourceforge.net>
 
@@ -3710,7 +3713,7 @@
 2009-04-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIndexObj.c:  Reset internal INTERP_ALTERNATE_WRONG_ARGS
-	* generic/tclIOCmd.c      flag inside the Tcl_WrongNumArgs function,
+	* generic/tclIOCmd.c:     flag inside the Tcl_WrongNumArgs function,
 	                          so the caller no longer has to do the reset.
 
 2009-04-24  Stuart Cassoff  <stwo@users.sf.net>
@@ -3994,7 +3997,7 @@
 
 	* generic/tcl.decls:    [Bug 218977]: Tcl_DbCkfree needs return value
 	* generic/tclCkalloc.c
-	* generic/tclDecls.h    (regenerated)
+	* generic/tclDecls.h:   (regenerated)
 	* generic/tclInt.decls: don't use CONST84/CONST86 here
 	* generic/tclCompile.h: don't use CONST86 here, comment fixing.
 	* generic/tclIO.h:      don't use CONST86 here, comment fixing.
@@ -4199,41 +4202,41 @@
 
 2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclEncoding.c  Eliminate some unnessary type casts
-	* generic/tclEvent.c     some internal const decorations
-	* generic/tclExecute.c   spacing
-	* generic/tclIndexObj.c
-	* generic/tclInterp.c
-	* generic/tclIO.c
-	* generic/tclIOCmd.c
-	* generic/tclIORChan.c
-	* generic/tclIOUtil.c
-	* generic/tclListObj.c
-	* generic/tclLiteral.c
-	* generic/tclNamesp.c
-	* generic/tclObj.c
-	* generic/tclOOBasic.c
-	* generic/tclPathObj.c
-	* generic/tclPkg.c
-	* generic/tclProc.c
-	* generic/tclRegexp.c
-	* generic/tclScan.c
-	* generic/tclStringObj.c
-	* generic/tclTest.c
-	* generic/tclTestProcBodyObj.c
-	* generic/tclThread.c
-	* generic/tclThreadTest.c
-	* generic/tclTimer.c
-	* generic/tclTrace.c
-	* generic/tclUtil.c
-	* generic/tclVar.c
-	* generic/tclStubInit.c (regenerated)
+	* generic/tclEncoding.c: Eliminate some unnessary type casts
+	* generic/tclEvent.c:    some internal const decorations
+	* generic/tclExecute.c:  spacing
+	* generic/tclIndexObj.c:
+	* generic/tclInterp.c:
+	* generic/tclIO.c:
+	* generic/tclIOCmd.c:
+	* generic/tclIORChan.c:
+	* generic/tclIOUtil.c:
+	* generic/tclListObj.c:
+	* generic/tclLiteral.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclOOBasic.c:
+	* generic/tclPathObj.c:
+	* generic/tclPkg.c:
+	* generic/tclProc.c:
+	* generic/tclRegexp.c:
+	* generic/tclScan.c:
+	* generic/tclStringObj.c:
+	* generic/tclTest.c:
+	* generic/tclTestProcBodyObj.c:
+	* generic/tclThread.c:
+	* generic/tclThreadTest.c:
+	* generic/tclTimer.c:
+	* generic/tclTrace.c:
+	* generic/tclUtil.c:
+	* generic/tclVar.c:
+	* generic/tclStubInit.c: (regenerated)
 
 2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/tcl.m4: fix [tcl-Bug 2502365] Building of head on HPUX is
-	broken when using the native CC.
-	* unix/configure (autoconf-2.59)
+	* unix/tcl.m4: [Bug 2502365]: Building of head on HPUX is broken when
+	using the native CC.
+	* unix/configure: (autoconf-2.59)
 
 2009-02-10  Don Porter  <dgp@users.sourceforge.net>
 
