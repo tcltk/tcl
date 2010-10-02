@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.112.2.3 2010/07/02 20:49:47 nijtmans Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.112.2.4 2010/10/02 00:29:42 hobbs Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -121,7 +121,7 @@ EXTERN void		TclDeleteVars(Interp *iPtr,
 #ifndef TclDumpMemoryInfo_TCL_DECLARED
 #define TclDumpMemoryInfo_TCL_DECLARED
 /* 14 */
-EXTERN void		TclDumpMemoryInfo(FILE *outFile);
+EXTERN int		TclDumpMemoryInfo(ClientData clientData, int flags);
 #endif
 /* Slot 15 is reserved */
 #ifndef TclExprFloatError_TCL_DECLARED
@@ -1055,7 +1055,7 @@ typedef struct TclIntStubs {
     void (*tclDeleteCompiledLocalVars) (Interp *iPtr, CallFrame *framePtr); /* 11 */
     void (*tclDeleteVars) (Interp *iPtr, TclVarHashTable *tablePtr); /* 12 */
     void *reserved13;
-    void (*tclDumpMemoryInfo) (FILE *outFile); /* 14 */
+    int (*tclDumpMemoryInfo) (ClientData clientData, int flags); /* 14 */
     void *reserved15;
     void (*tclExprFloatError) (Tcl_Interp *interp, double value); /* 16 */
     void *reserved17;
