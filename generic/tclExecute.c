@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.369.2.16 2010/10/02 00:29:42 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.369.2.17 2010/10/04 05:23:47 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -8154,7 +8154,7 @@ EvalStatsCmd(
 
     Tcl_AppendPrintfToObj(objPtr, "\n----------------------------------------------------------------\n");
     Tcl_AppendPrintfToObj(objPtr,
-	    "Compilation and execution statistics for interpreter 0x%p\n",
+	    "Compilation and execution statistics for interpreter %#lx\n",
 	    iPtr);
 
     Tcl_AppendPrintfToObj(objPtr, "\nNumber ByteCodes executed	%ld\n",
