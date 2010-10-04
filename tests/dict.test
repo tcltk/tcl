@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.2.2.23 2010/05/21 14:00:55 dgp Exp $
+# RCS: @(#) $Id: dict.test,v 1.2.2.24 2010/10/04 13:04:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -426,6 +426,9 @@ test dict-12.10 {dict lappend command: write failure} -setup {
 } -returnCodes error -cleanup {
     unset dictVar
 } -result {can't set "dictVar": variable is array}
+test dict-12.11 {compiled dict append: invalidate string rep - Bug 3079830} {
+    apply {{} {set d {a 1 b 2 c 3}; dict lappend d b 22}}
+} {a 1 b {2 22} c 3}
 
 test dict-13.1 {dict append command} -body {
     set dictv {a a}
@@ -487,6 +490,9 @@ test dict-13.9 {dict append command: write failure} -setup {
 test dict-13.10 {compiled dict append: crash case} {
     apply {{} {dict append dictVar a o k}}
 } {a ok}
+test dict-13.11 {compiled dict append: invalidate string rep - Bug 3079830} {
+    apply {{} {set d {a 1 b 2 c 3}; dict append d b 22}}
+} {a 1 b 222 c 3}
 
 test dict-14.1 {dict for command: syntax} -returnCodes error -body {
     dict for
