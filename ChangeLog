@@ -1,5 +1,7 @@
 2010-10-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/winPipe.test:	Test hygiene with makeFile and removeFile.
+
 	* generic/tclCompile.c:	Prevent writing to the intrep fields of a
 	* tests/subst.test:	freed Tcl_Obj.  [Bug 3081065]
 
