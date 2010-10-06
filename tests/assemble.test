@@ -2989,7 +2989,83 @@ test assemble-29.7 {regexp} {
     -result 1
 }
 
-test assemble-30.1 {unbalanced stack} {
+test assemble-30.1 {simplest possible catch} {
+    -body {
+	proc x {} {
+	    assemble {
+		beginCatch @bad
+		push error
+		push testing
+		invokeStk 2
+		pop
+		push 0
+		jump @ok
+		label @bad
+		push 1; # should be pushReturnCode
+		label @ok
+		endCatch
+	    }
+	}
+	x
+    }
+    -result 1
+    -cleanup {rename x {}}
+}
+	    
+test assemble-30.2 {catch in external catch conntext} {
+    -body {
+	proc x {} {
+	    list [catch {
+		assemble {
+		    beginCatch @bad
+		    push error
+		    push testing
+		    invokeStk 2
+		    pop
+		    push 0
+		    jump @ok
+		    label @bad
+		    pushReturnCode
+		    label @ok
+		    endCatch
+		}
+	    } result] $result
+	}
+	x
+    }
+    -result {0 1}
+    -cleanup {rename x {}}
+}
+
+test assemble-30.3 {embedded catches} {
+    -body {
+	proc x {} {
+	    list [catch {
+		assemble {
+		    beginCatch @bad
+		    push error
+		    eval { list [catch {error whatever} result] $result }
+		    invokeStk 2
+		    push 0
+		    reverse 2
+		    jump @done
+		    label @bad
+		    pushReturnCode
+		    pushResult
+		    label @done
+		    endCatch
+		    list 2
+		}
+	    } result2] $result2
+	}
+	x
+    }
+    -result {0 {1 {1 whatever}}}
+    -cleanup {rename x {}}
+}
+
+
+test assemble-40.1 {unbalanced stack} {
     -body {
 	list \
 	    [catch {
@@ -3011,7 +3087,7 @@ test assemble-30.1 {unbalanced stack} {
    -returnCodes ok
 }
 
-test assemble-30.2 {unbalanced stack} {*}{
+test assemble-40.2 {unbalanced stack} {*}{
     -body {
 	list \
 	    [catch {
@@ -3028,12 +3104,12 @@ test assemble-30.2 {unbalanced stack} {*}{
 	    } result] $result $::errorInfo
     }
     -result {1 {stack underflow} {stack underflow
-    in assembly code between lines 7 and 8*}}
+    in assembly code between lines 7 and 9*}}
     -match glob
    -returnCodes ok
 }
 
-test assemble-31.1 {Inconsistent stack usage} {*}{
+test assemble-41.1 {Inconsistent stack usage} {*}{
     -body {
 	proc x {y} {
 	    assemble {
@@ -3056,7 +3132,7 @@ test assemble-31.1 {Inconsistent stack usage} {*}{
     ("assemble" body, line 10)*}
 }
 
-test assemble-40.1 {Ulam's 3n+1 problem, TAL implementation} {
+test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
     -body {
 	proc ulam {n} {
 	    assemble {
