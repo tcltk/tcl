@@ -1,3 +1,11 @@
+2010-10-06  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* generic/tclAssembly.c:
+	* generic/tclAssembly.h:
+	* tests/assemble.test: Added catches. Still needs a lot of testing.
+
 2010-10-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	[dogeen-assembler-branch]

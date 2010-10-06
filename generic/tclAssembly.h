@@ -3,6 +3,24 @@
 
 #include "tclCompile.h"
 
+/* State identified for a basic block's catch context */
+
+typedef enum BasicBlockCatchState {
+    BBCS_UNKNOWN = 0,		/* Catch context has not yet been identified */
+    BBCS_NONE,			/* Block is outside of any catch */
+    BBCS_INCATCH,		/* Block is within a catch context */
+    BBCS_DONECATCH,		/* Block is nominally within a catch context
+				 * but has passed a 'doneCatch' directive
+				 * and wants exceptions to propagate. */
+    BBCS_CAUGHT,		/* Block is within a catch context and
+				 * may be executed after an exception fires */
+} BasicBlockCatchState;
+
+typedef struct CodeRange {
+    int startOffset;		/* Start offset in the bytecode array */
+    int endOffset;		/* End offset in the bytecode array */
+} CodeRange;
+
 /* 
  * Structure that defines a basic block - a linear sequence of bytecode
  * instructions with no jumps in or out.
@@ -17,10 +35,6 @@ typedef struct BasicBlock {
     int jumpLine;	        /* Line number in the input script of the
 				 * 'jump' instruction that ends the block,
 				 * or -1 if there is no jump */
-    int may_fall_thru;      	/* Flag == 1 if control passes from this
-				 * block to its successor. */
-    int visited;		/* Flag==1 if this block has been visited
-				 * in the stack checker*/
     struct BasicBlock* predecessor;	
 				/* Predecessor of this block in the
 				 * spanning tree */
@@ -37,13 +51,55 @@ typedef struct BasicBlock {
     int maxStackDepth; 		/* High-water relative stack depth */
     int finalStackDepth;	/* Relative stack depth on exit */
 
+    enum BasicBlockCatchState catchState;
+				/* State of the block for 'catch' analysis */
+    int catchDepth;		/* Number of nested catches in which the
+				 * basic block appears */
+    struct BasicBlock* enclosingCatch;
+				/* BasicBlock structure of the last
+				 * startCatch executed on a path to this 
+				 * block, or NULL if there is no
+				 * enclosing catch */
+
+    int foreignExceptionBase;	/* Base index of foreign exceptions */
+    int foreignExceptionCount;	/* Count of foreign exceptions */
+    ExceptionRange* foreignExceptions;
+				/* ExceptionRange structures for
+				 * exception ranges belonging to embedded
+				 * scripts and expressions in this block */
+
+    int flags;			/* Boolean flags */
+
 } BasicBlock;
+
+/* Flags that pertain to a basic block */
+
+enum BasicBlockFlags {
+    BB_VISITED = (1 << 0),	/* Block has been visited in the current
+				 * traversal */
+    BB_FALLTHRU = (1 << 1),	/* Control may pass from this block to
+				 * a successor */
+    BB_BEGINCATCH = (1 << 2),	/* Block ends with a 'beginCatch' instruction,
+				 * marking it as the start of a 'catch' 
+				 * sequence. The 'jumpTarget' is the exception
+				 * exit from the catch block. */
+    BB_DONECATCH = (1 << 3),	/* Block commences with a 'doneCatch'
+				 * directive, indicating that the program
+				 * is finished with the body of a catch block.
+				 */
+    BB_ENDCATCH = (1 << 4),	/* Block ends with an 'endCatch' instruction,
+				 * unwinding the catch from the exception 
+				 * stack. */
+};
 
 /* Source instruction type recognized by the assembler */
 
 typedef enum TalInstType {
 
     ASSEM_1BYTE,    /* Fixed arity, 1-byte instruction */
+    ASSEM_BEGIN_CATCH,
+		    /* Begin catch: one 4-byte jump offset to be converted
+		     * to appropriate exception ranges */
     ASSEM_BOOL,	    /* One Boolean operand */
     ASSEM_BOOL_LVT4,/* One Boolean, one 4-byte LVT ref. */
     ASSEM_CONCAT1,  /* 1-byte unsigned-integer operand count, must be 
@@ -55,6 +111,11 @@ typedef enum TalInstType {
     ASSEM_DICT_UNSET,
 		    /* specifies key count and LVT index, consumes N operands,
 		     * produces 1, N > 0 */
+    ASSEM_DONECATCH,/* Directive indicating that the body of a catch block
+		     * is complete. Generates no instructions, affects only
+		     * the exception ranges. */
+    ASSEM_END_CATCH,/* End catch. No args. Exception range popped from stack
+		     * and stack pointer restored. */
     ASSEM_EVAL,	    /* 'eval' - evaluate a constant script (by compiling it
 		     * in line with the assembly code! I love Tcl!) */
     ASSEM_INDEX,    /* 4 byte operand, integer or end-integer */
@@ -131,6 +192,10 @@ typedef struct AssembleEnv {
     BasicBlock* curr_bb;	/* Current basic block */
 
     int maxDepth;	     	/* Maximum stack depth encountered */
+
+    int curCatchDepth;		/* Current depth of catches */
+    int maxCatchDepth;		/* Maximum depth of catches encountered */
+
     int flags;			/* Compilation flags (TCL_EVAL_DIRECT) */
 } AssembleEnv;
 
