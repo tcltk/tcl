@@ -17,6 +17,8 @@ static void BBEmitInstInt4(AssembleEnv* assemEnvPtr, int tblind, int opnd,
 static void BBEmitInst1or4(AssembleEnv* assemEnvPtr, int tblind, int param,
 			   int count);
 static void BBEmitOpcode(AssembleEnv* assemEnvPtr, int tblind, int count);
+static int BuildExceptionRanges(AssembleEnv* assemEnvPtr);
+static int CheckForUnclosedCatches(AssembleEnv*);
 static int CheckNamespaceQualifiers(Tcl_Interp*, const char*, int);
 static int CheckNonNegative(Tcl_Interp*, int);
 static int CheckOneByte(Tcl_Interp*, int);
@@ -25,8 +27,10 @@ static int CheckStack(AssembleEnv*);
 static int CheckStrictlyPositive(Tcl_Interp*, int);
 static int CheckUndefinedLabels(AssembleEnv*);
 static ByteCode * CompileAssembleObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static void CompileEmbeddedScript(AssembleEnv*, Tcl_Token*, TalInstDesc*);
 static int DefineLabel(AssembleEnv* envPtr, const char* label);
 static void DupAssembleCodeInternalRep(Tcl_Obj* src, Tcl_Obj* dest);
+static JumpLabel* FindLabel(AssembleEnv* envPtr, Tcl_Obj* name);
 static int FindLocalVar(AssembleEnv* envPtr, Tcl_Token** tokenPtrPtr);
 static int FinishAssembly(AssembleEnv*);
 static void FreeAssembleCodeInternalRep(Tcl_Obj *objPtr);
@@ -35,13 +39,25 @@ static int GetBooleanOperand(AssembleEnv*, Tcl_Token**, int*);
 static int GetListIndexOperand(AssembleEnv*, Tcl_Token**, int*);
 static int GetIntegerOperand(AssembleEnv*, Tcl_Token**, int*);
 static int GetNextOperand(AssembleEnv*, Tcl_Token**, Tcl_Obj**);
+static void LookForFreshCatches(BasicBlock*, BasicBlock**);
+static void MoveExceptionRangesToBasicBlock(AssembleEnv*, int, int);
 static AssembleEnv* NewAssembleEnv(CompileEnv*, int);
+static int ProcessCatches(AssembleEnv*);
+static int ProcessCatchesInBasicBlock(AssembleEnv*, BasicBlock*, BasicBlock*,
+				      enum BasicBlockCatchState, int);
+static void ResetVisitedBasicBlocks(AssembleEnv*);
+static void RestoreEmbeddedExceptionRanges(AssembleEnv*);
 static int StackCheckBasicBlock(AssembleEnv*, BasicBlock *, BasicBlock *, int);
 static BasicBlock* StartBasicBlock(AssembleEnv*, int fallthrough,
 				   Tcl_Obj* jumpLabel);
 /* static int AdvanceIp(const unsigned char *pc); */
 static int StackCheckBasicBlock(AssembleEnv*, BasicBlock *, BasicBlock *, int);
+static int StackCheckExit(AssembleEnv*);
+static void StackFreshCatches(AssembleEnv*, BasicBlock*, int, BasicBlock**,
+			      int*);
 static void SyncStackDepth(AssembleEnv*);
+static void UnstackExpiredCatches(CompileEnv*, BasicBlock*, int, 
+				  BasicBlock**, int*);
 
 /* Tcl_ObjType that describes bytecode emitted by the assembler */
 
@@ -80,204 +96,133 @@ TalInstDesc TalInstructionTable[] = {
 
     /* PUSH must be first, see the code near the end of TclAssembleCode */
 
-    {"push",    ASSEM_PUSH  ,   (INST_PUSH1<<8
-			         | INST_PUSH4), 0   ,   1},
+    {"push",    	ASSEM_PUSH  ,   (INST_PUSH1<<8
+				         | INST_PUSH4), 	0   ,   1},
 
-    {"add",	ASSEM_1BYTE ,   INST_ADD    ,   2   ,   1},
-    {"append",  ASSEM_LVT,	(INST_APPEND_SCALAR1<<8
-	    			 | INST_APPEND_SCALAR4),
-                                                1,      1},
-    {"appendArray",
-                ASSEM_LVT,	(INST_APPEND_ARRAY1<<8
-	    			 | INST_APPEND_ARRAY4),
-                                                2,      1},
-    {"appendArrayStk", 
-                ASSEM_1BYTE,    INST_APPEND_ARRAY_STK,
-                                                3,      1}, 
-    {"appendStk", 
-                ASSEM_1BYTE,    INST_APPEND_STK, 
-                                                2,      1}, 
-    {"bitand",  ASSEM_1BYTE ,   INST_BITAND ,   2   ,   1},
-    {"bitnot",	ASSEM_1BYTE,    INST_BITNOT,    1,      1},
-    {"bitor",   ASSEM_1BYTE ,   INST_BITOR  ,   2   ,   1},
-    {"bitxor",  ASSEM_1BYTE ,   INST_BITXOR ,   2   ,   1},
-    {"concat",	ASSEM_CONCAT1,	INST_CONCAT1,	INT_MIN,1},
-    {"dictAppend",
-     		ASSEM_LVT4,	INST_DICT_APPEND,
-     						2,      1},
-    {"dictGet", ASSEM_DICT_GET, INST_DICT_GET,  INT_MIN,1},
-    {"dictIncrImm",
-                ASSEM_SINT4_LVT4,
-     				INST_DICT_INCR_IMM,
-						1,	1},
-    {"dictLappend",
-     		ASSEM_LVT4,	INST_DICT_LAPPEND,
-     						2,      1},
-    {"dictSet", ASSEM_DICT_SET, INST_DICT_SET,	INT_MIN,1},
-    {"dictUnset",
-		ASSEM_DICT_UNSET,
-     				INST_DICT_UNSET,INT_MIN,1},
-    {"div",     ASSEM_1BYTE,    INST_DIV,       2,      1},
-    {"dup",     ASSEM_1BYTE ,   INST_DUP    ,   1   ,   2}, 
-    {"eq",      ASSEM_1BYTE ,   INST_EQ     ,   2   ,   1},
-    {"eval",	ASSEM_EVAL,	INST_EVAL_STK,	1,	1},
-    {"evalStk",	ASSEM_1BYTE,	INST_EVAL_STK,	1,	1},
-    {"exist",	ASSEM_LVT4,	INST_EXIST_SCALAR,
-                                                0,      1},
-    {"existArray",
-		ASSEM_LVT4,	INST_EXIST_ARRAY,
-                                                1,      1},
-    {"existArrayStk",
-		ASSEM_1BYTE,	INST_EXIST_ARRAY_STK,
-						2,	1},
-    {"existStk",
-		ASSEM_1BYTE,	INST_EXIST_STK,	1,	1},
-    {"expon",   ASSEM_1BYTE,    INST_EXPON,     2,      1},
-    {"expr",	ASSEM_EVAL,	INST_EXPR_STK,	1,	1},
-    {"exprStk", ASSEM_1BYTE,	INST_EXPR_STK,	1,	1},
-    {"ge",      ASSEM_1BYTE ,   INST_GE     ,   2   ,   1},
-    {"gt",      ASSEM_1BYTE ,   INST_GT     ,   2   ,   1},
-    {"incr",    ASSEM_LVT1,     INST_INCR_SCALAR1,
-                                                1,      1},
-    {"incrArray", 
-                ASSEM_LVT1,     INST_INCR_ARRAY1, 
-                                                2,      1},
-    {"incrArrayImm", 
-                ASSEM_LVT1_SINT1,
-                                INST_INCR_ARRAY1_IMM, 
-                                                1,      1},
-    {"incrArrayStk", ASSEM_1BYTE, INST_INCR_ARRAY_STK, 
-                                                3,      1},
-    {"incrArrayStkImm", 
-		ASSEM_SINT1,    INST_INCR_ARRAY_STK_IMM, 
-                                                2,      1},    
-    {"incrImm", 
-                ASSEM_LVT1_SINT1,
-                                INST_INCR_SCALAR1_IMM, 
-                                                0,      1},
-    {"incrStk", ASSEM_1BYTE,    INST_INCR_SCALAR_STK, 
-                                                2,      1},
-    {"incrStkImm", 
-                ASSEM_SINT1,    INST_INCR_SCALAR_STK_IMM, 
-                                                1,      1},
-    {"invokeStk",
-                ASSEM_INVOKE,   (INST_INVOKE_STK1 << 8
-		                 | INST_INVOKE_STK4),
-                                                INT_MIN,1},
-    {"jump",    ASSEM_JUMP,     (INST_JUMP1 << 8
-		                 | INST_JUMP4), 0,      0},
-    {"jumpFalse",
-                ASSEM_JUMP,     (INST_JUMP_FALSE1 << 8
-	                         | INST_JUMP_FALSE4), 
-                                                1,      0},
-    {"jumpTrue",ASSEM_JUMP,     (INST_JUMP_TRUE1 << 8
-		                 | INST_JUMP_TRUE4), 
-                                                1,      0},
-    {"label",   ASSEM_LABEL,    0, 		0,	0}, 
-    {"land",    ASSEM_1BYTE ,   INST_LAND   ,   2   ,   1},
-    {"lappend",  ASSEM_LVT,	(INST_LAPPEND_SCALAR1<<8
-	    			 | INST_LAPPEND_SCALAR4),
-                                                1,      1},
-    {"lappendArray",
-                ASSEM_LVT,	(INST_LAPPEND_ARRAY1<<8
-	    			 | INST_LAPPEND_ARRAY4),
-                                                2,      1},
-    {"lappendArrayStk", 
-                ASSEM_1BYTE,    INST_LAPPEND_ARRAY_STK,
-                                                3,      1}, 
-    {"lappendStk", 
-                ASSEM_1BYTE,    INST_LAPPEND_STK, 
-                                                2,      1}, 
-    {"le",      ASSEM_1BYTE ,   INST_LE     ,   2   ,   1},
-    {"lindexMulti",
-	     	ASSEM_LINDEX_MULTI,
-     				INST_LIST_INDEX_MULTI,
-     						INT_MIN,1},
-    {"list",	ASSEM_LIST,	INST_LIST,	INT_MIN,1},
-    {"listIn",	ASSEM_1BYTE,	INST_LIST_IN,	2,	1},
-    {"listIndex", 
-     		ASSEM_1BYTE,    INST_LIST_INDEX,2,      1},
-    {"listIndexImm",
-     		ASSEM_INDEX,	INST_LIST_INDEX_IMM,
-     						1,	1},
-    {"listLength",
-                ASSEM_1BYTE,    INST_LIST_LENGTH,
-                                                1,      1},
-    {"listNotIn",
-	        ASSEM_1BYTE,	INST_LIST_NOT_IN,
-						2,	1},
-    {"load",    ASSEM_LVT,      (INST_LOAD_SCALAR1 << 8
-	                         | INST_LOAD_SCALAR4), 
-                                                0,      1}, 
-    {"loadArray",
-                ASSEM_LVT,      (INST_LOAD_ARRAY1<<8
-			         | INST_LOAD_ARRAY4),
-                                                1,      1},
-    {"loadArrayStk", 
-                ASSEM_1BYTE,    INST_LOAD_ARRAY_STK,
-                                                2,      1},
-    {"loadStk", ASSEM_1BYTE,    INST_LOAD_SCALAR_STK,
-                                                1,      1},
-    {"lor",     ASSEM_1BYTE ,   INST_LOR    ,   2   ,   1},
-    {"lsetFlat",
-     		ASSEM_LSET_FLAT,INST_LSET_FLAT,	INT_MIN,1},
-    {"lsetList", 
-                ASSEM_1BYTE,    INST_LSET_LIST, 3,      1},
-    {"lshift",  ASSEM_1BYTE ,   INST_LSHIFT ,   2   ,   1},
-    {"lt",      ASSEM_1BYTE ,   INST_LT     ,   2   ,   1},
-    {"mod",     ASSEM_1BYTE,    INST_MOD,       2,      1},
-    {"mult",    ASSEM_1BYTE ,   INST_MULT   ,   2   ,   1},
-    {"neq",     ASSEM_1BYTE ,   INST_NEQ    ,   2   ,   1},
-    {"nop",	ASSEM_1BYTE,	INST_NOP,	0,	0},
-    {"not",     ASSEM_1BYTE,    INST_LNOT,      1,      1},
-    {"nsupvar",	ASSEM_LVT4,	INST_NSUPVAR,	2,	1},
-    {"over",    ASSEM_OVER,     INST_OVER,      INT_MIN, -1-1},
-    {"pop",     ASSEM_1BYTE ,   INST_POP    ,   1   ,   0},
-    {"regexp",	ASSEM_REGEXP,	INST_REGEXP,	2,	1},
-    {"reverse", ASSEM_REVERSE,  INST_REVERSE,   INT_MIN, -1-0},
-    {"rshift",  ASSEM_1BYTE ,   INST_RSHIFT ,   2   ,   1},
-    {"store",   ASSEM_LVT,      (INST_STORE_SCALAR1<<8
-				      | INST_STORE_SCALAR4),
-                                                1,      1}, 
-    {"storeArray", 
-                ASSEM_LVT,      (INST_STORE_ARRAY1<<8
-                                 | INST_STORE_ARRAY4),
-                                                2,      1}, 
-    {"storeArrayStk", 
-                ASSEM_1BYTE,    INST_STORE_ARRAY_STK,
-                                                3,      1}, 
-    {"storeStk", 
-                ASSEM_1BYTE,    INST_STORE_SCALAR_STK, 
-                                                2,      1}, 
-    {"strcmp",  ASSEM_1BYTE,    INST_STR_CMP,   2,      1},
-    {"streq",   ASSEM_1BYTE,    INST_STR_EQ,    2,      1},
-    {"strindex", 
-                ASSEM_1BYTE,    INST_STR_INDEX, 2,      1},
-    {"strlen",  ASSEM_1BYTE,    INST_STR_LEN,   1,      1},
-    {"strmatch",
-                ASSEM_BOOL,     INST_STR_MATCH, 2,      1},
-    {"strneq",  ASSEM_1BYTE,    INST_STR_NEQ,   2,      1},
-    {"sub",     ASSEM_1BYTE ,   INST_SUB    ,   2   ,   1},
-    {"tryCvtToNumeric",
-     		ASSEM_1BYTE,    INST_TRY_CVT_TO_NUMERIC,
-     						1,      1},
-    {"uminus",  ASSEM_1BYTE,    INST_UMINUS,    1,      1},
-    {"unset",	ASSEM_BOOL_LVT4,
-				INST_UNSET_SCALAR,
-                                                0,      0},
-    {"unsetArray",
-		ASSEM_BOOL_LVT4,
-				INST_UNSET_ARRAY,
-                                                1,      0},
-    {"unsetArrayStk",
-		ASSEM_BOOL,	INST_UNSET_ARRAY_STK,
-						2,	0},
-    {"unsetStk",
-		ASSEM_BOOL,	INST_UNSET_STK,	1,	0},
-    {"uplus",   ASSEM_1BYTE,    INST_UPLUS,     1,      1},
-    {"upvar",	ASSEM_LVT4,	INST_UPVAR,	2,	1},
-    {"variable",ASSEM_LVT4,	INST_VARIABLE,	1,	0},
-    {NULL, 0, 0,0}
+    {"add",		ASSEM_1BYTE ,   INST_ADD    ,   	2   ,   1},
+    {"append",  	ASSEM_LVT,	(INST_APPEND_SCALAR1<<8
+	    				 | INST_APPEND_SCALAR4),1,      1},
+    {"appendArray",     ASSEM_LVT,	(INST_APPEND_ARRAY1<<8
+	    			 	 | INST_APPEND_ARRAY4),	2,      1},
+    {"appendArrayStk",	ASSEM_1BYTE,    INST_APPEND_ARRAY_STK,	3,      1}, 
+    {"appendStk", 	ASSEM_1BYTE,    INST_APPEND_STK,      	2,      1}, 
+    {"beginCatch",	ASSEM_BEGIN_CATCH,
+     					INST_BEGIN_CATCH4,	0,	0},
+    {"bitand",  	ASSEM_1BYTE ,   INST_BITAND ,   	2   ,   1},
+    {"bitnot",		ASSEM_1BYTE,    INST_BITNOT,    	1,      1},
+    {"bitor",   	ASSEM_1BYTE ,   INST_BITOR  ,   	2   ,   1},
+    {"bitxor",  	ASSEM_1BYTE ,   INST_BITXOR ,   	2   ,   1},
+    {"concat",		ASSEM_CONCAT1,	INST_CONCAT1,		INT_MIN,1},
+    {"dictAppend",	ASSEM_LVT4,	INST_DICT_APPEND,	2,      1},
+    {"dictGet", 	ASSEM_DICT_GET, INST_DICT_GET,  	INT_MIN,1},
+    {"dictIncrImm",    	ASSEM_SINT4_LVT4,
+     					INST_DICT_INCR_IMM,	1,	1},
+    {"dictLappend",	ASSEM_LVT4,	INST_DICT_LAPPEND,	2,      1},
+    {"dictSet", 	ASSEM_DICT_SET, INST_DICT_SET,		INT_MIN,1},
+    {"dictUnset",	ASSEM_DICT_UNSET,
+     					INST_DICT_UNSET,	INT_MIN,1},
+    {"div",     	ASSEM_1BYTE,    INST_DIV,       	2,      1},
+    {"doneCatch",	ASSEM_DONECATCH,0,			0,	0},
+    {"dup",     	ASSEM_1BYTE ,   INST_DUP    ,   	1   ,   2}, 
+    {"endCatch",	ASSEM_END_CATCH,INST_END_CATCH, 	0,	0},
+    {"eq",      	ASSEM_1BYTE ,   INST_EQ     ,   	2   ,   1},
+    {"eval",		ASSEM_EVAL,	INST_EVAL_STK,		1,	1},
+    {"evalStk",		ASSEM_1BYTE,	INST_EVAL_STK,		1,	1},
+    {"exist",		ASSEM_LVT4,	INST_EXIST_SCALAR,      0,      1},
+    {"existArray",	ASSEM_LVT4,	INST_EXIST_ARRAY,       1,      1},
+    {"existArrayStk",	ASSEM_1BYTE,	INST_EXIST_ARRAY_STK,	2,	1},
+    {"existStk",	ASSEM_1BYTE,	INST_EXIST_STK,		1,	1},
+    {"expon",   	ASSEM_1BYTE,    INST_EXPON,     	2,      1},
+    {"expr",		ASSEM_EVAL,	INST_EXPR_STK,		1,	1},
+    {"exprStk", 	ASSEM_1BYTE,	INST_EXPR_STK,		1,	1},
+    {"ge",      	ASSEM_1BYTE ,   INST_GE     ,   	2   ,   1},
+    {"gt",      	ASSEM_1BYTE ,   INST_GT     ,   	2   ,   1},
+    {"incr",    	ASSEM_LVT1,     INST_INCR_SCALAR1,      1,      1},
+    {"incrArray",	ASSEM_LVT1,     INST_INCR_ARRAY1,       2,      1},
+    {"incrArrayImm", 	ASSEM_LVT1_SINT1,
+                        	        INST_INCR_ARRAY1_IMM,   1,      1},
+    {"incrArrayStk", 	ASSEM_1BYTE,	INST_INCR_ARRAY_STK,	3,      1},
+    {"incrArrayStkImm", ASSEM_SINT1,    INST_INCR_ARRAY_STK_IMM,2,      1},    
+    {"incrImm", 	ASSEM_LVT1_SINT1,
+                        	        INST_INCR_SCALAR1_IMM, 	0,      1},
+    {"incrStk", 	ASSEM_1BYTE,    INST_INCR_SCALAR_STK,   2,      1},
+    {"incrStkImm", 	ASSEM_SINT1,    INST_INCR_SCALAR_STK_IMM, 
+                        	                        	1,      1},
+    {"invokeStk",	ASSEM_INVOKE,   (INST_INVOKE_STK1 << 8
+		        	         | INST_INVOKE_STK4),   INT_MIN,1},
+    {"jump",    	ASSEM_JUMP,     (INST_JUMP1 << 8
+		        	         | INST_JUMP4), 	0,      0},
+    {"jumpFalse",       ASSEM_JUMP,     (INST_JUMP_FALSE1 << 8
+	          	                 | INST_JUMP_FALSE4),   1,      0},
+    {"jumpTrue",	ASSEM_JUMP,     (INST_JUMP_TRUE1 << 8
+		        	         | INST_JUMP_TRUE4), 	1,      0},
+    {"label",   	ASSEM_LABEL,    0, 			0,	0}, 
+    {"land",    	ASSEM_1BYTE ,   INST_LAND   ,   	2   ,   1},
+    {"lappend",  	ASSEM_LVT,	(INST_LAPPEND_SCALAR1<<8
+	    				 | INST_LAPPEND_SCALAR4),
+                                	                	1,      1},
+    {"lappendArray",    ASSEM_LVT,	(INST_LAPPEND_ARRAY1<<8
+	    				 | INST_LAPPEND_ARRAY4),2,      1},
+    {"lappendArrayStk", ASSEM_1BYTE,    INST_LAPPEND_ARRAY_STK,	3,      1}, 
+    {"lappendStk", 	ASSEM_1BYTE,    INST_LAPPEND_STK, 	2,      1}, 
+    {"le",      	ASSEM_1BYTE ,   INST_LE     ,   	2   ,   1},
+    {"lindexMulti",	ASSEM_LINDEX_MULTI,
+     					INST_LIST_INDEX_MULTI,	INT_MIN,1},
+    {"list",		ASSEM_LIST,	INST_LIST,		INT_MIN,1},
+    {"listIn",		ASSEM_1BYTE,	INST_LIST_IN,		2,	1},
+    {"listIndex", 	ASSEM_1BYTE,    INST_LIST_INDEX,	2,      1},
+    {"listIndexImm",	ASSEM_INDEX,	INST_LIST_INDEX_IMM,	1,	1},
+    {"listLength",	ASSEM_1BYTE,    INST_LIST_LENGTH,	1,      1},
+    {"listNotIn",	ASSEM_1BYTE,	INST_LIST_NOT_IN,	2,	1},
+    {"load",    	ASSEM_LVT,      (INST_LOAD_SCALAR1 << 8
+	                	         | INST_LOAD_SCALAR4), 	0,      1}, 
+    {"loadArray",       ASSEM_LVT,      (INST_LOAD_ARRAY1<<8
+				         | INST_LOAD_ARRAY4),	1,      1},
+    {"loadArrayStk",    ASSEM_1BYTE,    INST_LOAD_ARRAY_STK,	2,      1},
+    {"loadStk", 	ASSEM_1BYTE,    INST_LOAD_SCALAR_STK,	1,      1},
+    {"lor",     	ASSEM_1BYTE ,   INST_LOR    ,   	2   ,   1},
+    {"lsetFlat",	ASSEM_LSET_FLAT,INST_LSET_FLAT,		INT_MIN,1},
+    {"lsetList", 	ASSEM_1BYTE,    INST_LSET_LIST, 	3,      1},
+    {"lshift",  	ASSEM_1BYTE ,   INST_LSHIFT ,   	2   ,   1},
+    {"lt",      	ASSEM_1BYTE ,   INST_LT     ,   	2   ,   1},
+    {"mod",     	ASSEM_1BYTE,    INST_MOD,       	2,      1},
+    {"mult",    	ASSEM_1BYTE ,   INST_MULT   ,   	2   ,   1},
+    {"neq",     	ASSEM_1BYTE ,   INST_NEQ    ,   	2   ,   1},
+    {"nop",		ASSEM_1BYTE,	INST_NOP,		0,	0},
+    {"not",     	ASSEM_1BYTE,    INST_LNOT,      	1,      1},
+    {"nsupvar",		ASSEM_LVT4,	INST_NSUPVAR,		2,	1},
+    {"over",    	ASSEM_OVER,     INST_OVER,      	INT_MIN,-1-1},
+    {"pop",     	ASSEM_1BYTE ,   INST_POP    ,   	1   ,   0},
+    {"pushReturnCode",	ASSEM_1BYTE,	INST_PUSH_RETURN_CODE,	0,	1},
+    {"pushReturnOpts",	ASSEM_1BYTE,	INST_PUSH_RETURN_OPTIONS,
+     								0,	1},
+    {"pushResult",	ASSEM_1BYTE,	INST_PUSH_RESULT,	0,	1},
+    {"regexp",		ASSEM_REGEXP,	INST_REGEXP,		2,	1},
+    {"reverse", 	ASSEM_REVERSE,  INST_REVERSE,   	INT_MIN,-1-0},
+    {"rshift",  	ASSEM_1BYTE ,   INST_RSHIFT ,   	2   ,   1},
+    {"store",   	ASSEM_LVT,      (INST_STORE_SCALAR1<<8
+					 | INST_STORE_SCALAR4),	1,      1}, 
+    {"storeArray", 	ASSEM_LVT,      (INST_STORE_ARRAY1<<8
+                        	         | INST_STORE_ARRAY4),	2,      1}, 
+    {"storeArrayStk", 	ASSEM_1BYTE,    INST_STORE_ARRAY_STK,	3,      1}, 
+    {"storeStk", 	ASSEM_1BYTE,    INST_STORE_SCALAR_STK, 	2,      1}, 
+    {"strcmp",  	ASSEM_1BYTE,    INST_STR_CMP,   	2,      1},
+    {"streq",   	ASSEM_1BYTE,    INST_STR_EQ,    	2,      1},
+    {"strindex", 	ASSEM_1BYTE,    INST_STR_INDEX, 	2,      1},
+    {"strlen",  	ASSEM_1BYTE,    INST_STR_LEN,   	1,      1},
+    {"strmatch",	ASSEM_BOOL,     INST_STR_MATCH, 	2,      1},
+    {"strneq",  	ASSEM_1BYTE,    INST_STR_NEQ,   	2,      1},
+    {"sub",     	ASSEM_1BYTE ,   INST_SUB    ,   	2   ,   1},
+    {"tryCvtToNumeric",	ASSEM_1BYTE,    INST_TRY_CVT_TO_NUMERIC,1,      1},
+    {"uminus",  	ASSEM_1BYTE,    INST_UMINUS,    	1,      1},
+    {"unset",		ASSEM_BOOL_LVT4,INST_UNSET_SCALAR,	0,      0},
+    {"unsetArray",	ASSEM_BOOL_LVT4,INST_UNSET_ARRAY,	1,      0},
+    {"unsetArrayStk",	ASSEM_BOOL,	INST_UNSET_ARRAY_STK,	2,	0},
+    {"unsetStk",	ASSEM_BOOL,	INST_UNSET_STK,		1,	0},
+    {"uplus",   	ASSEM_1BYTE,    INST_UPLUS,     	1,      1},
+    {"upvar",		ASSEM_LVT4,	INST_UPVAR,		2,	1},
+    {"variable",	ASSEM_LVT4,	INST_VARIABLE,		1,	0},
+    {NULL, 		0,		0,			0,	0}
 };
 
 /*
@@ -854,6 +799,7 @@ NewAssembleEnv(CompileEnv* envPtr,
 
     assemEnvPtr->head_bb = AllocBB(assemEnvPtr);
     assemEnvPtr->curr_bb = assemEnvPtr->head_bb;
+    assemEnvPtr->head_bb->startLine = 1;
 
     /* Stash compilation flags */
 
@@ -893,6 +839,9 @@ FreeAssembleEnv(AssembleEnv* assemEnvPtr)
     for (thisBB = assemEnvPtr->head_bb; thisBB != NULL; thisBB = nextBB) {
 	if (thisBB->jumpTarget != NULL) {
 	    Tcl_DecrRefCount(thisBB->jumpTarget);
+	}
+	if (thisBB->foreignExceptions != NULL) {
+	    ckfree((char*)(thisBB->foreignExceptions));
 	}
 	nextBB = thisBB->successor1;
 	ckfree((char*)thisBB);
@@ -947,11 +896,7 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
     				/* First operand to the instruction */
     const char* operand1;	/* String rep of the operand */
     int operand1Len;		/* String length of the operand  */
-    Tcl_HashEntry* entry;	/* Hash entry from label and basic
-				 * block operations */
-    int isNew;		    	/* Flag indicating that a new hash entry
-				 * has been created */
-    JumpLabel* l;		        /* Structure descibing a label in the
+    JumpLabel* l;	        /* Structure descibing a label in the
 				 * assembly code */
     int opnd;			/* Integer representation of an operand */
     int litIndex;		/* Literal pool index of a constant */
@@ -1000,6 +945,26 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	    goto cleanup;
 	}
 	BBEmitOpcode(assemEnvPtr, tblind, 0);
+	break;
+
+    case ASSEM_BEGIN_CATCH:
+	/* 
+	 * Emit the BEGIN_CATCH instruction with the code offset of the
+	 * exception branch target instead of the exception range index.
+	 * The correct index will be generated and inserted later, when
+	 * catches are being resolved.
+	 */
+	if (parsePtr->numWords != 2) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "label");
+	    goto cleanup;
+	}
+	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
+	    goto cleanup;
+	}
+	FindLabel(assemEnvPtr, operand1Obj);
+	BBEmitInstInt4(assemEnvPtr, tblind, 0, 0);
+	assemEnvPtr->curr_bb->flags |= BB_BEGINCATCH;
+	StartBasicBlock(assemEnvPtr, 1, operand1Obj);
 	break;
 
     case ASSEM_BOOL:
@@ -1079,6 +1044,21 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	TclEmitInt4(localVar, envPtr);
 	break;
 
+    case ASSEM_DONECATCH:
+	StartBasicBlock(assemEnvPtr, 0, NULL);
+	assemEnvPtr->curr_bb->flags |= BB_DONECATCH;
+	break;
+
+    case ASSEM_END_CATCH:
+	if (parsePtr->numWords != 1) {
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "");
+	    goto cleanup;
+	}
+	assemEnvPtr->curr_bb->flags |= BB_ENDCATCH;
+	BBEmitOpcode(assemEnvPtr, tblind, 0);
+	StartBasicBlock(assemEnvPtr, 1, NULL);
+	break;
+
     case ASSEM_EVAL:
 	/* TODO - Refactor this stuff into a subroutine
 	 * that takes the inst code, the message ("script" or "expression")
@@ -1092,34 +1072,10 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	    goto cleanup;
 	}
 	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    /*
-	     * The expression or script is not only known at compile time,
-	     * but actually a "simple word". It can be compiled inline by
-	     * invoking the compiler recursively.
-	     */
-	    int savedStackDepth = envPtr->currStackDepth;
-	    int savedMaxStackDepth = envPtr->maxStackDepth;
-	    envPtr->currStackDepth = 0;
-	    envPtr->maxStackDepth = 0;
-	    switch(TalInstructionTable[tblind].tclInstCode) {
-	    case INST_EVAL_STK:
-		TclCompileScript(interp, tokenPtr[1].start,
-				 tokenPtr[1].size, envPtr);
-		break;
-	    case INST_EXPR_STK:
-		TclCompileExpr(interp, tokenPtr[1].start,
-			       tokenPtr[1].size, envPtr, 1);
-		break;
-	    default:
-		Tcl_Panic("no ASSEM_EVAL case for %s (%d), can't happen",
-			  TalInstructionTable[tblind].name,
-			  TalInstructionTable[tblind].tclInstCode);
-	    }
-	    SyncStackDepth(assemEnvPtr);
-	    envPtr->currStackDepth = savedStackDepth;
-	    envPtr->maxStackDepth = savedMaxStackDepth;
-	} else if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj)
-		   != TCL_OK) {
+	    CompileEmbeddedScript(assemEnvPtr, tokenPtr+1, 
+				  TalInstructionTable+tblind);
+	} else if (GetNextOperand(assemEnvPtr, &tokenPtr,
+				  &operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	} else {
 	    operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
@@ -1151,17 +1107,8 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	}
-	entry = Tcl_CreateHashEntry(&assemEnvPtr->labelHash,
-				    Tcl_GetString(operand1Obj), &isNew);
-	if (isNew) {
-	    l = (JumpLabel*) ckalloc(sizeof(JumpLabel));
-	    l -> isDefined = 0;
-	    l -> offset = -1;
-	    Tcl_SetHashValue(entry, l);
-	} else {
-	    l = Tcl_GetHashValue(entry);
-	}
-	if (l -> isDefined) {
+	l = FindLabel(assemEnvPtr, operand1Obj);
+	if (l->isDefined) {
 	    BBEmitInst1or4(assemEnvPtr, tblind, 
 			   l->offset - (envPtr->codeNext - envPtr->codeStart),
 			   0);
@@ -1175,7 +1122,7 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 
 	assemEnvPtr->curr_bb->jumpLine = assemEnvPtr->cmdLine;
 	StartBasicBlock(assemEnvPtr,
-			TalInstructionTable[tblind].operandsConsumed,
+			(TalInstructionTable[tblind].operandsConsumed != 0),
 			operand1Obj);
 
 	break;
@@ -1375,6 +1322,199 @@ AssembleOneLine(AssembleEnv* assemEnvPtr)
 	Tcl_DecrRefCount(operand1Obj);
     }
     return status;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * CompileEmbeddedScript --
+ *
+ *	Compile an embedded 'eval' or 'expr' that appears in assembly code.
+ *
+ * This procedure is called when the 'eval' or 'expr' assembly directive
+ * is encountered, and the argument to the directive is a simple word that
+ * requires no substitution. The appropriate compiler (TclCompileScript or
+ * TclCompileExpr) is invoked recursively, and emits bytecode.
+ *
+ * Before the compiler is invoked, the compilation environment's stack
+ * consumption is reset to zero. Upon return from the compilation, the
+ * net stack effect of the compilation is in the compiler env, and this
+ * stack effect is posted to the assembler environment. The compile
+ * environment's stack consumption is then restored to what it was
+ * before (which is actually the state of the stack on entry to the block
+ * of assembly code).
+ *
+ * Any exception ranges pushed by the compilation are copied to the basic
+ * block and removed from the compiler environment. They will be rebuilt at
+ * the end of assembly, when the exception stack depth is actually known.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static void
+CompileEmbeddedScript(AssembleEnv* assemEnvPtr,
+				/* Assembler environment */
+		      Tcl_Token* tokenPtr,
+				/* Tcl_Token containing the script */
+		      TalInstDesc* instPtr)
+				/* Instruction that determines whether
+				 * the script is 'expr' or 'eval' */
+{
+    /*
+     * The expression or script is not only known at compile time,
+     * but actually a "simple word". It can be compiled inline by
+     * invoking the compiler recursively.
+     */
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+
+    /* 
+     * Save away the stack depth and reset it before compiling the script.
+     * We'll record the stack usage of the script in the BasicBlock, and
+     * accumulate it together with the stack usage of the enclosing assembly
+     * code.
+     */
+
+    int savedStackDepth = envPtr->currStackDepth;
+    int savedMaxStackDepth = envPtr->maxStackDepth;
+    int savedCodeIndex = envPtr->codeNext - envPtr->codeStart;
+    int savedExceptArrayNext = envPtr->exceptArrayNext;
+
+    envPtr->currStackDepth = 0;
+    envPtr->maxStackDepth = 0;
+
+    StartBasicBlock(assemEnvPtr, 1, NULL);
+    switch(instPtr->tclInstCode) {
+    case INST_EVAL_STK:
+	TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
+	break;
+    case INST_EXPR_STK:
+	TclCompileExpr(interp, tokenPtr->start, tokenPtr->size, envPtr, 1);
+	break;
+    default:
+	Tcl_Panic("no ASSEM_EVAL case for %s (%d), can't happen",
+		  instPtr->name, instPtr->tclInstCode);
+    }
+
+    /* 
+     * Roll up the stack usage of the embedded block into the assembler
+     * environment.
+     */
+    SyncStackDepth(assemEnvPtr);
+    envPtr->currStackDepth = savedStackDepth;
+    envPtr->maxStackDepth = savedMaxStackDepth;
+
+    /* 
+     * Save any exception ranges that were pushed by the compiler, They
+     * will need to be fixed up once the stack depth is known.
+     */
+
+    MoveExceptionRangesToBasicBlock(assemEnvPtr, savedCodeIndex, 
+				    savedExceptArrayNext);
+
+    /* Flush the current basic block */
+
+    StartBasicBlock(assemEnvPtr, 1, NULL);
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * SyncStackDepth --
+ *
+ *	Copies the stack depth from the compile environment to a basic
+ *	block.
+ *
+ * Side effects:
+ *	Current and max stack depth in the current basic block are
+ *	adjusted.
+ *
+ * This procedure is called on return from invoking the compiler for
+ * the 'eval' and 'expr' operations. It adjusts the stack depth of the
+ * current basic block to reflect the stack required by the just-compiled
+ * code.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static void
+SyncStackDepth(AssembleEnv* assemEnvPtr)
+				/* Assembly environment */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    BasicBlock* curr_bb = assemEnvPtr->curr_bb;
+				/* Current basic block */
+    int maxStackDepth = curr_bb->finalStackDepth + envPtr->maxStackDepth;
+				/* Max stack depth in the basic block */
+
+    if (maxStackDepth > curr_bb->maxStackDepth) {
+	curr_bb->maxStackDepth = maxStackDepth;
+    }
+    curr_bb->finalStackDepth += envPtr->currStackDepth;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * MoveExceptionRangesToBasicBlock --
+ *
+ *	Removes exception ranges that were created by compiling an embedded
+ *	script from the CompileEnv, and stores them in the BasicBlock. They
+ *	will be reinstalled, at the correct stack depth, after control flow
+ *	analysis is complete on the assembly code.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static void
+MoveExceptionRangesToBasicBlock(AssembleEnv* assemEnvPtr,
+				/* Assembler environment */
+				int savedCodeIndex,
+				/* Start of the embedded code */
+				int savedExceptArrayNext)
+				/* Saved index of the end of the exception
+				 * range array */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    BasicBlock* curr_bb = assemEnvPtr->curr_bb;
+				/* Current basic block */
+    int exceptionCount = envPtr->exceptArrayNext - savedExceptArrayNext;
+				/* Number of ranges that must be moved */
+    int i;
+
+    if (exceptionCount == 0) {
+	/* Nothing to do */
+	return;
+    }
+
+    /* 
+     * Save the exception ranges in the basic block. They will be re-added
+     * at the conclusion of assembly; at this time, the INST_BEGIN_CATCH
+     * instructions in the block will be adjusted from whatever range
+     * indices they have [savedExceptArrayNext .. envPtr->exceptArrayNext)
+     * to the indices that the exceptions acquire. The saved exception ranges
+     * are converted to a relative nesting depth. The depth will be recomputed
+     * once flow analysis has determined the actual stack depth of the block.
+     */
+
+    /*fprintf(stderr, "basic block %p has %d exceptions starting at %d\n",
+      curr_bb, exceptionCount, savedExceptArrayNext); */
+    curr_bb->foreignExceptionBase = savedExceptArrayNext;
+    curr_bb->foreignExceptionCount = exceptionCount;
+    curr_bb->foreignExceptions = (ExceptionRange*)
+	ckalloc(exceptionCount * sizeof(ExceptionRange));
+    memcpy(curr_bb->foreignExceptions,
+	   envPtr->exceptArrayPtr + savedExceptArrayNext,
+	   exceptionCount * sizeof(ExceptionRange));
+    for (i = 0; i < exceptionCount; ++i) {
+	curr_bb->foreignExceptions[i].nestingLevel -= envPtr->exceptDepth;
+    }
+    envPtr->exceptArrayNext = savedExceptArrayNext;
+    
 }
 
 /*
@@ -1656,43 +1796,6 @@ FindLocalVar(AssembleEnv* assemEnvPtr,
 /*
  *-----------------------------------------------------------------------------
  *
- * SyncStackDepth --
- *
- *	Copies the stack depth from the compile environment to a basic
- *	block.
- *
- * Side effects:
- *	Current and max stack depth in the current basic block are
- *	adjusted.
- *
- * This procedure is called on return from invoking the compiler for
- * the 'eval' and 'expr' operations. It adjusts the stack depth of the
- * current basic block to reflect the stack required by the just-compiled
- * code.
- *
- *-----------------------------------------------------------------------------
- */
-
-static void
-SyncStackDepth(AssembleEnv* assemEnvPtr)
-				/* Assembly environment */
-{
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
-				/* Compilation environment */
-    BasicBlock* curr_bb = assemEnvPtr->curr_bb;
-				/* Current basic block */
-    int maxStackDepth = curr_bb->finalStackDepth + envPtr->maxStackDepth;
-				/* Max stack depth in the basic block */
-
-    if (maxStackDepth > curr_bb->maxStackDepth) {
-	curr_bb->maxStackDepth = maxStackDepth;
-    }
-    curr_bb->finalStackDepth += envPtr->currStackDepth;
-}
-
-/*
- *-----------------------------------------------------------------------------
- *
  * CheckNamespaceQualifiers --
  *
  *	Verify that a variable name has no namespace qualifiers before
@@ -1943,6 +2046,40 @@ DefineLabel(AssembleEnv* assemEnvPtr,	/* Assembly environment */
 
     return TCL_OK;
 }
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * FindLabel --
+ *
+ *	Find a named label in the bytecode.
+ *
+ * Results:
+ *	Returns a pointer to the label. If the label is not known, an
+ *	undefined placeholder is created for it.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static JumpLabel*
+FindLabel(AssembleEnv* assemEnvPtr,
+				/* Assembler environment */
+	  Tcl_Obj* name)	/* Name of the label */
+{
+    int isNew;			/* Flag == 1 iff the label is undefined */
+    JumpLabel* l;		/* Label structure for an undefined label */
+    Tcl_HashEntry* entry =
+	Tcl_CreateHashEntry(&assemEnvPtr->labelHash,
+			    Tcl_GetString(name), &isNew);
+    if (isNew) {
+	l = (JumpLabel*) ckalloc(sizeof(JumpLabel));
+	l -> isDefined = 0;
+	l -> offset = -1;
+	Tcl_SetHashValue(entry, l);
+    } else {
+	l = Tcl_GetHashValue(entry);
+    }
+    return l;
+}
 
 /*
  *-----------------------------------------------------------------------------
@@ -1977,6 +2114,7 @@ StartBasicBlock(AssembleEnv* assemEnvPtr,
     /* Coalesce zero-length blocks */
 
     if (currBB->startOffset == envPtr->codeNext - envPtr->codeStart) {
+	currBB->startLine = assemEnvPtr->cmdLine;
 	return currBB;
     }
 
@@ -1992,7 +2130,9 @@ StartBasicBlock(AssembleEnv* assemEnvPtr,
 
     /* Record the fallthrough if there is one. */
 
-    currBB->may_fall_thru = fallsThrough;
+    if (fallsThrough) {
+	currBB->flags |= BB_FALLTHRU;
+    }
 
     /* Record the successor block */
 
@@ -2023,19 +2163,20 @@ AllocBB(AssembleEnv* assemEnvPtr)
     BasicBlock * bb = (BasicBlock *) ckalloc(sizeof(BasicBlock));
 
     bb->startOffset = envPtr->codeNext - envPtr->codeStart;
-    bb->startLine = assemEnvPtr->cmdLine;
+    bb->startLine = assemEnvPtr->cmdLine + 1;
     bb->jumpLine = -1;
+    bb->predecessor = NULL;
+    bb->successor1 = NULL;
+    bb->jumpTarget = NULL;
     bb->initialStackDepth = 0;
     bb->minStackDepth = 0;
     bb->maxStackDepth = 0;
     bb->finalStackDepth = 0;
-
-    bb->visited = 0;
-
-    bb->predecessor = NULL;
-    bb->may_fall_thru = 0;
-    bb->jumpTarget = NULL;
-    bb->successor1 = NULL;
+    bb->enclosingCatch = NULL;
+    bb->foreignExceptionBase = -1;
+    bb->foreignExceptionCount = 0;
+    bb->foreignExceptions = NULL;
+    bb->flags = 0;
 
     return bb;
 }
@@ -2065,24 +2206,16 @@ static int
 FinishAssembly(AssembleEnv* assemEnvPtr)
 				/* Assembly environment */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
-				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
-				/* Tcl interpreter */
-    BasicBlock* curr_bb = assemEnvPtr->curr_bb;
-				/* Last basic block in the program */
-    Tcl_Obj* depthObj;		/* Depth of the stack on exit */
-    Tcl_Obj* resultObj;		/* Error message from this function */
-    int litIndex;		/* Index of the empty literal {} */
-
-    /* Tie off the last basic block */
-
-    curr_bb->may_fall_thru = 0;
-    curr_bb->jumpTarget = NULL;
 
     /* Make sure there are no undefined labels */
 
     if (CheckUndefinedLabels(assemEnvPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* Label each basic block with its catch context. Quit on inconsistency */
+
+    if (ProcessCatches(assemEnvPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2093,44 +2226,8 @@ FinishAssembly(AssembleEnv* assemEnvPtr)
     }
 
     /* TODO - Check for unreachable code */
+    /* Maybe not - unreachable code is Mostly Harmless. */
 
-    /* If the exit is reachable, make sure that the program exits with
-     * 1 operand on the stack. */
-
-    if (curr_bb->visited) {
-
-	/* Exit with no operands; push an empty one. */
-
-	int depth = curr_bb->finalStackDepth + curr_bb->initialStackDepth;
-	if (depth == 0) {
-	    /* Emit a 'push' of the empty literal */
-	    litIndex = TclRegisterNewLiteral(envPtr, "", 0);
-	    /* Assumes that 'push' is at slot 0 in TalInstructionTable */
-	    BBEmitInst1or4(assemEnvPtr, 0, litIndex, 0);
-	    ++depth;
-	}
-
-	/* Exit with unbalanced stack */
-
-	if (depth != 1) {
-	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		depthObj = Tcl_NewIntObj(depth);
-		Tcl_IncrRefCount(depthObj);
-		resultObj = Tcl_NewStringObj("stack is unbalanced on exit "
-					     "from the code (depth=", -1);
-		Tcl_AppendObjToObj(resultObj, depthObj);
-		Tcl_DecrRefCount(depthObj);
-		Tcl_AppendToObj(resultObj, ")", -1);
-		Tcl_SetObjResult(interp, resultObj);
-		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACK", NULL);
-	    }
-	    return TCL_ERROR;
-	}
-
-	/* Record stack usage */
-
-	envPtr->currStackDepth += depth;
-    }
     return TCL_OK;
 }
 
@@ -2212,10 +2309,10 @@ CheckStack(AssembleEnv* assemEnvPtr)
 				/* Compilation environment */
     int maxDepth;		/* Maximum stack depth overall */
 
-    /* Checking the head block will check all the other blocks  recursively. */
+    /* Checking the head block will check all the other blocks recursively. */
 
     assemEnvPtr->maxDepth = 0;
-    if(StackCheckBasicBlock(assemEnvPtr,
+    if (StackCheckBasicBlock(assemEnvPtr,
 			    assemEnvPtr->head_bb, NULL, 0) == TCL_ERROR) {
         return TCL_ERROR;
     }
@@ -2226,6 +2323,17 @@ CheckStack(AssembleEnv* assemEnvPtr)
     if (maxDepth > envPtr->maxStackDepth) {
 	envPtr->maxStackDepth = maxDepth;
     }
+
+    /* If the exit is reachable, make sure that the program exits with
+     * 1 operand on the stack. */
+
+    if (StackCheckExit(assemEnvPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* Reset the visited state on all basic blocks */
+
+    ResetVisitedBasicBlocks(assemEnvPtr);
 
     return TCL_OK;
 }
@@ -2263,7 +2371,7 @@ StackCheckBasicBlock(AssembleEnv* assemEnvPtr,
 				 * to this one. */
 		     int initialStackDepth) 
 				/* Stack depth on entry to the block */
-{ 
+{
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
     Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
@@ -2272,7 +2380,7 @@ StackCheckBasicBlock(AssembleEnv* assemEnvPtr,
     int maxDepth;		/* Maximum stack depth so far */
     int result;			/* Tcl status return */
 
-    if (blockPtr->visited) {
+    if (blockPtr->flags & BB_VISITED) {
 
 	/* 
 	 * If the block is already visited, check stack depth for consistency
@@ -2302,7 +2410,7 @@ StackCheckBasicBlock(AssembleEnv* assemEnvPtr,
      * block underflows the stack, and update max stack depth in the
      * assembly environment.
      */
-    blockPtr->visited = 1;
+    blockPtr->flags |= BB_VISITED;
     blockPtr->predecessor = predecessor;
     blockPtr->initialStackDepth = initialStackDepth;
     if (initialStackDepth + blockPtr->minStackDepth < 0) {
@@ -2327,7 +2435,7 @@ StackCheckBasicBlock(AssembleEnv* assemEnvPtr,
 
     stackDepth = initialStackDepth + blockPtr->finalStackDepth;
     result = TCL_OK;
-    if (blockPtr->may_fall_thru) {
+    if (blockPtr->flags & BB_FALLTHRU) {
         result = StackCheckBasicBlock(assemEnvPtr, blockPtr->successor1,
 				      blockPtr, stackDepth);        
         
@@ -2341,6 +2449,760 @@ StackCheckBasicBlock(AssembleEnv* assemEnvPtr,
 				      blockPtr, stackDepth);
     }
     return result;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * StackCheckExit --
+ *
+ *	Makes sure that the net stack effect of an entire assembly language
+ *	script is to push 1 result.
+ *
+ * Results:
+ *	Returns a standard Tcl result, with an error message in the interpreter
+ *	result if the stack is wrong.
+ *
+ * Side effects:
+ *	If the assembly code had a net stack effect of zero, emits code
+ *	to the concluding block to push a null result. In any case, 
+ *	updates the stack depth in the compile environment to reflect
+ * 	the net effect of the assembly code.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+StackCheckExit(AssembleEnv* assemEnvPtr)
+				/* Assembler environment */
+{
+
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    int depth;			/* Net stack effect */
+    int litIndex;		/* Index in the literal pool of the empty 
+				 * string */
+    Tcl_Obj* depthObj;		/* Net stack effect for an error message */
+    Tcl_Obj* resultObj;		/* Error message from this procedure */
+    BasicBlock* curr_bb = assemEnvPtr->curr_bb;
+				/* Final basic block in the assembly */
+
+    /* 
+     * Don't perform these checks if execution doesn't reach the
+     * exit (either because of an infinite loop or because the only
+     * return is from the middle. 
+     */
+
+    if (curr_bb->flags & BB_VISITED) {
+
+    	/* Exit with no operands; push an empty one. */
+
+    	depth = curr_bb->finalStackDepth + curr_bb->initialStackDepth;
+    	if (depth == 0) {
+    	    /* Emit a 'push' of the empty literal */
+    	    litIndex = TclRegisterNewLiteral(envPtr, "", 0);
+    	    /* Assumes that 'push' is at slot 0 in TalInstructionTable */
+    	    BBEmitInst1or4(assemEnvPtr, 0, litIndex, 0);
+    	    ++depth;
+    	}
+
+    	/* Exit with unbalanced stack */
+
+    	if (depth != 1) {
+    	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+    		depthObj = Tcl_NewIntObj(depth);
+    		Tcl_IncrRefCount(depthObj);
+    		resultObj = Tcl_NewStringObj("stack is unbalanced on exit "
+    					     "from the code (depth=", -1);
+    		Tcl_AppendObjToObj(resultObj, depthObj);
+    		Tcl_DecrRefCount(depthObj);
+    		Tcl_AppendToObj(resultObj, ")", -1);
+    		Tcl_SetObjResult(interp, resultObj);
+    		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACK", NULL);
+    	    }
+    	    return TCL_ERROR;
+    	}
+
+    	/* Record stack usage */
+
+    	envPtr->currStackDepth += depth;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * ProcessCatches --
+ *
+ *	First pass of 'catch' processing. 
+ *
+ * Results:
+ *	Returns a standard Tcl result, with an appropriate error message
+ *	if the result is TCL_ERROR.
+ *
+ * Side effects:
+ *	Labels all basic blocks with their enclosing catches.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+ProcessCatches(AssembleEnv* assemEnvPtr)
+				/* Assembler environment */
+{
+    BasicBlock* blockPtr;	/* Pointer to a basic block */
+
+    /*
+     * Clear the catch state of all basic blocks
+     */
+
+    for (blockPtr = assemEnvPtr->head_bb;
+	 blockPtr != NULL;
+	 blockPtr = blockPtr->successor1) {
+	blockPtr->catchState = BBCS_UNKNOWN;
+	blockPtr->enclosingCatch = NULL;
+    }
+
+    /* 
+     * Start the check recursively from the first basic block, which
+     * is outside any exception context 
+     */
+
+    if (ProcessCatchesInBasicBlock(assemEnvPtr, assemEnvPtr->head_bb,
+				   NULL, BBCS_NONE, 0) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* Check for unclosed catch on exit */
+
+    if (CheckForUnclosedCatches(assemEnvPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* Now there's enough information to build the exception ranges. */
+
+    if (BuildExceptionRanges(assemEnvPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* Finally, restore any exception ranges from embedded scripts */
+
+    RestoreEmbeddedExceptionRanges(assemEnvPtr);
+
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * ProcessCatchesInBasicBlock --
+ *
+ *	First-pass catch processing for one basic block.
+ *
+ * Results:
+ *	Returns a standard Tcl result, with error message in the interpreter
+ *	result if an error occurs.
+ *
+ * This procedure checks consistency of the exception context through the
+ * assembler program, and records the enclosing 'catch' for every basic
+ * block.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+ProcessCatchesInBasicBlock(AssembleEnv* assemEnvPtr,
+				/* Assembler environment */
+			   BasicBlock* bbPtr,
+				/* Basic block being processed */
+			   BasicBlock* enclosing,
+				/* Start basic block of the enclosing catch */
+			   enum BasicBlockCatchState state,
+				/* BBCS_NONE, BBCS_INCATCH, or BBCS_CAUGHT */
+			   int catchDepth)
+				/* Depth of nesting of catches */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    int result;			/* Return value from this procedure */
+    BasicBlock* fallThruEnclosing;
+				/* Enclosing catch if execution falls thru */
+    enum BasicBlockCatchState fallThruState;
+				/* Catch state of the successor block */
+    BasicBlock* jumpEnclosing;
+				/* Enclosing catch if execution goes to
+				 * jump target */
+    enum BasicBlockCatchState jumpState;
+				/* Catch state of the jump target */
+    int changed = 0;		/* Flag == 1 iff successor blocks need
+				 * to be checked because the state of this
+				 * block has changed. */
+
+    /* 
+     * Update the state of the current block, checking for consistency.
+     * Set 'changed' to 1 if the state changes and successor blocks
+     * need to be rechecked.
+     */
+
+    if (bbPtr->catchState == BBCS_UNKNOWN) {
+	bbPtr->enclosingCatch = enclosing;
+    } else if (bbPtr->enclosingCatch != enclosing) {
+	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj("execution reaches block in "
+					      "inconsistent exception contexts",
+					      -1));
+	    Tcl_SetErrorLine(interp, bbPtr->startLine);
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADCATCH", NULL);
+	}
+	return TCL_ERROR;
+    } 
+    if (state > bbPtr->catchState) {
+	bbPtr->catchState = state;
+	changed = 1;
+    }
+
+    /* 
+     * If this block has been visited before, and its state hasn't
+     * changed, we're done with it for now.
+     */
+
+    if (!changed) {
+	return TCL_OK;
+    }
+    bbPtr->catchDepth = catchDepth;
+
+    /*
+     * Determine enclosing catch and 'caught' state for the fallthrough
+     * and the jump target. Default for both is the state of the current block.
+     */
+
+    fallThruEnclosing = enclosing;
+    fallThruState = state;
+    jumpEnclosing = enclosing;
+    jumpState = state;
+
+    /* TODO: Make sure that the test cases include validating
+     *       that a natural loop can't include 'beginCatch' or 'endCatch' */
+
+    if (bbPtr->flags & BB_DONECATCH) {
+	/*
+	 * If the block finishes a catch body, the block and its successors
+	 * are outside the exception range. (The block may also end the
+	 * catch or begin another one, so we need to check for those
+	 * conditions as well.)
+	 */
+	if (enclosing == NULL) {
+	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+		Tcl_SetObjResult(interp,
+				 Tcl_NewStringObj("doneCatch without a "
+						  "corresponding beginCatch",
+						  -1));
+		Tcl_SetErrorLine(interp, bbPtr->startLine);
+		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADENDCATCH", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	if (bbPtr->catchState < BB_DONECATCH) {
+	    bbPtr->catchState = BBCS_DONECATCH;
+	    fallThruState = BBCS_DONECATCH;
+	    jumpState = BBCS_DONECATCH;
+	}
+    } 
+
+    if (bbPtr->flags & BB_BEGINCATCH) {
+	/* 
+	 * If the block begins a catch, the state for the successor is
+	 * 'in catch'. The jump target is the exception exit, and the state
+	 * of the jump target is 'caught.'
+	 */
+	fallThruEnclosing = bbPtr;
+	fallThruState = BBCS_INCATCH;
+	jumpEnclosing = bbPtr;
+	jumpState = BBCS_CAUGHT;
+	++catchDepth;
+    } 
+
+    if (bbPtr->flags & BB_ENDCATCH) {
+	/*
+	 * If the block ends a catch, the state for the successor is
+	 * whatever the state was on entry to the catch.
+	 */
+	if (enclosing == NULL) {
+	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+		Tcl_SetObjResult(interp,
+				 Tcl_NewStringObj("endCatch without a "
+						  "corresponding beginCatch",
+						  -1));
+		Tcl_SetErrorLine(interp, bbPtr->startLine);
+		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADENDCATCH", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	fallThruEnclosing = enclosing->enclosingCatch;
+	fallThruState = enclosing->catchState;
+	--catchDepth;
+    }
+
+    /*
+     * Visit any successor blocks with the appropriate exception context
+     */
+
+    result = TCL_OK;
+    if (bbPtr->flags & BB_FALLTHRU) {
+        result = ProcessCatchesInBasicBlock(assemEnvPtr, bbPtr->successor1,
+					    fallThruEnclosing, fallThruState,
+					    catchDepth);        
+    }
+    if (result == TCL_OK && bbPtr->jumpTarget != NULL) {
+	Tcl_HashEntry* entry =
+	    Tcl_FindHashEntry(&assemEnvPtr->labelHash,
+			      Tcl_GetString(bbPtr->jumpTarget));
+	JumpLabel* targetLabel = (JumpLabel*) Tcl_GetHashValue(entry);
+        result = ProcessCatchesInBasicBlock(assemEnvPtr,
+					    targetLabel->basicBlock,
+					    jumpEnclosing, jumpState,
+					    catchDepth);
+    }
+    return result;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * CheckForUnclosedCatches -- 
+ *
+ *	Checks that a sequence of assembly code has no unclosed catches
+ *	on exit.
+ *
+ * Results:
+ *	Returns a standard Tcl result, with an error message for unclosed
+ *	catches.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+CheckForUnclosedCatches(AssembleEnv* assemEnvPtr)
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+
+    if (assemEnvPtr->curr_bb->catchState >= BBCS_INCATCH) {
+	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("catch still active on "
+						      "exit from block", -1));
+	    Tcl_SetErrorLine(interp,
+			     assemEnvPtr->curr_bb->enclosingCatch->startLine);
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "UNCLOSEDCATCH", -1);
+	}
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * BuildExceptionRanges --
+ *
+ *	Walks through the assembly code and builds exception ranges for
+ *	the catches embedded therein.
+ *
+ * Results:
+ *	Returns a standard Tcl result with an error message in the interpreter
+ *	if anything is unsuccessful.
+ *
+ * Side effects:
+ *	Each contiguous block of code with a given catch exit is assigned
+ *	an exception range at the appropriate level.
+ *	Exception ranges in embedded blocks have their levels corrected
+ *	and collated into the table.
+ *	Blocks that end with 'beginCatch' are associated with the innermost
+ *	exception range of the following block.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+BuildExceptionRanges(AssembleEnv* assemEnvPtr)
+				/* Assembler environment */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+#if 0
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+#endif
+    BasicBlock* bbPtr;		/* Current basic block */
+    BasicBlock* prevPtr = NULL;	/* Previous basic block */
+    int catchDepth = 0;		/* Current catch depth */
+    int maxCatchDepth= 0;	/* Maximum catch depth in the program */
+    BasicBlock** catches;	/* Stack of catches in progress */
+    int* catchIndices;		/* Indices of the exception ranges
+				 * of catches in progress */
+    int i;
+
+    /* 
+     * Determine the max catch depth for the entire assembly script
+     * (excluding embedded eval's and expr's, which will be handled later).
+     */
+    for (bbPtr = assemEnvPtr->head_bb; bbPtr != NULL; bbPtr=bbPtr->successor1) {
+	if (bbPtr->catchDepth > maxCatchDepth) {
+	    maxCatchDepth = bbPtr->catchDepth;
+	}
+    }
+
+    /* Allocate memory for a stack of active catches */
+
+    catches = (BasicBlock**) ckalloc(maxCatchDepth * sizeof(BasicBlock*));
+    catchIndices = (int*) ckalloc(maxCatchDepth * sizeof(int));
+    for (i = 0; i < maxCatchDepth; ++i) {
+	catches[i] = NULL;
+	catchIndices[i] = -1;
+    }
+
+    /* Walk through the basic blocks and manage exception ranges. */
+
+    for (bbPtr = assemEnvPtr->head_bb; bbPtr != NULL; bbPtr=bbPtr->successor1) {
+
+	/*fprintf(stderr, "block %p line %d byte %#x enclosing %p state %d"
+		" depth %d\n",
+		bbPtr, bbPtr->startLine, bbPtr->startOffset,
+		bbPtr->enclosingCatch, bbPtr->catchState, bbPtr->catchDepth);
+		fflush(stderr); */
+
+	UnstackExpiredCatches(envPtr, bbPtr, catchDepth,
+			      catches, catchIndices);
+	LookForFreshCatches(bbPtr, catches);
+	StackFreshCatches(assemEnvPtr, bbPtr, catchDepth,
+			  catches, catchIndices);
+
+	/* If the last block was a 'begin catch', fill in the exception range */
+
+	catchDepth = bbPtr->catchDepth;
+	if (prevPtr != NULL
+	    && (prevPtr->flags & BB_BEGINCATCH)) {
+	    /*fprintf(stderr, "beginCatch at %d (depth=%d) "
+		    "is exception range %d\n",
+		    bbPtr->startOffset, catchDepth-1,
+		    catchIndices[catchDepth-1]); fflush(stderr); */
+	    TclStoreInt4AtPtr(catchIndices[catchDepth-1],
+			      envPtr->codeStart + bbPtr->startOffset - 4);
+	}
+
+	prevPtr = bbPtr;
+    }
+
+    if (catchDepth != 0) {
+	Tcl_Panic("unclosed catch at end of code in "
+		  "tclAssembly.c:BuildExceptionRanges, can't happen");
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * UnstackExpiredCatches --
+ *
+ *	Unstacks and closes the exception ranges for any catch contexts that
+ *	were active in the previous basic block but are inactive in the
+ *	current one.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static void
+UnstackExpiredCatches(CompileEnv* envPtr,
+				/* Compilation environment */
+		      BasicBlock* bbPtr,
+				/* Basic block being processed */
+		      int catchDepth,
+				/* Depth of nesting of catches prior to
+				 * entry to this block */
+		      BasicBlock** catches,
+				/* Array of catch contexts */
+		      int* catchIndices)
+				/* Indices of the exception ranges 
+				 * corresponding to the catch contexts */
+{
+
+    ExceptionRange* range;	/* Exception range for a specific catch */
+    BasicBlock* catch;		/* Catch block being examined */
+    BasicBlockCatchState catchState;
+				/* State of the code relative to
+				 * the catch block being examined 
+				 * ("in catch" or "caught") */
+
+    /* 
+     * Unstack any catches that are deeper than the nesting level of
+     * the basic block being entered.
+     */
+    
+    while (catchDepth > bbPtr->catchDepth) {
+	--catchDepth;
+	/* fprintf(stderr, "unstack exception range %d\n",
+	   catchIndices[catchDepth]); fflush(stderr); */
+	range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
+	range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
+	catches[catchDepth] = NULL;
+	catchIndices[catchDepth] = -1;
+    }
+
+    /* 
+     * Unstack any catches that don't match the basic block being entered,
+     * either because they are no longer part of the context, or because
+     * the context has changed from INCATCH to CAUGHT.
+     */
+    
+    catchState = bbPtr->catchState;
+    catch = bbPtr->enclosingCatch;
+    while (catchDepth > 0) {
+	--catchDepth;
+	if (catches[catchDepth] != NULL) {
+	    if (catches[catchDepth] != catch
+		|| catchState >= BBCS_DONECATCH) {
+		/* fprintf(stderr, "unstack changed exception range %d\n",
+		   catchIndices[catchDepth]); fflush(stderr); */
+		range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
+		range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
+		catches[catchDepth] = NULL;
+		catchIndices[catchDepth] = -1;
+	    }
+	    catchState = catch->catchState;
+	    catch = catch->enclosingCatch;
+	}
+    }
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * LookForFreshCatches --
+ *
+ *	Determines whether a basic block being entered needs any exception
+ *	ranges that are not already stacked.
+ *
+ * Does not create the ranges: this procedure iterates from the innermost
+ * catch outward, but exception ranges must be created from the outermost
+ * catch inward.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static void
+LookForFreshCatches(BasicBlock* bbPtr,
+				/* Basic block being entered */
+		    BasicBlock** catches)
+				/* Array of catch contexts that are
+				 * already entered */
+{
+    BasicBlockCatchState catchState;
+				/* State ("in catch" or "caught" of
+				 * the current catch. */
+    BasicBlock* catch;		/* Current enclosing catch */
+    int catchDepth;		/* Nesting depth of the current catch */
+
+    catchState = bbPtr->catchState;
+    catch = bbPtr->enclosingCatch;
+    catchDepth = bbPtr->catchDepth;
+    while (catchDepth > 0) {
+	--catchDepth;
+	if (catches[catchDepth] != catch && catchState < BBCS_DONECATCH) {
+	    /* fprintf(stderr, "new exception range needed for %s.\n",
+	       Tcl_GetString(catch->jumpTarget)); */
+	    catches[catchDepth] = catch;
+	    /* } else {
+	     fprintf(stderr, "new exception range not needed for %s\n",
+	       Tcl_GetString(catch->jumpTarget));*/
+	}
+	catchState = catch->catchState;
+	catch = catch->enclosingCatch;
+    }
+}
+
+/*
+ *-----------------------------------------------------------------------------\ *
+ * StackFreshCatches --
+ *
+ *	Make ExceptionRange records for any catches that are in the
+ *	basic block being entered and were not in the previous basic block.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static void
+StackFreshCatches(AssembleEnv* assemEnvPtr,
+				/* Assembly environment */
+		  BasicBlock* bbPtr,
+				/* Basic block being processed */
+		  int catchDepth,
+				/* Depth of nesting of catches prior to
+				 * entry to this block */
+		  BasicBlock** catches,
+				/* Array of catch contexts */
+		  int* catchIndices)
+				/* Indices of the exception ranges 
+				 * corresponding to the catch contexts */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    ExceptionRange* range;	/* Exception range for a specific catch */
+    BasicBlock* catch;		/* Catch block being examined */
+    JumpLabel* l;		/* Error exit from the catch block */
+
+    catchDepth = 0;
+
+    /*
+     * Iterate through the enclosing catch blocks from the outside in,
+     * looking for ones that don't have exception ranges (and are uncaught)
+     */
+
+    for (catchDepth = 0; catchDepth < bbPtr->catchDepth; ++catchDepth) {
+	if (catchIndices[catchDepth] == -1  && catches[catchDepth] != NULL) {
+
+	    /* Create an exception range for a block that needs one. */
+
+	    catch = catches[catchDepth];
+	    catchIndices[catchDepth] =
+		TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+	    /* fprintf(stderr, "stack exception range %d at depth %d for %s\n",
+		    catchIndices[catchDepth], catchDepth,
+		    Tcl_GetString(catch->jumpTarget)); fflush(stderr); */
+	    range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
+	    range->nestingLevel = envPtr->exceptDepth + catchDepth;
+	    envPtr->maxExceptDepth =
+		TclMax(range->nestingLevel + 1, envPtr->maxExceptDepth);
+	    range->codeOffset = bbPtr->startOffset;
+	    l = FindLabel(assemEnvPtr, catch->jumpTarget);
+	    if (!l->isDefined) {
+		Tcl_Panic("undefined label in tclAssembly.c:"
+			  "BuildExceptionRanges, can't happen");
+	    } else {
+		range->catchOffset = l->offset;
+	    }
+	}
+    }
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * RestoreEmbeddedExceptionRanges --
+ *
+ *	Processes an assembly script, replacing any exception ranges that
+ *	were present in embedded code.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static void
+RestoreEmbeddedExceptionRanges(AssembleEnv* assemEnvPtr)
+				/* Assembler environment */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    BasicBlock* bbPtr;		/* Current basic block */
+    int rangeBase;		/* Base of the foreign exception ranges
+				 * when they are reinstalled */
+    int rangeIndex;		/* Index of the current foreign exception
+				 * range as reinstalled */
+    ExceptionRange* range;      /* Current foreign exception range */
+    unsigned char opcode;	/* Current instruction's opcode */
+    unsigned int catchIndex;	/* Index of the exception range to which
+				 * the current instruction refers */
+    int i;
+
+    /* Walk the basic blocks looking for exceptions in embedded scripts */
+
+    for (bbPtr = assemEnvPtr->head_bb;
+	 bbPtr != NULL;
+	 bbPtr = bbPtr->successor1) {
+	if (bbPtr->foreignExceptionCount != 0) {
+	    /* fprintf(stderr, "basic block %p has %d foreign exception ranges"
+		    " starting at %d\n",
+		    bbPtr, bbPtr->foreignExceptionCount,
+		    bbPtr->foreignExceptionBase); fflush(stderr); */
+
+	    /* 
+	     * Reinstall the embedded exceptions and track their 
+	     * nesting level 
+	     */
+	    rangeBase = envPtr->exceptArrayNext;
+	    /* fprintf(stderr, "next exception at %d\n", rangeBase); */
+	    for (i = 0; i < bbPtr->foreignExceptionCount; ++i) {
+		range = bbPtr->foreignExceptions + i;
+		rangeIndex = TclCreateExceptRange(range->type, envPtr);
+		/* fprintf(stderr, "restore range %d -> %d\n",
+			i + bbPtr->foreignExceptionBase,
+			rangeIndex); fflush(stderr); */
+		range->nestingLevel += envPtr->exceptDepth + bbPtr->catchDepth;
+		memcpy(envPtr->exceptArrayPtr + rangeIndex, range,
+		       sizeof(ExceptionRange));
+		if (range->nestingLevel >= envPtr->maxExceptDepth) {
+		    envPtr->maxExceptDepth = range->nestingLevel + 1;
+		}
+	    }
+
+	    /*
+	     * Walk through the bytecode of the basic block, and relocate
+	     * INST_BEGIN_CATCH4 instructions to the new locations
+	     */
+	    i = bbPtr->startOffset;
+	    while (i < bbPtr->successor1->startOffset) {
+		opcode = envPtr->codeStart[i];
+		if (opcode == INST_BEGIN_CATCH4) {
+		    catchIndex = TclGetUInt4AtPtr(envPtr->codeStart + i + 1);
+		    /* fprintf(stderr, "pc %d exception %d\n",
+		       i, catchIndex); fflush(stderr); */
+		    if (catchIndex >= bbPtr->foreignExceptionBase
+			&& catchIndex < (bbPtr->foreignExceptionBase +
+					 bbPtr->foreignExceptionCount)) {
+			catchIndex -= bbPtr->foreignExceptionBase;
+			catchIndex += rangeBase;
+			/* fprintf(stderr,
+				"alter catch at %d to refer to range %d\n",
+				i, catchIndex); fflush(stderr); */
+			TclStoreInt4AtPtr(catchIndex,
+					  envPtr->codeStart + i + 1);
+		    }
+		}
+		i += tclInstructionTable[opcode].numBytes;
+	    }
+	}
+    }
+
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * ResetVisitedBasicBlocks --
+ *
+ *	Turns off the 'visited' flag in all basic blocks at the conclusion
+ *	of a pass.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static void
+ResetVisitedBasicBlocks(AssembleEnv* assemEnvPtr)
+{
+    BasicBlock* block;
+    for (block = assemEnvPtr->head_bb; block != NULL; 
+	 block = block->successor1) {
+	block->flags &= ~BB_VISITED;
+    }
 }
 
 /*
