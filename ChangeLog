@@ -1,3 +1,7 @@
+2010-10-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIOSock.c: On Windows, use gai_strerrorA
+
 2010-10-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/winPipe.test:	Test hygiene with makeFile and removeFile.
