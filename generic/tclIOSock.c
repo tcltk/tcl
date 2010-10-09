@@ -8,10 +8,16 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOSock.c,v 1.11.10.1 2010/09/28 15:43:01 kennykb Exp $
+ * RCS: @(#) $Id: tclIOSock.c,v 1.11.10.2 2010/10/09 17:53:17 kennykb Exp $
  */
 
 #include "tclInt.h"
+
+#if defined(_WIN32) && defined(UNICODE)
+/* On Windows, we always need the ASCII version. */
+#   undef gai_strerror
+#   define gai_strerror gai_strerrorA
+#endif
 
 /*
  *---------------------------------------------------------------------------
