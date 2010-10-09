@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.369.2.17 2010/10/04 05:23:47 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.369.2.18 2010/10/09 16:31:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1799,8 +1799,8 @@ TclExecuteByteCode(
 
     catchTop = initCatchTop = (ptrdiff_t *) (
 	GrowEvaluationStack(iPtr->execEnvPtr,
-		codePtr->maxExceptDepth + sizeof(CmdFrame) +
-		    codePtr->maxStackDepth, 0) - 1);
+		(sizeof(CmdFrame) + sizeof(Tcl_Obj *) - 1)/sizeof(Tcl_Obj *) +
+		codePtr->maxExceptDepth + codePtr->maxStackDepth, 0) - 1);
     bcFramePtr = (CmdFrame *) (initCatchTop + codePtr->maxExceptDepth + 1);
     tosPtr = initTosPtr = ((Tcl_Obj **) (bcFramePtr + 1)) - 1;
     esPtr = iPtr->execEnvPtr->execStackPtr;
