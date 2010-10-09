@@ -1,4 +1,4 @@
-2010-10-10  Miguel Sofer  <msofer@users.sf.net>
+2010-10-09  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fix overallocation of exec stack in TEBC
 	(mixing numwords and numbytes)
