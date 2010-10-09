@@ -1,3 +1,8 @@
+2010-10-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fix overallocation of exec stack in TEBC
+	(mixing numwords and numbytes)
+
 2010-10-08  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIOSock.c: On Windows, use gai_strerrorA
