@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.187.2.1 2010/09/27 20:33:37 kennykb Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.187.2.2 2010/10/09 17:53:16 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1050,12 +1050,12 @@ FreeSubstCodeInternalRep(
 {
     register ByteCode *codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
 
+    objPtr->typePtr = NULL;
+    objPtr->internalRep.otherValuePtr = NULL;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
-    objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
 }
 
 /*
