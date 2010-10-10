@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.159 2010/10/04 13:04:47 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.160 2010/10/10 12:34:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1883,6 +1883,10 @@ TclNRExecuteByteCode(
 {
     Interp *iPtr = (Interp *) interp;
     BottomData *BP;
+    int size = sizeof(BottomData) + sizeof(CmdFrame) +
+	    + (codePtr->maxStackDepth + codePtr->maxExceptDepth)
+	         *(sizeof(Tcl_Obj *));
+    int numWords = (size + sizeof(Tcl_Obj *) - 1)/sizeof(Tcl_Obj *);
     
     if (iPtr->execEnvPtr->rewind) {
 	return TCL_ERROR;
@@ -1902,9 +1906,7 @@ TclNRExecuteByteCode(
      * execution stack is large enough to execute this ByteCode.
      */
 
-    BP = (BottomData *) GrowEvaluationStack(iPtr->execEnvPtr,
-	    sizeof(BottomData) + codePtr->maxExceptDepth + sizeof(CmdFrame)
-	    + codePtr->maxStackDepth, 0);
+    BP = (BottomData *) GrowEvaluationStack(iPtr->execEnvPtr, numWords, 0);
     esPtr->tosPtr = initTosPtr;
     
     BP->codePtr     = codePtr;
