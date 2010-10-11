@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.214 2010/09/09 14:30:20 nijtmans Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.215 2010/10/11 12:11:53 nijtmans Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -522,7 +522,7 @@ dlllflags = $(lflags) -dll
 conlflags = $(lflags) -subsystem:console
 guilflags = $(lflags) -subsystem:windows
 
-baselibs   = kernel32.lib user32.lib advapi32.lib ws2_32.lib
+baselibs   = netapi32.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib
 # Avoid 'unresolved external symbol __security_cookie' errors.
 # c.f. http://support.microsoft.com/?id=894573
 !if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
