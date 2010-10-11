@@ -7,6 +7,7 @@
 	* win/tcl.m4:         have to use LoadLibrary to access those functions.
 	* win/makefile.vc:
 	* win/configure:      (Re-generate with autoconf-2.59)
+	* win/rules.vc        Update for VS10
 
 2010-10-09  Miguel Sofer  <msofer@users.sf.net>
 
