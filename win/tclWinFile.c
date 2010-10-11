@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.113 2010/09/21 20:22:51 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.114 2010/10/11 12:11:53 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -19,7 +19,7 @@
 #include <winioctl.h>
 #include <sys/stat.h>
 #include <shlobj.h>
-#include <lmaccess.h>		/* For TclpGetUserHome(). */
+#include <lm.h>		/* For TclpGetUserHome(). */
 
 /*
  * The number of 100-ns intervals between the Windows system epoch (1601-01-01
@@ -149,14 +149,6 @@ typedef struct {
 
 static time_t		ToCTime(FILETIME fileTime);
 static void		FromCTime(time_t posixTime, FILETIME *fileTime);
-
-typedef NET_API_STATUS NET_API_FUNCTION NETUSERGETINFOPROC(
-	LPWSTR servername, LPWSTR username, DWORD level, LPBYTE *bufptr);
-
-typedef NET_API_STATUS NET_API_FUNCTION NETAPIBUFFERFREEPROC(LPVOID Buffer);
-
-typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC(
-	LPWSTR servername, LPWSTR domainname, LPBYTE *bufptr);
 
 /*
  * Declarations for local functions defined in this file:
@@ -819,17 +811,18 @@ TclpFindExecutable(
      * create this process.
      */
 
-    if (GetModuleFileNameW(NULL, wName, MAX_PATH) == 0) {
-	GetModuleFileNameA(NULL, name, sizeof(name));
+#ifdef UNICODE
+    GetModuleFileNameW(NULL, wName, MAX_PATH);
+#else
+    GetModuleFileNameA(NULL, name, sizeof(name));
 
-	/*
-	 * Convert to WCHAR to get out of ANSI codepage
-	 */
+    /*
+     * Convert to WCHAR to get out of ANSI codepage
+     */
 
-	MultiByteToWideChar(CP_ACP, 0, name, -1, wName, MAX_PATH);
-    }
-
-    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL,NULL);
+    MultiByteToWideChar(CP_ACP, 0, name, -1, wName, MAX_PATH);
+#endif
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
     TclSetObjNameOfExecutable(Tcl_NewStringObj(name, -1), NULL);
 }
@@ -1392,75 +1385,52 @@ TclpGetUserHome(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name of user's home directory. */
 {
-    const char *result;
-    HINSTANCE netapiInst;
+    const char *result = NULL;
+    USER_INFO_1 *uiPtr, **uiPtrPtr = &uiPtr;
+    Tcl_DString ds;
+    int nameLen = -1;
+    int badDomain = 0;
+    char *domain;
+    WCHAR *wName, *wHomeDir, *wDomain, **wDomainPtr = &wDomain;
+    WCHAR buf[MAX_PATH];
 
-    result = NULL;
     Tcl_DStringInit(bufferPtr);
+    wDomain = NULL;
+    domain = strchr(name, '@');
+    if (domain != NULL) {
+	Tcl_DStringInit(&ds);
+	wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
+	badDomain = NetGetDCName(NULL, wName,
+		(LPBYTE *) wDomainPtr);
+	Tcl_DStringFree(&ds);
+	nameLen = domain - name;
+    }
+    if (badDomain == 0) {
+	Tcl_DStringInit(&ds);
+	wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
+	if (NetUserGetInfo(wDomain, wName, 1,
+		(LPBYTE *) uiPtrPtr) == 0) {
+	    wHomeDir = uiPtr->usri1_home_dir;
+	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
+		Tcl_UniCharToUtfDString(wHomeDir, lstrlenW(wHomeDir),
+			bufferPtr);
+	    } else {
+		/*
+		 * User exists but has no home dir. Return
+		 * "{Windows Drive}:/users/default".
+		 */
 
-    netapiInst = LoadLibraryA("netapi32.dll");
-    if (netapiInst != NULL) {
-	NETAPIBUFFERFREEPROC *netApiBufferFreeProc;
-	NETGETDCNAMEPROC *netGetDCNameProc;
-	NETUSERGETINFOPROC *netUserGetInfoProc;
-
-	netApiBufferFreeProc = (NETAPIBUFFERFREEPROC *)
-		GetProcAddress(netapiInst, "NetApiBufferFree");
-	netGetDCNameProc = (NETGETDCNAMEPROC *)
-		GetProcAddress(netapiInst, "NetGetDCName");
-	netUserGetInfoProc = (NETUSERGETINFOPROC *)
-		GetProcAddress(netapiInst, "NetUserGetInfo");
-
-	if ((netUserGetInfoProc != NULL) && (netGetDCNameProc != NULL)
-		&& (netApiBufferFreeProc != NULL)) {
-	    USER_INFO_1 *uiPtr, **uiPtrPtr = &uiPtr;
-	    Tcl_DString ds;
-	    int nameLen, badDomain;
-	    char *domain;
-	    WCHAR *wName, *wHomeDir, *wDomain, **wDomainPtr = &wDomain;
-	    WCHAR buf[MAX_PATH];
-
-	    badDomain = 0;
-	    nameLen = -1;
-	    wDomain = NULL;
-	    domain = strchr(name, '@');
-	    if (domain != NULL) {
-		Tcl_DStringInit(&ds);
-		wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
-		badDomain = netGetDCNameProc(NULL, wName,
-			(LPBYTE *) wDomainPtr);
-		Tcl_DStringFree(&ds);
-		nameLen = domain - name;
+		GetWindowsDirectoryW(buf, MAX_PATH);
+		Tcl_UniCharToUtfDString(buf, 2, bufferPtr);
+		Tcl_DStringAppend(bufferPtr, "/users/default", -1);
 	    }
-	    if (badDomain == 0) {
-		Tcl_DStringInit(&ds);
-		wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
-		if (netUserGetInfoProc(wDomain, wName, 1,
-			(LPBYTE *) uiPtrPtr) == 0) {
-		    wHomeDir = uiPtr->usri1_home_dir;
-		    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
-			Tcl_UniCharToUtfDString(wHomeDir, lstrlenW(wHomeDir),
-				bufferPtr);
-		    } else {
-			/*
-			 * User exists but has no home dir. Return
-			 * "{Windows Drive}:/users/default".
-			 */
-
-			GetWindowsDirectoryW(buf, MAX_PATH);
-			Tcl_UniCharToUtfDString(buf, 2, bufferPtr);
-			Tcl_DStringAppend(bufferPtr, "/users/default", -1);
-		    }
-		    result = Tcl_DStringValue(bufferPtr);
-		    netApiBufferFreeProc((void *) uiPtr);
-		}
-		Tcl_DStringFree(&ds);
-	    }
-	    if (wDomain != NULL) {
-		netApiBufferFreeProc((void *) wDomain);
-	    }
+	    result = Tcl_DStringValue(bufferPtr);
+	    NetApiBufferFree((void *) uiPtr);
 	}
-	FreeLibrary(netapiInst);
+	Tcl_DStringFree(&ds);
+    }
+    if (wDomain != NULL) {
+	NetApiBufferFree((void *) wDomain);
     }
     if (result == NULL) {
 	/*

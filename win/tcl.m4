@@ -463,7 +463,7 @@ file for information about building with Mingw.])
 	fi
 	SHLIB_LD=""
 	SHLIB_LD_LIBS='${LIBS}'
-	LIBS="-lkernel32 -luser32 -ladvapi32 -lws2_32"
+	LIBS="-lnetapi32 -lkernel32 -luser32 -ladvapi32 -lws2_32"
 	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
 	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32"
 	STLIB_LD='${AR} cr'
@@ -615,7 +615,7 @@ file for information about building with Mingw.])
 	    fi
 	fi
 
-	LIBS="kernel32.lib user32.lib advapi32.lib ws2_32.lib"
+	LIBS="netapi32.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib"
 	if test "$do64bit" != "no" ; then
 	    # The space-based-path will work for the Makefile, but will
 	    # not work if AC_TRY_COMPILE is called.  TEA has the

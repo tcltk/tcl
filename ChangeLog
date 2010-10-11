@@ -1,3 +1,13 @@
+2010-10-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:    [FRQ 2965056]: Windows build with -DUNICODE
+	* win/tclWinReg.c:
+	* win/tclWinTest.c:   More cleanups
+	* win/tclWinFile.c:   Add netapi32 to the link line, so we no longer
+	* win/tcl.m4:         have to use LoadLibrary to access those functions.
+	* win/makefile.vc:
+	* win/configure:      (Re-generate with autoconf-2.59)
+
 2010-10-09  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fix overallocation of exec stack in TEBC
