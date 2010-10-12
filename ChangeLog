@@ -1,3 +1,13 @@
+2010-10-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWin32Dll.c:  Eliminate many tclWinProcs-> indirect calls, which  
+	* win/tclWinFCmd.c:   are no longer needed.
+	* win/tclWinFile.c:
+	* win/tclWinInt.h:
+	* win/tclWinPipe.c:
+	* win/tclWinTest.c:
+	* win/tclWinSock.c:   Fix some MSVC 6.0 warnings (thanks to Pat Thoyts!)
+
 2010-10-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinDde.c:    [FRQ 2965056]: Windows build with -DUNICODE

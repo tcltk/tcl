@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.84 2010/09/21 21:50:35 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.85 2010/10/12 10:21:55 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -478,14 +478,14 @@ TempFileName(
 				 * gets stored. */
 {
     TCHAR *prefix = TEXT("TCL");
-    if (tclWinProcs->getTempPathProc(MAX_PATH, name) != 0) {
-	if (tclWinProcs->getTempFileNameProc(name, prefix, 0, name) != 0) {
+    if (GetTempPath(MAX_PATH, name) != 0) {
+	if (GetTempFileName(name, prefix, 0, name) != 0) {
 	    return 1;
 	}
     }
     name[0] = '.';
     name[1] = '\0';
-    return tclWinProcs->getTempFileNameProc(name, prefix, 0, name);
+    return GetTempFileName(name, prefix, 0, name);
 }
 
 /*
@@ -589,7 +589,7 @@ TclpOpenFile(
 	break;
     }
 
-    nativePath = tclWinProcs->utf2tchar(path, -1, &ds);
+    nativePath = Tcl_WinUtfToTChar(path, -1, &ds);
 
     /*
      * If the file is not being created, use the existing file attributes.
@@ -597,7 +597,7 @@ TclpOpenFile(
 
     flags = 0;
     if (!(mode & O_CREAT)) {
-	flags = tclWinProcs->getFileAttributesProc(nativePath);
+	flags = GetFileAttributes(nativePath);
 	if (flags == 0xFFFFFFFF) {
 	    flags = 0;
 	}
@@ -613,7 +613,7 @@ TclpOpenFile(
      * Now we get to create the file.
      */
 
-    handle = tclWinProcs->createFileProc(nativePath, accessMode, shareMode,
+    handle = CreateFile(nativePath, accessMode, shareMode,
 	    NULL, createMode, flags, NULL);
     Tcl_DStringFree(&ds);
 
@@ -670,7 +670,7 @@ TclpCreateTempFile(
 	return NULL;
     }
 
-    handle = tclWinProcs->createFileProc((TCHAR *) name,
+    handle = CreateFile(name,
 	    GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
 	    FILE_ATTRIBUTE_TEMPORARY|FILE_FLAG_DELETE_ON_CLOSE, NULL);
     if (handle == INVALID_HANDLE_VALUE) {
@@ -730,7 +730,7 @@ TclpCreateTempFile(
 
     TclWinConvertError(GetLastError());
     CloseHandle(handle);
-    tclWinProcs->deleteFileProc((TCHAR *) name);
+    DeleteFile(name);
     return NULL;
 }
 
@@ -1162,7 +1162,7 @@ TclpCreateProcess(
 
     BuildCommandLine(execPath, argc, argv, &cmdLine);
 
-    if (tclWinProcs->createProcessProc(NULL,
+    if (CreateProcess(NULL,
 	    (TCHAR *) Tcl_DStringValue(&cmdLine), NULL, NULL, TRUE,
 	    (DWORD) createFlags, NULL, NULL, &startInfo, &procInfo) == 0) {
 	TclWinConvertError(GetLastError());
@@ -1319,9 +1319,9 @@ ApplicationType(
     for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
 	Tcl_DStringSetLength(&nameBuf, nameLen);
 	Tcl_DStringAppend(&nameBuf, extensions[i], -1);
-	nativeName = tclWinProcs->utf2tchar(Tcl_DStringValue(&nameBuf),
+	nativeName = Tcl_WinUtfToTChar(Tcl_DStringValue(&nameBuf),
 		Tcl_DStringLength(&nameBuf), &ds);
-	found = tclWinProcs->searchPathProc(NULL, nativeName, NULL, MAX_PATH,
+	found = SearchPath(NULL, nativeName, NULL, MAX_PATH,
 		nativeFullPath, &rest);
 	Tcl_DStringFree(&ds);
 	if (found == 0) {
@@ -1333,11 +1333,11 @@ ApplicationType(
 	 * known type.
 	 */
 
-	attr = tclWinProcs->getFileAttributesProc(nativeFullPath);
+	attr = GetFileAttributes(nativeFullPath);
 	if ((attr == 0xffffffff) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	    continue;
 	}
-	strcpy(fullName, tclWinProcs->tchar2utf(nativeFullPath, -1, &ds));
+	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, -1, &ds));
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
@@ -1346,7 +1346,7 @@ ApplicationType(
 	    break;
 	}
 
-	hFile = tclWinProcs->createFileProc(nativeFullPath,
+	hFile = CreateFile(nativeFullPath,
 		GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) {
@@ -1426,9 +1426,8 @@ ApplicationType(
 	 * application name from the arguments.
 	 */
 
-	tclWinProcs->getShortPathNameProc(nativeFullPath,
-		nativeFullPath, MAX_PATH);
-	strcpy(fullName, tclWinProcs->tchar2utf(nativeFullPath, -1, &ds));
+	GetShortPathName(nativeFullPath, nativeFullPath, MAX_PATH);
+	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, -1, &ds));
 	Tcl_DStringFree(&ds);
     }
     return applType;
@@ -1544,7 +1543,7 @@ BuildCommandLine(
 	}
     }
     Tcl_DStringFree(linePtr);
-    tclWinProcs->utf2tchar(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds), linePtr);
+    Tcl_WinUtfToTChar(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds), linePtr);
     Tcl_DStringFree(&ds);
 }
 
@@ -3104,7 +3103,7 @@ TclpOpenTemporaryFile(
     }
 
     namePtr = (char *) name;
-    length = tclWinProcs->getTempPathProc(MAX_PATH, name);
+    length = GetTempPath(MAX_PATH, name);
     if (length == 0) {
 	goto gotError;
     }
@@ -3112,7 +3111,7 @@ TclpOpenTemporaryFile(
     if (basenameObj) {
 	const char *string = Tcl_GetStringFromObj(basenameObj, &length);
 
-	tclWinProcs->utf2tchar(string, length, &buf);
+	Tcl_WinUtfToTChar(string, length, &buf);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);
@@ -3132,12 +3131,12 @@ TclpOpenTemporaryFile(
 
 	sprintf(number, "%d.TMP", counter);
 	counter = (unsigned short) (counter + 1);
-	tclWinProcs->utf2tchar(number, strlen(number), &buf);
+	Tcl_WinUtfToTChar(number, strlen(number), &buf);
 	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf) + 1);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf) + 1);
 	Tcl_DStringFree(&buf);
 
-	handle = tclWinProcs->createFileProc((TCHAR *) name,
+	handle = CreateFile(name,
 		GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, flags, NULL);
     } while (handle == INVALID_HANDLE_VALUE
 	    && --counter2 > 0
