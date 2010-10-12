@@ -2,6 +2,8 @@
 
 	* tools/uniClass.tcl    Spacing and comments: let uniClass.tcl generation match
 	* generic/regc_locale.c better the current (hand-modified) regc_locale.c
+	* tools/uniParse.tcl    Generate proper const qualifiers for tclUniData.c
+	* generic/tclUniData.c
 
 2010-10-12  Reinhard Max  <max@suse.de>
 
