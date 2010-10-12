@@ -65,16 +65,16 @@ proc genTable {type} {
     set ranges [string trimright $ranges "\t\n ,"]
     set chars  [string trimright $chars "\t\n ,"]
     if {$ranges ne ""} {
-	puts "static crange ${type}RangeTable\[\] = {\n$ranges\n};\n"
+	puts "static const crange ${type}RangeTable\[\] = {\n$ranges\n};\n"
 	puts "#define NUM_[string toupper $type]_RANGE (sizeof(${type}RangeTable)/sizeof(crange))\n"
     } else {
 	puts "/* no contiguous ranges of $type characters */\n"
     }
     if {$chars ne ""} {
-	puts "static chr ${type}CharTable\[\] = {\n$chars\n};\n"
+	puts "static const chr ${type}CharTable\[\] = {\n$chars\n};\n"
 	puts "#define NUM_[string toupper $type]_CHAR (sizeof(${type}CharTable)/sizeof(chr))\n"
     } else {
-	puts "/* no singletons of $type characters */\n"
+	puts "/*\n * no singletons of $type characters.\n */\n"
     }
 }
 
@@ -94,7 +94,7 @@ foreach {type desc} {
     upper "uppercase characters"
     graph "unicode print characters excluding space"
 } {
-    puts "/* Unicode: $desc */\n"
+    puts "/*\n * Unicode: $desc.\n */\n"
     genTable $type
 }
 
