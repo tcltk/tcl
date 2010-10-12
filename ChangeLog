@@ -1,3 +1,8 @@
+2010-10-12  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c (CreateClientSocket): Fix a memleak and
+	refactor the calls to freeaddrinfo() [Bug #3084338].
+
 2010-10-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWin32Dll.c:  Eliminate many tclWinProcs-> indirect calls, which  
