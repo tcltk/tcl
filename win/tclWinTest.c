@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.9.2.14 2010/10/11 14:18:39 dgp Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.9.2.15 2010/10/12 13:17:26 dgp Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -503,10 +503,6 @@ TestplatformChmod(
     SID *userSid = 0;
     char *userDomain = 0;
     int res = 0;
-
-    /*
-     * One time initialization, dynamically load Windows NT features
-     */
 
     /*
      * Process the chmod request.

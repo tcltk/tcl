@@ -1,3 +1,18 @@
+2010-10-12  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c (CreateClientSocket): Fix a memleak and
+	refactor the calls to freeaddrinfo() [Bug #3084338].
+
+2010-10-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWin32Dll.c:  Eliminate many tclWinProcs-> indirect calls, which  
+	* win/tclWinFCmd.c:   are no longer needed.
+	* win/tclWinFile.c:
+	* win/tclWinInt.h:
+	* win/tclWinPipe.c:
+	* win/tclWinTest.c:
+	* win/tclWinSock.c:   Fix some MSVC 6.0 warnings (thanks to Pat Thoyts!)
+
 2010-10-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinDde.c:    [FRQ 2965056]: Windows build with -DUNICODE
@@ -7,6 +22,7 @@
 	* win/tcl.m4:         have to use LoadLibrary to access those functions.
 	* win/makefile.vc:
 	* win/configure:      (Re-generate with autoconf-2.59)
+	* win/rules.vc        Update for VS10
 
 2010-10-09  Miguel Sofer  <msofer@users.sf.net>
 
