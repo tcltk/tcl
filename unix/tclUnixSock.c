@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.27 2010/09/28 15:13:55 rmax Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.28 2010/10/12 11:37:22 rmax Exp $
  */
 
 #include "tclInt.h"
@@ -867,7 +867,7 @@ CreateClientSocket(
 				 * attempt to do an async connect. Otherwise
 				 * do a synchronous connect or bind. */
 {
-    int status = 0, connected = 0, sock = -1;
+    int status = -1, connected = 0, sock = -1;
     struct addrinfo *addrlist = NULL, *addrPtr;
                                 /* Socket address */
     struct addrinfo *myaddrlist = NULL, *myaddrPtr;
@@ -968,14 +968,11 @@ CreateClientSocket(
 	status = TclUnixSetBlockingMode(sock, TCL_MODE_BLOCKING);
     }
 
+error:
+    freeaddrinfo(addrlist);
+    freeaddrinfo(myaddrlist);
+    
     if (status < 0) {
-    error:
-	if (addrlist != NULL) {
-	    freeaddrinfo(addrlist);
-        }
-	if (myaddrlist != NULL) {
-	    freeaddrinfo(myaddrlist);
-        }
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "couldn't open socket: ",
 		    Tcl_PosixError(interp), NULL);
@@ -987,13 +984,6 @@ CreateClientSocket(
 	    close(sock);
 	}
 	return NULL;
-    }
-
-    if (addrlist == NULL) {
-	freeaddrinfo(addrlist);
-    }
-    if (myaddrlist == NULL) {
-	freeaddrinfo(myaddrlist);
     }
 
     /*
