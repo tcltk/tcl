@@ -8,7 +8,7 @@
  * Copyright (c) 1998 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUniData.c,v 1.5 2010/05/27 08:38:07 nijtmans Exp $
+ * RCS: @(#) $Id: tclUniData.c,v 1.6 2010/10/12 15:19:04 nijtmans Exp $
  */
 
 /*
@@ -25,7 +25,7 @@
  * to the same alternate page number.
  */
 
-static unsigned char pageMap[] = {
+static const unsigned char pageMap[] = {
     0, 1, 2, 3, 0, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 7, 15, 16, 17,
     18, 19, 20, 21, 22, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 7, 32,
     7, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 47,
@@ -388,7 +388,7 @@ static unsigned char pageMap[] = {
  * set of character attributes.
  */
 
-static unsigned char groupMap[] = {
+static const unsigned char groupMap[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 3, 4, 3, 3, 3, 5, 6, 3, 7, 3, 8,
     3, 3, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 3, 3, 7, 7, 7, 3, 3, 10, 10, 10,
@@ -824,7 +824,7 @@ static unsigned char groupMap[] = {
  *			    highest field so we can easily sign extend.
  */
 
-static int groups[] = {
+static const int groups[] = {
     0, 15, 12, 25, 27, 21, 22, 26, 20, 9, 134217793, 28, 19, 134217858,
     29, 2, 23, 11, 1178599554, 24, -507510654, 4194369, 4194434, -834666431,
     973078658, -507510719, 1258291330, 880803905, 864026689, 859832385,
