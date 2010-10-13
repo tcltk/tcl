@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.505 2010/10/09 15:56:35 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.506 2010/10/13 16:41:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1525,12 +1525,12 @@ FreeExprCodeInternalRep(
 {
     ByteCode *codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 
+    objPtr->typePtr = NULL;
+    objPtr->internalRep.otherValuePtr = NULL;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
-    objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
 }
 
 /*
