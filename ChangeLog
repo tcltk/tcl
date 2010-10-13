@@ -1,3 +1,13 @@
+2010-10-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c:	Alternative fix for [Bugs 467523,983660] where
+	* generic/tclExecute.c:	sharing of empty scripts is allowed again.
+
+2010-10-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinThrd.h  (removed) because it is just empty en used nowhere
+	* win/tcl.dsp
+
 2010-10-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/uniClass.tcl    Spacing and comments: let uniClass.tcl generation match

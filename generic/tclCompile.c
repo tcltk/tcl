@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.86 2010/10/07 12:20:16 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.87 2010/10/13 16:42:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -717,12 +717,12 @@ FreeByteCodeInternalRep(
 {
     register ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
 
+    objPtr->typePtr = NULL;
+    objPtr->internalRep.otherValuePtr = NULL;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
-    objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
 }
 
 /*
@@ -1831,7 +1831,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
      */
 
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_NewObj(), NULL), envPtr);
+	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
     }
 }
 
