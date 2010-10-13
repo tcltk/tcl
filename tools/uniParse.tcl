@@ -9,7 +9,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: uniParse.tcl,v 1.4.16.2 2010/07/02 13:14:46 dgp Exp $
+# RCS: @(#) $Id: uniParse.tcl,v 1.4.16.3 2010/10/13 01:46:29 dgp Exp $
 
 
 namespace eval uni {
@@ -209,7 +209,7 @@ proc uni::main {} {
  * to the same alternate page number.
  */
 
-static unsigned char pageMap\[\] = {"
+static const unsigned char pageMap\[\] = {"
     set line "    "
     set last [expr {[llength $pMap] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
@@ -231,7 +231,7 @@ static unsigned char pageMap\[\] = {"
  * set of character attributes.
  */
 
-static unsigned char groupMap\[\] = {"
+static const unsigned char groupMap\[\] = {"
     set line "    "
     set lasti [expr {[llength $pages] - 1}]
     for {set i 0} {$i <= $lasti} {incr i} {
@@ -270,7 +270,7 @@ static unsigned char groupMap\[\] = {"
  *			    highest field so we can easily sign extend.
  */
 
-static int groups\[\] = {"
+static const int groups\[\] = {"
     set line "    "
     set last [expr {[llength $groups] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
