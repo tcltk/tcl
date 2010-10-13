@@ -1,3 +1,8 @@
+2010-10-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinThrd.h  (removed) because it is just empty en used nowhere
+	* win/tcl.dsp
+
 2010-10-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/uniClass.tcl    Spacing and comments: let uniClass.tcl generation match
