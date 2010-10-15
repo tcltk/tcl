@@ -9,7 +9,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: uniParse.tcl,v 1.4.16.3 2010/10/13 01:46:29 dgp Exp $
+# RCS: @(#) $Id: uniParse.tcl,v 1.4.16.4 2010/10/15 18:24:08 dgp Exp $
 
 
 namespace eval uni {
@@ -209,7 +209,7 @@ proc uni::main {} {
  * to the same alternate page number.
  */
 
-static const unsigned char pageMap\[\] = {"
+static const unsigned short pageMap\[\] = {"
     set line "    "
     set last [expr {[llength $pMap] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
