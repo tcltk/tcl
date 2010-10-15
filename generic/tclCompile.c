@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.87 2010/10/13 16:42:55 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.88 2010/10/15 13:20:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1822,12 +1822,6 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
     /*
      * If the source script yielded no instructions (e.g., if it was empty),
      * push an empty string as the command's result.
-     *
-     * WARNING: push an unshared object! If the script being compiled is a
-     * shared empty string, it will otherwise be self-referential and cause
-     * difficulties with literal management [Bugs 467523, 983660]. We used to
-     * have special code in TclReleaseLiteral to handle this particular
-     * self-reference, but now opt for avoiding its creation altogether.
      */
 
     if (envPtr->codeNext == entryCodeNext) {
