@@ -1,8 +1,15 @@
+2010-10-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (ReleaseDictIterator): Factored out the release
+	of the bytecode-level dictionary iterator information so that the
+	side-conditions on instruction issuing are simpler.
+
 2010-10-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/reg_locale.c  [Bug 3085863] tclUniData 9 years old: Updated Unicode
-	* generic/tclUniData.c  tables to latest UnicodeData.txt, corresponding with 
-	* tools/uniParse.tcl    Unicode 6.0 (except for out-of-range chars > 0xFFFF)
+	* generic/reg_locale.c: [Bug 3085863]: tclUniData 9 years old: Updated
+	* generic/tclUniData.c: Unicode tables to latest UnicodeData.txt,
+	* tools/uniParse.tcl:   corresponding with Unicode 6.0 (except for
+				out-of-range chars > 0xFFFF)
 
 2010-10-13  Don Porter  <dgp@users.sourceforge.net>
 
@@ -11,20 +18,21 @@
 
 2010-10-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinThrd.h  (removed) because it is just empty en used nowhere
+	* win/tclWinThrd.h: (removed) because it is just empty en used nowhere
 	* win/tcl.dsp
 
 2010-10-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tools/uniClass.tcl    Spacing and comments: let uniClass.tcl generation match
-	* generic/regc_locale.c better the current (hand-modified) regc_locale.c
-	* tools/uniParse.tcl    Generate proper const qualifiers for tclUniData.c
-	* generic/tclUniData.c
+	* tools/uniClass.tcl:    Spacing and comments: let uniClass.tcl
+	* generic/regc_locale.c: generation match better the current
+				 (hand-modified) regc_locale.c
+	* tools/uniParse.tcl:    Generate proper const qualifiers for
+	* generic/tclUniData.c:  tclUniData.c
 
 2010-10-12  Reinhard Max  <max@suse.de>
 
-	* unix/tclUnixSock.c (CreateClientSocket): Fix a memleak and
-	refactor the calls to freeaddrinfo() [Bug #3084338].
+	* unix/tclUnixSock.c (CreateClientSocket): [Bug 3084338]: Fix a
+	memleak and refactor the calls to freeaddrinfo().
 
 2010-10-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -39,8 +47,8 @@
 
 2010-10-09  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c: fix overallocation of exec stack in TEBC
-	(mixing numwords and numbytes)
+	* generic/tclExecute.c: Fix overallocation of exec stack in TEBC (due
+	to mixing numwords and numbytes)
 
 2010-10-08  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -50,8 +58,8 @@
 
 	* tests/winPipe.test:	Test hygiene with makeFile and removeFile.
 
-	* generic/tclCompile.c:	Prevent writing to the intrep fields of a
-	* tests/subst.test:	freed Tcl_Obj.  [Bug 3081065]
+	* generic/tclCompile.c:	[Bug 3081065]: Prevent writing to the intrep
+	* tests/subst.test:	fields of a freed Tcl_Obj.
 
 2010-10-02  Donal K. Fellows  <dkf@users.sf.net>
 
