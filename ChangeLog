@@ -1,3 +1,7 @@
+2010-10-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* doc/info.n:           Document [info errorstack] faithfully.
+
 2010-10-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclExecute.c (ReleaseDictIterator): Factored out the release
