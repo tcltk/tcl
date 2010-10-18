@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.161 2010/10/13 16:42:55 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.162 2010/10/18 15:33:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -513,16 +513,6 @@ VarHashCreateVar(
 #else
 #define IsErroringNaNType(type)		0
 #endif
-
-/*
- * Custom object type only used in this file; values of its type should never
- * be seen by user scripts.
- */
-
-static const Tcl_ObjType dictIteratorType = {
-    "dictIterator",
-    NULL, NULL, NULL, NULL
-};
 
 /*
  * Auxiliary tables used to compute powers of small integers.
@@ -714,6 +704,7 @@ static void		IllegalExprOperandType(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
 static inline int	OFFSET(void *ptr);
+static void		ReleaseDictIterator(Tcl_Obj *objPtr);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
 static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
@@ -735,6 +726,56 @@ static const Tcl_ObjType exprCodeType = {
     NULL,			/* updateStringProc */
     NULL			/* setFromAnyProc */
 };
+
+/*
+ * Custom object type only used in this file; values of its type should never
+ * be seen by user scripts.
+ */
+
+static const Tcl_ObjType dictIteratorType = {
+    "dictIterator",
+    ReleaseDictIterator,
+    NULL, NULL, NULL
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReleaseDictIterator --
+ *
+ *	This takes apart a dictionary iterator that is stored in the given Tcl
+ *	object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Deallocates memory, marks the object as being untyped.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ReleaseDictIterator(
+    Tcl_Obj *objPtr)
+{
+    Tcl_DictSearch *searchPtr;
+    Tcl_Obj *dictPtr;
+
+    /*
+     * First kill the search, and then release the reference to the dictionary
+     * that we were holding.
+     */
+
+    searchPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    Tcl_DictObjDone(searchPtr);
+    ckfree((char *) searchPtr);
+
+    dictPtr = objPtr->internalRep.twoPtrValue.ptr2;
+    TclDecrRefCount(dictPtr);
+
+    objPtr->typePtr = NULL;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -5935,23 +5976,8 @@ TEBCresume(
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
 	statePtr = (*LOCAL(opnd)).value.objPtr;
-	if (statePtr == NULL) {
-	    Tcl_Panic("mis-issued dictDone!");
-	}
 
-	if (statePtr->typePtr == &dictIteratorType) {
-	    /*
-	     * First kill the search, and then release the reference to the
-	     * dictionary that we were holding.
-	     */
-
-	    searchPtr = statePtr->internalRep.twoPtrValue.ptr1;
-	    Tcl_DictObjDone(searchPtr);
-	    ckfree((char *) searchPtr);
-
-	    dictPtr = statePtr->internalRep.twoPtrValue.ptr2;
-	    TclDecrRefCount(dictPtr);
-
+	if (statePtr != NULL && statePtr->typePtr == &dictIteratorType) {
 	    /*
 	     * Set the internal variable to an empty object to signify that we
 	     * don't hold an iterator.
