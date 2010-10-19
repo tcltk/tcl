@@ -1,8 +1,13 @@
+2010-10-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c: Purge code that wrote to the object returned by
+	Tcl_GetObjResult, as we don't want to do that anti-pattern no more.
+
 2010-10-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tools/uniParse.tcl:   [Bug 3085863]: tclUniData 9 years old
+	* tools/uniParse.tcl:   [Bug 3085863]: tclUniData was 9 years old;
 	Ignore non-BMP characters and fix comment about UnicodeData.txt file.
-	* generic/regcomp.c:    fix comment
+	* generic/regcomp.c:    Fix comment
 	* tests/utf.test:       Add some Unicode 6 testcases
 
 2010-10-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
