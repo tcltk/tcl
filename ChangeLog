@@ -1,3 +1,10 @@
+2010-10-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/uniParse.tcl:   [Bug 3085863]: tclUniData 9 years old
+	Ignore non-BMP characters and fix comment about UnicodeData.txt file.
+	* generic/regcomp.c:    fix comment
+	* tests/utf.test:       Add some Unicode 6 testcases
+
 2010-10-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* doc/info.n:           Document [info errorstack] faithfully.
