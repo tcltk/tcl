@@ -1,5 +1,19 @@
 2010-10-19  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclZlib.c (Tcl_ZlibStreamGet): [Bug 3081008]: Ensure that
+	when a bytearray gets its internals entangled with zlib for more than
+	a passing moment, that bytearray will never be shimmered away. This
+	increases the amount of copying but is simple to get right, which is a
+	reasonable trade-off.
+
+	* generic/tclStringObj.c (Tcl_AppendObjToObj): Added some special
+	cases so that most of the time when you build up a bytearray by
+	appending, it actually ends up being a bytearray rather than
+	shimmering back and forth to string.
+
+	* tests/http11.test (check_crc): Use a simpler way to express the
+	functionality of this procedure.
+
 	* generic/tclZlib.c: Purge code that wrote to the object returned by
 	Tcl_GetObjResult, as we don't want to do that anti-pattern no more.
 
