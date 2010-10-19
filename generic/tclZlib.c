@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.39 2010/10/19 21:23:32 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.40 2010/10/19 22:50:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1047,10 +1047,15 @@ Tcl_ZlibStreamGet(
 	    if (listLen > 0) {
 		/*
 		 * There is more input available, get it from the list and
-		 * give it to zlib.
+		 * give it to zlib. At this point, the data must not be shared
+		 * since we require the bytearray representation to not vanish
+		 * under our feet. [Bug 3081008]
 		 */
 
 		Tcl_ListObjIndex(NULL, zshPtr->inData, 0, &itemObj);
+		if (Tcl_IsShared(itemObj)) {
+		    itemObj = Tcl_DuplicateObj(itemObj);
+		}
 		itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 		Tcl_IncrRefCount(itemObj);
 		zshPtr->currentInput = itemObj;
@@ -1062,7 +1067,6 @@ Tcl_ZlibStreamGet(
 		 */
 
 		Tcl_ListObjReplace(NULL, zshPtr->inData, 0, 1, 0, NULL);
-		listLen--;
 	    }
 	}
 
@@ -1092,10 +1096,15 @@ Tcl_ZlibStreamGet(
 	    }
 
 	    /*
-	     * Get the next block of data to go to inflate.
+	     * Get the next block of data to go to inflate. At this point, the
+	     * data must not be shared since we require the bytearray
+	     * representation to not vanish under our feet. [Bug 3081008]
 	     */
 
 	    Tcl_ListObjIndex(zshPtr->interp, zshPtr->inData, 0, &itemObj);
+	    if (Tcl_IsShared(itemObj)) {
+		itemObj = Tcl_DuplicateObj(itemObj);
+	    }
 	    itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 	    Tcl_IncrRefCount(itemObj);
 	    zshPtr->currentInput = itemObj;
