@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.484 2010/09/28 15:13:54 rmax Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.485 2010/10/20 20:52:28 ferrieux Exp $
  */
 
 #ifndef _TCLINT
@@ -2159,6 +2159,8 @@ typedef struct Interp {
     Tcl_Obj *errorStack;	/* [info errorstack] value (as a Tcl_Obj). */
     Tcl_Obj *upLiteral;		/* "UP" literal for [info errorstack] */
     Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
+    Tcl_Obj *innerLiteral;	/* "INNER" literal for [info errorstack] */
+    Tcl_Obj *innerContext;	/* cached list for fast reallocation */
     int resetErrorStack;        /* controls cleaning up of ::errorStack */
 
 #ifdef TCL_COMPILE_STATS
@@ -3098,6 +3100,8 @@ MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
 MODULE_SCOPE void *	TclpThreadGetMasterTSD(void *tsdKeyPtr);
+
+MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp, const char *msg, int length);
 
 /*
  *----------------------------------------------------------------

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.127 2010/09/27 19:42:38 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.128 2010/10/20 20:52:28 ferrieux Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -975,6 +975,14 @@ MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 #endif
 MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
+MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
+					  const char *script,
+					  const char *command, int length,
+					  const unsigned char *pc, Tcl_Obj **tosPtr); 
+MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
+					    const unsigned char *pc, Tcl_Obj **tosPtr);
+MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
+
 
 /*
  *----------------------------------------------------------------
