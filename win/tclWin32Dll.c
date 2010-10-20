@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.68 2010/09/14 08:53:49 nijtmans Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.68.2.1 2010/10/20 01:50:19 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -146,7 +146,7 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
 
 typedef struct MountPointMap {
     const TCHAR *volumeName;	/* Native wide string volume name. */
-    char driveLetter;		/* Drive letter corresponding to the volume
+    TCHAR driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
 				/* Pointer to next structure in list, or
@@ -486,11 +486,11 @@ TclWinResetInterfaces(void)
 
 char
 TclWinDriveLetterForVolMountPoint(
-    const WCHAR *mountPoint)
+    const TCHAR *mountPoint)
 {
     MountPointMap *dlIter, *dlPtr2;
-    WCHAR Target[55];		/* Target of mount at mount point */
-    WCHAR drive[4] = { L'A', L':', L'\\', L'\0' };
+    TCHAR Target[55];		/* Target of mount at mount point */
+    TCHAR drive[4] = TEXT("A:\\");
 
     /*
      * Detect the volume mounted there. Unfortunately, there is no simple way
@@ -501,14 +501,14 @@ TclWinDriveLetterForVolMountPoint(
     Tcl_MutexLock(&mountPointMap);
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
-	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
 	    /*
 	     * We need to check whether this information is still valid, since
 	     * either the user or various programs could have adjusted the
 	     * mount points on the fly.
 	     */
 
-	    drive[0] = L'A' + (dlIter->driveLetter - 'A');
+	    drive[0] = (TCHAR) dlIter->driveLetter;
 
 	    /*
 	     * Try to read the volume mount point and see where it points.
@@ -516,7 +516,7 @@ TclWinDriveLetterForVolMountPoint(
 
 	    if (GetVolumeNameForVolumeMountPoint(drive,
 		    Target, 55) != 0) {
-		if (wcscmp(dlIter->volumeName, Target) == 0) {
+		if (_tcscmp(dlIter->volumeName, Target) == 0) {
 		    /*
 		     * Nothing has changed.
 		     */
@@ -579,7 +579,7 @@ TclWinDriveLetterForVolMountPoint(
 
 	    for (dlIter = driveLetterLookup; dlIter != NULL;
 		    dlIter = dlIter->nextPtr) {
-		if (wcscmp(dlIter->volumeName, Target) == 0) {
+		if (_tcscmp(dlIter->volumeName, Target) == 0) {
 		    alreadyStored = 1;
 		    break;
 		}
@@ -587,7 +587,7 @@ TclWinDriveLetterForVolMountPoint(
 	    if (!alreadyStored) {
 		dlPtr2 = (MountPointMap *) ckalloc(sizeof(MountPointMap));
 		dlPtr2->volumeName = TclNativeDupInternalRep(Target);
-		dlPtr2->driveLetter = 'A' + (drive[0] - L'A');
+		dlPtr2->driveLetter = (char) drive[0];
 		dlPtr2->nextPtr = driveLetterLookup;
 		driveLetterLookup = dlPtr2;
 	    }
@@ -600,7 +600,7 @@ TclWinDriveLetterForVolMountPoint(
 
     for (dlIter = driveLetterLookup; dlIter != NULL;
 	    dlIter = dlIter->nextPtr) {
-	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
 	    Tcl_MutexUnlock(&mountPointMap);
 	    return dlIter->driveLetter;
 	}
