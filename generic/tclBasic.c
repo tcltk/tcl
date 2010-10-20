@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.467 2010/10/01 12:52:49 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.468 2010/10/20 20:52:26 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -549,6 +549,10 @@ Tcl_CreateInterp(void)
     Tcl_IncrRefCount(iPtr->upLiteral);
     TclNewLiteralStringObj(iPtr->callLiteral,"CALL");
     Tcl_IncrRefCount(iPtr->callLiteral);
+    TclNewLiteralStringObj(iPtr->innerLiteral,"INNER");
+    Tcl_IncrRefCount(iPtr->innerLiteral);
+    iPtr->innerContext = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(iPtr->innerContext);
     iPtr->errorCode = NULL;
     TclNewLiteralStringObj(iPtr->ecVar, "::errorCode");
     Tcl_IncrRefCount(iPtr->ecVar);
@@ -1492,6 +1496,8 @@ DeleteInterpProc(
     iPtr->errorStack = NULL;
     Tcl_DecrRefCount(iPtr->upLiteral);
     Tcl_DecrRefCount(iPtr->callLiteral);
+    Tcl_DecrRefCount(iPtr->innerLiteral);
+    Tcl_DecrRefCount(iPtr->innerContext);
     if (iPtr->returnOpts) {
 	Tcl_DecrRefCount(iPtr->returnOpts);
     }
