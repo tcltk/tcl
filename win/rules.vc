@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2007 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.44 2010/08/31 20:48:17 nijtmans Exp $
+# RCS: @(#) $Id: rules.vc,v 1.44.2.1 2010/10/20 01:50:19 kennykb Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -189,7 +189,9 @@ VCVER=0
 !if ![echo VCVERSION=_MSC_VER > vercl.x] \
     && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
 !include vercl.i
-!if $(VCVERSION) >= 1500
+!if $(VCVERSION) >= 1600
+VCVER=10
+!elseif $(VCVERSION) >= 1500
 VCVER=9
 !elseif $(VCVERSION) >= 1400
 VCVER=8
