@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.170 2010/10/20 13:34:10 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.171 2010/10/20 20:52:27 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -3616,6 +3616,7 @@ TclCompileSyntaxError(
     int numBytes;
     const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
+    TclErrorStackResetIf(interp, bytes, numBytes);
     TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
 	    Tcl_GetReturnOptions(interp, TCL_ERROR));

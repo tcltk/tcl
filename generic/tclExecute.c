@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.508 2010/10/20 13:34:11 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.509 2010/10/20 20:52:28 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -697,7 +697,8 @@ static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
-			    ByteCode *codePtr, int *lengthPtr);
+			    ByteCode *codePtr, int *lengthPtr,
+			    const unsigned char **pcBeg);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
@@ -2445,7 +2446,7 @@ TEBCresume(
 	    }
 
 	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
-	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
+	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL);
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    pc += (opnd-1);
 	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
@@ -6264,9 +6265,11 @@ TEBCresume(
 	    goto abnormalReturn;
 	}
 	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
+	    const unsigned char *pcBeg;
+
+	    bytes = GetSrcInfoForPc(pc, codePtr, &length, &pcBeg);
 	    DECACHE_STACK_INFO();
-	    Tcl_LogCommandInfo(interp, codePtr->source, bytes, bytes ? length : 0);
+	    TclLogCommandInfo(interp, codePtr->source, bytes, bytes ? length : 0, pcBeg, tosPtr);
 	    CACHE_STACK_INFO();
 	}
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
@@ -7899,7 +7902,7 @@ ValidatePcAndStackTop(
     if (checkStack &&
 	    ((stackTop < stackLowerBound) || (stackTop > stackUpperBound))) {
 	int numChars;
-	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars);
+	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL);
 
 	fprintf(stderr, "\nBad stack top %d at pc %u in TclNRExecuteByteCode (min %i, max %i)",
 		stackTop, relativePc, stackLowerBound, stackUpperBound);
@@ -8013,7 +8016,7 @@ TclGetSrcInfoForCmd(
     ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
 
     return GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
-	    codePtr, lenPtr);
+			   codePtr, lenPtr, NULL);
 }
 
 void
@@ -8025,7 +8028,7 @@ TclGetSrcInfoForPc(
     if (cfPtr->cmd.str.cmd == NULL) {
 	cfPtr->cmd.str.cmd = GetSrcInfoForPc(
 		(unsigned char *) cfPtr->data.tebc.pc, codePtr,
-		&cfPtr->cmd.str.len);
+		&cfPtr->cmd.str.len, NULL);
     }
 
     if (cfPtr->cmd.str.cmd != NULL) {
@@ -8076,15 +8079,18 @@ TclGetSrcInfoForPc(
 
 static const char *
 GetSrcInfoForPc(
-    const unsigned char *pc, /* The program counter value for which to
+    const unsigned char *pc,	/* The program counter value for which to
 				 * return the closest command's source info.
-				 * This points to a bytecode instruction in
+				 * This points within a bytecode instruction in
 				 * codePtr's code. */
     ByteCode *codePtr,		/* The bytecode sequence in which to look up
 				 * the command source for the pc. */
-    int *lengthPtr)		/* If non-NULL, the location where the length
+    int *lengthPtr,		/* If non-NULL, the location where the length
 				 * of the command's source should be stored.
 				 * If NULL, no length is stored. */
+    const unsigned char **pcBeg)/* If non-NULL, the bytecode location
+				 * where the current instruction starts.
+				 * If NULL; no pointer is stored. */
 {
     register int pcOffset = (pc - codePtr->codeStart);
     int numCmds = codePtr->numCommands;
@@ -8096,6 +8102,7 @@ GetSrcInfoForPc(
     int bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
 
     if ((pcOffset < 0) || (pcOffset >= codePtr->numCodeBytes)) {
+	if (pcBeg != NULL) *pcBeg = NULL;
 	return NULL;
     }
 
@@ -8164,6 +8171,22 @@ GetSrcInfoForPc(
 	}
     }
 
+    if (pcBeg != NULL) {
+	const unsigned char *curr,*prev;
+
+	/* Walk from beginning of command or BC to pc, by complete
+	 * instructions. Stop when crossing pc; keep previous */
+
+	curr = prev = ((bestDist == INT_MAX) ?
+		       codePtr->codeStart :
+		       pc - bestDist);
+	while (curr <= pc) {
+	    prev = curr;
+	    curr += tclInstructionTable[*curr].numBytes;
+	}
+	*pcBeg = prev ; 
+    }
+
     if (bestDist == INT_MAX) {
 	return NULL;
     }
@@ -8171,6 +8194,7 @@ GetSrcInfoForPc(
     if (lengthPtr != NULL) {
 	*lengthPtr = bestSrcLength;
     }
+
     return (codePtr->source + bestSrcOffset);
 }
 
