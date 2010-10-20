@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.191 2010/10/13 17:10:57 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.192 2010/10/20 13:34:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -343,14 +343,16 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... key valueToAppend => ... newDict */
     {"dictFirst",	  5,	+2,	   1,	{OPERAND_LVT4}},
 	/* Begin iterating over the dictionary, using the local scalar
-	 * indicated by op4 to hold the iterator state. If doneBool is true,
-	 * dictDone *must* be called later on.
+	 * indicated by op4 to hold the iterator state. The local scalar
+	 * should not refer to a named variable as the value is not wholly
+	 * managed correctly.
 	 * Stack:  ... dict => ... value key doneBool */
     {"dictNext",	  5,	+3,	   1,	{OPERAND_LVT4}},
 	/* Get the next iteration from the iterator in op4's local scalar.
 	 * Stack:  ... => ... value key doneBool */
     {"dictDone",	  5,	0,	   1,	{OPERAND_LVT4}},
-	/* Terminate the iterator in op4's local scalar. */
+	/* Terminate the iterator in op4's local scalar. Use unsetScalar
+	 * instead (with 0 for flags). */
     {"dictUpdateStart",   9,    0,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
 	/* Create the variables (described in the aux data referred to by the
 	 * second immediate argument) to mirror the state of the dictionary in

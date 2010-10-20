@@ -1,3 +1,12 @@
+2010-10-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictForCmd): Update the compilation
+	* generic/tclCompile.c (tclInstructionTable):	of [dict for] so that
+	* generic/tclExecute.c (TEBCresume):		it no longer makes any
+	use of INST_DICT_DONE now that's not needed, and make it clearer in
+	the implementation of the instruction that it's just a deprecated form
+	of unset operation. Followup to my commit of 2010-10-16.
+
 2010-10-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (Tcl_ZlibStreamGet): [Bug 3081008]: Ensure that

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.507 2010/10/16 20:27:39 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.508 2010/10/20 13:34:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3772,6 +3772,29 @@ TEBCresume(
 	CACHE_STACK_INFO();
 	TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	goto gotError;
+
+	/*
+	 * This is really an unset operation these days. Do not issue.
+	 */
+
+    case INST_DICT_DONE:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	TRACE(("%u\n", opnd));
+	varPtr = LOCAL(opnd);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	if (TclIsVarDirectUnsettable(varPtr) && !TclIsVarInHash(varPtr)) {
+	    if (!TclIsVarUndefined(varPtr)) {
+		TclDecrRefCount(varPtr->value.objPtr);
+	    }
+	    varPtr->value.objPtr = NULL;
+	} else {
+	    DECACHE_STACK_INFO();
+	    TclPtrUnsetVar(interp, varPtr, NULL, NULL, NULL, 0, opnd);
+	    CACHE_STACK_INFO();
+	}
+	NEXT_INST_F(5, 0, 0);
     }
 
     /*
@@ -5971,24 +5994,6 @@ TEBCresume(
 	objResultPtr = TCONST(done);
 	/* TODO: consider opt like INST_FOREACH_STEP4 */
 	NEXT_INST_F(5, 0, 1);
-
-    case INST_DICT_DONE:
-	opnd = TclGetUInt4AtPtr(pc+1);
-	TRACE(("%u => ", opnd));
-	statePtr = (*LOCAL(opnd)).value.objPtr;
-
-	if (statePtr != NULL && statePtr->typePtr == &dictIteratorType) {
-	    /*
-	     * Set the internal variable to an empty object to signify that we
-	     * don't hold an iterator.
-	     */
-
-	    TclDecrRefCount(statePtr);
-	    TclNewObj(emptyPtr);
-	    (*LOCAL(opnd)).value.objPtr = emptyPtr;
-	    Tcl_IncrRefCount(emptyPtr);
-	}
-	NEXT_INST_F(5, 0, 0);
 
     case INST_DICT_UPDATE_START:
 	opnd = TclGetUInt4AtPtr(pc+1);
