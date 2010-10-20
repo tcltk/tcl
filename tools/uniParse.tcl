@@ -4,12 +4,12 @@
 #	corresponding tclUniData.c file with compressed character
 #	data tables.  The input to this program should be the latest
 #	UnicodeData file from:
-#	    ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData-Latest.txt
+#	    ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: uniParse.tcl,v 1.6 2010/07/01 21:28:15 nijtmans Exp $
+# RCS: @(#) $Id: uniParse.tcl,v 1.6.2.1 2010/10/20 01:50:19 kennykb Exp $
 
 
 namespace eval uni {
@@ -116,7 +116,11 @@ proc uni::buildTables {data} {
 
 	set items [split $line \;]
 
-	scan [lindex $items 0] %4x index
+	scan [lindex $items 0] %x index
+	if {$index > 0xFFFF} then {
+	    # Ignore non-BMP characters, as long as Tcl doesn't support them
+	    continue
+	}
 	set index [format 0x%0.4x $index]
 
 	set gIndex [getGroup [getValue $items $index]]
@@ -209,7 +213,7 @@ proc uni::main {} {
  * to the same alternate page number.
  */
 
-static unsigned char pageMap\[\] = {"
+static const unsigned short pageMap\[\] = {"
     set line "    "
     set last [expr {[llength $pMap] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
@@ -231,7 +235,7 @@ static unsigned char pageMap\[\] = {"
  * set of character attributes.
  */
 
-static unsigned char groupMap\[\] = {"
+static const unsigned char groupMap\[\] = {"
     set line "    "
     set lasti [expr {[llength $pages] - 1}]
     for {set i 0} {$i <= $lasti} {incr i} {
@@ -270,7 +274,7 @@ static unsigned char groupMap\[\] = {"
  *			    highest field so we can easily sign extend.
  */
 
-static int groups\[\] = {"
+static const int groups\[\] = {"
     set line "    "
     set last [expr {[llength $groups] - 1}]
     for {set i 0} {$i <= $last} {incr i} {

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.74.2.2 2010/09/28 15:43:01 kennykb Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.74.2.3 2010/10/20 01:50:19 kennykb Exp $
  *
  * -----------------------------------------------------------------------
  *
@@ -118,7 +118,7 @@ typedef struct SocketInfo SocketInfo;
 
 typedef struct TcpFdList {
     SocketInfo *infoPtr;
-    int fd;
+    SOCKET fd;
     struct TcpFdList *next;
 } TcpFdList;
 
@@ -1016,7 +1016,7 @@ CreateSocket(
     u_long flag = 1;		/* Indicates nonblocking mode. */
     int asyncConnect = 0;	/* Will be 1 if async connect is in
 				 * progress. */
-    int chosenport = 0;
+    unsigned short chosenport = 0;
     struct addrinfo *addrlist = NULL, *addrPtr;	/* socket address */
     struct addrinfo *myaddrlist = NULL, *myaddrPtr; /* Socket address for client */
     const char *errorMsg = NULL;
