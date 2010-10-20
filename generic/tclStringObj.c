@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.51 2010/05/03 16:30:38 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.52 2010/10/20 11:26:51 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1228,13 +1228,23 @@ Tcl_AppendObjToObj(
     const char *bytes;
 
     /*
+     * Special case: second object is standard-empty is fast case. We know
+     * that appending nothing to anything leaves that starting anything...
+     */
+
+    if (appendObjPtr->bytes == tclEmptyStringRep) {
+	return;
+    }
+
+    /*
      * Handle append of one bytearray object to another as a special case.
      * Note that we only do this when the objects don't have string reps; if
      * it did, then appending the byte arrays together could well lose
      * information; this is a special-case optimization only.
      */
 
-    if (TclIsPureByteArray(objPtr) && TclIsPureByteArray(appendObjPtr)) {
+    if ((TclIsPureByteArray(objPtr) || objPtr->bytes == tclEmptyStringRep)
+	    && TclIsPureByteArray(appendObjPtr)) {
 	unsigned char *bytesSrc;
 	int lengthSrc, lengthTotal;
 

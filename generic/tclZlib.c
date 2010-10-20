@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.29 2010/06/21 20:23:42 dgp Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4.2.30 2010/10/20 11:26:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -567,7 +567,7 @@ Tcl_ZlibStreamInit(
      */
 
     if (interp != NULL) {
-	if (Tcl_Eval(interp, "incr ::tcl::zlib::cmdcounter") != TCL_OK) {
+	if (Tcl_Eval(interp, "::incr ::tcl::zlib::cmdcounter") != TCL_OK) {
 	    goto error;
 	}
 	Tcl_DStringInit(&cmdname);
@@ -1047,10 +1047,15 @@ Tcl_ZlibStreamGet(
 	    if (listLen > 0) {
 		/*
 		 * There is more input available, get it from the list and
-		 * give it to zlib.
+		 * give it to zlib. At this point, the data must not be shared
+		 * since we require the bytearray representation to not vanish
+		 * under our feet. [Bug 3081008]
 		 */
 
 		Tcl_ListObjIndex(NULL, zshPtr->inData, 0, &itemObj);
+		if (Tcl_IsShared(itemObj)) {
+		    itemObj = Tcl_DuplicateObj(itemObj);
+		}
 		itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 		Tcl_IncrRefCount(itemObj);
 		zshPtr->currentInput = itemObj;
@@ -1062,7 +1067,6 @@ Tcl_ZlibStreamGet(
 		 */
 
 		Tcl_ListObjReplace(NULL, zshPtr->inData, 0, 1, 0, NULL);
-		listLen--;
 	    }
 	}
 
@@ -1092,10 +1096,15 @@ Tcl_ZlibStreamGet(
 	    }
 
 	    /*
-	     * Get the next block of data to go to inflate.
+	     * Get the next block of data to go to inflate. At this point, the
+	     * data must not be shared since we require the bytearray
+	     * representation to not vanish under our feet. [Bug 3081008]
 	     */
 
 	    Tcl_ListObjIndex(zshPtr->interp, zshPtr->inData, 0, &itemObj);
+	    if (Tcl_IsShared(itemObj)) {
+		itemObj = Tcl_DuplicateObj(itemObj);
+	    }
 	    itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 	    Tcl_IncrRefCount(itemObj);
 	    zshPtr->currentInput = itemObj;
@@ -1217,24 +1226,10 @@ Tcl_ZlibDeflate(
     gz_header *headerPtr = NULL;
     Tcl_Obj *obj;
 
-    /*
-     * We pass the data back in the interp result obj...
-     */
-
     if (!interp) {
 	return TCL_ERROR;
     }
-    obj = Tcl_GetObjResult(interp);
-
-    /*
-     * Make sure that the result is an unshared object. [Bug 2947783]
-     */
-
-    if (Tcl_IsShared(obj)) {
-	obj = Tcl_DuplicateObj(obj);
-	Tcl_SetObjResult(interp, obj);
-    }
-
+ 
     /*
      * Compressed format is specified by the wbits parameter. See zlib.h for
      * details.
@@ -1272,6 +1267,12 @@ Tcl_ZlibDeflate(
 	Tcl_Panic("compression level should be between 0 (uncompressed) and "
 		"9 (best compression) or -1 for default compression level");
     }
+
+    /*
+     * Allocate some space to store the output.
+     */
+
+    TclNewObj(obj);
 
     /*
      * Obtain the pointer to the byte array, we'll pass this pointer straight
@@ -1341,10 +1342,12 @@ Tcl_ZlibDeflate(
      */
 
     Tcl_SetByteArrayLength(obj, stream.total_out);
+    Tcl_SetObjResult(interp, obj);
     return TCL_OK;
 
   error:
     ConvertError(interp, e);
+    TclDecrRefCount(obj);
     return TCL_ERROR;
 }
 
@@ -1373,22 +1376,8 @@ Tcl_ZlibInflate(
     Tcl_Obj *obj;
     char *nameBuf = NULL, *commentBuf = NULL;
 
-    /*
-     * We pass the data back in the interp result obj...
-     */
-
     if (!interp) {
 	return TCL_ERROR;
-    }
-    obj = Tcl_GetObjResult(interp);
-
-    /*
-     * Make sure that the result is an unshared object. [Bug 2947783]
-     */
-
-    if (Tcl_IsShared(obj)) {
-	obj = Tcl_DuplicateObj(obj);
-	Tcl_SetObjResult(interp, obj);
     }
 
     /*
@@ -1443,6 +1432,7 @@ Tcl_ZlibInflate(
 	}
     }
 
+    TclNewObj(obj);
     outData = Tcl_SetByteArrayLength(obj, bufferSize);
     memset(&stream, 0, sizeof(z_stream));
     stream.avail_in = (uInt) inLen+1;	/* +1 because zlib can "over-request"
@@ -1530,9 +1520,11 @@ Tcl_ZlibInflate(
 	ckfree(nameBuf);
 	ckfree(commentBuf);
     }
+    Tcl_SetObjResult(interp, obj);
     return TCL_OK;
 
   error:
+    TclDecrRefCount(obj);
     ConvertError(interp, e);
     if (nameBuf) {
 	ckfree(nameBuf);
@@ -1593,7 +1585,6 @@ ZlibCmd(
     unsigned start, buffersize = 0;
     Tcl_ZlibStream zh;
     Byte *data;
-    Tcl_Obj *obj = Tcl_GetObjResult(interp);
     Tcl_Obj *headerDictObj, *headerVarObj;
     const char *extraInfoStr = NULL;
     static const char *const commands[] = {
@@ -1638,8 +1629,8 @@ ZlibCmd(
 	    start = Tcl_ZlibAdler32(0, NULL, 0);
 	}
 	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
-	Tcl_SetWideIntObj(obj,
-		(Tcl_WideInt) Tcl_ZlibAdler32(start, data, dlen));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
+		Tcl_ZlibAdler32(start, data, dlen)));
 	return TCL_OK;
     case CMD_CRC:			/* crc32 str ?startvalue?
 					 * -> checksum */
@@ -1655,8 +1646,8 @@ ZlibCmd(
 	    start = Tcl_ZlibCRC32(0, NULL, 0);
 	}
 	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
-	Tcl_SetWideIntObj(obj,
-		(Tcl_WideInt) Tcl_ZlibCRC32(start, data, dlen));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
+		Tcl_ZlibCRC32(start, data, dlen)));
 	return TCL_OK;
     case CMD_DEFLATE:			/* deflate data ?level?
 					 * -> rawCompressedData */
@@ -2023,10 +2014,8 @@ ZlibStreamCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = cd;
-    int command, index, count;
-    Tcl_Obj *obj = Tcl_GetObjResult(interp);
-    int buffersize;
-    int flush = -1, i;
+    int command, index, count, code, buffersize, flush = -1, i;
+    Tcl_Obj *obj;
     static const char *const cmds[] = {
 	"add", "checksum", "close", "eof", "finalize", "flush",
 	"fullflush", "get", "put", "reset",
@@ -2110,7 +2099,14 @@ ZlibStreamCmd(
 		flush) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	return Tcl_ZlibStreamGet(zstream, obj, -1);
+	TclNewObj(obj);
+	code = Tcl_ZlibStreamGet(zstream, obj, -1);
+	if (code == TCL_OK) {
+	    Tcl_SetObjResult(interp, obj);
+	} else {
+	    TclDecrRefCount(obj);
+	}
+	return code;
 
     case zs_put:		/* $strm put ?$flushopt? $data */
 	for (i=2; i<objc-1; i++) {
@@ -2169,33 +2165,50 @@ ZlibStreamCmd(
 		return TCL_ERROR;
 	    }
 	}
-	return Tcl_ZlibStreamGet(zstream, obj, count);
+	TclNewObj(obj);
+	code = Tcl_ZlibStreamGet(zstream, obj, count);
+	if (code == TCL_OK) {
+	    Tcl_SetObjResult(interp, obj);
+	} else {
+	    TclDecrRefCount(obj);
+	}
+	return code;
     case zs_flush:		/* $strm flush */
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjLength(obj, 0);
-	return Tcl_ZlibStreamPut(zstream, obj, Z_SYNC_FLUSH);
+	TclNewObj(obj);
+	Tcl_IncrRefCount(obj);
+	code = Tcl_ZlibStreamPut(zstream, obj, Z_SYNC_FLUSH);
+	TclDecrRefCount(obj);
+	return code;
     case zs_fullflush:		/* $strm fullflush */
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjLength(obj, 0);
-	return Tcl_ZlibStreamPut(zstream, obj, Z_FULL_FLUSH);
+	TclNewObj(obj);
+	Tcl_IncrRefCount(obj);
+	code = Tcl_ZlibStreamPut(zstream, obj, Z_FULL_FLUSH);
+	TclDecrRefCount(obj);
+	return code;
     case zs_finalize:		/* $strm finalize */
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
+
 	/*
 	 * The flush commands slightly abuse the empty result obj as input
 	 * data.
 	 */
 
-	Tcl_SetObjLength(obj, 0);
-	return Tcl_ZlibStreamPut(zstream, obj, Z_FINISH);
+	TclNewObj(obj);
+	Tcl_IncrRefCount(obj);
+	code = Tcl_ZlibStreamPut(zstream, obj, Z_FINISH);
+	TclDecrRefCount(obj);
+	return code;
     case zs_close:		/* $strm close */
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -2207,14 +2220,15 @@ ZlibStreamCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetIntObj(obj, Tcl_ZlibStreamEof(zstream));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_ZlibStreamEof(zstream)));
 	return TCL_OK;
     case zs_checksum:		/* $strm checksum */
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetWideIntObj(obj, (Tcl_WideInt) Tcl_ZlibStreamChecksum(zstream));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
+		Tcl_ZlibStreamChecksum(zstream)));
 	return TCL_OK;
     case zs_reset:		/* $strm reset */
 	if (objc != 2) {
