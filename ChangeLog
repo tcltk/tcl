@@ -1,3 +1,17 @@
+2010-10-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* doc/info.n :           [Patch 2995655] :
+	* generic/tclBasic.c:    Report inner contexts in [info errorstack]
+	* generic/tclCompCmds.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* tests/error.test:
+	* tests/result.test:
+
+
 2010-10-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileDictForCmd): Update the compilation
