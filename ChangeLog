@@ -1,3 +1,12 @@
+2010-10-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/uniParse.tcl:   [Bug 3085863]: tclUniData 9 years old
+	* tools/uniClass.tcl:   Upgrade everything to Unicode 6.0, except
+	* tests/utf.test:       non-BMP characters > 0xFFFF
+	* generic/tclUniData.c: (re-generated)
+	* generic/regc_locale.c:(re-generated)
+	* generic/regcomp.c:    fix comment
+
 2010-10-09  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fix overallocation of exec stack in TEBC
