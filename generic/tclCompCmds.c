@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.169 2010/04/30 09:23:06 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.169.2.1 2010/10/23 15:49:54 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -876,7 +876,8 @@ TclCompileDictForCmd(
      */
 
     ExceptionRangeTarget(envPtr, loopRange, breakOffset);
-    TclEmitInstInt4( INST_DICT_DONE, infoIndex,			envPtr);
+    TclEmitInstInt1( INST_UNSET_SCALAR, 0,			envPtr);
+    TclEmitInt4(     infoIndex,					envPtr);
     TclEmitOpcode(   INST_END_CATCH,				envPtr);
     endTargetOffset = CurrentOffset(envPtr);
     TclEmitInstInt4( INST_JUMP4, 0,				envPtr);
@@ -889,7 +890,8 @@ TclCompileDictForCmd(
     ExceptionRangeTarget(envPtr, catchRange, catchOffset);
     TclEmitOpcode(   INST_PUSH_RETURN_OPTIONS,			envPtr);
     TclEmitOpcode(   INST_PUSH_RESULT,				envPtr);
-    TclEmitInstInt4( INST_DICT_DONE, infoIndex,			envPtr);
+    TclEmitInstInt1( INST_UNSET_SCALAR, 0,			envPtr);
+    TclEmitInt4(     infoIndex,					envPtr);
     TclEmitOpcode(   INST_END_CATCH,				envPtr);
     TclEmitOpcode(   INST_RETURN_STK,				envPtr);
 
@@ -905,7 +907,8 @@ TclCompileDictForCmd(
 	    envPtr->codeStart + emptyTargetOffset);
     TclEmitOpcode(   INST_POP,					envPtr);
     TclEmitOpcode(   INST_POP,					envPtr);
-    TclEmitInstInt4( INST_DICT_DONE, infoIndex,			envPtr);
+    TclEmitInstInt1( INST_UNSET_SCALAR, 0,			envPtr);
+    TclEmitInt4(     infoIndex,					envPtr);
 
     /*
      * Final stage of the command (normal case) is that we push an empty
@@ -3613,6 +3616,7 @@ TclCompileSyntaxError(
     int numBytes;
     const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
+    TclErrorStackResetIf(interp, bytes, numBytes);
     TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
 	    Tcl_GetReturnOptions(interp, TCL_ERROR));
