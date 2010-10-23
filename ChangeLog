@@ -6,6 +6,7 @@
 	* generic/tclUniData.c: (re-generated)
 	* generic/regc_locale.c:(re-generated)
 	* generic/regcomp.c:    fix comment/signatures referencing regc_locale
+	* win/rules.vc          Update for VS10
 
 2010-09-24  Andreas Kupries  <andreask@activestate.com>
 
