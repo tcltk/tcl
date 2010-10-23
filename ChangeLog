@@ -6,6 +6,7 @@
 	* generic/tclUniData.c: (re-generated)
 	* generic/regc_locale.c:(re-generated)
 	* generic/regcomp.c:    fix comment
+	* win/rules.vc          Update for VS10
 
 2010-10-09  Miguel Sofer  <msofer@users.sf.net>
 
