@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.187.2.3 2010/10/20 01:50:19 kennykb Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.187.2.4 2010/10/23 15:49:54 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -343,14 +343,16 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... key valueToAppend => ... newDict */
     {"dictFirst",	  5,	+2,	   1,	{OPERAND_LVT4}},
 	/* Begin iterating over the dictionary, using the local scalar
-	 * indicated by op4 to hold the iterator state. If doneBool is true,
-	 * dictDone *must* be called later on.
+	 * indicated by op4 to hold the iterator state. The local scalar
+	 * should not refer to a named variable as the value is not wholly
+	 * managed correctly.
 	 * Stack:  ... dict => ... value key doneBool */
     {"dictNext",	  5,	+3,	   1,	{OPERAND_LVT4}},
 	/* Get the next iteration from the iterator in op4's local scalar.
 	 * Stack:  ... => ... value key doneBool */
     {"dictDone",	  5,	0,	   1,	{OPERAND_LVT4}},
-	/* Terminate the iterator in op4's local scalar. */
+	/* Terminate the iterator in op4's local scalar. Use unsetScalar
+	 * instead (with 0 for flags). */
     {"dictUpdateStart",   9,    0,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
 	/* Create the variables (described in the aux data referred to by the
 	 * second immediate argument) to mirror the state of the dictionary in
@@ -450,6 +452,8 @@ static int		FormatInstruction(ByteCode *codePtr,
 			    const unsigned char *pc, Tcl_Obj *bufferObj);
 static void		PrintSourceToObj(Tcl_Obj *appendObj,
 			    const char *stringPtr, int maxChars);
+static void		UpdateStringOfInstName(Tcl_Obj *objPtr);
+
 /*
  * TIP #280: Helper for building the per-word line information of all compiled
  * commands.
@@ -482,6 +486,19 @@ static const Tcl_ObjType substCodeType = {
     FreeSubstCodeInternalRep,	/* freeIntRepProc */
     DupByteCodeInternalRep,	/* dupIntRepProc - shared with bytecode */
     NULL,			/* updateStringProc */
+    NULL,			/* setFromAnyProc */
+};
+
+/*
+ * The structure below defines an instruction name Tcl object to allow
+ * reporting of inner contexts in errorstack without string allocation.
+ */
+
+static const Tcl_ObjType tclInstNameType = {
+    "instname",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    UpdateStringOfInstName,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
 };
 
@@ -4236,6 +4253,165 @@ FormatInstruction(
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetInnerContext --
+ *
+ *	If possible, returns a list capturing the inner context. Otherwise
+ *	return NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *TclGetInnerContext(Tcl_Interp *interp,
+			    const unsigned char *pc,
+			    Tcl_Obj **tosPtr)
+{
+    int objc = 0, off = 0;
+    Tcl_Obj *result;
+    Interp *iPtr = (Interp *) interp;
+
+    switch(*pc) {
+
+    case INST_STR_LEN:
+    case INST_LNOT:
+    case INST_BITNOT:
+    case INST_UMINUS:
+    case INST_UPLUS:
+    case INST_TRY_CVT_TO_NUMERIC:
+    case INST_EXPAND_STKTOP:
+    case INST_EXPR_STK:
+
+        objc = 1;
+        break;
+
+    case INST_LIST_IN:
+    case INST_LIST_NOT_IN:	/* Basic list containment operators. */
+    case INST_STR_EQ:
+    case INST_STR_NEQ:		/* String (in)equality check */
+    case INST_STR_CMP:		/* String compare. */
+    case INST_STR_INDEX:
+    case INST_STR_MATCH:
+    case INST_REGEXP:
+    case INST_EQ:
+    case INST_NEQ:
+    case INST_LT:
+    case INST_GT:
+    case INST_LE:
+    case INST_GE:
+    case INST_MOD:
+    case INST_LSHIFT:
+    case INST_RSHIFT:
+    case INST_BITOR:
+    case INST_BITXOR:
+    case INST_BITAND:
+    case INST_EXPON:
+    case INST_ADD:
+    case INST_SUB:
+    case INST_DIV:
+    case INST_MULT:
+        objc = 2;
+        break;
+
+    case INST_RETURN_STK:
+        /* early pop. TODO: dig out opt dict too :/ */
+        objc = 1;
+        break;
+
+    case INST_SYNTAX:
+    case INST_RETURN_IMM:
+        objc = 2;
+        break;
+
+    case INST_INVOKE_STK4:
+	objc = TclGetUInt4AtPtr(pc+1);
+        break;
+
+    case INST_INVOKE_STK1:
+	objc = TclGetUInt1AtPtr(pc+1);
+	break;
+    }
+
+    result = iPtr->innerContext;
+    if (Tcl_IsShared(result)) {
+        Tcl_DecrRefCount(result);
+        iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
+        Tcl_IncrRefCount(result);
+    } else {
+        int len;
+
+	Tcl_ListObjLength(interp, result, &len);
+        /* reset while keeping the list intrep as much as possible */
+        Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
+    }    
+    Tcl_ListObjAppendElement(NULL, result, TclNewInstNameObj(*pc));
+    for(;objc>0;objc--) {
+        Tcl_Obj *ob;
+
+        ob = tosPtr[1 - objc + off];
+        if (!ob) {
+            Tcl_Panic("InnerContext: bad tos -- appending null object");
+        }
+        if (ob->refCount<=0 || ob->refCount==0x61616161) {
+            Tcl_Panic("InnerContext: bad tos -- appending freed object %p",ob);
+        }
+        Tcl_ListObjAppendElement(NULL, result, ob);
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNewInstNameObj --
+ *
+ *	Creates a new InstName Tcl_Obj based on the given instruction
+ *
+ *----------------------------------------------------------------------
+ */
+MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst)
+{
+    Tcl_Obj *objPtr;
+    
+    objPtr=Tcl_NewObj();
+    objPtr->typePtr = &tclInstNameType;
+    objPtr->internalRep.longValue = (long)inst;
+    objPtr->bytes = NULL;
+
+    return objPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateStringOfInstName --
+ *
+ *	Update the string representation for an instruction name object.
+ *
+ *----------------------------------------------------------------------
+ */
+static void UpdateStringOfInstName(Tcl_Obj *objPtr)
+{
+    int inst = objPtr->internalRep.longValue;
+    char *s,buf[20];
+    int len;
+
+    if ((inst < 0) || (inst > LAST_INST_OPCODE)) {
+
+        sprintf(buf, "inst_%d", inst);
+        s = buf;
+    } else {
+        s = (char *)tclInstructionTable[objPtr->internalRep.longValue].name;
+    }
+    len = strlen(s);
+    objPtr->bytes = ckalloc((unsigned) len + 1);
+    strcpy(objPtr->bytes, s);
+    objPtr->length = len;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * PrintSourceToObj --
  *
  *	Appends a quoted representation of a string to a Tcl_Obj.
@@ -4341,5 +4517,7 @@ RecordByteCodeStats(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
