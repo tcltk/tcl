@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2006 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.11.2.7 2007/09/11 00:10:48 patthoyts Exp $
+# RCS: @(#) $Id: rules.vc,v 1.11.2.8 2010/10/23 21:42:15 nijtmans Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -83,7 +83,7 @@ COPY    = copy /y >NUL
 !message *** Compiler has 'Optimizations'
 OPTIMIZING	= 1
 !else
-!message *** Compiler doesn't have 'Optimizations'
+!message *** Compiler does not have 'Optimizations'
 OPTIMIZING	= 0
 !endif
 
@@ -141,9 +141,9 @@ OPTIMIZATIONS  = $(OPTIMIZATIONS) -YX
 ### test for pentium errata
 !if [nmakehlp -c -QI0f]
 !message *** Compiler has 'Pentium 0x0f fix'
-COMPILERFLAGS  = $(COMPILERFLAGSS) -QI0f
+COMPILERFLAGS  = $(COMPILERFLAGS) -QI0f
 !else
-!message *** Compiler doesn't have 'Pentium 0x0f fix'
+!message *** Compiler does not have 'Pentium 0x0f fix'
 !endif
 !endif
 
@@ -163,7 +163,7 @@ COMPILERFLAGS   = $(COMPILERFLAGS) -QIA64_Bx
 !message *** Linker has 'Win98 alignment problem'
 ALIGN98_HACK	= 1
 !else
-!message *** Linker doesn't have 'Win98 alignment problem'
+!message *** Linker does not have 'Win98 alignment problem'
 ALIGN98_HACK	= 0
 !endif
 !else
@@ -189,6 +189,14 @@ VCVER=6
 VCVER=7
 !elseif ![cl /Zs /Tc NUL 2>&1 | find "Version 14" > NUL]
 VCVER=8
+_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
+!elseif ![cl /Zs /Tc NUL 2>&1 | find "Version 15" > NUL]
+VCVER=9
+_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
+!elseif ![cl /Zs /Tc NUL 2>&1 | find "Version 16" > NUL]
+VCVER=10
 _VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 _VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
 !else
@@ -388,7 +396,6 @@ FULLWARNINGS		    = 1
 FULLWARNINGS		    = 0
 !endif
 !endif
-
 
 #----------------------------------------------------------
 # Set our defines now armed with our options.
