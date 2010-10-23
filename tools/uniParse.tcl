@@ -4,12 +4,12 @@
 #	corresponding tclUniData.c file with compressed character
 #	data tables.  The input to this program should be the latest
 #	UnicodeData file from:
-#	    ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData-Latest.txt
+#	    ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
-# 
-# RCS: @(#) $Id: uniParse.tcl,v 1.4 2001/05/28 04:37:57 hobbs Exp $
+#
+# RCS: @(#) $Id: uniParse.tcl,v 1.4.30.1 2010/10/23 07:32:24 nijtmans Exp $
 
 
 namespace eval uni {
@@ -66,7 +66,7 @@ proc uni::getValue {items index} {
     if {$categoryIndex < 0} {
 	puts "Unexpected character category: $index($category)"
 	set categoryIndex 0
-    } elseif {$category == "Lt"} {
+    } elseif {$category eq "Lt"} {
 	incr titleCount
     }
 
@@ -87,7 +87,7 @@ proc uni::getGroup {value} {
 proc uni::addPage {info} {
     variable pMap
     variable pages
-    
+
     set pIndex [lsearch -exact $pages $info]
     if {$pIndex == -1} {
 	set pIndex [llength $pages]
@@ -96,7 +96,7 @@ proc uni::addPage {info} {
     lappend pMap $pIndex
     return
 }
-    
+
 proc uni::buildTables {data} {
     variable shift
 
@@ -104,21 +104,25 @@ proc uni::buildTables {data} {
     variable pages {}
     variable groups {{0,,,}}
     set info {}			;# temporary page info
-    
+
     set mask [expr {(1 << $shift) - 1}]
 
     set next 0
 
     foreach line [split $data \n] {
-	if {$line == ""} {
+	if {$line eq ""} {
 	    set line "FFFF;;Cn;0;ON;;;;;N;;;;;\n"
 	}
 
 	set items [split $line \;]
 
-	scan [lindex $items 0] %4x index
+	scan [lindex $items 0] %x index
+	if {$index > 0xFFFF} then {
+	    # Ignore non-BMP characters, as long as Tcl doesn't support them
+	    continue
+	}
 	set index [format 0x%0.4x $index]
-	
+
 	set gIndex [getGroup [getValue $items $index]]
 
 	# Since the input table omits unassigned characters, these will
@@ -209,7 +213,7 @@ proc uni::main {} {
  * to the same alternate page number.
  */
 
-static unsigned char pageMap\[\] = {"
+static const unsigned short pageMap\[\] = {"
     set line "    "
     set last [expr {[llength $pMap] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
@@ -218,7 +222,7 @@ static unsigned char pageMap\[\] = {"
 	    append line ", "
 	}
 	if {[string length $line] > 70} {
-	    puts $f $line
+	    puts $f [string trimright $line]
 	    set line "    "
 	}
     }
@@ -231,7 +235,7 @@ static unsigned char pageMap\[\] = {"
  * set of character attributes.
  */
 
-static unsigned char groupMap\[\] = {"
+static const unsigned char groupMap\[\] = {"
     set line "    "
     set lasti [expr {[llength $pages] - 1}]
     for {set i 0} {$i <= $lasti} {incr i} {
@@ -243,7 +247,7 @@ static unsigned char groupMap\[\] = {"
 		append line ", "
 	    }
 	    if {[string length $line] > 70} {
-		puts $f $line
+		puts $f [string trimright $line]
 		set line "    "
 	    }
 	}
@@ -260,7 +264,7 @@ static unsigned char groupMap\[\] = {"
  * Bits 5-7	Case delta type: 000 = identity
  *				 010 = add delta for lower
  *				 011 = add delta for lower, add 1 for title
- *				 100 = sutract delta for title/upper
+ *				 100 = subtract delta for title/upper
  *				 101 = sub delta for upper, sub 1 for title
  *				 110 = sub delta for upper, add delta for lower
  *
@@ -270,20 +274,20 @@ static unsigned char groupMap\[\] = {"
  *			    highest field so we can easily sign extend.
  */
 
-static int groups\[\] = {"
+static const int groups\[\] = {"
     set line "    "
     set last [expr {[llength $groups] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
 	foreach {type toupper tolower totitle} [split [lindex $groups $i] ,] {}
-	
+
 	# Compute the case conversion type and delta
 
-	if {$totitle != ""} {
+	if {$totitle ne ""} {
 	    if {$totitle == $toupper} {
 		# subtract delta for title or upper
 		set case 4
 		set delta $toupper
-	    } elseif {$toupper != ""} {
+	    } elseif {$toupper ne ""} {
 		# subtract delta for upper, subtract 1 for title
 		set case 5
 		set delta $toupper
@@ -292,11 +296,11 @@ static int groups\[\] = {"
 		set case 3
 		set delta $tolower
 	    }
-	} elseif {$toupper != ""} {
+	} elseif {$toupper ne ""} {
 	    # subtract delta for upper, add delta for lower
 	    set case 6
 	    set delta $toupper
-	} elseif {$tolower != ""} {
+	} elseif {$tolower ne ""} {
 	    # add delta for lower
 	    set case 2
 	    set delta $tolower
@@ -313,7 +317,7 @@ static int groups\[\] = {"
 	    append line ", "
 	}
 	if {[string length $line] > 65} {
-	    puts $f $line
+	    puts $f [string trimright $line]
 	    set line "    "
 	}
     }
