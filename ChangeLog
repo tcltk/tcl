@@ -1,3 +1,11 @@
+2010-10-23  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+	* tclAssembly.h (removed):
+				Removed file that was included in only one
+				source file.
+	* tclAssembly.c:	Inlined tclAssembly.h.
+
 2010-10-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* doc/info.n :           [Patch 2995655] :
