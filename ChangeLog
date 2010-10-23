@@ -1,3 +1,12 @@
+2010-10-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/uniParse.tcl:   [Bug 3085863]: tclUniData 9 years old
+	* tools/uniClass.tcl:   Upgrade everything to Unicode 6.0, except
+	* tests/utf.test:       non-BMP characters > 0xFFFF
+	* generic/tclUniData.c: (re-generated)
+	* generic/regc_locale.c:(re-generated)
+	* generic/regcomp.c:    fix comment/signatures referencing regc_locale
+
 2010-09-24  Andreas Kupries  <andreask@activestate.com>
 
 	* tclWinsock.c: [Bug 3056775]: Fixed race condition between thread
