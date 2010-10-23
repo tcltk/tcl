@@ -1,0 +1,7 @@
+Makefile
+config.status
+config.cache
+dltest.marker
+tclConfig.sh
+tclsh
+tcltest
