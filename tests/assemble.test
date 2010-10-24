@@ -1914,7 +1914,7 @@ test assemble-17.9 {jump - resolve a label multiple times} {
     -cleanup {rename x {}}
 }
 
-test assemble-17.10 {jump4} {
+test assemble-17.10 {jump4 needed} {
     -body {
 	assemble "push x; jump one; label two; [string repeat {dup; pop;} 128]
 	      jump three; label one; jump two; label three"
@@ -1980,6 +1980,38 @@ test assemble-17.14 {jump to undefined label, line number correct?} {
     }
     -match glob
     -result {*"assemble" body, line 4*}
+}
+
+test assemble-17.15 {multiple passes of code resizing} {
+    -setup {
+	set body {
+	    push -
+	}
+	for {set i 0} {$i < 14} {incr i} {
+	    append body "label a" $i \
+		"; push a; concat 2; nop; nop; jump b" \
+		$i \n
+	}
+	append body {label a14; push a; concat 2; push 1; jumpTrue b14} \n
+	append body {label a15; push a; concat 2; push 0; jumpFalse b15} \n
+	for {set i 0} {$i < 15} {incr i} {
+	    append body "label b" $i \
+		"; push b; concat 2; nop; nop; jump a" \
+		[expr {$i+1}] \n
+	}
+	append body {label c; push -; concat 2; nop; nop; nop; jump d} \n
+	append body {label b15; push b; concat 2; nop; nop; jump c} \n
+	append body {label d}
+	proc x {} [list assemble $body]
+    }	
+    -body {
+	x
+    }
+    -cleanup {
+	catch {unset body}
+	catch {rename x {}}
+    }
+    -result -abababababababababababababababab-
 }
 
 # assemble-18 - lindexMulti
