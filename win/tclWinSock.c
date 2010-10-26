@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.77 2010/10/12 10:21:55 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.78 2010/10/26 13:14:09 rmax Exp $
  *
  * -----------------------------------------------------------------------
  *
@@ -2078,6 +2078,7 @@ TcpGetOptionProc(
     char host[NI_MAXHOST], port[NI_MAXSERV];
     SOCKET sock;
     size_t len = 0;
+    int reverseDNS = 0;
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -2117,6 +2118,10 @@ TcpGetOptionProc(
 	return TCL_OK;
     }
 
+    if (Tcl_GetVar(interp, "::tcl::unsupported::noReverseDNS", 0) != NULL) {
+        reverseDNS = NI_NUMERICHOST;
+    }
+
     if ((len == 0) || ((len > 1) && (optionName[1] == 'p') &&
 	    (strncmp(optionName, "-peername", len) == 0))) {
 	address peername;
@@ -2131,7 +2136,7 @@ TcpGetOptionProc(
                         NULL, 0, NI_NUMERICHOST);
 	    Tcl_DStringAppendElement(dsPtr, host);
 	    getnameinfo(&(peername.sa), size, host, sizeof(host),
-                        port, sizeof(port), NI_NUMERICSERV);
+                        port, sizeof(port), reverseDNS | NI_NUMERICSERV);
 	    Tcl_DStringAppendElement(dsPtr, host);
 	    Tcl_DStringAppendElement(dsPtr, port);
 	    if (len == 0) {
@@ -2174,7 +2179,7 @@ TcpGetOptionProc(
 	    sock = fds->fd;
 	    size = sizeof(sockname);
 	    if (getsockname(sock, &(sockname.sa), &size) >= 0) {
-		int flags;
+		int flags = reverseDNS;
 		found = 1;
 		
 		getnameinfo(&sockname.sa, size, host, sizeof(host),
@@ -2185,7 +2190,7 @@ TcpGetOptionProc(
 		 * We don't want to resolve INADDR_ANY and sin6addr_any; they
 		 * can sometimes cause problems (and never have a name).
 		 */
-		flags = NI_NUMERICSERV;
+		flags |= NI_NUMERICSERV;
 		if (sockname.sa.sa_family == AF_INET) {
 		    if (sockname.sa4.sin_addr.s_addr == INADDR_ANY) {
 			flags |= NI_NUMERICHOST;
