@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.17 2010/10/12 13:17:26 dgp Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.18 2010/10/26 13:42:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -623,6 +623,7 @@ TcpGetOptionProc(
 
     char host[NI_MAXHOST], port[NI_MAXSERV];
     size_t len = 0;
+    int reverseDNS = 0;
 
     if (optionName != NULL) {
 	len = strlen(optionName);
@@ -644,6 +645,10 @@ TcpGetOptionProc(
 	return TCL_OK;
     }
 
+    if (Tcl_GetVar(interp, "::tcl::unsupported::noReverseDNS", 0) != NULL) {
+        reverseDNS = NI_NUMERICHOST;
+    }
+    
     if ((len == 0) ||
 	    ((len > 1) && (optionName[1] == 'p') &&
 		    (strncmp(optionName, "-peername", len) == 0))) {
@@ -660,7 +665,7 @@ TcpGetOptionProc(
                     NI_NUMERICHOST);
 	    Tcl_DStringAppendElement(dsPtr, host);
 	    getnameinfo(&peername.sa, size, host, sizeof(host), port,
-                    sizeof(port), NI_NUMERICSERV);
+                    sizeof(port), reverseDNS | NI_NUMERICSERV);
 	    Tcl_DStringAppendElement(dsPtr, host);
 	    Tcl_DStringAppendElement(dsPtr, port);
 	    if (len == 0) {
@@ -701,7 +706,7 @@ TcpGetOptionProc(
 	for (fds = statePtr->fds; fds != NULL; fds = fds->next) {
 	    size = sizeof(sockname);
 	    if (getsockname(fds->fd, &(sockname.sa), &size) >= 0) {
-                int flags;
+                int flags = reverseDNS;
 
 		found = 1;
                 getnameinfo(&sockname.sa, size, host, sizeof(host), NULL, 0,
@@ -713,7 +718,7 @@ TcpGetOptionProc(
                  * can sometimes cause problems (and never have a name).
                  */
 
-                flags = NI_NUMERICSERV;
+                flags |= NI_NUMERICSERV;
                 if (sockname.sa.sa_family == AF_INET) {
                     if (sockname.sa4.sin_addr.s_addr == INADDR_ANY) {
                         flags |= NI_NUMERICHOST;

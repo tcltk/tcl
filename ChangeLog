@@ -1,3 +1,10 @@
+2010-10-26  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c (TcpGetOptionProc): Added support for
+	::tcl::unsupported::noReverseDNS, which if set, prevents
+	[fconfigure -sockname] and [fconfigure -peername] from doing
+	reverse DNS queries.
+
 2010-10-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* doc/info.n :           [Patch 2995655] :
