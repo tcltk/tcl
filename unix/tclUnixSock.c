@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.29 2010/10/26 13:14:09 rmax Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.30 2010/10/26 13:59:28 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -620,10 +620,10 @@ TcpGetOptionProc(
 				 * initialized by caller. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
-
     char host[NI_MAXHOST], port[NI_MAXSERV];
     size_t len = 0;
     int reverseDNS = 0;
+#define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
 
     if (optionName != NULL) {
 	len = strlen(optionName);
@@ -645,7 +645,7 @@ TcpGetOptionProc(
 	return TCL_OK;
     }
 
-    if (Tcl_GetVar(interp, "::tcl::unsupported::noReverseDNS", 0) != NULL) {
+    if (interp != NULL && Tcl_GetVar(interp, SUPPRESS_RDNS_VAR, 0) != NULL) {
         reverseDNS = NI_NUMERICHOST;
     }
     
@@ -668,11 +668,10 @@ TcpGetOptionProc(
                     sizeof(port), reverseDNS | NI_NUMERICSERV);
 	    Tcl_DStringAppendElement(dsPtr, host);
 	    Tcl_DStringAppendElement(dsPtr, port);
-	    if (len == 0) {
-		Tcl_DStringEndSublist(dsPtr);
-	    } else {
-		return TCL_OK;
-	    }
+	    if (len) {
+                return TCL_OK;
+            }
+            Tcl_DStringEndSublist(dsPtr);
 	} else {
 	    /*
 	     * getpeername failed - but if we were asked for all the options
@@ -743,11 +742,10 @@ TcpGetOptionProc(
 	    }
 	}
         if (found) {
-            if (len == 0) {
-                Tcl_DStringEndSublist(dsPtr);
-            } else {
+            if (len) {
                 return TCL_OK;
             }
+            Tcl_DStringEndSublist(dsPtr);
         } else {
             if (interp) {
                 Tcl_AppendResult(interp, "can't get sockname: ",

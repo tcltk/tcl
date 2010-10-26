@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.78 2010/10/26 13:14:09 rmax Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.79 2010/10/26 13:59:28 dkf Exp $
  *
  * -----------------------------------------------------------------------
  *
@@ -2079,6 +2079,7 @@ TcpGetOptionProc(
     SOCKET sock;
     size_t len = 0;
     int reverseDNS = 0;
+#define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -2118,7 +2119,7 @@ TcpGetOptionProc(
 	return TCL_OK;
     }
 
-    if (Tcl_GetVar(interp, "::tcl::unsupported::noReverseDNS", 0) != NULL) {
+    if (interp != NULL && Tcl_GetVar(interp, SUPPRESS_RDNS_VAR, 0) != NULL) {
         reverseDNS = NI_NUMERICHOST;
     }
 
