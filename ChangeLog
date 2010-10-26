@@ -1,13 +1,18 @@
+2010-10-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixSock.c (TcpGetOptionProc): Prevent crash if interp is
+	* win/tclWinSock.c (TcpGetOptionProc):   NULL (a legal situation).
+
 2010-10-26  Reinhard Max  <max@suse.de>
 
 	* unix/tclUnixSock.c (TcpGetOptionProc): Added support for
-	::tcl::unsupported::noReverseDNS, which if set, prevents
+	::tcl::unsupported::noReverseDNS, which if set to any value, prevents
 	[fconfigure -sockname] and [fconfigure -peername] from doing
 	reverse DNS queries.
 
 2010-10-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* doc/info.n :           [Patch 2995655] :
+	* doc/info.n:            [Patch 2995655]:
 	* generic/tclBasic.c:    Report inner contexts in [info errorstack]
 	* generic/tclCompCmds.c:
 	* generic/tclCompile.c:
@@ -17,7 +22,6 @@
 	* generic/tclNamesp.c:
 	* tests/error.test:
 	* tests/result.test:
-
 
 2010-10-20  Donal K. Fellows  <dkf@users.sf.net>
 
