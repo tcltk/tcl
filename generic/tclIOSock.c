@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOSock.c,v 1.13 2010/10/07 23:36:27 nijtmans Exp $
+ * RCS: @(#) $Id: tclIOSock.c,v 1.14 2010/10/26 16:14:19 rmax Exp $
  */
 
 #include "tclInt.h"
@@ -146,7 +146,7 @@ TclCreateSocketAddress(
     struct addrinfo *v4head = NULL, *v4ptr = NULL;
     struct addrinfo *v6head = NULL, *v6ptr = NULL;
     char *native = NULL, portstring[TCL_INTEGER_SPACE];
-    const char *family;
+    const char *family = NULL;
     Tcl_DString ds;
     int result, i;
 
@@ -159,13 +159,18 @@ TclCreateSocketAddress(
     (void) memset(&hints, 0, sizeof(hints));
     
     hints.ai_family = AF_UNSPEC;
-    /* Magic variable to enforce a certain address family */
-    family = Tcl_GetVar(interp, "::tcl::unsupported::socketAF", 0);
-    if (family != NULL) {
-        if (strcmp(family, "inet") == 0) {
-            hints.ai_family = AF_INET;
-        } else if (strcmp(family, "inet6") == 0) {
-            hints.ai_family = AF_INET6;
+    /* 
+     * Magic variable to enforce a certain address family - to be superseded
+     * by a TIP that adds explicit switches to [socket]
+     */
+    if (interp != NULL) {
+        family = Tcl_GetVar(interp, "::tcl::unsupported::socketAF", 0);
+        if (family != NULL) {
+            if (strcmp(family, "inet") == 0) {
+                hints.ai_family = AF_INET;
+            } else if (strcmp(family, "inet6") == 0) {
+                hints.ai_family = AF_INET6;
+            }
         }
     }
 
