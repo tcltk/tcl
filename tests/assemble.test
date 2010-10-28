@@ -1,3 +1,16 @@
+# assemble.test --
+#
+#	Test suite for the 'tcl::unsupported::assemble' command
+#
+# Copyright (c) 2010 by Ozgur Dogan Ugurlu.
+# Copyright (c) 2010 by Kevin B. Kenny.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: assemble.test,v 1.1.2.15 2010/10/28 19:40:13 kennykb Exp $
+#-----------------------------------------------------------------------------
+
 # Commands covered: assemble
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -3021,6 +3034,8 @@ test assemble-29.7 {regexp} {
     -result 1
 }
 
+# assemble-30 - Catches
+
 test assemble-30.1 {simplest possible catch} {
     -body {
 	proc x {} {
@@ -3096,6 +3111,91 @@ test assemble-30.3 {embedded catches} {
     -cleanup {rename x {}}
 }
 
+# assemble-31 - Jump tables
+
+test assemble-31.1 {jumpTable, wrong # args} {
+    -body {
+	assemble {jumpTable}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-31.2 {jumpTable, wrong # args} {
+    -body {
+	assemble {jumpTable too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-31.3 {jumpTable - bad subst} {
+    -body {
+	assemble {jumpTable $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-31.4 {jumptable - not a list} {
+    -body {
+	assemble {jumpTable \{rubbish}
+    }
+    -returnCodes error
+    -result {unmatched open brace in list}
+}
+test assemble-31.5 {jumpTable, badly structured} {
+    -body {
+	list [catch {assemble {
+	    # line 2
+	    jumpTable {one two three};# line 3
+	}} result] \
+	    $result $::errorCode $::errorInfo
+    }
+    -match glob
+    -result {1 {jump table must have an even number of list elements} {TCL ASSEM BADJUMPTABLE} {jump table must have an even number of list elements*("assemble" body, line 3)*}}
+}
+test assemble-31.6 {jumpTable, missing symbol} {
+    -body {
+	list [catch {assemble {
+	    # line 2
+	    jumpTable {1 a};# line 3
+	}} result] \
+	    $result $::errorCode $::errorInfo
+    }
+    -match glob
+    -result {1 {undefined label "a"} {TCL ASSEM NOLABEL a} {undefined label "a"*("assemble" body, line 3)*}}
+}
+
+test assemble-31.7 {jumptable, actual example} {
+    -setup {
+	proc x {} {
+	    set result {}
+	    for {set i 0} {$i < 5} {incr i} {
+		lappend result [assemble {
+		    load i
+		    jumpTable {1 @one 2 @two 3 @three}
+		    push {none of the above}
+		    jump @done
+		    label @one
+		    push one
+		    jump @done
+		    label @two
+		    push two
+		    jump @done
+		    label @three
+		    push three
+		    label @done
+		}]
+	    }
+	    set tcl_traceCompile 2
+	    set result
+	}
+    }
+    -body x
+    -result {{none of the above} one two three {none of the above}}
+    -cleanup {set tcl_traceCompile 0; rename x {}}
+}
 
 test assemble-40.1 {unbalanced stack} {
     -body {
@@ -3162,6 +3262,45 @@ test assemble-41.1 {Inconsistent stack usage} {*}{
     -match glob
     -result {inconsistent stack depths on two execution paths
     ("assemble" body, line 10)*}
+}
+
+test assemble-41.2 {Inconsistent stack, jumptable and default} {
+    -body {
+	proc x {y} {
+	    assemble {
+		load y
+		jumpTable {0 else}
+		push 0
+	      label else
+		pop
+	    }
+	}
+	catch {x 1}
+	set errorInfo
+    }
+    -match glob
+    -result {inconsistent stack depths on two execution paths
+    ("assemble" body, line 6)*}
+}
+
+test assemble-41.3 {Inconsistent stack, two legs of jumptable} {
+    -body {
+	proc x {y} {
+	    assemble {
+		load y
+		jumpTable {0 no 1 yes}
+		label no
+		push 0
+		label yes
+		pop
+	    }
+	}
+	catch {x 1}
+	set errorInfo
+    }
+    -match glob
+    -result {inconsistent stack depths on two execution paths
+    ("assemble" body, line 7)*}
 }
 
 test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
