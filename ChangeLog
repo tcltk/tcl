@@ -1,5 +1,7 @@
 2010-10-28  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/http.test:	Make http-4.15 pass in isolation [Bug 3097490]
+
 	* unix/tclUnixSock.c:	Prevent calls freeaddrinfo(NULL) which can
 	crash some systems.  Thanks Larry Virden.  [Bug 3093120]
 
