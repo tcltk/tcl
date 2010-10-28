@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.19 2010/10/26 17:54:02 dgp Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.20 2010/10/28 16:40:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -972,8 +972,12 @@ CreateClientSocket(
     }
 
 error:
-    freeaddrinfo(addrlist);
-    freeaddrinfo(myaddrlist);
+    if (addrlist) {
+	freeaddrinfo(addrlist);
+    }
+    if (myaddrlist) {
+	freeaddrinfo(myaddrlist);
+    }
     
     if (status < 0) {
 	if (interp != NULL) {
