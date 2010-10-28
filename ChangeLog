@@ -1,8 +1,14 @@
+2010-10-28  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+	* generic/tclAssembly.c:
+	* tests/assembly.test (assemble-31.*): Added jump tables.
+
 2010-10-24  Kevin B. Kenny  <kennykb@acm.org>
 
 	[dogeen-assembler-branch]
-	* tclAssembly.c:
-	* assembly.test (assemble-17.15): Reworked branch handling so that
+	* generic/tclAssembly.c:
+	* tests/assembly.test (assemble-17.15): Reworked branch handling so that
 	forward branches can use jump1 (jumpTrue1, jumpFalse1). Added test
 	cases that the forward branches will expand to jump4, jumpTrue4,
 	jumpFalse4 when needed.
@@ -10,10 +16,10 @@
 2010-10-23  Kevin B. Kenny  <kennykb@acm.org>
 
 	[dogeen-assembler-branch]
-	* tclAssembly.h (removed):
+	* generic/tclAssembly.h (removed):
 				Removed file that was included in only one
 				source file.
-	* tclAssembly.c:	Inlined tclAssembly.h.
+	* generictclAssembly.c:	Inlined tclAssembly.h.
 
 2010-10-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
