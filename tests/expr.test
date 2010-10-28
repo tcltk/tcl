@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.78 2010/02/21 20:09:38 nijtmans Exp $
+# RCS: @(#) $Id: expr.test,v 1.78.4.1 2010/10/28 19:42:20 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -7167,6 +7167,10 @@ test expr-48.1 {Bug 1770224} {
 test expr-49.1 {Bug 2823282} {
     coroutine foo apply {{} {set expr expr; $expr {[yield]}}}
     foo 1
+} 1
+
+test expr-50.1 {test sqrt() of bignums with non-Inf answer} {
+    expr {sqrt("1[string repeat 0 616]") == 1e308}
 } 1
 
 
