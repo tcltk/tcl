@@ -1,3 +1,8 @@
+2010-10-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclUnixSock.c:	Prevent calls freeaddrinfo(NULL) which can
+	crash some systems.  Thanks Larry Virden.  [Bug 3093120]
+
 2010-10-26  Reinhard Max  <max@suse.de>
 
 	* Changelog.2008: Split off from Changelog.
