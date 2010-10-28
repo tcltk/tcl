@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.26.2.2 2010/10/20 01:50:19 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.26.2.3 2010/10/28 19:42:20 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -620,9 +620,10 @@ TcpGetOptionProc(
 				 * initialized by caller. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
-
     char host[NI_MAXHOST], port[NI_MAXSERV];
     size_t len = 0;
+    int reverseDNS = 0;
+#define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
 
     if (optionName != NULL) {
 	len = strlen(optionName);
@@ -644,6 +645,10 @@ TcpGetOptionProc(
 	return TCL_OK;
     }
 
+    if (interp != NULL && Tcl_GetVar(interp, SUPPRESS_RDNS_VAR, 0) != NULL) {
+        reverseDNS = NI_NUMERICHOST;
+    }
+    
     if ((len == 0) ||
 	    ((len > 1) && (optionName[1] == 'p') &&
 		    (strncmp(optionName, "-peername", len) == 0))) {
@@ -660,14 +665,13 @@ TcpGetOptionProc(
                     NI_NUMERICHOST);
 	    Tcl_DStringAppendElement(dsPtr, host);
 	    getnameinfo(&peername.sa, size, host, sizeof(host), port,
-                    sizeof(port), NI_NUMERICSERV);
+                    sizeof(port), reverseDNS | NI_NUMERICSERV);
 	    Tcl_DStringAppendElement(dsPtr, host);
 	    Tcl_DStringAppendElement(dsPtr, port);
-	    if (len == 0) {
-		Tcl_DStringEndSublist(dsPtr);
-	    } else {
-		return TCL_OK;
-	    }
+	    if (len) {
+                return TCL_OK;
+            }
+            Tcl_DStringEndSublist(dsPtr);
 	} else {
 	    /*
 	     * getpeername failed - but if we were asked for all the options
@@ -701,7 +705,7 @@ TcpGetOptionProc(
 	for (fds = statePtr->fds; fds != NULL; fds = fds->next) {
 	    size = sizeof(sockname);
 	    if (getsockname(fds->fd, &(sockname.sa), &size) >= 0) {
-                int flags;
+                int flags = reverseDNS;
 
 		found = 1;
                 getnameinfo(&sockname.sa, size, host, sizeof(host), NULL, 0,
@@ -713,7 +717,7 @@ TcpGetOptionProc(
                  * can sometimes cause problems (and never have a name).
                  */
 
-                flags = NI_NUMERICSERV;
+                flags |= NI_NUMERICSERV;
                 if (sockname.sa.sa_family == AF_INET) {
                     if (sockname.sa4.sin_addr.s_addr == INADDR_ANY) {
                         flags |= NI_NUMERICHOST;
@@ -738,11 +742,10 @@ TcpGetOptionProc(
 	    }
 	}
         if (found) {
-            if (len == 0) {
-                Tcl_DStringEndSublist(dsPtr);
-            } else {
+            if (len) {
                 return TCL_OK;
             }
+            Tcl_DStringEndSublist(dsPtr);
         } else {
             if (interp) {
                 Tcl_AppendResult(interp, "can't get sockname: ",
@@ -969,8 +972,12 @@ CreateClientSocket(
     }
 
 error:
-    freeaddrinfo(addrlist);
-    freeaddrinfo(myaddrlist);
+    if (addrlist) {
+	freeaddrinfo(addrlist);
+    }
+    if (myaddrlist) {
+	freeaddrinfo(myaddrlist);
+    }
     
     if (status < 0) {
 	if (interp != NULL) {
