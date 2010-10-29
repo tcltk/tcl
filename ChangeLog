@@ -1,3 +1,8 @@
+2010-10-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclTimer.c:	Stop small [afters] from wasting CPU [Bug
+				2905784] while keeping accuracy.
+
 2010-10-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/http.test:	Make http-4.15 pass in isolation [Bug 3097490]
