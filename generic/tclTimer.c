@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.42 2010/02/24 10:32:17 dkf Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.42.4.1 2010/10/30 15:20:23 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -128,6 +128,17 @@ static Tcl_ThreadDataKey dataKey;
 #define TCL_TIME_DIFF_MS(t1, t2) \
     (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
 	    ((long)(t1).usec - (long)(t2).usec)/1000)
+
+#define TCL_TIME_DIFF_MS_CEILING(t1, t2) \
+    (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
+	    ((long)(t1).usec - (long)(t2).usec + 999)/1000)
+
+/*
+ * Sleeps under that number of milliseconds don't get double-checked
+ * and are done in exactly one Tcl_Sleep(). This to limit gettimeofday()s.
+ */
+
+#define SLEEP_OFFLOAD_GETTIMEOFDAY 20
 
 /*
  * The maximum number of milliseconds for each Tcl_Sleep call in AfterDelay.
@@ -1002,7 +1013,8 @@ AfterDelay(
     Tcl_Time endTime, now;
     Tcl_WideInt diff;
 
-    Tcl_GetTime(&endTime);
+    Tcl_GetTime(&now);
+    endTime = now;
     endTime.sec += (long)(ms/1000);
     endTime.usec += ((int)(ms%1000))*1000;
     if (endTime.usec >= 1000000) {
@@ -1011,7 +1023,6 @@ AfterDelay(
     }
 
     do {
-	Tcl_GetTime(&now);
 	if (Tcl_AsyncReady()) {
 	    if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
 		return TCL_ERROR;
@@ -1029,7 +1040,7 @@ AfterDelay(
 	}
 	if (iPtr->limit.timeEvent == NULL
 		|| TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
-	    diff = TCL_TIME_DIFF_MS(endTime, now);
+	    diff = TCL_TIME_DIFF_MS_CEILING(endTime, now);
 #ifndef TCL_WIDE_INT_IS_LONG
 	    if (diff > LONG_MAX) {
 		diff = LONG_MAX;
@@ -1038,9 +1049,11 @@ AfterDelay(
 	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
 		diff = TCL_TIME_MAXIMUM_SLICE;
 	    }
+            if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) diff = 1;
 	    if (diff > 0) {
 		Tcl_Sleep((long) diff);
-	    }
+                if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) break;
+	    } else break;
 	} else {
 	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
 #ifndef TCL_WIDE_INT_IS_LONG
@@ -1066,6 +1079,7 @@ AfterDelay(
 		return TCL_ERROR;
 	    }
 	}
+        Tcl_GetTime(&now);
     } while (TCL_TIME_BEFORE(now, endTime));
     return TCL_OK;
 }
@@ -1269,5 +1283,7 @@ AfterCleanupProc(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
