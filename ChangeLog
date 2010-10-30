@@ -1,3 +1,8 @@
+2010-10-28  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclTimer.c:	Stop small [afters] from wasting CPU [Bug
+				2905784] while keeping accuracy.
+
 2010-10-28  Kevin B. Kenny  <kennykb@acm.org>
 
 	[dogeen-assembler-branch]
