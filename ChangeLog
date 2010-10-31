@@ -1,3 +1,12 @@
+2010-10-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4     Add -D_CRT_SECURE_NO_DEPRECATE and
+	-D_CRT_NONSTDC_NO_DEPRECATE, reducing the number of
+	deprecation warnings on later VC++ versions.
+	* win/rules.vc   Better VCVERSION determination
+	* win/configure  (regenerated with autoconf 2.13)
+	All changes backported from Tcl8.5/8.6
+
 2010-10-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/uniParse.tcl:   [Bug 3085863]: tclUniData 9 years old
