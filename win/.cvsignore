@@ -13,3 +13,5 @@ tcl.hpj
 tclConfig.sh
 nmakehlp.exe
 .#*
+config.cache
+config.status

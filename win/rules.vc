@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2006 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.11.2.8 2010/10/23 21:42:15 nijtmans Exp $
+# RCS: @(#) $Id: rules.vc,v 1.11.2.9 2010/10/31 21:25:07 nijtmans Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -183,24 +183,27 @@ LINKERFLAGS     =-ltcg
 
 _VC_MANIFEST_EMBED_EXE=
 _VC_MANIFEST_EMBED_DLL=
-!if ![cl /Zs /Tc NUL 2>&1 | find "Version 12" > NUL]
-VCVER=6
-!elseif ![cl /Zs /Tc NUL 2>&1 | find "Version 13" > NUL]
-VCVER=7
-!elseif ![cl /Zs /Tc NUL 2>&1 | find "Version 14" > NUL]
-VCVER=8
-_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
-_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
-!elseif ![cl /Zs /Tc NUL 2>&1 | find "Version 15" > NUL]
-VCVER=9
-_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
-_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
-!elseif ![cl /Zs /Tc NUL 2>&1 | find "Version 16" > NUL]
-VCVER=10
-_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
-_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
-!else
 VCVER=0
+!if ![echo VCVERSION=_MSC_VER > vercl.x] \
+    && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
+!include vercl.i
+!if $(VCVERSION) >= 1600
+VCVER=10
+!elseif $(VCVERSION) >= 1500
+VCVER=9
+!elseif $(VCVERSION) >= 1400
+VCVER=8
+!elseif $(VCVERSION) >= 1300
+VCVER=7
+!elseif $(VCVERSION) >= 1200
+VCVER=6
+!endif
+!endif
+
+# Since MSVC8 we must deal with manifest resources.
+!if $(VCVERSION) >= 1400
+_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
 !endif
 
 #----------------------------------------------------------
