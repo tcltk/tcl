@@ -1,4 +1,10 @@
-2010-10-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+2010-11-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Asia/Hong_Kong:
+	* library/tzdata/Pacific/Apia:
+	* library/tzdata/Pacific/Fiji:   Olson's tzdata2010o.
+
+2010-10-29  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclTimer.c:	Stop small [afters] from wasting CPU [Bug
 				2905784] while keeping accuracy.
