@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.16.4.8 2010/09/02 18:30:29 andreas_kupries Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.16.4.9 2010/11/02 21:57:19 stwo Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -492,9 +492,9 @@ proc ::safe::InterpInit {
     # Sync the paths used to search for Tcl modules. This can be done only
     # now, after tm.tcl was loaded.
     namespace upvar ::safe S$slave state
-    ::interp eval $slave [list \
-	      ::tcl::tm::add {*}$state(tm_path_slave)]
-
+    if {[llength $state(tm_path_slave)] > 0} {
+	::interp eval $slave [list ::tcl::tm::add {*}$state(tm_path_slave)]
+    }
     return $slave
 }
 
