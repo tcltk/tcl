@@ -1,3 +1,8 @@
+2010-11-01  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* library/safe.tcl:	Improved handling of non-standard module
+	* tests/safe.test:	path lists, empty path lists in particular.
+
 2010-11-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Asia/Hong_Kong:
