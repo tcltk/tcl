@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.55 2010/10/11 12:11:53 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.56 2010/11/03 12:09:23 nijtmans Exp $
  */
 
 #undef STATIC_BUILD
@@ -1491,34 +1491,12 @@ AppendSystemError(
 	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (TCHAR *) tMsgPtrPtr,
 	    0, NULL);
     if (length == 0) {
-	char *msgPtr;
-
-	length = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM
-		| FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char *) &msgPtr,
-		0, NULL);
-	if (length > 0) {
-	    tMsgPtr = (TCHAR *)
-		    LocalAlloc(LPTR, (length + 1) * sizeof(TCHAR));
-	    MultiByteToWideChar(CP_ACP, 0, msgPtr, length + 1, tMsgPtr,
-		    length + 1);
-	    LocalFree(msgPtr);
-	}
-    }
-    if (length == 0) {
-	if (error == ERROR_CALL_NOT_IMPLEMENTED) {
-	    strcpy(msgBuf, "function not supported under Win32s");
-	} else {
-	    sprintf(msgBuf, "unknown error: %ld", error);
-	}
+	sprintf(msgBuf, "unknown error: %ld", error);
 	msg = msgBuf;
     } else {
-	Tcl_Encoding encoding;
 	char *msgPtr;
 
-	encoding = Tcl_GetEncoding(NULL, "unicode");
-	Tcl_ExternalToUtfDString(encoding, (char *) tMsgPtr, -1, &ds);
-	Tcl_FreeEncoding(encoding);
+	Tcl_WinTCharToUtf(tMsgPtr, -1, &ds);
 	LocalFree(tMsgPtr);
 
 	msgPtr = Tcl_DStringValue(&ds);
