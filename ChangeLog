@@ -1,18 +1,23 @@
+2010-11-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (TryPostBody):  Ensure that errors when setting
+	* tests/error.test (error-19.1[12]): message/opt capture variables get
+					     reflected properly to the caller.
+
 2010-11-03  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tclCompCmds.c (TclCompileCatchCmd):
-	* tests/compile.test (compile-3,6): Reworked the compilation of
-	the [catch] command so as to avoid placing any code that might
-	throw an exception (specifically, any initial substitutions
-	or any stores to result or options variables) between the
-	BEGIN_CATCH and END_CATCH but outside the exception range.
-	Added a test case that panics on a stack smash if the change
-	is not made. [Bug #3098302]
+	* generic/tclCompCmds.c (TclCompileCatchCmd): [Bug 3098302]:
+	* tests/compile.test (compile-3,6): Reworked the compilation of the
+	[catch] command so as to avoid placing any code that might throw an
+	exception (specifically, any initial substitutions or any stores to
+	result or options variables) between the BEGIN_CATCH and END_CATCH but
+	outside the exception range.  Added a test case that panics on a stack
+	smash if the change is not made.
 
 2010-11-01  Stuart Cassoff  <stwo@users.sourceforge.net>
 
-	* library/safe.tcl:	Improved handling of non-standard module
-	* tests/safe.test:	path lists, empty path lists in particular.
+	* library/safe.tcl:	Improved handling of non-standard module path
+	* tests/safe.test:	lists, empty path lists in particular.
 
 2010-11-01  Kevin B. Kenny  <kennykb@acm.org>
 
@@ -22,15 +27,17 @@
 
 2010-10-29  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclTimer.c:	Stop small [afters] from wasting CPU [Bug
-				2905784] while keeping accuracy.
+	* generic/tclTimer.c:	[Bug 2905784]: Stop small [after]s from
+				wasting CPU while keeping accuracy.
 
 2010-10-28  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/http.test:	Make http-4.15 pass in isolation [Bug 3097490]
+	* tests/http.test:	[Bug 3097490]: Make http-4.15 pass in
+				isolation.
 
-	* unix/tclUnixSock.c:	Prevent calls freeaddrinfo(NULL) which can
-	crash some systems.  Thanks Larry Virden.  [Bug 3093120]
+	* unix/tclUnixSock.c:	[Bug 3093120]: Prevent calls of
+				freeaddrinfo(NULL) which can crash some
+				systems.  Thanks Larry Virden.
 
 2010-10-26  Reinhard Max  <max@suse.de>
 
