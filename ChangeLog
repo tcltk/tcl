@@ -1,3 +1,9 @@
+2010-11-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFcmd.c:    [FRQ 2965056]: Windows build with -DUNICODE
+	* win/tclWinFile.c:    (more clean-ups for pre-win2000 stuff)
+	* win/tclWinReg.c:
+
 2010-11-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (TryPostBody):  Ensure that errors when setting
