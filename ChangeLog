@@ -1,3 +1,11 @@
+2010-11-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	Backported from 8.6 (see 2010-08-04).
+	* win/tclWin32Dll.c (asciiProcs, unicodeProcs):
+	* win/tclWinLoad.c (TclpDlopen): 'load' use LoadLibraryEx with
+	* win/tclWinInt.h (TclWinProcs): LOAD_WITH_ALTERED_SEARCH_PATH to
+	prefer dependent DLLs in same dir as loaded DLL.
+
 2010-10-31  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tcl.m4     Add -D_CRT_SECURE_NO_DEPRECATE and
