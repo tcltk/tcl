@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.81 2010/08/30 14:11:01 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.82 2010/11/03 13:02:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4499,6 +4499,8 @@ TryPostBody(
 		    ((Interp *) interp)->cmdFramePtr, 4*i + 5);
 
 	handlerFailed:
+	    resultObj = Tcl_GetObjResult(interp);
+	    Tcl_IncrRefCount(resultObj);
 	    options = During(interp, result, options, NULL);
 	    break;
 

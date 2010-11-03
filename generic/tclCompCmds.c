@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.63 2010/10/21 12:08:40 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.64 2010/11/03 13:02:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -279,7 +279,8 @@ TclCompileCatchCmd(
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
     const char *name;
     int resultIndex, optsIndex, nameChars, range;
-    int savedStackDepth = envPtr->currStackDepth;
+    int initStackDepth = envPtr->currStackDepth;
+    int savedStackDepth;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -345,112 +346,148 @@ TclCompileCatchCmd(
     }
 
     /*
-     * We will compile the catch command. Emit a beginCatch instruction at the
-     * start of the catch body: the subcommand it controls.
+     * We will compile the catch command. Declare the exception range
+     * that it uses.
      */
 
     range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
-    TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
 
     /*
-     * If the body is a simple word, compile the instructions to eval it.
-     * Otherwise, compile instructions to substitute its text without
-     * catching, a catch instruction that resets the stack to what it was
-     * before substituting the body, and then an instruction to eval the body.
-     * Care has to be taken to register the correct startOffset for the catch
-     * range so that errors in the substitution are not caught. [Bug 219184]
+     * If the body is a simple word, compile a BEGIN_CATCH instruction,
+     * followed by the instructions to eval the body.
+     * Otherwise, compile instructions to substitute the body text before
+     * starting the catch, then BEGIN_CATCH, and then EVAL_STK to
+     * evaluate the substituted body.
+     * Care has to be taken to make sure that substitution happens outside
+     * the catch range so that errors in the substitution are not caught.
+     * [Bug 219184]
+     * The reason for duplicating the script is that EVAL_STK would otherwise
+     * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
      */
 
     SetLineInformation(1);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	savedStackDepth = envPtr->currStackDepth;
+	TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
 	ExceptionRangeStarts(envPtr, range);
 	CompileBody(envPtr, cmdTokenPtr, interp);
-	ExceptionRangeEnds(envPtr, range);
     } else {
 	CompileTokens(envPtr, cmdTokenPtr, interp);
+	savedStackDepth = envPtr->currStackDepth;
+	TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
 	ExceptionRangeStarts(envPtr, range);
+	TclEmitOpcode(INST_DUP, envPtr);
 	TclEmitOpcode(INST_EVAL_STK, envPtr);
-	ExceptionRangeEnds(envPtr, range);
     }
-
-    /*
-     * The "no errors" epilogue code: store the body's result into the
-     * variable (if any), push "0" (TCL_OK) as the catch's "no error" result,
-     * and jump around the "error case" code. Note that we issue the push of
-     * the return options first so that if alterations happen to the current
-     * interpreter state during the writing of the variable, we won't see
-     * them; this results in a slightly complex instruction issuing flow
-     * (can't exchange, only duplicate and pop).
+    /* Stack at this point:
+     *    nonsimple:  script <mark> result
+     *    simple:            <mark> result
      */
 
-    if (resultIndex != -1) {
-	if (optsIndex != -1) {
-	    TclEmitOpcode(INST_PUSH_RETURN_OPTIONS, envPtr);
-	    TclEmitInstInt4(INST_OVER, 1, envPtr);
-	}
-	if (resultIndex <= 255) {
-	    TclEmitInstInt1(INST_STORE_SCALAR1, resultIndex, envPtr);
-	} else {
-	    TclEmitInstInt4(INST_STORE_SCALAR4, resultIndex, envPtr);
-	}
-	if (optsIndex != -1) {
-	    TclEmitOpcode(INST_POP, envPtr);
-	    if (optsIndex <= 255) {
-		TclEmitInstInt1(INST_STORE_SCALAR1, optsIndex, envPtr);
-	    } else {
-		TclEmitInstInt4(INST_STORE_SCALAR4, optsIndex, envPtr);
-	    }
-	    TclEmitOpcode(INST_POP, envPtr);
-	}
-    }
-    TclEmitOpcode(INST_POP, envPtr);
+    /*
+     * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch
+     * result, and jump around the "error case" code.
+     */
+
     PushLiteral(envPtr, "0", 1);
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
+    /* Stack at this point: ?script? <mark> result TCL_OK */
 
-    /*
-     * The "error case" code: store the body's result into the variable (if
-     * any), then push the error result code. The initial PC offset here is
-     * the catch's error target. Note that if we are saving the return
-     * options, we do that first so the preservation cannot get affected by
-     * any intermediate result handling.
+    /* 
+     * Emit the "error case" epilogue. Push the interpreter result
+     * and the return code.
      */
 
     envPtr->currStackDepth = savedStackDepth;
     ExceptionRangeTarget(envPtr, range, catchOffset);
+    /* Stack at this point:  ?script? */
+    TclEmitOpcode(INST_PUSH_RESULT, envPtr);
+    TclEmitOpcode(INST_PUSH_RETURN_CODE, envPtr);
+
+    /*
+     * Update the target of the jump after the "no errors" code. 
+     */
+
+    /* Stack at this point: ?script? result returnCode */
+    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
+	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
+		CurrentOffset(envPtr) - jumpFixup.codeOffset);
+    }
+
+    /* Push the return options if the caller wants them */
+
+    if (optsIndex != -1) {
+	TclEmitOpcode(INST_PUSH_RETURN_OPTIONS, envPtr);
+    }
+
+    /*
+     * End the catch
+     */
+
+    ExceptionRangeEnds(envPtr, range);
+    TclEmitOpcode(INST_END_CATCH, envPtr);
+
+    /*
+     * At this point, the top of the stack is inconveniently ordered:
+     *		?script? result returnCode ?returnOptions?
+     * Reverse the stack to bring the result to the top.
+     */
+
+    if (optsIndex != -1) {
+	TclEmitInstInt4(INST_REVERSE, 3, envPtr);
+    } else {
+	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+    }
+
+    /*
+     * Store the result if requested, and remove it from the stack
+     */
+
     if (resultIndex != -1) {
-	if (optsIndex != -1) {
-	    TclEmitOpcode(INST_PUSH_RETURN_OPTIONS, envPtr);
-	}
-	TclEmitOpcode(INST_PUSH_RESULT, envPtr);
 	if (resultIndex <= 255) {
 	    TclEmitInstInt1(INST_STORE_SCALAR1, resultIndex, envPtr);
 	} else {
 	    TclEmitInstInt4(INST_STORE_SCALAR4, resultIndex, envPtr);
 	}
-	TclEmitOpcode(INST_POP, envPtr);
-	if (optsIndex != -1) {
-	    if (optsIndex <= 255) {
-		TclEmitInstInt1(INST_STORE_SCALAR1, optsIndex, envPtr);
-	    } else {
-		TclEmitInstInt4(INST_STORE_SCALAR4, optsIndex, envPtr);
-	    }
-	    TclEmitOpcode(INST_POP, envPtr);
-	}
     }
-    TclEmitOpcode(INST_PUSH_RETURN_CODE, envPtr);
+    TclEmitOpcode(INST_POP, envPtr);
 
     /*
-     * Update the target of the jump after the "no errors" code, then emit an
-     * endCatch instruction at the end of the catch command.
+     * Stack is now ?script? result returnCode.
+     * If the options dict has been requested, it is buried on the stack
+     * under the return code. Reverse the stack to bring it to the top,
+     * store it and remove it from the stack.
      */
 
-    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
-		CurrentOffset(envPtr) - jumpFixup.codeOffset);
+    if (optsIndex != -1) {
+	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+	if (optsIndex <= 255) {
+	    TclEmitInstInt1(INST_STORE_SCALAR1, optsIndex, envPtr);
+	} else {
+	    TclEmitInstInt4(INST_STORE_SCALAR4, optsIndex, envPtr);
+	}
+	TclEmitOpcode(INST_POP, envPtr);
     }
-    TclEmitOpcode(INST_END_CATCH, envPtr);
 
-    envPtr->currStackDepth = savedStackDepth + 1;
+    /* 
+     * Stack is now ?script? result. Get rid of the subst'ed script
+     * if it's hanging arond.
+     */
+
+    if (cmdTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+	TclEmitOpcode(INST_POP, envPtr);
+    }
+
+    /* 
+     * Result of all this, on either branch, should have been to leave
+     * one operand -- the return code -- on the stack.
+     */
+
+    if (envPtr->currStackDepth != initStackDepth + 1) {
+	Tcl_Panic("in TclCompileCatchCmd, currStackDepth = %d should be %d",
+		  envPtr->currStackDepth, initStackDepth+1);
+    }
     return TCL_OK;
 }
 
