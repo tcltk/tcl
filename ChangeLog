@@ -1,3 +1,14 @@
+2010-11-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclCompCmds.c (TclCompileCatchCmd):
+	* tests/compile.test (compile-3,6): Reworked the compilation of
+	the [catch] command so as to avoid placing any code that might
+	throw an exception (specifically, any initial substitutions
+	or any stores to result or options variables) between the
+	BEGIN_CATCH and END_CATCH but outside the exception range.
+	Added a test case that panics on a stack smash if the change
+	is not made. [Bug #3098302]
+
 2010-11-01  Stuart Cassoff  <stwo@users.sourceforge.net>
 
 	* library/safe.tcl:	Improved handling of non-standard module
