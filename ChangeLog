@@ -7,6 +7,9 @@
 	tests to dynamically adapt to the address family that is being
 	tested.
 
+	Rework some of the tests to speed them up by avoiding (supposedly)
+	unneeded [after]s.
+
 2010-11-04  Stuart Cassoff  <stwo@users.sourceforge.net>
 	* unix/Makefile.in:	[Patch 3101127]: Installer Improvements.
 	* unix/install-sh:
