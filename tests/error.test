@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.10.2.20 2010/11/03 13:02:53 dgp Exp $
+# RCS: @(#) $Id: error.test,v 1.10.2.21 2010/11/04 15:50:39 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -953,6 +953,28 @@ test error-19.12 {interpreted try and errors on variable write} -setup {
 	} msg
 	addmsg $msg
     } ::tcl::test::error} try
+} -cleanup {
+    unset RES
+} -result {body finally,a {can't set "foo": variable is array}}
+test error-19.13 {compiled try and errors on variable write} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	array set foo {bar boo}
+	set bar unset
+	catch {
+	    try {
+		addmsg body
+		return a
+	    } on return {bar foo} - on error {bar foo} {
+		addmsg handler
+		return b
+	    } finally {
+		addmsg finally,$bar
+	    }
+	} msg
+	addmsg $msg
+    } ::tcl::test::error}
 } -cleanup {
     unset RES
 } -result {body finally,a {can't set "foo": variable is array}}

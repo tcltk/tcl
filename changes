@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.34 2010/08/12 12:34:13 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.35 2010/11/04 15:50:39 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7767,8 +7767,6 @@ memory with buffer backup (ferrieux)
 
 2010-07-28 (bug fix)[3037525] crash deleting vars @ callframe pop (sofer)
 
-2010-08-02 tzdata updated to Olson's tzdata2010k (kenny)
-
 2010-08-04 (bug fix)[3034840] mem corrupt when refchan loses interp (kupries)
 
 2010-08-04 (enhancement) Win [load] use LOAD_WITH_ALTERED_SEARCH_PATH (hobbs)
@@ -7776,4 +7774,89 @@ memory with buffer backup (ferrieux)
 2010-08-04 (platform support) panic on detection of win9x system (hobbs)
         *** POTENTIAL INCOMPATIBILITY ***
 
---- Released 8.6b2, September ??, 2010 --- See ChangeLog for details ---
+2010-08-10 (fix) Handle non-null-terminated bytearrys in glob matching (hobbs)
+
+2010-08-11 (fix) copy-paste bug in [yield] implementation (sofer, goth)
+
+2010-08-11 (platform) Drop pre-aix 4.2 support, ldAix (hobbs)
+
+2010-08-14 (frq)[2819611] changed signatures of hash fnctions, delete-file, and get-native-path (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2010-08-15 (bug fix)[3045010] tweaked error message for wrong#args of lambda's (fellows)
+
+2010-08-18 (bug fix)[3004191] fixed safe [glob] (fellows)
+
+2010-08-21 (patch)[3034251] genStubs steal features of ttkGenStubs (nijtmans)
+
+2010-08-26 (bug fix)[1230554] configure, OSF-1 problems, windows manifest issues (hobbs)
+
+2010-08-30 (bug fix) [3046594,3047235,3048771] reimplemented tailcall (sofer)
+
+2010-08-31 fixed manifest handling on windows (hobbs, kupries)
+
+2010-08-31 windows makefile and stub changes (nijtmans)
+
+2010-09-01 (bug fix)[3057639] compiled lappend trace consistency (hobbs,kupries)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2010-09-01 fixed safe glob handling of -directory (kupries)
+
+2010-09-02 fixed safe glob handling of -join (kupries)
+
+2010-09-08 (bug fix)[3059922] build with mingw on amd64 (porter, mescalinum)
+
+2010-09-15 (bug fix)[3067036] stop hang in bytearray append (fellows)
+
+2010-09-22 unified set of link libraries between mingw and vc (nijtmans)
+
+2010-09-22 (bug fix)[3072640] protect writes to ::error* variables (sofer)
+
+2010-09-23 fix leak of return options [catch $err m constant] (porter, hobbs)
+
+2010-09-24 (bugfix)[3056775] fixed race condition in windows sockets (kupries)
+
+2010-09-24 (performance) string eq/cmp (hobbs)
+
+2010-09-26 (patch)[3072080] rewritten NRE core (sofer)
+
+2010-09-28 (new feature)[TIP 162] implementation of ipv6 sockets (max)
+
+2010-10-02 (bug fix)[3079830] properly invalidate string rep of dicts (fellows)
+
+2010-10-06 (bug fix)[3081065] fix writing to freed Tcl_Obj (porter)
+
+2010-10-08 fix in ipv6 code on windows (nijtmans)
+
+2010-10-09 fixed overallocation of execution stack (sofer)
+
+2010-10-11 windows unicode changes (nijtmans)
+
+2010-10-12 (bug fix)[3084338] fixed meamleak in ipv6 code (max)
+
+2010-10-13 (bug fix)[467523,983660] alt fix allows empty literal share (porter)
+
+2010-10-15 (bugfix)[3085863] updated unicode tables (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2010-10-16 refactored implementation of dict iteration (fellows)
+
+2010-10-17 (patch)[2995655] report inner contexts on error stack (ferrieux)
+
+2010-10-19 (bug fix)[3081008] fixed bytearray zlib interaction (fellows)
+
+2010-10-19 improved crc, appending to bytearray (fellows)
+
+2010-10-20 improved compilation of [dict for] (fellows)
+
+2010-10-26 Added private support to disable reverse dns (max)
+
+2010-10-26 Prevent crashes when querying socket options (fellows, max)
+
+2010-10-28 (bug fix)[3093120] prevent freeaddrinfo(NULL) (porter, virden)
+
+2010-10-29 (bug fix)[2905784] stop cycle waste in short [after] (ferrieux)
+
+2010-11-01 tzdata updated to Olson's tzdata2010o (kenny)
+
+--- Released 8.6b2, November 15, 2010 --- See ChangeLog for details ---
