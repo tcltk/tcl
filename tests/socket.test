@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.46 2010/11/04 15:59:23 rmax Exp $
+# RCS: @(#) $Id: socket.test,v 1.47 2010/11/04 18:39:31 rmax Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -89,6 +89,14 @@ if {![info exists remoteServerPort]} {
         if {[info exists remoteServerIP]} {
 	    set remoteServerPort 2048
         }
+    }
+}
+
+if 0 {
+    # activate this to time the tests
+    proc test {args} {
+        set name [lindex $args 0]
+        puts "[lindex [time {uplevel [linsert $args 0 tcltest::test]}] 0] @@@ $name"
     }
 }
 
@@ -464,7 +472,6 @@ test socket_$af-2.7 {echo server, one line} -constraints [list socket supported_
     set s [socket $localhost $listen]
     fconfigure $s -buffering line -translation lf
     puts $s "hello abcdefghijklmnop"
-    after 1000
     set x [gets $s]
     close $s
     list $x [gets $f]
@@ -571,14 +578,16 @@ test socket_$af-2.11 {detecting new data} -constraints [list socket supported_$a
     vwait sock
     puts $s2 one
     flush $s2
-    after 500
+    after idle {set x 1}
+    vwait x
     fconfigure $sock -blocking 0
     set result a:[gets $sock]
     lappend result b:[gets $sock]
     fconfigure $sock -blocking 1
     puts $s2 two
     flush $s2
-    after 500
+    after idle {set x 1}
+    vwait x
     fconfigure $sock -blocking 0
     lappend result c:[gets $sock]
 } -cleanup {
@@ -980,12 +989,12 @@ test socket_$af-9.2 {testing async write, fileevents, flush on close} -constrain
     proc readable {s} {
 	set l [gets $s]
 	fileevent $s readable {}
-	after 1000 respond $s
+	after idle respond $s
     }
     proc respond {s} {
 	global firstblock
 	puts -nonewline $s $firstblock
-	after 1000 writedata $s
+	after idle writedata $s
     }
     proc writedata {s} {
 	global secondblock
@@ -1392,12 +1401,12 @@ test socket_$af-11.13 {testing async write, async flush, async close} -setup {
 	proc readable {s} {
 	    set l [gets $s]
 	    fileevent $s readable {}
-	    after 1000 respond $s
+	    after idle respond $s
 	}
 	proc respond {s} {
 	    global firstblock
 	    puts -nonewline $s $firstblock
-	    after 1000 writedata $s
+	    after idle writedata $s
 	}
 	proc writedata {s} {
 	    global secondblock
@@ -1443,31 +1452,27 @@ test socket_$af-12.1 {testing inheritance of server sockets} -setup {
 	vwait forever
     }
     close $f
-    # Script2 creates the server socket, launches script1, waits a second, and
-    # exits. The server socket will now be closed unless script1 inherited it.
+    # Script2 creates the server socket, launches script1, and exits.
+    # The server socket will now be closed unless script1 inherited it.
     set f [open $path(script2) w]
     puts $f [list set tcltest [interpreter]]
     puts $f [list set delay $path(script1)]
     puts $f [list set localhost $localhost]
     puts $f {
 	set f [socket -server accept -myaddr $localhost 0]
-	puts [lindex [fconfigure $f -sockname] 2]
 	proc accept { file addr port } {
 	    close $file
 	}
 	exec $tcltest $delay &
+	puts [lindex [fconfigure $f -sockname] 2]
 	close $f
-	after 1000 exit
-	vwait forever
+        exit
     }
     close $f
 } -constraints [list socket supported_$af stdio exec] -body {
     # Launch script2 and wait 5 seconds
     ### exec [interpreter] script2 &
     set p [open "|[list [interpreter] $path(script2)]" r]
-    gets $p listen
-    after 5000 { set ok_to_proceed 1 }
-    vwait ok_to_proceed
     # If we can still connect to the server, the socket got inherited.
     if {[catch {close [socket $localhost $listen]}]} {
 	return {server socket was not inherited}
@@ -1475,7 +1480,7 @@ test socket_$af-12.1 {testing inheritance of server sockets} -setup {
 	return {server socket was inherited}
     }
 } -cleanup {
-    close $p
+    catch {close $p}
 } -result {server socket was not inherited}
 test socket_$af-12.2 {testing inheritance of client sockets} -setup {
     file delete $path(script1)
@@ -1501,14 +1506,13 @@ test socket_$af-12.2 {testing inheritance of client sockets} -setup {
         exec $tcltest $delay &
 	puts $f testing
 	flush $f
-	after 1000 exit
-	vwait forever
+        exit
     }
     close $f
     # If the socket doesn't hit end-of-file in 10 seconds, the script1 process
     # must have inherited the client.
     set failed 0
-    after 10000 [list set failed 1]
+    set after [after 10000 [list set failed 1]]
 } -constraints [list socket supported_$af stdio exec] -body {
     # Create the server socket
     set server [socket -server accept -myaddr $localhost 0]
@@ -1547,9 +1551,7 @@ test socket_$af-12.2 {testing inheritance of client sockets} -setup {
     vwait x
     return $x
 } -cleanup {
-    if {!$failed} {
-	vwait failed
-    }
+    after cancel $after
     close $p
 } -result {client socket was not inherited}
 test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
@@ -1567,13 +1569,13 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
     puts $f [list set localhost $localhost]
     puts $f {
 	set server [socket -server accept -myaddr $localhost 0]
-	puts stdout [lindex [fconfigure $server -sockname] 2]
 	proc accept { file host port } {
 	    global tcltest delay
 	    puts $file {test data on socket}
 	    exec $tcltest $delay &
-	    after 1000 exit
+            after idle exit
 	}
+	puts stdout [lindex [fconfigure $server -sockname] 2]
 	vwait forever
     }
     close $f
@@ -1583,8 +1585,6 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
     ## exec [interpreter] script2 &
     set p [open "|[list [interpreter] $path(script2)]" r]
     gets $p listen
-    after 1000 set ok_to_proceed 1
-    vwait ok_to_proceed
     set f [socket $localhost $listen]
     fconfigure $f -buffering full -blocking 0
     fileevent $f readable [list getdata $f]
@@ -1654,7 +1654,6 @@ test socket_$af-13.1 {Testing use of shared socket between two threads} -setup {
     update
     set port [testthread send $serverthread {set listen}]
     update
-    after 1000
     set s [socket $localhost $port]
     fconfigure $s -buffering line
     catch {
@@ -1663,7 +1662,6 @@ test socket_$af-13.1 {Testing use of shared socket between two threads} -setup {
     }
     close $s
     update
-    after 2000
     append result " " [threadReap]
 } -cleanup {
     removeFile script
