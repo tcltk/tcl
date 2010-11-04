@@ -29,3 +29,4 @@ tcl.suo
 *.pch
 versions.vc
 vercl.x
+Release_VC*

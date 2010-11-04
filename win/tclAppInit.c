@@ -12,14 +12,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.33 2010/09/23 21:40:45 nijtmans Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.34 2010/11/04 21:48:23 nijtmans Exp $
  */
 
-/* TODO: This file does not compile in UNICODE mode.
- * See [Freq 2965056]: Windows build with -DUNICODE
- */
-#undef UNICODE
-#undef _UNICODE
+#ifndef _MSC_VER
+/* On mingw and cygwin this doesn't work yet */
+#   undef UNICODE
+#   undef _UNICODE
+#endif
 
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN

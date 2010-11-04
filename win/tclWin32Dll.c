@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.69 2010/10/12 10:21:55 nijtmans Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.70 2010/11/04 21:48:23 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -522,7 +522,7 @@ TclWinDriveLetterForVolMountPoint(
 		     */
 
 		    Tcl_MutexUnlock(&mountPointMap);
-		    return dlIter->driveLetter;
+		    return (char) dlIter->driveLetter;
 		}
 	    }
 
@@ -602,7 +602,7 @@ TclWinDriveLetterForVolMountPoint(
 	    dlIter = dlIter->nextPtr) {
 	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
 	    Tcl_MutexUnlock(&mountPointMap);
-	    return dlIter->driveLetter;
+	    return (char) dlIter->driveLetter;
 	}
     }
 
