@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: remote.tcl,v 1.4 2010/09/28 15:13:55 rmax Exp $
+# RCS: @(#) $Id: remote.tcl,v 1.5 2010/11/04 21:38:27 rmax Exp $
 
 # Initialize message delimitor
 
@@ -156,5 +156,6 @@ if {[catch {set serverSocket \
 	[socket -myaddr $serverAddress -server __accept__ $serverPort]} msg]} {
     puts "Server on $serverAddress:$serverPort cannot start: $msg"
 } else {
+    puts ready
     vwait __server_wait_variable__
 }
