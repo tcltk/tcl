@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.47 2010/11/04 18:39:31 rmax Exp $
+# RCS: @(#) $Id: socket.test,v 1.48 2010/11/04 21:08:19 rmax Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -1448,6 +1448,7 @@ test socket_$af-12.1 {testing inheritance of server sockets} -setup {
     # will be held open for 10 seconds
     set f [open $path(script1) w]
     puts $f {
+	fileevent stdin readable exit
 	after 10000 exit
 	vwait forever
     }
@@ -1489,6 +1490,7 @@ test socket_$af-12.2 {testing inheritance of client sockets} -setup {
     # will be held open for 20 seconds
     set f [open $path(script1) w]
     puts $f {
+	fileevent stdin readable exit
 	after 20000 exit
 	vwait forever
     }
@@ -1559,6 +1561,7 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
     file delete $path(script2)
     set f [open $path(script1) w]
     puts $f {
+	fileevent stdin readable exit
 	after 10000 exit
 	vwait forever
     }
