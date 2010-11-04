@@ -1,3 +1,9 @@
+2010-11-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclMain.c: Added missing conditional on _WIN32 around code
+	that messes around with the definition of _UNICODE, to correct a badly
+	broken Unix build from Jan's last commit.
+
 2010-11-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclDecls.h  [FRQ 491789]: "setargv() doesn't support a unicode

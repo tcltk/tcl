@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.53 2010/11/04 21:48:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.54 2010/11/04 23:56:07 kennykb Exp $
  */
 
 /**
@@ -18,7 +18,7 @@
  * TCL_ASCII_MAIN defined. This way both Tcl_Main and Tcl_MainExW
  * can be implemented, sharing the same source code.
  */
-#ifndef TCL_ASCII_MAIN
+#if defined(_WIN32) && !defined(TCL_ASCII_MAIN)
 #   ifdef UNICODE
 #	undef UNICODE
 #	undef _UNICODE
