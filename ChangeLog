@@ -1,3 +1,7 @@
+2010-11-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Updates for 8.6b2 release.  (Thanks Andreas Kupries)
+
 2010-11-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinFcmd.c:    [FRQ 2965056]: Windows build with -DUNICODE
