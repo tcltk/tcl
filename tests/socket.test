@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.48 2010/11/04 21:08:19 rmax Exp $
+# RCS: @(#) $Id: socket.test,v 1.49 2010/11/04 21:38:27 rmax Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -151,7 +151,7 @@ if {$doTestsWithRemoteServer} {
 		    [interpreter] $remoteFile -serverIsSilent \
 		    -port $remoteServerPort -address $remoteServerIP]" w+]
 	} msg]} then {
-	    after 1000
+	    gets $remoteProcChan
 	    if {[catch {
 		set commandSocket [socket $remoteServerIP $remoteServerPort]
 	    } msg] == 0} then {
@@ -1309,7 +1309,7 @@ test socket_$af-11.11 {testing spurious events} -setup {
 	set server [socket -server accept 0]
 	proc accept {s a p} {
 	    fconfigure $s -translation "auto lf"
-	    after 100 writesome $s
+	    after idle writesome $s
 	}
 	proc writesome {s} {
 	    for {set i 0} {$i < 100} {incr i} {
@@ -1352,7 +1352,7 @@ test socket_$af-11.12 {testing EOF stickyness} -constraints [list socket support
     set port [sendCommand {
 	set server [socket -server accept 0]
 	proc accept {s a p} {
-	    after 100 close $s
+	    after idle close $s
 	}
 	getPort $server
     }]
@@ -1681,9 +1681,9 @@ if {$remoteProcChan ne ""} {
 }
 catch {close $commandSocket}
 catch {close $remoteProcChan}
+}
 ::tcltest::cleanupTests
 flush stdout
-}
 return
 
 # Local Variables:
