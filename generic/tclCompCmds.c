@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.172 2010/11/03 00:59:22 kennykb Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.173 2010/11/04 12:22:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -453,7 +453,7 @@ TclCompileCatchCmd(
     TclEmitOpcode(INST_POP, envPtr);
 
     /*
-     * Stack is now ?script? result returnCode.
+     * Stack is now ?script? ?returnOptions? returnCode.
      * If the options dict has been requested, it is buried on the stack
      * under the return code. Reverse the stack to bring it to the top,
      * store it and remove it from the stack.
