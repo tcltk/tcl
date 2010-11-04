@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.187 2010/09/23 21:40:46 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.188 2010/11/04 21:48:23 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3787,8 +3787,14 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_SetVar(interp, varName, newValue, flags) \
 	    (tclStubsPtr->tcl_SetVar(interp, varName, newValue, flags))
 #endif
+
 #if defined(_WIN32) && defined(UNICODE)
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
+#   define Tcl_MainEx Tcl_MainExW
+    EXTERN void Tcl_MainExW(int argc, wchar_t **argv,
+	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
+#   define Tcl_Main(argc, argv, proc) Tcl_MainExW(argc, argv, proc, \
+	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
 #endif
 
 #undef TCL_STORAGE_CLASS
