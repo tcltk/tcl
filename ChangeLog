@@ -1,5 +1,8 @@
 2010-11-04  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tests/error.test (error-19.13): Another variation on testing for
+	issues in [try] compilation.
+
 	* doc/Tcl.n (Variable substitution): [Bug 3099086]: Increase clarity
 	of explanation of what characters are actually permitted in variable
 	substitutions. Note that this does not constitute a change of
