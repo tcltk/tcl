@@ -1,3 +1,8 @@
+2010-11-05  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclMain.c: Thanks, Kevin, for the fix, but this how it was
+	supposed to be (TCL_ASCII_MAIN is only supposed to be defined on WIN32).
+
 2010-11-05  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclMain.c: Added missing conditional on _WIN32 around code
