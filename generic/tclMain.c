@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.54 2010/11/04 23:56:07 kennykb Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.55 2010/11/05 08:16:46 nijtmans Exp $
  */
 
 /**
@@ -18,7 +18,7 @@
  * TCL_ASCII_MAIN defined. This way both Tcl_Main and Tcl_MainExW
  * can be implemented, sharing the same source code.
  */
-#if defined(_WIN32) && !defined(TCL_ASCII_MAIN)
+#if defined(TCL_ASCII_MAIN)
 #   ifdef UNICODE
 #	undef UNICODE
 #	undef _UNICODE
@@ -652,9 +652,8 @@ Tcl_MainEx(
     Tcl_Release(interp);
     Tcl_Exit(exitCode);
 }
-
-#ifndef TCL_ASCII_MAIN
-#undef Tcl_Main
+
+#ifndef UNICODE
 void
 Tcl_Main(
     int argc,			/* Number of arguments. */
@@ -667,6 +666,9 @@ Tcl_Main(
     Tcl_FindExecutable(argv[0]);
 	Tcl_MainEx(argc, argv, appInitProc, Tcl_CreateInterp());
 }
+#endif
+
+#ifndef TCL_ASCII_MAIN
 
 /*
  *---------------------------------------------------------------
