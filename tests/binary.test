@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.41 2010/09/15 22:12:00 dkf Exp $
+# RCS: @(#) $Id: binary.test,v 1.42 2010/11/09 13:41:21 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1583,6 +1583,10 @@ test binary-40.4 {ScanNumber: NaN} -body {
     unset -nocomplain arg1
     list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d arg1] $arg1
 } -match glob -result {1 -NaN*}
+test binary-40.5 {ScanNumber: -NaN} -body {
+    unset -nocomplain arg1
+    list [binary scan \x00\x00\x00\x00\x00\x00\xf8\xff d arg1] $arg1
+} -match glob -result {1 -NaN}
 
 test binary-41.1 {ScanNumber: word alignment} {
     unset -nocomplain arg1; unset arg2
