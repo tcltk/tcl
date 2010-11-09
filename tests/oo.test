@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.39 2010/03/24 13:21:11 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.40 2010/11/09 14:38:17 dkf Exp $
 
 package require -exact TclOO 0.6.2 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -96,6 +96,17 @@ test oo-0.7 {cleaning the core class pair; way #2} -setup {
 } -cleanup {
     interp delete t
 } -result {0 {} 1 {invalid command name "class"}}
+test oo-0.8 {leak in variable management} -setup {
+    oo::class create foo {
+	constructor {} {
+	    variable v 0
+	}
+    }
+} -constraints memory -body {
+    leaktest {[foo new] destroy}
+} -cleanup {
+    foo destroy
+} -result 0
 
 test oo-1.1 {basic test of OO functionality: no classes} {
     set result {}
@@ -2044,6 +2055,17 @@ test oo-20.15 {OO: variable method use in non-methods [Bug 2903811]} -setup {
     apply {{} {fooObj variable x; set x ok; return}}
     return [set [fooObj varname x]]
 } -result ok
+test oo-20.16 {variable method: leak per instance} -setup {
+    oo::class create foo {
+	constructor {} {
+	    set [my variable v] 0
+	}
+    }
+} -constraints memory -body {
+    leaktest {[foo new] destroy}
+} -cleanup {
+    foo destroy
+} -result 0
 
 test oo-21.1 {OO: inheritance ordering} -setup {
     oo::class create A
@@ -2531,6 +2553,18 @@ test oo-27.11 {variables declaration - no instance var leaks with class resolver
     inst1 step
     list [inst1 value] [inst2 value]
 } -result {3 2}
+test oo-27.12 {variables declaration: leak per instance} -setup {
+    oo::class create foo {
+	variable v
+	constructor {} {
+	    set v 0
+	}
+    }
+} -constraints memory -body {
+    leaktest {[foo new] destroy}
+} -cleanup {
+    foo destroy
+} -result 0
 
 # A feature that's not supported because the mechanism may change without
 # warning, but is supposed to work...
