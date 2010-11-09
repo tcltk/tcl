@@ -1,3 +1,7 @@
+2010-11-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/oo.test: Various tests for memory leaks.
+
 2010-11-05  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclMain.c: Thanks, Kevin, for the fix, but this how it was
