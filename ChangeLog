@@ -1,3 +1,7 @@
+2010-11-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tests/binary.test:  Added test case for [Bug #3105247] -NaN?
+
 2010-11-05  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclMain.c: Thanks, Kevin, for the fix, but this how it was
