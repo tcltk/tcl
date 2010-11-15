@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.468 2010/10/20 20:52:26 ferrieux Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.469 2010/11/15 21:34:54 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -595,6 +595,15 @@ Tcl_CreateInterp(void)
     Tcl_IncrRefCount(iPtr->emptyObjPtr);
     iPtr->resultSpace[0] = 0;
     iPtr->threadId = Tcl_GetCurrentThread();
+
+    /* TIP #378 */
+#ifdef TCL_INTERP_DEBUG_FRAME
+    iPtr->flags |= INTERP_DEBUG_FRAME;
+#else
+    if (getenv("TCL_INTERP_DEBUG_FRAME") != NULL) {
+        iPtr->flags |= INTERP_DEBUG_FRAME;
+    }
+#endif
 
     /*
      * Initialise the tables for variable traces and searches *before*
