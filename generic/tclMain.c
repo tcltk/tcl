@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.56 2010/11/15 09:21:49 nijtmans Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.57 2010/11/15 10:12:38 nijtmans Exp $
  */
 
 /**
@@ -47,26 +47,23 @@
 #   define TCHAR char
 #   define TEXT(arg) arg
 #   define _tcscmp strcmp
+#   define _tcslen strlen
+#   define _tcsncmp strncmp
 #endif
 
 /*
- * Further on, in UNICODE mode we need to use Tcl_NewUnicodeObj
- * in stead of Tcl_ExternalToUtfDString but they have a different
- * signature. So, create a simple wrapper function, that can
- * be used in both situations.
+ * Further on, in UNICODE mode, we need to use functions like
+ * Tcl_GetUnicodeFromObj, while otherwise Tcl_GetStringFromObj
+ * is needed. Those macro's assure that the right functions
+ * are used depending on the mode.
  */
-#ifdef UNICODE
-#   define NewNativeObj(value) Tcl_NewUnicodeObj(value, -1)
-#else
-static Tcl_Obj *NewNativeObj(const TCHAR *value) {
-	Tcl_DString ds;
-	Tcl_Obj *obj;
-
-	Tcl_ExternalToUtfDString(NULL, value, -1, &ds);
-	obj = Tcl_NewStringObj(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
-    Tcl_DStringFree(&ds);
-    return obj;
-}
+#ifndef UNICODE
+#   undef Tcl_GetUnicodeFromObj
+#   define Tcl_GetUnicodeFromObj Tcl_GetStringFromObj
+#   undef Tcl_NewUnicodeObj
+#   define Tcl_NewUnicodeObj Tcl_NewStringObj
+#   undef Tcl_WinTCharToUtf
+#   define Tcl_WinTCharToUtf(a,b,c) Tcl_ExternalToUtfDString(NULL,a,b,c)
 #endif /* !UNICODE */
 
 /*
@@ -305,6 +302,7 @@ Tcl_MainEx(
     int code, length, tty, exitCode = 0;
     Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel inChannel, outChannel, errChannel;
+    Tcl_DString appName;
 
     Tcl_InitMemory(interp);
 
@@ -324,13 +322,13 @@ Tcl_MainEx(
 
 	if ((argc > 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
 		&& (TEXT('-') != argv[3][0])) {
-		Tcl_Obj *value = NewNativeObj(argv[2]);
-	    Tcl_SetStartupScript(NewNativeObj(argv[3]), Tcl_GetString(value));
+		Tcl_Obj *value = Tcl_NewUnicodeObj(argv[2], -1);
+	    Tcl_SetStartupScript(Tcl_NewUnicodeObj(argv[3], -1), Tcl_GetString(value));
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    argv += 3;
 	} else if ((argc > 1) && (TEXT('-') != argv[1][0])) {
-	    Tcl_SetStartupScript(NewNativeObj(argv[1]), NULL);
+	    Tcl_SetStartupScript(Tcl_NewUnicodeObj(argv[1], -1), NULL);
 	    argc--;
 	    argv++;
 	}
@@ -338,9 +336,16 @@ Tcl_MainEx(
 
     path = Tcl_GetStartupScript(&encodingName);
     if (path == NULL) {
-	path = NewNativeObj(argv[0]);
+	Tcl_WinTCharToUtf(argv[0], -1, &appName);
+    } else {
+	const TCHAR *pathName = Tcl_GetUnicodeFromObj(path, &length);
+
+	Tcl_WinTCharToUtf(pathName, length * sizeof(TCHAR), &appName);
+	path = Tcl_NewStringObj(Tcl_DStringValue(&appName), -1);
+	Tcl_SetStartupScript(path, encodingName);
     }
-    Tcl_SetVar2Ex(interp, "argv0", NULL, path, TCL_GLOBAL_ONLY);
+    Tcl_SetVar(interp, "argv0", Tcl_DStringValue(&appName), TCL_GLOBAL_ONLY);
+    Tcl_DStringFree(&appName);
     argc--;
     argv++;
 
@@ -348,7 +353,12 @@ Tcl_MainEx(
 
     argvPtr = Tcl_NewListObj(0, NULL);
     while (argc--) {
-	Tcl_ListObjAppendElement(NULL, argvPtr, NewNativeObj(*argv++));
+	Tcl_DString ds;
+
+	Tcl_WinTCharToUtf(*argv++, -1, &ds);
+	Tcl_ListObjAppendElement(NULL, argvPtr, Tcl_NewStringObj(
+		Tcl_DStringValue(&ds), Tcl_DStringLength(&ds)));
+	Tcl_DStringFree(&ds);
     }
     Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
 
