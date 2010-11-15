@@ -1,3 +1,9 @@
+2010-11-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclMain.c:	[FRQ 491789]: "setargv() doesn't support a
+	unicode cmdline" follow-up: Eliminate use of the function
+	Tcl_WinTCharToUtf in generic code.
+
 2010-11-10  Andreas Kupries  <andreask@activestate.com>
 
 	* changes:	Updates for 8.6b2 release.
