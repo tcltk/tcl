@@ -1,3 +1,14 @@
+2010-11-15  Andreas Kupries  <andreask@activestate.com>
+
+	* doc/interp.n: [3081184] TIP #378.
+	* doc/tclvars.n: Performance fix for TIP #280.
+	* generic/tclBasic.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclInterp.c:
+	* tests/info.test:
+	* tests/interp.test:
+
 2010-11-10  Andreas Kupries  <andreask@activestate.com>
 
 	* changes:	Updates for 8.6b2 release.

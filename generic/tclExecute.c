@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.509 2010/10/20 20:52:28 ferrieux Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.510 2010/11/15 21:34:54 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2120,7 +2120,9 @@ TEBCresume(
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
 	NRE_ASSERT(TOP_CB(interp)->procPtr == TEBCreturn);
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
-	TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
+	if (iPtr->flags & INTERP_DEBUG_FRAME) {
+	    TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
+	}
 	if (codePtr->flags & TCL_BYTECODE_RECOMPILE) {
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	    codePtr->flags &= ~TCL_BYTECODE_RECOMPILE;
@@ -2797,8 +2799,10 @@ TEBCresume(
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
-	TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
-		codePtr, bcFramePtr, pc - codePtr->codeStart);
+	if (iPtr->flags & INTERP_DEBUG_FRAME) {
+	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	}
 
 	DECACHE_STACK_INFO();
 
