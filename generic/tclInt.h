@@ -13,11 +13,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.362.2.14 2010/07/25 10:13:48 nijtmans Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.362.2.15 2010/11/15 21:32:32 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
 #define _TCLINT
+
+#define TCL_NO_STACK_CHECK /* DISABLE C RUNTIME STACK CHECK - Test AIX */
 
 /*
  * Some numerics configuration options.
@@ -2032,6 +2034,9 @@ typedef struct InterpList {
  * SAFE_INTERP:		Non zero means that the current interp is a safe
  *			interp (i.e. it has only the safe commands installed,
  *			less priviledge than a regular interp).
+ * INTERP_DEBUG_FRAME:	Used for switching on various extra interpreter
+ *			debug/info mechanisms (e.g. info frame eval/uplevel
+ *			tracing) which are performance intensive.
  * INTERP_TRACE_IN_PROGRESS: Non-zero means that an interp trace is currently
  *			active; so no further trace callbacks should be
  *			invoked.
@@ -2047,6 +2052,7 @@ typedef struct InterpList {
 
 #define DELETED				     1
 #define ERR_ALREADY_LOGGED		     4
+#define INTERP_DEBUG_FRAME		  0x10
 #define DONT_COMPILE_CMDS_INLINE	  0x20
 #define RAND_SEED_INITIALIZED		  0x40
 #define SAFE_INTERP			  0x80

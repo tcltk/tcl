@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.369.2.18 2010/10/09 16:31:28 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.369.2.19 2010/11/15 21:32:31 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2412,14 +2412,18 @@ TclExecuteByteCode(
 
 	    bcFramePtr->data.tebc.pc = (char *) pc;
 	    iPtr->cmdFramePtr = bcFramePtr;
-	    TclArgumentBCEnter((Tcl_Interp*) iPtr, objv, objc,
-		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	    if (iPtr->flags & INTERP_DEBUG_FRAME) {
+		TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+			codePtr, bcFramePtr, pc - codePtr->codeStart);
+	    }
 	    DECACHE_STACK_INFO();
 	    result = TclEvalObjvInternal(interp, objc, objv,
 		    /* call from TEBC */(char *) -1, -1, 0);
 	    CACHE_STACK_INFO();
-	    TclArgumentBCRelease((Tcl_Interp*) iPtr, objv, objc,
-		    codePtr, pc - codePtr->codeStart);
+	    if (iPtr->flags & INTERP_DEBUG_FRAME) {
+		TclArgumentBCRelease((Tcl_Interp *) iPtr, objv, objc,
+			codePtr, pc - codePtr->codeStart);
+	    }
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 
 	    if (result == TCL_OK) {
