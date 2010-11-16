@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.27.2.2 2010/05/21 12:18:17 nijtmans Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.27.2.3 2010/11/16 14:57:46 nijtmans Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -32,6 +32,10 @@
 	/* Borland seems to forget to set this. */
 	typedef _TCHAR TCHAR;
 #	define _TCHAR_DEFINED
+#   endif
+#   if defined(_MSC_VER) && defined(__STDC__)
+	/* VS2005 SP1 misses this. See [Bug #3110161] */
+	typedef _TCHAR TCHAR;
 #   endif
 #endif
 
