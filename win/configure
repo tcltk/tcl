@@ -4029,7 +4029,7 @@ echo "$as_me: WARNING: 64bit mode not supported with GCC on Windows" >&2;}
 	MAKE_EXE="\${CC} -o \$@"
 	LIBPREFIX="lib"
 
-	extra_cflags="-pipe"
+	extra_cflags="-pipe -DTCL_BROKEN_MAINARGS"
 	extra_ldflags="-pipe"
 
 	if test "$ac_cv_cygwin" = "yes"; then

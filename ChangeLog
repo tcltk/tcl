@@ -1,3 +1,10 @@
+2010-11-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclAppInit.c Bring compilation under mingw-w64 a bit closer
+	* win/cat.c        to reality. See for what's missing:
+	* win/tcl.m4       <https://sourceforge.net/apps/trac/mingw-w64/wiki/Unicode%20apps>
+	* win/configure    (re-generated)
+
 2010-11-15  Andreas Kupries  <andreask@activestate.com>
 
 	* doc/interp.n: [3081184] TIP #378.
