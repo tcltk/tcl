@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.25.2.28 2010/08/04 21:48:23 dgp Exp $
+# RCS: @(#) $Id: info.test,v 1.25.2.29 2010/11/16 17:39:54 dgp Exp $
 
 if {{::tcltest} ni [namespace children]} {
     package require tcltest 2
@@ -690,14 +690,12 @@ test info-21.5 {miscellaneous error conditions} -returnCodes error -body {
 ##
 # ### ### ### ######### ######### #########
 ## info frame
-
 ## Helper
 # For the more complex results we cut the file name down to remove path
 # dependencies, and we use only part of the first line of the reported
 # command. The latter is required because otherwise the whole test case may
 # appear in some results, but the result is part of the testcase. An infinite
 # string would be required to describe that. The cutting-down breaks this.
-
 proc reduce {frame} {
     set  pos [lsearch -exact $frame cmd]
     incr pos
@@ -714,7 +712,9 @@ proc reduce {frame} {
     }
     set frame
 }
-
+proc subinterp {} { interp create sub ; interp debug sub -frame 1;
+    interp eval sub [list proc reduce [info args reduce] [info body reduce]]
+}
 ## Helper
 # Generate a stacktrace from the current location to top.  This code
 # not only depends on the exact location of things, but also on the
@@ -1363,14 +1363,14 @@ test info-38.1 {location information for uplevel, dv, direct-var} -match glob -b
 * {type eval line 3 cmd etrace proc ::tcltest::RunTest}
 * {type source line 1361 file info.test cmd {uplevel \\#0 $script} proc ::tcltest::RunTest}} -cleanup {unset script y}
 
-test info-38.2 {location information for uplevel, dl, direct-literal} -match glob -body {
-    join [lrange [uplevel \#0 {
-	set y DL.
-	etrace
-    }] 0 2] \n
-} -result {* {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
-* {type source line 1369 file info.test cmd etrace proc ::tcltest::RunTest}
-* {type source line 1367 file info.test cmd uplevel\\ \\\\ proc ::tcltest::RunTest}} -cleanup {unset y}
+# 38.2 moved to bottom to not disturb other tests with the necessary changes to this one.
+
+
+
+
+
+
+
 
 test info-38.3 {location information for uplevel, dpv, direct-proc-var} -match glob -body {
     set script {
@@ -1383,15 +1383,15 @@ test info-38.3 {location information for uplevel, dpv, direct-proc-var} -match g
 * {type source line 1338 file info.test cmd {uplevel 1 $script} proc ::control}
 * {type source line 1380 file info.test cmd {control y $script} proc ::tcltest::RunTest}} -cleanup {unset script y}
 
-test info-38.4 {location information for uplevel, dpv, direct-proc-literal} -match glob -body {
-    join [lrange [control y {
-	set y DPL
-	etrace
-    }] 0 3] \n
-} -result {* {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
-* {type source line 1389 file info.test cmd etrace proc ::control}
-* {type source line 1338 file info.test cmd {uplevel 1 $script} proc ::control}
-* {type source line 1387 file info.test cmd control proc ::tcltest::RunTest}} -cleanup {unset y}
+# 38.4 moved to bottom to not disturb other tests with the necessary changes to this one.
+
+
+
+
+
+
+
+
 
 test info-38.5 {location information for uplevel, ppv, proc-proc-var} -match glob -body {
     join [lrange [datav] 0 4] \n
@@ -1401,13 +1401,13 @@ test info-38.5 {location information for uplevel, ppv, proc-proc-var} -match glo
 * {type source line 1353 file info.test cmd {control y $script} proc ::datav level 1}
 * {type source line 1397 file info.test cmd datav proc ::tcltest::RunTest}}
 
-test info-38.6 {location information for uplevel, ppl, proc-proc-literal} -match glob -body {
-    join [lrange [datal] 0 4] \n
-} -result {* {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
-* {type source line 1344 file info.test cmd etrace proc ::control}
-* {type source line 1338 file info.test cmd {uplevel 1 $script} proc ::control}
-* {type source line 1342 file info.test cmd control proc ::datal level 1}
-* {type source line 1405 file info.test cmd datal proc ::tcltest::RunTest}}
+# 38.6 moved to bottom to not disturb other tests with the necessary changes to this one.
+
+
+
+
+
+
 
 testConstraint testevalex [llength [info commands testevalex]]
 test info-38.7 {location information for arg substitution} -constraints testevalex -match glob -body {
@@ -1543,18 +1543,18 @@ test info-30.12 {bs+nl in computed word, nested eval} -body {
 } -cleanup {unset res x} -result {   type source line 1541 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
 
 test info-30.13 {bs+nl in literal words, uplevel script, with nested words} -body {
-    uplevel #0 {
+    subinterp ; set res [interp eval sub { uplevel #0 {
 	if {1} \
 	    {
 		set ::res \
 		    [reduce [info frame 0]];# line 1550
 	    }
     }
-    return $res
-} -cleanup {unset res} -result {type source line 1550 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+    set res }] ; interp delete sub ; set res
+} -cleanup {unset res} -result {type source line 1550 file info.test cmd {info frame 0} level 0}
 
 test info-30.14 {bs+nl, literal word, uplevel through proc} {
-    proc abra {script} {
+    subinterp ; set res [interp eval sub { proc abra {script} {
 	uplevel 1 $script
     }
     set res [abra {
@@ -1562,7 +1562,7 @@ test info-30.14 {bs+nl, literal word, uplevel through proc} {
 [reduce [info frame 0]]";# line 1562
     }]
     rename abra {}
-    set res
+    set res }] ; interp delete sub ; set res
 } { type source line 1562 file info.test cmd {info frame 0} proc ::abra}
 
 test info-30.15 {bs+nl in literal words, nested proc body, compiled} {
@@ -1877,6 +1877,83 @@ test info-39.1 {location information not confused by literal sharing, bug 293308
     rename print_one {}
 } -result {type source line 1854 file info.test cmd print_one proc ::test_info_frame level 1
 type source line 1859 file info.test cmd print_one proc ::test_info_frame level 1}
+
+# -------------------------------------------------------------------------
+# Tests moved to the end to not disturb other tests and their locations.
+
+test info-38.6 {location information for uplevel, ppl, proc-proc-literal} -match glob -setup {subinterp} -body {
+    interp eval sub {
+	proc etrace {} {
+	    set res {}
+	    set level [info frame]
+	    while {$level} {
+		lappend res [list $level [reduce [info frame $level]]]
+		incr level -1
+	    }
+	    return $res
+	}
+	proc control {vv script} {
+	    upvar 1 $vv var
+	    return [uplevel 1 $script]
+	}
+	proc datal {} {
+	    control y {
+		set y PPL
+		etrace
+	    }
+	}
+	join [lrange [datal] 0 4] \n
+    }
+} -result {* {type source line 1890 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type source line 1902 file info.test cmd etrace proc ::control}
+* {type source line 1897 file info.test cmd {uplevel 1 $script} proc ::control}
+* {type source line 1900 file info.test cmd control proc ::datal level 1}
+* {type source line 1905 file info.test cmd datal level 2}} -cleanup {interp delete sub}
+
+test info-38.4 {location information for uplevel, dpv, direct-proc-literal} -match glob -setup {subinterp} -body {
+    interp eval sub {
+	proc etrace {} {
+	    set res {}
+	    set level [info frame]
+	    while {$level} {
+		lappend res [list $level [reduce [info frame $level]]]
+		incr level -1
+	    }
+	    return $res
+	}
+	proc control {vv script} {
+	    upvar 1 $vv var
+	    return [uplevel 1 $script]
+	}
+	join [lrange [control y {
+	    set y DPL
+	    etrace
+	}] 0 3] \n
+    }
+} -result {* {type source line 1919 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type source line 1930 file info.test cmd etrace proc ::control}
+* {type source line 1926 file info.test cmd {uplevel 1 $script} proc ::control}
+* {type source line 1928 file info.test cmd control level 1}} -cleanup {interp delete sub}
+
+test info-38.2 {location information for uplevel, dl, direct-literal} -match glob -setup {subinterp} -body {
+    interp eval sub {
+	proc etrace {} {
+	    set res {}
+	    set level [info frame]
+	    while {$level} {
+		lappend res [list $level [reduce [info frame $level]]]
+		incr level -1
+	    }
+	    return $res
+	}
+	join [lrange [uplevel \#0 {
+	    set y DL.
+	    etrace
+	}] 0 2] \n
+    }
+} -result {* {type source line 1944 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type source line 1951 file info.test cmd etrace level 1}
+* {type source line 1949 file info.test cmd uplevel\\ \\\\ level 1}} -cleanup {interp delete sub}
 
 # -------------------------------------------------------------------------
 unset -nocomplain res

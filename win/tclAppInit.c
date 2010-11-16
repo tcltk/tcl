@@ -12,11 +12,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.17 2010/11/05 16:40:10 dgp Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.18 2010/11/16 17:39:55 dgp Exp $
  */
 
-#ifndef _MSC_VER
-/* On mingw and cygwin this doesn't work yet */
+#ifdef TCL_BROKEN_MAINARGS
+/* On mingw32 and cygwin this doesn't work */
 #   undef UNICODE
 #   undef _UNICODE
 #endif
@@ -34,9 +34,9 @@ extern Tcl_PackageInitProc Tcltest_Init;
 extern Tcl_PackageInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
-#if defined(__GNUC__)
-static void setargv(int *argcPtr, TCHAR ***argvPtr);
-#endif /* __GNUC__ */
+#ifdef TCL_BROKEN_MAINARGS
+static void setargv(int *argcPtr, char ***argvPtr);
+#endif
 
 /*
  * The following #if block allows you to change the AppInit function by using
@@ -94,7 +94,7 @@ _tmain(
      * Get our args from the c-runtime. Ignore lpszCmdLine.
      */
 
-#if defined(__GNUC__)
+#ifdef TCL_BROKEN_MAINARGS
     setargv(&argc, &argv);
 #endif
 
@@ -223,14 +223,14 @@ Tcl_AppInit(
  *--------------------------------------------------------------------------
  */
 
-#if defined(__GNUC__)
+#ifdef TCL_BROKEN_MAINARGS
 static void
 setargv(
     int *argcPtr,		/* Filled with number of argument strings. */
-    TCHAR ***argvPtr)		/* Filled with argument strings (malloc'd). */
+    char ***argvPtr)		/* Filled with argument strings (malloc'd). */
 {
-    TCHAR *cmdLine, *p, *arg, *argSpace;
-    TCHAR **argv;
+    char *cmdLine, *p, *arg, *argSpace;
+    char **argv;
     int argc, size, inquote, copy, slashes;
 
     cmdLine = GetCommandLine();
@@ -241,30 +241,30 @@ setargv(
      */
 
     size = 2;
-    for (p = cmdLine; *p != TEXT('\0'); p++) {
-	if ((*p == TEXT(' ')) || (*p == TEXT('\t'))) {	/* INTL: ISO space. */
+    for (p = cmdLine; *p != '\0'; p++) {
+	if ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
 	    size++;
-	    while ((*p == TEXT(' ')) || (*p == TEXT('\t'))) { /* INTL: ISO space. */
+	    while ((*p == ' ') || (*p == '\t')) { /* INTL: ISO space. */
 		p++;
 	    }
-	    if (*p == TEXT('\0')) {
+	    if (*p == '\0') {
 		break;
 	    }
 	}
     }
-    argSpace = (TCHAR *) ckalloc(
-	    (unsigned) (size * sizeof(TCHAR *) + (_tcslen(cmdLine) * sizeof(TCHAR)) + 1));
-    argv = (TCHAR **) argSpace;
-    argSpace += size * sizeof(TCHAR *);
+    argSpace = (char *) ckalloc(
+	    (unsigned) (size * sizeof(char *) + (strlen(cmdLine)) + 1));
+    argv = (char **) argSpace;
+    argSpace += size;
     size--;
 
     p = cmdLine;
     for (argc = 0; argc < size; argc++) {
 	argv[argc] = arg = argSpace;
-	while ((*p == TEXT(' ')) || (*p == TEXT('\t'))) {	/* INTL: ISO space. */
+	while ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
 	    p++;
 	}
-	if (*p == TEXT('\0')) {
+	if (*p == '\0') {
 	    break;
 	}
 
@@ -272,14 +272,14 @@ setargv(
 	slashes = 0;
 	while (1) {
 	    copy = 1;
-	    while (*p == TEXT('\\')) {
+	    while (*p == '\\') {
 		slashes++;
 		p++;
 	    }
-	    if (*p == TEXT('"')) {
+	    if (*p == '"') {
 		if ((slashes & 1) == 0) {
 		    copy = 0;
-		    if ((inquote) && (p[1] == TEXT('"'))) {
+		    if ((inquote) && (p[1] == '"')) {
 			p++;
 			copy = 1;
 		    } else {
@@ -290,13 +290,13 @@ setargv(
 	    }
 
 	    while (slashes) {
-		*arg = TEXT('\\');
+		*arg = '\\';
 		arg++;
 		slashes--;
 	    }
 
-	    if ((*p == TEXT('\0')) || (!inquote &&
-		    ((*p == TEXT(' ')) || (*p == TEXT('\t'))))) {	/* INTL: ISO space. */
+	    if ((*p == '\0') || (!inquote &&
+		    ((*p == ' ') || (*p == '\t')))) {	/* INTL: ISO space. */
 		break;
 	    }
 	    if (copy != 0) {
@@ -305,7 +305,7 @@ setargv(
 	    }
 	    p++;
 	}
-	*arg = TEXT('\0');
+	*arg = '\0';
 	argSpace = arg + 1;
     }
     argv[argc] = NULL;
