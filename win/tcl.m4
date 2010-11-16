@@ -477,7 +477,7 @@ file for information about building with Mingw.])
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"
 
-	extra_cflags="-pipe"
+	extra_cflags="-pipe -DTCL_BROKEN_MAINARGS"
 	extra_ldflags="-pipe"
 
 	if test "$ac_cv_cygwin" = "yes"; then
