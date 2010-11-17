@@ -320,7 +320,7 @@ freecolor(
 	    cm->free = cm->cd[cm->free].sub;
 	}
 	if (cm->free > 0) {
-	    assert(cm->free < cm->max);
+	    assert((size_t)cm->free < cm->max);
 	    pco = cm->free;
 	    nco = cm->cd[pco].sub;
 	    while (nco > 0) {
@@ -332,7 +332,7 @@ freecolor(
 		    nco = cm->cd[nco].sub;
 		    cm->cd[pco].sub = nco;
 		} else {
-		    assert(nco < cm->max);
+		    assert((size_t)nco < cm->max);
 		    pco = nco;
 		    nco = cm->cd[pco].sub;
 		}

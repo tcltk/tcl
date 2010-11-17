@@ -39,15 +39,6 @@
  * Things that regcustom.h might override.
  */
 
-/* standard header files (NULL is a reasonable indicator for them) */
-#ifndef NULL
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <limits.h>
-#include <string.h>
-#endif
-
 /* assertions */
 #ifndef assert
 #ifndef REG_DEBUG
@@ -75,11 +66,6 @@
 #define	NOPARMS	void		/* for empty parm lists */
 #endif
 
-/* const */
-#ifndef CONST
-#define	CONST	const		/* for old compilers, might be empty */
-#endif
-
 /* function-pointer declarator */
 #ifndef FUNCPTR
 #if __STDC__ >= 1
@@ -101,9 +87,6 @@
 #endif
 
 /* want size of a char in bits, and max value in bounded quantifiers */
-#ifndef CHAR_BIT
-#include <limits.h>
-#endif
 #ifndef _POSIX2_RE_DUP_MAX
 #define	_POSIX2_RE_DUP_MAX 255	/* normally from <limits.h> */
 #endif
@@ -400,7 +383,7 @@ struct guts {
     struct cnfa search;		/* for fast preliminary search */
     int ntree;
     struct colormap cmap;
-    int FUNCPTR(compare, (CONST chr *, CONST chr *, size_t));
+    int FUNCPTR(compare, (const chr *, const chr *, size_t));
     struct subre *lacons;	/* lookahead-constraint vector */
     int nlacons;		/* size of lacons */
 };

@@ -1,5 +1,8 @@
 #ifndef _REGEX_H_
 #define	_REGEX_H_	/* never again */
+
+#include "tclInt.h"
+
 /*
  * regular expressions
  *
@@ -319,3 +322,11 @@ MODULE_SCOPE size_t regerror(int, __REG_CONST regex_t *, char *, size_t);
 #endif
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
