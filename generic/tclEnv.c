@@ -45,8 +45,13 @@ static char *		EnvTraceProc(ClientData clientData, Tcl_Interp *interp,
 static void		ReplaceString(const char *oldStr, char *newStr);
 MODULE_SCOPE void	TclSetEnv(const char *name, const char *value);
 MODULE_SCOPE void	TclUnsetEnv(const char *name);
-#if defined(__CYGWIN__) && defined(__WIN32__)
-static void		TclCygwinPutenv(const char *string);
+
+#if defined(__CYGWIN__)
+/* On Cygwin, the environment is imported from the Cygwin DLL. */
+     DLLIMPORT extern int cygwin_posix_to_win32_path_list_buf_size(char *value);
+     DLLIMPORT extern void cygwin_posix_to_win32_path_list(char *buf, char *value);
+#    define putenv TclCygwinPutenv
+static void		TclCygwinPutenv(char *string);
 #endif
 
 /*
@@ -111,7 +116,8 @@ TclSetupEnv(
 	    if (p2 == NULL) {
 		/*
 		 * This condition seem to happen occasionally under some
-		 * versions of Solaris; ignore the entry.
+		 * versions of Solaris, or when encoding accidents swallow the
+		 * '='; ignore the entry.
 		 */
 
 		continue;
@@ -157,7 +163,8 @@ TclSetEnv(
     const char *value)		/* New value for variable (UTF-8). */
 {
     Tcl_DString envString;
-    int index, length, nameLength;
+    unsigned nameLength, valueLength;
+    int index, length;
     char *p, *oldValue;
     const char *p2;
 
@@ -214,7 +221,7 @@ TclSetEnv(
 	Tcl_DStringFree(&envString);
 
 	oldValue = environ[index];
-	nameLength = length;
+	nameLength = (unsigned) length;
     }
 
     /*
@@ -223,18 +230,19 @@ TclSetEnv(
      * and set the environ array value.
      */
 
-    p = ckalloc((unsigned) nameLength + strlen(value) + 2);
-    strcpy(p, name);
+    valueLength = strlen(value);
+    p = ckalloc(nameLength + valueLength + 2);
+    memcpy(p, name, nameLength);
     p[nameLength] = '=';
-    strcpy(p+nameLength+1, value);
+    memcpy(p+nameLength+1, value, valueLength+1);
     p2 = Tcl_UtfToExternalDString(NULL, p, -1, &envString);
 
     /*
      * Copy the native string to heap memory.
      */
 
-    p = ckrealloc(p, strlen(p2) + 1);
-    strcpy(p, p2);
+    p = ckrealloc(p, (unsigned) Tcl_DStringLength(&envString) + 1);
+    memcpy(p, p2, (unsigned) Tcl_DStringLength(&envString) + 1);
     Tcl_DStringFree(&envString);
 
 #ifdef USE_PUTENV
@@ -393,7 +401,7 @@ TclUnsetEnv(
      * that no = should be included, and Windows requires it.
      */
 
-#ifdef WIN32
+#if defined(__WIN32__) || defined(__CYGWIN__)
     string = ckalloc((unsigned) length+2);
     memcpy(string, name, (size_t) length);
     string[length] = '=';
@@ -406,7 +414,8 @@ TclUnsetEnv(
 
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
     string = ckrealloc(string, (unsigned) Tcl_DStringLength(&envString)+1);
-    strcpy(string, Tcl_DStringValue(&envString));
+    memcpy(string, Tcl_DStringValue(&envString),
+	    (unsigned) Tcl_DStringLength(&envString)+1);
     Tcl_DStringFree(&envString);
 
     putenv(string);
@@ -562,7 +571,7 @@ EnvTraceProc(
 	const char *value = TclGetEnv(name2, &valueString);
 
 	if (value == NULL) {
-	    return "no such variable";
+	    return (char *) "no such variable";
 	}
 	Tcl_SetVar2(interp, name1, name2, value, 0);
 	Tcl_DStringFree(&valueString);
@@ -687,9 +696,7 @@ TclFinalizeEnvironment(void)
     }
 }
 
-#if defined(__CYGWIN__) && defined(__WIN32__)
-
-#include <windows.h>
+#if defined(__CYGWIN__)
 
 /*
  * When using cygwin, when an environment variable changes, we need to synch
@@ -700,7 +707,7 @@ TclFinalizeEnvironment(void)
 
 static void
 TclCygwinPutenv(
-    const char *str)
+    char *str)
 {
     char *name, *value;
 
@@ -718,8 +725,7 @@ TclCygwinPutenv(
 	/* Can't happen. */
 	return;
     }
-    *value = '\0';
-    ++value;
+    *(value++) = '\0';
     if (*value == '\0') {
 	value = NULL;
     }
@@ -751,11 +757,15 @@ TclCygwinPutenv(
 	 */
 
 	if (strcmp(name, "Path") == 0) {
-	    SetEnvironmentVariable("PATH", NULL);
+#ifdef __WIN32__
+	    SetEnvironmentVariableA("PATH", NULL);
+#endif
 	    unsetenv("PATH");
 	}
 
-	SetEnvironmentVariable(name, value);
+#ifdef __WIN32__
+	SetEnvironmentVariableA(name, value);
+#endif
     } else {
 	char *buf;
 
@@ -763,7 +773,9 @@ TclCygwinPutenv(
 	 * Eliminate any Path variable, to prevent any confusion.
 	 */
 
-	SetEnvironmentVariable("Path", NULL);
+#ifdef __WIN32__
+	SetEnvironmentVariableA("Path", NULL);
+#endif
 	unsetenv("Path");
 
 	if (value == NULL) {
@@ -776,10 +788,12 @@ TclCygwinPutenv(
 	    cygwin_posix_to_win32_path_list(value, buf);
 	}
 
-	SetEnvironmentVariable(name, buf);
+#ifdef __WIN32__
+	SetEnvironmentVariableA(name, buf);
+#endif
     }
 }
-#endif /* __CYGWIN__ && __WIN32__ */
+#endif /* __CYGWIN__ */
 
 /*
  * Local Variables:
