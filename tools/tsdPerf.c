@@ -1,13 +1,15 @@
 #include <tcl.h>
 
+extern DLLEXPORT Tcl_PackageInitProc Tsdperf_Init;
+
 static Tcl_ThreadDataKey key;
 
 typedef struct {
-    int value;  
+    int value;
 } TsdPerf;
 
 
-int
+static int
 tsdPerfSetObjCmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const *objv) {
     TsdPerf *perf = Tcl_GetThreadData(&key, sizeof(TsdPerf));
     int i;
@@ -20,34 +22,30 @@ tsdPerfSetObjCmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const 
     if (TCL_OK != Tcl_GetIntFromObj(interp, objv[1], &i)) {
 	return TCL_ERROR;
     }
-    
+
     perf->value = i;
-       
+
     return TCL_OK;
 }
 
-int tsdPerfGetObjCmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const *objv) {
+static int
+tsdPerfGetObjCmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const *objv) {
     TsdPerf *perf = Tcl_GetThreadData(&key, sizeof(TsdPerf));
 
-    
+
     Tcl_SetObjResult(interp, Tcl_NewIntObj(perf->value));
 
     return TCL_OK;
 }
 
-
 int
-Tsdperf_Init (Tcl_Interp *interp) {
-    if (NULL == Tcl_InitStubs(interp, TCL_VERSION, 0)) {
+Tsdperf_Init(Tcl_Interp *interp) {
+    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
 	return TCL_ERROR;
     }
-    
 
-    Tcl_CreateObjCommand(interp, "tsdPerfSet", tsdPerfSetObjCmd, (ClientData)NULL,
-			 (Tcl_CmdDeleteProc *)NULL);
-    Tcl_CreateObjCommand(interp, "tsdPerfGet", tsdPerfGetObjCmd, (ClientData)NULL,
-			 (Tcl_CmdDeleteProc *)NULL);
-
+    Tcl_CreateObjCommand(interp, "tsdPerfSet", tsdPerfSetObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "tsdPerfGet", tsdPerfGetObjCmd, NULL, NULL);
 
     return TCL_OK;
 }

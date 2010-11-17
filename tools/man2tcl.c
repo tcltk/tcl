@@ -96,7 +96,7 @@ main(
     char **argv)		/* Values of command-line arguments. */
 {
     FILE *f;
-#define MAX_LINE_SIZE 1000
+#define MAX_LINE_SIZE 4000
     char line[MAX_LINE_SIZE];
     char *p;
 
@@ -352,6 +352,7 @@ DoText(
 		sscanf(p,"%d",&ch);
 		PRINT(("text \\u%04x\n", ch));
 		while(*p&&*p!='\'') p++;
+		p++;
 	    } else if (*p != 0) {
 		PRINT(("char {\\%c}\n", *p));
 		p++;
