@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.18 2010/11/16 17:39:55 dgp Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.19 2010/11/17 18:09:15 dgp Exp $
  */
 
 #ifdef TCL_BROKEN_MAINARGS
@@ -253,9 +253,9 @@ setargv(
 	}
     }
     argSpace = (char *) ckalloc(
-	    (unsigned) (size * sizeof(char *) + (strlen(cmdLine)) + 1));
+	    (unsigned) (size * sizeof(char *) + strlen(cmdLine) + 1));
     argv = (char **) argSpace;
-    argSpace += size;
+    argSpace += size * sizeof(char *);
     size--;
 
     p = cmdLine;
