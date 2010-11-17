@@ -124,8 +124,10 @@ Beware of how you place comments in \fBswitch\fR commands.  Comments
 should only be placed \fBinside\fR the execution body of one of the
 patterns, and not intermingled with the patterns.
 .SH "EXAMPLES"
+.PP
 The \fBswitch\fR command can match against variables and not just
 literals, as shown here (the result is \fI2\fR):
+.PP
 .CS
 set foo "abc"
 \fBswitch\fR abc a \- b {expr {1}} $foo {expr {2}} default {expr {3}}
@@ -134,44 +136,47 @@ set foo "abc"
 Using glob matching and the fall-through body is an alternative to
 writing regular expressions with alternations, as can be seen here
 (this returns \fI1\fR):
+.PP
 .CS
 \fBswitch\fR \-glob aaab {
-   a*b     \-
-   b       {expr {1}}
-   a*      {expr {2}}
-   default {expr {3}}
+    a*b     \-
+    b       {expr {1}}
+    a*      {expr {2}}
+    default {expr {3}}
 }
 .CE
 .PP
 Whenever nothing matches, the \fBdefault\fR clause (which must be
 last) is taken.  This example has a result of \fI3\fR:
+.PP
 .CS
 \fBswitch\fR xyz {
-   a \-
-   b {
-      # Correct Comment Placement
-      expr {1}
-   }
-   c {
-      expr {2}
-   }
-   default {
-      expr {3}
-   }
+    a \-
+    b {
+        # Correct Comment Placement
+        expr {1}
+    }
+    c {
+        expr {2}
+    }
+    default {
+        expr {3}
+    }
 }
 .CE
 .PP
 When matching against regular expressions, information about what
 exactly matched is easily obtained using the \fB\-matchvar\fR option:
+.PP
 .CS
 \fBswitch\fR \-regexp \-matchvar foo \-\- $bar {
-   a(b*)c {
-      puts "Found [string length [lindex $foo 1]] 'b's"
-   }
-   d(e*)f(g*)h {
-      puts "Found [string length [lindex $foo 1]] 'e's and\e
-            [string length [lindex $foo 2]] 'g's"
-   }
+    a(b*)c {
+        puts "Found [string length [lindex $foo 1]] 'b's"
+    }
+    d(e*)f(g*)h {
+        puts "Found [string length [lindex $foo 1]] 'e's and\e
+                [string length [lindex $foo 2]] 'g's"
+    }
 }
 .CE
 .SH "SEE ALSO"

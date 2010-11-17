@@ -446,6 +446,7 @@ applications on the various platforms
 .SH "EXAMPLE"
 .PP
 Open a command pipeline and catch any errors:
+.PP
 .CS
 set fl [\fBopen\fR "| ls this_file_does_not_exist"]
 set data [read $fl]

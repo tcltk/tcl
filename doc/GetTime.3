@@ -43,10 +43,11 @@ Pointer to place the currently registered pass-through value into.
 The \fBTcl_GetTime\fR function retrieves the current time as a
 \fITcl_Time\fR structure in memory the caller provides.  This
 structure has the following definition:
+.PP
 .CS
 typedef struct Tcl_Time {
-    long sec;
-    long usec;
+    long \fIsec\fR;
+    long \fIusec\fR;
 } \fBTcl_Time\fR;
 .CE
 .PP
@@ -80,6 +81,7 @@ of the OS. The arguments to the function are allowed to be NULL; and
 any argument which is NULL is ignored and not set.
 .PP
 The signatures of the handler functions are as follows:
+.PP
 .CS
 typedef void \fBTcl_GetTimeProc\fR(
         Tcl_Time *\fItimebuf\fR,
@@ -88,6 +90,7 @@ typedef void \fBTcl_ScaleTimeProc\fR(
         Tcl_Time *\fItimebuf\fR,
         ClientData \fIclientData\fR);
 .CE
+.PP
 The \fItimebuf\fR fields contain the time to manipulate, and the
 \fIclientData\fR fields contain a pointer supplied at the time the
 handler functions were registered.

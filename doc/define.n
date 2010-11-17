@@ -94,23 +94,27 @@ arguments are present, the list of filter names is set to empty.
 .TP
 \fBforward\fI name cmdName \fR?\fIarg ...\fR?
 .
-This creates or updates a forwarded method called \fIname\fR. The method
-is defined be forwarded to the command called \fIcmdName\fR, with additional
+This creates or updates a forwarded method called \fIname\fR. The method is
+defined be forwarded to the command called \fIcmdName\fR, with additional
 arguments, \fIarg\fR etc., added before those arguments specified by the
-caller of the method. Forwarded methods should be deleted using the
-\fBmethod\fR subcommand. The method will be exported if \fIname\fR starts with
-a lower-case letter, and non-exported otherwise.
+caller of the method. The \fIcmdName\fR will always be resolved using the
+rules of the invoking objects' namespaces, i.e., when \fIcmdName\fR is not
+fully-qualified, the command will be searched for in each object's namespace,
+using the instances' namespace's path, or by looking in the global namespace.
+The method will be exported if \fIname\fR starts with a lower-case letter, and
+non-exported otherwise.
 .TP
 \fBmethod\fI name argList bodyScript\fR
 .
-This creates, updates or deletes a method. The name of the method is
-\fIname\fR, the formal arguments to the method (defined using the same format
-as for the Tcl \fBproc\fR command) will be \fIargList\fR, and the body of the
-method will be \fIbodyScript\fR. When the body of the method is evaluated, the
-current namespace of the method will be a namespace that is unique to the
-current object. The method will be exported if \fIname\fR starts with a
-lower-case letter, and non-exported otherwise; this behavior can be overridden
-via \fBexport\fR and \fBunexport\fR.
+This creates or updates a method that is implemented as a procedure-like
+script. The name of the method is \fIname\fR, the formal arguments to the
+method (defined using the same format as for the Tcl \fBproc\fR command) will
+be \fIargList\fR, and the body of the method will be \fIbodyScript\fR. When
+the body of the method is evaluated, the current namespace of the method will
+be a namespace that is unique to the current object. The method will be
+exported if \fIname\fR starts with a lower-case letter, and non-exported
+otherwise; this behavior can be overridden via \fBexport\fR and
+\fBunexport\fR.
 .TP
 \fBmixin\fR ?\fIclassName ...\fR?
 .
@@ -157,6 +161,20 @@ but instead just through the \fBmy\fR command visible in each object's
 context) by the class being defined. Note that the methods themselves may be
 actually defined by a superclass; subclass unexports override superclass
 visibility, and may be overridden by instance unexports.
+.TP
+\fBvariable\fR ?\fIname ...\fR?
+.VS
+This arranges for each of the named variables to be automatically made
+available in the methods, constructor and destructor declared by the class
+being defined. Note that the list of variable names is the whole list of
+variable names for the class. Each variable name must not have any namespace
+separators and must not look like an array access. All variables will be
+actually present in the instance object on which the method is executed. Note
+that the variable lists declared by a superclass or subclass are completely
+disjoint, as are variable lists declared by instances; the list of variable
+names is just for methods (and constructors and destructors) declared by this
+class.
+.VE
 .SS "CONFIGURING OBJECTS"
 .PP
 The following commands are supported in the \fIdefScript\fR for
@@ -233,6 +251,18 @@ This arranges for each of the named methods, \fIname\fR, to be not exported
 just through the \fBmy\fR command visible in the object's context) by the
 object being defined. Note that the methods themselves may be actually defined
 by a class; instance unexports override class visibility.
+.TP
+\fBvariable\fR ?\fIname ...\fR?
+.VS
+This arranges for each of the named variables to be automatically made
+available in the methods declared by the object being defined. Note that the
+list of variable names is the whole list of variable names for the object.
+Each variable name must not have any namespace separators and must not look
+like an array access. All variables will be actually present in the object on
+which the method is executed. Note that the variable lists declared by the
+classes and mixins of which the object is an instance are completely disjoint;
+the list of variable names is just for methods declared by this object.
+.VE
 .SH EXAMPLES
 This example demonstrates how to use both forms of the \fBoo::define\fR and
 \fBoo::objdefine\fR commands (they work in the same way), as well as

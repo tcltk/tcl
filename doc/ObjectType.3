@@ -17,7 +17,7 @@ Tcl_RegisterObjType, Tcl_GetObjType, Tcl_AppendAllObjTypes, Tcl_ConvertToType  \
 .sp
 \fBTcl_RegisterObjType\fR(\fItypePtr\fR)
 .sp
-Tcl_ObjType *
+const Tcl_ObjType *
 \fBTcl_GetObjType\fR(\fItypeName\fR)
 .sp
 int
@@ -27,7 +27,7 @@ int
 \fBTcl_ConvertToType\fR(\fIinterp, objPtr, typePtr\fR)
 .SH ARGUMENTS
 .AS "const char" *typeName
-.AP Tcl_ObjType *typePtr in
+.AP "const Tcl_ObjType" *typePtr in
 Points to the structure containing information about the Tcl object type.
 This storage must live forever,
 typically by being statically allocated.
@@ -100,14 +100,14 @@ Extension writers can define new object types by defining four
 procedures and
 initializing a Tcl_ObjType structure to describe the type.
 Extension writers may also pass a pointer to their Tcl_ObjType
-structire to \fBTcl_RegisterObjType\fR if they wish to permit
+structure to \fBTcl_RegisterObjType\fR if they wish to permit
 other extensions to look up their Tcl_ObjType by name with
 the \fBTcl_GetObjType\fR routine.
 The \fBTcl_ObjType\fR structure is defined as follows:
 .PP
 .CS
 typedef struct Tcl_ObjType {
-    char *\fIname\fR;
+    const char *\fIname\fR;
     Tcl_FreeInternalRepProc *\fIfreeIntRepProc\fR;
     Tcl_DupInternalRepProc *\fIdupIntRepProc\fR;
     Tcl_UpdateStringProc *\fIupdateStringProc\fR;
@@ -164,7 +164,7 @@ replace it with a new one or reset the \fItypePtr\fR member to NULL.
 The \fIsetFromAnyProc\fR member may be set to NULL, if the routines
 making use of the internal representation have no need to derive that
 internal representation from an arbitrary string value.  However, in
-this case, passing a pointer to the type to Tcl_ConvertToType() will
+this case, passing a pointer to the type to \fBTcl_ConvertToType\fR will
 lead to a panic, so to avoid this possibility, the type
 should \fInot\fR be registered.
 .SS "THE UPDATESTRINGPROC FIELD"

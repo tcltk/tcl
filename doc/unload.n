@@ -90,6 +90,7 @@ detached from the process.
 .SS "UNLOAD HOOK PROTOTYPE"
 .PP
 The unload procedure must match the following prototype:
+.PP
 .CS
 typedef int \fBTcl_PackageUnloadProc\fR(
         Tcl_Interp *\fIinterp\fR,
@@ -149,10 +150,13 @@ from the application while some interpreters will continue to use it).
 .PP
 If an unloadable module in the file \fBfoobar.dll\fR had been loaded
 using the \fBload\fR command like this (on Windows):
+.PP
 .CS
 load c:/some/dir/foobar.dll
 .CE
+.PP
 then it would be unloaded like this:
+.PP
 .CS
 \fBunload\fR c:/some/dir/foobar.dll
 .CE
@@ -165,3 +169,6 @@ without having to shut down the overall Tcl process.
 info sharedlibextension, load(n), safe(n)
 .SH KEYWORDS
 binary code, unloading, safe interpreter, shared library
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

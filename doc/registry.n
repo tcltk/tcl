@@ -15,9 +15,9 @@
 registry \- Manipulate the Windows registry
 .SH SYNOPSIS
 .sp
-\fBpackage require registry 1.1\fR
+\fBpackage require registry 1.3\fR
 .sp
-\fBregistry \fIoption\fR \fIkeyName\fR ?\fIarg arg ...\fR?
+\fBregistry \fR?\fI\-mode\fR? \fIoption\fR \fIkeyName\fR ?\fIarg arg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -45,6 +45,14 @@ one of \fBHKEY_LOCAL_MACHINE\fR, \fBHKEY_USERS\fR,
 \fBHKEY_CURRENT_CONFIG\fR, \fBHKEY_PERFORMANCE_DATA\fR, or
 \fBHKEY_DYN_DATA\fR.  The \fIkeypath\fR can be one or more
 registry key names separated by backslash (\fB\e\fR) characters.
+.PP
+.VS 8.6
+The optional \fI\-mode\fR argument indicates which registry to work
+with; when it is \fB\-32bit\fR the 32-bit registry will be used, and
+when it is \fB\-64bit\fR the 64-bit registry will be used. If this
+argument is omitted, the system's default registry will be the subject
+of the requested operation.
+.VE 8.6
 .PP
 \fIOption\fR indicates what to do with the registry key name.  Any
 unique abbreviation for \fIoption\fR is acceptable.  The valid options
@@ -207,3 +215,6 @@ puts "$ext opens with $command"
 .CE
 .SH KEYWORDS
 registry
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

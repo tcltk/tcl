@@ -77,6 +77,7 @@ have trouble integrating your code.
 .SH "EXAMPLE"
 .PP
 This \fBbgerror\fR procedure appends errors to a file, with a timestamp.
+.PP
 .CS
 proc bgerror {message} {
     set timestamp [clock format [clock seconds]]

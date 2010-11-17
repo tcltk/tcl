@@ -15,7 +15,7 @@
 .SH NAME
 lindex \- Retrieve an element from a list
 .SH SYNOPSIS
-\fBlindex \fIlist ?index...?\fR
+\fBlindex \fIlist ?index ...?\fR
 .BE
 .SH DESCRIPTION
 .PP
@@ -26,13 +26,17 @@ command line, or grouped in a
 Tcl list and presented as a single argument.
 .PP
 If no indices are presented, the command takes the form:
+.PP
 .CS
 lindex list
 .CE
+.PP
 or
+.PP
 .CS
 lindex list {}
 .CE
+.PP
 In this case, the return value of \fBlindex\fR is simply the value of the
 \fIlist\fR parameter.
 .PP
@@ -53,14 +57,19 @@ arithmetic and indices relative to the end of the list.
 If additional \fIindex\fR arguments are supplied, then each argument is
 used in turn to select an element from the previous indexing operation,
 allowing the script to select elements from sublists.  The command,
+.PP
 .CS
 lindex $a 1 2 3
 .CE
+.PP
 or
+.PP
 .CS
 lindex $a {1 2 3}
 .CE
+.PP
 is synonymous with
+.PP
 .CS
 lindex [lindex [lindex $a 1] 2] 3
 .CE
@@ -113,3 +122,6 @@ lset(n), lsort(n), lrange(n), lreplace(n),
 string(n)
 .SH KEYWORDS
 element, index, list
+'\"Local Variables:
+'\"mode: nroff
+'\"End:

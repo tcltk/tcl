@@ -93,7 +93,7 @@ is left in the interpreter's result.
 .PP
 The newly created channel is not registered in the supplied interpreter; to
 register it, use \fBTcl_RegisterChannel\fR.
-If one of the standard channels, \fBstdin, stdout\fR or \fBstderr\fR was
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it as a
 replacement for the standard channel.
 .SS TCL_MAKETCPCLIENTCHANNEL
@@ -103,7 +103,7 @@ existing, platform specific, handle for a client TCP socket.
 .PP
 The newly created channel is not registered in the supplied interpreter; to
 register it, use \fBTcl_RegisterChannel\fR.
-If one of the standard channels, \fBstdin, stdout\fR or \fBstderr\fR was
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it as a
 replacement for the standard channel.
 .SS TCL_OPENTCPSERVER
@@ -116,6 +116,7 @@ allow connections from any network interface.
 Each time a client connects to this socket, Tcl creates a channel
 for the new connection and invokes \fIproc\fR with information about
 the channel. \fIProc\fR must match the following prototype:
+.PP
 .CS
 typedef void \fBTcl_TcpAcceptProc\fR(
         ClientData \fIclientData\fR,
@@ -155,7 +156,7 @@ a remote client is pending.
 .PP
 The newly created channel is not registered in the supplied interpreter; to
 register it, use \fBTcl_RegisterChannel\fR.
-If one of the standard channels, \fBstdin, stdout\fR or \fBstderr\fR was
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it as a
 replacement for the standard channel.
 .SH "PLATFORM ISSUES"

@@ -245,7 +245,7 @@ be used in preference to \fBTcl_OpenFileChannel\fR wherever possible.
 .PP
 The newly created channel is not registered in the supplied interpreter; to
 register it, use \fBTcl_RegisterChannel\fR, described below.
-If one of the standard channels, \fBstdin, stdout\fR or \fBstderr\fR was
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it as a
 replacement for the standard channel.
 .SH TCL_OPENCOMMANDCHANNEL
@@ -282,7 +282,7 @@ the interpreter's result if \fIinterp\fR is not NULL.
 .PP
 The newly created channel is not registered in the supplied interpreter; to
 register it, use \fBTcl_RegisterChannel\fR, described below.
-If one of the standard channels, \fBstdin, stdout\fR or \fBstderr\fR was
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it as a
 replacement for the standard channel.
 .SH TCL_MAKEFILECHANNEL
@@ -291,7 +291,7 @@ replacement for the standard channel.
 platform-specific, file handle.
 The newly created channel is not registered in the supplied interpreter; to
 register it, use \fBTcl_RegisterChannel\fR, described below.
-If one of the standard channels, \fBstdin, stdout\fR or \fBstderr\fR was
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it as a
 replacement for the standard channel.
 .SH TCL_GETCHANNEL
@@ -355,7 +355,7 @@ close the channel if no further references to it exist.
 accessible in \fIinterp\fR. After this call, Tcl programs will no longer be
 able to use the channel's name to refer to the channel in that interpreter.
 Beyond that, this command has no further effect.  It cannot be used on
-the standard channels (stdout, stderr, stdin), and will return
+the standard channels (\fBstdout\fR, \fBstderr\fR, \fBstdin\fR), and will return
 \fBTCL_ERROR\fR if passed one of those channels.
 .PP
 Code not associated with a Tcl interpreter can call
@@ -366,8 +366,8 @@ it will not be closed.
 .SH TCL_ISSTANDARDCHANNEL
 .PP
 \fBTcl_IsStandardChannel\fR tests whether a channel is one of the
-three standard channels, stdin, stdout or stderr.  If so, it returns
-1, otherwise 0.
+three standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR.
+If so, it returns 1, otherwise 0.
 .PP
 No attempt is made to check whether the given channel or the standard 
 channels are initialized or otherwise valid.

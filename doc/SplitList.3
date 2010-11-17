@@ -81,15 +81,18 @@ also holds copies of all the list elements.  It is the caller's
 responsibility to free up all of this storage.
 For example, suppose that you have called \fBTcl_SplitList\fR with
 the following code:
+.PP
 .CS
 int argc, code;
 char *string;
 char **argv;
 \&...
-code = Tcl_SplitList(interp, string, &argc, &argv);
+code = \fBTcl_SplitList\fR(interp, string, &argc, &argv);
 .CE
+.PP
 Then you should eventually free the storage with a call like the
 following:
+.PP
 .CS
 Tcl_Free((char *) argv);
 .CE
@@ -183,3 +186,5 @@ the length of string \fIsrc\fR is specified by the \fIlength\fR
 argument, and the string may contain embedded nulls.
 .SH KEYWORDS
 backslash, convert, element, list, merge, split, strings
+.SH "SEE ALSO"
+Tcl_GetListFromObj(3)

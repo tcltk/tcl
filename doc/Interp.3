@@ -28,15 +28,25 @@ typedef void \fBTcl_FreeProc\fR(
 .SH DESCRIPTION
 .PP
 The \fBTcl_CreateInterp\fR procedure returns a pointer to a Tcl_Interp
-structure.  This pointer is then passed into other Tcl procedures
-to process commands in the interpreter and perform other operations
-on the interpreter.  Interpreter structures contain many fields
-that are used by Tcl, but only three that may be accessed by
-clients:  \fIresult\fR, \fIfreeProc\fR, and \fIerrorLine\fR.
+structure.  Callers of \fBTcl_CreateInterp\fR should use this pointer
+as an opaque token, suitable for nothing other than passing back to
+other routines in the Tcl interface.  Accessing fields directly through
+the pointer as described below is no longer supported.  The supported
+public routines \fBTcl_SetResult\fR, \fBTcl_GetResult\fR,
+\fBTcl_SetErrorLine\fR, \fBTcl_GetErrorLine\fR must be used instead.
 .PP
-\fBNote that access to all three fields, \fIresult\fB, \fIfreeProc\fB and
-\fIerrorLine\fB is deprecated.\fR  Use \fBTcl_SetResult\fR,
-\fBTcl_GetResult\fR, and \fBTcl_GetReturnOptions\fR instead.
+For legacy programs and extensions no longer being maintained, compiles
+against the Tcl 8.6 header files are only possible with the compiler
+directives
+.CS
+#define USE_INTERP_RESULT
+.CE
+and/or
+.CS
+#define USE_INTERP_ERRORLINE
+.CE
+depending on which fields of the \fBTcl_Interp\fR struct are accessed.
+These directives may be embedded in code or supplied via compiler options.
 .PP
 The \fIresult\fR and \fIfreeProc\fR fields are used to return
 results or error messages from commands.

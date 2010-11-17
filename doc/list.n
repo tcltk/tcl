@@ -31,14 +31,19 @@ the list, while \fBlist\fR works directly from the original arguments.
 .SH EXAMPLE
 .PP
 The command
+.PP
 .CS
 \fBlist\fR a b "c d e  " "  f {g h}"
 .CE
+.PP
 will return
+.PP
 .CS
 \fBa b {c d e  } {  f {g h}}\fR
 .CE
+.PP
 while \fBconcat\fR with the same arguments will return
+.PP
 .CS
 \fBa b c d e f {g h}\fR
 .CE
@@ -47,4 +52,7 @@ lappend(n), lindex(n), linsert(n), llength(n), lrange(n),
 lrepeat(n),
 lreplace(n), lsearch(n), lset(n), lsort(n)
 .SH KEYWORDS
-element, list
+element, list, quoting
+'\"Local Variables:
+'\"mode: nroff
+'\"End:

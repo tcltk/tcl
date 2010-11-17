@@ -94,6 +94,7 @@ invoking either constructors or destructors.
 .PP
 This example demonstrates how to use the \fBnext\fR command to call the
 (super)class's implementation of a method. The script:
+.PP
 .CS
 oo::class create theSuperclass {
     method example {args} {
@@ -117,7 +118,9 @@ oo::define obj method example args {
 }
 obj example 1 2 3
 .CE
+.PP
 prints the following:
+.PP
 .CS
 per-object method, args = 1 2 3
 before chaining from subclass, args = x 1 2 3 y
@@ -188,7 +191,6 @@ puts [demo compute  1 2 3]      \fI\(-> prints "7" after delay\fR
 oo::class(n), oo::define(n), oo::object(n), self(n)
 .SH KEYWORDS
 call, method, method chain
-
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

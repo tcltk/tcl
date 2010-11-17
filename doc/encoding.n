@@ -83,13 +83,15 @@ contain a sequence of Latin-1 characters that correspond to the bytes
 of the original string.  The \fBencoding\fR command can be used to
 convert this string to the expected Japanese Unicode characters.  For
 example,
+.PP
 .CS
 set s [\fBencoding convertfrom\fR euc-jp "\exA4\exCF"]
 .CE
+.PP
 would return the Unicode string
 .QW "\eu306F" ,
 which is the Hiragana letter HA.
 .SH "SEE ALSO"
 Tcl_GetEncoding(3)
 .SH KEYWORDS
-encoding
+encoding, unicode

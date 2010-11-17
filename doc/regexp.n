@@ -1,4 +1,3 @@
-'\" -*- nroff -*-
 '\"
 '\" Copyright (c) 1998 Sun Microsystems, Inc.
 '\"
@@ -123,12 +122,15 @@ list will be concatenated at each iteration, such that a flat list is
 always returned.  For each match iteration, the command will append the
 overall match data, plus one element for each subexpression in the
 regular expression.  Examples are:
+.RS
+.PP
 .CS
 \fBregexp\fR -inline -- {\ew(\ew)} " inlined "
       \fI\(-> in n\fR
 \fBregexp\fR -all -inline -- {\ew(\ew)} " inlined "
       \fI\(-> in n li i ne e\fR
 .CE
+.RE
 .TP 15
 \fB\-start\fR \fIindex\fR
 .
@@ -161,9 +163,11 @@ if \fB\-indices\fR has been specified or to an empty string otherwise.
 Find the first occurrence of a word starting with \fBfoo\fR in a
 string that is not actually an instance of \fBfoobar\fR, and get the
 letters following it up to the end of the word into a variable:
+.PP
 .CS
 \fBregexp\fR {\emfoo(?!bar\eM)(\ew*)} $string \-> restOfWord
 .CE
+.PP
 Note that the whole matched substring has been placed in the variable
 .QW \fB\->\fR ,
 which is a name chosen to look nice given that we are not
@@ -171,17 +175,21 @@ actually interested in its contents.
 .PP
 Find the index of the word \fBbadger\fR (in any case) within a string
 and store that in the variable \fBlocation\fR:
+.PP
 .CS
 \fBregexp\fR \-indices {(?i)\embadger\eM} $string location
 .CE
+.PP
 This could also be written as a \fIbasic\fR regular expression (as opposed
 to using the default syntax of \fIadvanced\fR regular expressions) match by
 prefixing the expression with a suitable flag:
+.PP
 .CS
 \fBregexp\fR \-indices {(?ib)\e<badger\e>} $string location
 .CE
 .PP
 This counts the number of octal digits in a string:
+.PP
 .CS
 \fBregexp\fR \-all {[0\-7]} $string
 .CE
@@ -189,6 +197,7 @@ This counts the number of octal digits in a string:
 This lists all words (consisting of all sequences of non-whitespace
 characters) in a string, and is useful as a more powerful version of the
 \fBsplit\fR command:
+.PP
 .CS
 \fBregexp\fR \-all \-inline {\eS+} $string
 .CE
@@ -196,3 +205,6 @@ characters) in a string, and is useful as a more powerful version of the
 re_syntax(n), regsub(n), string(n)
 .SH KEYWORDS
 match, parsing, pattern, regular expression, splitting, string
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -25,6 +25,9 @@ Tcl_Object
 Tcl_Class
 \fBTcl_GetObjectAsClass\fR(\fIobject\fR)
 .sp
+Tcl_Obj *
+\fBTcl_GetObjectName\fR(\fIinterp, object\fR)
+.sp
 Tcl_Command
 \fBTcl_GetObjectCommand\fR(\fIobject\fR)
 .sp
@@ -103,14 +106,17 @@ found. The correct way to look up a class by name is to look up the object
 with that name, and then to use \fBTcl_GetObjectAsClass\fR.
 .PP
 Every object has its own command and namespace associated with it. The command
-may be retrieved using the \fBTcl_GetObjectCommand\fR function, and the
-namespace may be retrieved using the \fBTcl_GetObjectNamespace\fR function.
+may be retrieved using the \fBTcl_GetObjectCommand\fR function, the name of
+the object (and hence the name of the command) with \fBTcl_GetObjectName\fR,
+and the namespace may be retrieved using the \fBTcl_GetObjectNamespace\fR
+function. Note that the Tcl_Obj reference returned by \fBTcl_GetObjectName\fR
+is a shared reference.
 .PP
 Instances of classes are created using \fBTcl_NewObjectInstance\fR, which
 takes creates an object from any class (and which is internally called by both
 the \fBcreate\fR and \fBnew\fR methods of the \fBoo::class\fR class). It takes
 parameters that optionally give the name of the object and namespace to
-create, and which describe the arguments to pass to to the class's constructor
+create, and which describe the arguments to pass to the class's constructor
 (if any). The result of the function will be either a reference to the newly
 created object, or NULL if the creation failed (when an error message will be
 left in the interpreter result). In addition, objects may be copied by using
@@ -140,8 +146,8 @@ The contents of the Tcl_ObjectMetadataType structure are as follows:
 typedef const struct {
     int \fIversion\fR;
     const char *\fIname\fR;
-    Tcl_ObjectMetadataDeleteProc \fIdeleteProc\fR;
-    Tcl_CloneProc \fIcloneProc\fR;
+    Tcl_ObjectMetadataDeleteProc *\fIdeleteProc\fR;
+    Tcl_CloneProc *\fIcloneProc\fR;
 } \fBTcl_ObjectMetadataType\fR;
 .CE
 .PP
@@ -211,20 +217,21 @@ typedef int \fBTcl_ObjectMapMethodNameProc\fR(
         Tcl_Obj *\fImethodNameObj\fR);
 .CE
 .PP
-The \fIinterp\fR parameter (and the integer result) follow normal Tcl result
-rules for error reporting. The \fIobject\fR parameter says which object is
-being processed. The \fIstartClsPtr\fR parameter points to a variable that
-contains the first class to provide a definition in the method chain to
-process, or NULL if the whole chain is to be processed (the argument itself is
-never NULL); this variable may be updated by the callback. The
-\fImethodNameObj\fR parameter gives an unshared object containing the name of
-the method being invoked, as provided by the user; this object may be updated
-by the callback.
+If the result is TCL_OK, the remapping is assumed to have been done. If the
+result is TCL_ERROR, an error message will have been left in \fIinterp\fR and
+the method call will fail. If the result is TCL_BREAK, the standard method
+name lookup rules will be used; the behavior of other result codes is
+currently undefined. The \fIobject\fR parameter says which object is being
+processed. The \fIstartClsPtr\fR parameter points to a variable that contains
+the first class to provide a definition in the method chain to process, or
+NULL if the whole chain is to be processed (the argument itself is never
+NULL); this variable may be updated by the callback. The \fImethodNameObj\fR
+parameter gives an unshared object containing the name of the method being
+invoked, as provided by the user; this object may be updated by the callback.
 .SH "SEE ALSO"
 Method(3), oo::class(n), oo::copy(n), oo::define(n), oo::object(n)
 .SH KEYWORDS
 class, constructor, object
-
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

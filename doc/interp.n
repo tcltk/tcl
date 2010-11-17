@@ -138,12 +138,12 @@ as the current names of the commands).
 .TP
 \fBinterp bgerror \fIpath\fR ?\fIcmdPrefix\fR?
 .
-This command either gets or sets the current background error handler
+This command either gets or sets the current background exception handler
 for the interpreter identified by \fIpath\fR. If \fIcmdPrefix\fR is
-absent, the current background error handler is returned, and if it is
+absent, the current background exception handler is returned, and if it is
 present, it is a list of words (of minimum length one) that describes
-what to set the interpreter's background error to. See the
-\fBBACKGROUND ERROR HANDLING\fR section for more details.
+what to set the interpreter's background exception handler to. See the
+\fBBACKGROUND EXCEPTION HANDLING\fR section for more details.
 .TP
 \fBinterp\fR \fBcancel \fR?\fB\-unwind\fR? ?\fB\-\|\-\fR? ?\fIpath\fR? ?\fIresult\fR?
 .VS 8.6
@@ -350,9 +350,11 @@ new Tcl command is created in the master interpreter with the same
 name as the new interpreter. This command may be used to invoke
 various operations on the interpreter.  It has the following
 general form:
+.PP
 .CS
 \fIslave command \fR?\fIarg arg ...\fR?
 .CE
+.PP
 \fISlave\fR is the name of the interpreter, and \fIcommand\fR
 and the \fIarg\fRs determine the exact behavior of the command.
 The valid forms of this command are:
@@ -393,12 +395,12 @@ does not have to be equal to \fIsrcCmd\fR.
 .TP
 \fIslave \fBbgerror\fR ?\fIcmdPrefix\fR?
 .
-This command either gets or sets the current background error handler
+This command either gets or sets the current background exception handler
 for the \fIslave\fR interpreter. If \fIcmdPrefix\fR is
-absent, the current background error handler is returned, and if it is
+absent, the current background exception handler is returned, and if it is
 present, it is a list of words (of minimum length one) that describes
-what to set the interpreter's background error to. See the
-\fBBACKGROUND ERROR HANDLING\fR section for more details.
+what to set the interpreter's background exception handler to. See the
+\fBBACKGROUND EXCEPTION HANDLING\fR section for more details.
 .TP
 \fIslave \fBeval \fIarg \fR?\fIarg ..\fR?
 .
@@ -746,9 +748,10 @@ This option (common for all limit types) specifies (if non-empty) a Tcl script
 to be executed in the global namespace of the interpreter reading and writing
 the option when the particular limit in the limited interpreter is exceeded.
 The callback may modify the limit on the interpreter if it wishes the limited
-interpreter to continue executing. If the callback generates an error, it is
-reported through the background error mechanism (see \fBBACKGROUND ERROR
-HANDLING\fR). Note that the callbacks defined by one interpreter are
+interpreter to continue executing. If the callback generates an exception, it
+is reported through the background exception mechanism (see
+\fBBACKGROUND EXCEPTION HANDLING\fR).
+Note that the callbacks defined by one interpreter are
 completely isolated from the callbacks defined by another, and that the order
 in which those callbacks are called is undefined.
 .TP
@@ -790,28 +793,32 @@ these conditions, it should hide the \fBinterp\fR command in the child and
 then use aliases and the \fBinterp invokehidden\fR subcommand to provide such
 access as it chooses to the \fBinterp\fR command to the limited master as
 necessary.
-.SH "BACKGROUND ERROR HANDLING"
+.SH "BACKGROUND EXCEPTION HANDLING"
 .PP
-When an error happens in a situation where it cannot be reported directly up
+When an exception happens in a situation where it cannot be reported directly up
 the stack (e.g. when processing events in an \fBupdate\fR or \fBvwait\fR call)
-the error is instead reported through the background error handling mechanism.
-Every interpreter has a background error handler registered; the default error
+the exception is instead reported through the background exception handling mechanism.
+Every interpreter has a background exception handler registered; the default exception
 handler arranges for the \fBbgerror\fR command in the interpreter's global
-namespace to be called, but other error handlers may be installed and process
-background errors in substantially different ways.
+namespace to be called, but other exception handlers may be installed and process
+background exceptions in substantially different ways.
 .PP
-A background error handler consists of a non-empty list of words to which will
+A background exception handler consists of a non-empty list of words to which will
 be appended two further words at invocation time. The first word will be the
-error message string, and the second will a dictionary of return options (this
-is also the sort of information that can be obtained by trapping a normal
-error using \fBcatch\fR of course.) The resulting list will then be executed
+interpreter result at time of the exception, typically an error message,
+and the second will be the dictionary of return options at the time of
+the exception.  These are the same values that \fBcatch\fR can capture
+when it controls script evaluation in a non-background situation.
+The resulting list will then be executed
 in the interpreter's global namespace without further substitutions being
 performed.
 .SH CREDITS
 The safe interpreter mechanism is based on the Safe-Tcl prototype implemented
 by Nathaniel Borenstein and Marshall Rose.
 .SH EXAMPLES
+.PP
 Creating and using an alias for a command in the current interpreter:
+.PP
 .CS
 \fBinterp alias\fR {} getIndex {} lsearch {alpha beta gamma delta}
 set idx [getIndex delta]
@@ -819,31 +826,33 @@ set idx [getIndex delta]
 .PP
 Executing an arbitrary command in a safe interpreter where every
 invocation of \fBlappend\fR is logged:
+.PP
 .CS
 set i [\fBinterp create\fR -safe]
 \fBinterp hide\fR $i lappend
 \fBinterp alias\fR $i lappend {} loggedLappend $i
 proc loggedLappend {i args} {
-   puts "logged invocation of lappend $args"
-   \fBinterp invokehidden\fR $i lappend {*}$args
+    puts "logged invocation of lappend $args"
+    \fBinterp invokehidden\fR $i lappend {*}$args
 }
 \fBinterp eval\fR $i $someUntrustedScript
 .CE
 .PP
 Setting a resource limit on an interpreter so that an infinite loop
 terminates.
+.PP
 .CS
 set i [\fBinterp create\fR]
 \fBinterp limit\fR $i command -value 1000
 \fBinterp eval\fR $i {
-   set x 0
-   while {1} {
-      puts "Counting up... [incr x]"
-   }
+    set x 0
+    while {1} {
+        puts "Counting up... [incr x]"
+    }
 }
 .CE
 .SH "SEE ALSO"
-bgerror(n), load(n), safe(n), Tcl_CreateSlave(3), Tcl_Eval(3)
+bgerror(n), load(n), safe(n), Tcl_CreateSlave(3), Tcl_Eval(3), Tcl_BackgroundException(3)
 .SH KEYWORDS
 alias, master interpreter, safe interpreter, slave interpreter
 '\"Local Variables:

@@ -10,7 +10,7 @@
 '\" RCS: @(#) $Id: lsearch.n,v 1.35 2008/06/29 22:28:24 dkf Exp $
 '\" 
 .so man.macros
-.TH lsearch n 8.5 Tcl "Tcl Built-In Commands"
+.TH lsearch n 8.6 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -134,6 +134,17 @@ meaningful when used with \fB\-sorted\fR.
 .
 The list elements are sorted in increasing order.  This option is only
 meaningful when used with \fB\-sorted\fR.
+.TP
+\fB\-bisect\fR
+.VS 8.6
+Inexact search when the list elements are in sorted order. For an increasing
+list the last index where the element is less than or equal to the pattern
+is returned. For a decreasing list the last index where the element is greater
+than or equal to the pattern is returned. If the pattern is before the first
+element or the list is empty, -1 is returned.
+This option implies \fB\-sorted\fR and cannot be used with either \fB\-all\fR
+or \fB\-not\fR.
+.VE 8.6
 .SS "NESTED LIST OPTIONS"
 .PP
 These options are used to search lists of lists.  They may be used
@@ -156,6 +167,7 @@ overall list to the term found.  This option has no effect unless the
 .SH EXAMPLES
 .PP
 Basic searching:
+.PP
 .CS
 \fBlsearch\fR {a b c d e} c
       \fI\(-> 2\fR
@@ -164,6 +176,7 @@ Basic searching:
 .CE
 .PP
 Using \fBlsearch\fR to filter lists:
+.PP
 .CS
 \fBlsearch\fR -inline {a20 b35 c47} b*
       \fI\(-> b35\fR
@@ -178,18 +191,21 @@ Using \fBlsearch\fR to filter lists:
 This can even do a
 .QW set-like
 removal operation:
+.PP
 .CS
 \fBlsearch\fR -all -inline -not -exact {a b c a d e a f g a} a
       \fI\(-> b c d e f g\fR
 .CE
 .PP
 Searching may start part-way through the list:
+.PP
 .CS
 \fBlsearch\fR -start 3 {a b c a b c} c
       \fI\(-> 5\fR
 .CE
 .PP
 It is also possible to search inside elements:
+.PP
 .CS
 \fBlsearch\fR -index 1 -all -inline {{a abc} {b bcd} {c cde}} *bc*
       \fI\(-> {a abc} {b bcd}\fR
@@ -199,6 +215,7 @@ foreach(n), list(n), lappend(n), lindex(n), linsert(n), llength(n),
 lset(n), lsort(n), lrange(n), lreplace(n),
 string(n)
 .SH KEYWORDS
+binary search, linear search,
 list, match, pattern, regular expression, search, string
 '\" Local Variables:
 '\" mode: nroff

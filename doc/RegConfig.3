@@ -27,7 +27,7 @@ registered for. Must not be NULL.
 Contains the name of the package registering the embedded
 configuration as ASCII string. This means that this information is in
 UTF-8 too. Must not be NULL.
-.AP Tcl_Config *configuration in
+.AP "const Tcl_Config" *configuration in
 Refers to an array of Tcl_Config entries containing the information
 embedded in the binary library. Must not be NULL. The end of the array
 is signaled by either a key identical to NULL, or a key referring to
@@ -109,4 +109,4 @@ typedef struct Tcl_Config {
 .\" No cross references yet.
 .\" .SH "SEE ALSO"
 .SH KEYWORDS
-embedding, configuration, bianry library
+embedding, configuration, binary library

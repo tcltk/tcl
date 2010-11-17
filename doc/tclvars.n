@@ -12,13 +12,32 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-tclvars \- Variables used by Tcl
+argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_nonwordchars, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_precision, tcl_rcFileName, tcl_traceCompile, tcl_traceEval, tcl_wordchars, tcl_version \- Variables used by Tcl
 .BE
 .SH DESCRIPTION
 .PP
 The following global variables are created and managed automatically
 by the Tcl library.  Except where noted below, these variables should
 normally be treated as read-only by application-specific code and by users.
+.TP
+\fBauto_path\fR
+.
+If set, then it must contain a valid Tcl list giving directories to
+search during auto-load operations (including for package index
+files when using the default \fBpackage unknown\fR handler).
+This variable is initialized during startup to contain, in order:
+the directories listed in the \fBTCLLIBPATH\fR environment variable,
+the directory named by the \fBtcl_library\fR global variable,
+the parent directory of \fBtcl_library\fR,
+the directories listed in the \fBtcl_pkgPath\fR variable.
+Additional locations to look for files and package indices should
+normally be added to this variable using \fBlappend\fR.
+.RS
+.PP
+Additional variables relating to package management exist. More
+details are listed in the \fBVARIABLES\fR section of the \fBlibrary\fR
+manual page.
+.RE
 .TP
 \fBenv\fR
 .
@@ -50,6 +69,38 @@ Tcl are left unmodified.  Setting an env array variable to blank is the
 same as unsetting it as this is the behavior of the underlying Windows OS.
 It should be noted that relying on an existing and empty environment variable
 will not work on Windows and is discouraged for cross-platform usage.
+.PP
+The following elements of \fBenv\fR are special to Tcl:
+.TP
+\fBenv(HOME)\fR
+.
+This environment variable, if set, gives the location of the directory
+considered to be the current user's home directory, and to which a
+call of \fBcd\fR without arguments or with just
+.QW ~
+as an argument will change into. Most platforms set this correctly by
+default; it does not normally need to be set by user code.
+.TP
+\fBenv(TCL_LIBRARY)\fR
+.
+If set, then it specifies the location of the directory containing
+library scripts (the value of this variable will be
+assigned to the \fBtcl_library\fR variable and therefore returned by
+the command \fBinfo library\fR).  If this variable is not set then
+a default value is used.
+.RS
+.PP
+Note that this environment variable should \fInot\fR normally be set.
+.RE
+.TP
+\fBenv(TCLLIBPATH)\fR
+.
+If set, then it must contain a valid Tcl list giving directories to
+search during auto-load operations.  Directories must be specified in 
+Tcl format, using
+.QW /
+as the path separator, regardless of platform.
+This variable is only used when initializing the \fBauto_path\fR variable.
 .RE
 .TP
 \fBerrorCode\fR
@@ -133,6 +184,11 @@ The \fImsg\fR element will be a human-readable
 message corresponding to \fIerrName\fR, such as
 .QW "no such file or directory"
 for the \fBENOENT\fR case.
+.TP
+\fBTCL\fR ...
+.
+Indicates some sort of problem generated in relation to Tcl itself, e.g. a
+failure to look up a channel or variable.
 .PP
 To set the \fB\-errorcode\fR return option, applications should use library
 procedures such as \fBTcl_SetObjErrorCode\fR, \fBTcl_SetReturnOptions\fR,
@@ -142,11 +198,6 @@ If none of these methods for setting the error code has been used,
 the Tcl interpreter will reset the variable to \fBNONE\fR after
 the next error.
 .RE
-.TP
-\fBTCL\fR ...
-.
-Indicates some sort of problem generated in relation to Tcl itself, e.g. a
-failure to look up a channel or variable.
 .TP
 \fBerrorInfo\fR
 .
@@ -197,8 +248,9 @@ either one or two entries; if it contains two entries, the first is
 normally a directory for platform-dependent packages (e.g., shared library
 binaries) and the second is normally a directory for platform-independent
 packages (e.g., script files). Typically a package is installed as a
-subdirectory of one of the entries in \fB$tcl_pkgPath\fR. The directories
-in \fB$tcl_pkgPath\fR are included by default in the \fBauto_path\fR
+subdirectory of one of the entries in the \fBtcl_pkgPath\fR
+variable. The directories in the \fBtcl_pkgPath\fR variable are
+included by default in the \fBauto_path\fR
 variable, so they and their immediate subdirectories are automatically
 searched for packages during \fBpackage require\fR commands.  Note:
 \fBtcl_pkgPath\fR is not intended to be modified by the application.  Its
@@ -253,6 +305,13 @@ The version number for the operating system running on this machine.
 On UNIX machines, this is the value returned by \fBuname -r\fR.  On
 Windows 95, the version will be 4.0; on Windows 98, the version will
 be 4.10.
+.TP
+\fBpathSeparator\fR
+.VS 8.6
+'\" Defined by TIP #315
+The character that should be used to \fBsplit\fR PATH-like environment
+variables into their corresponding list of directory names.
+.VE 8.6
 .TP
 \fBplatform\fR
 .
@@ -332,10 +391,10 @@ for Windows.
 The value of this variable can be set to control
 how much tracing information
 is displayed during bytecode compilation.
-By default, tcl_traceCompile is zero and no information is displayed.
-Setting tcl_traceCompile to 1 generates a one-line summary in stdout
+By default, \fBtcl_traceCompile\fR is zero and no information is displayed.
+Setting \fBtcl_traceCompile\fR to 1 generates a one-line summary in \fBstdout\fR
 whenever a procedure or top-level command is compiled.
-Setting it to 2 generates a detailed listing in stdout of the
+Setting it to 2 generates a detailed listing in \fBstdout\fR of the
 bytecode instructions emitted during every compilation.
 This variable is useful in
 tracking down suspected problems with the Tcl compiler.
@@ -350,15 +409,15 @@ This variable and functionality only exist if
 The value of this variable can be set to control
 how much tracing information
 is displayed during bytecode execution.
-By default, tcl_traceExec is zero and no information is displayed.
-Setting tcl_traceExec to 1 generates a one-line trace in stdout
+By default, \fBtcl_traceExec\fR is zero and no information is displayed.
+Setting \fBtcl_traceExec\fR to 1 generates a one-line trace in \fBstdout\fR
 on each call to a Tcl procedure.
 Setting it to 2 generates a line of output
 whenever any Tcl command is invoked
 that contains the name of the command and its arguments.
 Setting it to 3 produces a detailed trace showing the result of
 executing each bytecode instruction.
-Note that when tcl_traceExec is 2 or 3,
+Note that when \fBtcl_traceExec\fR is 2 or 3,
 commands such as \fBset\fR and \fBincr\fR
 that have been entirely replaced by a sequence
 of bytecode instructions are not shown.
@@ -426,15 +485,11 @@ was invoked.
 Contains 1 if \fBtclsh\fR or \fBwish\fR is running interactively (no
 script was specified and standard input is a terminal-like device), 0
 otherwise.
-.PP
-The \fBwish\fR executable additionally specifies the following global
-variable:
-.TP 6
-\fBgeometry\fR
-.
-If set, contains the user-supplied geometry specification to use for
-the main Tk window.
 .SH "SEE ALSO"
-eval(n), tclsh(1), wish(1)
+eval(n), library(n), tclsh(1), tkvars(n), wish(1)
 .SH KEYWORDS
-arithmetic, bytecode, compiler, error, environment, POSIX, precision, subprocess, variables
+arithmetic, bytecode, compiler, error, environment, POSIX, precision,
+subprocess, user, variables
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

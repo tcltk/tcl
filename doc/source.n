@@ -52,15 +52,17 @@ is omitted, the system encoding is assumed.
 .PP
 Run the script in the file \fBfoo.tcl\fR and then the script in the
 file \fBbar.tcl\fR:
+.PP
 .CS
 \fBsource\fR foo.tcl
 \fBsource\fR bar.tcl
 .CE
 .PP
 Alternatively:
+.PP
 .CS
 foreach scriptFile {foo.tcl bar.tcl} {
-   \fBsource\fR $scriptFile
+    \fBsource\fR $scriptFile
 }
 .CE
 .SH "SEE ALSO"

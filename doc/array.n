@@ -138,14 +138,14 @@ The command always returns an empty string.
 .SH EXAMPLES
 .CS
 \fBarray set\fR colorcount {
-   red   1
-   green 5
-   blue  4
-   white 9
+    red   1
+    green 5
+    blue  4
+    white 9
 }
 
 foreach {color count} [\fBarray get\fR colorcount] {
-   puts "Color: $color Count: $count"
+    puts "Color: $color Count: $count"
 }
   \fB\(->\fR Color: blue Count: 4
     Color: white Count: 9
@@ -153,7 +153,7 @@ foreach {color count} [\fBarray get\fR colorcount] {
     Color: red Count: 1
 
 foreach color [\fBarray names\fR colorcount] {
-   puts "Color: $color Count: $colorcount($color)"
+    puts "Color: $color Count: $colorcount($color)"
 }
   \fB\(->\fR Color: blue Count: 4
     Color: white Count: 9
@@ -161,7 +161,7 @@ foreach color [\fBarray names\fR colorcount] {
     Color: red Count: 1
 
 foreach color [lsort [\fBarray names\fR colorcount]] {
-   puts "Color: $color Count: $colorcount($color)"
+    puts "Color: $color Count: $colorcount($color)"
 }
   \fB\(->\fR Color: blue Count: 4
     Color: green Count: 5

@@ -49,18 +49,21 @@ is empty, any \fIelement\fR arguments are added to the end of the list.
 .SH EXAMPLES
 .PP
 Replacing an element of a list with another:
+.PP
 .CS
 % \fBlreplace\fR {a b c d e} 1 1 foo
 a foo c d e
 .CE
 .PP
 Replacing two elements of a list with three:
+.PP
 .CS
 % \fBlreplace\fR {a b c d e} 1 2 three more elements
 a three more elements d e
 .CE
 .PP
 Deleting the last element from a list in a variable:
+.PP
 .CS
 % set var {a b c d e}
 a b c d e
@@ -69,6 +72,7 @@ a b c d
 .CE
 .PP
 A procedure to delete a given element from a list:
+.PP
 .CS
 proc lremove {listVariable value} {
     upvar 1 $listVariable var

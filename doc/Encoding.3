@@ -282,6 +282,7 @@ and the
 interfaces when running on Windows 95, you would have
 to perform the following type of test over and over in your program
 (as represented in pseudo-code):
+.PP
 .CS
 if (running NT) {
     encoding <- Tcl_GetEncoding("unicode");
@@ -291,6 +292,7 @@ if (running NT) {
     nativeBuffer <- Tcl_UtfToExternal(NULL, utfBuffer);
 }
 .CE
+.PP
 \fBTcl_WinUtfToTChar\fR and \fBTcl_WinTCharToUtf\fR automatically
 handle this test and use the proper encoding based on the current
 operating system.  \fBTcl_WinUtfToTChar\fR returns a pointer to
@@ -412,6 +414,7 @@ procedure will be a non-NULL location.
 .PP
 The callback procedure \fIfreeProc\fR, if non-NULL, should match the type 
 \fBTcl_EncodingFreeProc\fR:
+.PP
 .CS
 typedef void \fBTcl_EncodingFreeProc\fR(
         ClientData \fIclientData\fR);
@@ -488,6 +491,7 @@ Cases [1], [2], and [3] are collectively referred to as table-based encoding
 files.  The lines in a table-based encoding file are in the same
 format as this example taken from the \fBshiftjis\fR encoding (this is not
 the complete file):
+.PP
 .CS
 # Encoding file: shiftjis, multi-byte
 M
@@ -553,6 +557,7 @@ If all characters on a page would map to 0000, that page can be omitted.
 Case [4] is the escape-sequence encoding file.  The lines in an this type of
 file are in the same format as this example taken from the \fBiso2022-jp\fR
 encoding:
+.PP
 .CS
 .ta 1.5i
 # Encoding file: iso2022-jp, escape-driven

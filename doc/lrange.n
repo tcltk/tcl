@@ -39,19 +39,23 @@ does not always produce the same result as
 braces); it does, however, produce exactly the same results as
 .QW "\fBlist [lindex \fIlist first\fB]\fR"
 .SH EXAMPLES
+.PP
 Selecting the first two elements:
+.PP
 .CS
 % \fBlrange\fR {a b c d e} 0 1
 a b
 .CE
 .PP
 Selecting the last three elements:
+.PP
 .CS
 % \fBlrange\fR {a b c d e} end-2 end
 c d e
 .CE
 .PP
 Selecting everything except the first and last element:
+.PP
 .CS
 % \fBlrange\fR {a b c d e} 1 end-1
 b c d
@@ -59,6 +63,7 @@ b c d
 .PP
 Selecting a single element with \fBlrange\fR is not the same as doing
 so with \fBlindex\fR:
+.PP
 .CS
 % set var {some {elements to} select}
 some {elements to} select

@@ -74,12 +74,8 @@ exit from the current process.
 It is useful for cleaning up when a process is finished using \fBTcl\fR but
 wishes to continue executing, and when \fBTcl\fR is used in a dynamically
 loaded extension that is about to be unloaded.
-On some systems \fBTcl\fR is automatically notified when it is being
-unloaded, and it calls \fBTcl_Finalize\fR internally; on these systems it
-not necessary for the caller to explicitly call \fBTcl_Finalize\fR.
-However, to ensure portability, your code should always invoke
-\fBTcl_Finalize\fR when \fBTcl\fR is being unloaded, to ensure that the
-code will work on all platforms. \fBTcl_Finalize\fR can be safely called
+Your code should always invoke \fBTcl_Finalize\fR when \fBTcl\fR is being
+unloaded, to ensure proper cleanup. \fBTcl_Finalize\fR can be safely called
 more than once.
 .PP
 \fBTcl_ExitThread\fR is used to terminate the current thread and invoke
@@ -96,10 +92,12 @@ by \fBTcl_FinalizeThread\fR and \fBTcl_ExitThread\fR.
 This provides a hook for cleanup operations such as flushing buffers
 and freeing global memory.
 \fIProc\fR should match the type \fBTcl_ExitProc\fR:
+.PP
 .CS
 typedef void \fBTcl_ExitProc\fR(
         ClientData \fIclientData\fR);
 .CE
+.PP
 The \fIclientData\fR parameter to \fIproc\fR is a
 copy of the \fIclientData\fR argument given to
 \fBTcl_CreateExitHandler\fR or \fBTcl_CreateThreadExitHandler\fR when
@@ -141,4 +139,4 @@ cast to a ClientData value.
 .SH "SEE ALSO"
 exit(n)
 .SH KEYWORDS
-callback, cleanup, dynamic loading, end application, exit, unloading, thread
+abort, callback, cleanup, dynamic loading, end application, exit, unloading, thread

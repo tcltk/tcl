@@ -19,8 +19,8 @@ package require TclOO
 \fBoo::copy\fI sourceObject \fR?\fItargetObject\fR?
 .fi
 .BE
-
 .SH DESCRIPTION
+.PP
 The \fBoo::copy\fR command creates a copy of an object or class. It takes the
 name of the object or class to be copied, \fIsourceObject\fR, and optionally
 the name of the object or class to create, \fItargetObject\fR, which will be
@@ -33,13 +33,15 @@ contents of the source object's private namespace \fIwill not\fR be copied; it
 is up to the caller to do this. The result of this command will be the
 fully-qualified name of the new object or class.
 .SH EXAMPLES
+.PP
 This example creates an object, copies it, modifies the source object, and
 then demonstrates that the copied object is indeed a copy.
+.PP
 .CS
 oo::object create src
-oo::define src method msg {} {puts foo}
+oo::objdefine src method msg {} {puts foo}
 \fBoo::copy\fR src dst
-oo::define src method msg {} {puts bar}
+oo::objdefine src method msg {} {puts bar}
 src msg              \fI\(-> prints "bar"\fR
 dst msg              \fI\(-> prints "foo"\fR
 .CE
@@ -47,7 +49,6 @@ dst msg              \fI\(-> prints "foo"\fR
 oo::class(n), oo::define(n), oo::object(n)
 .SH KEYWORDS
 clone, copy, duplication, object
-
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78
