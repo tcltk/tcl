@@ -237,7 +237,7 @@ Tcl_AsyncInvoke(
 	}
 	asyncPtr->ready = 0;
 	Tcl_MutexUnlock(&tsdPtr->asyncMutex);
-	code = (*asyncPtr->proc)(asyncPtr->clientData, interp, code);
+	code = asyncPtr->proc(asyncPtr->clientData, interp, code);
 	Tcl_MutexLock(&tsdPtr->asyncMutex);
     }
     tsdPtr->asyncActive = 0;
@@ -262,7 +262,7 @@ Tcl_AsyncInvoke(
  *	Failure to locate the handler in current thread private list
  *	of async handlers will result in panic; exception: the list
  *	is already empty (potential trouble?).
- *	Consequently, threads should create and delete handlers 
+ *	Consequently, threads should create and delete handlers
  *	themselves.  I.e. a handler created by one should not be
  *	deleted by some other thread.
  *
@@ -306,7 +306,7 @@ Tcl_AsyncDelete(
 	    tsdPtr->firstHandler = asyncPtr->nextPtr;
 	} else {
 	    prevPtr->nextPtr = asyncPtr->nextPtr;
-        }
+	}
 	if (asyncPtr == tsdPtr->lastHandler) {
 	    tsdPtr->lastHandler = prevPtr;
 	}

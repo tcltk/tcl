@@ -80,7 +80,7 @@ union overhead {
 #define RMAGIC		0x5555	/* magic # on range info */
 
 #ifdef RCHECK
-#define	RSLOP		sizeof (unsigned short)
+#define	RSLOP		sizeof(unsigned short)
 #else
 #define	RSLOP		0
 #endif
@@ -142,7 +142,6 @@ static int allocInit = 0;
  */
 
 static	unsigned int numMallocs[NBUCKETS+1];
-#include <stdio.h>
 #endif
 
 #if defined(DEBUG) || defined(RCHECK)
@@ -157,7 +156,7 @@ static	unsigned int numMallocs[NBUCKETS+1];
  * Prototypes for functions used only in this file.
  */
 
-static void 		MoreCore(int bucket);
+static void		MoreCore(int bucket);
 
 /*
  *-------------------------------------------------------------------------
@@ -265,7 +264,7 @@ TclpAlloc(
     register union overhead *overPtr;
     register long bucket;
     register unsigned amount;
-    struct block *bigBlockPtr;
+    struct block *bigBlockPtr = NULL;
 
     if (!allocInit) {
 	/*
@@ -281,9 +280,11 @@ TclpAlloc(
      * First the simple case: we simple allocate big blocks directly.
      */
 
-    if (numBytes + OVERHEAD >= MAXMALLOC) {
-	bigBlockPtr = (struct block *) TclpSysAlloc((unsigned)
-		(sizeof(struct block) + OVERHEAD + numBytes), 0);
+    if (numBytes >= MAXMALLOC - OVERHEAD) {
+	if (numBytes <= UINT_MAX - OVERHEAD -sizeof(struct block)) {
+	    bigBlockPtr = (struct block *) TclpSysAlloc((unsigned)
+		    (sizeof(struct block) + OVERHEAD + numBytes), 0);
+	}
 	if (bigBlockPtr == NULL) {
 	    Tcl_MutexUnlock(allocMutexPtr);
 	    return NULL;
@@ -464,7 +465,7 @@ TclpFree(
     }
 
     Tcl_MutexLock(allocMutexPtr);
-    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof (union overhead));
+    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof(union overhead));
 
     ASSERT(overPtr->overMagic0 == MAGIC);	/* make sure it was in use */
     ASSERT(overPtr->overMagic1 == MAGIC);
@@ -533,7 +534,7 @@ TclpRealloc(
 
     Tcl_MutexLock(allocMutexPtr);
 
-    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof (union overhead));
+    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof(union overhead));
 
     ASSERT(overPtr->overMagic0 == MAGIC);	/* make sure it was in use */
     ASSERT(overPtr->overMagic1 == MAGIC);

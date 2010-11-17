@@ -3,7 +3,7 @@
  *
  *	Tcl DTrace provider.
  *
- * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright (c) 2007-2008 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -12,6 +12,7 @@
  */
 
 typedef struct Tcl_Obj Tcl_Obj;
+typedef const char* TclDTraceStr;
 
 /*
  * Tcl DTrace probes
@@ -26,14 +27,14 @@ provider tcl {
      *		arg1: number of arguments		(int)
      *		arg2: array of proc argument objects	(Tcl_Obj**)
      */
-    probe proc__entry(char* name, int objc, Tcl_Obj **objv);
+    probe proc__entry(TclDTraceStr name, int objc, Tcl_Obj **objv);
     /*
      *	tcl*:::proc-return probe
      *	    triggered immediately after proc bytecode execution
      *		arg0: proc name				(string)
      *		arg1: return code			(int)
      */
-    probe proc__return(char* name, int code);
+    probe proc__return(TclDTraceStr name, int code);
     /*
      *	tcl*:::proc-result probe
      *	    triggered after proc-return probe and result processing
@@ -42,7 +43,8 @@ provider tcl {
      *		arg2: proc result			(string)
      *		arg3: proc result object		(Tcl_Obj*)
      */
-    probe proc__result(char* name, int code, char* result, Tcl_Obj *resultobj);
+    probe proc__result(TclDTraceStr name, int code, TclDTraceStr result,
+	    Tcl_Obj *resultobj);
     /*
      *	tcl*:::proc-args probe
      *	    triggered before proc-entry probe, gives access to string
@@ -50,9 +52,10 @@ provider tcl {
      *		arg0: proc name				(string)
      *		arg1-arg9: proc arguments or NULL	(strings)
      */
-    probe proc__args(char* name, char* arg1, char* arg2, char* arg3,
-	    char* arg4, char* arg5, char* arg6, char* arg7, char* arg8,
-	    char* arg9);
+    probe proc__args(TclDTraceStr name, TclDTraceStr arg1, TclDTraceStr arg2,
+	    TclDTraceStr arg3, TclDTraceStr arg4, TclDTraceStr arg5,
+	    TclDTraceStr arg6, TclDTraceStr arg7, TclDTraceStr arg8,
+	    TclDTraceStr arg9);
     /*
      *	tcl*:::proc-info probe
      *	    triggered before proc-entry probe, gives access to TIP 280
@@ -63,9 +66,12 @@ provider tcl {
      *		arg3: TIP 280 file			(string)
      *		arg4: TIP 280 line			(int)
      *		arg5: TIP 280 level			(int)
+     *		arg6: TclOO method			(string)
+     *		arg7: TclOO class/object		(string)
      */
-    probe proc__info(char* cmd, char* type, char* proc, char* file, int line,
-	    int level);
+    probe proc__info(TclDTraceStr cmd, TclDTraceStr type, TclDTraceStr proc,
+	    TclDTraceStr file, int line, int level, TclDTraceStr method,
+	    TclDTraceStr class);
 
     /***************************** cmd probes ******************************/
     /*
@@ -75,14 +81,14 @@ provider tcl {
      *		arg1: number of arguments		(int)
      *		arg2: array of command argument objects	(Tcl_Obj**)
      */
-    probe cmd__entry(char* name, int objc, Tcl_Obj **objv);
+    probe cmd__entry(TclDTraceStr name, int objc, Tcl_Obj **objv);
     /*
      *	tcl*:::cmd-return probe
      *	    triggered immediately after commmand execution
      *		arg0: command name			(string)
      *		arg1: return code			(int)
      */
-    probe cmd__return(char* name, int code);
+    probe cmd__return(TclDTraceStr name, int code);
     /*
      *	tcl*:::cmd-result probe
      *	    triggered after cmd-return probe and result processing
@@ -91,7 +97,8 @@ provider tcl {
      *		arg2: command result			(string)
      *		arg3: command result object		(Tcl_Obj*)
      */
-    probe cmd__result(char* name, int code, char* result, Tcl_Obj *resultobj);
+    probe cmd__result(TclDTraceStr name, int code, TclDTraceStr result,
+	    Tcl_Obj *resultobj);
     /*
      *	tcl*:::cmd-args probe
      *	    triggered before cmd-entry probe, gives access to string
@@ -99,9 +106,10 @@ provider tcl {
      *		arg0: command name			(string)
      *		arg1-arg9: command arguments or NULL	(strings)
      */
-    probe cmd__args(char* name, char* arg1, char* arg2, char* arg3,
-	    char* arg4, char* arg5, char* arg6, char* arg7, char* arg8,
-	    char* arg9);
+    probe cmd__args(TclDTraceStr name, TclDTraceStr arg1, TclDTraceStr arg2,
+	    TclDTraceStr arg3, TclDTraceStr arg4, TclDTraceStr arg5,
+	    TclDTraceStr arg6, TclDTraceStr arg7, TclDTraceStr arg8,
+	    TclDTraceStr arg9);
     /*
      *	tcl*:::cmd-info probe
      *	    triggered before cmd-entry probe, gives access to TIP 280
@@ -112,9 +120,12 @@ provider tcl {
      *		arg3: TIP 280 file			(string)
      *		arg4: TIP 280 line			(int)
      *		arg5: TIP 280 level			(int)
+     *		arg6: TclOO method			(string)
+     *		arg7: TclOO class/object		(string)
      */
-    probe cmd__info(char* cmd, char* type, char* proc, char* file, int line,
-	    int level);
+    probe cmd__info(TclDTraceStr cmd, TclDTraceStr type, TclDTraceStr proc,
+	    TclDTraceStr file, int line, int level, TclDTraceStr method,
+	    TclDTraceStr class);
 
     /***************************** inst probes *****************************/
     /*
@@ -124,7 +135,7 @@ provider tcl {
      *		arg1: depth of stack			(int)
      *		arg2: top of stack			(Tcl_Obj**)
      */
-    probe inst__start(char* name, int depth, Tcl_Obj **stack);
+    probe inst__start(TclDTraceStr name, int depth, Tcl_Obj **stack);
     /*
      *	tcl*:::inst-done probe
      *	    triggered immediately after execution of a bytecode
@@ -132,7 +143,7 @@ provider tcl {
      *		arg1: depth of stack			(int)
      *		arg2: top of stack			(Tcl_Obj**)
      */
-    probe inst__done(char* name, int depth, Tcl_Obj **stack);
+    probe inst__done(TclDTraceStr name, int depth, Tcl_Obj **stack);
 
     /***************************** obj probes ******************************/
     /*
@@ -154,9 +165,10 @@ provider tcl {
      *	    triggered when the ::tcl::dtrace command is called
      *		arg0-arg9: command arguments		(strings)
      */
-    probe tcl__probe(char* arg0, char* arg1, char* arg2, char* arg3,
-	    char* arg4, char* arg5, char* arg6, char* arg7, char* arg8,
-	    char* arg9);
+    probe tcl__probe(TclDTraceStr arg0, TclDTraceStr arg1, TclDTraceStr arg2,
+	    TclDTraceStr arg3, TclDTraceStr arg4, TclDTraceStr arg5,
+	    TclDTraceStr arg6, TclDTraceStr arg7, TclDTraceStr arg8,
+	    TclDTraceStr arg9);
 };
 
 /*
