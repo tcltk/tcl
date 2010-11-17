@@ -1,4 +1,4 @@
-/* 
+/*
  * dlfcn.h --
  *
  *	This file provides a replacement for the header file "dlfcn.h"
@@ -29,9 +29,7 @@
 #ifndef __dlfcn_h__
 #define __dlfcn_h__
 
-#ifndef _TCL
-#include <tcl.h>
-#endif
+#include "tcl.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,14 +47,14 @@ extern "C" {
  * that contains functions to be called to initialize and terminate.
  */
 struct dl_info {
-	void (*init) _ANSI_ARGS_((void));
-	void (*fini) _ANSI_ARGS_((void));
+	void (*init) (void);
+	void (*fini) (void);
 };
 
-VOID *dlopen _ANSI_ARGS_((const char *path, int mode));
-VOID *dlsym _ANSI_ARGS_((void *handle, const char *symbol));
-char *dlerror _ANSI_ARGS_((void));
-int dlclose _ANSI_ARGS_((void *handle));
+void *dlopen (const char *path, int mode);
+void *dlsym (void *handle, const char *symbol);
+char *dlerror (void);
+int dlclose (void *handle);
 
 #ifdef __cplusplus
 }

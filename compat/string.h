@@ -15,7 +15,7 @@
 #ifndef _STRING
 #define _STRING
 
-#include <tcl.h>
+#include "tcl.h"
 
 /*
  * The following #include is needed to define size_t. (This used to include
@@ -50,7 +50,7 @@ extern char *		strerror(int error);
 extern size_t		strlen(const char *string);
 extern int		strncasecmp(const char *s1, const char *s2, size_t n);
 extern char *		strncat(char *dst, const char *src, size_t numChars);
-extern int		strncmp(const char *s1, const char *s2,size_t nChars);
+extern int		strncmp(const char *s1, const char *s2, size_t nChars);
 extern char *		strncpy(char *dst, const char *src, size_t numChars);
 extern char *		strpbrk(const char *string, const char *chars);
 extern char *		strrchr(const char *string, int c);

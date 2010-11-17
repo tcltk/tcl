@@ -12,7 +12,6 @@
  * RCS: @(#) $Id: strtol.c,v 1.7 2008/04/27 22:21:28 dkf Exp $
  */
 
-#include <ctype.h>
 #include "tclInt.h"
 
 /*

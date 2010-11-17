@@ -13,7 +13,6 @@
  */
 
 #include "tclInt.h"
-#include <ctype.h>
 
 #ifndef TRUE
 #define TRUE 1
@@ -23,12 +22,12 @@
 #define NULL 0
 #endif
 
-static int maxExponent = 511;	/* Largest possible base 10 exponent.  Any
+static const int maxExponent = 511;	/* Largest possible base 10 exponent.  Any
 				 * exponent larger than this will already
 				 * produce underflow or overflow, so there's
 				 * no need to worry about additional digits.
 				 */
-static double powersOf10[] = {	/* Table giving binary powers of 10.  Entry */
+static const double powersOf10[] = {	/* Table giving binary powers of 10.  Entry */
     10.,			/* is 10^2^i.  Used to convert decimal */
     100.,			/* exponents into floating-point numbers. */
     1.0e4,
@@ -78,7 +77,8 @@ strtod(
 				 * address here. */
 {
     int sign, expSign = FALSE;
-    double fraction, dblExp, *d;
+    double fraction, dblExp;
+    const double *d;
     register const char *p;
     register int c;
     int exp = 0;		/* Exponent read from "EX" field. */
@@ -231,7 +231,7 @@ strtod(
 	errno = ERANGE;
     }
     dblExp = 1.0;
-    for (d = powersOf10; exp != 0; exp >>= 1, d += 1) {
+    for (d = powersOf10; exp != 0; exp >>= 1, ++d) {
 	if (exp & 01) {
 	    dblExp *= *d;
 	}

@@ -19,9 +19,6 @@
 #ifndef _STDLIB
 #define _STDLIB
 
-#include <tcl.h>
-/* TODO: Do we need tcl.h any more? */
-
 extern void		abort(void);
 extern double		atof(const char *string);
 extern int		atoi(const char *string);
