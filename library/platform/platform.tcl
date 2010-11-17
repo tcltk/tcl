@@ -103,7 +103,12 @@ proc ::platform::generic {} {
 	}
 	sunos {
 	    set plat solaris
-	    if {$cpu ne "ia64"} {
+	    if {[string match "ix86" $cpu]} {
+		if {$tcl_platform(wordSize) == 8} {
+		    set cpu x86_64
+		}
+	    } elseif {![string match "ia64*" $cpu]} {
+		# sparc
 		if {$tcl_platform(wordSize) == 8} {
 		    append cpu 64
 		}
@@ -111,6 +116,13 @@ proc ::platform::generic {} {
 	}
 	darwin {
 	    set plat macosx
+	    # Correctly identify the cpu when running as a 64bit
+	    # process on a machine with a 32bit kernel
+	    if {$cpu eq "ix86"} {
+		if {$tcl_platform(wordSize) == 8} {
+		    set cpu x86_64
+		}
+	    }
 	}
 	aix {
 	    set cpu powerpc
@@ -120,7 +132,7 @@ proc ::platform::generic {} {
 	}
 	hp-ux {
 	    set plat hpux
-	    if {$cpu ne "ia64"} {
+	    if {![string match "ia64*" $cpu]} {
 		set cpu parisc
 		if {$tcl_platform(wordSize) == 8} {
 		    append cpu 64
@@ -154,16 +166,44 @@ proc ::platform::identify {} {
 	    append plat $text
 	    return "${plat}-${cpu}"
 	}
+	macosx {
+	    set major [lindex [split $tcl_platform(osVersion) .] 0]
+	    if {$major > 8} {
+		incr major -4
+		append plat 10.$major
+		return "${plat}-${cpu}"
+	    }
+	}
 	linux {
 	    # Look for the libc*.so and determine its version
 	    # (libc5/6, libc6 further glibc 2.X)
 
 	    set v unknown
 
-	    if {[file exists /lib64] && [file isdirectory /lib64]} {
-		set base /lib64
-	    } else {
-		set base /lib
+	    # Determine in which directory to look. /lib, or /lib64.
+	    # For that we use the tcl_platform(wordSize).
+	    #
+	    # We could use the 'cpu' info, per the equivalence below,
+	    # that however would be restricted to intel. And this may
+	    # be a arm, mips, etc. system. The wordsize is more
+	    # fundamental.
+	    #
+	    # ix86   <=> (wordSize == 4) <=> 32 bit ==> /lib
+	    # x86_64 <=> (wordSize == 8) <=> 64 bit ==> /lib64
+	    #
+	    # Do not look into /lib64 even if present, if the cpu
+	    # doesn't fit.
+
+	    switch -exact -- $tcl_platform(wordSize) {
+		4 {
+		    set base /lib
+		}
+		8 {
+		    set base /lib64
+		}
+		default {
+		    return -code error "Bad wordSize $tcl_platform(wordSize), expected 4 or 8"
+		}
 	    }
 
 	    set libclist [lsort [glob -nocomplain -directory $base libc*]]
@@ -238,9 +278,51 @@ proc ::platform::patterns {id} {
 		}
 	    }
 	}
-	macosx-powerpc -
-	macosx-ix86    {
+	macosx*-*    {
+	    # 10.5+ 
+	    if {[regexp {macosx([^-]*)-(.*)} $id -> v cpu]} {
+
+		switch -exact -- $cpu {
+		    ix86    -
+		    x86_64  { set alt i386-x86_64 }
+		    default { set alt {} }
+		}
+
+		if {$v ne ""} {
+		    foreach {major minor} [split $v .] break
+
+		    # Add 10.5 to 10.minor to patterns.
+		    set res {}
+		    for {set j $minor} {$j >= 5} {incr j -1} {
+			lappend res macosx${major}.${j}-${cpu}
+			lappend res macosx${major}.${j}-universal
+			if {$alt ne {}} {
+			    lappend res macosx${major}.${j}-$alt
+			}
+		    }
+
+		    # Add unversioned patterns for 10.3/10.4 builds.
+		    lappend res macosx-${cpu}
+		    lappend res macosx-universal
+		    if {$alt ne {}} {
+			lappend res macosx-$alt
+		    }
+		} else {
+		    lappend res macosx-universal
+		    if {$alt ne {}} {
+			lappend res macosx-$alt
+		    }
+		}
+	    } else {
+		lappend res macosx-universal
+	    }
+	}
+	macosx-powerpc {
 	    lappend res macosx-universal
+	}
+	macosx-x86_64 -
+	macosx-ix86 {
+	    lappend res macosx-universal macosx-i386-x86_64
 	}
     }
     lappend res tcl ; # Pure tcl packages are always compatible.
@@ -251,7 +333,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.3
+package provide platform 1.0.9
 
 # ### ### ### ######### ######### #########
 ## Demo application

@@ -78,7 +78,7 @@ namespace eval tcl {
     # TIP #255 min and max functions
     namespace eval mathfunc {
 	proc min {args} {
-	    if {[llength $args] == 0} {
+	    if {![llength $args]} {
 		return -code error \
 		    "too few arguments to math function \"min\""
 	    }
@@ -89,12 +89,12 @@ namespace eval tcl {
 		if {[catch {expr {double($arg)}} err]} {
 		    return -code error $err
 		}
-		if {$arg < $val} { set val $arg }
+		if {$arg < $val} {set val $arg}
 	    }
 	    return $val
 	}
 	proc max {args} {
-	    if {[llength $args] == 0} {
+	    if {![llength $args]} {
 		return -code error \
 		    "too few arguments to math function \"max\""
 	    }
@@ -105,10 +105,11 @@ namespace eval tcl {
 		if {[catch {expr {double($arg)}} err]} {
 		    return -code error $err
 		}
-		if {$arg > $val} { set val $arg }
+		if {$arg > $val} {set val $arg}
 	    }
 	    return $val
 	}
+	namespace export min max
     }
 }
 
@@ -178,9 +179,9 @@ if {[interp issafe]} {
 		-subcommands {
 		    add clicks format microseconds milliseconds scan seconds
 		}]
-	
+
 	# Auto-loading stubs for 'clock.tcl'
-	
+
 	foreach cmd {add format scan} {
 	    proc ::tcl::clock::$cmd args {
 		variable TclLibDir
@@ -217,11 +218,9 @@ if {[namespace which -command tclLog] eq ""} {
 # exist in the interpreter.  It takes the following steps to make the
 # command available:
 #
-#	1. See if the command has the form "namespace inscope ns cmd" and
-#	   if so, concatenate its arguments onto the end and evaluate it.
-#	2. See if the autoload facility can locate the command in a
+#	1. See if the autoload facility can locate the command in a
 #	   Tcl script file.  If so, load it and execute it.
-#	3. If the command was invoked interactively at top-level:
+#	2. If the command was invoked interactively at top-level:
 #	    (a) see if the command exists as an executable UNIX program.
 #		If so, "exec" the command.
 #	    (b) see if the command requests csh-like history substitution
@@ -238,35 +237,28 @@ proc unknown args {
     variable ::tcl::UnknownPending
     global auto_noexec auto_noload env tcl_interactive
 
-    # If the command word has the form "namespace inscope ns cmd"
-    # then concatenate its arguments onto the end and evaluate it.
 
-    set cmd [lindex $args 0]
-    if {[regexp "^:*namespace\[ \t\n\]+inscope" $cmd] && [llength $cmd] == 4} {
-	#return -code error "You need an {*}"
-        set arglist [lrange $args 1 end]
-	set ret [catch {uplevel 1 ::$cmd $arglist} result opts]
-	dict unset opts -errorinfo
-	dict incr opts -level
-	return -options $opts $result
+    if {[info exists ::errorInfo]} {
+	set savedErrorInfo $::errorInfo
+    }
+    if {[info exists ::errorCode]} {
+	set savedErrorCode $::errorCode
     }
 
-    catch {set savedErrorInfo $::errorInfo}
-    catch {set savedErrorCode $::errorCode}
-    set name $cmd
+    set name [lindex $args 0]
     if {![info exists auto_noload]} {
 	#
 	# Make sure we're not trying to load the same proc twice.
 	#
 	if {[info exists UnknownPending($name)]} {
 	    return -code error "self-referential recursion\
-		    in \"unknown\" for command \"$name\"";
+		    in \"unknown\" for command \"$name\""
 	}
-	set UnknownPending($name) pending;
+	set UnknownPending($name) pending
 	set ret [catch {
 		auto_load $name [uplevel 1 {::namespace current}]
 	} msg opts]
-	unset UnknownPending($name);
+	unset UnknownPending($name)
 	if {$ret != 0} {
 	    dict append opts -errorinfo "\n    (autoloading \"$name\")"
 	    return -options $opts $msg
@@ -275,13 +267,21 @@ proc unknown args {
 	    unset UnknownPending
 	}
 	if {$msg} {
-	    catch {set ::errorCode $savedErrorCode}
-	    catch {set ::errorInfo $savedErrorInfo}
+	    if {[info exists savedErrorCode]} {
+		set ::errorCode $savedErrorCode
+	    } else {
+		unset -nocomplain ::errorCode
+	    }
+	    if {[info exists savedErrorInfo]} {
+		set ::errorInfo $savedErrorInfo
+	    } else {
+		unset -nocomplain ::errorInfo
+	    }
 	    set code [catch {uplevel 1 $args} msg opts]
 	    if {$code ==  1} {
 		#
 		# Compute stack trace contribution from the [uplevel].
-		# Note the dependence on how Tcl_AddErrorInfo, etc. 
+		# Note the dependence on how Tcl_AddErrorInfo, etc.
 		# construct the stack trace.
 		#
 		set errorInfo [dict get $opts -errorinfo]
@@ -412,7 +412,7 @@ proc unknown args {
 # library file to create the procedure.  Returns 1 if it successfully
 # loaded the procedure, 0 otherwise.
 #
-# Arguments: 
+# Arguments:
 # cmd -			Name of the command to find and load.
 # namespace (optional)  The namespace where the command is being used - must be
 #                       a canonical namespace as returned [namespace current]
@@ -436,7 +436,7 @@ proc auto_load {cmd {namespace {}}} {
 	    #    info commands $name
 	    # Unfortunately, if the name has glob-magic chars in it like *
 	    # or [], it may not match.  For our purposes here, a better
-	    # route is to use 
+	    # route is to use
 	    #    namespace which -command $name
 	    if {[namespace which -command $name] ne ""} {
 		return 1
@@ -467,7 +467,7 @@ proc auto_load {cmd {namespace {}}} {
 # of available commands.  Returns 1 if the index is loaded, and 0 if
 # the index is already loaded and up to date.
 #
-# Arguments: 
+# Arguments:
 # None.
 
 proc auto_load_index {} {
@@ -546,34 +546,34 @@ proc auto_qualify {cmd namespace} {
 
     # Before each return case we give an example of which category it is
     # with the following form :
-    # ( inputCmd, inputNameSpace) -> output
+    # (inputCmd, inputNameSpace) -> output
 
     if {[string match ::* $cmd]} {
 	if {$n > 1} {
-	    # ( ::foo::bar , * ) -> ::foo::bar
+	    # (::foo::bar , *) -> ::foo::bar
 	    return [list $cmd]
 	} else {
-	    # ( ::global , * ) -> global
+	    # (::global , *) -> global
 	    return [list [string range $cmd 2 end]]
 	}
     }
-    
+
     # Potentially returning 2 elements to try  :
     # (if the current namespace is not the global one)
 
     if {$n == 0} {
 	if {$namespace eq "::"} {
-	    # ( nocolons , :: ) -> nocolons
+	    # (nocolons , ::) -> nocolons
 	    return [list $cmd]
 	} else {
-	    # ( nocolons , ::sub ) -> ::sub::nocolons nocolons
+	    # (nocolons , ::sub) -> ::sub::nocolons nocolons
 	    return [list ${namespace}::$cmd $cmd]
 	}
     } elseif {$namespace eq "::"} {
-	#  ( foo::bar , :: ) -> ::foo::bar
+	#  (foo::bar , ::) -> ::foo::bar
 	return [list ::$cmd]
     } else {
-	# ( foo::bar , ::sub ) -> ::sub::foo::bar ::foo::bar
+	# (foo::bar , ::sub) -> ::sub::foo::bar ::foo::bar
 	return [list ${namespace}::$cmd ::$cmd]
     }
 }
@@ -615,13 +615,13 @@ proc auto_import {pattern} {
 
 # auto_execok --
 #
-# Returns string that indicates name of program to execute if 
+# Returns string that indicates name of program to execute if
 # name corresponds to a shell builtin or an executable in the
-# Windows search path, or "" otherwise.  Builds an associative 
-# array auto_execs that caches information about previous checks, 
+# Windows search path, or "" otherwise.  Builds an associative
+# array auto_execs that caches information about previous checks,
 # for speed.
 #
-# Arguments: 
+# Arguments:
 # name -			Name of a command.
 
 if {$tcl_platform(platform) eq "windows"} {
@@ -650,7 +650,7 @@ proc auto_execok name {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]
     } else {
-	set execExtensions [list {} .com .exe .bat]
+	set execExtensions [list {} .com .exe .bat .cmd]
     }
 
     if {$name in $shellBuiltins} {
@@ -676,7 +676,7 @@ proc auto_execok name {
 
     set path "[file dirname [info nameof]];.;"
     if {[info exists env(WINDIR)]} {
-	set windir $env(WINDIR) 
+	set windir $env(WINDIR)
     }
     if {[info exists windir]} {
 	if {$tcl_platform(os) eq "Windows NT"} {
@@ -693,7 +693,9 @@ proc auto_execok name {
 
     foreach dir [split $path {;}] {
 	# Skip already checked directories
-	if {[info exists checked($dir)] || ($dir eq {})} { continue }
+	if {[info exists checked($dir)] || ($dir eq "")} {
+	    continue
+	}
 	set checked($dir) {}
 	foreach ext $execExtensions {
 	    set file [file join $dir ${name}${ext}]
@@ -741,13 +743,13 @@ proc auto_execok name {
 # This procedure is called by Tcl's core when attempts to call the
 # filesystem's copydirectory function fail.  The semantics of the call
 # are that 'dest' does not yet exist, i.e. dest should become the exact
-# image of src.  If dest does exist, we throw an error.  
-# 
+# image of src.  If dest does exist, we throw an error.
+#
 # Note that making changes to this procedure can change the results
 # of running Tcl's tests.
 #
-# Arguments: 
-# action -              "renaming" or "copying" 
+# Arguments:
+# action -              "renaming" or "copying"
 # src -			source directory
 # dest -		destination directory
 proc tcl::CopyDirectory {action src dest} {
@@ -775,7 +777,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    # exists, then we should only call this function if -force
 	    # is true, which means we just want to over-write.  So,
 	    # the following code is now commented out.
-	    # 
+	    #
 	    # return -code error "error $action \"$src\" to\
 	    # \"$dest\": file already exists"
 	} else {
@@ -808,7 +810,7 @@ proc tcl::CopyDirectory {action src dest} {
     # Have to be careful to capture both visible and hidden files.
     # We will also be more generous to the file system and not
     # assume the hidden and non-hidden lists are non-overlapping.
-    # 
+    #
     # On Unix 'hidden' files begin with '.'.  On other platforms
     # or filesystems hidden files may have other interpretations.
     set filelist [concat [glob -nocomplain -directory $src *] \
