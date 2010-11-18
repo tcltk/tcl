@@ -54,7 +54,7 @@ typedef struct OldMathFuncData {
 
 static char *	CallCommandTraces(Interp *iPtr, Command *cmdPtr,
 		    const char *oldName, const char *newName, int flags);
-static int 	CancelEvalProc(ClientData clientData,
+static int	CancelEvalProc(ClientData clientData,
 		    Tcl_Interp *interp, int code);
 static int	CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void	DeleteInterpProc(Tcl_Interp *interp);
@@ -225,35 +225,35 @@ typedef struct {
     ClientData clientData;	/* Client data for the function */
 } BuiltinFuncDef;
 static const BuiltinFuncDef BuiltinFuncTable[] = {
-    { "abs",	ExprAbsFunc,	NULL 			},
-    { "acos",	ExprUnaryFunc,	(ClientData) acos 	},
-    { "asin",	ExprUnaryFunc,	(ClientData) asin 	},
-    { "atan",	ExprUnaryFunc,	(ClientData) atan 	},
-    { "atan2",	ExprBinaryFunc,	(ClientData) atan2 	},
+    { "abs",	ExprAbsFunc,	NULL			},
+    { "acos",	ExprUnaryFunc,	(ClientData) acos	},
+    { "asin",	ExprUnaryFunc,	(ClientData) asin	},
+    { "atan",	ExprUnaryFunc,	(ClientData) atan	},
+    { "atan2",	ExprBinaryFunc,	(ClientData) atan2	},
     { "bool",	ExprBoolFunc,	NULL			},
-    { "ceil",	ExprCeilFunc,	NULL		 	},
-    { "cos",	ExprUnaryFunc,	(ClientData) cos 	},
+    { "ceil",	ExprCeilFunc,	NULL			},
+    { "cos",	ExprUnaryFunc,	(ClientData) cos	},
     { "cosh",	ExprUnaryFunc,	(ClientData) cosh	},
     { "double",	ExprDoubleFunc,	NULL			},
     { "entier",	ExprEntierFunc,	NULL			},
     { "exp",	ExprUnaryFunc,	(ClientData) exp	},
-    { "floor",	ExprFloorFunc,	NULL		 	},
+    { "floor",	ExprFloorFunc,	NULL			},
     { "fmod",	ExprBinaryFunc,	(ClientData) fmod	},
-    { "hypot",	ExprBinaryFunc,	(ClientData) hypot 	},
+    { "hypot",	ExprBinaryFunc,	(ClientData) hypot	},
     { "int",	ExprIntFunc,	NULL			},
     { "isqrt",	ExprIsqrtFunc,	NULL			},
-    { "log",	ExprUnaryFunc,	(ClientData) log 	},
-    { "log10",	ExprUnaryFunc,	(ClientData) log10 	},
-    { "pow",	ExprBinaryFunc,	(ClientData) pow 	},
+    { "log",	ExprUnaryFunc,	(ClientData) log	},
+    { "log10",	ExprUnaryFunc,	(ClientData) log10	},
+    { "pow",	ExprBinaryFunc,	(ClientData) pow	},
     { "rand",	ExprRandFunc,	NULL			},
     { "round",	ExprRoundFunc,	NULL			},
-    { "sin",	ExprUnaryFunc,	(ClientData) sin 	},
-    { "sinh",	ExprUnaryFunc,	(ClientData) sinh 	},
-    { "sqrt",	ExprSqrtFunc,	NULL		 	},
+    { "sin",	ExprUnaryFunc,	(ClientData) sin	},
+    { "sinh",	ExprUnaryFunc,	(ClientData) sinh	},
+    { "sqrt",	ExprSqrtFunc,	NULL			},
     { "srand",	ExprSrandFunc,	NULL			},
-    { "tan",	ExprUnaryFunc,	(ClientData) tan 	},
-    { "tanh",	ExprUnaryFunc,	(ClientData) tanh 	},
-    { "wide",	ExprWideFunc,	NULL		 	},
+    { "tan",	ExprUnaryFunc,	(ClientData) tan	},
+    { "tanh",	ExprUnaryFunc,	(ClientData) tanh	},
+    { "wide",	ExprWideFunc,	NULL			},
     { NULL, NULL, NULL }
 };
 
@@ -366,8 +366,8 @@ static int stackGrowsDown = 1;
 
 /*
  * This is the script cancellation struct and hash table.  The hash table
- * is used to keep track of the information necessary to process script 
- * cancellation requests, including the original interp, asynchronous handler 
+ * is used to keep track of the information necessary to process script
+ * cancellation requests, including the original interp, asynchronous handler
  * tokens (created by Tcl_AsyncCreate), and the clientData and flags arguments
  * passed to Tcl_CancelEval on a per-interp basis.  The cancelLock mutex is
  * used for protecting calls to Tcl_CancelEval as well as protecting access
@@ -375,11 +375,11 @@ static int stackGrowsDown = 1;
  */
 typedef struct {
     Tcl_Interp *interp;		/* Interp this struct belongs to */
-    Tcl_AsyncHandler async;	/* Async handler token for script 
+    Tcl_AsyncHandler async;	/* Async handler token for script
 				 * cancellation */
     char *result;		/* The script cancellation result or
 				 * NULL for a default result */
-    int length;                 /* Length of the above error message */
+    int length;			/* Length of the above error message */
     ClientData clientData;	/* Ignored */
     int flags;			/* Additional flags */
 } CancelInfo;
@@ -742,7 +742,7 @@ Tcl_CreateInterp(void)
 
     /*
      * Create the "binary", "chan", "dict", "info" and "string" ensembles.
-     * Note that all these commands (and their subcommands that are not 
+     * Note that all these commands (and their subcommands that are not
      * present in the global namespace) are wholly safe.
      */
 
@@ -1319,28 +1319,28 @@ DeleteInterpProc(
     Tcl_MutexLock(&cancelLock);
     hPtr = Tcl_FindHashEntry(&cancelTable, (char *) iPtr);
     if (hPtr != NULL) {
-        cancelInfo = (CancelInfo *) Tcl_GetHashValue(hPtr);
+	cancelInfo = (CancelInfo *) Tcl_GetHashValue(hPtr);
 
-        if (cancelInfo != NULL) {
-            if (cancelInfo->result != NULL) {
-                ckfree((char *) cancelInfo->result);
-                cancelInfo->result = NULL;
-            }
-            ckfree((char *) cancelInfo);
-            cancelInfo = NULL;
-        }
+	if (cancelInfo != NULL) {
+	    if (cancelInfo->result != NULL) {
+		ckfree((char *) cancelInfo->result);
+		cancelInfo->result = NULL;
+	    }
+	    ckfree((char *) cancelInfo);
+	    cancelInfo = NULL;
+	}
 
-        Tcl_DeleteHashEntry(hPtr);
+	Tcl_DeleteHashEntry(hPtr);
     }
 
     if (iPtr->asyncCancel != NULL) {
-        Tcl_AsyncDelete(iPtr->asyncCancel);
-        iPtr->asyncCancel = NULL;
+	Tcl_AsyncDelete(iPtr->asyncCancel);
+	iPtr->asyncCancel = NULL;
     }
 
     if (iPtr->asyncCancelMsg != NULL) {
-        Tcl_DecrRefCount(iPtr->asyncCancelMsg);
-        iPtr->asyncCancelMsg = NULL;
+	Tcl_DecrRefCount(iPtr->asyncCancelMsg);
+	iPtr->asyncCancelMsg = NULL;
     }
     Tcl_MutexUnlock(&cancelLock);
 
@@ -2044,7 +2044,7 @@ Tcl_CreateObjCommand(
     Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
 				 * name. */
     ClientData clientData,	/* Arbitrary value to pass to object
-    				 * function. */
+				 * function. */
     Tcl_CmdDeleteProc *deleteProc)
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
@@ -2209,7 +2209,7 @@ TclInvokeStringCommand(
     const char **argv = (const char **)
 	    TclStackAlloc(interp, (unsigned)(objc + 1) * sizeof(char *));
 
-    for (i = 0;  i < objc;  i++) {
+    for (i = 0; i < objc; i++) {
 	argv[i] = Tcl_GetString(objv[i]);
     }
     argv[objc] = 0;
@@ -2258,7 +2258,7 @@ TclInvokeObjectCommand(
     Tcl_Obj **objv = (Tcl_Obj **)
 	    TclStackAlloc(interp, (unsigned)(argc * sizeof(Tcl_Obj *)));
 
-    for (i = 0;  i < argc;  i++) {
+    for (i = 0; i < argc; i++) {
 	length = strlen(argv[i]);
 	TclNewStringObj(objPtr, argv[i], length);
 	Tcl_IncrRefCount(objPtr);
@@ -2283,7 +2283,7 @@ TclInvokeObjectCommand(
      * free the objv array if malloc'ed storage was used.
      */
 
-    for (i = 0;  i < argc;  i++) {
+    for (i = 0; i < argc; i++) {
 	objPtr = objv[i];
 	Tcl_DecrRefCount(objPtr);
     }
@@ -2919,7 +2919,7 @@ Tcl_DeleteCommandFromToken(
      * imported commands now.
      */
 
-    for (refPtr = cmdPtr->importRefPtr;  refPtr != NULL;
+    for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
 	    refPtr = nextRefPtr) {
 	nextRefPtr = refPtr->nextPtr;
 	importCmd = (Tcl_Command) refPtr->importedCmdPtr;
@@ -3069,7 +3069,7 @@ CancelEvalProc(clientData, interp, code)
     Tcl_Interp *interp;		/* Ignored */
     int code;			/* Current return code from command. */
 {
-    CancelInfo *cancelInfo = (CancelInfo *) clientData; 
+    CancelInfo *cancelInfo = (CancelInfo *) clientData;
     Interp *iPtr;
 
     if (cancelInfo != NULL) {
@@ -3093,7 +3093,7 @@ CancelEvalProc(clientData, interp, code)
 	     * from Tcl_CancelEval.  We do not want to simply combine all
 	     * the flags from original Tcl_CancelEval call with the interp
 	     * flags here just in case the caller passed flags that might
-	     * cause behaviour unrelated to script cancellation. 
+	     * cause behaviour unrelated to script cancellation.
 	     */
 	    if (cancelInfo->flags & TCL_CANCEL_UNWIND) {
 		iPtr->flags |= TCL_CANCEL_UNWIND;
@@ -3619,8 +3619,8 @@ TclInterpReady(
  *
  * TclResetCancellation --
  *
- *	Reset the script cancellation flags if the nesting level 
- *	(iPtr->numLevels) for the interp is zero or argument force is 
+ *	Reset the script cancellation flags if the nesting level
+ *	(iPtr->numLevels) for the interp is zero or argument force is
  *	non-zero.
  *
  * Results:
@@ -3685,23 +3685,23 @@ Tcl_Canceled(
 
     /*
      * Traverse up the to the top-level interp, checking for the
-     * CANCELED flag along the way.  If any of the intervening 
-     * interps have the CANCELED flag set, the current script in 
+     * CANCELED flag along the way.  If any of the intervening
+     * interps have the CANCELED flag set, the current script in
      * progress is considered to be canceled and we stop checking.
-     * Otherwise, if any interp has the DELETED flag set we stop 
+     * Otherwise, if any interp has the DELETED flag set we stop
      * checking.
      */
     for (; iPtr != NULL; iPtr = (Interp *) Tcl_GetMaster((Tcl_Interp *)iPtr)) {
 	/*
 	 * Has the current script in progress for this interpreter been
-	 * canceled or is the stack being unwound due to the previous 
+	 * canceled or is the stack being unwound due to the previous
 	 * script cancellation?
 	 */
 	if ((iPtr->flags & CANCELED) || (iPtr->flags & TCL_CANCEL_UNWIND)) {
-	    /* 
+	    /*
 	     * The CANCELED flag is a one-shot flag that is reset immediately
 	     * upon being detected; however, if the TCL_CANCEL_UNWIND flag is
-	     * set we will continue to report that the script in progress has 
+	     * set we will continue to report that the script in progress has
 	     * been canceled thereby allowing the evaluation stack for the
 	     * interp to be fully unwound.
 	     */
@@ -3709,7 +3709,7 @@ Tcl_Canceled(
 
 	    /*
 	     * The CANCELED flag was detected and reset; however, if the caller
-	     * specified the TCL_CANCEL_UNWIND flag, we only return TCL_ERROR 
+	     * specified the TCL_CANCEL_UNWIND flag, we only return TCL_ERROR
 	     * (indicating that the script in progress has been canceled) if the
 	     * evaluation stack for the interp is being fully unwound.
 	     */
@@ -3749,13 +3749,13 @@ Tcl_Canceled(
 		/*
 		 * Return TCL_ERROR to the caller (not necessarily just the Tcl core
 		 * itself) that indicates further processing of the script or command
-		 * in progress should halt gracefully and as soon as possible. 
+		 * in progress should halt gracefully and as soon as possible.
 		 */
 		return TCL_ERROR;
 	    }
 	} else {
 	    /*
-	     * FIXME: If this interpreter is being deleted we cannot continue to 
+	     * FIXME: If this interpreter is being deleted we cannot continue to
 	     *	traverse up the interp chain due to an issue with
 	     *	Tcl_GetMaster (really the slave interp bookkeeping) that
 	     *	causes us to run off into a freed interp struct.  Ideally,
@@ -3783,7 +3783,7 @@ Tcl_Canceled(
  * Results:
  *	The return value is a standard Tcl completion code such as TCL_OK or
  *	TCL_ERROR.  Since the interp may belong to a different thread, no
- *	error message can be left in the interp's result. 
+ *	error message can be left in the interp's result.
  *
  * Side effects:
  *	The script in progress in the specified interpreter will be
@@ -3820,10 +3820,10 @@ Tcl_CancelEval(
 
 		if (cancelInfo != NULL) {
 		    /*
-		     * Populate information needed by the interpreter thread 
-		     * to fulfill the cancellation request.  Currently, 
+		     * Populate information needed by the interpreter thread
+		     * to fulfill the cancellation request.  Currently,
 		     * clientData is ignored.  If the TCL_CANCEL_UNWIND flags
-		     * bit is set, the script in progress is not allowed to 
+		     * bit is set, the script in progress is not allowed to
 		     * catch the script cancellation because the evaluation
 		     * stack for the interp is completely unwound.
 		     */
@@ -3858,7 +3858,7 @@ Tcl_CancelEval(
 	}
     } else {
 	/*
-	 * No CancelInfo hash table (Tcl_CreateInterp 
+	 * No CancelInfo hash table (Tcl_CreateInterp
 	 * has never been called?)
 	 */
 	code = TCL_ERROR;

@@ -660,8 +660,7 @@ Tcl_EvalObjCmd(
 	 * TIP #280. Make invoking context available to eval'd script.
 	 */
 
-	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT,
-		iPtr->cmdFramePtr, 1);
+	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT, iPtr->cmdFramePtr, 1);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
