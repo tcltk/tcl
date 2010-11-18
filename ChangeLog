@@ -1,11 +1,15 @@
+2010-11-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/file.n: [Bug 3111298]: Typofix.
+
 2010-11-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclPlatDecls.h [Bug #3110161]: Extensions using TCHAR don't compile
-	on VS2005 SP1
+	* generic/tclPlatDecls.h: [Bug 3110161]: Extensions using TCHAR don't
+	compile on VS2005 SP1
 
 2010-11-15  Andreas Kupries  <andreask@activestate.com>
 
-	* doc/interp.n: [3081184] TIP #378.
+	* doc/interp.n: [Bug 3081184]: TIP #378 backport.
 	* doc/tclvars.n: Performance fix for TIP #280.
 	* generic/tclBasic.c:
 	* generic/tclExecute.c:
@@ -17,13 +21,12 @@
 2010-11-03  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclCompCmds.c (TclCompileCatchCmd):
-	* tests/compile.test (compile-3.6): Reworked the compilation of
-	the [catch] command so as to avoid placing any code that might
-	throw an exception (specifically, any initial substitutions
-	or any stores to result or options variables) between the
-	BEGIN_CATCH and END_CATCH but outside the exception range.
-	Added a test case that panics on a stack smash if the change
-	is not made. [Bug #3098302]
+	* tests/compile.test (compile-3.6): [Bug 3098302]: Reworked the
+	compilation of the [catch] command so as to avoid placing any code
+	that might throw an exception (specifically, any initial substitutions
+	or any stores to result or options variables) between the BEGIN_CATCH
+	and END_CATCH but outside the exception range.  Added a test case that
+	panics on a stack smash if the change is not made.
 
 2010-11-01  Stuart Cassoff  <stwo@users.sourceforge.net>
 
