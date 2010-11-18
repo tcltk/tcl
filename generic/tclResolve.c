@@ -67,6 +67,7 @@ Tcl_AddInterpResolvers(
 {
     Interp *iPtr = (Interp *) interp;
     ResolverScheme *resPtr;
+    unsigned len;
 
     /*
      * Since we're adding a new name resolution scheme, we must force all code
@@ -103,8 +104,9 @@ Tcl_AddInterpResolvers(
      */
 
     resPtr = (ResolverScheme *) ckalloc(sizeof(ResolverScheme));
-    resPtr->name = (char *) ckalloc((unsigned)(strlen(name) + 1));
-    strcpy(resPtr->name, name);
+    len = strlen(name) + 1;
+    resPtr->name = (char *) ckalloc(len);
+    memcpy(resPtr->name, name, len);
     resPtr->cmdResProc = cmdProc;
     resPtr->varResProc = varProc;
     resPtr->compiledVarResProc = compiledVarProc;
@@ -262,12 +264,23 @@ BumpCmdRefEpochs(
 
     nsPtr->cmdRefEpoch++;
 
+#ifndef BREAK_NAMESPACE_COMPAT
     for (entry = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
 	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
 	Namespace *childNsPtr = Tcl_GetHashValue(entry);
 
 	BumpCmdRefEpochs(childNsPtr);
     }
+#else
+    if (nsPtr->childTablePtr != NULL) {
+	for (entry = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
+		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
+	    Namespace *childNsPtr = Tcl_GetHashValue(entry);
+
+	    BumpCmdRefEpochs(childNsPtr);
+	}
+    }
+#endif
     TclInvalidateNsPath(nsPtr);
 }
 
@@ -283,7 +296,7 @@ BumpCmdRefEpochs(
  *
  *	Command resolution is handled by a function of the following type:
  *
- *	  typedef int (*Tcl_ResolveCmdProc)(Tcl_Interp *interp,
+ *	  typedef int (Tcl_ResolveCmdProc)(Tcl_Interp *interp,
  *		  const char *name, Tcl_Namespace *context,
  *		  int flags, Tcl_Command *rPtr);
  *
@@ -298,7 +311,7 @@ BumpCmdRefEpochs(
  *	Variable resolution is handled by two functions. The first is called
  *	whenever a variable needs to be resolved at compile time:
  *
- *	  typedef int (*Tcl_ResolveCompiledVarProc)(Tcl_Interp *interp,
+ *	  typedef int (Tcl_ResolveCompiledVarProc)(Tcl_Interp *interp,
  *		  const char *name, Tcl_Namespace *context,
  *		  Tcl_ResolvedVarInfo *rPtr);
  *
@@ -314,7 +327,7 @@ BumpCmdRefEpochs(
  *	the variable may be requested via Tcl_FindNamespaceVar.) This function
  *	has the following type:
  *
- *	  typedef int (*Tcl_ResolveVarProc)(Tcl_Interp *interp,
+ *	  typedef int (Tcl_ResolveVarProc)(Tcl_Interp *interp,
  *		  const char *name, Tcl_Namespace *context,
  *		  int flags, Tcl_Var *rPtr);
  *

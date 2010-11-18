@@ -54,7 +54,7 @@ typedef struct JoinableThread {
 
 TCL_DECLARE_MUTEX(joinMutex)
 
-static JoinableThread* firstThreadPtr;
+static JoinableThread *firstThreadPtr;
 
 /*
  *----------------------------------------------------------------------
