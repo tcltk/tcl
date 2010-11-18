@@ -969,6 +969,10 @@ void *TclpThreadCreateKey (void) {
     }
     
     *key = TlsAlloc();
+
+    if (*key == TLS_OUT_OF_INDEXES) {
+	Tcl_Panic("unable to allocate thread-local storage");
+    }
     
     return key;
 }

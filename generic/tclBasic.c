@@ -3697,7 +3697,7 @@ Tcl_Canceled(
      * stop checking.
      */
 
-    for (; iPtr != NULL; iPtr = (Interp *) Tcl_GetMaster((Tcl_Interp *)iPtr)) {
+    for (; iPtr!=NULL; iPtr = (Interp *) Tcl_GetMaster((Tcl_Interp *)iPtr)) {
 	/*
 	 * Has the current script in progress for this interpreter been
 	 * canceled or is the stack being unwound due to the previous script
@@ -3826,6 +3826,10 @@ Tcl_CancelEval(
     int code = TCL_ERROR;
     const char *result;
 
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
+
     Tcl_MutexLock(&cancelLock);
     if (cancelTableInitialized != 1) {
 	/*
@@ -3834,28 +3838,15 @@ Tcl_CancelEval(
 
 	goto done;
     }
-    if (interp != NULL) {
-	/*
-	 * A valid interp must be supplied.
-	 */
-
-	goto done;
-    }
     hPtr = Tcl_FindHashEntry(&cancelTable, (char *) interp);
     if (hPtr == NULL) {
 	/*
-	 * No CancelInfo for this interp.
+	 * No CancelInfo record for this interpreter.
 	 */
 
 	goto done;
     }
     cancelInfo = Tcl_GetHashValue(hPtr);
-    if (cancelInfo == NULL) {
-	/*
-	 * The CancelInfo for this interp is invalid.
-	 */
-	goto done;
-    }
 
     /*
      * Populate information needed by the interpreter thread to fulfill the
@@ -3867,11 +3858,9 @@ Tcl_CancelEval(
 
     if (resultObjPtr != NULL) {
 	result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
-	cancelInfo->result = ckrealloc(cancelInfo->result,
-		cancelInfo->length);
-	memcpy((void *) cancelInfo->result, (void *) result,
-		(size_t) cancelInfo->length);
-	Tcl_DecrRefCount(resultObjPtr);	/* Discard their result object. */
+	cancelInfo->result = ckrealloc(cancelInfo->result,cancelInfo->length);
+	memcpy(cancelInfo->result, result, (size_t) cancelInfo->length);
+	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
     } else {
 	cancelInfo->result = NULL;
 	cancelInfo->length = 0;
@@ -4451,7 +4440,7 @@ Tcl_EvalEx(
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
 {
-  return TclEvalEx(interp, script, numBytes, flags, 1);
+    return TclEvalEx(interp, script, numBytes, flags, 1);
 }
 
 int
@@ -4483,14 +4472,12 @@ TclEvalEx(
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
 				 * properly if an error occurs. */
-    Tcl_Parse *parsePtr = (Tcl_Parse *)
-	    TclStackAlloc(interp, sizeof(Tcl_Parse));
-    CmdFrame *eeFramePtr = (CmdFrame *)
-	    TclStackAlloc(interp, sizeof(CmdFrame));
-    Tcl_Obj **stackObjArray = (Tcl_Obj **)
+    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    CmdFrame *eeFramePtr = TclStackAlloc(interp, sizeof(CmdFrame));
+    Tcl_Obj **stackObjArray =
 	    TclStackAlloc(interp, minObjs * sizeof(Tcl_Obj *));
-    int *expandStack = (int *) TclStackAlloc(interp, minObjs * sizeof(int));
-    int *linesStack = (int *) TclStackAlloc(interp, minObjs * sizeof(int));
+    int *expandStack = TclStackAlloc(interp, minObjs * sizeof(int));
+    int *linesStack = TclStackAlloc(interp, minObjs * sizeof(int));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
 
@@ -4555,6 +4542,7 @@ TclEvalEx(
 		/*
 		 * Error message in the interp result.
 		 */
+
 		code = TCL_ERROR;
 		goto error;
 	    }
@@ -4606,7 +4594,7 @@ TclEvalEx(
 	     * Generate an array of objects for the words of the command.
 	     */
 
-	    unsigned int objectsNeeded = 0;
+ 	    unsigned int objectsNeeded = 0;
 	    unsigned int numWords = parsePtr->numWords;
 
 	    if (numWords > minObjs) {
@@ -5430,7 +5418,7 @@ Tcl_ExprLongObj(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type) != TCL_OK){
+    if (TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type)!=TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -5523,6 +5511,7 @@ Tcl_ExprBooleanObj(
  *
  *	Object version: Invokes a Tcl command, given an objv/objc, from either
  *	the exposed or hidden set of commands in the given interpreter.
+ *
  *	NOTE: The command is invoked in the global stack frame of the
  *	interpreter or namespace, thus it cannot see any current state on the
  *	stack of that interpreter.
@@ -5866,7 +5855,7 @@ Tcl_AddObjErrorInfo(
 
 int
 Tcl_VarEvalVA(
-    Tcl_Interp *interp,		/* Interpreter in which to evaluate command. */
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate command */
     va_list argList)		/* Variable argument list. */
 {
     Tcl_DString buf;
@@ -6911,8 +6900,8 @@ MathFuncWrongNumArgs(
 	    "too %s arguments for math function \"%s\"",
 	    (found < expected ? "few" : "many"), name));
 }
-#ifdef USE_DTRACE
 
+#ifdef USE_DTRACE
 /*
  *----------------------------------------------------------------------
  *

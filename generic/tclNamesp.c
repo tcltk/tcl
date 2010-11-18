@@ -154,6 +154,9 @@ static int		DoImport(Tcl_Interp *interp,
 			    const char *cmdName, const char *pattern,
 			    Namespace *importNsPtr, int allowOverwrite);
 static void		DupNsNameInternalRep(Tcl_Obj *objPtr,Tcl_Obj *copyPtr);
+static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
+			    EnsembleConfig *ensemblePtr, int objc,
+			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
 static char *		ErrorCodeRead(ClientData clientData,Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static char *		ErrorInfoRead(ClientData clientData,Tcl_Interp *interp,
@@ -1639,7 +1642,8 @@ DoImport(
 
 	dataPtr = (ImportedCmdData *) ckalloc(sizeof(ImportedCmdData));
 	importedCmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds),
-		InvokeImportedCmd, dataPtr, DeleteImportedCmd);
+		InvokeImportedCmd, dataPtr,
+		DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
 	dataPtr->selfPtr = (Command *) importedCmd;
 	dataPtr->selfPtr->compileProc = cmdPtr->compileProc;
@@ -1886,8 +1890,7 @@ InvokeImportedCmd(
     register ImportedCmdData *dataPtr = clientData;
     register Command *realCmdPtr = dataPtr->realCmdPtr;
 
-    return (*realCmdPtr->objProc)(realCmdPtr->objClientData, interp,
-	    objc, objv);
+    return realCmdPtr->objProc(realCmdPtr->objClientData, interp, objc, objv);
 }
 
 /*
@@ -6079,7 +6082,7 @@ NsEnsembleImplementationCmd(
 
     /*
      * Look in the hashtable for the subcommand name; this is the fastest way
-     * of all.
+     * of all if there is no cache in operation.
      */
 
     hPtr = Tcl_FindHashEntry(&ensemblePtr->subcommandTable,
@@ -6203,7 +6206,7 @@ NsEnsembleImplementationCmd(
 	    iPtr->ensembleRewrite.numRemovedObjs = 2;
 	    iPtr->ensembleRewrite.numInsertedObjs = prefixObjc;
 	} else {
-	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
+	    register int ni = iPtr->ensembleRewrite.numInsertedObjs;
 
 	    if (ni < 2) {
 		iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
@@ -6254,90 +6257,15 @@ NsEnsembleImplementationCmd(
      */
 
     if (ensemblePtr->unknownHandler != NULL && reparseCount++ < 1) {
-	int paramc, i;
-	Tcl_Obj **paramv, *unknownCmd, *ensObj;
-
-	unknownCmd = Tcl_DuplicateObj(ensemblePtr->unknownHandler);
-	TclNewObj(ensObj);
-	Tcl_GetCommandFullName(interp, ensemblePtr->token, ensObj);
-	Tcl_ListObjAppendElement(NULL, unknownCmd, ensObj);
-	for (i=1 ; i<objc ; i++) {
-	    Tcl_ListObjAppendElement(NULL, unknownCmd, objv[i]);
-	}
-	TclListObjGetElements(NULL, unknownCmd, &paramc, &paramv);
-	Tcl_Preserve(ensemblePtr);
-	Tcl_IncrRefCount(unknownCmd);
-	result = Tcl_EvalObjv(interp, paramc, paramv, 0);
-	if (result == TCL_OK) {
-	    prefixObj = Tcl_GetObjResult(interp);
-	    Tcl_IncrRefCount(prefixObj);
-	    Tcl_DecrRefCount(unknownCmd);
-	    Tcl_Release(ensemblePtr);
-	    Tcl_ResetResult(interp);
-	    if (ensemblePtr->flags & ENS_DEAD) {
-		Tcl_DecrRefCount(prefixObj);
-		Tcl_SetResult(interp,
-			"unknown subcommand handler deleted its ensemble",
-			TCL_STATIC);
-		return TCL_ERROR;
-	    }
-
-	    /*
-	     * Namespace is still there. Check if the result is a valid list.
-	     * If it is, and it is non-empty, that list is what we are using
-	     * as our replacement.
-	     */
-
-	    if (TclListObjLength(interp, prefixObj, &prefixObjc) != TCL_OK) {
-		Tcl_DecrRefCount(prefixObj);
-		Tcl_AddErrorInfo(interp, "\n    while parsing result of "
-			"ensemble unknown subcommand handler");
-		return TCL_ERROR;
-	    }
-	    if (prefixObjc > 0) {
-		goto runResultingSubcommand;
-	    }
-
-	    /*
-	     * Namespace alive & empty result => reparse.
-	     */
-
-	    Tcl_DecrRefCount(prefixObj);
+	switch (EnsembleUnknownCallback(interp, ensemblePtr, objc, objv,
+		&prefixObj)) {
+	case TCL_OK:
+	    goto runResultingSubcommand;
+	case TCL_ERROR:
+	    return TCL_ERROR;
+	case TCL_CONTINUE:
 	    goto restartEnsembleParse;
 	}
-	if (!Tcl_InterpDeleted(interp)) {
-	    if (result != TCL_ERROR) {
-		char buf[TCL_INTEGER_SPACE];
-
-		Tcl_ResetResult(interp);
-		Tcl_SetResult(interp,
-			"unknown subcommand handler returned bad code: ",
-			TCL_STATIC);
-		switch (result) {
-		case TCL_RETURN:
-		    Tcl_AppendResult(interp, "return", NULL);
-		    break;
-		case TCL_BREAK:
-		    Tcl_AppendResult(interp, "break", NULL);
-		    break;
-		case TCL_CONTINUE:
-		    Tcl_AppendResult(interp, "continue", NULL);
-		    break;
-		default:
-		    sprintf(buf, "%d", result);
-		    Tcl_AppendResult(interp, buf, NULL);
-		}
-		Tcl_AddErrorInfo(interp, "\n    result of "
-			"ensemble unknown subcommand handler: ");
-		Tcl_AddErrorInfo(interp, TclGetString(unknownCmd));
-	    } else {
-		Tcl_AddErrorInfo(interp,
-			"\n    (ensemble unknown subcommand handler)");
-	    }
-	}
-	Tcl_DecrRefCount(unknownCmd);
-	Tcl_Release(ensemblePtr);
-	return TCL_ERROR;
     }
 
     /*
@@ -6375,6 +6303,145 @@ NsEnsembleImplementationCmd(
     }
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "SUBCOMMAND",
 	    TclGetString(objv[1]), NULL);
+    return TCL_ERROR;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * EnsmebleUnknownCallback --
+ *
+ *	Helper for the ensemble engine that handles the procesing of unknown
+ *	callbacks. See the user documentation of the ensemble unknown handler
+ *	for details; this function is only ever called when such a function is
+ *	defined, and is only ever called once per ensemble dispatch (i.e. if a
+ *	reparse still fails, this isn't called again).
+ *
+ * Results:
+ *	TCL_OK -	*prefixObjPtr contains the command words to dispatch
+ *			to.
+ *	TCL_CONTINUE -	Need to reparse (*prefixObjPtr is invalid).
+ *	TCL_ERROR -	Something went wrong! Error message in interpreter.
+ *
+ * Side effects:
+ *	Calls the Tcl interpreter, so arbitrary.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline int
+EnsembleUnknownCallback(
+    Tcl_Interp *interp,
+    EnsembleConfig *ensemblePtr,
+    int objc,
+    Tcl_Obj *const objv[],
+    Tcl_Obj **prefixObjPtr)
+{
+    int paramc, i, result, prefixObjc;
+    Tcl_Obj **paramv, *unknownCmd, *ensObj;
+    char buf[TCL_INTEGER_SPACE];
+
+    /*
+     * Create the unknown command callback to determine what to do.
+     */
+
+    unknownCmd = Tcl_DuplicateObj(ensemblePtr->unknownHandler);
+    TclNewObj(ensObj);
+    Tcl_GetCommandFullName(interp, ensemblePtr->token, ensObj);
+    Tcl_ListObjAppendElement(NULL, unknownCmd, ensObj);
+    for (i=1 ; i<objc ; i++) {
+	Tcl_ListObjAppendElement(NULL, unknownCmd, objv[i]);
+    }
+    TclListObjGetElements(NULL, unknownCmd, &paramc, &paramv);
+    Tcl_IncrRefCount(unknownCmd);
+
+    /*
+     * Now call the unknown handler. (We don't bother NRE-enabling this; deep
+     * recursing through unknown handlers is horribly perverse.) Note that it
+     * is always an error for an unknown handler to delete its ensemble; don't
+     * do that!
+     */
+
+    Tcl_Preserve(ensemblePtr);
+    result = Tcl_EvalObjv(interp, paramc, paramv, 0);
+    if ((result == TCL_OK) && (ensemblePtr->flags & ENS_DEAD)) {
+	Tcl_SetResult(interp,
+		"unknown subcommand handler deleted its ensemble",
+		TCL_STATIC);
+	result = TCL_ERROR;
+    }
+    Tcl_Release(ensemblePtr);
+
+    /*
+     * If we succeeded, we should either have a list of words that form the
+     * command to be executed, or an empty list. In the empty-list case, the
+     * ensemble is believed to be updated so we should ask the ensemble engine
+     * to reparse the original command.
+     */
+
+    if (result == TCL_OK) {
+	*prefixObjPtr = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(*prefixObjPtr);
+	TclDecrRefCount(unknownCmd);
+	Tcl_ResetResult(interp);
+
+	/*
+	 * Namespace is still there. Check if the result is a valid list. If
+	 * it is, and it is non-empty, that list is what we are using as our
+	 * replacement.
+	 */
+
+	if (TclListObjLength(interp, *prefixObjPtr, &prefixObjc) != TCL_OK) {
+	    TclDecrRefCount(*prefixObjPtr);
+	    Tcl_AddErrorInfo(interp, "\n    while parsing result of "
+		    "ensemble unknown subcommand handler");
+	    return TCL_ERROR;
+	}
+	if (prefixObjc > 0) {
+	    return TCL_OK;
+	}
+
+	/*
+	 * Namespace alive & empty result => reparse.
+	 */
+
+	TclDecrRefCount(*prefixObjPtr);
+	return TCL_CONTINUE;
+    }
+
+    /*
+     * Oh no! An exceptional result. Convert to an error.
+     */
+
+    if (!Tcl_InterpDeleted(interp)) {
+	if (result != TCL_ERROR) {
+	    Tcl_ResetResult(interp);
+	    Tcl_SetResult(interp,
+		    "unknown subcommand handler returned bad code: ",
+		    TCL_STATIC);
+	    switch (result) {
+	    case TCL_RETURN:
+		Tcl_AppendResult(interp, "return", NULL);
+		break;
+	    case TCL_BREAK:
+		Tcl_AppendResult(interp, "break", NULL);
+		break;
+	    case TCL_CONTINUE:
+		Tcl_AppendResult(interp, "continue", NULL);
+		break;
+	    default:
+		sprintf(buf, "%d", result);
+		Tcl_AppendResult(interp, buf, NULL);
+	    }
+	    Tcl_AddErrorInfo(interp, "\n    result of "
+		    "ensemble unknown subcommand handler: ");
+	    Tcl_AddErrorInfo(interp, TclGetString(unknownCmd));
+	} else {
+	    Tcl_AddErrorInfo(interp,
+		    "\n    (ensemble unknown subcommand handler)");
+	}
+    }
+    TclDecrRefCount(unknownCmd);
     return TCL_ERROR;
 }
 
