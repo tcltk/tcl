@@ -4,6 +4,9 @@
 	unicode cmdline" now implemented for cygwin and mingw32 too.
 	* tests/main.test: No longer disable tests Tcl_Main-1.4 and 1.6
 	on Windows, because those now work on all supported platforms.
+	* win/configure.in:  Set NO_VIZ=1 when zlib is compiled in libtcl,
+	this resolves compiler warnings in 64-bit and static builds.
+	* win/configure (regenerated)
 
 2010-11-18  Donal K. Fellows  <dkf@users.sf.net>
 
