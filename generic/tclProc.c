@@ -1437,7 +1437,6 @@ InitArgsAndLocals(
      * defPtr and varPtr point to the last argument to be initialized.
      */
 
-
     varPtr->flags = 0;
     if (defPtr->flags & VAR_IS_ARGS) {
 	Tcl_Obj *listPtr = Tcl_NewListObj(argCt-i, argObjs+i);
@@ -1466,7 +1465,8 @@ InitArgsAndLocals(
 
   correctArgs:
     if (numArgs < localCt) {
-	if (!framePtr->nsPtr->compiledVarResProc && !((Interp *)interp)->resolverPtr) {
+	if (!framePtr->nsPtr->compiledVarResProc
+		&& !((Interp *)interp)->resolverPtr) {
 	    memset(varPtr, 0, (localCt - numArgs)*sizeof(Var));
 	} else {
 	    InitResolvedLocals(interp, codePtr, varPtr, framePtr->nsPtr);
@@ -1475,13 +1475,13 @@ InitArgsAndLocals(
 
     return TCL_OK;
 
-
-    incorrectArgs:
     /*
      * Initialise all compiled locals to avoid problems at DeleteLocalVars.
      */
 
-    memset(varPtr, 0, ((framePtr->compiledLocals + localCt)-varPtr)*sizeof(Var));
+  incorrectArgs:
+    memset(varPtr, 0,
+	    ((framePtr->compiledLocals + localCt)-varPtr) * sizeof(Var));
     return ProcWrongNumArgs(interp, skip);
 }
 
@@ -1677,12 +1677,13 @@ TclObjInterpProcCore(
 
     if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
 	char *a[10];
-	int i = 0;
+	int i;
 	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 
-	while (i < 10) {
+	for (i=0 ; i<10 ; i++) {
 	    a[i] = (l < iPtr->varFramePtr->objc ? 
-		    TclGetString(iPtr->varFramePtr->objv[l]) : NULL); i++; l++;
+		    TclGetString(iPtr->varFramePtr->objv[l]) : NULL);
+	    l++;
 	}
 	TCL_DTRACE_PROC_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
 		a[8], a[9]);
@@ -1890,21 +1891,22 @@ ProcCompileProc(
 		&& (codePtr->nsPtr == nsPtr)
 		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)) {
 	    return TCL_OK;
-	} else {
-	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-		if ((Interp *) *codePtr->interpHandle != iPtr) {
-		    Tcl_AppendResult(interp,
-			    "a precompiled script jumped interps", NULL);
-		    return TCL_ERROR;
-		}
-		codePtr->compileEpoch = iPtr->compileEpoch;
-		codePtr->nsPtr = nsPtr;
-	    } else {
-		bodyPtr->typePtr->freeIntRepProc(bodyPtr);
-		bodyPtr->typePtr = NULL;
+	}
+
+	if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+	    if ((Interp *) *codePtr->interpHandle != iPtr) {
+		Tcl_AppendResult(interp,
+			"a precompiled script jumped interps", NULL);
+		return TCL_ERROR;
 	    }
+	    codePtr->compileEpoch = iPtr->compileEpoch;
+	    codePtr->nsPtr = nsPtr;
+	} else {
+	    bodyPtr->typePtr->freeIntRepProc(bodyPtr);
+	    bodyPtr->typePtr = NULL;
  	}
     }
+
     if (bodyPtr->typePtr != &tclByteCodeType) {
 	Tcl_HashEntry *hePtr;
 
@@ -2730,7 +2732,6 @@ MakeLambdaError(
 	    (overflow ? limit : nameLen), procName,
 	    (overflow ? "..." : ""), interp->errorLine));
 }
-
 
 /*
  *----------------------------------------------------------------------

@@ -3945,7 +3945,7 @@ Tcl_VariableObjCmd(
     Tcl_Obj *varNamePtr, *tailPtr;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?name value...? name ?value?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?name value ...? name ?value?");
 	return TCL_ERROR;
     }
 
