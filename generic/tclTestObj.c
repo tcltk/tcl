@@ -801,7 +801,7 @@ TestobjCmd(
 {
     int varIndex, destIndex, i;
     char *index, *subCmd, *string;
-    Tcl_ObjType *targetType;
+    const Tcl_ObjType *targetType;
 
     if (objc < 2) {
 	wrongNumArgs:

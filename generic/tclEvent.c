@@ -914,8 +914,9 @@ TclInitSubsystems(void)
  * Tcl_Finalize --
  *
  *	Shut down Tcl. First calls registered exit handlers, then carefully
- *	shuts down various subsystems. Called by Tcl_Exit or when the Tcl
- *	shared library is being unloaded.
+ *	shuts down various subsystems.  Called by Tcl_Exit, or should be
+ *	invoked by user before the Tcl shared library is being unloaded in
+ *	an embedded context.
  *
  * Results:
  *	None.

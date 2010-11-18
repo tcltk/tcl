@@ -590,7 +590,7 @@ void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (WinCondition **) */
     Tcl_Mutex *mutexPtr,	/* Really (CRITICAL_SECTION **) */
-    Tcl_Time *timePtr)		/* Timeout on waiting period */
+    const Tcl_Time *timePtr) /* Timeout on waiting period */
 {
     WinCondition *winCondPtr;	/* Per-condition queue head */
     CRITICAL_SECTION *csPtr;	/* Caller's Mutex, after casting */
@@ -967,13 +967,13 @@ void *TclpThreadCreateKey (void) {
     if (key == NULL) {
 	Tcl_Panic("unable to allocate thread key!");
     }
-    
+
     *key = TlsAlloc();
 
     if (*key == TLS_OUT_OF_INDEXES) {
 	Tcl_Panic("unable to allocate thread-local storage");
     }
-    
+
     return key;
 }
 
@@ -989,7 +989,7 @@ void TclpThreadDeleteKey(void *keyPtr) {
 
 void TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr) {
     DWORD *key = tsdKeyPtr;
-    
+
     if (!TlsSetValue(*key, ptr)) {
 	Tcl_Panic("unable to set master TSD value");
     }

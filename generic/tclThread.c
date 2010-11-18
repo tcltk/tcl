@@ -125,7 +125,7 @@ Tcl_GetThreadData(
 void *
 TclThreadDataKeyGet(
     Tcl_ThreadDataKey *keyPtr)	/* Identifier for the data chunk. */
-				
+
 {
 #ifdef TCL_THREADS
     return TclThreadStorageKeyGet(keyPtr);
@@ -405,7 +405,7 @@ TclFinalizeSynchronization(void)
     }
     keyRecord.max = 0;
     keyRecord.num = 0;
-    
+
 #ifdef TCL_THREADS
     /*
      * Call thread storage master cleanup.
@@ -496,7 +496,7 @@ void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
     Tcl_Mutex *mutexPtr,	/* Really (pthread_mutex_t **) */
-    Tcl_Time *timePtr)		/* Timeout on waiting period */
+    const Tcl_Time *timePtr) /* Timeout on waiting period */
 {
 }
 

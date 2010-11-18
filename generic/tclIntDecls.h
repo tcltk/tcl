@@ -559,12 +559,12 @@ EXTERN int		TclGetNamespaceFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
 /* 232 */
 EXTERN int		TclEvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
-				int flags, const CmdFrame *invoker, int word);
+				int flags, CONST CmdFrame *invoker, int word);
 /* 233 */
 EXTERN void		TclGetSrcInfoForPc(CmdFrame *contextPtr);
 /* 234 */
 EXTERN Var *		TclVarHashCreateVar(TclVarHashTable *tablePtr,
-				const char *key, int *newPtr);
+				CONST char *key, int *newPtr);
 /* 235 */
 EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
 				Namespace *nsPtr);
@@ -833,9 +833,9 @@ typedef struct TclIntStubs {
     int (*tclPtrMakeUpvar) (Tcl_Interp *interp, Var *otherP1Ptr, CONST char *myName, int myFlags, int index); /* 229 */
     Var * (*tclObjLookupVar) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, CONST char *part2, int flags, CONST char *msg, CONST int createPart1, CONST int createPart2, Var **arrayPtrPtr); /* 230 */
     int (*tclGetNamespaceFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr); /* 231 */
-    int (*tclEvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 232 */
+    int (*tclEvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, CONST CmdFrame *invoker, int word); /* 232 */
     void (*tclGetSrcInfoForPc) (CmdFrame *contextPtr); /* 233 */
-    Var * (*tclVarHashCreateVar) (TclVarHashTable *tablePtr, const char *key, int *newPtr); /* 234 */
+    Var * (*tclVarHashCreateVar) (TclVarHashTable *tablePtr, CONST char *key, int *newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
     void (*tclBackgroundException) (Tcl_Interp *interp, int code); /* 236 */
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */

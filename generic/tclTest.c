@@ -403,7 +403,7 @@ static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
-static Tcl_Filesystem testReportingFilesystem = {
+static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
@@ -437,7 +437,7 @@ static Tcl_Filesystem testReportingFilesystem = {
     &TestReportChdir
 };
 
-static Tcl_Filesystem simpleFilesystem = {
+static const Tcl_Filesystem simpleFilesystem = {
     "simple",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,

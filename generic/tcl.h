@@ -145,7 +145,7 @@ extern "C" {
  *
  * The following TCL_VARARGS* macros are to support old extensions
  * written for older versions of Tcl where the macros permitted
- * support for the varargs.h system as well as stdarg.h .  
+ * support for the varargs.h system as well as stdarg.h .
  *
  * New code should just directly be written to use stdarg.h conventions.
  */
@@ -167,7 +167,7 @@ extern "C" {
  * Note: when building static but linking dynamically to MSVCRT we must still
  *       correctly decorate the C library imported function.  Use CRTIMPORT
  *       for this purpose.  _DLL is defined by the compiler when linking to
- *       MSVCRT.  
+ *       MSVCRT.
  */
 
 #if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
@@ -260,6 +260,9 @@ extern "C" {
 #      define CONST84_RETURN CONST
 #   endif
 #endif
+
+#define CONST86 CONST84
+#define CONST86_RETURN CONST84_RETURN
 
 /*
  * Make sure EXTERN isn't defined elsewhere
@@ -719,7 +722,7 @@ typedef void (Tcl_MainLoopProc) _ANSI_ARGS_((void));
  */
 
 typedef struct Tcl_ObjType {
-    char *name;			/* Name of the type, e.g. "int". */
+    CONST86 char *name;			/* Name of the type, e.g. "int". */
     Tcl_FreeInternalRepProc *freeIntRepProc;
 				/* Called to free any storage for the type's
 				 * internal rep. NULL if the internal rep does
@@ -757,7 +760,7 @@ typedef struct Tcl_Obj {
 				 * array as a readonly value. */
     int length;			/* The number of bytes at *bytes, not
 				 * including the terminating null. */
-    Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
+    CONST86 Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
 				 * corresponds to the type of the object's
 				 * internal rep. NULL indicates the object has
 				 * no internal rep (has no type). */
@@ -1338,8 +1341,8 @@ typedef struct Tcl_Time {
     long usec;			/* Microseconds. */
 } Tcl_Time;
 
-typedef void (Tcl_SetTimerProc) _ANSI_ARGS_((Tcl_Time *timePtr));
-typedef int (Tcl_WaitForEventProc) _ANSI_ARGS_((Tcl_Time *timePtr));
+typedef void (Tcl_SetTimerProc) _ANSI_ARGS_((CONST86 Tcl_Time *timePtr));
+typedef int (Tcl_WaitForEventProc) _ANSI_ARGS_((CONST86 Tcl_Time *timePtr));
 
 /*
  * TIP #233 (Virtualized Time)

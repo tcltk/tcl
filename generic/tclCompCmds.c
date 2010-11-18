@@ -425,7 +425,7 @@ TclCompileCatchCmd(
 	if (resultIndex < 0) {
 	    return TCL_ERROR;
 	}
-	
+
 	/* DKF */
 	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
@@ -5840,7 +5840,7 @@ TclCompileUpvarCmd(
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     if(TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	CallFrame *framePtr;
-	Tcl_ObjType *newTypePtr, *typePtr = objPtr->typePtr;
+	const Tcl_ObjType *newTypePtr, *typePtr = objPtr->typePtr;
 
 	/*
 	 * Attempt to convert to a level reference. Note that TclObjGetFrame

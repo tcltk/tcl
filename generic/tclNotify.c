@@ -794,7 +794,7 @@ Tcl_SetServiceMode(
 
 void
 Tcl_SetMaxBlockTime(
-    Tcl_Time *timePtr)		/* Specifies a maximum elapsed time for the
+    const Tcl_Time *timePtr)		/* Specifies a maximum elapsed time for the
 				 * next blocking operation in the event
 				 * tsdPtr-> */
 {

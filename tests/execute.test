@@ -937,6 +937,27 @@ test execute-8.3 {Stack restoration} -body {
      interp recursionlimit {} $limit
  } -result {too many nested evaluations (infinite loop?)}
 
+test execute-8.4 {Compile epoch bump effect on stack trace} -setup {
+    proc foo {} {
+	error bar
+    }
+    proc FOO {} {
+	catch {error bar} m o
+	rename ::set ::dummy
+	rename ::dummy ::set
+	return -options $o $m
+    }
+} -body {
+    catch foo m o
+    set stack1 [dict get $o -errorinfo]
+    catch FOO m o
+    set stack2 [string map {FOO foo} [dict get $o -errorinfo]]
+    expr {$stack1 eq $stack2 ? {} : "These differ:\n$stack1\n$stack2"}
+} -cleanup {
+    rename foo {}
+    rename FOO {}
+} -result {}
+
 test execute-9.1 {Interp result resetting [Bug 1522803]} {
     set c 0
     catch {

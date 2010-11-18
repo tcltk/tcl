@@ -722,7 +722,6 @@ PushMethodCallFrame(
     register int result;
     const char *namePtr;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
-    static Tcl_ObjType *byteCodeTypePtr = NULL;	/* HACK! */
 
     /*
      * Compute basic information on the basis of the type of method it is.
@@ -772,17 +771,12 @@ PushMethodCallFrame(
     fdPtr->cmd.clientData = &fdPtr->efi;
     pmPtr->procPtr->cmdPtr = &fdPtr->cmd;
 
-    /* Should be a reference to tclByteCodeType, but that's MODULE_SCOPE */
-    if (byteCodeTypePtr == NULL ||
-	    pmPtr->procPtr->bodyPtr->typePtr != byteCodeTypePtr) {
+    if (pmPtr->procPtr->bodyPtr->typePtr != &tclByteCodeType) {
 	result = TclProcCompileProc(interp, pmPtr->procPtr,
 		pmPtr->procPtr->bodyPtr, (Namespace *) nsPtr,
 		"body of method", namePtr);
 	if (result != TCL_OK) {
 	    return result;
-	}
-	if (byteCodeTypePtr == NULL) {
-	    byteCodeTypePtr = pmPtr->procPtr->bodyPtr->typePtr;
 	}
     }
 

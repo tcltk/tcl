@@ -163,13 +163,13 @@ typedef struct Tcl_ResolvedVarInfo {
 } Tcl_ResolvedVarInfo;
 
 typedef int (Tcl_ResolveCompiledVarProc) (Tcl_Interp *interp,
-	CONST84 char *name, int length, Tcl_Namespace *context,
+	const char *name, int length, Tcl_Namespace *context,
 	Tcl_ResolvedVarInfo **rPtr);
 
-typedef int (Tcl_ResolveVarProc) (Tcl_Interp *interp, CONST84 char *name,
+typedef int (Tcl_ResolveVarProc) (Tcl_Interp *interp, const char *name,
 	Tcl_Namespace *context, int flags, Tcl_Var *rPtr);
 
-typedef int (Tcl_ResolveCmdProc) (Tcl_Interp *interp, CONST84 char *name,
+typedef int (Tcl_ResolveCmdProc) (Tcl_Interp *interp, const char *name,
 	Tcl_Namespace *context, int flags, Tcl_Command *rPtr);
 
 typedef struct Tcl_ResolverInfo {
@@ -1596,6 +1596,24 @@ enum PkgPreferOptions {
 
 /*
  *----------------------------------------------------------------
+ * This structure shadows the first few fields of the memory cache for the
+ * allocator defined in tclThreadAlloc.c; it has to be kept in sync with the
+ * definition there.
+ * Some macros require knowledge of some fields in the struct in order to
+ * avoid hitting the TSD unnecessarily. In order to facilitate this, a pointer
+ * to the relevant fields is kept in the objCache field in struct Interp.
+ *----------------------------------------------------------------
+ */
+
+typedef struct AllocCache {
+    struct Cache *nextPtr;	/* Linked list of cache entries */
+    Tcl_ThreadId owner;		/* Which thread's cache is this? */
+    Tcl_Obj *firstObjPtr;	/* List of free objects for thread */
+    int numObjects;		/* Number of objects for thread */
+} AllocCache;
+
+/*
+ *----------------------------------------------------------------
  * This structure defines an interpreter, which is a collection of commands
  * plus other state information related to interpreting commands, such as
  * variable storage. Primary responsibility for this data structure is in
@@ -1922,7 +1940,7 @@ typedef struct Interp {
      * They are used by the macros defined below.
      */
 
-    void *allocCache;
+    AllocCache *allocCache;
     void *pendingObjDataPtr;	/* Pointer to the Cache and PendingObjData
 				 * structs for this interp's thread; see
 				 * tclObj.c and tclThreadAlloc.c */
@@ -2773,8 +2791,8 @@ MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
 MODULE_SCOPE void *     TclpThreadCreateKey(void);
 MODULE_SCOPE void       TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void       TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
-MODULE_SCOPE void *     TclpThreadGetMasterTSD(void *tsdKeyPtr); 
-  
+MODULE_SCOPE void *     TclpThreadGetMasterTSD(void *tsdKeyPtr);
+
 /*
  *----------------------------------------------------------------
  * Command procedures in the generic core:
@@ -3397,6 +3415,12 @@ MODULE_SCOPE unsigned	TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 #  define TclIncrObjsFreed()
 #endif /* TCL_COMPILE_STATS */
 
+#  define TclAllocObjStorage(objPtr)		\
+        TclAllocObjStorageEx(NULL, (objPtr))
+
+#  define TclFreeObjStorage(objPtr)		\
+        TclFreeObjStorageEx(NULL, (objPtr))
+
 #ifndef TCL_MEM_DEBUG
 # define TclNewObj(objPtr) \
     TclIncrObjsAllocated(); \
@@ -3439,10 +3463,10 @@ MODULE_SCOPE unsigned	TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
  * track memory leaks
  */
 
-#  define TclAllocObjStorage(objPtr) \
+#  define TclAllocObjStorageEx(interp, objPtr)			\
 	(objPtr) = (Tcl_Obj *) Tcl_Alloc(sizeof(Tcl_Obj))
 
-#  define TclFreeObjStorage(objPtr) \
+#  define TclFreeObjStorageEx(interp, objPtr)	\
 	ckfree((char *) (objPtr))
 
 #undef USE_THREAD_ALLOC
@@ -3462,11 +3486,43 @@ MODULE_SCOPE void	TclpSetAllocCache(void *);
 MODULE_SCOPE void	TclpFreeAllocMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclpFreeAllocCache(void *);
 
-#  define TclAllocObjStorage(objPtr) \
-	(objPtr) = TclThreadAllocObj()
+/*
+ * These macros need to be kept in sync with the code of TclThreadAllocObj()
+ * and TclThreadFreeObj().
+ *
+ * Note that the optimiser should resolve the case (interp==NULL) at compile
+ * time. 
+ */
 
-#  define TclFreeObjStorage(objPtr) \
-	TclThreadFreeObj((objPtr))
+#  define ALLOC_NOBJHIGH 1200
+
+#  define TclAllocObjStorageEx(interp, objPtr)				\
+    do {								\
+	AllocCache *cachePtr;						\
+	if (((interp) == NULL) ||					\
+		((cachePtr = ((Interp *)(interp))->allocCache),		\
+			(cachePtr->numObjects == 0))) {			\
+	    (objPtr) = TclThreadAllocObj();				\
+	} else {							\
+	    (objPtr) = cachePtr->firstObjPtr;				\
+	    cachePtr->firstObjPtr = (objPtr)->internalRep.otherValuePtr; \
+	    --cachePtr->numObjects;					\
+	}								\
+    } while (0)
+	
+#  define TclFreeObjStorageEx(interp, objPtr)				\
+    do {								\
+	AllocCache *cachePtr;						\
+	if (((interp) == NULL) ||					\
+		((cachePtr = ((Interp *)(interp))->allocCache),		\
+			(cachePtr->numObjects >= ALLOC_NOBJHIGH))) {	\
+	    TclThreadFreeObj(objPtr);					\
+	} else {							\
+	    (objPtr)->internalRep.otherValuePtr = cachePtr->firstObjPtr; \
+	    cachePtr->firstObjPtr = objPtr;				\
+	    ++cachePtr->numObjects;					\
+	}								\
+    } while (0)
 
 #else /* not PURIFY or USE_THREAD_ALLOC */
 
@@ -3475,7 +3531,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 #endif
 
-#  define TclAllocObjStorage(objPtr) \
+#  define TclAllocObjStorageEx(interp, objPtr)	\
 	Tcl_MutexLock(&tclObjMutex); \
 	if (tclFreeObjList == NULL) { \
 	    TclAllocateFreeObjects(); \
@@ -3485,7 +3541,7 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 		tclFreeObjList->internalRep.otherValuePtr; \
 	Tcl_MutexUnlock(&tclObjMutex)
 
-#  define TclFreeObjStorage(objPtr) \
+#  define TclFreeObjStorageEx(interp, objPtr)	\
 	Tcl_MutexLock(&tclObjMutex); \
 	(objPtr)->internalRep.otherValuePtr = (void *) tclFreeObjList; \
 	tclFreeObjList = (objPtr); \
@@ -3937,7 +3993,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #include "tclTomMathDecls.h"
 
 #endif /* _TCLINT */
-
+
 /*
  * Local Variables:
  * mode: c

@@ -2165,7 +2165,7 @@ TclProcCleanupProc(
     /*
      * TIP #280: Release the location data associated with this Proc
      * structure, if any. The interpreter may not exist (For example for
-     * procbody structurues created by tbcload.
+     * procbody structures created by tbcload.
      */
 
     if (!iPtr) {

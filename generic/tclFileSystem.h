@@ -29,7 +29,7 @@
 typedef struct FilesystemRecord {
     ClientData clientData;	/* Client specific data for the new filesystem
 				 * (can be NULL) */
-    Tcl_Filesystem *fsPtr;	/* Pointer to filesystem dispatch table. */
+    const Tcl_Filesystem *fsPtr;	/* Pointer to filesystem dispatch table. */
     int fileRefCount;		/* How many Tcl_Obj's use this filesystem. */
     struct FilesystemRecord *nextPtr;
 				/* The next filesystem registered to Tcl, or
@@ -72,11 +72,11 @@ MODULE_SCOPE int	TclFSNormalizeToUniquePath(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclFSMakePathRelative(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, Tcl_Obj *cwdPtr);
 MODULE_SCOPE Tcl_Obj *	TclFSInternalToNormalized(
-			    Tcl_Filesystem *fromFilesystem,
+			    const Tcl_Filesystem *fromFilesystem,
 			    ClientData clientData,
 			    FilesystemRecord **fsRecPtrPtr);
 MODULE_SCOPE int	TclFSEnsureEpochOk(Tcl_Obj *pathPtr,
-			    Tcl_Filesystem **fsPtrPtr);
+			    const Tcl_Filesystem **fsPtrPtr);
 MODULE_SCOPE void	TclFSSetPathDetails(Tcl_Obj *pathPtr,
 			    FilesystemRecord *fsRecPtr,
 			    ClientData clientData);
@@ -87,7 +87,7 @@ MODULE_SCOPE Tcl_Obj *	TclFSNormalizeAbsolutePath(Tcl_Interp *interp,
  * Private shared variables for use by tclIOUtil.c and tclPathObj.c
  */
 
-MODULE_SCOPE Tcl_Filesystem tclNativeFilesystem;
+MODULE_SCOPE const Tcl_Filesystem tclNativeFilesystem;
 MODULE_SCOPE Tcl_ThreadDataKey tclFsDataKey;
 
 /*
@@ -96,13 +96,13 @@ MODULE_SCOPE Tcl_ThreadDataKey tclFsDataKey;
  */
 
 MODULE_SCOPE Tcl_PathType TclFSGetPathType(Tcl_Obj *pathPtr,
-			    Tcl_Filesystem **filesystemPtrPtr,
+			    const Tcl_Filesystem **filesystemPtrPtr,
 			    int *driveNameLengthPtr);
 MODULE_SCOPE Tcl_PathType TclFSNonnativePathType(const char *pathPtr,
-			    int pathLen, Tcl_Filesystem **filesystemPtrPtr,
+			    int pathLen, const Tcl_Filesystem **filesystemPtrPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
 MODULE_SCOPE Tcl_PathType TclGetPathType(Tcl_Obj *pathPtr,
-			    Tcl_Filesystem **filesystemPtrPtr,
+			    const Tcl_Filesystem **filesystemPtrPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
 MODULE_SCOPE int	TclFSEpochOk(int filesystemEpoch);
 MODULE_SCOPE int	TclFSCwdIsNative(void);
@@ -113,7 +113,7 @@ MODULE_SCOPE Tcl_FSPathInFilesystemProc TclNativePathInFilesystem;
 MODULE_SCOPE Tcl_FSCreateInternalRepProc TclNativeCreateNativeRep;
 
 #endif /* _TCLFILESYSTEM */
-
+
 /*
  * Local Variables:
  * mode: c

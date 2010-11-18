@@ -687,7 +687,8 @@ Tcl_CreateInterp(void)
     TclInitLimitSupport(interp);
 
     /*
-     * Initialise the thread-specific data ekeko.
+     * Initialise the thread-specific data ekeko. Note that the thread's alloc
+     * cache was already initialised by the call to alloc the interp struct.
      */
 
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
@@ -1523,6 +1524,10 @@ DeleteInterpProc(
 
 	    if (eclPtr->loc != NULL) {
 		ckfree((char *) eclPtr->loc);
+	    }
+
+	    if (eclPtr->eiloc != NULL) {
+		ckfree((char *) eclPtr->eiloc);
 	    }
 
 	    ckfree((char *) eclPtr);
@@ -4592,10 +4597,10 @@ TclEvalEx(
 		goto error;
 	    }
 	    eeFramePtr->data.eval.path = norm;
-	    Tcl_IncrRefCount(eeFramePtr->data.eval.path);
 	} else {
 	    TclNewLiteralStringObj(eeFramePtr->data.eval.path, "");
 	}
+	Tcl_IncrRefCount(eeFramePtr->data.eval.path);
     } else {
 	/*
 	 * Set up for plain eval.
@@ -5396,6 +5401,9 @@ TclEvalObjEx(
      * avoid a setFromAny step that would just pack everything into a
      * string and back out again.
      *
+     * This also preserves any associations between list elements and location
+     * information for such elements.
+     *
      * This restriction has been relaxed a bit by storing in lists whether
      * they are "canonical" or not (a canonical list being one that is
      * either pure or that has its string rep derived by
@@ -6172,7 +6180,7 @@ Tcl_AddObjErrorInfo(
 	    Tcl_SetErrorCode(interp, "NONE", NULL);
 	}
     }
-
+    
     /*
      * Now append "message" to the end of errorInfo.
      */
