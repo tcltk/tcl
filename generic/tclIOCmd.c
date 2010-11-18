@@ -873,7 +873,7 @@ Tcl_ExecObjCmd(
 	}
     }
     if (objc <= skip) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?switches? arg ?arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-switch ...? arg ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -1803,6 +1803,57 @@ ChanTruncateObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * ChanPipeObjCmd --
+ *
+ *	This function is invoked to process the "chan pipe" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Creates a pair of Tcl channels wrapping both ends of a new
+ *	anonymous pipe.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ChanPipeObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Channel rchan, wchan;
+    const char *channelNames[2];
+    Tcl_Obj *resultPtr;
+
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_CreatePipe(interp, &rchan, &wchan, 0) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    channelNames[0] = Tcl_GetChannelName(rchan);
+    channelNames[1] = Tcl_GetChannelName(wchan);
+
+    resultPtr = Tcl_NewObj();
+    Tcl_ListObjAppendElement(NULL, resultPtr,
+	    Tcl_NewStringObj(channelNames[0], -1));
+    Tcl_ListObjAppendElement(NULL, resultPtr,
+	    Tcl_NewStringObj(channelNames[1], -1));
+    Tcl_SetObjResult(interp, resultPtr);
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclInitChanCmd --
  *
  *	This function is invoked to create the "chan" Tcl command. See the
@@ -1844,6 +1895,7 @@ TclInitChanCmd(
 	{"puts",	Tcl_PutsObjCmd},
 	{"read",	Tcl_ReadObjCmd},
 	{"seek",	Tcl_SeekObjCmd},
+	{"pipe",	ChanPipeObjCmd},		/* TIP #304 */
 	{"tell",	Tcl_TellObjCmd},
 	{"truncate",	ChanTruncateObjCmd},		/* TIP #208 */
 	{NULL}

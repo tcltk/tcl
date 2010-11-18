@@ -672,7 +672,7 @@ test info-20.5 {info functions option} -returnCodes error -body {
 
 test info-21.1 {miscellaneous error conditions} -returnCodes error -body {
     info
-} -result {wrong # args: should be "info subcommand ?argument ...?"}
+} -result {wrong # args: should be "info subcommand ?arg ...?"}
 test info-21.2 {miscellaneous error conditions} -returnCodes error -body {
     info gorp
 } -result {unknown or ambiguous subcommand "gorp": must be args, body, class, cmdcount, commands, complete, default, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}

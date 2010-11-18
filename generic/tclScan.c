@@ -575,7 +575,7 @@ Tcl_ScanObjCmd(
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"string format ?varName varName ...?");
+		"string format ?varName ...?");
 	return TCL_ERROR;
     }
 
@@ -1037,7 +1037,7 @@ Tcl_ScanObjCmd(
     }
     return code;
 }
-
+
 /*
  * Local Variables:
  * mode: c

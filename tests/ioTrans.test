@@ -115,11 +115,10 @@ eval $helperscript
 test iortrans-1.0 {chan, wrong#args} {
     catch {chan} msg
     set msg
-} {wrong # args: should be "chan subcommand ?argument ...?"}
-test iortrans-1.1 {chan, unknown method} {
-    catch {chan foo} msg
-    set msg
-} {unknown or ambiguous subcommand "foo": must be blocked, close, configure, copy, create, eof, event, flush, gets, names, pending, pop, postevent, push, puts, read, seek, tell, or truncate}
+} {wrong # args: should be "chan subcommand ?arg ...?"}
+test iortrans-1.1 {chan, unknown method} -body {
+    chan foo
+} -returnCodes error  -match glob -result {unknown or ambiguous subcommand "foo": must be*}
 
 # --- --- --- --------- --------- ---------
 # chan push, and method "initalize"

@@ -211,7 +211,7 @@ Tcl_TraceObjCmd(
     };
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -231,7 +231,7 @@ Tcl_TraceObjCmd(
 	int typeIndex;
 
 	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "type ?arg arg ...?");
+	    Tcl_WrongNumArgs(interp, 2, objv, "type ?arg ...?");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[2], traceTypeOptions, "option",

@@ -15,7 +15,7 @@
 
 static const TclOOIntStubs tclOOIntStubs = {
     TCL_STUB_MAGIC,
-    NULL,
+    0,
     TclOOGetDefineCmdContext, /* 0 */
     TclOOMakeProcInstanceMethod, /* 1 */
     TclOOMakeProcMethod, /* 2 */
@@ -38,7 +38,7 @@ static const TclOOStubHooks tclOOStubHooks = {
     &tclOOIntStubs
 };
 
-static const TclOOStubs tclOOStubs = {
+const TclOOStubs tclOOStubs = {
     TCL_STUB_MAGIC,
     &tclOOStubHooks,
     Tcl_CopyObjectInstance, /* 0 */

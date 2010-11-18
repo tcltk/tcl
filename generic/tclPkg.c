@@ -763,7 +763,7 @@ Tcl_PackageObjCmd(
     char *argv2, *argv3, *argv4, *iva = NULL, *ivb = NULL;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -1100,7 +1100,7 @@ Tcl_PackageObjCmd(
 
 	if (objc < 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "version requirement requirement...");
+		    "version ?requirement ...?");
 	    return TCL_ERROR;
 	}
 

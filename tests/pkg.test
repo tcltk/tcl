@@ -525,7 +525,7 @@ test pkg-2.52 {Tcl_PkgRequire procedure, picking best stable version} {
 
 test pkg-3.1 {Tcl_PackageCmd procedure} {
     list [catch {package} msg] $msg
-} {1 {wrong # args: should be "package option ?arg arg ...?"}}
+} {1 {wrong # args: should be "package option ?arg ...?"}}
 test pkg-3.2 {Tcl_PackageCmd procedure, "forget" option} {
     foreach i [package names] {
 	package forget $i
@@ -735,7 +735,7 @@ test pkg-3.46 {Tcl_PackageCmd procedure, "versions" option} {
 } {2.3 2.4}
 test pkg-3.47 {Tcl_PackageCmd procedure, "vsatisfies" option} {
     list [catch {package vsatisfies a} msg] $msg
-} {1 {wrong # args: should be "package vsatisfies version requirement requirement..."}}
+} {1 {wrong # args: should be "package vsatisfies version ?requirement ...?"}}
 
 test pkg-3.49 {Tcl_PackageCmd procedure, "vsatisfies" option} {
     list [catch {package vsatisfies x.y 3.4} msg] $msg

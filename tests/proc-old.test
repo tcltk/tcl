@@ -233,7 +233,7 @@ test proc-old-30.12 {arguments and defaults} {
 	return [list $x $y $args]
     }
     list [catch {tproc} msg] $msg
-} {1 {wrong # args: should be "tproc x ?y? ..."}}
+} {1 {wrong # args: should be "tproc x ?y? ?arg ...?"}}
 
 test proc-old-4.1 {variable numbers of arguments} {
     proc tproc args {return $args}
@@ -258,7 +258,7 @@ test proc-old-4.5 {variable numbers of arguments} {
 test proc-old-4.6 {variable numbers of arguments} {
     proc tproc {x missing args} {return $args}
     list [catch {tproc 1} msg] $msg
-} {1 {wrong # args: should be "tproc x missing ..."}}
+} {1 {wrong # args: should be "tproc x missing ?arg ...?"}}
 
 test proc-old-5.1 {error conditions} {
     list [catch {proc} msg] $msg

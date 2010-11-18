@@ -453,29 +453,29 @@ declare 111 generic {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc,
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-declare 112 generic {
-    int Tcl_AppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    Tcl_Obj *objPtr)
-}
-declare 113 generic {
-    Tcl_Namespace *Tcl_CreateNamespace(Tcl_Interp *interp, CONST char *name,
-	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
-}
-declare 114 generic {
-    void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
-}
-declare 115 generic {
-    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    CONST char *pattern, int resetListFirst)
-}
-declare 116 generic {
-    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, CONST char *name,
-	    Tcl_Namespace *contextNsPtr, int flags)
-}
-declare 117 generic {
-    Tcl_Namespace *Tcl_FindNamespace(Tcl_Interp *interp, CONST char *name,
-	    Tcl_Namespace *contextNsPtr, int flags)
-}
+#declare 112 generic {
+#    int Tcl_AppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    Tcl_Obj *objPtr)
+#}
+#declare 113 generic {
+#    Tcl_Namespace *Tcl_CreateNamespace(Tcl_Interp *interp, CONST char *name,
+#	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
+#}
+#declare 114 generic {
+#    void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
+#}
+#declare 115 generic {
+#    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    CONST char *pattern, int resetListFirst)
+#}
+#declare 116 generic {
+#    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, CONST char *name,
+#	    Tcl_Namespace *contextNsPtr, int flags)
+#}
+#declare 117 generic {
+#    Tcl_Namespace *Tcl_FindNamespace(Tcl_Interp *interp, CONST char *name,
+#	    Tcl_Namespace *contextNsPtr, int flags)
+#}
 declare 118 generic {
     int Tcl_GetInterpResolvers(Tcl_Interp *interp, CONST char *name,
 	    Tcl_ResolverInfo *resInfo)
@@ -488,31 +488,31 @@ declare 120 generic {
     Tcl_Var Tcl_FindNamespaceVar(Tcl_Interp *interp, CONST char *name,
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
-declare 121 generic {
-    int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    CONST char *pattern)
-}
-declare 122 generic {
-    Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
-}
-declare 123 generic {
-    void Tcl_GetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
-	    Tcl_Obj *objPtr)
-}
-declare 124 generic {
-    Tcl_Namespace *Tcl_GetCurrentNamespace(Tcl_Interp *interp)
-}
-declare 125 generic {
-    Tcl_Namespace *Tcl_GetGlobalNamespace(Tcl_Interp *interp)
-}
+#declare 121 generic {
+#    int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    CONST char *pattern)
+#}
+#declare 122 generic {
+#    Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+#}
+#declare 123 generic {
+#    void Tcl_GetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
+#	    Tcl_Obj *objPtr)
+#}
+#declare 124 generic {
+#    Tcl_Namespace *Tcl_GetCurrentNamespace(Tcl_Interp *interp)
+#}
+#declare 125 generic {
+#    Tcl_Namespace *Tcl_GetGlobalNamespace(Tcl_Interp *interp)
+#}
 declare 126 generic {
     void Tcl_GetVariableFullName(Tcl_Interp *interp, Tcl_Var variable,
 	    Tcl_Obj *objPtr)
 }
-declare 127 generic {
-    int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    CONST char *pattern, int allowOverwrite)
-}
+#declare 127 generic {
+#    int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    CONST char *pattern, int allowOverwrite)
+#}
 declare 128 generic {
     void Tcl_PopCallFrame(Tcl_Interp *interp)
 }

@@ -364,7 +364,7 @@ err}
 
 test exec-10.1 {errors in exec invocation} -constraints {exec} -body {
     exec
-} -returnCodes error -result {wrong # args: should be "exec ?switches? arg ?arg ...?"}
+} -returnCodes error -result {wrong # args: should be "exec ?-switch ...? arg ?arg ...?"}
 test exec-10.2 {errors in exec invocation} -constraints {exec} -body {
     exec | cat
 } -returnCodes error -result {illegal use of | or |& in command}
@@ -539,7 +539,7 @@ test exec-14.1 {-keepnewline switch} {exec} {
 } "foo\n"
 test exec-14.2 {-keepnewline switch} -constraints {exec} -body {
     exec -keepnewline
-} -returnCodes error -result {wrong # args: should be "exec ?switches? arg ?arg ...?"}
+} -returnCodes error -result {wrong # args: should be "exec ?-switch ...? arg ?arg ...?"}
 test exec-14.3 {unknown switch} -constraints {exec} -body {
     exec -gorp
 } -returnCodes error -result {bad switch "-gorp": must be -ignorestderr, -keepnewline, or --}

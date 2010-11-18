@@ -2514,7 +2514,7 @@ Tcl_AppendObjCmd(
     int i;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value value ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value ...?");
 	return TCL_ERROR;
     }
 
@@ -2579,7 +2579,7 @@ Tcl_LappendObjCmd(
     int result;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value value ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value ...?");
 	return TCL_ERROR;
     }
     if (objc == 2) {

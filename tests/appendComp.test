@@ -57,7 +57,7 @@ test appendComp-2.1 {long appends} {
 test appendComp-3.1 {append errors} {
     proc foo {} {append}
     list [catch {foo} msg] $msg
-} {1 {wrong # args: should be "append varName ?value value ...?"}}
+} {1 {wrong # args: should be "append varName ?value ...?"}}
 test appendComp-3.2 {append errors} {
     proc foo {} {
 	set x ""
@@ -232,7 +232,7 @@ test appendComp-5.1 {long lappends} {
 test appendComp-6.1 {lappend errors} {
     proc foo {} {lappend}
     list [catch {foo} msg] $msg
-} {1 {wrong # args: should be "lappend varName ?value value ...?"}}
+} {1 {wrong # args: should be "lappend varName ?value ...?"}}
 test appendComp-6.2 {lappend errors} {
     proc foo {} {
 	set x ""

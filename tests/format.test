@@ -288,7 +288,7 @@ test format-8.1 {error conditions} {
 test format-8.2 {error conditions} {
     catch format msg
     set msg
-} {wrong # args: should be "format formatString ?arg arg ...?"}
+} {wrong # args: should be "format formatString ?arg ...?"}
 test format-8.3 {error conditions} {
     catch {format %*d}
 } 1

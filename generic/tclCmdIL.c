@@ -2524,7 +2524,7 @@ Tcl_LreplaceObjCmd(
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"list first last ?element element ...?");
+		"list first last ?element ...?");
 	return TCL_ERROR;
     }
 

@@ -1117,7 +1117,7 @@ test oo-15.3 {OO: class cloning} {
 
 test oo-16.1 {OO: object introspection} -body {
     info object
-} -returnCodes 1 -result "wrong \# args: should be \"info object subcommand ?argument ...?\""
+} -returnCodes 1 -result "wrong \# args: should be \"info object subcommand ?arg ...?\""
 test oo-16.2 {OO: object introspection} -body {
     info object class NOTANOBJECT
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
@@ -1215,7 +1215,7 @@ test oo-16.11 {OO: object introspection} -setup {
 
 test oo-17.1 {OO: class introspection} -body {
     info class
-} -returnCodes 1 -result "wrong \# args: should be \"info class subcommand ?argument ...?\""
+} -returnCodes 1 -result "wrong \# args: should be \"info class subcommand ?arg ...?\""
 test oo-17.2 {OO: class introspection} -body {
     info class superclass NOTANOBJECT
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}

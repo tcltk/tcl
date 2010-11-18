@@ -735,7 +735,7 @@ BinaryFormatCmd(
     int offset, size, length;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -1241,7 +1241,7 @@ BinaryScanCmd(
     
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-	    "value formatString ?varName varName ...?");
+	    "value formatString ?varName ...?");
 	return TCL_ERROR;
     }
     numberCachePtr = &numberCacheHash;

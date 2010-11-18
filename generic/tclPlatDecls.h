@@ -48,84 +48,68 @@
  */
 
 #ifdef __WIN32__ /* WIN */
-#ifndef Tcl_WinUtfToTChar_TCL_DECLARED
-#define Tcl_WinUtfToTChar_TCL_DECLARED
 /* 0 */
-EXTERN TCHAR *		Tcl_WinUtfToTChar (CONST char * str, int len, 
-				Tcl_DString * dsPtr);
-#endif
-#ifndef Tcl_WinTCharToUtf_TCL_DECLARED
-#define Tcl_WinTCharToUtf_TCL_DECLARED
+EXTERN TCHAR *		Tcl_WinUtfToTChar(CONST char *str, int len,
+				Tcl_DString *dsPtr);
 /* 1 */
-EXTERN char *		Tcl_WinTCharToUtf (CONST TCHAR * str, int len, 
-				Tcl_DString * dsPtr);
-#endif
+EXTERN char *		Tcl_WinTCharToUtf(CONST TCHAR *str, int len,
+				Tcl_DString *dsPtr);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-#ifndef Tcl_MacOSXOpenBundleResources_TCL_DECLARED
-#define Tcl_MacOSXOpenBundleResources_TCL_DECLARED
 /* 0 */
-EXTERN int		Tcl_MacOSXOpenBundleResources (Tcl_Interp * interp, 
-				CONST char * bundleName, int hasResourceFile, 
-				int maxPathLen, char * libraryPath);
-#endif
-#ifndef Tcl_MacOSXOpenVersionedBundleResources_TCL_DECLARED
-#define Tcl_MacOSXOpenVersionedBundleResources_TCL_DECLARED
+EXTERN int		Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
+				CONST char *bundleName, int hasResourceFile,
+				int maxPathLen, char *libraryPath);
 /* 1 */
-EXTERN int		Tcl_MacOSXOpenVersionedBundleResources (
-				Tcl_Interp * interp, CONST char * bundleName, 
-				CONST char * bundleVersion, 
-				int hasResourceFile, int maxPathLen, 
-				char * libraryPath);
-#endif
+EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
+				Tcl_Interp *interp, CONST char *bundleName,
+				CONST char *bundleVersion,
+				int hasResourceFile, int maxPathLen,
+				char *libraryPath);
 #endif /* MACOSX */
 
 typedef struct TclPlatStubs {
     int magic;
-    CONST struct TclPlatStubHooks *hooks;
+    const struct TclPlatStubHooks *hooks;
 
 #ifdef __WIN32__ /* WIN */
-    TCHAR * (*tcl_WinUtfToTChar) (CONST char * str, int len, Tcl_DString * dsPtr); /* 0 */
-    char * (*tcl_WinTCharToUtf) (CONST TCHAR * str, int len, Tcl_DString * dsPtr); /* 1 */
+    TCHAR * (*tcl_WinUtfToTChar) (CONST char *str, int len, Tcl_DString *dsPtr); /* 0 */
+    char * (*tcl_WinTCharToUtf) (CONST TCHAR *str, int len, Tcl_DString *dsPtr); /* 1 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-    int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp * interp, CONST char * bundleName, int hasResourceFile, int maxPathLen, char * libraryPath); /* 0 */
-    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp * interp, CONST char * bundleName, CONST char * bundleVersion, int hasResourceFile, int maxPathLen, char * libraryPath); /* 1 */
+    int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp *interp, CONST char *bundleName, int hasResourceFile, int maxPathLen, char *libraryPath); /* 0 */
+    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, CONST char *bundleName, CONST char *bundleVersion, int hasResourceFile, int maxPathLen, char *libraryPath); /* 1 */
 #endif /* MACOSX */
 } TclPlatStubs;
 
-#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
-extern CONST TclPlatStubs *tclPlatStubsPtr;
-#endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern const TclPlatStubs *tclPlatStubsPtr;
+#ifdef __cplusplus
+}
+#endif
 
-#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#if defined(USE_TCL_STUBS)
 
 /*
  * Inline function declarations:
  */
 
 #ifdef __WIN32__ /* WIN */
-#ifndef Tcl_WinUtfToTChar
 #define Tcl_WinUtfToTChar \
 	(tclPlatStubsPtr->tcl_WinUtfToTChar) /* 0 */
-#endif
-#ifndef Tcl_WinTCharToUtf
 #define Tcl_WinTCharToUtf \
 	(tclPlatStubsPtr->tcl_WinTCharToUtf) /* 1 */
-#endif
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-#ifndef Tcl_MacOSXOpenBundleResources
 #define Tcl_MacOSXOpenBundleResources \
 	(tclPlatStubsPtr->tcl_MacOSXOpenBundleResources) /* 0 */
-#endif
-#ifndef Tcl_MacOSXOpenVersionedBundleResources
 #define Tcl_MacOSXOpenVersionedBundleResources \
 	(tclPlatStubsPtr->tcl_MacOSXOpenVersionedBundleResources) /* 1 */
-#endif
 #endif /* MACOSX */
 
-#endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
+#endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
 

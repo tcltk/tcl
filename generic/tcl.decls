@@ -1030,6 +1030,11 @@ declare 284 generic {
 #  declare 285 generic {
 #  }
 
+# TIP#304 (chan pipe)
+
+declare 588 generic {
+    int Tcl_CreatePipe (Tcl_Interp  *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags)
+}
 
 # Added in 8.1:
 
@@ -2149,6 +2154,7 @@ declare 1 macosx {
 	    int maxPathLen,
 	    char *libraryPath)
 }
+
 
 ##############################################################################
 

@@ -188,7 +188,7 @@ test timer-5.1 {Tcl_ServiceIdle, self-rescheduling handlers} -setup {
 
 test timer-6.1 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after
-} -result {wrong # args: should be "after option ?arg arg ...?"}
+} -result {wrong # args: should be "after option ?arg ...?"}
 test timer-6.2 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after 2x
 } -result {bad argument "2x": must be cancel, idle, info, or an integer}
@@ -327,7 +327,7 @@ test timer-6.15 {Tcl_AfterCmd procedure, cancel option, multiple interps} -setup
 } -result {2 0 aaa bbb {before b-after}}
 test timer-6.16 {Tcl_AfterCmd procedure, idle option} -body {
     after idle
-} -returnCodes error -result {wrong # args: should be "after idle script script ..."}
+} -returnCodes error -result {wrong # args: should be "after idle script ?script ...?"}
 test timer-6.17 {Tcl_AfterCmd procedure, idle option} {
     set x before
     after idle {set x after}

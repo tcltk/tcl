@@ -4976,7 +4976,7 @@ NamespaceEnsembleCmd(
 
     case ENS_CONFIG:
 	if (objc < 4 || (objc != 5 && objc & 1)) {
-	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname ?opt? ?value? ...");
+	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname ?-option value ...? ?arg ...?");
 	    return TCL_ERROR;
 	}
 	token = Tcl_FindEnsemble(interp, objv[3], TCL_LEAVE_ERR_MSG);
@@ -6034,7 +6034,7 @@ NsEnsembleImplementationCmd(
     int reparseCount = 0;	/* Number of reparses. */
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?argument ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
 

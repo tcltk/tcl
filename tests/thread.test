@@ -39,7 +39,7 @@ if {[testConstraint testthread]} {
 
 test thread-1.1 {Tcl_ThreadObjCmd: no args} {testthread} {
     list [catch {testthread} msg] $msg
-} {1 {wrong # args: should be "testthread option ?args?"}}
+} {1 {wrong # args: should be "testthread option ?arg ...?"}}
 test thread-1.2 {Tcl_ThreadObjCmd: bad option} {testthread} {
     list [catch {testthread foo} msg] $msg
 } {1 {bad option "foo": must be cancel, create, event, exit, id, join, names, send, wait, or errorproc}}

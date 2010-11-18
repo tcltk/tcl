@@ -43,10 +43,10 @@ testConstraint teststaticpkg [llength [info commands teststaticpkg]]
 # Basic tests: parameter testing...
 test unload-1.1 {basic errors} -returnCodes error -body {
     unload
-} -result {wrong # args: should be "unload ?switches? fileName ?packageName? ?interp?"}
+} -result {wrong # args: should be "unload ?-switch ...? fileName ?packageName? ?interp?"}
 test unload-1.2 {basic errors} -returnCodes error -body {
     unload a b c d
-} -result {wrong # args: should be "unload ?switches? fileName ?packageName? ?interp?"}
+} -result {wrong # args: should be "unload ?-switch ...? fileName ?packageName? ?interp?"}
 test unload-1.3 {basic errors} -returnCodes error -body {
     unload a b foobar
 } -result {could not find interpreter "foobar"}

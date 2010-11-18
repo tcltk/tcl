@@ -345,7 +345,7 @@ RegistryObjCmd(
     };
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, objc, objv, "option ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, objc, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
 

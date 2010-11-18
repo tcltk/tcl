@@ -38,7 +38,7 @@ testConstraint english [expr {
 
 test registry-1.1 {argument parsing for registry command} {win reg} {
     list [catch {registry} msg] $msg
-} {1 {wrong # args: should be "registry option ?arg arg ...?"}}
+} {1 {wrong # args: should be "registry option ?arg ...?"}}
 test registry-1.2 {argument parsing for registry command} {win reg} {
     list [catch {registry foo} msg] $msg
 } {1 {bad option "foo": must be broadcast, delete, get, keys, set, type, or values}}

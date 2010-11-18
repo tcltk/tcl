@@ -793,7 +793,7 @@ Tcl_AfterObjCmd(
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -923,7 +923,7 @@ Tcl_AfterObjCmd(
     }
     case AFTER_IDLE:
 	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "script script ...");
+	    Tcl_WrongNumArgs(interp, 2, objv, "script ?script ...?");
 	    return TCL_ERROR;
 	}
 	afterPtr = (AfterInfo *) ckalloc((unsigned) (sizeof(AfterInfo)));

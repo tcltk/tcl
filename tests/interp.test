@@ -275,7 +275,7 @@ test interp-8.2 {testing basic alias invocation} {
 test interp-8.3 {testing basic alias invocation} {
    catch {interp create a}
    list [catch {a alias} msg] $msg
-} {1 {wrong # args: should be "a alias aliasName ?targetName? ?args..?"}}
+} {1 {wrong # args: should be "a alias aliasName ?targetName? ?arg ...?"}}
 
 # Part 8: Testing aliases for non-existent or hidden targets
 test interp-9.1 {testing aliases for non-existent targets} {
