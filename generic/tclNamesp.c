@@ -3282,12 +3282,15 @@ NamespaceEvalCmd(
 
     if (objc == 4) {
 	/*
-	 * TIP #280: Make invoker available to eval'd script.
+	 * TIP #280: Make actual argument location available to eval'd script.
 	 */
 
-	Interp *iPtr = (Interp *) interp;
+	Interp *iPtr      = (Interp *) interp;
+	CmdFrame* invoker = iPtr->cmdFramePtr;
+	int word          = 3;
 
-	result = TclEvalObjEx(interp, objv[3], 0, iPtr->cmdFramePtr, 3);
+	TclArgumentGet (interp, objv[3], &invoker, &word);
+	result = TclEvalObjEx(interp, objv[3], 0, invoker, word);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces

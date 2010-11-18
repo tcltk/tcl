@@ -2700,6 +2700,17 @@ test binary-75.23 {binary decode uuencode} -body {
     list [string length $r] $r
 } -result {3 abc}
 
+test binary-76.1 {byte array concat speed} -body {
+    set b1 [binary format H* [string repeat E9 1000000]]
+    set b2 [binary format H* 41]
+    set t1 [lindex [time {set z ${b1}${b2}}] 0]
+    unset z
+    set b1 [binary format H* [string repeat E9 1000000]]
+    set b2 [binary format H* 41]
+    set t2 [lindex [time {set z ${b1}é}] 0]
+    expr {($t2/$t1)>3}
+} -result 1
+
 # cleanup
 ::tcltest::cleanupTests
 return

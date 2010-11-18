@@ -129,10 +129,12 @@ typedef struct CmdLocation {
 
 typedef struct ECL {
     int srcOffset;		/* Command location to find the entry. */
-    int nline;
+    int nline;                  /* Number of words in the command */
     int *line;			/* Line information for all words in the
 				 * command. */
 } ECL;
+
+/* ExtIndex defined in tclInt.h */
 
 typedef struct ExtCmdLoc {
     int type;			/* Context type. */
@@ -141,6 +143,9 @@ typedef struct ExtCmdLoc {
     ECL *loc;			/* Command word locations (lines). */
     int nloc;			/* Number of allocated entries in 'loc'. */
     int nuloc;			/* Number of used entries in 'loc'. */
+    ExtIndex* eiloc;
+    int neiloc;
+    int nueiloc;
 } ExtCmdLoc;
 
 /*

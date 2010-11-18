@@ -1159,7 +1159,7 @@ TclInfoFrame(
 	 */
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
+	ADD_PAIR("line", Tcl_NewIntObj(1));
 
 	/*
 	 * We put a duplicate of the command list obj into the result to

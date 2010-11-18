@@ -433,6 +433,9 @@ static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd, int len,
 			    int numWords, int line, int **lines);
 
+static void             EnterCmdWordIndex (ExtCmdLoc *eclPtr, Tcl_Obj* obj,
+				  int pc, int word);
+
 /*
  * The structure below defines the bytecode Tcl object type by means of
  * procedures that can be invoked by generic object code.
@@ -813,6 +816,11 @@ TclCleanupByteCode(
 		ckfree((char *) eclPtr->loc);
 	    }
 
+	    /* Release index of literals as well. */
+	    if (eclPtr->eiloc != NULL) {
+		ckfree((char *) eclPtr->eiloc);
+	    }
+
 	    ckfree((char *) eclPtr);
 	    Tcl_DeleteHashEntry(hePtr);
 	}
@@ -902,10 +910,15 @@ TclInitCompileEnv(
     envPtr->extCmdMapPtr->nloc = 0;
     envPtr->extCmdMapPtr->nuloc = 0;
     envPtr->extCmdMapPtr->path = NULL;
+    envPtr->extCmdMapPtr->eiloc = NULL;
+    envPtr->extCmdMapPtr->neiloc = 0;
+    envPtr->extCmdMapPtr->nueiloc = 0;
 
-    if (invoker == NULL) {
+    if ((invoker == NULL) ||
+	(invoker->type == TCL_LOCATION_EVAL_LIST)) {
         /*
-	 * Initialize the compiler for relative counting.
+	 * Initialize the compiler for relative counting in case of a
+	 * dynamic context.
 	 */
 
 	envPtr->line = 1;
@@ -1441,8 +1454,23 @@ TclCompileScript(
 			TclHideLiteral(interp, envPtr, objIndex);
 		    }
 		} else {
+		    /*
+		     * Simple argument word of a command. We reach this if and
+		     * only if the command word was not compiled for whatever
+		     * reason. Register the literal's location for use by
+		     * uplevel, etc. commands, should they encounter it
+		     * unmodified. We care only if the we are in a context
+		     * which already allows absolute counting.
+		     */
 		    objIndex = TclRegisterNewLiteral(envPtr,
 			    tokenPtr[1].start, tokenPtr[1].size);
+
+		    if (eclPtr->type == TCL_LOCATION_SOURCE) {
+			EnterCmdWordIndex (eclPtr,
+					   envPtr->literalArrayPtr[objIndex].objPtr,
+					   envPtr->codeNext - envPtr->codeStart,
+					   wordIdx);
+		    }
 		}
 		TclEmitPush(objIndex, envPtr);
 	    } /* for loop */
@@ -2440,6 +2468,39 @@ EnterCmdWordData(
 
     *wlines = wwlines;
     eclPtr->nuloc ++;
+}
+
+static void
+EnterCmdWordIndex (
+     ExtCmdLoc *eclPtr,
+     Tcl_Obj*   obj,
+     int        pc,
+     int        word)
+{
+    ExtIndex* eiPtr;
+
+    if (eclPtr->nueiloc >= eclPtr->neiloc) {
+	/*
+	 * Expand the ExtIndex array by allocating more storage from the heap. The
+	 * currently allocated ECL entries are stored from eclPtr->loc[0] up
+	 * to eclPtr->loc[eclPtr->nuloc-1] (inclusive).
+	 */
+
+	size_t currElems = eclPtr->neiloc;
+	size_t newElems = (currElems ? 2*currElems : 1);
+	size_t newBytes = newElems * sizeof(ExtIndex);
+
+	eclPtr->eiloc = (ExtIndex *) ckrealloc((char *)(eclPtr->eiloc), newBytes);
+	eclPtr->neiloc = newElems;
+    }
+
+    eiPtr = &eclPtr->eiloc[eclPtr->nueiloc];
+
+    eiPtr->obj  = obj;
+    eiPtr->pc   = pc;
+    eiPtr->word = word;
+
+    eclPtr->nueiloc ++;
 }
 
 /*

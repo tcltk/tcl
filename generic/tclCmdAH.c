@@ -657,10 +657,15 @@ Tcl_EvalObjCmd(
 
     if (objc == 2) {
 	/*
-	 * TIP #280. Make invoking context available to eval'd script.
+	 * TIP #280. Make argument location available to eval'd script.
 	 */
 
-	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT, iPtr->cmdFramePtr, 1);
+	CmdFrame* invoker = iPtr->cmdFramePtr;
+	int word          = 1;
+	TclArgumentGet (interp, objv[1], &invoker, &word);
+
+	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT,
+		invoker, word);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces

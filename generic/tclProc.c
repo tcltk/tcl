@@ -873,6 +873,8 @@ Tcl_UplevelObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register Interp *iPtr = (Interp *) interp;
+    CmdFrame* invoker = NULL;
+    int word          = 0;
     int result;
     CallFrame *savedVarFramePtr, *framePtr;
 
@@ -908,7 +910,12 @@ Tcl_UplevelObjCmd(
      */
 
     if (objc == 1) {
-	result = Tcl_EvalObjEx(interp, objv[0], 0);
+	/*
+	 * TIP #280. Make actual argument location available to eval'd script
+	 */
+
+	TclArgumentGet (interp, objv[0], &invoker, &word);
+	result = TclEvalObjEx(interp, objv[0], 0, invoker, word);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
