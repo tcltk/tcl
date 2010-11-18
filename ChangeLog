@@ -1,3 +1,10 @@
+2010-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclAppInit.c: [FRQ 491789]: "setargv() doesn't support a
+	unicode cmdline" now implemented for cygwin and mingw32 too.
+	* tests/main.test: No longer disable tests Tcl_Main-1.4 and 1.6
+	on Windows, because those now work on all supported platforms.
+
 2010-11-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/file.n: [Bug 3111298]: Typofix.
