@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.82 2010/10/21 12:08:41 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.83 2010/11/18 15:43:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -888,7 +888,7 @@ Tcl_DeleteNamespace(
 		    (Tcl_Command) cmdPtr);
 	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
 	} else {
-	    entryPtr = entryPtr->nextPtr;
+	    entryPtr = Tcl_NextHashEntry(&search);
 	}
     }
 

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.32 2010/11/09 21:05:17 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.33 2010/11/18 15:43:22 dgp Exp $
 
 package require -exact TclOO 0.6.2 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2615,6 +2615,40 @@ test oo-30.2 {Bug 2903011: deleting an object in a constructor} -setup {
 } -returnCodes error -cleanup {
     cls destroy
 } -result {object deleted in constructor}
+
+test oo-31.1 {Bug 3111059: when objects and coroutines entangle} -setup {
+    oo::class create cls
+} -constraints memory -body {
+    oo::define cls {
+	method justyield {} {
+	    yield
+	}
+	constructor {} {
+	    coroutine coro my justyield
+	}
+    }
+    list [leaktest {[cls new] destroy}] [info class instances cls]
+} -cleanup {
+    cls destroy
+} -result {0 {}}
+test oo-31.2 {Bug 3111059: when objects and coroutines entangle} -setup {
+    oo::class create cls
+} -constraints memory -body {
+    oo::define cls {
+	method justyield {} {
+	    yield
+	}
+	constructor {} {
+	    coroutine coro my justyield
+	}
+	destructor {
+	    rename coro {}
+	}
+    }
+    list [leaktest {[cls new] destroy}] [info class instances cls]
+} -cleanup {
+    cls destroy
+} -result {0 {}}
 
 cleanupTests
 return
