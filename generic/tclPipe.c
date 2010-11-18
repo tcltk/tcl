@@ -96,17 +96,24 @@ FileForRedirect(
 	    }
 	    *skipPtr = 2;
 	}
-        chan = Tcl_GetChannel(interp, spec, NULL);
-        if (chan == (Tcl_Channel) NULL) {
-            return NULL;
-        }
+	chan = Tcl_GetChannel(interp, spec, NULL);
+	if (chan == (Tcl_Channel) NULL) {
+	    return NULL;
+	}
 	file = TclpMakeFile(chan, writing ? TCL_WRITABLE : TCL_READABLE);
-        if (file == NULL) {
-	    Tcl_AppendResult(interp, "channel \"", Tcl_GetChannelName(chan),
-		    "\" wasn't opened for ",
-		    ((writing) ? "writing" : "reading"), NULL);
-            return NULL;
-        }
+	if (file == NULL) {
+	    Tcl_Obj *msg;
+
+	    Tcl_GetChannelError(chan, &msg);
+	    if (msg) {
+		Tcl_SetObjResult(interp, msg);
+	    } else {
+		Tcl_AppendResult(interp, "channel \"",
+			Tcl_GetChannelName(chan), "\" wasn't opened for ",
+			((writing) ? "writing" : "reading"), NULL);
+	    }
+	    return NULL;
+	}
 	*releasePtr = 1;
 	if (writing) {
 	    /*
@@ -114,7 +121,7 @@ FileForRedirect(
 	     * by the child appears after stuff we've already written.
 	     */
 
-            Tcl_Flush(chan);
+	    Tcl_Flush(chan);
 	}
     } else {
 	const char *name;
@@ -139,7 +146,7 @@ FileForRedirect(
 		    Tcl_PosixError(interp), NULL);
 	    return NULL;
 	}
-        *closePtr = 1;
+	*closePtr = 1;
     }
     return file;
 
@@ -268,7 +275,7 @@ TclCleanupChildren(
     int result = TCL_OK;
     int i, abnormalExit, anyErrorInfo;
     Tcl_Pid pid;
-    WAIT_STATUS_TYPE waitStatus;
+    int waitStatus;
     const char *msg;
     unsigned long resolvedPid;
 
@@ -281,24 +288,24 @@ TclCleanupChildren(
 	 */
 
 	resolvedPid = TclpGetPid(pidPtr[i]);
-        pid = Tcl_WaitPid(pidPtr[i], (int *) &waitStatus, 0);
+	pid = Tcl_WaitPid(pidPtr[i], &waitStatus, 0);
 	if (pid == (Tcl_Pid) -1) {
 	    result = TCL_ERROR;
-            if (interp != NULL) {
-                msg = Tcl_PosixError(interp);
-                if (errno == ECHILD) {
+	    if (interp != NULL) {
+		msg = Tcl_PosixError(interp);
+		if (errno == ECHILD) {
 		    /*
-                     * This changeup in message suggested by Mark Diekhans to
-                     * remind people that ECHILD errors can occur on some
-                     * systems if SIGCHLD isn't in its default state.
-                     */
+		     * This changeup in message suggested by Mark Diekhans to
+		     * remind people that ECHILD errors can occur on some
+		     * systems if SIGCHLD isn't in its default state.
+		     */
 
-                    msg =
-                        "child process lost (is SIGCHLD ignored or trapped?)";
-                }
-                Tcl_AppendResult(interp, "error waiting for process to exit: ",
-                        msg, NULL);
-            }
+		    msg =
+			"child process lost (is SIGCHLD ignored or trapped?)";
+		}
+		Tcl_AppendResult(interp, "error waiting for process to exit: ",
+			msg, NULL);
+	    }
 	    continue;
 	}
 
@@ -315,32 +322,29 @@ TclCleanupChildren(
 	    result = TCL_ERROR;
 	    sprintf(msg1, "%lu", resolvedPid);
 	    if (WIFEXITED(waitStatus)) {
-                if (interp != (Tcl_Interp *) NULL) {
-		    sprintf(msg2, "%lu",
-			    (unsigned long) WEXITSTATUS(waitStatus));
-                    Tcl_SetErrorCode(interp, "CHILDSTATUS", msg1, msg2, NULL);
-                }
+		if (interp != NULL) {
+		    sprintf(msg2, "%u", WEXITSTATUS(waitStatus));
+		    Tcl_SetErrorCode(interp, "CHILDSTATUS", msg1, msg2, NULL);
+		}
 		abnormalExit = 1;
 	    } else if (interp != NULL) {
 		const char *p;
 
 		if (WIFSIGNALED(waitStatus)) {
-                    p = Tcl_SignalMsg((int) (WTERMSIG(waitStatus)));
-                    Tcl_SetErrorCode(interp, "CHILDKILLED", msg1,
-                            Tcl_SignalId((int) (WTERMSIG(waitStatus))), p,
-                            NULL);
-                    Tcl_AppendResult(interp, "child killed: ", p, "\n", NULL);
+		    p = Tcl_SignalMsg(WTERMSIG(waitStatus));
+		    Tcl_SetErrorCode(interp, "CHILDKILLED", msg1,
+			    Tcl_SignalId(WTERMSIG(waitStatus)), p, NULL);
+		    Tcl_AppendResult(interp, "child killed: ", p, "\n", NULL);
 		} else if (WIFSTOPPED(waitStatus)) {
-                    p = Tcl_SignalMsg((int) (WSTOPSIG(waitStatus)));
-                    Tcl_SetErrorCode(interp, "CHILDSUSP", msg1,
-                            Tcl_SignalId((int) (WSTOPSIG(waitStatus))), p,
+		    p = Tcl_SignalMsg(WSTOPSIG(waitStatus));
+		    Tcl_SetErrorCode(interp, "CHILDSUSP", msg1,
+			    Tcl_SignalId(WSTOPSIG(waitStatus)), p, NULL);
+		    Tcl_AppendResult(interp, "child suspended: ", p, "\n",
 			    NULL);
-                    Tcl_AppendResult(interp, "child suspended: ", p, "\n",
-                            NULL);
 		} else {
-                    Tcl_AppendResult(interp,
-                            "child wait status didn't make sense\n", NULL);
-                }
+		    Tcl_AppendResult(interp,
+			    "child wait status didn't make sense\n", NULL);
+		}
 	    }
 	}
     }
@@ -356,7 +360,7 @@ TclCleanupChildren(
 	 * Make sure we start at the beginning of the file.
 	 */
 
-        if (interp != NULL) {
+	if (interp != NULL) {
 	    int count;
 	    Tcl_Obj *objPtr;
 
@@ -469,19 +473,19 @@ TclCreatePipeline(
 				 * first process in pipeline (specified via <
 				 * or <@). */
     int inputClose = 0;		/* If non-zero, then inputFile should be
-    				 * closed when cleaning up. */
+				 * closed when cleaning up. */
     int inputRelease = 0;
     TclFile outputFile = NULL;	/* Writable file for output from last command
 				 * in pipeline (could be file or pipe). NULL
 				 * means use stdout. */
     int outputClose = 0;	/* If non-zero, then outputFile should be
-    				 * closed when cleaning up. */
+				 * closed when cleaning up. */
     int outputRelease = 0;
     TclFile errorFile = NULL;	/* Writable file for error output from all
 				 * commands in pipeline. NULL means use
 				 * stderr. */
     int errorClose = 0;		/* If non-zero, then errorFile should be
-    				 * closed when cleaning up. */
+				 * closed when cleaning up. */
     int errorRelease = 0;
     const char *p;
     const char *nextArg;
@@ -687,9 +691,12 @@ TclCreatePipeline(
 	    break;
 
 	default:
-	  /* Got a command word, not a redirection */
-	  needCmd = 0;
-	  break;
+	    /*
+	     * Got a command word, not a redirection.
+	     */
+
+	    needCmd = 0;
+	    break;
 	}
 
 	if (skip != 0) {
@@ -702,11 +709,12 @@ TclCreatePipeline(
     }
 
     if (needCmd) {
-	/* We had a bar followed only by redirections. */
+	/*
+	 * We had a bar followed only by redirections.
+	 */
 
-        Tcl_SetResult(interp,
-		      "illegal use of | or |& in command",
-		      TCL_STATIC);
+	Tcl_SetResult(interp, "illegal use of | or |& in command",
+		TCL_STATIC);
 	goto error;
     }
 
@@ -1023,7 +1031,7 @@ TclCreatePipeline(
 Tcl_Channel
 Tcl_OpenCommandChannel(
     Tcl_Interp *interp,		/* Interpreter for error reporting. Can NOT be
-                                 * NULL. */
+				 * NULL. */
     int argc,			/* How many arguments. */
     const char **argv,		/* Array of arguments for command pipe. */
     int flags)			/* Or'ed combination of TCL_STDIN, TCL_STDOUT,
@@ -1042,7 +1050,7 @@ Tcl_OpenCommandChannel(
     errFilePtr = (flags & TCL_STDERR) ? &errFile : NULL;
 
     numPids = TclCreatePipeline(interp, argc, argv, &pidPtr, inPipePtr,
-            outPipePtr, errFilePtr);
+	    outPipePtr, errFilePtr);
 
     if (numPids < 0) {
 	goto error;
@@ -1069,9 +1077,9 @@ Tcl_OpenCommandChannel(
     channel = TclpCreateCommandChannel(outPipe, inPipe, errFile,
 	    numPids, pidPtr);
 
-    if (channel == (Tcl_Channel) NULL) {
-        Tcl_AppendResult(interp, "pipe for command could not be created",
-                NULL);
+    if (channel == NULL) {
+	Tcl_AppendResult(interp, "pipe for command could not be created",
+		NULL);
 	goto error;
     }
     return channel;
