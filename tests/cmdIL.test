@@ -20,7 +20,7 @@ testConstraint memory [llength [info commands memory]]
 
 test cmdIL-1.1 {Tcl_LsortObjCmd procedure} {
     list [catch {lsort} msg] $msg
-} {1 {wrong # args: should be "lsort ?options? list"}}
+} {1 {wrong # args: should be "lsort ?-option value ...? list"}}
 test cmdIL-1.2 {Tcl_LsortObjCmd procedure} {
     list [catch {lsort -foo {1 3 2 5}} msg] $msg
 } {1 {bad option "-foo": must be -ascii, -command, -decreasing, -dictionary, -increasing, -index, -indices, -integer, -nocase, -real, or -unique}}

@@ -3281,10 +3281,10 @@ test interp-34.12 {time limit extension in callbacks} -setup {
 
 test interp-35.1 {interp limit syntax} -body {
     interp limit
-} -returnCodes error -result {wrong # args: should be "interp limit path limitType ?options?"}
+} -returnCodes error -result {wrong # args: should be "interp limit path limitType ?-option value ...?"}
 test interp-35.2 {interp limit syntax} -body {
     interp limit {}
-} -returnCodes error -result {wrong # args: should be "interp limit path limitType ?options?"}
+} -returnCodes error -result {wrong # args: should be "interp limit path limitType ?-option value ...?"}
 test interp-35.3 {interp limit syntax} -body {
     interp limit {} foo
 } -returnCodes error -result {bad limit type "foo": must be commands or time}

@@ -192,10 +192,10 @@ test iocmd-7.3 {close command} {
 
 test iocmd-8.1 {fconfigure command} {
     list [catch {fconfigure} msg] $msg
-} {1 {wrong # args: should be "fconfigure channelId ?optionName? ?value? ?optionName value?..."}}
+} {1 {wrong # args: should be "fconfigure channelId ?-option value ...?"}}
 test iocmd-8.2 {fconfigure command} {
     list [catch {fconfigure a b c d e f} msg] $msg
-} {1 {wrong # args: should be "fconfigure channelId ?optionName? ?value? ?optionName value?..."}}
+} {1 {wrong # args: should be "fconfigure channelId ?-option value ...?"}}
 test iocmd-8.3 {fconfigure command} {
     list [catch {fconfigure a b} msg] $msg
 } {1 {can not find channel named "a"}}

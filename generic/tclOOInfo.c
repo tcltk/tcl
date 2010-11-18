@@ -523,7 +523,7 @@ InfoObjectMethodsCmd(
     };
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "objName ?options...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-option value ...?");
 	return TCL_ERROR;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
@@ -1060,7 +1060,7 @@ InfoClassMethodsCmd(
     };
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "className ?options...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "className ?-option value ...?");
 	return TCL_ERROR;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);

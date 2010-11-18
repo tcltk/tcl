@@ -718,7 +718,7 @@ Tcl_FconfigureObjCmd(
 
     if ((objc < 2) || (((objc % 2) == 1) && (objc != 3))) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"channelId ?optionName? ?value? ?optionName value?...");
+		"channelId ?-option value ...?");
 	return TCL_ERROR;
     }
 

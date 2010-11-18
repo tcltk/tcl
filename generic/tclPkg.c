@@ -949,7 +949,7 @@ Tcl_PackageObjCmd(
 	if (objc < 3) {
 	requireSyntax:
 	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "?-exact? package ?requirement...?");
+		    "?-exact? package ?requirement ...?");
 	    return TCL_ERROR;
 	}
 

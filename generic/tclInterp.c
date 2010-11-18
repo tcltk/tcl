@@ -925,7 +925,7 @@ Tcl_InterpObjCmd(
 	int limitType;
 
 	if (objc < 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "path limitType ?options?");
+	    Tcl_WrongNumArgs(interp, 2, objv, "path limitType ?-option value ...?");
 	    return TCL_ERROR;
 	}
 	slaveInterp = GetInterp(interp, objv[2]);
@@ -2430,7 +2430,7 @@ SlaveObjCmd(
 	int limitType;
 
 	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "limitType ?options?");
+	    Tcl_WrongNumArgs(interp, 2, objv, "limitType ?-option value ...?");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[2], limitTypes, "limit type", 0,
@@ -4144,7 +4144,7 @@ SlaveCommandLimitCmd(
 	return TCL_OK;
     } else if ((objc-consumedObjc) & 1 /* isOdd(objc-consumedObjc) */) {
 	Tcl_WrongNumArgs(interp, consumedObjc, objv,
-		"?-option? ?value? ?-option value ...?");
+		"?-option value ...?");
 	return TCL_ERROR;
     } else {
 	int i, scriptLen = 0, limitLen = 0;
@@ -4332,7 +4332,7 @@ SlaveTimeLimitCmd(
 	return TCL_OK;
     } else if ((objc-consumedObjc) & 1 /* isOdd(objc-consumedObjc) */) {
 	Tcl_WrongNumArgs(interp, consumedObjc, objv,
-		"?-option? ?value? ?-option value ...?");
+		"?-option value ...?");
 	return TCL_ERROR;
     } else {
 	int i, scriptLen = 0, milliLen = 0, secLen = 0;
