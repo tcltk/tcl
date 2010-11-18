@@ -1,3 +1,8 @@
+2010-11-18  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclNamesp.c: fix leak due to bad looping construct, 
+	[Bug 3111059] 
+
 2010-11-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tcl.m4: [FRQ 491789]: "setargv() doesn't support a
