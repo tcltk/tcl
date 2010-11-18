@@ -4527,6 +4527,10 @@ else
 
   ZLIB_OBJS=\${ZLIB_OBJS}
 
+  cat >>confdefs.h <<_ACEOF
+#define NO_VIZ 1
+_ACEOF
+
 
 fi
 

@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.124 2010/09/28 15:13:55 rmax Exp $
+# RCS: @(#) $Id: configure.in,v 1.125 2010/11/18 23:15:18 nijtmans Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -326,6 +326,7 @@ AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win32/zdll.lib])
 ], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
+  AC_DEFINE_UNQUOTED(NO_VIZ, 1)
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
