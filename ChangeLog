@@ -1,5 +1,7 @@
 2010-11-18  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/file.n: [Bug 3111298]: Typofix.
+
 	* tests/oo.test: [Bug 3111059]: Added testing that neatly trapped this
 	issue.
 
