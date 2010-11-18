@@ -12,14 +12,8 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.36 2010/11/17 10:37:38 nijtmans Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.37 2010/11/18 15:50:54 nijtmans Exp $
  */
-
-#ifdef TCL_BROKEN_MAINARGS
-/* On mingw32 and cygwin this doesn't work */
-#   undef UNICODE
-#   undef _UNICODE
-#endif
 
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
@@ -34,8 +28,14 @@ extern Tcl_PackageInitProc Tcltest_Init;
 extern Tcl_PackageInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
+#if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
+extern Tcl_PackageInitProc Registry_Init;
+extern Tcl_PackageInitProc Dde_Init;
+extern Tcl_PackageInitProc Dde_SafeInit;
+#endif
+
 #ifdef TCL_BROKEN_MAINARGS
-static void setargv(int *argcPtr, char ***argvPtr);
+static void setargv(int *argcPtr, TCHAR ***argvPtr);
 #endif
 
 /*
@@ -76,11 +76,20 @@ extern int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
  *----------------------------------------------------------------------
  */
 
+#ifdef TCL_BROKEN_MAINARGS
+int
+main(
+    int argc,
+    char *dummy[])
+{
+    TCHAR **argv;
+#else
 int
 _tmain(
     int argc,
     TCHAR *argv[])
 {
+#endif
     TCHAR *p;
 
     /*
@@ -90,11 +99,11 @@ _tmain(
 
     setlocale(LC_ALL, "C");
 
+#ifdef TCL_BROKEN_MAINARGS
     /*
      * Get our args from the c-runtime. Ignore lpszCmdLine.
      */
 
-#ifdef TCL_BROKEN_MAINARGS
     setargv(&argc, &argv);
 #endif
 
@@ -144,21 +153,15 @@ Tcl_AppInit(
     }
 
 #if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
-    {
-	extern Tcl_PackageInitProc Registry_Init;
-	extern Tcl_PackageInitProc Dde_Init;
-	extern Tcl_PackageInitProc Dde_SafeInit;
+    if (Registry_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
 
-	if (Registry_Init(interp) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
-
-	if (Dde_Init(interp) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
-   }
+    if (Dde_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
 #endif
 
 #ifdef TCL_TEST
@@ -227,10 +230,10 @@ Tcl_AppInit(
 static void
 setargv(
     int *argcPtr,		/* Filled with number of argument strings. */
-    char ***argvPtr)		/* Filled with argument strings (malloc'd). */
+    TCHAR ***argvPtr)		/* Filled with argument strings (malloc'd). */
 {
-    char *cmdLine, *p, *arg, *argSpace;
-    char **argv;
+    TCHAR *cmdLine, *p, *arg, *argSpace;
+    TCHAR **argv;
     int argc, size, inquote, copy, slashes;
 
     cmdLine = GetCommandLine();
@@ -241,30 +244,35 @@ setargv(
      */
 
     size = 2;
-    for (p = cmdLine; *p != '\0'; p++) {
-	if ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
+    for (p = cmdLine; *p != TEXT('\0'); p++) {
+	if ((*p == TEXT(' ')) || (*p == TEXT('\t'))) {	/* INTL: ISO space. */
 	    size++;
-	    while ((*p == ' ') || (*p == '\t')) { /* INTL: ISO space. */
+	    while ((*p == TEXT(' ')) || (*p == TEXT('\t'))) { /* INTL: ISO space. */
 		p++;
 	    }
-	    if (*p == '\0') {
+	    if (*p == TEXT('\0')) {
 		break;
 	    }
 	}
     }
-    argSpace = (char *) ckalloc(
-	    (unsigned) (size * sizeof(char *) + strlen(cmdLine) + 1));
-    argv = (char **) argSpace;
-    argSpace += size * sizeof(char *);
+
+    /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
+    #undef Tcl_Alloc
+    #undef Tcl_DbCkalloc
+
+    argSpace = (TCHAR *) ckalloc(
+	    (unsigned) (size * sizeof(char *) + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR)));
+    argv = (TCHAR **) argSpace;
+    argSpace += size * (sizeof(char *)/sizeof(TCHAR));
     size--;
 
     p = cmdLine;
     for (argc = 0; argc < size; argc++) {
 	argv[argc] = arg = argSpace;
-	while ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
+	while ((*p == TEXT(' ')) || (*p == TEXT('\t'))) {	/* INTL: ISO space. */
 	    p++;
 	}
-	if (*p == '\0') {
+	if (*p == TEXT('\0')) {
 	    break;
 	}
 
@@ -272,14 +280,14 @@ setargv(
 	slashes = 0;
 	while (1) {
 	    copy = 1;
-	    while (*p == '\\') {
+	    while (*p == TEXT('\\')) {
 		slashes++;
 		p++;
 	    }
-	    if (*p == '"') {
+	    if (*p == TEXT('"')) {
 		if ((slashes & 1) == 0) {
 		    copy = 0;
-		    if ((inquote) && (p[1] == '"')) {
+		    if ((inquote) && (p[1] == TEXT('"'))) {
 			p++;
 			copy = 1;
 		    } else {
@@ -290,13 +298,13 @@ setargv(
 	    }
 
 	    while (slashes) {
-		*arg = '\\';
+		*arg = TEXT('\\');
 		arg++;
 		slashes--;
 	    }
 
-	    if ((*p == '\0') || (!inquote &&
-		    ((*p == ' ') || (*p == '\t')))) {	/* INTL: ISO space. */
+	    if ((*p == TEXT('\0')) || (!inquote &&
+		    ((*p == TEXT(' ')) || (*p == TEXT('\t'))))) {	/* INTL: ISO space. */
 		break;
 	    }
 	    if (copy != 0) {
@@ -313,7 +321,7 @@ setargv(
     *argcPtr = argc;
     *argvPtr = argv;
 }
-#endif /* __GNUC__ */
+#endif /* TCL_BROKEN_MAINARGS */
 
 /*
  * Local Variables:
