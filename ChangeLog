@@ -4,6 +4,9 @@
 	'Tcl_GetIndexFromObj' discards qualifiers from pointer target type
 	* generic/tclWinInit.c: fix gcc warning: dereferencing pointer
 	'oemId' does break strict-aliasing rules
+	* win/tclWin32Dll.c: fix gcc warnings: unused variable 'registration'
+	* win/tclWinChan.c:
+	* win/tclWinFCmd.c:
 
 2010-11-18  Donal K. Fellows  <dkf@users.sf.net>
 
