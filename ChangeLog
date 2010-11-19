@@ -2,6 +2,8 @@
 
 	* generic/tclInterp.c:  fix gcc warning: passing argument 3 of
 	'Tcl_GetIndexFromObj' discards qualifiers from pointer target type
+	* generic/tclWinInit.c: fix gcc warning: dereferencing pointer
+	'oemId' does break strict-aliasing rules
 
 2010-11-18  Donal K. Fellows  <dkf@users.sf.net>
 
