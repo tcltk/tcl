@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.83.2.5 2010/11/15 21:32:32 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.83.2.6 2010/11/19 19:45:29 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -2494,7 +2494,7 @@ SlaveDebugCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *const debugTypes[] = {
+    static const char *debugTypes[] = {
 	"-frame", NULL
     };
     enum DebugTypes {
