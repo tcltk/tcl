@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.54.2.3 2010/09/08 15:42:13 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.54.2.4 2010/11/19 20:34:47 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -303,7 +303,7 @@ DllMain(
     DWORD reason,		/* Reason this function is being called. */
     LPVOID reserved)		/* Not used. */
 {
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
 
@@ -1054,7 +1054,7 @@ TclWinCPUID(
     unsigned int index,		/* Which CPUID value to retrieve. */
     unsigned int *regsPtr)	/* Registers after the CPUID. */
 {
-#ifdef HAVE_NO_SEH
+#if defined(__GNUC__) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
     int status = TCL_ERROR;

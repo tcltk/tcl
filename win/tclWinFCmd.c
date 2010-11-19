@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.52.8.1 2010/09/08 15:42:13 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.52.8.2 2010/11/19 20:34:47 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -177,7 +177,7 @@ DoRenameFile(
     CONST TCHAR *nativeDst)	/* New pathname for file or directory
 				 * (native). */
 {
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
     DWORD srcAttr, dstAttr;
@@ -569,7 +569,7 @@ DoCopyFile(
     CONST TCHAR *nativeSrc,	/* Pathname of file to be copied (native). */
     CONST TCHAR *nativeDst)	/* Pathname of file to copy to (native). */
 {
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
     int retval = -1;
