@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.38 2010/09/16 03:02:24 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.39 2010/11/19 15:36:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2454,7 +2454,7 @@ BinaryDecodeHex(
 	    }						\
 	}						\
 	if (cursor > limit) {				\
-	    Tcl_Panic("limit hit\n");			\
+	    Tcl_Panic("limit hit");			\
 	}						\
     } while (0)
 
