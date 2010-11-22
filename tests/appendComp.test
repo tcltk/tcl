@@ -270,7 +270,8 @@ test appendComp-7.2 {lappend var triggers read trace, index var} -setup {
     bar
 } -result {myvar {} r}
 test appendComp-7.3 {lappend var triggers read trace, stack var} -setup {
-    catch {unset ::result}
+    unset -nocomplain ::result
+    unset -nocomplain ::myvar
 } -body {
     proc bar {} {
 	trace variable ::myvar r foo

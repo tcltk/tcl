@@ -1450,8 +1450,8 @@ TclWinSerialReopen(
     if (CloseHandle(handle) == FALSE) {
 	return INVALID_HANDLE_VALUE;
     }
-    handle = (*tclWinProcs->createFileProc)(name, access, 0, 0,
-	    OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
+    handle = tclWinProcs->createFileProc(name, access, 0, 0, OPEN_EXISTING,
+	    FILE_FLAG_OVERLAPPED, 0);
     return handle;
 }
 
@@ -1685,7 +1685,7 @@ SerialSetOptionProc(
 	    return TCL_ERROR;
 	}
 	native = Tcl_WinUtfToTChar(value, -1, &ds);
-	result = (*tclWinProcs->buildCommDCBProc)(native, &dcb);
+	result = tclWinProcs->buildCommDCBProc(native, &dcb);
 	Tcl_DStringFree(&ds);
 
 	if (result == FALSE) {
@@ -2056,7 +2056,7 @@ SerialGetOptionProc(
     }
     if (len==0 || (len>2 && (strncmp(optionName, "-mode", len) == 0))) {
 	char parity;
-	char *stop;
+	const char *stop;
 	char buf[2 * TCL_INTEGER_SPACE + 16];
 
 	if (!GetCommState(infoPtr->handle, &dcb)) {

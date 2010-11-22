@@ -2770,7 +2770,7 @@ TcpAccept(
 	    "auto crlf");
 
     if (sockState->acceptProc != NULL) {
-	(*sockState->acceptProc)(sockState->acceptProcData,
+	sockState->acceptProc(sockState->acceptProcData,
 		newSockState->channel, inet_ntoa(addr.sin_addr),
 		ntohs(addr.sin_port));
     }
@@ -2800,7 +2800,7 @@ TclpGetDefaultStdChannel(
     Tcl_Channel channel = NULL;
     int fd = 0;			/* Initializations needed to prevent */
     int mode = 0;		/* compiler warning (used before set). */
-    char *bufMode = NULL;
+    const char *bufMode = NULL;
 
     /*
      * Some #def's to make the code a little clearer!

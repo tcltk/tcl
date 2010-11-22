@@ -64,7 +64,7 @@ static void		UpdateStringOfString(Tcl_Obj *objPtr);
  * functions that can be invoked by generic object code.
  */
 
-Tcl_ObjType tclStringType = {
+const Tcl_ObjType tclStringType = {
     "string",			/* name */
     FreeStringInternalRep,	/* freeIntRepPro */
     DupStringInternalRep,	/* dupIntRepProc */
@@ -883,13 +883,12 @@ Tcl_AttemptSetObjLength(
 	 */
 
 	if (objPtr->bytes != tclEmptyStringRep) {
-	    newBytes = attemptckrealloc(objPtr->bytes,
-		    (unsigned)(length + 1));
+	    newBytes = attemptckrealloc(objPtr->bytes, (unsigned) length+1);
 	    if (newBytes == NULL) {
 		return 0;
 	    }
 	} else {
-	    newBytes = attemptckalloc((unsigned) (length + 1));
+	    newBytes = attemptckalloc((unsigned) length+1);
 	    if (newBytes == NULL) {
 		return 0;
 	    }
@@ -1702,7 +1701,7 @@ Tcl_AppendFormatToObj(
     int originalLength;
     static const char *mixedXPG =
 	    "cannot mix \"%\" and \"%n$\" conversion specifiers";
-    static const char *badIndex[2] = {
+    static const char *const badIndex[2] = {
 	"not enough arguments for all format specifiers",
 	"\"%n$\" argument index out of range"
     };
@@ -2027,7 +2026,7 @@ Tcl_AppendFormatToObj(
 		const char *bytes;
 
 		if (useShort) {
-		    pure = Tcl_NewIntObj((int)(s));
+		    pure = Tcl_NewIntObj((int) s);
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
 		} else if (useBig) {

@@ -150,7 +150,7 @@ typedef struct Dict {
  * functions that can be invoked by generic object code.
  */
 
-Tcl_ObjType tclDictType = {
+const Tcl_ObjType tclDictType = {
     "dict",
     FreeDictInternalRep,		/* freeIntRepProc */
     DupDictInternalRep,		        /* dupIntRepProc */
@@ -168,7 +168,7 @@ Tcl_ObjType tclDictType = {
  * *this* file. Everything else should use the dict iterator API.
  */
 
-static Tcl_HashKeyType chainHashType = {
+static const Tcl_HashKeyType chainHashType = {
     TCL_HASH_KEY_TYPE_VERSION,
     0,
     TclHashObjKey,
@@ -2618,7 +2618,7 @@ DictFilterCmd(
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
-    static const char *filters[] = {
+    static const char *const filters[] = {
 	"key", "script", "value", NULL
     };
     enum FilterTypes {
@@ -3191,7 +3191,7 @@ TclInitDictCmd(
 {
     return TclMakeEnsemble(interp, "dict", implementationMap);
 }
-
+
 /*
  * Local Variables:
  * mode: c

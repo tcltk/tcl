@@ -642,7 +642,7 @@ FileHandlerEventProc(
 	mask = filePtr->readyMask & filePtr->mask;
 	filePtr->readyMask = 0;
 	if (mask != 0) {
-	    (*filePtr->proc)(filePtr->clientData, mask);
+	    filePtr->proc(filePtr->clientData, mask);
 	}
 	break;
     }
@@ -710,7 +710,7 @@ Tcl_WaitForEvent(
 	    myTime.usec = timePtr->usec;
 
 	    if (myTime.sec != 0 || myTime.usec != 0) {
-		(*tclScaleTimeProcPtr) (&myTime, tclTimeClientData);
+		tclScaleTimeProcPtr(&myTime, tclTimeClientData);
 	    }
 
 #ifdef TCL_THREADS

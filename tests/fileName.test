@@ -697,16 +697,16 @@ test filename-10.24 {Tcl_TranslateFileName} -body {
 
 test filename-11.1 {Tcl_GlobCmd} -returnCodes error -body {
     glob
-} -result {wrong # args: should be "glob ?-switch ...? name ?name ...?"}
+} -result {no files matched glob patterns ""}
 test filename-11.2 {Tcl_GlobCmd} -returnCodes error -body {
     glob -gorp
 } -result {bad option "-gorp": must be -directory, -join, -nocomplain, -path, -tails, -types, or --}
-test filename-11.3 {Tcl_GlobCmd} -returnCodes error -body {
+test filename-11.3 {Tcl_GlobCmd} -body {
     glob -nocomplai
-} -result {wrong # args: should be "glob ?-switch ...? name ?name ...?"}
-test filename-11.4 {Tcl_GlobCmd} -returnCodes error -body {
+} -result {}
+test filename-11.4 {Tcl_GlobCmd} -body {
     glob -nocomplain
-} -result {wrong # args: should be "glob ?-switch ...? name ?name ...?"}
+} -result {}
 test filename-11.5 {Tcl_GlobCmd} -returnCodes error -body {
     glob -nocomplain * ~xyqrszzz
 } -result {user "xyqrszzz" doesn't exist}

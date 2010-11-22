@@ -30,7 +30,7 @@ static void		FreeVarEntry(Tcl_HashEntry *hPtr);
 static int		CompareVarKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 static unsigned int	HashVarKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
-static Tcl_HashKeyType tclVarHashKeyType = {
+static const Tcl_HashKeyType tclVarHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
     0,				/* flags */
     HashVarKey,			/* hashKeyProc */
@@ -201,7 +201,7 @@ static Tcl_SetFromAnyProc	PanicOnSetVarName;
  *			Tcl_Obj), or NULL if it is a scalar variable
  */
 
-static Tcl_ObjType localVarNameType = {
+static const Tcl_ObjType localVarNameType = {
     "localVarName",
     FreeLocalVarName, DupLocalVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
@@ -219,13 +219,13 @@ static Tcl_ObjType localVarNameType = {
 static Tcl_FreeInternalRepProc FreeNsVarName;
 static Tcl_DupInternalRepProc DupNsVarName;
 
-static Tcl_ObjType tclNsVarNameType = {
+static const Tcl_ObjType tclNsVarNameType = {
     "namespaceVarName",
     FreeNsVarName, DupNsVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
 #endif
 
-static Tcl_ObjType tclParsedVarNameType = {
+static const Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
     FreeParsedVarName, DupParsedVarName, UpdateParsedVarName, PanicOnSetVarName
 };
@@ -242,7 +242,7 @@ static Tcl_ObjType tclParsedVarNameType = {
  * as this can be safely copied.
  */
 
-Tcl_ObjType tclArraySearchType = {
+const Tcl_ObjType tclArraySearchType = {
     "array search",
     NULL, NULL, NULL, SetArraySearchObj
 };
@@ -894,7 +894,7 @@ TclLookupSimpleVar(
 	    && !(flags & AVOID_RESOLVERS)) {
 	resPtr = iPtr->resolverPtr;
 	if (cxtNsPtr->varResProc) {
-	    result = (*cxtNsPtr->varResProc)(interp, varName,
+	    result = cxtNsPtr->varResProc(interp, varName,
 		    (Tcl_Namespace *) cxtNsPtr, flags, &var);
 	} else {
 	    result = TCL_CONTINUE;
@@ -902,7 +902,7 @@ TclLookupSimpleVar(
 
 	while (result == TCL_CONTINUE && resPtr) {
 	    if (resPtr->varResProc) {
-		result = (*resPtr->varResProc)(interp, varName,
+		result = resPtr->varResProc(interp, varName,
 			(Tcl_Namespace *) cxtNsPtr, flags, &var);
 	    }
 	    resPtr = resPtr->nextPtr;
@@ -2723,7 +2723,7 @@ Tcl_ArrayObjCmd(
 	ARRAY_NAMES, ARRAY_NEXTELEMENT, ARRAY_SET, ARRAY_SIZE,
 	ARRAY_STARTSEARCH, ARRAY_STATISTICS, ARRAY_UNSET
     };
-    static const char *arrayOptions[] = {
+    static const char *const arrayOptions[] = {
 	"anymore", "donesearch", "exists", "get", "names", "nextelement",
 	"set", "size", "startsearch", "statistics", "unset", NULL
     };
@@ -3051,7 +3051,7 @@ Tcl_ArrayObjCmd(
 	char *name;
 	Tcl_Obj *namePtr, *resultPtr, *patternPtr;
 	int mode, matched = 0;
-	static const char *options[] = {
+	static const char *const options[] = {
 	    "-exact", "-glob", "-regexp", NULL
 	};
 	enum options { OPT_EXACT, OPT_GLOB, OPT_REGEXP };
@@ -3833,11 +3833,6 @@ Tcl_GlobalObjCmd(
     register char *tail;
     int result, i;
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName ?varName ...?");
-	return TCL_ERROR;
-    }
-
     /*
      * If we are not executing inside a Tcl procedure, just return.
      */
@@ -3942,11 +3937,6 @@ Tcl_VariableObjCmd(
     Tcl_Obj *varValuePtr;
     int i, result;
     Tcl_Obj *varNamePtr, *tailPtr;
-
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?name value ...? name ?value?");
-	return TCL_ERROR;
-    }
 
     for (i=1 ; i<objc ; i+=2) {
 	/*
@@ -4361,7 +4351,7 @@ TclDeleteNamespaceVars(
 	    varPtr = VarHashFirstVar(tablePtr, &search)) {
 	Tcl_Obj *objPtr = Tcl_NewObj();
 	Tcl_IncrRefCount(objPtr);
-	
+
 	VarHashRefCount(varPtr)++;	/* Make sure we get to remove from
 					 * hash. */
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
@@ -4651,16 +4641,13 @@ TclObjVarErrMsg(
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
-    Tcl_ResetResult(interp);
     if (!part1Ptr) {
 	part1Ptr = localName(((Interp *)interp)->varFramePtr, index);
     }
-    Tcl_AppendResult(interp, "can't ", operation, " \"",
-	    TclGetString(part1Ptr), NULL);
-    if (part2Ptr) {
-	Tcl_AppendResult(interp, "(", TclGetString(part2Ptr), ")", NULL);
-    }
-    Tcl_AppendResult(interp, "\": ", reason, NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("can't %s \"%s%s%s%s\": %s",
+	    operation, TclGetString(part1Ptr), (part2Ptr ? "(" : ""),
+	    (part2Ptr ? TclGetString(part2Ptr) : ""), (part2Ptr ? ")" : ""),
+	    reason));
 }
 
 /*
@@ -4954,7 +4941,7 @@ ObjFindNamespaceVar(
 	resPtr = iPtr->resolverPtr;
 
 	if (cxtNsPtr->varResProc) {
-	    result = (*cxtNsPtr->varResProc)(interp, name,
+	    result = cxtNsPtr->varResProc(interp, name,
 		    (Tcl_Namespace *) cxtNsPtr, flags, &var);
 	} else {
 	    result = TCL_CONTINUE;
@@ -4962,7 +4949,7 @@ ObjFindNamespaceVar(
 
 	while (result == TCL_CONTINUE && resPtr) {
 	    if (resPtr->varResProc) {
-		result = (*resPtr->varResProc)(interp, name,
+		result = resPtr->varResProc(interp, name,
 			(Tcl_Namespace *) cxtNsPtr, flags, &var);
 	    }
 	    resPtr = resPtr->nextPtr;

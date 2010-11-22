@@ -1823,7 +1823,7 @@ ParseLexeme(
 	*lexemePtr = END;
 	return 0;
     }
-    byte = (unsigned char)(*start);
+    byte = UCHAR(*start);
     if (byte < sizeof(Lexeme) && Lexeme[byte] != 0) {
 	*lexemePtr = Lexeme[byte];
 	return 1;

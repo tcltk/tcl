@@ -184,7 +184,7 @@ test safe-6.3 {test safe interpreters knowledge of the world} {
 	set r [lreplace $r $threaded $threaded]
     }
     set r
-} {byteOrder platform pointerSize wordSize}
+} {byteOrder pathSeparator platform pointerSize wordSize}
 
 # more test should be added to check that hostname, nameofexecutable,
 # aren't leaking infos, but they still do...
@@ -213,7 +213,7 @@ test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -body {
 	    [catch {interp eval $i {package require http 1}} msg] $msg \
 	    [safe::interpConfigure $i]\
 	    [safe::interpDelete $i]
-} -match glob -result "{\$p(:0:)} {\$p(:17:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library * /dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
+} -match glob -result "{\$p(:0:)} {\$p(:[expr 1+[llength [tcl::tm::list]]]:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library * /dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
 
 
 # test source control on file name

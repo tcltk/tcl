@@ -54,7 +54,7 @@ if "%INSTALLDIR%" == "" set INSTALLDIR=C:\Program Files\Tcl
 ::
 set OPTS=none
 if not %SYMBOLS%.==. set OPTS=symbols
-nmake -nologo -f makefile.vc release winhelp OPTS=%OPTS% %1
+nmake -nologo -f makefile.vc release htmlhelp OPTS=%OPTS% %1
 if errorlevel 1 goto error
 
 :: Build the static core, dlls and shell.

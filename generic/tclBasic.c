@@ -760,6 +760,7 @@ Tcl_CreateInterp(void)
     TclInitDictCmd(interp);
     TclInitInfoCmd(interp);
     TclInitStringCmd(interp);
+    TclInitPrefixCmd(interp);
 
     /*
      * Register "clock" subcommands. These *do* go through
@@ -1435,7 +1436,7 @@ DeleteInterpProc(
      */
 
     Tcl_FreeResult(interp);
-    interp->result = NULL;
+    iPtr->result = NULL;
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
     Tcl_DecrRefCount(iPtr->ecVar);
@@ -4111,7 +4112,7 @@ TclEvalObjvInternal(
     }
     if (TCL_DTRACE_CMD_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	char *a[6]; int i[2];
+	const char *a[6]; int i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -6179,7 +6180,7 @@ Tcl_AddObjErrorInfo(
 	     * interp->result completely.
 	     */
 
-	    iPtr->errorInfo = Tcl_NewStringObj(interp->result, -1);
+	    iPtr->errorInfo = Tcl_NewStringObj(iPtr->result, -1);
 	} else {
 	    iPtr->errorInfo = iPtr->objResultPtr;
 	}
@@ -7325,7 +7326,7 @@ DTraceObjCmd(
 void
 TclDTraceInfo(
     Tcl_Obj *info,
-    char **args,
+    const char **args,
     int *argsi)
 {
     static Tcl_Obj *keys[10] = { NULL };

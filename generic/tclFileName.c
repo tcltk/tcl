@@ -39,6 +39,16 @@ static Tcl_Obj *	SplitUnixPath(const char *path);
 static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
 			    const char *separators, Tcl_Obj *pathPtr, int flags,
 			    char *pattern, Tcl_GlobTypeData *types);
+
+/*
+ * When there is no support for getting the block size of a file in a stat()
+ * call, use this as a guess. Allow it to be overridden in the platform-
+ * specific files.
+ */
+
+#if (!defined(HAVE_ST_BLOCKS) && !defined(GUESSED_BLOCK_SIZE))
+#define GUESSED_BLOCK_SIZE	1024
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1202,7 +1212,7 @@ Tcl_GlobObjCmd(
     Tcl_Obj *typePtr, *resultPtr, *look;
     Tcl_Obj *pathOrDir = NULL;
     Tcl_DString prefix;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-directory", "-join", "-nocomplain", "-path", "-tails",
 	"-types", "--", NULL
     };
@@ -1299,10 +1309,6 @@ Tcl_GlobObjCmd(
     }
 
   endOfForLoop:
-    if (objc - i < 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?-switch ...? name ?name ...?");
-	return TCL_ERROR;
-    }
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {
 	Tcl_AppendResult(interp,
 		"\"-tails\" must be used with either "
@@ -1891,7 +1897,7 @@ TclGlob(
 	 */
 
 	if (types == NULL) {
-	    /* 
+	    /*
 	     * We just want to check for existence. In this case we make it
 	     * easy on Tcl_FSMatchInDirectory and its sub-implementations by
 	     * not bothering them (even though they should support this
@@ -1904,7 +1910,7 @@ TclGlob(
 	    }
 	    result = TCL_OK;
 	} else {
-	    /* 
+	    /*
 	     * We want to check for the correct type. Tcl_FSMatchInDirectory
 	     * is documented to do this for us, if we give it a NULL pattern.
 	     */
@@ -1954,7 +1960,7 @@ TclGlob(
 	if (pathPrefix == NULL) {
 	    Tcl_Panic("Called TclGlob with TCL_GLOBMODE_TAILS and pathPrefix==NULL");
 	}
-	
+
 	pre = Tcl_GetStringFromObj(pathPrefix, &prefixLen);
 	if (prefixLen > 0
 		&& (strchr(separators, pre[prefixLen-1]) == NULL)) {
@@ -2625,14 +2631,27 @@ Tcl_WideUInt
 Tcl_GetBlocksFromStat(
     const Tcl_StatBuf *statPtr)
 {
+#ifdef HAVE_ST_BLOCKS
     return (Tcl_WideUInt) statPtr->st_blocks;
+#else
+    return ((Tcl_WideUInt) statPtr->st_size
+	    + (GUESSED_BLOCK_SIZE-1)) / GUESSED_BLOCK_SIZE;
+#endif
 }
 
 unsigned
 Tcl_GetBlockSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
+#ifdef HAVE_ST_BLOCKS
     return (unsigned) statPtr->st_blksize;
+#else
+    /*
+     * Not a great guess, but will do...
+     */
+
+    return GUESSED_BLOCK_SIZE;
+#endif
 }
 
 /*

@@ -76,7 +76,7 @@ int tclTraceExec = 0;
  * disjoint for backward-compatability reasons.
  */
 
-static const char *operatorStrings[] = {
+static const char *const operatorStrings[] = {
     "||", "&&", "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
     "+", "-", "*", "/", "%", "+", "-", "~", "!",
     "BUILTIN FUNCTION", "FUNCTION",
@@ -89,7 +89,7 @@ static const char *operatorStrings[] = {
  */
 
 #ifdef TCL_COMPILE_DEBUG
-static const char *resultStrings[] = {
+static const char *const resultStrings[] = {
     "TCL_OK", "TCL_ERROR", "TCL_RETURN", "TCL_BREAK", "TCL_CONTINUE"
 };
 #endif
@@ -119,7 +119,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  */
 
 typedef struct {
-    char *name;		/* Name of function. */
+    const char *name;		/* Name of function. */
     int numArgs;	/* Number of arguments for function. */
 } BuiltinFunc;
 
@@ -129,7 +129,7 @@ typedef struct {
  * operand byte.
  */
 
-static BuiltinFunc tclBuiltinFuncTable[] = {
+static BuiltinFunc const tclBuiltinFuncTable[] = {
     {"acos", 1},
     {"asin", 1},
     {"atan", 1},
@@ -332,15 +332,17 @@ VarHashCreateVar(
 #define TCL_DTRACE_INST_NEXT() \
     if (TCL_DTRACE_INST_DONE_ENABLED()) {\
 	if (curInstName) {\
-	    TCL_DTRACE_INST_DONE(curInstName, (int) CURR_DEPTH, tosPtr);\
+	    TCL_DTRACE_INST_DONE(curInstName, (int) CURR_DEPTH,\
+		    tosPtr);\
 	}\
 	curInstName = tclInstructionTable[*pc].name;\
 	if (TCL_DTRACE_INST_START_ENABLED()) {\
-	    TCL_DTRACE_INST_START(curInstName, (int) CURR_DEPTH, tosPtr);\
+	    TCL_DTRACE_INST_START(curInstName, (int) CURR_DEPTH,\
+		    tosPtr);\
 	}\
     } else if (TCL_DTRACE_INST_START_ENABLED()) {\
-	TCL_DTRACE_INST_START(tclInstructionTable[*pc].name, (int) CURR_DEPTH,\
-		tosPtr);\
+	TCL_DTRACE_INST_START(tclInstructionTable[*pc].name,\
+		(int) CURR_DEPTH, tosPtr);\
     }
 #define TCL_DTRACE_INST_LAST() \
     if (TCL_DTRACE_INST_DONE_ENABLED() && curInstName) {\
@@ -453,7 +455,7 @@ VarHashCreateVar(
  * be seen by user scripts.
  */
 
-static Tcl_ObjType dictIteratorType = {
+static const Tcl_ObjType dictIteratorType = {
     "dictIterator",
     NULL, NULL, NULL, NULL
 };
@@ -599,7 +601,7 @@ static int		EvalStatsCmd(ClientData clientData,
 			    Tcl_Obj *const objv[]);
 #endif /* TCL_COMPILE_STATS */
 #ifdef TCL_COMPILE_DEBUG
-static char *		GetOpcodeName(unsigned char *pc);
+static const char *	GetOpcodeName(unsigned char *pc);
 static void		PrintByteCodeInfo(ByteCode *codePtr);
 static const char *	StringForResultCode(int result);
 static void		ValidatePcAndStackTop(ByteCode *codePtr,
@@ -628,7 +630,7 @@ static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
  * compiled bytecode for Tcl expressions.
  */
 
-static Tcl_ObjType exprCodeType = {
+static const Tcl_ObjType exprCodeType = {
     "exprcode",
     FreeExprCodeInternalRep,	/* freeIntRepProc */
     DupExprCodeInternalRep,	/* dupIntRepProc */
@@ -1743,7 +1745,7 @@ TclExecuteByteCode(
     int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
 #endif
-    char *curInstName = NULL;
+    const char *curInstName = NULL;
 
     /*
      * The execution uses a unified stack: first the catch stack, immediately
@@ -5888,6 +5890,7 @@ TclExecuteByteCode(
 				/ sizeof(unsigned short)) - 1)) {
 		    unsigned short base = Exp32Index[l1-3]
 			    + (unsigned short) l2 - 9;
+
 		    if (base < Exp32Index[l1-2]) {
 			/*
 			 * 32-bit number raised to intermediate power, done by
@@ -5905,14 +5908,14 @@ TclExecuteByteCode(
 			NEXT_INST_F(1, 1, 0);
 		    }
 		}
-		if (-l1 >= 3
-		    && (unsigned long)(-l1) < (sizeof(Exp32Index)
-			     / sizeof(unsigned short)) - 1) {
-		    unsigned short base
-			= Exp32Index[-l1-3] + (unsigned short) l2 - 9;
+		if (-l1 >= 3 && (unsigned long)(-l1) <
+			(sizeof(Exp32Index) / sizeof(unsigned short)) - 1) {
+		    unsigned short base =
+			    Exp32Index[-l1-3] + (unsigned short) l2 - 9;
+
 		    if (base < Exp32Index[-l1-2]) {
 			long lResult = (oddExponent) ?
-			    -Exp32Value[base] : Exp32Value[base];
+				-Exp32Value[base] : Exp32Value[base];
 
 			/*
 			 * 32-bit number raised to intermediate power, done by
@@ -7994,7 +7997,7 @@ GetExceptRangeForPc(
  */
 
 #ifdef TCL_COMPILE_DEBUG
-static char *
+static const char *
 GetOpcodeName(
     unsigned char *pc)		/* Points to the instruction whose name should
 				 * be returned. */

@@ -116,7 +116,7 @@ typedef int (TraversalProc)(Tcl_DString *srcPtr, Tcl_DString *dstPtr,
  */
 
 extern TclFileAttrProcs tclpFileAttrProcs[];
-extern char *tclpFileAttrStrings[];
+extern const char *const tclpFileAttrStrings[];
 
 #else
 enum {
@@ -131,8 +131,8 @@ enum {
     UNIX_INVALID_ATTRIBUTE /* lint - last enum value needs no trailing , */
 };
 
-MODULE_SCOPE const char *tclpFileAttrStrings[];
-const char *tclpFileAttrStrings[] = {
+MODULE_SCOPE const char *const tclpFileAttrStrings[];
+const char *const tclpFileAttrStrings[] = {
     "-group", "-owner", "-permissions",
 #if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
     "-readonly",
@@ -527,6 +527,8 @@ TclUnixCopyFile(
 #define BINMODE
 #endif
 
+#define DEFAULT_COPY_BLOCK_SIZE 4069
+
     if ((srcFd = TclOSopen(src, O_RDONLY BINMODE, 0)) < 0) { /* INTL: Native */
 	return TCL_ERROR;
     }
@@ -553,11 +555,11 @@ TclUnixCopyFile(
 	if (fstatfs(srcFd, &fs, sizeof(fs), 0) == 0) {
 	    blockSize = fs.f_bsize;
 	} else {
-	    blockSize = 4096;
+	    blockSize = DEFAULT_COPY_BLOCK_SIZE;
 	}
     }
 #else
-    blockSize = 4096;
+    blockSize = DEFAULT_COPY_BLOCK_SIZE;
 #endif /* HAVE_ST_BLKSIZE */
 
     /*
@@ -568,7 +570,7 @@ TclUnixCopyFile(
      */
 
     if (blockSize <= 0) {
-	blockSize = 4096;
+	blockSize = DEFAULT_COPY_BLOCK_SIZE;
     }
     buffer = ckalloc(blockSize);
     while (1) {
@@ -946,7 +948,7 @@ TraverseUnixTree(
 	 * Process the regular file
 	 */
 
-	return (*traverseProc)(sourcePtr, targetPtr, &statBuf, DOTREE_F,
+	return traverseProc(sourcePtr, targetPtr, &statBuf, DOTREE_F,
 		errorPtr);
     }
 #ifndef HAVE_FTS
@@ -959,7 +961,7 @@ TraverseUnixTree(
 	errfile = source;
 	goto end;
     }
-    result = (*traverseProc)(sourcePtr, targetPtr, &statBuf, DOTREE_PRED,
+    result = traverseProc(sourcePtr, targetPtr, &statBuf, DOTREE_PRED,
 	    errorPtr);
     if (result != TCL_OK) {
 	closedir(dirPtr);
@@ -1033,7 +1035,7 @@ TraverseUnixTree(
 	 * that directory.
 	 */
 
-	result = (*traverseProc)(sourcePtr, targetPtr, &statBuf, DOTREE_POSTD,
+	result = traverseProc(sourcePtr, targetPtr, &statBuf, DOTREE_POSTD,
 		errorPtr);
     }
 #else /* HAVE_FTS */
@@ -1087,7 +1089,7 @@ TraverseUnixTree(
 		statBufPtr = (Tcl_StatBuf *) ent->fts_statp;
 	    }
 	}
-	result = (*traverseProc)(sourcePtr, targetPtr, statBufPtr, type,
+	result = traverseProc(sourcePtr, targetPtr, statBufPtr, type,
 		errorPtr);
 	if (result != TCL_OK) {
 	    break;

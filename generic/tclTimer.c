@@ -584,8 +584,8 @@ TimerHandlerEventProc(
 	 * potential reentrancy problems.
 	 */
 
-	(*nextPtrPtr) = timerHandlerPtr->nextPtr;
-	(*timerHandlerPtr->proc)(timerHandlerPtr->clientData);
+	*nextPtrPtr = timerHandlerPtr->nextPtr;
+	timerHandlerPtr->proc(timerHandlerPtr->clientData);
 	ckfree((char *) timerHandlerPtr);
     }
     TimerSetupProc(NULL, TCL_TIMER_EVENTS);
@@ -743,7 +743,7 @@ TclServiceIdle(void)
 	if (tsdPtr->idleList == NULL) {
 	    tsdPtr->lastIdlePtr = NULL;
 	}
-	(*idlePtr->proc)(idlePtr->clientData);
+	idlePtr->proc(idlePtr->clientData);
 	ckfree((char *) idlePtr);
     }
     if (tsdPtr->idleList) {
@@ -786,7 +786,7 @@ Tcl_AfterObjCmd(
     int length;
     int index;
     char buf[16 + TCL_INTEGER_SPACE];
-    static const char *afterSubCmds[] = {
+    static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
     enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
@@ -820,7 +820,7 @@ Tcl_AfterObjCmd(
 	|| objv[1]->typePtr == &tclWideIntType
 #endif
 	|| objv[1]->typePtr == &tclBignumType
-	|| ( Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, 
+	|| ( Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0,
 				 &index) != TCL_OK )) {
 	index = -1;
 	if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
@@ -832,7 +832,7 @@ Tcl_AfterObjCmd(
 	}
     }
 
-    /* 
+    /*
      * At this point, either index = -1 and ms contains the number of ms
      * to wait, or else index is the index of a subcommand.
      */

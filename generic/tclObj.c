@@ -206,28 +206,28 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
-static Tcl_ObjType oldBooleanType = {
+static const Tcl_ObjType oldBooleanType = {
     "boolean",				/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
     SetBooleanFromAny			/* setFromAnyProc */
 };
-Tcl_ObjType tclBooleanType = {
+const Tcl_ObjType tclBooleanType = {
     "booleanString",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
     SetBooleanFromAny			/* setFromAnyProc */
 };
-Tcl_ObjType tclDoubleType = {
+const Tcl_ObjType tclDoubleType = {
     "double",				/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     UpdateStringOfDouble,		/* updateStringProc */
     SetDoubleFromAny			/* setFromAnyProc */
 };
-Tcl_ObjType tclIntType = {
+const Tcl_ObjType tclIntType = {
     "int",				/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
@@ -235,7 +235,7 @@ Tcl_ObjType tclIntType = {
     SetIntFromAny			/* setFromAnyProc */
 };
 #ifndef NO_WIDE_TYPE
-Tcl_ObjType tclWideIntType = {
+const Tcl_ObjType tclWideIntType = {
     "wideInt",				/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
@@ -243,7 +243,7 @@ Tcl_ObjType tclWideIntType = {
     SetWideIntFromAny			/* setFromAnyProc */
 };
 #endif
-Tcl_ObjType tclBignumType = {
+const Tcl_ObjType tclBignumType = {
     "bignum",				/* name */
     FreeBignum,				/* freeIntRepProc */
     DupBignum,				/* dupIntRepProc */
@@ -255,7 +255,7 @@ Tcl_ObjType tclBignumType = {
  * The structure below defines the Tcl obj hash key type.
  */
 
-Tcl_HashKeyType tclObjHashKeyType = {
+const Tcl_HashKeyType tclObjHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
     0,				/* flags */
     TclHashObjKey,		/* hashKeyProc */
@@ -279,7 +279,7 @@ Tcl_HashKeyType tclObjHashKeyType = {
  * own purposes.
  */
 
-static Tcl_ObjType tclCmdNameType = {
+static const Tcl_ObjType tclCmdNameType = {
     "cmdName",				/* name */
     FreeCmdNameInternalRep,		/* freeIntRepProc */
     DupCmdNameInternalRep,		/* dupIntRepProc */
@@ -1024,7 +1024,7 @@ Tcl_DuplicateObj(
 	    dupPtr->internalRep = objPtr->internalRep;
 	    dupPtr->typePtr = typePtr;
 	} else {
-	    (*typePtr->dupIntRepProc)(objPtr, dupPtr);
+	    typePtr->dupIntRepProc(objPtr, dupPtr);
 	}
     }
     return dupPtr;
@@ -1064,7 +1064,7 @@ Tcl_GetString(
 	Tcl_Panic("UpdateStringProc should not be invoked for type %s",
 		objPtr->typePtr->name);
     }
-    (*objPtr->typePtr->updateStringProc)(objPtr);
+    objPtr->typePtr->updateStringProc(objPtr);
     return objPtr->bytes;
 }
 
@@ -1104,7 +1104,7 @@ Tcl_GetStringFromObj(
 	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
 		    objPtr->typePtr->name);
 	}
-	(*objPtr->typePtr->updateStringProc)(objPtr);
+	objPtr->typePtr->updateStringProc(objPtr);
     }
 
     if (lengthPtr != NULL) {
@@ -2206,7 +2206,7 @@ Tcl_GetLongFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t)(big.used) <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
+	    if ((size_t) big.used <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
 		    / DIGIT_BIT) {
 		unsigned long value = 0, numBytes = sizeof(long);
 		long scratch;
@@ -2227,7 +2227,7 @@ Tcl_GetLongFromObj(
 	tooLarge:
 #endif
 	    if (interp != NULL) {
-		char *s = "integer value too large to represent";
+		const char *s = "integer value too large to represent";
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
@@ -2506,7 +2506,7 @@ Tcl_GetWideIntFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t)(big.used) <= (CHAR_BIT * sizeof(Tcl_WideInt)
+	    if ((size_t) big.used <= (CHAR_BIT * sizeof(Tcl_WideInt)
 		     + DIGIT_BIT - 1) / DIGIT_BIT) {
 		Tcl_WideUInt value = 0;
 		unsigned long numBytes = sizeof(Tcl_WideInt);
@@ -2526,7 +2526,7 @@ Tcl_GetWideIntFromObj(
 		}
 	    }
 	    if (interp != NULL) {
-		char *s = "integer value too large to represent";
+		const char *s = "integer value too large to represent";
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
@@ -2587,7 +2587,7 @@ FreeBignum(
 
     UNPACK_BIGNUM(objPtr, toFree);
     mp_clear(&toFree);
-    if ((long)(objPtr->internalRep.ptrAndLongRep.value) < 0) {
+    if ((long) objPtr->internalRep.ptrAndLongRep.value < 0) {
 	ckfree((char *) objPtr->internalRep.ptrAndLongRep.ptr);
     }
 }
@@ -2927,11 +2927,12 @@ Tcl_SetBignumObj(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetBignumObj");
     }
-    if ((size_t)(bignumValue->used)
+    if ((size_t) bignumValue->used
 	    <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	unsigned long value = 0, numBytes = sizeof(long);
 	long scratch;
-	unsigned char *bytes = (unsigned char *)&scratch;
+	unsigned char *bytes = (unsigned char *) &scratch;
+
 	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
 	    goto tooLargeForLong;
 	}
@@ -2951,12 +2952,13 @@ Tcl_SetBignumObj(
     }
   tooLargeForLong:
 #ifndef NO_WIDE_TYPE
-    if ((size_t)(bignumValue->used)
+    if ((size_t) bignumValue->used
 	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	Tcl_WideUInt value = 0;
 	unsigned long numBytes = sizeof(Tcl_WideInt);
 	Tcl_WideInt scratch;
 	unsigned char *bytes = (unsigned char *)&scratch;
+
 	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
 	    goto tooLargeForWide;
 	}

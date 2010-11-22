@@ -20,7 +20,7 @@ main(void)
 {
     char buf[1024];
     int n;
-    char *err;
+    const char *err;
 
     while (1) {
 	n = read(0, buf, sizeof(buf));

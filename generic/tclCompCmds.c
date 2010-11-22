@@ -187,21 +187,21 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
  * The structures below define the AuxData types defined in this file.
  */
 
-AuxDataType tclForeachInfoType = {
+const AuxDataType tclForeachInfoType = {
     "ForeachInfo",		/* name */
     DupForeachInfo,		/* dupProc */
     FreeForeachInfo,		/* freeProc */
     PrintForeachInfo		/* printProc */
 };
 
-AuxDataType tclJumptableInfoType = {
+const AuxDataType tclJumptableInfoType = {
     "JumptableInfo",		/* name */
     DupJumptableInfo,		/* dupProc */
     FreeJumptableInfo,		/* freeProc */
     PrintJumptableInfo		/* printProc */
 };
 
-AuxDataType tclDictUpdateInfoType = {
+const AuxDataType tclDictUpdateInfoType = {
     "DictUpdateInfo",		/* name */
     DupDictUpdateInfo,		/* dupProc */
     FreeDictUpdateInfo,		/* freeProc */

@@ -556,7 +556,7 @@ Tcl_InterpObjCmd(
     Tcl_Obj *const objv[])		/* Argument objects. */
 {
     int index;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"cancel",
 	"create",	"delete",	"eval",		"exists",
 	"expose",	"hide",		"hidden",	"issafe",
@@ -642,7 +642,7 @@ Tcl_InterpObjCmd(
 	int i, flags;
 	Tcl_Interp *slaveInterp;
 	Tcl_Obj *resultObjPtr;
-	static CONST char *options[] = {
+	static const char *options[] = {
 	    "-unwind",	"--",	NULL
 	};
 	enum option {
@@ -683,7 +683,7 @@ Tcl_InterpObjCmd(
 
 	/*
 	 * Did they specify a slave interp to cancel the script in
-	 * progress in?  If not, use the current interp. 
+	 * progress in?  If not, use the current interp.
 	 */
 
 	if (i < objc) {
@@ -711,7 +711,7 @@ Tcl_InterpObjCmd(
 	int i, last, safe;
 	Tcl_Obj *slavePtr;
 	char buf[16 + TCL_INTEGER_SPACE];
-	static const char *options[] = {
+	static const char *const options[] = {
 	    "-safe",	"--", NULL
 	};
 	enum option {
@@ -873,7 +873,7 @@ Tcl_InterpObjCmd(
 	int i, index;
 	const char *namespaceName;
 	Tcl_Interp *slaveInterp;
-	static const char *hiddenOptions[] = {
+	static const char *const hiddenOptions[] = {
 	    "-global",	"-namespace",	"--", NULL
 	};
 	enum hiddenOption {
@@ -916,7 +916,7 @@ Tcl_InterpObjCmd(
     }
     case OPT_LIMIT: {
 	Tcl_Interp *slaveInterp;
-	static const char *limitTypes[] = {
+	static const char *const limitTypes[] = {
 	    "commands", "time", NULL
 	};
 	enum LimitTypes {
@@ -2296,7 +2296,7 @@ SlaveObjCmd(
 {
     Tcl_Interp *slaveInterp = clientData;
     int index;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"eval",
 	"expose",	"hide",		"hidden",	"issafe",
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit", NULL
@@ -2383,7 +2383,7 @@ SlaveObjCmd(
     case OPT_INVOKEHIDDEN: {
 	int i, index;
 	const char *namespaceName;
-	static const char *hiddenOptions[] = {
+	static const char *const hiddenOptions[] = {
 	    "-global",	"-namespace",	"--", NULL
 	};
 	enum hiddenOption {
@@ -2421,7 +2421,7 @@ SlaveObjCmd(
 		objc - i, objv + i);
     }
     case OPT_LIMIT: {
-	static const char *limitTypes[] = {
+	static const char *const limitTypes[] = {
 	    "commands", "time", NULL
 	};
 	enum LimitTypes {
@@ -4066,7 +4066,7 @@ SlaveCommandLimitCmd(
     int objc,			/* Total number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-command", "-granularity", "-value", NULL
     };
     enum Options {
@@ -4237,7 +4237,7 @@ SlaveTimeLimitCmd(
     int objc,				/* Total number of arguments. */
     Tcl_Obj *const objv[])		/* Argument objects. */
 {
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-command", "-granularity", "-milliseconds", "-seconds", NULL
     };
     enum Options {

@@ -22,6 +22,15 @@
 #include "tclRegexp.h"
 
 static int		UniCharIsAscii(int character);
+
+/*
+ * Default set of characters to trim in [string trim] and friends. This is a
+ * UTF-8 literal string containing space, tab, newline, carriage return,
+ * ethiopic wordspace (U+1361), ogham space mark (U+1680), and ideographic
+ * space (U+3000). [TIP #318]
+ */
+
+#define DEFAULT_TRIM_SET " \t\n\r\xe1\x8d\xa1\xe1\x9a\x80\xe3\x80\x80"
 
 /*
  *----------------------------------------------------------------------
@@ -92,7 +101,7 @@ Tcl_RegexpObjCmd(
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-all",		"-about",	"-indices",	"-inline",
 	"-expanded",	"-line",	"-linestop",	"-lineanchor",
 	"-nocase",	"-start",	"--",		NULL
@@ -444,7 +453,7 @@ Tcl_RegsubObjCmd(
     Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-all",		"-nocase",	"-expanded",
 	"-line",	"-linestop",	"-lineanchor",	"-start",
 	"--",		NULL
@@ -940,7 +949,7 @@ Tcl_SourceObjCmd(
     fileName = objv[objc-1];
 
     if (objc == 4) {
-	static const char *options[] = {
+	static const char *const options[] = {
 	    "-encoding", NULL
 	};
 	int index;
@@ -981,7 +990,8 @@ Tcl_SplitObjCmd(
 {
     Tcl_UniChar ch;
     int len;
-    char *splitChars, *stringPtr, *end;
+    const char *splitChars;
+    char *stringPtr, *end;
     int splitCharLen, stringLen;
     Tcl_Obj *listPtr, *objPtr;
 
@@ -1059,7 +1069,7 @@ Tcl_SplitObjCmd(
 	TclNewStringObj(objPtr, stringPtr, end - stringPtr);
 	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
     } else {
-	char *element, *p, *splitEnd;
+	const char *element, *p, *splitEnd;
 	int splitLen;
 	Tcl_UniChar splitChar;
 
@@ -1392,7 +1402,7 @@ StringIsCmd(
     Tcl_Obj *objPtr, *failVarObj = NULL;
     Tcl_WideInt w;
 
-    static const char *isOptions[] = {
+    static const char *const isOptions[] = {
 	"alnum",	"alpha",	"ascii",	"control",
 	"boolean",	"digit",	"double",	"false",
 	"graph",	"integer",	"list",		"lower",
@@ -3068,8 +3078,8 @@ StringTrimCmd(
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
-	string2 = " \t\n\r";
-	length2 = strlen(string2);
+	string2 = DEFAULT_TRIM_SET;
+	length2 = strlen(DEFAULT_TRIM_SET);
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
@@ -3164,8 +3174,8 @@ StringTrimLCmd(
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
-	string2 = " \t\n\r";
-	length2 = strlen(string2);
+	string2 = DEFAULT_TRIM_SET;
+	length2 = strlen(DEFAULT_TRIM_SET);
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
@@ -3236,8 +3246,8 @@ StringTrimRCmd(
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
-	string2 = " \t\n\r";
-	length2 = strlen(string2);
+	string2 = DEFAULT_TRIM_SET;
+	length2 = strlen(DEFAULT_TRIM_SET);
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
@@ -3354,7 +3364,7 @@ Tcl_SubstObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *substOptions[] = {
+    static const char *const substOptions[] = {
 	"-nobackslashes", "-nocommands", "-novariables", NULL
     };
     enum substOptions {
@@ -3450,7 +3460,7 @@ Tcl_SwitchObjCmd(
      * -glob, you *must* fix TclCompileSwitchCmd's option parser as well.
      */
 
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-exact", "-glob", "-indexvar", "-matchvar", "-nocase", "-regexp",
 	"--", NULL
     };

@@ -284,9 +284,6 @@ test proc-old-5.7 {error conditions} {
 test proc-old-5.8 {error conditions} {
     catch {return}
 } 2
-test proc-old-5.9 {error conditions} {
-    list [catch {global} msg] $msg
-} {1 {wrong # args: should be "global varName ?varName ...?"}}
 proc tproc {} {
     set a 22
     global a

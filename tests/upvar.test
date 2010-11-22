@@ -544,6 +544,19 @@ test upvar-NS-1.9 {nsupvar links to correct variable} \
     -returnCodes error \
     -cleanup {namespace delete test_ns_1}
 
+test upvar-NS-2.1 {TIP 323} -returnCodes error -body {
+    namespace upvar
+} -result {wrong # args: should be "namespace upvar ns ?otherVar myVar ...?"}
+
+test upvar-NS-2.2 {TIP 323} -setup {
+    namespace eval test_ns_1 {}
+} -body {
+    namespace upvar test_ns_1
+} -cleanup {
+    namespace delete test_ns_1
+} -result {}
+
+
 
 # cleanup
 ::tcltest::cleanupTests

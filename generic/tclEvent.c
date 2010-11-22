@@ -416,7 +416,7 @@ TclDefaultBgErrorHandlerObjCmd(
      */
 
     saved = Tcl_SaveInterpState(interp, code);
-    
+
     /* Invoke the bgerror command. */
     Tcl_AllowExceptions(interp);
     code = Tcl_EvalObjv(interp, 2, tempObjv, TCL_EVAL_GLOBAL);
@@ -947,7 +947,7 @@ Tcl_Finalize(void)
 
 	firstExitPtr = exitPtr->nextPtr;
 	Tcl_MutexUnlock(&exitMutex);
-	(*exitPtr->proc)(exitPtr->clientData);
+	exitPtr->proc(exitPtr->clientData);
 	ckfree((char *) exitPtr);
 	Tcl_MutexLock(&exitMutex);
     }
@@ -1135,7 +1135,7 @@ Tcl_FinalizeThread(void)
 	     */
 
 	    tsdPtr->firstExitPtr = exitPtr->nextPtr;
-	    (*exitPtr->proc)(exitPtr->clientData);
+	    exitPtr->proc(exitPtr->clientData);
 	    ckfree((char *) exitPtr);
 	}
 	TclFinalizeIOSubsystem();
@@ -1325,7 +1325,7 @@ Tcl_UpdateObjCmd(
 {
     int optionIndex;
     int flags = 0;		/* Initialized to avoid compiler warning. */
-    static const char *updateOptions[] = {"idletasks", NULL};
+    static const char *const updateOptions[] = {"idletasks", NULL};
     enum updateOptions {REGEXP_IDLETASKS};
 
     if (objc == 1) {
@@ -1388,16 +1388,15 @@ static Tcl_ThreadCreateType
 NewThreadProc(
     ClientData clientData)
 {
-    ThreadClientData *cdPtr;
+    ThreadClientData *cdPtr = clientData;
     ClientData threadClientData;
     Tcl_ThreadCreateProc *threadProc;
 
-    cdPtr = (ThreadClientData *) clientData;
     threadProc = cdPtr->proc;
     threadClientData = cdPtr->clientData;
     ckfree((char *) clientData);	/* Allocated in Tcl_CreateThread() */
 
-    (*threadProc)(threadClientData);
+    threadProc(threadClientData);
 
     TCL_THREAD_CREATE_RETURN;
 }

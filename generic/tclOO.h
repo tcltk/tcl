@@ -24,10 +24,11 @@
 #endif
 
 /*
- * Must match version at top of ../configure.in
+ * Be careful when it comes to versioning; need to make sure that the
+ * standalone TclOO version matches...
  */
 
-#define TCLOO_VERSION "0.5"
+#define TCLOO_VERSION "0.6.1"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
 
 /*

@@ -535,7 +535,7 @@ Tcl_DeleteEvents(
     prevPtr = NULL;
     evPtr = tsdPtr->firstEventPtr;
     while (evPtr != NULL) {
-	if ((*proc)(evPtr, clientData) == 1) {
+	if (proc(evPtr, clientData) == 1) {
 	    /*
 	     * This event should be deleted. Unlink it.
 	     */
@@ -667,7 +667,7 @@ Tcl_ServiceEvent(
 	 */
 
 	Tcl_MutexUnlock(&(tsdPtr->queueMutex));
-	result = (*proc)(evPtr, flags);
+	result = proc(evPtr, flags);
 	Tcl_MutexLock(&(tsdPtr->queueMutex));
 
 	if (result) {
@@ -931,7 +931,7 @@ Tcl_DoOneEvent(
 	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->setupProc) {
-		(sourcePtr->setupProc)(sourcePtr->clientData, flags);
+		sourcePtr->setupProc(sourcePtr->clientData, flags);
 	    }
 	}
 	tsdPtr->inTraversal = 0;
@@ -960,7 +960,7 @@ Tcl_DoOneEvent(
 	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->checkProc) {
-		(sourcePtr->checkProc)(sourcePtr->clientData, flags);
+		sourcePtr->checkProc(sourcePtr->clientData, flags);
 	    }
 	}
 
@@ -1070,13 +1070,13 @@ Tcl_ServiceAll(void)
     for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 	    sourcePtr = sourcePtr->nextPtr) {
 	if (sourcePtr->setupProc) {
-	    (sourcePtr->setupProc)(sourcePtr->clientData, TCL_ALL_EVENTS);
+	    sourcePtr->setupProc(sourcePtr->clientData, TCL_ALL_EVENTS);
 	}
     }
     for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 	    sourcePtr = sourcePtr->nextPtr) {
 	if (sourcePtr->checkProc) {
-	    (sourcePtr->checkProc)(sourcePtr->clientData, TCL_ALL_EVENTS);
+	    sourcePtr->checkProc(sourcePtr->clientData, TCL_ALL_EVENTS);
 	}
     }
 

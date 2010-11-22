@@ -129,7 +129,7 @@ TestbignumobjCmd(
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
-    const char * subcmds[] = {
+    const char *const subcmds[] = {
 	"set",      "get",      "mult10",      "div10", NULL
     };
     enum options {
@@ -496,7 +496,7 @@ TestindexobjCmd(
 {
     int allowAbbrev, index, index2, setError, i, result;
     const char **argv;
-    static const char *tablePtr[] = {"a", "b", "check", NULL};
+    static const char *const tablePtr[] = {"a", "b", "check", NULL};
     /*
      * Keep this structure declaration in sync with tclIndexObj.c
      */
@@ -996,7 +996,7 @@ TeststringobjCmd(
 #define MAX_STRINGS 11
     char *index, *string, *strings[MAX_STRINGS+1];
     TestString *strPtr;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
 	"set", "set2", "setlength", "ualloc", "getunicode", NULL
     };

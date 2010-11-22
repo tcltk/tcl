@@ -234,6 +234,7 @@ InitFoundation(
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
+    Tcl_CreateObjCommand(interp, "::oo::UpCatch", TclOOUpcatchCmd, NULL,NULL);
     Tcl_CreateObjCommand(interp, "::oo::UnknownDefinition",
 	    TclOOUnknownDefinition, NULL, NULL);
     namePtr = Tcl_NewStringObj("::oo::UnknownDefinition", -1);
@@ -297,6 +298,10 @@ InitFoundation(
      * Finish setting up the class of classes by marking the 'new' method as
      * private; classes, unlike general objects, must have explicit names. We
      * also need to create the constructor for classes.
+     *
+     * The 0xDeadBeef is a special signal to the errorInfo logger that is used
+     * by constructors that stops it from generating extra error information
+     * that is confusing.
      */
 
     namePtr = Tcl_NewStringObj("new", -1);
@@ -306,12 +311,12 @@ InitFoundation(
     argsPtr = Tcl_NewStringObj("{definitionScript {}}", -1);
     Tcl_IncrRefCount(argsPtr);
     bodyPtr = Tcl_NewStringObj(
-	    "if {[catch {define [self] $definitionScript} msg opt]} {\n"
-	    "set ei [split [dict get $opt -errorinfo] \\n]\n"
-	    "dict set opt -errorinfo [join [lrange $ei 0 end-2] \\n]\n"
-	    "dict set opt -errorline 0xdeadbeef\n"
+	    "set script [list ::oo::define [self] $definitionScript];"
+	    "lassign [::oo::UpCatch $script] msg opts\n"
+	    "if {[dict get $opts -code] == 1} {"
+	    "    dict set opts -errorline 0xDeadBeef\n"
 	    "}\n"
-	    "return -options $opt $msg", -1);
+	    "return -options $opts $msg", -1);
     fPtr->classCls->constructorPtr = TclOONewProcMethod(interp,
 	    fPtr->classCls, 0, NULL, argsPtr, bodyPtr, NULL);
     Tcl_DecrRefCount(argsPtr);

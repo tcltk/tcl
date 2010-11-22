@@ -1472,7 +1472,7 @@ TcpAccept(
      */
 
     if (infoPtr->acceptProc != NULL) {
-	(infoPtr->acceptProc) (infoPtr->acceptProcData, newInfoPtr->channel,
+	infoPtr->acceptProc(infoPtr->acceptProcData, newInfoPtr->channel,
 		inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
     }
 }
@@ -2121,7 +2121,7 @@ SocketThread(
     LPVOID arg)
 {
     MSG msg;
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)(arg);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) arg;
 
     /*
      * Create a dummy window receiving socket events.
@@ -2362,7 +2362,7 @@ InitializeHostName(
     DWORD length = sizeof(wbuf) / sizeof(WCHAR);
     Tcl_DString ds;
 
-    if ((*tclWinProcs->getComputerNameProc)(wbuf, &length) != 0) {
+    if (tclWinProcs->getComputerNameProc(wbuf, &length) != 0) {
 	/*
 	 * Convert string from native to UTF then change to lowercase.
 	 */

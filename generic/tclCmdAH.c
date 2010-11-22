@@ -27,7 +27,7 @@ static int		EncodingDirsObjCmd(ClientData dummy,
 			    Tcl_Obj *const objv[]);
 static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_FSStatProc *statProc, Tcl_StatBuf *statPtr);
-static char *		GetTypeFromMode(int mode);
+static const char *	GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
 
@@ -435,7 +435,7 @@ Tcl_EncodingObjCmd(
 {
     int index;
 
-    static const char *optionStrings[] = {
+    static const char *const optionStrings[] = {
 	"convertfrom", "convertto", "dirs", "names", "system",
 	NULL
     };
@@ -824,7 +824,7 @@ Tcl_FileObjCmd(
      * This list of constants should match the fileOption string array below.
      */
 
-    static const char *fileOptions[] = {
+    static const char *const fileOptions[] = {
 	"atime",	"attributes",	"channels",	"copy",
 	"delete",
 	"dirname",	"executable",	"exists",	"extension",
@@ -1041,7 +1041,7 @@ Tcl_FileObjCmd(
 		 * We have a '-linktype' argument.
 		 */
 
-		static const char *linkTypes[] = {
+		static const char *const linkTypes[] = {
 		    "-symbolic", "-hard", NULL
 		};
 		if (Tcl_GetIndexFromObj(interp, objv[2], linkTypes, "switch",
@@ -1286,7 +1286,7 @@ Tcl_FileObjCmd(
 	    return TCL_ERROR;
 	}
 	if (objc == 2) {
-	    char *separator = NULL; /* lint */
+	    const char *separator = NULL; /* lint */
 
 	    switch (tclPlatform) {
 	    case TCL_PLATFORM_UNIX:
@@ -1446,7 +1446,7 @@ GetStatBuf(
 	return TCL_ERROR;
     }
 
-    status = (*statProc)(pathPtr, statPtr);
+    status = statProc(pathPtr, statPtr);
 
     if (status < 0) {
 	if (interp != NULL) {
@@ -1548,7 +1548,7 @@ StoreStatData(
  *----------------------------------------------------------------------
  */
 
-static char *
+static const char *
 GetTypeFromMode(
     int mode)
 {

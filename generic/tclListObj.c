@@ -38,7 +38,7 @@ static void		UpdateStringOfList(Tcl_Obj *listPtr);
  * storage to avoid an auxiliary stack.
  */
 
-Tcl_ObjType tclListType = {
+const Tcl_ObjType tclListType = {
     "list",			/* name */
     FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
@@ -1271,7 +1271,7 @@ TclLsetFlat(
 				/* Index args. */
     Tcl_Obj *valuePtr)		/* Value arg to 'lset'. */
 {
-    int index, result;
+    int index, result, len;
     Tcl_Obj *subListPtr, *retValuePtr, *chainPtr;
 
     /*
@@ -1326,7 +1326,7 @@ TclLsetFlat(
 	 * WARNING: the macro TclGetIntForIndexM is not safe for
 	 * post-increments, avoid '*indexArray++' here.
 	 */
-	
+
 	if (TclGetIntForIndexM(interp, *indexArray, elemCount - 1, &index)
 		!= TCL_OK)  {
 	    /* ...the index we're trying to use isn't an index at all. */
@@ -1335,7 +1335,7 @@ TclLsetFlat(
 	}
 	indexArray++;
 
-	if (index < 0 || index >= elemCount) {
+	if (index < 0 || index > elemCount) {
 	    /* ...the index points outside the sublist. */
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("list index out of range", -1));
@@ -1352,7 +1352,11 @@ TclLsetFlat(
 	result = TCL_OK;
 	if (--indexCount) {
 	    parentList = subListPtr;
-	    subListPtr = elemPtrs[index];
+	    if (index == elemCount) {
+		subListPtr = Tcl_NewObj();
+	    } else {
+		subListPtr = elemPtrs[index];
+	    }
 	    if (Tcl_IsShared(subListPtr)) {
 		subListPtr = Tcl_DuplicateObj(subListPtr);
 	    }
@@ -1366,7 +1370,11 @@ TclLsetFlat(
 	     * make and store another copy.
 	     */
 
-	    TclListObjSetElement(NULL, parentList, index, subListPtr);
+	    if (index == elemCount) {
+		Tcl_ListObjAppendElement(NULL, parentList, subListPtr);
+	    } else {
+		TclListObjSetElement(NULL, parentList, index, subListPtr);
+	    }
 	    if (Tcl_IsShared(subListPtr)) {
 		subListPtr = Tcl_DuplicateObj(subListPtr);
 		TclListObjSetElement(NULL, parentList, index, subListPtr);
@@ -1417,9 +1425,9 @@ TclLsetFlat(
     }
 
     if (result != TCL_OK) {
-	/* 
+	/*
 	 * Error return; message is already in interp. Clean up
-	 * any excess memory. 
+	 * any excess memory.
 	 */
 	if (retValuePtr != listPtr) {
 	    Tcl_DecrRefCount(retValuePtr);
@@ -1428,7 +1436,12 @@ TclLsetFlat(
     }
 
     /* Store valuePtr in proper sublist and return */
-    TclListObjSetElement(NULL, subListPtr, index, valuePtr);
+    Tcl_ListObjLength(NULL, subListPtr, &len);
+    if (index == len) {
+	Tcl_ListObjAppendElement(NULL, subListPtr, valuePtr);
+    } else {
+	TclListObjSetElement(NULL, subListPtr, index, valuePtr);
+    }
     Tcl_InvalidateStringRep(subListPtr);
     Tcl_IncrRefCount(retValuePtr);
     return retValuePtr;

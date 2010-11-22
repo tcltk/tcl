@@ -75,7 +75,7 @@ static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
  * Object type used to manage type caches attached to method names.
  */
 
-static Tcl_ObjType methodNameType = {
+static const Tcl_ObjType methodNameType = {
     "TclOO method name",
     FreeMethodNameRep,
     DupMethodNameRep,

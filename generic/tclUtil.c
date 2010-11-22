@@ -80,7 +80,7 @@ static void		UpdateStringOfEndOffset(Tcl_Obj* objPtr);
  * integer, so no memory management is required for it.
  */
 
-Tcl_ObjType tclEndOffsetType = {
+const Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
@@ -2065,14 +2065,15 @@ Tcl_DStringResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the
 				 * result of interp. */
 {
+    Interp* iPtr = (Interp*) interp;
     Tcl_ResetResult(interp);
 
     if (dsPtr->string != dsPtr->staticSpace) {
-	interp->result = dsPtr->string;
-	interp->freeProc = TCL_DYNAMIC;
+	iPtr->result = dsPtr->string;
+	iPtr->freeProc = TCL_DYNAMIC;
     } else if (dsPtr->length < TCL_RESULT_SIZE) {
-	interp->result = ((Interp *) interp)->resultSpace;
-	strcpy(interp->result, dsPtr->string);
+	iPtr->result = iPtr->resultSpace;
+	strcpy(iPtr->result, dsPtr->string);
     } else {
 	Tcl_SetResult(interp, dsPtr->string, TCL_VOLATILE);
     }
@@ -2128,9 +2129,9 @@ Tcl_DStringGetResult(
 	    dsPtr->string = iPtr->result;
 	    dsPtr->spaceAvl = dsPtr->length+1;
 	} else {
-	    dsPtr->string = (char *) ckalloc((unsigned) (dsPtr->length+1));
+	    dsPtr->string = (char *) ckalloc((unsigned) dsPtr->length+1);
 	    memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
-	    (*iPtr->freeProc)(iPtr->result);
+	    iPtr->freeProc(iPtr->result);
 	}
 	dsPtr->spaceAvl = dsPtr->length+1;
 	iPtr->freeProc = NULL;
@@ -2139,7 +2140,7 @@ Tcl_DStringGetResult(
 	    dsPtr->string = dsPtr->staticSpace;
 	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
 	} else {
-	    dsPtr->string = (char *) ckalloc((unsigned) (dsPtr->length + 1));
+	    dsPtr->string = (char *) ckalloc((unsigned) dsPtr->length+1);
 	    dsPtr->spaceAvl = dsPtr->length + 1;
 	}
 	memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
@@ -2422,13 +2423,13 @@ TclPrecTraceProc(
      */
 
     if (Tcl_IsSafe(interp)) {
-	return "can't modify precision from a safe interpreter";
+	return (char *)"can't modify precision from a safe interpreter";
     }
     value = Tcl_GetVar2Ex(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
     if (value == NULL
 	    || Tcl_GetIntFromObj((Tcl_Interp*) NULL, value, &prec) != TCL_OK
 	    || prec < 0 || prec > TCL_MAX_PREC) {
-	return "improper value for precision";
+	return (char *)"improper value for precision";
     }
     *precisionPtr = prec;
     return NULL;
@@ -3051,7 +3052,7 @@ TclGetProcessGlobalValue(
 	    Tcl_DStringLength(&native), &newValue);
 	    Tcl_DStringFree(&native);
 	    ckfree(pgvPtr->value);
-	    pgvPtr->value = ckalloc((unsigned int)
+	    pgvPtr->value = ckalloc((unsigned)
 		    Tcl_DStringLength(&newValue) + 1);
 	    memcpy(pgvPtr->value, Tcl_DStringValue(&newValue),
 		    (size_t) Tcl_DStringLength(&newValue) + 1);
@@ -3084,12 +3085,11 @@ TclGetProcessGlobalValue(
 	Tcl_MutexLock(&pgvPtr->mutex);
 	if ((NULL == pgvPtr->value) && (pgvPtr->proc)) {
 	    pgvPtr->epoch++;
-	    (*(pgvPtr->proc))(&pgvPtr->value, &pgvPtr->numBytes,
-		    &pgvPtr->encoding);
+	    pgvPtr->proc(&pgvPtr->value,&pgvPtr->numBytes,&pgvPtr->encoding);
 	    if (pgvPtr->value == NULL) {
 		Tcl_Panic("PGV Initializer did not initialize");
 	    }
-	    Tcl_CreateExitHandler(FreeProcessGlobalValue, (ClientData)pgvPtr);
+	    Tcl_CreateExitHandler(FreeProcessGlobalValue, pgvPtr);
 	}
 
 	/*
@@ -3100,10 +3100,10 @@ TclGetProcessGlobalValue(
 	hPtr = Tcl_CreateHashEntry(cacheMap,
 		(char *) INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
-	Tcl_SetHashValue(hPtr, (ClientData) value);
+	Tcl_SetHashValue(hPtr, value);
 	Tcl_IncrRefCount(value);
     }
-    return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+    return Tcl_GetHashValue(hPtr);
 }
 
 /*
@@ -3268,8 +3268,8 @@ TclReToGlob(
     int *exactPtr)
 {
     int anchorLeft, anchorRight, lastIsStar;
-    char *dsStr, *dsStrStart, *msg;
-    const char *p, *strEnd;
+    char *dsStr, *dsStrStart;
+    const char *msg, *p, *strEnd;
 
     strEnd = reStr + reStrLen;
     Tcl_DStringInit(dsPtr);

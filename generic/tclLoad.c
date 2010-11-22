@@ -506,7 +506,7 @@ Tcl_UnloadObjCmd(
     int trustedRefCount = -1, safeRefCount = -1;
     const char *fullFileName = "";
     char *packageName;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-nocomplain", "-keeplibrary", "--", NULL
     };
     enum options {
@@ -791,7 +791,9 @@ Tcl_UnloadObjCmd(
 
 	    if (unLoadProcPtr != NULL) {
 		Tcl_MutexLock(&packageMutex);
-		unLoadProcPtr(pkgPtr->loadHandle);
+		if ((pkgPtr->unloadProc != NULL) || (unLoadProcPtr == TclFSUnloadTempFile)) {
+		    unLoadProcPtr(pkgPtr->loadHandle);
+		}
 
 		/*
 		 * Remove this library from the loaded library cache.
@@ -1144,8 +1146,11 @@ TclFinalizeLoad(void)
 	 */
 
 	if (pkgPtr->fileName[0] != '\0') {
-	    if (pkgPtr->unLoadProcPtr != NULL) {
-		pkgPtr->unLoadProcPtr(pkgPtr->loadHandle);
+	    Tcl_FSUnloadFileProc *unLoadProcPtr = pkgPtr->unLoadProcPtr;
+	    if ((unLoadProcPtr != NULL)
+		    && ((pkgPtr->unloadProc != NULL)
+		    || (unLoadProcPtr == TclFSUnloadTempFile))) {
+		unLoadProcPtr(pkgPtr->loadHandle);
 	    }
 	}
 #endif

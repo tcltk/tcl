@@ -742,7 +742,7 @@ Tcl_PackageObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *pkgOptions[] = {
+    static const char *const pkgOptions[] = {
 	"forget",  "ifneeded", "names",   "prefer",   "present",
 	"provide", "require",  "unknown", "vcompare", "versions",
 	"vsatisfies", NULL
@@ -1015,7 +1015,7 @@ Tcl_PackageObjCmd(
 	break;
     }
     case PKG_PREFER: {
-	static const char *pkgPreferOptions[] = {
+	static const char *const pkgPreferOptions[] = {
 	    "latest", "stable", NULL
 	};
 
