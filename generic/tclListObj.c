@@ -428,7 +428,16 @@ Tcl_ListObjGetElements(
     if (listPtr->typePtr != &tclListType) {
 	int result, length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	/*
+	 * Don't get the string version of a dictionary; that transformation
+	 * is not lossy, but is expensive.
+	 */
+
+	if (listPtr->typePtr == &tclDictType) {
+	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
+	} else {
+	    (void) TclGetStringFromObj(listPtr, &length);
+	}
 	if (!length) {
 	    *objcPtr = 0;
 	    *objvPtr = NULL;
@@ -1081,8 +1090,8 @@ TclLindexFlat(
     Tcl_IncrRefCount(listPtr);
 
     for (i=0 ; i<indexCount && listPtr ; i++) {
-	int index, listLen;
-	Tcl_Obj **elemPtrs, *sublistCopy;
+	int index, listLen = 0;
+	Tcl_Obj **elemPtrs = NULL, *sublistCopy;
 
 	/*
 	 * Here we make a private copy of the current sublist, so we avoid any
@@ -1167,8 +1176,8 @@ TclLsetList(
     Tcl_Obj *indexArgPtr,	/* Index or index-list arg to 'lset'. */
     Tcl_Obj *valuePtr)		/* Value arg to 'lset'. */
 {
-    int indexCount;		/* Number of indices in the index list. */
-    Tcl_Obj **indices;		/* Vector of indices in the index list. */
+    int indexCount = 0;		/* Number of indices in the index list. */
+    Tcl_Obj **indices = NULL;	/* Vector of indices in the index list. */
     Tcl_Obj *retValuePtr;	/* Pointer to the list to be returned. */
     int index;			/* Current index in the list - discarded. */
     Tcl_Obj *indexListCopy;

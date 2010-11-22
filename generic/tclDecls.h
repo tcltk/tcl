@@ -79,11 +79,11 @@ EXTERN void		Tcl_DeleteFileHandler(int fd);
 EXTERN void		Tcl_DeleteFileHandler(int fd);
 #endif /* MACOSX */
 /* 11 */
-EXTERN void		Tcl_SetTimer(CONST86 Tcl_Time *timePtr);
+EXTERN void		Tcl_SetTimer(CONST Tcl_Time *timePtr);
 /* 12 */
 EXTERN void		Tcl_Sleep(int ms);
 /* 13 */
-EXTERN int		Tcl_WaitForEvent(CONST86 Tcl_Time *timePtr);
+EXTERN int		Tcl_WaitForEvent(CONST Tcl_Time *timePtr);
 /* 14 */
 EXTERN int		Tcl_AppendAllObjTypes(Tcl_Interp *interp,
 				Tcl_Obj *objPtr);
@@ -96,8 +96,7 @@ EXTERN void		Tcl_AppendToObj(Tcl_Obj*objPtr, CONST char*bytes,
 EXTERN Tcl_Obj *	Tcl_ConcatObj(int objc, Tcl_Obj *CONST objv[]);
 /* 18 */
 EXTERN int		Tcl_ConvertToType(Tcl_Interp *interp,
-				Tcl_Obj *objPtr,
-				CONST86 Tcl_ObjType *typePtr);
+				Tcl_Obj *objPtr, CONST Tcl_ObjType *typePtr);
 /* 19 */
 EXTERN void		Tcl_DbDecrRefCount(Tcl_Obj *objPtr, CONST char *file,
 				int line);
@@ -160,7 +159,7 @@ EXTERN int		Tcl_GetIntFromObj(Tcl_Interp *interp,
 EXTERN int		Tcl_GetLongFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, long *longPtr);
 /* 40 */
-EXTERN CONST86_RETURN Tcl_ObjType * Tcl_GetObjType(CONST char *typeName);
+EXTERN CONST86 Tcl_ObjType * Tcl_GetObjType(CONST char *typeName);
 /* 41 */
 EXTERN char *		Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr);
 /* 42 */
@@ -665,7 +664,7 @@ EXTERN int		Tcl_RecordAndEvalObj(Tcl_Interp *interp,
 EXTERN void		Tcl_RegisterChannel(Tcl_Interp *interp,
 				Tcl_Channel chan);
 /* 211 */
-EXTERN void		Tcl_RegisterObjType(CONST86 Tcl_ObjType *typePtr);
+EXTERN void		Tcl_RegisterObjType(CONST Tcl_ObjType *typePtr);
 /* 212 */
 EXTERN Tcl_RegExp	Tcl_RegExpCompile(Tcl_Interp *interp,
 				CONST char *pattern);
@@ -713,7 +712,7 @@ EXTERN void		Tcl_SetErrno(int err);
 /* 228 */
 EXTERN void		Tcl_SetErrorCode(Tcl_Interp *interp, ...);
 /* 229 */
-EXTERN void		Tcl_SetMaxBlockTime(CONST86 Tcl_Time *timePtr);
+EXTERN void		Tcl_SetMaxBlockTime(CONST Tcl_Time *timePtr);
 /* 230 */
 EXTERN void		Tcl_SetPanicProc(Tcl_PanicProc *panicProc);
 /* 231 */
@@ -953,8 +952,7 @@ EXTERN void		Tcl_MutexUnlock(Tcl_Mutex *mutexPtr);
 EXTERN void		Tcl_ConditionNotify(Tcl_Condition *condPtr);
 /* 311 */
 EXTERN void		Tcl_ConditionWait(Tcl_Condition *condPtr,
-				Tcl_Mutex *mutexPtr,
-				CONST86 Tcl_Time *timePtr);
+				Tcl_Mutex *mutexPtr, CONST Tcl_Time *timePtr);
 /* 312 */
 EXTERN int		Tcl_NumUtfChars(CONST char *src, int length);
 /* 313 */
@@ -1376,7 +1374,7 @@ EXTERN Tcl_Obj*		Tcl_FSJoinToPath(Tcl_Obj *pathPtr, int objc,
 				Tcl_Obj *CONST objv[]);
 /* 465 */
 EXTERN ClientData	Tcl_FSGetInternalRep(Tcl_Obj*pathPtr,
-				CONST86 Tcl_Filesystem *fsPtr);
+				CONST Tcl_Filesystem *fsPtr);
 /* 466 */
 EXTERN Tcl_Obj*		Tcl_FSGetTranslatedPath(Tcl_Interp *interp,
 				Tcl_Obj*pathPtr);
@@ -1384,7 +1382,7 @@ EXTERN Tcl_Obj*		Tcl_FSGetTranslatedPath(Tcl_Interp *interp,
 EXTERN int		Tcl_FSEvalFile(Tcl_Interp *interp, Tcl_Obj *fileName);
 /* 468 */
 EXTERN Tcl_Obj*		Tcl_FSNewNativePath(
-				CONST86 Tcl_Filesystem*fromFilesystem,
+				CONST Tcl_Filesystem*fromFilesystem,
 				ClientData clientData);
 /* 469 */
 EXTERN CONST char*	Tcl_FSGetNativePath(Tcl_Obj*pathPtr);
@@ -1396,23 +1394,22 @@ EXTERN Tcl_Obj*		Tcl_FSPathSeparator(Tcl_Obj*pathPtr);
 EXTERN Tcl_Obj*		Tcl_FSListVolumes(void);
 /* 473 */
 EXTERN int		Tcl_FSRegister(ClientData clientData,
-				CONST86 Tcl_Filesystem *fsPtr);
+				CONST Tcl_Filesystem *fsPtr);
 /* 474 */
-EXTERN int		Tcl_FSUnregister(CONST86 Tcl_Filesystem *fsPtr);
+EXTERN int		Tcl_FSUnregister(CONST Tcl_Filesystem *fsPtr);
 /* 475 */
-EXTERN ClientData	Tcl_FSData(CONST86 Tcl_Filesystem *fsPtr);
+EXTERN ClientData	Tcl_FSData(CONST Tcl_Filesystem *fsPtr);
 /* 476 */
 EXTERN CONST char*	Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp,
 				Tcl_Obj*pathPtr);
 /* 477 */
-EXTERN CONST86_RETURN Tcl_Filesystem* Tcl_FSGetFileSystemForPath(
-				Tcl_Obj*pathPtr);
+EXTERN CONST86 Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj*pathPtr);
 /* 478 */
 EXTERN Tcl_PathType	Tcl_FSGetPathType(Tcl_Obj *pathPtr);
 /* 479 */
 EXTERN int		Tcl_OutputBuffered(Tcl_Channel chan);
 /* 480 */
-EXTERN void		Tcl_FSMountsChanged(CONST86 Tcl_Filesystem *fsPtr);
+EXTERN void		Tcl_FSMountsChanged(CONST Tcl_Filesystem *fsPtr);
 /* 481 */
 EXTERN int		Tcl_EvalTokensStandard(Tcl_Interp *interp,
 				Tcl_Token *tokenPtr, int count);
@@ -1716,6 +1713,33 @@ EXTERN int		Tcl_Canceled(Tcl_Interp *interp, int flags);
 EXTERN int		Tcl_CreatePipe(Tcl_Interp *interp,
 				Tcl_Channel *rchan, Tcl_Channel *wchan,
 				int flags);
+/* 589 */
+EXTERN unsigned		Tcl_GetFSDeviceFromStat(const Tcl_StatBuf *statPtr);
+/* 590 */
+EXTERN unsigned		Tcl_GetFSInodeFromStat(const Tcl_StatBuf *statPtr);
+/* 591 */
+EXTERN unsigned		Tcl_GetModeFromStat(const Tcl_StatBuf *statPtr);
+/* 592 */
+EXTERN int		Tcl_GetLinkCountFromStat(const Tcl_StatBuf *statPtr);
+/* 593 */
+EXTERN int		Tcl_GetUserIdFromStat(const Tcl_StatBuf *statPtr);
+/* 594 */
+EXTERN int		Tcl_GetGroupIdFromStat(const Tcl_StatBuf *statPtr);
+/* 595 */
+EXTERN int		Tcl_GetDeviceTypeFromStat(const Tcl_StatBuf *statPtr);
+/* 596 */
+EXTERN Tcl_WideInt	Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr);
+/* 597 */
+EXTERN Tcl_WideInt	Tcl_GetModificationTimeFromStat(
+				const Tcl_StatBuf *statPtr);
+/* 598 */
+EXTERN Tcl_WideInt	Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr);
+/* 599 */
+EXTERN Tcl_WideUInt	Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr);
+/* 600 */
+EXTERN Tcl_WideUInt	Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr);
+/* 601 */
+EXTERN unsigned		Tcl_GetBlockSizeFromStat(const Tcl_StatBuf *statPtr);
 
 typedef struct TclStubHooks {
     const struct TclPlatStubs *tclPlatStubs;
@@ -1754,14 +1778,14 @@ typedef struct TclStubs {
 #ifdef MAC_OSX_TCL /* MACOSX */
     void (*tcl_DeleteFileHandler) (int fd); /* 10 */
 #endif /* MACOSX */
-    void (*tcl_SetTimer) (CONST86 Tcl_Time *timePtr); /* 11 */
+    void (*tcl_SetTimer) (CONST Tcl_Time *timePtr); /* 11 */
     void (*tcl_Sleep) (int ms); /* 12 */
-    int (*tcl_WaitForEvent) (CONST86 Tcl_Time *timePtr); /* 13 */
+    int (*tcl_WaitForEvent) (CONST Tcl_Time *timePtr); /* 13 */
     int (*tcl_AppendAllObjTypes) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 14 */
     void (*tcl_AppendStringsToObj) (Tcl_Obj *objPtr, ...); /* 15 */
     void (*tcl_AppendToObj) (Tcl_Obj*objPtr, CONST char*bytes, int length); /* 16 */
     Tcl_Obj * (*tcl_ConcatObj) (int objc, Tcl_Obj *CONST objv[]); /* 17 */
-    int (*tcl_ConvertToType) (Tcl_Interp *interp, Tcl_Obj *objPtr, CONST86 Tcl_ObjType *typePtr); /* 18 */
+    int (*tcl_ConvertToType) (Tcl_Interp *interp, Tcl_Obj *objPtr, CONST Tcl_ObjType *typePtr); /* 18 */
     void (*tcl_DbDecrRefCount) (Tcl_Obj *objPtr, CONST char *file, int line); /* 19 */
     void (*tcl_DbIncrRefCount) (Tcl_Obj *objPtr, CONST char *file, int line); /* 20 */
     int (*tcl_DbIsShared) (Tcl_Obj *objPtr, CONST char *file, int line); /* 21 */
@@ -1783,7 +1807,7 @@ typedef struct TclStubs {
     int (*tcl_GetInt) (Tcl_Interp *interp, CONST char *src, int *intPtr); /* 37 */
     int (*tcl_GetIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 38 */
     int (*tcl_GetLongFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr); /* 39 */
-    CONST86_RETURN Tcl_ObjType * (*tcl_GetObjType) (CONST char *typeName); /* 40 */
+    CONST86 Tcl_ObjType * (*tcl_GetObjType) (CONST char *typeName); /* 40 */
     char * (*tcl_GetStringFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 41 */
     void (*tcl_InvalidateStringRep) (Tcl_Obj *objPtr); /* 42 */
     int (*tcl_ListObjAppendList) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Obj *elemListPtr); /* 43 */
@@ -1986,7 +2010,7 @@ typedef struct TclStubs {
     int (*tcl_RecordAndEval) (Tcl_Interp *interp, CONST char *cmd, int flags); /* 208 */
     int (*tcl_RecordAndEvalObj) (Tcl_Interp *interp, Tcl_Obj *cmdPtr, int flags); /* 209 */
     void (*tcl_RegisterChannel) (Tcl_Interp *interp, Tcl_Channel chan); /* 210 */
-    void (*tcl_RegisterObjType) (CONST86 Tcl_ObjType *typePtr); /* 211 */
+    void (*tcl_RegisterObjType) (CONST Tcl_ObjType *typePtr); /* 211 */
     Tcl_RegExp (*tcl_RegExpCompile) (Tcl_Interp *interp, CONST char *pattern); /* 212 */
     int (*tcl_RegExpExec) (Tcl_Interp *interp, Tcl_RegExp regexp, CONST char *text, CONST char *start); /* 213 */
     int (*tcl_RegExpMatch) (Tcl_Interp *interp, CONST char *text, CONST char *pattern); /* 214 */
@@ -2004,7 +2028,7 @@ typedef struct TclStubs {
     int (*tcl_SetCommandInfo) (Tcl_Interp *interp, CONST char *cmdName, CONST Tcl_CmdInfo *infoPtr); /* 226 */
     void (*tcl_SetErrno) (int err); /* 227 */
     void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
-    void (*tcl_SetMaxBlockTime) (CONST86 Tcl_Time *timePtr); /* 229 */
+    void (*tcl_SetMaxBlockTime) (CONST Tcl_Time *timePtr); /* 229 */
     void (*tcl_SetPanicProc) (Tcl_PanicProc *panicProc); /* 230 */
     int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
     void (*tcl_SetResult) (Tcl_Interp *interp, char *result, Tcl_FreeProc *freeProc); /* 232 */
@@ -2086,7 +2110,7 @@ typedef struct TclStubs {
     void (*tcl_MutexLock) (Tcl_Mutex *mutexPtr); /* 308 */
     void (*tcl_MutexUnlock) (Tcl_Mutex *mutexPtr); /* 309 */
     void (*tcl_ConditionNotify) (Tcl_Condition *condPtr); /* 310 */
-    void (*tcl_ConditionWait) (Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr, CONST86 Tcl_Time *timePtr); /* 311 */
+    void (*tcl_ConditionWait) (Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr, CONST Tcl_Time *timePtr); /* 311 */
     int (*tcl_NumUtfChars) (CONST char *src, int length); /* 312 */
     int (*tcl_ReadChars) (Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead, int appendFlag); /* 313 */
     void (*tcl_RestoreResult) (Tcl_Interp *interp, Tcl_SavedResult *statePtr); /* 314 */
@@ -2240,22 +2264,22 @@ typedef struct TclStubs {
     int (*tcl_FSEqualPaths) (Tcl_Obj*firstPtr, Tcl_Obj*secondPtr); /* 462 */
     Tcl_Obj* (*tcl_FSGetNormalizedPath) (Tcl_Interp *interp, Tcl_Obj*pathPtr); /* 463 */
     Tcl_Obj* (*tcl_FSJoinToPath) (Tcl_Obj *pathPtr, int objc, Tcl_Obj *CONST objv[]); /* 464 */
-    ClientData (*tcl_FSGetInternalRep) (Tcl_Obj*pathPtr, CONST86 Tcl_Filesystem *fsPtr); /* 465 */
+    ClientData (*tcl_FSGetInternalRep) (Tcl_Obj*pathPtr, CONST Tcl_Filesystem *fsPtr); /* 465 */
     Tcl_Obj* (*tcl_FSGetTranslatedPath) (Tcl_Interp *interp, Tcl_Obj*pathPtr); /* 466 */
     int (*tcl_FSEvalFile) (Tcl_Interp *interp, Tcl_Obj *fileName); /* 467 */
-    Tcl_Obj* (*tcl_FSNewNativePath) (CONST86 Tcl_Filesystem*fromFilesystem, ClientData clientData); /* 468 */
+    Tcl_Obj* (*tcl_FSNewNativePath) (CONST Tcl_Filesystem*fromFilesystem, ClientData clientData); /* 468 */
     CONST char* (*tcl_FSGetNativePath) (Tcl_Obj*pathPtr); /* 469 */
     Tcl_Obj* (*tcl_FSFileSystemInfo) (Tcl_Obj*pathPtr); /* 470 */
     Tcl_Obj* (*tcl_FSPathSeparator) (Tcl_Obj*pathPtr); /* 471 */
     Tcl_Obj* (*tcl_FSListVolumes) (void); /* 472 */
-    int (*tcl_FSRegister) (ClientData clientData, CONST86 Tcl_Filesystem *fsPtr); /* 473 */
-    int (*tcl_FSUnregister) (CONST86 Tcl_Filesystem *fsPtr); /* 474 */
-    ClientData (*tcl_FSData) (CONST86 Tcl_Filesystem *fsPtr); /* 475 */
+    int (*tcl_FSRegister) (ClientData clientData, CONST Tcl_Filesystem *fsPtr); /* 473 */
+    int (*tcl_FSUnregister) (CONST Tcl_Filesystem *fsPtr); /* 474 */
+    ClientData (*tcl_FSData) (CONST Tcl_Filesystem *fsPtr); /* 475 */
     CONST char* (*tcl_FSGetTranslatedStringPath) (Tcl_Interp *interp, Tcl_Obj*pathPtr); /* 476 */
-    CONST86_RETURN Tcl_Filesystem* (*tcl_FSGetFileSystemForPath) (Tcl_Obj*pathPtr); /* 477 */
+    CONST86 Tcl_Filesystem* (*tcl_FSGetFileSystemForPath) (Tcl_Obj*pathPtr); /* 477 */
     Tcl_PathType (*tcl_FSGetPathType) (Tcl_Obj *pathPtr); /* 478 */
     int (*tcl_OutputBuffered) (Tcl_Channel chan); /* 479 */
-    void (*tcl_FSMountsChanged) (CONST86 Tcl_Filesystem *fsPtr); /* 480 */
+    void (*tcl_FSMountsChanged) (CONST Tcl_Filesystem *fsPtr); /* 480 */
     int (*tcl_EvalTokensStandard) (Tcl_Interp *interp, Tcl_Token *tokenPtr, int count); /* 481 */
     void (*tcl_GetTime) (Tcl_Time*timeBuf); /* 482 */
     Tcl_Trace (*tcl_CreateObjTrace) (Tcl_Interp*interp, int level, int flags, Tcl_CmdObjTraceProc*objProc, ClientData clientData, Tcl_CmdObjTraceDeleteProc*delProc); /* 483 */
@@ -2364,6 +2388,19 @@ typedef struct TclStubs {
     void (*reserved586)(void);
     void (*reserved587)(void);
     int (*tcl_CreatePipe) (Tcl_Interp *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags); /* 588 */
+    unsigned (*tcl_GetFSDeviceFromStat) (const Tcl_StatBuf *statPtr); /* 589 */
+    unsigned (*tcl_GetFSInodeFromStat) (const Tcl_StatBuf *statPtr); /* 590 */
+    unsigned (*tcl_GetModeFromStat) (const Tcl_StatBuf *statPtr); /* 591 */
+    int (*tcl_GetLinkCountFromStat) (const Tcl_StatBuf *statPtr); /* 592 */
+    int (*tcl_GetUserIdFromStat) (const Tcl_StatBuf *statPtr); /* 593 */
+    int (*tcl_GetGroupIdFromStat) (const Tcl_StatBuf *statPtr); /* 594 */
+    int (*tcl_GetDeviceTypeFromStat) (const Tcl_StatBuf *statPtr); /* 595 */
+    Tcl_WideInt (*tcl_GetAccessTimeFromStat) (const Tcl_StatBuf *statPtr); /* 596 */
+    Tcl_WideInt (*tcl_GetModificationTimeFromStat) (const Tcl_StatBuf *statPtr); /* 597 */
+    Tcl_WideInt (*tcl_GetChangeTimeFromStat) (const Tcl_StatBuf *statPtr); /* 598 */
+    Tcl_WideUInt (*tcl_GetSizeFromStat) (const Tcl_StatBuf *statPtr); /* 599 */
+    Tcl_WideUInt (*tcl_GetBlocksFromStat) (const Tcl_StatBuf *statPtr); /* 600 */
+    unsigned (*tcl_GetBlockSizeFromStat) (const Tcl_StatBuf *statPtr); /* 601 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3598,6 +3635,32 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 587 is reserved */
 #define Tcl_CreatePipe \
 	(tclStubsPtr->tcl_CreatePipe) /* 588 */
+#define Tcl_GetFSDeviceFromStat \
+	(tclStubsPtr->tcl_GetFSDeviceFromStat) /* 589 */
+#define Tcl_GetFSInodeFromStat \
+	(tclStubsPtr->tcl_GetFSInodeFromStat) /* 590 */
+#define Tcl_GetModeFromStat \
+	(tclStubsPtr->tcl_GetModeFromStat) /* 591 */
+#define Tcl_GetLinkCountFromStat \
+	(tclStubsPtr->tcl_GetLinkCountFromStat) /* 592 */
+#define Tcl_GetUserIdFromStat \
+	(tclStubsPtr->tcl_GetUserIdFromStat) /* 593 */
+#define Tcl_GetGroupIdFromStat \
+	(tclStubsPtr->tcl_GetGroupIdFromStat) /* 594 */
+#define Tcl_GetDeviceTypeFromStat \
+	(tclStubsPtr->tcl_GetDeviceTypeFromStat) /* 595 */
+#define Tcl_GetAccessTimeFromStat \
+	(tclStubsPtr->tcl_GetAccessTimeFromStat) /* 596 */
+#define Tcl_GetModificationTimeFromStat \
+	(tclStubsPtr->tcl_GetModificationTimeFromStat) /* 597 */
+#define Tcl_GetChangeTimeFromStat \
+	(tclStubsPtr->tcl_GetChangeTimeFromStat) /* 598 */
+#define Tcl_GetSizeFromStat \
+	(tclStubsPtr->tcl_GetSizeFromStat) /* 599 */
+#define Tcl_GetBlocksFromStat \
+	(tclStubsPtr->tcl_GetBlocksFromStat) /* 600 */
+#define Tcl_GetBlockSizeFromStat \
+	(tclStubsPtr->tcl_GetBlockSizeFromStat) /* 601 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

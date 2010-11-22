@@ -584,6 +584,12 @@ TclpSetVariables(
     Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
 	    TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&ds);
+
+    /*
+     * Define what the platform PATH separator is. [TIP #315]
+     */
+
+    Tcl_SetVar2(interp, "tcl_platform","pathSeparator", ";", TCL_GLOBAL_ONLY);
 }
 
 /*

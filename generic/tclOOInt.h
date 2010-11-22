@@ -76,7 +76,7 @@ typedef struct ProcedureMethod {
     ClientData clientData;
     TclOO_PmCDDeleteProc deleteClientdataProc;
     TclOO_PmCDCloneProc cloneClientdataProc;
-    ProcErrorProc errProc;	/* Replacement error handler. */
+    ProcErrorProc *errProc;	/* Replacement error handler. */
     TclOO_PreCallProc preCallProc;
 				/* Callback to allow for additional setup
 				 * before the method executes. */
@@ -175,6 +175,7 @@ typedef struct Object {
     Tcl_ObjectMapMethodNameProc mapMethodNameProc;
 				/* Function to allow remapping of method
 				 * names. For itcl-ng. */
+    LIST_STATIC(Tcl_Obj *) variables;
 } Object;
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been
@@ -248,6 +249,7 @@ typedef struct Class {
 				 * object doesn't override with its own mixins
 				 * (and filters and method implementations for
 				 * when getting method chains). */
+    LIST_STATIC(Tcl_Obj *) variables;
 } Class;
 
 /*
@@ -422,6 +424,9 @@ MODULE_SCOPE int	TclOODefineSuperclassObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOODefineUnexportObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineVariablesObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineClassObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
@@ -487,6 +492,7 @@ MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
+MODULE_SCOPE Tcl_Obj *	TclOOGetMethodBody(Method *mPtr);
 MODULE_SCOPE int	TclOOGetSortedClassMethodList(Class *clsPtr,
 			    int flags, const char ***stringsPtr);
 MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
@@ -506,6 +512,7 @@ MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
 MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
+MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 
 /*
  * Include all the private API, generated from tclOO.decls.

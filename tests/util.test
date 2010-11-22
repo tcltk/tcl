@@ -163,6 +163,11 @@ test util-4.6 {Tcl_ConcatObj - utf-8 sequence with "whitespace" char} {
     # Check for Bug #227512.  If this violates C isspace, then it returns \xc3.
     concat \xe0
 } \xe0
+test util-4.7 {Tcl_ConcatObj - refCount safety} {
+    # Check for Bug #1447328 (actually, bugs in its original "fix"). One of the
+    # symptoms was Bug #2055782. 
+    testconcatobj
+} {}
 
 proc Wrapper_Tcl_StringMatch {pattern string} {
     # Forces use of Tcl_StringMatch, not Tcl_UniCharCaseMatch

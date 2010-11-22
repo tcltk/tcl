@@ -38,6 +38,7 @@ static const struct {
     {"self", TclOODefineSelfObjCmd, 0},
     {"superclass", TclOODefineSuperclassObjCmd, 0},
     {"unexport", TclOODefineUnexportObjCmd, 0},
+    {"variable", TclOODefineVariablesObjCmd, 0},
     {NULL, NULL, 0}
 }, objdefCmds[] = {
     {"class", TclOODefineClassObjCmd, 1},
@@ -49,6 +50,7 @@ static const struct {
     {"mixin", TclOODefineMixinObjCmd, 1},
     {"renamemethod", TclOODefineRenameMethodObjCmd, 1},
     {"unexport", TclOODefineUnexportObjCmd, 1},
+    {"variable", TclOODefineVariablesObjCmd, 1},
     {NULL, NULL, 0}
 };
 
@@ -441,6 +443,15 @@ AllocObject(
 
   configNamespace:
     TclSetNsPath((Namespace *) oPtr->namespacePtr, 1, &fPtr->helpersNs);
+    TclOOSetupVariableResolver(oPtr->namespacePtr);
+
+    /*
+     * Suppress use of compiled versions of the commands in this object's
+     * namespace and its children; causes wrong behaviour without expensive
+     * recompilation. [Bug 2037727]
+     */
+
+    ((Namespace *) oPtr->namespacePtr)->flags |= NS_SUPPRESS_COMPILATION;
 
     /*
      * Fill in the rest of the non-zero/NULL parts of the structure.
@@ -739,7 +750,7 @@ ObjectNamespaceDeleted(
     FOREACH_HASH_DECLS;
     Class *clsPtr = oPtr->classPtr, *mixinPtr;
     Method *mPtr;
-    Tcl_Obj *filterObj;
+    Tcl_Obj *filterObj, *variableObj;
     int i, preserved = !(oPtr->flags & OBJECT_DELETED);
 
     /*
@@ -784,6 +795,13 @@ ObjectNamespaceDeleted(
 	}
 	Tcl_DeleteHashTable(oPtr->methodsPtr);
 	ckfree((char *) oPtr->methodsPtr);
+    }
+
+    FOREACH(variableObj, oPtr->variables) {
+	Tcl_DecrRefCount(variableObj);
+    }
+    if (i) {
+	ckfree((char *) oPtr->variables.list);
     }
 
     if (oPtr->chainCache) {
@@ -867,6 +885,14 @@ ObjectNamespaceDeleted(
 	Tcl_DeleteHashTable(&clsPtr->classMethods);
 	TclOODelMethodRef(clsPtr->constructorPtr);
 	TclOODelMethodRef(clsPtr->destructorPtr);
+
+	FOREACH(variableObj, clsPtr->variables) {
+	    Tcl_DecrRefCount(variableObj);
+	}
+	if (i) {
+	    ckfree((char *) clsPtr->variables.list);
+	}
+
 	DelRef(clsPtr);
     }
 
@@ -1952,10 +1978,17 @@ Tcl_ObjectContextInvokeNext(
 
     if (contextPtr->index+1 >= contextPtr->callPtr->numChain) {
 	/*
-	 * We're at the end of the chain; generate an error message.
+	 * We're at the end of the chain; generate an error message unless the
+	 * interpreter is being torn down, in which case we might be getting
+	 * here because of methods/destructors doing a [next] (or equivalent)
+	 * unexpectedly.
 	 */
 
 	const char *methodType;
+
+	if (Tcl_InterpDeleted(interp)) {
+	    return TCL_OK;
+	}
 
 	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
 	    methodType = "constructor";

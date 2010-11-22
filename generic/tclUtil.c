@@ -1197,11 +1197,7 @@ Tcl_ConcatObj(
 		if (resPtr) {
 		    Tcl_ListObjReplace(NULL, resPtr, INT_MAX, 0, listc, listv);
 		} else {
-		    if (Tcl_IsShared(objPtr)) {
-			resPtr = TclListObjCopy(NULL, objPtr);
-		    } else {
-			resPtr = objPtr;
-		    }
+		    resPtr = TclListObjCopy(NULL, objPtr);
 		}
 	    }
 	}
@@ -3279,24 +3275,43 @@ TclReToGlob(
     Tcl_DStringInit(dsPtr);
 
     /*
-     * "***=xxx" == "*xxx*"
+     * "***=xxx" == "*xxx*", watch for glob-sensitive chars.
      */
 
     if ((reStrLen >= 4) && (memcmp("***=", reStr, 4) == 0)) {
-	if (exactPtr) {
-	    *exactPtr = 1;
+	/*
+	 * At most, the glob pattern has length 2*reStrLen + 2 to
+	 * backslash escape every character and have * at each end.
+	 */
+	Tcl_DStringSetLength(dsPtr, reStrLen + 2);
+	dsStr = dsStrStart = Tcl_DStringValue(dsPtr);
+	*dsStr++ = '*';
+	for (p = reStr + 4; p < strEnd; p++) {
+	    switch (*p) {
+	    case '\\': case '*': case '[': case ']': case '?':
+		/* Only add \ where necessary for glob */
+		*dsStr++ = '\\';
+		/* fall through */
+	    default:
+		*dsStr++ = *p;
+		break;
+	    }
 	}
-	Tcl_DStringAppend(dsPtr, reStr + 4, reStrLen - 4);
+	*dsStr++ = '*';
+	Tcl_DStringSetLength(dsPtr, dsStr - dsStrStart);
+	if (exactPtr) {
+	    *exactPtr = 0;
+	}
 	return TCL_OK;
     }
 
     /*
-     * Write to the ds directly without the function overhead.
-     * An equivalent glob pattern can be no more than reStrLen+2 in size.
+     * At most, the glob pattern has length reStrLen + 2 to account
+     * for possible * at each end.
      */
 
     Tcl_DStringSetLength(dsPtr, reStrLen + 2);
-    dsStrStart = Tcl_DStringValue(dsPtr);
+    dsStr = dsStrStart = Tcl_DStringValue(dsPtr);
 
     /*
      * Check for anchored REs (ie ^foo$), so we can use string equal if
@@ -3311,7 +3326,7 @@ TclReToGlob(
     p = reStr;
     anchorRight = 0;
     lastIsStar = 0;
-    dsStr = dsStrStart;
+
     if (*p == '^') {
 	anchorLeft = 1;
 	p++;

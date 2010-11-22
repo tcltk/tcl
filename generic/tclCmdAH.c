@@ -1179,10 +1179,6 @@ Tcl_FileObjCmd(
 		GetTypeFromMode((unsigned short) buf.st_mode), -1));
 	return TCL_OK;
     case FCMD_MKDIR:
-	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "name ?name ...?");
-	    return TCL_ERROR;
-	}
 	return TclFileMakeDirsCmd(interp, objc, objv);
     case FCMD_NATIVENAME: {
 	const char *fileName;

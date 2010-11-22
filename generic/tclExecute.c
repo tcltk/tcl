@@ -199,35 +199,37 @@ VarHashCreateVar(
  *    resultHandling: 0 indicates no object should be pushed on the stack;
  *	otherwise, push objResultPtr. If (result < 0), objResultPtr already
  *	has the correct reference count.
+ *
+ * We use the new compile-time assertions to cheack that nCleanup is constant
+ * and within range.
  */
 
 #define NEXT_INST_F(pcAdjustment, nCleanup, resultHandling) \
-    if (nCleanup == 0) {\
-	if (resultHandling != 0) {\
-	    if ((resultHandling) > 0) {\
-		PUSH_OBJECT(objResultPtr);\
-	    } else {\
-		*(++tosPtr) = objResultPtr;\
-	    }\
-	} \
-	pc += (pcAdjustment);\
-	goto cleanup0;\
-    } else if (resultHandling != 0) {\
-	if ((resultHandling) > 0) {\
-	    Tcl_IncrRefCount(objResultPtr);\
-	}\
-	pc += (pcAdjustment);\
-	switch (nCleanup) {\
-	    case 1: goto cleanup1_pushObjResultPtr;\
-	    case 2: goto cleanup2_pushObjResultPtr;\
-	    default: Tcl_Panic("bad usage of macro NEXT_INST_F");\
+    TCL_CT_ASSERT((nCleanup >= 0) && (nCleanup <= 2));	    \
+    if (nCleanup == 0) {				    \
+	if (resultHandling != 0) {			    \
+	    if ((resultHandling) > 0) {			    \
+		PUSH_OBJECT(objResultPtr);		    \
+	    } else {					    \
+		*(++tosPtr) = objResultPtr;		    \
+	    }						    \
+	}						    \
+	pc += (pcAdjustment);				    \
+	goto cleanup0;					    \
+    } else if (resultHandling != 0) {			    \
+	if ((resultHandling) > 0) {			    \
+	    Tcl_IncrRefCount(objResultPtr);		    \
+	}						    \
+	pc += (pcAdjustment);				    \
+	switch (nCleanup) {				    \
+	    case 1: goto cleanup1_pushObjResultPtr;	    \
+	    case 2: goto cleanup2_pushObjResultPtr;	    \
 	}\
     } else {\
 	pc += (pcAdjustment);\
 	switch (nCleanup) {\
 	    case 1: goto cleanup1;\
 	    case 2: goto cleanup2;\
-	    default: Tcl_Panic("bad usage of macro NEXT_INST_F");\
 	}\
     }
 
@@ -1231,7 +1233,8 @@ Tcl_ExprObj(
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
-		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
+		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)
+		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
 	    objPtr->typePtr->freeIntRepProc(objPtr);
 	    objPtr->typePtr = (Tcl_ObjType *) NULL;
 	}
@@ -1268,6 +1271,10 @@ Tcl_ExprObj(
 	objPtr->typePtr = &exprCodeType;
 	TclFreeCompileEnv(&compEnv);
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	if (iPtr->varFramePtr->localCachePtr) {
+	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
+	    codePtr->localCachePtr->refCount++;
+	}
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceCompile == 2) {
 	    TclPrintByteCodeObj(interp, objPtr);
@@ -1463,11 +1470,6 @@ TclCompEvalObj(
 		}
 		codePtr->compileEpoch = iPtr->compileEpoch;
 	    } else {
-		/*
-		 * This byteCode is invalid: free it and recompile.
-		 */
-
-		objPtr->typePtr->freeIntRepProc(objPtr);
 		goto recompileObj;
 	    }
 	}
@@ -2071,7 +2073,7 @@ TclExecuteByteCode(
 	    goto instStartCmdOK;
 	} else {
 	    const char *bytes;
-	    int length, opnd;
+	    int length = 0, opnd;
 	    Tcl_Obj *newObjResultPtr;
 
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
@@ -2097,7 +2099,7 @@ TclExecuteByteCode(
 	    TclNewObj(newObjResultPtr);
 	    Tcl_IncrRefCount(newObjResultPtr);
 	    iPtr->objResultPtr = newObjResultPtr;
-	    NEXT_INST_V(opnd, 0, -1);
+	    NEXT_INST_F(opnd, 0, -1);
 	}
 
     case INST_DUP:

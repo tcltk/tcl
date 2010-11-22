@@ -1459,7 +1459,7 @@ test fileName-20.1 {Bug 1750300} -setup {
     set d [makeDirectory foo]
     makeFile {} TAGS $d
 } -body {
-    llength [glob -nocomplain -directory $d -- TAGS tags Tags]
+    llength [glob -nocomplain -directory $d -- TAGS one two]
 } -cleanup {
     removeFile TAGS $d
     removeDirectory foo
@@ -1468,7 +1468,7 @@ test fileName-20.2 {Bug 1750300} -setup {
     set d [makeDirectory foo]
     makeFile {} TAGS $d
 } -body {
-    llength [glob -nocomplain -directory $d -types {} -- TAGS tags Tags]
+    llength [glob -nocomplain -directory $d -types {} -- TAGS one two]
 } -cleanup {
     removeFile TAGS $d
     removeDirectory foo
@@ -1486,7 +1486,7 @@ test fileName-20.4 {Bug 1750300} -setup {
     set d [makeDirectory foo]
     makeFile {} TAGS $d
 } -body {
-    llength [glob -nocomplain -directory $d -types {} -- URGENT Urgent]
+    llength [glob -nocomplain -directory $d -types {} -- URGENT Urkle]
 } -cleanup {
     removeFile TAGS $d
     removeDirectory foo

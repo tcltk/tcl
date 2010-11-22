@@ -1792,6 +1792,100 @@ TclOODefineUnexportObjCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOODefineVariablesObjCmd --
+ *	Implementation of the "variable" subcommand of the "oo::define" and
+ *	"oo::objdefine" commands.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOODefineVariablesObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    int isInstanceVars = (clientData != NULL);
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Tcl_Obj *variableObj;
+    int i;
+
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (!isInstanceVars && !oPtr->classPtr) {
+	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	return TCL_ERROR;
+    }
+
+    for (i=1 ; i<objc ; i++) {
+	const char *varName = Tcl_GetString(objv[i]);
+
+	if (strstr(varName, "::") != NULL) {
+	    Tcl_AppendResult(interp, "invalid declared variable name \"",
+		    varName, "\": must not contain namespace separators",
+		    NULL);
+	    return TCL_ERROR;
+	}
+	if (Tcl_StringMatch(varName, "*(*)")) {
+	    Tcl_AppendResult(interp, "invalid declared variable name \"",
+		    varName, "\": must not refer to an array element", NULL);
+	    return TCL_ERROR;
+	}
+    }
+    for (i=1 ; i<objc ; i++) {
+	Tcl_IncrRefCount(objv[i]);
+    }
+
+    if (!isInstanceVars) {
+	FOREACH(variableObj, oPtr->classPtr->variables) {
+	    Tcl_DecrRefCount(variableObj);
+	}
+	if (i != objc-1) {
+	    if (objc == 1) {
+		ckfree((char *) oPtr->classPtr->variables.list);
+	    } else if (i) {
+		oPtr->classPtr->variables.list = (Tcl_Obj **)
+			ckrealloc((char *) oPtr->classPtr->variables.list,
+			sizeof(Tcl_Obj *) * (objc-1));
+	    } else {
+		oPtr->classPtr->variables.list = (Tcl_Obj **)
+			ckalloc(sizeof(Tcl_Obj *) * (objc-1));
+	    }
+	}
+	if (objc > 1) {
+	    memcpy(oPtr->classPtr->variables.list, objv+1,
+		    sizeof(Tcl_Obj *) * (objc-1));
+	}
+	oPtr->classPtr->variables.num = objc-1;
+    } else {
+	FOREACH(variableObj, oPtr->variables) {
+	    Tcl_DecrRefCount(variableObj);
+	}
+	if (i != objc-1) {
+	    if (objc == 1) {
+		ckfree((char *) oPtr->variables.list);
+	    } else if (i) {
+		oPtr->variables.list = (Tcl_Obj **)
+			ckrealloc((char *) oPtr->variables.list,
+			sizeof(Tcl_Obj *) * (objc-1));
+	    } else {
+		oPtr->variables.list = (Tcl_Obj **)
+			ckalloc(sizeof(Tcl_Obj *) * (objc-1));
+	    }
+	}
+	if (objc > 1) {
+	    memcpy(oPtr->variables.list, objv+1, sizeof(Tcl_Obj *)*(objc-1));
+	}
+	oPtr->variables.num = objc-1;
+    }
+    return TCL_OK;
+}
+
 void
 Tcl_ClassSetConstructor(
     Tcl_Interp *interp,

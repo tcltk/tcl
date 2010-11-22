@@ -462,6 +462,8 @@ install-libraries:
 	@echo installing library files
 	-@copy "$(GENERICDIR)\tcl.h"         "$(INCLUDE_INSTALL_DIR)"
 	-@copy "$(GENERICDIR)\tclDecls.h"    "$(INCLUDE_INSTALL_DIR)"
+	-@copy "$(GENERICDIR)\tclOO.h"       "$(INCLUDE_INSTALL_DIR)"
+	-@copy "$(GENERICDIR)\tclOODecls.h"  "$(INCLUDE_INSTALL_DIR)"
 	-@copy "$(GENERICDIR)\tclPlatDecls.h" "$(INCLUDE_INSTALL_DIR)"
 	-@copy "$(ROOT)\library\history.tcl" "$(SCRIPT_INSTALL_DIR)"
 	-@copy "$(ROOT)\library\init.tcl"    "$(SCRIPT_INSTALL_DIR)"

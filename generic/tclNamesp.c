@@ -887,6 +887,16 @@ Tcl_CreateNamespace(
     Tcl_DStringFree(&buffer2);
 
     /*
+     * If compilation of commands originating from the parent NS is
+     * suppressed, suppress it for commands originating in this one too.
+     */
+
+    if (nsPtr->parentPtr != NULL &&
+	    nsPtr->parentPtr->flags & NS_SUPPRESS_COMPILATION) {
+	nsPtr->flags |= NS_SUPPRESS_COMPILATION;
+    }
+
+    /*
      * Return a pointer to the new namespace.
      */
 
