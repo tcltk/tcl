@@ -548,7 +548,7 @@ ObjectRenamedTrace(
 
     AddRef(oPtr);
     oPtr->flags |= OBJECT_DELETED;
-    if (!(flags & TCL_INTERP_DESTROYED)) {
+    if (!Tcl_InterpDeleted(interp)) {
 	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR);
 
 	if (contextPtr != NULL) {

@@ -1203,7 +1203,9 @@ TclInfoFrame(
 	 */
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[fPtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(fPtr->line[0]));
+	if (fPtr->line) {
+	    ADD_PAIR("line", Tcl_NewIntObj(fPtr->line[0]));
+	}
 
 	if (fPtr->type == TCL_LOCATION_SOURCE) {
 	    ADD_PAIR("file", fPtr->data.eval.path);

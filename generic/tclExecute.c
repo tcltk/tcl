@@ -851,12 +851,12 @@ TclFinalizeExecution(void)
 }
 
 /*
- * Auxiliary code to insure that GrowEvaluationStack always returns correctly 
+ * Auxiliary code to insure that GrowEvaluationStack always returns correctly
  * aligned memory.
  *
  * WALLOCALIGN represents the alignment reqs in words, just as TCL_ALLOCALIGN
  * represents the reqs in bytes. This assumes that TCL_ALLOCALIGN is a
- * multiple of the wordsize 'sizeof(Tcl_Obj *)'. 
+ * multiple of the wordsize 'sizeof(Tcl_Obj *)'.
  */
 
 #define WALLOCALIGN \
@@ -878,7 +878,7 @@ OFFSET(
 }
 
 /*
- * Given a marker, compute where the following aligned memory starts. 
+ * Given a marker, compute where the following aligned memory starts.
  */
 
 #define MEMSTART(markerPtr)			\
@@ -931,13 +931,13 @@ GrowEvaluationStack(
 
 	if (needed + offset < 0) {
 	    /*
-	     * Put a marker pointing to the previous marker in this stack, and 
+	     * Put a marker pointing to the previous marker in this stack, and
 	     * store it in esPtr as the current marker. Return a pointer to
 	     * the start of aligned memory.
 	     */
 
 	    esPtr->markerPtr = tmpMarkerPtr;
-	    memStart = tmpMarkerPtr + offset; 
+	    memStart = tmpMarkerPtr + offset;
 	    esPtr->tosPtr = memStart - 1;
 	    *esPtr->markerPtr = (Tcl_Obj *) markerPtr;
 	    return memStart;
@@ -947,7 +947,7 @@ GrowEvaluationStack(
     /*
      * Reset move to hold the number of words to be moved to new stack (if
      * any) and growth to hold the complete stack requirements: add the marker
-     * and maximal possible offset. 
+     * and maximal possible offset.
      */
 
     if (move) {
@@ -1011,7 +1011,7 @@ GrowEvaluationStack(
     esPtr->markerPtr = &esPtr->stackWords[0];
     memStart = MEMSTART(esPtr->markerPtr);
     esPtr->tosPtr = memStart - 1;
-    
+
     if (move) {
 	memcpy(memStart, MEMSTART(markerPtr), moveWords*sizeof(Tcl_Obj *));
 	esPtr->tosPtr += moveWords;

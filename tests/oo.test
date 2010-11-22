@@ -1787,6 +1787,34 @@ test oo-25.1 {call chain caching} -setup {
     lappend result [foo $m1] [bar $m2]
 } -result {ok ok ok ok ok ok good ok}
 
+test oo-26.1 {Bug 2037727} -setup {
+    proc succeed args {}
+    oo::object create example
+} -body {
+    oo::objdefine example method foo {} {succeed}
+    example foo
+    proc succeed {} {return succeed}
+    example foo
+} -cleanup {
+    example destroy
+    rename succeed {}
+} -result succeed
+
+test oo-26.2 {Bug 2037727} -setup {
+    oo::class create example {
+	method namespace {} {self namespace}
+	method foo {} {succeed}
+    }
+    example create i1
+    example create i2
+    namespace eval [i1 namespace] {proc succeed args {}}
+    namespace eval [i2 namespace] {proc succeed args {return succeed}}
+} -body {
+    list [i1 foo] [i2 foo]
+} -cleanup {
+    example destroy
+} -result {{} succeed}
+
 cleanupTests
 return
 

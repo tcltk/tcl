@@ -226,7 +226,7 @@ InfoObjectDefnCmd(
     Tcl_Obj *argsObj;
 
     if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 3, objv, "objName methodName");
+	Tcl_WrongNumArgs(interp, 1, objv, "objName methodName");
 	return TCL_ERROR;
     }
 
@@ -599,7 +599,7 @@ InfoObjectMixinsCmd(
     int i;
 
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 3, objv, "objName");
+	Tcl_WrongNumArgs(interp, 1, objv, "objName");
 	return TCL_ERROR;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);

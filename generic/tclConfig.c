@@ -78,7 +78,7 @@ Tcl_RegisterConfig(
 				 * configuration values, ASCII, thus UTF-8. */
 {
     Tcl_DString cmdName;
-    Tcl_Config *cfg;
+    const Tcl_Config *cfg;
     Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
     QCCD *cdPtr = (QCCD *) ckalloc(sizeof(QCCD));
 

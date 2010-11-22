@@ -997,8 +997,7 @@ TclLookupSimpleVar(
 	    }
 	}
     } else {			/* Local var: look in frame varFramePtr. */
-	Proc *procPtr = varFramePtr->procPtr;
-	int localCt = procPtr->numCompiledLocals;
+	int localCt = varFramePtr->numCompiledLocals;
 	Tcl_Obj **objPtrPtr = &varFramePtr->localCachePtr->varName0;
 
 	for (i=0 ; i<localCt ; i++, objPtrPtr++) {

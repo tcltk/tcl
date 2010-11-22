@@ -254,7 +254,8 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 		    # means something else without the namespace
 		    # specifier.
 
-		    package ifneeded $pkgname $pkgversion [::list source -encoding utf-8 $file]
+		    package ifneeded $pkgname $pkgversion \
+			"[::list package provide $pkgname $pkgversion];[::list source -encoding utf-8 $file]"
 
 		    # We abort in this unknown handler only if we got
 		    # a satisfying candidate for the requested
