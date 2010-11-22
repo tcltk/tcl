@@ -832,7 +832,11 @@ Tcl_ListObjReplace(
     }
     if (count < 0) {
 	count = 0;
-    } else if (numElems < first+count) {
+    } else if (numElems < first+count || first+count < 0) {
+	/*
+	 * The 'first+count < 0' condition here guards agains integer
+	 * overflow in determining 'first+count'
+	 */
 	count = numElems - first;
     }
 
@@ -1614,6 +1618,7 @@ FreeListInternalRep(
 
     listPtr->internalRep.twoPtrValue.ptr1 = NULL;
     listPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    listPtr->typePtr = NULL;
 }
 
 /*
@@ -1670,7 +1675,8 @@ SetListFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
-    char *string, *s;
+    const char *string;
+    char *s;
     const char *elemStart, *nextElem;
     int lenRemain, length, estCount, elemSize, hasBrace, i, j, result;
     const char *limit;		/* Points just after string's last byte. */
@@ -1682,10 +1688,12 @@ SetListFromAny(
     /*
      * Dictionaries are a special case; they have a string representation such
      * that *all* valid dictionaries are valid lists. Hence we can convert
-     * more directly.
+     * more directly. Only do this when there's no existing string rep; if
+     * there is, it is the string rep that's authoritative (because it could
+     * describe duplicate keys).
      */
 
-    if (objPtr->typePtr == &tclDictType) {
+    if (objPtr->typePtr == &tclDictType && !objPtr->bytes) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;
@@ -1705,6 +1713,7 @@ SetListFromAny(
 	    Tcl_SetResult(interp,
 		    "insufficient memory to allocate list working space",
 		    TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    return TCL_ERROR;
 	}
 	listRepPtr->elemCount = 2 * size;
@@ -1764,6 +1773,7 @@ SetListFromAny(
     if (!listRepPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"Not enough memory to allocate the list internal rep", -1));
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	return TCL_ERROR;
     }
     elemPtrs = &listRepPtr->elements;
@@ -1779,6 +1789,9 @@ SetListFromAny(
 		Tcl_DecrRefCount(elemPtr);
 	    }
 	    ckfree((char *) listRepPtr);
+	    if (interp != NULL) {
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", NULL);
+	    }
 	    return result;
 	}
 	if (elemStart >= limit) {
@@ -1855,7 +1868,8 @@ UpdateStringOfList(
     List *listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     int numElems = listRepPtr->elemCount;
     register int i;
-    char *elem, *dst;
+    const char *elem;
+    char *dst;
     int length;
     Tcl_Obj **elemPtrs;
 

@@ -25,7 +25,9 @@ static Tcl_ObjCmdProc InfoObjectFiltersCmd;
 static Tcl_ObjCmdProc InfoObjectForwardCmd;
 static Tcl_ObjCmdProc InfoObjectIsACmd;
 static Tcl_ObjCmdProc InfoObjectMethodsCmd;
+static Tcl_ObjCmdProc InfoObjectMethodTypeCmd;
 static Tcl_ObjCmdProc InfoObjectMixinsCmd;
+static Tcl_ObjCmdProc InfoObjectNsCmd;
 static Tcl_ObjCmdProc InfoObjectVarsCmd;
 static Tcl_ObjCmdProc InfoObjectVariablesCmd;
 static Tcl_ObjCmdProc InfoClassConstrCmd;
@@ -35,6 +37,7 @@ static Tcl_ObjCmdProc InfoClassFiltersCmd;
 static Tcl_ObjCmdProc InfoClassForwardCmd;
 static Tcl_ObjCmdProc InfoClassInstancesCmd;
 static Tcl_ObjCmdProc InfoClassMethodsCmd;
+static Tcl_ObjCmdProc InfoClassMethodTypeCmd;
 static Tcl_ObjCmdProc InfoClassMixinsCmd;
 static Tcl_ObjCmdProc InfoClassSubsCmd;
 static Tcl_ObjCmdProc InfoClassSupersCmd;
@@ -47,15 +50,17 @@ struct NameProcMap { const char *name; Tcl_ObjCmdProc *proc; };
  */
 
 static const struct NameProcMap infoObjectCmds[] = {
-    {"::oo::InfoObject::class",	     InfoObjectClassCmd},
-    {"::oo::InfoObject::definition", InfoObjectDefnCmd},
-    {"::oo::InfoObject::filters",    InfoObjectFiltersCmd},
-    {"::oo::InfoObject::forward",    InfoObjectForwardCmd},
-    {"::oo::InfoObject::isa",	     InfoObjectIsACmd},
-    {"::oo::InfoObject::methods",    InfoObjectMethodsCmd},
-    {"::oo::InfoObject::mixins",     InfoObjectMixinsCmd},
-    {"::oo::InfoObject::variables",  InfoObjectVariablesCmd},
-    {"::oo::InfoObject::vars",	     InfoObjectVarsCmd},
+    {"::oo::InfoObject::class",		InfoObjectClassCmd},
+    {"::oo::InfoObject::definition",	InfoObjectDefnCmd},
+    {"::oo::InfoObject::filters",	InfoObjectFiltersCmd},
+    {"::oo::InfoObject::forward",	InfoObjectForwardCmd},
+    {"::oo::InfoObject::isa",		InfoObjectIsACmd},
+    {"::oo::InfoObject::methods",	InfoObjectMethodsCmd},
+    {"::oo::InfoObject::methodtype",	InfoObjectMethodTypeCmd},
+    {"::oo::InfoObject::mixins",	InfoObjectMixinsCmd},
+    {"::oo::InfoObject::namespace",	InfoObjectNsCmd},
+    {"::oo::InfoObject::variables",	InfoObjectVariablesCmd},
+    {"::oo::InfoObject::vars",		InfoObjectVarsCmd},
     {NULL, NULL}
 };
 
@@ -64,17 +69,18 @@ static const struct NameProcMap infoObjectCmds[] = {
  */
 
 static const struct NameProcMap infoClassCmds[] = {
-    {"::oo::InfoClass::constructor",  InfoClassConstrCmd},
-    {"::oo::InfoClass::definition",   InfoClassDefnCmd},
-    {"::oo::InfoClass::destructor",   InfoClassDestrCmd},
-    {"::oo::InfoClass::filters",      InfoClassFiltersCmd},
-    {"::oo::InfoClass::forward",      InfoClassForwardCmd},
-    {"::oo::InfoClass::instances",    InfoClassInstancesCmd},
-    {"::oo::InfoClass::methods",      InfoClassMethodsCmd},
-    {"::oo::InfoClass::mixins",	      InfoClassMixinsCmd},
-    {"::oo::InfoClass::subclasses",   InfoClassSubsCmd},
-    {"::oo::InfoClass::superclasses", InfoClassSupersCmd},
-    {"::oo::InfoClass::variables",    InfoClassVariablesCmd},
+    {"::oo::InfoClass::constructor",	InfoClassConstrCmd},
+    {"::oo::InfoClass::definition",	InfoClassDefnCmd},
+    {"::oo::InfoClass::destructor",	InfoClassDestrCmd},
+    {"::oo::InfoClass::filters",	InfoClassFiltersCmd},
+    {"::oo::InfoClass::forward",	InfoClassForwardCmd},
+    {"::oo::InfoClass::instances",	InfoClassInstancesCmd},
+    {"::oo::InfoClass::methods",	InfoClassMethodsCmd},
+    {"::oo::InfoClass::methodtype",	InfoClassMethodTypeCmd},
+    {"::oo::InfoClass::mixins",		InfoClassMixinsCmd},
+    {"::oo::InfoClass::subclasses",	InfoClassSubsCmd},
+    {"::oo::InfoClass::superclasses",	InfoClassSupersCmd},
+    {"::oo::InfoClass::variables",	InfoClassVariablesCmd},
     {NULL, NULL}
 };
 
@@ -171,6 +177,8 @@ GetClassFromObj(
     if (oPtr->classPtr == NULL) {
 	Tcl_AppendResult(interp, "\"", TclGetString(objPtr),
 		"\" is not a class", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		TclGetString(objPtr), NULL);
 	return NULL;
     }
     return oPtr->classPtr;
@@ -221,6 +229,8 @@ InfoObjectClassCmd(
 	if (o2Ptr->classPtr == NULL) {
 	    Tcl_AppendResult(interp, "object \"", TclGetString(objv[2]),
 		    "\" is not a class", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		    TclGetString(objv[2]), NULL);
 	    return TCL_ERROR;
 	}
 
@@ -277,12 +287,16 @@ InfoObjectDefnCmd(
     unknownMethod:
 	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
 		"\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
     procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp,
 		"definition not available for this kind of method", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
 
@@ -384,6 +398,8 @@ InfoObjectForwardCmd(
     unknownMethod:
 	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
 		"\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
     prefixObj = TclOOGetFwdFromMethod(Tcl_GetHashValue(hPtr));
@@ -391,6 +407,8 @@ InfoObjectForwardCmd(
 	Tcl_AppendResult(interp,
 		"prefix argument list not available for this kind of method",
 		NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
 
@@ -586,7 +604,9 @@ InfoObjectMethodsCmd(
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(names[i], -1));
 	}
-	ckfree((char *) names);
+	if (numNames > 0) {
+	    ckfree((char *) names);
+	}
     } else if (oPtr->methodsPtr) {
 	FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
 	    if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
@@ -595,6 +615,63 @@ InfoObjectMethodsCmd(
 	}
     }
     Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectMethodTypeCmd --
+ *
+ *	Implements [info object methodtype $objName $methodName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+InfoObjectMethodTypeCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Object *oPtr;
+    Tcl_HashEntry *hPtr;
+    Method *mPtr;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName methodName");
+	return TCL_ERROR;
+    }
+
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    if (!oPtr->methodsPtr) {
+	goto unknownMethod;
+    }
+    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[2]);
+    if (hPtr == NULL) {
+    unknownMethod:
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
+		"\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]), NULL);
+	return TCL_ERROR;
+    }
+    mPtr = Tcl_GetHashValue(hPtr);
+    if (mPtr->typePtr == NULL) {
+	/*
+	 * Special entry for visibility control: pretend the method doesnt
+	 * exist.
+	 */
+
+	goto unknownMethod;
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(mPtr->typePtr->name, -1));
     return TCL_OK;
 }
 
@@ -635,6 +712,39 @@ InfoObjectMixinsCmd(
 		TclOOObjectName(interp, mixinPtr->thisPtr));
     }
     Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectNsCmd --
+ *
+ *	Implements [info object namespace $objName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+InfoObjectNsCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Object *oPtr;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName");
+	return TCL_ERROR;
+    }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp,
+	    Tcl_NewStringObj(oPtr->namespacePtr->fullName, -1));
     return TCL_OK;
 }
 
@@ -832,12 +942,16 @@ InfoClassDefnCmd(
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
 		"\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
     procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp,
 		"definition not available for this kind of method", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
 
@@ -975,6 +1089,8 @@ InfoClassForwardCmd(
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
 		"\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
     prefixObj = TclOOGetFwdFromMethod(Tcl_GetHashValue(hPtr));
@@ -982,6 +1098,8 @@ InfoClassForwardCmd(
 	Tcl_AppendResult(interp,
 		"prefix argument list not available for this kind of method",
 		NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
     }
 
@@ -1104,7 +1222,9 @@ InfoClassMethodsCmd(
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(names[i], -1));
 	}
-	ckfree((char *) names);
+	if (numNames > 0) {
+	    ckfree((char *) names);
+	}
     } else {
 	FOREACH_HASH_DECLS;
 
@@ -1115,6 +1235,58 @@ InfoClassMethodsCmd(
 	}
     }
     Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassMethodTypeCmd --
+ *
+ *	Implements [info class methodtype $clsName $methodName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+InfoClassMethodTypeCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_HashEntry *hPtr;
+    Method *mPtr;
+    Class *clsPtr;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className methodName");
+	return TCL_ERROR;
+    }
+    clsPtr = GetClassFromObj(interp, objv[1]);
+    if (clsPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[2]);
+    if (hPtr == NULL) {
+    unknownMethod:
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
+		"\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]), NULL);
+	return TCL_ERROR;
+    }
+    mPtr = Tcl_GetHashValue(hPtr);
+    if (mPtr->typePtr == NULL) {
+	/*
+	 * Special entry for visibility control: pretend the method doesnt
+	 * exist.
+	 */
+
+	goto unknownMethod;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(mPtr->typePtr->name, -1));
     return TCL_OK;
 }
 

@@ -179,7 +179,7 @@ Tcl_RegisterConfig(
 
     if (Tcl_CreateObjCommand(interp, Tcl_DStringValue(&cmdName),
 	    QueryConfigObjCmd, cdPtr, QueryConfigDelete) == NULL) {
-        Tcl_Panic("%s: %s", "Tcl_RegisterConfig",
+	Tcl_Panic("%s: %s", "Tcl_RegisterConfig",
 		"Unable to create query command for package configuration");
     }
 
@@ -233,12 +233,12 @@ QueryConfigObjCmd(
     pDB = GetConfigDict(interp);
     if (Tcl_DictObjGet(interp, pDB, pkgName, &pkgDict) != TCL_OK
 	    || pkgDict == NULL) {
-        /*
+	/*
 	 * Maybe a Tcl_Panic is better, because the package data has to be
 	 * present.
 	 */
 
-        Tcl_SetResult(interp, "package not known", TCL_STATIC);
+	Tcl_SetResult(interp, "package not known", TCL_STATIC);
 	return TCL_ERROR;
     }
 

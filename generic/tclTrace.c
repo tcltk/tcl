@@ -193,7 +193,8 @@ Tcl_TraceObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int optionIndex;
-    char *name, *flagOps, *p;
+    const char *name;
+    const char *flagOps, *p;
     /* Main sub commands to 'trace' */
     static const char *const traceOptions[] = {
 	"add", "info", "remove",
@@ -325,26 +326,26 @@ Tcl_TraceObjCmd(
 	name = Tcl_GetString(objv[2]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
 	    TraceVarInfo *tvarPtr = clientData;
+	    char *q = ops;
 
 	    pairObjPtr = Tcl_NewListObj(0, NULL);
-	    p = ops;
 	    if (tvarPtr->flags & TCL_TRACE_READS) {
-		*p = 'r';
-		p++;
+		*q = 'r';
+		q++;
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_WRITES) {
-		*p = 'w';
-		p++;
+		*q = 'w';
+		q++;
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_UNSETS) {
-		*p = 'u';
-		p++;
+		*q = 'u';
+		q++;
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_ARRAY) {
-		*p = 'a';
-		p++;
+		*q = 'a';
+		q++;
 	    }
-	    *p = '\0';
+	    *q = '\0';
 
 	    /*
 	     * Build a pair (2-item list) with the ops string as the first obj
@@ -399,7 +400,7 @@ TraceExecutionObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int commandLength, index;
-    char *name, *command;
+    const char *name, *command;
     size_t length;
     enum traceOptions {
 	TRACE_ADD, TRACE_INFO, TRACE_REMOVE
@@ -477,7 +478,7 @@ TraceExecutionObjCmd(
 		    TCL_TRACE_LEAVE_DURING_EXEC)) {
 		flags |= (TCL_TRACE_ENTER_EXEC | TCL_TRACE_LEAVE_EXEC);
 	    }
-	    strcpy(tcmdPtr->command, command);
+	    memcpy(tcmdPtr->command, command, length+1);
 	    name = Tcl_GetString(objv[3]);
 	    if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 		    tcmdPtr) != TCL_OK) {
@@ -648,7 +649,7 @@ TraceCommandObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int commandLength, index;
-    char *name, *command;
+    const char *name, *command;
     size_t length;
     enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
     static const char *const opStrings[] = { "delete", "rename", NULL };
@@ -710,7 +711,7 @@ TraceCommandObjCmd(
 	    tcmdPtr->length = length;
 	    tcmdPtr->refCount = 1;
 	    flags |= TCL_TRACE_DELETE;
-	    strcpy(tcmdPtr->command, command);
+	    memcpy(tcmdPtr->command, command, length+1);
 	    name = Tcl_GetString(objv[3]);
 	    if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 		    tcmdPtr) != TCL_OK) {
@@ -840,8 +841,9 @@ TraceVariableObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int commandLength, index;
-    char *name, *command;
+    const char *name, *command;
     size_t length;
+    ClientData clientData;
     enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
     static const char *const opStrings[] = {
 	"array", "read", "unset", "write", NULL
@@ -902,13 +904,14 @@ TraceVariableObjCmd(
 	    CombinedTraceVarInfo *ctvarPtr = (CombinedTraceVarInfo *)
 		    ckalloc((unsigned) (sizeof(CombinedTraceVarInfo)
 		    + length + 1 - sizeof(ctvarPtr->traceCmdInfo.command)));
+
 	    ctvarPtr->traceCmdInfo.flags = flags;
 	    if (objv[0] == NULL) {
 		ctvarPtr->traceCmdInfo.flags |= TCL_TRACE_OLD_STYLE;
 	    }
 	    ctvarPtr->traceCmdInfo.length = length;
 	    flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
-	    strcpy(ctvarPtr->traceCmdInfo.command, command);
+	    memcpy(ctvarPtr->traceCmdInfo.command, command, length+1);
 	    ctvarPtr->traceInfo.traceProc = TraceVarProc;
 	    ctvarPtr->traceInfo.clientData = &ctvarPtr->traceCmdInfo;
 	    ctvarPtr->traceInfo.flags = flags;
@@ -924,8 +927,6 @@ TraceVariableObjCmd(
 	     * there's one with the given command. If so, then delete the
 	     * first one that matches.
 	     */
-
-	    ClientData clientData;
 
 	    name = Tcl_GetString(objv[3]);
 	    FOREACH_VAR_TRACE(interp, name, clientData) {
@@ -945,7 +946,6 @@ TraceVariableObjCmd(
 	break;
     }
     case TRACE_INFO: {
-	ClientData clientData;
 	Tcl_Obj *resultListPtr;
 
 	if (objc != 4) {
@@ -1814,7 +1814,7 @@ TraceExecutionProc(
 		}
 	    } else if (flags & TCL_TRACE_LEAVE_EXEC) {
 		Tcl_Obj *resultCode;
-		char *resultCodeStr;
+		const char *resultCodeStr;
 
 		/*
 		 * Append result code.
@@ -2269,7 +2269,7 @@ static void
 StringTraceDeleteProc(
     ClientData clientData)
 {
-    ckfree((char *) clientData);
+    ckfree(clientData);
 }
 
 /*
@@ -2297,7 +2297,7 @@ Tcl_DeleteTrace(
 {
     Interp *iPtr = (Interp *) interp;
     Trace *prevPtr, *tracePtr = (Trace *) trace;
-    register Trace **tracePtr2 = &(iPtr->tracePtr);
+    register Trace **tracePtr2 = &iPtr->tracePtr;
     ActiveInterpTrace *activePtr;
 
     /*
@@ -2306,14 +2306,14 @@ Tcl_DeleteTrace(
      */
 
     prevPtr = NULL;
-    while ((*tracePtr2) != NULL && (*tracePtr2) != tracePtr) {
+    while (*tracePtr2 != NULL && *tracePtr2 != tracePtr) {
 	prevPtr = *tracePtr2;
-	tracePtr2 = &((*tracePtr2)->nextPtr);
+	tracePtr2 = &prevPtr->nextPtr;
     }
     if (*tracePtr2 == NULL) {
 	return;
     }
-    (*tracePtr2) = (*tracePtr2)->nextPtr;
+    *tracePtr2 = (*tracePtr2)->nextPtr;
 
     /*
      * The code below makes it possible to delete traces while traces are
@@ -2464,7 +2464,7 @@ TclObjCallVarTraces(
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
-    char *part1, *part2;
+    const char *part1, *part2;
 
     if (!part1Ptr) {
 	part1Ptr = localName(iPtr->varFramePtr, index);
@@ -2885,6 +2885,7 @@ Tcl_UntraceVar2(
     } else {
 	prevPtr->nextPtr = nextPtr;
     }
+    tracePtr->nextPtr = NULL;
     Tcl_EventuallyFree(tracePtr, TCL_DYNAMIC);
 
     for (tracePtr = nextPtr; tracePtr != NULL;
@@ -3184,7 +3185,7 @@ TraceVarEx(
 #endif
     tracePtr->flags = tracePtr->flags & flagMask;
 
-    hPtr = Tcl_CreateHashEntry(&iPtr->varTraces, (char *) varPtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(&iPtr->varTraces, varPtr, &isNew);
     if (isNew) {
 	tracePtr->nextPtr = NULL;
     } else {
