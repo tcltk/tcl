@@ -145,7 +145,7 @@ Tcl_PutsObjCmd(
 	     * documented.
 	     */
 
-	    char *arg;
+	    const char *arg;
 	    int length;
 
 	    arg = TclGetStringFromObj(objv[3], &length);
@@ -402,7 +402,6 @@ Tcl_ReadObjCmd(
 
 	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? channelId");
-	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	return TCL_ERROR;
     }
 
@@ -435,7 +434,7 @@ Tcl_ReadObjCmd(
 
     toRead = -1;
     if (i < objc) {
-	char *arg;
+	const char *arg;
 
 	arg = TclGetString(objv[i]);
 	if (isdigit(UCHAR(arg[0]))) { /* INTL: digit */
@@ -477,7 +476,7 @@ Tcl_ReadObjCmd(
      */
 
     if ((charactersRead > 0) && (newline != 0)) {
-	char *result;
+	const char *result;
 	int length;
 
 	result = TclGetStringFromObj(resultPtr, &length);
@@ -680,10 +679,11 @@ Tcl_CloseObjCmd(
 	 * never opened for that direction).
 	 */
 
-	if (!(dir & Tcl_GetChannelMode (chan))) {
-	    Tcl_AppendResult (interp, "Half-close of ", dirOptions[optionIndex],
-			      "-side not possible, side not opened or already closed",
-			      NULL);
+	if (!(dir & Tcl_GetChannelMode(chan))) {
+	    Tcl_AppendResult(interp, "Half-close of ",
+		    dirOptions[optionIndex],
+		    "-side not possible, side not opened or already closed",
+		    NULL);
 	    return TCL_ERROR;
 	}
 
@@ -694,8 +694,9 @@ Tcl_CloseObjCmd(
 	 * process.
 	 */
 
-	if ((Tcl_GetChannelMode (chan) & (TCL_CLOSE_READ|TCL_CLOSE_WRITE)) != dir) {
-	    return Tcl_CloseEx (interp, chan, dir) != TCL_OK;
+	if ((Tcl_GetChannelMode(chan) &
+		(TCL_CLOSE_READ|TCL_CLOSE_WRITE)) != dir) {
+	    return Tcl_CloseEx(interp, chan, dir);
 	}
     }
 
@@ -712,7 +713,7 @@ Tcl_CloseObjCmd(
 	 */
 
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
-	char *string;
+	const char *string;
 	int len;
 
 	if (Tcl_IsShared(resultPtr)) {
@@ -754,7 +755,7 @@ Tcl_FconfigureObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *optionName, *valueName;
+    const char *optionName, *valueName;
     Tcl_Channel chan;		/* The channel to set a mode on. */
     int i;			/* Iterate over arg-value pairs. */
 
@@ -879,7 +880,7 @@ Tcl_ExecObjCmd(
 
     Tcl_Obj *resultPtr;
     const char **argv;
-    char *string;
+    const char *string;
     Tcl_Channel chan;
     int argc, background, i, index, keepNewline, result, skip, length;
     int ignoreStderr;
@@ -955,7 +956,7 @@ Tcl_ExecObjCmd(
      * Free the argv array.
      */
 
-    TclStackFree(interp, (void *)argv);
+    TclStackFree(interp, (void *) argv);
 
     if (chan == NULL) {
 	return TCL_ERROR;
@@ -1105,7 +1106,7 @@ Tcl_OpenObjCmd(
     } else {
 	modeString = TclGetString(objv[2]);
 	if (objc == 4) {
-	    char *permString = TclGetString(objv[3]);
+	    const char *permString = TclGetString(objv[3]);
 	    int code = TCL_ERROR;
 	    int scanned = TclParseAllWhiteSpace(permString, -1);
 
@@ -1170,7 +1171,7 @@ Tcl_OpenObjCmd(
 		break;
 	    }
 	    chan = Tcl_OpenCommandChannel(interp, cmdObjc, cmdArgv, flags);
-	    if (binary) {
+	    if (binary && chan) {
 		Tcl_SetChannelOption(interp, chan, "-translation", "binary");
 	    }
 	}
@@ -1270,7 +1271,7 @@ RegisterTcpServerInterpCleanup(
 		TcpAcceptCallbacksDeleteProc, hTblPtr);
     }
 
-    hPtr = Tcl_CreateHashEntry(hTblPtr, (char *) acceptCallbackPtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(hTblPtr, acceptCallbackPtr, &isNew);
     if (!isNew) {
 	Tcl_Panic("RegisterTcpServerCleanup: damaged accept record table");
     }
@@ -1461,13 +1462,13 @@ Tcl_SocketObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const socketOptions[] = {
-	"-async", "-myaddr", "-myport","-server", NULL
+	"-async", "-myaddr", "-myport", "-server", NULL
     };
     enum socketOptions {
 	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_SERVER
     };
     int optionIndex, a, server = 0, port, myport = 0, async = 0;
-    char *host, *script = NULL, *myaddr = NULL;
+    const char *host, *script = NULL, *myaddr = NULL;
     Tcl_Channel chan;
 
     if (TclpHasSockets(interp) != TCL_OK) {
@@ -1503,7 +1504,7 @@ Tcl_SocketObjCmd(
 	    myaddr = TclGetString(objv[a]);
 	    break;
 	case SKT_MYPORT: {
-	    char *myPortName;
+	    const char *myPortName;
 
 	    a++;
 	    if (a >= objc) {
@@ -1556,7 +1557,6 @@ Tcl_SocketObjCmd(
 	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"-server command ?-myaddr addr? port");
-	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	return TCL_ERROR;
     }
 
@@ -1640,7 +1640,8 @@ Tcl_FcopyObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel inChan, outChan;
-    int mode, i, toRead, index;
+    int mode, i, index;
+    Tcl_WideInt toRead;
     Tcl_Obj *cmdPtr;
     static const char *const switches[] = { "-size", "-command", NULL };
     enum { FcopySize, FcopyCommand };
@@ -1682,16 +1683,17 @@ Tcl_FcopyObjCmd(
 	}
 	switch (index) {
 	case FcopySize:
-	    if (TclGetIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (toRead<0) {
+	    if (toRead < 0) {
 		/*
 		 * Handle all negative sizes like -1, meaning 'copy all'. By
 		 * resetting toRead we avoid changes in the core copying
 		 * functions (which explicitly check for -1 and crash on any
 		 * other negative value).
 		 */
+
 		toRead = -1;
 	    }
 	    break;
@@ -1922,25 +1924,25 @@ TclInitChanCmd(
      * function at the moment.
      */
     static const EnsembleImplMap initMap[] = {
-	{"blocked",	Tcl_FblockedObjCmd},
-	{"close",	Tcl_CloseObjCmd},
-	{"copy",	Tcl_FcopyObjCmd},
-	{"create",	TclChanCreateObjCmd},		/* TIP #219 */
-	{"eof",		Tcl_EofObjCmd},
-	{"event",	Tcl_FileEventObjCmd},
-	{"flush",	Tcl_FlushObjCmd},
-	{"gets",	Tcl_GetsObjCmd},
-	{"pending",	ChanPendingObjCmd},		/* TIP #287 */
-	{"pop",         TclChanPopObjCmd},              /* TIP #230 */
-	{"postevent",	TclChanPostEventObjCmd},	/* TIP #219 */
-	{"push",        TclChanPushObjCmd},             /* TIP #230 */
-	{"puts",	Tcl_PutsObjCmd},
-	{"read",	Tcl_ReadObjCmd},
-	{"seek",	Tcl_SeekObjCmd},
-	{"pipe",	ChanPipeObjCmd},		/* TIP #304 */
-	{"tell",	Tcl_TellObjCmd},
-	{"truncate",	ChanTruncateObjCmd},		/* TIP #208 */
-	{NULL}
+	{"blocked",	Tcl_FblockedObjCmd, NULL, NULL, NULL},
+	{"close",	Tcl_CloseObjCmd, NULL, NULL, NULL},
+	{"copy",	Tcl_FcopyObjCmd, NULL, NULL, NULL},
+	{"create",	TclChanCreateObjCmd, NULL, NULL, NULL},		/* TIP #219 */
+	{"eof",		Tcl_EofObjCmd, NULL, NULL, NULL},
+	{"event",	Tcl_FileEventObjCmd, NULL, NULL, NULL},
+	{"flush",	Tcl_FlushObjCmd, NULL, NULL, NULL},
+	{"gets",	Tcl_GetsObjCmd, NULL, NULL, NULL},
+	{"pending",	ChanPendingObjCmd, NULL, NULL, NULL},		/* TIP #287 */
+	{"pop",		TclChanPopObjCmd, NULL, NULL, NULL},		/* TIP #230 */
+	{"postevent",	TclChanPostEventObjCmd, NULL, NULL, NULL},	/* TIP #219 */
+	{"push",	TclChanPushObjCmd, NULL, NULL, NULL},		/* TIP #230 */
+	{"puts",	Tcl_PutsObjCmd, NULL, NULL, NULL},
+	{"read",	Tcl_ReadObjCmd, NULL, NULL, NULL},
+	{"seek",	Tcl_SeekObjCmd, NULL, NULL, NULL},
+	{"pipe",	ChanPipeObjCmd, NULL, NULL, NULL},		/* TIP #304 */
+	{"tell",	Tcl_TellObjCmd, NULL, NULL, NULL},
+	{"truncate",	ChanTruncateObjCmd, NULL, NULL, NULL},		/* TIP #208 */
+	{NULL, NULL, NULL, NULL, NULL}
     };
     static const char *const extras[] = {
 	"configure",	"::fconfigure",

@@ -25,6 +25,14 @@
 
 #include "tclInt.h"
 
+/* Static functions defined within this file */
+
+static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
+			const char* symbol);
+static void
+UnloadFile(Tcl_LoadHandle handle);
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -57,6 +65,7 @@ TclpDlopen(
 				 * file. */
 {
     shl_t handle;
+    Tcl_LoadHandle newHandle;
     const char *native;
     char *fileName = Tcl_GetString(pathPtr);
 
@@ -97,15 +106,18 @@ TclpDlopen(
 		Tcl_PosixError(interp), (char *) NULL);
 	return TCL_ERROR;
     }
-    *loadHandle = (Tcl_LoadHandle) handle;
-    *unloadProcPtr = &TclpUnloadFile;
+    newHandle = (Tcl_LoadHandle) ckalloc(sizeof(*newHandle));
+    newHandle->clientData = handle;
+    newHandle->findSymbolProcPtr = &FindSymbol;
+    newHandle->unloadFileProcPtr = *unloadProcPtr = &UnloadFile;
+    *loadHandle = newHandle;
     return TCL_OK;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpFindSymbol --
+ * Tcl_FindSymbol --
  *
  *	Looks up a symbol, by name, through a handle associated with a
  *	previously loaded piece of code (shared library).
@@ -118,15 +130,15 @@ TclpDlopen(
  *----------------------------------------------------------------------
  */
 
-Tcl_PackageInitProc *
-TclpFindSymbol(
+static void*
+FindSymbol(
     Tcl_Interp *interp,
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
     Tcl_DString newName;
     Tcl_PackageInitProc *proc = NULL;
-    shl_t handle = (shl_t)loadHandle;
+    shl_t handle = (shl_t)(loadHandle->clientData);
 
     /*
      * Some versions of the HP system software still use "_" at the beginning
@@ -144,13 +156,18 @@ TclpFindSymbol(
 	}
 	Tcl_DStringFree(&newName);
     }
+    if (proc == NULL && interp != NULL) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "cannot find symbol\"", symbol, 
+			 "\": ", Tcl_PosixError(interp), NULL);
+    }
     return proc;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpUnloadFile --
+ * UnloadFile --
  *
  *	Unloads a dynamically loaded binary code file from memory.  Code
  *	pointers in the formerly loaded file are no longer valid after calling
@@ -165,16 +182,17 @@ TclpFindSymbol(
  *----------------------------------------------------------------------
  */
 
-void
-TclpUnloadFile(
+static void
+UnloadFile(
     Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
     shl_t handle;
 
-    handle = (shl_t) loadHandle;
+    handle = (shl_t) (loadHandle -> clientData);
     shl_unload(handle);
+    ckfree((char*) loadHandle);
 }
 
 /*

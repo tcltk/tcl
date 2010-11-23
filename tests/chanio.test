@@ -6522,7 +6522,7 @@ test chan-io-52.5a {TclCopyChannel, all, other negative value} {fcopy} {
     }
     set result
 } {0 0 ok}
-test chan-io-52.5b {TclCopyChannel, all, wrap to negative value} {fcopy} {
+test chan-io-52.5b {TclCopyChannel, all, wrap to negative value} {fcopy HANG} {
     file delete $path(test1)
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]

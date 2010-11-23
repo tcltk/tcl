@@ -16,6 +16,14 @@
 #include "tcl.h"
 
 /*
+ * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
+ * Pkgb_Init declaration is in the source file itself, which is only
+ * accessed when we are building a library.
+ */
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLEXPORT
+
+/*
  * Prototypes for procedures defined later in this file:
  */
 
@@ -107,7 +115,7 @@ Pkgb_UnsafeObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
+EXTERN int
 Pkgb_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
@@ -121,10 +129,9 @@ Pkgb_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkgb_sub", Pkgb_SubObjCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateObjCommand(interp, "pkgb_unsafe", Pkgb_UnsafeObjCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "pkgb_sub", Pkgb_SubObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "pkgb_unsafe", Pkgb_UnsafeObjCmd, NULL,
+	    NULL);
     return TCL_OK;
 }
 
@@ -145,7 +152,7 @@ Pkgb_Init(
  *----------------------------------------------------------------------
  */
 
-int
+EXTERN int
 Pkgb_SafeInit(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
@@ -159,7 +166,6 @@ Pkgb_SafeInit(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkgb_sub", Pkgb_SubObjCmd, (ClientData) 0,
-	    (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "pkgb_sub", Pkgb_SubObjCmd, NULL, NULL);
     return TCL_OK;
 }

@@ -16,6 +16,14 @@
 #include "tcl.h"
 
 /*
+ * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
+ * Pkgua_Init declaration is in the source file itself, which is only
+ * accessed when we are building a library.
+ */
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLEXPORT
+
+/*
  * Prototypes for procedures defined later in this file:
  */
 
@@ -51,7 +59,7 @@ PkguaInitTokensHashTable(void)
     interpTokenMapInitialised = 1;
 }
 
-void
+static void
 PkguaFreeTokensHashTable(void)
 {
     Tcl_HashSearch search;
@@ -79,7 +87,7 @@ PkguaInterpToTokens(
 	for (newEntry=0 ; newEntry<MAX_REGISTERED_COMMANDS+1 ; ++newEntry) {
 	    cmdTokens[newEntry] = NULL;
 	}
-	Tcl_SetHashValue(entryPtr, (ClientData) cmdTokens);
+	Tcl_SetHashValue(entryPtr, cmdTokens);
     } else {
 	cmdTokens = (Tcl_Command *) Tcl_GetHashValue(entryPtr);
     }
@@ -193,7 +201,7 @@ PkguaQuoteObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
+EXTERN int
 Pkgua_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
@@ -221,11 +229,11 @@ Pkgua_Init(
 
     cmdTokens = PkguaInterpToTokens(interp);
     cmdTokens[cmdIndex++] =
-	    Tcl_CreateObjCommand(interp, "pkgua_eq", PkguaEqObjCmd,
-		    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+	    Tcl_CreateObjCommand(interp, "pkgua_eq", PkguaEqObjCmd, NULL,
+		    NULL);
     cmdTokens[cmdIndex++] =
 	    Tcl_CreateObjCommand(interp, "pkgua_quote", PkguaQuoteObjCmd,
-		    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+		    NULL, NULL);
     return TCL_OK;
 }
 
@@ -246,7 +254,7 @@ Pkgua_Init(
  *----------------------------------------------------------------------
  */
 
-int
+EXTERN int
 Pkgua_SafeInit(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
@@ -271,7 +279,7 @@ Pkgua_SafeInit(
  *----------------------------------------------------------------------
  */
 
-int
+EXTERN int
 Pkgua_Unload(
     Tcl_Interp *interp,		/* Interpreter from which the package is to be
 				 * unloaded. */
@@ -324,7 +332,7 @@ Pkgua_Unload(
  *----------------------------------------------------------------------
  */
 
-int
+EXTERN int
 Pkgua_SafeUnload(
     Tcl_Interp *interp,		/* Interpreter from which the package is to be
 				 * unloaded. */

@@ -1,22 +1,31 @@
-/* 
+/*
  * tclXtTest.c --
  *
  *	Contains commands for Xt notifier specific tests on Unix.
  *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * RCS: @(#) $Id: tclXtTest.c,v 1.7 2008/04/27 22:21:35 dkf Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include <X11/Intrinsic.h>
 #include "tcl.h"
 
-static int	TesteventloopCmd(ClientData clientData,
-		    Tcl_Interp *interp, int argc, const char **argv);
+static Tcl_CmdProc TesteventloopCmd;
+extern DLLEXPORT Tcl_PackageInitProc Tclxttest_Init;
+
+/*
+ * Functions defined in tclXtNotify.c for use by users of the Xt Notifier:
+ */
+
 extern void	InitNotifier(void);
+extern XtAppContext	TclSetAppContext(XtAppContext ctx);
 
 /*
  *----------------------------------------------------------------------
@@ -41,13 +50,13 @@ int
 Tclxttest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
 	return TCL_ERROR;
     }
     XtToolkitInitialize();
     InitNotifier();
     Tcl_CreateCommand(interp, "testeventloop", TesteventloopCmd,
-            (ClientData) 0, NULL);
+	    NULL, NULL);
     return TCL_OK;
 }
 
@@ -80,10 +89,10 @@ TesteventloopCmd(
 				 * innermost invocation of the "wait"
 				 * subcommand. */
 
-   if (argc < 2) {
+    if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
-                " option ... \"", NULL);
-        return TCL_ERROR;
+		" option ... \"", NULL);
+	return TCL_ERROR;
     }
     if (strcmp(argv[1], "done") == 0) {
 	*framePtr = 1;

@@ -38,6 +38,12 @@
 #include <sys/types.h>
 #include <loader.h>
 
+/* Static functions defined within this file */
+
+static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
+		       const char* symbol);
+static void UnloadFile(Tcl_LoadHandle handle);
+
 /*
  *----------------------------------------------------------------------
  *
@@ -69,6 +75,7 @@ TclpDlopen(
 				 * function which should be used for this
 				 * file. */
 {
+    Tcl_LoadHandle newHandle;
     ldr_module_t lm;
     char *pkg;
     char *fileName = Tcl_GetString(pathPtr);
@@ -119,15 +126,19 @@ TclpDlopen(
     } else {
 	pkg++;
     }
-    *loadHandle = pkg;
-    *unloadProcPtr = &TclpUnloadFile;
+    newHandle = (Tcl_LoadHandle*) ckalloc(sizeof(*newHandle));
+    newHandle->clientData = pkg;
+    newHandle->findSymbolProcPtr = &FindSymbol;
+    newHandle->unloadFileProcPtr = &UnloadFile;
+    *loadHandle = newHandle;
+    *unloadProcPtr = &UnloadFile;
     return TCL_OK;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpFindSymbol --
+ * FindSymbol --
  *
  *	Looks up a symbol, by name, through a handle associated with a
  *	previously loaded piece of code (shared library).
@@ -140,19 +151,25 @@ TclpDlopen(
  *----------------------------------------------------------------------
  */
 
-Tcl_PackageInitProc *
-TclpFindSymbol(
+static void *
+FindSymbol(
     Tcl_Interp *interp,
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
-    return ldr_lookup_package((char *)loadHandle, symbol);
+    void* retval = ldr_lookup_package((char *)loadHandle, symbol);
+    if (retval == NULL && interp != NULL) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "cannot find symbol\"", symbol, "\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, NULL);
+    }
+    return retval;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpUnloadFile --
+ * UnloadFile --
  *
  *	Unloads a dynamically loaded binary code file from memory. Code
  *	pointers in the formerly loaded file are no longer valid after calling
@@ -167,12 +184,13 @@ TclpFindSymbol(
  *----------------------------------------------------------------------
  */
 
-void
-TclpUnloadFile(
+static void
+UnloadFile(
     Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
+    ckfree((char*) loadHandle);
 }
 
 /*

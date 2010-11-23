@@ -1,7 +1,7 @@
 /*
  * tclLoadNone.c --
  *
- *	This procedure provides a version of the TclLoadFile for use in
+ *	This procedure provides a version of the TclpDlopen for use in
  *	systems that don't support dynamic loading; it just returns an error.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
@@ -55,33 +55,6 @@ TclpDlopen(
 /*
  *----------------------------------------------------------------------
  *
- * TclpFindSymbol --
- *
- *	Looks up a symbol, by name, through a handle associated with a
- *	previously loaded piece of code (shared library). This version of this
- *	routine should never be called because the associated TclpDlopen()
- *	function always returns an error.
- *
- * Results:
- *	Returns a pointer to the function associated with 'symbol' if it is
- *	found. Otherwise returns NULL and may leave an error message in the
- *	interp's result.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_PackageInitProc *
-TclpFindSymbol(
-    Tcl_Interp *interp,
-    Tcl_LoadHandle loadHandle,
-    const char *symbol)
-{
-    return NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclGuessPackageName --
  *
  *	If the "load" command is invoked without providing a package name,
@@ -107,32 +80,6 @@ TclGuessPackageName(
 				 * name to this if possible. */
 {
     return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpUnloadFile --
- *
- *    This procedure is called to carry out dynamic unloading of binary code;
- *    it is intended for use only on systems that don't support dynamic
- *    loading (it does nothing).
- *
- * Results:
- *    None.
- *
- * Side effects:
- *    None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpUnloadFile(
-    Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
-				 * TclpDlopen(). The loadHandle is a token
-				 * that represents the loaded file. */
-{
 }
 
 /*
