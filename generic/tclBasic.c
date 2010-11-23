@@ -379,12 +379,12 @@ static int stackGrowsDown = 1;
  * to the hash table below.
  */
 typedef struct {
-    Tcl_Interp *interp;		/* Interp this struct belongs to */
+    Tcl_Interp *interp;		/* Interp this struct belongs to. */
     Tcl_AsyncHandler async;	/* Async handler token for script
-				 * cancellation */
-    char *result;		/* The script cancellation result or
-				 * NULL for a default result */
-    int length;			/* Length of the above error message */
+				 * cancellation. */
+    char *result;		/* The script cancellation result or NULL for
+				 * a default result. */
+    int length;			/* Length of the above error message. */
     ClientData clientData;	/* Ignored */
     int flags;			/* Additional flags */
 } CancelInfo;
@@ -507,8 +507,8 @@ Tcl_CreateInterp(void)
     iPtr->varFramePtr = NULL;	/* Initialise as soon as :: is available */
 
     /*
-     * TIP #280 - Initialize the arrays used to extend the ByteCode and
-     * Proc structures.
+     * TIP #280 - Initialize the arrays used to extend the ByteCode and Proc
+     * structures.
      */
 
     iPtr->cmdFramePtr = NULL;
@@ -1552,9 +1552,9 @@ DeleteInterpProc(
 
 	/*
 	 * Location stack for uplevel/eval/... scripts which were passed
-	 * through proc arguments. Actually we track all arguments as we
-	 * don't, cannot know which arguments will be used as scripts and
-	 * which won't.
+	 * through proc arguments. Actually we track all arguments as we do
+	 * not and cannot know which arguments will be used as scripts and
+	 * which will not.
 	 */
 
 	if (iPtr->lineLAPtr->numEntries) {
@@ -2005,7 +2005,7 @@ Tcl_CreateCommand(
 	     * stuck in an infinite loop).
 	     */
 
-	     ckfree(Tcl_GetHashValue(hPtr));
+	    ckfree(Tcl_GetHashValue(hPtr));
 	}
     } else {
 	/*
@@ -2598,7 +2598,7 @@ Tcl_SetCommandInfoFromToken(
 {
     Command *cmdPtr;		/* Internal representation of the command */
 
-    if (cmd == (Tcl_Command) NULL) {
+    if (cmd == NULL) {
 	return 0;
     }
 
@@ -2678,7 +2678,7 @@ Tcl_GetCommandInfoFromToken(
 {
     Command *cmdPtr;		/* Internal representation of the command */
 
-    if (cmd == (Tcl_Command) NULL) {
+    if (cmd == NULL) {
 	return 0;
     }
 
@@ -2823,7 +2823,7 @@ Tcl_DeleteCommand(
      */
 
     cmd = Tcl_FindCommand(interp, cmdName, NULL, /*flags*/ 0);
-    if (cmd == (Tcl_Command) NULL) {
+    if (cmd == NULL) {
 	return -1;
     }
     return Tcl_DeleteCommandFromToken(interp, cmd);
@@ -3834,11 +3834,11 @@ Tcl_Canceled(
 	} else {
 	    /*
 	     * FIXME: If this interpreter is being deleted we cannot continue
-	     *	to traverse up the interp chain due to an issue with
-	     *	Tcl_GetMaster (really the slave interp bookkeeping) that
-	     *	causes us to run off into a freed interp struct. Ideally, this
-	     *	check would not be necessary because Tcl_GetMaster would
-	     *	return NULL instead of a pointer to invalid (freed) memory.
+	     * to traverse up the interp chain due to an issue with
+	     * Tcl_GetMaster (really the slave interp bookkeeping) that causes
+	     * us to run off into a freed interp struct. Ideally, this check
+	     * would not be necessary because Tcl_GetMaster would return NULL
+	     * instead of a pointer to invalid (freed) memory.
 	     */
 
 	    if (iPtr->flags & DELETED) {
@@ -5064,10 +5064,10 @@ TclArgumentEnter(
  *
  * TclArgumentRelease --
  *
- *	This procedure is a helper for the TIP #280 uplevel extension.
- *	It removes the location references for the arguments of a command
- *	just done. Usage is counted down, the data is removed only when
- *	no user is left over.
+ *	This procedure is a helper for the TIP #280 uplevel extension. It
+ *	removes the location references for the arguments of a command just
+ *	done. Usage is counted down, the data is removed only when no user is
+ *	left over.
  *
  * Results:
  *	None.
@@ -5096,7 +5096,7 @@ TclArgumentRelease(
 	if (!hPtr) {
 	    continue;
 	}
-	cfwPtr = (CFWord *) Tcl_GetHashValue(hPtr);
+	cfwPtr = Tcl_GetHashValue(hPtr);
 
 	cfwPtr->refCount--;
 	if (cfwPtr->refCount > 0) {
@@ -5113,8 +5113,8 @@ TclArgumentRelease(
  *
  * TclArgumentGet --
  *
- *	This procedure is a helper for the TIP #280 uplevel extension.
- *	It find the location references for a Tcl_Obj, if any.
+ *	This procedure is a helper for the TIP #280 uplevel extension. It
+ *	finds the location references for a Tcl_Obj, if any.
  *
  * Results:
  *	None.
@@ -5145,7 +5145,7 @@ TclArgumentGet(
      */
 
     if ((!obj->bytes) || ((obj->typePtr == &tclListType) &&
-	    ((List *)obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
+	    ((List *) obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
 	return;
     }
     

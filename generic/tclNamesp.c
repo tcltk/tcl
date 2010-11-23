@@ -6127,48 +6127,65 @@ TclMakeEnsemble(
     Tcl_Command ensemble;
     Tcl_Namespace *ns;
     Tcl_DString buf;
-    const char **nameParts;
-    const char *cmdname;
+    const char **nameParts = NULL;
+    const char *cmdName = NULL;
     int i, nameCount = 0, ensembleFlags = 0;
 
    /*
-    * Construct the path for the ensemble namespace and create it
+    * Construct the path for the ensemble namespace and create it.
     */
 
     Tcl_DStringInit(&buf);
-    Tcl_DStringAppend(&buf, "::tcl", -1);
+    if (name[0] == ':' && name[1] == ':') {
+	/*
+	 * An absolute name, so use it directly.
+	 */
 
-    if (Tcl_SplitList(NULL, name, &nameCount, &nameParts) != TCL_OK) {
-	Tcl_Panic("invalid ensemble name '%s'", name);
+	cmdName = name;
+	Tcl_DStringAppend(&buf, name, -1);
+	ensembleFlags = TCL_ENSEMBLE_PREFIX;
+    } else {
+	/*
+	 * Not an absolute name, so do munging of it. Note that this treats a
+	 * multi-word list differently to a single word.
+	 */
+
+	Tcl_DStringAppend(&buf, "::tcl", -1);
+
+	if (Tcl_SplitList(NULL, name, &nameCount, &nameParts) != TCL_OK) {
+	    Tcl_Panic("invalid ensemble name '%s'", name);
+	}
+
+	for (i = 0; i < nameCount; ++i) {
+	    Tcl_DStringAppend(&buf, "::", 2);
+	    Tcl_DStringAppend(&buf, nameParts[i], -1);
+	}
     }
 
-    for (i = 0; i < nameCount; ++i) {
-	Tcl_DStringAppend(&buf, "::", 2);
-	Tcl_DStringAppend(&buf, nameParts[i], -1);
-    }
-
-    ns = Tcl_FindNamespace(interp, Tcl_DStringValue(&buf),
-	NULL, TCL_CREATE_NS_IF_UNKNOWN);
+    ns = Tcl_FindNamespace(interp, Tcl_DStringValue(&buf), NULL,
+	    TCL_CREATE_NS_IF_UNKNOWN);
     if (!ns) {
 	Tcl_Panic("unable to find or create %s namespace!",
-	    Tcl_DStringValue(&buf));
+		Tcl_DStringValue(&buf));
     }
 
     /*
      * Create the named ensemble in the correct namespace
      */
 
-    if (nameCount == 1) {
-	ensembleFlags = TCL_ENSEMBLE_PREFIX;
-	cmdname = Tcl_DStringValue(&buf) + 5;
-    } else {
-	ns = ns->parentPtr;
-	cmdname = nameParts[nameCount - 1];
+    if (cmdName == NULL) {
+	if (nameCount == 1) {
+	    ensembleFlags = TCL_ENSEMBLE_PREFIX;
+	    cmdName = Tcl_DStringValue(&buf) + 5;
+	} else {
+	    ns = ns->parentPtr;
+	    cmdName = nameParts[nameCount - 1];
+	}
     }
-    ensemble = Tcl_CreateEnsemble(interp, cmdname, ns, ensembleFlags);
+    ensemble = Tcl_CreateEnsemble(interp, cmdName, ns, ensembleFlags);
 
     /*
-     * Create the ensemble mapping dictionary and the ensemble command procs
+     * Create the ensemble mapping dictionary and the ensemble command procs.
      */
 
     if (ensemble != NULL) {
@@ -6201,7 +6218,9 @@ TclMakeEnsemble(
     }
 
     Tcl_DStringFree(&buf);
-    Tcl_Free((char *)nameParts);
+    if (nameParts != NULL) {
+	Tcl_Free((char *) nameParts);
+    }
     return ensemble;
 }
 

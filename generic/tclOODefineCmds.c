@@ -1933,6 +1933,16 @@ Tcl_ClassSetConstructor(
     if (method != (Tcl_Method) clsPtr->constructorPtr) {
 	TclOODelMethodRef(clsPtr->constructorPtr);
 	clsPtr->constructorPtr = (Method *) method;
+
+	/*
+	 * Remember to invalidate the cached constructor chain for this class.
+	 * [Bug 2531577]
+	 */
+
+	if (clsPtr->constructorChainPtr) {
+	    TclOODeleteChain(clsPtr->constructorChainPtr);
+	    clsPtr->constructorChainPtr = NULL;
+	}
 	BumpGlobalEpoch(interp, clsPtr);
     }
 }
@@ -1948,6 +1958,10 @@ Tcl_ClassSetDestructor(
     if (method != (Tcl_Method) clsPtr->destructorPtr) {
 	TclOODelMethodRef(clsPtr->destructorPtr);
 	clsPtr->destructorPtr = (Method *) method;
+	if (clsPtr->destructorChainPtr) {
+	    TclOODeleteChain(clsPtr->destructorChainPtr);
+	    clsPtr->destructorChainPtr = NULL;
+	}
 	BumpGlobalEpoch(interp, clsPtr);
     }
 }
