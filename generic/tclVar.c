@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.160.2.11 2010/09/01 19:42:40 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.160.2.12 2010/11/23 20:01:18 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -67,19 +67,8 @@ VarHashCreateVar(
 
 #define VarHashFindVar(tablePtr, key) \
     VarHashCreateVar((tablePtr), (key), NULL)
-#ifdef _AIX
-/* Work around AIX cc problem causing crash in TclDeleteVars. Possible
- * optimizer bug. Do _NOT_ inline this function, this re-activates the
- * problem.
- */
-static void
-VarHashInvalidateEntry(Var* varPtr) {
-    varPtr->flags |= VAR_DEAD_HASH;
-}
-#else
 #define VarHashInvalidateEntry(varPtr) \
     ((varPtr)->flags |= VAR_DEAD_HASH)
-#endif
 #define VarHashDeleteEntry(varPtr) \
     Tcl_DeleteHashEntry(&(((VarInHash *) varPtr)->entry))
 
