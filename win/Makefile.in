@@ -284,7 +284,8 @@ GENERIC_OBJS = \
 	tclTrace.$(OBJEXT) \
 	tclUtf.$(OBJEXT) \
 	tclUtil.$(OBJEXT) \
-	tclVar.$(OBJEXT)
+	tclVar.$(OBJEXT) \
+	tclZlib.$(OBJEXT)
 
 TOMMATH_OBJS = \
 	bncore.${OBJEXT} \

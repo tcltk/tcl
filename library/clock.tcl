@@ -3885,23 +3885,42 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 			      * $dstSignum }]
     }
 
-    # Fill in defaults for US DST rules
+    # Fill in defaults for European or US DST rules
 
     if { [dict get $z startDayOfYear] eq {} 
 	 && [dict get $z startMonth] eq {} } {
+	if {($stdHours>=0) && ($stdHours<=12)} {
+	    dict set z startWeekOfMonth 5
+	    if {$stdHours>2} {
+		dict set z startHours 2
+	    } else {
+		dict set z startHours [expr {$stdHours+1}]
+	    }
+	} else {
+	    dict set z startWeekOfMonth 2
+	    dict set z startHours 2
+	}
 	dict set z startMonth 3
-	dict set z startWeekOfMonth 2
 	dict set z startDayOfWeek 0
-	dict set z startHours 2
 	dict set z startMinutes 0
 	dict set z startSeconds 0
     }
     if { [dict get $z endDayOfYear] eq {} 
 	 && [dict get $z endMonth] eq {} } {
-	dict set z endMonth 11
-	dict set z endWeekOfMonth 1
+	if {($stdHours>=0) && ($stdHours<=12)} {
+	    dict set z endMonth 10
+	    dict set z endWeekOfMonth 5
+	    if {$stdHours>2} {
+		dict set z endHours 3
+	    } else {
+		dict set z endHours [expr {$stdHours+2}]
+	    }
+	} else {
+	    dict set z endMonth 11
+	    dict set z endWeekOfMonth 1
+	    dict set z endHours 2
+	}
 	dict set z endDayOfWeek 0
-	dict set z endHours 2
 	dict set z endMinutes 0
 	dict set z endSeconds 0
     }

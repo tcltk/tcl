@@ -317,7 +317,7 @@ TclOO_Object_Eval(
 	Tcl_IncrRefCount(objnameObj);
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (in \"%s eval\" script line %d)",
-		TclGetString(objnameObj), interp->errorLine));
+		TclGetString(objnameObj), Tcl_GetErrorLine(interp)));
 	Tcl_DecrRefCount(objnameObj);
     }
 
@@ -954,7 +954,7 @@ TclOOUpcatchCmd(
     iPtr->varFramePtr = savedFramePtr;
     if (Tcl_LimitExceeded(interp)) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"UpCatch\" body line %d)", interp->errorLine));
+		"\n    (\"UpCatch\" body line %d)", Tcl_GetErrorLine(interp)));
 	return TCL_ERROR;
     }
     resultObj[0] = Tcl_GetObjResult(interp);

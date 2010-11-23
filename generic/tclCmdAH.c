@@ -15,6 +15,7 @@
 
 #include "tclInt.h"
 #include <locale.h>
+#include "tclFileSystem.h"
 
 /*
  * Prototypes for local procedures defined in this file:
@@ -193,7 +194,7 @@ Tcl_CaseObjCmd(
 	if (result == TCL_ERROR) {
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (\"%.50s\" arm line %d)",
-		    TclGetString(armPtr), interp->errorLine));
+		    TclGetString(armPtr), Tcl_GetErrorLine(interp)));
 	}
 	return result;
     }
@@ -260,7 +261,7 @@ Tcl_CatchObjCmd(
 
     if (Tcl_LimitExceeded(interp)) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"catch\" body line %d)", interp->errorLine));
+		"\n    (\"catch\" body line %d)", Tcl_GetErrorLine(interp)));
 	return TCL_ERROR;
     }
 
@@ -685,7 +686,7 @@ Tcl_EvalObjCmd(
     }
     if (result == TCL_ERROR) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"eval\" body line %d)", interp->errorLine));
+		"\n    (\"eval\" body line %d)", Tcl_GetErrorLine(interp)));
     }
     return result;
 }
@@ -1644,6 +1645,18 @@ FileTempfileCmd(
 		|| (tclPlatform == TCL_PLATFORM_WINDOWS
 		    && strchr(string, '\\') != NULL)) {
 	    tempDirObj = TclPathPart(interp, objv[3], TCL_PATH_DIRNAME);
+
+	    /*
+	     * Only allow creation of temporary files in the native filesystem
+	     * since they are frequently used for integration with external
+	     * tools or system libraries. [Bug 2388866]
+	     */
+
+	    if (Tcl_FSGetFileSystemForPath(tempDirObj)
+		    != &tclNativeFilesystem) {
+		TclDecrRefCount(tempDirObj);
+		tempDirObj = NULL;
+	    }
 	}
 
 	/*
@@ -1796,7 +1809,7 @@ Tcl_ForObjCmd(
 	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
 	    if (result == TCL_ERROR) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (\"for\" body line %d)", interp->errorLine));
+			"\n    (\"for\" body line %d)", Tcl_GetErrorLine(interp)));
 	    }
 	    break;
 	}
@@ -1972,7 +1985,7 @@ Tcl_ForeachObjCmd(
 	    } else if (result == TCL_ERROR) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (\"foreach\" body line %d)",
-			interp->errorLine));
+			Tcl_GetErrorLine(interp)));
 		break;
 	    } else {
 		break;

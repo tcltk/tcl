@@ -3330,7 +3330,7 @@ NamespaceEvalCmd(
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (in namespace eval \"%.*s%s\" script line %d)",
 		(overflow ? limit : length), namespacePtr->fullName,
-		(overflow ? "..." : ""), interp->errorLine));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 
     /*
@@ -3761,7 +3761,7 @@ NamespaceInscopeCmd(
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (in namespace inscope \"%.*s%s\" script line %d)",
 		(overflow ? limit : length), namespacePtr->fullName,
-		(overflow ? "..." : ""), interp->errorLine));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 
     /*

@@ -1806,7 +1806,7 @@ ConvertFileNameFormat(
 	     */
 
 	    if (Tcl_DStringValue(&dsTemp)[0] == '~') {
-		tempPath = Tcl_NewStringObj("./",2);
+		TclNewLiteralStringObj(tempPath, "./");
 		Tcl_AppendToObj(tempPath, Tcl_DStringValue(&dsTemp),
 			Tcl_DStringLength(&dsTemp));
 	    } else {

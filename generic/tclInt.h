@@ -2430,6 +2430,8 @@ typedef struct ProcessGlobalValue {
 				/* Use [scan] rules dealing with 0? prefixes */
 #define TCL_PARSE_NO_WHITESPACE		32
 				/* Reject leading/trailing whitespace */
+#define TCL_PARSE_BINARY_ONLY	64
+				/* Parse binary even without prefix */
 
 /*
  *----------------------------------------------------------------------
@@ -2768,8 +2770,6 @@ MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 MODULE_SCOPE Tcl_Obj *	TclStringObjReverse(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int count, int *tokensLeftPtr, int line);
-MODULE_SCOPE void	TclTransferResult(Tcl_Interp *sourceInterp, int result,
-			    Tcl_Interp *targetInterp);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE Tcl_PackageInitProc *TclpFindSymbol(Tcl_Interp *interp,
@@ -2792,6 +2792,7 @@ MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
 MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
+MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 
 MODULE_SCOPE void *     TclpThreadCreateKey(void);
 MODULE_SCOPE void       TclpThreadDeleteKey(void *keyPtr);

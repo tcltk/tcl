@@ -3223,7 +3223,7 @@ Tcl_ArrayObjCmd(
 	stats = Tcl_HashStats((Tcl_HashTable *) varPtr->value.tablePtr);
 	if (stats != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, -1));
-	    ckfree((void *)stats);
+	    ckfree((char *)stats);
 	} else {
 	    Tcl_SetResult(interp,"error reading array statistics",TCL_STATIC);
 	    return TCL_ERROR;

@@ -937,6 +937,12 @@ NotifierThreadProc(
     if (TclUnixSetBlockingMode(fds[1], TCL_MODE_NONBLOCKING) < 0) {
 	Tcl_Panic("NotifierThreadProc: could not make trigger pipe non blocking");
     }
+    if (fcntl(receivePipe, F_SETFD, FD_CLOEXEC) < 0) {
+	Tcl_Panic("NotifierThreadProc: could not make receive pipe close-on-exec");
+    }
+    if (fcntl(fds[1], F_SETFD, FD_CLOEXEC) < 0) {
+	Tcl_Panic("NotifierThreadProc: could not make trigger pipe close-on-exec");
+    }
 
     /*
      * Install the write end of the pipe into the global variable.

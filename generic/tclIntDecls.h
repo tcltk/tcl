@@ -396,10 +396,8 @@ EXTERN void		TclRegError(Tcl_Interp *interp, const char *msg,
 /* 157 */
 EXTERN Var *		TclVarTraceExists(Tcl_Interp *interp,
 				const char *varName);
-/* 158 */
-EXTERN void		TclSetStartupScriptFileName(const char *filename);
-/* 159 */
-EXTERN CONST84_RETURN char * TclGetStartupScriptFileName(void);
+/* Slot 158 is reserved */
+/* Slot 159 is reserved */
 /* Slot 160 is reserved */
 /* 161 */
 EXTERN int		TclChannelTransform(Tcl_Interp *interp,
@@ -417,10 +415,8 @@ EXTERN void		TclpSetInitialEncodings(void);
 EXTERN int		TclListObjSetElement(Tcl_Interp *interp,
 				Tcl_Obj *listPtr, int index,
 				Tcl_Obj *valuePtr);
-/* 167 */
-EXTERN void		TclSetStartupScriptPath(Tcl_Obj *pathPtr);
-/* 168 */
-EXTERN Tcl_Obj *	TclGetStartupScriptPath(void);
+/* Slot 167 is reserved */
+/* Slot 168 is reserved */
 /* 169 */
 EXTERN int		TclpUtfNcmp2(const char *s1, const char *s2,
 				unsigned long n);
@@ -452,11 +448,8 @@ EXTERN void		TclCleanupVar(Var *varPtr, Var *arrayPtr);
 EXTERN void		TclVarErrMsg(Tcl_Interp *interp, const char *part1,
 				const char *part2, const char *operation,
 				const char *reason);
-/* 178 */
-EXTERN void		Tcl_SetStartupScript(Tcl_Obj *pathPtr,
-				const char*encodingName);
-/* 179 */
-EXTERN Tcl_Obj *	Tcl_GetStartupScript(const char **encodingNamePtr);
+/* Slot 178 is reserved */
+/* Slot 179 is reserved */
 /* Slot 180 is reserved */
 /* Slot 181 is reserved */
 /* 182 */
@@ -568,8 +561,7 @@ EXTERN Var *		TclVarHashCreateVar(TclVarHashTable *tablePtr,
 /* 235 */
 EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
 				Namespace *nsPtr);
-/* 236 */
-EXTERN void		TclBackgroundException(Tcl_Interp *interp, int code);
+/* Slot 236 is reserved */
 /* 237 */
 EXTERN int		TclResetCancellation(Tcl_Interp *interp, int force);
 
@@ -759,8 +751,8 @@ typedef struct TclIntStubs {
     void (*reserved155)(void);
     void (*tclRegError) (Tcl_Interp *interp, const char *msg, int status); /* 156 */
     Var * (*tclVarTraceExists) (Tcl_Interp *interp, const char *varName); /* 157 */
-    void (*tclSetStartupScriptFileName) (const char *filename); /* 158 */
-    CONST84_RETURN char * (*tclGetStartupScriptFileName) (void); /* 159 */
+    void (*reserved158)(void);
+    void (*reserved159)(void);
     void (*reserved160)(void);
     int (*tclChannelTransform) (Tcl_Interp *interp, Tcl_Channel chan, Tcl_Obj *cmdObjPtr); /* 161 */
     void (*tclChannelEventScriptInvoker) (ClientData clientData, int flags); /* 162 */
@@ -768,8 +760,8 @@ typedef struct TclIntStubs {
     void (*tclExpandCodeArray) (void *envPtr); /* 164 */
     void (*tclpSetInitialEncodings) (void); /* 165 */
     int (*tclListObjSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, int index, Tcl_Obj *valuePtr); /* 166 */
-    void (*tclSetStartupScriptPath) (Tcl_Obj *pathPtr); /* 167 */
-    Tcl_Obj * (*tclGetStartupScriptPath) (void); /* 168 */
+    void (*reserved167)(void);
+    void (*reserved168)(void);
     int (*tclpUtfNcmp2) (const char *s1, const char *s2, unsigned long n); /* 169 */
     int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 171 */
@@ -779,8 +771,8 @@ typedef struct TclIntStubs {
     int (*tclCallVarTraces) (Interp *iPtr, Var *arrayPtr, Var *varPtr, const char *part1, const char *part2, int flags, int leaveErrMsg); /* 175 */
     void (*tclCleanupVar) (Var *varPtr, Var *arrayPtr); /* 176 */
     void (*tclVarErrMsg) (Tcl_Interp *interp, const char *part1, const char *part2, const char *operation, const char *reason); /* 177 */
-    void (*tcl_SetStartupScript) (Tcl_Obj *pathPtr, const char*encodingName); /* 178 */
-    Tcl_Obj * (*tcl_GetStartupScript) (const char **encodingNamePtr); /* 179 */
+    void (*reserved178)(void);
+    void (*reserved179)(void);
     void (*reserved180)(void);
     void (*reserved181)(void);
     struct tm * (*tclpLocaltime) (const time_t *clock); /* 182 */
@@ -837,7 +829,7 @@ typedef struct TclIntStubs {
     void (*tclGetSrcInfoForPc) (CmdFrame *contextPtr); /* 233 */
     Var * (*tclVarHashCreateVar) (TclVarHashTable *tablePtr, const char *key, int *newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
-    void (*tclBackgroundException) (Tcl_Interp *interp, int code); /* 236 */
+    void (*reserved236)(void);
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
 } TclIntStubs;
 
@@ -1129,10 +1121,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclRegError) /* 156 */
 #define TclVarTraceExists \
 	(tclIntStubsPtr->tclVarTraceExists) /* 157 */
-#define TclSetStartupScriptFileName \
-	(tclIntStubsPtr->tclSetStartupScriptFileName) /* 158 */
-#define TclGetStartupScriptFileName \
-	(tclIntStubsPtr->tclGetStartupScriptFileName) /* 159 */
+/* Slot 158 is reserved */
+/* Slot 159 is reserved */
 /* Slot 160 is reserved */
 #define TclChannelTransform \
 	(tclIntStubsPtr->tclChannelTransform) /* 161 */
@@ -1146,10 +1136,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclpSetInitialEncodings) /* 165 */
 #define TclListObjSetElement \
 	(tclIntStubsPtr->tclListObjSetElement) /* 166 */
-#define TclSetStartupScriptPath \
-	(tclIntStubsPtr->tclSetStartupScriptPath) /* 167 */
-#define TclGetStartupScriptPath \
-	(tclIntStubsPtr->tclGetStartupScriptPath) /* 168 */
+/* Slot 167 is reserved */
+/* Slot 168 is reserved */
 #define TclpUtfNcmp2 \
 	(tclIntStubsPtr->tclpUtfNcmp2) /* 169 */
 #define TclCheckInterpTraces \
@@ -1167,10 +1155,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclCleanupVar) /* 176 */
 #define TclVarErrMsg \
 	(tclIntStubsPtr->tclVarErrMsg) /* 177 */
-#define Tcl_SetStartupScript \
-	(tclIntStubsPtr->tcl_SetStartupScript) /* 178 */
-#define Tcl_GetStartupScript \
-	(tclIntStubsPtr->tcl_GetStartupScript) /* 179 */
+/* Slot 178 is reserved */
+/* Slot 179 is reserved */
 /* Slot 180 is reserved */
 /* Slot 181 is reserved */
 #define TclpLocaltime \
@@ -1258,8 +1244,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclVarHashCreateVar) /* 234 */
 #define TclInitVarHashTable \
 	(tclIntStubsPtr->tclInitVarHashTable) /* 235 */
-#define TclBackgroundException \
-	(tclIntStubsPtr->tclBackgroundException) /* 236 */
+/* Slot 236 is reserved */
 #define TclResetCancellation \
 	(tclIntStubsPtr->tclResetCancellation) /* 237 */
 

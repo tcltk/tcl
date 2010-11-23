@@ -2490,7 +2490,7 @@ TclExecuteByteCode(
 	    Tcl_Panic("TclExecuteByteCode: unrecognized builtin function code %d", opnd);
 	}
 
-	objPtr = Tcl_NewStringObj("::tcl::mathfunc::", 17);
+	TclNewLiteralStringObj(objPtr, "::tcl::mathfunc::");
 	Tcl_AppendToObj(objPtr, tclBuiltinFuncTable[opnd].name, -1);
 
 	/*
@@ -2538,7 +2538,7 @@ TclExecuteByteCode(
 	objc = TclGetUInt1AtPtr(pc+1);
 
 	objPtr = OBJ_AT_DEPTH(objc-1);
-	tmpPtr = Tcl_NewStringObj("::tcl::mathfunc::", 17);
+	TclNewLiteralStringObj(tmpPtr, "::tcl::mathfunc::");
 	Tcl_AppendObjToObj(tmpPtr, objPtr);
 	Tcl_DecrRefCount(objPtr);
 
@@ -6768,7 +6768,7 @@ TclExecuteByteCode(
 		    "%u => ERROR reading leaf dictionary key \"%s\": ",
 		    opnd, O2S(dictPtr)), Tcl_GetObjResult(interp));
 	} else {
-	    /*Tcl_ResetResult(interp);*/
+		Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "key \"", TclGetString(OBJ_AT_TOS),
 		    "\" not known in dictionary", NULL);
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));

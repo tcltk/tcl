@@ -706,7 +706,7 @@ TclOODefineObjCmd(
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (in definition script for object \"%.*s%s\" line %d)",
 		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), interp->errorLine));
+		    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 	}
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
@@ -825,7 +825,7 @@ TclOOObjDefObjCmd(
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (in definition script for object \"%.*s%s\" line %d)",
 		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), interp->errorLine));
+		    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 	}
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
@@ -945,7 +945,7 @@ TclOODefineSelfObjCmd(
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (in definition script for object \"%.*s%s\" line %d)",
 		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), interp->errorLine));
+		    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 	}
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;

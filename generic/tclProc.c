@@ -945,7 +945,7 @@ Tcl_UplevelObjCmd(
     }
     if (result == TCL_ERROR) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"uplevel\" body line %d)", interp->errorLine));
+		"\n    (\"uplevel\" body line %d)", Tcl_GetErrorLine(interp)));
     }
 
     /*
@@ -2043,7 +2043,7 @@ MakeProcError(
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (procedure \"%.*s%s\" line %d)",
 	    (overflow ? limit : nameLen), procName,
-	    (overflow ? "..." : ""), interp->errorLine));
+	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
 /*
@@ -2709,7 +2709,7 @@ MakeLambdaError(
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (lambda term \"%.*s%s\" line %d)",
 	    (overflow ? limit : nameLen), procName,
-	    (overflow ? "..." : ""), interp->errorLine));
+	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
 /*

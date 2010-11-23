@@ -2464,9 +2464,10 @@ DoGlob(
 	}
 	Tcl_IncrRefCount(joinedPtr);
 	Tcl_DStringFree(&append);
-	Tcl_FSMatchInDirectory(interp, matchesObj, joinedPtr, NULL, types);
+	result = Tcl_FSMatchInDirectory(interp, matchesObj, joinedPtr, NULL,
+		types);
 	Tcl_DecrRefCount(joinedPtr);
-	return TCL_OK;
+	return result;
     }
 
     /*

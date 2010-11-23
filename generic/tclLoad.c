@@ -460,7 +460,7 @@ Tcl_LoadObjCmd(
 	ipPtr->nextPtr = ipFirstPtr;
 	Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
     } else {
-	TclTransferResult(target, code, interp);
+	Tcl_TransferResult(target, code, interp);
     }
 
   done:
@@ -736,7 +736,7 @@ Tcl_UnloadObjCmd(
     }
     code = unloadProc(target, code);
     if (code != TCL_OK) {
-	TclTransferResult(target, code, interp);
+	Tcl_TransferResult(target, code, interp);
 	goto done;
     }
 

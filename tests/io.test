@@ -7695,6 +7695,16 @@ test io-73.1 {channel Tcl_Obj SetChannelFromAny} {} {
     catch {close [lreplace [list a] 0 end]}
 } {1}
 
+test io-73.2 {channel Tcl_Obj SetChannelFromAny, bug 2407783} {} {
+    # Invalidate intrep of 'channel' Tcl_Obj when transiting between interpreters.
+    interp create foo
+    set f [open [info script] r]
+    seek $f 0
+    set code [catch {interp eval foo [list seek $f 0]} msg]
+    # The string map converts the changing channel handle to a fixed string
+    list $code [string map [list $f @@] $msg]
+} {1 {can not find channel named "@@"}}
+
 # ### ### ### ######### ######### #########
 
 # cleanup

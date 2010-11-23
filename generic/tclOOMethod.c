@@ -1147,7 +1147,7 @@ MethodErrorHandler(
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
 	    kindName, ELLIPSIFY(objectName, objectNameLen),
-	    ELLIPSIFY(methodName, nameLen), interp->errorLine));
+	    ELLIPSIFY(methodName, nameLen), Tcl_GetErrorLine(interp)));
 }
 
 static void
@@ -1161,7 +1161,7 @@ ConstructorErrorHandler(
     const char *objectName, *kindName;
     int objectNameLen;
 
-    if (interp->errorLine == (int) 0xDEADBEEF) {
+    if (Tcl_GetErrorLine(interp) == (int) 0xDEADBEEF) {
 	/*
 	 * Horrible hack to deal with certain constructors that must not add
 	 * information to the error trace.
@@ -1185,7 +1185,7 @@ ConstructorErrorHandler(
 	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" constructor line %d)", kindName,
-	    ELLIPSIFY(objectName, objectNameLen), interp->errorLine));
+	    ELLIPSIFY(objectName, objectNameLen), Tcl_GetErrorLine(interp)));
 }
 
 static void
@@ -1214,7 +1214,7 @@ DestructorErrorHandler(
 	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" destructor line %d)", kindName,
-	    ELLIPSIFY(objectName, objectNameLen), interp->errorLine));
+	    ELLIPSIFY(objectName, objectNameLen), Tcl_GetErrorLine(interp)));
 }
 
 /*

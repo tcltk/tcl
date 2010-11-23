@@ -3892,7 +3892,7 @@ Tcl_SwitchObjCmd(
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%.*s%s\" arm line %d)",
 		(overflow ? limit : patternLength), pattern,
-		(overflow ? "..." : ""), interp->errorLine));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
     TclStackFree(interp, ctxPtr);
     return result;
@@ -4040,7 +4040,7 @@ Tcl_WhileObjCmd(
 	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
 	    if (result == TCL_ERROR) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (\"while\" body line %d)", interp->errorLine));
+			"\n    (\"while\" body line %d)", Tcl_GetErrorLine(interp)));
 	    }
 	    break;
 	}

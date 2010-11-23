@@ -1177,7 +1177,7 @@ AfterProc(
     result = Tcl_EvalObjEx(interp, afterPtr->commandPtr, TCL_EVAL_GLOBAL);
     if (result != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (\"after\" script)");
-	TclBackgroundException(interp, result);
+	Tcl_BackgroundException(interp, result);
     }
     Tcl_Release((ClientData) interp);
 

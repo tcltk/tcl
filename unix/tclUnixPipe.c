@@ -51,8 +51,10 @@ typedef struct PipeState {
  */
 
 static int		PipeBlockModeProc(ClientData instanceData, int mode);
-static int		PipeCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
+static int		PipeClose2Proc(ClientData instanceData,
+			    Tcl_Interp *interp, int flags);
+/* static int		PipeCloseProc(ClientData instanceData,
+   Tcl_Interp *interp); */
 static int		PipeGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
 static int		PipeInputProc(ClientData instanceData, char *buf,
@@ -71,7 +73,7 @@ static int		SetupStdFile(TclFile file, int type);
 static Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    PipeCloseProc,		/* Close proc. */
+    TCL_CLOSE2PROC,		/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -79,7 +81,7 @@ static Tcl_ChannelType pipeChannelType = {
     NULL,			/* Get option proc. */
     PipeWatchProc,		/* Initialize notifier. */
     PipeGetHandleProc,		/* Get OS handles out of channel. */
-    NULL,			/* close2proc. */
+    PipeClose2Proc,		/* close2proc. */
     PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -798,6 +800,9 @@ Tcl_CreatePipe(
 	return TCL_ERROR;
     }
 
+    fcntl(fileNums[0], F_SETFD, FD_CLOEXEC);
+    fcntl(fileNums[1], F_SETFD, FD_CLOEXEC);
+
     *rchan = Tcl_MakeFileChannel((ClientData) INT2PTR(fileNums[0]),
 	    TCL_READABLE);
     Tcl_RegisterChannel(interp, *rchan);
@@ -905,11 +910,10 @@ PipeBlockModeProc(
 /*
  *----------------------------------------------------------------------
  *
- * PipeCloseProc --
+ * PipeClose2Proc
  *
  *	This function is invoked by the generic IO level to perform
- *	channel-type-specific cleanup when a command pipeline channel is
- *	closed.
+ *	pipeline-type-specific half or full-close.
  *
  * Results:
  *	0 on success, errno otherwise.
@@ -920,28 +924,37 @@ PipeBlockModeProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
-PipeCloseProc(
+PipeClose2Proc(
     ClientData instanceData,	/* The pipe to close. */
-    Tcl_Interp *interp)		/* For error reporting. */
+    Tcl_Interp *interp,		/* For error reporting. */
+    int flags)			/* Flags that indicate which side to close. */
 {
-    PipeState *pipePtr;
+    PipeState *pipePtr= (PipeState *) instanceData;
     Tcl_Channel errChan;
     int errorCode, result;
 
     errorCode = 0;
     result = 0;
-    pipePtr = (PipeState *) instanceData;
-    if (pipePtr->inFile) {
+
+    if (((!flags)||(flags & TCL_CLOSE_READ)) && (pipePtr->inFile != NULL)) {
 	if (TclpCloseFile(pipePtr->inFile) < 0) {
 	    errorCode = errno;
+	} else {
+	    pipePtr->inFile=NULL;
 	}
     }
-    if (pipePtr->outFile) {
-	if ((TclpCloseFile(pipePtr->outFile) < 0) && (errorCode == 0)) {
+    if (((!flags)||(flags & TCL_CLOSE_WRITE)) && (pipePtr->outFile != NULL) && (errorCode == 0)) {
+	if (TclpCloseFile(pipePtr->outFile) < 0) {
 	    errorCode = errno;
+	} else {
+	    pipePtr->outFile=NULL;
 	}
+    }
+    
+    /* if half-closing, stop here. */
+    if (flags) {
+		return errorCode;
     }
 
     if (pipePtr->isNonBlocking || TclInExit()) {

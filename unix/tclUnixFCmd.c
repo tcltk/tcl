@@ -1059,7 +1059,7 @@ TraverseUnixTree(
 	unsigned short pathlen = ent->fts_pathlen - sourceLen;
 	int type;
 	Tcl_StatBuf *statBufPtr = NULL;
-	
+
 	if (info == FTS_DNR || info == FTS_ERR || info == FTS_NS) {
 	    errfile = ent->fts_path;
 	    break;
@@ -1684,7 +1684,8 @@ SetPermissionsAttribute(
 Tcl_Obj *
 TclpObjListVolumes(void)
 {
-    Tcl_Obj *resultPtr = Tcl_NewStringObj("/", 1);
+    Tcl_Obj *resultPtr;
+    TclNewLiteralStringObj(resultPtr, "/");
 
     Tcl_IncrRefCount(resultPtr);
     return resultPtr;

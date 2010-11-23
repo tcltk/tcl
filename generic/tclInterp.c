@@ -1008,7 +1008,7 @@ Tcl_InterpObjCmd(
 	}
 	chan = Tcl_GetChannel(masterInterp, TclGetString(objv[3]), NULL);
 	if (chan == NULL) {
-	    TclTransferResult(masterInterp, TCL_OK, interp);
+	    Tcl_TransferResult(masterInterp, TCL_OK, interp);
 	    return TCL_ERROR;
 	}
 	slaveInterp = GetInterp(interp, objv[4]);
@@ -1023,7 +1023,7 @@ Tcl_InterpObjCmd(
 	     */
 
 	    if (Tcl_UnregisterChannel(masterInterp, chan) != TCL_OK) {
-		TclTransferResult(masterInterp, TCL_OK, interp);
+		Tcl_TransferResult(masterInterp, TCL_OK, interp);
 		return TCL_ERROR;
 	    }
 	}
@@ -1824,7 +1824,7 @@ AliasObjCmd(
      */
 
     if (targetInterp != interp) {
-	TclTransferResult(targetInterp, result, interp);
+	Tcl_TransferResult(targetInterp, result, interp);
 	Tcl_Release(targetInterp);
     }
 
@@ -2263,7 +2263,7 @@ SlaveCreate(
     return slaveInterp;
 
   error:
-    TclTransferResult(slaveInterp, TCL_ERROR, interp);
+    Tcl_TransferResult(slaveInterp, TCL_ERROR, interp);
   error2:
     Tcl_DeleteInterp(slaveInterp);
 
@@ -2556,7 +2556,7 @@ SlaveEval(
 	result = Tcl_EvalObjEx(slaveInterp, objPtr, 0);
 	Tcl_DecrRefCount(objPtr);
     }
-    TclTransferResult(slaveInterp, result, interp);
+    Tcl_TransferResult(slaveInterp, result, interp);
 
     Tcl_Release(slaveInterp);
     return result;
@@ -2598,7 +2598,7 @@ SlaveExpose(
     name = TclGetString(objv[(objc == 1) ? 0 : 1]);
     if (Tcl_ExposeCommand(slaveInterp, TclGetString(objv[0]),
 	    name) != TCL_OK) {
-	TclTransferResult(slaveInterp, TCL_ERROR, interp);
+	Tcl_TransferResult(slaveInterp, TCL_ERROR, interp);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -2696,7 +2696,7 @@ SlaveHide(
 
     name = TclGetString(objv[(objc == 1) ? 0 : 1]);
     if (Tcl_HideCommand(slaveInterp, TclGetString(objv[0]), name) != TCL_OK) {
-	TclTransferResult(slaveInterp, TCL_ERROR, interp);
+	Tcl_TransferResult(slaveInterp, TCL_ERROR, interp);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -2794,7 +2794,7 @@ SlaveInvokeHidden(
 	}
     }
 
-    TclTransferResult(slaveInterp, result, interp);
+    Tcl_TransferResult(slaveInterp, result, interp);
 
     Tcl_Release(slaveInterp);
     return result;
@@ -3679,7 +3679,7 @@ TimeLimitCallback(
     code = Tcl_LimitCheck(interp);
     if (code != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (while waiting for event)");
-	TclBackgroundException(interp, code);
+	Tcl_BackgroundException(interp, code);
     }
     Tcl_Release(interp);
 }
@@ -3847,7 +3847,7 @@ CallScriptLimitCallback(
     code = Tcl_EvalObjEx(limitCBPtr->interp, limitCBPtr->scriptObj,
 	    TCL_EVAL_GLOBAL);
     if (code != TCL_OK && !Tcl_InterpDeleted(limitCBPtr->interp)) {
-	TclBackgroundException(limitCBPtr->interp, code);
+	Tcl_BackgroundException(limitCBPtr->interp, code);
     }
     Tcl_Release(limitCBPtr->interp);
 }

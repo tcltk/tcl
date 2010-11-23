@@ -401,7 +401,6 @@ Tcl_SetResult(
 				 * a Tcl_FreeProc such as free. */
 {
     Interp *iPtr = (Interp *) interp;
-    int length;
     register Tcl_FreeProc *oldFreeProc = iPtr->freeProc;
     char *oldResult = iPtr->result;
 
@@ -410,7 +409,7 @@ Tcl_SetResult(
 	iPtr->result = iPtr->resultSpace;
 	iPtr->freeProc = 0;
     } else if (freeProc == TCL_VOLATILE) {
-	length = strlen(result);
+	int length = strlen(result);
 	if (length > TCL_RESULT_SIZE) {
 	    iPtr->result = (char *) ckalloc((unsigned) length+1);
 	    iPtr->freeProc = TCL_DYNAMIC;
@@ -420,7 +419,7 @@ Tcl_SetResult(
 	}
 	strcpy(iPtr->result, result);
     } else {
-	iPtr->result = result;
+	iPtr->result = (char *) result;
 	iPtr->freeProc = freeProc;
     }
 
@@ -1084,6 +1083,45 @@ Tcl_SetObjErrorCode(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_GetErrorLine --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetErrorLine(
+    Tcl_Interp *interp)
+{
+    return ((Interp *) interp)->errorLine;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetErrorLine --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetErrorLine(
+    Tcl_Interp *interp,
+    int value)
+{
+    ((Interp *) interp)->errorLine = value;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * GetKeys --
  *
  *	Returns a Tcl_Obj * array of the standard keys used in the return
@@ -1517,7 +1555,7 @@ Tcl_SetReturnOptions(
 /*
  *-------------------------------------------------------------------------
  *
- * TclTransferResult --
+ * Tcl_TransferResult --
  *
  *	Copy the result (and error information) from one interp to another.
  *	Used when one interp has caused another interp to evaluate a script
@@ -1543,7 +1581,7 @@ Tcl_SetReturnOptions(
  */
 
 void
-TclTransferResult(
+Tcl_TransferResult(
     Tcl_Interp *sourceInterp,	/* Interp whose result and error information
 				 * should be moved to the target interp.
 				 * After moving result, this interp's result

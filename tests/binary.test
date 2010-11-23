@@ -2718,6 +2718,14 @@ test binary-75.23 {binary decode uuencode} -body {
     set r [binary decode uuencode 86)C]
     list [string length $r] $r
 } -result {3 abc}
+test binary-75.24 {binary decode uuencode} -body {
+    set s "04)\# "
+    binary decode uuencode $s
+} -result ABC
+test binary-75.25 {binary decode uuencode} -body {
+    set s "04)\#z"
+    binary decode uuencode $s
+} -returnCodes error -match glob -result {invalid uuencode character "z" at position 4}
 
 test binary-76.1 {byte array concat speed} -body {
     set b1 [binary format H* [string repeat E9 1000000]]

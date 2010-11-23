@@ -405,6 +405,7 @@ ValidateFormat(
 	case 'i':
 	case 'o':
 	case 'x':
+	case 'b':
 	    break;
 	case 'u':
 	    if (flags & SCAN_BIG) {
@@ -731,6 +732,10 @@ Tcl_ScanObjCmd(
 	case 'x':
 	    op = 'i';
 	    parseFlag |= TCL_PARSE_HEXADECIMAL_ONLY;
+	    break;
+	case 'b':
+	    op = 'i';
+	    parseFlag |= TCL_PARSE_BINARY_ONLY;
 	    break;
 	case 'u':
 	    op = 'i';

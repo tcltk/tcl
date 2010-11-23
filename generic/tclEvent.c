@@ -140,10 +140,10 @@ Tcl_BackgroundError(
     Tcl_Interp *interp)		/* Interpreter in which an error has
 				 * occurred. */
 {
-    TclBackgroundException(interp, TCL_ERROR);
+    Tcl_BackgroundException(interp, TCL_ERROR);
 }
 void
-TclBackgroundException(
+Tcl_BackgroundException(
     Tcl_Interp *interp,		/* Interpreter in which an exception has
 				 * occurred. */
     int code)			/* The exception code value */
@@ -353,7 +353,7 @@ TclDefaultBgErrorHandlerObjCmd(
     if (code == TCL_OK) {
 	/*
 	 * Somehow we got to exception handling with no exception.
-	 * (Pass TCL_OK to TclBackgroundException()?)
+	 * (Pass TCL_OK to Tcl_BackgroundException()?)
 	 * Just return without doing anything.
 	 */
 	return TCL_OK;

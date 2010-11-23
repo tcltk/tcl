@@ -911,6 +911,17 @@ Tcl_CreateInterp(void)
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 
+    /*
+     * Only build in zlib support if we've successfully detected a library to
+     * compile and link against.
+     */
+
+#ifdef HAVE_ZLIB
+    if (TclZlibInit(interp) != TCL_OK) {
+	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
+#endif
+
     return interp;
 }
 
@@ -3449,8 +3460,8 @@ OldMathFuncDeleteProc(
 {
     OldMathFuncData *dataPtr = clientData;
 
-    ckfree((void *) dataPtr->argTypes);
-    ckfree((void *) dataPtr);
+    ckfree((char *) dataPtr->argTypes);
+    ckfree((char *) dataPtr);
 }
 
 /*
@@ -4302,6 +4313,30 @@ TclEvalObjvInternal(
 	}
 	goto done;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_InterpActive --
+ *
+ *	Returns non-zero if the specified interpreter is in use, i.e. if there
+ *	is an evaluation currently active in the interpreter.
+ *
+ * Results:
+ *	See above.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_InterpActive(
+    Tcl_Interp *interp)
+{
+    return ((Interp *) interp)->numLevels > 0;
 }
 
 /*

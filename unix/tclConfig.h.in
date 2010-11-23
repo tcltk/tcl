@@ -244,6 +244,9 @@
 /* Is weak import available? */
 #undef HAVE_WEAK_IMPORT
 
+/* Is there an installed zlib? */
+#undef HAVE_ZLIB
+
 /* Is this a Mac I see before me? */
 #undef MAC_OSX_TCL
 
