@@ -299,7 +299,7 @@ TclFinalizeIOSubsystem(void)
 		statePtr != NULL;
 		statePtr = statePtr->nextCSPtr) {
 	    chanPtr = statePtr->topChanPtr;
-	    if (!(statePtr->flags & CHANNEL_DEAD)) {
+	    if (!(statePtr->flags & (CHANNEL_INCLOSE|CHANNEL_CLOSED|CHANNEL_DEAD))) {
 		active = 1;
 		break;
 	    }
@@ -2383,14 +2383,7 @@ FlushChannel(
 		Tcl_SetErrno(errorCode);
 		if (interp != NULL && !TclChanCaughtErrorBypass(interp,
 			(Tcl_Channel) chanPtr)) {
-		    /*
-		     * Casting away const here is safe because the
-		     * TCL_VOLATILE flag guarantees const treatment of the
-		     * Posix error string.
-		     */
-
-		    Tcl_SetResult(interp, (char *) Tcl_PosixError(interp),
-			    TCL_VOLATILE);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_PosixError(interp), -1));
 		}
 
 		/*
@@ -9808,7 +9801,7 @@ Tcl_IsChannelExisting(
 	}
 
 	if ((*chanName == *name) &&
-		(memcmp(name, chanName, (size_t) chanNameLen) == 0)) {
+		(memcmp(name, chanName, (size_t) chanNameLen + 1) == 0)) {
 	    return 1;
 	}
     }

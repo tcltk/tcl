@@ -953,7 +953,7 @@ declare 268 generic {
     void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
 }
 declare 269 generic {
-    CONST84_RETURN char * Tcl_HashStats(Tcl_HashTable *tablePtr)
+    char * Tcl_HashStats(Tcl_HashTable *tablePtr)
 }
 declare 270 generic {
     CONST84_RETURN char * Tcl_ParseVar(Tcl_Interp *interp, const char *start,

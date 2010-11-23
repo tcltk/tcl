@@ -568,6 +568,13 @@ test compile-16.24.$noComp {
 } -constraints $constraints -body {
     run "{*}\"\{foo bar\""
 } -returnCodes error -result {unmatched open brace in list}
+test compile-16.25.$noComp {TclCompileScript: word expansion, naked backslashes} $constraints {
+    run {list {*}{a \n b}}
+} {a {
+} b}
+test compile-16.26.$noComp {TclCompileScript: word expansion, protected backslashes} $constraints {
+    run {list {*}{a {\n} b}}
+} {a {\n} b}
 }	;# End of noComp loop
 
 # These tests are messy because it wrecks the interpreter it runs in!

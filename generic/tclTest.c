@@ -736,7 +736,6 @@ TestasyncCmd(
     TestAsyncHandler *asyncPtr, *prevPtr;
     int id, code;
     static int nextId = 1;
-    char buf[TCL_INTEGER_SPACE];
 
     if (argc < 2) {
 	wrongNumArgs:
@@ -756,8 +755,7 @@ TestasyncCmd(
 	strcpy(asyncPtr->command, argv[2]);
 	asyncPtr->nextPtr = firstHandler;
 	firstHandler = asyncPtr;
-	TclFormatInt(buf, asyncPtr->id);
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(asyncPtr->id));
     } else if (strcmp(argv[1], "delete") == 0) {
 	if (argc == 2) {
 	    while (firstHandler != NULL) {
@@ -805,7 +803,7 @@ TestasyncCmd(
 		break;
 	    }
 	}
-	Tcl_SetResult(interp, (char *)argv[3], TCL_VOLATILE);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(argv[3], -1));
 	return code;
 #ifdef TCL_THREADS
     } else if (strcmp(argv[1], "marklater") == 0) {
@@ -978,9 +976,9 @@ TestcmdinfoCmd(
 	info.deleteProc = CmdDelProc2;
 	info.deleteData = (ClientData) "new_delete_data";
 	if (Tcl_SetCommandInfo(interp, argv[2], &info) == 0) {
-	    Tcl_SetResult(interp, "0", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
 	} else {
-	    Tcl_SetResult(interp, "1", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
 	}
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
@@ -1586,7 +1584,6 @@ TestdstringCmd(
     const char **argv)		/* Argument strings. */
 {
     int count;
-    Interp* iPtr = (Interp*) interp;
 
     if (argc < 2) {
 	wrongNumArgs:
@@ -1630,13 +1627,13 @@ TestdstringCmd(
 	} else if (strcmp(argv[2], "staticlarge") == 0) {
 	    Tcl_SetResult(interp, "first0 first1 first2 first3 first4 first5 first6 first7 first8 first9\nsecond0 second1 second2 second3 second4 second5 second6 second7 second8 second9\nthird0 third1 third2 third3 third4 third5 third6 third7 third8 third9\nfourth0 fourth1 fourth2 fourth3 fourth4 fourth5 fourth6 fourth7 fourth8 fourth9\nfifth0 fifth1 fifth2 fifth3 fifth4 fifth5 fifth6 fifth7 fifth8 fifth9\nsixth0 sixth1 sixth2 sixth3 sixth4 sixth5 sixth6 sixth7 sixth8 sixth9\nseventh0 seventh1 seventh2 seventh3 seventh4 seventh5 seventh6 seventh7 seventh8 seventh9\n", TCL_STATIC);
 	} else if (strcmp(argv[2], "free") == 0) {
-	    Tcl_SetResult(interp, (char *) ckalloc(100), TCL_DYNAMIC);
-	    strcpy(iPtr->result, "This is a malloc-ed string");
+	    char *s = (char *) ckalloc(100);
+	    strcpy(s, "This is a malloc-ed string");
+	    Tcl_SetResult(interp, s, TCL_DYNAMIC);
 	} else if (strcmp(argv[2], "special") == 0) {
-	    iPtr->result = (char *) ckalloc(100);
-	    iPtr->result += 4;
-	    iPtr->freeProc = SpecialFree;
-	    strcpy(iPtr->result, "This is a specially-allocated string");
+	    char *s = (char *) ckalloc(100) + 16;
+	    strcpy(s, "This is a specially-allocated string");
+	    Tcl_SetResult(interp, s, SpecialFree);
 	} else {
 	    Tcl_AppendResult(interp, "bad gresult option \"", argv[2],
 		    "\": must be staticsmall, staticlarge, free, or special",
@@ -1645,13 +1642,11 @@ TestdstringCmd(
 	}
 	Tcl_DStringGetResult(interp, &dstring);
     } else if (strcmp(argv[1], "length") == 0) {
-	char buf[TCL_INTEGER_SPACE];
 
 	if (argc != 2) {
 	    goto wrongNumArgs;
 	}
-	TclFormatInt(buf, Tcl_DStringLength(&dstring));
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_DStringLength(&dstring)));
     } else if (strcmp(argv[1], "result") == 0) {
 	if (argc != 2) {
 	    goto wrongNumArgs;
@@ -1687,7 +1682,7 @@ TestdstringCmd(
 static void SpecialFree(blockPtr)
     char *blockPtr;			/* Block to free. */
 {
-    ckfree(blockPtr - 4);
+    ckfree(blockPtr - 16);
 }
 
 /*
@@ -4884,7 +4879,7 @@ TestsaveresultCmd(
 	break;
     }
     case RESULT_DYNAMIC:
-	Tcl_SetResult(interp, "dynamic result", TestsaveresultFree);
+	Tcl_SetResult(interp, (char *)"dynamic result", TestsaveresultFree);
 	break;
     case RESULT_OBJECT:
 	objPtr = Tcl_NewStringObj("object result", -1);
@@ -5884,7 +5879,7 @@ TestFilesystemObjCmd(
     Tcl_Obj *const objv[])
 {
     int res, boolVal;
-    char *msg;
+    const char *msg;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "boolean");
@@ -5900,7 +5895,7 @@ TestFilesystemObjCmd(
 	res = Tcl_FSUnregister(&testReportingFilesystem);
 	msg = (res == TCL_OK) ? "unregistered" : "failed";
     }
-    Tcl_SetResult(interp, msg, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(msg , -1));
     return res;
 }
 
@@ -6256,7 +6251,7 @@ TestSimpleFilesystemObjCmd(
     Tcl_Obj *const objv[])
 {
     int res, boolVal;
-    char *msg;
+    const char *msg;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "boolean");
@@ -6272,7 +6267,7 @@ TestSimpleFilesystemObjCmd(
 	res = Tcl_FSUnregister(&simpleFilesystem);
 	msg = (res == TCL_OK) ? "unregistered" : "failed";
     }
-    Tcl_SetResult(interp, msg, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(msg , -1));
     return res;
 }
 
@@ -6519,7 +6514,6 @@ TestgetintCmd(
 	return TCL_ERROR;
     } else {
 	int val, i, total=0;
-	char buf[TCL_INTEGER_SPACE];
 
 	for (i=1 ; i<argc ; i++) {
 	    if (Tcl_GetInt(interp, argv[i], &val) != TCL_OK) {
@@ -6527,8 +6521,7 @@ TestgetintCmd(
 	    }
 	    total += val;
 	}
-	TclFormatInt(buf, total);
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(total));
 	return TCL_OK;
     }
 }

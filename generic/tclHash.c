@@ -614,7 +614,7 @@ Tcl_NextHashEntry(
  *----------------------------------------------------------------------
  */
 
-const char *
+char *
 Tcl_HashStats(
     Tcl_HashTable *tablePtr)	/* Table for which to produce stats. */
 {
@@ -665,11 +665,7 @@ Tcl_HashStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
-	result = (char *) TclpSysAlloc((unsigned) (NUM_COUNTERS*60) + 300, 0);
-    } else {
-	result = (char *) ckalloc((unsigned) (NUM_COUNTERS*60) + 300);
-    }
+    result = (char *) ckalloc((unsigned) (NUM_COUNTERS*60) + 300);
     sprintf(result, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);

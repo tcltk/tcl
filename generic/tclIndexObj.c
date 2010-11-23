@@ -1263,7 +1263,7 @@ Tcl_ParseArgsObjv(
 
 	    sprintf(buf, "bad argument type %d in Tcl_ArgvInfo",
 		    infoPtr->type);
-	    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
 	    goto error;
 	}
 	}

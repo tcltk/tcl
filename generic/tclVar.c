@@ -3214,7 +3214,7 @@ Tcl_ArrayObjCmd(
     }
 
     case ARRAY_STATISTICS: {
-	const char *stats;
+	char *stats;
 
 	if (notArray) {
 	    goto error;

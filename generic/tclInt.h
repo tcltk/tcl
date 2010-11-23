@@ -2728,6 +2728,9 @@ MODULE_SCOPE Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 MODULE_SCOPE Tcl_Obj *	TclpObjLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 			    int linkType);
 MODULE_SCOPE int	TclpObjChdir(Tcl_Obj *pathPtr);
+MODULE_SCOPE Tcl_Channel TclpOpenTemporaryFile(Tcl_Obj *dirObj,
+			    Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
+			    Tcl_Obj *resultingNameObj);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
 MODULE_SCOPE void	TclpPanic(const char *format, ...);
