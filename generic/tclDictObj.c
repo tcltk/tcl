@@ -153,7 +153,7 @@ typedef struct Dict {
 const Tcl_ObjType tclDictType = {
     "dict",
     FreeDictInternalRep,		/* freeIntRepProc */
-    DupDictInternalRep,		        /* dupIntRepProc */
+    DupDictInternalRep,			/* dupIntRepProc */
     UpdateStringOfDict,			/* updateStringProc */
     SetDictFromAny			/* setFromAnyProc */
 };
@@ -583,6 +583,7 @@ SetDictFromAny(
 	    if (interp != NULL) {
 		Tcl_SetResult(interp, "missing value to go with key",
 			TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -635,6 +636,9 @@ SetDictFromAny(
 	result = TclFindElement(interp, p, lenRemain,
 		&elemStart, &nextElem, &elemSize, &hasBrace);
 	if (result != TCL_OK) {
+	    if (interp != NULL) {
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
+	    }
 	    goto errorExit;
 	}
 	if (elemStart >= limit) {
@@ -655,8 +659,8 @@ SetDictFromAny(
 	}
 
 	TclNewObj(keyPtr);
-        keyPtr->bytes = s;
-        keyPtr->length = elemSize;
+	keyPtr->bytes = s;
+	keyPtr->length = elemSize;
 
 	p = nextElem;
 	lenRemain = (limit - nextElem);
@@ -667,6 +671,9 @@ SetDictFromAny(
 	result = TclFindElement(interp, p, lenRemain,
 		&elemStart, &nextElem, &elemSize, &hasBrace);
 	if (result != TCL_OK) {
+	    if (interp != NULL) {
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
+	    }
 	    TclDecrRefCount(keyPtr);
 	    goto errorExit;
 	}
@@ -681,15 +688,15 @@ SetDictFromAny(
 
 	s = ckalloc((unsigned) elemSize + 1);
 	if (hasBrace) {
-	    memcpy((void *) s, (void *) elemStart, (size_t) elemSize);
+	    memcpy(s, elemStart, (size_t) elemSize);
 	    s[elemSize] = 0;
 	} else {
 	    elemSize = TclCopyAndCollapse(elemSize, elemStart, s);
 	}
 
 	TclNewObj(valuePtr);
-        valuePtr->bytes = s;
-        valuePtr->length = elemSize;
+	valuePtr->bytes = s;
+	valuePtr->length = elemSize;
 
 	/*
 	 * Store key and value in the hash table we're building.
@@ -703,7 +710,7 @@ SetDictFromAny(
 	    TclDecrRefCount(discardedValue);
 	}
 	Tcl_SetHashValue(hPtr, valuePtr);
-	Tcl_IncrRefCount(valuePtr); /* since hash now holds ref to it */
+	Tcl_IncrRefCount(valuePtr);	/* Since hash now holds ref to it. */
     }
 
   installHash:
@@ -724,6 +731,7 @@ SetDictFromAny(
   missingKey:
     if (interp != NULL) {
 	Tcl_SetResult(interp, "missing value to go with key", TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
     }
     TclDecrRefCount(keyPtr);
     result = TCL_ERROR;
@@ -2128,10 +2136,11 @@ DictIncrCmd(
 	 */
 
 	char *saved = dictPtr->bytes;
+	Tcl_Obj *oldPtr = dictPtr;
 
 	dictPtr->bytes = NULL;
 	dictPtr = Tcl_DuplicateObj(dictPtr);
-	dictPtr->bytes = saved;
+	oldPtr->bytes = saved;
     }
     if (valuePtr == NULL) {
 	/*

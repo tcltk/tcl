@@ -1226,7 +1226,8 @@ Tcl_NewObjectInstance(
      * that's not allowed.
      */
 
-    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL, 0)) {
+    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL,
+	    TCL_NAMESPACE_ONLY)) {
 	Tcl_AppendResult(interp, "can't create object \"", nameStr,
 		"\": command already exists with that name", NULL);
 	return NULL;

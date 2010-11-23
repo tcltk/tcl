@@ -48,21 +48,9 @@
 /* 3 */
 EXTERN void		TclAllocateFreeObjects(void);
 /* Slot 4 is reserved */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 5 */
 EXTERN int		TclCleanupChildren(Tcl_Interp *interp, int numPids,
 				Tcl_Pid *pidPtr, Tcl_Channel errorChan);
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-/* 5 */
-EXTERN int		TclCleanupChildren(Tcl_Interp *interp, int numPids,
-				Tcl_Pid *pidPtr, Tcl_Channel errorChan);
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-/* 5 */
-EXTERN int		TclCleanupChildren(Tcl_Interp *interp, int numPids,
-				Tcl_Pid *pidPtr, Tcl_Channel errorChan);
-#endif /* MACOSX */
 /* 6 */
 EXTERN void		TclCleanupCommand(Command *cmdPtr);
 /* 7 */
@@ -72,27 +60,11 @@ EXTERN int		TclCopyAndCollapse(int count, const char *src,
 EXTERN int		TclCopyChannel(Tcl_Interp *interp,
 				Tcl_Channel inChan, Tcl_Channel outChan,
 				int toRead, Tcl_Obj *cmdPtr);
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 9 */
 EXTERN int		TclCreatePipeline(Tcl_Interp *interp, int argc,
 				const char **argv, Tcl_Pid **pidArrayPtr,
 				TclFile *inPipePtr, TclFile *outPipePtr,
 				TclFile *errFilePtr);
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-/* 9 */
-EXTERN int		TclCreatePipeline(Tcl_Interp *interp, int argc,
-				const char **argv, Tcl_Pid **pidArrayPtr,
-				TclFile *inPipePtr, TclFile *outPipePtr,
-				TclFile *errFilePtr);
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-/* 9 */
-EXTERN int		TclCreatePipeline(Tcl_Interp *interp, int argc,
-				const char **argv, Tcl_Pid **pidArrayPtr,
-				TclFile *inPipePtr, TclFile *outPipePtr,
-				TclFile *errFilePtr);
-#endif /* MACOSX */
 /* 10 */
 EXTERN int		TclCreateProc(Tcl_Interp *interp, Namespace *nsPtr,
 				const char *procName, Tcl_Obj *argsPtr,
@@ -276,18 +248,8 @@ EXTERN void		TclSetupEnv(Tcl_Interp *interp);
 /* 103 */
 EXTERN int		TclSockGetPort(Tcl_Interp *interp, const char *str,
 				const char *proto, int *portPtr);
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 104 */
 EXTERN int		TclSockMinimumBuffers(int sock, int size);
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-/* 104 */
-EXTERN int		TclSockMinimumBuffers(int sock, int size);
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-/* 104 */
-EXTERN int		TclSockMinimumBuffers(int sock, int size);
-#endif /* MACOSX */
 /* Slot 105 is reserved */
 /* Slot 106 is reserved */
 /* Slot 107 is reserved */
@@ -574,27 +536,11 @@ typedef struct TclIntStubs {
     void (*reserved2)(void);
     void (*tclAllocateFreeObjects) (void); /* 3 */
     void (*reserved4)(void);
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     int (*tclCleanupChildren) (Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-    int (*tclCleanupChildren) (Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    int (*tclCleanupChildren) (Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
-#endif /* MACOSX */
     void (*tclCleanupCommand) (Command *cmdPtr); /* 6 */
     int (*tclCopyAndCollapse) (int count, const char *src, char *dst); /* 7 */
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr); /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     int (*tclCreatePipeline) (Tcl_Interp *interp, int argc, const char **argv, Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr, TclFile *errFilePtr); /* 9 */
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-    int (*tclCreatePipeline) (Tcl_Interp *interp, int argc, const char **argv, Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr, TclFile *errFilePtr); /* 9 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    int (*tclCreatePipeline) (Tcl_Interp *interp, int argc, const char **argv, Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr, TclFile *errFilePtr); /* 9 */
-#endif /* MACOSX */
     int (*tclCreateProc) (Tcl_Interp *interp, Namespace *nsPtr, const char *procName, Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr, Proc **procPtrPtr); /* 10 */
     void (*tclDeleteCompiledLocalVars) (Interp *iPtr, CallFrame *framePtr); /* 11 */
     void (*tclDeleteVars) (Interp *iPtr, TclVarHashTable *tablePtr); /* 12 */
@@ -689,15 +635,7 @@ typedef struct TclIntStubs {
     char * (*tclSetPreInitScript) (char *string); /* 101 */
     void (*tclSetupEnv) (Tcl_Interp *interp); /* 102 */
     int (*tclSockGetPort) (Tcl_Interp *interp, const char *str, const char *proto, int *portPtr); /* 103 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     int (*tclSockMinimumBuffers) (int sock, int size); /* 104 */
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-    int (*tclSockMinimumBuffers) (int sock, int size); /* 104 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    int (*tclSockMinimumBuffers) (int sock, int size); /* 104 */
-#endif /* MACOSX */
     void (*reserved105)(void);
     void (*reserved106)(void);
     void (*reserved107)(void);
@@ -853,36 +791,16 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclAllocateFreeObjects \
 	(tclIntStubsPtr->tclAllocateFreeObjects) /* 3 */
 /* Slot 4 is reserved */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
 #define TclCleanupChildren \
 	(tclIntStubsPtr->tclCleanupChildren) /* 5 */
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-#define TclCleanupChildren \
-	(tclIntStubsPtr->tclCleanupChildren) /* 5 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-#define TclCleanupChildren \
-	(tclIntStubsPtr->tclCleanupChildren) /* 5 */
-#endif /* MACOSX */
 #define TclCleanupCommand \
 	(tclIntStubsPtr->tclCleanupCommand) /* 6 */
 #define TclCopyAndCollapse \
 	(tclIntStubsPtr->tclCopyAndCollapse) /* 7 */
 #define TclCopyChannel \
 	(tclIntStubsPtr->tclCopyChannel) /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
 #define TclCreatePipeline \
 	(tclIntStubsPtr->tclCreatePipeline) /* 9 */
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-#define TclCreatePipeline \
-	(tclIntStubsPtr->tclCreatePipeline) /* 9 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-#define TclCreatePipeline \
-	(tclIntStubsPtr->tclCreatePipeline) /* 9 */
-#endif /* MACOSX */
 #define TclCreateProc \
 	(tclIntStubsPtr->tclCreateProc) /* 10 */
 #define TclDeleteCompiledLocalVars \
@@ -1027,18 +945,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclSetupEnv) /* 102 */
 #define TclSockGetPort \
 	(tclIntStubsPtr->tclSockGetPort) /* 103 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
 #define TclSockMinimumBuffers \
 	(tclIntStubsPtr->tclSockMinimumBuffers) /* 104 */
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-#define TclSockMinimumBuffers \
-	(tclIntStubsPtr->tclSockMinimumBuffers) /* 104 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-#define TclSockMinimumBuffers \
-	(tclIntStubsPtr->tclSockMinimumBuffers) /* 104 */
-#endif /* MACOSX */
 /* Slot 105 is reserved */
 /* Slot 106 is reserved */
 /* Slot 107 is reserved */

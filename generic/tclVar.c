@@ -147,7 +147,7 @@ static void		AppendLocals(Tcl_Interp *interp, Tcl_Obj *listPtr,
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
 			    Var *varPtr, int flags);
-static Tcl_Var          ObjFindNamespaceVar(Tcl_Interp *interp,
+static Tcl_Var		ObjFindNamespaceVar(Tcl_Interp *interp,
 			    Tcl_Obj *namePtr, Tcl_Namespace *contextNsPtr,
 			    int flags);
 static int		ObjMakeUpvar(Tcl_Interp *interp,
@@ -187,7 +187,7 @@ static Tcl_SetFromAnyProc	PanicOnSetVarName;
  *
  * localVarName - INTERNALREP DEFINITION:
  *   ptrAndLongRep.ptr:   pointer to name obj in varFramePtr->localCache
- *                        or NULL if it is this same obj
+ *			  or NULL if it is this same obj
  *   ptrAndLongRep.value: index into locals table
  *
  * nsVarName - INTERNALREP DEFINITION:
@@ -545,8 +545,7 @@ TclObjLookupVarEx(
 	     * Use the cached index if the names coincide.
 	     */
 
-	    Tcl_Obj *namePtr = (Tcl_Obj *)
-		    part1Ptr->internalRep.ptrAndLongRep.ptr;
+	    Tcl_Obj *namePtr = part1Ptr->internalRep.ptrAndLongRep.ptr;
 	    Tcl_Obj *checkNamePtr = localName(iPtr->varFramePtr, localIndex);
 
 	    if ((!namePtr && (checkNamePtr == part1Ptr)) ||
@@ -612,6 +611,7 @@ TclObjLookupVarEx(
 		if (flags & TCL_LEAVE_ERR_MSG) {
 		    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
 			    noSuchVar, -1);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "VARNAME", NULL);
 		}
 		return NULL;
 	    }
@@ -644,6 +644,8 @@ TclObjLookupVarEx(
 		    if (flags & TCL_LEAVE_ERR_MSG) {
 			TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
 				needArray, -1);
+			Tcl_SetErrorCode(interp, "TCL", "VALUE", "VARNAME",
+				NULL);
 		    }
 		    return NULL;
 		}
@@ -657,8 +659,8 @@ TclObjLookupVarEx(
 		len2 = len1 - i - 2;
 		len1 = i;
 
-		newPart2 = ckalloc((unsigned int) (len2+1));
-		memcpy(newPart2, part2, (unsigned int) len2);
+		newPart2 = ckalloc((unsigned) (len2+1));
+		memcpy(newPart2, part2, (unsigned) len2);
 		*(newPart2+len2) = '\0';
 		part2 = newPart2;
 		part2Ptr = Tcl_NewStringObj(newPart2, -1);
@@ -707,6 +709,7 @@ TclObjLookupVarEx(
     if (varPtr == NULL) {
 	if ((errMsg != NULL) && (flags & TCL_LEAVE_ERR_MSG)) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg, errMsg, -1);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	}
 	if (newPart2) {
 	    Tcl_DecrRefCount(part2Ptr);
@@ -764,6 +767,7 @@ TclObjLookupVarEx(
 	    part1 = TclGetString(part1Ptr);
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
 		    "Cached variable reference is NULL.", -1);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	}
 	return NULL;
     }
@@ -968,9 +972,13 @@ TclLookupSimpleVar(
 			flags, &varNsPtr, &dummy1Ptr, &dummy2Ptr, &tail);
 		if (varNsPtr == NULL) {
 		    *errMsgPtr = badNamespace;
+		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+			    NULL);
 		    return NULL;
 		} else if (tail == NULL) {
 		    *errMsgPtr = missingName;
+		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+			    NULL);
 		    return NULL;
 		}
 		if (tail != varName) {
@@ -993,6 +1001,7 @@ TclLookupSimpleVar(
 		}
 	    } else {		/* Var wasn't found and not to create it. */
 		*errMsgPtr = noSuchVar;
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 		return NULL;
 	    }
 	}
@@ -1029,6 +1038,7 @@ TclLookupSimpleVar(
 	    }
 	    if (varPtr == NULL) {
 		*errMsgPtr = noSuchVar;
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	    }
 	}
     }
@@ -1120,6 +1130,7 @@ TclLookupArrayElement(
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg,
 			danglingVar, index);
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	    }
 	    return NULL;
 	}
@@ -1138,6 +1149,7 @@ TclLookupArrayElement(
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg, needArray,
 		    index);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	}
 	return NULL;
     }
@@ -1433,6 +1445,7 @@ TclPtrGetVar(
      */
 
   errorReturn:
+    Tcl_SetErrorCode(interp, "TCL", "READ", "VARNAME", NULL);
     if (TclIsVarUndefined(varPtr)) {
 	TclCleanupVar(varPtr, arrayPtr);
     }
@@ -1921,6 +1934,9 @@ TclPtrSetVar(
      */
 
   cleanup:
+    if (resultPtr == NULL) {
+	Tcl_SetErrorCode(interp, "TCL", "WRITE", "VARNAME", NULL);
+    }
     if (TclIsVarUndefined(varPtr)) {
 	TclCleanupVar(varPtr, arrayPtr);
     }
@@ -2221,6 +2237,7 @@ TclObjUnsetVar2(
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset",
 		    ((arrayPtr == NULL) ? noSuchVar : noSuchElement), -1);
+	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", NULL);
 	}
     }
 
@@ -2360,7 +2377,7 @@ UnsetVarStruct(
 		VarTrace *prevPtr = tracePtr;
 
 		tracePtr = tracePtr->nextPtr;
-		Tcl_EventuallyFree((ClientData) prevPtr, TCL_DYNAMIC);
+		Tcl_EventuallyFree(prevPtr, TCL_DYNAMIC);
 	    }
 	    for (activePtr = iPtr->activeVarTracePtr;  activePtr != NULL;
 		    activePtr = activePtr->nextPtr) {
@@ -3628,6 +3645,7 @@ TclPtrObjMakeUpvar(
 
 	if (TclIsVarLink(varPtr)) {
 	    Var *linkPtr = varPtr->value.linkPtr;
+
 	    if (linkPtr == otherPtr) {
 		return TCL_OK;
 	    }
@@ -4685,7 +4703,7 @@ PanicOnSetVarName(
  *
  * INTERNALREP DEFINITION:
  *   ptrAndLongRep.ptr:   pointer to name obj in varFramePtr->localCache
- *                        or NULL if it is this same obj
+ *			  or NULL if it is this same obj
  *   ptrAndLongRep.value: index into locals table
  */
 
@@ -4693,7 +4711,8 @@ static void
 FreeLocalVarName(
     Tcl_Obj *objPtr)
 {
-    Tcl_Obj *namePtr = (Tcl_Obj *) objPtr->internalRep.ptrAndLongRep.ptr;
+    Tcl_Obj *namePtr = objPtr->internalRep.ptrAndLongRep.ptr;
+
     if (namePtr) {
 	Tcl_DecrRefCount(namePtr);
     }
@@ -5330,7 +5349,7 @@ TclInfoLocalsCmd(
 	return TCL_ERROR;
     }
 
-    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC )) {
+    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
 	return TCL_OK;
     }
 

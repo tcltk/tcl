@@ -919,7 +919,7 @@ MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 #endif
 MODULE_SCOPE int	TclPrintInstruction(ByteCode* codePtr,
-			    unsigned char *pc);
+			    const unsigned char *pc);
 MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,

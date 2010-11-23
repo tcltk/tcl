@@ -21,7 +21,7 @@
 #define _TCLINT
 
 /*
- * Some numerics configuration options
+ * Some numerics configuration options.
  */
 
 #undef NO_WIDE_TYPE
@@ -273,9 +273,9 @@ typedef struct Namespace {
 				 * is currently allocated. */
     int cmdRefEpoch;		/* Incremented if a newly added command
 				 * shadows a command for which this namespace
-				 * has already cached a Command * pointer;
-				 * this causes all its cached Command*
-				 * pointers to be invalidated. */
+				 * has already cached a Command* pointer; this
+				 * causes all its cached Command* pointers to
+				 * be invalidated. */
     int resolverEpoch;		/* Incremented whenever (a) the name
 				 * resolution rules change for this namespace
 				 * or (b) a newly added command shadows a
@@ -653,7 +653,7 @@ typedef struct VarInHash {
 #define VAR_ALL_HASH \
 	(VAR_IN_HASHTABLE|VAR_DEAD_HASH|VAR_NAMESPACE_VAR|VAR_ARRAY_ELEMENT)
 
-/* Trace and search state */
+/* Trace and search state. */
 
 #define VAR_TRACED_READ		0x10	/* TCL_TRACE_READS */
 #define VAR_TRACED_WRITE	0x20	/* TCL_TRACE_WRITES */
@@ -664,7 +664,7 @@ typedef struct VarInHash {
 #define VAR_ALL_TRACES \
 	(VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_ARRAY|VAR_TRACED_UNSET)
 
-/* Special handling on initialisation (only CompiledLocal) */
+/* Special handling on initialisation (only CompiledLocal). */
 #define VAR_ARGUMENT		0x100	/* KEEP OLD VALUE! See tclProc.c */
 #define VAR_TEMPORARY		0x200	/* KEEP OLD VALUE! See tclProc.c */
 #define VAR_IS_ARGS		0x400
@@ -780,7 +780,7 @@ typedef struct VarInHash {
     ((VarInHash *) (varPtr))->refCount
 
 /*
- * Macros for direct variable access by TEBC
+ * Macros for direct variable access by TEBC.
  */
 
 #define TclIsVarDirectReadable(varPtr) \
@@ -918,9 +918,9 @@ typedef struct Trace {
     ClientData clientData;	/* Arbitrary value to pass to proc. */
     struct Trace *nextPtr;	/* Next in list of traces for this interp. */
     int flags;			/* Flags governing the trace - see
-				 * Tcl_CreateObjTrace for details */
+				 * Tcl_CreateObjTrace for details. */
     Tcl_CmdObjTraceDeleteProc *delProc;
-				/* Procedure to call when trace is deleted */
+				/* Procedure to call when trace is deleted. */
 } Trace;
 
 /*
@@ -1092,14 +1092,14 @@ typedef struct CmdFrame {
      */
 
     int type;			/* Values see below. */
-    int level;			/* #Frames in stack, prevent O(n) scan of
-				 * list. */
+    int level;			/* Number of frames in stack, prevent O(n)
+				 * scan of list. */
     int *line;			/* Lines the words of the command start on. */
     int nline;
 
     CallFrame *framePtr;	/* Procedure activation record, may be
 				 * NULL. */
-    struct CmdFrame *nextPtr;	/* Link to calling frame */
+    struct CmdFrame *nextPtr;	/* Link to calling frame. */
 
     /*
      * Data needed for Eval vs TEBC
@@ -1137,27 +1137,28 @@ typedef struct CmdFrame {
 				 * in. */
 	} eval;
 	struct {
-	    const void *codePtr;/* Byte code currently executed */
-	    const char *pc;	/* and instruction pointer. */
+	    const void *codePtr;/* Byte code currently executed... */
+	    const char *pc;	/* ... and instruction pointer. */
 	} tebc;
     } data;
     union {
 	struct {
-	    const char *cmd;	/* The executed command, if possible */
-	    int len;		/* And its length */
+	    const char *cmd;	/* The executed command, if possible... */
+	    int len;		/* ... and its length. */
 	} str;
-	Tcl_Obj *listPtr;	/* Tcl_EvalObjEx, cmd list */
+	Tcl_Obj *listPtr;	/* Tcl_EvalObjEx, cmd list. */
     } cmd;
 } CmdFrame;
 
 typedef struct CFWord {
-    CmdFrame *framePtr;		/* CmdFrame to acess */
-    int word;			/* Index of the word in the command */
-    int refCount;		/* #times the word is on the stack */
+    CmdFrame *framePtr;		/* CmdFrame to access. */
+    int word;			/* Index of the word in the command. */
+    int refCount;		/* Number of times the word is on the
+				 * stack. */
 } CFWord;
 
 typedef struct ExtIndex {
-    Tcl_Obj *obj;		/* Reference to the word */
+    Tcl_Obj *obj;		/* Reference to the word. */
     int pc;			/* Instruction pointer of a command in
 				 * ExtCmdLoc.loc[.] */
     int word;			/* Index of word in
@@ -1165,9 +1166,10 @@ typedef struct ExtIndex {
 } ExtIndex;
 
 typedef struct CFWordBC {
-    CmdFrame *framePtr;		/* CmdFrame to acess */
-    ExtIndex *eiPtr;		/* Word info: PC and index */
-    int refCount;		/* #times the word is on the stack */
+    CmdFrame *framePtr;		/* CmdFrame to access. */
+    ExtIndex *eiPtr;		/* Word info: PC and index. */
+    int refCount;		/* Number of times the word is on the
+				 * stack. */
 } CFWordBC;
 
 /*
@@ -1188,15 +1190,15 @@ typedef struct CFWordBC {
  * types, per the context of the byte code in execution.
  */
 
-#define TCL_LOCATION_EVAL	(0) /* Location in a dynamic eval script */
+#define TCL_LOCATION_EVAL	(0) /* Location in a dynamic eval script. */
 #define TCL_LOCATION_EVAL_LIST	(1) /* Location in a dynamic eval script,
-				     * list-path */
-#define TCL_LOCATION_BC		(2) /* Location in byte code */
+				     * list-path. */
+#define TCL_LOCATION_BC		(2) /* Location in byte code. */
 #define TCL_LOCATION_PREBC	(3) /* Location in precompiled byte code, no
-				     * location */
-#define TCL_LOCATION_SOURCE	(4) /* Location in a file */
-#define TCL_LOCATION_PROC	(5) /* Location in a dynamic proc */
-#define TCL_LOCATION_LAST	(6) /* Number of values in the enum */
+				     * location. */
+#define TCL_LOCATION_SOURCE	(4) /* Location in a file. */
+#define TCL_LOCATION_PROC	(5) /* Location in a dynamic proc. */
+#define TCL_LOCATION_LAST	(6) /* Number of values in the enum. */
 
 /*
  * Structure passed to describe procedure-like "procedures" that are not
@@ -1421,15 +1423,16 @@ typedef struct ByteCodeStats {
 
 /*
  * Structure used in implementation of those core ensembles which are
- * partially compiled.
+ * partially compiled. Used as an array of these, with a terminating field
+ * whose 'name' is NULL.
  */
 
 typedef struct {
-    const char        *name;        /* The name of the subcommand           */
-    Tcl_ObjCmdProc    *proc;        /* The implementation of the subcommand */
-    CompileProc       *compileProc; /* The compiler for the subcommand      */
-    Tcl_ObjCmdProc    *nreProc;     /* NRE implementation of this command   */
-    ClientData         clientData;  /* Any clientData to give the command   */
+    const char *name;		/* The name of the subcommand. */
+    Tcl_ObjCmdProc *proc;	/* The implementation of the subcommand. */
+    CompileProc *compileProc;	/* The compiler for the subcommand. */
+    Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command. */
+    ClientData clientData;	/* Any clientData to give the command. */
 } EnsembleImplMap;
 
 /*
@@ -1607,10 +1610,10 @@ enum PkgPreferOptions {
  */
 
 typedef struct AllocCache {
-    struct Cache *nextPtr;	/* Linked list of cache entries */
+    struct Cache *nextPtr;	/* Linked list of cache entries. */
     Tcl_ThreadId owner;		/* Which thread's cache is this? */
-    Tcl_Obj *firstObjPtr;	/* List of free objects for thread */
-    int numObjects;		/* Number of objects for thread */
+    Tcl_Obj *firstObjPtr;	/* List of free objects for thread. */
+    int numObjects;		/* Number of objects for thread. */
 } AllocCache;
 
 /*
@@ -1695,10 +1698,11 @@ typedef struct Interp {
     ActiveVarTrace *activeVarTracePtr;
 				/* First in list of active traces for interp,
 				 * or NULL if no active traces. */
-    int returnCode;		/* [return -code] parameter */
-    CallFrame *rootFramePtr;	/* Global frame pointer for this interpreter */
+    int returnCode;		/* [return -code] parameter. */
+    CallFrame *rootFramePtr;	/* Global frame pointer for this
+				 * interpreter. */
     Namespace *lookupNsPtr;	/* Namespace to use ONLY on the next
-				 * TCL_EVAL_INVOKE call to Tcl_EvalObjv */
+				 * TCL_EVAL_INVOKE call to Tcl_EvalObjv. */
 
     /*
      * Information used by Tcl_AppendResult to keep track of partial results.
@@ -1778,7 +1782,7 @@ typedef struct Interp {
     Tcl_Obj *objResultPtr;	/* If the last command returned an object
 				 * result, this points to it. Should not be
 				 * accessed directly; see comment above. */
-    Tcl_ThreadId threadId;	/* ID of thread that owns the interpreter */
+    Tcl_ThreadId threadId;	/* ID of thread that owns the interpreter. */
 
     ActiveCommandTrace *activeCmdTracePtr;
 				/* First in list of active command traces for
@@ -1787,19 +1791,22 @@ typedef struct Interp {
 				/* First in list of active traces for interp,
 				 * or NULL if no active traces. */
 
-    int tracesForbiddingInline; /* Count of traces (in the list headed by
+    int tracesForbiddingInline;	/* Count of traces (in the list headed by
 				 * tracePtr) that forbid inline bytecode
-				 * compilation */
+				 * compilation. */
 
-    /* Fields used to manage extensible return options (TIP 90) */
+    /*
+     * Fields used to manage extensible return options (TIP 90).
+     */
+
     Tcl_Obj *returnOpts;	/* A dictionary holding the options to the
-				 * last [return] command */
+				 * last [return] command. */
 
-    Tcl_Obj *errorInfo;		/* errorInfo value (now as a Tcl_Obj) */
-    Tcl_Obj *eiVar;		/* cached ref to ::errorInfo variable */
-    Tcl_Obj *errorCode;		/* errorCode value (now as a Tcl_Obj) */
-    Tcl_Obj *ecVar;		/* cached ref to ::errorInfo variable */
-    int returnLevel;		/* [return -level] parameter */
+    Tcl_Obj *errorInfo;		/* errorInfo value (now as a Tcl_Obj). */
+    Tcl_Obj *eiVar;		/* cached ref to ::errorInfo variable. */
+    Tcl_Obj *errorCode;		/* errorCode value (now as a Tcl_Obj). */
+    Tcl_Obj *ecVar;		/* cached ref to ::errorInfo variable. */
+    int returnLevel;		/* [return -level] parameter. */
 
     /*
      * Resource limiting framework support (TIP#143).
@@ -1857,7 +1864,7 @@ typedef struct Interp {
     } ensembleRewrite;
 
     /*
-     * TIP #219 ... Global info for the I/O system ...
+     * TIP #219: Global info for the I/O system.
      */
 
     Tcl_Obj *chanMsg;		/* Error message set by channel drivers, for
@@ -1879,7 +1886,10 @@ typedef struct Interp {
 				 * over the default error messages returned by
 				 * a script cancellation operation. */
 
-    /* TIP #280 */
+    /*
+     * Source code origin information (TIP #280).
+     */
+
     CmdFrame *cmdFramePtr;	/* Points to the command frame containing the
 				 * location information for the current
 				 * command. */
@@ -1923,13 +1933,13 @@ typedef struct Interp {
     int packagePrefer;		/* Current package selection mode. */
 
     /*
-     * Hashtables for variable traces and searches
+     * Hashtables for variable traces and searches.
      */
 
     Tcl_HashTable varTraces;	/* Hashtable holding the start of a variable's
 				 * active trace list; varPtr is the key. */
     Tcl_HashTable varSearches;	/* Hashtable holding the start of a variable's
-				 * active searches list; varPtr is the key */
+				 * active searches list; varPtr is the key. */
     /*
      * The thread-specific data ekeko: cache pointers or values that
      *  (a) do not change during the thread's lifetime
@@ -2104,9 +2114,10 @@ struct LimitHandler {
 				/* The handler callback. */
     ClientData clientData;	/* Opaque argument to the handler callback. */
     Tcl_LimitHandlerDeleteProc *deleteProc;
-				/* How to delete the clientData */
-    LimitHandler *prevPtr;	/* Previous item in linked list of handlers */
-    LimitHandler *nextPtr;	/* Next item in linked list of handlers */
+				/* How to delete the clientData. */
+    LimitHandler *prevPtr;	/* Previous item in linked list of
+				 * handlers. */
+    LimitHandler *nextPtr;	/* Next item in linked list of handlers. */
 };
 
 /*
@@ -2132,7 +2143,7 @@ struct LimitHandler {
 
 /*
  * This macro is used to properly align the memory allocated by Tcl, giving
- * the same alignment as the native malloc
+ * the same alignment as the native malloc.
  */
 
 #if defined(__APPLE__)
@@ -2172,7 +2183,7 @@ typedef enum {
 /*
  * The following enum values are used to indicate the translation of a Tcl
  * channel. Declared here so that each platform can define
- * TCL_PLATFORM_TRANSLATION to the native translation on that platform
+ * TCL_PLATFORM_TRANSLATION to the native translation on that platform.
  */
 
 typedef enum TclEolTranslation {
@@ -2419,19 +2430,21 @@ typedef struct ProcessGlobalValue {
  */
 
 #define TCL_PARSE_DECIMAL_ONLY		1
-				/* Leading zero doesn't denote octal or hex */
+				/* Leading zero doesn't denote octal or
+				 * hex. */
 #define TCL_PARSE_OCTAL_ONLY		2
-				/* Parse octal even without prefix */
+				/* Parse octal even without prefix. */
 #define TCL_PARSE_HEXADECIMAL_ONLY	4
-				/* Parse hexadecimal even without prefix */
+				/* Parse hexadecimal even without prefix. */
 #define TCL_PARSE_INTEGER_ONLY		8
-				/* Disable floating point parsing */
+				/* Disable floating point parsing. */
 #define TCL_PARSE_SCAN_PREFIXES		16
-				/* Use [scan] rules dealing with 0? prefixes */
+				/* Use [scan] rules dealing with 0?
+				 * prefixes. */
 #define TCL_PARSE_NO_WHITESPACE		32
-				/* Reject leading/trailing whitespace */
+				/* Reject leading/trailing whitespace. */
 #define TCL_PARSE_BINARY_ONLY	64
-				/* Parse binary even without prefix */
+				/* Parse binary even without prefix. */
 
 /*
  *----------------------------------------------------------------------
@@ -2552,7 +2565,7 @@ MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
 MODULE_SCOPE int	TclDoubleDigits(char *buf, double value, int *signum);
 MODULE_SCOPE void       TclDeleteNamespaceVars(Namespace *nsPtr);
-/* TIP #280 - Modified token based evulation, with line information */
+/* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int        TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line);
 MODULE_SCOPE int	TclFileAttrsCmd(Tcl_Interp *interp,
@@ -2716,7 +2729,7 @@ MODULE_SCOPE int	TclpMatchFiles(Tcl_Interp *interp, char *separators,
 			    Tcl_DString *dirPtr, char *pattern, char *tail);
 MODULE_SCOPE int	TclpObjNormalizePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, int nextCheckpoint);
-MODULE_SCOPE void	TclpNativeJoinPath(Tcl_Obj *prefix, char *joining);
+MODULE_SCOPE void	TclpNativeJoinPath(Tcl_Obj *prefix, const char *joining);
 MODULE_SCOPE Tcl_Obj *	TclpNativeSplitPath(Tcl_Obj *pathPtr, int *lenPtr);
 MODULE_SCOPE Tcl_PathType TclpGetNativePathType(Tcl_Obj *pathPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
@@ -3038,6 +3051,8 @@ MODULE_SCOPE int	Tcl_SwitchObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_TellObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_ThrowObjCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_TimeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3445,7 +3460,7 @@ typedef const char* TclDTraceStr;
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
  * 'length == -1'.
- * Use empty 'if ; else' to handle use in unbraced outer if/else conditions
+ * Use empty 'if ; else' to handle use in unbraced outer if/else conditions.
  */
 
 # define TclDecrRefCount(objPtr) \
@@ -3470,7 +3485,7 @@ typedef const char* TclDTraceStr;
  * The PURIFY mode is like the regular mode, but instead of doing block
  * Tcl_Obj allocation and keeping a freed list for efficiency, it always
  * allocates and frees a single Tcl_Obj so that tools like Purify can better
- * track memory leaks
+ * track memory leaks.
  */
 
 #  define TclAllocObjStorageEx(interp, objPtr) \
@@ -3769,11 +3784,11 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 			    Tcl_WideUInt initVal);
 
 /*
- * Compile-time assertions: these produce a compile time error if
- * the expression is not known to be true at compile time.
- * If the assertion is known to be false, the compiler (or optimizer?) will
- * error out with "division by zero". If the assertion cannot be evaluated at
- * compile time, the compiler will error out with "non-static initializer".
+ * Compile-time assertions: these produce a compile time error if the
+ * expression is not known to be true at compile time.  If the assertion is
+ * known to be false, the compiler (or optimizer?) will error out with
+ * "division by zero". If the assertion cannot be evaluated at compile time,
+ * the compiler will error out with "non-static initializer".
  *
  * Adapted with permission from
  * http://www.pixelbeat.org/programming/gcc/static_assert.html
@@ -3965,7 +3980,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 
 /*
  *----------------------------------------------------------------
- * Inline version of Tcl_GetCurrentNamespace and Tcl_GetGlobalNamespace
+ * Inline version of Tcl_GetCurrentNamespace and Tcl_GetGlobalNamespace.
  */
 
 #define TclGetCurrentNamespace(interp) \

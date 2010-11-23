@@ -1319,7 +1319,7 @@ Tcl_GetBooleanFromObj(
 	     * sets the proper error message for us.
 	     */
 
-            double d;
+	    double d;
 
 	    if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
 		return TCL_ERROR;
@@ -1411,6 +1411,7 @@ SetBooleanFromAny(
 	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
 	Tcl_AppendToObj(msg, "\"", -1);
 	Tcl_SetObjResult(interp, msg);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", NULL);
     }
     return TCL_ERROR;
 }
@@ -1705,8 +1706,9 @@ Tcl_GetDoubleFromObj(
 	}
 	if (objPtr->typePtr == &tclBignumType) {
 	    mp_int big;
-	    UNPACK_BIGNUM( objPtr, big );
-	    *dblPtr = TclBignumToDouble( &big );
+
+	    UNPACK_BIGNUM(objPtr, big);
+	    *dblPtr = TclBignumToDouble(&big);
 	    return TCL_OK;
 	}
 #ifndef NO_WIDE_TYPE
@@ -2184,18 +2186,19 @@ Tcl_GetLongFromObj(
 	    goto tooLarge;
 	}
 #endif
-        if (objPtr->typePtr == &tclDoubleType) {
-            if (interp != NULL) {
+	if (objPtr->typePtr == &tclDoubleType) {
+	    if (interp != NULL) {
 		Tcl_Obj *msg;
 
 		TclNewLiteralStringObj(msg, "expected integer but got \"");
 		Tcl_AppendObjToObj(msg, objPtr);
 		Tcl_AppendToObj(msg, "\"", -1);
 		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
 	}
-        if (objPtr->typePtr == &tclBignumType) {
+	if (objPtr->typePtr == &tclBignumType) {
 	    /*
 	     * Must check for those bignum values that can fit in a long, even
 	     * when auto-narrowing is enabled. Only those values in the signed
@@ -2486,18 +2489,19 @@ Tcl_GetWideIntFromObj(
 	    *wideIntPtr = (Tcl_WideInt) objPtr->internalRep.longValue;
 	    return TCL_OK;
 	}
-        if (objPtr->typePtr == &tclDoubleType) {
-            if (interp != NULL) {
+	if (objPtr->typePtr == &tclDoubleType) {
+	    if (interp != NULL) {
 		Tcl_Obj *msg;
 
 		TclNewLiteralStringObj(msg, "expected integer but got \"");
 		Tcl_AppendObjToObj(msg, objPtr);
 		Tcl_AppendToObj(msg, "\"", -1);
 		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
 	}
-        if (objPtr->typePtr == &tclBignumType) {
+	if (objPtr->typePtr == &tclBignumType) {
 	    /*
 	     * Must check for those bignum values that can fit in a
 	     * Tcl_WideInt, even when auto-narrowing is enabled.
@@ -2825,6 +2829,7 @@ GetBignumFromObj(
 		Tcl_AppendObjToObj(msg, objPtr);
 		Tcl_AppendToObj(msg, "\"", -1);
 		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3046,7 +3051,8 @@ int TclGetNumberFromObj(
 	    static Tcl_ThreadDataKey bignumKey;
 	    mp_int *bigPtr = Tcl_GetThreadData(&bignumKey,
 		    (int) sizeof(mp_int));
-	    UNPACK_BIGNUM( objPtr, *bigPtr );
+
+	    UNPACK_BIGNUM(objPtr, *bigPtr);
 	    *typePtr = TCL_NUMBER_BIG;
 	    *clientDataPtr = bigPtr;
 	    return TCL_OK;

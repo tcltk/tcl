@@ -2546,9 +2546,9 @@ SlaveEval(
 
         Interp *iPtr = (Interp *) interp;
 	CmdFrame* invoker = iPtr->cmdFramePtr;
-	int word          = 0;
+	int word = 0;
 
-	TclArgumentGet (interp, objv[0], &invoker, &word);
+	TclArgumentGet(interp, objv[0], &invoker, &word);
 	result = TclEvalObjEx(slaveInterp, objv[0], 0, invoker, word);
     } else {
 	objPtr = Tcl_ConcatObj(objc, objv);

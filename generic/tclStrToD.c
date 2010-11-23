@@ -90,7 +90,8 @@ static int maxpow10_wide;	/* The powers of ten that can be represented
 				 * exactly as wide integers. */
 static Tcl_WideUInt *pow10_wide;
 #define MAXPOW	22
-static double pow10vals[MAXPOW+1];	/* The powers of ten that can be represented
+static double pow10vals[MAXPOW+1];
+				/* The powers of ten that can be represented
 				 * exactly as IEEE754 doubles. */
 static int mmaxpow;		/* Largest power of ten that can be
 				 * represented exactly in a 'double'. */
@@ -1161,6 +1162,7 @@ TclParseNumber(
 		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
 	    }
 	    Tcl_SetObjResult(interp, msg);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 	}
     }
 
@@ -1229,7 +1231,7 @@ AccumulateDecimalDigit(
 	     * number to a bignum and fall through into the bignum case.
 	     */
 
-	    TclBNInitBignumFromWideUInt (bignumRepPtr, w);
+	    TclBNInitBignumFromWideUInt(bignumRepPtr, w);
 	} else {
 	    /*
 	     * Wide multiplication.
@@ -1339,7 +1341,7 @@ MakeLowPrecisionDouble(
 		 * without special handling.
 		 */
 
-		retval = (double)(Tcl_WideInt)significand * pow10vals[ exponent ];
+		retval = (double)(Tcl_WideInt)significand * pow10vals[exponent];
 		goto returnValue;
 	    } else {
 		int diff = DBL_DIG - numSigDigs;
@@ -1692,8 +1694,8 @@ RefineApproximation(
      */
 
     if (mp_cmp_mag(&twoMd, &twoMv) == MP_LT) {
-        mp_clear(&twoMd);
-        mp_clear(&twoMv);
+	mp_clear(&twoMd);
+	mp_clear(&twoMv);
 	return approxResult;
     }
 
