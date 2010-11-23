@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.29 2010/11/05 16:40:10 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.30 2010/11/23 13:02:52 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -718,7 +718,7 @@ TclWinCPUID(
     unsigned int index,		/* Which CPUID value to retrieve. */
     unsigned int *regsPtr)	/* Registers after the CPUID. */
 {
-#ifdef HAVE_NO_SEH
+#if defined(__GNUC__) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
     int status = TCL_ERROR;
