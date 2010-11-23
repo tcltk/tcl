@@ -27,8 +27,22 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL="a1"
+TCL_PATCH_LEVEL="b1.2"
 VERSION=${TCL_VERSION}
+
+#------------------------------------------------------------------------
+# Setup configure arguments for bundled packages
+#------------------------------------------------------------------------
+
+PKG_CFG_ARGS="$ac_configure_args ${PKG_CFG_ARGS}"
+
+if test -r "$cache_file" -a -f "$cache_file"; then
+    case $cache_file in
+	[[\\/]]* | ?:[[\\/]]* ) pkg_cache_file=$cache_file ;;
+	*) pkg_cache_file=../../$cache_file ;;
+    esac
+    PKG_CFG_ARGS="${PKG_CFG_ARGS} --cache-file=$pkg_cache_file"
+fi
 
 #------------------------------------------------------------------------
 # Handle the --prefix=... option
@@ -74,6 +88,12 @@ AC_C_INLINE
 
 SC_MISSING_POSIX_HEADERS
 
+#--------------------------------------------------------------------
+# Determines the correct executable file extension (.exe)
+#--------------------------------------------------------------------
+
+AC_EXEEXT
+
 #------------------------------------------------------------------------
 # If we're using GCC, see if the compiler understands -pipe.  If so, use it.
 # It makes compiling go faster.  (This is only a performance feature.)
@@ -114,6 +134,37 @@ LIBS="$LIBS$THREADS_LIBS"
 SC_ENABLE_SHARED
 
 #--------------------------------------------------------------------
+# Look for a native installed tclsh binary (if available)
+# If one cannot be found then use the binary we build (fails for
+# cross compiling). This is used for NATIVE_TCLSH in Makefile.
+#--------------------------------------------------------------------
+
+SC_PROG_TCLSH
+if test "$TCLSH_PROG" = ""; then
+  TCLSH_PROG='./${TCL_EXE}'
+fi
+
+#------------------------------------------------------------------------
+#	Add stuff for zlib
+#------------------------------------------------------------------------
+
+zlib_ok=yes
+AC_CHECK_HEADER([zlib.h],[
+  AC_CHECK_TYPE([gz_header],[],[zlib_ok=no],[#include <zlib.h>])],[
+  zlib_ok=no])
+AS_IF([test $zlib_ok = yes], [
+  AC_SEARCH_LIBS([deflateSetHeader],[z],[],[
+    zlib_ok=no
+  ])])
+AS_IF([test $zlib_ok = no], [
+  AC_SUBST(ZLIB_DIR,[\${COMPAT_DIR}/zlib])
+  AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
+  AC_SUBST(ZLIB_SRCS,[\${ZLIB_SRCS}])
+  AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
+])
+AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
+
+#--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
 # macro depends on the value of SHARED_BUILD, and should be called
 # after SC_ENABLE_SHARED checks the configure switches.
@@ -151,7 +202,7 @@ AC_CHECK_FUNCS(getcwd, , [AC_DEFINE(USEGETWD, 1, [Is getcwd Posix-compliant?])])
 # Nb: if getcwd uses popen and pwd(1) (like SunOS 4) we should really
 # define USEGETWD even if the posix getcwd exists. Add a test ?
 
-AC_REPLACE_FUNCS(opendir strtol waitpid)
+AC_REPLACE_FUNCS(mkstemp opendir strtol waitpid)
 AC_CHECK_FUNC(strerror, , [AC_DEFINE(NO_STRERROR, 1, [Do we have strerror()])])
 AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD, 1, [Do we have getwd()])])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3, 1, [Do we have wait3()])])
@@ -165,7 +216,7 @@ if test "`uname -s`" = "Darwin" && test "${TCL_THREADS}" = 1 && \
 fi
 AC_CHECK_FUNC(realpath, , [AC_DEFINE(NO_REALPATH, 1, [Do we have realpath()])])
 
-SC_TCL_GETADDRINFO
+SC_TCL_IPV6
 
 #-------------------------------------------------------------------- 
 #	Look for thread-safe variants of some library functions.
@@ -244,24 +295,26 @@ fi
 SC_TIME_HANDLER
 
 #--------------------------------------------------------------------
-#	Some systems (e.g., IRIX 4.0.5) lack the st_blksize field
-#	in struct stat.  But we might be able to use fstatfs instead.
+#	Some systems (e.g., IRIX 4.0.5) lack some fields in struct stat. But
+#	we might be able to use fstatfs instead. Some systems (OpenBSD?) also
+#	lack blkcnt_t.
 #--------------------------------------------------------------------
 
-AC_STRUCT_ST_BLKSIZE
+AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
+AC_CHECK_TYPES([blkcnt_t])
 AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS, 1, [Do we have fstatfs()?])])
 
 #--------------------------------------------------------------------
-#       Some system have no memcmp or it does not work with 8 bit
-#       data, this checks it and add memcmp.o to LIBOBJS if needed
+#       Some system have no memcmp or it does not work with 8 bit data, this
+#       checks it and add memcmp.o to LIBOBJS if needed
 #--------------------------------------------------------------------
 
 AC_FUNC_MEMCMP
 
 #--------------------------------------------------------------------
-#       Some system like SunOS 4 and other BSD like systems
-#       have no memmove (we assume they have bcopy instead).
-#       {The replacement define is in compat/string.h}
+#       Some system like SunOS 4 and other BSD like systems have no memmove
+#       (we assume they have bcopy instead). {The replacement define is in
+#       compat/string.h}
 #--------------------------------------------------------------------
 
 AC_CHECK_FUNC(memmove, , [
@@ -269,8 +322,8 @@ AC_CHECK_FUNC(memmove, , [
     AC_DEFINE(NO_STRING_H, 1, [Do we have <string.h>?]) ])
 
 #--------------------------------------------------------------------
-#	On some systems strstr is broken: it returns a pointer even
-#	even if the original string is empty.
+#	On some systems strstr is broken: it returns a pointer even even if
+#	the original string is empty.
 #--------------------------------------------------------------------
 
 SC_TCL_CHECK_BROKEN_FUNC(strstr, [
@@ -486,10 +539,10 @@ fi
 SC_ENABLE_LANGINFO
 
 #--------------------------------------------------------------------
-# Check for support of chflags function
+# Check for support of chflags and mkstemps functions
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNCS(chflags)
+AC_CHECK_FUNCS(chflags mkstemps)
 
 #--------------------------------------------------------------------
 # Check for support of isnan() function or macro
@@ -542,6 +595,25 @@ if test "`uname -s`" = "Darwin" ; then
 	if test $tcl_cv_cc_weak_import = yes; then
 	    AC_DEFINE(HAVE_WEAK_IMPORT, 1, [Is weak import available?])
 	fi
+	AC_CACHE_CHECK([if Darwin SUSv3 extensions are available],
+	    tcl_cv_cc_darwin_c_source, [
+	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
+	    AC_TRY_COMPILE([
+		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
+		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
+		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
+		    #endif
+		    #elif MAC_OS_X_VERSION_MIN_REQUIRED < 1050
+		    #error MAC_OS_X_VERSION_MIN_REQUIRED < 1050
+		    #endif
+		    #define _DARWIN_C_SOURCE 1
+		    #include <sys/cdefs.h>
+		],,tcl_cv_cc_darwin_c_source=yes, tcl_cv_cc_darwin_c_source=no)
+	    CFLAGS=$hold_cflags])
+	if test $tcl_cv_cc_darwin_c_source = yes; then
+	    AC_DEFINE(_DARWIN_C_SOURCE, 1,
+		    [Are Darwin SUSv3 extensions available?])
+	fi
     fi
     # Build .bundle dltest binaries in addition to .dylib
     DLTEST_LD='${CC} -bundle -Wl,-w ${CFLAGS} ${LDFLAGS}'
@@ -552,7 +624,7 @@ else
 fi
 
 #--------------------------------------------------------------------
-# Check for support of fts functions (readdir replacement)
+#	Check for support of fts functions (readdir replacement)
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([for fts], tcl_cv_api_fts, [
@@ -570,10 +642,9 @@ if test $tcl_cv_api_fts = yes; then
 fi
 
 #--------------------------------------------------------------------
-#	The statements below check for systems where POSIX-style
-#	non-blocking I/O (O_NONBLOCK) doesn't work or is unimplemented. 
-#	On these systems (mostly older ones), use the old BSD-style
-#	FIONBIO approach instead.
+#	The statements below check for systems where POSIX-style non-blocking
+#	I/O (O_NONBLOCK) doesn't work or is unimplemented. On these systems
+#	(mostly older ones), use the old BSD-style FIONBIO approach instead.
 #--------------------------------------------------------------------
 
 SC_BLOCKING_STYLE
@@ -657,6 +728,7 @@ if test $tcl_ok = yes; then
     test -z "$ac_cv_path_DTRACE" && tcl_ok=no
 fi
 AC_MSG_CHECKING([whether to enable DTrace support])
+MAKEFILE_SHELL='/bin/sh'
 if test $tcl_ok = yes; then
     AC_DEFINE(USE_DTRACE, 1, [Are we building with DTrace support?])
     DTRACE_SRC="\${DTRACE_SRC}"
@@ -667,6 +739,7 @@ if test $tcl_ok = yes; then
 	    # Need to create an intermediate object file to ensure tclDTrace.o
 	    # gets included when linking against the static tcl library.
 	    STLIB_LD='stlib_ld () { /usr/ccs/bin/ld -r -o $${1%.a}.o "$${@:2}" && '"${STLIB_LD}"' $${1} $${1%.a}.o ; } && stlib_ld'
+	    MAKEFILE_SHELL='/bin/bash'
 	    # Force use of Sun ar and ranlib, the GNU versions choke on
 	    # tclDTrace.o and the combined object file above.
 	    AR='/usr/ccs/bin/ar'
@@ -675,28 +748,6 @@ if test $tcl_ok = yes; then
     fi
 fi
 AC_MSG_RESULT([$tcl_ok])
-
-#--------------------------------------------------------------------
-#  Does the C stack grow upwards or downwards? Or cross-compiling?
-#--------------------------------------------------------------------
-
-AC_CACHE_CHECK([if the C stack grows upwards in memory], tcl_cv_stack_grows_up, [
-    AC_TRY_RUN([
-	int StackGrowsUp(int *parent) {
-	    int here;
-	    return (&here < parent);
-	}
-	int main (int argc, char *argv[]) {
-	    int foo;
-	    return StackGrowsUp(&foo);
-	}
-    ], tcl_cv_stack_grows_up=yes, tcl_cv_stack_grows_up=no,
-    tcl_cv_stack_grows_up=unknown)])
-if test $tcl_cv_stack_grows_up = unknown; then
-    AC_DEFINE(TCL_CROSS_COMPILE, 1, [Are we cross-compiling?])
-elif test $tcl_cv_stack_grows_up = yes; then
-    AC_DEFINE(TCL_STACK_GROWS_UP, 1, [The C stack grows upwards in memory.])
-fi
 
 #--------------------------------------------------------------------
 #	The statements below define a collection of symbols related to
@@ -746,6 +797,12 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
         unset n f v
     ], VERSION=${TCL_VERSION})
     LD_LIBRARY_PATH_VAR="DYLD_FRAMEWORK_PATH"
+    # default install directory for bundled packages
+    if test "${libdir}" = '${exec_prefix}/lib' -o "`basename ${libdir}`" = 'Frameworks'; then
+        PACKAGE_DIR="/Library/Tcl"
+    else
+        PACKAGE_DIR="$libdir"
+    fi
     if test "${libdir}" = '${exec_prefix}/lib'; then
         # override libdir default
         libdir="/Library/Frameworks"
@@ -772,31 +829,19 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
 else
     # libdir must be a fully qualified path and not ${exec_prefix}/lib
     eval libdir="$libdir"
-    if test "$SHARED_BUILD" = "0" || test "$TCL_NEEDS_EXP_FILE" = "0"; then
-        if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-            TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
-        else
-            TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
-        fi
-        TCL_BUILD_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_LIB_FLAG}"
-        TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
+    # default install directory for bundled packages
+    PACKAGE_DIR="$libdir"
+    if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
+        TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
     else
-        TCL_BUILD_EXP_FILE="lib.exp"
-        eval "TCL_EXP_FILE=libtcl${TCL_EXPORT_FILE_SUFFIX}"
-    
-        if test "$GCC" = "yes" ; then
-            TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd | sed -e 's/ /\\\\ /g'`/${TCL_BUILD_EXP_FILE} -L`pwd | sed -e 's/ /\\\\ /g'`"
-            TCL_LIB_SPEC="-Wl,-bI:${libdir}/${TCL_EXP_FILE} -L${libdir}"
-        else
-            TCL_BUILD_LIB_SPEC="-bI:`pwd | sed -e 's/ /\\\\ /g'`/${TCL_BUILD_EXP_FILE}"
-            TCL_LIB_SPEC="-bI:${libdir}/${TCL_EXP_FILE}"
-        fi
+        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
     fi
+    TCL_BUILD_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_LIB_FLAG}"
+    TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
 fi
 VERSION='${VERSION}'
 eval "CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}"
 eval "CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
-eval "CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}"
 VERSION=${TCL_VERSION}
 
 #--------------------------------------------------------------------
@@ -808,9 +853,9 @@ VERSION=${TCL_VERSION}
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_PACKAGE_PATH" && \
-	TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl ~/Library/Frameworks /Library/Frameworks /Network/Library/Frameworks /System/Library/Frameworks"
+	TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl /System/Library/Tcl ~/Library/Frameworks /Library/Frameworks /System/Library/Frameworks"
     test -z "$TCL_MODULE_PATH"  && \
-	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl"
+	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl /System/Library/Tcl"
 elif test "$prefix/lib" != "$libdir"; then
     TCL_PACKAGE_PATH="${libdir} ${prefix}/lib ${TCL_PACKAGE_PATH}"
 else
@@ -854,6 +899,7 @@ AC_SUBST(TCL_MAJOR_VERSION)
 AC_SUBST(TCL_MINOR_VERSION)
 AC_SUBST(TCL_PATCH_LEVEL)
 AC_SUBST(TCL_YEAR)
+AC_SUBST(PKG_CFG_ARGS)
 
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)
@@ -869,15 +915,11 @@ AC_SUBST(TCL_BUILD_STUB_LIB_PATH)
 AC_SUBST(TCL_SRC_DIR)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
-AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
 
 AC_SUBST(TCL_SHARED_BUILD)
 AC_SUBST(LD_LIBRARY_PATH_VAR)
 
 AC_SUBST(TCL_BUILD_LIB_SPEC)
-AC_SUBST(TCL_NEEDS_EXP_FILE)
-AC_SUBST(TCL_BUILD_EXP_FILE)
-AC_SUBST(TCL_EXP_FILE)
 
 AC_SUBST(TCL_LIB_VERSIONS_OK)
 AC_SUBST(TCL_SHARED_LIB_SUFFIX)
@@ -890,6 +932,7 @@ AC_SUBST(INSTALL_TZDATA)
 AC_SUBST(DTRACE_SRC)
 AC_SUBST(DTRACE_HDR)
 AC_SUBST(DTRACE_OBJ)
+AC_SUBST(MAKEFILE_SHELL)
 
 AC_SUBST(BUILD_DLTEST)
 AC_SUBST(TCL_PACKAGE_PATH)
@@ -898,6 +941,7 @@ AC_SUBST(TCL_MODULE_PATH)
 AC_SUBST(TCL_LIBRARY)
 AC_SUBST(PRIVATE_INCLUDE_DIR)
 AC_SUBST(HTML_DIR)
+AC_SUBST(PACKAGE_DIR)
 
 AC_SUBST(EXTRA_CC_SWITCHES)
 AC_SUBST(EXTRA_APP_CC_SWITCHES)
@@ -916,5 +960,10 @@ AC_CONFIG_FILES([
     Makefile:../unix/Makefile.in
     dltest/Makefile:../unix/dltest/Makefile.in
     tclConfig.sh:../unix/tclConfig.sh.in
+    tcl.pc:../unix/tcl.pc.in
 ])
 AC_OUTPUT
+
+dnl Local Variables:
+dnl mode: autoconf
+dnl End:

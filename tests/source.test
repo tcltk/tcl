@@ -21,7 +21,7 @@ if {[catch {package require tcltest 2.1}]} {
 
 namespace eval ::tcl::test::source {
     namespace import ::tcltest::*
-
+
 test source-1.1 {source command} -setup {
     set x "old x value"
     set y "old y value"
@@ -269,7 +269,12 @@ test source-7.6 {source -encoding: mismatch encoding error} -setup {
     removeFile source.file
 } -returnCodes error -match glob -result {invalid command name*}
 
+
 cleanupTests
 }
 namespace delete ::tcl::test::source
 return
+
+# Local Variables:
+# mode: tcl
+# End:

@@ -16,7 +16,7 @@ SHELL=/bin/sh
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL="a4"
+TCL_PATCH_LEVEL="b1.2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.3
@@ -25,11 +25,13 @@ TCL_DDE_MINOR_VERSION=3
 TCL_DDE_PATCH_LEVEL="2"
 DDEVER=$TCL_DDE_MAJOR_VERSION$TCL_DDE_MINOR_VERSION
 
-TCL_REG_VERSION=1.2
+TCL_REG_VERSION=1.3
 TCL_REG_MAJOR_VERSION=1
-TCL_REG_MINOR_VERSION=2
-TCL_REG_PATCH_LEVEL="1"
+TCL_REG_MINOR_VERSION=3
+TCL_REG_PATCH_LEVEL="0"
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
+
+PKG_CFG_ARGS=$@
 
 #------------------------------------------------------------------------
 # Handle the --prefix=... option
@@ -58,31 +60,9 @@ AC_PROG_CC
 AC_C_INLINE
 AC_HEADER_STDC
 
-# To properly support cross-compilation, one would
-# need to use these tool checks instead of
-# the ones below and reconfigure with
-# autoconf 2.50. You can also just set
-# the CC, AR, RANLIB, and RC environment
-# variables if you want to cross compile.
-dnl AC_CHECK_TOOL(AR, ar)
-dnl AC_CHECK_TOOL(RANLIB, ranlib)
-dnl AC_CHECK_TOOL(RC, windres)
-
-if test "${GCC}" = "yes" ; then
-    AC_CHECK_PROG(AR, ar, ar)
-    AC_CHECK_PROG(RANLIB, ranlib, ranlib)
-    AC_CHECK_PROG(RC, windres, windres)
-
-    if test "${AR}" = "" ; then
-	AC_MSG_ERROR([Required archive tool 'ar' not found on PATH.])
-    fi
-    if test "${RANLIB}" = "" ; then
-	AC_MSG_ERROR([Required archive index tool 'ranlib' not found on PATH.])
-    fi
-    if test "${RC}" = "" ; then
-	AC_MSG_ERROR([Required resource tool 'windres' not found on PATH.])
-    fi
-fi
+AC_CHECK_TOOL(AR, ar)
+AC_CHECK_TOOL(RANLIB, ranlib)
+AC_CHECK_TOOL(RC, windres)
 
 #--------------------------------------------------------------------
 # Checks to see if the make program sets the $MAKE variable.
@@ -98,24 +78,6 @@ dnl Currently AC_CYGWIN is disabled since it invokes AC_CANONICAL_HOST
 dnl under autoconf 2.5X.
 dnl
 dnl AC_CYGWIN
-
-AC_CACHE_CHECK(for Cygwin version of gcc,
-    ac_cv_cygwin,
-AC_TRY_COMPILE([
-#ifdef __CYGWIN__
-#error cygwin
-#endif
-],
-[],
-        ac_cv_cygwin=no,
-        ac_cv_cygwin=yes)
-)
-if test "$ac_cv_cygwin" = "yes" ; then
-    AC_MSG_ERROR([Compiling under Cygwin is not currently supported.
-A maintainer for the Cygwin port of Tcl/Tk is needed. See the README
-file for information about building with Mingw.])
-fi
-
 
 AC_CACHE_CHECK(for SEH support in compiler,
     tcl_cv_seh,
@@ -336,27 +298,6 @@ SC_TCL_CFG_ENCODING
 
 SC_ENABLE_SHARED
 
-#------------------------------------------------------------------------
-#	Add stuff for zlib
-#------------------------------------------------------------------------
-
-tcl_ok=yes
-AC_CHECK_HEADER([zlib.h],[
-  AC_CHECK_TYPE([gz_header],[],[
-    tcl_ok=no
-    AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
-  ],[#include <zlib.h>])],[
-    tcl_ok=no
-    AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
-  ])
-AS_IF([test $tcl_ok = yes], [
-  AC_SEARCH_LIBS([deflateSetHeader],[z Z zlib Zlib ZLIB],[],[
-    tcl_ok=no
-    AC_MSG_WARN([todo: Add compat/zlib to list of things to build])
-  ])])
-AS_IF([test $tcl_ok = yes], [
-  AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])])
-
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
 # macro depends on the value of SHARED_BUILD, and should be called
@@ -364,6 +305,29 @@ AS_IF([test $tcl_ok = yes], [
 #--------------------------------------------------------------------
 
 SC_CONFIG_CFLAGS
+
+#------------------------------------------------------------------------
+#	Add stuff for zlib; note that this is mostly done in the makefile now
+#	as we just assume that the platform hasn't got a usable z.lib
+#------------------------------------------------------------------------
+
+AS_IF([test "$do64bit" = "yes"], [
+  tcl_ok=no
+], [
+AS_IF([test "${enable_shared+set}" = "set"], [
+  enableval="$enable_shared"
+  tcl_ok=$enableval
+], [
+  tcl_ok=yes
+])
+])
+AS_IF([test "$tcl_ok" = "yes"], [
+  AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
+  AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win32/zdll.lib])
+], [
+  AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
+])
+AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
 #--------------------------------------------------------------------
 # Set the default compiler switches based on the --enable-symbols
@@ -374,6 +338,12 @@ SC_CONFIG_CFLAGS
 SC_ENABLE_SYMBOLS
 
 TCL_DBGX=${DBGX}
+
+#--------------------------------------------------------------------
+# Embed the manifest if we can determine how
+#--------------------------------------------------------------------
+
+SC_EMBED_MANIFEST
 
 #------------------------------------------------------------------------
 # tclConfig.sh refers to this by a different name
@@ -393,18 +363,16 @@ eval "TCL_SRC_DIR=\"`cd $srcdir/..; pwd`\""
 
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
 
-eval "TCL_LIB_FILE=${LIBPREFIX}tcl$VER${LIBSUFFIX}"
-
-eval "TCL_LIB_FLAG=\"-ltcl${VER}${LIBFLAGSUFFIX}\""
-eval "TCL_BUILD_LIB_SPEC=\"-L`pwd` ${TCL_LIB_FLAG}\""
-eval "TCL_LIB_SPEC=\"-L${libdir} ${TCL_LIB_FLAG}\""
-
 eval "TCL_STUB_LIB_FILE=\"${LIBPREFIX}tclstub${VER}${LIBSUFFIX}\""
 eval "TCL_STUB_LIB_FLAG=\"-ltclstub${VER}${LIBFLAGSUFFIX}\""
 eval "TCL_BUILD_STUB_LIB_SPEC=\"-L`pwd` ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`pwd`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
+
+eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
+eval "TCL_BUILD_LIB_SPEC=\"-L`pwd` -ltcl${VER}${FLAGSUFFIX}\""
+eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
 
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
@@ -455,9 +423,14 @@ AC_SUBST(TCL_VERSION)
 AC_SUBST(TCL_MAJOR_VERSION)
 AC_SUBST(TCL_MINOR_VERSION)
 AC_SUBST(TCL_PATCH_LEVEL)
+AC_SUBST(PKG_CFG_ARGS)
 
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)
+AC_SUBST(TCL_STATIC_LIB_FILE)
+AC_SUBST(TCL_STATIC_LIB_FLAG)
+AC_SUBST(TCL_IMPORT_LIB_FILE)
+AC_SUBST(TCL_IMPORT_LIB_FLAG)
 # empty on win
 AC_SUBST(TCL_LIB_SPEC)
 AC_SUBST(TCL_STUB_LIB_FILE)
@@ -541,3 +514,7 @@ AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 
 AC_OUTPUT(Makefile tclConfig.sh tcl.hpj)
+
+dnl Local Variables:
+dnl mode: autoconf;
+dnl End:

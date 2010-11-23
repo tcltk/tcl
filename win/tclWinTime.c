@@ -29,11 +29,11 @@
  * month, where index 1 is January.
  */
 
-static int normalDays[] = {
+static const int normalDays[] = {
     -1, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333, 364
 };
 
-static int leapDays[] = {
+static const int leapDays[] = {
     -1, 30, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 };
 
@@ -89,7 +89,7 @@ typedef struct TimeInfo {
 } TimeInfo;
 
 static TimeInfo timeInfo = {
-    { NULL },
+    { NULL, 0, 0, NULL, NULL, 0 },
     0,
     0,
     (HANDLE) NULL,
@@ -416,7 +416,7 @@ NativeGetTime(
 
 		WaitForSingleObject(timeInfo.readyEvent, INFINITE);
 		CloseHandle(timeInfo.readyEvent);
-		Tcl_CreateExitHandler(StopCalibration, (ClientData) NULL);
+		Tcl_CreateExitHandler(StopCalibration, NULL);
 	    }
 	    timeInfo.initialized = TRUE;
 	}
@@ -736,7 +736,7 @@ ComputeGMT(
     struct tm *tmPtr;
     long tmp, rem;
     int isLeap;
-    int *days;
+    const int *days;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     tmPtr = &tsdPtr->tm;

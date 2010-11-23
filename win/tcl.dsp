@@ -1300,6 +1300,14 @@ SOURCE=..\generic\tclStubLib.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\generic\tclOOStubLib.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\generic\tclTomMathStubLib.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\generic\tclTest.c
 # End Source File
 # Begin Source File
@@ -1452,10 +1460,6 @@ SOURCE=.\rules.vc
 # End Source File
 # Begin Source File
 
-SOURCE=.\stub16.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\tcl.hpj.in
 # End Source File
 # Begin Source File
@@ -1553,10 +1557,6 @@ SOURCE=.\tclWinTest.c
 # Begin Source File
 
 SOURCE=.\tclWinThrd.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\tclWinThrd.h
 # End Source File
 # Begin Source File
 

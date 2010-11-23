@@ -129,8 +129,8 @@ VERSION		= 86
 DDEVERSION = 13
 DDEDOTVERSION = 1.3
 
-REGVERSION = 12
-REGDOTVERSION = 1.2
+REGVERSION = 13
+REGDOTVERSION = 1.3
 
 BINROOT		= ..
 !IF "$(NODEBUG)" == "1"
@@ -159,8 +159,6 @@ TCLPLUGINDLLNAME	= $(NAMEPREFIX)$(VERSION)p$(DBGX).dll
 TCLPLUGINDLL	= $(OUTDIR)\$(TCLPLUGINDLLNAME)
 TCLSH		= $(OUTDIR)\$(NAMEPREFIX)sh$(VERSION)$(DBGX).exe
 TCLSHP		= $(OUTDIR)\$(NAMEPREFIX)shp$(VERSION)$(DBGX).exe
-TCLPIPEDLLNAME	= $(NAMEPREFIX)pip$(VERSION)$(DBGX).dll
-TCLPIPEDLL	= $(OUTDIR)\$(TCLPIPEDLLNAME)
 TCLREGDLLNAME	= $(NAMEPREFIX)reg$(REGVERSION)$(DBGX).dll
 TCLREGDLL	= $(OUTDIR)\$(TCLREGDLLNAME)
 TCLDDEDLLNAME	= $(NAMEPREFIX)dde$(DDEVERSION)$(DBGX).dll
@@ -202,12 +200,14 @@ TCLOBJS	= \
 	$(TMPDIR)\tclCmdIL.obj \
 	$(TMPDIR)\tclCmdMZ.obj \
 	$(TMPDIR)\tclCompCmds.obj \
+	$(TMPDIR)\tclCompCmdsSZ.obj \
 	$(TMPDIR)\tclCompExpr.obj \
 	$(TMPDIR)\tclCompile.obj \
 	$(TMPDIR)\tclConfig.obj \
 	$(TMPDIR)\tclDate.obj \
 	$(TMPDIR)\tclDictObj.obj \
 	$(TMPDIR)\tclEncoding.obj \
+	$(TMPDIR)\tclEnsemble.obj \
 	$(TMPDIR)\tclEnv.obj \
 	$(TMPDIR)\tclEvent.obj \
 	$(TMPDIR)\tclExecute.obj \
@@ -277,6 +277,7 @@ TCLOBJS	= \
 
 TCLSTUBOBJS	= \
 	$(TMPDIR)\tclStubLib.obj \
+	$(TMPDIR)\tclTomMathStubLib.obj \
 	$(TMPDIR)\tclOOStubLib.obj
 
 WINDIR		= $(ROOT)\win
@@ -339,7 +340,7 @@ LNLIBS	= import32 cw32mt
 ######################################################################
 
 release:	setup $(TCLSH) dlls
-dlls:		setup $(TCLPIPEDLL) $(TCLREGDLL) $(TCLDDEDLL)
+dlls:		setup $(TCLREGDLL) $(TCLDDEDLL)
 all:		setup $(TCLSH) dlls $(CAT32)
 tcltest:	setup $(TCLTEST) dlls $(CAT32)
 plugin:		setup $(TCLPLUGINDLL) $(TCLSHP)
@@ -388,11 +389,6 @@ $(TCLTEST): $(TCLTESTOBJS) $(TCLLIB) $(TMPDIR)\$(NAMEPREFIX)sh.res
 		$(TCLTESTOBJS), $@, -x, $(LNLIBS) $(TCLLIB),, $(TMPDIR)\$(NAMEPREFIX)sh.res
 !
 
-$(TCLPIPEDLL): $(WINDIR)\stub16.c
-	$(cc32) $(CFLAGS) -o$(TMPDIR)\stub16.obj $(WINDIR)\stub16.c
-	$(link32) $(ldebug) $(LNFLAGS) $(LNFLAGS_CONS) $(TOOLS32)\lib\c0x32 \
-		$(TMPDIR)\stub16.obj, $@, -x, $(LNLIBS),, $(TMPDIR)\$(NAMEPREFIX).res
-
 $(TCLDDEDLL): $(TMPDIR)\tclWinDde.obj $(TCLSTUBLIB)
 	$(link32) $(ldebug) $(LNFLAGS) $(LNFLAGS_DLL) $(TOOLS32)\lib\c0d32 \
 		$(TMPDIR)\tclWinDde.obj, $@, -x, $(LNLIBS) $(TCLSTUBLIB),, \
@@ -416,10 +412,10 @@ install-binaries: $(TCLSH)
 	@copy "$(TCLLIB)" "$(LIB_INSTALL_DIR)"
 	@echo installing "$(TCLSH)"
 	@copy "$(TCLSH)" "$(BIN_INSTALL_DIR)"
-	@echo installing $(TCLPIPEDLLNAME)
-	@copy "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)"
 	@echo installing $(TCLSTUBLIBNAME)
 	@copy "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)"
+	@echo installing $(WINDIR)\tclooConfig.sh
+	@copy "$(WINDIR)\tclooConfig.sh" "$(LIB_INSTALL_DIR)"
 
 install-libraries:
 	-@$(MKDIR) "$(LIB_INSTALL_DIR)"
@@ -429,10 +425,10 @@ install-libraries:
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http1.0"
 	-@copy "$(ROOT)\library\http1.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http1.0"
 	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http1.0"
-	@echo installing http2.7
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.7"
-	-@copy "$(ROOT)\library\http\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.7"
-	-@copy "$(ROOT)\library\http\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.7"
+	@echo installing http2.8
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.8"
+	-@copy "$(ROOT)\library\http\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.8"
+	-@copy "$(ROOT)\library\http\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.8"
 	@echo installing opt0.4
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	-@copy "$(ROOT)\library\opt\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
@@ -456,7 +452,7 @@ install-libraries:
 	-@copy "$(ROOT)\library\dde\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\dde1.3"
 	@echo installing $(TCLREGDLLNAME)
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\reg1.2"
-	-@copy "$(TCLREGDLL)" "$(SCRIPT_INSTALL_DIR)\reg1.2"
+	-@copy "$(TCLREGDLL)" "$(SCRIPT_INSTALL_DIR)\reg1.3"
 	-@copy "$(ROOT)\library\reg\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\reg1.2"
 	@echo installing encoding files
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\encoding"
@@ -530,6 +526,12 @@ $(TMPDIR)\tclWinDde.obj : $(WINDIR)\tclWinDde.c
 $(TMPDIR)\tclStubLib.obj : $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
 
+$(TMPDIR)\tclTomMathStubLib.obj : $(GENERICDIR)\tclTomMathStubLib.c
+	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
+
+$(TMPDIR)\tclOOStubLib.obj : $(GENERICDIR)\tclOOStubLib.c
+	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
+
 
 # Dedependency rules
 
@@ -563,7 +565,7 @@ $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
 
 {$(GENERICDIR)}.c{$(TMPDIR)}.obj:
-	$(cc32) -DBUILD_tcl -DBUILD_tcloo $(TCL_CFLAGS) -o$@ $<
+	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
 
 {$(ROOT)\compat}.c{$(TMPDIR)}.obj:
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<

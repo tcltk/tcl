@@ -80,6 +80,9 @@ HTML_DIR		= @HTML_DIR@
 # Directory in which to install html documentation:
 HTML_INSTALL_DIR	= $(INSTALL_ROOT)$(HTML_DIR)
 
+# Directory in which to install bundled packages:
+PACKAGE_DIR             = @PACKAGE_DIR@
+
 # Package search path.
 TCL_PACKAGE_PATH	= @TCL_PACKAGE_PATH@
 
@@ -149,7 +152,7 @@ SHELL			= /bin/sh
 INSTALL_STRIP_PROGRAM   = -s
 INSTALL_STRIP_LIBRARY   = -S -x
 
-INSTALL			= @srcdir@/../unix/install-sh -c
+INSTALL			= $(UNIX_DIR)/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
 INSTALL_LIBRARY		= ${INSTALL}
 INSTALL_DATA		= ${INSTALL} -m 644
@@ -231,6 +234,9 @@ PKGS_DIR		= $(TOP_DIR)/pkgs
 DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
 # Must be absolute to so the corresponding tcltest's tcl_library is absolute.
 TCL_BUILDTIME_LIBRARY	= @TCL_SRC_DIR@/library
+
+ZLIB_DIR		= @ZLIB_DIR@
+ZLIB_INCLUDE		= @ZLIB_INCLUDE@
 
 CC			= @CC@
 #CC			= purify -best-effort @CC@ -DPURIFY
@@ -332,10 +338,13 @@ MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
 
 DTRACE_OBJ = tclDTrace.o
 
+ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zgzio.o Zinfback.o \
+	Zinffast.o Zinflate.o Zinftrees.o Ztrees.o Zuncompr.o Zzutil.o
+
 TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
 	${OO_OBJS} @DL_OBJS@ @PLAT_OBJS@
 
-OBJS = ${TCL_OBJS} ${TOMMATH_OBJS} @DTRACE_OBJ@
+OBJS = ${TCL_OBJS} ${TOMMATH_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
@@ -549,12 +558,26 @@ DTRACE_HDR = tclDTrace.h
 
 DTRACE_SRC = $(GENERIC_DIR)/tclDTrace.d
 
+ZLIB_SRCS = \
+	$(ZLIB_DIR)/adler32.c \
+	$(ZLIB_DIR)/compress.c \
+	$(ZLIB_DIR)/crc32.c \
+	$(ZLIB_DIR)/deflate.c \
+	$(ZLIB_DIR)/gzio.c \
+	$(ZLIB_DIR)/infback.c \
+	$(ZLIB_DIR)/inffast.c \
+	$(ZLIB_DIR)/inflate.c \
+	$(ZLIB_DIR)/inftrees.c \
+	$(ZLIB_DIR)/trees.c \
+	$(ZLIB_DIR)/uncompr.c \
+	$(ZLIB_DIR)/zutil.c
+
 # Note: don't include DL_SRCS or MAC_OSX_SRCS in SRCS: most of those files
 # won't compile on the current machine, and they will cause problems for
 # things like "make depend".
 
 SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
-	$(STUB_SRCS) @PLAT_SRCS@
+	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@
 
 all: binaries libraries doc packages
 
@@ -594,6 +617,7 @@ tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
 # This keeps tcltest from picking up an already installed version of the Tcl
 # library.
 SHELL_ENV =	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@} \
+		TCLLIBPATH="@abs_builddir@/pkgs" \
 		TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"
 
 tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
@@ -611,7 +635,9 @@ tcltest-real:
 # tcltest, ie:
 #	% make test TESTFLAGS="-verbose bps -file fileName.test"
 
-test: tcltest test-packages
+test: test-tcl test-packages
+
+test-tcl: tcltest
 	$(SHELL_ENV) ./tcltest $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
 gdb-test: tcltest
@@ -724,8 +750,8 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@if test ! -x $(SRC_DIR)/../unix/install-sh; then \
-	    chmod +x $(SRC_DIR)/../unix/install-sh; \
+	@if test ! -x $(UNIX_DIR)/install-sh; then \
+	    chmod +x $(UNIX_DIR)/install-sh; \
 	    fi
 	@echo "Installing $(LIB_FILE) to $(LIB_INSTALL_DIR)/"
 	@@INSTALL_LIB@
@@ -764,8 +790,8 @@ install-libraries: libraries $(INSTALL_TZDATA) install-msgs
 		else true; \
 		fi; \
 	    done;
-	@if test ! -x $(SRC_DIR)/../unix/install-sh; then \
-	    chmod +x $(SRC_DIR)/../unix/install-sh; \
+	@if test ! -x $(UNIX_DIR)/install-sh; then \
+	    chmod +x $(UNIX_DIR)/install-sh; \
 	    fi
 	@echo "Installing header files";
 	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
@@ -867,8 +893,8 @@ install-private-headers: libraries
 		else true; \
 		fi; \
 	    done;
-	@if test ! -x $(SRC_DIR)/../unix/install-sh; then \
-	    chmod +x $(SRC_DIR)/../unix/install-sh; \
+	@if test ! -x $(UNIX_DIR)/install-sh; then \
+	    chmod +x $(UNIX_DIR)/install-sh; \
 	    fi
 	@echo "Installing private header files";
 	@for i in $(GENERIC_DIR)/tclInt.h $(GENERIC_DIR)/tclIntDecls.h \
@@ -1217,7 +1243,7 @@ tclVar.o: $(GENERIC_DIR)/tclVar.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVar.c
 
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclZlib.c
+	$(CC) -c $(ZLIB_INCLUDE) $(CC_SWITCHES) $(GENERIC_DIR)/tclZlib.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
@@ -1519,6 +1545,9 @@ fixstrtod.o: $(COMPAT_DIR)/fixstrtod.c
 opendir.o: $(COMPAT_DIR)/opendir.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/opendir.c
 
+mkstemp.o: $(COMPAT_DIR)/mkstemp.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/mkstemp.c
+
 memcmp.o: $(COMPAT_DIR)/memcmp.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/memcmp.c
 
@@ -1540,6 +1569,32 @@ strtoul.o: $(COMPAT_DIR)/strtoul.c
 waitpid.o: $(COMPAT_DIR)/waitpid.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/waitpid.c
 
+# For building zlib, only used in some build configurations
+Zadler32.o: $(ZLIB_DIR)/adler32.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+Zcompress.o: $(ZLIB_DIR)/compress.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+Zcrc32.o:    $(ZLIB_DIR)/crc32.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+Zdeflate.o:  $(ZLIB_DIR)/deflate.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+Zgzio.o:     $(ZLIB_DIR)/gzio.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+Zinfback.o:  $(ZLIB_DIR)/infback.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+Zinffast.o:  $(ZLIB_DIR)/inffast.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+Zinflate.o:  $(ZLIB_DIR)/inflate.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+Zinftrees.o: $(ZLIB_DIR)/inftrees.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+Ztrees.o:    $(ZLIB_DIR)/trees.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+Zuncompr.o:  $(ZLIB_DIR)/uncompr.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+Zzutil.o:    $(ZLIB_DIR)/zutil.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $<
+
 # Stub library binaries, these must be compiled for use in a shared library
 # even though they will be placed in a static archive
 
@@ -1552,84 +1607,107 @@ tclOOStubLib.o: $(GENERIC_DIR)/tclOOStubLib.c
 .c.o:
 	$(CC) -c $(CC_SWITCHES) $<
 
-
 #
 # Bundled Package targets
 #
 
-# somehow we need to propagate configure args like --enable-64bit
-PKG_CFG_ARGS   =	@PKG_CFG_ARGS@
-PKG_DIR                = ./pkgs
+# propagate configure args like --enable-64bit to package configure
+PKG_CFG_ARGS		= @PKG_CFG_ARGS@
+# if PKG_DIR is changed to a different relative depth to the build dir,
+# need to adapt the ../.. relative paths below and at the top of configure.in
+# (cannot use absolute paths due to issues in nested configure when path to
+#  build dir contains spaces).
+PKG_DIR			= ./pkgs
 
-packages:
-	@builddir=`pwd`; \
-	for i in $(PKGS_DIR)/*; do \
+configure-packages:
+	@for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    if [ -x $$i/configure ]; then \
-	        pkg=`basename $$i`; \
-	        echo "Building package '$$pkg'"; \
-	        mkdir -p $(PKG_DIR)/$$pkg; \
-	        if [ ! -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	            ( cd $(PKG_DIR)/$$pkg; \
-	              $$i/configure --with-tcl=$(PWD) --with-tclinclude=$(GENERIC_DIR) $(PKG_CFG_ARGS) --enable-shared --enable-threads; ) \
-	        fi; \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) \
+	      pkg=`basename $$i`; \
+	      echo "Configuring package '$$pkg'"; \
+	      mkdir -p $(PKG_DIR)/$$pkg; \
+	      if [ ! -f $(PKG_DIR)/$$pkg/Makefile ]; then \
+		( cd $(PKG_DIR)/$$pkg; \
+		  $$i/configure --with-tcl=../.. \
+		      --with-tclinclude=$(GENERIC_DIR) \
+		      $(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
+		      --enable-shared --enable-threads; ) || exit $$?; \
+	      fi; \
 	    fi; \
 	  fi; \
-	done; \
-	cd $$builddir
+	done
+
+packages: configure-packages ${STUB_LIB_FILE}
+	@for i in $(PKGS_DIR)/*; do \
+	  if [ -d $$i ]; then \
+	    pkg=`basename $$i`; \
+	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
+	      echo "Building package '$$pkg'"; \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
+	    fi; \
+	  fi; \
+	done
 
 install-packages: packages
-	@builddir=`pwd`; \
-	for i in $(PKGS_DIR)/*; do \
+	@for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        echo "Installing package '$$pkg'"; \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) install "DESTDIR=$(INSTALL_ROOT)"; ) \
+	      echo "Installing package '$$pkg'"; \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) install \
+		  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
 	    fi; \
 	  fi; \
-	done; \
-	cd $$builddir
+	done
 
 test-packages: tcltest packages
-	@builddir=`pwd`; \
-	for i in $(PKGS_DIR)/*; do \
+	@for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        echo "Testing package '$$pkg'"; \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) "LD_LIBRARY_PATH=$$builddir:${LD_LIBRARY_PATH}" "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" "TCLLIBPATH=$$builddir/pkgs" test "TCLSH_PROG=$$builddir/tcltest"; ) \
+	      echo "Testing package '$$pkg'"; \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) \
+		  "@LD_LIBRARY_PATH_VAR@=../..:$${@LD_LIBRARY_PATH_VAR@}" \
+		  "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" \
+		  "TCLLIBPATH=../../pkgs" test \
+		  "TCLSH_PROG=../../tcltest"; ) \
 	    fi; \
 	  fi; \
-	done; \
-	cd $$builddir
+	done
 
 clean-packages:
-	@builddir=`pwd`; \
-	for i in $(PKGS_DIR)/*; do \
+	@for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
 	    fi; \
 	  fi; \
-	done; \
-	cd $$builddir
+	done
 
 distclean-packages:
-	@builddir=`pwd`; \
-	for i in $(PKGS_DIR)/*; do \
+	@for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
 	    fi; \
-	    cd $$builddir; \
 	    rm -rf $(PKG_DIR)/$$pkg; \
 	  fi; \
 	done; \
 	rm -rf $(PKG_DIR)
+
+dist-packages: configure-packages
+	@rm -rf $(DISTROOT)/pkgs; \
+	for i in $(PKGS_DIR)/*; do \
+	  if [ -d $$i ]; then \
+	    pkg=`basename $$i`; \
+	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) dist \
+		  "DIST_ROOT=$(DISTROOT)/pkgs"; ) || exit $$?; \
+	    fi; \
+	  fi; \
+	done
 
 #
 # Target to regenerate header files and stub files from the *.decls tables.
@@ -1737,7 +1815,7 @@ $(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
 $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
 	cd $(MAC_OSX_DIR); autoheader; touch $@
 
-dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(MAC_OSX_DIR)/configure genstubs
+dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(MAC_OSX_DIR)/configure genstubs dist-packages
 	rm -rf $(DISTDIR)
 	mkdir -p $(DISTDIR)/unix
 	cp -p $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
@@ -1782,6 +1860,11 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(MAC_OSX_DIR)/configure 
 	mkdir $(DISTDIR)/compat
 	cp -p $(TOP_DIR)/license.terms $(COMPAT_DIR)/*.[ch] \
 		$(COMPAT_DIR)/README $(DISTDIR)/compat
+	mkdir $(DISTDIR)/compat/zlib
+	( cd $(COMPAT_DIR)/zlib; \
+	  find . -name CVS -prune -o -type f -print ) \
+	    | ( cd $(COMPAT_DIR)/zlib ; xargs tar cf - ) \
+	    | ( cd $(DISTDIR)/compat/zlib ; tar xfp - )
 	mkdir $(DISTDIR)/tests
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tests
 	cp -p $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
@@ -1837,6 +1920,11 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(MAC_OSX_DIR)/configure 
 	mkdir $(DISTDIR)/libtommath
 	cp -p $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h \
 		$(DISTDIR)/libtommath
+	mkdir $(DISTDIR)/pkgs
+	cp $(TOP_DIR)/pkgs/README $(DISTDIR)/pkgs
+	for i in $(DISTROOT)/pkgs/*.tar.gz; do \
+	    tar -C $(DISTDIR)/pkgs -xzf "$$i"; \
+	done
 
 #
 # The following target can only be used for non-patch releases. Use the

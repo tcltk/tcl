@@ -14,8 +14,6 @@
 
 #include "tclWinInt.h"
 
-#include <fcntl.h>
-#include <io.h>
 #include <sys/stat.h>
 
 /*
@@ -163,7 +161,7 @@ static void		ConsoleThreadActionProc(ClientData instanceData,
  * based IO.
  */
 
-static Tcl_ChannelType consoleChannelType = {
+static const Tcl_ChannelType consoleChannelType = {
     "console",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
     ConsoleCloseProc,		/* Close proc. */
@@ -180,7 +178,7 @@ static Tcl_ChannelType consoleChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc */
     ConsoleThreadActionProc,    /* thread action proc */
-    NULL,                       /* truncation */
+    NULL                       /* truncation */
 };
 
 /*
@@ -199,9 +197,8 @@ readConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize;
-    tcharsize = tclWinProcs->useWide? 2 : 1;
-    result = tclWinProcs->readConsoleProc(
+    int tcharsize = sizeof(TCHAR);
+    result = ReadConsole(
 	    hConsole, lpBuffer, nbytes / tcharsize, &ntchars, NULL);
     if (nbytesread)
 	*nbytesread = (ntchars*tcharsize);
@@ -217,9 +214,8 @@ writeConsoleBytes(
 {
     DWORD ntchars;
     BOOL result;
-    int tcharsize;
-    tcharsize = tclWinProcs->useWide? 2 : 1;
-    result = tclWinProcs->writeConsoleProc(
+    int tcharsize = sizeof(TCHAR);
+    result = WriteConsole(
 	    hConsole, lpBuffer, nbytes / tcharsize, &ntchars, NULL);
     if (nbyteswritten)
 	*nbyteswritten = (ntchars*tcharsize);
@@ -1187,7 +1183,7 @@ ConsoleReaderThread(
 	    DWORD err;
 	    err = GetLastError();
 
-	    if (err == EOF) {
+	    if (err == (DWORD)EOF) {
 		infoPtr->readFlags = CONSOLE_EOF;
 	    }
 	}
@@ -1369,7 +1365,7 @@ TclWinOpenConsoleChannel(
     wsprintfA(channelName, "file%lx", (int) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&consoleChannelType, channelName,
-	    (ClientData) infoPtr, permissions);
+	    infoPtr, permissions);
 
     if (permissions & TCL_READABLE) {
 	/*
@@ -1407,11 +1403,11 @@ TclWinOpenConsoleChannel(
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
-    if (tclWinProcs->useWide)
-	Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", "unicode");
-    else
-	Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
-
+#ifdef UNICODE
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", "unicode");
+#else
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
+#endif
     return infoPtr->channel;
 }
 

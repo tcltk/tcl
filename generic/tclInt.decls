@@ -168,7 +168,7 @@ declare 34 generic {
 #    int TclGetLong(Tcl_Interp *interp, const char *str, long *longPtr)
 #}
 declare 37 generic {
-    int TclGetLoadedPackages(Tcl_Interp *interp, char *targetName)
+    int TclGetLoadedPackages(Tcl_Interp *interp, const char *targetName)
 }
 declare 38 generic {
     int TclGetNamespaceForQualName(Tcl_Interp *interp, const char *qualName,

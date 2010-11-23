@@ -1122,8 +1122,8 @@ const TclStubs tclStubs = {
     Tcl_GetSizeFromStat, /* 599 */
     Tcl_GetBlocksFromStat, /* 600 */
     Tcl_GetBlockSizeFromStat, /* 601 */
-    0, /* 602 */
-    0, /* 603 */
+    Tcl_SetEnsembleParameterList, /* 602 */
+    Tcl_GetEnsembleParameterList, /* 603 */
     Tcl_ParseArgsObjv, /* 604 */
     Tcl_GetErrorLine, /* 605 */
     Tcl_SetErrorLine, /* 606 */
@@ -1137,7 +1137,7 @@ const TclStubs tclStubs = {
     Tcl_ZlibStreamInit, /* 614 */
     Tcl_ZlibStreamGetCommandName, /* 615 */
     Tcl_ZlibStreamEof, /* 616 */
-    0, /* 617 */
+    Tcl_ZlibStreamChecksum, /* 617 */
     Tcl_ZlibStreamPut, /* 618 */
     Tcl_ZlibStreamGet, /* 619 */
     Tcl_ZlibStreamClose, /* 620 */

@@ -52,6 +52,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static int notifierCount = 0;
+static const TCHAR classname[] = TEXT("TclNotifier");
 TCL_DECLARE_MUTEX(notifierMutex)
 
 /*
@@ -99,12 +100,12 @@ Tcl_InitNotifier(void)
 	    class.hInstance = TclWinGetTclInstance();
 	    class.hbrBackground = NULL;
 	    class.lpszMenuName = NULL;
-	    class.lpszClassName = "TclNotifier";
+	    class.lpszClassName = classname;
 	    class.lpfnWndProc = NotifierProc;
 	    class.hIcon = NULL;
 	    class.hCursor = NULL;
 
-	    if (!RegisterClassA(&class)) {
+	    if (!RegisterClass(&class)) {
 		Tcl_Panic("Unable to register TclNotifier window class");
 	    }
 	}
@@ -121,7 +122,7 @@ Tcl_InitNotifier(void)
 	tsdPtr->event = CreateEvent(NULL, TRUE /* manual */,
 		FALSE /* !signaled */, NULL);
 
-	return (ClientData) tsdPtr;
+	return tsdPtr;
     }
 }
 
@@ -187,7 +188,7 @@ Tcl_FinalizeNotifier(
 	Tcl_MutexLock(&notifierMutex);
 	notifierCount--;
 	if (notifierCount == 0) {
-	    UnregisterClassA("TclNotifier", TclWinGetTclInstance());
+	    UnregisterClass(classname, TclWinGetTclInstance());
 	}
 	Tcl_MutexUnlock(&notifierMutex);
     }
@@ -351,7 +352,7 @@ Tcl_ServiceModeHook(
 	 */
 
 	if (mode == TCL_SERVICE_ALL && !tsdPtr->hwnd) {
-	    tsdPtr->hwnd = CreateWindowA("TclNotifier", "TclNotifier",
+	    tsdPtr->hwnd = CreateWindow(classname, classname,
 		    WS_TILED, 0, 0, 0, 0, NULL, NULL, TclWinGetTclInstance(),
 		    NULL);
 
@@ -362,7 +363,7 @@ Tcl_ServiceModeHook(
 	     * if one is needed.
 	     */
 
-	    Tcl_AlertNotifier((ClientData)tsdPtr);
+	    Tcl_AlertNotifier(tsdPtr);
 	}
     }
 }
@@ -507,7 +508,7 @@ Tcl_WaitForEvent(
 
 		PostQuitMessage((int) msg.wParam);
 		status = -1;
-	    } else if (result == -1) {
+	    } else if (result == (DWORD)-1) {
 		/*
 		 * We got an error from the system. I have no idea why this
 		 * would happen, so we'll just unwind.

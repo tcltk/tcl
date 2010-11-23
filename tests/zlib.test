@@ -44,20 +44,20 @@ test zlib-4.2 {zlib gzip/gunzip} zlib {
 } {abcdefabcdefabcdefabcdefabcdef gorp 30}
 
 test zlib-5.1 {zlib adler32} zlib {
-    format %x [zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde]
+    format %x [expr {[zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde] & 0xffffffff}]
 } b3b50b9b
 test zlib-5.2 {zlib adler32} zlib {
-    format %x [zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde 42]
+    format %x [expr {[zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde 42] & 0xffffffff}]
 } b8830bc4
 test zlib-5.3 {zlib adler32} -constraints zlib -returnCodes error -body {
     zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde 42 x
 } -result {wrong # args: should be "zlib adler32 data ?startValue?"}
 
 test zlib-6.1 {zlib crc32} zlib {
-    format %x [zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde]
+    format %x [expr {[zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde] & 0xffffffff}]
 } 6f73e901
 test zlib-6.2 {zlib crc32} zlib {
-    format %x [zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde 42]
+    format %x [expr {[zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde 42] & 0xffffffff}]
 } ce1c4914
 test zlib-6.3 {zlib crc32} -constraints zlib -returnCodes error -body {
     zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde 42 x

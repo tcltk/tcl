@@ -6,7 +6,7 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
+#
 # Copyright (c) 2001-2003 David Gravereaux.
 # Copyright (c) 2003-2007 Patrick Thoyts
 #
@@ -130,7 +130,7 @@ DEBUGFLAGS     = $(DEBUGFLAGS) -RTC1
 DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 !endif
 
-COMPILERFLAGS  =-W3
+COMPILERFLAGS  =-W3 -DUNICODE -D_UNICODE
 
 # In v13 -GL and -YX are incompatible.
 !if [nmakehlp -c -YX]
@@ -143,7 +143,7 @@ OPTIMIZATIONS  = $(OPTIMIZATIONS) -YX
 ### test for pentium errata
 !if [nmakehlp -c -QI0f]
 !message *** Compiler has 'Pentium 0x0f fix'
-COMPILERFLAGS  = $(COMPILERFLAGSS) -QI0f
+COMPILERFLAGS  = $(COMPILERFLAGS) -QI0f
 !else
 !message *** Compiler does not have 'Pentium 0x0f fix'
 !endif
@@ -189,7 +189,9 @@ VCVER=0
 !if ![echo VCVERSION=_MSC_VER > vercl.x] \
     && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
 !include vercl.i
-!if $(VCVERSION) >= 1500
+!if $(VCVERSION) >= 1600
+VCVER=10
+!elseif $(VCVERSION) >= 1500
 VCVER=9
 !elseif $(VCVERSION) >= 1400
 VCVER=8
@@ -212,14 +214,15 @@ _VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -ou
 
 !if "$(OPTS)" == "" || [nmakehlp -f "$(OPTS)" "none"]
 STATIC_BUILD	= 0
-TCL_THREADS	= 0
+TCL_THREADS	= 1
 DEBUG		= 0
 SYMBOLS		= 0
 PROFILE		= 0
+PGO		= 0
 MSVCRT		= 0
 LOIMPACT	= 0
 TCL_USE_STATIC_PACKAGES	= 0
-USE_THREAD_ALLOC = 0
+USE_THREAD_ALLOC = 1
 UNCHECKED	= 0
 !else
 !if [nmakehlp -f $(OPTS) "static"]
@@ -240,12 +243,12 @@ TCL_USE_STATIC_PACKAGES	= 1
 !else
 TCL_USE_STATIC_PACKAGES	= 0
 !endif
-!if [nmakehlp -f $(OPTS) "threads"]
+!if [nmakehlp -f $(OPTS) "nothreads"]
+TCL_THREADS	= 0
+!else
 !message *** Doing threads
 TCL_THREADS	= 1
 USE_THREAD_ALLOC= 1
-!else
-TCL_THREADS	= 0
 !endif
 !if [nmakehlp -f $(OPTS) "symbols"]
 !message *** Doing symbols
@@ -264,6 +267,15 @@ SYMBOLS		= 0
 PROFILE		= 1
 !else
 PROFILE		= 0
+!endif
+!if [nmakehlp -f $(OPTS) "pgi"]
+!message *** Doing profile guided optimization instrumentation
+PGO		= 1
+!elseif [nmakehlp -f $(OPTS) "pgo"]
+!message *** Doing profile guided optimization
+PGO		= 2
+!else
+PGO		= 0
 !endif
 !if [nmakehlp -f $(OPTS) "loimpact"]
 !message *** Doing loimpact
@@ -419,6 +431,24 @@ WARNINGS		    = $(WARNINGS) -Wp64
 !endif
 !endif
 
+!if $(PGO) > 1
+!if [nmakehlp -l -ltcg:pgoptimize]
+LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pgoptimize
+!else
+MSG=^
+This compiler does not support profile guided optimization.
+!error $(MSG)
+!endif
+!elseif $(PGO) > 0
+!if [nmakehlp -l -ltcg:pginstrument]
+LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pginstrument
+!else
+MSG=^
+This compiler does not support profile guided optimization.
+!error $(MSG)
+!endif
+!endif
+
 #----------------------------------------------------------
 # Set our defines now armed with our options.
 #----------------------------------------------------------
@@ -565,7 +595,7 @@ TCLSH           = "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX).exe"
 TCLSTUBLIB	= "$(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib"
 TCLIMPLIB	= "$(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX).lib"
 TCL_LIBRARY	= $(_TCLDIR)\lib
-TCLREGLIB	= "$(_TCLDIR)\lib\tclreg12$(SUFX:t=).lib"
+TCLREGLIB	= "$(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib"
 TCLDDELIB	= "$(_TCLDIR)\lib\tcldde13$(SUFX:t=).lib"
 COFFBASE	= \must\have\tcl\sources\to\build\this\target
 TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
@@ -578,7 +608,7 @@ TCLSH		= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX).exe"
 TCLSTUBLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib"
 TCLIMPLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX).lib"
 TCL_LIBRARY	= $(_TCLDIR)\library
-TCLREGLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg12$(SUFX:t=).lib"
+TCLREGLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib"
 TCLDDELIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde13$(SUFX:t=).lib"
 COFFBASE	= "$(_TCLDIR)\win\coffbase.txt"
 TCLTOOLSDIR	= $(_TCLDIR)\tools

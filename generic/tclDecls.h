@@ -1744,8 +1744,12 @@ EXTERN Tcl_WideUInt	Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr);
 EXTERN Tcl_WideUInt	Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr);
 /* 601 */
 EXTERN unsigned		Tcl_GetBlockSizeFromStat(const Tcl_StatBuf *statPtr);
-/* Slot 602 is reserved */
-/* Slot 603 is reserved */
+/* 602 */
+EXTERN int		Tcl_SetEnsembleParameterList(Tcl_Interp *interp,
+				Tcl_Command token, Tcl_Obj *paramList);
+/* 603 */
+EXTERN int		Tcl_GetEnsembleParameterList(Tcl_Interp *interp,
+				Tcl_Command token, Tcl_Obj **paramListPtr);
 /* 604 */
 EXTERN int		Tcl_ParseArgsObjv(Tcl_Interp *interp,
 				const Tcl_ArgvInfo *argTable, int *objcPtr,
@@ -1770,11 +1774,11 @@ EXTERN int		Tcl_ZlibInflate(Tcl_Interp *interp, int format,
 				Tcl_Obj *data, int buffersize,
 				Tcl_Obj *gzipHeaderDictObj);
 /* 612 */
-EXTERN unsigned int	Tcl_ZlibCRC32(unsigned int crc, const char *buf,
-				int len);
+EXTERN unsigned int	Tcl_ZlibCRC32(unsigned int crc,
+				const unsigned char *buf, int len);
 /* 613 */
-EXTERN unsigned int	Tcl_ZlibAdler32(unsigned int adler, const char *buf,
-				int len);
+EXTERN unsigned int	Tcl_ZlibAdler32(unsigned int adler,
+				const unsigned char *buf, int len);
 /* 614 */
 EXTERN int		Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode,
 				int format, int level, Tcl_Obj *dictObj,
@@ -1783,7 +1787,8 @@ EXTERN int		Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode,
 EXTERN Tcl_Obj *	Tcl_ZlibStreamGetCommandName(Tcl_ZlibStream zshandle);
 /* 616 */
 EXTERN int		Tcl_ZlibStreamEof(Tcl_ZlibStream zshandle);
-/* Slot 617 is reserved */
+/* 617 */
+EXTERN int		Tcl_ZlibStreamChecksum(Tcl_ZlibStream zshandle);
 /* 618 */
 EXTERN int		Tcl_ZlibStreamPut(Tcl_ZlibStream zshandle,
 				Tcl_Obj *data, int flush);
@@ -2463,8 +2468,8 @@ typedef struct TclStubs {
     Tcl_WideUInt (*tcl_GetSizeFromStat) (const Tcl_StatBuf *statPtr); /* 599 */
     Tcl_WideUInt (*tcl_GetBlocksFromStat) (const Tcl_StatBuf *statPtr); /* 600 */
     unsigned (*tcl_GetBlockSizeFromStat) (const Tcl_StatBuf *statPtr); /* 601 */
-    void (*reserved602)(void);
-    void (*reserved603)(void);
+    int (*tcl_SetEnsembleParameterList) (Tcl_Interp *interp, Tcl_Command token, Tcl_Obj *paramList); /* 602 */
+    int (*tcl_GetEnsembleParameterList) (Tcl_Interp *interp, Tcl_Command token, Tcl_Obj **paramListPtr); /* 603 */
     int (*tcl_ParseArgsObjv) (Tcl_Interp *interp, const Tcl_ArgvInfo *argTable, int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv); /* 604 */
     int (*tcl_GetErrorLine) (Tcl_Interp *interp); /* 605 */
     void (*tcl_SetErrorLine) (Tcl_Interp *interp, int lineNum); /* 606 */
@@ -2473,12 +2478,12 @@ typedef struct TclStubs {
     void (*tcl_BackgroundException) (Tcl_Interp *interp, int code); /* 609 */
     int (*tcl_ZlibDeflate) (Tcl_Interp *interp, int format, Tcl_Obj *data, int level, Tcl_Obj *gzipHeaderDictObj); /* 610 */
     int (*tcl_ZlibInflate) (Tcl_Interp *interp, int format, Tcl_Obj *data, int buffersize, Tcl_Obj *gzipHeaderDictObj); /* 611 */
-    unsigned int (*tcl_ZlibCRC32) (unsigned int crc, const char *buf, int len); /* 612 */
-    unsigned int (*tcl_ZlibAdler32) (unsigned int adler, const char *buf, int len); /* 613 */
+    unsigned int (*tcl_ZlibCRC32) (unsigned int crc, const unsigned char *buf, int len); /* 612 */
+    unsigned int (*tcl_ZlibAdler32) (unsigned int adler, const unsigned char *buf, int len); /* 613 */
     int (*tcl_ZlibStreamInit) (Tcl_Interp *interp, int mode, int format, int level, Tcl_Obj *dictObj, Tcl_ZlibStream *zshandle); /* 614 */
     Tcl_Obj * (*tcl_ZlibStreamGetCommandName) (Tcl_ZlibStream zshandle); /* 615 */
     int (*tcl_ZlibStreamEof) (Tcl_ZlibStream zshandle); /* 616 */
-    void (*reserved617)(void);
+    int (*tcl_ZlibStreamChecksum) (Tcl_ZlibStream zshandle); /* 617 */
     int (*tcl_ZlibStreamPut) (Tcl_ZlibStream zshandle, Tcl_Obj *data, int flush); /* 618 */
     int (*tcl_ZlibStreamGet) (Tcl_ZlibStream zshandle, Tcl_Obj *data, int count); /* 619 */
     int (*tcl_ZlibStreamClose) (Tcl_ZlibStream zshandle); /* 620 */
@@ -3746,8 +3751,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetBlocksFromStat) /* 600 */
 #define Tcl_GetBlockSizeFromStat \
 	(tclStubsPtr->tcl_GetBlockSizeFromStat) /* 601 */
-/* Slot 602 is reserved */
-/* Slot 603 is reserved */
+#define Tcl_SetEnsembleParameterList \
+	(tclStubsPtr->tcl_SetEnsembleParameterList) /* 602 */
+#define Tcl_GetEnsembleParameterList \
+	(tclStubsPtr->tcl_GetEnsembleParameterList) /* 603 */
 #define Tcl_ParseArgsObjv \
 	(tclStubsPtr->tcl_ParseArgsObjv) /* 604 */
 #define Tcl_GetErrorLine \
@@ -3774,7 +3781,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ZlibStreamGetCommandName) /* 615 */
 #define Tcl_ZlibStreamEof \
 	(tclStubsPtr->tcl_ZlibStreamEof) /* 616 */
-/* Slot 617 is reserved */
+#define Tcl_ZlibStreamChecksum \
+	(tclStubsPtr->tcl_ZlibStreamChecksum) /* 617 */
 #define Tcl_ZlibStreamPut \
 	(tclStubsPtr->tcl_ZlibStreamPut) /* 618 */
 #define Tcl_ZlibStreamGet \

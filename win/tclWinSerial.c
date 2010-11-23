@@ -16,8 +16,6 @@
 
 #include "tclWinInt.h"
 
-#include <fcntl.h>
-#include <io.h>
 #include <sys/stat.h>
 
 /*
@@ -203,7 +201,7 @@ static int		SerialBlockingWrite(SerialInfo *infoPtr, LPVOID buf,
  * based IO.
  */
 
-static Tcl_ChannelType serialChannelType = {
+static const Tcl_ChannelType serialChannelType = {
     "serial",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
     SerialCloseProc,		/* Close proc. */
@@ -220,7 +218,7 @@ static Tcl_ChannelType serialChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc */
     SerialThreadActionProc,	/* thread action proc */
-    NULL,                       /* truncate */
+    NULL                       /* truncate */
 };
 
 /*
@@ -1450,7 +1448,7 @@ TclWinSerialReopen(
     if (CloseHandle(handle) == FALSE) {
 	return INVALID_HANDLE_VALUE;
     }
-    handle = tclWinProcs->createFileProc(name, access, 0, 0, OPEN_EXISTING,
+    handle = CreateFile(name, access, 0, 0, OPEN_EXISTING,
 	    FILE_FLAG_OVERLAPPED, 0);
     return handle;
 }
@@ -1508,7 +1506,7 @@ TclWinOpenSerialChannel(
     wsprintfA(channelName, "file%lx", (int) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
-	    (ClientData) infoPtr, permissions);
+	    infoPtr, permissions);
 
 
     SetupComm(handle, infoPtr->sysBufRead, infoPtr->sysBufWrite);
@@ -1685,7 +1683,7 @@ SerialSetOptionProc(
 	    return TCL_ERROR;
 	}
 	native = Tcl_WinUtfToTChar(value, -1, &ds);
-	result = tclWinProcs->buildCommDCBProc(native, &dcb);
+	result = BuildCommDCB(native, &dcb);
 	Tcl_DStringFree(&ds);
 
 	if (result == FALSE) {
@@ -1744,16 +1742,16 @@ SerialSetOptionProc(
 	dcb.XonLim = (WORD) (infoPtr->sysBufRead*1/2);
 	dcb.XoffLim = (WORD) (infoPtr->sysBufRead*1/4);
 
-	if (strnicmp(value, "NONE", vlen) == 0) {
+	if (strncasecmp(value, "NONE", vlen) == 0) {
 	    /*
 	     * Leave all handshake options disabled.
 	     */
-	} else if (strnicmp(value, "XONXOFF", vlen) == 0) {
+	} else if (strncasecmp(value, "XONXOFF", vlen) == 0) {
 	    dcb.fOutX = dcb.fInX = TRUE;
-	} else if (strnicmp(value, "RTSCTS", vlen) == 0) {
+	} else if (strncasecmp(value, "RTSCTS", vlen) == 0) {
 	    dcb.fOutxCtsFlow = TRUE;
 	    dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
-	} else if (strnicmp(value, "DTRDSR", vlen) == 0) {
+	} else if (strncasecmp(value, "DTRDSR", vlen) == 0) {
 	    dcb.fOutxDsrFlow = TRUE;
 	    dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
 	} else {
@@ -1863,7 +1861,7 @@ SerialSetOptionProc(
 		result = TCL_ERROR;
 		break;
 	    }
-	    if (strnicmp(argv[i], "DTR", strlen(argv[i])) == 0) {
+	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
 		if (!EscapeCommFunction(infoPtr->handle,
 			(DWORD) (flag ? SETDTR : CLRDTR))) {
 		    if (interp != NULL) {
@@ -1872,7 +1870,7 @@ SerialSetOptionProc(
 		    result = TCL_ERROR;
 		    break;
 		}
-	    } else if (strnicmp(argv[i], "RTS", strlen(argv[i])) == 0) {
+	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
 		if (!EscapeCommFunction(infoPtr->handle,
 			(DWORD) (flag ? SETRTS : CLRRTS))) {
 		    if (interp != NULL) {
@@ -1881,7 +1879,7 @@ SerialSetOptionProc(
 		    result = TCL_ERROR;
 		    break;
 		}
-	    } else if (strnicmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
+	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
 		if (!EscapeCommFunction(infoPtr->handle,
 			(DWORD) (flag ? SETBREAK : CLRBREAK))) {
 		    if (interp != NULL) {

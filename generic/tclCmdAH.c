@@ -138,7 +138,7 @@ Tcl_CaseObjCmd(
 	char *pat;
 	unsigned char *p;
 
-	if (i == (caseObjc - 1)) {
+	if (i == caseObjc-1) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "extra case pattern with no body", NULL);
 	    return TCL_ERROR;
@@ -664,7 +664,7 @@ Tcl_EvalObjCmd(
 	 */
 
 	CmdFrame* invoker = iPtr->cmdFramePtr;
-	int word          = 1;
+	int word = 1;
 	TclArgumentGet (interp, objv[1], &invoker, &word);
 
 	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT,
@@ -833,9 +833,9 @@ Tcl_FileObjCmd(
 	"dirname",	"executable",	"exists",	"extension",
 	"isdirectory",	"isfile",	"join",		"link",
 	"lstat",	"mtime",	"mkdir",	"nativename",
-	"normalize",    "owned",
+	"normalize",	"owned",
 	"pathtype",	"readable",	"readlink",	"rename",
-	"rootname",	"separator",    "size",		"split",
+	"rootname",	"separator",	"size",		"split",
 	"stat",		"system",	"tail",		"tempfile",
 	"type",		"volumes",	"writable",
 	NULL
@@ -888,7 +888,7 @@ Tcl_FileObjCmd(
 	    if (index == FCMD_ATIME) {
 		tval.actime = newTime;
 		tval.modtime = buf.st_mtime;
-	    } else {	/* index == FCMD_MTIME */
+	    } else {		/* index == FCMD_MTIME */
 		tval.actime = buf.st_atime;
 		tval.modtime = newTime;
 	    }
@@ -937,11 +937,10 @@ Tcl_FileObjCmd(
 	dirPtr = TclPathPart(interp, objv[2], TCL_PATH_DIRNAME);
 	if (dirPtr == NULL) {
 	    return TCL_ERROR;
-	} else {
-	    Tcl_SetObjResult(interp, dirPtr);
-	    Tcl_DecrRefCount(dirPtr);
-	    return TCL_OK;
 	}
+	Tcl_SetObjResult(interp, dirPtr);
+	Tcl_DecrRefCount(dirPtr);
+	return TCL_OK;
     }
     case FCMD_EXECUTABLE:
 	if (objc != 3) {
@@ -960,13 +959,12 @@ Tcl_FileObjCmd(
 	    goto only3Args;
 	}
 	ext = TclPathPart(interp, objv[2], TCL_PATH_EXTENSION);
-	if (ext != NULL) {
-	    Tcl_SetObjResult(interp, ext);
-	    Tcl_DecrRefCount(ext);
-	    return TCL_OK;
-	} else {
+	if (ext == NULL) {
 	    return TCL_ERROR;
 	}
+	Tcl_SetObjResult(interp, ext);
+	Tcl_DecrRefCount(ext);
+	return TCL_OK;
     }
     case FCMD_ISDIRECTORY:
 	if (objc != 3) {
@@ -997,6 +995,9 @@ Tcl_FileObjCmd(
 	    /*
 	     * For Windows, there are no user ids associated with a file, so
 	     * we always return 1.
+	     *
+	     * TODO: use GetSecurityInfo to get the real owner of the file and
+	     * test for equivalence to the current user.
 	     */
 
 #if defined(__WIN32__)
@@ -1275,13 +1276,12 @@ Tcl_FileObjCmd(
 	    goto only3Args;
 	}
 	root = TclPathPart(interp, objv[2], TCL_PATH_ROOT);
-	if (root != NULL) {
-	    Tcl_SetObjResult(interp, root);
-	    Tcl_DecrRefCount(root);
-	    return TCL_OK;
-	} else {
+	if (root == NULL) {
 	    return TCL_ERROR;
 	}
+	Tcl_SetObjResult(interp, root);
+	Tcl_DecrRefCount(root);
+	return TCL_OK;
     }
     case FCMD_SEPARATOR:
 	if ((objc < 2) || (objc > 3)) {
@@ -1652,7 +1652,7 @@ FileTempfileCmd(
 	     * tools or system libraries. [Bug 2388866]
 	     */
 
-	    if (Tcl_FSGetFileSystemForPath(tempDirObj)
+	    if (tempDirObj != NULL && Tcl_FSGetFileSystemForPath(tempDirObj)
 		    != &tclNativeFilesystem) {
 		TclDecrRefCount(tempDirObj);
 		tempDirObj = NULL;
@@ -1668,9 +1668,11 @@ FileTempfileCmd(
 		|| string[length-1] != '\\')) {
 	    Tcl_Obj *tailObj = TclPathPart(interp, objv[3], TCL_PATH_TAIL);
 
-	    tempBaseObj = TclPathPart(interp, tailObj, TCL_PATH_ROOT);
-	    tempExtObj = TclPathPart(interp, tailObj, TCL_PATH_EXTENSION);
-	    TclDecrRefCount(tailObj);
+	    if (tailObj != NULL) {
+		tempBaseObj = TclPathPart(interp, tailObj, TCL_PATH_ROOT);
+		tempExtObj = TclPathPart(interp, tailObj, TCL_PATH_EXTENSION);
+		TclDecrRefCount(tailObj);
+	    }
 	}
     }
 
