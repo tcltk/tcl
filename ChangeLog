@@ -1,3 +1,10 @@
+2010-11-23  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclVar.c (VarHashInvalidateEntry): Removed obsolete
+	  patch for AIX defining this macro as function. This is not
+	  necessary anymore. See ChangeLog entry 2010-07-28 (Bug 3037525)
+	  for the actual bug and fix the patch was a workaround for.
+
 2010-11-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInterp.c:  fix gcc warning: passing argument 3 of
