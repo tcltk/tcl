@@ -372,7 +372,7 @@ EXTERN void		TclHideLiteral(Tcl_Interp *interp,
 /* 145 */
 EXTERN CONST86 struct AuxDataType * TclGetAuxDataType(const char *typeName);
 /* 146 */
-EXTERN TclHandle	TclHandleCreate(VOID *ptr);
+EXTERN TclHandle	TclHandleCreate(void *ptr);
 /* 147 */
 EXTERN void		TclHandleFree(TclHandle handle);
 /* 148 */
@@ -739,7 +739,7 @@ typedef struct TclIntStubs {
     int (*tclAddLiteralObj) (struct CompileEnv *envPtr, Tcl_Obj *objPtr, LiteralEntry **litPtrPtr); /* 143 */
     void (*tclHideLiteral) (Tcl_Interp *interp, struct CompileEnv *envPtr, int index); /* 144 */
     CONST86 struct AuxDataType * (*tclGetAuxDataType) (const char *typeName); /* 145 */
-    TclHandle (*tclHandleCreate) (VOID *ptr); /* 146 */
+    TclHandle (*tclHandleCreate) (void *ptr); /* 146 */
     void (*tclHandleFree) (TclHandle handle); /* 147 */
     TclHandle (*tclHandlePreserve) (TclHandle handle); /* 148 */
     void (*tclHandleRelease) (TclHandle handle); /* 149 */
