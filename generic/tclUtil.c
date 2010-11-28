@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.118 2010/10/01 12:52:50 dkf Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.119 2010/11/28 23:20:11 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2234,129 +2234,100 @@ Tcl_PrintDouble(
     char *p, c;
     int exponent;
     int signum;
-    char buffer[TCL_DOUBLE_SPACE];
+    char* digits;
+    char* end;
     Tcl_UniChar ch;
 
     int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int)sizeof(int));
 
     /*
-     * If *precisionPtr == 0, then use TclDoubleDigits to develop a decimal
-     * significand and exponent, then format it in E or F format as
-     * appropriate. If *precisionPtr != 0, use the native sprintf and then add
-     * a trailing ".0" if there is no decimal point in the rep.
+     * Handle NaN.
      */
+    
+    if (TclIsNaN(value)) {
+	TclFormatNaN(value, dst);
+	return;
+    }
 
-    if (*precisionPtr == 0) {
+    /*
+     * Handle infinities.
+     */
+    
+    if (TclIsInfinite(value)) {
 	/*
-	 * Handle NaN.
+	 * Remember to copy the terminating NUL too.
 	 */
-
-	if (TclIsNaN(value)) {
-	    TclFormatNaN(value, dst);
-	    return;
-	}
-
-	/*
-	 * Handle infinities.
-	 */
-
-	if (TclIsInfinite(value)) {
-	    /*
-	     * Remember to copy the terminating NUL too.
-	     */
-
-	    if (value < 0) {
-		memcpy(dst, "-Inf", 5);
-	    } else {
-		memcpy(dst, "Inf", 4);
-	    }
-	    return;
-	}
-
-	/*
-	 * Ordinary (normal and denormal) values.
-	 */
-
-	exponent = TclDoubleDigits(buffer, value, &signum);
-	if (signum) {
-	    *dst++ = '-';
-	}
-	p = buffer;
-	if (exponent < -3 || exponent > 17) {
-	    /*
-	     * E format for numbers < 1e-3 or >= 1e17.
-	     */
-
-	    *dst++ = *p++;
-	    c = *p;
-	    if (c != '\0') {
-		*dst++ = '.';
-		while (c != '\0') {
-		    *dst++ = c;
-		    c = *++p;
-		}
-	    }
-	    sprintf(dst, "e%+d", exponent-1);
+	
+	if (value < 0) {
+	    memcpy(dst, "-Inf", 5);
 	} else {
-	    /*
-	     * F format for others.
-	     */
-
-	    if (exponent <= 0) {
-		*dst++ = '0';
-	    }
-	    c = *p;
-	    while (exponent-- > 0) {
-		if (c != '\0') {
-		    *dst++ = c;
-		    c = *++p;
-		} else {
-		    *dst++ = '0';
-		}
-	    }
-	    *dst++ = '.';
-	    if (c == '\0') {
-		*dst++ = '0';
-	    } else {
-		while (++exponent < 0) {
-		    *dst++ = '0';
-		}
-		while (c != '\0') {
-		    *dst++ = c;
-		    c = *++p;
-		}
-	    }
-	    *dst++ = '\0';
+	    memcpy(dst, "Inf", 4);
 	}
+	return;
+    }
+
+    /*
+     * Ordinary (normal and denormal) values.
+     */
+    
+    if (*precisionPtr == 0) {
+	digits = TclDoubleDigits(value, -1, TCL_DD_SHORTEST,
+				 &exponent, &signum, &end);
+    } else {
+	digits = TclDoubleDigits(value, *precisionPtr, TCL_DD_E_FORMAT, 
+				 &exponent, &signum, &end);
+    }
+    if (signum) {
+	*dst++ = '-';
+    }
+    p = digits;
+    if (exponent < -4 || exponent > 16) {
+	/*
+	 * E format for numbers < 1e-3 or >= 1e17.
+	 */
+	
+	*dst++ = *p++;
+	c = *p;
+	if (c != '\0') {
+	    *dst++ = '.';
+	    while (c != '\0') {
+		*dst++ = c;
+		c = *++p;
+	    }
+	}
+	sprintf(dst, "e%+d", exponent);
     } else {
 	/*
-	 * tcl_precision is supplied, pass it to the native sprintf.
+	 * F format for others.
 	 */
-
-	sprintf(dst, "%.*g", *precisionPtr, value);
-
-	/*
-	 * If the ASCII result looks like an integer, add ".0" so that it
-	 * doesn't look like an integer anymore. This prevents floating-point
-	 * values from being converted to integers unintentionally. Check for
-	 * ASCII specifically to speed up the function.
-	 */
-
-	for (p = dst; *p != 0;) {
-	    if (UCHAR(*p) < 0x80) {
-		c = *p++;
+	
+	if (exponent < 0) {
+	    *dst++ = '0';
+	}
+	c = *p;
+	while (exponent-- >= 0) {
+	    if (c != '\0') {
+		*dst++ = c;
+		c = *++p;
 	    } else {
-		p += Tcl_UtfToUniChar(p, &ch);
-		c = UCHAR(ch);
-	    }
-	    if ((c == '.') || isalpha(UCHAR(c))) {	/* INTL: ISO only. */
-		return;
+		*dst++ = '0';
 	    }
 	}
-	p[0] = '.';
-	p[1] = '0';
-	p[2] = 0;
+	*dst++ = '.';
+	if (c == '\0') {
+	    *dst++ = '0';
+	} else {
+	    while (++exponent < -1) {
+		*dst++ = '0';
+	    }
+	    while (c != '\0') {
+		*dst++ = c;
+		c = *++p;
+	    }
+	}
+	*dst++ = '\0';
     }
+    ckfree(digits);
 }
 
 /*
