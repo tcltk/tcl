@@ -2727,17 +2727,6 @@ test binary-75.25 {binary decode uuencode} -body {
     binary decode uuencode $s
 } -returnCodes error -match glob -result {invalid uuencode character "z" at position 4}
 
-test binary-76.1 {byte array concat speed} -body {
-    set b1 [binary format H* [string repeat E9 1000000]]
-    set b2 [binary format H* 41]
-    set t1 [lindex [time {set z ${b1}${b2}}] 0]
-    unset z
-    set b1 [binary format H* [string repeat E9 1000000]]
-    set b2 [binary format H* 41]
-    set t2 [lindex [time {set z ${b1}é}] 0]
-    expr {($t2/$t1)>3}
-} -result 1
-
 # cleanup
 ::tcltest::cleanupTests
 return
