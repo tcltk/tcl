@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.469 2010/11/15 21:34:54 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.470 2010/11/29 22:16:17 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -168,6 +168,7 @@ static Tcl_NRPostProc	YieldToCallback;
 
 static void	        ClearTailcall(Tcl_Interp *interp,
 			    struct TEOV_callback *tailcallPtr);
+static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 
 MODULE_SCOPE const TclStubs tclStubs;
 
@@ -828,7 +829,9 @@ Tcl_CreateInterp(void)
 	    TclNRYieldToObjCmd, NULL, NULL);
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldm", NULL,
 	    TclNRYieldObjCmd, INT2PTR(CORO_ACTIVATE_YIELDM), NULL);
-
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
+	    NRCoroInjectObjCmd, NULL, NULL);
+    
 #ifdef USE_DTRACE
     /*
      * Register the tcl::dtrace command.
@@ -8756,6 +8759,52 @@ NRCoroutineActivateCallback(
     }
 }
 
+
+static int
+NRCoroInjectObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Command *cmdPtr;
+    CoroutineData *corPtr;
+    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
+    
+    /*
+     * Usage more or less like tailcall:
+     *   inject coroName cmd ?arg1 arg2 ...?
+     */
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "coroName cmd ?arg1 arg2 ...?");
+	return TCL_ERROR;
+    }
+
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
+    if ((!cmdPtr) || (cmdPtr->nreProc != NRInterpCoroutine)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("can only inject a command into a coroutine", -1));
+        return TCL_ERROR;
+    }
+
+    corPtr = (CoroutineData *) cmdPtr->objClientData;
+    if (!COR_IS_SUSPENDED(corPtr)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("can only inject a command into a suspended coroutine", -1));
+        return TCL_ERROR;
+    }
+
+    /*
+     * Add the callback to the coro's execEnv, so that it is the first thing
+     * to happen when the coro is resumed
+     */
+    
+    iPtr->execEnvPtr = corPtr->eePtr;
+    Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);    
+    iPtr->execEnvPtr = savedEEPtr;
+    
+    return TCL_OK;
+}
+
 int
 NRInterpCoroutine(
     ClientData clientData,
