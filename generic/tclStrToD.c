@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.47 2010/11/28 23:20:11 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.48 2010/11/29 02:27:11 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -2031,9 +2031,9 @@ RequiredPrecision(Tcl_WideUInt w)
     int rv;
     unsigned long wi;
     if (w & ((Tcl_WideUInt) 0xffffffff << 32)) {
-	wi = w >> 32; rv = 32;
+	wi = (unsigned long) (w >> 32); rv = 32;
     } else {
-	wi = w; rv = 0;
+	wi = (unsigned long) w; rv = 0;
     }
     if (wi & 0xffff0000) {
 	wi >>= 16; rv += 16;
@@ -2551,7 +2551,7 @@ ShorteningQuickFormat(double d,	/* Number to convert */
     for (;;) {
 	/* Convert a digit */
 
-	digit = d;
+	digit = (int) d;
 	d -= digit;
 	*s++ = '0' + digit;
 
@@ -2622,7 +2622,7 @@ StrictQuickFormat(double d,	/* Number to convert */
     i = 1;
     for (;;) {
 	/* Extract a digit */
-	digit = d;
+	digit = (int) d;
 	d -= digit;
 	if (d == 0.0) {
 	    ilim = i;
