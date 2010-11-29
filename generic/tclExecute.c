@@ -612,14 +612,14 @@ static void		DeleteExecStack(ExecStack *esPtr);
 static void		DupExprCodeInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
 static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
-static ExceptionRange *	GetExceptRangeForPc(unsigned char *pc, int catchOnly,
+static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc, int catchOnly,
 			    ByteCode *codePtr);
-static const char *	GetSrcInfoForPc(unsigned char *pc, ByteCode *codePtr,
+static const char *	GetSrcInfoForPc(const unsigned char *pc, ByteCode *codePtr,
 			    int *lengthPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
-			    unsigned char *pc, Tcl_Obj *opndPtr);
+			    const unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
@@ -2143,12 +2143,16 @@ TclExecuteByteCode(
 	opnd = TclGetUInt1AtPtr(pc+1);
 
 	/*
-	 * Detect only-bytearray-or-null case
+	 * Detect only-bytearray-or-null case.
 	 */
 
 	for (currPtr=&OBJ_AT_DEPTH(opnd-1); currPtr<=&OBJ_AT_TOS; currPtr++) {
 	    if (((*currPtr)->typePtr != &tclByteArrayType)
 		    && ((*currPtr)->bytes != tclEmptyStringRep)) {
+		onlyb = 0;
+		break;
+	    } else if (((*currPtr)->typePtr == &tclByteArrayType) &&
+		    ((*currPtr)->bytes != NULL)) {
 		onlyb = 0;
 		break;
 	    }
@@ -4079,7 +4083,7 @@ TclExecuteByteCode(
 
 	int found, s1len, s2len, llen, i;
 	Tcl_Obj *valuePtr, *value2Ptr, *o;
-	char *s1;
+	const char *s1;
 	const char *s2;
 
 	value2Ptr = OBJ_AT_TOS;
@@ -4169,7 +4173,7 @@ TclExecuteByteCode(
 
 	    iResult = (*pc == INST_STR_EQ);
 	} else {
-	    char *s1, *s2;
+	    const char *s1, *s2;
 	    int s1len, s2len;
 
 	    s1 = TclGetStringFromObj(valuePtr, &s1len);
@@ -7678,14 +7682,14 @@ static void
 IllegalExprOperandType(
     Tcl_Interp *interp,		/* Interpreter to which error information
 				 * pertains. */
-    unsigned char *pc,		/* Points to the instruction being executed
+    const unsigned char *pc, /* Points to the instruction being executed
 				 * when the illegal type was found. */
     Tcl_Obj *opndPtr)		/* Points to the operand holding the value
 				 * with the illegal type. */
 {
     ClientData ptr;
     int type;
-    unsigned char opcode = *pc;
+    const unsigned char opcode = *pc;
     const char *description, *operator = operatorStrings[opcode - INST_LOR];
 
     if (opcode == INST_EXPON) {
@@ -7812,7 +7816,7 @@ TclGetSrcInfoForPc(
 
 static const char *
 GetSrcInfoForPc(
-    unsigned char *pc,		/* The program counter value for which to
+    const unsigned char *pc, /* The program counter value for which to
 				 * return the closest command's source info.
 				 * This points to a bytecode instruction in
 				 * codePtr's code. */
@@ -7936,7 +7940,7 @@ GetSrcInfoForPc(
 
 static ExceptionRange *
 GetExceptRangeForPc(
-    unsigned char *pc,		/* The program counter value for which to
+    const unsigned char *pc, /* The program counter value for which to
 				 * search for a closest enclosing exception
 				 * range. This points to a bytecode
 				 * instruction in codePtr's code. */

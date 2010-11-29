@@ -594,14 +594,14 @@ TclOOGetDefineCmdContext(
 {
     Interp *iPtr = (Interp *) interp;
 
-    if ((iPtr->framePtr == NULL)
-	    || (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE)) {
+    if ((iPtr->varFramePtr == NULL)
+	    || (iPtr->varFramePtr->isProcCallFrame != FRAME_IS_OO_DEFINE)) {
 	Tcl_AppendResult(interp, "this command may only be called from within"
 		" the context of an ::oo::define or ::oo::objdefine command",
 		NULL);
 	return NULL;
     }
-    return (Tcl_Object) iPtr->framePtr->clientData;
+    return (Tcl_Object) iPtr->varFramePtr->clientData;
 }
 
 /*

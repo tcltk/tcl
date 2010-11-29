@@ -277,9 +277,17 @@ const Tcl_HashKeyType tclObjHashKeyType = {
  * ResolvedCmdName pointer, but DO NOT DO THIS. It seems that some extensions
  * use the second internal pointer field of the twoPtrValue field for their
  * own purposes.
+ *
+ * TRICKY POINT! Some extensions update this structure! (Notably, these
+ * include TclBlend and TCom). This is highly ill-advised on their part, but
+ * does allow them to delete a command when references to it are gone, which
+ * is fragile but useful given their somewhat-OO style. Because of this, this
+ * structure MUST NOT be const so that the C compiler puts the data in
+ * writable memory. [Bug 2558422]
+ * TODO: Provide a better API for those extensions so that they can coexist...
  */
 
-static const Tcl_ObjType tclCmdNameType = {
+Tcl_ObjType tclCmdNameType = {
     "cmdName",				/* name */
     FreeCmdNameInternalRep,		/* freeIntRepProc */
     DupCmdNameInternalRep,		/* dupIntRepProc */
@@ -1060,11 +1068,28 @@ Tcl_GetString(
 	return objPtr->bytes;
     }
 
+    /*
+     * Note we do not check for objPtr->typePtr == NULL.  An invariant of
+     * a properly maintained Tcl_Obj is that at least  one of objPtr->bytes
+     * and objPtr->typePtr must not be NULL.  If broken extensions fail to
+     * maintain that invariant, we can crash here.
+     */
+
     if (objPtr->typePtr->updateStringProc == NULL) {
+	/*
+	 * Those Tcl_ObjTypes which choose not to define an updateStringProc
+	 * must be written in such a way that (objPtr->bytes) never becomes
+	 * NULL.  This panic was added in Tcl 8.1.
+	 */
 	Tcl_Panic("UpdateStringProc should not be invoked for type %s",
 		objPtr->typePtr->name);
     }
     objPtr->typePtr->updateStringProc(objPtr);
+    if (objPtr->bytes == NULL || objPtr->length < 0
+	    || objPtr->bytes[objPtr->length] != '\0') {
+	Tcl_Panic("UpdateStringProc for type '%s' "
+		"failed to create a valid string rep", objPtr->typePtr->name);
+    }
     return objPtr->bytes;
 }
 
@@ -1099,13 +1124,7 @@ Tcl_GetStringFromObj(
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
-    if (objPtr->bytes == NULL) {
-	if (objPtr->typePtr->updateStringProc == NULL) {
-	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
-		    objPtr->typePtr->name);
-	}
-	objPtr->typePtr->updateStringProc(objPtr);
-    }
+    (void) TclGetString(objPtr);
 
     if (lengthPtr != NULL) {
 	*lengthPtr = objPtr->length;
@@ -1404,7 +1423,7 @@ SetBooleanFromAny(
   badBoolean:
     if (interp != NULL) {
 	int length;
-	char *str = Tcl_GetStringFromObj(objPtr, &length);
+	const char *str = Tcl_GetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
 	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
@@ -1421,7 +1440,8 @@ ParseBoolean(
     register Tcl_Obj *objPtr)	/* The object to parse/convert. */
 {
     int i, length, newBool;
-    char lowerCase[6], *str = TclGetStringFromObj(objPtr, &length);
+    char lowerCase[6];
+    const char *str = TclGetStringFromObj(objPtr, &length);
 
     if ((length == 0) || (length > 5)) {
 	/* longest valid boolean string rep. is "false" */
@@ -3586,7 +3606,7 @@ TclSetCmdNameObj(
     Interp *iPtr = (Interp *) interp;
     register ResolvedCmdName *resPtr;
     register Namespace *currNsPtr;
-    char *name;
+    const char *name;
 
     if (objPtr->typePtr == &tclCmdNameType) {
 	return;
@@ -3736,7 +3756,7 @@ SetCmdNameFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     Interp *iPtr = (Interp *) interp;
-    char *name;
+    const char *name;
     register Command *cmdPtr;
     Namespace *currNsPtr;
     register ResolvedCmdName *resPtr;

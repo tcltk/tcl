@@ -422,7 +422,7 @@ static void		RecordByteCodeStats(ByteCode *codePtr);
 static int		SetByteCodeFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
-			    unsigned char *pc, Tcl_Obj *bufferObj);
+			    const unsigned char *pc, Tcl_Obj *bufferObj);
 static void		PrintSourceToObj(Tcl_Obj *appendObj,
 			    const char *stringPtr, int maxChars);
 /*
@@ -3738,7 +3738,7 @@ TclDisassembleByteCodeObj(
 static int
 FormatInstruction(
     ByteCode *codePtr,		/* Bytecode containing the instruction. */
-    unsigned char *pc,		/* Points to first byte of instruction. */
+    const unsigned char *pc,	/* Points to first byte of instruction. */
     Tcl_Obj *bufferObj)		/* Object to append instruction info to. */
 {
     Proc *procPtr = codePtr->procPtr;

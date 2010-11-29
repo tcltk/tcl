@@ -630,7 +630,7 @@ FsUpdateCwd(
     ClientData clientData)
 {
     int len;
-    char *str = NULL;
+    const char *str = NULL;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
 
     if (cwdObj != NULL) {
@@ -1682,7 +1682,7 @@ Tcl_FSEvalFileEx(
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile;
     Interp *iPtr;
-    char *string;
+    const char *string;
     Tcl_Channel chan;
     Tcl_Obj *objPtr;
 
@@ -2615,7 +2615,7 @@ Tcl_FSGetCwd(
 	     */
 
 	    int len1, len2;
-	    char *str1, *str2;
+	    const char *str1, *str2;
 
 	    str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
 	    str2 = Tcl_GetStringFromObj(norm, &len2);
@@ -3534,7 +3534,7 @@ Tcl_FSSplitPath(
     const Tcl_Filesystem *fsPtr;
     char separator = '/';
     int driveNameLength;
-    char *p;
+    const char *p;
 
     /*
      * Perform platform specific splitting.
@@ -3580,7 +3580,7 @@ Tcl_FSSplitPath(
      */
 
     for (;;) {
-	char *elementStart = p;
+	const char *elementStart = p;
 	int length;
 
 	while ((*p != '\0') && (*p != separator)) {
@@ -3673,7 +3673,7 @@ TclGetPathType(
 				 * caller. */
 {
     int pathLen;
-    char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
     Tcl_PathType type;
 
     type = TclFSNonnativePathType(path, pathLen, filesystemPtrPtr,
@@ -3780,7 +3780,7 @@ TclFSNonnativePathType(
 		while (numVolumes > 0) {
 		    Tcl_Obj *vol;
 		    int len;
-		    char *strVol;
+		    const char *strVol;
 
 		    numVolumes--;
 		    Tcl_ListObjIndex(NULL, thisFsVolumes, numVolumes, &vol);
@@ -4125,7 +4125,7 @@ Tcl_FSRemoveDirectory(
 	Tcl_Obj *cwdPtr = Tcl_FSGetCwd(NULL);
 
 	if (cwdPtr != NULL) {
-	    char *cwdStr, *normPathStr;
+	    const char *cwdStr, *normPathStr;
 	    int cwdLen, normLen;
 	    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 

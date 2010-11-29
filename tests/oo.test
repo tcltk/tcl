@@ -209,6 +209,18 @@ test oo-1.17 {basic test of OO functionality: Bug 2481109} -body {
 } -cleanup {
     namespace delete ::foo
 } -result ::foo::lreplace
+# Check for Bug 2519474; problem in tclNamesp.c, but tested here...
+test oo-1.18 {OO: create object in NS with same name as global cmd} -setup {
+    proc test-oo-1.18 {} return
+    oo::class create A
+    oo::class create B {superclass A}
+} -body {
+    oo::define B constructor {} {A create test-oo-1.18}
+    B create C
+} -cleanup {
+    rename test-oo-1.18 {}
+    A destroy
+} -result ::C
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -2152,6 +2164,25 @@ test oo-27.11 {variables declaration - no instance var leaks with class resolver
     inst1 step
     list [inst1 value] [inst2 value]
 } -result {3 2}
+
+# A feature that's not supported because the mechanism may change without
+# warning, but is supposed to work...
+test oo-28.1 {scripted extensions to oo::define} -setup {
+    interp create foo
+    foo eval {oo::class create cls {export eval}}
+} -cleanup {
+    interp delete foo
+} -body {
+    foo eval {
+	proc oo::define::privateMethod {name arguments body} {
+	    uplevel 1 [list method $name $arguments $body]
+	    uplevel 1 [list unexport $name]
+	}
+	oo::define cls privateMethod m {x y} {return $x,$y}
+	cls create obj
+	list [catch {obj m 1 2}] [obj eval my m 3 4]
+    }
+} -result {1 3,4}
 
 cleanupTests
 return

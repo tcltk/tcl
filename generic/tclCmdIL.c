@@ -30,7 +30,7 @@
 
 typedef struct SortElement {
     union {
-	char *strValuePtr;
+	const char *strValuePtr;
 	long intValue;
 	double doubleValue;
 	Tcl_Obj *objValuePtr;
@@ -103,7 +103,7 @@ typedef struct SortInfo {
  * Forward declarations for procedures defined in this file:
  */
 
-static int		DictionaryCompare(char *left, char *right);
+static int		DictionaryCompare(const char *left, const char *right);
 static int		InfoArgsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoBodyCmd(ClientData dummy, Tcl_Interp *interp,
@@ -212,7 +212,7 @@ Tcl_IfObjCmd(
 				 * check. */
     Interp *iPtr = (Interp *) interp;
     int i, result, value;
-    char *clause;
+    const char *clause;
 
     i = 1;
     while (1) {
@@ -420,7 +420,7 @@ InfoArgsCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register Interp *iPtr = (Interp *) interp;
-    char *name;
+    const char *name;
     Proc *procPtr;
     CompiledLocal *localPtr;
     Tcl_Obj *listObjPtr;
@@ -481,7 +481,7 @@ InfoBodyCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register Interp *iPtr = (Interp *) interp;
-    char *name;
+    const char *name;
     Proc *procPtr;
     Tcl_Obj *bodyPtr, *resultPtr;
 
@@ -591,7 +591,7 @@ InfoCommandsCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *cmdName, *pattern;
+    const char *cmdName, *pattern;
     const char *simplePattern;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
@@ -906,7 +906,7 @@ InfoDefaultCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    char *procName, *argName, *varName;
+    const char *procName, *argName, *varName;
     Proc *procPtr;
     CompiledLocal *localPtr;
     Tcl_Obj *valueObjPtr;
@@ -987,7 +987,7 @@ TclInfoExistsCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *varName;
+    const char *varName;
     Var *varPtr;
 
     if (objc != 2) {
@@ -1341,7 +1341,7 @@ InfoFunctionsCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *pattern;
+    const char *pattern;
 
     if (objc == 1) {
 	pattern = NULL;
@@ -1542,7 +1542,7 @@ InfoLoadedCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *interpName;
+    const char *interpName;
     int result;
 
     if ((objc != 1) && (objc != 2)) {
@@ -1670,7 +1670,7 @@ InfoProcsCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *cmdName, *pattern;
+    const char *cmdName, *pattern;
     const char *simplePattern;
     Namespace *nsPtr;
 #ifdef INFO_PROCS_SEARCH_GLOBAL_NS
@@ -2734,7 +2734,7 @@ Tcl_LsearchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    char *bytes, *patternBytes;
+    const char *bytes, *patternBytes;
     int i, match, index, result, listc, length, elemLen, bisect;
     int dataType, isIncreasing, lower, upper, patInt, objInt, offset;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
@@ -4178,7 +4178,7 @@ SortCompare(
 
 static int
 DictionaryCompare(
-    char *left, char *right)	/* The strings to compare. */
+    const char *left, const char *right)	/* The strings to compare. */
 {
     Tcl_UniChar uniLeft, uniRight, uniLeftLower, uniRightLower;
     int diff, zeros;

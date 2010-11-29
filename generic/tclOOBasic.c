@@ -887,7 +887,7 @@ TclOOCopyObjectCmd(
     if (objc == 2) {
 	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, NULL, NULL);
     } else {
-	char *name;
+	const char *name;
 	Tcl_DString buffer;
 
 	name = TclGetString(objv[2]);

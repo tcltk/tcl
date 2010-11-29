@@ -244,6 +244,7 @@ static void		DeleteScriptLimitCallback(ClientData clientData);
 static void		RunLimitHandlers(LimitHandler *handlerPtr,
 			    Tcl_Interp *interp);
 static void		TimeLimitCallback(ClientData clientData);
+
 
 /*
  *----------------------------------------------------------------------
@@ -642,17 +643,12 @@ Tcl_InterpObjCmd(
 	int i, flags;
 	Tcl_Interp *slaveInterp;
 	Tcl_Obj *resultObjPtr;
-	static const char *options[] = {
+	static const char *const options[] = {
 	    "-unwind",	"--",	NULL
 	};
 	enum option {
 	    OPT_UNWIND,	OPT_LAST
 	};
-
-	if (objc > 6) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "?-unwind? ?--? ?path? ?result?");
-	    return TCL_ERROR;
-	}
 
 	flags = 0;
 
@@ -680,6 +676,11 @@ Tcl_InterpObjCmd(
 	}
 
 	endOfForLoop:
+
+	if ((i + 2) < objc) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "?-unwind? ?--? ?path? ?result?");
+	    return TCL_ERROR;
+	}
 
 	/*
 	 * Did they specify a slave interp to cancel the script in
@@ -1034,7 +1035,7 @@ Tcl_InterpObjCmd(
 	InterpInfo *iiPtr;
 	Tcl_HashEntry *hPtr;
 	Alias *aliasPtr;
-	char *aliasName;
+	const char *aliasName;
 
 	if (objc != 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "path alias");
@@ -1527,7 +1528,7 @@ AliasCreate(
     slavePtr = &((InterpInfo *) ((Interp *) slaveInterp)->interpInfo)->slave;
     while (1) {
 	Tcl_Obj *newToken;
-	char *string;
+	const char *string;
 
 	string = TclGetString(aliasPtr->token);
 	hPtr = Tcl_CreateHashEntry(&slavePtr->aliasTable, string, &isNew);
@@ -2165,7 +2166,7 @@ SlaveCreate(
     Slave *slavePtr;
     InterpInfo *masterInfoPtr;
     Tcl_HashEntry *hPtr;
-    char *path;
+    const char *path;
     int isNew, objc;
     Tcl_Obj **objv;
 
@@ -2586,7 +2587,7 @@ SlaveExpose(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
-    char *name;
+    const char *name;
 
     if (Tcl_IsSafe(interp)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -2685,7 +2686,7 @@ SlaveHide(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
-    char *name;
+    const char *name;
 
     if (Tcl_IsSafe(interp)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(

@@ -4112,7 +4112,7 @@ TclEvalObjvInternal(
     }
 
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
-	char *a[10];
+	const char *a[10];
 	int i = 0;
 
 	while (i < 10) {
@@ -5990,7 +5990,7 @@ TclObjInvoke(
 {
     register Interp *iPtr = (Interp *) interp;
     Tcl_HashTable *hTblPtr;	/* Table of hidden commands. */
-    char *cmdName;		/* Name of the command from objv[0]. */
+    const char *cmdName;	/* Name of the command from objv[0]. */
     Tcl_HashEntry *hPtr = NULL;
     Command *cmdPtr;
     int result;
@@ -7330,7 +7330,7 @@ DTraceObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (TCL_DTRACE_TCL_PROBE_ENABLED()) {
-	char *a[10];
+	const char *a[10];
 	int i = 0;
 
 	while (i++ < 10) {

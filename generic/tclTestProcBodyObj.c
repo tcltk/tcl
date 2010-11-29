@@ -229,7 +229,7 @@ ProcBodyTestProcObjCmd(
     int objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
 {
-    char *fullName;
+    const char *fullName;
     Tcl_Command procCmd;
     Command *cmdPtr;
     Proc *procPtr = NULL;

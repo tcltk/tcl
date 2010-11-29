@@ -466,7 +466,8 @@ UpdateStringOfDict(
     ChainEntry *cPtr;
     Tcl_Obj *keyPtr, *valuePtr;
     int numElems, i, length;
-    char *elem, *dst;
+    const char *elem;
+    char *dst;
 
     /*
      * This field is the most useful one in the whole hash structure, and it
@@ -557,10 +558,11 @@ SetDictFromAny(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr)
 {
-    char *string, *s;
+    const char *string;
+    char *s;
     const char *elemStart, *nextElem;
     int lenRemain, length, elemSize, hasBrace, result, isNew;
-    char *limit;		/* Points just after string's last byte. */
+    const char *limit;	/* Points just after string's last byte. */
     register const char *p;
     register Tcl_Obj *keyPtr, *valuePtr;
     Dict *dict;
@@ -1828,7 +1830,7 @@ DictKeysCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *listPtr;
-    char *pattern = NULL;
+    const char *pattern = NULL;
 
     if (objc!=2 && objc!=3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?pattern?");
@@ -1913,7 +1915,7 @@ DictValuesCmd(
     Tcl_Obj *valuePtr, *listPtr;
     Tcl_DictSearch search;
     int done;
-    char *pattern;
+    const char *pattern;
 
     if (objc!=2 && objc!=3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?pattern?");
@@ -2060,7 +2062,6 @@ DictInfoCmd(
 {
     Tcl_Obj *dictPtr;
     Dict *dict;
-    char *buf;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
@@ -2076,9 +2077,7 @@ DictInfoCmd(
     }
     dict = dictPtr->internalRep.otherValuePtr;
 
-    buf = Tcl_HashStats(&dict->table);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
-    ckfree(buf);
+    Tcl_SetResult(interp, Tcl_HashStats(&dict->table), TCL_DYNAMIC);
     return TCL_OK;
 }
 
@@ -2636,7 +2635,7 @@ DictFilterCmd(
     Tcl_Obj **varv, *keyObj, *valueObj, *resultObj, *boolObj;
     Tcl_DictSearch search;
     int index, varc, done, result, satisfied;
-    char *pattern;
+    const char *pattern;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary filterType ?arg ...?");
