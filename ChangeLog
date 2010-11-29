@@ -2,7 +2,7 @@
 
 	* generic/tclBasic.c: Patch by Miguel, providing a
 	  [::tcl::unsupported::inject coroname command args], which prepends
-	  ("injects") arbitrary code to a suspented coro's future resumption.
+	  ("injects") arbitrary code to a suspended coro's future resumption.
 	  Neat for debugging complex coros without heavy instrumentation.
 
 2010-11-29  Kevin B. Kenny  <kennykb@acm.org>
