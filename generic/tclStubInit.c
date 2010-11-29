@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.71 2010/09/17 13:10:55 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.72 2010/11/29 13:32:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -305,6 +305,7 @@ static const TclIntStubs tclIntStubs = {
     TclInitRewriteEnsemble, /* 246 */
     TclResetRewriteEnsemble, /* 247 */
     TclCopyChannel, /* 248 */
+    TclDoubleDigits, /* 249 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -460,6 +461,8 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_s_mp_mul_digs, /* 58 */
     TclBN_s_mp_sqr, /* 59 */
     TclBN_s_mp_sub, /* 60 */
+    TclBN_mp_init_set_int, /* 61 */
+    TclBN_mp_set_int, /* 62 */
 };
 
 static const TclStubHooks tclStubHooks = {
