@@ -3742,6 +3742,31 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------
+ * Macro counterpart of the Tcl_NumUtfChars() function.  To be used
+ * in speed-sensitive points where it pays to avoid a function call
+ * in the common case of counting along a string of all one-byte characters.
+ * The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE void	TclNumUtfChars(int numChars, const char *bytes,
+ *				int numBytes);
+ *----------------------------------------------------------------
+ */
+
+#define TclNumUtfChars(numChars, bytes, numBytes) \
+    do { \
+	int count, i = (numBytes); \
+	unsigned char *str = (unsigned char *) (bytes); \
+	while (i && (*str < 0xC0)) { i--; str++; } \
+	count = (numBytes) - i; \
+	if (i) { \
+	    count += Tcl_NumUtfChars((bytes) + count, i); \
+	} \
+	(numChars) = count; \
+    } while (0);
+
+
+/*
+ *----------------------------------------------------------------
  * Macro used by the Tcl core to compare Unicode strings. On big-endian
  * systems we can use the more efficient memcmp, but this would not be
  * lexically correct on little-endian systems. The ANSI C "prototype" for

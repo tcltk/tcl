@@ -1443,6 +1443,12 @@ test filename-17.2 {windows specific glob with executable} -body {
     removeFile execglob/abc.notexecutable
     removeDirectory execglob
 } -result {abc.exe}
+test filename-17.3 {Bug 2571597} win {
+    set p /a
+    file pathtype $p
+    file normalize $p
+    file pathtype $p
+} volumerelative
 
 test fileName-18.1 {windows - split ADS name correctly} {win} {
     # bug 1194458
