@@ -140,6 +140,12 @@ test cmdIL-1.34 {lsort -stride errors} -returnCodes error -body {
 test cmdIL-1.35 {lsort -stride errors} -returnCodes error -body {
     lsort -stride 2 -index 3 {a b c d}
 } -result {when used with "-stride", the leading "-index" value must be within the group}
+test cmdIL-1.36 {lsort -stride and -index: Bug 2918962} {
+    lsort -stride 2 -index {0 1} {
+	{{c o d e} 54321} {{b l a h} 94729}
+	{{b i g} 12345} {{d e m o} 34512}
+    }
+} {{{b i g} 12345} {{d e m o} 34512} {{c o d e} 54321} {{b l a h} 94729}}
 
 # Can't think of any good tests for the MergeSort and MergeLists procedures,
 # except a bunch of random lists to sort.

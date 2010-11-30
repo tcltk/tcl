@@ -284,6 +284,12 @@ static const TclIntStubs tclIntStubs = {
     TclInitVarHashTable, /* 235 */
     0, /* 236 */
     TclResetCancellation, /* 237 */
+    0, /* 238 */
+    0, /* 239 */
+    0, /* 240 */
+    0, /* 241 */
+    0, /* 242 */
+    TclDbDumpActiveObjects, /* 243 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

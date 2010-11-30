@@ -2553,11 +2553,11 @@ MODULE_SCOPE void       TclArgumentGet(Tcl_Interp* interp, Tcl_Obj* obj,
 			    CmdFrame** cfPtrPtr, int* wordPtr);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
-MODULE_SCOPE double	TclBignumToDouble(mp_int *bignum);
+MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
 			    int ptnLen, int flags);
-MODULE_SCOPE double	TclCeil(mp_int *a);
+MODULE_SCOPE double	TclCeil(const mp_int *a);
 MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,const char *value);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
@@ -2602,7 +2602,7 @@ MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
 MODULE_SCOPE void	TclFinalizeThreadObjects(void);
-MODULE_SCOPE double	TclFloor(mp_int *a);
+MODULE_SCOPE double	TclFloor(const mp_int *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
@@ -4041,9 +4041,9 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #if defined(PURIFY) && defined(__clang__) && !defined(CLANG_ASSERT)
 #include <assert.h>
 #define CLANG_ASSERT(x) assert(x)
-#define Tcl_PanicEx Tcl_Panic
+#define TclPanic Tcl_Panic
 #undef Tcl_Panic
-#define Tcl_Panic(f, ...) Tcl_PanicEx(f,##__VA_ARGS__); CLANG_ASSERT(0)
+#define Tcl_Panic(f, ...) do { TclPanic(f,##__VA_ARGS__); CLANG_ASSERT(0); } while(0)
 #elif !defined(CLANG_ASSERT)
 #define CLANG_ASSERT(x)
 #endif

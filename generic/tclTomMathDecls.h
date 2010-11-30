@@ -154,15 +154,15 @@ EXTERN void		TclBN_mp_clear(mp_int*a);
 /* 7 */
 EXTERN void		TclBN_mp_clear_multi(mp_int*a, ...);
 /* 8 */
-EXTERN int		TclBN_mp_cmp(mp_int*a, mp_int*b);
+EXTERN int		TclBN_mp_cmp(const mp_int*a, const mp_int*b);
 /* 9 */
-EXTERN int		TclBN_mp_cmp_d(mp_int*a, mp_digit b);
+EXTERN int		TclBN_mp_cmp_d(const mp_int*a, mp_digit b);
 /* 10 */
-EXTERN int		TclBN_mp_cmp_mag(mp_int*a, mp_int*b);
+EXTERN int		TclBN_mp_cmp_mag(const mp_int*a, const mp_int*b);
 /* 11 */
-EXTERN int		TclBN_mp_copy(mp_int*a, mp_int*b);
+EXTERN int		TclBN_mp_copy(const mp_int*a, mp_int*b);
 /* 12 */
-EXTERN int		TclBN_mp_count_bits(mp_int*a);
+EXTERN int		TclBN_mp_count_bits(const mp_int*a);
 /* 13 */
 EXTERN int		TclBN_mp_div(mp_int*a, mp_int*b, mp_int*q, mp_int*r);
 /* 14 */
@@ -171,7 +171,8 @@ EXTERN int		TclBN_mp_div_d(mp_int*a, mp_digit b, mp_int*q,
 /* 15 */
 EXTERN int		TclBN_mp_div_2(mp_int*a, mp_int*q);
 /* 16 */
-EXTERN int		TclBN_mp_div_2d(mp_int*a, int b, mp_int*q, mp_int*r);
+EXTERN int		TclBN_mp_div_2d(const mp_int*a, int b, mp_int*q,
+				mp_int*r);
 /* 17 */
 EXTERN int		TclBN_mp_div_3(mp_int*a, mp_int*q, mp_digit*r);
 /* 18 */
@@ -195,7 +196,7 @@ EXTERN int		TclBN_mp_lshd(mp_int*a, int shift);
 /* 27 */
 EXTERN int		TclBN_mp_mod(mp_int*a, mp_int*b, mp_int*r);
 /* 28 */
-EXTERN int		TclBN_mp_mod_2d(mp_int*a, int b, mp_int*r);
+EXTERN int		TclBN_mp_mod_2d(const mp_int*a, int b, mp_int*r);
 /* 29 */
 EXTERN int		TclBN_mp_mul(mp_int*a, mp_int*b, mp_int*p);
 /* 30 */
@@ -203,9 +204,9 @@ EXTERN int		TclBN_mp_mul_d(mp_int*a, mp_digit b, mp_int*p);
 /* 31 */
 EXTERN int		TclBN_mp_mul_2(mp_int*a, mp_int*p);
 /* 32 */
-EXTERN int		TclBN_mp_mul_2d(mp_int*a, int d, mp_int*p);
+EXTERN int		TclBN_mp_mul_2d(const mp_int*a, int d, mp_int*p);
 /* 33 */
-EXTERN int		TclBN_mp_neg(mp_int*a, mp_int*b);
+EXTERN int		TclBN_mp_neg(const mp_int*a, mp_int*b);
 /* 34 */
 EXTERN int		TclBN_mp_or(mp_int*a, mp_int*b, mp_int*c);
 /* 35 */
@@ -278,15 +279,15 @@ typedef struct TclTomMathStubs {
     void (*tclBN_mp_clamp) (mp_int*a); /* 5 */
     void (*tclBN_mp_clear) (mp_int*a); /* 6 */
     void (*tclBN_mp_clear_multi) (mp_int*a, ...); /* 7 */
-    int (*tclBN_mp_cmp) (mp_int*a, mp_int*b); /* 8 */
-    int (*tclBN_mp_cmp_d) (mp_int*a, mp_digit b); /* 9 */
-    int (*tclBN_mp_cmp_mag) (mp_int*a, mp_int*b); /* 10 */
-    int (*tclBN_mp_copy) (mp_int*a, mp_int*b); /* 11 */
-    int (*tclBN_mp_count_bits) (mp_int*a); /* 12 */
+    int (*tclBN_mp_cmp) (const mp_int*a, const mp_int*b); /* 8 */
+    int (*tclBN_mp_cmp_d) (const mp_int*a, mp_digit b); /* 9 */
+    int (*tclBN_mp_cmp_mag) (const mp_int*a, const mp_int*b); /* 10 */
+    int (*tclBN_mp_copy) (const mp_int*a, mp_int*b); /* 11 */
+    int (*tclBN_mp_count_bits) (const mp_int*a); /* 12 */
     int (*tclBN_mp_div) (mp_int*a, mp_int*b, mp_int*q, mp_int*r); /* 13 */
     int (*tclBN_mp_div_d) (mp_int*a, mp_digit b, mp_int*q, mp_digit*r); /* 14 */
     int (*tclBN_mp_div_2) (mp_int*a, mp_int*q); /* 15 */
-    int (*tclBN_mp_div_2d) (mp_int*a, int b, mp_int*q, mp_int*r); /* 16 */
+    int (*tclBN_mp_div_2d) (const mp_int*a, int b, mp_int*q, mp_int*r); /* 16 */
     int (*tclBN_mp_div_3) (mp_int*a, mp_int*q, mp_digit*r); /* 17 */
     void (*tclBN_mp_exch) (mp_int*a, mp_int*b); /* 18 */
     int (*tclBN_mp_expt_d) (mp_int*a, mp_digit b, mp_int*c); /* 19 */
@@ -298,12 +299,12 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_init_size) (mp_int*a, int size); /* 25 */
     int (*tclBN_mp_lshd) (mp_int*a, int shift); /* 26 */
     int (*tclBN_mp_mod) (mp_int*a, mp_int*b, mp_int*r); /* 27 */
-    int (*tclBN_mp_mod_2d) (mp_int*a, int b, mp_int*r); /* 28 */
+    int (*tclBN_mp_mod_2d) (const mp_int*a, int b, mp_int*r); /* 28 */
     int (*tclBN_mp_mul) (mp_int*a, mp_int*b, mp_int*p); /* 29 */
     int (*tclBN_mp_mul_d) (mp_int*a, mp_digit b, mp_int*p); /* 30 */
     int (*tclBN_mp_mul_2) (mp_int*a, mp_int*p); /* 31 */
-    int (*tclBN_mp_mul_2d) (mp_int*a, int d, mp_int*p); /* 32 */
-    int (*tclBN_mp_neg) (mp_int*a, mp_int*b); /* 33 */
+    int (*tclBN_mp_mul_2d) (const mp_int*a, int d, mp_int*p); /* 32 */
+    int (*tclBN_mp_neg) (const mp_int*a, mp_int*b); /* 33 */
     int (*tclBN_mp_or) (mp_int*a, mp_int*b, mp_int*c); /* 34 */
     int (*tclBN_mp_radix_size) (mp_int*a, int radix, int*size); /* 35 */
     int (*tclBN_mp_read_radix) (mp_int*a, const char*str, int radix); /* 36 */

@@ -241,7 +241,7 @@ int mp_init_set (mp_int * a, mp_digit b);
 int mp_init_set_int (mp_int * a, unsigned long b);
 
 /* copy, b = a */
-int mp_copy(mp_int *a, mp_int *b);
+int mp_copy(const mp_int *a, mp_int *b);
 
 /* inits and copies, a = b */
 int mp_init_copy(mp_int *a, mp_int *b);
@@ -258,19 +258,19 @@ void mp_rshd(mp_int *a, int b);
 int mp_lshd(mp_int *a, int b);
 
 /* c = a / 2**b */
-int mp_div_2d(mp_int *a, int b, mp_int *c, mp_int *d);
+int mp_div_2d(const mp_int *a, int b, mp_int *c, mp_int *d);
 
 /* b = a/2 */
 int mp_div_2(mp_int *a, mp_int *b);
 
 /* c = a * 2**b */
-int mp_mul_2d(mp_int *a, int b, mp_int *c);
+int mp_mul_2d(const mp_int *a, int b, mp_int *c);
 
 /* b = a*2 */
 int mp_mul_2(mp_int *a, mp_int *b);
 
 /* c = a mod 2**d */
-int mp_mod_2d(mp_int *a, int b, mp_int *c);
+int mp_mod_2d(const mp_int *a, int b, mp_int *c);
 
 /* computes a = 2**b */
 int mp_2expt(mp_int *a, int b);
@@ -296,16 +296,16 @@ int mp_and(mp_int *a, mp_int *b, mp_int *c);
 /* ---> Basic arithmetic <--- */
 
 /* b = -a */
-int mp_neg(mp_int *a, mp_int *b);
+int mp_neg(const mp_int *a, mp_int *b);
 
 /* b = |a| */
 int mp_abs(mp_int *a, mp_int *b);
 
 /* compare a to b */
-int mp_cmp(mp_int *a, mp_int *b);
+int mp_cmp(const mp_int *a, const mp_int *b);
 
 /* compare |a| to |b| */
-int mp_cmp_mag(mp_int *a, mp_int *b);
+int mp_cmp_mag(const mp_int *a, const mp_int *b);
 
 /* c = a + b */
 int mp_add(mp_int *a, mp_int *b, mp_int *c);
@@ -328,7 +328,7 @@ int mp_mod(mp_int *a, mp_int *b, mp_int *c);
 /* ---> single digit functions <--- */
 
 /* compare against a single digit */
-int mp_cmp_d(mp_int *a, mp_digit b);
+int mp_cmp_d(const mp_int *a, mp_digit b);
 
 /* c = a + b */
 int mp_add_d(mp_int *a, mp_digit b, mp_int *c);
@@ -517,7 +517,7 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style);
 int mp_prime_random_ex(mp_int *a, int t, int size, int flags, ltm_prime_callback cb, void *dat);
 
 /* ---> radix conversion <--- */
-int mp_count_bits(mp_int *a);
+int mp_count_bits(const mp_int *a);
 
 int mp_unsigned_bin_size(mp_int *a);
 int mp_read_unsigned_bin(mp_int *a, const unsigned char *b, int c);

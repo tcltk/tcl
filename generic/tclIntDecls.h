@@ -524,6 +524,13 @@ EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
 /* Slot 236 is reserved */
 /* 237 */
 EXTERN int		TclResetCancellation(Tcl_Interp *interp, int force);
+/* Slot 238 is reserved */
+/* Slot 239 is reserved */
+/* Slot 240 is reserved */
+/* Slot 241 is reserved */
+/* Slot 242 is reserved */
+/* 243 */
+EXTERN void		TclDbDumpActiveObjects(FILE *outFile);
 
 typedef struct TclIntStubs {
     int magic;
@@ -767,6 +774,12 @@ typedef struct TclIntStubs {
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
     void (*reserved236)(void);
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
+    void (*reserved238)(void);
+    void (*reserved239)(void);
+    void (*reserved240)(void);
+    void (*reserved241)(void);
+    void (*reserved242)(void);
+    void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1153,6 +1166,13 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 236 is reserved */
 #define TclResetCancellation \
 	(tclIntStubsPtr->tclResetCancellation) /* 237 */
+/* Slot 238 is reserved */
+/* Slot 239 is reserved */
+/* Slot 240 is reserved */
+/* Slot 241 is reserved */
+/* Slot 242 is reserved */
+#define TclDbDumpActiveObjects \
+	(tclIntStubsPtr->tclDbDumpActiveObjects) /* 243 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

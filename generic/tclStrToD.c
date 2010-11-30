@@ -134,7 +134,7 @@ static int n770_fp;		/* Flag is 1 on Nokia N770 floating point.
 static double		AbsoluteValue(double v, int *signum);
 static int		AccumulateDecimalDigit(unsigned, int, 
 			    Tcl_WideUInt *, mp_int *, int);
-static double		BignumToBiasedFrExp(mp_int *big, int* machexp);
+static double		BignumToBiasedFrExp(const mp_int *big, int* machexp);
 static int		GetIntegerTimesPower(double v, mp_int *r, int *e);
 static double		MakeHighPrecisionDouble(int signum,
 			    mp_int *significand, int nSigDigs, int exponent);
@@ -2359,7 +2359,7 @@ Tcl_InitBignumFromDouble(
 
 double
 TclBignumToDouble(
-    mp_int *a)			/* Integer to convert. */
+    const mp_int *a)			/* Integer to convert. */
 {
     mp_int b;
     int bits, shift, i;
@@ -2420,7 +2420,7 @@ TclBignumToDouble(
 
 double
 TclCeil(
-    mp_int *a)			/* Integer to convert. */
+    const mp_int *a)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
@@ -2463,7 +2463,7 @@ TclCeil(
 
 double
 TclFloor(
-    mp_int *a)			/* Integer to convert. */
+    const mp_int *a)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
@@ -2519,7 +2519,7 @@ TclFloor(
 
 static double
 BignumToBiasedFrExp(
-    mp_int *a,			/* Integer to convert */
+    const mp_int *a,	/* Integer to convert */
     int *machexp)		/* Power of two */
 {
     mp_int b;

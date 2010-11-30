@@ -17,7 +17,7 @@
 
 /* copy, b = a */
 int
-mp_copy (mp_int * a, mp_int * b)
+mp_copy (const mp_int * a, mp_int * b)
 {
   int     res, n;
 
