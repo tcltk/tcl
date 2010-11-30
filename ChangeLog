@@ -1,3 +1,11 @@
+2010-11-30  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclInt.decls, generic/tclInt.h, generic/tclIntDecls.h:
+	* generic/tclStubInit.c: TclFormatInt restored at slot 24
+	* generic/tclUtil.c (TclFormatInt): restore TclFormatInt func from
+	2005-07-05 macro-ization. Benchmarks indicate it is faster, as a
+	key int->string routine (e.g. int-indexed arrays).
+
 2010-11-23  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclVar.c (VarHashInvalidateEntry): Removed obsolete

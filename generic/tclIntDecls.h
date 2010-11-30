@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.112.2.4 2010/10/02 00:29:42 hobbs Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.112.2.5 2010/11/30 18:16:02 hobbs Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -148,7 +148,11 @@ EXTERN int		TclFindElement(Tcl_Interp *interp,
 /* 23 */
 EXTERN Proc *		TclFindProc(Interp *iPtr, CONST char *procName);
 #endif
-/* Slot 24 is reserved */
+#ifndef TclFormatInt_TCL_DECLARED
+#define TclFormatInt_TCL_DECLARED
+/* 24 */
+EXTERN int		TclFormatInt(char *buffer, long n);
+#endif
 #ifndef TclFreePackageInfo_TCL_DECLARED
 #define TclFreePackageInfo_TCL_DECLARED
 /* 25 */
@@ -1065,7 +1069,7 @@ typedef struct TclIntStubs {
     void *reserved21;
     int (*tclFindElement) (Tcl_Interp *interp, CONST char *listStr, int listLength, CONST char **elementPtr, CONST char **nextPtr, int *sizePtr, int *bracePtr); /* 22 */
     Proc * (*tclFindProc) (Interp *iPtr, CONST char *procName); /* 23 */
-    void *reserved24;
+    int (*tclFormatInt) (char *buffer, long n); /* 24 */
     void (*tclFreePackageInfo) (Interp *iPtr); /* 25 */
     void *reserved26;
     void *reserved27;
@@ -1364,7 +1368,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclFindProc \
 	(tclIntStubsPtr->tclFindProc) /* 23 */
 #endif
-/* Slot 24 is reserved */
+#ifndef TclFormatInt
+#define TclFormatInt \
+	(tclIntStubsPtr->tclFormatInt) /* 24 */
+#endif
 #ifndef TclFreePackageInfo
 #define TclFreePackageInfo \
 	(tclIntStubsPtr->tclFreePackageInfo) /* 25 */
