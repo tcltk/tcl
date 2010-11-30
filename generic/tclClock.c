@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.66.2.3 2009/11/12 16:31:15 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.66.2.4 2010/11/30 20:59:27 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1513,7 +1513,7 @@ GetJulianDayFromEraYearMonthDay(
 	fields->julianDay = JDAY_1_JAN_1_CE_JULIAN - 1
 		+ fields->dayOfMonth
 		+ daysInPriorMonths[year%4 == 0][month - 1]
-		+ (365 * ym1)
+		+ (ONE_YEAR * ym1)
 	        + ym1o4;
     }
 }

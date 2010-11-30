@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.112.2.5 2010/11/30 18:16:02 hobbs Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.112.2.6 2010/11/30 20:59:27 andreas_kupries Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1040,6 +1040,17 @@ EXTERN void		TclBackgroundException(Tcl_Interp *interp, int code);
 /* 243 */
 EXTERN void		TclDbDumpActiveObjects(FILE *outFile);
 #endif
+/* Slot 244 is reserved */
+/* Slot 245 is reserved */
+/* Slot 246 is reserved */
+/* Slot 247 is reserved */
+/* Slot 248 is reserved */
+#ifndef TclDoubleDigits_TCL_DECLARED
+#define TclDoubleDigits_TCL_DECLARED
+/* 249 */
+EXTERN char*		TclDoubleDigits(double dv, int ndigits, int flags,
+				int*decpt, int*signum, char**endPtr);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1289,6 +1300,12 @@ typedef struct TclIntStubs {
     void *reserved241;
     void *reserved242;
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
+    void *reserved244;
+    void *reserved245;
+    void *reserved246;
+    void *reserved247;
+    void *reserved248;
+    char* (*tclDoubleDigits) (double dv, int ndigits, int flags, int*decpt, int*signum, char**endPtr); /* 249 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2007,6 +2024,15 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclDbDumpActiveObjects
 #define TclDbDumpActiveObjects \
 	(tclIntStubsPtr->tclDbDumpActiveObjects) /* 243 */
+#endif
+/* Slot 244 is reserved */
+/* Slot 245 is reserved */
+/* Slot 246 is reserved */
+/* Slot 247 is reserved */
+/* Slot 248 is reserved */
+#ifndef TclDoubleDigits
+#define TclDoubleDigits \
+	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

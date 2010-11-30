@@ -1,3 +1,31 @@
+2010-11-30  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclInt.decls: Backport of Kevin B. Kenny's work on
+	* generic/tclInt.h: the Tcl Head, with help from Jeff Hobbs.
+	* generic/tclStrToD.c:
+	* generic/tclTest.c:
+	* generic/tclTomMath.decls:
+	* generic/tclUtil.c:
+	* tests/util.test:
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc: Rewrite of Tcl_PrintDouble and TclDoubleDigits
+	that (a) fixes a severe performance problem with floating point
+	shimmering reported by Karl Lehenbauer, (b) allows TclDoubleDigits
+	to generate the digit strings for 'e' and 'f' format, so that it
+	can be used for tcl_precision != 0 (and possibly later for [format]),
+	(c) fixes [Bug 3120139] by making TclPrintDouble inherently
+	locale-independent, (d) adds test cases to util.test for
+	correct rounding in difficult cases of TclDoubleDigits where fixed-
+	precision results are requested. (e) adds test cases to util.test for
+	the controversial aspects of [Bug 3105247]. As a side effect, two
+	more modules from libtommath (bn_mp_set_int.c and bn_mp_init_set_int.c)
+	are brought into the build, since the new code uses them.
+
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclTomMathDecls.h:	Regenerated.
+
 2010-11-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclInt.decls, generic/tclInt.h, generic/tclIntDecls.h:
