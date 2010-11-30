@@ -24,11 +24,11 @@
 #include <tommath_class.h>
 
 #ifndef MIN
-   #define MIN(x,y) ((x)<(y)?(x):(y))
+#   define MIN(x,y) ((x)<(y)?(x):(y))
 #endif
 
 #ifndef MAX
-   #define MAX(x,y) ((x)>(y)?(x):(y))
+#   define MAX(x,y) ((x)>(y)?(x):(y))
 #endif
 
 #ifdef __cplusplus
@@ -47,9 +47,9 @@ extern "C" {
 
 /* detect 64-bit mode if possible */
 #if defined(__x86_64__) 
-   #if !(defined(MP_64BIT) && defined(MP_16BIT) && defined(MP_8BIT))
-      #define MP_64BIT
-   #endif
+#   if !(defined(MP_64BIT) && defined(MP_16BIT) && defined(MP_8BIT))
+#	define MP_64BIT
+#   endif
 #endif
 
 /* some default configurations.
@@ -76,19 +76,19 @@ extern "C" {
    typedef unsigned long      mp_digit;
    typedef unsigned long      mp_word __attribute__ ((mode(TI)));
 
-   #define DIGIT_BIT          60
+#  define DIGIT_BIT          60
 #else
    /* this is the default case, 28-bit digits */
    
    /* this is to make porting into LibTomCrypt easier :-) */
 #ifndef CRYPT
-   #if defined(_MSC_VER) || defined(__BORLANDC__) 
+#  if defined(_MSC_VER) || defined(__BORLANDC__)
       typedef unsigned __int64   ulong64;
       typedef signed __int64     long64;
-   #else
+#  else
       typedef unsigned long long ulong64;
       typedef signed long long   long64;
-   #endif
+#  endif
 #endif
 
    typedef unsigned long      mp_digit;
@@ -96,35 +96,35 @@ extern "C" {
 
 #ifdef MP_31BIT   
    /* this is an extension that uses 31-bit digits */
-   #define DIGIT_BIT          31
+#  define DIGIT_BIT          31
 #else
    /* default case is 28-bit digits, defines MP_28BIT as a handy macro to test */
-   #define DIGIT_BIT          28
-   #define MP_28BIT
+#  define DIGIT_BIT          28
+#  define MP_28BIT
 #endif   
 #endif
 
 /* define heap macros */
 #ifndef CRYPT
    /* default to libc stuff */
-   #ifndef XMALLOC 
-       #define XMALLOC  malloc
-       #define XFREE    free
-       #define XREALLOC realloc
-       #define XCALLOC  calloc
-   #else
+#  ifndef XMALLOC
+#     define XMALLOC  malloc
+#     define XFREE    free
+#     define XREALLOC realloc
+#     define XCALLOC  calloc
+#  else
       /* prototypes for our heap functions */
       extern void *XMALLOC(size_t n);
       extern void *XREALLOC(void *p, size_t n);
       extern void *XCALLOC(size_t n, size_t s);
       extern void XFREE(void *p);
-   #endif
+#  endif
 #endif
 
 
 /* otherwise the bits per digit is calculated automatically from the size of a mp_digit */
 #ifndef DIGIT_BIT
-   #define DIGIT_BIT     ((int)((CHAR_BIT * sizeof(mp_digit) - 1)))  /* bits per digit */
+#   define DIGIT_BIT     ((int)((CHAR_BIT * sizeof(mp_digit) - 1)))  /* bits per digit */
 #endif
 
 #define MP_DIGIT_BIT     DIGIT_BIT
@@ -165,11 +165,11 @@ extern int KARATSUBA_MUL_CUTOFF,
 
 /* default precision */
 #ifndef MP_PREC
-   #ifndef MP_LOW_MEM
-      #define MP_PREC                 32     /* default digits of precision */
-   #else
-      #define MP_PREC                 8      /* default digits of precision */
-   #endif   
+#  ifndef MP_LOW_MEM
+#     define MP_PREC                 32     /* default digits of precision */
+#  else
+#     define MP_PREC                 8      /* default digits of precision */
+#  endif
 #endif
 
 /* size of comba arrays, should be at least 2 * 2**(BITS_PER_WORD - BITS_PER_DIGIT*2) */
@@ -447,9 +447,9 @@ int mp_exptmod(mp_int *a, mp_int *b, mp_int *c, mp_int *d);
 
 /* number of primes */
 #ifdef MP_8BIT
-   #define PRIME_SIZE      31
+#  define PRIME_SIZE      31
 #else
-   #define PRIME_SIZE      256
+#  define PRIME_SIZE      256
 #endif
 
 /* table of first PRIME_SIZE primes */
@@ -573,7 +573,7 @@ void bn_reverse(unsigned char *s, int len);
 extern const char *mp_s_rmap;
 
 #ifdef __cplusplus
-   }
+}
 #endif
 
 #endif
