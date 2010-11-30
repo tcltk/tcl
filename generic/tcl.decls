@@ -53,7 +53,7 @@ declare 6 generic {
     char *Tcl_DbCkalloc(unsigned int size, const char *file, int line)
 }
 declare 7 generic {
-    int Tcl_DbCkfree(char *ptr, const char *file, int line)
+    void Tcl_DbCkfree(char *ptr, const char *file, int line)
 }
 declare 8 generic {
     char *Tcl_DbCkrealloc(char *ptr, unsigned int size,

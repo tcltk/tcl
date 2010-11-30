@@ -177,6 +177,7 @@ static const CmdInfo builtInCmds[] = {
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	1},
     {"throw",		Tcl_ThrowObjCmd,	NULL,			1},
     {"trace",		Tcl_TraceObjCmd,	NULL,			1},
+    {"try",		Tcl_TryObjCmd,		NULL,			1},
     {"unset",		Tcl_UnsetObjCmd,	NULL,			1},
     {"uplevel",		Tcl_UplevelObjCmd,	NULL,			1},
     {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	1},

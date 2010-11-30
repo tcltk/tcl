@@ -62,6 +62,9 @@ test zlib-6.2 {zlib crc32} zlib {
 test zlib-6.3 {zlib crc32} -constraints zlib -returnCodes error -body {
     zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde 42 x
 } -result {wrong # args: should be "zlib crc32 data ?startValue?"}
+test zlib-6.4 {zlib crc32: bug 2662434} -constraints zlib -body {
+    zlib crc32 "dabale arroz a la zorra el abad"
+} -result 3842832571
 
 test zlib-7.0 {zlib stream} -constraints zlib -returnCodes error -setup {
     set s [zlib stream compress]

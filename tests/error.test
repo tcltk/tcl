@@ -396,38 +396,38 @@ test error-13.1 {try with no arguments} -body {
     # warning: error message may change
     try
 } -returnCodes error -match glob -result {wrong # args: *}
-test error-13.2 {try with body only (ok) } {
+test error-13.2 {try with body only (ok)} {
     try list
 } {}
-test error-13.3 {try with missing finally body } -body {
+test error-13.3 {try with missing finally body} -body {
     # warning: error message may change
     try list finally
-} -returnCodes error -match glob -result {wrong # args: *}
-test error-13.4 {try with bad handler keyword } -body {
+} -returnCodes error -match glob -result {wrong # args to finally clause: *}
+test error-13.4 {try with bad handler keyword} -body {
     # warning: error message may change
     try list then a b c
 } -returnCodes error -match glob -result {bad handler *}
-test error-13.5 {try with partial handler #1 } -body {
+test error-13.5 {try with partial handler #1} -body {
     # warning: error message may change
     try list on
-} -returnCodes error -match glob -result {bad code *}
-test error-13.6 {try with partial handler #2 } -body {
+} -returnCodes error -match glob -result {wrong # args to on clause: *}
+test error-13.6 {try with partial handler #2} -body {
     # warning: error message may change
     try list on error
-} -returnCodes error -match glob -result {wrong # args: *}
-test error-13.7 {try with partial handler #3 } -body {
+} -returnCodes error -match glob -result {wrong # args to on clause: *}
+test error-13.7 {try with partial handler #3} -body {
     # warning: error message may change
     try list on error {em opts}
-} -returnCodes error -match glob -result {wrong # args: *}
+} -returnCodes error -match glob -result {wrong # args to on clause: *}
 test error-13.8 {try with multiple handlers and finally (ok)} {
     try list on error {} {} trap {} {} {} finally {}
 } {}
 test error-13.9 {last handler body can't be a fallthrough #1} -body {
     try list on error {} {} on break {} - 
-} -returnCodes error -match glob -result {wrong # args: *}
+} -returnCodes error -result {last non-finally clause must not have a body of "-"}
 test error-13.10 {last handler body can't be a fallthrough #2} -body {
     try list on error {} {} on break {} - finally { list d e f }
-} -returnCodes error -match glob -result {wrong # args: *}
+} -returnCodes error -result {last non-finally clause must not have a body of "-"}
 
 # try tests - multiple handlers (left-to-right matching, only one runs)
 

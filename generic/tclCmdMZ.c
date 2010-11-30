@@ -21,6 +21,18 @@
 #include "tclInt.h"
 #include "tclRegexp.h"
 
+static inline Tcl_Obj*  During(Tcl_Interp *interp, int resultCode,
+			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
+static int		TryPostBody(Tcl_Obj* handlersObj,
+			    Tcl_Obj* finallyObj, Tcl_Obj* cmdObj,
+			    Tcl_Interp *interp, int result);
+static int		TryPostFinal(Tcl_Obj* resultObj, int result,
+			    Tcl_Obj* options, Tcl_Obj* cmdObj,
+			    Tcl_Interp *interp, int finalResult);
+static int		TryPostHandler(Tcl_Obj* cmdObj,
+			    Tcl_Obj* options, Tcl_Obj* handlerObj,
+			    Tcl_Obj* finallyObj, Tcl_Interp *interp,
+			    int result);
 static int		UniCharIsAscii(int character);
 
 /*
@@ -1335,7 +1347,7 @@ StringIndexCmd(
     }
 
     /*
-     * Get Unicode or byte-array char length to calulate what 'end' means.
+     * Get the char length to calulate what 'end' means.
      */
 
     length = Tcl_GetCharLength(objv[1]);
@@ -2037,9 +2049,8 @@ StringRangeCmd(
     }
 
     /*
-     * Get the length in actual characters; this uses the unicode string rep
-     * or the byte-array rep. We then reduce it by one because 'end' refers to
-     * the last character, not one past it.
+     * Get the length in actual characters; Then reduce it by one because
+     * 'end' refers to the last character, not one past it.
      */
 
     length = Tcl_GetCharLength(objv[1]) - 1;
@@ -4017,14 +4028,13 @@ Tcl_TimeObjCmd(
     return TCL_OK;
 }
 
-#if 0 /* not yet implemented */
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_TryObjCmd --
  *
  *	This procedure is invoked to process the "try" Tcl command. See the
- *	user documentation for details on what it does.
+ *	user documentation (or TIP #329) for details on what it does.
  *
  * Results:
  *	A standard Tcl object result.
@@ -4042,19 +4052,494 @@ Tcl_TryObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRTryObjCmd, dummy, objc, objv);
-}
+    Tcl_Obj *bodyObj, *handlersObj, *finallyObj = NULL;
+    int i, bodyShared, haveHandlers, dummy, code;
+    static const char *handlerNames[] = {
+	"finally", "on", "trap", NULL
+    };
+    enum Handlers {
+	TryFinally, TryOn, TryTrap
+    };
+    static const char *exceptionNames[] = {
+	"ok", "error", "return", "break", "continue", NULL
+    };
 
-int
-TclNRTryObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    /*
+     * Parse the arguments. The handlers are passed to subsequent callbacks as
+     * a Tcl_Obj list of the 5-tuples like (type, returnCode, errorCodePrefix,
+     * bindVariables, script), and the finally script is just passed as it is.
+     */
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"body ?handler ...? ?finally script?");
+	return TCL_ERROR;
+    }
+    bodyObj = objv[1];
+    handlersObj = Tcl_NewObj();
+    bodyShared = 0;
+    haveHandlers = 0;
+    for (i=2 ; i<objc ; i++) {
+	int type;
+	Tcl_Obj *info[5];
+
+	if (Tcl_GetIndexFromObj(interp, objv[i], handlerNames, "handler type",
+		0, &type) != TCL_OK) {
+	    Tcl_DecrRefCount(handlersObj);
+	    return TCL_ERROR;
+	}
+	switch ((enum Handlers) type) {
+	case TryFinally:	/* finally script */
+	    if (i < objc-2) {
+		Tcl_AppendResult(interp, "finally clause must be last", NULL);
+		Tcl_DecrRefCount(handlersObj);
+		return TCL_ERROR;
+	    } else if (i == objc-1) {
+		Tcl_AppendResult(interp, "wrong # args to finally clause: ",
+			"must be \"", TclGetString(objv[0]),
+			" ... finally script\"", NULL);
+		Tcl_DecrRefCount(handlersObj);
+		return TCL_ERROR;
+	    }
+	    finallyObj = objv[++i];
+	    break;
+
+	case TryOn:		/* on code variableList script */
+	    if (i > objc-4) {
+		Tcl_AppendResult(interp, "wrong # args to on clause: ",
+			"must be \"", TclGetString(objv[0]),
+			" ... on code variableList script\"", NULL);
+		Tcl_DecrRefCount(handlersObj);
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIntFromObj(NULL, objv[i+1], &code) != TCL_OK
+		    && Tcl_GetIndexFromObj(NULL, objv[i+1], exceptionNames,
+			    "code", 0, &code) != TCL_OK) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad code '%s': must be integer, \"ok\", \"error\", "
+			"\"return\", \"break\" or \"continue\"",
+			Tcl_GetString(objv[i+1])));
+		Tcl_DecrRefCount(handlersObj);
+		return TCL_ERROR;
+	    }
+	    info[2] = NULL;
+	    goto commonHandler;
+
+	case TryTrap:		/* trap pattern variableList script */
+	    if (i > objc-4) {
+		Tcl_AppendResult(interp, "wrong # args to trap clause: ",
+			"must be \"... trap pattern variableList script\"",
+			NULL);
+		Tcl_DecrRefCount(handlersObj);
+		return TCL_ERROR;
+	    }
+	    code = 1;
+	    if (Tcl_ListObjLength(NULL, objv[i+1], &dummy) != TCL_OK) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad prefix '%s': must be a list",
+			Tcl_GetString(objv[i+1])));
+		Tcl_DecrRefCount(handlersObj);
+		return TCL_ERROR;
+	    }
+	    info[2] = objv[i+1];
+
+	commonHandler:
+	    if (Tcl_ListObjLength(interp, objv[i+2], &dummy) != TCL_OK) {
+		Tcl_DecrRefCount(handlersObj);
+		return TCL_ERROR;
+	    }
+
+	    info[0] = objv[i];			/* type */
+	    TclNewIntObj(info[1], code);	/* returnCode */
+	    if (info[2] == NULL) {		/* errorCodePrefix */
+		TclNewObj(info[2]);
+	    }
+	    info[3] = objv[i+2];		/* bindVariables */
+	    info[4] = objv[i+3];		/* script */
+
+	    bodyShared = !strcmp(TclGetString(objv[i+3]), "-");
+	    Tcl_ListObjAppendElement(NULL, handlersObj,
+		    Tcl_NewListObj(5, info));
+	    haveHandlers = 1;
+	    i += 3;
+	    break;
+	}
+    }
+    if (bodyShared) {
+	Tcl_AppendResult(interp,
+		"last non-finally clause must not have a body of \"-\"",
+		NULL);
+	Tcl_DecrRefCount(handlersObj);
+	return TCL_ERROR;
+    }
+    if (!haveHandlers) {
+	Tcl_DecrRefCount(handlersObj);
+	handlersObj = NULL;
+    }
+
+    /*
+     * Execute the body.
+     */
+
+    result = TclEvalObjEx(interp, bodyObj, 0,
+			  ((Interp *) interp)->cmdFramePtr, 1);
+
+    return TryPostBody (handlersObj, finallyObj, objv[0], interp, result);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * During --
+ *
+ *	This helper function patches together the updates to the interpreter's
+ *	return options that are needed when things fail during the processing
+ *	of a handler or finally script for the [try] command.
+ *
+ * Returns:
+ *	The new option dictionary.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline Tcl_Obj *
+During(
+    Tcl_Interp *interp,
+    int resultCode,		/* The result code from the just-evaluated
+				 * script. */
+    Tcl_Obj *oldOptions,	/* The old option dictionary. */
+    Tcl_Obj *errorInfo)		/* An object to append to the errorinfo and
+				 * release, or NULL if nothing is to be added.
+				 * Designed to be used with Tcl_ObjPrintf. */
 {
+    Tcl_Obj *during, *options;
 
+    if (errorInfo != NULL) {
+	Tcl_AppendObjToErrorInfo(interp, errorInfo);
+    }
+    options = Tcl_GetReturnOptions(interp, resultCode);
+    TclNewLiteralStringObj(during, "-during");
+    Tcl_IncrRefCount(during);
+    Tcl_DictObjPut(interp, options, during, oldOptions);
+    Tcl_DecrRefCount(during);
+    Tcl_IncrRefCount(options);
+    Tcl_DecrRefCount(oldOptions);
+    return options;
 }
-#endif /* not yet implemented */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TryPostBody --
+ *
+ *	Callback to andle the outcome of the execution of the body of a 'try'
+ *	command.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TryPostBody(
+    Tcl_Obj* handlersObj,
+    Tcl_Obj* finallyObj,
+    Tcl_Obj* cmdObj,
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Obj *resultObj, *options;
+    int i, dummy, code;
+
+    /*
+     * Basic processing of the outcome of the script, including adding of
+     * errorinfo trace.
+     */
+
+    resultObj = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(resultObj);
+    if (result == TCL_ERROR) {
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
+		Tcl_GetErrorLine(interp)));
+    }
+    if (handlersObj != NULL || finallyObj != NULL) {
+	options = Tcl_GetReturnOptions(interp, result);
+	Tcl_IncrRefCount(options);
+    } else {
+	options = NULL;
+    }
+    Tcl_ResetResult(interp);
+
+    /*
+     * Handle the results.
+     */
+
+    if (handlersObj != NULL) {
+	int numHandlers, found = 0;
+	Tcl_Obj **handlers, **info;
+
+	Tcl_ListObjGetElements(NULL, handlersObj, &numHandlers, &handlers);
+	for (i=0 ; i<numHandlers ; i++) {
+	    Tcl_Obj *handlerBodyObj;
+
+	    Tcl_ListObjGetElements(NULL, handlers[i], &dummy, &info);
+	    if (!found) {
+		Tcl_GetIntFromObj(NULL, info[1], &code);
+		if (code != result) {
+		    continue;
+		}
+
+		/*
+		 * When processing an error, we must also perform list-prefix
+		 * matching of the errorcode list. However, if this was an
+		 * 'on' handler, the list that we are matching against will be
+		 * empty.
+		 */
+
+		if (code == TCL_ERROR) {
+		    Tcl_Obj *errorCodeName, *errcode, **bits1, **bits2;
+		    int len1, len2, j;
+
+		    TclNewLiteralStringObj(errorCodeName, "-errorcode");
+		    Tcl_DictObjGet(NULL, options, errorCodeName, &errcode);
+		    Tcl_DecrRefCount(errorCodeName);
+		    Tcl_ListObjGetElements(NULL, info[2], &len1, &bits1);
+		    if (Tcl_ListObjGetElements(NULL, errcode, &len2,
+			    &bits2) != TCL_OK) {
+			continue;
+		    }
+		    if (len2 < len1) {
+			continue;
+		    }
+		    for (j=0 ; j<len1 ; j++) {
+			if (strcmp(TclGetString(bits1[j]),
+				TclGetString(bits2[j])) != 0) {
+			    /*
+			     * Really want 'continue outerloop;', but C does
+			     * not give us that.
+			     */
+
+			    goto didNotMatch;
+			}
+		    }
+		}
+
+		found = 1;
+	    }
+
+	    /*
+	     * Now we need to scan forward over "-" bodies. Note that we've
+	     * already checked that the last body is not a "-", so this search
+	     * will terminate successfully.
+	     */
+
+	    if (!strcmp(TclGetString(info[4]), "-")) {
+		continue;
+	    }
+
+	    /*
+	     * Bind the variables. We already know this is a list of variable
+	     * names, but it might be empty.
+	     */
+
+	    Tcl_ResetResult(interp);
+	    result = TCL_ERROR;
+	    Tcl_ListObjLength(NULL, info[3], &dummy);
+	    if (dummy > 0) {
+		Tcl_Obj *varName;
+
+		Tcl_ListObjIndex(NULL, info[3], 0, &varName);
+		if (Tcl_ObjSetVar2(interp, varName, NULL, resultObj,
+			TCL_LEAVE_ERR_MSG) == NULL) {
+		    goto handlerFailed;
+		}
+		if (dummy > 1) {
+		    Tcl_ListObjIndex(NULL, info[3], 1, &varName);
+		    if (Tcl_ObjSetVar2(interp, varName, NULL, options,
+			    TCL_LEAVE_ERR_MSG) == NULL) {
+			goto handlerFailed;
+		    }
+		}
+	    }
+
+	    /*
+	     * Evaluate the handler body and process the outcome. Note that we
+	     * need to keep the kind of handler for debugging purposes, and in
+	     * any case anything we want from info[] must be extracted right
+	     * now because the info[] array is about to become invalid. There
+	     * is very little refcount handling here however, since we know
+	     * that the objects that we still want to refer to now were input
+	     * arguments to [try] and so are still on the Tcl value stack.
+	     */
+
+	    handlerBodyObj = info[4];
+
+	    Tcl_DecrRefCount(handlersObj);
+	    result = TclEvalObjEx(interp, handlerBodyObj, 0,
+				  ((Interp *) interp)->cmdFramePtr, -1);
+
+	    return TryPostHandler (cmdObj, options, info[0], finallyObj,
+				   interp, result);
+
+	handlerFailed:
+	    options = During(interp, result, options, NULL);
+	    break;
+
+	didNotMatch:
+	    continue;
+	}
+
+	/*
+	 * No handler matched; get rid of the list of handlers.
+	 */
+
+	Tcl_DecrRefCount(handlersObj);
+    }
+
+    /*
+     * Process the finally clause.
+     */
+
+    if (finallyObj != NULL) {
+	int finalResult = TclEvalObjEx(interp, finallyObj, 0,
+				       ((Interp *) interp)->cmdFramePtr, -1);
+
+	return TryPostFinal (resultObj, result, options,
+			     cmdObj, interp, finalResult);
+    }
+
+    /*
+     * Install the correct result/options into the interpreter and clean up
+     * any temporary storage.
+     */
+
+    if (options != NULL) {
+	result = TclProcessReturn(interp, result, 0, options);
+	Tcl_DecrRefCount(options);
+    }
+    if (resultObj != NULL) {
+	Tcl_SetObjResult(interp, resultObj);
+	Tcl_DecrRefCount(resultObj);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TryPostHandler --
+ *
+ *	Callback to handle the outcome of the execution of a handler of a
+ *	'try' command.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TryPostHandler(
+    Tcl_Obj* cmdObj,
+    Tcl_Obj* options,
+    Tcl_Obj* handlerKindObj,
+    Tcl_Obj* finallyObj, 
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Obj *resultObj;
+
+    /*
+     * The handler result completely substitutes for the result of the body.
+     */
+
+    resultObj = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(resultObj);
+    if (result == TCL_ERROR) {
+	options = During(interp, result, options, Tcl_ObjPrintf(
+		"\n    (\"%s ... %s\" handler line %d)",
+		TclGetString(cmdObj), TclGetString(handlerKindObj),
+		Tcl_GetErrorLine(interp)));
+    } else {
+	Tcl_DecrRefCount(options);
+	options = Tcl_GetReturnOptions(interp, result);
+	Tcl_IncrRefCount(options);
+    }
+
+    /*
+     * Process the finally clause if it is present.
+     */
+
+    if (finallyObj != NULL) {
+	int finalResult = TclEvalObjEx(interp, finallyObj, 0,
+				       ((Interp *) interp)->cmdFramePtr, -1);
+
+	return TryPostFinal (resultObj, result, options,
+			     cmdObj, interp, finalResult);
+    }
+
+    /*
+     * Install the correct result/options into the interpreter and clean up
+     * any temporary storage.
+     */
+
+    result = TclProcessReturn(interp, result, 0, options);
+    Tcl_DecrRefCount(options);
+    Tcl_SetObjResult(interp, resultObj);
+    Tcl_DecrRefCount(resultObj);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TryPostFinal --
+ *
+ *	Callback to handle the outcome of the execution of the finally script
+ *	of a 'try' command.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TryPostFinal(
+    Tcl_Obj* resultObj,
+    int      result,
+    Tcl_Obj* options,
+    Tcl_Obj* cmdObj,
+    Tcl_Interp *interp,
+    int finalResult)
+{
+    /*
+     * If the result wasn't OK, we need to adjust the result options.
+     */
+
+    if (finalResult != TCL_OK) {
+	Tcl_DecrRefCount(resultObj);
+	resultObj = NULL;
+	result = finalResult;
+	if (result == TCL_ERROR) {
+	    options = During(interp, result, options, Tcl_ObjPrintf(
+		    "\n    (\"%s ... finally\" body line %d)",
+		    TclGetString(cmdObj), Tcl_GetErrorLine(interp)));
+	} else {
+	    Tcl_Obj *origOptions = options;
+
+	    options = Tcl_GetReturnOptions(interp, result);
+	    Tcl_IncrRefCount(options);
+	    Tcl_DecrRefCount(origOptions);
+	}
+    }
+
+    /*
+     * Install the correct result/options into the interpreter and clean up
+     * any temporary storage.
+     */
+
+    result = TclProcessReturn(interp, result, 0, options);
+    Tcl_DecrRefCount(options);
+    if (resultObj != NULL) {
+	Tcl_SetObjResult(interp, resultObj);
+	Tcl_DecrRefCount(resultObj);
+    }
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------

@@ -57,7 +57,7 @@ EXTERN char *		Tcl_Realloc(char *ptr, unsigned int size);
 EXTERN char *		Tcl_DbCkalloc(unsigned int size, const char *file,
 				int line);
 /* 7 */
-EXTERN int		Tcl_DbCkfree(char *ptr, const char *file, int line);
+EXTERN void		Tcl_DbCkfree(char *ptr, const char *file, int line);
 /* 8 */
 EXTERN char *		Tcl_DbCkrealloc(char *ptr, unsigned int size,
 				const char *file, int line);
@@ -1793,7 +1793,7 @@ typedef struct TclStubs {
     void (*tcl_Free) (char *ptr); /* 4 */
     char * (*tcl_Realloc) (char *ptr, unsigned int size); /* 5 */
     char * (*tcl_DbCkalloc) (unsigned int size, const char *file, int line); /* 6 */
-    int (*tcl_DbCkfree) (char *ptr, const char *file, int line); /* 7 */
+    void (*tcl_DbCkfree) (char *ptr, const char *file, int line); /* 7 */
     char * (*tcl_DbCkrealloc) (char *ptr, unsigned int size, const char *file, int line); /* 8 */
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, ClientData clientData); /* 9 */

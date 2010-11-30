@@ -2163,21 +2163,25 @@ TclExecuteByteCode(
 	 */
 
 	if (onlyb) {
-	    for (currPtr = &OBJ_AT_DEPTH(opnd-2); currPtr <= &OBJ_AT_TOS;
-		    currPtr++) {
+	    for (currPtr = &OBJ_AT_DEPTH(opnd-2); 
+		    appendLen >= 0 && currPtr <= &OBJ_AT_TOS; currPtr++) {
 		if ((*currPtr)->bytes != tclEmptyStringRep) {
 		    Tcl_GetByteArrayFromObj(*currPtr, &length);
 		    appendLen += length;
 		}
 	    }
 	} else {
-	    for (currPtr = &OBJ_AT_DEPTH(opnd-2); currPtr <= &OBJ_AT_TOS;
-		    currPtr++) {
+	    for (currPtr = &OBJ_AT_DEPTH(opnd-2);
+		    appendLen >= 0 && currPtr <= &OBJ_AT_TOS; currPtr++) {
 		bytes = TclGetStringFromObj(*currPtr, &length);
 		if (bytes != NULL) {
 		    appendLen += length;
 		}
 	    }
+	}
+
+	if (appendLen < 0) {
+	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
 
 	/*
@@ -2204,6 +2208,10 @@ TclExecuteByteCode(
 	objResultPtr = OBJ_AT_DEPTH(opnd-1);
 	if (!onlyb) {
 	    bytes = TclGetStringFromObj(objResultPtr, &length);
+	    if (length + appendLen < 0) {
+		Tcl_Panic("max size for a Tcl value (%d bytes) exceeded",
+			INT_MAX);
+	    }
 #if !TCL_COMPILE_DEBUG
 	    if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
 		TclFreeIntRep(objResultPtr);
@@ -2236,6 +2244,10 @@ TclExecuteByteCode(
 	    *p = '\0';
 	} else {
 	    bytes = (char *) Tcl_GetByteArrayFromObj(objResultPtr, &length);
+	    if (length + appendLen < 0) {
+		Tcl_Panic("max size for a Tcl value (%d bytes) exceeded",
+			INT_MAX);
+	    }
 #if !TCL_COMPILE_DEBUG
 	    if (!Tcl_IsShared(objResultPtr)) {
 		bytes = (char *) Tcl_SetByteArrayLength(objResultPtr,
@@ -4333,11 +4345,7 @@ TclExecuteByteCode(
 
 	valuePtr = OBJ_AT_TOS;
 
-	if (valuePtr->typePtr == &tclByteArrayType) {
-	    (void) Tcl_GetByteArrayFromObj(valuePtr, &length);
-	} else {
-	    length = Tcl_GetCharLength(valuePtr);
-	}
+	length = Tcl_GetCharLength(valuePtr);
 	TclNewIntObj(objResultPtr, length);
 	TRACE(("%.20s => %d\n", O2S(valuePtr), length));
 	NEXT_INST_F(1, 1, 1);
@@ -4357,21 +4365,9 @@ TclExecuteByteCode(
 	valuePtr = OBJ_UNDER_TOS;
 
 	/*
-	 * If we have a ByteArray object, avoid indexing in the Utf string
-	 * since the byte array contains one byte per character. Otherwise,
-	 * use the Unicode string rep to get the index'th char.
+	 * Get char length to calulate what 'end' means.
 	 */
-
-	if (valuePtr->typePtr == &tclByteArrayType) {
-	    bytes = (char *)Tcl_GetByteArrayFromObj(valuePtr, &length);
-	} else {
-	    /*
-	     * Get Unicode char length to calulate what 'end' means.
-	     */
-
-	    length = Tcl_GetCharLength(valuePtr);
-	}
-
+	length = Tcl_GetCharLength(valuePtr);
 	result = TclGetIntForIndexM(interp, value2Ptr, length - 1, &index);
 	if (result != TCL_OK) {
 	    goto checkForCatch;
@@ -4379,8 +4375,8 @@ TclExecuteByteCode(
 
 	if ((index >= 0) && (index < length)) {
 	    if (valuePtr->typePtr == &tclByteArrayType) {
-		objResultPtr = Tcl_NewByteArrayObj((unsigned char *)
-			(&bytes[index]), 1);
+		objResultPtr = Tcl_NewByteArrayObj(
+			Tcl_GetByteArrayFromObj(valuePtr, &length)+index, 1);
 	    } else if (valuePtr->bytes && length == valuePtr->length) {
 		objResultPtr = Tcl_NewStringObj((const char *)
 			(&valuePtr->bytes[index]), 1);

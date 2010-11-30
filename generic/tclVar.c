@@ -972,13 +972,9 @@ TclLookupSimpleVar(
 			flags, &varNsPtr, &dummy1Ptr, &dummy2Ptr, &tail);
 		if (varNsPtr == NULL) {
 		    *errMsgPtr = badNamespace;
-		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
-			    NULL);
 		    return NULL;
 		} else if (tail == NULL) {
 		    *errMsgPtr = missingName;
-		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
-			    NULL);
 		    return NULL;
 		}
 		if (tail != varName) {
@@ -1001,7 +997,6 @@ TclLookupSimpleVar(
 		}
 	    } else {		/* Var wasn't found and not to create it. */
 		*errMsgPtr = noSuchVar;
-		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 		return NULL;
 	    }
 	}
@@ -1038,7 +1033,6 @@ TclLookupSimpleVar(
 	    }
 	    if (varPtr == NULL) {
 		*errMsgPtr = noSuchVar;
-		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	    }
 	}
     }
@@ -3621,6 +3615,7 @@ TclPtrObjMakeUpvar(
 		myFlags|AVOID_RESOLVERS, /* create */ 1, &errMsg, &index);
 	if (varPtr == NULL) {
 	    TclObjVarErrMsg(interp, myNamePtr, NULL, "create", errMsg, -1);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	    return TCL_ERROR;
 	}
     }
