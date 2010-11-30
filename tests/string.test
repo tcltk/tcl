@@ -1868,6 +1868,7 @@ test string-28.13 {tcl::prefix longest} {
 
 # cleanup
 rename MemStress {}
+catch {rename foo {}}
 ::tcltest::cleanupTests
 return
 

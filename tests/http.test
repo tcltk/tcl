@@ -331,16 +331,24 @@ test http-3.23 {http::geturl parse failures} -body {
 test http-3.24 {http::geturl parse failures} -body {
     http::geturl http://somewhere/path?%query
 } -returnCodes error -result {Illegal encoding character usage "%qu" in URL path}
-test http-3.25 {http::meta} {
+test http-3.25 {http::meta} -setup {
+    unset -nocomplain m token
+} -body {
     set token [http::geturl $url -timeout 2000]
     array set m [http::meta $token]
     lsort [array names m]
-} {Content-Length Content-Type Date}
-test http-3.26 {http::meta} {
+} -cleanup {
+    unset -nocomplain m token
+} -result {Content-Length Content-Type Date}
+test http-3.26 {http::meta} -setup {
+    unset -nocomplain m token
+} -body {
     set token [http::geturl $url -headers {X-Check 1} -timeout 2000]
     array set m [http::meta $token]
     lsort [array names m]
-} {Content-Length Content-Type Date X-Check}
+} -cleanup {
+    unset -nocomplain m token
+} -result {Content-Length Content-Type Date X-Check}
 
 test http-4.1 {http::Event} {
     set token [http::geturl $url -keepalive 0]

@@ -2601,6 +2601,7 @@ MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
+MODULE_SCOPE void	TclFinalizeThreadObjects(void);
 MODULE_SCOPE double	TclFloor(mp_int *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
@@ -3581,12 +3582,13 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 #endif
 
 #else /* TCL_MEM_DEBUG */
-MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
+MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
+			    int line);
 
 # define TclDbNewObj(objPtr, file, line) \
     TclIncrObjsAllocated(); \
     (objPtr) = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line)); \
-    TclDbInitNewObj(objPtr); \
+    TclDbInitNewObj((objPtr), (file), (line)); \
     TCL_DTRACE_OBJ_CREATE(objPtr)
 
 # define TclNewObj(objPtr) \
@@ -4031,6 +4033,20 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
     if (--(cmdPtr)->refCount <= 0) { \
 	ckfree((char *) (cmdPtr));\
     }
+
+/*
+ * Macros for clang static analyzer
+ */
+
+#if defined(PURIFY) && defined(__clang__) && !defined(CLANG_ASSERT)
+#include <assert.h>
+#define CLANG_ASSERT(x) assert(x)
+#define Tcl_PanicEx Tcl_Panic
+#undef Tcl_Panic
+#define Tcl_Panic(f, ...) Tcl_PanicEx(f,##__VA_ARGS__); CLANG_ASSERT(0)
+#elif !defined(CLANG_ASSERT)
+#define CLANG_ASSERT(x)
+#endif
 
 /*
  *----------------------------------------------------------------

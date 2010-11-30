@@ -1369,7 +1369,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 	    [dict get $date dayOfMonth]
     } result]
     if { $status != 0 } {
-	return -code error "unable to convert date-time string \"$string\""
+	return -code error "unable to convert date-time string \"$string\": $result"
     }
 
     lassign $result parseDate parseTime parseZone parseRel \

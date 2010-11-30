@@ -76,13 +76,13 @@ static ExitHandler *firstLateExitPtr = NULL;
 TCL_DECLARE_MUTEX(exitMutex)
 
 /*
- * This variable is set to 1 when Tcl_Finalize is called, and at the end of
- * its work, it is reset to 0. The variable is checked by TclInExit() to allow
- * different behavior for exit-time processing, e.g. in closing of files and
- * pipes.
+ * This variable is set to 1 when Tcl_Exit is called.  The variable is
+ * checked by TclInExit() to allow different behavior for
+ * exit-time processing, e.g. in closing of files and pipes.
  */
 
-static int inFinalize = 0;
+static int inExit = 0;
+
 static int subsystemsInitialized = 0;
 
 /*
@@ -119,6 +119,8 @@ static void		BgErrorDeleteProc(ClientData clientData,
 static void		HandleBgErrors(ClientData clientData);
 static char *		VwaitVarProc(ClientData clientData, Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
+static void             InvokeExitHandlers(void);
+
 
 /*
  *----------------------------------------------------------------------
@@ -862,6 +864,49 @@ Tcl_SetExitProc(
 
     return prevExitProc;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InvokeExitHandlers --
+ *
+ *      Call the registered exit handlers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The exit handlers are invoked, and the ExitHandler struct is
+ *      freed.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+InvokeExitHandlers(void) 
+{
+    ExitHandler *exitPtr;
+
+    Tcl_MutexLock(&exitMutex);
+    inExit = 1;
+
+    for (exitPtr = firstExitPtr; exitPtr != NULL; exitPtr = firstExitPtr) {
+	/*
+	 * Be careful to remove the handler from the list before invoking its
+	 * callback. This protects us against double-freeing if the callback
+	 * should call Tcl_DeleteExitHandler on itself.
+	 */
+
+	firstExitPtr = exitPtr->nextPtr;
+	Tcl_MutexUnlock(&exitMutex);
+	(*exitPtr->proc)(exitPtr->clientData);
+	ckfree((char *) exitPtr);
+	Tcl_MutexLock(&exitMutex);
+    }
+    firstExitPtr = NULL;
+    Tcl_MutexUnlock(&exitMutex);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -904,7 +949,14 @@ Tcl_Exit(
 	 * Use default handling.
 	 */
 
-	Tcl_Finalize();
+	InvokeExitHandlers();
+
+	/*
+	 * This triggers a flush of the Tcl_Channels that may have
+	 * data enqueued.
+	 */
+	TclFinalizeIOSubsystem();
+
 	TclpExit(status);
 	Tcl_Panic("OS exit failed!");
     }
@@ -938,8 +990,8 @@ Tcl_Exit(
 void
 TclInitSubsystems(void)
 {
-    if (inFinalize != 0) {
-	Tcl_Panic("TclInitSubsystems called while finalizing");
+    if (inExit != 0) {
+	Tcl_Panic("TclInitSubsystems called while exiting");
     }
 
     if (subsystemsInitialized == 0) {
@@ -993,9 +1045,8 @@ TclInitSubsystems(void)
  * Tcl_Finalize --
  *
  *	Shut down Tcl. First calls registered exit handlers, then carefully
- *	shuts down various subsystems.  Called by Tcl_Exit, or should be
- *	invoked by user before the Tcl shared library is being unloaded in
- *	an embedded context.
+ *	shuts down various subsystems.  Should be invoked by user before the
+ *	Tcl shared library is being unloaded in an embedded context.
  *
  * Results:
  *	None.
@@ -1010,28 +1061,10 @@ void
 Tcl_Finalize(void)
 {
     ExitHandler *exitPtr;
-
     /*
      * Invoke exit handlers first.
      */
-
-    Tcl_MutexLock(&exitMutex);
-    inFinalize = 1;
-    for (exitPtr = firstExitPtr; exitPtr != NULL; exitPtr = firstExitPtr) {
-	/*
-	 * Be careful to remove the handler from the list before invoking its
-	 * callback. This protects us against double-freeing if the callback
-	 * should call Tcl_DeleteExitHandler on itself.
-	 */
-
-	firstExitPtr = exitPtr->nextPtr;
-	Tcl_MutexUnlock(&exitMutex);
-	exitPtr->proc(exitPtr->clientData);
-	ckfree((char *) exitPtr);
-	Tcl_MutexLock(&exitMutex);
-    }
-    firstExitPtr = NULL;
-    Tcl_MutexUnlock(&exitMutex);
+    InvokeExitHandlers();   
 
     TclpInitLock();
     if (subsystemsInitialized == 0) {
@@ -1187,7 +1220,6 @@ Tcl_Finalize(void)
      */
 
     TclFinalizeMemorySubsystem();
-    inFinalize = 0;
 
   alreadyFinalized:
     TclFinalizeLock();
@@ -1241,6 +1273,7 @@ Tcl_FinalizeThread(void)
 	TclFinalizeIOSubsystem();
 	TclFinalizeNotifier();
 	TclFinalizeAsync();
+	TclFinalizeThreadObjects();
     }
 
     /*
@@ -1275,7 +1308,7 @@ Tcl_FinalizeThread(void)
 int
 TclInExit(void)
 {
-    return inFinalize;
+    return inExit;
 }
 
 /*

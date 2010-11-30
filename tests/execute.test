@@ -945,6 +945,7 @@ test execute-8.4 {Compile epoch bump effect on stack trace} -setup {
 } -cleanup {
     rename foo {}
     rename FOO {}
+    unset -nocomplain m o stack1 stack2
 } -result {}
 
 test execute-9.1 {Interp result resetting [Bug 1522803]} {
@@ -964,6 +965,19 @@ test execute-9.1 {Interp result resetting [Bug 1522803]} {
 test execute-10.1 {TclExecuteByteCode, INST_CONCAT1, bytearrays} {
     apply {s {binary scan $s c x; list $x [scan $s$s %c%c]}} \u0130
 } {48 {304 304}}
+
+test execute-10.2 {Bug 2802881} -setup {
+    interp create slave
+} -body {
+    # If [Bug 2802881] is not fixed, this will segfault
+    slave eval {
+	trace add variable ::errorInfo write {expr {$foo} ;#}
+	proc demo {} {a {}{}}
+	demo
+    }
+} -cleanup {
+    interp delete slave
+} -returnCodes error -match glob -result *
 
 # cleanup
 if {[info commands testobj] != {}} {

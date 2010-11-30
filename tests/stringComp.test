@@ -714,5 +714,6 @@ test stringComp-11.54 {string match, failure} {
 ## not yet bc
 
 # cleanup
+catch {rename foo {}}
 ::tcltest::cleanupTests
 return

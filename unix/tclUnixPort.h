@@ -620,5 +620,7 @@ MODULE_SCOPE struct passwd*  TclpGetPwUid(uid_t uid);
 MODULE_SCOPE struct group*   TclpGetGrGid(gid_t gid);
 MODULE_SCOPE struct hostent* TclpGetHostByName(const char *name);
 MODULE_SCOPE struct hostent* TclpGetHostByAddr(const char *addr, int length, int type);
+MODULE_SCOPE Tcl_Channel     TclpMakeTcpClientChannelMode(ClientData tcpSocket, int mode);
+
 
 #endif /* _TCLUNIXPORT */

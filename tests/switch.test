@@ -739,6 +739,7 @@ test switch-14.16 {switch -regexp compilation} {
 } no
 
 # cleanup
+catch {rename foo {}}
 ::tcltest::cleanupTests
 return
 

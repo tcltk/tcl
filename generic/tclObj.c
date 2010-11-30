@@ -56,9 +56,24 @@ char *tclEmptyStringRep = &tclEmptyString;
 
 #if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
 /*
+ * Structure for tracking the source file and line number where a given Tcl_Obj
+ * was allocated.  We also track the pointer to the Tcl_Obj itself, for sanity
+ * checking purposes.
+ */
+
+typedef struct ObjData {
+    Tcl_Obj *objPtr;		/* The pointer to the allocated Tcl_Obj. */
+    const char *file;		/* The name of the source file calling this
+				 * function; used for debugging. */
+    int line;			/* Line number in the source file; used for
+				 * debugging. */
+} ObjData;
+
+/*
  * Thread local table that is used to check that a Tcl_Obj was not allocated
  * by some other thread.
  */
+
 typedef struct ThreadSpecificData {
     Tcl_HashTable *objThreadMap;
 } ThreadSpecificData;
@@ -393,6 +408,49 @@ TclInitObjSubsystem(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclFinalizeThreadObjects --
+ *
+ *	This function is called by Tcl_FinalizeThread to clean up thread
+ *	specific Tcl_Obj information.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFinalizeThreadObjects(void)
+{
+#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch hSearch;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    Tcl_HashTable *tablePtr = tsdPtr->objThreadMap;
+
+    if (tablePtr != NULL) {
+	for (hPtr = Tcl_FirstHashEntry(tablePtr, &hSearch);
+		hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
+	    ObjData *objData = Tcl_GetHashValue(hPtr);
+
+	    if (objData != NULL) {
+		ckfree((char *) objData);
+	    }
+	}
+
+	Tcl_DeleteHashTable(tablePtr);
+	ckfree((char *) tablePtr);
+	tsdPtr->objThreadMap = NULL;
+    }
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclFinalizeObjects --
  *
  *	This function is called by Tcl_Finalize to clean up all registered
@@ -595,6 +653,55 @@ Tcl_ConvertToType(
 }
 
 /*
+ *--------------------------------------------------------------
+ *
+ * TclDbDumpActiveObjects --
+ *
+ *	This function is called to dump all of the active Tcl_Obj structs this
+ *	allocator knows about.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+
+void
+TclDbDumpActiveObjects(
+    FILE *outFile)
+{
+#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+    Tcl_HashSearch hSearch;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashTable *tablePtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    tablePtr = tsdPtr->objThreadMap;
+
+    if (tablePtr != NULL) {
+	fprintf(outFile, "total objects: %d\n", tablePtr->numEntries);
+	for (hPtr = Tcl_FirstHashEntry(tablePtr, &hSearch); hPtr != NULL;
+		hPtr = Tcl_NextHashEntry(&hSearch)) {
+	    ObjData *objData = Tcl_GetHashValue(hPtr);
+
+	    if (objData != NULL) {
+		fprintf(outFile,
+			"key = 0x%p, objPtr = 0x%p, file = %s, line = %d\n",
+			Tcl_GetHashKey(tablePtr, hPtr), objData->objPtr,
+			objData->file, objData->line);
+	    } else {
+		fprintf(outFile, "key = 0x%p\n",
+			Tcl_GetHashKey(tablePtr, hPtr));
+	    }
+	}
+    }
+#endif
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * TclDbInitNewObj --
@@ -615,7 +722,11 @@ Tcl_ConvertToType(
 #ifdef TCL_MEM_DEBUG
 void
 TclDbInitNewObj(
-    register Tcl_Obj *objPtr)
+    register Tcl_Obj *objPtr,
+    register const char *file,	/* The name of the source file calling this
+				 * function; used for debugging. */
+    register int line)		/* Line number in the source file; used for
+				 * debugging. */
 {
     objPtr->refCount = 0;
     objPtr->bytes = tclEmptyStringRep;
@@ -632,6 +743,7 @@ TclDbInitNewObj(
 	Tcl_HashEntry *hPtr;
 	Tcl_HashTable *tablePtr;
 	int isNew;
+	ObjData *objData;
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (tsdPtr->objThreadMap == NULL) {
@@ -644,7 +756,16 @@ TclDbInitNewObj(
 	if (!isNew) {
 	    Tcl_Panic("expected to create new entry for object map");
 	}
-	Tcl_SetHashValue(hPtr, NULL);
+
+	/*
+	 * Record the debugging information.
+	 */
+
+	objData = (ObjData *) ckalloc(sizeof(ObjData));
+	objData->objPtr = objPtr;
+	objData->file = file;
+	objData->line = line;
+	Tcl_SetHashValue(hPtr, objData);
     }
 #endif /* TCL_THREADS */
 }
@@ -3207,8 +3328,17 @@ Tcl_DbDecrRefCount(
 		    "Tcl_Obj allocated in another thread");
 	}
 
-	/* If the Tcl_Obj is going to be deleted, remove the entry */
-	if ((((objPtr)->refCount) - 1) <= 0) {
+	/*
+	 * If the Tcl_Obj is going to be deleted, remove the entry.
+	 */
+
+	if ((objPtr->refCount - 1) <= 0) {
+	    ObjData *objData = Tcl_GetHashValue(hPtr);
+
+	    if (objData != NULL) {
+		ckfree((char *) objData);
+	    }
+
 	    Tcl_DeleteHashEntry(hPtr);
 	}
     }

@@ -1891,7 +1891,6 @@ TclProcCompileProc(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_CallFrame *framePtr;
-    Proc *saveProcPtr;
     ByteCode *codePtr = bodyPtr->internalRep.otherValuePtr;
 
     /*
@@ -1961,7 +1960,6 @@ TclProcCompileProc(
  	 *   appropriate class context.
  	 */
 
- 	saveProcPtr = iPtr->compiledProcPtr;
  	iPtr->compiledProcPtr = procPtr;
 
 	if (procPtr->numCompiledLocals > procPtr->numArgs) {
@@ -2007,7 +2005,6 @@ TclProcCompileProc(
 	tclByteCodeType.setFromAnyProc(interp, bodyPtr);
 	iPtr->invokeCmdFramePtr = NULL;
 	TclPopStackFrame(interp);
- 	iPtr->compiledProcPtr = saveProcPtr;
     } else if (codePtr->nsEpoch != nsPtr->resolverEpoch) {
 	/*
 	 * The resolver epoch has changed, but we only need to invalidate the
