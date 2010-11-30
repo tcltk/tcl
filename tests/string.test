@@ -1676,6 +1676,9 @@ test string-26.1 {tcl::prefix, too few args} -body {
 test string-26.2 {tcl::prefix, bad args} -body {
     tcl::prefix match a b c
 } -returnCodes 1 -result {bad option "a": must be -error, -exact, or -message}
+test string-26.2.1 {tcl::prefix, empty table} -body {
+    tcl::prefix match {} foo
+} -returnCodes 1 -result {bad option "foo": no valid options}
 test string-26.3 {tcl::prefix, bad args} -body {
     tcl::prefix match -error "{}x" -exact str1 str2
 } -returnCodes 1 -result {list element in braces followed by "x" instead of space}

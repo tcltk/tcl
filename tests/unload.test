@@ -40,6 +40,10 @@ set alreadyTotalLoaded [info loaded]
 # Certain tests require the 'teststaticpkg' command from tcltest
 testConstraint teststaticpkg [llength [info commands teststaticpkg]]
 
+# Certain tests need the 'testsimplefilsystem' in tcltest
+testConstraint testsimplefilesystem \
+	[llength [info commands testsimplefilesystem]]
+
 # Basic tests: parameter testing...
 test unload-1.1 {basic errors} -returnCodes error -body {
     unload
@@ -213,9 +217,28 @@ test unload-4.6 {basic unloading of unloadable package from a safe interpreter, 
 	    [child-trusted eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
 } {{. {} {}} {} {} {. . .}}
 
+test unload-5.1 {unload a module loaded from vfs} \
+     -constraints [list $dll $loaded testsimplefilesystem] \
+     -setup {
+	 set dir [pwd]
+	 cd $testDir
+	 testsimplefilesystem 1
+	 load simplefs:/pkgua$ext pkgua
+     } \
+    -body {
+	list [catch {unload simplefs:/pkgua$ext} msg] $msg
+    } \
+    -result {0 {}}
+
+
+
 # cleanup
 interp delete child
 interp delete child-trusted
 unset ext
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

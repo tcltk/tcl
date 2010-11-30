@@ -408,12 +408,12 @@ test proc-old-7.5 {return with special completion code} {
 test proc-old-7.6 {return with special completion code} {
     list [catch {tproc -14} msg] $msg
 } {-14 abc}
-test proc-old-7.7 {return with special completion code} {
-    list [catch {tproc gorp} msg] $msg
-} {1 {bad completion code "gorp": must be ok, error, return, break, continue, or an integer}}
-test proc-old-7.8 {return with special completion code} {
-    list [catch {tproc 10b} msg] $msg
-} {1 {bad completion code "10b": must be ok, error, return, break, continue, or an integer}}
+test proc-old-7.7 {return with special completion code} -body {
+    tproc err
+} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
+test proc-old-7.8 {return with special completion code} -body {
+    tproc 10b
+} -returnCodes error -match glob -result {bad completion code "10b": must be ok, error, return, break, continue*, or an integer}
 test proc-old-7.9 {return with special completion code} {
     proc tproc2 {} {
 	tproc return
