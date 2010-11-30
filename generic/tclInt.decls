@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.121.2.6 2010/11/30 18:16:02 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.121.2.7 2010/11/30 20:59:27 andreas_kupries Exp $
 
 library tcl
 
@@ -938,6 +938,11 @@ declare 236 generic {
 # Tcl_Obj leak detection support.
 declare 243 generic {
     void TclDbDumpActiveObjects(FILE *outFile)
+}
+
+declare 249 {
+    char* TclDoubleDigits(double dv, int ndigits, int flags,
+			  int* decpt, int* signum, char** endPtr)
 }
 
 

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.97.2.7 2010/11/30 18:16:02 hobbs Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.97.2.8 2010/11/30 20:59:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2232,22 +2232,14 @@ Tcl_PrintDouble(
 				 * at least TCL_DOUBLE_SPACE characters. */
 {
     char *p, c;
-    int exp;
+    int exponent;
     int signum;
-    char buffer[TCL_DOUBLE_SPACE];
-    Tcl_UniChar ch;
+    char* digits;
+    char* end;
 
     int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int)sizeof(int));
 
     /*
-     * If *precisionPtr == 0, then use TclDoubleDigits to develop a decimal
-     * significand and exponent, then format it in E or F format as
-     * appropriate. If *precisionPtr != 0, use the native sprintf and then add
-     * a trailing ".0" if there is no decimal point in the rep.
-     */
-
-    if (*precisionPtr == 0) {
-	/*
 	 * Handle NaN.
 	 */
 
@@ -2261,10 +2253,14 @@ Tcl_PrintDouble(
 	 */
 
 	if (TclIsInfinite(value)) {
+	/*
+	 * Remember to copy the terminating NUL too.
+	 */
+	
 	    if (value < 0) {
-		strcpy(dst, "-Inf");
+	    memcpy(dst, "-Inf", 5);
 	    } else {
-		strcpy(dst, "Inf");
+	    memcpy(dst, "Inf", 4);
 	    }
 	    return;
 	}
@@ -2273,12 +2269,18 @@ Tcl_PrintDouble(
 	 * Ordinary (normal and denormal) values.
 	 */
 
-	exp = TclDoubleDigits(buffer, value, &signum);
+    if (*precisionPtr == 0) {
+	digits = TclDoubleDigits(value, -1, TCL_DD_SHORTEST,
+				 &exponent, &signum, &end);
+    } else {
+	digits = TclDoubleDigits(value, *precisionPtr, TCL_DD_E_FORMAT, 
+				 &exponent, &signum, &end);
+    }
 	if (signum) {
 	    *dst++ = '-';
 	}
-	p = buffer;
-	if (exp < -3 || exp > 17) {
+    p = digits;
+    if (exponent < -4 || exponent > 16) {
 	    /*
 	     * E format for numbers < 1e-3 or >= 1e17.
 	     */
@@ -2292,17 +2294,17 @@ Tcl_PrintDouble(
 		    c = *++p;
 		}
 	    }
-	    sprintf(dst, "e%+d", exp-1);
+	sprintf(dst, "e%+d", exponent);
 	} else {
 	    /*
 	     * F format for others.
 	     */
 
-	    if (exp <= 0) {
+	if (exponent < 0) {
 		*dst++ = '0';
 	    }
 	    c = *p;
-	    while (exp-- > 0) {
+	while (exponent-- >= 0) {
 		if (c != '\0') {
 		    *dst++ = c;
 		    c = *++p;
@@ -2314,7 +2316,7 @@ Tcl_PrintDouble(
 	    if (c == '\0') {
 		*dst++ = '0';
 	    } else {
-		while (++exp < 0) {
+	    while (++exponent < -1) {
 		    *dst++ = '0';
 		}
 		while (c != '\0') {
@@ -2324,35 +2326,7 @@ Tcl_PrintDouble(
 	    }
 	    *dst++ = '\0';
 	}
-    } else {
-	/*
-	 * tcl_precision is supplied, pass it to the native sprintf.
-	 */
-
-	sprintf(dst, "%.*g", *precisionPtr, value);
-
-	/*
-	 * If the ASCII result looks like an integer, add ".0" so that it
-	 * doesn't look like an integer anymore. This prevents floating-point
-	 * values from being converted to integers unintentionally. Check for
-	 * ASCII specifically to speed up the function.
-	 */
-
-	for (p = dst; *p != 0;) {
-	    if (UCHAR(*p) < 0x80) {
-		c = *p++;
-	    } else {
-		p += Tcl_UtfToUniChar(p, &ch);
-		c = UCHAR(ch);
-	    }
-	    if ((c == '.') || isalpha(UCHAR(c))) {	/* INTL: ISO only. */
-		return;
-	    }
-	}
-	p[0] = '.';
-	p[1] = '0';
-	p[2] = 0;
-    }
+    ckfree(digits);
 }
 
 /*
