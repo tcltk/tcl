@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.198 2010/11/28 23:20:11 kennykb Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.199 2010/11/30 18:17:26 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -80,7 +80,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 21 */
     TclFindElement, /* 22 */
     TclFindProc, /* 23 */
-    0, /* 24 */
+    TclFormatInt, /* 24 */
     TclFreePackageInfo, /* 25 */
     0, /* 26 */
     0, /* 27 */
