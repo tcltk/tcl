@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.362.2.15 2010/11/15 21:32:32 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.362.2.16 2010/11/30 18:16:02 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -3735,17 +3735,6 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
  */
 
 #define TclMatchIsTrivial(pattern)	strpbrk((pattern), "*[?\\") == NULL
-
-/*
- *----------------------------------------------------------------
- * Macro used by the Tcl core to write the string rep of a long integer to a
- * character buffer. The ANSI C "prototype" for this macro is:
- *
- * MODULE_SCOPE int	TclFormatInt(char *buf, long n);
- *----------------------------------------------------------------
- */
-
-#define TclFormatInt(buf, n)		sprintf((buf), "%ld", (long)(n))
 
 /*
  *----------------------------------------------------------------
