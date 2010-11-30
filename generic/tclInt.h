@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.487 2010/11/28 23:20:11 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.488 2010/11/30 18:17:26 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -4218,18 +4218,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TclMatchIsTrivial(pattern) \
     (strpbrk((pattern), "*[?\\") == NULL)
-
-/*
- *----------------------------------------------------------------
- * Macro used by the Tcl core to write the string rep of a long integer to a
- * character buffer. The ANSI C "prototype" for this macro is:
- *
- * MODULE_SCOPE int	TclFormatInt(char *buf, long n);
- *----------------------------------------------------------------
- */
-
-#define TclFormatInt(buf, n) \
-    sprintf((buf), "%ld", (long)(n))
 
 /*
  *----------------------------------------------------------------
