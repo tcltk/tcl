@@ -4053,7 +4053,7 @@ Tcl_TryObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *bodyObj, *handlersObj, *finallyObj = NULL;
-    int i, bodyShared, haveHandlers, dummy, code;
+    int i, bodyShared, haveHandlers, dummy1, code, result;
     static const char *handlerNames[] = {
 	"finally", "on", "trap", NULL
     };
@@ -4134,7 +4134,7 @@ Tcl_TryObjCmd(
 		return TCL_ERROR;
 	    }
 	    code = 1;
-	    if (Tcl_ListObjLength(NULL, objv[i+1], &dummy) != TCL_OK) {
+	    if (Tcl_ListObjLength(NULL, objv[i+1], &dummy1) != TCL_OK) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad prefix '%s': must be a list",
 			Tcl_GetString(objv[i+1])));
@@ -4144,7 +4144,7 @@ Tcl_TryObjCmd(
 	    info[2] = objv[i+1];
 
 	commonHandler:
-	    if (Tcl_ListObjLength(interp, objv[i+2], &dummy) != TCL_OK) {
+	    if (Tcl_ListObjLength(interp, objv[i+2], &dummy1) != TCL_OK) {
 		Tcl_DecrRefCount(handlersObj);
 		return TCL_ERROR;
 	    }

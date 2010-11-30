@@ -564,6 +564,13 @@ InitDefineContext(
     CallFrame *framePtr, **framePtrPtr = &framePtr;
     int result;
 
+    if (namespacePtr == NULL) {
+	Tcl_AppendResult(interp,
+		"cannot process definitions; support namespace deleted",
+		NULL);
+	return TCL_ERROR;
+    }
+
     /* framePtrPtr is needed to satisfy GCC 3.3's strict aliasing rules */
 
     result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,

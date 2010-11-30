@@ -685,23 +685,14 @@ TclOOSelfObjCmd(
 		contextPtr->oPtr->namespacePtr->fullName,-1));
 	return TCL_OK;
     case SELF_CLASS: {
-	Method *mPtr = CurrentlyInvoked(contextPtr).mPtr;
-	Object *declarerPtr;
+	Class *clsPtr = CurrentlyInvoked(contextPtr).mPtr->declaringClassPtr;
 
-	if (mPtr->declaringClassPtr != NULL) {
-	    declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	} else if (mPtr->declaringObjectPtr != NULL) {
-	    declarerPtr = mPtr->declaringObjectPtr;
-	} else {
-	    /*
-	     * This should be unreachable code.
-	     */
-
-	    Tcl_AppendResult(interp, "method without declarer!", NULL);
+	if (clsPtr == NULL) {
+	    Tcl_AppendResult(interp, "method not defined by a class", NULL);
 	    return TCL_ERROR;
 	}
 
-	Tcl_SetObjResult(interp, TclOOObjectName(interp, declarerPtr));
+	Tcl_SetObjResult(interp, TclOOObjectName(interp, clsPtr->thisPtr));
 	return TCL_OK;
     }
     case SELF_METHOD:

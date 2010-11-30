@@ -13,7 +13,7 @@
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.7.3
+package provide http 2.7.6
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -27,7 +27,13 @@ namespace eval http {
 	    -proxyfilter http::ProxyRequired
 	    -urlencoding utf-8
 	}
-	set http(-useragent) "Tcl http client package [package provide http]"
+	# We need a useragent string of this style or various servers will refuse to
+	# send us compressed content even when we ask for it. This follows the
+	# de-facto layout of user-agent strings in current browsers.
+	set http(-useragent) "Mozilla/5.0\
+            ([string totitle $::tcl_platform(platform)]; U;\
+            $::tcl_platform(os) $::tcl_platform(osVersion))\
+            http/[package provide http] Tcl/[package provide Tcl]"
     }
 
     proc init {} {
@@ -94,7 +100,7 @@ namespace eval http {
 # Arguments:
 #     msg	Message to output
 #
-proc http::Log {args} {}
+if {[info command http::Log] eq {}} { proc http::Log {args} {} }
 
 # http::register --
 #
@@ -195,7 +201,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     if {
 	($state(status) eq "timeout") || ($state(status) eq "error") ||
 	([info exists state(connection)] && ($state(connection) eq "close"))
-    } then {
+    } {
         CloseSocket $state(sock) $token
     }
     if {[info exists state(after)]} {
@@ -363,7 +369,7 @@ proc http::geturl {url args} {
 	    if {
 		[info exists type($flag)] &&
 		![string is $type($flag) -strict $value]
-	    } then {
+	    } {
 		unset $token
 		return -code error \
 		    "Bad value for $flag ($value), must be $type($flag)"
@@ -433,7 +439,7 @@ proc http::geturl {url args} {
 	    ( [^/:\#?]+ )		# <host part of authority>
 	    (?: : (\d+) )?		# <port part of authority>
 	)?
-	( / [^\#?]* (?: \? [^\#?]* )?)?	# <path> (including query)
+	( / [^\#]*)?			# <path> (including query)
 	(?: \# (.*) )?			# <fragment>
 	$
     }
@@ -699,7 +705,7 @@ proc http::geturl {url args} {
 	    ([package vsatisfies [package provide Tcl] 8.6]
 		|| [llength [package provide zlib]]) &&
 	    !([info exists state(-channel)] || [info exists state(-handler)])
-        } then {
+        } {
 	    puts $sock "Accept-Encoding: gzip, identity, *;q=0.1"
         }
 	if {$isQueryChannel && $state(querylength) == 0} {
@@ -755,7 +761,7 @@ proc http::geturl {url args} {
 		return -code error [lindex $state(error) 0]
 	    }
 	}
-    } err]} then {
+    } err]} {
 	# The socket probably was never connected, or the connection dropped
 	# later.
 
@@ -863,7 +869,7 @@ proc http::Connect {token} {
     if {
 	[eof $state(sock)] ||
 	[string length [fconfigure $state(sock) -error]]
-    } then {
+    } {
 	Finish $token "connect failed [fconfigure $state(sock) -error]" 1
     } else {
 	set state(status) connect
@@ -902,7 +908,6 @@ proc http::Write {token} {
 	    incr state(queryoffset) $state(-queryblocksize)
 	    if {$state(queryoffset) >= $state(querylength)} {
 		set state(queryoffset) $state(querylength)
-		puts $sock ""
 		set done 1
 	    }
 	} else {
@@ -915,7 +920,7 @@ proc http::Write {token} {
 		set done 1
 	    }
 	}
-    } err]} then {
+    } err]} {
 	# Do not call Finish here, but instead let the read half of the socket
 	# process whatever server reply there is to get.
 
@@ -962,9 +967,10 @@ proc http::Event {sock token} {
 	return
     }
     if {$state(state) eq "connecting"} {
-	set state(state) "header"
 	if {[catch {gets $sock state(http)} n]} {
 	    return [Finish $token $n]
+	} elseif {$n >= 0} {
+	    set state(state) "header"
 	}
     } elseif {$state(state) eq "header"} {
 	if {[catch {gets $sock line} n]} {
@@ -993,7 +999,7 @@ proc http::Event {sock token} {
 			&& ($state(connection) eq "close"))
 		    || [info exists state(transfer)])
 		&& ($state(totalsize) == 0)
-	    } then {
+	    } {
 		Log "body size is 0 and no events likely - complete."
 		Eof $token
 		return
@@ -1004,14 +1010,14 @@ proc http::Event {sock token} {
 
 	    if {
 		$state(-binary) || ![string match -nocase text* $state(type)]
-	    } then {
+	    } {
 		# Turn off conversions for non-text data
 		set state(binary) 1
 	    }
 	    if {
 		$state(binary) || [string match *gzip* $state(coding)] ||
 		[string match *compress* $state(coding)]
-	    } then {
+	    } {
 		if {[info exists state(-channel)]} {
 		    fconfigure $state(-channel) -translation binary
 		}
@@ -1019,7 +1025,7 @@ proc http::Event {sock token} {
 	    if {
 		[info exists state(-channel)] &&
 		![info exists state(-handler)]
-	    } then {
+	    } {
 		# Initiate a sequence of background fcopies
 		fileevent $sock readable {}
 		CopyStart $sock $token
@@ -1032,8 +1038,14 @@ proc http::Event {sock token} {
 		    content-type {
 			set state(type) [string trim [string tolower $value]]
 			# grab the optional charset information
-			regexp -nocase {charset\s*=\s*(\S+?);?} \
-			    $state(type) -> state(charset)
+			if {[regexp -nocase \
+				 {charset\s*=\s*\"((?:[^""]|\\\")*)\"} \
+				 $state(type) -> cs]} {
+			    set state(charset) [string map {{\"} \"} $cs]
+			} else {
+			    regexp -nocase {charset\s*=\s*(\S+?);?} \
+				$state(type) -> state(charset)
+			}
 		    }
 		    content-length {
 			set state(totalsize) [string trim $value]
@@ -1072,7 +1084,7 @@ proc http::Event {sock token} {
 	    } elseif {
 		[info exists state(transfer)]
 		&& $state(transfer) eq "chunked"
-	    } then {
+	    } {
 		set size 0
 		set chunk [getTextLine $sock]
 		set n [string length $chunk]
@@ -1112,11 +1124,11 @@ proc http::Event {sock token} {
 		if {
 		    ($state(totalsize) > 0)
 		    && ($state(currentsize) >= $state(totalsize))
-		} then {
+		} {
 		    Eof $token
 		}
 	    }
-	} err]} then {
+	} err]} {
 	    return [Finish $token $err]
 	} else {
 	    if {[info exists state(-progress)]} {
@@ -1175,7 +1187,7 @@ proc http::CopyStart {sock token} {
     if {[catch {
 	fcopy $sock $state(-channel) -size $state(-blocksize) -command \
 	    [list http::CopyDone $token]
-    } err]} then {
+    } err]} {
 	Finish $token $err
     }
 }
@@ -1238,7 +1250,7 @@ proc http::Eof {token {force 0}} {
 	    } else {
 		set state(body) [Gunzip $state(body)]
 	    }
-        } err]} then {
+        } err]} {
 	    return [Finish $token $err]
         }
     }
@@ -1356,7 +1368,7 @@ proc http::ProxyRequired {host} {
 	if {
 	    ![info exists http(-proxyport)] ||
 	    ![string length $http(-proxyport)]
-	} then {
+	} {
 	    set http(-proxyport) 8080
 	}
 	return [list $http(-proxyhost) $http(-proxyport)]

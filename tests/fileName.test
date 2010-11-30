@@ -1277,6 +1277,18 @@ test filename-14.25.1 {type specific globbing} {win} {
 test filename-14.26 {type specific globbing} {
     glob -nocomplain -dir globTest -types {readonly} *
 } {}
+test filename-14.27 {Bug 2710920} {unixOrPc} {
+    file tail [lindex [lsort [glob globTest/*/]] 0]
+} a1
+test filename-14.28 {Bug 2710920} {unixOrPc} {
+    file dirname [lindex [lsort [glob globTest/*/]] 0]
+} globTest
+test filename-14.29 {Bug 2710920} {unixOrPc} {
+    file extension [lindex [lsort [glob globTest/*/]] 0]
+} {}
+test filename-14.30 {Bug 2710920} {unixOrPc} {
+    file rootname [lindex [lsort [glob globTest/*/]] 0]
+} globTest/a1/
 
 unset globname
 

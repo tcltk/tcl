@@ -357,6 +357,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclMacOSXSetFileAttribute, /* 16 */
     TclMacOSXCopyFileAttributes, /* 17 */
     TclMacOSXMatchType, /* 18 */
+    TclMacOSXNotifierAddRunLoopMode, /* 19 */
 #endif /* MACOSX */
 };
 
