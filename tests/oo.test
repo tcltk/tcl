@@ -1308,7 +1308,7 @@ test oo-16.2 {OO: object introspection} -body {
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, mixins, variables, or vars}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, mixins, namespace, variables, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
     [meta create instance1] create instance2
@@ -1405,6 +1405,14 @@ test oo-16.12 {OO: object introspection} -setup {
     oo::objdefine foo unexport {*}[info object methods foo -all]
     info object methods foo -all
 } -result {}
+test oo-16.13 {OO: object introspection} -setup {
+    oo::object create foo
+} -cleanup {
+    rename foo {}
+} -body {
+    oo::objdefine foo method Bar {} {return "ok in foo"}
+    [info object namespace foo]::my Bar
+} -result "ok in foo"
 
 test oo-17.1 {OO: class introspection} -body {
     info class

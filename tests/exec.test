@@ -39,6 +39,7 @@ set path(cat) [makeFile {
     if {$argv eq ""} {
 	set argv -
     }
+    fconfigure stdout -translation binary
     foreach name $argv {
 	if {$name eq "-"} {
 	    set f stdin
@@ -46,6 +47,7 @@ set path(cat) [makeFile {
 	    puts stderr $f
 	    continue
 	}
+	fconfigure $f -translation binary
 	while {[eof $f] == 0} {
 	    puts -nonewline [read $f]
 	}
@@ -72,7 +74,7 @@ set path(sh) [makeFile {
     set newcmd {}
     foreach arg $cmd {
 	if {$arg eq ";"} {
-	    eval exec >@stdout 2>@stderr [list [info nameofexecutable]] $newcmd
+	    exec >@stdout 2>@stderr [info nameofexecutable] {*}$newcmd
 	    set newcmd {}
 	    continue
 	}
@@ -92,7 +94,7 @@ set path(sh2) [makeFile {
     set newcmd {}
     foreach arg $cmd {
 	if {$arg eq ";"} {
-	    eval exec -ignorestderr >@stdout [list [info nameofexecutable]] $newcmd
+	    exec -ignorestderr >@stdout [info nameofexecutable] {*}$newcmd
 	    set newcmd {}
 	    continue
 	}
@@ -114,7 +116,8 @@ proc readfile filename {
     close $f
     return [string trimright $d \n]
 }
-
+
+# ----------------------------------------------------------------------
 # Basic operations.
 
 test exec-1.1 {basic exec operation} {exec} {
@@ -152,6 +155,8 @@ test exec-2.5 {redirecting input from immediate source} {exec} {
     exec [interpreter] $path(cat) "<<Joined to arrows"
 } {Joined to arrows}
 test exec-2.6 {redirecting input from immediate source, with UTF} -setup {
+    set sysenc [encoding system]
+    encoding system iso8859-1
     proc quotenonascii s {
 	regsub -all {\[|\\|\]} $s {\\&} s
 	regsub -all {[\u007f-\uffff]} $s \
@@ -163,6 +168,9 @@ test exec-2.6 {redirecting input from immediate source, with UTF} -setup {
     # If it does, this means that the UTF -> external conversion did not occur
     # before writing out the temp file.
     quotenonascii [exec [interpreter] $path(cat) << "\uE9\uE0\uFC\uF1"]
+} -cleanup {
+    encoding system $sysenc
+    rename quotenonascii {}
 } -result {\u00e9\u00e0\u00fc\u00f1}
 
 # I/O redirection: output to file.
@@ -212,37 +220,37 @@ test exec-3.7 {redirecting output to file} {exec} {
 file delete $path(gorp.file)
 
 test exec-4.1 {redirecting output and stderr to file} {exec} {
-    exec [interpreter] "$path(echo)" "test output" >& $path(gorp.file)
-    exec [interpreter] "$path(cat)" "$path(gorp.file)"
+    exec [interpreter] $path(echo) "test output" >& $path(gorp.file)
+    exec [interpreter] $path(cat) $path(gorp.file)
 } "test output"
 test exec-4.2 {redirecting output and stderr to file} {exec} {
-    list [exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" >&$path(gorp.file)] \
-	    [exec [interpreter] "$path(cat)" "$path(gorp.file)"]
+    list [exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" >&$path(gorp.file)] \
+	    [exec [interpreter] $path(cat) $path(gorp.file)]
 } {{} {foo bar}}
 test exec-4.3 {redirecting output and stderr to file} {exec} {
     exec [interpreter] $path(echo) "first line" > $path(gorp.file)
-    list [exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" >>&$path(gorp.file)] \
-	    [exec [interpreter] "$path(cat)" "$path(gorp.file)"]
+    list [exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" >>&$path(gorp.file)] \
+	    [exec [interpreter] $path(cat) $path(gorp.file)]
 } "{} {first line\nfoo bar}"
 test exec-4.4 {redirecting output and stderr to file} {exec} {
-    set f [open "$path(gorp.file)" w]
+    set f [open $path(gorp.file) w]
     puts $f "Line 1"
     flush $f
-    exec [interpreter] "$path(echo)" "More text" >&@ $f
-    exec [interpreter] "$path(echo)" >&@$f "Even more"
+    exec [interpreter] $path(echo) "More text" >&@ $f
+    exec [interpreter] $path(echo) >&@$f "Even more"
     puts $f "Line 3"
     close $f
-    exec [interpreter] "$path(cat)" "$path(gorp.file)"
+    exec [interpreter] $path(cat) $path(gorp.file)
 } "Line 1\nMore text\nEven more\nLine 3"
 test exec-4.5 {redirecting output and stderr to file} {exec} {
-    set f [open "$path(gorp.file)" w]
+    set f [open $path(gorp.file) w]
     puts $f "Line 1"
     flush $f
-    exec >&@ $f [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2"
-    exec >&@$f [interpreter] "$path(sh)" -c "\"$path(echo)\" xyzzy 1>&2"
+    exec >&@ $f [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2"
+    exec >&@$f [interpreter] $path(sh) -c "\"$path(echo)\" xyzzy 1>&2"
     puts $f "Line 3"
     close $f
-    exec [interpreter] "$path(cat)" "$path(gorp.file)"
+    exec [interpreter] $path(cat) $path(gorp.file)
 } "Line 1\nfoo bar\nxyzzy\nLine 3"
 
 # I/O redirection: input from file.
@@ -281,14 +289,14 @@ test exec-5.7 {redirecting input from file} -constraints {exec} -body {
 # I/O redirection: standard error through a pipeline.
 
 test exec-6.1 {redirecting stderr through a pipeline} {exec stdio} {
-    exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar" |& [interpreter] "$path(cat)"
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar" |& [interpreter] $path(cat)
 } "foo bar"
 test exec-6.2 {redirecting stderr through a pipeline} {exec stdio} {
-    exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" |& [interpreter] "$path(cat)"
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" |& [interpreter] $path(cat)
 } "foo bar"
 test exec-6.3 {redirecting stderr through a pipeline} {exec stdio} {
-    exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" \
-	|& [interpreter] "$path(sh)" -c "\"$path(echo)\" second msg 1>&2 ; \"$path(cat)\"" |& [interpreter] "$path(cat)"
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" \
+	|& [interpreter] $path(sh) -c "\"$path(echo)\" second msg 1>&2 ; \"$path(cat)\"" |& [interpreter] $path(cat)
 } "second msg\nfoo bar"
 
 # I/O redirection: combinations.
@@ -338,12 +346,12 @@ test exec-9.5 {commands returning errors} -constraints {exec stdio} -body {
     exec gorp456 | [interpreter] echo a b c
 } -returnCodes error -result {couldn't execute "gorp456": no such file or directory}
 test exec-9.6 {commands returning errors} -constraints {exec} -body {
-    exec [interpreter] "$path(sh)" -c "\"$path(echo)\" error msg 1>&2"
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" error msg 1>&2"
 } -returnCodes error -result {error msg}
 test exec-9.7 {commands returning errors} -constraints {exec stdio nonPortable} -body {
     # This test can fail easily on multiprocessor machines
-    exec [interpreter] "$path(sh)" -c "\"$path(echo)\" error msg 1>&2 ; \"$path(sleep)\" 1" \
-	| [interpreter] "$path(sh)" -c "\"$path(echo)\" error msg 1>&2 ; \"$path(sleep)\" 1"
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" error msg 1>&2 ; \"$path(sleep)\" 1" \
+	| [interpreter] $path(sh) -c "\"$path(echo)\" error msg 1>&2 ; \"$path(sleep)\" 1"
 } -returnCodes error -result {error msg
 error msg}
 set path(err) [makeFile {} err]
@@ -554,27 +562,27 @@ test exec-14.5 {-ignorestderr switch} {exec} {
 # Redirecting standard error separately from standard output
 
 test exec-15.1 {standard error redirection} {exec} {
-    exec [interpreter] "$path(echo)" "First line" > "$path(gorp.file)"
-    list [exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" 2> "$path(gorp.file)"] \
-	    [exec [interpreter] "$path(cat)" "$path(gorp.file)"]
+    exec [interpreter] $path(echo) "First line" > $path(gorp.file)
+    list [exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" 2> $path(gorp.file)] \
+	    [exec [interpreter] $path(cat) $path(gorp.file)]
 } {{} {foo bar}}
 test exec-15.2 {standard error redirection} {exec stdio} {
-    list [exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" \
-	      | [interpreter] "$path(echo)" biz baz >$path(gorp.file) 2> "$path(gorp.file2)"] \
-	[exec [interpreter] "$path(cat)" "$path(gorp.file)"] \
-	[exec [interpreter] "$path(cat)" "$path(gorp.file2)"]
+    list [exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" \
+	      | [interpreter] $path(echo) biz baz >$path(gorp.file) 2> $path(gorp.file2)] \
+	[exec [interpreter] $path(cat) $path(gorp.file)] \
+	[exec [interpreter] $path(cat) $path(gorp.file2)]
 } {{} {biz baz} {foo bar}}
 test exec-15.3 {standard error redirection} {exec stdio} {
-    list [exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" \
-	      | [interpreter] "$path(echo)" biz baz 2>$path(gorp.file) > "$path(gorp.file2)"] \
-	[exec [interpreter] "$path(cat)" "$path(gorp.file)"] \
-	[exec [interpreter] "$path(cat)" "$path(gorp.file2)"]
+    list [exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" \
+	      | [interpreter] $path(echo) biz baz 2>$path(gorp.file) > $path(gorp.file2)] \
+	[exec [interpreter] $path(cat) $path(gorp.file)] \
+	[exec [interpreter] $path(cat) $path(gorp.file2)]
 } {{} {foo bar} {biz baz}}
 test exec-15.4 {standard error redirection} {exec} {
-    set f [open "$path(gorp.file)" w]
+    set f [open $path(gorp.file) w]
     puts $f "Line 1"
     flush $f
-    exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" 2>@ $f
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" 2>@ $f
     puts $f "Line 3"
     close $f
     readfile $path(gorp.file)
@@ -582,14 +590,14 @@ test exec-15.4 {standard error redirection} {exec} {
 foo bar
 Line 3}
 test exec-15.5 {standard error redirection} {exec} {
-    exec [interpreter] "$path(echo)" "First line" > "$path(gorp.file)"
+    exec [interpreter] $path(echo) "First line" > "$path(gorp.file)"
     exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" 2>> "$path(gorp.file)"
     readfile $path(gorp.file)
 } {First line
 foo bar}
 test exec-15.6 {standard error redirection} {exec stdio} {
     exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" > "$path(gorp.file2)" 2> "$path(gorp.file)" \
-	    >& "$path(gorp.file)" 2> "$path(gorp.file2)" | [interpreter] "$path(echo)" biz baz
+	    >& "$path(gorp.file)" 2> "$path(gorp.file2)" | [interpreter] $path(echo) biz baz
     list [readfile $path(gorp.file)] [readfile $path(gorp.file2)]
 } {{biz baz} {foo bar}}
 test exec-15.7 {standard error redirection 2>@1} {exec stdio} {
@@ -618,7 +626,7 @@ test exec-16.2 {flush output before exec} {exec} {
 Second line
 Third line}
 
-test exec-17.1 { inheriting standard I/O } -constraints {exec} -setup {
+test exec-17.1 {inheriting standard I/O} -constraints {exec} -setup {
     set path(script) [makeFile {} script]
     set f [open $path(script) w]
     puts $f [list lassign [list \
@@ -639,7 +647,13 @@ test exec-17.1 { inheriting standard I/O } -constraints {exec} -setup {
     removeFile $path(script)
 } -result {{} foobar}
 
-test exec-18.1 { exec cat deals with weird file names} -body {
+test exec-18.1 {exec deals with weird file names} -body {
+    set path(fooblah) [makeFile {contents} "foo\[\{blah"]
+    exec [interpreter] $path(cat) $path(fooblah)
+} -constraints {exec} -cleanup {
+    removeFile $path(fooblah)
+} -result contents
+test exec-18.2 {exec cat deals with weird file names} -body {
     # This is cross-platform, but the cat isn't predictably correct on
     # Windows.
     set path(fooblah) [makeFile {contents} "foo\[\{blah"]
@@ -649,7 +663,8 @@ test exec-18.1 { exec cat deals with weird file names} -body {
 } -result contents
 
 # Note that this test cannot be adapted to work on Windows; that platform has
-# no kernel support for an analog of O_APPEND.
+# no kernel support for an analog of O_APPEND. OTOH, that means we can assume
+# that there is a POSIX shell...
 test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix} -setup {
     set tmpfile [makeFile {0} tmpfile.exec-19.1]
 } -body {
@@ -669,7 +684,8 @@ test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix} -setup {
 } -cleanup {
     removeFile $tmpfile
 } -result 14
-
+
+# ----------------------------------------------------------------------
 # cleanup
 
 foreach file {gorp.file gorp.file2 echo echo2 cat wc sh sh2 sleep exit err} {
@@ -679,3 +695,7 @@ unset -nocomplain path
 
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

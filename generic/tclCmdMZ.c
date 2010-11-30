@@ -2138,7 +2138,7 @@ StringReptCmd(
 
     if (count > (INT_MAX / length1)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+		"result exceeds max size for a Tcl value (%d bytes)", INT_MAX));
 	return TCL_ERROR;
     }
     length2 = length1 * count;
