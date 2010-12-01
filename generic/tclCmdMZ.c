@@ -1809,8 +1809,7 @@ StringMapCmd(
 	 * adapt this code...
 	 */
 
-	mapElemv = (Tcl_Obj **)
-		TclStackAlloc(interp, sizeof(Tcl_Obj *) * mapElemc);
+	mapElemv = TclStackAlloc(interp, sizeof(Tcl_Obj *) * mapElemc);
 	Tcl_DictObjFirst(interp, objv[objc-2], &search, mapElemv+0,
 		mapElemv+1, &done);
 	for (i=2 ; i<mapElemc ; i+=2) {
@@ -1919,12 +1918,10 @@ StringMapCmd(
 	 * case.
 	 */
 
-	mapStrings = (Tcl_UniChar **)
-		TclStackAlloc(interp, mapElemc * 2 * sizeof(Tcl_UniChar *));
-	mapLens = (int *) TclStackAlloc(interp, mapElemc * 2 * sizeof(int));
+	mapStrings = TclStackAlloc(interp, mapElemc*2*sizeof(Tcl_UniChar *));
+	mapLens = TclStackAlloc(interp, mapElemc * 2 * sizeof(int));
 	if (nocase) {
-	    u2lc = (Tcl_UniChar *) TclStackAlloc(interp,
-		    mapElemc * sizeof(Tcl_UniChar));
+	    u2lc = TclStackAlloc(interp, mapElemc * sizeof(Tcl_UniChar));
 	}
 	for (index = 0; index < mapElemc; index++) {
 	    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
@@ -2167,9 +2164,10 @@ StringReptCmd(
      * We need to keep 2 <= length2 <= INT_MAX.
      */
 
-    if (count > (INT_MAX / length1)) {
+    if (count > INT_MAX/length1) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"result exceeds max size for a Tcl value (%d bytes)", INT_MAX));
+		"result exceeds max size for a Tcl value (%d bytes)",
+		INT_MAX));
 	return TCL_ERROR;
     }
     length2 = length1 * count;
@@ -3521,11 +3519,10 @@ Tcl_SwitchObjCmd(
 			TclGetString(objv[i]), "\": ", options[mode],
 			" option already found", NULL);
 		return TCL_ERROR;
-	    } else {
-		foundmode = 1;
-		mode = index;
-		break;
 	    }
+	    foundmode = 1;
+	    mode = index;
+	    break;
 
 	    /*
 	     * Check for TIP#75 options specifying the variables to write
@@ -3589,8 +3586,8 @@ Tcl_SwitchObjCmd(
     splitObjs = 0;
     if (objc == 1) {
 	Tcl_Obj **listv;
-	blist = objv[0];
 
+	blist = objv[0];
 	if (TclListObjGetElements(interp, objv[0], &objc, &listv) != TCL_OK){
 	    return TCL_ERROR;
 	}
@@ -3687,36 +3684,35 @@ Tcl_SwitchObjCmd(
 		}
 	    }
 	    goto matchFound;
-	} else {
-	    switch (mode) {
-	    case OPT_EXACT:
-		if (strCmpFn(TclGetString(stringObj), pattern) == 0) {
-		    goto matchFound;
-		}
-		break;
-	    case OPT_GLOB:
-		if (Tcl_StringCaseMatch(TclGetString(stringObj), pattern,
-			noCase)) {
-		    goto matchFound;
-		}
-		break;
-	    case OPT_REGEXP:
-		regExpr = Tcl_GetRegExpFromObj(interp, objv[i],
-			TCL_REG_ADVANCED | (noCase ? TCL_REG_NOCASE : 0));
-		if (regExpr == NULL) {
-		    return TCL_ERROR;
-		} else {
-		    int matched = Tcl_RegExpExecObj(interp, regExpr,
-			    stringObj, 0, numMatchesSaved, 0);
+	}
 
-		    if (matched < 0) {
-			return TCL_ERROR;
-		    } else if (matched) {
-			goto matchFoundRegexp;
-		    }
-		}
-		break;
+	switch (mode) {
+	case OPT_EXACT:
+	    if (strCmpFn(TclGetString(stringObj), pattern) == 0) {
+		goto matchFound;
 	    }
+	    break;
+	case OPT_GLOB:
+	    if (Tcl_StringCaseMatch(TclGetString(stringObj),pattern,noCase)) {
+		goto matchFound;
+	    }
+	    break;
+	case OPT_REGEXP:
+	    regExpr = Tcl_GetRegExpFromObj(interp, objv[i],
+		    TCL_REG_ADVANCED | (noCase ? TCL_REG_NOCASE : 0));
+	    if (regExpr == NULL) {
+		return TCL_ERROR;
+	    } else {
+		int matched = Tcl_RegExpExecObj(interp, regExpr, stringObj, 0,
+			numMatchesSaved, 0);
+
+		if (matched < 0) {
+		    return TCL_ERROR;
+		} else if (matched) {
+		    goto matchFoundRegexp;
+		}
+	    }
+	    break;
 	}
     }
     return TCL_OK;
@@ -3808,7 +3804,7 @@ Tcl_SwitchObjCmd(
      */
 
   matchFound:
-    ctxPtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+    ctxPtr = TclStackAlloc(interp, sizeof(CmdFrame));
     *ctxPtr = *iPtr->cmdFramePtr;
 
     if (splitObjs) {

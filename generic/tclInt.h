@@ -3041,6 +3041,9 @@ MODULE_SCOPE int	Tcl_RegsubObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_RenameObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_RepresentationCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_ReturnObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -4074,9 +4077,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #if defined(PURIFY) && defined(__clang__) && !defined(CLANG_ASSERT)
 #include <assert.h>
 #define CLANG_ASSERT(x) assert(x)
-#define TclPanic Tcl_Panic
-#undef Tcl_Panic
-#define Tcl_Panic(f, ...) do { TclPanic(f,##__VA_ARGS__); CLANG_ASSERT(0); } while(0)
+EXTERN void Tcl_Panic(const char * format, ...) __attribute__((analyzer_noreturn));
 #elif !defined(CLANG_ASSERT)
 #define CLANG_ASSERT(x)
 #endif

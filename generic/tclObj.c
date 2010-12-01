@@ -3962,6 +3962,44 @@ SetCmdNameFromAny(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_RepresentationCmd --
+ *
+ *	Implementation of the "tcl::unsupported::representation" command.
+ *
+ * Results:
+ *	Reports the current representation (Tcl_Obj type) of its argument. 
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_RepresentationCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value");
+	return TCL_ERROR;
+    }
+
+    if (objv[1]->typePtr == NULL) {
+	Tcl_AppendResult(interp, "value has no internal representation set",
+		NULL);
+    } else {
+	Tcl_AppendResult(interp, "value has internal representation of ",
+		objv[1]->typePtr->name, " currently", NULL);
+    }
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
