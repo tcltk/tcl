@@ -404,6 +404,7 @@ FreeDictInternalRep(
     }
 
     dictPtr->internalRep.otherValuePtr = NULL;	/* Belt and braces! */
+    dictPtr->typePtr = NULL;
 }
 
 /*

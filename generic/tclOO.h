@@ -25,7 +25,11 @@
 
 /*
  * Be careful when it comes to versioning; need to make sure that the
- * standalone TclOO version matches...
+ * standalone TclOO version matches. Also make sure that this matches the
+ * version in the files:
+ *
+ * unix/tclooConfig.sh
+ * win/tclooConfig.sh
  */
 
 #define TCLOO_VERSION "0.6.1"

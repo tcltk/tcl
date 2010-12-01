@@ -499,6 +499,7 @@ FreeIndex(
     Tcl_Obj *objPtr)
 {
     ckfree((char *) objPtr->internalRep.otherValuePtr);
+    objPtr->typePtr = NULL;
 }
 
 /*

@@ -11131,6 +11131,7 @@ FreeChannelIntRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
     Tcl_Release(GET_CHANNELSTATE(objPtr));
+    objPtr->typePtr = NULL;
 }
 
 #if 0

@@ -167,9 +167,7 @@ StashCallChain(
     CallChain *callPtr)
 {
     callPtr->refCount++;
-    if (objPtr->typePtr && objPtr->typePtr->freeIntRepProc) {
-	objPtr->typePtr->freeIntRepProc(objPtr);
-    }
+    TclFreeIntRep(objPtr);
     objPtr->typePtr = &methodNameType;
     objPtr->internalRep.otherValuePtr = callPtr;
 }
@@ -920,7 +918,7 @@ TclOOGetCallContext(
 		callPtr->refCount++;
 		goto returnContext;
 	    }
-	    cacheInThisObj->typePtr->freeIntRepProc(cacheInThisObj);
+	    FreeMethodNameRep(cacheInThisObj);
 	}
 
 	if (oPtr->flags & USE_CLASS_CACHE) {

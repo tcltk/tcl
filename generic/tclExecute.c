@@ -1213,8 +1213,7 @@ Tcl_ExprObj(
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)
 		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
-	    objPtr->typePtr->freeIntRepProc(objPtr);
-	    objPtr->typePtr = (Tcl_ObjType *) NULL;
+	    FreeExprCodeInternalRep(objPtr);
 	}
     }
     if (objPtr->typePtr != &exprCodeType) {
