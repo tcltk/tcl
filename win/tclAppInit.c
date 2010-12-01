@@ -12,14 +12,8 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.31.2.1 2010/09/25 14:51:13 kennykb Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.31.2.2 2010/12/01 16:42:38 kennykb Exp $
  */
-
-/* TODO: This file does not compile in UNICODE mode.
- * See [Freq 2965056]: Windows build with -DUNICODE
- */
-#undef UNICODE
-#undef _UNICODE
 
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
@@ -34,9 +28,15 @@ extern Tcl_PackageInitProc Tcltest_Init;
 extern Tcl_PackageInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
-#if defined(__GNUC__)
+#if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
+extern Tcl_PackageInitProc Registry_Init;
+extern Tcl_PackageInitProc Dde_Init;
+extern Tcl_PackageInitProc Dde_SafeInit;
+#endif
+
+#ifdef TCL_BROKEN_MAINARGS
 static void setargv(int *argcPtr, TCHAR ***argvPtr);
-#endif /* __GNUC__ */
+#endif
 
 /*
  * The following #if block allows you to change the AppInit function by using
@@ -76,11 +76,20 @@ extern int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
  *----------------------------------------------------------------------
  */
 
+#ifdef TCL_BROKEN_MAINARGS
+int
+main(
+    int argc,
+    char *dummy[])
+{
+    TCHAR **argv;
+#else
 int
 _tmain(
     int argc,
     TCHAR *argv[])
 {
+#endif
     TCHAR *p;
 
     /*
@@ -90,11 +99,11 @@ _tmain(
 
     setlocale(LC_ALL, "C");
 
+#ifdef TCL_BROKEN_MAINARGS
     /*
      * Get our args from the c-runtime. Ignore lpszCmdLine.
      */
 
-#if defined(__GNUC__)
     setargv(&argc, &argv);
 #endif
 
@@ -144,21 +153,15 @@ Tcl_AppInit(
     }
 
 #if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
-    {
-	extern Tcl_PackageInitProc Registry_Init;
-	extern Tcl_PackageInitProc Dde_Init;
-	extern Tcl_PackageInitProc Dde_SafeInit;
+    if (Registry_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
 
-	if (Registry_Init(interp) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
-
-	if (Dde_Init(interp) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
-   }
+    if (Dde_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
 #endif
 
 #ifdef TCL_TEST
@@ -223,7 +226,7 @@ Tcl_AppInit(
  *--------------------------------------------------------------------------
  */
 
-#if defined(__GNUC__)
+#ifdef TCL_BROKEN_MAINARGS
 static void
 setargv(
     int *argcPtr,		/* Filled with number of argument strings. */
@@ -252,10 +255,15 @@ setargv(
 	    }
 	}
     }
+
+    /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
+    #undef Tcl_Alloc
+    #undef Tcl_DbCkalloc
+
     argSpace = (TCHAR *) ckalloc(
-	    (unsigned) (size * sizeof(TCHAR *) + (_tcslen(cmdLine) * sizeof(TCHAR)) + 1));
+	    (unsigned) (size * sizeof(char *) + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR)));
     argv = (TCHAR **) argSpace;
-    argSpace += size * sizeof(TCHAR *);
+    argSpace += size * (sizeof(char *)/sizeof(TCHAR));
     size--;
 
     p = cmdLine;
@@ -305,7 +313,7 @@ setargv(
 	    }
 	    p++;
 	}
-	*arg = TEXT('\0');
+	*arg = '\0';
 	argSpace = arg + 1;
     }
     argv[argc] = NULL;
@@ -313,7 +321,7 @@ setargv(
     *argcPtr = argc;
     *argvPtr = argv;
 }
-#endif /* __GNUC__ */
+#endif /* TCL_BROKEN_MAINARGS */
 
 /*
  * Local Variables:
