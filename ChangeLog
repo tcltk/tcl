@@ -6,6 +6,8 @@
 	* generic/tclThreadTest.c:
 	* generic/tclStrToD.c: fix gcc(-4.5.2) warning: 'static' is not at
 	beginning of declaration.
+	* generic/tclPanic.c:  Allow Tcl_Panic() to enter the debugger on win32
+	* generic/tclCkalloc.c: use Tcl_Panic() in stead of duplicating the code.
 
 2010-11-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -22,7 +24,6 @@
 	  ("injects") arbitrary code to a suspended coro's future resumption.
 	  Neat for debugging complex coros without heavy instrumentation.
 
->>>>>>> 1.5314
 2010-11-29  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclInt.decls:
