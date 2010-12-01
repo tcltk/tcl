@@ -495,6 +495,24 @@ file for information about building with Mingw.])
 	  rm -f ac$$.o ac$$.c
 	fi
 
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -mwindows -municode -Dmain=xxmain"
+    AC_CACHE_CHECK(for working -municode linker flag,
+        ac_cv_municode,
+    AC_TRY_LINK([
+    #include <windows.h>
+    int APIENTRY wWinMain(HINSTANCE a, HINSTANCE b, LPWSTR c, int d) {return 0;}
+    ],
+    [],
+        ac_cv_municode=yes,
+        ac_cv_municode=no)
+    )
+    CFLAGS=$hold_cflags
+    if test "$ac_cv_municode" = "yes" ; then
+	extra_ldflags="$extra_ldflags -municode"
+    else
+	extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
+    fi
+
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
             AC_MSG_RESULT([using static flags])

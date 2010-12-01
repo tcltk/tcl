@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.38.4.1 2010/10/02 01:38:27 kennykb Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.38.4.2 2010/12/01 16:42:34 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -453,11 +453,7 @@ Tcl_DbCkalloc(
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
 	break_on_malloc = 0;
 	(void) fflush(stdout);
-	fprintf(stderr,"reached malloc break limit (%d)\n",
-		total_mallocs);
-	fprintf(stderr, "program will now enter C debugger\n");
-	(void) fflush(stderr);
-	abort();
+	Tcl_Panic("reached malloc break limit (%d)", total_mallocs);
     }
 
     current_malloc_packets++;
@@ -546,11 +542,7 @@ Tcl_AttemptDbCkalloc(
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
 	break_on_malloc = 0;
 	(void) fflush(stdout);
-	fprintf(stderr,"reached malloc break limit (%d)\n",
-		total_mallocs);
-	fprintf(stderr, "program will now enter C debugger\n");
-	(void) fflush(stderr);
-	abort();
+	Tcl_Panic("reached malloc break limit (%d)", total_mallocs);
     }
 
     current_malloc_packets++;
@@ -948,7 +940,7 @@ MemoryCmd(
     }
 
     Tcl_AppendResult(interp, "bad option \"", argv[1],
-	    "\": should be active, break_on_malloc, info, init, onexit, "
+	    "\": should be active, break_on_malloc, info, init, objs, onexit, "
 	    "tag, trace, trace_on_at_malloc, or validate", NULL);
     return TCL_ERROR;
 
@@ -1315,5 +1307,7 @@ TclFinalizeMemorySubsystem(void)
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
