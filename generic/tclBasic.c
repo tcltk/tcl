@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.470 2010/11/29 22:16:17 ferrieux Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.471 2010/12/01 09:58:52 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -7702,7 +7702,7 @@ ExprRandFunc(
 	 * to insure different seeds in different threads (bug #416643)
 	 */
 
-	iPtr->randSeed = TclpGetClicks() + ((long)Tcl_GetCurrentThread()<<12);
+	iPtr->randSeed = TclpGetClicks() + (PTR2INT(Tcl_GetCurrentThread())<<12);
 
 	/*
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
