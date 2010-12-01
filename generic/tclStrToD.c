@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.48 2010/11/29 02:27:11 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.49 2010/12/01 09:58:51 nijtmans Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -3093,7 +3093,7 @@ ShouldBankerRoundUpPowD(mp_int* b,
 				/* 1 if the digit is odd, 0 if even */
 {
     int i;
-    const static mp_digit topbit = (1<<(DIGIT_BIT-1));
+    static const mp_digit topbit = (1<<(DIGIT_BIT-1));
     if (b->used < sd || (b->dp[sd-1] & topbit) == 0) {
 	return 0;
     }

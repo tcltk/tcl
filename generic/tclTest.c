@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.155 2010/11/28 23:20:11 kennykb Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.156 2010/12/01 09:58:52 nijtmans Exp $
  */
 
 #include <math.h>
@@ -5157,7 +5157,7 @@ TestmainthreadCmd(
     const char **argv)		/* Argument strings. */
 {
     if (argc == 1) {
-	Tcl_Obj *idObj = Tcl_NewLongObj((long) Tcl_GetCurrentThread());
+	Tcl_Obj *idObj = Tcl_NewLongObj((long)(size_t)Tcl_GetCurrentThread());
 
 	Tcl_SetObjResult(interp, idObj);
 	return TCL_OK;
@@ -5554,7 +5554,7 @@ TestChannelCmd(
 	    return TCL_ERROR;
 	}
 
-	TclFormatInt(buf, (long) Tcl_GetChannelThread(chan));
+	TclFormatInt(buf, (size_t) Tcl_GetChannelThread(chan));
 	Tcl_AppendResult(interp, buf, NULL);
 	return TCL_OK;
     }
