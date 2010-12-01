@@ -1,3 +1,12 @@
+2010-12-01  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c: fix gcc 64-bit warnings: cast from pointer to
+	* generic/tclHash.c:  integer of different size.
+	* generic/tclTest.c:
+	* generic/tclThreadTest.c:
+	* generic/tclStrToD.c: fix gcc(-4.5.2) warning: 'static' is not at
+	beginning of declaration.
+
 2010-11-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclInt.decls, generic/tclInt.h, generic/tclIntDecls.h:
@@ -13,6 +22,7 @@
 	  ("injects") arbitrary code to a suspended coro's future resumption.
 	  Neat for debugging complex coros without heavy instrumentation.
 
+>>>>>>> 1.5314
 2010-11-29  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclInt.decls:
