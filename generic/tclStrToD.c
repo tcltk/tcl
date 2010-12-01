@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.49 2010/12/01 09:58:51 nijtmans Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.50 2010/12/01 16:28:00 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -2405,6 +2405,11 @@ SetPrecisionLimits(int convType,
 	    *iPtr = 1;
 	}
 	break;
+    default:
+	*iPtr = -1;
+	*iLimPtr = -1;
+	*iLim1Ptr = -1;
+	Tcl_Panic("impossible conversion type in TclDoubleDigits");
     }
 }
 
@@ -3915,7 +3920,7 @@ StrictBignumConversion(Double* dPtr,
 	     * empty precision.
 	     */
 
-	    /* Extract the next digit */
+	    /* Extract the next group of digits */
 	    
 	    mp_div(&b, &S, &dig, &b);
 	    if (dig.used > 1) {
@@ -4054,9 +4059,11 @@ TclDoubleDigits(double dv,	/* Number to convert */
 				 * power of ten that k must be checked */
     int b2, b5, s2, s5;		/* Powers of 2 and 5 in the numerator and
 				 * denominator of intermediate results */
-    int ilim, ilim1;
+    int ilim = -1, ilim1 = -1;	/* Number of digits to convert, and number
+				 * to convert if log10(d) has been 
+				 * overestimated */
     char* retval;		/* Return value from this function */
-    int i;
+    int i = -1;
 
     /* Put the input number into a union for bit-whacking */
 
