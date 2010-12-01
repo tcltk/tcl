@@ -1,8 +1,11 @@
-# -*- tcl -*-
 # $Id: tclOO.decls,v 1.2 2008/06/01 00:02:05 dkf Exp $
 
-# public API
 library tclOO
+
+######################################################################
+# public API
+#
+
 interface tclOO
 hooks tclOOInt
 
@@ -109,9 +112,16 @@ declare 27 generic {
     void Tcl_ClassSetDestructor(Tcl_Interp *interp, Tcl_Class clazz,
 	    Tcl_Method method)
 }
-
+declare 28 generic {
+    Tcl_Obj *Tcl_GetObjectName(Tcl_Interp *interp, Tcl_Object object)
+}
+
+######################################################################
 # private API, exposed to support advanced OO systems that plug in on top
+#
+
 interface tclOOInt
+
 declare 0 generic {
     Tcl_Object TclOOGetDefineCmdContext(Tcl_Interp *interp)
 }
@@ -187,3 +197,9 @@ declare 15 generic {
     void TclOOClassSetMixins(Tcl_Interp *interp, Class *classPtr,
 	    int numMixins, Class *const *mixins)
 }
+
+return
+
+# Local Variables:
+# mode: tcl
+# End:

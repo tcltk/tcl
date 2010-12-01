@@ -516,12 +516,15 @@ TclObjLookupVarEx(
     const Tcl_ObjType *typePtr = part1Ptr->typePtr;
     const char *errMsg = NULL;
     CallFrame *varFramePtr = iPtr->varFramePtr;
+#if ENABLE_NS_VARNAME_CACHING
     Namespace *nsPtr;
+#endif
     const char *part2 = part2Ptr? TclGetString(part2Ptr):NULL;
     char *newPart2 = NULL;
 
     *arrayPtrPtr = NULL;
 
+#if ENABLE_NS_VARNAME_CACHING
     if (varFramePtr) {
 	nsPtr = varFramePtr->nsPtr;
     } else {
@@ -532,6 +535,7 @@ TclObjLookupVarEx(
 
 	nsPtr = NULL;
     }
+#endif
 
     if (typePtr == &localVarNameType) {
 	int localIndex;

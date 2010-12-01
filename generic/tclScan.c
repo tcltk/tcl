@@ -45,7 +45,7 @@ typedef struct CharSet {
  * Declarations for functions used only in this file.
  */
 
-static const char * BuildCharSet(CharSet *cset, const char *format);
+static const char *	BuildCharSet(CharSet *cset, const char *format);
 static int		CharInSet(CharSet *cset, int ch);
 static void		ReleaseCharSet(CharSet *cset);
 static int		ValidateFormat(Tcl_Interp *interp, const char *format,
@@ -262,7 +262,7 @@ ValidateFormat(
     char *end;
     Tcl_UniChar ch;
     int objIndex, xpgSize, nspace = numVars;
-    int *nassign = (int *) TclStackAlloc(interp, nspace * sizeof(int));
+    int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
     char buf[TCL_UTF_MAX+1];
 
     /*
@@ -449,14 +449,10 @@ ValidateFormat(
 		    TCL_STATIC);
 	    goto error;
 	default:
-	    {
-		char buf[TCL_UTF_MAX+1];
-
-		buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-		Tcl_AppendResult(interp, "bad scan conversion character \"",
-			buf, "\"", NULL);
-		goto error;
-	    }
+	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
+	    Tcl_AppendResult(interp, "bad scan conversion character \"", buf,
+		    "\"", NULL);
+	    goto error;
 	}
 	if (!(flags & SCAN_SUPPRESS)) {
 	    if (objIndex >= nspace) {
@@ -472,7 +468,7 @@ ValidateFormat(
 		} else {
 		    nspace += 16;	/* formerly STATIC_LIST_SIZE */
 		}
-		nassign = (int *) TclStackRealloc(interp, nassign,
+		nassign = TclStackRealloc(interp, nassign,
 			nspace * sizeof(int));
 		for (i = value; i < nspace; i++) {
 		    nassign[i] = 0;
@@ -554,7 +550,7 @@ ValidateFormat(
 	/* ARGSUSED */
 int
 Tcl_ScanObjCmd(
-    ClientData dummy,    	/* Not used. */
+    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -712,6 +708,7 @@ Tcl_ScanObjCmd(
 	    if (!(flags & SCAN_SUPPRESS)) {
 		objPtr = Tcl_NewIntObj(string - baseString);
 		Tcl_IncrRefCount(objPtr);
+		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
 	    }
 	    nconversions++;
@@ -819,6 +816,7 @@ Tcl_ScanObjCmd(
 	    if (!(flags & SCAN_SUPPRESS)) {
 		objPtr = Tcl_NewStringObj(string, end-string);
 		Tcl_IncrRefCount(objPtr);
+		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
 	    }
 	    string = end;
@@ -869,6 +867,7 @@ Tcl_ScanObjCmd(
 	    if (!(flags & SCAN_SUPPRESS)) {
 		objPtr = Tcl_NewIntObj((int)sch);
 		Tcl_IncrRefCount(objPtr);
+		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
 	    }
 	    break;
@@ -964,7 +963,7 @@ Tcl_ScanObjCmd(
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
 		    if (objPtr->typePtr == &tclDoubleType) {
-			dValue = objPtr->internalRep.doubleValue;
+			dvalue = objPtr->internalRep.doubleValue;
 		    } else
 #endif
 		    {
@@ -973,6 +972,7 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		Tcl_SetDoubleObj(objPtr, dvalue);
+		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
 		string = end;
 	    }

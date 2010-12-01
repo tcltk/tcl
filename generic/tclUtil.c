@@ -15,7 +15,6 @@
  */
 
 #include "tclInt.h"
-#include <float.h>
 #include <math.h>
 
 /*
@@ -44,11 +43,11 @@ static ProcessGlobalValue executableName = {
  * BRACES_UNMATCHED -		1 means that braces aren't properly matched in
  *				the argument.
  * TCL_DONT_QUOTE_HASH -	1 means the caller insists that a leading hash
- * 				character ('#') should *not* be quoted. This
- * 				is appropriate when the caller can guarantee
- * 				the element is not the first element of a
- * 				list, so [eval] cannot mis-parse the element
- * 				as a comment.
+ *				character ('#') should *not* be quoted. This
+ *				is appropriate when the caller can guarantee
+ *				the element is not the first element of a
+ *				list, so [eval] cannot mis-parse the element
+ *				as a comment.
  */
 
 #define USE_BRACES		2
@@ -69,9 +68,9 @@ static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(ClientData clientData);
 static void		FreeThreadHash(ClientData clientData);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
-static int		SetEndOffsetFromAny(Tcl_Interp* interp,
-			    Tcl_Obj* objPtr);
-static void		UpdateStringOfEndOffset(Tcl_Obj* objPtr);
+static int		SetEndOffsetFromAny(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
+static void		UpdateStringOfEndOffset(Tcl_Obj *objPtr);
 
 /*
  * The following is the Tcl object type definition for an object that
@@ -435,7 +434,7 @@ Tcl_SplitList(
 		if (next == '\0') {
 		    break;
 		}
-		++l;
+		l++;
 		if (isspace(UCHAR(next))) {		/* INTL: ISO space. */
 		    continue;
 		}
@@ -553,7 +552,7 @@ TclMarkList(
 		if ((l+1) == end) {
 		    break;
 		}
-		++l;
+		l++;
 		if (isspace(UCHAR(next))) {		/* INTL: ISO space. */
 		    continue;
 		}
@@ -676,7 +675,7 @@ Tcl_ScanCountedElement(
      *	  "{abc": the leading brace will have to be backslashed. For each
      *	  element, one of three things must be done:
      *
-     * 	  (a) Use the element as-is (it doesn't contain any special
+     *	  (a) Use the element as-is (it doesn't contain any special
      *	      characters). This is the most desirable option.
      *
      *	  (b) Enclose the element in braces, but leave the contents alone.
@@ -1613,7 +1612,7 @@ TclByteArrayMatch(
 	     * Skip all successive *'s in the pattern.
 	     */
 
-	    while (*(++pattern) == '*') {
+	    while ((++pattern < patternEnd) && (*pattern == '*')) {
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
@@ -1747,9 +1746,10 @@ TclByteArrayMatch(
 
 int
 TclStringMatchObj(
-    Tcl_Obj *strObj,	/* string object. */
-    Tcl_Obj *ptnObj,	/* pattern object. */
-    int flags)		/* Only TCL_MATCH_NOCASE should be passed or 0. */
+    Tcl_Obj *strObj,		/* string object. */
+    Tcl_Obj *ptnObj,		/* pattern object. */
+    int flags)			/* Only TCL_MATCH_NOCASE should be passed, or
+				 * 0. */
 {
     int match, length, plen;
 
@@ -1766,8 +1766,7 @@ TclStringMatchObj(
 	udata = Tcl_GetUnicodeFromObj(strObj, &length);
 	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
 	match = TclUniCharMatch(udata, length, uptn, plen, flags);
-    } else if ((strObj->typePtr == &tclByteArrayType) 
-	    && (strObj->bytes == NULL) && !flags) {
+    } else if (TclIsPureByteArray(strObj) && !flags) {
 	unsigned char *data, *ptn;
 
 	data = Tcl_GetByteArrayFromObj(strObj, &length);
@@ -1836,8 +1835,6 @@ Tcl_DStringAppend(
 				 * at end. */
 {
     int newSize;
-    char *dst;
-    const char *end;
 
     if (length < 0) {
 	length = strlen(bytes);
@@ -1867,12 +1864,9 @@ Tcl_DStringAppend(
      * Copy the new string into the buffer at the end of the old one.
      */
 
-    for (dst = dsPtr->string + dsPtr->length, end = bytes+length;
-	    bytes < end; bytes++, dst++) {
-	*dst = *bytes;
-    }
-    *dst = '\0';
+    memcpy(dsPtr->string + dsPtr->length, bytes, length);
     dsPtr->length += length;
+    dsPtr->string[dsPtr->length] = '\0';
     return dsPtr->string;
 }
 
@@ -2069,7 +2063,7 @@ Tcl_DStringResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the
 				 * result of interp. */
 {
-    Interp* iPtr = (Interp*) interp;
+    Interp *iPtr = (Interp *) interp;
     Tcl_ResetResult(interp);
 
     if (dsPtr->string != dsPtr->staticSpace) {
@@ -2077,7 +2071,7 @@ Tcl_DStringResult(
 	iPtr->freeProc = TCL_DYNAMIC;
     } else if (dsPtr->length < TCL_RESULT_SIZE) {
 	iPtr->result = iPtr->resultSpace;
-	strcpy(iPtr->result, dsPtr->string);
+	memcpy(iPtr->result, dsPtr->string, dsPtr->length + 1);
     } else {
 	Tcl_SetResult(interp, dsPtr->string, TCL_VOLATILE);
     }
@@ -2238,7 +2232,7 @@ Tcl_PrintDouble(
 				 * at least TCL_DOUBLE_SPACE characters. */
 {
     char *p, c;
-    int exp;
+    int exponent;
     int signum;
     char buffer[TCL_DOUBLE_SPACE];
     Tcl_UniChar ch;
@@ -2267,10 +2261,14 @@ Tcl_PrintDouble(
 	 */
 
 	if (TclIsInfinite(value)) {
+	    /*
+	     * Remember to copy the terminating NUL too.
+	     */
+
 	    if (value < 0) {
-		strcpy(dst, "-Inf");
+		memcpy(dst, "-Inf", 5);
 	    } else {
-		strcpy(dst, "Inf");
+		memcpy(dst, "Inf", 4);
 	    }
 	    return;
 	}
@@ -2279,12 +2277,12 @@ Tcl_PrintDouble(
 	 * Ordinary (normal and denormal) values.
 	 */
 
-	exp = TclDoubleDigits(buffer, value, &signum);
+	exponent = TclDoubleDigits(buffer, value, &signum);
 	if (signum) {
 	    *dst++ = '-';
 	}
 	p = buffer;
-	if (exp < -3 || exp > 17) {
+	if (exponent < -3 || exponent > 17) {
 	    /*
 	     * E format for numbers < 1e-3 or >= 1e17.
 	     */
@@ -2298,17 +2296,17 @@ Tcl_PrintDouble(
 		    c = *++p;
 		}
 	    }
-	    sprintf(dst, "e%+d", exp-1);
+	    sprintf(dst, "e%+d", exponent-1);
 	} else {
 	    /*
 	     * F format for others.
 	     */
 
-	    if (exp <= 0) {
+	    if (exponent <= 0) {
 		*dst++ = '0';
 	    }
 	    c = *p;
-	    while (exp-- > 0) {
+	    while (exponent-- > 0) {
 		if (c != '\0') {
 		    *dst++ = c;
 		    c = *++p;
@@ -2320,7 +2318,7 @@ Tcl_PrintDouble(
 	    if (c == '\0') {
 		*dst++ = '0';
 	    } else {
-		while (++exp < 0) {
+		while (++exponent < 0) {
 		    *dst++ = '0';
 		}
 		while (c != '\0') {
@@ -2390,7 +2388,7 @@ TclPrecTraceProc(
     const char *name2,		/* Second part of variable name. */
     int flags)			/* Information about what happened. */
 {
-    Tcl_Obj* value;
+    Tcl_Obj *value;
     int prec;
     int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int) sizeof(int));
 
@@ -2427,13 +2425,13 @@ TclPrecTraceProc(
      */
 
     if (Tcl_IsSafe(interp)) {
-	return (char *)"can't modify precision from a safe interpreter";
+	return (char *) "can't modify precision from a safe interpreter";
     }
     value = Tcl_GetVar2Ex(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
     if (value == NULL
-	    || Tcl_GetIntFromObj((Tcl_Interp*) NULL, value, &prec) != TCL_OK
+	    || Tcl_GetIntFromObj(NULL, value, &prec) != TCL_OK
 	    || prec < 0 || prec > TCL_MAX_PREC) {
-	return (char *)"improper value for precision";
+	return (char *) "improper value for precision";
     }
     *precisionPtr = prec;
     return NULL;
@@ -2624,14 +2622,13 @@ TclGetIntForIndex(
 
   parseError:
     if (interp != NULL) {
-	const char *bytes = Tcl_GetString(objPtr);
-
 	/*
 	 * The result might not be empty; this resets it which should be both
 	 * a cheap operation, and of little problem because this is an
 	 * error-generation path anyway.
 	 */
 
+	bytes = Tcl_GetString(objPtr);
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "bad index \"", bytes,
 		"\": must be integer?[+-]integer? or end?[+-]integer?", NULL);
@@ -2667,12 +2664,12 @@ TclGetIntForIndex(
 
 static void
 UpdateStringOfEndOffset(
-    register Tcl_Obj* objPtr)
+    register Tcl_Obj *objPtr)
 {
     char buffer[TCL_INTEGER_SPACE + sizeof("end") + 1];
     register int len;
 
-    strcpy(buffer, "end");
+    memcpy(buffer, "end", sizeof("end") + 1);
     len = sizeof("end") - 1;
     if (objPtr->internalRep.longValue != 0) {
 	buffer[len++] = '-';
@@ -2707,7 +2704,7 @@ SetEndOffsetFromAny(
     Tcl_Obj *objPtr)		/* Pointer to the object to parse */
 {
     int offset;			/* Offset in the "end-offset" expression */
-    register const char* bytes;	/* String rep of the object */
+    register const char *bytes;	/* String rep of the object */
     int length;			/* Length of the object's string rep */
 
     /*
@@ -2820,7 +2817,7 @@ TclCheckBadOctal(
     }
     if (*p == '0') {
 	if ((p[1] == 'o') || p[1] == 'O') {
-	    p+=2;
+	    p += 2;
 	}
 	while (isdigit(UCHAR(*p))) {	/* INTL: digit. */
 	    p++;
@@ -3011,8 +3008,8 @@ TclSetProcessGlobalValue(
     cacheMap = GetThreadHash(&pgvPtr->key);
     ClearHash(cacheMap);
     hPtr = Tcl_CreateHashEntry(cacheMap,
-	    (char *) INT2PTR(pgvPtr->epoch), &dummy);
-    Tcl_SetHashValue(hPtr, (ClientData) newValue);
+	    INT2PTR(pgvPtr->epoch), &dummy);
+    Tcl_SetHashValue(hPtr, newValue);
     Tcl_MutexUnlock(&pgvPtr->mutex);
 }
 
@@ -3106,7 +3103,7 @@ TclGetProcessGlobalValue(
 
 	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
 	hPtr = Tcl_CreateHashEntry(cacheMap,
-		(char *) INT2PTR(pgvPtr->epoch), &dummy);
+		INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
 	Tcl_SetHashValue(hPtr, value);
 	Tcl_IncrRefCount(value);
@@ -3123,7 +3120,7 @@ TclGetProcessGlobalValue(
  *	(normally as computed by TclpFindExecutable).
  *
  * Results:
- * 	None.
+ *	None.
  *
  * Side effects:
  *	Stores the executable name.
@@ -3154,7 +3151,7 @@ TclSetObjNameOfExecutable(
  *	pathname of the application is unknown.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -3173,15 +3170,15 @@ TclGetObjNameOfExecutable(void)
  *	This function retrieves the absolute pathname of the application in
  *	which the Tcl library is running, and returns it in string form.
  *
- * 	The returned string belongs to Tcl and should be copied if the caller
- * 	plans to keep it, to guard against it becoming invalid.
+ *	The returned string belongs to Tcl and should be copied if the caller
+ *	plans to keep it, to guard against it becoming invalid.
  *
  * Results:
  *	A pointer to the internal string or NULL if the internal full path
  *	name has not been computed or unknown.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */

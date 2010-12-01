@@ -609,7 +609,7 @@ ObjectRenamedTrace(
     AddRef(oPtr);
     oPtr->flags |= OBJECT_DELETED;
     if (!Tcl_InterpDeleted(interp)) {
-	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR);
+	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
 
 	if (contextPtr != NULL) {
 	    int result;
@@ -1315,7 +1315,8 @@ Tcl_NewObjectInstance(
      */
 
     if (objc >= 0) {
-	CallContext *contextPtr = TclOOGetCallContext(oPtr,NULL,CONSTRUCTOR);
+	CallContext *contextPtr =
+		TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL);
 
 	if (contextPtr != NULL) {
 	    int result;
@@ -1935,34 +1936,49 @@ TclOOObjectCmdCore(
     methodNamePtr = objv[1];
     if (oPtr->mapMethodNameProc != NULL) {
 	register Class **startClsPtr = &startCls;
+	Tcl_Obj *mappedMethodName = Tcl_DuplicateObj(methodNamePtr);
 
-	methodNamePtr = Tcl_DuplicateObj(methodNamePtr);
 	result = oPtr->mapMethodNameProc(interp, (Tcl_Object) oPtr,
-		(Tcl_Class *) startClsPtr, methodNamePtr);
+		(Tcl_Class *) startClsPtr, mappedMethodName);
 	if (result != TCL_OK) {
-	    if (result == TCL_ERROR) {
+	    Tcl_DecrRefCount(mappedMethodName);
+	    if (result == TCL_BREAK) {
+		goto noMapping;
+	    } else if (result == TCL_ERROR) {
 		Tcl_AddErrorInfo(interp, "\n    (while mapping method name)");
 	    }
-	    Tcl_DecrRefCount(methodNamePtr);
 	    return result;
 	}
-    }
-    Tcl_IncrRefCount(methodNamePtr);
 
-    /*
-     * Get the call chain.
-     */
+	/*
+	 * Get the call chain for the remapped name.
+	 */
 
-    contextPtr = TclOOGetCallContext(oPtr, methodNamePtr,
-	    flags | (oPtr->flags & FILTER_HANDLING));
-    if (contextPtr == NULL) {
-	Tcl_AppendResult(interp, "impossible to invoke method \"",
-		TclGetString(methodNamePtr),
-		"\": no defined method or unknown method", NULL);
-	Tcl_DecrRefCount(methodNamePtr);
-	return TCL_ERROR;
+	Tcl_IncrRefCount(mappedMethodName);
+	contextPtr = TclOOGetCallContext(oPtr, mappedMethodName,
+		flags | (oPtr->flags & FILTER_HANDLING), methodNamePtr);
+	Tcl_DecrRefCount(mappedMethodName);
+	if (contextPtr == NULL) {
+	    Tcl_AppendResult(interp, "impossible to invoke method \"",
+		    TclGetString(methodNamePtr),
+		    "\": no defined method or unknown method", NULL);
+	    return TCL_ERROR;
+	}
+    } else {
+	/*
+	 * Get the call chain.
+	 */
+
+    noMapping:
+	contextPtr = TclOOGetCallContext(oPtr, methodNamePtr,
+		flags | (oPtr->flags & FILTER_HANDLING), NULL);
+	if (contextPtr == NULL) {
+	    Tcl_AppendResult(interp, "impossible to invoke method \"",
+		    TclGetString(methodNamePtr),
+		    "\": no defined method or unknown method", NULL);
+	    return TCL_ERROR;
+	}
     }
-    Tcl_DecrRefCount(methodNamePtr);
 
     /*
      * Check to see if we need to apply magical tricks to start part way
@@ -2169,7 +2185,7 @@ TclOOIsReachable(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOOObjectName --
+ * TclOOObjectName, Tcl_GetObjectName --
  *
  *	Utility function that returns the name of the object. Note that this
  *	simplifies cache management by keeping the code to do it in one place
@@ -2194,6 +2210,14 @@ TclOOObjectName(
     Tcl_IncrRefCount(namePtr);
     oPtr->cachedNameObj = namePtr;
     return namePtr;
+}
+
+Tcl_Obj *
+Tcl_GetObjectName(
+    Tcl_Interp *interp,
+    Tcl_Object object)
+{
+    return TclOOObjectName(interp, (Object *) object);
 }
 
 /*

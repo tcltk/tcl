@@ -531,6 +531,17 @@ EXTERN int		TclResetCancellation(Tcl_Interp *interp, int force);
 /* Slot 242 is reserved */
 /* 243 */
 EXTERN void		TclDbDumpActiveObjects(FILE *outFile);
+/* 244 */
+EXTERN Tcl_HashTable *	TclGetNamespaceChildTable(Tcl_Namespace *nsPtr);
+/* 245 */
+EXTERN Tcl_HashTable *	TclGetNamespaceCommandTable(Tcl_Namespace *nsPtr);
+/* 246 */
+EXTERN int		TclInitRewriteEnsemble(Tcl_Interp *interp,
+				int numRemoved, int numInserted,
+				Tcl_Obj *const *objv);
+/* 247 */
+EXTERN void		TclResetRewriteEnsemble(Tcl_Interp *interp,
+				int isRootEnsemble);
 
 typedef struct TclIntStubs {
     int magic;
@@ -780,6 +791,10 @@ typedef struct TclIntStubs {
     void (*reserved241)(void);
     void (*reserved242)(void);
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
+    Tcl_HashTable * (*tclGetNamespaceChildTable) (Tcl_Namespace *nsPtr); /* 244 */
+    Tcl_HashTable * (*tclGetNamespaceCommandTable) (Tcl_Namespace *nsPtr); /* 245 */
+    int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, int numRemoved, int numInserted, Tcl_Obj *const *objv); /* 246 */
+    void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1173,6 +1188,14 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 242 is reserved */
 #define TclDbDumpActiveObjects \
 	(tclIntStubsPtr->tclDbDumpActiveObjects) /* 243 */
+#define TclGetNamespaceChildTable \
+	(tclIntStubsPtr->tclGetNamespaceChildTable) /* 244 */
+#define TclGetNamespaceCommandTable \
+	(tclIntStubsPtr->tclGetNamespaceCommandTable) /* 245 */
+#define TclInitRewriteEnsemble \
+	(tclIntStubsPtr->tclInitRewriteEnsemble) /* 246 */
+#define TclResetRewriteEnsemble \
+	(tclIntStubsPtr->tclResetRewriteEnsemble) /* 247 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

@@ -123,6 +123,9 @@ EXTERN void		Tcl_ClassSetConstructor(Tcl_Interp *interp,
 /* 27 */
 EXTERN void		Tcl_ClassSetDestructor(Tcl_Interp *interp,
 				Tcl_Class clazz, Tcl_Method method);
+/* 28 */
+EXTERN Tcl_Obj *	Tcl_GetObjectName(Tcl_Interp *interp,
+				Tcl_Object object);
 
 typedef struct TclOOStubHooks {
     const struct TclOOIntStubs *tclOOIntStubs;
@@ -160,6 +163,7 @@ typedef struct TclOOStubs {
     void (*tcl_ObjectSetMethodNameMapper) (Tcl_Object object, Tcl_ObjectMapMethodNameProc mapMethodNameProc); /* 25 */
     void (*tcl_ClassSetConstructor) (Tcl_Interp *interp, Tcl_Class clazz, Tcl_Method method); /* 26 */
     void (*tcl_ClassSetDestructor) (Tcl_Interp *interp, Tcl_Class clazz, Tcl_Method method); /* 27 */
+    Tcl_Obj * (*tcl_GetObjectName) (Tcl_Interp *interp, Tcl_Object object); /* 28 */
 } TclOOStubs;
 
 #ifdef __cplusplus
@@ -232,6 +236,8 @@ extern const TclOOStubs *tclOOStubsPtr;
 	(tclOOStubsPtr->tcl_ClassSetConstructor) /* 26 */
 #define Tcl_ClassSetDestructor \
 	(tclOOStubsPtr->tcl_ClassSetDestructor) /* 27 */
+#define Tcl_GetObjectName \
+	(tclOOStubsPtr->tcl_GetObjectName) /* 28 */
 
 #endif /* defined(USE_TCLOO_STUBS) */
 

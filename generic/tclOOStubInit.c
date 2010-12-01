@@ -69,6 +69,7 @@ const TclOOStubs tclOOStubs = {
     Tcl_ObjectSetMethodNameMapper, /* 25 */
     Tcl_ClassSetConstructor, /* 26 */
     Tcl_ClassSetDestructor, /* 27 */
+    Tcl_GetObjectName, /* 28 */
 };
 
 /* !END!: Do not edit above this line. */

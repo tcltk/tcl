@@ -2085,6 +2085,14 @@ Tcl_GetChannelHandle(
     int result;
 
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
+    if (!chanPtr->typePtr->getHandleProc) {
+	Tcl_Obj* err;
+	TclNewLiteralStringObj(err, "channel \"");
+	Tcl_AppendToObj(err, Tcl_GetChannelName(chan), -1);
+	Tcl_AppendToObj(err, "\" does not support OS handles", -1);
+	Tcl_SetChannelError (chan,err);
+	return TCL_ERROR;
+    }
     result = chanPtr->typePtr->getHandleProc(chanPtr->instanceData, direction,
 	    &handle);
     if (handlePtr) {

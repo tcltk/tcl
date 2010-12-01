@@ -952,11 +952,20 @@ Tcl_Exit(
 	InvokeExitHandlers();
 
 	/*
-	 * This triggers a flush of the Tcl_Channels that may have
-	 * data enqueued.
+	 * Ensure the thread-specific data is initialised as it is used in
+	 * Tcl_FinalizeThread()
 	 */
-	TclFinalizeIOSubsystem();
-
+	
+	(void) TCL_TSD_INIT(&dataKey);
+	
+	/*
+	 * Now finalize the calling thread only (others are not safely
+	 * reachable).  Among other things, this triggers a flush of the
+	 * Tcl_Channels that may have data enqueued.
+	 */
+	
+	Tcl_FinalizeThread();
+	
 	TclpExit(status);
 	Tcl_Panic("OS exit failed!");
     }

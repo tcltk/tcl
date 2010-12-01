@@ -134,18 +134,23 @@ typedef struct ECL {
 				 * command. */
 } ECL;
 
-/* ExtIndex defined in tclInt.h */
-
 typedef struct ExtCmdLoc {
     int type;			/* Context type. */
+    int start;                  /* Starting line for compiled script. Needed
+				 * for the extended recompile check in
+				 * tclCompileObj. */
     Tcl_Obj *path;		/* Path of the sourced file the command is
 				 * in. */
     ECL *loc;			/* Command word locations (lines). */
     int nloc;			/* Number of allocated entries in 'loc'. */
     int nuloc;			/* Number of used entries in 'loc'. */
-    ExtIndex* eiloc;
-    int neiloc;
-    int nueiloc;
+    Tcl_HashTable litInfo;      /* Indexed by bytecode 'PC', to have the
+				 * information accessible per command and
+				 * argument, not per whole bytecode. Value is
+				 * index of command in 'loc', giving us the
+				 * literals to associate with line information
+				 * as command argument, see
+				 * TclArgumentBCEnter() */
 } ExtCmdLoc;
 
 /*

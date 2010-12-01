@@ -2347,7 +2347,7 @@ Tcl_LrangeObjCmd(
     }
 
     result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
-				&first);
+	    &first);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2356,7 +2356,7 @@ Tcl_LrangeObjCmd(
     }
 
     result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
-				&last);
+	    &last);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2392,8 +2392,8 @@ Tcl_LrangeObjCmd(
 	}
 
 	/*
-	 * This one is not conditioned on (first>0) in order to
-	 * preserve the string-canonizing effect of [lrange 0 end].
+	 * This one is not conditioned on (first>0) in order to preserve the
+	 * string-canonizing effect of [lrange 0 end].
 	 */
 
 	Tcl_ListObjReplace(interp, objv[1], 0, first, 0, NULL);
@@ -2481,6 +2481,7 @@ Tcl_LrepeatObjCmd(
     listPtr = Tcl_NewListObj(totalElems, NULL);
     if (totalElems) {
 	List *listRepPtr = listPtr->internalRep.twoPtrValue.ptr1;
+
 	listRepPtr->elemCount = elementCount*objc;
 	dataArray = &listRepPtr->elements;
     }
@@ -3504,7 +3505,7 @@ Tcl_LsortObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    int i, j, index, unique, indices, length, nocase = 0, sortMode, indexc;
+    int i, j, index, indices, length, nocase = 0, sortMode, indexc;
     int group, groupSize, groupOffset, idx;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     SortElement *elementArray, *elementPtr;
@@ -3545,7 +3546,6 @@ Tcl_LsortObjCmd(
     sortInfo.interp = interp;
     sortInfo.resultCode = TCL_OK;
     cmdPtr = NULL;
-    unique = 0;
     indices = 0;
     group = 0;
     groupSize = 1;
@@ -3644,7 +3644,6 @@ Tcl_LsortObjCmd(
 	    sortInfo.sortMode = SORTMODE_REAL;
 	    break;
 	case LSORT_UNIQUE:
-	    unique = 1;
 	    sortInfo.unique = 1;
 	    break;
 	case LSORT_INDICES:
