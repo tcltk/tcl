@@ -896,7 +896,7 @@ test parse-15.60 {CommandComplete procedure} {
 } 0
 
 test parse-16.1 {Tcl_EvalEx, check termOffset is set correctly for non TCL_OK cases, bug 2535} {
-    subst {[eval {return foo}]bar}
+    set subst subst; $subst {[eval {return foo}]bar}
 } foobar
 
 test parse-17.1 {Correct return codes from errors during substitution} {
@@ -1043,17 +1043,17 @@ test parse-19.3 {Bug 1115904: recursion limit in Tcl_EvalEx} -setup {
     i eval {proc {} args {}}
     interp recursionlimit i 3
 } -body {
-    i eval {subst {[]}}
+    i eval {set subst subst; $subst {[]}}
 } -cleanup {
     interp delete i
 }
 
-test parse-19.4 {Bug 1115904: recursion limit in Tcl_EvalEx} -setup {
+test parse-19.4 {Bug 1115904: recursion limit in Tcl_EvalEx} -constraints knownBug -setup {
     interp create i
     i eval {proc {} args {}}
     interp recursionlimit i 3
 } -body {
-    i eval {subst {[[]]}}
+    i eval {set subst subst; $subst {[[]]}}
 } -cleanup {
     interp delete i
 } -returnCodes error -match glob -result {too many nested*}

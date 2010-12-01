@@ -132,6 +132,9 @@ typedef struct ECL {
     int nline;                  /* Number of words in the command */
     int *line;			/* Line information for all words in the
 				 * command. */
+    int** next;                 /* Transient information used by the compiler
+				 * for tracking of hidden continuation
+				 * lines. */
 } ECL;
 
 typedef struct ExtCmdLoc {
@@ -309,6 +312,13 @@ typedef struct CompileEnv {
 				 * should be issued; they should never be
 				 * issued repeatedly, as that is significantly
 				 * inefficient. */
+    ContLineLoc* clLoc;  /* If not NULL, the table holding the
+			  * locations of the invisible continuation
+			  * lines in the input script, to adjust the
+			  * line counter. */
+    int*         clNext; /* If not NULL, it refers to the next slot in
+			  * clLoc to check for an invisible
+			  * continuation line. */
 } CompileEnv;
 
 /*
@@ -656,8 +666,12 @@ typedef struct ByteCode {
 #define INST_EXIST_ARRAY_STK		130
 #define INST_EXIST_STK			131
 
+/* For [subst] compilation */
+#define INST_NOP			132
+#define INST_RETURN_CODE_BRANCH		133
+
 /* The last opcode */
-#define LAST_INST_OPCODE		131
+#define LAST_INST_OPCODE		133
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -877,6 +891,8 @@ MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,

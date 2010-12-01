@@ -8565,6 +8565,7 @@ DeleteScriptRecord(
 	    if (esPtr == statePtr->scriptRecordPtr) {
 		statePtr->scriptRecordPtr = esPtr->nextPtr;
 	    } else {
+		CLANG_ASSERT(prevEsPtr);
 		prevEsPtr->nextPtr = esPtr->nextPtr;
 	    }
 

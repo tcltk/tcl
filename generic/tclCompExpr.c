@@ -2231,6 +2231,7 @@ CompileExprTree(
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &(jumpPtr->jump));
 		break;
 	    case COLON:
+		CLANG_ASSERT(jumpPtr);
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
 			&(jumpPtr->next->jump));
 		envPtr->currStackDepth = jumpPtr->depth;
@@ -2284,6 +2285,7 @@ CompileExprTree(
 		numWords++;
 		break;
 	    case COLON:
+		CLANG_ASSERT(jumpPtr);
 		if (TclFixupForwardJump(envPtr, &(jumpPtr->next->jump),
 			(envPtr->codeNext - envPtr->codeStart)
 			- jumpPtr->next->jump.codeOffset, 127)) {
@@ -2302,6 +2304,7 @@ CompileExprTree(
 		break;
 	    case AND:
 	    case OR:
+		CLANG_ASSERT(jumpPtr);
 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
 			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP,
 			&(jumpPtr->next->jump));
