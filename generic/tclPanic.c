@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPanic.c,v 1.14 2009/07/22 19:54:50 nijtmans Exp $
+ * RCS: @(#) $Id: tclPanic.c,v 1.15 2010/12/01 10:43:36 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -90,7 +90,12 @@ Tcl_PanicVA(
 		arg8);
 	fprintf(stderr, "\n");
 	fflush(stderr);
+#ifdef _WIN32
+    DebugBreak();
+    ExitProcess(1);
+#else
 	abort();
+#endif
     }
 }
 
