@@ -1,3 +1,12 @@
+2010-12-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c (SetPrecisionLimits, TclDoubleDigits):
+	Added meaningless initialization of 'i', 'ilim' and 'ilim1'
+	to silence warnings from the C compiler about possible use of
+	uninitialized variables, Added a panic to the 'switch' that
+	assigns them, to assert that the 'default' case is impossible.
+	[Bug 3124675]
+
 2010-11-30  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclInt.decls: Backport of Kevin B. Kenny's work on
