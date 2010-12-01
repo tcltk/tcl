@@ -6,8 +6,8 @@
  *
  * Copyright (c) 1995-1998 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * RCS: @(#) $Id: tclUnixFile.c,v 1.53 2008/04/27 22:21:34 dkf Exp $
  */
@@ -232,9 +232,9 @@ TclpMatchInDirectory(
 	Tcl_Obj *tailPtr;
 	const char *nativeTail;
 
-	native = (const char *) Tcl_FSGetNativePath(pathPtr);
+	native = Tcl_FSGetNativePath(pathPtr);
 	tailPtr = TclPathPart(interp, pathPtr, TCL_PATH_TAIL);
-	nativeTail = (const char *) Tcl_FSGetNativePath(tailPtr);
+	nativeTail = Tcl_FSGetNativePath(tailPtr);
 	matchResult = NativeMatchType(interp, native, nativeTail, types);
 	if (matchResult == 1) {
 	    Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
@@ -568,7 +568,7 @@ NativeMatchType(
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 TclpGetUserHome(
     const char *name,		/* User name for desired home directory. */
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
@@ -578,15 +578,13 @@ TclpGetUserHome(
     Tcl_DString ds;
     const char *native = Tcl_UtfToExternalDString(NULL, name, -1, &ds);
 
-    pwPtr = getpwnam(native);				/* INTL: Native. */
+    pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
 
     if (pwPtr == NULL) {
-	endpwent();
 	return NULL;
     }
     Tcl_ExternalToUtfDString(NULL, pwPtr->pw_dir, -1, bufferPtr);
-    endpwent();
     return Tcl_DStringValue(bufferPtr);
 }
 
@@ -712,7 +710,7 @@ TclpGetNativeCwd(
 	char *newCd = ckalloc((unsigned) strlen(buffer) + 1);
 
 	strcpy(newCd, buffer);
-	return (ClientData) newCd;
+	return newCd;
     }
 
     /*
@@ -1117,7 +1115,7 @@ TclNativeCreateNativeRep(
     memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
 
     Tcl_DStringFree(&ds);
-    return (ClientData)nativePathPtr;
+    return nativePathPtr;
 }
 
 /*
@@ -1156,7 +1154,7 @@ TclNativeDupInternalRep(
 
     copy = ckalloc(len);
     memcpy(copy, clientData, len);
-    return (ClientData) copy;
+    return copy;
 }
 
 /*

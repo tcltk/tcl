@@ -2170,9 +2170,13 @@ ExitProcOdd(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
+    size_t len;
 
     sprintf(buf, "odd %d\n", PTR2INT(clientData));
-    (void)write(1, buf, strlen(buf));
+    len = strlen(buf);
+    if (len != (size_t) write(1, buf, len)) {
+		Tcl_Panic("ExitProcOdd: unable to write to stdout");
+    }
 }
 
 static void
@@ -2180,9 +2184,13 @@ ExitProcEven(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
+    size_t len;
 
     sprintf(buf, "even %d\n", PTR2INT(clientData));
-    (void)write(1, buf, strlen(buf));
+    len = strlen(buf);
+    if (len != (size_t) write(1, buf, len)) {
+		Tcl_Panic("ExitProcEven: unable to write to stdout");
+    }
 }
 
 /*

@@ -41,6 +41,7 @@ set helperscript {
     }
 
     proc note  {item}  {global res; lappend res $item; return}
+    #proc note  {item}  {global res; lappend res $item; puts $item ; flush stdout ; return}
     proc track {}      {upvar args item; note $item; return}
     proc notes {items} {foreach i $items {note $i}}
 
@@ -452,7 +453,41 @@ test iortrans-4.7 {chan read, level is squashed} -match glob -body {
     set res
 } -result {{read rt* {test data
 }} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "read"*}}
-
+test iortrans-4.8 {chan read, read, bug 2921116} -match glob -setup {
+    set res {}
+    proc foo {fd args} {
+	oninit; onfinal; track
+	# Kill and recreate transform while it is operating
+	chan pop  $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+} -body {
+    note [read $c]
+    #note [gets $c]
+    set res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} file*}
+test iortrans-4.9 {chan read, gets, bug 2921116} -match glob -setup {
+    set res {}
+    proc foo {fd args} {
+	oninit; onfinal; track
+	# Kill and recreate transform while it is operating
+	chan pop  $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+} -body {
+    note [gets $c]
+    set res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} file*}
 
 # --- === *** ###########################
 # method write (via puts)
@@ -560,6 +595,28 @@ test iortrans-5.10 {chan write, failed write, level is ignored} -match glob -bod
     rename foo {}
     set res
 } -result {{write rt* snarfsnarfsnarf} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "write"*}}
+test iortrans-5.11 {chan write, bug 2921116} -match glob -setup {
+    set res {}
+    set level 0
+    proc foo {fd args} {
+	oninit; onfinal; track
+	# pop - invokes flush - invokes 'foo write' - infinite recursion - stop it
+	global level
+	if {$level} { return "" }
+	incr level
+	# Kill and recreate transform while it is operating
+	chan pop  $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+} -body {
+    note [puts -nonewline $c abcdef]
+    note [flush $c]
+    set res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{} {write rt* abcdef} {write rt* abcdef} {}}
 
 # --- === *** ###########################
 # method limit?, drain (via read)
@@ -631,6 +688,22 @@ test iortrans-7.3 {clear, any result is ignored} -match glob -body {
     rename foo {}
     set res
 } -result {{clear rt*}}
+test iortrans-7.4 {chan clear, bug 2921116} -match glob -setup {
+    set res {}
+    proc foo {fd args} {
+	oninit clear; onfinal; track
+	# Kill and recreate transform while it is operating
+	chan pop  $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+} -body {
+    seek $c 2
+    set res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{clear rt*}}
 
 # --- === *** ###########################
 # method flush (via seek, close)
@@ -666,6 +739,22 @@ test iortrans-8.2 {close flushes write buffers, writes data} -match glob -body {
     set res
 } -result {{flush rt*} {finalize rt*} .flushed.}
 
+test iortrans-8.3 {chan flush, bug 2921116} -match glob -setup {
+    set res {}
+    proc foo {fd args} {
+	oninit flush; onfinal; track
+	# Kill and recreate transform while it is operating
+	chan pop  $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+} -body {
+    seek $c 2
+    set res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{flush rt*}}
 
 # --- === *** ###########################
 # method watch - removed from TIP (rev 1.12+)
@@ -764,6 +853,28 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
     set res
 } -constraints {testchannel impossible} \
     -result {Owner lost}
+
+
+test iortrans-11.2 {delete interp of reflected transform} -body {
+    interp create slave
+
+    # Magic to get the test* commands into the slave
+    load {} Tcltest slave
+
+    # Get base channel into the slave
+    set c [tempchan]
+    testchannel cut $c
+    interp eval slave [list testchannel splice $c]
+    interp eval slave [list set c $c]
+
+    slave eval {
+        proc no-op args {}
+        proc driver {c sub args} {return {initialize finalize read write}}
+	set t [chan push $c [list driver $c]]
+        chan event $c readable no-op
+    }
+    interp delete slave
+} -result {} -constraints {testchannel}
 
 # ### ### ### ######### ######### #########
 ## Same tests as above, but exercising the code forwarding and

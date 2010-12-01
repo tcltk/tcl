@@ -21,7 +21,7 @@
  * above. This variable can be modified by the function below.
  */
 
-static char *tclPreInitScript = NULL;
+static const char *tclPreInitScript = NULL;
 
 /* Forward declaration */
 struct Target;
@@ -263,11 +263,11 @@ static void		TimeLimitCallback(ClientData clientData);
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 TclSetPreInitScript(
-    char *string)		/* Pointer to a script. */
+    const char *string)		/* Pointer to a script. */
 {
-    char *prevString = tclPreInitScript;
+    const char *prevString = tclPreInitScript;
     tclPreInitScript = string;
     return(prevString);
 }

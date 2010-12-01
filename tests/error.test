@@ -18,7 +18,23 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+testConstraint memory [llength [info commands memory]]
 namespace eval ::tcl::test::error {
+if {[testConstraint memory]} {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	return [lindex $lines 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+	set end [getbytes]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [getbytes]
+	}
+	return [expr {$end - $tmp}]
+    }
+}
 
 proc foo {} {
     global errorInfo
@@ -153,6 +169,19 @@ test error-4.5 {errorInfo and errorCode variables} {
     list [catch {error msg1 msg2 {}} msg] $msg $::errorInfo $::errorCode
 } {1 msg1 msg2 {}}
 
+test error-4.6 {errorstack via info } -body {
+    proc f x {g $x$x}
+    proc g x {error G:$x}
+    catch {f 12}
+    info errorstack
+} -match glob -result {INNER * CALL {g 1212} CALL {f 12} UP 1}
+test error-4.7 {errorstack via options dict } -body {
+    proc f x {g $x$x}
+    proc g x {error G:$x}
+    catch {f 12} m d
+    dict get $d -errorstack
+} -match glob -result {INNER * CALL {g 1212} CALL {f 12} UP 1}
+
 # Errors in error command itself
 
 test error-5.1 {errors in error command} {
@@ -207,6 +236,15 @@ test error-6.9 {catch must reset error state} {
     catch foo
     list $::errorCode
 } {NONE}
+test error-6.10 {catch must reset errorstack} -body {
+	proc f x {g $x$x}
+	proc g x {error G:$x}
+	catch {f 12}
+	set e1 [info errorstack]
+	catch {f 13}
+	set e2 [info errorstack]
+	list $e1 $e2
+} -match glob -result {{INNER * CALL {g 1212} CALL {f 12} UP 1} {INNER * CALL {g 1313} CALL {f 13} UP 1}}
 
 test error-7.1 {Bug 1397843} -body {
     variable cmds
@@ -491,6 +529,46 @@ test error-15.7 {try with no matching handler (unknown integer result propagates
     try { return -level 0 -code 123456 } trap {} {} { list a b c }
 } -returnCodes 123456 -result {}
 
+foreach level {0 1 2 3} {
+    foreach code {0 1 2 3 4 5} {
+
+	# Following cases have different -errorinfo; avoid false alarms
+	# TODO: examine whether these difference are as they ought to be.
+	if {$level == 0 && $code == 1} continue
+
+	foreach extras {{} {-bar soom}} {
+
+test error-15.8.$level.$code.[llength $extras] {[try] coverage} {
+    set script {return -level $level -code $code {*}$extras foo}
+    catch $script m1 o1
+    catch {try $script} m2 o2
+    set o1 [lsort -stride 2 $o1]
+    set o2 [lsort -stride 2 $o2]
+    expr {$o1 eq $o2 ? "ok" : "$o1\n\tis not equal to\n$o2"}
+} ok
+
+test error-15.9.$level.$code.[llength $extras] {[try] coverage} {
+    set script {return -level $level -code $code {*}$extras foo}
+    catch $script m1 o1
+    catch {try $script finally {}} m2 o2
+    set o1 [lsort -stride 2 $o1]
+    set o2 [lsort -stride 2 $o2]
+    expr {$o1 eq $o2 ? "ok" : "$o1\n\tis not equal to\n$o2"}
+} ok
+
+test error-15.10.$level.$code.[llength $extras] {[try] coverage} {
+    set script {return -level $level -code $code {*}$extras foo}
+    catch $script m1 o1
+    catch {try $script on $code {x y} {return -options $y $x}} m2 o2
+    set o1 [lsort -stride 2 $o1]
+    set o2 [lsort -stride 2 $o2]
+    expr {$o1 eq $o2 ? "ok" : "$o1\n\tis not equal to\n$o2"}
+} ok
+
+	}
+    }
+}
+
 # try tests - propagation (exceptions in handlers, exception chaining)
 
 test error-16.1 {try with successfully executed handler} {
@@ -747,6 +825,160 @@ test error-19.5 {multiple unrelated fallthroughs #2} {
     } 
     set RES
 } {err}
+proc addmsg msg {
+    variable RES
+    lappend RES $msg
+}
+test error-19.6 {compiled try executes all clauses} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	try {
+	    addmsg a
+	    throw bar hello
+	} trap bar {res opt} {
+	    addmsg b
+	} finally {
+	    addmsg c
+	}
+	addmsg d
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {a b c d}
+test error-19.7 {compiled try executes all clauses} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	try {
+	    addmsg a
+	} on error {res opt} {
+	    addmsg b
+	} on ok {} {
+	    addmsg c
+	} finally {
+	    addmsg d
+	}
+	addmsg e
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {a c d e}
+test error-19.8 {compiled try executes all clauses} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	try {
+	    addmsg a
+	    throw bar hello
+	} trap bar {res opt} {
+	    addmsg b
+	}
+	addmsg c
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {a b c}
+test error-19.9 {compiled try executes all clauses} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	try {
+	    addmsg a
+	} on error {res opt} {
+	    addmsg b
+	} on ok {} {
+	    addmsg c
+	}
+	addmsg d
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {a c d}
+test error-19.10 {compiled try with chained clauses} -setup {
+    set RES {}
+} -body {
+    list [apply {{} {
+	try {
+	    return good
+	} on return {res} - on ok {res} {
+	    addmsg ok
+	    addmsg $res
+	    return handler
+	} finally {
+	    addmsg finally
+	}
+    } ::tcl::test::error}] $RES
+} -cleanup {
+    unset RES
+} -result {handler {ok good finally}}
+test error-19.11 {compiled try and errors on variable write} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	array set foo {bar boo}
+	set bar unset
+	catch {
+	    try {
+		addmsg body
+		return a
+	    } on return {bar foo} {
+		addmsg handler
+		return b
+	    } finally {
+		addmsg finally,$bar
+	    }
+	} msg
+	addmsg $msg
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {body finally,a {can't set "foo": variable is array}}
+test error-19.12 {interpreted try and errors on variable write} -setup {
+    set RES {}
+} -body {
+    apply {try {
+	array set foo {bar boo}
+	set bar unset
+	catch {
+	    $try {
+		addmsg body
+		return a
+	    } on return {bar foo} {
+		addmsg handler
+		return b
+	    } finally {
+		addmsg finally,$bar
+	    }
+	} msg
+	addmsg $msg
+    } ::tcl::test::error} try
+} -cleanup {
+    unset RES
+} -result {body finally,a {can't set "foo": variable is array}}
+test error-19.13 {compiled try and errors on variable write} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	array set foo {bar boo}
+	set bar unset
+	catch {
+	    try {
+		addmsg body
+		return a
+	    } on return {bar foo} - on error {bar foo} {
+		addmsg handler
+		return b
+	    } finally {
+		addmsg finally,$bar
+	    }
+	} msg
+	addmsg $msg
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {body finally,a {can't set "foo": variable is array}}
+rename addmsg {}
 
 # FIXME test what vars get set on fallthough ... what is the correct behavior?
 # It would seem appropriate to set at least those for the matching handler and
@@ -755,11 +987,60 @@ test error-19.5 {multiple unrelated fallthroughs #2} {
 # negative case try tests - bad "on" handler
 
 test error-20.1 {bad code name in on handler} -body {
-    try { list a b c } on foo {} {}
-} -returnCodes error -match glob -result {bad code *}
+    try { list a b c } on err {} {}
+} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
 test error-20.2 {bad code value in on handler} -body {
     try { list a b c } on 34985723094872345 {} {}
-} -returnCodes error -match glob -result {bad code *}
+} -returnCodes error -match glob -result {bad completion code "34985723094872345": must be ok, error, return, break, continue*, or an integer}
+
+test error-21.1 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {string repeat x 10} on ok {} {}
+    }
+} 0
+test error-21.2 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {error [string repeat x 10]} on error {} {}
+    }
+} 0
+test error-21.3 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {throw FOO [string repeat x 10]} trap FOO {} {}
+    }
+} 0
+test error-21.4 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {string repeat x 10}
+    }
+} 0
+test error-21.5 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {string repeat x 10} on ok {} {} finally {string repeat y 10}
+    }
+} 0
+test error-21.6 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {
+	    error [string repeat x 10]
+	} on error {} {} finally {
+	    string repeat y 10
+	}
+    }
+} 0
+test error-21.7 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {
+	    throw FOO [string repeat x 10]
+	} trap FOO {} {} finally {
+	    string repeat y 10
+	}
+    }
+} 0
+test error-21.8 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {string repeat x 10} finally {string repeat y 10}
+    }
+} 0
 
 # negative case try tests - bad "trap" handler
 # what is the effect if we attempt to trap an errorcode that is not a list?

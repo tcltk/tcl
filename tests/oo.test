@@ -9,7 +9,7 @@
 #
 # RCS: @(#) $Id: oo.test,v 1.7 2008/06/19 21:29:04 dkf Exp $
 
-package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
+package require -exact TclOO 0.6.2 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
@@ -72,6 +72,42 @@ test oo-0.5 {testing literal leak on interp delete} memory {
 	interp delete foo
     }
 } 0
+test oo-0.6 {cleaning the core class pair; way #1} -setup {
+    interp create t
+    initInterpreter t
+} -body {
+    t eval {
+	package require TclOO
+	namespace path oo
+	list [catch {class destroy} m] $m [catch {object destroy} m] $m
+    }
+} -cleanup {
+    interp delete t
+} -result {0 {} 1 {invalid command name "object"}}
+test oo-0.7 {cleaning the core class pair; way #2} -setup {
+    interp create t
+    initInterpreter t
+} -body {
+    t eval {
+	package require TclOO
+	namespace path oo
+	list [catch {object destroy} m] $m [catch {class destroy} m] $m
+    }
+} -cleanup {
+    interp delete t
+} -result {0 {} 1 {invalid command name "class"}}
+test oo-0.8 {leak in variable management} -setup {
+    oo::class create foo
+} -constraints memory -body {
+    oo::define foo {
+	constructor {} {
+	    variable v 0
+	}
+    }
+    leaktest {[foo new] destroy}
+} -cleanup {
+    foo destroy
+} -result 0
 
 test oo-1.1 {basic test of OO functionality: no classes} {
     set result {}
@@ -221,6 +257,18 @@ test oo-1.18 {OO: create object in NS with same name as global cmd} -setup {
     rename test-oo-1.18 {}
     A destroy
 } -result ::C
+test oo-1.19 {basic test of OO functionality: teardown order} -body {
+    oo::object create o
+    namespace delete [info object namespace o]
+    o destroy
+    # Crashes on error
+} -returnCodes error -result {invalid command name "o"}
+test oo-1.20 {basic test of OO functionality: my teardown post rename} -body {
+    oo::object create obj
+    rename [info object namespace obj]::my ::AGlobalName
+    obj destroy
+    info commands ::AGlobalName
+} -result {}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -319,6 +367,164 @@ test oo-3.2 {basic test of OO functionality: destructor} -setup {
 } -cleanup {
     interp delete subinterp
 } -result {1 ::foo died 2 {}}
+test oo-3.3 {basic test of OO functionality: destructor} -setup {
+    oo::class create foo
+    set result {}
+} -cleanup {
+    foo destroy
+} -body {
+    oo::define foo {
+	constructor {} {lappend ::result made}
+	destructor {lappend ::result died}
+    }
+    namespace delete [info object namespace [foo new]]
+    return $result
+} -result {made died}
+test oo-3.4 {basic test of OO functionality: my exists in destructor} -setup {
+    oo::class create cls
+    set result {}
+} -cleanup {
+    cls destroy
+} -body {
+    oo::define cls {
+	variable state
+	constructor {} {
+	    proc localcmdexists {} {}
+	    set state ok
+	}
+	forward Report lappend ::result
+	destructor {
+	    objmy Report [catch {set state} msg] $msg
+	    objmy Report [namespace which -var state]
+	    objmy Report [info commands localcmdexists]
+	}
+    }
+    cls create obj
+    rename [info object namespace obj]::my ::objmy
+    obj destroy
+    lappend result [info commands ::objmy]
+} -match glob -result {0 ok *::state localcmdexists {}}
+test oo-3.4a {basic test of OO functionality: my exists in destructor} -setup {
+    oo::class create cls
+    set result {}
+} -cleanup {
+    cls destroy
+} -body {
+    oo::define cls {
+	variable state
+	constructor {} {
+	    proc localcmdexists {} {}
+	    set state ok
+	}
+	forward Report lappend ::result
+	destructor {
+	    objmy Report [catch {set state} msg] $msg
+	    objmy Report [namespace which -var state]
+	    objmy Report [info commands localcmdexists]
+	}
+    }
+    cls create obj
+    rename [info object namespace obj]::my ::objmy
+    rename obj {}
+    lappend result [info commands ::objmy]
+} -match glob -result {0 ok *::state localcmdexists {}}
+test oo-3.5 {basic test of OO functionality: destructor: evil case for Itcl} -setup {
+    oo::class create cls
+    set result {}
+} -cleanup {
+    cls destroy
+} -body {
+    oo::define cls {
+	variable state
+	constructor {} {
+	    proc localcmdexists {} {}
+	    set state ok
+	}
+	forward Report lappend ::result
+	destructor {
+	    objmy Report [catch {set state} msg] $msg
+	    objmy Report [namespace which -var state]
+	    objmy Report [info commands localcmdexists]
+	}
+    }
+    cls create obj
+    rename [info object namespace obj]::my ::objmy
+    namespace delete [info object namespace obj]
+    lappend result [info commands ::objmy]
+} -match glob -result {0 ok *::state localcmdexists {}}
+test oo-3.5a {basic test of OO functionality: destructor: evil case for Itcl} -setup {
+    oo::class create cls
+    set result {}
+} -cleanup {
+    cls destroy
+} -body {
+    oo::define cls {
+	variable state result
+	constructor {} {
+	    proc localcmdexists {} {}
+	    set state ok
+	    my eval {upvar 0 ::result result}
+	}
+	method nuke {} {
+	    namespace delete [namespace current]
+	    return $result
+	}
+	destructor {
+	    lappend result [self] $state [info commands localcmdexists]
+	}
+    }
+    cls create obj
+    namespace delete [info object namespace obj]
+    [cls create obj2] nuke
+} -match glob -result {::obj ok localcmdexists ::obj2 ok localcmdexists}
+test oo-3.6 {basic test of OO functionality: errors in destructor} -setup {
+    oo::class create cls
+} -cleanup {
+    cls destroy
+} -body {
+    oo::define cls destructor {error foo}
+    list [catch {[cls create obj] destroy} msg] $msg [info commands obj]
+} -result {1 foo {}}
+test oo-3.7 {basic test of OO functionality: errors in destructor} -setup {
+    oo::class create cls
+    set result {}
+    proc bgerror msg {lappend ::result $msg}
+} -cleanup {
+    cls destroy
+    rename bgerror {}
+} -body {
+    oo::define cls destructor {error foo}
+    list [rename [cls create obj] {}] \
+	[update idletasks] $result [info commands obj]
+} -result {{} {} foo {}}
+test oo-3.8 {basic test of OO functionality: errors in destructor} -setup {
+    oo::class create cls
+    set result {}
+    proc bgerror msg {lappend ::result $msg}
+} -cleanup {
+    cls destroy
+    rename bgerror {}
+} -body {
+    oo::define cls destructor {error foo}
+    list [namespace delete [info object namespace [cls create obj]]] \
+	[update idletasks] $result [info commands obj]
+} -result {{} {} foo {}}
+test oo-3.9 {Bug 2944404: deleting the object in the destructor} -setup {
+    oo::class create cls
+    set result {}
+} -body {
+    oo::define cls {
+	destructor {
+	    lappend ::result in destructor
+	    [self] destroy
+	}
+    }
+    # This used to crash
+    [cls new] destroy
+    return $result
+} -cleanup {
+    cls destroy
+} -result {in destructor}
 
 test oo-4.1 {basic test of OO functionality: export} {
     set o [oo::object new]
@@ -1309,7 +1515,7 @@ test oo-16.2 {OO: object introspection} -body {
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, mixins, namespace, variables, or vars}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, methodtype, mixins, namespace, variables, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
     [meta create instance1] create instance2
@@ -1350,10 +1556,11 @@ test oo-16.7 {OO: object introspection} -setup {
 } -body {
     oo::objdefine foo method bar {a {b c} args} {the body}
     set result [info object methods foo]
-    lappend result [info object definition foo bar]
+    lappend result [info object methodtype foo bar] \
+	[info object definition foo bar]
 } -cleanup {
     foo destroy
-} -result {bar {{a {b c} args} {the body}}}
+} -result {bar method {{a {b c} args} {the body}}}
 test oo-16.8 {OO: object introspection} {
     oo::object create foo
     oo::class create bar
@@ -1430,7 +1637,7 @@ test oo-17.3 {OO: class introspection} -setup {
 } -result {"foo" is not a class}
 test oo-17.4 {OO: class introspection} -body {
     info class gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, mixins, subclasses, superclasses, or variables}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, methodtype, mixins, subclasses, superclasses, or variables}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
 } -body {
@@ -1446,10 +1653,11 @@ test oo-17.6 {OO: class introspection} -setup {
 } -body {
     oo::define foo method bar {a {b c} args} {the body}
     set result [info class methods foo]
-    lappend result [info class definition foo bar]
+    lappend result [info class methodtype foo bar] \
+	[info class definition foo bar]
 } -cleanup {
     foo destroy
-} -result {bar {{a {b c} args} {the body}}}
+} -result {bar method {{a {b c} args} {the body}}}
 test oo-17.7 {OO: class introspection} {
     info class superclasses oo::class
 } ::oo::object
@@ -1615,6 +1823,17 @@ test oo-19.1 {OO: varname method} -setup {
     inst destroy
     rename foo {}
 } -result {{x {} write} ok ok 0}
+test oo-19.2 {OO: varname method: Bug 2883857} -setup {
+    oo::class create SpecialClass
+    oo::objdefine SpecialClass export createWithNamespace
+    SpecialClass createWithNamespace inst ::oo_test
+    oo::objdefine inst export varname eval
+} -body {
+    inst eval { variable x; array set x {y z} }
+    inst varname x(y)
+} -cleanup {
+    SpecialClass destroy
+} -result ::oo_test::x(y)
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
@@ -1793,6 +2012,51 @@ test oo-20.12 {OO: variable method accept zero args (TIP 323)} -setup {
     }
     foo demo
 } -result {}
+test oo-20.13 {OO: variable method use in non-methods [Bug 2903811]} -setup {
+    oo::object create fooObj
+    oo::objdefine fooObj export variable
+} -cleanup {
+    fooObj destroy
+} -body {
+    apply {{} {fooObj variable x; set x ok; return}}
+    apply {{} {fooObj variable x; return $x}}
+} -result ok
+test oo-20.14 {OO: variable method use in non-methods [Bug 2903811]} -setup {
+    oo::object create fooObj
+    oo::objdefine fooObj export variable
+    namespace eval ns1 {}
+    namespace eval ns2 {}
+    set x bad
+} -cleanup {
+    fooObj destroy
+    namespace delete ns1 ns2
+    unset x
+} -body {
+    namespace eval ns1 {fooObj variable x; set x ok; subst ""}
+    set x bad
+    namespace eval ns2 {fooObj variable x; return $x}
+} -result ok
+test oo-20.15 {OO: variable method use in non-methods [Bug 2903811]} -setup {
+    oo::object create fooObj
+    oo::objdefine fooObj export variable varname
+} -cleanup {
+    fooObj destroy
+} -body {
+    apply {{} {fooObj variable x; set x ok; return}}
+    return [set [fooObj varname x]]
+} -result ok
+test oo-20.16 {variable method: leak per instance} -setup {
+    oo::class create foo
+} -constraints memory -body {
+    oo::define foo {
+	constructor {} {
+	    set [my variable v] 0
+	}
+    }
+    leaktest {[foo new] destroy}
+} -cleanup {
+    foo destroy
+} -result 0
 
 test oo-21.1 {OO: inheritance ordering} -setup {
     oo::class create A
@@ -1959,7 +2223,7 @@ test oo-22.1 {OO and info frame} -setup {
     list [i level] [i frames] [dict get [c frame] object]
 } -cleanup {
     c destroy
-} -result {1 {{* cmd {info frame 0} method frames class ::c level 0} {* cmd {info frame 0} method frames object ::i level 0}} ::c}
+} -result {1 {{type source line * file * cmd {info frame 0} method frames class ::c level 0} {type source line * file * cmd {info frame 0} method frames object ::i level 0}} ::c}
 
 # Prove that the issue in [Bug 1865054] isn't an issue any more
 test oo-23.1 {Self-like derivation; complex case!} -setup {
@@ -2280,6 +2544,19 @@ test oo-27.11 {variables declaration - no instance var leaks with class resolver
     inst1 step
     list [inst1 value] [inst2 value]
 } -result {3 2}
+test oo-27.12 {variables declaration: leak per instance} -setup {
+    oo::class create foo
+} -constraints memory -body {
+    oo::define foo {
+	variable v
+	constructor {} {
+	    set v 0
+	}
+    }
+    leaktest {[foo new] destroy}
+} -cleanup {
+    foo destroy
+} -result 0
 
 # A feature that's not supported because the mechanism may change without
 # warning, but is supposed to work...
@@ -2310,6 +2587,23 @@ test oo-29.1 {self class with object-defined methods} -setup {
 } -returnCodes error -cleanup {
     obj destroy
 } -result {method not defined by a class}
+
+test oo-30.1 {Bug 2903011: deleting an object in a constructor} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {constructor {} {[self] destroy}}
+    cls new
+} -returnCodes error -cleanup {
+    cls destroy
+} -result {object deleted in constructor}
+test oo-30.2 {Bug 2903011: deleting an object in a constructor} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {constructor {} {my destroy}}
+    cls new
+} -returnCodes error -cleanup {
+    cls destroy
+} -result {object deleted in constructor}
 
 cleanupTests
 return

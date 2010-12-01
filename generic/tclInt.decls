@@ -186,7 +186,7 @@ declare 41 generic {
     Tcl_Command TclGetOriginalCommand(Tcl_Command command)
 }
 declare 42 generic {
-    char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
+    CONST86 char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
 # Removed in Tcl 8.5a2
 #declare 43 generic {
@@ -412,7 +412,7 @@ declare 98 generic {
 #	    Tcl_Obj *objPtr, int flags)
 #}
 declare 101 generic {
-    char *TclSetPreInitScript(char *string)
+    CONST86 char *TclSetPreInitScript(const char *string)
 }
 declare 102 generic {
     void TclSetupEnv(Tcl_Interp *interp)

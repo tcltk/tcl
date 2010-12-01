@@ -20,7 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 catch {unset x}
 catch {rename unknown unknown.old}
-
+
 test unknown-1.1 {non-existent "unknown" command} {
     list [catch {_non-existent_ foo bar} msg] $msg
 } {1 {invalid command name "_non-existent_"}}
@@ -29,7 +29,6 @@ proc unknown {args} {
     global x
     set x $args
 }
-
 test unknown-2.1 {calling "unknown" command} {
     foobar x y z
     set x
@@ -55,13 +54,16 @@ test unknown-3.1 {argument quoting in calls to "unknown"} {
 proc unknown args {
     error "unknown failed"
 }
-
 test unknown-4.1 {errors in "unknown" procedure} {
     list [catch {non-existent a b} msg] $msg $errorCode
 } {1 {unknown failed} NONE}
-
+
 # cleanup
 catch {rename unknown {}}
 catch {rename unknown.old unknown}
 ::tcltest::cleanupTests
 return 
+
+# Local Variables:
+# mode: tcl
+# End:

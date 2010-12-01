@@ -43,7 +43,7 @@ testConstraint teststaticpkg [llength [info commands teststaticpkg]]
 
 testConstraint testsimplefilesystem \
 	[llength [info commands testsimplefilesystem]]
-
+
 test load-1.1 {basic errors} {} {
     list [catch {load} msg] $msg
 } "1 {wrong \# args: should be \"load fileName ?packageName? ?interp?\"}"
@@ -66,7 +66,7 @@ test load-1.6 {basic errors} {} {
 test load-2.1 {basic loading, with guess for package name} \
 	[list $dll $loaded] {
     load [file join $testDir pkga$ext]
-    list [pkga_eq abc def] [info commands pkga_*]
+    list [pkga_eq abc def] [lsort [info commands pkga_*]]
 } {0 {pkga_eq pkga_quote}}
 interp create -safe child
 test load-2.2 {loading into a safe interpreter, with package name conversion} \
@@ -77,8 +77,10 @@ test load-2.2 {loading into a safe interpreter, with package name conversion} \
 } {31 1 {invalid command name "pkgb_unsafe"} 1 {invalid command name "pkgb_sub"}}
 test load-2.3 {loading with no _Init procedure} -constraints [list $dll $loaded] \
 -body {
-    list [catch {load [file join $testDir pkgc$ext] foo} msg] $msg
-} -match glob -result {1 {*couldn't find procedure Foo_Init}}
+    list [catch {load [file join $testDir pkgc$ext] foo} msg] $msg $errorCode
+} -match glob \
+    -result [list 1 {cannot find symbol "Foo_Init"*} \
+		 {TCL LOOKUP LOAD_SYMBOL *Foo_Init}]
 test load-2.4 {loading with no _SafeInit procedure} [list $dll $loaded] {
     list [catch {load [file join $testDir pkga$ext] {} child} msg] $msg
 } {1 {can't use package in a safe interpreter: no Pkga_SafeInit procedure}}
@@ -206,8 +208,12 @@ test load-10.1 {load from vfs} \
     -body {list [catch {load simplefs:/pkgd$ext pkgd} msg] $msg} \
     -result {0 {}} \
     -cleanup {testsimplefilesystem 0; cd $dir; unset dir}
-
+
 # cleanup
 unset ext
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

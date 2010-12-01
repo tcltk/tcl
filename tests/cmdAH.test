@@ -1051,7 +1051,7 @@ test cmdAH-23.6 {Tcl_FileObjCmd: lstat errors} -setup {
 } -body {
     set x 44
     list [catch {file lstat $gorpfile x} msg] $msg $errorCode
-} -result {1 {can't set "x(dev)": variable isn't array} {TCL LOOKUP VARNAME}}
+} -result {1 {can't set "x(dev)": variable isn't array} {TCL LOOKUP VARNAME x}}
 catch {unset stat}
 # mkdir
 set dirA [file join [temporaryDirectory] a]
@@ -1295,8 +1295,10 @@ test cmdAH-28.2 {Tcl_FileObjCmd: stat} -returnCodes error -body {
 } -result {wrong # args: should be "file stat name varName"}
 test cmdAH-28.3 {Tcl_FileObjCmd: stat} -setup {
     catch {unset stat}
+    set stat(blocks) [set stat(blksize) {}]
 } -body {
     file stat $gorpfile stat
+    unset stat(blocks) stat(blksize); # Ignore these fields; not always set
     lsort [array names stat]
 } -result {atime ctime dev gid ino mode mtime nlink size type uid}
 test cmdAH-28.4 {Tcl_FileObjCmd: stat} -setup {

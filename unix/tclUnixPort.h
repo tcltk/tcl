@@ -104,6 +104,11 @@ typedef off_t		Tcl_SeekOffset;
 #if HAVE_INTTYPES_H
 #   include <inttypes.h>
 #endif
+#ifdef NO_LIMITS_H
+#   include "../compat/limits.h"
+#else
+#   include <limits.h>
+#endif
 #if HAVE_STDINT_H
 #   include <stdint.h>
 #endif
@@ -127,7 +132,10 @@ MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 #endif
 #include <netinet/in.h>		/* struct in_addr, struct sockaddr_in */
 #include <arpa/inet.h>		/* inet_ntoa() */
-#include <netdb.h>		/* gethostbyname() */
+#include <netdb.h>		/* getaddrinfo() */
+#ifdef NEED_FAKE_RFC2553
+# include "../compat/fake-rfc2553.h"
+#endif
 
 /*
  * Some platforms (e.g. SunOS) don't define FLT_MAX and FLT_MIN, so we
@@ -251,7 +259,7 @@ MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 #endif
 
 #ifdef GETTOD_NOT_DECLARED
-EXTERN int		gettimeofday(struct timeval *tp, struct timezone *tzp);
+MODULE_SCOPE int		gettimeofday(struct timeval *tp, struct timezone *tzp);
 #endif
 
 /*
@@ -459,12 +467,6 @@ extern char **environ;
 #endif
 
 /*
- * There is no platform-specific panic routine for Unix in the Tcl internals.
- */
-
-#define TclpPanic ((Tcl_PanicProc *) NULL)
-
-/*
  * Darwin specifc configure overrides.
  */
 
@@ -553,8 +555,8 @@ extern char **environ;
 
 /*
  *---------------------------------------------------------------------------
- * The following macros and declarations represent the interface between 
- * generic and unix-specific parts of Tcl.  Some of the macros may override 
+ * The following macros and declarations represent the interface between
+ * generic and unix-specific parts of Tcl.  Some of the macros may override
  * functions declared in tclInt.h.
  *---------------------------------------------------------------------------
  */
@@ -571,7 +573,7 @@ typedef int socklen_t;
 #endif
 
 /*
- * The following macros have trivial definitions, allowing generic code to 
+ * The following macros have trivial definitions, allowing generic code to
  * address platform-specific issues.
  */
 
@@ -594,21 +596,21 @@ typedef int socklen_t;
 #define TclpExit		exit
 
 #ifdef TCL_THREADS
-EXTERN struct tm *     	TclpLocaltime(const time_t *);
-EXTERN struct tm *     	TclpGmtime(const time_t *);
-EXTERN char *          	TclpInetNtoa(struct in_addr);
-/* #define localtime(x)	TclpLocaltime(x)
- * #define gmtime(x)	TclpGmtime(x)    */
 #   undef inet_ntoa
 #   define inet_ntoa(x)	TclpInetNtoa(x)
 #endif /* TCL_THREADS */
+
+/* FIXME */
+#ifndef AF_INET6
+#define AF_INET6 10
+#endif
 
 /*
  * Set of MT-safe implementations of some
  * known-to-be-MT-unsafe library calls.
  * Instead of returning pointers to the
  * static storage, those return pointers
- * to the TSD data. 
+ * to the TSD data.
  */
 
 #include <pwd.h>
