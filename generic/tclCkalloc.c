@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.19.4.17 2010/11/09 21:05:17 dgp Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.19.4.18 2010/12/01 15:27:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -453,11 +453,7 @@ Tcl_DbCkalloc(
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
 	break_on_malloc = 0;
 	(void) fflush(stdout);
-	fprintf(stderr,"reached malloc break limit (%d)\n",
-		total_mallocs);
-	fprintf(stderr, "program will now enter C debugger\n");
-	(void) fflush(stderr);
-	abort();
+	Tcl_Panic("reached malloc break limit (%d)", total_mallocs);
     }
 
     current_malloc_packets++;
@@ -546,11 +542,7 @@ Tcl_AttemptDbCkalloc(
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
 	break_on_malloc = 0;
 	(void) fflush(stdout);
-	fprintf(stderr,"reached malloc break limit (%d)\n",
-		total_mallocs);
-	fprintf(stderr, "program will now enter C debugger\n");
-	(void) fflush(stderr);
-	abort();
+	Tcl_Panic("reached malloc break limit (%d)", total_mallocs);
     }
 
     current_malloc_packets++;

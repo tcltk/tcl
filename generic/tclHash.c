@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.12.4.30 2010/08/24 18:10:10 dgp Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.12.4.31 2010/12/01 15:27:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -37,7 +37,7 @@
  */
 
 #define RANDOM_INDEX(tablePtr, i) \
-    (((((long) (i))*1103515245) >> (tablePtr)->downShift) & (tablePtr)->mask)
+    ((((i)*1103515245L) >> (tablePtr)->downShift) & (tablePtr)->mask)
 
 /*
  * Prototypes for the array hash key methods.
@@ -436,7 +436,7 @@ Tcl_DeleteHashEntry(
 #if TCL_HASH_KEY_STORE_HASH
     if (typePtr->hashKeyProc == NULL
 	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-	index = RANDOM_INDEX(tablePtr, entryPtr->hash);
+	index = RANDOM_INDEX(tablePtr, PTR2INT(entryPtr->hash));
     } else {
 	index = PTR2UINT(entryPtr->hash) & tablePtr->mask;
     }
@@ -1065,7 +1065,7 @@ RebuildTable(
 #if TCL_HASH_KEY_STORE_HASH
 	    if (typePtr->hashKeyProc == NULL
 		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-		index = RANDOM_INDEX(tablePtr, hPtr->hash);
+		index = RANDOM_INDEX(tablePtr, PTR2INT(hPtr->hash));
 	    } else {
 		index = PTR2UINT(hPtr->hash) & tablePtr->mask;
 	    }
