@@ -1009,7 +1009,7 @@ TclDbDumpActiveObjects(
     Tcl_HashSearch hSearch;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable *tablePtr;
-    ThreadSpecificData *tsdPtr = TclGetContLineTable();
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     tablePtr = tsdPtr->objThreadMap;
 
@@ -1076,7 +1076,7 @@ TclDbInitNewObj(
 	Tcl_HashTable *tablePtr;
 	int isNew;
 	ObjData *objData;
-	ThreadSpecificData *tsdPtr = TclGetContLineTable();
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (tsdPtr->objThreadMap == NULL) {
 	    tsdPtr->objThreadMap = (Tcl_HashTable *)
@@ -3627,7 +3627,7 @@ Tcl_DbIncrRefCount(
     if (!TclInExit()) {
 	Tcl_HashTable *tablePtr;
 	Tcl_HashEntry *hPtr;
-	ThreadSpecificData *tsdPtr = TclGetContLineTable();
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
@@ -3692,7 +3692,7 @@ Tcl_DbDecrRefCount(
     if (!TclInExit()) {
 	Tcl_HashTable *tablePtr;
 	Tcl_HashEntry *hPtr;
-	ThreadSpecificData *tsdPtr = TclGetContLineTable();
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
@@ -3772,7 +3772,7 @@ Tcl_DbIsShared(
     if (!TclInExit()) {
 	Tcl_HashTable *tablePtr;
 	Tcl_HashEntry *hPtr;
-	ThreadSpecificData *tsdPtr = TclGetContLineTable();
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
 	    Tcl_Panic("object table not initialized");

@@ -46,7 +46,7 @@ static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
  * specific files.
  */
 
-#if (!defined(HAVE_ST_BLOCKS) && !defined(GUESSED_BLOCK_SIZE))
+#if (!defined(HAVE_STRUCT_STAT_ST_BLKSIZE) && !defined(GUESSED_BLOCK_SIZE))
 #define GUESSED_BLOCK_SIZE	1024
 #endif
 
@@ -421,7 +421,7 @@ TclpGetNativePathType(
 		    && (path[1] == '/') && isdigit(UCHAR(path[2]))) {
 		path += 3;
 		while (isdigit(UCHAR(*path))) {
-		    ++path;
+		    path++;
 		}
 	    }
 #endif
@@ -647,11 +647,12 @@ SplitUnixPath(
     /*
      * Check for QNX //<node id> prefix
      */
+
     if ((path[0] == '/') && (path[1] == '/')
 	    && isdigit(UCHAR(path[2]))) { /* INTL: digit */
 	path += 3;
 	while (isdigit(UCHAR(*path))) { /* INTL: digit */
-	    ++path;
+	    path++;
 	}
     }
 #endif
@@ -1331,8 +1332,8 @@ Tcl_GlobObjCmd(
 
     if (dir == PATH_GENERAL) {
 	int pathlength;
-	char *last;
-	char *first = Tcl_GetStringFromObj(pathOrDir,&pathlength);
+	const char *last;
+	const char *first = Tcl_GetStringFromObj(pathOrDir,&pathlength);
 
 	/*
 	 * Find the last path separator in the path
@@ -1424,8 +1425,7 @@ Tcl_GlobObjCmd(
 	if (length <= 0) {
 	    goto skipTypes;
 	}
-	globTypes = (Tcl_GlobTypeData *)
-		TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
+	globTypes = TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
 	globTypes->type = 0;
 	globTypes->perm = 0;
 	globTypes->macType = NULL;
@@ -1433,7 +1433,7 @@ Tcl_GlobObjCmd(
 
 	while (--length >= 0) {
 	    int len;
-	    char *str;
+	    const char *str;
 
 	    Tcl_ListObjIndex(interp, typePtr, length, &look);
 	    str = Tcl_GetStringFromObj(look, &len);
@@ -1824,7 +1824,7 @@ TclGlob(
 		if (tail[0] == '/') {
 		    tail++;
 		} else {
-		    tail+=2;
+		    tail += 2;
 		}
 		Tcl_IncrRefCount(pathPrefix);
 		break;
@@ -1983,19 +1983,19 @@ TclGlob(
 	for (i = 0; i< objc; i++) {
 	    int len;
 	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
-	    Tcl_Obj *elems[1];
+	    Tcl_Obj *elem;
 
 	    if (len == prefixLen) {
 		if ((pattern[0] == '\0')
 			|| (strchr(separators, pattern[0]) == NULL)) {
-		    TclNewLiteralStringObj(elems[0], ".");
+		    TclNewLiteralStringObj(elem, ".");
 		} else {
-		    TclNewLiteralStringObj(elems[0], "/");
+		    TclNewLiteralStringObj(elem, "/");
 		}
 	    } else {
-		elems[0] = Tcl_NewStringObj(oldStr+prefixLen, len-prefixLen);
+		elem = Tcl_NewStringObj(oldStr+prefixLen, len-prefixLen);
 	    }
-	    Tcl_ListObjReplace(interp, filenamesObj, i, 1, 1, elems);
+	    Tcl_ListObjReplace(interp, filenamesObj, i, 1, 1, &elem);
 	}
     }
 
@@ -2445,7 +2445,6 @@ DoGlob(
 
 #if defined(__CYGWIN__) && defined(__WIN32__)
 	    {
-		extern int cygwin_conv_to_win32_path(const char *, char *);
 		char winbuf[MAX_PATH+1];
 
 		cygwin_conv_to_win32_path(Tcl_DStringValue(&append), winbuf);
@@ -2463,6 +2462,16 @@ DoGlob(
 		    Tcl_DStringAppend(&append, ".", 1);
 		}
 	    }
+#if defined(__CYGWIN__) && !defined(__WIN32__)
+	    DLLIMPORT extern int cygwin_conv_to_posix_path(const char *, char *);
+	    {
+		char winbuf[MAXPATHLEN+1];
+
+		cygwin_conv_to_posix_path(Tcl_DStringValue(&append), winbuf);
+		Tcl_DStringFree(&append);
+		Tcl_DStringAppend(&append, winbuf, -1);
+	    }
+#endif /* __CYGWIN__ && __WIN32__ */
 	    break;
 	}
 
@@ -2663,11 +2672,12 @@ Tcl_WideUInt
 Tcl_GetBlocksFromStat(
     const Tcl_StatBuf *statPtr)
 {
-#ifdef HAVE_ST_BLOCKS
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
     return (Tcl_WideUInt) statPtr->st_blocks;
 #else
-    return ((Tcl_WideUInt) statPtr->st_size
-	    + (GUESSED_BLOCK_SIZE-1)) / GUESSED_BLOCK_SIZE;
+    register unsigned blksize = Tcl_GetBlockSizeFromStat(statPtr);
+
+    return ((Tcl_WideUInt) statPtr->st_size + blksize - 1) / blksize;
 #endif
 }
 
@@ -2675,7 +2685,7 @@ unsigned
 Tcl_GetBlockSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-#ifdef HAVE_ST_BLOCKS
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     return (unsigned) statPtr->st_blksize;
 #else
     /*

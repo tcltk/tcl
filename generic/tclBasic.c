@@ -5729,13 +5729,13 @@ TclEvalObjEx(
 		result = TclEvalEx(interp, script, numSrcBytes, flags,
 				   ctxPtr->line[word], NULL, script);
 
-		if (pc) {
-		    /*
-		     * Death of SrcInfo reference.
-		     */
+	    }
+	    if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
+		/*
+		 * Death of SrcInfo reference.
+		 */
 
-		    Tcl_DecrRefCount(ctxPtr->data.eval.path);
-		}
+		Tcl_DecrRefCount(ctxPtr->data.eval.path);
 	    }
 	    TclStackFree(interp, ctxPtr);
 
@@ -7301,7 +7301,7 @@ ExprRoundFunc(
     int type;
 
     if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 1, objc, objv);
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
 

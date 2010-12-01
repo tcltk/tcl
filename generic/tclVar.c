@@ -2361,11 +2361,22 @@ UnsetVarStruct(
 	if ((dummyVar.flags & VAR_TRACED_UNSET)
 		|| (arrayPtr && (arrayPtr->flags & VAR_TRACED_UNSET))) {
 	    dummyVar.flags &= ~VAR_TRACE_ACTIVE;
-	    TclObjCallVarTraces(iPtr, arrayPtr, (Var *) &dummyVar,
-		    part1Ptr, part2Ptr,
+	    TclObjCallVarTraces(iPtr, arrayPtr, &dummyVar, part1Ptr, part2Ptr,
 		    (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
 			    | TCL_TRACE_UNSETS,
 		    /* leaveErrMsg */ 0, -1);
+
+	    /*
+	     * The traces that we just called may have triggered a change in
+	     * the set of traces. If so, reload the traces to manipulate.
+	     */
+
+	    tracePtr = NULL;
+	    if (TclIsVarTraced(&dummyVar)) {
+		tPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) &dummyVar);
+		tracePtr = Tcl_GetHashValue(tPtr);
+	    }
+
 	    if (tPtr) {
 		Tcl_DeleteHashEntry(tPtr);
 	    }
@@ -2378,6 +2389,7 @@ UnsetVarStruct(
 		VarTrace *prevPtr = tracePtr;
 
 		tracePtr = tracePtr->nextPtr;
+		prevPtr->nextPtr = NULL;
 		Tcl_EventuallyFree(prevPtr, TCL_DYNAMIC);
 	    }
 	    for (activePtr = iPtr->activeVarTracePtr;  activePtr != NULL;
@@ -4307,8 +4319,8 @@ ParseSearchId(
 	Tcl_HashEntry *hPtr =
 		Tcl_FindHashEntry(&iPtr->varSearches, (char *) varPtr);
 
-	for (searchPtr = (ArraySearch *) Tcl_GetHashValue(hPtr);
-		searchPtr != NULL; searchPtr = searchPtr->nextPtr) {
+	for (searchPtr = Tcl_GetHashValue(hPtr); searchPtr != NULL;
+		searchPtr = searchPtr->nextPtr) {
 	    if (searchPtr->id == id) {
 		return searchPtr;
 	    }
@@ -4348,8 +4360,8 @@ DeleteSearches(
 
     if (arrayVarPtr->flags & VAR_SEARCH_ACTIVE) {
 	sPtr = Tcl_FindHashEntry(&iPtr->varSearches, (char *) arrayVarPtr);
-	for (searchPtr = (ArraySearch *) Tcl_GetHashValue(sPtr);
-		searchPtr != NULL; searchPtr = nextPtr) {
+	for (searchPtr = Tcl_GetHashValue(sPtr); searchPtr != NULL;
+		searchPtr = nextPtr) {
 	    nextPtr = searchPtr->nextPtr;
 	    ckfree((char *) searchPtr);
 	}
@@ -4418,16 +4430,24 @@ TclDeleteNamespaceVars(
 	if (TclIsVarTraced(varPtr)) {
 	    Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces,
 		    (char *) varPtr);
-	    VarTrace *tracePtr = (VarTrace *) Tcl_GetHashValue(tPtr);
+	    VarTrace *tracePtr = Tcl_GetHashValue(tPtr);
+	    ActiveVarTrace *activePtr;
 
 	    while (tracePtr) {
 		VarTrace *prevPtr = tracePtr;
 
 		tracePtr = tracePtr->nextPtr;
-		Tcl_EventuallyFree((ClientData) prevPtr, TCL_DYNAMIC);
+		prevPtr->nextPtr = NULL;
+		Tcl_EventuallyFree(prevPtr, TCL_DYNAMIC);
 	    }
 	    Tcl_DeleteHashEntry(tPtr);
 	    varPtr->flags &= ~VAR_ALL_TRACES;
+	    for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
+		    activePtr = activePtr->nextPtr) {
+		if (activePtr->varPtr == varPtr) {
+		    activePtr->nextTracePtr = NULL;
+		}
+	    }
 	}
 	VarHashRefCount(varPtr)--;
 	VarHashDeleteEntry(varPtr);
@@ -4530,6 +4550,7 @@ TclDeleteCompiledLocalVars(
 	UnsetVarStruct(varPtr, NULL, iPtr, *namePtrPtr, NULL,
 		TCL_TRACE_UNSETS);
     }
+    framePtr->numCompiledLocals = 0;
 }
 
 /*
@@ -4601,12 +4622,13 @@ DeleteArray(
 			elNamePtr, flags,/* leaveErrMsg */ 0, -1);
 	    }
 	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) elPtr);
-	    tracePtr = (VarTrace *) Tcl_GetHashValue(tPtr);
+	    tracePtr = Tcl_GetHashValue(tPtr);
 	    while (tracePtr) {
 		VarTrace *prevPtr = tracePtr;
 
 		tracePtr = tracePtr->nextPtr;
-		Tcl_EventuallyFree((ClientData) prevPtr, TCL_DYNAMIC);
+		prevPtr->nextPtr = NULL;
+		Tcl_EventuallyFree(prevPtr, TCL_DYNAMIC);
 	    }
 	    Tcl_DeleteHashEntry(tPtr);
 	    elPtr->flags &= ~VAR_ALL_TRACES;
@@ -5513,7 +5535,7 @@ AllocVarEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
-    Tcl_Obj *objPtr = (Tcl_Obj *) keyPtr;
+    Tcl_Obj *objPtr = keyPtr;
     Tcl_HashEntry *hPtr;
     Var *varPtr;
 
@@ -5522,7 +5544,7 @@ AllocVarEntry(
     varPtr->value.objPtr = NULL;
     VarHashRefCount(varPtr) = 1;
 
-    hPtr = &(((VarInHash *)varPtr)->entry);
+    hPtr = &(((VarInHash *) varPtr)->entry);
     Tcl_SetHashValue(hPtr, varPtr);
     hPtr->key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
@@ -5553,7 +5575,7 @@ CompareVarKeys(
     void *keyPtr,		/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
-    Tcl_Obj *objPtr1 = (Tcl_Obj *) keyPtr;
+    Tcl_Obj *objPtr1 = keyPtr;
     Tcl_Obj *objPtr2 = hPtr->key.objPtr;
     register const char *p1, *p2;
     register int l1, l2;
@@ -5599,7 +5621,7 @@ HashVarKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {
-    Tcl_Obj *objPtr = (Tcl_Obj *) keyPtr;
+    Tcl_Obj *objPtr = keyPtr;
     const char *string = TclGetString(objPtr);
     int length = objPtr->length;
     unsigned int result = 0;
