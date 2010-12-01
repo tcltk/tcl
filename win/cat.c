@@ -8,8 +8,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: cat.c,v 1.5 2010/01/13 06:46:56 nijtmans Exp $
+ * RCS: @(#) $Id: cat.c,v 1.5.4.1 2010/12/01 16:42:37 kennykb Exp $
  */
+
+#ifdef TCL_BROKEN_MAINARGS
+/* On mingw32 and cygwin this doesn't work */
+#   undef UNICODE
+#   undef _UNICODE
+#endif
 
 #include <stdio.h>
 #ifdef __CYGWIN__
@@ -18,9 +24,10 @@
 #   include <io.h>
 #endif
 #include <string.h>
+#include <tchar.h>
 
 int
-main(void)
+_tmain(void)
 {
     char buf[1024];
     int n;

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.67.2.2 2010/10/20 01:50:19 kennykb Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.67.2.3 2010/12/01 16:42:38 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -177,7 +177,7 @@ DoRenameFile(
     const TCHAR *nativeDst)	/* New pathname for file or directory
 				 * (native). */
 {
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
     DWORD srcAttr, dstAttr;
@@ -564,7 +564,7 @@ DoCopyFile(
     const TCHAR *nativeSrc,	/* Pathname of file to be copied (native). */
     const TCHAR *nativeDst)	/* Pathname of file to copy to (native). */
 {
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
     int retval = -1;
@@ -1278,7 +1278,7 @@ TraverseWinTree(
 	return traverseProc(nativeSource, nativeTarget, DOTREE_F, errorPtr);
     }
 
-    Tcl_DStringAppend(sourcePtr, (char *) L"\\*.*", 4 * sizeof(WCHAR) + 1);
+    Tcl_DStringAppend(sourcePtr, (char *) TEXT("\\*.*"), 4 * sizeof(TCHAR) + 1);
     Tcl_DStringSetLength(sourcePtr, Tcl_DStringLength(sourcePtr) - 1);
 
     nativeSource = (TCHAR *) Tcl_DStringValue(sourcePtr);
@@ -1302,15 +1302,15 @@ TraverseWinTree(
 	return result;
     }
 
-    sourceLen = oldSourceLen + sizeof(WCHAR);
-    Tcl_DStringAppend(sourcePtr, (char *) L"\\", sizeof(WCHAR) + 1);
+    sourceLen = oldSourceLen + sizeof(TCHAR);
+    Tcl_DStringAppend(sourcePtr, (char *) TEXT("\\"), sizeof(TCHAR) + 1);
     Tcl_DStringSetLength(sourcePtr, sourceLen);
     if (targetPtr != NULL) {
 	oldTargetLen = Tcl_DStringLength(targetPtr);
 
 	targetLen = oldTargetLen;
-	targetLen += sizeof(WCHAR);
-	Tcl_DStringAppend(targetPtr, (char *) L"\\", sizeof(WCHAR) + 1);
+	targetLen += sizeof(TCHAR);
+	Tcl_DStringAppend(targetPtr, (char *) TEXT("\\"), sizeof(TCHAR) + 1);
 	Tcl_DStringSetLength(targetPtr, targetLen);
     }
 
@@ -1319,7 +1319,7 @@ TraverseWinTree(
 	TCHAR *nativeName;
 	int len;
 
-	WCHAR *wp = data.cFileName;
+	TCHAR *wp = data.cFileName;
 	if (*wp == '.') {
 	    wp++;
 	    if (*wp == '.') {
@@ -1330,7 +1330,7 @@ TraverseWinTree(
 	    }
 	}
 	nativeName = (TCHAR *) data.cFileName;
-	len = wcslen(data.cFileName) * sizeof(WCHAR);
+	len = _tcslen(data.cFileName) * sizeof(TCHAR);
 
 	/*
 	 * Append name after slash, and recurse on the file.

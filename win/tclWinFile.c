@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.112.2.2 2010/10/20 01:50:19 kennykb Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.112.2.3 2010/12/01 16:42:38 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -573,6 +573,7 @@ WinReadLinkDirectory(
 	 */
 
 	offset = 0;
+#ifdef UNICODE
 	if (reparseBuffer->MountPointReparseBuffer.PathBuffer[0] == L'\\') {
 	    /*
 	     * Check whether this is a mounted volume.
@@ -634,6 +635,7 @@ WinReadLinkDirectory(
 		offset = 4;
 	    }
 	}
+#endif /* UNICODE */
 
 	Tcl_WinTCharToUtf((const TCHAR *)
 		reparseBuffer->MountPointReparseBuffer.PathBuffer,
@@ -1712,19 +1714,19 @@ static int
 NativeIsExec(
     const TCHAR *path)
 {
-    int len = wcslen(path);
+    int len = _tcslen(path);
 
     if (len < 5) {
 	return 0;
     }
 
-    if (path[len-4] != L'.') {
+    if (path[len-4] != TEXT('.')) {
 	return 0;
     }
 
-    if ((_wcsicmp(path+len-3, L"exe") == 0)
-	    || (_wcsicmp(path+len-3, L"com") == 0)
-	    || (_wcsicmp(path+len-3, L"bat") == 0)) {
+    if ((_tcsicmp(path+len-3, TEXT("exe")) == 0)
+	    || (_tcsicmp(path+len-3, TEXT("com")) == 0)
+	    || (_tcsicmp(path+len-3, TEXT("bat")) == 0)) {
 	return 1;
     }
     return 0;
@@ -3128,7 +3130,7 @@ TclNativeDupInternalRep(
 	return NULL;
     }
 
-    len = sizeof(TCHAR) * (_tcslen((const WCHAR *) clientData) + 1);
+    len = sizeof(TCHAR) * (_tcslen((const TCHAR *) clientData) + 1);
 
     copy = (char *) ckalloc(len);
     memcpy(copy, clientData, len);
