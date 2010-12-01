@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.465.2.4 2010/10/23 15:49:54 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.465.2.5 2010/12/01 16:42:34 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -168,6 +168,7 @@ static Tcl_NRPostProc	YieldToCallback;
 
 static void	        ClearTailcall(Tcl_Interp *interp,
 			    struct TEOV_callback *tailcallPtr);
+static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 
 MODULE_SCOPE const TclStubs tclStubs;
 
@@ -596,6 +597,15 @@ Tcl_CreateInterp(void)
     iPtr->resultSpace[0] = 0;
     iPtr->threadId = Tcl_GetCurrentThread();
 
+    /* TIP #378 */
+#ifdef TCL_INTERP_DEBUG_FRAME
+    iPtr->flags |= INTERP_DEBUG_FRAME;
+#else
+    if (getenv("TCL_INTERP_DEBUG_FRAME") != NULL) {
+        iPtr->flags |= INTERP_DEBUG_FRAME;
+    }
+#endif
+
     /*
      * Initialise the tables for variable traces and searches *before*
      * creating the global ns - so that the trace on errorInfo can be
@@ -826,7 +836,9 @@ Tcl_CreateInterp(void)
 	    TclNRYieldToObjCmd, NULL, NULL);
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldm", NULL,
 	    TclNRYieldObjCmd, INT2PTR(CORO_ACTIVATE_YIELDM), NULL);
-
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
+	    NRCoroInjectObjCmd, NULL, NULL);
+    
 #ifdef USE_DTRACE
     /*
      * Register the tcl::dtrace command.
@@ -7697,7 +7709,7 @@ ExprRandFunc(
 	 * to insure different seeds in different threads (bug #416643)
 	 */
 
-	iPtr->randSeed = TclpGetClicks() + ((long)Tcl_GetCurrentThread()<<12);
+	iPtr->randSeed = TclpGetClicks() + (PTR2INT(Tcl_GetCurrentThread())<<12);
 
 	/*
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
@@ -8754,6 +8766,52 @@ NRCoroutineActivateCallback(
     }
 }
 
+
+static int
+NRCoroInjectObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Command *cmdPtr;
+    CoroutineData *corPtr;
+    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
+    
+    /*
+     * Usage more or less like tailcall:
+     *   inject coroName cmd ?arg1 arg2 ...?
+     */
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "coroName cmd ?arg1 arg2 ...?");
+	return TCL_ERROR;
+    }
+
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
+    if ((!cmdPtr) || (cmdPtr->nreProc != NRInterpCoroutine)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("can only inject a command into a coroutine", -1));
+        return TCL_ERROR;
+    }
+
+    corPtr = (CoroutineData *) cmdPtr->objClientData;
+    if (!COR_IS_SUSPENDED(corPtr)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("can only inject a command into a suspended coroutine", -1));
+        return TCL_ERROR;
+    }
+
+    /*
+     * Add the callback to the coro's execEnv, so that it is the first thing
+     * to happen when the coro is resumed
+     */
+    
+    iPtr->execEnvPtr = corPtr->eePtr;
+    Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);    
+    iPtr->execEnvPtr = savedEEPtr;
+    
+    return TCL_OK;
+}
+
 int
 NRInterpCoroutine(
     ClientData clientData,

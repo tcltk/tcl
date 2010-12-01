@@ -1,7 +1,219 @@
+2010-12-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c (SetPrecisionLimits, TclDoubleDigits):
+	Added meaningless initialization of 'i', 'ilim' and 'ilim1'
+	to silence warnings from the C compiler about possible use of
+	uninitialized variables, Added a panic to the 'switch' that
+	assigns them, to assert that the 'default' case is impossible.
+	[Bug 3124675]
+
+2010-12-01  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c: fix gcc 64-bit warnings: cast from pointer to
+	* generic/tclHash.c:  integer of different size.
+	* generic/tclTest.c:
+	* generic/tclThreadTest.c:
+	* generic/tclStrToD.c: fix gcc(-4.5.2) warning: 'static' is not at
+	beginning of declaration.
+	* generic/tclPanic.c:  Allow Tcl_Panic() to enter the debugger on win32
+	* generic/tclCkalloc.c: use Tcl_Panic() in stead of duplicating the code.
+
+2010-11-30  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclInt.decls, generic/tclInt.h, generic/tclIntDecls.h:
+	* generic/tclStubInit.c: TclFormatInt restored at slot 24
+	* generic/tclUtil.c (TclFormatInt): restore TclFormatInt func from
+	2005-07-05 macro-ization. Benchmarks indicate it is faster, as a
+	key int->string routine (e.g. int-indexed arrays).
+
+2010-11-29 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclBasic.c: Patch by Miguel, providing a
+	  [::tcl::unsupported::inject coroname command args], which prepends
+	  ("injects") arbitrary code to a suspended coro's future resumption.
+	  Neat for debugging complex coros without heavy instrumentation.
+
+2010-11-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclStrToD.c:
+	* generic/tclTest.c:
+	* generic/tclTomMath.decls:
+	* generic/tclUtil.c:
+	* tests/util.test:
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc: Rewrite of Tcl_PrintDouble and TclDoubleDigits
+	that (a) fixes a severe performance problem with floating point
+	shimmering reported by Karl Lehenbauer, (b) allows TclDoubleDigits
+	to generate the digit strings for 'e' and 'f' format, so that it
+	can be used for tcl_precision != 0 (and possibly later for [format]),
+	(c) fixes [Bug 3120139] by making TclPrintDouble inherently
+	locale-independent, (d) adds test cases to util.test for
+	correct rounding in difficult cases of TclDoubleDigits where fixed-
+	precision results are requested. (e) adds test cases to util.test for
+	the controversial aspects of [Bug 3105247]. As a side effect, two
+	more modules from libtommath (bn_mp_set_int.c and bn_mp_init_set_int.c)
+	are brought into the build, since the new code uses them.
+
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclTomMathDecls.h:	Regenerated.
+
+2010-11-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/chanio.test, tests/iogt.test, tests/ioTrans.test: Convert more
+	tests to tcltest2 and factor them to be easier to understand.
+
+2010-11-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/chanio.test: Converted many tests to tcltest2 by marking the
+	setup and cleanup parts as such.
+
+2010-11-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWin32Dll.c: fix gcc warnings: unused variable 'registration'
+	* win/tclWinChan.c:
+	* win/tclWinFCmd.c:
+
+2010-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclAppInit.c: [FRQ 491789]: "setargv() doesn't support a
+	unicode cmdline" now implemented for cygwin and mingw32 too.
+	* tests/main.test: No longer disable tests Tcl_Main-1.4 and 1.6
+	on Windows, because those now work on all supported platforms.
+	* win/configure.in:  Set NO_VIZ=1 when zlib is compiled in libtcl,
+	this resolves compiler warnings in 64-bit and static builds.
+	* win/configure (regenerated)
+
+2010-11-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/file.n: [Bug 3111298]: Typofix.
+
+	* tests/oo.test: [Bug 3111059]: Added testing that neatly trapped this
+	issue.
+
+2010-11-18  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclNamesp.c: [Bug 3111059]: Fix leak due to bad looping
+	construct.
+
+2010-11-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4: [FRQ 491789]: "setargv() doesn't support a unicode
+	cmdline" now implemented for mingw-w64
+	* win/configure    (re-generated)
+
+2010-11-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclAppInit.c:Bring compilation under mingw-w64 a bit closer
+	* win/cat.c:       to reality. See for what's missing:
+	* win/tcl.m4:      <https://sourceforge.net/apps/trac/mingw-w64/wiki/Unicode%20apps>
+	* win/configure:   (re-generated)
+	* win/tclWinPort.h:[Bug #3110161]: Extensions using TCHAR don't compile
+	on VS2005 SP1
+
+2010-11-15  Andreas Kupries  <andreask@activestate.com>
+
+	* doc/interp.n: [Bug 3081184]: TIP #378.
+	* doc/tclvars.n: Performance fix for TIP #280.
+	* generic/tclBasic.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclInterp.c:
+	* tests/info.test:
+	* tests/interp.test:
+
+2010-11-10  Andreas Kupries  <andreask@activestate.com>
+
+	* changes:	Updates for 8.6b2 release.
+
+2010-11-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (ProcedureMethodVarResolver): [Bug 3105999]:
+	* tests/oo.test:	Make sure that resolver structures that are
+				only temporarily needed get squelched.
+
+2010-11-05  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclMain.c: Thanks, Kevin, for the fix, but this how it was
+	supposed to be (TCL_ASCII_MAIN is only supposed to be defined on
+	WIN32).
+
+2010-11-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclMain.c: Added missing conditional on _WIN32 around code
+	that messes around with the definition of _UNICODE, to correct a badly
+	broken Unix build from Jan's last commit.
+
+2010-11-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h:	[FRQ 491789]: "setargv() doesn't support a
+	* generic/tclMain.c:	unicode cmdline" implemented for Tcl on MSVC++
+	* doc/Tcl_Main.3:
+	* win/tclAppInit.c:
+	* win/makefile.vc:
+	* win/Makefile.in:
+	* win/tclWin32Dll.c:	Eliminate minor MSVC warning TCHAR -> char
+				conversion
+
+2010-11-04  Reinhard Max  <max@suse.de>
+
+	* tests/socket.test: Run the socket tests three times with the address
+	family set to any, inet, and inet6 respectively. Use constraints to
+	skip the tests if a family is found to be unsupported or not
+	configured on the local machine. Adjust the tests to dynamically adapt
+	to the address family that is being tested.
+
+	Rework some of the tests to speed them up by avoiding (supposedly)
+	unneeded [after]s.
+
+2010-11-04  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/Makefile.in:	[Patch 3101127]: Installer Improvements.
+	* unix/install-sh:
+
+2010-11-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/error.test (error-19.13): Another variation on testing for
+	issues in [try] compilation.
+
+	* doc/Tcl.n (Variable substitution): [Bug 3099086]: Increase clarity
+	of explanation of what characters are actually permitted in variable
+	substitutions. Note that this does not constitute a change of
+	behavior; it is just an improvement of explanation.
+
+2010-11-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Updates for 8.6b2 release.  (Thanks Andreas Kupries)
+
+2010-11-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFcmd.c:    [FRQ 2965056]: Windows build with -DUNICODE
+	* win/tclWinFile.c:    (more clean-ups for pre-win2000 stuff)
+	* win/tclWinReg.c:
+
+2010-11-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (TryPostBody):  Ensure that errors when setting
+	* tests/error.test (error-19.1[12]): message/opt capture variables get
+					     reflected properly to the caller.
+
+2010-11-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclCompCmds.c (TclCompileCatchCmd): [Bug 3098302]:
+	* tests/compile.test (compile-3.6): Reworked the compilation of the
+	[catch] command so as to avoid placing any code that might throw an
+	exception (specifically, any initial substitutions or any stores to
+	result or options variables) between the BEGIN_CATCH and END_CATCH but
+	outside the exception range.  Added a test case that panics on a stack
+	smash if the change is not made.
+
 2010-11-01  Stuart Cassoff  <stwo@users.sourceforge.net>
 
-	* library/safe.tcl:	Improved handling of non-standard module
-	* tests/safe.test:	path lists, empty path lists in particular.
+	* library/safe.tcl:	Improved handling of non-standard module path
+	* tests/safe.test:	lists, empty path lists in particular.
 
 2010-11-01  Kevin B. Kenny  <kennykb@acm.org>
 
@@ -11,8 +223,8 @@
 
 2010-10-29  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclTimer.c:	Stop small [afters] from wasting CPU [Bug
-				2905784] while keeping accuracy.
+	* generic/tclTimer.c:	[Bug 2905784]: Stop small [after]s from
+				wasting CPU while keeping accuracy.
 
 2010-10-28  Kevin B. Kenny  <kennykb@acm.org>
 
@@ -22,10 +234,12 @@
 
 2010-10-28  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/http.test:	Make http-4.15 pass in isolation [Bug 3097490]
+	* tests/http.test:	[Bug 3097490]: Make http-4.15 pass in
+				isolation.
 
-	* unix/tclUnixSock.c:	Prevent calls freeaddrinfo(NULL) which can
-	crash some systems.  Thanks Larry Virden.  [Bug 3093120]
+	* unix/tclUnixSock.c:	[Bug 3093120]: Prevent calls of
+				freeaddrinfo(NULL) which can crash some
+				systems.  Thanks Larry Virden.
 
 2010-10-26  Reinhard Max  <max@suse.de>
 

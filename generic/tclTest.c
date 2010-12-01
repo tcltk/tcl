@@ -14,8 +14,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.153.2.1 2010/09/27 20:33:37 kennykb Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.153.2.2 2010/12/01 16:42:36 kennykb Exp $
  */
+
+#include <math.h>
 
 #undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
@@ -233,6 +235,9 @@ static int		TestdelCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestdelassocdataCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestdoubledigitsObjCmd(ClientData dummy,
+					       Tcl_Interp* interp,
+					       int objc, Tcl_Obj* const objv[]);
 static int		TestdstringCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestencodingObjCmd(ClientData dummy,
@@ -569,6 +574,8 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testdel", TestdelCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testdelassocdata", TestdelassocdataCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testdoubledigits", TestdoubledigitsObjCmd,
+			 NULL, NULL);
     Tcl_DStringInit(&dstring);
     Tcl_CreateCommand(interp, "testdstring", TestdstringCmd, NULL,
 	    NULL);
@@ -1590,6 +1597,102 @@ TestdelassocdataCmd(
 	return TCL_ERROR;
     }
     Tcl_DeleteAssocData(interp, argv[1]);
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * TestdoubledigitsCmd --
+ *
+ *	This procedure implements the 'testdoubledigits' command. It is
+ *	used to test the low-level floating-point formatting primitives
+ *	in Tcl.
+ *
+ * Usage:
+ *	testdoubledigits fpval ndigits type ?shorten"
+ *
+ * Parameters:
+ *	fpval - Floating-point value to format.
+ *	ndigits - Digit count to request from Tcl_DoubleDigits
+ *	type - One of 'shortest', 'Steele', 'e', 'f'
+ *	shorten - Indicates that the 'shorten' flag should be passed in.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+TestdoubledigitsObjCmd(ClientData unused,
+				/* NULL */
+		       Tcl_Interp* interp,
+				/* Tcl interpreter */
+		       int objc,
+				/* Parameter count */
+		       Tcl_Obj* const objv[])
+				/* Parameter vector */
+{
+    static const char* options[] = {
+	"shortest",
+	"Steele",
+	"e",
+	"f",
+	NULL
+    };
+    static const int types[] = {
+	TCL_DD_SHORTEST,
+	TCL_DD_STEELE,
+	TCL_DD_E_FORMAT,
+	TCL_DD_F_FORMAT
+    };
+
+    const Tcl_ObjType* doubleType;
+    double d;
+    int status;
+    int ndigits;
+    int type;
+    int decpt;
+    int signum;
+    char* str;
+    char* endPtr;
+    Tcl_Obj* strObj;
+    Tcl_Obj* retval;
+
+    if (objc < 4 || objc > 5) {
+	Tcl_WrongNumArgs(interp, 1, objv, "fpval ndigits type ?shorten?");
+	return TCL_ERROR;
+    }
+    status = Tcl_GetDoubleFromObj(interp, objv[1], &d);
+    if (status != TCL_OK) {
+	doubleType = Tcl_GetObjType("double");
+	if (objv[1]->typePtr == doubleType
+	    || TclIsNaN(objv[1]->internalRep.doubleValue)) {
+	    status = TCL_OK;
+	    memcpy(&d, &(objv[1]->internalRep.doubleValue), sizeof(double));
+	}
+    }
+    if (status != TCL_OK
+	|| Tcl_GetIntFromObj(interp, objv[2], &ndigits) != TCL_OK
+	|| Tcl_GetIndexFromObj(interp, objv[3], options, "conversion type",
+			       TCL_EXACT, &type) != TCL_OK) {
+	fprintf(stderr, "bad value? %g\n", d);
+	return TCL_ERROR;
+    }
+    type = types[type];
+    if (objc > 4) {
+	if (strcmp(Tcl_GetString(objv[4]), "shorten")) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("bad flag", -1));
+	    return TCL_ERROR;
+	}
+	type |= TCL_DD_SHORTEN_FLAG;
+    }
+    str = TclDoubleDigits(d, ndigits, type, &decpt, &signum, &endPtr);
+    strObj = Tcl_NewStringObj(str, endPtr-str);
+    ckfree(str);
+    retval = Tcl_NewListObj(1, &strObj);
+    Tcl_ListObjAppendElement(NULL, retval, Tcl_NewIntObj(decpt));
+    strObj = Tcl_NewStringObj(signum ? "-" : "+", 1);
+    Tcl_ListObjAppendElement(NULL, retval, strObj);
+    Tcl_SetObjResult(interp, retval);
     return TCL_OK;
 }
 
@@ -5054,7 +5157,7 @@ TestmainthreadCmd(
     const char **argv)		/* Argument strings. */
 {
     if (argc == 1) {
-	Tcl_Obj *idObj = Tcl_NewLongObj((long) Tcl_GetCurrentThread());
+	Tcl_Obj *idObj = Tcl_NewLongObj((long)(size_t)Tcl_GetCurrentThread());
 
 	Tcl_SetObjResult(interp, idObj);
 	return TCL_OK;
@@ -5451,7 +5554,7 @@ TestChannelCmd(
 	    return TCL_ERROR;
 	}
 
-	TclFormatInt(buf, (long) Tcl_GetChannelThread(chan));
+	TclFormatInt(buf, (size_t) Tcl_GetChannelThread(chan));
 	Tcl_AppendResult(interp, buf, NULL);
 	return TCL_OK;
     }

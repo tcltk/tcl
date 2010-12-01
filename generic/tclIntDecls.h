@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.142.2.2 2010/10/02 01:38:27 kennykb Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.142.2.3 2010/12/01 16:42:36 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -109,7 +109,8 @@ EXTERN int		TclFindElement(Tcl_Interp *interp,
 				int *bracePtr);
 /* 23 */
 EXTERN Proc *		TclFindProc(Interp *iPtr, const char *procName);
-/* Slot 24 is reserved */
+/* 24 */
+EXTERN int		TclFormatInt(char *buffer, long n);
 /* 25 */
 EXTERN void		TclFreePackageInfo(Interp *iPtr);
 /* Slot 26 is reserved */
@@ -596,6 +597,9 @@ EXTERN void		TclResetRewriteEnsemble(Tcl_Interp *interp,
 EXTERN int		TclCopyChannel(Tcl_Interp *interp,
 				Tcl_Channel inChan, Tcl_Channel outChan,
 				Tcl_WideInt toRead, Tcl_Obj *cmdPtr);
+/* 249 */
+EXTERN char*		TclDoubleDigits(double dv, int ndigits, int flags,
+				int*decpt, int*signum, char**endPtr);
 
 typedef struct TclIntStubs {
     int magic;
@@ -625,7 +629,7 @@ typedef struct TclIntStubs {
     void (*reserved21)(void);
     int (*tclFindElement) (Tcl_Interp *interp, const char *listStr, int listLength, const char **elementPtr, const char **nextPtr, int *sizePtr, int *bracePtr); /* 22 */
     Proc * (*tclFindProc) (Interp *iPtr, const char *procName); /* 23 */
-    void (*reserved24)(void);
+    int (*tclFormatInt) (char *buffer, long n); /* 24 */
     void (*tclFreePackageInfo) (Interp *iPtr); /* 25 */
     void (*reserved26)(void);
     void (*reserved27)(void);
@@ -850,6 +854,7 @@ typedef struct TclIntStubs {
     int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, int numRemoved, int numInserted, Tcl_Obj *const *objv); /* 246 */
     void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
+    char* (*tclDoubleDigits) (double dv, int ndigits, int flags, int*decpt, int*signum, char**endPtr); /* 249 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -903,7 +908,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclFindElement) /* 22 */
 #define TclFindProc \
 	(tclIntStubsPtr->tclFindProc) /* 23 */
-/* Slot 24 is reserved */
+#define TclFormatInt \
+	(tclIntStubsPtr->tclFormatInt) /* 24 */
 #define TclFreePackageInfo \
 	(tclIntStubsPtr->tclFreePackageInfo) /* 25 */
 /* Slot 26 is reserved */
@@ -1269,6 +1275,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclResetRewriteEnsemble) /* 247 */
 #define TclCopyChannel \
 	(tclIntStubsPtr->tclCopyChannel) /* 248 */
+#define TclDoubleDigits \
+	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
