@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.33.2.6 2010/12/01 16:28:21 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.33.2.7 2010/12/01 18:57:11 andreas_kupries Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -1676,9 +1676,9 @@ MakeHighPrecisionDouble(
 	goto returnValue;
     }
     retval = SafeLdExp(retval, machexp);
-	if (tiny == 0.0) {
-	    tiny = SafeLdExp(1.0, DBL_MIN_EXP * log2FLT_RADIX - mantBits);
-	}
+    if (tiny == 0.0) {
+	tiny = SafeLdExp(1.0, DBL_MIN_EXP * log2FLT_RADIX - mantBits);
+    }
     if (retval < tiny) {
 	retval = tiny;
     }
@@ -1959,7 +1959,7 @@ MulPow5(mp_int* base, 		/* Number to multiply */
     }
 }
 
-    /*
+/*
  *-----------------------------------------------------------------------------
  *
  * NormalizeRightward --
@@ -1974,7 +1974,7 @@ MulPow5(mp_int* base, 		/* Number to multiply */
  *	Shifts the number in place; *wPtr is replaced by the shifted number.
  *
  *-----------------------------------------------------------------------------
-     */
+ */
 
 inline static int
 NormalizeRightward(Tcl_WideUInt* wPtr)
@@ -2004,7 +2004,7 @@ NormalizeRightward(Tcl_WideUInt* wPtr)
     return rv;
 }
 
-    /*
+/*
  *-----------------------------------------------------------------------------0
  *
  * RequiredPrecision --
@@ -2016,7 +2016,7 @@ NormalizeRightward(Tcl_WideUInt* wPtr)
  *	Returns 0 if the number is zero.
  *
  *----------------------------------------------------------------------------
-     */
+ */
 
 static int
 RequiredPrecision(Tcl_WideUInt w)
@@ -2048,9 +2048,9 @@ RequiredPrecision(Tcl_WideUInt w)
 	++rv;
     }
     return rv;
-    }
+}
 
-    /*
+/*
  *-----------------------------------------------------------------------------
  *
  * DoubleToExpAndSig --
@@ -2064,7 +2064,7 @@ RequiredPrecision(Tcl_WideUInt w)
  *	in 'bits'.
  *
  *-----------------------------------------------------------------------------
-     */
+ */
 
 inline static void
 DoubleToExpAndSig(double dv,	/* Number to convert */
@@ -2097,7 +2097,7 @@ DoubleToExpAndSig(double dv,	/* Number to convert */
     *significand = z;
 }
 
-	    /*
+/*
  *-----------------------------------------------------------------------------
  *
  * TakeAbsoluteValue --
@@ -2109,7 +2109,7 @@ DoubleToExpAndSig(double dv,	/* Number to convert */
  *	signum is stored in 'sign': 1 for negative, 0 for nonnegative.
  *
  *-----------------------------------------------------------------------------
-	     */
+ */
 
 inline static void
 TakeAbsoluteValue(Double* d,	/* Number to replace with absolute value */
@@ -2118,12 +2118,12 @@ TakeAbsoluteValue(Double* d,	/* Number to replace with absolute value */
     if (d->w.word0 & SIGN_BIT) {
 	*sign = 1;
 	d->w.word0 &= ~SIGN_BIT;
-	} else {
+    } else {
 	*sign = 0;
     }
-	}
+}
 
-	    /*
+/*
  *-----------------------------------------------------------------------------
  *
  * FormatInfAndNaN --
@@ -2140,7 +2140,7 @@ TakeAbsoluteValue(Double* d,	/* Number to replace with absolute value */
  * The string returned must be freed by the caller using 'ckfree'.
  *
  *-----------------------------------------------------------------------------
-	     */
+ */
 
 inline static char*
 FormatInfAndNaN(Double* d,	/* Exceptional number to format */
@@ -2155,7 +2155,7 @@ FormatInfAndNaN(Double* d,	/* Exceptional number to format */
 	if (endPtr) {
 	    *endPtr = retval + 8;
 	}
-	} else {
+    } else {
 	retval = ckalloc(4);
 	strcpy(retval, "NaN");
 	if (endPtr) {
@@ -2165,7 +2165,7 @@ FormatInfAndNaN(Double* d,	/* Exceptional number to format */
     return retval;
 }
 
-    /*
+/*
  *-----------------------------------------------------------------------------
  *
  * FormatZero --
@@ -2180,7 +2180,7 @@ FormatInfAndNaN(Double* d,	/* Exceptional number to format */
  *	the string in '*endPtr' if 'endPtr' is not NULL.
  *
  *-----------------------------------------------------------------------------
-     */
+ */
 
 inline static char*
 FormatZero(int* decpt,		/* Location of the decimal point */
@@ -2193,9 +2193,9 @@ FormatZero(int* decpt,		/* Location of the decimal point */
     }
     *decpt = 0;
     return retval;
-    }
+}
 
-    /*
+/*
  *-----------------------------------------------------------------------------
  *
  * ApproximateLog10 --
@@ -2208,7 +2208,7 @@ FormatZero(int* decpt,		/* Location of the decimal point */
  *	exact or 1 too high.
  *
  *-----------------------------------------------------------------------------
-     */
+ */
 
 inline static int
 ApproximateLog10(Tcl_WideUInt bw,
@@ -2237,11 +2237,11 @@ ApproximateLog10(Tcl_WideUInt bw,
     k = (int) ds;
     if (k > ds) {
 	--k;
-	}
-    return k;
     }
+    return k;
+}
 
-    /*
+/*
  *-----------------------------------------------------------------------------
  *
  * BetterLog10 --
@@ -2257,7 +2257,7 @@ ApproximateLog10(Tcl_WideUInt bw,
  *	Returns the improved approximation to log10(d)
  *
  *-----------------------------------------------------------------------------
-     */
+ */
 
 inline static int
 BetterLog10(double d,		/* Original number to format */
@@ -2275,11 +2275,11 @@ BetterLog10(double d,		/* Original number to format */
 	*k_check = 0;
     } else {
 	*k_check = 1;
-	}
-    return k;
     }
+    return k;
+}
 
-    /*
+/*
  *-----------------------------------------------------------------------------
  *
  * ComputeScale --
@@ -2297,7 +2297,7 @@ BetterLog10(double d,		/* Original number to format */
  *	by multiplying sig%10 by 10.
  *
  *-----------------------------------------------------------------------------
-     */
+ */
 
 inline static void
 ComputeScale(int be,		/* Exponent part of number: d = bw * 2**be */
@@ -2315,10 +2315,10 @@ ComputeScale(int be,		/* Exponent part of number: d = bw * 2**be */
     if (be <= 0) {
 	*b2 = 0;
 	*s2 = -be;
-	} else {
+    } else {
 	*b2 = be;
 	*s2 = 0;
-	}
+    }
 
     /* 
      * Scale numerator and denominator so that the output decimal number
@@ -2328,12 +2328,12 @@ ComputeScale(int be,		/* Exponent part of number: d = bw * 2**be */
 	*b5 = 0;
 	*s5 = k;
 	*s2 += k;
-	} else {
+    } else {
 	*b2 -= k;
 	*b5 = -k;
 	*s5 = 0;
-	}
-	    }
+    }
+}
 
 /*
  *-----------------------------------------------------------------------------
@@ -2388,7 +2388,7 @@ SetPrecisionLimits(int convType,
     case TCL_DD_E_FORMAT:
 	if (*ndigitsPtr <= 0) {
 	    *ndigitsPtr = 1;
-		}
+	}
 	*iLimPtr = *iLim1Ptr = *iPtr = *ndigitsPtr;
 	break;
     case TCL_DD_F_FORMAT:
@@ -2397,19 +2397,19 @@ SetPrecisionLimits(int convType,
 	*iLim1Ptr = *iPtr - 1;
 	if (*iPtr <= 0) {
 	    *iPtr = 1;
-	    }
-	    break;
 	}
-}
-
-    /*
- *-----------------------------------------------------------------------------
- *
+	break;
     default:
 	*iPtr = -1;
 	*iLimPtr = -1;
 	*iLim1Ptr = -1;
 	Tcl_Panic("impossible conversion type in TclDoubleDigits");
+    }
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
  * BumpUp --
  *
  *	Increases a string of digits ending in a series of nines to
@@ -2423,7 +2423,7 @@ SetPrecisionLimits(int convType,
  *	to "1" and moves the decimal point (*kPtr) one place to the right.
  *
  *-----------------------------------------------------------------------------
-     */
+ */
 
 
 inline static char*
@@ -2472,22 +2472,22 @@ AdjustRange(double* dPtr,	/* INOUT: Number to adjust */
     ieps = 2;
 
     if (k > 0) {
-    /*
+	/*
 	 * The number must be reduced to bring it into range.
-     */
+	 */
 	ds = tens[k & 0xf];
 	j = k >> 4;
 	if (j & BLETCH) {
 	    j &= (BLETCH-1);
 	    d /= bigtens[N_BIGTENS - 1];
 	    ieps++;
-    }
+	}
 	i = 0;
 	for (; j != 0; j>>=1) {
 	    if (j & 1) {
 		ds *= bigtens[i];
 		++ieps;
-    }
+	    }
 	    ++i;
 	}
 	d /= ds;
@@ -2501,7 +2501,7 @@ AdjustRange(double* dPtr,	/* INOUT: Number to adjust */
 	    if (j & 1) {
 		ieps++;
 		d *= bigtens[i];
-    }
+	    }
 	    ++i;
 	}
     }
@@ -2534,9 +2534,9 @@ ShorteningQuickFormat(double d,	/* Number to convert */
 		      int k,	/* floor(log10(d)) */
 		      int ilim,	/* Number of significant digits to return */
 		      double eps,
-				/* Estimated roundoff error */
+		      		/* Estimated roundoff error */
 		      char* retval,
-				/* Buffer to receive the digit string */
+		      		/* Buffer to receive the digit string */
 		      int* kPtr)
 				/* Pointer to stash the position of
 				 * the decimal point */
@@ -2554,32 +2554,32 @@ ShorteningQuickFormat(double d,	/* Number to convert */
 	d -= digit;
 	*s++ = '0' + digit;
 
-    /*
+	/*
 	 * Truncate the conversion if the string of digits is within
 	 * 1/2 ulp of the actual value.
-     */
+	 */
 
 	if (d < eps) {
 	    *kPtr = k;
 	    return s;
-    }
+	}
 	if ((1. - d) < eps) {
 	    *kPtr = k;
 	    return BumpUp(s, retval, kPtr);
-    }
+	}
 
-    /*
+	/*
 	 * Bail out if the conversion fails to converge to a sufficiently
 	 * precise value
-     */
+	 */
 
 	if (++i >= ilim) {
 	    return NULL;
-    }
+	}
 
-    /*
+	/*
 	 * Bring the next digit to the integer part.
-     */
+	 */
 
 	eps *= 10;
 	d *= 10.0;
@@ -2820,7 +2820,7 @@ ShorteningInt64Conversion(Double* dPtr,
 				/* Scale factor for the significand
 				 * in the numerator */
 			  int m2plus, int m2minus, int m5,
-			  	/* Scale factors for 1/2 ulp in
+				/* Scale factors for 1/2 ulp in
 				 * the numerator (will be different if
 				 * bw == 1 */
 			  int s2, int s5,
@@ -3201,7 +3201,7 @@ ShorteningBignumConversionPowD(Double* dPtr,
 				/* Scale factor for the significand
 				 * in the numerator */
 			       int m2plus, int m2minus, int m5,
-			  	/* Scale factors for 1/2 ulp in
+				/* Scale factors for 1/2 ulp in
 				 * the numerator (will be different if
 				 * bw == 1 */
 			       int sd,
@@ -3682,7 +3682,7 @@ ShorteningBignumConversion(Double* dPtr,
 	    || (r1 == MP_EQ
 		&& convType != TCL_DD_STEELE0
 		&& (dPtr->w.word1 & 1) == 0)) {
-		mp_mul_2d(&b, 1, &b);
+	    mp_mul_2d(&b, 1, &b);
 	    if (ShouldBankerRoundUp(&b, &S, digit&1)) {
 		++digit;
 		if (digit == 10) {
@@ -3869,8 +3869,8 @@ StrictBignumConversion(Double* dPtr,
     i = 0;
     mp_div(&b, &S, &dig, &b);
     if (dig.used > 1 || dig.dp[0] >= 10) {
-	    Tcl_Panic("wrong digit!");
-	}
+	Tcl_Panic("wrong digit!");
+    }
     digit = dig.dp[0];
 
     /* Is a single digit all that was requested? */
