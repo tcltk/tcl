@@ -109,12 +109,12 @@ static const DeclaredClassMethod objMethods[] = {
     DCM("unknown", 0,	TclOO_Object_Unknown),
     DCM("variable", 0,	TclOO_Object_LinkVar),
     DCM("varname", 0,	TclOO_Object_VarName),
-    {NULL}
+    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 }, clsMethods[] = {
     DCM("create", 1,	TclOO_Class_Create),
     DCM("new", 1,	TclOO_Class_New),
     DCM("createWithNamespace", 0, TclOO_Class_CreateNs),
-    {NULL}
+    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 };
 
 static char initScript[] =
@@ -1319,7 +1319,7 @@ Tcl_NewObjectInstance(
 		TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL);
 
 	if (contextPtr != NULL) {
-	    int result;
+	    int result, flags;
 	    Tcl_InterpState state;
 
 	    AddRef(oPtr);
@@ -1328,10 +1328,31 @@ Tcl_NewObjectInstance(
 	    contextPtr->skip = skip;
 	    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
 	    TclOODeleteContext(contextPtr);
+	    flags = oPtr->flags;
+
+	    /*
+	     * It's an error if the object was whacked in the constructor.
+	     * Force this if it isn't already an error (don't want to lose
+	     * errors by accident...)  [Bug 2903011]
+	     */
+
+	    if (result != TCL_ERROR && (flags & OBJECT_DELETED)) {
+		Tcl_SetResult(interp, "object deleted in constructor",
+			TCL_STATIC);
+		result = TCL_ERROR;
+	    }
 	    DelRef(oPtr);
 	    if (result != TCL_OK) {
 		Tcl_DiscardInterpState(state);
-		Tcl_DeleteCommandFromToken(interp, oPtr->command);
+
+		/*
+		 * Take care to not delete a deleted object; that would be
+		 * bad. [Bug 2903011]
+		 */
+
+		if (!(flags & OBJECT_DELETED)) {
+		    Tcl_DeleteCommandFromToken(interp, oPtr->command);
+		}
 		return NULL;
 	    }
 	    Tcl_RestoreInterpState(interp, state);

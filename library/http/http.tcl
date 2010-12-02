@@ -100,7 +100,7 @@ namespace eval http {
 # Arguments:
 #     msg	Message to output
 #
-if {[info command http::Log] eq {}} { proc http::Log {args} {} }
+if {[info command http::Log] eq {}} {proc http::Log {args} {}}
 
 # http::register --
 #
@@ -730,7 +730,7 @@ proc http::geturl {url args} {
 	# versions TclHttpd in various error cases). Depending on the
 	# platform, the client may or may not be able to get the response from
 	# the server because of the error it will get trying to write the post
-	# data.  Having both fileevents active changes the timing and the
+	# data. Having both fileevents active changes the timing and the
 	# behavior, but no two platforms (among Solaris, Linux, and NT) behave
 	# the same, and none behave all that well in any case. Servers should
 	# always read their POST data if they expect the client to read their

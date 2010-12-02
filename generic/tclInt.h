@@ -3939,6 +3939,22 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
     {enum { ct_assert_value = 1/(!!(e)) };}
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * External (platform specific) initialization routine, these declarations
+ * explicitly don't use EXTERN since this code does not get compiled into the
+ * library:
+ *
+ *----------------------------------------------------------------------
+ */
+
+MODULE_SCOPE int	TclplatformtestInit(Tcl_Interp *interp);
+MODULE_SCOPE int	TclObjTest_Init(Tcl_Interp *interp);
+MODULE_SCOPE int	TclThread_Init(Tcl_Interp *interp);
+MODULE_SCOPE int	Procbodytest_Init(Tcl_Interp *interp);
+MODULE_SCOPE int	Procbodytest_SafeInit(Tcl_Interp *interp);
+
+/*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to check whether a pattern has any characters
  * special to [string match]. The ANSI C "prototype" for this macro is:

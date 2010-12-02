@@ -4770,6 +4770,7 @@ FreeLocalVarName(
     if (namePtr) {
 	Tcl_DecrRefCount(namePtr);
     }
+    objPtr->typePtr = NULL;
 }
 
 static void
@@ -4811,6 +4812,7 @@ FreeNsVarName(
 	    CleanupVar(varPtr, NULL);
 	}
     }
+    objPtr->typePtr = NULL;
 }
 
 static void
@@ -4850,6 +4852,7 @@ FreeParsedVarName(
 	TclDecrRefCount(arrayPtr);
 	ckfree(elem);
     }
+    objPtr->typePtr = NULL;
 }
 
 static void

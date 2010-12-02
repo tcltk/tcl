@@ -28,11 +28,12 @@
  * standalone TclOO version matches. Also make sure that this matches the
  * version in the files:
  *
+ * tests/oo.test
  * unix/tclooConfig.sh
  * win/tclooConfig.sh
  */
 
-#define TCLOO_VERSION "0.6.1"
+#define TCLOO_VERSION "0.6.2"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
 
 /*

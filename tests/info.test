@@ -1033,7 +1033,7 @@ set body {set flag 0
     set a c
     set res [info frame 0]} ;# line 3!
 
-test info-31.0 {ns eval, script in variable} -body {
+test info-31.0 {ns eval, script in variable} -body {namespace eval foo {variable res {}}
     namespace eval foo $body
     return $foo::res
 } -result {type eval line 3 cmd {info frame 0} level 0} -cleanup {

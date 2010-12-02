@@ -429,12 +429,12 @@ TclOO_Object_LinkVar(
     }
 
     /*
-     * Do nothing if we are not called from the body of a method. In this
-     * respect, we are like the [global] command.
+     * A sanity check. Shouldn't ever happen. (This is all that remains of a
+     * more complex check inherited from [global] after we have applied the
+     * fix for [Bug 2903811]; note that the fix involved *removing* code.)
      */
 
-    if (iPtr->varFramePtr == NULL ||
-	    !(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+    if (iPtr->varFramePtr == NULL) {
 	return TCL_OK;
     }
 
@@ -460,9 +460,7 @@ TclOO_Object_LinkVar(
 	 * would only work if the caller was a method of the object itself,
 	 * which might not be true if the method was exported. This is a bit
 	 * of a hack, but the simplest way to do this (pushing a stack frame
-	 * would be horribly expensive by comparison). We never have to worry
-	 * about the case where we're dealing with the global namespace; we've
-	 * already checked that we are inside a method.
+	 * would be horribly expensive by comparison).
 	 */
 
 	savedNsPtr = iPtr->varFramePtr->nsPtr;

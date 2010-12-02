@@ -20,10 +20,8 @@
 
 #include "tclInt.h"
 
-extern Tcl_PackageInitProc	Procbodytest_Init;
-extern Tcl_PackageInitProc	Procbodytest_SafeInit;
-extern Tcl_PackageInitProc	TclObjTest_Init;
 extern Tcl_PackageInitProc	Tcltest_Init;
+extern Tcl_PackageInitProc	Tcltest_SafeInit;
 
 #endif /* TCL_TEST */
 
@@ -125,16 +123,7 @@ Tcl_AppInit(
     if (Tcltest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init,
-	    (Tcl_PackageInitProc *) NULL);
-    if (TclObjTest_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    if (Procbodytest_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticPackage(interp, "procbodytest", Procbodytest_Init,
-	    Procbodytest_SafeInit);
+    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
 #endif /* TCL_TEST */
 
     /*

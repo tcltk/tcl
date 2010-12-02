@@ -71,9 +71,10 @@ typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
 
 /*
  * MIPS floating-point units need special settings in control registers
- * to use gradual underflow as we expect.
+ * to use gradual underflow as we expect.  This fix is for the MIPSpro
+ * compiler.  
  */
-#if defined(__mips)
+#if defined(__sgi) && defined(_COMPILER_VERSION)
 #include <sys/fpu.h>
 #endif
 /*
@@ -2174,7 +2175,7 @@ TclInitDoubleConversion(void)
     } bitwhack;
 #endif
 
-#if defined(__mips)
+#if defined(__sgi) && defined(_COMPILER_VERSION)
     union fpc_csr mipsCR;
 
     mipsCR.fc_word = get_fpc_csr();

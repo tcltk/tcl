@@ -1698,6 +1698,39 @@ test oo-17.10 {OO: class introspection} -setup {
     oo::define foo unexport {*}[info class methods foo -all]
     info class methods foo -all
 } -result {}
+test oo-20.13 {OO: variable method use in non-methods [Bug 2903811]} -setup {
+    oo::object create fooObj
+    oo::objdefine fooObj export variable
+} -cleanup {
+    fooObj destroy
+} -body {
+    apply {{} {fooObj variable x; set x ok; return}}
+    apply {{} {fooObj variable x; return $x}}
+} -result ok
+test oo-20.14 {OO: variable method use in non-methods [Bug 2903811]} -setup {
+    oo::object create fooObj
+    oo::objdefine fooObj export variable
+    namespace eval ns1 {}
+    namespace eval ns2 {}
+    set x bad
+} -cleanup {
+    fooObj destroy
+    namespace delete ns1 ns2
+    unset x
+} -body {
+    namespace eval ns1 {fooObj variable x; set x ok; subst ""}
+    set x bad
+    namespace eval ns2 {fooObj variable x; return $x}
+} -result ok
+test oo-20.15 {OO: variable method use in non-methods [Bug 2903811]} -setup {
+    oo::object create fooObj
+    oo::objdefine fooObj export variable varname
+} -cleanup {
+    fooObj destroy
+} -body {
+    apply {{} {fooObj variable x; set x ok; return}}
+    return [set [fooObj varname x]]
+} -result ok
 
 test oo-18.1 {OO: define command support} {
     list [catch {oo::define oo::object {error foo}} msg] $msg $errorInfo

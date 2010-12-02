@@ -17,7 +17,10 @@
  * RCS: @(#) $Id: tclTest.c,v 1.115 2008/04/21 16:26:38 dgp Exp $
  */
 
-#define TCL_TEST
+#undef STATIC_BUILD
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 
 /*
@@ -38,6 +41,17 @@
 /*
  * Declare external functions used in Windows tests.
  */
+
+/*
+ * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
+ * Tcltest_Init declaration is in the source file itself, which is only
+ * accessed when we are building a library.
+ */
+
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLEXPORT
+EXTERN int		Tcltest_Init(Tcl_Interp *interp);
+EXTERN int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc; used to collect
@@ -139,7 +153,6 @@ static TestChannel *firstDetached;
  * Forward declarations for procedures defined later in this file:
  */
 
-int			Tcltest_Init(Tcl_Interp *interp);
 static int		AsyncHandlerProc(ClientData clientData,
 			    Tcl_Interp *interp, int code);
 #ifdef TCL_THREADS
@@ -290,6 +303,9 @@ static int		TestexitmainloopCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestpanicCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestfinexitObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestparserObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -488,15 +504,6 @@ static const Tcl_Filesystem simpleFilesystem = {
 
 
 /*
- * External (platform specific) initialization routine, these declarations
- * explicitly don't use EXTERN since this code does not get compiled into the
- * library:
- */
-
-extern int		TclplatformtestInit(Tcl_Interp *interp);
-extern int		TclThread_Init(Tcl_Interp *interp);
-
-/*
  *----------------------------------------------------------------------
  *
  * Tcltest_Init --
@@ -529,6 +536,9 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
+    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+	return TCL_ERROR;
+    }
     /* TIP #268: Full patchlevel instead of just major.minor */
 
     if (Tcl_PkgProvide(interp, "Tcltest", TCL_PATCH_LEVEL) == TCL_ERROR) {
@@ -616,6 +626,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, (ClientData) 0,
 	    NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, (ClientData) 0, NULL);
+    Tcl_CreateObjCommand(interp, "testfinexit", TestfinexitObjCmd, (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testparser", TestparserObjCmd,
 	    (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testparsevar", TestparsevarObjCmd,
@@ -662,6 +673,12 @@ Tcltest_Init(
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
 	    (ClientData) 0);
 
+    if (TclObjTest_Init(interp) != TCL_OK) {
+ 	return TCL_ERROR;
+    }
+    if (Procbodytest_Init(interp) != TCL_OK) {
+ 	return TCL_ERROR;
+    }
 #ifdef TCL_THREADS
     if (TclThread_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
@@ -706,6 +723,35 @@ Tcltest_Init(
      */
 
     return TclplatformtestInit(interp);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcltest_SafeInit --
+ *
+ *	This procedure performs application-specific initialization. Most
+ *	applications, especially those that incorporate additional packages,
+ *	will have their own version of this procedure.
+ *
+ * Results:
+ *	Returns a standard Tcl completion code, and leaves an error message in
+ *	the interp's result if an error occurs.
+ *
+ * Side effects:
+ *	Depends on the startup script.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcltest_SafeInit(
+    Tcl_Interp *interp)		/* Interpreter for application. */
+{
+    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+	return TCL_ERROR;
+    }
+    return Procbodytest_SafeInit(interp);
 }
 
 /*
@@ -4358,6 +4404,47 @@ TestpanicCmd(
     ckfree((char *)argString);
 
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestfinexitObjCmd --
+ *
+ *	Calls a variant of [exit] including the full finalization path.
+ *
+ * Results:
+ *	Error, or doesn't return.
+ *
+ * Side effects:
+ *	Exits application.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestfinexitObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int value;
+
+    if ((objc != 1) && (objc != 2)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?returnCode?");
+	return TCL_ERROR;
+    }
+
+    if (objc == 1) {
+	value = 0;
+    } else if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_Finalize();
+    TclpExit(value);
+    /*NOTREACHED*/
+    return TCL_ERROR;		/* Better not ever reach this! */
 }
 
 static int

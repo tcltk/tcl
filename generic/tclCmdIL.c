@@ -377,7 +377,7 @@ Tcl_IncrObjCmd(
  *	documentation for details on what it does.
  *
  * Results:
- *	FIXME
+ *	Handle for the info command, or NULL on failure.
  *
  * Side effects:
  *	none

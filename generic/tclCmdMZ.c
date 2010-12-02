@@ -3318,29 +3318,29 @@ TclInitStringCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap stringImplMap[] = {
-	{"bytelength",	StringBytesCmd,	NULL},
-	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd},
-	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd},
-	{"first",	StringFirstCmd,	NULL},
-	{"index",	StringIndexCmd,	TclCompileStringIndexCmd},
-	{"is",		StringIsCmd,	NULL},
-	{"last",	StringLastCmd,	NULL},
-	{"length",	StringLenCmd,	TclCompileStringLenCmd},
-	{"map",		StringMapCmd,	NULL},
-	{"match",	StringMatchCmd,	TclCompileStringMatchCmd},
-	{"range",	StringRangeCmd,	NULL},
-	{"repeat",	StringReptCmd,	NULL},
-	{"replace",	StringRplcCmd,	NULL},
-	{"reverse",	StringRevCmd,	NULL},
-	{"tolower",	StringLowerCmd,	NULL},
-	{"toupper",	StringUpperCmd,	NULL},
-	{"totitle",	StringTitleCmd,	NULL},
-	{"trim",	StringTrimCmd,	NULL},
-	{"trimleft",	StringTrimLCmd,	NULL},
-	{"trimright",	StringTrimRCmd,	NULL},
-	{"wordend",	StringEndCmd,	NULL},
-	{"wordstart",	StringStartCmd,	NULL},
-	{NULL}
+	{"bytelength",	StringBytesCmd,	NULL, NULL, NULL},
+	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL},
+	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL},
+	{"first",	StringFirstCmd,	NULL, NULL, NULL},
+	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL},
+	{"is",		StringIsCmd,	NULL, NULL, NULL},
+	{"last",	StringLastCmd,	NULL, NULL, NULL},
+	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL},
+	{"map",		StringMapCmd,	NULL, NULL, NULL},
+	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL},
+	{"range",	StringRangeCmd,	NULL, NULL, NULL},
+	{"repeat",	StringReptCmd,	NULL, NULL, NULL},
+	{"replace",	StringRplcCmd,	NULL, NULL, NULL},
+	{"reverse",	StringRevCmd,	NULL, NULL, NULL},
+	{"tolower",	StringLowerCmd,	NULL, NULL, NULL},
+	{"toupper",	StringUpperCmd,	NULL, NULL, NULL},
+	{"totitle",	StringTitleCmd,	NULL, NULL, NULL},
+	{"trim",	StringTrimCmd,	NULL, NULL, NULL},
+	{"trimleft",	StringTrimLCmd,	NULL, NULL, NULL},
+	{"trimright",	StringTrimRCmd,	NULL, NULL, NULL},
+	{"wordend",	StringEndCmd,	NULL, NULL, NULL},
+	{"wordstart",	StringStartCmd,	NULL, NULL, NULL},
+	{NULL, NULL, NULL, NULL, NULL}
     };
 
     return TclMakeEnsemble(interp, "string", stringImplMap);
@@ -4381,8 +4381,10 @@ TryPostBody(
 		Tcl_ListObjIndex(NULL, info[3], 0, &varName);
 		if (Tcl_ObjSetVar2(interp, varName, NULL, resultObj,
 			TCL_LEAVE_ERR_MSG) == NULL) {
+		    Tcl_DecrRefCount(resultObj);
 		    goto handlerFailed;
 		}
+		Tcl_DecrRefCount(resultObj);
 		if (dummy > 1) {
 		    Tcl_ListObjIndex(NULL, info[3], 1, &varName);
 		    if (Tcl_ObjSetVar2(interp, varName, NULL, options,
@@ -4390,6 +4392,12 @@ TryPostBody(
 			goto handlerFailed;
 		    }
 		}
+	    } else {
+		/*
+		 * Dispose of the result to prevent a memleak. [Bug 2910044]
+		 */
+
+		Tcl_DecrRefCount(resultObj);
 	    }
 
 	    /*

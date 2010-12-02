@@ -156,7 +156,7 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
     {"round", 1},
     {"srand", 1},
     {"wide", 1},
-    {0},
+    {NULL, 0},
 };
 
 #define LAST_BUILTIN_FUNC	25
@@ -1499,7 +1499,7 @@ TclCompEvalObj(
 		int redo = 0;
 
 		if (invoker) {
-		    CmdFrame *ctxPtr = (CmdFrame *) 
+		    CmdFrame *ctxPtr = (CmdFrame *)
 			TclStackAlloc(interp, sizeof(CmdFrame));
 		    *ctxPtr = *invoker;
 
@@ -1530,7 +1530,7 @@ TclCompEvalObj(
 			 * test info-32.0 using literal of info-24.8
 			 *     (dict with ... vs           set body ...).
 			 */
-			redo = 
+			redo =
 			    ((eclPtr->type == TCL_LOCATION_SOURCE) &&
 			     (eclPtr->start != ctxPtr->line[word])) ||
 			    ((eclPtr->type == TCL_LOCATION_BC)     &&
@@ -2227,7 +2227,7 @@ TclExecuteByteCode(
 	 */
 
 	if (onlyb) {
-	    for (currPtr = &OBJ_AT_DEPTH(opnd-2); 
+	    for (currPtr = &OBJ_AT_DEPTH(opnd-2);
 		    appendLen >= 0 && currPtr <= &OBJ_AT_TOS; currPtr++) {
 		if ((*currPtr)->bytes != tclEmptyStringRep) {
 		    Tcl_GetByteArrayFromObj(*currPtr, &length);

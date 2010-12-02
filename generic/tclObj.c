@@ -582,6 +582,17 @@ TclContinuationsEnter(Tcl_Obj* objPtr,
     ContLineLoc* clLocPtr = 
 	(ContLineLoc*) ckalloc (sizeof(ContLineLoc) + num*sizeof(int));
 
+    if (!newEntry) {
+	/*
+	 * Somehow we're entering ContLineLoc data for the same value (objPtr)
+	 * more than one time.  Not sure whether that's expected, or a sign of
+	 * trouble, but at a minimum, we should take care not to leak the old
+	 * entry.
+	 */
+
+	ckfree((char *) Tcl_GetHashValue(hPtr));
+    }
+
     clLocPtr->num = num;
     memcpy (&clLocPtr->loc, loc, num*sizeof(int));
     clLocPtr->loc[num] = CLL_END; /* Sentinel */

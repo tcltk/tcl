@@ -1543,7 +1543,7 @@ DeleteInterpProc(
 		ckfree((char *) eclPtr->loc);
 	    }
 
-	    Tcl_DeleteHashTable (&eclPtr->litInfo);
+	    Tcl_DeleteHashTable(&eclPtr->litInfo);
 
 	    ckfree((char *) eclPtr);
 	    Tcl_DeleteHashEntry(hPtr);
@@ -2179,7 +2179,7 @@ Tcl_CreateObjCommand(
 	     * stuck in an infinite loop).
 	     */
 
-	     ckfree(Tcl_GetHashValue(hPtr));
+	    ckfree(Tcl_GetHashValue(hPtr));
 	}
     } else {
 	/*
@@ -3161,6 +3161,7 @@ CancelEvalProc(
 	     * Create the result object now so that Tcl_Canceled can avoid
 	     * locking the cancelLock mutex.
 	     */
+
 	    if (cancelInfo->result != NULL) {
 		Tcl_SetStringObj(iPtr->asyncCancelMsg, cancelInfo->result,
 			cancelInfo->length);
@@ -3458,7 +3459,7 @@ OldMathFuncProc(
 
 static void
 OldMathFuncDeleteProc(
-     ClientData clientData)
+    ClientData clientData)
 {
     OldMathFuncData *dataPtr = clientData;
 
@@ -3523,6 +3524,7 @@ Tcl_GetMathFuncInfo(
 	Tcl_AppendToObj(message, name, -1);
 	Tcl_AppendToObj(message, "\"", 1);
 	Tcl_SetObjResult(interp, message);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "MATHFUNC", name, NULL);
 	*numArgsPtr = -1;
 	*argTypesPtr = NULL;
 	*procPtr = NULL;
@@ -4551,23 +4553,23 @@ TclEvalEx(
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
     int line,			/* The line the script starts on. */
-    int*  clNextOuter,       /* Information about an outer context for */
-    CONST char* outerScript) /* continuation line data. This is set only in
-			      * EvalTokensStandard(), to properly handle
-			      * [...]-nested commands. The 'outerScript'
-			      * refers to the most-outer script containing the
-			      * embedded command, which is refered to by
-			      * 'script'. The 'clNextOuter' refers to the
-			      * current entry in the table of continuation
-			      * lines in this "master script", and the
-			      * character offsets are relative to the
-			      * 'outerScript' as well.
-			      *
-			      * If outerScript == script, then this call is
-			      * for the outer-most script/command. See
-			      * Tcl_EvalEx() and TclEvalObjEx() for places
-			      * generating arguments for which this is true.
-			      */
+    int *clNextOuter,		/* Information about an outer context for */
+    const char *outerScript)	/* continuation line data. This is set only in
+				 * EvalTokensStandard(), to properly handle
+				 * [...]-nested commands. The 'outerScript'
+				 * refers to the most-outer script containing
+				 * the embedded command, which is refered to
+				 * by 'script'. The 'clNextOuter' refers to
+				 * the current entry in the table of
+				 * continuation lines in this "master script",
+				 * and the character offsets are relative to
+				 * the 'outerScript' as well.
+				 *
+				 * If outerScript == script, then this call is
+				 * for the outer-most script/command. See
+				 * Tcl_EvalEx() and TclEvalObjEx() for places
+				 * generating arguments for which this is
+				 * true. */
 {
     Interp *iPtr = (Interp *) interp;
     const char *p, *next;
@@ -4601,7 +4603,7 @@ TclEvalEx(
      * parsing the script.
      */
 
-    int* clNext = NULL;
+    int *clNext = NULL;
 
     if (iPtr->scriptCLLocPtr) {
 	if (clNextOuter) {
@@ -4710,8 +4712,8 @@ TclEvalEx(
 	 */
 
 	TclAdvanceLines(&line, p, parsePtr->commandStart);
-	TclAdvanceContinuations (&line, &clNext,
-				 parsePtr->commandStart - outerScript);
+	TclAdvanceContinuations(&line, &clNext,
+		parsePtr->commandStart - outerScript);
 
 	gotParse = 1;
 	if (parsePtr->numWords > 0) {
@@ -4724,7 +4726,7 @@ TclEvalEx(
 
 	    int wordLine = line;
 	    const char *wordStart = parsePtr->commandStart;
-	    int*        wordCLNext = clNext;
+	    int *wordCLNext = clNext;
 
 	    /*
 	     * Generate an array of objects for the words of the command.
@@ -4755,8 +4757,8 @@ TclEvalEx(
 		 */
 
 		TclAdvanceLines(&wordLine, wordStart, tokenPtr->start);
-		TclAdvanceContinuations (&wordLine, &wordCLNext,
-					 tokenPtr->start - outerScript);
+		TclAdvanceContinuations(&wordLine, &wordCLNext,
+			tokenPtr->start - outerScript);
 		wordStart = tokenPtr->start;
 
 		lines[objectsUsed] = TclWordKnownAtCompileTime(tokenPtr, NULL)
@@ -4768,7 +4770,7 @@ TclEvalEx(
 
 		code = TclSubstTokens(interp, tokenPtr+1,
 			tokenPtr->numComponents, NULL, wordLine,
-		        wordCLNext, outerScript);
+			wordCLNext, outerScript);
 
 		iPtr->evalFlags = 0;
 
@@ -4802,8 +4804,8 @@ TclEvalEx(
 		}
 
 		if (wordCLNext) {
-		    TclContinuationsEnterDerived (objv[objectsUsed],
-				  wordStart - outerScript, wordCLNext);
+		    TclContinuationsEnterDerived(objv[objectsUsed],
+			    wordStart - outerScript, wordCLNext);
 		}
 	    } /* for loop */
 	    if (expandRequested) {
@@ -5054,10 +5056,10 @@ TclAdvanceLines(
  */
 
 void
-TclAdvanceContinuations (line,clNextPtrPtr,loc)
-     int* line;
-     int** clNextPtrPtr;
-     int loc;
+TclAdvanceContinuations(
+    int *line,
+    int **clNextPtrPtr,
+    int loc)
 {
     /*
      * Track the invisible continuation lines embedded in a script, if
@@ -5069,14 +5071,16 @@ TclAdvanceContinuations (line,clNextPtrPtr,loc)
      * loc >= **clNextPtrPtr <=> We stepped beyond the current cont. line.
      */
 
-    while (*clNextPtrPtr && (**clNextPtrPtr >= 0) && (loc >= **clNextPtrPtr)) {
+    while (*clNextPtrPtr && (**clNextPtrPtr >= 0)
+	    && (loc >= **clNextPtrPtr)) {
 	/*
 	 * We just stepped over an invisible continuation line. Adjust the
 	 * line counter and step to the table entry holding the location of
 	 * the next continuation line to track.
 	 */
-	(*line) ++;
-	(*clNextPtrPtr) ++;
+
+	(*line)++;
+	(*clNextPtrPtr)++;
     }
 }
 
@@ -5301,73 +5305,77 @@ TclArgumentGet(
 
 void
 TclArgumentBCEnter(
-     Tcl_Interp* interp,
-     Tcl_Obj*    objv[],
-     int         objc,
-     void*       codePtr,
-     CmdFrame*   cfPtr,
-     int         pc)
+    Tcl_Interp *interp,
+    Tcl_Obj *objv[],
+    int objc,
+    void *codePtr,
+    CmdFrame *cfPtr,
+    int pc)
 {
-    Interp*        iPtr  = (Interp*) interp;
-    Tcl_HashEntry* hePtr = Tcl_FindHashEntry (iPtr->lineBCPtr, (char *) codePtr);
+    Interp *iPtr = (Interp *) interp;
+    Tcl_HashEntry *hePtr =
+	    Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
+    ExtCmdLoc *eclPtr;
 
+    if (!hePtr) {
+	return;
+    }
+    eclPtr = Tcl_GetHashValue(hePtr);
+    hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, INT2PTR(pc));
     if (hePtr) {
-	ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
-	hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, INT2PTR(pc));
+	int word;
+	int cmd = PTR2INT(Tcl_GetHashValue(hePtr));
+	ECL *ePtr = &eclPtr->loc[cmd];
+	CFWordBC *lastPtr = NULL;
 
-	if (hePtr) {
-	    int  word;
-	    int  cmd  = PTR2INT(Tcl_GetHashValue(hePtr));
-	    ECL* ePtr = &eclPtr->loc[cmd];
-	    CFWordBC* lastPtr = 0;
+	/*
+	 * A few truths ...
+	 * (1) ePtr->nline == objc
+	 * (2) (ePtr->line[word] < 0) => !literal, for all words
+	 * (3) (word == 0) => !literal
+	 *
+	 * Item (2) is why we can use objv to get the literals, and do not
+	 * have to save them at compile time.
+	 */
 
-	    /*
-	     * A few truths ...
-	     * (1) ePtr->nline == objc
-	     * (2) (ePtr->line[word] < 0) => !literal, for all words
-	     * (3) (word == 0) => !literal
-	     *
-	     * Item (2) is why we can use objv to get the literals, and do not
-	     * have to save them at compile time.
-	     */
+	for (word = 1; word < objc; word++) {
+	    if (ePtr->line[word] >= 0) {
+		int isnew;
+		Tcl_HashEntry *hPtr =
+			Tcl_CreateHashEntry(iPtr->lineLABCPtr,
+				(char *) objv[word], &isnew);
+		CFWordBC *cfwPtr = (CFWordBC *) ckalloc(sizeof(CFWordBC));
 
-	    for (word = 1; word < objc; word++) {
-		if (ePtr->line[word] >= 0) {
-		    int isnew;
-		    Tcl_HashEntry* hPtr =
-			Tcl_CreateHashEntry (iPtr->lineLABCPtr,
-					     (char*) objv[word], &isnew);
-		    CFWordBC* cfwPtr = (CFWordBC*) ckalloc (sizeof (CFWordBC));
+		cfwPtr->framePtr = cfPtr;
+		cfwPtr->obj      = objv[word];
+		cfwPtr->pc       = pc;
+		cfwPtr->word     = word;
+		cfwPtr->nextPtr  = lastPtr;
+		lastPtr = cfwPtr;
 
-		    cfwPtr->framePtr = cfPtr;
-		    cfwPtr->obj      = objv[word];
-		    cfwPtr->pc       = pc;
-		    cfwPtr->word     = word;
-		    cfwPtr->nextPtr  = lastPtr;
-		    lastPtr = cfwPtr;
+		if (isnew) {
+		    /*
+		     * The word is not on the stack yet, remember the current
+		     * location and initialize references.
+		     */
 
-		    if (isnew) {
-			/*
-			 * The word is not on the stack yet, remember the
-			 * current location and initialize references.
-			 */
-			cfwPtr->prevPtr = NULL;
-		    } else {
-			/*
-			 * The object is already on the stack, however it may
-			 * have a different location now (literal sharing may
-			 * map multiple location to a single Tcl_Obj*. Save
-			 * the old information in the new structure.
-			 */
-			cfwPtr->prevPtr = (CFWordBC*) Tcl_GetHashValue(hPtr);
-		    }
+		    cfwPtr->prevPtr = NULL;
+		} else {
+		    /*
+		     * The object is already on the stack, however it may have
+		     * a different location now (literal sharing may map
+		     * multiple location to a single Tcl_Obj*. Save the old
+		     * information in the new structure.
+		     */
 
-		    Tcl_SetHashValue (hPtr, cfwPtr);
+		    cfwPtr->prevPtr = Tcl_GetHashValue(hPtr);
 		}
-	    } /* for */
 
-	    cfPtr->litarg = lastPtr;
-	} /* if */
+		Tcl_SetHashValue(hPtr, cfwPtr);
+	    }
+	} /* for */
+
+	cfPtr->litarg = lastPtr;
     } /* if */
 }
 
@@ -5393,20 +5401,20 @@ TclArgumentBCEnter(
 
 void
 TclArgumentBCRelease(
-     Tcl_Interp *interp,
-     CmdFrame* cfPtr)
+    Tcl_Interp *interp,
+    CmdFrame *cfPtr)
 {
-    Interp*   iPtr    = (Interp*) interp;
-    CFWordBC* cfwPtr  = (CFWordBC*) cfPtr->litarg;
+    Interp *iPtr = (Interp *) interp;
+    CFWordBC *cfwPtr = (CFWordBC *) cfPtr->litarg;
 
     while (cfwPtr) {
-	CFWordBC* nextPtr = cfwPtr->nextPtr;
-	Tcl_HashEntry* hPtr =
-	    Tcl_FindHashEntry(iPtr->lineLABCPtr, (char *) cfwPtr->obj);
-	CFWordBC* xPtr = (CFWordBC*) Tcl_GetHashValue (hPtr);
+	CFWordBC *nextPtr = cfwPtr->nextPtr;
+	Tcl_HashEntry *hPtr =
+		Tcl_FindHashEntry(iPtr->lineLABCPtr, (char *) cfwPtr->obj);
+	CFWordBC *xPtr = Tcl_GetHashValue(hPtr);
 
 	if (xPtr != cfwPtr) {
-	    Tcl_Panic ("TclArgumentBC Enter/Release Mismatch");
+	    Tcl_Panic("TclArgumentBC Enter/Release Mismatch");
 	}
 
 	if (cfwPtr->prevPtr) {
@@ -5416,7 +5424,6 @@ TclArgumentBCRelease(
 	}
 
 	ckfree((char *) cfwPtr);
-
 	cfwPtr = nextPtr;
     }
 
@@ -5738,17 +5745,17 @@ TclEvalObjEx(
 		Tcl_DecrRefCount(ctxPtr->data.eval.path);
 	    }
 	    TclStackFree(interp, ctxPtr);
-
-	    /*
-	     * Now release the lock on the continuation line information, if
-	     * any, and restore the caller's settings.
-	     */
-
-	    if (iPtr->scriptCLLocPtr) {
-		Tcl_Release (iPtr->scriptCLLocPtr);
-	    }
-	    iPtr->scriptCLLocPtr = saveCLLocPtr;
 	}
+
+	/*
+	 * Now release the lock on the continuation line information, if any,
+	 * and restore the caller's settings.
+	 */
+
+	if (iPtr->scriptCLLocPtr) {
+	    Tcl_Release(iPtr->scriptCLLocPtr);
+	}
+	iPtr->scriptCLLocPtr = saveCLLocPtr;
     } else {
 	/*
 	 * Let the compiler/engine subsystem do the evaluation.
@@ -5816,6 +5823,8 @@ ProcessUnexpectedResult(
 				 * result code was returned. */
     int returnCode)		/* The unexpected result code. */
 {
+    char buf[TCL_INTEGER_SPACE];
+
     Tcl_ResetResult(interp);
     if (returnCode == TCL_BREAK) {
 	Tcl_AppendResult(interp,
@@ -5827,6 +5836,8 @@ ProcessUnexpectedResult(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"command returned bad code: %d", returnCode));
     }
+    sprintf(buf, "%d", returnCode);
+    Tcl_SetErrorCode(interp, "TCL", "UNEXPECTED_RESULT_CODE", buf, NULL);
 }
 
 /*
@@ -6240,7 +6251,7 @@ Tcl_ExprString(
 	 * An empty string. Just set the interpreter's result to 0.
 	 */
 
-	Tcl_SetResult(interp, "0", TCL_VOLATILE);
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
     } else {
 	Tcl_Obj *resultPtr, *exprObj = Tcl_NewStringObj(expr, -1);
 
@@ -6251,13 +6262,13 @@ Tcl_ExprString(
 	    Tcl_SetObjResult(interp, resultPtr);
 	    Tcl_DecrRefCount(resultPtr);
 	}
-
-	/*
-	 * Force the string rep of the interp result.
-	 */
-
-	(void) Tcl_GetStringResult(interp);
     }
+
+    /*
+     * Force the string rep of the interp result.
+     */
+
+    (void) Tcl_GetStringResult(interp);
     return code;
 }
 
@@ -6794,6 +6805,8 @@ ExprIsqrtFunc(
   negarg:
     Tcl_SetObjResult(interp,
 	    Tcl_NewStringObj("square root of negative argument", -1));
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+	    "domain error: argument not in valid range", NULL);
     return TCL_ERROR;
 }
 
@@ -6965,6 +6978,7 @@ ExprAbsFunc(
 
     if (type == TCL_NUMBER_LONG) {
 	long l = *((const long *) ptr);
+
 	if (l <= (long)0) {
 	    if (l == LONG_MIN) {
 		TclBNInitBignumFromLong(&big, l);
@@ -6979,6 +6993,7 @@ ExprAbsFunc(
 
     if (type == TCL_NUMBER_DOUBLE) {
 	double d = *((const double *) ptr);
+
 	if (d <= 0.0) {
 	    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
 	} else {
@@ -6990,6 +7005,7 @@ ExprAbsFunc(
 #ifndef NO_WIDE_TYPE
     if (type == TCL_NUMBER_WIDE) {
 	Tcl_WideInt w = *((const Tcl_WideInt *) ptr);
+
 	if (w < (Tcl_WideInt)0) {
 	    if (w == LLONG_MIN) {
 		TclBNInitBignumFromWideInt(&big, w);
@@ -7021,6 +7037,7 @@ ExprAbsFunc(
 	return TCL_OK;
 #else
 	double d;
+
 	Tcl_GetDoubleFromObj(interp, objv[1], &d);
 	return TCL_ERROR;
 #endif
@@ -7058,6 +7075,7 @@ ExprDoubleFunc(
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     double dResult;
+
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
@@ -7173,6 +7191,7 @@ ExprWideFunc(
 {
     Tcl_WideInt wResult;
     Tcl_Obj *objPtr;
+
     if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -7457,6 +7476,7 @@ MathFuncWrongNumArgs(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "too %s arguments for math function \"%s\"",
 	    (found < expected ? "few" : "many"), name));
+    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
 }
 
 #ifdef USE_DTRACE

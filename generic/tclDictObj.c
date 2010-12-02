@@ -80,26 +80,26 @@ static inline int	DeleteChainEntry(struct Dict *dict, Tcl_Obj *keyPtr);
  */
 
 static const EnsembleImplMap implementationMap[] = {
-    {"append",	DictAppendCmd,	TclCompileDictAppendCmd },
-    {"create",	DictCreateCmd,	NULL },
-    {"exists",	DictExistsCmd,	NULL },
-    {"filter",	DictFilterCmd,	NULL },
-    {"for",	DictForCmd,	TclCompileDictForCmd },
-    {"get",	DictGetCmd,	TclCompileDictGetCmd },
-    {"incr",	DictIncrCmd,	TclCompileDictIncrCmd },
-    {"info",	DictInfoCmd,	NULL },
-    {"keys",	DictKeysCmd,	NULL },
-    {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd },
-    {"merge",	DictMergeCmd,	NULL },
-    {"remove",	DictRemoveCmd,	NULL },
-    {"replace",	DictReplaceCmd,	NULL },
-    {"set",	DictSetCmd,	TclCompileDictSetCmd },
-    {"size",	DictSizeCmd,	NULL },
-    {"unset",	DictUnsetCmd,	NULL },
-    {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd },
-    {"values",	DictValuesCmd,	NULL },
-    {"with",	DictWithCmd,	NULL },
-    {NULL,      NULL,           NULL }
+    {"append",  DictAppendCmd,  TclCompileDictAppendCmd },
+    {"create",  DictCreateCmd,  NULL },
+    {"exists",  DictExistsCmd,  NULL },
+    {"filter",  DictFilterCmd,  NULL },
+    {"for",     DictForCmd,     TclCompileDictForCmd },
+    {"get",     DictGetCmd,     TclCompileDictGetCmd },
+    {"incr",    DictIncrCmd,    TclCompileDictIncrCmd },
+    {"info",    DictInfoCmd,    NULL },
+    {"keys",    DictKeysCmd,    NULL },
+    {"lappend", DictLappendCmd, TclCompileDictLappendCmd },
+    {"merge",   DictMergeCmd,   NULL },
+    {"remove",  DictRemoveCmd,  NULL },
+    {"replace", DictReplaceCmd, NULL },
+    {"set",     DictSetCmd,     TclCompileDictSetCmd },
+    {"size",    DictSizeCmd,    NULL },
+    {"unset",   DictUnsetCmd,   NULL },
+    {"update",  DictUpdateCmd,  TclCompileDictUpdateCmd },
+    {"values",  DictValuesCmd,  NULL },
+    {"with",    DictWithCmd,    NULL },
+    {NULL, NULL, NULL }
 };
 
 /*

@@ -2305,9 +2305,9 @@ typedef int (*Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
  * main library in case an extension is statically linked into an application.
  */
 
-EXTERN const char *	Tcl_InitStubs (Tcl_Interp *interp, const char *version,
+const char *	Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 				int exact);
-EXTERN const char *	TclTomMathInitializeStubs (Tcl_Interp *interp,
+const char *	TclTomMathInitializeStubs(Tcl_Interp *interp,
 				const char *version, int epoch, int revision);
 
 #ifndef USE_TCL_STUBS

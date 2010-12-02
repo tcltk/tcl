@@ -12,6 +12,9 @@
  * RCS: @(#) $Id: tclUnixTest.c,v 1.27 2008/04/27 22:21:35 dkf Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 
 /*
@@ -74,7 +77,6 @@ static int		TestgetdefencdirCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestsetdefencdirCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-int			TclplatformtestInit(Tcl_Interp *interp);
 static int		TestalarmCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgotsigCmd(ClientData dummy,

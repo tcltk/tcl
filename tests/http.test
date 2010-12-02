@@ -343,7 +343,7 @@ test http-3.22 {http::geturl parse failures} -body {
     http::geturl http://somewhere/%path
 } -returnCodes error -result {Illegal encoding character usage "%pa" in URL path}
 test http-3.23 {http::geturl parse failures} -body {
-    http::geturl http://somewhere/path?{query}
+    http::geturl http://somewhere/path?{query}?
 } -returnCodes error -result {Illegal characters in URL path}
 test http-3.24 {http::geturl parse failures} -body {
     http::geturl http://somewhere/path?%query

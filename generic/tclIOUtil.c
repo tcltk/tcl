@@ -159,6 +159,7 @@ static FilesystemRecord nativeFilesystemRecord = {
     NULL,
     &tclNativeFilesystem,
     1,
+    NULL,
     NULL
 };
 
