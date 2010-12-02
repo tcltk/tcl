@@ -1235,7 +1235,7 @@ Tcl_ParseArgsObjv(
 	    objc--;
 	    break;
 	case TCL_ARGV_FUNC: {
-	    Tcl_ArgvFuncProc handlerProc;
+	    Tcl_ArgvFuncProc *handlerProc;
 	    Tcl_Obj *argObj;
 
 	    if (objc == 0) {
@@ -1243,7 +1243,7 @@ Tcl_ParseArgsObjv(
 	    } else {
 		argObj = objv[srcIndex];
 	    }
-	    handlerProc = (Tcl_ArgvFuncProc) infoPtr->srcPtr;
+	    handlerProc = (Tcl_ArgvFuncProc *) infoPtr->srcPtr;
 	    if (handlerProc(infoPtr->clientData, argObj, infoPtr->dstPtr)) {
 		srcIndex++;
 		objc--;
@@ -1251,9 +1251,9 @@ Tcl_ParseArgsObjv(
 	    break;
 	}
 	case TCL_ARGV_GENFUNC: {
-	    Tcl_ArgvGenFuncProc handlerProc;
+	    Tcl_ArgvGenFuncProc *handlerProc;
 
-	    handlerProc = (Tcl_ArgvGenFuncProc) infoPtr->srcPtr;
+	    handlerProc = (Tcl_ArgvGenFuncProc *) infoPtr->srcPtr;
 	    objc = handlerProc(infoPtr->clientData, interp, objc,
 		    &objv[srcIndex], infoPtr->dstPtr);
 	    if (objc < 0) {

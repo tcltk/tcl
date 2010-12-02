@@ -39,6 +39,7 @@
 #ifdef HAVE_TCL_CONFIG_H
 #include "tclConfig.h"
 #endif
+#include "tclPort.h"
 #ifndef _TCL
 #include "tcl.h"
 #endif
@@ -163,13 +164,13 @@ typedef struct Tcl_ResolvedVarInfo {
 } Tcl_ResolvedVarInfo;
 
 typedef int (Tcl_ResolveCompiledVarProc)(Tcl_Interp *interp,
-	const char *name, int length, Tcl_Namespace *context,
+	CONST84 char *name, int length, Tcl_Namespace *context,
 	Tcl_ResolvedVarInfo **rPtr);
 
-typedef int (Tcl_ResolveVarProc)(Tcl_Interp *interp, const char *name,
+typedef int (Tcl_ResolveVarProc)(Tcl_Interp *interp, CONST84 char *name,
 	Tcl_Namespace *context, int flags, Tcl_Var *rPtr);
 
-typedef int (Tcl_ResolveCmdProc)(Tcl_Interp *interp, const char *name,
+typedef int (Tcl_ResolveCmdProc)(Tcl_Interp *interp, CONST84 char *name,
 	Tcl_Namespace *context, int flags, Tcl_Command *rPtr);
 
 typedef struct Tcl_ResolverInfo {
@@ -1254,10 +1255,10 @@ typedef struct ContLineLoc {
  * by [info frame]. Contains a sub-structure for each extra field.
  */
 
-typedef Tcl_Obj *(*GetFrameInfoValueProc)(ClientData clientData);
+typedef Tcl_Obj *(GetFrameInfoValueProc)(ClientData clientData);
 typedef struct {
     const char *name;		/* Name of this field. */
-    GetFrameInfoValueProc proc;	/* Function to generate a Tcl_Obj* from the
+    GetFrameInfoValueProc *proc;	/* Function to generate a Tcl_Obj* from the
 				 * clientData, or just use the clientData
 				 * directly (after casting) if NULL. */
     ClientData clientData;	/* Context for above function, or Tcl_Obj* if
@@ -2822,7 +2823,6 @@ MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
 			    Tcl_DString *linkPtr);
-MODULE_SCOPE void	TclpReleaseFile(TclFile file);
 MODULE_SCOPE void	TclpSetInterfaces(void);
 MODULE_SCOPE void	TclpSetVariables(Tcl_Interp *interp);
 MODULE_SCOPE void	TclpUnloadFile(Tcl_LoadHandle loadHandle);
@@ -4215,7 +4215,6 @@ typedef struct ForIterData {
     int      word; /* Index of the body script in the command */
 } ForIterData;
 
-#include "tclPort.h"
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
 #include "tclTomMathDecls.h"

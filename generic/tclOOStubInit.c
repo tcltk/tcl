@@ -8,7 +8,6 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include "tclOO.h"
 #include "tclOOInt.h"
 
 /* !BEGIN!: Do not edit below this line. */

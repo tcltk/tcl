@@ -1,4 +1,3 @@
-
 /*
  * tcl.h --
  *
@@ -372,7 +371,7 @@ typedef long LONG;
 #      if defined(__WIN32__) && !defined(__CYGWIN__)
 #         define TCL_LL_MODIFIER        "I64"
 #      else
-#         define TCL_LL_MODIFIER	"L"
+#         define TCL_LL_MODIFIER	"ll"
 #      endif
 typedef struct stat	Tcl_StatBuf;
 #   elif defined(__WIN32__)
@@ -474,8 +473,8 @@ typedef struct Tcl_Interp {
 				 * Tcl_Eval must free it before executing next
 				 * command. */
 #else
-    char* unused3;
-    void (*unused4) (char*);
+    char *unused3;
+    void (*unused4) (char *);
 #endif
 #ifdef USE_INTERP_ERRORLINE
     int errorLine;		/* When TCL_ERROR is returned, this gives the
@@ -626,13 +625,13 @@ typedef struct stat *Tcl_OldStat_;
  *			interpreter's result is meaningless.
  */
 
-#define TCL_OK		0
-#define TCL_ERROR	1
-#define TCL_RETURN	2
-#define TCL_BREAK	3
-#define TCL_CONTINUE	4
+#define TCL_OK			0
+#define TCL_ERROR		1
+#define TCL_RETURN		2
+#define TCL_BREAK		3
+#define TCL_CONTINUE		4
 
-#define TCL_RESULT_SIZE 200
+#define TCL_RESULT_SIZE		200
 
 /*
  * Flags to control what substitutions are performed by Tcl_SubstObj():
@@ -807,9 +806,9 @@ typedef struct Tcl_Obj {
  * to compute or has side effects.
  */
 
-void		Tcl_IncrRefCount (Tcl_Obj *objPtr);
-void		Tcl_DecrRefCount (Tcl_Obj *objPtr);
-int		Tcl_IsShared (Tcl_Obj *objPtr);
+void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
+void		Tcl_DecrRefCount(Tcl_Obj *objPtr);
+int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 /*
  * The following structure contains the state needed by Tcl_SaveResult. No-one
@@ -953,8 +952,8 @@ typedef struct Tcl_DString {
  * buffer space required by Tcl_PrintDouble.
  */
 
-#define TCL_MAX_PREC 17
-#define TCL_DOUBLE_SPACE (TCL_MAX_PREC+10)
+#define TCL_MAX_PREC		17
+#define TCL_DOUBLE_SPACE	(TCL_MAX_PREC+10)
 
 /*
  * Definition for a number of bytes of buffer space sufficient to hold the
@@ -1015,9 +1014,9 @@ typedef struct Tcl_DString {
  * page for details):
  */
 
-#define TCL_VOLATILE	((Tcl_FreeProc *) 1)
-#define TCL_STATIC	((Tcl_FreeProc *) 0)
-#define TCL_DYNAMIC	((Tcl_FreeProc *) 3)
+#define TCL_VOLATILE		((Tcl_FreeProc *) 1)
+#define TCL_STATIC		((Tcl_FreeProc *) 0)
+#define TCL_DYNAMIC		((Tcl_FreeProc *) 3)
 
 /*
  * Flag values passed to variable-related functions.
@@ -1367,9 +1366,9 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, ClientData clientData);
  * indicate what sorts of events are of interest:
  */
 
-#define TCL_READABLE	(1<<1)
-#define TCL_WRITABLE	(1<<2)
-#define TCL_EXCEPTION	(1<<3)
+#define TCL_READABLE		(1<<1)
+#define TCL_WRITABLE		(1<<2)
+#define TCL_EXCEPTION		(1<<3)
 
 /*
  * Flag values to pass to Tcl_OpenCommandChannel to indicate the disposition
@@ -1387,15 +1386,15 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, ClientData clientData);
  * should be closed.
  */
 
-#define TCL_CLOSE_READ	(1<<1)
-#define TCL_CLOSE_WRITE	(1<<2)
+#define TCL_CLOSE_READ		(1<<1)
+#define TCL_CLOSE_WRITE		(1<<2)
 
 /*
  * Value to use as the closeProc for a channel that supports the close2Proc
  * interface.
  */
 
-#define TCL_CLOSE2PROC	((Tcl_DriverCloseProc *)1)
+#define TCL_CLOSE2PROC		((Tcl_DriverCloseProc *) 1)
 
 /*
  * Channel version tag. This was introduced in 8.3.2/8.4.
@@ -2228,9 +2227,9 @@ typedef struct {
  * argument types:
  */
 
-typedef int (*Tcl_ArgvFuncProc)(ClientData clientData, Tcl_Obj *objPtr,
+typedef int (Tcl_ArgvFuncProc)(ClientData clientData, Tcl_Obj *objPtr,
 	void *dstPtr);
-typedef int (*Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
+typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 	int objc, Tcl_Obj *const *objv, void *dstPtr);
 
 /*
@@ -2296,7 +2295,7 @@ typedef int (*Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
  * value since the stubs tables don't match.
  */
 
-#define TCL_STUB_MAGIC ((int)0xFCA3BACF)
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2325,18 +2324,17 @@ const char *	TclTomMathInitializeStubs(Tcl_Interp *interp,
      * TODO - tommath stubs export goes here!
      */
 
-
 /*
  * Public functions that are not accessible via the stubs table.
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
  */
 
-EXTERN void		Tcl_Main (int argc, char **argv,
-				Tcl_AppInitProc *appInitProc);
-EXTERN const char *	Tcl_PkgInitStubsCheck (Tcl_Interp *interp,
-				const char *version, int exact);
+EXTERN void		Tcl_Main(int argc, char **argv,
+			    Tcl_AppInitProc *appInitProc);
+EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
+			    const char *version, int exact);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-EXTERN void		Tcl_GetMemoryInfo (Tcl_DString *dsPtr);
+EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #endif
 
 /*
@@ -2527,7 +2525,7 @@ EXTERN void		Tcl_GetMemoryInfo (Tcl_DString *dsPtr);
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS
 
-EXTERN int		Tcl_AppInit (Tcl_Interp *interp);
+EXTERN int		Tcl_AppInit(Tcl_Interp *interp);
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT

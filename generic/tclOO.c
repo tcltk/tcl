@@ -78,6 +78,9 @@ static void		DeletedHelpersNamespace(ClientData clientData);
 static void		InitFoundation(Tcl_Interp *interp);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
+static void		MyDeletedTrace(ClientData clientData,
+			    Tcl_Interp *interp, const char *oldName,
+			    const char *newName, int flags);
 static void		ObjectNamespaceDeleted(ClientData clientData);
 static void		ObjectRenamedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
@@ -544,6 +547,7 @@ AllocObject(
 
     {
 	register Command *cmdPtr = (Command *) ckalloc(sizeof(Command));
+	register CommandTrace *tracePtr;
 
 	memset(cmdPtr, 0, sizeof(Command));
 	cmdPtr->nsPtr = (Namespace *) oPtr->namespacePtr;
@@ -555,12 +559,47 @@ AllocObject(
 	cmdPtr->proc = TclInvokeObjectCommand;
 	cmdPtr->clientData = cmdPtr;
 	Tcl_SetHashValue(cmdPtr->hPtr, cmdPtr);
+	oPtr->myCommand = (Tcl_Command) cmdPtr;
+	cmdPtr->tracePtr = tracePtr = (CommandTrace *)
+		ckalloc(sizeof(CommandTrace));
+	tracePtr->traceProc = MyDeletedTrace;
+	tracePtr->clientData = oPtr;
+	tracePtr->flags = TCL_TRACE_DELETE;
+	tracePtr->nextPtr = NULL;
+	tracePtr->refCount = 1;
     }
 
     Tcl_TraceCommand(interp, TclGetString(TclOOObjectName(interp, oPtr)),
 	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjectRenamedTrace, oPtr);
 
     return oPtr;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MyDeletedTrace --
+ *
+ *	This callback is triggered when the object's [my] command is deleted
+ *	by any mechanism. It just marks the object as not having a [my]
+ *	command, and so prevents cleanup of that when the object itself is
+ *	deleted.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+MyDeletedTrace(
+    ClientData clientData,	/* Reference to the object whose [my] has been
+				 * squelched. */
+    Tcl_Interp *interp,		/* ignored */
+    const char *oldName,	/* ignored */
+    const char *newName,	/* ignored */
+    int flags)			/* ignored */
+{
+    register Object *oPtr = clientData;
+
+    oPtr->myCommand = NULL;
 }
 
 /*
@@ -604,13 +643,20 @@ ObjectRenamedTrace(
      * Oh dear, the object really is being deleted. Handle this by running the
      * destructors and deleting the object's namespace, which in turn causes
      * the real object structures to be deleted.
+     *
+     * Note that it is possible for the namespace to be deleted before the
+     * command. Because of that case, we must take care here to mark the
+     * command as being deleted so that if we return here we don't run into
+     * reentrancy problems.
      */
 
     AddRef(oPtr);
+    oPtr->command = NULL;
     oPtr->flags |= OBJECT_DELETED;
-    if (!Tcl_InterpDeleted(interp)) {
+    if (!Tcl_InterpDeleted(interp) && !(oPtr->flags & DESTRUCTOR_CALLED)) {
 	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
 
+	oPtr->flags |= DESTRUCTOR_CALLED;
 	if (contextPtr != NULL) {
 	    int result;
 	    Tcl_InterpState state;
@@ -804,8 +850,18 @@ ObjectNamespaceDeleted(
 
     /*
      * Instruct everyone to no longer use any allocated fields of the object.
+     * Also delete the commands that refer to the object at this point (if
+     * they still exist) because otherwise their references to the object
+     * point into freed memory, allowing crashes.
      */
 
+    oPtr->flags |= OBJECT_DELETED;
+    if (oPtr->command) {
+	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
+    }
+    if (oPtr->myCommand) {
+	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->myCommand);
+    }
     if (preserved) {
 	AddRef(oPtr);
 	if (clsPtr != NULL) {
@@ -813,7 +869,6 @@ ObjectNamespaceDeleted(
 	    ReleaseClassContents(NULL, oPtr);
 	}
     }
-    oPtr->flags |= OBJECT_DELETED;
 
     /*
      * Splice the object out of its context. After this, we must *not* call

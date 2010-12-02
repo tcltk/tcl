@@ -3468,7 +3468,7 @@ Tcl_LsortObjCmd(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     int i, j, index, indices, length, nocase = 0, sortMode, indexc;
-    int group, groupSize, groupOffset, idx;
+    int group, groupSize, groupOffset, idx, allocatedIndexVector = 0;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     SortElement *elementArray, *elementPtr;
     SortInfo sortInfo;		/* Information about this sort that needs to
@@ -3582,6 +3582,9 @@ Tcl_LsortObjCmd(
 	    default:
 		sortInfo.indexv =
 			TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
+		allocatedIndexVector = 1;	/* Cannot use indexc field, as
+						 * it might be decreased by 1
+						 * later. */
 	    }
 
 	    /*
@@ -3724,16 +3727,16 @@ Tcl_LsortObjCmd(
 		sortInfo.indexc = 0;
 		sortInfo.indexv = NULL;
 	    } else {
-		int *new_indexv;
-
 		sortInfo.indexc--;
-		new_indexv =
-			TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
+
+		/*
+		 * Do not shrink the actual memory block used; that doesn't
+		 * work with TclStackAlloc-allocated memory. [Bug 2918962]
+		 */
+
 		for (i = 0; i < sortInfo.indexc; i++) {
-		    new_indexv[i] = sortInfo.indexv[i+1];
+		    sortInfo.indexv[i] = sortInfo.indexv[i+1];
 		}
-		TclStackFree(interp, sortInfo.indexv);
-		sortInfo.indexv = new_indexv;
 	    }
 	}
     }
@@ -3799,7 +3802,8 @@ Tcl_LsortObjCmd(
 	} else if (sortInfo.sortMode == SORTMODE_REAL) {
 	    double a;
 
-	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
+	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr,
+		    &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done1;
 	    }
@@ -3899,7 +3903,7 @@ Tcl_LsortObjCmd(
 	sortInfo.compareCmdPtr = NULL;
     }
   done2:
-    if (sortInfo.indexc > 1) {
+    if (allocatedIndexVector) {
 	TclStackFree(interp, sortInfo.indexv);
     }
     return sortInfo.resultCode;

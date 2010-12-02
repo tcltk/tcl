@@ -2124,7 +2124,7 @@ declare 581 generic {
 
 # TIP#304 (chan pipe) aferrieux
 declare 588 generic {
-    int Tcl_CreatePipe (Tcl_Interp  *interp, Tcl_Channel *rchan,
+    int Tcl_CreatePipe(Tcl_Interp  *interp, Tcl_Channel *rchan,
 	   Tcl_Channel *wchan, int flags)
 }
 

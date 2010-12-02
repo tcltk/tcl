@@ -1415,7 +1415,7 @@ test info-38.7 {location information for arg substitution} -constraints testeval
 } -result {* {type source line 728 file info.test cmd {info frame \$level} proc ::etrace level 0}
 * {type eval line 1 cmd etrace proc ::tcltest::RunTest}
 * {type source line 1414 file info.test cmd {testevalex {return -level 0 \[etrace]}} proc ::tcltest::RunTest}
-* {type source line 2298 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
+* {type source line * file tcltest* cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
 
 # -------------------------------------------------------------------------
 # literal sharing

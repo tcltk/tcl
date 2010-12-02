@@ -96,7 +96,7 @@ typedef struct ProcedureMethod {
     TclOO_PostCallProc postCallProc;
 				/* Callback to allow for additional cleanup
 				 * after the method executes. */
-    GetFrameInfoValueProc gfivProc;
+    GetFrameInfoValueProc *gfivProc;
 				/* Callback to allow for fine tuning of how
 				 * the method reports itself. */
 } ProcedureMethod;
@@ -199,6 +199,8 @@ typedef struct Object {
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been
 				 * destroyed. */
+#define DESTRUCTOR_CALLED 2	/* Flag to say that the destructor has been
+				 * called. */
 #define ROOT_OBJECT 0x1000	/* Flag to say that this object is the root of
 				 * the class hierarchy and should be treated
 				 * specially during teardown. */
@@ -579,6 +581,7 @@ MODULE_SCOPE int	TclOOUpcatchCmd(ClientData ignored,
  * but all arguments are used multiple times and so must have no side effects.
  */
 
+#undef DUPLICATE /* prevent possible conflict with definition in WINAPI nb30.h */
 #define DUPLICATE(target,source,type) \
     do { \
 	register unsigned len = sizeof(type) * ((target).num=(source).num);\

@@ -49,65 +49,73 @@ typedef struct OldMathFuncData {
 } OldMathFuncData;
 
 /*
+ * This is the script cancellation struct and hash table. The hash table is
+ * used to keep track of the information necessary to process script
+ * cancellation requests, including the original interp, asynchronous handler
+ * tokens (created by Tcl_AsyncCreate), and the clientData and flags arguments
+ * passed to Tcl_CancelEval on a per-interp basis. The cancelLock mutex is
+ * used for protecting calls to Tcl_CancelEval as well as protecting access to
+ * the hash table below.
+ */
+
+typedef struct {
+    Tcl_Interp *interp;		/* Interp this struct belongs to. */
+    Tcl_AsyncHandler async;	/* Async handler token for script
+				 * cancellation. */
+    char *result;		/* The script cancellation result or NULL for
+				 * a default result. */
+    int length;			/* Length of the above error message. */
+    ClientData clientData;	/* Ignored */
+    int flags;			/* Additional flags */
+} CancelInfo;
+static Tcl_HashTable cancelTable;
+static int cancelTableInitialized = 0;	/* 0 means not yet initialized. */
+TCL_DECLARE_MUTEX(cancelLock)
+
+/*
  * Static functions in this file:
  */
 
-static char *	CallCommandTraces(Interp *iPtr, Command *cmdPtr,
-		    const char *oldName, const char *newName, int flags);
-static int	CancelEvalProc(ClientData clientData,
-		    Tcl_Interp *interp, int code);
-static int	CheckDoubleResult(Tcl_Interp *interp, double dResult);
-static void	DeleteInterpProc(Tcl_Interp *interp);
-static void	DeleteOpCmdClientData(ClientData clientData);
-static Tcl_Obj *GetCommandSource(Interp *iPtr, const char *command,
-	            int numChars, int objc, Tcl_Obj *const objv[]);
-static void	ProcessUnexpectedResult(Tcl_Interp *interp, int returnCode);
-static int	OldMathFuncProc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static void	OldMathFuncDeleteProc(ClientData clientData);
-static int	ExprAbsFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprBinaryFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprBoolFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprCeilFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprDoubleFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprEntierFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprFloorFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprIntFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprIsqrtFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprRandFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprRoundFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprSqrtFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprSrandFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprUnaryFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static int	ExprWideFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *const *objv);
-static void	MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
-		    int actual, Tcl_Obj *const *objv);
+static char *		CallCommandTraces(Interp *iPtr, Command *cmdPtr,
+			    const char *oldName, const char *newName,
+			    int flags);
+static int		CancelEvalProc(ClientData clientData,
+			    Tcl_Interp *interp, int code);
+static int		CheckDoubleResult(Tcl_Interp *interp, double dResult);
+static void		DeleteInterpProc(Tcl_Interp *interp);
+static void		DeleteOpCmdClientData(ClientData clientData);
 #ifdef USE_DTRACE
-static int	DTraceObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
-		    Tcl_Obj *const objv[]);
-static int	DTraceCmdReturn(ClientData data[], Tcl_Interp *interp,
-		    int result);
+static Tcl_ObjCmdProc	DTraceObjCmd;
 #else
-#define		DTraceCmdReturn NULL
-#endif
+#   define DTraceCmdReturn	NULL
+#endif /* USE_DTRACE */
+static Tcl_ObjCmdProc	ExprAbsFunc;
+static Tcl_ObjCmdProc	ExprBinaryFunc;
+static Tcl_ObjCmdProc	ExprBoolFunc;
+static Tcl_ObjCmdProc	ExprCeilFunc;
+static Tcl_ObjCmdProc	ExprDoubleFunc;
+static Tcl_ObjCmdProc	ExprEntierFunc;
+static Tcl_ObjCmdProc	ExprFloorFunc;
+static Tcl_ObjCmdProc	ExprIntFunc;
+static Tcl_ObjCmdProc	ExprIsqrtFunc;
+static Tcl_ObjCmdProc	ExprRandFunc;
+static Tcl_ObjCmdProc	ExprRoundFunc;
+static Tcl_ObjCmdProc	ExprSqrtFunc;
+static Tcl_ObjCmdProc	ExprSrandFunc;
+static Tcl_ObjCmdProc	ExprUnaryFunc;
+static Tcl_ObjCmdProc	ExprWideFunc;
+static Tcl_Obj *        GetCommandSource(Interp *iPtr,
+			    const char *command, int numChars,
+			    int objc, Tcl_Obj *const objv[]);
+static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
+			    int actual, Tcl_Obj *const *objv);
+static Tcl_ObjCmdProc	OldMathFuncProc;
+static void		OldMathFuncDeleteProc(ClientData clientData);
+static void		ProcessUnexpectedResult(Tcl_Interp *interp,
+			    int returnCode);
 
-MODULE_SCOPE const TclStubs * const tclConstStubsPtr;
-
+MODULE_SCOPE const TclStubs *const tclConstStubsPtr;
+
 /*
  * The following structure define the commands in the Tcl core.
  */
@@ -371,29 +379,6 @@ static int stackGrowsDown = 1;
 #endif /* TCL_NO_STACK_CHECK/TCL_CROSS_COMPILE */
 
 /*
- * This is the script cancellation struct and hash table.  The hash table
- * is used to keep track of the information necessary to process script
- * cancellation requests, including the original interp, asynchronous handler
- * tokens (created by Tcl_AsyncCreate), and the clientData and flags arguments
- * passed to Tcl_CancelEval on a per-interp basis.  The cancelLock mutex is
- * used for protecting calls to Tcl_CancelEval as well as protecting access
- * to the hash table below.
- */
-typedef struct {
-    Tcl_Interp *interp;		/* Interp this struct belongs to. */
-    Tcl_AsyncHandler async;	/* Async handler token for script
-				 * cancellation. */
-    char *result;		/* The script cancellation result or NULL for
-				 * a default result. */
-    int length;			/* Length of the above error message. */
-    ClientData clientData;	/* Ignored */
-    int flags;			/* Additional flags */
-} CancelInfo;
-static Tcl_HashTable cancelTable;
-static int cancelTableInitialized = 0;	/* 0 means not yet initialized. */
-TCL_DECLARE_MUTEX(cancelLock)
-
-/*
  *----------------------------------------------------------------------
  *
  * TclFinalizeEvaluation --
@@ -553,7 +538,7 @@ Tcl_CreateInterp(void)
     }
 
     iPtr->cmdCount = 0;
-    TclInitLiteralTable(&(iPtr->literalTable));
+    TclInitLiteralTable(&iPtr->literalTable);
     iPtr->compileEpoch = 0;
     iPtr->compiledProcPtr = NULL;
     iPtr->resolverPtr = NULL;
@@ -646,7 +631,7 @@ Tcl_CreateInterp(void)
      */
 
 #ifdef TCL_COMPILE_STATS
-    statsPtr = &(iPtr->stats);
+    statsPtr = &iPtr->stats;
     statsPtr->numExecutions = 0;
     statsPtr->numCompilations = 0;
     statsPtr->numByteCodesFreed = 0;
@@ -724,7 +709,7 @@ Tcl_CreateInterp(void)
      * Tcl_CmdProc, set the Tcl_CmdProc to TclInvokeObjectCommand.
      */
 
-    for (cmdInfoPtr = builtInCmds;  cmdInfoPtr->name != NULL; cmdInfoPtr++) {
+    for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
 	if ((cmdInfoPtr->objProc == NULL)
 		&& (cmdInfoPtr->compileProc == NULL)) {
 	    Tcl_Panic("builtin command with NULL object command proc and a NULL compile proc");
@@ -1384,7 +1369,7 @@ DeleteInterpProc(
      * table, as it will be freed later in this function without further use.
      */
 
-    TclCleanupLiteralTable(interp, &(iPtr->literalTable));
+    TclCleanupLiteralTable(interp, &iPtr->literalTable);
     TclHandleFree(iPtr->handle);
     TclTeardownNamespace(iPtr->globalNsPtr);
 
@@ -1397,7 +1382,7 @@ DeleteInterpProc(
 	/*
 	 * Non-pernicious deletion. The deletion callbacks will not be allowed
 	 * to create any new hidden or non-hidden commands.
-	 * Tcl_DeleteCommandFromToken() will remove the entry from the
+	 * Tcl_DeleteCommandFromToken will remove the entry from the
 	 * hiddenCmdTablePtr.
 	 */
 
@@ -1495,7 +1480,7 @@ DeleteInterpProc(
      * interpreter.
      */
 
-    TclDeleteLiteralTable(interp, &(iPtr->literalTable));
+    TclDeleteLiteralTable(interp, &iPtr->literalTable);
 
     /*
      * TIP #280 - Release the arrays for ByteCode/Proc extension, and
@@ -1829,13 +1814,13 @@ Tcl_ExposeCommand(
 
     /*
      * Check that we have a true global namespace command (enforced by
-     * Tcl_HideCommand() but let's double check. (If it was not, we would not
+     * Tcl_HideCommand but let's double check. (If it was not, we would not
      * really know how to handle it).
      */
 
     if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
 	/*
-	 * This case is theoritically impossible, we might rather Tcl_Panic()
+	 * This case is theoritically impossible, we might rather Tcl_Panic
 	 * than 'nicely' erroring out ?
 	 */
 
@@ -2441,7 +2426,7 @@ TclRenameCommand(
 
     /*
      * Warning: any changes done in the code here are likely to be needed in
-     * Tcl_HideCommand() code too (until the common parts are extracted out).
+     * Tcl_HideCommand code too (until the common parts are extracted out).
      * - dl
      */
 
@@ -2961,7 +2946,7 @@ Tcl_DeleteCommandFromToken(
 	 * If you are getting a crash during the call to deleteProc and
 	 * cmdPtr->deleteProc is a pointer to the function free(), the most
 	 * likely cause is that your extension allocated memory for the
-	 * clientData argument to Tcl_CreateObjCommand() with the ckalloc()
+	 * clientData argument to Tcl_CreateObjCommand with the ckalloc()
 	 * macro and you are now trying to deallocate this memory with free()
 	 * instead of ckfree(). You should pass a pointer to your own method
 	 * that calls ckfree().
@@ -2996,10 +2981,10 @@ Tcl_DeleteCommandFromToken(
     }
 
     /*
-     * A number of tests for particular kinds of commands are done by
-     * checking whether the objProc field holds a known value.  Set the
-     * field to NULL so that such tests won't have false positives when
-     * applied to deleted commands.
+     * A number of tests for particular kinds of commands are done by checking
+     * whether the objProc field holds a known value. Set the field to NULL so
+     * that such tests won't have false positives when applied to deleted
+     * commands.
      */
 
     cmdPtr->objProc = NULL;
@@ -3017,6 +3002,23 @@ Tcl_DeleteCommandFromToken(
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CallCommandTraces --
+ *
+ *	Abstraction of the code to call traces on a command.
+ *
+ * Results:
+ *	Currently always NULL.
+ *
+ * Side effects:
+ *	Anything; this may recursively evaluate scripts and code exists to do
+ *	just that.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static char *
 CallCommandTraces(
     Interp *iPtr,		/* Interpreter containing command. */
@@ -3118,6 +3120,26 @@ CallCommandTraces(
     Tcl_Release(iPtr);
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CancelEvalProc --
+ *
+ *	Marks this interpreter as being canceled. This causes current
+ *	executions to be unwound as the interpreter enters a state where it
+ *	refuses to execute more commands or handle [catch] or [try], yet the
+ *	interpreter is still able to execute further commands after the
+ *	cancelation is cleared (unlike if it is deleted).
+ *
+ * Results:
+ *	The value given for the code argument.
+ *
+ * Side effects:
+ *	Transfers a message from the cancelation message to the interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 CancelEvalProc(
@@ -3346,7 +3368,7 @@ OldMathFuncProc(
 
     args = (Tcl_Value *) ckalloc(dataPtr->numArgs * sizeof(Tcl_Value));
     for (j = 1, k = 0; j < objc; ++j, ++k) {
-	/* TODO: Convert to TclGetNumberFromObj() ? */
+	/* TODO: Convert to TclGetNumberFromObj? */
 	valuePtr = objv[j];
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
 #ifdef ACCEPT_NAN
@@ -3377,12 +3399,12 @@ OldMathFuncProc(
 	args[k].type = dataPtr->argTypes[k];
 	switch (args[k].type) {
 	case TCL_EITHER:
-	    if (Tcl_GetLongFromObj(NULL, valuePtr, &(args[k].intValue))
+	    if (Tcl_GetLongFromObj(NULL, valuePtr, &args[k].intValue)
 		    == TCL_OK) {
 		args[k].type = TCL_INT;
 		break;
 	    }
-	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &(args[k].wideValue))
+	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &args[k].wideValue)
 		    == TCL_OK) {
 		args[k].type = TCL_WIDE_INT;
 		break;
@@ -3394,21 +3416,21 @@ OldMathFuncProc(
 	    args[k].doubleValue = d;
 	    break;
 	case TCL_INT:
-	    if (ExprIntFunc(NULL, interp, 2, &(objv[j-1])) != TCL_OK) {
+	    if (ExprIntFunc(NULL, interp, 2, &objv[j-1]) != TCL_OK) {
 		ckfree((char *) args);
 		return TCL_ERROR;
 	    }
 	    valuePtr = Tcl_GetObjResult(interp);
-	    Tcl_GetLongFromObj(NULL, valuePtr, &(args[k].intValue));
+	    Tcl_GetLongFromObj(NULL, valuePtr, &args[k].intValue);
 	    Tcl_ResetResult(interp);
 	    break;
 	case TCL_WIDE_INT:
-	    if (ExprWideFunc(NULL, interp, 2, &(objv[j-1])) != TCL_OK) {
+	    if (ExprWideFunc(NULL, interp, 2, &objv[j-1]) != TCL_OK) {
 		ckfree((char *) args);
 		return TCL_ERROR;
 	    }
 	    valuePtr = Tcl_GetObjResult(interp);
-	    Tcl_GetWideIntFromObj(NULL, valuePtr, &(args[k].wideValue));
+	    Tcl_GetWideIntFromObj(NULL, valuePtr, &args[k].wideValue);
 	    Tcl_ResetResult(interp);
 	    break;
 	}
@@ -4133,9 +4155,6 @@ TclEvalObjvInternal(
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
 	TclDecrRefCount(info);
     }
-    if (TCL_DTRACE_CMD_RETURN_ENABLED() || TCL_DTRACE_CMD_RESULT_ENABLED()) {
-	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
-    }
     if (TCL_DTRACE_CMD_ENTRY_ENABLED()) {
 	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
 		(Tcl_Obj **)(objv + 1));
@@ -4454,7 +4473,7 @@ Tcl_EvalTokensStandard(
 				 * Must be at least 1. */
 {
     return TclSubstTokens(interp, tokenPtr, count, /* numLeftPtr */ NULL, 1,
-			  NULL, NULL);
+	    NULL, NULL);
 }
 
 /*
@@ -4595,15 +4614,13 @@ TclEvalEx(
     int *linesStack = TclStackAlloc(interp, minObjs * sizeof(int));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
-    /*
-     * Pointer for the tracking of invisible continuation lines. Initialized
-     * only if the caller gave us a table of locations to track, via
-     * scriptCLLocPtr. It always refers to the table entry holding the
-     * location of the next invisible continuation line to look for, while
-     * parsing the script.
-     */
-
-    int *clNext = NULL;
+    int *clNext = NULL;		/* Pointer for the tracking of invisible
+				 * continuation lines. Initialized only if the
+				 * caller gave us a table of locations to
+				 * track, via scriptCLLocPtr. It always refers
+				 * to the table entry holding the location of
+				 * the next invisible continuation line to
+				 * look for, while parsing the script. */
 
     if (iPtr->scriptCLLocPtr) {
 	if (clNextOuter) {
@@ -4727,13 +4744,12 @@ TclEvalEx(
 	    int wordLine = line;
 	    const char *wordStart = parsePtr->commandStart;
 	    int *wordCLNext = clNext;
+	    unsigned int objectsNeeded = 0;
+	    unsigned int numWords = parsePtr->numWords;
 
 	    /*
 	     * Generate an array of objects for the words of the command.
 	     */
-
- 	    unsigned int objectsNeeded = 0;
-	    unsigned int numWords = parsePtr->numWords;
 
 	    if (numWords > minObjs) {
 		expand = (int *) ckalloc(numWords * sizeof(int));
@@ -5062,9 +5078,9 @@ TclAdvanceContinuations(
     int loc)
 {
     /*
-     * Track the invisible continuation lines embedded in a script, if
-     * any. Here they are just spaces (already). They were removed by
-     * EvalTokensStandard() via Tcl_UtfBackslash().
+     * Track the invisible continuation lines embedded in a script, if any.
+     * Here they are just spaces (already). They were removed by
+     * EvalTokensStandard via Tcl_UtfBackslash.
      *
      * *clNextPtrPtr         <=> We have continuation lines to track.
      * **clNextPtrPtr >= 0   <=> We are not beyond the last possible location.
@@ -5192,8 +5208,8 @@ TclArgumentRelease(
 
     for (i = 1; i < objc; i++) {
 	CFWord *cfwPtr;
-	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(iPtr->lineLAPtr,
-		(char *) objv[i]);
+	Tcl_HashEntry *hPtr =
+		Tcl_FindHashEntry(iPtr->lineLAPtr, (char *) objv[i]);
 
 	if (!hPtr) {
 	    continue;
@@ -5347,10 +5363,10 @@ TclArgumentBCEnter(
 		CFWordBC *cfwPtr = (CFWordBC *) ckalloc(sizeof(CFWordBC));
 
 		cfwPtr->framePtr = cfPtr;
-		cfwPtr->obj      = objv[word];
-		cfwPtr->pc       = pc;
-		cfwPtr->word     = word;
-		cfwPtr->nextPtr  = lastPtr;
+		cfwPtr->obj = objv[word];
+		cfwPtr->pc = pc;
+		cfwPtr->word = word;
+		cfwPtr->nextPtr = lastPtr;
 		lastPtr = cfwPtr;
 
 		if (isnew) {
@@ -5591,7 +5607,6 @@ TclEvalObjEx(
 	     */
 	    
 	    int nelements;
-	    char *w;
 	    Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
 	    CmdFrame *eoFramePtr = (CmdFrame *)
 		TclStackAlloc(interp, sizeof(CmdFrame));
@@ -5659,7 +5674,7 @@ TclEvalObjEx(
  	 * evaluator is using it, leading to the release of the associated
  	 * ContLineLoc structure as well. To ensure that the latter doesn't
  	 * happen we set a lock on it. We release this lock later in this
- 	 * function, after the evaluator is done.  The relevant "lineCLPtr"
+ 	 * function, after the evaluator is done. The relevant "lineCLPtr"
  	 * hashtable is managed in the file "tclObj.c".
  	 *
  	 * Another important action is to save (and later restore) the
@@ -6506,7 +6521,8 @@ Tcl_VarEval(
 
 int
 Tcl_GlobalEval(
-    Tcl_Interp *interp,		/* Interpreter in which to evaluate command. */
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate
+				 * command. */
     const char *command)	/* Command to evaluate. */
 {
     register Interp *iPtr = (Interp *) interp;
@@ -7420,7 +7436,7 @@ ExprSrandFunc(
 
     /*
      * Reset the seed. Make sure 1 <= randSeed <= 2^31 - 2. See comments in
-     * ExprRandFunc() for more details.
+     * ExprRandFunc for more details.
      */
 
     iPtr->flags |= RAND_SEED_INITIALIZED;
@@ -7568,12 +7584,14 @@ TclDTraceInfo(
     for (i = 0; i < 2; i++) {
 	Tcl_DictObjGet(NULL, info, *k++, &val);
 	if (val) {
-	    TclGetIntFromObj(NULL, val, &(argsi[i]));
+	    TclGetIntFromObj(NULL, val, &argsi[i]);
 	} else {
 	    argsi[i] = 0;
 	}
     }
 }
+
+#undef iPtr
 
 /*
  *----------------------------------------------------------------------

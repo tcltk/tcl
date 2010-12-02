@@ -4668,8 +4668,8 @@ TclListLines(
     Tcl_Obj* const* elems)      /* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
-    CONST char*  listStr  = Tcl_GetString (listObj);
-    CONST char*  listHead = listStr;
+    const char*  listStr  = Tcl_GetString (listObj);
+    const char*  listHead = listStr;
     int i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;
     ContLineLoc* clLocPtr = TclContinuationsGet(listObj);

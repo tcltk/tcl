@@ -230,7 +230,7 @@ declare 51 generic {
 #}
 declare 53 generic {
     int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp,
-	    int argc, const char **argv)
+	    int argc, CONST84 char **argv)
 }
 declare 54 generic {
     int TclInvokeStringCommand(ClientData clientData, Tcl_Interp *interp,
@@ -549,7 +549,7 @@ declare 133 generic {
 #   int TclpChdir(const char *dirName)
 #}
 declare 138 generic {
-    const char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
+    CONST84_RETURN char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
 }
 #declare 139 generic {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
@@ -561,7 +561,7 @@ declare 138 generic {
 #}
 # This is used by TclX, but should otherwise be considered private
 declare 141 generic {
-    const char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+    CONST84_RETURN char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 142 generic {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -876,7 +876,7 @@ declare 216 generic {
 }
 declare 217 generic {
     int TclPushStackFrame(Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr,
-            Tcl_Namespace *namespacePtr, int isProcCallFrame )
+            Tcl_Namespace *namespacePtr, int isProcCallFrame)
 }
 declare 218 generic {
     void TclPopStackFrame(Tcl_Interp *interp)
@@ -977,10 +977,10 @@ interface tclIntPlat
 # Windows specific functions
 
 declare 0 win {
-    void TclWinConvertError(DWORD errCode)
+    void TclWinConvertError(unsigned long errCode)
 }
 declare 1 win {
-    void TclWinConvertWSAError(DWORD errCode)
+    void TclWinConvertWSAError(unsigned long errCode)
 }
 declare 2 win {
     struct servent *TclWinGetServByName(const char *nm,
@@ -1049,7 +1049,7 @@ declare 19 win {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 20 win {
-    void TclWinAddProcess(HANDLE hProcess, DWORD id)
+    void TclWinAddProcess(void *hProcess, unsigned long id)
 }
 
 # removed permanently for 8.4
@@ -1087,7 +1087,7 @@ declare 28 win {
     void TclWinResetInterfaces(void)
 }
 declare 29 win {
-    int TclWinCPUID( unsigned int index, unsigned int *regs )
+    int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
 
 ################################

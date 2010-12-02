@@ -8677,6 +8677,7 @@ CreateScriptRecord(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     EventScriptRecord *esPtr;
+    int makeCH;
 
     for (esPtr=statePtr->scriptRecordPtr; esPtr!=NULL; esPtr=esPtr->nextPtr) {
 	if ((esPtr->interp == interp) && (esPtr->mask == mask)) {
@@ -8685,18 +8686,34 @@ CreateScriptRecord(
 	    break;
 	}
     }
-    if (esPtr == NULL) {
+
+    makeCH = (esPtr == NULL);
+
+    if (makeCH) {
 	esPtr = (EventScriptRecord *) ckalloc(sizeof(EventScriptRecord));
-	Tcl_CreateChannelHandler((Tcl_Channel) chanPtr, mask,
-		TclChannelEventScriptInvoker, esPtr);
-	esPtr->nextPtr = statePtr->scriptRecordPtr;
-	statePtr->scriptRecordPtr = esPtr;
     }
+
+    /*
+     * Initialize the structure before calling Tcl_CreateChannelHandler,
+     * because a reflected channel caling 'chan postevent' aka
+     * 'Tcl_NotifyChannel' in its 'watch'Proc will invoke
+     * 'TclChannelEventScriptInvoker' immediately, and we do not wish it to
+     * see uninitialized memory and crash. See [Bug 2918110].
+     */
+
     esPtr->chanPtr = chanPtr;
     esPtr->interp = interp;
     esPtr->mask = mask;
     Tcl_IncrRefCount(scriptPtr);
     esPtr->scriptPtr = scriptPtr;
+
+    if (makeCH) {
+	esPtr->nextPtr = statePtr->scriptRecordPtr;
+	statePtr->scriptRecordPtr = esPtr;
+
+	Tcl_CreateChannelHandler((Tcl_Channel) chanPtr, mask,
+		TclChannelEventScriptInvoker, esPtr);
+    }
 }
 
 /*

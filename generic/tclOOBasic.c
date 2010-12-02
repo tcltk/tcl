@@ -225,14 +225,28 @@ TclOO_Object_Destroy(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int result = TCL_OK;
+
     if (objc != Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
     }
+    if (!(oPtr->flags & DESTRUCTOR_CALLED)) {
+	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
+
+	oPtr->flags |= DESTRUCTOR_CALLED;
+	if (contextPtr != NULL) {
+	    contextPtr->callPtr->flags |= DESTRUCTOR;
+	    contextPtr->skip = 0;
+	    result = TclOOInvokeContext(interp, contextPtr, 0, NULL);
+	    TclOODeleteContext(contextPtr);
+	}
+    }
     Tcl_DeleteCommandFromToken(interp,
 	    Tcl_GetObjectCommand(Tcl_ObjectContextObject(context)));
-    return TCL_OK;
+    return result;
 }
 
 /*
