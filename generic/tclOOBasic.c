@@ -68,6 +68,7 @@ TclOO_Class_Create(
 	    objv[Tcl_ObjectContextSkippedArgs(context)], &len);
     if (len == 0) {
 	Tcl_AppendResult(interp, "object name must not be empty", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "EMPTY_NAME", NULL);
 	return TCL_ERROR;
     }
 
@@ -135,12 +136,14 @@ TclOO_Class_CreateNs(
 	    objv[Tcl_ObjectContextSkippedArgs(context)], &len);
     if (len == 0) {
 	Tcl_AppendResult(interp, "object name must not be empty", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "EMPTY_NAME", NULL);
 	return TCL_ERROR;
     }
     nsName = Tcl_GetStringFromObj(
 	    objv[Tcl_ObjectContextSkippedArgs(context)+1], &len);
     if (len == 0) {
 	Tcl_AppendResult(interp, "namespace name must not be empty", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "EMPTY_NAME", NULL);
 	return TCL_ERROR;
     }
 
@@ -233,6 +236,7 @@ TclOO_Object_Destroy(
 		NULL);
 	return TCL_ERROR;
     }
+    AddRef(oPtr);
     if (!(oPtr->flags & DESTRUCTOR_CALLED)) {
 	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
 
@@ -244,8 +248,10 @@ TclOO_Object_Destroy(
 	    TclOODeleteContext(contextPtr);
 	}
     }
-    Tcl_DeleteCommandFromToken(interp,
-	    Tcl_GetObjectCommand(Tcl_ObjectContextObject(context)));
+    if (oPtr->command) {
+	Tcl_DeleteCommandFromToken(interp, oPtr->command);
+    }
+    DelRef(oPtr);
     return result;
 }
 
@@ -393,6 +399,8 @@ TclOO_Object_Unknown(
 	} else {
 	    Tcl_AppendResult(interp, "\" has no methods", NULL);
 	}
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[skip]), NULL);
 	return TCL_ERROR;
     }
 
@@ -409,6 +417,8 @@ TclOO_Object_Unknown(
     }
     Tcl_AppendResult(interp, methodNames[i], NULL);
     ckfree((char *) methodNames);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+	    TclGetString(objv[skip]), NULL);
     return TCL_ERROR;
 }
 
@@ -464,6 +474,7 @@ TclOO_Object_LinkVar(
 	if (strstr(varName, "::") != NULL) {
 	    Tcl_AppendResult(interp, "variable name \"", varName,
 		    "\" illegal: must not contain namespace separator", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "INVERTED", NULL);
 	    return TCL_ERROR;
 	}
 
@@ -492,6 +503,7 @@ TclOO_Object_LinkVar(
 
 	    TclVarErrMsg(interp, varName, NULL, "define",
 		    "name refers to an element in an array");
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", NULL);
 	    return TCL_ERROR;
 	}
 
@@ -571,6 +583,8 @@ TclOO_Object_VarName(
     }
 
     if (varPtr == NULL) {
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE",
+		TclGetString(objv[objc-1]), NULL);
 	return TCL_ERROR;
     }
 
@@ -635,6 +649,7 @@ TclOONextObjCmd(
     if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
 	Tcl_AppendResult(interp, TclGetString(objv[0]),
 		" may only be called from inside a method", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
 	return TCL_ERROR;
     }
     context = framePtr->clientData;
@@ -691,6 +706,7 @@ TclOOSelfObjCmd(
     if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
 	Tcl_AppendResult(interp, TclGetString(objv[0]),
 		" may only be called from inside a method", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
 	return TCL_ERROR;
     }
 
@@ -724,6 +740,7 @@ TclOOSelfObjCmd(
 
 	if (clsPtr == NULL) {
 	    Tcl_AppendResult(interp, "method not defined by a class", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "UNMATCHED_CONTEXT", NULL);
 	    return TCL_ERROR;
 	}
 
@@ -743,6 +760,7 @@ TclOOSelfObjCmd(
     case SELF_FILTER:
 	if (!CurrentlyInvoked(contextPtr).isFilter) {
 	    Tcl_AppendResult(interp, "not inside a filtering context", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "UNMATCHED_CONTEXT", NULL);
 	    return TCL_ERROR;
 	} else {
 	    register struct MInvoke *miPtr = &CurrentlyInvoked(contextPtr);
@@ -768,6 +786,7 @@ TclOOSelfObjCmd(
 	if ((framePtr->callerVarPtr == NULL) ||
 		!(framePtr->callerVarPtr->isProcCallFrame & FRAME_IS_METHOD)){
 	    Tcl_AppendResult(interp, "caller is not an object", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
 	    return TCL_ERROR;
 	} else {
 	    CallContext *callerPtr = framePtr->callerVarPtr->clientData;
@@ -834,6 +853,7 @@ TclOOSelfObjCmd(
     case SELF_TARGET:
 	if (!CurrentlyInvoked(contextPtr).isFilter) {
 	    Tcl_AppendResult(interp, "not inside a filtering context", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "UNMATCHED_CONTEXT", NULL);
 	    return TCL_ERROR;
 	} else {
 	    Method *mPtr;

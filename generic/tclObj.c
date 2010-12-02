@@ -4020,11 +4020,10 @@ TclHashObjKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {
-    Tcl_Obj *objPtr = (Tcl_Obj *) keyPtr;
+    Tcl_Obj *objPtr = keyPtr;
     const char *string = TclGetString(objPtr);
-    int length = objPtr->length;
     unsigned int result = 0;
-    int i;
+    const char *end = string + objPtr->length;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -4034,16 +4033,32 @@ TclHashObjKey(
      * following reasons:
      *
      * 1. Multiplying by 10 is perfect for keys that are decimal strings, and
-     *	  multiplying by 9 is just about as good.
+     *    multiplying by 9 is just about as good.
      * 2. Times-9 is (shift-left-3) plus (old). This means that each
-     *	  character's bits hang around in the low-order bits of the hash value
-     *	  for ever, plus they spread fairly rapidly up to the high-order bits
-     *	  to fill out the hash value. This seems works well both for decimal
-     *	  and *non-decimal strings.
+     *    character's bits hang around in the low-order bits of the hash value
+     *    for ever, plus they spread fairly rapidly up to the high-order bits
+     *    to fill out the hash value. This seems works well both for decimal
+     *    and non-decimal strings.
+     *
+     * Note that this function is very weak against malicious strings; it's
+     * very easy to generate multiple keys that have the same hashcode. On the
+     * other hand, that hardly ever actually occurs and this function *is*
+     * very cheap, even by comparison with industry-standard hashes like FNV.
+     * If real strength of hash is required though, use a custom hash based on
+     * Bob Jenkins's lookup3(), but be aware that it's significantly slower.
+     * Tcl does not use that level of strength because it typically does not
+     * need it (and some of the aspects of that strength are genuinely
+     * unnecessary given the rest of Tcl's hash machinery, and the fact that
+     * we do not either transfer hashes to another machine, use them as a true
+     * substitute for equality, or attempt to minimize work in rebuilding the
+     * hash table).
+     *
+     * See also HashStringKey in tclHash.c.
+     * See also HashString in tclLiteral.c.
      */
 
-    for (i=0 ; i<length ; i++) {
-	result += (result << 3) + string[i];
+    while (string < end) {
+        result += (result << 3) + UCHAR(*string++);
     }
     return result;
 }

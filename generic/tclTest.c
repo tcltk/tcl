@@ -2221,7 +2221,7 @@ ExitProcOdd(
     sprintf(buf, "odd %d\n", PTR2INT(clientData));
     len = strlen(buf);
     if (len != (size_t) write(1, buf, len)) {
-		Tcl_Panic("ExitProcOdd: unable to write to stdout");
+	Tcl_Panic("ExitProcOdd: unable to write to stdout");
     }
 }
 
@@ -2235,7 +2235,7 @@ ExitProcEven(
     sprintf(buf, "even %d\n", PTR2INT(clientData));
     len = strlen(buf);
     if (len != (size_t) write(1, buf, len)) {
-		Tcl_Panic("ExitProcEven: unable to write to stdout");
+	Tcl_Panic("ExitProcEven: unable to write to stdout");
     }
 }
 

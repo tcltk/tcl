@@ -1750,6 +1750,7 @@ TclExecuteByteCode(
 
 #define ReadTraced(varPtr) ((varPtr)->flags & VAR_TRACED_READ)
 #define WriteTraced(varPtr) ((varPtr)->flags & VAR_TRACED_WRITE)
+#define UnsetTraced(varPtr) ((varPtr)->flags & VAR_TRACED_UNSET)
 
     /*
      * Constants: variables that do not change during the execution, used
@@ -2174,19 +2175,17 @@ TclExecuteByteCode(
 	NEXT_INST_F(1, 0, 1);
 
     case INST_OVER: {
-	int opnd;
+	int opnd = TclGetUInt4AtPtr(pc+1);
 
-	opnd = TclGetUInt4AtPtr(pc+1);
 	objResultPtr = OBJ_AT_DEPTH(opnd);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(5, 0, 1);
     }
 
     case INST_REVERSE: {
-	int opnd;
 	Tcl_Obj **a, **b;
+	int opnd = TclGetUInt4AtPtr(pc+1);
 
-	opnd = TclGetUInt4AtPtr(pc+1);
 	a = tosPtr-(opnd-1);
 	b = tosPtr;
 	while (a<b) {
@@ -2428,11 +2427,11 @@ TclExecuteByteCode(
 	NEXT_INST_F(5, 0, 0);
     }
 
-    {
 	/*
 	 * INVOCATION BLOCK
 	 */
 
+    {
 	int objc, pcAdjustment;
 
     case INST_INVOKE_EXPANDED:
@@ -2448,14 +2447,14 @@ TclExecuteByteCode(
 	if (objc) {
 	    pcAdjustment = 1;
 	    goto doInvocation;
-	} else {
-	    /*
-	     * Nothing was expanded, return {}.
-	     */
-
-	    TclNewObj(objResultPtr);
-	    NEXT_INST_F(1, 0, 1);
 	}
+
+	/*
+	 * Nothing was expanded, return {}.
+	 */
+
+	TclNewObj(objResultPtr);
+	NEXT_INST_F(1, 0, 1);
 
     case INST_INVOKE_STK4:
 	objc = TclGetUInt4AtPtr(pc+1);
@@ -2566,7 +2565,7 @@ TclExecuteByteCode(
 	 */
 
 	int opnd, numArgs;
-	Tcl_Obj *objPtr;
+	Tcl_Obj *objPtr, *tmpPtr1, *tmpPtr2;
 
 	opnd = TclGetUInt1AtPtr(pc+1);
 	if ((opnd < 0) || (opnd > LAST_BUILTIN_FUNC)) {
@@ -2585,12 +2584,11 @@ TclExecuteByteCode(
 	if (numArgs == 0) {
 	    PUSH_OBJECT(objPtr);
 	} else if (numArgs == 1) {
-	    Tcl_Obj *tmpPtr1 = POP_OBJECT();
+	    tmpPtr1 = POP_OBJECT();
 	    PUSH_OBJECT(objPtr);
 	    PUSH_OBJECT(tmpPtr1);
 	    Tcl_DecrRefCount(tmpPtr1);
 	} else {
-	    Tcl_Obj *tmpPtr1, *tmpPtr2;
 	    tmpPtr2 = POP_OBJECT();
 	    tmpPtr1 = POP_OBJECT();
 	    PUSH_OBJECT(objPtr);
@@ -2719,7 +2717,7 @@ TclExecuteByteCode(
     }
 
     /*
-     * ---------------------------------------------------------
+     * -----------------------------------------------------------------
      *	   Start of INST_LOAD instructions.
      *
      * WARNING: more 'goto' here than your doctor recommended! The different
@@ -2728,9 +2726,8 @@ TclExecuteByteCode(
      */
     {
 	int opnd, pcAdjustment;
-	Tcl_Obj *part1Ptr, *part2Ptr;
+	Tcl_Obj *objPtr, *part1Ptr, *part2Ptr;
 	Var *varPtr, *arrayPtr;
-	Tcl_Obj *objPtr;
 
     case INST_LOAD_SCALAR1:
     instLoadScalar1:
@@ -2877,11 +2874,7 @@ TclExecuteByteCode(
 
     /*
      *	   End of INST_LOAD instructions.
-     * ---------------------------------------------------------
-     */
-
-    /*
-     * ---------------------------------------------------------
+     * -----------------------------------------------------------------
      *	   Start of INST_STORE and related instructions.
      *
      * WARNING: more 'goto' here than your doctor recommended! The different
@@ -2891,9 +2884,8 @@ TclExecuteByteCode(
 
     {
 	int opnd, pcAdjustment, storeFlags;
-	Tcl_Obj *part1Ptr, *part2Ptr;
+	Tcl_Obj *part1Ptr, *part2Ptr, *objPtr, *valuePtr;
 	Var *varPtr, *arrayPtr;
-	Tcl_Obj *objPtr, *valuePtr;
 
     case INST_STORE_ARRAY4:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -3142,11 +3134,7 @@ TclExecuteByteCode(
 
     /*
      *	   End of INST_STORE and related instructions.
-     * ---------------------------------------------------------
-     */
-
-    /*
-     * ---------------------------------------------------------
+     * -----------------------------------------------------------------
      *	   Start of INST_INCR instructions.
      *
      * WARNING: more 'goto' here than your doctor recommended! The different
@@ -3157,13 +3145,12 @@ TclExecuteByteCode(
 /*TODO: Consider more untangling here; merge with LOAD and STORE ? */
 
     {
-	Tcl_Obj *objPtr, *incrPtr;
+	Tcl_Obj *objPtr, *incrPtr, *part1Ptr, *part2Ptr;
 	int opnd, pcAdjustment;
 #ifndef NO_WIDE_TYPE
 	Tcl_WideInt w;
 #endif
 	long i;
-	Tcl_Obj *part1Ptr, *part2Ptr;
 	Var *varPtr, *arrayPtr;
 
     case INST_INCR_SCALAR1:
@@ -3288,34 +3275,32 @@ TclExecuteByteCode(
 			goto doneIncr;
 		    }
 #ifndef NO_WIDE_TYPE
-		    {
-			w = (Tcl_WideInt)augend;
+		    w = (Tcl_WideInt)augend;
 
-			TRACE(("%u %ld => ", opnd, i));
-			if (Tcl_IsShared(objPtr)) {
-			    objPtr->refCount--;	/* We know it's shared. */
-			    objResultPtr = Tcl_NewWideIntObj(w+i);
-			    Tcl_IncrRefCount(objResultPtr);
-			    varPtr->value.objPtr = objResultPtr;
-			} else {
-			    objResultPtr = objPtr;
+		    TRACE(("%u %ld => ", opnd, i));
+		    if (Tcl_IsShared(objPtr)) {
+			objPtr->refCount--;	/* We know it's shared. */
+			objResultPtr = Tcl_NewWideIntObj(w+i);
+			Tcl_IncrRefCount(objResultPtr);
+			varPtr->value.objPtr = objResultPtr;
+		    } else {
+			objResultPtr = objPtr;
 
-			    /*
-			     * We know the sum value is outside the long
-			     * range; use macro form that doesn't range test
-			     * again.
-			     */
+			/*
+			 * We know the sum value is outside the long range;
+			 * use macro form that doesn't range test again.
+			 */
 
-			    TclSetWideIntObj(objPtr, w+i);
-			}
-			goto doneIncr;
+			TclSetWideIntObj(objPtr, w+i);
 		    }
+		    goto doneIncr;
 #endif
 		}	/* end if (type == TCL_NUMBER_LONG) */
 #ifndef NO_WIDE_TYPE
 		if (type == TCL_NUMBER_WIDE) {
 		    Tcl_WideInt sum;
-		    w = *((const Tcl_WideInt *)ptr);
+
+		    w = *((const Tcl_WideInt *) ptr);
 		    sum = w + i;
 
 		    /*
@@ -3464,11 +3449,9 @@ TclExecuteByteCode(
 	objResultPtr = constants[!varPtr || TclIsVarUndefined(varPtr) ? 0 : 1];
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(5, 0, 1);
-    }
 
-    case INST_EXIST_ARRAY: {
-	int opnd = TclGetUInt4AtPtr(pc+1);
-
+    case INST_EXIST_ARRAY:
+	opnd = TclGetUInt4AtPtr(pc+1);
 	part2Ptr = OBJ_AT_TOS;
 	arrayPtr = &(compiledLocals[opnd]);
 	while (TclIsVarLink(arrayPtr)) {
@@ -3536,7 +3519,128 @@ TclExecuteByteCode(
 
     /*
      *	   End of INST_EXIST instructions.
-     * ---------------------------------------------------------
+     * -----------------------------------------------------------------
+     *	   Start of INST_UNSET instructions.
+     */
+
+    {
+	Tcl_Obj *part1Ptr, *part2Ptr;
+	Var *varPtr, *arrayPtr;
+	int opnd, flags, localResult;
+
+    case INST_UNSET_SCALAR:
+	flags = TclGetUInt1AtPtr(pc+1) ? TCL_LEAVE_ERR_MSG : 0;
+	opnd = TclGetUInt4AtPtr(pc+2);
+	varPtr = &compiledLocals[opnd];
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	TRACE(("%s %u\n", (flags?"normal":"noerr"), opnd));
+	if (TclIsVarDirectUnsettable(varPtr) && !TclIsVarInHash(varPtr)) {
+	    /*
+	     * No errors, no traces, no searches: just make the variable cease
+	     * to exist.
+	     */
+
+	    if (!TclIsVarUndefined(varPtr)) {
+		Tcl_DecrRefCount(varPtr->value.objPtr);
+	    } else if (flags & TCL_LEAVE_ERR_MSG) {
+		goto slowUnsetScalar;
+	    }
+	    varPtr->value.objPtr = NULL;
+	    NEXT_INST_F(6, 0, 0);
+	}
+    slowUnsetScalar:
+	DECACHE_STACK_INFO();
+	localResult = TclPtrUnsetVar(interp, varPtr, NULL, NULL, NULL, flags,
+		opnd);
+	CACHE_STACK_INFO();
+	if (localResult != TCL_OK && flags) {
+	    goto errorInUnset;
+	}
+	NEXT_INST_F(6, 0, 0);
+
+    case INST_UNSET_ARRAY:
+	flags = TclGetUInt1AtPtr(pc+1) ? TCL_LEAVE_ERR_MSG : 0;
+	opnd = TclGetUInt4AtPtr(pc+2);
+	part2Ptr = OBJ_AT_TOS;
+	arrayPtr = &compiledLocals[opnd];
+	while (TclIsVarLink(arrayPtr)) {
+	    arrayPtr = arrayPtr->value.linkPtr;
+	}
+	TRACE(("%s %u \"%.30s\"\n", (flags?"normal":"noerr"), opnd, O2S(part2Ptr)));
+	if (TclIsVarArray(arrayPtr) && !UnsetTraced(arrayPtr)) {
+	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
+	    if (varPtr && TclIsVarDirectUnsettable(varPtr)) {
+		/*
+		 * No nasty traces and element exists, so we can proceed to
+		 * unset it. Might still not exist though...
+		 */
+
+		if (!TclIsVarUndefined(varPtr)) {
+		    Tcl_DecrRefCount(varPtr->value.objPtr);
+		} else if (flags & TCL_LEAVE_ERR_MSG) {
+		    goto slowUnsetArray;
+		}
+		varPtr->value.objPtr = NULL;
+		NEXT_INST_F(6, 1, 0);
+	    }
+	}
+    slowUnsetArray:
+	DECACHE_STACK_INFO();
+	varPtr = TclLookupArrayElement(interp, NULL, part2Ptr, flags, "unset",
+		0, 0, arrayPtr, opnd);
+	if (!varPtr && (flags & TCL_LEAVE_ERR_MSG)) {
+	    CACHE_STACK_INFO();
+	    goto errorInUnset;
+	}
+	if (varPtr) {
+	    localResult = TclPtrUnsetVar(interp, varPtr, arrayPtr, NULL,
+		    part2Ptr, flags, opnd);
+	} else {
+	    localResult = TCL_OK;
+	}
+	CACHE_STACK_INFO();
+	if (localResult != TCL_OK && (flags & TCL_LEAVE_ERR_MSG)) {
+	    goto errorInUnset;
+	}
+	NEXT_INST_F(6, 1, 0);
+
+    case INST_UNSET_ARRAY_STK:
+	flags = TclGetUInt1AtPtr(pc+1) ? TCL_LEAVE_ERR_MSG : 0;
+	cleanup = 2;
+	part2Ptr = OBJ_AT_TOS;		/* element name */
+	part1Ptr = OBJ_UNDER_TOS;	/* array name */
+	TRACE(("%s \"%.30s(%.30s)\"\n", (flags?"normal":"noerr"),
+		O2S(part1Ptr), O2S(part2Ptr)));
+	goto doUnsetStk;
+
+    case INST_UNSET_STK:
+	flags = TclGetUInt1AtPtr(pc+1) ? TCL_LEAVE_ERR_MSG : 0;
+	cleanup = 1;
+	part2Ptr = NULL;
+	part1Ptr = OBJ_AT_TOS;		/* variable name */
+	TRACE(("%s \"%.30s\"\n", (flags?"normal":"noerr"), O2S(part1Ptr)));
+
+    doUnsetStk:
+	DECACHE_STACK_INFO();
+	localResult = TclObjUnsetVar2(interp, part1Ptr, part2Ptr, flags);
+	CACHE_STACK_INFO();
+	if (localResult != TCL_OK && (flags & TCL_LEAVE_ERR_MSG)) {
+	    goto errorInUnset;
+	}
+	NEXT_INST_V(2, cleanup, 0);
+
+    errorInUnset:
+	result = TCL_ERROR;
+	TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	goto checkForCatch;
+    }
+
+    /*
+     *	   End of INST_UNSET instructions.
+     * -----------------------------------------------------------------
+     *	   Start of variable linking instructions.
      */
 
     case INST_UPVAR: {
@@ -3661,6 +3765,11 @@ TclExecuteByteCode(
     doLinkVarsDone:
 	NEXT_INST_F(5, 1, 0);
     }
+
+    /*
+     *	   End of variable linking instructions.
+     * -----------------------------------------------------------------
+     */
 
     case INST_JUMP1: {
 	int opnd = TclGetInt1AtPtr(pc+1);
@@ -3807,7 +3916,7 @@ TclExecuteByteCode(
     }
 
     /*
-     * ---------------------------------------------------------
+     * -----------------------------------------------------------------
      *	   Start of INST_LIST and related instructions.
      */
 
@@ -4229,7 +4338,8 @@ TclExecuteByteCode(
 
     /*
      *	   End of INST_LIST and related instructions.
-     * ---------------------------------------------------------
+     * -----------------------------------------------------------------
+     *	   Start of string-related instructions.
      */
 
     case INST_STR_EQ:
@@ -4433,6 +4543,7 @@ TclExecuteByteCode(
 	/*
 	 * Get char length to calulate what 'end' means.
 	 */
+
 	length = Tcl_GetCharLength(valuePtr);
 	result = TclGetIntForIndexM(interp, value2Ptr, length - 1, &index);
 	if (result != TCL_OK) {
@@ -4507,12 +4618,29 @@ TclExecuteByteCode(
 	/*
 	 * Reuse value2Ptr object already on stack if possible. Adjustment is
 	 * 2 due to the nocase byte
-	 * TODO: consider peephole opt.
 	 */
 
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), match));
+
+	/*
+	 * Peep-hole optimisation: if you're about to jump, do jump from here.
+	 */
+
+	pc += 2;
+#ifndef TCL_COMPILE_DEBUG
+	switch (*pc) {
+	case INST_JUMP_FALSE1:
+	    NEXT_INST_F((match? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
+	case INST_JUMP_TRUE1:
+	    NEXT_INST_F((match? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
+	case INST_JUMP_FALSE4:
+	    NEXT_INST_F((match? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
+	case INST_JUMP_TRUE4:
+	    NEXT_INST_F((match? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
+	}
+#endif
 	objResultPtr = constants[match];
-	NEXT_INST_F(2, 2, 1);
+	NEXT_INST_F(0, 2, 1);
     }
 
     case INST_REGEXP: {
@@ -4541,13 +4669,36 @@ TclExecuteByteCode(
 		    O2S(valuePtr), O2S(value2Ptr)), objResultPtr);
 	    result = TCL_ERROR;
 	    goto checkForCatch;
-	} else {
-	    TRACE(("%.20s %.20s => %d\n",
-		    O2S(valuePtr), O2S(value2Ptr), match));
-	    objResultPtr = constants[match];
-	    NEXT_INST_F(2, 2, 1);
 	}
+
+	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), match));
+
+	/*
+	 * Peep-hole optimisation: if you're about to jump, do jump from here.
+	 */
+
+	pc += 2;
+#ifndef TCL_COMPILE_DEBUG
+	switch (*pc) {
+	case INST_JUMP_FALSE1:
+	    NEXT_INST_F((match? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
+	case INST_JUMP_TRUE1:
+	    NEXT_INST_F((match? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
+	case INST_JUMP_FALSE4:
+	    NEXT_INST_F((match? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
+	case INST_JUMP_TRUE4:
+	    NEXT_INST_F((match? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
+	}
+#endif
+	objResultPtr = constants[match];
+	NEXT_INST_F(0, 2, 1);
     }
+  
+    /*
+     *	   End of string-related instructions.
+     * -----------------------------------------------------------------
+     *	   Start of numeric operator instructions.
+     */
 
     case INST_EQ:
     case INST_NEQ:
@@ -6577,6 +6728,11 @@ TclExecuteByteCode(
 	NEXT_INST_F(1, 0, 0);
     }
 
+    /*
+     *	   End of numeric operator instructions.
+     * -----------------------------------------------------------------
+     */
+
     case INST_BREAK:
 	/*
 	DECACHE_STACK_INFO();
@@ -6829,11 +6985,18 @@ TclExecuteByteCode(
 	NEXT_INST_F(2*code -1, 1, 0);
     }
 
-/* TODO: normalize "valPtr" to "valuePtr" */
+    /*
+     * -----------------------------------------------------------------
+     *	   Start of dictionary-related instructions.
+     */
+
     {
-	int opnd, opnd2, allocateDict;
-	Tcl_Obj *dictPtr, *valPtr;
+	int opnd, opnd2, allocateDict, done, i, length, allocdict;
+	Tcl_Obj *dictPtr, *valPtr, *statePtr, *keyPtr;
+	Tcl_Obj *emptyPtr, **keyPtrPtr;
 	Var *varPtr;
+	Tcl_DictSearch *searchPtr;
+	DictUpdateInfo *duiPtr;
 
     case INST_DICT_GET:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -7037,7 +7200,9 @@ TclExecuteByteCode(
 
 	    if (valPtr == NULL) {
 		valPtr = Tcl_NewListObj(1, &OBJ_AT_TOS);
-	    } else if (Tcl_IsShared(valPtr)) {
+		break;
+	    }
+	    if (Tcl_IsShared(valPtr)) {
 		valPtr = Tcl_DuplicateObj(valPtr);
 		result = Tcl_ListObjAppendElement(interp, valPtr, OBJ_AT_TOS);
 		if (result != TCL_OK) {
@@ -7049,12 +7214,12 @@ TclExecuteByteCode(
 		}
 	    } else {
 		result = Tcl_ListObjAppendElement(interp, valPtr, OBJ_AT_TOS);
-		if (result != TCL_OK) {
-		    if (allocateDict) {
-			TclDecrRefCount(dictPtr);
-		    }
-		    goto checkForCatch;
+	    }
+	    if (result != TCL_OK) {
+		if (allocateDict) {
+		    TclDecrRefCount(dictPtr);
 		}
+		goto checkForCatch;
 	    }
 	    break;
 	default:
@@ -7095,13 +7260,6 @@ TclExecuteByteCode(
 #endif
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(5, 2, 1);
-    }
-
-    {
-	int opnd, done;
-	Tcl_Obj *statePtr, *dictPtr, *keyPtr, *valuePtr, *emptyPtr;
-	Var *varPtr;
-	Tcl_DictSearch *searchPtr;
 
     case INST_DICT_FIRST:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -7109,7 +7267,7 @@ TclExecuteByteCode(
 	dictPtr = POP_OBJECT();
 	searchPtr = (Tcl_DictSearch *) ckalloc(sizeof(Tcl_DictSearch));
 	result = Tcl_DictObjFirst(interp, dictPtr, searchPtr, &keyPtr,
-		&valuePtr, &done);
+		&valPtr, &done);
 	if (result != TCL_OK) {
 	    ckfree((char *) searchPtr);
 	    goto checkForCatch;
@@ -7138,14 +7296,14 @@ TclExecuteByteCode(
 	    Tcl_Panic("mis-issued dictNext!");
 	}
 	searchPtr = (Tcl_DictSearch *) statePtr->internalRep.twoPtrValue.ptr1;
-	Tcl_DictObjNext(searchPtr, &keyPtr, &valuePtr, &done);
+	Tcl_DictObjNext(searchPtr, &keyPtr, &valPtr, &done);
     pushDictIteratorResult:
 	if (done) {
 	    TclNewObj(emptyPtr);
 	    PUSH_OBJECT(emptyPtr);
 	    PUSH_OBJECT(emptyPtr);
 	} else {
-	    PUSH_OBJECT(valuePtr);
+	    PUSH_OBJECT(valPtr);
 	    PUSH_OBJECT(keyPtr);
 	}
 	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d",
@@ -7187,13 +7345,6 @@ TclExecuteByteCode(
 	    Tcl_IncrRefCount(emptyPtr);
 	}
 	NEXT_INST_F(5, 0, 0);
-    }
-
-    {
-	int opnd, opnd2, i, length, allocdict;
-	Tcl_Obj **keyPtrPtr, *dictPtr;
-	DictUpdateInfo *duiPtr;
-	Var *varPtr;
 
     case INST_DICT_UPDATE_START:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -7323,6 +7474,11 @@ TclExecuteByteCode(
 	}
 	NEXT_INST_F(9, 1, 0);
     }
+
+    /*
+     *	   End of dictionary-related instructions.
+     * -----------------------------------------------------------------
+     */
 
     default:
 	Tcl_Panic("TclExecuteByteCode: unrecognized opCode %u", *pc);

@@ -140,7 +140,6 @@ static const CmdInfo builtInCmds[] = {
 
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	1},
     {"apply",		Tcl_ApplyObjCmd,	NULL,			1},
-    {"array",		Tcl_ArrayObjCmd,	NULL,			1},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	1},
 #ifndef EXCLUDE_OBSOLETE_COMMANDS
     {"case",		Tcl_CaseObjCmd,		NULL,			1},
@@ -148,7 +147,7 @@ static const CmdInfo builtInCmds[] = {
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	1},
     {"concat",		Tcl_ConcatObjCmd,	NULL,			1},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	1},
-    {"error",		Tcl_ErrorObjCmd,	NULL,			1},
+    {"error",		Tcl_ErrorObjCmd,	TclCompileErrorCmd,	1},
     {"eval",		Tcl_EvalObjCmd,		NULL,			1},
     {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	1},
     {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	1},
@@ -185,8 +184,8 @@ static const CmdInfo builtInCmds[] = {
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	1},
     {"throw",		Tcl_ThrowObjCmd,	NULL,			1},
     {"trace",		Tcl_TraceObjCmd,	NULL,			1},
-    {"try",		Tcl_TryObjCmd,		NULL,			1},
-    {"unset",		Tcl_UnsetObjCmd,	NULL,			1},
+    {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	1},
+    {"unset",		Tcl_UnsetObjCmd,	TclCompileUnsetCmd,	1},
     {"uplevel",		Tcl_UplevelObjCmd,	NULL,			1},
     {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	1},
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	1},
@@ -738,11 +737,12 @@ Tcl_CreateInterp(void)
     }
 
     /*
-     * Create the "binary", "chan", "dict", "info" and "string" ensembles.
-     * Note that all these commands (and their subcommands that are not
-     * present in the global namespace) are wholly safe.
+     * Create the "array", "binary", "chan", "dict", "info" and "string"
+     * ensembles. Note that all these commands (and their subcommands that are
+     * not present in the global namespace) are wholly safe.
      */
 
+    TclInitArrayCmd(interp);
     TclInitBinaryCmd(interp);
     TclInitChanCmd(interp);
     TclInitDictCmd(interp);

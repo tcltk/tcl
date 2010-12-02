@@ -355,9 +355,9 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Create the variables (described in the aux data referred to by the
 	 * second immediate argument) to mirror the state of the dictionary in
 	 * the variable referred to by the first immediate argument. The list
-	 * of keys (popped from the stack) must be the same length as the list
-	 * of variables.
-	 * Stack:  ... keyList => ... */
+	 * of keys (top of the stack, not poppsed) must be the same length as
+	 * the list of variables.
+	 * Stack:  ... keyList => ... keyList */
     {"dictUpdateEnd",	  9,    -1,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
 	/* Reflect the state of local variables (described in the aux data
 	 * referred to by the second immediate argument) back to the state of
@@ -399,6 +399,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * stknext */
     {"existStk",	 1,    0,         0,	{OPERAND_NONE}},
 	/* Test if general variable exists; unparsed variable name is stktop*/
+
     {"nop",		 1,    0,         0,	{OPERAND_NONE}},
 	/* Do nothing */
     {"returnCodeBranch", 1,   -1,	  0,	{OPERAND_NONE}},
@@ -406,9 +407,23 @@ InstructionDesc const tclInstructionTable[] = {
 	 * ERROR: +1;	RETURN: +3;	BREAK: +5;	CONTINUE: +7;
 	 * Other non-OK: +9
 	 */
+
+    {"unsetScalar",	 6,    0,         2,	{OPERAND_UINT1, OPERAND_LVT4}},
+	/* Make scalar variable at index op2 in call frame cease to exist;
+	 * op1 is 1 for errors on problems, 0 otherwise */
+    {"unsetArray",	 6,    -1,        2,	{OPERAND_UINT1, OPERAND_LVT4}},
+	/* Make array element cease to exist; array at slot op2, element is
+	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
+    {"unsetArrayStk",	 2,    -2,        1,	{OPERAND_UINT1}},
+	/* Make array element cease to exist; element is stktop, array name is
+	 * stknext; op1 is 1 for errors on problems, 0 otherwise */
+    {"unsetStk",	 2,    -1,        1,	{OPERAND_UINT1}},
+	/* Make general variable cease to exist; unparsed variable name is
+	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
-
+
 /*
  * Prototypes for procedures defined later in this file:
  */

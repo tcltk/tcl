@@ -491,7 +491,7 @@ test info-15.4 {info procs option} -setup {
     namespace eval test_ns_info2 {
         namespace import ::test_ns_info1::*
         proc r {} {}
-        list [info procs] [info procs p*]
+        list [lsort [info procs]] [info procs p*]
     }
 } -result {{p q r} p}
 test info-15.5 {info procs option with a proc in a namespace} -setup {

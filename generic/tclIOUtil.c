@@ -291,7 +291,11 @@ Tcl_Stat(
 	oldStyleBuf->st_blksize	= buf.st_blksize;
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
+#ifdef HAVE_BLKCNT_T
 	oldStyleBuf->st_blocks	= (blkcnt_t) buf.st_blocks;
+#else
+	oldStyleBuf->st_blocks	= (unsigned long) buf.st_blocks;
+#endif
 #endif
     }
     return ret;

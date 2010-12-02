@@ -866,14 +866,14 @@ CompareStringKeys(
  *----------------------------------------------------------------------
  */
 
-static unsigned int
+static unsigned
 HashStringKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     register const char *string = (const char *) keyPtr;
-    register unsigned int result;
-    register int c;
+    register unsigned int result = 0;
+    register char c;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -883,19 +883,30 @@ HashStringKey(
      * following reasons:
      *
      * 1. Multiplying by 10 is perfect for keys that are decimal strings, and
-     *	  multiplying by 9 is just about as good.
+     *    multiplying by 9 is just about as good.
      * 2. Times-9 is (shift-left-3) plus (old). This means that each
-     *	  character's bits hang around in the low-order bits of the hash value
-     *	  for ever, plus they spread fairly rapidly up to the high-order bits
-     *	  to fill out the hash value. This seems works well both for decimal
-     *	  and non-decimal strings, but isn't strong against maliciously-chosen
-     *	  keys.
+     *    character's bits hang around in the low-order bits of the hash value
+     *    for ever, plus they spread fairly rapidly up to the high-order bits
+     *    to fill out the hash value. This seems works well both for decimal
+     *    and non-decimal strings, but isn't strong against maliciously-chosen
+     *    keys.
+     *
+     * Note that this function is very weak against malicious strings; it's
+     * very easy to generate multiple keys that have the same hashcode. On the
+     * other hand, that hardly ever actually occurs and this function *is*
+     * very cheap, even by comparison with industry-standard hashes like FNV.
+     * If real strength of hash is required though, use a custom hash based on
+     * Bob Jenkins's lookup3(), but be aware that it's significantly slower.
+     * Since Tcl command and namespace names are usually reasonably-named (the
+     * main use for string hashes in modern Tcl) speed is far more important
+     * than strength.
+     *
+     * See also HashString in tclLiteral.c.
+     * See also TclObjHashKey in tclObj.c.
      */
 
-    result = 0;
-
-    for (c=*string++ ; c ; c=*string++) {
-	result += (result<<3) + c;
+    for (; (c=*string++) != 0 ;) {
+        result += (result<<3) + UCHAR(c);
     }
     return result;
 }
