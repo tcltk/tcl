@@ -1,3 +1,13 @@
+2010-12-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUtil.c:   silence gcc warning when using -Wwrite-strings
+	* generic/tclStrToD.c: silence gcc warning for non-IEEE platforms
+	* win/Makefile.in:     [Patch #3116490] cross-compile Tcl mingw32 on unix
+	* win/tcl.m4           This makes it possible to cross-compile Tcl/Tk for
+	* win/configure.in     Windows (either 32-bit or 64-bit) out-of-the-box
+	* win/configure        on UNIX, using mingw-w64 build tools (If Itcl, tdbc
+	and Thread take over the latest tcl.m4, they can do that too).
+
 2010-12-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclStrToD.c (SetPrecisionLimits, TclDoubleDigits):
