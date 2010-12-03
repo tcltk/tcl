@@ -1,3 +1,9 @@
+2010-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclUtil.c (TclReToGlob): add extra check for multiple
+	inner *s that leads to poor recursive glob matching, defer to
+	original RE instead.  tclbench RE var backtrack.
+
 2010-12-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclStrToD.c (SetPrecisionLimits, TclDoubleDigits):

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.97.2.8 2010/11/30 20:59:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.97.2.9 2010/12/03 22:27:44 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3326,7 +3326,7 @@ TclReToGlob(
     Tcl_DString *dsPtr,
     int *exactPtr)
 {
-    int anchorLeft, anchorRight, lastIsStar;
+    int anchorLeft, anchorRight, lastIsStar, numStars;
     char *dsStr, *dsStrStart, *msg;
     const char *p, *strEnd;
 
@@ -3385,6 +3385,7 @@ TclReToGlob(
     p = reStr;
     anchorRight = 0;
     lastIsStar = 0;
+    numStars = 0;
 
     if (*p == '^') {
 	anchorLeft = 1;
@@ -3448,6 +3449,7 @@ TclReToGlob(
 		    if (!lastIsStar) {
 			*dsStr++ = '*';
 			lastIsStar = 1;
+			numStars++;
 		    }
 		    continue;
 		} else if (p[1] == '+') {
@@ -3455,6 +3457,7 @@ TclReToGlob(
 		    *dsStr++ = '?';
 		    *dsStr++ = '*';
 		    lastIsStar = 1;
+		    numStars++;
 		    continue;
 		}
 	    }
@@ -3478,6 +3481,15 @@ TclReToGlob(
 	}
 	lastIsStar = 0;
     }
+    if (numStars > 1) {
+	/*
+	 * Heuristic: if >1 non-anchoring *, the risk is large that glob
+	 * matching is slower than the RE engine, so report invalid.
+	 */
+	msg = "excessive recursive glob backtrack potential";
+	goto invalidGlob;
+    }
+
     if (!anchorRight && !lastIsStar) {
 	*dsStr++ = '*';
     }
