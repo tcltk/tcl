@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.50 2010/11/30 21:29:34 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.51 2010/12/03 14:50:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2527,7 +2527,7 @@ TclFormatInt(buffer, n)
     long intVal;
     int i;
     int numFormatted, j;
-    char *digits = "0123456789";
+    const char *digits = "0123456789";
 
     /*
      * Check first whether "n" is zero.

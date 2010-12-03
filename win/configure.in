@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74.2.46 2010/11/19 15:36:54 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.47 2010/12/03 14:50:32 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -306,6 +306,16 @@ SC_ENABLE_SHARED
 
 SC_CONFIG_CFLAGS
 
+# Cross-compiling
+case ${host_alias} in
+*mingw32*)
+    TCL_EXE="tclsh"
+    ;;
+*)
+    TCL_EXE="TCL_LIBRARY=\"\${LIBRARY_DIR}\"; export TCL_LIBRARY; ./\${TCLSH}"
+    ;;
+esac
+
 #------------------------------------------------------------------------
 #	Add stuff for zlib; note that this is mostly done in the makefile now
 #	as we just assume that the platform hasn't got a usable z.lib
@@ -425,6 +435,7 @@ AC_SUBST(TCL_MAJOR_VERSION)
 AC_SUBST(TCL_MINOR_VERSION)
 AC_SUBST(TCL_PATCH_LEVEL)
 AC_SUBST(PKG_CFG_ARGS)
+AC_SUBST(TCL_EXE)
 
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)

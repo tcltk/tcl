@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.34 2010/12/03 14:42:43 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.35 2010/12/03 14:50:31 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -285,7 +285,9 @@ static double		MakeHighPrecisionDouble(int signum,
 static double		MakeLowPrecisionDouble(int signum,
 			    Tcl_WideUInt significand, int nSigDigs,
 			    int exponent);
+#ifdef IEEE_FLOATING_POINT
 static double		MakeNaN(int signum, Tcl_WideUInt tag);
+#endif
 static double		RefineApproximation(double approx,
 			    mp_int *exactSignificand, int exponent);
 static void		MulPow5(mp_int*, unsigned, mp_int*);
@@ -346,7 +348,9 @@ static double		BignumToBiasedFrExp(const mp_int *big, int *machexp);
 static double		Pow10TimesFrExp(int exponent, double fraction,
 			    int *machexp);
 static double		SafeLdExp(double fraction, int exponent);
+#ifdef IEEE_FLOATING_POINT
 static Tcl_WideUInt	Nokia770Twiddle(Tcl_WideUInt w);
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -4921,13 +4925,14 @@ TclFormatNaN(
  *
  *----------------------------------------------------------------------
  */
-
+#ifdef IEEE_FLOATING_POINT
 static Tcl_WideUInt
 Nokia770Twiddle(
     Tcl_WideUInt w)		/* Number to transpose */
 {
     return (((w >> 32) & 0xffffffff) | (w << 32));
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
