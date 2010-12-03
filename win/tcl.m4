@@ -458,9 +458,6 @@ file for information about building with Mingw.])
 
     AC_MSG_CHECKING([compiler flags])
     if test "${GCC}" = "yes" ; then
-	if test "$do64bit" != "no" ; then
-	    AC_MSG_WARN([64bit mode not supported with GCC on Windows])
-	fi
 	SHLIB_LD=""
 	SHLIB_LD_LIBS='${LIBS}'
 	LIBS="-lnetapi32 -lkernel32 -luser32 -ladvapi32 -lws2_32"
