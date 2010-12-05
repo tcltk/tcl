@@ -1,7 +1,7 @@
 2010-12-05  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tcl.m4:      [Patch #3116490] cross-compile support for unix
-	* unix/configure    (autoconf-2.95)
+	* unix/configure    (autoconf-2.59)
 
 2010-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
