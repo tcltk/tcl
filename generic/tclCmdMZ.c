@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.32 2010/04/06 07:45:56 vasiljevic Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.33 2010/12/05 22:27:00 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -3340,7 +3340,7 @@ TclTraceExecutionObjCmd(interp, optionIndex, objc, objv)
 		    flags |= (TCL_TRACE_ENTER_EXEC | 
 			      TCL_TRACE_LEAVE_EXEC);
 		}
-		strcpy(tcmdPtr->command, command);
+		memcpy(tcmdPtr->command, command, length + 1);
 		name = Tcl_GetString(objv[3]);
 		if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 			(ClientData) tcmdPtr) != TCL_OK) {
@@ -3572,7 +3572,7 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
 		tcmdPtr->length = length;
 		tcmdPtr->refCount = 1;
 		flags |= TCL_TRACE_DELETE;
-		strcpy(tcmdPtr->command, command);
+		memcpy(tcmdPtr->command, command, length + 1);
 		name = Tcl_GetString(objv[3]);
 		if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 			(ClientData) tcmdPtr) != TCL_OK) {
@@ -3791,7 +3791,7 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 		}
 		tvarPtr->length = length;
 		flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
-		strcpy(tvarPtr->command, command);
+		memcpy(tvarPtr->command, command, length + 1);
 		name = Tcl_GetString(objv[3]);
 		flagMask = TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY;
 		varPtr = TclLookupVar(interp, name, NULL,
