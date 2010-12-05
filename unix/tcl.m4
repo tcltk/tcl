@@ -1112,12 +1112,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	CFLAGS_OPTIMIZE=-O
 	CFLAGS_WARNING=""
     ])
-dnl FIXME: Replace AC_CHECK_PROG with AC_CHECK_TOOL once cross compiling is fixed.
-dnl AC_CHECK_TOOL(AR, ar)
-    AC_CHECK_PROG(AR, ar, ar)
-    AS_IF([test "${AR}" = ""], [
-	AC_MSG_ERROR([Required archive tool 'ar' not found on PATH.])
-    ])
+    AC_CHECK_TOOL(AR, ar)
     STLIB_LD='${AR} cr'
     LD_LIBRARY_PATH_VAR="LD_LIBRARY_PATH"
     PLAT_OBJS=""
