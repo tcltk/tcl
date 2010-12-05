@@ -1,3 +1,8 @@
+2010-12-05  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCmdMZ.c: [Bug 3127687] Triggers FORTIFY_SOURCE
+	buffer overflow detection
+
 2010-11-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	Backported from 8.6 (see 2010-08-04).
