@@ -120,7 +120,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 
 typedef struct {
     const char *name;		/* Name of function. */
-    int numArgs;	/* Number of arguments for function. */
+    int numArgs;		/* Number of arguments for function. */
 } BuiltinFunc;
 
 /*
@@ -968,7 +968,7 @@ GrowEvaluationStack(
     while (needed > newElems) {
 	newElems *= 2;
     }
-    newBytes = sizeof (ExecStack) + (newElems-1) * sizeof(Tcl_Obj *);
+    newBytes = sizeof(ExecStack) + (newElems-1) * sizeof(Tcl_Obj *);
 
     oldPtr = esPtr;
     esPtr = (ExecStack *) ckalloc(newBytes);
@@ -1100,13 +1100,13 @@ TclStackFree(
 
     esPtr->tosPtr = &esPtr->stackWords[-1];
     if (esPtr->prevPtr) {
- 	eePtr->execStackPtr = esPtr->prevPtr;
+	eePtr->execStackPtr = esPtr->prevPtr;
     }
     if (esPtr->nextPtr) {
- 	if (!esPtr->prevPtr) {
- 	    eePtr->execStackPtr = esPtr->nextPtr;
- 	}
- 	DeleteExecStack(esPtr);
+	if (!esPtr->prevPtr) {
+	    eePtr->execStackPtr = esPtr->nextPtr;
+	}
+	DeleteExecStack(esPtr);
     }
 }
 
@@ -1189,7 +1189,7 @@ Tcl_ExprObj(
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
     register ByteCode *codePtr = NULL;
-    				/* Tcl Internal type of bytecode. Initialized
+				/* Tcl Internal type of bytecode. Initialized
 				 * to avoid compiler warning. */
     int result;
 
@@ -4787,7 +4787,7 @@ TclExecuteByteCode(
 		 * need to convert the double to a suitably sized integer.
 		 *
 		 * Need this to get comparsions like
-		 * 	expr 20000000000000003 < 20000000000000004.0
+		 *	expr 20000000000000003 < 20000000000000004.0
 		 * right. Converting the first argument to double will yield
 		 * two double values that are equivalent within double
 		 * precision. Converting the double to an integer gets done
@@ -8417,29 +8417,29 @@ EvalStatsCmd(
 	    "Compilation and execution statistics for interpreter 0x%p\n",
 	    iPtr);
 
-    fprintf(stdout, "\nNumber ByteCodes executed	%ld\n",
+    fprintf(stdout, "\nNumber ByteCodes executed\t%ld\n",
 	    statsPtr->numExecutions);
-    fprintf(stdout, "Number ByteCodes compiled	%ld\n",
+    fprintf(stdout, "Number ByteCodes compiled\t%ld\n",
 	    statsPtr->numCompilations);
-    fprintf(stdout, "  Mean executions/compile	%.1f\n",
+    fprintf(stdout, "  Mean executions/compile\t%.1f\n",
 	    statsPtr->numExecutions / (float)statsPtr->numCompilations);
 
-    fprintf(stdout, "\nInstructions executed		%.0f\n",
+    fprintf(stdout, "\nInstructions executed\t\t%.0f\n",
 	    numInstructions);
-    fprintf(stdout, "  Mean inst/compile		%.0f\n",
+    fprintf(stdout, "  Mean inst/compile\t\t%.0f\n",
 	    numInstructions / statsPtr->numCompilations);
-    fprintf(stdout, "  Mean inst/execution		%.0f\n",
+    fprintf(stdout, "  Mean inst/execution\t\t%.0f\n",
 	    numInstructions / statsPtr->numExecutions);
 
-    fprintf(stdout, "\nTotal ByteCodes			%ld\n",
+    fprintf(stdout, "\nTotal ByteCodes\t\t\t%ld\n",
 	    statsPtr->numCompilations);
-    fprintf(stdout, "  Source bytes			%.6g\n",
+    fprintf(stdout, "  Source bytes\t\t\t%.6g\n",
 	    statsPtr->totalSrcBytes);
-    fprintf(stdout, "  Code bytes			%.6g\n",
+    fprintf(stdout, "  Code bytes\t\t\t%.6g\n",
 	    totalCodeBytes);
-    fprintf(stdout, "    ByteCode bytes		%.6g\n",
+    fprintf(stdout, "    ByteCode bytes\t\t%.6g\n",
 	    statsPtr->totalByteCodeBytes);
-    fprintf(stdout, "    Literal bytes		%.6g\n",
+    fprintf(stdout, "    Literal bytes\t\t%.6g\n",
 	    totalLiteralBytes);
     fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
@@ -8447,20 +8447,20 @@ EvalStatsCmd(
 	    (unsigned long) (statsPtr->numLiteralsCreated * sizeof(LiteralEntry)),
 	    (unsigned long) (statsPtr->numLiteralsCreated * sizeof(Tcl_Obj)),
 	    statsPtr->totalLitStringBytes);
-    fprintf(stdout, "  Mean code/compile		%.1f\n",
+    fprintf(stdout, "  Mean code/compile\t\t%.1f\n",
 	    totalCodeBytes / statsPtr->numCompilations);
-    fprintf(stdout, "  Mean code/source		%.1f\n",
+    fprintf(stdout, "  Mean code/source\t\t%.1f\n",
 	    totalCodeBytes / statsPtr->totalSrcBytes);
 
-    fprintf(stdout, "\nCurrent (active) ByteCodes	%ld\n",
+    fprintf(stdout, "\nCurrent (active) ByteCodes\t%ld\n",
 	    numCurrentByteCodes);
-    fprintf(stdout, "  Source bytes			%.6g\n",
+    fprintf(stdout, "  Source bytes\t\t\t%.6g\n",
 	    statsPtr->currentSrcBytes);
-    fprintf(stdout, "  Code bytes			%.6g\n",
+    fprintf(stdout, "  Code bytes\t\t\t%.6g\n",
 	    currentCodeBytes);
-    fprintf(stdout, "    ByteCode bytes		%.6g\n",
+    fprintf(stdout, "    ByteCode bytes\t\t%.6g\n",
 	    statsPtr->currentByteCodeBytes);
-    fprintf(stdout, "    Literal bytes		%.6g\n",
+    fprintf(stdout, "    Literal bytes\t\t%.6g\n",
 	    currentLiteralBytes);
     fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
@@ -8468,9 +8468,9 @@ EvalStatsCmd(
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(Tcl_Obj)),
 	    statsPtr->currentLitStringBytes);
-    fprintf(stdout, "  Mean code/source		%.1f\n",
+    fprintf(stdout, "  Mean code/source\t\t%.1f\n",
 	    currentCodeBytes / statsPtr->currentSrcBytes);
-    fprintf(stdout, "  Code + source bytes		%.6g (%0.1f mean code/src)\n",
+    fprintf(stdout, "  Code + source bytes\t\t%.6g (%0.1f mean code/src)\n",
 	    (currentCodeBytes + statsPtr->currentSrcBytes),
 	    (currentCodeBytes / statsPtr->currentSrcBytes) + 1.0);
 
@@ -8483,17 +8483,17 @@ EvalStatsCmd(
 
     numSharedMultX = 0;
     fprintf(stdout, "\nTcl_IsShared object check (all objects):\n");
-    fprintf(stdout, "  Object had refcount <=1 (not shared)	%ld\n",
+    fprintf(stdout, "  Object had refcount <=1 (not shared)\t%ld\n",
 	    tclObjsShared[1]);
     for (i = 2;  i < TCL_MAX_SHARED_OBJ_STATS;  i++) {
-	fprintf(stdout, "  refcount ==%d		%ld\n",
+	fprintf(stdout, "  refcount ==%d\t\t%ld\n",
 		i, tclObjsShared[i]);
 	numSharedMultX += tclObjsShared[i];
     }
-    fprintf(stdout, "  refcount >=%d		%ld\n",
+    fprintf(stdout, "  refcount >=%d\t\t%ld\n",
 	    i, tclObjsShared[0]);
     numSharedMultX += tclObjsShared[0];
-    fprintf(stdout, "  Total shared objects			%d\n",
+    fprintf(stdout, "  Total shared objects\t\t\t%d\n",
 	    numSharedMultX);
 
     /*
@@ -8530,31 +8530,31 @@ EvalStatsCmd(
     sharingBytesSaved = (objBytesIfUnshared + strBytesIfUnshared)
 	    - currentLiteralBytes;
 
-    fprintf(stdout, "\nTotal objects (all interps)	%ld\n",
+    fprintf(stdout, "\nTotal objects (all interps)\t%ld\n",
 	    tclObjsAlloced);
-    fprintf(stdout, "Current objects			%ld\n",
+    fprintf(stdout, "Current objects\t\t\t%ld\n",
 	    (tclObjsAlloced - tclObjsFreed));
-    fprintf(stdout, "Total literal objects		%ld\n",
+    fprintf(stdout, "Total literal objects\t\t%ld\n",
 	    statsPtr->numLiteralsCreated);
 
-    fprintf(stdout, "\nCurrent literal objects		%d (%0.1f%% of current objects)\n",
+    fprintf(stdout, "\nCurrent literal objects\t\t%d (%0.1f%% of current objects)\n",
 	    globalTablePtr->numEntries,
 	    Percent(globalTablePtr->numEntries, tclObjsAlloced-tclObjsFreed));
-    fprintf(stdout, "  ByteCode literals	 	%ld (%0.1f%% of current literals)\n",
+    fprintf(stdout, "  ByteCode literals\t\t%ld (%0.1f%% of current literals)\n",
 	    numByteCodeLits,
 	    Percent(numByteCodeLits, globalTablePtr->numEntries));
-    fprintf(stdout, "  Literals reused > 1x	 	%d\n",
+    fprintf(stdout, "  Literals reused > 1x\t\t%d\n",
 	    numSharedMultX);
-    fprintf(stdout, "  Mean reference count	 	%.2f\n",
+    fprintf(stdout, "  Mean reference count\t\t%.2f\n",
 	    ((double) refCountSum) / globalTablePtr->numEntries);
-    fprintf(stdout, "  Mean len, str reused >1x 	%.2f\n",
+    fprintf(stdout, "  Mean len, str reused >1x \t%.2f\n",
 	    (numSharedMultX ? strBytesSharedMultX/numSharedMultX : 0.0));
-    fprintf(stdout, "  Mean len, str used 1x	 	%.2f\n",
+    fprintf(stdout, "  Mean len, str used 1x\t\t%.2f\n",
 	    (numSharedOnce ? strBytesSharedOnce/numSharedOnce : 0.0));
-    fprintf(stdout, "  Total sharing savings	 	%.6g (%0.1f%% of bytes if no sharing)\n",
+    fprintf(stdout, "  Total sharing savings\t\t%.6g (%0.1f%% of bytes if no sharing)\n",
 	    sharingBytesSaved,
 	    Percent(sharingBytesSaved, objBytesIfUnshared+strBytesIfUnshared));
-    fprintf(stdout, "    Bytes with sharing		%.6g\n",
+    fprintf(stdout, "    Bytes with sharing\t\t%.6g\n",
 	    currentLiteralBytes);
     fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
@@ -8562,13 +8562,13 @@ EvalStatsCmd(
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(Tcl_Obj)),
 	    statsPtr->currentLitStringBytes);
-    fprintf(stdout, "    Bytes if no sharing		%.6g = objects %.6g + strings %.6g\n",
+    fprintf(stdout, "    Bytes if no sharing\t\t%.6g = objects %.6g + strings %.6g\n",
 	    (objBytesIfUnshared + strBytesIfUnshared),
 	    objBytesIfUnshared, strBytesIfUnshared);
-    fprintf(stdout, "  String sharing savings 	%.6g = unshared %.6g - shared %.6g\n",
+    fprintf(stdout, "  String sharing savings \t%.6g = unshared %.6g - shared %.6g\n",
 	    (strBytesIfUnshared - statsPtr->currentLitStringBytes),
 	    strBytesIfUnshared, statsPtr->currentLitStringBytes);
-    fprintf(stdout, "  Literal mgmt overhead	 	%ld (%0.1f%% of bytes with sharing)\n",
+    fprintf(stdout, "  Literal mgmt overhead\t\t%ld (%0.1f%% of bytes with sharing)\n",
 	    literalMgmtBytes,
 	    Percent(literalMgmtBytes, currentLiteralBytes));
     fprintf(stdout, "    table %lu + buckets %lu + entries %lu\n",
@@ -8616,7 +8616,7 @@ EvalStatsCmd(
      */
 
     fprintf(stdout, "\nLiteral string sizes:\n");
-    fprintf(stdout, "	 Up to length		Percentage\n");
+    fprintf(stdout, "\t Up to length\t\tPercentage\n");
     maxSizeDecade = 0;
     for (i = 31;  i >= 0;  i--) {
 	if (statsPtr->literalCount[i] > 0) {
@@ -8628,7 +8628,7 @@ EvalStatsCmd(
     for (i = 0;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->literalCount[i];
-	fprintf(stdout, "	%10d		%8.0f%%\n",
+	fprintf(stdout, "\t%10d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numLiteralsCreated));
     }
 
@@ -8642,7 +8642,7 @@ EvalStatsCmd(
      */
 
     fprintf(stdout, "\nSource sizes:\n");
-    fprintf(stdout, "	 Up to size		Percentage\n");
+    fprintf(stdout, "\t Up to size\t\tPercentage\n");
     minSizeDecade = maxSizeDecade = 0;
     for (i = 0;  i < 31;  i++) {
 	if (statsPtr->srcCount[i] > 0) {
@@ -8660,12 +8660,12 @@ EvalStatsCmd(
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->srcCount[i];
-	fprintf(stdout, "	%10d		%8.0f%%\n",
+	fprintf(stdout, "\t%10d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
 
     fprintf(stdout, "\nByteCode sizes:\n");
-    fprintf(stdout, "	 Up to size		Percentage\n");
+    fprintf(stdout, "\t Up to size\t\tPercentage\n");
     minSizeDecade = maxSizeDecade = 0;
     for (i = 0;  i < 31;  i++) {
 	if (statsPtr->byteCodeCount[i] > 0) {
@@ -8683,12 +8683,12 @@ EvalStatsCmd(
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->byteCodeCount[i];
-	fprintf(stdout, "	%10d		%8.0f%%\n",
+	fprintf(stdout, "\t%10d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
 
     fprintf(stdout, "\nByteCode longevity (excludes Current ByteCodes):\n");
-    fprintf(stdout, "	       Up to ms		Percentage\n");
+    fprintf(stdout, "\t       Up to ms\t\tPercentage\n");
     minSizeDecade = maxSizeDecade = 0;
     for (i = 0;  i < 31;  i++) {
 	if (statsPtr->lifetimeCount[i] > 0) {
@@ -8706,7 +8706,7 @@ EvalStatsCmd(
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->lifetimeCount[i];
-	fprintf(stdout, "	%12.3f		%8.0f%%\n",
+	fprintf(stdout, "\t%12.3f\t\t%8.0f%%\n",
 		decadeHigh/1000.0, Percent(sum, statsPtr->numByteCodesFreed));
     }
 

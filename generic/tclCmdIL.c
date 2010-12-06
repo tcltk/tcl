@@ -142,7 +142,7 @@ static int		InfoSharedlibCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoTclVersionCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static SortElement *    MergeLists(SortElement *leftPtr, SortElement *rightPtr,
+static SortElement *	MergeLists(SortElement *leftPtr, SortElement *rightPtr,
 			    SortInfo *infoPtr);
 static int		SortCompare(SortElement *firstPtr, SortElement *second,
 			    SortInfo *infoPtr);
@@ -494,6 +494,8 @@ InfoBodyCmd(
     procPtr = TclFindProc(iPtr, name);
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp, "\"", name, "\" isn't a procedure", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", name, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", name, NULL);
 	return TCL_ERROR;
     }
 
@@ -922,6 +924,8 @@ InfoDefaultCmd(
     procPtr = TclFindProc(iPtr, procName);
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp, "\"", procName, "\" isn't a procedure",NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", procName,
+		NULL);
 	return TCL_ERROR;
     }
 
@@ -952,6 +956,7 @@ InfoDefaultCmd(
 
     Tcl_AppendResult(interp, "procedure \"", procName,
 	    "\" doesn't have an argument \"", argName, "\"", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARGUMENT", argName, NULL);
     return TCL_ERROR;
 
   defStoreError:
@@ -1069,6 +1074,8 @@ InfoFrameCmd(
 	levelError:
 	    Tcl_AppendResult(interp, "bad level \"", TclGetString(objv[1]), "\"",
 		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_FRAME",
+		TclGetString(objv[1]), NULL);
 	    return TCL_ERROR;
 	}
 
@@ -1465,6 +1472,8 @@ InfoLevelCmd(
   levelError:
     Tcl_AppendResult(interp, "bad level \"", TclGetString(objv[1]), "\"",
 	    NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
+	    TclGetString(objv[1]), NULL);
     return TCL_ERROR;
 }
 
@@ -2571,7 +2580,7 @@ Tcl_LreplaceObjCmd(
     }
 
     if (first < 0) {
-    	first = 0;
+	first = 0;
     }
 
     /*
@@ -2587,7 +2596,7 @@ Tcl_LreplaceObjCmd(
 	return TCL_ERROR;
     }
     if (last >= listLen) {
-    	last = listLen - 1;
+	last = listLen - 1;
     }
     if (first <= last) {
 	numToDelete = last - first + 1;
@@ -3622,9 +3631,8 @@ Tcl_LsortObjCmd(
 	    break;
 	case LSORT_STRIDE:
 	    if (i == objc-2) {
-		Tcl_AppendResult(interp,
-		       "\"-stride\" option must be followed by stride length",
-			NULL);
+		Tcl_AppendResult(interp, "\"-stride\" option must be ",
+			"followed by stride length", NULL);
 		sortInfo.resultCode = TCL_ERROR;
 		goto done2;
 	    }
@@ -3930,12 +3938,14 @@ Tcl_LsortObjCmd(
  *	"repeated" elements in each of the left and right lists. In that case,
  *	if any element of the left list is equivalent to one in the right list
  *	it is omitted from the merged list.
- *	This simplified mechanism works because of the special way
- *	our MergeSort creates the sublists to be merged and will fail to
- *	eliminate all repeats in the general case where they are already
- *	present in either the left or right list. A general code would need to
- *	skip adjacent initial repeats in the left and right lists before
- *	comparing their initial elements, at each step.
+ *
+ *	This simplified mechanism works because of the special way our
+ *	MergeSort creates the sublists to be merged and will fail to eliminate
+ *	all repeats in the general case where they are already present in
+ *	either the left or right list. A general code would need to skip
+ *	adjacent initial repeats in the left and right lists before comparing
+ *	their initial elements, at each step.
+ *
  *----------------------------------------------------------------------
  */
 

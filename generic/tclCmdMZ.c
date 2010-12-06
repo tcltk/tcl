@@ -1059,7 +1059,7 @@ Tcl_SplitObjCmd(
 	     * Assume Tcl_UniChar is an integral type...
 	     */
 
-	    hPtr = Tcl_CreateHashEntry(&charReuseTable, (char*)0+ch, &isNew);
+	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
 
@@ -1067,9 +1067,9 @@ Tcl_SplitObjCmd(
 		 * Don't need to fiddle with refcount...
 		 */
 
-		Tcl_SetHashValue(hPtr, (ClientData) objPtr);
+		Tcl_SetHashValue(hPtr, objPtr);
 	    } else {
-		objPtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+		objPtr = Tcl_GetHashValue(hPtr);
 	    }
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	}
@@ -1200,7 +1200,12 @@ StringFirstCmd(
 	}
     }
 
-    if (needleLen > 0) {
+    /*
+     * If the length of the needle is more than the length of the haystack, it
+     * cannot be contained in there so we can avoid searching. [Bug 2960021]
+     */
+
+    if (needleLen > 0 && needleLen <= haystackLen) {
 	register Tcl_UniChar *p, *end;
 
 	end = haystackStr + haystackLen - needleLen + 1;
@@ -1305,7 +1310,12 @@ StringLastCmd(
 	p = haystackStr + haystackLen - needleLen;
     }
 
-    if (needleLen > 0) {
+    /*
+     * If the length of the needle is more than the length of the haystack, it
+     * cannot be contained in there so we can avoid searching. [Bug 2960021]
+     */
+
+    if (needleLen > 0 && needleLen <= haystackLen) {
 	for (; p >= haystackStr; p--) {
 	    /*
 	     * Scan backwards to find the first character.
@@ -4667,33 +4677,30 @@ Tcl_WhileObjCmd(
 
 void
 TclListLines(
-    Tcl_Obj* listObj,          /* Pointer to obj holding a string with list
-				* structure.  Assumed to be valid. Assumed to
-				* contain n elements.
-				*/
+    Tcl_Obj *listObj,		/* Pointer to obj holding a string with list
+				 * structure. Assumed to be valid. Assumed to
+				 * contain n elements. */
     int line,			/* Line the list as a whole starts on. */
     int n,			/* #elements in lines */
     int *lines,			/* Array of line numbers, to fill. */
-    Tcl_Obj* const* elems)      /* The list elems as Tcl_Obj*, in need of
+    Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
-    const char*  listStr  = Tcl_GetString (listObj);
-    const char*  listHead = listStr;
+    const char *listStr = Tcl_GetString(listObj);
+    const char *listHead = listStr;
     int i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;
-    ContLineLoc* clLocPtr = TclContinuationsGet(listObj);
-    int* clNext   = (clLocPtr ? &clLocPtr->loc[0] : NULL);
+    ContLineLoc *clLocPtr = TclContinuationsGet(listObj);
+    int *clNext= (clLocPtr ? &clLocPtr->loc[0] : NULL);
 
     for (i = 0; i < n; i++) {
 	TclFindElement(NULL, listStr, length, &element, &next, NULL, NULL);
 
 	TclAdvanceLines(&line, listStr, element);
 				/* Leading whitespace */
-	TclAdvanceContinuations (&line, &clNext, element - listHead);
+	TclAdvanceContinuations(&line, &clNext, element - listHead);
 	if (elems && clNext) {
-	    TclContinuationsEnterDerived (elems[i],
-					  element - listHead,
-					  clNext);
+	    TclContinuationsEnterDerived(elems[i], element-listHead, clNext);
 	}
 	lines[i] = line;
 	length -= (next - listStr);

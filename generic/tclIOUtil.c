@@ -49,7 +49,7 @@ static void		FsRecacheFilesystemList(void);
  * they are not (and should not be) used anywhere else.
  */
 
-MODULE_SCOPE const char *const     	tclpFileAttrStrings[];
+MODULE_SCOPE const char *const		tclpFileAttrStrings[];
 MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 /*
@@ -651,7 +651,7 @@ FsUpdateCwd(
 	 */
 
 	cwdPathPtr = Tcl_NewStringObj(str, len);
-    	Tcl_IncrRefCount(cwdPathPtr);
+	Tcl_IncrRefCount(cwdPathPtr);
 	cwdClientData = TclNativeDupInternalRep(clientData);
     }
 

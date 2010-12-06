@@ -21,7 +21,7 @@
  * Prototypes for functions defined later in this file:
  */
 
-static int 		GetIndexFromObjList(Tcl_Interp *interp,
+static int		GetIndexFromObjList(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Obj *tableObjPtr,
 			    const char *msg, int flags, int *indexPtr);
 static int		SetIndexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -105,7 +105,7 @@ typedef struct {
 
 int
 Tcl_GetIndexFromObj(
-    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
     const char *const*tablePtr,	/* Array of strings to compare against the
 				 * value of objPtr; last entry must be NULL
@@ -168,7 +168,7 @@ Tcl_GetIndexFromObj(
 
 int
 GetIndexFromObjList(
-    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
     Tcl_Obj *tableObjPtr,	/* List of strings to compare against the
 				 * value of objPtr. */
@@ -254,7 +254,7 @@ GetIndexFromObjList(
 
 int
 Tcl_GetIndexFromObjStruct(
-    Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
+    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
     const void *tablePtr,	/* The first string in the table. The second
 				 * string will be at this address plus the
@@ -340,12 +340,12 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (objPtr->typePtr == &indexType) {
- 	indexRep = objPtr->internalRep.otherValuePtr;
+	indexRep = objPtr->internalRep.otherValuePtr;
     } else {
 	TclFreeIntRep(objPtr);
- 	indexRep = (IndexRep *) ckalloc(sizeof(IndexRep));
- 	objPtr->internalRep.otherValuePtr = indexRep;
- 	objPtr->typePtr = &indexType;
+	indexRep = (IndexRep *) ckalloc(sizeof(IndexRep));
+	objPtr->internalRep.otherValuePtr = indexRep;
+	objPtr->typePtr = &indexType;
     }
     indexRep->tablePtr = (void *) tablePtr;
     indexRep->offset   = offset;
@@ -365,16 +365,20 @@ Tcl_GetIndexFromObjStruct(
 	TclNewObj(resultPtr);
 	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_AppendStringsToObj(resultPtr, (numAbbrev > 1) &&
-		!(flags & TCL_EXACT) ? "ambiguous " : "bad ", msg, " \"", key,
-		"\": must be ", STRING_AT(tablePtr, offset, 0), NULL);
-	for (entryPtr = NEXT_ENTRY(tablePtr, offset), count = 0;
-		*entryPtr != NULL;
-		entryPtr = NEXT_ENTRY(entryPtr, offset), count++) {
-	    if (*NEXT_ENTRY(entryPtr, offset) == NULL) {
-		Tcl_AppendStringsToObj(resultPtr, ((count > 0) ? "," : ""),
-			" or ", *entryPtr, NULL);
-	    } else {
-		Tcl_AppendStringsToObj(resultPtr, ", ", *entryPtr, NULL);
+			       !(flags & TCL_EXACT) ? "ambiguous " : "bad ", msg, " \"", key, NULL);
+	if (STRING_AT(tablePtr, offset, 0) == NULL) {
+	    Tcl_AppendStringsToObj(resultPtr, "\": no valid options", NULL);
+	} else {
+	    Tcl_AppendStringsToObj(resultPtr, "\": must be ", STRING_AT(tablePtr, offset, 0), NULL);
+	    for (entryPtr = NEXT_ENTRY(tablePtr, offset), count = 0;
+		 *entryPtr != NULL;
+		 entryPtr = NEXT_ENTRY(entryPtr, offset), count++) {
+		if (*NEXT_ENTRY(entryPtr, offset) == NULL) {
+		    Tcl_AppendStringsToObj(resultPtr, ((count > 0) ? "," : ""),
+					   " or ", *entryPtr, NULL);
+		} else {
+		    Tcl_AppendStringsToObj(resultPtr, ", ", *entryPtr, NULL);
+		}
 	    }
 	}
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, NULL);

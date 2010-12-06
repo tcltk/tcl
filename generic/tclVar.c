@@ -1931,7 +1931,7 @@ TclPtrSetVar(
 		if (Tcl_IsShared(oldValuePtr)) {	/* Append to copy. */
 		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
 
-		    TclContinuationsCopy (varPtr->value.objPtr, oldValuePtr);
+		    TclContinuationsCopy(varPtr->value.objPtr, oldValuePtr);
 
 		    TclDecrRefCount(oldValuePtr);
 		    oldValuePtr = varPtr->value.objPtr;

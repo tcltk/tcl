@@ -64,7 +64,7 @@ static int		CloseChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode);
 static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode, int flags);
-static int		CloseWrite(Tcl_Interp *interp, Channel* chanPtr);
+static int		CloseWrite(Tcl_Interp *interp, Channel *chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
 static int		CopyAndTranslateBuffer(ChannelState *statePtr,
 			    char *result, int space);
@@ -120,7 +120,7 @@ static int		WriteChars(Channel *chanPtr, const char *src,
 static Tcl_Obj *	FixLevelCode(Tcl_Obj *msg);
 static void		SpliceChannel(Tcl_Channel chan);
 static void		CutChannel(Tcl_Channel chan);
-static int WillRead(Channel *chanPtr);
+static int              WillRead(Channel *chanPtr);
 
 /*
  * Simplifying helper macros. All may use their argument(s) multiple times.
@@ -1370,10 +1370,14 @@ Tcl_CreateChannel(
      */
 
     if (chanName != NULL) {
-   	unsigned len = strlen(chanName) + 1;
-   	/* make sure we allocate at least 7 bytes, so it fits for "stdout" later */
-	tmp = ckalloc((len < 7) ? 7 : len);
+	unsigned len = strlen(chanName) + 1;
 
+	/*
+         * Make sure we allocate at least 7 bytes, so it fits for "stdout"
+         * later.
+         */
+
+	tmp = ckalloc((len < 7) ? 7 : len);
 	strcpy(tmp, chanName);
     } else {
 	tmp = ckalloc(7);
@@ -2093,11 +2097,12 @@ Tcl_GetChannelHandle(
 
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
     if (!chanPtr->typePtr->getHandleProc) {
-	Tcl_Obj* err;
+	Tcl_Obj *err;
+
 	TclNewLiteralStringObj(err, "channel \"");
 	Tcl_AppendToObj(err, Tcl_GetChannelName(chan), -1);
 	Tcl_AppendToObj(err, "\" does not support OS handles", -1);
-	Tcl_SetChannelError (chan,err);
+	Tcl_SetChannelError(chan, err);
 	return TCL_ERROR;
     }
     result = chanPtr->typePtr->getHandleProc(chanPtr->instanceData, direction,
@@ -3284,12 +3289,15 @@ Tcl_CloseEx(
 static int
 CloseWrite(
     Tcl_Interp *interp,		/* Interpreter for errors. */
-    Channel* chanPtr)		/* The channel whose write side is being closed. May still be used by some interpreter */
+    Channel *chanPtr)		/* The channel whose write side is being
+                                 * closed. May still be used by some
+                                 * interpreter */
 {
-    /* Notes: clear-channel-handlers - write side only ? or keep around, just not caled */
+    /* Notes: clear-channel-handlers - write side only ? or keep around, just
+     * not called */
     /* No close cllbacks are run - channel is still open (read side) */
 
-    ChannelState *statePtr = chanPtr->state;	/* State of real IO channel. */
+    ChannelState *statePtr = chanPtr->state;	/* State of real IO channel */
     int flushcode;
     int result = 0;
 
@@ -3357,7 +3365,7 @@ CloseWrite(
 static int
 CloseChannelPart(
     Tcl_Interp *interp,		/* Interpreter for errors. */
-    Channel* chanPtr,		/* The channel being closed. May still be used
+    Channel *chanPtr,		/* The channel being closed. May still be used
 				 * by some interpreter. */
     int errorCode,		/* Status of operation so far. */
     int flags)			/* Flags telling us which side to close. */
@@ -3836,24 +3844,29 @@ Tcl_WriteObj(
     }
 }
 
-static void WillWrite(Channel *chanPtr)
+static void
+WillWrite(
+    Channel *chanPtr)
 {
     int inputBuffered;
 
-    if ((chanPtr->typePtr->seekProc != NULL)
-        && ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)) {
+    if ((chanPtr->typePtr->seekProc != NULL) &&
+            ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)){
         int ignore;
+
         DiscardInputQueued(chanPtr->state, 0);
-        ChanSeek(chanPtr, - inputBuffered, SEEK_CUR, &ignore);
+        ChanSeek(chanPtr, -inputBuffered, SEEK_CUR, &ignore);
     }
 }
 
-static int WillRead(Channel *chanPtr)
+static int
+WillRead(
+    Channel *chanPtr)
 {
     if ((chanPtr->typePtr->seekProc != NULL)
-        && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
+            && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
         if ((chanPtr->state->curOutPtr != NULL)
-            && IsBufferReady(chanPtr->state->curOutPtr)) {
+                && IsBufferReady(chanPtr->state->curOutPtr)) {
             SetFlag(chanPtr->state, BUFFER_READY);
         }
         if (FlushChannel(NULL, chanPtr, 0) != 0) {
@@ -9875,7 +9888,7 @@ CopyEventProc(
     ClientData clientData,
     int mask)
 {
-    (void) CopyData((CopyState *) clientData, mask);
+    (void) CopyData(clientData, mask);
 }
 
 /*
@@ -10401,13 +10414,13 @@ Tcl_ChannelBlockModeProc(
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
 	return chanTypePtr->blockModeProc;
-    } else {
-	/*
-	 * The v1 structure had the blockModeProc in a different place.
-	 */
-
-	return (Tcl_DriverBlockModeProc *) chanTypePtr->version;
     }
+
+    /*
+     * The v1 structure had the blockModeProc in a different place.
+     */
+
+    return (Tcl_DriverBlockModeProc *) chanTypePtr->version;
 }
 
 /*
@@ -10649,9 +10662,8 @@ Tcl_ChannelFlushProc(
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
 	return chanTypePtr->flushProc;
-    } else {
-	return NULL;
     }
+    return NULL;
 }
 
 /*
@@ -10677,9 +10689,8 @@ Tcl_ChannelHandlerProc(
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
 	return chanTypePtr->handlerProc;
-    } else {
-	return NULL;
     }
+    return NULL;
 }
 
 /*
@@ -10705,9 +10716,8 @@ Tcl_ChannelWideSeekProc(
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_3)) {
 	return chanTypePtr->wideSeekProc;
-    } else {
-	return NULL;
     }
+    return NULL;
 }
 
 /*
@@ -10734,9 +10744,8 @@ Tcl_ChannelThreadActionProc(
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
 	return chanTypePtr->threadActionProc;
-    } else {
-	return NULL;
     }
+    return NULL;
 }
 
 /*
@@ -11050,9 +11059,8 @@ Tcl_ChannelTruncateProc(
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_5)) {
 	return chanTypePtr->truncateProc;
-    } else {
-	return NULL;
     }
+    return NULL;
 }
 
 /*
@@ -11189,7 +11197,7 @@ UpdateStringOfChannel(
 	if (name) {
 	    size_t len = strlen(name);
 
-	    objPtr->bytes = (char *) ckalloc(len + 1);
+	    objPtr->bytes = ckalloc(len + 1);
 	    objPtr->length = len;
 	    memcpy(objPtr->bytes, name, len);
 	} else {

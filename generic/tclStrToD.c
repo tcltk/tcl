@@ -185,14 +185,14 @@ static double		SafeLdExp(double fraction, int exponent);
  *	- TCL_PARSE_SCAN_PREFIXES:	ignore the prefixes 0b and 0o that are
  *		not part of the [scan] command's vocabulary. Use only in
  *		combination with TCL_PARSE_INTEGER_ONLY.
- * 	- TCL_PARSE_OCTAL_ONLY:		parse only in the octal format, whether
+ *	- TCL_PARSE_OCTAL_ONLY:		parse only in the octal format, whether
  *		or not a prefix is present that would lead to octal parsing.
  *		Use only in combination with TCL_PARSE_INTEGER_ONLY.
- * 	- TCL_PARSE_HEXADECIMAL_ONLY:	parse only in the hexadecimal format,
+ *	- TCL_PARSE_HEXADECIMAL_ONLY:	parse only in the hexadecimal format,
  *		whether or not a prefix is present that would lead to
  *		hexadecimal parsing. Use only in combination with
  *		TCL_PARSE_INTEGER_ONLY.
- * 	- TCL_PARSE_DECIMAL_ONLY:	parse only in the decimal format, no
+ *	- TCL_PARSE_DECIMAL_ONLY:	parse only in the decimal format, no
  *		matter whether a 0 prefix would normally force a different
  *		base.
  *	- TCL_PARSE_NO_WHITESPACE:	reject any leading/trailing whitespace
@@ -1540,7 +1540,7 @@ MakeHighPrecisionDouble(
 static double
 MakeNaN(
     int signum,			/* Sign bit (1=negative, 0=nonnegative */
-    Tcl_WideUInt tags)	 	/* Tag bits to put in the NaN */
+    Tcl_WideUInt tags)		/* Tag bits to put in the NaN */
 {
     union {
 	Tcl_WideUInt iv;
@@ -2601,7 +2601,7 @@ BignumToBiasedFrExp(
 
 static double
 Pow10TimesFrExp(
-    int exponent,	 	/* Power of 10 to multiply by */
+    int exponent,		/* Power of 10 to multiply by */
     double fraction,		/* Significand of multiplicand */
     int *machexp)		/* On input, exponent of multiplicand. On
 				 * output, exponent of result. */
@@ -2734,7 +2734,7 @@ TclFormatNaN(
  *
  * Nokia770Twiddle --
  *
- * 	Transpose the two words of a number for Nokia 770 floating
+ *	Transpose the two words of a number for Nokia 770 floating
  *	point handling.
  *
  *----------------------------------------------------------------------
@@ -2752,7 +2752,7 @@ Nokia770Twiddle(
  *
  * TclNokia770Doubles --
  *
- * 	Transpose the two words of a number for Nokia 770 floating
+ *	Transpose the two words of a number for Nokia 770 floating
  *	point handling.
  *
  *----------------------------------------------------------------------

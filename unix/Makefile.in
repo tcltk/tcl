@@ -160,13 +160,14 @@ INSTALL_PROGRAM		= ${INSTALL}
 INSTALL_LIBRARY		= ${INSTALL}
 INSTALL_DATA		= ${INSTALL} -m 644
 
-# TCL_EXE is the name of a tclsh executable that is available *BEFORE* running
-# make for the first time. Certain build targets (make genstubs) need it to be
-# available on the PATH. This executable should *NOT* be required just to do a
-# normal build although it can be required to run make dist.
-EXE_SUFFIX		= @EXE_SUFFIX@
+# NATIVE_TCLSH is the name of a tclsh executable that is available *BEFORE*
+# running make for the first time. Certain build targets (make genstubs) need
+# it to be available on the PATH. This executable should *NOT* be required
+# just to do a normal build although it can be required to run make dist.
+EXE_SUFFIX		= @EXEEXT@
 TCL_EXE			= tclsh${EXE_SUFFIX}
 TCLTEST_EXE		= tcltest${EXE_SUFFIX}
+NATIVE_TCLSH		= ./${TCL_EXE}
 
 # The symbols below provide support for dynamic loading and shared libraries.
 # See configure.in for a description of what the symbols mean. The values of
@@ -175,7 +176,7 @@ TCLTEST_EXE		= tcltest${EXE_SUFFIX}
 
 STLIB_LD		= @STLIB_LD@
 SHLIB_LD		= @SHLIB_LD@
-SHLIB_CFLAGS		= @SHLIB_CFLAGS@
+SHLIB_CFLAGS		= @SHLIB_CFLAGS@ -DBUILD_tcl
 SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
 TCL_SHLIB_LD_EXTRAS	= @TCL_SHLIB_LD_EXTRAS@
 
@@ -294,9 +295,9 @@ XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o tclClock.o \
-	tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompCmds.o tclCompExpr.o \
-	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclEncoding.o \
-	tclEnsemble.o \
+	tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompCmds.o tclCompCmdsSZ.o \
+	tclCompExpr.o tclCompile.o tclConfig.o tclDate.o tclDictObj.o \
+	tclEncoding.o tclEnsemble.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
 	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIORChan.o tclIORTrans.o tclIOGT.o tclIOSock.o tclIOUtil.o \
@@ -334,7 +335,7 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
         bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
-STUB_LIB_OBJS = tclStubLib.o tclOOStubLib.o ${COMPAT_OBJS}
+STUB_LIB_OBJS = tclStubLib.o tclTomMathStubLib.o tclOOStubLib.o ${COMPAT_OBJS}
 
 UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixFile.o tclUnixPipe.o tclUnixSock.o \
@@ -393,6 +394,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclCmdIL.c \
 	$(GENERIC_DIR)/tclCmdMZ.c \
 	$(GENERIC_DIR)/tclCompCmds.c \
+	$(GENERIC_DIR)/tclCompCmdsSZ.c \
 	$(GENERIC_DIR)/tclCompExpr.c \
 	$(GENERIC_DIR)/tclCompile.c \
 	$(GENERIC_DIR)/tclConfig.c \
@@ -464,6 +466,7 @@ OO_SRCS = \
 
 STUB_SRCS = \
 	$(GENERIC_DIR)/tclStubLib.c \
+	$(GENERIC_DIR)/tclTomMathStubLib.c \
 	$(GENERIC_DIR)/tclOOStubLib.o
 
 TOMMATH_SRCS = \
@@ -624,6 +627,9 @@ objs: ${OBJS}
 ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE}
 	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCL_EXE}
+
+# Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
+${NATIVE_TCLSH}:
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
@@ -865,18 +871,18 @@ install-libraries: libraries $(INSTALL_TZDATA) install-msgs
 	        "$(SCRIPT_INSTALL_DIR)"/tm.tcl; \
 	fi
 
-install-tzdata: ${TCL_EXE}
+install-tzdata: ${NATIVE_TCLSH}
 	@echo "Installing time zone data"
 	@@LD_LIBRARY_PATH_VAR@="`pwd`:$${@LD_LIBRARY_PATH_VAR@}"; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	./${TCL_EXE} $(TOOL_DIR)/installData.tcl \
+	${NATIVE_TCLSH} $(TOOL_DIR)/installData.tcl \
 	    $(TOP_DIR)/library/tzdata "$(SCRIPT_INSTALL_DIR)"/tzdata
 
-install-msgs: ${TCL_EXE}
+install-msgs: ${NATIVE_TCLSH}
 	@echo "Installing message catalogs"
 	@@LD_LIBRARY_PATH_VAR@="`pwd`:$${@LD_LIBRARY_PATH_VAR@}"; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	./${TCL_EXE} $(TOOL_DIR)/installData.tcl \
+	${NATIVE_TCLSH} $(TOOL_DIR)/installData.tcl \
 	    $(TOP_DIR)/library/msgs "$(SCRIPT_INSTALL_DIR)"/msgs
 
 install-doc: doc
@@ -1033,6 +1039,9 @@ tclDate.o: $(GENERIC_DIR)/tclDate.c
 
 tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c $(COMPILEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmds.c
+
+tclCompCmdsSZ.o: $(GENERIC_DIR)/tclCompCmdsSZ.c $(COMPILEHDR)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmdsSZ.c
 
 tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c $(COMPILEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompExpr.c
@@ -1618,6 +1627,9 @@ Zzutil.o:    $(ZLIB_DIR)/zutil.c
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclStubLib.c
 
+tclTomMathStubLib.o: $(GENERIC_DIR)/tclTomMathStubLib.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclTomMathStubLib.c
+
 tclOOStubLib.o: $(GENERIC_DIR)/tclOOStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclOOStubLib.c
 
@@ -1628,12 +1640,12 @@ tclOOStubLib.o: $(GENERIC_DIR)/tclOOStubLib.c
 # Bundled Package targets
 #--------------------------------------------------------------------------
 
-# propagate configure args like --enable-64bit to package configure
+# Propagate configure args like --enable-64bit to package configure
 PKG_CFG_ARGS		= @PKG_CFG_ARGS@
-# if PKG_DIR is changed to a different relative depth to the build dir,
-# need to adapt the ../.. relative paths below and at the top of configure.in
-# (cannot use absolute paths due to issues in nested configure when path to
-#  build dir contains spaces).
+# If PKG_DIR is changed to a different relative depth to the build dir, need
+# to adapt the ../.. relative paths below and at the top of configure.in (we
+# cannot use absolute paths due to issues in nested configure when path to
+# build dir contains spaces).
 PKG_DIR			= ./pkgs
 
 configure-packages:
@@ -1757,7 +1769,7 @@ gendate:
 # run (and the results checked) after updating to a new release of libtommath.
 
 gentommath_h:
-	$(TCL_EXE) "$(TOOL_DIR)/fix_tommath_h.tcl" \
+	$(NATIVE_TCLSH) "$(TOOL_DIR)/fix_tommath_h.tcl" \
 		"$(TOMMATH_DIR)/tommath.h" \
 		> "$(GENERIC_DIR)/tclTomMath.h"
 
@@ -1777,10 +1789,10 @@ $(GENERIC_DIR)/tclOOStubInit.c: $(GENERIC_DIR)/tclOO.decls
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:
-	$(TCL_EXE) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
+	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls \
 		$(GENERIC_DIR)/tclTomMath.decls
-	$(TCL_EXE) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
+	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tclOO.decls
 
 #
@@ -1871,7 +1883,7 @@ $(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
 $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
 	cd $(MAC_OSX_DIR); autoheader; touch $@
 
-dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(MAC_OSX_DIR)/configure genstubs dist-packages
+dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(MAC_OSX_DIR)/configure genstubs dist-packages ${NATIVE_TCLSH}
 	rm -rf $(DISTDIR)
 	mkdir -p $(DISTDIR)/unix
 	cp -p $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
@@ -1936,17 +1948,17 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	cp -p $(TOP_DIR)/win/*.[ch] $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
-	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/*.bat
+	$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/*.bat
 	cp -p $(TOP_DIR)/win/makefile.* $(DISTDIR)/win
-	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/makefile.*
+	$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/makefile.*
 	cp -p $(TOP_DIR)/win/rules.vc $(DISTDIR)/win
-	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/rules.vc
+	$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/rules.vc
 	cp -p $(TOP_DIR)/win/coffbase.txt $(DISTDIR)/win
-	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/coffbase.txt
+	$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/coffbase.txt
 	cp -p $(TOP_DIR)/win/tcl.hpj.in $(DISTDIR)/win
-	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.hpj.in
+	$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.hpj.in
 	cp -p $(TOP_DIR)/win/tcl.ds* $(DISTDIR)/win
-	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.ds*
+	$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.ds*
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/macosx
@@ -1974,7 +1986,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 		$(TOOL_DIR)/tcl.wse.in $(TOOL_DIR)/*.bmp \
 		$(TOOL_DIR)/tcl.hpj.in \
 		$(DISTDIR)/tools
-	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/tools/tcl.hpj.in \
+	$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/tools/tcl.hpj.in \
 		$(DISTDIR)/tools/tcl.wse.in
 	mkdir $(DISTDIR)/libtommath
 	cp -p $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h \
@@ -2024,20 +2036,20 @@ allpatch: dist
 # to function on those of the Tcl/Tk maintainers.
 #--------------------------------------------------------------------------
 
-html: ${TCL_EXE}
+html: ${NATIVE_TCLSH}
 	$(BUILD_HTML)
 	@EXTRA_BUILD_HTML@
-html-tcl: ${TCL_EXE}
+html-tcl: ${NATIVE_TCLSH}
 	$(BUILD_HTML) --tcl
 	@EXTRA_BUILD_HTML@
-html-tk: ${TCL_EXE}
+html-tk: ${NATIVE_TCLSH}
 	$(BUILD_HTML) --tk
 	@EXTRA_BUILD_HTML@
 
 BUILD_HTML = \
 	@@LD_LIBRARY_PATH_VAR@="`pwd`:$${@LD_LIBRARY_PATH_VAR@}"; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	./${TCL_EXE} $(TOOL_DIR)/tcltk-man2html.tcl --htmldir="$(HTML_INSTALL_DIR)" \
+	${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl --htmldir="$(HTML_INSTALL_DIR)" \
 		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
 
 #--------------------------------------------------------------------------

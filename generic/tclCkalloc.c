@@ -1010,8 +1010,8 @@ Tcl_InitMemory(
 				 * added */
 {
     TclInitDbCkalloc();
-    Tcl_CreateCommand(interp, "memory", MemoryCmd, (ClientData) NULL, NULL);
-    Tcl_CreateCommand(interp, "checkmem", CheckmemCmd, (ClientData) 0, NULL);
+    Tcl_CreateCommand(interp, "memory", MemoryCmd, NULL, NULL);
+    Tcl_CreateCommand(interp, "checkmem", CheckmemCmd, NULL, NULL);
 }
 
 

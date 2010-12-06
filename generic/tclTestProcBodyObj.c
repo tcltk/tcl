@@ -298,7 +298,7 @@ ProcBodyTestProcObjCmd(
     myobjv[3] = bodyObjPtr;
     myobjv[4] = NULL;
 
-    result = Tcl_ProcObjCmd((ClientData) NULL, interp, objc, myobjv);
+    result = Tcl_ProcObjCmd(NULL, interp, objc, myobjv);
     Tcl_DecrRefCount(bodyObjPtr);
 
     return result;

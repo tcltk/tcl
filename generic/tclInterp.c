@@ -662,23 +662,24 @@ Tcl_InterpObjCmd(
 	    }
 
 	    switch ((enum option) index) {
-		case OPT_UNWIND:
-		    /*
-		     * The evaluation stack in the target interp is to be
-		     * unwound.
-		     */
-		    flags |= TCL_CANCEL_UNWIND;
-		    break;
-		case OPT_LAST:
-		    i++;
-		    goto endOfForLoop;
+	    case OPT_UNWIND:
+		/*
+		 * The evaluation stack in the target interp is to be unwound.
+		 */
+
+		flags |= TCL_CANCEL_UNWIND;
+		break;
+	    case OPT_LAST:
+		i++;
+		goto endOfForLoop;
 	    }
 	}
 
 	endOfForLoop:
 
 	if ((i + 2) < objc) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "?-unwind? ?--? ?path? ?result?");
+	    Tcl_WrongNumArgs(interp, 2, objv,
+		    "?-unwind? ?--? ?path? ?result?");
 	    return TCL_ERROR;
 	}
 
@@ -697,7 +698,12 @@ Tcl_InterpObjCmd(
 	if (slaveInterp != NULL) {
 	    if (i < objc) {
 		resultObjPtr = objv[i];
-		Tcl_IncrRefCount(resultObjPtr); /* Tcl_CancelEval removes this ref. */
+
+		/*
+		 * Tcl_CancelEval removes this reference.
+		 */
+
+		Tcl_IncrRefCount(resultObjPtr);
 		i++;
 	    } else {
 		resultObjPtr = NULL;
@@ -1141,8 +1147,7 @@ Tcl_CreateAlias(
     int i;
     int result;
 
-    objv = (Tcl_Obj **)
-	    TclStackAlloc(slaveInterp, (unsigned) sizeof(Tcl_Obj *) * argc);
+    objv = TclStackAlloc(slaveInterp, (unsigned) sizeof(Tcl_Obj *) * argc);
     for (i = 0; i < argc; i++) {
 	objv[i] = Tcl_NewStringObj(argv[i], -1);
 	Tcl_IncrRefCount(objv[i]);
@@ -1767,7 +1772,7 @@ AliasObjCmd(
     if (cmdc <= ALIAS_CMDV_PREALLOC) {
 	cmdv = cmdArr;
     } else {
-	cmdv = (Tcl_Obj **) TclStackAlloc(interp, cmdc*(int)sizeof(Tcl_Obj*));
+	cmdv = TclStackAlloc(interp, cmdc * sizeof(Tcl_Obj *));
     }
 
     prefv = &aliasPtr->objPtr;

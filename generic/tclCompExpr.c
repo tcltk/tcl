@@ -455,7 +455,7 @@ static unsigned char Lexeme[] = {
 	INVALID		/* SUB */,	INVALID		/* ESC */,
 	INVALID		/* FS */,	INVALID		/* GS */,
 	INVALID		/* RS */,	INVALID		/* US */,
-	INVALID		/* SPACE */,	0 		/* ! or != */,
+	INVALID		/* SPACE */,	0		/* ! or != */,
 	QUOTED		/* " */,	INVALID		/* # */,
 	VARIABLE	/* $ */,	MOD		/* % */,
 	0		/* & or && */,	INVALID		/* ' */,
@@ -902,7 +902,7 @@ ParseExpr(
 		break;
 
 	    case SCRIPT: {
-		Tcl_Parse *nestedPtr = (Tcl_Parse *)
+		Tcl_Parse *nestedPtr =
 			TclStackAlloc(interp, sizeof(Tcl_Parse));
 
 		tokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
@@ -1784,12 +1784,11 @@ Tcl_ParseExpr(
 				 * information in the structure is ignored. */
 {
     int code;
-    OpNode *opTree = NULL;	/* Will point to the tree of operators */
-    Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
-    Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names*/
-    Tcl_Parse *exprParsePtr = (Tcl_Parse *)
-	    TclStackAlloc(interp, sizeof(Tcl_Parse));
-				/* Holds the Tcl_Tokens of substitutions */
+    OpNode *opTree = NULL;	/* Will point to the tree of operators. */
+    Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals. */
+    Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names. */
+    Tcl_Parse *exprParsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+				/* Holds the Tcl_Tokens of substitutions. */
 
     if (numBytes < 0) {
 	numBytes = (start ? strlen(start) : 0);
@@ -2039,8 +2038,7 @@ TclCompileExpr(
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names*/
-    Tcl_Parse *parsePtr = (Tcl_Parse *)
-	    TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions */
 
     int code = ParseExpr(interp, script, numBytes, &opTree, litList,
@@ -2110,7 +2108,7 @@ ExecConstantExprTree(
      * bytecode, so there's no need to tend to TIP 280 issues.
      */
 
-    envPtr = (CompileEnv *) TclStackAlloc(interp, sizeof(CompileEnv));
+    envPtr = TclStackAlloc(interp, sizeof(CompileEnv));
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
 	    0 /* optimize */);
@@ -2174,10 +2172,10 @@ CompileExprTree(
 
 	    switch (nodePtr->lexeme) {
 	    case QUESTION:
-		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
 		jumpPtr->depth = envPtr->currStackDepth;
@@ -2185,13 +2183,13 @@ CompileExprTree(
 		break;
 	    case AND:
 	    case OR:
-		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
 		jumpPtr->depth = envPtr->currStackDepth;
@@ -2436,7 +2434,7 @@ CompileExprTree(
  *	A standard Tcl return code and result left in interp.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -2489,7 +2487,7 @@ TclSingleOpCmd(
  *	A standard Tcl return code and result left in interp.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -2507,10 +2505,9 @@ TclSortingOpCmd(
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
     } else {
 	TclOpCmdClientData *occdPtr = clientData;
-	Tcl_Obj **litObjv = (Tcl_Obj **) TclStackAlloc(interp,
-		2*(objc-2)*sizeof(Tcl_Obj *));
-	OpNode *nodes = (OpNode *) TclStackAlloc(interp,
-		2*(objc-2)*sizeof(OpNode));
+	Tcl_Obj **litObjv = TclStackAlloc(interp,
+		2 * (objc-2) * sizeof(Tcl_Obj *));
+	OpNode *nodes = TclStackAlloc(interp, 2 * (objc-2) * sizeof(OpNode));
 	unsigned char lexeme;
 	int i, lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
@@ -2570,7 +2567,7 @@ TclSortingOpCmd(
  *	A standard Tcl return code and result left in interp.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -2637,8 +2634,7 @@ TclVariadicOpCmd(
 	return code;
     } else {
 	Tcl_Obj *const *litObjv = objv + 1;
-	OpNode *nodes = (OpNode *) TclStackAlloc(interp,
-		(objc-1)*sizeof(OpNode));
+	OpNode *nodes = TclStackAlloc(interp, (objc-1) * sizeof(OpNode));
 	int i, lastOp = OT_LITERAL;
 
 	nodes[0].lexeme = START;
@@ -2690,7 +2686,7 @@ TclVariadicOpCmd(
  *	A standard Tcl return code and result left in interp.
  *
  * Side effects:
- * 	None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
