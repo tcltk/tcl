@@ -3552,7 +3552,7 @@ Tcl_LsortObjCmd(
 	    sortInfo.isIncreasing = 1;
 	    break;
 	case LSORT_INDEX: {
-	    Tcl_Obj **indices;
+	    Tcl_Obj **indexv;
 
 	    /* === START SPECIAL CASE ===
 	     *
@@ -3576,7 +3576,7 @@ Tcl_LsortObjCmd(
 	     */
 
 	    if (TclListObjGetElements(interp, objv[i+1], &sortInfo.indexc,
-		    &indices) != TCL_OK) {
+		    &indexv) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    /* === END SPECIAL CASE === */
@@ -3603,7 +3603,7 @@ Tcl_LsortObjCmd(
 	     */
 
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		if (TclGetIntForIndexM(interp, indices[j], SORTIDX_END,
+		if (TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
 			&sortInfo.indexv[j]) != TCL_OK) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
@@ -3864,7 +3864,6 @@ Tcl_LsortObjCmd(
     if (sortInfo.resultCode == TCL_OK) {
 	List *listRepPtr;
 	Tcl_Obj **newArray, *objPtr;
-	int i;
 
 	resultPtr = Tcl_NewListObj(sortInfo.numElements * groupSize, NULL);
 	listRepPtr = resultPtr->internalRep.twoPtrValue.ptr1;

@@ -348,7 +348,7 @@ MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
 
 DTRACE_OBJ = tclDTrace.o
 
-ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zgzio.o Zinfback.o \
+ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
 	Zinffast.o Zinflate.o Zinftrees.o Ztrees.o Zuncompr.o Zzutil.o
 
 TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
@@ -1602,8 +1602,6 @@ Zcrc32.o:    $(ZLIB_DIR)/crc32.c
 	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/crc32.c
 Zdeflate.o:  $(ZLIB_DIR)/deflate.c
 	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/deflate.c
-Zgzio.o:     $(ZLIB_DIR)/gzio.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/gzio.c
 Zinfback.o:  $(ZLIB_DIR)/infback.c
 	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/infback.c
 Zinffast.o:  $(ZLIB_DIR)/inffast.c

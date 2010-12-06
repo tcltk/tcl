@@ -286,6 +286,7 @@ InitFoundation(
     ckfree((char *) fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
     fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
+    fPtr->classCls->thisPtr->flags |= ROOT_CLASS;
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
     TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
     AddRef(fPtr->objectCls->thisPtr);
@@ -692,8 +693,7 @@ ObjectRenamedTrace(
     oPtr->command = NULL;
     oPtr->flags |= OBJECT_DELETED;
     if (!(oPtr->flags & DESTRUCTOR_CALLED) && (!Tcl_InterpDeleted(interp)
-	    || (oPtr != oPtr->fPtr->objectCls->thisPtr
-	    && oPtr != oPtr->fPtr->classCls->thisPtr))) {
+	    || (oPtr->flags & (ROOT_OBJECT|ROOT_CLASS)))) {
 	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
 
 	oPtr->flags |= DESTRUCTOR_CALLED;
@@ -718,15 +718,33 @@ ObjectRenamedTrace(
      * and nuke the namespace (which triggers the final crushing of the object
      * structure itself).
      *
-     * The namespace is only deleted if it hasn't already been deleted. [Bug
-     * 2950259]
+     * The class of classes needs some special care; if it is deleted (and
+     * we're not killing the whole interpreter) we force the delete of the
+     * class of objects now as well. Due to the incestuous nature of those two
+     * classes, if one goes the other must too and yet the tangle can
+     * sometimes not go away automatically; we force it here. [Bug 2962664]
      */
+
+    if (!Tcl_InterpDeleted(interp)) {
+	if ((oPtr->flags & ROOT_OBJECT) && oPtr->fPtr->classCls != NULL) {
+	    Tcl_DeleteCommandFromToken(interp,
+		    oPtr->fPtr->classCls->thisPtr->command);
+	} else if (oPtr->flags & ROOT_CLASS) {
+	    oPtr->fPtr->classCls = NULL;
+	}
+    }
 
     clsPtr = oPtr->classPtr;
     if (clsPtr != NULL) {
 	AddRef(clsPtr);
 	ReleaseClassContents(interp, oPtr);
     }
+
+    /*
+     * The namespace is only deleted if it hasn't already been deleted. [Bug
+     * 2950259]
+     */
+
     if (((Namespace *) oPtr->namespacePtr)->earlyDeleteProc != NULL) {
 	Tcl_DeleteNamespace(oPtr->namespacePtr);
     }
@@ -975,10 +993,9 @@ ObjectNamespaceDeleted(
     }
 
     if (clsPtr != NULL) {
-	Class *superPtr, *mixinPtr;
+	Class *superPtr;
 
 	if (clsPtr->metadataPtr != NULL) {
-	    FOREACH_HASH_DECLS;
 	    Tcl_ObjectMetadataType *metadataTypePtr;
 	    ClientData value;
 
@@ -1497,7 +1514,7 @@ Tcl_CopyObjectInstance(
 		NULL);
 	return NULL;
     }
-    if (oPtr->classPtr == GetFoundation(interp)->classCls) {
+    if (oPtr->flags & ROOT_CLASS) {
 	Tcl_AppendResult(interp, "may not clone the class of classes", NULL);
 	return NULL;
     }
@@ -2414,7 +2431,7 @@ Tcl_GetClassAsObject(
     return (Tcl_Object) ((Class *)clazz)->thisPtr;
 }
 
-Tcl_ObjectMapMethodNameProc
+Tcl_ObjectMapMethodNameProc *
 Tcl_ObjectGetMethodNameMapper(
     Tcl_Object object)
 {
@@ -2424,7 +2441,7 @@ Tcl_ObjectGetMethodNameMapper(
 void
 Tcl_ObjectSetMethodNameMapper(
     Tcl_Object object,
-    Tcl_ObjectMapMethodNameProc mapMethodNameProc)
+    Tcl_ObjectMapMethodNameProc *mapMethodNameProc)
 {
     ((Object *) object)->mapMethodNameProc = mapMethodNameProc;
 }

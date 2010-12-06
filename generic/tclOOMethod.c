@@ -1625,8 +1625,8 @@ Tcl_Method
 TclOONewProcInstanceMethodEx(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     Tcl_Object oPtr,		/* The object to modify. */
-    TclOO_PreCallProc preCallPtr,
-    TclOO_PostCallProc postCallPtr,
+    TclOO_PreCallProc *preCallPtr,
+    TclOO_PostCallProc *postCallPtr,
     ProcErrorProc *errProc,
     ClientData clientData,
     Tcl_Obj *nameObj,		/* The name of the method, which must not be
@@ -1662,8 +1662,8 @@ Tcl_Method
 TclOONewProcMethodEx(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Tcl_Class clsPtr,		/* The class to modify. */
-    TclOO_PreCallProc preCallPtr,
-    TclOO_PostCallProc postCallPtr,
+    TclOO_PreCallProc *preCallPtr,
+    TclOO_PostCallProc *postCallPtr,
     ProcErrorProc *errProc,
     ClientData clientData,
     Tcl_Obj *nameObj,		/* The name of the method, which may be NULL;

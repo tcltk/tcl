@@ -110,39 +110,39 @@ const Tcl_Filesystem tclNativeFilesystem = {
     "native",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_2,
-    &TclNativePathInFilesystem,
-    &TclNativeDupInternalRep,
-    &NativeFreeInternalRep,
-    &TclpNativeToNormalized,
-    &TclNativeCreateNativeRep,
-    &TclpObjNormalizePath,
-    &TclpFilesystemPathType,
-    &NativeFilesystemSeparator,
-    &TclpObjStat,
-    &TclpObjAccess,
-    &TclpOpenFileChannel,
-    &TclpMatchInDirectory,
-    &TclpUtime,
+    TclNativePathInFilesystem,
+    TclNativeDupInternalRep,
+    NativeFreeInternalRep,
+    TclpNativeToNormalized,
+    TclNativeCreateNativeRep,
+    TclpObjNormalizePath,
+    TclpFilesystemPathType,
+    NativeFilesystemSeparator,
+    TclpObjStat,
+    TclpObjAccess,
+    TclpOpenFileChannel,
+    TclpMatchInDirectory,
+    TclpUtime,
 #ifndef S_IFLNK
     NULL,
 #else
-    &TclpObjLink,
+    TclpObjLink,
 #endif /* S_IFLNK */
-    &TclpObjListVolumes,
-    &NativeFileAttrStrings,
-    &NativeFileAttrsGet,
-    &NativeFileAttrsSet,
-    &TclpObjCreateDirectory,
-    &TclpObjRemoveDirectory,
-    &TclpObjDeleteFile,
-    &TclpObjCopyFile,
-    &TclpObjRenameFile,
-    &TclpObjCopyDirectory,
-    &TclpObjLstat,
-    &TclpDlopen,
+    TclpObjListVolumes,
+    NativeFileAttrStrings,
+    NativeFileAttrsGet,
+    NativeFileAttrsSet,
+    TclpObjCreateDirectory,
+    TclpObjRemoveDirectory,
+    TclpObjDeleteFile,
+    TclpObjCopyFile,
+    TclpObjRenameFile,
+    TclpObjCopyDirectory,
+    TclpObjLstat,
+    TclpDlopen,
     /* Needs a cast since we're using version_2. */
-    (Tcl_FSGetCwdProc *) &TclpGetNativeCwd,
-    &TclpObjChdir
+    (Tcl_FSGetCwdProc *) TclpGetNativeCwd,
+    TclpObjChdir
 };
 
 /*
@@ -1510,7 +1510,7 @@ TclGetOpenModeEx(
 	default:
 	    goto error;
 	}
-	i=1;
+	i = 1;
 	while (i<3 && modeString[i]) {
 	    if (modeString[i] == modeString[i-1]) {
 		goto error;

@@ -22,7 +22,7 @@
 #   define USE_TCL_STUBS
 #endif
 #include "tclInt.h"
-
+#include "tclOO.h"
 /*
  * Required for Testregexp*Cmd
  */
@@ -425,41 +425,41 @@ static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
-    &TestReportInFilesystem, /* path in */
-    &TestReportDupInternalRep,
-    &TestReportFreeInternalRep,
+    TestReportInFilesystem, /* path in */
+    TestReportDupInternalRep,
+    TestReportFreeInternalRep,
     NULL, /* native to norm */
     NULL, /* convert to native */
-    &TestReportNormalizePath,
+    TestReportNormalizePath,
     NULL, /* path type */
     NULL, /* separator */
-    &TestReportStat,
-    &TestReportAccess,
-    &TestReportOpenFileChannel,
-    &TestReportMatchInDirectory,
-    &TestReportUtime,
-    &TestReportLink,
+    TestReportStat,
+    TestReportAccess,
+    TestReportOpenFileChannel,
+    TestReportMatchInDirectory,
+    TestReportUtime,
+    TestReportLink,
     NULL /* list volumes */,
-    &TestReportFileAttrStrings,
-    &TestReportFileAttrsGet,
-    &TestReportFileAttrsSet,
-    &TestReportCreateDirectory,
-    &TestReportRemoveDirectory,
-    &TestReportDeleteFile,
-    &TestReportCopyFile,
-    &TestReportRenameFile,
-    &TestReportCopyDirectory,
-    &TestReportLstat,
-    &TestReportLoadFile,
+    TestReportFileAttrStrings,
+    TestReportFileAttrsGet,
+    TestReportFileAttrsSet,
+    TestReportCreateDirectory,
+    TestReportRemoveDirectory,
+    TestReportDeleteFile,
+    TestReportCopyFile,
+    TestReportRenameFile,
+    TestReportCopyDirectory,
+    TestReportLstat,
+    TestReportLoadFile,
     NULL /* cwd */,
-    &TestReportChdir
+    TestReportChdir
 };
 
 static const Tcl_Filesystem simpleFilesystem = {
     "simple",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
-    &SimplePathInFilesystem,
+    SimplePathInFilesystem,
     NULL,
     NULL,
     /* No internal to normalized, since we don't create any
@@ -473,14 +473,14 @@ static const Tcl_Filesystem simpleFilesystem = {
     NULL,
     NULL,
     NULL,
-    &SimpleStat,
-    &SimpleAccess,
-    &SimpleOpenFileChannel,
-    &SimpleMatchInDirectory,
+    SimpleStat,
+    SimpleAccess,
+    SimpleOpenFileChannel,
+    SimpleMatchInDirectory,
     NULL,
     /* We choose not to support symbolic links inside our vfs's */
     NULL,
-    &SimpleListVolumes,
+    SimpleListVolumes,
     NULL,
     NULL,
     NULL,
@@ -536,7 +536,13 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
+	return TCL_ERROR;
+    }
+    if (Tcl_TomMath_InitStubs(interp, "8.5") == NULL) {
+	return TCL_ERROR;
+    }
+    if (Tcl_OOInitStubs(interp) == NULL) {
 	return TCL_ERROR;
     }
     /* TIP #268: Full patchlevel instead of just major.minor */
@@ -747,7 +753,7 @@ int
 Tcltest_SafeInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
 	return TCL_ERROR;
     }
     return Procbodytest_SafeInit(interp);

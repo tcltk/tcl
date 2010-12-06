@@ -67,12 +67,12 @@ typedef struct Method {
  * tuned in their behaviour.
  */
 
-typedef int (*TclOO_PreCallProc)(ClientData clientData, Tcl_Interp *interp,
+typedef int (TclOO_PreCallProc)(ClientData clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext context, Tcl_CallFrame *framePtr, int *isFinished);
-typedef int (*TclOO_PostCallProc)(ClientData clientData, Tcl_Interp *interp,
+typedef int (TclOO_PostCallProc)(ClientData clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext context, Tcl_Namespace *namespacePtr, int result);
-typedef void (*TclOO_PmCDDeleteProc)(ClientData clientData);
-typedef ClientData (*TclOO_PmCDCloneProc)(ClientData clientData);
+typedef void (TclOO_PmCDDeleteProc)(ClientData clientData);
+typedef ClientData (TclOO_PmCDCloneProc)(ClientData clientData);
 
 /*
  * Procedure-like methods have the following extra information.
@@ -87,13 +87,13 @@ typedef struct ProcedureMethod {
     int flags;			/* Flags to control features. */
     int refCount;
     ClientData clientData;
-    TclOO_PmCDDeleteProc deleteClientdataProc;
-    TclOO_PmCDCloneProc cloneClientdataProc;
+    TclOO_PmCDDeleteProc *deleteClientdataProc;
+    TclOO_PmCDCloneProc *cloneClientdataProc;
     ProcErrorProc *errProc;	/* Replacement error handler. */
-    TclOO_PreCallProc preCallProc;
+    TclOO_PreCallProc *preCallProc;
 				/* Callback to allow for additional setup
 				 * before the method executes. */
-    TclOO_PostCallProc postCallProc;
+    TclOO_PostCallProc *postCallProc;
 				/* Callback to allow for additional cleanup
 				 * after the method executes. */
     GetFrameInfoValueProc *gfivProc;
@@ -191,7 +191,7 @@ typedef struct Object {
     Tcl_Obj *cachedNameObj;	/* Cache of the name of the object. */
     Tcl_HashTable *chainCache;	/* Place to keep unused contexts. This table
 				 * is indexed by method name as Tcl_Obj. */
-    Tcl_ObjectMapMethodNameProc mapMethodNameProc;
+    Tcl_ObjectMapMethodNameProc *mapMethodNameProc;
 				/* Function to allow remapping of method
 				 * names. For itcl-ng. */
     LIST_STATIC(Tcl_Obj *) variables;
@@ -212,6 +212,10 @@ typedef struct Object {
 				 * instance of the class, and has had nothing
 				 * added that changes the dispatch chain (i.e.
 				 * no methods, mixins, or filters. */
+#define ROOT_CLASS 0x8000	/* Flag to say that this object is the root
+				 * class of classes, and should be treated
+				 * specially during teardown (and in a few
+				 * other spots). */
 
 /*
  * And the definition of a class. Note that every class also has an associated

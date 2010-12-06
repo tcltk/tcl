@@ -398,7 +398,7 @@ FreeDictInternalRep(
 {
     Dict *dict = dictPtr->internalRep.otherValuePtr;
 
-    --dict->refcount;
+    dict->refcount--;
     if (dict->refcount <= 0) {
 	DeleteDict(dict);
     }

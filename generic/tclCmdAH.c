@@ -1021,7 +1021,6 @@ Tcl_FileObjCmd(
     }
     case FCMD_LINK: {
 	Tcl_Obj *contents;
-	int index;
 
 	if (objc < 3 || objc > 5) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "?-linktype? linkname ?target?");

@@ -204,14 +204,14 @@ TclNamespaceEnsembleCmd(
 		paramObj = (len > 0 ? objv[1] : NULL);
 		continue;
 	    case CRT_MAP: {
-		Tcl_Obj *patchedDict = NULL, *subcmdObj;
+		Tcl_Obj *patchedDict = NULL, *subcmdWordsObj;
 
 		/*
 		 * Verify that the map is sensible.
 		 */
 
 		if (Tcl_DictObjFirst(interp, objv[1], &search,
-			&subcmdObj, &listObj, &done) != TCL_OK) {
+			&subcmdWordsObj, &listObj, &done) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -262,9 +262,10 @@ TclNamespaceEnsembleCmd(
 			if (patchedDict == NULL) {
 			    patchedDict = Tcl_DuplicateObj(objv[1]);
 			}
-			Tcl_DictObjPut(NULL, patchedDict, subcmdObj, newList);
+			Tcl_DictObjPut(NULL, patchedDict, subcmdWordsObj,
+				newList);
 		    }
-		    Tcl_DictObjNext(&search, &subcmdObj, &listObj, &done);
+		    Tcl_DictObjNext(&search, &subcmdWordsObj,&listObj, &done);
 		} while (!done);
 
 		if (allocatedMapFlag) {
@@ -492,7 +493,7 @@ TclNamespaceEnsembleCmd(
 		    paramObj = (len > 0 ? objv[1] : NULL);
 		    continue;
 		case CONF_MAP: {
-		    Tcl_Obj *patchedDict = NULL, *subcmdObj, **listv;
+		    Tcl_Obj *patchedDict = NULL, *subcmdWordsObj, **listv;
 		    const char *cmd;
 
 		    /*
@@ -500,7 +501,7 @@ TclNamespaceEnsembleCmd(
 		     */
 
 		    if (Tcl_DictObjFirst(interp, objv[1], &search,
-			    &subcmdObj, &listObj, &done) != TCL_OK) {
+			    &subcmdWordsObj, &listObj, &done) != TCL_OK) {
 			goto freeMapAndError;
 		    }
 		    if (done) {
@@ -539,10 +540,11 @@ TclNamespaceEnsembleCmd(
 			    if (patchedDict == NULL) {
 				patchedDict = Tcl_DuplicateObj(objv[1]);
 			    }
-			    Tcl_DictObjPut(NULL, patchedDict, subcmdObj,
+			    Tcl_DictObjPut(NULL, patchedDict, subcmdWordsObj,
 				    newList);
 			}
-			Tcl_DictObjNext(&search, &subcmdObj, &listObj, &done);
+			Tcl_DictObjNext(&search, &subcmdWordsObj, &listObj,
+				&done);
 		    } while (!done);
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
@@ -864,14 +866,14 @@ Tcl_SetEnsembleMappingDict(
 
 	for (Tcl_DictObjFirst(NULL, mapDict, &search, NULL, &valuePtr, &done);
 		!done; Tcl_DictObjNext(&search, NULL, &valuePtr, &done)) {
-	    Tcl_Obj *cmdPtr;
+	    Tcl_Obj *cmdObjPtr;
 	    const char *bytes;
 
-	    if (Tcl_ListObjIndex(interp, valuePtr, 0, &cmdPtr) != TCL_OK) {
+	    if (Tcl_ListObjIndex(interp, valuePtr, 0, &cmdObjPtr) != TCL_OK) {
 		Tcl_DictObjDone(&search);
 		return TCL_ERROR;
 	    }
-	    bytes = TclGetString(cmdPtr);
+	    bytes = TclGetString(cmdObjPtr);
 	    if (bytes[0] != ':' || bytes[1] != ':') {
 		Tcl_AppendResult(interp,
 			"ensemble target is not a fully-qualified command",
@@ -2269,8 +2271,6 @@ BuildEnsembleConfig(
 	/*
 	 * Remove pre-existing table.
 	 */
-
-	Tcl_HashSearch search;
 
 	ckfree((char *) ensemblePtr->subcommandArrayPtr);
 	hPtr = Tcl_FirstHashEntry(hash, &search);

@@ -845,7 +845,6 @@ TclCleanupByteCode(
 
 	if (hePtr) {
 	    ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
-	    int i;
 
 	    if (eclPtr->type == TCL_LOCATION_SOURCE) {
 		Tcl_DecrRefCount(eclPtr->path);

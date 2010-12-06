@@ -1043,12 +1043,12 @@ TclOODefineClassObjCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    if (oPtr == fPtr->objectCls->thisPtr) {
+    if (oPtr->flags & ROOT_OBJECT) {
 	Tcl_AppendResult(interp,
-		"may not modify the class of the root object", NULL);
+		"may not modify the class of the root object class", NULL);
 	return TCL_ERROR;
     }
-    if (oPtr == fPtr->classCls->thisPtr) {
+    if (oPtr->flags & ROOT_CLASS) {
 	Tcl_AppendResult(interp,
 		"may not modify the class of the class of classes", NULL);
 	return TCL_ERROR;
@@ -1657,7 +1657,6 @@ TclOODefineSuperclassObjCmd(
     Tcl_Obj *const *objv)
 {
     Object *oPtr;
-    Foundation *fPtr = TclOOGetFoundation(interp);
     Class **superclasses, *superPtr;
     int i, j;
 
@@ -1679,7 +1678,7 @@ TclOODefineSuperclassObjCmd(
 		NULL);
 	return TCL_ERROR;
     }
-    if (oPtr == fPtr->objectCls->thisPtr) {
+    if (oPtr->flags & ROOT_OBJECT) {
 	Tcl_AppendResult(interp,
 		"may not modify the superclass of the root object", NULL);
 	return TCL_ERROR;

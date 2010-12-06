@@ -443,9 +443,9 @@ Tcl_LoadObjCmd(
 
 	Tcl_MutexLock(&packageMutex);
 	if (Tcl_IsSafe(target)) {
-	    ++pkgPtr->safeInterpRefCount;
+	    pkgPtr->safeInterpRefCount++;
 	} else {
-	    ++pkgPtr->interpRefCount;
+	    pkgPtr->interpRefCount++;
 	}
 	Tcl_MutexUnlock(&packageMutex);
 
@@ -725,9 +725,9 @@ Tcl_UnloadObjCmd(
 	Tcl_MutexUnlock(&packageMutex);
 
 	if (Tcl_IsSafe(target)) {
-	    --safeRefCount;
+	    safeRefCount--;
 	} else {
-	    --trustedRefCount;
+	    trustedRefCount--;
 	}
 
 	if (safeRefCount <= 0 && trustedRefCount <= 0) {
@@ -747,7 +747,7 @@ Tcl_UnloadObjCmd(
 
     Tcl_MutexLock(&packageMutex);
     if (Tcl_IsSafe(target)) {
-	--pkgPtr->safeInterpRefCount;
+	pkgPtr->safeInterpRefCount--;
 
 	/*
 	 * Do not let counter get negative.
@@ -757,7 +757,7 @@ Tcl_UnloadObjCmd(
 	    pkgPtr->safeInterpRefCount = 0;
 	}
     } else {
-	--pkgPtr->interpRefCount;
+	pkgPtr->interpRefCount--;
 
 	/*
 	 * Do not let counter get negative.

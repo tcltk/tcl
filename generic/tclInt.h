@@ -2682,7 +2682,8 @@ MODULE_SCOPE char	tclEmptyString;
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE void       TclAdvanceContinuations(int *line, int **next, int loc);
+MODULE_SCOPE void       TclAdvanceContinuations(int *line, int **next,
+			    int loc);
 MODULE_SCOPE void       TclAdvanceLines(int *line, const char *start,
 			    const char *end);
 MODULE_SCOPE void       TclArgumentEnter(Tcl_Interp* interp,
@@ -2703,16 +2704,17 @@ MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
 			    int ptnLen, int flags);
 MODULE_SCOPE double	TclCeil(const mp_int *a);
-MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp, const char *value);
+MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,
+			    const char *value);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
-MODULE_SCOPE ContLineLoc* TclContinuationsEnter(Tcl_Obj *objPtr, int num,
+MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, int num,
 			   int *loc);
 MODULE_SCOPE void         TclContinuationsEnterDerived(Tcl_Obj *objPtr,
 			      int start, int *clNext);
-MODULE_SCOPE ContLineLoc* TclContinuationsGet(Tcl_Obj *objPtr);
+MODULE_SCOPE ContLineLoc *TclContinuationsGet(Tcl_Obj *objPtr);
 MODULE_SCOPE void         TclContinuationsCopy(Tcl_Obj *objPtr,
 			      Tcl_Obj *originObjPtr);
 MODULE_SCOPE int	TclDoubleDigits(char *buf, double value, int *signum);
@@ -2832,7 +2834,7 @@ MODULE_SCOPE int	TclMarkList(Tcl_Interp *interp, const char *list,
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
-MODULE_SCOPE int	TclNokia770Doubles();
+MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
@@ -3374,6 +3376,9 @@ MODULE_SCOPE int	TclCompileSubstCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileSwitchCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileThrowCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileTryCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
@@ -3742,21 +3747,25 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 #endif
 
-#  define TclAllocObjStorageEx(interp, objPtr)	\
-	Tcl_MutexLock(&tclObjMutex); \
-	if (tclFreeObjList == NULL) { \
-	    TclAllocateFreeObjects(); \
-	} \
-	(objPtr) = tclFreeObjList; \
-	tclFreeObjList = (Tcl_Obj *) \
-		tclFreeObjList->internalRep.otherValuePtr; \
-	Tcl_MutexUnlock(&tclObjMutex)
+#  define TclAllocObjStorageEx(interp, objPtr) \
+    do {								\
+	Tcl_MutexLock(&tclObjMutex);					\
+	if (tclFreeObjList == NULL) {					\
+	    TclAllocateFreeObjects();					\
+	}								\
+	(objPtr) = tclFreeObjList;					\
+	tclFreeObjList = (Tcl_Obj *)					\
+		tclFreeObjList->internalRep.otherValuePtr;		\
+	Tcl_MutexUnlock(&tclObjMutex);					\
+    } while (0)
 
-#  define TclFreeObjStorageEx(interp, objPtr)	\
-	Tcl_MutexLock(&tclObjMutex); \
+#  define TclFreeObjStorageEx(interp, objPtr) \
+    do {							       \
+	Tcl_MutexLock(&tclObjMutex);				       \
 	(objPtr)->internalRep.otherValuePtr = (void *) tclFreeObjList; \
-	tclFreeObjList = (objPtr); \
-	Tcl_MutexUnlock(&tclObjMutex)
+	tclFreeObjList = (objPtr);				       \
+	Tcl_MutexUnlock(&tclObjMutex);				       \
+    } while (0)
 #endif
 
 #else /* TCL_MEM_DEBUG */
@@ -3764,10 +3773,13 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 			    int line);
 
 # define TclDbNewObj(objPtr, file, line) \
-    TclIncrObjsAllocated(); \
-    (objPtr) = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line)); \
-    TclDbInitNewObj((objPtr), (file), (line)); \
-    TCL_DTRACE_OBJ_CREATE(objPtr)
+    do { \
+	TclIncrObjsAllocated();						\
+	(objPtr) = (Tcl_Obj *)						\
+		Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line));		\
+	TclDbInitNewObj((objPtr), (file), (line));			\
+	TCL_DTRACE_OBJ_CREATE(objPtr);					\
+    } while (0)
 
 # define TclNewObj(objPtr) \
     TclDbNewObj(objPtr, __FILE__, __LINE__);
@@ -3878,40 +3890,40 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TCL_MAX_TOKENS (int)(UINT_MAX / sizeof(Tcl_Token))
 #define TCL_MIN_TOKEN_GROWTH 50
 #define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)	\
-{									\
-    int needed = (used) + (append);					\
-    if (needed > TCL_MAX_TOKENS) {					\
-	Tcl_Panic("max # of tokens for a Tcl parse (%d) exceeded",	\
-		TCL_MAX_TOKENS);					\
-    }									\
-    if (needed > (available)) {						\
-	int allocated = 2 * needed;					\
-	Tcl_Token *oldPtr = (tokenPtr);					\
-	Tcl_Token *newPtr;						\
-	if (oldPtr == (staticPtr)) {					\
-	    oldPtr = NULL;						\
+    do {								\
+	int needed = (used) + (append);					\
+	if (needed > TCL_MAX_TOKENS) {					\
+	    Tcl_Panic("max # of tokens for a Tcl parse (%d) exceeded",	\
+		    TCL_MAX_TOKENS);					\
 	}								\
-	if (allocated > TCL_MAX_TOKENS) {				\
-	    allocated = TCL_MAX_TOKENS;					\
-	}								\
-	newPtr = (Tcl_Token *) attemptckrealloc((char *) oldPtr,	\
-		(unsigned int) (allocated * sizeof(Tcl_Token)));	\
-	if (newPtr == NULL) {						\
-	    allocated = needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
+	if (needed > (available)) {					\
+	    int allocated = 2 * needed;					\
+	    Tcl_Token *oldPtr = (tokenPtr);				\
+	    Tcl_Token *newPtr;						\
+	    if (oldPtr == (staticPtr)) {				\
+		oldPtr = NULL;						\
+	    }								\
 	    if (allocated > TCL_MAX_TOKENS) {				\
 		allocated = TCL_MAX_TOKENS;				\
 	    }								\
-	    newPtr = (Tcl_Token *) ckrealloc((char *) oldPtr,		\
+	    newPtr = (Tcl_Token *) attemptckrealloc((char *) oldPtr,	\
 		    (unsigned int) (allocated * sizeof(Tcl_Token)));	\
+	    if (newPtr == NULL) {					\
+		allocated = needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
+		if (allocated > TCL_MAX_TOKENS) {			\
+		    allocated = TCL_MAX_TOKENS;				\
+		}							\
+		newPtr = (Tcl_Token *) ckrealloc((char *) oldPtr,	\
+			(unsigned int) (allocated * sizeof(Tcl_Token))); \
+	    }								\
+	    (available) = allocated;					\
+	    if (oldPtr == NULL) {					\
+		memcpy(newPtr, staticPtr,				\
+			(size_t) ((used) * sizeof(Tcl_Token)));		\
+	    }								\
+	    (tokenPtr) = newPtr;					\
 	}								\
-	(available) = allocated;					\
-	if (oldPtr == NULL) {						\
-	    memcpy(newPtr, staticPtr,					\
-		    (size_t) ((used) * sizeof(Tcl_Token)));		\
-	}								\
-	(tokenPtr) = newPtr;						\
-    }									\
-}
+    } while (0)
 
 #define TclGrowParseTokenArray(parsePtr, append)			\
     TclGrowTokenArray((parsePtr)->tokenPtr, (parsePtr)->numTokens,	\
@@ -4005,8 +4017,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateNsCmdLookup(nsPtr) \
-    if ((nsPtr)->numExportPatterns) { \
-	(nsPtr)->exportLookupEpoch++; \
+    if ((nsPtr)->numExportPatterns) {	\
+	(nsPtr)->exportLookupEpoch++;	\
     }
 
 /*
@@ -4063,7 +4075,8 @@ MODULE_SCOPE int	Procbodytest_SafeInit(Tcl_Interp *interp);
  *----------------------------------------------------------------
  */
 
-#define TclMatchIsTrivial(pattern)	strpbrk((pattern), "*[?\\") == NULL
+#define TclMatchIsTrivial(pattern) \
+    (strpbrk((pattern), "*[?\\") == NULL)
 
 /*
  *----------------------------------------------------------------
@@ -4074,7 +4087,8 @@ MODULE_SCOPE int	Procbodytest_SafeInit(Tcl_Interp *interp);
  *----------------------------------------------------------------
  */
 
-#define TclFormatInt(buf, n)		sprintf((buf), "%ld", (long)(n))
+#define TclFormatInt(buf, n) \
+    sprintf((buf), "%ld", (long)(n))
 
 /*
  *----------------------------------------------------------------
@@ -4092,10 +4106,12 @@ MODULE_SCOPE int	Procbodytest_SafeInit(Tcl_Interp *interp);
  */
 
 #define TclSetIntObj(objPtr, i) \
-    TclInvalidateStringRep(objPtr);\
-    TclFreeIntRep(objPtr); \
-    (objPtr)->internalRep.longValue = (long)(i); \
-    (objPtr)->typePtr = &tclIntType
+    do {						\
+	TclInvalidateStringRep(objPtr);			\
+	TclFreeIntRep(objPtr);				\
+	(objPtr)->internalRep.longValue = (long)(i);	\
+	(objPtr)->typePtr = &tclIntType;		\
+    } while (0)
 
 #define TclSetLongObj(objPtr, l) \
     TclSetIntObj((objPtr), (l))
@@ -4112,17 +4128,21 @@ MODULE_SCOPE int	Procbodytest_SafeInit(Tcl_Interp *interp);
 
 #ifndef NO_WIDE_TYPE
 #define TclSetWideIntObj(objPtr, w) \
-    TclInvalidateStringRep(objPtr);\
-    TclFreeIntRep(objPtr); \
-    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w); \
-    (objPtr)->typePtr = &tclWideIntType
+    do {							\
+	TclInvalidateStringRep(objPtr);				\
+	TclFreeIntRep(objPtr);					\
+	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(w);	\
+	(objPtr)->typePtr = &tclWideIntType;			\
+    } while (0)
 #endif
 
 #define TclSetDoubleObj(objPtr, d) \
-    TclInvalidateStringRep(objPtr);\
-    TclFreeIntRep(objPtr); \
-    (objPtr)->internalRep.doubleValue = (double)(d); \
-    (objPtr)->typePtr = &tclDoubleType
+    do {							\
+	TclInvalidateStringRep(objPtr);				\
+	TclFreeIntRep(objPtr);					\
+	(objPtr)->internalRep.doubleValue = (double)(d);	\
+	(objPtr)->typePtr = &tclDoubleType;			\
+    } while (0)
 
 /*
  *----------------------------------------------------------------
@@ -4143,13 +4163,15 @@ MODULE_SCOPE int	Procbodytest_SafeInit(Tcl_Interp *interp);
 
 #ifndef TCL_MEM_DEBUG
 #define TclNewIntObj(objPtr, i) \
-    TclIncrObjsAllocated(); \
-    TclAllocObjStorage(objPtr); \
-    (objPtr)->refCount = 0; \
-    (objPtr)->bytes = NULL; \
-    (objPtr)->internalRep.longValue = (long)(i); \
-    (objPtr)->typePtr = &tclIntType; \
-    TCL_DTRACE_OBJ_CREATE(objPtr)
+    do {						\
+	TclIncrObjsAllocated();				\
+	TclAllocObjStorage(objPtr);			\
+	(objPtr)->refCount = 0;				\
+	(objPtr)->bytes = NULL;				\
+	(objPtr)->internalRep.longValue = (long)(i);	\
+	(objPtr)->typePtr = &tclIntType;		\
+	TCL_DTRACE_OBJ_CREATE(objPtr);			\
+    } while (0)
 
 #define TclNewLongObj(objPtr, l) \
     TclNewIntObj((objPtr), (l))
@@ -4162,21 +4184,25 @@ MODULE_SCOPE int	Procbodytest_SafeInit(Tcl_Interp *interp);
     TclNewIntObj((objPtr), ((b)? 1 : 0))
 
 #define TclNewDoubleObj(objPtr, d) \
-    TclIncrObjsAllocated(); \
-    TclAllocObjStorage(objPtr); \
-    (objPtr)->refCount = 0; \
-    (objPtr)->bytes = NULL; \
-    (objPtr)->internalRep.doubleValue = (double)(d); \
-    (objPtr)->typePtr = &tclDoubleType; \
-    TCL_DTRACE_OBJ_CREATE(objPtr)
+    do {							\
+	TclIncrObjsAllocated();					\
+	TclAllocObjStorage(objPtr);				\
+	(objPtr)->refCount = 0;					\
+	(objPtr)->bytes = NULL;					\
+	(objPtr)->internalRep.doubleValue = (double)(d);	\
+	(objPtr)->typePtr = &tclDoubleType;			\
+	TCL_DTRACE_OBJ_CREATE(objPtr);				\
+    } while (0)
 
 #define TclNewStringObj(objPtr, s, len) \
-    TclIncrObjsAllocated(); \
-    TclAllocObjStorage(objPtr); \
-    (objPtr)->refCount = 0; \
-    TclInitStringRep((objPtr), (s), (len));\
-    (objPtr)->typePtr = NULL; \
-    TCL_DTRACE_OBJ_CREATE(objPtr)
+    do {							\
+	TclIncrObjsAllocated();					\
+	TclAllocObjStorage(objPtr);				\
+	(objPtr)->refCount = 0;					\
+	TclInitStringRep((objPtr), (s), (len));			\
+	(objPtr)->typePtr = NULL;				\
+	TCL_DTRACE_OBJ_CREATE(objPtr);				\
+    } while (0)
 
 #else /* TCL_MEM_DEBUG */
 #define TclNewIntObj(objPtr, i) \

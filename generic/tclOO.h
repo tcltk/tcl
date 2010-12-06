@@ -51,13 +51,13 @@ typedef struct Tcl_ObjectContext_ *Tcl_ObjectContext;
  * and to allow the attachment of arbitrary data to objects and classes.
  */
 
-typedef int (*Tcl_MethodCallProc)(ClientData clientData, Tcl_Interp *interp,
+typedef int (Tcl_MethodCallProc)(ClientData clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
-typedef void (*Tcl_MethodDeleteProc)(ClientData clientData);
-typedef int (*Tcl_CloneProc)(Tcl_Interp *interp, ClientData oldClientData,
+typedef void (Tcl_MethodDeleteProc)(ClientData clientData);
+typedef int (Tcl_CloneProc)(Tcl_Interp *interp, ClientData oldClientData,
 	ClientData *newClientData);
-typedef void (*Tcl_ObjectMetadataDeleteProc)(ClientData clientData);
-typedef int (*Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
+typedef void (Tcl_ObjectMetadataDeleteProc)(ClientData clientData);
+typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
 	Tcl_Object object, Tcl_Class *startClsPtr, Tcl_Obj *methodNameObj);
 
 /*
@@ -72,12 +72,13 @@ typedef struct {
 				 * declarations. */
     const char *name;		/* Name of this type of method, mostly for
 				 * debugging purposes. */
-    Tcl_MethodCallProc callProc;/* How to invoke this method. */
-    Tcl_MethodDeleteProc deleteProc;
+    Tcl_MethodCallProc *callProc;
+				/* How to invoke this method. */
+    Tcl_MethodDeleteProc *deleteProc;
 				/* How to delete this method's type-specific
 				 * data, or NULL if the type-specific data
 				 * does not need deleting. */
-    Tcl_CloneProc cloneProc;	/* How to copy this method's type-specific
+    Tcl_CloneProc *cloneProc;	/* How to copy this method's type-specific
 				 * data, or NULL if the type-specific data can
 				 * be copied directly. */
 } Tcl_MethodType;
@@ -101,10 +102,10 @@ typedef struct {
 				 * to TCL_OO_METADATA_VERSION_CURRENT in
 				 * declarations. */
     const char *name;
-    Tcl_ObjectMetadataDeleteProc deleteProc;
+    Tcl_ObjectMetadataDeleteProc *deleteProc;
 				/* How to delete the metadata. This must not
 				 * be NULL. */
-    Tcl_CloneProc cloneProc;	/* How to copy the metadata, or NULL if the
+    Tcl_CloneProc *cloneProc;	/* How to copy the metadata, or NULL if the
 				 * type-specific data can be copied
 				 * directly. */
 } Tcl_ObjectMetadataType;

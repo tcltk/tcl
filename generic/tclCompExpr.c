@@ -1477,7 +1477,7 @@ ConvertTreeToTokens(
 
 	    /* Skip any white space that comes before the literal */
 	    scanned = TclParseAllWhiteSpace(start, numBytes);
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 
 	    /*
@@ -1498,7 +1498,7 @@ ConvertTreeToTokens(
 	    subExprTokenPtr[1].numComponents = 0;
 
 	    parsePtr->numTokens += 2;
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 	    break;
 
@@ -1550,7 +1550,7 @@ ConvertTreeToTokens(
 	    }
 
 	    scanned = tokenPtr->start + tokenPtr->size - start;
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 	    tokenPtr += toCopy;
 	    break;
@@ -1566,7 +1566,7 @@ ConvertTreeToTokens(
 	     */
 
 	    scanned = TclParseAllWhiteSpace(start, numBytes);
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 
 	    /*
@@ -1641,7 +1641,7 @@ ConvertTreeToTokens(
 
 	    /* Skip any white space that comes before the operator */
 	    scanned = TclParseAllWhiteSpace(start, numBytes);
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 
 	    /*
@@ -1672,7 +1672,7 @@ ConvertTreeToTokens(
 		break;
 	    }
 
-	    start +=scanned;
+	    start += scanned;
 	    numBytes -= scanned;
 	    break;
 
@@ -1693,10 +1693,10 @@ ConvertTreeToTokens(
 
 		/* Skip past matching close paren. */
 		scanned = TclParseAllWhiteSpace(start, numBytes);
-		start +=scanned;
+		start += scanned;
 		numBytes -= scanned;
 		scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
-		start +=scanned;
+		start += scanned;
 		numBytes -= scanned;
 		break;
 

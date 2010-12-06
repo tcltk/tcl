@@ -4028,9 +4028,9 @@ PushVarName(
 	     */
 
 	    if (varTokenPtr[n].size == 1) {
-		--n;
+		n--;
 	    } else {
-		--varTokenPtr[n].size;
+		varTokenPtr[n].size--;
 		removedParen = n;
 	    }
 
@@ -4131,7 +4131,7 @@ PushVarName(
     }
 
     if (removedParen) {
-	++varTokenPtr[removedParen].size;
+	varTokenPtr[removedParen].size++;
     }
     if (allocedTokens) {
 	TclStackFree(interp, elemTokenPtr);

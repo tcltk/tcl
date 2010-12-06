@@ -1608,13 +1608,12 @@ DoImport(
 	cmdPtr = Tcl_GetHashValue(hPtr);
 	if (found != NULL && cmdPtr->deleteProc == DeleteImportedCmd) {
 	    Command *overwrite = Tcl_GetHashValue(found);
-	    Command *link = cmdPtr;
+	    Command *linkCmd = cmdPtr;
 
-	    while (link->deleteProc == DeleteImportedCmd) {
-		ImportedCmdData *dataPtr = link->objClientData;
-
-		link = dataPtr->realCmdPtr;
-		if (overwrite == link) {
+	    while (linkCmd->deleteProc == DeleteImportedCmd) {
+		dataPtr = linkCmd->objClientData;
+		linkCmd = dataPtr->realCmdPtr;
+		if (overwrite == linkCmd) {
 		    Tcl_AppendResult(interp, "import pattern \"", pattern,
 			    "\" would create a loop containing command \"",
 			    Tcl_DStringValue(&ds), "\"", NULL);

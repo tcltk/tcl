@@ -2445,7 +2445,7 @@ UnsetVarStruct(
 
     if (traced) {
 	VarTrace *tracePtr = NULL;
-	Tcl_HashEntry *tPtr = NULL;
+	Tcl_HashEntry *tPtr;
 
 	if (TclIsVarTraced(&dummyVar)) {
 	    /*
@@ -2454,9 +2454,8 @@ UnsetVarStruct(
 	     */
 
 	    int isNew;
-	    Tcl_HashEntry *tPtr =
-		    Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
 
+	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
 	    tracePtr = Tcl_GetHashValue(tPtr);
 	    varPtr->flags &= ~VAR_ALL_TRACES;
 	    Tcl_DeleteHashEntry(tPtr);
@@ -2464,8 +2463,6 @@ UnsetVarStruct(
 		tPtr = Tcl_CreateHashEntry(&iPtr->varTraces,
 			(char *) &dummyVar, &isNew);
 		Tcl_SetHashValue(tPtr, tracePtr);
-	    } else {
-		tPtr = NULL;
 	    }
 	}
 
@@ -2484,12 +2481,12 @@ UnsetVarStruct(
 
 	    tracePtr = NULL;
 	    if (TclIsVarTraced(&dummyVar)) {
-		tPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) &dummyVar);
+		tPtr = Tcl_FindHashEntry(&iPtr->varTraces,
+			(char *) &dummyVar);
 		tracePtr = Tcl_GetHashValue(tPtr);
-	    }
-
-	    if (tPtr) {
-		Tcl_DeleteHashEntry(tPtr);
+		if (tPtr) {
+		    Tcl_DeleteHashEntry(tPtr);
+		}
 	    }
 	}
 

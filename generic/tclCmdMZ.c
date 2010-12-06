@@ -1059,7 +1059,8 @@ Tcl_SplitObjCmd(
 	     * Assume Tcl_UniChar is an integral type...
 	     */
 
-	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
+	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR((int) ch),
+		    &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
 
@@ -2505,7 +2506,7 @@ StringEqualCmd(
 	    if (i+1 >= objc-2) {
 		goto str_cmp_args;
 	    }
-	    ++i;
+	    i++;
 	    if (TclGetIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -2652,7 +2653,7 @@ StringCmpCmd(
 	    if (i+1 >= objc-2) {
 		goto str_cmp_args;
 	    }
-	    ++i;
+	    i++;
 	    if (TclGetIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }

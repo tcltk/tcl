@@ -112,7 +112,7 @@ EXTERN int		Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
 				Tcl_ObjectContext context, int objc,
 				Tcl_Obj *const *objv, int skip);
 /* 24 */
-EXTERN Tcl_ObjectMapMethodNameProc Tcl_ObjectGetMethodNameMapper(
+EXTERN Tcl_ObjectMapMethodNameProc * Tcl_ObjectGetMethodNameMapper(
 				Tcl_Object object);
 /* 25 */
 EXTERN void		Tcl_ObjectSetMethodNameMapper(Tcl_Object object,
@@ -159,8 +159,8 @@ typedef struct TclOOStubs {
     ClientData (*tcl_ObjectGetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType *typePtr); /* 21 */
     void (*tcl_ObjectSetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType *typePtr, ClientData metadata); /* 22 */
     int (*tcl_ObjectContextInvokeNext) (Tcl_Interp *interp, Tcl_ObjectContext context, int objc, Tcl_Obj *const *objv, int skip); /* 23 */
-    Tcl_ObjectMapMethodNameProc (*tcl_ObjectGetMethodNameMapper) (Tcl_Object object); /* 24 */
-    void (*tcl_ObjectSetMethodNameMapper) (Tcl_Object object, Tcl_ObjectMapMethodNameProc mapMethodNameProc); /* 25 */
+    Tcl_ObjectMapMethodNameProc * (*tcl_ObjectGetMethodNameMapper) (Tcl_Object object); /* 24 */
+    void (*tcl_ObjectSetMethodNameMapper) (Tcl_Object object, Tcl_ObjectMapMethodNameProc *mapMethodNameProc); /* 25 */
     void (*tcl_ClassSetConstructor) (Tcl_Interp *interp, Tcl_Class clazz, Tcl_Method method); /* 26 */
     void (*tcl_ClassSetDestructor) (Tcl_Interp *interp, Tcl_Class clazz, Tcl_Method method); /* 27 */
     Tcl_Obj * (*tcl_GetObjectName) (Tcl_Interp *interp, Tcl_Object object); /* 28 */
