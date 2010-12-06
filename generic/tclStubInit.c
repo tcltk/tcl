@@ -14,6 +14,12 @@
 #include "tclInt.h"
 #include "tommath.h"
 
+#ifdef __GNUC__
+#pragma GCC dependency "tcl.decls"
+#pragma GCC dependency "tclInt.decls"
+#pragma GCC dependency "tclTomMath.decls"
+#endif
+
 /*
  * Remove macros that will interfere with the definitions below.
  */
@@ -54,7 +60,7 @@ static const TclIntStubs tclIntStubs = {
     TclCleanupChildren, /* 5 */
     TclCleanupCommand, /* 6 */
     TclCopyAndCollapse, /* 7 */
-    TclCopyChannel, /* 8 */
+    TclCopyChannelOld, /* 8 */
     TclCreatePipeline, /* 9 */
     TclCreateProc, /* 10 */
     TclDeleteCompiledLocalVars, /* 11 */
@@ -294,6 +300,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetNamespaceCommandTable, /* 245 */
     TclInitRewriteEnsemble, /* 246 */
     TclResetRewriteEnsemble, /* 247 */
+    TclCopyChannel, /* 248 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -1109,6 +1116,11 @@ const TclStubs tclStubs = {
     Tcl_SetStartupScript, /* 622 */
     Tcl_GetStartupScript, /* 623 */
     Tcl_CloseEx, /* 624 */
+    0, /* 625 */
+    0, /* 626 */
+    Tcl_LoadFile, /* 627 */
+    Tcl_FindSymbol, /* 628 */
+    Tcl_FSUnloadFile, /* 629 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -644,7 +644,21 @@ TclCompileSubstCmd(
     TclSubstParse(interp, /*toSubst,*/ wordTokenPtr[1].start,
 	    wordTokenPtr[1].size, flags, &parse, &state);
 
-    for (tokenPtr = parse.tokenPtr, endTokenPtr = tokenPtr + parse.numTokens;
+    /*
+     * Tricky point! If the first token does not result in a *guaranteed* push
+     * of a Tcl_Obj on the stack, we must push an empty object. Otherwise it
+     * is possible to get to an INST_CONCAT1 or INST_DONE without enough
+     * values on the stack, resulting in a crash. Thanks to Joe Mistachkin for
+     * identifying a script that could trigger this case.
+     */
+
+    tokenPtr = parse.tokenPtr;
+    if (tokenPtr->type != TCL_TOKEN_TEXT && tokenPtr->type != TCL_TOKEN_BS) {
+	PushLiteral(envPtr, "", 0);
+	count++;
+    }
+
+    for (endTokenPtr = tokenPtr + parse.numTokens;
 	    tokenPtr < endTokenPtr; tokenPtr = TokenAfter(tokenPtr)) {
 	int length, literal, catchRange, breakJump;
 	char buf[TCL_UTF_MAX];
@@ -775,7 +789,11 @@ TclCompileSubstCmd(
 	    Tcl_Panic("TclCompileSubstCmd: bad other jump distance %d",
 		    CurrentOffset(envPtr) - otherFixup.codeOffset);
 	}
-	/* Pull the result to top of stack, discard options dict */
+
+	/*
+	 * Pull the result to top of stack, discard options dict.
+	 */
+
 	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
 	TclEmitOpcode(INST_POP, envPtr);
 
@@ -787,6 +805,7 @@ TclCompileSubstCmd(
 	 * through them all.  So, we now have a stack requirements estimate
 	 * that is too low.  Here we manually fix that up.
 	 */
+
 	TclAdjustStackDepth(5, envPtr);
 
 	/* OK destination */
@@ -1980,9 +1999,6 @@ TclCompileTryCmd(
 	    } else if (tokenPtr[1].size == 2
 		    && !strncmp(tokenPtr[1].start, "on", 2)) {
 		int code;
-		static const char *codes[] = {
-		    "ok", "error", "return", "break", "continue", NULL
-		};
 
 		/*
 		 * Parse the result code to look for.
@@ -1995,9 +2011,7 @@ TclCompileTryCmd(
 		    TclDecrRefCount(tmpObj);
 		    goto failedToCompile;
 		}
-		if (Tcl_GetIntFromObj(NULL, tmpObj, &code) != TCL_OK
-			&& Tcl_GetIndexFromObj(NULL, tmpObj, codes, "",
-				TCL_EXACT, &code) != TCL_OK) {
+		if (TCL_ERROR == TclGetCompletionCodeFromObj(NULL, tmpObj, &code)) {
 		    TclDecrRefCount(tmpObj);
 		    goto failedToCompile;
 		}

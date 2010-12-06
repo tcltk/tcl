@@ -4876,6 +4876,45 @@ Tcl_LogCommandInfo(
 		    TCL_GLOBAL_ONLY);
 	}
     }
+
+    /*
+     * TIP #348
+     */
+
+    if (Tcl_IsShared(iPtr->errorStack)) {
+        Tcl_Obj *newObj;
+            
+        newObj = Tcl_DuplicateObj(iPtr->errorStack);
+        Tcl_DecrRefCount(iPtr->errorStack);
+        Tcl_IncrRefCount(newObj);
+        iPtr->errorStack = newObj;
+    }
+    if (iPtr->resetErrorStack) {
+	int len;
+
+        iPtr->resetErrorStack = 0;
+	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+        /* reset while keeping the list intrep as much as possible */
+        Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
+    } 
+
+    if (iPtr->varFramePtr != iPtr->framePtr) {
+        /* uplevel case, [lappend errorstack UP $relativelevel] */
+        struct CallFrame *frame;
+        int n;
+
+        for (n=0, frame=iPtr->framePtr;
+		(frame && (frame != iPtr->varFramePtr));
+		n++, frame=frame->callerVarPtr);
+        Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
+        Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(n));
+    } else if (iPtr->framePtr != iPtr->rootFramePtr) {
+        /* normal case, [lappend errorstack CALL [info level 0]] */
+        Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->callLiteral);
+        Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
+                                 Tcl_NewListObj(iPtr->varFramePtr->objc,
+                                                iPtr->varFramePtr->objv));
+    }
 }
 
 /*
@@ -4883,5 +4922,7 @@ Tcl_LogCommandInfo(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */

@@ -57,11 +57,6 @@ typedef struct LoadedPackage {
 				 * in trusted interpreters. */
     int safeInterpRefCount;	/* How many times the package has been loaded
 				 * in safe interpreters. */
-    Tcl_FSUnloadFileProc *unLoadProcPtr;
-				/* Function to use to unload this package. If
-				 * NULL, then we do not attempt to unload the
-				 * package. If fileName is NULL, then this
-				 * field is irrelevant. */
     struct LoadedPackage *nextPtr;
 				/* Next in list of all packages loaded into
 				 * this application process. NULL means end of
@@ -131,15 +126,12 @@ Tcl_LoadObjCmd(
     LoadedPackage *pkgPtr, *defaultPtr;
     Tcl_DString pkgName, tmp, initName, safeInitName;
     Tcl_DString unloadName, safeUnloadName;
-    Tcl_PackageInitProc *initProc, *safeInitProc, *unloadProc, *safeUnloadProc;
     InterpPackage *ipFirstPtr, *ipPtr;
     int code, namesMatch, filesMatch, offset;
-    const char *symbols[4];
-    Tcl_PackageInitProc **procPtrs[4];
-    ClientData clientData;
+    const char *symbols[2];
+    void* procPtrs[1];
     const char *p, *fullFileName, *packageName;
     Tcl_LoadHandle loadHandle;
-    Tcl_FSUnloadFileProc *unLoadProcPtr = NULL;
     Tcl_UniChar ch;
 
     if ((objc < 2) || (objc > 4)) {
@@ -359,30 +351,12 @@ Tcl_LoadObjCmd(
 	 */
 
 	symbols[0] = Tcl_DStringValue(&initName);
-	symbols[1] = Tcl_DStringValue(&safeInitName);
-	symbols[2] = Tcl_DStringValue(&unloadName);
-	symbols[3] = Tcl_DStringValue(&safeUnloadName);
-	procPtrs[0] = &initProc;
-	procPtrs[1] = &safeInitProc;
-	procPtrs[2] = &unloadProc;
-	procPtrs[3] = &safeUnloadProc;
+	symbols[1] = NULL;
 
 	Tcl_MutexLock(&packageMutex);
-	code = TclLoadFile(interp, objv[1], 4, symbols, procPtrs,
-		&loadHandle, &clientData, &unLoadProcPtr);
+	code = Tcl_LoadFile(interp, objv[1], symbols, 0, procPtrs, &loadHandle);
 	Tcl_MutexUnlock(&packageMutex);
-	loadHandle = clientData;
 	if (code != TCL_OK) {
-	    goto done;
-	}
-
-	if (*procPtrs[0] /* initProc */ == NULL) {
-	    Tcl_AppendResult(interp, "couldn't find procedure ",
-		    Tcl_DStringValue(&initName), NULL);
-	    if (unLoadProcPtr != NULL) {
-		unLoadProcPtr(loadHandle);
-	    }
-	    code = TCL_ERROR;
 	    goto done;
 	}
 
@@ -398,11 +372,14 @@ Tcl_LoadObjCmd(
 		ckalloc((unsigned) (Tcl_DStringLength(&pkgName) + 1));
 	strcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName));
 	pkgPtr->loadHandle	   = loadHandle;
-	pkgPtr->unLoadProcPtr	   = unLoadProcPtr;
-	pkgPtr->initProc	   = *procPtrs[0];
-	pkgPtr->safeInitProc	   = *procPtrs[1];
-	pkgPtr->unloadProc	   = (Tcl_PackageUnloadProc *) *procPtrs[2];
-	pkgPtr->safeUnloadProc	   = (Tcl_PackageUnloadProc *) *procPtrs[3];
+	pkgPtr->initProc	   = (Tcl_PackageInitProc*) procPtrs[0];
+	pkgPtr->safeInitProc	   = (Tcl_PackageInitProc*)
+	    Tcl_FindSymbol(interp, loadHandle, Tcl_DStringValue(&safeInitName));
+	pkgPtr->unloadProc	   = (Tcl_PackageUnloadProc*)
+	    Tcl_FindSymbol(interp, loadHandle, Tcl_DStringValue(&unloadName));
+	pkgPtr->safeUnloadProc	   = (Tcl_PackageUnloadProc *) 
+	    Tcl_FindSymbol(interp, loadHandle,
+			   Tcl_DStringValue(&safeUnloadName));
 	pkgPtr->interpRefCount	   = 0;
 	pkgPtr->safeInterpRefCount = 0;
 
@@ -410,6 +387,11 @@ Tcl_LoadObjCmd(
 	pkgPtr->nextPtr		   = firstPackagePtr;
 	firstPackagePtr		   = pkgPtr;
 	Tcl_MutexUnlock(&packageMutex);
+	/*
+	 * The Tcl_FindSymbol calls may have left a spurious error message
+	 * in the interpreter result.
+	 */
+	Tcl_ResetResult(interp);
     }
 
     /*
@@ -787,14 +769,9 @@ Tcl_UnloadObjCmd(
 	 */
 
 	if (pkgPtr->fileName[0] != '\0') {
-	    Tcl_FSUnloadFileProc *unLoadProcPtr = pkgPtr->unLoadProcPtr;
 
-	    if (unLoadProcPtr != NULL) {
 		Tcl_MutexLock(&packageMutex);
-		if ((pkgPtr->unloadProc != NULL) || (unLoadProcPtr == TclFSUnloadTempFile)) {
-		    unLoadProcPtr(pkgPtr->loadHandle);
-		}
-
+	    if (Tcl_FSUnloadFile(interp, pkgPtr->loadHandle) == TCL_OK) {
 		/*
 		 * Remove this library from the loaded library cache.
 		 */
@@ -839,9 +816,6 @@ Tcl_UnloadObjCmd(
 		ckfree((char *) ipPtr);
 		Tcl_MutexUnlock(&packageMutex);
 	    } else {
-		Tcl_AppendResult(interp, "file \"", fullFileName,
-			"\" cannot be unloaded: filesystem does not support unloading",
-			NULL);
 		code = TCL_ERROR;
 	    }
 	}
@@ -1146,12 +1120,7 @@ TclFinalizeLoad(void)
 	 */
 
 	if (pkgPtr->fileName[0] != '\0') {
-	    Tcl_FSUnloadFileProc *unLoadProcPtr = pkgPtr->unLoadProcPtr;
-	    if ((unLoadProcPtr != NULL)
-		    && ((pkgPtr->unloadProc != NULL)
-		    || (unLoadProcPtr == TclFSUnloadTempFile))) {
-		unLoadProcPtr(pkgPtr->loadHandle);
-	    }
+	    Tcl_FSUnloadFile(NULL, pkgPtr->loadHandle);
 	}
 #endif
 

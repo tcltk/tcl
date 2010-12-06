@@ -116,7 +116,7 @@ EXTERN Tcl_ObjectMapMethodNameProc * Tcl_ObjectGetMethodNameMapper(
 				Tcl_Object object);
 /* 25 */
 EXTERN void		Tcl_ObjectSetMethodNameMapper(Tcl_Object object,
-				Tcl_ObjectMapMethodNameProc mapMethodNameProc);
+				Tcl_ObjectMapMethodNameProc *mapMethodNameProc);
 /* 26 */
 EXTERN void		Tcl_ClassSetConstructor(Tcl_Interp *interp,
 				Tcl_Class clazz, Tcl_Method method);

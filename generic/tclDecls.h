@@ -1775,6 +1775,18 @@ EXTERN Tcl_Obj *	Tcl_GetStartupScript(const char **encodingPtr);
 /* 624 */
 EXTERN int		Tcl_CloseEx(Tcl_Interp *interp, Tcl_Channel chan,
 				int flags);
+/* Slot 625 is reserved */
+/* Slot 626 is reserved */
+/* 627 */
+EXTERN int		Tcl_LoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+				const char *const symv[], int flags,
+				void *procPtrs, Tcl_LoadHandle *handlePtr);
+/* 628 */
+EXTERN void*		Tcl_FindSymbol(Tcl_Interp *interp,
+				Tcl_LoadHandle handle, const char *symbol);
+/* 629 */
+EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
+				Tcl_LoadHandle handlePtr);
 
 typedef struct TclStubHooks {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2435,6 +2447,11 @@ typedef struct TclStubs {
     void (*tcl_SetStartupScript) (Tcl_Obj *path, const char *encoding); /* 622 */
     Tcl_Obj * (*tcl_GetStartupScript) (const char **encodingPtr); /* 623 */
     int (*tcl_CloseEx) (Tcl_Interp *interp, Tcl_Channel chan, int flags); /* 624 */
+    void (*reserved625)(void);
+    void (*reserved626)(void);
+    int (*tcl_LoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *const symv[], int flags, void *procPtrs, Tcl_LoadHandle *handlePtr); /* 627 */
+    void* (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
+    int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3711,6 +3728,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetStartupScript) /* 623 */
 #define Tcl_CloseEx \
 	(tclStubsPtr->tcl_CloseEx) /* 624 */
+/* Slot 625 is reserved */
+/* Slot 626 is reserved */
+#define Tcl_LoadFile \
+	(tclStubsPtr->tcl_LoadFile) /* 627 */
+#define Tcl_FindSymbol \
+	(tclStubsPtr->tcl_FindSymbol) /* 628 */
+#define Tcl_FSUnloadFile \
+	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

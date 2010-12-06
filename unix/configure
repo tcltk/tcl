@@ -848,7 +848,7 @@ Optional Features:
                           use STRING as a suffix to manpage file names
                           (default: no, tcl if enabled without
                           specifying STRING)
-  --enable-threads        build with threads (default: off)
+  --enable-threads        build with threads (default: on)
   --enable-shared         build and link with shared libraries (default: on)
   --enable-64bit          enable 64bit support (default: off)
   --enable-64bit-vis      enable 64bit Sparc VIS support (default: off)
@@ -4398,7 +4398,7 @@ if test "${enable_threads+set}" = set; then
   enableval="$enable_threads"
   tcl_ok=$enableval
 else
-  tcl_ok=no
+  tcl_ok=yes
 fi;
 
     if test "${TCL_THREADS}" = 1; then
@@ -4934,8 +4934,8 @@ echo "${ECHO_T}yes (threaded core)" >&6
 echo "${ECHO_T}yes" >&6
 	fi
     else
-	echo "$as_me:$LINENO: result: no (default)" >&5
-echo "${ECHO_T}no (default)" >&6
+	echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
     fi
 
 
@@ -6434,8 +6434,10 @@ if test "${tcl_cv_cc_visibility_hidden+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
-	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fvisibility=hidden -Werror"
-	cat >conftest.$ac_ext <<_ACEOF
+	    if test "$GCC" = yes; then
+
+		hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fvisibility=hidden -Werror"
+		cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -6480,7 +6482,15 @@ sed 's/^/| /' conftest.$ac_ext >&5
 tcl_cv_cc_visibility_hidden=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-	CFLAGS=$hold_cflags
+		CFLAGS=$hold_cflags
+
+else
+
+		tcl_cv_cc_visibility_hidden=no
+
+fi
+
+
 fi
 echo "$as_me:$LINENO: result: $tcl_cv_cc_visibility_hidden" >&5
 echo "${ECHO_T}$tcl_cv_cc_visibility_hidden" >&6
@@ -6489,7 +6499,6 @@ echo "${ECHO_T}$tcl_cv_cc_visibility_hidden" >&6
 	CFLAGS="$CFLAGS -fvisibility=hidden"
 
 else
-
 
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	cat >conftest.$ac_ext <<_ACEOF

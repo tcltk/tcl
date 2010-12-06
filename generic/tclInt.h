@@ -63,7 +63,7 @@ typedef int ptrdiff_t;
 #endif
 
 /*
- * Ensure WORDS_BIGENDIAN is defined correcly:
+ * Ensure WORDS_BIGENDIAN is defined correctly:
  * Needs to happen here in addition to configure to work with fat compiles on
  * Darwin (where configure runs only once for multiple architectures).
  */
@@ -1941,6 +1941,10 @@ typedef struct Interp {
     Tcl_Obj *eiVar;		/* cached ref to ::errorInfo variable. */
     Tcl_Obj *errorCode;		/* errorCode value (now as a Tcl_Obj). */
     Tcl_Obj *ecVar;		/* cached ref to ::errorInfo variable. */
+    Tcl_Obj *errorStack;	/* [info errorstack] value (as a Tcl_Obj). */
+    Tcl_Obj *upLiteral;		/* "UP" literal for [info errorstack] */
+    Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
+    int resetErrorStack;        /* controls cleaning up of ::errorStack */
     int returnLevel;		/* [return -level] parameter. */
 
     /*
@@ -2676,6 +2680,25 @@ MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 MODULE_SCOPE char *	tclEmptyStringRep;
 MODULE_SCOPE char	tclEmptyString;
 
+/* TIP #357 - Structure doing the bookkeeping of handles for Tcl_LoadFile
+ *            and Tcl_FindSymbol. This structure corresponds to an opaque
+ *            typedef in tcl.h */
+
+typedef void* TclFindSymbolProc(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
+				const char* symbol);
+struct Tcl_LoadHandle_ {
+    ClientData clientData;	/* Client data is the load handle in the
+				 * native filesystem if a module was loaded
+				 * there, or an opaque pointer to a structure
+				 * for further bookkeeping on load-from-VFS
+				 * and load-from-memory */
+    TclFindSymbolProc* findSymbolProcPtr;
+				/* Procedure that resolves symbols in a
+				 * loaded module */
+    Tcl_FSUnloadFileProc* unloadFileProcPtr;
+				/* Procedure that unloads a loaded module */
+};
+
 /*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world:
@@ -2767,6 +2790,8 @@ MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
 MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Channel *chanPtr,
 			    int *modePtr, int flags);
+MODULE_SCOPE int TclGetCompletionCodeFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *value, int *code);
 MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, ClientData *clientDataPtr,
 			    int *typePtr);
@@ -2815,12 +2840,6 @@ MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 			    int *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
-MODULE_SCOPE int	TclLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
-			    int symc, const char *symbols[],
-			    Tcl_PackageInitProc **procPtrs[],
-			    Tcl_LoadHandle *handlePtr,
-			    ClientData *clientDataPtr,
-			    Tcl_FSUnloadFileProc **unloadProcPtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
@@ -2861,6 +2880,7 @@ MODULE_SCOPE int        TclpGetCStackParams(int **stackBoundPtr);
 #endif
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
+MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp, Tcl_Obj* pathPtr);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    int len);
 MODULE_SCOPE int	TclpDeleteFile(const void *path);
@@ -2913,11 +2933,11 @@ MODULE_SCOPE char *	TclpReadlink(const char *fileName,
 			    Tcl_DString *linkPtr);
 MODULE_SCOPE void	TclpSetInterfaces(void);
 MODULE_SCOPE void	TclpSetVariables(Tcl_Interp *interp);
-MODULE_SCOPE void	TclpUnloadFile(Tcl_LoadHandle loadHandle);
 MODULE_SCOPE void *	TclThreadStorageKeyGet(Tcl_ThreadDataKey *keyPtr);
 MODULE_SCOPE void	TclThreadStorageKeySet(Tcl_ThreadDataKey *keyPtr,
 			    void *data);
 MODULE_SCOPE void	TclpThreadExit(int status);
+MODULE_SCOPE size_t	TclpThreadGetStackSize(void);
 MODULE_SCOPE void	TclRememberCondition(Tcl_Condition *mutex);
 MODULE_SCOPE void	TclRememberJoinableThread(Tcl_ThreadId id);
 MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
@@ -2950,8 +2970,6 @@ MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
-MODULE_SCOPE Tcl_PackageInitProc *TclpFindSymbol(Tcl_Interp *interp,
-			    Tcl_LoadHandle loadHandle, const char *symbol);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_LoadHandle *loadHandle,
 			    Tcl_FSUnloadFileProc **unloadProcPtr);

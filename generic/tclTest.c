@@ -365,55 +365,36 @@ static int		TestSimpleFilesystemObjCmd(
 static void		TestReport(const char *cmd, Tcl_Obj *arg1,
 			    Tcl_Obj *arg2);
 static Tcl_Obj *	TestReportGetNativePath(Tcl_Obj *pathPtr);
-static int		TestReportStat(Tcl_Obj *path, Tcl_StatBuf *buf);
-static int		TestReportAccess(Tcl_Obj *path, int mode);
-static Tcl_Channel	TestReportOpenFileChannel(
-			    Tcl_Interp *interp, Tcl_Obj *fileName,
-			    int mode, int permissions);
-static int		TestReportMatchInDirectory(Tcl_Interp *interp,
-			    Tcl_Obj *resultPtr, Tcl_Obj *dirPtr,
-			    const char *pattern, Tcl_GlobTypeData *types);
-static int		TestReportChdir(Tcl_Obj *dirName);
-static int		TestReportLstat(Tcl_Obj *path, Tcl_StatBuf *buf);
-static int		TestReportCopyFile(Tcl_Obj *src, Tcl_Obj *dst);
-static int		TestReportDeleteFile(Tcl_Obj *path);
-static int		TestReportRenameFile(Tcl_Obj *src, Tcl_Obj *dst);
-static int		TestReportCreateDirectory(Tcl_Obj *path);
-static int		TestReportCopyDirectory(Tcl_Obj *src,
-			    Tcl_Obj *dst, Tcl_Obj **errorPtr);
-static int		TestReportRemoveDirectory(Tcl_Obj *path,
-			    int recursive, Tcl_Obj **errorPtr);
-static int		TestReportLoadFile(Tcl_Interp *interp,
-			    Tcl_Obj *fileName, Tcl_LoadHandle *handlePtr,
-			    Tcl_FSUnloadFileProc **unloadProcPtr);
-static Tcl_Obj *	TestReportLink(Tcl_Obj *path,
-			    Tcl_Obj *to, int linkType);
-static const char *const *TestReportFileAttrStrings(
-			    Tcl_Obj *fileName, Tcl_Obj **objPtrRef);
-static int		TestReportFileAttrsGet(Tcl_Interp *interp,
-			    int index, Tcl_Obj *fileName, Tcl_Obj **objPtrRef);
-static int		TestReportFileAttrsSet(Tcl_Interp *interp,
-			    int index, Tcl_Obj *fileName, Tcl_Obj *objPtr);
-static int		TestReportUtime(Tcl_Obj *fileName,
-			    struct utimbuf *tval);
-static int		TestReportNormalizePath(Tcl_Interp *interp,
-			    Tcl_Obj *pathPtr, int nextCheckpoint);
-static int		TestReportInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr);
-static void		TestReportFreeInternalRep(ClientData clientData);
-static ClientData	TestReportDupInternalRep(ClientData clientData);
+static Tcl_FSStatProc TestReportStat;
+static Tcl_FSAccessProc TestReportAccess;
+static Tcl_FSOpenFileChannelProc TestReportOpenFileChannel;
+static Tcl_FSMatchInDirectoryProc TestReportMatchInDirectory;
+static Tcl_FSChdirProc TestReportChdir;
+static Tcl_FSLstatProc TestReportLstat;
+static Tcl_FSCopyFileProc TestReportCopyFile;
+static Tcl_FSDeleteFileProc TestReportDeleteFile;
+static Tcl_FSRenameFileProc TestReportRenameFile;
+static Tcl_FSCreateDirectoryProc TestReportCreateDirectory;
+static Tcl_FSCopyDirectoryProc TestReportCopyDirectory;
+static Tcl_FSRemoveDirectoryProc TestReportRemoveDirectory;
+static Tcl_FSLoadFileProc TestReportLoadFile;
+static Tcl_FSLinkProc TestReportLink;
+static Tcl_FSFileAttrStringsProc TestReportFileAttrStrings;
+static Tcl_FSFileAttrsGetProc TestReportFileAttrsGet;
+static Tcl_FSFileAttrsSetProc TestReportFileAttrsSet;
+static Tcl_FSUtimeProc TestReportUtime;
+static Tcl_FSNormalizePathProc TestReportNormalizePath;
+static Tcl_FSPathInFilesystemProc TestReportInFilesystem;
+static Tcl_FSFreeInternalRepProc TestReportFreeInternalRep;
+static Tcl_FSDupInternalRepProc TestReportDupInternalRep;
 
-static int		SimpleStat(Tcl_Obj *path, Tcl_StatBuf *buf);
-static int		SimpleAccess(Tcl_Obj *path, int mode);
-static Tcl_Channel	SimpleOpenFileChannel(Tcl_Interp *interp,
-			    Tcl_Obj *fileName, int mode, int permissions);
-static Tcl_Obj *	SimpleListVolumes(void);
-static int		SimplePathInFilesystem(
-			    Tcl_Obj *pathPtr, ClientData *clientDataPtr);
+static Tcl_FSStatProc SimpleStat;
+static Tcl_FSAccessProc SimpleAccess;
+static Tcl_FSOpenFileChannelProc SimpleOpenFileChannel;
+static Tcl_FSListVolumesProc SimpleListVolumes;
+static Tcl_FSPathInFilesystemProc SimplePathInFilesystem;
 static Tcl_Obj *	SimpleRedirect(Tcl_Obj *pathPtr);
-static int		SimpleMatchInDirectory(
-			    Tcl_Interp *interp, Tcl_Obj *resultPtr,
-			    Tcl_Obj *dirPtr, const char *pattern,
-			    Tcl_GlobTypeData *types);
+static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
 static int		TestNumUtfCharsCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);

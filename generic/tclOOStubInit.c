@@ -10,6 +10,10 @@
 #endif
 #include "tclOOInt.h"
 
+#ifdef __GNUC__
+#pragma GCC dependency "tclOO.decls"
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
 
 static const TclOOIntStubs tclOOIntStubs = {

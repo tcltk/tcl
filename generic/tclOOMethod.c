@@ -104,7 +104,7 @@ static int		ProcedureMethodCompiledVarResolver(Tcl_Interp *interp,
  */
 
 static const Tcl_MethodType procMethodType = {
-    TCL_OO_METHOD_VERSION_CURRENT, "procedural method",
+    TCL_OO_METHOD_VERSION_CURRENT, "method",
     InvokeProcedureMethod, DeleteProcedureMethod, CloneProcedureMethod
 };
 static const Tcl_MethodType fwdMethodType = {

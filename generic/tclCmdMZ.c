@@ -10,7 +10,7 @@
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 Scriptics Corporation.
  * Copyright (c) 2002 ActiveState Corporation.
- * Copyright (c) 2003 Donal K. Fellows.
+ * Copyright (c) 2003-2009 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -24,14 +24,14 @@
 static inline Tcl_Obj*  During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
 static int		TryPostBody(Tcl_Obj* handlersObj,
-			    Tcl_Obj* finallyObj, Tcl_Obj* cmdObj,
+				    Tcl_Obj* finallyObj, Tcl_Obj** objv, int objc,
 			    Tcl_Interp *interp, int result);
-static int		TryPostFinal(Tcl_Obj* resultObj, int result,
+static int		TryPostFinal(Tcl_Obj* resultObj,
 			    Tcl_Obj* options, Tcl_Obj* cmdObj,
-			    Tcl_Interp *interp, int finalResult);
-static int		TryPostHandler(Tcl_Obj* cmdObj,
+			    Tcl_Interp *interp, int result);
+static int		TryPostHandler(Tcl_Obj** objv,
 			    Tcl_Obj* options, Tcl_Obj* handlerObj,
-			    Tcl_Obj* finallyObj, Tcl_Interp *interp,
+			    int finally, Tcl_Interp *interp,
 			    int result);
 static int		UniCharIsAscii(int character);
 static int		UniCharIsHexDigit(int character);
@@ -3338,29 +3338,29 @@ TclInitStringCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap stringImplMap[] = {
-	{"bytelength",	StringBytesCmd,	NULL, NULL, NULL},
-	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL},
-	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL},
-	{"first",	StringFirstCmd,	NULL, NULL, NULL},
-	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL},
-	{"is",		StringIsCmd,	NULL, NULL, NULL},
-	{"last",	StringLastCmd,	NULL, NULL, NULL},
-	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL},
-	{"map",		StringMapCmd,	NULL, NULL, NULL},
-	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL},
-	{"range",	StringRangeCmd,	NULL, NULL, NULL},
-	{"repeat",	StringReptCmd,	NULL, NULL, NULL},
-	{"replace",	StringRplcCmd,	NULL, NULL, NULL},
-	{"reverse",	StringRevCmd,	NULL, NULL, NULL},
-	{"tolower",	StringLowerCmd,	NULL, NULL, NULL},
-	{"toupper",	StringUpperCmd,	NULL, NULL, NULL},
-	{"totitle",	StringTitleCmd,	NULL, NULL, NULL},
-	{"trim",	StringTrimCmd,	NULL, NULL, NULL},
-	{"trimleft",	StringTrimLCmd,	NULL, NULL, NULL},
-	{"trimright",	StringTrimRCmd,	NULL, NULL, NULL},
-	{"wordend",	StringEndCmd,	NULL, NULL, NULL},
-	{"wordstart",	StringStartCmd,	NULL, NULL, NULL},
-	{NULL, NULL, NULL, NULL, NULL}
+	{"bytelength",	StringBytesCmd,	NULL, NULL},
+	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL},
+	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL},
+	{"first",	StringFirstCmd,	NULL, NULL},
+	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL},
+	{"is",		StringIsCmd,	NULL, NULL},
+	{"last",	StringLastCmd,	NULL, NULL},
+	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL},
+	{"map",		StringMapCmd,	NULL, NULL},
+	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL},
+	{"range",	StringRangeCmd,	NULL, NULL},
+	{"repeat",	StringReptCmd,	NULL, NULL},
+	{"replace",	StringRplcCmd,	NULL, NULL},
+	{"reverse",	StringRevCmd,	NULL, NULL},
+	{"tolower",	StringLowerCmd,	NULL, NULL},
+	{"toupper",	StringUpperCmd,	NULL, NULL},
+	{"totitle",	StringTitleCmd,	NULL, NULL},
+	{"trim",	StringTrimCmd,	NULL, NULL},
+	{"trimleft",	StringTrimLCmd,	NULL, NULL},
+	{"trimright",	StringTrimRCmd,	NULL, NULL},
+	{"wordend",	StringEndCmd,	NULL, NULL},
+	{"wordstart",	StringStartCmd,	NULL, NULL},
+	{NULL, NULL, NULL, NULL}
     };
 
     return TclMakeEnsemble(interp, "string", stringImplMap);
@@ -4109,14 +4109,11 @@ Tcl_TryObjCmd(
 {
     Tcl_Obj *bodyObj, *handlersObj, *finallyObj = NULL;
     int i, bodyShared, haveHandlers, dummy1, code, result;
-    static const char *handlerNames[] = {
+    static const char *const handlerNames[] = {
 	"finally", "on", "trap", NULL
     };
     enum Handlers {
 	TryFinally, TryOn, TryTrap
-    };
-    static const char *exceptionNames[] = {
-	"ok", "error", "return", "break", "continue", NULL
     };
 
     /*
@@ -4167,13 +4164,7 @@ Tcl_TryObjCmd(
 		Tcl_DecrRefCount(handlersObj);
 		return TCL_ERROR;
 	    }
-	    if (Tcl_GetIntFromObj(NULL, objv[i+1], &code) != TCL_OK
-		    && Tcl_GetIndexFromObj(NULL, objv[i+1], exceptionNames,
-			    "code", 0, &code) != TCL_OK) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad code '%s': must be integer, \"ok\", \"error\", "
-			"\"return\", \"break\" or \"continue\"",
-			Tcl_GetString(objv[i+1])));
+	    if (TCL_ERROR == TclGetCompletionCodeFromObj(interp, objv[i+1], &code)) {
 		Tcl_DecrRefCount(handlersObj);
 		return TCL_ERROR;
 	    }
@@ -4239,7 +4230,7 @@ Tcl_TryObjCmd(
     result = TclEvalObjEx(interp, bodyObj, 0,
 			  ((Interp *) interp)->cmdFramePtr, 1);
 
-    return TryPostBody (handlersObj, finallyObj, objv[0], interp, result);
+    return TryPostBody (handlersObj, finallyObj, objv, objc, interp, result);
 }
 
 /*
@@ -4297,25 +4288,41 @@ static int
 TryPostBody(
     Tcl_Obj* handlersObj,
     Tcl_Obj* finallyObj,
-    Tcl_Obj* cmdObj,
+    Tcl_Obj** objv,
+    int objc,
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj *resultObj, *options;
+    Tcl_Obj *resultObj, *options, *cmdObj = objv[0];
     int i, dummy, code;
+    int numHandlers = 0;
+
+    /*
+     * Check for limits/rewinding, which override normal trapping behaviour.
+     */
+
+    if (Tcl_LimitExceeded(interp)) {
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
+		Tcl_GetErrorLine(interp)));
+	if (handlersObj != NULL) {
+	    Tcl_DecrRefCount(handlersObj);
+	}
+	return TCL_ERROR;
+    }
 
     /*
      * Basic processing of the outcome of the script, including adding of
      * errorinfo trace.
      */
 
-    resultObj = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(resultObj);
     if (result == TCL_ERROR) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
 		Tcl_GetErrorLine(interp)));
     }
+    resultObj = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(resultObj);
     options = Tcl_GetReturnOptions(interp, result);
     Tcl_IncrRefCount(options);
     Tcl_ResetResult(interp);
@@ -4325,7 +4332,7 @@ TryPostBody(
      */
 
     if (handlersObj != NULL) {
-	int numHandlers, found = 0;
+	int found = 0;
 	Tcl_Obj **handlers, **info;
 
 	Tcl_ListObjGetElements(NULL, handlersObj, &numHandlers, &handlers);
@@ -4434,9 +4441,10 @@ TryPostBody(
 
 	    Tcl_DecrRefCount(handlersObj);
 	    result = TclEvalObjEx(interp, handlerBodyObj, 0,
-				  ((Interp *) interp)->cmdFramePtr, -1);
+				  ((Interp *) interp)->cmdFramePtr, 4*i + 5);
 
-	    return TryPostHandler (cmdObj, options, info[0], finallyObj,
+	    return TryPostHandler (objv, options, info[0],
+				   finallyObj == NULL ? 0 : objc - 1,
 				   interp, result);
 
 	handlerFailed:
@@ -4460,9 +4468,9 @@ TryPostBody(
 
     if (finallyObj != NULL) {
 	int finalResult = TclEvalObjEx(interp, finallyObj, 0,
-				       ((Interp *) interp)->cmdFramePtr, -1);
+				       ((Interp *) interp)->cmdFramePtr, objc - 1);
 
-	return TryPostFinal (resultObj, result, options,
+	return TryPostFinal (resultObj, options,
 			     cmdObj, interp, finalResult);
     }
 
@@ -4491,14 +4499,29 @@ TryPostBody(
 
 static int
 TryPostHandler(
-    Tcl_Obj* cmdObj,
+    Tcl_Obj** objv,
     Tcl_Obj* options,
     Tcl_Obj* handlerKindObj,
-    Tcl_Obj* finallyObj, 
+    int finally, 
     Tcl_Interp *interp,
     int result)
 {
+    Tcl_Obj *cmdObj = objv [0];
+    Tcl_Obj *finallyObj = finally ? objv[finally] : 0;
     Tcl_Obj *resultObj;
+
+    /*
+     * Check for limits/rewinding, which override normal trapping behaviour.
+     */
+
+    if (Tcl_LimitExceeded(interp)) {
+	options = During(interp, result, options, Tcl_ObjPrintf(
+		"\n    (\"%s ... %s\" handler line %d)",
+		TclGetString(cmdObj), TclGetString(handlerKindObj),
+		Tcl_GetErrorLine(interp)));
+	Tcl_DecrRefCount(options);
+	return TCL_ERROR;
+    }
 
     /*
      * The handler result completely substitutes for the result of the body.
@@ -4522,10 +4545,14 @@ TryPostHandler(
      */
 
     if (finallyObj != NULL) {
-	int finalResult = TclEvalObjEx(interp, finallyObj, 0,
-				       ((Interp *) interp)->cmdFramePtr, -1);
+	Interp *iPtr = (Interp *) interp;
 
-	return TryPostFinal (resultObj, result, options,
+	/* The 'finally' script is always the last argument word. */
+	int finalResult = TclEvalObjEx(interp, finallyObj, 0,
+				       iPtr->cmdFramePtr,
+				       finally);
+
+	return TryPostFinal (resultObj, options,
 			     cmdObj, interp, finalResult);
     }
 
@@ -4555,20 +4582,18 @@ TryPostHandler(
 static int
 TryPostFinal(
     Tcl_Obj* resultObj,
-    int      result,
     Tcl_Obj* options,
     Tcl_Obj* cmdObj,
     Tcl_Interp *interp,
-    int finalResult)
+    int result)
 {
     /*
      * If the result wasn't OK, we need to adjust the result options.
      */
 
-    if (finalResult != TCL_OK) {
+    if (result != TCL_OK) {
 	Tcl_DecrRefCount(resultObj);
 	resultObj = NULL;
-	result = finalResult;
 	if (result == TCL_ERROR) {
 	    options = During(interp, result, options, Tcl_ObjPrintf(
 		    "\n    (\"%s ... finally\" body line %d)",

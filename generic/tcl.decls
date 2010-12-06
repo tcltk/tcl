@@ -2265,6 +2265,20 @@ declare 624 generic {
     int Tcl_CloseEx(Tcl_Interp *interp, Tcl_Channel chan, int flags)
 }
 
+# TIP #357 (Export TclLoadFile and TclpFindSymbol) kbk
+declare 627 generic {
+    int Tcl_LoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+		     const char *const symv[], int flags, void *procPtrs,
+		     Tcl_LoadHandle *handlePtr)
+}
+declare 628 generic {
+    void* Tcl_FindSymbol(Tcl_Interp *interp, Tcl_LoadHandle handle,
+			 const char *symbol)
+}
+declare 629 generic {
+    int Tcl_FSUnloadFile(Tcl_Interp *interp, Tcl_LoadHandle handlePtr)
+}
+
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
 ##############################################################################
