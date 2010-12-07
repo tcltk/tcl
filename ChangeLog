@@ -1,5 +1,9 @@
 2010-12-07  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tests/fCmd.test, tests/safe.test, tests/uplevel.test,
+	* tests/upvar.test, tests/var.test: Convert more tests to tcltest2 and
+	factor them to be easier to understand.
+
 	* generic/tclStrToD.c: Tidy up code so that more #ifdef-fery is
 	quarantined at the front of the file and function headers follow the
 	modern Tcl style.
