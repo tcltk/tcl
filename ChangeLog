@@ -1,64 +1,70 @@
+2010-12-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclStrToD.c: Tidy up code so that more #ifdef-fery is
+	quarantined at the front of the file and function headers follow the
+	modern Tcl style.
+
 2010-12-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclBinary.c     [Bug 3129448]: possible over-allocation on 64-bit platforms
-	* generic/tclCkalloc.c
+	* generic/tclBinary.c:  [Bug 3129448]: Possible over-allocation on
+	* generic/tclCkalloc.c: 64-bit platforms.
 	* generic/tclTrace.c
 
 2010-12-05  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/tcl.m4:      [Patch #3116490] cross-compile support for unix
-	* unix/configure    (autoconf-2.59)
+	* unix/tcl.m4: [Patch 3116490]: Cross-compile support for unix
+	* unix/configure: (autoconf-2.59)
 
 2010-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclUtil.c (TclReToGlob): add extra check for multiple
-	inner *s that leads to poor recursive glob matching, defer to
-	original RE instead.  tclbench RE var backtrack.
+	* generic/tclUtil.c (TclReToGlob): Add extra check for multiple inner
+	*s that leads to poor recursive glob matching, defer to original RE
+	instead.  tclbench RE var backtrack.
 
 2010-12-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclUtil.c:   silence gcc warning when using -Wwrite-strings
-	* generic/tclStrToD.c: silence gcc warning for non-IEEE platforms
-	* win/Makefile.in:  [Patch #3116490] cross-compile Tcl mingw32 on unix
-	* win/tcl.m4        This makes it possible to cross-compile Tcl/Tk for
-	* win/configure.in  Windows (either 32-bit or 64-bit) out-of-the-box
-	* win/configure     on UNIX, using mingw-w64 build tools (If Itcl, tdbc
-	and Thread take over the latest tcl.m4, they can do that too).
+	* generic/tclUtil.c:   Silence gcc warning when using -Wwrite-strings
+	* generic/tclStrToD.c: Silence gcc warning for non-IEEE platforms
+	* win/Makefile.in:  [Patch 3116490]: Cross-compile Tcl mingw32 on unix
+	* win/tcl.m4:       This makes it possible to cross-compile Tcl/Tk for
+	* win/configure.in: Windows (either 32-bit or 64-bit) out-of-the-box
+	* win/configure:    on UNIX, using mingw-w64 build tools (If Itcl,
+	tdbc and Thread take over the latest tcl.m4, they can do that too).
 
 2010-12-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclStrToD.c (SetPrecisionLimits, TclDoubleDigits):
-	Added meaningless initialization of 'i', 'ilim' and 'ilim1'
-	to silence warnings from the C compiler about possible use of
-	uninitialized variables, Added a panic to the 'switch' that
-	assigns them, to assert that the 'default' case is impossible.
-	[Bug 3124675]
+	[Bug 3124675]: Added meaningless initialization of 'i', 'ilim' and
+	'ilim1' to silence warnings from the C compiler about possible use of
+	uninitialized variables, Added a panic to the 'switch' that assigns
+	them, to assert that the 'default' case is impossible.
 
 2010-12-01  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclBasic.c: fix gcc 64-bit warnings: cast from pointer to
+	* generic/tclBasic.c: Fix gcc 64-bit warnings: cast from pointer to
 	* generic/tclHash.c:  integer of different size.
 	* generic/tclTest.c:
 	* generic/tclThreadTest.c:
-	* generic/tclStrToD.c: fix gcc(-4.5.2) warning: 'static' is not at
+	* generic/tclStrToD.c: Fix gcc(-4.5.2) warning: 'static' is not at
 	beginning of declaration.
-	* generic/tclPanic.c:  Allow Tcl_Panic() to enter the debugger on win32
-	* generic/tclCkalloc.c: use Tcl_Panic() in stead of duplicating the code.
+	* generic/tclPanic.c: Allow Tcl_Panic() to enter the debugger on win32
+	* generic/tclCkalloc.c: Use Tcl_Panic() in stead of duplicating the
+	code.
 
 2010-11-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclInt.decls, generic/tclInt.h, generic/tclIntDecls.h:
 	* generic/tclStubInit.c: TclFormatInt restored at slot 24
 	* generic/tclUtil.c (TclFormatInt): restore TclFormatInt func from
-	2005-07-05 macro-ization. Benchmarks indicate it is faster, as a
-	key int->string routine (e.g. int-indexed arrays).
+	2005-07-05 macro-ization. Benchmarks indicate it is faster, as a key
+	int->string routine (e.g. int-indexed arrays).
 
 2010-11-29 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclBasic.c: Patch by Miguel, providing a
-	  [::tcl::unsupported::inject coroname command args], which prepends
-	  ("injects") arbitrary code to a suspended coro's future resumption.
-	  Neat for debugging complex coros without heavy instrumentation.
+	[::tcl::unsupported::inject coroname command args], which prepends
+	("injects") arbitrary code to a suspended coro's future resumption.
+	Neat for debugging complex coros without heavy instrumentation.
 
 2010-11-29  Kevin B. Kenny  <kennykb@acm.org>
 
@@ -71,18 +77,18 @@
 	* tests/util.test:
 	* unix/Makefile.in:
 	* win/Makefile.in:
-	* win/makefile.vc: Rewrite of Tcl_PrintDouble and TclDoubleDigits
-	that (a) fixes a severe performance problem with floating point
-	shimmering reported by Karl Lehenbauer, (b) allows TclDoubleDigits
-	to generate the digit strings for 'e' and 'f' format, so that it
-	can be used for tcl_precision != 0 (and possibly later for [format]),
-	(c) fixes [Bug 3120139] by making TclPrintDouble inherently
-	locale-independent, (d) adds test cases to util.test for
-	correct rounding in difficult cases of TclDoubleDigits where fixed-
-	precision results are requested. (e) adds test cases to util.test for
-	the controversial aspects of [Bug 3105247]. As a side effect, two
-	more modules from libtommath (bn_mp_set_int.c and bn_mp_init_set_int.c)
-	are brought into the build, since the new code uses them.
+	* win/makefile.vc: Rewrite of Tcl_PrintDouble and TclDoubleDigits that
+	(a) fixes a severe performance problem with floating point shimmering
+	reported by Karl Lehenbauer, (b) allows TclDoubleDigits to generate
+	the digit strings for 'e' and 'f' format, so that it can be used for
+	tcl_precision != 0 (and possibly later for [format]), (c) fixes [Bug
+	3120139] by making TclPrintDouble inherently locale-independent, (d)
+	adds test cases to util.test for correct rounding in difficult cases
+	of TclDoubleDigits where fixed- precision results are requested. (e)
+	adds test cases to util.test for the controversial aspects of [Bug
+	3105247]. As a side effect, two more modules from libtommath
+	(bn_mp_set_int.c and bn_mp_init_set_int.c) are brought into the build,
+	since the new code uses them.
 
 	* generic/tclIntDecls.h:
 	* generic/tclStubInit.c:
@@ -100,16 +106,16 @@
 
 2010-11-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWin32Dll.c: fix gcc warnings: unused variable 'registration'
+	* win/tclWin32Dll.c: Fix gcc warnings: unused variable 'registration'
 	* win/tclWinChan.c:
 	* win/tclWinFCmd.c:
 
 2010-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclAppInit.c: [FRQ 491789]: "setargv() doesn't support a
-	unicode cmdline" now implemented for cygwin and mingw32 too.
-	* tests/main.test: No longer disable tests Tcl_Main-1.4 and 1.6
-	on Windows, because those now work on all supported platforms.
+	* win/tclAppInit.c: [FRQ 491789]: "setargv() doesn't support a unicode
+	cmdline" now implemented for cygwin and mingw32 too.
+	* tests/main.test: No longer disable tests Tcl_Main-1.4 and 1.6 on
+	Windows, because those now work on all supported platforms.
 	* win/configure.in:  Set NO_VIZ=1 when zlib is compiled in libtcl,
 	this resolves compiler warnings in 64-bit and static builds.
 	* win/configure (regenerated)
