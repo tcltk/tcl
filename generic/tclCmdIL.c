@@ -777,7 +777,7 @@ InfoCommandsCmd(
 		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
 		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		(void) Tcl_CreateHashEntry(&addedCommandsTable,
-			(char *)elemObjPtr, &isNew);
+			elemObjPtr, &isNew);
 	    }
 	    entryPtr = Tcl_NextHashEntry(&search);
 	}
@@ -802,7 +802,7 @@ InfoCommandsCmd(
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
 		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
 		    (void) Tcl_CreateHashEntry(&addedCommandsTable,
-			    (char *) elemObjPtr, &isNew);
+			    elemObjPtr, &isNew);
 		    if (isNew) {
 			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		    } else {

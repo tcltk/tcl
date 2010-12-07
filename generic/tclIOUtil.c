@@ -505,7 +505,7 @@ TclFSCwdPointerEquals(
 
 	str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
 	str2 = Tcl_GetStringFromObj(*pathPtrPtr, &len2);
-	if (len1 == len2 && !strcmp(str1,str2)) {
+	if ((len1 == len2) && !memcmp(str1, str2, len1)) {
 	    /*
 	     * They are equal, but different objects. Update so they will be
 	     * the same object in the future.
@@ -4437,7 +4437,7 @@ Tcl_FSGetFileSystemForPath(
  *---------------------------------------------------------------------------
  */
 
-const char *
+const void *
 Tcl_FSGetNativePath(
     Tcl_Obj *pathPtr)
 {

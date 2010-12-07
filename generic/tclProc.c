@@ -258,7 +258,7 @@ Tcl_ProcObjCmd(
 		cfPtr->cmd.str.len = 0;
 
 		hePtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew);
+			procPtr, &isNew);
 		if (!isNew) {
 		    /*
 		     * Get the old command frame and release it. See also
@@ -1076,13 +1076,15 @@ ProcWrongNumArgs(
     desiredObjs = TclStackAlloc(interp,
 	    (int) sizeof(Tcl_Obj *) * (numArgs+1));
 
+    if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
+	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
+    } else {
 #ifdef AVOID_HACKS_FOR_ITCL
-    desiredObjs[0] = framePtr->objv[skip-1];
+	desiredObjs[0] = framePtr->objv[skip-1];
 #else
-    desiredObjs[0] = ((framePtr->isProcCallFrame & FRAME_IS_LAMBDA)
-	    ? framePtr->objv[skip-1]
-	    : Tcl_NewListObj(skip, framePtr->objv));
+	desiredObjs[0] = Tcl_NewListObj(skip, framePtr->objv);
 #endif /* AVOID_HACKS_FOR_ITCL */
+    }
     Tcl_IncrRefCount(desiredObjs[0]);
 
     defPtr = (Var *) (&framePtr->localCachePtr->varName0 + localCt);
@@ -1256,7 +1258,7 @@ InitResolvedLocals(
     codePtr->flags &= ~TCL_BYTECODE_RESOLVE_VARS;
 
     /*
-     * Initialize the array of local variables stored in the call frame.  Some
+     * Initialize the array of local variables stored in the call frame. Some
      * variables may have special resolution rules. In that case, we call
      * their "resolver" procs to get our hands on the variable, and we make
      * the compiled local a link to the real variable.
@@ -2518,7 +2520,7 @@ SetLambdaFromAny(
 		cfPtr->cmd.str.len = 0;
 
 		Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew), cfPtr);
+			procPtr, &isNew), cfPtr);
 	    }
 
 	    /*

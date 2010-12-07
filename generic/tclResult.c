@@ -1378,7 +1378,7 @@ TclMergeReturnOptions(
 	const char *compare =
 		TclGetStringFromObj(keys[KEY_OPTIONS], &compareLen);
 
-	if ((optLen == compareLen) && (strcmp(opt, compare) == 0)) {
+	if ((optLen == compareLen) && (memcmp(opt, compare, optLen) == 0)) {
 	    Tcl_DictSearch search;
 	    int done = 0;
 	    Tcl_Obj *keyPtr;

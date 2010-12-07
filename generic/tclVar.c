@@ -55,7 +55,7 @@ VarHashCreateVar(
     int *newPtr)
 {
     Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&tablePtr->table,
-	    (char *) key, newPtr);
+	    key, newPtr);
 
     if (hPtr) {
 	return VarHashGetValue(hPtr);
@@ -880,8 +880,8 @@ TclLookupSimpleVar(
 				 * the variable. */
     Namespace *varNsPtr, *cxtNsPtr, *dummy1Ptr, *dummy2Ptr;
     ResolverScheme *resPtr;
-    int isNew, i, result;
-    const char *varName = TclGetString(varNamePtr);
+    int isNew, i, result, varLen;
+    const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
 
     varPtr = NULL;
     varNsPtr = NULL;		/* Set non-NULL if a nonlocal variable. */
@@ -1006,17 +1006,18 @@ TclLookupSimpleVar(
 	    }
 	}
     } else {			/* Local var: look in frame varFramePtr. */
-	int localCt = varFramePtr->numCompiledLocals;
+	int localLen, localCt = varFramePtr->numCompiledLocals;
 	Tcl_Obj **objPtrPtr = &varFramePtr->localCachePtr->varName0;
+	const char *localNameStr;
 
 	for (i=0 ; i<localCt ; i++, objPtrPtr++) {
 	    register Tcl_Obj *objPtr = *objPtrPtr;
 
 	    if (objPtr) {
-		const char *localNameStr = TclGetString(objPtr);
+		localNameStr = TclGetStringFromObj(objPtr, &localLen);
 
-		if ((varName[0] == localNameStr[0])
-			&& (strcmp(varName, localNameStr) == 0)) {
+		if ((varLen == localLen) && (varName[0] == localNameStr[0])
+			&& !memcmp(varName, localNameStr, varLen)) {
 		    *indexPtr = i;
 		    return (Var *) &varFramePtr->compiledLocals[i];
 		}
@@ -1867,8 +1868,10 @@ TclPtrSetVar(
 
     /*
      * Invoke any read traces that have been set for the variable if it is
-     * requested; this is only done in the core by the INST_LAPPEND_*
-     * instructions.
+     * requested. This was done for INST_LAPPEND_* but that was inconsistent
+     * with the non-bc instruction, and would cause failures trying to
+     * lappend to any non-existing ::env var, which is inconsistent with
+     * documented behavior. [Bug #3057639].
      */
 
     if ((flags & TCL_TRACE_READS) && ((varPtr->flags & VAR_TRACED_READ)
@@ -2455,13 +2458,13 @@ UnsetVarStruct(
 
 	    int isNew;
 
-	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
+	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
 	    tracePtr = Tcl_GetHashValue(tPtr);
 	    varPtr->flags &= ~VAR_ALL_TRACES;
 	    Tcl_DeleteHashEntry(tPtr);
 	    if (dummyVar.flags & VAR_TRACED_UNSET) {
 		tPtr = Tcl_CreateHashEntry(&iPtr->varTraces,
-			(char *) &dummyVar, &isNew);
+			&dummyVar, &isNew);
 		Tcl_SetHashValue(tPtr, tracePtr);
 	    }
 	}
@@ -2481,8 +2484,7 @@ UnsetVarStruct(
 
 	    tracePtr = NULL;
 	    if (TclIsVarTraced(&dummyVar)) {
-		tPtr = Tcl_FindHashEntry(&iPtr->varTraces,
-			(char *) &dummyVar);
+		tPtr = Tcl_FindHashEntry(&iPtr->varTraces, &dummyVar);
 		tracePtr = Tcl_GetHashValue(tPtr);
 		if (tPtr) {
 		    Tcl_DeleteHashEntry(tPtr);
@@ -3076,7 +3078,7 @@ ArrayStartSearchCmd(
      */
 
     searchPtr = (ArraySearch *) ckalloc(sizeof(ArraySearch));
-    hPtr = Tcl_CreateHashEntry(&iPtr->varSearches, (char *) varPtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(&iPtr->varSearches, varPtr, &isNew);
     if (isNew) {
 	searchPtr->id = 1;
 	Tcl_AppendResult(interp, "s-1-", varName, NULL);
@@ -3401,7 +3403,7 @@ ArrayDoneSearchCmd(
      * variable.
      */
 
-    hPtr = Tcl_FindHashEntry(&iPtr->varSearches, (char *) varPtr);
+    hPtr = Tcl_FindHashEntry(&iPtr->varSearches, varPtr);
     if (searchPtr == Tcl_GetHashValue(hPtr)) {
 	if (searchPtr->nextPtr) {
 	    Tcl_SetHashValue(hPtr, searchPtr->nextPtr);
@@ -5148,7 +5150,7 @@ ParseSearchId(
 
     if (varPtr->flags & VAR_SEARCH_ACTIVE) {
 	Tcl_HashEntry *hPtr =
-		Tcl_FindHashEntry(&iPtr->varSearches, (char *) varPtr);
+		Tcl_FindHashEntry(&iPtr->varSearches, varPtr);
 
 	for (searchPtr = Tcl_GetHashValue(hPtr); searchPtr != NULL;
 		searchPtr = searchPtr->nextPtr) {
@@ -5190,7 +5192,7 @@ DeleteSearches(
     Tcl_HashEntry *sPtr;
 
     if (arrayVarPtr->flags & VAR_SEARCH_ACTIVE) {
-	sPtr = Tcl_FindHashEntry(&iPtr->varSearches, (char *) arrayVarPtr);
+	sPtr = Tcl_FindHashEntry(&iPtr->varSearches, arrayVarPtr);
 	for (searchPtr = Tcl_GetHashValue(sPtr); searchPtr != NULL;
 		searchPtr = nextPtr) {
 	    nextPtr = searchPtr->nextPtr;
@@ -5258,8 +5260,7 @@ TclDeleteNamespaceVars(
 	 */
 
 	if (TclIsVarTraced(varPtr)) {
-	    Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces,
-		    (char *) varPtr);
+	    Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
 	    VarTrace *tracePtr = Tcl_GetHashValue(tPtr);
 	    ActiveVarTrace *activePtr;
 
@@ -5448,7 +5449,7 @@ DeleteArray(
 		TclObjCallVarTraces(iPtr, NULL, elPtr, arrayNamePtr,
 			elNamePtr, flags,/* leaveErrMsg */ 0, index);
 	    }
-	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) elPtr);
+	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, elPtr);
 	    tracePtr = Tcl_GetHashValue(tPtr);
 	    while (tracePtr) {
 		VarTrace *prevPtr = tracePtr;
@@ -6428,21 +6429,10 @@ CompareVarKeys(
     l2 = objPtr2->length;
 
     /*
-     * Only compare if the string representations are of the same length.
+     * Only compare string representations of the same length.
      */
 
-    if (l1 == l2) {
-	for (;; p1++, p2++, l1--) {
-	    if (*p1 != *p2) {
-		break;
-	    }
-	    if (l1 == 0) {
-		return 1;
-	    }
-	}
-    }
-
-    return 0;
+    return ((l1 == l2) && !memcmp(p1, p2, l1));
 }
 
 /*

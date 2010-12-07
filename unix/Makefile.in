@@ -164,6 +164,7 @@ INSTALL_DATA		= ${INSTALL} -m 644
 # running make for the first time. Certain build targets (make genstubs) need
 # it to be available on the PATH. This executable should *NOT* be required
 # just to do a normal build although it can be required to run make dist.
+# Do not use SHELL_ENV for NATIVE_TCLSH unless it is the tclsh being built.
 EXE_SUFFIX		= @EXEEXT@
 TCL_EXE			= tclsh${EXE_SUFFIX}
 TCLTEST_EXE		= tcltest${EXE_SUFFIX}
@@ -867,16 +868,12 @@ install-libraries: libraries $(INSTALL_TZDATA) install-msgs
 
 install-tzdata: ${NATIVE_TCLSH}
 	@echo "Installing time zone data"
-	@@LD_LIBRARY_PATH_VAR@="`pwd`:$${@LD_LIBRARY_PATH_VAR@}"; export @LD_LIBRARY_PATH_VAR@; \
-	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	${NATIVE_TCLSH} $(TOOL_DIR)/installData.tcl \
+	@${NATIVE_TCLSH} $(TOOL_DIR)/installData.tcl \
 	    $(TOP_DIR)/library/tzdata "$(SCRIPT_INSTALL_DIR)"/tzdata
 
 install-msgs: ${NATIVE_TCLSH}
 	@echo "Installing message catalogs"
-	@@LD_LIBRARY_PATH_VAR@="`pwd`:$${@LD_LIBRARY_PATH_VAR@}"; export @LD_LIBRARY_PATH_VAR@; \
-	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	${NATIVE_TCLSH} $(TOOL_DIR)/installData.tcl \
+	@${NATIVE_TCLSH} $(TOOL_DIR)/installData.tcl \
 	    $(TOP_DIR)/library/msgs "$(SCRIPT_INSTALL_DIR)"/msgs
 
 install-doc: doc
@@ -1663,7 +1660,7 @@ packages: configure-packages ${STUB_LIB_FILE}
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	      echo "Building package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory; ) || exit $$?; \
 	    fi; \
 	  fi; \
 	done
@@ -1674,7 +1671,7 @@ install-packages: packages
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	      echo "Installing package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) install \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE)  --no-print-directory install \
 		  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
 	    fi; \
 	  fi; \
@@ -1685,8 +1682,10 @@ test-packages: tcltest packages
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
+	      echo ""; \
+	      echo ""; \
 	      echo "Testing package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory \
 		  "@LD_LIBRARY_PATH_VAR@=../..:$${@LD_LIBRARY_PATH_VAR@}" \
 		  "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" \
 		  "TCLLIBPATH=../../pkgs" test \
@@ -1700,7 +1699,7 @@ clean-packages:
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory clean; ) \
 	    fi; \
 	  fi; \
 	done
@@ -1710,7 +1709,7 @@ distclean-packages:
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory distclean; ) \
 	    fi; \
 	    rm -rf $(PKG_DIR)/$$pkg; \
 	  fi; \
@@ -1719,11 +1718,12 @@ distclean-packages:
 
 dist-packages: configure-packages
 	@rm -rf $(DISTROOT)/pkgs; \
+	mkdir -p $(DISTROOT)/pkgs; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) dist \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory dist \
 		  "DIST_ROOT=$(DISTROOT)/pkgs"; ) || exit $$?; \
 	    fi; \
 	  fi; \
@@ -1984,7 +1984,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 		$(DISTDIR)/libtommath
 	mkdir $(DISTDIR)/pkgs
 	cp $(TOP_DIR)/pkgs/README $(DISTDIR)/pkgs
-	for i in $(DISTROOT)/pkgs/*.tar.gz; do \
+	for i in `ls $(DISTROOT)/pkgs/*.tar.gz 2> /dev/null`; do \
 	    tar -C $(DISTDIR)/pkgs -xzf "$$i"; \
 	done
 
@@ -2038,9 +2038,8 @@ html-tk: ${NATIVE_TCLSH}
 	@EXTRA_BUILD_HTML@
 
 BUILD_HTML = \
-	@@LD_LIBRARY_PATH_VAR@="`pwd`:$${@LD_LIBRARY_PATH_VAR@}"; export @LD_LIBRARY_PATH_VAR@; \
-	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl --htmldir="$(HTML_INSTALL_DIR)" \
+	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
+		--htmldir="$(HTML_INSTALL_DIR)" \
 		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
 
 #--------------------------------------------------------------------------

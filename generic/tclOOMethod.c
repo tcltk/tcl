@@ -968,8 +968,10 @@ ProcedureMethodCompiledVarConnect(
     CallContext *contextPtr;
     Tcl_Obj *variableObj;
     Tcl_HashEntry *hPtr;
-    int i, isNew, cacheIt;
-    const char *varName = Tcl_GetString(infoPtr->variableObj);
+    int i, isNew, cacheIt, varLen, len;
+    const char *match, *varName;
+
+    varName = TclGetStringFromObj(infoPtr->variableObj, &varLen);
 
     /*
      * Check that the variable is being requested in a context that is also a
@@ -1001,14 +1003,16 @@ ProcedureMethodCompiledVarConnect(
 	    .mPtr->declaringClassPtr != NULL) {
 	FOREACH(variableObj, contextPtr->callPtr->chain[contextPtr->index]
 		.mPtr->declaringClassPtr->variables) {
-	    if (!strcmp(Tcl_GetString(variableObj), varName)) {
+	    match = TclGetStringFromObj(variableObj, &len);
+	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		cacheIt = 0;
 		goto gotMatch;
 	    }
 	}
     } else {
 	FOREACH(variableObj, contextPtr->oPtr->variables) {
-	    if (!strcmp(Tcl_GetString(variableObj), varName)) {
+	    match = TclGetStringFromObj(variableObj, &len);
+	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		cacheIt = 1;
 		goto gotMatch;
 	    }

@@ -48,7 +48,7 @@ typedef struct Package {
 				 * exist in this interpreter yet. */
     PkgAvail *availPtr;		/* First in list of all available versions of
 				 * this package. */
-    ClientData clientData;	/* Client data. */
+    const void *clientData;	/* Client data. */
 } Package;
 
 /*
@@ -73,7 +73,7 @@ static void		AddRequirementsToDString(Tcl_DString *dstring,
 static Package *	FindPackage(Tcl_Interp *interp, const char *name);
 static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
 			    int reqc, Tcl_Obj *const reqv[],
-			    ClientData *clientDataPtr);
+			    void *clientDataPtr);
 
 /*
  * Helper macros.
@@ -124,7 +124,7 @@ Tcl_PkgProvideEx(
 				 * available. */
     const char *name,		/* Name of package. */
     const char *version,	/* Version string for package. */
-    ClientData clientData)	/* clientdata for this package (normally used
+    const void *clientData)	/* clientdata for this package (normally used
 				 * for C callback function table) */
 {
     Package *pkgPtr;
@@ -212,7 +212,7 @@ Tcl_PkgRequireEx(
     int exact,			/* Non-zero means that only the particular
 				 * version given is acceptable. Zero means use
 				 * the latest compatible version. */
-    ClientData *clientDataPtr)	/* Used to return the client data for this
+    void *clientDataPtr)	/* Used to return the client data for this
 				 * package. If it is NULL then the client data
 				 * is not returned. This is unchanged if this
 				 * call fails for any reason. */
@@ -323,7 +323,7 @@ Tcl_PkgRequireProc(
 				 * version. */
     Tcl_Obj *const reqv[],	/* 0 means to use the latest version
 				 * available. */
-    ClientData *clientDataPtr)
+    void *clientDataPtr)
 {
     const char *result =
 	    PkgRequireCore(interp, name, reqc, reqv, clientDataPtr);
@@ -344,7 +344,7 @@ PkgRequireCore(
 				 * version. */
     Tcl_Obj *const reqv[],	/* 0 means to use the latest version
 				 * available. */
-    ClientData *clientDataPtr)
+    void *clientDataPtr)
 {
     Interp *iPtr = (Interp *) interp;
     Package *pkgPtr;
@@ -621,7 +621,8 @@ PkgRequireCore(
 
     if (satisfies) {
 	if (clientDataPtr) {
-	    *clientDataPtr = pkgPtr->clientData;
+		const void **ptr = (const void **) clientDataPtr;
+	    *ptr = pkgPtr->clientData;
 	}
 	return pkgPtr->version;
     }
@@ -677,7 +678,7 @@ Tcl_PkgPresentEx(
     int exact,			/* Non-zero means that only the particular
 				 * version given is acceptable. Zero means use
 				 * the latest compatible version. */
-    ClientData *clientDataPtr)	/* Used to return the client data for this
+    void *clientDataPtr)	/* Used to return the client data for this
 				 * package. If it is NULL then the client data
 				 * is not returned. This is unchanged if this
 				 * call fails for any reason. */

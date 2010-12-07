@@ -174,7 +174,7 @@ VarHashCreateVar(
     int *newPtr)
 {
     Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&tablePtr->table,
-	    (char *) key, newPtr);
+	    key, newPtr);
 
     if (!hPtr) {
 	return NULL;
@@ -1491,7 +1491,7 @@ TclCompEvalObj(
 
 	{
 	    Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->lineBCPtr,
-						     (char *) codePtr);
+						     codePtr);
 	    if (hePtr) {
 		ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
 		int redo = 0;
@@ -2966,14 +2966,14 @@ TclExecuteByteCode(
 	valuePtr = OBJ_AT_TOS; /* value to append */
 	part2Ptr = NULL;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreStk;
 
     case INST_LAPPEND_ARRAY_STK:
 	valuePtr = OBJ_AT_TOS; /* value to append */
 	part2Ptr = OBJ_UNDER_TOS;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreStk;
 
     case INST_APPEND_STK:
@@ -3028,14 +3028,14 @@ TclExecuteByteCode(
 	opnd = TclGetUInt4AtPtr(pc+1);
 	pcAdjustment = 5;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreArray;
 
     case INST_LAPPEND_ARRAY1:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreArray;
 
     case INST_APPEND_ARRAY4:
@@ -3077,14 +3077,14 @@ TclExecuteByteCode(
 	opnd = TclGetUInt4AtPtr(pc+1);
 	pcAdjustment = 5;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreScalar;
 
     case INST_LAPPEND_SCALAR1:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreScalar;
 
     case INST_APPEND_SCALAR4:
@@ -4276,7 +4276,6 @@ TclExecuteByteCode(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	/* TODO: Consider more efficient tests than strcmp() */
 	s1 = TclGetStringFromObj(valuePtr, &s1len);
 	result = TclListObjLength(interp, value2Ptr, &llen);
 	if (result != TCL_OK) {
@@ -4299,7 +4298,7 @@ TclExecuteByteCode(
 		    s2 = ""; s2len = 0;
 		}
 		if (s1len == s2len) {
-		    found = (strcmp(s1, s2) == 0);
+		    found = (memcmp(s1, s2, s1len) == 0);
 		}
 		i++;
 	    } while (i < llen && found == 0);
@@ -4373,10 +4372,10 @@ TclExecuteByteCode(
 		 */
 
 		if (*pc == INST_STR_NEQ) {
-		    iResult = (strcmp(s1, s2) != 0);
+		    iResult = (memcmp(s1, s2, s1len) != 0);
 		} else {
 		    /* INST_STR_EQ */
-		    iResult = (strcmp(s1, s2) == 0);
+		    iResult = (memcmp(s1, s2, s1len) == 0);
 		}
 	    } else {
 		iResult = (*pc == INST_STR_NEQ);
@@ -8049,14 +8048,14 @@ TclGetSrcInfoForPc(
 	int srcOffset, i;
 	Interp *iPtr = (Interp *) *codePtr->interpHandle;
 	Tcl_HashEntry *hePtr =
-		Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
+		Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
 
 	if (!hePtr) {
 	    return;
 	}
 
 	srcOffset = cfPtr->cmd.str.cmd - codePtr->source;
-	eclPtr = (ExtCmdLoc *) Tcl_GetHashValue(hePtr);
+	eclPtr = Tcl_GetHashValue(hePtr);
 
 	for (i=0; i < eclPtr->nuloc; i++) {
 	    if (eclPtr->loc[i].srcOffset == srcOffset) {

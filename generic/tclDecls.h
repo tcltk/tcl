@@ -40,11 +40,11 @@
 /* 0 */
 EXTERN int		Tcl_PkgProvideEx(Tcl_Interp *interp,
 				const char *name, const char *version,
-				ClientData clientData);
+				const void *clientData);
 /* 1 */
 EXTERN CONST84_RETURN char * Tcl_PkgRequireEx(Tcl_Interp *interp,
 				const char *name, const char *version,
-				int exact, ClientData *clientDataPtr);
+				int exact, void *clientDataPtr);
 /* 2 */
 EXTERN void		Tcl_Panic(const char *format, ...);
 /* 3 */
@@ -817,7 +817,7 @@ EXTERN CONST84_RETURN char * Tcl_PkgPresent(Tcl_Interp *interp,
 /* 272 */
 EXTERN CONST84_RETURN char * Tcl_PkgPresentEx(Tcl_Interp *interp,
 				const char *name, const char *version,
-				int exact, ClientData *clientDataPtr);
+				int exact, void *clientDataPtr);
 /* 273 */
 EXTERN int		Tcl_PkgProvide(Tcl_Interp *interp, const char *name,
 				const char *version);
@@ -1214,10 +1214,10 @@ EXTERN int		Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
 				const Tcl_UniChar *uniPattern, int nocase);
 /* 421 */
 EXTERN Tcl_HashEntry *	Tcl_FindHashEntry(Tcl_HashTable *tablePtr,
-				const char *key);
+				const void *key);
 /* 422 */
 EXTERN Tcl_HashEntry *	Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
-				const char *key, int *newPtr);
+				const void *key, int *newPtr);
 /* 423 */
 EXTERN void		Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr,
 				int keyType, const Tcl_HashKeyType *typePtr);
@@ -1356,7 +1356,7 @@ EXTERN Tcl_Obj *	Tcl_FSNewNativePath(
 				const Tcl_Filesystem *fromFilesystem,
 				ClientData clientData);
 /* 469 */
-EXTERN const char *	Tcl_FSGetNativePath(Tcl_Obj *pathPtr);
+EXTERN const void *	Tcl_FSGetNativePath(Tcl_Obj *pathPtr);
 /* 470 */
 EXTERN Tcl_Obj *	Tcl_FSFileSystemInfo(Tcl_Obj *pathPtr);
 /* 471 */
@@ -1648,8 +1648,7 @@ EXTERN const char *	Tcl_GetEncodingNameFromEnvironment(
 /* 573 */
 EXTERN int		Tcl_PkgRequireProc(Tcl_Interp *interp,
 				const char *name, int objc,
-				Tcl_Obj *const objv[],
-				ClientData *clientDataPtr);
+				Tcl_Obj *const objv[], void *clientDataPtr);
 /* 574 */
 EXTERN void		Tcl_AppendObjToErrorInfo(Tcl_Interp *interp,
 				Tcl_Obj *objPtr);
@@ -1798,8 +1797,8 @@ typedef struct TclStubs {
     int magic;
     const struct TclStubHooks *hooks;
 
-    int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, ClientData clientData); /* 0 */
-    CONST84_RETURN char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, ClientData *clientDataPtr); /* 1 */
+    int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, const void *clientData); /* 0 */
+    CONST84_RETURN char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
     void (*tcl_Panic) (const char *format, ...); /* 2 */
     char * (*tcl_Alloc) (unsigned int size); /* 3 */
     void (*tcl_Free) (char *ptr); /* 4 */
@@ -2094,7 +2093,7 @@ typedef struct TclStubs {
     char * (*tcl_HashStats) (Tcl_HashTable *tablePtr); /* 269 */
     CONST84_RETURN char * (*tcl_ParseVar) (Tcl_Interp *interp, const char *start, CONST84 char **termPtr); /* 270 */
     CONST84_RETURN char * (*tcl_PkgPresent) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 271 */
-    CONST84_RETURN char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, ClientData *clientDataPtr); /* 272 */
+    CONST84_RETURN char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 272 */
     int (*tcl_PkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
     CONST84_RETURN char * (*tcl_PkgRequire) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 274 */
     void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
@@ -2243,8 +2242,8 @@ typedef struct TclStubs {
     int (*tcl_IsChannelExisting) (const char *channelName); /* 418 */
     int (*tcl_UniCharNcasecmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned long numChars); /* 419 */
     int (*tcl_UniCharCaseMatch) (const Tcl_UniChar *uniStr, const Tcl_UniChar *uniPattern, int nocase); /* 420 */
-    Tcl_HashEntry * (*tcl_FindHashEntry) (Tcl_HashTable *tablePtr, const char *key); /* 421 */
-    Tcl_HashEntry * (*tcl_CreateHashEntry) (Tcl_HashTable *tablePtr, const char *key, int *newPtr); /* 422 */
+    Tcl_HashEntry * (*tcl_FindHashEntry) (Tcl_HashTable *tablePtr, const void *key); /* 421 */
+    Tcl_HashEntry * (*tcl_CreateHashEntry) (Tcl_HashTable *tablePtr, const void *key, int *newPtr); /* 422 */
     void (*tcl_InitCustomHashTable) (Tcl_HashTable *tablePtr, int keyType, const Tcl_HashKeyType *typePtr); /* 423 */
     void (*tcl_InitObjHashTable) (Tcl_HashTable *tablePtr); /* 424 */
     ClientData (*tcl_CommandTraceInfo) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *procPtr, ClientData prevClientData); /* 425 */
@@ -2291,7 +2290,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_FSGetTranslatedPath) (Tcl_Interp *interp, Tcl_Obj *pathPtr); /* 466 */
     int (*tcl_FSEvalFile) (Tcl_Interp *interp, Tcl_Obj *fileName); /* 467 */
     Tcl_Obj * (*tcl_FSNewNativePath) (const Tcl_Filesystem *fromFilesystem, ClientData clientData); /* 468 */
-    const char * (*tcl_FSGetNativePath) (Tcl_Obj *pathPtr); /* 469 */
+    const void * (*tcl_FSGetNativePath) (Tcl_Obj *pathPtr); /* 469 */
     Tcl_Obj * (*tcl_FSFileSystemInfo) (Tcl_Obj *pathPtr); /* 470 */
     Tcl_Obj * (*tcl_FSPathSeparator) (Tcl_Obj *pathPtr); /* 471 */
     Tcl_Obj * (*tcl_FSListVolumes) (void); /* 472 */
@@ -2395,7 +2394,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_GetEncodingSearchPath) (void); /* 570 */
     int (*tcl_SetEncodingSearchPath) (Tcl_Obj *searchPath); /* 571 */
     const char * (*tcl_GetEncodingNameFromEnvironment) (Tcl_DString *bufPtr); /* 572 */
-    int (*tcl_PkgRequireProc) (Tcl_Interp *interp, const char *name, int objc, Tcl_Obj *const objv[], ClientData *clientDataPtr); /* 573 */
+    int (*tcl_PkgRequireProc) (Tcl_Interp *interp, const char *name, int objc, Tcl_Obj *const objv[], void *clientDataPtr); /* 573 */
     void (*tcl_AppendObjToErrorInfo) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 574 */
     void (*tcl_AppendLimitedToObj) (Tcl_Obj *objPtr, const char *bytes, int length, int limit, const char *ellipsis); /* 575 */
     Tcl_Obj * (*tcl_Format) (Tcl_Interp *interp, const char *format, int objc, Tcl_Obj *const objv[]); /* 576 */
@@ -3741,20 +3740,26 @@ extern const TclStubs *tclStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLIMPORT
-
 #if defined(USE_TCL_STUBS)
 #   undef Tcl_CreateInterp
 #   undef Tcl_FindExecutable
+#   undef Tcl_GetStringResult
 #   undef Tcl_Init
+#   undef Tcl_SetPanicProc
 #   undef Tcl_SetVar
 #   undef Tcl_StaticPackage
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
+#   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
+#   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
 #   define Tcl_SetVar(interp, varName, newValue, flags) \
 	    (tclStubsPtr->tcl_SetVar(interp, varName, newValue, flags))
 #endif
+#if defined(_WIN32) && defined(UNICODE)
+#   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
+#endif
+
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLDECLS */
-
