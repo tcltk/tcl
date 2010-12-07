@@ -51,8 +51,6 @@ static int	ProcBodyTestProcObjCmd(ClientData dummy,
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
 			const char *namespace, const CmdTable *cmdTablePtr);
-int		Procbodytest_Init(Tcl_Interp * interp);
-int		Procbodytest_SafeInit(Tcl_Interp * interp);
 
 /*
  * List of commands to create when the package is loaded; must go after the

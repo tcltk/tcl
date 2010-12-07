@@ -1135,7 +1135,7 @@ EXTERN void		Tcl_ConditionFinalize(Tcl_Condition *condPtr);
 EXTERN void		Tcl_MutexFinalize(Tcl_Mutex *mutex);
 /* 393 */
 EXTERN int		Tcl_CreateThread(Tcl_ThreadId *idPtr,
-				Tcl_ThreadCreateProc proc,
+				Tcl_ThreadCreateProc *proc,
 				ClientData clientData, int stackSize,
 				int flags);
 /* 394 */
@@ -2215,7 +2215,7 @@ typedef struct TclStubs {
     int (*tcl_ProcObjCmd) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 390 */
     void (*tcl_ConditionFinalize) (Tcl_Condition *condPtr); /* 391 */
     void (*tcl_MutexFinalize) (Tcl_Mutex *mutex); /* 392 */
-    int (*tcl_CreateThread) (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc proc, ClientData clientData, int stackSize, int flags); /* 393 */
+    int (*tcl_CreateThread) (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc, ClientData clientData, int stackSize, int flags); /* 393 */
     int (*tcl_ReadRaw) (Tcl_Channel chan, char *dst, int bytesToRead); /* 394 */
     int (*tcl_WriteRaw) (Tcl_Channel chan, const char *src, int srcLen); /* 395 */
     Tcl_Channel (*tcl_GetTopChannel) (Tcl_Channel chan); /* 396 */
@@ -3743,6 +3743,18 @@ extern const TclStubs *tclStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
+
+#if defined(USE_TCL_STUBS)
+#   undef Tcl_CreateInterp
+#   undef Tcl_FindExecutable
+#   undef Tcl_Init
+#   undef Tcl_SetVar
+#   undef Tcl_StaticPackage
+#   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
+#   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
+#   define Tcl_SetVar(interp, varName, newValue, flags) \
+	    (tclStubsPtr->tcl_SetVar(interp, varName, newValue, flags))
+#endif
 
 #endif /* _TCLDECLS */
 

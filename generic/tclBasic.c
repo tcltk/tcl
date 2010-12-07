@@ -451,9 +451,9 @@ Tcl_CreateInterp(void)
      * the Tcl_CallFrame structure (or vice versa).
      */
 
-    if (sizeof(Tcl_CallFrame) != sizeof(CallFrame)) {
+    if (sizeof(Tcl_CallFrame) < sizeof(CallFrame)) {
 	/*NOTREACHED*/
-	Tcl_Panic("Tcl_CallFrame and CallFrame are not the same size");
+	Tcl_Panic("Tcl_CallFrame must not be smaller than CallFrame");
     }
 
     if (cancelTableInitialized == 0) {
@@ -1651,6 +1651,7 @@ Tcl_HideCommand(
 	Tcl_AppendResult(interp,
 		"cannot use namespace qualifiers in hidden command"
 		" token (rename)", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "HIDDENTOKEN", NULL);
 	return TCL_ERROR;
     }
 
@@ -1674,6 +1675,7 @@ Tcl_HideCommand(
     if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
 	Tcl_AppendResult(interp, "can only hide global namespace commands"
 		" (use rename then hide)", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "HIDE", "NON_GLOBAL", NULL);
 	return TCL_ERROR;
     }
 
@@ -1699,6 +1701,7 @@ Tcl_HideCommand(
     if (!isNew) {
 	Tcl_AppendResult(interp, "hidden command named \"", hiddenCmdToken,
 		"\" already exists", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "HIDE", "ALREADY_HIDDEN", NULL);
 	return TCL_ERROR;
     }
 
@@ -1801,6 +1804,7 @@ Tcl_ExposeCommand(
     if (strstr(cmdName, "::") != NULL) {
 	Tcl_AppendResult(interp, "cannot expose to a namespace "
 		"(use expose to toplevel, then rename)", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "EXPOSE", "NON_GLOBAL", NULL);
 	return TCL_ERROR;
     }
 
@@ -1816,6 +1820,8 @@ Tcl_ExposeCommand(
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "unknown hidden command \"", hiddenCmdToken,
 		"\"", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "HIDDENTOKEN",
+                hiddenCmdToken, NULL);
 	return TCL_ERROR;
     }
     cmdPtr = Tcl_GetHashValue(hPtr);
@@ -1833,7 +1839,7 @@ Tcl_ExposeCommand(
 	 */
 
 	Tcl_AppendResult(interp,
-		"trying to expose a non global command name space command",
+		"trying to expose a non-global command namespace command",
 		NULL);
 	return TCL_ERROR;
     }
@@ -1853,6 +1859,7 @@ Tcl_ExposeCommand(
     if (!isNew) {
 	Tcl_AppendResult(interp, "exposed command \"", cmdName,
 		"\" already exists", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "EXPOSE", "COMMAND_EXISTS", NULL);
 	return TCL_ERROR;
     }
 
@@ -2392,6 +2399,7 @@ TclRenameCommand(
 	Tcl_AppendResult(interp, "can't ",
 		((newName == NULL)||(*newName == '\0'))? "delete":"rename",
 		" \"", oldName, "\": command doesn't exist", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", oldName, NULL);
 	return TCL_ERROR;
     }
     cmdNsPtr = cmdPtr->nsPtr;
@@ -2422,12 +2430,14 @@ TclRenameCommand(
     if ((newNsPtr == NULL) || (newTail == NULL)) {
 	Tcl_AppendResult(interp, "can't rename to \"", newName,
 		"\": bad command name", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", NULL);
 	result = TCL_ERROR;
 	goto done;
     }
     if (Tcl_FindHashEntry(&newNsPtr->cmdTable, newTail) != NULL) {
 	Tcl_AppendResult(interp, "can't rename to \"", newName,
 		 "\": command already exists", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "RENAME", "TARGET_EXISTS", NULL);
 	result = TCL_ERROR;
 	goto done;
     }
@@ -3711,6 +3721,7 @@ TclInterpReady(
     } else {
 	Tcl_AppendResult(interp,
 		"too many nested evaluations (infinite loop?)", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", NULL);
     }
     return TCL_ERROR;
 }
@@ -4320,6 +4331,8 @@ TclEvalObjvInternal(
 	if (cmdPtr == NULL) {
 	    Tcl_AppendResult(interp, "invalid command name \"",
 		    TclGetString(objv[0]), "\"", NULL);
+            Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
+		    TclGetString(objv[0]), NULL);
 	    code = TCL_ERROR;
 	} else {
 	    TclResetCancellation(interp, 0);
@@ -6209,6 +6222,8 @@ TclObjInvoke(
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "invalid hidden command name \"",
 		cmdName, "\"", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "HIDDENTOKEN", cmdName,
+                NULL);
 	return TCL_ERROR;
     }
     cmdPtr = Tcl_GetHashValue(hPtr);

@@ -4,7 +4,7 @@
  *	This file contains functions that implement the Tcl dict object type
  *	and its accessor command.
  *
- * Copyright (c) 2002 by Donal K. Fellows.
+ * Copyright (c) 2002-2010 by Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1614,6 +1614,8 @@ DictGetCmd(
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "key \"", TclGetString(objv[objc-1]),
 		"\" not known in dictionary", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
+		TclGetString(objv[objc-1]), NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, valuePtr);

@@ -352,11 +352,11 @@ proc ::tcl::tm::roots {paths} {
 	set p [file join $pa tcl$major]
 	for {set n $minor} {$n >= 0} {incr n -1} {
 	    set px [file join $p ${major}.${n}]
-	    if {![interp issafe]} { set px [file normalize $px] }
+	    if {![interp issafe]} {set px [file normalize $px]}
 	    path add $px
 	}
 	set px [file join $p site-tcl]
-	if {![interp issafe]} { set px [file normalize $px] }
+	if {![interp issafe]} {set px [file normalize $px]}
 	path add $px
     }
     return
@@ -365,4 +365,4 @@ proc ::tcl::tm::roots {paths} {
 # Initialization. Set up the default paths, then insert the new handler into
 # the chain.
 
-if {![interp issafe]} { ::tcl::tm::Defaults }
+if {![interp issafe]} {::tcl::tm::Defaults}

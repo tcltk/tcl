@@ -50,7 +50,7 @@ proc ::history {args} {
     # ensemble unknown handler, as those don't fire when no subcommand is
     # given at all.
 
-    if {[llength $args] == 0} {
+    if {![llength $args]} {
 	set args info
     }
 
@@ -229,10 +229,10 @@ proc ::tcl::HistIndex {event} {
 	for {set i [expr {$history(nextid)-1}]} {[info exists history($i)]} \
 		{incr i -1} {
 	    if {[string match $event* $history($i)]} {
-		return $i;
+		return $i
 	    }
 	    if {[string match $event $history($i)]} {
-		return $i;
+		return $i
 	    }
 	}
 	return -code error "no event matches \"$event\""

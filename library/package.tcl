@@ -29,7 +29,7 @@ namespace eval tcl::Pkg {}
 # Results:
 #  Returns 1 if the extension matches, 0 otherwise
 
-proc tcl::Pkg::CompareExtension { fileName {ext {}} } {
+proc tcl::Pkg::CompareExtension {fileName {ext {}}} {
     global tcl_platform
     if {$ext eq ""} {set ext [info sharedlibextension]}
     if {$tcl_platform(platform) eq "windows"} {
@@ -50,7 +50,7 @@ proc tcl::Pkg::CompareExtension { fileName {ext {}} } {
 	    #		tcl::Pkg::CompareExtension foo.so.bar .so
 	    # which should not match.
 
-	    if { ![string is integer -strict [string range $currExt 1 end]] } {
+	    if {![string is integer -strict [string range $currExt 1 end]]} {
 		return 0
 	    }
             set root [file rootname $root]
@@ -83,7 +83,7 @@ proc tcl::Pkg::CompareExtension { fileName {ext {}} } {
 #			dir.
 
 proc pkg_mkIndex {args} {
-    set usage {"pkg_mkIndex ?-direct? ?-lazy? ?-load pattern? ?-verbose? ?--? dir ?pattern ...?"};
+    set usage {"pkg_mkIndex ?-direct? ?-lazy? ?-load pattern? ?-verbose? ?--? dir ?pattern ...?"}
 
     set argCount [llength $args]
     if {$argCount < 1} {
@@ -129,7 +129,7 @@ proc pkg_mkIndex {args} {
 
     set dir [lindex $args $idx]
     set patternList [lrange $args [expr {$idx + 1}] end]
-    if {[llength $patternList] == 0} {
+    if {![llength $patternList]} {
 	set patternList [list "*.tcl" "*[info sharedlibextension]"]
     }
 
@@ -165,7 +165,7 @@ proc pkg_mkIndex {args} {
 	    }
 	}
 	foreach pkg [info loaded] {
-	    if {! [string match -nocase $loadPat [lindex $pkg 1]]} {
+	    if {![string match -nocase $loadPat [lindex $pkg 1]]} {
 		continue
 	    }
 	    if {$doVerbose} {
@@ -301,12 +301,12 @@ proc pkg_mkIndex {args} {
 		# load packages, don't bother figuring out the set of commands
 		# created by the new packages.  We only need that list for
 		# setting up the autoloading used in the non-direct case.
-		if { !$::tcl::direct } {
+		if {!$::tcl::direct} {
 		    # See what new namespaces appeared, and import commands
 		    # from them.  Only exported commands go into the index.
 
 		    foreach ::tcl::x [::tcl::GetAllNamespaces] {
-			if {! [info exists ::tcl::namespaces($::tcl::x)]} {
+			if {![info exists ::tcl::namespaces($::tcl::x)]} {
 			    namespace import -force ${::tcl::x}::*
 			}
 
@@ -365,7 +365,7 @@ proc pkg_mkIndex {args} {
 	    set cmds [lsort [$c eval array names ::tcl::newCmds]]
 	    set pkgs [$c eval set ::tcl::newPkgs]
 	    if {$doVerbose} {
-		if { !$direct } {
+		if {!$direct} {
 		    tclLog "commands provided were $cmds"
 		}
 		tclLog "packages provided were $pkgs"
@@ -403,7 +403,7 @@ proc pkg_mkIndex {args} {
 	lappend cmd ::tcl::Pkg::Create -name $name -version $version
 	foreach spec $files($pkg) {
 	    foreach {file type procs} $spec {
-		if { $direct } {
+		if {$direct} {
 		    set procs {}
 		}
 		lappend cmd "-$type" [list $file $procs]
@@ -678,7 +678,7 @@ proc ::tcl::Pkg::Create {args} {
 
     # process arguments
     set len [llength $args]
-    if { $len < 6 } {
+    if {$len < 6} {
 	error $err(wrongNumArgs)
     }
 
@@ -695,14 +695,14 @@ proc ::tcl::Pkg::Create {args} {
 	switch -glob -- $flag {
 	    "-name"		-
 	    "-version"		{
-		if { $i >= $len } {
+		if {$i >= $len} {
 		    error [format $err(valueMissing) $flag]
 		}
 		set opts($flag) [lindex $args $i]
 	    }
 	    "-source"		-
 	    "-load"		{
-		if { $i >= $len } {
+		if {$i >= $len} {
 		    error [format $err(valueMissing) $flag]
 		}
 		lappend opts($flag) [lindex $args $i]
@@ -714,14 +714,14 @@ proc ::tcl::Pkg::Create {args} {
     }
 
     # Validate the parameters
-    if { [llength $opts(-name)] == 0 } {
+    if {![llength $opts(-name)]} {
 	error [format $err(valueMissing) "-name"]
     }
-    if { [llength $opts(-version)] == 0 } {
+    if {![llength $opts(-version)]} {
 	error [format $err(valueMissing) "-version"]
     }
 
-    if { [llength $opts(-source)] == 0 && [llength $opts(-load)] == 0 } {
+    if {!([llength $opts(-source)] || [llength $opts(-load)])} {
 	error $err(noLoadOrSource)
     }
 
@@ -741,7 +741,7 @@ proc ::tcl::Pkg::Create {args} {
 		break
 	    }
 
-	    if { [llength $proclist] == 0 } {
+	    if {![llength $proclist]} {
 		set cmd "\[list $key \[file join \$dir [list $filename]\]\]"
 		lappend cmdList $cmd
 	    } else {
@@ -750,7 +750,7 @@ proc ::tcl::Pkg::Create {args} {
 	}
     }
 
-    if { [llength $lazyFileList] > 0 } {
+    if {[llength $lazyFileList]} {
 	lappend cmdList "\[list tclPkgSetup \$dir $opts(-name)\
 		$opts(-version) [list $lazyFileList]\]"
     }

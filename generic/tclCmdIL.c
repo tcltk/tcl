@@ -3450,7 +3450,8 @@ Tcl_LsetObjCmd(
      */
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "listVar index ?index ...? value");
+	Tcl_WrongNumArgs(interp, 1, objv,
+                "listVar ?index? ?index ...? value");
 	return TCL_ERROR;
     }
 

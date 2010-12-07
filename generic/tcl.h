@@ -312,9 +312,9 @@ typedef long LONG;
  */
 
 #ifndef NO_VOID
-#define VOID	void
+#   define VOID void
 #else
-#define VOID	char
+#   define VOID char
 #endif
 
 /*
@@ -2562,13 +2562,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * neither DLLEXPORT nor DLLIMPORT.
  */
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS
-
-EXTERN int		Tcl_AppInit(Tcl_Interp *interp);
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLIMPORT
+extern Tcl_AppInitProc Tcl_AppInit;
 
 #endif /* RC_INVOKED */
 

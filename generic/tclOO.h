@@ -16,13 +16,6 @@
 #define TCLOO_H_INCLUDED
 #include "tcl.h"
 
-#if defined(BUILD_tcloo)
-#	define TCLOOAPI DLLEXPORT
-#	undef USE_TCLOO_STUBS
-#else
-#	define TCLOOAPI DLLIMPORT
-#endif
-
 /*
  * Be careful when it comes to versioning; need to make sure that the
  * standalone TclOO version matches. Also make sure that this matches the
