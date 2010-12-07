@@ -1699,6 +1699,7 @@ TclCompileForeachCmd(
     infoPtr->loopCtTemp = loopCtTemp;
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	ForeachVarList *varListPtr;
+
 	numVars = varcList[loopIndex];
 	varListPtr = (ForeachVarList *) ckalloc((unsigned)
 		sizeof(ForeachVarList) + numVars*sizeof(int));
@@ -2162,6 +2163,7 @@ TclCompileIfCmd(
 
 	    Tcl_Obj *boolObj = Tcl_NewStringObj(testTokenPtr[1].start,
 		    testTokenPtr[1].size);
+
 	    Tcl_IncrRefCount(boolObj);
 	    code = Tcl_GetBooleanFromObj(NULL, boolObj, &boolVal);
 	    TclDecrRefCount(boolObj);
@@ -3793,7 +3795,11 @@ TclCompileVariableCmd(
 	     */
 
 	    CompileWord(envPtr, valueTokenPtr, interp, 1);
-	    TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
+	    if (localIndex < 0x100) {
+		TclEmitInstInt1(INST_STORE_SCALAR1, localIndex, envPtr);
+	    } else {
+		TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
+	    }
 	    TclEmitOpcode(INST_POP, envPtr);
 	}
     }

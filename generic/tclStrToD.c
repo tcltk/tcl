@@ -19,14 +19,9 @@
  *----------------------------------------------------------------------
  */
 
-#include <tclInt.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <float.h>
-#include <limits.h>
+#include "tclInt.h"
+#include "tommath.h"
 #include <math.h>
-#include <ctype.h>
-#include <tommath.h>
 
 /*
  * Define KILL_OCTAL to suppress interpretation of numbers with leading zero
@@ -110,6 +105,7 @@ static int log2FLT_RADIX;	/* Logarithm of the floating point radix. */
 static int mantBits;		/* Number of bits in a double's significand */
 static mp_int pow5[9];		/* Table of powers of 5**(2**n), up to
 				 * 5**256 */
+static double tiny = 0.0;		/* The smallest representable double */
 static int maxDigits;		/* The maximum number of digits to the left of
 				 * the decimal point of a double. */
 static int minDigits;		/* The maximum number of digits to the right
@@ -954,13 +950,14 @@ TclParseNumber(
 	case sINFIN:
 	case sINFINI:
 	case sINFINIT:
+#ifdef IEEE_FLOATING_POINT
 	case sN:
 	case sNA:
 	case sNANPAREN:
 	case sNANHEX:
 	    Tcl_Panic("TclParseNumber: bad acceptState %d parsing '%s'",
 		    acceptState, bytes);
-
+#endif
 	case BINARY:
 	    shift = numTrailZeros;
 	    if (!significandOverflow && significandWide != 0 &&
@@ -1141,12 +1138,13 @@ TclParseNumber(
 	    objPtr->typePtr = &tclDoubleType;
 	    break;
 
+#ifdef IEEE_FLOATING_POINT
 	case sNAN:
 	case sNANFINISH:
 	    objPtr->internalRep.doubleValue = MakeNaN(signum, significandWide);
 	    objPtr->typePtr = &tclDoubleType;
 	    break;
-
+#endif
 	case INITIAL:
 	    /* This case only to silence compiler warning */
 	    Tcl_Panic("TclParseNumber: state INITIAL can't happen here");
@@ -1489,8 +1487,11 @@ MakeHighPrecisionDouble(
 	goto returnValue;
     }
     retval = SafeLdExp(retval, machexp);
-    if (retval <= 0.0) {
-	retval = SafeLdExp(1.0, DBL_MIN_EXP * log2FLT_RADIX - mantBits);
+	if (tiny == 0.0) {
+	    tiny = SafeLdExp(1.0, DBL_MIN_EXP * log2FLT_RADIX - mantBits);
+	}
+    if (retval < tiny) {
+	retval = tiny;
     }
 
     /*

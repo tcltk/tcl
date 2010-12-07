@@ -982,7 +982,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
  */
 
 #define LITERAL_ON_HEAP		0x01
-#define LITERAL_NS_SCOPE	0x02
+#define LITERAL_CMD_NAME	0x02
 
 /*
  * Form of TclRegisterLiteral with flags == 0. In that case, it is safe to
@@ -996,7 +996,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
     TclRegisterLiteral(envPtr, (char *)(bytes), length, /*flags*/ 0)
 
 /*
- * Form of TclRegisterLiteral with flags == LITERAL_NS_SCOPE. In that case, it
+ * Form of TclRegisterLiteral with flags == LITERAL_CMD_NAME. In that case, it
  * is safe to cast away constness, and it is cleanest to do that here, all in
  * one place.
  *
@@ -1004,8 +1004,8 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
  *			       int length);
  */
 
-#define TclRegisterNewNSLiteral(envPtr, bytes, length) \
-    TclRegisterLiteral(envPtr, (char *)(bytes), length, LITERAL_NS_SCOPE)
+#define TclRegisterNewCmdLiteral(envPtr, bytes, length) \
+    TclRegisterLiteral(envPtr, (char *)(bytes), length, LITERAL_CMD_NAME)
 
 /*
  * Macro used to manually adjust the stack requirements; used in cases where

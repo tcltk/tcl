@@ -15,7 +15,7 @@
 #ifndef TCL_OO_INTERNAL_H
 #define TCL_OO_INTERNAL_H 1
 
-#include <tclInt.h>
+#include "tclInt.h"
 #include "tclOO.h"
 
 /*

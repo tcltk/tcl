@@ -21,10 +21,8 @@
 #include "tclInt.h"
 #include "tclOOInt.h"
 #include "tclCompile.h"
-#include <float.h>
-#include <limits.h>
-#include <math.h>
 #include "tommath.h"
+#include <math.h>
 
 /*
  * Determine whether we're using IEEE floating point

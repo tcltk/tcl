@@ -54,7 +54,7 @@ VarHashCreateVar(
     Tcl_Obj *key,
     int *newPtr)
 {
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) tablePtr,
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&tablePtr->table,
 	    (char *) key, newPtr);
 
     if (hPtr) {
@@ -74,7 +74,7 @@ VarHashCreateVar(
     Tcl_DeleteHashEntry(&(((VarInHash *) varPtr)->entry))
 
 #define VarHashFirstEntry(tablePtr, searchPtr) \
-    Tcl_FirstHashEntry((Tcl_HashTable *) (tablePtr), (searchPtr))
+    Tcl_FirstHashEntry(&(tablePtr)->table, (searchPtr))
 
 #define VarHashNextEntry(searchPtr) \
     Tcl_NextHashEntry((searchPtr))
@@ -110,7 +110,7 @@ VarHashNextVar(
     (((VarInHash *)(varPtr))->entry.key.objPtr)
 
 #define VarHashDeleteTable(tablePtr) \
-    Tcl_DeleteHashTable((Tcl_HashTable *) (tablePtr))
+    Tcl_DeleteHashTable(&(tablePtr)->table)
 
 /*
  * The strings below are used to indicate what went wrong when a variable

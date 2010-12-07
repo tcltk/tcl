@@ -63,7 +63,7 @@ extern "C" {
 #define TCL_RELEASE_SERIAL  1
 
 #define TCL_VERSION	    "8.6"
-#define TCL_PATCH_LEVEL	    "8.6b1.1"
+#define TCL_PATCH_LEVEL	    "8.6b1.2"
 
 /*
  *----------------------------------------------------------------------------

@@ -156,11 +156,11 @@ InstructionDesc const tclInstructionTable[] = {
     {"lt",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Less:	push (stknext < stktop) */
     {"gt",		  1,   -1,         0,	{OPERAND_NONE}},
-	/* Greater:	push (stknext || stktop) */
+	/* Greater:	push (stknext > stktop) */
     {"le",		  1,   -1,         0,	{OPERAND_NONE}},
-	/* Less or equal: push (stknext || stktop) */
+	/* Less or equal: push (stknext <= stktop) */
     {"ge",		  1,   -1,         0,	{OPERAND_NONE}},
-	/* Greater or equal: push (stknext || stktop) */
+	/* Greater or equal: push (stknext >= stktop) */
     {"lshift",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Left shift:	push (stknext << stktop) */
     {"rshift",		  1,   -1,         0,	{OPERAND_NONE}},
@@ -1543,25 +1543,16 @@ TclCompileScript(
 		    /*
 		     * No compile procedure so push the word. If the command
 		     * was found, push a CmdName object to reduce runtime
-		     * lookups. Avoid sharing this literal among different
-		     * namespaces to reduce shimmering.
+		     * lookups. Mark this as a command name literal to reduce
+		     * shimmering. 
 		     */
 
-		    objIndex = TclRegisterNewNSLiteral(envPtr,
+		    objIndex = TclRegisterNewCmdLiteral(envPtr,
 			    tokenPtr[1].start, tokenPtr[1].size);
 		    if (cmdPtr != NULL) {
 			TclSetCmdNameObj(interp,
 				envPtr->literalArrayPtr[objIndex].objPtr,
 				cmdPtr);
-		    }
-		    if ((wordIdx == 0) && (parsePtr->numWords == 1)) {
-			/*
-			 * Single word script: unshare the command name to
-			 * avoid shimmering between bytecode and cmdName
-			 * representations. [Bug 458361]
-			 */
-
-			TclHideLiteral(interp, envPtr, objIndex);
 		    }
 		} else {
 		    /*

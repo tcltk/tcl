@@ -1313,19 +1313,16 @@ TclInfoFrame(
 	Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
 
 	if (namePtr) {
-	    char *procName = Tcl_GetHashKey(namePtr->tablePtr, namePtr);
-	    char *nsName = procPtr->cmdPtr->nsPtr->fullName;
+            Tcl_Obj *procNameObj;
 
 	    /*
 	     * This is a regular command.
 	     */
 
-	    ADD_PAIR("proc", Tcl_NewStringObj(nsName, -1));
-
-	    if (strcmp(nsName, "::") != 0) {
-		Tcl_AppendToObj(lv[lc-1], "::", -1);
-	    }
-	    Tcl_AppendToObj(lv[lc-1], procName, -1);
+            TclNewObj(procNameObj);
+            Tcl_GetCommandFullName(interp, (Tcl_Command) procPtr->cmdPtr,
+                    procNameObj);
+	    ADD_PAIR("proc", procNameObj);
 	} else if (procPtr->cmdPtr->clientData) {
 	    ExtraFrameInfo *efiPtr = procPtr->cmdPtr->clientData;
 	    int i;

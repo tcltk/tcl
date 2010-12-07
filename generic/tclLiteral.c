@@ -411,8 +411,8 @@ TclRegisterLiteral(
 				 * first null character. */
     int flags)			/* If LITERAL_ON_HEAP then the caller already
 				 * malloc'd bytes and ownership is passed to
-				 * this function. If LITERAL_NS_SCOPE then
-				 * the literal shouldnot be shared accross
+				 * this function. If LITERAL_CMD_NAME then
+				 * the literal should not be shared accross
 				 * namespaces. */
 {
     Interp *iPtr = envPtr->iPtr;
@@ -453,18 +453,22 @@ TclRegisterLiteral(
     }
 
     /*
-     * The literal is new to this CompileEnv. Should it be shared accross
-     * namespaces? If it is a fully qualified name, the namespace
-     * specification is not needed to avoid sharing.
+     * The literal is new to this CompileEnv. If it is a command name, avoid
+     * sharing it accross namespaces, and try not to share it with non-cmd
+     * literals. Note that FQ command names can be shared, so that we register
+     * the namespace as the interp's global NS.
      */
 
-    if ((flags & LITERAL_NS_SCOPE) && iPtr->varFramePtr
-	    && ((length <2) || (bytes[0] != ':') || (bytes[1] != ':'))) {
-	nsPtr = iPtr->varFramePtr->nsPtr;
+    if (flags & LITERAL_CMD_NAME) {
+	if ((length >= 2) && (bytes[0] == ':') && (bytes[1] == ':')) {
+	    nsPtr = iPtr->globalNsPtr;
+	} else {
+	    nsPtr = iPtr->varFramePtr->nsPtr;
+	}
     } else {
 	nsPtr = NULL;
     }
-
+    
     /*
      * Is it in the interpreter's global literal table? If not, create it.
      */

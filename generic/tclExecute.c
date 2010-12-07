@@ -20,9 +20,7 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tommath.h"
-
 #include <math.h>
-#include <float.h>
 
 /*
  * Hack to determine whether we may expect IEEE floating point. The hack is
@@ -175,7 +173,7 @@ VarHashCreateVar(
     Tcl_Obj *key,
     int *newPtr)
 {
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) tablePtr,
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&tablePtr->table,
 	    (char *) key, newPtr);
 
     if (!hPtr) {
@@ -7306,6 +7304,31 @@ TclExecuteByteCode(
 	    PUSH_OBJECT(valPtr);
 	    PUSH_OBJECT(keyPtr);
 	}
+
+#ifndef TCL_COMPILE_DEBUG
+	/*
+	 * The INST_DICT_FIRST and INST_DICT_NEXT instructsions are always
+	 * followed by a conditional jump, so we can take advantage of this to
+	 * do some peephole optimization (note that we're careful to not close
+	 * out someone doing something else).
+	 */
+
+	pc += 5;
+	switch (*pc) {
+	case INST_JUMP_FALSE1:
+	    NEXT_INST_F((done ? 2 : TclGetInt1AtPtr(pc+1)), 0, 0);
+	case INST_JUMP_FALSE4:
+	    NEXT_INST_F((done ? 5 : TclGetInt4AtPtr(pc+1)), 0, 0);
+	case INST_JUMP_TRUE1:
+	    NEXT_INST_F((done ? TclGetInt1AtPtr(pc+1) : 2), 0, 0);
+	case INST_JUMP_TRUE4:
+	    NEXT_INST_F((done ? TclGetInt4AtPtr(pc+1) : 5), 0, 0);
+	default:
+	    pc -= 5;
+	    /* fall through to non-debug handling */
+	}
+#endif
+
 	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), done));
 	objResultPtr = constants[done];

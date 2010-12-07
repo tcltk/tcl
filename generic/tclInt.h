@@ -41,11 +41,6 @@
 #include <stdio.h>
 
 #include <ctype.h>
-#ifdef NO_LIMITS_H
-#   include "../compat/limits.h"
-#else
-#   include <limits.h>
-#endif
 #ifdef NO_STDLIB_H
 #   include "../compat/stdlib.h"
 #else
@@ -892,7 +887,7 @@ typedef struct VarInHash {
     !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_WRITE|VAR_DEAD_HASH))
 
 #define TclIsVarDirectUnsettable(varPtr) \
-    !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_UNSET|VAR_DEAD_HASH))
+    !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH))
 
 #define TclIsVarDirectModifyable(varPtr) \
     (   !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_READ|VAR_TRACED_WRITE)) \
@@ -1941,10 +1936,6 @@ typedef struct Interp {
     Tcl_Obj *eiVar;		/* cached ref to ::errorInfo variable. */
     Tcl_Obj *errorCode;		/* errorCode value (now as a Tcl_Obj). */
     Tcl_Obj *ecVar;		/* cached ref to ::errorInfo variable. */
-    Tcl_Obj *errorStack;	/* [info errorstack] value (as a Tcl_Obj). */
-    Tcl_Obj *upLiteral;		/* "UP" literal for [info errorstack] */
-    Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
-    int resetErrorStack;        /* controls cleaning up of ::errorStack */
     int returnLevel;		/* [return -level] parameter. */
 
     /*
@@ -2108,15 +2099,6 @@ typedef struct Interp {
 				 * tclOOInt.h and tclOO.c for real definition
 				 * and setup. */
 
-#ifdef TCL_COMPILE_STATS
-    /*
-     * Statistical information about the bytecode compiler and interpreter's
-     * operation.
-     */
-
-    ByteCodeStats stats;	/* Holds compilation and execution statistics
-				 * for this interpreter. */
-#endif /* TCL_COMPILE_STATS */
     /*
      * TIP #285, Script cancellation support.
      */
@@ -2130,6 +2112,23 @@ typedef struct Interp {
 				 * over the default error messages returned by
 				 * a script cancellation operation. */
 
+	/*
+	 * TIP #348 IMPLEMENTATION  -  Substituted error stack
+	 */
+    Tcl_Obj *errorStack;	/* [info errorstack] value (as a Tcl_Obj). */
+    Tcl_Obj *upLiteral;		/* "UP" literal for [info errorstack] */
+    Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
+    int resetErrorStack;        /* controls cleaning up of ::errorStack */
+
+#ifdef TCL_COMPILE_STATS
+    /*
+     * Statistical information about the bytecode compiler and interpreter's
+     * operation. This should be the last field of Interp.
+     */
+
+    ByteCodeStats stats;	/* Holds compilation and execution statistics
+				 * for this interpreter. */
+#endif /* TCL_COMPILE_STATS */
 } Interp;
 
 /*
@@ -2722,6 +2721,8 @@ MODULE_SCOPE void       TclArgumentGet(Tcl_Interp* interp, Tcl_Obj* obj,
 			    CmdFrame** cfPtrPtr, int* wordPtr);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
+MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
+			    const unsigned char *bytes, int len);
 MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
