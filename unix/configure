@@ -10930,9 +10930,18 @@ _ACEOF
 fi
 
 
-echo "$as_me:$LINENO: checking for getaddrinfo" >&5
-echo $ECHO_N "checking for getaddrinfo... $ECHO_C" >&6
-if test "${ac_cv_func_getaddrinfo+set}" = set; then
+
+	NEED_FAKE_RFC2553=0
+
+
+
+
+for ac_func in getnameinfo getaddrinfo freeaddrinfo gai_strerror
+do
+as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ac_func" >&5
+echo $ECHO_N "checking for $ac_func... $ECHO_C" >&6
+if eval "test \"\${$as_ac_var+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -10941,12 +10950,12 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-/* Define getaddrinfo to an innocuous variant, in case <limits.h> declares getaddrinfo.
+/* Define $ac_func to an innocuous variant, in case <limits.h> declares $ac_func.
    For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define getaddrinfo innocuous_getaddrinfo
+#define $ac_func innocuous_$ac_func
 
 /* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char getaddrinfo (); below.
+    which can conflict with char $ac_func (); below.
     Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
     <limits.h> exists even on freestanding compilers.  */
 
@@ -10956,7 +10965,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 # include <assert.h>
 #endif
 
-#undef getaddrinfo
+#undef $ac_func
 
 /* Override any gcc2 internal prototype to avoid an error.  */
 #ifdef __cplusplus
@@ -10965,14 +10974,14 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char getaddrinfo ();
+char $ac_func ();
 /* The GNU C library defines this for functions which it implements
     to always fail with ENOSYS.  Some functions are actually named
     something starting with __ and the normal name is an alias.  */
-#if defined (__stub_getaddrinfo) || defined (__stub___getaddrinfo)
+#if defined (__stub_$ac_func) || defined (__stub___$ac_func)
 choke me
 #else
-char (*f) () = getaddrinfo;
+char (*f) () = $ac_func;
 #endif
 #ifdef __cplusplus
 }
@@ -10981,7 +10990,7 @@ char (*f) () = getaddrinfo;
 int
 main ()
 {
-return f != getaddrinfo;
+return f != $ac_func;
   ;
   return 0;
 }
@@ -11008,44 +11017,53 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_func_getaddrinfo=yes
+  eval "$as_ac_var=yes"
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_func_getaddrinfo=no
+eval "$as_ac_var=no"
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 fi
-echo "$as_me:$LINENO: result: $ac_cv_func_getaddrinfo" >&5
-echo "${ECHO_T}$ac_cv_func_getaddrinfo" >&6
-if test $ac_cv_func_getaddrinfo = yes; then
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_var'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_var'}'`" >&6
+if test `eval echo '${'$as_ac_var'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
 
-    echo "$as_me:$LINENO: checking for working getaddrinfo" >&5
-echo $ECHO_N "checking for working getaddrinfo... $ECHO_C" >&6
-if test "${tcl_cv_api_getaddrinfo+set}" = set; then
+else
+  NEED_FAKE_RFC2553=1
+fi
+done
+
+	echo "$as_me:$LINENO: checking for struct addrinfo" >&5
+echo $ECHO_N "checking for struct addrinfo... $ECHO_C" >&6
+if test "${ac_cv_type_struct_addrinfo+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-
-    cat >conftest.$ac_ext <<_ACEOF
+  cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-	#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
 
 int
 main ()
 {
-
-	const char *name, *port;
-	struct addrinfo *aiPtr, hints;
-	(void)getaddrinfo(name,port, &hints, &aiPtr);
-	(void)freeaddrinfo(aiPtr);
-
+if ((struct addrinfo *) 0)
+  return 0;
+if (sizeof (struct addrinfo))
+  return 0;
   ;
   return 0;
 }
@@ -11072,25 +11090,347 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  tcl_cv_api_getaddrinfo=yes
+  ac_cv_type_struct_addrinfo=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-tcl_cv_getaddrinfo=no
+ac_cv_type_struct_addrinfo=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-echo "$as_me:$LINENO: result: $tcl_cv_api_getaddrinfo" >&5
-echo "${ECHO_T}$tcl_cv_api_getaddrinfo" >&6
-    tcl_ok=$tcl_cv_api_getaddrinfo
-    if test "$tcl_ok" = yes; then
+echo "$as_me:$LINENO: result: $ac_cv_type_struct_addrinfo" >&5
+echo "${ECHO_T}$ac_cv_type_struct_addrinfo" >&6
+if test $ac_cv_type_struct_addrinfo = yes; then
 
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETADDRINFO 1
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_ADDRINFO 1
 _ACEOF
 
-    fi
+
+else
+  NEED_FAKE_RFC2553=1
+fi
+echo "$as_me:$LINENO: checking for struct in6_addr" >&5
+echo $ECHO_N "checking for struct in6_addr... $ECHO_C" >&6
+if test "${ac_cv_type_struct_in6_addr+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
+
+int
+main ()
+{
+if ((struct in6_addr *) 0)
+  return 0;
+if (sizeof (struct in6_addr))
+  return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_type_struct_in6_addr=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_type_struct_in6_addr=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_type_struct_in6_addr" >&5
+echo "${ECHO_T}$ac_cv_type_struct_in6_addr" >&6
+if test $ac_cv_type_struct_in6_addr = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_IN6_ADDR 1
+_ACEOF
+
+
+else
+  NEED_FAKE_RFC2553=1
+fi
+echo "$as_me:$LINENO: checking for struct sockaddr_in6" >&5
+echo $ECHO_N "checking for struct sockaddr_in6... $ECHO_C" >&6
+if test "${ac_cv_type_struct_sockaddr_in6+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
+
+int
+main ()
+{
+if ((struct sockaddr_in6 *) 0)
+  return 0;
+if (sizeof (struct sockaddr_in6))
+  return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_type_struct_sockaddr_in6=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_type_struct_sockaddr_in6=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_type_struct_sockaddr_in6" >&5
+echo "${ECHO_T}$ac_cv_type_struct_sockaddr_in6" >&6
+if test $ac_cv_type_struct_sockaddr_in6 = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_SOCKADDR_IN6 1
+_ACEOF
+
+
+else
+  NEED_FAKE_RFC2553=1
+fi
+echo "$as_me:$LINENO: checking for struct sockaddr_storage" >&5
+echo $ECHO_N "checking for struct sockaddr_storage... $ECHO_C" >&6
+if test "${ac_cv_type_struct_sockaddr_storage+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
+
+int
+main ()
+{
+if ((struct sockaddr_storage *) 0)
+  return 0;
+if (sizeof (struct sockaddr_storage))
+  return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_type_struct_sockaddr_storage=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_type_struct_sockaddr_storage=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_type_struct_sockaddr_storage" >&5
+echo "${ECHO_T}$ac_cv_type_struct_sockaddr_storage" >&6
+if test $ac_cv_type_struct_sockaddr_storage = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_SOCKADDR_STORAGE 1
+_ACEOF
+
+
+else
+  NEED_FAKE_RFC2553=1
+fi
+
+if test "x$NEED_FAKE_RFC2553" = "x1"; then
+   cat >>confdefs.h <<\_ACEOF
+#define NEED_FAKE_RFC2553 1
+_ACEOF
+
+   case $LIBOBJS in
+    "fake-rfc2553.$ac_objext"   | \
+  *" fake-rfc2553.$ac_objext"   | \
+    "fake-rfc2553.$ac_objext "* | \
+  *" fake-rfc2553.$ac_objext "* ) ;;
+  *) LIBOBJS="$LIBOBJS fake-rfc2553.$ac_objext" ;;
+esac
+
+   echo "$as_me:$LINENO: checking for strlcpy" >&5
+echo $ECHO_N "checking for strlcpy... $ECHO_C" >&6
+if test "${ac_cv_func_strlcpy+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define strlcpy to an innocuous variant, in case <limits.h> declares strlcpy.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define strlcpy innocuous_strlcpy
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char strlcpy (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef strlcpy
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char strlcpy ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_strlcpy) || defined (__stub___strlcpy)
+choke me
+#else
+char (*f) () = strlcpy;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
+int
+main ()
+{
+return f != strlcpy;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_func_strlcpy=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_func_strlcpy=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_func_strlcpy" >&5
+echo "${ECHO_T}$ac_cv_func_strlcpy" >&6
 
 fi
 

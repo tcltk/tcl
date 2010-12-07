@@ -83,7 +83,7 @@ declare 12 {
 #	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
 #}
 declare 14 {
-    void TclDumpMemoryInfo(FILE *outFile)
+    int TclDumpMemoryInfo(ClientData clientData, int flags)
 }
 # Removed in 8.1:
 #  declare 15 {

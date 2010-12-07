@@ -2118,6 +2118,8 @@ typedef struct Interp {
     Tcl_Obj *errorStack;	/* [info errorstack] value (as a Tcl_Obj). */
     Tcl_Obj *upLiteral;		/* "UP" literal for [info errorstack] */
     Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
+    Tcl_Obj *innerLiteral;	/* "INNER" literal for [info errorstack] */
+    Tcl_Obj *innerContext;	/* cached list for fast reallocation */
     int resetErrorStack;        /* controls cleaning up of ::errorStack */
 
 #ifdef TCL_COMPILE_STATS
@@ -2889,6 +2891,10 @@ MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);
 MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
+MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
+			    struct addrinfo **addrlist,
+			    const char *host, int port, int willBind,
+			    const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, ClientData clientData,
 			    int stackSize, int flags);
@@ -2995,6 +3001,8 @@ MODULE_SCOPE void *     TclpThreadCreateKey(void);
 MODULE_SCOPE void       TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void       TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
 MODULE_SCOPE void *     TclpThreadGetMasterTSD(void *tsdKeyPtr);
+
+MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp, const char *msg, int length);
 
 /*
  *----------------------------------------------------------------

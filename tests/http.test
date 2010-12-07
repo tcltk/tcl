@@ -524,7 +524,7 @@ test http-4.15 {http::Event} -body {
     http::status $token
     # error codes vary among platforms.
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -returnCodes 1 -match glob -result "couldn't open socket*"
 
 test http-5.1 {http::formatQuery} {

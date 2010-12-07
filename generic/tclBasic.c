@@ -518,6 +518,10 @@ Tcl_CreateInterp(void)
     Tcl_IncrRefCount(iPtr->upLiteral);
     TclNewLiteralStringObj(iPtr->callLiteral,"CALL");
     Tcl_IncrRefCount(iPtr->callLiteral);
+    TclNewLiteralStringObj(iPtr->innerLiteral,"INNER");
+    Tcl_IncrRefCount(iPtr->innerLiteral);
+    iPtr->innerContext = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(iPtr->innerContext);
     iPtr->errorCode = NULL;
     TclNewLiteralStringObj(iPtr->ecVar, "::errorCode");
     Tcl_IncrRefCount(iPtr->ecVar);
@@ -800,8 +804,8 @@ Tcl_CreateInterp(void)
     if (mathfuncNSPtr == NULL) {
 	Tcl_Panic("Can't create math function namespace");
     }
-    strcpy(mathFuncName, "::tcl::mathfunc::");
 #define MATH_FUNC_PREFIX_LEN 17 /* == strlen("::tcl::mathfunc::") */
+    memcpy(mathFuncName, "::tcl::mathfunc::", MATH_FUNC_PREFIX_LEN);
     for (builtinFuncPtr = BuiltinFuncTable; builtinFuncPtr->name != NULL;
 	    builtinFuncPtr++) {
 	strcpy(mathFuncName+MATH_FUNC_PREFIX_LEN, builtinFuncPtr->name);
@@ -815,12 +819,12 @@ Tcl_CreateInterp(void)
      */
 
     mathopNSPtr = Tcl_CreateNamespace(interp, "::tcl::mathop", NULL, NULL);
-#define MATH_OP_PREFIX_LEN 15 /* == strlen("::tcl::mathop::") */
     if (mathopNSPtr == NULL) {
 	Tcl_Panic("can't create math operator namespace");
     }
     Tcl_Export(interp, mathopNSPtr, "*", 1);
-    strcpy(mathFuncName, "::tcl::mathop::");
+#define MATH_OP_PREFIX_LEN 15 /* == strlen("::tcl::mathop::") */
+    memcpy(mathFuncName, "::tcl::mathop::", MATH_OP_PREFIX_LEN);
     for (opcmdInfoPtr=mathOpCmds ; opcmdInfoPtr->name!=NULL ; opcmdInfoPtr++){
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)
 		ckalloc(sizeof(TclOpCmdClientData));
@@ -1459,6 +1463,8 @@ DeleteInterpProc(
     iPtr->errorStack = NULL;
     Tcl_DecrRefCount(iPtr->upLiteral);
     Tcl_DecrRefCount(iPtr->callLiteral);
+    Tcl_DecrRefCount(iPtr->innerLiteral);
+    Tcl_DecrRefCount(iPtr->innerContext);
     if (iPtr->returnOpts) {
 	Tcl_DecrRefCount(iPtr->returnOpts);
     }

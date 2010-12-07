@@ -55,9 +55,9 @@ char *tclEmptyStringRep = &tclEmptyString;
 
 #if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
 /*
- * Structure for tracking the source file and line number where a given Tcl_Obj
- * was allocated.  We also track the pointer to the Tcl_Obj itself, for sanity
- * checking purposes.
+ * Structure for tracking the source file and line number where a given
+ * Tcl_Obj was allocated.  We also track the pointer to the Tcl_Obj itself,
+ * for sanity checking purposes.
  */
 
 typedef struct ObjData {
@@ -1486,7 +1486,7 @@ TclFreeObj(
 	}
     }
 }
-#endif
+#endif /* TCL_MEM_DEBUG */
 
 /*
  *----------------------------------------------------------------------
@@ -1512,7 +1512,6 @@ TclObjBeingDeleted(
 {
     return (objPtr->length == -1);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1689,7 +1688,6 @@ Tcl_InvalidateStringRep(
 {
     TclInvalidateStringRep(objPtr);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -2338,7 +2336,7 @@ UpdateStringOfDouble(
     len = strlen(buffer);
 
     objPtr->bytes = (char *) ckalloc((unsigned) len + 1);
-    strcpy(objPtr->bytes, buffer);
+    memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
     objPtr->length = len;
 }
 
@@ -2534,7 +2532,7 @@ UpdateStringOfInt(
     len = TclFormatInt(buffer, objPtr->internalRep.longValue);
 
     objPtr->bytes = ckalloc((unsigned) len + 1);
-    strcpy(objPtr->bytes, buffer);
+    memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
     objPtr->length = len;
 }
 
@@ -3242,7 +3240,7 @@ UpdateStringOfBignum(
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
     }
     objPtr->bytes = stringVal;
-    objPtr->length = size - 1;	/* size includes a trailing null byte */
+    objPtr->length = size - 1;	/* size includes a trailing NUL byte. */
 }
 
 /*
@@ -3549,6 +3547,24 @@ Tcl_SetBignumObj(
     TclSetBignumIntRep(objPtr, bignumValue);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetBignumIntRep --
+ *
+ *	Install a bignum into the internal representation of an object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Object internal representation is updated and object type is set. The
+ *	bignum value is cleared, since ownership has transferred to the
+ *	object.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TclSetBignumIntRep(
     Tcl_Obj *objPtr,
@@ -3559,8 +3575,9 @@ TclSetBignumIntRep(
 
     /*
      * Clear the mp_int value.
-     * Don't call mp_clear() because it would free the digit array
-     * we just packed into the Tcl_Obj.
+     *
+     * Don't call mp_clear() because it would free the digit array we just
+     * packed into the Tcl_Obj.
      */
 
     bignumValue->dp = NULL;
@@ -3573,9 +3590,17 @@ TclSetBignumIntRep(
  *
  * TclGetNumberFromObj --
  *
+ *      Extracts a number (of any possible numeric type) from an object.
+ *
  * Results:
+ *      Whether the extraction worked. The type is stored in the variable
+ *      referred to by the typePtr argument, and a pointer to the
+ *      representation is stored in the variable referred to by the
+ *      clientDataPtr.
  *
  * Side effects:
+ *      Can allocate thread-specific data for handling the copy-out space for
+ *      bignums; this space is shared within a thread.
  *
  *----------------------------------------------------------------------
  */
@@ -3594,18 +3619,18 @@ TclGetNumberFromObj(
 	    } else {
 		*typePtr = TCL_NUMBER_DOUBLE;
 	    }
-	    *clientDataPtr = &(objPtr->internalRep.doubleValue);
+	    *clientDataPtr = &objPtr->internalRep.doubleValue;
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclIntType) {
 	    *typePtr = TCL_NUMBER_LONG;
-	    *clientDataPtr = &(objPtr->internalRep.longValue);
+	    *clientDataPtr = &objPtr->internalRep.longValue;
 	    return TCL_OK;
 	}
 #ifndef NO_WIDE_TYPE
 	if (objPtr->typePtr == &tclWideIntType) {
 	    *typePtr = TCL_NUMBER_WIDE;
-	    *clientDataPtr = &(objPtr->internalRep.wideValue);
+	    *clientDataPtr = &objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
 #endif

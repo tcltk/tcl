@@ -77,7 +77,7 @@ EXTERN void		TclDeleteVars(Interp *iPtr,
 				TclVarHashTable *tablePtr);
 /* Slot 13 is reserved */
 /* 14 */
-EXTERN void		TclDumpMemoryInfo(FILE *outFile);
+EXTERN int		TclDumpMemoryInfo(ClientData clientData, int flags);
 /* Slot 15 is reserved */
 /* 16 */
 EXTERN void		TclExprFloatError(Tcl_Interp *interp, double value);
@@ -567,7 +567,7 @@ typedef struct TclIntStubs {
     void (*tclDeleteCompiledLocalVars) (Interp *iPtr, CallFrame *framePtr); /* 11 */
     void (*tclDeleteVars) (Interp *iPtr, TclVarHashTable *tablePtr); /* 12 */
     void (*reserved13)(void);
-    void (*tclDumpMemoryInfo) (FILE *outFile); /* 14 */
+    int (*tclDumpMemoryInfo) (ClientData clientData, int flags); /* 14 */
     void (*reserved15)(void);
     void (*tclExprFloatError) (Tcl_Interp *interp, double value); /* 16 */
     void (*reserved17)(void);

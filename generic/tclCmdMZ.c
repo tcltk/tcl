@@ -4448,6 +4448,8 @@ TryPostBody(
 				   interp, result);
 
 	handlerFailed:
+	    resultObj = Tcl_GetObjResult(interp);
+	    Tcl_IncrRefCount(resultObj);
 	    options = During(interp, result, options, NULL);
 	    break;
 

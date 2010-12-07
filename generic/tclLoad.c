@@ -133,6 +133,7 @@ Tcl_LoadObjCmd(
     const char *p, *fullFileName, *packageName;
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch;
+    unsigned len;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "fileName ?packageName? ?interp?");
@@ -281,8 +282,7 @@ Tcl_LoadObjCmd(
 
 	    retc = TclGuessPackageName(fullFileName, &pkgName);
 	    if (!retc) {
-		Tcl_Obj *splitPtr;
-		Tcl_Obj *pkgGuessPtr;
+		Tcl_Obj *splitPtr, *pkgGuessPtr;
 		int pElements;
 		const char *pkgGuess;
 
@@ -354,7 +354,8 @@ Tcl_LoadObjCmd(
 	symbols[1] = NULL;
 
 	Tcl_MutexLock(&packageMutex);
-	code = Tcl_LoadFile(interp, objv[1], symbols, 0, &initProc, &loadHandle);
+	code = Tcl_LoadFile(interp, objv[1], symbols, 0, &initProc,
+		&loadHandle);
 	Tcl_MutexUnlock(&packageMutex);
 	if (code != TCL_OK) {
 	    goto done;
@@ -365,21 +366,23 @@ Tcl_LoadObjCmd(
 	 */
 
 	pkgPtr = (LoadedPackage *) ckalloc(sizeof(LoadedPackage));
-	pkgPtr->fileName	   =
-		ckalloc((unsigned) (strlen(fullFileName) + 1));
-	strcpy(pkgPtr->fileName, fullFileName);
-	pkgPtr->packageName	   =
-		ckalloc((unsigned) (Tcl_DStringLength(&pkgName) + 1));
-	strcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName));
+	len = strlen(fullFileName) + 1;
+	pkgPtr->fileName	   = ckalloc(len);
+	memcpy(pkgPtr->fileName, fullFileName, len);
+	len = (unsigned) Tcl_DStringLength(&pkgName) + 1;
+	pkgPtr->packageName	   = ckalloc(len);
+	memcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName), len);
 	pkgPtr->loadHandle	   = loadHandle;
 	pkgPtr->initProc	   = initProc;
-	pkgPtr->safeInitProc	   = (Tcl_PackageInitProc*)
-	    Tcl_FindSymbol(interp, loadHandle, Tcl_DStringValue(&safeInitName));
-	pkgPtr->unloadProc	   = (Tcl_PackageUnloadProc*)
-	    Tcl_FindSymbol(interp, loadHandle, Tcl_DStringValue(&unloadName));
+	pkgPtr->safeInitProc	   = (Tcl_PackageInitProc *)
+		Tcl_FindSymbol(interp, loadHandle,
+			Tcl_DStringValue(&safeInitName));
+	pkgPtr->unloadProc	   = (Tcl_PackageUnloadProc *)
+		Tcl_FindSymbol(interp, loadHandle,
+			Tcl_DStringValue(&unloadName));
 	pkgPtr->safeUnloadProc	   = (Tcl_PackageUnloadProc *) 
-	    Tcl_FindSymbol(interp, loadHandle,
-			   Tcl_DStringValue(&safeUnloadName));
+		Tcl_FindSymbol(interp, loadHandle,
+			Tcl_DStringValue(&safeUnloadName));
 	pkgPtr->interpRefCount	   = 0;
 	pkgPtr->safeInterpRefCount = 0;
 
@@ -387,10 +390,12 @@ Tcl_LoadObjCmd(
 	pkgPtr->nextPtr		   = firstPackagePtr;
 	firstPackagePtr		   = pkgPtr;
 	Tcl_MutexUnlock(&packageMutex);
+
 	/*
-	 * The Tcl_FindSymbol calls may have left a spurious error message
-	 * in the interpreter result.
+	 * The Tcl_FindSymbol calls may have left a spurious error message in
+	 * the interpreter result.
 	 */
+
 	Tcl_ResetResult(interp);
     }
 
@@ -400,15 +405,14 @@ Tcl_LoadObjCmd(
      */
 
     if (Tcl_IsSafe(target)) {
-	if (pkgPtr->safeInitProc != NULL) {
-	    code = pkgPtr->safeInitProc(target);
-	} else {
+	if (pkgPtr->safeInitProc == NULL) {
 	    Tcl_AppendResult(interp,
 		    "can't use package in a safe interpreter: no ",
 		    pkgPtr->packageName, "_SafeInit procedure", NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
+	code = pkgPtr->safeInitProc(target);
     } else {
 	code = pkgPtr->initProc(target);
     }

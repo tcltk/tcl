@@ -165,22 +165,32 @@ TclInitDbCkalloc(void)
  *----------------------------------------------------------------------
  */
 
-void
-TclDumpMemoryInfo(
-    FILE *outFile)
+int
+TclDumpMemoryInfo(ClientData clientData, int flags)
 {
-    fprintf(outFile,"total mallocs             %10d\n",
-	    total_mallocs);
-    fprintf(outFile,"total frees               %10d\n",
-	    total_frees);
-    fprintf(outFile,"current packets allocated %10d\n",
-	    current_malloc_packets);
-    fprintf(outFile,"current bytes allocated   %10lu\n",
-	    current_bytes_malloced);
-    fprintf(outFile,"maximum packets allocated %10d\n",
-	    maximum_malloc_packets);
-    fprintf(outFile,"maximum bytes allocated   %10lu\n",
+    char buf[1024];
+
+    if (clientData == NULL) { return 0; }
+    sprintf(buf,
+	    "total mallocs             %10d\n"
+	    "total frees               %10d\n"
+	    "current packets allocated %10d\n"
+	    "current bytes allocated   %10lu\n"
+	    "maximum packets allocated %10d\n"
+	    "maximum bytes allocated   %10lu\n",
+	    total_mallocs,
+	    total_frees,
+	    current_malloc_packets,
+	    current_bytes_malloced,
+	    maximum_malloc_packets,
 	    maximum_bytes_malloced);
+    if (flags == 0) {
+	fprintf((FILE *)clientData, buf);
+    } else {
+	/* Assume objPtr to append to */
+	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, -1);
+    }
+    return 1;
 }
 
 /*
@@ -228,7 +238,7 @@ ValidateMemory(
 	}
     }
     if (guard_failed) {
-	TclDumpMemoryInfo(stderr);
+	TclDumpMemoryInfo((ClientData) stderr, 0);
 	fprintf(stderr, "low guard failed at %lx, %s %d\n",
 		(long unsigned) memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
@@ -250,7 +260,7 @@ ValidateMemory(
     }
 
     if (guard_failed) {
-	TclDumpMemoryInfo(stderr);
+	TclDumpMemoryInfo((ClientData) stderr, 0);
 	fprintf(stderr, "high guard failed at %lx, %s %d\n",
 		(long unsigned) memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
@@ -389,7 +399,7 @@ Tcl_DbCkalloc(
     }
     if (result == NULL) {
 	fflush(stdout);
-	TclDumpMemoryInfo(stderr);
+	TclDumpMemoryInfo((ClientData) stderr, 0);
 	Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
     }
 
@@ -483,7 +493,7 @@ Tcl_AttemptDbCkalloc(
     }
     if (result == NULL) {
 	fflush(stdout);
-	TclDumpMemoryInfo(stderr);
+	TclDumpMemoryInfo((ClientData) stderr, 0);
 	return NULL;
     }
 
@@ -1247,10 +1257,10 @@ Tcl_ValidateAllMemory(
 {
 }
 
-void
-TclDumpMemoryInfo(
-    FILE *outFile)
+int
+TclDumpMemoryInfo(ClientData clientData, int flags)
 {
+    return 1;
 }
 
 #endif	/* TCL_MEM_DEBUG */

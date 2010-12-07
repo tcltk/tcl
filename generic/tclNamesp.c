@@ -26,6 +26,7 @@
  */
 
 #include "tclInt.h"
+#include "tclCompile.h" /* for TclLogCommandInfo visibility */
 
 /*
  * Thread-local storage used to avoid having a global lock on data that is not
@@ -695,8 +696,9 @@ Tcl_CreateNamespace(
      */
 
     nsPtr = (Namespace *) ckalloc(sizeof(Namespace));
-    nsPtr->name = ckalloc((unsigned) (strlen(simpleName)+1));
-    strcpy(nsPtr->name, simpleName);
+    nameLen = strlen(simpleName) + 1;
+    nsPtr->name = ckalloc((unsigned) nameLen);
+    memcpy(nsPtr->name, simpleName, nameLen);
     nsPtr->fullName = NULL;		/* Set below. */
     nsPtr->clientData = clientData;
     nsPtr->deleteProc = deleteProc;
@@ -4789,31 +4791,36 @@ TclGetNamespaceChildTable(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_LogCommandInfo --
+ * TclLogCommandInfo --
  *
  *	This function is invoked after an error occurs in an interpreter. It
- *	adds information to iPtr->errorInfo field to describe the command that
- *	was being executed when the error occurred.
+ *	adds information to iPtr->errorInfo/errorStack fields to describe the
+ *	command that was being executed when the error occurred. When pc and
+ *	tosPtr are non-NULL, conveying a bytecode execution "inner context",
+ *	and the offending instruction is suitable, that inner context is
+ *	recorded in errorStack.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Information about the command is added to errorInfo and the line
- *	number stored internally in the interpreter is set.
+ *	Information about the command is added to errorInfo/errorStack and the
+ *	line number stored internally in the interpreter is set.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Tcl_LogCommandInfo(
+TclLogCommandInfo(
     Tcl_Interp *interp,		/* Interpreter in which to log information. */
     const char *script,		/* First character in script containing
 				 * command (must be <= command). */
     const char *command,	/* First character in command that generated
 				 * the error. */
-    int length)			/* Number of bytes in command (-1 means use
+    int length,			/* Number of bytes in command (-1 means use
 				 * all bytes up to first null byte). */
+    const unsigned char *pc,    /* current pc of bytecode execution context */
+    Tcl_Obj **tosPtr)           /* current stack of bytecode execution context */
 {
     register const char *p;
     Interp *iPtr = (Interp *) interp;
@@ -4900,6 +4907,18 @@ Tcl_LogCommandInfo(
 	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
         /* reset while keeping the list intrep as much as possible */
         Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
+        if (pc != NULL) {
+            Tcl_Obj *innerContext;
+
+            innerContext = TclGetInnerContext(interp, pc, tosPtr);
+            if (innerContext != NULL) {
+                Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->innerLiteral);
+                Tcl_ListObjAppendElement(NULL, iPtr->errorStack, innerContext);
+            }
+        } else if (command != NULL) {
+            Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->innerLiteral);
+            Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewStringObj(command, length));
+        }
     } 
 
     if (!iPtr->framePtr->objc) {
@@ -4917,6 +4936,80 @@ Tcl_LogCommandInfo(
 		iPtr->framePtr->objc, iPtr->framePtr->objv));
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclErrorStackResetIf --
+ *
+ *      The TIP 348 reset/no-bc part of TLCI, for specific use by
+ *      TclCompileSyntaxError.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Reset errorstack if it needs be, and in that case remember the
+ *	passed-in error message as inner context.
+ *
+ *----------------------------------------------------------------------
+ */
+void TclErrorStackResetIf(Tcl_Interp *interp, const char *msg, int length)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    if (Tcl_IsShared(iPtr->errorStack)) {
+        Tcl_Obj *newObj;
+            
+        newObj = Tcl_DuplicateObj(iPtr->errorStack);
+        Tcl_DecrRefCount(iPtr->errorStack);
+        Tcl_IncrRefCount(newObj);
+        iPtr->errorStack = newObj;
+    }
+    if (iPtr->resetErrorStack) {
+	int len;
+
+        iPtr->resetErrorStack = 0;
+	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+        /* reset while keeping the list intrep as much as possible */
+        Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
+        Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->innerLiteral);
+        Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewStringObj(msg, length));
+    } 
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LogCommandInfo --
+ *
+ *	This function is invoked after an error occurs in an interpreter. It
+ *	adds information to iPtr->errorInfo/errorStack fields to describe the
+ *	command that was being executed when the error occurred.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Information about the command is added to errorInfo/errorStack and the
+ *	line number stored internally in the interpreter is set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_LogCommandInfo(
+    Tcl_Interp *interp,		/* Interpreter in which to log information. */
+    const char *script,		/* First character in script containing
+				 * command (must be <= command). */
+    const char *command,	/* First character in command that generated
+				 * the error. */
+    int length)			/* Number of bytes in command (-1 means use
+				 * all bytes up to first null byte). */
+{
+    TclLogCommandInfo(interp, script, command, length, NULL, NULL);
+}
+
 
 /*
  * Local Variables:

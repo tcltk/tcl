@@ -5998,8 +5998,7 @@ TclInfoVarsCmd(
 
     listPtr = Tcl_NewListObj(0, NULL);
 
-    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)
-	    || specificNsInPattern) {
+    if (!HasLocalVars(iPtr->varFramePtr) || specificNsInPattern) {
 	/*
 	 * There is no frame pointer, the frame pointer was pushed only to
 	 * activate a namespace, or we are in a procedure call frame but a
@@ -6235,7 +6234,7 @@ TclInfoLocalsCmd(
 	return TCL_ERROR;
     }
 
-    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
+    if (!HasLocalVars(iPtr->varFramePtr)) {
 	return TCL_OK;
     }
 
