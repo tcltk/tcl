@@ -1731,6 +1731,17 @@ test oo-20.15 {OO: variable method use in non-methods [Bug 2903811]} -setup {
     apply {{} {fooObj variable x; set x ok; return}}
     return [set [fooObj varname x]]
 } -result ok
+test oo-20.16 {variable method: leak per instance} -setup {
+    oo::class create foo {
+	constructor {} {
+	    set [my variable v] 0
+	}
+    }
+} -constraints memory -body {
+    leaktest {[foo new] destroy}
+} -cleanup {
+    foo destroy
+} -result 0
 
 test oo-18.1 {OO: define command support} {
     list [catch {oo::define oo::object {error foo}} msg] $msg $errorInfo
