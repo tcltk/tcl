@@ -1924,25 +1924,25 @@ TclInitChanCmd(
      * function at the moment.
      */
     static const EnsembleImplMap initMap[] = {
-	{"blocked",	Tcl_FblockedObjCmd, NULL, NULL, NULL},
-	{"close",	Tcl_CloseObjCmd, NULL, NULL, NULL},
-	{"copy",	Tcl_FcopyObjCmd, NULL, NULL, NULL},
-	{"create",	TclChanCreateObjCmd, NULL, NULL, NULL},		/* TIP #219 */
-	{"eof",		Tcl_EofObjCmd, NULL, NULL, NULL},
-	{"event",	Tcl_FileEventObjCmd, NULL, NULL, NULL},
-	{"flush",	Tcl_FlushObjCmd, NULL, NULL, NULL},
-	{"gets",	Tcl_GetsObjCmd, NULL, NULL, NULL},
-	{"pending",	ChanPendingObjCmd, NULL, NULL, NULL},		/* TIP #287 */
-	{"pop",		TclChanPopObjCmd, NULL, NULL, NULL},		/* TIP #230 */
-	{"postevent",	TclChanPostEventObjCmd, NULL, NULL, NULL},	/* TIP #219 */
-	{"push",	TclChanPushObjCmd, NULL, NULL, NULL},		/* TIP #230 */
-	{"puts",	Tcl_PutsObjCmd, NULL, NULL, NULL},
-	{"read",	Tcl_ReadObjCmd, NULL, NULL, NULL},
-	{"seek",	Tcl_SeekObjCmd, NULL, NULL, NULL},
-	{"pipe",	ChanPipeObjCmd, NULL, NULL, NULL},		/* TIP #304 */
-	{"tell",	Tcl_TellObjCmd, NULL, NULL, NULL},
-	{"truncate",	ChanTruncateObjCmd, NULL, NULL, NULL},		/* TIP #208 */
-	{NULL, NULL, NULL, NULL, NULL}
+	{"blocked",	Tcl_FblockedObjCmd, NULL, NULL},
+	{"close",	Tcl_CloseObjCmd, NULL, NULL},
+	{"copy",	Tcl_FcopyObjCmd, NULL, NULL},
+	{"create",	TclChanCreateObjCmd, NULL, NULL},		/* TIP #219 */
+	{"eof",		Tcl_EofObjCmd, NULL, NULL},
+	{"event",	Tcl_FileEventObjCmd, NULL, NULL},
+	{"flush",	Tcl_FlushObjCmd, NULL, NULL},
+	{"gets",	Tcl_GetsObjCmd, NULL, NULL},
+	{"pending",	ChanPendingObjCmd, NULL, NULL},		/* TIP #287 */
+	{"pop",		TclChanPopObjCmd, NULL, NULL},		/* TIP #230 */
+	{"postevent",	TclChanPostEventObjCmd, NULL, NULL},	/* TIP #219 */
+	{"push",	TclChanPushObjCmd, NULL, NULL},		/* TIP #230 */
+	{"puts",	Tcl_PutsObjCmd, NULL, NULL},
+	{"read",	Tcl_ReadObjCmd, NULL, NULL},
+	{"seek",	Tcl_SeekObjCmd, NULL, NULL},
+	{"pipe",	ChanPipeObjCmd, NULL, NULL},		/* TIP #304 */
+	{"tell",	Tcl_TellObjCmd, NULL, NULL},
+	{"truncate",	ChanTruncateObjCmd, NULL, NULL},		/* TIP #208 */
+	{NULL, NULL, NULL, NULL}
     };
     static const char *const extras[] = {
 	"configure",	"::fconfigure",

@@ -529,10 +529,10 @@ TclInitPrefixCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap prefixImplMap[] = {
-	{"all",		PrefixAllObjCmd, NULL, NULL, NULL},
-	{"longest",	PrefixLongestObjCmd, NULL, NULL, NULL},
-	{"match",	PrefixMatchObjCmd, NULL, NULL, NULL},
-	{NULL, NULL, NULL, NULL, NULL}
+	{"all",		PrefixAllObjCmd, NULL, NULL},
+	{"longest",	PrefixLongestObjCmd, NULL, NULL},
+	{"match",	PrefixMatchObjCmd, NULL, NULL},
+	{NULL, NULL, NULL, NULL}
     };
     Tcl_Command prefixCmd;
 

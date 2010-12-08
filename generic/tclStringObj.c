@@ -144,19 +144,6 @@ typedef struct String {
 	((objPtr)->internalRep.otherValuePtr = (void *) (stringPtr))
 
 /*
- * Macro that encapsulates the logic that determines when it is safe to
- * interpret a string as a byte array directly. In summary, the object must be
- * a byte array and must not have a string representation (as the operations
- * that it is used in are defined on strings, not byte arrays). Theoretically
- * it is possible to also be efficient in the case where the object's bytes
- * field is filled by generation from the byte array (c.f. list canonicality)
- * but we don't do that at the moment since this is purely about efficiency.
- */
-
-#define IS_PURE_BYTE_ARRAY(objPtr) \
-	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
-
-/*
  * TCL STRING GROWTH ALGORITHM
  *
  * When growing strings (during an append, for example), the following growth
@@ -472,7 +459,7 @@ Tcl_GetCharLength(
      * perform the get-length operation.
      */
 
-    if (IS_PURE_BYTE_ARRAY(objPtr)) {
+    if (TclIsPureByteArray(objPtr)) {
 	int length;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
@@ -538,7 +525,7 @@ Tcl_GetUniChar(
      * perform the indexing operation.
      */
 
-    if (IS_PURE_BYTE_ARRAY(objPtr)) {
+    if (TclIsPureByteArray(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
 
 	return (Tcl_UniChar) bytes[index];
@@ -669,7 +656,7 @@ Tcl_GetRange(
      * perform the substring operation.
      */
 
-    if (IS_PURE_BYTE_ARRAY(objPtr)) {
+    if (TclIsPureByteArray(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
 
 	return Tcl_NewByteArrayObj(bytes+first, last-first+1);
@@ -1256,8 +1243,8 @@ Tcl_AppendObjToObj(
      * information; this is a special-case optimization only.
      */
 
-    if ((IS_PURE_BYTE_ARRAY(objPtr) || objPtr->bytes == tclEmptyStringRep)
-	    && IS_PURE_BYTE_ARRAY(appendObjPtr)) {
+    if ((TclIsPureByteArray(objPtr) || objPtr->bytes == tclEmptyStringRep)
+	    && TclIsPureByteArray(appendObjPtr)) {
 	unsigned char *bytesSrc;
 	int lengthSrc, lengthTotal;
 

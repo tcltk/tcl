@@ -24,12 +24,12 @@
 static inline Tcl_Obj*  During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
 static int		TryPostBody(Tcl_Obj* handlersObj,
-				    Tcl_Obj* finallyObj, Tcl_Obj** objv, int objc,
+				    Tcl_Obj* finallyObj, Tcl_Obj *const objv[], int objc,
 			    Tcl_Interp *interp, int result);
 static int		TryPostFinal(Tcl_Obj* resultObj,
 			    Tcl_Obj* options, Tcl_Obj* cmdObj,
 			    Tcl_Interp *interp, int result);
-static int		TryPostHandler(Tcl_Obj** objv,
+static int		TryPostHandler(Tcl_Obj *const objv[],
 			    Tcl_Obj* options, Tcl_Obj* handlerObj,
 			    int finally, Tcl_Interp *interp,
 			    int result);
@@ -4288,7 +4288,7 @@ static int
 TryPostBody(
     Tcl_Obj* handlersObj,
     Tcl_Obj* finallyObj,
-    Tcl_Obj** objv,
+    Tcl_Obj *const objv[],
     int objc,
     Tcl_Interp *interp,
     int result)
@@ -4501,7 +4501,7 @@ TryPostBody(
 
 static int
 TryPostHandler(
-    Tcl_Obj** objv,
+    Tcl_Obj *const objv[],
     Tcl_Obj* options,
     Tcl_Obj* handlerKindObj,
     int finally, 

@@ -44,9 +44,6 @@ static int		CompileStrictlyBinaryOpCmd(Tcl_Interp *interp,
 static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, int instruction,
 			    CompileEnv *envPtr);
-static void		CompileReturnInternal(CompileEnv *envPtr,
-			    unsigned char op, int code, int level,
-			    Tcl_Obj *returnOpts);
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, ExtCmdLoc *mapPtr,
 			    int eclIndex, int mode, int noCase,
