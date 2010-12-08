@@ -4381,78 +4381,14 @@ TclExecuteByteCode(
      */
 
     case INST_STR_EQ:
-    case INST_STR_NEQ: {
-	/*
-	 * String (in)equality check
-	 * TODO: Consider merging into INST_STR_CMP
-	 */
-
-	int iResult;
-	Tcl_Obj *valuePtr, *value2Ptr;
-
-	value2Ptr = OBJ_AT_TOS;
-	valuePtr = OBJ_UNDER_TOS;
-
-	if (valuePtr == value2Ptr) {
-	    /*
-	     * On the off-chance that the objects are the same, we don't
-	     * really have to think hard about equality.
-	     */
-
-	    iResult = (*pc == INST_STR_EQ);
-	} else {
-	    const char *s1, *s2;
-	    int s1len, s2len;
-
-	    s1 = TclGetStringFromObj(valuePtr, &s1len);
-	    s2 = TclGetStringFromObj(value2Ptr, &s2len);
-	    if (s1len == s2len) {
-		/*
-		 * We only need to check (in)equality when we have equal
-		 * length strings.
-		 */
-
-		if (*pc == INST_STR_NEQ) {
-		    iResult = (memcmp(s1, s2, s1len) != 0);
-		} else {
-		    /* INST_STR_EQ */
-		    iResult = (memcmp(s1, s2, s1len) == 0);
-		}
-	    } else {
-		iResult = (*pc == INST_STR_NEQ);
-	    }
-	}
-
-	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr),O2S(value2Ptr),iResult));
-
-	/*
-	 * Peep-hole optimisation: if you're about to jump, do jump from here.
-	 */
-
-	pc++;
-#ifndef TCL_COMPILE_DEBUG
-	switch (*pc) {
-	case INST_JUMP_FALSE1:
-	    NEXT_INST_F((iResult? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE1:
-	    NEXT_INST_F((iResult? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
-	case INST_JUMP_FALSE4:
-	    NEXT_INST_F((iResult? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE4:
-	    NEXT_INST_F((iResult? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
-	}
-#endif
-	objResultPtr = constants[iResult];
-	NEXT_INST_F(0, 2, 1);
-    }
-
+    case INST_STR_NEQ:
     case INST_STR_CMP: {
 	/*
 	 * String compare.
 	 */
 
 	const char *s1, *s2;
-	int s1len, s2len, iResult;
+	int s1len, s2len, match;
 	Tcl_Obj *valuePtr, *value2Ptr;
 
     stringCompare:
@@ -4465,47 +4401,84 @@ TclExecuteByteCode(
 	 */
 
 	if (valuePtr == value2Ptr) {
-	    /*
-	     * In the pure equality case, set lengths too for the checks below
-	     * (or we could goto beyond it).
-	     */
-
-	    iResult = s1len = s2len = 0;
-	} else if (TclIsPureByteArray(valuePtr)
-		&& TclIsPureByteArray(value2Ptr)) {
-	    s1 = (char *) Tcl_GetByteArrayFromObj(valuePtr, &s1len);
-	    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
-	    iResult = memcmp(s1, s2,
-		    (size_t) ((s1len < s2len) ? s1len : s2len));
-	} else if (((valuePtr->typePtr == &tclStringType)
-		&& (value2Ptr->typePtr == &tclStringType))) {
-	    /*
-	     * Do a unicode-specific comparison if both of the args are of
-	     * String type. If the char length == byte length, we can do a
-	     * memcmp. In benchmark testing this proved the most efficient
-	     * check between the unicode and string comparison operations.
-	     */
-
-	    s1len = Tcl_GetCharLength(valuePtr);
-	    s2len = Tcl_GetCharLength(value2Ptr);
-	    if ((s1len == valuePtr->length) && (s2len == value2Ptr->length)) {
-		iResult = memcmp(valuePtr->bytes, value2Ptr->bytes,
-			(unsigned) ((s1len < s2len) ? s1len : s2len));
-	    } else {
-		iResult = TclUniCharNcmp(Tcl_GetUnicode(valuePtr),
-			Tcl_GetUnicode(value2Ptr),
-			(unsigned) ((s1len < s2len) ? s1len : s2len));
-	    }
+	    match = 0;
 	} else {
-	    /*
-	     * We can't do a simple memcmp in order to handle the special Tcl
-	     * \xC0\x80 null encoding for utf-8.
-	     */
+ 	    /*
+	     * We only need to check (in)equality when we have equal length
+	     * strings.  We can use memcmp in all (n)eq cases because we
+	     * don't need to worry about lexical LE/BE variance.
+ 	     */
+	    typedef int (*memCmpFn_t)(const void*, const void*, size_t);
+	    memCmpFn_t memCmpFn;
+	    int checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
+		    || (*pc == INST_STR_EQ) || (*pc == INST_STR_NEQ));
 
-	    s1 = TclGetStringFromObj(valuePtr, &s1len);
-	    s2 = TclGetStringFromObj(value2Ptr, &s2len);
-	    iResult = TclpUtfNcmp2(s1, s2,
-		    (size_t) ((s1len < s2len) ? s1len : s2len));
+	    if (TclIsPureByteArray(valuePtr)
+		    && TclIsPureByteArray(value2Ptr)) {
+		s1 = (char *) Tcl_GetByteArrayFromObj(valuePtr, &s1len);
+		s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
+		memCmpFn = memcmp;
+	    } else if (((valuePtr->typePtr == &tclStringType)
+			    && (value2Ptr->typePtr == &tclStringType))) {
+ 		/*
+		 * Do a unicode-specific comparison if both of the args are of
+		 * String type. If the char length == byte length, we can do a
+		 * memcmp. In benchmark testing this proved the most efficient
+		 * check between the unicode and string comparison operations.
+ 		 */
+ 
+		s1len = Tcl_GetCharLength(valuePtr);
+		s2len = Tcl_GetCharLength(value2Ptr);
+		if ((s1len == valuePtr->length)
+			&& (s2len == value2Ptr->length)) {
+		    s1 = valuePtr->bytes;
+		    s2 = value2Ptr->bytes;
+		    memCmpFn = memcmp;
+ 		} else {
+		    s1 = (char *) Tcl_GetUnicode(valuePtr);
+		    s2 = (char *) Tcl_GetUnicode(value2Ptr);
+		    if (
+#ifdef WORDS_BIGENDIAN
+			1
+#else
+			checkEq
+#endif
+			) {
+			memCmpFn = memcmp;
+			s1len *= sizeof(Tcl_UniChar);
+			s2len *= sizeof(Tcl_UniChar);
+		    } else {
+			memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
+		    }
+ 		}
+ 	    } else {
+		/*
+		 * strcmp can't do a simple memcmp in order to handle the
+		 * special Tcl \xC0\x80 null encoding for utf-8.
+		 */
+ 
+		s1 = TclGetStringFromObj(valuePtr, &s1len);
+		s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		if (checkEq) {
+		    memCmpFn = memcmp;
+		} else {
+		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
+		}
+	    }
+ 
+	    if (checkEq && (s1len != s2len)) {
+		match = 1;
+ 	    } else {
+		/*
+		 * The comparison function should compare up to the minimum
+		 * byte length only.
+		 */
+		match = memCmpFn(s1, s2,
+			(size_t) ((s1len < s2len) ? s1len : s2len));
+		if (match == 0) {
+		    match = s1len - s2len;
+		}
+ 	    }
 	}
 
 	/*
@@ -4513,43 +4486,41 @@ TclExecuteByteCode(
 	 * TODO: consider peephole opt.
 	 */
 
-	if (iResult == 0) {
-	    iResult = s1len - s2len;
-	}
-
 	if (*pc != INST_STR_CMP) {
 	    /*
 	     * Take care of the opcodes that goto'ed into here.
 	     */
 
 	    switch (*pc) {
+	    case INST_STR_EQ:
 	    case INST_EQ:
-		iResult = (iResult == 0);
+		match = (match == 0);
 		break;
+	    case INST_STR_NEQ:
 	    case INST_NEQ:
-		iResult = (iResult != 0);
+		match = (match != 0);
 		break;
 	    case INST_LT:
-		iResult = (iResult < 0);
+		match = (match < 0);
 		break;
 	    case INST_GT:
-		iResult = (iResult > 0);
+		match = (match > 0);
 		break;
 	    case INST_LE:
-		iResult = (iResult <= 0);
+		match = (match <= 0);
 		break;
 	    case INST_GE:
-		iResult = (iResult >= 0);
+		match = (match >= 0);
 		break;
 	    }
 	}
-	if (iResult < 0) {
+	if (match < 0) {
 	    TclNewIntObj(objResultPtr, -1);
 	    TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), -1));
 	} else {
-	    objResultPtr = constants[(iResult>0)];
+	    objResultPtr = constants[(match>0)];
 	    TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr),
-		(iResult > 0)));
+		(match > 0)));
 	}
 
 	NEXT_INST_F(1, 2, 1);
