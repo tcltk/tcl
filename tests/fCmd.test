@@ -10,10 +10,10 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.27.2.21 2009/11/25 16:20:12 dgp Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.27.2.22 2010/12/09 15:39:43 dgp Exp $
 #
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -31,7 +31,10 @@ testConstraint reg 0
 if {[testConstraint win]} {
     catch {
 	# Is the registry extension already static to this shell?
-	if [catch {load {} Registry; set ::reglib {}}] {
+	try {
+	    load {} Registry
+	    set ::reglib {}
+	} on error {} {
 	    # try the location given to use on the commandline to tcltest
 	    ::tcltest::loadTestedCommands
 	    load $::reglib Registry
@@ -106,11 +109,11 @@ proc createfile {file {string a}} {
 #  if the file does not exist, or has a different content
 #
 proc checkcontent {file matchString} {
-    if {[catch {
+    try {
 	set f [open $file]
 	set fileString [read $f]
 	close $f
-    }]} then {
+    } on error {} {
 	return 0
     }
     return [string match $matchString $fileString]
@@ -163,8 +166,8 @@ testConstraint xdev [expr {[testConstraint unix] && ([dev .] != [dev /tmp])}]
 
 set root [lindex [file split [pwd]] 0]
 
-# A really long file name
-# length of long is 1216 chars, which should be greater than any static buffer
+# A really long file name.
+# Length of long is 1216 chars, which should be greater than any static buffer
 # or allowable filename.
 
 set long "abcdefghihjllmnopqrstuvwxyz01234567890"
@@ -173,7 +176,7 @@ append long $long
 append long $long
 append long $long
 append long $long
-
+
 test fCmd-1.1 {TclFileRenameCmd} -constraints {notRoot} -setup {
     cleanup
 } -body {
@@ -1529,8 +1532,7 @@ test fCmd-15.1 {TclMakeDirsCmd: target filename translation failing} -setup {
     set ::env(HOME) $temp
 } -result {1}
 #
-# Can Tcl_SplitPath return argc == 0? If so them we need a
-# test for that code.
+# Can Tcl_SplitPath return argc == 0? If so them we need a test for that code.
 #
 test fCmd-15.2 {TclMakeDirsCmd - one directory} -setup {
     catch {file delete -force -- tfa}
@@ -1710,7 +1712,6 @@ test fCmd-17.3 {mkdir several levels deep - absolute} -setup {
 #
 # Functionality tests for TclFileRenameCmd()
 #
-
 test fCmd-18.1 {TclFileRenameCmd: rename (first form) in the same directory} \
 	-setup {
     catch {file delete -force -- tfad}
@@ -1918,7 +1919,6 @@ test fCmd-19.3 {recursive remove} -constraints {notRoot} -setup {
 #
 # Coverage tests for TraverseUnixTree(), called from TclDeleteFilesCmd
 #
-
 test fCmd-20.1 {TraverseUnixTree : failure opening a subdirectory directory} -setup {
     catch {file delete -force -- tfa}
 } -constraints {unix notRoot} -body {
@@ -2150,7 +2150,6 @@ test fCmd-22.5 {TclMacCopyFile: copy and overwrite in a single dir} -setup {
 # TclMacRmdir
 # Error cases are not covered.
 #
-
 test fCmd-23.1 {TclMacRmdir: trying to remove a nonempty directory} -setup {
     catch {file delete -force -- tfad}
 } -constraints {notRoot} -body {
@@ -2212,7 +2211,6 @@ test fCmd-25.3 {TclMacCopyDirectory: copying dirs between different dirs} -setup
 #
 # Functionality tests for TclDeleteFilesCmd
 #
-
 test fCmd-26.1 {TclDeleteFilesCmd: delete symlink} -setup {
     catch {file delete -force -- tfad1 tfad2}
 } -constraints {unix notRoot} -body {
@@ -2405,7 +2403,7 @@ test fCmd-28.12 {file link: cd into a link} -setup {
     cd ..
     set up [pwd]
     cd $orig
-    # now '$up' should be either $orig or [file dirname abc.dir], depending on
+    # Now '$up' should be either $orig or [file dirname abc.dir], depending on
     # whether 'cd' actually moves to the destination of a link, or simply
     # treats the link as a directory. (On windows the former, on unix the
     # latter, I believe)
@@ -2530,21 +2528,22 @@ test fCmd-28.22 {file link: relative paths} -setup {
     catch {file delete -force d1}
     cd [workingDirectory]
 } -result d2/d3
-
-test fCmd-29.1 {weird memory corruption fault} -body {
-    open [file join ~a_totally_bogus_user_id/foo bar]
-} -returnCodes error -match glob -result *
-
-cd [temporaryDirectory]
-file delete -force abc.link
-file delete -force d1/d2
-file delete -force d1
-cd [workingDirectory]
-
+try {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    file delete -force d1/d2
+    file delete -force d1
+} finally {
+    cd [workingDirectory]
+}
 removeFile abc2.file
 removeFile abc.file
 removeDirectory abc2.dir
 removeDirectory abc.dir
+
+test fCmd-29.1 {weird memory corruption fault} -body {
+    open [file join ~a_totally_bogus_user_id/foo bar]
+} -returnCodes error -match glob -result *
 
 test fCmd-30.1 {file writable on 'My Documents'} -setup {
     # Get the localized version of the folder name by looking in the registry.
@@ -2556,7 +2555,6 @@ test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {2000orNewer} -body 
     expr {[info exists env(USERPROFILE)]
           && [file exists $env(USERPROFILE)/NTUSER.DAT]
           && [file readable $env(USERPROFILE)/NTUSER.DAT]}
-
 } -result {1}
 test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {2000orNewer} -body {
     set r {}
@@ -2568,7 +2566,7 @@ test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {2000orNewer} -bod
     }
     return $r
 } -result {exists 1 readable 0 stat 0 {}}
-
+
 # cleanup
 cleanup
 ::tcltest::cleanupTests
@@ -2576,4 +2574,5 @@ return
 
 # Local Variables:
 # mode: tcl
+# fill-column: 78
 # End:
