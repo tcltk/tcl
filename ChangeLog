@@ -1,5 +1,22 @@
 2010-12-09  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclCmdAH.c (TclInitFileCmd, TclMakeFileCommandSafe, ...):
+	Break up [file] into an ensemble. Note that the ensemble is safe in
+	itself, but the majority of its subcommands are not.
+	* generic/tclFCmd.c (FileCopyRename,TclFileDeleteCmd,TclFileAttrsCmd)
+	(TclFileMakeDirsCmd): Adjust these subcommand implementations to work
+	inside an ensemble.
+	(TclFileLinkCmd, TclFileReadLinkCmd, TclFileTemporaryCmd): Move these
+	subcommand implementations from tclCmdAH.c, where they didn't really
+	belong.
+	* generic/tclIOCmd.c (TclChannelNamesCmd): Move to more appropriate
+	source file.
+	* generic/tclEnsemble.c (TclMakeEnsemble): Start of code to make
+	partially-safe ensembles. Currently does not function as expected due
+	to various shortcomings in how safe interpreters are constructed.
+	* tests/cmdAH.test, tests/fCmd.test, tests/interp.test: Test updates
+	to take into account systematization of error messages.
+
 	* tests/append.test, tests/appendComp.test: Clean up tests so that
 	they don't leave things in the global environment (detected when doing
 	-singleproc testing).

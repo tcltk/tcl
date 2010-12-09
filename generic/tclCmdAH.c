@@ -10,12 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.127 2010/09/23 18:08:35 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.128 2010/12/09 15:09:07 dkf Exp $
  */
 
 #include "tclInt.h"
 #include <locale.h>
-#include "tclFileSystem.h"
 
 /*
  * The state structure used by [foreach]. Note that the actual structure has
@@ -46,8 +45,6 @@ static int		CheckAccess(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 static int		EncodingDirsObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		FileTempfileCmd(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
 static inline int	ForeachAssignments(Tcl_Interp *interp,
 			    struct ForeachState *statePtr);
 static inline void	ForeachCleanup(Tcl_Interp *interp,
@@ -65,6 +62,32 @@ static Tcl_NRPostProc	ForNextCallback;
 static Tcl_NRPostProc	ForPostNextCallback;
 static Tcl_NRPostProc	ForeachLoopStep;
 static Tcl_NRPostProc	EvalCmdErrMsg;
+
+static Tcl_ObjCmdProc FileAttrAccessTimeCmd;
+static Tcl_ObjCmdProc FileAttrIsDirectoryCmd;
+static Tcl_ObjCmdProc FileAttrIsExecutableCmd;
+static Tcl_ObjCmdProc FileAttrIsExistingCmd;
+static Tcl_ObjCmdProc FileAttrIsFileCmd;
+static Tcl_ObjCmdProc FileAttrIsOwnedCmd;
+static Tcl_ObjCmdProc FileAttrIsReadableCmd;
+static Tcl_ObjCmdProc FileAttrIsWritableCmd;
+static Tcl_ObjCmdProc FileAttrLinkStatCmd;
+static Tcl_ObjCmdProc FileAttrModifyTimeCmd;
+static Tcl_ObjCmdProc FileAttrSizeCmd;
+static Tcl_ObjCmdProc FileAttrStatCmd;
+static Tcl_ObjCmdProc FileAttrTypeCmd;
+static Tcl_ObjCmdProc FilesystemSeparatorCmd;
+static Tcl_ObjCmdProc FilesystemVolumesCmd;
+static Tcl_ObjCmdProc PathDirNameCmd;
+static Tcl_ObjCmdProc PathExtensionCmd;
+static Tcl_ObjCmdProc PathFilesystemCmd;
+static Tcl_ObjCmdProc PathJoinCmd;
+static Tcl_ObjCmdProc PathNativeNameCmd;
+static Tcl_ObjCmdProc PathNormalizeCmd;
+static Tcl_ObjCmdProc PathRootNameCmd;
+static Tcl_ObjCmdProc PathSplitCmd;
+static Tcl_ObjCmdProc PathTailCmd;
+static Tcl_ObjCmdProc PathTypeCmd;
 
 /*
  *----------------------------------------------------------------------
@@ -882,13 +905,14 @@ ExprCallback(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_FileObjCmd --
+ * TclInitFileCmd --
  *
- *	This procedure is invoked to process the "file" Tcl command. See the
- *	user documentation for details on what it does. PLEASE NOTE THAT THIS
- *	FAILS WITH FILENAMES AND PATHS WITH EMBEDDED NULLS. With the
- *	object-based Tcl_FS APIs, the above NOTE may no longer be true. In any
- *	case this assertion should be tested.
+ *	This function builds the "file" Tcl command ensemble. See the user
+ *	documentation for details on what that ensemble does.
+ *
+ *	PLEASE NOTE THAT THIS FAILS WITH FILENAMES AND PATHS WITH EMBEDDED
+ *	NULLS. With the object-based Tcl_FS APIs, the above NOTE may no longer
+ *	be true. In any case this assertion should be tested.
  *
  * Results:
  *	A standard Tcl result.
@@ -899,570 +923,1160 @@ ExprCallback(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
-int
-Tcl_FileObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+Tcl_Command
+TclInitFileCmd(
+    Tcl_Interp *interp)
 {
-    int index, value;
+    /*
+     * Note that most subcommands are unsafe because either they manipulate
+     * the native filesystem or because they reveal information about the
+     * native filesystem.
+     */
+
+    static const EnsembleImplMap initMap[] = {
+	{"atime",	FileAttrAccessTimeCmd},
+	{"attributes",	TclFileAttrsCmd},
+	{"channels",	TclChannelNamesCmd},
+	{"copy",	TclFileCopyCmd},
+	{"delete",	TclFileDeleteCmd},
+	{"dirname",	PathDirNameCmd},
+	{"executable",	FileAttrIsExecutableCmd},
+	{"exists",	FileAttrIsExistingCmd},
+	{"extension",	PathExtensionCmd},
+	{"isdirectory",	FileAttrIsDirectoryCmd},
+	{"isfile",	FileAttrIsFileCmd},
+	{"join",	PathJoinCmd},
+	{"link",	TclFileLinkCmd},
+	{"lstat",	FileAttrLinkStatCmd},
+	{"mtime",	FileAttrModifyTimeCmd},
+	{"mkdir",	TclFileMakeDirsCmd},
+	{"nativename",	PathNativeNameCmd},
+	{"normalize",	PathNormalizeCmd},
+	{"owned",	FileAttrIsOwnedCmd},
+	{"pathtype",	PathTypeCmd},
+	{"readable",	FileAttrIsReadableCmd},
+	{"readlink",	TclFileReadLinkCmd},
+	{"rename",	TclFileRenameCmd},
+	{"rootname",	PathRootNameCmd},
+	{"separator",	FilesystemSeparatorCmd},
+	{"size",	FileAttrSizeCmd},
+	{"split",	PathSplitCmd},
+	{"stat",	FileAttrStatCmd},
+	{"system",	PathFilesystemCmd},
+	{"tail",	PathTailCmd},
+	{"tempfile",	TclFileTemporaryCmd},
+	{"type",	FileAttrTypeCmd},
+	{"volumes",	FilesystemVolumesCmd},
+	{"writable",	FileAttrIsWritableCmd},
+	{NULL}
+    };
+    return TclMakeEnsemble(interp, "file", initMap);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclMakeFileCommandSafe --
+ *
+ *	This function hides the unsafe subcommands of the "file" Tcl command
+ *	ensemble. It must only be called from TclHideUnsafeCommands.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Adds commands to the table of hidden commands.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclMakeFileCommandSafe(
+    Tcl_Interp *interp)
+{
+    static const struct {
+	const char *cmdName;
+	int unsafe;
+    } unsafeInfo[] = {
+	{"atime",	 1},
+	{"attributes",	 1},
+	{"channels",	 0},
+	{"copy",	 1},
+	{"delete",	 1},
+	{"dirname",	 1},
+	{"executable",	 1},
+	{"exists",	 1},
+	{"extension",	 1},
+	{"isdirectory",	 1},
+	{"isfile",	 1},
+	{"join",	 0},
+	{"link",	 1},
+	{"lstat",	 1},
+	{"mtime",	 1},
+	{"mkdir",	 1},
+	{"nativename",	 1},
+	{"normalize",	 1},
+	{"owned",	 1},
+	{"pathtype",	 0},
+	{"readable",	 1},
+	{"readlink",	 1},
+	{"rename",	 1},
+	{"rootname",	 1},
+	{"separator",	 0},
+	{"size",	 1},
+	{"split",	 0},
+	{"stat",	 1},
+	{"system",	 0},
+	{"tail",	 1},
+	{"tempfile",	 1},
+	{"type",	 1},
+	{"volumes",	 1},
+	{"writable",	 1},
+	{NULL}
+    };
+    int i;
+    Tcl_DString oldBuf, newBuf;
+
+    Tcl_DStringInit(&oldBuf);
+    Tcl_DStringAppend(&oldBuf, "::tcl::file::", -1);
+    Tcl_DStringInit(&newBuf);
+    Tcl_DStringAppend(&newBuf, "tcl:file:", -1);
+    for (i=0 ; unsafeInfo[i].cmdName != NULL ; i++) {
+	if (unsafeInfo[i].unsafe) {
+	    const char *oldName, *newName;
+
+	    Tcl_DStringSetLength(&oldBuf, 13);
+	    oldName = Tcl_DStringAppend(&oldBuf, unsafeInfo[i].cmdName, -1);
+	    Tcl_DStringSetLength(&newBuf, 9);
+	    newName = Tcl_DStringAppend(&newBuf, unsafeInfo[i].cmdName, -1);
+	    if (TclRenameCommand(interp, oldName, "___tmp") != TCL_OK
+		    || Tcl_HideCommand(interp, "___tmp", newName) != TCL_OK) {
+		Tcl_Panic("problem making 'file %s' safe: %s",
+			unsafeInfo[i].cmdName,
+			Tcl_GetString(Tcl_GetObjResult(interp)));
+	    }
+	}
+    }
+    Tcl_DStringFree(&oldBuf);
+    Tcl_DStringFree(&newBuf);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrAccessTimeCmd --
+ *
+ *	This function is invoked to process the "file atime" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	May update the access time on the file, if requested by the user.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrAccessTimeCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
     Tcl_StatBuf buf;
     struct utimbuf tval;
 
-    /*
-     * This list of constants should match the fileOption string array below.
-     */
-
-    static const char *const fileOptions[] = {
-	"atime",	"attributes",	"channels",	"copy",
-	"delete",
-	"dirname",	"executable",	"exists",	"extension",
-	"isdirectory",	"isfile",	"join",		"link",
-	"lstat",	"mtime",	"mkdir",	"nativename",
-	"normalize",	"owned",
-	"pathtype",	"readable",	"readlink",	"rename",
-	"rootname",	"separator",	"size",		"split",
-	"stat",		"system",	"tail",		"tempfile",
-	"type",		"volumes",	"writable",
-	NULL
-    };
-    enum options {
-	FCMD_ATIME,	FCMD_ATTRIBUTES, FCMD_CHANNELS,	FCMD_COPY,
-	FCMD_DELETE,
-	FCMD_DIRNAME,	FCMD_EXECUTABLE, FCMD_EXISTS,	FCMD_EXTENSION,
-	FCMD_ISDIRECTORY, FCMD_ISFILE,	FCMD_JOIN,	FCMD_LINK,
-	FCMD_LSTAT,	FCMD_MTIME,	FCMD_MKDIR,	FCMD_NATIVENAME,
-	FCMD_NORMALIZE,	FCMD_OWNED,
-	FCMD_PATHTYPE,	FCMD_READABLE,	FCMD_READLINK,	FCMD_RENAME,
-	FCMD_ROOTNAME,	FCMD_SEPARATOR,	FCMD_SIZE,	FCMD_SPLIT,
-	FCMD_STAT,	FCMD_SYSTEM,	FCMD_TAIL,	FCMD_TEMPFILE,
-	FCMD_TYPE,	FCMD_VOLUMES,	FCMD_WRITABLE
-    };
-
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?time?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], fileOptions, "option", 0,
-	    &index) != TCL_OK) {
+    if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
 	return TCL_ERROR;
     }
+    if (objc == 3) {
+	/*
+	 * Need separate variable for reading longs from an object on 64-bit
+	 * platforms. [Bug 698146]
+	 */
 
-    switch ((enum options) index) {
+	long newTime;
 
-    case FCMD_ATIME:
-    case FCMD_MTIME:
-	if ((objc < 3) || (objc > 4)) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "name ?time?");
+	if (TclGetLongFromObj(interp, objv[2], &newTime) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (objc == 4) {
-	    /*
-	     * Need separate variable for reading longs from an object on
-	     * 64-bit platforms. [Bug #698146]
-	     */
 
-	    long newTime;
+	tval.actime = newTime;
+	tval.modtime = buf.st_mtime;
 
-	    if (TclGetLongFromObj(interp, objv[3], &newTime) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-
-	    if (index == FCMD_ATIME) {
-		tval.actime = newTime;
-		tval.modtime = buf.st_mtime;
-	    } else {		/* index == FCMD_MTIME */
-		tval.actime = buf.st_atime;
-		tval.modtime = newTime;
-	    }
-
-	    if (Tcl_FSUtime(objv[2], &tval) != 0) {
-		Tcl_AppendResult(interp, "could not set ",
-			(index == FCMD_ATIME ? "access" : "modification"),
-			" time for file \"", TclGetString(objv[2]), "\": ",
-			Tcl_PosixError(interp), NULL);
-		return TCL_ERROR;
-	    }
-
-	    /*
-	     * Do another stat to ensure that the we return the new recognized
-	     * atime - hopefully the same as the one we sent in. However, fs's
-	     * like FAT don't even know what atime is.
-	     */
-
-	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	}
-
-	Tcl_SetObjResult(interp, Tcl_NewLongObj((long)
-		(index == FCMD_ATIME ? buf.st_atime : buf.st_mtime)));
-	return TCL_OK;
-    case FCMD_ATTRIBUTES:
-	return TclFileAttrsCmd(interp, objc, objv);
-    case FCMD_CHANNELS:
-	if ((objc < 2) || (objc > 3)) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
-	    return TCL_ERROR;
-	}
-	return Tcl_GetChannelNamesEx(interp,
-		((objc == 2) ? NULL : TclGetString(objv[2])));
-    case FCMD_COPY:
-	return TclFileCopyCmd(interp, objc, objv);
-    case FCMD_DELETE:
-	return TclFileDeleteCmd(interp, objc, objv);
-    case FCMD_DIRNAME: {
-	Tcl_Obj *dirPtr;
-
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	dirPtr = TclPathPart(interp, objv[2], TCL_PATH_DIRNAME);
-	if (dirPtr == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, dirPtr);
-	Tcl_DecrRefCount(dirPtr);
-	return TCL_OK;
-    }
-    case FCMD_EXECUTABLE:
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	return CheckAccess(interp, objv[2], X_OK);
-    case FCMD_EXISTS:
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	return CheckAccess(interp, objv[2], F_OK);
-    case FCMD_EXTENSION: {
-	Tcl_Obj *ext;
-
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	ext = TclPathPart(interp, objv[2], TCL_PATH_EXTENSION);
-	if (ext == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, ext);
-	Tcl_DecrRefCount(ext);
-	return TCL_OK;
-    }
-    case FCMD_ISDIRECTORY:
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	value = 0;
-	if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
-	    value = S_ISDIR(buf.st_mode);
-	}
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
-	return TCL_OK;
-    case FCMD_ISFILE:
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	value = 0;
-	if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
-	    value = S_ISREG(buf.st_mode);
-	}
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
-	return TCL_OK;
-    case FCMD_OWNED:
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	value = 0;
-	if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
-	    /*
-	     * For Windows, there are no user ids associated with a file, so
-	     * we always return 1.
-	     *
-	     * TODO: use GetSecurityInfo to get the real owner of the file and
-	     * test for equivalence to the current user.
-	     */
-
-#if defined(__WIN32__)
-	    value = 1;
-#else
-	    value = (geteuid() == buf.st_uid);
-#endif
-	}
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
-	return TCL_OK;
-    case FCMD_JOIN: {
-	Tcl_Obj *resObj;
-
-	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "name ?name ...?");
-	    return TCL_ERROR;
-	}
-	resObj = Tcl_FSJoinToPath(NULL, objc - 2, objv + 2);
-	Tcl_SetObjResult(interp, resObj);
-	return TCL_OK;
-    }
-    case FCMD_LINK: {
-	Tcl_Obj *contents;
-
-	if (objc < 3 || objc > 5) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "?-linktype? linkname ?target?");
+	if (Tcl_FSUtime(objv[1], &tval) != 0) {
+	    Tcl_AppendResult(interp, "could not set access time for file \"",
+		    TclGetString(objv[1]), "\": ", Tcl_PosixError(interp),
+		    NULL);
 	    return TCL_ERROR;
 	}
 
 	/*
-	 * Index of the 'source' argument.
+	 * Do another stat to ensure that the we return the new recognized
+	 * atime - hopefully the same as the one we sent in. However, fs's
+	 * like FAT don't even know what atime is.
 	 */
 
-	if (objc == 5) {
-	    index = 3;
-	} else {
-	    index = 2;
+	if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_atime));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrModifyTimeCmd --
+ *
+ *	This function is invoked to process the "file mtime" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	May update the modification time on the file, if requested by the
+ *	user.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrModifyTimeCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_StatBuf buf;
+    struct utimbuf tval;
+
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?time?");
+	return TCL_ERROR;
+    }
+    if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (objc == 3) {
+	/*
+	 * Need separate variable for reading longs from an object on 64-bit
+	 * platforms. [Bug 698146]
+	 */
+
+	long newTime;
+
+	if (TclGetLongFromObj(interp, objv[2], &newTime) != TCL_OK) {
+	    return TCL_ERROR;
 	}
 
-	if (objc > 3) {
-	    int linkAction;
-	    if (objc == 5) {
-		/*
-		 * We have a '-linktype' argument.
-		 */
+	tval.actime = buf.st_atime;
+	tval.modtime = newTime;
 
-		static const char *const linkTypes[] = {
-		    "-symbolic", "-hard", NULL
-		};
-		if (Tcl_GetIndexFromObj(interp, objv[2], linkTypes, "switch",
-			0, &linkAction) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		if (linkAction == 0) {
-		    linkAction = TCL_CREATE_SYMBOLIC_LINK;
-		} else {
-		    linkAction = TCL_CREATE_HARD_LINK;
-		}
-	    } else {
-		linkAction = TCL_CREATE_SYMBOLIC_LINK|TCL_CREATE_HARD_LINK;
-	    }
-	    if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-
-	    /*
-	     * Create link from source to target.
-	     */
-
-	    contents = Tcl_FSLink(objv[index], objv[index+1], linkAction);
-	    if (contents == NULL) {
-		/*
-		 * We handle three common error cases specially, and for all
-		 * other errors, we use the standard posix error message.
-		 */
-
-		if (errno == EEXIST) {
-		    Tcl_AppendResult(interp, "could not create new link \"",
-			    TclGetString(objv[index]),
-			    "\": that path already exists", NULL);
-		} else if (errno == ENOENT) {
-		    /*
-		     * There are two cases here: either the target doesn't
-		     * exist, or the directory of the src doesn't exist.
-		     */
-
-		    int access;
-		    Tcl_Obj *dirPtr = TclPathPart(interp, objv[index],
-			    TCL_PATH_DIRNAME);
-
-		    if (dirPtr == NULL) {
-			return TCL_ERROR;
-		    }
-		    access = Tcl_FSAccess(dirPtr, F_OK);
-		    Tcl_DecrRefCount(dirPtr);
-		    if (access != 0) {
-			Tcl_AppendResult(interp,
-				"could not create new link \"",
-				TclGetString(objv[index]),
-				"\": no such file or directory", NULL);
-		    } else {
-			Tcl_AppendResult(interp,
-				"could not create new link \"",
-				TclGetString(objv[index]), "\": target \"",
-				TclGetString(objv[index+1]),
-				"\" doesn't exist", NULL);
-		    }
-		} else {
-		    Tcl_AppendResult(interp,
-			    "could not create new link \"",
-			    TclGetString(objv[index]), "\" pointing to \"",
-			    TclGetString(objv[index+1]), "\": ",
-			    Tcl_PosixError(interp), NULL);
-		}
-		return TCL_ERROR;
-	    }
-	} else {
-	    if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-
-	    /*
-	     * Read link
-	     */
-
-	    contents = Tcl_FSLink(objv[index], NULL, 0);
-	    if (contents == NULL) {
-		Tcl_AppendResult(interp, "could not read link \"",
-			TclGetString(objv[index]), "\": ",
-			Tcl_PosixError(interp), NULL);
-		return TCL_ERROR;
-	    }
+	if (Tcl_FSUtime(objv[1], &tval) != 0) {
+	    Tcl_AppendResult(interp, "could not set modification time for "
+		    "file \"", TclGetString(objv[1]), "\": ",
+		    Tcl_PosixError(interp), NULL);
+	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, contents);
-	if (objc == 3) {
-	    /*
-	     * If we are reading a link, we need to free this result refCount.
-	     * If we are creating a link, this will just be objv[index+1], and
-	     * so we don't own it.
-	     */
 
-	    Tcl_DecrRefCount(contents);
+	/*
+	 * Do another stat to ensure that the we return the new recognized
+	 * mtime - hopefully the same as the one we sent in.
+	 */
+
+	if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
+	    return TCL_ERROR;
 	}
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_mtime));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrLinkStatCmd --
+ *
+ *	This function is invoked to process the "file lstat" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Writes to an array named by the user.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrLinkStatCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_StatBuf buf;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name varName");
+	return TCL_ERROR;
+    }
+    if (GetStatBuf(interp, objv[1], Tcl_FSLstat, &buf) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    return StoreStatData(interp, objv[2], &buf);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrStatCmd --
+ *
+ *	This function is invoked to process the "file stat" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Writes to an array named by the user.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrStatCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_StatBuf buf;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name varName");
+	return TCL_ERROR;
+    }
+    if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    return StoreStatData(interp, objv[2], &buf);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrTypeCmd --
+ *
+ *	This function is invoked to process the "file type" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrTypeCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_StatBuf buf;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    if (GetStatBuf(interp, objv[1], Tcl_FSLstat, &buf) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    GetTypeFromMode((unsigned short) buf.st_mode), -1));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrSizeCmd --
+ *
+ *	This function is invoked to process the "file size" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrSizeCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_StatBuf buf;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) buf.st_size));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrIsDirectoryCmd --
+ *
+ *	This function is invoked to process the "file isdirectory" Tcl
+ *	command. See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrIsDirectoryCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_StatBuf buf;
+    int value = 0;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    if (GetStatBuf(NULL, objv[1], Tcl_FSStat, &buf) == TCL_OK) {
+	value = S_ISDIR(buf.st_mode);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrIsExecutableCmd --
+ *
+ *	This function is invoked to process the "file executable" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrIsExecutableCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    return CheckAccess(interp, objv[1], X_OK);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrIsExistingCmd --
+ *
+ *	This function is invoked to process the "file exists" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrIsExistingCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    return CheckAccess(interp, objv[1], F_OK);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrIsFileCmd --
+ *
+ *	This function is invoked to process the "file isfile" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrIsFileCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_StatBuf buf;
+    int value = 0;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    if (GetStatBuf(NULL, objv[1], Tcl_FSStat, &buf) == TCL_OK) {
+	value = S_ISREG(buf.st_mode);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrIsOwnedCmd --
+ *
+ *	This function is invoked to process the "file owned" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrIsOwnedCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_StatBuf buf;
+    int value = 0;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    if (GetStatBuf(NULL, objv[1], Tcl_FSStat, &buf) == TCL_OK) {
+	/*
+	 * For Windows, there are no user ids associated with a file, so we
+	 * always return 1.
+	 *
+	 * TODO: use GetSecurityInfo to get the real owner of the file and
+	 * test for equivalence to the current user.
+	 */
+
+#ifdef __WIN32__
+	value = 1;
+#else
+	value = (geteuid() == buf.st_uid);
+#endif
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrIsReadableCmd --
+ *
+ *	This function is invoked to process the "file readable" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrIsReadableCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    return CheckAccess(interp, objv[1], R_OK);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrIsWritableCmd --
+ *
+ *	This function is invoked to process the "file writable" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrIsWritableCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    return CheckAccess(interp, objv[1], W_OK);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PathDirNameCmd --
+ *
+ *	This function is invoked to process the "file dirname" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PathDirNameCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *dirPtr;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    dirPtr = TclPathPart(interp, objv[1], TCL_PATH_DIRNAME);
+    if (dirPtr == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, dirPtr);
+    Tcl_DecrRefCount(dirPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PathExtensionCmd --
+ *
+ *	This function is invoked to process the "file extension" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PathExtensionCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *dirPtr;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    dirPtr = TclPathPart(interp, objv[1], TCL_PATH_EXTENSION);
+    if (dirPtr == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, dirPtr);
+    Tcl_DecrRefCount(dirPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PathRootNameCmd --
+ *
+ *	This function is invoked to process the "file root" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PathRootNameCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *dirPtr;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    dirPtr = TclPathPart(interp, objv[1], TCL_PATH_ROOT);
+    if (dirPtr == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, dirPtr);
+    Tcl_DecrRefCount(dirPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PathTailCmd --
+ *
+ *	This function is invoked to process the "file tail" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PathTailCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *dirPtr;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    dirPtr = TclPathPart(interp, objv[1], TCL_PATH_TAIL);
+    if (dirPtr == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, dirPtr);
+    Tcl_DecrRefCount(dirPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PathFilesystemCmd --
+ *
+ *	This function is invoked to process the "file system" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PathFilesystemCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *fsInfo;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    fsInfo = Tcl_FSFileSystemInfo(objv[1]);
+    if (fsInfo == NULL) {
+	Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, fsInfo);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PathJoinCmd --
+ *
+ *	This function is invoked to process the "file join" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PathJoinCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_FSJoinToPath(NULL, objc - 1, objv + 1));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PathNativeNameCmd --
+ *
+ *	This function is invoked to process the "file nativename" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PathNativeNameCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    const char *fileName;
+    Tcl_DString ds;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    fileName = Tcl_TranslateFileName(interp, TclGetString(objv[1]), &ds);
+    if (fileName == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(fileName,
+	    Tcl_DStringLength(&ds)));
+    Tcl_DStringFree(&ds);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PathNormalizeCmd --
+ *
+ *	This function is invoked to process the "file normalize" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PathNormalizeCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *fileName;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    fileName = Tcl_FSGetNormalizedPath(interp, objv[1]);
+    if (fileName == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, fileName);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PathSplitCmd --
+ *
+ *	This function is invoked to process the "file split" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PathSplitCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *res;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    res = Tcl_FSSplitPath(objv[1], NULL);
+    if (res == NULL) {
+	Tcl_AppendResult(interp, "could not read \"", TclGetString(objv[1]),
+		"\": no such file or directory", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, res);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PathTypeCmd --
+ *
+ *	This function is invoked to process the "file pathtype" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PathTypeCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *typeName;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+    switch (Tcl_FSGetPathType(objv[1])) {
+    case TCL_PATH_ABSOLUTE:
+	TclNewLiteralStringObj(typeName, "absolute");
+	break;
+    case TCL_PATH_RELATIVE:
+	TclNewLiteralStringObj(typeName, "relative");
+	break;
+    case TCL_PATH_VOLUME_RELATIVE:
+	TclNewLiteralStringObj(typeName, "volumerelative");
+	break;
+    default:
+	/* Should be unreachable */
 	return TCL_OK;
     }
-    case FCMD_LSTAT:
-	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "name varName");
-	    return TCL_ERROR;
-	}
-	if (GetStatBuf(interp, objv[2], Tcl_FSLstat, &buf) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	return StoreStatData(interp, objv[3], &buf);
-    case FCMD_STAT:
-	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "name varName");
-	    return TCL_ERROR;
-	}
-	if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	return StoreStatData(interp, objv[3], &buf);
-    case FCMD_SIZE:
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp,
-		Tcl_NewWideIntObj((Tcl_WideInt) buf.st_size));
-	return TCL_OK;
-    case FCMD_TYPE:
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	if (GetStatBuf(interp, objv[2], Tcl_FSLstat, &buf) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		GetTypeFromMode((unsigned short) buf.st_mode), -1));
-	return TCL_OK;
-    case FCMD_MKDIR:
-	return TclFileMakeDirsCmd(interp, objc, objv);
-    case FCMD_NATIVENAME: {
-	const char *fileName;
-	Tcl_DString ds;
+    Tcl_SetObjResult(interp, typeName);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FilesystemSeparatorCmd --
+ *
+ *	This function is invoked to process the "file separator" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	fileName = TclGetString(objv[2]);
-	fileName = Tcl_TranslateFileName(interp, fileName, &ds);
-	if (fileName == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(fileName,
-		Tcl_DStringLength(&ds)));
-	Tcl_DStringFree(&ds);
-	return TCL_OK;
+static int
+FilesystemSeparatorCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc < 1 || objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?name?");
+	return TCL_ERROR;
     }
-    case FCMD_NORMALIZE: {
-	Tcl_Obj *fileName;
+    if (objc == 1) {
+	const char *separator = NULL; /* lint */
 
-	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "filename");
-	    return TCL_ERROR;
-	}
-
-	fileName = Tcl_FSGetNormalizedPath(interp, objv[2]);
-	if (fileName == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, fileName);
-	return TCL_OK;
-    }
-    case FCMD_PATHTYPE: {
-	Tcl_Obj *typeName;
-
-	if (objc != 3) {
-	    goto only3Args;
-	}
-
-	switch (Tcl_FSGetPathType(objv[2])) {
-	case TCL_PATH_ABSOLUTE:
-	    TclNewLiteralStringObj(typeName, "absolute");
+	switch (tclPlatform) {
+	case TCL_PLATFORM_UNIX:
+	    separator = "/";
 	    break;
-	case TCL_PATH_RELATIVE:
-	    TclNewLiteralStringObj(typeName, "relative");
+	case TCL_PLATFORM_WINDOWS:
+	    separator = "\\";
 	    break;
-	case TCL_PATH_VOLUME_RELATIVE:
-	    TclNewLiteralStringObj(typeName, "volumerelative");
-	    break;
-	default:
-	    return TCL_OK;
 	}
-	Tcl_SetObjResult(interp, typeName);
-	return TCL_OK;
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(separator, 1));
+    } else {
+	Tcl_Obj *separatorObj = Tcl_FSPathSeparator(objv[1]);
+
+	if (separatorObj == NULL) {
+	    Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, separatorObj);
     }
-    case FCMD_READABLE:
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	return CheckAccess(interp, objv[2], R_OK);
-    case FCMD_READLINK: {
-	Tcl_Obj *contents;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FilesystemVolumesCmd --
+ *
+ *	This function is invoked to process the "file volumes" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
-	if (objc != 3) {
-	    goto only3Args;
-	}
-
-	if (Tcl_FSConvertToPathType(interp, objv[2]) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-
-	contents = Tcl_FSLink(objv[2], NULL, 0);
-
-	if (contents == NULL) {
-	    Tcl_AppendResult(interp, "could not readlink \"",
-		    TclGetString(objv[2]), "\": ", Tcl_PosixError(interp),
-		    NULL);
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, contents);
-	Tcl_DecrRefCount(contents);
-	return TCL_OK;
+static int
+FilesystemVolumesCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
     }
-    case FCMD_RENAME:
-	return TclFileRenameCmd(interp, objc, objv);
-    case FCMD_ROOTNAME: {
-	Tcl_Obj *root;
-
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	root = TclPathPart(interp, objv[2], TCL_PATH_ROOT);
-	if (root == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, root);
-	Tcl_DecrRefCount(root);
-	return TCL_OK;
-    }
-    case FCMD_SEPARATOR:
-	if ((objc < 2) || (objc > 3)) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "?name?");
-	    return TCL_ERROR;
-	}
-	if (objc == 2) {
-	    const char *separator = NULL; /* lint */
-
-	    switch (tclPlatform) {
-	    case TCL_PLATFORM_UNIX:
-		separator = "/";
-		break;
-	    case TCL_PLATFORM_WINDOWS:
-		separator = "\\";
-		break;
-	    }
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(separator, 1));
-	} else {
-	    Tcl_Obj *separatorObj = Tcl_FSPathSeparator(objv[2]);
-
-	    if (separatorObj == NULL) {
-		Tcl_SetResult(interp, "Unrecognised path", TCL_STATIC);
-		return TCL_ERROR;
-	    }
-	    Tcl_SetObjResult(interp, separatorObj);
-	}
-	return TCL_OK;
-    case FCMD_SPLIT: {
-	Tcl_Obj *res;
-
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	res = Tcl_FSSplitPath(objv[2], NULL);
-	if (res == NULL) {
-	    /* How can the interp be NULL here?! DKF */
-	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "could not read \"",
-			TclGetString(objv[2]),
-			"\": no such file or directory", NULL);
-	    }
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, res);
-	return TCL_OK;
-    }
-    case FCMD_SYSTEM: {
-	Tcl_Obj *fsInfo;
-
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	fsInfo = Tcl_FSFileSystemInfo(objv[2]);
-	if (fsInfo == NULL) {
-	    Tcl_SetResult(interp, "Unrecognised path", TCL_STATIC);
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, fsInfo);
-	return TCL_OK;
-    }
-    case FCMD_TAIL: {
-	Tcl_Obj *dirPtr;
-
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	dirPtr = TclPathPart(interp, objv[2], TCL_PATH_TAIL);
-	if (dirPtr == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, dirPtr);
-	Tcl_DecrRefCount(dirPtr);
-	return TCL_OK;
-    }
-    case FCMD_TEMPFILE:
-	return FileTempfileCmd(interp, objc, objv);
-    case FCMD_VOLUMES:
-	if (objc != 2) {
-	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, Tcl_FSListVolumes());
-	return TCL_OK;
-    case FCMD_WRITABLE:
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	return CheckAccess(interp, objv[2], W_OK);
-    }
-
-  only3Args:
-    Tcl_WrongNumArgs(interp, 2, objv, "name");
-    return TCL_ERROR;
+    Tcl_SetObjResult(interp, Tcl_FSListVolumes());
+    return TCL_OK;
 }
 
 /*
@@ -1590,13 +2204,13 @@ StoreStatData(
      */
 
 #define STORE_ARY(fieldName, object) \
-    TclNewLiteralStringObj(field, fieldName); \
-    Tcl_IncrRefCount(field); \
-    value = (object); \
+    TclNewLiteralStringObj(field, fieldName);				\
+    Tcl_IncrRefCount(field);						\
+    value = (object);							\
     if (Tcl_ObjSetVar2(interp,varName,field,value,TCL_LEAVE_ERR_MSG)==NULL) { \
-	TclDecrRefCount(field); \
-	return TCL_ERROR; \
-    } \
+	TclDecrRefCount(field);						\
+	return TCL_ERROR;						\
+    }									\
     TclDecrRefCount(field);
 
     /*
@@ -1667,165 +2281,6 @@ GetTypeFromMode(
 #endif
     }
     return "unknown";
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * FileTempfileCmd
- *
- *	This function implements the "tempfile" subcommand of the "file"
- *	command.
- *
- * Results:
- *	Returns a standard Tcl result.
- *
- * Side effects:
- *	Creates a temporary file. Opens a channel to that file and puts the
- *	name of that channel in the result. *Might* register suitable exit
- *	handlers to ensure that the temporary file gets deleted. Might write
- *	to a variable, so reentrancy is a potential issue.
- *
- *---------------------------------------------------------------------------
- */
-
-static int
-FileTempfileCmd(
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_Obj *nameVarObj = NULL;	/* Variable to store the name of the temporary
-				 * file in. */
-    Tcl_Obj *nameObj = NULL;	/* Object that will contain the filename. */
-    Tcl_Channel chan;		/* The channel opened (RDWR) on the temporary
-				 * file, or NULL if there's an error. */
-    Tcl_Obj *tempDirObj = NULL, *tempBaseObj = NULL, *tempExtObj = NULL;
-				/* Pieces of template. Each piece is NULL if
-				 * it is omitted. The platform temporary file
-				 * engine might ignore some pieces. */
-
-    if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?nameVar? ?template?");
-	return TCL_ERROR;
-    }
-
-    if (objc > 2) {
-	nameVarObj = objv[2];
-	TclNewObj(nameObj);
-    }
-    if (objc > 3) {
-	int length;
-	const char *string = TclGetStringFromObj(objv[3], &length);
-
-	/*
-	 * Treat an empty string as if it wasn't there.
-	 */
-
-	if (length == 0) {
-	    goto makeTemporary;
-	}
-
-	/*
-	 * The template only gives a directory if there is a directory
-	 * separator in it.
-	 */
-
-	if (strchr(string, '/') != NULL
-		|| (tclPlatform == TCL_PLATFORM_WINDOWS
-		    && strchr(string, '\\') != NULL)) {
-	    tempDirObj = TclPathPart(interp, objv[3], TCL_PATH_DIRNAME);
-
-	    /*
-	     * Only allow creation of temporary files in the native filesystem
-	     * since they are frequently used for integration with external
-	     * tools or system libraries. [Bug 2388866]
-	     */
-
-	    if (tempDirObj != NULL && Tcl_FSGetFileSystemForPath(tempDirObj)
-		    != &tclNativeFilesystem) {
-		TclDecrRefCount(tempDirObj);
-		tempDirObj = NULL;
-	    }
-	}
-
-	/*
-	 * The template only gives the filename if the last character isn't a
-	 * directory separator.
-	 */
-
-	if (string[length-1] != '/' && (tclPlatform != TCL_PLATFORM_WINDOWS
-		|| string[length-1] != '\\')) {
-	    Tcl_Obj *tailObj = TclPathPart(interp, objv[3], TCL_PATH_TAIL);
-
-	    if (tailObj != NULL) {
-		tempBaseObj = TclPathPart(interp, tailObj, TCL_PATH_ROOT);
-		tempExtObj = TclPathPart(interp, tailObj, TCL_PATH_EXTENSION);
-		TclDecrRefCount(tailObj);
-	    }
-	}
-    }
-
-    /*
-     * Convert empty parts of the template into unspecified parts.
-     */
-
-    if (tempDirObj && !TclGetString(tempDirObj)[0]) {
-	TclDecrRefCount(tempDirObj);
-	tempDirObj = NULL;
-    }
-    if (tempBaseObj && !TclGetString(tempBaseObj)[0]) {
-	TclDecrRefCount(tempBaseObj);
-	tempBaseObj = NULL;
-    }
-    if (tempExtObj && !TclGetString(tempExtObj)[0]) {
-	TclDecrRefCount(tempExtObj);
-	tempExtObj = NULL;
-    }
-
-    /*
-     * Create and open the temporary file.
-     */
-
-  makeTemporary:
-    chan = TclpOpenTemporaryFile(tempDirObj,tempBaseObj,tempExtObj, nameObj);
-
-    /*
-     * If we created pieces of template, get rid of them now.
-     */
-
-    if (tempDirObj) {
-	TclDecrRefCount(tempDirObj);
-    }
-    if (tempBaseObj) {
-	TclDecrRefCount(tempBaseObj);
-    }
-    if (tempExtObj) {
-	TclDecrRefCount(tempExtObj);
-    }
-
-    /*
-     * Deal with results.
-     */
-
-    if (chan == NULL) {
-	if (nameVarObj) {
-	    TclDecrRefCount(nameObj);
-	}
-	Tcl_AppendResult(interp, "can't create temporary file: ",
-		Tcl_PosixError(interp), NULL);
-	return TCL_ERROR;
-    }
-    Tcl_RegisterChannel(interp, chan);
-    if (nameVarObj != NULL) {
-	if (Tcl_ObjSetVar2(interp, nameVarObj, NULL, nameObj,
-		TCL_LEAVE_ERR_MSG) == NULL) {
-	    Tcl_UnregisterChannel(interp, chan);
-	    return TCL_ERROR;
-	}
-    }
-    Tcl_AppendResult(interp, Tcl_GetChannelName(chan), NULL);
-    return TCL_OK;
 }
 
 /*

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.69 2010/11/15 21:34:54 andreas_kupries Exp $
+# RCS: @(#) $Id: interp.test,v 1.70 2010/12/09 15:09:08 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -19,7 +19,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 testConstraint testinterpdelete [llength [info commands testinterpdelete]]
 
-set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source unload}
+set hidden_cmds {cd encoding exec exit fconfigure glob load open pwd socket source tcl:file:atime tcl:file:attributes tcl:file:copy tcl:file:delete tcl:file:dirname tcl:file:executable tcl:file:exists tcl:file:extension tcl:file:isdirectory tcl:file:isfile tcl:file:link tcl:file:lstat tcl:file:mkdir tcl:file:mtime tcl:file:nativename tcl:file:normalize tcl:file:owned tcl:file:readable tcl:file:readlink tcl:file:rename tcl:file:rootname tcl:file:size tcl:file:stat tcl:file:tail tcl:file:tempfile tcl:file:type tcl:file:volumes tcl:file:writable unload}
 
 foreach i [interp slaves] {
   interp delete $i
@@ -1607,67 +1607,73 @@ test interp-21.1 {interp hidden} {
 test interp-21.2 {interp hidden} {
     interp hidden
 } ""
-test interp-21.3 {interp hidden vs interp hide, interp expose} {
+test interp-21.3 {interp hidden vs interp hide, interp expose} -setup {
     set l ""
+} -body {
     lappend l [interp hidden]
     interp hide {} pwd
     lappend l [interp hidden]
     interp expose {} pwd
     lappend l [interp hidden]
-    set l
-} {{} pwd {}}
-test interp-21.4 {interp hidden} {
+} -result {{} pwd {}}
+test interp-21.4 {interp hidden} -setup {
     catch {interp delete a}
+} -body {
     interp create a
-    set l [interp hidden a]
+    interp hidden a
+} -cleanup {
     interp delete a
-    set l
-} ""
-test interp-21.5 {interp hidden} {
+} -result ""
+test interp-21.5 {interp hidden} -setup {
     catch {interp delete a}
+} -body {
     interp create -safe a
-    set l [lsort [interp hidden a]]
+    lsort [interp hidden a]
+} -cleanup {
     interp delete a
-    set l
-} $hidden_cmds 
-test interp-21.6 {interp hidden vs interp hide, interp expose} {
+} -result $hidden_cmds 
+test interp-21.6 {interp hidden vs interp hide, interp expose} -setup {
     catch {interp delete a}
-    interp create a
     set l ""
+} -body {
+    interp create a
     lappend l [interp hidden a]
     interp hide a pwd
     lappend l [interp hidden a]
     interp expose a pwd
     lappend l [interp hidden a]
+} -cleanup {
     interp delete a
-    set l
-} {{} pwd {}}
-test interp-21.7 {interp hidden} {
+} -result {{} pwd {}}
+test interp-21.7 {interp hidden} -setup {
     catch {interp delete a}
+} -body {
     interp create a
-    set l [a hidden]
+    a hidden
+} -cleanup {
     interp delete a
-    set l
-} ""
-test interp-21.8 {interp hidden} {
+} -result ""
+test interp-21.8 {interp hidden} -setup {
     catch {interp delete a}
+} -body {
     interp create a -safe
-    set l [lsort [a hidden]]
+    lsort [a hidden]
+} -cleanup {
     interp delete a
-    set l
-} $hidden_cmds
-test interp-21.9 {interp hidden vs interp hide, interp expose} {
+} -result $hidden_cmds
+test interp-21.9 {interp hidden vs interp hide, interp expose} -setup {
     catch {interp delete a}
-    interp create a
     set l ""
+} -body {
+    interp create a
     lappend l [a hidden]
     a hide pwd
     lappend l [a hidden]
     a expose pwd
     lappend l [a hidden]
+} -cleanup {
     interp delete a
-    set l
-} {{} pwd {}}
+} -result {{} pwd {}}
 
 test interp-22.1 {testing interp marktrusted} {
     catch {interp delete a}
@@ -1767,183 +1773,161 @@ test interp-22.9 {testing interp marktrusted} {
     set l
 } {1 1 1 0 0}
 
-test interp-23.1 {testing hiding vs aliases} {
+test interp-23.1 {testing hiding vs aliases: unsafe interp} -setup {
     catch {interp delete a}
+    set l ""
+} -body {
     interp create a
-    set l ""
     lappend l [interp hidden a]
     a alias bar bar
-    lappend l [interp aliases a]
-    lappend l [interp hidden a]
+    lappend l [interp aliases a] [interp hidden a]
     a hide bar
-    lappend l [interp aliases a]
-    lappend l [interp hidden a]
+    lappend l [interp aliases a] [interp hidden a]
     a alias bar {}
-    lappend l [interp aliases a]
-    lappend l [interp hidden a]
+    lappend l [interp aliases a] [interp hidden a]
+} -cleanup {
     interp delete a
-    set l
-} {{} bar {} bar bar {} {}}
-test interp-23.2 {testing hiding vs aliases} {unixOrPc} {
+} -result {{} bar {} bar bar {} {}}
+test interp-23.2 {testing hiding vs aliases: safe interp} -setup {
     catch {interp delete a}
-    interp create a -safe
     set l ""
+} -constraints {unixOrPc} -body {
+    interp create a -safe
     lappend l [lsort [interp hidden a]]
     a alias bar bar
-    lappend l [lsort [interp aliases a]]
-    lappend l [lsort [interp hidden a]]
+    lappend l [lsort [interp aliases a]] [lsort [interp hidden a]]
     a hide bar
-    lappend l [lsort [interp aliases a]]
-    lappend l [lsort [interp hidden a]]
+    lappend l [lsort [interp aliases a]] [lsort [interp hidden a]]
     a alias bar {}
-    lappend l [lsort [interp aliases a]]
-    lappend l [lsort [interp hidden a]]
+    lappend l [lsort [interp aliases a]] [lsort [interp hidden a]]
+} -cleanup {
     interp delete a
-    set l
-} {{cd encoding exec exit fconfigure file glob load open pwd socket source unload} {::tcl::mathfunc::max ::tcl::mathfunc::min bar clock} {cd encoding exec exit fconfigure file glob load open pwd socket source unload} {::tcl::mathfunc::max ::tcl::mathfunc::min bar clock} {bar cd encoding exec exit fconfigure file glob load open pwd socket source unload} {::tcl::mathfunc::max ::tcl::mathfunc::min clock} {cd encoding exec exit fconfigure file glob load open pwd socket source unload}} 
+} -result [list $hidden_cmds {::tcl::mathfunc::max ::tcl::mathfunc::min bar clock} $hidden_cmds {::tcl::mathfunc::max ::tcl::mathfunc::min bar clock} [lsort [concat $hidden_cmds bar]] {::tcl::mathfunc::max ::tcl::mathfunc::min clock} $hidden_cmds]
 
-test interp-24.1 {result resetting on error} {
+test interp-24.1 {result resetting on error} -setup {
     catch {interp delete a}
+} -body {
     interp create a
-    proc foo args {error $args}
-    interp alias a foo {} foo
-    set l [interp eval a {
-	set l {}
-	lappend l [catch {foo 1 2 3} msg]
-	lappend l $msg
-	lappend l [catch {foo 3 4 5} msg]
-	lappend l $msg
-	set l
-    }]
+    interp alias a foo {} apply {args {error $args}}
+    interp eval a {
+	lappend l [catch {foo 1 2 3} msg] $msg
+	lappend l [catch {foo 3 4 5} msg] $msg
+    }
+} -cleanup {
     interp delete a
-    rename foo {}
-    set l
-} {1 {1 2 3} 1 {3 4 5}}
-test interp-24.2 {result resetting on error} {
+} -result {1 {1 2 3} 1 {3 4 5}}
+test interp-24.2 {result resetting on error} -setup {
     catch {interp delete a}
+} -body {
     interp create a -safe
-    proc foo args {error $args}
-    interp alias a foo {} foo
-    set l [interp eval a {
-	set l {}
-	lappend l [catch {foo 1 2 3} msg]
-	lappend l $msg
-	lappend l [catch {foo 3 4 5} msg]
-	lappend l $msg
-	set l
-    }]
+    interp alias a foo {} apply {args {error $args}}
+    interp eval a {
+	lappend l [catch {foo 1 2 3} msg] $msg
+	lappend l [catch {foo 3 4 5} msg] $msg
+    }
+} -cleanup {
     interp delete a
-    rename foo {}
-    set l
-} {1 {1 2 3} 1 {3 4 5}}
-test interp-24.3 {result resetting on error} {
+} -result {1 {1 2 3} 1 {3 4 5}}
+test interp-24.3 {result resetting on error} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp create {a b}
     interp eval a {
 	proc foo args {error $args}
     }
     interp alias {a b} foo a foo
-    set l [interp eval {a b} {
-	set l {}
-	lappend l [catch {foo 1 2 3} msg]
-	lappend l $msg
-	lappend l [catch {foo 3 4 5} msg]
-	lappend l $msg
-	set l
-    }]
+    interp eval {a b} {
+	lappend l [catch {foo 1 2 3} msg] $msg
+	lappend l [catch {foo 3 4 5} msg] $msg
+    }
+} -cleanup {
     interp delete a
-    set l
-} {1 {1 2 3} 1 {3 4 5}}
-test interp-24.4 {result resetting on error} {
+} -result {1 {1 2 3} 1 {3 4 5}}
+test interp-24.4 {result resetting on error} -setup {
     catch {interp delete a}
+} -body {
     interp create a -safe
     interp create {a b}
     interp eval a {
 	proc foo args {error $args}
     }
     interp alias {a b} foo a foo
-    set l [interp eval {a b} {
-	set l {}
+    interp eval {a b} {
 	lappend l [catch {foo 1 2 3} msg]
 	lappend l $msg
 	lappend l [catch {foo 3 4 5} msg]
 	lappend l $msg
-	set l
-    }]
+    }
+} -cleanup {
     interp delete a
-    set l
-} {1 {1 2 3} 1 {3 4 5}}
-test interp-24.5 {result resetting on error} {
+} -result {1 {1 2 3} 1 {3 4 5}}
+test interp-24.5 {result resetting on error} -setup {
     catch {interp delete a}
     catch {interp delete b}
+} -body {
     interp create a
     interp create b
     interp eval a {
 	proc foo args {error $args}
     }
     interp alias b foo a foo
-    set l [interp eval b {
-	set l {}
-	lappend l [catch {foo 1 2 3} msg]
-	lappend l $msg
-	lappend l [catch {foo 3 4 5} msg]
-	lappend l $msg
-	set l
-    }]
+    interp eval b {
+	lappend l [catch {foo 1 2 3} msg] $msg
+	lappend l [catch {foo 3 4 5} msg] $msg
+    }
+} -cleanup {
     interp delete a
-    set l
-} {1 {1 2 3} 1 {3 4 5}}
-test interp-24.6 {result resetting on error} {
+    interp delete b
+} -result {1 {1 2 3} 1 {3 4 5}}
+test interp-24.6 {result resetting on error} -setup {
     catch {interp delete a}
     catch {interp delete b}
+} -body {
     interp create a -safe
     interp create b -safe
     interp eval a {
 	proc foo args {error $args}
     }
     interp alias b foo a foo
-    set l [interp eval b {
-	set l {}
-	lappend l [catch {foo 1 2 3} msg]
-	lappend l $msg
-	lappend l [catch {foo 3 4 5} msg]
-	lappend l $msg
-	set l
-    }]
+    interp eval b {
+	lappend l [catch {foo 1 2 3} msg] $msg
+	lappend l [catch {foo 3 4 5} msg] $msg
+    }
+} -cleanup {
     interp delete a
-    set l
-} {1 {1 2 3} 1 {3 4 5}}
-test interp-24.7 {result resetting on error} {
+    interp delete b
+} -result {1 {1 2 3} 1 {3 4 5}}
+test interp-24.7 {result resetting on error} -setup {
     catch {interp delete a}
+    set l {}
+} -body {
     interp create a
     interp eval a {
 	proc foo args {error $args}
     }
-    set l {}
-    lappend l [catch {interp eval a foo 1 2 3} msg]
-    lappend l $msg
-    lappend l [catch {interp eval a foo 3 4 5} msg]
-    lappend l $msg
+    lappend l [catch {interp eval a foo 1 2 3} msg] $msg
+    lappend l [catch {interp eval a foo 3 4 5} msg] $msg
+} -cleanup {
     interp delete a
-    set l
-} {1 {1 2 3} 1 {3 4 5}}
-test interp-24.8 {result resetting on error} {
+} -result {1 {1 2 3} 1 {3 4 5}}
+test interp-24.8 {result resetting on error} -setup {
     catch {interp delete a}
+    set l {}
+} -body {
     interp create a -safe
     interp eval a {
 	proc foo args {error $args}
     }
-    set l {}
-    lappend l [catch {interp eval a foo 1 2 3} msg]
-    lappend l $msg
-    lappend l [catch {interp eval a foo 3 4 5} msg]
-    lappend l $msg
+    lappend l [catch {interp eval a foo 1 2 3} msg] $msg
+    lappend l [catch {interp eval a foo 3 4 5} msg] $msg
+} -cleanup {
     interp delete a
-    set l
-} {1 {1 2 3} 1 {3 4 5}}
-test interp-24.9 {result resetting on error} {
+} -result {1 {1 2 3} 1 {3 4 5}}
+test interp-24.9 {result resetting on error} -setup {
     catch {interp delete a}
+    set l {}
+} -body {
     interp create a
     interp create {a b}
     interp eval {a b} {
@@ -1954,16 +1938,15 @@ test interp-24.9 {result resetting on error} {
 	    eval interp eval b foo $args
 	}
     }
-    set l {}
-    lappend l [catch {interp eval a foo 1 2 3} msg]
-    lappend l $msg
-    lappend l [catch {interp eval a foo 3 4 5} msg]
-    lappend l $msg
+    lappend l [catch {interp eval a foo 1 2 3} msg] $msg
+    lappend l [catch {interp eval a foo 3 4 5} msg] $msg
+} -cleanup {
     interp delete a
-    set l
-} {1 {1 2 3} 1 {3 4 5}}
-test interp-24.10 {result resetting on error} {
+} -result {1 {1 2 3} 1 {3 4 5}}
+test interp-24.10 {result resetting on error} -setup {
     catch {interp delete a}
+    set l {}
+} -body {
     interp create a -safe
     interp create {a b}
     interp eval {a b} {
@@ -1974,16 +1957,14 @@ test interp-24.10 {result resetting on error} {
 	    eval interp eval b foo $args
 	}
     }
-    set l {}
-    lappend l [catch {interp eval a foo 1 2 3} msg]
-    lappend l $msg
-    lappend l [catch {interp eval a foo 3 4 5} msg]
-    lappend l $msg
+    lappend l [catch {interp eval a foo 1 2 3} msg] $msg
+    lappend l [catch {interp eval a foo 3 4 5} msg] $msg
+} -cleanup {
     interp delete a
-    set l
-} {1 {1 2 3} 1 {3 4 5}}
-test interp-24.11 {result resetting on error} {
+} -result {1 {1 2 3} 1 {3 4 5}}
+test interp-24.11 {result resetting on error} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp create {a b}
     interp eval {a b} {
@@ -1991,20 +1972,17 @@ test interp-24.11 {result resetting on error} {
     }
     interp eval a {
 	proc foo args {
-	    set l {}
-	    lappend l [catch {eval interp eval b foo $args} msg]
-	    lappend l $msg
-	    lappend l [catch {eval interp eval b foo $args} msg]
-	    lappend l $msg
-	    set l
+	    lappend l [catch {eval interp eval b foo $args} msg] $msg
+	    lappend l [catch {eval interp eval b foo $args} msg] $msg
 	}
     }
-    set l [interp eval a foo 1 2 3]
+    interp eval a foo 1 2 3
+} -cleanup {
     interp delete a
-    set l
-} {1 {1 2 3} 1 {1 2 3}}
-test interp-24.12 {result resetting on error} {
+} -result {1 {1 2 3} 1 {1 2 3}}
+test interp-24.12 {result resetting on error} -setup {
     catch {interp delete a}
+} -body {
     interp create a -safe
     interp create {a b}
     interp eval {a b} {
@@ -2012,27 +1990,22 @@ test interp-24.12 {result resetting on error} {
     }
     interp eval a {
 	proc foo args {
-	    set l {}
-	    lappend l [catch {eval interp eval b foo $args} msg]
-	    lappend l $msg
-	    lappend l [catch {eval interp eval b foo $args} msg]
-	    lappend l $msg
-	    set l
+	    lappend l [catch {eval interp eval b foo $args} msg] $msg
+	    lappend l [catch {eval interp eval b foo $args} msg] $msg
 	}
     }
-    set l [interp eval a foo 1 2 3]
+    interp eval a foo 1 2 3
+} -cleanup {
     interp delete a
-    set l
-} {1 {1 2 3} 1 {1 2 3}}
+} -result {1 {1 2 3} 1 {1 2 3}}
 
-unset hidden_cmds
-
-test interp-25.1 {testing aliasing of string commands} {
+test interp-25.1 {testing aliasing of string commands} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     a alias exec foo		;# Relies on exec being a string command!
     interp delete a
-} ""
+} -result ""
 
 #
 # Interps result transmission
@@ -3058,7 +3031,7 @@ test interp-31.1 {alias invocation scope} {
 	myNewSet a $value
 	return $a
     }
-    catch {unset a}
+    unset -nocomplain a
     set result [testMyNewSet "ok"]
     rename testMyNewSet {}
     rename mySet {}
@@ -3580,7 +3553,7 @@ test interp-36.7 {SlaveBgerror sets error handler of slave [1999035]} -setup {
     set result
 } -cleanup {
     variable result {}
-    unset result
+    unset -nocomplain result
     interp delete slave
 } -result foo
 
@@ -3593,7 +3566,7 @@ test interp-37.1 {safe interps and min() and max(): Bug 2895741} -setup {
     lappend result [interp eval a {expr min(5,2,3)*max(7,13,11)}]
     lappend result [interp eval {a b} {expr min(5,2,3)*max(7,13,11)}]
 } -cleanup {
-    unset result
+    unset -nocomplain result
     interp delete a
 } -result {26 26}
 
@@ -3614,7 +3587,7 @@ test interp-38.2 {interp debug env var} -setup {
 } -body {
     interp debug a
 } -cleanup {
-    unset ::env(TCL_INTERP_DEBUG_FRAME)
+    unset -nocomplain ::env(TCL_INTERP_DEBUG_FRAME)
     interp delete a
 } -result {-frame 1}
 test interp-38.3 {interp debug wrong args} -body {
@@ -3642,6 +3615,7 @@ test interp-38.8 {interp debug basic setup} -body {
 
 
 # cleanup
+unset -nocomplain hidden_cmds
 foreach i [interp slaves] {
     interp delete $i
 }
