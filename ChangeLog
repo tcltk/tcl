@@ -1,3 +1,9 @@
+2010-12-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/append.test, tests/appendComp.test: Clean up tests so that
+	they don't leave things in the global environment (detected when doing
+	-singleproc testing).
+
 2010-12-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/fCmd.test, tests/safe.test, tests/uplevel.test,
