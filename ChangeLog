@@ -1,5 +1,8 @@
 2010-12-09  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tests/fCmd.test: Improve sanity of constraints now that we don't
+	support anything before Windows 2000.
+
 	* generic/tclCmdAH.c (TclInitFileCmd, TclMakeFileCommandSafe, ...):
 	Break up [file] into an ensemble. Note that the ensemble is safe in
 	itself, but the majority of its subcommands are not.
