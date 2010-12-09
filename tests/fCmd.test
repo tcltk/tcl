@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.71 2010/12/07 16:32:06 dkf Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.72 2010/12/09 15:09:08 dkf Exp $
 #
 
 if {"::tcltest" ni [namespace children]} {
@@ -195,7 +195,7 @@ test fCmd-2.1 {TclFileCopyCmd} -constraints {notRoot} -setup {
 
 test fCmd-3.1 {FileCopyRename: FileForceOption fails} -constraints {notRoot} -body {
     file rename -xyz
-} -returnCodes error -result {bad option "-xyz": should be -force or --}
+} -returnCodes error -result {bad option "-xyz": must be -force or --}
 test fCmd-3.2 {FileCopyRename: not enough args} -constraints {notRoot} -body {
     file rename xyz
 } -returnCodes error -result {wrong # args: should be "file rename ?-option value ...? source ?source ...? target"}
@@ -393,7 +393,7 @@ test fCmd-4.16 {TclFileMakeDirsCmd: TclpCreateDirectory succeeds} -setup {
 
 test fCmd-5.1 {TclFileDeleteCmd: FileForceOption fails} -constraints {notRoot} -body {
     file delete -xyz
-} -returnCodes error -result {bad option "-xyz": should be -force or --}
+} -returnCodes error -result {bad option "-xyz": must be -force or --}
 test fCmd-5.2 {TclFileDeleteCmd: accept 0 files (TIP 323)} -body {
     file delete -force -force
 } -result {}
@@ -740,7 +740,7 @@ test fCmd-7.4 {FileForceOption: bad option} -constraints {notRoot} -setup {
     file delete -tf1
 } -returnCodes error -cleanup {
     file delete -- -tf1
-} -result {bad option "-tf1": should be -force or --}
+} -result {bad option "-tf1": must be -force or --}
 test fCmd-7.5 {FileForceOption: multiple times through loop} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
