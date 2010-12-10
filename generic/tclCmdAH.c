@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.128 2010/12/09 15:09:07 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.129 2010/12/10 13:08:54 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -934,41 +934,41 @@ TclInitFileCmd(
      */
 
     static const EnsembleImplMap initMap[] = {
-	{"atime",	FileAttrAccessTimeCmd},
-	{"attributes",	TclFileAttrsCmd},
-	{"channels",	TclChannelNamesCmd},
-	{"copy",	TclFileCopyCmd},
-	{"delete",	TclFileDeleteCmd},
-	{"dirname",	PathDirNameCmd},
-	{"executable",	FileAttrIsExecutableCmd},
-	{"exists",	FileAttrIsExistingCmd},
-	{"extension",	PathExtensionCmd},
-	{"isdirectory",	FileAttrIsDirectoryCmd},
-	{"isfile",	FileAttrIsFileCmd},
-	{"join",	PathJoinCmd},
-	{"link",	TclFileLinkCmd},
-	{"lstat",	FileAttrLinkStatCmd},
-	{"mtime",	FileAttrModifyTimeCmd},
-	{"mkdir",	TclFileMakeDirsCmd},
-	{"nativename",	PathNativeNameCmd},
-	{"normalize",	PathNormalizeCmd},
-	{"owned",	FileAttrIsOwnedCmd},
-	{"pathtype",	PathTypeCmd},
-	{"readable",	FileAttrIsReadableCmd},
-	{"readlink",	TclFileReadLinkCmd},
-	{"rename",	TclFileRenameCmd},
-	{"rootname",	PathRootNameCmd},
-	{"separator",	FilesystemSeparatorCmd},
-	{"size",	FileAttrSizeCmd},
-	{"split",	PathSplitCmd},
-	{"stat",	FileAttrStatCmd},
-	{"system",	PathFilesystemCmd},
-	{"tail",	PathTailCmd},
-	{"tempfile",	TclFileTemporaryCmd},
-	{"type",	FileAttrTypeCmd},
-	{"volumes",	FilesystemVolumesCmd},
-	{"writable",	FileAttrIsWritableCmd},
-	{NULL}
+	{"atime",	FileAttrAccessTimeCmd, NULL, NULL, NULL, 0},
+	{"attributes",	TclFileAttrsCmd, NULL, NULL, NULL, 0},
+	{"channels",	TclChannelNamesCmd, NULL, NULL, NULL, 0},
+	{"copy",	TclFileCopyCmd, NULL, NULL, NULL, 0},
+	{"delete",	TclFileDeleteCmd, NULL, NULL, NULL, 0},
+	{"dirname",	PathDirNameCmd, NULL, NULL, NULL, 0},
+	{"executable",	FileAttrIsExecutableCmd, NULL, NULL, NULL, 0},
+	{"exists",	FileAttrIsExistingCmd, NULL, NULL, NULL, 0},
+	{"extension",	PathExtensionCmd, NULL, NULL, NULL, 0},
+	{"isdirectory",	FileAttrIsDirectoryCmd, NULL, NULL, NULL, 0},
+	{"isfile",	FileAttrIsFileCmd, NULL, NULL, NULL, 0},
+	{"join",	PathJoinCmd, NULL, NULL, NULL, 0},
+	{"link",	TclFileLinkCmd, NULL, NULL, NULL, 0},
+	{"lstat",	FileAttrLinkStatCmd, NULL, NULL, NULL, 0},
+	{"mtime",	FileAttrModifyTimeCmd, NULL, NULL, NULL, 0},
+	{"mkdir",	TclFileMakeDirsCmd, NULL, NULL, NULL, 0},
+	{"nativename",	PathNativeNameCmd, NULL, NULL, NULL, 0},
+	{"normalize",	PathNormalizeCmd, NULL, NULL, NULL, 0},
+	{"owned",	FileAttrIsOwnedCmd, NULL, NULL, NULL, 0},
+	{"pathtype",	PathTypeCmd, NULL, NULL, NULL, 0},
+	{"readable",	FileAttrIsReadableCmd, NULL, NULL, NULL, 0},
+	{"readlink",	TclFileReadLinkCmd, NULL, NULL, NULL, 0},
+	{"rename",	TclFileRenameCmd, NULL, NULL, NULL, 0},
+	{"rootname",	PathRootNameCmd, NULL, NULL, NULL, 0},
+	{"separator",	FilesystemSeparatorCmd, NULL, NULL, NULL, 0},
+	{"size",	FileAttrSizeCmd, NULL, NULL, NULL, 0},
+	{"split",	PathSplitCmd, NULL, NULL, NULL, 0},
+	{"stat",	FileAttrStatCmd, NULL, NULL, NULL, 0},
+	{"system",	PathFilesystemCmd, NULL, NULL, NULL, 0},
+	{"tail",	PathTailCmd, NULL, NULL, NULL, 0},
+	{"tempfile",	TclFileTemporaryCmd, NULL, NULL, NULL, 0},
+	{"type",	FileAttrTypeCmd, NULL, NULL, NULL, 0},
+	{"volumes",	FilesystemVolumesCmd, NULL, NULL, NULL, 0},
+	{"writable",	FileAttrIsWritableCmd, NULL, NULL, NULL, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     return TclMakeEnsemble(interp, "file", initMap);
 }
@@ -1032,7 +1032,7 @@ TclMakeFileCommandSafe(
 	{"type",	 1},
 	{"volumes",	 1},
 	{"writable",	 1},
-	{NULL}
+	{NULL, 0}
     };
     int i;
     Tcl_DString oldBuf, newBuf;

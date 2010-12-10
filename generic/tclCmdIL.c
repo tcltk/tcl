@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.185 2010/09/27 19:42:38 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.186 2010/12/10 13:08:53 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -160,31 +160,31 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  */
 
 static const EnsembleImplMap defaultInfoMap[] = {
-    {"args",		   InfoArgsCmd,		    NULL, NULL, NULL},
-    {"body",		   InfoBodyCmd,		    NULL, NULL, NULL},
-    {"cmdcount",	   InfoCmdCountCmd,	    NULL, NULL, NULL},
-    {"commands",	   InfoCommandsCmd,	    NULL, NULL, NULL},
-    {"complete",	   InfoCompleteCmd,	    NULL, NULL, NULL},
-    {"coroutine",	   TclInfoCoroutineCmd,     NULL, NULL, NULL},
-    {"default",		   InfoDefaultCmd,	    NULL, NULL, NULL},
-    {"errorstack",	   InfoErrorStackCmd,	    NULL, NULL, NULL},
-    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL},
-    {"frame",		   InfoFrameCmd,	    NULL, NULL, NULL},
-    {"functions",	   InfoFunctionsCmd,	    NULL, NULL, NULL},
-    {"globals",		   TclInfoGlobalsCmd,	    NULL, NULL, NULL},
-    {"hostname",	   InfoHostnameCmd,	    NULL, NULL, NULL},
-    {"level",		   InfoLevelCmd,	    NULL, NULL, NULL},
-    {"library",		   InfoLibraryCmd,	    NULL, NULL, NULL},
-    {"loaded",		   InfoLoadedCmd,	    NULL, NULL, NULL},
-    {"locals",		   TclInfoLocalsCmd,	    NULL, NULL, NULL},
-    {"nameofexecutable",   InfoNameOfExecutableCmd, NULL, NULL, NULL},
-    {"patchlevel",	   InfoPatchLevelCmd,	    NULL, NULL, NULL},
-    {"procs",		   InfoProcsCmd,	    NULL, NULL, NULL},
-    {"script",		   InfoScriptCmd,	    NULL, NULL, NULL},
-    {"sharedlibextension", InfoSharedlibCmd,	    NULL, NULL, NULL},
-    {"tclversion",	   InfoTclVersionCmd,	    NULL, NULL, NULL},
-    {"vars",		   TclInfoVarsCmd,	    NULL, NULL, NULL},
-    {NULL, NULL, NULL, NULL, NULL}
+    {"args",		   InfoArgsCmd,		    NULL, NULL, NULL, 0},
+    {"body",		   InfoBodyCmd,		    NULL, NULL, NULL, 0},
+    {"cmdcount",	   InfoCmdCountCmd,	    NULL, NULL, NULL, 0},
+    {"commands",	   InfoCommandsCmd,	    NULL, NULL, NULL, 0},
+    {"complete",	   InfoCompleteCmd,	    NULL, NULL, NULL, 0},
+    {"coroutine",	   TclInfoCoroutineCmd,     NULL, NULL, NULL, 0},
+    {"default",		   InfoDefaultCmd,	    NULL, NULL, NULL, 0},
+    {"errorstack",	   InfoErrorStackCmd,	    NULL, NULL, NULL, 0},
+    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL, 0},
+    {"frame",		   InfoFrameCmd,	    NULL, NULL, NULL, 0},
+    {"functions",	   InfoFunctionsCmd,	    NULL, NULL, NULL, 0},
+    {"globals",		   TclInfoGlobalsCmd,	    NULL, NULL, NULL, 0},
+    {"hostname",	   InfoHostnameCmd,	    NULL, NULL, NULL, 0},
+    {"level",		   InfoLevelCmd,	    NULL, NULL, NULL, 0},
+    {"library",		   InfoLibraryCmd,	    NULL, NULL, NULL, 0},
+    {"loaded",		   InfoLoadedCmd,	    NULL, NULL, NULL, 0},
+    {"locals",		   TclInfoLocalsCmd,	    NULL, NULL, NULL, 0},
+    {"nameofexecutable",   InfoNameOfExecutableCmd, NULL, NULL, NULL, 0},
+    {"patchlevel",	   InfoPatchLevelCmd,	    NULL, NULL, NULL, 0},
+    {"procs",		   InfoProcsCmd,	    NULL, NULL, NULL, 0},
+    {"script",		   InfoScriptCmd,	    NULL, NULL, NULL, 0},
+    {"sharedlibextension", InfoSharedlibCmd,	    NULL, NULL, NULL, 0},
+    {"tclversion",	   InfoTclVersionCmd,	    NULL, NULL, NULL, 0},
+    {"vars",		   TclInfoVarsCmd,	    NULL, NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /*
