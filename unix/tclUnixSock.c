@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.31 2010/10/28 16:22:37 dgp Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.32 2010/12/10 15:44:54 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -923,7 +923,7 @@ CreateClientSocket(
 	     * Set kernel space buffering
 	     */
 	    
-	    TclSockMinimumBuffers(sock, SOCKET_BUFSIZE);
+	    TclSockMinimumBuffers(INT2PTR(sock), SOCKET_BUFSIZE);
     
 	    if (async) {
 		status = TclUnixSetBlockingMode(sock, TCL_MODE_NONBLOCKING);
@@ -1185,7 +1185,7 @@ Tcl_OpenTcpServer(
 	 * Set kernel space buffering
 	 */
 	
-	TclSockMinimumBuffers(sock, SOCKET_BUFSIZE);
+	TclSockMinimumBuffers(INT2PTR(sock), SOCKET_BUFSIZE);
 	
 	/*
 	 * Set up to reuse server addresses automatically and bind to the

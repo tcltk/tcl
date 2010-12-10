@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOSock.c,v 1.14 2010/10/26 16:14:19 rmax Exp $
+ * RCS: @(#) $Id: tclIOSock.c,v 1.15 2010/12/10 15:44:54 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -89,25 +89,30 @@ TclSockGetPort(
  *----------------------------------------------------------------------
  */
 
+#ifdef _WIN32
+#   define PTR2SOCK(a) (SOCKET)a
+#else
+#   define PTR2SOCK(a) PTR2INT(a)
+#endif
 int
 TclSockMinimumBuffers(
-    int sock,			/* Socket file descriptor */
+    ClientData sock,			/* Socket file descriptor */
     int size)			/* Minimum buffer size */
 {
     int current;
     socklen_t len;
 
     len = sizeof(int);
-    getsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *)&current, &len);
+    getsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_SNDBUF, (char *)&current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *)&size, len);
+	setsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_SNDBUF, (char *)&size, len);
     }
     len = sizeof(int);
-    getsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&current, &len);
+    getsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_RCVBUF, (char *)&current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&size, len);
+	setsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_RCVBUF, (char *)&size, len);
     }
     return TCL_OK;
 }
