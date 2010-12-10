@@ -8,6 +8,15 @@
 	* generic/tclIndexObj.c:
 	* generic/tclIOCmd.c:
 	* generic/tclVar.c:
+	* win/tcl.m4:               Fix manifest-generation for 64-bit gcc (mingw-w64)
+	* win/configure.in:         Check for availability of intptr_t and uintptr_t
+	* win/configure:            (autoconf-2.59)
+	* generic/tclInt.decls:     Change first parameter of TclSockMinimumBuffers to
+	* generic/tclIntDecls.h:    ClientData, and TclWin(Get|Set)SockOpt to SOCKET,
+	* generic/tclIntPlatDecls.h:because on Win64 those are 64-bit, which does not fit.
+	* generic/tclIOSock.c:
+	* win/tclWinSock.c:      
+	* unix/tclUnixSock.c:
 
 2010-12-09  Donal K. Fellows  <dkf@users.sf.net>
 

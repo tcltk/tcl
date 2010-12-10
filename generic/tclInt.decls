@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.152 2010/11/30 18:17:26 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.153 2010/12/10 15:44:53 nijtmans Exp $
 
 library tcl
 
@@ -423,7 +423,7 @@ declare 103 {
 	    int *portPtr)
 }
 declare 104 {
-    int TclSockMinimumBuffers(int sock, int size)
+    int TclSockMinimumBuffers(ClientData sock, int size)
 }
 # Replaced by Tcl_FSStat in 8.4:
 #declare 105 {
@@ -1023,7 +1023,7 @@ declare 2 win {
 	    const char *proto)
 }
 declare 3 win {
-    int TclWinGetSockOpt(int s, int level, int optname,
+    int TclWinGetSockOpt(SOCKET s, int level, int optname,
 	    char FAR *optval, int FAR *optlen)
 }
 declare 4 win {
@@ -1037,7 +1037,7 @@ declare 6 win {
     u_short TclWinNToHS(u_short ns)
 }
 declare 7 win {
-    int TclWinSetSockOpt(int s, int level, int optname,
+    int TclWinSetSockOpt(SOCKET s, int level, int optname,
 	    const char FAR *optval, int optlen)
 }
 declare 8 win {
