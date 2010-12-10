@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.68 2010/12/06 09:01:49 nijtmans Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.69 2010/12/10 13:08:54 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -691,29 +691,30 @@ TclAppendBytesToByteArray(
  *----------------------------------------------------------------------
  */
 
+static const EnsembleImplMap binaryMap[] = {
+{ "format", BinaryFormatCmd, NULL, NULL, NULL, 0 },
+{ "scan",   BinaryScanCmd, NULL, NULL, NULL, 0 },
+{ "encode", NULL, NULL, NULL, NULL, 0 },
+{ "decode", NULL, NULL, NULL, NULL, 0 },
+{ NULL, NULL, NULL, NULL, NULL, 0 }
+};
+static const EnsembleImplMap encodeMap[] = {
+{ "hex",      BinaryEncodeHex, NULL, NULL, (ClientData)HexDigits, 0 },
+{ "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits, 0 },
+{ "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits, 0 },
+{ NULL, NULL, NULL, NULL, NULL, 0 }
+};
+static const EnsembleImplMap decodeMap[] = {
+{ "hex",      BinaryDecodeHex, NULL, NULL, NULL, 0 },
+{ "uuencode", BinaryDecodeUu,  NULL, NULL, NULL, 0 },
+{ "base64",   BinaryDecode64,  NULL, NULL, NULL, 0 },
+{ NULL, NULL, NULL, NULL, NULL, 0 }
+};
+
 Tcl_Command
 TclInitBinaryCmd(
     Tcl_Interp *interp)
 {
-    const EnsembleImplMap binaryMap[] = {
-	{ "format", BinaryFormatCmd, NULL, NULL ,NULL },
-	{ "scan",   BinaryScanCmd, NULL,NULL ,NULL },
-	{ "encode", NULL, NULL, NULL, NULL },
-	{ "decode", NULL, NULL, NULL, NULL },
-	{ NULL, NULL, NULL, NULL, NULL }
-    };
-    const EnsembleImplMap encodeMap[] = {
-	{ "hex",      BinaryEncodeHex, NULL, NULL, (ClientData)HexDigits },
-	{ "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits },
-	{ "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits },
-	{ NULL, NULL, NULL, NULL, NULL }
-    };
-    const EnsembleImplMap decodeMap[] = {
-	{ "hex",      BinaryDecodeHex, NULL, NULL, NULL },
-	{ "uuencode", BinaryDecodeUu,  NULL, NULL, NULL },
-	{ "base64",   BinaryDecode64,  NULL, NULL, NULL },
-	{ NULL, NULL, NULL, NULL, NULL }
-    };
     Tcl_Command binaryEnsemble;
 
     binaryEnsemble = TclMakeEnsemble(interp, "binary", binaryMap);

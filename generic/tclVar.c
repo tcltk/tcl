@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.205 2010/09/27 17:36:48 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.206 2010/12/10 13:08:53 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -4226,18 +4226,18 @@ TclInitArrayCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap arrayImplMap[] = {
-	{"anymore",	ArrayAnyMoreCmd,	NULL, NULL, NULL},
-	{"donesearch",	ArrayDoneSearchCmd,	NULL, NULL, NULL},
-	{"exists",	ArrayExistsCmd,		NULL, NULL, NULL},
-	{"get",		ArrayGetCmd,		NULL, NULL, NULL},
-	{"names",	ArrayNamesCmd,		NULL, NULL, NULL},
-	{"nextelement",	ArrayNextElementCmd,	NULL, NULL, NULL},
-	{"set",		ArraySetCmd,		NULL, NULL, NULL},
-	{"size",	ArraySizeCmd,		NULL, NULL, NULL},
-	{"startsearch",	ArrayStartSearchCmd,	NULL, NULL, NULL},
-	{"statistics",	ArrayStatsCmd,		NULL, NULL, NULL},
-	{"unset",	ArrayUnsetCmd,		NULL, NULL, NULL},
-	{NULL, NULL, NULL, NULL, NULL}
+	{"anymore",	ArrayAnyMoreCmd,	NULL, NULL, NULL, 0},
+	{"donesearch",	ArrayDoneSearchCmd,	NULL, NULL, NULL, 0},
+	{"exists",	ArrayExistsCmd,		NULL, NULL, NULL, 0},
+	{"get",		ArrayGetCmd,		NULL, NULL, NULL, 0},
+	{"names",	ArrayNamesCmd,		NULL, NULL, NULL, 0},
+	{"nextelement",	ArrayNextElementCmd,	NULL, NULL, NULL, 0},
+	{"set",		ArraySetCmd,		NULL, NULL, NULL, 0},
+	{"size",	ArraySizeCmd,		NULL, NULL, NULL, 0},
+	{"startsearch",	ArrayStartSearchCmd,	NULL, NULL, NULL, 0},
+	{"statistics",	ArrayStatsCmd,		NULL, NULL, NULL, 0},
+	{"unset",	ArrayUnsetCmd,		NULL, NULL, NULL, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
     };
 
     return TclMakeEnsemble(interp, "array", arrayImplMap);
