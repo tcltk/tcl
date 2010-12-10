@@ -1,3 +1,14 @@
+2010-12-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBinary.c:  Fix gcc -Wextra warning: missing initializer
+	* generic/tclCmdAH.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
+	* generic/tclDictObj.c:
+	* generic/tclIndexObj.c:
+	* generic/tclIOCmd.c:
+	* generic/tclVar.c:
+
 2010-12-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/fCmd.test: Improve sanity of constraints now that we don't
