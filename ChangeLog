@@ -1,3 +1,13 @@
+2010-12-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:       [Bug 3129448]: Possible over-allocation on
+	* generic/tclCkalloc.c: 64-bit platforms, part 2
+	* generic/tclCompile.c:
+	* generic/tclHash.c:
+	* generic/tclInt.h:
+	* generic/tclIO.h:
+	* generic/tclProc.c:
+
 2010-12-10 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclIO.c: Make sure [fcopy -size ... -command ...] always
