@@ -1,3 +1,8 @@
+2010-12-10 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c: [backport] Make sure [fcopy -size ... -command ...] always
+	* tests/io.test:   calls the callback asynchronously, even for size zero.
+
 2010-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclUtil.c (TclReToGlob): add extra check for multiple

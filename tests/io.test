@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.80.2.14 2009/11/12 15:47:20 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.80.2.15 2010/12/10 17:16:08 ferrieux Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -7007,6 +7007,44 @@ test io-53.8a {CopyData: async callback and error handling, Bug 1932639, at eof}
     removeFile foo
     removeFile bar
 } -result {1 sync/OK {CMD 0}}
+test io-53.8b {CopyData: async callback and -size 0} -setup {
+    # copy progress callback. errors out intentionally
+    proc ::cmd args {
+	lappend ::RES "CMD $args"
+	set ::forever has-been-reached
+	return
+    }
+    # Files we use for our channels
+    set foo [makeFile ashgdfashdgfasdhgfasdhgf foo]
+    set bar [makeFile {} bar]
+    # Channels to copy between
+    set f [open $foo r] ; fconfigure $f -translation binary
+    set g [open $bar w] ; fconfigure $g -translation binary -buffering none
+} -constraints {stdio openpipe fcopy} -body {
+	set ::RES {}
+    # Run the copy. Should not invoke -command now.
+    fcopy $f $g -size 0 -command ::cmd
+    # Check that -command was not called synchronously
+    lappend ::RES [expr {([llength $::RES] > 1) ? "sync/FAIL" : "sync/OK"}]
+    # Now let the async part happen. Should capture the eof in cmd
+    # If not break the event loop via timer.
+    set token [after 1000 {
+	lappend ::RES {cmd/FAIL timeout}
+	set ::forever has-been-reached
+    }]
+    vwait ::forever
+    catch {after cancel $token}
+    # Report
+    set ::RES
+} -cleanup {
+    close $f
+    close $g
+    catch {unset ::RES}
+    catch {unset ::forever}
+    rename ::cmd {}
+    removeFile foo
+    removeFile bar
+} -result {sync/OK {CMD 0}}
 test io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
     set out [makeFile {} out]
     set err [makeFile {} err]
