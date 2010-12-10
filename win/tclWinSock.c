@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.79 2010/10/26 13:59:28 dkf Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.80 2010/12/10 15:44:53 nijtmans Exp $
  *
  * -----------------------------------------------------------------------
  *
@@ -1062,7 +1062,7 @@ CreateSocket(
 	     * Set kernel space buffering
 	     */
 	    
-	    TclSockMinimumBuffers((int) sock, TCP_BUFFER_SIZE);
+	    TclSockMinimumBuffers((ClientData)sock, TCP_BUFFER_SIZE);
 
 	    /*
 	     * Make sure we use the same port when opening two server sockets
@@ -1171,7 +1171,7 @@ CreateSocket(
 		 * Set kernel space buffering
 		 */
 		
-		TclSockMinimumBuffers((int) sock, TCP_BUFFER_SIZE);
+		TclSockMinimumBuffers((ClientData)sock, TCP_BUFFER_SIZE);
 		
 		/*
 		 * Try to bind to a local port.
@@ -1508,7 +1508,7 @@ Tcl_MakeTcpClientChannel(
      * Set kernel space buffering and non-blocking.
      */
 
-    TclSockMinimumBuffers((int) sock, TCP_BUFFER_SIZE);
+    TclSockMinimumBuffers((ClientData) sock, TCP_BUFFER_SIZE);
 
     infoPtr = NewSocketInfo((SOCKET) sock);
 
@@ -2095,7 +2095,7 @@ TcpGetOptionProc(
     }
 
     infoPtr = (SocketInfo *) instanceData;
-    sock = (int) infoPtr->sockets->fd;
+    sock = infoPtr->sockets->fd;
     if (optionName != NULL) {
 	len = strlen(optionName);
     }
@@ -2107,7 +2107,7 @@ TcpGetOptionProc(
 	int ret;
 
 	optlen = sizeof(int);
-	ret = TclWinGetSockOpt((int)sock, SOL_SOCKET, SO_ERROR,
+	ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
 		(char *)&err, &optlen);
 	if (ret == SOCKET_ERROR) {
 	    err = WSAGetLastError();
@@ -2686,7 +2686,7 @@ InitializeHostName(
 
 int
 TclWinGetSockOpt(
-    int s,
+    SOCKET s,
     int level,
     int optname,
     char * optval,
@@ -2702,12 +2702,12 @@ TclWinGetSockOpt(
 	return SOCKET_ERROR;
     }
 
-    return getsockopt((SOCKET)s, level, optname, optval, optlen);
+    return getsockopt(s, level, optname, optval, optlen);
 }
 
 int
 TclWinSetSockOpt(
-    int s,
+    SOCKET s,
     int level,
     int optname,
     const char * optval,
@@ -2723,7 +2723,7 @@ TclWinSetSockOpt(
 	return SOCKET_ERROR;
     }
 
-    return setsockopt((SOCKET)s, level, optname, optval, optlen);
+    return setsockopt(s, level, optname, optval, optlen);
 }
 
 u_short
