@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.47 2010/12/01 09:58:52 nijtmans Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.48 2010/12/10 21:59:23 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -829,14 +829,14 @@ AllocStringEntry(
 {
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
-    unsigned int size;
+    unsigned int size, allocsize;
 
-    size = sizeof(Tcl_HashEntry) + strlen(string) + 1 - sizeof(hPtr->key);
-    if (size < sizeof(Tcl_HashEntry)) {
-	size = sizeof(Tcl_HashEntry);
+    allocsize = size = strlen(string) + 1;
+    if (size < sizeof(hPtr->key)) {
+	allocsize = sizeof(hPtr->key);
     }
-    hPtr = (Tcl_HashEntry *) ckalloc(size);
-    strcpy(hPtr->key.string, string);
+    hPtr = (Tcl_HashEntry *) ckalloc(TclOffset(Tcl_HashEntry, key) + allocsize);
+    memcpy(hPtr->key.string, string, size);
     hPtr->clientData = 0;
     return hPtr;
 }
