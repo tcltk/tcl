@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.308 2010/08/14 20:58:30 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.308.2.1 2010/12/11 18:39:28 kennykb Exp $
  */
 
 #ifndef _TCL
@@ -1165,7 +1165,7 @@ struct Tcl_HashEntry {
 	int words[1];		/* Multiple integer words for key. The actual
 				 * size will be as large as necessary for this
 				 * table's keys. */
-	char string[4];		/* String for key. The actual size will be as
+	char string[1];		/* String for key. The actual size will be as
 				 * large as needed to hold the key. */
     } key;			/* MUST BE LAST FIELD IN RECORD!! */
 };

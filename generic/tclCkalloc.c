@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.38.4.2 2010/12/01 16:42:34 kennykb Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.38.4.3 2010/12/11 18:39:28 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -32,12 +32,12 @@
 typedef struct MemTag {
     int refCount;		/* Number of mem_headers referencing this
 				 * tag. */
-    char string[4];		/* Actual size of string will be as large as
+    char string[1];		/* Actual size of string will be as large as
 				 * needed for actual tag. This must be the
 				 * last field in the structure. */
 } MemTag;
 
-#define TAG_SIZE(bytesInString) ((unsigned) sizeof(MemTag) + bytesInString - 3)
+#define TAG_SIZE(bytesInString) ((unsigned) ((TclOffset(MemTag, string) + 1) + bytesInString))
 
 static MemTag *curTagPtr = NULL;/* Tag to use in all future mem_headers (set
 				 * by "memory tag" command). */
@@ -185,7 +185,7 @@ TclDumpMemoryInfo(ClientData clientData, int flags)
 	    maximum_malloc_packets,
 	    maximum_bytes_malloced);
     if (flags == 0) {
-	fprintf((FILE *)clientData, buf);
+	fprintf((FILE *)clientData, "%s", buf);
     } else {
 	/* Assume objPtr to append to */
 	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, -1);
@@ -814,6 +814,7 @@ MemoryCmd(
     FILE *fileP;
     Tcl_DString buffer;
     int result;
+    size_t len;
 
     if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -909,9 +910,10 @@ MemoryCmd(
 	if ((curTagPtr != NULL) && (curTagPtr->refCount == 0)) {
 	    TclpFree((char *) curTagPtr);
 	}
-	curTagPtr = (MemTag *) TclpAlloc(TAG_SIZE(strlen(argv[2])));
+	len = strlen(argv[2]);
+	curTagPtr = (MemTag *) TclpAlloc(TAG_SIZE(len));
 	curTagPtr->refCount = 0;
-	strcpy(curTagPtr->string, argv[2]);
+	memcpy(curTagPtr->string, argv[2], len + 1);
 	return TCL_OK;
     }
     if (strcmp(argv[1],"trace") == 0) {
