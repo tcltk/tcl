@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.187.2.4 2010/10/23 15:49:54 kennykb Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.187.2.5 2010/12/11 18:39:28 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2600,8 +2600,7 @@ TclFindCompiledLocal(
     if (create || (name == NULL)) {
 	localVar = procPtr->numCompiledLocals;
 	localPtr = (CompiledLocal *) ckalloc((unsigned)
-		(sizeof(CompiledLocal) - sizeof(localPtr->name)
-		+ nameBytes + 1));
+		(TclOffset(CompiledLocal, name) + nameBytes + 1));
 	if (procPtr->firstLocalPtr == NULL) {
 	    procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	} else {
@@ -4404,7 +4403,7 @@ static void UpdateStringOfInstName(Tcl_Obj *objPtr)
     }
     len = strlen(s);
     objPtr->bytes = ckalloc((unsigned) len + 1);
-    strcpy(objPtr->bytes, s);
+    memcpy(objPtr->bytes, s, len + 1);
     objPtr->length = len;
 }
 

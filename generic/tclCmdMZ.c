@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.214.2.1 2010/12/01 16:42:34 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.214.2.2 2010/12/11 18:39:28 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -3346,29 +3346,29 @@ TclInitStringCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap stringImplMap[] = {
-	{"bytelength",	StringBytesCmd,	NULL, NULL, NULL},
-	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL},
-	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL},
-	{"first",	StringFirstCmd,	NULL, NULL, NULL},
-	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL},
-	{"is",		StringIsCmd,	NULL, NULL, NULL},
-	{"last",	StringLastCmd,	NULL, NULL, NULL},
-	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL},
-	{"map",		StringMapCmd,	NULL, NULL, NULL},
-	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL},
-	{"range",	StringRangeCmd,	NULL, NULL, NULL},
-	{"repeat",	StringReptCmd,	NULL, NULL, NULL},
-	{"replace",	StringRplcCmd,	NULL, NULL, NULL},
-	{"reverse",	StringRevCmd,	NULL, NULL, NULL},
-	{"tolower",	StringLowerCmd,	NULL, NULL, NULL},
-	{"toupper",	StringUpperCmd,	NULL, NULL, NULL},
-	{"totitle",	StringTitleCmd,	NULL, NULL, NULL},
-	{"trim",	StringTrimCmd,	NULL, NULL, NULL},
-	{"trimleft",	StringTrimLCmd,	NULL, NULL, NULL},
-	{"trimright",	StringTrimRCmd,	NULL, NULL, NULL},
-	{"wordend",	StringEndCmd,	NULL, NULL, NULL},
-	{"wordstart",	StringStartCmd,	NULL, NULL, NULL},
-	{NULL, NULL, NULL, NULL, NULL}
+	{"bytelength",	StringBytesCmd,	NULL, NULL, NULL, 0},
+	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
+	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
+	{"first",	StringFirstCmd,	NULL, NULL, NULL, 0},
+	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL, 0},
+	{"is",		StringIsCmd,	NULL, NULL, NULL, 0},
+	{"last",	StringLastCmd,	NULL, NULL, NULL, 0},
+	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, 0},
+	{"map",		StringMapCmd,	NULL, NULL, NULL, 0},
+	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
+	{"range",	StringRangeCmd,	NULL, NULL, NULL, 0},
+	{"repeat",	StringReptCmd,	NULL, NULL, NULL, 0},
+	{"replace",	StringRplcCmd,	NULL, NULL, NULL, 0},
+	{"reverse",	StringRevCmd,	NULL, NULL, NULL, 0},
+	{"tolower",	StringLowerCmd,	NULL, NULL, NULL, 0},
+	{"toupper",	StringUpperCmd,	NULL, NULL, NULL, 0},
+	{"totitle",	StringTitleCmd,	NULL, NULL, NULL, 0},
+	{"trim",	StringTrimCmd,	NULL, NULL, NULL, 0},
+	{"trimleft",	StringTrimLCmd,	NULL, NULL, NULL, 0},
+	{"trimright",	StringTrimRCmd,	NULL, NULL, NULL, 0},
+	{"wordend",	StringEndCmd,	NULL, NULL, NULL, 0},
+	{"wordstart",	StringStartCmd,	NULL, NULL, NULL, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
     };
 
     return TclMakeEnsemble(interp, "string", stringImplMap);

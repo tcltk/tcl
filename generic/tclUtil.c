@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.117.2.2 2010/12/01 16:42:36 kennykb Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.117.2.3 2010/12/11 18:39:29 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2527,7 +2527,7 @@ TclFormatInt(buffer, n)
     long intVal;
     int i;
     int numFormatted, j;
-    char *digits = "0123456789";
+    const char *digits = "0123456789";
 
     /*
      * Check first whether "n" is zero.
@@ -3328,7 +3328,7 @@ TclReToGlob(
     Tcl_DString *dsPtr,
     int *exactPtr)
 {
-    int anchorLeft, anchorRight, lastIsStar;
+    int anchorLeft, anchorRight, lastIsStar, numStars;
     char *dsStr, *dsStrStart;
     const char *msg, *p, *strEnd;
 
@@ -3387,6 +3387,7 @@ TclReToGlob(
     p = reStr;
     anchorRight = 0;
     lastIsStar = 0;
+    numStars = 0;
 
     if (*p == '^') {
 	anchorLeft = 1;
@@ -3450,6 +3451,7 @@ TclReToGlob(
 		    if (!lastIsStar) {
 			*dsStr++ = '*';
 			lastIsStar = 1;
+			numStars++;
 		    }
 		    continue;
 		} else if (p[1] == '+') {
@@ -3457,6 +3459,7 @@ TclReToGlob(
 		    *dsStr++ = '?';
 		    *dsStr++ = '*';
 		    lastIsStar = 1;
+		    numStars++;
 		    continue;
 		}
 	    }
@@ -3480,6 +3483,15 @@ TclReToGlob(
 	}
 	lastIsStar = 0;
     }
+    if (numStars > 1) {
+	/*
+	 * Heuristic: if >1 non-anchoring *, the risk is large that glob
+	 * matching is slower than the RE engine, so report invalid.
+	 */
+	msg = "excessive recursive glob backtrack potential";
+	goto invalidGlob;
+    }
+
     if (!anchorRight && !lastIsStar) {
 	*dsStr++ = '*';
     }
