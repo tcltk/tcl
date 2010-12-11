@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.175 2010/03/20 17:49:15 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.175.2.1 2010/12/11 18:39:29 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -8915,6 +8915,33 @@ Tcl_FileEventObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * ZeroTransferTimerProc --
+ *
+ *	Timer handler scheduled by TclCopyChannel so that -command is
+ *	called asynchronously even when -size is 0.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls CopyData for -command invocation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ZeroTransferTimerProc(
+    ClientData clientData)
+{
+    /* calling CopyData with mask==0 still implies immediate invocation of the
+     *  -command callback, and completion of the fcopy.
+     */
+    CopyData(clientData, 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCopyChannel --
  *
  *	This routine copies data from one channel to another, either
@@ -9031,6 +9058,16 @@ TclCopyChannel(
 
     inStatePtr->csPtrR  = csPtr;
     outStatePtr->csPtrW = csPtr;
+
+    /*
+     * Special handling of -size 0 async transfers, so that the -command is
+     * still called asynchronously.
+     */
+
+    if ((nonBlocking == CHANNEL_NONBLOCKING) && (toRead == 0)) {
+        Tcl_CreateTimerHandler(0, ZeroTransferTimerProc, csPtr);
+        return 0;
+    }
 
     /*
      * Start copying data between the channels.

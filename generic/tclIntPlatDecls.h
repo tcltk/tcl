@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.44 2010/08/21 16:30:26 nijtmans Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.44.2.1 2010/12/11 18:39:29 kennykb Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -86,7 +86,7 @@ EXTERN void		TclWinConvertWSAError(unsigned long errCode);
 EXTERN struct servent *	 TclWinGetServByName(const char *nm,
 				const char *proto);
 /* 3 */
-EXTERN int		TclWinGetSockOpt(int s, int level, int optname,
+EXTERN int		TclWinGetSockOpt(SOCKET s, int level, int optname,
 				char FAR *optval, int FAR *optlen);
 /* 4 */
 EXTERN HINSTANCE	TclWinGetTclInstance(void);
@@ -94,7 +94,7 @@ EXTERN HINSTANCE	TclWinGetTclInstance(void);
 /* 6 */
 EXTERN u_short		TclWinNToHS(u_short ns);
 /* 7 */
-EXTERN int		TclWinSetSockOpt(int s, int level, int optname,
+EXTERN int		TclWinSetSockOpt(SOCKET s, int level, int optname,
 				const char FAR *optval, int optlen);
 /* 8 */
 EXTERN unsigned long	TclpGetPid(Tcl_Pid pid);
@@ -227,11 +227,11 @@ typedef struct TclIntPlatStubs {
     void (*tclWinConvertError) (unsigned long errCode); /* 0 */
     void (*tclWinConvertWSAError) (unsigned long errCode); /* 1 */
     struct servent * (*tclWinGetServByName) (const char *nm, const char *proto); /* 2 */
-    int (*tclWinGetSockOpt) (int s, int level, int optname, char FAR *optval, int FAR *optlen); /* 3 */
+    int (*tclWinGetSockOpt) (SOCKET s, int level, int optname, char FAR *optval, int FAR *optlen); /* 3 */
     HINSTANCE (*tclWinGetTclInstance) (void); /* 4 */
     void (*reserved5)(void);
     u_short (*tclWinNToHS) (u_short ns); /* 6 */
-    int (*tclWinSetSockOpt) (int s, int level, int optname, const char FAR *optval, int optlen); /* 7 */
+    int (*tclWinSetSockOpt) (SOCKET s, int level, int optname, const char FAR *optval, int optlen); /* 7 */
     unsigned long (*tclpGetPid) (Tcl_Pid pid); /* 8 */
     int (*tclWinGetPlatformId) (void); /* 9 */
     void (*reserved10)(void);
