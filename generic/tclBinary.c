@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.66.2.1 2010/12/01 16:42:34 kennykb Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.66.2.2 2010/12/11 18:39:28 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -174,13 +174,13 @@ typedef struct ByteArray {
 				 * array. */
     int allocated;		/* The amount of space actually allocated
 				 * minus 1 byte. */
-    unsigned char bytes[4];	/* The array of bytes. The actual size of this
+    unsigned char bytes[1];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
 				 * above. */
 } ByteArray;
 
 #define BYTEARRAY_SIZE(len) \
-		((unsigned) (sizeof(ByteArray) - 4 + (len)))
+		((unsigned) (TclOffset(ByteArray, bytes) + (len)))
 #define GET_BYTEARRAY(objPtr) \
 		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
 #define SET_BYTEARRAY(objPtr, baPtr) \
@@ -691,29 +691,30 @@ TclAppendBytesToByteArray(
  *----------------------------------------------------------------------
  */
 
+static const EnsembleImplMap binaryMap[] = {
+{ "format", BinaryFormatCmd, NULL, NULL, NULL, 0 },
+{ "scan",   BinaryScanCmd, NULL, NULL, NULL, 0 },
+{ "encode", NULL, NULL, NULL, NULL, 0 },
+{ "decode", NULL, NULL, NULL, NULL, 0 },
+{ NULL, NULL, NULL, NULL, NULL, 0 }
+};
+static const EnsembleImplMap encodeMap[] = {
+{ "hex",      BinaryEncodeHex, NULL, NULL, (ClientData)HexDigits, 0 },
+{ "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits, 0 },
+{ "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits, 0 },
+{ NULL, NULL, NULL, NULL, NULL, 0 }
+};
+static const EnsembleImplMap decodeMap[] = {
+{ "hex",      BinaryDecodeHex, NULL, NULL, NULL, 0 },
+{ "uuencode", BinaryDecodeUu,  NULL, NULL, NULL, 0 },
+{ "base64",   BinaryDecode64,  NULL, NULL, NULL, 0 },
+{ NULL, NULL, NULL, NULL, NULL, 0 }
+};
+
 Tcl_Command
 TclInitBinaryCmd(
     Tcl_Interp *interp)
 {
-    const EnsembleImplMap binaryMap[] = {
-	{ "format", BinaryFormatCmd, NULL, NULL ,NULL },
-	{ "scan",   BinaryScanCmd, NULL,NULL ,NULL },
-	{ "encode", NULL, NULL, NULL, NULL },
-	{ "decode", NULL, NULL, NULL, NULL },
-	{ NULL, NULL, NULL, NULL, NULL }
-    };
-    const EnsembleImplMap encodeMap[] = {
-	{ "hex",      BinaryEncodeHex, NULL, NULL, (ClientData)HexDigits },
-	{ "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits },
-	{ "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits },
-	{ NULL, NULL, NULL, NULL, NULL }
-    };
-    const EnsembleImplMap decodeMap[] = {
-	{ "hex",      BinaryDecodeHex, NULL, NULL, NULL },
-	{ "uuencode", BinaryDecodeUu,  NULL, NULL, NULL },
-	{ "base64",   BinaryDecode64,  NULL, NULL, NULL },
-	{ NULL, NULL, NULL, NULL, NULL }
-    };
     Tcl_Command binaryEnsemble;
 
     binaryEnsemble = TclMakeEnsemble(interp, "binary", binaryMap);

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.84 2010/08/22 18:53:26 nijtmans Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.84.2.1 2010/12/11 18:39:28 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -87,26 +87,26 @@ static int		DictForLoopCallback(ClientData data[],
  */
 
 static const EnsembleImplMap implementationMap[] = {
-    {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL },
-    {"create",	DictCreateCmd, NULL, NULL, NULL },
-    {"exists",	DictExistsCmd, NULL, NULL, NULL },
-    {"filter",	DictFilterCmd, NULL, NULL, NULL },
-    {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL },
-    {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, NULL },
-    {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL },
-    {"info",	DictInfoCmd, NULL, NULL, NULL },
-    {"keys",	DictKeysCmd, NULL, NULL, NULL },
-    {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL },
-    {"merge",	DictMergeCmd, NULL, NULL, NULL },
-    {"remove",	DictRemoveCmd, NULL, NULL, NULL },
-    {"replace",	DictReplaceCmd, NULL, NULL, NULL },
-    {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL },
-    {"size",	DictSizeCmd, NULL, NULL, NULL },
-    {"unset",	DictUnsetCmd, NULL, NULL, NULL },
-    {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL },
-    {"values",	DictValuesCmd, NULL, NULL, NULL },
-    {"with",	DictWithCmd, NULL, NULL, NULL },
-    {NULL, NULL, NULL, NULL, NULL}
+    {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL, 0 },
+    {"create",	DictCreateCmd, NULL, NULL, NULL, 0 },
+    {"exists",	DictExistsCmd, NULL, NULL, NULL, 0 },
+    {"filter",	DictFilterCmd, NULL, NULL, NULL, 0 },
+    {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL, 0 },
+    {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, NULL, 0 },
+    {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL, 0 },
+    {"info",	DictInfoCmd, NULL, NULL, NULL, 0 },
+    {"keys",	DictKeysCmd, NULL, NULL, NULL, 0 },
+    {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, 0 },
+    {"merge",	DictMergeCmd, NULL, NULL, NULL, 0 },
+    {"remove",	DictRemoveCmd, NULL, NULL, NULL, 0 },
+    {"replace",	DictReplaceCmd, NULL, NULL, NULL, 0 },
+    {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, 0 },
+    {"size",	DictSizeCmd, NULL, NULL, NULL, 0 },
+    {"unset",	DictUnsetCmd, NULL, NULL, NULL, 0 },
+    {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL, 0 },
+    {"values",	DictValuesCmd, NULL, NULL, NULL, 0 },
+    {"with",	DictWithCmd, NULL, NULL, NULL, 0 },
+    {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /*
