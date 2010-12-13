@@ -1056,6 +1056,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
 	CFLAGS="$CFLAGS -fvisibility=hidden"
     ], [
+	AC_DEFINE(NO_VIZ, [], [No visibility attribute])
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	AC_TRY_LINK([
 	    extern __attribute__((__visibility__("hidden"))) void f(void);

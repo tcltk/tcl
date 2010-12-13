@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.309 2010/12/10 21:59:24 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.310 2010/12/13 22:33:11 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -190,7 +190,7 @@ extern "C" {
 #   endif
 #else
 #   define DLLIMPORT
-#   if defined(__GNUC__) && __GNUC__ > 3
+#   if defined(__GNUC__) && !defined(NO_VIZ)
 #       define DLLEXPORT __attribute__ ((visibility("default")))
 #   else
 #       define DLLEXPORT
