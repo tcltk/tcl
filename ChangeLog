@@ -1,3 +1,10 @@
+2010-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclPanic.c:    Use gcc's __builtin_trap(), when available,
+	to enter the debugger after a panic.
+	* win/tclWinFile.c:  Undocumented feature, only meant to be
+	used by Tk_Main. See [Patch 3124554]: Move WishPanic from Tk to Tcl
+
 2010-12-12  Stuart Cassoff  <stwo@users.sourceforge.net>
 
 	* unix/tcl.m4: Better building on OpenBSD.
