@@ -441,9 +441,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     AC_MSG_CHECKING([compiler flags])
     if test "${GCC}" = "yes" ; then
-	if test "$do64bit" != "no" ; then
-	    AC_MSG_WARN([64bit mode not supported with GCC on Windows])
-	fi
 	SHLIB_LD=""
 	SHLIB_LD_LIBS=""
 	LIBS="-lws2_32"
@@ -546,8 +543,11 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	LDFLAGS_CONSOLE="-mconsole ${extra_ldflags}"
 	LDFLAGS_WINDOW="-mwindows ${extra_ldflags}"
 
-	# gcc under Windows supports only 32bit builds
-	MACHINE="X86"
+	if test "$do64bit" != "no" ; then
+	    MACHINE="AMD64"
+	else
+	    MACHINE="X86"
+	fi
     else
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
