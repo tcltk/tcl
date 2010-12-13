@@ -6545,6 +6545,11 @@ echo "${ECHO_T}$tcl_cv_cc_visibility_hidden" >&6
 
 else
 
+
+cat >>confdefs.h <<\_ACEOF
+#define NO_VIZ
+_ACEOF
+
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
