@@ -16,6 +16,9 @@
  * RCS: @(#) $Id: tclTestObj.c,v 1.22 2008/04/27 22:21:32 dkf Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 #include "tommath.h"
 
@@ -34,7 +37,7 @@ static Tcl_Obj *varPtr[NUMBER_OF_OBJECT_VARS];
 
 static int		CheckIfVarUnset(Tcl_Interp *interp, int varIndex);
 static int		GetVariableIndex(Tcl_Interp *interp,
-			    char *string, int *indexPtr);
+			    const char *string, int *indexPtr);
 static void		SetVarToObj(int varIndex, Tcl_Obj *objPtr);
 int			TclObjTest_Init(Tcl_Interp *interp);
 static int		TestbignumobjCmd(ClientData dummy, Tcl_Interp *interp,
@@ -48,6 +51,8 @@ static int		TestindexobjCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		TestintobjCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int 		TestlistobjCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		TestobjCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
@@ -55,8 +60,8 @@ static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
 
 typedef struct TestString {
     int numChars;
-    size_t allocated;
-    size_t uallocated;
+    int allocated;
+    int maxChars;
     Tcl_UniChar unicode[2];
 } TestString;
 
@@ -89,18 +94,20 @@ TclObjTest_Init(
     }
 
     Tcl_CreateObjCommand(interp, "testbignumobj", TestbignumobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbooleanobj", TestbooleanobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testdoubleobj", TestdoubleobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testintobj", TestintobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testindexobj", TestindexobjCmd,
-	    (ClientData) 0, NULL);
-    Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, (ClientData) 0, NULL);
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testlistobj", TestlistobjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringobj", TeststringobjCmd,
-	    (ClientData) 0, NULL);
+	    NULL, NULL);
     return TCL_OK;
 }
 
@@ -135,9 +142,8 @@ TestbignumobjCmd(
     enum options {
 	BIGNUM_SET, BIGNUM_GET, BIGNUM_MULT10, BIGNUM_DIV10
     };
-
     int index, varIndex;
-    char* string;
+    const char* string;
     mp_int bignumValue, newValue;
 
     if (objc < 3) {
@@ -283,7 +289,7 @@ TestbooleanobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int varIndex, boolValue;
-    char *index, *subCmd;
+    const char *index, *subCmd;
 
     if (objc < 3) {
 	wrongNumArgs:
@@ -381,7 +387,7 @@ TestdoubleobjCmd(
 {
     int varIndex;
     double doubleValue;
-    char *index, *subCmd, *string;
+    const char *index, *subCmd, *string;
 
     if (objc < 3) {
 	wrongNumArgs:
@@ -438,9 +444,9 @@ TestdoubleobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetDoubleObj(varPtr[varIndex], (doubleValue * 10.0));
+	    Tcl_SetDoubleObj(varPtr[varIndex], doubleValue * 10.0);
 	} else {
-	    SetVarToObj(varIndex, Tcl_NewDoubleObj( (doubleValue * 10.0) ));
+	    SetVarToObj(varIndex, Tcl_NewDoubleObj( doubleValue * 10.0 ));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else if (strcmp(subCmd, "div10") == 0) {
@@ -455,9 +461,9 @@ TestdoubleobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetDoubleObj(varPtr[varIndex], (doubleValue / 10.0));
+	    Tcl_SetDoubleObj(varPtr[varIndex], doubleValue / 10.0);
 	} else {
-	    SetVarToObj(varIndex, Tcl_NewDoubleObj( (doubleValue / 10.0) ));
+	    SetVarToObj(varIndex, Tcl_NewDoubleObj( doubleValue / 10.0 ));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
@@ -501,8 +507,8 @@ TestindexobjCmd(
      * Keep this structure declaration in sync with tclIndexObj.c
      */
     struct IndexRep {
-	void *tablePtr;			/* Pointer to the table of strings */
-	int offset;			/* Offset between table entries */
+	void *tablePtr;			/* Pointer to the table of strings. */
+	int offset;			/* Offset between table entries. */
 	int index;			/* Selected index into table. */
     };
     struct IndexRep *indexRep;
@@ -600,7 +606,7 @@ TestintobjCmd(
 {
     int intValue, varIndex, i;
     long longValue;
-    char *index, *subCmd, *string;
+    const char *index, *subCmd, *string;
 
     if (objc < 3) {
 	wrongNumArgs:
@@ -744,9 +750,9 @@ TestintobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], (intValue * 10));
+	    Tcl_SetIntObj(varPtr[varIndex], intValue * 10);
 	} else {
-	    SetVarToObj(varIndex, Tcl_NewIntObj( (intValue * 10) ));
+	    SetVarToObj(varIndex, Tcl_NewIntObj( intValue * 10 ));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else if (strcmp(subCmd, "div10") == 0) {
@@ -761,9 +767,9 @@ TestintobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], (intValue / 10));
+	    Tcl_SetIntObj(varPtr[varIndex], intValue / 10);
 	} else {
-	    SetVarToObj(varIndex, Tcl_NewIntObj( (intValue / 10) ));
+	    SetVarToObj(varIndex, Tcl_NewIntObj( intValue / 10 ));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
@@ -771,6 +777,102 @@ TestintobjCmd(
 		"bad option \"", Tcl_GetString(objv[1]),
 		"\": must be set, get, get2, mult10, or div10", NULL);
 	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * TestlistobjCmd --
+ *
+ *	This function implements the 'testlistobj' command. It is used to
+ *	test a few possible corner cases in list object manipulation from
+ *	C code that cannot occur at the Tcl level.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	Creates, manipulates and frees list objects.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+TestlistobjCmd(
+    ClientData clientData,	/* Not used */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *const objv[])	/* Argument objects */
+{
+    /* Subcommands supported by this command */
+    const char* subcommands[] = {
+	"set",
+	"get",
+	"replace"
+    };
+    enum listobjCmdIndex {
+	LISTOBJ_SET,
+	LISTOBJ_GET,
+	LISTOBJ_REPLACE
+    };
+
+    const char* index;		/* Argument giving the variable number */
+    int varIndex;		/* Variable number converted to binary */
+    int cmdIndex;		/* Ordinal number of the subcommand */
+    int first;			/* First index in the list */
+    int count;			/* Count of elements in a list */
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "option arg ?arg...?");
+	return TCL_ERROR;
+    }
+    index = Tcl_GetString(objv[2]);
+    if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command",
+			    0, &cmdIndex) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch(cmdIndex) {
+    case LISTOBJ_SET:
+	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
+	    Tcl_SetListObj(varPtr[varIndex], objc-3, objv+3);
+	} else {
+	    SetVarToObj(varIndex, Tcl_NewListObj(objc-3, objv+3));
+	}
+	Tcl_SetObjResult(interp, varPtr[varIndex]);
+	break;
+
+    case LISTOBJ_GET:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex");
+	    return TCL_ERROR;
+	}
+	if (CheckIfVarUnset(interp, varIndex)) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, varPtr[varIndex]);
+	break;
+
+    case LISTOBJ_REPLACE:
+	if (objc < 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv,
+			     "varIndex start count ?element...?");
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetIntFromObj(interp, objv[3], &first) != TCL_OK
+	    || Tcl_GetIntFromObj(interp, objv[4], &count) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_IsShared(varPtr[varIndex])) {
+	    SetVarToObj(varIndex, Tcl_DuplicateObj(varPtr[varIndex]));
+	}
+	Tcl_ResetResult(interp);
+	return Tcl_ListObjReplace(interp, varPtr[varIndex], first, count,
+				  objc-5, objv+5);
     }
     return TCL_OK;
 }
@@ -800,7 +902,7 @@ TestobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int varIndex, destIndex, i;
-    char *index, *subCmd, *string;
+    const char *index, *subCmd, *string;
     const Tcl_ObjType *targetType;
 
     if (objc < 2) {
@@ -828,7 +930,8 @@ TestobjCmd(
         SetVarToObj(destIndex, varPtr[varIndex]);
 	Tcl_SetObjResult(interp, varPtr[destIndex]);
      } else if (strcmp(subCmd, "convert") == 0) {
-        char *typeName;
+        const char *typeName;
+
         if (objc != 4) {
             goto wrongNumArgs;
         }
@@ -904,8 +1007,8 @@ TestobjCmd(
 	const char *typeName;
 
 	/*
-	 * return an object containing the name of the argument's type
-	 * of internal rep.  If none exists, return "none".
+	 * Return an object containing the name of the argument's type of
+	 * internal rep.  If none exists, return "none".
 	 */
 
         if (objc != 3) {
@@ -918,8 +1021,6 @@ TestobjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	}
     } else if (strcmp(subCmd, "refcount") == 0) {
-	char buf[TCL_INTEGER_SPACE];
-
         if (objc != 3) {
             goto wrongNumArgs;
         }
@@ -930,8 +1031,7 @@ TestobjCmd(
         if (CheckIfVarUnset(interp, varIndex)) {
 	    return TCL_ERROR;
 	}
-	TclFormatInt(buf, varPtr[varIndex]->refCount);
-        Tcl_SetResult(interp, buf, TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(varPtr[varIndex]->refCount));
     } else if (strcmp(subCmd, "type") == 0) {
         if (objc != 3) {
             goto wrongNumArgs;
@@ -992,13 +1092,15 @@ TeststringobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    Tcl_UniChar *unicode;
     int varIndex, option, i, length;
 #define MAX_STRINGS 11
-    char *index, *string, *strings[MAX_STRINGS+1];
+    const char *index, *string, *strings[MAX_STRINGS+1];
     TestString *strPtr;
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
-	"set", "set2", "setlength", "ualloc", "getunicode", NULL
+	"set", "set2", "setlength", "maxchars", "getunicode",
+	"appendself", "appendself2", NULL
     };
 
     if (objc < 3) {
@@ -1099,6 +1201,8 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
+		Tcl_ConvertToType(NULL, varPtr[varIndex],
+			Tcl_GetObjType("string"));
 		strPtr = (TestString *)
 		    (varPtr[varIndex])->internalRep.otherValuePtr;
 		length = (int) strPtr->allocated;
@@ -1147,14 +1251,16 @@ TeststringobjCmd(
 		Tcl_SetObjLength(varPtr[varIndex], length);
 	    }
 	    break;
-	case 9:				/* ualloc */
+	case 9:				/* maxchars */
 	    if (objc != 3) {
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
+		Tcl_ConvertToType(NULL, varPtr[varIndex],
+			Tcl_GetObjType("string"));
 		strPtr = (TestString *)
 		    (varPtr[varIndex])->internalRep.otherValuePtr;
-		length = (int) strPtr->uallocated;
+		length = strPtr->maxChars;
 	    } else {
 		length = -1;
 	    }
@@ -1165,6 +1271,68 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    Tcl_GetUnicodeFromObj(varPtr[varIndex], NULL);
+	    break;
+	case 11:			/* appendself */
+	    if (objc != 4) {
+		goto wrongNumArgs;
+	    }
+	    if (varPtr[varIndex] == NULL) {
+		SetVarToObj(varIndex, Tcl_NewObj());
+	    }
+
+	    /*
+	     * If the object bound to variable "varIndex" is shared, we must
+	     * "copy on write" and append to a copy of the object.
+	     */
+
+	    if (Tcl_IsShared(varPtr[varIndex])) {
+		SetVarToObj(varIndex, Tcl_DuplicateObj(varPtr[varIndex]));
+	    }
+
+	    string = Tcl_GetStringFromObj(varPtr[varIndex], &length);
+
+	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if ((i < 0) || (i > length)) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"index value out of range", -1));
+		return TCL_ERROR;
+	    }
+
+	    Tcl_AppendToObj(varPtr[varIndex], string + i, length - i);
+	    Tcl_SetObjResult(interp, varPtr[varIndex]);
+	    break;
+	case 12:			/* appendself2 */
+	    if (objc != 4) {
+		goto wrongNumArgs;
+	    }
+	    if (varPtr[varIndex] == NULL) {
+		SetVarToObj(varIndex, Tcl_NewObj());
+	    }
+
+	    /*
+	     * If the object bound to variable "varIndex" is shared, we must
+	     * "copy on write" and append to a copy of the object.
+	     */
+
+	    if (Tcl_IsShared(varPtr[varIndex])) {
+		SetVarToObj(varIndex, Tcl_DuplicateObj(varPtr[varIndex]));
+	    }
+
+	    unicode = Tcl_GetUnicodeFromObj(varPtr[varIndex], &length);
+
+	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if ((i < 0) || (i > length)) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"index value out of range", -1));
+		return TCL_ERROR;
+	    }
+
+	    Tcl_AppendUnicodeToObj(varPtr[varIndex], unicode + i, length - i);
+	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
     }
 
@@ -1223,7 +1391,7 @@ SetVarToObj(
 static int
 GetVariableIndex(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
-    char *string,		/* String containing a variable index
+    const char *string,		/* String containing a variable index
 				 * specified as a nonnegative number less than
 				 * NUMBER_OF_OBJECT_VARS. */
     int *indexPtr)		/* Place to store converted result. */
