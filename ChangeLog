@@ -1,3 +1,7 @@
+2010-12-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:	[Bug 3137454]: Tcl CVS HEAD does not build on GCC 3
+
 2010-12-14  Reinhard Max  <max@suse.de>
 
 	* win/tclWinSock.c (CreateSocket):         Swap the loops over
