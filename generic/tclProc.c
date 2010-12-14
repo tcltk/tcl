@@ -1004,7 +1004,6 @@ TclFindProc(
     const char *procName)	/* Name of desired procedure. */
 {
     Tcl_Command cmd;
-    Tcl_Command origCmd;
     Command *cmdPtr;
 
     cmd = Tcl_FindCommand((Tcl_Interp *) iPtr, procName, NULL, /*flags*/ 0);
@@ -1013,14 +1012,7 @@ TclFindProc(
     }
     cmdPtr = (Command *) cmd;
 
-    origCmd = TclGetOriginalCommand(cmd);
-    if (origCmd != NULL) {
-	cmdPtr = (Command *) origCmd;
-    }
-    if (cmdPtr->objProc != TclObjInterpProc) {
-	return NULL;
-    }
-    return (Proc *) cmdPtr->objClientData;
+    return TclIsProc (cmdPtr);
 }
 
 /*
@@ -1050,7 +1042,7 @@ TclIsProc(
     if (origCmd != NULL) {
 	cmdPtr = (Command *) origCmd;
     }
-    if (cmdPtr->objProc == TclObjInterpProc) {
+    if (cmdPtr->deleteProc == TclProcDeleteProc) {
 	return cmdPtr->objClientData;
     }
     return NULL;
@@ -1767,14 +1759,15 @@ TclObjInterpProcCore(
 
 	codePtr->refCount++;
 	if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
-	    int l;
-	    
-	    l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 2 : 1;
+	    int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 2 : 1;
+
 	    TCL_DTRACE_PROC_ENTRY(TclGetString(procNameObj),
 		    iPtr->varFramePtr->objc - l,
 		    (Tcl_Obj **)(iPtr->varFramePtr->objv + l));
 	}
+
 	result = TclExecuteByteCode(interp, codePtr);
+
 	if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
 	    TCL_DTRACE_PROC_RETURN(TclGetString(procNameObj), result);
 	}
@@ -1867,6 +1860,7 @@ TclObjInterpProcCore(
     TclStackFree(interp, freePtr->compiledLocals);
 					/* Free compiledLocals. */
     TclStackFree(interp, freePtr);	/* Free CallFrame. */
+
     return result;
 }
 
