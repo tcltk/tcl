@@ -2454,7 +2454,7 @@ BinaryDecodeHex(
 	    }						\
 	}						\
 	if (cursor > limit) {				\
-	    Tcl_Panic("limit hit\n");			\
+	    Tcl_Panic("limit hit");			\
 	}						\
     } while (0)
 
