@@ -369,7 +369,6 @@ TclNamespaceEnsembleCmd(
 		break;
 	    case CONF_NAMESPACE:
 		namespacePtr = NULL; /* silence gcc 4 warning */
-
 		Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
 		Tcl_SetResult(interp, ((Namespace *)namespacePtr)->fullName,
 			TCL_VOLATILE);
@@ -530,6 +529,7 @@ TclNamespaceEnsembleCmd(
 			    Tcl_Obj *newList = Tcl_DuplicateObj(listObj);
 			    Tcl_Obj *newCmd =
 				    Tcl_NewStringObj(nsPtr->fullName, -1);
+
 			    if (nsPtr->parentPtr) {
 				Tcl_AppendStringsToObj(newCmd, "::", NULL);
 			    }
@@ -1371,6 +1371,7 @@ Tcl_IsEnsemble(
     Tcl_Command token)
 {
     Command *cmdPtr = (Command *) token;
+
     if (cmdPtr->objProc == NsEnsembleImplementationCmd) {
 	return 1;
     }
@@ -2174,6 +2175,7 @@ DeleteEnsembleConfig(
 
     if (ensemblePtr->next != ensemblePtr) {
 	EnsembleConfig *ensPtr = (EnsembleConfig *) nsPtr->ensembles;
+
 	if (ensPtr == ensemblePtr) {
 	    nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr->next;
 	} else {
@@ -2274,6 +2276,7 @@ BuildEnsembleConfig(
 	hPtr = Tcl_FirstHashEntry(hash, &search);
 	while (hPtr != NULL) {
 	    Tcl_Obj *prefixObj = Tcl_GetHashValue(hPtr);
+
 	    Tcl_DecrRefCount(prefixObj);
 	    hPtr = Tcl_NextHashEntry(&search);
 	}

@@ -317,6 +317,7 @@ Tcl_PushCallFrame(
 
     iPtr->framePtr = framePtr;
     iPtr->varFramePtr = framePtr;
+
     return TCL_OK;
 }
 
