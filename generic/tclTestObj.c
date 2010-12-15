@@ -39,7 +39,6 @@ static int		CheckIfVarUnset(Tcl_Interp *interp, int varIndex);
 static int		GetVariableIndex(Tcl_Interp *interp,
 			    const char *string, int *indexPtr);
 static void		SetVarToObj(int varIndex, Tcl_Obj *objPtr);
-int			TclObjTest_Init(Tcl_Interp *interp);
 static int		TestbignumobjCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		TestbooleanobjCmd(ClientData dummy,

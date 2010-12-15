@@ -10,6 +10,8 @@
 #endif
 #include "tclOOInt.h"
 
+MODULE_SCOPE const TclOOStubs tclOOStubs;
+
 #ifdef __GNUC__
 #pragma GCC dependency "tclOO.decls"
 #endif
@@ -76,7 +78,3 @@ const TclOOStubs tclOOStubs = {
 };
 
 /* !END!: Do not edit above this line. */
-
-MODULE_SCOPE const TclOOStubs * const tclOOConstStubPtr;
-const TclOOStubs * const tclOOConstStubPtr = &tclOOStubs;
-

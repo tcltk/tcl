@@ -174,13 +174,13 @@ typedef struct ByteArray {
 				 * array. */
     int allocated;		/* The amount of space actually allocated
 				 * minus 1 byte. */
-    unsigned char bytes[4];	/* The array of bytes. The actual size of this
+    unsigned char bytes[1];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
 				 * above. */
 } ByteArray;
 
 #define BYTEARRAY_SIZE(len) \
-		((unsigned) (sizeof(ByteArray) - 4 + (len)))
+		((unsigned) (TclOffset(ByteArray,bytes) + (len)))
 #define GET_BYTEARRAY(objPtr) \
 		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
 #define SET_BYTEARRAY(objPtr, baPtr) \

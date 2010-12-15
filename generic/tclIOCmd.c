@@ -1898,6 +1898,39 @@ ChanPipeObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclChannelNamesCmd --
+ *
+ *	This function is invoked to process the "chan names" and "file
+ *	channels" Tcl commands.  See the user documentation for details on
+ *	what they do.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclChannelNamesCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc < 1 || objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
+	return TCL_ERROR;
+    }
+    return Tcl_GetChannelNamesEx(interp,
+	    ((objc == 1) ? NULL : TclGetString(objv[1])));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclInitChanCmd --
  *
  *	This function is invoked to create the "chan" Tcl command. See the
@@ -1932,6 +1965,7 @@ TclInitChanCmd(
 	{"event",	Tcl_FileEventObjCmd, NULL, NULL},
 	{"flush",	Tcl_FlushObjCmd, NULL, NULL},
 	{"gets",	Tcl_GetsObjCmd, NULL, NULL},
+	{"names",	TclChannelNamesCmd, NULL, NULL},
 	{"pending",	ChanPendingObjCmd, NULL, NULL},		/* TIP #287 */
 	{"pop",		TclChanPopObjCmd, NULL, NULL},		/* TIP #230 */
 	{"postevent",	TclChanPostEventObjCmd, NULL, NULL},	/* TIP #219 */
@@ -1946,7 +1980,6 @@ TclInitChanCmd(
     };
     static const char *const extras[] = {
 	"configure",	"::fconfigure",
-	"names",	"::file channels",
 	NULL
     };
     Tcl_Command ensemble;

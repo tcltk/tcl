@@ -79,6 +79,7 @@
 #define mp_init_copy TclBN_mp_init_copy
 #define mp_init_multi TclBN_mp_init_multi
 #define mp_init_set TclBN_mp_init_set
+#define mp_init_set_int TclBN_mp_init_set_int
 #define mp_init_size TclBN_mp_init_size
 #define mp_karatsuba_mul TclBN_mp_karatsuba_mul
 #define mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
@@ -96,6 +97,7 @@
 #define mp_rshd TclBN_mp_rshd
 #define mp_s_rmap TclBNMpSRmap
 #define mp_set TclBN_mp_set
+#define mp_set_int TclBN_mp_set_int
 #define mp_shrink TclBN_mp_shrink
 #define mp_sqr TclBN_mp_sqr
 #define mp_sqrt TclBN_mp_sqrt
@@ -268,6 +270,10 @@ EXTERN int		TclBN_s_mp_mul_digs(mp_int *a, mp_int *b, mp_int *c,
 EXTERN int		TclBN_s_mp_sqr(mp_int *a, mp_int *b);
 /* 60 */
 EXTERN int		TclBN_s_mp_sub(mp_int *a, mp_int *b, mp_int *c);
+/* 61 */
+EXTERN int		TclBN_mp_init_set_int(mp_int*a, unsigned long i);
+/* 62 */
+EXTERN int		TclBN_mp_set_int(mp_int*a, unsigned long i);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -334,6 +340,8 @@ typedef struct TclTomMathStubs {
     int (*tclBN_s_mp_mul_digs) (mp_int *a, mp_int *b, mp_int *c, int digs); /* 58 */
     int (*tclBN_s_mp_sqr) (mp_int *a, mp_int *b); /* 59 */
     int (*tclBN_s_mp_sub) (mp_int *a, mp_int *b, mp_int *c); /* 60 */
+    int (*tclBN_mp_init_set_int) (mp_int*a, unsigned long i); /* 61 */
+    int (*tclBN_mp_set_int) (mp_int*a, unsigned long i); /* 62 */
 } TclTomMathStubs;
 
 #ifdef __cplusplus
@@ -472,6 +480,10 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_s_mp_sqr) /* 59 */
 #define TclBN_s_mp_sub \
 	(tclTomMathStubsPtr->tclBN_s_mp_sub) /* 60 */
+#define TclBN_mp_init_set_int \
+	(tclTomMathStubsPtr->tclBN_mp_init_set_int) /* 61 */
+#define TclBN_mp_set_int \
+	(tclTomMathStubsPtr->tclBN_mp_set_int) /* 62 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

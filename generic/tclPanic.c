@@ -90,7 +90,12 @@ Tcl_PanicVA(
 		arg8);
 	fprintf(stderr, "\n");
 	fflush(stderr);
+#ifdef _WIN32
+    DebugBreak();
+    ExitProcess(1);
+#else
 	abort();
+#endif
     }
 }
 

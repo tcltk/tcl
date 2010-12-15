@@ -48,6 +48,9 @@
  * below should be made in the generic/tcl.decls script.
  */
 
+MODULE_SCOPE const TclStubs tclStubs;
+MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
+
 /* !BEGIN!: Do not edit below this line. */
 
 static const TclIntStubs tclIntStubs = {
@@ -77,7 +80,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 21 */
     TclFindElement, /* 22 */
     TclFindProc, /* 23 */
-    0, /* 24 */
+    TclFormatInt, /* 24 */
     TclFreePackageInfo, /* 25 */
     0, /* 26 */
     0, /* 27 */
@@ -165,22 +168,22 @@ static const TclIntStubs tclIntStubs = {
     TclUpdateReturnInfo, /* 109 */
     0, /* 110 */
     Tcl_AddInterpResolvers, /* 111 */
-    0, /* 112 */
-    0, /* 113 */
-    0, /* 114 */
-    0, /* 115 */
-    0, /* 116 */
-    0, /* 117 */
+    Tcl_AppendExportList, /* 112 */
+    Tcl_CreateNamespace, /* 113 */
+    Tcl_DeleteNamespace, /* 114 */
+    Tcl_Export, /* 115 */
+    Tcl_FindCommand, /* 116 */
+    Tcl_FindNamespace, /* 117 */
     Tcl_GetInterpResolvers, /* 118 */
     Tcl_GetNamespaceResolvers, /* 119 */
     Tcl_FindNamespaceVar, /* 120 */
-    0, /* 121 */
-    0, /* 122 */
-    0, /* 123 */
-    0, /* 124 */
-    0, /* 125 */
+    Tcl_ForgetImport, /* 121 */
+    Tcl_GetCommandFromObj, /* 122 */
+    Tcl_GetCommandFullName, /* 123 */
+    Tcl_GetCurrentNamespace, /* 124 */
+    Tcl_GetGlobalNamespace, /* 125 */
     Tcl_GetVariableFullName, /* 126 */
-    0, /* 127 */
+    Tcl_Import, /* 127 */
     Tcl_PopCallFrame, /* 128 */
     Tcl_PushCallFrame, /* 129 */
     Tcl_RemoveInterpResolvers, /* 130 */
@@ -302,6 +305,7 @@ static const TclIntStubs tclIntStubs = {
     TclInitRewriteEnsemble, /* 246 */
     TclResetRewriteEnsemble, /* 247 */
     TclCopyChannel, /* 248 */
+    TclDoubleDigits, /* 249 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -457,6 +461,8 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_s_mp_mul_digs, /* 58 */
     TclBN_s_mp_sqr, /* 59 */
     TclBN_s_mp_sub, /* 60 */
+    TclBN_mp_init_set_int, /* 61 */
+    TclBN_mp_set_int, /* 62 */
 };
 
 static const TclStubHooks tclStubHooks = {
@@ -1074,13 +1080,13 @@ const TclStubs tclStubs = {
     Tcl_AppendPrintfToObj, /* 579 */
     Tcl_CancelEval, /* 580 */
     Tcl_Canceled, /* 581 */
-    0, /* 582 */
+    Tcl_CreatePipe, /* 582 */
     0, /* 583 */
     0, /* 584 */
     0, /* 585 */
     0, /* 586 */
     0, /* 587 */
-    Tcl_CreatePipe, /* 588 */
+    0, /* 588 */
     Tcl_GetFSDeviceFromStat, /* 589 */
     Tcl_GetFSInodeFromStat, /* 590 */
     Tcl_GetModeFromStat, /* 591 */
@@ -1125,14 +1131,3 @@ const TclStubs tclStubs = {
 };
 
 /* !END!: Do not edit above this line. */
-
-/* 
- * Module-scope pointers to the main static stubs tables, used for package
- * initialization via Tcl_PkgProvideEx().
- */
-
-MODULE_SCOPE const TclStubs * const tclConstStubsPtr;
-MODULE_SCOPE const TclTomMathStubs * const tclTomMathConstStubsPtr;
-
-const TclStubs * const tclConstStubsPtr = &tclStubs;
-const TclTomMathStubs * const tclTomMathConstStubsPtr = &tclTomMathStubs;

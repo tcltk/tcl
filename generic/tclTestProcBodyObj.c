@@ -257,10 +257,10 @@ ProcBodyTestProcObjCmd(
 
     /*
      * check that this is a procedure and not a builtin command:
-     * If a procedure, cmdPtr->objProc is TclObjInterpProc.
+     * If a procedure, cmdPtr->objClientData is TclIsProc(cmdPtr).
      */
 
-    if (cmdPtr->objProc != TclGetObjInterpProc()) {
+    if (cmdPtr->objClientData != TclIsProc(cmdPtr)) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"command \"", fullName, "\" is not a Tcl procedure", NULL);
         return TCL_ERROR;

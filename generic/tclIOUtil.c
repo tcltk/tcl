@@ -37,7 +37,6 @@ static void		FsAddMountsToGlobResult(Tcl_Obj *resultPtr,
 			    Tcl_Obj *pathPtr, const char *pattern,
 			    Tcl_GlobTypeData *types);
 static void		FsUpdateCwd(Tcl_Obj *cwdObj, ClientData clientData);
-
 #ifdef TCL_THREADS
 static void		FsRecacheFilesystemList(void);
 #endif

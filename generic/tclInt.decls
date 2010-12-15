@@ -116,10 +116,10 @@ declare 22 {
 declare 23 {
     Proc *TclFindProc(Interp *iPtr, const char *procName)
 }
-# Replaced with macro (see tclInt.h) in Tcl 8.5
-#declare 24 {
-#    int TclFormatInt(char *buffer, long n)
-#}
+# Replaced with macro (see tclInt.h) in Tcl 8.5.0, restored in 8.5.10
+declare 24 {
+    int TclFormatInt(char *buffer, long n)
+}
 declare 25 {
     void TclFreePackageInfo(Interp *iPtr)
 }
@@ -454,29 +454,29 @@ declare 111 {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc,
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-#declare 112 {
-#    int Tcl_AppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-#	    Tcl_Obj *objPtr)
-#}
-#declare 113 {
-#    Tcl_Namespace *Tcl_CreateNamespace(Tcl_Interp *interp, const char *name,
-#	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
-#}
-#declare 114 {
-#    void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
-#}
-#declare 115 {
-#    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-#	    const char *pattern, int resetListFirst)
-#}
-#declare 116 {
-#    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, const char *name,
-#	    Tcl_Namespace *contextNsPtr, int flags)
-#}
-#declare 117 {
-#    Tcl_Namespace *Tcl_FindNamespace(Tcl_Interp *interp, const char *name,
-#	    Tcl_Namespace *contextNsPtr, int flags)
-#}
+declare 112 {
+    int Tcl_AppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+	    Tcl_Obj *objPtr)
+}
+declare 113 {
+    Tcl_Namespace *Tcl_CreateNamespace(Tcl_Interp *interp, const char *name,
+	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
+}
+declare 114 {
+    void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
+}
+declare 115 {
+    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+	    const char *pattern, int resetListFirst)
+}
+declare 116 {
+    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, const char *name,
+	    Tcl_Namespace *contextNsPtr, int flags)
+}
+declare 117 {
+    Tcl_Namespace *Tcl_FindNamespace(Tcl_Interp *interp, const char *name,
+	    Tcl_Namespace *contextNsPtr, int flags)
+}
 declare 118 {
     int Tcl_GetInterpResolvers(Tcl_Interp *interp, const char *name,
 	    Tcl_ResolverInfo *resInfo)
@@ -489,31 +489,31 @@ declare 120 {
     Tcl_Var Tcl_FindNamespaceVar(Tcl_Interp *interp, const char *name,
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
-#declare 121 {
-#    int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-#	    const char *pattern)
-#}
-#declare 122 {
-#    Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
-#}
-#declare 123 {
-#    void Tcl_GetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
-#	    Tcl_Obj *objPtr)
-#}
-#declare 124 {
-#    Tcl_Namespace *Tcl_GetCurrentNamespace(Tcl_Interp *interp)
-#}
-#declare 125 {
-#    Tcl_Namespace *Tcl_GetGlobalNamespace(Tcl_Interp *interp)
-#}
+declare 121 {
+    int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+	    const char *pattern)
+}
+declare 122 {
+    Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+}
+declare 123 {
+    void Tcl_GetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
+	    Tcl_Obj *objPtr)
+}
+declare 124 {
+    Tcl_Namespace *Tcl_GetCurrentNamespace(Tcl_Interp *interp)
+}
+declare 125 {
+    Tcl_Namespace *Tcl_GetGlobalNamespace(Tcl_Interp *interp)
+}
 declare 126 {
     void Tcl_GetVariableFullName(Tcl_Interp *interp, Tcl_Var variable,
 	    Tcl_Obj *objPtr)
 }
-#declare 127 {
-#    int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-#	    const char *pattern, int allowOverwrite)
-#}
+declare 127 {
+    int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+	    const char *pattern, int allowOverwrite)
+}
 declare 128 {
     void Tcl_PopCallFrame(Tcl_Interp *interp)
 }
@@ -970,6 +970,11 @@ declare 247 {
 declare 248 {
     int TclCopyChannel(Tcl_Interp *interp, Tcl_Channel inChan,
 	    Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr)
+}
+
+declare 249 {
+    char* TclDoubleDigits(double dv, int ndigits, int flags,
+			  int* decpt, int* signum, char** endPtr)
 }
 
 ##############################################################################

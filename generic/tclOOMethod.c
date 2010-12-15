@@ -1260,6 +1260,7 @@ TclOONewForwardInstanceMethod(
 {
     int prefixLen;
     register ForwardMethod *fmPtr;
+    Tcl_Obj *cmdObj;
 
     if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
@@ -1272,6 +1273,8 @@ TclOONewForwardInstanceMethod(
 
     fmPtr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
+    Tcl_ListObjIndex(interp, prefixObj, 0, &cmdObj);
+    fmPtr->fullyQualified = (strncmp(TclGetString(cmdObj), "::", 2) == 0);
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr,
 	    nameObj, flags, &fwdMethodType, fmPtr);

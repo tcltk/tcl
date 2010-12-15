@@ -1195,7 +1195,6 @@ typedef struct CmdFrame {
 				 * scan of list. */
     int *line;			/* Lines the words of the command start on. */
     int nline;
-
     CallFrame *framePtr;	/* Procedure activation record, may be
 				 * NULL. */
     struct CmdFrame *nextPtr;	/* Link to calling frame. */
@@ -2211,6 +2210,9 @@ typedef struct InterpList {
  * SAFE_INTERP:		Non zero means that the current interp is a safe
  *			interp (i.e. it has only the safe commands installed,
  *			less priviledge than a regular interp).
+ * INTERP_DEBUG_FRAME:	Used for switching on various extra interpreter
+ *			debug/info mechanisms (e.g. info frame eval/uplevel
+ *			tracing) which are performance intensive.
  * INTERP_TRACE_IN_PROGRESS: Non-zero means that an interp trace is currently
  *			active; so no further trace callbacks should be
  *			invoked.
@@ -2236,6 +2238,7 @@ typedef struct InterpList {
 
 #define DELETED				     1
 #define ERR_ALREADY_LOGGED		     4
+#define INTERP_DEBUG_FRAME		  0x10
 #define DONT_COMPILE_CMDS_INLINE	  0x20
 #define RAND_SEED_INITIALIZED		  0x40
 #define SAFE_INTERP			  0x80
@@ -2700,12 +2703,40 @@ struct Tcl_LoadHandle_ {
 				/* Procedure that unloads a loaded module */
 };
 
+/* Flags for conversion of doubles to digit strings */
+
+#define TCL_DD_SHORTEST 		0x4
+				/* Use the shortest possible string */
+#define TCL_DD_STEELE   		0x5
+				/* Use the original Steele&White algorithm */
+#define TCL_DD_E_FORMAT 		0x2
+				/* Use a fixed-length string of digits,
+				 * suitable for E format*/
+#define TCL_DD_F_FORMAT 		0x3
+				/* Use a fixed number of digits after the
+				 * decimal point, suitable for F format */
+
+#define TCL_DD_SHORTEN_FLAG 		0x4
+				/* Allow return of a shorter digit string
+				 * if it converts losslessly */
+#define TCL_DD_NO_QUICK 		0x8
+				/* Debug flag: forbid quick FP conversion */
+
+#define TCL_DD_CONVERSION_TYPE_MASK	0x3
+				/* Mask to isolate the conversion type */
+#define TCL_DD_STEELE0 			0x1
+				/* 'Steele&White' after masking */
+#define TCL_DD_SHORTEST0		0x0
+				/* 'Shortest possible' after masking */
+
 /*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world:
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
+			    const unsigned char *bytes, int len);
 MODULE_SCOPE void       TclAdvanceContinuations(int *line, int **next,
 			    int loc);
 MODULE_SCOPE void       TclAdvanceLines(int *line, const char *start,
@@ -2723,8 +2754,6 @@ MODULE_SCOPE void       TclArgumentGet(Tcl_Interp* interp, Tcl_Obj* obj,
 			    CmdFrame** cfPtrPtr, int* wordPtr);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
-MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
-			    const unsigned char *bytes, int len);
 MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
@@ -2743,7 +2772,6 @@ MODULE_SCOPE void         TclContinuationsEnterDerived(Tcl_Obj *objPtr,
 MODULE_SCOPE ContLineLoc *TclContinuationsGet(Tcl_Obj *objPtr);
 MODULE_SCOPE void         TclContinuationsCopy(Tcl_Obj *objPtr,
 			      Tcl_Obj *originObjPtr);
-MODULE_SCOPE int	TclDoubleDigits(char *buf, double value, int *signum);
 MODULE_SCOPE void       TclDeleteNamespaceVars(Namespace *nsPtr);
 /* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int        TclEvalEx(Tcl_Interp *interp, const char *script,
@@ -2957,6 +2985,7 @@ MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
 			    mp_int *bignumValue);
 MODULE_SCOPE void	TclSetCmdNameObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Command *cmdPtr);
+MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 			    Tcl_Obj *newValue, Tcl_Encoding encoding);
 MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
@@ -2967,6 +2996,9 @@ MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 			    Tcl_Obj *patternObj, int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringObjReverse(Tcl_Obj *objPtr);
+MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
+			    int numBytes, int flags, int line,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclSubstOptions(Tcl_Interp *interp, int numOpts,
 			    Tcl_Obj *const opts[], int *flagPtr);
 MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
@@ -4064,20 +4096,6 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 			    Tcl_WideUInt initVal);
 
 /*
- * Compile-time assertions: these produce a compile time error if the
- * expression is not known to be true at compile time.  If the assertion is
- * known to be false, the compiler (or optimizer?) will error out with
- * "division by zero". If the assertion cannot be evaluated at compile time,
- * the compiler will error out with "non-static initializer".
- *
- * Adapted with permission from
- * http://www.pixelbeat.org/programming/gcc/static_assert.html
- */
-
-#define TCL_CT_ASSERT(e) \
-    {enum { ct_assert_value = 1/(!!(e)) };}
-
-/*
  *----------------------------------------------------------------------
  *
  * External (platform specific) initialization routine, these declarations
@@ -4104,18 +4122,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TclMatchIsTrivial(pattern) \
     (strpbrk((pattern), "*[?\\") == NULL)
-
-/*
- *----------------------------------------------------------------
- * Macro used by the Tcl core to write the string rep of a long integer to a
- * character buffer. The ANSI C "prototype" for this macro is:
- *
- * MODULE_SCOPE int	TclFormatInt(char *buf, long n);
- *----------------------------------------------------------------
- */
-
-#define TclFormatInt(buf, n) \
-    sprintf((buf), "%ld", (long)(n))
 
 /*
  *----------------------------------------------------------------
@@ -4311,23 +4317,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     }
 
 /*
- * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
- */
-
-#if defined(PURIFY) && defined(__clang__)
-#if __has_feature(attribute_analyzer_noreturn) && \
-	!defined(Tcl_Panic) && defined(Tcl_Panic_TCL_DECLARED)
-void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
-#endif
-#if !defined(CLANG_ASSERT)
-#include <assert.h>
-#define CLANG_ASSERT(x) assert(x)
-#endif
-#elif !defined(CLANG_ASSERT)
-#define CLANG_ASSERT(x)
-#endif /* PURIFY && __clang__ */
-
-/*
  *----------------------------------------------------------------
  * Inline versions of Tcl_LimitReady() and Tcl_LimitExceeded to limit number
  * of calls out of the critical path. Note that this code isn't particularly
@@ -4351,22 +4340,35 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
 	    ? 1 : 0)))
 
 /*
- * This structure holds the data for the various iteration callbacks used to
- * NRE the 'for' and 'while' commands. We need a separate structure because we
- * have more than the 4 client data entries we can provide directly thorugh
- * the callback API. It is the 'word' information which puts us over the
- * limit. It is needed because the loop body is argument 4 of 'for' and
- * argument 2 of 'while'. Not providing the correct index confuses the #280
- * code. We TclSmallAlloc/Free this.
+ * Compile-time assertions: these produce a compile time error if the
+ * expression is not known to be true at compile time.  If the assertion is
+ * known to be false, the compiler (or optimizer?) will error out with
+ * "division by zero". If the assertion cannot be evaluated at compile time,
+ * the compiler will error out with "non-static initializer".
+ *
+ * Adapted with permission from
+ * http://www.pixelbeat.org/programming/gcc/static_assert.html
  */
 
-typedef struct ForIterData {
-    Tcl_Obj* cond; /* loop condition expression */
-    Tcl_Obj* body; /* loop body */
-    Tcl_Obj* next; /* loop step script, NULL for 'while' */
-    char*    msg;  /* error message part */
-    int      word; /* Index of the body script in the command */
-} ForIterData;
+#define TCL_CT_ASSERT(e) \
+    {enum { ct_assert_value = 1/(!!(e)) };}
+
+/*
+ * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
+ */
+
+#if defined(PURIFY) && defined(__clang__)
+#if __has_feature(attribute_analyzer_noreturn) && \
+	!defined(Tcl_Panic) && defined(Tcl_Panic_TCL_DECLARED)
+void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
+#endif
+#if !defined(CLANG_ASSERT)
+#include <assert.h>
+#define CLANG_ASSERT(x) assert(x)
+#endif
+#elif !defined(CLANG_ASSERT)
+#define CLANG_ASSERT(x)
+#endif /* PURIFY && __clang__ */
 
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"

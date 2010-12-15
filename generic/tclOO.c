@@ -127,7 +127,7 @@ static char initScript[] =
 /*     "tcl_findLibrary tcloo $oo::version $oo::version" */
 /*     " tcloo.tcl OO_LIBRARY oo::library;"; */
 
-MODULE_SCOPE const TclOOStubs * const tclOOConstStubPtr;
+MODULE_SCOPE const TclOOStubs tclOOStubs;
 
 /*
  * Convenience macro for getting the foundation from an interpreter.
@@ -173,7 +173,7 @@ TclOOInit(
     }
 
     return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION,
-	    (ClientData) tclOOConstStubPtr);
+	    (ClientData) &tclOOStubs);
 }
 
 /*
@@ -692,6 +692,7 @@ ObjectRenamedTrace(
     AddRef(oPtr);
     oPtr->command = NULL;
     oPtr->flags |= OBJECT_DELETED;
+
     if (!(oPtr->flags & DESTRUCTOR_CALLED) && (!Tcl_InterpDeleted(interp)
 	    || (oPtr->flags & (ROOT_OBJECT|ROOT_CLASS)))) {
 	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
@@ -1444,7 +1445,6 @@ Tcl_NewObjectInstance(
 	    contextPtr->callPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
 	    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
-	    TclOODeleteContext(contextPtr);
 	    flags = oPtr->flags;
 
 	    /*
@@ -1458,6 +1458,7 @@ Tcl_NewObjectInstance(
 			TCL_STATIC);
 		result = TCL_ERROR;
 	    }
+	    TclOODeleteContext(contextPtr);
 	    DelRef(oPtr);
 	    if (result != TCL_OK) {
 		Tcl_DiscardInterpState(state);
@@ -2124,13 +2125,15 @@ TclOOObjectCmdCore(
      */
 
     if (startCls != NULL) {
-	while (contextPtr->index < contextPtr->callPtr->numChain) {
+	for (; contextPtr->index < contextPtr->callPtr->numChain;
+		contextPtr->index++) {
 	    register struct MInvoke *miPtr =
 		    &contextPtr->callPtr->chain[contextPtr->index];
 
-	    if (miPtr->isFilter || miPtr->mPtr->declaringClassPtr!=startCls) {
-		contextPtr->index++;
-	    } else {
+	    if (miPtr->isFilter) {
+		continue;
+	    }
+	    if (miPtr->mPtr->declaringClassPtr == startCls) {
 		break;
 	    }
 	}
@@ -2138,8 +2141,8 @@ TclOOObjectCmdCore(
 	    result = TCL_ERROR;
 	    Tcl_SetResult(interp, "no valid method implementation",
 		    TCL_STATIC);
-	    AddRef(oPtr);		/* Just to balance. */
-	    goto disposeChain;
+	    TclOODeleteContext(contextPtr);
+	    return TCL_ERROR;
 	}
     }
 
@@ -2155,7 +2158,6 @@ TclOOObjectCmdCore(
      * Dispose of the call chain and drop the lock on the object's structure.
      */
 
-  disposeChain:
     TclOODeleteContext(contextPtr);
     DelRef(oPtr);
     return result;

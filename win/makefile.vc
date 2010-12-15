@@ -369,6 +369,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_init_copy.obj \
 	$(TMP_DIR)\bn_mp_init_multi.obj \
 	$(TMP_DIR)\bn_mp_init_set.obj \
+	$(TMP_DIR)\bn_mp_init_set_int.obj \
 	$(TMP_DIR)\bn_mp_init_size.obj \
 	$(TMP_DIR)\bn_mp_karatsuba_mul.obj \
 	$(TMP_DIR)\bn_mp_karatsuba_sqr.obj \
@@ -386,6 +387,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_read_radix.obj \
 	$(TMP_DIR)\bn_mp_rshd.obj \
 	$(TMP_DIR)\bn_mp_set.obj \
+	$(TMP_DIR)\bn_mp_set_int.obj \
 	$(TMP_DIR)\bn_mp_shrink.obj \
 	$(TMP_DIR)\bn_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_sqrt.obj \

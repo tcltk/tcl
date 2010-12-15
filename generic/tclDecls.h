@@ -1674,16 +1674,16 @@ EXTERN int		Tcl_CancelEval(Tcl_Interp *interp,
 				int flags);
 /* 581 */
 EXTERN int		Tcl_Canceled(Tcl_Interp *interp, int flags);
-/* Slot 582 is reserved */
+/* 582 */
+EXTERN int		Tcl_CreatePipe(Tcl_Interp *interp,
+				Tcl_Channel *rchan, Tcl_Channel *wchan,
+				int flags);
 /* Slot 583 is reserved */
 /* Slot 584 is reserved */
 /* Slot 585 is reserved */
 /* Slot 586 is reserved */
 /* Slot 587 is reserved */
-/* 588 */
-EXTERN int		Tcl_CreatePipe(Tcl_Interp *interp,
-				Tcl_Channel *rchan, Tcl_Channel *wchan,
-				int flags);
+/* Slot 588 is reserved */
 /* 589 */
 EXTERN unsigned		Tcl_GetFSDeviceFromStat(const Tcl_StatBuf *statPtr);
 /* 590 */
@@ -2403,13 +2403,13 @@ typedef struct TclStubs {
     void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, const char *format, ...); /* 579 */
     int (*tcl_CancelEval) (Tcl_Interp *interp, Tcl_Obj *resultObjPtr, ClientData clientData, int flags); /* 580 */
     int (*tcl_Canceled) (Tcl_Interp *interp, int flags); /* 581 */
-    void (*reserved582)(void);
+    int (*tcl_CreatePipe) (Tcl_Interp *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags); /* 582 */
     void (*reserved583)(void);
     void (*reserved584)(void);
     void (*reserved585)(void);
     void (*reserved586)(void);
     void (*reserved587)(void);
-    int (*tcl_CreatePipe) (Tcl_Interp *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags); /* 588 */
+    void (*reserved588)(void);
     unsigned (*tcl_GetFSDeviceFromStat) (const Tcl_StatBuf *statPtr); /* 589 */
     unsigned (*tcl_GetFSInodeFromStat) (const Tcl_StatBuf *statPtr); /* 590 */
     unsigned (*tcl_GetModeFromStat) (const Tcl_StatBuf *statPtr); /* 591 */
@@ -3647,14 +3647,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_CancelEval) /* 580 */
 #define Tcl_Canceled \
 	(tclStubsPtr->tcl_Canceled) /* 581 */
-/* Slot 582 is reserved */
+#define Tcl_CreatePipe \
+	(tclStubsPtr->tcl_CreatePipe) /* 582 */
 /* Slot 583 is reserved */
 /* Slot 584 is reserved */
 /* Slot 585 is reserved */
 /* Slot 586 is reserved */
 /* Slot 587 is reserved */
-#define Tcl_CreatePipe \
-	(tclStubsPtr->tcl_CreatePipe) /* 588 */
+/* Slot 588 is reserved */
 #define Tcl_GetFSDeviceFromStat \
 	(tclStubsPtr->tcl_GetFSDeviceFromStat) /* 589 */
 #define Tcl_GetFSInodeFromStat \
@@ -3748,6 +3748,7 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_SetPanicProc
 #   undef Tcl_SetVar
 #   undef Tcl_StaticPackage
+#   undef TclFSGetNativePath
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))

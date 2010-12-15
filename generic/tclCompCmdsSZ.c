@@ -2,7 +2,9 @@
  * tclCompCmdsSZ.c --
  *
  *	This file contains compilation procedures that compile various Tcl
- *	commands into a sequence of instructions ("bytecodes").
+*	commands (beginning with the letters 's' through 'z', except for
+ *	[upvar] and [variable]) into a sequence of instructions ("bytecodes").
+ *	Also includes the operator command compilers.
  *
  * Copyright (c) 1997-1998 Sun Microsystems, Inc.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
@@ -587,14 +589,9 @@ TclCompileSubstCmd(
     int numOpts = numArgs - 1;
     int objc, flags = TCL_SUBST_ALL;
     Tcl_Obj **objv/*, *toSubst = NULL*/;
-    Tcl_Parse parse;
-    Tcl_InterpState state = NULL;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int breakOffset = 0, count = 0, code = TCL_ERROR;
-    Tcl_Token *endTokenPtr, *tokenPtr;
+    int code = TCL_ERROR;
     DefineLineInformation;	/* TIP #280 */
-    int bline = mapPtr->loc[eclIndex].line[numArgs];
-    SetLineInformation(numArgs);
 
     if (numArgs == 0) {
 	return TCL_ERROR;
@@ -638,8 +635,29 @@ TclCompileSubstCmd(
 	return TCL_ERROR;
     }
 
-    TclSubstParse(interp, /*toSubst,*/ wordTokenPtr[1].start,
-	    wordTokenPtr[1].size, flags, &parse, &state);
+    SetLineInformation(numArgs);
+    TclSubstCompile(interp, wordTokenPtr[1].start, wordTokenPtr[1].size,
+	    flags, mapPtr->loc[eclIndex].line[numArgs], envPtr);
+
+/*    TclDecrRefCount(toSubst);*/
+    return TCL_OK;
+}
+
+void
+TclSubstCompile(
+    Tcl_Interp *interp,
+    const char *bytes,
+    int numBytes,
+    int flags,
+    int line,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *endTokenPtr, *tokenPtr;
+    int breakOffset = 0, count = 0, bline = line;
+    Tcl_Parse parse;
+    Tcl_InterpState state = NULL;
+
+    TclSubstParse(interp, bytes, numBytes, flags, &parse, &state);
 
     /*
      * Tricky point! If the first token does not result in a *guaranteed* push
@@ -833,7 +851,6 @@ TclCompileSubstCmd(
     }
 
     Tcl_FreeParse(&parse);
-/*    TclDecrRefCount(toSubst);*/
 
     if (state != NULL) {
 	Tcl_RestoreInterpState(interp, state);
@@ -845,8 +862,6 @@ TclCompileSubstCmd(
 	TclUpdateInstInt4AtPc(INST_JUMP4, CurrentOffset(envPtr) - breakOffset,
 		envPtr->codeStart + breakOffset);
     }
-
-    return TCL_OK;
 }
 
 /*
@@ -3544,7 +3559,10 @@ TclCompileMinusOpCmd(
     int words;
 
     if (parsePtr->numWords == 1) {
-	/* Fallback to direct eval to report syntax error */
+	/*
+	 * Fallback to direct eval to report syntax error.
+	 */
+
 	return TCL_ERROR;
     }
     for (words=1 ; words<parsePtr->numWords ; words++) {
@@ -3586,7 +3604,10 @@ TclCompileDivOpCmd(
     int words;
 
     if (parsePtr->numWords == 1) {
-	/* Fallback to direct eval to report syntax error */
+	/*
+	 * Fallback to direct eval to report syntax error.
+	 */
+
 	return TCL_ERROR;
     }
     if (parsePtr->numWords == 2) {

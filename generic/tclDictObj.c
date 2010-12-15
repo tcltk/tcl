@@ -1568,7 +1568,7 @@ DictGetCmd(
      */
 
     if (objc == 2) {
-	Tcl_Obj *keyPtr, *listPtr;
+	Tcl_Obj *keyPtr = NULL, *listPtr;
 	Tcl_DictSearch search;
 	int done;
 
@@ -1750,7 +1750,7 @@ DictMergeCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Tcl_Obj *targetObj, *keyObj, *valueObj;
+    Tcl_Obj *targetObj, *keyObj = NULL, *valueObj = NULL;
     int allocatedDict = 0;
     int i, done;
     Tcl_DictSearch search;
@@ -1874,8 +1874,8 @@ DictKeysCmd(
 	}
     } else {
 	Tcl_DictSearch search;
-	Tcl_Obj *keyPtr;
-	int done;
+	Tcl_Obj *keyPtr = NULL;
+	int done = 0;
 
 	/*
 	 * At this point, we know we have a dictionary (or at least something
@@ -1922,7 +1922,7 @@ DictValuesCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Tcl_Obj *valuePtr, *listPtr;
+    Tcl_Obj *valuePtr = NULL, *listPtr;
     Tcl_DictSearch search;
     int done;
     const char *pattern;
@@ -2648,7 +2648,7 @@ DictFilterCmd(
 	FILTER_KEYS, FILTER_SCRIPT, FILTER_VALUES
     };
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
-    Tcl_Obj **varv, *keyObj, *valueObj, *resultObj, *boolObj;
+    Tcl_Obj **varv, *keyObj = NULL, *valueObj = NULL, *resultObj, *boolObj;
     Tcl_DictSearch search;
     int index, varc, done, result, satisfied;
     const char *pattern;

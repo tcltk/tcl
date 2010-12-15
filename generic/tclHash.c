@@ -37,7 +37,7 @@
  */
 
 #define RANDOM_INDEX(tablePtr, i) \
-    (((((long) (i))*1103515245) >> (tablePtr)->downShift) & (tablePtr)->mask)
+    ((((i)*1103515245L) >> (tablePtr)->downShift) & (tablePtr)->mask)
 
 /*
  * Prototypes for the array hash key methods.
@@ -436,7 +436,7 @@ Tcl_DeleteHashEntry(
 #if TCL_HASH_KEY_STORE_HASH
     if (typePtr->hashKeyProc == NULL
 	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-	index = RANDOM_INDEX(tablePtr, entryPtr->hash);
+	index = RANDOM_INDEX(tablePtr, PTR2INT(entryPtr->hash));
     } else {
 	index = PTR2UINT(entryPtr->hash) & tablePtr->mask;
     }
@@ -1065,7 +1065,7 @@ RebuildTable(
 #if TCL_HASH_KEY_STORE_HASH
 	    if (typePtr->hashKeyProc == NULL
 		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-		index = RANDOM_INDEX(tablePtr, hPtr->hash);
+		index = RANDOM_INDEX(tablePtr, PTR2INT(hPtr->hash));
 	    } else {
 		index = PTR2UINT(hPtr->hash) & tablePtr->mask;
 	    }
