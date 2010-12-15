@@ -1,5 +1,11 @@
 2010-12-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* generic/tclPanic.c:    Restore abort() as it was before.
+	* win/tclWinFile.c:      [Patch 3124554] use ExitProcess() here, like
+	in wish.
+
+2010-12-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
 	* generic/tcl.h:	[Bug 3137454]: Tcl CVS HEAD does not build on GCC 3
 
 2010-12-14  Reinhard Max  <max@suse.de>
@@ -15,8 +21,6 @@
 	* generic/tcl.h:    [Bug 3135271] Link error due to hidden
 	* unix/tcl.m4:      symbols (CentOS 4.2)
 	* unix/configure:   (autoconf-2.59)
-	* win/tclPanic.c:    Use gcc's __builtin_trap(), when available,
-	to enter the debugger after a panic.
 	* win/tclWinFile.c:  Undocumented feature, only meant to be
 	used by Tk_Main. See [Patch 3124554]: Move WishPanic from Tk to Tcl
 
