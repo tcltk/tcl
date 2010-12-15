@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.117 2010/12/13 13:57:58 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.118 2010/12/15 14:03:52 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -823,7 +823,14 @@ PanicMessageBox(
     MessageBeep(MB_ICONEXCLAMATION);
     MessageBoxW(NULL, msgString, L"Fatal Error",
 	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
-    /* We don't need to abort here, because our caller already does. */
+	/* try to trigger the debugger */
+#   ifdef __GNUC__
+	__builtin_trap();
+#   endif
+#   ifdef _MSC_VER
+	DebugBreak();
+#   endif
+	ExitProcess(1);
 }
 
 /*
