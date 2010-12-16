@@ -1,4 +1,9 @@
-2010-12-14  Jan Nijtmans  <nijtmans@users.sf.net>
+2010-12-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPanic.c:  [Patch 3124554]: Move WishPanic from Tk to Tcl
+	* win/tclWinFile.c:    Better communication with debugger, if present.
+
+2010-12-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPanic.c:    Restore abort() as it was before.
 	* win/tclWinFile.c:      [Patch 3124554] use ExitProcess() here, like

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.118 2010/12/15 14:03:52 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.119 2010/12/16 08:52:37 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -175,6 +175,7 @@ static int		WinLink(const TCHAR *LinkSource,
 			    const TCHAR *LinkTarget, int linkAction);
 static int		WinSymLinkDirectory(const TCHAR *LinkDirectory,
 			    const TCHAR *LinkTarget);
+MODULE_SCOPE void tclWinDebugPanic(const char *format, ...);
 
 /*
  *--------------------------------------------------------------------
@@ -786,9 +787,10 @@ NativeWriteReparse(
 /*
  *----------------------------------------------------------------------
  *
- * WishPanic --
+ * tclWinDebugPanic --
  *
- *	Display a message.
+ *	Display a message. If a debugger is present, present it directly
+ *  to the debugger, otherwise use a MessageBox.
  *
  * Results:
  *	None.
@@ -799,8 +801,8 @@ NativeWriteReparse(
  *----------------------------------------------------------------------
  */
 
-static void
-PanicMessageBox(
+void
+tclWinDebugPanic(
     const char *format, ...)
 {
 #define TCL_MAX_WARN_LEN 1024
@@ -820,17 +822,13 @@ PanicMessageBox(
     if (msgString[TCL_MAX_WARN_LEN-1] != L'\0') {
 		memcpy(msgString + (TCL_MAX_WARN_LEN - 5), L" ...", 5 * sizeof(WCHAR));
 	}
+    if (IsDebuggerPresent()) {
+	OutputDebugStringW(msgString);
+    } else {
     MessageBeep(MB_ICONEXCLAMATION);
     MessageBoxW(NULL, msgString, L"Fatal Error",
 	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
-	/* try to trigger the debugger */
-#   ifdef __GNUC__
-	__builtin_trap();
-#   endif
-#   ifdef _MSC_VER
-	DebugBreak();
-#   endif
-	ExitProcess(1);
+	}
 }
 
 /*
@@ -862,7 +860,7 @@ TclpFindExecutable(
      * create this process. Only if it is NULL, install a new panic handler.
      */
     if (argv0 == NULL) {
-	Tcl_SetPanicProc(PanicMessageBox);
+	Tcl_SetPanicProc(tclWinDebugPanic);
     }
 
 #ifdef UNICODE
