@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAssembly.c,v 1.1.2.17 2010/10/28 19:40:12 kennykb Exp $
+ * RCS: @(#) $Id: tclAssembly.c,v 1.1.2.18 2010/12/16 01:40:42 kennykb Exp $
  */
 
 /*-
@@ -47,9 +47,6 @@ typedef enum BasicBlockCatchState {
     BBCS_UNKNOWN = 0,		/* Catch context has not yet been identified */
     BBCS_NONE,			/* Block is outside of any catch */
     BBCS_INCATCH,		/* Block is within a catch context */
-    BBCS_DONECATCH,		/* Block is nominally within a catch context
-				 * but has passed a 'doneCatch' directive
-				 * and wants exceptions to propagate. */
     BBCS_CAUGHT,		/* Block is within a catch context and
 				 * may be executed after an exception fires */
 } BasicBlockCatchState;
@@ -81,8 +78,7 @@ typedef struct BasicBlock {
     struct BasicBlock * successor1;
 				/* BasicBlock structure of the following 
 				 * block:  NULL at the end of the bytecode 
-				 * sequence or if the block ends in an
-				 * unconditional jump */ 
+				 * sequence. */
     Tcl_Obj * jumpTarget;	/* Jump target label if the jump target 
 				 * is unresolved */
     
@@ -128,11 +124,7 @@ enum BasicBlockFlags {
 				 * marking it as the start of a 'catch' 
 				 * sequence. The 'jumpTarget' is the exception
 				 * exit from the catch block. */
-    BB_DONECATCH = (1 << 5),	/* Block commences with a 'doneCatch'
-				 * directive, indicating that the program
-				 * is finished with the body of a catch block.
-				 */
-    BB_ENDCATCH = (1 << 6),	/* Block ends with an 'endCatch' instruction,
+    BB_ENDCATCH = (1 << 5),	/* Block ends with an 'endCatch' instruction,
 				 * unwinding the catch from the exception 
 				 * stack. */
 };
@@ -156,9 +148,6 @@ typedef enum TalInstType {
     ASSEM_DICT_UNSET,
 		    /* specifies key count and LVT index, consumes N operands,
 		     * produces 1, N > 0 */
-    ASSEM_DONECATCH,/* Directive indicating that the body of a catch block
-		     * is complete. Generates no instructions, affects only
-		     * the exception ranges. */
     ASSEM_END_CATCH,/* End catch. No args. Exception range popped from stack
 		     * and stack pointer restored. */
     ASSEM_EVAL,	    /* 'eval' - evaluate a constant script (by compiling it
@@ -253,6 +242,9 @@ static void BBEmitOpcode(AssemblyEnv* assemEnvPtr, int tblind, int count);
 static int BuildExceptionRanges(AssemblyEnv* assemEnvPtr);
 static int CalculateJumpRelocations(AssemblyEnv*, int*);
 static int CheckForUnclosedCatches(AssemblyEnv*);
+static int CheckForThrowInWrongContext(AssemblyEnv*);
+static int CheckNonThrowingBlock(AssemblyEnv*, BasicBlock*);
+static int BytecodeMightThrow(unsigned char);
 static int CheckJumpTableLabels(AssemblyEnv*, BasicBlock*);
 static int CheckNamespaceQualifiers(Tcl_Interp*, const char*, int);
 static int CheckNonNegative(Tcl_Interp*, int);
@@ -333,6 +325,10 @@ static const Tcl_ObjType assembleCodeType = {
 
 #define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
 
+/*
+ * Source instructions recognized in the Tcl Assembly Language (TAL)
+ */
+
 TalInstDesc TalInstructionTable[] = {
 
     /* PUSH must be first, see the code near the end of TclAssembleCode */
@@ -363,7 +359,6 @@ TalInstDesc TalInstructionTable[] = {
     {"dictUnset",	ASSEM_DICT_UNSET,
      					INST_DICT_UNSET,	INT_MIN,1},
     {"div",     	ASSEM_1BYTE,    INST_DIV,       	2,      1},
-    {"doneCatch",	ASSEM_DONECATCH,0,			0,	0},
     {"dup",     	ASSEM_1BYTE ,   INST_DUP    ,   	1   ,   2}, 
     {"endCatch",	ASSEM_END_CATCH,INST_END_CATCH, 	0,	0},
     {"eq",      	ASSEM_1BYTE ,   INST_EQ     ,   	2   ,   1},
@@ -465,6 +460,24 @@ TalInstDesc TalInstructionTable[] = {
     {"upvar",		ASSEM_LVT4,	INST_UPVAR,		2,	1},
     {"variable",	ASSEM_LVT4,	INST_VARIABLE,		1,	0},
     {NULL, 		0,		0,			0,	0}
+};
+
+/*
+ * List of instructions that cannot throw an exception under any circumstances.
+ * These instructions are the ones that are permissible after an exception
+ * is caught but before the corresponding exception range is popped from
+ * the stack.
+ * The instructions must be in ascending order by numeric operation code.
+ */
+
+static unsigned char NonThrowingByteCodes[] = {
+    INST_PUSH1, INST_PUSH4, INST_POP, INST_DUP,			/* 1-4 */
+    INST_JUMP1, INST_JUMP4,					/* 34-35 */
+    INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 70-72 */
+    INST_OVER,							/* 95 */
+    INST_PUSH_RETURN_OPTIONS,					/* 108 */
+    INST_REVERSE,						/* 126 */
+    INST_NOP							/* 132 */
 };
 
 /*
@@ -1288,11 +1301,6 @@ AssembleOneLine(AssemblyEnv* assemEnvPtr)
 	}
 	BBEmitInstInt4(assemEnvPtr, tblind, opnd, opnd);
 	TclEmitInt4(localVar, envPtr);
-	break;
-
-    case ASSEM_DONECATCH:
-	StartBasicBlock(assemEnvPtr, BB_FALLTHRU, NULL);
-	assemEnvPtr->curr_bb->flags |= BB_DONECATCH;
 	break;
 
     case ASSEM_END_CATCH:
@@ -2572,6 +2580,15 @@ FinishAssembly(AssemblyEnv* assemEnvPtr)
 	return TCL_ERROR;
     }
 
+    /*
+     * Make sure that no block accessible from a catch's error exit that hasn't
+     * popped the exception stack can throw an exception.
+     */
+
+    if (CheckForThrowInWrongContext(assemEnvPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
     /* Compute stack balance throughout the program */
 
     if (CheckStack(assemEnvPtr) != TCL_OK) {
@@ -2959,6 +2976,168 @@ ResolveJumpTableTargets(AssemblyEnv* assemEnvPtr,
 /*
  *-----------------------------------------------------------------------------
  *
+ * CheckForThrowInWrongContext --
+ *
+ *	Verify that no beginCatch/endCatch sequence can throw an exception
+ *	after an original exception is caught and before its exception
+ *	context is removed from the stack.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	Stores an appropriate error message in the interpreter as needed.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+CheckForThrowInWrongContext(AssemblyEnv* assemEnvPtr)
+				/* Assembler environment */
+{
+    BasicBlock* blockPtr;	/* Current basic block */
+
+    /* 
+     * Walk through the basic blocks in turn, checking all the ones
+     * that have caught an exception and not disposed of it properly.
+     */
+
+    for (blockPtr = assemEnvPtr->head_bb;
+	 blockPtr != NULL;
+	 blockPtr = blockPtr->successor1) {
+
+	if (blockPtr->catchState == BBCS_CAUGHT) {
+
+	    /* Walk through the instructions in the basic block */
+
+	    if (CheckNonThrowingBlock(assemEnvPtr, blockPtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * CheckNonThrowingBlock --
+ *
+ *	Check that a basic block cannot throw an exception.
+ *
+ * Results:
+ *	Returns TCL_ERROR if the block cannot be proven to be nonthrowing.
+ *
+ * Side effects:
+ *	Stashes an error message in the interpreter result.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+CheckNonThrowingBlock(AssemblyEnv* assemEnvPtr,
+				/* Assembler environment */
+		      BasicBlock* blockPtr)
+				/* Basic block where exceptions are
+				 * not allowed */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+    BasicBlock* nextPtr;	/* Pointer to the succeeding basic block */
+    int offset;			/* Bytecode offset of the current instruction */
+    int bound;			/* Bytecode offset following the last
+				 * instruction of the block. */
+    unsigned char opcode;	/* Current bytecode instruction */
+    Tcl_Obj* retval;		/* Error message */
+
+    /* Determine where in the code array the basic block ends */
+    
+    nextPtr = blockPtr->successor1;
+    if (nextPtr == NULL) {
+	bound = envPtr->codeNext - envPtr->codeStart;
+    } else {
+	bound = nextPtr->startOffset;
+    }
+
+    /* Walk through the instructions of the block */
+
+    offset = blockPtr->startOffset;
+    while (offset < bound) {
+
+	/* Determine whether an instruction is nonthrowing */
+	
+	opcode = (envPtr->codeStart)[offset];
+
+	if (BytecodeMightThrow(opcode)) {
+
+	    /* Report an error for a throw in the wrong context */
+
+	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+		retval = Tcl_NewStringObj("\"", -1);
+		Tcl_AppendToObj(retval, tclInstructionTable[opcode].name,
+				-1);
+		Tcl_AppendToObj(retval, "\" instruction may not appear in "
+				"a context where an exception has been "
+				"caught and not disposed of.", -1);
+		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADTHROW", NULL);
+		Tcl_SetObjResult(interp, retval);
+		AddBasicBlockRangeToErrorInfo(assemEnvPtr, blockPtr);
+	    }
+	    return TCL_ERROR;
+	}
+	offset += tclInstructionTable[opcode].numBytes;
+    }
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * BytecodeMightThrow --
+ *
+ *	Tests if a given bytecode instruction might throw an exception.
+ *
+ * Results:
+ *	Returns 1 if the bytecode might throw an exception, 0 if the
+ *	instruction is known never to throw.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+BytecodeMightThrow(unsigned char opcode)
+{
+
+    /* Binary search on the non-throwing bytecode list */
+
+    int min = 0;
+    int max = sizeof(NonThrowingByteCodes)-1;
+    int mid;
+    unsigned char c;
+    while (max >= min) {
+	mid = (min + max) / 2;
+	c = NonThrowingByteCodes[mid];
+	if (opcode < c) {
+	    max = mid-1;
+	} else if (opcode > c) {
+	    min = mid+1;
+	} else {
+
+	    /* Opcode is nonthrowing */
+
+	    return 0;
+	}
+    }
+
+    return 1;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
  * CheckStack --
  *
  *	Audit stack usage in a block of assembly code.
@@ -3084,13 +3263,15 @@ StackCheckBasicBlock(AssemblyEnv* assemEnvPtr,
      * If the block is not already visited, set the 'predecessor'
      * link to indicate how control got to it. Set the initial stack
      * depth to the current stack depth in the flow of control.
-     * Calculate max and min stack depth, flag an error if the
-     * block underflows the stack, and update max stack depth in the
-     * assembly environment.
      */
     blockPtr->flags |= BB_VISITED;
     blockPtr->predecessor = predecessor;
     blockPtr->initialStackDepth = initialStackDepth;
+
+    /* 
+     * Calculate minimum stack depth, and flag an error if the block
+     * underflows the stack.
+     */
     if (initialStackDepth + blockPtr->minStackDepth < 0) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp,
@@ -3101,6 +3282,29 @@ StackCheckBasicBlock(AssemblyEnv* assemEnvPtr,
 	}
 	return TCL_ERROR;
     }
+
+    /*
+     * Make sure that the block doesn't try to pop below the stack level
+     * of an enclosing catch.
+     */
+    if (blockPtr->enclosingCatch != 0
+	&& initialStackDepth + blockPtr->minStackDepth
+	< (blockPtr->enclosingCatch->initialStackDepth
+	   + blockPtr->enclosingCatch->finalStackDepth)) {
+	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj("code pops stack below level of"
+					      " enclosing catch", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACKINCATCH", -1);
+	    AddBasicBlockRangeToErrorInfo(assemEnvPtr, blockPtr);
+	    Tcl_SetErrorLine(interp, blockPtr->startLine);
+	}
+	return TCL_ERROR;
+    }
+
+    /*
+     * Update maximum stgack depth.
+     */
     maxDepth = initialStackDepth + blockPtr->maxStackDepth;
     if (maxDepth > assemEnvPtr->maxDepth) {
 	assemEnvPtr->maxDepth = maxDepth;
@@ -3354,7 +3558,8 @@ ProcessCatchesInBasicBlock(AssemblyEnv* assemEnvPtr,
     } else if (bbPtr->enclosingCatch != enclosing) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp,
-			     Tcl_NewStringObj("execution reaches block in "
+			     Tcl_NewStringObj("execution reaches an "
+					      "instruction in "
 					      "inconsistent exception contexts",
 					      -1));
 	    Tcl_SetErrorLine(interp, bbPtr->startLine);
@@ -3389,31 +3594,6 @@ ProcessCatchesInBasicBlock(AssemblyEnv* assemEnvPtr,
 
     /* TODO: Make sure that the test cases include validating
      *       that a natural loop can't include 'beginCatch' or 'endCatch' */
-
-    if (bbPtr->flags & BB_DONECATCH) {
-	/*
-	 * If the block finishes a catch body, the block and its successors
-	 * are outside the exception range. (The block may also end the
-	 * catch or begin another one, so we need to check for those
-	 * conditions as well.)
-	 */
-	if (enclosing == NULL) {
-	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp,
-				 Tcl_NewStringObj("doneCatch without a "
-						  "corresponding beginCatch",
-						  -1));
-		Tcl_SetErrorLine(interp, bbPtr->startLine);
-		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADENDCATCH", NULL);
-	    }
-	    return TCL_ERROR;
-	}
-	if (bbPtr->catchState < BB_DONECATCH) {
-	    bbPtr->catchState = BBCS_DONECATCH;
-	    fallThruState = BBCS_DONECATCH;
-	    jumpState = BBCS_DONECATCH;
-	}
-    } 
 
     if (bbPtr->flags & BB_BEGINCATCH) {
 	/* 
@@ -3514,10 +3694,11 @@ CheckForUnclosedCatches(AssemblyEnv* assemEnvPtr)
     if (assemEnvPtr->curr_bb->catchState >= BBCS_INCATCH) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("catch still active on "
-						      "exit from block", -1));
+						      "exit from assembly "
+						      "code", -1));
 	    Tcl_SetErrorLine(interp,
 			     assemEnvPtr->curr_bb->enclosingCatch->startLine);
-	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "UNCLOSEDCATCH", -1);
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "UNCLOSEDCATCH", NULL);
 	}
 	return TCL_ERROR;
     }
@@ -3585,12 +3766,6 @@ BuildExceptionRanges(AssemblyEnv* assemEnvPtr)
 
     for (bbPtr = assemEnvPtr->head_bb; bbPtr != NULL; bbPtr=bbPtr->successor1) {
 
-	/*fprintf(stderr, "block %p line %d byte %#x enclosing %p state %d"
-		" depth %d\n",
-		bbPtr, bbPtr->startLine, bbPtr->startOffset,
-		bbPtr->enclosingCatch, bbPtr->catchState, bbPtr->catchDepth);
-		fflush(stderr); */
-
 	UnstackExpiredCatches(envPtr, bbPtr, catchDepth,
 			      catches, catchIndices);
 	LookForFreshCatches(bbPtr, catches);
@@ -3602,10 +3777,6 @@ BuildExceptionRanges(AssemblyEnv* assemEnvPtr)
 	catchDepth = bbPtr->catchDepth;
 	if (prevPtr != NULL
 	    && (prevPtr->flags & BB_BEGINCATCH)) {
-	    /*fprintf(stderr, "beginCatch at %d (depth=%d) "
-		    "is exception range %d\n",
-		    bbPtr->startOffset, catchDepth-1,
-		    catchIndices[catchDepth-1]); fflush(stderr); */
 	    TclStoreInt4AtPtr(catchIndices[catchDepth-1],
 			      envPtr->codeStart + bbPtr->startOffset - 4);
 	}
@@ -3662,8 +3833,6 @@ UnstackExpiredCatches(CompileEnv* envPtr,
     
     while (catchDepth > bbPtr->catchDepth) {
 	--catchDepth;
-	/* fprintf(stderr, "unstack exception range %d\n",
-	   catchIndices[catchDepth]); fflush(stderr); */
 	range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
 	range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
 	catches[catchDepth] = NULL;
@@ -3682,9 +3851,7 @@ UnstackExpiredCatches(CompileEnv* envPtr,
 	--catchDepth;
 	if (catches[catchDepth] != NULL) {
 	    if (catches[catchDepth] != catch
-		|| catchState >= BBCS_DONECATCH) {
-		/* fprintf(stderr, "unstack changed exception range %d\n",
-		   catchIndices[catchDepth]); fflush(stderr); */
+		|| catchState >= BBCS_CAUGHT) {
 		range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
 		range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
 		catches[catchDepth] = NULL;
@@ -3729,13 +3896,8 @@ LookForFreshCatches(BasicBlock* bbPtr,
     catchDepth = bbPtr->catchDepth;
     while (catchDepth > 0) {
 	--catchDepth;
-	if (catches[catchDepth] != catch && catchState < BBCS_DONECATCH) {
-	    /* fprintf(stderr, "new exception range needed for %s.\n",
-	       Tcl_GetString(catch->jumpTarget)); */
+	if (catches[catchDepth] != catch && catchState < BBCS_CAUGHT) {
 	    catches[catchDepth] = catch;
-	    /* } else {
-	     fprintf(stderr, "new exception range not needed for %s\n",
-	       Tcl_GetString(catch->jumpTarget));*/
 	}
 	catchState = catch->catchState;
 	catch = catch->enclosingCatch;
@@ -3788,9 +3950,6 @@ StackFreshCatches(AssemblyEnv* assemEnvPtr,
 	    catch = catches[catchDepth];
 	    catchIndices[catchDepth] =
 		TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-	    /* fprintf(stderr, "stack exception range %d at depth %d for %s\n",
-		    catchIndices[catchDepth], catchDepth,
-		    Tcl_GetString(catch->jumpTarget)); fflush(stderr); */
 	    range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
 	    range->nestingLevel = envPtr->exceptDepth + catchDepth;
 	    envPtr->maxExceptDepth =
@@ -3845,23 +4004,14 @@ RestoreEmbeddedExceptionRanges(AssemblyEnv* assemEnvPtr)
 	 bbPtr != NULL;
 	 bbPtr = bbPtr->successor1) {
 	if (bbPtr->foreignExceptionCount != 0) {
-	    /* fprintf(stderr, "basic block %p has %d foreign exception ranges"
-		    " starting at %d\n",
-		    bbPtr, bbPtr->foreignExceptionCount,
-		    bbPtr->foreignExceptionBase); fflush(stderr); */
-
 	    /* 
 	     * Reinstall the embedded exceptions and track their 
 	     * nesting level 
 	     */
 	    rangeBase = envPtr->exceptArrayNext;
-	    /* fprintf(stderr, "next exception at %d\n", rangeBase); */
 	    for (i = 0; i < bbPtr->foreignExceptionCount; ++i) {
 		range = bbPtr->foreignExceptions + i;
 		rangeIndex = TclCreateExceptRange(range->type, envPtr);
-		/* fprintf(stderr, "restore range %d -> %d\n",
-			i + bbPtr->foreignExceptionBase,
-			rangeIndex); fflush(stderr); */
 		range->nestingLevel += envPtr->exceptDepth + bbPtr->catchDepth;
 		memcpy(envPtr->exceptArrayPtr + rangeIndex, range,
 		       sizeof(ExceptionRange));
@@ -3879,16 +4029,11 @@ RestoreEmbeddedExceptionRanges(AssemblyEnv* assemEnvPtr)
 		opcode = envPtr->codeStart[i];
 		if (opcode == INST_BEGIN_CATCH4) {
 		    catchIndex = TclGetUInt4AtPtr(envPtr->codeStart + i + 1);
-		    /* fprintf(stderr, "pc %d exception %d\n",
-		       i, catchIndex); fflush(stderr); */
 		    if (catchIndex >= bbPtr->foreignExceptionBase
 			&& catchIndex < (bbPtr->foreignExceptionBase +
 					 bbPtr->foreignExceptionCount)) {
 			catchIndex -= bbPtr->foreignExceptionBase;
 			catchIndex += rangeBase;
-			/* fprintf(stderr,
-				"alter catch at %d to refer to range %d\n",
-				i, catchIndex); fflush(stderr); */
 			TclStoreInt4AtPtr(catchIndex,
 					  envPtr->codeStart + i + 1);
 		    }
