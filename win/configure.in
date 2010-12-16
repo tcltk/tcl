@@ -306,6 +306,16 @@ SC_ENABLE_SHARED
 
 SC_CONFIG_CFLAGS
 
+# Cross-compiling
+case ${host_alias} in
+*mingw32*)
+    TCL_EXE="tclsh"
+    ;;
+*)
+    TCL_EXE="TCL_LIBRARY=\"\${LIBRARY_DIR}\"; export TCL_LIBRARY; ./\${TCLSH}"
+    ;;
+esac
+
 #------------------------------------------------------------------------
 #	Add stuff for zlib; note that this is mostly done in the makefile now
 #	as we just assume that the platform hasn't got a usable z.lib
@@ -326,6 +336,7 @@ AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win32/zdll.lib])
 ], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
+  AC_DEFINE_UNQUOTED(NO_VIZ, 1)
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
@@ -424,6 +435,7 @@ AC_SUBST(TCL_MAJOR_VERSION)
 AC_SUBST(TCL_MINOR_VERSION)
 AC_SUBST(TCL_PATCH_LEVEL)
 AC_SUBST(PKG_CFG_ARGS)
+AC_SUBST(TCL_EXE)
 
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)

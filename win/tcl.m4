@@ -458,9 +458,6 @@ file for information about building with Mingw.])
 
     AC_MSG_CHECKING([compiler flags])
     if test "${GCC}" = "yes" ; then
-	if test "$do64bit" != "no" ; then
-	    AC_MSG_WARN([64bit mode not supported with GCC on Windows])
-	fi
 	SHLIB_LD=""
 	SHLIB_LD_LIBS='${LIBS}'
 	LIBS="-lnetapi32 -lkernel32 -luser32 -ladvapi32 -lws2_32"
@@ -494,6 +491,24 @@ file for information about building with Mingw.])
 	  fi
 	  rm -f ac$$.o ac$$.c
 	fi
+
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -mwindows -municode -Dmain=xxmain"
+    AC_CACHE_CHECK(for working -municode linker flag,
+        ac_cv_municode,
+    AC_TRY_LINK([
+    #include <windows.h>
+    int APIENTRY wWinMain(HINSTANCE a, HINSTANCE b, LPWSTR c, int d) {return 0;}
+    ],
+    [],
+        ac_cv_municode=yes,
+        ac_cv_municode=no)
+    )
+    CFLAGS=$hold_cflags
+    if test "$ac_cv_municode" = "yes" ; then
+	extra_ldflags="$extra_ldflags -municode"
+    else
+	extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
+    fi
 
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
