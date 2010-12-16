@@ -4337,7 +4337,7 @@ TryPostBody(
 
 	Tcl_ListObjGetElements(NULL, handlersObj, &numHandlers, &handlers);
 	for (i=0 ; i<numHandlers ; i++) {
-	    Tcl_Obj *handlerBodyObj;
+	    Tcl_Obj *handlerBodyObj, *kindObj;
 
 	    Tcl_ListObjGetElements(NULL, handlers[i], &dummy, &info);
 	    if (!found) {
@@ -4438,12 +4438,13 @@ TryPostBody(
 	     */
 
 	    handlerBodyObj = info[4];
+	    kindObj        = info[0];
 
 	    Tcl_DecrRefCount(handlersObj);
 	    result = TclEvalObjEx(interp, handlerBodyObj, 0,
 				  ((Interp *) interp)->cmdFramePtr, 4*i + 5);
 
-	    return TryPostHandler (objv, options, info[0],
+	    return TryPostHandler (objv, options, kindObj,
 				   finallyObj == NULL ? 0 : objc - 1,
 				   interp, result);
 
