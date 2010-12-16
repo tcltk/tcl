@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: assemble.test,v 1.1.2.15 2010/10/28 19:40:13 kennykb Exp $
+# RCS: @(#) $Id: assemble.test,v 1.1.2.16 2010/12/16 01:40:42 kennykb Exp $
 #-----------------------------------------------------------------------------
 
 # Commands covered: assemble
@@ -3108,6 +3108,81 @@ test assemble-30.3 {embedded catches} {
 	x
     }
     -result {0 {1 {1 whatever}}}
+    -cleanup {rename x {}}
+}
+
+test assemble-30.4 {throw in wrong context} {
+    -body {
+	proc x {} {
+	    list [catch {
+		assemble {
+		    beginCatch @bad
+		    push error
+		    eval { list [catch {error whatever} result] $result }
+		    invokeStk 2
+		    push 0
+		    reverse 2
+		    jump @done
+
+		    label @bad
+		    load x
+		    pushResult
+
+		    label @done
+		    endCatch
+		    list 2
+		}
+	    } result] $result $::errorCode [split $::errorInfo \n]
+	}
+	x
+    }
+    -match glob
+    -result {1 {"loadScalar1" instruction may not appear in a context where an exception has been caught and not disposed of.} {TCL ASSEM BADTHROW} {{"loadScalar1" instruction may not appear in a context where an exception has been caught and not disposed of.} {    in assembly code between lines 10 and 15}*}}
+    -cleanup {rename x {}}
+}
+    
+test assemble-30.5 {unclosed catch} {
+    -body {
+	proc x {} {
+	    assemble {
+		beginCatch @error
+		push 0
+		jump @done
+		label @error
+		push 1
+		label @done
+		push ""
+		pop
+	    }
+	}
+	list [catch {x} result] $result $::errorCode $::errorInfo
+    }
+    -match glob
+    -result {1 {catch still active on exit from assembly code} {TCL ASSEM UNCLOSEDCATCH} {catch still active on exit from assembly code
+    ("assemble" body, line 2)*}}
+    -cleanup {rename x {}}
+}
+
+test assemble-30.6 {inconsistent catch contexts} {
+    -body {
+	proc x {y} {
+	    assemble {
+		load y
+		jumpTrue @inblock
+		beginCatch @error
+		label @inblock
+		push 0
+		jump @done
+		label @error
+		push 1
+		label @done
+	    }
+	}
+	list [catch {x 2} result] $::errorCode $::errorInfo
+    }
+    -match glob
+    -result {1 {TCL ASSEM BADCATCH} {execution reaches an instruction in inconsistent exception contexts
+    ("assemble" body, line 5)*}}
     -cleanup {rename x {}}
 }
 
