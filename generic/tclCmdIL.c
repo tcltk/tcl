@@ -438,6 +438,7 @@ InfoArgsCmd(
     procPtr = TclFindProc(iPtr, name);
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp, "\"", name, "\" isn't a procedure", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", name, NULL);
 	return TCL_ERROR;
     }
 
@@ -498,7 +499,6 @@ InfoBodyCmd(
     procPtr = TclFindProc(iPtr, name);
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp, "\"", name, "\" isn't a procedure", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", name, NULL);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", name, NULL);
 	return TCL_ERROR;
     }

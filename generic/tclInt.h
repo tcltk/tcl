@@ -457,7 +457,7 @@ typedef struct EnsembleConfig {
 				 * all lists, and cannot be found by scanning
 				 * the list from the namespace's ensemble
 				 * field. */
-    int flags;			/* ORed combo of TCL_ENSEMBLE_PREFIX, ENS_DEAD
+    int flags;			/* ORed combo of TCL_ENSEMBLE_PREFIX, ENSEMBLE_DEAD
 				 * and ENSEMBLE_COMPILE. */
 
     /* OBJECT FIELDS FOR ENSEMBLE CONFIGURATION */
@@ -494,7 +494,7 @@ typedef struct EnsembleConfig {
 				 * field. */
 } EnsembleConfig;
 
-#define ENS_DEAD	0x1	/* Flag value to say that the ensemble is dead
+#define ENSEMBLE_DEAD	0x1	/* Flag value to say that the ensemble is dead
 				 * and on its way out. */
 
 /*
@@ -1562,6 +1562,8 @@ typedef struct {
     Tcl_ObjCmdProc *proc;	/* The implementation of the subcommand. */
     CompileProc *compileProc;	/* The compiler for the subcommand. */
     ClientData clientData;	/* Any clientData to give the command. */
+    int unsafe;			/* Whether this command is to be hidden by
+				 * default in a safe interpreter. */
 } EnsembleImplMap;
 
 /*
@@ -2763,6 +2765,7 @@ MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,
 			    const char *value);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
+MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
 MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
 MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, int num,
@@ -2777,16 +2780,14 @@ MODULE_SCOPE void       TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE int        TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,
  			    int *clNextOuter, const char *outerScript);
-MODULE_SCOPE int	TclFileAttrsCmd(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclFileCopyCmd(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclFileDeleteCmd(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclFileMakeDirsCmd(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclFileRenameCmd(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileLinkCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileMakeDirsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileReadLinkCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileRenameCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileTemporaryCmd;
 MODULE_SCOPE void	TclCreateLateExitHandler(Tcl_ExitProc *proc,
 			    ClientData clientData);
 MODULE_SCOPE void	TclDeleteLateExitHandler(Tcl_ExitProc *proc,
@@ -3028,7 +3029,6 @@ MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
 MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
-
 MODULE_SCOPE void *     TclpThreadCreateKey(void);
 MODULE_SCOPE void       TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void       TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
@@ -3129,9 +3129,8 @@ MODULE_SCOPE int	Tcl_FconfigureObjCmd(
 MODULE_SCOPE int	Tcl_FcopyObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	Tcl_FileObjCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_Command TclInitFileCmd(Tcl_Interp *interp);
+MODULE_SCOPE int	TclMakeFileCommandSafe(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_FileEventObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);

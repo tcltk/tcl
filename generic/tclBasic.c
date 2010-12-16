@@ -203,7 +203,6 @@ static const CmdInfo builtInCmds[] = {
     {"fblocked",	Tcl_FblockedObjCmd,	NULL,			1},
     {"fconfigure",	Tcl_FconfigureObjCmd,	NULL,			0},
     {"fcopy",		Tcl_FcopyObjCmd,	NULL,			1},
-    {"file",		Tcl_FileObjCmd,		NULL,			0},
     {"fileevent",	Tcl_FileEventObjCmd,	NULL,			1},
     {"flush",		Tcl_FlushObjCmd,	NULL,			1},
     {"gets",		Tcl_GetsObjCmd,		NULL,			1},
@@ -565,6 +564,15 @@ Tcl_CreateInterp(void)
     iPtr->resultSpace[0] = 0;
     iPtr->threadId = Tcl_GetCurrentThread();
 
+    /* TIP #378 */
+#ifdef TCL_INTERP_DEBUG_FRAME
+    iPtr->flags |= INTERP_DEBUG_FRAME;
+#else
+    if (getenv("TCL_INTERP_DEBUG_FRAME") != NULL) {
+        iPtr->flags |= INTERP_DEBUG_FRAME;
+    }
+#endif
+
     /*
      * Initialise the tables for variable traces and searches *before*
      * creating the global ns - so that the trace on errorInfo can be
@@ -746,15 +754,17 @@ Tcl_CreateInterp(void)
     }
 
     /*
-     * Create the "array", "binary", "chan", "dict", "info" and "string"
-     * ensembles. Note that all these commands (and their subcommands that are
-     * not present in the global namespace) are wholly safe.
+     * Create the "array", "binary", "chan", "dict", "file", "info" and
+     * "string" ensembles. Note that all these commands (and their subcommands
+     * that are not present in the global namespace) are wholly safe *except*
+     * for "file".
      */
 
     TclInitArrayCmd(interp);
     TclInitBinaryCmd(interp);
     TclInitChanCmd(interp);
     TclInitDictCmd(interp);
+    TclInitFileCmd(interp);
     TclInitInfoCmd(interp);
     TclInitStringCmd(interp);
     TclInitPrefixCmd(interp);
@@ -962,6 +972,7 @@ TclHideUnsafeCommands(
 	    Tcl_HideCommand(interp, cmdInfoPtr->name, cmdInfoPtr->name);
 	}
     }
+    TclMakeFileCommandSafe(interp);     /* Ugh! */
     return TCL_OK;
 }
 
@@ -2280,7 +2291,7 @@ TclInvokeStringCommand(
      * Invoke the command's string-based Tcl_CmdProc.
      */
 
-    result = (*cmdPtr->proc)(cmdPtr->clientData, interp, objc, argv);
+    result = cmdPtr->proc(cmdPtr->clientData, interp, objc, argv);
 
     TclStackFree(interp, (void *) argv);
     return result;
@@ -2331,7 +2342,7 @@ TclInvokeObjectCommand(
      * Invoke the command's object-based Tcl_ObjCmdProc.
      */
 
-    result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, argc, objv);
+    result = cmdPtr->objProc(cmdPtr->objClientData, interp, argc, objv);
 
     /*
      * Move the interpreter's object result to the string result, then reset
@@ -2963,9 +2974,7 @@ Tcl_DeleteCommandFromToken(
 	 * created when a command was imported into a namespace, this client
 	 * data will be a pointer to a ImportedCmdData structure describing
 	 * the "real" command that this imported command refers to.
-	 */
-
-	/*
+         *
 	 * If you are getting a crash during the call to deleteProc and
 	 * cmdPtr->deleteProc is a pointer to the function free(), the most
 	 * likely cause is that your extension allocated memory for the
@@ -2975,7 +2984,7 @@ Tcl_DeleteCommandFromToken(
 	 * that calls ckfree().
 	 */
 
-	(*cmdPtr->deleteProc)(cmdPtr->deleteData);
+	cmdPtr->deleteProc(cmdPtr->deleteData);
     }
 
     /*
@@ -3112,8 +3121,8 @@ CallCommandTraces(
 	if (state == NULL) {
 	    state = Tcl_SaveInterpState((Tcl_Interp *) iPtr, TCL_OK);
 	}
-	(*tracePtr->traceProc)(tracePtr->clientData,
-		(Tcl_Interp *) iPtr, oldName, newName, flags);
+	tracePtr->traceProc(tracePtr->clientData, (Tcl_Interp *) iPtr,
+		oldName, newName, flags);
 	cmdPtr->flags &= ~tracePtr->flags;
 	if ((--tracePtr->refCount) <= 0) {
 	    ckfree((char *) tracePtr);
@@ -3405,8 +3414,9 @@ OldMathFuncProc(
 	     * We have a non-numeric argument.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "argument to math function didn't have numeric value",-1));
+	    Tcl_SetResult(interp,
+		    "argument to math function didn't have numeric value",
+		    TCL_STATIC);
 	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
 	    ckfree((char *) args);
 	    return TCL_ERROR;
@@ -3464,7 +3474,7 @@ OldMathFuncProc(
      */
 
     errno = 0;
-    result = (*dataPtr->proc)(dataPtr->clientData, interp, args, &funcResult);
+    result = dataPtr->proc(dataPtr->clientData, interp, args, &funcResult);
     ckfree((char *) args);
     if (result != TCL_OK) {
 	return result;
@@ -4688,6 +4698,13 @@ TclEvalEx(
      * during Tcl initialization.
      */
 
+    eeFramePtr->level = iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level + 1 : 1;
+    eeFramePtr->framePtr = iPtr->framePtr;
+    eeFramePtr->nextPtr = iPtr->cmdFramePtr;
+    eeFramePtr->nline = 0;
+    eeFramePtr->line = NULL;
+
+    iPtr->cmdFramePtr = eeFramePtr;
     if (iPtr->evalFlags & TCL_EVAL_CTX) {
 	/*
 	 * Path information comes out of the context.
@@ -4735,12 +4752,6 @@ TclEvalEx(
 	eeFramePtr->data.eval.path = NULL;
     }
 
-    eeFramePtr->level = iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level + 1 : 1;
-    eeFramePtr->framePtr = iPtr->framePtr;
-    eeFramePtr->nextPtr = iPtr->cmdFramePtr;
-    eeFramePtr->nline = 0;
-    eeFramePtr->line = NULL;
-
     iPtr->evalFlags = 0;
     do {
 	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, parsePtr) != TCL_OK) {
@@ -4787,6 +4798,7 @@ TclEvalEx(
 	    objv = objvSpace;
 	    lines = lineSpace;
 
+	    iPtr->cmdFramePtr = eeFramePtr->nextPtr;
 	    for (objectsUsed = 0, tokenPtr = parsePtr->tokenPtr;
 		    objectsUsed < numWords;
 		    objectsUsed++, tokenPtr += tokenPtr->numComponents+1) {
@@ -4817,7 +4829,7 @@ TclEvalEx(
 		iPtr->evalFlags = 0;
 
 		if (code != TCL_OK) {
-		    goto error;
+		    break;
 		}
 		objv[objectsUsed] = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(objv[objectsUsed]);
@@ -4834,7 +4846,7 @@ TclEvalEx(
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 				"\n    (expanding word %d)", objectsUsed));
 			Tcl_DecrRefCount(objv[objectsUsed]);
-			goto error;
+                        break;
 		    }
 		    expandRequested = 1;
 		    expand[objectsUsed] = 1;
@@ -4850,6 +4862,10 @@ TclEvalEx(
 			    wordStart - outerScript, wordCLNext);
 		}
 	    } /* for loop */
+	    iPtr->cmdFramePtr = eeFramePtr;
+	    if (code != TCL_OK) {
+		goto error;
+	    }
 	    if (expandRequested) {
 		/*
 		 * Some word expansion was requested. Check for objv resize.
@@ -4920,15 +4936,11 @@ TclEvalEx(
 	    eeFramePtr->line = lines;
 
 	    TclArgumentEnter(interp, objv, objectsUsed, eeFramePtr);
-	    iPtr->cmdFramePtr = eeFramePtr;
-
 	    TclResetCancellation(interp, 0);
-
 	    iPtr->numLevels++;
 	    code = TclEvalObjvInternal(interp, objectsUsed, objv,
 		    parsePtr->commandStart, parsePtr->commandSize, 0);
 	    iPtr->numLevels--;
-	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 	    TclArgumentRelease(interp, objv, objectsUsed);
 
 	    eeFramePtr->line = NULL;
@@ -5032,6 +5044,7 @@ TclEvalEx(
      * TIP #280. Release the local CmdFrame, and its contents.
      */
 
+    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
     if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
 	Tcl_DecrRefCount(eeFramePtr->data.eval.path);
     }
@@ -5255,79 +5268,6 @@ TclArgumentRelease(
 /*
  *----------------------------------------------------------------------
  *
- * TclArgumentGet --
- *
- *	This procedure is a helper for the TIP #280 uplevel extension. It
- *	finds the location references for a Tcl_Obj, if any.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Writes found location information into the result arguments.
- *
- * TIP #280
- *----------------------------------------------------------------------
- */
-
-void
-TclArgumentGet(
-     Tcl_Interp *interp,
-     Tcl_Obj *obj,
-     CmdFrame **cfPtrPtr,
-     int *wordPtr)
-{
-    Interp *iPtr = (Interp*) interp;
-    Tcl_HashEntry *hPtr;
-    CmdFrame *framePtr;
-
-    /*
-     * An object which either has no string rep or else is a canonical list is
-     * guaranteed to have been generated dynamically: bail out, this cannot
-     * have a usable absolute location. _Do not touch_ the information the set
-     * up by the caller. It knows better than us.
-     */
-
-    if ((!obj->bytes) || ((obj->typePtr == &tclListType) &&
-	    ((List *) obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
-	return;
-    }
-    
-    /*
-     * First look for location information recorded in the argument
-     * stack. That is nearest.
-     */
-
-    hPtr = Tcl_FindHashEntry(iPtr->lineLAPtr, (char *) obj);
-    if (hPtr) {
-	CFWord *cfwPtr = (CFWord*) Tcl_GetHashValue(hPtr);
-
-	*wordPtr  = cfwPtr->word;
-	*cfPtrPtr = cfwPtr->framePtr;
-	return;
-    }
-
-    /*
-     * Check if the Tcl_Obj has location information as a bytecode literal, in
-     * that stack.
-     */
-
-    hPtr = Tcl_FindHashEntry(iPtr->lineLABCPtr, (char *) obj);
-    if (hPtr) {
- 	CFWordBC *cfwPtr = (CFWordBC*) Tcl_GetHashValue(hPtr);
-	
- 	framePtr = cfwPtr->framePtr;
- 	framePtr->data.tebc.pc = (char*) (((ByteCode*)
-	        framePtr->data.tebc.codePtr)->codeStart + cfwPtr->pc);
- 	*cfPtrPtr = cfwPtr->framePtr;
- 	*wordPtr  = cfwPtr->word;
- 	return;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclArgumentBCEnter --
  *
  *	This procedure is a helper for the TIP #280 uplevel extension. It
@@ -5475,6 +5415,79 @@ TclArgumentBCRelease(
 /*
  *----------------------------------------------------------------------
  *
+ * TclArgumentGet --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension. It
+ *	finds the location references for a Tcl_Obj, if any.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Writes found location information into the result arguments.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclArgumentGet(
+     Tcl_Interp *interp,
+     Tcl_Obj *obj,
+     CmdFrame **cfPtrPtr,
+     int *wordPtr)
+{
+    Interp *iPtr = (Interp*) interp;
+    Tcl_HashEntry *hPtr;
+    CmdFrame *framePtr;
+
+    /*
+     * An object which either has no string rep or else is a canonical list is
+     * guaranteed to have been generated dynamically: bail out, this cannot
+     * have a usable absolute location. _Do not touch_ the information the set
+     * up by the caller. It knows better than us.
+     */
+
+    if ((!obj->bytes) || ((obj->typePtr == &tclListType) &&
+	    ((List *) obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
+	return;
+    }
+    
+    /*
+     * First look for location information recorded in the argument
+     * stack. That is nearest.
+     */
+
+    hPtr = Tcl_FindHashEntry(iPtr->lineLAPtr, (char *) obj);
+    if (hPtr) {
+	CFWord *cfwPtr = Tcl_GetHashValue(hPtr);
+
+	*wordPtr  = cfwPtr->word;
+	*cfPtrPtr = cfwPtr->framePtr;
+	return;
+    }
+
+    /*
+     * Check if the Tcl_Obj has location information as a bytecode literal, in
+     * that stack.
+     */
+
+    hPtr = Tcl_FindHashEntry(iPtr->lineLABCPtr, (char *) obj);
+    if (hPtr) {
+ 	CFWordBC *cfwPtr = Tcl_GetHashValue(hPtr);
+	
+ 	framePtr = cfwPtr->framePtr;
+ 	framePtr->data.tebc.pc = (char*) (((ByteCode*)
+	        framePtr->data.tebc.codePtr)->codeStart + cfwPtr->pc);
+ 	*cfPtrPtr = cfwPtr->framePtr;
+ 	*wordPtr  = cfwPtr->word;
+ 	return;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_Eval --
  *
  *	Execute a Tcl command in a string. This function executes the script
@@ -5537,7 +5550,6 @@ Tcl_EvalObj(
 {
     return Tcl_EvalObjEx(interp, objPtr, 0);
 }
-
 #undef Tcl_GlobalEvalObj
 int
 Tcl_GlobalEvalObj(
@@ -6847,8 +6859,7 @@ ExprIsqrtFunc(
     return TCL_OK;
 
   negarg:
-    Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj("square root of negative argument", -1));
+    Tcl_SetResult(interp, "square root of negative argument", TCL_STATIC);
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 	    "domain error: argument not in valid range", NULL);
     return TCL_ERROR;
@@ -6925,7 +6936,7 @@ ExprUnaryFunc(
 	return TCL_ERROR;
     }
     errno = 0;
-    return CheckDoubleResult(interp, (*func)(d));
+    return CheckDoubleResult(interp, func(d));
 }
 
 static int
@@ -6996,7 +7007,7 @@ ExprBinaryFunc(
 	return TCL_ERROR;
     }
     errno = 0;
-    return CheckDoubleResult(interp, (*func)(d1, d2));
+    return CheckDoubleResult(interp, func(d1, d2));
 }
 
 static int

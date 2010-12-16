@@ -218,10 +218,10 @@ test cmdAH-4.13 {Tcl_EncodingObjCmd} -setup {
 
 test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
     file
-} -result {wrong # args: should be "file option ?arg ...?"}
+} -result {wrong # args: should be "file subcommand ?arg ...?"}
 test cmdAH-5.2 {Tcl_FileObjCmd} -returnCodes error -body {
     file x
-} -result {bad option "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
 test cmdAH-5.3 {Tcl_FileObjCmd} -returnCodes error -body {
     file exists
 } -result {wrong # args: should be "file exists name"}
@@ -242,7 +242,7 @@ test cmdAH-6.3 {Tcl_FileObjCmd: volumes} {unix} {
 } {0}
 test cmdAH-6.4 {Tcl_FileObjCmd: volumes} win {
     set volumeList [string tolower [file volumes]]
-    list [catch {lsearch $volumeList "c:/"} element] [expr $element != -1] [catch {list glob -nocomplain [lindex $volumeList $element]*}]
+    list [catch {lsearch $volumeList "c:/"} element] [expr {$element != -1}] [catch {list glob -nocomplain [lindex $volumeList $element]*}]
 } {0 1 0}
 
 # attributes
@@ -1415,25 +1415,25 @@ test cmdAH-29.5 {Tcl_FileObjCmd: type} {
 # Error conditions
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file gorp x
-} -result {bad option "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
 test cmdAH-30.2 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file ex x
-} -match glob -result {ambiguous option "ex": must be *}
+} -match glob -result {unknown or ambiguous subcommand "ex": must be *}
 test cmdAH-30.3 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file is x
-} -match glob -result {ambiguous option "is": must be *}
+} -match glob -result {unknown or ambiguous subcommand "is": must be *}
 test cmdAH-30.4 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file z x
-} -match glob -result {bad option "z": must be *}
+} -match glob -result {unknown or ambiguous subcommand "z": must be *}
 test cmdAH-30.5 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file read x
-} -match glob -result {ambiguous option "read": must be *}
+} -match glob -result {unknown or ambiguous subcommand "read": must be *}
 test cmdAH-30.6 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file s x
-} -match glob -result {ambiguous option "s": must be *}
+} -match glob -result {unknown or ambiguous subcommand "s": must be *}
 test cmdAH-30.7 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file t x
-} -match glob -result {ambiguous option "t": must be *}
+} -match glob -result {unknown or ambiguous subcommand "t": must be *}
 test cmdAH-30.8 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file dirname ~woohgy
 } -result {user "woohgy" doesn't exist}
@@ -1445,7 +1445,7 @@ test cmdAH-30.8 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
 interp create simpleInterp
 interp create -safe safeInterp
 interp create
-safeInterp expose file file
+catch {safeInterp expose file file}
 
 test cmdAH-31.1 {Tcl_FileObjCmd: channels, too many args} -body {
     file channels a b

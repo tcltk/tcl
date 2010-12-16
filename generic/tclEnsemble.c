@@ -1017,11 +1017,11 @@ Tcl_SetEnsembleFlags(
     wasCompiled = ensemblePtr->flags & ENSEMBLE_COMPILE;
 
     /*
-     * This API refuses to set the ENS_DEAD flag...
+     * This API refuses to set the ENSEMBLE_DEAD flag...
      */
 
-    ensemblePtr->flags &= ENS_DEAD;
-    ensemblePtr->flags |= flags & ~ENS_DEAD;
+    ensemblePtr->flags &= ENSEMBLE_DEAD;
+    ensemblePtr->flags |= flags & ~ENSEMBLE_DEAD;
 
     /*
      * Trigger an eventual recomputation of the ensemble command set. Note
@@ -1414,16 +1414,21 @@ TclMakeEnsemble(
 {
     Tcl_Command ensemble;
     Tcl_Namespace *ns;
-    Tcl_DString buf;
+    Tcl_DString buf, hiddenBuf;
     const char **nameParts = NULL;
     const char *cmdName = NULL;
-    int i, nameCount = 0, ensembleFlags = 0;
+    int i, nameCount = 0, ensembleFlags = 0, hiddenLen;
 
    /*
     * Construct the path for the ensemble namespace and create it.
     */
 
     Tcl_DStringInit(&buf);
+    Tcl_DStringInit(&hiddenBuf);
+    Tcl_DStringAppend(&hiddenBuf, "tcl:", -1);
+    Tcl_DStringAppend(&hiddenBuf, name, -1);
+    Tcl_DStringAppend(&hiddenBuf, ":", -1);
+    hiddenLen = Tcl_DStringLength(&hiddenBuf);
     if (name[0] == ':' && name[1] == ':') {
 	/*
 	 * An absolute name, so use it directly.
@@ -1477,26 +1482,48 @@ TclMakeEnsemble(
      */
 
     if (ensemble != NULL) {
-	Tcl_Obj *mapDict;
+	Tcl_Obj *mapDict, *fromObj, *toObj;
+	Command *cmdPtr;
 
 	Tcl_DStringAppend(&buf, "::", 2);
 	TclNewObj(mapDict);
 	for (i=0 ; map[i].name != NULL ; i++) {
-	    Tcl_Obj *fromObj, *toObj;
-	    Command *cmdPtr;
-
 	    fromObj = Tcl_NewStringObj(map[i].name, -1);
 	    TclNewStringObj(toObj, Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf));
 	    Tcl_AppendToObj(toObj, map[i].name, -1);
 	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
+
 	    if (map[i].proc) {
-		cmdPtr = (Command *)Tcl_CreateObjCommand(interp,
-		    TclGetString(toObj), map[i].proc,
-		    map[i].clientData, NULL);
+		/*
+		 * If the command is unsafe, hide it when we're in a safe
+		 * interpreter. The code to do this is really hokey! It also
+		 * doesn't work properly yet; this function is always
+		 * currently called before the safe-interp flag is set so the
+		 * Tcl_IsSafe check fails.
+		 */
+
+		if (map[i].unsafe && Tcl_IsSafe(interp)) {
+		    cmdPtr = (Command *)Tcl_CreateObjCommand(interp,
+			"___tmp", map[i].proc, map[i].clientData, NULL);
+		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
+		    if (Tcl_HideCommand(interp, "___tmp",
+			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
+			Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+		    }
+		} else {
+		    /*
+		     * Not hidden, so just create it. Yay!
+		     */
+
+		    cmdPtr = (Command *)Tcl_CreateObjCommand(interp,
+			TclGetString(toObj), map[i].proc,
+			map[i].clientData, NULL);
+		}
 		cmdPtr->compileProc = map[i].compileProc;
-		if (map[i].compileProc != NULL)
+		if (map[i].compileProc != NULL) {
 		    ensembleFlags |= ENSEMBLE_COMPILE;
+		}
 	    }
 	}
 	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
@@ -1506,6 +1533,7 @@ TclMakeEnsemble(
     }
 
     Tcl_DStringFree(&buf);
+    Tcl_DStringFree(&hiddenBuf);
     if (nameParts != NULL) {
 	Tcl_Free((char *) nameParts);
     }
@@ -1997,7 +2025,7 @@ EnsembleUnknownCallback(
 
     Tcl_Preserve(ensemblePtr);
     result = Tcl_EvalObjv(interp, paramc, paramv, 0);
-    if ((result == TCL_OK) && (ensemblePtr->flags & ENS_DEAD)) {
+    if ((result == TCL_OK) && (ensemblePtr->flags & ENSEMBLE_DEAD)) {
 	Tcl_SetResult(interp,
 		"unknown subcommand handler deleted its ensemble",
 		TCL_STATIC);
@@ -2194,7 +2222,7 @@ DeleteEnsembleConfig(
      * whether disaster happened anyway.
      */
 
-    ensemblePtr->flags |= ENS_DEAD;
+    ensemblePtr->flags |= ENSEMBLE_DEAD;
 
     /*
      * Kill the pointer-containing fields.
