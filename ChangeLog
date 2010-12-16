@@ -1,3 +1,11 @@
+2010-12-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tclAssembly.c:
+	* assemble.test: 	Reworked beginCatch/endCatch handling to
+	enforce the more severe (but more correct) restrictions on catch
+	handling that appeared in the discussion of [Bug 3098302] and in
+	tcl-core traffic beginning about 2010-10-29.
+
 2010-12-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:       [Bug 3129448]: Possible over-allocation on
