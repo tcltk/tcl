@@ -12,11 +12,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPanic.c,v 1.14.4.1 2010/12/01 16:42:36 kennykb Exp $
+ * RCS: @(#) $Id: tclPanic.c,v 1.14.4.2 2010/12/16 01:42:18 kennykb Exp $
  */
 
 #include "tclInt.h"
-#undef Tcl_Panic
 
 /*
  * The panicProc variable contains a pointer to an application specific panic
@@ -90,13 +89,9 @@ Tcl_PanicVA(
 		arg8);
 	fprintf(stderr, "\n");
 	fflush(stderr);
-#ifdef _WIN32
-    DebugBreak();
-    ExitProcess(1);
-#else
-	abort();
-#endif
     }
+    /* In case the users panic proc does not abort, we do it here */
+    abort();
 }
 
 /*
