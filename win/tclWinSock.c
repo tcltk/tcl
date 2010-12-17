@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.81 2010/12/14 17:22:55 rmax Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.80 2010/12/10 15:44:53 nijtmans Exp $
  *
  * -----------------------------------------------------------------------
  *
@@ -1142,10 +1142,10 @@ CreateSocket(
 	    }
 	}
     } else {
-        for (addrPtr = addrlist; addrPtr != NULL;
-             addrPtr = addrPtr->ai_next) {
-            for (myaddrPtr = myaddrlist; myaddrPtr != NULL;
-                 myaddrPtr = myaddrPtr->ai_next) {
+	for (myaddrPtr = myaddrlist; myaddrPtr != NULL;
+	     myaddrPtr = myaddrPtr->ai_next) {
+	    for (addrPtr = addrlist; addrPtr != NULL;
+		 addrPtr = addrPtr->ai_next) {
 		/*
 		 * No need to try combinations of local and remote addresses
 		 * of different families.

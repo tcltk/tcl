@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.33 2010/12/14 17:22:55 rmax Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.32 2010/12/10 15:44:54 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -862,9 +862,9 @@ static TcpState *
 CreateClientSocket(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
     int port,			/* Port number to open. */
-    const char *host,		/* Name of host on which to open port. */
-    const char *myaddr,		/* Optional client-side address.
-                                 * NULL implies INADDR_ANY/in6addr_any */
+    const char *host,		/* Name of host on which to open port. NULL
+				 * implies INADDR_ANY */
+    const char *myaddr,		/* Optional client-side address */
     int myport,			/* Optional client-side port */
     int async)			/* If nonzero and creating a client socket,
 				 * attempt to do an async connect. Otherwise
@@ -885,12 +885,12 @@ CreateClientSocket(
 	goto error;
     }
 
-    for (addrPtr = addrlist; addrPtr != NULL;
-         addrPtr = addrPtr->ai_next) {
-        for (myaddrPtr = myaddrlist; myaddrPtr != NULL;
-             myaddrPtr = myaddrPtr->ai_next) {
+    for (myaddrPtr = myaddrlist; myaddrPtr != NULL;
+            myaddrPtr = myaddrPtr->ai_next) {
+	for (addrPtr = addrlist; addrPtr != NULL;
+                addrPtr = addrPtr->ai_next) {
             int reuseaddr;
-            
+
 	    /*
 	     * No need to try combinations of local and remote addresses of
 	     * different families.
@@ -900,7 +900,14 @@ CreateClientSocket(
 		continue;
 	    }
 
-	    sock = socket(addrPtr->ai_family, SOCK_STREAM, 0);
+	    /*
+	     * Attempt to connect. The connect may fail at present with an
+	     * EINPROGRESS but at a later time it will complete. The caller
+	     * will set up a file handler on the socket if she is interested
+	     * in being informed when the connect completes.
+	     */
+	    
+	    sock = socket(myaddrPtr->ai_family, SOCK_STREAM, 0);
 	    if (sock < 0) {
 		continue;
 	    }
@@ -933,13 +940,6 @@ CreateClientSocket(
                 goto looperror;
             }
 
-	    /*
-	     * Attempt to connect. The connect may fail at present with an
-	     * EINPROGRESS but at a later time it will complete. The caller
-	     * will set up a file handler on the socket if she is interested
-	     * in being informed when the connect completes.
-	     */
-	    
 	    status = connect(sock, addrPtr->ai_addr, addrPtr->ai_addrlen);
 	    if (status < 0 && errno == EINPROGRESS) {
 		status = 0;
@@ -1196,8 +1196,8 @@ Tcl_OpenTcpServer(
 		(char *) &reuseaddr, sizeof(reuseaddr));
 	
         /*
-         * Make sure we use the same port number when opening two server
-         * sockets for IPv4 and IPv6 on a random port.
+         * Make sure we use the same port when opening two server sockets for
+         * IPv4 and IPv6.
          *
          * As sockaddr_in6 uses the same offset and size for the port member
          * as sockaddr_in, we can handle both through the IPv4 API.
