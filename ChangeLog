@@ -1,5 +1,9 @@
 2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
 
+	* unix/Makefile.in:  [Bug 2446711]: Remove 'allpatch' target.
+
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
 	* unix/Makefile.in:  Use 'rpmbuild', not 'rpm' [Bug 2537626].
 
 2010-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
