@@ -1,5 +1,11 @@
 2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
 
+	* unix/Makefile.in:	Clean up '.PHONY:' targets: Arrange those
+				common to Tcl and Tk as in Tk's Makefile.in,
+				add any missing ones and remove duplicates.
+
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
 	* unix/Makefile.in:  [Bug 2446711]: Remove 'allpatch' target.
 
 2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
