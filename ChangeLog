@@ -1,3 +1,7 @@
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/Makefile.in:  Use 'rpmbuild', not 'rpm' [Bug 2537626].
+
 2010-12-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPanic.c:  [Patch 3124554]: Move WishPanic from Tk to Tcl
