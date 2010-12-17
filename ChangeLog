@@ -1,3 +1,7 @@
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/Makefile.in:  Use 'rpmbuild', not 'rpm' [Bug 2537626].
+
 2010-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tcl.m4:    Cross-compile support for Win and UNIX (backported)
