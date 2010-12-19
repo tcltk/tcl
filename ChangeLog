@@ -1,6 +1,6 @@
 2010-12-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWin32Dll.c:    [Patch 3124554]: fixes for mingw64 - gcc4.5.1
+	* win/tclWin32Dll.c:    [Patch 3059922]: fixes for mingw64 - gcc4.5.1
 	tdm64-1: Fixed for gcc, not yet for MSVC 64-bit.
 
 2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
