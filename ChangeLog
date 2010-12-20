@@ -1,3 +1,10 @@
+2010-12-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/configure.in:   Explicitely test for intrinsics support in compiler,
+	before assuming only MSVC has it.
+	* win/configure:      (autoconf-2.59)
+	* generic/tclPanic.c:
+
 2010-12-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWin32Dll.c:    [Patch 3059922]: fixes for mingw64 - gcc4.5.1
