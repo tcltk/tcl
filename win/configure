@@ -3651,8 +3651,7 @@ int
 main ()
 {
 
-  unsigned int regs[4];
-  __cpuidex(regs,0,0);
+  __cpuidex(0,0,0);
   __debugbreak();
 
   ;
