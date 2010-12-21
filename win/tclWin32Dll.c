@@ -10,10 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.72 2010/12/19 18:14:47 nijtmans Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.73 2010/12/21 10:04:59 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
+#if defined(HAVE_INTRIN_H) || (defined(_MSC_VER) && defined(_WIN64))
+#   include <intrin.h>
+#endif
 
 /*
  * The following data structures are used when loading the thunking library
@@ -720,7 +723,12 @@ TclWinCPUID(
 {
     int status = TCL_ERROR;
 
-#if defined(__GNUC__)
+#if defined(HAVE_INTRIN_H) && defined(_WIN64)
+
+    __cpuid(regsPtr, index);
+    status = TCL_OK;
+
+#elif defined(__GNUC__)
 #   if defined(_WIN64)
     /*
      * Execute the CPUID instruction with the given index, and store results
@@ -836,7 +844,13 @@ TclWinCPUID(
     status = registration.status;
 
 #   endif /* !_WIN64 */
-#elif defined(_MSC_VER) && !defined(_WIN64)
+#elif defined(_MSC_VER)
+#   if defined(_WIN64)
+
+    __cpuid(regsPtr, index);
+    status = TCL_OK;
+
+#   else
     /*
      * Define a structure in the stack frame to hold the registers.
      */
@@ -883,6 +897,7 @@ TclWinCPUID(
 	/* do nothing */
     }
 
+#   endif
 #else
     /*
      * Don't know how to do assembly code for this compiler and/or
