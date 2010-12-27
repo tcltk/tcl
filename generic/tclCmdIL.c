@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.186 2010/12/10 13:08:53 nijtmans Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.187 2010/12/27 00:01:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3640,6 +3640,7 @@ Tcl_LsortObjCmd(
     group = 0;
     groupSize = 1;
     groupOffset = 0;
+    indexPtr = NULL;
     for (i = 1; i < objc-1; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0,
 		&index) != TCL_OK) {
@@ -3672,66 +3673,40 @@ Tcl_LsortObjCmd(
 	    sortInfo.isIncreasing = 1;
 	    break;
 	case LSORT_INDEX: {
+            int indexc, dummy;
 	    Tcl_Obj **indexv;
 
-	    /* === START SPECIAL CASE ===
-	     *
-	     * When reviewing code flow in this function, note that from here
-	     * to the line a bit below (END SPECIAL CASE) the contents of the
-	     * indexc and indexv fields of the sortInfo structure may not be
-	     * matched, so jumping to the done2 label to exit is wrong.
-	     */
-
-	    if (sortInfo.indexc > 1) {
-		TclStackFree(interp, sortInfo.indexv);
-	    }
 	    if (i == objc-2) {
 		Tcl_AppendResult(interp, "\"-index\" option must be "
 			"followed by list index", NULL);
-		return TCL_ERROR;
+                sortInfo.resultCode = TCL_ERROR;
+                goto done2;
 	    }
-
-	    /*
-	     * Take copy to prevent shimmering problems.
-	     */
-
-	    if (TclListObjGetElements(interp, objv[i+1], &sortInfo.indexc,
+	    if (TclListObjGetElements(interp, objv[i+1], &indexc,
 		    &indexv) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    /* === END SPECIAL CASE === */
-
-	    switch (sortInfo.indexc) {
-	    case 0:
-		sortInfo.indexv = NULL;
-		break;
-	    case 1:
-		sortInfo.indexv = &sortInfo.singleIndex;
-		break;
-	    default:
-		sortInfo.indexv =
-			TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
-		allocatedIndexVector = 1;	/* Cannot use indexc field, as
-						 * it might be decreased by 1
-						 * later. */
+                sortInfo.resultCode = TCL_ERROR;
+                goto done2;
 	    }
 
-	    /*
-	     * Fill the array by parsing each index. We don't know whether
-	     * their scale is sensible yet, but we at least perform the
-	     * syntactic check here.
-	     */
+            /*
+             * Check each of the indices for syntactic correctness. Note that
+             * we do not store the converted values here because we do not
+             * know if this is the only -index option yet and so we can't
+             * allocate any space; that happens after the scan through all the
+             * options is done.
+             */
 
-	    for (j=0 ; j<sortInfo.indexc ; j++) {
+	    for (j=0 ; j<indexc ; j++) {
 		if (TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
-			&sortInfo.indexv[j]) != TCL_OK) {
+			&dummy) != TCL_OK) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
 		    sortInfo.resultCode = TCL_ERROR;
 		    goto done2;
 		}
 	    }
-	    i++;
+	    indexPtr = objv[i+1];
+            i++;
 	    break;
 	}
 	case LSORT_INTEGER:
@@ -3773,6 +3748,35 @@ Tcl_LsortObjCmd(
     }
     if (nocase && (sortInfo.sortMode == SORTMODE_ASCII)) {
 	sortInfo.sortMode = SORTMODE_ASCII_NC;
+    }
+
+    /*
+     * Now extract the -index list for real, if present. No failures are
+     * expected here; the values are all of the right type or convertible to
+     * it.
+     */
+
+    if (indexPtr) {
+        Tcl_Obj **indexv;
+
+        TclListObjGetElements(interp, indexPtr, &sortInfo.indexc, &indexv);
+        switch (sortInfo.indexc) {
+        case 0:
+            sortInfo.indexv = NULL;
+            break;
+        case 1:
+            sortInfo.indexv = &sortInfo.singleIndex;
+            break;
+        default:
+            sortInfo.indexv =
+		    TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
+            allocatedIndexVector = 1;	/* Cannot use indexc field, as it
+                                         * might be decreased by 1 later. */
+        }
+        for (j=0 ; j<sortInfo.indexc ; j++) {
+            TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
+		    &sortInfo.indexv[j]);
+        }
     }
 
     listObj = objv[objc-1];
