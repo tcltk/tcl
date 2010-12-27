@@ -1,3 +1,8 @@
+2010-12-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Fix crash when multiple -index
+	options are used. Simplified memory handling logic.
+
 2010-12-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWin32Dll.c:    [Patch 3059922]: fixes for mingw64 - gcc4.5.1
@@ -5,8 +10,8 @@
 
 2010-12-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/configure.in:   Explicitely test for intrinsics support in compiler,
-	before assuming only MSVC has it.
+	* win/configure.in:   Explicitely test for intrinsics support in
+	compiler, before assuming only MSVC has it.
 	* win/configure:      (autoconf-2.59)
 	* generic/tclPanic.c:
 
@@ -31,7 +36,7 @@
 
 2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
 
-	* unix/Makefile.in:  Use 'rpmbuild', not 'rpm' [Bug 2537626].
+	* unix/Makefile.in:  [Bug 2537626]: Use 'rpmbuild', not 'rpm'.
 
 2010-12-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -41,24 +46,25 @@
 2010-12-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPanic.c:    Restore abort() as it was before.
-	* win/tclWinFile.c:      [Patch 3124554] use ExitProcess() here, like
+	* win/tclWinFile.c:      [Patch 3124554]: Use ExitProcess() here, like
 	in wish.
 
 2010-12-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h:	[Bug 3137454]: Tcl CVS HEAD does not build on GCC 3
+	* generic/tcl.h:	[Bug 3137454]: Tcl CVS HEAD does not build
+	on GCC 3.
 
 2010-12-14  Reinhard Max  <max@suse.de>
 
 	* win/tclWinSock.c (CreateSocket):         Swap the loops over
-	* unix/tclUnixSock.c (CreateClientSocket): local and remote
-	addresses, so that the system's address preference for the remote
-	side decides which family gets tried first. Cleanup and clarify
-	some of the comments.
+	* unix/tclUnixSock.c (CreateClientSocket): local and remote addresses,
+	so that the system's address preference for the remote side decides
+	which family gets tried first. Cleanup and clarify some of the
+	comments.
 
 2010-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h:    [Bug 3135271] Link error due to hidden
+	* generic/tcl.h:    [Bug 3135271]: Link error due to hidden
 	* unix/tcl.m4:      symbols (CentOS 4.2)
 	* unix/configure:   (autoconf-2.59)
 	* win/tclWinFile.c:  Undocumented feature, only meant to be
@@ -82,7 +88,8 @@
 2010-12-10 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclIO.c: Make sure [fcopy -size ... -command ...] always
-	* tests/io.test:   calls the callback asynchronously, even for size zero.
+	* tests/io.test:   calls the callback asynchronously, even for size
+			   zero.
 
 2010-12-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -94,14 +101,16 @@
 	* generic/tclIndexObj.c:
 	* generic/tclIOCmd.c:
 	* generic/tclVar.c:
-	* win/tcl.m4:               Fix manifest-generation for 64-bit gcc (mingw-w64)
-	* win/configure.in:         Check for availability of intptr_t and uintptr_t
+	* win/tcl.m4:               Fix manifest-generation for 64-bit gcc
+				    (mingw-w64)
+	* win/configure.in:         Check for availability of intptr_t and
+				    uintptr_t
 	* win/configure:            (autoconf-2.59)
-	* generic/tclInt.decls:     Change first parameter of TclSockMinimumBuffers to
-	* generic/tclIntDecls.h:    ClientData, and TclWin(Get|Set)SockOpt to SOCKET,
-	* generic/tclIntPlatDecls.h:because on Win64 those are 64-bit, which does not fit.
-	* generic/tclIOSock.c:
-	* win/tclWinSock.c:      
+	* generic/tclInt.decls:     Change 1st param of TclSockMinimumBuffers
+	* generic/tclIntDecls.h:    to ClientData, and TclWin(Get|Set)SockOpt
+	* generic/tclIntPlatDecls.h:to SOCKET, because on Win64 those are
+	* generic/tclIOSock.c:	    64-bit, which does not fit.
+	* win/tclWinSock.c:
 	* unix/tclUnixSock.c:
 
 2010-12-09  Donal K. Fellows  <dkf@users.sf.net>
