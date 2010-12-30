@@ -1,4 +1,139 @@
+2010-12-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Fix crash when multiple -index
+	options are used. Simplified memory handling logic.
+
+2010-12-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWin32Dll.c:    [Patch 3059922]: fixes for mingw64 - gcc4.5.1
+	tdm64-1: completed for all environments.
+
+2010-12-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/configure.in:   Explicitely test for intrinsics support in
+	compiler, before assuming only MSVC has it.
+	* win/configure:      (autoconf-2.59)
+	* generic/tclPanic.c:
+
+2010-12-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWin32Dll.c:    [Patch 3059922]: fixes for mingw64 - gcc4.5.1
+	tdm64-1: Fixed for gcc, not yet for MSVC 64-bit.
+
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/Makefile.in:  Remove unwanted/obsolete 'ddd' target.
+
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/Makefile.in:	Clean up '.PHONY:' targets: Arrange those
+				common to Tcl and Tk as in Tk's Makefile.in,
+				add any missing ones and remove duplicates.
+
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/Makefile.in:  [Bug 2446711]: Remove 'allpatch' target.
+
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/Makefile.in:  [Bug 2537626]: Use 'rpmbuild', not 'rpm'.
+
+2010-12-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPanic.c:  [Patch 3124554]: Move WishPanic from Tk to Tcl
+	* win/tclWinFile.c:    Better communication with debugger, if present.
+
+2010-12-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPanic.c:    Restore abort() as it was before.
+	* win/tclWinFile.c:      [Patch 3124554]: Use ExitProcess() here, like
+	in wish.
+
+2010-12-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:	[Bug 3137454]: Tcl CVS HEAD does not build
+	on GCC 3.
+
+2010-12-14  Reinhard Max  <max@suse.de>
+
+	* win/tclWinSock.c (CreateSocket):         Swap the loops over
+	* unix/tclUnixSock.c (CreateClientSocket): local and remote addresses,
+	so that the system's address preference for the remote side decides
+	which family gets tried first. Cleanup and clarify some of the
+	comments.
+
+2010-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:    [Bug 3135271]: Link error due to hidden
+	* unix/tcl.m4:      symbols (CentOS 4.2)
+	* unix/configure:   (autoconf-2.59)
+	* win/tclWinFile.c:  Undocumented feature, only meant to be
+	used by Tk_Main. See [Patch 3124554]: Move WishPanic from Tk to Tcl
+
+2010-12-12  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/tcl.m4: Better building on OpenBSD.
+	* unix/configure: (autoconf-2.59)
+
+2010-12-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:       [Bug 3129448]: Possible over-allocation on
+	* generic/tclCkalloc.c: 64-bit platforms, part 2
+	* generic/tclCompile.c:
+	* generic/tclHash.c:
+	* generic/tclInt.h:
+	* generic/tclIO.h:
+	* generic/tclProc.c:
+
+2010-12-10 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c: Make sure [fcopy -size ... -command ...] always
+	* tests/io.test:   calls the callback asynchronously, even for size
+			   zero.
+
+2010-12-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBinary.c:  Fix gcc -Wextra warning: missing initializer
+	* generic/tclCmdAH.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
+	* generic/tclDictObj.c:
+	* generic/tclIndexObj.c:
+	* generic/tclIOCmd.c:
+	* generic/tclVar.c:
+	* win/tcl.m4:               Fix manifest-generation for 64-bit gcc
+				    (mingw-w64)
+	* win/configure.in:         Check for availability of intptr_t and
+				    uintptr_t
+	* win/configure:            (autoconf-2.59)
+	* generic/tclInt.decls:     Change 1st param of TclSockMinimumBuffers
+	* generic/tclIntDecls.h:    to ClientData, and TclWin(Get|Set)SockOpt
+	* generic/tclIntPlatDecls.h:to SOCKET, because on Win64 those are
+	* generic/tclIOSock.c:	    64-bit, which does not fit.
+	* win/tclWinSock.c:
+	* unix/tclUnixSock.c:
+
 2010-12-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/fCmd.test: Improve sanity of constraints now that we don't
+	support anything before Windows 2000.
+
+	* generic/tclCmdAH.c (TclInitFileCmd, TclMakeFileCommandSafe, ...):
+	Break up [file] into an ensemble. Note that the ensemble is safe in
+	itself, but the majority of its subcommands are not.
+	* generic/tclFCmd.c (FileCopyRename,TclFileDeleteCmd,TclFileAttrsCmd)
+	(TclFileMakeDirsCmd): Adjust these subcommand implementations to work
+	inside an ensemble.
+	(TclFileLinkCmd, TclFileReadLinkCmd, TclFileTemporaryCmd): Move these
+	subcommand implementations from tclCmdAH.c, where they didn't really
+	belong.
+	* generic/tclIOCmd.c (TclChannelNamesCmd): Move to more appropriate
+	source file.
+	* generic/tclEnsemble.c (TclMakeEnsemble): Start of code to make
+	partially-safe ensembles. Currently does not function as expected due
+	to various shortcomings in how safe interpreters are constructed.
+	* tests/cmdAH.test, tests/fCmd.test, tests/interp.test: Test updates
+	to take into account systematization of error messages.
 
 	* tests/append.test, tests/appendComp.test: Clean up tests so that
 	they don't leave things in the global environment (detected when doing

@@ -575,8 +575,11 @@ file for information about building with Mingw.])
 	LDFLAGS_CONSOLE="-mconsole ${extra_ldflags}"
 	LDFLAGS_WINDOW="-mwindows ${extra_ldflags}"
 
-	# gcc under Windows supports only 32bit builds
-	MACHINE="X86"
+	if test "$do64bit" != "no" ; then
+	    MACHINE="AMD64"
+	else
+	    MACHINE="X86"
+	fi
     else
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static

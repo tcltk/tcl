@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.91 2010/08/17 02:16:10 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.92 2010/12/30 14:42:02 dgp Exp $
  */
 
 #ifndef _TCL
@@ -190,7 +190,7 @@ extern "C" {
 #   endif
 #else
 #   define DLLIMPORT
-#   if defined(__GNUC__) && __GNUC__ > 3
+#   if defined(__GNUC__) && !defined(NO_VIZ) && !defined(STATIC_BUILD)
 #       define DLLEXPORT __attribute__ ((visibility("default")))
 #   else
 #       define DLLEXPORT
@@ -1165,7 +1165,7 @@ struct Tcl_HashEntry {
 	int words[1];		/* Multiple integer words for key. The actual
 				 * size will be as large as necessary for this
 				 * table's keys. */
-	char string[4];		/* String for key. The actual size will be as
+	char string[1];		/* String for key. The actual size will be as
 				 * large as needed to hold the key. */
     } key;			/* MUST BE LAST FIELD IN RECORD!! */
 };

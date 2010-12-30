@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74.2.47 2010/12/03 14:50:32 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.48 2010/12/30 14:42:10 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -272,6 +272,28 @@ if test "$tcl_cv_mwmo_alertable" = "no"; then
             [Defined when MWMO_ALERTABLE is missing from winuser.h])
 fi
 
+# See if the compiler supports intrinsics.
+
+AC_CACHE_CHECK(for intrinsics support in compiler,
+    tcl_cv_intrinsics,
+AC_TRY_COMPILE([
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+#include <intrin.h>
+],
+[
+  __cpuidex(0,0,0);
+  __debugbreak();
+],
+        tcl_cv_intrinsics=yes,
+        tcl_cv_intrinsics=no)
+)
+if test "$tcl_cv_intrinsics" = "yes"; then
+    AC_DEFINE(HAVE_INTRIN_H, 1,
+            [Defined when the compilers supports intrinsics])
+fi
+
 #--------------------------------------------------------------------
 # Determines the correct binary file extension (.o, .obj, .exe etc.)
 #--------------------------------------------------------------------
@@ -340,6 +362,37 @@ AS_IF([test "$tcl_ok" = "yes"], [
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
+AC_CHECK_TYPE([intptr_t], [
+    AC_DEFINE([HAVE_INTPTR_T], 1, [Do we have the intptr_t type?])], [
+    AC_CACHE_CHECK([for pointer-size signed integer type], tcl_cv_intptr_t, [
+    for tcl_cv_intptr_t in "int" "long" "long long" none; do
+	if test "$tcl_cv_intptr_t" != none; then
+	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
+		    [[sizeof (void *) <= sizeof ($tcl_cv_intptr_t)]])], 
+		[tcl_ok=yes], [tcl_ok=no])
+	    test "$tcl_ok" = yes && break; fi
+    done])
+    if test "$tcl_cv_intptr_t" != none; then
+	AC_DEFINE_UNQUOTED([intptr_t], [$tcl_cv_intptr_t], [Signed integer
+	   type wide enough to hold a pointer.])
+    fi
+])
+AC_CHECK_TYPE([uintptr_t], [
+    AC_DEFINE([HAVE_UINTPTR_T], 1, [Do we have the uintptr_t type?])], [
+    AC_CACHE_CHECK([for pointer-size unsigned integer type], tcl_cv_uintptr_t, [
+    for tcl_cv_uintptr_t in "unsigned int" "unsigned long" "unsigned long long" \
+	    none; do
+	if test "$tcl_cv_uintptr_t" != none; then
+	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
+		    [[sizeof (void *) <= sizeof ($tcl_cv_uintptr_t)]])], 
+		[tcl_ok=yes], [tcl_ok=no])
+	    test "$tcl_ok" = yes && break; fi
+    done])
+    if test "$tcl_cv_uintptr_t" != none; then
+	AC_DEFINE_UNQUOTED([uintptr_t], [$tcl_cv_uintptr_t], [Unsigned integer
+	   type wide enough to hold a pointer.])
+    fi
+])
 #--------------------------------------------------------------------
 # Set the default compiler switches based on the --enable-symbols
 # option.  This macro depends on C flags, and should be called

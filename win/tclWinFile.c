@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.43 2010/11/03 13:02:53 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.44 2010/12/30 14:42:10 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -175,6 +175,7 @@ static int		WinLink(const TCHAR *LinkSource,
 			    const TCHAR *LinkTarget, int linkAction);
 static int		WinSymLinkDirectory(const TCHAR *LinkDirectory,
 			    const TCHAR *LinkTarget);
+MODULE_SCOPE void tclWinDebugPanic(const char *format, ...);
 
 /*
  *--------------------------------------------------------------------
@@ -784,6 +785,53 @@ NativeWriteReparse(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * tclWinDebugPanic --
+ *
+ *	Display a message. If a debugger is present, present it directly
+ *  to the debugger, otherwise use a MessageBox.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+tclWinDebugPanic(
+    const char *format, ...)
+{
+#define TCL_MAX_WARN_LEN 1024
+    va_list argList;
+    char buf[TCL_MAX_WARN_LEN * TCL_UTF_MAX];
+    WCHAR msgString[TCL_MAX_WARN_LEN];
+
+    va_start(argList, format);
+    vsnprintf(buf, sizeof(buf), format, argList);
+
+    msgString[TCL_MAX_WARN_LEN-1] = L'\0';
+    MultiByteToWideChar(CP_UTF8, 0, buf, -1, msgString, TCL_MAX_WARN_LEN);
+    /*
+     * Truncate MessageBox string if it is too long to not overflow the screen
+     * and cause possible oversized window error.
+     */
+    if (msgString[TCL_MAX_WARN_LEN-1] != L'\0') {
+		memcpy(msgString + (TCL_MAX_WARN_LEN - 5), L" ...", 5 * sizeof(WCHAR));
+	}
+    if (IsDebuggerPresent()) {
+	OutputDebugStringW(msgString);
+    } else {
+    MessageBeep(MB_ICONEXCLAMATION);
+    MessageBoxW(NULL, msgString, L"Fatal Error",
+	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+	}
+}
+
+/*
  *---------------------------------------------------------------------------
  *
  * TclpFindExecutable --
@@ -802,16 +850,18 @@ NativeWriteReparse(
 
 void
 TclpFindExecutable(
-    const char *argv0)		/* The value of the application's argv[0]
-				 * (native). */
+    const char *argv0)		/* If NULL, install PanicMessageBox, otherwise ignore */
 {
     WCHAR wName[MAX_PATH];
     char name[MAX_PATH * TCL_UTF_MAX];
 
     /*
      * Under Windows we ignore argv0, and return the path for the file used to
-     * create this process.
+     * create this process. Only if it is NULL, install a new panic handler.
      */
+    if (argv0 == NULL) {
+	Tcl_SetPanicProc(tclWinDebugPanic);
+    }
 
 #ifdef UNICODE
     GetModuleFileNameW(NULL, wName, MAX_PATH);

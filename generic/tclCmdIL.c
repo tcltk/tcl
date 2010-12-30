@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.70 2010/09/27 20:46:12 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.71 2010/12/30 14:42:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -160,31 +160,31 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  */
 
 static const EnsembleImplMap defaultInfoMap[] = {
-    {"args",		   InfoArgsCmd,		    NULL, NULL, NULL},
-    {"body",		   InfoBodyCmd,		    NULL, NULL, NULL},
-    {"cmdcount",	   InfoCmdCountCmd,	    NULL, NULL, NULL},
-    {"commands",	   InfoCommandsCmd,	    NULL, NULL, NULL},
-    {"complete",	   InfoCompleteCmd,	    NULL, NULL, NULL},
-    {"coroutine",	   TclInfoCoroutineCmd,     NULL, NULL, NULL},
-    {"default",		   InfoDefaultCmd,	    NULL, NULL, NULL},
-    {"errorstack",	   InfoErrorStackCmd,	    NULL, NULL, NULL},
-    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL},
-    {"frame",		   InfoFrameCmd,	    NULL, NULL, NULL},
-    {"functions",	   InfoFunctionsCmd,	    NULL, NULL, NULL},
-    {"globals",		   TclInfoGlobalsCmd,	    NULL, NULL, NULL},
-    {"hostname",	   InfoHostnameCmd,	    NULL, NULL, NULL},
-    {"level",		   InfoLevelCmd,	    NULL, NULL, NULL},
-    {"library",		   InfoLibraryCmd,	    NULL, NULL, NULL},
-    {"loaded",		   InfoLoadedCmd,	    NULL, NULL, NULL},
-    {"locals",		   TclInfoLocalsCmd,	    NULL, NULL, NULL},
-    {"nameofexecutable",   InfoNameOfExecutableCmd, NULL, NULL, NULL},
-    {"patchlevel",	   InfoPatchLevelCmd,	    NULL, NULL, NULL},
-    {"procs",		   InfoProcsCmd,	    NULL, NULL, NULL},
-    {"script",		   InfoScriptCmd,	    NULL, NULL, NULL},
-    {"sharedlibextension", InfoSharedlibCmd,	    NULL, NULL, NULL},
-    {"tclversion",	   InfoTclVersionCmd,	    NULL, NULL, NULL},
-    {"vars",		   TclInfoVarsCmd,	    NULL, NULL, NULL},
-    {NULL, NULL, NULL, NULL, NULL}
+    {"args",		   InfoArgsCmd,		    NULL, NULL, NULL, 0},
+    {"body",		   InfoBodyCmd,		    NULL, NULL, NULL, 0},
+    {"cmdcount",	   InfoCmdCountCmd,	    NULL, NULL, NULL, 0},
+    {"commands",	   InfoCommandsCmd,	    NULL, NULL, NULL, 0},
+    {"complete",	   InfoCompleteCmd,	    NULL, NULL, NULL, 0},
+    {"coroutine",	   TclInfoCoroutineCmd,     NULL, NULL, NULL, 0},
+    {"default",		   InfoDefaultCmd,	    NULL, NULL, NULL, 0},
+    {"errorstack",	   InfoErrorStackCmd,	    NULL, NULL, NULL, 0},
+    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL, 0},
+    {"frame",		   InfoFrameCmd,	    NULL, NULL, NULL, 0},
+    {"functions",	   InfoFunctionsCmd,	    NULL, NULL, NULL, 0},
+    {"globals",		   TclInfoGlobalsCmd,	    NULL, NULL, NULL, 0},
+    {"hostname",	   InfoHostnameCmd,	    NULL, NULL, NULL, 0},
+    {"level",		   InfoLevelCmd,	    NULL, NULL, NULL, 0},
+    {"library",		   InfoLibraryCmd,	    NULL, NULL, NULL, 0},
+    {"loaded",		   InfoLoadedCmd,	    NULL, NULL, NULL, 0},
+    {"locals",		   TclInfoLocalsCmd,	    NULL, NULL, NULL, 0},
+    {"nameofexecutable",   InfoNameOfExecutableCmd, NULL, NULL, NULL, 0},
+    {"patchlevel",	   InfoPatchLevelCmd,	    NULL, NULL, NULL, 0},
+    {"procs",		   InfoProcsCmd,	    NULL, NULL, NULL, 0},
+    {"script",		   InfoScriptCmd,	    NULL, NULL, NULL, 0},
+    {"sharedlibextension", InfoSharedlibCmd,	    NULL, NULL, NULL, 0},
+    {"tclversion",	   InfoTclVersionCmd,	    NULL, NULL, NULL, 0},
+    {"vars",		   TclInfoVarsCmd,	    NULL, NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /*
@@ -3640,6 +3640,7 @@ Tcl_LsortObjCmd(
     group = 0;
     groupSize = 1;
     groupOffset = 0;
+    indexPtr = NULL;
     for (i = 1; i < objc-1; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0,
 		&index) != TCL_OK) {
@@ -3672,66 +3673,40 @@ Tcl_LsortObjCmd(
 	    sortInfo.isIncreasing = 1;
 	    break;
 	case LSORT_INDEX: {
+            int indexc, dummy;
 	    Tcl_Obj **indexv;
 
-	    /* === START SPECIAL CASE ===
-	     *
-	     * When reviewing code flow in this function, note that from here
-	     * to the line a bit below (END SPECIAL CASE) the contents of the
-	     * indexc and indexv fields of the sortInfo structure may not be
-	     * matched, so jumping to the done2 label to exit is wrong.
-	     */
-
-	    if (sortInfo.indexc > 1) {
-		TclStackFree(interp, sortInfo.indexv);
-	    }
 	    if (i == objc-2) {
 		Tcl_AppendResult(interp, "\"-index\" option must be "
 			"followed by list index", NULL);
-		return TCL_ERROR;
+                sortInfo.resultCode = TCL_ERROR;
+                goto done2;
 	    }
-
-	    /*
-	     * Take copy to prevent shimmering problems.
-	     */
-
-	    if (TclListObjGetElements(interp, objv[i+1], &sortInfo.indexc,
+	    if (TclListObjGetElements(interp, objv[i+1], &indexc,
 		    &indexv) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    /* === END SPECIAL CASE === */
-
-	    switch (sortInfo.indexc) {
-	    case 0:
-		sortInfo.indexv = NULL;
-		break;
-	    case 1:
-		sortInfo.indexv = &sortInfo.singleIndex;
-		break;
-	    default:
-		sortInfo.indexv =
-			TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
-		allocatedIndexVector = 1;	/* Cannot use indexc field, as
-						 * it might be decreased by 1
-						 * later. */
+                sortInfo.resultCode = TCL_ERROR;
+                goto done2;
 	    }
 
-	    /*
-	     * Fill the array by parsing each index. We don't know whether
-	     * their scale is sensible yet, but we at least perform the
-	     * syntactic check here.
-	     */
+            /*
+             * Check each of the indices for syntactic correctness. Note that
+             * we do not store the converted values here because we do not
+             * know if this is the only -index option yet and so we can't
+             * allocate any space; that happens after the scan through all the
+             * options is done.
+             */
 
-	    for (j=0 ; j<sortInfo.indexc ; j++) {
+	    for (j=0 ; j<indexc ; j++) {
 		if (TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
-			&sortInfo.indexv[j]) != TCL_OK) {
+			&dummy) != TCL_OK) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
 		    sortInfo.resultCode = TCL_ERROR;
 		    goto done2;
 		}
 	    }
-	    i++;
+	    indexPtr = objv[i+1];
+            i++;
 	    break;
 	}
 	case LSORT_INTEGER:
@@ -3773,6 +3748,35 @@ Tcl_LsortObjCmd(
     }
     if (nocase && (sortInfo.sortMode == SORTMODE_ASCII)) {
 	sortInfo.sortMode = SORTMODE_ASCII_NC;
+    }
+
+    /*
+     * Now extract the -index list for real, if present. No failures are
+     * expected here; the values are all of the right type or convertible to
+     * it.
+     */
+
+    if (indexPtr) {
+        Tcl_Obj **indexv;
+
+        TclListObjGetElements(interp, indexPtr, &sortInfo.indexc, &indexv);
+        switch (sortInfo.indexc) {
+        case 0:
+            sortInfo.indexv = NULL;
+            break;
+        case 1:
+            sortInfo.indexv = &sortInfo.singleIndex;
+            break;
+        default:
+            sortInfo.indexv =
+		    TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
+            allocatedIndexVector = 1;	/* Cannot use indexc field, as it
+                                         * might be decreased by 1 later. */
+        }
+        for (j=0 ; j<sortInfo.indexc ; j++) {
+            TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
+		    &sortInfo.indexv[j]);
+        }
     }
 
     listObj = objv[objc-1];

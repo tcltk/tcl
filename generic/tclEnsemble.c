@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnsemble.c,v 1.3.2.4 2010/03/06 03:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclEnsemble.c,v 1.3.2.5 2010/12/30 14:42:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1417,16 +1417,21 @@ TclMakeEnsemble(
 {
     Tcl_Command ensemble;
     Tcl_Namespace *ns;
-    Tcl_DString buf;
+    Tcl_DString buf, hiddenBuf;
     const char **nameParts = NULL;
     const char *cmdName = NULL;
-    int i, nameCount = 0, ensembleFlags = 0;
+    int i, nameCount = 0, ensembleFlags = 0, hiddenLen;
 
     /*
      * Construct the path for the ensemble namespace and create it.
      */
 
     Tcl_DStringInit(&buf);
+    Tcl_DStringInit(&hiddenBuf);
+    Tcl_DStringAppend(&hiddenBuf, "tcl:", -1);
+    Tcl_DStringAppend(&hiddenBuf, name, -1);
+    Tcl_DStringAppend(&hiddenBuf, ":", -1);
+    hiddenLen = Tcl_DStringLength(&hiddenBuf);
     if (name[0] == ':' && name[1] == ':') {
 	/*
 	 * An absolute name, so use it directly.
@@ -1491,10 +1496,35 @@ TclMakeEnsemble(
 		    Tcl_DStringLength(&buf));
 	    Tcl_AppendToObj(toObj, map[i].name, -1);
 	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
+
 	    if (map[i].proc || map[i].nreProc) {
-		cmdPtr = (Command *)
-			Tcl_NRCreateCommand(interp, TclGetString(toObj),
-			map[i].proc, map[i].nreProc, map[i].clientData, NULL);
+		/*
+		 * If the command is unsafe, hide it when we're in a safe
+		 * interpreter. The code to do this is really hokey! It also
+		 * doesn't work properly yet; this function is always
+		 * currently called before the safe-interp flag is set so the
+		 * Tcl_IsSafe check fails.
+		 */
+
+		if (map[i].unsafe && Tcl_IsSafe(interp)) {
+		    cmdPtr = (Command *)
+			    Tcl_NRCreateCommand(interp, "___tmp", map[i].proc,
+			    map[i].nreProc, map[i].clientData, NULL);
+		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
+		    if (Tcl_HideCommand(interp, "___tmp",
+			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
+			Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+		    }
+		} else {
+		    /*
+		     * Not hidden, so just create it. Yay!
+		     */
+
+		    cmdPtr = (Command *)
+			    Tcl_NRCreateCommand(interp, TclGetString(toObj),
+			    map[i].proc, map[i].nreProc, map[i].clientData,
+			    NULL);
+		}
 		cmdPtr->compileProc = map[i].compileProc;
 		if (map[i].compileProc != NULL) {
 		    ensembleFlags |= ENSEMBLE_COMPILE;
@@ -1508,6 +1538,7 @@ TclMakeEnsemble(
     }
 
     Tcl_DStringFree(&buf);
+    Tcl_DStringFree(&hiddenBuf);
     if (nameParts != NULL) {
 	Tcl_Free((char *) nameParts);
     }

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.67 2010/09/27 20:46:13 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.68 2010/12/30 14:42:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -622,8 +622,7 @@ TclCreateProc(
 	     */
 
 	    localPtr = (CompiledLocal *) ckalloc((unsigned)
-		    (sizeof(CompiledLocal) - sizeof(localPtr->name)
-			    + nameLength + 1));
+		    (TclOffset(CompiledLocal, name) + nameLength + 1));
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -643,7 +642,7 @@ TclCreateProc(
 	    } else {
 		localPtr->defValuePtr = NULL;
 	    }
-	    strcpy(localPtr->name, fieldValues[0]);
+	    memcpy(localPtr->name, fieldValues[0], nameLength + 1);
 	    if ((i == numArgs - 1)
 		    && (localPtr->nameLength == 4)
 		    && (localPtr->name[0] == 'a')

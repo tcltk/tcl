@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.5.6.11 2010/03/20 15:58:37 dgp Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.5.6.12 2010/12/30 14:42:03 dgp Exp $
  */
 
 /*
@@ -65,13 +65,13 @@ typedef struct ChannelBuffer {
     int bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
     				/* Next buffer in chain. */
-    char buf[4];		/* Placeholder for real buffer. The real
-				 * buffer occuppies this space + bufSize-4
+    char buf[1];		/* Placeholder for real buffer. The real
+				 * buffer occuppies this space + bufSize-1
 				 * bytes. This must be the last field in the
 				 * structure. */
 } ChannelBuffer;
 
-#define CHANNELBUFFER_HEADER_SIZE	(sizeof(ChannelBuffer) - 4)
+#define CHANNELBUFFER_HEADER_SIZE	TclOffset(ChannelBuffer, buf)
 
 /*
  * How much extra space to allocate in buffer to hold bytes from previous
