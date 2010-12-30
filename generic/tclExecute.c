@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.510 2010/11/15 21:34:54 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.511 2010/12/30 23:10:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1062,14 +1062,14 @@ GrowEvaluationStack(
 
     /*
      * Reset move to hold the number of words to be moved to new stack (if
-     * any) and growth to hold the complete stack requirements: add the marker
-     * and maximal possible offset.
+     * any) and growth to hold the complete stack requirements: add one for
+     * the marker, (WALLOCALIGN-1) for the maximal possible offset.
      */
 
     if (move) {
 	moveWords = esPtr->tosPtr - MEMSTART(markerPtr) + 1;
     }
-    needed = growth + moveWords + WALLOCALIGN - 1;
+    needed = growth + moveWords + WALLOCALIGN;
 
     /*
      * Check if there is enough room in the next stack (if there is one, it

@@ -1,3 +1,10 @@
+2010-12-30  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (GrowEvaluationStack): off-by-one error in
+	sizing the new allocation - was ok in comment but wrong in the 
+	code. Triggered by [Bug 3142026] which happened to require
+	exactly one more than what was in existence.
+
 2010-12-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Fix crash when multiple -index
