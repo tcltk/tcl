@@ -1,3 +1,12 @@
+2010-12-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclHash.c: [Bug 3007895]: Tcl_(Find|Create)HashEntry
+	stub entries can never be called. They still cannot be called
+	(no change in functionality), but at least they now do
+	exactly the same as the Tcl_(Find|Create)HashEntry macro's,
+	so the confusion addressed in this Bug report is gone.
+	(Backported from Tcl 8.6)
+
 2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
 
 	* unix/Makefile.in:  Remove unwanted/obsolete 'ddd' target.
