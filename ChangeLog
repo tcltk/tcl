@@ -1,3 +1,8 @@
+2010-12-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/dltest/*.c:  Fix [Bug 3148192]: [load] broken. Assure that
+	those files are never compiled with -DSTATIC_BUILD
+
 2010-12-30  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c (GrowEvaluationStack): off-by-one error in
