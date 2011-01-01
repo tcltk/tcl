@@ -1,5 +1,15 @@
 2011-01-01  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tests/cmdAH.test, tests/cmdMZ.test, tests/compExpr.test,
+	* tests/compile.test, tests/concat.test, tests/eval.test,
+	* tests/fileName.test, tests/fileSystem.test, tests/interp.test,
+	* tests/lsearch.test, tests/namespace-old.test, tests/namespace.test,
+	* tests/oo.test, tests/proc.test, tests/security.test,
+	* tests/switch.test, tests/unixInit.test, tests/var.test,
+	* tests/winDde.test, tests/winPipe.test: Clean up of tests and
+	conversion to tcltest 2. Target has been to get init and cleanup code
+	out of the test body and into the -setup/-cleanup stanzas.
+
 	* tests/execute.test (execute-11.1): [Bug 3142026]: Added test that
 	fails (with a crash) in an unfixed memdebug build on 64-bit systems.
 
