@@ -1,3 +1,8 @@
+2011-01-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/execute.test (execute-11.1): [Bug 3142026]: Added test that
+	fails (with a crash) in an unfixed memdebug build on 64-bit systems.
+
 2010-12-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c (SortElement): Use unions properly in the
