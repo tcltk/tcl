@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.22.2.4 2010/02/07 22:16:54 nijtmans Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.22.2.5 2011/01/03 10:08:22 nijtmans Exp $
 
 package require Tcl 8.4
 
@@ -135,10 +135,15 @@ proc genStubs::declare {args} {
     variable stubs
     variable curName
 
-    if {[llength $args] != 3} {
+    if {[llength $args] == 2} {
+	lassign $args index decl
+	set platformList generic
+    } elseif {[llength $args] == 3} {
+	lassign $args index platformList decl
+    } else {
 	puts stderr "wrong # args: declare $args"
+	return
     }
-    lassign $args index platformList decl
 
     # Check for duplicate declarations, then add the declaration and
     # bump the lastNum counter if necessary.
