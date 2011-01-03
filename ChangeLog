@@ -1,3 +1,8 @@
+2011-01-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:  Fix "make genstubs", which was broken
+	since 2010-11-30, the TclDoubleDigits backport.
+
 2010-12-31  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclHash.c: [Bug 3007895]: Tcl_(Find|Create)HashEntry
