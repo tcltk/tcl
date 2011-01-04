@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.71 2010/12/30 14:42:03 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.72 2011/01/04 16:21:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -29,13 +29,16 @@
  */
 
 typedef struct SortElement {
-    union {
+    union {                     /* The value that we sorting by. */
 	const char *strValuePtr;
 	long intValue;
 	double doubleValue;
 	Tcl_Obj *objValuePtr;
-    } index;
-    Tcl_Obj *objPtr;		/* Object being sorted, or its index. */
+    } collationKey;
+    union {             	/* Object being sorted, or its index. */
+        Tcl_Obj *objPtr;
+        int index;
+    } payload;
     struct SortElement *nextPtr;/* Next element in the list, or NULL for end
 				 * of list. */
 } SortElement;
@@ -3922,7 +3925,7 @@ Tcl_LsortObjCmd(
 	 */
 
 	if (sortMode == SORTMODE_ASCII) {
-	    elementArray[i].index.strValuePtr = TclGetString(indexPtr);
+	    elementArray[i].collationKey.strValuePtr = TclGetString(indexPtr);
 	} else if (sortMode == SORTMODE_INTEGER) {
 	    long a;
 
@@ -3930,7 +3933,7 @@ Tcl_LsortObjCmd(
 		sortInfo.resultCode = TCL_ERROR;
 		goto done1;
 	    }
-	    elementArray[i].index.intValue = a;
+	    elementArray[i].collationKey.intValue = a;
 	} else if (sortInfo.sortMode == SORTMODE_REAL) {
 	    double a;
 
@@ -3939,9 +3942,9 @@ Tcl_LsortObjCmd(
 		sortInfo.resultCode = TCL_ERROR;
 		goto done1;
 	    }
-	    elementArray[i].index.doubleValue = a;
+	    elementArray[i].collationKey.doubleValue = a;
 	} else {
-	    elementArray[i].index.objValuePtr = indexPtr;
+	    elementArray[i].collationKey.objValuePtr = indexPtr;
 	}
 
 	/*
@@ -3950,9 +3953,9 @@ Tcl_LsortObjCmd(
 	 */
 
 	if (indices || group) {
-	    elementArray[i].objPtr = INT2PTR(idx);
+	    elementArray[i].payload.index = idx;
 	} else {
-	    elementArray[i].objPtr = listObjPtrs[idx];
+	    elementArray[i].payload.objPtr = listObjPtrs[idx];
 	}
 
 	/*
@@ -3994,7 +3997,7 @@ Tcl_LsortObjCmd(
 	newArray = &listRepPtr->elements;
 	if (group) {
 	    for (i=0; elementPtr!=NULL ; elementPtr=elementPtr->nextPtr) {
-		idx = PTR2INT(elementPtr->objPtr);
+		idx = elementPtr->payload.index;
 		for (j = 0; j < groupSize; j++) {
 		    if (indices) {
 			objPtr = Tcl_NewIntObj(idx + j - groupOffset);
@@ -4009,13 +4012,13 @@ Tcl_LsortObjCmd(
 	    }
 	} else if (indices) {
 	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
-		objPtr = Tcl_NewIntObj(PTR2INT(elementPtr->objPtr));
+		objPtr = Tcl_NewIntObj(elementPtr->payload.index);
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }
 	} else {
 	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
-		objPtr = elementPtr->objPtr;
+		objPtr = elementPtr->payload.objPtr;
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }
@@ -4170,25 +4173,25 @@ SortCompare(
     int order = 0;
 
     if (infoPtr->sortMode == SORTMODE_ASCII) {
-	order = strcmp(elemPtr1->index.strValuePtr,
-		elemPtr2->index.strValuePtr);
+	order = strcmp(elemPtr1->collationKey.strValuePtr,
+		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_ASCII_NC) {
-	order = strcasecmp(elemPtr1->index.strValuePtr,
-		elemPtr2->index.strValuePtr);
+	order = strcasecmp(elemPtr1->collationKey.strValuePtr,
+		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_DICTIONARY) {
-	order = DictionaryCompare(elemPtr1->index.strValuePtr,
-		elemPtr2->index.strValuePtr);
+	order = DictionaryCompare(elemPtr1->collationKey.strValuePtr,
+		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_INTEGER) {
 	long a, b;
 
-	a = elemPtr1->index.intValue;
-	b = elemPtr2->index.intValue;
+	a = elemPtr1->collationKey.intValue;
+	b = elemPtr2->collationKey.intValue;
 	order = ((a >= b) - (a <= b));
     } else if (infoPtr->sortMode == SORTMODE_REAL) {
 	double a, b;
 
-	a = elemPtr1->index.doubleValue;
-	b = elemPtr2->index.doubleValue;
+	a = elemPtr1->collationKey.doubleValue;
+	b = elemPtr2->collationKey.doubleValue;
 	order = ((a >= b) - (a <= b));
     } else {
 	Tcl_Obj **objv, *paramObjv[2];
@@ -4205,8 +4208,8 @@ SortCompare(
 	}
 
 
-	objPtr1 = elemPtr1->index.objValuePtr;
-	objPtr2 = elemPtr2->index.objValuePtr;
+	objPtr1 = elemPtr1->collationKey.objValuePtr;
+	objPtr2 = elemPtr2->collationKey.objValuePtr;
 
 	paramObjv[0] = objPtr1;
 	paramObjv[1] = objPtr2;

@@ -10,9 +10,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22.2.30 2010/12/30 14:42:05 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.31 2011/01/04 16:21:14 dgp Exp $
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
@@ -147,7 +147,7 @@ test interp-3.8 {testing interp exists and interp slaves} -body {
 } -returnCodes error -result {wrong # args: should be "interp slaves ?path?"}
 test interp-3.9 {testing interp exists and interp slaves} {
     interp create {a a2} -safe
-    expr {[lsearch [interp slaves a] a2] >= 0}
+    expr {"a2" in [interp slaves a]}
 } 1
 test interp-3.10 {testing interp exists and interp slaves} {
     interp exists {a a2}
@@ -174,7 +174,7 @@ test interp-4.5 {testing interp delete} {
     interp create a
     interp create {a x1}
     interp delete {a x1}
-    expr {[lsearch [interp slaves a] x1] >= 0}
+    expr {"x1" in [interp slaves a]}
 } 0
 test interp-4.6 {testing interp delete} {
     interp create c1

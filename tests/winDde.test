@@ -9,9 +9,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.16.2.7 2005/01/12 21:36:43 dgp Exp $
+# RCS: @(#) $Id: winDde.test,v 1.16.2.8 2011/01/04 16:21:14 dgp Exp $
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     #tcltest::configure -verbose {pass start}
     namespace import -force ::tcltest::*
@@ -49,7 +49,7 @@ proc createChildProcess { ddeServerName {handler {}}} {
     puts $f {
         # DDE child server -
         #
-	if {[lsearch [namespace children] ::tcltest] == -1} {
+	if {"::tcltest" ni [namespace children]} {
 	    package require tcltest
 	    namespace import -force ::tcltest::*
 	}
@@ -267,7 +267,7 @@ test winDde-7.2 {DDE slave cleanup} -constraints {win dde} -setup {
     dde services TclEval {}
     set s [dde services TclEval {}]
     set m [list [list TclEval dde-interp-7.5]]
-    if {[lsearch -exact $s $m] != -1} {
+    if {$m in $s} {
 	set s
     }
 } -result {}

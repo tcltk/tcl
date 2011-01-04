@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.22.2.12 2010/12/09 15:39:43 dgp Exp $
+# RCS: @(#) $Id: var.test,v 1.22.2.13 2011/01/04 16:21:14 dgp Exp $
 #
 
 if {"::tcltest" ni [namespace children]} {
@@ -118,9 +118,9 @@ test var-1.14 {TclLookupVar, namespace code ignores ":"s in middle and end of va
         set x:y: 789
         list [set :] [set v:] [set x:y:] \
              ${:} ${v:} ${x:y:} \
-             [expr {[lsearch [info vars] :] != -1}] \
-             [expr {[lsearch [info vars] v:] != -1}] \
-             [expr {[lsearch [info vars] x:y:] != -1}]
+             [expr {":" in [info vars]}] \
+             [expr {"v:" in [info vars]}] \
+             [expr {"x:y:" in [info vars]}]
     }
 } {123 456 789 123 456 789 1 1 1}
 test var-1.15 {TclLookupVar, resurrect variable via upvar to deleted namespace: compiled code path} {
