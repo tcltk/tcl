@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.10.6.10 2010/11/29 13:32:22 dgp Exp $
+# RCS: @(#) $Id: util.test,v 1.10.6.11 2011/01/10 15:24:49 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1901,6 +1901,94 @@ test util-14.2 {funky NaN} {*}{
 	set ieeeValues(-NaN(3456789abcdef))
     }
     -result -NaN(3456789abcdef)
+}
+
+test util-15.1 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format w 0x000fffffffffffff] q x
+	set x
+    }
+    -result 2.225073858507201e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.2 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format w 0x800fffffffffffff] q x
+	set x
+    }
+    -result -2.225073858507201e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.3 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format q 2.225073858507201e-308] w x
+	format %#lx $x
+    }
+    -result 0xfffffffffffff
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.4 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format q -2.225073858507201e-308] w x
+	format %#lx $x
+    }
+    -result 0x800fffffffffffff
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.5 {smallest normal} {*}{
+    -body {
+	binary scan [binary format w 0x0010000000000000] q x
+	set x
+    }
+    -result 2.2250738585072014e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.6 {smallest normal} {*}{
+    -body {
+	binary scan [binary format w 0x8010000000000000] q x
+	set x
+    }
+    -result -2.2250738585072014e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.7 {smallest normal} {*}{
+    -body {
+	binary scan [binary format q 2.2250738585072014e-308] w x
+	format %#lx $x
+    }
+    -result 0x10000000000000
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.8 {smallest normal} {*}{
+    -body {
+	binary scan [binary format q -2.2250738585072014e-308] w x
+	format %#lx $x
+    }
+    -result 0x8010000000000000
+    -cleanup {
+	unset x
+    }
 }
 
 # cleanup
