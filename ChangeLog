@@ -1,3 +1,8 @@
+2011-01-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c:  Use _vsnprintf in stead of vsnprintf, because
+	MSVC 6 doesn't have it. Reported by andreask.
+
 2011-01-07  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/util.test (util-15.*): Added test cases for floating point
