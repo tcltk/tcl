@@ -1,8 +1,11 @@
 2011-01-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinFile.c:  Use _vsnprintf in stead of vsnprintf, because
+	* win/tclWinFile.c:   Use _vsnprintf in stead of vsnprintf, because
 	MSVC 6 doesn't have it. Reported by andreask.
-	* win/tclWin32Dll.c: VS 2005 64-bit does not have intrin.h, and
+	* win/tcl.m4:         handle --enable-64bit=ia64 for gcc
+	* win/configure.in:   more accurate test for correct <intrin.h>
+	* win/configure:      (autoconf-2.59)
+	* win/tclWin32Dll.c:  VS 2005 64-bit does not have intrin.h, and
 	* generic/tclPanic.c: does not need it.
 
 2011-01-07  Kevin B. Kenny  <kennykb@acm.org>
