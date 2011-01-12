@@ -10,11 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.73 2010/12/21 10:04:59 nijtmans Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.74 2011/01/12 07:37:41 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
-#if defined(HAVE_INTRIN_H) || (defined(_MSC_VER) && defined(_WIN64))
+#if defined(HAVE_INTRIN_H)
 #   include <intrin.h>
 #endif
 
