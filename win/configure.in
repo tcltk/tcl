@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74.2.48 2010/12/30 14:42:10 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.49 2011/01/12 20:30:17 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -276,7 +276,7 @@ fi
 
 AC_CACHE_CHECK(for intrinsics support in compiler,
     tcl_cv_intrinsics,
-AC_TRY_COMPILE([
+AC_TRY_LINK([
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
@@ -284,7 +284,6 @@ AC_TRY_COMPILE([
 ],
 [
   __cpuidex(0,0,0);
-  __debugbreak();
 ],
         tcl_cv_intrinsics=yes,
         tcl_cv_intrinsics=no)

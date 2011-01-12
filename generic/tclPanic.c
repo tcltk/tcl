@@ -12,14 +12,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPanic.c,v 1.4.14.10 2010/12/30 14:42:04 dgp Exp $
+ * RCS: @(#) $Id: tclPanic.c,v 1.4.14.11 2011/01/12 20:30:17 dgp Exp $
  */
 
 #include "tclInt.h"
 #ifdef _WIN32
-#   ifdef HAVE_INTRIN_H
-#	include <intrin.h>
-#   endif
     MODULE_SCOPE void tclWinDebugPanic(const char *format, ...);
 #endif
 
@@ -106,10 +103,12 @@ Tcl_PanicVA(
     }
     /* In case the users panic proc does not abort, we do it here */
 #ifdef _WIN32
-#   ifdef HAVE_INTRIN_H
-    __debugbreak();
-#   elif defined(__GNUC__)
+#   if defined(__GNUC__)
     __builtin_trap();
+#   elif defined(_WIN64)
+    __debugbreak();
+#   elif defined(_MSC_VER)
+    _asm {int 3}
 #   else
     DebugBreak();
 #   endif

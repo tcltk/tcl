@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.44 2010/12/30 14:42:10 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.45 2011/01/12 20:30:17 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -811,7 +811,7 @@ tclWinDebugPanic(
     WCHAR msgString[TCL_MAX_WARN_LEN];
 
     va_start(argList, format);
-    vsnprintf(buf, sizeof(buf), format, argList);
+    _vsnprintf(buf, sizeof(buf), format, argList);
 
     msgString[TCL_MAX_WARN_LEN-1] = L'\0';
     MultiByteToWideChar(CP_UTF8, 0, buf, -1, msgString, TCL_MAX_WARN_LEN);
