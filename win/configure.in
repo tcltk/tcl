@@ -276,7 +276,7 @@ fi
 
 AC_CACHE_CHECK(for intrinsics support in compiler,
     tcl_cv_intrinsics,
-AC_TRY_COMPILE([
+AC_TRY_LINK([
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
@@ -284,7 +284,6 @@ AC_TRY_COMPILE([
 ],
 [
   __cpuidex(0,0,0);
-  __debugbreak();
 ],
         tcl_cv_intrinsics=yes,
         tcl_cv_intrinsics=no)

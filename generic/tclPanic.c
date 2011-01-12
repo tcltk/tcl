@@ -17,9 +17,6 @@
 
 #include "tclInt.h"
 #ifdef _WIN32
-#   ifdef HAVE_INTRIN_H
-#	include <intrin.h>
-#   endif
     MODULE_SCOPE void tclWinDebugPanic(const char *format, ...);
 #endif
 
@@ -106,10 +103,12 @@ Tcl_PanicVA(
     }
     /* In case the users panic proc does not abort, we do it here */
 #ifdef _WIN32
-#   ifdef HAVE_INTRIN_H
-    __debugbreak();
-#   elif defined(__GNUC__)
+#   if defined(__GNUC__)
     __builtin_trap();
+#   elif defined(_WIN64)
+    __debugbreak();
+#   elif defined(_MSC_VER)
+    _asm {int 3}
 #   else
     DebugBreak();
 #   endif

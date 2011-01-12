@@ -14,7 +14,7 @@
  */
 
 #include "tclWinInt.h"
-#if defined(HAVE_INTRIN_H) || (defined(_MSC_VER) && defined(_WIN64))
+#if defined(HAVE_INTRIN_H)
 #   include <intrin.h>
 #endif
 

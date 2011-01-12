@@ -1903,6 +1903,94 @@ test util-14.2 {funky NaN} {*}{
     -result -NaN(3456789abcdef)
 }
 
+test util-15.1 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format w 0x000fffffffffffff] q x
+	set x
+    }
+    -result 2.225073858507201e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.2 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format w 0x800fffffffffffff] q x
+	set x
+    }
+    -result -2.225073858507201e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.3 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format q 2.225073858507201e-308] w x
+	format %#lx $x
+    }
+    -result 0xfffffffffffff
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.4 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format q -2.225073858507201e-308] w x
+	format %#lx $x
+    }
+    -result 0x800fffffffffffff
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.5 {smallest normal} {*}{
+    -body {
+	binary scan [binary format w 0x0010000000000000] q x
+	set x
+    }
+    -result 2.2250738585072014e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.6 {smallest normal} {*}{
+    -body {
+	binary scan [binary format w 0x8010000000000000] q x
+	set x
+    }
+    -result -2.2250738585072014e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.7 {smallest normal} {*}{
+    -body {
+	binary scan [binary format q 2.2250738585072014e-308] w x
+	format %#lx $x
+    }
+    -result 0x10000000000000
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.8 {smallest normal} {*}{
+    -body {
+	binary scan [binary format q -2.2250738585072014e-308] w x
+	format %#lx $x
+    }
+    -result 0x8010000000000000
+    -cleanup {
+	unset x
+    }
+}
+
 # cleanup
 ::tcltest::cleanupTests
 return
