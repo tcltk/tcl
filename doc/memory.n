@@ -3,7 +3,7 @@
 '\" Copyright (c) 2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: memory.n,v 1.14 2009/06/18 09:41:30 dkf Exp $
+'\" RCS: @(#) $Id: memory.n,v 1.12 2008/01/18 15:51:08 dkf Exp $
 '\" 
 .so man.macros
 .TH memory n 8.1 Tcl "Tcl Built-In Commands"

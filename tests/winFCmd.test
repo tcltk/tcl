@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.46 2009/11/10 20:40:06 patthoyts Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.43 2008/04/10 00:21:02 dkf Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {

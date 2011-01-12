@@ -10,7 +10,7 @@
  * no representations about the suitability of this software for any purpose.
  * It is provided "as is" without express or implied warranty.
  *
- * RCS: @(#) $Id: unistd.h,v 1.5 2010/04/29 09:23:57 nijtmans Exp $
+ * RCS: @(#) $Id: unistd.h,v 1.4 2008/05/04 07:28:47 nijtmans Exp $
  */
 
 #ifndef _UNISTD

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathInterface.c,v 1.16 2010/08/31 20:48:17 nijtmans Exp $
+ * RCS: @(#) $Id: tclTomMathInterface.c,v 1.11 2008/04/16 14:49:29 das Exp $
  */
 
 #include "tclInt.h"

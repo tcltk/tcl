@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.71 2010/12/10 13:08:54 nijtmans Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.54 2008/06/06 19:46:36 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1957,26 +1957,26 @@ TclInitChanCmd(
      * function at the moment.
      */
     static const EnsembleImplMap initMap[] = {
-	{"blocked",	Tcl_FblockedObjCmd, NULL, NULL, NULL, 0},
-	{"close",	Tcl_CloseObjCmd, NULL, NULL, NULL, 0},
-	{"copy",	Tcl_FcopyObjCmd, NULL, NULL, NULL, 0},
-	{"create",	TclChanCreateObjCmd, NULL, NULL, NULL, 0},		/* TIP #219 */
-	{"eof",		Tcl_EofObjCmd, NULL, NULL, NULL, 0},
-	{"event",	Tcl_FileEventObjCmd, NULL, NULL, NULL, 0},
-	{"flush",	Tcl_FlushObjCmd, NULL, NULL, NULL, 0},
-	{"gets",	Tcl_GetsObjCmd, NULL, NULL, NULL, 0},
-	{"names",	TclChannelNamesCmd, NULL, NULL, NULL, 0},
-	{"pending",	ChanPendingObjCmd, NULL, NULL, NULL, 0},		/* TIP #287 */
-	{"pop",		TclChanPopObjCmd, NULL, NULL, NULL, 0},		/* TIP #230 */
-	{"postevent",	TclChanPostEventObjCmd, NULL, NULL, NULL, 0},	/* TIP #219 */
-	{"push",	TclChanPushObjCmd, NULL, NULL, NULL, 0},		/* TIP #230 */
-	{"puts",	Tcl_PutsObjCmd, NULL, NULL, NULL, 0},
-	{"read",	Tcl_ReadObjCmd, NULL, NULL, NULL, 0},
-	{"seek",	Tcl_SeekObjCmd, NULL, NULL, NULL, 0},
-	{"pipe",	ChanPipeObjCmd, NULL, NULL, NULL, 0},		/* TIP #304 */
-	{"tell",	Tcl_TellObjCmd, NULL, NULL, NULL, 0},
-	{"truncate",	ChanTruncateObjCmd, NULL, NULL, NULL, 0},		/* TIP #208 */
-	{NULL, NULL, NULL, NULL, NULL, 0}
+	{"blocked",	Tcl_FblockedObjCmd, NULL, NULL, 0},
+	{"close",	Tcl_CloseObjCmd, NULL, NULL, 0},
+	{"copy",	Tcl_FcopyObjCmd, NULL, NULL, 0},
+	{"create",	TclChanCreateObjCmd, NULL, NULL, 0},		/* TIP #219 */
+	{"eof",		Tcl_EofObjCmd, NULL, NULL, 0},
+	{"event",	Tcl_FileEventObjCmd, NULL, NULL, 0},
+	{"flush",	Tcl_FlushObjCmd, NULL, NULL, 0},
+	{"gets",	Tcl_GetsObjCmd, NULL, NULL, 0},
+	{"names",	TclChannelNamesCmd, NULL, NULL, 0},
+	{"pending",	ChanPendingObjCmd, NULL, NULL, 0},		/* TIP #287 */
+	{"pop",		TclChanPopObjCmd, NULL, NULL, 0},		/* TIP #230 */
+	{"postevent",	TclChanPostEventObjCmd, NULL, NULL, 0},	/* TIP #219 */
+	{"push",	TclChanPushObjCmd, NULL, NULL, 0},		/* TIP #230 */
+	{"puts",	Tcl_PutsObjCmd, NULL, NULL, 0},
+	{"read",	Tcl_ReadObjCmd, NULL, NULL, 0},
+	{"seek",	Tcl_SeekObjCmd, NULL, NULL, 0},
+	{"pipe",	ChanPipeObjCmd, NULL, NULL, 0},		/* TIP #304 */
+	{"tell",	Tcl_TellObjCmd, NULL, NULL, 0},
+	{"truncate",	ChanTruncateObjCmd, NULL, NULL, 0},		/* TIP #208 */
+	{NULL, NULL, NULL, NULL, 0}
     };
     static const char *const extras[] = {
 	"configure",	"::fconfigure",

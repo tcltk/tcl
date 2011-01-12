@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.53 2011/01/01 15:14:43 dkf Exp $
+# RCS: @(#) $Id: compile.test,v 1.48 2007/12/13 15:26:06 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*

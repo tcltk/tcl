@@ -6,7 +6,7 @@
 # Copyright (c) 2004 by Donal K. Fellows.
 # All rights reserved.
 #
-# RCS: @(#) $Id: tm.test,v 1.8 2008/09/26 19:54:59 dgp Exp $
+# RCS: @(#) $Id: tm.test,v 1.6 2005/08/29 21:55:27 andreas_kupries Exp $
 
 package require Tcl 8.5
 if {"::tcltest" ni [namespace children]} {

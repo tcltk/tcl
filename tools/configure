@@ -1643,9 +1643,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-
-
-# RCS: @(#) $Id: configure,v 1.5 2010/06/09 13:51:51 nijtmans Exp $
+# RCS: @(#) $Id: configure,v 1.4 2003/03/13 10:39:57 mdejong Exp $
 
 # Recover information that Tcl computed with its configure script.
 

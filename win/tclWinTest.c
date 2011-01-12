@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.29 2010/10/12 10:21:55 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.22 2007/12/13 15:28:44 dgp Exp $
  */
 
 #ifndef USE_TCL_STUBS

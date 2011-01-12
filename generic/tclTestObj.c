@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.38 2010/03/18 20:34:48 dgp Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.22 2008/04/27 22:21:32 dkf Exp $
  */
 
 #ifndef USE_TCL_STUBS

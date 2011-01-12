@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileSystem.h,v 1.13 2008/07/28 21:31:21 nijtmans Exp $
+ * RCS: @(#) $Id: tclFileSystem.h,v 1.12 2008/05/02 10:27:07 dkf Exp $
  */
 
 #ifndef _TCLFILESYSTEM

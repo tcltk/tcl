@@ -1,4 +1,4 @@
-/* $Id: fake-rfc2553.h,v 1.2 2010/09/28 15:14:57 rmax Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (C) 2000-2003 Damien Miller.  All rights reserved.

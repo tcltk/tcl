@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.69 2010/12/10 13:08:54 nijtmans Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.45 2008/06/05 00:02:38 das Exp $
  */
 
 #include "tclInt.h"
@@ -692,23 +692,23 @@ TclAppendBytesToByteArray(
  */
 
 static const EnsembleImplMap binaryMap[] = {
-{ "format", BinaryFormatCmd, NULL, NULL, NULL, 0 },
-{ "scan",   BinaryScanCmd, NULL, NULL, NULL, 0 },
-{ "encode", NULL, NULL, NULL, NULL, 0 },
-{ "decode", NULL, NULL, NULL, NULL, 0 },
-{ NULL, NULL, NULL, NULL, NULL, 0 }
+{ "format", BinaryFormatCmd, NULL, NULL, 0 },
+{ "scan",   BinaryScanCmd, NULL, NULL, 0 },
+{ "encode", NULL, NULL, NULL, 0 },
+{ "decode", NULL, NULL, NULL, 0 },
+{ NULL, NULL, NULL, NULL, 0 }
 };
 static const EnsembleImplMap encodeMap[] = {
-{ "hex",      BinaryEncodeHex, NULL, NULL, (ClientData)HexDigits, 0 },
-{ "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits, 0 },
-{ "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits, 0 },
-{ NULL, NULL, NULL, NULL, NULL, 0 }
+{ "hex",      BinaryEncodeHex, NULL, (ClientData)HexDigits, 0 },
+{ "uuencode", BinaryEncode64,  NULL, (ClientData)UueDigits, 0 },
+{ "base64",   BinaryEncode64,  NULL, (ClientData)B64Digits, 0 },
+{ NULL, NULL, NULL, NULL, 0 }
 };
 static const EnsembleImplMap decodeMap[] = {
-{ "hex",      BinaryDecodeHex, NULL, NULL, NULL, 0 },
-{ "uuencode", BinaryDecodeUu,  NULL, NULL, NULL, 0 },
-{ "base64",   BinaryDecode64,  NULL, NULL, NULL, 0 },
-{ NULL, NULL, NULL, NULL, NULL, 0 }
+{ "hex",      BinaryDecodeHex, NULL, NULL, 0 },
+{ "uuencode", BinaryDecodeUu,  NULL, NULL, 0 },
+{ "base64",   BinaryDecode64,  NULL, NULL, 0 },
+{ NULL, NULL, NULL, NULL, 0 }
 };
 
 Tcl_Command

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.181 2010/09/15 07:33:54 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.133 2008/06/13 05:45:07 mistachkin Exp $
 
 library tcl
 
@@ -2129,36 +2129,6 @@ declare 582 {
 	    Tcl_Channel *wchan, int flags)
 }
 
-# TIP #322 (NRE public interface) msofer
-declare 583 {
-    Tcl_Command Tcl_NRCreateCommand(Tcl_Interp *interp,
-	    const char *cmdName, Tcl_ObjCmdProc *proc,
-	    Tcl_ObjCmdProc *nreProc, ClientData clientData,
-	    Tcl_CmdDeleteProc *deleteProc)
-}
-declare 584 {
-    int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
-}
-declare 585 {
-    int Tcl_NREvalObjv(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
-	    int flags)
-}
-declare 586 {
-    int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc,
-	    Tcl_Obj *const objv[], int flags)
-}
-declare 587 {
-    void Tcl_NRAddCallback(Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr,
-	    ClientData data0, ClientData data1, ClientData data2,
-	    ClientData data3)
-}
-# For use by NR extenders, to have a simple way to also provide a (required!)
-# classic objProc
-declare 588 {
-    int Tcl_NRCallObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
-	    ClientData clientData, int objc, Tcl_Obj *const objv[])
-}
-
 # TIP#316 (Tcl_StatBuf reader functions) dkf
 declare 589 {
     unsigned Tcl_GetFSDeviceFromStat(const Tcl_StatBuf *statPtr)
@@ -2294,16 +2264,6 @@ declare 623 {
 # TIP#332 (half-close made public) aferrieux
 declare 624 {
     int Tcl_CloseEx(Tcl_Interp *interp, Tcl_Channel chan, int flags)
-}
-
-# TIP #353 (NR-enabled expressions) dgp
-declare 625 {
-    int Tcl_NRExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *resultPtr)
-}
-
-# TIP #356 (NR-enabled substitution) dgp
-declare 626 {
-    int Tcl_NRSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 
 # TIP #357 (Export TclLoadFile and TclpFindSymbol) kbk

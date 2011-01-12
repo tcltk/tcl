@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.194 2010/12/10 21:59:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.149 2008/06/08 03:21:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -929,44 +929,15 @@ Tcl_SubstObj(
     Tcl_Obj *objPtr,		/* The value to be substituted. */
     int flags)			/* What substitutions to do. */
 {
-    TEOV_callback *rootPtr = TOP_CB(interp);
-
-    if (TclNRRunCallbacks(interp, Tcl_NRSubstObj(interp, objPtr, flags),
-	    rootPtr) != TCL_OK) {
-	return NULL;
-    }
-    return Tcl_GetObjResult(interp);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_NRSubstObj --
- *
- *	Request substitution of a Tcl value by the NR stack.
- *
- * Results:
- *	Returns TCL_OK.
- *
- * Side effects:
- *	Compiles objPtr into bytecode that performs the substitutions as
- *	governed by flags and places callbacks on the NR stack to execute
- *	the bytecode and store the result in the interp.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_NRSubstObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr,
-    int flags)
-{
     ByteCode *codePtr = CompileSubstObj(interp, objPtr, flags);
 
     /* TODO: Confirm we do not need this. */
     /* Tcl_ResetResult(interp); */
-    return TclNRExecuteByteCode(interp, codePtr);
+    if (TclExecuteByteCode(interp, codePtr) != TCL_OK) {
+        return NULL;
+    }
+
+    return Tcl_GetObjResult(interp);
 }
 
 /*
@@ -1666,7 +1637,7 @@ TclCompileScript(
 			 * length will be updated later. There is no need to
 			 * do this for the first bytecode in the compile env,
 			 * as the check is done before calling
-			 * TclNRExecuteByteCode(). Do emit an INST_START_CMD in
+			 * TclExecuteByteCode(). Do emit an INST_START_CMD in
 			 * special cases where the first bytecode is in a
 			 * loop, to insure that the corresponding command is
 			 * counted properly. Compilers for commands able to

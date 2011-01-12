@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.199 2010/11/30 18:17:26 hobbs Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.155 2008/07/08 17:52:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -284,7 +284,7 @@ static const TclIntStubs tclIntStubs = {
     TclTraceDictPath, /* 225 */
     TclObjBeingDeleted, /* 226 */
     TclSetNsPath, /* 227 */
-    0, /* 228 */
+    TclObjInterpProcCore, /* 228 */
     TclPtrMakeUpvar, /* 229 */
     TclObjLookupVar, /* 230 */
     TclGetNamespaceFromObj, /* 231 */
@@ -294,11 +294,11 @@ static const TclIntStubs tclIntStubs = {
     TclInitVarHashTable, /* 235 */
     0, /* 236 */
     TclResetCancellation, /* 237 */
-    TclNRInterpProc, /* 238 */
-    TclNRInterpProcCore, /* 239 */
-    TclNRRunCallbacks, /* 240 */
-    TclNREvalObjEx, /* 241 */
-    TclNREvalObjv, /* 242 */
+    0, /* 238 */
+    0, /* 239 */
+    0, /* 240 */
+    0, /* 241 */
+    0, /* 242 */
     TclDbDumpActiveObjects, /* 243 */
     TclGetNamespaceChildTable, /* 244 */
     TclGetNamespaceCommandTable, /* 245 */
@@ -1081,12 +1081,12 @@ const TclStubs tclStubs = {
     Tcl_CancelEval, /* 580 */
     Tcl_Canceled, /* 581 */
     Tcl_CreatePipe, /* 582 */
-    Tcl_NRCreateCommand, /* 583 */
-    Tcl_NREvalObj, /* 584 */
-    Tcl_NREvalObjv, /* 585 */
-    Tcl_NRCmdSwap, /* 586 */
-    Tcl_NRAddCallback, /* 587 */
-    Tcl_NRCallObjProc, /* 588 */
+    0, /* 583 */
+    0, /* 584 */
+    0, /* 585 */
+    0, /* 586 */
+    0, /* 587 */
+    0, /* 588 */
     Tcl_GetFSDeviceFromStat, /* 589 */
     Tcl_GetFSInodeFromStat, /* 590 */
     Tcl_GetModeFromStat, /* 591 */
@@ -1123,8 +1123,8 @@ const TclStubs tclStubs = {
     Tcl_SetStartupScript, /* 622 */
     Tcl_GetStartupScript, /* 623 */
     Tcl_CloseEx, /* 624 */
-    Tcl_NRExprObj, /* 625 */
-    Tcl_NRSubstObj, /* 626 */
+    0, /* 625 */
+    0, /* 626 */
     Tcl_LoadFile, /* 627 */
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */

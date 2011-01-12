@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclooConfig.sh,v 1.2 2009/11/27 07:27:53 dkf Exp $
+# RCS: @(#) $Id$
 
 # These are mostly empty because no special steps are ever needed from Tcl 8.6
 # onwards; all libraries and include files are just part of Tcl.

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: history.test,v 1.7 2009/07/25 21:51:02 dkf Exp $
+# RCS: @(#) $Id: history.test,v 1.6 2004/05/19 12:43:03 dkf Exp $
   
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -59,7 +59,7 @@ test history-1.9 {event option} history {catch {history event 123 456} msg} 1
 test history-1.10 {event option} history {
     catch {history event 123 456} msg
     set msg
-} {wrong # args: should be "history event ?event?"}
+} {wrong # args: should be "::tcl::history event ?event?"}
 
 # "history redo"
 
@@ -77,7 +77,7 @@ test history-2.3 {redo option} history {catch {history redo -3 -4}} 1
 test history-2.4 {redo option} history {
     catch {history redo -3 -4} msg
     set msg
-} {wrong # args: should be "history redo ?event?"}
+} {wrong # args: should be "::tcl::history redo ?event?"}
 
 # "history add"
 
@@ -107,7 +107,7 @@ test history-3.8 {add option} history {catch {history add "set a 666" e f} msg} 
 test history-3.9 {add option} history {
     catch {history add "set a 666" e f} msg
     set msg
-} {wrong # args: should be "history add event ?exec?"}
+} {wrong # args: should be "::tcl::history add event ?exec?"}
 
 # "history change"
 
@@ -126,7 +126,7 @@ test history-4.4 {change option} history {catch {history change Foo 4 10}} 1
 test history-4.5 {change option} history {
     catch {history change Foo 4 10} msg
     set msg
-} {wrong # args: should be "history change newValue ?event?"}
+} {wrong # args: should be "::tcl::history change newValue ?event?"}
 test history-4.6 {change option} history {
     catch {history change Foo [expr {[history n]-4}]}
 } 1
@@ -160,7 +160,7 @@ test history-5.3 {info option} history {catch {history i 2 3}} 1
 test history-5.4 {info option} history {
     catch {history i 2 3} msg
     set msg
-} {wrong # args: should be "history info ?count?"}
+} {wrong # args: should be "::tcl::history info ?count?"}
 test history-5.5 {info option} history {history} [format {%6d  set a {b
 	c d e}
 %6d  set b 1234
@@ -195,7 +195,7 @@ test history-6.10 {keep option} history {catch {history keep 4 6}} 1
 test history-6.11 {keep option} history {
     catch {history keep 4 6} msg
     set msg
-} {wrong # args: should be "history keep ?count?"}
+} {wrong # args: should be "::tcl::history keep ?count?"}
 test history-6.12 {keep option} history {catch {history keep}} 0
 test history-6.13 {keep option} history {
     history keep
@@ -223,7 +223,7 @@ test history-7.3 {nextid option} history {catch {history nextid garbage}} 1
 test history-7.4 {nextid option} history {
     catch {history nextid garbage} msg
     set msg
-} {wrong # args: should be "history nextid"}
+} {wrong # args: should be "::tcl::history nextid"}
 
 # "history clear"
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.33 2010/12/14 17:22:55 rmax Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.21 2008/04/27 22:21:35 dkf Exp $
  */
 
 #include "tclInt.h"

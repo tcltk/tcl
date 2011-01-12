@@ -22,11 +22,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.216 2010/11/18 00:44:39 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.164 2008/05/22 15:22:07 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclCompile.h" /* for NRCommand; and TclLogCommandInfo visibility */
+#include "tclCompile.h" /* for TclLogCommandInfo visibility */
 
 /*
  * Thread-local storage used to avoid having a global lock on data that is not
@@ -93,8 +93,6 @@ static int		GetNamespaceFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
 static int		InvokeImportedCmd(ClientData clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
-static int		InvokeImportedNRCmd(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceChildrenCmd(ClientData dummy,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceCodeCmd(ClientData dummy, Tcl_Interp *interp,
@@ -135,8 +133,6 @@ static int		NamespaceWhichCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		SetNsNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UnlinkNsPath(Namespace *nsPtr);
-
-static Tcl_NRPostProc NsEval_Callback;
 
 /*
  * This structure defines a Tcl object type that contains a namespace
@@ -313,8 +309,7 @@ Tcl_PushCallFrame(
     framePtr->compiledLocals = NULL;
     framePtr->clientData = NULL;
     framePtr->localCachePtr = NULL;
-    framePtr->tailcallPtr = NULL;
-    
+
     /*
      * Push the new call frame onto the interpreter's stack of procedure call
      * frames making it the current frame.
@@ -392,10 +387,6 @@ Tcl_PopCallFrame(
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
-
-    if (framePtr->tailcallPtr) {
-        TclSpliceTailcall(interp, framePtr->tailcallPtr);
-    }
 }
 
 /*
@@ -847,8 +838,6 @@ Tcl_DeleteNamespace(
     Namespace *globalNsPtr = (Namespace *)
 	    TclGetGlobalNamespace((Tcl_Interp *) iPtr);
     Tcl_HashEntry *entryPtr;
-    Tcl_HashSearch search;
-    Command *cmdPtr;
 
     /*
      * Give anyone interested - notably TclOO - a chance to use this namespace
@@ -868,28 +857,6 @@ Tcl_DeleteNamespace(
 	nsPtr->activationCount++;
 	earlyDeleteProc(nsPtr->clientData);
 	nsPtr->activationCount--;
-    }
-
-    /*
-     * Delete all coroutine commands now: break the circular ref cycle between
-     * the namespace and the coroutine command [Bug 2724403]. This code is
-     * essentially duplicated in TclTeardownNamespace() for all other
-     * commands. Don't optimize to Tcl_NextHashEntry() because of traces.
-     *
-     * NOTE: we could avoid traversing the ns's command list by keeping a
-     * separate list of coros.
-     */
-
-    for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-	    entryPtr != NULL;) {
-	cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
-	if (cmdPtr->nreProc == NRInterpCoroutine) {
-	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
-		    (Tcl_Command) cmdPtr);
-	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-	} else {
-	    entryPtr = Tcl_NextHashEntry(&search);
-	}
     }
 
     /*
@@ -1660,8 +1627,8 @@ DoImport(
 	}
 
 	dataPtr = (ImportedCmdData *) ckalloc(sizeof(ImportedCmdData));
-	importedCmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
-		InvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
+	importedCmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds),
+		InvokeImportedCmd, dataPtr,
 		DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
 	dataPtr->selfPtr = (Command *) importedCmd;
@@ -1899,21 +1866,6 @@ TclGetOriginalCommand(
  */
 
 static int
-InvokeImportedNRCmd(
-    ClientData clientData,	/* Points to the imported command's
-				 * ImportedCmdData structure. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* The argument objects. */
-{
-    ImportedCmdData *dataPtr = clientData;
-    Command *realCmdPtr = dataPtr->realCmdPtr;
-
-    ((Interp *) interp)->evalFlags |= TCL_EVAL_REDIRECT;
-    return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv, 0);
-}
-
-static int
 InvokeImportedCmd(
     ClientData clientData,	/* Points to the imported command's
 				 * ImportedCmdData structure. */
@@ -1921,8 +1873,10 @@ InvokeImportedCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, InvokeImportedNRCmd, clientData,
-	    objc, objv);
+    register ImportedCmdData *dataPtr = clientData;
+    register Command *realCmdPtr = dataPtr->realCmdPtr;
+
+    return realCmdPtr->objProc(realCmdPtr->objClientData, interp, objc, objv);
 }
 
 /*
@@ -2836,17 +2790,6 @@ Tcl_NamespaceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRNamespaceObjCmd, clientData, objc,
-	    objv);
-}
-
-int
-TclNRNamespaceObjCmd(
-    ClientData clientData,	/* Arbitrary value passed to cmd. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
     static const char *const subCmds[] = {
 	"children", "code", "current", "delete", "ensemble",
 	"eval", "exists", "export", "forget", "import",
@@ -3356,10 +3299,11 @@ NamespaceEvalCmd(
 	 * TIP #280: Make actual argument location available to eval'd script.
 	 */
 
-	objPtr = objv[3];
 	invoker = iPtr->cmdFramePtr;
 	word = 3;
-	TclArgumentGet(interp, objPtr, &invoker, &word);
+	TclArgumentGet(interp, objv[3], &invoker, &word);
+
+        result = TclEvalObjEx(interp, objv[3], 0, invoker, word);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -3368,36 +3312,17 @@ NamespaceEvalCmd(
 	 */
 
 	objPtr = Tcl_ConcatObj(objc-3, objv+3);
-	invoker = NULL;
-	word = 0;
+        result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
-
-    /*
-     * TIP #280: Make invoking context available to eval'd script.
-     */
-
-    TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "eval",
-	    NULL, NULL);
-    return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
-}
-
-static int
-NsEval_Callback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Tcl_Namespace *namespacePtr = data[0];
 
     if (result == TCL_ERROR) {
 	int length = strlen(namespacePtr->fullName);
 	int limit = 200;
 	int overflow = (length > limit);
-	char *cmd = data[1];
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (in namespace %s \"%.*s%s\" script line %d)",
-		cmd,
+		"eval",
 		(overflow ? limit : length), namespacePtr->fullName,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
@@ -3823,9 +3748,26 @@ NamespaceInscopeCmd(
 	Tcl_DecrRefCount(listPtr);    /* We're done with the list object. */
     }
 
-    TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "inscope",
-	    NULL, NULL);
-    return TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
+    result = Tcl_EvalObjEx(interp, cmdObjPtr, 0);
+
+    if (result == TCL_ERROR) {
+	int length = strlen(namespacePtr->fullName);
+	int limit = 200;
+	int overflow = (length > limit);
+
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (in namespace %s \"%.*s%s\" script line %d)",
+		"inscope",
+		(overflow ? limit : length), namespacePtr->fullName,
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+    }
+
+    /*
+     * Restore the previous "current" namespace.
+     */
+
+    TclPopStackFrame(interp);
+    return result;
 }
 
 /*

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadShl.c,v 1.20 2010/04/02 21:21:06 kennykb Exp $
+ * RCS: @(#) $Id: tclLoadShl.c,v 1.17 2008/04/27 22:21:34 dkf Exp $
  */
 
 #include <dl.h>

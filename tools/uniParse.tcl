@@ -9,7 +9,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: uniParse.tcl,v 1.9 2010/10/18 21:47:36 nijtmans Exp $
+# RCS: @(#) $Id: uniParse.tcl,v 1.4 2001/05/28 04:37:57 hobbs Exp $
 
 
 namespace eval uni {

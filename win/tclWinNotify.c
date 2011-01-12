@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.28 2010/05/11 14:47:12 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.23 2008/06/13 05:45:15 mistachkin Exp $
  */
 
 #include "tclInt.h"

@@ -5,7 +5,7 @@
  *	Unix systems that don't have such procedures. The origin of this code
  *	is unclear, but it seems to have come originally from Larry Wall.
  *
- * RCS: @(#) $Id: opendir.c,v 1.5 2009/12/10 09:21:37 dkf Exp $
+ * RCS: @(#) $Id: opendir.c,v 1.4 2007/04/16 13:36:34 dkf Exp $
  */
 
 #include "tclInt.h"

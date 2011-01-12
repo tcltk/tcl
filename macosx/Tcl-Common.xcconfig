@@ -9,7 +9,7 @@
 // See the file "license.terms" for information on usage and redistribution
 // of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 //
-// RCS: @(#) $Id: Tcl-Common.xcconfig,v 1.13 2009/06/26 18:14:25 das Exp $
+// RCS: @(#) $Id: Tcl-Common.xcconfig,v 1.11 2008/04/01 16:23:42 dgp Exp $
 //
 
 HEADER_SEARCH_PATHS = "$(DERIVED_FILE_DIR)/tcl" $(HEADER_SEARCH_PATHS)

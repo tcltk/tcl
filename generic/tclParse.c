@@ -1876,7 +1876,6 @@ Tcl_ParseQuotedString(
  *	None.
  *
  * Side effects:
-
  *	The Tcl_Parse struct '*parsePtr' is filled with parse results.
  *	The caller is expected to eventually call Tcl_FreeParse() to properly
  *	cleanup the value written there.

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.153 2010/12/10 15:44:53 nijtmans Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.123 2008/07/08 17:52:17 dgp Exp $
 
 library tcl
 
@@ -900,12 +900,10 @@ declare 227 {
     void TclSetNsPath(Namespace *nsPtr, int pathLength,
             Tcl_Namespace *pathAry[])
 }
-#  Used to be needed for TclOO-extension; unneeded now that TclOO is in the
-#  core and NRE-enabled
-#  declare 228 {
-#      int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
-#             int skip, ProcErrorProc *errorProc)
-#  }
+declare 228 {
+      int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
+             int skip, ProcErrorProc *errorProc)
+}
 declare 229 {
     int	TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
 	    const char *myName, int myFlags, int index)
@@ -947,29 +945,6 @@ declare 235 {
 # TIP #285: Script cancellation support.
 declare 237 {
     int TclResetCancellation(Tcl_Interp *interp, int force)
-}
-
-# NRE functions for "rogue" extensions to exploit NRE; they will need to
-# include NRE.h too.
-declare 238 {
-    int TclNRInterpProc(ClientData clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
-}
-declare 239 {
-    int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
-			    int skip, ProcErrorProc *errorProc)
-}
-declare 240 {
-    int TclNRRunCallbacks(Tcl_Interp *interp, int result,
-	      struct TEOV_callback *rootPtr)
-}
-declare 241 {
-    int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
-	    const CmdFrame *invoker, int word)
-}
-declare 242 {
-    int TclNREvalObjv(Tcl_Interp *interp, int objc,
-	      Tcl_Obj *const objv[], int flags, Command *cmdPtr)
 }
 
 # Tcl_Obj leak detection support.

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: define.n,v 1.3 2009/04/11 11:18:51 dkf Exp $
+'\" RCS: @(#) $Id: define.n,v 1.1 2008/05/31 11:42:12 dkf Exp $
 '\"
 .so man.macros
 .TH define n 0.3 TclOO "TclOO Commands"

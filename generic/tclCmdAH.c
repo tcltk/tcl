@@ -10,31 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.129 2010/12/10 13:08:54 nijtmans Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.95 2008/05/30 22:54:27 dkf Exp $
  */
 
 #include "tclInt.h"
 #include <locale.h>
-
-/*
- * The state structure used by [foreach]. Note that the actual structure has
- * all its working arrays appended afterwards so they can be allocated and
- * freed in a single step.
- */
-
-struct ForeachState {
-    Tcl_Obj *bodyPtr;		/* The script body of the command. */
-    int bodyIdx;		/* The argument index of the body. */
-    int j, maxj;		/* Number of loop iterations. */
-    int numLists;		/* Count of value lists. */
-    int *index;			/* Array of value list indices. */
-    int *varcList;		/* # loop variables per list. */
-    Tcl_Obj ***varvList;	/* Array of var name lists. */
-    Tcl_Obj **vCopyList;	/* Copies of var name list arguments. */
-    int *argcList;		/* Array of value list sizes. */
-    Tcl_Obj ***argvList;	/* Array of value lists. */
-    Tcl_Obj **aCopyList;	/* Copies of value list arguments. */
-};
 
 /*
  * Prototypes for local procedures defined in this file:
@@ -45,23 +25,11 @@ static int		CheckAccess(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 static int		EncodingDirsObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static inline int	ForeachAssignments(Tcl_Interp *interp,
-			    struct ForeachState *statePtr);
-static inline void	ForeachCleanup(Tcl_Interp *interp,
-			    struct ForeachState *statePtr);
 static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_FSStatProc *statProc, Tcl_StatBuf *statPtr);
 static const char *	GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
-static Tcl_NRPostProc	CatchObjCmdCallback;
-static Tcl_NRPostProc	ExprCallback;
-static Tcl_NRPostProc	ForSetupCallback;
-static Tcl_NRPostProc	ForCondCallback;
-static Tcl_NRPostProc	ForNextCallback;
-static Tcl_NRPostProc	ForPostNextCallback;
-static Tcl_NRPostProc	ForeachLoopStep;
-static Tcl_NRPostProc	EvalCmdErrMsg;
 
 static Tcl_ObjCmdProc FileAttrAccessTimeCmd;
 static Tcl_ObjCmdProc FileAttrIsDirectoryCmd;
@@ -286,18 +254,9 @@ Tcl_CatchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRCatchObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRCatchObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
     Tcl_Obj *varNamePtr = NULL;
     Tcl_Obj *optionVarNamePtr = NULL;
+    int result;
     Interp *iPtr = (Interp *) interp;
 
     if ((objc < 2) || (objc > 4)) {
@@ -313,35 +272,19 @@ TclNRCatchObjCmd(
 	optionVarNamePtr = objv[3];
     }
 
-    TclNRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
-	    varNamePtr, optionVarNamePtr, NULL);
-
     /*
      * TIP #280. Make invoking context available to caught script.
      */
 
-    return TclNREvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr, 1);
-}
-
-static int
-CatchObjCmdCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Interp *iPtr = (Interp *) interp;
-    int objc = PTR2INT(data[0]);
-    Tcl_Obj *varNamePtr = data[1];
-    Tcl_Obj *optionVarNamePtr = data[2];
-    int rewind = iPtr->execEnvPtr->rewind;
+    result = TclEvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr, 1);
 
     /*
      * We disable catch in interpreters where the limit has been exceeded.
      */
 
-    if (rewind || Tcl_LimitExceeded(interp)) {
+    if (Tcl_LimitExceeded(interp)) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"catch\" body line %d)", Tcl_GetErrorLine(interp)));
+						       "\n    (\"catch\" body line %d)", Tcl_GetErrorLine(interp)));
 	return TCL_ERROR;
     }
 
@@ -356,7 +299,6 @@ CatchObjCmdCallback(
     }
     if (objc == 4) {
 	Tcl_Obj *options = Tcl_GetReturnOptions(interp, result);
-
 	if (NULL == Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL,
 		options, 0)) {
 	    Tcl_DecrRefCount(options);
@@ -723,19 +665,6 @@ Tcl_ErrorObjCmd(
  */
 
 	/* ARGSUSED */
-static int
-EvalCmdErrMsg(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"eval\" body line %d)", Tcl_GetErrorLine(interp)));
-    }
-    return result;
-}
-
 int
 Tcl_EvalObjCmd(
     ClientData dummy,		/* Not used. */
@@ -747,6 +676,7 @@ Tcl_EvalObjCmd(
     Interp *iPtr = (Interp *) interp;
     CmdFrame *invoker = NULL;
     int word = 0;
+    int result;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
@@ -774,8 +704,14 @@ Tcl_EvalObjCmd(
 
 	objPtr = Tcl_ConcatObj(objc-1, objv+1);
     }
-    TclNRAddCallback(interp, EvalCmdErrMsg, NULL, NULL, NULL, NULL);
-    return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
+
+    result = TclEvalObjEx(interp, objPtr, TCL_EVAL_DIRECT, invoker, word);
+
+    if (result == TCL_ERROR) {
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"eval\" body line %d)", Tcl_GetErrorLine(interp)));
+    }
+    return result;
 }
 
 /*
@@ -852,53 +788,28 @@ Tcl_ExprObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRExprObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRExprObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    Tcl_Obj *resultPtr, *objPtr;
+    Tcl_Obj *resultPtr;
+    int result;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
 
-    TclNewObj(resultPtr);
-    Tcl_IncrRefCount(resultPtr);
     if (objc == 2) {
-	objPtr = objv[1];
-	TclNRAddCallback(interp, ExprCallback, resultPtr, NULL, NULL, NULL);
+	result = Tcl_ExprObj(interp, objv[1], &resultPtr);
     } else {
-	objPtr = Tcl_ConcatObj(objc-1, objv+1);
-	TclNRAddCallback(interp, ExprCallback, resultPtr, objPtr, NULL, NULL);
-    }
-
-    return Tcl_NRExprObj(interp, objPtr, resultPtr);
-}
-
-static int
-ExprCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Tcl_Obj *resultPtr = data[0];
-    Tcl_Obj *objPtr = data[1];
-
-    if (objPtr != NULL) {
+	Tcl_Obj *objPtr = Tcl_ConcatObj(objc-1, objv+1);
+	Tcl_IncrRefCount(objPtr);
+	result = Tcl_ExprObj(interp, objPtr, &resultPtr);
 	Tcl_DecrRefCount(objPtr);
     }
 
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultPtr);
+	Tcl_DecrRefCount(resultPtr);	/* Done with the result object */
     }
-    Tcl_DecrRefCount(resultPtr);
+
     return result;
 }
 
@@ -934,41 +845,41 @@ TclInitFileCmd(
      */
 
     static const EnsembleImplMap initMap[] = {
-	{"atime",	FileAttrAccessTimeCmd, NULL, NULL, NULL, 0},
-	{"attributes",	TclFileAttrsCmd, NULL, NULL, NULL, 0},
-	{"channels",	TclChannelNamesCmd, NULL, NULL, NULL, 0},
-	{"copy",	TclFileCopyCmd, NULL, NULL, NULL, 0},
-	{"delete",	TclFileDeleteCmd, NULL, NULL, NULL, 0},
-	{"dirname",	PathDirNameCmd, NULL, NULL, NULL, 0},
-	{"executable",	FileAttrIsExecutableCmd, NULL, NULL, NULL, 0},
-	{"exists",	FileAttrIsExistingCmd, NULL, NULL, NULL, 0},
-	{"extension",	PathExtensionCmd, NULL, NULL, NULL, 0},
-	{"isdirectory",	FileAttrIsDirectoryCmd, NULL, NULL, NULL, 0},
-	{"isfile",	FileAttrIsFileCmd, NULL, NULL, NULL, 0},
-	{"join",	PathJoinCmd, NULL, NULL, NULL, 0},
-	{"link",	TclFileLinkCmd, NULL, NULL, NULL, 0},
-	{"lstat",	FileAttrLinkStatCmd, NULL, NULL, NULL, 0},
-	{"mtime",	FileAttrModifyTimeCmd, NULL, NULL, NULL, 0},
-	{"mkdir",	TclFileMakeDirsCmd, NULL, NULL, NULL, 0},
-	{"nativename",	PathNativeNameCmd, NULL, NULL, NULL, 0},
-	{"normalize",	PathNormalizeCmd, NULL, NULL, NULL, 0},
-	{"owned",	FileAttrIsOwnedCmd, NULL, NULL, NULL, 0},
-	{"pathtype",	PathTypeCmd, NULL, NULL, NULL, 0},
-	{"readable",	FileAttrIsReadableCmd, NULL, NULL, NULL, 0},
-	{"readlink",	TclFileReadLinkCmd, NULL, NULL, NULL, 0},
-	{"rename",	TclFileRenameCmd, NULL, NULL, NULL, 0},
-	{"rootname",	PathRootNameCmd, NULL, NULL, NULL, 0},
-	{"separator",	FilesystemSeparatorCmd, NULL, NULL, NULL, 0},
-	{"size",	FileAttrSizeCmd, NULL, NULL, NULL, 0},
-	{"split",	PathSplitCmd, NULL, NULL, NULL, 0},
-	{"stat",	FileAttrStatCmd, NULL, NULL, NULL, 0},
-	{"system",	PathFilesystemCmd, NULL, NULL, NULL, 0},
-	{"tail",	PathTailCmd, NULL, NULL, NULL, 0},
-	{"tempfile",	TclFileTemporaryCmd, NULL, NULL, NULL, 0},
-	{"type",	FileAttrTypeCmd, NULL, NULL, NULL, 0},
-	{"volumes",	FilesystemVolumesCmd, NULL, NULL, NULL, 0},
-	{"writable",	FileAttrIsWritableCmd, NULL, NULL, NULL, 0},
-	{NULL, NULL, NULL, NULL, NULL, 0}
+	{"atime",	FileAttrAccessTimeCmd, NULL, NULL, 0},
+	{"attributes",	TclFileAttrsCmd, NULL, NULL, 0},
+	{"channels",	TclChannelNamesCmd, NULL, NULL, 0},
+	{"copy",	TclFileCopyCmd, NULL, NULL, 0},
+	{"delete",	TclFileDeleteCmd, NULL, NULL, 0},
+	{"dirname",	PathDirNameCmd, NULL, NULL, 0},
+	{"executable",	FileAttrIsExecutableCmd, NULL, NULL, 0},
+	{"exists",	FileAttrIsExistingCmd, NULL, NULL, 0},
+	{"extension",	PathExtensionCmd, NULL, NULL, 0},
+	{"isdirectory",	FileAttrIsDirectoryCmd, NULL, NULL, 0},
+	{"isfile",	FileAttrIsFileCmd, NULL, NULL, 0},
+	{"join",	PathJoinCmd, NULL, NULL, 0},
+	{"link",	TclFileLinkCmd, NULL, NULL, 0},
+	{"lstat",	FileAttrLinkStatCmd, NULL, NULL, 0},
+	{"mtime",	FileAttrModifyTimeCmd, NULL, NULL, 0},
+	{"mkdir",	TclFileMakeDirsCmd, NULL, NULL, 0},
+	{"nativename",	PathNativeNameCmd, NULL, NULL, 0},
+	{"normalize",	PathNormalizeCmd, NULL, NULL, 0},
+	{"owned",	FileAttrIsOwnedCmd, NULL, NULL, 0},
+	{"pathtype",	PathTypeCmd, NULL, NULL, 0},
+	{"readable",	FileAttrIsReadableCmd, NULL, NULL, 0},
+	{"readlink",	TclFileReadLinkCmd, NULL, NULL, 0},
+	{"rename",	TclFileRenameCmd, NULL, NULL, 0},
+	{"rootname",	PathRootNameCmd, NULL, NULL, 0},
+	{"separator",	FilesystemSeparatorCmd, NULL, NULL, 0},
+	{"size",	FileAttrSizeCmd, NULL, NULL, 0},
+	{"split",	PathSplitCmd, NULL, NULL, 0},
+	{"stat",	FileAttrStatCmd, NULL, NULL, 0},
+	{"system",	PathFilesystemCmd, NULL, NULL, 0},
+	{"tail",	PathTailCmd, NULL, NULL, 0},
+	{"tempfile",	TclFileTemporaryCmd, NULL, NULL, 0},
+	{"type",	FileAttrTypeCmd, NULL, NULL, 0},
+	{"volumes",	FilesystemVolumesCmd, NULL, NULL, 0},
+	{"writable",	FileAttrIsWritableCmd, NULL, NULL, 0},
+	{NULL, NULL, NULL, NULL, 0}
     };
     return TclMakeEnsemble(interp, "file", initMap);
 }
@@ -2302,25 +2213,6 @@ GetTypeFromMode(
  * Side effects:
  *	See the user documentation.
  *
- * Notes:
- *	This command is split into a lot of pieces so that it can avoid doing
- *	reentrant TEBC calls. This makes things rather hard to follow, but
- *	here's the plan:
- *
- *	NR:	---------------_\
- *	Direct:	Tcl_ForObjCmd -> TclNRForObjCmd
- *					|
- *				ForSetupCallback
- *					|
- *	[while] ------------> TclNRForIterCallback <---------.
- *					|		     |
- *				 ForCondCallback	     |
- *					|		     |
- *				 ForNextCallback ------------|
- *					|		     |
- *			       ForPostNextCallback	     |
- *					|____________________|
- *
  *----------------------------------------------------------------------
  */
 
@@ -2332,180 +2224,81 @@ Tcl_ForObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRForObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRForObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
+    int result, value;
     Interp *iPtr = (Interp *) interp;
-    ForIterData *iterPtr;
 
     if (objc != 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "start test next command");
 	return TCL_ERROR;
     }
 
-    TclSmallAllocEx(interp, sizeof(ForIterData), iterPtr);
-    iterPtr->cond = objv[2];
-    iterPtr->body = objv[4];
-    iterPtr->next = objv[3];
-    iterPtr->msg  = "\n    (\"for\" body line %d)";
-    iterPtr->word = 4;
-
-    TclNRAddCallback(interp, ForSetupCallback, iterPtr, NULL, NULL, NULL);
-
     /*
      * TIP #280. Make invoking context available to initial script.
      */
 
-    return TclNREvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr, 1);
-}
-
-static int
-ForSetupCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    ForIterData *iterPtr = data[0];
-
+    result = TclEvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr, 1);
     if (result != TCL_OK) {
 	if (result == TCL_ERROR) {
 	    Tcl_AddErrorInfo(interp, "\n    (\"for\" initial command)");
 	}
-	TclSmallFreeEx(interp, iterPtr);
 	return result;
     }
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
-    return TCL_OK;
-}
-
-int
-TclNRForIterCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    ForIterData *iterPtr = data[0];
-    Tcl_Obj *boolObj;
-
-    switch (result) {
-    case TCL_OK:
-    case TCL_CONTINUE:
+    while (1) {
 	/*
-	 * We need to reset the result before evaluating the expression.
-	 * Otherwise, any error message will be appended to the result of the
-	 * last evaluation.
+	 * We need to reset the result before passing it off to
+	 * Tcl_ExprBooleanObj. Otherwise, any error message will be appended
+	 * to the result of the last evaluation.
 	 */
 
 	Tcl_ResetResult(interp);
-	TclNewObj(boolObj);
-	TclNRAddCallback(interp, ForCondCallback, iterPtr, boolObj, NULL,
-		NULL);
-	return Tcl_NRExprObj(interp, iterPtr->cond, boolObj);
-    case TCL_BREAK:
-	result = TCL_OK;
-	Tcl_ResetResult(interp);
-	break;
-    case TCL_ERROR:
-	Tcl_AppendObjToErrorInfo(interp,
-		Tcl_ObjPrintf(iterPtr->msg, Tcl_GetErrorLine(interp)));
-    }
-    TclSmallFreeEx(interp, iterPtr);
-    return result;
-}
-
-static int
-ForCondCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Interp *iPtr = (Interp *) interp;
-    ForIterData *iterPtr = data[0];
-    Tcl_Obj *boolObj = data[1];
-    int value;
-
-    if (result != TCL_OK) {
-	Tcl_DecrRefCount(boolObj);
-	TclSmallFreeEx(interp, iterPtr);
-	return result;
-    } else if (Tcl_GetBooleanFromObj(interp, boolObj, &value) != TCL_OK) {
-	Tcl_DecrRefCount(boolObj);
-	TclSmallFreeEx(interp, iterPtr);
-	return TCL_ERROR;
-    }
-    Tcl_DecrRefCount(boolObj);
-
-    if (value) {
-	/* TIP #280. */
-	if (iterPtr->next) {
-	    TclNRAddCallback(interp, ForNextCallback, iterPtr, NULL, NULL,
-		    NULL);
-	} else {
-	    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
-		    NULL, NULL);
+	result = Tcl_ExprBooleanObj(interp, objv[2], &value);
+	if (result != TCL_OK) {
+	    return result;
 	}
-	return TclNREvalObjEx(interp, iterPtr->body, 0, iPtr->cmdFramePtr,
-		iterPtr->word);
-    }
-    TclSmallFreeEx(interp, iterPtr);
-    return result;
-}
+	if (!value) {
+	    break;
+	}
 
-static int
-ForNextCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Interp *iPtr = (Interp *) interp;
-    ForIterData *iterPtr = data[0];
-    Tcl_Obj *next = iterPtr->next;
+	/*
+	 * TIP #280. Make invoking context available to loop body.
+	 */
 
-    if ((result == TCL_OK) || (result == TCL_CONTINUE)) {
-	TclNRAddCallback(interp, ForPostNextCallback, iterPtr, NULL, NULL,
-		NULL);
+	result = TclEvalObjEx(interp, objv[4], 0, iPtr->cmdFramePtr, 4);
+	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
+	    if (result == TCL_ERROR) {
+		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+			"\n    (\"for\" body line %d)", Tcl_GetErrorLine(interp)));
+	    }
+	    break;
+	}
 
 	/*
 	 * TIP #280. Make invoking context available to next script.
 	 */
 
-	return TclNREvalObjEx(interp, next, 0, iPtr->cmdFramePtr, 3);
-    }
-
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
-    return result;
-}
-
-static int
-ForPostNextCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    ForIterData *iterPtr = data[0];
-
-    if ((result != TCL_BREAK) && (result != TCL_OK)) {
-	if (result == TCL_ERROR) {
-	    Tcl_AddErrorInfo(interp, "\n    (\"for\" loop-end command)");
-	    TclSmallFreeEx(interp, iterPtr);
+	result = TclEvalObjEx(interp, objv[3], 0, iPtr->cmdFramePtr, 3);
+	if (result == TCL_BREAK) {
+	    break;
+	} else if (result != TCL_OK) {
+	    if (result == TCL_ERROR) {
+		Tcl_AddErrorInfo(interp, "\n    (\"for\" loop-end command)");
+	    }
+	    return result;
 	}
-	return result;
     }
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
+    if (result == TCL_BREAK) {
+	result = TCL_OK;
+    }
+    if (result == TCL_OK) {
+	Tcl_ResetResult(interp);
+    }
     return result;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ForeachObjCmd, TclNRForeachCmd --
+ * Tcl_ForeachObjCmd --
  *
  *	This object-based procedure is invoked to process the "foreach" Tcl
  *	command. See the user documentation for details on what it does.
@@ -2527,19 +2320,21 @@ Tcl_ForeachObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRForeachCmd, dummy, objc, objv);
-}
+    int result = TCL_OK;
+    int i;			/* i selects a value list */
+    int j, maxj;		/* Number of loop iterations */
+    int v;			/* v selects a loop variable */
+    int numLists = (objc-2)/2;	/* Count of value lists */
+    Tcl_Obj *bodyPtr;
+    Interp *iPtr = (Interp *) interp;
 
-int
-TclNRForeachCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    int numLists = (objc-2) / 2;
-    register struct ForeachState *statePtr;
-    int i, j, result;
+    int *index;			/* Array of value list indices */
+    int *varcList;		/* # loop variables per list */
+    Tcl_Obj ***varvList;	/* Array of var name lists */
+    Tcl_Obj **vCopyList;	/* Copies of var name list arguments */
+    int *argcList;		/* Array of value list sizes */
+    Tcl_Obj ***argvList;	/* Array of value lists */
+    Tcl_Obj **aCopyList;	/* Copies of value list arguments */
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2549,214 +2344,129 @@ TclNRForeachCmd(
 
     /*
      * Manage numList parallel value lists.
-     * statePtr->argvList[i] is a value list counted by statePtr->argcList[i];
-     * statePtr->varvList[i] is the list of variables associated with the
-     *		value list;
-     * statePtr->varcList[i] is the number of variables associated with the
-     *		value list;
-     * statePtr->index[i] is the current pointer into the value list
-     *		statePtr->argvList[i].
-     *
-     * The setting up of all of these pointers is moderately messy, but allows
-     * the rest of this code to be simple and for us to use a single memory
-     * allocation for better performance.
+     * argvList[i] is a value list counted by argcList[i]l;
+     * varvList[i] is the list of variables associated with the value list;
+     * varcList[i] is the number of variables associated with the value list;
+     * index[i] is the current pointer into the value list argvList[i].
      */
 
-    statePtr = TclStackAlloc(interp,
-	    sizeof(struct ForeachState) + 3 * numLists * sizeof(int)
-	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
-    memset(statePtr, 0,
-	    sizeof(struct ForeachState) + 3 * numLists * sizeof(int)
-	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
-    statePtr->varvList = (Tcl_Obj ***) (statePtr + 1);
-    statePtr->argvList = statePtr->varvList + numLists;
-    statePtr->vCopyList = (Tcl_Obj **) (statePtr->argvList + numLists);
-    statePtr->aCopyList = statePtr->vCopyList + numLists;
-    statePtr->index = (int *) (statePtr->aCopyList + numLists);
-    statePtr->varcList = statePtr->index + numLists;
-    statePtr->argcList = statePtr->varcList + numLists;
+    index = (int *) TclStackAlloc(interp, 3 * numLists * sizeof(int));
+    varcList = index + numLists;
+    argcList = varcList + numLists;
+    memset(index, 0, 3 * numLists * sizeof(int));
 
-    statePtr->numLists = numLists;
-    statePtr->bodyPtr = objv[objc - 1];
-    statePtr->bodyIdx = objc - 1;
+    varvList = (Tcl_Obj ***)
+	    TclStackAlloc(interp, 2 * numLists * sizeof(Tcl_Obj **));
+    argvList = varvList + numLists;
+    memset(varvList, 0, 2 * numLists * sizeof(Tcl_Obj **));
+
+    vCopyList = (Tcl_Obj **)
+	    TclStackAlloc(interp, 2 * numLists * sizeof(Tcl_Obj *));
+    aCopyList = vCopyList + numLists;
+    memset(vCopyList, 0, 2 * numLists * sizeof(Tcl_Obj *));
 
     /*
      * Break up the value lists and variable lists into elements.
      */
 
+    maxj = 0;
     for (i=0 ; i<numLists ; i++) {
-	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
-	if (statePtr->vCopyList[i] == NULL) {
+	
+	vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
+	if (vCopyList[i] == NULL) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjGetElements(NULL, statePtr->vCopyList[i],
-		&statePtr->varcList[i], &statePtr->varvList[i]);
-	if (statePtr->varcList[i] < 1) {
+	TclListObjGetElements(NULL, vCopyList[i], &varcList[i], &varvList[i]);
+	if (varcList[i] < 1) {
 	    Tcl_AppendResult(interp, "foreach varlist is empty", NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}
 
-	statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
-	if (statePtr->aCopyList[i] == NULL) {
+	aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
+	if (aCopyList[i] == NULL) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjGetElements(NULL, statePtr->aCopyList[i],
-		&statePtr->argcList[i], &statePtr->argvList[i]);
+	TclListObjGetElements(NULL, aCopyList[i], &argcList[i], &argvList[i]);
 
-	j = statePtr->argcList[i] / statePtr->varcList[i];
-	if ((statePtr->argcList[i] % statePtr->varcList[i]) != 0) {
+	j = argcList[i] / varcList[i];
+	if ((argcList[i] % varcList[i]) != 0) {
 	    j++;
 	}
-	if (j > statePtr->maxj) {
-	    statePtr->maxj = j;
+	if (j > maxj) {
+	    maxj = j;
 	}
     }
 
     /*
-     * If there is any work to do, assign the variables and set things going
-     * non-recursively.
+     * Iterate maxj times through the lists in parallel. If some value lists
+     * run out of values, set loop vars to ""
      */
 
-    if (statePtr->maxj > 0) {
-	result = ForeachAssignments(interp, statePtr);
-	if (result == TCL_ERROR) {
-	    goto done;
-	}
+    bodyPtr = objv[objc-1];
+    for (j=0 ; j<maxj ; j++) {
+	for (i=0 ; i<numLists ; i++) {
+	    for (v=0 ; v<varcList[i] ; v++) {
+		int k = index[i]++;
+		Tcl_Obj *valuePtr, *varValuePtr;
 
-	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
-	return TclNREvalObjEx(interp, objv[objc-1], 0,
-		((Interp *) interp)->cmdFramePtr, objc-1);
-    }
-
-    /*
-     * This cleanup stage is only used when an error occurs during setup or if
-     * there is no work to do.
-     */
-
-    result = TCL_OK;
-  done:
-    ForeachCleanup(interp, statePtr);
-    return result;
-}
-
-/*
- * Post-body processing handler.
- */
-
-static int
-ForeachLoopStep(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    register struct ForeachState *statePtr = data[0];
-
-    /*
-     * Process the result code from this run of the [foreach] body. Note that
-     * this switch uses fallthroughs in several places. Maintainer aware!
-     */
-
-    switch (result) {
-    case TCL_CONTINUE:
-	result = TCL_OK;
-    case TCL_OK:
-	break;
-    case TCL_BREAK:
-	result = TCL_OK;
-	goto done;
-    case TCL_ERROR:
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"foreach\" body line %d)", Tcl_GetErrorLine(interp)));
-    default:
-	goto done;
-    }
-
-    /*
-     * Test if there is work still to be done. If so, do the next round of
-     * variable assignments, reschedule ourselves and run the body again.
-     */
-
-    if (statePtr->maxj > ++statePtr->j) {
-	result = ForeachAssignments(interp, statePtr);
-	if (result == TCL_ERROR) {
-	    goto done;
-	}
-
-	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
-	return TclNREvalObjEx(interp, statePtr->bodyPtr, 0,
-		((Interp *) interp)->cmdFramePtr, statePtr->bodyIdx);
-    }
-
-    /*
-     * We're done. Tidy up our work space and finish off.
-     */
-
-    Tcl_ResetResult(interp);
-  done:
-    ForeachCleanup(interp, statePtr);
-    return result;
-}
-
-/*
- * Factored out code to do the assignments in [foreach].
- */
-
-static inline int
-ForeachAssignments(
-    Tcl_Interp *interp,
-    struct ForeachState *statePtr)
-{
-    int i, v, k;
-    Tcl_Obj *valuePtr, *varValuePtr;
-
-    for (i=0 ; i<statePtr->numLists ; i++) {
-	for (v=0 ; v<statePtr->varcList[i] ; v++) {
-	    k = statePtr->index[i]++;
-
-	    if (k < statePtr->argcList[i]) {
-		valuePtr = statePtr->argvList[i][k];
-	    } else {
-		TclNewObj(valuePtr);	/* Empty string */
+		if (k < argcList[i]) {
+		    valuePtr = argvList[i][k];
+		} else {
+		    valuePtr = Tcl_NewObj(); /* Empty string */
+		}
+		varValuePtr = Tcl_ObjSetVar2(interp, varvList[i][v], NULL,
+			valuePtr, TCL_LEAVE_ERR_MSG);
+		if (varValuePtr == NULL) {
+		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+			    "\n    (setting foreach loop variable \"%s\")",
+			    TclGetString(varvList[i][v])));
+		    result = TCL_ERROR;
+		    goto done;
+		}
 	    }
+	}
 
-	    varValuePtr = Tcl_ObjSetVar2(interp, statePtr->varvList[i][v],
-		    NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+	/*
+	 * TIP #280. Make invoking context available to loop body.
+	 */
 
-	    if (varValuePtr == NULL) {
+	result = TclEvalObjEx(interp, bodyPtr, 0, iPtr->cmdFramePtr, objc-1);
+	if (result != TCL_OK) {
+	    if (result == TCL_CONTINUE) {
+		result = TCL_OK;
+	    } else if (result == TCL_BREAK) {
+		result = TCL_OK;
+		break;
+	    } else if (result == TCL_ERROR) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (setting foreach loop variable \"%s\")",
-			TclGetString(statePtr->varvList[i][v])));
-		return TCL_ERROR;
+			"\n    (\"foreach\" body line %d)",
+			Tcl_GetErrorLine(interp)));
+		break;
+	    } else {
+		break;
 	    }
 	}
     }
+    if (result == TCL_OK) {
+	Tcl_ResetResult(interp);
+    }
 
-    return TCL_OK;
-}
-
-/*
- * Factored out code for cleaning up the state of the foreach.
- */
-
-static inline void
-ForeachCleanup(
-    Tcl_Interp *interp,
-    struct ForeachState *statePtr)
-{
-    int i;
-
-    for (i=0 ; i<statePtr->numLists ; i++) {
-	if (statePtr->vCopyList[i]) {
-	    TclDecrRefCount(statePtr->vCopyList[i]);
+  done:
+    for (i=0 ; i<numLists ; i++) {
+	if (vCopyList[i]) {
+	    Tcl_DecrRefCount(vCopyList[i]);
 	}
-	if (statePtr->aCopyList[i]) {
-	    TclDecrRefCount(statePtr->aCopyList[i]);
+	if (aCopyList[i]) {
+	    Tcl_DecrRefCount(aCopyList[i]);
 	}
     }
-    TclStackFree(interp, statePtr);
+    TclStackFree(interp, vCopyList);	/* Tcl_Obj * arrays */
+    TclStackFree(interp, varvList);	/* Tcl_Obj ** arrays */
+    TclStackFree(interp, index);	/* int arrays */
+    return result;
 }
 
 /*

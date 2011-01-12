@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.13 2010/03/05 11:36:19 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.4 2008/05/31 11:42:18 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1074,7 +1074,7 @@ TclOODefineClassObjCmd(
      * produce an error if any attempt is made to swap from one to the other.
      */
 
-    if ((oPtr->classPtr==NULL) == TclOOIsReachable(fPtr->classCls, clsPtr)) {
+    if ((oPtr->classPtr == NULL) == TclOOIsReachable(fPtr->classCls,clsPtr)) {
 	Tcl_AppendResult(interp, "may not change a ",
 		(oPtr->classPtr==NULL ? "non-" : ""), "class object into a ",
 		(oPtr->classPtr==NULL ? "" : "non-"), "class object", NULL);

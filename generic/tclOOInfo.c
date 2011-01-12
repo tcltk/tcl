@@ -1,5 +1,5 @@
 /*
- * tclOODefineCmds.c --
+ * tclOOInfo.c --
  *
  *	This file contains the implementation of the ::oo-related [info]
  *	subcommands.
@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.14 2010/03/24 13:21:11 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.4 2008/05/31 11:42:18 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -18,7 +18,7 @@
 #include "tclInt.h"
 #include "tclOOInt.h"
 
-static inline Class *	GetClassFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static inline Class *  GetClassFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static Tcl_ObjCmdProc InfoObjectClassCmd;
 static Tcl_ObjCmdProc InfoObjectDefnCmd;
 static Tcl_ObjCmdProc InfoObjectFiltersCmd;
@@ -50,17 +50,17 @@ struct NameProcMap { const char *name; Tcl_ObjCmdProc *proc; };
  */
 
 static const struct NameProcMap infoObjectCmds[] = {
-    {"::oo::InfoObject::class",		InfoObjectClassCmd},
-    {"::oo::InfoObject::definition",	InfoObjectDefnCmd},
-    {"::oo::InfoObject::filters",	InfoObjectFiltersCmd},
-    {"::oo::InfoObject::forward",	InfoObjectForwardCmd},
-    {"::oo::InfoObject::isa",		InfoObjectIsACmd},
-    {"::oo::InfoObject::methods",	InfoObjectMethodsCmd},
-    {"::oo::InfoObject::methodtype",	InfoObjectMethodTypeCmd},
-    {"::oo::InfoObject::mixins",	InfoObjectMixinsCmd},
-    {"::oo::InfoObject::namespace",	InfoObjectNsCmd},
-    {"::oo::InfoObject::variables",	InfoObjectVariablesCmd},
-    {"::oo::InfoObject::vars",		InfoObjectVarsCmd},
+    {"::oo::InfoObject::class",	     InfoObjectClassCmd},
+    {"::oo::InfoObject::definition", InfoObjectDefnCmd},
+    {"::oo::InfoObject::filters",    InfoObjectFiltersCmd},
+    {"::oo::InfoObject::forward",    InfoObjectForwardCmd},
+    {"::oo::InfoObject::isa",	     InfoObjectIsACmd},
+    {"::oo::InfoObject::methods",    InfoObjectMethodsCmd},
+    {"::oo::InfoObject::methodtype", InfoObjectMethodTypeCmd},
+    {"::oo::InfoObject::mixins",     InfoObjectMixinsCmd},
+    {"::oo::InfoObject::namespace",  InfoObjectNsCmd},
+    {"::oo::InfoObject::variables",  InfoObjectVariablesCmd},
+    {"::oo::InfoObject::vars",	     InfoObjectVarsCmd},
     {NULL, NULL}
 };
 
@@ -69,18 +69,18 @@ static const struct NameProcMap infoObjectCmds[] = {
  */
 
 static const struct NameProcMap infoClassCmds[] = {
-    {"::oo::InfoClass::constructor",	InfoClassConstrCmd},
-    {"::oo::InfoClass::definition",	InfoClassDefnCmd},
-    {"::oo::InfoClass::destructor",	InfoClassDestrCmd},
-    {"::oo::InfoClass::filters",	InfoClassFiltersCmd},
-    {"::oo::InfoClass::forward",	InfoClassForwardCmd},
-    {"::oo::InfoClass::instances",	InfoClassInstancesCmd},
-    {"::oo::InfoClass::methods",	InfoClassMethodsCmd},
-    {"::oo::InfoClass::methodtype",	InfoClassMethodTypeCmd},
-    {"::oo::InfoClass::mixins",		InfoClassMixinsCmd},
-    {"::oo::InfoClass::subclasses",	InfoClassSubsCmd},
-    {"::oo::InfoClass::superclasses",	InfoClassSupersCmd},
-    {"::oo::InfoClass::variables",	InfoClassVariablesCmd},
+    {"::oo::InfoClass::constructor",  InfoClassConstrCmd},
+    {"::oo::InfoClass::definition",   InfoClassDefnCmd},
+    {"::oo::InfoClass::destructor",   InfoClassDestrCmd},
+    {"::oo::InfoClass::filters",      InfoClassFiltersCmd},
+    {"::oo::InfoClass::forward",      InfoClassForwardCmd},
+    {"::oo::InfoClass::instances",    InfoClassInstancesCmd},
+    {"::oo::InfoClass::methods",      InfoClassMethodsCmd},
+    {"::oo::InfoClass::methodtype",   InfoClassMethodTypeCmd},
+    {"::oo::InfoClass::mixins",	      InfoClassMixinsCmd},
+    {"::oo::InfoClass::subclasses",   InfoClassSubsCmd},
+    {"::oo::InfoClass::superclasses", InfoClassSupersCmd},
+    {"::oo::InfoClass::variables",    InfoClassVariablesCmd},
     {NULL, NULL}
 };
 
@@ -158,8 +158,8 @@ TclOOInitInfo(
  *
  * GetClassFromObj --
  *
- *	How to correctly get a class from a Tcl_Obj. Just a wrapper round
- *	Tcl_GetObjectFromObj, but this is an idiom that was used heavily.
+ *     How to correctly get a class from a Tcl_Obj. Just a wrapper round
+ *     Tcl_GetObjectFromObj, but this is an idiom that was used heavily.
  *
  * ----------------------------------------------------------------------
  */
@@ -1233,7 +1233,7 @@ InfoClassMethodsCmd(
 		Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
 	    }
 	}
-    }
+    } 
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }

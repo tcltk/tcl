@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkgua.c,v 1.12 2010/12/31 16:35:26 nijtmans Exp $
+ * RCS: @(#) $Id: pkgua.c,v 1.8 2008/04/27 22:41:47 dkf Exp $
  */
 
 #undef STATIC_BUILD

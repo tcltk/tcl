@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.18 2010/04/04 11:59:23 dkf Exp $
+ * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.12 2008/04/27 22:21:33 dkf Exp $
  */
 
 #include "tclPort.h"

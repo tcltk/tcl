@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.188 2011/01/01 10:49:09 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.143 2008/07/07 21:40:18 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -107,8 +107,6 @@ typedef struct SortInfo {
  */
 
 static int		DictionaryCompare(const char *left, const char *right);
-static int		IfConditionCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
 static int		InfoArgsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoBodyCmd(ClientData dummy, Tcl_Interp *interp,
@@ -163,31 +161,30 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  */
 
 static const EnsembleImplMap defaultInfoMap[] = {
-    {"args",		   InfoArgsCmd,		    NULL, NULL, NULL, 0},
-    {"body",		   InfoBodyCmd,		    NULL, NULL, NULL, 0},
-    {"cmdcount",	   InfoCmdCountCmd,	    NULL, NULL, NULL, 0},
-    {"commands",	   InfoCommandsCmd,	    NULL, NULL, NULL, 0},
-    {"complete",	   InfoCompleteCmd,	    NULL, NULL, NULL, 0},
-    {"coroutine",	   TclInfoCoroutineCmd,     NULL, NULL, NULL, 0},
-    {"default",		   InfoDefaultCmd,	    NULL, NULL, NULL, 0},
-    {"errorstack",	   InfoErrorStackCmd,	    NULL, NULL, NULL, 0},
-    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL, 0},
-    {"frame",		   InfoFrameCmd,	    NULL, NULL, NULL, 0},
-    {"functions",	   InfoFunctionsCmd,	    NULL, NULL, NULL, 0},
-    {"globals",		   TclInfoGlobalsCmd,	    NULL, NULL, NULL, 0},
-    {"hostname",	   InfoHostnameCmd,	    NULL, NULL, NULL, 0},
-    {"level",		   InfoLevelCmd,	    NULL, NULL, NULL, 0},
-    {"library",		   InfoLibraryCmd,	    NULL, NULL, NULL, 0},
-    {"loaded",		   InfoLoadedCmd,	    NULL, NULL, NULL, 0},
-    {"locals",		   TclInfoLocalsCmd,	    NULL, NULL, NULL, 0},
-    {"nameofexecutable",   InfoNameOfExecutableCmd, NULL, NULL, NULL, 0},
-    {"patchlevel",	   InfoPatchLevelCmd,	    NULL, NULL, NULL, 0},
-    {"procs",		   InfoProcsCmd,	    NULL, NULL, NULL, 0},
-    {"script",		   InfoScriptCmd,	    NULL, NULL, NULL, 0},
-    {"sharedlibextension", InfoSharedlibCmd,	    NULL, NULL, NULL, 0},
-    {"tclversion",	   InfoTclVersionCmd,	    NULL, NULL, NULL, 0},
-    {"vars",		   TclInfoVarsCmd,	    NULL, NULL, NULL, 0},
-    {NULL, NULL, NULL, NULL, NULL, 0}
+    {"args",		   InfoArgsCmd,		    NULL, NULL, 0},
+    {"body",		   InfoBodyCmd,		    NULL, NULL, 0},
+    {"cmdcount",	   InfoCmdCountCmd,	    NULL, NULL, 0},
+    {"commands",	   InfoCommandsCmd,	    NULL, NULL, 0},
+    {"complete",	   InfoCompleteCmd,	    NULL, NULL, 0},
+    {"default",		   InfoDefaultCmd,	    NULL, NULL, 0},
+    {"errorstack",	   InfoErrorStackCmd,	    NULL, NULL, 0},
+    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, 0},
+    {"frame",		   InfoFrameCmd,	    NULL, NULL, 0},
+    {"functions",	   InfoFunctionsCmd,	    NULL, NULL, 0},
+    {"globals",		   TclInfoGlobalsCmd,	    NULL, NULL, 0},
+    {"hostname",	   InfoHostnameCmd,	    NULL, NULL, 0},
+    {"level",		   InfoLevelCmd,	    NULL, NULL, 0},
+    {"library",		   InfoLibraryCmd,	    NULL, NULL, 0},
+    {"loaded",		   InfoLoadedCmd,	    NULL, NULL, 0},
+    {"locals",		   TclInfoLocalsCmd,	    NULL, NULL, 0},
+    {"nameofexecutable",   InfoNameOfExecutableCmd, NULL, NULL, 0},
+    {"patchlevel",	   InfoPatchLevelCmd,	    NULL, NULL, 0},
+    {"procs",		   InfoProcsCmd,	    NULL, NULL, 0},
+    {"script",		   InfoScriptCmd,	    NULL, NULL, 0},
+    {"sharedlibextension", InfoSharedlibCmd,	    NULL, NULL, 0},
+    {"tclversion",	   InfoTclVersionCmd,	    NULL, NULL, 0},
+    {"vars",		   TclInfoVarsCmd,	    NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, 0}
 };
 
 /*
@@ -218,65 +215,40 @@ Tcl_IfObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRIfObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRIfObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    Tcl_Obj *boolObj;
-
-    if (objc <= 1) {
-	Tcl_AppendResult(interp, "wrong # args: no expression after \"",
-		TclGetString(objv[0]), "\" argument", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
-	return TCL_ERROR;
-    }
-
-    /*
-     * At this point, objv[1] refers to the main expression to test. The
-     * arguments after the expression must be "then" (optional) and a script
-     * to execute if the expression is true.
-     */
-
-    TclNewObj(boolObj);
-    Tcl_NRAddCallback(interp, IfConditionCallback, INT2PTR(objc),
-	    (ClientData) objv, INT2PTR(1), boolObj);
-    return Tcl_NRExprObj(interp, objv[1], boolObj);
-}
-
-static int
-IfConditionCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
+    int thenScriptIndex = 0;	/* "then" script to be evaled after syntax
+				 * check. */
     Interp *iPtr = (Interp *) interp;
-    int objc = PTR2INT(data[0]);
-    Tcl_Obj *const *objv = data[1];
-    int i = PTR2INT(data[2]);
-    Tcl_Obj *boolObj = data[3];
-    int value, thenScriptIndex = 0;
+    int i, result, value;
     const char *clause;
 
-    if (result != TCL_OK) {
-	TclDecrRefCount(boolObj);
-	return result;
-    }
-    if (Tcl_GetBooleanFromObj(interp, boolObj, &value) != TCL_OK) {
-	TclDecrRefCount(boolObj);
-	return TCL_ERROR;
-    }
-    TclDecrRefCount(boolObj);
-
+    i = 1;
     while (1) {
+	/*
+	 * At this point in the loop, objv and objc refer to an expression to
+	 * test, either for the main expression or an expression following an
+	 * "elseif". The arguments after the expression must be "then"
+	 * (optional) and a script to execute if the expression is true.
+	 */
+
+	if (i >= objc) {
+	    clause = TclGetString(objv[i-1]);
+	    Tcl_AppendResult(interp, "wrong # args: ",
+		    "no expression after \"", clause, "\" argument", NULL);
+	    return TCL_ERROR;
+	}
+	if (!thenScriptIndex) {
+	    result = Tcl_ExprBooleanObj(interp, objv[i], &value);
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	}
 	i++;
 	if (i >= objc) {
-	    goto missingScript;
+	missingScript:
+	    clause = TclGetString(objv[i-1]);
+	    Tcl_AppendResult(interp, "wrong # args: ",
+		    "no script following \"", clause, "\" argument", NULL);
+	    return TCL_ERROR;
 	}
 	clause = TclGetString(objv[i]);
 	if ((i < objc) && (strcmp(clause, "then") == 0)) {
@@ -302,36 +274,17 @@ IfConditionCallback(
 		 * TIP #280. Make invoking context available to branch.
 		 */
 
-		return TclNREvalObjEx(interp, objv[thenScriptIndex], 0,
+		return TclEvalObjEx(interp, objv[thenScriptIndex], 0,
 			iPtr->cmdFramePtr, thenScriptIndex);
 	    }
 	    return TCL_OK;
 	}
 	clause = TclGetString(objv[i]);
-	if ((clause[0] != 'e') || (strcmp(clause, "elseif") != 0)) {
-	    break;
+	if ((clause[0] == 'e') && (strcmp(clause, "elseif") == 0)) {
+	    i++;
+	    continue;
 	}
-	i++;
-
-	/*
-	 * At this point in the loop, objv and objc refer to an expression to
-	 * test, either for the main expression or an expression following an
-	 * "elseif". The arguments after the expression must be "then"
-	 * (optional) and a script to execute if the expression is true.
-	 */
-
-	if (i >= objc) {
-	    Tcl_AppendResult(interp, "wrong # args: ",
-		    "no expression after \"", clause, "\" argument", NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
-	    return TCL_ERROR;
-	}
-	if (!thenScriptIndex) {
-	    TclNewObj(boolObj);
-	    Tcl_NRAddCallback(interp, IfConditionCallback, data[0], data[1],
-		    INT2PTR(i), boolObj);
-	    return Tcl_NRExprObj(interp, objv[i], boolObj);
-	}
+	break;
     }
 
     /*
@@ -343,13 +296,14 @@ IfConditionCallback(
     if (strcmp(clause, "else") == 0) {
 	i++;
 	if (i >= objc) {
-	    goto missingScript;
+	    Tcl_AppendResult(interp, "wrong # args: ",
+		    "no script following \"else\" argument", NULL);
+	    return TCL_ERROR;
 	}
     }
     if (i < objc - 1) {
 	Tcl_AppendResult(interp, "wrong # args: ",
 		"extra words after \"else\" clause in \"if\" command", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
 	return TCL_ERROR;
     }
     if (thenScriptIndex) {
@@ -357,17 +311,10 @@ IfConditionCallback(
 	 * TIP #280. Make invoking context available to branch/else.
 	 */
 
-	return TclNREvalObjEx(interp, objv[thenScriptIndex], 0,
+	return TclEvalObjEx(interp, objv[thenScriptIndex], 0,
 		iPtr->cmdFramePtr, thenScriptIndex);
     }
-    return TclNREvalObjEx(interp, objv[i], 0, iPtr->cmdFramePtr, i);
-
-  missingScript:
-    clause = TclGetString(objv[i-1]);
-    Tcl_AppendResult(interp, "wrong # args: no script following \"", clause,
-	    "\" argument", NULL);
-    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
-    return TCL_ERROR;
+    return TclEvalObjEx(interp, objv[i], 0, iPtr->cmdFramePtr, i);
 }
 
 /*
@@ -1155,26 +1102,6 @@ InfoFrameCmd(
 	    ? 0
 	    : iPtr->cmdFramePtr->level);
 
-
-    if (iPtr->execEnvPtr->corPtr) {
-	/*
-	 * A coroutine: must fix the level computations AND the cmdFrame chain,
-	 * which is interrupted at the base.
-	 */
-
-        CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-        CmdFrame *runPtr = iPtr->cmdFramePtr;
-        CmdFrame *lastPtr = NULL;
-        
-        topLevel += corPtr->caller.cmdFramePtr->level;
-        while (runPtr && (runPtr != corPtr->caller.cmdFramePtr)) {
-            lastPtr = runPtr;
-            runPtr = runPtr->nextPtr;
-        }
-        if (lastPtr && !runPtr) {
-            lastPtr->nextPtr = corPtr->caller.cmdFramePtr;
-        }
-    }
 
     if (objc == 1) {
 	/*

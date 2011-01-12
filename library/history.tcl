@@ -2,7 +2,7 @@
 #
 # Implementation of the history command.
 #
-# RCS: @(#) $Id: history.tcl,v 1.11 2010/06/14 13:48:25 nijtmans Exp $
+# RCS: @(#) $Id: history.tcl,v 1.7 2005/07/23 04:12:49 dgp Exp $
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
 #
@@ -54,8 +54,7 @@ proc ::history {args} {
 	set args info
     }
 
-    # Tricky stuff needed to make stack and errors come out right!
-    tailcall apply {args {tailcall history {*}$args} ::tcl} {*}$args
+    uplevel 1 [list ::tcl::history {*}$args]
 }
 
 # tcl::HistAdd --
@@ -95,7 +94,7 @@ proc ::tcl::HistAdd {event {exec {}}} {
     if {$exec eq ""} {
 	return ""
     }
-    tailcall eval $event
+    uplevel 1 $event
 }
 
 # tcl::HistKeep --
@@ -206,7 +205,7 @@ proc ::tcl::HistRedo {{event -1}} {
     }
     set cmd $history($i)
     HistChange $cmd 0
-    tailcall eval $cmd
+    uplevel 1 $cmd
 }
 
 # tcl::HistIndex --

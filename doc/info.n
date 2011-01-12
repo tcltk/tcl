@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.40 2010/10/20 20:52:26 ferrieux Exp $
+'\" RCS: @(#) $Id: info.n,v 1.27 2008/06/29 22:28:24 dkf Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -78,13 +78,6 @@ This command is typically used in line-oriented input environments
 to allow users to type in commands that span multiple lines;  if the
 command is not complete, the script can delay evaluating it until additional
 lines have been typed to complete the command.
-.TP
-\fBinfo coroutine\fR
-.VS 8.6
-Returns the name of the currently executing coroutine, or the empty string if
-either no coroutine is currently executing, or the current coroutine has been
-deleted (but has not yet returned or yielded since deletion).
-.VE 8.6
 .TP
 \fBinfo default \fIprocname arg varname\fR
 .

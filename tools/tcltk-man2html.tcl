@@ -18,9 +18,9 @@ package require Tcl 8.6
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 #
-# CVS: $Id: tcltk-man2html.tcl,v 1.49 2010/09/03 09:38:53 dkf Exp $
+# CVS: $Id$
 
-regexp {\d+\.\d+} {$Revision: 1.49 $} ::Version
+regexp {\d+\.\d+} {$Revision$} ::Version
 set ::CSSFILE "docs.css"
 
 ##

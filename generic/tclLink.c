@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.26 2008/10/28 23:29:54 nijtmans Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.25 2008/04/27 22:21:30 dkf Exp $
  */
 
 #include "tclInt.h"

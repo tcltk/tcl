@@ -89,6 +89,6 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_read_radix.c,v $ */
 /* Tom's revision is 1.4. */
-/* $Revision: 1.7 $ */
-/* $Date: 2009/12/11 23:10:47 $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/12/01 00:31:32 $ */
 

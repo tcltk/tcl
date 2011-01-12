@@ -835,6 +835,6 @@ MODULE_SCOPE const char *mp_s_rmap;
 
 /* $Source: /root/tcl/repos-to-convert/tcl/generic/tclTomMath.h,v $ */
 /* Based on Tom's version 1.8 */
-/* $Revision: 1.14 $ */
-/* $Date: 2010/05/03 14:36:41 $ */
+/* $Revision: 1.10 $ */
+/* $Date: 2007/02/14 17:59:21 $ */
 

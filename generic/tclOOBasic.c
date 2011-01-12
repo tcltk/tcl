@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.24 2010/02/05 13:41:33 dkf Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.1 2008/05/31 11:42:17 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -17,57 +17,6 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
-
-static inline Tcl_Object *AddConstructionFinalizer(Tcl_Interp *interp);
-static int		AfterNRDestructor(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeConstruction(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeEval(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		RestoreFrame(ClientData data[],
-			    Tcl_Interp *interp, int result);
-
-/*
- * ----------------------------------------------------------------------
- *
- * AddCreateCallback, FinalizeConstruction --
- *
- *	Special version of TclNRAddCallback that allows the caller to splice
- *	the object created later on. Always calls FinalizeConstruction, which
- *	converts the object into its name and stores that in the interpreter
- *	result. This is shared by all the construction methods (create,
- *	createWithNamespace, new).
- *
- *	Note that this is the only code in this file (or, indeed, the whole of
- *	TclOO) that uses NRE internals; it is the only code that does
- *	non-standard poking in the NRE guts.
- *
- * ----------------------------------------------------------------------
- */
-
-static inline Tcl_Object *
-AddConstructionFinalizer(
-    Tcl_Interp *interp)
-{
-    TclNRAddCallback(interp, FinalizeConstruction, NULL, NULL, NULL, NULL);
-    return (Tcl_Object *) &(TOP_CB(interp)->data[0]);
-}
-
-static int
-FinalizeConstruction(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Object *oPtr = data[0];
-
-    if (result != TCL_OK) {
-	return result;
-    }
-    Tcl_SetObjResult(interp, TclOOObjectName(interp, oPtr));
-    return TCL_OK;
-}
 
 /*
  * ----------------------------------------------------------------------
@@ -89,6 +38,7 @@ TclOO_Class_Create(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Tcl_Object newObject;
     const char *objName;
     int len;
 
@@ -126,10 +76,14 @@ TclOO_Class_Create(
      * Make the object and return its name.
      */
 
-    return TclNRNewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
+    newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
 	    objName, NULL, objc, objv,
-	    Tcl_ObjectContextSkippedArgs(context)+1,
-	    AddConstructionFinalizer(interp));
+	    Tcl_ObjectContextSkippedArgs(context)+1);
+    if (newObject == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
+    return TCL_OK;
 }
 
 /*
@@ -152,6 +106,7 @@ TclOO_Class_CreateNs(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Tcl_Object newObject;
     const char *objName, *nsName;
     int len;
 
@@ -196,10 +151,14 @@ TclOO_Class_CreateNs(
      * Make the object and return its name.
      */
 
-    return TclNRNewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
+    newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
 	    objName, nsName, objc, objv,
-	    Tcl_ObjectContextSkippedArgs(context)+2,
-	    AddConstructionFinalizer(interp));
+	    Tcl_ObjectContextSkippedArgs(context)+2);
+    if (newObject == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
+    return TCL_OK;
 }
 
 /*
@@ -222,6 +181,7 @@ TclOO_Class_New(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Tcl_Object newObject;
 
     /*
      * Sanity check; should not be possible to invoke this method on a
@@ -240,9 +200,13 @@ TclOO_Class_New(
      * Make the object and return its name.
      */
 
-    return TclNRNewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
-	    NULL, NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context),
-	    AddConstructionFinalizer(interp));
+    newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
+	    NULL, NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context));
+    if (newObject == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
+    return TCL_OK;
 }
 
 /*
@@ -265,41 +229,25 @@ TclOO_Object_Destroy(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    CallContext *contextPtr;
+    int result = TCL_OK;
 
     if (objc != Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
     }
+    AddRef(oPtr);
     if (!(oPtr->flags & DESTRUCTOR_CALLED)) {
+	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR);
+
 	oPtr->flags |= DESTRUCTOR_CALLED;
-	contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
 	if (contextPtr != NULL) {
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
-	    AddRef(oPtr);
-	    TclNRAddCallback(interp, AfterNRDestructor, oPtr, contextPtr,
-		    NULL, NULL);
-	    return TclOOInvokeContext(contextPtr, interp, 0, NULL);
+	    result = TclOOInvokeContext(interp, contextPtr, 0, NULL);
+	    TclOODeleteContext(contextPtr);
 	}
     }
-    if (oPtr->command) {
-	Tcl_DeleteCommandFromToken(interp, oPtr->command);
-    }
-    return TCL_OK;
-}
-
-static int
-AfterNRDestructor(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Object *oPtr = data[0];
-    CallContext *contextPtr = data[1];
-
-    TclOODeleteContext(contextPtr);
     if (oPtr->command) {
 	Tcl_DeleteCommandFromToken(interp, oPtr->command);
     }
@@ -329,10 +277,8 @@ TclOO_Object_Eval(
     CallContext *contextPtr = (CallContext *) context;
     Tcl_Object object = Tcl_ObjectContextObject(context);
     register const int skip = Tcl_ObjectContextSkippedArgs(context);
-    CallFrame *framePtr, **framePtrPtr = &framePtr;
-    Tcl_Obj *scriptPtr;
+    CallFrame *framePtr, **framePtrPtr;
     int result;
-    CmdFrame *invoker;
 
     if (objc-1 < skip) {
 	Tcl_WrongNumArgs(interp, skip, objv, "arg ?arg ...?");
@@ -344,6 +290,8 @@ TclOO_Object_Eval(
      * command(s).
      */
 
+    /* This is needed to satisfy GCC 3.3's strict aliasing rules */
+    framePtrPtr = &framePtr;
     result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    Tcl_GetObjectNamespace(object), 0);
     if (result != TCL_OK) {
@@ -354,46 +302,29 @@ TclOO_Object_Eval(
 				 * incremented here. */
 
     if (!(contextPtr->callPtr->flags & PUBLIC_METHOD)) {
-	object = NULL;		/* Now just for error mesage printing. */
+	object = NULL;
     }
 
-    /*
-     * Work out what script we are actually going to evaluate.
-     *
-     * When there's more than one argument, we concatenate them together with
-     * spaces between, then evaluate the result. Tcl_EvalObjEx will delete the
-     * object when it decrements its refcount after eval'ing it.
-     */
-
-    if (objc != skip+1) {
-	scriptPtr = Tcl_ConcatObj(objc-skip, objv+skip);
-	invoker = NULL;
+    if (objc == skip+1) {
+	result = Tcl_EvalObjEx(interp, objv[skip], 0);
     } else {
-	scriptPtr = objv[skip];
-	invoker = ((Interp *) interp)->cmdFramePtr;
+	Tcl_Obj *objPtr;
+
+	/*
+	 * More than one argument: concatenate them together with spaces
+	 * between, then evaluate the result. Tcl_EvalObjEx will delete the
+	 * object when it decrements its refcount after eval'ing it.
+	 */
+
+	objPtr = Tcl_ConcatObj(objc-skip, objv+skip);
+	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
 
-    /*
-     * Evaluate the script now, with FinalizeEval to do the processing after
-     * the script completes.
-     */
-
-    TclNRAddCallback(interp, FinalizeEval, object, NULL, NULL, NULL);
-    return TclNREvalObjEx(interp, scriptPtr, 0, invoker, skip);
-}
-
-static int
-FinalizeEval(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
     if (result == TCL_ERROR) {
-	Object *oPtr = data[0];
-	const char *namePtr;
+	const char* namePtr;
 
-	if (oPtr) {
-	    namePtr = TclGetString(TclOOObjectName(interp, oPtr));
+	if (object) {
+	    namePtr = TclGetString(TclOOObjectName(interp, (Object *) object));
 	} else {
 	    namePtr = "my";
 	}
@@ -700,6 +631,7 @@ TclOONextObjCmd(
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->varFramePtr;
     Tcl_ObjectContext context;
+    int result;
 
     /*
      * Start with sanity checks on the calling context to make sure that we
@@ -720,20 +652,9 @@ TclOONextObjCmd(
      * that this is like [uplevel 1] and not [eval].
      */
 
-    TclNRAddCallback(interp, RestoreFrame, framePtr, NULL, NULL, NULL);
     iPtr->varFramePtr = framePtr->callerVarPtr;
-    return TclNRObjectContextInvokeNext(interp, context, objc, objv, 1);
-}
-
-static int
-RestoreFrame(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Interp *iPtr = (Interp *) interp;
-
-    iPtr->varFramePtr = data[0];
+    result = Tcl_ObjectContextInvokeNext(interp, context, objc, objv, 1);
+    iPtr->varFramePtr = framePtr;
     return result;
 }
 
@@ -755,7 +676,7 @@ TclOOSelfObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    static const char *const subcmds[] = {
+    static const char *subcmds[] = {
 	"caller", "class", "filter", "method", "namespace", "next", "object",
 	"target", NULL
     };
@@ -856,7 +777,7 @@ TclOOSelfObjCmd(
 	}
     case SELF_CALLER:
 	if ((framePtr->callerVarPtr == NULL) ||
-		!(framePtr->callerVarPtr->isProcCallFrame & FRAME_IS_METHOD)){
+		!(framePtr->callerVarPtr->isProcCallFrame & FRAME_IS_METHOD)) {
 	    Tcl_AppendResult(interp, "caller is not an object", NULL);
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
 	    return TCL_ERROR;
@@ -955,7 +876,13 @@ TclOOSelfObjCmd(
 		return TCL_ERROR;
 	    }
 	    result[0] = TclOOObjectName(interp, declarerPtr);
-	    result[1] = mPtr->namePtr;
+	    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+		result[1] = declarerPtr->fPtr->constructorName;
+	    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+		result[1] = declarerPtr->fPtr->destructorName;
+	    } else {
+		result[1] = mPtr->namePtr;
+	    }
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	    return TCL_OK;
 	}
@@ -1056,22 +983,21 @@ TclOOUpcatchCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    return Tcl_NRCallObjProc(interp, TclOONRUpcatch, NULL, objc, objv);
-}
-
-static int
-UpcatchCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
     Interp *iPtr = (Interp *) interp;
-    CallFrame *savedFramePtr = data[0];
+    CallFrame *savedFramePtr = iPtr->varFramePtr;
     Tcl_Obj *resultObj[2];
-    int rewind = iPtr->execEnvPtr->rewind;
+    int result;
 
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "cmd ...");
+	return TCL_ERROR;
+    }
+    if (iPtr->varFramePtr->callerVarPtr != NULL) {
+	iPtr->varFramePtr = iPtr->varFramePtr->callerVarPtr;
+    }
+    result = Tcl_EvalObjv(interp, objc-1, objv+1, TCL_EVAL_INVOKE);
     iPtr->varFramePtr = savedFramePtr;
-    if (rewind || Tcl_LimitExceeded(interp)) {
+    if (Tcl_LimitExceeded(interp)) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"UpCatch\" body line %d)", Tcl_GetErrorLine(interp)));
 	return TCL_ERROR;
@@ -1080,29 +1006,6 @@ UpcatchCallback(
     resultObj[1] = Tcl_GetReturnOptions(interp, result);
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObj));
     return TCL_OK;
-}
-
-int
-TclOONRUpcatch(
-    ClientData ignored,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Interp *iPtr = (Interp *) interp;
-    CallFrame *savedFramePtr = iPtr->varFramePtr;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "script");
-	return TCL_ERROR;
-    }
-    if (iPtr->varFramePtr->callerVarPtr != NULL) {
-	iPtr->varFramePtr = iPtr->varFramePtr->callerVarPtr;
-    }
-
-    Tcl_NRAddCallback(interp, UpcatchCallback, savedFramePtr, NULL,NULL,NULL);
-    return TclNREvalObjEx(interp, objv[1], TCL_EVAL_NOERR,
-	    iPtr->cmdFramePtr, 1);
 }
 
 /*

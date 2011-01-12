@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.147 2010/12/10 15:44:53 nijtmans Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.117 2008/07/08 17:52:17 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -535,7 +535,10 @@ EXTERN int		TclObjBeingDeleted(Tcl_Obj *objPtr);
 /* 227 */
 EXTERN void		TclSetNsPath(Namespace *nsPtr, int pathLength,
 				Tcl_Namespace *pathAry[]);
-/* Slot 228 is reserved */
+/* 228 */
+EXTERN int		TclObjInterpProcCore(register Tcl_Interp *interp,
+				Tcl_Obj *procNameObj, int skip,
+				ProcErrorProc *errorProc);
 /* 229 */
 EXTERN int		TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
 				const char *myName, int myFlags, int index);
@@ -562,24 +565,11 @@ EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
 /* Slot 236 is reserved */
 /* 237 */
 EXTERN int		TclResetCancellation(Tcl_Interp *interp, int force);
-/* 238 */
-EXTERN int		TclNRInterpProc(ClientData clientData,
-				Tcl_Interp *interp, int objc,
-				Tcl_Obj *const objv[]);
-/* 239 */
-EXTERN int		TclNRInterpProcCore(Tcl_Interp *interp,
-				Tcl_Obj *procNameObj, int skip,
-				ProcErrorProc *errorProc);
-/* 240 */
-EXTERN int		TclNRRunCallbacks(Tcl_Interp *interp, int result,
-				struct TEOV_callback *rootPtr);
-/* 241 */
-EXTERN int		TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
-				int flags, const CmdFrame *invoker, int word);
-/* 242 */
-EXTERN int		TclNREvalObjv(Tcl_Interp *interp, int objc,
-				Tcl_Obj *const objv[], int flags,
-				Command *cmdPtr);
+/* Slot 238 is reserved */
+/* Slot 239 is reserved */
+/* Slot 240 is reserved */
+/* Slot 241 is reserved */
+/* Slot 242 is reserved */
 /* 243 */
 EXTERN void		TclDbDumpActiveObjects(FILE *outFile);
 /* 244 */
@@ -833,7 +823,7 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp *interp, Tcl_Obj *rootPtr, int keyc, Tcl_Obj *const keyv[], int flags); /* 225 */
     int (*tclObjBeingDeleted) (Tcl_Obj *objPtr); /* 226 */
     void (*tclSetNsPath) (Namespace *nsPtr, int pathLength, Tcl_Namespace *pathAry[]); /* 227 */
-    void (*reserved228)(void);
+    int (*tclObjInterpProcCore) (register Tcl_Interp *interp, Tcl_Obj *procNameObj, int skip, ProcErrorProc *errorProc); /* 228 */
     int (*tclPtrMakeUpvar) (Tcl_Interp *interp, Var *otherP1Ptr, const char *myName, int myFlags, int index); /* 229 */
     Var * (*tclObjLookupVar) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, const char *part2, int flags, const char *msg, const int createPart1, const int createPart2, Var **arrayPtrPtr); /* 230 */
     int (*tclGetNamespaceFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr); /* 231 */
@@ -843,11 +833,11 @@ typedef struct TclIntStubs {
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
     void (*reserved236)(void);
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
-    int (*tclNRInterpProc) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
-    int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, int skip, ProcErrorProc *errorProc); /* 239 */
-    int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct TEOV_callback *rootPtr); /* 240 */
-    int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 241 */
-    int (*tclNREvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags, Command *cmdPtr); /* 242 */
+    void (*reserved238)(void);
+    void (*reserved239)(void);
+    void (*reserved240)(void);
+    void (*reserved241)(void);
+    void (*reserved242)(void);
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
     Tcl_HashTable * (*tclGetNamespaceChildTable) (Tcl_Namespace *nsPtr); /* 244 */
     Tcl_HashTable * (*tclGetNamespaceCommandTable) (Tcl_Namespace *nsPtr); /* 245 */
@@ -1235,7 +1225,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclObjBeingDeleted) /* 226 */
 #define TclSetNsPath \
 	(tclIntStubsPtr->tclSetNsPath) /* 227 */
-/* Slot 228 is reserved */
+#define TclObjInterpProcCore \
+	(tclIntStubsPtr->tclObjInterpProcCore) /* 228 */
 #define TclPtrMakeUpvar \
 	(tclIntStubsPtr->tclPtrMakeUpvar) /* 229 */
 #define TclObjLookupVar \
@@ -1253,16 +1244,11 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 236 is reserved */
 #define TclResetCancellation \
 	(tclIntStubsPtr->tclResetCancellation) /* 237 */
-#define TclNRInterpProc \
-	(tclIntStubsPtr->tclNRInterpProc) /* 238 */
-#define TclNRInterpProcCore \
-	(tclIntStubsPtr->tclNRInterpProcCore) /* 239 */
-#define TclNRRunCallbacks \
-	(tclIntStubsPtr->tclNRRunCallbacks) /* 240 */
-#define TclNREvalObjEx \
-	(tclIntStubsPtr->tclNREvalObjEx) /* 241 */
-#define TclNREvalObjv \
-	(tclIntStubsPtr->tclNREvalObjv) /* 242 */
+/* Slot 238 is reserved */
+/* Slot 239 is reserved */
+/* Slot 240 is reserved */
+/* Slot 241 is reserved */
+/* Slot 242 is reserved */
 #define TclDbDumpActiveObjects \
 	(tclIntStubsPtr->tclDbDumpActiveObjects) /* 243 */
 #define TclGetNamespaceChildTable \

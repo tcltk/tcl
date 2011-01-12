@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: transchan.n,v 1.2 2008/10/07 15:00:10 dkf Exp $
+'\" RCS: @(#) $Id$
 .so man.macros
 .TH transchan n 8.6 Tcl "Tcl Built-In Commands"
 .BS

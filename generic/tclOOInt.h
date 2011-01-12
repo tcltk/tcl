@@ -4,12 +4,12 @@
  *	This file contains the structure definitions and some of the function
  *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006 by Donal K. Fellows
+ * Copyright (c) 2006-2008 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.18 2010/04/27 12:36:21 nijtmans Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.2 2008/05/31 19:56:07 dkf Exp $
  */
 
 #ifndef TCL_OO_INTERNAL_H
@@ -508,18 +508,12 @@ MODULE_SCOPE int	TclOO_Object_VarName(ClientData clientData,
 MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
-MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
-			    Tcl_Class cls, const char *nameStr,
-			    const char *nsNameStr, int objc,
-			    Tcl_Obj *const *objv, int skip,
-			    Tcl_Object *objectPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
 MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODelMethodRef(Method *method);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
-			    Tcl_Obj *methodNameObj, int flags,
-			    Tcl_Obj *cacheInThisObj);
+			    Tcl_Obj *methodNameObj, int flags);
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
@@ -528,18 +522,12 @@ MODULE_SCOPE int	TclOOGetSortedClassMethodList(Class *clsPtr,
 			    int flags, const char ***stringsPtr);
 MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
 			    const char ***stringsPtr);
-MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
-MODULE_SCOPE int	TclOOInvokeContext(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
-			    Tcl_ObjectContext context, int objc,
-			    Tcl_Obj *const *objv, int skip);
+MODULE_SCOPE int	TclOOInvokeContext(Tcl_Interp *interp,
+			    CallContext *contextPtr, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE void	TclOONewBasicMethod(Tcl_Interp *interp, Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
-MODULE_SCOPE int	TclOONRUpcatch(ClientData ignored, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
 MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOORemoveFromMixinSubs(Class *subPtr,
@@ -604,6 +592,17 @@ MODULE_SCOPE int	TclOOUpcatchCmd(ClientData ignored,
 	} else { \
 	    (target).list = NULL; \
 	} \
+    } while(0)
+
+/*
+ * Convenience macro for directing a list into temporary storage and clearing
+ * the original list. Used when disposing the list.
+ */
+
+#define TEMP_AND_CLEAR(temporary,main) \
+    do {						\
+	memcpy(&(temporary), &(main), sizeof(main));	\
+	memset(&(main), 0, sizeof(main));		\
     } while(0)
 
 /*

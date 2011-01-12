@@ -9,21 +9,22 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.11 2010/06/02 08:22:15 nijtmans Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.5 2008/06/25 14:35:39 dgp Exp $
  */
 
 #ifndef TCLOO_H_INCLUDED
 #define TCLOO_H_INCLUDED
 #include "tcl.h"
 
+#if defined(BUILD_tcloo)
+#	define TCLOOAPI DLLEXPORT
+#	undef USE_TCLOO_STUBS
+#else
+#	define TCLOOAPI DLLIMPORT
+#endif
+
 /*
- * Be careful when it comes to versioning; need to make sure that the
- * standalone TclOO version matches. Also make sure that this matches the
- * version in the files:
- *
- * tests/oo.test
- * unix/tclooConfig.sh
- * win/tclooConfig.sh
+ * Must match version at top of ../configure.in
  */
 
 #define TCLOO_VERSION "0.6.2"

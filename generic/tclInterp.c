@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.114 2010/11/15 21:34:54 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.86 2008/06/20 20:48:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -194,9 +194,6 @@ static int		AliasDescribe(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, Tcl_Obj *objPtr);
 static int		AliasList(Tcl_Interp *interp, Tcl_Interp *slaveInterp);
 static int		AliasObjCmd(ClientData dummy,
-			    Tcl_Interp *currentInterp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		AliasNRCmd(ClientData dummy,
 			    Tcl_Interp *currentInterp, int objc,
 			    Tcl_Obj *const objv[]);
 static void		AliasObjCmdDeleteProc(ClientData clientData);
@@ -1513,15 +1510,9 @@ AliasCreate(
     Tcl_Preserve(slaveInterp);
     Tcl_Preserve(masterInterp);
 
-    if (slaveInterp == masterInterp) {
-	aliasPtr->slaveCmd = Tcl_NRCreateCommand(slaveInterp,
-		TclGetString(namePtr), AliasObjCmd, AliasNRCmd, aliasPtr,
-		AliasObjCmdDeleteProc);
-    } else {
     aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
 	    TclGetString(namePtr), AliasObjCmd, aliasPtr,
 	    AliasObjCmdDeleteProc);
-    }
 
     if (TclPreventAliasLoop(interp, slaveInterp,
 	    aliasPtr->slaveCmd) != TCL_OK) {
@@ -1774,70 +1765,6 @@ AliasList(
  *
  *----------------------------------------------------------------------
  */
-
-static int
-AliasNRCmd(
-    ClientData clientData,	/* Alias record. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument vector. */
-{
-    Interp *iPtr = (Interp *) interp;
-    Alias *aliasPtr = clientData;
-    int prefc, cmdc, i;
-    Tcl_Obj **prefv, **cmdv;
-    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
-    Tcl_Obj *listPtr;
-    List *listRep;
-    int flags = TCL_EVAL_INVOKE;
-
-    /*
-     * Append the arguments to the command prefix and invoke the command in
-     * the target interp's global namespace.
-     */
-
-    prefc = aliasPtr->objc;
-    prefv = &aliasPtr->objPtr;
-    cmdc = prefc + objc - 1;
-
-    listPtr = Tcl_NewListObj(cmdc, NULL);
-    listRep = listPtr->internalRep.twoPtrValue.ptr1;
-    listRep->elemCount = cmdc;
-    cmdv = &listRep->elements;
-
-    prefv = &aliasPtr->objPtr;
-    memcpy(cmdv, prefv, (size_t) (prefc * sizeof(Tcl_Obj *)));
-    memcpy(cmdv+prefc, objv+1, (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
-
-    for (i=0; i<cmdc; i++) {
-	Tcl_IncrRefCount(cmdv[i]);
-    }
-
-    /*
-     * Use the ensemble rewriting machinery to ensure correct error messages:
-     * only the source command should show, not the full target prefix.
-     */
-
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = 1;
-	iPtr->ensembleRewrite.numInsertedObjs = prefc;
-    } else {
-	iPtr->ensembleRewrite.numInsertedObjs += prefc - 1;
-    }
-
-    /*
-     * We are sending a 0-refCount obj, do not need a callback: it will be
-     * cleaned up automatically. But we may need to clear the rootEnsemble
-     * stuff ...
-     */
-
-    if (isRootEnsemble) {
-	TclNRDeferCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
-    }
-    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
-    return Tcl_NREvalObj(interp, listPtr, flags);
-}
 
 static int
 AliasObjCmd(

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPanic.c,v 1.19 2010/12/20 10:28:48 nijtmans Exp $
+ * RCS: @(#) $Id: tclPanic.c,v 1.11 2008/04/27 22:21:31 dkf Exp $
  */
 
 #include "tclInt.h"

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.37 2010/05/11 14:47:12 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.34 2008/04/27 22:21:37 dkf Exp $
  */
 
 #include "tclInt.h"

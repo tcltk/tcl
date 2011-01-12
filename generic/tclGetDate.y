@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.45 2010/03/04 23:16:56 nijtmans Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.38 2007/12/13 15:23:17 dgp Exp $
  */
 
 %parse-param {DateInfo* info}

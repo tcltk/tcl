@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.43 2011/01/01 15:14:43 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.7 2008/06/19 21:29:04 dkf Exp $
 
 package require -exact TclOO 0.6.2 ;# Must match value in generic/tclOO.h
 package require tcltest 2
@@ -326,17 +326,6 @@ test oo-2.5 {OO constructor - Bug 2531577} -setup {
 } -cleanup {
     foo destroy
 } -result {1 1}
-test oo-2.6 {OO constructor and tailcall - Bug 2414858} -setup {
-    oo::class create foo
-} -body {
-    oo::define foo {
-	constructor {} { tailcall my bar }
-	method bar {}  { return bad }
-    }
-    namespace tail [foo create good]
-} -cleanup {
-    foo destroy
-} -result good
 
 test oo-3.1 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as we're
@@ -2616,39 +2605,6 @@ test oo-30.2 {Bug 2903011: deleting an object in a constructor} -setup {
     cls destroy
 } -result {object deleted in constructor}
 
-test oo-31.1 {Bug 3111059: when objects and coroutines entangle} -setup {
-    oo::class create cls
-} -constraints memory -body {
-    oo::define cls {
-	method justyield {} {
-	    yield
-	}
-	constructor {} {
-	    coroutine coro my justyield
-	}
-    }
-    list [leaktest {[cls new] destroy}] [info class instances cls]
-} -cleanup {
-    cls destroy
-} -result {0 {}}
-test oo-31.2 {Bug 3111059: when objects and coroutines entangle} -setup {
-    oo::class create cls
-} -constraints memory -body {
-    oo::define cls {
-	method justyield {} {
-	    yield
-	}
-	constructor {} {
-	    coroutine coro my justyield
-	}
-	destructor {
-	    rename coro {}
-	}
-    }
-    list [leaktest {[cls new] destroy}] [info class instances cls]
-} -cleanup {
-    cls destroy
-} -result {0 {}}
 
 cleanupTests
 return

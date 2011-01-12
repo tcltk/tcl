@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strncasecmp.c,v 1.5 2010/03/04 22:29:05 nijtmans Exp $
+ * RCS: @(#) $Id: strncasecmp.c,v 1.4 2008/04/27 22:21:28 dkf Exp $
  */
 
 #include "tclPort.h"

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.56 2010/11/03 12:09:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.41 2008/04/27 22:21:36 dkf Exp $
  */
 
 #undef STATIC_BUILD

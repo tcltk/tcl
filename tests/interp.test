@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.71 2011/01/01 15:14:43 dkf Exp $
+# RCS: @(#) $Id: interp.test,v 1.57 2008/06/20 20:48:49 dgp Exp $
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.1
@@ -3588,6 +3588,50 @@ test interp-38.2 {interp debug env var} -setup {
     interp debug a
 } -cleanup {
     unset -nocomplain ::env(TCL_INTERP_DEBUG_FRAME)
+    interp delete a
+} -result {-frame 1}
+test interp-38.3 {interp debug wrong args} -body {
+    interp debug
+} -returnCodes {
+    error
+} -result {wrong # args: should be "interp debug path ?-frame ?bool??"}
+test interp-38.4 {interp debug basic setup} -body {
+    interp debug {}
+} -result {-frame 0}
+test interp-38.5 {interp debug basic setup} -body {
+    interp debug {} -f
+} -result {0}
+test interp-38.6 {interp debug basic setup} -body {
+    interp debug -frames
+} -returnCodes error -result {could not find interpreter "-frames"}
+test interp-38.7 {interp debug basic setup} -body {
+    interp debug {} -frames
+} -returnCodes error -result {bad debug option "-frames": must be -frame}
+test interp-38.8 {interp debug basic setup} -body {
+    interp debug {} -frame 0 bogus
+} -returnCodes {
+    error
+} -result {wrong # args: should be "interp debug path ?-frame ?bool??"}
+
+
+test interp-38.1 {interp debug one-way switch} -setup {
+    catch {interp delete a}
+    interp create a
+    interp debug a -frame 1
+} -body {
+    # TIP #3xx interp debug frame is a one-way switch
+    interp debug a -frame 0
+} -cleanup {
+    interp delete a
+} -result {1}
+test interp-38.2 {interp debug env var} -setup {
+    catch {interp delete a}
+    set ::env(TCL_INTERP_DEBUG_FRAME) 1
+    interp create a
+} -body {
+    interp debug a
+} -cleanup {
+    unset ::env(TCL_INTERP_DEBUG_FRAME)
     interp delete a
 } -result {-frame 1}
 test interp-38.3 {interp debug wrong args} -body {

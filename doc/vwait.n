@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: vwait.n,v 1.14 2010/01/20 13:42:17 dkf Exp $
+'\" RCS: @(#) $Id: vwait.n,v 1.7 2008/01/09 08:09:56 georgeps Exp $
 '\" 
 .so man.macros
 .TH vwait n 8.0 Tcl "Tcl Built-In Commands"
@@ -105,28 +105,6 @@ namespace eval example {
 }
 .CE
 .PP
-When running inside a \fBcoroutine\fR, an alternative to using \fBvwait\fR is
-to \fByield\fR to an outer event loop and to get recommenced when the variable
-is set, or at an idle moment after that.
-.PP
-.CS
-coroutine task apply {{} {
-    # simulate [after 1000]
-    after 1000 [info coroutine]
-    yield
-
-    # schedule the setting of a global variable, as normal
-    after 2000 {set var 1}
-
-    # simulate [\fBvwait\fR var]
-    proc updatedVar {task args} {
-        after idle $task
-        trace remove variable ::var write "updatedVar $task"
-    }
-    trace add variable ::var write "updatedVar [info coroutine]"
-    yield
-}}
-.CE
 .SS "NESTED VWAITS BY EXAMPLE"
 .PP
 This example demonstrates what can happen when the \fBvwait\fR command is
@@ -167,9 +145,8 @@ until after it has printed
 .QW "b was set"
 because of the nesting of \fBvwait\fR commands, and yet \fIb\fR will not be
 set until after the outer \fBvwait\fR returns, so the script has deadlocked.
-The only ways to avoid this are to either structure the overall program in
-continuation-passing style or to use \fBcoroutine\fR to make the continuations
-implicit. The first of these options would be written as:
+The only way to avoid this is to structure the overall program in
+continuation-passing style. This would be written as:
 .PP
 .CS
 after 500 {
@@ -194,48 +171,6 @@ trace add variable a write {apply {args {
     puts "setting b"
     set b 42
 }}}
-\fBvwait\fR done
-.CE
-.PP
-The second option, with \fBcoroutine\fR and some helper procedures, is done
-like this:
-.PP
-.CS
-# A coroutine-based wait-for-variable command
-proc waitvar globalVar {
-    trace add variable ::$globalVar write \e
-            [list apply {{v c args} {
-        trace remove variable $v write \e
-                [lrange [info level 0] 0 3]
-        after 0 $c
-    }} ::$globalVar [info coroutine]]
-    yield
-}
-# A coroutine-based wait-for-some-time command
-proc waittime ms {
-    after $ms [info coroutine]
-    yield
-}
-
-coroutine task-1 eval {
-    puts "waiting for a"
-    waitvar a
-    puts "a was set"
-    puts "setting b"
-    set b 42
-}
-coroutine task-2 eval {
-    waittime 500
-    puts "waiting for b"
-    waitvar b
-    puts "b was set"
-    set done ok
-}
-coroutine task-3 eval {
-    waittime 1000
-    puts "setting a"
-    set a 10
-}
 \fBvwait\fR done
 .CE
 .SH "SEE ALSO"

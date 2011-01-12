@@ -10,7 +10,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: security.test,v 1.7 2011/01/01 15:14:43 dkf Exp $
+# RCS: @(#) $Id: security.test,v 1.6 2004/05/19 13:02:10 dkf Exp $
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest

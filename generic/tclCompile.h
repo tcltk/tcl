@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.128 2010/10/20 20:52:28 ferrieux Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.92 2008/06/08 03:21:33 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -342,8 +342,6 @@ typedef struct CompileEnv {
  */
 
 #define TCL_BYTECODE_RESOLVE_VARS		0x0002
-
-#define TCL_BYTECODE_RECOMPILE			0x0004
 
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
@@ -863,8 +861,17 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_NRPostProc	NRCommand;
-MODULE_SCOPE Tcl_ObjCmdProc	NRInterpCoroutine;
+MODULE_SCOPE int	TclEvalObjvInternal(Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[],
+			    const char *command, int length, int flags);
+/*
+ *----------------------------------------------------------------
+ * Procedures exported by the engine to be used by tclBasic.c
+ *----------------------------------------------------------------
+ */
+
+MODULE_SCOPE int	TclCompEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    const CmdFrame *invoker, int word);
 
 /*
  *----------------------------------------------------------------
@@ -905,7 +912,7 @@ MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
-MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
+MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes,
 			    int length, unsigned int hash, int *newPtr,
 			    Namespace *nsPtr, int flags,
@@ -918,7 +925,7 @@ MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
-MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
+MODULE_SCOPE int	TclExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,

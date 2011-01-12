@@ -26,7 +26,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: loadICU.tcl,v 1.4 2010/06/16 10:31:15 nijtmans Exp $
+# RCS: @(#) $Id: loadICU.tcl,v 1.3 2007/04/20 02:23:35 kennykb Exp $
 #
 #----------------------------------------------------------------------
 

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: regc_locale.c,v 1.23 2010/10/15 15:25:52 nijtmans Exp $
+ * RCS: @(#) $Id: regc_locale.c,v 1.20 2007/12/13 15:23:14 dgp Exp $
  */
 
 /* ASCII character-name table */

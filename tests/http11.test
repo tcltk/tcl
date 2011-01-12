@@ -10,7 +10,7 @@
 package require tcltest 2
 namespace import -force ::tcltest::*
 
-package require http 2.8
+package require http 2.7.6
 
 # start the server
 variable httpd_output

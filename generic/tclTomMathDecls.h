@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathDecls.h,v 1.14 2010/11/28 23:20:11 kennykb Exp $
+ * RCS: @(#) $Id: tclTomMathDecls.h,v 1.5 2008/04/08 14:54:53 das Exp $
  */
 
 #ifndef _TCLTOMMATHDECLS

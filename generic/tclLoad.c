@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.27 2010/10/01 12:52:49 dkf Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.17 2008/05/30 22:54:29 dkf Exp $
  */
 
 #include "tclInt.h"

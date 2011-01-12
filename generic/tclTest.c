@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.156 2010/12/01 09:58:52 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.115 2008/04/21 16:26:38 dgp Exp $
  */
 
 #include <math.h>
@@ -406,9 +406,6 @@ static int		TestNumUtfCharsCmd(ClientData clientData,
 static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestNRELevels(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
 
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -669,9 +666,6 @@ Tcltest_Init(
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
 	    NULL);
-
-    Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
-	    NULL, NULL);
 
     if (TclObjTest_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
@@ -1189,7 +1183,7 @@ TestcmdtraceCmd(
 	 * Create a command trace then eval a script to check whether it is
 	 * called. Note that this trace procedure removes itself as a further
 	 * check of the robustness of the trace proc calling code in
-	 * TclNRExecuteByteCode.
+	 * TclExecuteByteCode.
 	 */
 
 	cmdTrace = Tcl_CreateTrace(interp, 50000, CmdTraceDeleteProc, NULL);
@@ -1289,7 +1283,7 @@ CmdTraceDeleteProc(
 {
     /*
      * Remove ourselves to test whether calling Tcl_DeleteTrace within a trace
-     * callback causes the for loop in TclNRExecuteByteCode that calls traces to
+     * callback causes the for loop in TclExecuteByteCode that calls traces to
      * reference freed memory.
      */
 
@@ -6712,43 +6706,6 @@ TestgetintCmd(
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(total));
 	return TCL_OK;
     }
-}
-
-static int
-TestNRELevels(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Interp *iPtr = (Interp *) interp;
-    static ptrdiff_t *refDepth = NULL;
-    ptrdiff_t depth;
-    Tcl_Obj *levels[6];
-    int i = 0;
-    TEOV_callback *cbPtr = ((Interp *) interp)->execEnvPtr->callbackPtr;
-
-    if (refDepth == NULL) {
-	refDepth = &depth;
-    }
-
-    depth = (refDepth - &depth);
-
-    levels[0] = Tcl_NewIntObj(depth);
-    levels[1] = Tcl_NewIntObj(((Interp *)interp)->numLevels);
-    levels[2] = Tcl_NewIntObj(iPtr->cmdFramePtr->level);
-    levels[3] = Tcl_NewIntObj(iPtr->varFramePtr->level);
-    levels[4] = Tcl_NewIntObj((iPtr->execEnvPtr->execStackPtr->tosPtr
-		    - iPtr->execEnvPtr->execStackPtr->stackWords));
-
-    while (cbPtr) {
-	i++;
-	cbPtr = cbPtr->nextPtr;
-    }
-    levels[5] = Tcl_NewIntObj(i);
-
-    Tcl_SetObjResult(interp, Tcl_NewListObj(6, levels));
-    return TCL_OK;
 }
 
 /*

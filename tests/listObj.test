@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: listObj.test,v 1.9 2010/03/18 20:34:48 dgp Exp $
+# RCS: @(#) $Id: listObj.test,v 1.8 2005/07/27 18:12:43 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest

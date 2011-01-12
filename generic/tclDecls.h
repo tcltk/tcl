@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.188 2010/11/04 21:48:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.134 2008/06/13 05:45:09 mistachkin Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1678,31 +1678,12 @@ EXTERN int		Tcl_Canceled(Tcl_Interp *interp, int flags);
 EXTERN int		Tcl_CreatePipe(Tcl_Interp *interp,
 				Tcl_Channel *rchan, Tcl_Channel *wchan,
 				int flags);
-/* 583 */
-EXTERN Tcl_Command	Tcl_NRCreateCommand(Tcl_Interp *interp,
-				const char *cmdName, Tcl_ObjCmdProc *proc,
-				Tcl_ObjCmdProc *nreProc,
-				ClientData clientData,
-				Tcl_CmdDeleteProc *deleteProc);
-/* 584 */
-EXTERN int		Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-				int flags);
-/* 585 */
-EXTERN int		Tcl_NREvalObjv(Tcl_Interp *interp, int objc,
-				Tcl_Obj *const objv[], int flags);
-/* 586 */
-EXTERN int		Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd,
-				int objc, Tcl_Obj *const objv[], int flags);
-/* 587 */
-EXTERN void		Tcl_NRAddCallback(Tcl_Interp *interp,
-				Tcl_NRPostProc *postProcPtr,
-				ClientData data0, ClientData data1,
-				ClientData data2, ClientData data3);
-/* 588 */
-EXTERN int		Tcl_NRCallObjProc(Tcl_Interp *interp,
-				Tcl_ObjCmdProc *objProc,
-				ClientData clientData, int objc,
-				Tcl_Obj *const objv[]);
+/* Slot 583 is reserved */
+/* Slot 584 is reserved */
+/* Slot 585 is reserved */
+/* Slot 586 is reserved */
+/* Slot 587 is reserved */
+/* Slot 588 is reserved */
 /* 589 */
 EXTERN unsigned		Tcl_GetFSDeviceFromStat(const Tcl_StatBuf *statPtr);
 /* 590 */
@@ -1793,12 +1774,8 @@ EXTERN Tcl_Obj *	Tcl_GetStartupScript(const char **encodingPtr);
 /* 624 */
 EXTERN int		Tcl_CloseEx(Tcl_Interp *interp, Tcl_Channel chan,
 				int flags);
-/* 625 */
-EXTERN int		Tcl_NRExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-				Tcl_Obj *resultPtr);
-/* 626 */
-EXTERN int		Tcl_NRSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-				int flags);
+/* Slot 625 is reserved */
+/* Slot 626 is reserved */
 /* 627 */
 EXTERN int		Tcl_LoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 				const char *const symv[], int flags,
@@ -2427,12 +2404,12 @@ typedef struct TclStubs {
     int (*tcl_CancelEval) (Tcl_Interp *interp, Tcl_Obj *resultObjPtr, ClientData clientData, int flags); /* 580 */
     int (*tcl_Canceled) (Tcl_Interp *interp, int flags); /* 581 */
     int (*tcl_CreatePipe) (Tcl_Interp *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags); /* 582 */
-    Tcl_Command (*tcl_NRCreateCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc, ClientData clientData, Tcl_CmdDeleteProc *deleteProc); /* 583 */
-    int (*tcl_NREvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 584 */
-    int (*tcl_NREvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 585 */
-    int (*tcl_NRCmdSwap) (Tcl_Interp *interp, Tcl_Command cmd, int objc, Tcl_Obj *const objv[], int flags); /* 586 */
-    void (*tcl_NRAddCallback) (Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr, ClientData data0, ClientData data1, ClientData data2, ClientData data3); /* 587 */
-    int (*tcl_NRCallObjProc) (Tcl_Interp *interp, Tcl_ObjCmdProc *objProc, ClientData clientData, int objc, Tcl_Obj *const objv[]); /* 588 */
+    void (*reserved583)(void);
+    void (*reserved584)(void);
+    void (*reserved585)(void);
+    void (*reserved586)(void);
+    void (*reserved587)(void);
+    void (*reserved588)(void);
     unsigned (*tcl_GetFSDeviceFromStat) (const Tcl_StatBuf *statPtr); /* 589 */
     unsigned (*tcl_GetFSInodeFromStat) (const Tcl_StatBuf *statPtr); /* 590 */
     unsigned (*tcl_GetModeFromStat) (const Tcl_StatBuf *statPtr); /* 591 */
@@ -2469,8 +2446,8 @@ typedef struct TclStubs {
     void (*tcl_SetStartupScript) (Tcl_Obj *path, const char *encoding); /* 622 */
     Tcl_Obj * (*tcl_GetStartupScript) (const char **encodingPtr); /* 623 */
     int (*tcl_CloseEx) (Tcl_Interp *interp, Tcl_Channel chan, int flags); /* 624 */
-    int (*tcl_NRExprObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *resultPtr); /* 625 */
-    int (*tcl_NRSubstObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 626 */
+    void (*reserved625)(void);
+    void (*reserved626)(void);
     int (*tcl_LoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *const symv[], int flags, void *procPtrs, Tcl_LoadHandle *handlePtr); /* 627 */
     void* (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
@@ -3672,18 +3649,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_Canceled) /* 581 */
 #define Tcl_CreatePipe \
 	(tclStubsPtr->tcl_CreatePipe) /* 582 */
-#define Tcl_NRCreateCommand \
-	(tclStubsPtr->tcl_NRCreateCommand) /* 583 */
-#define Tcl_NREvalObj \
-	(tclStubsPtr->tcl_NREvalObj) /* 584 */
-#define Tcl_NREvalObjv \
-	(tclStubsPtr->tcl_NREvalObjv) /* 585 */
-#define Tcl_NRCmdSwap \
-	(tclStubsPtr->tcl_NRCmdSwap) /* 586 */
-#define Tcl_NRAddCallback \
-	(tclStubsPtr->tcl_NRAddCallback) /* 587 */
-#define Tcl_NRCallObjProc \
-	(tclStubsPtr->tcl_NRCallObjProc) /* 588 */
+/* Slot 583 is reserved */
+/* Slot 584 is reserved */
+/* Slot 585 is reserved */
+/* Slot 586 is reserved */
+/* Slot 587 is reserved */
+/* Slot 588 is reserved */
 #define Tcl_GetFSDeviceFromStat \
 	(tclStubsPtr->tcl_GetFSDeviceFromStat) /* 589 */
 #define Tcl_GetFSInodeFromStat \
@@ -3756,10 +3727,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetStartupScript) /* 623 */
 #define Tcl_CloseEx \
 	(tclStubsPtr->tcl_CloseEx) /* 624 */
-#define Tcl_NRExprObj \
-	(tclStubsPtr->tcl_NRExprObj) /* 625 */
-#define Tcl_NRSubstObj \
-	(tclStubsPtr->tcl_NRSubstObj) /* 626 */
+/* Slot 625 is reserved */
+/* Slot 626 is reserved */
 #define Tcl_LoadFile \
 	(tclStubsPtr->tcl_LoadFile) /* 627 */
 #define Tcl_FindSymbol \

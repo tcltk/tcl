@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.37 2011/01/01 14:44:32 dkf Exp $
+# RCS: @(#) $Id$
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
@@ -1006,27 +1006,6 @@ test execute-10.2 {Bug 2802881} -setup {
 } -cleanup {
     interp delete slave
 } -returnCodes error -match glob -result *
-test execute-10.3 {Bug 3072640} -setup {
-    proc generate {n} {
-	for {set i 0} {$i < $n} {incr i} {
-	    yield $i
-	}
-    }
-    proc t {args} { 
-	incr ::foo 
-    }
-    trace add execution ::generate enterstep ::t
-} -body {
-    coroutine coro generate 5
-    trace remove execution ::generate enterstep ::t
-    set ::foo
-} -cleanup {
-    unset ::foo
-    rename generate {}
-    rename t {}
-    rename coro {}
-} -result 4
-
 test execute-11.1 {Bug 3142026: GrowEvaluationStack off-by-one} -setup {
     interp create slave
 } -body {

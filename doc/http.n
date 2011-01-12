@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.40 2010/07/25 16:08:13 dkf Exp $
+'\" RCS: @(#) $Id: http.n,v 1.36 2008/03/12 10:01:02 hobbs Exp $
 '\" 
 .so man.macros
 .TH "http" n 2.7 http "Tcl Bundled Packages"

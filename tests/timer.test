@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: timer.test,v 1.14 2008/07/19 22:50:39 nijtmans Exp $
+# RCS: @(#) $Id: timer.test,v 1.13 2008/04/23 15:44:38 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2

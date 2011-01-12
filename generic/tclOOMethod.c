@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.29 2010/11/09 16:26:30 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.5 2008/06/01 08:11:07 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -70,10 +70,6 @@ static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
 static int		InvokeProcedureMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		FinalizeForwardCall(ClientData data[], Tcl_Interp *interp,
-			    int result);
-static int		FinalizePMCall(ClientData data[], Tcl_Interp *interp,
-			    int result);
 static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    CallContext *contextPtr, ProcedureMethod *pmPtr,
 			    int objc, Tcl_Obj *const *objv,
@@ -170,8 +166,8 @@ Tcl_NewInstanceMethod(
     hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) nameObj, &isNew);
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
-	mPtr->namePtr = nameObj;
 	mPtr->refCount = 1;
+	mPtr->namePtr = nameObj;
 	Tcl_IncrRefCount(nameObj);
 	Tcl_SetHashValue(hPtr, mPtr);
     } else {
@@ -668,25 +664,17 @@ InvokeProcedureMethod(
 {
     ProcedureMethod *pmPtr = clientData;
     int result;
+    register int skip;
     PMFrameData *fdPtr;		/* Important data that has to have a lifetime
 				 * matched by this function (or rather, by the
 				 * call frame's lifetime). */
 
     /*
-     * If the interpreter was deleted, we just skip to the next thing in the
-     * chain.
-     */
-
-    if (Tcl_InterpDeleted(interp)) {
-	return TclNRObjectContextInvokeNext(interp, context, objc, objv,
-		Tcl_ObjectContextSkippedArgs(context));
-    }
-
-    /*
      * Allocate the special frame data.
      */
 
-    fdPtr = TclStackAlloc(interp, sizeof(PMFrameData));
+    fdPtr = (PMFrameData *) TclStackAlloc(interp, sizeof(PMFrameData));
+    pmPtr->refCount++;
 
     /*
      * Create a call frame for this method.
@@ -695,10 +683,8 @@ InvokeProcedureMethod(
     result = PushMethodCallFrame(interp, (CallContext *) context, pmPtr,
 	    objc, objv, fdPtr);
     if (result != TCL_OK) {
-	TclStackFree(interp, fdPtr);
-	return result;
+	goto done;
     }
-    pmPtr->refCount++;
 
     /*
      * Give the pre-call callback a chance to do some setup and, possibly,
@@ -713,32 +699,19 @@ InvokeProcedureMethod(
 	if (isFinished || result != TCL_OK) {
 	    Tcl_PopCallFrame(interp);
 	    TclStackFree(interp, fdPtr->framePtr);
-	    if (--pmPtr->refCount < 1) {
-		DeleteProcedureMethodRecord(pmPtr);
-	    }
-	    TclStackFree(interp, fdPtr);
-	    return result;
+	    goto done;
 	}
     }
 
     /*
-     * Now invoke the body of the method.
+     * Now invoke the body of the method. Note that we need to take special
+     * action when doing unknown processing to ensure that the missing method
+     * name is passed as an argument.
      */
 
-    TclNRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
-    return TclNRInterpProcCore(interp, fdPtr->nameObj,
-	    Tcl_ObjectContextSkippedArgs(context), fdPtr->errProc);
-}
-
-static int
-FinalizePMCall(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    ProcedureMethod *pmPtr = data[0];
-    Tcl_ObjectContext context = data[1];
-    PMFrameData *fdPtr = data[2];
+    skip = Tcl_ObjectContextSkippedArgs(context);
+    result = TclObjInterpProcCore(interp, fdPtr->nameObj, skip,
+	    fdPtr->errProc);
 
     /*
      * Give the post-call callback a chance to do some cleanup. Note that at
@@ -757,6 +730,7 @@ FinalizePMCall(
      * sensitive when it comes to performance!
      */
 
+  done:
     if (--pmPtr->refCount < 1) {
 	DeleteProcedureMethodRecord(pmPtr);
     }
@@ -812,7 +786,7 @@ PushMethodCallFrame(
 		contextPtr->callPtr->chain[contextPtr->index].mPtr;
 
 	if (mPtr->declaringClassPtr != NULL) {
-	    nsPtr = (Namespace *)
+	    nsPtr = (Namespace *) 
 		    mPtr->declaringClassPtr->thisPtr->namespacePtr;
 	} else {
 	    nsPtr = (Namespace *) mPtr->declaringObjectPtr->namespacePtr;
@@ -990,7 +964,7 @@ ProcedureMethodCompiledVarConnect(
      * either.
      */
 
-    varName = TclGetStringFromObj(infoPtr->variableObj, &varLen);
+    varName = Tcl_GetStringFromObj(infoPtr->variableObj, &varLen);
     if (contextPtr->callPtr->chain[contextPtr->index]
 	    .mPtr->declaringClassPtr != NULL) {
 	FOREACH(variableObj, contextPtr->callPtr->chain[contextPtr->index]
@@ -1369,8 +1343,7 @@ InvokeForwardMethod(
     CallContext *contextPtr = (CallContext *) context;
     ForwardMethod *fmPtr = clientData;
     Tcl_Obj **argObjs, **prefixObjs;
-    int numPrefixes, len, skip = contextPtr->skip;
-    Command *cmdPtr;
+    int numPrefixes, result, len, skip = contextPtr->skip;
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -1383,24 +1356,22 @@ InvokeForwardMethod(
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
 
-    if (fmPtr->fullyQualified) {
-	cmdPtr = NULL;
-    } else {
-	cmdPtr = (Command *) Tcl_FindCommand(interp, TclGetString(argObjs[0]),
-		contextPtr->oPtr->namespacePtr, 0 /* normal lookup */);
-    }
-    Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
-    return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE, cmdPtr);
-}
+    /*
+     * In 8.6 we do this much more efficiently. But 8.5 simply doesn't have
+     * the API we use there, so we do this nasty hack here.
+     */
 
-static int
-FinalizeForwardCall(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Tcl_Obj **argObjs = data[0];
-    
+    if (!fmPtr->fullyQualified) {
+	Tcl_Command cmd = Tcl_FindCommand(interp, Tcl_GetString(argObjs[0]),
+		contextPtr->oPtr->namespacePtr, 0);
+
+	argObjs[0] = Tcl_NewObj();
+	Tcl_GetCommandFullName(interp, cmd, argObjs[0]);
+    }
+
+    Tcl_IncrRefCount(argObjs[0]);
+    result = Tcl_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
+    Tcl_DecrRefCount(argObjs[0]);
     TclStackFree(interp, argObjs);
     return result;
 }
@@ -1627,7 +1598,7 @@ TclOONewProcInstanceMethodEx(
     Tcl_Object oPtr,		/* The object to modify. */
     TclOO_PreCallProc *preCallPtr,
     TclOO_PostCallProc *postCallPtr,
-    ProcErrorProc *errProc,
+    ProcErrorProc errProc,
     ClientData clientData,
     Tcl_Obj *nameObj,		/* The name of the method, which must not be
 				 * NULL. */
@@ -1664,7 +1635,7 @@ TclOONewProcMethodEx(
     Tcl_Class clsPtr,		/* The class to modify. */
     TclOO_PreCallProc *preCallPtr,
     TclOO_PostCallProc *postCallPtr,
-    ProcErrorProc *errProc,
+    ProcErrorProc errProc,
     ClientData clientData,
     Tcl_Obj *nameObj,		/* The name of the method, which may be NULL;
 				 * if so, up to caller to manage storage

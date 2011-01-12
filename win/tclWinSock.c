@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.81 2010/12/14 17:22:55 rmax Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.62 2008/02/22 11:50:54 patthoyts Exp $
  *
  * -----------------------------------------------------------------------
  *

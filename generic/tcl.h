@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.311 2010/12/14 21:51:53 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.259 2008/06/19 15:37:03 dgp Exp $
  */
 
 #ifndef _TCL
@@ -899,7 +899,6 @@ typedef struct Tcl_CallFrame {
     void *dummy10;
     void *dummy11;
     void *dummy12;
-    void *dummy13;
 } Tcl_CallFrame;
 
 /*
@@ -1019,8 +1018,6 @@ typedef struct Tcl_DString {
  *	TCL_CANCEL_UNWIND:	Magical Tcl_CancelEval mode that causes the
  *				stack for the script in progress to be
  *				completely unwound.
- *	TCL_EVAL_NOERR:	Do no exception reporting at all, just return
- *				as the caller will report.
  */
 
 #define TCL_NO_EVAL		0x010000
@@ -1028,7 +1025,6 @@ typedef struct Tcl_DString {
 #define TCL_EVAL_DIRECT		0x040000
 #define TCL_EVAL_INVOKE		0x080000
 #define TCL_CANCEL_UNWIND	0x100000
-#define TCL_EVAL_NOERR          0x200000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see the man
@@ -2317,14 +2313,6 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 #define TCL_ZLIB_FLUSH		2
 #define TCL_ZLIB_FULLFLUSH	3
 #define TCL_ZLIB_FINALIZE	4
-
-/*
- *----------------------------------------------------------------------------
- * Single public declaration for NRE.
- */
-
-typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
-				int result);
 
 /*
  *----------------------------------------------------------------------------
