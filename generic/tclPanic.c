@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPanic.c,v 1.20 2011/01/12 07:48:29 nijtmans Exp $
+ * RCS: @(#) $Id: tclPanic.c,v 1.21 2011/01/12 20:17:03 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -105,8 +105,10 @@ Tcl_PanicVA(
 #ifdef _WIN32
 #   if defined(__GNUC__)
     __builtin_trap();
-#   elif defined(_MSC_VER)
+#   elif defined(_WIN64)
     __debugbreak();
+#   elif defined(_MSC_VER)
+    _asm {int 3}
 #   else
     DebugBreak();
 #   endif
