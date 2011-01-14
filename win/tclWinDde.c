@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.13.2.7 2006/04/05 20:50:46 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.13.2.8 2011/01/14 16:03:14 nijtmans Exp $
  */
 
 #include "tclPort.h"
@@ -987,7 +987,7 @@ Tcl_DdeObjCmd(
     ClientData clientData,	/* Used only for deletion */
     Tcl_Interp *interp,		/* The interp we are sending from */
     int objc,			/* Number of arguments */
-    Tcl_Obj *CONST objv[])	/* The arguments */
+    Tcl_Obj *CONST *objv)	/* The arguments */
 {
     enum {
 	DDE_SERVERNAME,
@@ -1308,7 +1308,7 @@ Tcl_DdeObjCmd(
 	    }
 
 	    objc -= (async + 3);
-	    ((Tcl_Obj **) objv) += (async + 3);
+	    objv += (async + 3);
 
             /*
 	     * See if the target interpreter is local.  If so, execute
