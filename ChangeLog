@@ -1,3 +1,8 @@
+2011-01-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:  Fix gcc-4.5.2 error: lvalue required as ...
+	* win/tclWinReg.c:  (backported from 8.5/8.6)
+
 2010-12-05  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCmdMZ.c: [Bug 3127687] Triggers FORTIFY_SOURCE
