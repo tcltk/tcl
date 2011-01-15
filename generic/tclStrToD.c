@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.53 2011/01/15 18:10:19 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.54 2011/01/15 19:01:31 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -3335,11 +3335,6 @@ ShorteningBignumConversionPowD(
 		    *s++ = '9';
 		    s = BumpUp(s, retval, &k);
 		    break;
-		} else if (mp_iszero(&b)) {
-		    while (*--s == '0') {
-			/* do nothing */
-		    }
-		    ++s;
 		}
 	    }
 
