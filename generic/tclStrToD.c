@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.33.2.7 2010/12/01 18:57:11 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.33.2.8 2011/01/15 19:07:01 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -3046,6 +3046,11 @@ StrictInt64Conversion(Double* dPtr,
 	    if (2*b > S
 		|| (2*b == S && (digit & 1) != 0)) {
 		s = BumpUp(s, retval, &k);
+	    } else {
+		while (*--s == '0') {
+		    /* do nothing */
+		}
+		++s;
 	    }
 	    break;
 	}
@@ -3463,6 +3468,11 @@ StrictBignumConversionPowD(Double* dPtr,
 	if (i == ilim) {
 	    if (ShouldBankerRoundUpPowD(&b, sd, digit&1)) {
 		s = BumpUp(s, retval, &k);
+	    } else {
+		while (*--s == '0') {
+		    /* do nothing */
+		}
+		++s;
 	    }
 	    break;
 	}
@@ -3736,7 +3746,7 @@ ShorteningBignumConversion(Double* dPtr,
 	    mp_div_d(&S, 5, &S, NULL);
 	    --s5;
 	    /* 
-	     * TODO: It might possibly be a win to fall back to
+	     * IDEA: It might possibly be a win to fall back to
 	     *       int64 arithmetic here if S < 2**64/10. But it's
 	     *       a win only for a fairly narrow range of magnitudes
 	     *       so perhaps not worth bothering. We already know that
@@ -3934,8 +3944,13 @@ StrictBignumConversion(Double* dPtr,
 		mp_mul_2d(&b, 1, &b);
 		if (ShouldBankerRoundUp(&b, &S, digit&1)) {
 		    s = BumpUp(s, retval, &k);  
-		}
-		break;
+		} else {
+		    while (*--s == '0') {
+			/* do nothing */
+		    }
+		    ++s;
+		}	
+	    break;
 	    }
 	}
     }
@@ -3996,9 +4011,9 @@ StrictBignumConversion(Double* dPtr,
  *		given number (and resolving ties with 'round to even').
  *		It is allowed to return fewer than 'ndigits' if the number
  *		converts exactly; if the TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG 
- *		is supplied instead, it is also allowed to return fewer digits
- *		if the shorter string will still reconvert to the given
- *		input number.
+ *		is supplied instead, it also returns fewer digits if the 
+ *		shorter string will still reconvert to the given input number.
+ *		In any case, strings of trailing zeroes are suppressed.
  *	TCL_DD_F_FORMAT - This value is used to prepare numbers for %f
  *		format conversion. It requests that conversion proceed until
  *		'ndigits' digits after the decimal point have been converted.
@@ -4009,6 +4024,7 @@ StrictBignumConversion(Double* dPtr,
  *		argument to TCL_DD_F_FORMAT|TCL_DD_SHORTEN_FLAG will allow
  *		the routine also to return fewer digits if the shorter string
  *		will still reconvert without loss to the given input number.
+ *		Strings of trailing zeroes are suppressed.
  *
  *	To any of these flags may be OR'ed TCL_DD_NO_QUICK; this flag
  *	requires all calculations to be done in exact arithmetic. Normally,

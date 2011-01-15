@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.35.2.1 2010/11/15 21:32:31 andreas_kupries Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.35.2.2 2011/01/15 19:07:01 kennykb Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -299,9 +299,9 @@ is same as the result of evaluating \fIsizeof(void*)\fR in C.)
 .RE
 .TP
 \fBtcl_precision\fR
+.
 This variable controls the number of digits to generate
 when converting floating-point values to strings.  It defaults
-.VS 8.5
 to 0.  \fIApplications should not change this value;\fR it is
 provided for compatibility with legacy code.
 .PP
@@ -315,24 +315,42 @@ will convert as \fI1.4\fR rather than \fI1.3999999999999999\fR
 even though the latter is nearer to the exact value of the
 binary number.
 .RE
-.VE 8.5
 .PP
 .RS
-17 digits is
+If \Btcl_precision\fB is not zero, then when Tcl converts a floating
+point number, it creates a decimal representation of at most 
+\fBtcl_precision\fR significant digits; the result may be shorter if
+the shorter result represents the original number exactly. If no
+result of at most \fBtcl_precision\fR digits is an exact representation
+of the original number, the one that is closest to the original
+number is chosen.
+If the original number lies precisely between two equally accurate
+decimal representations, then the one with an even value for the least
+significant digit is chosen; for instance, if tcl_precision is 3, then
+0.3125 will convert to 0.312, not 0.313, while 0.6875 will convert to
+0.688, not 0.687. Any string of trailing zeroes that remains is trimmed.
+.RE
+.PP
+.RS
+a \fBtcl_precision\fR value of 17 digits is
 .QW perfect
 for IEEE floating-point in that it allows
 double-precision values to be converted to strings and back to
-binary with no loss of information.  However, using 17 digits prevents
-any rounding, which produces longer, less intuitive results.  For example,
-\fBexpr {1.4}\fR returns 1.3999999999999999 with \fBtcl_precision\fR
-set to 17, vs. 1.4 if \fBtcl_precision\fR is 12.
+binary with no loss of information. For this reason, you will often
+see it as a value in legacy code that must run on Tcl versions before
+8.5. It is no longer recommended; as noted above, a zero value is the
+preferred method.
 .RE
 .PP
 .RS
 All interpreters in a thread share a single \fBtcl_precision\fR value:
 changing it in one interpreter will affect all other interpreters as
-well.  However, safe interpreters are not allowed to modify the
+well.  Safe interpreters are not allowed to modify the
 variable.
+.RE
+.PP
+.RS
+Valid values for \Btcl_precision\fR range from 0 to 17.
 .RE
 .TP
 \fBtcl_rcFileName\fR
