@@ -1,3 +1,14 @@
+2011-01-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/tclvars.n:
+	* generic/tclStrToD.c:
+	* generic/tclUtil.c (Tcl_PrintDouble):
+	* tests/util.test (util-16.*): Restored full Tcl 8.4 compatibility
+	for the formatting of floating point numbers when $::tcl_precision
+	is not zero. Added compatibility tests to make sure that excess
+	trailing zeroes are suppressed for all eight major code paths.
+	[Bug 3157475]
+
 2011-01-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinFile.c:   Use _vsnprintf in stead of vsnprintf, because
