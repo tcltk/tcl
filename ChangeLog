@@ -1,3 +1,10 @@
+2011-01-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIOCmd.c: [Bug 3148192]: Commands "read/puts" incorrectly
+	* tests/chanio.test:  interpret parameters. Improved error-message
+	* tests/io.test       regarding legacy form.
+	* tests/ioCmd.test
+
 2011-01-15  Kevin B. Kenny  <kennykb@acm.org>
 
 	* doc/tclvars.n:
