@@ -3,6 +3,10 @@
 	* win/tcl.m4:         handle --enable-64bit=ia64 for gcc. BACKPORT.
 	* win/configure:      (autoconf-2.59)
 	* win/tclWin32Dll.c:  [Patch 3059922]: fixes for mingw64 - gcc4.5.1
+	* generic/tclIOCmd.c: [Bug 3148192]: Commands "read/puts" incorrectly
+	* tests/chanio.test:  interpret parameters. Improved error-message
+	* tests/io.test       regarding legacy form.
+	* tests/ioCmd.test
 
 2011-01-15  Kevin B. Kenny  <kennykb@users.sf.net>
 
