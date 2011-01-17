@@ -1,4 +1,11 @@
+2011-01-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4:         handle --enable-64bit=ia64 for gcc. BACKPORT.
+	* win/configure:      (autoconf-2.59)
+	* win/tclWin32Dll.c:  [Patch 3059922]: fixes for mingw64 - gcc4.5.1
+
 2011-01-15  Kevin B. Kenny  <kennykb@users.sf.net>
+
 	* doc/tclvars.n:
 	* generic/tclStrToD.c:
 	* generic/tclUtil.c (Tcl_PrintDouble):
