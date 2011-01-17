@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.54.2.4 2010/11/19 20:34:47 nijtmans Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.54.2.5 2011/01/17 08:43:05 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -1054,12 +1054,42 @@ TclWinCPUID(
     unsigned int index,		/* Which CPUID value to retrieve. */
     unsigned int *regsPtr)	/* Registers after the CPUID. */
 {
-#if defined(__GNUC__) && !defined(_WIN64)
-    EXCEPTION_REGISTRATION registration;
-#endif
     int status = TCL_ERROR;
 
-#if defined(__GNUC__) && !defined(_WIN64)
+#if defined(__GNUC__)
+#   if defined(_WIN64)
+    /*
+     * Execute the CPUID instruction with the given index, and store results
+     * off 'regsPtr'.
+     */
+
+    __asm__ __volatile__(
+	/*
+	 * Do the CPUID instruction, and save the results in the 'regsPtr'
+	 * area.
+	 */
+
+	"movl	%[rptr],	%%edi"		"\n\t"
+	"movl	%[index],	%%eax"		"\n\t"
+	"cpuid"					"\n\t"
+	"movl	%%eax,		0x0(%%edi)"	"\n\t"
+	"movl	%%ebx,		0x4(%%edi)"	"\n\t"
+	"movl	%%ecx,		0x8(%%edi)"	"\n\t"
+	"movl	%%edx,		0xc(%%edi)"	"\n\t"
+
+	:
+	/* No outputs */
+	:
+	[index]		"m"	(index),
+	[rptr]		"m"	(regsPtr)
+	:
+	"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory");
+    status = TCL_OK;
+
+#   else
+
+    EXCEPTION_REGISTRATION registration;
+
     /*
      * Execute the CPUID instruction with the given index, and store results
      * off 'regPtr'.
@@ -1141,7 +1171,14 @@ TclWinCPUID(
 	"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory");
     status = registration.status;
 
-#elif defined(_MSC_VER) && !defined(_WIN64)
+#   endif /* !_WIN64 */
+#elif defined(_MSC_VER)
+#   if defined(_WIN64)
+
+    __cpuid(regsPtr, index);
+    status = TCL_OK;
+
+#   else
     /*
      * Define a structure in the stack frame to hold the registers.
      */
@@ -1188,6 +1225,7 @@ TclWinCPUID(
 	/* do nothing */
     }
 
+#   endif
 #else
     /*
      * Don't know how to do assembly code for this compiler and/or
