@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.38 2010/12/30 14:42:03 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.39 2011/01/18 16:34:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -135,32 +135,26 @@ Tcl_PutsObjCmd(
 	break;
 
     case 4: /* [puts -nonewline $chan $x] or [puts $chan $x nonewline] */
+	newline = 0;
 	if (strcmp(TclGetString(objv[1]), "-nonewline") == 0) {
 	    chanObjPtr = objv[2];
 	    string = objv[3];
-	} else {
+	    break;
+#if TCL_MAJOR_VERSION < 9
+	} else if (strcmp(TclGetString(objv[2]), "nonewline") == 0) {
 	    /*
 	     * The code below provides backwards compatibility with an old
 	     * form of the command that is no longer recommended or
-	     * documented.
+	     * documented. See also [Bug #3151675]. Will be removed in Tcl 9,
+	     * maybe even earlier.
 	     */
 
-	    const char *arg;
-	    int length;
-
-	    arg = TclGetStringFromObj(objv[3], &length);
-	    if ((length != 9)
-		    || (strncmp(arg, "nonewline", (size_t) length) != 0)) {
-		Tcl_AppendResult(interp, "bad argument \"", arg,
-			"\": should be \"nonewline\"", NULL);
-		return TCL_ERROR;
-	    }
 	    chanObjPtr = objv[1];
 	    string = objv[2];
+	    break;
+#endif
 	}
-	newline = 0;
-	break;
-
+	/* Fall through */
     default:
 	/* [puts] or [puts some bad number of arguments...] */
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? ?channelId? string");
@@ -428,25 +422,31 @@ Tcl_ReadObjCmd(
     i++;	/* Consumed channel name. */
 
     /*
-     * Compute how many bytes to read, and see whether the final newline
-     * should be dropped.
+     * Compute how many bytes to read.
      */
 
     toRead = -1;
     if (i < objc) {
-	const char *arg;
+	if ((TclGetIntFromObj(interp, objv[i], &toRead) != TCL_OK) || (toRead < 0)) {
+#if TCL_MAJOR_VERSION < 9
+	    /*
+	     * The code below provides backwards compatibility with an old
+	     * form of the command that is no longer recommended or
+	     * documented. See also [Bug #3151675]. Will be removed in Tcl 9,
+	     * maybe even earlier.
+	     */
 
-	arg = TclGetString(objv[i]);
-	if (isdigit(UCHAR(arg[0]))) { /* INTL: digit */
-	    if (TclGetIntFromObj(interp, objv[i], &toRead) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	} else if (strcmp(arg, "nonewline") == 0) {
-	    newline = 1;
-	} else {
-	    Tcl_AppendResult(interp, "bad argument \"", arg,
-		    "\": should be \"nonewline\"", NULL);
+	    if (strcmp(TclGetString(objv[i]), "nonewline") != 0) {
+#endif
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "expected non-negative integer but got \"",
+		    TclGetString(objv[i]), "\"", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 	    return TCL_ERROR;
+#if TCL_MAJOR_VERSION < 9
+	    }
+	    newline = 1;
+#endif
 	}
     }
 

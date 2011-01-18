@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.20 2010/11/09 21:05:17 dgp Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.21 2011/01/18 16:34:01 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -41,6 +41,8 @@ typedef struct {
     Tcl_Obj *nameObj;		/* The "name" of the command. */
     Command cmd;		/* The command structure. Mostly bogus. */
     ExtraFrameInfo efi;		/* Extra information used for [info frame]. */
+    Command *oldCmdPtr;		/* Saved cmdPtr so that we can be safe after a
+				 * recursive call returns. */
     struct PNI pni;		/* Specialist information used in the efi
 				 * field for this type of call. */
 } PMFrameData;
@@ -711,6 +713,13 @@ InvokeProcedureMethod(
 	result = pmPtr->preCallProc(pmPtr->clientData, interp, context,
 		(Tcl_CallFrame *) fdPtr->framePtr, &isFinished);
 	if (isFinished || result != TCL_OK) {
+	    /*
+	     * Restore the old cmdPtr so that a subsequent use of [info frame]
+	     * won't crash on us. [Bug 3001438]
+	     */
+
+	    pmPtr->procPtr->cmdPtr = fdPtr->oldCmdPtr;
+
 	    Tcl_PopCallFrame(interp);
 	    TclStackFree(interp, fdPtr->framePtr);
 	    if (--pmPtr->refCount < 1) {
@@ -750,6 +759,13 @@ FinalizePMCall(
 		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context)),
 		result);
     }
+
+    /*
+     * Restore the old cmdPtr so that a subsequent use of [info frame] won't
+     * crash on us. [Bug 3001438]
+     */
+
+    pmPtr->procPtr->cmdPtr = fdPtr->oldCmdPtr;
 
     /*
      * Scrap the special frame data now that we're done with it. Note that we
@@ -820,6 +836,14 @@ PushMethodCallFrame(
     }
 
     /*
+     * Save the old cmdPtr so that when this recursive call returns, we can
+     * restore it. To do otherwise causes crashes in [info frame] after we
+     * return from a recursive call. [Bug 3001438]
+     */
+
+    fdPtr->oldCmdPtr = pmPtr->procPtr->cmdPtr;
+
+    /*
      * Compile the body. This operation may fail.
      */
 
@@ -845,7 +869,7 @@ PushMethodCallFrame(
     result = TclProcCompileProc(interp, pmPtr->procPtr,
 	    pmPtr->procPtr->bodyPtr, nsPtr, "body of method", namePtr);
     if (result != TCL_OK) {
-	return result;
+	goto failureReturn;
     }
 
     /*
@@ -856,7 +880,7 @@ PushMethodCallFrame(
     result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    (Tcl_Namespace *) nsPtr, FRAME_IS_PROC|FRAME_IS_METHOD);
     if (result != TCL_OK) {
-	return result;
+	goto failureReturn;
     }
 
     fdPtr->framePtr->clientData = contextPtr;
@@ -891,6 +915,15 @@ PushMethodCallFrame(
     }
 
     return TCL_OK;
+
+    /*
+     * Restore the old cmdPtr so that a subsequent use of [info frame] won't
+     * crash on us. [Bug 3001438]
+     */
+
+  failureReturn:
+    pmPtr->procPtr->cmdPtr = fdPtr->oldCmdPtr;
+    return result;
 }
 
 /*

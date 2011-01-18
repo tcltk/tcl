@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.44 2010/09/27 20:46:12 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.45 2011/01/18 16:34:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1381,13 +1381,13 @@ ParseExpr(
 	Tcl_AppendPrintfToObj(msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
 		((start - limit) < parsePtr->string) ? "" : "...",
 		((start - limit) < parsePtr->string)
-			? (start - parsePtr->string) : limit - 3,
+			? (int) (start - parsePtr->string) : limit - 3,
 		((start - limit) < parsePtr->string)
 			? parsePtr->string : start - limit + 3,
 		(scanned < limit) ? scanned : limit - 3, start,
 		(scanned < limit) ? "" : "...", insertMark ? mark : "",
 		(start + scanned + limit > parsePtr->end)
-			? parsePtr->end - (start + scanned) : limit-3,
+			? (int) (parsePtr->end - start) - scanned : limit-3,
 		start + scanned,
 		(start + scanned + limit > parsePtr->end) ? "" : "...");
 
