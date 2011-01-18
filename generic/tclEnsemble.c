@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnsemble.c,v 1.6 2010/12/09 15:09:07 dkf Exp $
+ * RCS: @(#) $Id: tclEnsemble.c,v 1.7 2011/01/18 08:43:53 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1513,7 +1513,7 @@ TclMakeEnsemble(
 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
 		    if (Tcl_HideCommand(interp, "___tmp",
 			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
-			Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+			Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
 		    }
 		} else {
 		    /*

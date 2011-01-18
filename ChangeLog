@@ -1,3 +1,13 @@
+2011-01-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c:      Various mismatches between Tcl_Panic 
+	* generic/tclCompCmds.c:   format string and its arguments,
+	* generic/tclCompCmdsSZ.c: discovered thanks to [Bug 3159920]
+	* generic/tclCompExpr.c
+	* generic/tclEnsemble.c
+	* generic/tclPreserve.c
+	* generic/tclTest.c
+
 2011-01-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIOCmd.c: [Bug 3148192]: Commands "read/puts" incorrectly
