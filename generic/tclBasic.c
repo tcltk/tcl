@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.295.2.19 2010/11/15 21:32:31 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.295.2.20 2011/01/18 10:02:02 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -830,7 +830,7 @@ Tcl_CreateInterp(void)
     Tcl_InitStubs(interp, TCL_VERSION, 1);
 
     if (TclTommath_Init(interp) != TCL_OK) {
-	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 
     return interp;
@@ -4847,7 +4847,7 @@ TclArgumentBCRelease(interp,objv,objc,codePtr,pc)
 						    (char *) objv[word]);
 		    if (hPtr) {
 			CFWordBC* cfwPtr = (CFWordBC*) Tcl_GetHashValue (hPtr);
- 
+
 			if (cfwPtr->prevPtr) {
 			    Tcl_SetHashValue(hPtr, cfwPtr->prevPtr);
 			} else {
