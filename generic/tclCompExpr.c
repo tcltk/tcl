@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.97.2.1 2010/01/06 21:35:25 nijtmans Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.97.2.2 2011/01/18 10:02:03 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -50,7 +50,7 @@ typedef struct OpNode {
  * filled with a pointer to its single operand.  When an operand is a
  * subexpression the "pointer" takes the form of the index -- a non-negative
  * integer -- into the OpNode storage array where the root of that
- * subexpression parse tree is found.  
+ * subexpression parse tree is found.
  *
  * Non-operator elements of the expression do not get stored in the OpNode
  * tree.  They are stored in the other structures according to their type.
@@ -150,7 +150,7 @@ enum Marks {
 				 * for it.  Either a literal value will be
 				 * appended to the list of literals in this
 				 * expression, or appropriate Tcl_Tokens will
-				 * be appended in a Tcl_Parse struct to 
+				 * be appended in a Tcl_Parse struct to
 				 * represent those leaves that require some
 				 * form of substitution.
 				 */
@@ -325,7 +325,7 @@ enum Precedence {
 
 /*
  * Here the same information contained in the comments above is stored
- * in inverted form, so that given a lexeme, one can quickly look up 
+ * in inverted form, so that given a lexeme, one can quickly look up
  * its precedence value.
  */
 
@@ -369,7 +369,7 @@ static const unsigned char prec[] = {
     0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-    0,  
+    0,
     /* Unary operator lexemes */
     PREC_UNARY,		/* UNARY_PLUS */
     PREC_UNARY,		/* UNARY_MINUS */
@@ -424,7 +424,7 @@ static const unsigned char instruction[] = {
     0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-    0,  
+    0,
     /* Unary operator lexemes */
     INST_UPLUS,		/* UNARY_PLUS */
     INST_UMINUS,	/* UNARY_MINUS */
@@ -492,7 +492,7 @@ static unsigned char Lexeme[] = {
 
 typedef struct JumpList {
     JumpFixup jump;		/* Pass this argument to matching calls of
-				 * TclEmitForwardJump() and 
+				 * TclEmitForwardJump() and
 				 * TclFixupForwardJump(). */
     int depth;			/* Remember the currStackDepth of the
 				 * CompileEnv here. */
@@ -582,7 +582,7 @@ ParseExpr(
 				 * for most expressions to parse with no need
 				 * for array growth and reallocation. */
     int nodesUsed = 0;		/* Number of OpNodes filled. */
-    int scanned = 0;		/* Capture number of byte scanned by 
+    int scanned = 0;		/* Capture number of byte scanned by
 				 * parsing routines. */
     int lastParsed;		/* Stores info about what the lexeme parsed
 				 * the previous pass through the parsing loop
@@ -708,7 +708,7 @@ ParseExpr(
 		 * Most barewords in an expression are a syntax error.
 		 * The exceptions are that when a bareword is followed by
 		 * an open paren, it might be a function call, and when the
-		 * bareword is a legal literal boolean value, we accept that 
+		 * bareword is a legal literal boolean value, we accept that
 		 * as well.
 		 */
 
@@ -833,7 +833,7 @@ ParseExpr(
 
 	    switch (lexeme) {
 	    case NUMBER:
-	    case BOOLEAN: 
+	    case BOOLEAN:
 		/*
 		 * TODO: Consider using a dict or hash to collapse all
 		 * duplicate literals into a single representative value.
@@ -855,7 +855,7 @@ ParseExpr(
 		start += scanned;
 		numBytes -= scanned;
 		continue;
-	    
+
 	    default:
 		break;
 	    }
@@ -1112,7 +1112,7 @@ ParseExpr(
 
 	    /*
 	     * Here is where the tree comes together.  At this point, we
-	     * have a stack of incomplete trees corresponding to 
+	     * have a stack of incomplete trees corresponding to
 	     * substrings that are incomplete expressions, followed by
 	     * a complete tree corresponding to a substring that is itself
 	     * a complete expression, followed by the binary operator we have
@@ -1293,7 +1293,7 @@ ParseExpr(
 	    nodePtr->mark = MARK_LEFT;
 	    nodePtr->left = complete;
 
-	    /* 
+	    /*
 	     * The COMMA operator cannot be optimized, since the function
 	     * needs all of its arguments, and optimization would reduce
 	     * the number.  Other binary operators root constant expressions
@@ -1371,13 +1371,13 @@ ParseExpr(
 	Tcl_AppendPrintfToObj(msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
 		((start - limit) < parsePtr->string) ? "" : "...",
 		((start - limit) < parsePtr->string)
-			? (start - parsePtr->string) : limit - 3,
+			? (int) (start - parsePtr->string) : limit - 3,
 		((start - limit) < parsePtr->string)
 			? parsePtr->string : start - limit + 3,
 		(scanned < limit) ? scanned : limit - 3, start,
 		(scanned < limit) ? "" : "...", insertMark ? mark : "",
 		(start + scanned + limit > parsePtr->end)
-			? parsePtr->end - (start + scanned) : limit-3,
+			? (int) (parsePtr->end - start) - scanned : limit-3,
 		start + scanned,
 		(start + scanned + limit > parsePtr->end) ? "" : "...");
 
@@ -1495,7 +1495,7 @@ ConvertTreeToTokens(
 	     * of those few callers of Tcl_ParseExpr() we do not change
 	     * them now.  Internally, we can do better.
 	     */
-	
+
 	    int toCopy = tokenPtr->numComponents + 1;
 
 	    if (tokenPtr->numComponents == tokenPtr[1].numComponents + 1) {
@@ -1513,7 +1513,7 @@ ConvertTreeToTokens(
 		parsePtr->numTokens += toCopy;
 	    } else {
 
-		/* 
+		/*
 		 * Multiple element word.  Create a TCL_TOKEN_SUB_EXPR
 		 * token to lead, with fields initialized from the leading
 		 * token, then copy entire set of word tokens.
@@ -1553,7 +1553,7 @@ ConvertTreeToTokens(
 	    case COMMA:
 	    case COLON:
 
-		/* 
+		/*
 		 * Historical practice has been to have no Tcl_Tokens for
 		 * these operators.
 		 */
@@ -1680,7 +1680,7 @@ ConvertTreeToTokens(
 		/*
 		 * Before we leave this node/operator/subexpression for the
 		 * last time, finish up its tokens....
-		 * 
+		 *
 		 * Our current position scanning the string is where the
 		 * substring for the subexpression ends.
 		 */
@@ -1988,7 +1988,7 @@ ParseLexeme(
  * TclCompileExpr --
  *
  *	This procedure compiles a string containing a Tcl expression into Tcl
- *	bytecodes. 
+ *	bytecodes.
  *
  * Results:
  *	None.
@@ -2232,7 +2232,7 @@ CompileExprTree(
 		 * Use the numWords count we've kept to invoke the
 		 * function command with the correct number of arguments.
 		 */
-		
+
 		if (numWords < 255) {
 		    TclEmitInstInt1(INST_INVOKE_STK1, numWords, envPtr);
 		} else {
@@ -2439,7 +2439,7 @@ TclSingleOpCmd(
  *----------------------------------------------------------------------
  *
  * TclSortingOpCmd --
- *	Implements the commands: <, <=, >, >=, ==, eq 
+ *	Implements the commands: <, <=, >, >=, ==, eq
  *	in the ::tcl::mathop namespace.  These commands are defined for
  *	arbitrary number of arguments by computing the AND of the base
  * 	operator applied to all neighbor argument pairs.
