@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.114.2.8 2010/11/30 20:59:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.114.2.9 2011/01/18 10:02:03 nijtmans Exp $
  */
 
 #include <math.h>
@@ -4499,7 +4499,7 @@ TestpanicCmd(
      */
 
     argString = Tcl_Merge(argc-1, argv+1);
-    Tcl_Panic(argString);
+    Tcl_Panic("%s", argString);
     ckfree((char *)argString);
 
     return TCL_OK;
