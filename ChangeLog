@@ -1,6 +1,14 @@
+2011-01-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (PushMethodCallFrame): [Bug 3001438]: Make
+	sure that the cmdPtr field of the procPtr is correct and relevant at
+	all times so that [info frame] can report sensible information about a
+	frame after a return to it from a recursive call, instead of probably
+	crashing (depending on what else has overwritten the Tcl stack!)
+
 2011-01-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclBasic.c:      Various mismatches between Tcl_Panic 
+	* generic/tclBasic.c:      Various mismatches between Tcl_Panic
 	* generic/tclCompCmds.c:   format string and its arguments,
 	* generic/tclCompCmdsSZ.c: discovered thanks to [Bug 3159920]
 	* generic/tclCompExpr.c
@@ -20,11 +28,11 @@
 	* doc/tclvars.n:
 	* generic/tclStrToD.c:
 	* generic/tclUtil.c (Tcl_PrintDouble):
-	* tests/util.test (util-16.*): Restored full Tcl 8.4 compatibility
-	for the formatting of floating point numbers when $::tcl_precision
-	is not zero. Added compatibility tests to make sure that excess
-	trailing zeroes are suppressed for all eight major code paths.
-	[Bug 3157475]
+	* tests/util.test (util-16.*): [Bug 3157475]: Restored full Tcl 8.4
+	compatibility for the formatting of floating point numbers when
+	$::tcl_precision is not zero. Added compatibility tests to make sure
+	that excess trailing zeroes are suppressed for all eight major code
+	paths.
 
 2011-01-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
