@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.173 2010/11/04 12:22:07 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.174 2011/01/18 08:43:53 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -411,7 +411,7 @@ TclCompileCatchCmd(
     /* Stack at this point: ?script? result returnCode */
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
-		CurrentOffset(envPtr) - jumpFixup.codeOffset);
+		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
 
     /* Push the return options if the caller wants them */
@@ -1125,7 +1125,7 @@ TclCompileDictUpdateCmd(
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
-		CurrentOffset(envPtr) - jumpFixup.codeOffset);
+		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
     TclStackFree(interp, keyTokenPtrs);
     return TCL_OK;
