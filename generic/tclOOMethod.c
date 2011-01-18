@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.30 2011/01/18 13:50:03 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.31 2011/01/18 15:44:41 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -41,7 +41,8 @@ typedef struct {
     Tcl_Obj *nameObj;		/* The "name" of the command. */
     Command cmd;		/* The command structure. Mostly bogus. */
     ExtraFrameInfo efi;		/* Extra information used for [info frame]. */
-    Command *oldCmdPtr;
+    Command *oldCmdPtr;		/* Saved cmdPtr so that we can be safe after a
+				 * recursive call returns. */
     struct PNI pni;		/* Specialist information used in the efi
 				 * field for this type of call. */
 } PMFrameData;
