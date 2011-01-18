@@ -2273,7 +2273,47 @@ Tcl_PrintDouble(
 	digits = TclDoubleDigits(value, -1, TCL_DD_SHORTEST,
 				 &exponent, &signum, &end);
     } else {
-	digits = TclDoubleDigits(value, *precisionPtr, TCL_DD_E_FORMAT, 
+	/*
+	 * There are at least two possible interpretations for tcl_precision.
+	 *
+	 * The first is, "choose the decimal representation having
+	 * $tcl_precision digits of significance that is nearest to the
+	 * given number, breaking ties by rounding to even, and then
+	 * trimming trailing zeros." This gives the greatest possible
+	 * precision in the decimal string, but offers the anomaly that
+	 * [expr 0.1] will be "0.10000000000000001".
+	 *
+	 * The second is "choose the decimal representation having at
+	 * most $tcl_precision digits of significance that is nearest
+	 * to the given number. If no such representation converts
+	 * exactly to the given number, choose the one that is closest,
+	 * breaking ties by rounding to even. If more than one such
+	 * representation converts exactly to the given number, choose
+	 * the shortest, breaking ties in favour of the nearest, breaking
+	 * remaining ties in favour of the one ending in an even digit."
+	 *
+	 * Tcl 8.4 implements the first of these, which gives rise to
+	 * anomalies in formatting:
+	 *
+	 * % expr 0.1
+	 * 0.10000000000000001
+	 * % expr 0.01
+	 * 0.01
+	 * % expr 1e-7
+	 * 9.9999999999999995e-08
+	 *
+	 * For human readability, it appears better to choose the second rule,
+	 * and let [expr 0.1] return 0.1. But for 8.4 compatibility, we
+	 * prefer the first (the recommended zero value for tcl_precision
+	 * avoids the problem entirely).
+	 *
+	 * Uncomment TCL_DD_SHORTEN_FLAG in the next call to prefer the
+	 * method that allows floating point values to be shortened if
+	 * it can be done without loss of precision.
+	 */
+
+	digits = TclDoubleDigits(value, *precisionPtr,
+				 TCL_DD_E_FORMAT /* | TCL_DD_SHORTEN_FLAG */, 
 				 &exponent, &signum, &end);
     }
     if (signum) {
@@ -2294,7 +2334,15 @@ Tcl_PrintDouble(
 		c = *++p;
 	    }
 	}
+	/*
+	 * Tcl 8.4 appears to format with at least a two-digit exponent;
+	 * preserve that behaviour when tcl_precision != 0
+	 */
+	if (*precisionPtr == 0) {
 	sprintf(dst, "e%+d", exponent);
+    } else {
+	    sprintf(dst, "e%+03d", exponent);
+	}
     } else {
 	/*
 	 * F format for others.

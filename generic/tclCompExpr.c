@@ -1381,13 +1381,13 @@ ParseExpr(
 	Tcl_AppendPrintfToObj(msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
 		((start - limit) < parsePtr->string) ? "" : "...",
 		((start - limit) < parsePtr->string)
-			? (start - parsePtr->string) : limit - 3,
+			? (int) (start - parsePtr->string) : limit - 3,
 		((start - limit) < parsePtr->string)
 			? parsePtr->string : start - limit + 3,
 		(scanned < limit) ? scanned : limit - 3, start,
 		(scanned < limit) ? "" : "...", insertMark ? mark : "",
 		(start + scanned + limit > parsePtr->end)
-			? parsePtr->end - (start + scanned) : limit-3,
+			? (int) (parsePtr->end - start) - scanned : limit-3,
 		start + scanned,
 		(start + scanned + limit > parsePtr->end) ? "" : "...");
 

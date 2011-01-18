@@ -4486,7 +4486,7 @@ TestpanicCmd(
      */
 
     argString = Tcl_Merge(argc-1, argv+1);
-    Tcl_Panic(argString);
+    Tcl_Panic("%s", argString);
     ckfree((char *)argString);
 
     return TCL_OK;

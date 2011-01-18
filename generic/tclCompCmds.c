@@ -411,7 +411,7 @@ TclCompileCatchCmd(
     /* Stack at this point: ?script? result returnCode */
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
-		CurrentOffset(envPtr) - jumpFixup.codeOffset);
+		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
 
     /* Push the return options if the caller wants them */
@@ -1125,7 +1125,7 @@ TclCompileDictUpdateCmd(
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
-		CurrentOffset(envPtr) - jumpFixup.codeOffset);
+		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
     TclStackFree(interp, keyTokenPtrs);
     return TCL_OK;

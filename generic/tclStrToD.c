@@ -3086,6 +3086,11 @@ StrictInt64Conversion(
 	if (i == ilim) {
 	    if (2*b > S || (2*b == S && (digit & 1) != 0)) {
 		s = BumpUp(s, retval, &k);
+	    } else {
+		while (*--s == '0') {
+		    /* do nothing */
+		}
+		++s;
 	    }
 	    break;
 	}
@@ -3494,6 +3499,10 @@ StrictBignumConversionPowD(
 	    if (ShouldBankerRoundUpPowD(&b, sd, digit&1)) {
 		s = BumpUp(s, retval, &k);
 	    }
+	    while (*--s == '0') {
+		/* do nothing */
+	    }
+	    ++s;
 	    break;
 	}
 
@@ -3766,7 +3775,7 @@ ShorteningBignumConversion(
 	    --s5;
 
 	    /*
-	     * TODO: It might possibly be a win to fall back to int64
+	     * IDEA: It might possibly be a win to fall back to int64
 	     *       arithmetic here if S < 2**64/10. But it's a win only for
 	     *       a fairly narrow range of magnitudes so perhaps not worth
 	     *       bothering.  We already know that we shorten the
@@ -3966,6 +3975,10 @@ StrictBignumConversion(
 	    }
 	}
     }
+    while (*--s == '0') {
+	/* do nothing */
+    }
+    ++s;
 
     /*
      * Endgame - store the location of the decimal point and the end of the
@@ -4023,9 +4036,10 @@ StrictBignumConversion(
  *		choosing the one that is closest to the given number (and
  *		resolving ties with 'round to even').  It is allowed to return
  *		fewer than 'ndigits' if the number converts exactly; if the
- *		TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG is supplied instead, it is
- *		also allowed to return fewer digits if the shorter string will
- *		still reconvert to the given input number.
+ *		TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG is supplied instead, it 
+ *		also returns fewer digits if the shorter string will still
+ *		reconvert without loss to the given input number. In any case,
+ *		strings of trailing zeroes are suppressed.
  *	TCL_DD_F_FORMAT - This value is used to prepare numbers for %f format
  *		conversion. It requests that conversion proceed until
  *		'ndigits' digits after the decimal point have been converted.
@@ -4035,7 +4049,8 @@ StrictBignumConversion(
  *		number that converts exactly, and changing the argument to
  *		TCL_DD_F_FORMAT|TCL_DD_SHORTEN_FLAG will allow the routine
  *		also to return fewer digits if the shorter string will still
- *		reconvert without loss to the given input number.
+ *		reconvert without loss to the given input number. Strings of
+ *		trailing zeroes are suppressed.
  *
  *	To any of these flags may be OR'ed TCL_DD_NO_QUICK; this flag requires
  *	all calculations to be done in exact arithmetic. Normally, E and F

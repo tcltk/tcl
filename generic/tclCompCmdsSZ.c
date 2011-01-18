@@ -717,7 +717,7 @@ TclSubstCompile(
 	    /* Start */
 	    if (TclFixupForwardJumpToHere(envPtr, &startFixup, 127)) {
 		Tcl_Panic("TclCompileSubstCmd: bad start jump distance %d",
-			CurrentOffset(envPtr) - startFixup.codeOffset);
+			(int) (CurrentOffset(envPtr) - startFixup.codeOffset));
 	    }
 	}
 
@@ -774,7 +774,7 @@ TclSubstCompile(
 	/* BREAK destination */
 	if (TclFixupForwardJumpToHere(envPtr, &breakFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad break jump distance %d",
-		    CurrentOffset(envPtr) - breakFixup.codeOffset);
+		    (int) (CurrentOffset(envPtr) - breakFixup.codeOffset));
 	}
 	TclEmitOpcode(INST_POP, envPtr);
 	TclEmitOpcode(INST_POP, envPtr);
@@ -789,7 +789,7 @@ TclSubstCompile(
 	/* CONTINUE destination */
 	if (TclFixupForwardJumpToHere(envPtr, &continueFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad continue jump distance %d",
-		    CurrentOffset(envPtr) - continueFixup.codeOffset);
+		    (int) (CurrentOffset(envPtr) - continueFixup.codeOffset));
 	}
 	TclEmitOpcode(INST_POP, envPtr);
 	TclEmitOpcode(INST_POP, envPtr);
@@ -798,11 +798,11 @@ TclSubstCompile(
 	/* RETURN + other destination */
 	if (TclFixupForwardJumpToHere(envPtr, &returnFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad return jump distance %d",
-		    CurrentOffset(envPtr) - returnFixup.codeOffset);
+		    (int) (CurrentOffset(envPtr) - returnFixup.codeOffset));
 	}
 	if (TclFixupForwardJumpToHere(envPtr, &otherFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad other jump distance %d",
-		    CurrentOffset(envPtr) - otherFixup.codeOffset);
+		    (int) (CurrentOffset(envPtr) - otherFixup.codeOffset));
 	}
 
 	/*
@@ -826,7 +826,7 @@ TclSubstCompile(
 	/* OK destination */
 	if (TclFixupForwardJumpToHere(envPtr, &okFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad ok jump distance %d",
-		    CurrentOffset(envPtr) - okFixup.codeOffset);
+		    (int) (CurrentOffset(envPtr) - okFixup.codeOffset));
 	}
 	if (count > 1) {
 	    TclEmitInstInt1(INST_CONCAT1, count, envPtr);
@@ -836,7 +836,7 @@ TclSubstCompile(
 	/* CONTINUE jump to here */
 	if (TclFixupForwardJumpToHere(envPtr, &endFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad end jump distance %d",
-		    CurrentOffset(envPtr) - endFixup.codeOffset);
+		    (int) (CurrentOffset(envPtr) - endFixup.codeOffset));
 	}
 	bline = envPtr->line;
     }

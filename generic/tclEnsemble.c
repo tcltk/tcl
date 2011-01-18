@@ -1509,7 +1509,7 @@ TclMakeEnsemble(
 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
 		    if (Tcl_HideCommand(interp, "___tmp",
 			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
-			Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+			Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
 		    }
 		} else {
 		    /*

@@ -240,7 +240,7 @@ Tcl_Release(
      * Reference not found. This is a bug in the caller.
      */
 
-    Tcl_Panic("Tcl_Release couldn't find reference for 0x%x", clientData);
+    Tcl_Panic("Tcl_Release couldn't find reference for 0x%x", PTR2UINT(clientData));
 }
 
 /*
@@ -280,7 +280,7 @@ Tcl_EventuallyFree(
 	    continue;
 	}
 	if (refPtr->mustFree) {
-	    Tcl_Panic("Tcl_EventuallyFree called twice for 0x%x", clientData);
+	    Tcl_Panic("Tcl_EventuallyFree called twice for 0x%x", PTR2UINT(clientData));
 	}
 	refPtr->mustFree = 1;
 	refPtr->freeProc = freeProc;
