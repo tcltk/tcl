@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.32.2.3 2010/02/07 22:16:54 nijtmans Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.32.2.4 2011/01/19 08:04:49 nijtmans Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -216,7 +216,7 @@ EXTERN TclFile		TclpOpenFile(CONST char *fname, int mode);
 #ifndef TclWinAddProcess_TCL_DECLARED
 #define TclWinAddProcess_TCL_DECLARED
 /* 20 */
-EXTERN void		TclWinAddProcess(void *hProcess, unsigned long id);
+EXTERN void		TclWinAddProcess(VOID *hProcess, unsigned long id);
 #endif
 /* Slot 21 is reserved */
 #ifndef TclpCreateTempFile_TCL_DECLARED
@@ -369,7 +369,7 @@ EXTERN int		TclMacOSXMatchType(Tcl_Interp *interp,
 #define TclMacOSXNotifierAddRunLoopMode_TCL_DECLARED
 /* 19 */
 EXTERN void		TclMacOSXNotifierAddRunLoopMode(
-				CONST void *runLoopMode);
+				CONST VOID *runLoopMode);
 #endif
 #endif /* MACOSX */
 
@@ -415,7 +415,7 @@ typedef struct TclIntPlatStubs {
     void *reserved17;
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 18 */
     TclFile (*tclpOpenFile) (CONST char *fname, int mode); /* 19 */
-    void (*tclWinAddProcess) (void *hProcess, unsigned long id); /* 20 */
+    void (*tclWinAddProcess) (VOID *hProcess, unsigned long id); /* 20 */
     void *reserved21;
     TclFile (*tclpCreateTempFile) (CONST char *contents); /* 22 */
     char * (*tclpGetTZName) (int isdst); /* 23 */
@@ -446,7 +446,7 @@ typedef struct TclIntPlatStubs {
     int (*tclMacOSXSetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj *attributePtr); /* 16 */
     int (*tclMacOSXCopyFileAttributes) (CONST char *src, CONST char *dst, CONST Tcl_StatBuf *statBufPtr); /* 17 */
     int (*tclMacOSXMatchType) (Tcl_Interp *interp, CONST char *pathName, CONST char *fileName, Tcl_StatBuf *statBufPtr, Tcl_GlobTypeData *types); /* 18 */
-    void (*tclMacOSXNotifierAddRunLoopMode) (CONST void *runLoopMode); /* 19 */
+    void (*tclMacOSXNotifierAddRunLoopMode) (CONST VOID *runLoopMode); /* 19 */
 #endif /* MACOSX */
 } TclIntPlatStubs;
 

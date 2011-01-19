@@ -1,3 +1,10 @@
+2011-01-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:       Make sure to use CONST/VOID in stead of
+	* generic/tclIntDecls.h     const/void when appropriate. This allows to
+	* generic/tclIntPlatDecls.h use const/void in the *.decls file always,
+	* generic/tclTomMathDecls.h genStubs will do the right thing.
+
 2011-01-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclBasic.c:      Various mismatches between Tcl_Panic 
