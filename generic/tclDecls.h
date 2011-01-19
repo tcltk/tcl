@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.188 2010/11/04 21:48:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.189 2011/01/19 14:11:23 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -46,7 +46,7 @@ EXTERN CONST84_RETURN char * Tcl_PkgRequireEx(Tcl_Interp *interp,
 				const char *name, const char *version,
 				int exact, void *clientDataPtr);
 /* 2 */
-EXTERN void		Tcl_Panic(const char *format, ...);
+EXTERN void		Tcl_Panic(const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
 /* 3 */
 EXTERN char *		Tcl_Alloc(unsigned int size);
 /* 4 */
@@ -1664,10 +1664,10 @@ EXTERN int		Tcl_AppendFormatToObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, const char *format,
 				int objc, Tcl_Obj *const objv[]);
 /* 578 */
-EXTERN Tcl_Obj *	Tcl_ObjPrintf(const char *format, ...);
+EXTERN Tcl_Obj *	Tcl_ObjPrintf(const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
 /* 579 */
 EXTERN void		Tcl_AppendPrintfToObj(Tcl_Obj *objPtr,
-				const char *format, ...);
+				const char *format, ...) TCL_FORMAT_PRINTF(2, 3);
 /* 580 */
 EXTERN int		Tcl_CancelEval(Tcl_Interp *interp,
 				Tcl_Obj *resultObjPtr, ClientData clientData,
@@ -1822,7 +1822,7 @@ typedef struct TclStubs {
 
     int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, const void *clientData); /* 0 */
     CONST84_RETURN char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
-    void (*tcl_Panic) (const char *format, ...); /* 2 */
+    void (*tcl_Panic) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 2 */
     char * (*tcl_Alloc) (unsigned int size); /* 3 */
     void (*tcl_Free) (char *ptr); /* 4 */
     char * (*tcl_Realloc) (char *ptr, unsigned int size); /* 5 */
@@ -2422,8 +2422,8 @@ typedef struct TclStubs {
     void (*tcl_AppendLimitedToObj) (Tcl_Obj *objPtr, const char *bytes, int length, int limit, const char *ellipsis); /* 575 */
     Tcl_Obj * (*tcl_Format) (Tcl_Interp *interp, const char *format, int objc, Tcl_Obj *const objv[]); /* 576 */
     int (*tcl_AppendFormatToObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, const char *format, int objc, Tcl_Obj *const objv[]); /* 577 */
-    Tcl_Obj * (*tcl_ObjPrintf) (const char *format, ...); /* 578 */
-    void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, const char *format, ...); /* 579 */
+    Tcl_Obj * (*tcl_ObjPrintf) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 578 */
+    void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, const char *format, ...) TCL_FORMAT_PRINTF(2, 3); /* 579 */
     int (*tcl_CancelEval) (Tcl_Interp *interp, Tcl_Obj *resultObjPtr, ClientData clientData, int flags); /* 580 */
     int (*tcl_Canceled) (Tcl_Interp *interp, int flags); /* 581 */
     int (*tcl_CreatePipe) (Tcl_Interp *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags); /* 582 */
