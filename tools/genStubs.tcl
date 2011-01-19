@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.22.2.5 2011/01/03 10:08:22 nijtmans Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.22.2.6 2011/01/19 08:04:49 nijtmans Exp $
 
 package require Tcl 8.4
 
@@ -18,7 +18,7 @@ namespace eval genStubs {
     # libraryName --
     #
     #	The name of the entire library.  This value is used to compute
-    #	the USE_*_STUB_PROCS macro and the name of the init file.
+    #	the USE_*_STUBS macro and the name of the init file.
 
     variable libraryName "UNKNOWN"
 
@@ -153,6 +153,8 @@ proc genStubs::declare {args} {
 	    puts stderr "Duplicate entry: declare $args"
 	}
     }
+    regsub -all const $decl CONST decl
+    regsub -all _XCONST $decl _Xconst decl
     regsub -all "\[ \t\n\]+" [string trim $decl] " " decl
     set decl [parseDecl $decl]
 
@@ -181,14 +183,9 @@ proc genStubs::declare {args} {
 #	None.
 
 proc genStubs::export {args} {
-    variable stubs
-    variable curName
-
     if {[llength $args] != 1} {
 	puts stderr "wrong # args: export $args"
     }
-    lassign $args decl
-
     return
 }
 
@@ -307,7 +304,6 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}}} {
 #	None.
 
 proc genStubs::emitSlots {name textVar} {
-    variable stubs
     upvar $textVar text
 
     forAllStubs $name makeSlot 1 text {"    void *reserved$i;\n"}
@@ -415,6 +411,9 @@ proc genStubs::makeDecl {name decl index} {
     lassign $decl rtype fname args
 
     append text "/* $index */\n"
+    if {$rtype eq "VOID"} {
+	set rtype void
+    }
     set line "EXTERN $rtype"
     set count [expr {2 - ([string length $line] / 8)}]
     append line [string range "\t\t\t" 0 $count]
@@ -431,9 +430,10 @@ proc genStubs::makeDecl {name decl index} {
     }
     append line $fname
 
+    regsub -all void $args VOID args
     set arg1 [lindex $args 0]
     switch -exact $arg1 {
-	void {
+	VOID {
 	    append line "(void)"
 	}
 	TCL_VARARGS {
@@ -502,79 +502,12 @@ proc genStubs::makeMacro {name decl index} {
     set lfname [string tolower [string index $fname 0]]
     append lfname [string range $fname 1 end]
 
-    set text "#ifndef $fname\n#define $fname"
+    set text "#ifndef $fname\n#define $fname \\\n\t("
     if {$args == ""} {
-	append text " \\\n\t(*${name}StubsPtr->$lfname)"
-	append text " /* $index */\n#endif\n"
-	return $text
+	append text "*"
     }
-    append text " \\\n\t(${name}StubsPtr->$lfname)"
+    append text "${name}StubsPtr->$lfname)"
     append text " /* $index */\n#endif\n"
-    return $text
-}
-
-# genStubs::makeStub --
-#
-#	Emits a stub function definition.
-#
-# Arguments:
-#	name	The interface name.
-#	decl	The function declaration.
-#	index	The slot index for this function.
-#
-# Results:
-#	Returns the formatted stub function definition.
-
-proc genStubs::makeStub {name decl index} {
-    lassign $decl rtype fname args
-
-    set lfname [string tolower [string index $fname 0]]
-    append lfname [string range $fname 1 end]
-
-    append text "/* Slot $index */\n" $rtype "\n" $fname
-
-    set arg1 [lindex $args 0]
-
-    if {![string compare $arg1 "TCL_VARARGS"]} {
-	lassign [lindex $args 1] type argName
-	append text " ($type$argName, ...)\n\{\n"
-	append text "    " $type " var;\n    va_list argList;\n"
-	if {[string compare $rtype "void"]} {
-	    append text "    " $rtype " resultValue;\n"
-	}
-	append text "\n    var = (" $type ") (va_start(argList, " \
-		$argName "), " $argName ");\n\n    "
-	if {[string compare $rtype "void"]} {
-	    append text "resultValue = "
-	}
-	append text "(" $name "StubsPtr->" $lfname "VA)(var, argList);\n"
-	append text "    va_end(argList);\n"
-	if {[string compare $rtype "void"]} {
-	    append text "return resultValue;\n"
-	}
-	append text "\}\n\n"
-	return $text
-    }
-
-    if {![string compare $arg1 "void"]} {
-	set argList "()"
-	set argDecls ""
-    } else {
-	set argList ""
-	set sep "("
-	foreach arg $args {
-	    append argList $sep [lindex $arg 1]
-	    append argDecls "    " [lindex $arg 0] " " \
-		    [lindex $arg 1] [lindex $arg 2] ";\n"
-	    set sep ", "
-	}
-	append argList ")"
-    }
-    append text $argList "\n" $argDecls "{\n    "
-    if {[string compare $rtype "void"]} {
-	append text "return "
-    }
-    append text "(" $name "StubsPtr->" $lfname ")" $argList ";\n}\n\n"
     return $text
 }
 
@@ -597,6 +530,9 @@ proc genStubs::makeSlot {name decl index} {
     append lfname [string range $fname 1 end]
 
     set text "    "
+    if {$rtype eq "VOID"} {
+	set rtype void
+    }
     if {$args == ""} {
 	append text $rtype " *" $lfname "; /* $index */\n"
 	return $text
@@ -606,9 +542,10 @@ proc genStubs::makeSlot {name decl index} {
     } else {
 	append text $rtype " (*" $lfname ") "
     }
+    regsub -all void $args VOID args
     set arg1 [lindex $args 0]
     switch -exact $arg1 {
-	void {
+	VOID {
 	    append text "(void)"
 	}
 	TCL_VARARGS {
@@ -683,7 +620,7 @@ proc genStubs::makeInit {name decl index} {
 # Results:
 #	None.
 
-proc genStubs::forAllStubs {name slotProc onAll textVar \
+proc genStubs::forAllStubs {name slotProc onAll textVar
 	{skipString {"/* Slot $i is reserved */\n"}}} {
     variable stubs
     upvar $textVar text
@@ -942,7 +879,6 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 #	None.
 
 proc genStubs::emitDeclarations {name textVar} {
-    variable stubs
     upvar $textVar text
 
     append text "\n/*\n * Exported function declarations:\n */\n\n"
@@ -962,7 +898,6 @@ proc genStubs::emitDeclarations {name textVar} {
 #	None.
 
 proc genStubs::emitMacros {name textVar} {
-    variable stubs
     variable libraryName
     upvar $textVar text
 
@@ -1022,27 +957,6 @@ proc genStubs::emitHeader {name} {
     emitMacros $name text
 
     rewriteFile [file join $outDir ${name}Decls.h] $text
-    return
-}
-
-# genStubs::emitStubs --
-#
-#	This function emits the body of the <name>Stubs.c file for
-#	the specified interface.
-#
-# Arguments:
-#	name	The name of the interface being emitted.
-#
-# Results:
-#	None.
-
-proc genStubs::emitStubs {name} {
-    variable outDir
-
-    append text "\n/*\n * Exported stub functions:\n */\n\n"
-    forAllStubs $name makeStub 0 text
-
-    rewriteFile [file join $outDir ${name}Stubs.c] $text
     return
 }
 
