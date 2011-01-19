@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.22.2.6 2011/01/19 08:04:49 nijtmans Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.22.2.7 2011/01/19 14:02:19 nijtmans Exp $
 
 package require Tcl 8.4
 
@@ -411,8 +411,8 @@ proc genStubs::makeDecl {name decl index} {
     lassign $decl rtype fname args
 
     append text "/* $index */\n"
-    if {$rtype eq "VOID"} {
-	set rtype void
+    if {$rtype != "void"} {
+	regsub -all void $rtype VOID rtype
     }
     set line "EXTERN $rtype"
     set count [expr {2 - ([string length $line] / 8)}]
@@ -530,8 +530,8 @@ proc genStubs::makeSlot {name decl index} {
     append lfname [string range $fname 1 end]
 
     set text "    "
-    if {$rtype eq "VOID"} {
-	set rtype void
+    if {$rtype != "void"} {
+	regsub -all void $rtype VOID rtype
     }
     if {$args == ""} {
 	append text $rtype " *" $lfname "; /* $index */\n"
