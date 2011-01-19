@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.112.2.6 2010/11/30 20:59:27 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.112.2.7 2011/01/19 08:04:49 nijtmans Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -730,7 +730,7 @@ EXTERN void *		TclGetInstructionTable(void);
 #ifndef TclExpandCodeArray_TCL_DECLARED
 #define TclExpandCodeArray_TCL_DECLARED
 /* 164 */
-EXTERN void		TclExpandCodeArray(void *envPtr);
+EXTERN void		TclExpandCodeArray(VOID *envPtr);
 #endif
 #ifndef TclpSetInitialEncodings_TCL_DECLARED
 #define TclpSetInitialEncodings_TCL_DECLARED
@@ -930,7 +930,7 @@ EXTERN void *		TclStackAlloc(Tcl_Interp *interp, int numBytes);
 #ifndef TclStackFree_TCL_DECLARED
 #define TclStackFree_TCL_DECLARED
 /* 216 */
-EXTERN void		TclStackFree(Tcl_Interp *interp, void *freePtr);
+EXTERN void		TclStackFree(Tcl_Interp *interp, VOID *freePtr);
 #endif
 #ifndef TclPushStackFrame_TCL_DECLARED
 #define TclPushStackFrame_TCL_DECLARED
@@ -1220,7 +1220,7 @@ typedef struct TclIntStubs {
     int (*tclChannelTransform) (Tcl_Interp *interp, Tcl_Channel chan, Tcl_Obj *cmdObjPtr); /* 161 */
     void (*tclChannelEventScriptInvoker) (ClientData clientData, int flags); /* 162 */
     void * (*tclGetInstructionTable) (void); /* 163 */
-    void (*tclExpandCodeArray) (void *envPtr); /* 164 */
+    void (*tclExpandCodeArray) (VOID *envPtr); /* 164 */
     void (*tclpSetInitialEncodings) (void); /* 165 */
     int (*tclListObjSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, int index, Tcl_Obj *valuePtr); /* 166 */
     void (*tclSetStartupScriptPath) (Tcl_Obj *pathPtr); /* 167 */
@@ -1272,7 +1272,7 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclGetObjNameOfExecutable) (void); /* 213 */
     void (*tclSetObjNameOfExecutable) (Tcl_Obj *name, Tcl_Encoding encoding); /* 214 */
     void * (*tclStackAlloc) (Tcl_Interp *interp, int numBytes); /* 215 */
-    void (*tclStackFree) (Tcl_Interp *interp, void *freePtr); /* 216 */
+    void (*tclStackFree) (Tcl_Interp *interp, VOID *freePtr); /* 216 */
     int (*tclPushStackFrame) (Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
     void (*tclPopStackFrame) (Tcl_Interp *interp); /* 218 */
     void *reserved219;
