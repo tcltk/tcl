@@ -1,4 +1,11 @@
-2011-01-18  Donal K. Fellows  <dkf@users.sf.net>
+2011-01-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl: [Enh #3159920]: Tcl_ObjPrintf() crashes with
+	* generic/tcl.decls   bad format specifier.
+	* generic/tcl.h
+	* generic/tclDecls.h
+
+2011-01-18  Donal K. Fellows  <dkf@users.sf.net>3159920
 
 	* generic/tclOOMethod.c (PushMethodCallFrame): [Bug 3001438]: Make
 	sure that the cmdPtr field of the procPtr is correct and relevant at

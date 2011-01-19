@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.20 2010/09/15 13:17:15 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.21 2011/01/19 14:44:56 dgp Exp $
 
 package require Tcl 8.4
 
@@ -491,6 +491,9 @@ proc genStubs::makeDecl {name decl index} {
 		set sep ", "
 	    }
 	    append line ", ...)"
+	    if {[lindex $args end] eq "{const char *} format"} {
+		append line " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+	    }
 	}
 	default {
 	    set sep "("
@@ -588,6 +591,9 @@ proc genStubs::makeSlot {name decl index} {
 		set sep ", "
 	    }
 	    append text ", ...)"
+	    if {[lindex $args end] eq "{const char *} format"} {
+		append text " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+	    }
 	}
 	default {
 	    set sep "("

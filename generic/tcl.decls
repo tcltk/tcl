@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.55 2010/09/15 13:17:15 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.56 2011/01/19 14:44:55 dgp Exp $
 
 library tcl
 
@@ -62,7 +62,7 @@ declare 8 {
 }
 
 # Tcl_CreateFileHandler and Tcl_DeleteFileHandler are only available on unix,
-# but they are part of the old interface, so we include them here for
+# but they are part of the old generic interface, so we include them here for
 # compatibility reasons.
 
 declare 9 unix {
@@ -598,7 +598,7 @@ declare 166 {
 }
 
 # Tcl_GetOpenFile is only available on unix, but it is a part of the old
-# interface, so we inlcude it here for compatibility reasons.
+# generic interface, so we inlcude it here for compatibility reasons.
 
 declare 167 unix {
     int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID, int forWriting,
