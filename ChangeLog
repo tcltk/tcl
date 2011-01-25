@@ -1,3 +1,9 @@
+2011-01-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCkalloc.c:  [Bug 3129448]: Possible over-allocation on 64-bit
+	* generic/tclHash.c:     platforms, part 2, backported strcpy->memcpy
+	* generic/tclProc.c      change but not change in any struct.
+
 2011-01-19 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclExecute.c: Backport of Miguel's 2010-09-22 fix on 8.6
