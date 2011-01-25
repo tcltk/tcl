@@ -1,4 +1,4 @@
-2011-01-18  Jan Nijtmans  <nijtmans@users.sf.net>
+2011-01-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPreserve.c:  Don't miss 64-bit address bits in panic message.
 
