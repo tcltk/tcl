@@ -1,4 +1,4 @@
-/* 
+/*
  * tclCkalloc.c --
  *
  *    Interface to malloc and free that provides support for debugging problems
@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.19.2.1 2009/09/28 21:20:51 dgp Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.19.2.2 2011/01/25 15:57:09 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -103,7 +103,7 @@ static int  init_malloced_bodies = TRUE;
 #endif
 
 /*
- * The following variable indicates to TclFinalizeMemorySubsystem() 
+ * The following variable indicates to TclFinalizeMemorySubsystem()
  * that it should dump out the state of memory before exiting.  If the
  * value is non-NULL, it gives the name of the file in which to
  * dump memory usage information.
@@ -146,7 +146,7 @@ static void		ValidateMemory _ANSI_ARGS_((
  *----------------------------------------------------------------------
  */
 void
-TclInitDbCkalloc() 
+TclInitDbCkalloc()
 {
     if (!ckallocInit) {
 	ckallocInit = 1;
@@ -163,20 +163,20 @@ TclInitDbCkalloc()
  *----------------------------------------------------------------------
  */
 void
-TclDumpMemoryInfo(outFile) 
+TclDumpMemoryInfo(outFile)
     FILE *outFile;
 {
-    fprintf(outFile,"total mallocs             %10d\n", 
+    fprintf(outFile,"total mallocs             %10d\n",
 	    total_mallocs);
-    fprintf(outFile,"total frees               %10d\n", 
+    fprintf(outFile,"total frees               %10d\n",
 	    total_frees);
-    fprintf(outFile,"current packets allocated %10d\n", 
+    fprintf(outFile,"current packets allocated %10d\n",
 	    current_malloc_packets);
-    fprintf(outFile,"current bytes allocated   %10d\n", 
+    fprintf(outFile,"current bytes allocated   %10d\n",
 	    current_bytes_malloced);
-    fprintf(outFile,"maximum packets allocated %10d\n", 
+    fprintf(outFile,"maximum packets allocated %10d\n",
 	    maximum_malloc_packets);
-    fprintf(outFile,"maximum bytes allocated   %10d\n", 
+    fprintf(outFile,"maximum bytes allocated   %10d\n",
 	    maximum_bytes_malloced);
 }
 
@@ -213,7 +213,7 @@ ValidateMemory(memHeaderP, file, line, nukeGuards)
     int   idx;
     int   guard_failed = FALSE;
     int byte;
-    
+
     for (idx = 0; idx < LOW_GUARD_SIZE; idx++) {
         byte = *(memHeaderP->low_guard + idx);
         if (byte != GUARD_VALUE) {
@@ -258,8 +258,8 @@ ValidateMemory(memHeaderP, file, line, nukeGuards)
     }
 
     if (nukeGuards) {
-        memset ((char *) memHeaderP->low_guard, 0, LOW_GUARD_SIZE); 
-        memset ((char *) hiPtr, 0, HIGH_GUARD_SIZE); 
+        memset ((char *) memHeaderP->low_guard, 0, LOW_GUARD_SIZE);
+        memset ((char *) hiPtr, 0, HIGH_GUARD_SIZE);
     }
 
 }
@@ -305,7 +305,7 @@ Tcl_ValidateAllMemory (file, line)
  *	information will be written to stderr.
  *
  * Results:
- *	Return TCL_ERROR if an error accessing the file occurs, `errno' 
+ *	Return TCL_ERROR if an error accessing the file occurs, `errno'
  *	will have the file error number left in it.
  *----------------------------------------------------------------------
  */
@@ -350,7 +350,7 @@ Tcl_DumpActiveMemory (fileName)
  * Tcl_DbCkalloc - debugging ckalloc
  *
  *        Allocate the requested amount of space plus some extra for
- *        guard bands at both ends of the request, plus a size, panicing 
+ *        guard bands at both ends of the request, plus a size, panicing
  *        if there isn't enough space, then write in the guard bands
  *        and return the address of the space in the middle that the
  *        user asked for.
@@ -376,7 +376,7 @@ Tcl_DbCkalloc(size, file, line)
 
     /* Don't let size argument to TclpAlloc overflow */
     if (size <= UINT_MAX - HIGH_GUARD_SIZE - sizeof(struct mem_header)) {
-	result = (struct mem_header *) TclpAlloc((unsigned)size + 
+	result = (struct mem_header *) TclpAlloc((unsigned)size +
 		sizeof(struct mem_header) + HIGH_GUARD_SIZE);
     }
     if (result == NULL) {
@@ -432,7 +432,7 @@ Tcl_DbCkalloc(size, file, line)
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
         break_on_malloc = 0;
         (void) fflush(stdout);
-        fprintf(stderr,"reached malloc break limit (%d)\n", 
+        fprintf(stderr,"reached malloc break limit (%d)\n",
                 total_mallocs);
         fprintf(stderr, "program will now enter C debugger\n");
         (void) fflush(stderr);
@@ -464,7 +464,7 @@ Tcl_AttemptDbCkalloc(size, file, line)
 
     /* Don't let size argument to TclpAlloc overflow */
     if (size <= UINT_MAX - HIGH_GUARD_SIZE - sizeof(struct mem_header)) {
-	result = (struct mem_header *) TclpAlloc((unsigned)size + 
+	result = (struct mem_header *) TclpAlloc((unsigned)size +
 		sizeof(struct mem_header) + HIGH_GUARD_SIZE);
     }
     if (result == NULL) {
@@ -520,7 +520,7 @@ Tcl_AttemptDbCkalloc(size, file, line)
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
         break_on_malloc = 0;
         (void) fflush(stdout);
-        fprintf(stderr,"reached malloc break limit (%d)\n", 
+        fprintf(stderr,"reached malloc break limit (%d)\n",
                 total_mallocs);
         fprintf(stderr, "program will now enter C debugger\n");
         (void) fflush(stderr);
@@ -793,6 +793,7 @@ MemoryCmd (clientData, interp, argc, argv)
     CONST char *fileName;
     Tcl_DString buffer;
     int result;
+    size_t len;
 
     if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -813,7 +814,7 @@ MemoryCmd (clientData, interp, argc, argv)
 	result = Tcl_DumpActiveMemory (fileName);
 	Tcl_DStringFree(&buffer);
 	if (result != TCL_OK) {
-	    Tcl_AppendResult(interp, "error accessing ", argv[2], 
+	    Tcl_AppendResult(interp, "error accessing ", argv[2],
 		    (char *) NULL);
 	    return TCL_ERROR;
 	}
@@ -870,9 +871,10 @@ MemoryCmd (clientData, interp, argc, argv)
 	if ((curTagPtr != NULL) && (curTagPtr->refCount == 0)) {
 	    TclpFree((char *) curTagPtr);
 	}
-	curTagPtr = (MemTag *) TclpAlloc(TAG_SIZE(strlen(argv[2])));
+	len = strlen(argv[2]);
+	curTagPtr = (MemTag *) TclpAlloc(TAG_SIZE(len));
 	curTagPtr->refCount = 0;
-	strcpy(curTagPtr->string, argv[2]);
+	memcpy(curTagPtr->string, argv[2], len + 1);
 	return TCL_OK;
     }
     if (strcmp(argv[1],"trace") == 0) {
@@ -974,7 +976,7 @@ Tcl_InitMemory(interp)
     Tcl_Interp *interp;	/* Interpreter in which commands should be added */
 {
     TclInitDbCkalloc();
-    Tcl_CreateCommand (interp, "memory", MemoryCmd, (ClientData) NULL, 
+    Tcl_CreateCommand (interp, "memory", MemoryCmd, (ClientData) NULL,
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "checkmem", CheckmemCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
@@ -1076,7 +1078,7 @@ Tcl_AttemptDbCkalloc(size, file, line)
  *----------------------------------------------------------------------
  *
  * Tcl_Realloc --
- *     Interface to TclpRealloc when TCL_MEM_DEBUG is disabled.  It does 
+ *     Interface to TclpRealloc when TCL_MEM_DEBUG is disabled.  It does
  *     check that memory was actually allocated.
  *
  *----------------------------------------------------------------------
@@ -1119,7 +1121,7 @@ Tcl_DbCkrealloc(ptr, size, file, line)
  *----------------------------------------------------------------------
  *
  * Tcl_AttemptRealloc --
- *     Interface to TclpRealloc when TCL_MEM_DEBUG is disabled.  It does 
+ *     Interface to TclpRealloc when TCL_MEM_DEBUG is disabled.  It does
  *     not check that memory was actually allocated.
  *
  *----------------------------------------------------------------------
@@ -1154,7 +1156,7 @@ Tcl_AttemptDbCkrealloc(ptr, size, file, line)
  *
  * Tcl_Free --
  *     Interface to TclpFree when TCL_MEM_DEBUG is disabled.  Done here
- *     rather in the macro to keep some modules from being compiled with 
+ *     rather in the macro to keep some modules from being compiled with
  *     TCL_MEM_DEBUG enabled and some with it disabled.
  *
  *----------------------------------------------------------------------
@@ -1181,7 +1183,7 @@ Tcl_DbCkfree(ptr, file, line)
  *----------------------------------------------------------------------
  *
  * Tcl_InitMemory --
- *     Dummy initialization for memory command, which is only available 
+ *     Dummy initialization for memory command, which is only available
  *     if TCL_MEM_DEBUG is on.
  *
  *----------------------------------------------------------------------
@@ -1208,7 +1210,7 @@ Tcl_ValidateAllMemory(file, line)
 }
 
 void
-TclDumpMemoryInfo(outFile) 
+TclDumpMemoryInfo(outFile)
     FILE *outFile;
 {
 }
@@ -1220,16 +1222,16 @@ TclDumpMemoryInfo(outFile)
  *
  * TclFinalizeMemorySubsystem --
  *
- *	This procedure is called to finalize all the structures that 
+ *	This procedure is called to finalize all the structures that
  *	are used by the memory allocator on a per-process basis.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	This subsystem is self-initializing, since memory can be 
+ *	This subsystem is self-initializing, since memory can be
  *	allocated before Tcl is formally initialized.  After this call,
- *	this subsystem has been reset to its initial state and is 
+ *	this subsystem has been reset to its initial state and is
  *	usable again.
  *
  *---------------------------------------------------------------------------
@@ -1254,6 +1256,6 @@ TclFinalizeMemorySubsystem()
 #endif
 
 #if USE_TCLALLOC
-    TclFinalizeAllocSubsystem(); 
+    TclFinalizeAllocSubsystem();
 #endif
 }
