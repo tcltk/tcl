@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.139.2.7 2010/08/15 16:16:07 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.139.2.8 2011/01/25 15:55:48 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -633,7 +633,7 @@ TclCreateProc(
 	    } else {
 		localPtr->defValuePtr = NULL;
 	    }
-	    strcpy(localPtr->name, fieldValues[0]);
+	    memcpy(localPtr->name, fieldValues[0], nameLength + 1);
 	    if ((i == numArgs - 1)
 		    && (localPtr->nameLength == 4)
 		    && (localPtr->name[0] == 'a')
@@ -1083,7 +1083,7 @@ ProcWrongNumArgs(
     int localCt = procPtr->numCompiledLocals, numArgs, i;
     Tcl_Obj **desiredObjs;
     const char *final = NULL;
-    
+
     /*
      * Build up desired argument list for Tcl_WrongNumArgs
      */
@@ -1175,7 +1175,7 @@ TclInitCompiledLocals(
 	}
 	framePtr->localCachePtr = codePtr->localCachePtr;
 	framePtr->localCachePtr->refCount++;
-    }    
+    }
 
     InitResolvedLocals(interp, codePtr, varPtr, nsPtr);
 }
@@ -1233,12 +1233,12 @@ InitResolvedLocals(
 	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
 	    varPtr->flags = 0;
 	    varPtr->value.objPtr = NULL;
-	    
+
 	    /*
 	     * Now invoke the resolvers to determine the exact variables
 	     * that should be used.
 	     */
-	    
+
 	    resVarInfo = localPtr->resolveInfo;
 	    if (resVarInfo && resVarInfo->fetchProc) {
 		Var *resolvedVarPtr = (Var *)
@@ -1259,7 +1259,7 @@ InitResolvedLocals(
      * This is the first run after a recompile, or else the resolver epoch
      * has changed: update the resolver cache.
      */
-    
+
     firstLocalPtr = localPtr;
     for (; localPtr != NULL; localPtr = localPtr->nextPtr) {
 	if (localPtr->resolveInfo) {
@@ -1271,13 +1271,13 @@ InitResolvedLocals(
 	    localPtr->resolveInfo = NULL;
 	}
 	localPtr->flags &= ~VAR_RESOLVED;
-	
+
 	if (haveResolvers &&
 		!(localPtr->flags & (VAR_ARGUMENT|VAR_TEMPORARY))) {
 	    ResolverScheme *resPtr = iPtr->resolverPtr;
 	    Tcl_ResolvedVarInfo *vinfo;
 	    int result;
-	    
+
 	    if (nsPtr->compiledVarResProc) {
 		result = (*nsPtr->compiledVarResProc)(nsPtr->interp,
 			localPtr->name, localPtr->nameLength,
@@ -1316,8 +1316,8 @@ TclFreeLocalCache(
     for (i = 0; i < localCachePtr->numVars; i++, namePtrPtr++) {
 	Tcl_Obj *objPtr = *namePtrPtr;
 	/*
-	 * Note that this can be called with interp==NULL, on interp 
-	 * deletion. In that case, the literal table and objects go away 
+	 * Note that this can be called with interp==NULL, on interp
+	 * deletion. In that case, the literal table and objects go away
 	 * on their own.
 	 */
 	if (objPtr) {
@@ -1396,7 +1396,7 @@ InitArgsAndLocals(
     register Var *varPtr, *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
-        
+
     /*
      * Make sure that the local cache of variable names and initial values has
      * been initialised properly .
@@ -1412,7 +1412,7 @@ InitArgsAndLocals(
     } else {
 	defPtr = NULL;
     }
-    
+
     /*
      * Create the "compiledLocals" array. Make sure it is large enough to hold
      * all the procedure's compiled local variables, including its formal
@@ -1720,7 +1720,7 @@ TclObjInterpProcCore(
 	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 
 	while (i < 10) {
-	    a[i] = (l < iPtr->varFramePtr->objc ? 
+	    a[i] = (l < iPtr->varFramePtr->objc ?
 		    TclGetString(iPtr->varFramePtr->objv[l]) : NULL); i++; l++;
 	}
 	TCL_DTRACE_PROC_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
@@ -1729,7 +1729,7 @@ TclObjInterpProcCore(
     if (TCL_DTRACE_PROC_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
 	char *a[4]; int i[2];
-	
+
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_PROC_INFO(a[0], a[1], a[2], a[3], i[0], i[1]);
 	TclDecrRefCount(info);
@@ -1751,7 +1751,7 @@ TclObjInterpProcCore(
 	codePtr->refCount++;
 	if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
 	    int l;
-	    
+
 	    l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 2 : 1;
 	    TCL_DTRACE_PROC_ENTRY(TclGetString(procNameObj),
 		    iPtr->varFramePtr->objc - l,
@@ -2010,7 +2010,7 @@ ProcCompileProc(
 		    Tcl_IncrRefCount(copy->defValuePtr);
 		}
 		copy->resolveInfo = localPtr->resolveInfo;
-		strcpy(copy->name, localPtr->name);
+		memcpy(copy->name, localPtr->name, localPtr->nameLength + 1);
 	    }
 
 	    /*
