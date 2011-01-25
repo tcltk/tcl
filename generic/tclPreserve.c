@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPreserve.c,v 1.13 2011/01/18 08:43:53 nijtmans Exp $
+ * RCS: @(#) $Id: tclPreserve.c,v 1.14 2011/01/25 07:17:26 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -240,7 +240,7 @@ Tcl_Release(
      * Reference not found. This is a bug in the caller.
      */
 
-    Tcl_Panic("Tcl_Release couldn't find reference for 0x%x", PTR2UINT(clientData));
+    Tcl_Panic("Tcl_Release couldn't find reference for %p", clientData);
 }
 
 /*
@@ -280,7 +280,7 @@ Tcl_EventuallyFree(
 	    continue;
 	}
 	if (refPtr->mustFree) {
-	    Tcl_Panic("Tcl_EventuallyFree called twice for 0x%x", PTR2UINT(clientData));
+	    Tcl_Panic("Tcl_EventuallyFree called twice for %p", clientData);
 	}
 	refPtr->mustFree = 1;
 	refPtr->freeProc = freeProc;
