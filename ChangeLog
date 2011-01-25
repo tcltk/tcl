@@ -1,6 +1,14 @@
 2011-01-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPreserve.c:  Don't miss 64-bit address bits in panic message.
+	* win/tclWinChan.c:       Fix various gcc-4.5.2 64-bit warning messages,
+	* win/tclWinConsole.c     e.g. by using full 64-bits for socket fd's
+	* win/tclWinDde.c
+	* win/tclWinPipe.c
+	* win/tclWinReg.c
+	* win/tclWinSerial.c
+	* win/tclWinSock.c
+	* win/tclWinThrd.c
 
 2011-01-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
