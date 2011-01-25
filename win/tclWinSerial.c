@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.44 2010/09/13 14:20:38 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.45 2011/01/25 22:33:56 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -1503,7 +1503,7 @@ TclWinOpenSerialChannel(
      * are shared between multiple channels (stdin/stdout).
      */
 
-    wsprintfA(channelName, "file%lx", (int) infoPtr);
+    sprintf(channelName, "file%Ix", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    infoPtr, permissions);
