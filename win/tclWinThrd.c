@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.53 2010/06/16 14:49:51 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.54 2011/01/25 22:33:56 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -263,7 +263,7 @@ TclpThreadExit(
 Tcl_ThreadId
 Tcl_GetCurrentThread(void)
 {
-    return (Tcl_ThreadId) GetCurrentThreadId();
+    return (Tcl_ThreadId)(size_t)GetCurrentThreadId();
 }
 
 /*

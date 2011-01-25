@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.120 2011/01/12 07:32:02 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.121 2011/01/25 22:33:56 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -985,7 +985,7 @@ TclpMatchInDirectory(
 	}
 	attr = GetFileAttributes(native);
 
-	if ((attr == INVALID_FILE_ATTRIBUTES) 
+	if ((attr == INVALID_FILE_ATTRIBUTES)
 	    || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
 	    return TCL_OK;
 	}
@@ -2054,7 +2054,7 @@ NativeStat(
 	    /*
 	     * We might have just been denied access
 	     */
-	    
+
 	    WIN32_FIND_DATA ffd;
 	    HANDLE hFind;
 	    hFind = FindFirstFile(nativePath, &ffd);
