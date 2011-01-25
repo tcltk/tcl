@@ -1,3 +1,7 @@
+2011-01-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPreserve.c:  Don't miss 64-bit address bits in panic message.
+
 2011-01-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/genStubs.tcl: [Enh #3159920]: Tcl_ObjPrintf() crashes with
