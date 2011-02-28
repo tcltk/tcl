@@ -1,25 +1,31 @@
+2011-01-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/RegExp.3: [Bug 3165108]: Corrected documentation of description
+	of subexpression info in Tcl_RegExpInfo structure.
+
 2011-01-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclCkalloc.c:  [Bug 3129448]: Possible over-allocation on 64-bit
-	* generic/tclHash.c:     platforms, part 2, backported strcpy->memcpy
-	* generic/tclProc.c      change but not change in any struct.
+	* generic/tclCkalloc.c:  [Bug 3129448]: Possible over-allocation on
+	* generic/tclHash.c:     64-bit platforms, part 2, backported
+	* generic/tclProc.c:     strcpy->memcpy change but not change in any
+				 struct.
 
 2011-01-19 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclExecute.c: Backport of Miguel's 2010-09-22 fix on 8.6
-	branch (decache stack info wherever ::errorInfo may be updated,
-	for trace sanity). [Bug 3138178]
+	* generic/tclExecute.c: [Bug 3138178]: Backport of Miguel's 2010-09-22
+	fix on 8.6 branch (decache stack info wherever ::errorInfo may be
+	updated, for trace sanity).
 
 2011-01-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/genStubs.tcl:       Make sure to use CONST/VOID in stead of
-	* generic/tclIntDecls.h     const/void when appropriate. This allows to
-	* generic/tclIntPlatDecls.h use const/void in the *.decls file always,
-	* generic/tclTomMathDecls.h genStubs will do the right thing.
+	* generic/tclIntDecls.h:    const/void when appropriate. This allows to
+	* generic/tclIntPlatDecls.h:use const/void in the *.decls file always,
+	* generic/tclTomMathDecls.h:genStubs will do the right thing.
 
 2011-01-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclBasic.c:      Various mismatches between Tcl_Panic 
+	* generic/tclBasic.c:      Various mismatches between Tcl_Panic
 	* generic/tclCompCmds.c:   format string and its arguments,
 	* generic/tclCompExpr.c:   discovered thanks to [Bug 3159920]
 	* generic/tclPreserve.c:   (Backported)
