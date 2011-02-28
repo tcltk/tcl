@@ -1,7 +1,13 @@
+2011-01-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/RegExp.3: [Bug 3165108]: Corrected documentation of description
+	of subexpression info in Tcl_RegExpInfo structure.
+
 2011-01-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclPreserve.c:  Don't miss 64-bit address bits in panic message.
-	* win/tclWinChan.c:       Fix various gcc-4.5.2 64-bit warning messages,
+	* generic/tclPreserve.c:  Don't miss 64-bit address bits in panic
+				  message.
+	* win/tclWinChan.c:       Fix various gcc-4.5.2 64-bit warning messages
 	* win/tclWinConsole.c     e.g. by using full 64-bits for socket fd's
 	* win/tclWinDde.c
 	* win/tclWinPipe.c
