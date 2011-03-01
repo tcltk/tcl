@@ -9,15 +9,14 @@
 # Copyright (c) 1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.33.10.1 2010/10/09 17:53:17 kennykb Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.35 2011/01/01 15:14:43 dkf Exp $
 
 package require tcltest
 namespace import -force ::tcltest::*
 unset -nocomplain path
-
 
 set bindir [file join [pwd] [file dirname [info nameofexecutable]]]
 set cat32 [file join $bindir cat32.exe]
@@ -185,7 +184,6 @@ test winpipe-4.1 {Tcl_WaitPid} {win nt exec cat32} {
 	    set result "$result$line"
 	}
     }
-
     set f [open "|[list $cat32] < $path(big) 2> $path(stderr)" r]
     fconfigure $f  -buffering none -blocking 0
     fileevent $f readable "readResults $f"
@@ -237,7 +235,7 @@ test winpipe-5.1 {TclpCreateTempFile: cleanup temp files} {win exec} {
     set existing [glob -nocomplain c:/tcl*.tmp]
     exec [interpreter] < $path(nothing)
     foreach p [glob -nocomplain c:/tcl*.tmp] {
-	if {[lsearch $existing $p] == -1} {
+	if {$p ni $existing} {
 	    lappend x $p
 	}
     }
@@ -311,7 +309,6 @@ test winpipe-6.2 {PipeSetupProc & PipeCheckProc: write threads} \
 set path(echoArgs.tcl) [makeFile {
     puts "[list $argv0 $argv]"
 } echoArgs.tcl]
-
 
 ### validate the raw output of BuildCommandLine().
 ###
@@ -449,3 +446,7 @@ removeFile nothing
 removeFile echoArgs.tcl
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

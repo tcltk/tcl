@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.33.2.2 2010/12/01 16:42:36 kennykb Exp $
+# RCS: @(#) $Id: error.test,v 1.36 2010/11/04 15:00:41 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2

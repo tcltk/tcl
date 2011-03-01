@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.148.2.4 2010/12/11 18:39:29 kennykb Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.153 2010/12/10 15:44:53 nijtmans Exp $
 
 library tcl
 
@@ -996,7 +996,7 @@ declare 248 {
     int TclCopyChannel(Tcl_Interp *interp, Tcl_Channel inChan,
 	    Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr)
 }
-
+
 declare 249 {
     char* TclDoubleDigits(double dv, int ndigits, int flags,
 			  int* decpt, int* signum, char** endPtr)

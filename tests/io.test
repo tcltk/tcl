@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.96.4.1 2010/12/11 18:39:30 kennykb Exp $
+# RCS: @(#) $Id: io.test,v 1.98 2011/01/17 11:27:28 nijtmans Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -3858,7 +3858,7 @@ test io-32.3 {Tcl_Read, negative byte count} {
     set l [list [catch {read $f -1} msg] $msg]
     close $f
     set l
-} {1 {bad argument "-1": should be "nonewline"}}
+} {1 {expected non-negative integer but got "-1"}}
 test io-32.4 {Tcl_Read, positive byte count} {
     set f [open $path(longfile) r]
     set x [read $f 1024]

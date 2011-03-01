@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.465.2.6 2010/12/11 18:39:28 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.473 2011/01/18 08:43:53 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -825,7 +825,7 @@ Tcl_CreateInterp(void)
 	    Tcl_DisassembleObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
 	    Tcl_RepresentationCmd, NULL, NULL);
-	    
+
     /* Adding the bytecode assembler command */
     cmdPtr = (Command*)
         Tcl_NRCreateCommand(interp, "::tcl::unsupported::assemble",
@@ -839,7 +839,7 @@ Tcl_CreateInterp(void)
 	    TclNRYieldObjCmd, INT2PTR(CORO_ACTIVATE_YIELDM), NULL);
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
 	    NRCoroInjectObjCmd, NULL, NULL);
-    
+
 #ifdef USE_DTRACE
     /*
      * Register the tcl::dtrace command.
@@ -954,11 +954,11 @@ Tcl_CreateInterp(void)
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
-	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 
     if (TclOOInit(interp) != TCL_OK) {
-	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 
     /*
@@ -968,7 +968,7 @@ Tcl_CreateInterp(void)
 
 #ifdef HAVE_ZLIB
     if (TclZlibInit(interp) != TCL_OK) {
-	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 #endif
 
@@ -8625,7 +8625,7 @@ NRCoroutineCallerCallback(
     NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
     SAVE_CONTEXT(corPtr->running);
     RESTORE_CONTEXT(corPtr->caller);
-    
+
     if (cmdPtr->flags & CMD_IS_DELETED) {
 	/*
 	 * The command was deleted while it was running: wind down the
