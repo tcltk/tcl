@@ -5,8 +5,6 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation. 
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
-#
-# RCS: @(#) $Id: tcltest.test,v 1.37.2.12 2009/11/10 22:32:39 patthoyts Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup

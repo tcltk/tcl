@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacChan.c,v 1.21.2.1 2005/01/27 22:53:34 andreas_kupries Exp $
  */
 
 #include "tclInt.h"

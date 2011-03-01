@@ -18,8 +18,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.20 2010/05/19 03:39:12 das Exp $
  */
 
 #ifndef _TCLUNIXPORT

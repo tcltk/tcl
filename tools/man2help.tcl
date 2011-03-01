@@ -5,9 +5,6 @@
 # entries.
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
-#
-# RCS: @(#) $Id: man2help.tcl,v 1.13.2.1 2003/06/04 23:41:15 mistachkin Exp $
-# 
 
 #
 # PASS 1

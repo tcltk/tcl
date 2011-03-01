@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclIO.h,v 1.5.4.3 2008/04/07 22:17:37 andreas_kupries Exp $
  */
 
 /*

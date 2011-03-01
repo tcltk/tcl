@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclRegexp.c,v 1.14.4.2 2006/04/07 01:14:28 hobbs Exp $
  */
 
 #include "tclInt.h"

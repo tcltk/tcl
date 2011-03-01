@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinTest.c,v 1.8.2.6 2006/03/27 23:30:54 patthoyts Exp $
  */
 
 #define USE_COMPAT_CONST

@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclLiteral.c,v 1.11 2001/10/11 22:28:01 msofer Exp $
  */
 
 #include "tclInt.h"

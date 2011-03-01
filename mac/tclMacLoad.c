@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacLoad.c,v 1.16 2002/10/09 11:54:26 das Exp $
  */
 
 #include <CodeFragments.h>

@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacOSA.r,v 1.5 2001/12/27 22:46:24 das Exp $
  */
 
 #include <Types.r>

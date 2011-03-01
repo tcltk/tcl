@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacMath.h,v 1.3 2001/11/23 01:27:50 das Exp $
  */
 
 #ifndef _TCLMACMATH

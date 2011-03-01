@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclAsync.c,v 1.6.12.3 2008/04/27 08:18:13 vasiljevic Exp $
  */
 
 #include "tclInt.h"

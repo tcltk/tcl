@@ -10,8 +10,6 @@
 # Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
-# RCS: @(#) $Id: tcl.decls,v 1.94.2.4 2006/09/22 01:26:22 andreas_kupries Exp $
 
 library tcl
 

@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclIOSock.c,v 1.7 2002/07/29 16:54:41 rmax Exp $
  */
 
 #include "tclInt.h"

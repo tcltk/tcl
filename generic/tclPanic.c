@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclPanic.c,v 1.4.12.2 2006/03/09 23:11:23 dgp Exp $
  */
 
 #include "tclInt.h"

@@ -13,8 +13,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclTest.c,v 1.62.2.15 2008/03/07 20:26:22 dgp Exp $
  */
 
 #define TCL_TEST

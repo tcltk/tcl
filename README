@@ -5,8 +5,6 @@ README:  Tcl
     You can get any source release of Tcl from the file distributions
     link at the above URL.
 
-RCS: @(#) $Id: README,v 1.49.2.23 2008/04/11 16:57:37 dgp Exp $
-
 Contents
 --------
     1. Introduction
