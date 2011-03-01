@@ -1,3 +1,20 @@
+2011-03-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclOOCall.c (TclOODeleteContext): added missing '*' so
+	that trunk compiles.
+
+	* generic/tclBasic.c (TclNRRunCallbacks): don't do the trampoline
+	dance for commands that do not have an nreProc, [Patch 3168229]
+
+2011-03-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_NewObjectInstance, TclNRNewObjectInstance)
+	(TclOOObjectCmdCore, FinalizeObjectCall):
+	* generic/tclOOBasic.c (TclOO_Object_Destroy, AfterNRDestructor):
+	* generic/tclOOCall.c (TclOODeleteContext, TclOOGetCallContext):
+	Reorganization of call context reference count management so that code
+	is (mostly) simpler.
+
 2011-01-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/RegExp.3: [Bug 3165108]: Corrected documentation of description

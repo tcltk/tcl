@@ -839,7 +839,7 @@ Tcl_CreateInterp(void)
 	    TclNRYieldObjCmd, INT2PTR(CORO_ACTIVATE_YIELDM), NULL);
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
 	    NRCoroInjectObjCmd, NULL, NULL);
-
+    
 #ifdef USE_DTRACE
     /*
      * Register the tcl::dtrace command.
@@ -4147,8 +4147,6 @@ TclNREvalObjv(
     Interp *iPtr = (Interp *) interp;
     int result;
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
-    Tcl_ObjCmdProc *objProc;
-    ClientData objClientData;
     Command **cmdPtrPtr;
 
     iPtr->lookupNsPtr = NULL;
@@ -4287,6 +4285,7 @@ TclNREvalObjv(
      * a callback to do the actual running.
      */
 
+#if 0
     objProc = cmdPtr->nreProc;
     if (!objProc) {
 	objProc = cmdPtr->objProc;
@@ -4295,7 +4294,15 @@ TclNREvalObjv(
 
     TclNRAddCallback(interp, NRRunObjProc, objProc, objClientData,
 	    INT2PTR(objc), (ClientData) objv);
-    return TCL_OK;
+#else
+    if (cmdPtr->nreProc) {
+        TclNRAddCallback(interp, NRRunObjProc, cmdPtr->nreProc,
+                cmdPtr->objClientData, INT2PTR(objc), (ClientData) objv);
+        return TCL_OK;
+    } else {
+	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+    }        
+#endif
 }
 
 void
@@ -8625,7 +8632,7 @@ NRCoroutineCallerCallback(
     NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
     SAVE_CONTEXT(corPtr->running);
     RESTORE_CONTEXT(corPtr->caller);
-
+    
     if (cmdPtr->flags & CMD_IS_DELETED) {
 	/*
 	 * The command was deleted while it was running: wind down the
