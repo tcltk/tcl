@@ -11,8 +11,6 @@
 ; maximum size is too small a linker warning will occur.  Modules can overlap when
 ; they're mutually exclusive.  This info is placed in the DLL's PE header by the
 ; linker with the `-base:@$(TCLDIR)\win\coffbase.txt,<key>` option.
-;
-; RCS: @(#) $Id: coffbase.txt,v 1.5.2.1 2004/05/06 01:03:33 davygrvy Exp $
 
 tcl		0x10000000	0x00200000
 tcldde		0x10200000	0x00010000

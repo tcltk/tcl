@@ -1,8 +1,6 @@
 Porting Notes
 -------------
 
-RCS: @(#) $Id: porting.notes,v 1.2 1998/09/14 18:40:04 stanton Exp $
-
 Currently, the Macintosh version Tcl only compilies with the
 CodeWarrior C compilier from MetroWerks.  It should be straight
 forward to port the Tcl source to MPW.

@@ -1,4 +1,3 @@
-# $Id: tcl.spec,v 1.16.2.19 2008/04/11 16:57:42 dgp Exp $
 # This file is the basis for a binary Tcl RPM for Linux.
 
 %define version 8.4.19

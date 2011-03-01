@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclRegexp.h,v 1.11 1999/08/02 17:45:38 redman Exp $
  */
 
 #ifndef _TCLREGEXP

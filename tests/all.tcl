@@ -9,8 +9,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
-# RCS: @(#) $Id: all.tcl,v 1.16 2002/04/10 19:57:15 hobbs Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force tcltest::*

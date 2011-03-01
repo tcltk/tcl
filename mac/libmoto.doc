@@ -1,8 +1,6 @@
 Notes about the use of libmoto
 ------------------------------
 
-RCS: @(#) $Id: libmoto.doc,v 1.2 1998/09/14 18:40:04 stanton Exp $
-
 First of all, libmoto is not required!  If you don't have it, you
 can simply remove the library reference from the project file and
 everything should compile just fine.

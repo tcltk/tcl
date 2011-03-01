@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclFCmd.c,v 1.20.2.2 2005/08/17 17:46:36 hobbs Exp $
  */
 
 #include "tclInt.h"

@@ -6,8 +6,6 @@
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
- *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.16 2009/10/05 02:41:18 das Exp $
  */
 
 #if defined(HAVE_COREFOUNDATION)

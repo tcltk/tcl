@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclThreadJoin.c,v 1.4 2002/04/24 20:35:40 hobbs Exp $
  */
 
 #include "tclInt.h"
