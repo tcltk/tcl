@@ -1,5 +1,8 @@
 2011-03-01  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclOOCall.c (TclOODeleteContext): added missing '*' so
+	that trunk compiles.
+
 	* generic/tclBasic.c (TclNRRunCallbacks): don't do the trampoline
 	dance for commands that do not have an nreProc, [Patch 3168229]
 
