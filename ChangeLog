@@ -1,3 +1,8 @@
+2011-03-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TclNRRunCallbacks): don't do the trampoline
+	dance for commands that do not have an nreProc, [Patch 3168229]
+
 2011-03-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (Tcl_NewObjectInstance, TclNRNewObjectInstance)
