@@ -10,7 +10,7 @@
 # Copyright (c) 2000 Andreas Kupries.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: iogt.test,v 1.16.10.1 2010/12/01 16:42:37 kennykb Exp $
+# RCS: @(#) $Id: iogt.test,v 1.17 2010/11/24 11:56:57 dkf Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
@@ -354,7 +354,7 @@ proc asort {alist} {
     array set a $alist
     array_sget a
 }
-
+
 ########################################################################
 
 test iogt-1.1 {stack/unstack} testchannel {
@@ -793,7 +793,7 @@ test iogt-6.1 {Push back and up} -constraints {testchannel knownBug} -body {
 } -cleanup {
     close $f
 } -result {xxxghi}
-
+
 # cleanup
 foreach file [list dummy dummyout __echo_srv__.tcl] {
     removeFile $file

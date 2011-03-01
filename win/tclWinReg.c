@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.54.2.2 2010/12/01 16:42:38 kennykb Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.57 2011/01/25 22:33:56 nijtmans Exp $
  */
 
 #undef STATIC_BUILD
@@ -1417,7 +1417,7 @@ BroadcastValue(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     LRESULT result;
-    DWORD sendResult;
+    DWORD_PTR sendResult;
     UINT timeout = 3000;
     int len;
     const char *str;

@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.123.2.3 2010/12/11 18:39:31 kennykb Exp $
+# RCS: @(#) $Id: configure.in,v 1.131 2011/01/12 10:40:03 nijtmans Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -270,6 +270,27 @@ AC_TRY_COMPILE([
 if test "$tcl_cv_mwmo_alertable" = "no"; then
     AC_DEFINE(HAVE_NO_MWMO_ALERTABLE, 1,
             [Defined when MWMO_ALERTABLE is missing from winuser.h])
+fi
+
+# See if the compiler supports intrinsics.
+
+AC_CACHE_CHECK(for intrinsics support in compiler,
+    tcl_cv_intrinsics,
+AC_TRY_LINK([
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+#include <intrin.h>
+],
+[
+  __cpuidex(0,0,0);
+],
+        tcl_cv_intrinsics=yes,
+        tcl_cv_intrinsics=no)
+)
+if test "$tcl_cv_intrinsics" = "yes"; then
+    AC_DEFINE(HAVE_INTRIN_H, 1,
+            [Defined when the compilers supports intrinsics])
 fi
 
 #--------------------------------------------------------------------

@@ -9,9 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkga.c,v 1.16 2010/03/28 03:17:50 dgp Exp $
+ * RCS: @(#) $Id: pkga.c,v 1.17 2010/12/31 16:35:26 nijtmans Exp $
  */
 
+#undef STATIC_BUILD
 #include "tcl.h"
 
 /*

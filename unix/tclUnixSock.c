@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.26.2.5 2010/12/16 01:42:19 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.33 2010/12/14 17:22:55 rmax Exp $
  */
 
 #include "tclInt.h"
@@ -523,7 +523,7 @@ TcpCloseProc(
      * handlers are already deleted in the generic IO channel closing code
      * that called this function, so we do not have to delete them here.
      */
-    
+
     for (fds = statePtr->fds; fds != NULL; fds = statePtr->fds) {
 	statePtr->fds = fds->next;
 	Tcl_DeleteFileHandler(fds->fd);
@@ -660,7 +660,7 @@ TcpGetOptionProc(
 		Tcl_DStringAppendElement(dsPtr, "-peername");
 		Tcl_DStringStartSublist(dsPtr);
 	    }
-            
+
 	    getnameinfo(&peername.sa, size, host, sizeof(host), NULL, 0,
                     NI_NUMERICHOST);
 	    Tcl_DStringAppendElement(dsPtr, host);
@@ -1319,7 +1319,7 @@ TcpAccept(
     socklen_t len;		/* For accept interface */
     char channelName[16 + TCL_INTEGER_SPACE];
     char host[NI_MAXHOST], port[NI_MAXSERV];
-    
+
     fds = (TcpFdList *) data;
 
     len = sizeof(addr);

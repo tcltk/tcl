@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.59.2.1 2010/12/01 16:42:38 kennykb Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.61 2011/01/25 22:33:56 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -1225,7 +1225,7 @@ TclpGetDefaultStdChannel(
     HANDLE handle;
     int mode = -1;
     const char *bufMode = NULL;
-    DWORD handleId = (DWORD)INVALID_HANDLE_VALUE;
+    DWORD handleId = (DWORD) -1;
 				/* Standard handle to retrieve. */
 
     switch (type) {
@@ -1338,7 +1338,7 @@ TclWinOpenFileChannel(
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    wsprintfA(channelName, "file%lx", (int) infoPtr);
+    sprintf(channelName, "file%Ix", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    infoPtr, permissions);

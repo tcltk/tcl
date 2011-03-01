@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.50.2.3 2010/12/01 16:42:36 kennykb Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.57 2010/11/15 10:12:38 nijtmans Exp $
  */
 
 /**
@@ -652,7 +652,7 @@ Tcl_MainEx(
     Tcl_Release(interp);
     Tcl_Exit(exitCode);
 }
-
+
 #ifndef UNICODE
 void
 Tcl_Main(
