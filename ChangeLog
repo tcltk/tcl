@@ -1,3 +1,12 @@
+2011-03-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_NewObjectInstance, TclNRNewObjectInstance)
+	(TclOOObjectCmdCore, FinalizeObjectCall):
+	* generic/tclOOBasic.c (TclOO_Object_Destroy, AfterNRDestructor):
+	* generic/tclOOCall.c (TclOODeleteContext, TclOOGetCallContext):
+	Reorganization of call context reference count management so that code
+	is (mostly) simpler.
+
 2011-01-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/RegExp.3: [Bug 3165108]: Corrected documentation of description
