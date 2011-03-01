@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.70.4.1 2010/12/11 18:39:30 kennykb Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.73 2010/12/09 15:31:02 dkf Exp $
 #
 
 if {"::tcltest" ni [namespace children]} {
@@ -172,7 +172,7 @@ append long $long
 append long $long
 append long $long
 append long $long
-
+
 test fCmd-1.1 {TclFileRenameCmd} -constraints {notRoot} -setup {
     cleanup
 } -body {
@@ -2583,7 +2583,7 @@ test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win} -body {
     }
     return $r
 } -result {exists 1 readable 0 stat 0 {}}
-
+
 # cleanup
 cleanup
 ::tcltest::cleanupTests

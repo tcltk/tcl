@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.23.4.1 2010/12/01 16:42:36 kennykb Exp $
+# RCS: @(#) $Id: chanio.test,v 1.27 2011/01/17 11:27:28 nijtmans Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -3932,7 +3932,7 @@ test chan-io-32.3 {Tcl_Read, negative byte count} -setup {
     chan read $f -1
 } -returnCodes error -cleanup {
     chan close $f
-} -result {bad argument "-1": should be "nonewline"}
+} -result {expected non-negative integer but got "-1"}
 test chan-io-32.4 {Tcl_Read, positive byte count} -body {
     set f [open $path(longfile) r]
     string length [chan read $f 1024]

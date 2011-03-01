@@ -7,11 +7,11 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.39.2.1 2010/12/01 16:42:37 kennykb Exp $
+# RCS: @(#) $Id: oo.test,v 1.44 2011/01/18 13:50:03 dkf Exp $
 
 package require -exact TclOO 0.6.2 ;# Must match value in generic/tclOO.h
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+package require tcltest 2
+if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
@@ -2235,6 +2235,18 @@ test oo-22.1 {OO and info frame} -setup {
 } -cleanup {
     c destroy
 } -result {1 {{type source line * file * cmd {info frame 0} method frames class ::c level 0} {type source line * file * cmd {info frame 0} method frames object ::i level 0}} ::c}
+test oo-22.2 {OO and info frame: Bug 3001438} -setup {
+    oo::class create c
+} -body {
+    oo::define c method test {{x 1}} {
+	if {$x} {my test 0}
+	lsort {q w e r t y u i o p}; # Overwrite the Tcl stack
+	info frame 0
+    }
+    [c new] test
+} -match glob -cleanup {
+    c destroy
+} -result {* cmd {info frame 0} method test class ::c level 0}
 
 # Prove that the issue in [Bug 1865054] isn't an issue any more
 test oo-23.1 {Self-like derivation; complex case!} -setup {

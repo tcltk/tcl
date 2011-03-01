@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.43.2.1 2010/10/01 13:34:09 kennykb Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.44 2010/10/01 12:52:49 dkf Exp $
  */
 
 #include "tclInt.h"

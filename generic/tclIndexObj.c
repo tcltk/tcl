@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.59.2.1 2010/12/11 18:39:29 kennykb Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.60 2010/12/10 13:08:54 nijtmans Exp $
  */
 
 #include "tclInt.h"
