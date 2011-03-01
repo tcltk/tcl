@@ -1002,6 +1002,11 @@ declare 249 {
 			  int* decpt, int* signum, char** endPtr)
 }
 
+# TIP #285: Script cancellation support.
+declare 250 {
+    void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
+}
+
 ##############################################################################
 
 # Define the platform specific internal Tcl interface. These functions are
