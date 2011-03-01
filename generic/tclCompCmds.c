@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.169.2.3 2010/12/01 16:42:34 kennykb Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.174 2011/01/18 08:43:53 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -393,7 +393,7 @@ TclCompileCatchCmd(
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
     /* Stack at this point: ?script? <mark> result TCL_OK */
 
-    /* 
+    /*
      * Emit the "error case" epilogue. Push the interpreter result
      * and the return code.
      */
@@ -411,7 +411,7 @@ TclCompileCatchCmd(
     /* Stack at this point: ?script? result returnCode */
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
-		CurrentOffset(envPtr) - jumpFixup.codeOffset);
+		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
 
     /* Push the return options if the caller wants them */
@@ -479,7 +479,7 @@ TclCompileCatchCmd(
 	TclEmitOpcode(INST_POP, envPtr);
     }
 
-    /* 
+    /*
      * Result of all this, on either branch, should have been to leave
      * one operand -- the return code -- on the stack.
      */
@@ -1125,7 +1125,7 @@ TclCompileDictUpdateCmd(
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
-		CurrentOffset(envPtr) - jumpFixup.codeOffset);
+		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
     TclStackFree(interp, keyTokenPtrs);
     return TCL_OK;

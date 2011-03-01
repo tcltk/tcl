@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.19.2.1 2010/10/01 13:34:10 kennykb Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.20 2010/10/01 12:52:50 dkf Exp $
  */
 
 #include "tclInt.h"

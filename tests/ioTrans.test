@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioTrans.test,v 1.9.2.1 2010/12/01 16:42:37 kennykb Exp $
+# RCS: @(#) $Id: ioTrans.test,v 1.10 2010/11/24 11:56:57 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -102,7 +102,7 @@ set helperscript {
 eval $helperscript
 
 #puts <<[file channels]>>
-
+
 # ### ### ### ######### ######### #########
 
 test iortrans-1.0 {chan, wrong#args} -returnCodes error -body {
@@ -1036,7 +1036,7 @@ test iortrans-11.2 {delete interp of reflected transform} -setup {
     }
     interp delete slave
 } -result {}
-
+
 # ### ### ### ######### ######### #########
 ## Same tests as above, but exercising the code forwarding and receiving
 ## driver operations to the originator thread.
@@ -1862,7 +1862,7 @@ test iortrans.tf-11.1 {origin thread of moved transform destroyed during access}
     tcltest::threadReap
     tempdone
 } -result {Owner lost}
-
+
 # ### ### ### ######### ######### #########
 
 cleanupTests

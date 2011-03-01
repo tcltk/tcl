@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.35.4.1 2010/12/01 16:42:36 kennykb Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.36 2010/12/01 09:58:52 nijtmans Exp $
  */
 
 #ifndef USE_TCL_STUBS

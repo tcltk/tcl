@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.38.4.3 2010/12/11 18:39:28 kennykb Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.43 2010/12/10 21:59:23 nijtmans Exp $
  */
 
 #include "tclInt.h"
