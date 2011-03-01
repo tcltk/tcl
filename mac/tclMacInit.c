@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacInit.c,v 1.9.2.2 2005/10/23 22:01:31 msofer Exp $
  */
 
 #include <AppleEvents.h>

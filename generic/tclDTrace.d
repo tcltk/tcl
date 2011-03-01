@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclDTrace.d,v 1.1.2.2 2007/09/13 15:28:12 das Exp $
  */
 
 typedef struct Tcl_Obj Tcl_Obj;

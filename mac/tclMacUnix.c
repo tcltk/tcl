@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacUnix.c,v 1.5 2002/10/09 11:54:45 das Exp $
  */
 
 #include <Files.h>

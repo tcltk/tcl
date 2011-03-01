@@ -13,8 +13,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacExit.c,v 1.4 1999/04/16 00:47:19 stanton Exp $
  */
 
 #include "tclInt.h"

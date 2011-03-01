@@ -8,8 +8,6 @@
  * may not be used to endorse or promote products derived from this
  * software without specific written prior permission. This software
  * is provided ``as is'' without express or implied warranty.
- *
- * RCS: @(#) $Id: tmpnam.c,v 1.2 1998/09/14 18:39:45 stanton Exp $
  */
 
 #include <sys/param.h>

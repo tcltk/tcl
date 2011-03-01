@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclClock.c,v 1.20.2.4 2007/08/25 17:12:20 kennykb Exp $
  */
 
 #include "tcl.h"

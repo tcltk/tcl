@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.14.2.2 2006/03/19 22:47:30 vincentdarley Exp $
  */
 
 #include "tclInt.h"

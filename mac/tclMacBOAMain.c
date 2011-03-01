@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacBOAMain.c,v 1.4 2001/12/28 23:36:31 dgp Exp $
  */
 
 #include "tcl.h"

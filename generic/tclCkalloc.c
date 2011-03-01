@@ -12,8 +12,6 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
- *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.19.2.2 2011/01/25 15:57:09 nijtmans Exp $
  */
 
 #include "tclInt.h"

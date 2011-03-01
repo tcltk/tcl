@@ -18,8 +18,6 @@
 #	its .o file placed before all others in the command; then
 #	"ld" is executed to bind the objects together.
 #
-# RCS: @(#) $Id: ldAout.tcl,v 1.5 2001/09/28 01:21:53 dgp Exp $
-#
 # Copyright (c) 1995, by General Electric Company. All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution

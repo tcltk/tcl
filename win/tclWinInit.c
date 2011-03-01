@@ -6,8 +6,6 @@
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
- *
- * RCS: @(#) $Id: tclWinInit.c,v 1.40.2.6 2005/10/23 22:01:31 msofer Exp $
  */
 
 #include "tclWinInt.h"

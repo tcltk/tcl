@@ -13,8 +13,6 @@
  * This work was supported in part by the ARPA Manufacturing Automation
  * and Design Engineering (MADE) Initiative through ARPA contract
  * F33615-94-C-4400.
- *
- * RCS: @(#) $Id: tclLoadAout.c,v 1.14 2002/10/10 12:25:53 vincentdarley Exp $
  */
 
 #include "tclInt.h"

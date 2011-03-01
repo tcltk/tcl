@@ -9,8 +9,6 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: Makefile,v 1.5.2.18 2007/09/13 15:28:17 das Exp $
-#
 ########################################################################################################
 
 #-------------------------------------------------------------------------------------------------------

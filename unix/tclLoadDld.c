@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclLoadDld.c,v 1.12 2002/10/10 12:25:53 vincentdarley Exp $
  */
 
 #include "tclInt.h"

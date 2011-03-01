@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: dde.n,v 1.8.2.4 2004/12/03 00:37:21 hobbs Exp $
-'\" 
 .so man.macros
 .TH dde n 1.2 dde "Tcl Bundled Packages"
 .BS

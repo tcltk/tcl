@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclAppInit.c,v 1.11 2002/05/31 22:20:22 dgp Exp $
  */
 
 #include "tcl.h"

@@ -7,8 +7,6 @@
  *
  * Copyright (c) 1998 by Scriptics Corporation.
  * All rights reserved.
- *
- * RCS: @(#) $Id: tclUniData.c,v 1.4.14.1 2010/10/23 14:41:22 nijtmans Exp $
  */
 
 /*

@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclXtTest.c,v 1.5 2002/08/05 03:24:41 dgp Exp $
  */
 
 #include <X11/Intrinsic.h>

@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.16.2.5 2006/04/06 18:57:24 dgp Exp $
  */
 
 #include "tclInt.h"

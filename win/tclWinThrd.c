@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.24.2.12 2007/03/24 09:31:11 vasiljevic Exp $
  */
 
 #include "tclWinInt.h"

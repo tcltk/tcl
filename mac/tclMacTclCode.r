@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * SCCS: @(#) tclMacTclCode.r 1.1 98/01/21 22:22:38
  */
 
 #include <Types.r>

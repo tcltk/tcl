@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclStubInit.c,v 1.79.2.10 2006/09/22 01:26:23 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
