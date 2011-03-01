@@ -101,7 +101,7 @@ void
 TclOODeleteContext(
     CallContext *contextPtr)
 {
-    register Object oPtr = contextPtr->oPtr;
+    register Object *oPtr = contextPtr->oPtr;
 
     TclOODeleteChain(contextPtr->callPtr);
     TclStackFree(oPtr->fPtr->interp, contextPtr);
