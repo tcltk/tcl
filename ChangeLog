@@ -1,5 +1,8 @@
 2011-03-01  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCompCmdsSZ.c (TclCompileThrowCmd)
+	(TclCompileUnsetCmd): fix leaks
+	
 	* generic/tclBasic.c:       This is [Patch 3168398],
 	* generic/tclCompCmdsSZ.c:  Joe Mistachkin's optimisation
 	* generic/tclExecute.c:     of Tip #285
