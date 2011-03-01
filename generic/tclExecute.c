@@ -1407,7 +1407,6 @@ ExprObjCallback(
 
     if (result == TCL_OK) {
 	TclSetDuplicateObj(resultPtr, Tcl_GetObjResult(interp));
-	Tcl_IncrRefCount(resultPtr);
 	Tcl_SetObjResult(interp, saveObjPtr);
     }
     TclDecrRefCount(saveObjPtr);
