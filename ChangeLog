@@ -1,5 +1,9 @@
 2011-03-01  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclExecute.c (TEBCresume): store local var array and
+	constants in automatic vars to reduce indirection, slight perf
+	increase 
+	
 	* generic/tclOOCall.c (TclOODeleteContext): added missing '*' so
 	that trunk compiles.
 
