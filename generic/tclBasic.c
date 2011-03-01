@@ -4140,8 +4140,6 @@ TclNREvalObjv(
     Interp *iPtr = (Interp *) interp;
     int result;
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
-    Tcl_ObjCmdProc *objProc;
-    ClientData objClientData;
     Command **cmdPtrPtr;
 
     iPtr->lookupNsPtr = NULL;
