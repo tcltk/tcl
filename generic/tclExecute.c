@@ -2080,10 +2080,6 @@ TEBCresume(
 			       * stack. */
     const unsigned char *pc;  /* The current program counter. */
 
-#ifdef TCL_COMPILE_DEBUG
-    traceInstructions = (tclTraceExec == 3);
-#endif
-
     /*
      * Transfer variables - needed only between opcodes, but not while
      * executing an instruction.
@@ -2100,10 +2096,15 @@ TEBCresume(
 
     Tcl_Obj *objPtr, *valuePtr, *value2Ptr, *part1Ptr, *part2Ptr, *tmpPtr;
     Tcl_Obj **objv;
-    int opnd, objc, length, pcAdjustment;
+    int objc = 0;
+    int opnd, length, pcAdjustment;
     Var *varPtr, *arrayPtr;
 #ifdef TCL_COMPILE_DEBUG
     char cmdNameBuf[21];
+#endif
+
+#ifdef TCL_COMPILE_DEBUG
+    traceInstructions = (tclTraceExec == 3);
 #endif
 
     NR_DATA_DIG();
@@ -2280,9 +2281,11 @@ TEBCresume(
 	    }
 	}
 
-	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
-	    CACHE_STACK_INFO();
-	    goto gotError;
+	if (TclCanceled(iPtr)) {
+	    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+		CACHE_STACK_INFO();
+		goto gotError;
+	    }
 	}
 
 	if (TclLimitReady(iPtr->limit)) {
@@ -6303,7 +6306,7 @@ TEBCresume(
 	 * already be set prior to vectoring down to this point in the code.
 	 */
 
-	if (Tcl_Canceled(interp, 0) == TCL_ERROR) {
+	if (TclCanceled(iPtr) && (Tcl_Canceled(interp, 0) == TCL_ERROR)) {
 #ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
 		fprintf(stdout, "   ... cancel with unwind, returning %s\n",
