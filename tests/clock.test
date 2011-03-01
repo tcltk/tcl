@@ -9,8 +9,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: clock.test,v 1.22.2.7 2006/07/30 17:05:43 kennykb Exp $
 
 set env(LC_TIME) POSIX
 

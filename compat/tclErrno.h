@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclErrno.h,v 1.3 2002/06/07 08:50:22 dkf Exp $
  */
 
 extern int errno;		/* global error number */

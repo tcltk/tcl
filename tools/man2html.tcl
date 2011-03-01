@@ -8,9 +8,6 @@ if [catch {
 # man2tcl program to generate a HTML files from Tcl manual entries.
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
-#
-# SCCS: @(#) man2html.tcl 1.5 96/04/11 20:21:43
-#
 
 set homeDir /home/rjohnson/Projects/tools/generic
 

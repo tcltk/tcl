@@ -13,8 +13,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacNotify.c,v 1.8.4.1 2003/03/21 03:24:08 dgp Exp $
  */
 
 #include "tclInt.h"

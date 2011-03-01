@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * SCCS: @(#) memcmp.c 1.2 98/01/19 10:48:58
  */
 
 #include "tcl.h"

@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.15.2.1 2010/11/03 22:10:48 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"

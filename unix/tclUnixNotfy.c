@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.16 2006/08/22 17:45:02 andreas_kupries Exp $
  */
 
 #include "tclInt.h"

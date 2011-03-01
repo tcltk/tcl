@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclGetDate.y,v 1.18.4.2 2005/11/04 20:15:09 kennykb Exp $
  */
 
 %{

@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclEvent.c,v 1.28.2.16 2009/04/27 22:10:28 ferrieux Exp $
  */
 
 #include "tclInt.h"

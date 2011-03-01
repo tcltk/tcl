@@ -4,8 +4,6 @@
 #
 # 1997/10 -- dl
 #
-# $Id: str2c,v 1.2 1999/04/16 00:47:40 stanton Exp $
-#
 # restart with tclsh \
 exec tclsh8.0 "$0" "$@"
 
