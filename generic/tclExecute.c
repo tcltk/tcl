@@ -2053,8 +2053,12 @@ TEBCresume(
     int traceInstructions;	/* Whether we are doing instruction-level
 				 * tracing or not. */
 #endif
-#define LOCAL(i)	(&iPtr->varFramePtr->compiledLocals[(i)])
-#define TCONST(i)	(iPtr->execEnvPtr->constants[(i)])
+    
+    Var *compiledLocals = iPtr->varFramePtr->compiledLocals;
+    Tcl_Obj **constants = &iPtr->execEnvPtr->constants[0];
+ 
+#define LOCAL(i)	(&compiledLocals[(i)])
+#define TCONST(i)	(constants[(i)])
 
     /*
      * These macros are just meant to save some global variables that are not
