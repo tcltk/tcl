@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinReg.c,v 1.21.2.8 2011/01/14 16:03:13 nijtmans Exp $
  */
 
 #include <tclPort.h>

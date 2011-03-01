@@ -7,8 +7,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: http.tcl,v 1.43.2.15 2008/02/27 23:58:18 patthoyts Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface.

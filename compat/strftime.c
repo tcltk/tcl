@@ -9,8 +9,6 @@
  * restrictions.  The "license.terms" file does not apply to this file.
  *
  * Changes 2002 Copyright (c) 2002 ActiveState Corporation.
- *
- * RCS: @(#) $Id: strftime.c,v 1.10.2.3 2005/11/04 18:18:04 kennykb Exp $
  */
 
 /*
@@ -45,10 +43,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.10.2.3 2005/11/04 18:18:04 kennykb Exp $";
-#endif /* LIBC_SCCS */
 
 #include <time.h>
 #include <string.h>

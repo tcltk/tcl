@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: pkga.c,v 1.4.24.3 2004/06/08 20:25:45 dgp Exp $
  */
 #include "tcl.h"
 

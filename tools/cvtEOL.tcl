@@ -4,9 +4,6 @@
 # convert the EOL from \n to \r on all text files.
 #
 # Copyright (c) 1996-1997 by Sun Microsystems, Inc.
-#
-# SCCS: @(#) cvtEOL.tcl 1.1 97/01/30 11:33:33
-#
 
 #
 # Convert files in the distribution to Mac style

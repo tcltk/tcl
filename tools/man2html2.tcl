@@ -4,9 +4,6 @@
 # man page to html conversion process. It is sourced by man2html.tcl.
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
-#
-# SCCS: @(#) man2html2.tcl 1.2 96/03/21 10:48:30
-#
 
 # Global variables used by these scripts:
 #

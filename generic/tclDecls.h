@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclDecls.h,v 1.93.2.7 2006/09/22 01:26:23 andreas_kupries Exp $
  */
 
 #ifndef _TCLDECLS

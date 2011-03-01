@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.2.6 2008/03/24 03:05:07 patthoyts Exp $
  */
 
 #include "tclInt.h"

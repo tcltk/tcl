@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacFile.c,v 1.27.2.1 2003/10/03 17:45:37 vincentdarley Exp $
  */
 
 /*

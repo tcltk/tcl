@@ -47,8 +47,6 @@
  *	authors grant the U.S. Government and others acting in its behalf
  *	permission to use and distribute the software in accordance with the
  *	terms specified in this license.
- *
- * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.3.2.8 2009/10/05 02:41:18 das Exp $
  */
 
 #include "tclPort.h"

@@ -11,8 +11,6 @@
  *
  * See the file "License Terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacOSA.c,v 1.10 2002/10/09 11:54:30 das Exp $
  */
 
 #define MAC_TCL

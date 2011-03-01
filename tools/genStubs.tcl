@@ -7,8 +7,6 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
-# RCS: @(#) $Id: genStubs.tcl,v 1.13 2002/10/04 08:25:14 dkf Exp $
 
 package require Tcl 8
 
