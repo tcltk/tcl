@@ -24,7 +24,7 @@
  * in the generic/tclOO.decls script.
  */
 
-#if defined(USE_TCLOO_STUBS)
+#if defined(USE_TCL_STUBS)
 extern const char *TclOOInitializeStubs(Tcl_Interp *, const char *version);
 #define Tcl_OOInitStubs(interp) TclOOInitializeStubs((interp),TCLOO_VERSION)
 #else
