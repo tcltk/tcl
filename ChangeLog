@@ -1,3 +1,169 @@
+2011-01-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/RegExp.3: [Bug 3165108]: Corrected documentation of description
+	of subexpression info in Tcl_RegExpInfo structure.
+
+2011-01-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPreserve.c:  Don't miss 64-bit address bits in panic
+				  message.
+	* win/tclWinChan.c:       Fix various gcc-4.5.2 64-bit warning messages
+	* win/tclWinConsole.c     e.g. by using full 64-bits for socket fd's
+	* win/tclWinDde.c
+	* win/tclWinPipe.c
+	* win/tclWinReg.c
+	* win/tclWinSerial.c
+	* win/tclWinSock.c
+	* win/tclWinThrd.c
+
+2011-01-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl: [Enh #3159920]: Tcl_ObjPrintf() crashes with
+	* generic/tcl.decls   bad format specifier.
+	* generic/tcl.h
+	* generic/tclDecls.h
+
+2011-01-18  Donal K. Fellows  <dkf@users.sf.net>3159920
+
+	* generic/tclOOMethod.c (PushMethodCallFrame): [Bug 3001438]: Make
+	sure that the cmdPtr field of the procPtr is correct and relevant at
+	all times so that [info frame] can report sensible information about a
+	frame after a return to it from a recursive call, instead of probably
+	crashing (depending on what else has overwritten the Tcl stack!)
+
+2011-01-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c:      Various mismatches between Tcl_Panic
+	* generic/tclCompCmds.c:   format string and its arguments,
+	* generic/tclCompCmdsSZ.c: discovered thanks to [Bug 3159920]
+	* generic/tclCompExpr.c
+	* generic/tclEnsemble.c
+	* generic/tclPreserve.c
+	* generic/tclTest.c
+
+2011-01-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIOCmd.c: [Bug 3148192]: Commands "read/puts" incorrectly
+	* tests/chanio.test:  interpret parameters. Improved error-message
+	* tests/io.test       regarding legacy form.
+	* tests/ioCmd.test
+
+2011-01-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/tclvars.n:
+	* generic/tclStrToD.c:
+	* generic/tclUtil.c (Tcl_PrintDouble):
+	* tests/util.test (util-16.*): [Bug 3157475]: Restored full Tcl 8.4
+	compatibility for the formatting of floating point numbers when
+	$::tcl_precision is not zero. Added compatibility tests to make sure
+	that excess trailing zeroes are suppressed for all eight major code
+	paths.
+
+2011-01-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c:   Use _vsnprintf in stead of vsnprintf, because
+	MSVC 6 doesn't have it. Reported by andreask.
+	* win/tcl.m4:         handle --enable-64bit=ia64 for gcc
+	* win/configure.in:   more accurate test for correct <intrin.h>
+	* win/configure:      (autoconf-2.59)
+	* win/tclWin32Dll.c:  VS 2005 64-bit does not have intrin.h, and
+	* generic/tclPanic.c: does not need it.
+
+2011-01-07  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/util.test (util-15.*): Added test cases for floating point
+	conversion of the largest denormal and the smallest normal number,
+	to avoid any possibility of the failure suffered by PHP in the
+	last couple of days. (They didn't fail, so no actual functional
+	change.)
+
+2011-01-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/package.test, tests/pkg.test: Coalesce these tests into one
+	file that is concerned with the package system. Convert to use
+	tcltest2 properly.
+	* tests/autoMkindex.test, tests/pkgMkIndex.test: Convert to use
+	tcltest2 properly.
+
+2011-01-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/cmdAH.test, tests/cmdMZ.test, tests/compExpr.test,
+	* tests/compile.test, tests/concat.test, tests/eval.test,
+	* tests/fileName.test, tests/fileSystem.test, tests/interp.test,
+	* tests/lsearch.test, tests/namespace-old.test, tests/namespace.test,
+	* tests/oo.test, tests/proc.test, tests/security.test,
+	* tests/switch.test, tests/unixInit.test, tests/var.test,
+	* tests/winDde.test, tests/winPipe.test: Clean up of tests and
+	conversion to tcltest 2. Target has been to get init and cleanup code
+	out of the test body and into the -setup/-cleanup stanzas.
+
+	* tests/execute.test (execute-11.1): [Bug 3142026]: Added test that
+	fails (with a crash) in an unfixed memdebug build on 64-bit systems.
+
+2010-12-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (SortElement): Use unions properly in the
+	definition of this structure so that there is no need to use nasty
+	int/pointer type punning. Made it clearer what the purposes of the
+	various parts of the structure are.
+
+2010-12-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/dltest/*.c: [Bug 3148192]: Fix broken [load] tests by ensuring
+	that the affected files are never compiled with -DSTATIC_BUILD.
+
+2010-12-30  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (GrowEvaluationStack): Off-by-one error in
+	sizing the new allocation - was ok in comment but wrong in the code.
+	Triggered by [Bug 3142026] which happened to require exactly one more
+	than what was in existence.
+
+2010-12-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Fix crash when multiple -index
+	options are used. Simplified memory handling logic.
+
+2010-12-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWin32Dll.c:    [Patch 3059922]: fixes for mingw64 - gcc4.5.1
+	tdm64-1: completed for all environments.
+
+2010-12-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/configure.in:   Explicitely test for intrinsics support in
+	compiler, before assuming only MSVC has it.
+	* win/configure:      (autoconf-2.59)
+	* generic/tclPanic.c:
+
+2010-12-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWin32Dll.c:    [Patch 3059922]: fixes for mingw64 - gcc4.5.1
+	tdm64-1: Fixed for gcc, not yet for MSVC 64-bit.
+
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/Makefile.in:  Remove unwanted/obsolete 'ddd' target.
+
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/Makefile.in:	Clean up '.PHONY:' targets: Arrange those
+				common to Tcl and Tk as in Tk's Makefile.in,
+				add any missing ones and remove duplicates.
+
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/Makefile.in:  [Bug 2446711]: Remove 'allpatch' target.
+
+2010-12-17  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/Makefile.in:  [Bug 2537626]: Use 'rpmbuild', not 'rpm'.
+
+2010-12-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPanic.c:  [Patch 3124554]: Move WishPanic from Tk to Tcl
+	* win/tclWinFile.c:    Better communication with debugger, if present.
+
 2010-12-15  Kevin B. Kenny  <kennykb@acm.org>
 
 	[dogeen-assembler-branch]
@@ -8,27 +174,28 @@
 	handling that appeared in the discussion of [Bug 3098302] and in
 	tcl-core traffic beginning about 2010-10-29.
 
-2010-12-14  Jan Nijtmans  <nijtmans@users.sf.net>
+2010-12-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPanic.c:    Restore abort() as it was before.
-	* win/tclWinFile.c:      [Patch 3124554] use ExitProcess() here, like
+	* win/tclWinFile.c:      [Patch 3124554]: Use ExitProcess() here, like
 	in wish.
 
 2010-12-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h:	[Bug 3137454]: Tcl CVS HEAD does not build on GCC 3
+	* generic/tcl.h:	[Bug 3137454]: Tcl CVS HEAD does not build
+	on GCC 3.
 
 2010-12-14  Reinhard Max  <max@suse.de>
 
 	* win/tclWinSock.c (CreateSocket):         Swap the loops over
-	* unix/tclUnixSock.c (CreateClientSocket): local and remote
-	addresses, so that the system's address preference for the remote
-	side decides which family gets tried first. Cleanup and clarify
-	some of the comments.
+	* unix/tclUnixSock.c (CreateClientSocket): local and remote addresses,
+	so that the system's address preference for the remote side decides
+	which family gets tried first. Cleanup and clarify some of the
+	comments.
 
 2010-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h:    [Bug 3135271] Link error due to hidden
+	* generic/tcl.h:    [Bug 3135271]: Link error due to hidden
 	* unix/tcl.m4:      symbols (CentOS 4.2)
 	* unix/configure:   (autoconf-2.59)
 	* win/tclWinFile.c:  Undocumented feature, only meant to be
@@ -52,7 +219,8 @@
 2010-12-10 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclIO.c: Make sure [fcopy -size ... -command ...] always
-	* tests/io.test:   calls the callback asynchronously, even for size zero.
+	* tests/io.test:   calls the callback asynchronously, even for size
+			   zero.
 
 2010-12-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -64,14 +232,16 @@
 	* generic/tclIndexObj.c:
 	* generic/tclIOCmd.c:
 	* generic/tclVar.c:
-	* win/tcl.m4:               Fix manifest-generation for 64-bit gcc (mingw-w64)
-	* win/configure.in:         Check for availability of intptr_t and uintptr_t
+	* win/tcl.m4:               Fix manifest-generation for 64-bit gcc
+				    (mingw-w64)
+	* win/configure.in:         Check for availability of intptr_t and
+				    uintptr_t
 	* win/configure:            (autoconf-2.59)
-	* generic/tclInt.decls:     Change first parameter of TclSockMinimumBuffers to
-	* generic/tclIntDecls.h:    ClientData, and TclWin(Get|Set)SockOpt to SOCKET,
-	* generic/tclIntPlatDecls.h:because on Win64 those are 64-bit, which does not fit.
-	* generic/tclIOSock.c:
-	* win/tclWinSock.c:      
+	* generic/tclInt.decls:     Change 1st param of TclSockMinimumBuffers
+	* generic/tclIntDecls.h:    to ClientData, and TclWin(Get|Set)SockOpt
+	* generic/tclIntPlatDecls.h:to SOCKET, because on Win64 those are
+	* generic/tclIOSock.c:	    64-bit, which does not fit.
+	* win/tclWinSock.c:
 	* unix/tclUnixSock.c:
 
 2010-12-09  Donal K. Fellows  <dkf@users.sf.net>
@@ -676,6 +846,8 @@
 	* generic/tclTest.c:
 
 	* generic/tclVar.c: Use the macro HasLocalVars everywhere
+
+2010-09-26  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclOOMethod.c (ProcedureMethodVarResolver): avoid code
 	duplication, let the runtime var resolver call the compiled var

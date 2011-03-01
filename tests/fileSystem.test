@@ -36,7 +36,7 @@ if {[testConstraint win]} {
     set vols [string map [list :/ {}] [file volumes]]
     for {set i 0} {$i < 26} {incr i} {
 	set drive [format %c [expr {$i + 65}]]
-	if {[lsearch -exact $vols $drive] == -1} {
+	if {$drive ni $vols} {
 	    testConstraint unusedDrive 1
 	    break
 	}

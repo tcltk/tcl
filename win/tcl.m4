@@ -407,6 +407,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     SHLIB_SUFFIX=".dll"
 
+    # MACHINE is IX86 for LINK, but this is used by the manifest,
+    # which requires x86|amd64|ia64.
+    MACHINE="X86"
+
     # Check for a bug in gcc's windres that causes the
     # compile to fail when a Windows native path is
     # passed into windres. The mingw toolchain requires
@@ -575,11 +579,16 @@ file for information about building with Mingw.])
 	LDFLAGS_CONSOLE="-mconsole ${extra_ldflags}"
 	LDFLAGS_WINDOW="-mwindows ${extra_ldflags}"
 
-	if test "$do64bit" != "no" ; then
-	    MACHINE="AMD64"
-	else
-	    MACHINE="X86"
-	fi
+	case "$do64bit" in
+	    amd64|x64|yes)
+		MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
+		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		;;
+	    ia64)
+		MACHINE="IA64"
+		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		;;
+	esac
     else
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
@@ -602,12 +611,9 @@ file for information about building with Mingw.])
 	LIBSUFFIX="\${DBGX}.lib"
 	LIBFLAGSUFFIX="\${DBGX}"
 
- 	# This is a 2-stage check to make sure we have the 64-bit SDK
- 	# We have to know where the SDK is installed.
+	# This is a 2-stage check to make sure we have the 64-bit SDK
+	# We have to know where the SDK is installed.
 	# This magic is based on MS Platform SDK for Win2003 SP1 - hobbs
-	# MACHINE is IX86 for LINK, but this is used by the manifest,
-	# which requires x86|amd64|ia64.
-	MACHINE="X86"
 	if test "$do64bit" != "no" ; then
 	    if test "x${MSSDK}x" = "xx" ; then
 		MSSDK="C:/Progra~1/Microsoft Platform SDK"
@@ -615,14 +621,14 @@ file for information about building with Mingw.])
 	    MSSDK=`echo "$MSSDK" | sed -e 's!\\\!/!g'`
 	    PATH64=""
 	    case "$do64bit" in
-	      amd64|x64|yes)
-		MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
-		PATH64="${MSSDK}/Bin/Win64/x86/AMD64"
-		;;
-	      ia64)
-		MACHINE="IA64"
-		PATH64="${MSSDK}/Bin/Win64"
-		;;
+		amd64|x64|yes)
+		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
+		    PATH64="${MSSDK}/Bin/Win64/x86/AMD64"
+		    ;;
+		ia64)
+		    MACHINE="IA64"
+		    PATH64="${MSSDK}/Bin/Win64"
+		    ;;
 	    esac
 	    if test ! -d "${PATH64}" ; then
 		AC_MSG_WARN([Could not find 64-bit $MACHINE SDK to enable 64bit mode])

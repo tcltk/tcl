@@ -11,14 +11,14 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: appendComp.test,v 1.13.2.1 2010/12/11 18:39:30 kennykb Exp $
+# RCS: @(#) $Id: appendComp.test,v 1.14 2010/12/09 10:47:53 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
 catch {unset x}
-
+
 test appendComp-1.1 {append command} -setup {
     unset -nocomplain x
 } -body {
@@ -440,7 +440,7 @@ test appendComp-9.3 {bug 3057639, append direct eval, read trace on non-existing
 } -cleanup {
     unset -nocomplain ::env(__DUMMY__)
 } -result {0 {new value}}
-
+
 catch {unset i x result y}
 catch {rename foo ""}
 catch {rename bar ""}
