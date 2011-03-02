@@ -8,9 +8,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: GNUmakefile,v 1.9.2.1 2008/05/06 16:33:38 das Exp $
-#
 ########################################################################################################
 
 #-------------------------------------------------------------------------------------------------------

@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclFileSystem.h,v 1.11 2005/10/13 00:07:17 dkf Exp $
  */
 
 #ifndef _TCLFILESYSTEM

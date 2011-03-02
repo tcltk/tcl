@@ -15,9 +15,6 @@ exec tclsh "$0" ${1+"$@"}
 # Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: installData.tcl,v 1.1.16.1 2010/05/21 12:18:17 nijtmans Exp $
-#
 #----------------------------------------------------------------------
 
 proc copyDir {d1 d2} {

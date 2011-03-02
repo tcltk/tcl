@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclCompile.c,v 1.146.2.13 2010/02/02 20:51:46 andreas_kupries Exp $
  */
 
 #include "tclInt.h"

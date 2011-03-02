@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclResult.c,v 1.47.2.1 2010/03/24 15:31:48 dgp Exp $
  */
 
 #include "tclInt.h"

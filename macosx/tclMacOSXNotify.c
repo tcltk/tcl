@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.18.2.5 2009/08/24 00:27:53 das Exp $
  */
 
 #include "tclInt.h"
