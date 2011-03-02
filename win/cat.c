@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: cat.c,v 1.3.10.1 2010/01/31 23:51:37 nijtmans Exp $
  */
 
 #include <stdio.h>

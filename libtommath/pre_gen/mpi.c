@@ -43,10 +43,6 @@ char *mp_error_to_string(int code)
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_error.c */
 
 /* Start: bn_fast_mp_invmod.c */
@@ -194,10 +190,6 @@ LBL_ERR:mp_clear_multi (&x, &y, &u, &v, &B, &D, NULL);
   return res;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_fast_mp_invmod.c */
 
@@ -371,10 +363,6 @@ int fast_mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_fast_mp_montgomery_reduce.c */
 
 /* Start: bn_fast_s_mp_mul_digs.c */
@@ -482,10 +470,6 @@ int fast_s_mp_mul_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_fast_s_mp_mul_digs.c */
 
 /* Start: bn_fast_s_mp_mul_high_digs.c */
@@ -583,10 +567,6 @@ int fast_s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_fast_s_mp_mul_high_digs.c */
 
@@ -702,10 +682,6 @@ int fast_s_mp_sqr (mp_int * a, mp_int * b)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_fast_s_mp_sqr.c */
 
 /* Start: bn_mp_2expt.c */
@@ -754,10 +730,6 @@ mp_2expt (mp_int * a, int b)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_2expt.c */
 
 /* Start: bn_mp_abs.c */
@@ -800,10 +772,6 @@ mp_abs (mp_int * a, mp_int * b)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_abs.c */
 
@@ -857,10 +825,6 @@ int mp_add (mp_int * a, mp_int * b, mp_int * c)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_add.c */
 
@@ -974,10 +938,6 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_add_d.c */
 
 /* Start: bn_mp_addmod.c */
@@ -1018,10 +978,6 @@ mp_addmod (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
   return res;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_addmod.c */
 
@@ -1080,10 +1036,6 @@ mp_and (mp_int * a, mp_int * b, mp_int * c)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_and.c */
 
 /* Start: bn_mp_clamp.c */
@@ -1127,10 +1079,6 @@ mp_clamp (mp_int * a)
   }
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_clamp.c */
 
@@ -1176,10 +1124,6 @@ mp_clear (mp_int * a)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_clear.c */
 
 /* Start: bn_mp_clear_multi.c */
@@ -1213,10 +1157,6 @@ void mp_clear_multi(mp_int *mp, ...)
     va_end(args);
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_clear_multi.c */
 
@@ -1261,10 +1201,6 @@ mp_cmp (mp_int * a, mp_int * b)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_cmp.c */
 
 /* Start: bn_mp_cmp_d.c */
@@ -1308,10 +1244,6 @@ int mp_cmp_d(mp_int * a, mp_digit b)
   }
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_cmp_d.c */
 
@@ -1368,10 +1300,6 @@ int mp_cmp_mag (mp_int * a, mp_int * b)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_cmp_mag.c */
 
 /* Start: bn_mp_cnt_lsb.c */
@@ -1424,10 +1352,6 @@ int mp_cnt_lsb(mp_int *a)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_cnt_lsb.c */
 
@@ -1497,10 +1421,6 @@ mp_copy (mp_int * a, mp_int * b)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_copy.c */
 
 /* Start: bn_mp_count_bits.c */
@@ -1545,10 +1465,6 @@ mp_count_bits (mp_int * a)
   return r;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_count_bits.c */
 
@@ -1842,10 +1758,6 @@ LBL_Q:mp_clear (&q);
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_div.c */
 
 /* Start: bn_mp_div_2.c */
@@ -1913,10 +1825,6 @@ int mp_div_2(mp_int * a, mp_int * b)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_div_2.c */
 
@@ -2015,10 +1923,6 @@ int mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_div_2d.c */
 
 /* Start: bn_mp_div_3.c */
@@ -2097,10 +2001,6 @@ mp_div_3 (mp_int * a, mp_int *c, mp_digit * d)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_div_3.c */
 
@@ -2212,10 +2112,6 @@ int mp_div_d (mp_int * a, mp_digit b, mp_int * c, mp_digit * d)
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_div_d.c */
 
 /* Start: bn_mp_dr_is_modulus.c */
@@ -2258,10 +2154,6 @@ int mp_dr_is_modulus(mp_int *a)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_dr_is_modulus.c */
 
@@ -2357,10 +2249,6 @@ top:
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_dr_reduce.c */
 
 /* Start: bn_mp_dr_setup.c */
@@ -2392,10 +2280,6 @@ void mp_dr_setup(mp_int *a, mp_digit *d)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_dr_setup.c */
 
@@ -2430,10 +2314,6 @@ mp_exch (mp_int * a, mp_int * b)
   *b = t;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_exch.c */
 
@@ -2491,10 +2371,6 @@ int mp_expt_d (mp_int * a, mp_digit b, mp_int * c)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_expt_d.c */
 
@@ -2607,10 +2483,6 @@ int mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_exptmod.c */
 
@@ -2932,11 +2804,6 @@ LBL_M:
 }
 #endif
 
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_exptmod_fast.c */
 
 /* Start: bn_mp_exteuclid.c */
@@ -3019,10 +2886,6 @@ _ERR: mp_clear_multi(&u1, &u2, &u3, &v1, &v2, &v3, &t1, &t2, &t3, &q, &tmp, NULL
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_exteuclid.c */
 
 /* Start: bn_mp_fread.c */
@@ -3090,10 +2953,6 @@ int mp_fread(mp_int *a, int radix, FILE *stream)
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_fread.c */
 
 /* Start: bn_mp_fwrite.c */
@@ -3145,10 +3004,6 @@ int mp_fwrite(mp_int *a, int radix, FILE *stream)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_fwrite.c */
 
@@ -3255,10 +3110,6 @@ LBL_U:mp_clear (&v);
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_gcd.c */
 
 /* Start: bn_mp_get_int.c */
@@ -3303,10 +3154,6 @@ unsigned long mp_get_int(mp_int * a)
   return res & 0xFFFFFFFFUL;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_get_int.c */
 
@@ -3365,10 +3212,6 @@ int mp_grow (mp_int * a, int size)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_grow.c */
 
 /* Start: bn_mp_init.c */
@@ -3415,10 +3258,6 @@ int mp_init (mp_int * a)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_init.c */
 
 /* Start: bn_mp_init_copy.c */
@@ -3450,10 +3289,6 @@ int mp_init_copy (mp_int * a, mp_int * b)
   return mp_copy (b, a);
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_init_copy.c */
 
@@ -3514,10 +3349,6 @@ int mp_init_multi(mp_int *mp, ...)
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_init_multi.c */
 
 /* Start: bn_mp_init_set.c */
@@ -3550,10 +3381,6 @@ int mp_init_set (mp_int * a, mp_digit b)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_init_set.c */
 
 /* Start: bn_mp_init_set_int.c */
@@ -3584,10 +3411,6 @@ int mp_init_set_int (mp_int * a, unsigned long b)
   return mp_set_int(a, b);
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_init_set_int.c */
 
@@ -3637,10 +3460,6 @@ int mp_init_size (mp_int * a, int size)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_init_size.c */
 
 /* Start: bn_mp_invmod.c */
@@ -3683,10 +3502,6 @@ int mp_invmod (mp_int * a, mp_int * b, mp_int * c)
   return MP_VAL;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_invmod.c */
 
@@ -3863,10 +3678,6 @@ LBL_ERR:mp_clear_multi (&x, &y, &u, &v, &A, &B, &C, &D, NULL);
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_invmod_slow.c */
 
 /* Start: bn_mp_is_square.c */
@@ -3976,10 +3787,6 @@ ERR:mp_clear(&t);
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_is_square.c */
 
 /* Start: bn_mp_jacobi.c */
@@ -4084,10 +3891,6 @@ LBL_A1:mp_clear (&a1);
   return res;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_jacobi.c */
 
@@ -4256,10 +4059,6 @@ ERR:
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_karatsuba_mul.c */
 
 /* Start: bn_mp_karatsuba_sqr.c */
@@ -4381,10 +4180,6 @@ ERR:
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_karatsuba_sqr.c */
 
 /* Start: bn_mp_lcm.c */
@@ -4444,10 +4239,6 @@ LBL_T:
   return res;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_lcm.c */
 
@@ -4516,10 +4307,6 @@ int mp_lshd (mp_int * a, int b)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_lshd.c */
 
 /* Start: bn_mp_mod.c */
@@ -4567,10 +4354,6 @@ mp_mod (mp_int * a, mp_int * b, mp_int * c)
   return res;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_mod.c */
 
@@ -4627,10 +4410,6 @@ mp_mod_2d (mp_int * a, int b, mp_int * c)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_mod_2d.c */
 
 /* Start: bn_mp_mod_d.c */
@@ -4657,10 +4436,6 @@ mp_mod_d (mp_int * a, mp_digit b, mp_digit * c)
   return mp_div_d(a, b, NULL, c);
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_mod_d.c */
 
@@ -4720,10 +4495,6 @@ int mp_montgomery_calc_normalization (mp_int * a, mp_int * b)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_montgomery_calc_normalization.c */
 
@@ -4843,10 +4614,6 @@ mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_montgomery_reduce.c */
 
 /* Start: bn_mp_montgomery_setup.c */
@@ -4905,10 +4672,6 @@ mp_montgomery_setup (mp_int * n, mp_digit * rho)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_montgomery_setup.c */
 
@@ -4975,10 +4738,6 @@ int mp_mul (mp_int * a, mp_int * b, mp_int * c)
   return res;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_mul.c */
 
@@ -5061,10 +4820,6 @@ int mp_mul_2(mp_int * a, mp_int * b)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_mul_2.c */
 
@@ -5151,10 +4906,6 @@ int mp_mul_2d (mp_int * a, int b, mp_int * c)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_mul_2d.c */
 
 /* Start: bn_mp_mul_d.c */
@@ -5234,10 +4985,6 @@ mp_mul_d (mp_int * a, mp_digit b, mp_int * c)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_mul_d.c */
 
 /* Start: bn_mp_mulmod.c */
@@ -5277,10 +5024,6 @@ int mp_mulmod (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
   return res;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_mulmod.c */
 
@@ -5414,10 +5157,6 @@ LBL_T1:mp_clear (&t1);
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_n_root.c */
 
 /* Start: bn_mp_neg.c */
@@ -5457,10 +5196,6 @@ int mp_neg (mp_int * a, mp_int * b)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_neg.c */
 
@@ -5511,10 +5246,6 @@ int mp_or (mp_int * a, mp_int * b, mp_int * c)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_or.c */
 
@@ -5578,10 +5309,6 @@ LBL_T:mp_clear (&t);
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_prime_fermat.c */
 
 /* Start: bn_mp_prime_is_divisible.c */
@@ -5631,10 +5358,6 @@ int mp_prime_is_divisible (mp_int * a, int *result)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_prime_is_divisible.c */
 
@@ -5718,10 +5441,6 @@ LBL_B:mp_clear (&b);
   return err;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_prime_is_prime.c */
 
@@ -5825,10 +5544,6 @@ LBL_N1:mp_clear (&n1);
   return err;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_prime_miller_rabin.c */
 
@@ -6000,10 +5715,6 @@ LBL_ERR:
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_prime_next_prime.c */
 
 /* Start: bn_mp_prime_rabin_miller_trials.c */
@@ -6055,10 +5766,6 @@ int mp_prime_rabin_miller_trials(int size)
 
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_prime_rabin_miller_trials.c */
 
@@ -6185,10 +5892,6 @@ error:
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_prime_random_ex.c */
 
 /* Start: bn_mp_radix_size.c */
@@ -6267,10 +5970,6 @@ int mp_radix_size (mp_int * a, int radix, int *size)
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_radix_size.c */
 
 /* Start: bn_mp_radix_smap.c */
@@ -6294,10 +5993,6 @@ int mp_radix_size (mp_int * a, int radix, int *size)
 /* chars used in radix conversions */
 const char *mp_s_rmap = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_radix_smap.c */
 
@@ -6353,10 +6048,6 @@ mp_rand (mp_int * a, int digits)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_rand.c */
 
@@ -6443,10 +6134,6 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_read_radix.c */
 
 /* Start: bn_mp_read_signed_bin.c */
@@ -6487,10 +6174,6 @@ int mp_read_signed_bin (mp_int * a, const unsigned char *b, int c)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_read_signed_bin.c */
 
@@ -6546,10 +6229,6 @@ int mp_read_unsigned_bin (mp_int * a, const unsigned char *b, int c)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_read_unsigned_bin.c */
 
@@ -6651,10 +6330,6 @@ CLEANUP:
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_reduce.c */
 
 /* Start: bn_mp_reduce_2k.c */
@@ -6715,10 +6390,6 @@ ERR:
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_reduce_2k.c */
 
@@ -6782,10 +6453,6 @@ ERR:
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_reduce_2k_l.c */
 
 /* Start: bn_mp_reduce_2k_setup.c */
@@ -6833,10 +6500,6 @@ int mp_reduce_2k_setup(mp_int *a, mp_digit *d)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_reduce_2k_setup.c */
 
 /* Start: bn_mp_reduce_2k_setup_l.c */
@@ -6880,10 +6543,6 @@ ERR:
    return res;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_reduce_2k_setup_l.c */
 
@@ -6937,10 +6596,6 @@ int mp_reduce_is_2k(mp_int *a)
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_reduce_is_2k.c */
 
 /* Start: bn_mp_reduce_is_2k_l.c */
@@ -6985,10 +6640,6 @@ int mp_reduce_is_2k_l(mp_int *a)
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_reduce_is_2k_l.c */
 
 /* Start: bn_mp_reduce_setup.c */
@@ -7022,10 +6673,6 @@ int mp_reduce_setup (mp_int * a, mp_int * b)
   return mp_div (a, b, a, NULL);
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_reduce_setup.c */
 
@@ -7099,10 +6746,6 @@ void mp_rshd (mp_int * a, int b)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_rshd.c */
 
 /* Start: bn_mp_set.c */
@@ -7131,10 +6774,6 @@ void mp_set (mp_int * a, mp_digit b)
   a->used  = (a->dp[0] != 0) ? 1 : 0;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_set.c */
 
@@ -7184,10 +6823,6 @@ int mp_set_int (mp_int * a, unsigned long b)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_set_int.c */
 
 /* Start: bn_mp_shrink.c */
@@ -7223,10 +6858,6 @@ int mp_shrink (mp_int * a)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_shrink.c */
 
 /* Start: bn_mp_signed_bin_size.c */
@@ -7253,10 +6884,6 @@ int mp_signed_bin_size (mp_int * a)
   return 1 + mp_unsigned_bin_size (a);
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_signed_bin_size.c */
 
@@ -7316,10 +6943,6 @@ if (a->used >= KARATSUBA_SQR_CUTOFF) {
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_sqr.c */
 
 /* Start: bn_mp_sqrmod.c */
@@ -7361,14 +6984,11 @@ mp_sqrmod (mp_int * a, mp_int * b, mp_int * c)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_sqrmod.c */
 
 /* Start: bn_mp_sqrt.c */
 #include <tommath.h>
+
 #ifdef BN_MP_SQRT_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -7446,10 +7066,6 @@ E2: mp_clear(&t1);
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_sqrt.c */
 
 /* Start: bn_mp_sub.c */
@@ -7508,10 +7124,6 @@ mp_sub (mp_int * a, mp_int * b, mp_int * c)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_sub.c */
 
@@ -7606,10 +7218,6 @@ mp_sub_d (mp_int * a, mp_digit b, mp_int * c)
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_sub_d.c */
 
 /* Start: bn_mp_submod.c */
@@ -7652,10 +7260,6 @@ mp_submod (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_submod.c */
 
 /* Start: bn_mp_to_signed_bin.c */
@@ -7689,10 +7293,6 @@ int mp_to_signed_bin (mp_int * a, unsigned char *b)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_to_signed_bin.c */
 
 /* Start: bn_mp_to_signed_bin_n.c */
@@ -7723,10 +7323,6 @@ int mp_to_signed_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen)
    return mp_to_signed_bin(a, b);
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_to_signed_bin_n.c */
 
@@ -7776,10 +7372,6 @@ int mp_to_unsigned_bin (mp_int * a, unsigned char *b)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_to_unsigned_bin.c */
 
 /* Start: bn_mp_to_unsigned_bin_n.c */
@@ -7810,10 +7402,6 @@ int mp_to_unsigned_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen)
    return mp_to_unsigned_bin(a, b);
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_to_unsigned_bin_n.c */
 
@@ -8099,10 +7687,6 @@ ERR:
      
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_toom_mul.c */
 
 /* Start: bn_mp_toom_sqr.c */
@@ -8329,10 +7913,6 @@ ERR:
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_toom_sqr.c */
 
 /* Start: bn_mp_toradix.c */
@@ -8407,10 +7987,6 @@ int mp_toradix (mp_int * a, char *str, int radix)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_toradix.c */
 
@@ -8500,10 +8076,6 @@ int mp_toradix_n(mp_int * a, char *str, int radix, int maxlen)
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_toradix_n.c */
 
 /* Start: bn_mp_unsigned_bin_size.c */
@@ -8531,10 +8103,6 @@ int mp_unsigned_bin_size (mp_int * a)
   return (size / 8 + ((size & 7) != 0 ? 1 : 0));
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_unsigned_bin_size.c */
 
@@ -8587,10 +8155,6 @@ mp_xor (mp_int * a, mp_int * b, mp_int * c)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_mp_xor.c */
 
 /* Start: bn_mp_zero.c */
@@ -8626,10 +8190,6 @@ void mp_zero (mp_int * a)
   }
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_mp_zero.c */
 
@@ -8692,10 +8252,6 @@ const mp_digit ltm_prime_tab[] = {
 };
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_prime_tab.c */
 
 /* Start: bn_reverse.c */
@@ -8734,10 +8290,6 @@ bn_reverse (unsigned char *s, int len)
   }
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_reverse.c */
 
@@ -8847,10 +8399,6 @@ s_mp_add (mp_int * a, mp_int * b, mp_int * c)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_s_mp_add.c */
 
@@ -9104,10 +8652,6 @@ LBL_M:
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_s_mp_exptmod.c */
 
 /* Start: bn_s_mp_mul_digs.c */
@@ -9198,10 +8742,6 @@ int s_mp_mul_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_s_mp_mul_digs.c */
 
 /* Start: bn_s_mp_mul_high_digs.c */
@@ -9282,10 +8822,6 @@ s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_s_mp_mul_high_digs.c */
 
@@ -9370,10 +8906,6 @@ int s_mp_sqr (mp_int * a, mp_int * b)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bn_s_mp_sqr.c */
 
@@ -9464,10 +8996,6 @@ s_mp_sub (mp_int * a, mp_int * b, mp_int * c)
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
-
 /* End: bn_s_mp_sub.c */
 
 /* Start: bncore.c */
@@ -9503,10 +9031,6 @@ int     KARATSUBA_MUL_CUTOFF = 80,      /* Min. number of digits before Karatsub
         TOOM_MUL_CUTOFF      = 350,      /* no optimal values of these are known yet so set em high */
         TOOM_SQR_CUTOFF      = 400; 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/pre_gen/mpi.c,v $ */
-/* $Revision: 1.1.1.5 $ */
-/* $Date: 2006/12/01 00:08:34 $ */
 
 /* End: bncore.c */
 

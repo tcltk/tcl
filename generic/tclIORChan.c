@@ -14,8 +14,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclIORChan.c,v 1.28.2.11 2010/08/04 16:47:15 andreas_kupries Exp $
  */
 
 #include <tclInt.h>

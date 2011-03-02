@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclPkgConfig.c,v 1.4 2005/11/07 15:14:09 dkf Exp $
  */
 
 /* Note, the definitions in this module are influenced by the following C

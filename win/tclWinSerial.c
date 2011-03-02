@@ -10,8 +10,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
- *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.36.2.1 2010/01/31 23:51:37 nijtmans Exp $
  */
 
 #include "tclWinInt.h"

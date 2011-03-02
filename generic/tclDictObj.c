@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclDictObj.c,v 1.56.2.4 2010/05/19 21:47:49 ferrieux Exp $
  */
 
 #include "tclInt.h"

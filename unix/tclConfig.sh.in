@@ -8,8 +8,6 @@
 # out for themselves.
 #
 # The information in this file is specific to a single platform.
-#
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.21.10.1 2010/08/12 00:11:23 hobbs Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'

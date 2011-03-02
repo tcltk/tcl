@@ -11,8 +11,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: safe.tcl,v 1.16.4.9 2010/11/02 21:57:19 stwo Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are

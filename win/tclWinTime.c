@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinTime.c,v 1.33 2005/11/04 00:06:51 dkf Exp $
  */
 
 #include "tclInt.h"
