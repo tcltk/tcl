@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclPipe.c,v 1.19.4.1 2009/07/24 16:51:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"

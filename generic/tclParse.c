@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclParse.c,v 1.62.2.4 2009/08/26 02:26:14 dgp Exp $
  */
 
 #include "tclInt.h"

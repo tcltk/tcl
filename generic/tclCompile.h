@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclCompile.h,v 1.90.2.8 2010/02/02 20:51:47 andreas_kupries Exp $
  */
 
 #ifndef _TCLCOMPILATION

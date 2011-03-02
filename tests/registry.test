@@ -9,8 +9,6 @@
 #
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
-#
-# RCS: @(#) $Id: registry.test,v 1.21.4.1 2009/11/11 23:46:09 patthoyts Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2

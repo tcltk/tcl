@@ -12,8 +12,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclExecute.c,v 1.369.2.21 2011/01/19 08:14:17 ferrieux Exp $
  */
 
 #include "tclInt.h"
