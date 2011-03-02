@@ -14,8 +14,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclAlloc.c,v 1.27.2.1 2009/09/29 04:43:58 dgp Exp $
  */
 
 /*

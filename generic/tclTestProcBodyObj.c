@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.5 2007/04/16 13:36:35 dkf Exp $
  */
 
 #include "tclInt.h"

@@ -14,9 +14,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: basic.test,v 1.44 2007/04/20 05:51:11 kennykb Exp $
-#
 
 package require tcltest 2
 namespace import -force ::tcltest::*

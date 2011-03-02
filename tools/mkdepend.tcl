@@ -25,9 +25,6 @@
 # Modified heavily by David Gravereaux <davygrvy@pobox.com> about 9/17/2006.
 # Original can be found @ 
 #	http://web.archive.org/web/20070616205924/http://www.doc.ic.ac.uk/~np2/software/mkdepend.html
-#
-#==============================================================================
-# RCS: @(#) $Id: mkdepend.tcl,v 1.6 2007/12/13 15:28:40 dgp Exp $
 #==============================================================================
 
 array set mode_data {}

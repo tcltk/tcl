@@ -10,8 +10,6 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.65.2.4 2010/08/04 19:45:07 hobbs Exp $
- *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
  *

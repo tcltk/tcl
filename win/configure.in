@@ -2,8 +2,6 @@
 # This file is an input file used by the GNU "autoconf" program to
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
-#
-# RCS: @(#) $Id: configure.in,v 1.104.2.13 2010/12/13 21:18:50 nijtmans Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
