@@ -3242,28 +3242,29 @@ CancelEvalProc(
 
 	if (iPtr != NULL) {
 	    /*
-	     * Setting this flag will cause the script in progress to be
-	     * canceled as soon as possible. The core honors this flag at all
-	     * the necessary places to ensure script cancellation is
+	     * Setting the CANCELED flag will cause the script in progress to
+	     * be canceled as soon as possible. The core honors this flag at
+	     * all the necessary places to ensure script cancellation is
 	     * responsive. Extensions can check for this flag by calling
 	     * Tcl_Canceled and checking if TCL_ERROR is returned or they can
 	     * choose to ignore the script cancellation flag and the
-	     * associated functionality altogether.
-	     */
-
-	    iPtr->flags |= CANCELED;
-
-	    /*
-	     * Currently, we only care about the TCL_CANCEL_UNWIND flag from
-	     * Tcl_CancelEval. We do not want to simply combine all the flags
+	     * associated functionality altogether. Currently, the only other
+	     * flag we care about here is the TCL_CANCEL_UNWIND flag (from
+	     * Tcl_CancelEval). We do not want to simply combine all the flags
 	     * from original Tcl_CancelEval call with the interp flags here
 	     * just in case the caller passed flags that might cause behaviour
 	     * unrelated to script cancellation.
 	     */
 
-	    if (cancelInfo->flags & TCL_CANCEL_UNWIND) {
-		iPtr->flags |= TCL_CANCEL_UNWIND;
-	    }
+	    TclSetCancelFlags(iPtr, cancelInfo->flags | CANCELED);
+
+	    /*
+	     * Now, we must set the script cancellation flags on all the slave
+	     * interpreters belonging to this one.
+	     */
+
+	    TclSetSlaveCancelFlags((Tcl_Interp *) iPtr,
+		    cancelInfo->flags | CANCELED, 0);
 
 	    /*
 	     * Create the result object now so that Tcl_Canceled can avoid
@@ -3792,7 +3793,15 @@ TclInterpReady(
 	return TCL_ERROR;
     }
 
-    if (iPtr->execEnvPtr->rewind ||
+    if (iPtr->execEnvPtr->rewind) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Make sure the script being evaluated (if any) has not been canceled.
+     */
+
+    if (TclCanceled(iPtr) &&
 	    (TCL_OK != Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG))) {
 	return TCL_ERROR;
     }
@@ -3842,7 +3851,7 @@ TclResetCancellation(
     }
 
     if (force || (iPtr->numLevels == 0)) {
-	iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));
+	TclUnsetCancelFlags(iPtr);
     }
     return TCL_OK;
 }
@@ -3880,21 +3889,12 @@ Tcl_Canceled(
     register Interp *iPtr = (Interp *) interp;
 
     /*
-     * Traverse up the to the top-level interp, checking for the CANCELED flag
-     * along the way. If any of the intervening interps have the CANCELED flag
-     * set, the current script in progress is considered to be canceled and we
-     * stop checking. Otherwise, if any interp has the DELETED flag set we
-     * stop checking.
-     */
-
-    for (; iPtr!=NULL; iPtr = (Interp *) Tcl_GetMaster((Tcl_Interp *) iPtr)) {
-	/*
 	 * Has the current script in progress for this interpreter been
 	 * canceled or is the stack being unwound due to the previous script
 	 * cancellation?
 	 */
 
-	if ((iPtr->flags & CANCELED) || (iPtr->flags & TCL_CANCEL_UNWIND)) {
+    if (TclCanceled(iPtr)) {
 	    /*
 	     * The CANCELED flag is a one-shot flag that is reset immediately
 	     * upon being detected; however, if the TCL_CANCEL_UNWIND flag is
@@ -3962,20 +3962,6 @@ Tcl_Canceled(
 
 		return TCL_ERROR;
 	    }
-	} else {
-	    /*
-	     * FIXME: If this interpreter is being deleted we cannot continue
-	     * to traverse up the interp chain due to an issue with
-	     * Tcl_GetMaster (really the slave interp bookkeeping) that causes
-	     * us to run off into a freed interp struct. Ideally, this check
-	     * would not be necessary because Tcl_GetMaster would return NULL
-	     * instead of a pointer to invalid (freed) memory.
-	     */
-
-	    if (iPtr->flags & DELETED) {
-		break;
-	    }
-	}
     }
 
     return TCL_OK;
@@ -4372,7 +4358,7 @@ NRCommand(
     if (TclAsyncReady(iPtr)) {
 	result = Tcl_AsyncInvoke(interp, result);
     }
-    if (result == TCL_OK) {
+    if ((result == TCL_OK) && TclCanceled(iPtr)) {
 	result = Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG);
     }
     if (result == TCL_OK && TclLimitReady(iPtr->limit)) {
@@ -4501,7 +4487,7 @@ TEOV_Exception(
      * here directly.
      */
 
-    iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));
+    TclUnsetCancelFlags(iPtr);
     return result;
 }
 
@@ -6204,7 +6190,7 @@ TEOEx_ByteCodeCallback(
 	 * Let us just unset the flags inline.
 	 */
 
-	iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));
+	TclUnsetCancelFlags(iPtr);
     }
     iPtr->evalFlags = 0;
 

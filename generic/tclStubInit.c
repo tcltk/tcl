@@ -306,6 +306,7 @@ static const TclIntStubs tclIntStubs = {
     TclResetRewriteEnsemble, /* 247 */
     TclCopyChannel, /* 248 */
     TclDoubleDigits, /* 249 */
+    TclSetSlaveCancelFlags, /* 250 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

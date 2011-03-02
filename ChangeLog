@@ -1,5 +1,25 @@
 2011-03-01  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCompCmdsSZ.c (TclCompileThrowCmd)
+	(TclCompileUnsetCmd): fix leaks
+	
+	* generic/tclBasic.c:       This is [Patch 3168398],
+	* generic/tclCompCmdsSZ.c:  Joe Mistachkin's optimisation
+	* generic/tclExecute.c:     of Tip #285
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclInterp.c:
+	* generic/tclOODecls.h:
+	* generic/tclStubInit.c:
+	* win/makefile.vc:
+
+	* generic/tclExecute.c (ExprObjCallback): fix object leak
+
+	* generic/tclExecute.c (TEBCresume): store local var array and
+	constants in automatic vars to reduce indirection, slight perf
+	increase 
+
 	* generic/tclOOCall.c (TclOODeleteContext): added missing '*' so
 	that trunk compiles.
 

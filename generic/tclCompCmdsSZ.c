@@ -1863,6 +1863,7 @@ TclCompileThrowCmd(
 
 	    CompileWord(envPtr, msgToken, interp, 2);
 	    TclCompileSyntaxError(interp, envPtr);
+	    Tcl_DecrRefCount(objPtr);
 	    return TCL_OK;
 	}
 	if (len == 0) {
@@ -2586,6 +2587,7 @@ TclCompileUnsetCmd(
 	 * evaluation with reasonable effort, so spill to interpreted version.
 	 */
 
+	TclDecrRefCount(leadingWord);
 	return TCL_ERROR;
     }
     TclDecrRefCount(leadingWord);
