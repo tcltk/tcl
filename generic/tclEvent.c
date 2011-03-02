@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclEvent.c,v 1.80.2.3 2010/09/23 17:59:39 dgp Exp $
  */
 
 #include "tclInt.h"

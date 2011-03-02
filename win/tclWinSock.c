@@ -8,8 +8,6 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.62.2.4 2010/09/24 17:53:27 andreas_kupries Exp $
- *
  * -----------------------------------------------------------------------
  *
  * General information on how this module works.

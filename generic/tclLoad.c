@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclLoad.c,v 1.16.4.2 2008/11/14 00:22:39 nijtmans Exp $
  */
 
 #include "tclInt.h"

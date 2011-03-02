@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.42.2.1 2010/01/29 09:38:47 nijtmans Exp $
  */
 
 #include "tclInt.h"

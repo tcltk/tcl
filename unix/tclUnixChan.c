@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.93.2.5 2010/03/01 15:25:27 ferrieux Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
