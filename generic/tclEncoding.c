@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclEncoding.c,v 1.73 2010/10/01 12:52:49 dkf Exp $
  */
 
 #include "tclInt.h"

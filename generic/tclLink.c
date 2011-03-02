@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclLink.c,v 1.26 2008/10/28 23:29:54 nijtmans Exp $
  */
 
 #include "tclInt.h"

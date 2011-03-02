@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lrepeat.n,v 1.7 2008/09/26 21:05:57 dgp Exp $
-'\" 
 .so man.macros
 .TH lrepeat n 8.5 Tcl "Tcl Built-In Commands"
 .BS

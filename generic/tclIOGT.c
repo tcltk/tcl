@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * CVS: $Id: tclIOGT.c,v 1.22 2010/01/10 22:58:40 nijtmans Exp $
  */
 
 #include "tclInt.h"

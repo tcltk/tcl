@@ -2,8 +2,6 @@
 ::  This is an example batchfile for building everything. Please
 ::  edit this (or make your own) for your needs and wants using
 ::  the instructions for calling makefile.vc found in makefile.vc
-::
-::  RCS: @(#) $Id: buildall.vc.bat,v 1.11 2009/01/19 19:54:19 davygrvy Exp $
 
 set SYMBOLS=
 

@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: memcmp.c,v 1.5 2008/04/27 22:21:27 dkf Exp $
  */
 
 #include "tclPort.h"

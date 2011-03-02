@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclConfig.c,v 1.25 2009/01/09 11:21:45 dkf Exp $
  */
 
 #include "tclInt.h"
