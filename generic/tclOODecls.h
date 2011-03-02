@@ -1,6 +1,4 @@
 /*
- * $Id: tclOODecls.h,v 1.16 2010/08/19 04:26:03 nijtmans Exp $
- *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
 
