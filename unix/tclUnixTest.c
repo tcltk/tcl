@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.34 2010/06/21 11:23:23 nijtmans Exp $
  */
 
 #ifndef USE_TCL_STUBS

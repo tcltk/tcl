@@ -6,8 +6,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regsub.n,v 1.29 2010/09/10 12:59:01 dkf Exp $
-'\" 
 .so man.macros
 .TH regsub n 8.3 Tcl "Tcl Built-In Commands"
 .BS

@@ -140,8 +140,3 @@ E2: mp_clear(&t1);
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_sqrt.c,v $ */
-/* Based on Tom's 1.3 */
-/* $Revision: 1.6 $ */
-/* $Date: 2008/10/05 21:27:07 $ */

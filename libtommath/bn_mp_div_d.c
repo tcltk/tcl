@@ -108,7 +108,3 @@ int mp_div_d (mp_int * a, mp_digit b, mp_int * c, mp_digit * d)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_div_d.c,v $ */
-/* $Revision: 1.3 $ */
-/* $Date: 2006/12/01 05:47:47 $ */

@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.107 2011/01/18 08:43:53 nijtmans Exp $
  */
 
 #include "tclInt.h"
