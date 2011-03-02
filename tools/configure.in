@@ -3,7 +3,6 @@ dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(man2tcl.c)
 AC_PREREQ(2.59)
-# RCS: @(#) $Id: configure.in,v 1.12 2010/06/09 13:51:51 nijtmans Exp $
 
 # Recover information that Tcl computed with its configure script.
 

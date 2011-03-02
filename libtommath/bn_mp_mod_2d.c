@@ -49,7 +49,3 @@ mp_mod_2d (const mp_int * a, int b, mp_int * c)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_mod_2d.c,v $ */
-/* $Revision: 1.2 $ */
-/* $Date: 2010/05/03 14:36:40 $ */

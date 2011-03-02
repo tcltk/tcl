@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinDde.c,v 1.46 2011/01/25 22:33:56 nijtmans Exp $
  */
 
 #undef STATIC_BUILD

@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclScan.c,v 1.35 2010/03/05 14:34:04 dkf Exp $
  */
 
 #include "tclInt.h"

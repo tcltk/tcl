@@ -4,8 +4,6 @@
  *	This file provides dirent-style directory-reading procedures for V7
  *	Unix systems that don't have such procedures. The origin of this code
  *	is unclear, but it seems to have come originally from Larry Wall.
- *
- * RCS: @(#) $Id: opendir.c,v 1.5 2009/12/10 09:21:37 dkf Exp $
  */
 
 #include "tclInt.h"
