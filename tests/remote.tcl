@@ -8,8 +8,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: remote.tcl,v 1.5 2010/11/04 21:38:27 rmax Exp $
 
 # Initialize message delimitor
 

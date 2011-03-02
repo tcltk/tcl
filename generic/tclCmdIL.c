@@ -15,8 +15,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.188 2011/01/01 10:49:09 dkf Exp $
  */
 
 #include "tclInt.h"
