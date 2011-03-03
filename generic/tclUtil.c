@@ -756,7 +756,7 @@ TclScanElement(
 		p++;
 		break;
 	    }
-	    if ((p[1] == '{') || (p[1] == '}')) {
+	    if ((p[1] == '{') || (p[1] == '}') || (p[1] == '\\')) {
 		extra++;
 		length -= (length > 0);
 		p++;
