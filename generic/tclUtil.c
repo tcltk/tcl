@@ -39,8 +39,6 @@ static ProcessGlobalValue executableName = {
  * USE_BRACES -			1 means the string contains a special
  *				character that can be handled simply by
  *				enclosing the entire argument in braces.
- * BRACES_UNMATCHED -		1 means that braces aren't properly matched in
- *				the argument.
  * TCL_DONT_QUOTE_HASH -	1 means the caller insists that a leading hash
  * 				character ('#') should *not* be quoted. This
  * 				is appropriate when the caller can guarantee
@@ -50,7 +48,6 @@ static ProcessGlobalValue executableName = {
  */
 
 #define USE_BRACES		2
-#define BRACES_UNMATCHED	4
 
 /*
  * The following key is used by Tcl_PrintDouble and TclPrecTraceProc to
@@ -720,7 +717,7 @@ Tcl_ScanCountedElement(
 	case '}':
 	    nestingLevel--;
 	    if (nestingLevel < 0) {
-		flags |= TCL_DONT_USE_BRACES|BRACES_UNMATCHED;
+		flags |= TCL_DONT_USE_BRACES;
 	    }
 	    break;
 	case '[':
@@ -736,7 +733,7 @@ Tcl_ScanCountedElement(
 	    break;
 	case '\\':
 	    if ((p+1 == lastChar) || (p[1] == '\n')) {
-		flags = TCL_DONT_USE_BRACES | BRACES_UNMATCHED;
+		flags = TCL_DONT_USE_BRACES;
 	    } else {
 		int size;
 
@@ -748,7 +745,7 @@ Tcl_ScanCountedElement(
 	}
     }
     if (nestingLevel != 0) {
-	flags = TCL_DONT_USE_BRACES | BRACES_UNMATCHED;
+	flags = TCL_DONT_USE_BRACES;
     }
     *flagPtr = flags;
 
@@ -848,20 +845,7 @@ Tcl_ConvertCountedElement(
 	*p = '}';
 	p++;
     } else {
-	if (*src == '{') {
-	    /*
-	     * Can't have a leading brace unless the whole element is enclosed
-	     * in braces. Add a backslash before the brace. Furthermore, this
-	     * may destroy the balance between open and close braces, so set
-	     * BRACES_UNMATCHED.
-	     */
-
-	    p[0] = '\\';
-	    p[1] = '{';
-	    p += 2;
-	    src++;
-	    flags |= BRACES_UNMATCHED;
-	} else if ((*src == '#') && !(flags & TCL_DONT_QUOTE_HASH)) {
+	if ((*src == '#') && !(flags & TCL_DONT_QUOTE_HASH)) {
 	    /*
 	     * Leading '#' could be seen by [eval] as the start of a comment,
 	     * if on the first element of a list, so quote it.
@@ -895,7 +879,7 @@ Tcl_ConvertCountedElement(
 		 * backslashed.
 		 */
 
-		if (flags & BRACES_UNMATCHED) {
+		if (flags & TCL_DONT_USE_BRACES) {
 		    *p = '\\';
 		    p++;
 		}
