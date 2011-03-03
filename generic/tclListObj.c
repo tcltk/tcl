@@ -1842,18 +1842,29 @@ UpdateStringOfList(
     Tcl_Obj *listPtr)		/* List object with string rep to update. */
 {
 #   define LOCAL_SIZE 20
-    int localFlags[LOCAL_SIZE], *flagPtr;
+    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
     List *listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     int numElems = listRepPtr->elemCount;
-    register int i;
+    int i, length, bytesNeeded = 0;
     char *elem, *dst;
-    int length;
     Tcl_Obj **elemPtrs;
+    const int maxFlags = UINT_MAX / sizeof(int);
 
     /*
-     * Convert each element of the list to string form and then convert it to
-     * proper list element form, adding it to the result buffer.
+     * Mark the list as being canonical; although it will now have a string
+     * rep, it is one we derived through proper "canonical" quoting and so
+     * it's known to be free from nasties relating to [concat] and [eval].
      */
+
+    listRepPtr->canonicalFlag = 1;
+
+    /* Handle empty list case first, so rest of the routine is simpler */
+
+    if (numElems == 0) {
+	listPtr->bytes = tclEmptyStringRep;
+	listPtr->length = 0;
+	return;
+    }
 
     /*
      * Pass 1: estimate space, gather flags.
@@ -1861,55 +1872,43 @@ UpdateStringOfList(
 
     if (numElems <= LOCAL_SIZE) {
 	flagPtr = localFlags;
+    } else if (numElems > maxFlags) {
+	Tcl_Panic("UpdateStringOfList: size requirement exceeds limits");
     } else {
 	flagPtr = (int *) ckalloc((unsigned) numElems * sizeof(int));
     }
-    listPtr->length = 1;
     elemPtrs = &listRepPtr->elements;
     for (i = 0; i < numElems; i++) {
+	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
-	listPtr->length += Tcl_ScanCountedElement(elem, length, flagPtr+i)+1;
-
-	/*
-	 * Check for continued sanity. [Bug 1267380]
-	 */
-
-	if (listPtr->length < 1) {
-	    Tcl_Panic("string representation size exceeds sane bounds");
+	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
+	if (bytesNeeded < 0) {
+	    Tcl_Panic("UpdateStringOfList: size requirement exceeds limits");
 	}
     }
+    if (bytesNeeded > INT_MAX - numElems + 1) {
+	Tcl_Panic("UpdateStringOfList: size requirement exceeds limits");
+    }
+    bytesNeeded += numElems;
 
     /*
      * Pass 2: copy into string rep buffer.
      */
 
-    listPtr->bytes = ckalloc((unsigned) listPtr->length);
+    listPtr->length = bytesNeeded - 1;
+    listPtr->bytes = ckalloc((unsigned) bytesNeeded);
     dst = listPtr->bytes;
     for (i = 0; i < numElems; i++) {
+	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
-	dst += Tcl_ConvertCountedElement(elem, length, dst,
-		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH));
-	*dst = ' ';
-	dst++;
+	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
+	*dst++ = ' ';
     }
+    listPtr->bytes[listPtr->length] = '\0';
+
     if (flagPtr != localFlags) {
 	ckfree((char *) flagPtr);
     }
-    if (dst == listPtr->bytes) {
-	*dst = 0;
-    } else {
-	dst--;
-	*dst = 0;
-    }
-    listPtr->length = dst - listPtr->bytes;
-
-    /*
-     * Mark the list as being canonical; although it has a string rep, it is
-     * one we derived through proper "canonical" quoting and so it's known to
-     * be free from nasties relating to [concat] and [eval].
-     */
-
-    listRepPtr->canonicalFlag = 1;
 }
 
 /*
