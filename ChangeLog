@@ -1,3 +1,10 @@
+2010-11-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclResult.c (Tcl_AppendResultVA):	Use the directive
+	USE_INTERP_RESULT [TIP 330] to force compat with interp->result
+	access, instead of the improvised hack USE_DIRECT_INTERP_RESULT_ACCESS
+	from releases past.
+
 2011-03-01  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompCmdsSZ.c (TclCompileThrowCmd)
