@@ -534,12 +534,13 @@ Tcl_WrongNumArgs(
 	    } else {
 		elementStr = TclGetStringFromObj(origObjv[i], &elemLen);
 	    }
-	    len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
+	    flags = 0;
+	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
 		char *quotedElementStr = TclStackAlloc(interp, (unsigned)len);
 
-		len = Tcl_ConvertCountedElement(elementStr, elemLen,
+		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
 		Tcl_AppendToObj(objPtr, quotedElementStr, len);
 		TclStackFree(interp, quotedElementStr);
@@ -588,12 +589,13 @@ Tcl_WrongNumArgs(
 	     */
 
 	    elementStr = TclGetStringFromObj(objv[i], &elemLen);
-	    len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
+	    flags = 0;
+	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
 		char *quotedElementStr = TclStackAlloc(interp,(unsigned) len);
 
-		len = Tcl_ConvertCountedElement(elementStr, elemLen,
+		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
 		Tcl_AppendToObj(objPtr, quotedElementStr, len);
 		TclStackFree(interp, quotedElementStr);
