@@ -30,7 +30,3 @@ int     KARATSUBA_MUL_CUTOFF = 80,      /* Min. number of digits before Karatsub
         TOOM_MUL_CUTOFF      = 350,      /* no optimal values of these are known yet so set em high */
         TOOM_SQR_CUTOFF      = 400; 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bncore.c,v $ */
-/* $Revision: 1.1.1.2.2.2 $ */
-/* $Date: 2008/01/22 16:55:27 $ */

@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: next.n,v 1.1.2.4 2008/10/17 20:52:23 dgp Exp $
-'\"
 .so man.macros
 .TH next n 0.1 TclOO "TclOO Commands"
 .BS

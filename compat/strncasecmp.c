@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: strncasecmp.c,v 1.2.42.3 2010/03/05 04:21:34 dgp Exp $
  */
 
 #include "tclPort.h"

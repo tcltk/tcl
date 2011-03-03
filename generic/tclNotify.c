@@ -13,8 +13,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclNotify.c,v 1.11.4.14 2010/02/25 21:53:08 dgp Exp $
  */
 
 #include "tclInt.h"

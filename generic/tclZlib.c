@@ -12,8 +12,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.30 2010/10/20 11:26:51 dgp Exp $
  */
 
 #include "tclInt.h"

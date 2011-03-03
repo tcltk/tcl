@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclTimer.c,v 1.6.4.30 2010/11/01 14:23:20 dgp Exp $
  */
 
 #include "tclInt.h"

@@ -17,8 +17,6 @@
  *	for any results of using the software, alterations are clearly marked
  *	as such, and this notice is not modified.
  *
- * RCS: @(#) $Id: tclLoadAix.c,v 1.3.36.4 2008/11/10 02:18:42 dgp Exp $
- *
  * Note: this file has been altered from the original in a few ways in order
  * to work properly with Tcl.
  */

@@ -314,8 +314,3 @@ LBL_M:
   return err;
 }
 #endif
-
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_exptmod_fast.c,v $ */
-/* $Revision: 1.1.1.2.2.2 $ */
-/* $Date: 2008/01/22 16:55:26 $ */

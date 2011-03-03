@@ -1,3 +1,40 @@
+2011-03-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompCmdsSZ.c (TclCompileThrowCmd)
+	(TclCompileUnsetCmd): fix leaks
+	
+	* generic/tclBasic.c:       This is [Patch 3168398],
+	* generic/tclCompCmdsSZ.c:  Joe Mistachkin's optimisation
+	* generic/tclExecute.c:     of Tip #285
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclInterp.c:
+	* generic/tclOODecls.h:
+	* generic/tclStubInit.c:
+	* win/makefile.vc:
+
+	* generic/tclExecute.c (ExprObjCallback): fix object leak
+
+	* generic/tclExecute.c (TEBCresume): store local var array and
+	constants in automatic vars to reduce indirection, slight perf
+	increase 
+	
+	* generic/tclOOCall.c (TclOODeleteContext): added missing '*' so
+	that trunk compiles.
+
+	* generic/tclBasic.c (TclNRRunCallbacks): don't do the trampoline
+	dance for commands that do not have an nreProc, [Patch 3168229]
+
+2011-03-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_NewObjectInstance, TclNRNewObjectInstance)
+	(TclOOObjectCmdCore, FinalizeObjectCall):
+	* generic/tclOOBasic.c (TclOO_Object_Destroy, AfterNRDestructor):
+	* generic/tclOOCall.c (TclOODeleteContext, TclOOGetCallContext):
+	Reorganization of call context reference count management so that code
+	is (mostly) simpler.
+
 2011-01-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/RegExp.3: [Bug 3165108]: Corrected documentation of description

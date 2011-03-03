@@ -4,12 +4,10 @@
  *	This file contains implementations of the "simple" commands and
  *	methods from the object-system core.
  *
- * Copyright (c) 2005-2008 by Donal K. Fellows
+ * Copyright (c) 2005-2011 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.17 2010/02/09 17:53:09 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -278,9 +276,8 @@ TclOO_Object_Destroy(
 	if (contextPtr != NULL) {
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
-	    AddRef(oPtr);
-	    TclNRAddCallback(interp, AfterNRDestructor, oPtr, contextPtr,
-		    NULL, NULL);
+	    TclNRAddCallback(interp, AfterNRDestructor, contextPtr,
+		    NULL, NULL, NULL);
 	    return TclOOInvokeContext(contextPtr, interp, 0, NULL);
 	}
     }
@@ -296,14 +293,12 @@ AfterNRDestructor(
     Tcl_Interp *interp,
     int result)
 {
-    Object *oPtr = data[0];
-    CallContext *contextPtr = data[1];
+    CallContext *contextPtr = data[0];
 
-    TclOODeleteContext(contextPtr);
-    if (oPtr->command) {
-	Tcl_DeleteCommandFromToken(interp, oPtr->command);
+    if (contextPtr->oPtr->command) {
+	Tcl_DeleteCommandFromToken(interp, contextPtr->oPtr->command);
     }
-    DelRef(oPtr);
+    TclOODeleteContext(contextPtr);
     return result;
 }
 

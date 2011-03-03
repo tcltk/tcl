@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinReg.c,v 1.21.4.27 2010/11/03 13:02:53 dgp Exp $
  */
 
 #undef STATIC_BUILD

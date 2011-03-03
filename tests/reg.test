@@ -8,8 +8,6 @@
 # to read this file, ignoring the Tcl-isms.)
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
-#
-# RCS: @(#) $Id: reg.test,v 1.17.2.8 2009/10/29 17:44:28 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2

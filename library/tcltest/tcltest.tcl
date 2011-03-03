@@ -15,8 +15,6 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
-#
-# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.12 2009/09/01 14:14:21 dgp Exp $
 
 package require Tcl 8.5		;# -verbose line uses [info frame]
 namespace eval tcltest {

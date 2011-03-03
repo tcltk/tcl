@@ -14,9 +14,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: findBadExternals.tcl,v 1.1.2.2 2005/12/02 18:43:10 dgp Exp $
-#
 #----------------------------------------------------------------------
 
 proc main {argc argv} {

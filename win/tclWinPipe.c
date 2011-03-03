@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.32 2010/10/12 13:17:26 dgp Exp $
  */
 
 #include "tclWinInt.h"

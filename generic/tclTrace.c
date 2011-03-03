@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclTrace.c,v 1.2.2.42 2010/12/06 15:03:03 dgp Exp $
  */
 
 #include "tclInt.h"

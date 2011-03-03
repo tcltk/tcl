@@ -12,8 +12,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.78 2010/10/04 13:04:47 dgp Exp $
  */
 
 #include "tclInt.h"

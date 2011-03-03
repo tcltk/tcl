@@ -13,8 +13,3 @@ typedef int                mp_err;
 #define MP_DIGIT_SIZE      2
 #define DIGIT_FMT          "%04X"
 #define RADIX              (MP_DIGIT_MAX+1)
-
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/mtest/mpi-types.h,v $ */
-/* $Revision: 1.1.1.1.4.1 $ */
-/* $Date: 2008/01/22 16:55:29 $ */

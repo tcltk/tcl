@@ -6,8 +6,6 @@
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
- *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.27 2009/10/05 14:27:27 dgp Exp $
  */
 
 #include "tclInt.h"

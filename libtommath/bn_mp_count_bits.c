@@ -39,7 +39,3 @@ mp_count_bits (const mp_int * a)
   return r;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_count_bits.c,v $ */
-/* $Revision: 1.1.1.1.4.3 $ */
-/* $Date: 2010/05/03 16:30:38 $ */

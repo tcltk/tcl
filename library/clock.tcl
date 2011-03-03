@@ -13,8 +13,6 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.32 2010/02/10 02:56:48 dgp Exp $
-#
 #----------------------------------------------------------------------
 
 # We must have message catalogs that support the root locale, and we need

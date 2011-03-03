@@ -10,8 +10,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: switch.test,v 1.9.2.14 2011/01/04 16:21:14 dgp Exp $
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2

@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.73 2010/11/30 21:29:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -306,6 +304,7 @@ static const TclIntStubs tclIntStubs = {
     TclResetRewriteEnsemble, /* 247 */
     TclCopyChannel, /* 248 */
     TclDoubleDigits, /* 249 */
+    TclSetSlaveCancelFlags, /* 250 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

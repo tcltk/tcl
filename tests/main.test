@@ -1,6 +1,4 @@
 # This file contains a collection of tests for generic/tclMain.c.
-#
-# RCS: @(#) $Id: main.test,v 1.13.4.9 2010/11/19 15:36:54 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."

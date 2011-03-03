@@ -70,7 +70,3 @@
 #endif
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/tommath_superclass.h,v $ */
-/* $Revision: 1.2.2.1 $ */
-/* $Date: 2008/01/22 16:55:27 $ */

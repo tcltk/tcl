@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclLoadNext.c,v 1.11.4.5 2010/06/21 20:23:42 dgp Exp $
  */
 
 #include "tclInt.h"

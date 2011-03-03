@@ -12,8 +12,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.19 2010/03/19 15:26:57 dgp Exp $
  */
 
 #ifndef USE_TCL_STUBS

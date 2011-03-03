@@ -1,4 +1,3 @@
-# $Id: tcl.spec,v 1.17.2.23 2008/12/19 23:53:12 dgp Exp $
 # This file is the basis for a binary Tcl RPM for Linux.
 
 %{!?directory:%define directory /usr/local}

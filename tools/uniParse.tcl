@@ -8,8 +8,6 @@
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
-# 
-# RCS: @(#) $Id: uniParse.tcl,v 1.4.16.5 2010/10/19 12:33:00 dgp Exp $
 
 
 namespace eval uni {
@@ -195,8 +193,6 @@ proc uni::main {} {
  *
  * Copyright (c) 1998 by Scriptics Corporation.
  * All rights reserved.
- *
- * RCS: @(#) \$Id\$
  */
 
 /*

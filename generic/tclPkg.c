@@ -10,8 +10,6 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.4.21 2010/09/02 12:18:38 dgp Exp $
- *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
  * package requirements.

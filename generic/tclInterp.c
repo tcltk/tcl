@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.47 2010/11/16 17:39:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2096,6 +2094,72 @@ Tcl_GetMaster(
 /*
  *----------------------------------------------------------------------
  *
+ * TclSetSlaveCancelFlags --
+ *
+ *	This function marks all slave interpreters belonging to a given
+ *	interpreter as being canceled or not canceled, depending on the
+ *	provided flags.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclSetSlaveCancelFlags(
+    Tcl_Interp *interp,		/* Set cancel flags of this interpreter. */
+    int flags,			/* Collection of OR-ed bits that control
+				 * the cancellation of the script. Only
+				 * TCL_CANCEL_UNWIND is currently
+				 * supported. */
+    int force)			/* Non-zero to ignore numLevels for the purpose
+				 * of resetting the cancellation flags. */
+{
+    Master *masterPtr;		/* Master record of given interpreter. */
+    Tcl_HashEntry *hPtr;	/* Search element. */
+    Tcl_HashSearch hashSearch;	/* Search variable. */
+    Slave *slavePtr;		/* Slave record of interpreter. */
+    Interp *iPtr;
+
+    if (interp == NULL) {
+	return;
+    }
+
+    flags &= (CANCELED | TCL_CANCEL_UNWIND);
+
+    masterPtr = &((InterpInfo *) ((Interp *) interp)->interpInfo)->master;
+
+    hPtr = Tcl_FirstHashEntry(&masterPtr->slaveTable, &hashSearch);
+    for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
+	slavePtr = Tcl_GetHashValue(hPtr);
+	iPtr = (Interp *) slavePtr->slaveInterp;
+
+	if (iPtr == NULL) {
+	    continue;
+	}
+
+	if (flags == 0) {
+	    TclResetCancellation((Tcl_Interp *) iPtr, force);
+	} else {
+	    TclSetCancelFlags(iPtr, flags);
+	}
+
+	/*
+	 * Now, recursively handle this for the slaves of this slave
+	 * interpreter.
+	 */
+
+	TclSetSlaveCancelFlags((Tcl_Interp *) iPtr, flags, force);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetInterpPath --
  *
  *	Sets the result of the asking interpreter to a proper Tcl list
@@ -2716,6 +2780,16 @@ SlaveEval(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
+
+    /*
+     * TIP #285: If necessary, reset the cancellation flags for the slave
+     * interpreter now; otherwise, canceling a script in a master interpreter
+     * can result in a situation where a slave interpreter can no longer
+     * evaluate any scripts unless somebody calls the TclResetCancellation
+     * function for that particular Tcl_Interp.
+     */
+
+    TclSetSlaveCancelFlags(slaveInterp, 0, 0);
 
     Tcl_Preserve(slaveInterp);
     Tcl_AllowExceptions(slaveInterp);

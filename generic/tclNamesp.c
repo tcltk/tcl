@@ -21,8 +21,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.83 2010/11/18 15:43:22 dgp Exp $
  */
 
 #include "tclInt.h"

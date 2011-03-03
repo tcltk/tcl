@@ -106,7 +106,3 @@ int mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_exptmod.c,v $ */
-/* $Revision: 1.1.1.2.2.2 $ */
-/* $Date: 2008/01/22 16:55:26 $ */

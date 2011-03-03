@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.57 2010/12/30 14:42:02 dgp Exp $
  */
 
 #include "tclInt.h"

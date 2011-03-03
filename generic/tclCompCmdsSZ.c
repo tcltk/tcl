@@ -13,8 +13,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclCompCmdsSZ.c,v 1.1.2.12 2011/01/18 16:34:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1866,6 +1864,7 @@ TclCompileThrowCmd(
 
 	    CompileWord(envPtr, msgToken, interp, 2);
 	    TclCompileSyntaxError(interp, envPtr);
+	    Tcl_DecrRefCount(objPtr);
 	    return TCL_OK;
 	}
 	if (len == 0) {
@@ -2589,6 +2588,7 @@ TclCompileUnsetCmd(
 	 * evaluation with reasonable effort, so spill to interpreted version.
 	 */
 
+	TclDecrRefCount(leadingWord);
 	return TCL_ERROR;
     }
     TclDecrRefCount(leadingWord);

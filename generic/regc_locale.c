@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: regc_locale.c,v 1.10.4.11 2010/10/15 18:24:08 dgp Exp $
  */
 
 /* ASCII character-name table */

@@ -12,8 +12,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.57 2010/12/30 14:42:03 dgp Exp $
 
 library tcl
 
@@ -1000,6 +998,11 @@ declare 248 {
 declare 249 {
     char* TclDoubleDigits(double dv, int ndigits, int flags,
 			  int* decpt, int* signum, char** endPtr)
+}
+
+# TIP #285: Script cancellation support.
+declare 250 {
+    void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
 }
 
 ##############################################################################

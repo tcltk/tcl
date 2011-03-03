@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.4.2.12 2009/12/22 04:42:33 dgp Exp $
  */
 
 #include "tclInt.h"

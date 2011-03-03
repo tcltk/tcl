@@ -17,8 +17,3 @@ const float s_logv_2[] = {
    0.169293808, 0.168613099, 0.167948779, 0.167300179, 	/* 60 61 62 63 */
    0.166666667
 };
-
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/mtest/logtab.h,v $ */
-/* $Revision: 1.1.1.1.4.1 $ */
-/* $Date: 2008/01/22 16:55:29 $ */

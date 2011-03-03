@@ -9,8 +9,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
-# RCS: @(#) $Id: msgcat.tcl,v 1.17.4.9 2009/12/19 05:44:37 dgp Exp $
 
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,

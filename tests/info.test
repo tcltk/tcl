@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.25.2.29 2010/11/16 17:39:54 dgp Exp $
+# DO NOT DELETE THIS LINE
 
 if {{::tcltest} ni [namespace children]} {
     package require tcltest 2

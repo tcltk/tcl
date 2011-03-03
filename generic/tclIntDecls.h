@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.56 2010/12/30 14:42:04 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -600,6 +598,9 @@ EXTERN int		TclCopyChannel(Tcl_Interp *interp,
 /* 249 */
 EXTERN char*		TclDoubleDigits(double dv, int ndigits, int flags,
 				int*decpt, int*signum, char**endPtr);
+/* 250 */
+EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
+				int force);
 
 typedef struct TclIntStubs {
     int magic;
@@ -855,6 +856,7 @@ typedef struct TclIntStubs {
     void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
     char* (*tclDoubleDigits) (double dv, int ndigits, int flags, int*decpt, int*signum, char**endPtr); /* 249 */
+    void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1277,6 +1279,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclCopyChannel) /* 248 */
 #define TclDoubleDigits \
 	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
+#define TclSetSlaveCancelFlags \
+	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

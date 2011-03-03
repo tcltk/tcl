@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclXtNotify.c,v 1.4.34.8 2010/06/14 13:42:56 dgp Exp $
  */
 
 #ifndef USE_TCL_STUBS

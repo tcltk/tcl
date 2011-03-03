@@ -9,8 +9,6 @@
 # from the argument list, creates a .exp file describing all of the
 # symbols exported by those files, and then invokes "ldCmd" to
 # perform the real link.
-#
-# RCS: @(#) $Id: ldAix,v 1.4.4.1 2010/08/12 12:34:18 dgp Exp $
 
 # Extract from the arguments the names of all of the object files.
 

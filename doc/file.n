@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.24.2.18 2010/11/18 15:43:22 dgp Exp $
-'\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
 .BS

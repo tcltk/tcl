@@ -5,8 +5,6 @@
     Copyright (C) 1998 Michael J. Fromberger, All Rights Reserved
 
     Arbitrary precision integer arithmetic library
-
-    $Id: mpi.h,v 1.1.1.1.4.1 2008/01/22 16:55:29 dgp Exp $
  */
 
 #ifndef _H_MPI_
@@ -225,7 +223,3 @@ int    mp_char2value(char ch, int r);
 const  char  *mp_strerror(mp_err ec);
 
 #endif /* end _H_MPI_ */
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/mtest/mpi.h,v $ */
-/* $Revision: 1.1.1.1.4.1 $ */
-/* $Date: 2008/01/22 16:55:29 $ */

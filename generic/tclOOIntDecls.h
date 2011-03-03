@@ -1,6 +1,4 @@
 /*
- * $Id: tclOOIntDecls.h,v 1.1.2.11 2010/08/19 12:31:59 dgp Exp $
- *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
 

@@ -12,8 +12,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: stdlib.h,v 1.3.36.2 2010/04/29 23:32:23 dgp Exp $
  */
 
 #ifndef _STDLIB

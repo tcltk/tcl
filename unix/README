@@ -1,8 +1,6 @@
 Tcl UNIX README
 ---------------
 
-RCS: @(#) $Id: README,v 1.24.4.6 2008/02/12 17:40:28 dgp Exp $
-
 This is the directory where you configure, compile, test, and install UNIX
 versions of Tcl. This directory also contains source files for Tcl that are
 specific to UNIX. Some of the files in this directory are used on the PC or

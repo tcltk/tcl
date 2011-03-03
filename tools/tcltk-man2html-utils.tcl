@@ -5,8 +5,6 @@
 ##
 ## Copyright (c) 1995-1997 Roger E. Critchlow Jr
 ## Copyright (c) 2004-2010 Donal K. Fellows
-##
-## CVS: $Id: tcltk-man2html-utils.tcl,v 1.4.2.4 2010/09/08 21:06:06 dgp Exp $
 
 set ::manual(report-level) 1
 

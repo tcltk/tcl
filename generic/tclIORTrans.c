@@ -14,8 +14,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.15 2010/08/04 21:48:23 dgp Exp $
  */
 
 #include "tclInt.h"

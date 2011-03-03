@@ -12,8 +12,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
-# RCS: @(#) $Id: tclTomMath.decls,v 1.1.2.9 2010/11/29 13:32:22 dgp Exp $
 
 library tcl
 

@@ -81,8 +81,3 @@ int mp_radix_size (mp_int * a, int radix, int *size)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_radix_size.c,v $ */
-/* Tom's revision is 1.4 */
-/* $Revision: 1.2.2.2 $ */
-/* $Date: 2008/01/22 16:55:26 $ */

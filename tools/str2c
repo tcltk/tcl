@@ -4,8 +4,6 @@
 #
 # 1997/10 -- dl
 #
-# $Id: str2c,v 1.2.36.1 2009/03/26 13:28:00 dgp Exp $
-#
 # restart with tclsh \
 exec tclsh "$0" ${1+"$@"}
 

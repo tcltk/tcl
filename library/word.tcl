@@ -7,10 +7,8 @@
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 # Copyright (c) 1998 by Scritpics Corporation.
 #
-# See the file "license.terms" for information on usage and redistribution of
-# this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: word.tcl,v 1.7.4.2 2007/09/07 03:15:17 dgp Exp $
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 # The following variables are used to determine which characters are
 # interpreted as white space.

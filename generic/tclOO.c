@@ -3,12 +3,10 @@
  *
  *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
  *
- * Copyright (c) 2005-2008 by Donal K. Fellows
+ * Copyright (c) 2005-2011 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclOO.c,v 1.4.2.25 2010/03/06 03:40:56 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1452,7 +1450,6 @@ Tcl_NewObjectInstance(
 	    int result, flags;
 	    Tcl_InterpState state;
 
-	    AddRef(oPtr);
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
 	    contextPtr->callPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
@@ -1472,7 +1469,6 @@ Tcl_NewObjectInstance(
 		result = TCL_ERROR;
 	    }
 	    TclOODeleteContext(contextPtr);
-	    DelRef(oPtr);
 	    if (result != TCL_OK) {
 		Tcl_DiscardInterpState(state);
 
@@ -1569,7 +1565,6 @@ TclNRNewObjectInstance(
 	return TCL_OK;
     }
 
-    AddRef(oPtr);
     state = Tcl_SaveInterpState(interp, TCL_OK);
     contextPtr->callPtr->flags |= CONSTRUCTOR;
     contextPtr->skip = skip;
@@ -1607,7 +1602,6 @@ FinalizeAlloc(
 	result = TCL_ERROR;
     }
     TclOODeleteContext(contextPtr);
-    DelRef(oPtr);
     if (result != TCL_OK) {
 	Tcl_DiscardInterpState(state);
 
@@ -2316,7 +2310,6 @@ TclOOObjectCmdCore(
 	    }
 	}
 	if (contextPtr->index >= contextPtr->callPtr->numChain) {
-	    result = TCL_ERROR;
 	    Tcl_SetResult(interp, "no valid method implementation",
 		    TCL_STATIC);
 	    TclOODeleteContext(contextPtr);
@@ -2329,8 +2322,7 @@ TclOOObjectCmdCore(
      * for the duration.
      */
 
-    AddRef(oPtr);
-    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr,oPtr, NULL,NULL);
+    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL,NULL,NULL);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 
@@ -2340,15 +2332,12 @@ FinalizeObjectCall(
     Tcl_Interp *interp,
     int result)
 {
-    register CallContext *contextPtr = data[0];
-    register Object *oPtr = data[1];
-
     /*
-     * Dispose of the call chain and drop the lock on the object's structure.
+     * Dispose of the call chain, which drops the lock on the object's
+     * structure.
      */
 
-    TclOODeleteContext(contextPtr);
-    DelRef(oPtr);
+    TclOODeleteContext(data[0]);
     return result;
 }
 

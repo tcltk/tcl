@@ -4,12 +4,10 @@
  *	This file contains the method call chain management code for the
  *	object-system core.
  *
- * Copyright (c) 2005-2008 by Donal K. Fellows
+ * Copyright (c) 2005-2011 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclOOCall.c,v 1.4.2.10 2009/09/30 06:07:51 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -103,8 +101,11 @@ void
 TclOODeleteContext(
     CallContext *contextPtr)
 {
+    register Object *oPtr = contextPtr->oPtr;
+
     TclOODeleteChain(contextPtr->callPtr);
-    TclStackFree(contextPtr->oPtr->fPtr->interp, contextPtr);
+    TclStackFree(oPtr->fPtr->interp, contextPtr);
+    DelRef(oPtr);
 }
 
 /*
@@ -1089,6 +1090,7 @@ TclOOGetCallContext(
   returnContext:
     contextPtr = TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
     contextPtr->oPtr = oPtr;
+    AddRef(oPtr);
     contextPtr->callPtr = callPtr;
     contextPtr->skip = 2;
     contextPtr->index = 0;

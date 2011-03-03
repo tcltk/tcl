@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.2.42.10 2010/06/16 16:17:05 dgp Exp $
  */
 
 #ifndef USE_TCL_STUBS

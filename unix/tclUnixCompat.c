@@ -5,9 +5,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.8.6.9 2009/12/12 03:06:57 dgp Exp $
- *
  */
 
 #include "tclInt.h"

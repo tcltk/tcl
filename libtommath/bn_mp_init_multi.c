@@ -53,7 +53,3 @@ int mp_init_multi(mp_int *mp, ...)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_init_multi.c,v $ */
-/* $Revision: 1.1.1.1.4.2 $ */
-/* $Date: 2008/01/22 16:55:26 $ */

@@ -313,7 +313,3 @@ int main(void)
 
    return 0;
 }
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/demo/timing.c,v $ */
-/* $Revision: 1.1.1.2.2.1 $ */
-/* $Date: 2008/01/22 16:55:28 $ */

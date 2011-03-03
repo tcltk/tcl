@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: pkga.c,v 1.5.2.7 2011/01/04 16:21:14 dgp Exp $
  */
 
 #undef STATIC_BUILD

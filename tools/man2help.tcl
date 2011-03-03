@@ -5,9 +5,6 @@
 # entries.
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
-#
-# RCS: @(#) $Id: man2help.tcl,v 1.13.4.2 2007/10/27 04:05:17 dgp Exp $
-# 
 
 #
 # PASS 1

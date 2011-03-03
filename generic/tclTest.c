@@ -13,8 +13,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.64 2011/01/18 16:34:01 dgp Exp $
  */
 
 #include <math.h>

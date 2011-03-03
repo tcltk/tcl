@@ -25,9 +25,6 @@
 # Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: loadICU.tcl,v 1.1.2.4 2010/06/16 16:17:05 dgp Exp $
-#
 #----------------------------------------------------------------------
 
 # Calculate the Chinese numerals from zero to ninety-nine.

@@ -32,8 +32,7 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.52 2010/10/20 11:26:51 dgp Exp $ */
+ */
 
 #include "tclInt.h"
 #include "tommath.h"

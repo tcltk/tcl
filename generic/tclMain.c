@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMain.c,v 1.20.4.26 2010/11/05 16:40:10 dgp Exp $
  */
 
 /**

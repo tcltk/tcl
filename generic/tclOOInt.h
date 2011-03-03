@@ -4,12 +4,10 @@
  *	This file contains the structure definitions and some of the function
  *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006 by Donal K. Fellows
+ * Copyright (c) 2006-2011 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.16 2010/04/29 23:32:24 dgp Exp $
  */
 
 #ifndef TCL_OO_INTERNAL_H
@@ -368,7 +366,7 @@ typedef struct CallContext {
 } CallContext;
 
 /*
- * Bits for the 'flags' field of the call context.
+ * Bits for the 'flags' field of the call chain.
  */
 
 #define PUBLIC_METHOD     0x01	/* This is a public (exported) method. */

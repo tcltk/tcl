@@ -9,8 +9,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.21 2011/01/19 14:44:56 dgp Exp $
 
 package require Tcl 8.4
 

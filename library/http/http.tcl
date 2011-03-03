@@ -7,8 +7,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: http.tcl,v 1.44.2.18 2009/11/19 16:51:27 dgp Exp $
 
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
