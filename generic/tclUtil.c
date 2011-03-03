@@ -645,6 +645,15 @@ Tcl_ScanElement(
  *----------------------------------------------------------------------
  */
 
+#define COMPAT 1
+
+#define CONVERT_NONE	0
+#define CONVERT_BRACE	2
+#define CONVERT_ESCAPE	4
+#define CONVERT_SAFE	16
+#define CONVERT_MASK	(CONVERT_BRACE | CONVERT_ESCAPE)
+
+
 int
 Tcl_ScanCountedElement(
     CONST char *string,		/* String to convert to Tcl list element. */
@@ -652,74 +661,73 @@ Tcl_ScanCountedElement(
     int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
-    int flags, nestingLevel;
-    register CONST char *p, *lastChar;
+    int flags = CONVERT_SAFE;
+    int numBytes = TclScanElement(string, length, &flags);
 
-    /*
-     * This function and Tcl_ConvertElement together do two things:
-     *
-     * 1. They produce a proper list, one that will yield back the argument
-     *	  strings when evaluated or when disassembled with Tcl_SplitList. This
-     *	  is the most important thing.
-     *
-     * 2. They try to produce legible output, which means minimizing the use
-     *	  of backslashes (using braces instead). However, there are some
-     *	  situations where backslashes must be used (e.g. an element like
-     *	  "{abc": the leading brace will have to be backslashed. For each
-     *	  element, one of three things must be done:
-     *
-     * 	  (a) Use the element as-is (it doesn't contain any special
-     *	      characters). This is the most desirable option.
-     *
-     *	  (b) Enclose the element in braces, but leave the contents alone.
-     *	      This happens if the element contains embedded space, or if it
-     *	      contains characters with special interpretation ($, [, ;, or \),
-     *	      or if it starts with a brace or double-quote, or if there are no
-     *	      characters in the element.
-     *
-     *	  (c) Don't enclose the element in braces, but add backslashes to
-     *	      prevent special interpretation of special characters. This is a
-     *	      last resort used when the argument would normally fall under
-     *	      case (b) but contains unmatched braces. It also occurs if the
-     *	      last character of the argument is a backslash or if the element
-     *	      contains a backslash followed by newline.
-     *
-     * The function figures out how many bytes will be needed to store the
-     * result (actually, it overestimates). It also collects information about
-     * the element in the form of a flags word.
-     *
-     * Note: list elements produced by this function and
-     * Tcl_ConvertCountedElement must have the property that they can be
-     * enclosing in curly braces to make sub-lists. This means, for example,
-     * that we must not leave unmatched curly braces in the resulting list
-     * element. This property is necessary in order for functions like
-     * Tcl_DStringStartSublist to work.
-     */
+    *flagPtr = flags;
+    return numBytes;
+}
 
-    nestingLevel = 0;
-    flags = 0;
-    if (string == NULL) {
-	string = "";
+int
+TclScanElement(
+    CONST char *string,		/* String to convert to Tcl list element. */
+    int length,			/* Number of bytes in string, or -1. */
+    int *flagPtr)		/* Where to store information to guide
+				 * Tcl_ConvertElement. */
+{
+    CONST char *p = string;
+    int nestingLevel = 0;
+    int forbidNone = 0;
+    int requireEscape = 0;
+    int extra = 0;
+    int bytesNeeded;
+#if COMPAT
+    int preferEscape = 0;
+    int preferBrace = 0;
+    int braceCount = 0;
+#endif
+    
+    if ((p == NULL) || (length == 0)) {
+	*flagPtr = CONVERT_BRACE;
+	return 2;
     }
-    if (length == -1) {
-	length = strlen(string);
+
+    if ((*p == '{') || (*p == '"') || ((*p == '\0') && (length == -1))) {
+	forbidNone = 1;
+#if COMPAT
+	preferBrace = 1;
+#endif
     }
-    lastChar = string + length;
-    p = string;
-    if ((p == lastChar) || (*p == '{') || (*p == '"')) {
-	flags |= USE_BRACES;
-    }
-    for (; p < lastChar; p++) {
+
+    while (length) {
 	switch (*p) {
 	case '{':
+#if COMPAT
+	    braceCount++;
+#endif
+	    extra++;
 	    nestingLevel++;
 	    break;
 	case '}':
+#if COMPAT
+	    braceCount++;
+#endif
+	    extra++;
 	    nestingLevel--;
 	    if (nestingLevel < 0) {
-		flags |= TCL_DONT_USE_BRACES;
+		requireEscape = 1;
 	    }
 	    break;
+	case ']':
+	case '"':
+#if COMPAT
+	    forbidNone = 1;
+	    extra++;
+	    preferEscape = 1;
+	    break;
+#else
+	    /* FLOW THROUGH */
+#endif
 	case '[':
 	case '$':
 	case ';':
@@ -729,32 +737,103 @@ Tcl_ScanCountedElement(
 	case '\r':
 	case '\t':
 	case '\v':
-	    flags |= USE_BRACES;
+	    forbidNone = 1;
+	    extra++;
+#if COMPAT
+	    preferBrace = 1;
+#endif
 	    break;
 	case '\\':
-	    if ((p+1 == lastChar) || (p[1] == '\n')) {
-		flags = TCL_DONT_USE_BRACES;
-	    } else {
-		int size;
-
-		Tcl_UtfBackslash(p, &size, NULL);
-		p += size-1;
-		flags |= USE_BRACES;
+	    extra++;
+	    if ((length == 1) || ((length == -1) && (p[1] == '\0'))) {
+		requireEscape = 1;
+		break;
 	    }
+	    if (p[1] == '\n') {
+		extra++;
+		requireEscape = 1;
+		length -= (length > 0);
+		p++;
+		break;
+	    }
+	    if ((p[1] == '{') || (p[1] == '}')) {
+		extra++;
+		length -= (length > 0);
+		p++;
+	    }
+	    forbidNone = 1;
+#if COMPAT
+	    preferBrace = 1;
+#endif
+	    break;
+	case '\0':
+	    if (length == -1) {
+		goto endOfString;
+	    }
+	    /* TODO: Panic on improper encoding? */
 	    break;
 	}
+	length -= (length > 0);
+	p++;
     }
+
+    endOfString:
     if (nestingLevel != 0) {
-	flags = TCL_DONT_USE_BRACES;
+	requireEscape = 1;
     }
-    *flagPtr = flags;
 
-    /*
-     * Allow enough space to backslash every character plus leave two spaces
-     * for braces.
-     */
+    bytesNeeded = p - string;
 
-    return 2*(p-string) + 2;
+    if (requireEscape) {
+	bytesNeeded += extra;
+	if ((*string == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+	    bytesNeeded++;
+	}
+	*flagPtr = CONVERT_ESCAPE;
+	goto overflowCheck;
+    }
+    if (*flagPtr & CONVERT_SAFE) {
+	if (extra < 2) {
+	    extra = 2;
+	}
+	*flagPtr |= TCL_DONT_USE_BRACES;
+    }
+    if (forbidNone) {
+#if COMPAT
+	if (preferEscape && !preferBrace) {
+	    bytesNeeded += (extra - braceCount);
+	    if ((*string == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+		bytesNeeded++;
+	    }
+	    if (*flagPtr & TCL_DONT_USE_BRACES) {
+		bytesNeeded += braceCount;
+	    }
+	    *flagPtr = CONVERT_MASK;
+	    goto overflowCheck;
+	}
+#endif
+	if (*flagPtr & TCL_DONT_USE_BRACES) {
+	    bytesNeeded += extra;
+	    if ((*string == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+		bytesNeeded++;
+	    }
+	} else {
+	    bytesNeeded += 2;
+	}
+	*flagPtr = CONVERT_BRACE;
+	goto overflowCheck;
+    }
+
+    if ((*string == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+	bytesNeeded += 2;
+    }
+    *flagPtr = CONVERT_NONE;
+
+    overflowCheck:
+    if (bytesNeeded < 0) {
+	Tcl_Panic("TclScanElement: string length overflow");
+    }
+    return bytesNeeded;
 }
 
 /*
@@ -815,112 +894,139 @@ Tcl_ConvertCountedElement(
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
-    register char *p = dst;
-    register CONST char *lastChar;
+    int numBytes = TclConvertElement(src, length, dst, flags);
+    dst[numBytes] = '\0';
+    return numBytes;
+}
 
-    /*
-     * See the comment block at the beginning of the Tcl_ScanElement code for
-     * details of how this works.
-     */
+int TclConvertElement(
+    register CONST char *src,	/* Source information for list element. */
+    int length,			/* Number of bytes in src, or -1. */
+    char *dst,			/* Place to put list-ified element. */
+    int flags)			/* Flags produced by Tcl_ScanElement. */
+{
+    int conversion = flags & CONVERT_MASK;
+    char *p = dst;
 
-    if (src && length == -1) {
-	length = strlen(src);
+    if ((flags & TCL_DONT_USE_BRACES) && (conversion & CONVERT_BRACE)) {
+	conversion = CONVERT_ESCAPE;
     }
     if ((src == NULL) || (length == 0)) {
-	p[0] = '{';
-	p[1] = '}';
-	p[2] = 0;
-	return 2;
+	src = tclEmptyStringRep;
+	length = 0;
+	conversion = CONVERT_BRACE;
     }
-    lastChar = src + length;
     if ((*src == '#') && !(flags & TCL_DONT_QUOTE_HASH)) {
-	flags |= USE_BRACES;
-    }
-    if ((flags & USE_BRACES) && !(flags & TCL_DONT_USE_BRACES)) {
-	*p = '{';
-	p++;
-	for (; src != lastChar; src++, p++) {
-	    *p = *src;
-	}
-	*p = '}';
-	p++;
-    } else {
-	if ((*src == '#') && !(flags & TCL_DONT_QUOTE_HASH)) {
-	    /*
-	     * Leading '#' could be seen by [eval] as the start of a comment,
-	     * if on the first element of a list, so quote it.
-	     */
-
+	if (conversion == CONVERT_ESCAPE) {
 	    p[0] = '\\';
 	    p[1] = '#';
 	    p += 2;
 	    src++;
-	}
-	for (; src != lastChar; src++) {
-	    switch (*src) {
-	    case ']':
-	    case '[':
-	    case '$':
-	    case ';':
-	    case ' ':
-	    case '\\':
-	    case '"':
-		*p = '\\';
-		p++;
-		break;
-	    case '{':
-	    case '}':
-		/*
-		 * It may not seem necessary to backslash braces, but it is.
-		 * The reason for this is that the resulting list element may
-		 * actually be an element of a sub-list enclosed in braces
-		 * (e.g. if Tcl_DStringStartSublist has been invoked), so
-		 * there may be a brace mismatch if the braces aren't
-		 * backslashed.
-		 */
-
-		if (flags & TCL_DONT_USE_BRACES) {
-		    *p = '\\';
-		    p++;
-		}
-		break;
-	    case '\f':
-		*p = '\\';
-		p++;
-		*p = 'f';
-		p++;
-		continue;
-	    case '\n':
-		*p = '\\';
-		p++;
-		*p = 'n';
-		p++;
-		continue;
-	    case '\r':
-		*p = '\\';
-		p++;
-		*p = 'r';
-		p++;
-		continue;
-	    case '\t':
-		*p = '\\';
-		p++;
-		*p = 't';
-		p++;
-		continue;
-	    case '\v':
-		*p = '\\';
-		p++;
-		*p = 'v';
-		p++;
-		continue;
-	    }
-	    *p = *src;
-	    p++;
+	    length--;
+	} else {
+	    conversion = CONVERT_BRACE;
 	}
     }
-    *p = '\0';
-    return p-dst;
+    if (conversion == CONVERT_NONE) {
+	if (length == -1) {
+	    /* TODO: INT_MAX overflow? */
+	    while (*src) {
+		*p++ = *src++;
+	    }
+	    return p - dst;
+	} else {
+	    memcpy(dst, src, length);
+	    return length;
+	}
+    }
+    if (conversion == CONVERT_BRACE) {
+	*p = '{';
+	p++;
+	if (length == -1) {
+	    /* TODO: INT_MAX overflow? */
+	    while (*src) {
+		*p++ = *src++;
+	    }
+	} else {
+	    memcpy(p, src, length);
+	    p += length;
+	}
+	*p = '}';
+	p++;
+	return p - dst;
+    }
+    /* conversion == CONVERT_ESCAPE or CONVERT_MASK */
+
+    for ( ; length; src++, length -= (length > 0)) {
+	switch (*src) {
+	case ']':
+	case '[':
+	case '$':
+	case ';':
+	case ' ':
+	case '\\':
+	case '"':
+	    *p = '\\';
+	    p++;
+	    break;
+	case '{':
+	case '}':
+#if COMPAT
+	    if (conversion == CONVERT_ESCAPE) {
+#endif
+		*p = '\\';
+		p++;
+#if COMPAT
+	    }
+#endif
+	    break;
+	case '\f':
+	    *p = '\\';
+	    p++;
+	    *p = 'f';
+	    p++;
+	    continue;
+	case '\n':
+	    *p = '\\';
+	    p++;
+	    *p = 'n';
+	    p++;
+	    continue;
+	case '\r':
+	    *p = '\\';
+	    p++;
+	    *p = 'r';
+	    p++;
+	    continue;
+	case '\t':
+	    *p = '\\';
+	    p++;
+	    *p = 't';
+	    p++;
+	    continue;
+	case '\v':
+	    *p = '\\';
+	    p++;
+	    *p = 'v';
+	    p++;
+	    continue;
+	case '\0':
+	    if (length == -1) {
+		return p - dst;
+	    }
+	    /* 
+	     * If we reach this point, there's an embedded NULL in the
+	     * string range being processed, which should not happen when
+	     * the encoding rules for Tcl strings are properly followed.
+	     * If the day ever comes when we stop tolerating such things,
+	     * this is where to put the Tcl_Panic().
+	     */
+	    break;
+	}
+	*p = *src;
+	p++;
+    }
+    return p - dst;
 }
 
 /*
@@ -949,11 +1055,20 @@ Tcl_Merge(
     CONST char * CONST *argv)	/* Array of string values. */
 {
 #   define LOCAL_SIZE 20
-    int localFlags[LOCAL_SIZE], *flagPtr;
-    int numChars;
-    char *result;
-    char *dst;
-    int i;
+    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
+    int i, bytesNeeded = 0;
+    char *result, *dst;
+    const int maxFlags = UINT_MAX / sizeof(int);
+
+    if (argc == 0) {
+	/*
+	 * Handle empty list case first, so logic of the general case
+	 * can be simpler.
+	 */
+	result = ckalloc(1);
+	result[0] = '\0';
+	return result;
+    }
 
     /*
      * Pass 1: estimate space, gather flags.
@@ -961,32 +1076,48 @@ Tcl_Merge(
 
     if (argc <= LOCAL_SIZE) {
 	flagPtr = localFlags;
+    } else if (argc > maxFlags) {
+	/*
+	 * We cannot allocate a large enough flag array to format this
+	 * list in one pass.  We could imagine converting this routine
+	 * to a multi-pass implementation, but for sizeof(int) == 4, 
+	 * the limit is a max of 2^30 list elements and since each element
+	 * is at least one byte formatted, and requires one byte space
+	 * between it and the next one, that a minimum space requirement
+	 * of 2^31 bytes, which is already INT_MAX. If we tried to format
+	 * a list of > maxFlags elements, we're just going to overflow
+	 * the size limits on the formatted string anyway, so just issue
+	 * that same panic early.
+	 */
+	Tcl_Panic("Tcl_Merge: size requirement exceeds limits");
     } else {
 	flagPtr = (int *) ckalloc((unsigned) argc*sizeof(int));
     }
-    numChars = 1;
     for (i = 0; i < argc; i++) {
-	numChars += Tcl_ScanElement(argv[i], &flagPtr[i]) + 1;
+	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
+	bytesNeeded += TclScanElement(argv[i], -1, &flagPtr[i]);
+	if (bytesNeeded < 0) {
+	    Tcl_Panic("Tcl_Merge: size requirement exceeds limits");
+	}
     }
+    if (bytesNeeded > INT_MAX - argc + 1) {
+	Tcl_Panic("Tcl_Merge: size requirement exceeds limits");
+    }
+    bytesNeeded += argc;
 
     /*
      * Pass two: copy into the result area.
      */
 
-    result = (char *) ckalloc((unsigned) numChars);
+    result = ckalloc((unsigned) bytesNeeded);
     dst = result;
     for (i = 0; i < argc; i++) {
-	numChars = Tcl_ConvertElement(argv[i], dst,
-		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH));
-	dst += numChars;
+	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
+	dst += TclConvertElement(argv[i], -1, dst, flagPtr[i]);
 	*dst = ' ';
 	dst++;
     }
-    if (dst == result) {
-	*dst = 0;
-    } else {
-	dst[-1] = 0;
-    }
+    dst[-1] = 0;
 
     if (flagPtr != localFlags) {
 	ckfree((char *) flagPtr);
@@ -1877,12 +2008,11 @@ Tcl_DStringAppendElement(
     CONST char *element)	/* String to append. Must be
 				 * null-terminated. */
 {
-    int newSize, flags, strSize;
-    char *dst;
-
-    strSize = ((element== NULL) ? 0 : strlen(element));
-    newSize = Tcl_ScanCountedElement(element, strSize, &flags)
-	+ dsPtr->length + 1;
+    char *dst = dsPtr->string + dsPtr->length;
+    int needSpace = TclNeedSpace(dsPtr->string, dst);
+    int flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
+    int newSize = dsPtr->length + needSpace
+	    + TclScanElement(element, -1, &flags);
 
     /*
      * Allocate a larger buffer for the string if the current one isn't large
@@ -1903,6 +2033,7 @@ Tcl_DStringAppendElement(
 	    dsPtr->string = (char *) ckrealloc((void *) dsPtr->string,
 		    (size_t) dsPtr->spaceAvl);
 	}
+	dst = dsPtr->string + dsPtr->length;
     }
 
     /*
@@ -1910,8 +2041,7 @@ Tcl_DStringAppendElement(
      * the end, with a space, if needed.
      */
 
-    dst = dsPtr->string + dsPtr->length;
-    if (TclNeedSpace(dsPtr->string, dst)) {
+    if (needSpace) {
 	*dst = ' ';
 	dst++;
 	dsPtr->length++;
@@ -1924,7 +2054,8 @@ Tcl_DStringAppendElement(
 
 	flags |= TCL_DONT_QUOTE_HASH;
     }
-    dsPtr->length += Tcl_ConvertCountedElement(element, strSize, dst, flags);
+    dsPtr->length += TclConvertElement(element, -1, dst, flags);
+    dsPtr->string[dsPtr->length] = '\0';
     return dsPtr->string;
 }
 
