@@ -4263,14 +4263,17 @@ TclNREvalObjv(
      */
 
 #if 0
-    objProc = cmdPtr->nreProc;
-    if (!objProc) {
-	objProc = cmdPtr->objProc;
+    {
+        Tcl_ObjCmdProc *objProc = cmdPtr->nreProc;
+        
+        if (!objProc) {
+            objProc = cmdPtr->objProc;
+        }
+        
+        TclNRAddCallback(interp, NRRunObjProc, objProc, cmdPtr->objClientData,
+                INT2PTR(objc), (ClientData) objv);
     }
-    objClientData = cmdPtr->objClientData;
-
-    TclNRAddCallback(interp, NRRunObjProc, objProc, objClientData,
-	    INT2PTR(objc), (ClientData) objv);
+    return TCL_OK;
 #else
     if (cmdPtr->nreProc) {
         TclNRAddCallback(interp, NRRunObjProc, cmdPtr->nreProc,
