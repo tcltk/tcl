@@ -1,3 +1,10 @@
+2011-03-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (ProcedureMethodCompiledVarConnect)
+	(ProcedureMethodCompiledVarDelete): [Bug 3185009]: Keep references to
+	resolved object variables so that an unset doesn't leave any dangling
+	pointers for code to trip over.
+
 2011-03-01  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TclNREvalObjv): missing a variable
