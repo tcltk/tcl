@@ -930,7 +930,7 @@ TclDeleteExecEnv(
     TclDecrRefCount(eePtr->constants[0]);
     TclDecrRefCount(eePtr->constants[1]);
     if (eePtr->callbackPtr) {
-	Tcl_Panic("Deleting execEnv with pending TEOV callbacks!");
+	Tcl_Panic("Deleting execEnv with pending NRE callbacks!");
     }
     if (eePtr->corPtr) {
 	Tcl_Panic("Deleting execEnv with existing coroutine");
@@ -1321,7 +1321,7 @@ Tcl_ExprObj(
     Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj* that is the expression
 				 * result is stored if no errors occur. */
 {
-    TEOV_callback *rootPtr = TOP_CB(interp);
+    NRE_callback *rootPtr = TOP_CB(interp);
     Tcl_Obj *resultPtr;
 
     TclNewObj(resultPtr);
