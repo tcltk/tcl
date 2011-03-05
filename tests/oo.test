@@ -2578,6 +2578,22 @@ test oo-27.12 {variables declaration: leak per instance} -setup {
 } -cleanup {
     foo destroy
 } -result 0
+# This test will actually (normally) crash if it fails!
+test oo-27.13 {variables declaration: Bug 3185009: require refcount management} -setup {
+    oo::object create foo
+} -body {
+    oo::objdefine foo {
+	variable x
+	method set v {set x $v}
+	method unset {} {unset x}
+	method exists {} {info exists x}
+	method get {} {return $x}
+    }
+    list [foo exists] [foo set 7] [foo exists] [foo get] [foo unset] \
+	[foo exists] [catch {foo get} msg] $msg
+} -cleanup {
+    foo destroy
+} -result {0 7 1 7 {} 0 1 {can't read "x": no such variable}}
 
 # A feature that's not supported because the mechanism may change without
 # warning, but is supposed to work...
