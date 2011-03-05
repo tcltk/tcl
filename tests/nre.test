@@ -302,7 +302,7 @@ test nre-7.8 {bug #2910748: switch out of stale BC is not nre-aware} -setup {
 
 test nre-8.1 {nre and {*}} -body {
     # force an expansion that grows the evaluation stack, check that nre
-    # adapts the bottomPtr. This crashes on failure.
+    # adapts the TEBCdataPtr. This crashes on failure.
 
     proc inner {} {
 	set long [lrepeat 1000000 1]
