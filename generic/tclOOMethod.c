@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.31 2011/01/18 15:44:41 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1057,6 +1055,14 @@ ProcedureMethodCompiledVarConnect(
     }
     if (cacheIt) {
 	infoPtr->cachedObjectVar = TclVarHashGetValue(hPtr);
+
+	/*
+	 * We must keep a reference to the variable so everything will
+	 * continue to work correctly even if it is unset; being unset does
+	 * not end the life of the variable at this level. [Bug 3185009]
+	 */
+
+	VarHashRefCount(infoPtr->cachedObjectVar)++;
     }
     return TclVarHashGetValue(hPtr);
 }
@@ -1067,6 +1073,14 @@ ProcedureMethodCompiledVarDelete(
 {
     OOResVarInfo *infoPtr = (OOResVarInfo *) rPtr;
 
+    /*
+     * Release the reference to the variable if we were holding it.
+     */
+
+    if (infoPtr->cachedObjectVar) {
+	VarHashRefCount(infoPtr->cachedObjectVar)--;
+	TclCleanupVar((Var *) infoPtr->cachedObjectVar, NULL);
+    }
     Tcl_DecrRefCount(infoPtr->variableObj);
     ckfree((char *) infoPtr);
 }

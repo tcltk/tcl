@@ -97,7 +97,3 @@ LBL_N1:mp_clear (&n1);
   return err;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_prime_miller_rabin.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2006/12/01 00:08:11 $ */

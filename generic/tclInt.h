@@ -14,8 +14,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclInt.h,v 1.490 2010/12/10 21:59:23 nijtmans Exp $
  */
 
 #ifndef _TCLINT
@@ -1152,7 +1150,7 @@ typedef struct CallFrame {
 				 * meaning of the value is, which we do not
 				 * specify. */
     LocalCache *localCachePtr;
-    struct TEOV_callback *tailcallPtr;
+    struct NRE_callback *tailcallPtr;
 				/* NULL if no tailcall is scheduled */
 } CallFrame;
 
@@ -1493,8 +1491,8 @@ typedef struct ExecEnv {
 				 * stack on the heap. */
     Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
     struct Tcl_Interp *interp;
-    struct TEOV_callback *callbackPtr;
-				/* Top callback in TEOV's stack. */
+    struct NRE_callback *callbackPtr;
+				/* Top callback in NRE's stack. */
     struct CoroutineData *corPtr;
     int rewind;
 } ExecEnv;
@@ -2135,7 +2133,7 @@ typedef struct Interp {
 				 * tclOOInt.h and tclOO.c for real definition
 				 * and setup. */
 
-    struct TEOV_callback *deferredCallbacks;
+    struct NRE_callback *deferredCallbacks;
 				/* Callbacks that are set previous to a call
 				 * to some Eval function but that actually
 				 * belong to the command that is about to be
@@ -2774,7 +2772,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
 MODULE_SCOPE void  TclSpliceTailcall(Tcl_Interp *interp,
-	               struct TEOV_callback *tailcallPtr);
+	               struct NRE_callback *tailcallPtr);
 
 /*
  * This structure holds the data for the various iteration callbacks used to
@@ -4562,11 +4560,11 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
  * available.
  */
 
-typedef struct TEOV_callback {
+typedef struct NRE_callback {
     Tcl_NRPostProc *procPtr;
     ClientData data[4];
-    struct TEOV_callback *nextPtr;
-} TEOV_callback;
+    struct NRE_callback *nextPtr;
+} NRE_callback;
 
 #define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
 
@@ -4576,7 +4574,7 @@ typedef struct TEOV_callback {
 
 #define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3) \
     do {								\
-	TEOV_callback *callbackPtr;					\
+	NRE_callback *callbackPtr;					\
 	TCLNR_ALLOC((interp), (callbackPtr));				\
 	callbackPtr->procPtr = (postProcPtr);				\
 	callbackPtr->data[0] = (ClientData)(data0);			\
@@ -4589,7 +4587,7 @@ typedef struct TEOV_callback {
 
 #define TclNRDeferCallback(interp,postProcPtr,data0,data1,data2,data3) \
     do {								\
-	TEOV_callback *callbackPtr;					\
+	NRE_callback *callbackPtr;					\
 	TCLNR_ALLOC((interp), (callbackPtr));				\
 	callbackPtr->procPtr = (postProcPtr);				\
 	callbackPtr->data[0] = (ClientData)(data0);			\
@@ -4602,7 +4600,7 @@ typedef struct TEOV_callback {
 
 #define TclNRSpliceCallbacks(interp, topPtr) \
     do {					\
-	TEOV_callback *bottomPtr = topPtr;	\
+	NRE_callback *bottomPtr = topPtr;	\
 	while (bottomPtr->nextPtr) {		\
 	    bottomPtr = bottomPtr->nextPtr;	\
 	}					\
@@ -4618,11 +4616,11 @@ typedef struct TEOV_callback {
 
 #if NRE_USE_SMALL_ALLOC
 #define TCLNR_ALLOC(interp, ptr) \
-    TclSmallAllocEx(interp, sizeof(TEOV_callback), (ptr))
+    TclSmallAllocEx(interp, sizeof(NRE_callback), (ptr))
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    (ptr = ((ClientData) ckalloc(sizeof(TEOV_callback))))
+    (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
 #define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
 #endif
 

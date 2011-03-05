@@ -1,7 +1,44 @@
+2011-03-05  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: cleaner mem management for TEBCdata
+
+	* generic/tclExecute.c:
+	* tests/nre.test: Renamed BottomData to TEBCdata, so that the name
+	refers to what it is rather than to its storage location. 
+	
+	* generic/tclBasic.c:     Renamed struct TEOV_callback to 
+	* generic/tclCompExpr.c:  the more descriptive NRE_callback.
+	* generic/tclCompile.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclTest.c:
+
+2011-03-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (ProcedureMethodCompiledVarConnect)
+	(ProcedureMethodCompiledVarDelete): [Bug 3185009]: Keep references to
+	resolved object variables so that an unset doesn't leave any dangling
+	pointers for code to trip over.
+
 2011-03-01  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompCmdsSZ.c (TclCompileThrowCmd)
-	(TclCompileUnsetCmd): fix leaks
+	* generic/tclBasic.c (TclNREvalObjv): missing a variable
+	declaration in commented out non-optimised code, left for ref in
+	checkin [b97b771b6d]
+
+2011-03-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclResult.c (Tcl_AppendResultVA):	Use the directive
+	USE_INTERP_RESULT [TIP 330] to force compat with interp->result
+	access, instead of the improvised hack USE_DIRECT_INTERP_RESULT_ACCESS
+	from releases past.
+
+2011-03-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompCmdsSZ.c (TclCompileThrowCmd, TclCompileUnsetCmd): 
+	fix leaks
 	
 	* generic/tclBasic.c:       This is [Patch 3168398],
 	* generic/tclCompCmdsSZ.c:  Joe Mistachkin's optimisation
