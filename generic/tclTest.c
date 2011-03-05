@@ -13,8 +13,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclTest.c,v 1.157 2011/01/18 08:43:53 nijtmans Exp $
  */
 
 #include <math.h>
@@ -6726,7 +6724,7 @@ TestNRELevels(
     ptrdiff_t depth;
     Tcl_Obj *levels[6];
     int i = 0;
-    TEOV_callback *cbPtr = ((Interp *) interp)->execEnvPtr->callbackPtr;
+    NRE_callback *cbPtr = ((Interp *) interp)->execEnvPtr->callbackPtr;
 
     if (refDepth == NULL) {
 	refDepth = &depth;

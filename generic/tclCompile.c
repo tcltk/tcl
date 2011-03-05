@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclCompile.c,v 1.194 2010/12/10 21:59:23 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -929,7 +927,7 @@ Tcl_SubstObj(
     Tcl_Obj *objPtr,		/* The value to be substituted. */
     int flags)			/* What substitutions to do. */
 {
-    TEOV_callback *rootPtr = TOP_CB(interp);
+    NRE_callback *rootPtr = TOP_CB(interp);
 
     if (TclNRRunCallbacks(interp, Tcl_NRSubstObj(interp, objPtr, flags),
 	    rootPtr) != TCL_OK) {
