@@ -1,3 +1,9 @@
+2011-03-05  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TclStackFree): insure that the execStack
+	satisfies "at most one free stack after the current one" when
+	consecutive reallocs caused the creation of intervening stacks.
+
 2011-03-05  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclAssembly.c (new file):

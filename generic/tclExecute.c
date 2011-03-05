@@ -1235,19 +1235,28 @@ TclStackFree(
     }
 
     /*
-     * Return to previous stack.
+     * Return to previous active stack. Note that repeated expansions or
+     * reallocs could have generated several unused intervening stacks: free
+     * them too.
      */
 
+    while (esPtr->nextPtr) {
+	esPtr = esPtr->nextPtr;
+    }
     esPtr->tosPtr = &esPtr->stackWords[-1];
+    while (esPtr->prevPtr) {
+	ExecStack *tmpPtr = esPtr->prevPtr;
+	if (tmpPtr->tosPtr == &tmpPtr->stackWords[-1]) {
+	    DeleteExecStack(tmpPtr);
+	} else {
+	    break;
+	}
+    }
     if (esPtr->prevPtr) {
 	eePtr->execStackPtr = esPtr->prevPtr;
-    }
-    if (esPtr->nextPtr) {
-	if (!esPtr->prevPtr) {
-	    eePtr->execStackPtr = esPtr->nextPtr;
-	}
-	DeleteExecStack(esPtr);
-    }
+    } else {
+	eePtr->execStackPtr = esPtr;
+    }	
 }
 
 void *
