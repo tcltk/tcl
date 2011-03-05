@@ -1,5 +1,9 @@
-2011-03-01  Miguel Sofer  <msofer@users.sf.net>
+2011-03-05  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclExecute.c:
+	* tests/nre.test: Renamed BottomData to TEBCdata, so that the name
+	refers to what it is rather than to its storage location. 
+	
 	* generic/tclBasic.c:     Renamed struct TEOV_callback to 
 	* generic/tclCompExpr.c:  the more descriptive NRE_callback.
 	* generic/tclCompile.c:
