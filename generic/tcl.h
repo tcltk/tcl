@@ -12,8 +12,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tcl.h,v 1.312 2011/01/19 14:11:23 nijtmans Exp $
  */
 
 #ifndef _TCL

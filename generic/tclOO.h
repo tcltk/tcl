@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclOO.h,v 1.11 2010/06/02 08:22:15 nijtmans Exp $
  */
 
 #ifndef TCLOO_H_INCLUDED

@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclResult.c,v 1.63 2010/10/01 12:52:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -650,14 +648,14 @@ Tcl_AppendResultVA(
      * calls to Tcl_GetStringResult() itself. [Patch 1041072 discussion]
      */
 
-#ifdef USE_DIRECT_INTERP_RESULT_ACCESS
+#ifdef USE_INTERP_RESULT
     /*
      * Ensure that the interp->result is legal so old Tcl 7.* code still
      * works. There's still embarrasingly much of it about...
      */
 
     (void) Tcl_GetStringResult(interp);
-#endif /* USE_DIRECT_INTERP_RESULT_ACCESS */
+#endif /* USE_INTERP_RESULT */
 }
 
 /*
