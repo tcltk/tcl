@@ -178,6 +178,10 @@ typedef struct TEBCdata {
     int cleanup;		/* new codePtr was received for NR */
     Tcl_Obj *auxObjList;	/* execution. */
     int checkInterp;
+    CmdFrame cmdFrame;
+    void * stack[1];            /* Start of the actual combined catch and obj
+				 * stacks; the struct will be expanded as
+				 * necessary */
 } TEBCdata;
 
 #define TEBC_YIELD()					\
@@ -1910,8 +1914,8 @@ TclIncrObj(
  *
  *----------------------------------------------------------------------
  */
-#define	bcFramePtr	((CmdFrame *) (TD + 1))
-#define	initCatchTop	(((ptrdiff_t *) (bcFramePtr + 1)) - 1)
+#define	bcFramePtr	(&TD->cmdFrame)
+#define	initCatchTop	((ptrdiff_t *) (&TD->stack[-1]))
 #define	initTosPtr	((Tcl_Obj **) (initCatchTop+codePtr->maxExceptDepth))
 #define esPtr           (iPtr->execEnvPtr->execStackPtr)
 
@@ -1922,9 +1926,9 @@ TclNRExecuteByteCode(
 {
     Interp *iPtr = (Interp *) interp;
     TEBCdata *TD;
-    int size = sizeof(TEBCdata) + sizeof(CmdFrame) +
+    int size = sizeof(TEBCdata) -1 + 
 	    + (codePtr->maxStackDepth + codePtr->maxExceptDepth)
-	         *(sizeof(Tcl_Obj *));
+	         *(sizeof(void *));
     int numWords = (size + sizeof(Tcl_Obj *) - 1)/sizeof(Tcl_Obj *);
     
     if (iPtr->execEnvPtr->rewind) {
