@@ -211,6 +211,7 @@ GENERIC_OBJS = \
 	regfree.$(OBJEXT) \
 	regerror.$(OBJEXT) \
 	tclAlloc.$(OBJEXT) \
+	tclAssembly.$(OBJEXT) \
 	tclAsync.$(OBJEXT) \
 	tclBasic.$(OBJEXT) \
 	tclBinary.$(OBJEXT) \
