@@ -927,7 +927,7 @@ Tcl_SubstObj(
     Tcl_Obj *objPtr,		/* The value to be substituted. */
     int flags)			/* What substitutions to do. */
 {
-    TEOV_callback *rootPtr = TOP_CB(interp);
+    NRE_callback *rootPtr = TOP_CB(interp);
 
     if (TclNRRunCallbacks(interp, Tcl_NRSubstObj(interp, objPtr, flags),
 	    rootPtr) != TCL_OK) {
