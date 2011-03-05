@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: pkge.c,v 1.15 2010/12/31 16:35:26 nijtmans Exp $
  */
 
 #undef STATIC_BUILD

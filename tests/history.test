@@ -10,8 +10,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: history.test,v 1.7 2009/07/25 21:51:02 dkf Exp $
   
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
