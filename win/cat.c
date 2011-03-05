@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: cat.c,v 1.6 2010/11/16 14:03:34 nijtmans Exp $
  */
 
 #ifdef TCL_BROKEN_MAINARGS
