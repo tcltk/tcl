@@ -1,3 +1,8 @@
+2011-03-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c (TclFindElement):	Guard escape sequence scans
+	to not overrun the string end.  [Bug 3192636]
+
 2011-03-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParse.c (TclParseBackslash): Correct trunction checks in

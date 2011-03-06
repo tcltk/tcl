@@ -239,7 +239,7 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
 	     */
 
 	    case '\\': {
-		Tcl_UtfBackslash(p, &numChars, NULL);
+		TclParseBackslash(p, limit - p, &numChars, NULL);
 		p += (numChars - 1);
 		break;
 	    }
