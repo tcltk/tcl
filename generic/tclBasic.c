@@ -4907,7 +4907,7 @@ TclEvalEx(
     int line,			/* The line the script starts on. */
     int *clNextOuter,		/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set only in
-				 * EvalTokensStandard(), to properly handle
+				 * TclSubstTokens(), to properly handle
 				 * [...]-nested commands. The 'outerScript'
 				 * refers to the most-outer script containing
 				 * the embedded command, which is refered to
@@ -5413,7 +5413,7 @@ TclAdvanceContinuations(
     /*
      * Track the invisible continuation lines embedded in a script, if any.
      * Here they are just spaces (already). They were removed by
-     * EvalTokensStandard via Tcl_UtfBackslash.
+     * TclSubstTokens via TclParseBackslash.
      *
      * *clNextPtrPtr         <=> We have continuation lines to track.
      * **clNextPtrPtr >= 0   <=> We are not beyond the last possible location.
