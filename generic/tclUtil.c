@@ -232,7 +232,7 @@ TclFindElement(
 	     */
 
 	case '\\':
-	    Tcl_UtfBackslash(p, &numChars, NULL);
+	    TclParseBackslash(p, limit - p, &numChars, NULL);
 	    p += (numChars - 1);
 	    break;
 
