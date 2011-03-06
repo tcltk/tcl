@@ -1,3 +1,8 @@
+2011-03-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParse.c (TclParseBackslash): Correct trunction checks in
+	* tests/parse.test:	\x and \u substitutions.  [Bug 3200987]
+
 2011-01-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCkalloc.c:  [Bug 3129448]: Possible over-allocation on 64-bit
