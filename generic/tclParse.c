@@ -851,7 +851,7 @@ TclParseBackslash(
 	result = 0xb;
 	break;
     case 'x':
-	count += TclParseHex(p+1, numBytes-1, &result);
+	count += TclParseHex(p+1, numBytes-2, &result);
 	if (count == 2) {
 	    /*
 	     * No hexadigits -> This is just "x".
@@ -866,7 +866,7 @@ TclParseBackslash(
 	}
 	break;
     case 'u':
-	count += TclParseHex(p+1, (numBytes > 5) ? 4 : numBytes-1, &result);
+	count += TclParseHex(p+1, (numBytes > 5) ? 4 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
 	     * No hexadigits -> This is just "u".
