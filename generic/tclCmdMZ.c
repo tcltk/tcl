@@ -2597,7 +2597,7 @@ Tcl_SubstObj(interp, objPtr, flags)
 		    Tcl_AppendToObj(resultObj, old, p-old);
 		}
 		Tcl_AppendToObj(resultObj, buf,
-				Tcl_UtfBackslash(p, &count, buf));
+				TclParseBackslash(p, length, &count, buf));
 		p += count; length -= count;
 		old = p;
 	    } else {

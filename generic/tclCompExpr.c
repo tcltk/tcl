@@ -387,8 +387,8 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    break;
 	    
         case TCL_TOKEN_BS:
-	    length = Tcl_UtfBackslash(tokenPtr->start, (int *) NULL,
-		    buffer);
+	    length = TclParseBackslash(tokenPtr->start, tokenPtr->size,
+		    (int *) NULL, buffer);
 	    if (length > 0) {
 		objIndex = TclRegisterNewLiteral(envPtr, buffer, length);
 	    } else {
