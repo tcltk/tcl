@@ -3647,8 +3647,8 @@ EvalTokensStandard(interp, tokenPtr, count, line, clNextOuter, outerScript)
 		break;
 
 	    case TCL_TOKEN_BS:
-		length = Tcl_UtfBackslash(tokenPtr->start, (int *) NULL,
-			buffer);
+		length = TclParseBackslash(tokenPtr->start, tokenPtr->size,
+			(int *) NULL, buffer);
 		p = buffer;
 #ifdef TCL_TIP280
 		/*
@@ -4510,7 +4510,7 @@ TclAdvanceContinuations (line,clNextPtrPtr,loc)
     /*
      * Track the invisible continuation lines embedded in a script, if
      * any. Here they are just spaces (already). They were removed by
-     * EvalTokensStandard() via Tcl_UtfBackslash().
+     * EvalTokensStandard() via TclParseBackslash().
      *
      * *clNextPtrPtr             <=> We have continuation lines to track.
      * **clNextPtrPtr >= 0       <=> We are not beyond the last possible location.
