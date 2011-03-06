@@ -341,11 +341,10 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
  *	Copy a string and eliminate any backslashes that aren't in braces.
  *
  * Results:
- *	Count characters get copied from src to	dst. Along the way, if
- *	backslash sequences are found outside braces, the backslashes are
- *	eliminated in the copy. After scanning count chars from source, a
- *	null character is placed at the end of dst.  Returns the number
- *	of characters that got copied.
+ *	Count bytes get copied from src to dst. Along the way, backslash
+ *	sequences are substituted in the copy.  After scanning count bytes
+ *	from src, a null character is placed at the end of dst.  Returns
+ *	the number of bytes that got written to dst.
  *
  * Side effects:
  *	None.
@@ -355,26 +354,28 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
 
 int
 TclCopyAndCollapse(count, src, dst)
-    int count;			/* Number of characters to copy from src. */
+    int count;			/* Number of bytes to copy from src. */
     CONST char *src;		/* Copy from here... */
     char *dst;			/* ... to here. */
 {
-    register char c;
-    int numRead;
     int newCount = 0;
-    int backslashCount;
 
-    for (c = *src;  count > 0;  src++, c = *src, count--) {
+    while (count > 0) {
+	char c = *src;
 	if (c == '\\') {
-	    backslashCount = Tcl_UtfBackslash(src, &numRead, dst);
+	    int numRead;
+	    int backslashCount = TclParseBackslash(src, count, &numRead, dst);
+
 	    dst += backslashCount;
 	    newCount += backslashCount;
-	    src += numRead-1;
-	    count -= numRead-1;
+	    src += numRead;
+	    count -= numRead;
 	} else {
 	    *dst = c;
 	    dst++;
 	    newCount++;
+	    src++;
+	    count--;
 	}
     }
     *dst = 0;
@@ -643,7 +644,7 @@ Tcl_ScanCountedElement(string, length, flagPtr)
 		} else {
 		    int size;
 
-		    Tcl_UtfBackslash(p, &size, NULL);
+		    TclParseBackslash(p, lastChar - p, &size, NULL);
 		    p += size-1;
 		    flags |= USE_BRACES;
 		}

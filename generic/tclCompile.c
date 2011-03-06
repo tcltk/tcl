@@ -1571,8 +1571,8 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		break;
 
 	    case TCL_TOKEN_BS:
-		length = Tcl_UtfBackslash(tokenPtr->start, (int *) NULL,
-			buffer);
+		length = TclParseBackslash(tokenPtr->start, tokenPtr->size,
+			(int *) NULL, buffer);
 		Tcl_DStringAppend(&textBuffer, buffer, length);
 
 #ifdef TCL_TIP280
