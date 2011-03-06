@@ -1,5 +1,11 @@
 2011-03-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c:	More replacements of Tcl_UtfBackslash() calls
+	* generic/tclCompile.c:	with TclParseBackslash() where possible.
+	* generic/tclCompCmdsSZ.c:
+	* generic/tclParse.c:
+	* generic/tclUtil.c:
+
 	* generic/tclUtil.c (TclFindElement):	Guard escape sequence scans
 	to not overrun the string end.  [Bug 3192636]
 
