@@ -26,28 +26,71 @@ static ProcessGlobalValue executableName = {
 };
 
 /*
- * The following values are used in the flags returned by Tcl_ScanElement and
- * used by Tcl_ConvertElement. The values TCL_DONT_USE_BRACES and
- * TCL_DONT_QUOTE_HASH are defined in tcl.h; make sure neither value overlaps
- * with any of the values below.
+ * The following values are used in the flags arguments of Tcl*Scan*Element and
+ * Tcl*Convert*Element. The values TCL_DONT_USE_BRACES and TCL_DONT_QUOTE_HASH
+ * are defined in tcl.h, like so:
  *
- * TCL_DONT_USE_BRACES -	1 means the string mustn't be enclosed in
- *				braces (e.g. it contains unmatched braces, or
- *				ends in a backslash character, or user just
- *				doesn't want braces); handle all special
- *				characters by adding backslashes.
- * USE_BRACES -			1 means the string contains a special
- *				character that can be handled simply by
- *				enclosing the entire argument in braces.
+#define TCL_DONT_USE_BRACES     1
+#define TCL_DONT_QUOTE_HASH     8
+ *
+ * Those are public flag bits which callers of the public routines
+ * Tcl_Convert*Element() can use to indicate:
+ *
+ * TCL_DONT_USE_BRACES -	1 means the caller is insisting that brace
+ *				quoting not be used when converting the list
+ *				element.
  * TCL_DONT_QUOTE_HASH -	1 means the caller insists that a leading hash
  * 				character ('#') should *not* be quoted. This
  * 				is appropriate when the caller can guarantee
  * 				the element is not the first element of a
  * 				list, so [eval] cannot mis-parse the element
  * 				as a comment.
+ *
+ * The remaining values which can be carried by the flags of these routines
+ * are for internal use only.  Make sure they do not overlap with the public
+ * values above.
+ *
+ * The Tcl*Scan*Element() routines make a determination which of 4 modes of
+ * conversion is most appropriate for Tcl*Convert*Element() to perform, and
+ * sets two bits of the flags value to indicate the mode selected.
+ *
+ * CONVERT_NONE		The element needs no quoting.  Its literal string
+ *			is suitable as is.
+ * CONVERT_BRACE	The conversion should be enclosing the literal string
+ *			in braces.
+ * CONVERT_ESCAPE	The conversion should be using backslashes to escape
+ *			any characters in the string that require it.
+ * CONVERT_MASK		A mask value used to extract the conversion mode from
+ *			the flags argument.
+ *			Also indicates a strange conversion mode where all
+ *			special characters are escaped with backslashes 
+ *			*except for braces*.  This is a strange and unnecessary
+ *			case, but it's part of the historical way in which
+ *			lists have been formatted in Tcl.  To experiment with
+ *			removing this case, set the value of COMPAT to 0.
+ *
+ * One last flag value is used only by callers of TclScanElement().  The flag
+ * value produced by a call to Tcl*Scan*Element() will never leave this bit
+ * set.
+ *
+ * CONVERT_ANY		The caller of TclScanElement() declares it can make
+ *			no promise about what public flags will be passed to
+ *			the matching call of TclConvertElement().  As such,
+ *			TclScanElement() has to determine the worst case
+ *			destination buffer length over all possibilities, and
+ *			in other cases this means an overestimate of the
+ *			required size.
+ *
+ * For more details, see the comments on the Tcl*Scan*Element and 
+ * Tcl*Convert*Element routines.
  */
 
-#define USE_BRACES		2
+#define COMPAT 1
+#define CONVERT_NONE	0
+#define CONVERT_BRACE	2
+#define CONVERT_ESCAPE	4
+#define CONVERT_MASK	(CONVERT_BRACE | CONVERT_ESCAPE)
+#define CONVERT_ANY	16
 
 /*
  * The following key is used by Tcl_PrintDouble and TclPrecTraceProc to
@@ -230,7 +273,7 @@ TclFindElement(
 	     */
 
 	case '\\':
-	    Tcl_UtfBackslash(p, &numChars, NULL);
+	    TclParseBackslash(p, limit - p, &numChars, NULL);
 	    p += (numChars - 1);
 	    break;
 
@@ -324,14 +367,13 @@ TclFindElement(
  *
  * TclCopyAndCollapse --
  *
- *	Copy a string and eliminate any backslashes that aren't in braces.
+ *	Copy a string and substitute all backslash escape sequences
  *
  * Results:
- *	Count characters get copied from src to dst. Along the way, if
- *	backslash sequences are found outside braces, the backslashes are
- *	eliminated in the copy. After scanning count chars from source, a null
- *	character is placed at the end of dst. Returns the number of
- *	characters that got copied.
+ *	Count bytes get copied from src to dst. Along the way, backslash
+ *	sequences are substituted in the copy.  After scanning count bytes
+ *	from src, a null character is placed at the end of dst.  Returns
+ *	the number of bytes that got written to dst.
  *
  * Side effects:
  *	None.
@@ -341,26 +383,28 @@ TclFindElement(
 
 int
 TclCopyAndCollapse(
-    int count,			/* Number of characters to copy from src. */
+    int count,			/* Number of byte to copy from src. */
     CONST char *src,		/* Copy from here... */
     char *dst)			/* ... to here. */
 {
-    register char c;
-    int numRead;
     int newCount = 0;
-    int backslashCount;
 
-    for (c = *src;  count > 0;  src++, c = *src, count--) {
+    while (count > 0) {
+	char c = *src;
 	if (c == '\\') {
-	    backslashCount = Tcl_UtfBackslash(src, &numRead, dst);
+	    int numRead;
+	    int backslashCount = TclParseBackslash(src, count, &numRead, dst);
+
 	    dst += backslashCount;
 	    newCount += backslashCount;
-	    src += numRead-1;
-	    count -= numRead-1;
+	    src += numRead;
+	    count -= numRead;
 	} else {
 	    *dst = c;
 	    dst++;
 	    newCount++;
+	    src++;
+	    count--;
 	}
     }
     *dst = 0;
@@ -645,15 +689,6 @@ Tcl_ScanElement(
  *----------------------------------------------------------------------
  */
 
-#define COMPAT 1
-
-#define CONVERT_NONE	0
-#define CONVERT_BRACE	2
-#define CONVERT_ESCAPE	4
-#define CONVERT_SAFE	16
-#define CONVERT_MASK	(CONVERT_BRACE | CONVERT_ESCAPE)
-
-
 int
 Tcl_ScanCountedElement(
     CONST char *string,		/* String to convert to Tcl list element. */
@@ -661,7 +696,7 @@ Tcl_ScanCountedElement(
     int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
-    int flags = CONVERT_SAFE;
+    int flags = CONVERT_ANY;
     int numBytes = TclScanElement(string, length, &flags);
 
     *flagPtr = flags;
@@ -792,10 +827,11 @@ TclScanElement(
 	*flagPtr = CONVERT_ESCAPE;
 	goto overflowCheck;
     }
-    if (*flagPtr & CONVERT_SAFE) {
+    if (*flagPtr & CONVERT_ANY) {
 	if (extra < 2) {
 	    extra = 2;
 	}
+	*flagPtr &= ~CONVERT_ANY;
 	*flagPtr |= TCL_DONT_USE_BRACES;
     }
     if (forbidNone) {
