@@ -1,3 +1,7 @@
+2011-03-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixInit: 
+
 2011-03-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	More replacements of Tcl_UtfBackslash() calls
