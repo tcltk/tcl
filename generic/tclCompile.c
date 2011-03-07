@@ -1136,7 +1136,8 @@ TclWordKnownAtCompileTime(
 	case TCL_TOKEN_BS:
 	    if (tempPtr != NULL) {
 		char utfBuf[TCL_UTF_MAX];
-		int length = Tcl_UtfBackslash(tokenPtr->start, NULL, utfBuf);
+		int length = TclParseBackslash(tokenPtr->start,
+			tokenPtr->size, NULL, utfBuf);
 		Tcl_AppendToObj(tempPtr, utfBuf, length);
 	    }
 	    break;
@@ -1667,7 +1668,7 @@ TclCompileTokens(
      * any. The table is extended if needed.
      *
      * Note: Different to the equivalent code in function
-     * 'EvalTokensStandard()' (see file "tclBasic.c") we do not seem to need
+     * 'TclSubstTokens()' (see file "tclParse.c") we do not seem to need
      * the 'adjust' variable. We also do not seem to need code which merges
      * continuation line information of multiple words which concat'd at
      * runtime. Either that or I have not managed to find a test case for
@@ -1700,7 +1701,8 @@ TclCompileTokens(
 	    break;
 
 	case TCL_TOKEN_BS:
-	    length = Tcl_UtfBackslash(tokenPtr->start, NULL, buffer);
+	    length = TclParseBackslash(tokenPtr->start, tokenPtr->size,
+		    NULL, buffer);
 	    Tcl_DStringAppend(&textBuffer, buffer, length);
 
 	    /*

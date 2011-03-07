@@ -2219,8 +2219,8 @@ TclSubstTokens(
 	    break;
 
 	case TCL_TOKEN_BS:
-	    appendByteLength = Tcl_UtfBackslash(tokenPtr->start, NULL,
-		    utfCharBytes);
+	    appendByteLength = TclParseBackslash(tokenPtr->start,
+		    tokenPtr->size, NULL, utfCharBytes);
 	    append = utfCharBytes;
 	    /*
 	     * If the backslash sequence we found is in a literal, and
