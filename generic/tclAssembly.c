@@ -2919,7 +2919,7 @@ ResolveJumpTableTargets(AssemblyEnv* assemEnvPtr,
 			BasicBlock* bbPtr)
 				/* Basic block that ends in a jump table */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;;
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
     Tcl_HashTable* symHash = &bbPtr->jtPtr->hashTable;
 				/* Hash table with the symbols */
