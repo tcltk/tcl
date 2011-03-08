@@ -3234,6 +3234,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
         break;
     }
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	char *a[10];
 	int i = 0;
@@ -3244,6 +3245,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	TCL_DTRACE_CMD_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
 		a[8], a[9]);
     }
+#endif /* USE_DTRACE */
 
     /*
      * Finally, invoke the command's Tcl_ObjCmdProc.
@@ -3306,12 +3308,14 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	(void) Tcl_GetObjResult(interp);
     }
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_RESULT_ENABLED()) {
 	Tcl_Obj *r;
 
 	r = Tcl_GetObjResult(interp);
 	TCL_DTRACE_CMD_RESULT(TclGetString(objv[0]), code, TclGetString(r), r);
     }
+#endif /* USE_DTRACE */
 
     done:
     iPtr->varFramePtr = savedVarFramePtr;
