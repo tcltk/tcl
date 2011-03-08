@@ -2689,7 +2689,6 @@ ForwardOpToOwnerThread(
     Tcl_ThreadId dst = rcPtr->thread;
     ForwardingEvent *evPtr;
     ForwardingResult *resultPtr;
-    int result;
 
     /*
      * We gather the lock early. This allows us to check the liveness of the
@@ -2793,7 +2792,6 @@ ForwardOpToOwnerThread(
 
     Tcl_DeleteThreadExitHandler(SrcExitProc, evPtr);
 
-    result = resultPtr->result;
     ckfree((char *) resultPtr);
 }
 
