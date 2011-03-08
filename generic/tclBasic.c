@@ -4230,6 +4230,8 @@ TclNREvalObjv(
 	}
     }
 
+
+#ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	const char *a[10];
 	int i = 0;
@@ -4255,7 +4257,7 @@ TclNREvalObjv(
 	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
 		(Tcl_Obj **)(objv + 1));
     }
-
+#endif /* USE_DTRACE */
     /*
      * Fix the original callback to point to the now known cmdPtr. Insure that
      * the Command struct lives until the command returns.
@@ -8109,6 +8111,7 @@ Tcl_NRCallObjProc(
     int result = TCL_OK;
     NRE_callback *rootPtr = TOP_CB(interp);
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	const char *a[10];
 	int i = 0;
@@ -8135,6 +8138,7 @@ Tcl_NRCallObjProc(
 	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
 		(Tcl_Obj **)(objv + 1));
     }
+#endif /* USE_DTRACE */
     result = objProc(clientData, interp, objc, objv);
     return TclNRRunCallbacks(interp, result, rootPtr);
 }

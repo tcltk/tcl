@@ -1,3 +1,10 @@
+2011-03-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c: Fix gcc warnings: variable set but not used
+	* generic/tclProc.c:
+	* generic/tclIORChan.c:
+	* generic/tclIORTrans.c:
+
 2011-03-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	Remove TclMarkList() routine, an experimental
