@@ -4,6 +4,8 @@
 	* generic/tclProc.c:
 	* generic/tclIORChan.c:
 	* generic/tclIORTrans.c:
+	* generic/tclAssembly.c:  Fix gcc warning: comparison between signed
+	and unsigned integer expressions
 
 2011-03-08  Don Porter  <dgp@users.sourceforge.net>
 
