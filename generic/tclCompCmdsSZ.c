@@ -687,7 +687,8 @@ TclSubstCompile(
 	    count++;
 	    continue;
 	case TCL_TOKEN_BS:
-	    length = Tcl_UtfBackslash(tokenPtr->start, NULL, buf);
+	    length = TclParseBackslash(tokenPtr->start, tokenPtr->size,
+		    NULL, buf);
 	    literal = TclRegisterNewLiteral(envPtr, buf, length);
 	    TclEmitPush(literal, envPtr);
 	    count++;

@@ -930,7 +930,7 @@ Tcl_SubstObj(
     Tcl_Obj *objPtr,		/* The value to be substituted. */
     int flags)			/* What substitutions to do. */
 {
-    TEOV_callback *rootPtr = TOP_CB(interp);
+    NRE_callback *rootPtr = TOP_CB(interp);
 
     if (TclNRRunCallbacks(interp, Tcl_NRSubstObj(interp, objPtr, flags),
 	    rootPtr) != TCL_OK) {
@@ -1396,7 +1396,8 @@ TclWordKnownAtCompileTime(
 	case TCL_TOKEN_BS:
 	    if (tempPtr != NULL) {
 		char utfBuf[TCL_UTF_MAX];
-		int length = Tcl_UtfBackslash(tokenPtr->start, NULL, utfBuf);
+		int length = TclParseBackslash(tokenPtr->start,
+			tokenPtr->size, NULL, utfBuf);
 
 		Tcl_AppendToObj(tempPtr, utfBuf, length);
 	    }
@@ -1995,7 +1996,8 @@ TclCompileTokens(
 	    break;
 
 	case TCL_TOKEN_BS:
-	    length = Tcl_UtfBackslash(tokenPtr->start, NULL, buffer);
+	    length = TclParseBackslash(tokenPtr->start, tokenPtr->size,
+		    NULL, buffer);
 	    Tcl_DStringAppend(&textBuffer, buffer, length);
 
 	    /*

@@ -1,8 +1,84 @@
+2011-03-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclAssembly.c, tests/assemble.test: Migrate to use a style
+	more consistent with the rest of Tcl.
+
+2011-03-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	More replacements of Tcl_UtfBackslash() calls
+	* generic/tclCompile.c:	with TclParseBackslash() where possible.
+	* generic/tclCompCmdsSZ.c:
+	* generic/tclParse.c:
+	* generic/tclUtil.c:
+
+	* generic/tclUtil.c (TclFindElement):	Guard escape sequence scans
+	to not overrun the string end.  [Bug 3192636]
+
+2011-03-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParse.c (TclParseBackslash): Correct trunction checks in
+	* tests/parse.test:	\x and \u substitutions.  [Bug 3200987]
+
+2011-03-05  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TclStackFree): insure that the execStack
+	satisfies "at most one free stack after the current one" when
+	consecutive reallocs caused the creation of intervening stacks.
+
+2011-03-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclAssembly.c (new file):
+	* generic/tclBasic.c (Tcl_CreateInterp):
+	* generic/tclInt.h:
+	* tests/assemble.test (new file):
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc:  Merged dogeen-assembler-branch into HEAD.
+	Since all functional changes are in the tcl::unsupported namespace,
+	there's no reason to sequester this code on a separate branch.
+
+2011-03-05  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: cleaner mem management for TEBCdata
+
+	* generic/tclExecute.c:
+	* tests/nre.test: Renamed BottomData to TEBCdata, so that the name
+	refers to what it is rather than to its storage location.
+
+	* generic/tclBasic.c:     Renamed struct TEOV_callback to
+	* generic/tclCompExpr.c:  the more descriptive NRE_callback.
+	* generic/tclCompile.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclTest.c:
+
+2011-03-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (ProcedureMethodCompiledVarConnect)
+	(ProcedureMethodCompiledVarDelete): [Bug 3185009]: Keep references to
+	resolved object variables so that an unset doesn't leave any dangling
+	pointers for code to trip over.
+
 2011-03-01  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompCmdsSZ.c (TclCompileThrowCmd)
-	(TclCompileUnsetCmd): fix leaks
-	
+	* generic/tclBasic.c (TclNREvalObjv): missing a variable
+	declaration in commented out non-optimised code, left for ref in
+	checkin [b97b771b6d]
+
+2011-03-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclResult.c (Tcl_AppendResultVA):	Use the directive
+	USE_INTERP_RESULT [TIP 330] to force compat with interp->result
+	access, instead of the improvised hack USE_DIRECT_INTERP_RESULT_ACCESS
+	from releases past.
+
+2011-03-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompCmdsSZ.c (TclCompileThrowCmd, TclCompileUnsetCmd):
+	fix leaks
+
 	* generic/tclBasic.c:       This is [Patch 3168398],
 	* generic/tclCompCmdsSZ.c:  Joe Mistachkin's optimisation
 	* generic/tclExecute.c:     of Tip #285
@@ -18,8 +94,8 @@
 
 	* generic/tclExecute.c (TEBCresume): store local var array and
 	constants in automatic vars to reduce indirection, slight perf
-	increase 
-	
+	increase
+
 	* generic/tclOOCall.c (TclOODeleteContext): added missing '*' so
 	that trunk compiles.
 
@@ -200,6 +276,16 @@
 
 	* generic/tclPanic.c:  [Patch 3124554]: Move WishPanic from Tk to Tcl
 	* win/tclWinFile.c:    Better communication with debugger, if present.
+
+2010-12-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* tclAssembly.c:
+	* assemble.test: 	Reworked beginCatch/endCatch handling to
+	enforce the more severe (but more correct) restrictions on catch
+	handling that appeared in the discussion of [Bug 3098302] and in
+	tcl-core traffic beginning about 2010-10-29.
 
 2010-12-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -562,6 +648,12 @@
 	* generic/tclTimer.c:	[Bug 2905784]: Stop small [after]s from
 				wasting CPU while keeping accuracy.
 
+2010-10-28  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+	* generic/tclAssembly.c:
+	* tests/assembly.test (assemble-31.*): Added jump tables.
+
 2010-10-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/http.test:	[Bug 3097490]: Make http-4.15 pass in
@@ -588,6 +680,23 @@
 	::tcl::unsupported::noReverseDNS, which if set to any value, prevents
 	[fconfigure -sockname] and [fconfigure -peername] from doing
 	reverse DNS queries.
+
+2010-10-24  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+	* generic/tclAssembly.c:
+	* tests/assembly.test (assemble-17.15): Reworked branch handling so that
+	forward branches can use jump1 (jumpTrue1, jumpFalse1). Added test
+	cases that the forward branches will expand to jump4, jumpTrue4,
+	jumpFalse4 when needed.
+
+2010-10-23  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+	* generic/tclAssembly.h (removed):
+				Removed file that was included in only one
+				source file.
+	* generictclAssembly.c:	Inlined tclAssembly.h.
 
 2010-10-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
@@ -704,6 +813,23 @@
 	* generic/tclCompile.c:	[Bug 3081065]: Prevent writing to the intrep
 	* tests/subst.test:	fields of a freed Tcl_Obj.
 
+2010-10-06  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* generic/tclAssembly.c:
+	* generic/tclAssembly.h:
+	* tests/assemble.test: Added catches. Still needs a lot of testing.
+
+2010-10-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* generic/tclAssembly.c:
+	* generic/tclAssembly.h:
+	* tests/assemble.test: Added dictAppend, dictIncrImm, dictLappend,
+	dictSet, dictUnset, nop, regexp, nsupvar, upvar, and variable.
+
 2010-10-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclExecute.c (TEBCresume): [Bug 3079830]: Added invalidation
@@ -727,6 +853,31 @@
 	* generic/tclResult.c, generic/tclUtil.c, macosx/tclMacOSXFCmd.c:
 	More purging of strcpy() from locations where we already know the
 	length of the data being copied.
+
+2010-10-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* tests/assemble.test:
+	* generic/tclAssemble.h:
+	* generic/tclAssemble.c:  Added listIn, listNotIn, and dictGet.
+
+2010-09-30  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* tests/assemble.test:   Added tryCvtToNumeric and several more list
+	* generic/tclAssemble.c: operations.
+	* generic/tclAssemble.h:
+
+2010-09-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* tests/assemble.test:   Completed conversion of tests to a
+	* generic/tclAssemble.c: "white box" structure that follows the
+	C code. Added missing safety checks on the operands of 'over' and
+	'reverse' so that negative operand counts don't smash the stack.
 
 2010-09-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -763,6 +914,35 @@
 				tests running in parallel or other services on
 				the machine.
 
+2010-09-28  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* tests/assemble.test: Added more "white box" tests.
+	* generic/tclAssembly.c: Added the error checking and reporting
+	for undefined labels. Revised code so that no pointers into the
+	bytecode sequence are held (because the sequence can move!),
+	that no Tcl_HashEntry pointers are held (because the hash table
+	doesn't guarantee their stability!) and to eliminate the BBHash
+	table, which is merely additional information indexed by jump
+	labels and can just as easily be held in the 'label' structure.
+	Renamed shared structures to CamelCase, and renamed 'label' to
+	JumpLabel because other types of labels may eventually be possible.
+
+2010-09-27  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* tests/assemble.test: Added more "white box" tests.
+	* generic/tclAssembly.c: Fixed bugs exposed by the new tests.
+	(a) [eval] and [expr] had incorrect stack balance computed if
+	the arg was not a simple word. (b) [concat] accepted a negative
+	operand count. (c) [invoke] accepted a zero or negative operand
+	count. (d) more misspelt error messages.
+	Also replaced a funky NRCallTEBC with the new call
+	TclNRExecuteByteCode, necessitated by a merge with changes on the
+	HEAD.
+
 2010-09-26  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    [Patch 3072080] (minus the itcl
@@ -785,6 +965,31 @@
 	* generic/tclOOMethod.c (ProcedureMethodVarResolver): avoid code
 	duplication, let the runtime var resolver call the compiled var
 	resolver.
+
+2010-09-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* tests/assemble.test:	Added many new tests moving toward a more
+	comprehensive test suite for the assembler.
+	* generic/tclAssembly.c:	Fixed bugs exposed by the new tests:
+	(a) [bitnot] and [not] had incorrect operand counts. (b)
+	INST_CONCAT cannot concatenate zero objects. (c) misspelt error
+	messages. (d) the "assembly code" internal representation lacked
+	a duplicator, which caused double-frees of the Bytecode object
+	if assembly code ever was duplicated.
+
+2010-09-25  Kevin B. Kenny   <kennykb@acm.org>
+
+	[dogeen-assembler-branch]
+
+	* generic/tclAssembly.c:	Massive refactoring of the assembler
+	* generic/tclAssembly.h:	to use a Tcl-like syntax (and use
+	* tests/assemble.test:		Tcl_ParseCommand to parse it). The
+	* tests/assemble1.bench:	refactoring also ensures that
+	Tcl_Tokens in the assembler have string ranges inside the source
+	code, which allows for [eval] and [expr] assembler directives
+	that simply call TclCompileScript and TclCompileExpr recursively.
 
 2010-09-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -846,6 +1051,22 @@
 	* generic/tclIOUtil.c (TclFSCwdPointerEquals): peephole opt
 	* generic/tclResult.c (TclMergeReturnOptions): Use memcmp where
 	applicable as possible speedup on some libc variants.
+
+2010-09-21  Kevin B. Kenny  <kennykb@acm.org>
+
+	[BRANCH: dogeen-assembler-branch]
+
+	* generic/tclAssembly.c (new file): 
+	* generic/tclAssembly.h:
+	* generic/tclBasic.c (builtInCmds, Tcl_CreateInterp):
+	* generic/tclInt.h:
+	* tests/assemble.test (new file):
+	* tests/assemble1.bench (new file):
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/Makefile.vc:
+		Initial commit of Ozgur Dogan Ugurlu's (SF user: dogeen)
+		assembler for the Tcl bytecode language.
 
 2010-09-21  Jan Nijtmans  <nijtmans@users.sf.net>
 

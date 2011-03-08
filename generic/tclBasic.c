@@ -165,7 +165,7 @@ static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	YieldToCallback;
 
 static void	        ClearTailcall(Tcl_Interp *interp,
-			    struct TEOV_callback *tailcallPtr);
+			    struct NRE_callback *tailcallPtr);
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 
 MODULE_SCOPE const TclStubs tclStubs;
@@ -823,6 +823,13 @@ Tcl_CreateInterp(void)
 	    Tcl_DisassembleObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
 	    Tcl_RepresentationCmd, NULL, NULL);
+
+    /* Adding the bytecode assembler command */
+    cmdPtr = (Command*)
+        Tcl_NRCreateCommand(interp, "::tcl::unsupported::assemble",
+                            Tcl_AssembleObjCmd, TclNRAssembleObjCmd,
+                            NULL, NULL);
+    cmdPtr->compileProc = &TclCompileAssembleCmd;
 
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldTo", NULL,
 	    TclNRYieldToObjCmd, NULL, NULL);
@@ -4100,7 +4107,7 @@ Tcl_EvalObjv(
 				 * TCL_EVAL_NOERR are currently supported. */
 {
     int result;
-    TEOV_callback *rootPtr = TOP_CB(interp);
+    NRE_callback *rootPtr = TOP_CB(interp);
 
     result = TclNREvalObjv(interp, objc, objv, flags, NULL);
     return TclNRRunCallbacks(interp, result, rootPtr);
@@ -4263,14 +4270,17 @@ TclNREvalObjv(
      */
 
 #if 0
-    objProc = cmdPtr->nreProc;
-    if (!objProc) {
-	objProc = cmdPtr->objProc;
+    {
+        Tcl_ObjCmdProc *objProc = cmdPtr->nreProc;
+        
+        if (!objProc) {
+            objProc = cmdPtr->objProc;
+        }
+        
+        TclNRAddCallback(interp, NRRunObjProc, objProc, cmdPtr->objClientData,
+                INT2PTR(objc), (ClientData) objv);
     }
-    objClientData = cmdPtr->objClientData;
-
-    TclNRAddCallback(interp, NRRunObjProc, objProc, objClientData,
-	    INT2PTR(objc), (ClientData) objv);
+    return TCL_OK;
 #else
     if (cmdPtr->nreProc) {
         TclNRAddCallback(interp, NRRunObjProc, cmdPtr->nreProc,
@@ -4294,12 +4304,12 @@ int
 TclNRRunCallbacks(
     Tcl_Interp *interp,
     int result,
-    struct TEOV_callback *rootPtr)
+    struct NRE_callback *rootPtr)
 				/* All callbacks down to rootPtr not inclusive
 				 * are to be run. */
 {
     Interp *iPtr = (Interp *) interp;
-    TEOV_callback *callbackPtr;
+    NRE_callback *callbackPtr;
     Tcl_NRPostProc *procPtr;
 
     /*
@@ -4870,7 +4880,7 @@ TclEvalScriptTokens(
     int line,
     int*  clNextOuter,		/* Information about an outer context for */
     CONST char* outerScript)	/* continuation line data. This is set only in
-				 * EvalTokensStandard(), to properly handle
+				 * TclSubstTokens(), to properly handle
 				 * [...]-nested commands. The 'outerScript'
 				 * refers to the most-outer script containing
 				 * the embedded command, which is refered to
@@ -5388,7 +5398,7 @@ TclAdvanceContinuations(
     /*
      * Track the invisible continuation lines embedded in a script, if any.
      * Here they are just spaces (already). They were removed by
-     * EvalTokensStandard via Tcl_UtfBackslash.
+     * TclSubstTokens via TclParseBackslash.
      *
      * *clNextPtrPtr         <=> We have continuation lines to track.
      * **clNextPtrPtr >= 0   <=> We are not beyond the last possible location.
@@ -5877,7 +5887,7 @@ TclEvalObjEx(
     int word)			/* Index of the word which is in objPtr. */
 {
     int result = TCL_OK;
-    TEOV_callback *rootPtr = TOP_CB(interp);
+    NRE_callback *rootPtr = TOP_CB(interp);
 
     result = TclNREvalObjEx(interp, objPtr, flags, invoker, word);
     return TclNRRunCallbacks(interp, result, rootPtr);
@@ -8076,7 +8086,7 @@ Tcl_NRCallObjProc(
     Tcl_Obj *const objv[])
 {
     int result = TCL_OK;
-    TEOV_callback *rootPtr = TOP_CB(interp);
+    NRE_callback *rootPtr = TOP_CB(interp);
 
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	const char *a[10];
@@ -8228,7 +8238,7 @@ Tcl_NRCmdSwap(
 void
 TclSpliceTailcall(
     Tcl_Interp *interp,
-    TEOV_callback *tailcallPtr)
+    NRE_callback *tailcallPtr)
 {
     /*
      * Find the splicing spot: right before the NRCommand of the thing
@@ -8236,7 +8246,7 @@ TclSpliceTailcall(
      * (used by command redirectors).
      */
 
-    TEOV_callback *runPtr;
+    NRE_callback *runPtr;
 
     for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
 	if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
@@ -8294,7 +8304,7 @@ TclNRTailcallObjCmd(
         Tcl_Obj *listPtr, *nsObjPtr;
         Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
         Tcl_Namespace *ns1Ptr;
-        TEOV_callback *tailcallPtr;
+        NRE_callback *tailcallPtr;
         
         listPtr = Tcl_NewListObj(objc-1, objv+1);
         Tcl_IncrRefCount(listPtr);
@@ -8365,7 +8375,7 @@ TailcallCleanup(
 static void
 ClearTailcall(
     Tcl_Interp *interp,
-    TEOV_callback *tailcallPtr)
+    NRE_callback *tailcallPtr)
 {
     TailcallCleanup(tailcallPtr->data, interp, TCL_OK);
     TCLNR_FREE(interp, tailcallPtr);
@@ -8502,7 +8512,7 @@ YieldToCallback(
     /* CoroutineData *corPtr = data[0];*/
     Tcl_Obj *listPtr = data[1];
     ClientData nsPtr = data[2];
-    TEOV_callback *cbPtr;
+    NRE_callback *cbPtr;
 
     /*
      * yieldTo: invoke the command using tailcall tech.
@@ -8549,7 +8559,7 @@ DeleteCoroutine(
 {
     CoroutineData *corPtr = clientData;
     Tcl_Interp *interp = corPtr->eePtr->interp;
-    TEOV_callback *rootPtr = TOP_CB(interp);
+    NRE_callback *rootPtr = TOP_CB(interp);
 
     if (COR_IS_SUSPENDED(corPtr)) {
 	TclNRRunCallbacks(interp, RewindCoroutine(corPtr,TCL_OK), rootPtr);

@@ -168,28 +168,32 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
  * Minimal data required to fully reconstruct the execution state.
  */
 
-typedef struct BottomData {
+typedef struct TEBCdata {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
-    struct BottomData *expanded;/* NULL if unchanged, pointer to the succesor
+    struct TEBCdata *expanded;/* NULL if unchanged, pointer to the succesor
 				 * if it was expanded */
     const unsigned char *pc;	/* These fields are used on return TO this */
     ptrdiff_t *catchTop;	/* this level: they record the state when a */
     int cleanup;		/* new codePtr was received for NR */
     Tcl_Obj *auxObjList;	/* execution. */
     int checkInterp;
-} BottomData;
+    CmdFrame cmdFrame;
+    void * stack[1];            /* Start of the actual combined catch and obj
+				 * stacks; the struct will be expanded as
+				 * necessary */
+} TEBCdata;
 
-#define NR_YIELD(invoke)				\
+#define TEBC_YIELD()					\
     esPtr->tosPtr = tosPtr;				\
-    BP->pc = pc;					\
-    BP->cleanup = cleanup;				\
-    TclNRAddCallback(interp, TEBCresume, BP,	\
-	    INT2PTR(invoke), NULL, NULL)
+    TD->pc = pc;					\
+    TD->cleanup = cleanup;				\
+    TclNRAddCallback(interp, TEBCresume, TD,	\
+	    INT2PTR(1), NULL, NULL)
     
-#define NR_DATA_DIG()				\
-    pc = BP->pc;				\
-    cleanup = BP->cleanup;			\
+#define TEBC_DATA_DIG()				\
+    pc = TD->pc;				\
+    cleanup = TD->cleanup;			\
     tosPtr = esPtr->tosPtr
     
 
@@ -930,7 +934,7 @@ TclDeleteExecEnv(
     TclDecrRefCount(eePtr->constants[0]);
     TclDecrRefCount(eePtr->constants[1]);
     if (eePtr->callbackPtr) {
-	Tcl_Panic("Deleting execEnv with pending TEOV callbacks!");
+	Tcl_Panic("Deleting execEnv with pending NRE callbacks!");
     }
     if (eePtr->corPtr) {
 	Tcl_Panic("Deleting execEnv with existing coroutine");
@@ -1231,19 +1235,28 @@ TclStackFree(
     }
 
     /*
-     * Return to previous stack.
+     * Return to previous active stack. Note that repeated expansions or
+     * reallocs could have generated several unused intervening stacks: free
+     * them too.
      */
 
+    while (esPtr->nextPtr) {
+	esPtr = esPtr->nextPtr;
+    }
     esPtr->tosPtr = &esPtr->stackWords[-1];
+    while (esPtr->prevPtr) {
+	ExecStack *tmpPtr = esPtr->prevPtr;
+	if (tmpPtr->tosPtr == &tmpPtr->stackWords[-1]) {
+	    DeleteExecStack(tmpPtr);
+	} else {
+	    break;
+	}
+    }
     if (esPtr->prevPtr) {
 	eePtr->execStackPtr = esPtr->prevPtr;
-    }
-    if (esPtr->nextPtr) {
-	if (!esPtr->prevPtr) {
-	    eePtr->execStackPtr = esPtr->nextPtr;
-	}
-	DeleteExecStack(esPtr);
-    }
+    } else {
+	eePtr->execStackPtr = esPtr;
+    }	
 }
 
 void *
@@ -1321,7 +1334,7 @@ Tcl_ExprObj(
     Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj* that is the expression
 				 * result is stored if no errors occur. */
 {
-    TEOV_callback *rootPtr = TOP_CB(interp);
+    NRE_callback *rootPtr = TOP_CB(interp);
     Tcl_Obj *resultPtr;
 
     TclNewObj(resultPtr);
@@ -1910,8 +1923,8 @@ TclIncrObj(
  *
  *----------------------------------------------------------------------
  */
-#define	bcFramePtr	((CmdFrame *) (BP + 1))
-#define	initCatchTop	(((ptrdiff_t *) (bcFramePtr + 1)) - 1)
+#define	bcFramePtr	(&TD->cmdFrame)
+#define	initCatchTop	((ptrdiff_t *) (&TD->stack[-1]))
 #define	initTosPtr	((Tcl_Obj **) (initCatchTop+codePtr->maxExceptDepth))
 #define esPtr           (iPtr->execEnvPtr->execStackPtr)
 
@@ -1921,10 +1934,10 @@ TclNRExecuteByteCode(
     ByteCode *codePtr)		/* The bytecode sequence to interpret. */
 {
     Interp *iPtr = (Interp *) interp;
-    BottomData *BP;
-    int size = sizeof(BottomData) + sizeof(CmdFrame) +
+    TEBCdata *TD;
+    int size = sizeof(TEBCdata) -1 + 
 	    + (codePtr->maxStackDepth + codePtr->maxExceptDepth)
-	         *(sizeof(Tcl_Obj *));
+	         *(sizeof(void *));
     int numWords = (size + sizeof(Tcl_Obj *) - 1)/sizeof(Tcl_Obj *);
     
     if (iPtr->execEnvPtr->rewind) {
@@ -1934,9 +1947,9 @@ TclNRExecuteByteCode(
     codePtr->refCount++;
 
     /*
-     * Reserve the stack, setup the BottomPtr and CallFrame
+     * Reserve the stack, setup the TEBCdataPtr (TD) and CallFrame
      *
-     * The execution uses a unified stack: first a BottomData, immediately
+     * The execution uses a unified stack: first a TEBCdata, immediately
      * above it a CmdFrame, then the catch stack, then the execution stack.
      *
      * Make sure the catch stack is large enough to hold the maximum number of
@@ -1945,20 +1958,20 @@ TclNRExecuteByteCode(
      * execution stack is large enough to execute this ByteCode.
      */
 
-    BP = (BottomData *) GrowEvaluationStack(iPtr->execEnvPtr, numWords, 0);
+    TD = (TEBCdata *) GrowEvaluationStack(iPtr->execEnvPtr, numWords, 0);
     esPtr->tosPtr = initTosPtr;
     
-    BP->codePtr     = codePtr;
-    BP->expanded    = NULL;
-    BP->pc          = codePtr->codeStart;
-    BP->catchTop    = initCatchTop;
-    BP->cleanup     = 0;
-    BP->auxObjList  = NULL;
-    BP->checkInterp = 0;
+    TD->codePtr     = codePtr;
+    TD->expanded    = NULL;
+    TD->pc          = codePtr->codeStart;
+    TD->catchTop    = initCatchTop;
+    TD->cleanup     = 0;
+    TD->auxObjList  = NULL;
+    TD->checkInterp = 0;
     
     /*
      * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
-     * every time that we call out from this BP, popped when we return to it.
+     * every time that we call out from this TD, popped when we return to it.
      */
 
     bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
@@ -1985,9 +1998,9 @@ TclNRExecuteByteCode(
      *  - bytecode execution
      */
     
-    TclNRAddCallback(interp, TEBCreturn, BP, NULL,
+    TclNRAddCallback(interp, TEBCreturn, TD, NULL,
 	    NULL, NULL);
-    TclNRAddCallback(interp, TEBCresume, BP,
+    TclNRAddCallback(interp, TEBCresume, TD,
 	    /*resume*/ INT2PTR(0), NULL, NULL);
     
     return TCL_OK;
@@ -1999,16 +2012,16 @@ TEBCreturn(
     Tcl_Interp *interp,
     int result)
 {
-    BottomData *BP = data[0];
-    ByteCode *codePtr = BP->codePtr;
+    TEBCdata *TD = data[0];
+    ByteCode *codePtr = TD->codePtr;
 
     if (--codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
-    while (BP->expanded) {
-	BP = BP->expanded;
+    while (TD->expanded) {
+	TD = TD->expanded;
     }
-    TclStackFree(interp, BP);	/* free my stack */
+    TclStackFree(interp, TD);	/* free my stack */
 
     return result;
 }
@@ -2036,7 +2049,6 @@ TEBCresume(
     /*
      * Bottom of allocated stack holds the NR data
      */
-    /* NR_TEBC */
 
     /*
      * Constants: variables that do not change during the execution, used
@@ -2062,11 +2074,11 @@ TEBCresume(
      * used too frequently
      */
 
-    BottomData *BP = data[0];
-#define auxObjList	(BP->auxObjList)
-#define catchTop	(BP->catchTop)
-#define codePtr         (BP->codePtr)
-#define checkInterp	(BP->checkInterp)
+    TEBCdata *TD = data[0];
+#define auxObjList	(TD->auxObjList)
+#define catchTop	(TD->catchTop)
+#define codePtr         (TD->codePtr)
+#define checkInterp	(TD->checkInterp)
                         /* Indicates when a check of interp readyness
 			 * is necessary. Set by CACHE_STACK_INFO() */
 
@@ -2105,7 +2117,7 @@ TEBCresume(
     traceInstructions = (tclTraceExec == 3);
 #endif
 
-    NR_DATA_DIG();
+    TEBC_DATA_DIG();
 
 #ifdef TCL_COMPILE_DEBUG
     if (!data[1] && (tclTraceExec >= 2)) {
@@ -2686,17 +2698,17 @@ TEBCresume(
 	length = objc + (codePtr->maxStackDepth - TclGetInt4AtPtr(pc+1));
 	DECACHE_STACK_INFO();
 	moved = GrowEvaluationStack(iPtr->execEnvPtr, length, 1)
-		- (Tcl_Obj **) BP;
+		- (Tcl_Obj **) TD;
 	if (moved) {
 	    /*
 	     * Change the global data to point to the new stack: move the
-	     * bottomPtr, recompute the position of every other
+	     * TEBCdataPtr TD, recompute the position of every other
 	     * stack-allocated parameter, update the stack pointers.
 	     */
 
 	    esPtr = iPtr->execEnvPtr->execStackPtr;
-	    BP->expanded = (BottomData *) (((Tcl_Obj **)BP) + moved);
-	    BP = BP->expanded;
+	    TD->expanded = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
+	    TD = TD->expanded;
 
 	    catchTop += moved;
 	    tosPtr += moved;
@@ -2725,7 +2737,7 @@ TEBCresume(
 	CACHE_STACK_INFO();
 	cleanup = 1;
 	pc++;
-	NR_YIELD(1);
+	TEBC_YIELD();
 	return TclNRExecuteByteCode(interp, newCodePtr);
     }
 
@@ -2740,7 +2752,7 @@ TEBCresume(
 
 	cleanup = 1;
 	pc += 1;
-	NR_YIELD(1);
+	TEBC_YIELD();
 	return TclNREvalObjEx(interp, OBJ_AT_TOS, 0, NULL, 0);
 
     case INST_INVOKE_EXPANDED:
@@ -2811,7 +2823,7 @@ TEBCresume(
 	DECACHE_STACK_INFO();
 
 	pc += pcAdjustment;
-	NR_YIELD(1);
+	TEBC_YIELD();
 	return TclNREvalObjv(interp, objc, objv,
 		TCL_EVAL_NOERR, NULL);
 
@@ -6417,12 +6429,6 @@ TEBCresume(
 	}
 	CLANG_ASSERT(bcFramePtr);
     }
-
-    /*
-     * Store the previous bottomPtr for returning to it, then free all
-     * resources used by this bytecode and process callbacks until you return
-     * to the previous bytecode (if any).
-     */
 
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
     return result;
