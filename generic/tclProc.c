@@ -1769,6 +1769,7 @@ TclNRInterpProcCore(
     }
 #endif /*TCL_COMPILE_DEBUG*/
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
 	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 	const char *a[10];
@@ -1798,6 +1799,7 @@ TclNRInterpProcCore(
 		iPtr->varFramePtr->objc - l - 1,
 		(Tcl_Obj **)(iPtr->varFramePtr->objv + l + 1));
     }
+#endif /* USE_DTRACE */
 
     /*
      * Invoke the commands in the procedure's body.

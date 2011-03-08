@@ -1,3 +1,7 @@
+2011-03-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c: Fix gcc warnings: variable set but not used
+
 2011-03-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	More replacements of Tcl_UtfBackslash() calls
