@@ -1,3 +1,8 @@
+2011-03-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclResult.c (ResetObjResult):	Correct failure to clear
+	invalid intrep.  Thanks to Colin McDonald. [Bug 3202905]
+
 2011-03-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclAssembly.c, tests/assemble.test: Migrate to use a style
