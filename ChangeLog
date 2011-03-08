@@ -1,3 +1,7 @@
+2011-03-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c: Fix gcc warnings: variable set but not used
+
 2011-03-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	Remove TclMarkList() routine, an experimental
@@ -5,10 +9,6 @@
 
 	* generic/tclResult.c (ResetObjResult):	Correct failure to clear
 	invalid intrep.  Thanks to Colin McDonald. [Bug 3202905]
-
-2011-03-07  Jan Nijtmans  <nijtmans@users.sf.net>
-
-	* unix/tclUnixInit: 
 
 2011-03-06  Don Porter  <dgp@users.sourceforge.net>
 
