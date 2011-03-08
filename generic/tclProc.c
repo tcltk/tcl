@@ -1196,6 +1196,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
     }
 #endif /*TCL_COMPILE_DEBUG*/
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
 	char *a[10];
 	int i = 0;
@@ -1206,6 +1207,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	TCL_DTRACE_PROC_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
 		a[8], a[9]);
     }
+#endif /* USE_DTRACE */
 
     iPtr->returnCode = TCL_OK;
     procPtr->refCount++;
@@ -1234,6 +1236,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	result = ProcessProcResultCode(interp, procName, nameLen, result);
     }
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
 	Tcl_Obj *r;
 
@@ -1241,6 +1244,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	TCL_DTRACE_PROC_RESULT(TclGetString(objv[0]), result,
 		TclGetString(r), r);
     }
+#endif /* USE_DTRACE */
 
     /*
      * Pop and free the call frame for this procedure invocation, then
