@@ -1,3 +1,8 @@
+2011-03-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclAssembly.c, tests/assemble.test: Migrate to use a style
+	more consistent with the rest of Tcl.
+
 2011-03-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	More replacements of Tcl_UtfBackslash() calls
