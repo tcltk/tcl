@@ -3664,6 +3664,7 @@ TclEvalObjvInternal(
 	}
     }
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	char *a[10];
 	int i = 0;
@@ -3682,6 +3683,7 @@ TclEvalObjvInternal(
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1]);
 	TclDecrRefCount(info);
     }
+#endif /* USE_DTRACE */
 
     /*
      * Finally, invoke the command's Tcl_ObjCmdProc.
@@ -3756,12 +3758,14 @@ TclEvalObjvInternal(
 	(void) Tcl_GetObjResult(interp);
     }
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_RESULT_ENABLED()) {
 	Tcl_Obj *r;
 
 	r = Tcl_GetObjResult(interp);
 	TCL_DTRACE_CMD_RESULT(TclGetString(objv[0]), code, TclGetString(r),r);
     }
+#endif /* USE_DTRACE */
 
   done:
     if (savedVarFramePtr) {
