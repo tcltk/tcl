@@ -3077,7 +3077,7 @@ NamespaceCodeCmd(
 {
     Namespace *currNsPtr;
     Tcl_Obj *listPtr, *objPtr;
-    register const char *arg, *p;
+    register const char *arg;
     int length;
 
     if (objc != 3) {
@@ -3087,21 +3087,17 @@ NamespaceCodeCmd(
 
     /*
      * If "arg" is already a scoped value, then return it directly.
+     * Take care to only check for scoping in precisely the style that
+     * [::namespace code] generates it.  Anything more forgiving can have
+     * the effect of failing in namespaces that contain their own custom
+     " "namespace" command.  [Bug 3202171].
      */
 
     arg = TclGetStringFromObj(objv[2], &length);
-    while (*arg == ':') {
-	arg++;
-	length--;
-    }
-    if (*arg=='n' && length>17 && strncmp(arg, "namespace", 9)==0) {
-	for (p=arg+9 ; isspace(UCHAR(*p)) ; p++) {
-	    /* empty body: skip over whitespace */
-	}
-	if (*p=='i' && (p+7 <= arg+length) && strncmp(p, "inscope", 7)==0) {
-	    Tcl_SetObjResult(interp, objv[2]);
-	    return TCL_OK;
-	}
+    if (*arg==':' && length > 20 
+	    && strncmp(arg, "::namespace inscope ", 20) == 0) {
+	Tcl_SetObjResult(interp, objv[2]);
+	return TCL_OK;
     }
 
     /*
