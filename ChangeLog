@@ -1,5 +1,10 @@
 2011-03-09  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclNamesp.c:	Tighten the detector of nested [namespace code]
+	* tests/namespace.test:	quoting that the quoted scripts function
+	properly even in a namespace that contains a custom "namespace"
+	command.  [Bug 3202171]
+
 	* doc/tclvars.n:	Formatting fix.  Thanks to Pat Thotys.
 
 2011-03-08  Jan Nijtmans  <nijtmans@users.sf.net>
