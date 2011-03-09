@@ -363,7 +363,7 @@ binary number.
 .RE
 .PP
 .RS
-If \Btcl_precision\fB is not zero, then when Tcl converts a floating
+If \fBtcl_precision\fR is not zero, then when Tcl converts a floating
 point number, it creates a decimal representation of at most 
 \fBtcl_precision\fR significant digits; the result may be shorter if
 the shorter result represents the original number exactly. If no
@@ -372,7 +372,7 @@ of the original number, the one that is closest to the original
 number is chosen.
 If the original number lies precisely between two equally accurate
 decimal representations, then the one with an even value for the least
-significant digit is chosen; for instance, if tcl_precision is 3, then
+significant digit is chosen; for instance, if \fBtcl_precision\fR is 3, then
 0.3125 will convert to 0.312, not 0.313, while 0.6875 will convert to
 0.688, not 0.687. Any string of trailing zeroes that remains is trimmed.
 .RE
@@ -396,7 +396,7 @@ variable.
 .RE
 .PP
 .RS
-Valid values for \Btcl_precision\fR range from 0 to 17.
+Valid values for \fBtcl_precision\fR range from 0 to 17.
 .RE
 .TP
 \fBtcl_rcFileName\fR
