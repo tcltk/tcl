@@ -3211,7 +3211,8 @@ TclCompileLsetCmd(
  * TclCompileNamespaceCmd --
  *
  *	Procedure called to compile the "namespace" command; currently, only
- *	the subcommand "namespace upvar" is compiled to bytecodes.
+ *	the subcommand "namespace upvar" is compiled to bytecodes, and then
+ *	only inside a procedure(-like) context.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
@@ -3225,7 +3226,7 @@ TclCompileLsetCmd(
  */
 
 int
-TclCompileNamespaceCmd(
+TclCompileNamespaceUpvarCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
@@ -3242,21 +3243,11 @@ TclCompileNamespaceCmd(
     }
 
     /*
-     * Only compile [namespace upvar ...]: needs an odd number of args, >=5
+     * Only compile [namespace upvar ...]: needs an even number of args, >=4
      */
 
     numWords = parsePtr->numWords;
-    if (!(numWords%2) || (numWords < 5)) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Check if the second argument is "upvar"
-     */
-
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if ((tokenPtr->size != 5)  /* 5 == strlen("upvar") */
-	    || strncmp(tokenPtr->start, "upvar", 5)) {
+    if ((numWords % 2) || (numWords < 4)) {
 	return TCL_ERROR;
     }
 
@@ -3264,7 +3255,7 @@ TclCompileNamespaceCmd(
      * Push the namespace
      */
 
-    tokenPtr = TokenAfter(tokenPtr);
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 1);
 
     /*
@@ -3274,7 +3265,7 @@ TclCompileNamespaceCmd(
      */
 
     localTokenPtr = tokenPtr;
-    for (i=4; i<=numWords; i+=2) {
+    for (i=3; i<=numWords; i+=2) {
 	otherTokenPtr = TokenAfter(localTokenPtr);
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
