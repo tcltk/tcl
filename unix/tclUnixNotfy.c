@@ -1043,7 +1043,7 @@ NotifierThreadProc(
 		    found = 1;
 		}
 		if (FD_ISSET(i, &tsdPtr->checkMasks.exception)
-			&& FD_ISSET(i, &exceptionalMask)) {
+			&& FD_ISSET(i, &exceptionMask)) {
 		    FD_SET(i, &tsdPtr->readyMasks.exception);
 		    found = 1;
 		}
