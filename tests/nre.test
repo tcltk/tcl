@@ -161,7 +161,7 @@ test nre-5.1 {[namespace eval] is not recursive} -setup {
     namespace delete ::foo
 } -constraints {
     testnrelevels
-} -result {{0 2 2 2} 0}
+} -result {{0 3 2 2} 0}
 
 test nre-5.2 {[namespace eval] is not recursive} -setup {
     namespace eval ::foo {
@@ -174,7 +174,7 @@ test nre-5.2 {[namespace eval] is not recursive} -setup {
     namespace delete ::foo
 } -constraints {
     testnrelevels
-} -result {{0 2 2 2} 0}
+} -result {{0 3 2 2} 0}
 
 test nre-6.1 {[uplevel] is not recursive} -setup {
     proc a i [makebody {uplevel 1 [list a $i]}]
