@@ -85,7 +85,7 @@ static void		FileProc(ClientData clientData, int *source,
 static void		NotifierExitHandler(ClientData clientData);
 static void		TimerProc(ClientData clientData, XtIntervalId *id);
 static void		CreateFileHandler(int fd, int mask,
-				Tcl_FileProc * proc, ClientData clientData);
+			    Tcl_FileProc *proc, ClientData clientData);
 static void		DeleteFileHandler(int fd);
 static void		SetTimer(CONST86 Tcl_Time * timePtr);
 static int		WaitForEvent(CONST86 Tcl_Time * timePtr);
@@ -358,7 +358,7 @@ CreateFileHandler(
 	}
     }
     if (filePtr == NULL) {
-	filePtr = (FileHandler*) ckalloc(sizeof(FileHandler));
+	filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->read = 0;
 	filePtr->write = 0;

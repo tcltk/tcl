@@ -47,7 +47,7 @@
 #ifndef NO_FSTATFS
 #include <sys/statfs.h>
 #endif
-#endif
+#endif /* !HAVE_STRUCT_STAT_ST_BLKSIZE */
 #ifdef HAVE_FTS
 #include <fts.h>
 #endif
@@ -112,7 +112,7 @@ typedef int (TraversalProc)(Tcl_DString *srcPtr, Tcl_DString *dstPtr,
 extern TclFileAttrProcs tclpFileAttrProcs[];
 extern const char *const tclpFileAttrStrings[];
 
-#else
+#else /* !DJGPP */
 enum {
     UNIX_GROUP_ATTRIBUTE, UNIX_OWNER_ATTRIBUTE, UNIX_PERMISSIONS_ATTRIBUTE,
 #if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
@@ -152,7 +152,7 @@ const TclFileAttrProcs tclpFileAttrProcs[] = {
     {TclMacOSXGetFileAttribute,	TclMacOSXSetFileAttribute},
 #endif
 };
-#endif
+#endif /* DJGPP */
 
 /*
  * This is the maximum number of consecutive readdir/unlink calls that can be
@@ -183,11 +183,13 @@ static int		DoRemoveDirectory(Tcl_DString *pathPtr,
 			    int recursive, Tcl_DString *errorPtr);
 static int		DoRenameFile(const char *src, const char *dst);
 static int		TraversalCopy(Tcl_DString *srcPtr,
-			    Tcl_DString *dstPtr, const Tcl_StatBuf *statBufPtr,
-			    int type, Tcl_DString *errorPtr);
+			    Tcl_DString *dstPtr,
+			    const Tcl_StatBuf *statBufPtr, int type,
+			    Tcl_DString *errorPtr);
 static int		TraversalDelete(Tcl_DString *srcPtr,
-			    Tcl_DString *dstPtr, const Tcl_StatBuf *statBufPtr,
-			    int type, Tcl_DString *errorPtr);
+			    Tcl_DString *dstPtr,
+			    const Tcl_StatBuf *statBufPtr, int type,
+			    Tcl_DString *errorPtr);
 static int		TraverseUnixTree(TraversalProc *traversalProc,
 			    Tcl_DString *sourcePtr, Tcl_DString *destPtr,
 			    Tcl_DString *errorPtr, int doRewind);
@@ -211,8 +213,8 @@ Realpath(
     return realpath(path, resolved);
 }
 #else
-#define Realpath realpath
-#endif
+#   define Realpath	realpath
+#endif /* PURIFY */
 
 #ifndef NO_REALPATH
 #if defined(__APPLE__) && defined(TCL_THREADS) && \
@@ -225,16 +227,16 @@ Realpath(
  */
 
 MODULE_SCOPE long tclMacOSXDarwinRelease;
-#define haveRealpath (tclMacOSXDarwinRelease >= 7)
+#   define haveRealpath	(tclMacOSXDarwinRelease >= 7)
 #else
-#define haveRealpath 1
+#   define haveRealpath	1
 #endif
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
 #ifdef HAVE_STRUCT_STAT64
 /* fts doesn't do stat64 */
-#define noFtsStat 1
+#   define noFtsStat	1
 #elif defined(__APPLE__) && defined(__LP64__) && \
 	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
 	MAC_OS_X_VERSION_MIN_REQUIRED < 1050
@@ -245,9 +247,9 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
  */
 
 MODULE_SCOPE long tclMacOSXDarwinRelease;
-#define noFtsStat (tclMacOSXDarwinRelease < 9)
+#   define noFtsStat	(tclMacOSXDarwinRelease < 9)
 #else
-#define noFtsStat 0
+#   define noFtsStat	0
 #endif
 #endif /* HAVE_FTS */
 
@@ -467,7 +469,7 @@ DoCopyFile(
 #endif
 	break;
     }
-#endif
+#endif /* !DJGPP */
     case S_IFBLK:
     case S_IFCHR:
 	if (mknod(dst, statBufPtr->st_mode,		/* INTL: Native. */
@@ -521,7 +523,7 @@ TclUnixCopyFile(
 #define BINMODE |O_BINARY
 #else
 #define BINMODE
-#endif
+#endif /* DJGPP */
 
 #define DEFAULT_COPY_BLOCK_SIZE 4069
 
@@ -1037,7 +1039,7 @@ TraverseUnixTree(
     }
 #else /* HAVE_FTS */
     paths[0] = source;
-    fts = fts_open((char**)paths, FTS_PHYSICAL | FTS_NOCHDIR |
+    fts = fts_open((char **) paths, FTS_PHYSICAL | FTS_NOCHDIR |
 	    (noFtsStat || doRewind ? FTS_NOSTAT : 0), NULL);
     if (fts == NULL) {
 	errfile = source;
@@ -1096,7 +1098,7 @@ TraverseUnixTree(
 	    Tcl_DStringSetLength(targetPtr, targetLen);
 	}
     }
-#endif /* HAVE_FTS */
+#endif /* !HAVE_FTS */
 
   end:
     if (errfile != NULL) {
