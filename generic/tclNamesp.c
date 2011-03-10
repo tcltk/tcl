@@ -103,6 +103,8 @@ static int		NamespaceDeleteCmd(ClientData dummy,Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceEvalCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		NRNamespaceEvalCmd(ClientData dummy,
+                            Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceExistsCmd(ClientData dummy,Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceExportCmd(ClientData dummy,Tcl_Interp *interp,
@@ -113,6 +115,8 @@ static void		NamespaceFree(Namespace *nsPtr);
 static int		NamespaceImportCmd(ClientData dummy,Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceInscopeCmd(ClientData dummy,
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+static int		NRNamespaceInscopeCmd(ClientData dummy,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceOriginCmd(ClientData dummy,Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -127,8 +131,7 @@ static int		NamespaceTailCmd(ClientData dummy, Tcl_Interp *interp,
 static int		NamespaceUpvarCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceUnknownCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceWhichCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		SetNsNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -149,6 +152,34 @@ static const Tcl_ObjType nsNameType = {
     DupNsNameInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
     SetNsNameFromAny		/* setFromAnyProc */
+};
+
+/*
+ * Array of values describing how to implement each standard subcommand of the
+ * "namespace" command.
+ */
+
+static const EnsembleImplMap defaultNamespaceMap[] = {
+    {"children",        NamespaceChildrenCmd},
+    {"code",            NamespaceCodeCmd},
+    {"current",         NamespaceCurrentCmd},
+    {"delete",          NamespaceDeleteCmd},
+    {"ensemble",        TclNamespaceEnsembleCmd},
+    {"eval",            NamespaceEvalCmd,       NULL, NRNamespaceEvalCmd},
+    {"exists",          NamespaceExistsCmd},
+    {"export",          NamespaceExportCmd},
+    {"forget",          NamespaceForgetCmd},
+    {"import",          NamespaceImportCmd},
+    {"inscope",         NamespaceInscopeCmd,    NULL, NRNamespaceInscopeCmd},
+    {"origin",          NamespaceOriginCmd},
+    {"parent",          NamespaceParentCmd},
+    {"path",            NamespacePathCmd},
+    {"qualifiers",      NamespaceQualifiersCmd},
+    {"tail",            NamespaceTailCmd},
+    {"unknown",         NamespaceUnknownCmd},
+    {"upvar",           NamespaceUpvarCmd,      TclCompileNamespaceUpvarCmd},
+    {"which",           NamespaceWhichCmd},
+    {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /*
@@ -2742,7 +2773,7 @@ TclGetNamespaceFromObj(
 	     * Get the current namespace name.
 	     */
 
-	    NamespaceCurrentCmd(NULL, interp, 2, NULL);
+	    NamespaceCurrentCmd(NULL, interp, 1, NULL);
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "namespace \"%s\" not found in \"%s\"", name,
 		    Tcl_GetStringResult(interp)));
@@ -2790,132 +2821,25 @@ GetNamespaceFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_NamespaceObjCmd --
+ * TclInitNamespaceCmd --
  *
- *	Invoked to implement the "namespace" command that creates, deletes, or
- *	manipulates Tcl namespaces. Handles the following syntax:
- *
- *	    namespace children ?name? ?pattern?
- *	    namespace code arg
- *	    namespace current
- *	    namespace delete ?name name...?
- *	    namespace ensemble subcommand ?arg...?
- *	    namespace eval name arg ?arg...?
- *	    namespace exists name
- *	    namespace export ?-clear? ?pattern pattern...?
- *	    namespace forget ?pattern pattern...?
- *	    namespace import ?-force? ?pattern pattern...?
- *	    namespace inscope name arg ?arg...?
- *	    namespace origin name
- *	    namespace parent ?name?
- *	    namespace qualifiers string
- *	    namespace tail string
- *	    namespace which ?-command? ?-variable? name
+ *	This function is called to create the "namespace" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  * Results:
- *	Returns TCL_OK if the command is successful. Returns TCL_ERROR if
- *	anything goes wrong.
+ *	Handle for the namespace command, or NULL on failure.
  *
  * Side effects:
- *	Based on the subcommand name (e.g., "import"), this function
- *	dispatches to a corresponding function NamespaceXXXCmd defined
- *	statically in this file. This function's side effects depend on
- *	whatever that subcommand function does. If there is an error, this
- *	function returns an error message in the interpreter's result object.
- *	Otherwise it may return a result in the interpreter's result object.
+ *	none
  *
  *----------------------------------------------------------------------
  */
 
-int
-Tcl_NamespaceObjCmd(
-    ClientData clientData,	/* Arbitrary value passed to cmd. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+Tcl_Command
+TclInitNamespaceCmd(
+    Tcl_Interp *interp)		/* Current interpreter. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRNamespaceObjCmd, clientData, objc,
-	    objv);
-}
-
-int
-TclNRNamespaceObjCmd(
-    ClientData clientData,	/* Arbitrary value passed to cmd. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    static const char *const subCmds[] = {
-	"children", "code", "current", "delete", "ensemble",
-	"eval", "exists", "export", "forget", "import",
-	"inscope", "origin", "parent", "path", "qualifiers",
-	"tail", "unknown", "upvar", "which", NULL
-    };
-    enum NSSubCmdIdx {
-	NSChildrenIdx, NSCodeIdx, NSCurrentIdx, NSDeleteIdx, NSEnsembleIdx,
-	NSEvalIdx, NSExistsIdx, NSExportIdx, NSForgetIdx, NSImportIdx,
-	NSInscopeIdx, NSOriginIdx, NSParentIdx, NSPathIdx, NSQualifiersIdx,
-	NSTailIdx, NSUnknownIdx, NSUpvarIdx, NSWhichIdx
-    };
-    int index;
-
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
-	return TCL_ERROR;
-    }
-
-    /*
-     * Return an index reflecting the particular subcommand.
-     */
-
-    if (Tcl_GetIndexFromObj(interp, objv[1], subCmds, "option", /*flags*/ 0,
-	    (int *) &index) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    switch (index) {
-    case NSChildrenIdx:
-	return NamespaceChildrenCmd(clientData, interp, objc, objv);
-    case NSCodeIdx:
-	return NamespaceCodeCmd(clientData, interp, objc, objv);
-    case NSCurrentIdx:
-	return NamespaceCurrentCmd(clientData, interp, objc, objv);
-    case NSDeleteIdx:
-	return NamespaceDeleteCmd(clientData, interp, objc, objv);
-    case NSEnsembleIdx:
-	return TclNamespaceEnsembleCmd(clientData, interp, objc, objv);
-    case NSEvalIdx:
-	return NamespaceEvalCmd(clientData, interp, objc, objv);
-    case NSExistsIdx:
-	return NamespaceExistsCmd(clientData, interp, objc, objv);
-    case NSExportIdx:
-	return NamespaceExportCmd(clientData, interp, objc, objv);
-    case NSForgetIdx:
-	return NamespaceForgetCmd(clientData, interp, objc, objv);
-    case NSImportIdx:
-	return NamespaceImportCmd(clientData, interp, objc, objv);
-    case NSInscopeIdx:
-	return NamespaceInscopeCmd(clientData, interp, objc, objv);
-    case NSOriginIdx:
-	return NamespaceOriginCmd(clientData, interp, objc, objv);
-    case NSParentIdx:
-	return NamespaceParentCmd(clientData, interp, objc, objv);
-    case NSPathIdx:
-	return NamespacePathCmd(clientData, interp, objc, objv);
-    case NSQualifiersIdx:
-	return NamespaceQualifiersCmd(clientData, interp, objc, objv);
-    case NSTailIdx:
-	return NamespaceTailCmd(clientData, interp, objc, objv);
-    case NSUpvarIdx:
-	return NamespaceUpvarCmd(clientData, interp, objc, objv);
-    case NSUnknownIdx:
-	return NamespaceUnknownCmd(clientData, interp, objc, objv);
-    case NSWhichIdx:
-	return NamespaceWhichCmd(clientData, interp, objc, objv);
-    default:
-	Tcl_Panic("unhandled namespace subcommand");
-    }
-    return TCL_ERROR;
+    return TclMakeEnsemble(interp, "namespace", defaultNamespaceMap);
 }
 
 /*
@@ -2959,15 +2883,15 @@ NamespaceChildrenCmd(
      * Get a pointer to the specified namespace, or the current namespace.
      */
 
-    if (objc == 2) {
+    if (objc == 1) {
 	nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-    } else if ((objc == 3) || (objc == 4)) {
-	if (TclGetNamespaceFromObj(interp, objv[2], &namespacePtr) != TCL_OK){
+    } else if ((objc == 2) || (objc == 3)) {
+	if (TclGetNamespaceFromObj(interp, objv[1], &namespacePtr) != TCL_OK){
 	    return TCL_ERROR;
 	}
 	nsPtr = (Namespace *) namespacePtr;
     } else {
-	Tcl_WrongNumArgs(interp, 2, objv, "?name? ?pattern?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?name? ?pattern?");
 	return TCL_ERROR;
     }
 
@@ -2976,8 +2900,8 @@ NamespaceChildrenCmd(
      */
 
     Tcl_DStringInit(&buffer);
-    if (objc == 4) {
-	const char *name = TclGetString(objv[3]);
+    if (objc == 3) {
+	const char *name = TclGetString(objv[2]);
 
 	if ((*name == ':') && (*(name+1) == ':')) {
 	    pattern = name;
@@ -3080,8 +3004,8 @@ NamespaceCodeCmd(
     register const char *arg;
     int length;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "arg");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "arg");
 	return TCL_ERROR;
     }
 
@@ -3093,10 +3017,10 @@ NamespaceCodeCmd(
      " "namespace" command.  [Bug 3202171].
      */
 
-    arg = TclGetStringFromObj(objv[2], &length);
+    arg = TclGetStringFromObj(objv[1], &length);
     if (*arg==':' && length > 20 
 	    && strncmp(arg, "::namespace inscope ", 20) == 0) {
-	Tcl_SetObjResult(interp, objv[2]);
+	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     }
 
@@ -3122,7 +3046,7 @@ NamespaceCodeCmd(
     }
     Tcl_ListObjAppendElement(interp, listPtr, objPtr);
 
-    Tcl_ListObjAppendElement(interp, listPtr, objv[2]);
+    Tcl_ListObjAppendElement(interp, listPtr, objv[1]);
 
     Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
@@ -3158,8 +3082,8 @@ NamespaceCurrentCmd(
 {
     register Namespace *currNsPtr;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, NULL);
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
 
@@ -3223,8 +3147,8 @@ NamespaceDeleteCmd(
     const char *name;
     register int i;
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?name name...?");
+    if (objc < 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?name name...?");
 	return TCL_ERROR;
     }
 
@@ -3234,7 +3158,7 @@ NamespaceDeleteCmd(
      * command line are valid, and report any errors.
      */
 
-    for (i = 2;  i < objc;  i++) {
+    for (i = 1;  i < objc;  i++) {
 	name = TclGetString(objv[i]);
 	namespacePtr = Tcl_FindNamespace(interp, name, NULL, /*flags*/ 0);
 	if ((namespacePtr == NULL)
@@ -3252,7 +3176,7 @@ NamespaceDeleteCmd(
      * Okay, now delete each namespace.
      */
 
-    for (i = 2;  i < objc;  i++) {
+    for (i = 1;  i < objc;  i++) {
 	name = TclGetString(objv[i]);
 	namespacePtr = Tcl_FindNamespace(interp, name, NULL, /* flags */ 0);
 	if (namespacePtr) {
@@ -3291,6 +3215,17 @@ NamespaceDeleteCmd(
 
 static int
 NamespaceEvalCmd(
+    ClientData clientData,	/* Arbitrary value passed to cmd. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, NRNamespaceEvalCmd, clientData, objc,
+	    objv);
+}
+
+static int
+NRNamespaceEvalCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -3304,8 +3239,8 @@ NamespaceEvalCmd(
     Tcl_Obj *objPtr;
     int result;
 
-    if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "name arg ?arg...?");
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name arg ?arg...?");
 	return TCL_ERROR;
     }
 
@@ -3314,14 +3249,14 @@ NamespaceEvalCmd(
      * namespace object along the way.
      */
 
-    result = GetNamespaceFromObj(interp, objv[2], &namespacePtr);
+    result = GetNamespaceFromObj(interp, objv[1], &namespacePtr);
 
     /*
      * If the namespace wasn't found, try to create it.
      */
 
     if (result == TCL_ERROR) {
-	const char *name = TclGetString(objv[2]);
+	const char *name = TclGetString(objv[1]);
 
 	namespacePtr = Tcl_CreateNamespace(interp, name, NULL, NULL);
 	if (namespacePtr == NULL) {
@@ -3342,15 +3277,21 @@ NamespaceEvalCmd(
 	return TCL_ERROR;
     }
 
-    framePtr->objc = objc;
-    framePtr->objv = objv;
+    if (iPtr->ensembleRewrite.sourceObjs == NULL) {
+        framePtr->objc = objc;
+        framePtr->objv = objv;
+    } else {
+        framePtr->objc = objc + iPtr->ensembleRewrite.numRemovedObjs
+                - iPtr->ensembleRewrite.numInsertedObjs;
+        framePtr->objv = iPtr->ensembleRewrite.sourceObjs;
+    }
 
-    if (objc == 4) {
+    if (objc == 3) {
 	/*
 	 * TIP #280: Make actual argument location available to eval'd script.
 	 */
 
-	objPtr = objv[3];
+	objPtr = objv[2];
 	invoker = iPtr->cmdFramePtr;
 	word = 3;
 	TclArgumentGet(interp, objPtr, &invoker, &word);
@@ -3361,7 +3302,7 @@ NamespaceEvalCmd(
 	 * object when it decrements its refcount after eval'ing it.
 	 */
 
-	objPtr = Tcl_ConcatObj(objc-3, objv+3);
+	objPtr = Tcl_ConcatObj(objc-2, objv+2);
 	invoker = NULL;
 	word = 0;
     }
@@ -3434,13 +3375,13 @@ NamespaceExistsCmd(
 {
     Tcl_Namespace *namespacePtr;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "name");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
 
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-	    GetNamespaceFromObj(interp, objv[2], &namespacePtr) == TCL_OK));
+	    GetNamespaceFromObj(interp, objv[1], &namespacePtr) == TCL_OK));
     return TCL_OK;
 }
 
@@ -3492,8 +3433,8 @@ NamespaceExportCmd(
     int resetListFirst = 0;
     int firstArg, patternCt, i, result;
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?-clear? ?pattern pattern...?");
+    if (objc < 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-clear? ?pattern pattern...?");
 	return TCL_ERROR;
     }
 
@@ -3501,7 +3442,7 @@ NamespaceExportCmd(
      * Process the optional "-clear" argument.
      */
 
-    firstArg = 2;
+    firstArg = 1;
     if (firstArg < objc) {
 	string = TclGetString(objv[firstArg]);
 	if (strcmp(string, "-clear") == 0) {
@@ -3515,9 +3456,9 @@ NamespaceExportCmd(
      * the namespace's current export pattern list.
      */
 
-    patternCt = (objc - firstArg);
+    patternCt = objc - firstArg;
     if (patternCt == 0) {
-	if (firstArg > 2) {
+	if (firstArg > 1) {
 	    return TCL_OK;
 	} else {
 	    /*
@@ -3591,12 +3532,12 @@ NamespaceForgetCmd(
     const char *pattern;
     register int i, result;
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?pattern pattern...?");
+    if (objc < 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?pattern pattern...?");
 	return TCL_ERROR;
     }
 
-    for (i = 2;  i < objc;  i++) {
+    for (i = 1;  i < objc;  i++) {
 	pattern = TclGetString(objv[i]);
 	result = Tcl_ForgetImport(interp, NULL, pattern);
 	if (result != TCL_OK) {
@@ -3658,8 +3599,8 @@ NamespaceImportCmd(
     register int i, result;
     int firstArg;
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?-force? ?pattern pattern...?");
+    if (objc < 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-force? ?pattern pattern...?");
 	return TCL_ERROR;
     }
 
@@ -3667,7 +3608,7 @@ NamespaceImportCmd(
      * Skip over the optional "-force" as the first argument.
      */
 
-    firstArg = 2;
+    firstArg = 1;
     if (firstArg < objc) {
 	string = TclGetString(objv[firstArg]);
 	if ((*string == '-') && (strcmp(string, "-force") == 0)) {
@@ -3676,7 +3617,7 @@ NamespaceImportCmd(
 	}
     } else {
 	/*
-	 * When objc == 2, command is just [namespace import]. Introspection
+	 * When objc == 1, command is just [namespace import]. Introspection
 	 * form to return list of imported commands.
 	 */
 
@@ -3752,6 +3693,17 @@ NamespaceImportCmd(
 
 static int
 NamespaceInscopeCmd(
+    ClientData clientData,	/* Arbitrary value passed to cmd. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, NRNamespaceInscopeCmd, clientData, objc,
+	    objv);
+}
+
+static int
+NRNamespaceInscopeCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -3759,11 +3711,12 @@ NamespaceInscopeCmd(
 {
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
+    register Interp *iPtr = (Interp *) interp;
     int i, result;
     Tcl_Obj *cmdObjPtr;
 
-    if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "name arg ?arg...?");
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name arg ?arg...?");
 	return TCL_ERROR;
     }
 
@@ -3771,7 +3724,7 @@ NamespaceInscopeCmd(
      * Resolve the namespace reference.
      */
 
-    if (TclGetNamespaceFromObj(interp, objv[2], &namespacePtr) != TCL_OK) {
+    if (TclGetNamespaceFromObj(interp, objv[1], &namespacePtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3787,8 +3740,14 @@ NamespaceInscopeCmd(
 	return result;
     }
 
-    framePtr->objc = objc;
-    framePtr->objv = objv;
+    if (iPtr->ensembleRewrite.sourceObjs == NULL) {
+        framePtr->objc = objc;
+        framePtr->objv = objv;
+    } else {
+        framePtr->objc = objc + iPtr->ensembleRewrite.numRemovedObjs
+                - iPtr->ensembleRewrite.numInsertedObjs;
+        framePtr->objv = iPtr->ensembleRewrite.sourceObjs;
+    }
 
     /*
      * Execute the command. If there is just one argument, just treat it as a
@@ -3797,21 +3756,21 @@ NamespaceInscopeCmd(
      * of extra arguments to form the command to evaluate.
      */
 
-    if (objc == 4) {
-	cmdObjPtr = objv[3];
+    if (objc == 3) {
+	cmdObjPtr = objv[2];
     } else {
 	Tcl_Obj *concatObjv[2];
 	register Tcl_Obj *listPtr;
 
 	listPtr = Tcl_NewListObj(0, NULL);
-	for (i = 4;  i < objc;  i++) {
+	for (i = 3;  i < objc;  i++) {
 	    if (Tcl_ListObjAppendElement(interp, listPtr, objv[i]) != TCL_OK){
 		Tcl_DecrRefCount(listPtr);	/* Free unneeded obj. */
 		return TCL_ERROR;
 	    }
 	}
 
-	concatObjv[0] = objv[3];
+	concatObjv[0] = objv[2];
 	concatObjv[1] = listPtr;
 	cmdObjPtr = Tcl_ConcatObj(2, concatObjv);
 	Tcl_DecrRefCount(listPtr);    /* We're done with the list object. */
@@ -3861,17 +3820,17 @@ NamespaceOriginCmd(
     Tcl_Command command, origCommand;
     Tcl_Obj *resultPtr;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "name");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
 
-    command = Tcl_GetCommandFromObj(interp, objv[2]);
+    command = Tcl_GetCommandFromObj(interp, objv[1]);
     if (command == NULL) {
 	Tcl_AppendResult(interp, "invalid command name \"",
-		TclGetString(objv[2]), "\"", NULL);
+		TclGetString(objv[1]), "\"", NULL);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
-		TclGetString(objv[2]), NULL);
+		TclGetString(objv[1]), NULL);
 	return TCL_ERROR;
     }
     origCommand = TclGetOriginalCommand(command);
@@ -3921,14 +3880,14 @@ NamespaceParentCmd(
 {
     Tcl_Namespace *nsPtr;
 
-    if (objc == 2) {
+    if (objc == 1) {
 	nsPtr = TclGetCurrentNamespace(interp);
-    } else if (objc == 3) {
-	if (TclGetNamespaceFromObj(interp, objv[2], &nsPtr) != TCL_OK) {
+    } else if (objc == 2) {
+	if (TclGetNamespaceFromObj(interp, objv[1], &nsPtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     } else {
-	Tcl_WrongNumArgs(interp, 2, objv, "?name?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?name?");
 	return TCL_ERROR;
     }
 
@@ -3982,8 +3941,8 @@ NamespacePathCmd(
     Tcl_Obj **nsObjv;
     Tcl_Namespace **namespaceList = NULL;
 
-    if (objc > 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?pathList?");
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?pathList?");
 	return TCL_ERROR;
     }
 
@@ -3991,7 +3950,7 @@ NamespacePathCmd(
      * If no path is given, return the current path.
      */
 
-    if (objc == 2) {
+    if (objc == 1) {
 	/*
 	 * Not a very fast way to compute this, but easy to get right.
 	 */
@@ -4009,7 +3968,7 @@ NamespacePathCmd(
      * There is a path given, so parse it into an array of namespace pointers.
      */
 
-    if (TclListObjGetElements(interp, objv[2], &nsObjc, &nsObjv) != TCL_OK) {
+    if (TclListObjGetElements(interp, objv[1], &nsObjc, &nsObjv) != TCL_OK) {
 	goto badNamespace;
     }
     if (nsObjc != 0) {
@@ -4206,8 +4165,8 @@ NamespaceQualifiersCmd(
     register const char *name, *p;
     int length;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "string");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string");
 	return TCL_ERROR;
     }
 
@@ -4216,7 +4175,7 @@ NamespaceQualifiersCmd(
      * the last "::" qualifier.
      */
 
-    name = TclGetString(objv[2]);
+    name = TclGetString(objv[1]);
     for (p = name;  *p != '\0';  p++) {
 	/* empty body */
     }
@@ -4275,14 +4234,14 @@ NamespaceUnknownCmd(
     Tcl_Obj *resultPtr;
     int rc;
 
-    if (objc > 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?script?");
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?script?");
 	return TCL_ERROR;
     }
 
     currNsPtr = TclGetCurrentNamespace(interp);
 
-    if (objc == 2) {
+    if (objc == 1) {
 	/*
 	 * Introspection - return the current namespace handler.
 	 */
@@ -4293,9 +4252,9 @@ NamespaceUnknownCmd(
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
-	rc = Tcl_SetNamespaceUnknownHandler(interp, currNsPtr, objv[2]);
+	rc = Tcl_SetNamespaceUnknownHandler(interp, currNsPtr, objv[1]);
 	if (rc == TCL_OK) {
-	    Tcl_SetObjResult(interp, objv[2]);
+	    Tcl_SetObjResult(interp, objv[1]);
 	}
 	return rc;
     }
@@ -4460,8 +4419,8 @@ NamespaceTailCmd(
 {
     register const char *name, *p;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "string");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string");
 	return TCL_ERROR;
     }
 
@@ -4470,7 +4429,7 @@ NamespaceTailCmd(
      * qualifier.
      */
 
-    name = TclGetString(objv[2]);
+    name = TclGetString(objv[1]);
     for (p = name;  *p != '\0';  p++) {
 	/* empty body */
     }
@@ -4521,17 +4480,17 @@ NamespaceUpvarCmd(
     Var *otherPtr, *arrayPtr;
     const char *myName;
 
-    if (objc < 3 || !(objc & 1)) {
-	Tcl_WrongNumArgs(interp, 2, objv, "ns ?otherVar myVar ...?");
+    if (objc < 2 || (objc & 1)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "ns ?otherVar myVar ...?");
 	return TCL_ERROR;
     }
 
-    if (TclGetNamespaceFromObj(interp, objv[2], &nsPtr) != TCL_OK) {
+    if (TclGetNamespaceFromObj(interp, objv[1], &nsPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    objc -= 3;
-    objv += 3;
+    objc -= 2;
+    objv += 2;
 
     for (; objc>0 ; objc-=2, objv+=2) {
 	/*
@@ -4596,16 +4555,16 @@ NamespaceWhichCmd(
     int lookupType = 0;
     Tcl_Obj *resultPtr;
 
-    if (objc < 3 || objc > 4) {
+    if (objc < 2 || objc > 3) {
     badArgs:
-	Tcl_WrongNumArgs(interp, 2, objv, "?-command? ?-variable? name");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-command? ?-variable? name");
 	return TCL_ERROR;
-    } else if (objc == 4) {
+    } else if (objc == 3) {
 	/*
 	 * Look for a flag controlling the lookup.
 	 */
 
-	if (Tcl_GetIndexFromObj(interp, objv[2], opts, "option", 0,
+	if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
 		&lookupType) != TCL_OK) {
 	    /*
 	     * Preserve old style of error message!
