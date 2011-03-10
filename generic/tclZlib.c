@@ -122,30 +122,30 @@ typedef struct {
  * Prototypes for private procedures defined later in this file:
  */
 
-static Tcl_CmdDeleteProc ZlibStreamCmdDelete;
-static Tcl_DriverBlockModeProc ZlibTransformBlockMode;
-static Tcl_DriverCloseProc ZlibTransformClose;
-static Tcl_DriverGetHandleProc ZlibTransformGetHandle;
-static Tcl_DriverGetOptionProc ZlibTransformGetOption;
-static Tcl_DriverHandlerProc ZlibTransformHandler;
-static Tcl_DriverInputProc ZlibTransformInput;
-static Tcl_DriverOutputProc ZlibTransformOutput;
-static Tcl_DriverSetOptionProc ZlibTransformSetOption;
-static Tcl_DriverWatchProc ZlibTransformWatch;
-static Tcl_ObjCmdProc ZlibCmd;
-static Tcl_ObjCmdProc ZlibStreamCmd;
+static Tcl_CmdDeleteProc	ZlibStreamCmdDelete;
+static Tcl_DriverBlockModeProc	ZlibTransformBlockMode;
+static Tcl_DriverCloseProc	ZlibTransformClose;
+static Tcl_DriverGetHandleProc	ZlibTransformGetHandle;
+static Tcl_DriverGetOptionProc	ZlibTransformGetOption;
+static Tcl_DriverHandlerProc	ZlibTransformHandler;
+static Tcl_DriverInputProc	ZlibTransformInput;
+static Tcl_DriverOutputProc	ZlibTransformOutput;
+static Tcl_DriverSetOptionProc	ZlibTransformSetOption;
+static Tcl_DriverWatchProc	ZlibTransformWatch;
+static Tcl_ObjCmdProc		ZlibCmd;
+static Tcl_ObjCmdProc		ZlibStreamCmd;
 
-static void ConvertError(Tcl_Interp *interp, int code);
-static void ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
-static int GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
-	GzipHeader *headerPtr, int *extraSizePtr);
-static Tcl_Channel ZlibStackChannelTransform(Tcl_Interp *interp,
-	int mode, int format, int level,
-	Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr);
-static void ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
-static void ZlibTransformTimerKill(ZlibChannelData *cd);
-static void ZlibTransformTimerRun(ClientData clientData);
-static void ZlibTransformTimerSetup(ZlibChannelData *cd);
+static void		ConvertError(Tcl_Interp *interp, int code);
+static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
+static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
+			    GzipHeader *headerPtr, int *extraSizePtr);
+static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
+			    int mode, int format, int level,
+			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr);
+static void		ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
+static void		ZlibTransformTimerKill(ZlibChannelData *cd);
+static void		ZlibTransformTimerRun(ClientData clientData);
+static void		ZlibTransformTimerSetup(ZlibChannelData *cd);
 
 /*
  * Type of zlib-based compressing and decompressing channels.

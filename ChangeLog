@@ -1,3 +1,14 @@
+2011-03-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclAlloc.c, generic/tclCmdMZ.c, generic/tclCompExpr.c:
+	* generic/tclCompile.c, generic/tclEnv.c, generic/tclEvent.c:
+	* generic/tclIO.c, generic/tclIOCmd.c, generic/tclIORChan.c:
+	* generic/tclIORTrans.c, generic/tclLiteral.c, generic/tclNotify.c:
+	* generic/tclParse.c, generic/tclStringObj.c, generic/tclUtil.c:
+	* generic/tclZlib.c, unix/tclUnixFCmd.c, unix/tclUnixNotfy.c:
+	* unix/tclUnixPort.h, unix/tclXtNotify.c: Formatting fixes, mainly to
+	comments, so code better fits the style in the Engineering Manual.
+
 2011-03-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/incr.test: Update more of the test suite to use Tcltest 2.
