@@ -18734,11 +18734,13 @@ cat >>conftest.$ac_ext <<_ACEOF
 
 	int StackGrowsUp(int *parent) {
 	    int here;
-	    return (&here < parent);
+	    if (parent)
+		return (&here < parent);
+	    else
+		return StackGrowsUp(&here);
 	}
 	int main (int argc, char *argv[]) {
-	    int foo;
-	    return StackGrowsUp(&foo);
+	    return StackGrowsUp(0);
 	}
 
 _ACEOF

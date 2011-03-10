@@ -1,3 +1,8 @@
+2011-03-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/configure.in  [Bug 3205320]: stack space detection defeated by inlining
+	* unix/configure:    (autoconf-2.59)
+
 2011-03-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclNamesp.c:	Tighten the detector of nested [namespace code]
