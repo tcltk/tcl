@@ -702,7 +702,7 @@ char *
 TclpAlloc(
     unsigned int numBytes)	/* Number of bytes to allocate. */
 {
-    return (char*) malloc(numBytes);
+    return (char *) malloc(numBytes);
 }
 
 /*
@@ -750,7 +750,7 @@ TclpRealloc(
     char *oldPtr,		/* Pointer to alloced block. */
     unsigned int numBytes)	/* New size of memory. */
 {
-    return (char*) realloc(oldPtr, numBytes);
+    return (char *) realloc(oldPtr, numBytes);
 }
 
 #endif /* !USE_TCLALLOC */
