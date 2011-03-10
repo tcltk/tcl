@@ -1952,6 +1952,7 @@ Tcl_DStringResult(
 				 * result of interp. */
 {
     Interp *iPtr = (Interp *) interp;
+
     Tcl_ResetResult(interp);
 
     if (dsPtr->string != dsPtr->staticSpace) {

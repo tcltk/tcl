@@ -136,9 +136,8 @@ TclCleanupLiteralTable(
 		    typePtr->freeIntRepProc(objPtr);
 		    didOne = 1;
 		    break;
-		} else {
-		    entryPtr = nextPtr;
 		}
+		entryPtr = nextPtr;
 	    }
 	} while (didOne);
     }

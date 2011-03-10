@@ -479,11 +479,11 @@ Tcl_ParseCommand(
 
 		if ((code != TCL_OK) || nakedbs) {
 		    /*
-		     * Some  list element  could not  be parsed,  or contained
-		     * naked  backslashes. This means  the literal  string was
-		     * not  in fact  a  valid nor  canonical  list. Defer  the
-		     * handling of  this to  compile/eval time, where  code is
-		     * already  in place to  report the  "attempt to  expand a
+		     * Some list element could not be parsed, or contained
+		     * naked backslashes. This means the literal string was
+		     * not in fact a valid nor canonical list. Defer the
+		     * handling of this to compile/eval time, where code is
+		     * already in place to report the "attempt to expand a
 		     * non-list" error or expand lists that require
 		     * substitution.
 		     */
@@ -1103,7 +1103,7 @@ ParseTokens(
 	    }
 
 	    /*
-	     * This is a variable reference.  Call Tcl_ParseVarName to do all
+	     * This is a variable reference. Call Tcl_ParseVarName to do all
 	     * the dirty work of parsing the name.
 	     */
 
@@ -1127,7 +1127,7 @@ ParseTokens(
 	    }
 
 	    /*
-	     * Command substitution.  Call Tcl_ParseCommand recursively (and
+	     * Command substitution. Call Tcl_ParseCommand recursively (and
 	     * repeatedly) to parse the nested command(s), then throw away the
 	     * parse information.
 	     */
@@ -1875,10 +1875,10 @@ Tcl_ParseQuotedString(
  *	None.
  *
  * Side effects:
-
  *	The Tcl_Parse struct '*parsePtr' is filled with parse results.
  *	The caller is expected to eventually call Tcl_FreeParse() to properly
  *	cleanup the value written there.
+ *
  *	If a parse error occurs, the Tcl_InterpState value '*statePtr' is
  *	filled with the state created by that error. When *statePtr is written
  *	to, the caller is expected to make the required calls to either
