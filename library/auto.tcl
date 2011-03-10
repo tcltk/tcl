@@ -304,7 +304,14 @@ namespace eval auto_mkindex_parser {
 	    $parser hide namespace
 	    $parser hide eval
 	    $parser hide puts
-	    $parser invokehidden namespace delete ::
+	    foreach ns [$parser invokehidden namespace children ::] {
+		# MUST NOT DELETE "::tcl" OR BAD THINGS HAPPEN!
+		if {$ns eq "::tcl"} continue
+		$parser invokehidden namespace delete $ns
+	    }
+	    foreach cmd [$parser invokehidden info commands ::*] {
+		$parser invokehidden rename $cmd {}
+	    }
 	    $parser invokehidden proc unknown {args} {}
 
 	    # We'll need access to the "namespace" command within the

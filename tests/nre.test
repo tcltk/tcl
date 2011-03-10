@@ -60,7 +60,7 @@ if {[testConstraint testnrelevels]} {
     }
     namespace import testnre::*
 }
-
+
 test nre-1.1 {self-recursive procs} -setup {
     proc a i [makebody {a $i}]
 } -body {
@@ -161,7 +161,7 @@ test nre-5.1 {[namespace eval] is not recursive} -setup {
     namespace delete ::foo
 } -constraints {
     testnrelevels
-} -result {{0 2 2 2} 0}
+} -result {{0 3 2 2} 0}
 
 test nre-5.2 {[namespace eval] is not recursive} -setup {
     namespace eval ::foo {
@@ -174,7 +174,7 @@ test nre-5.2 {[namespace eval] is not recursive} -setup {
     namespace delete ::foo
 } -constraints {
     testnrelevels
-} -result {{0 2 2 2} 0}
+} -result {{0 3 2 2} 0}
 
 test nre-6.1 {[uplevel] is not recursive} -setup {
     proc a i [makebody {uplevel 1 [list a $i]}]
@@ -411,23 +411,24 @@ test nre-oo.5 {really deep calls in oo - forwards} -setup {
 # NASTY BUG found by tcllib's interp package
 #
 
-test nre-X.1 {eval in wrong interp} {
+test nre-X.1 {eval in wrong interp} -setup {
     set i [interp create]
-    set res [$i eval {
+    $i eval {proc filter lst {lsearch -all -inline -not $lst "::tcl"}}
+} -body {
+    $i eval {
 	set x {namespace children ::}
 	set y [list namespace children ::]
-	namespace delete {*}[{*}$y]
+	namespace delete {*}[filter [{*}$y]]
 	set j [interp create]
-	$j eval {namespace delete {*}[namespace children ::]}
+	$j alias filter filter
+	$j eval {namespace delete {*}[filter [namespace children ::]]}
 	namespace eval foo {}
-	set res [list [eval $x] [eval $y] [$j eval $x] [$j eval $y]]
-	interp delete $j
-	set res
-    }]
+	list [filter [eval $x]] [filter [eval $y]] [filter [$j eval $x]] [filter [$j eval $y]]
+    }
+} -cleanup {
     interp delete $i
-    set res
-} {::foo ::foo {} {}}
-
+} -result {::foo ::foo {} {}}
+
 # cleanup
 ::tcltest::cleanupTests
 
@@ -437,3 +438,8 @@ if {[testConstraint testnrelevels]} {
 }
 
 return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

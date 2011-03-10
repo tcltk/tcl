@@ -237,7 +237,6 @@ static const CmdInfo builtInCmds[] = {
     {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	1},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	1},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	1},
-    {"namespace",	Tcl_NamespaceObjCmd,	TclCompileNamespaceCmd,	TclNRNamespaceObjCmd,	1},
     {"package",		Tcl_PackageObjCmd,	NULL,			NULL,	1},
     {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	1},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	1},
@@ -780,10 +779,10 @@ Tcl_CreateInterp(void)
     }
 
     /*
-     * Create the "array", "binary", "chan", "dict", "file", "info" and
-     * "string" ensembles. Note that all these commands (and their subcommands
-     * that are not present in the global namespace) are wholly safe *except*
-     * for "file".
+     * Create the "array", "binary", "chan", "dict", "file", "info",
+     * "namespace" and "string" ensembles. Note that all these commands (and
+     * their subcommands that are not present in the global namespace) are
+     * wholly safe *except* for "file".
      */
 
     TclInitArrayCmd(interp);
@@ -792,6 +791,7 @@ Tcl_CreateInterp(void)
     TclInitDictCmd(interp);
     TclInitFileCmd(interp);
     TclInitInfoCmd(interp);
+    TclInitNamespaceCmd(interp);
     TclInitStringCmd(interp);
     TclInitPrefixCmd(interp);
 
@@ -825,10 +825,9 @@ Tcl_CreateInterp(void)
 	    Tcl_RepresentationCmd, NULL, NULL);
 
     /* Adding the bytecode assembler command */
-    cmdPtr = (Command*)
-        Tcl_NRCreateCommand(interp, "::tcl::unsupported::assemble",
-                            Tcl_AssembleObjCmd, TclNRAssembleObjCmd,
-                            NULL, NULL);
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp,
+            "::tcl::unsupported::assemble", Tcl_AssembleObjCmd,
+            TclNRAssembleObjCmd, NULL, NULL);
     cmdPtr->compileProc = &TclCompileAssembleCmd;
 
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldTo", NULL,
