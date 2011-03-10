@@ -19,11 +19,9 @@ if {"::tcltest" ni [namespace children]} {
 
 # Do all this in a slave interp to avoid garbaging the package list
 set i [interp create]
-interp eval $i [list set argv $argv]
-interp eval $i [list package require tcltest 2]
-interp eval $i [list namespace import -force ::tcltest::*]
+tcltest::loadIntoSlaveInterpreter $i {*}$argv
 interp eval $i {
-
+namespace import -force ::tcltest::*
 package forget {*}[package names]
 set oldPkgUnknown [package unknown]
 package unknown {}
