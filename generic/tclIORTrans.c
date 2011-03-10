@@ -440,7 +440,7 @@ static const char *msg_dstlost =
  * information waiting in buffers (fileevent support).
  */
 
-#define FLUSH_DELAY (5)
+#define FLUSH_DELAY	(5)
 
 /*
  * Helper functions encapsulating some of the thread forwarding to make the

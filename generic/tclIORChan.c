@@ -2381,7 +2381,7 @@ ErrnoReturn(
     if (((Tcl_GetIntFromObj(rcPtr->interp, resObj, &code) != TCL_OK)
 	    || (code >= 0))) {
 	if (strcmp("EAGAIN", Tcl_GetString(resObj)) == 0) {
-	    code = - EAGAIN;
+	    code = -EAGAIN;
 	} else {
 	    code = 0;
 	}
