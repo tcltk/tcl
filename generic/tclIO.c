@@ -3292,10 +3292,11 @@ CloseWrite(
                                  * interpreter */
 {
     /* Notes: clear-channel-handlers - write side only ? or keep around, just
-     * not called */
+     * not called. */
     /* No close cllbacks are run - channel is still open (read side) */
 
-    ChannelState *statePtr = chanPtr->state;	/* State of real IO channel */
+    ChannelState *statePtr = chanPtr->state;
+                                /* State of real IO channel. */
     int flushcode;
     int result = 0;
 

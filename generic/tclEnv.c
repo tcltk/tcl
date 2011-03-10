@@ -649,8 +649,8 @@ ReplaceString(
 	env.cache = (char **) ckrealloc((char *) env.cache,
 		(env.cacheSize + growth) * sizeof(char *));
 	env.cache[env.cacheSize] = newStr;
-	(void) memset(env.cache+env.cacheSize+1, (int) 0,
-		(size_t) (growth-1) * sizeof(char*));
+	(void) memset(env.cache+env.cacheSize+1, 0,
+		(size_t) (growth-1) * sizeof(char *));
 	env.cacheSize += growth;
     }
 }
