@@ -2328,17 +2328,17 @@ test interp-28.1 {getting fooled by slave's namespace ?} -setup {
 } -result {}
 test interp-28.2 {master's nsName cache should not cross} -setup {
     set i [interp create]
+    $i eval {proc filter lst {lsearch -all -inline -not $lst "::tcl"}}
 } -body {
     $i eval {
 	set x {namespace children ::}
 	set y [list namespace children ::]
-	namespace delete {*}[{*}$y]
+	namespace delete {*}[filter [{*}$y]]
 	set j [interp create]
-	$j eval {namespace delete {*}[namespace children ::]}
+	$j alias filter filter
+	$j eval {namespace delete {*}[filter [namespace children ::]]}
 	namespace eval foo {}
-	set res [list [eval $x] [eval $y] [$j eval $x] [$j eval $y]]
-	interp delete $j
-	set res
+	list [filter [eval $x]] [filter [eval $y]] [filter [$j eval $x]] [filter [$j eval $y]]
     }
 } -cleanup {
     interp delete $i

@@ -6724,7 +6724,7 @@ TestNRELevels(
     ptrdiff_t depth;
     Tcl_Obj *levels[6];
     int i = 0;
-    NRE_callback *cbPtr = ((Interp *) interp)->execEnvPtr->callbackPtr;
+    NRE_callback *cbPtr = iPtr->execEnvPtr->callbackPtr;
 
     if (refDepth == NULL) {
 	refDepth = &depth;
@@ -6733,11 +6733,11 @@ TestNRELevels(
     depth = (refDepth - &depth);
 
     levels[0] = Tcl_NewIntObj(depth);
-    levels[1] = Tcl_NewIntObj(((Interp *)interp)->numLevels);
+    levels[1] = Tcl_NewIntObj(iPtr->numLevels);
     levels[2] = Tcl_NewIntObj(iPtr->cmdFramePtr->level);
     levels[3] = Tcl_NewIntObj(iPtr->varFramePtr->level);
-    levels[4] = Tcl_NewIntObj((iPtr->execEnvPtr->execStackPtr->tosPtr
-		    - iPtr->execEnvPtr->execStackPtr->stackWords));
+    levels[4] = Tcl_NewIntObj(iPtr->execEnvPtr->execStackPtr->tosPtr
+	    - iPtr->execEnvPtr->execStackPtr->stackWords);
 
     while (cbPtr) {
 	i++;

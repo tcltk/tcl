@@ -896,7 +896,7 @@ test namespace-20.1 {Tcl_NamespaceObjCmd, bad subcommand} {
 } {1 {wrong # args: should be "namespace subcommand ?arg ...?"}}
 test namespace-20.2 {Tcl_NamespaceObjCmd, bad subcommand} -body {
     namespace wombat {}
-} -returnCodes error -match glob -result {bad option "wombat": must be *}
+} -returnCodes error -match glob -result {unknown or ambiguous subcommand "wombat": must be *}
 test namespace-20.3 {Tcl_NamespaceObjCmd, abbreviations are okay} {
     namespace ch :: test_ns_*
 } {}
@@ -1013,7 +1013,7 @@ test namespace-25.1 {NamespaceEvalCmd, bad args} {
 } {1 {wrong # args: should be "namespace eval name arg ?arg...?"}}
 test namespace-25.2 {NamespaceEvalCmd, bad args} -body {
     namespace test_ns_1
-} -returnCodes error -match glob -result {bad option "test_ns_1": must be *}
+} -returnCodes error -match glob -result {unknown or ambiguous subcommand "test_ns_1": must be *}
 catch {unset v}
 test namespace-25.3 {NamespaceEvalCmd, new namespace} {
     set v 123
