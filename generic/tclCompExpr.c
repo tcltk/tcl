@@ -1333,13 +1333,12 @@ ParseExpr(
 	numBytes -= scanned;
     }	/* main parsing loop */
 
-  error:
-
     /*
      * We only get here if there's been an error. Any errors that didn't get a
      * suitable parsePtr->errorType, get recorded as syntax errors.
      */
 
+  error:
     if (parsePtr->errorType == TCL_PARSE_SUCCESS) {
 	parsePtr->errorType = TCL_PARSE_SYNTAX;
     }
@@ -1349,7 +1348,7 @@ ParseExpr(
      */
 
     if (nodes != NULL) {
-	ckfree((char*) nodes);
+	ckfree((char *) nodes);
     }
 
     if (interp == NULL) {
@@ -1361,7 +1360,6 @@ ParseExpr(
 	    Tcl_DecrRefCount(msg);
 	}
     } else {
-
 	/*
 	 * Construct the complete error message. Start with the simple error
 	 * message, pulled from the interp result if necessary...

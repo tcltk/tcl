@@ -1786,8 +1786,8 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	    int isnew;
 	    Tcl_HashEntry* hePtr = Tcl_CreateHashEntry(&eclPtr->litInfo,
 		    INT2PTR(envPtr->codeNext - envPtr->codeStart), &isnew);
-	    Tcl_SetHashValue(hePtr, INT2PTR(wlineat));
 
+	    Tcl_SetHashValue(hePtr, INT2PTR(wlineat));
 	    if (numWords <= 255) {
 		TclEmitInstInt1(INST_INVOKE_STK1, numWords, envPtr);
 	    } else {
@@ -2659,7 +2659,7 @@ TclExpandCodeArray(
      */
 
     size_t currBytes = envPtr->codeNext - envPtr->codeStart;
-    size_t newBytes = 2*(envPtr->codeEnd - envPtr->codeStart);
+    size_t newBytes = 2 * (envPtr->codeEnd - envPtr->codeStart);
 
     if (envPtr->mallocedCodeArray) {
 	envPtr->codeStart = (unsigned char *)
@@ -2726,7 +2726,7 @@ EnterCmdStartData(
 	 */
 
 	size_t currElems = envPtr->cmdMapEnd;
-	size_t newElems = 2*currElems;
+	size_t newElems = 2 * currElems;
 	size_t currBytes = currElems * sizeof(CmdLocation);
 	size_t newBytes = newElems * sizeof(CmdLocation);
 

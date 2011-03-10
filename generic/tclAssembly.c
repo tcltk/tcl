@@ -4120,7 +4120,7 @@ RestoreEmbeddedExceptionRanges(
 				 * range as reinstalled */
     ExceptionRange* range;	/* Current foreign exception range */
     unsigned char opcode;	/* Current instruction's opcode */
-    unsigned int catchIndex;	/* Index of the exception range to which the
+    int catchIndex;	/* Index of the exception range to which the
 				 * current instruction refers */
     int i;
 

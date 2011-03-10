@@ -3923,6 +3923,7 @@ TclNRSwitchObjCmd(
 	    INT2PTR(pc), (ClientData) pattern);
     return TclNREvalObjEx(interp, objv[j], 0, ctxPtr, splitObjs ? j : bidx+j);
 }
+
 static int
 SwitchPostProc(
     ClientData data[],		/* Data passed from Tcl_NRAddCallback above */
@@ -4772,7 +4773,7 @@ TclListLines(
     int i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;
     ContLineLoc *clLocPtr = TclContinuationsGet(listObj);
-    int *clNext= (clLocPtr ? &clLocPtr->loc[0] : NULL);
+    int *clNext = (clLocPtr ? &clLocPtr->loc[0] : NULL);
 
     for (i = 0; i < n; i++) {
 	TclFindElement(NULL, listStr, length, &element, &next, NULL, NULL);

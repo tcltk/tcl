@@ -2381,7 +2381,7 @@ ErrnoReturn(
     if (((Tcl_GetIntFromObj(rcPtr->interp, resObj, &code) != TCL_OK)
 	    || (code >= 0))) {
 	if (strcmp("EAGAIN", Tcl_GetString(resObj)) == 0) {
-	    code = - EAGAIN;
+	    code = -EAGAIN;
 	} else {
 	    code = 0;
 	}
@@ -2689,7 +2689,6 @@ ForwardOpToOwnerThread(
     Tcl_ThreadId dst = rcPtr->thread;
     ForwardingEvent *evPtr;
     ForwardingResult *resultPtr;
-    int result;
 
     /*
      * We gather the lock early. This allows us to check the liveness of the
@@ -2793,7 +2792,6 @@ ForwardOpToOwnerThread(
 
     Tcl_DeleteThreadExitHandler(SrcExitProc, evPtr);
 
-    result = resultPtr->result;
     ckfree((char *) resultPtr);
 }
 

@@ -1,3 +1,57 @@
+2011-03-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/tcltest/tcltest.tcl (loadIntoSlaveInterpreter): Added this
+	command to handle connecting tcltest to a slave interpreter. This adds
+	in the hook (inside the tcltest namespace) that allows the tests run
+	in the child interpreter to be reported as part of the main sequence
+	of test results. Bumped version of tcltest to 2.3.3.
+	* tests/init.test, tests/package.test: Adapted these test files to use
+	the new feature.
+
+	* generic/tclAlloc.c, generic/tclCmdMZ.c, generic/tclCompExpr.c:
+	* generic/tclCompile.c, generic/tclEnv.c, generic/tclEvent.c:
+	* generic/tclIO.c, generic/tclIOCmd.c, generic/tclIORChan.c:
+	* generic/tclIORTrans.c, generic/tclLiteral.c, generic/tclNotify.c:
+	* generic/tclParse.c, generic/tclStringObj.c, generic/tclUtil.c:
+	* generic/tclZlib.c, unix/tclUnixFCmd.c, unix/tclUnixNotfy.c:
+	* unix/tclUnixPort.h, unix/tclXtNotify.c: Formatting fixes, mainly to
+	comments, so code better fits the style in the Engineering Manual.
+
+2011-03-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/incr.test: Update more of the test suite to use Tcltest 2.
+
+2011-03-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c:	Tighten the detector of nested [namespace code]
+	* tests/namespace.test:	quoting that the quoted scripts function
+	properly even in a namespace that contains a custom "namespace"
+	command.  [Bug 3202171]
+
+	* doc/tclvars.n:	Formatting fix.  Thanks to Pat Thotys.
+
+2011-03-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/dstring.test, tests/init.test, tests/link.test: Update more of
+	the test suite to use Tcltest 2.
+
+2011-03-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c: Fix gcc warnings: variable set but not used
+	* generic/tclProc.c:
+	* generic/tclIORChan.c:
+	* generic/tclIORTrans.c:
+	* generic/tclAssembly.c:  Fix gcc warning: comparison between signed
+	and unsigned integer expressions
+
+2011-03-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Remove TclMarkList() routine, an experimental
+	* generic/tclUtil.c:	dead-end from the 8.5 alpha days.
+
+	* generic/tclResult.c (ResetObjResult):	Correct failure to clear
+	invalid intrep.  Thanks to Colin McDonald. [Bug 3202905]
+
 2011-03-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclAssembly.c, tests/assemble.test: Migrate to use a style

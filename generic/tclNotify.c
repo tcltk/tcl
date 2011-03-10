@@ -362,6 +362,7 @@ Tcl_QueueEvent(
 				 * TCL_QUEUE_MARK. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
     QueueEvent(tsdPtr, evPtr, position);
 }
 

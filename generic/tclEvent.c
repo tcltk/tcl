@@ -119,7 +119,6 @@ static char *		VwaitVarProc(ClientData clientData,
 			    Tcl_Interp *interp, const char *name1,
 			    const char *name2, int flags);
 static void		InvokeExitHandlers(void);
-
 
 /*
  *----------------------------------------------------------------------
