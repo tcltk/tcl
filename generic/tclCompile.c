@@ -1765,6 +1765,7 @@ TclCompileScript(
 		     * unmodified. We care only if the we are in a context
 		     * which already allows absolute counting.
 		     */
+
 		    objIndex = TclRegisterNewLiteral(envPtr,
 			    tokenPtr[1].start, tokenPtr[1].size);
 
@@ -1813,7 +1814,6 @@ TclCompileScript(
 			&isnew);
 
 		Tcl_SetHashValue(hePtr, INT2PTR(wlineat));
-
 		if (wordIdx <= 255) {
 		    TclEmitInstInt1(INST_INVOKE_STK1, wordIdx, envPtr);
 		} else {
@@ -2661,7 +2661,7 @@ TclExpandCodeArray(
      */
 
     size_t currBytes = envPtr->codeNext - envPtr->codeStart;
-    size_t newBytes = 2*(envPtr->codeEnd - envPtr->codeStart);
+    size_t newBytes = 2 * (envPtr->codeEnd - envPtr->codeStart);
 
     if (envPtr->mallocedCodeArray) {
 	envPtr->codeStart = (unsigned char *)
@@ -2728,7 +2728,7 @@ EnterCmdStartData(
 	 */
 
 	size_t currElems = envPtr->cmdMapEnd;
-	size_t newElems = 2*currElems;
+	size_t newElems = 2 * currElems;
 	size_t currBytes = currElems * sizeof(CmdLocation);
 	size_t newBytes = newElems * sizeof(CmdLocation);
 
