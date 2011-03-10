@@ -1,5 +1,13 @@
 2011-03-10  Donal K. Fellows  <dkf@users.sf.net>
 
+	* library/tcltest/tcltest.tcl (loadIntoSlaveInterpreter): Added this
+	command to handle connecting tcltest to a slave interpreter. This adds
+	in the hook (inside the tcltest namespace) that allows the tests run
+	in the child interpreter to be reported as part of the main sequence
+	of test results. Bumped version of tcltest to 2.3.3.
+	* tests/init.test, tests/package.test: Adapted these test files to use
+	the new feature.
+
 	* generic/tclAlloc.c, generic/tclCmdMZ.c, generic/tclCompExpr.c:
 	* generic/tclCompile.c, generic/tclEnv.c, generic/tclEvent.c:
 	* generic/tclIO.c, generic/tclIOCmd.c, generic/tclIORChan.c:
