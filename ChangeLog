@@ -1,5 +1,13 @@
 2011-03-10  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclBasic.c, generic/tclCompCmds.c, generic/tclEnsemble.c:
+	* generic/tclInt.h, generic/tclNamesp.c, library/auto.tcl:
+	* tests/interp.test, tests/namespace.test, tests/nre.test:
+	Converted the [namespace] command into an ensemble. This has the
+	consequence of making it vital for Tcl code that wishes to work with
+	namespaces to _not_ delete the ::tcl namespace.
+	***POTENTIAL INCOMPATIBILITY***
+
 	* library/tcltest/tcltest.tcl (loadIntoSlaveInterpreter): Added this
 	command to handle connecting tcltest to a slave interpreter. This adds
 	in the hook (inside the tcltest namespace) that allows the tests run
