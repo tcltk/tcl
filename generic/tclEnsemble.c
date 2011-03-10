@@ -123,11 +123,11 @@ TclNamespaceEnsembleCmd(
 	return TCL_ERROR;
     }
 
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "subcommand ?arg ...?");
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[2], ensembleSubcommands,
+    if (Tcl_GetIndexFromObj(interp, objv[1], ensembleSubcommands,
 	    "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -149,12 +149,12 @@ TclNamespaceEnsembleCmd(
 	 * Check that we've got option-value pairs... [Bug 1558654]
 	 */
 
-	if ((objc & 1) == 0) {
-	    Tcl_WrongNumArgs(interp, 3, objv, "?option value ...?");
+	if (objc & 1) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "?option value ...?");
 	    return TCL_ERROR;
 	}
-	objv += 3;
-	objc -= 3;
+	objv += 2;
+	objc -= 2;
 
 	/*
 	 * Work out what name to use for the command to create. If supplied,
@@ -322,29 +322,29 @@ TclNamespaceEnsembleCmd(
     }
 
     case ENS_EXISTS:
-	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname");
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "cmdname");
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-		Tcl_FindEnsemble(interp, objv[3], 0) != NULL));
+		Tcl_FindEnsemble(interp, objv[2], 0) != NULL));
 	return TCL_OK;
 
     case ENS_CONFIG:
-	if (objc < 4 || (objc != 5 && objc & 1)) {
-	    Tcl_WrongNumArgs(interp, 3, objv,
+	if (objc < 3 || (objc != 4 && !(objc & 1))) {
+	    Tcl_WrongNumArgs(interp, 2, objv,
 		    "cmdname ?-option value ...? ?arg ...?");
 	    return TCL_ERROR;
 	}
-	token = Tcl_FindEnsemble(interp, objv[3], TCL_LEAVE_ERR_MSG);
+	token = Tcl_FindEnsemble(interp, objv[2], TCL_LEAVE_ERR_MSG);
 	if (token == NULL) {
 	    return TCL_ERROR;
 	}
 
-	if (objc == 5) {
+	if (objc == 4) {
 	    Tcl_Obj *resultObj = NULL;		/* silence gcc 4 warning */
 
-	    if (Tcl_GetIndexFromObj(interp, objv[4], ensembleConfigOptions,
+	    if (Tcl_GetIndexFromObj(interp, objv[3], ensembleConfigOptions,
 		    "option", 0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -388,7 +388,7 @@ TclNamespaceEnsembleCmd(
 		}
 		break;
 	    }
-	} else if (objc == 4) {
+	} else if (objc == 3) {
 	    /*
 	     * Produce list of all information.
 	     */
@@ -457,8 +457,8 @@ TclNamespaceEnsembleCmd(
 	    Tcl_GetEnsembleFlags(NULL, token, &flags);
 	    permitPrefix = (flags & TCL_ENSEMBLE_PREFIX) != 0;
 
-	    objv += 4;
-	    objc -= 4;
+	    objv += 3;
+	    objc -= 3;
 
 	    /*
 	     * Parse the option list, applying type checks as we go. Note that
