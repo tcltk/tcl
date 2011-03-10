@@ -45,26 +45,22 @@ test init-1.7 {auto_qualify - multiples colons 1} {
 test init-1.8 {auto_qualify - multiple colons 2} {
     auto_qualify :::foo ::bar
 } foo
-
+
 # We use a sub-interp and auto_reset and double the tests because there is 2
 # places where auto_loading occur (before loading the indexes files and after)
 
 set testInterp [interp create]
-interp eval $testInterp [list set argv $argv]
+tcltest::loadIntoSlaveInterpreter $testInterp {*}$argv
 interp eval $testInterp {
-    package require tcltest 2
     namespace import -force ::tcltest::*
     customMatch pairwise {apply {{mode pair} {
 	if {[llength $pair] != 2} {error "need a pair of values to check"}
 	string $mode [lindex $pair 0] [lindex $pair 1]
     }}}
-}
-# TODO: Connect result reporting to master interp
-interp eval $testInterp {
 
-auto_reset
-catch {rename parray {}}
-
+    auto_reset
+    catch {rename parray {}}
+
 test init-2.0 {load parray - stage 1} -body {
     parray
 } -returnCodes error -cleanup {
@@ -127,12 +123,12 @@ test init-3.0 {random stuff in the auto_index, should still work} {
 
 set count 0
 foreach arg [subst -nocommands -novariables {
-		c
-                {argument
+    c
+    {argument
                 which spans
                 multiple lines}
-                {argument which is all on one line but which is of such great length that the Tcl C library will truncate it when appending it onto the global error stack}
-                {argument which spans multiple lines
+    {argument which is all on one line but which is of such great length that the Tcl C library will truncate it when appending it onto the global error stack}
+    {argument which spans multiple lines
                 and is long enough to be truncated and
 "               <- includes a false lead in the prune point search
                 and must be longer still to force truncation}
@@ -141,13 +137,13 @@ foreach arg [subst -nocommands -novariables {
 		error stack cannot be uniquely determined.
 		foo bar foo
 "}
-                {contrived example: rare circumstance 
+    {contrived example: rare circumstance 
 		where the point at which to prune the
 		error stack cannot be uniquely determined.
 		foo bar
 "}
-		{argument that contains non-ASCII character, \u20ac, and which is of such great length that it will be longer than 150 bytes so it will be truncated by the Tcl C library}
-	}] {
+    {argument that contains non-ASCII character, \u20ac, and which is of such great length that it will be longer than 150 bytes so it will be truncated by the Tcl C library}
+	}] {    ;# emacs needs -> "
 
     test init-4.$count.0 {::errorInfo produced by [unknown]} -setup {
 	auto_reset
