@@ -202,13 +202,7 @@ DoRenameFile(
      * if one of the arguments is a char block device.
      */
 
-#ifndef HAVE_NO_SEH
-    __try {
-	if ((*tclWinProcs->moveFileProc)(nativeSrc, nativeDst) != FALSE) {
-	    retval = TCL_OK;
-	}
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
-#else
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
 
     /*
      * Don't have SEH available, do things the hard way.
@@ -289,6 +283,16 @@ DoRenameFile(
     if (registration.status != FALSE) {
 	retval = TCL_OK;
     }
+#else
+#ifndef HAVE_NO_SEH
+    __try {
+#endif
+	if ((*tclWinProcs->moveFileProc)(nativeSrc, nativeDst) != FALSE) {
+	    retval = TCL_OK;
+	}
+#ifndef HAVE_NO_SEH
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+#endif
 #endif
 
     if (retval != -1)
@@ -571,13 +575,7 @@ DoCopyFile(
      * of the arguments is a char block device.
      */
 
-#ifndef HAVE_NO_SEH
-    __try {
-	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
-	    retval = TCL_OK;
-	}
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
-#else
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
 
     /*
      * Don't have SEH available, do things the hard way.
@@ -660,6 +658,16 @@ DoCopyFile(
     if (registration.status != FALSE) {
 	retval = TCL_OK;
     }
+#else
+#ifndef HAVE_NO_SEH
+    __try {
+#endif
+	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
+	    retval = TCL_OK;
+	}
+#ifndef HAVE_NO_SEH
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+#endif
 #endif
 
     if (retval != -1)
