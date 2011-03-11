@@ -1,3 +1,10 @@
+2011-03-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4:         handle --enable-64bit=ia64 for gcc.
+	* win/configure:      (autoconf-2.13)
+	* win/tclWin32Dll.c:  [Patch 3059922]: fixes for mingw64 - gcc4.5.1
+	Merged --cherrypick from Tcl8.5 (2011-01-17, 6e410a115b)
+
 2011-03-08  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclBasic.c: Fix gcc warnings: variable set but not used
@@ -8,8 +15,6 @@
 	* generic/tclCmdMZ.c:	with TclParseBackslash() where possible.
 	* generic/tclCompExpr.c:
 	* generic/tclCompile.c:
-	* generic/tclUtil.c:
-
 	* generic/tclUtil.c (TclFindElement):	Guard escape sequence scans
 	to not overrun the string end.  [Bug 3192636]
 
