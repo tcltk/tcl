@@ -1,3 +1,7 @@
+2011-03-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/unixInit.test: Make better use of tcltest2.
+
 2011-03-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBasic.c, generic/tclCompCmds.c, generic/tclEnsemble.c:
