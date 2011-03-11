@@ -542,6 +542,12 @@ TclpCheckStackSpace()
      */
 
 #ifdef HAVE_NO_SEH
+#   ifdef __WIN64__
+
+    /* TODO: How to call allocal on Win64? */
+    retval = 1;
+
+#   else
     __asm__ __volatile__ (
 
         /*
@@ -611,6 +617,7 @@ TclpCheckStackSpace()
         );
     retval = (registration.status == TCL_OK);
 
+#   endif
 #else /* !HAVE_NO_SEH */
     __try {
 #ifdef HAVE_ALLOCA_GCC_INLINE
