@@ -2776,9 +2776,9 @@ TclpObjNormalizePath(
 			 * path segment and continue.
 			 */
 
-			Tcl_DStringAppend(&dsNorm, (const char *)
-				((WCHAR *)(nativePath + Tcl_DStringLength(&ds))
-				- dotLen), (int)(dotLen * sizeof(WCHAR)));
+			Tcl_DStringAppend(&dsNorm,
+				((const char *) nativePath) + Tcl_DStringLength(&ds)
+				- (dotLen * sizeof(TCHAR)), (int)(dotLen * sizeof(TCHAR)));
 		    } else {
 			/*
 			 * Normal path.
