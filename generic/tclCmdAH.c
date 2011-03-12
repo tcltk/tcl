@@ -234,7 +234,7 @@ Tcl_CaseObjCmd(
 		break;
 	    }
 	}
-	ckfree((char *) patObjv);
+	ckfree(patObjv);
 	if (j < patObjc) {
 	    break;
 	}

@@ -89,7 +89,7 @@ TclFinalizePreserve(void)
 {
     Tcl_MutexLock(&preserveMutex);
     if (spaceAvl != 0) {
-	ckfree((char *) refArray);
+	ckfree(refArray);
 	refArray = NULL;
 	inUse = 0;
 	spaceAvl = 0;
@@ -144,8 +144,7 @@ Tcl_Preserve(
 
     if (inUse == spaceAvl) {
 	spaceAvl = spaceAvl ? 2*spaceAvl : INITIAL_SIZE;
-	refArray = (Reference *) ckrealloc((char *) refArray,
-		spaceAvl * sizeof(Reference));
+	refArray = ckrealloc(refArray, spaceAvl * sizeof(Reference));
     }
 
     /*
@@ -225,9 +224,9 @@ Tcl_Release(
 	Tcl_MutexUnlock(&preserveMutex);
 	if (mustFree) {
 	    if (freeProc == TCL_DYNAMIC) {
-		ckfree((char *) clientData);
+		ckfree(clientData);
 	    } else {
-		freeProc((char *) clientData);
+		freeProc(clientData);
 	    }
 	}
 	return;
@@ -292,9 +291,9 @@ Tcl_EventuallyFree(
      */
 
     if (freeProc == TCL_DYNAMIC) {
-	ckfree((char *) clientData);
+	ckfree(clientData);
     } else {
-	freeProc((char *)clientData);
+	freeProc(clientData);
     }
 }
 
@@ -328,9 +327,8 @@ TclHandleCreate(
 				 * be tracked for deletion. Must not be
 				 * NULL. */
 {
-    HandleStruct *handlePtr;
+    HandleStruct *handlePtr = ckalloc(sizeof(HandleStruct));
 
-    handlePtr = (HandleStruct *) ckalloc(sizeof(HandleStruct));
     handlePtr->ptr = ptr;
 #ifdef TCL_MEM_DEBUG
     handlePtr->ptr2 = ptr;
@@ -379,7 +377,7 @@ TclHandleFree(
 #endif
     handlePtr->ptr = NULL;
     if (handlePtr->refCount == 0) {
-	ckfree((char *) handlePtr);
+	ckfree(handlePtr);
     }
 }
 
@@ -463,7 +461,7 @@ TclHandleRelease(
 #endif
     handlePtr->refCount--;
     if ((handlePtr->refCount == 0) && (handlePtr->ptr == NULL)) {
-	ckfree((char *) handlePtr);
+	ckfree(handlePtr);
     }
 }
 

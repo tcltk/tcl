@@ -358,7 +358,7 @@ CreateFileHandler(
 	}
     }
     if (filePtr == NULL) {
-	filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
+	filePtr = ckalloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->read = 0;
 	filePtr->write = 0;
@@ -469,7 +469,7 @@ DeleteFileHandler(
     if (filePtr->mask & TCL_EXCEPTION) {
 	XtRemoveInput(filePtr->except);
     }
-    ckfree((char *) filePtr);
+    ckfree(filePtr);
 }
 
 /*
@@ -524,7 +524,7 @@ FileProc(
      */
 
     filePtr->readyMask |= mask;
-    fileEvPtr = (FileHandlerEvent *) ckalloc(sizeof(FileHandlerEvent));
+    fileEvPtr = ckalloc(sizeof(FileHandlerEvent));
     fileEvPtr->header.proc = FileHandlerEventProc;
     fileEvPtr->fd = filePtr->fd;
     Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);

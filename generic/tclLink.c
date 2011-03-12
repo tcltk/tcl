@@ -112,7 +112,7 @@ Tcl_LinkVar(
     Link *linkPtr;
     int code;
 
-    linkPtr = (Link *) ckalloc(sizeof(Link));
+    linkPtr = ckalloc(sizeof(Link));
     linkPtr->interp = interp;
     linkPtr->varName = Tcl_NewStringObj(varName, -1);
     Tcl_IncrRefCount(linkPtr->varName);
@@ -127,14 +127,14 @@ Tcl_LinkVar(
     if (Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, objPtr,
 	    TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG) == NULL) {
 	Tcl_DecrRefCount(linkPtr->varName);
-	ckfree((char *) linkPtr);
+	ckfree(linkPtr);
 	return TCL_ERROR;
     }
     code = Tcl_TraceVar(interp, varName, TCL_GLOBAL_ONLY|TCL_TRACE_READS
 	    |TCL_TRACE_WRITES|TCL_TRACE_UNSETS, LinkTraceProc, linkPtr);
     if (code != TCL_OK) {
 	Tcl_DecrRefCount(linkPtr->varName);
-	ckfree((char *) linkPtr);
+	ckfree(linkPtr);
     }
     return code;
 }
@@ -172,7 +172,7 @@ Tcl_UnlinkVar(
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    LinkTraceProc, linkPtr);
     Tcl_DecrRefCount(linkPtr->varName);
-    ckfree((char *) linkPtr);
+    ckfree(linkPtr);
 }
 
 /*
@@ -266,7 +266,7 @@ LinkTraceProc(
     if (flags & TCL_TRACE_UNSETS) {
 	if (Tcl_InterpDeleted(interp)) {
 	    Tcl_DecrRefCount(linkPtr->varName);
-	    ckfree((char *) linkPtr);
+	    ckfree(linkPtr);
 	} else if (flags & TCL_TRACE_DESTROYED) {
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);

@@ -395,8 +395,8 @@ DoRenameFile(
 		Tcl_SetErrno(EXDEV);
 	    }
 
-	    ckfree((char *) srcArgv);
-	    ckfree((char *) dstArgv);
+	    ckfree(srcArgv);
+	    ckfree(dstArgv);
 	}
 
 	/*

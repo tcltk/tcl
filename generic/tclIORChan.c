@@ -687,8 +687,7 @@ TclChanCreateObjCmd(
 	 * as the actual channel type.
 	 */
 
-	Tcl_ChannelType *clonePtr = (Tcl_ChannelType *)
-		ckalloc(sizeof(Tcl_ChannelType));
+	Tcl_ChannelType *clonePtr = ckalloc(sizeof(Tcl_ChannelType));
 
 	memcpy(clonePtr, &tclRChannelType, sizeof(Tcl_ChannelType));
 
@@ -2030,7 +2029,7 @@ NewReflectedChannel(
     int i, listc;
     Tcl_Obj **listv;
 
-    rcPtr = (ReflectedChannel *) ckalloc(sizeof(ReflectedChannel));
+    rcPtr = ckalloc(sizeof(ReflectedChannel));
 
     /* rcPtr->chan: Assigned by caller. Dummy data here. */
     /* rcPtr->methods: Assigned by caller. Dummy data here. */
@@ -2063,7 +2062,7 @@ NewReflectedChannel(
      */
 
     rcPtr->argc = listc + 2;
-    rcPtr->argv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * (listc+4));
+    rcPtr->argv = ckalloc(sizeof(Tcl_Obj *) * (listc+4));
 
     /*
      * Duplicate object references.
@@ -2149,7 +2148,7 @@ FreeReflectedChannel(
 	 * Delete a cloned ChannelType structure.
 	 */
 
-	ckfree((char *) chanPtr->typePtr);
+	ckfree(chanPtr->typePtr);
     }
 
     n = rcPtr->argc - 2;
@@ -2163,8 +2162,8 @@ FreeReflectedChannel(
 
     Tcl_DecrRefCount(rcPtr->argv[n+1]);
 
-    ckfree((char *) rcPtr->argv);
-    ckfree((char *) rcPtr);
+    ckfree(rcPtr->argv);
+    ckfree(rcPtr);
 }
 
 /*
@@ -2415,7 +2414,7 @@ GetReflectedChannelMap(
     ReflectedChannelMap *rcmPtr = Tcl_GetAssocData(interp, RCMKEY, NULL);
 
     if (rcmPtr == NULL) {
-	rcmPtr = (ReflectedChannelMap *) ckalloc(sizeof(ReflectedChannelMap));
+	rcmPtr = ckalloc(sizeof(ReflectedChannelMap));
 	Tcl_InitHashTable(&rcmPtr->map, TCL_STRING_KEYS);
 	Tcl_SetAssocData(interp, RCMKEY,
 		(Tcl_InterpDeleteProc *) DeleteReflectedChannelMap, rcmPtr);
@@ -2482,7 +2481,7 @@ DeleteReflectedChannelMap(
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(&rcmPtr->map);
-    ckfree((char *) &rcmPtr->map);
+    ckfree(&rcmPtr->map);
 
 #ifdef TCL_THREADS
     /*
@@ -2578,8 +2577,7 @@ GetThreadReflectedChannelMap(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->rcmPtr) {
-	tsdPtr->rcmPtr = (ReflectedChannelMap *)
-		ckalloc(sizeof(ReflectedChannelMap));
+	tsdPtr->rcmPtr = ckalloc(sizeof(ReflectedChannelMap));
 	Tcl_InitHashTable(&tsdPtr->rcmPtr->map, TCL_STRING_KEYS);
 	Tcl_CreateThreadExitHandler(DeleteThreadReflectedChannelMap, NULL);
     }
@@ -2712,8 +2710,8 @@ ForwardOpToOwnerThread(
      * Create and initialize the event and data structures.
      */
 
-    evPtr = (ForwardingEvent *) ckalloc(sizeof(ForwardingEvent));
-    resultPtr = (ForwardingResult *) ckalloc(sizeof(ForwardingResult));
+    evPtr = ckalloc(sizeof(ForwardingEvent));
+    resultPtr = ckalloc(sizeof(ForwardingResult));
 
     evPtr->event.proc = ForwardProc;
     evPtr->resultPtr = resultPtr;
@@ -2792,7 +2790,7 @@ ForwardOpToOwnerThread(
 
     Tcl_DeleteThreadExitHandler(SrcExitProc, evPtr);
 
-    ckfree((char *) resultPtr);
+    ckfree(resultPtr);
 }
 
 static int
@@ -3187,7 +3185,7 @@ ForwardSetObjError(
     const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;
-    ForwardSetDynamicError(paramPtr, ckalloc((unsigned) len));
+    ForwardSetDynamicError(paramPtr, ckalloc(len));
     memcpy(paramPtr->base.msgStr, msgStr, (unsigned) len);
 }
 #endif

@@ -304,7 +304,7 @@ Tcl_SetByteArrayObj(
     Tcl_InvalidateStringRep(objPtr);
 
     length = (length < 0) ? 0 : length;
-    byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     memset(byteArrayPtr, 0, BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
@@ -391,8 +391,7 @@ Tcl_SetByteArrayLength(
 
     byteArrayPtr = GET_BYTEARRAY(objPtr);
     if (length > byteArrayPtr->allocated) {
-	byteArrayPtr = (ByteArray *)
-		ckrealloc((char *) byteArrayPtr, BYTEARRAY_SIZE(length));
+	byteArrayPtr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(length));
 	byteArrayPtr->allocated = length;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
     }
@@ -432,7 +431,7 @@ SetByteArrayFromAny(
 	src = TclGetStringFromObj(objPtr, &length);
 	srcEnd = src + length;
 
-	byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
+	byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
 	for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
 	    src += Tcl_UtfToUniChar(src, &ch);
 	    *dst++ = UCHAR(ch);
@@ -469,7 +468,7 @@ static void
 FreeByteArrayInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
-    ckfree((char *) GET_BYTEARRAY(objPtr));
+    ckfree(GET_BYTEARRAY(objPtr));
     objPtr->typePtr = NULL;
 }
 
@@ -501,7 +500,7 @@ DupByteArrayInternalRep(
     srcArrayPtr = GET_BYTEARRAY(srcPtr);
     length = srcArrayPtr->used;
 
-    copyArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
@@ -560,7 +559,7 @@ UpdateStringOfByteArray(
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
-    dst = (char *) ckalloc((unsigned) (size + 1));
+    dst = ckalloc(size + 1);
     objPtr->bytes = dst;
     objPtr->length = size;
 
@@ -641,9 +640,8 @@ TclAppendBytesToByteArray(
 	}
 
 	if (BYTEARRAY_SIZE(attempt) > BYTEARRAY_SIZE(used)) {
-	    tmpByteArrayPtr = (ByteArray *)
-		    attemptckrealloc((char *) byteArrayPtr,
-			    BYTEARRAY_SIZE(attempt));
+	    tmpByteArrayPtr = attemptckrealloc(byteArrayPtr,
+		    BYTEARRAY_SIZE(attempt));
 	}
 
 	if (tmpByteArrayPtr == NULL) {
@@ -651,7 +649,7 @@ TclAppendBytesToByteArray(
 	    if (BYTEARRAY_SIZE(attempt) < BYTEARRAY_SIZE(used)) {
 		Tcl_Panic("attempt to allocate a bigger buffer than we can handle");
 	    }
-	    tmpByteArrayPtr = (ByteArray *) ckrealloc((char *) byteArrayPtr,
+	    tmpByteArrayPtr = ckrealloc(byteArrayPtr,
 		    BYTEARRAY_SIZE(attempt));
 	}
 

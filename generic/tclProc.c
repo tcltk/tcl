@@ -253,11 +253,11 @@ Tcl_ProcObjCmd(
 		    && (contextPtr->nline >= 4) && (contextPtr->line[3] >= 0)) {
 		int isNew;
 		Tcl_HashEntry *hePtr;
-		CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
+		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = (int *) ckalloc(sizeof(int));
+		cfPtr->line = ckalloc(sizeof(int));
 		cfPtr->line[0] = contextPtr->line[3];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -285,9 +285,9 @@ Tcl_ProcObjCmd(
 			Tcl_DecrRefCount(cfOldPtr->data.eval.path);
 			cfOldPtr->data.eval.path = NULL;
 		    }
-		    ckfree((char *) cfOldPtr->line);
+		    ckfree(cfOldPtr->line);
 		    cfOldPtr->line = NULL;
-		    ckfree((char *) cfOldPtr);
+		    ckfree(cfOldPtr);
 		}
 		Tcl_SetHashValue(hePtr, cfPtr);
 	    }
@@ -460,7 +460,7 @@ TclCreateProc(
 
 	Tcl_IncrRefCount(bodyPtr);
 
-	procPtr = (Proc *) ckalloc(sizeof(Proc));
+	procPtr = ckalloc(sizeof(Proc));
 	procPtr->iPtr = iPtr;
 	procPtr->refCount = 1;
 	procPtr->bodyPtr = bodyPtr;
@@ -513,14 +513,14 @@ TclCreateProc(
 	    goto procError;
 	}
 	if (fieldCount > 2) {
-	    ckfree((char *) fieldValues);
+	    ckfree(fieldValues);
 	    Tcl_AppendResult(interp,
 		    "too many fields in argument specifier \"",
 		    argArray[i], "\"", NULL);
 	    goto procError;
 	}
 	if ((fieldCount == 0) || (*fieldValues[0] == 0)) {
-	    ckfree((char *) fieldValues);
+	    ckfree(fieldValues);
 	    Tcl_AppendResult(interp, "argument with no name", NULL);
 	    goto procError;
 	}
@@ -546,16 +546,14 @@ TclCreateProc(
 		q--;
 		if (*q == ')') {	/* We have an array element. */
 		    Tcl_AppendResult(interp, "formal parameter \"",
-			    fieldValues[0],
-			    "\" is an array element", NULL);
-		    ckfree((char *) fieldValues);
+			    fieldValues[0], "\" is an array element", NULL);
+		    ckfree(fieldValues);
 		    goto procError;
 		}
 	    } else if ((*p == ':') && (*(p+1) == ':')) {
 		Tcl_AppendResult(interp, "formal parameter \"",
-			fieldValues[0],
-			"\" is not a simple name", NULL);
-		ckfree((char *) fieldValues);
+			fieldValues[0], "\" is not a simple name", NULL);
+		ckfree(fieldValues);
 		goto procError;
 	    }
 	    p++;
@@ -582,7 +580,7 @@ TclCreateProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"procedure \"%s\": formal parameter %d is "
 			"inconsistent with precompiled body", procName, i));
-		ckfree((char *) fieldValues);
+		ckfree(fieldValues);
 		goto procError;
 	    }
 
@@ -601,7 +599,7 @@ TclCreateProc(
 			    "procedure \"%s\": formal parameter \"%s\" has "
 			    "default value inconsistent with precompiled body",
 			    procName, fieldValues[0]));
-		    ckfree((char *) fieldValues);
+		    ckfree(fieldValues);
 		    goto procError;
 		}
 	    }
@@ -619,8 +617,7 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = (CompiledLocal *) ckalloc((unsigned)
-		    (TclOffset(CompiledLocal, name) + nameLength + 1));
+	    localPtr = ckalloc(TclOffset(CompiledLocal, name) + nameLength+1);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -649,11 +646,11 @@ TclCreateProc(
 	    }
 	}
 
-	ckfree((char *) fieldValues);
+	ckfree(fieldValues);
     }
 
     *procPtrPtr = procPtr;
-    ckfree((char *) argArray);
+    ckfree(argArray);
     return TCL_OK;
 
   procError:
@@ -670,12 +667,12 @@ TclCreateProc(
 		Tcl_DecrRefCount(defPtr);
 	    }
 
-	    ckfree((char *) localPtr);
+	    ckfree(localPtr);
 	}
-	ckfree((char *) procPtr);
+	ckfree(procPtr);
     }
     if (argArray != NULL) {
-	ckfree((char *) argArray);
+	ckfree(argArray);
     }
     return TCL_ERROR;
 }
@@ -1247,7 +1244,7 @@ InitResolvedLocals(
 	    if (localPtr->resolveInfo->deleteProc) {
 		localPtr->resolveInfo->deleteProc(localPtr->resolveInfo);
 	    } else {
-		ckfree((char *) localPtr->resolveInfo);
+		ckfree(localPtr->resolveInfo);
 	    }
 	    localPtr->resolveInfo = NULL;
 	}
@@ -1341,7 +1338,7 @@ TclFreeLocalCache(
 	    }
 	}
     }
-    ckfree((char *) localCachePtr);
+    ckfree(localCachePtr);
 }
 
 static void
@@ -1365,9 +1362,9 @@ InitLocalCache(
      * for future calls.
      */
 
-    localCachePtr = (LocalCache *) ckalloc(sizeof(LocalCache)
-	    + (localCt-1)*sizeof(Tcl_Obj *)
-	    + numArgs*sizeof(Var));
+    localCachePtr = ckalloc(sizeof(LocalCache)
+	    + (localCt - 1) * sizeof(Tcl_Obj *)
+	    + numArgs * sizeof(Var));
 
     namePtr = &localCachePtr->varName0;
     varPtr = (Var *) (namePtr + localCt);
@@ -2045,8 +2042,9 @@ TclProcCompileProc(
 	    procPtr->lastLocalPtr = lastPtr;
 	    while (clPtr) {
 		CompiledLocal *toFree = clPtr;
+
 		clPtr = clPtr->nextPtr;
-		ckfree((char *) toFree);
+		ckfree(toFree);
 	    }
 	    procPtr->numCompiledLocals = procPtr->numArgs;
 	}
@@ -2189,7 +2187,7 @@ TclProcCleanupProc(
 	    if (resVarInfo->deleteProc) {
 		resVarInfo->deleteProc(resVarInfo);
 	    } else {
-		ckfree((char *) resVarInfo);
+		ckfree(resVarInfo);
 	    }
 	}
 
@@ -2197,10 +2195,10 @@ TclProcCleanupProc(
 	    defPtr = localPtr->defValuePtr;
 	    Tcl_DecrRefCount(defPtr);
 	}
-	ckfree((char *) localPtr);
+	ckfree(localPtr);
 	localPtr = nextPtr;
     }
-    ckfree((char *) procPtr);
+    ckfree(procPtr);
 
     /*
      * TIP #280: Release the location data associated with this Proc
@@ -2223,9 +2221,9 @@ TclProcCleanupProc(
 	Tcl_DecrRefCount(cfPtr->data.eval.path);
 	cfPtr->data.eval.path = NULL;
     }
-    ckfree((char *) cfPtr->line);
+    ckfree(cfPtr->line);
     cfPtr->line = NULL;
-    ckfree((char *) cfPtr);
+    ckfree(cfPtr);
     Tcl_DeleteHashEntry(hePtr);
 }
 
@@ -2549,7 +2547,7 @@ SetLambdaFromAny(
 	    if (contextPtr->line
 		    && (contextPtr->nline >= 2) && (contextPtr->line[1] >= 0)) {
 		int isNew, buf[2];
-		CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
+		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
 
 		/*
 		 * Move from approximation (line of list cmd word) to actual
@@ -2560,7 +2558,7 @@ SetLambdaFromAny(
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = (int *) ckalloc(sizeof(int));
+		cfPtr->line = ckalloc(sizeof(int));
 		cfPtr->line[0] = buf[1];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;

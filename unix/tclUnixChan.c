@@ -396,7 +396,7 @@ FileCloseProc(
 	    errorCode = errno;
 	}
     }
-    ckfree((char *) fsPtr);
+    ckfree(fsPtr);
     return errorCode;
 }
 
@@ -720,7 +720,7 @@ TtySetOptionProc(
 		Tcl_AppendResult(interp, "bad value for -xchar: "
 			"should be a list of two elements", NULL);
 	    }
-	    ckfree((char *) argv);
+	    ckfree(argv);
 	    return TCL_ERROR;
 	}
 
@@ -733,7 +733,7 @@ TtySetOptionProc(
 	Tcl_UtfToExternalDString(NULL, argv[1], -1, &ds);
 	iostate.c_cc[VSTOP] = *(const cc_t *) Tcl_DStringValue(&ds);
 	Tcl_DStringFree(&ds);
-	ckfree((char *) argv);
+	ckfree(argv);
 
 	SETIOSTATE(fsPtr->fd, &iostate);
 	return TCL_OK;
@@ -771,14 +771,14 @@ TtySetOptionProc(
 		Tcl_AppendResult(interp, "bad value for -ttycontrol: "
 			"should be a list of signal,value pairs", NULL);
 	    }
-	    ckfree((char *) argv);
+	    ckfree(argv);
 	    return TCL_ERROR;
 	}
 
 	GETCONTROL(fsPtr->fd, &control);
 	for (i = 0; i < argc-1; i += 2) {
 	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
-		ckfree((char *) argv);
+		ckfree(argv);
 		return TCL_ERROR;
 	    }
 	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
@@ -790,7 +790,7 @@ TtySetOptionProc(
 		}
 #else /* !TIOCM_DTR */
 		UNSUPPORTED_OPTION("-ttycontrol DTR");
-		ckfree((char *) argv);
+		ckfree(argv);
 		return TCL_ERROR;
 #endif /* TIOCM_DTR */
 	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
@@ -802,7 +802,7 @@ TtySetOptionProc(
 		}
 #else /* !TIOCM_RTS*/
 		UNSUPPORTED_OPTION("-ttycontrol RTS");
-		ckfree((char *) argv);
+		ckfree(argv);
 		return TCL_ERROR;
 #endif /* TIOCM_RTS*/
 	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
@@ -810,7 +810,7 @@ TtySetOptionProc(
 		SETBREAK(fsPtr->fd, flag);
 #else /* !SETBREAK */
 		UNSUPPORTED_OPTION("-ttycontrol BREAK");
-		ckfree((char *) argv);
+		ckfree(argv);
 		return TCL_ERROR;
 #endif /* SETBREAK */
 	    } else {
@@ -819,13 +819,13 @@ TtySetOptionProc(
 			    "\" for -ttycontrol: must be "
 			    "DTR, RTS or BREAK", NULL);
 		}
-		ckfree((char *) argv);
+		ckfree(argv);
 		return TCL_ERROR;
 	    }
 	} /* -ttycontrol options loop */
 
 	SETCONTROL(fsPtr->fd, &control);
-	ckfree((char *) argv);
+	ckfree(argv);
 	return TCL_OK;
     }
 
@@ -1458,7 +1458,7 @@ TtyInit(
 				 * initialized. */
     int initialize)
 {
-    TtyState *ttyPtr = (TtyState *) ckalloc((unsigned) sizeof(TtyState));
+    TtyState *ttyPtr = ckalloc(sizeof(TtyState));
     int stateUpdated = 0;
 
     GETIOSTATE(fd, &ttyPtr->savedState);
@@ -1609,7 +1609,7 @@ TclpOpenFileChannel(
     {
 	translation = NULL;
 	channelTypePtr = &fileChannelType;
-	fsPtr = (FileState *) ckalloc((unsigned) sizeof(FileState));
+	fsPtr = ckalloc(sizeof(FileState));
     }
 
     fsPtr->validMask = channelPermissions | TCL_EXCEPTION;
@@ -1685,7 +1685,7 @@ Tcl_MakeFileChannel(
 	return TclpMakeTcpClientChannelMode(INT2PTR(fd), mode);
     } else {
 	channelTypePtr = &fileChannelType;
-	fsPtr = (FileState *) ckalloc((unsigned) sizeof(FileState));
+	fsPtr = ckalloc(sizeof(FileState));
 	sprintf(channelName, "file%d", fd);
     }
 

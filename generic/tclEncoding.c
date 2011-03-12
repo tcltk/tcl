@@ -592,14 +592,14 @@ TclInitEncodingSubsystem(void)
      * code to duplicate the structure of a table encoding here.
      */
 
-    dataPtr = (TableEncodingData *) ckalloc(sizeof(TableEncodingData));
+    dataPtr = ckalloc(sizeof(TableEncodingData));
     memset(dataPtr, 0, sizeof(TableEncodingData));
     dataPtr->fallback = '?';
 
     size = 256*(sizeof(unsigned short *) + sizeof(unsigned short));
-    dataPtr->toUnicode = (unsigned short **) ckalloc(size);
+    dataPtr->toUnicode = ckalloc(size);
     memset(dataPtr->toUnicode, 0, size);
-    dataPtr->fromUnicode = (unsigned short **) ckalloc(size);
+    dataPtr->fromUnicode = ckalloc(size);
     memset(dataPtr->fromUnicode, 0, size);
 
     dataPtr->toUnicode[0] = (unsigned short *) (dataPtr->toUnicode + 256);
@@ -849,8 +849,8 @@ FreeEncoding(
 	if (encodingPtr->hPtr != NULL) {
 	    Tcl_DeleteHashEntry(encodingPtr->hPtr);
 	}
-	ckfree((char *) encodingPtr->name);
-	ckfree((char *) encodingPtr);
+	ckfree(encodingPtr->name);
+	ckfree(encodingPtr);
     }
 }
 
@@ -1054,9 +1054,9 @@ Tcl_CreateEncoding(
 	encodingPtr->hPtr = NULL;
     }
 
-    name = ckalloc((unsigned) strlen(typePtr->encodingName) + 1);
+    name = ckalloc(strlen(typePtr->encodingName) + 1);
 
-    encodingPtr = (Encoding *) ckalloc(sizeof(Encoding));
+    encodingPtr = ckalloc(sizeof(Encoding));
     encodingPtr->name		= strcpy(name, typePtr->encodingName);
     encodingPtr->toUtfProc	= typePtr->toUtfProc;
     encodingPtr->fromUtfProc	= typePtr->fromUtfProc;
@@ -1707,7 +1707,7 @@ LoadTableEncoding(
 #undef PAGESIZE
 #define PAGESIZE    (256 * sizeof(unsigned short))
 
-    dataPtr = (TableEncodingData *) ckalloc(sizeof(TableEncodingData));
+    dataPtr = ckalloc(sizeof(TableEncodingData));
     memset(dataPtr, 0, sizeof(TableEncodingData));
 
     dataPtr->fallback = fallback;
@@ -1719,7 +1719,7 @@ LoadTableEncoding(
      */
 
     size = 256 * sizeof(unsigned short *) + numPages * PAGESIZE;
-    dataPtr->toUnicode = (unsigned short **) ckalloc(size);
+    dataPtr->toUnicode = ckalloc(size);
     memset(dataPtr->toUnicode, 0, size);
     pageMemPtr = (unsigned short *) (dataPtr->toUnicode + 256);
 
@@ -1777,7 +1777,7 @@ LoadTableEncoding(
 	}
     }
     size = 256 * sizeof(unsigned short *) + numPages * PAGESIZE;
-    dataPtr->fromUnicode = (unsigned short **) ckalloc(size);
+    dataPtr->fromUnicode = ckalloc(size);
     memset(dataPtr->fromUnicode, 0, size);
     pageMemPtr = (unsigned short *) (dataPtr->fromUnicode + 256);
 
@@ -2009,13 +2009,13 @@ LoadEscapeEncoding(
 		Tcl_DStringAppend(&escapeData, (char *) &est, sizeof(est));
 	    }
 	}
-	ckfree((char *) argv);
+	ckfree(argv);
 	Tcl_DStringFree(&lineString);
     }
 
     size = sizeof(EscapeEncodingData) - sizeof(EscapeSubTable)
 	    + Tcl_DStringLength(&escapeData);
-    dataPtr = (EscapeEncodingData *) ckalloc(size);
+    dataPtr = ckalloc(size);
     dataPtr->initLen = strlen(init);
     memcpy(dataPtr->init, init, (unsigned) dataPtr->initLen + 1);
     dataPtr->finalLen = strlen(final);
@@ -2955,9 +2955,9 @@ TableFreeProc(
      * Make sure we aren't freeing twice on shutdown. [Bug 219314]
      */
 
-    ckfree((char *) dataPtr->toUnicode);
-    ckfree((char *) dataPtr->fromUnicode);
-    ckfree((char *) dataPtr);
+    ckfree(dataPtr->toUnicode);
+    ckfree(dataPtr->fromUnicode);
+    ckfree(dataPtr);
 }
 
 /*
@@ -3432,7 +3432,7 @@ EscapeFreeProc(
 	    subTablePtr++;
 	}
     }
-    ckfree((char *) dataPtr);
+    ckfree(dataPtr);
 }
 
 /*
@@ -3570,7 +3570,7 @@ InitializeEncodingSearchPath(
     bytes = Tcl_GetStringFromObj(searchPathObj, &numBytes);
 
     *lengthPtr = numBytes;
-    *valuePtr = ckalloc((unsigned) numBytes + 1);
+    *valuePtr = ckalloc(numBytes + 1);
     memcpy(*valuePtr, bytes, (size_t) numBytes + 1);
     Tcl_DecrRefCount(searchPathObj);
 }
