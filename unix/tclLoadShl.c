@@ -104,7 +104,7 @@ TclpDlopen(
 		Tcl_PosixError(interp), (char *) NULL);
 	return TCL_ERROR;
     }
-    newHandle = (Tcl_LoadHandle) ckalloc(sizeof(*newHandle));
+    newHandle = ckalloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = *unloadProcPtr = &UnloadFile;
@@ -190,7 +190,7 @@ UnloadFile(
 
     handle = (shl_t) (loadHandle -> clientData);
     shl_unload(handle);
-    ckfree((char*) loadHandle);
+    ckfree(loadHandle);
 }
 
 /*

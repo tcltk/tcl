@@ -436,7 +436,7 @@ ThreadObjCmd(
 	    ckfree(errorProcString);
 	}
 	proc = Tcl_GetString(objv[2]);
-	errorProcString = ckalloc(strlen(proc)+1);
+	errorProcString = ckalloc(strlen(proc) + 1);
 	strcpy(errorProcString, proc);
 	Tcl_MutexUnlock(&threadMutex);
 	return TCL_OK;
@@ -513,7 +513,7 @@ ThreadCreate(
 	    TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
 	Tcl_AppendResult(interp, "can't create a new thread", NULL);
-	ckfree((char *) ctrl.script);
+	ckfree(ctrl.script);
 	return TCL_ERROR;
     }
 
@@ -597,7 +597,7 @@ NewTestThread(
      * eval'ing, for the case that we exit during evaluation
      */
 
-    threadEvalScript = ckalloc(strlen(ctrlPtr->script)+1);
+    threadEvalScript = ckalloc(strlen(ctrlPtr->script) + 1);
     strcpy(threadEvalScript, ctrlPtr->script);
 
     Tcl_CreateThreadExitHandler(ThreadExitProc, threadEvalScript);
@@ -841,13 +841,13 @@ ThreadSend(
      * Create the event for its event queue.
      */
 
-    threadEventPtr = (ThreadEvent *) ckalloc(sizeof(ThreadEvent));
+    threadEventPtr = ckalloc(sizeof(ThreadEvent));
     threadEventPtr->script = ckalloc(strlen(script) + 1);
     strcpy(threadEventPtr->script, script);
     if (!wait) {
 	resultPtr = threadEventPtr->resultPtr = NULL;
     } else {
-	resultPtr = (ThreadEventResult *) ckalloc(sizeof(ThreadEventResult));
+	resultPtr = ckalloc(sizeof(ThreadEventResult));
 	threadEventPtr->resultPtr = resultPtr;
 
 	/*
@@ -930,7 +930,7 @@ ThreadSend(
     Tcl_ConditionFinalize(&resultPtr->done);
     code = resultPtr->code;
 
-    ckfree((char *) resultPtr);
+    ckfree(resultPtr);
 
     return code;
 }
@@ -1083,7 +1083,7 @@ ThreadFreeProc(
     ClientData clientData)
 {
     if (clientData) {
-	ckfree((char *) clientData);
+	ckfree(clientData);
     }
 }
 
@@ -1111,7 +1111,7 @@ ThreadDeleteEvent(
     ClientData clientData)	/* dummy */
 {
     if (eventPtr->proc == ThreadEventProc) {
-	ckfree((char *) ((ThreadEvent *) eventPtr)->script);
+	ckfree(((ThreadEvent *) eventPtr)->script);
 	return 1;
     }
 
@@ -1175,7 +1175,7 @@ ThreadExitProc(
 	    }
 	    resultPtr->nextPtr = resultPtr->prevPtr = 0;
 	    resultPtr->eventPtr->resultPtr = NULL;
-	    ckfree((char *) resultPtr);
+	    ckfree(resultPtr);
 	} else if (resultPtr->dstThreadId == self) {
 	    /*
 	     * Dang. The target is going away. Unblock the caller. The result

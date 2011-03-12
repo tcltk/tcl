@@ -548,8 +548,7 @@ Tcl_MainEx(
 		if (tty) {
 		    Prompt(interp, &prompt);
 		}
-		isPtr = (InteractiveState *)
-			ckalloc(sizeof(InteractiveState));
+		isPtr = ckalloc(sizeof(InteractiveState));
 		isPtr->input = inChannel;
 		isPtr->tty = tty;
 		isPtr->commandPtr = commandPtr;
@@ -577,7 +576,7 @@ Tcl_MainEx(
 		if (isPtr->input != NULL) {
 		    Tcl_DeleteChannelHandler(isPtr->input, StdinProc, isPtr);
 		}
-		ckfree((char *) isPtr);
+		ckfree(isPtr);
 	    }
 	    inChannel = Tcl_GetStdChannel(TCL_STDIN);
 	    outChannel = Tcl_GetStdChannel(TCL_STDOUT);

@@ -458,12 +458,12 @@ TclFinalizeThreadObjects(void)
 	    ObjData *objData = Tcl_GetHashValue(hPtr);
 
 	    if (objData != NULL) {
-		ckfree((char *) objData);
+		ckfree(objData);
 	    }
 	}
 
 	Tcl_DeleteHashTable(tablePtr);
-	ckfree((char *) tablePtr);
+	ckfree(tablePtr);
 	tsdPtr->objThreadMap = NULL;
     }
 #endif
@@ -539,7 +539,7 @@ TclGetContLineTable(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->lineCLPtr) {
-	tsdPtr->lineCLPtr = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
+	tsdPtr->lineCLPtr = ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(tsdPtr->lineCLPtr, TCL_ONE_WORD_KEYS);
 	Tcl_CreateThreadExitHandler(TclThreadFinalizeContLines,NULL);
     }
@@ -574,8 +574,7 @@ TclContinuationsEnter(
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = (ContLineLoc *)
-            ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
+    ContLineLoc *clLocPtr = ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
 
     if (!newEntry) {
 	/*
@@ -814,7 +813,7 @@ TclThreadFinalizeContLines(
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(tsdPtr->lineCLPtr);
-    ckfree((char *) tsdPtr->lineCLPtr);
+    ckfree(tsdPtr->lineCLPtr);
     tsdPtr->lineCLPtr = NULL;
 }
 
@@ -1104,8 +1103,7 @@ TclDbInitNewObj(
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (tsdPtr->objThreadMap == NULL) {
-	    tsdPtr->objThreadMap = (Tcl_HashTable *)
-		    ckalloc(sizeof(Tcl_HashTable));
+	    tsdPtr->objThreadMap = ckalloc(sizeof(Tcl_HashTable));
 	    Tcl_InitHashTable(tsdPtr->objThreadMap, TCL_ONE_WORD_KEYS);
 	}
 	tablePtr = tsdPtr->objThreadMap;
@@ -1118,7 +1116,7 @@ TclDbInitNewObj(
 	 * Record the debugging information.
 	 */
 
-	objData = (ObjData *) ckalloc(sizeof(ObjData));
+	objData = ckalloc(sizeof(ObjData));
 	objData->objPtr = objPtr;
 	objData->file = file;
 	objData->line = line;
@@ -1277,7 +1275,7 @@ TclAllocateFreeObjects(void)
      * Purify apparently can't figure that out, and fires a false alarm.
      */
 
-    basePtr = (char *) ckalloc(bytesToAlloc);
+    basePtr = ckalloc(bytesToAlloc);
 
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
@@ -1351,7 +1349,7 @@ TclFreeObj(
 	}
 
 	Tcl_MutexLock(&tclObjMutex);
-	ckfree((char *) objPtr);
+	ckfree(objPtr);
 	Tcl_MutexUnlock(&tclObjMutex);
 	TclIncrObjsFreed();
 	ObjDeletionLock(context);
@@ -1363,7 +1361,7 @@ TclFreeObj(
 	    TclFreeIntRep(objToFree);
 
 	    Tcl_MutexLock(&tclObjMutex);
-	    ckfree((char *) objToFree);
+	    ckfree(objToFree);
 	    Tcl_MutexUnlock(&tclObjMutex);
 	    TclIncrObjsFreed();
 	}
@@ -2350,7 +2348,7 @@ UpdateStringOfDouble(
     Tcl_PrintDouble(NULL, objPtr->internalRep.doubleValue, buffer);
     len = strlen(buffer);
 
-    objPtr->bytes = (char *) ckalloc((unsigned) len + 1);
+    objPtr->bytes = ckalloc(len + 1);
     memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
     objPtr->length = len;
 }
@@ -2546,7 +2544,7 @@ UpdateStringOfInt(
 
     len = TclFormatInt(buffer, objPtr->internalRep.longValue);
 
-    objPtr->bytes = ckalloc((unsigned) len + 1);
+    objPtr->bytes = ckalloc(len + 1);
     memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
     objPtr->length = len;
 }
@@ -2852,7 +2850,7 @@ UpdateStringOfWideInt(
 
     sprintf(buffer, "%" TCL_LL_MODIFIER "d", wideVal);
     len = strlen(buffer);
-    objPtr->bytes = ckalloc((unsigned) len + 1);
+    objPtr->bytes = ckalloc(len + 1);
     memcpy(objPtr->bytes, buffer, len + 1);
     objPtr->length = len;
 }
@@ -3164,7 +3162,7 @@ FreeBignum(
     UNPACK_BIGNUM(objPtr, toFree);
     mp_clear(&toFree);
     if ((long) objPtr->internalRep.ptrAndLongRep.value < 0) {
-	ckfree((char *) objPtr->internalRep.ptrAndLongRep.ptr);
+	ckfree(objPtr->internalRep.ptrAndLongRep.ptr);
     }
     objPtr->typePtr = NULL;
 }
@@ -3249,7 +3247,7 @@ UpdateStringOfBignum(
 
 	Tcl_Panic("UpdateStringOfBignum: string length limit exceeded");
     }
-    stringVal = ckalloc((size_t) size);
+    stringVal = ckalloc(size);
     status = mp_toradix_n(&bignumVal, stringVal, 10, size);
     if (status != MP_OKAY) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
@@ -3797,7 +3795,7 @@ Tcl_DbDecrRefCount(
 	    ObjData *objData = Tcl_GetHashValue(hPtr);
 
 	    if (objData != NULL) {
-		ckfree((char *) objData);
+		ckfree(objData);
 	    }
 
 	    Tcl_DeleteHashEntry(hPtr);
@@ -3935,11 +3933,10 @@ AllocObjEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
-    Tcl_Obj *objPtr = (Tcl_Obj *) keyPtr;
-    Tcl_HashEntry *hPtr;
+    Tcl_Obj *objPtr = keyPtr;
+    Tcl_HashEntry *hPtr = ckalloc(sizeof(Tcl_HashEntry));
 
-    hPtr = (Tcl_HashEntry *) ckalloc((unsigned) (sizeof(Tcl_HashEntry)));
-    hPtr->key.oneWordValue = (char *) objPtr;
+    hPtr->key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
     hPtr->clientData = NULL;
 
@@ -4032,7 +4029,7 @@ TclFreeObjEntry(
     Tcl_Obj *objPtr = (Tcl_Obj *) hPtr->key.oneWordValue;
 
     Tcl_DecrRefCount(objPtr);
-    ckfree((char *) hPtr);
+    ckfree(hPtr);
 }
 
 /*
@@ -4227,7 +4224,7 @@ TclSetCmdNameObj(
     }
 
     cmdPtr->refCount++;
-    resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
+    resPtr = ckalloc(sizeof(ResolvedCmdName));
     resPtr->cmdPtr = cmdPtr;
     resPtr->cmdEpoch = cmdPtr->cmdEpoch;
     resPtr->refCount = 1;
@@ -4303,7 +4300,7 @@ FreeCmdNameInternalRep(
 	    Command *cmdPtr = resPtr->cmdPtr;
 
 	    TclCleanupCommandMacro(cmdPtr);
-	    ckfree((char *) resPtr);
+	    ckfree(resPtr);
 	}
     }
     objPtr->typePtr = NULL;
@@ -4410,7 +4407,7 @@ SetCmdNameFromAny(
 	    }
 	} else {
 	    TclFreeIntRep(objPtr);
-	    resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
+	    resPtr = ckalloc(sizeof(ResolvedCmdName));
 	    resPtr->refCount = 1;
 	    objPtr->internalRep.twoPtrValue.ptr1 = resPtr;
 	    objPtr->internalRep.twoPtrValue.ptr2 = NULL;

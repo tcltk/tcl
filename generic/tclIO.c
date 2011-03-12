@@ -627,7 +627,7 @@ Tcl_CreateCloseHandler(
     ChannelState *statePtr = ((Channel *) chan)->state;
     CloseCallback *cbPtr;
 
-    cbPtr = (CloseCallback *) ckalloc(sizeof(CloseCallback));
+    cbPtr = ckalloc(sizeof(CloseCallback));
     cbPtr->proc = proc;
     cbPtr->clientData = clientData;
 
@@ -671,7 +671,7 @@ Tcl_DeleteCloseHandler(
 	    if (cbPrevPtr == NULL) {
 		statePtr->closeCbPtr = cbPtr->nextPtr;
 	    }
-	    ckfree((char *) cbPtr);
+	    ckfree(cbPtr);
 	    break;
 	}
 	cbPrevPtr = cbPtr;
@@ -706,7 +706,7 @@ GetChannelTable(
 
     hTblPtr = Tcl_GetAssocData(interp, "tclIO", NULL);
     if (hTblPtr == NULL) {
-	hTblPtr = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
+	hTblPtr = ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_STRING_KEYS);
 	Tcl_SetAssocData(interp, "tclIO",
 		(Tcl_InterpDeleteProc *) DeleteChannelTable, hTblPtr);
@@ -798,7 +798,7 @@ DeleteChannelTable(
 			TclChannelEventScriptInvoker, sPtr);
 
 		TclDecrRefCount(sPtr->scriptPtr);
-		ckfree((char *) sPtr);
+		ckfree(sPtr);
 	    } else {
 		prevPtr = sPtr;
 	    }
@@ -822,7 +822,7 @@ DeleteChannelTable(
 
     }
     Tcl_DeleteHashTable(hTblPtr);
-    ckfree((char *) hTblPtr);
+    ckfree(hTblPtr);
 }
 
 /*
@@ -1355,8 +1355,8 @@ Tcl_CreateChannel(
      * assignments to 0/NULL below.
      */
 
-    chanPtr = (Channel *) ckalloc(sizeof(Channel));
-    statePtr = (ChannelState *) ckalloc(sizeof(ChannelState));
+    chanPtr = ckalloc(sizeof(Channel));
+    statePtr = ckalloc(sizeof(ChannelState));
     chanPtr->state = statePtr;
 
     chanPtr->instanceData = instanceData;
@@ -1436,7 +1436,7 @@ Tcl_CreateChannel(
 
     statePtr->outputStage	= NULL;
     if ((statePtr->encoding != NULL) && GotFlag(statePtr, TCL_WRITABLE)) {
-	statePtr->outputStage = ckalloc((unsigned) statePtr->bufSize + 2);
+	statePtr->outputStage = ckalloc(statePtr->bufSize + 2);
     }
 
     /*
@@ -1647,7 +1647,7 @@ Tcl_StackChannel(
 	statePtr->inQueueTail = NULL;
     }
 
-    chanPtr = (Channel *) ckalloc(sizeof(Channel));
+    chanPtr = ckalloc(sizeof(Channel));
 
     /*
      * Save some of the current state into the new structure, reinitialize the
@@ -2143,7 +2143,7 @@ AllocChannelBuffer(
     int n;
 
     n = length + CHANNELBUFFER_HEADER_SIZE + BUFFER_PADDING + BUFFER_PADDING;
-    bufPtr = (ChannelBuffer *) ckalloc((unsigned) n);
+    bufPtr = ckalloc(n);
     bufPtr->nextAdded	= BUFFER_PADDING;
     bufPtr->nextRemoved	= BUFFER_PADDING;
     bufPtr->bufLength	= length + BUFFER_PADDING;
@@ -2182,7 +2182,7 @@ RecycleBuffer(
      */
 
     if (mustDiscard) {
-	ckfree((char *) bufPtr);
+	ckfree(bufPtr);
 	return;
     }
 
@@ -2193,7 +2193,7 @@ RecycleBuffer(
      */
 
     if ((bufPtr->bufLength - BUFFER_PADDING) < statePtr->bufSize) {
-	ckfree((char *) bufPtr);
+	ckfree(bufPtr);
 	return;
     }
 
@@ -2228,7 +2228,7 @@ RecycleBuffer(
      * If we reached this code we return the buffer to the OS.
      */
 
-    ckfree((char *) bufPtr);
+    ckfree(bufPtr);
     return;
 
   keepBuffer:
@@ -2619,7 +2619,7 @@ CloseChannel(
      */
 
     if (statePtr->curOutPtr != NULL) {
-	ckfree((char *) statePtr->curOutPtr);
+	ckfree(statePtr->curOutPtr);
 	statePtr->curOutPtr = NULL;
     }
 
@@ -2677,13 +2677,13 @@ CloseChannel(
 
     if (chanPtr == statePtr->bottomChanPtr) {
 	if (statePtr->channelName != NULL) {
-	    ckfree((char *) statePtr->channelName);
+	    ckfree(statePtr->channelName);
 	    statePtr->channelName = NULL;
 	}
 
 	Tcl_FreeEncoding(statePtr->encoding);
 	if (statePtr->outputStage != NULL) {
-	    ckfree((char *) statePtr->outputStage);
+	    ckfree(statePtr->outputStage);
 	    statePtr->outputStage = NULL;
 	}
     }
@@ -3066,7 +3066,7 @@ Tcl_Close(
 	cbPtr = statePtr->closeCbPtr;
 	statePtr->closeCbPtr = cbPtr->nextPtr;
 	cbPtr->proc(cbPtr->clientData);
-	ckfree((char *) cbPtr);
+	ckfree(cbPtr);
     }
 
     ResetFlag(statePtr, CHANNEL_INCLOSE);
@@ -3540,7 +3540,7 @@ Tcl_ClearChannelHandlers(
 
     for (chPtr = statePtr->chPtr; chPtr != NULL; chPtr = chNext) {
 	chNext = chPtr->nextPtr;
-	ckfree((char *) chPtr);
+	ckfree(chPtr);
     }
     statePtr->chPtr = NULL;
 
@@ -3567,7 +3567,7 @@ Tcl_ClearChannelHandlers(
     for (ePtr = statePtr->scriptRecordPtr; ePtr != NULL; ePtr = eNextPtr) {
 	eNextPtr = ePtr->nextPtr;
 	TclDecrRefCount(ePtr->scriptPtr);
-	ckfree((char *) ePtr);
+	ckfree(ePtr);
     }
     statePtr->scriptRecordPtr = NULL;
 }
@@ -6559,7 +6559,7 @@ DiscardInputQueued(
      */
 
     if (discardSavedBuffers && statePtr->saveInBufPtr != NULL) {
-	ckfree((char *) statePtr->saveInBufPtr);
+	ckfree(statePtr->saveInBufPtr);
 	statePtr->saveInBufPtr = NULL;
     }
 }
@@ -6652,7 +6652,7 @@ GetInput(
 
 	if ((bufPtr != NULL)
 		&& (bufPtr->bufLength - BUFFER_PADDING < statePtr->bufSize)) {
-	    ckfree((char *) bufPtr);
+	    ckfree(bufPtr);
 	    bufPtr = NULL;
 	}
 
@@ -7440,11 +7440,11 @@ Tcl_SetChannelBufferSize(
     statePtr->bufSize = sz;
 
     if (statePtr->outputStage != NULL) {
-	ckfree((char *) statePtr->outputStage);
+	ckfree(statePtr->outputStage);
 	statePtr->outputStage = NULL;
     }
     if ((statePtr->encoding != NULL) && GotFlag(statePtr, TCL_WRITABLE)) {
-	statePtr->outputStage = ckalloc((unsigned) statePtr->bufSize + 2);
+	statePtr->outputStage = ckalloc(statePtr->bufSize + 2);
     }
 }
 
@@ -7538,7 +7538,7 @@ Tcl_BadChannelOption(
 	}
 	Tcl_AppendResult(interp, "or -", argv[i], NULL);
 	Tcl_DStringFree(&ds);
-	ckfree((char *) argv);
+	ckfree(argv);
     }
     Tcl_SetErrno(EINVAL);
     return TCL_ERROR;
@@ -7923,7 +7923,7 @@ Tcl_SetChannelOption(
 		    Tcl_AppendResult(interp, "bad value for -eofchar: ",
 			    "must be non-NUL ASCII character", NULL);
 		}
-		ckfree((char *) argv);
+		ckfree(argv);
 		return TCL_ERROR;
 	    }
 	    if (GotFlag(statePtr, TCL_READABLE)) {
@@ -7938,11 +7938,11 @@ Tcl_SetChannelOption(
 			"bad value for -eofchar: should be a list of zero,"
 			" one, or two elements", NULL);
 	    }
-	    ckfree((char *) argv);
+	    ckfree(argv);
 	    return TCL_ERROR;
 	}
 	if (argv != NULL) {
-	    ckfree((char *) argv);
+	    ckfree(argv);
 	}
 
 	/*
@@ -7972,7 +7972,7 @@ Tcl_SetChannelOption(
 			"bad value for -translation: must be a one or two"
 			" element list", NULL);
 	    }
-	    ckfree((char *) argv);
+	    ckfree(argv);
 	    return TCL_ERROR;
 	}
 
@@ -8003,7 +8003,7 @@ Tcl_SetChannelOption(
 			    "must be one of auto, binary, cr, lf, crlf,"
 			    " or platform", NULL);
 		}
-		ckfree((char *) argv);
+		ckfree(argv);
 		return TCL_ERROR;
 	    }
 
@@ -8054,11 +8054,11 @@ Tcl_SetChannelOption(
 			    "must be one of auto, binary, cr, lf, crlf,"
 			    " or platform", NULL);
 		}
-		ckfree((char *) argv);
+		ckfree(argv);
 		return TCL_ERROR;
 	    }
 	}
-	ckfree((char *) argv);
+	ckfree(argv);
 	return TCL_OK;
     } else if (chanPtr->typePtr->setOptionProc != NULL) {
 	return chanPtr->typePtr->setOptionProc(chanPtr->instanceData, interp,
@@ -8092,7 +8092,7 @@ Tcl_SetChannelOption(
 	statePtr->outputStage = NULL;
     }
     if ((statePtr->encoding != NULL) && GotFlag(statePtr, TCL_WRITABLE)) {
-	statePtr->outputStage = ckalloc((unsigned) (statePtr->bufSize + 2));
+	statePtr->outputStage = ckalloc(statePtr->bufSize + 2);
     }
     return TCL_OK;
 }
@@ -8144,7 +8144,7 @@ CleanupChannelHandlers(
 		    TclChannelEventScriptInvoker, sPtr);
 
 	    TclDecrRefCount(sPtr->scriptPtr);
-	    ckfree((char *) sPtr);
+	    ckfree(sPtr);
 	} else {
 	    prevPtr = sPtr;
 	}
@@ -8515,7 +8515,7 @@ Tcl_CreateChannelHandler(
 	}
     }
     if (chPtr == NULL) {
-	chPtr = (ChannelHandler *) ckalloc(sizeof(ChannelHandler));
+	chPtr = ckalloc(sizeof(ChannelHandler));
 	chPtr->mask = 0;
 	chPtr->proc = proc;
 	chPtr->clientData = clientData;
@@ -8619,7 +8619,7 @@ Tcl_DeleteChannelHandler(
     } else {
 	prevChPtr->nextPtr = chPtr->nextPtr;
     }
-    ckfree((char *) chPtr);
+    ckfree(chPtr);
 
     /*
      * Recompute the interest list for the channel, so that infinite loops
@@ -8678,7 +8678,7 @@ DeleteScriptRecord(
 		    TclChannelEventScriptInvoker, esPtr);
 
 	    TclDecrRefCount(esPtr->scriptPtr);
-	    ckfree((char *) esPtr);
+	    ckfree(esPtr);
 
 	    break;
 	}
@@ -8727,7 +8727,7 @@ CreateScriptRecord(
     makeCH = (esPtr == NULL);
 
     if (makeCH) {
-	esPtr = (EventScriptRecord *) ckalloc(sizeof(EventScriptRecord));
+	esPtr = ckalloc(sizeof(EventScriptRecord));
     }
 
     /*
@@ -9041,7 +9041,7 @@ TclCopyChannel(
      * completed.
      */
 
-    csPtr = (CopyState *) ckalloc(sizeof(CopyState) + inStatePtr->bufSize);
+    csPtr = ckalloc(sizeof(CopyState) + inStatePtr->bufSize);
     csPtr->bufSize = inStatePtr->bufSize;
     csPtr->readPtr = inPtr;
     csPtr->writePtr = outPtr;
@@ -10027,7 +10027,7 @@ StopCopy(
     }
     inStatePtr->csPtrR = NULL;
     outStatePtr->csPtrW = NULL;
-    ckfree((char *) csPtr);
+    ckfree(csPtr);
 }
 
 /*
@@ -10996,7 +10996,7 @@ FixLevelCode(
 	lcn += 2;
     }
 
-    lvn = (Tcl_Obj **) ckalloc(lcn * sizeof(Tcl_Obj *));
+    lvn = ckalloc(lcn * sizeof(Tcl_Obj *));
 
     /*
      * New level/code information is spliced into the first occurence of
@@ -11049,7 +11049,7 @@ FixLevelCode(
 
     msg = Tcl_NewListObj(j, lvn);
 
-    ckfree((char *) lvn);
+    ckfree(lvn);
     return msg;
 }
 

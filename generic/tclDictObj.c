@@ -210,8 +210,8 @@ AllocChainEntry(
     Tcl_Obj *objPtr = keyPtr;
     ChainEntry *cPtr;
 
-    cPtr = (ChainEntry *) ckalloc(sizeof(ChainEntry));
-    cPtr->entry.key.oneWordValue = (char *) objPtr;
+    cPtr = ckalloc(sizeof(ChainEntry));
+    cPtr->entry.key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
     cPtr->entry.clientData = NULL;
     cPtr->prevPtr = cPtr->nextPtr = NULL;
@@ -341,7 +341,7 @@ DupDictInternalRep(
     Tcl_Obj *copyPtr)
 {
     Dict *oldDict = srcPtr->internalRep.otherValuePtr;
-    Dict *newDict = (Dict *) ckalloc(sizeof(Dict));
+    Dict *newDict = ckalloc(sizeof(Dict));
     ChainEntry *cPtr;
 
     /*
@@ -437,7 +437,7 @@ DeleteDict(
     Dict *dict)
 {
     DeleteChainTable(dict);
-    ckfree((char *) dict);
+    ckfree(dict);
 }
 
 /*
@@ -489,7 +489,7 @@ UpdateStringOfDict(
     if (numElems <= LOCAL_SIZE) {
 	flagPtr = localFlags;
     } else {
-	flagPtr = (int *) ckalloc((unsigned) numElems*sizeof(int));
+	flagPtr = ckalloc(numElems * sizeof(int));
     }
     dictPtr->length = 1;
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
@@ -513,7 +513,7 @@ UpdateStringOfDict(
      * Pass 2: copy into string rep buffer.
      */
 
-    dictPtr->bytes = ckalloc((unsigned) dictPtr->length);
+    dictPtr->bytes = ckalloc(dictPtr->length);
     dst = dictPtr->bytes;
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
@@ -529,7 +529,7 @@ UpdateStringOfDict(
 	*(dst++) = ' ';
     }
     if (flagPtr != localFlags) {
-	ckfree((char *) flagPtr);
+	ckfree(flagPtr);
     }
     if (dst == dictPtr->bytes) {
 	*dst = 0;
@@ -600,7 +600,7 @@ SetDictFromAny(
 	 * Build the hash of key/value pairs.
 	 */
 
-	dict = (Dict *) ckalloc(sizeof(Dict));
+	dict = ckalloc(sizeof(Dict));
 	InitChainTable(dict);
 	for (i=0 ; i<objc ; i+=2) {
 	    /*
@@ -644,7 +644,7 @@ SetDictFromAny(
      * values.
      */
 
-    dict = (Dict *) ckalloc(sizeof(Dict));
+    dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
     for (p = string, lenRemain = length;
 	    lenRemain > 0;
@@ -666,7 +666,7 @@ SetDictFromAny(
 	 * "elemSize" bytes starting at "elemStart".
 	 */
 
-	s = ckalloc((unsigned) elemSize + 1);
+	s = ckalloc(elemSize + 1);
 	if (hasBrace) {
 	    memcpy(s, elemStart, (size_t) elemSize);
 	    s[elemSize] = 0;
@@ -702,7 +702,7 @@ SetDictFromAny(
 	 * "elemSize" bytes starting at "elemStart".
 	 */
 
-	s = ckalloc((unsigned) elemSize + 1);
+	s = ckalloc(elemSize + 1);
 	if (hasBrace) {
 	    memcpy(s, elemStart, (size_t) elemSize);
 	    s[elemSize] = 0;
@@ -754,7 +754,7 @@ SetDictFromAny(
 
   errorExit:
     DeleteChainTable(dict);
-    ckfree((char *) dict);
+    ckfree(dict);
     return result;
 }
 
@@ -1419,7 +1419,7 @@ Tcl_NewDictObj(void)
 
     TclNewObj(dictPtr);
     Tcl_InvalidateStringRep(dictPtr);
-    dict = (Dict *) ckalloc(sizeof(Dict));
+    dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
@@ -1468,7 +1468,7 @@ Tcl_DbNewDictObj(
 
     TclDbNewObj(dictPtr, file, line);
     Tcl_InvalidateStringRep(dictPtr);
-    dict = (Dict *) ckalloc(sizeof(Dict));
+    dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;

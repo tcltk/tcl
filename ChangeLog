@@ -1,3 +1,21 @@
+2011-03-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tcl.h (ckalloc,ckfree,ckrealloc): Moved casts into these
+	macro so that they work with VOID* (which is a void* on all platforms
+	which Tcl actually builds on) and unsigned int for the length
+	parameters, removing the need for MANY casts across the rest of Tcl.
+	Note that this is a strict source-level-only change, so size_t cannot
+	be used (would break binary compatibility on 64-bit platforms).
+
+2011-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3185609]: File normalization corner case
+	of ... broken with -DUNICODE
+
+2011-03-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/unixInit.test: Make better use of tcltest2.
+
 2011-03-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBasic.c, generic/tclCompCmds.c, generic/tclEnsemble.c:

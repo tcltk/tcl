@@ -772,7 +772,7 @@ ReleaseDictIterator(
 
     searchPtr = objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_DictObjDone(searchPtr);
-    ckfree((char *) searchPtr);
+    ckfree(searchPtr);
 
     dictPtr = objPtr->internalRep.twoPtrValue.ptr2;
     TclDecrRefCount(dictPtr);
@@ -847,8 +847,8 @@ TclCreateExecEnv(
     int size)			/* The initial stack size, in number of words
 				 * [sizeof(Tcl_Obj*)] */
 {
-    ExecEnv *eePtr = (ExecEnv *) ckalloc(sizeof(ExecEnv));
-    ExecStack *esPtr = (ExecStack *) ckalloc(sizeof(ExecStack)
+    ExecEnv *eePtr = ckalloc(sizeof(ExecEnv));
+    ExecStack *esPtr = ckalloc(sizeof(ExecStack)
 	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
@@ -909,7 +909,7 @@ DeleteExecStack(
     if (esPtr->nextPtr) {
 	esPtr->nextPtr->prevPtr = esPtr->prevPtr;
     }
-    ckfree((char *) esPtr);
+    ckfree(esPtr);
 }
 
 void
@@ -939,7 +939,7 @@ TclDeleteExecEnv(
     if (eePtr->corPtr) {
 	Tcl_Panic("Deleting execEnv with existing coroutine");
     }
-    ckfree((char *) eePtr);
+    ckfree(eePtr);
 }
 
 /*
@@ -1109,7 +1109,7 @@ GrowEvaluationStack(
     newBytes = sizeof(ExecStack) + (newElems-1) * sizeof(Tcl_Obj *);
 
     oldPtr = esPtr;
-    esPtr = (ExecStack *) ckalloc(newBytes);
+    esPtr = ckalloc(newBytes);
 
     oldPtr->nextPtr = esPtr;
     esPtr->prevPtr = oldPtr;
@@ -2592,7 +2592,7 @@ TEBCresume(
 	    } else
 #endif
 	    {
-		p = (char *) ckalloc((unsigned) (length + appendLen + 1));
+		p = ckalloc(length + appendLen + 1);
 		TclNewObj(objResultPtr);
 		objResultPtr->bytes = p;
 		objResultPtr->length = length + appendLen;
@@ -5946,10 +5946,10 @@ TEBCresume(
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
 	dictPtr = POP_OBJECT();
-	searchPtr = (Tcl_DictSearch *) ckalloc(sizeof(Tcl_DictSearch));
+	searchPtr = ckalloc(sizeof(Tcl_DictSearch));
 	if (Tcl_DictObjFirst(interp, dictPtr, searchPtr, &keyPtr,
 		&valuePtr, &done) != TCL_OK) {
-	    ckfree((char *) searchPtr);
+	    ckfree(searchPtr);
 	    goto gotError;
 	}
 	TclNewObj(statePtr);
@@ -8691,7 +8691,7 @@ EvalStatsCmd(
     litTableStats = TclLiteralStats(globalTablePtr);
     Tcl_AppendPrintfToObj(objPtr, "\nCurrent literal table statistics:\n%s\n",
 	    litTableStats);
-    ckfree((char *) litTableStats);
+    ckfree(litTableStats);
 
     /*
      * Source and ByteCode size distributions.

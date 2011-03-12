@@ -184,12 +184,11 @@ TclSetEnv(
 	 */
 
 	if ((env.ourEnviron != environ) || (length+2 > env.ourEnvironSize)) {
-	    char **newEnviron = (char **)
-		    ckalloc(((unsigned) length + 5) * sizeof(char *));
+	    char **newEnviron = ckalloc((length + 5) * sizeof(char *));
 
 	    memcpy(newEnviron, environ, length * sizeof(char *));
 	    if ((env.ourEnvironSize != 0) && (env.ourEnviron != NULL)) {
-		ckfree((char *) env.ourEnviron);
+		ckfree(env.ourEnviron);
 	    }
 	    environ = env.ourEnviron = newEnviron;
 	    env.ourEnvironSize = length + 5;
@@ -239,7 +238,7 @@ TclSetEnv(
      * Copy the native string to heap memory.
      */
 
-    p = ckrealloc(p, (unsigned) Tcl_DStringLength(&envString) + 1);
+    p = ckrealloc(p, Tcl_DStringLength(&envString) + 1);
     memcpy(p, p2, (unsigned) Tcl_DStringLength(&envString) + 1);
     Tcl_DStringFree(&envString);
 
@@ -400,18 +399,18 @@ TclUnsetEnv(
      */
 
 #if defined(__WIN32__) || defined(__CYGWIN__)
-    string = ckalloc((unsigned) length+2);
+    string = ckalloc(length + 2);
     memcpy(string, name, (size_t) length);
     string[length] = '=';
     string[length+1] = '\0';
 #else
-    string = ckalloc((unsigned) length+1);
+    string = ckalloc(length + 1);
     memcpy(string, name, (size_t) length);
     string[length] = '\0';
 #endif /* WIN32 */
 
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
-    string = ckrealloc(string, (unsigned) Tcl_DStringLength(&envString)+1);
+    string = ckrealloc(string, Tcl_DStringLength(&envString) + 1);
     memcpy(string, Tcl_DStringValue(&envString),
 	    (unsigned) Tcl_DStringLength(&envString)+1);
     Tcl_DStringFree(&envString);
@@ -646,7 +645,7 @@ ReplaceString(
 
 	const int growth = 5;
 
-	env.cache = (char **) ckrealloc((char *) env.cache,
+	env.cache = ckrealloc(env.cache,
 		(env.cacheSize + growth) * sizeof(char *));
 	env.cache[env.cacheSize] = newStr;
 	(void) memset(env.cache+env.cacheSize+1, 0,
@@ -685,7 +684,7 @@ TclFinalizeEnvironment(void)
      */
 
     if (env.cache) {
-	ckfree((char *) env.cache);
+	ckfree(env.cache);
 	env.cache = NULL;
 	env.cacheSize = 0;
 #ifndef USE_PUTENV

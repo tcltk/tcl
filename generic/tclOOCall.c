@@ -131,7 +131,7 @@ TclOODeleteChainCache(
 	}
     }
     Tcl_DeleteHashTable(tablePtr);
-    ckfree((char *) tablePtr);
+    ckfree(tablePtr);
 }
 
 /*
@@ -152,9 +152,9 @@ TclOODeleteChain(
 	return;
     }
     if (callPtr->chain != callPtr->staticChain) {
-	ckfree((char *) callPtr->chain);
+	ckfree(callPtr->chain);
     }
-    ckfree((char *) callPtr);
+    ckfree(callPtr);
 }
 
 /*
@@ -451,7 +451,7 @@ TclOOGetSortedMethodList(
 	 * heavily sorted when it is long enough to matter.
 	 */
 
-	strings = (const char **) ckalloc(sizeof(char *) * names.numEntries);
+	strings = ckalloc(sizeof(char *) * names.numEntries);
 	FOREACH_HASH(namePtr, isWanted, &names) {
 	    if (!(flags & PUBLIC_METHOD) || (PTR2INT(isWanted) & IN_LIST)) {
 		if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
@@ -472,7 +472,7 @@ TclOOGetSortedMethodList(
 	    }
 	    *stringsPtr = strings;
 	} else {
-	    ckfree((char *) strings);
+	    ckfree(strings);
 	}
     }
 
@@ -518,7 +518,7 @@ TclOOGetSortedClassMethodList(
 	 * heavily sorted when it is long enough to matter.
 	 */
 
-	strings = (const char **) ckalloc(sizeof(char *) * names.numEntries);
+	strings = ckalloc(sizeof(char *) * names.numEntries);
 	FOREACH_HASH(namePtr, isWanted, &names) {
 	    if (!(flags & PUBLIC_METHOD) || (PTR2INT(isWanted) & IN_LIST)) {
 		if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
@@ -539,7 +539,7 @@ TclOOGetSortedClassMethodList(
 	    }
 	    *stringsPtr = strings;
 	} else {
-	    ckfree((char *) strings);
+	    ckfree(strings);
 	}
     }
 
@@ -801,12 +801,12 @@ AddMethodToCallChain(
      */
 
     if (callPtr->numChain == CALL_CHAIN_STATIC_SIZE) {
-	callPtr->chain = (struct MInvoke *)
-		ckalloc(sizeof(struct MInvoke)*(callPtr->numChain+1));
+	callPtr->chain =
+		ckalloc(sizeof(struct MInvoke) * (callPtr->numChain+1));
 	memcpy(callPtr->chain, callPtr->staticChain,
 		sizeof(struct MInvoke) * callPtr->numChain);
     } else if (callPtr->numChain > CALL_CHAIN_STATIC_SIZE) {
-	callPtr->chain = (struct MInvoke *) ckrealloc((char *) callPtr->chain,
+	callPtr->chain = ckrealloc(callPtr->chain,
 		sizeof(struct MInvoke) * (callPtr->numChain + 1));
     }
     callPtr->chain[i].mPtr = mPtr;
@@ -987,7 +987,7 @@ TclOOGetCallContext(
 	doFilters = 1;
     }
 
-    callPtr = (CallChain *) ckalloc(sizeof(CallChain));
+    callPtr = ckalloc(sizeof(CallChain));
     InitCallChain(callPtr, oPtr, flags);
 
     cb.callChainPtr = callPtr;
@@ -1052,7 +1052,7 @@ TclOOGetCallContext(
 	if (hPtr == NULL) {
 	    if (oPtr->flags & USE_CLASS_CACHE) {
 		if (oPtr->selfCls->classChainCache == NULL) {
-		    oPtr->selfCls->classChainCache = (Tcl_HashTable *)
+		    oPtr->selfCls->classChainCache =
 			    ckalloc(sizeof(Tcl_HashTable));
 
 		    Tcl_InitObjHashTable(oPtr->selfCls->classChainCache);
@@ -1061,8 +1061,7 @@ TclOOGetCallContext(
 			(char *) methodNameObj, &i);
 	    } else {
 		if (oPtr->chainCache == NULL) {
-		    oPtr->chainCache = (Tcl_HashTable *)
-			    ckalloc(sizeof(Tcl_HashTable));
+		    oPtr->chainCache = ckalloc(sizeof(Tcl_HashTable));
 
 		    Tcl_InitObjHashTable(oPtr->chainCache);
 		}

@@ -905,7 +905,7 @@ CompileRegexp(
      * This is a new expression, so compile it and add it to the cache.
      */
 
-    regexpPtr = (TclRegexp *) ckalloc(sizeof(TclRegexp));
+    regexpPtr = ckalloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
     regexpPtr->details.rm_extend.rm_so = -1;
@@ -932,7 +932,7 @@ CompileRegexp(
 	 * Clean up and report errors in the interpreter, if possible.
 	 */
 
-	ckfree((char *)regexpPtr);
+	ckfree(regexpPtr);
 	if (interp) {
 	    TclRegError(interp,
 		    "couldn't compile regular expression pattern: ", status);
@@ -960,7 +960,7 @@ CompileRegexp(
      * the entire pattern.
      */
 
-    regexpPtr->matches = (regmatch_t *)
+    regexpPtr->matches =
 	    ckalloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
 
     /*
@@ -987,7 +987,7 @@ CompileRegexp(
 	tsdPtr->patLengths[i+1] = tsdPtr->patLengths[i];
 	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
     }
-    tsdPtr->patterns[0] = ckalloc((unsigned) length+1);
+    tsdPtr->patterns[0] = ckalloc(length + 1);
     memcpy(tsdPtr->patterns[0], string, (unsigned) length + 1);
     tsdPtr->patLengths[0] = length;
     tsdPtr->regexps[0] = regexpPtr;
@@ -1020,9 +1020,9 @@ FreeRegexp(
 	TclDecrRefCount(regexpPtr->globObjPtr);
     }
     if (regexpPtr->matches) {
-	ckfree((char *) regexpPtr->matches);
+	ckfree(regexpPtr->matches);
     }
-    ckfree((char *) regexpPtr);
+    ckfree(regexpPtr);
 }
 
 /*

@@ -1280,7 +1280,7 @@ Tcl_FreeParse(
 				 * call to Tcl_ParseCommand. */
 {
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	ckfree((char *) parsePtr->tokenPtr);
+	ckfree(parsePtr->tokenPtr);
 	parsePtr->tokenPtr = parsePtr->staticTokens;
     }
 }
@@ -2154,7 +2154,7 @@ TclSubstTokens(
 
     if (isLiteral) {
 	maxNumCL = NUM_STATIC_POS;
-	clPosition = (int *) ckalloc(maxNumCL * sizeof(int));
+	clPosition = ckalloc(maxNumCL * sizeof(int));
     }
 
     adjust = 0;
@@ -2204,7 +2204,7 @@ TclSubstTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = (int *) ckrealloc((char *) clPosition,
+			clPosition = ckrealloc(clPosition,
 				maxNumCL * sizeof(int));
 		    }
 		    clPosition[numCL] = clPos;
@@ -2362,7 +2362,7 @@ TclSubstTokens(
 	     */
 
 	    if (maxNumCL) {
-		ckfree((char *) clPosition);
+		ckfree(clPosition);
 	    }
 	} else {
 	    Tcl_ResetResult(interp);
