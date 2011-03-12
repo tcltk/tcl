@@ -3879,7 +3879,7 @@ TclNRSwitchObjCmd(
 	if (ctxPtr->type == TCL_LOCATION_SOURCE && ctxPtr->line[bidx] >= 0) {
 	    int bline = ctxPtr->line[bidx];
 
-	    ctxPtr->line = (int *) ckalloc(objc * sizeof(int));
+	    ctxPtr->line = ckalloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
 	    TclListLines(blist, bline, objc, ctxPtr->line, objv);
 	} else {
@@ -3893,7 +3893,7 @@ TclNRSwitchObjCmd(
 
 	    int k;
 
-	    ctxPtr->line = (int *) ckalloc(objc * sizeof(int));
+	    ctxPtr->line = ckalloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
 	    for (k=0; k < objc; k++) {
 		ctxPtr->line[k] = -1;
@@ -3943,7 +3943,7 @@ SwitchPostProc(
      */
 
     if (splitObjs) {
-	ckfree((char *) ctxPtr->line);
+	ckfree(ctxPtr->line);
 	if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
 	    /*
 	     * Death of SrcInfo reference.

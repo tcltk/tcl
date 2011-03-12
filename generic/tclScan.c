@@ -101,10 +101,9 @@ BuildCharSet(
 	end += Tcl_UtfToUniChar(end, &ch);
     }
 
-    cset->chars = (Tcl_UniChar *)
-	    ckalloc(sizeof(Tcl_UniChar) * (end - format - 1));
+    cset->chars = ckalloc(sizeof(Tcl_UniChar) * (end - format - 1));
     if (nranges > 0) {
-	cset->ranges = (struct Range *) ckalloc(sizeof(struct Range)*nranges);
+	cset->ranges = ckalloc(sizeof(struct Range) * nranges);
     } else {
 	cset->ranges = NULL;
     }
@@ -224,9 +223,9 @@ static void
 ReleaseCharSet(
     CharSet *cset)
 {
-    ckfree((char *)cset->chars);
+    ckfree(cset->chars);
     if (cset->ranges) {
-	ckfree((char *)cset->ranges);
+	ckfree(cset->ranges);
     }
 }
 
@@ -590,7 +589,7 @@ Tcl_ScanObjCmd(
      */
 
     if (totalVars > 0) {
-	objs = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * totalVars);
+	objs = ckalloc(sizeof(Tcl_Obj *) * totalVars);
 	for (i = 0; i < totalVars; i++) {
 	    objs[i] = NULL;
 	}
@@ -1020,7 +1019,7 @@ Tcl_ScanObjCmd(
 	}
     }
     if (objs != NULL) {
-	ckfree((char *) objs);
+	ckfree(objs);
     }
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {

@@ -503,7 +503,7 @@ Tcl_MutexLock(
 	 */
 
 	if (*mutexPtr == NULL) {
-	    csPtr = (CRITICAL_SECTION *) ckalloc(sizeof(CRITICAL_SECTION));
+	    csPtr = ckalloc(sizeof(CRITICAL_SECTION));
 	    InitializeCriticalSection(csPtr);
 	    *mutexPtr = (Tcl_Mutex)csPtr;
 	    TclRememberMutex(mutexPtr);
@@ -564,7 +564,7 @@ TclpFinalizeMutex(
 
     if (csPtr != NULL) {
 	DeleteCriticalSection(csPtr);
-	ckfree((char *) csPtr);
+	ckfree(csPtr);
 	*mutexPtr = NULL;
     }
 }
@@ -646,7 +646,7 @@ Tcl_ConditionWait(
 	 */
 
 	if (*condPtr == NULL) {
-	    winCondPtr = (WinCondition *) ckalloc(sizeof(WinCondition));
+	    winCondPtr = ckalloc(sizeof(WinCondition));
 	    InitializeCriticalSection(&winCondPtr->condLock);
 	    winCondPtr->firstPtr = NULL;
 	    winCondPtr->lastPtr = NULL;
@@ -857,7 +857,7 @@ TclpFinalizeCondition(
 
     if (winCondPtr != NULL) {
 	DeleteCriticalSection(&winCondPtr->condLock);
-	ckfree((char *) winCondPtr);
+	ckfree(winCondPtr);
 	*condPtr = NULL;
     }
 }

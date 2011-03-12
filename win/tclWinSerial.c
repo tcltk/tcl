@@ -529,7 +529,7 @@ SerialCheckProc(
 
 	if (needEvent) {
 	    infoPtr->flags |= SERIAL_PENDING;
-	    evPtr = (SerialEvent *) ckalloc(sizeof(SerialEvent));
+	    evPtr = ckalloc(sizeof(SerialEvent));
 	    evPtr->header.proc = SerialEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -708,7 +708,7 @@ SerialCloseProc(
 	ckfree(serialPtr->writeBuf);
 	serialPtr->writeBuf = NULL;
     }
-    ckfree((char*) serialPtr);
+    ckfree(serialPtr);
 
     if (errorCode == 0) {
 	return result;
@@ -1073,7 +1073,7 @@ SerialOutputProc(
 		ckfree(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc((unsigned int) toWrite);
+	    infoPtr->writeBuf = ckalloc(toWrite);
 	}
 	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
 	infoPtr->toWrite = toWrite;
@@ -1480,7 +1480,7 @@ TclWinOpenSerialChannel(
 
     SerialInit();
 
-    infoPtr = (SerialInfo *) ckalloc((unsigned) sizeof(SerialInfo));
+    infoPtr = ckalloc(sizeof(SerialInfo));
     memset(infoPtr, 0, sizeof(SerialInfo));
 
     infoPtr->validMask = permissions;
@@ -1792,7 +1792,7 @@ SerialSetOptionProc(
 			"a list of two elements with each a single character",
 			NULL);
 	    }
-	    ckfree((char *) argv);
+	    ckfree(argv);
 	    return TCL_ERROR;
 	}
 
@@ -1823,7 +1823,7 @@ SerialSetOptionProc(
 	    }
 	    dcb.XoffChar = (char) character;
 	}
-	ckfree((char *) argv);
+	ckfree(argv);
 
 	if (!SetCommState(infoPtr->handle, &dcb)) {
 	    if (interp != NULL) {
@@ -1850,7 +1850,7 @@ SerialSetOptionProc(
 			"\" for -ttycontrol: should be a list of "
 			"signal,value pairs", NULL);
 	    }
-	    ckfree((char *) argv);
+	    ckfree(argv);
 	    return TCL_ERROR;
 	}
 
@@ -1897,7 +1897,7 @@ SerialSetOptionProc(
 	    }
 	}
 
-	ckfree((char *) argv);
+	ckfree(argv);
 	return result;
     }
 
@@ -1923,7 +1923,7 @@ SerialSetOptionProc(
 	    inSize  = atoi(argv[0]);
 	    outSize = atoi(argv[1]);
 	}
-	ckfree((char *) argv);
+	ckfree(argv);
 
 	if ((argc < 1) || (argc > 2) || (inSize <= 0) || (outSize <= 0)) {
 	    if (interp != NULL) {

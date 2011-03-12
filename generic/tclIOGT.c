@@ -259,7 +259,7 @@ TclChannelTransform(
      * regime of the underlying channel and to use the same for us too.
      */
 
-    dataPtr = (TransformChannelData *) ckalloc(sizeof(TransformChannelData));
+    dataPtr = ckalloc(sizeof(TransformChannelData));
 
     Tcl_DStringInit(&ds);
     Tcl_GetChannelOption(interp, chan, "-blocking", &ds);
@@ -288,7 +288,7 @@ TclChannelTransform(
 		Tcl_GetChannelName(chan), "\"", NULL);
 	Tcl_DecrRefCount(dataPtr->command);
 	ResultClear(&dataPtr->result);
-	ckfree((char *) dataPtr);
+	ckfree(dataPtr);
 	return TCL_ERROR;
     }
 
@@ -561,7 +561,7 @@ TransformCloseProc(
 
     ResultClear(&dataPtr->result);
     Tcl_DecrRefCount(dataPtr->command);
-    ckfree((char *) dataPtr);
+    ckfree(dataPtr);
     return TCL_OK;
 }
 
@@ -1227,7 +1227,7 @@ ResultClear(
     r->used = 0;
 
     if (r->allocated) {
-	ckfree((char *) r->buf);
+	ckfree(r->buf);
 	r->buf = NULL;
 	r->allocated = 0;
     }
@@ -1371,10 +1371,10 @@ ResultAdd(
 
 	if (r->allocated == 0) {
 	    r->allocated = toWrite + INCREMENT;
-	    r->buf = UCHARP(ckalloc(r->allocated));
+	    r->buf = ckalloc(r->allocated);
 	} else {
 	    r->allocated += toWrite + INCREMENT;
-	    r->buf = UCHARP(ckrealloc((char *) r->buf, r->allocated));
+	    r->buf = ckrealloc(r->buf, r->allocated);
 	}
     }
 

@@ -1299,7 +1299,7 @@ TclNewFSPathObj(
     tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
 
     pathPtr = Tcl_NewObj();
-    fsPathPtr = (FsPath *) ckalloc(sizeof(FsPath));
+    fsPathPtr = ckalloc(sizeof(FsPath));
 
     /*
      * Set up the path.
@@ -1531,7 +1531,7 @@ TclFSMakePathFromNormalized(
 	TclFreeIntRep(pathPtr);
     }
 
-    fsPathPtr = (FsPath *) ckalloc(sizeof(FsPath));
+    fsPathPtr = ckalloc(sizeof(FsPath));
 
     /*
      * It's a pure normalized absolute path.
@@ -1613,7 +1613,7 @@ Tcl_FSNewNativePath(
 	TclFreeIntRep(pathPtr);
     }
 
-    fsPathPtr = (FsPath *) ckalloc(sizeof(FsPath));
+    fsPathPtr = ckalloc(sizeof(FsPath));
 
     fsPathPtr->translatedPathPtr = NULL;
 
@@ -1738,7 +1738,7 @@ Tcl_FSGetTranslatedStringPath(
     if (transPtr != NULL) {
 	int len;
 	const char *orig = Tcl_GetStringFromObj(transPtr, &len);
-	char *result = ckalloc((unsigned) len+1);
+	char *result = ckalloc(len+1);
 
 	memcpy(result, orig, (size_t) len+1);
 	TclDecrRefCount(transPtr);
@@ -2532,7 +2532,7 @@ SetFsPathFromAny(
      * slashes on Windows, and will not contain any ~user sequences.
      */
 
-    fsPathPtr = (FsPath *) ckalloc(sizeof(FsPath));
+    fsPathPtr = ckalloc(sizeof(FsPath));
 
     fsPathPtr->translatedPathPtr = transPtr;
     if (transPtr != pathPtr) {
@@ -2597,11 +2597,11 @@ FreeFsPathInternalRep(
 	     * It has been unregistered already.
 	     */
 
-	    ckfree((char *) fsPathPtr->fsRecPtr);
+	    ckfree(fsPathPtr->fsRecPtr);
 	}
     }
 
-    ckfree((char *) fsPathPtr);
+    ckfree(fsPathPtr);
     pathPtr->typePtr = NULL;
 }
 
@@ -2611,7 +2611,7 @@ DupFsPathInternalRep(
     Tcl_Obj *copyPtr)		/* Path obj with internal rep to set. */
 {
     FsPath *srcFsPathPtr = PATHOBJ(srcPtr);
-    FsPath *copyFsPathPtr = (FsPath *) ckalloc(sizeof(FsPath));
+    FsPath *copyFsPathPtr = ckalloc(sizeof(FsPath));
 
     SETPATHOBJ(copyPtr, copyFsPathPtr);
 

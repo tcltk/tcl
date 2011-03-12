@@ -621,7 +621,7 @@ ParseExpr(
 
     TclParseInit(interp, start, numBytes, parsePtr);
 
-    nodes = (OpNode *) attemptckalloc(nodesAvailable * sizeof(OpNode));
+    nodes = attemptckalloc(nodesAvailable * sizeof(OpNode));
     if (nodes == NULL) {
 	TclNewLiteralStringObj(msg, "not enough memory to parse expression");
 	goto error;
@@ -668,8 +668,7 @@ ParseExpr(
 	    OpNode *newPtr;
 
 	    do {
-		newPtr = (OpNode *) attemptckrealloc((char *) nodes,
-			(unsigned int) size * sizeof(OpNode));
+		newPtr = attemptckrealloc(nodes, size * sizeof(OpNode));
 	    } while ((newPtr == NULL)
 		    && ((size -= (size - nodesUsed) / 2) > nodesUsed));
 	    if (newPtr == NULL) {
@@ -682,7 +681,10 @@ ParseExpr(
 	}
 	nodePtr = nodes + nodesUsed;
 
-	/* Skip white space between lexemes. */
+	/*
+	 * Skip white space between lexemes.
+	 */
+
 	scanned = TclParseAllWhiteSpace(start, numBytes);
 	start += scanned;
 	numBytes -= scanned;
@@ -1348,7 +1350,7 @@ ParseExpr(
      */
 
     if (nodes != NULL) {
-	ckfree((char *) nodes);
+	ckfree(nodes);
     }
 
     if (interp == NULL) {
@@ -1806,7 +1808,7 @@ Tcl_ParseExpr(
 
     Tcl_FreeParse(exprParsePtr);
     TclStackFree(interp, exprParsePtr);
-    ckfree((char *) opTree);
+    ckfree(opTree);
     return code;
 }
 
@@ -2065,7 +2067,7 @@ TclCompileExpr(
     TclStackFree(interp, parsePtr);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
-    ckfree((char *) opTree);
+    ckfree(opTree);
 }
 
 /*

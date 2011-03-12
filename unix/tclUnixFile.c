@@ -705,7 +705,7 @@ TclpGetNativeCwd(
 #endif
 
     if ((clientData == NULL) || strcmp(buffer, (const char*)clientData)) {
-	char *newCd = ckalloc((unsigned) strlen(buffer) + 1);
+	char *newCd = ckalloc(strlen(buffer) + 1);
 
 	strcpy(newCd, buffer);
 	return newCd;
@@ -1109,7 +1109,7 @@ TclNativeCreateNativeRep(
     Tcl_UtfToExternalDString(NULL, str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(char);
     Tcl_DecrRefCount(validPathPtr);
-    nativePathPtr = ckalloc((unsigned) len);
+    nativePathPtr = ckalloc(len);
     memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
 
     Tcl_DStringFree(&ds);

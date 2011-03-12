@@ -280,8 +280,7 @@ TclpDlopen(
 			    | NSLINKMODULE_OPTION_RETURN_ON_ERROR);
 		    NSDestroyObjectFileImage(dyldObjFileImage);
 		    if (module) {
-			modulePtr = (Tcl_DyldModuleHandle *)
-				ckalloc(sizeof(Tcl_DyldModuleHandle));
+			modulePtr = ckalloc(sizeof(Tcl_DyldModuleHandle));
 			modulePtr->module = module;
 			modulePtr->nextPtr = NULL;
 			TclLoadDbgMsg("NSLinkModule() successful");
@@ -307,8 +306,7 @@ TclpDlopen(
 	    || dyldLibHeader || modulePtr
 #endif
     ) {
-	dyldLoadHandle = (Tcl_DyldLoadHandle *)
-		ckalloc(sizeof(Tcl_DyldLoadHandle));
+	dyldLoadHandle = ckalloc(sizeof(Tcl_DyldLoadHandle));
 #if TCL_DYLD_USE_DLFCN
 	dyldLoadHandle->dlHandle = dlHandle;
 #endif
@@ -316,7 +314,7 @@ TclpDlopen(
 	dyldLoadHandle->dyldLibHeader = dyldLibHeader;
 	dyldLoadHandle->modulePtr = modulePtr;
 #endif
-	newHandle = (Tcl_LoadHandle) ckalloc(sizeof(*newHandle));
+	newHandle = ckalloc(sizeof(*newHandle));
 	newHandle->clientData = dyldLoadHandle;
 	newHandle->findSymbolProcPtr = &FindSymbol;
 	newHandle->unloadFileProcPtr = &UnloadFile;
@@ -413,8 +411,7 @@ FindSymbol(
 		    modulePtr = modulePtr->nextPtr;
 		}
 		if (modulePtr == NULL) {
-		    modulePtr = (Tcl_DyldModuleHandle *)
-			    ckalloc(sizeof(Tcl_DyldModuleHandle));
+		    modulePtr = ckalloc(sizeof(Tcl_DyldModuleHandle));
 		    modulePtr->module = module;
 		    modulePtr->nextPtr = dyldLoadHandle->modulePtr;
 		    dyldLoadHandle->modulePtr = modulePtr;
@@ -519,8 +516,8 @@ UnloadFile(
 	}
 #endif /* TCL_DYLD_USE_NSMODULE */
     }
-    ckfree((char *) dyldLoadHandle);
-    ckfree((char *) loadHandle);
+    ckfree(dyldLoadHandle);
+    ckfree(loadHandle);
 }
 
 /*
@@ -765,17 +762,16 @@ TclpLoadMemory(
      * Stash the module reference within the load handle we create and return.
      */
 
-    modulePtr = (Tcl_DyldModuleHandle *) ckalloc(sizeof(Tcl_DyldModuleHandle));
+    modulePtr = ckalloc(sizeof(Tcl_DyldModuleHandle));
     modulePtr->module = module;
     modulePtr->nextPtr = NULL;
-    dyldLoadHandle = (Tcl_DyldLoadHandle *)
-	    ckalloc(sizeof(Tcl_DyldLoadHandle));
+    dyldLoadHandle = ckalloc(sizeof(Tcl_DyldLoadHandle));
 #if TCL_DYLD_USE_DLFCN
     dyldLoadHandle->dlHandle = NULL;
 #endif
     dyldLoadHandle->dyldLibHeader = NULL;
     dyldLoadHandle->modulePtr = modulePtr;
-    newHandle = (Tcl_LoadHandle) ckalloc(sizeof(*newHandle));
+    newHandle = ckalloc(sizeof(*newHandle));
     newHandle->clientData = dyldLoadHandle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
