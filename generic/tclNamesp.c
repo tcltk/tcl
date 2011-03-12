@@ -397,7 +397,7 @@ Tcl_PopCallFrame(
 
     if (framePtr->varTablePtr != NULL) {
 	TclDeleteVars(iPtr, framePtr->varTablePtr);
-	ckfree((char *) framePtr->varTablePtr);
+	ckfree(framePtr->varTablePtr);
 	framePtr->varTablePtr = NULL;
     }
     if (framePtr->numCompiledLocals > 0) {
@@ -734,9 +734,9 @@ Tcl_CreateNamespace(
      * of namespaces created.
      */
 
-    nsPtr = (Namespace *) ckalloc(sizeof(Namespace));
+    nsPtr = ckalloc(sizeof(Namespace));
     nameLen = strlen(simpleName) + 1;
-    nsPtr->name = ckalloc((unsigned) nameLen);
+    nsPtr->name = ckalloc(nameLen);
     memcpy(nsPtr->name, simpleName, nameLen);
     nsPtr->fullName = NULL;		/* Set below. */
     nsPtr->clientData = clientData;
@@ -825,7 +825,7 @@ Tcl_CreateNamespace(
 
     name = Tcl_DStringValue(namePtr);
     nameLen = Tcl_DStringLength(namePtr);
-    nsPtr->fullName = ckalloc((unsigned) (nameLen+1));
+    nsPtr->fullName = ckalloc(nameLen + 1);
     memcpy(nsPtr->fullName, name, (unsigned) nameLen + 1);
 
     Tcl_DStringFree(&buffer1);
@@ -1006,7 +1006,7 @@ Tcl_DeleteNamespace(
 #else
 	    if (nsPtr->childTablePtr != NULL) {
 		Tcl_DeleteHashTable(nsPtr->childTablePtr);
-		ckfree((char *) nsPtr->childTablePtr);
+		ckfree(nsPtr->childTablePtr);
 	    }
 #endif
 	    Tcl_DeleteHashTable(&nsPtr->cmdTable);
@@ -1170,7 +1170,7 @@ TclTeardownNamespace(
 	for (i = 0;  i < nsPtr->numExportPatterns;  i++) {
 	    ckfree(nsPtr->exportArrayPtr[i]);
 	}
-	ckfree((char *) nsPtr->exportArrayPtr);
+	ckfree(nsPtr->exportArrayPtr);
 	nsPtr->exportArrayPtr = NULL;
 	nsPtr->numExportPatterns = 0;
 	nsPtr->maxExportPatterns = 0;
@@ -1224,8 +1224,7 @@ NamespaceFree(
 
     ckfree(nsPtr->name);
     ckfree(nsPtr->fullName);
-
-    ckfree((char *) nsPtr);
+    ckfree(nsPtr);
 }
 
 /*
@@ -1317,7 +1316,7 @@ Tcl_Export(
 	    for (i = 0;  i < nsPtr->numExportPatterns;  i++) {
 		ckfree(nsPtr->exportArrayPtr[i]);
 	    }
-	    ckfree((char *) nsPtr->exportArrayPtr);
+	    ckfree(nsPtr->exportArrayPtr);
 	    nsPtr->exportArrayPtr = NULL;
 	    TclInvalidateNsCmdLookup(nsPtr);
 	    nsPtr->numExportPatterns = 0;
@@ -1364,8 +1363,7 @@ Tcl_Export(
     if (neededElems > nsPtr->maxExportPatterns) {
 	nsPtr->maxExportPatterns = nsPtr->maxExportPatterns ?
 		2 * nsPtr->maxExportPatterns : INIT_EXPORT_PATTERNS;
-	nsPtr->exportArrayPtr = (char **)
-		ckrealloc((char *) nsPtr->exportArrayPtr,
+	nsPtr->exportArrayPtr = ckrealloc(nsPtr->exportArrayPtr,
 		sizeof(char *) * nsPtr->maxExportPatterns);
     }
 
@@ -1374,7 +1372,7 @@ Tcl_Export(
      */
 
     len = strlen(pattern);
-    patternCpy = ckalloc((unsigned) (len + 1));
+    patternCpy = ckalloc(len + 1);
     memcpy(patternCpy, pattern, (unsigned) len + 1);
 
     nsPtr->exportArrayPtr[nsPtr->numExportPatterns] = patternCpy;
@@ -1688,7 +1686,7 @@ DoImport(
 	    }
 	}
 
-	dataPtr = (ImportedCmdData *) ckalloc(sizeof(ImportedCmdData));
+	dataPtr = ckalloc(sizeof(ImportedCmdData));
 	importedCmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
 		InvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
 		DeleteImportedCmd);
@@ -1702,7 +1700,7 @@ DoImport(
 	 * and add it to the import ref list in the "real" command.
 	 */
 
-	refPtr = (ImportRef *) ckalloc(sizeof(ImportRef));
+	refPtr = ckalloc(sizeof(ImportRef));
 	refPtr->importedCmdPtr = (Command *) importedCmd;
 	refPtr->nextPtr = cmdPtr->importRefPtr;
 	cmdPtr->importRefPtr = refPtr;
@@ -1999,8 +1997,8 @@ DeleteImportedCmd(
 	    } else {
 		prevPtr->nextPtr = refPtr->nextPtr;
 	    }
-	    ckfree((char *) refPtr);
-	    ckfree((char *) dataPtr);
+	    ckfree(refPtr);
+	    ckfree(dataPtr);
 	    return;
 	}
 	prevPtr = refPtr;
@@ -4024,7 +4022,7 @@ TclSetNsPath(
     Tcl_Namespace *pathAry[])	/* Array of namespaces that are the path. */
 {
     if (pathLength != 0) {
-	NamespacePathEntry *tmpPathArray = (NamespacePathEntry *)
+	NamespacePathEntry *tmpPathArray =
 		ckalloc(sizeof(NamespacePathEntry) * pathLength);
 	int i;
 
@@ -4093,7 +4091,7 @@ UnlinkNsPath(
 	    }
 	}
     }
-    ckfree((char *) nsPtr->commandPathArray);
+    ckfree(nsPtr->commandPathArray);
 }
 
 /*
@@ -4639,7 +4637,7 @@ FreeNsNameInternalRep(
 	 */
 
 	TclNsDecrRefCount(resNamePtr->nsPtr);
-	ckfree((char *) resNamePtr);
+	ckfree(resNamePtr);
     }
     objPtr->typePtr = NULL;
 }
@@ -4732,7 +4730,7 @@ SetNsNameFromAny(
     }
 
     nsPtr->refCount++;
-    resNamePtr = (ResolvedNsName *) ckalloc(sizeof(ResolvedNsName));
+    resNamePtr = ckalloc(sizeof(ResolvedNsName));
     resNamePtr->nsPtr = nsPtr;
     if ((name[0] == ':') && (name[1] == ':')) {
 	resNamePtr->refNsPtr = NULL;
@@ -4794,7 +4792,7 @@ TclGetNamespaceChildTable(
     return &nPtr->childTable;
 #else
     if (nPtr->childTablePtr == NULL) {
-	nPtr->childTablePtr = (Tcl_HashTable*) ckalloc(sizeof(Tcl_HashTable));
+	nPtr->childTablePtr = ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(nPtr->childTablePtr, TCL_STRING_KEYS);
     }
     return nPtr->childTablePtr;

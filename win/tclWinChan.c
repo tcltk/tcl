@@ -274,7 +274,7 @@ FileCheckProc(
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask && !(infoPtr->flags & FILE_PENDING)) {
 	    infoPtr->flags |= FILE_PENDING;
-	    evPtr = (FileEvent *) ckalloc(sizeof(FileEvent));
+	    evPtr = ckalloc(sizeof(FileEvent));
 	    evPtr->header.proc = FileEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -441,7 +441,7 @@ FileCloseProc(
 	    break;
 	}
     }
-    ckfree((char *)fileInfoPtr);
+    ckfree(fileInfoPtr);
     return errorCode;
 }
 
@@ -1322,7 +1322,7 @@ TclWinOpenFileChannel(
 	}
     }
 
-    infoPtr = (FileInfo *) ckalloc((unsigned) sizeof(FileInfo));
+    infoPtr = ckalloc(sizeof(FileInfo));
 
     /*
      * TIP #218. Removed the code inserting the new structure into the global

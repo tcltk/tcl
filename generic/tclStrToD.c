@@ -4368,8 +4368,7 @@ TclInitDoubleConversion(void)
 
     maxpow10_wide = (int)
 	    floor(sizeof(Tcl_WideUInt) * CHAR_BIT * log(2.) / log(10.));
-    pow10_wide = (Tcl_WideUInt *)
-	    ckalloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
+    pow10_wide = ckalloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
     u = 1;
     for (i = 0; i < maxpow10_wide; ++i) {
 	pow10_wide[i] = u;
@@ -4477,7 +4476,7 @@ TclFinalizeDoubleConversion(void)
 {
     int i;
 
-    ckfree((char *) pow10_wide);
+    ckfree(pow10_wide);
     for (i=0; i<9; ++i) {
 	mp_clear(pow5 + i);
     }

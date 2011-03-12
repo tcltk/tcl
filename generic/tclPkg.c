@@ -791,9 +791,9 @@ Tcl_PackageObjCmd(
 		pkgPtr->availPtr = availPtr->nextPtr;
 		Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
-		ckfree((char *) availPtr);
+		ckfree(availPtr);
 	    }
-	    ckfree((char *) pkgPtr);
+	    ckfree(pkgPtr);
 	}
 	break;
     }
@@ -849,7 +849,7 @@ Tcl_PackageObjCmd(
 	    return TCL_OK;
 	}
 	if (availPtr == NULL) {
-	    availPtr = (PkgAvail *) ckalloc(sizeof(PkgAvail));
+	    availPtr = ckalloc(sizeof(PkgAvail));
 	    DupBlock(availPtr->version, argv3, (unsigned) length + 1);
 
 	    if (prevPtr == NULL) {
@@ -1154,7 +1154,7 @@ FindPackage(
 
     hPtr = Tcl_CreateHashEntry(&iPtr->packageTable, name, &isNew);
     if (isNew) {
-	pkgPtr = (Package *) ckalloc(sizeof(Package));
+	pkgPtr = ckalloc(sizeof(Package));
 	pkgPtr->version = NULL;
 	pkgPtr->availPtr = NULL;
 	pkgPtr->clientData = NULL;
@@ -1202,9 +1202,9 @@ TclFreePackageInfo(
 	    pkgPtr->availPtr = availPtr->nextPtr;
 	    Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
 	    Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
-	    ckfree((char *) availPtr);
+	    ckfree(availPtr);
 	}
-	ckfree((char *) pkgPtr);
+	ckfree(pkgPtr);
     }
     Tcl_DeleteHashTable(&iPtr->packageTable);
     if (iPtr->packageUnknown != NULL) {

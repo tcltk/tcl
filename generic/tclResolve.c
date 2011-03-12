@@ -101,9 +101,9 @@ Tcl_AddInterpResolvers(
      * list, so that it overrides existing schemes.
      */
 
-    resPtr = (ResolverScheme *) ckalloc(sizeof(ResolverScheme));
+    resPtr = ckalloc(sizeof(ResolverScheme));
     len = strlen(name) + 1;
-    resPtr->name = (char *) ckalloc(len);
+    resPtr->name = ckalloc(len);
     memcpy(resPtr->name, name, len);
     resPtr->cmdResProc = cmdProc;
     resPtr->varResProc = varProc;
@@ -226,7 +226,7 @@ Tcl_RemoveInterpResolvers(
 
 	*prevPtrPtr = resPtr->nextPtr;
 	ckfree(resPtr->name);
-	ckfree((char *) resPtr);
+	ckfree(resPtr);
 
 	return 1;
     }

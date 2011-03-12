@@ -110,7 +110,7 @@ TclpDlopen(
 		Tcl_GetString(pathPtr), "\": ", errorStr, NULL);
 	return TCL_ERROR;
     }
-    newHandle = (Tcl_LoadHandle) ckalloc(sizeof(*newHandle));
+    newHandle = ckalloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
@@ -202,10 +202,10 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    void *handle = (void *) loadHandle->clientData;
+    void *handle = loadHandle->clientData;
 
     dlclose(handle);
-    ckfree((char *) loadHandle);
+    ckfree(loadHandle);
 }
 
 /*
