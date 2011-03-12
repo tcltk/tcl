@@ -89,8 +89,7 @@ NewListIntRep(
 	return NULL;
     }
 
-    listRepPtr = (List *)
-	    attemptckalloc(sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *)));
+    listRepPtr = attemptckalloc(sizeof(List) + ((objc-1) * sizeof(Tcl_Obj*)));
     if (listRepPtr == NULL) {
 	return NULL;
     }
@@ -600,12 +599,11 @@ Tcl_ListObjAppendElement(
 	listRepPtr->elemCount = numElems;
 	listRepPtr->refCount++;
 	oldListRepPtr->refCount--;
-	listPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
     } else if (newSize) {
-	listRepPtr = (List *) ckrealloc((char *)listRepPtr, (size_t)newSize);
+	listRepPtr = ckrealloc(listRepPtr, newSize);
 	listRepPtr->maxElemCount = newMax;
-	listPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
     }
+    listPtr->internalRep.twoPtrValue.ptr1 = listRepPtr;
 
     /*
      * Add objPtr to the end of listPtr's array of element pointers. Increment
@@ -943,7 +941,7 @@ Tcl_ListObjReplace(
 			(size_t) numAfterLast * sizeof(Tcl_Obj *));
 	    }
 
-	    ckfree((char *) oldListRepPtr);
+	    ckfree(oldListRepPtr);
 	}
     }
 
@@ -1611,7 +1609,7 @@ FreeListInternalRep(
 	    objPtr = elemPtrs[i];
 	    Tcl_DecrRefCount(objPtr);
 	}
-	ckfree((char *) listRepPtr);
+	ckfree(listRepPtr);
     }
 
     listPtr->internalRep.twoPtrValue.ptr1 = NULL;
@@ -1786,7 +1784,7 @@ SetListFromAny(
 		elemPtr = elemPtrs[j];
 		Tcl_DecrRefCount(elemPtr);
 	    }
-	    ckfree((char *) listRepPtr);
+	    ckfree(listRepPtr);
 	    if (interp != NULL) {
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", NULL);
 	    }
@@ -1804,7 +1802,7 @@ SetListFromAny(
 	 * "elemSize" bytes starting at "elemStart".
 	 */
 
-	s = ckalloc((unsigned) elemSize + 1);
+	s = ckalloc(elemSize + 1);
 	if (hasBrace) {
 	    memcpy(s, elemStart, (size_t) elemSize);
 	    s[elemSize] = 0;
@@ -1883,7 +1881,7 @@ UpdateStringOfList(
     if (numElems <= LOCAL_SIZE) {
 	flagPtr = localFlags;
     } else {
-	flagPtr = (int *) ckalloc((unsigned) numElems * sizeof(int));
+	flagPtr = ckalloc(numElems * sizeof(int));
     }
     listPtr->length = 1;
     elemPtrs = &listRepPtr->elements;
@@ -1904,7 +1902,7 @@ UpdateStringOfList(
      * Pass 2: copy into string rep buffer.
      */
 
-    listPtr->bytes = ckalloc((unsigned) listPtr->length);
+    listPtr->bytes = ckalloc(listPtr->length);
     dst = listPtr->bytes;
     for (i = 0; i < numElems; i++) {
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
@@ -1914,7 +1912,7 @@ UpdateStringOfList(
 	dst++;
     }
     if (flagPtr != localFlags) {
-	ckfree((char *) flagPtr);
+	ckfree(flagPtr);
     }
     if (dst == listPtr->bytes) {
 	*dst = 0;

@@ -360,7 +360,7 @@ CreateHashEntry(
     if (typePtr->allocEntryProc) {
 	hPtr = typePtr->allocEntryProc(tablePtr, (void *) key);
     } else {
-	hPtr = (Tcl_HashEntry *) ckalloc((unsigned) sizeof(Tcl_HashEntry));
+	hPtr = ckalloc(sizeof(Tcl_HashEntry));
 	hPtr->key.oneWordValue = (char *) key;
 	hPtr->clientData = 0;
     }
@@ -462,7 +462,7 @@ Tcl_DeleteHashEntry(
     if (typePtr->freeEntryProc) {
 	typePtr->freeEntryProc(entryPtr);
     } else {
-	ckfree((char *) entryPtr);
+	ckfree(entryPtr);
     }
 }
 
@@ -513,7 +513,7 @@ Tcl_DeleteHashTable(
 	    if (typePtr->freeEntryProc) {
 		typePtr->freeEntryProc(hPtr);
 	    } else {
-		ckfree((char *) hPtr);
+		ckfree(hPtr);
 	    }
 	    hPtr = nextPtr;
 	}
@@ -527,7 +527,7 @@ Tcl_DeleteHashTable(
 	if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
 	    TclpSysFree((char *) tablePtr->buckets);
 	} else {
-	    ckfree((char *) tablePtr->buckets);
+	    ckfree(tablePtr->buckets);
 	}
     }
 
@@ -672,7 +672,7 @@ Tcl_HashStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = (char *) ckalloc((unsigned) (NUM_COUNTERS*60) + 300);
+    result = ckalloc((NUM_COUNTERS * 60) + 300);
     sprintf(result, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
@@ -721,7 +721,7 @@ AllocArrayEntry(
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
     }
-    hPtr = (Tcl_HashEntry *) ckalloc(size);
+    hPtr = ckalloc(size);
 
     for (iPtr1 = array, iPtr2 = hPtr->key.words;
 	    count > 0; count--, iPtr1++, iPtr2++) {
@@ -833,7 +833,7 @@ AllocStringEntry(
     if (size < sizeof(hPtr->key)) {
 	allocsize = sizeof(hPtr->key);
     }
-    hPtr = (Tcl_HashEntry *) ckalloc(TclOffset(Tcl_HashEntry, key) + allocsize);
+    hPtr = ckalloc(TclOffset(Tcl_HashEntry, key) + allocsize);
     memcpy(hPtr->key.string, string, size);
     hPtr->clientData = 0;
     return hPtr;
@@ -1042,8 +1042,8 @@ RebuildTable(
 	tablePtr->buckets = (Tcl_HashEntry **) TclpSysAlloc((unsigned)
 		(tablePtr->numBuckets * sizeof(Tcl_HashEntry *)), 0);
     } else {
-	tablePtr->buckets = (Tcl_HashEntry **) ckalloc((unsigned)
-		(tablePtr->numBuckets * sizeof(Tcl_HashEntry *)));
+	tablePtr->buckets =
+		ckalloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     }
     for (count = tablePtr->numBuckets, newChainPtr = tablePtr->buckets;
 	    count > 0; count--, newChainPtr++) {
@@ -1100,7 +1100,7 @@ RebuildTable(
 	if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
 	    TclpSysFree((char *) oldBuckets);
 	} else {
-	    ckfree((char *) oldBuckets);
+	    ckfree(oldBuckets);
 	}
     }
 }

@@ -266,9 +266,9 @@ TclClockInit(
      * Create the client data, which is a refcounted literal pool.
      */
 
-    data = (ClockClientData *) ckalloc(sizeof(ClockClientData));
+    data = ckalloc(sizeof(ClockClientData));
     data->refCount = 0;
-    data->literals = (Tcl_Obj **) ckalloc(LIT__END * sizeof(Tcl_Obj*));
+    data->literals = ckalloc(LIT__END * sizeof(Tcl_Obj*));
     for (i = 0; i < LIT__END; ++i) {
 	data->literals[i] = Tcl_NewStringObj(literals[i], -1);
 	Tcl_IncrRefCount(data->literals[i]);
@@ -2024,8 +2024,8 @@ ClockDeleteCmdProc(
 	for (i = 0; i < LIT__END; ++i) {
 	    Tcl_DecrRefCount(data->literals[i]);
 	}
-	ckfree((char *) data->literals);
-	ckfree((char *) data);
+	ckfree(data->literals);
+	ckfree(data);
     }
 }
 

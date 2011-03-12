@@ -534,7 +534,7 @@ Tcl_ZlibStreamInit(
 		" TCL_ZLIB_STREAM_INFLATE");
     }
 
-    zshPtr = (ZlibStreamHandle *) ckalloc(sizeof(ZlibStreamHandle));
+    zshPtr = ckalloc(sizeof(ZlibStreamHandle));
     zshPtr->interp = interp;
     zshPtr->mode = mode;
     zshPtr->format = format;
@@ -617,7 +617,7 @@ Tcl_ZlibStreamInit(
 
     return TCL_OK;
  error:
-    ckfree((char *) zshPtr);
+    ckfree(zshPtr);
     return TCL_ERROR;
 }
 
@@ -725,7 +725,7 @@ ZlibStreamCleanup(
 	Tcl_DecrRefCount(zshPtr->currentInput);
     }
 
-    ckfree((char *) zshPtr);
+    ckfree(zshPtr);
 }
 
 /*
@@ -2691,8 +2691,7 @@ ZlibStackChannelTransform(
 				 * use a default. Ignored if not compressing
 				 * to produce gzip-format data. */
 {
-    ZlibChannelData *cd = (ZlibChannelData *)
-	    ckalloc(sizeof(ZlibChannelData));
+    ZlibChannelData *cd = ckalloc(sizeof(ZlibChannelData));
     Tcl_Channel chan;
     int wbits = 0;
     int e;
@@ -2790,7 +2789,7 @@ ZlibStackChannelTransform(
 	ckfree(cd->outBuffer);
 	deflateEnd(&cd->outStream);
     }
-    ckfree((char *) cd);
+    ckfree(cd);
     return NULL;
 }
 
