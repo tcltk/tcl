@@ -409,7 +409,7 @@ DeleteKey(
      */
 
     keyName = Tcl_GetStringFromObj(keyNameObj, &length);
-    buffer = ckalloc((unsigned) length + 1);
+    buffer = ckalloc(length + 1);
     strcpy(buffer, keyName);
 
     if (ParseKeyName(interp, buffer, &hostName, &rootKey,
@@ -591,7 +591,7 @@ GetKeyNames(
 	RegCloseKey(key);
 	return TCL_ERROR;
     }
-    buffer = (TCHAR *) ckalloc((maxSubKeyLen+1) * sizeof(TCHAR));
+    buffer = ckalloc((maxSubKeyLen+1) * sizeof(TCHAR));
 
     /*
      * Enumerate the subkeys.
@@ -627,7 +627,7 @@ GetKeyNames(
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
-    ckfree((char *)buffer);
+    ckfree(buffer);
     RegCloseKey(key);
     return result;
 }
@@ -973,7 +973,7 @@ OpenKey(
     DWORD result;
 
     keyName = Tcl_GetStringFromObj(keyNameObj, &length);
-    buffer = ckalloc((unsigned) length + 1);
+    buffer = ckalloc(length + 1);
     strcpy(buffer, keyName);
 
     result = ParseKeyName(interp, buffer, &hostName, &rootKey, &keyName);

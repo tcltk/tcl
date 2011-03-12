@@ -1751,7 +1751,7 @@ NewReflectedTransform(
     Tcl_Obj **listv;
     int i;
 
-    rtPtr = (ReflectedTransform *) ckalloc(sizeof(ReflectedTransform));
+    rtPtr = ckalloc(sizeof(ReflectedTransform));
 
     /* rtPtr->chan: Assigned by caller. Dummy data here. */
     /* rtPtr->methods: Assigned by caller. Dummy data here. */
@@ -1796,7 +1796,7 @@ NewReflectedTransform(
      */
 
     rtPtr->argc = listc + 2;
-    rtPtr->argv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * (listc+4));
+    rtPtr->argv = ckalloc(sizeof(Tcl_Obj *) * (listc+4));
 
     /*
      * Duplicate object references.
@@ -1892,8 +1892,8 @@ FreeReflectedTransform(
      */
     Tcl_DecrRefCount(rtPtr->argv[n+1]);
 
-    ckfree((char*) rtPtr->argv);
-    ckfree((char*) rtPtr);
+    ckfree(rtPtr->argv);
+    ckfree(rtPtr);
 }
 
 /*
@@ -2090,8 +2090,7 @@ GetReflectedTransformMap(
     ReflectedTransformMap *rtmPtr = Tcl_GetAssocData(interp, RTMKEY, NULL);
 
     if (rtmPtr == NULL) {
-	rtmPtr = (ReflectedTransformMap *)
-		ckalloc(sizeof(ReflectedTransformMap));
+	rtmPtr = ckalloc(sizeof(ReflectedTransformMap));
 	Tcl_InitHashTable(&rtmPtr->map, TCL_STRING_KEYS);
 	Tcl_SetAssocData(interp, RTMKEY,
 		(Tcl_InterpDeleteProc *) DeleteReflectedTransformMap, rtmPtr);
@@ -2155,7 +2154,7 @@ DeleteReflectedTransformMap(
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(&rtmPtr->map);
-    ckfree((char *) &rtmPtr->map);
+    ckfree(&rtmPtr->map);
 
 #ifdef TCL_THREADS
     /*
@@ -2249,8 +2248,7 @@ GetThreadReflectedTransformMap(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->rtmPtr) {
-	tsdPtr->rtmPtr = (ReflectedTransformMap *)
-		ckalloc(sizeof(ReflectedTransformMap));
+	tsdPtr->rtmPtr = ckalloc(sizeof(ReflectedTransformMap));
 	Tcl_InitHashTable(&tsdPtr->rtmPtr->map, TCL_STRING_KEYS);
 	Tcl_CreateThreadExitHandler(DeleteThreadReflectedTransformMap, NULL);
     }
@@ -2381,8 +2379,8 @@ ForwardOpToOwnerThread(
      * Create and initialize the event and data structures.
      */
 
-    evPtr = (ForwardingEvent *) ckalloc(sizeof(ForwardingEvent));
-    resultPtr = (ForwardingResult *) ckalloc(sizeof(ForwardingResult));
+    evPtr = ckalloc(sizeof(ForwardingEvent));
+    resultPtr = ckalloc(sizeof(ForwardingResult));
 
     evPtr->event.proc = ForwardProc;
     evPtr->resultPtr = resultPtr;
@@ -2461,7 +2459,7 @@ ForwardOpToOwnerThread(
 
     Tcl_DeleteThreadExitHandler(SrcExitProc, evPtr);
 
-    ckfree((char*) resultPtr);
+    ckfree(resultPtr);
 }
 
 static int
@@ -2780,7 +2778,7 @@ ForwardSetObjError(
     const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;
-    ForwardSetDynamicError(paramPtr, ckalloc((unsigned) len));
+    ForwardSetDynamicError(paramPtr, ckalloc(len));
     memcpy(paramPtr->base.msgStr, msgStr, (unsigned) len);
 }
 #endif

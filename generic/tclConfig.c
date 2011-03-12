@@ -78,7 +78,7 @@ Tcl_RegisterConfig(
     Tcl_DString cmdName;
     const Tcl_Config *cfg;
     Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
-    QCCD *cdPtr = (QCCD *) ckalloc(sizeof(QCCD));
+    QCCD *cdPtr = ckalloc(sizeof(QCCD));
 
     cdPtr->interp = interp;
     cdPtr->pkg = Tcl_NewStringObj(pkgName, -1);
@@ -319,12 +319,13 @@ static void
 QueryConfigDelete(
     ClientData clientData)
 {
-    QCCD *cdPtr = (QCCD *) clientData;
+    QCCD *cdPtr = clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB = GetConfigDict(cdPtr->interp);
+
     Tcl_DictObjRemove(NULL, pDB, pkgName);
     Tcl_DecrRefCount(pkgName);
-    ckfree((char *)cdPtr);
+    ckfree(cdPtr);
 }
 
 /*

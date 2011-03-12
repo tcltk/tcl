@@ -881,16 +881,16 @@ TclCleanupByteCode(
 		Tcl_DecrRefCount(eclPtr->path);
 	    }
 	    for (i=0 ; i<eclPtr->nuloc ; i++) {
-		ckfree((char *) eclPtr->loc[i].line);
+		ckfree(eclPtr->loc[i].line);
 	    }
 
 	    if (eclPtr->loc != NULL) {
-		ckfree((char *) eclPtr->loc);
+		ckfree(eclPtr->loc);
 	    }
 
 	    Tcl_DeleteHashTable(&eclPtr->litInfo);
 
-	    ckfree((char *) eclPtr);
+	    ckfree(eclPtr);
 	    Tcl_DeleteHashEntry(hePtr);
 	}
     }
@@ -900,7 +900,7 @@ TclCleanupByteCode(
     }
 
     TclHandleRelease(codePtr->interpHandle);
-    ckfree((char *) codePtr);
+    ckfree(codePtr);
 }
 
 /*
@@ -1145,7 +1145,7 @@ TclInitCompileEnv(
      * non-compiling evaluator
      */
 
-    envPtr->extCmdMapPtr = (ExtCmdLoc *) ckalloc(sizeof(ExtCmdLoc));
+    envPtr->extCmdMapPtr = ckalloc(sizeof(ExtCmdLoc));
     envPtr->extCmdMapPtr->loc = NULL;
     envPtr->extCmdMapPtr->nloc = 0;
     envPtr->extCmdMapPtr->nuloc = 0;
@@ -1302,26 +1302,26 @@ TclFreeCompileEnv(
     register CompileEnv *envPtr)/* Points to the CompileEnv structure. */
 {
     if (envPtr->localLitTable.buckets != envPtr->localLitTable.staticBuckets){
-	ckfree((char *) envPtr->localLitTable.buckets);
+	ckfree(envPtr->localLitTable.buckets);
 	envPtr->localLitTable.buckets = envPtr->localLitTable.staticBuckets;
     }
     if (envPtr->mallocedCodeArray) {
-	ckfree((char *) envPtr->codeStart);
+	ckfree(envPtr->codeStart);
     }
     if (envPtr->mallocedLiteralArray) {
-	ckfree((char *) envPtr->literalArrayPtr);
+	ckfree(envPtr->literalArrayPtr);
     }
     if (envPtr->mallocedExceptArray) {
-	ckfree((char *) envPtr->exceptArrayPtr);
+	ckfree(envPtr->exceptArrayPtr);
     }
     if (envPtr->mallocedCmdMap) {
-	ckfree((char *) envPtr->cmdMapPtr);
+	ckfree(envPtr->cmdMapPtr);
     }
     if (envPtr->mallocedAuxDataArray) {
-	ckfree((char *) envPtr->auxDataArrayPtr);
+	ckfree(envPtr->auxDataArrayPtr);
     }
     if (envPtr->extCmdMapPtr) {
-	ckfree((char *) envPtr->extCmdMapPtr);
+	ckfree(envPtr->extCmdMapPtr);
     }
 
     /*
@@ -1836,8 +1836,8 @@ TclCompileScript(
 	     * reduced form now
 	     */
 
-	    ckfree((char *) eclPtr->loc[wlineat].line);
-	    ckfree((char *) eclPtr->loc[wlineat].next);
+	    ckfree(eclPtr->loc[wlineat].line);
+	    ckfree(eclPtr->loc[wlineat].next);
 	    eclPtr->loc[wlineat].line = wlines;
 	    eclPtr->loc[wlineat].next = NULL;
 	} /* end if parsePtr->numWords > 0 */
@@ -2018,7 +2018,7 @@ TclCompileTokens(
 
     if (isLiteral) {
 	maxNumCL = NUM_STATIC_POS;
-	clPosition = (int *) ckalloc(maxNumCL * sizeof(int));
+	clPosition = ckalloc(maxNumCL * sizeof(int));
     }
 
     Tcl_DStringInit(&textBuffer);
@@ -2058,8 +2058,8 @@ TclCompileTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = (int *) ckrealloc((char *) clPosition,
-				maxNumCL * sizeof(int));
+			clPosition = ckrealloc(clPosition,
+                                maxNumCL * sizeof(int));
 		    }
 		    clPosition[numCL] = clPos;
 		    numCL ++;
@@ -2168,7 +2168,7 @@ TclCompileTokens(
      */
 
     if (maxNumCL) {
-	ckfree((char *) clPosition);
+	ckfree(clPosition);
     }
 }
 
@@ -2407,7 +2407,7 @@ TclInitByteCodeObj(
 	namespacePtr = envPtr->iPtr->globalNsPtr;
     }
 
-    p = (unsigned char *) ckalloc((size_t) structureSize);
+    p = ckalloc(structureSize);
     codePtr = (ByteCode *) p;
     codePtr->interpHandle = TclHandlePreserve(iPtr->handle);
     codePtr->compileEpoch = iPtr->compileEpoch;
@@ -2599,8 +2599,7 @@ TclFindCompiledLocal(
 
     if (create || (name == NULL)) {
 	localVar = procPtr->numCompiledLocals;
-	localPtr = (CompiledLocal *) ckalloc((unsigned)
-		(TclOffset(CompiledLocal, name) + nameBytes + 1));
+	localPtr = ckalloc(TclOffset(CompiledLocal, name) + nameBytes + 1);
 	if (procPtr->firstLocalPtr == NULL) {
 	    procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	} else {
@@ -2664,16 +2663,14 @@ TclExpandCodeArray(
     size_t newBytes = 2 * (envPtr->codeEnd - envPtr->codeStart);
 
     if (envPtr->mallocedCodeArray) {
-	envPtr->codeStart = (unsigned char *)
-		ckrealloc((char *) envPtr->codeStart, newBytes);
+	envPtr->codeStart = ckrealloc(envPtr->codeStart, newBytes);
     } else {
 	/*
 	 * envPtr->codeStart isn't a ckalloc'd pointer, so we must code a
 	 * ckrealloc equivalent for ourselves.
 	 */
 
-	unsigned char *newPtr = (unsigned char *)
-		ckalloc((unsigned) newBytes);
+	unsigned char *newPtr = ckalloc(newBytes);
 
 	memcpy(newPtr, envPtr->codeStart, currBytes);
 	envPtr->codeStart = newPtr;
@@ -2733,16 +2730,14 @@ EnterCmdStartData(
 	size_t newBytes = newElems * sizeof(CmdLocation);
 
 	if (envPtr->mallocedCmdMap) {
-	    envPtr->cmdMapPtr = (CmdLocation *)
-		    ckrealloc((char *) envPtr->cmdMapPtr, newBytes);
+	    envPtr->cmdMapPtr = ckrealloc(envPtr->cmdMapPtr, newBytes);
 	} else {
 	    /*
 	     * envPtr->cmdMapPtr isn't a ckalloc'd pointer, so we must code a
 	     * ckrealloc equivalent for ourselves.
 	     */
 
-	    CmdLocation *newPtr = (CmdLocation *)
-		    ckalloc((unsigned) newBytes);
+	    CmdLocation *newPtr = ckalloc(newBytes);
 
 	    memcpy(newPtr, envPtr->cmdMapPtr, currBytes);
 	    envPtr->cmdMapPtr = newPtr;
@@ -2861,16 +2856,16 @@ EnterCmdWordData(
 	size_t newElems = (currElems ? 2*currElems : 1);
 	size_t newBytes = newElems * sizeof(ECL);
 
-	eclPtr->loc = (ECL *) ckrealloc((char *) eclPtr->loc, newBytes);
+	eclPtr->loc = ckrealloc(eclPtr->loc, newBytes);
 	eclPtr->nloc = newElems;
     }
 
     ePtr = &eclPtr->loc[eclPtr->nuloc];
     ePtr->srcOffset = srcOffset;
-    ePtr->line = (int *) ckalloc(numWords * sizeof(int));
-    ePtr->next = (int **) ckalloc(numWords * sizeof(int *));
+    ePtr->line = ckalloc(numWords * sizeof(int));
+    ePtr->next = ckalloc(numWords * sizeof(int *));
     ePtr->nline = numWords;
-    wwlines = (int *) ckalloc(numWords * sizeof(int));
+    wwlines = ckalloc(numWords * sizeof(int));
 
     last = cmd;
     wordLine = line;
@@ -2933,16 +2928,15 @@ TclCreateExceptRange(
 	size_t newBytes = newElems * sizeof(ExceptionRange);
 
 	if (envPtr->mallocedExceptArray) {
-	    envPtr->exceptArrayPtr = (ExceptionRange *)
-		    ckrealloc((char *) envPtr->exceptArrayPtr, newBytes);
+	    envPtr->exceptArrayPtr =
+		    ckrealloc(envPtr->exceptArrayPtr, newBytes);
 	} else {
 	    /*
 	     * envPtr->exceptArrayPtr isn't a ckalloc'd pointer, so we must
 	     * code a ckrealloc equivalent for ourselves.
 	     */
 
-	    ExceptionRange *newPtr = (ExceptionRange *)
-		    ckalloc((unsigned) newBytes);
+	    ExceptionRange *newPtr = ckalloc(newBytes);
 
 	    memcpy(newPtr, envPtr->exceptArrayPtr, currBytes);
 	    envPtr->exceptArrayPtr = newPtr;
@@ -3012,15 +3006,15 @@ TclCreateAuxData(
 	size_t newBytes = newElems * sizeof(AuxData);
 
 	if (envPtr->mallocedAuxDataArray) {
-	    envPtr->auxDataArrayPtr = (AuxData *)
-		    ckrealloc((char *) envPtr->auxDataArrayPtr, newBytes);
+	    envPtr->auxDataArrayPtr =
+		    ckrealloc(envPtr->auxDataArrayPtr, newBytes);
 	} else {
 	    /*
 	     * envPtr->auxDataArrayPtr isn't a ckalloc'd pointer, so we must
 	     * code a ckrealloc equivalent for ourselves.
 	     */
 
-	    AuxData *newPtr = (AuxData *) ckalloc((unsigned) newBytes);
+	    AuxData *newPtr = ckalloc(newBytes);
 
 	    memcpy(newPtr, envPtr->auxDataArrayPtr, currBytes);
 	    envPtr->auxDataArrayPtr = newPtr;
@@ -3088,8 +3082,8 @@ TclInitJumpFixupArray(
 void
 TclExpandJumpFixupArray(
     register JumpFixupArray *fixupArrayPtr)
-				/* Points to the JumpFixupArray structure
-				 * to enlarge. */
+				/* Points to the JumpFixupArray structure to
+				 * enlarge. */
 {
     /*
      * The currently allocated jump fixup entries are stored from fixup[0] up
@@ -3102,15 +3096,14 @@ TclExpandJumpFixupArray(
     size_t newBytes = newElems * sizeof(JumpFixup);
 
     if (fixupArrayPtr->mallocedArray) {
-	fixupArrayPtr->fixup = (JumpFixup *)
-		ckrealloc((char *) fixupArrayPtr->fixup, newBytes);
+	fixupArrayPtr->fixup = ckrealloc(fixupArrayPtr->fixup, newBytes);
     } else {
 	/*
 	 * fixupArrayPtr->fixup isn't a ckalloc'd pointer, so we must code a
 	 * ckrealloc equivalent for ourselves.
 	 */
 
-	JumpFixup *newPtr = (JumpFixup *) ckalloc((unsigned) newBytes);
+	JumpFixup *newPtr = ckalloc(newBytes);
 
 	memcpy(newPtr, fixupArrayPtr->fixup, currBytes);
 	fixupArrayPtr->fixup = newPtr;
@@ -3142,7 +3135,7 @@ TclFreeJumpFixupArray(
 				 * free. */
 {
     if (fixupArrayPtr->mallocedArray) {
-	ckfree((char *) fixupArrayPtr->fixup);
+	ckfree(fixupArrayPtr->fixup);
     }
 }
 
@@ -4259,16 +4252,18 @@ FormatInstruction(
  *
  *----------------------------------------------------------------------
  */
-Tcl_Obj *TclGetInnerContext(Tcl_Interp *interp,
-			    const unsigned char *pc,
-			    Tcl_Obj **tosPtr)
+
+Tcl_Obj *
+TclGetInnerContext(
+    Tcl_Interp *interp,
+    const unsigned char *pc,
+    Tcl_Obj **tosPtr)
 {
     int objc = 0, off = 0;
     Tcl_Obj *result;
     Interp *iPtr = (Interp *) interp;
 
-    switch(*pc) {
-
+    switch (*pc) {
     case INST_STR_LEN:
     case INST_LNOT:
     case INST_BITNOT:
@@ -4277,7 +4272,6 @@ Tcl_Obj *TclGetInnerContext(Tcl_Interp *interp,
     case INST_TRY_CVT_TO_NUMERIC:
     case INST_EXPAND_STKTOP:
     case INST_EXPR_STK:
-
         objc = 1;
         break;
 
@@ -4336,22 +4330,27 @@ Tcl_Obj *TclGetInnerContext(Tcl_Interp *interp,
     } else {
         int len;
 
-	Tcl_ListObjLength(interp, result, &len);
-        /* reset while keeping the list intrep as much as possible */
-        Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
-    }    
-    Tcl_ListObjAppendElement(NULL, result, TclNewInstNameObj(*pc));
-    for(;objc>0;objc--) {
-        Tcl_Obj *ob;
+        /*
+         * Reset while keeping the list intrep as much as possible.
+         */
 
-        ob = tosPtr[1 - objc + off];
-        if (!ob) {
+	Tcl_ListObjLength(interp, result, &len);
+        Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
+    }
+    Tcl_ListObjAppendElement(NULL, result, TclNewInstNameObj(*pc));
+
+    for (; objc>0 ; objc--) {
+        Tcl_Obj *objPtr;
+
+        objPtr = tosPtr[1 - objc + off];
+        if (!objPtr) {
             Tcl_Panic("InnerContext: bad tos -- appending null object");
         }
-        if (ob->refCount<=0 || ob->refCount==0x61616161) {
-            Tcl_Panic("InnerContext: bad tos -- appending freed object %p",ob);
+        if (objPtr->refCount<=0 || objPtr->refCount==0x61616161) {
+            Tcl_Panic("InnerContext: bad tos -- appending freed object %p",
+                    objPtr);
         }
-        Tcl_ListObjAppendElement(NULL, result, ob);
+        Tcl_ListObjAppendElement(NULL, result, objPtr);
     }
 
     return result;
@@ -4366,18 +4365,19 @@ Tcl_Obj *TclGetInnerContext(Tcl_Interp *interp,
  *
  *----------------------------------------------------------------------
  */
-MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst)
+
+MODULE_SCOPE Tcl_Obj *
+TclNewInstNameObj(
+    unsigned char inst)
 {
-    Tcl_Obj *objPtr;
-    
-    objPtr=Tcl_NewObj();
+    Tcl_Obj *objPtr = Tcl_NewObj();
+
     objPtr->typePtr = &tclInstNameType;
-    objPtr->internalRep.longValue = (long)inst;
+    objPtr->internalRep.longValue = (long) inst;
     objPtr->bytes = NULL;
 
     return objPtr;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -4388,25 +4388,26 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst)
  *
  *----------------------------------------------------------------------
  */
-static void UpdateStringOfInstName(Tcl_Obj *objPtr)
+
+static void
+UpdateStringOfInstName(
+    Tcl_Obj *objPtr)
 {
     int inst = objPtr->internalRep.longValue;
-    char *s,buf[20];
+    char *s, buf[20];
     int len;
 
     if ((inst < 0) || (inst > LAST_INST_OPCODE)) {
-
         sprintf(buf, "inst_%d", inst);
         s = buf;
     } else {
-        s = (char *)tclInstructionTable[objPtr->internalRep.longValue].name;
+        s = (char *) tclInstructionTable[objPtr->internalRep.longValue].name;
     }
     len = strlen(s);
-    objPtr->bytes = ckalloc((unsigned) len + 1);
+    objPtr->bytes = ckalloc(len + 1);
     memcpy(objPtr->bytes, s, len + 1);
     objPtr->length = len;
 }
-
 
 /*
  *----------------------------------------------------------------------

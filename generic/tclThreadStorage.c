@@ -117,7 +117,7 @@ TSDTableDelete(
 	     * and must now be deallocated or they will leak.
 	     */
 
-	    ckfree((char *) tsdTablePtr->tablePtr[i]);
+	    ckfree(tsdTablePtr->tablePtr[i]);
 	}
     }
 

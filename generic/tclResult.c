@@ -75,7 +75,7 @@ Tcl_SaveInterpState(
     int status)			/* status code for current operation */
 {
     Interp *iPtr = (Interp *) interp;
-    InterpState *statePtr = (InterpState *) ckalloc(sizeof(InterpState));
+    InterpState *statePtr = ckalloc(sizeof(InterpState));
 
     statePtr->status = status;
     statePtr->flags = iPtr->flags & ERR_ALREADY_LOGGED;
@@ -205,7 +205,7 @@ Tcl_DiscardInterpState(
 	Tcl_DecrRefCount(statePtr->errorStack);
     }
     Tcl_DecrRefCount(statePtr->objResult);
-    ckfree((char *) statePtr);
+    ckfree(statePtr);
 }
 
 /*
@@ -331,7 +331,7 @@ Tcl_RestoreResult(
 	 */
 
 	if (iPtr->appendResult != NULL) {
-	    ckfree((char *) iPtr->appendResult);
+	    ckfree(iPtr->appendResult);
 	}
 
 	iPtr->appendResult = statePtr->appendResult;
@@ -428,7 +428,7 @@ Tcl_SetResult(
 	int length = strlen(result);
 
 	if (length > TCL_RESULT_SIZE) {
-	    iPtr->result = ckalloc((unsigned) length+1);
+	    iPtr->result = ckalloc(length + 1);
 	    iPtr->freeProc = TCL_DYNAMIC;
 	} else {
 	    iPtr->result = iPtr->resultSpace;
@@ -831,7 +831,7 @@ SetupAppendBuffer(
 	} else {
 	    totalSpace *= 2;
 	}
-	new = ckalloc((unsigned) totalSpace);
+	new = ckalloc(totalSpace);
 	strcpy(new, iPtr->result);
 	if (iPtr->appendResult != NULL) {
 	    ckfree(iPtr->appendResult);
@@ -983,7 +983,7 @@ ResetObjResult(
     } else {
 	if (objResultPtr->bytes != tclEmptyStringRep) {
 	    if (objResultPtr->bytes) {
-		ckfree((char *) objResultPtr->bytes);
+		ckfree(objResultPtr->bytes);
 	    }
 	    objResultPtr->bytes = tclEmptyStringRep;
 	    objResultPtr->length = 0;

@@ -641,7 +641,7 @@ SocketCheckProc(
 	if ((infoPtr->readyEvents & infoPtr->watchEvents)
 		&& !(infoPtr->flags & SOCKET_PENDING)) {
 	    infoPtr->flags |= SOCKET_PENDING;
-	    evPtr = (SocketEvent *) ckalloc(sizeof(SocketEvent));
+	    evPtr = ckalloc(sizeof(SocketEvent));
 	    evPtr->header.proc = SocketEventProc;
 	    evPtr->socket = infoPtr->sockets->fd;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -875,7 +875,7 @@ TcpCloseProc(
      * fear of damaging the list.
      */
 
-    ckfree((char *) infoPtr);
+    ckfree(infoPtr);
     return errorCode;
 }
 
@@ -951,10 +951,8 @@ static SocketInfo *
 NewSocketInfo(
     SOCKET socket)
 {
-    SocketInfo *infoPtr;
-    TcpFdList *fds;
-    infoPtr = (SocketInfo *) ckalloc((unsigned) sizeof(SocketInfo));
-    fds = (TcpFdList*) ckalloc(sizeof(TcpFdList));
+    SocketInfo *infoPtr = ckalloc(sizeof(SocketInfo));
+    TcpFdList *fds = ckalloc(sizeof(TcpFdList));
 
     fds->fd = socket;
     fds->next = NULL;
@@ -1130,7 +1128,7 @@ CreateSocket(
 		infoPtr->watchEvents |= FD_ACCEPT;
 
 	    } else {
-		newfds = (TcpFdList *) ckalloc((unsigned) sizeof(TcpFdList));
+		newfds = ckalloc(sizeof(TcpFdList));
 		memset(newfds, (int) 0, sizeof(TcpFdList));
 		newfds->fd = sock;
 		newfds->infoPtr = infoPtr;
@@ -2658,7 +2656,7 @@ InitializeHostName(
 
     *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
     *lengthPtr = Tcl_DStringLength(&ds);
-    *valuePtr = ckalloc((unsigned int) (*lengthPtr)+1);
+    *valuePtr = ckalloc((*lengthPtr) + 1);
     memcpy(*valuePtr, Tcl_DStringValue(&ds), (size_t)(*lengthPtr)+1);
     Tcl_DStringFree(&ds);
 }

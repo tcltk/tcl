@@ -1168,7 +1168,7 @@ Tcl_OpenObjCmd(
 		Tcl_SetChannelOption(interp, chan, "-translation", "binary");
 	    }
 	}
-	ckfree((char *) cmdArgv);
+	ckfree(cmdArgv);
     }
     if (chan == NULL) {
 	return TCL_ERROR;
@@ -1217,7 +1217,7 @@ TcpAcceptCallbacksDeleteProc(
 	acceptCallbackPtr->interp = NULL;
     }
     Tcl_DeleteHashTable(hTblPtr);
-    ckfree((char *) hTblPtr);
+    ckfree(hTblPtr);
 }
 
 /*
@@ -1257,7 +1257,7 @@ RegisterTcpServerInterpCleanup(
     hTblPtr = Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
 
     if (hTblPtr == NULL) {
-	hTblPtr = (Tcl_HashTable *) ckalloc((unsigned) sizeof(Tcl_HashTable));
+	hTblPtr = ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_ONE_WORD_KEYS);
 	Tcl_SetAssocData(interp, "tclTCPAcceptCallbacks",
 		TcpAcceptCallbacksDeleteProc, hTblPtr);
@@ -1425,7 +1425,7 @@ TcpServerCloseProc(
 		acceptCallbackPtr);
     }
     Tcl_EventuallyFree(acceptCallbackPtr->script, TCL_DYNAMIC);
-    ckfree((char *) acceptCallbackPtr);
+    ckfree(acceptCallbackPtr);
 }
 
 /*
@@ -1561,8 +1561,8 @@ Tcl_SocketObjCmd(
     }
 
     if (server) {
-	AcceptCallback *acceptCallbackPtr = (AcceptCallback *)
-		ckalloc((unsigned) sizeof(AcceptCallback));
+	AcceptCallback *acceptCallbackPtr =
+		ckalloc(sizeof(AcceptCallback));
 	unsigned len = strlen(script) + 1;
 	char *copyScript = ckalloc(len);
 
@@ -1573,7 +1573,7 @@ Tcl_SocketObjCmd(
 		acceptCallbackPtr);
 	if (chan == NULL) {
 	    ckfree(copyScript);
-	    ckfree((char *) acceptCallbackPtr);
+	    ckfree(acceptCallbackPtr);
 	    return TCL_ERROR;
 	}
 

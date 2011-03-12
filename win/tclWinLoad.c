@@ -109,7 +109,7 @@ TclpDlopen(
 	size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
 		FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, lastError, 0,
 		(LPTSTR) &lpMsgBuf, 0, NULL);
-	buf = (char *) ckalloc((unsigned) TCL_INTEGER_SPACE + size + 1);
+	buf = ckalloc(TCL_INTEGER_SPACE + size + 1);
 	sprintf(buf, "%d %s", lastError, (char *)lpMsgBuf);
 #endif
 
@@ -148,8 +148,7 @@ TclpDlopen(
 	}
 	return TCL_ERROR;
     } else {
-	handlePtr =
-	    (Tcl_LoadHandle) ckalloc(sizeof(struct Tcl_LoadHandle_));
+	handlePtr = ckalloc(sizeof(struct Tcl_LoadHandle_));
 	handlePtr->clientData = (ClientData) hInstance;
 	handlePtr->findSymbolProcPtr = &FindSymbol;
 	handlePtr->unloadFileProcPtr = &UnloadFile;
@@ -231,8 +230,9 @@ UnloadFile(
 				 * that represents the loaded file. */
 {
     HINSTANCE hInstance = (HINSTANCE) loadHandle->clientData;
+
     FreeLibrary(hInstance);
-    ckfree((char*) loadHandle);
+    ckfree(loadHandle);
 }
 
 /*
@@ -336,8 +336,7 @@ TclpTempFileNameForLibrary(Tcl_Interp* interp, /* Tcl interpreter */
 		}
 	    }
 	    if (status != 0) {
-		dllDirectoryName = (WCHAR*)
-		    ckalloc((nameLen+1) * sizeof(WCHAR));
+		dllDirectoryName = ckalloc((nameLen+1) * sizeof(WCHAR));
 		wcscpy(dllDirectoryName, name);
 	    }
 	}
