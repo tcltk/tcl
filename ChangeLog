@@ -1,3 +1,8 @@
+2011-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3185609] File normalization
+	corner case of ... broken with -DUNICODE
+
 2011-03-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/unixInit.test: Make better use of tcltest2.
