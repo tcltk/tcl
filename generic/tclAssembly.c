@@ -241,7 +241,7 @@ static void		BBAdjustStackDepth(BasicBlock* bbPtr, int consumed,
 static void		BBUpdateStackReqs(BasicBlock* bbPtr, int tblIdx,
 			    int count);
 static void		BBEmitInstInt1(AssemblyEnv* assemEnvPtr, int tblIdx,
-			    unsigned char opnd, int count);
+			    int opnd, int count);
 static void		BBEmitInstInt4(AssemblyEnv* assemEnvPtr, int tblIdx,
 			    int opnd, int count);
 static void		BBEmitInst1or4(AssemblyEnv* assemEnvPtr, int tblIdx,
@@ -652,7 +652,7 @@ static void
 BBEmitInstInt1(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     int tblIdx,			/* Index in TalInstructionTable of op */
-    unsigned char opnd,		/* 1-byte operand */
+    int opnd,			/* 1-byte operand */
     int count)			/* Operand count for variadic ops */
 {
     BBEmitOpcode(assemEnvPtr, tblIdx, count);
