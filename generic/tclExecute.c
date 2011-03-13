@@ -171,8 +171,6 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
 typedef struct TEBCdata {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
-    struct TEBCdata *expanded;/* NULL if unchanged, pointer to the succesor
-				 * if it was expanded */
     const unsigned char *pc;	/* These fields are used on return TO this */
     ptrdiff_t *catchTop;	/* this level: they record the state when a */
     int cleanup;		/* new codePtr was received for NR */
@@ -1961,7 +1959,6 @@ TclNRExecuteByteCode(
     esPtr->tosPtr = initTosPtr;
     
     TD->codePtr     = codePtr;
-    TD->expanded    = NULL;
     TD->pc          = codePtr->codeStart;
     TD->catchTop    = initCatchTop;
     TD->cleanup     = 0;
@@ -2681,8 +2678,7 @@ TEBCresume(
 	     */
 
 	    esPtr = iPtr->execEnvPtr->execStackPtr;
-	    TD->expanded = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
-	    TD = TD->expanded;
+	    TD = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
 
 	    catchTop += moved;
 	    tosPtr += moved;
@@ -6407,9 +6403,6 @@ TEBCresume(
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
     if (--codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
-    }
-    while (TD->expanded) {
-	TD = TD->expanded;
     }
     TclStackFree(interp, TD);	/* free my stack */
 
