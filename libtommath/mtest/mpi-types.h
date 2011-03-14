@@ -15,6 +15,6 @@ typedef int                mp_err;
 #define RADIX              (MP_DIGIT_MAX+1)
 
 
-/* $Source: /cvs/libtom/libtommath/mtest/mpi-types.h,v $ */
-/* $Revision: 1.2 $ */
-/* $Date: 2005/05/05 14:38:47 $ */
+/* $Source$ */
+/* $Revision: 0.36 $ */
+/* $Date: 2005-08-01 16:37:28 +0000 $ */

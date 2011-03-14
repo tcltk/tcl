@@ -59,6 +59,6 @@ int main(void)
 }
 
 
-/* $Source: /cvs/libtom/libtommath/etc/drprime.c,v $ */
-/* $Revision: 1.2 $ */
-/* $Date: 2005/05/05 14:38:47 $ */
+/* $Source$ */
+/* $Revision: 0.36 $ */
+/* $Date: 2005-08-01 16:37:28 +0000 $ */

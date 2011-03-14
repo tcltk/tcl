@@ -6,7 +6,7 @@
 
     Arbitrary precision integer arithmetic library
 
-    $Id: mpi.h,v 1.2 2005/05/05 14:38:47 tom Exp $
+    $ID$
  */
 
 #ifndef _H_MPI_
@@ -226,6 +226,6 @@ const  char  *mp_strerror(mp_err ec);
 
 #endif /* end _H_MPI_ */
 
-/* $Source: /cvs/libtom/libtommath/mtest/mpi.h,v $ */
-/* $Revision: 1.2 $ */
-/* $Date: 2005/05/05 14:38:47 $ */
+/* $Source$ */
+/* $Revision: 0.36 $ */
+/* $Date: 2005-08-01 16:37:28 +0000 $ */

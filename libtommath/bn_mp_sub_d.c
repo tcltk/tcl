@@ -88,6 +88,6 @@ mp_sub_d (mp_int * a, mp_digit b, mp_int * c)
 
 #endif
 
-/* $Source: /cvs/libtom/libtommath/bn_mp_sub_d.c,v $ */
-/* $Revision: 1.6 $ */
-/* $Date: 2006/12/28 01:25:13 $ */
+/* $Source$ */
+/* $Revision: 0.41 $ */
+/* $Date: 2007-04-18 09:58:18 +0000 $ */
