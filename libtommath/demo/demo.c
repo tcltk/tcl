@@ -735,6 +735,6 @@ printf("compare no compare!\n"); exit(EXIT_FAILURE); }
    return 0;
 }
 
-/* $Source: /cvs/libtom/libtommath/demo/demo.c,v $ */
-/* $Revision: 1.3 $ */
-/* $Date: 2005/06/24 11:32:07 $ */
+/* $Source$ */
+/* $Revision: 0.36 $ */
+/* $Date: 2005-08-01 16:37:28 +0000 $ */

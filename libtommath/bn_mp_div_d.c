@@ -110,6 +110,6 @@ int mp_div_d (mp_int * a, mp_digit b, mp_int * c, mp_digit * d)
 
 #endif
 
-/* $Source: /cvs/libtom/libtommath/bn_mp_div_d.c,v $ */
-/* $Revision: 1.5 $ */
-/* $Date: 2007/01/09 04:44:32 $ */
+/* $Source$ */
+/* $Revision: 0.41 $ */
+/* $Date: 2007-04-18 09:58:18 +0000 $ */

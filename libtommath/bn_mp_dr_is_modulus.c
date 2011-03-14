@@ -38,6 +38,6 @@ int mp_dr_is_modulus(mp_int *a)
 
 #endif
 
-/* $Source: /cvs/libtom/libtommath/bn_mp_dr_is_modulus.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/28 01:25:13 $ */
+/* $Source$ */
+/* $Revision: 0.41 $ */
+/* $Date: 2007-04-18 09:58:18 +0000 $ */

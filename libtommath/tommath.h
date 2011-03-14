@@ -579,6 +579,6 @@ extern const char *mp_s_rmap;
 #endif
 
 
-/* $Source: /cvs/libtom/libtommath/tommath.h,v $ */
-/* $Revision: 1.8 $ */
-/* $Date: 2006/03/31 14:18:44 $ */
+/* $Source$ */
+/* $Revision: 0.39 $ */
+/* $Date: 2006-04-06 19:49:59 +0000 $ */

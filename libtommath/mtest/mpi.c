@@ -6,7 +6,7 @@
 
     Arbitrary precision integer arithmetic library
 
-    $Id: mpi.c,v 1.2 2005/05/05 14:38:47 tom Exp $
+    $ID$
  */
 
 #include "mpi.h"
@@ -3980,6 +3980,6 @@ int      s_mp_outlen(int bits, int r)
 /* HERE THERE BE DRAGONS                                                  */
 /* crc==4242132123, version==2, Sat Feb 02 06:43:52 2002 */
 
-/* $Source: /cvs/libtom/libtommath/mtest/mpi.c,v $ */
-/* $Revision: 1.2 $ */
-/* $Date: 2005/05/05 14:38:47 $ */
+/* $Source$ */
+/* $Revision: 0.36 $ */
+/* $Date: 2005-08-01 16:37:28 +0000 $ */
