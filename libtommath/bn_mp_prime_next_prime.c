@@ -143,7 +143,7 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
 
       /* is this prime? */
       for (x = 0; x < t; x++) {
-          mp_set(&b, ltm_prime_tab[t]);
+          mp_set(&b, ltm_prime_tab[x]);
           if ((err = mp_prime_miller_rabin(a, &b, &res)) != MP_OKAY) {
              goto LBL_ERR;
           }
@@ -165,6 +165,6 @@ LBL_ERR:
 
 #endif
 
-/* $Source: /cvs/libtom/libtommath/bn_mp_prime_next_prime.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/28 01:25:13 $ */
+/* $Source$ */
+/* $Revision: v0.42.0 $ */
+/* $Date: 2010-07-15 13:49:00 +0000 $ */

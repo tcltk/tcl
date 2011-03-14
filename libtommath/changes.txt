@@ -1,3 +1,9 @@
+July 23rd, 2010
+v0.42.0
+       -- Fix for mp_prime_next_prime() bug when checking generated prime
+       -- allow mp_shrink to shrink initialized, but empty MPI's
+       -- Added project and solution files for Visual Studio 2005 and Visual Studio 2008. 
+
 March 10th, 2007
 v0.41  -- Wolfgang Ehrhardt suggested a quick fix to mp_div_d() which makes the detection of powers of two quicker. 
        -- [CRI] Added libtommath.dsp for Visual C++ users.

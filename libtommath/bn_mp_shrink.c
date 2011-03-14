@@ -19,17 +19,22 @@
 int mp_shrink (mp_int * a)
 {
   mp_digit *tmp;
-  if (a->alloc != a->used && a->used > 0) {
-    if ((tmp = OPT_CAST(mp_digit) XREALLOC (a->dp, sizeof (mp_digit) * a->used)) == NULL) {
+  int used = 1;
+  
+  if(a->used > 0)
+    used = a->used;
+  
+  if (a->alloc != used) {
+    if ((tmp = OPT_CAST(mp_digit) XREALLOC (a->dp, sizeof (mp_digit) * used)) == NULL) {
       return MP_MEM;
     }
     a->dp    = tmp;
-    a->alloc = a->used;
+    a->alloc = used;
   }
   return MP_OKAY;
 }
 #endif
 
-/* $Source: /cvs/libtom/libtommath/bn_mp_shrink.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/28 01:25:13 $ */
+/* $Source$ */
+/* $Revision: v0.42.0 $ */
+/* $Date: 2010-06-02 15:09:36 +0200 $ */

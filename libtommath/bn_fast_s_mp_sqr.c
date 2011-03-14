@@ -109,6 +109,6 @@ int fast_s_mp_sqr (mp_int * a, mp_int * b)
 }
 #endif
 
-/* $Source: /cvs/libtom/libtommath/bn_fast_s_mp_sqr.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/28 01:25:13 $ */
+/* $Source$ */
+/* $Revision: 0.41 $ */
+/* $Date: 2007-04-18 09:58:18 +0000 $ */

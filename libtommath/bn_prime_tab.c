@@ -56,6 +56,6 @@ const mp_digit ltm_prime_tab[] = {
 };
 #endif
 
-/* $Source: /cvs/libtom/libtommath/bn_prime_tab.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/28 01:25:13 $ */
+/* $Source$ */
+/* $Revision: 0.41 $ */
+/* $Date: 2007-04-18 09:58:18 +0000 $ */
