@@ -4953,7 +4953,7 @@ TclEvalScriptTokens(
      * during Tcl initialization.
      */
 
-    eeFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+    eeFramePtr = TclStackAlloc(interp, sizeof(CmdFrame));
     if (iPtr->evalFlags & TCL_EVAL_CTX) {
 	/*
 	 * Path information comes out of the context.
@@ -5009,11 +5009,11 @@ TclEvalScriptTokens(
 
     iPtr->cmdFramePtr = eeFramePtr;
     iPtr->evalFlags = 0;
-    objvSpace = stackObjArray = (Tcl_Obj **)
+    objvSpace = stackObjArray =
 	    TclStackAlloc(interp, objLength * sizeof(Tcl_Obj *));
-    expand = expandStack = (int *)
+    expand = expandStack =
 	    TclStackAlloc(interp, objLength * sizeof(int));
-    lineSpace = linesStack = (int *)
+    lineSpace = linesStack =
 	    TclStackAlloc(interp, objLength * sizeof(int));
     while (numCommands-- && (code == TCL_OK)) {
 	int objc, expandRequested = 0;
@@ -5144,10 +5144,8 @@ TclEvalScriptTokens(
 
 	    if (objectsNeeded > objLength) {
 		inPlaceCopy = 0;
-		objv = objvSpace =
-			ckalloc((unsigned)objectsNeeded*sizeof(Tcl_Obj*));
-		lines = lineSpace =
-			ckalloc((unsigned) objectsNeeded * sizeof (int));
+		objv = objvSpace = ckalloc(objectsNeeded * sizeof(Tcl_Obj*));
+		lines = lineSpace = ckalloc(objectsNeeded * sizeof (int));
 	    }
 
 	    objc = 0;
@@ -5236,15 +5234,15 @@ TclEvalScriptTokens(
     TclStackFree(interp, stackObjArray);
 
     if (iPtr->numLevels == 0) {
-        if (code == TCL_RETURN) {
+	if (code == TCL_RETURN) {
 	    code = TclUpdateReturnInfo(iPtr);
-        }
-        if ((code != TCL_OK) && (code != TCL_ERROR) && !allowExceptions) {
+	}
+	if ((code != TCL_OK) && (code != TCL_ERROR) && !allowExceptions) {
 	    ProcessUnexpectedResult(interp, code);
 	    code = TCL_ERROR;
 	    Tcl_LogCommandInfo(interp, scriptTokenPtr->start,
 		    cmdString, cmdSize);
-        }
+	}
     }
     /*
      * TIP #280. Release the local CmdFrame, and its contents.
@@ -5571,7 +5569,7 @@ TclArgumentBCEnter(
     CmdFrame *cfPtr,
     int pc)
 {
-    Interp *iPtr  = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hePtr =
 	    Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
     ExtCmdLoc *eclPtr;
@@ -5902,7 +5900,7 @@ TclNREvalObjEx(
     const CmdFrame *invoker,	/* Frame of the command doing the eval. */
     int word)			/* Index of the word which is in objPtr. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
     int result;
     List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
@@ -5967,7 +5965,7 @@ TclNREvalObjEx(
 	     * Note that we use (word==INTMIN) to signal that no command frame
 	     * should be pushed, as needed by alias and ensemble redirections.
 	     */
-	
+
 	    eoFramePtr = TclStackAlloc(interp, sizeof(CmdFrame));
 	    eoFramePtr->nline = 0;
 	    eoFramePtr->line = NULL;
@@ -6026,7 +6024,7 @@ TclNREvalObjEx(
 	 * TIP #280. Propagate context as much as we can. Especially if the
 	 * script to evaluate is a single literal it makes sense to look if
 	 * our context is one with absolute line numbers we can then track
-	 * into the literal * itself too.
+	 * into the literal itself too.
 	 *
 	 * See also tclCompile.c, TclInitCompileEnv, for the equivalent code
 	 * in the bytecode compiler.
@@ -7118,6 +7116,7 @@ ExprFloorFunc(
     if (code != TCL_OK) {
 	return TCL_ERROR;
     }
+
     if (Tcl_GetBignumFromObj(NULL, objv[1], &big) == TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(TclFloor(&big)));
 	mp_clear(&big);
@@ -7139,7 +7138,7 @@ ExprIsqrtFunc(
     double d;
     Tcl_WideInt w;
     mp_int big;
-    int exact = 0;		/* Flag == 1 if the argument can be represented
+    int exact = 0;		/* Flag ==1 if the argument can be represented
 				 * in a double as an exact integer. */
 
     /*

@@ -2154,11 +2154,6 @@
 	* unix/install-sh:     files should always have LF line ending.
 	* doc/Load.3:          Fix signature of Tcl_LoadFile in documentation.
 
-2010-04-05  Donal K. Fellows  <dkf@users.sf.net>
-
-	* unix/tclLoadDyld.c (FindSymbol): Better human-readable error message
-	generation to match code in tclLoadDl.c.
-
 2010-04-05  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	TIP #348 IMPLEMENTATION

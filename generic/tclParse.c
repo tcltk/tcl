@@ -184,7 +184,7 @@ static const char *parseErrorMsg[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static int		CommandComplete(const char *script, int numBytes);
+static inline int	CommandComplete(const char *script, int numBytes);
 static int		ParseBraces(Tcl_Interp *interp, CONST char *start,
 			    int numBytes, Tcl_Parse *parsePtr, int flags,
 			    CONST char **termPtr);
@@ -380,7 +380,7 @@ TclParseScript(interp, script, numBytes, flags, lastTokenPtrPtr, termPtr)
     Tcl_Token **lastTokenPtrPtr;/* Return pointer to last token */
     CONST char **termPtr;	/* Return the terminating character in string */
 {
-    Tcl_Parse *parsePtr = (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
     Tcl_Token *result;
 
     if (numBytes < 0) {
@@ -397,8 +397,8 @@ TclParseScript(interp, script, numBytes, flags, lastTokenPtrPtr, termPtr)
      * We'll transfer the tokens to the caller.
      */
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	result = ckrealloc((VOID *)parsePtr->tokenPtr,
-		(unsigned int) (parsePtr->numTokens * sizeof(Tcl_Token)));
+	result = ckrealloc(parsePtr->tokenPtr,
+		parsePtr->numTokens * sizeof(Tcl_Token));
     } else {
 	result = ckalloc(parsePtr->numTokens * sizeof(Tcl_Token));
 	memcpy(result, parsePtr->tokenPtr, 

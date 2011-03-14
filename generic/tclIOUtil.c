@@ -1688,6 +1688,7 @@ Tcl_FSEvalFileEx(
     if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
 	return result;
     }
+
     if (Tcl_FSStat(pathPtr, &statBuf) == -1) {
 	Tcl_SetErrno(errno);
 	Tcl_AppendResult(interp, "couldn't read file \"",

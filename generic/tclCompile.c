@@ -1004,7 +1004,7 @@ CompileSubstObj(
     if (objPtr->typePtr == &substCodeType) {
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
+	codePtr = (ByteCode *) objPtr->internalRep.ptrAndLongRep.ptr;
 	if ((unsigned long)flags != objPtr->internalRep.ptrAndLongRep.value
 		|| ((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
