@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
 
 /* get the lower 32-bits of an mp_int */
@@ -39,3 +39,7 @@ unsigned long mp_get_int(mp_int * a)
   return res & 0xFFFFFFFFUL;
 }
 #endif
+
+/* $Source: /cvs/libtom/libtommath/bn_mp_get_int.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/12/28 01:25:13 $ */

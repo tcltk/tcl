@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
 
 /* read a string [ASCII] in a given radix */
@@ -48,7 +48,7 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
      * this allows numbers like 1AB and 1ab to represent the same  value
      * [e.g. in hex]
      */
-    ch = (char) ((radix < 36) ? toupper ((unsigned char) *str) : *str);
+    ch = (char) ((radix < 36) ? toupper (*str) : *str);
     for (y = 0; y < 64; y++) {
       if (ch == mp_s_rmap[y]) {
          break;
@@ -72,13 +72,6 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
     ++str;
   }
   
-  /* if an illegal character was found, fail. */
-
-  if ( *str != '\0' ) {
-      mp_zero( a );
-      return MP_VAL;
-  }
-
   /* set the sign only if a != 0 */
   if (mp_iszero(a) != 1) {
      a->sign = neg;
@@ -86,3 +79,7 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
   return MP_OKAY;
 }
 #endif
+
+/* $Source: /cvs/libtom/libtommath/bn_mp_read_radix.c,v $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/12/28 01:25:13 $ */

@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
 
 /* compare two ints (signed)*/
@@ -37,3 +37,7 @@ mp_cmp (const mp_int * a, const mp_int * b)
   }
 }
 #endif
+
+/* $Source: /cvs/libtom/libtommath/bn_mp_cmp.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/12/28 01:25:13 $ */

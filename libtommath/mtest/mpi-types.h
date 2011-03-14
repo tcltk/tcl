@@ -13,3 +13,8 @@ typedef int                mp_err;
 #define MP_DIGIT_SIZE      2
 #define DIGIT_FMT          "%04X"
 #define RADIX              (MP_DIGIT_MAX+1)
+
+
+/* $Source: /cvs/libtom/libtommath/mtest/mpi-types.h,v $ */
+/* $Revision: 1.2 $ */
+/* $Date: 2005/05/05 14:38:47 $ */

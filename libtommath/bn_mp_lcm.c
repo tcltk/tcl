@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
 
 /* computes least common multiple as |a*b|/(a, b) */
@@ -54,3 +54,7 @@ LBL_T:
   return res;
 }
 #endif
+
+/* $Source: /cvs/libtom/libtommath/bn_mp_lcm.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/12/28 01:25:13 $ */
