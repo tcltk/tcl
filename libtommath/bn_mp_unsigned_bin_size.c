@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
 
 /* get the size for an unsigned equivalent */
@@ -22,3 +22,7 @@ int mp_unsigned_bin_size (mp_int * a)
   return (size / 8 + ((size & 7) != 0 ? 1 : 0));
 }
 #endif
+
+/* $Source: /cvs/libtom/libtommath/bn_mp_unsigned_bin_size.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/12/28 01:25:13 $ */

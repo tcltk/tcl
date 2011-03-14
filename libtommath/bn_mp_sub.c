@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
 
 /* high level subtraction (handles signs) */
@@ -53,3 +53,7 @@ mp_sub (mp_int * a, mp_int * b, mp_int * c)
 }
 
 #endif
+
+/* $Source: /cvs/libtom/libtommath/bn_mp_sub.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/12/28 01:25:13 $ */

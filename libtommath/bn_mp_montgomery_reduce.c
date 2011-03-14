@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
 
 /* computes xR**-1 == x (mod N) via Montgomery Reduction */
@@ -112,3 +112,7 @@ mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
   return MP_OKAY;
 }
 #endif
+
+/* $Source: /cvs/libtom/libtommath/bn_mp_montgomery_reduce.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/12/28 01:25:13 $ */

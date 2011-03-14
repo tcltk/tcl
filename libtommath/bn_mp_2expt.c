@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
 
 /* computes a = 2**b 
@@ -42,3 +42,7 @@ mp_2expt (mp_int * a, int b)
   return MP_OKAY;
 }
 #endif
+
+/* $Source: /cvs/libtom/libtommath/bn_mp_2expt.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/12/28 01:25:13 $ */
