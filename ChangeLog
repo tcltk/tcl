@@ -1,5 +1,15 @@
 2011-03-14  Kevin B. Kenny  <kennykb@acm.org>
 
+	* tools/tclZIC.tcl (onDayOfMonth): Allow for leading zeroes
+	in month and day so that tzdata2011d parses correctly.
+	* library/tzdata/America/Havana:
+	* library/tzdata/America/Juneau:
+	* library/tzdata/America/Santiago:
+	* library/tzdata/Europe/Istanbul:
+	* library/tzdata/Pacific/Apia:
+	* library/tzdata/Pacific/Easter:
+	* library/tzdata/Pacific/Honolulu:  tzdata2011d
+
 	* generic/tclAssembly.c (BBEmitInstInt1): Changed parameter
 	data types in an effort to silence a MSVC warning reported by
 	Ashok P. Nadkarni. Unable to test, since both forms work on
