@@ -171,8 +171,6 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
 typedef struct TEBCdata {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
-    struct TEBCdata *expanded;/* NULL if unchanged, pointer to the succesor
-				 * if it was expanded */
     const unsigned char *pc;	/* These fields are used on return TO this */
     ptrdiff_t *catchTop;	/* this level: they record the state when a */
     int cleanup;		/* new codePtr was received for NR */
@@ -715,7 +713,6 @@ static Tcl_NRPostProc	CopyCallback;
 static Tcl_NRPostProc	ExprObjCallback;
 
 static Tcl_NRPostProc   TEBCresume;
-static Tcl_NRPostProc   TEBCreturn;
 
 /*
  * The structure below defines a bytecode Tcl object type to hold the
@@ -1962,7 +1959,6 @@ TclNRExecuteByteCode(
     esPtr->tosPtr = initTosPtr;
     
     TD->codePtr     = codePtr;
-    TD->expanded    = NULL;
     TD->pc          = codePtr->codeStart;
     TD->catchTop    = initCatchTop;
     TD->cleanup     = 0;
@@ -1993,37 +1989,13 @@ TclNRExecuteByteCode(
 #endif
 
     /*
-     * Push the callbacks for
-     *  - exception handling and cleanup
-     *  - bytecode execution
+     * Push the callback for bytecode execution
      */
     
-    TclNRAddCallback(interp, TEBCreturn, TD, NULL,
-	    NULL, NULL);
     TclNRAddCallback(interp, TEBCresume, TD,
 	    /*resume*/ INT2PTR(0), NULL, NULL);
     
     return TCL_OK;
-}
-
-static int
-TEBCreturn(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    TEBCdata *TD = data[0];
-    ByteCode *codePtr = TD->codePtr;
-
-    if (--codePtr->refCount <= 0) {
-	TclCleanupByteCode(codePtr);
-    }
-    while (TD->expanded) {
-	TD = TD->expanded;
-    }
-    TclStackFree(interp, TD);	/* free my stack */
-
-    return result;
 }
 
 static int
@@ -2132,7 +2104,6 @@ TEBCresume(
 	    result = TCL_ERROR;
 	}
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
-	NRE_ASSERT(TOP_CB(interp)->procPtr == TEBCreturn);
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
 	    TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
@@ -2707,8 +2678,7 @@ TEBCresume(
 	     */
 
 	    esPtr = iPtr->execEnvPtr->execStackPtr;
-	    TD->expanded = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
-	    TD = TD->expanded;
+	    TD = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
 
 	    catchTop += moved;
 	    tosPtr += moved;
@@ -6431,8 +6401,14 @@ TEBCresume(
     }
 
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
+    if (--codePtr->refCount <= 0) {
+	TclCleanupByteCode(codePtr);
+    }
+    TclStackFree(interp, TD);	/* free my stack */
+
     return result;
 }
+
 #undef codePtr
 #undef iPtr
 #undef bcFramePtr

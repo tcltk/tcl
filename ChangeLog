@@ -1,3 +1,18 @@
+2011-03-14  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclAssembly.c (BBEmitInstInt1): Changed parameter
+	data types in an effort to silence a MSVC warning reported by
+	Ashok P. Nadkarni. Unable to test, since both forms work on
+	my machine in VC2005, 2008. 2010, in both release and debug
+	builds.
+	* tests/tclTest.c (TestdstringCmd): Restored MSVC buildability
+	broken by [5574bdd262], which changed the effective return type
+	of 'ckalloc' from 'char*' to 'void*'.
+
+2011-03-13  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: remove TEBCreturn()
+
 2011-03-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tcl.h (ckalloc,ckfree,ckrealloc): Moved casts into these
