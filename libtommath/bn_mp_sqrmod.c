@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
 
 /* c = a * a (mod b) */
@@ -36,6 +36,6 @@ mp_sqrmod (mp_int * a, mp_int * b, mp_int * c)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_sqrmod.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2006/12/01 00:08:11 $ */
+/* $Source: /cvs/libtom/libtommath/bn_mp_sqrmod.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/12/28 01:25:13 $ */

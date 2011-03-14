@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
+ * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
 
 /* makes a pseudo-random int of a given size */
@@ -50,6 +50,6 @@ mp_rand (mp_int * a, int digits)
 }
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_rand.c,v $ */
-/* $Revision: 1.1.1.4 $ */
-/* $Date: 2006/12/01 00:08:11 $ */
+/* $Source: /cvs/libtom/libtommath/bn_mp_rand.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/12/28 01:25:13 $ */
