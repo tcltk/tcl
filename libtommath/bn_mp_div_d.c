@@ -19,7 +19,12 @@ static int s_is_power_of_two(mp_digit b, int *p)
 {
    int x;
 
-   for (x = 1; x < DIGIT_BIT; x++) {
+   /* fast return if no power of two */
+   if ((b==0) || (b & (b-1))) {
+      return 0;
+   }
+
+   for (x = 0; x < DIGIT_BIT; x++) {
       if (b == (((mp_digit)1)<<x)) {
          *p = x;
          return 1;
@@ -106,5 +111,5 @@ int mp_div_d (mp_int * a, mp_digit b, mp_int * c, mp_digit * d)
 #endif
 
 /* $Source: /cvs/libtom/libtommath/bn_mp_div_d.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2007/01/09 04:44:32 $ */
