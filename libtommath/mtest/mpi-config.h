@@ -1,5 +1,5 @@
 /* Default configuration for MPI library */
-/* $Id: mpi-config.h,v 1.1.1.2 2005/09/26 16:32:17 kennykb Exp $ */
+/* $Id: mpi-config.h,v 1.2 2005/05/05 14:38:47 tom Exp $ */
 
 #ifndef MPI_CONFIG_H_
 #define MPI_CONFIG_H_
@@ -85,6 +85,6 @@
 
 /* crc==3287762869, version==2, Sat Feb 02 06:43:53 2002 */
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/mtest/mpi-config.h,v $ */
-/* $Revision: 1.1.1.2 $ */
-/* $Date: 2005/09/26 16:32:17 $ */
+/* $Source: /cvs/libtom/libtommath/mtest/mpi-config.h,v $ */
+/* $Revision: 1.2 $ */
+/* $Date: 2005/05/05 14:38:47 $ */

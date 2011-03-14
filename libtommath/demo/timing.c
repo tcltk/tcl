@@ -314,6 +314,6 @@ int main(void)
    return 0;
 }
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/demo/timing.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2005/09/26 16:32:16 $ */
+/* $Source: /cvs/libtom/libtommath/demo/timing.c,v $ */
+/* $Revision: 1.2 $ */
+/* $Date: 2005/05/05 14:38:47 $ */

@@ -137,6 +137,6 @@ main (void)
   return 0;
 }
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/etc/tune.c,v $ */
-/* $Revision: 1.1.1.4 $ */
-/* $Date: 2006/12/01 00:08:29 $ */
+/* $Source: /cvs/libtom/libtommath/etc/tune.c,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/03/31 14:18:47 $ */

@@ -303,6 +303,6 @@ int main(void)
    return 0;
 }
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/mtest/mtest.c,v $ */
-/* $Revision: 1.1.1.2 $ */
-/* $Date: 2005/09/26 16:32:17 $ */
+/* $Source: /cvs/libtom/libtommath/mtest/mtest.c,v $ */
+/* $Revision: 1.2 $ */
+/* $Date: 2005/05/05 14:38:47 $ */

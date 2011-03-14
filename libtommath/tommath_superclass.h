@@ -71,6 +71,6 @@
 
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/tommath_superclass.h,v $ */
-/* $Revision: 1.1.1.2 $ */
-/* $Date: 2005/09/26 16:32:16 $ */
+/* $Source: /cvs/libtom/libtommath/tommath_superclass.h,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2005/05/14 13:29:17 $ */
