@@ -790,12 +790,12 @@ TestasyncCmd(
 	if (argc != 3) {
 	    goto wrongNumArgs;
 	}
-	asyncPtr = (TestAsyncHandler *) ckalloc(sizeof(TestAsyncHandler));
+	asyncPtr = ckalloc(sizeof(TestAsyncHandler));
 	asyncPtr->id = nextId;
 	nextId++;
 	asyncPtr->handler = Tcl_AsyncCreate(AsyncHandlerProc,
 		(ClientData) asyncPtr);
-	asyncPtr->command = (char *) ckalloc((unsigned) (strlen(argv[2]) + 1));
+	asyncPtr->command = ckalloc(strlen(argv[2]) + 1);
 	strcpy(asyncPtr->command, argv[2]);
 	asyncPtr->nextPtr = firstHandler;
 	firstHandler = asyncPtr;
@@ -807,7 +807,7 @@ TestasyncCmd(
 		firstHandler = asyncPtr->nextPtr;
 		Tcl_AsyncDelete(asyncPtr->handler);
 		ckfree(asyncPtr->command);
-		ckfree((char *) asyncPtr);
+		ckfree(asyncPtr);
 	    }
 	    return TCL_OK;
 	}
@@ -829,7 +829,7 @@ TestasyncCmd(
 	    }
 	    Tcl_AsyncDelete(asyncPtr->handler);
 	    ckfree(asyncPtr->command);
-	    ckfree((char *) asyncPtr);
+	    ckfree(asyncPtr);
 	    break;
 	}
     } else if (strcmp(argv[1], "mark") == 0) {
@@ -909,7 +909,7 @@ AsyncHandlerProc(
 	 * invoked, it's possible.  Better error checking is needed here.
 	 */
     }
-    ckfree((char *)cmd);
+    ckfree(cmd);
     return code;
 }
 
@@ -1527,9 +1527,9 @@ TestdelCmd(
 	return TCL_ERROR;
     }
 
-    dPtr = (DelCmd *) ckalloc(sizeof(DelCmd));
+    dPtr = ckalloc(sizeof(DelCmd));
     dPtr->interp = interp;
-    dPtr->deleteCmd = (char *) ckalloc((unsigned) (strlen(argv[3]) + 1));
+    dPtr->deleteCmd = ckalloc(strlen(argv[3]) + 1);
     strcpy(dPtr->deleteCmd, argv[3]);
 
     Tcl_CreateCommand(slave, argv[2], DelCmdProc, (ClientData) dPtr,
@@ -1548,7 +1548,7 @@ DelCmdProc(
 
     Tcl_AppendResult(interp, dPtr->deleteCmd, NULL);
     ckfree(dPtr->deleteCmd);
-    ckfree((char *) dPtr);
+    ckfree(dPtr);
     return TCL_OK;
 }
 
@@ -1556,12 +1556,12 @@ static void
 DelDeleteProc(
     ClientData clientData)	/* String command to evaluate. */
 {
-    DelCmd *dPtr = (DelCmd *) clientData;
+    DelCmd *dPtr = clientData;
 
     Tcl_Eval(dPtr->interp, dPtr->deleteCmd);
     Tcl_ResetResult(dPtr->interp);
     ckfree(dPtr->deleteCmd);
-    ckfree((char *) dPtr);
+    ckfree(dPtr);
 }
 
 /*
@@ -1763,11 +1763,11 @@ TestdstringCmd(
 	} else if (strcmp(argv[2], "staticlarge") == 0) {
 	    Tcl_SetResult(interp, "first0 first1 first2 first3 first4 first5 first6 first7 first8 first9\nsecond0 second1 second2 second3 second4 second5 second6 second7 second8 second9\nthird0 third1 third2 third3 third4 third5 third6 third7 third8 third9\nfourth0 fourth1 fourth2 fourth3 fourth4 fourth5 fourth6 fourth7 fourth8 fourth9\nfifth0 fifth1 fifth2 fifth3 fifth4 fifth5 fifth6 fifth7 fifth8 fifth9\nsixth0 sixth1 sixth2 sixth3 sixth4 sixth5 sixth6 sixth7 sixth8 sixth9\nseventh0 seventh1 seventh2 seventh3 seventh4 seventh5 seventh6 seventh7 seventh8 seventh9\n", TCL_STATIC);
 	} else if (strcmp(argv[2], "free") == 0) {
-	    char *s = (char *) ckalloc(100);
+	    char *s = ckalloc(100);
 	    strcpy(s, "This is a malloc-ed string");
 	    Tcl_SetResult(interp, s, TCL_DYNAMIC);
 	} else if (strcmp(argv[2], "special") == 0) {
-	    char *s = (char *) ckalloc(100) + 16;
+	    char *s = (char*)ckalloc(100) + 16;
 	    strcpy(s, "This is a specially-allocated string");
 	    Tcl_SetResult(interp, s, SpecialFree);
 	} else {
@@ -1869,15 +1869,15 @@ TestencodingObjCmd(
 	if (objc != 5) {
 	    return TCL_ERROR;
 	}
-	encodingPtr = (TclEncoding *) ckalloc(sizeof(TclEncoding));
+	encodingPtr = ckalloc(sizeof(TclEncoding));
 	encodingPtr->interp = interp;
 
 	string = Tcl_GetStringFromObj(objv[3], &length);
-	encodingPtr->toUtfCmd = (char *) ckalloc((unsigned) (length + 1));
+	encodingPtr->toUtfCmd = ckalloc(length + 1);
 	memcpy(encodingPtr->toUtfCmd, string, (unsigned) length + 1);
 
 	string = Tcl_GetStringFromObj(objv[4], &length);
-	encodingPtr->fromUtfCmd = (char *) ckalloc((unsigned) (length + 1));
+	encodingPtr->fromUtfCmd = ckalloc(length + 1);
 	memcpy(encodingPtr->fromUtfCmd, string, (unsigned) (length + 1));
 
 	string = Tcl_GetStringFromObj(objv[2], &length);
@@ -1972,12 +1972,11 @@ static void
 EncodingFreeProc(
     ClientData clientData)	/* ClientData associated with type. */
 {
-    TclEncoding *encodingPtr;
+    TclEncoding *encodingPtr = clientData;
 
-    encodingPtr = (TclEncoding *) clientData;
-    ckfree((char *) encodingPtr->toUtfCmd);
-    ckfree((char *) encodingPtr->fromUtfCmd);
-    ckfree((char *) encodingPtr);
+    ckfree(encodingPtr->toUtfCmd);
+    ckfree(encodingPtr->fromUtfCmd);
+    ckfree(encodingPtr);
 }
 
 /*
@@ -2132,7 +2131,7 @@ TesteventObjCmd(
 		"position specifier", TCL_EXACT, &posIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	ev = (TestEvent *) ckalloc(sizeof(TestEvent));
+	ev = ckalloc(sizeof(TestEvent));
 	ev->header.proc = TesteventProc;
 	ev->header.nextPtr = NULL;
 	ev->interp = interp;
@@ -2990,7 +2989,7 @@ TestlinkCmd(
 	    if (strcmp(argv[5], "-") == 0) {
 		stringVar = NULL;
 	    } else {
-		stringVar = (char *) ckalloc((unsigned) (strlen(argv[5]) + 1));
+		stringVar = ckalloc(strlen(argv[5]) + 1);
 		strcpy(stringVar, argv[5]);
 	    }
 	}
@@ -3097,7 +3096,7 @@ TestlinkCmd(
 	    if (strcmp(argv[5], "-") == 0) {
 		stringVar = NULL;
 	    } else {
-		stringVar = (char *) ckalloc((unsigned) (strlen(argv[5]) + 1));
+		stringVar = ckalloc(strlen(argv[5]) + 1);
 		strcpy(stringVar, argv[5]);
 	    }
 	    Tcl_UpdateLinkedVar(interp, "string");
@@ -3409,7 +3408,7 @@ CleanupTestSetassocdataTests(
     ClientData clientData,	/* Data to be released. */
     Tcl_Interp *interp)		/* Interpreter being deleted. */
 {
-    ckfree((char *) clientData);
+    ckfree(clientData);
 }
 
 /*
@@ -4108,7 +4107,7 @@ TestsetassocdataCmd(
 	return TCL_ERROR;
     }
 
-    buf = ckalloc((unsigned) strlen(argv[2]) + 1);
+    buf = ckalloc(strlen(argv[2]) + 1);
     strcpy(buf, argv[2]);
 
     /*
@@ -4491,7 +4490,7 @@ TestpanicCmd(
 
     argString = Tcl_Merge(argc-1, argv+1);
     Tcl_Panic("%s", argString);
-    ckfree((char *)argString);
+    ckfree(argString);
 
     return TCL_OK;
 }
@@ -4716,8 +4715,8 @@ GetTimesCmd(
     fprintf(stderr, "alloc & free 100000 6 word items\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	objPtr = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj));
-	ckfree((char *) objPtr);
+	objPtr = ckalloc(sizeof(Tcl_Obj));
+	ckfree(objPtr);
     }
     Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
@@ -4725,10 +4724,10 @@ GetTimesCmd(
 
     /* alloc 5000 times */
     fprintf(stderr, "alloc 5000 6 word items\n");
-    objv = (Tcl_Obj **) ckalloc(5000 * sizeof(Tcl_Obj *));
+    objv = ckalloc(5000 * sizeof(Tcl_Obj *));
     Tcl_GetTime(&start);
     for (i = 0;  i < 5000;  i++) {
-	objv[i] = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj));
+	objv[i] = ckalloc(sizeof(Tcl_Obj));
     }
     Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
@@ -4738,7 +4737,7 @@ GetTimesCmd(
     fprintf(stderr, "free 5000 6 word items\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 5000;  i++) {
-	ckfree((char *) objv[i]);
+	ckfree(objv[i]);
     }
     Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
@@ -4764,7 +4763,7 @@ GetTimesCmd(
     Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per Tcl_DecrRefCount\n", timePer/5000);
-    ckfree((char *) objv);
+    ckfree(objv);
 
     /* TclGetString 100000 times */
     fprintf(stderr, "TclGetStringFromObj of \"12345\" 100000 times\n");
@@ -5312,7 +5311,7 @@ TestChannelCmd(
 		    *nextPtrPtr = curPtr->nextPtr;
 		    curPtr->nextPtr = NULL;
 		    chan = curPtr->chan;
-		    ckfree((char *) curPtr);
+		    ckfree(curPtr);
 		    break;
 		}
 	    }
@@ -5382,7 +5381,7 @@ TestChannelCmd(
 
 	/* Remember the channel in the pool of detached channels */
 
-	det = (TestChannel *) ckalloc(sizeof(TestChannel));
+	det = ckalloc(sizeof(TestChannel));
 	det->chan     = chan;
 	det->nextPtr  = firstDetached;
 	firstDetached = det;
@@ -5780,8 +5779,7 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 
-	esPtr = (EventScriptRecord *) ckalloc((unsigned)
-		sizeof(EventScriptRecord));
+	esPtr = ckalloc(sizeof(EventScriptRecord));
 	esPtr->nextPtr = statePtr->scriptRecordPtr;
 	statePtr->scriptRecordPtr = esPtr;
 
@@ -5838,7 +5836,7 @@ TestChannelEventCmd(
 	Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
 		TclChannelEventScriptInvoker, (ClientData) esPtr);
 	Tcl_DecrRefCount(esPtr->scriptPtr);
-	ckfree((char *) esPtr);
+	ckfree(esPtr);
 
 	return TCL_OK;
     }
@@ -5879,7 +5877,7 @@ TestChannelEventCmd(
 	    Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
 		    TclChannelEventScriptInvoker, (ClientData) esPtr);
 	    Tcl_DecrRefCount(esPtr->scriptPtr);
-	    ckfree((char *) esPtr);
+	    ckfree(esPtr);
 	}
 	statePtr->scriptRecordPtr = NULL;
 	return TCL_OK;
@@ -6724,7 +6722,7 @@ TestNRELevels(
     ptrdiff_t depth;
     Tcl_Obj *levels[6];
     int i = 0;
-    NRE_callback *cbPtr = ((Interp *) interp)->execEnvPtr->callbackPtr;
+    NRE_callback *cbPtr = iPtr->execEnvPtr->callbackPtr;
 
     if (refDepth == NULL) {
 	refDepth = &depth;
@@ -6733,11 +6731,11 @@ TestNRELevels(
     depth = (refDepth - &depth);
 
     levels[0] = Tcl_NewIntObj(depth);
-    levels[1] = Tcl_NewIntObj(((Interp *)interp)->numLevels);
+    levels[1] = Tcl_NewIntObj(iPtr->numLevels);
     levels[2] = Tcl_NewIntObj(iPtr->cmdFramePtr->level);
     levels[3] = Tcl_NewIntObj(iPtr->varFramePtr->level);
-    levels[4] = Tcl_NewIntObj((iPtr->execEnvPtr->execStackPtr->tosPtr
-		    - iPtr->execEnvPtr->execStackPtr->stackWords));
+    levels[4] = Tcl_NewIntObj(iPtr->execEnvPtr->execStackPtr->tosPtr
+	    - iPtr->execEnvPtr->execStackPtr->stackWords);
 
     while (cbPtr) {
 	i++;

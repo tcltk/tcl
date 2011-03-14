@@ -248,7 +248,7 @@ FreeTokensInternalRep(objPtr)
     Tcl_Obj *objPtr;
 {
     /* Free the Tcl_Token array */
-    ckfree((char *) objPtr->internalRep.twoPtrValue.ptr1);
+    ckfree(objPtr->internalRep.twoPtrValue.ptr1);
 }
 
 /*
@@ -397,11 +397,10 @@ TclParseScript(interp, script, numBytes, flags, lastTokenPtrPtr, termPtr)
      * We'll transfer the tokens to the caller.
      */
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	result = (Tcl_Token *) ckrealloc((VOID *)parsePtr->tokenPtr,
+	result = ckrealloc((VOID *)parsePtr->tokenPtr,
 		(unsigned int) (parsePtr->numTokens * sizeof(Tcl_Token)));
     } else {
-	result = (Tcl_Token *)
-		ckalloc((unsigned int) (parsePtr->numTokens * sizeof(Tcl_Token)));
+	result = ckalloc(parsePtr->numTokens * sizeof(Tcl_Token));
 	memcpy(result, parsePtr->tokenPtr, 
 		(size_t) (parsePtr->numTokens * sizeof(Tcl_Token)));
     }
@@ -1658,7 +1657,7 @@ Tcl_FreeParse(
 				 * call to Tcl_ParseCommand. */
 {
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	ckfree((char *) parsePtr->tokenPtr);
+	ckfree(parsePtr->tokenPtr);
 	parsePtr->tokenPtr = parsePtr->staticTokens;
     }
 }
@@ -2432,7 +2431,7 @@ TclSubstTokens(
 
     if (isLiteral) {
 	maxNumCL = NUM_STATIC_POS;
-	clPosition = (int *) ckalloc(maxNumCL * sizeof(int));
+	clPosition = ckalloc(maxNumCL * sizeof(int));
     }
 
     adjust = 0;
@@ -2482,7 +2481,7 @@ TclSubstTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = (int *) ckrealloc((char *) clPosition,
+			clPosition = ckrealloc(clPosition,
 				maxNumCL * sizeof(int));
 		    }
 		    clPosition[numCL] = clPos;
@@ -2685,7 +2684,7 @@ TclSubstTokens(
 	     */
 
 	    if (maxNumCL) {
-		ckfree((char *) clPosition);
+		ckfree(clPosition);
 	    }
 	} else {
 	    Tcl_ResetResult(interp);

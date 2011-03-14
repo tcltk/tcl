@@ -460,7 +460,7 @@ Tcl_CreateFileHandler(
 	    }
 	}
 	if (filePtr == NULL) {
-	    filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
+	    filePtr = ckalloc(sizeof(FileHandler));
 	    filePtr->fd = fd;
 	    filePtr->readyMask = 0;
 	    filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -579,7 +579,7 @@ Tcl_DeleteFileHandler(
 	} else {
 	    prevPtr->nextPtr = filePtr->nextPtr;
 	}
-	ckfree((char *) filePtr);
+	ckfree(filePtr);
     }
 }
 
@@ -870,7 +870,7 @@ Tcl_WaitForEvent(
 	     */
 
 	    if (filePtr->readyMask == 0) {
-		FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
+		FileHandlerEvent *fileEvPtr =
 			ckalloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;

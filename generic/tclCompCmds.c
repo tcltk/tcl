@@ -800,24 +800,24 @@ TclCompileDictForCmd(
     }
     Tcl_DStringFree(&buffer);
     if (numVars != 2) {
-	ckfree((char *) argv);
+	ckfree(argv);
 	return TCL_ERROR;
     }
 
     nameChars = strlen(argv[0]);
     if (!TclIsLocalScalar(argv[0], nameChars)) {
-	ckfree((char *) argv);
+	ckfree(argv);
 	return TCL_ERROR;
     }
     keyVarIndex = TclFindCompiledLocal(argv[0], nameChars, 1, envPtr);
 
     nameChars = strlen(argv[1]);
     if (!TclIsLocalScalar(argv[1], nameChars)) {
-	ckfree((char *) argv);
+	ckfree(argv);
 	return TCL_ERROR;
     }
     valueVarIndex = TclFindCompiledLocal(argv[1], nameChars, 1, envPtr);
-    ckfree((char *) argv);
+    ckfree(argv);
 
     if ((keyVarIndex < 0) || (valueVarIndex < 0)) {
 	return TCL_ERROR;
@@ -1019,8 +1019,7 @@ TclCompileDictUpdateCmd(
      * that are to be used.
      */
 
-    duiPtr = (DictUpdateInfo *)
-	    ckalloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
+    duiPtr = ckalloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
     duiPtr->length = numVars;
     keyTokenPtrs = TclStackAlloc(interp,
 	    sizeof(Tcl_Token *) * numVars);
@@ -1060,7 +1059,7 @@ TclCompileDictUpdateCmd(
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
     failedUpdateInfoAssembly:
-	ckfree((char *) duiPtr);
+	ckfree(duiPtr);
 	TclStackFree(interp, keyTokenPtrs);
 	return TCL_ERROR;
     }
@@ -1266,7 +1265,7 @@ DupDictUpdateInfo(
 
     dui1Ptr = clientData;
     len = sizeof(DictUpdateInfo) + sizeof(int) * (dui1Ptr->length - 1);
-    dui2Ptr = (DictUpdateInfo *) ckalloc(len);
+    dui2Ptr = ckalloc(len);
     memcpy(dui2Ptr, dui1Ptr, len);
     return dui2Ptr;
 }
@@ -1730,8 +1729,8 @@ TclCompileForeachCmd(
      * pointing to the ForeachInfo structure.
      */
 
-    infoPtr = (ForeachInfo *) ckalloc((unsigned)
-	    sizeof(ForeachInfo) + numLists*sizeof(ForeachVarList *));
+    infoPtr = ckalloc(sizeof(ForeachInfo)
+	    + numLists * sizeof(ForeachVarList *));
     infoPtr->numLists = numLists;
     infoPtr->firstValueTemp = firstValueTemp;
     infoPtr->loopCtTemp = loopCtTemp;
@@ -1739,8 +1738,8 @@ TclCompileForeachCmd(
 	ForeachVarList *varListPtr;
 
 	numVars = varcList[loopIndex];
-	varListPtr = (ForeachVarList *) ckalloc((unsigned)
-		sizeof(ForeachVarList) + numVars*sizeof(int));
+	varListPtr = ckalloc(sizeof(ForeachVarList)
+		+ numVars * sizeof(int));
 	varListPtr->numVars = numVars;
 	for (j = 0;  j < numVars;  j++) {
 	    const char *varName = varvList[loopIndex][j];
@@ -1865,7 +1864,7 @@ TclCompileForeachCmd(
   done:
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	if (varvList[loopIndex] != NULL) {
-	    ckfree((char *) varvList[loopIndex]);
+	    ckfree(varvList[loopIndex]);
 	}
     }
     TclStackFree(interp, (void *)varvList);
@@ -1904,8 +1903,8 @@ DupForeachInfo(
     register ForeachVarList *srcListPtr, *dupListPtr;
     int numVars, i, j, numLists = srcPtr->numLists;
 
-    dupPtr = (ForeachInfo *) ckalloc((unsigned)
-	    sizeof(ForeachInfo) + numLists*sizeof(ForeachVarList *));
+    dupPtr = ckalloc(sizeof(ForeachInfo)
+	    + numLists * sizeof(ForeachVarList *));
     dupPtr->numLists = numLists;
     dupPtr->firstValueTemp = srcPtr->firstValueTemp;
     dupPtr->loopCtTemp = srcPtr->loopCtTemp;
@@ -1913,8 +1912,8 @@ DupForeachInfo(
     for (i = 0;  i < numLists;  i++) {
 	srcListPtr = srcPtr->varLists[i];
 	numVars = srcListPtr->numVars;
-	dupListPtr = (ForeachVarList *) ckalloc((unsigned)
-		sizeof(ForeachVarList) + numVars*sizeof(int));
+	dupListPtr = ckalloc(sizeof(ForeachVarList)
+		+ numVars * sizeof(int));
 	dupListPtr->numVars = numVars;
 	for (j = 0;  j < numVars;  j++) {
 	    dupListPtr->varIndexes[j] =	srcListPtr->varIndexes[j];
@@ -1955,9 +1954,9 @@ FreeForeachInfo(
 
     for (i = 0;  i < numLists;  i++) {
 	listPtr = infoPtr->varLists[i];
-	ckfree((char *) listPtr);
+	ckfree(listPtr);
     }
-    ckfree((char *) infoPtr);
+    ckfree(infoPtr);
 }
 
 /*
@@ -3211,7 +3210,8 @@ TclCompileLsetCmd(
  * TclCompileNamespaceCmd --
  *
  *	Procedure called to compile the "namespace" command; currently, only
- *	the subcommand "namespace upvar" is compiled to bytecodes.
+ *	the subcommand "namespace upvar" is compiled to bytecodes, and then
+ *	only inside a procedure(-like) context.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
@@ -3225,7 +3225,7 @@ TclCompileLsetCmd(
  */
 
 int
-TclCompileNamespaceCmd(
+TclCompileNamespaceUpvarCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
@@ -3242,21 +3242,11 @@ TclCompileNamespaceCmd(
     }
 
     /*
-     * Only compile [namespace upvar ...]: needs an odd number of args, >=5
+     * Only compile [namespace upvar ...]: needs an even number of args, >=4
      */
 
     numWords = parsePtr->numWords;
-    if (!(numWords%2) || (numWords < 5)) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Check if the second argument is "upvar"
-     */
-
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if ((tokenPtr->size != 5)  /* 5 == strlen("upvar") */
-	    || strncmp(tokenPtr->start, "upvar", 5)) {
+    if ((numWords % 2) || (numWords < 4)) {
 	return TCL_ERROR;
     }
 
@@ -3264,7 +3254,7 @@ TclCompileNamespaceCmd(
      * Push the namespace
      */
 
-    tokenPtr = TokenAfter(tokenPtr);
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 1);
 
     /*
@@ -3274,7 +3264,7 @@ TclCompileNamespaceCmd(
      */
 
     localTokenPtr = tokenPtr;
-    for (i=4; i<=numWords; i+=2) {
+    for (i=3; i<=numWords; i+=2) {
 	otherTokenPtr = TokenAfter(localTokenPtr);
 	localTokenPtr = TokenAfter(otherTokenPtr);
 

@@ -461,9 +461,9 @@ TraceExecutionObjCmd(
 	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
-	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)
-		    ckalloc((unsigned) ((TclOffset(TraceCommandInfo, command)
-			    + 1) + length));
+	    TraceCommandInfo *tcmdPtr = ckalloc(
+		    TclOffset(TraceCommandInfo, command) + 1 + length);
+
 	    tcmdPtr->flags = flags;
 	    tcmdPtr->stepTrace = NULL;
 	    tcmdPtr->startLevel = 0;
@@ -479,7 +479,7 @@ TraceExecutionObjCmd(
 	    name = Tcl_GetString(objv[3]);
 	    if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 		    tcmdPtr) != TCL_OK) {
-		ckfree((char *) tcmdPtr);
+		ckfree(tcmdPtr);
 		return TCL_ERROR;
 	    }
 	} else {
@@ -530,7 +530,7 @@ TraceExecutionObjCmd(
 			Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 			tcmdPtr->stepTrace = NULL;
 			if (tcmdPtr->startCmd != NULL) {
-			    ckfree((char *) tcmdPtr->startCmd);
+			    ckfree(tcmdPtr->startCmd);
 			}
 		    }
 		    if (tcmdPtr->flags & TCL_TRACE_EXEC_IN_PROGRESS) {
@@ -541,7 +541,7 @@ TraceExecutionObjCmd(
 			tcmdPtr->flags = 0;
 		    }
 		    if ((--tcmdPtr->refCount) <= 0) {
-			ckfree((char *) tcmdPtr);
+			ckfree(tcmdPtr);
 		    }
 		    break;
 		}
@@ -697,9 +697,8 @@ TraceCommandObjCmd(
 	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
-	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)
-		    ckalloc((unsigned) ((TclOffset(TraceCommandInfo, command)
-			    + 1) + length));
+	    TraceCommandInfo *tcmdPtr = ckalloc(
+		    TclOffset(TraceCommandInfo, command) + 1 + length);
 
 	    tcmdPtr->flags = flags;
 	    tcmdPtr->stepTrace = NULL;
@@ -712,7 +711,7 @@ TraceCommandObjCmd(
 	    name = Tcl_GetString(objv[3]);
 	    if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 		    tcmdPtr) != TCL_OK) {
-		ckfree((char *) tcmdPtr);
+		ckfree(tcmdPtr);
 		return TCL_ERROR;
 	    }
 	} else {
@@ -743,7 +742,7 @@ TraceCommandObjCmd(
 			    TraceCommandProc, clientData);
 		    tcmdPtr->flags |= TCL_TRACE_DESTROYED;
 		    if ((--tcmdPtr->refCount) <= 0) {
-			ckfree((char *) tcmdPtr);
+			ckfree(tcmdPtr);
 		    }
 		    break;
 		}
@@ -898,9 +897,9 @@ TraceVariableObjCmd(
 	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = (size_t) commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
-	    CombinedTraceVarInfo *ctvarPtr = (CombinedTraceVarInfo *)
-		    ckalloc((unsigned) ((TclOffset(CombinedTraceVarInfo,
-			    traceCmdInfo.command) + 1) + length));
+	    CombinedTraceVarInfo *ctvarPtr = ckalloc(
+		    TclOffset(CombinedTraceVarInfo, traceCmdInfo.command)
+		    + 1 + length);
 
 	    ctvarPtr->traceCmdInfo.flags = flags;
 	    if (objv[0] == NULL) {
@@ -915,7 +914,7 @@ TraceVariableObjCmd(
 	    name = Tcl_GetString(objv[3]);
 	    if (TraceVarEx(interp, name, NULL, (VarTrace *) ctvarPtr)
 		    != TCL_OK) {
-		ckfree((char *) ctvarPtr);
+		ckfree(ctvarPtr);
 		return TCL_ERROR;
 	    }
 	} else {
@@ -1109,7 +1108,7 @@ Tcl_TraceCommand(
      * Set up trace information.
      */
 
-    tracePtr = (CommandTrace *) ckalloc(sizeof(CommandTrace));
+    tracePtr = ckalloc(sizeof(CommandTrace));
     tracePtr->traceProc = proc;
     tracePtr->clientData = clientData;
     tracePtr->flags = flags &
@@ -1205,7 +1204,7 @@ Tcl_UntraceCommand(
     tracePtr->flags = 0;
 
     if ((--tracePtr->refCount) <= 0) {
-	ckfree((char *) tracePtr);
+	ckfree(tracePtr);
     }
 
     if (hasExecTraces) {
@@ -1312,7 +1311,7 @@ TraceCommandProc(
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 	    tcmdPtr->stepTrace = NULL;
 	    if (tcmdPtr->startCmd != NULL) {
-		ckfree((char *) tcmdPtr->startCmd);
+		ckfree(tcmdPtr->startCmd);
 	    }
 	}
 	if (tcmdPtr->flags & TCL_TRACE_EXEC_IN_PROGRESS) {
@@ -1355,7 +1354,7 @@ TraceCommandProc(
 	tcmdPtr->refCount--;
     }
     if ((--tcmdPtr->refCount) <= 0) {
-	ckfree((char *) tcmdPtr);
+	ckfree(tcmdPtr);
     }
 }
 
@@ -1447,7 +1446,7 @@ TclCheckExecutionTraces(
 		traceCode = TraceExecutionProc(tcmdPtr, interp, curLevel,
 			command, (Tcl_Command) cmdPtr, objc, objv);
 		if ((--tcmdPtr->refCount) <= 0) {
-		    ckfree((char *) tcmdPtr);
+		    ckfree(tcmdPtr);
 		}
 	    }
 	}
@@ -1690,7 +1689,7 @@ CommandObjTraceDeleted(
     TraceCommandInfo *tcmdPtr = clientData;
 
     if ((--tcmdPtr->refCount) <= 0) {
-	ckfree((char *) tcmdPtr);
+	ckfree(tcmdPtr);
     }
 }
 
@@ -1773,7 +1772,7 @@ TraceExecutionProc(
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 	    tcmdPtr->stepTrace = NULL;
 	    if (tcmdPtr->startCmd != NULL) {
-		ckfree((char *) tcmdPtr->startCmd);
+		ckfree(tcmdPtr->startCmd);
 	    }
 	}
 
@@ -1905,7 +1904,7 @@ TraceExecutionProc(
     }
     if (call) {
 	if ((--tcmdPtr->refCount) <= 0) {
-	    ckfree((char *) tcmdPtr);
+	    ckfree(tcmdPtr);
 	}
     }
     return traceCode;
@@ -2131,7 +2130,7 @@ Tcl_CreateObjTrace(
 	iPtr->tracesForbiddingInline++;
     }
 
-    tracePtr = (Trace *) ckalloc(sizeof(Trace));
+    tracePtr = ckalloc(sizeof(Trace));
     tracePtr->level = level;
     tracePtr->proc = proc;
     tracePtr->clientData = clientData;
@@ -2194,8 +2193,7 @@ Tcl_CreateTrace(
 				 * command. */
     ClientData clientData)	/* Arbitrary value word to pass to proc. */
 {
-    StringTraceData *data = (StringTraceData *)
-	    ckalloc(sizeof(StringTraceData));
+    StringTraceData *data = ckalloc(sizeof(StringTraceData));
 
     data->clientData = clientData;
     data->proc = proc;
@@ -3105,7 +3103,7 @@ Tcl_TraceVar2(
     register VarTrace *tracePtr;
     int result;
 
-    tracePtr = (VarTrace *) ckalloc(sizeof(VarTrace));
+    tracePtr = ckalloc(sizeof(VarTrace));
     tracePtr->traceProc = proc;
     tracePtr->clientData = clientData;
     tracePtr->flags = flags;
@@ -3113,7 +3111,7 @@ Tcl_TraceVar2(
     result = TraceVarEx(interp, part1, part2, tracePtr);
 
     if (result != TCL_OK) {
-	ckfree((char *) tracePtr);
+	ckfree(tracePtr);
     }
     return result;
 }

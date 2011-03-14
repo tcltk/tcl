@@ -220,7 +220,7 @@ InitFoundation(
     static Tcl_ThreadDataKey tsdKey;
     ThreadLocalData *tsdPtr =
 	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
-    Foundation *fPtr = (Foundation *) ckalloc(sizeof(Foundation));
+    Foundation *fPtr = ckalloc(sizeof(Foundation));
     Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
     Tcl_DString buffer;
     int i;
@@ -292,7 +292,7 @@ InitFoundation(
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
     fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
     fPtr->objectCls->superclasses.num = 0;
-    ckfree((char *) fPtr->objectCls->superclasses.list);
+    ckfree(fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
     fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
     fPtr->classCls->thisPtr->flags |= ROOT_CLASS;
@@ -419,7 +419,7 @@ KillFoundation(
     Tcl_DecrRefCount(fPtr->unknownMethodNameObj);
     Tcl_DecrRefCount(fPtr->constructorName);
     Tcl_DecrRefCount(fPtr->destructorName);
-    ckfree((char *) fPtr);
+    ckfree(fPtr);
 }
 
 /*
@@ -453,7 +453,7 @@ AllocObject(
     CommandTrace *tracePtr;
     int creationEpoch, ignored;
 
-    oPtr = (Object *) ckalloc(sizeof(Object));
+    oPtr = ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
 
     /*
@@ -567,8 +567,7 @@ AllocObject(
 
     cmdPtr = (Command *) oPtr->command;
     cmdPtr->nreProc = PublicNRObjectCmd;
-    cmdPtr->tracePtr = tracePtr = (CommandTrace *)
-	    ckalloc(sizeof(CommandTrace));
+    cmdPtr->tracePtr = tracePtr = ckalloc(sizeof(CommandTrace));
     tracePtr->traceProc = ObjectRenamedTrace;
     tracePtr->clientData = oPtr;
     tracePtr->flags = TCL_TRACE_RENAME|TCL_TRACE_DELETE;
@@ -580,7 +579,7 @@ AllocObject(
      * a bottleneck in string manipulation. Another abstraction-buster.
      */
 
-    cmdPtr = (Command *) ckalloc(sizeof(Command));
+    cmdPtr = ckalloc(sizeof(Command));
     memset(cmdPtr, 0, sizeof(Command));
     cmdPtr->nsPtr = (Namespace *) oPtr->namespacePtr;
     cmdPtr->hPtr = Tcl_CreateHashEntry(&cmdPtr->nsPtr->cmdTable, "my",
@@ -809,7 +808,7 @@ ReleaseClassContents(
 	DelRef(list[i]);
     }
     if (list != NULL) {
-	ckfree((char *) list);
+	ckfree(list);
     }
 
     list = clsPtr->subclasses.list;
@@ -830,7 +829,7 @@ ReleaseClassContents(
 	DelRef(list[i]);
     }
     if (list != NULL) {
-	ckfree((char *) list);
+	ckfree(list);
     }
 
     insts = clsPtr->instances.list;
@@ -849,7 +848,7 @@ ReleaseClassContents(
 	DelRef(insts[i]);
     }
     if (insts != NULL) {
-	ckfree((char *) insts);
+	ckfree(insts);
     }
 
     if (clsPtr->constructorChainPtr) {
@@ -868,7 +867,7 @@ ReleaseClassContents(
 	    TclOODeleteChain(callPtr);
 	}
 	Tcl_DeleteHashTable(clsPtr->classChainCache);
-	ckfree((char *) clsPtr->classChainCache);
+	ckfree(clsPtr->classChainCache);
 	clsPtr->classChainCache = NULL;
     }
 
@@ -878,7 +877,7 @@ ReleaseClassContents(
 	FOREACH(filterObj, clsPtr->filters) {
 	    Tcl_DecrRefCount(filterObj);
 	}
-	ckfree((char *) clsPtr->filters.list);
+	ckfree(clsPtr->filters.list);
 	clsPtr->filters.num = 0;
     }
 
@@ -892,7 +891,7 @@ ReleaseClassContents(
 	    metadataTypePtr->deleteProc(value);
 	}
 	Tcl_DeleteHashTable(clsPtr->metadataPtr);
-	ckfree((char *) clsPtr->metadataPtr);
+	ckfree(clsPtr->metadataPtr);
 	clsPtr->metadataPtr = NULL;
     }
 }
@@ -957,14 +956,14 @@ ObjectNamespaceDeleted(
 	TclOORemoveFromInstances(oPtr, mixinPtr);
     }
     if (i) {
-	ckfree((char *) oPtr->mixins.list);
+	ckfree(oPtr->mixins.list);
     }
 
     FOREACH(filterObj, oPtr->filters) {
 	Tcl_DecrRefCount(filterObj);
     }
     if (i) {
-	ckfree((char *) oPtr->filters.list);
+	ckfree(oPtr->filters.list);
     }
 
     if (oPtr->methodsPtr) {
@@ -972,14 +971,14 @@ ObjectNamespaceDeleted(
 	    TclOODelMethodRef(mPtr);
 	}
 	Tcl_DeleteHashTable(oPtr->methodsPtr);
-	ckfree((char *) oPtr->methodsPtr);
+	ckfree(oPtr->methodsPtr);
     }
 
     FOREACH(variableObj, oPtr->variables) {
 	Tcl_DecrRefCount(variableObj);
     }
     if (i) {
-	ckfree((char *) oPtr->variables.list);
+	ckfree(oPtr->variables.list);
     }
 
     if (oPtr->chainCache) {
@@ -999,7 +998,7 @@ ObjectNamespaceDeleted(
 	    metadataTypePtr->deleteProc(value);
 	}
 	Tcl_DeleteHashTable(oPtr->metadataPtr);
-	ckfree((char *) oPtr->metadataPtr);
+	ckfree(oPtr->metadataPtr);
 	oPtr->metadataPtr = NULL;
     }
 
@@ -1014,7 +1013,7 @@ ObjectNamespaceDeleted(
 		metadataTypePtr->deleteProc(value);
 	    }
 	    Tcl_DeleteHashTable(clsPtr->metadataPtr);
-	    ckfree((char *) clsPtr->metadataPtr);
+	    ckfree(clsPtr->metadataPtr);
 	    clsPtr->metadataPtr = NULL;
 	}
 
@@ -1022,7 +1021,7 @@ ObjectNamespaceDeleted(
 	    Tcl_DecrRefCount(filterObj);
 	}
 	if (i) {
-	    ckfree((char *) clsPtr->filters.list);
+	    ckfree(clsPtr->filters.list);
 	    clsPtr->filters.num = 0;
 	}
 	FOREACH(mixinPtr, clsPtr->mixins) {
@@ -1031,7 +1030,7 @@ ObjectNamespaceDeleted(
 	    }
 	}
 	if (i) {
-	    ckfree((char *) clsPtr->mixins.list);
+	    ckfree(clsPtr->mixins.list);
 	    clsPtr->mixins.num = 0;
 	}
 	FOREACH(superPtr, clsPtr->superclasses) {
@@ -1040,19 +1039,19 @@ ObjectNamespaceDeleted(
 	    }
 	}
 	if (i) {
-	    ckfree((char *) clsPtr->superclasses.list);
+	    ckfree(clsPtr->superclasses.list);
 	    clsPtr->superclasses.num = 0;
 	}
 	if (clsPtr->subclasses.list) {
-	    ckfree((char *) clsPtr->subclasses.list);
+	    ckfree(clsPtr->subclasses.list);
 	    clsPtr->subclasses.num = 0;
 	}
 	if (clsPtr->instances.list) {
-	    ckfree((char *) clsPtr->instances.list);
+	    ckfree(clsPtr->instances.list);
 	    clsPtr->instances.num = 0;
 	}
 	if (clsPtr->mixinSubs.list) {
-	    ckfree((char *) clsPtr->mixinSubs.list);
+	    ckfree(clsPtr->mixinSubs.list);
 	    clsPtr->mixinSubs.num = 0;
 	}
 
@@ -1067,7 +1066,7 @@ ObjectNamespaceDeleted(
 	    Tcl_DecrRefCount(variableObj);
 	}
 	if (i) {
-	    ckfree((char *) clsPtr->variables.list);
+	    ckfree(clsPtr->variables.list);
 	}
 
 	DelRef(clsPtr);
@@ -1143,11 +1142,9 @@ TclOOAddToInstances(
     if (clsPtr->instances.num >= clsPtr->instances.size) {
 	clsPtr->instances.size += ALLOC_CHUNK;
 	if (clsPtr->instances.size == ALLOC_CHUNK) {
-	    clsPtr->instances.list = (Object **)
-		    ckalloc(sizeof(Object *) * ALLOC_CHUNK);
+	    clsPtr->instances.list = ckalloc(sizeof(Object *) * ALLOC_CHUNK);
 	} else {
-	    clsPtr->instances.list = (Object **)
-		    ckrealloc((char *) clsPtr->instances.list,
+	    clsPtr->instances.list = ckrealloc(clsPtr->instances.list,
 		    sizeof(Object *) * clsPtr->instances.size);
 	}
     }
@@ -1211,11 +1208,9 @@ TclOOAddToSubclasses(
     if (superPtr->subclasses.num >= superPtr->subclasses.size) {
 	superPtr->subclasses.size += ALLOC_CHUNK;
 	if (superPtr->subclasses.size == ALLOC_CHUNK) {
-	    superPtr->subclasses.list = (Class **)
-		    ckalloc(sizeof(Class *) * ALLOC_CHUNK);
+	    superPtr->subclasses.list = ckalloc(sizeof(Class*) * ALLOC_CHUNK);
 	} else {
-	    superPtr->subclasses.list = (Class **)
-		    ckrealloc((char *) superPtr->subclasses.list,
+	    superPtr->subclasses.list = ckrealloc(superPtr->subclasses.list,
 		    sizeof(Class *) * superPtr->subclasses.size);
 	}
     }
@@ -1279,11 +1274,9 @@ TclOOAddToMixinSubs(
     if (superPtr->mixinSubs.num >= superPtr->mixinSubs.size) {
 	superPtr->mixinSubs.size += ALLOC_CHUNK;
 	if (superPtr->mixinSubs.size == ALLOC_CHUNK) {
-	    superPtr->mixinSubs.list = (Class **)
-		    ckalloc(sizeof(Class *) * ALLOC_CHUNK);
+	    superPtr->mixinSubs.list = ckalloc(sizeof(Class *) * ALLOC_CHUNK);
 	} else {
-	    superPtr->mixinSubs.list = (Class **)
-		    ckrealloc((char *) superPtr->mixinSubs.list,
+	    superPtr->mixinSubs.list = ckrealloc(superPtr->mixinSubs.list,
 		    sizeof(Class *) * superPtr->mixinSubs.size);
 	}
     }
@@ -1310,7 +1303,7 @@ AllocClass(
 				 * (with automatic name) is to be used. */
 {
     Foundation *fPtr = GetFoundation(interp);
-    Class *clsPtr = (Class *) ckalloc(sizeof(Class));
+    Class *clsPtr = ckalloc(sizeof(Class));
 
     /*
      * Make an object if we haven't been given one.
@@ -1351,7 +1344,7 @@ AllocClass(
      */
 
     clsPtr->superclasses.num = 1;
-    clsPtr->superclasses.list = (Class **) ckalloc(sizeof(Class *));
+    clsPtr->superclasses.list = ckalloc(sizeof(Class *));
     clsPtr->superclasses.list[0] = fPtr->objectCls;
 
     /*
@@ -1769,11 +1762,10 @@ Tcl_CopyObjectInstance(
 	    TclOORemoveFromSubclasses(cls2Ptr, superPtr);
 	}
 	if (cls2Ptr->superclasses.num) {
-	    cls2Ptr->superclasses.list = (Class **)
-		    ckrealloc((char *) cls2Ptr->superclasses.list,
+	    cls2Ptr->superclasses.list = ckrealloc(cls2Ptr->superclasses.list,
 		    sizeof(Class *) * clsPtr->superclasses.num);
 	} else {
-	    cls2Ptr->superclasses.list = (Class **)
+	    cls2Ptr->superclasses.list =
 		    ckalloc(sizeof(Class *) * clsPtr->superclasses.num);
 	}
 	memcpy(cls2Ptr->superclasses.list, clsPtr->superclasses.list,
@@ -1801,7 +1793,7 @@ Tcl_CopyObjectInstance(
 	    TclOORemoveFromMixinSubs(cls2Ptr, mixinPtr);
 	}
 	if (cls2Ptr->mixins.num != 0) {
-	    ckfree((char *) clsPtr->mixins.list);
+	    ckfree(clsPtr->mixins.list);
 	}
 	DUPLICATE(cls2Ptr->mixins, clsPtr->mixins, Class *);
 	FOREACH(mixinPtr, cls2Ptr->mixins) {
@@ -2012,7 +2004,7 @@ Tcl_ClassSetMetadata(
 	if (metadata == NULL) {
 	    return;
 	}
-	clsPtr->metadataPtr = (Tcl_HashTable*) ckalloc(sizeof(Tcl_HashTable));
+	clsPtr->metadataPtr = ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(clsPtr->metadataPtr, TCL_ONE_WORD_KEYS);
     }
 
@@ -2092,7 +2084,7 @@ Tcl_ObjectSetMetadata(
 	if (metadata == NULL) {
 	    return;
 	}
-	oPtr->metadataPtr = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
+	oPtr->metadataPtr = ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(oPtr->metadataPtr, TCL_ONE_WORD_KEYS);
     }
 

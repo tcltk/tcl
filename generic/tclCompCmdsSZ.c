@@ -1085,15 +1085,15 @@ TclCompileSwitchCmd(
 	 */
 
 	if (numWords == 0 || numWords % 2) {
-	    ckfree((char *) argv);
+	    ckfree(argv);
 	    return TCL_ERROR;
 	}
 
 	isListedArms = 1;
-	bodyTokenArray = (Tcl_Token *) ckalloc(sizeof(Tcl_Token) * numWords);
-	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numWords);
-	bodyLines = (int *) ckalloc(sizeof(int) * numWords);
-	bodyContLines = (int **) ckalloc(sizeof(int*) * numWords);
+	bodyTokenArray = ckalloc(sizeof(Tcl_Token) * numWords);
+	bodyToken = ckalloc(sizeof(Tcl_Token *) * numWords);
+	bodyLines = ckalloc(sizeof(int) * numWords);
+	bodyContLines = ckalloc(sizeof(int*) * numWords);
 
 	/*
 	 * Locate the start of the arms within the overall word.
@@ -1133,7 +1133,7 @@ TclCompileSwitchCmd(
 	    if ((isTokenBraced && *(tokenStartPtr++) != '}') ||
 		    (tokenStartPtr < tokenPtr[1].start+tokenPtr[1].size
 		    && !isspace(UCHAR(*tokenStartPtr)))) {
-		ckfree((char *) argv);
+		ckfree(argv);
 		goto freeTemporaries;
 	    }
 
@@ -1163,7 +1163,7 @@ TclCompileSwitchCmd(
 		isTokenBraced = 0;
 	    }
 	}
-	ckfree((char *) argv);
+	ckfree(argv);
 
 	/*
 	 * Check that we've parsed everything we thought we were going to
@@ -1190,9 +1190,9 @@ TclCompileSwitchCmd(
 	 * Multi-word definition of patterns & actions.
 	 */
 
-	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numWords);
-	bodyLines = (int *) ckalloc(sizeof(int) * numWords);
-	bodyContLines = (int **) ckalloc(sizeof(int*) * numWords);
+	bodyToken = ckalloc(sizeof(Tcl_Token *) * numWords);
+	bodyLines = ckalloc(sizeof(int) * numWords);
+	bodyContLines = ckalloc(sizeof(int*) * numWords);
 	bodyTokenArray = NULL;
 	for (i=0 ; i<numWords ; i++) {
 	    /*
@@ -1250,11 +1250,11 @@ TclCompileSwitchCmd(
      */
 
   freeTemporaries:
-    ckfree((char *) bodyToken);
-    ckfree((char *) bodyLines);
-    ckfree((char *) bodyContLines);
+    ckfree(bodyToken);
+    ckfree(bodyLines);
+    ckfree(bodyContLines);
     if (bodyTokenArray != NULL) {
-	ckfree((char *) bodyTokenArray);
+	ckfree(bodyTokenArray);
     }
     return result;
 }
@@ -1582,7 +1582,7 @@ IssueSwitchJumpTable(
      * Start by allocating the jump table itself, plus some workspace.
      */
 
-    jtPtr = (JumptableInfo *) ckalloc(sizeof(JumptableInfo));
+    jtPtr = ckalloc(sizeof(JumptableInfo));
     Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
     infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
     finalFixups = TclStackAlloc(interp, sizeof(int) * (numBodyTokens/2));
@@ -1752,8 +1752,7 @@ DupJumptableInfo(
     ClientData clientData)
 {
     JumptableInfo *jtPtr = clientData;
-    JumptableInfo *newJtPtr = (JumptableInfo *)
-	    ckalloc(sizeof(JumptableInfo));
+    JumptableInfo *newJtPtr = ckalloc(sizeof(JumptableInfo));
     Tcl_HashEntry *hPtr, *newHPtr;
     Tcl_HashSearch search;
     int isNew;
@@ -1775,7 +1774,7 @@ FreeJumptableInfo(
     JumptableInfo *jtPtr = clientData;
 
     Tcl_DeleteHashTable(&jtPtr->hashTable);
-    ckfree((char *) jtPtr);
+    ckfree(jtPtr);
 }
 
 static void

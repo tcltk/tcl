@@ -545,7 +545,7 @@ TestindexobjCmd(
 	return TCL_ERROR;
     }
 
-    argv = (const char **) ckalloc((unsigned) ((objc-3) * sizeof(char *)));
+    argv = ckalloc((objc-3) * sizeof(char *));
     for (i = 4; i < objc; i++) {
 	argv[i-4] = Tcl_GetString(objv[i]);
     }
@@ -569,7 +569,7 @@ TestindexobjCmd(
 
     result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],
 	    argv, "token", (allowAbbrev? 0 : TCL_EXACT), &index);
-    ckfree((char *) argv);
+    ckfree(argv);
     if (result == TCL_OK) {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
     }

@@ -412,7 +412,7 @@ PipeCheckProc(
 
 	if (needEvent) {
 	    infoPtr->flags |= PIPE_PENDING;
-	    evPtr = (PipeEvent *) ckalloc(sizeof(PipeEvent));
+	    evPtr = ckalloc(sizeof(PipeEvent));
 	    evPtr->header.proc = PipeEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -443,7 +443,7 @@ TclWinMakeFile(
 {
     WinFile *filePtr;
 
-    filePtr = (WinFile *) ckalloc(sizeof(WinFile));
+    filePtr = ckalloc(sizeof(WinFile));
     filePtr->type = WIN_FILE;
     filePtr->handle = handle;
 
@@ -833,7 +833,7 @@ TclpCloseFile(
 	    if (filePtr->handle != NULL &&
 		    CloseHandle(filePtr->handle) == FALSE) {
 		TclWinConvertError(GetLastError());
-		ckfree((char *) filePtr);
+		ckfree(filePtr);
 		return -1;
 	    }
 	}
@@ -843,7 +843,7 @@ TclpCloseFile(
 	Tcl_Panic("TclpCloseFile: unexpected file type");
     }
 
-    ckfree((char *) filePtr);
+    ckfree(filePtr);
     return 0;
 }
 
@@ -1574,7 +1574,7 @@ TclpCreateCommandChannel(
     char channelName[16 + TCL_INTEGER_SPACE];
     int channelId;
     DWORD id;
-    PipeInfo *infoPtr = (PipeInfo *) ckalloc((unsigned) sizeof(PipeInfo));
+    PipeInfo *infoPtr = ckalloc(sizeof(PipeInfo));
 
     PipeInit();
 
@@ -1747,7 +1747,7 @@ TclGetAndDetachPids(
 	Tcl_DetachPids(1, &(pipePtr->pidPtr[i]));
     }
     if (pipePtr->numPids > 0) {
-	ckfree((char *) pipePtr->pidPtr);
+	ckfree(pipePtr->pidPtr);
 	pipePtr->numPids = 0;
     }
 }
@@ -2011,7 +2011,7 @@ PipeClose2Proc(
 
 	    errChan = Tcl_MakeFileChannel((ClientData) filePtr->handle,
 		    TCL_READABLE);
-	    ckfree((char *) filePtr);
+	    ckfree(filePtr);
 	} else {
 	    errChan = NULL;
 	}
@@ -2021,14 +2021,14 @@ PipeClose2Proc(
     }
 
     if (pipePtr->numPids > 0) {
-	ckfree((char *) pipePtr->pidPtr);
+	ckfree(pipePtr->pidPtr);
     }
 
     if (pipePtr->writeBuf != NULL) {
 	ckfree(pipePtr->writeBuf);
     }
 
-    ckfree((char*) pipePtr);
+    ckfree(pipePtr);
 
     if (errorCode == 0) {
 	return result;
@@ -2196,7 +2196,7 @@ PipeOutputProc(
 		ckfree(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc((unsigned int) toWrite);
+	    infoPtr->writeBuf = ckalloc(toWrite);
 	}
 	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
 	infoPtr->toWrite = toWrite;
@@ -2578,7 +2578,7 @@ Tcl_WaitPid(
      */
 
     CloseHandle(infoPtr->hProcess);
-    ckfree((char*)infoPtr);
+    ckfree(infoPtr);
 
     return result;
 }
@@ -2606,7 +2606,7 @@ TclWinAddProcess(
     void *hProcess,		/* Handle to process */
     unsigned long id)		/* Global process identifier */
 {
-    ProcInfo *procPtr = (ProcInfo *) ckalloc(sizeof(ProcInfo));
+    ProcInfo *procPtr = ckalloc(sizeof(ProcInfo));
 
     PipeInit();
 

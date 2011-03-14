@@ -2402,11 +2402,16 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 
 #ifdef TCL_MEM_DEBUG
 
-#   define ckalloc(x) Tcl_DbCkalloc(x, __FILE__, __LINE__)
-#   define ckfree(x)  Tcl_DbCkfree(x, __FILE__, __LINE__)
-#   define ckrealloc(x,y) Tcl_DbCkrealloc((x), (y),__FILE__, __LINE__)
-#   define attemptckalloc(x) Tcl_AttemptDbCkalloc(x, __FILE__, __LINE__)
-#   define attemptckrealloc(x,y) Tcl_AttemptDbCkrealloc((x), (y), __FILE__, __LINE__)
+#   define ckalloc(x) \
+    ((VOID *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
+#   define ckfree(x) \
+    Tcl_DbCkfree((VOID *)(x), __FILE__, __LINE__)
+#   define ckrealloc(x,y) \
+    ((VOID *) Tcl_DbCkrealloc((VOID *)(x), (unsigned)(y), __FILE__, __LINE__))
+#   define attemptckalloc(x) \
+    ((VOID *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
+#   define attemptckrealloc(x,y) \
+    ((VOID *) Tcl_AttemptDbCkrealloc((VOID *)(x), (unsigned)(y), __FILE__, __LINE__))
 
 #else /* !TCL_MEM_DEBUG */
 
@@ -2416,11 +2421,16 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * memory allocator both inside and outside of the Tcl library.
  */
 
-#   define ckalloc(x) Tcl_Alloc(x)
-#   define ckfree(x) Tcl_Free(x)
-#   define ckrealloc(x,y) Tcl_Realloc(x,y)
-#   define attemptckalloc(x) Tcl_AttemptAlloc(x)
-#   define attemptckrealloc(x,y) Tcl_AttemptRealloc(x,y)
+#   define ckalloc(x) \
+    ((VOID *) Tcl_Alloc((unsigned)(x)))
+#   define ckfree(x) \
+    Tcl_Free((VOID *)(x))
+#   define ckrealloc(x,y) \
+    ((VOID *) Tcl_Realloc((VOID *)(x), (unsigned)(y)))
+#   define attemptckalloc(x) \
+    ((VOID *) Tcl_AttemptAlloc((unsigned)(x)))
+#   define attemptckrealloc(x,y) \
+    ((VOID *) Tcl_AttemptRealloc((VOID *)(x), (unsigned)(y)))
 #   undef  Tcl_InitMemory
 #   define Tcl_InitMemory(x)
 #   undef  Tcl_DumpActiveMemory

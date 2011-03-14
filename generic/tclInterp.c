@@ -436,7 +436,7 @@ TclInterpInit(
     Master *masterPtr;
     Slave *slavePtr;
 
-    interpInfoPtr = (InterpInfo *) ckalloc(sizeof(InterpInfo));
+    interpInfoPtr = ckalloc(sizeof(InterpInfo));
     ((Interp *) interp)->interpInfo = interpInfoPtr;
 
     masterPtr = &interpInfoPtr->master;
@@ -532,7 +532,7 @@ InterpInfoDeleteProc(
     }
     Tcl_DeleteHashTable(&slavePtr->aliasTable);
 
-    ckfree((char *) interpInfoPtr);
+    ckfree(interpInfoPtr);
 }
 
 /*
@@ -1289,7 +1289,7 @@ Tcl_GetAlias(
     }
     if (argvPtr != NULL) {
 	*argvPtr = (const char **)
-		ckalloc((unsigned) sizeof(const char *) * (objc - 1));
+		ckalloc(sizeof(const char *) * (objc - 1));
 	for (i = 1; i < objc; i++) {
 	    (*argvPtr)[i - 1] = TclGetString(objv[i]);
 	}
@@ -1492,8 +1492,7 @@ AliasCreate(
     Tcl_Obj **prefv;
     int isNew, i;
 
-    aliasPtr = (Alias *) ckalloc((unsigned) (sizeof(Alias)
-	    + objc * sizeof(Tcl_Obj *)));
+    aliasPtr = ckalloc(sizeof(Alias) + objc * sizeof(Tcl_Obj *));
     aliasPtr->token = namePtr;
     Tcl_IncrRefCount(aliasPtr->token);
     aliasPtr->targetInterp = masterInterp;
@@ -1544,7 +1543,7 @@ AliasCreate(
 	cmdPtr->deleteData = NULL;
 	Tcl_DeleteCommandFromToken(slaveInterp, aliasPtr->slaveCmd);
 
-	ckfree((char *) aliasPtr);
+	ckfree(aliasPtr);
 
 	/*
 	 * The result was already set by TclPreventAliasLoop.
@@ -1601,11 +1600,11 @@ AliasCreate(
      * interp alias {} foo {} zop		# Now recreate "foo"...
      */
 
-    targetPtr = (Target *) ckalloc((unsigned) sizeof(Target));
+    targetPtr = ckalloc(sizeof(Target));
     targetPtr->slaveCmd = aliasPtr->slaveCmd;
     targetPtr->slaveInterp = slaveInterp;
 
-    masterPtr = &((InterpInfo *) ((Interp*) masterInterp)->interpInfo)->master;
+    masterPtr = &((InterpInfo*) ((Interp*) masterInterp)->interpInfo)->master;
     targetPtr->nextPtr = masterPtr->targetsPtr;
     targetPtr->prevPtr = NULL;
     if (masterPtr->targetsPtr != NULL) {
@@ -1988,8 +1987,8 @@ AliasObjCmdDeleteProc(
 	targetPtr->nextPtr->prevPtr = targetPtr->prevPtr;
     }
 
-    ckfree((char *) targetPtr);
-    ckfree((char *) aliasPtr);
+    ckfree(targetPtr);
+    ckfree(aliasPtr);
 }
 
 /*
@@ -3440,7 +3439,7 @@ RunLimitHandlers(
 	    if (handlerPtr->deleteProc != NULL) {
 		handlerPtr->deleteProc(handlerPtr->clientData);
 	    }
-	    ckfree((char *) handlerPtr);
+	    ckfree(handlerPtr);
 	}
     }
 }
@@ -3487,7 +3486,7 @@ Tcl_LimitAddHandler(
      * Allocate a handler record.
      */
 
-    handlerPtr = (LimitHandler *) ckalloc(sizeof(LimitHandler));
+    handlerPtr = ckalloc(sizeof(LimitHandler));
     handlerPtr->flags = 0;
     handlerPtr->handlerProc = handlerProc;
     handlerPtr->clientData = clientData;
@@ -3606,7 +3605,7 @@ Tcl_LimitRemoveHandler(
 	    if (handlerPtr->deleteProc != NULL) {
 		handlerPtr->deleteProc(handlerPtr->clientData);
 	    }
-	    ckfree((char *) handlerPtr);
+	    ckfree(handlerPtr);
 	}
 	return;
     }
@@ -3666,7 +3665,7 @@ TclLimitRemoveAllHandlers(
 	    if (handlerPtr->deleteProc != NULL) {
 		handlerPtr->deleteProc(handlerPtr->clientData);
 	    }
-	    ckfree((char *) handlerPtr);
+	    ckfree(handlerPtr);
 	}
     }
 
@@ -3699,7 +3698,7 @@ TclLimitRemoveAllHandlers(
 	    if (handlerPtr->deleteProc != NULL) {
 		handlerPtr->deleteProc(handlerPtr->clientData);
 	    }
-	    ckfree((char *) handlerPtr);
+	    ckfree(handlerPtr);
 	}
     }
 
@@ -4094,7 +4093,7 @@ DeleteScriptLimitCallback(
     if (limitCBPtr->entryPtr != NULL) {
 	Tcl_DeleteHashEntry(limitCBPtr->entryPtr);
     }
-    ckfree((char *) limitCBPtr);
+    ckfree(limitCBPtr);
 }
 
 /*
@@ -4194,7 +4193,7 @@ SetScriptLimitCallback(
 		limitCBPtr);
     }
 
-    limitCBPtr = (ScriptLimitCallback *) ckalloc(sizeof(ScriptLimitCallback));
+    limitCBPtr = ckalloc(sizeof(ScriptLimitCallback));
     limitCBPtr->interp = interp;
     limitCBPtr->scriptObj = scriptObj;
     limitCBPtr->entryPtr = hashPtr;

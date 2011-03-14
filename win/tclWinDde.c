@@ -386,9 +386,9 @@ DdeSetServerName(
      * We have found a unique name. Now add it to the registry.
      */
 
-    riPtr = (RegisteredInterp *) ckalloc(sizeof(RegisteredInterp));
+    riPtr = ckalloc(sizeof(RegisteredInterp));
     riPtr->interp = interp;
-    riPtr->name = ckalloc((unsigned int) strlen(actualName) + 1);
+    riPtr->name = ckalloc(strlen(actualName) + 1);
     riPtr->nextPtr = tsdPtr->interpListPtr;
     riPtr->handlerPtr = handlerPtr;
     if (riPtr->handlerPtr != NULL) {
@@ -657,7 +657,7 @@ DdeServerProc(
 	for (riPtr = tsdPtr->interpListPtr; riPtr != NULL;
 		riPtr = riPtr->nextPtr) {
 	    if (strcasecmp(riPtr->name, utilString) == 0) {
-		convPtr = (Conversation *) ckalloc(sizeof(Conversation));
+		convPtr = ckalloc(sizeof(Conversation));
 		convPtr->nextPtr = tsdPtr->currentConversations;
 		convPtr->returnPackagePtr = NULL;
 		convPtr->hConv = hConv;
@@ -687,7 +687,7 @@ DdeServerProc(
 		if (convPtr->returnPackagePtr != NULL) {
 		    Tcl_DecrRefCount(convPtr->returnPackagePtr);
 		}
-		ckfree((char *) convPtr);
+		ckfree(convPtr);
 		break;
 	    }
 	}

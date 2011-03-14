@@ -241,7 +241,7 @@ static void		BBAdjustStackDepth(BasicBlock* bbPtr, int consumed,
 static void		BBUpdateStackReqs(BasicBlock* bbPtr, int tblIdx,
 			    int count);
 static void		BBEmitInstInt1(AssemblyEnv* assemEnvPtr, int tblIdx,
-			    unsigned char opnd, int count);
+			    int opnd, int count);
 static void		BBEmitInstInt4(AssemblyEnv* assemEnvPtr, int tblIdx,
 			    int opnd, int count);
 static void		BBEmitInst1or4(AssemblyEnv* assemEnvPtr, int tblIdx,
@@ -652,7 +652,7 @@ static void
 BBEmitInstInt1(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     int tblIdx,			/* Index in TalInstructionTable of op */
-    unsigned char opnd,		/* 1-byte operand */
+    int opnd,			/* 1-byte operand */
     int count)			/* Operand count for variadic ops */
 {
     BBEmitOpcode(assemEnvPtr, tblIdx, count);
@@ -1162,14 +1162,14 @@ FreeAssemblyEnv(
 	    Tcl_DecrRefCount(thisBB->jumpTarget);
 	}
 	if (thisBB->foreignExceptions != NULL) {
-	    ckfree((char*) thisBB->foreignExceptions);
+	    ckfree(thisBB->foreignExceptions);
 	}
 	nextBB = thisBB->successor1;
 	if (thisBB->jtPtr != NULL) {
 	    DeleteMirrorJumpTable(thisBB->jtPtr);
 	    thisBB->jtPtr = NULL;
 	}
-	ckfree((char*) thisBB);
+	ckfree(thisBB);
     }
 
     /*
@@ -1478,7 +1478,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 
-	jtPtr = (JumptableInfo*) ckalloc(sizeof(JumptableInfo));
+	jtPtr = ckalloc(sizeof(JumptableInfo));
 
 	Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
 	assemEnvPtr->curr_bb->jumpLine = assemEnvPtr->cmdLine;
@@ -1873,7 +1873,7 @@ MoveExceptionRangesToBasicBlock(
 	    curr_bb, exceptionCount, savedExceptArrayNext);
     curr_bb->foreignExceptionBase = savedExceptArrayNext;
     curr_bb->foreignExceptionCount = exceptionCount;
-    curr_bb->foreignExceptions = (ExceptionRange*)
+    curr_bb->foreignExceptions = 
 	    ckalloc(exceptionCount * sizeof(ExceptionRange));
     memcpy(curr_bb->foreignExceptions,
 	    envPtr->exceptArrayPtr + savedExceptArrayNext,
@@ -1940,7 +1940,7 @@ CreateMirrorJumpTable(
      * Allocate the jumptable.
      */
 
-    jtPtr = (JumptableInfo*) ckalloc(sizeof(JumptableInfo));
+    jtPtr = ckalloc(sizeof(JumptableInfo));
     jtHashPtr = &jtPtr->hashTable;
     Tcl_InitHashTable(jtHashPtr, TCL_STRING_KEYS);
 
@@ -2007,7 +2007,7 @@ DeleteMirrorJumpTable(
 	Tcl_SetHashValue(entry, NULL);
     }
     Tcl_DeleteHashTable(jtHashPtr);
-    ckfree((char*) jtPtr);
+    ckfree(jtPtr);
 }
 
 /*
@@ -2606,7 +2606,7 @@ AllocBB(
     AssemblyEnv* assemEnvPtr)	/* Assembly environment */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
-    BasicBlock * bb = (BasicBlock *) ckalloc(sizeof(BasicBlock));
+    BasicBlock *bb = ckalloc(sizeof(BasicBlock));
 
     bb->originalStartOffset =
 	    bb->startOffset = envPtr->codeNext - envPtr->codeStart;
@@ -3889,8 +3889,8 @@ BuildExceptionRanges(
      * Allocate memory for a stack of active catches.
      */
 
-    catches = (BasicBlock**) ckalloc(maxCatchDepth * sizeof(BasicBlock*));
-    catchIndices = (int*) ckalloc(maxCatchDepth * sizeof(int));
+    catches = ckalloc(maxCatchDepth * sizeof(BasicBlock*));
+    catchIndices = ckalloc(maxCatchDepth * sizeof(int));
     for (i = 0; i < maxCatchDepth; ++i) {
 	catches[i] = NULL;
 	catchIndices[i] = -1;

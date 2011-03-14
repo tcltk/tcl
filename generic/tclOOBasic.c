@@ -473,7 +473,7 @@ TclOO_Object_Unknown(
 	Tcl_AppendResult(interp, " or ", NULL);
     }
     Tcl_AppendResult(interp, methodNames[i], NULL);
-    ckfree((char *) methodNames);
+    ckfree(methodNames);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 	    TclGetString(objv[skip]), NULL);
     return TCL_ERROR;

@@ -124,7 +124,7 @@ TclpDlopen(
     } else {
 	pkg++;
     }
-    newHandle = (Tcl_LoadHandle*) ckalloc(sizeof(*newHandle));
+    newHandle = ckalloc(sizeof(*newHandle));
     newHandle->clientData = pkg;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
@@ -188,7 +188,7 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    ckfree((char*) loadHandle);
+    ckfree(loadHandle);
 }
 
 /*

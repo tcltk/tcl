@@ -363,7 +363,7 @@ Tcl_LoadObjCmd(
 	 * Create a new record to describe this package.
 	 */
 
-	pkgPtr = (LoadedPackage *) ckalloc(sizeof(LoadedPackage));
+	pkgPtr = ckalloc(sizeof(LoadedPackage));
 	len = strlen(fullFileName) + 1;
 	pkgPtr->fileName	   = ckalloc(len);
 	memcpy(pkgPtr->fileName, fullFileName, len);
@@ -439,7 +439,7 @@ Tcl_LoadObjCmd(
 	 */
 
 	ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
-	ipPtr = (InterpPackage *) ckalloc(sizeof(InterpPackage));
+	ipPtr = ckalloc(sizeof(InterpPackage));
 	ipPtr->pkgPtr = pkgPtr;
 	ipPtr->nextPtr = ipFirstPtr;
 	Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
@@ -814,8 +814,8 @@ Tcl_UnloadObjCmd(
 			ipFirstPtr);
 		ckfree(defaultPtr->fileName);
 		ckfree(defaultPtr->packageName);
-		ckfree((char *) defaultPtr);
-		ckfree((char *) ipPtr);
+		ckfree(defaultPtr);
+		ckfree(ipPtr);
 		Tcl_MutexUnlock(&packageMutex);
 	    } else {
 		code = TCL_ERROR;
@@ -929,10 +929,10 @@ Tcl_StaticPackage(
      */
 
     if (pkgPtr == NULL) {
-	pkgPtr = (LoadedPackage *) ckalloc(sizeof(LoadedPackage));
-	pkgPtr->fileName	= ckalloc((unsigned) 1);
+	pkgPtr = ckalloc(sizeof(LoadedPackage));
+	pkgPtr->fileName	= ckalloc(1);
 	pkgPtr->fileName[0]	= 0;
-	pkgPtr->packageName	= ckalloc((unsigned) (strlen(pkgName) + 1));
+	pkgPtr->packageName	= ckalloc(strlen(pkgName) + 1);
 	strcpy(pkgPtr->packageName, pkgName);
 	pkgPtr->loadHandle	= NULL;
 	pkgPtr->initProc	= initProc;
@@ -962,7 +962,7 @@ Tcl_StaticPackage(
 	 * loaded.
 	 */
 
-	ipPtr = (InterpPackage *) ckalloc(sizeof(InterpPackage));
+	ipPtr = ckalloc(sizeof(InterpPackage));
 	ipPtr->pkgPtr = pkgPtr;
 	ipPtr->nextPtr = ipFirstPtr;
 	Tcl_SetAssocData(interp, "tclLoad", LoadCleanupProc, ipPtr);
@@ -1075,7 +1075,7 @@ LoadCleanupProc(
     ipPtr = clientData;
     while (ipPtr != NULL) {
 	nextPtr = ipPtr->nextPtr;
-	ckfree((char *) ipPtr);
+	ckfree(ipPtr);
 	ipPtr = nextPtr;
     }
 }
@@ -1128,7 +1128,7 @@ TclFinalizeLoad(void)
 
 	ckfree(pkgPtr->fileName);
 	ckfree(pkgPtr->packageName);
-	ckfree((char *) pkgPtr);
+	ckfree(pkgPtr);
     }
 }
 

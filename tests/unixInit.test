@@ -73,8 +73,7 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
     # Can't use normal comparison, as hostname varies due to some
     # installations having a messed up /etc/hosts file.
     if {
-	[string equal 127.0.0.1 [lindex $result 0]] &&
-	[string equal $port     [lindex $result 2]]
+	"127.0.0.1" eq [lindex $result 0] && $port == [lindex $result 2]
     } then {
 	subst "OK"
     } else {
@@ -106,16 +105,14 @@ test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} -setup 
     set installLib lib/tcl[info tclversion]
     set developLib tcl[info patchlevel]/library
     set prefix [file dirname [file dirname [interpreter]]]
-    set x {}
-    lappend x [string compare [lindex $path 0] $prefix/$installLib]
-    lappend x [string compare [lindex $path 4] [file dirname $prefix]/$developLib]
-    set x
+    list [string equal [lindex $path 0] $prefix/$installLib] \
+	[string equal [lindex $path 4] [file dirname $prefix]/$developLib]
 } -cleanup {
     if {[info exists oldlibrary]} {
 	set env(TCL_LIBRARY) $oldlibrary
 	unset oldlibrary
     }
-} -result {0 0}
+} -result {1 1}
 test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} -setup {
     unset -nocomplain oldlibrary
     if {[info exists env(TCL_LIBRARY)]} {
@@ -124,10 +121,9 @@ test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} -setup {
 } -body {
     # ((str != NULL) && (str[0] != '\0'))
     set env(TCL_LIBRARY) sparkly
-    set path [getlibpath]
-    unset env(TCL_LIBRARY)
-    lindex $path 0
+    lindex [getlibpath] 0
 } -cleanup {
+    unset -nocomplain env(TCL_LIBRARY)
     if {[info exists oldlibrary]} {
 	set env(TCL_LIBRARY) $oldlibrary
 	unset oldlibrary
@@ -141,10 +137,9 @@ test unixInit-2.3 {TclpInitLibraryPath: TCL_LIBRARY wrong version} -setup {
 } -body {
     # ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc - 1]) != 0))
     set env(TCL_LIBRARY) /a/b/tcl1.7
-    set path [getlibpath]
-    unset env(TCL_LIBRARY)
-    lrange $path 0 1
+    lrange [getlibpath] 0 1
 } -cleanup {
+    unset -nocomplain env(TCL_LIBRARY)
     if {[info exists oldlibrary]} {
 	set env(TCL_LIBRARY) $oldlibrary
 	unset oldlibrary
@@ -157,11 +152,9 @@ test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} -setup {
 } -body {
     # Child process translates env variable from native encoding.
     set env(TCL_LIBRARY) "\xa7"
-    set x [lindex [getlibpath] 0]
-    unset env(TCL_LIBRARY)
-    unset env(LANG)
-    set x
+    lindex [getlibpath] 0
 } -cleanup {
+    unset -nocomplain env(TCL_LIBRARY) env(LANG)
     if {[info exists oldlibrary]} {
 	set env(TCL_LIBRARY) $oldlibrary
 	unset oldlibrary
@@ -315,21 +308,15 @@ test unixInit-2.10 {TclpInitLibraryPath: executable relative} -setup {
     set y
 } -cleanup {
     cd $saveDir
-    unset saveDir
     removeFile init.tcl $scriptDir
-    unset scriptDir
     removeDirectory tcl[info tclversion] $libDir
-    unset libDir
     file delete $execPath
-    unset execPath
     removeDirectory bin $sparklyDir
     removeDirectory lib $sparklyDir
-    unset sparklyDir
     removeDirectory sparkly $tmpDir
-    unset tmpDir
     removeDirectory tmp
-    unset x p y
-    unset env(TCL_LIBRARY)
+    unset -nocomplain saveDir scriptDir libDir execPath sparklyDir tmpDir
+    unset -nocomplain x p y env(TCL_LIBRARY)
     if {[info exists oldlibrary]} {
 	set env(TCL_LIBRARY) $oldlibrary
 	unset oldlibrary
@@ -346,22 +333,21 @@ test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
     puts $f {puts [encoding system]; exit}
     set enc [gets $f]
     close $f
-    unset env(LANG)
-    set enc
+    return $enc
+} -cleanup {
+    unset -nocomplain env(LANG)
 } -match regexp -result [expr {
 	($tcl_platform(os) eq "Darwin") ? "^utf-8$" : "^iso8859-15?$"}]
-test unixInit-3.2 {TclpSetInitialEncodings} {unix stdio} {
-    set env(LANG) japanese
+test unixInit-3.2 {TclpSetInitialEncodings} -setup {
     catch {set oldlc_all $env(LC_ALL)}
+} -constraints {unix stdio} -body {
+    set env(LANG) japanese
     set env(LC_ALL) japanese
     set f [open "|[list [interpreter]]" w+]
     fconfigure $f -buffering none
     puts $f {puts [encoding system]; exit}
     set enc [gets $f]
     close $f
-    unset env(LANG)
-    unset env(LC_ALL)
-    catch {set env(LC_ALL) $oldlc_all}
     set validEncodings [list euc-jp]
     if {[string match HP-UX $tcl_platform(os)]} {
 	# Some older HP-UX systems need us to accept this as valid Bug 453883
@@ -369,7 +355,10 @@ test unixInit-3.2 {TclpSetInitialEncodings} {unix stdio} {
 	lappend validEncodings shiftjis
     }
     expr {$enc ni $validEncodings}
-} 0
+} -cleanup {
+    unset -nocomplain env(LANG) env(LC_ALL)
+    catch {set env(LC_ALL) $oldlc_all}
+} -result 0
 
 test unixInit-4.1 {TclpSetVariables} {unix} {
     # just make sure they exist

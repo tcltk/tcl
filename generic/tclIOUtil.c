@@ -417,7 +417,7 @@ FsThrExitProc(
     while (fsRecPtr != NULL) {
 	tmpFsRecPtr = fsRecPtr->nextPtr;
 	if (--fsRecPtr->fileRefCount <= 0) {
-	    ckfree((char *) fsRecPtr);
+	    ckfree(fsRecPtr);
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
@@ -535,7 +535,7 @@ FsRecacheFilesystemList(void)
     while (fsRecPtr != NULL) {
 	tmpFsRecPtr = fsRecPtr->nextPtr;
 	if (--fsRecPtr->fileRefCount <= 0) {
-	    ckfree((char *) fsRecPtr);
+	    ckfree(fsRecPtr);
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
@@ -560,7 +560,7 @@ FsRecacheFilesystemList(void)
 
     fsRecPtr = tmpFsRecPtr;
     while (fsRecPtr != NULL) {
-	tmpFsRecPtr = (FilesystemRecord *) ckalloc(sizeof(FilesystemRecord));
+	tmpFsRecPtr = ckalloc(sizeof(FilesystemRecord));
 	*tmpFsRecPtr = *fsRecPtr;
 	tmpFsRecPtr->nextPtr = tsdPtr->filesystemList;
 	tmpFsRecPtr->prevPtr = NULL;
@@ -733,7 +733,7 @@ TclFinalizeFilesystem(void)
 	     */
 
 	    if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
-		ckfree((char *) fsRecPtr);
+		ckfree(fsRecPtr);
 	    }
 	}
 	fsRecPtr = tmpFsRecPtr;
@@ -827,7 +827,7 @@ Tcl_FSRegister(
 	return TCL_ERROR;
     }
 
-    newFilesystemPtr = (FilesystemRecord *) ckalloc(sizeof(FilesystemRecord));
+    newFilesystemPtr = ckalloc(sizeof(FilesystemRecord));
 
     newFilesystemPtr->clientData = clientData;
     newFilesystemPtr->fsPtr = fsPtr;
@@ -935,7 +935,7 @@ Tcl_FSUnregister(
 
 	    fsRecPtr->fileRefCount--;
 	    if (fsRecPtr->fileRefCount <= 0) {
-		ckfree((char *) fsRecPtr);
+		ckfree(fsRecPtr);
 	    }
 
 	    retVal = TCL_OK;
@@ -1596,7 +1596,7 @@ TclGetOpenModeEx(
 		Tcl_AppendResult(interp, "access mode \"", flag,
 			"\" not supported by this system", NULL);
 	    }
-	    ckfree((char *) modeArgv);
+	    ckfree(modeArgv);
 	    return -1;
 #endif
 
@@ -1608,7 +1608,7 @@ TclGetOpenModeEx(
 		Tcl_AppendResult(interp, "access mode \"", flag,
 			"\" not supported by this system", NULL);
 	    }
-	    ckfree((char *) modeArgv);
+	    ckfree(modeArgv);
 	    return -1;
 #endif
 
@@ -1623,12 +1623,12 @@ TclGetOpenModeEx(
 			"\": must be RDONLY, WRONLY, RDWR, APPEND, BINARY, "
 			"CREAT, EXCL, NOCTTY, NONBLOCK, or TRUNC", NULL);
 	    }
-	    ckfree((char *) modeArgv);
+	    ckfree(modeArgv);
 	    return -1;
 	}
     }
 
-    ckfree((char *) modeArgv);
+    ckfree(modeArgv);
 
     if (!gotRW) {
 	if (interp != NULL) {
@@ -3227,7 +3227,7 @@ Tcl_LoadFile(
      * unload and cleanup the temporary file correctly.
      */
 
-    tvdlPtr = (FsDivertLoad *) ckalloc(sizeof(FsDivertLoad));
+    tvdlPtr = ckalloc(sizeof(FsDivertLoad));
 
     /*
      * Remember three pieces of information. This allows us to cleanup the
@@ -3273,10 +3273,8 @@ Tcl_LoadFile(
 
     copyToPtr = NULL;
 
-    
-    divertedLoadHandle = (Tcl_LoadHandle)
-	    ckalloc(sizeof (struct Tcl_LoadHandle_));
-    divertedLoadHandle->clientData = (ClientData) tvdlPtr;
+    divertedLoadHandle = ckalloc(sizeof(struct Tcl_LoadHandle_));
+    divertedLoadHandle->clientData = tvdlPtr;
     divertedLoadHandle->findSymbolProcPtr = DivertFindSymbol;
     divertedLoadHandle->unloadFileProcPtr = DivertUnloadFile;
     *handlePtr = divertedLoadHandle;
@@ -3419,8 +3417,8 @@ DivertUnloadFile(
 	Tcl_DecrRefCount(tvdlPtr->divertedFile);
     }
 
-    ckfree((void *) tvdlPtr);
-    ckfree((void *) loadHandle);
+    ckfree(tvdlPtr);
+    ckfree(loadHandle);
 }
 
 /*
@@ -3633,7 +3631,7 @@ TclFSUnloadTempFile(
 	Tcl_DecrRefCount(tvdlPtr->divertedFile);
     }
 
-    ckfree((char *) tvdlPtr);
+    ckfree(tvdlPtr);
 }
 
 /*
@@ -4587,7 +4585,7 @@ static void
 NativeFreeInternalRep(
     ClientData clientData)
 {
-    ckfree((char *) clientData);
+    ckfree(clientData);
 }
 
 /*

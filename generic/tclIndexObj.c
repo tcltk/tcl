@@ -193,14 +193,14 @@ GetIndexFromObjList(
      * Build a string table from the list.
      */
 
-    tablePtr = (const char **) ckalloc((objc + 1) * sizeof(char *));
+    tablePtr = ckalloc((objc + 1) * sizeof(char *));
     for (t = 0; t < objc; t++) {
 	if (objv[t] == objPtr) {
 	    /*
 	     * An exact match is always chosen, so we can stop here.
 	     */
 
-	    ckfree((char *) tablePtr);
+	    ckfree(tablePtr);
 	    *indexPtr = t;
 	    return TCL_OK;
 	}
@@ -218,7 +218,7 @@ GetIndexFromObjList(
 
     TclFreeIntRep(objPtr);
     objPtr->typePtr = NULL;
-    ckfree((char *) tablePtr);
+    ckfree(tablePtr);
 
     return result;
 }
@@ -340,7 +340,7 @@ Tcl_GetIndexFromObjStruct(
 	indexRep = objPtr->internalRep.otherValuePtr;
     } else {
 	TclFreeIntRep(objPtr);
-	indexRep = (IndexRep *) ckalloc(sizeof(IndexRep));
+	indexRep = ckalloc(sizeof(IndexRep));
 	objPtr->internalRep.otherValuePtr = indexRep;
 	objPtr->typePtr = &indexType;
     }
@@ -443,7 +443,7 @@ UpdateStringOfIndex(
     register const char *indexStr = EXPAND_OF(indexRep);
 
     len = strlen(indexStr);
-    buf = (char *) ckalloc(len + 1);
+    buf = ckalloc(len + 1);
     memcpy(buf, indexStr, len+1);
     objPtr->bytes = buf;
     objPtr->length = len;
@@ -473,7 +473,7 @@ DupIndex(
     Tcl_Obj *dupPtr)
 {
     IndexRep *srcIndexRep = srcPtr->internalRep.otherValuePtr;
-    IndexRep *dupIndexRep = (IndexRep *) ckalloc(sizeof(IndexRep));
+    IndexRep *dupIndexRep = ckalloc(sizeof(IndexRep));
 
     memcpy(dupIndexRep, srcIndexRep, sizeof(IndexRep));
     dupPtr->internalRep.otherValuePtr = dupIndexRep;
@@ -501,7 +501,7 @@ static void
 FreeIndex(
     Tcl_Obj *objPtr)
 {
-    ckfree((char *) objPtr->internalRep.otherValuePtr);
+    ckfree(objPtr->internalRep.otherValuePtr);
     objPtr->typePtr = NULL;
 }
 
@@ -1109,7 +1109,7 @@ Tcl_ParseArgsObjv(
 	 */
 
 	nrem = 1;
-	leftovers = (Tcl_Obj **) ckalloc((nrem+1) * sizeof(Tcl_Obj *));
+	leftovers = ckalloc((nrem + 1) * sizeof(Tcl_Obj *));
 	leftovers[nrem-1] = objv[0];
 	leftovers[nrem] = NULL;
     } else {
@@ -1181,8 +1181,7 @@ Tcl_ParseArgsObjv(
 	     * Allocate nrem (+1 extra for NULL terminator) pointers.
 	     */
 
-	    leftovers = (Tcl_Obj **) ckrealloc((void *) leftovers,
-		    (nrem+1) * sizeof(Tcl_Obj *));
+	    leftovers = ckrealloc(leftovers, (nrem+1) * sizeof(Tcl_Obj *));
 	    leftovers[nrem-1] = curArg;
 	    continue;
 	}
@@ -1293,8 +1292,7 @@ Tcl_ParseArgsObjv(
     }
 
     if (objc > 0) {
-	leftovers = (Tcl_Obj **) ckrealloc((void *) leftovers,
-		(nrem+objc+1) * sizeof(Tcl_Obj *));
+	leftovers = ckrealloc(leftovers, (nrem+objc+1) * sizeof(Tcl_Obj *));
 	while (objc) {
 	    leftovers[nrem] = objv[srcIndex];
 	    nrem++;
@@ -1302,7 +1300,7 @@ Tcl_ParseArgsObjv(
 	    objc--;
 	}
     } else if (leftovers != NULL) {
-	ckfree((char *) leftovers);
+	ckfree(leftovers);
     }
     leftovers[nrem] = NULL;
     *objcPtr = nrem;
@@ -1319,7 +1317,7 @@ Tcl_ParseArgsObjv(
 	    "\" option requires an additional argument", NULL);
   error:
     if (leftovers != NULL) {
-	ckfree((char *) leftovers);
+	ckfree(leftovers);
     }
     return TCL_ERROR;
 }

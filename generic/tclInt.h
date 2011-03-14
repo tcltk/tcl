@@ -2858,7 +2858,6 @@ MODULE_SCOPE char	tclEmptyString;
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc TclNRNamespaceObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRApplyObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRCatchObjCmd;
@@ -3444,9 +3443,7 @@ MODULE_SCOPE int	Tcl_LsetObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_LsortObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	Tcl_NamespaceObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_Command TclInitNamespaceCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	TclNamespaceEnsembleCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3632,7 +3629,7 @@ MODULE_SCOPE int	TclCompileLlengthCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileLsetCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE int	TclCompileNamespaceCmd(Tcl_Interp *interp,
+MODULE_SCOPE int	TclCompileNamespaceUpvarCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileNoOp(Tcl_Interp *interp,

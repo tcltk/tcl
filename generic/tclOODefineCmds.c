@@ -129,7 +129,7 @@ TclOOObjectSetFilters(
 	 * No list of filters was supplied, so we're deleting filters.
 	 */
 
-	ckfree((char *) oPtr->filters.list);
+	ckfree(oPtr->filters.list);
 	oPtr->filters.list = NULL;
 	oPtr->filters.num = 0;
 	RecomputeClassCacheFlag(oPtr);
@@ -142,10 +142,9 @@ TclOOObjectSetFilters(
 	int size = sizeof(Tcl_Obj *) * numFilters;	/* should be size_t */
 
 	if (oPtr->filters.num == 0) {
-	    filtersList = (Tcl_Obj **) ckalloc(size);
+	    filtersList = ckalloc(size);
 	} else {
-	    filtersList = (Tcl_Obj **)
-		    ckrealloc((char *) oPtr->filters.list, size);
+	    filtersList = ckrealloc(oPtr->filters.list, size);
 	}
 	for (i=0 ; i<numFilters ; i++) {
 	    filtersList[i] = filters[i];
@@ -189,7 +188,7 @@ TclOOClassSetFilters(
 	 * No list of filters was supplied, so we're deleting filters.
 	 */
 
-	ckfree((char *) classPtr->filters.list);
+	ckfree(classPtr->filters.list);
 	classPtr->filters.list = NULL;
 	classPtr->filters.num = 0;
     } else {
@@ -201,10 +200,9 @@ TclOOClassSetFilters(
 	int size = sizeof(Tcl_Obj *) * numFilters;	/* should be size_t */
 
 	if (classPtr->filters.num == 0) {
-	    filtersList = (Tcl_Obj **) ckalloc(size);
+	    filtersList = ckalloc(size);
 	} else {
-	    filtersList = (Tcl_Obj **)
-		    ckrealloc((char *) classPtr->filters.list, size);
+	    filtersList = ckrealloc(classPtr->filters.list, size);
 	}
 	for (i=0 ; i<numFilters ; i++) {
 	    filtersList[i] = filters[i];
@@ -244,7 +242,7 @@ TclOOObjectSetMixins(
 	    FOREACH(mixinPtr, oPtr->mixins) {
 		TclOORemoveFromInstances(oPtr, mixinPtr);
 	    }
-	    ckfree((char *) oPtr->mixins.list);
+	    ckfree(oPtr->mixins.list);
 	    oPtr->mixins.num = 0;
 	}
 	RecomputeClassCacheFlag(oPtr);
@@ -255,12 +253,10 @@ TclOOObjectSetMixins(
 		    TclOORemoveFromInstances(oPtr, mixinPtr);
 		}
 	    }
-	    oPtr->mixins.list = (Class **)
-		    ckrealloc((char *) oPtr->mixins.list,
+	    oPtr->mixins.list = ckrealloc(oPtr->mixins.list,
 		    sizeof(Class *) * numMixins);
 	} else {
-	    oPtr->mixins.list = (Class **)
-		    ckalloc(sizeof(Class *) * numMixins);
+	    oPtr->mixins.list = ckalloc(sizeof(Class *) * numMixins);
 	    oPtr->flags &= ~USE_CLASS_CACHE;
 	}
 	oPtr->mixins.num = numMixins;
@@ -298,7 +294,7 @@ TclOOClassSetMixins(
 	    FOREACH(mixinPtr, classPtr->mixins) {
 		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
 	    }
-	    ckfree((char *) classPtr->mixins.list);
+	    ckfree(classPtr->mixins.list);
 	    classPtr->mixins.num = 0;
 	}
     } else {
@@ -306,12 +302,10 @@ TclOOClassSetMixins(
 	    FOREACH(mixinPtr, classPtr->mixins) {
 		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
 	    }
-	    classPtr->mixins.list = (Class **)
-		    ckrealloc((char *) classPtr->mixins.list,
+	    classPtr->mixins.list = ckrealloc(classPtr->mixins.list,
 		    sizeof(Class *) * numMixins);
 	} else {
-	    classPtr->mixins.list = (Class **)
-		    ckalloc(sizeof(Class *) * numMixins);
+	    classPtr->mixins.list = ckalloc(sizeof(Class *) * numMixins);
 	}
 	classPtr->mixins.num = numMixins;
 	memcpy(classPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
@@ -1333,8 +1327,7 @@ TclOODefineExportObjCmd(
 
 	if (isInstanceExport) {
 	    if (!oPtr->methodsPtr) {
-		oPtr->methodsPtr = (Tcl_HashTable *)
-			ckalloc(sizeof(Tcl_HashTable));
+		oPtr->methodsPtr = ckalloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
@@ -1346,7 +1339,7 @@ TclOODefineExportObjCmd(
 	}
 
 	if (isNew) {
-	    mPtr = (Method *) ckalloc(sizeof(Method));
+	    mPtr = ckalloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
 	    mPtr->refCount = 1;
 	    mPtr->namePtr = objv[i];
@@ -1686,7 +1679,7 @@ TclOODefineSuperclassObjCmd(
      * Allocate some working space.
      */
 
-    superclasses = (Class **) ckalloc(sizeof(Class *) * (objc-1));
+    superclasses = ckalloc(sizeof(Class *) * (objc-1));
 
     /*
      * Parse the arguments to get the class to use as superclasses.
@@ -1710,7 +1703,7 @@ TclOODefineSuperclassObjCmd(
 	    Tcl_AppendResult(interp,
 		    "attempt to form circular dependency graph", NULL);
 	failedAfterAlloc:
-	    ckfree((char *) superclasses);
+	    ckfree(superclasses);
 	    return TCL_ERROR;
 	}
 	superclasses[i] = clsPtr;
@@ -1727,7 +1720,7 @@ TclOODefineSuperclassObjCmd(
 	FOREACH(superPtr, oPtr->classPtr->superclasses) {
 	    TclOORemoveFromSubclasses(oPtr->classPtr, superPtr);
 	}
-	ckfree((char *) oPtr->classPtr->superclasses.list);
+	ckfree(oPtr->classPtr->superclasses.list);
     }
     oPtr->classPtr->superclasses.list = superclasses;
     oPtr->classPtr->superclasses.num = objc-1;
@@ -1790,8 +1783,7 @@ TclOODefineUnexportObjCmd(
 
 	if (isInstanceUnexport) {
 	    if (!oPtr->methodsPtr) {
-		oPtr->methodsPtr = (Tcl_HashTable *)
-			ckalloc(sizeof(Tcl_HashTable));
+		oPtr->methodsPtr = ckalloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
@@ -1803,7 +1795,7 @@ TclOODefineUnexportObjCmd(
 	}
 
 	if (isNew) {
-	    mPtr = (Method *) ckalloc(sizeof(Method));
+	    mPtr = ckalloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
 	    mPtr->refCount = 1;
 	    mPtr->namePtr = objv[i];
@@ -1887,13 +1879,13 @@ TclOODefineVariablesObjCmd(
 	}
 	if (i != objc-1) {
 	    if (objc == 1) {
-		ckfree((char *) oPtr->classPtr->variables.list);
+		ckfree(oPtr->classPtr->variables.list);
 	    } else if (i) {
-		oPtr->classPtr->variables.list = (Tcl_Obj **)
-			ckrealloc((char *) oPtr->classPtr->variables.list,
+		oPtr->classPtr->variables.list =
+			ckrealloc(oPtr->classPtr->variables.list,
 			sizeof(Tcl_Obj *) * (objc-1));
 	    } else {
-		oPtr->classPtr->variables.list = (Tcl_Obj **)
+		oPtr->classPtr->variables.list =
 			ckalloc(sizeof(Tcl_Obj *) * (objc-1));
 	    }
 	}
@@ -1908,13 +1900,12 @@ TclOODefineVariablesObjCmd(
 	}
 	if (i != objc-1) {
 	    if (objc == 1) {
-		ckfree((char *) oPtr->variables.list);
+		ckfree(oPtr->variables.list);
 	    } else if (i) {
-		oPtr->variables.list = (Tcl_Obj **)
-			ckrealloc((char *) oPtr->variables.list,
+		oPtr->variables.list = ckrealloc(oPtr->variables.list,
 			sizeof(Tcl_Obj *) * (objc-1));
 	    } else {
-		oPtr->variables.list = (Tcl_Obj **)
+		oPtr->variables.list =
 			ckalloc(sizeof(Tcl_Obj *) * (objc-1));
 	    }
 	}

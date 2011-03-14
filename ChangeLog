@@ -1,4 +1,45 @@
+2011-03-14  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclAssembly.c (BBEmitInstInt1): Changed parameter
+	data types in an effort to silence a MSVC warning reported by
+	Ashok P. Nadkarni. Unable to test, since both forms work on
+	my machine in VC2005, 2008. 2010, in both release and debug
+	builds.
+	* tests/tclTest.c (TestdstringCmd): Restored MSVC buildability
+	broken by [5574bdd262], which changed the effective return type
+	of 'ckalloc' from 'char*' to 'void*'.
+
+2011-03-13  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: remove TEBCreturn()
+
+2011-03-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tcl.h (ckalloc,ckfree,ckrealloc): Moved casts into these
+	macro so that they work with VOID* (which is a void* on all platforms
+	which Tcl actually builds on) and unsigned int for the length
+	parameters, removing the need for MANY casts across the rest of Tcl.
+	Note that this is a strict source-level-only change, so size_t cannot
+	be used (would break binary compatibility on 64-bit platforms).
+
+2011-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3185609]: File normalization corner case
+	of ... broken with -DUNICODE
+
+2011-03-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/unixInit.test: Make better use of tcltest2.
+
 2011-03-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c, generic/tclCompCmds.c, generic/tclEnsemble.c:
+	* generic/tclInt.h, generic/tclNamesp.c, library/auto.tcl:
+	* tests/interp.test, tests/namespace.test, tests/nre.test:
+	Converted the [namespace] command into an ensemble. This has the
+	consequence of making it vital for Tcl code that wishes to work with
+	namespaces to _not_ delete the ::tcl namespace.
+	***POTENTIAL INCOMPATIBILITY***
 
 	* library/tcltest/tcltest.tcl (loadIntoSlaveInterpreter): Added this
 	command to handle connecting tcltest to a slave interpreter. This adds
