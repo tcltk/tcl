@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* performs one Fermat test.
@@ -56,7 +56,3 @@ LBL_T:mp_clear (&t);
   return err;
 }
 #endif
-
-/* $Source: /cvs/libtom/libtommath/bn_mp_prime_fermat.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/28 01:25:13 $ */

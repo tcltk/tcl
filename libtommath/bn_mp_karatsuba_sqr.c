@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* Karatsuba squaring, computes b = a*a using three 
@@ -115,7 +115,3 @@ ERR:
   return err;
 }
 #endif
-
-/* $Source: /cvs/libtom/libtommath/bn_mp_karatsuba_sqr.c,v $ */
-/* $Revision: 1.6 $ */
-/* $Date: 2006/12/28 01:25:13 $ */

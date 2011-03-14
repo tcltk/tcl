@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* single digit addition */
@@ -37,8 +37,9 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
      /* c = |a| - b */
      res = mp_sub_d(a, b, c);
 
-     /* fix sign  */
-     a->sign = c->sign = MP_NEG;
+     /* fix signs  */
+     a->sign = MP_NEG;
+     c->sign = (c->used) ? MP_NEG : MP_ZPOS;
 
      /* clamp */
      mp_clamp(c);
@@ -106,7 +107,3 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
 }
 
 #endif
-
-/* $Source: /cvs/libtom/libtommath/bn_mp_add_d.c,v $ */
-/* $Revision: 1.5 $ */
-/* $Date: 2006/12/28 01:25:13 $ */

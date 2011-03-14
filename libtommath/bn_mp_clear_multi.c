@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 #include <stdarg.h>
 
@@ -28,7 +28,3 @@ void mp_clear_multi(mp_int *mp, ...)
     va_end(args);
 }
 #endif
-
-/* $Source: /cvs/libtom/libtommath/bn_mp_clear_multi.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/28 01:25:13 $ */

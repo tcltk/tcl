@@ -17,8 +17,3 @@ const float s_logv_2[] = {
    0.169293808, 0.168613099, 0.167948779, 0.167300179, 	/* 60 61 62 63 */
    0.166666667
 };
-
-
-/* $Source: /cvs/libtom/libtommath/mtest/logtab.h,v $ */
-/* $Revision: 1.2 $ */
-/* $Date: 2005/05/05 14:38:47 $ */
