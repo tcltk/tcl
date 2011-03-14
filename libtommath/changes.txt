@@ -1,3 +1,7 @@
+March 10th, 2007
+v0.41  -- Wolfgang Ehrhardt suggested a quick fix to mp_div_d() which makes the detection of powers of two quicker. 
+       -- [CRI] Added libtommath.dsp for Visual C++ users.
+
 December 24th, 2006
 v0.40  -- Updated makefile to properly support LIBNAME
        -- Fixed bug in fast_s_mp_mul_high_digs() which overflowed (line 83), thanks Valgrind!
