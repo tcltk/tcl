@@ -219,7 +219,7 @@ int mp_init_size(mp_int *a, int size);
 
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-#define mp_iseven(a) (((a)->used > 0 && (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
+#define mp_iseven(a) (((a)->used == 0 || (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
 #define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
 
 /* set to zero */
@@ -577,8 +577,3 @@ extern const char *mp_s_rmap;
 #endif
 
 #endif
-
-
-/* $Source: /cvs/libtom/libtommath/tommath.h,v $ */
-/* $Revision: 1.8 $ */
-/* $Date: 2006/03/31 14:18:44 $ */

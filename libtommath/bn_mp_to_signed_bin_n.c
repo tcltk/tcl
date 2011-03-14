@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* store in signed [big endian] format */
@@ -25,7 +25,3 @@ int mp_to_signed_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen)
    return mp_to_signed_bin(a, b);
 }
 #endif
-
-/* $Source: /cvs/libtom/libtommath/bn_mp_to_signed_bin_n.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/28 01:25:13 $ */

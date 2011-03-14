@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* reduce "x" in place modulo "n" using the Diminished Radix algorithm.
@@ -88,7 +88,3 @@ top:
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /cvs/libtom/libtommath/bn_mp_dr_reduce.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/28 01:25:13 $ */

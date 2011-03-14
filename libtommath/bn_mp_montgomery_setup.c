@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* setups the montgomery reduction stuff */
@@ -53,7 +53,3 @@ mp_montgomery_setup (mp_int * n, mp_digit * rho)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /cvs/libtom/libtommath/bn_mp_montgomery_setup.c,v $ */
-/* $Revision: 1.5 $ */
-/* $Date: 2006/12/28 01:25:13 $ */

@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* reduces a modulo n where n is of the form 2**p - d */
@@ -55,7 +55,3 @@ ERR:
 }
 
 #endif
-
-/* $Source: /cvs/libtom/libtommath/bn_mp_reduce_2k.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/28 01:25:13 $ */

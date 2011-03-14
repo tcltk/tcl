@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* multiplies |a| * |b| and does not compute the lower digs digits
@@ -75,7 +75,3 @@ s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /cvs/libtom/libtommath/bn_s_mp_mul_high_digs.c,v $ */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/28 01:25:13 $ */
