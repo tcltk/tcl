@@ -218,7 +218,7 @@ Initialize(void)
     if (ddeInstance == 0) {
 	Tcl_MutexLock(&ddeMutex);
 	if (ddeInstance == 0) {
-	    if (DdeInitializeA(&ddeInstance, DdeServerProc,
+	    if (DdeInitializeA(&ddeInstance, (PFNCALLBACK) DdeServerProc,
 		    CBF_SKIP_REGISTRATIONS | CBF_SKIP_UNREGISTRATIONS
 		    | CBF_FAIL_POKES, 0) != DMLERR_NO_ERROR) {
 		ddeInstance = 0;
@@ -965,7 +965,7 @@ DdeClientWindowProc(
 		(struct DdeEnumServices *) lpcs->lpCreateParams;
 
 #ifdef _WIN64
-	SetWindowLongPtr(hwnd, GWLP_USERDATA, (long)es);
+	SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)es);
 #else
 	SetWindowLongA(hwnd, GWL_USERDATA, (long)es);
 #endif
@@ -1040,7 +1040,7 @@ DdeEnumWindowsCallback(
     HWND hwndTarget,
     LPARAM lParam)
 {
-    DWORD dwResult = 0;
+    DWORD_PTR dwResult = 0;
     struct DdeEnumServices *es = (struct DdeEnumServices *) lParam;
 
     SendMessageTimeoutA(hwndTarget, WM_DDE_INITIATE, (WPARAM)es->hwnd,

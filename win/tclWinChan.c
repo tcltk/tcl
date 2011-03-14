@@ -1223,7 +1223,7 @@ TclpGetDefaultStdChannel(
     HANDLE handle;
     int mode = -1;
     const char *bufMode = NULL;
-    DWORD handleId = (DWORD)INVALID_HANDLE_VALUE;
+    DWORD handleId = (DWORD) -1;
 				/* Standard handle to retrieve. */
 
     switch (type) {

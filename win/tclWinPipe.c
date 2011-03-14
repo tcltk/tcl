@@ -1572,7 +1572,6 @@ TclpCreateCommandChannel(
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    int channelId;
     DWORD id;
     PipeInfo *infoPtr = ckalloc(sizeof(PipeInfo));
 
@@ -1590,20 +1589,6 @@ TclpCreateCommandChannel(
     infoPtr->writeBufLen = 0;
     infoPtr->writeError = 0;
     infoPtr->channel = NULL;
-
-    /*
-     * Use one of the fds associated with the channel as the channel id.
-     */
-
-    if (readFile) {
-	channelId = (int) ((WinFile *) readFile)->handle;
-    } else if (writeFile) {
-	channelId = (int) ((WinFile *) writeFile)->handle;
-    } else if (errorFile) {
-	channelId = (int) ((WinFile *) errorFile)->handle;
-    } else {
-	channelId = 0;
-    }
 
     infoPtr->validMask = 0;
 
