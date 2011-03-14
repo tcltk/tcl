@@ -994,6 +994,6 @@
 #define LTM_LAST
 #endif
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/tommath_class.h,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2005/09/26 16:32:16 $ */
+/* $Source: /cvs/libtom/libtommath/tommath_class.h,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2005/07/28 11:59:32 $ */

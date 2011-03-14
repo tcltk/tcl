@@ -579,6 +579,6 @@ extern const char *mp_s_rmap;
 #endif
 
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/tommath.h,v $ */
-/* $Revision: 1.1.1.4 $ */
-/* $Date: 2006/12/01 00:08:12 $ */
+/* $Source: /cvs/libtom/libtommath/tommath.h,v $ */
+/* $Revision: 1.8 $ */
+/* $Date: 2006/03/31 14:18:44 $ */

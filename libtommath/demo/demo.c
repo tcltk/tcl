@@ -735,6 +735,6 @@ printf("compare no compare!\n"); exit(EXIT_FAILURE); }
    return 0;
 }
 
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/demo/demo.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2005/09/26 16:32:16 $ */
+/* $Source: /cvs/libtom/libtommath/demo/demo.c,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2005/06/24 11:32:07 $ */
