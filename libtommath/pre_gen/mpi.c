@@ -553,7 +553,7 @@ int fast_s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
     register mp_digit *tmpc;
 
     tmpc = c->dp + digs;
-    for (ix = digs; ix <= pa; ix++) {
+    for (ix = digs; ix < pa; ix++) {
       /* now extract the previous digit [below the carry] */
       *tmpc++ = W[ix];
     }
@@ -2026,7 +2026,12 @@ static int s_is_power_of_two(mp_digit b, int *p)
 {
    int x;
 
-   for (x = 1; x < DIGIT_BIT; x++) {
+   /* fast return if no power of two */
+   if ((b==0) || (b & (b-1))) {
+      return 0;
+   }
+
+   for (x = 0; x < DIGIT_BIT; x++) {
       if (b == (((mp_digit)1)<<x)) {
          *p = x;
          return 1;
@@ -4667,7 +4672,7 @@ mp_montgomery_setup (mp_int * n, mp_digit * rho)
 #endif
 
   /* rho = -1/m mod b */
-  *rho = (((mp_word)1 << ((mp_word) DIGIT_BIT)) - x) & MP_MASK;
+  *rho = (unsigned long)(((mp_word)1 << ((mp_word) DIGIT_BIT)) - x) & MP_MASK;
 
   return MP_OKAY;
 }
@@ -5693,7 +5698,7 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
 
       /* is this prime? */
       for (x = 0; x < t; x++) {
-          mp_set(&b, ltm_prime_tab[t]);
+          mp_set(&b, ltm_prime_tab[x]);
           if ((err = mp_prime_miller_rabin(a, &b, &res)) != MP_OKAY) {
              goto LBL_ERR;
           }
@@ -6847,12 +6852,17 @@ int mp_set_int (mp_int * a, unsigned long b)
 int mp_shrink (mp_int * a)
 {
   mp_digit *tmp;
-  if (a->alloc != a->used && a->used > 0) {
-    if ((tmp = OPT_CAST(mp_digit) XREALLOC (a->dp, sizeof (mp_digit) * a->used)) == NULL) {
+  int used = 1;
+  
+  if(a->used > 0)
+    used = a->used;
+  
+  if (a->alloc != used) {
+    if ((tmp = OPT_CAST(mp_digit) XREALLOC (a->dp, sizeof (mp_digit) * used)) == NULL) {
       return MP_MEM;
     }
     a->dp    = tmp;
-    a->alloc = a->used;
+    a->alloc = used;
   }
   return MP_OKAY;
 }
