@@ -4,6 +4,8 @@
 	Add /usr/lib64 to set of auto-search dirs. [Bug 1230554]
 	(SC_PATH_X): Correct syntax error when xincludes not found.
 	Backported from Tcl 8.5
+	* generic/tclCkalloc.c: [Bug #3197864] pointer truncation on Win64
+	TCL_MEM_DEBUG builds
 
 2010-03-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
