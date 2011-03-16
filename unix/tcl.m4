@@ -1251,7 +1251,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
 	    SHLIB_LD='${CC} -G'
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1456,7 +1456,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	MP-RAS-02*)
 	    SHLIB_CFLAGS="-K PIC"
 	    SHLIB_LD='${CC} -G'
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1466,7 +1466,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	MP-RAS-*)
 	    SHLIB_CFLAGS="-K PIC"
 	    SHLIB_LD='${CC} -G'
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1773,7 +1773,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test "$SHARED_BUILD" = 1], [SHLIB_LD="ld -shared"], [
 	        SHLIB_LD="ld -non_shared"
 	    ])
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1814,7 +1814,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # This may work for all QNX, but it was only reported for v6.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="ld -Bshareable -x"
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    # dlopen is in -lc on QNX
@@ -1834,7 +1834,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    	LDFLAGS="$LDFLAGS -belf -Wl,-Bexport"
 	    ])
 	    SHLIB_LD="ld -G"
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1844,7 +1844,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SINIX*5.4*)
 	    SHLIB_CFLAGS="-K PIC"
 	    SHLIB_LD='${CC} -G'
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1854,7 +1854,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SunOS-4*)
 	    SHLIB_CFLAGS="-PIC"
 	    SHLIB_LD="ld"
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -2005,7 +2005,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	UNIX_SV* | UnixWare-5*)
 	    SHLIB_CFLAGS="-KPIC"
 	    SHLIB_LD='${CC} -G'
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
