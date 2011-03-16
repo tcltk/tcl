@@ -2648,7 +2648,7 @@ fi
 	    if test "$do64bit" = "yes" -a "`uname -v`" -gt "3" ; then
 		if test "$GCC" = "yes" ; then
 		    echo "configure: warning: 64bit mode not supported with GCC on $system" 1>&2
-		else 
+		else
 		    do64bit_ok=yes
 		    CFLAGS="$CFLAGS -q64"
 		    LDFLAGS="$LDFLAGS -q64"
@@ -3068,7 +3068,7 @@ fi
 	    SHLIB_SUFFIX=".so"
 
 	    CFLAGS_OPTIMIZE=-O2
-	    # egcs-2.91.66 on Redhat Linux 6.0 generates lots of warnings 
+	    # egcs-2.91.66 on Redhat Linux 6.0 generates lots of warnings
 	    # when you inline the string and math operations.  Turn this off to
 	    # get rid of the warnings.
 	    #CFLAGS_OPTIMIZE="${CFLAGS_OPTIMIZE} -D__NO_STRING_INLINES -D__NO_MATH_INLINES"
@@ -3754,7 +3754,7 @@ EOF
 #define _OE_SOCKETS 1
 EOF
 	# needed in sys/socket.h
-	    ;;      
+	    ;;
 	OSF1-1.0|OSF1-1.1|OSF1-1.2)
 	    # OSF/1 1.[012] from OSF, and derivatives, including Paragon OSF/1
 	    SHLIB_CFLAGS=""
@@ -3790,7 +3790,7 @@ EOF
 	    else
 	        SHLIB_LD='ld -non_shared -expect_unresolved "*"'
 	    fi
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -4095,7 +4095,7 @@ echo "$ac_t""$tcl_cv_ld_Bexport" 1>&6
     # New Orleans, LA, Computerized Processes Unlimited, 1994), then we need
     # to determine which of several header files defines the a.out file
     # format (a.out.h, sys/exec.h, or sys/exec_aout.h).  At present, we
-    # support only a file format that is more or less version-7-compatible. 
+    # support only a file format that is more or less version-7-compatible.
     # In particular,
     #	- a.out files must begin with `struct exec'.
     #	- the N_TXTOFF on the `struct exec' must compute the seek address
@@ -4631,8 +4631,8 @@ rm -f conftest*
 #include "confdefs.h"
 
 int main() {
-switch (0) { 
-            case 1: case (sizeof(${tcl_type_64bit})==sizeof(long)): ; 
+switch (0) {
+            case 1: case (sizeof(${tcl_type_64bit})==sizeof(long)): ;
         }
 ; return 0; }
 EOF
@@ -8493,7 +8493,7 @@ fi
 EOF
 
 	fi
-    else 
+    else
 	echo "$ac_t""$langinfo_ok" 1>&6
     fi
 
