@@ -1,3 +1,10 @@
+2011-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4:    Make SHLIB_LD_LIBS='${LIBS}' the default and
+	* unix/configure: set to "" on per-platform necessary basis.
+	Backported from TEA, but kept all original platform code which was
+	removed from TEA.
+
 2011-03-14  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tools/tclZIC.tcl (onDayOfMonth): Allow for leading zeroes
@@ -10,7 +17,6 @@
 	* library/tzdata/Pacific/Easter:
 	* library/tzdata/Pacific/Honolulu:  tzdata2011d
 
-2011-03-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/configure.in  [Bug 3205320]: stack space detection defeated by inlining
 	* unix/configure:    (autoconf-2.59)
