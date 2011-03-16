@@ -323,7 +323,7 @@ Tcl_ProcObjCmd(
 	int numBytes;
 
 	procArgs +=4;
-	while(*procArgs != '\0') {
+	while (*procArgs != '\0') {
 	    if (*procArgs != ' ') {
 		goto done;
 	    }
