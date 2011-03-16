@@ -81,7 +81,7 @@ static struct mem_header *allocHead = NULL;  /* List of allocated structures */
  */
 
 #define BODY_OFFSET \
-	((unsigned long) (&((struct mem_header *) 0)->body))
+	((size_t) (&((struct mem_header *) 0)->body))
 
 static int total_mallocs = 0;
 static int total_frees = 0;
@@ -595,7 +595,7 @@ Tcl_DbCkfree(
      * words on these machines).
      */
 
-    memp = (struct mem_header *) (((unsigned long) ptr) - BODY_OFFSET);
+    memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
 
     if (alloc_tracing) {
 	fprintf(stderr, "ckfree %lx %ld %s %d\n",
@@ -672,7 +672,7 @@ Tcl_DbCkrealloc(
      * See comment from Tcl_DbCkfree before you change the following line.
      */
 
-    memp = (struct mem_header *) (((unsigned long) ptr) - BODY_OFFSET);
+    memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
 
     copySize = size;
     if (copySize > (unsigned int) memp->length) {
@@ -703,7 +703,7 @@ Tcl_AttemptDbCkrealloc(
      * See comment from Tcl_DbCkfree before you change the following line.
      */
 
-    memp = (struct mem_header *) (((unsigned long) ptr) - BODY_OFFSET);
+    memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
 
     copySize = size;
     if (copySize > (unsigned int) memp->length) {
