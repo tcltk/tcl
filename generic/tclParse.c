@@ -525,28 +525,23 @@ Tcl_ParseCommand(
 		     */
 
 		    nextElem = tokenPtr[1].start;
-		    while (isspace(UCHAR(*nextElem))) {
-			nextElem++;
-		    }
 		    while (nextElem < listEnd) {
+			int quoted, brace;
+	
 			tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
 			tokenPtr->numComponents = 1;
-			tokenPtr->start = nextElem;
 
 			tokenPtr++;
 			tokenPtr->type = TCL_TOKEN_TEXT;
 			tokenPtr->numComponents = 0;
 			TclFindElement(NULL, nextElem, listEnd - nextElem,
 				&(tokenPtr->start), &nextElem,
-				&(tokenPtr->size), NULL);
-			if (tokenPtr->start + tokenPtr->size == listEnd) {
-			    tokenPtr[-1].size = listEnd - tokenPtr[-1].start;
-			} else {
-			    tokenPtr[-1].size = tokenPtr->start
-				    + tokenPtr->size - tokenPtr[-1].start;
-			    tokenPtr[-1].size += (isspace(UCHAR(
-				tokenPtr->start[tokenPtr->size])) == 0);
-			}
+				&(tokenPtr->size), &brace);
+
+			quoted = brace || tokenPtr->start[-1] == '"';
+			tokenPtr[-1].start = tokenPtr->start - quoted;
+			tokenPtr[-1].size = tokenPtr->start + tokenPtr->size
+				- tokenPtr[-1].start + quoted;
 
 			tokenPtr++;
 		    }
