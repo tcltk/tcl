@@ -1096,6 +1096,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     # Step 3: set configuration options based on system name and version.
 
     do64bit_ok=no
+    # default to '{$LIBS}' and set to "" on per-platform necessary basis
+    SHLIB_LD_LIBS='${LIBS}'
     LDFLAGS_ORIG="$LDFLAGS"
     # When ld needs options to work in 64-bit mode, put them in
     # LDFLAGS_ARCH so they eventually end up in LDFLAGS even if [load]
@@ -1137,9 +1139,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ])
 	    LIBS="$LIBS -lc"
 	    SHLIB_CFLAGS=""
-	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
-	    # symbols when dynamically loaded into tclsh.
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
 	    DL_OBJS="tclLoadDl.o"
@@ -1190,7 +1189,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	BeOS*)
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD='${CC} -nostart'
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1205,7 +1203,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	BSD/OS-2.1*|BSD/OS-3*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="shlicc -r"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1215,7 +1212,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	BSD/OS-4.*)
 	    SHLIB_CFLAGS="-export-dynamic -fPIC"
 	    SHLIB_LD='${CC} -shared'
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1226,7 +1222,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	CYGWIN_*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD='${CC} -shared'
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dll"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1246,7 +1241,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	Haiku*)
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
 	    DL_OBJS="tclLoadDl.o"
@@ -1268,7 +1262,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test "$tcl_ok" = yes], [
 		SHLIB_CFLAGS="+z"
 		SHLIB_LD="ld -b"
-		SHLIB_LD_LIBS='${LIBS}'
 		DL_OBJS="tclLoadShl.o"
 		DL_LIBS="-ldld"
 		LDFLAGS="$LDFLAGS -Wl,-E"
@@ -1278,7 +1271,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ])
 	    AS_IF([test "$GCC" = yes], [
 		SHLIB_LD='${CC} -shared'
-		SHLIB_LD_LIBS='${LIBS}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    ], [
 		CFLAGS="$CFLAGS -z"
@@ -1295,7 +1287,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			    # 64-bit gcc in use.  Fix flags for GNU ld.
 			    do64bit_ok=yes
 			    SHLIB_LD='${CC} -shared'
-			    SHLIB_LD_LIBS='${LIBS}'
 			    AS_IF([test $doRpath = yes], [
 				CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 			    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
@@ -1327,7 +1318,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	IRIX-5.*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="ld -shared -rdata_shared"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1339,7 +1329,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	IRIX-6.*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="ld -n32 -shared -rdata_shared"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1366,7 +1355,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	IRIX64-6.*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="ld -n32 -shared -rdata_shared"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1390,7 +1378,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ;;
 	Linux*)
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
 	    CFLAGS_OPTIMIZE="-O2"
@@ -1429,7 +1416,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ;;
 	GNU*)
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
 	    SHLIB_LD='${CC} -shared'
@@ -1442,7 +1428,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ;;
 	Lynx*)
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    CFLAGS_OPTIMIZE=-02
 	    SHLIB_LD='${CC} -shared'
@@ -1477,7 +1462,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	NetBSD-1.*|FreeBSD-[[1-2]].*)
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="ld -Bshareable -x"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1508,11 +1492,11 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		# Equivalent using configure option --disable-load
 		# Step 4 will set the necessary variables
 		DL_OBJS=""
+		SHLIB_LD_LIBS=""
 		;;
 	    *)
 		SHLIB_CFLAGS="-fPIC"
 		SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
-		SHLIB_LD_LIBS='${LIBS}'
 		SHLIB_SUFFIX=".so"
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS=""
@@ -1557,7 +1541,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # NetBSD 2.* has ELF and can use 'cc -shared' to build shared libs
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1585,7 +1568,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
 	    TCL_SHLIB_LD_EXTRAS="-soname \$[@]"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1660,7 +1642,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test $tcl_cv_ld_single_module = yes], [
 		SHLIB_LD="${SHLIB_LD} -Wl,-single_module"
 	    ])
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
@@ -1754,6 +1735,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	OS/390-*)
+	    SHLIB_LD_LIBS=""
 	    CFLAGS_OPTIMIZE=""		# Optimizer is buggy
 	    AC_DEFINE(_OE_SOCKETS, 1,	# needed in sys/socket.h
 		[Should OS/390 do the right thing with sockets?])
@@ -1791,7 +1773,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ], [
 	        SHLIB_LD='ld -non_shared -expect_unresolved "*"'
 	    ])
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1885,11 +1866,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		[Do we really want to follow the standard? Yes we do!])
 
 	    SHLIB_CFLAGS="-KPIC"
-
-	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
-	    # symbols when dynamically loaded into tclsh.
-
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1979,11 +1955,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			use_sunmath=no
 		])
 	    ])
-
-	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
-	    # symbols when dynamically loaded into tclsh.
-
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
