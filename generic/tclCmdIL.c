@@ -19,6 +19,7 @@
 
 #include "tclInt.h"
 #include "tclRegexp.h"
+#include "tommath.h"
 
 /*
  * During execution of the "lsort" command, structures of the following type
@@ -87,6 +88,7 @@ typedef struct SortInfo {
 #define SORTMODE_REAL		2
 #define SORTMODE_COMMAND	3
 #define SORTMODE_DICTIONARY	4
+#define SORTMODE_ENTIER		5
 #define SORTMODE_ASCII_NC	8
 
 /*
@@ -3462,13 +3464,14 @@ Tcl_LsortObjCmd(
     SortInfo sortInfo;		/* Information about this sort that needs to
 				 * be passed to the comparison function. */
     static CONST char *switches[] = {
-	"-ascii", "-command", "-decreasing", "-dictionary", "-increasing",
-	"-index", "-indices", "-integer", "-nocase", "-real", "-unique", NULL
+	"-ascii", "-command", "-decreasing", "-dictionary", "-entier",
+	"-increasing", "-index", "-indices", "-integer", "-nocase",
+	"-real", "-unique", NULL
     };
     enum Lsort_Switches {
 	LSORT_ASCII, LSORT_COMMAND, LSORT_DECREASING, LSORT_DICTIONARY,
-	LSORT_INCREASING, LSORT_INDEX, LSORT_INDICES, LSORT_INTEGER,
-	LSORT_NOCASE, LSORT_REAL, LSORT_UNIQUE
+	LSORT_ENTIER, LSORT_INCREASING, LSORT_INDEX, LSORT_INDICES,
+	LSORT_INTEGER, LSORT_NOCASE, LSORT_REAL, LSORT_UNIQUE
     };
 
     /*
@@ -3527,6 +3530,9 @@ Tcl_LsortObjCmd(
 	    break;
 	case LSORT_DICTIONARY:
 	    sortInfo.sortMode = SORTMODE_DICTIONARY;
+	    break;
+	case LSORT_ENTIER:
+	    sortInfo.sortMode = SORTMODE_ENTIER;
 	    break;
 	case LSORT_INCREASING:
 	    sortInfo.isIncreasing = 1;
@@ -3701,6 +3707,22 @@ Tcl_LsortObjCmd(
 	
 	if (sortMode == SORTMODE_ASCII) {
 	    elementArray[i].index.strValuePtr = TclGetString(indexPtr);
+	} else if (sortMode == SORTMODE_ENTIER) {
+	    ClientData ptr;
+	    int type;
+	
+	    if (TclGetNumberFromObj(sortInfo.interp, indexPtr, &ptr, &type)
+		    != TCL_OK) {
+		sortInfo.resultCode = TCL_ERROR;
+		goto done1;
+	    }
+	    if ((type == TCL_NUMBER_NAN) || (type == TCL_NUMBER_DOUBLE)) {
+		/* Generate standard error message */
+		Tcl_GetBignumFromObj(sortInfo.interp, indexPtr, NULL);
+		sortInfo.resultCode = TCL_ERROR;
+		goto done1;
+	    }
+	    elementArray[i].index.objValuePtr = indexPtr;
 	} else if (sortMode == SORTMODE_INTEGER) {
 	    long a;
 	    if (TclGetLongFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
@@ -3933,6 +3955,69 @@ SortCompare(
     } else if (infoPtr->sortMode == SORTMODE_DICTIONARY) {
 	order = DictionaryCompare(elemPtr1->index.strValuePtr,
 		elemPtr2->index.strValuePtr);
+    } else if (infoPtr->sortMode == SORTMODE_ENTIER) {
+	ClientData ptr;
+	int type1, type2, comparison;
+	Tcl_Obj *objPtr1 = elemPtr1->index.objValuePtr;
+	Tcl_Obj *objPtr2 = elemPtr2->index.objValuePtr;
+
+	TclGetNumberFromObj(NULL, objPtr1, &ptr, &type1);
+	TclGetNumberFromObj(NULL, objPtr2, &ptr, &type2);
+
+	comparison = (type1 > type2) ? type1 : type2;
+
+	switch (comparison) {
+	case TCL_NUMBER_LONG: {
+	    long a, b;
+
+	    Tcl_GetLongFromObj(NULL, objPtr1, &a);
+	    Tcl_GetLongFromObj(NULL, objPtr2, &b);
+	    order = ((a >= b) - (a <= b));
+	    break;
+	}
+#ifndef NO_WIDE_TYPE
+	case TCL_NUMBER_WIDE: {
+	    Tcl_WideInt a, b;
+
+	    Tcl_GetWideIntFromObj(NULL, objPtr1, &a);
+	    Tcl_GetWideIntFromObj(NULL, objPtr2, &b);
+	    order = ((a >= b) - (a <= b));
+	    break;
+	}
+#endif
+	case TCL_NUMBER_BIG: {
+	    mp_int a, b;
+
+	    if (type1 < TCL_NUMBER_BIG) {
+		Tcl_GetBignumFromObj(NULL, objPtr2, &b);
+		order = 2*(mp_cmp_d(&b, 0) == MP_LT) - 1;
+		mp_clear(&b);
+		break;
+	    }
+	    if (type2 < TCL_NUMBER_BIG) {
+		Tcl_GetBignumFromObj(NULL, objPtr1, &a);
+		order = 1 - 2*(mp_cmp_d(&a, 0) == MP_LT);
+		mp_clear(&a);
+		break;
+	    }
+
+	    Tcl_GetBignumFromObj(NULL, objPtr1, &a);
+	    Tcl_GetBignumFromObj(NULL, objPtr2, &b);
+	    switch (mp_cmp(&a, &b)) {
+	    case MP_LT:
+		order = -1;
+		break;
+	    case MP_EQ:
+		order = 0;
+		break;
+	    case MP_GT:
+		order = 1;
+		break;
+	    }
+	    mp_clear(&a);
+	    mp_clear(&b);
+	}
+	}
     } else if (infoPtr->sortMode == SORTMODE_INTEGER) {
 	long a, b;
 
