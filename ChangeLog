@@ -1,3 +1,8 @@
+2011-03-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tkMain.c:  [Patch #3124683]: platform specific
+	stuff in (tcl|tk)Main.c
+
 2011-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCkalloc.c: [Bug #3197864] pointer truncation on Win64
