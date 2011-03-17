@@ -1,12 +1,17 @@
+2011-03-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompExpr.c (ParseExpr): Generate errorCode information on
+	failure to parse expressions.
+
 2011-03-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tkMain.c:  [Patch #3124683]: platform specific
-	stuff in (tcl|tk)Main.c
+	* generic/tkMain.c: [Patch 3124683]: Reorganize the platform-specific
+	stuff in (tcl|tk)Main.c.
 
 2011-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclCkalloc.c: [Bug #3197864] pointer truncation on Win64
-	TCL_MEM_DEBUG builds
+	* generic/tclCkalloc.c: [Bug 3197864]: Pointer truncation on Win64
+	TCL_MEM_DEBUG builds.
 
 2011-03-16  Don Porter  <dgp@users.sourceforge.net>
 
