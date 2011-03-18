@@ -1535,6 +1535,12 @@ TclIncrObj(
 #define	catchStack	(TD->stack)
 #define	initTosPtr	((Tcl_Obj **) &TD->stack[codePtr->maxExceptDepth - 1])
 
+#define capacity2size(cap)						\
+    (sizeof(TEBCdata) + sizeof(void *)*(cap + codePtr->maxExceptDepth - 1))
+
+#define size2capacity(s) \
+    (((s - sizeof(TEBCdata))/sizeof(void *)) - codePtr->maxExceptDepth + 1)
+    
 int
 TclNRExecuteByteCode(
     Tcl_Interp *interp,		/* Token for command interpreter. */
@@ -1542,8 +1548,7 @@ TclNRExecuteByteCode(
 {
     Interp *iPtr = (Interp *) interp;
     TEBCdata *TD;
-    unsigned int size = sizeof(TEBCdata) + sizeof(void *) *
-	  (codePtr->maxStackDepth + codePtr->maxExceptDepth - 1);       
+    unsigned int size = capacity2size(codePtr->maxStackDepth);
     
     if (iPtr->execEnvPtr->rewind) {
 	return TCL_ERROR;
@@ -1564,6 +1569,13 @@ TclNRExecuteByteCode(
      */
 
     TD = ckalloc(size);
+    size = TclAllocMaximize(TD);
+    if (size == UINT_MAX) {
+	TD->capacity = codePtr->maxStackDepth;
+    } else {
+	TD->capacity = size2capacity(size);
+    }
+        
     TD->tosPtr = initTosPtr;
     
     TD->codePtr     = codePtr;
@@ -1572,7 +1584,6 @@ TclNRExecuteByteCode(
     TD->cleanup     = 0;
     TD->auxObjList  = NULL;
     TD->checkInterp = 0;
-    TD->capacity = codePtr->maxStackDepth;
     
     /*
      * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
@@ -2284,13 +2295,17 @@ TEBCresume(
 	(void) POP_OBJECT();
 	if (reqWords > TD->capacity) {
 	    ptrdiff_t depth;
-	    unsigned int size = sizeof(TEBCdata) + sizeof(void *) *
-		+ (reqWords + codePtr->maxExceptDepth - 1);
+	    unsigned int size = capacity2size(reqWords);
 	    
 	    depth = tosPtr - initTosPtr;
 	    TD = ckrealloc(TD, size);
+	    size = TclAllocMaximize(TD);
+	    if (size == UINT_MAX) {
+		TD->capacity = reqWords;
+	    } else {
+		TD->capacity = size2capacity(size);
+	    }
 	    tosPtr = initTosPtr + depth;
-	    TD->capacity = reqWords;
 	}
 	
 	/*
