@@ -3877,6 +3877,7 @@ MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
 #  define TclSmallFree(ptr) ckfree(ptr)
 #  define TclInitAlloc()
 #  define TclFinalizeAlloc()
+#  define TclFreeAllocCache(ptr)
 #else
    MODULE_SCOPE void * TclSmallAlloc();
    MODULE_SCOPE void   TclSmallFree(void *ptr);
