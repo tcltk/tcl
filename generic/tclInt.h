@@ -3864,10 +3864,12 @@ MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
 #    define TclpAlloc(size) ckalloc(size)
 #    define TclpRealloc(ptr, size) ckrealloc((ptr),(size))
 #    define TclpFree(size) ckfree(size)
+#    define TclAllocMaximize(ptr) UINT_MAX
 #else
    MODULE_SCOPE char * TclpAlloc(unsigned int size);
    MODULE_SCOPE char * TclpRealloc(char * ptr, unsigned int size);
    MODULE_SCOPE void   TclpFree(char * ptr);
+   MODULE_SCOPE unsigned int TclAllocMaximize(void *ptr);
 #endif
 
 #if TCL_ALLOCATOR == aPURIFY

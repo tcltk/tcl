@@ -197,7 +197,6 @@ typedef struct Block {
 #define magicNum1	u.s.magic1
 #define magicNum2	u.s.magic2
 #define MAGIC		0xEF
-#define blockReqSize	reqSize
 
 /*
  * The following defines the minimum and maximum block sizes and the number
@@ -385,7 +384,7 @@ Block2Ptr(
 
     blockPtr->magicNum1 = blockPtr->magicNum2 = MAGIC;
     blockPtr->sourceBucket = bucket;
-    blockPtr->blockReqSize = reqSize;
+    blockPtr->reqSize = reqSize;
     ptr = (void *) (((char *)blockPtr) + OFFSET);
 #if RCHECK
     ((unsigned char *)(ptr))[reqSize] = MAGIC;
@@ -405,10 +404,10 @@ Ptr2Block(
 		blockPtr, blockPtr->magicNum1, blockPtr->magicNum2);
     }
 #if RCHECK
-    if (((unsigned char *) ptr)[blockPtr->blockReqSize] != MAGIC) {
+    if (((unsigned char *) ptr)[blockPtr->reqSize] != MAGIC) {
 	Tcl_Panic("alloc: invalid block: %p: %x %x %x",
 		blockPtr, blockPtr->magicNum1, blockPtr->magicNum2,
-		((unsigned char *) ptr)[blockPtr->blockReqSize]);
+		((unsigned char *) ptr)[blockPtr->reqSize]);
     }
 #endif
     return blockPtr;
@@ -707,14 +706,14 @@ TclpFree(
     bucket = blockPtr->sourceBucket;
     if (bucket == nBuckets) {
 #ifdef ZIPPY_STATS
-	cachePtr->totalAssigned -= blockPtr->blockReqSize;
+	cachePtr->totalAssigned -= blockPtr->reqSize;
 #endif
 	free(blockPtr);
 	return;
     }
 
 #ifdef ZIPPY_STATS
-    cachePtr->buckets[bucket].totalAssigned -= blockPtr->blockReqSize;
+    cachePtr->buckets[bucket].totalAssigned -= blockPtr->reqSize;
 #endif
     blockPtr->nextBlock = cachePtr->buckets[bucket].firstPtr;
     cachePtr->buckets[bucket].firstPtr = blockPtr;
@@ -800,14 +799,14 @@ TclpRealloc(
 	}
 	if (size > min && size <= bucketInfo[bucket].blockSize) {
 #ifdef ZIPPY_STATS
-	    cachePtr->buckets[bucket].totalAssigned -= blockPtr->blockReqSize;
+	    cachePtr->buckets[bucket].totalAssigned -= blockPtr->reqSize;
 	    cachePtr->buckets[bucket].totalAssigned += reqSize;
 #endif
 	    return Block2Ptr(blockPtr, bucket, reqSize);
 	}
     } else if (size > MAXALLOC) {
 #ifdef ZIPPY_STATS
-	cachePtr->totalAssigned -= blockPtr->blockReqSize;
+	cachePtr->totalAssigned -= blockPtr->reqSize;
 	cachePtr->totalAssigned += reqSize;
 #endif
 	blockPtr = realloc(blockPtr, size);
@@ -823,14 +822,65 @@ TclpRealloc(
 
     newPtr = TclpAlloc(reqSize);
     if (newPtr != NULL) {
-	if (reqSize > blockPtr->blockReqSize) {
-	    reqSize = blockPtr->blockReqSize;
+	if (reqSize > blockPtr->reqSize) {
+	    reqSize = blockPtr->reqSize;
 	}
 	memcpy(newPtr, ptr, reqSize);
 	TclpFree(ptr);
     }
     return newPtr;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAllocMaximize --
+ *
+ * Given a TclpAlloc'ed pointer, it returns the maximal size that can be used
+ * by the allocated memory. This is almost always larger than the requested
+ * size, as it corresponds to the bucket's size.
+ *
+ * Results:
+ *	New size.
+ *
+ *----------------------------------------------------------------------
+ */
+ unsigned int
+ TclAllocMaximize(
+     void *ptr)
+{
+    Block *blockPtr;
+    int bucket;
+    size_t oldSize, newSize;
+
+    if (allocator < aNONE) {
+	/*
+	 * No info, return UINT_MAX as a signal.
+	 */
+	
+	return UINT_MAX;
+    }
+    
+    blockPtr = Ptr2Block(ptr);
+    bucket = blockPtr->sourceBucket;
+    
+    if (bucket == nBuckets) {
+	/*
+	 * System malloc'ed: no info
+	 */
+	
+	return UINT_MAX;
+    }
+
+    oldSize = blockPtr->reqSize;
+    newSize = bucketInfo[bucket].blockSize - OFFSET - RCHECK;
+    blockPtr->reqSize = newSize;
+#if RCHECK
+    ((unsigned char *)(ptr))[newSize] = MAGIC;
+#endif    
+    return newSize;
+}
+
 #ifdef ZIPPY_STATS
 
 /*
