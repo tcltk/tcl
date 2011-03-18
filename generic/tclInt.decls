@@ -35,9 +35,9 @@ scspec EXTERN
 #declare 2 {
 #    int TclAccessInsertProc(TclAccessProc_ *proc)
 #}
-declare 3 {
-    void TclAllocateFreeObjects(void)
-}
+#declare 3 {
+#    void TclAllocateFreeObjects(void)
+#}
 # Replaced by TclpChdir in 8.1:
 #  declare 4 {
 #      int TclChdir(Tcl_Interp *interp, char *dirName)
@@ -867,12 +867,12 @@ declare 213 {
 declare 214 {
     void TclSetObjNameOfExecutable(Tcl_Obj *name, Tcl_Encoding encoding)
 }
-declare 215 {
-    void *TclStackAlloc(Tcl_Interp *interp, int numBytes)
-}
-declare 216 {
-    void TclStackFree(Tcl_Interp *interp, void *freePtr)
-}
+#declare 215 {
+#    void *TclStackAlloc(Tcl_Interp *interp, unsigned int numBytes)
+#}
+#declare 216 {
+#    void TclStackFree(Tcl_Interp *interp, void *freePtr)
+#}
 declare 217 {
     int TclPushStackFrame(Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr,
             Tcl_Namespace *namespacePtr, int isProcCallFrame)

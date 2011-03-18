@@ -27,12 +27,6 @@ static int typeTableInitialized = 0;	/* 0 means not yet initialized. */
 TCL_DECLARE_MUTEX(tableMutex)
 
 /*
- * Head of the list of free Tcl_Obj structs we maintain.
- */
-
-Tcl_Obj *tclFreeObjList = NULL;
-
-/*
  * The object allocator is single threaded. This mutex is referenced by the
  * TclNewObj macro, however, so must be visible.
  */
@@ -475,7 +469,7 @@ TclFinalizeThreadObjects(void)
  * TclFinalizeObjects --
  *
  *	This function is called by Tcl_Finalize to clean up all registered
- *	Tcl_ObjType's and to reset the tclFreeObjList.
+ *	Tcl_ObjType's
  *
  * Results:
  *	None.
@@ -495,15 +489,6 @@ TclFinalizeObjects(void)
 	typeTableInitialized = 0;
     }
     Tcl_MutexUnlock(&tableMutex);
-
-    /*
-     * All we do here is reset the head pointer of the linked list of free
-     * Tcl_Obj's to NULL; the memory finalization will take care of releasing
-     * memory for us.
-     */
-    Tcl_MutexLock(&tclObjMutex);
-    tclFreeObjList = NULL;
-    Tcl_MutexUnlock(&tclObjMutex);
 }
 
 /*
@@ -1238,59 +1223,6 @@ Tcl_DbNewObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclAllocateFreeObjects --
- *
- *	Function to allocate a number of free Tcl_Objs. This is done using a
- *	single ckalloc to reduce the overhead for Tcl_Obj allocation.
- *
- *	Assumes mutex is held.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	tclFreeObjList, the head of the list of free Tcl_Objs, is set to the
- *	first of a number of free Tcl_Obj's linked together by their
- *	internalRep.otherValuePtrs.
- *
- *----------------------------------------------------------------------
- */
-
-#define OBJS_TO_ALLOC_EACH_TIME 100
-
-void
-TclAllocateFreeObjects(void)
-{
-    size_t bytesToAlloc = (OBJS_TO_ALLOC_EACH_TIME * sizeof(Tcl_Obj));
-    char *basePtr;
-    register Tcl_Obj *prevPtr, *objPtr;
-    register int i;
-
-    /*
-     * This has been noted by Purify to be a potential leak. The problem is
-     * that Tcl, when not TCL_MEM_DEBUG compiled, keeps around all allocated
-     * Tcl_Obj's, pointed to by tclFreeObjList, when freed instead of actually
-     * freeing the memory. TclFinalizeObjects() does not ckfree() this memory,
-     * but leaves it to Tcl's memory subsystem finalization to release it.
-     * Purify apparently can't figure that out, and fires a false alarm.
-     */
-
-    basePtr = ckalloc(bytesToAlloc);
-
-    prevPtr = NULL;
-    objPtr = (Tcl_Obj *) basePtr;
-    for (i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
-	objPtr->internalRep.otherValuePtr = prevPtr;
-	prevPtr = objPtr;
-	objPtr++;
-    }
-    tclFreeObjList = prevPtr;
-}
-#undef OBJS_TO_ALLOC_EACH_TIME
-
-/*
- *----------------------------------------------------------------------
- *
  * TclFreeObj --
  *
  *	This function frees the memory associated with the argument object.
@@ -1404,7 +1336,6 @@ TclFreeObj(
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = -1;
 
     if (!objPtr->typePtr || !objPtr->typePtr->freeIntRepProc) {
 	/*

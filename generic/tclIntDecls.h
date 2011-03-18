@@ -58,8 +58,7 @@
 /* Slot 0 is reserved */
 /* Slot 1 is reserved */
 /* Slot 2 is reserved */
-/* 3 */
-EXTERN void		TclAllocateFreeObjects(void);
+/* Slot 3 is reserved */
 /* Slot 4 is reserved */
 /* 5 */
 EXTERN int		TclCleanupChildren(Tcl_Interp *interp, int numPids,
@@ -506,10 +505,8 @@ EXTERN Tcl_Obj *	TclGetObjNameOfExecutable(void);
 /* 214 */
 EXTERN void		TclSetObjNameOfExecutable(Tcl_Obj *name,
 				Tcl_Encoding encoding);
-/* 215 */
-EXTERN void *		TclStackAlloc(Tcl_Interp *interp, int numBytes);
-/* 216 */
-EXTERN void		TclStackFree(Tcl_Interp *interp, void *freePtr);
+/* Slot 215 is reserved */
+/* Slot 216 is reserved */
 /* 217 */
 EXTERN int		TclPushStackFrame(Tcl_Interp *interp,
 				Tcl_CallFrame **framePtrPtr,
@@ -609,7 +606,7 @@ typedef struct TclIntStubs {
     void (*reserved0)(void);
     void (*reserved1)(void);
     void (*reserved2)(void);
-    void (*tclAllocateFreeObjects) (void); /* 3 */
+    void (*reserved3)(void);
     void (*reserved4)(void);
     int (*tclCleanupChildren) (Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
     void (*tclCleanupCommand) (Command *cmdPtr); /* 6 */
@@ -821,8 +818,8 @@ typedef struct TclIntStubs {
     void (*tclpFindExecutable) (const char *argv0); /* 212 */
     Tcl_Obj * (*tclGetObjNameOfExecutable) (void); /* 213 */
     void (*tclSetObjNameOfExecutable) (Tcl_Obj *name, Tcl_Encoding encoding); /* 214 */
-    void * (*tclStackAlloc) (Tcl_Interp *interp, int numBytes); /* 215 */
-    void (*tclStackFree) (Tcl_Interp *interp, void *freePtr); /* 216 */
+    void (*reserved215)(void);
+    void (*reserved216)(void);
     int (*tclPushStackFrame) (Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
     void (*tclPopStackFrame) (Tcl_Interp *interp); /* 218 */
     void (*reserved219)(void);
@@ -876,8 +873,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 0 is reserved */
 /* Slot 1 is reserved */
 /* Slot 2 is reserved */
-#define TclAllocateFreeObjects \
-	(tclIntStubsPtr->tclAllocateFreeObjects) /* 3 */
+/* Slot 3 is reserved */
 /* Slot 4 is reserved */
 #define TclCleanupChildren \
 	(tclIntStubsPtr->tclCleanupChildren) /* 5 */
@@ -1216,10 +1212,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetObjNameOfExecutable) /* 213 */
 #define TclSetObjNameOfExecutable \
 	(tclIntStubsPtr->tclSetObjNameOfExecutable) /* 214 */
-#define TclStackAlloc \
-	(tclIntStubsPtr->tclStackAlloc) /* 215 */
-#define TclStackFree \
-	(tclIntStubsPtr->tclStackFree) /* 216 */
+/* Slot 215 is reserved */
+/* Slot 216 is reserved */
 #define TclPushStackFrame \
 	(tclIntStubsPtr->tclPushStackFrame) /* 217 */
 #define TclPopStackFrame \

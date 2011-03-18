@@ -104,7 +104,7 @@ TclOODeleteContext(
     register Object *oPtr = contextPtr->oPtr;
 
     TclOODeleteChain(contextPtr->callPtr);
-    TclStackFree(oPtr->fPtr->interp, contextPtr);
+    ckfree(contextPtr);
     DelRef(oPtr);
 }
 
@@ -1087,7 +1087,7 @@ TclOOGetCallContext(
     }
 
   returnContext:
-    contextPtr = TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
+    contextPtr = ckalloc(sizeof(CallContext));
     contextPtr->oPtr = oPtr;
     AddRef(oPtr);
     contextPtr->callPtr = callPtr;
