@@ -38,6 +38,10 @@ What is mig-alloc-reform?
 
 
 ** PERFORMANCE NOTES **
+   * do enable HAVE_FAST_TSD on threaded build where available! Without
+     that it is probably slower than before. Note that __thread is not
+     available on macosx, but the "slow" version should be quite fast there
+     (or so they say)
    * not measured, but: purify, native and zippy builds should be just as
      fast as before. The obj-alloc macros have been removed while
      developing. It is not certain that they provide a speedup, this will
