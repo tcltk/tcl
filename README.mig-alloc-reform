@@ -48,7 +48,7 @@ What is mig-alloc-reform?
      be measured and acted accordingly 
    * multi build should be a only a tad slower, may even be suitable as
      default build on all platforms 
-
+   * zippy stats not enabled by default, -DZIPPY_STATS switches them on
 
 ** TO DO LIST **
    * DEFINITELY
