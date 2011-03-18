@@ -340,7 +340,7 @@ UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixTime.o tclUnixInit.o tclUnixThrd.o \
 	tclUnixCompat.o
 
-NOTIFY_OBJS = tclUnixNotfy.o
+NOTIFY_OBJS = @NOTIFIER_IMPL@
 
 MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
 
@@ -553,7 +553,7 @@ UNIX_SRCS = \
 	$(UNIX_DIR)/tclUnixCompat.c
 
 NOTIFY_SRCS = \
-	$(UNIX_DIR)/tclUnixNotfy.c
+	$(UNIX_DIR)/tclUnixNotfy.c $(UNIX_DIR)/tclUnixPoll.c
 
 DL_SRCS = \
 	$(UNIX_DIR)/tclLoadAix.c \
@@ -1507,6 +1507,9 @@ tclUnixNotfy.o: $(UNIX_DIR)/tclUnixNotfy.c
 
 tclUnixPipe.o: $(UNIX_DIR)/tclUnixPipe.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixPipe.c
+
+tclUnixPoll.o: $(UNIX_DIR)/tclUnixPoll.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixPoll.c
 
 tclUnixSock.o: $(UNIX_DIR)/tclUnixSock.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixSock.c

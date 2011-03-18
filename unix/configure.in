@@ -269,6 +269,11 @@ SC_SERIAL_PORT
 #	special flag.
 #--------------------------------------------------------------------
 
+NOTIFIER_IMPL=tclUnixNotfy.o
+AC_ARG_ENABLE(poll,[AS_HELP_STRING([--enable-poll],
+	[use poll() system call for notifier instead of select()])], [
+    NOTIFIER_IMPL=tclUnixPoll.o])
+
 AC_CACHE_CHECK([for fd_set in sys/types], tcl_cv_type_fd_set, [
     AC_TRY_COMPILE([#include <sys/types.h>],[fd_set readMask, writeMask;],
 	tcl_cv_type_fd_set=yes, tcl_cv_type_fd_set=no)])
@@ -950,6 +955,8 @@ AC_SUBST(EXTRA_TCLSH_LIBS)
 
 AC_SUBST(DLTEST_LD)
 AC_SUBST(DLTEST_SUFFIX)
+
+AC_SUBST(NOTIFIER_IMPL)
 
 dnl	Disable the automake-friendly normalization of LIBOBJS
 dnl	performed by autoconf 2.53 and later.  It's not correct for us.
