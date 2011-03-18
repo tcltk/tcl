@@ -67,13 +67,23 @@ const Tcl_ObjType tclListType = {
  *----------------------------------------------------------------------
  */
 
+#define Elems2Size(n)					\
+    ((n > 1)						\
+	    ? (sizeof(List) + (n-1)*sizeof(Tcl_Obj *))	\
+	    : (sizeof(List)))
+#define Size2Elems(s)							\
+    ((s > sizeof(List) + sizeof(Tcl_Obj *) -1)				\
+	    ? (s - sizeof(List) + sizeof(Tcl_Obj *))/sizeof(Tcl_Obj *)	\
+	    : 1)
+
 static List *
 NewListIntRep(
     int objc,
     Tcl_Obj *const objv[])
 {
     List *listRepPtr;
-
+    unsigned int allocSize;
+    
     if (objc <= 0) {
 	return NULL;
     }
@@ -89,14 +99,17 @@ NewListIntRep(
 	return NULL;
     }
 
-    listRepPtr = attemptckalloc(sizeof(List) + ((objc-1) * sizeof(Tcl_Obj*)));
+    listRepPtr = attemptckalloc(Elems2Size(objc));
     if (listRepPtr == NULL) {
 	return NULL;
     }
-
+    allocSize = TclAllocMaximize(listRepPtr);
+    
     listRepPtr->canonicalFlag = 0;
     listRepPtr->refCount = 0;
-    listRepPtr->maxElemCount = objc;
+    listRepPtr->maxElemCount = (allocSize == UINT_MAX)
+	? objc
+	: Size2Elems(allocSize);
 
     if (objv) {
 	Tcl_Obj **elemPtrs;
@@ -576,7 +589,7 @@ Tcl_ListObjAppendElement(
 
     if (numRequired > listRepPtr->maxElemCount){
 	newMax = 2 * numRequired;
-	newSize = sizeof(List) + ((newMax-1) * sizeof(Tcl_Obj *));
+	newSize = Elems2Size(newMax);
     } else {
 	newMax = listRepPtr->maxElemCount;
 	newSize = 0;
@@ -601,7 +614,10 @@ Tcl_ListObjAppendElement(
 	oldListRepPtr->refCount--;
     } else if (newSize) {
 	listRepPtr = ckrealloc(listRepPtr, newSize);
-	listRepPtr->maxElemCount = newMax;
+	newSize = TclAllocMaximize(listRepPtr);
+	listRepPtr->maxElemCount = (newSize == UINT_MAX)
+	    ? newMax
+	    : Size2Elems(newSize);
     }
     listPtr->internalRep.twoPtrValue.ptr1 = listRepPtr;
 
