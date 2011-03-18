@@ -199,14 +199,12 @@ EXTERN int		TclObjInvoke(Tcl_Interp *interp, int objc,
 /* Slot 66 is reserved */
 /* Slot 67 is reserved */
 /* Slot 68 is reserved */
-/* 69 */
-EXTERN char *		TclpAlloc(unsigned int size);
+/* Slot 69 is reserved */
 /* Slot 70 is reserved */
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
 /* Slot 73 is reserved */
-/* 74 */
-EXTERN void		TclpFree(char *ptr);
+/* Slot 74 is reserved */
 /* 75 */
 EXTERN unsigned long	TclpGetClicks(void);
 /* 76 */
@@ -217,8 +215,7 @@ EXTERN void		TclpGetTime(Tcl_Time *time);
 EXTERN int		TclpGetTimeZone(unsigned long time);
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
-/* 81 */
-EXTERN char *		TclpRealloc(char *ptr, unsigned int size);
+/* Slot 81 is reserved */
 /* Slot 82 is reserved */
 /* Slot 83 is reserved */
 /* Slot 84 is reserved */
@@ -672,19 +669,19 @@ typedef struct TclIntStubs {
     void (*reserved66)(void);
     void (*reserved67)(void);
     void (*reserved68)(void);
-    char * (*tclpAlloc) (unsigned int size); /* 69 */
+    void (*reserved69)(void);
     void (*reserved70)(void);
     void (*reserved71)(void);
     void (*reserved72)(void);
     void (*reserved73)(void);
-    void (*tclpFree) (char *ptr); /* 74 */
+    void (*reserved74)(void);
     unsigned long (*tclpGetClicks) (void); /* 75 */
     unsigned long (*tclpGetSeconds) (void); /* 76 */
     void (*tclpGetTime) (Tcl_Time *time); /* 77 */
     int (*tclpGetTimeZone) (unsigned long time); /* 78 */
     void (*reserved79)(void);
     void (*reserved80)(void);
-    char * (*tclpRealloc) (char *ptr, unsigned int size); /* 81 */
+    void (*reserved81)(void);
     void (*reserved82)(void);
     void (*reserved83)(void);
     void (*reserved84)(void);
@@ -977,14 +974,12 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 66 is reserved */
 /* Slot 67 is reserved */
 /* Slot 68 is reserved */
-#define TclpAlloc \
-	(tclIntStubsPtr->tclpAlloc) /* 69 */
+/* Slot 69 is reserved */
 /* Slot 70 is reserved */
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
 /* Slot 73 is reserved */
-#define TclpFree \
-	(tclIntStubsPtr->tclpFree) /* 74 */
+/* Slot 74 is reserved */
 #define TclpGetClicks \
 	(tclIntStubsPtr->tclpGetClicks) /* 75 */
 #define TclpGetSeconds \
@@ -995,8 +990,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclpGetTimeZone) /* 78 */
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
-#define TclpRealloc \
-	(tclIntStubsPtr->tclpRealloc) /* 81 */
+/* Slot 81 is reserved */
 /* Slot 82 is reserved */
 /* Slot 83 is reserved */
 /* Slot 84 is reserved */
