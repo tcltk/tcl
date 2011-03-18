@@ -9,8 +9,10 @@ What is mig-alloc-reform?
      e. unify all allocator options in a single file tclAlloc.c
      d. exploit fast TSD via __thread where available (autoconferry still
         missing, enable by hand with -DHAVE_FAST_TSD)
-     f. small improvement in zippy's memory usage: try to split blocks in
-        the shared cache before allocating new ones from the system
+     f. small improvements in zippy's memory usage: 
+         . try to split blocks in the shared cache before allocating new
+           ones from the system 
+         . use the same bucket for Tcl_Objs and smallest allocs
 
   2. New allocator options
      a. purify build (but stop using them, see below). This is suitable to
