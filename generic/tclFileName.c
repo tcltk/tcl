@@ -1422,7 +1422,7 @@ Tcl_GlobObjCmd(
 	if (length <= 0) {
 	    goto skipTypes;
 	}
-	globTypes = TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
+	globTypes = ckalloc(sizeof(Tcl_GlobTypeData));
 	globTypes->type = 0;
 	globTypes->perm = 0;
 	globTypes->macType = NULL;
@@ -1638,7 +1638,7 @@ Tcl_GlobObjCmd(
 	if (globTypes->macCreator != NULL) {
 	    Tcl_DecrRefCount(globTypes->macCreator);
 	}
-	TclStackFree(interp, globTypes);
+	ckfree(globTypes);
     }
     return result;
 }

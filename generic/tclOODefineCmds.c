@@ -455,7 +455,7 @@ TclOOUnknownDefinition(
 	 * Got one match, and only one match!
 	 */
 
-	Tcl_Obj **newObjv = TclStackAlloc(interp, sizeof(Tcl_Obj*)*(objc-1));
+	Tcl_Obj **newObjv = ckalloc(sizeof(Tcl_Obj*)*(objc-1));
 	int result;
 
 	newObjv[0] = Tcl_NewStringObj(matchedStr, -1);
@@ -465,7 +465,7 @@ TclOOUnknownDefinition(
 	}
 	result = Tcl_EvalObjv(interp, objc-1, newObjv, 0);
 	Tcl_DecrRefCount(newObjv[0]);
-	TclStackFree(interp, newObjv);
+	ckfree(newObjv);
 	return result;
     }
 
@@ -1546,7 +1546,7 @@ TclOODefineMixinObjCmd(
 	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
 	return TCL_ERROR;
     }
-    mixins = TclStackAlloc(interp, sizeof(Class *) * (objc-1));
+    mixins = ckalloc(sizeof(Class *) * (objc-1));
 
     for (i=1 ; i<objc ; i++) {
 	Class *clsPtr = GetClassInOuterContext(interp, objv[i],
@@ -1568,11 +1568,11 @@ TclOODefineMixinObjCmd(
 	TclOOClassSetMixins(interp, oPtr->classPtr, objc-1, mixins);
     }
 
-    TclStackFree(interp, mixins);
+    ckfree(mixins);
     return TCL_OK;
 
   freeAndError:
-    TclStackFree(interp, mixins);
+    ckfree(mixins);
     return TCL_ERROR;
 }
 

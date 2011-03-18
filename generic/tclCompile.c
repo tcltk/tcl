@@ -1202,7 +1202,7 @@ TclInitCompileEnv(
 	 * ...) which may make change the type as well.
 	 */
 
-	CmdFrame *ctxPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	CmdFrame *ctxPtr = ckalloc(sizeof(CmdFrame));
 	int pc = 0;
 
 	*ctxPtr = *invoker;
@@ -1255,7 +1255,7 @@ TclInitCompileEnv(
 	    }
 	}
 
-	TclStackFree(interp, ctxPtr);
+	ckfree(ctxPtr);
     }
 
     envPtr->extCmdMapPtr->start = envPtr->line;
@@ -1461,7 +1461,7 @@ TclCompileScript(
     /* TIP #280 */
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     int *wlines, wlineat, cmdLine, *clNext;
-    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr = ckalloc(sizeof(Tcl_Parse));
 
     Tcl_DStringInit(&ds);
 
@@ -1877,7 +1877,7 @@ TclCompileScript(
     }
 
     envPtr->numSrcBytes = p - script;
-    TclStackFree(interp, parsePtr);
+    ckfree(parsePtr);
     Tcl_DStringFree(&ds);
 }
 

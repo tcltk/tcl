@@ -465,7 +465,7 @@ TclPushStackFrame(
 				 * treated as references to namespace
 				 * variables. */
 {
-    *framePtrPtr = TclStackAlloc(interp, sizeof(CallFrame));
+    *framePtrPtr = ckalloc(sizeof(CallFrame));
     return Tcl_PushCallFrame(interp, *framePtrPtr, namespacePtr,
 	    isProcCallFrame);
 }
@@ -477,7 +477,7 @@ TclPopStackFrame(
     CallFrame *freePtr = ((Interp *) interp)->framePtr;
 
     Tcl_PopCallFrame(interp);
-    TclStackFree(interp, freePtr);
+    ckfree(freePtr);
 }
 
 /*
@@ -2632,8 +2632,7 @@ TclResetShadowedCmdRefs(
     int found, i;
     int trailFront = -1;
     int trailSize = 5;		/* Formerly NUM_TRAIL_ELEMS. */
-    Namespace **trailPtr = TclStackAlloc(interp,
-	    trailSize * sizeof(Namespace *));
+    Namespace **trailPtr = ckalloc(trailSize * sizeof(Namespace *));
 
     /*
      * Start at the namespace containing the new command, and work up through
@@ -2722,13 +2721,12 @@ TclResetShadowedCmdRefs(
 	if (trailFront == trailSize) {
 	    int newSize = 2 * trailSize;
 
-	    trailPtr = TclStackRealloc(interp, trailPtr,
-		    newSize * sizeof(Namespace *));
+	    trailPtr = ckrealloc(trailPtr, newSize * sizeof(Namespace *));
 	    trailSize = newSize;
 	}
 	trailPtr[trailFront] = nsPtr;
     }
-    TclStackFree(interp, trailPtr);
+    ckfree(trailPtr);
 }
 
 /*
@@ -3970,8 +3968,7 @@ NamespacePathCmd(
 	goto badNamespace;
     }
     if (nsObjc != 0) {
-	namespaceList = TclStackAlloc(interp,
-		sizeof(Tcl_Namespace *) * nsObjc);
+	namespaceList = ckalloc(sizeof(Tcl_Namespace *) * nsObjc);
 
 	for (i=0 ; i<nsObjc ; i++) {
 	    if (TclGetNamespaceFromObj(interp, nsObjv[i],
@@ -3990,7 +3987,7 @@ NamespacePathCmd(
     result = TCL_OK;
   badNamespace:
     if (namespaceList != NULL) {
-	TclStackFree(interp, namespaceList);
+	ckfree(namespaceList);
     }
     return result;
 }
