@@ -2425,14 +2425,14 @@ DictForNRCmd(
 		TCL_STATIC);
 	return TCL_ERROR;
     }
-    searchPtr = TclStackAlloc(interp, sizeof(Tcl_DictSearch));
+    searchPtr = ckalloc(sizeof(Tcl_DictSearch));
     if (Tcl_DictObjFirst(interp, objv[2], searchPtr, &keyObj, &valueObj,
 	    &done) != TCL_OK) {
-	TclStackFree(interp, searchPtr);
+	ckfree(searchPtr);
 	return TCL_ERROR;
     }
     if (done) {
-	TclStackFree(interp, searchPtr);
+	ckfree(searchPtr);
 	return TCL_OK;
     }
     TclListObjGetElements(NULL, objv[1], &varc, &varv);
@@ -2488,7 +2488,7 @@ DictForNRCmd(
     TclDecrRefCount(valueVarObj);
     TclDecrRefCount(scriptObj);
     Tcl_DictObjDone(searchPtr);
-    TclStackFree(interp, searchPtr);
+    ckfree(searchPtr);
     return TCL_ERROR;
 }
 
@@ -2574,7 +2574,7 @@ DictForLoopCallback(
     TclDecrRefCount(valueVarObj);
     TclDecrRefCount(scriptObj);
     Tcl_DictObjDone(searchPtr);
-    TclStackFree(interp, searchPtr);
+    ckfree(searchPtr);
     return result;
 }
 
