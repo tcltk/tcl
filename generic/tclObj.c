@@ -27,16 +27,6 @@ static int typeTableInitialized = 0;	/* 0 means not yet initialized. */
 TCL_DECLARE_MUTEX(tableMutex)
 
 /*
- * The object allocator is single threaded. This mutex is referenced by the
- * TclNewObj macro, however, so must be visible.
- */
-
-#ifdef TCL_THREADS
-MODULE_SCOPE Tcl_Mutex tclObjMutex;
-Tcl_Mutex tclObjMutex;
-#endif
-
-/*
  * Pointer to a heap-allocated string of length zero that the Tcl core uses as
  * the value of an empty string representation for an object. This value is
  * shared by all new objects allocated by Tcl_NewObj.
