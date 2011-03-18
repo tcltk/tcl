@@ -1032,9 +1032,7 @@ TclInitSubsystems(void)
 
 	    TclInitThreadStorage();     /* Creates master hash table for
 					 * thread local storage */
-#if USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */
-#endif
 #ifdef TCL_MEM_DEBUG
 	    TclInitDbCkalloc();		/* Process wide mutex init */
 #endif
@@ -1211,9 +1209,7 @@ Tcl_Finalize(void)
      * Close down the thread-specific object allocator.
      */
 
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-    TclFinalizeThreadAlloc();
-#endif
+    TclFinalizeAlloc();
 
     /*
      * We defer unloading of packages until very late to avoid memory access

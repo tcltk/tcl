@@ -728,11 +728,6 @@ Tcl_CreateInterp(void)
      * cache was already initialised by the call to alloc the interp struct.
      */
 
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-    iPtr->allocCache = TclpGetAllocCache();
-#else
-    iPtr->allocCache = NULL;
-#endif
     iPtr->pendingObjDataPtr = NULL;
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
     iPtr->deferredCallbacks = NULL;
@@ -2319,8 +2314,7 @@ TclInvokeStringCommand(
 {
     Command *cmdPtr = clientData;
     int i, result;
-    const char **argv =
-	    TclStackAlloc(interp, (unsigned)(objc + 1) * sizeof(char *));
+    const char **argv = ckalloc((unsigned)(objc + 1) * sizeof(char *));
 
     for (i = 0; i < objc; i++) {
 	argv[i] = Tcl_GetString(objv[i]);
@@ -2333,7 +2327,7 @@ TclInvokeStringCommand(
 
     result = cmdPtr->proc(cmdPtr->clientData, interp, objc, argv);
 
-    TclStackFree(interp, (void *) argv);
+    ckfree((void *) argv);
     return result;
 }
 
@@ -2368,8 +2362,7 @@ TclInvokeObjectCommand(
     Command *cmdPtr = clientData;
     Tcl_Obj *objPtr;
     int i, length, result;
-    Tcl_Obj **objv =
-	    TclStackAlloc(interp, (unsigned)(argc * sizeof(Tcl_Obj *)));
+    Tcl_Obj **objv = ckalloc((unsigned)(argc * sizeof(Tcl_Obj *)));
 
     for (i = 0; i < argc; i++) {
 	length = strlen(argv[i]);
@@ -2405,7 +2398,7 @@ TclInvokeObjectCommand(
 	objPtr = objv[i];
 	Tcl_DecrRefCount(objPtr);
     }
-    TclStackFree(interp, objv);
+    ckfree(objv);
     return result;
 }
 
@@ -4563,7 +4556,7 @@ TEOV_NotFound(
     Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
 	    &handlerObjc, &handlerObjv);
     newObjc = objc + handlerObjc;
-    newObjv = TclStackAlloc(interp, (int) sizeof(Tcl_Obj *) * newObjc);
+    newObjv = ckalloc((int) sizeof(Tcl_Obj *) * newObjc);
 
     /*
      * Copy command prefix from unknown handler and add on the real command's
@@ -4602,7 +4595,7 @@ TEOV_NotFound(
 	for (i = 0; i < handlerObjc; ++i) {
 	    Tcl_DecrRefCount(newObjv[i]);
 	}
-	TclStackFree(interp, newObjv);
+	ckfree(newObjv);
 	return TCL_ERROR;
     }
 
@@ -4640,7 +4633,7 @@ TEOV_NotFoundCallback(
     for (i = 0; i < objc; ++i) {
 	Tcl_DecrRefCount(objv[i]);
     }
-    TclStackFree(interp, objv);
+    ckfree(objv);
 
     return result;
 }
@@ -4937,12 +4930,11 @@ TclEvalEx(
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
 				 * properly if an error occurs. */
-    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
-    CmdFrame *eeFramePtr = TclStackAlloc(interp, sizeof(CmdFrame));
-    Tcl_Obj **stackObjArray =
-	    TclStackAlloc(interp, minObjs * sizeof(Tcl_Obj *));
-    int *expandStack = TclStackAlloc(interp, minObjs * sizeof(int));
-    int *linesStack = TclStackAlloc(interp, minObjs * sizeof(int));
+    Tcl_Parse *parsePtr = ckalloc(sizeof(Tcl_Parse));
+    CmdFrame *eeFramePtr = ckalloc(sizeof(CmdFrame));
+    Tcl_Obj **stackObjArray = ckalloc(minObjs * sizeof(Tcl_Obj *));
+    int *expandStack = ckalloc(minObjs * sizeof(int));
+    int *linesStack = ckalloc(minObjs * sizeof(int));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
     int *clNext = NULL;		/* Pointer for the tracking of invisible
@@ -5338,11 +5330,11 @@ TclEvalEx(
     if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
 	Tcl_DecrRefCount(eeFramePtr->data.eval.path);
     }
-    TclStackFree(interp, linesStack);
-    TclStackFree(interp, expandStack);
-    TclStackFree(interp, stackObjArray);
-    TclStackFree(interp, eeFramePtr);
-    TclStackFree(interp, parsePtr);
+    ckfree(linesStack);
+    ckfree(expandStack);
+    ckfree(stackObjArray);
+    ckfree(eeFramePtr);
+    ckfree(parsePtr);
 
     return code;
 }
@@ -5980,7 +5972,7 @@ TclNREvalObjEx(
 	     * should be pushed, as needed by alias and ensemble redirections.
 	     */
 
-	    eoFramePtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	    eoFramePtr = ckalloc(sizeof(CmdFrame));
 	    eoFramePtr->nline = 0;
 	    eoFramePtr->line = NULL;
 
@@ -6098,7 +6090,7 @@ TclNREvalObjEx(
 	     */
 
 	    int pc = 0;
-	    CmdFrame *ctxPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	    CmdFrame *ctxPtr = ckalloc(sizeof(CmdFrame));
 
 	    *ctxPtr = *invoker;
 	    if (invoker->type == TCL_LOCATION_BC) {
@@ -6139,7 +6131,7 @@ TclNREvalObjEx(
 
 		Tcl_DecrRefCount(ctxPtr->data.eval.path);
 	    }
-	    TclStackFree(interp, ctxPtr);
+	    ckfree(ctxPtr);
 	}
 
 	/*
@@ -6218,7 +6210,7 @@ TEOEx_ListCallback(
 
     if (eoFramePtr) {
 	iPtr->cmdFramePtr = eoFramePtr->nextPtr;
-	TclStackFree(interp, eoFramePtr);
+	ckfree(eoFramePtr);
     }
     TclDecrRefCount(listPtr);
 

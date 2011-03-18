@@ -1169,7 +1169,7 @@ Tcl_CreateAlias(
     int i;
     int result;
 
-    objv = TclStackAlloc(slaveInterp, (unsigned) sizeof(Tcl_Obj *) * argc);
+    objv = ckalloc((unsigned) sizeof(Tcl_Obj *) * argc);
     for (i = 0; i < argc; i++) {
 	objv[i] = Tcl_NewStringObj(argv[i], -1);
 	Tcl_IncrRefCount(objv[i]);
@@ -1187,7 +1187,7 @@ Tcl_CreateAlias(
     for (i = 0; i < argc; i++) {
 	Tcl_DecrRefCount(objv[i]);
     }
-    TclStackFree(slaveInterp, objv);
+    ckfree(objv);
     Tcl_DecrRefCount(targetObjPtr);
     Tcl_DecrRefCount(slaveObjPtr);
 
@@ -1863,7 +1863,7 @@ AliasObjCmd(
     if (cmdc <= ALIAS_CMDV_PREALLOC) {
 	cmdv = cmdArr;
     } else {
-	cmdv = TclStackAlloc(interp, cmdc * sizeof(Tcl_Obj *));
+	cmdv = ckalloc(cmdc * sizeof(Tcl_Obj *));
     }
 
     prefv = &aliasPtr->objPtr;
@@ -1930,7 +1930,7 @@ AliasObjCmd(
 	Tcl_DecrRefCount(cmdv[i]);
     }
     if (cmdv != cmdArr) {
-	TclStackFree(interp, cmdv);
+	ckfree(cmdv);
     }
     return result;
 #undef ALIAS_CMDV_PREALLOC

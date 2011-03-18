@@ -57,7 +57,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 0 */
     0, /* 1 */
     0, /* 2 */
-    TclAllocateFreeObjects, /* 3 */
+    0, /* 3 */
     0, /* 4 */
     TclCleanupChildren, /* 5 */
     TclCleanupCommand, /* 6 */
@@ -269,8 +269,8 @@ static const TclIntStubs tclIntStubs = {
     TclpFindExecutable, /* 212 */
     TclGetObjNameOfExecutable, /* 213 */
     TclSetObjNameOfExecutable, /* 214 */
-    TclStackAlloc, /* 215 */
-    TclStackFree, /* 216 */
+    0, /* 215 */
+    0, /* 216 */
     TclPushStackFrame, /* 217 */
     TclPopStackFrame, /* 218 */
     0, /* 219 */
