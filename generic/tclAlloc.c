@@ -877,7 +877,14 @@ TclpRealloc(
     blockPtr->reqSize = newSize;
 #if RCHECK
     ((unsigned char *)(ptr))[newSize] = MAGIC;
-#endif    
+#endif
+#ifdef ZIPPY_STATS
+    {
+	Cache *cachePtr;
+	GETCACHE(cachePtr);
+	cachePtr->buckets[bucket].totalAssigned += (newSize - oldSize);
+    }
+#endif
     return newSize;
 }
 
