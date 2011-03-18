@@ -3815,101 +3815,6 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #endif /* TCL_MEM_DEBUG */
 
 /*
- * Macros that drive the allocator behaviour
- */
-
-#if defined(TCL_THREADS)
-/*
- * The TCL_THREADS mode is like the regular mode but allocates Tcl_Obj's from
- * per-thread caches.
- */
-MODULE_SCOPE void	TclpFreeAllocCache(void *);
-MODULE_SCOPE void *	TclpGetAllocCache(void);
-MODULE_SCOPE void	TclpSetAllocCache(void *);
-MODULE_SCOPE void	TclFreeAllocCache(void *);
-MODULE_SCOPE void	TclpFreeAllocMutex(Tcl_Mutex *mutex);
-MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
-#endif
-
-/*
- * List of valid allocators. Have to respect the following convention:
- *  - allocators that shunt TclpAlloc to malloc are below aNONE
- *  - allocators that use zippy are above aNONE
- */
-
-#define aNATIVE    0
-#define aPURIFY    1
-#define aNONE      2 
-#define aZIPPY     3
-#define aMULTI     4
-
-#if defined(TCL_ALLOCATOR) && ((TCL_ALLOCATOR < 0) || (TCL_ALLOCATOR > aMULTI))
-#undef TCL_ALLOCATOR
-#endif
-
-#ifdef PURIFY
-#  undef TCL_ALLOCATOR
-#  define TCL_ALLOCATOR aPURIFY
-#endif
-
-#if !defined(TCL_ALLOCATOR)
-#  if defined(USE_THREAD_ALLOC) || defined(USE_TCLALLOC)
-#    define TCL_ALLOCATOR aZIPPY
-#  else
-#    define TCL_ALLOCATOR aNATIVE
-#  endif
-#endif
-
-#if TCL_ALLOCATOR < aNONE /* native or purify */
-#    define TclpAlloc(size) ckalloc(size)
-#    define TclpRealloc(ptr, size) ckrealloc((ptr),(size))
-#    define TclpFree(size) ckfree(size)
-#    define TclAllocMaximize(ptr) UINT_MAX
-#else
-   MODULE_SCOPE char * TclpAlloc(unsigned int size);
-   MODULE_SCOPE char * TclpRealloc(char * ptr, unsigned int size);
-   MODULE_SCOPE void   TclpFree(char * ptr);
-   MODULE_SCOPE unsigned int TclAllocMaximize(void *ptr);
-#endif
-
-#if TCL_ALLOCATOR == aPURIFY
-#  define TclSmallAlloc() ckalloc(sizeof(Tcl_Obj))
-#  define TclSmallFree(ptr) ckfree(ptr)
-#  define TclInitAlloc()
-#  define TclFinalizeAlloc()
-#else
-   MODULE_SCOPE void * TclSmallAlloc();
-   MODULE_SCOPE void   TclSmallFree(void *ptr);
-   MODULE_SCOPE void   TclInitAlloc(void);
-   MODULE_SCOPE void   TclFinalizeAlloc(void);
-#endif
-
-#define TclCkSmallAlloc(nbytes, memPtr)					\
-    do {								\
-	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
-	memPtr = TclSmallAlloc();					\
-    } while (0)
-
-/*
- * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
- */
-
-#if (TCL_ALLOCATOR == aPURIFY) && defined(__clang__)
-#if __has_feature(attribute_analyzer_noreturn) && \
-       !defined(Tcl_Panic) && defined(Tcl_Panic_TCL_DECLARED)
-void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
-#endif
-#if !defined(CLANG_ASSERT)
-#include <assert.h>
-#define CLANG_ASSERT(x) assert(x)
-#endif
-#elif !defined(CLANG_ASSERT)
- #define CLANG_ASSERT(x)
-#endif /* PURIFY && __clang__ */
-
-
-
-/*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
  * copy of the "len" bytes starting at "bytePtr". This code works even if the
@@ -4505,6 +4410,102 @@ typedef struct NRE_callback {
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
 #include "tclTomMathDecls.h"
+
+/*
+ * Macros that drive the allocator behaviour
+ * WARNING: these have to come AFTER tclIntDecls.h, as some macros may
+ * interfere with those declarations.
+ */
+
+#if defined(TCL_THREADS)
+/*
+ * The TCL_THREADS mode is like the regular mode but allocates Tcl_Obj's from
+ * per-thread caches.
+ */
+MODULE_SCOPE void	TclpFreeAllocCache(void *);
+MODULE_SCOPE void *	TclpGetAllocCache(void);
+MODULE_SCOPE void	TclpSetAllocCache(void *);
+MODULE_SCOPE void	TclFreeAllocCache(void *);
+MODULE_SCOPE void	TclpFreeAllocMutex(Tcl_Mutex *mutex);
+MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
+#endif
+
+/*
+ * List of valid allocators. Have to respect the following convention:
+ *  - allocators that shunt TclpAlloc to malloc are below aNONE
+ *  - allocators that use zippy are above aNONE
+ */
+
+#define aNATIVE    0
+#define aPURIFY    1
+#define aNONE      2 
+#define aZIPPY     3
+#define aMULTI     4
+
+#if defined(TCL_ALLOCATOR) && ((TCL_ALLOCATOR < 0) || (TCL_ALLOCATOR > aMULTI))
+#undef TCL_ALLOCATOR
+#endif
+
+#ifdef PURIFY
+#  undef TCL_ALLOCATOR
+#  define TCL_ALLOCATOR aPURIFY
+#endif
+
+#if !defined(TCL_ALLOCATOR)
+#  if defined(USE_THREAD_ALLOC) || defined(USE_TCLALLOC)
+#    define TCL_ALLOCATOR aZIPPY
+#  else
+#    define TCL_ALLOCATOR aNATIVE
+#  endif
+#endif
+
+#if TCL_ALLOCATOR < aNONE /* native or purify */
+#    define TclpAlloc(size) ckalloc(size)
+#    define TclpRealloc(ptr, size) ckrealloc((ptr),(size))
+#    define TclpFree(size) ckfree(size)
+#    define TclAllocMaximize(ptr) UINT_MAX
+#else
+   MODULE_SCOPE char * TclpAlloc(unsigned int size);
+   MODULE_SCOPE char * TclpRealloc(char * ptr, unsigned int size);
+   MODULE_SCOPE void   TclpFree(char * ptr);
+   MODULE_SCOPE unsigned int TclAllocMaximize(void *ptr);
+#endif
+
+#if TCL_ALLOCATOR == aPURIFY
+#  define TclSmallAlloc() ckalloc(sizeof(Tcl_Obj))
+#  define TclSmallFree(ptr) ckfree(ptr)
+#  define TclInitAlloc()
+#  define TclFinalizeAlloc()
+#else
+   MODULE_SCOPE void * TclSmallAlloc();
+   MODULE_SCOPE void   TclSmallFree(void *ptr);
+   MODULE_SCOPE void   TclInitAlloc(void);
+   MODULE_SCOPE void   TclFinalizeAlloc(void);
+#endif
+
+#define TclCkSmallAlloc(nbytes, memPtr)					\
+    do {								\
+	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
+	memPtr = TclSmallAlloc();					\
+    } while (0)
+
+/*
+ * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
+ */
+
+#if (TCL_ALLOCATOR == aPURIFY) && defined(__clang__)
+#if __has_feature(attribute_analyzer_noreturn) && \
+       !defined(Tcl_Panic) && defined(Tcl_Panic_TCL_DECLARED)
+void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
+#endif
+#if !defined(CLANG_ASSERT)
+#include <assert.h>
+#define CLANG_ASSERT(x) assert(x)
+#endif
+#elif !defined(CLANG_ASSERT)
+ #define CLANG_ASSERT(x)
+#endif /* PURIFY && __clang__ */
+
 
 #endif /* _TCLINT */
 
