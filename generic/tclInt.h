@@ -3861,9 +3861,9 @@ MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
 #endif
 
 #if TCL_ALLOCATOR < aNONE /* native or purify */
-#    define TclpAlloc(size) ckalloc(size)
-#    define TclpRealloc(ptr, size) ckrealloc((ptr),(size))
-#    define TclpFree(size) ckfree(size)
+#    define TclpAlloc(size) malloc(size)
+#    define TclpRealloc(ptr, size) realloc((ptr),(size))
+#    define TclpFree(size) free(size)
 #    define TclAllocMaximize(ptr) UINT_MAX
 #else
    MODULE_SCOPE char * TclpAlloc(unsigned int size);
