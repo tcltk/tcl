@@ -67,14 +67,11 @@ const Tcl_ObjType tclListType = {
  *----------------------------------------------------------------------
  */
 
-#define Elems2Size(n)					\
-    ((n > 1)						\
-	    ? (sizeof(List) + (n-1)*sizeof(Tcl_Obj *))	\
-	    : (sizeof(List)))
+#define Elems2Size(n)				\
+    (sizeof(List) - sizeof(Tcl_Obj *) + n*sizeof(Tcl_Obj *))
+
 #define Size2Elems(s)							\
-    ((s > sizeof(List) + sizeof(Tcl_Obj *) -1)				\
-	    ? (s - sizeof(List) + sizeof(Tcl_Obj *))/sizeof(Tcl_Obj *)	\
-	    : 1)
+    (s - (sizeof(List) - sizeof(Tcl_Obj *)))/sizeof(Tcl_Obj *)
 
 static List *
 NewListIntRep(
