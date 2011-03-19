@@ -686,15 +686,15 @@ TclpFree(
     Block *blockPtr;
     int bucket;
 
+    if (ptr == NULL) {
+	return;
+    }
+
     if (allocator < aNONE) {
 	return free((char *) ptr);
     }
 
     GETCACHE(cachePtr);
-
-    if (ptr == NULL) {
-	return;
-    }
 
     /*
      * Get the block back from the user pointer and call system free directly
