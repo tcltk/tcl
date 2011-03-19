@@ -1230,20 +1230,28 @@ GetBlocks(
 		cachePtr->buckets[n].firstPtr = blockPtr->nextBlock;
 		cachePtr->buckets[n].numFree--;
 		break;
-	    } else if (sharedPtr->buckets[n].numFree > 0){
-		LockBucket(cachePtr, n);
+	    }
+	}
+#if defined(TCL_THREADS)
+	if (blockPtr == NULL) {
+	    n = nBuckets;
+	    size = 0; /* lint */
+	    while (--n > bucket) {
 		if (sharedPtr->buckets[n].numFree > 0) {
-		    blockPtr = sharedPtr->buckets[n].firstPtr;
-		    sharedPtr->buckets[n].firstPtr = blockPtr->nextBlock;
-		    sharedPtr->buckets[n].numFree--;
+		    LockBucket(cachePtr, n);
+		    if (sharedPtr->buckets[n].numFree > 0) {
+			blockPtr = sharedPtr->buckets[n].firstPtr;
+			sharedPtr->buckets[n].firstPtr = blockPtr->nextBlock;
+			sharedPtr->buckets[n].numFree--;
+			UnlockBucket(cachePtr, n);
+			break;		
+		    }
 		    UnlockBucket(cachePtr, n);
-		    break;		
 		}
-		UnlockBucket(cachePtr, n);
 	    }
 	}
 #endif
-
+#endif
 	/*
 	 * Otherwise, allocate a big new block directly.
 	 */
