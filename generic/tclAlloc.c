@@ -387,7 +387,6 @@ Block2Ptr(
     blockPtr->reqSize = reqSize;
     ptr = (void *) (((char *)blockPtr) + OFFSET);
 #if RCHECK
-    TclPanic("RCHECK??");
     ((unsigned char *)(ptr))[reqSize] = MAGIC;
 #endif
     return (char *) ptr;
