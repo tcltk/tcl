@@ -387,6 +387,7 @@ Block2Ptr(
     blockPtr->reqSize = reqSize;
     ptr = (void *) (((char *)blockPtr) + OFFSET);
 #if RCHECK
+    TclPanic("RCHECK??");
     ((unsigned char *)(ptr))[reqSize] = MAGIC;
 #endif
     return (char *) ptr;
@@ -1224,8 +1225,8 @@ GetBlocks(
 	n = nBuckets;
 	size = 0; /* lint */
 	while (--n > bucket) {
-	    size = bucketInfo[n].blockSize;
 	    if (cachePtr->buckets[n].numFree > 0) {
+		size = bucketInfo[n].blockSize;
 		blockPtr = cachePtr->buckets[n].firstPtr;
 		cachePtr->buckets[n].firstPtr = blockPtr->nextBlock;
 		cachePtr->buckets[n].numFree--;
@@ -1238,6 +1239,7 @@ GetBlocks(
 	    size = 0; /* lint */
 	    while (--n > bucket) {
 		if (sharedPtr->buckets[n].numFree > 0) {
+		    size = bucketInfo[n].blockSize;
 		    LockBucket(cachePtr, n);
 		    if (sharedPtr->buckets[n].numFree > 0) {
 			blockPtr = sharedPtr->buckets[n].firstPtr;
