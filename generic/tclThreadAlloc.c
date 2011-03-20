@@ -145,6 +145,28 @@ static Tcl_Mutex *objLockPtr;
 static Cache sharedCache;
 static Cache *sharedPtr = &sharedCache;
 static Cache *firstCachePtr = &sharedCache;
+
+#if defined(HAVE_FAST_TSD)
+static __thread Cache *tcachePtr;
+static __thread int allocInitialized = 0;
+
+# define GETCACHE(cachePtr)			\
+    do {					\
+	if (!allocInitialized) {		\
+	    allocInitialized = 1;		\
+	    tcachePtr = GetCache();				\
+	}					\
+	(cachePtr) = tcachePtr;			\
+    } while (0)
+#else
+# define GETCACHE(cachePtr)			\
+    do {					\
+	(cachePtr) = TclpGetAllocCache();	\
+	if ((cachePtr) == NULL) {		\
+	    (cachePtr) = GetCache();		\
+	}					\
+    } while (0)
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -308,10 +330,7 @@ TclpAlloc(
     }
 #endif
 
-    cachePtr = TclpGetAllocCache();
-    if (cachePtr == NULL) {
-	cachePtr = GetCache();
-    }
+    GETCACHE(cachePtr);
 
     /*
      * Increment the requested size to include room for the Block structure.
@@ -378,10 +397,7 @@ TclpFree(
 	return;
     }
 
-    cachePtr = TclpGetAllocCache();
-    if (cachePtr == NULL) {
-	cachePtr = GetCache();
-    }
+    GETCACHE(cachePtr);
 
     /*
      * Get the block back from the user pointer and call system free directly
@@ -453,10 +469,7 @@ TclpRealloc(
     }
 #endif
 
-    cachePtr = TclpGetAllocCache();
-    if (cachePtr == NULL) {
-	cachePtr = GetCache();
-    }
+    GETCACHE(cachePtr);
 
     /*
      * If the block is not a system block and fits in place, simply return the
@@ -530,12 +543,10 @@ TclpRealloc(
 Tcl_Obj *
 TclThreadAllocObj(void)
 {
-    register Cache *cachePtr = TclpGetAllocCache();
+    register Cache *cachePtr;
     register Tcl_Obj *objPtr;
 
-    if (cachePtr == NULL) {
-	cachePtr = GetCache();
-    }
+    GETCACHE(cachePtr);
 
     /*
      * Get this thread's obj list structure and move or allocate new objs if
@@ -604,11 +615,9 @@ void
 TclThreadFreeObj(
     Tcl_Obj *objPtr)
 {
-    Cache *cachePtr = TclpGetAllocCache();
+    Cache *cachePtr;
 
-    if (cachePtr == NULL) {
-	cachePtr = GetCache();
-    }
+    GETCACHE(cachePtr);
 
     /*
      * Get this thread's list and push on the free Tcl_Obj.
