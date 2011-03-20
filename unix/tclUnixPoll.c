@@ -175,6 +175,7 @@ static Tcl_ThreadId notifierThread;
 static void		NotifierThreadProc(ClientData clientData);
 #endif /* TCL_THREADS */
 static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+static int		ComparePollFDStructures(const void *, const void *);
 
 /*
  *----------------------------------------------------------------------
@@ -465,7 +466,7 @@ Tcl_CreateFileHandler(
 	}
     }
     if (filePtr == NULL) {
-	filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
+	filePtr = ckalloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->readyMask = 0;
 	filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -490,14 +491,12 @@ Tcl_CreateFileHandler(
 	}
 
 	if (tsdPtr->pollInfo.fds == tsdPtr->pollInfo.defaultFds) {
-	    tsdPtr->pollInfo.fds = (struct pollfd *)
-		    ckalloc(sizeof(struct pollfd) * newSize);
+	    tsdPtr->pollInfo.fds = ckalloc(sizeof(struct pollfd) * newSize);
 	    memcpy(tsdPtr->pollInfo.fds, tsdPtr->pollInfo.defaultFds,
 		    sizeof(struct pollfd) * tsdPtr->pollInfo.maxNfds);
 	} else {
-	    tsdPtr->pollInfo.fds = (struct pollfd *)
-		    ckrealloc((char *) tsdPtr->pollInfo.fds,
-			    sizeof(struct pollfd) * newSize);
+	    tsdPtr->pollInfo.fds = ckrealloc(tsdPtr->pollInfo.fds,
+		    sizeof(struct pollfd) * newSize);
 	    memset(tsdPtr->pollInfo.fds + tsdPtr->pollInfo.maxNfds, 0,
 		    sizeof(struct pollfd)*(newSize-tsdPtr->pollInfo.maxNfds));
 	}
@@ -515,7 +514,7 @@ Tcl_CreateFileHandler(
     if (mask & TCL_WRITABLE) {
 	pollPtr->events |= POLLOUT;
     } else {
-	pollPtr->events &= &POLLOUT;
+	pollPtr->events &= ~POLLOUT;
     }
     if (mask & TCL_EXCEPTION) {
 	pollPtr->events |= POLLERR | POLLHUP;
@@ -546,7 +545,6 @@ Tcl_DeleteFileHandler(
 				 * function. */
 {
     FileHandler *filePtr, *prevPtr;
-    int i;
     ThreadSpecificData *tsdPtr;
 
     if (tclNotifierHooks.deleteFileHandlerProc) {
@@ -578,7 +576,7 @@ Tcl_DeleteFileHandler(
     if (filePtr->pollIndex != tsdPtr->pollInfo.nfds) {
 	register FileHandler *file2Ptr;
 
-	tsdPtr->pollInfo.fds[filePtr>pollIndex] =
+	tsdPtr->pollInfo.fds[filePtr->pollIndex] =
 		tsdPtr->pollInfo.fds[tsdPtr->pollInfo.nfds];
 	for (file2Ptr = tsdPtr->firstFileHandlerPtr ;;
 		file2Ptr = file2Ptr->nextPtr) {
@@ -598,7 +596,7 @@ Tcl_DeleteFileHandler(
     } else {
 	prevPtr->nextPtr = filePtr->nextPtr;
     }
-    ckfree((char *) filePtr);
+    ckfree(filePtr);
 }
 
 /*
@@ -874,8 +872,7 @@ Tcl_WaitForEvent(
 	 */
 
 	if (filePtr->readyMask == 0) {
-	    fileEvPtr = (FileHandlerEvent *)
-		    ckalloc(sizeof(FileHandlerEvent));
+	    fileEvPtr = ckalloc(sizeof(FileHandlerEvent));
 	    fileEvPtr->header.proc = FileHandlerEventProc;
 	    fileEvPtr->fd = filePtr->fd;
 	    Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);
@@ -919,28 +916,37 @@ NotifierThreadProc(
 {
     ThreadSpecificData *tsdPtr;
     int fds[2];
-    int i, numFdBits = 0, receivePipe;
+    int i, j, receivePipe, bound;
     long found;
-    struct timeval poll = {0., 0.}, *timePtr;
     char buf[2];
+    PollData pollData;
+    struct pollfd *ptr, *ptr2;
+
+    memset(&pollData, 0, sizeof(PollData));
+    pollData.fds = pollData.defaultFds;
+    pollData.maxNfds = DEFAULT_POLL_FDS_SIZE;
 
     if (pipe(fds) != 0) {
-	Tcl_Panic("NotifierThreadProc: could not create trigger pipe");
+	Tcl_Panic("NotifierThreadProc: %s", "could not create trigger pipe");
     }
 
     receivePipe = fds[0];
 
     if (TclUnixSetBlockingMode(receivePipe, TCL_MODE_NONBLOCKING) < 0) {
-	Tcl_Panic("NotifierThreadProc: could not make receive pipe non blocking");
+	Tcl_Panic("NotifierThreadProc: %s",
+		"could not make receive pipe non blocking");
     }
     if (TclUnixSetBlockingMode(fds[1], TCL_MODE_NONBLOCKING) < 0) {
-	Tcl_Panic("NotifierThreadProc: could not make trigger pipe non blocking");
+	Tcl_Panic("NotifierThreadProc: %s",
+		"could not make trigger pipe non blocking");
     }
     if (fcntl(receivePipe, F_SETFD, FD_CLOEXEC) < 0) {
-	Tcl_Panic("NotifierThreadProc: could not make receive pipe close-on-exec");
+	Tcl_Panic("NotifierThreadProc: %s",
+		"could not make receive pipe close-on-exec");
     }
     if (fcntl(fds[1], F_SETFD, FD_CLOEXEC) < 0) {
-	Tcl_Panic("NotifierThreadProc: could not make trigger pipe close-on-exec");
+	Tcl_Panic("NotifierThreadProc: %s",
+		"could not make trigger pipe close-on-exec");
     }
 
     /*
@@ -962,62 +968,68 @@ NotifierThreadProc(
      */
 
     while (1) {
-	for (i=0 ;
-	FD_ZERO(&readableMask);
-	FD_ZERO(&writableMask);
-	FD_ZERO(&exceptionMask);
-
 	/*
 	 * Compute the logical OR of the select masks from all the waiting
 	 * notifiers.
 	 */
 
 	Tcl_MutexLock(&notifierMutex);
-	timePtr = NULL;
+	bound = 1;
 	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
-	    for (i = tsdPtr->numFdBits-1; i >= 0; --i) {
-		if (FD_ISSET(i, &tsdPtr->checkMasks.readable)) {
-		    FD_SET(i, &readableMask);
-		}
-		if (FD_ISSET(i, &tsdPtr->checkMasks.writable)) {
-		    FD_SET(i, &writableMask);
-		}
-		if (FD_ISSET(i, &tsdPtr->checkMasks.exception)) {
-		    FD_SET(i, &exceptionMask);
-		}
+	    bound += tsdPtr->pollInfo.nfds;
+	}
+	if (bound > pollData.maxNfds) {
+	    if (pollData.fds != pollData.defaultFds) {
+		ckfree(pollData.fds);
 	    }
-	    if (tsdPtr->numFdBits > numFdBits) {
-		numFdBits = tsdPtr->numFdBits;
-	    }
-	    if (tsdPtr->pollState & POLL_WANT) {
-		/*
-		 * Here we make sure we go through select() with the same mask
-		 * bits that were present when the thread tried to poll.
-		 */
-
-		tsdPtr->pollState |= POLL_DONE;
-		timePtr = &poll;
+	    pollData.fds = ckalloc(bound * sizeof(struct pollfd));
+	    pollData.maxNfds = bound;
+	}
+	ptr = pollData.fds;
+	ptr->fd = receivePipe;
+	ptr->events = POLLIN;
+	ptr++;
+	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
+	    for (i=0 ; i<tsdPtr->pollInfo.nfds ; i++) {
+		ptr2 = tsdPtr->pollInfo.fds;
+		for (j=0 ; pollData.fds+j<ptr ; j++) {
+		    if (pollData.fds[j].fd == ptr2->fd) {
+			pollData.fds[j].events |= ptr2->events;
+			goto nextFD;
+		    }
+		}
+		memcpy(ptr++, ptr2, sizeof(struct pollfd));
+	    nextFD:
+		(void) 0;
 	    }
 	}
 	Tcl_MutexUnlock(&notifierMutex);
 
-	/*
-	 * Set up the select mask to include the receive pipe.
-	 */
+	pollData.nfds = ptr - pollData.fds;
+	qsort(pollData.fds, pollData.nfds, sizeof(struct pollfd),
+		ComparePollFDStructures);
 
-	if (receivePipe >= numFdBits) {
-	    numFdBits = receivePipe + 1;
-	}
-	FD_SET(receivePipe, &readableMask);
-
-	if (select(numFdBits, &readableMask, &writableMask, &exceptionMask,
-		timePtr) == -1) {
+#if 0
+	if (tsdPtr->pollState & POLL_WANT) {
 	    /*
-	     * Try again immediately on an error.
+	     * Here we make sure we go through select() with the same mask
+	     * bits that were present when the thread tried to poll.
 	     */
 
-	    continue;
+	    tsdPtr->pollState |= POLL_DONE;
 	}
+#endif
+
+	do {
+	    for (i=0 ; i<pollData.nfds ; i++) {
+		pollData.fds[i].revents = 0;
+	    }
+	    j = poll(pollData.fds, pollData.nfds, -1);
+
+	    /*
+	     * Try again immediately on a recoverable error.
+	     */
+	} while ((j == -1) && (errno == EAGAIN || errno == EINTR));
 
 	/*
 	 * Alert any threads that are waiting on a ready file descriptor.
@@ -1026,21 +1038,21 @@ NotifierThreadProc(
 	Tcl_MutexLock(&notifierMutex);
 	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	    found = 0;
-
-	    for (i = tsdPtr->numFdBits-1; i >= 0; --i) {
-		if (FD_ISSET(i, &tsdPtr->checkMasks.readable)
-			&& FD_ISSET(i, &readableMask)) {
-		    FD_SET(i, &tsdPtr->readyMasks.readable);
-		    found = 1;
+	    for (i=j=0 ; i<tsdPtr->pollInfo.nfds ; i++) {
+		if (j >= pollData.nfds) {
+		    break;
 		}
-		if (FD_ISSET(i, &tsdPtr->checkMasks.writable)
-			&& FD_ISSET(i, &writableMask)) {
-		    FD_SET(i, &tsdPtr->readyMasks.writable);
-		    found = 1;
+		while (tsdPtr->pollInfo.fds[i].fd > pollData.fds[j].fd
+			&& j < pollData.nfds) {
+		    j++;
 		}
-		if (FD_ISSET(i, &tsdPtr->checkMasks.exception)
-			&& FD_ISSET(i, &exceptionMask)) {
-		    FD_SET(i, &tsdPtr->readyMasks.exception);
+		if (j >= pollData.nfds) {
+		    break;
+		}
+		if (tsdPtr->pollInfo.fds[i].fd == pollData.fds[j].fd) {
+		    tsdPtr->pollInfo.fds[i].revents =
+			    tsdPtr->pollInfo.fds[i].events
+			    & pollData.fds[j].revents;
 		    found = 1;
 		}
 	    }
@@ -1078,17 +1090,21 @@ NotifierThreadProc(
 	 * avoid a race condition we only read one at a time.
 	 */
 
-	if (FD_ISSET(receivePipe, &readableMask)) {
-	    i = read(receivePipe, buf, 1);
+	for (i=0 ; i<pollData.nfds ; i++) {
+	    if ((pollData.fds[i].fd == receivePipe)
+		    && (pollData.fds[i].revents & POLLIN)) {
+		i = read(receivePipe, buf, 1);
 
-	    if ((i == 0) || ((i == 1) && (buf[0] == 'q'))) {
-		/*
-		 * Someone closed the write end of the pipe or sent us a Quit
-		 * message [Bug: 4139] and then closed the write end of the
-		 * pipe so we need to shut down the notifier thread.
-		 */
+		if ((i == 0) || ((i == 1) && (buf[0] == 'q'))) {
+		    /*
+		     * Someone closed the write end of the pipe or sent us a
+		     * Quit message [Bug: 4139] and then closed the write end
+		     * of the pipe so we need to shut down the notifier
+		     * thread.
+		     */
 
-		break;
+		    goto cleanup;
+		}
 	    }
 	}
     }
@@ -1098,6 +1114,7 @@ NotifierThreadProc(
      * termination of the notifier thread.
      */
 
+  cleanup:
     close(receivePipe);
     Tcl_MutexLock(&notifierMutex);
     triggerPipe = -1;
@@ -1105,6 +1122,14 @@ NotifierThreadProc(
     Tcl_MutexUnlock(&notifierMutex);
 
     TclpThreadExit(0);
+}
+
+static int
+ComparePollFDStructures(
+    const void *a,
+    const void *b)
+{
+    return ((struct pollfd *)a)->fd - ((struct pollfd *)b)->fd;
 }
 #endif /* TCL_THREADS */
 
