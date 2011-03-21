@@ -310,13 +310,11 @@ static void	PutBlocks(Cache *cachePtr, int bucket, int numMove);
 
 #if defined(HAVE_FAST_TSD)
 static __thread Cache *tcachePtr;
-static __thread int allocInitialized = 0;
 
 # define GETCACHE(cachePtr)			\
     do {					\
-	if (!allocInitialized) {		\
-	    allocInitialized = 1;		\
-	    tcachePtr = GetCache();				\
+	if (!tcachePtr) {			\
+	    tcachePtr = GetCache();		\
 	}					\
 	(cachePtr) = tcachePtr;			\
     } while (0)
@@ -331,19 +329,16 @@ static __thread int allocInitialized = 0;
 #endif
 #else /* NOT THREADS! */
 
-static int allocInitialized = 0;
-
 #define TclpSetAllocCache()
 #define PutBlocks(cachePtr, bucket, numMove) 
 #define firstCachePtr sharedCachePtr
 
 # define GETCACHE(cachePtr)			\
     do {					\
-	if (!allocInitialized) {		\
-	    allocInitialized = 1;		\
+	if (!sharedPtr) {			\
 	    GetCache();				\
 	}					\
-	(cachePtr) = sharedPtr;		\
+	(cachePtr) = sharedPtr;			\
     } while (0)
 
 static void *
