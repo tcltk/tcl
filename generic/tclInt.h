@@ -4500,6 +4500,12 @@ typedef struct NRE_callback {
 #include "tclIntPlatDecls.h"
 #include "tclTomMathDecls.h"
 
+#if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
+#define Tcl_AttemptAlloc   TclpAlloc
+#define Tcl_AttemptRealloc TclpRealloc
+#define Tcl_Free           TclpFree
+#endif
+
 #endif /* _TCLINT */
 
 /*
