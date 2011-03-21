@@ -628,7 +628,6 @@ TclpAlloc(
      * allocating more blocks if necessary.
      */
 
-    blockPtr = NULL;
     size = reqSize + OFFSET;
 #if RCHECK
     size++;
@@ -642,6 +641,7 @@ TclpAlloc(
 	}
 #endif
     } else {
+	blockPtr = NULL;
 	bucket = 0;
 	while (bucketInfo[bucket].blockSize < size) {
 	    bucket++;
@@ -655,9 +655,9 @@ TclpAlloc(
 	    cachePtr->buckets[bucket].totalAssigned += reqSize;
 #endif
 	}
-    }
-    if (blockPtr == NULL) {
-	return NULL;
+	if (blockPtr == NULL) {
+	    return NULL;
+	}
     }
     return Block2Ptr(blockPtr, bucket, reqSize);
 }
@@ -694,7 +694,9 @@ TclpFree(
 	return free((char *) ptr);
     }
 
+#ifdef ZIPPY_STATS
     GETCACHE(cachePtr);
+#endif
 
     /*
      * Get the block back from the user pointer and call system free directly
@@ -711,6 +713,10 @@ TclpFree(
 	free(blockPtr);
 	return;
     }
+
+#ifndef ZIPPY_STATS
+    GETCACHE(cachePtr);
+#endif
 
 #ifdef ZIPPY_STATS
     cachePtr->buckets[bucket].totalAssigned -= blockPtr->reqSize;
