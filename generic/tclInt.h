@@ -2668,13 +2668,6 @@ MODULE_SCOPE const Tcl_HashKeyType tclOneWordHashKeyType;
 MODULE_SCOPE const Tcl_HashKeyType tclStringHashKeyType;
 MODULE_SCOPE const Tcl_HashKeyType tclObjHashKeyType;
 
-/*
- * The head of the list of free Tcl objects, and the total number of Tcl
- * objects ever allocated and freed.
- */
-
-MODULE_SCOPE Tcl_Obj *	tclFreeObjList;
-
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE long	tclObjsAlloced;
 MODULE_SCOPE long	tclObjsFreed;

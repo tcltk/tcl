@@ -26,6 +26,10 @@ static Tcl_HashTable typeTable;
 static int typeTableInitialized = 0;	/* 0 means not yet initialized. */
 TCL_DECLARE_MUTEX(tableMutex)
 
+#if defined(TCL_THREADS) && defined(TCL_COMPILE_STATS)
+static Tcl_Mutex tclObjMutex;
+#endif
+
 /*
  * Pointer to a heap-allocated string of length zero that the Tcl core uses as
  * the value of an empty string representation for an object. This value is
@@ -459,7 +463,7 @@ TclFinalizeThreadObjects(void)
  * TclFinalizeObjects --
  *
  *	This function is called by Tcl_Finalize to clean up all registered
- *	Tcl_ObjType's
+ *	Tcl_ObjType's and to reset the tclFreeObjList.
  *
  * Results:
  *	None.
@@ -1258,7 +1262,6 @@ TclFreeObj(
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = -1;
 
     if (ObjDeletePending(context)) {
 	PushObjToDelete(context, objPtr);
@@ -1404,31 +1407,6 @@ TclFreeObj(
     }
 }
 #endif /* TCL_MEM_DEBUG */
-
-/*
- *----------------------------------------------------------------------
- *
- * TclObjBeingDeleted --
- *
- *	This function returns 1 when the Tcl_Obj is being deleted. It is
- *	provided for the rare cases where the reason for the loss of an
- *	internal rep might be relevant. [FR 1512138]
- *
- * Results:
- *	1 if being deleted, 0 otherwise.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclObjBeingDeleted(
-    Tcl_Obj *objPtr)
-{
-    return (objPtr->length == -1);
-}
 
 /*
  *----------------------------------------------------------------------
