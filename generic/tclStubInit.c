@@ -280,7 +280,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 223 */
     TclGetPlatform, /* 224 */
     TclTraceDictPath, /* 225 */
-    TclObjBeingDeleted, /* 226 */
+    0, /* 226 */
     TclSetNsPath, /* 227 */
     0, /* 228 */
     TclPtrMakeUpvar, /* 229 */

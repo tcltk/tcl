@@ -891,9 +891,9 @@ declare 225 {
     Tcl_Obj *TclTraceDictPath(Tcl_Interp *interp, Tcl_Obj *rootPtr,
 	    int keyc, Tcl_Obj *const keyv[], int flags)
 }
-declare 226 {
-    int TclObjBeingDeleted(Tcl_Obj *objPtr)
-}
+#declare 226 {
+#    int TclObjBeingDeleted(Tcl_Obj *objPtr)
+#}
 declare 227 {
     void TclSetNsPath(Namespace *nsPtr, int pathLength,
             Tcl_Namespace *pathAry[])
