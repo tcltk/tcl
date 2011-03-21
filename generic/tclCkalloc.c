@@ -20,6 +20,12 @@
 #define FALSE	0
 #define TRUE	1
 
+#undef Tcl_Alloc
+#undef Tcl_Free
+#undef Tcl_Realloc
+#undef Tcl_AttemptAlloc
+#undef Tcl_AttemptRealloc
+
 #ifdef TCL_MEM_DEBUG
 
 /*
@@ -735,12 +741,6 @@ Tcl_AttemptDbCkrealloc(
  *
  *----------------------------------------------------------------------
  */
-
-#undef Tcl_Alloc
-#undef Tcl_Free
-#undef Tcl_Realloc
-#undef Tcl_AttemptAlloc
-#undef Tcl_AttemptRealloc
 
 char *
 Tcl_Alloc(
