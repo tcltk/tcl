@@ -522,8 +522,7 @@ EXTERN TclPlatformType * TclGetPlatform(void);
 EXTERN Tcl_Obj *	TclTraceDictPath(Tcl_Interp *interp,
 				Tcl_Obj *rootPtr, int keyc,
 				Tcl_Obj *const keyv[], int flags);
-/* 226 */
-EXTERN int		TclObjBeingDeleted(Tcl_Obj *objPtr);
+/* Slot 226 is reserved */
 /* 227 */
 EXTERN void		TclSetNsPath(Namespace *nsPtr, int pathLength,
 				Tcl_Namespace *pathAry[]);
@@ -826,7 +825,7 @@ typedef struct TclIntStubs {
     void (*reserved223)(void);
     TclPlatformType * (*tclGetPlatform) (void); /* 224 */
     Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp *interp, Tcl_Obj *rootPtr, int keyc, Tcl_Obj *const keyv[], int flags); /* 225 */
-    int (*tclObjBeingDeleted) (Tcl_Obj *objPtr); /* 226 */
+    void (*reserved226)(void);
     void (*tclSetNsPath) (Namespace *nsPtr, int pathLength, Tcl_Namespace *pathAry[]); /* 227 */
     void (*reserved228)(void);
     int (*tclPtrMakeUpvar) (Tcl_Interp *interp, Var *otherP1Ptr, const char *myName, int myFlags, int index); /* 229 */
@@ -1221,8 +1220,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetPlatform) /* 224 */
 #define TclTraceDictPath \
 	(tclIntStubsPtr->tclTraceDictPath) /* 225 */
-#define TclObjBeingDeleted \
-	(tclIntStubsPtr->tclObjBeingDeleted) /* 226 */
+/* Slot 226 is reserved */
 #define TclSetNsPath \
 	(tclIntStubsPtr->tclSetNsPath) /* 227 */
 /* Slot 228 is reserved */
