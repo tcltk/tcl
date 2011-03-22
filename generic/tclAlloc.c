@@ -1124,7 +1124,6 @@ Tcl_GetMemoryInfo(
     Tcl_MutexUnlock(listLockPtr);
 }
 #endif /* ZIPPY_STATS */
-#endif /* code above only for NATIVE allocator */
 
 #if defined(TCL_THREADS)
 /*
@@ -1382,7 +1381,7 @@ ChooseAllocator()
 	}
     }
 }
-
+#endif
 #endif /* USE_ZIPPY */
 
 /*
