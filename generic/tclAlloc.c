@@ -262,7 +262,7 @@ static __thread Cache *tcachePtr;
 
 #else /* NOT THREADS */
 #define GETCACHE(cachePtr)			\
-    (cachePtr) = &sharedCache
+    (cachePtr) = (&sharedCache)
 #endif /* THREADS */
 
 #if USE_ZIPPY
