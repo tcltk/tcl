@@ -3835,6 +3835,10 @@ MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
 #define aZIPPY     3
 #define aMULTI     4
 
+#if defined(TCL_ALLOCATOR) && (TCL_ALLOCATOR == aNONE)
+#undef TCL_ALLOCATOR
+#endif
+
 #if defined(TCL_ALLOCATOR) && ((TCL_ALLOCATOR < 0) || (TCL_ALLOCATOR > aMULTI))
 #undef TCL_ALLOCATOR
 #endif
@@ -3852,7 +3856,10 @@ MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
 #  endif
 #endif
 
-#if TCL_ALLOCATOR < aNONE /* native or purify */
+#define USE_ZIPPY ((TCL_ALLOCATOR != aNATIVE) && (TCL_ALLOCATOR != aPURIFY))
+#define USE_OBJQ   (TCL_ALLOCATOR != aPURIFY)
+
+#if !USE_ZIPPY /* native or purify */
 #    define TclpAlloc(size) malloc(size)
 #    define TclpRealloc(ptr, size) realloc((ptr),(size))
 #    define TclpFree(size) free(size)
@@ -3864,7 +3871,7 @@ MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
    MODULE_SCOPE unsigned int TclAllocMaximize(void *ptr);
 #endif
 
-#if TCL_ALLOCATOR == aPURIFY
+#if !USE_OBJQ
 #  define TclSmallAlloc() ckalloc(sizeof(Tcl_Obj))
 #  define TclSmallFree(ptr) ckfree(ptr)
 #  define TclInitAlloc()
