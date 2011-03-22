@@ -52,7 +52,11 @@
 #undef TclSmallAlloc
 #undef TclSmallFree
 
-#if (TCL_ALLOCATOR == aNATIVE) || (TCL_ALLOCATOR == aPURIFY)
+#define USE_BLOCKS (TCL_ALLOCATOR != aNATIVE) && (TCL_ALLOCATOR != aPURIFY)
+#define USE_OBJQ   (TCL_ALLOCATOR != aPURIFY)
+
+
+#if !USE_BLOCKS
 /*
  * Not much of this file is needed, most things are dealt with in the
  * macros. Just shunt the allocators for use by the library, the core
@@ -84,10 +88,10 @@ TclpFree(
     free(ptr);
 }
 
-#endif /* end of code for aPURIFY */
+#endif /* !USE_BLOCKS, this is end of code for aPURIFY */
 
 
-#if TCL_ALLOCATOR != aPURIFY
+#if (USE_BLOCKS || USE_OBJQ)
 
 /*
  * Parameters for the per-thread Tcl_Obj cache
@@ -103,7 +107,7 @@ TclpFree(
  * them in macro and struct definitions
  */
 
-#if TCL_ALLOCATOR != aNATIVE
+#if USE_BLOCKS
 /*
  * This macro is used to properly align the memory allocated by Tcl, giving
  * the same alignment as the native malloc.
@@ -203,8 +207,6 @@ static struct {
     Tcl_Mutex *lockPtr;		/* Share bucket lock. */
 #endif
 } bucketInfo[NBUCKETS];
-
-
 #endif /* Advanced definitions, back to common code */
 
 
@@ -230,12 +232,12 @@ typedef struct Cache {
 } Cache;
 
 static Cache sharedCache;
+#define sharedPtr (&sharedCache)
 
 #if defined(TCL_THREADS)
 static Tcl_Mutex *objLockPtr;
 static Tcl_Mutex *listLockPtr;
 static Cache *firstCachePtr = &sharedCache;
-static Cache *sharedPtr = &sharedCache;
 
 static Cache *	GetCache(void);
 static void	MoveObjs(Cache *fromPtr, Cache *toPtr, int numMove);
@@ -266,6 +268,7 @@ static __thread Cache *tcachePtr;
     (cachePtr) = &sharedCache
 #endif /* THREADS */
 
+#if USE_BLOCKS
 #if TCL_ALLOCATOR == aMULTI
 static int allocator;
 static void ChooseAllocator();
@@ -273,12 +276,22 @@ static void ChooseAllocator();
 #define allocator TCL_ALLOCATOR
 #endif
 
-#if TCL_ALLOCATOR != aNATIVE
 static void InitBucketInfo(void);
-static void PutBlocks(Cache *cachePtr, int bucket, int numMove);
+static inline char * Block2Ptr(Block *blockPtr,
+	int bucket, unsigned int reqSize);
+static inline Block * Ptr2Block(char *ptr);
 
+static int  GetBlocks(Cache *cachePtr, int bucket);
+
+#if (TCL_THREADS)
+static void PutBlocks(Cache *cachePtr, int bucket, int numMove);
+static void LockBucket(Cache *cachePtr, int bucket);
+static void UnlockBucket(Cache *cachePtr, int bucket);
+#else
+#define PutBlocks(cachePtr, bucket, numMove)
 #endif
 
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -296,8 +309,7 @@ static void PutBlocks(Cache *cachePtr, int bucket, int numMove);
  *----------------------------------------------------------------------
  */
 
-#if defined(TCL_THREADS) || (TCL_ALLOCATOR != aNATIVE)
-
+#if defined(TCL_THREADS)
 static Cache *
 GetCache(void)
 {
@@ -307,7 +319,6 @@ GetCache(void)
      * Get this thread's cache, allocating if necessary.
      */
 
-#if defined(TCL_THREADS)
     cachePtr = TclpGetAllocCache();
     if (cachePtr == NULL) {
 	cachePtr = calloc(1, sizeof(Cache));
@@ -318,14 +329,11 @@ GetCache(void)
 	cachePtr->nextPtr = firstCachePtr;
 	firstCachePtr = cachePtr;
 	Tcl_MutexUnlock(listLockPtr);
-#if (TCL_ALLOCATOR != aNATIVE) && defined(ZIPPY_STATS)
+#if  USE_BLOCKS && defined(ZIPPY_STATS)
 	cachePtr->owner = Tcl_GetCurrentThread();
 #endif
 	TclpSetAllocCache(cachePtr);
     }
-#else
-    cachePtr = sharedPtr;
-#endif
     return cachePtr;
 }
 #endif
@@ -346,7 +354,7 @@ GetCache(void)
  *-------------------------------------------------------------------------
  */
 
-#if TCL_ALLOCATOR != aNATIVE
+#if USE_BLOCKS
 static void
 InitBucketInfo ()
 {
@@ -380,13 +388,13 @@ TclInitAlloc(void)
 	if (listLockPtr == NULL) {
 	    listLockPtr = TclpNewAllocMutex();
 	    objLockPtr = TclpNewAllocMutex();
-#if TCL_ALLOCATOR != aNATIVE
+#if USE_BLOCKS
 	    InitBucketInfo();
 #endif /* !aNATIVE */
 	}
 	Tcl_MutexUnlock(initLockPtr);
     }
-#elif TCL_ALLOCATOR != aNATIVE
+#elif USE_BLOCKS
     InitBucketInfo();
 #endif /* THREADS */
 
@@ -417,7 +425,7 @@ TclFinalizeAlloc(void)
 {
 #if defined(TCL_THREADS)
 
-#if TCL_ALLOCATOR != aNATIVE
+#if USE_BLOCKS
     unsigned int i;
 
     for (i = 0; i < nBuckets; ++i) {
@@ -459,7 +467,7 @@ TclFreeAllocCache(
 {
     Cache *cachePtr = arg;
     Cache **nextPtrPtr;
-#if TCL_ALLOCATOR != aNATIVE
+#if USE_BLOCKS
     register unsigned int bucket;
 
     /*
@@ -667,7 +675,7 @@ MoveObjs(
 #endif
 #endif /* end of code for aNATIVE */
 
-#if TCL_ALLOCATOR > aNONE
+#if USE_BLOCKS
 /*
  * The rest of this file deals with aZIPPY and aMULTI builds
  */
@@ -692,15 +700,6 @@ MoveObjs(
 #  else
 #    define RCHECK		1
 #  endif
-#endif
-
-#if defined(TCL_THREADS)
-static Tcl_Mutex *listLockPtr;
-static Tcl_Mutex *objLockPtr;
-
-static int	GetBlocks(Cache *cachePtr, int bucket);
-static void	LockBucket(Cache *cachePtr, int bucket);
-static void	UnlockBucket(Cache *cachePtr, int bucket);
 #endif
 
 
