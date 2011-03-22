@@ -1066,15 +1066,7 @@ LockBucket(
     Cache *cachePtr,
     int bucket)
 {
-#if 0
-    if (Tcl_MutexTryLock(bucketInfo[bucket].lockPtr) != TCL_OK) {
-	Tcl_MutexLock(bucketInfo[bucket].lockPtr);
-	cachePtr->buckets[bucket].numWaits++;
-	sharedPtr->buckets[bucket].numWaits++;
-    }
-#else
     Tcl_MutexLock(bucketInfo[bucket].lockPtr);
-#endif
 #ifdef ZIPPY_STATS
     cachePtr->buckets[bucket].numLocks++;
     sharedPtr->buckets[bucket].numLocks++;
@@ -1217,42 +1209,44 @@ GetBlocks(
 	register size_t size;
 
 #if TCL_ALLOCATOR != aNATIVE
-	/*
-	 * If no blocks could be moved from shared, first look for a larger
-	 * block in this cache OR the shared cache to split up.
-	 */
-
-	n = nBuckets;
-	size = 0; /* lint */
-	while (--n > bucket) {
-	    if (cachePtr->buckets[n].numFree > 0) {
-		size = bucketInfo[n].blockSize;
-		blockPtr = cachePtr->buckets[n].firstPtr;
-		cachePtr->buckets[n].firstPtr = blockPtr->nextBlock;
-		cachePtr->buckets[n].numFree--;
-		break;
-	    }
-	}
-#if defined(TCL_THREADS)
-	if (blockPtr == NULL) {
+	if (allocator == aZIPPY) {
+	    /*
+	     * If no blocks could be moved from shared, first look for a larger
+	     * block in this cache OR the shared cache to split up.
+	     */
+	    
 	    n = nBuckets;
 	    size = 0; /* lint */
 	    while (--n > bucket) {
-		if (sharedPtr->buckets[n].numFree > 0) {
+		if (cachePtr->buckets[n].numFree > 0) {
 		    size = bucketInfo[n].blockSize;
-		    LockBucket(cachePtr, n);
-		    if (sharedPtr->buckets[n].numFree > 0) {
-			blockPtr = sharedPtr->buckets[n].firstPtr;
-			sharedPtr->buckets[n].firstPtr = blockPtr->nextBlock;
-			sharedPtr->buckets[n].numFree--;
-			UnlockBucket(cachePtr, n);
-			break;		
-		    }
-		    UnlockBucket(cachePtr, n);
+		    blockPtr = cachePtr->buckets[n].firstPtr;
+		    cachePtr->buckets[n].firstPtr = blockPtr->nextBlock;
+		    cachePtr->buckets[n].numFree--;
+		    break;
 		}
 	    }
-	}
+#if defined(TCL_THREADS)
+	    if (blockPtr == NULL) {
+		n = nBuckets;
+		size = 0; /* lint */
+		while (--n > bucket) {
+		    if (sharedPtr->buckets[n].numFree > 0) {
+			size = bucketInfo[n].blockSize;
+			LockBucket(cachePtr, n);
+			if (sharedPtr->buckets[n].numFree > 0) {
+			    blockPtr = sharedPtr->buckets[n].firstPtr;
+			    sharedPtr->buckets[n].firstPtr = blockPtr->nextBlock;
+			    sharedPtr->buckets[n].numFree--;
+			    UnlockBucket(cachePtr, n);
+			    break;		
+			}
+			UnlockBucket(cachePtr, n);
+		    }
+		}
+	    }
 #endif
+	}
 #endif
 	/*
 	 * Otherwise, allocate a big new block directly.
