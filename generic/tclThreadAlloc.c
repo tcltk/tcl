@@ -148,13 +148,11 @@ static Cache *firstCachePtr = &sharedCache;
 
 #if defined(HAVE_FAST_TSD)
 static __thread Cache *tcachePtr;
-static __thread int allocInitialized = 0;
 
 # define GETCACHE(cachePtr)			\
     do {					\
-	if (!allocInitialized) {		\
-	    allocInitialized = 1;		\
-	    tcachePtr = GetCache();				\
+	if (!tcachePtr) {			\
+	    tcachePtr = GetCache();		\
 	}					\
 	(cachePtr) = tcachePtr;			\
     } while (0)
