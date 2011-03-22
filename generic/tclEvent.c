@@ -1030,9 +1030,9 @@ TclInitSubsystems(void)
 	     * implementation of self-initializing locks.
 	     */
 
+	    TclInitAlloc();		/* Process wide allocator init */
 	    TclInitThreadStorage();     /* Creates master hash table for
 					 * thread local storage */
-	    TclInitAlloc();		/* Process wide mutex init */
 #ifdef TCL_MEM_DEBUG
 	    TclInitDbCkalloc();		/* Process wide mutex init */
 #endif
@@ -1206,12 +1206,6 @@ Tcl_Finalize(void)
     TclFinalizeSynchronization();
 
     /*
-     * Close down the thread-specific object allocator.
-     */
-
-    TclFinalizeAlloc();
-
-    /*
      * We defer unloading of packages until very late to avoid memory access
      * issues. Both exit callbacks and synchronization variables may be stored
      * in packages.
@@ -1235,6 +1229,14 @@ Tcl_Finalize(void)
 
     TclFinalizeMemorySubsystem();
 
+    /*
+     * Close down the thread-specific object allocator.
+     */
+
+    TclFinalizeAlloc();
+
+
+    
   alreadyFinalized:
     TclFinalizeLock();
 }

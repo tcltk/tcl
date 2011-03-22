@@ -2901,7 +2901,6 @@ MODULE_SCOPE int	TclInfoLocalsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclInfoVarsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE void	TclInitAlloc(void);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
@@ -3872,6 +3871,7 @@ MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
 #  define TclFinalizeAlloc()
 #  define TclFreeAllocCache(ptr)
 #else
+#define ALLOC_NOBJHIGH 1200
    MODULE_SCOPE void * TclSmallAlloc();
    MODULE_SCOPE void   TclSmallFree(void *ptr);
    MODULE_SCOPE void   TclInitAlloc(void);
