@@ -1,3 +1,8 @@
+2011-03-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclLoadDl.c:    [Bug #3216070] Loading extension libraries
+	* unix/tclLoadDyld.c:  from embedded Tcl applications.
+
 2011-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCkalloc.c: [Bug #3197864] pointer truncation on Win64
