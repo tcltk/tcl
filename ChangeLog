@@ -23,7 +23,7 @@
 
 2011-03-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tkMain.c: [Patch 3124683]: Reorganize the platform-specific
+	* generic/tclMain.c: [Patch 3124683]: Reorganize the platform-specific
 	stuff in (tcl|tk)Main.c.
 
 2011-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
