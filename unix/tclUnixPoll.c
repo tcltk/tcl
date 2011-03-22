@@ -809,8 +809,8 @@ Tcl_WaitForEvent(
 	waitingListPtr = tsdPtr;
 	tsdPtr->onList = 1;
 
-	if (tsdPtr->addEpoch != tsdPtr->lastWaitEpoch) {
-	    tsdPtr->lastWaitEpoch = tsdPtr->addEpoch;
+	if (tsdPtr->addEpoch != tsdPtr->waitEpoch) {
+	    tsdPtr->waitEpoch = tsdPtr->addEpoch;
 	    write(triggerPipe, "", 1);
 	}
     }
@@ -1048,22 +1048,17 @@ NotifierThreadProc(
 	Tcl_MutexLock(&notifierMutex);
 	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	    found = 0;
-	    for (i=j=0 ; i<tsdPtr->pollInfo.nfds ; i++) {
-		if (j >= pollData.nfds) {
+	    for (i=0 ; i<tsdPtr->pollInfo.nfds ; i++) {
+		ptr2 = &tsdPtr->pollInfo.fds[i];
+		for (j=0 ; j<pollData.nfds ; j++) {
+		    if (ptr2->fd > pollData.fds[j].fd) {
+			continue;
+		    }
+		    if (ptr2->fd == pollData.fds[j].fd) {
+			ptr2->revents = ptr2->events & pollData.fds[j].revents;
+			found = 1;
+		    }
 		    break;
-		}
-		while (tsdPtr->pollInfo.fds[i].fd > pollData.fds[j].fd
-			&& j < pollData.nfds) {
-		    j++;
-		}
-		if (j >= pollData.nfds) {
-		    break;
-		}
-		if (tsdPtr->pollInfo.fds[i].fd == pollData.fds[j].fd) {
-		    tsdPtr->pollInfo.fds[i].revents =
-			    tsdPtr->pollInfo.fds[i].events
-			    & pollData.fds[j].revents;
-		    found = 1;
 		}
 	    }
 
