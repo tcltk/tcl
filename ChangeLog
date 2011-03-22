@@ -1,3 +1,19 @@
+2011-03-22  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclThreadAlloc.c: simpler initialization of Cache
+	under HAVE_FAST_TSD, from mig-alloc-reform.
+
+2011-03-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclLoadDl.c:    [Bug #3216070] Loading extension libraries
+	* unix/tclLoadDyld.c:  from embedded Tcl applications.
+
+2011-03-21  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCkAlloc.c:
+	* generic/tclInt.h: remove one level of allocator indirection in
+	non memdebug builds, imported from mig-alloc-reform.
+
 2011-03-20  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclThreadAlloc.c: imported HAVE_FAST_TSD support from
@@ -12,7 +28,7 @@
 
 2011-03-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tkMain.c: [Patch 3124683]: Reorganize the platform-specific
+	* generic/tclMain.c: [Patch 3124683]: Reorganize the platform-specific
 	stuff in (tcl|tk)Main.c.
 
 2011-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
