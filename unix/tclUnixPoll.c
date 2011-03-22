@@ -92,6 +92,11 @@ typedef struct ThreadSpecificData {
     int eventReady;		/* True if an event is ready to be processed.
 				 * Used as condition flag together with waitCV
 				 * above. */
+    int addEpoch;		/* Epoch counter used to indicate whether the
+				 * set of polled file descriptors has been
+				 * updated since the last time we waited. */
+    int waitEpoch;		/* The value of the addEpoch the last time
+				 * this thread waited for events. */
 #endif /* TCL_THREADS */
 } ThreadSpecificData;
 
@@ -481,8 +486,6 @@ Tcl_CreateFileHandler(
      * Update the check masks for this file.
      */
 
-
-    // Grow the array that will be passed into poll()
     if (tsdPtr->pollInfo.nfds > tsdPtr->pollInfo.maxNfds) {
 	unsigned newSize = tsdPtr->pollInfo.maxNfds;
 
@@ -503,6 +506,7 @@ Tcl_CreateFileHandler(
 	tsdPtr->pollInfo.maxNfds = newSize;
     }
 
+    tsdPtr->addEpoch++;
     pollPtr = &tsdPtr->pollInfo.fds[filePtr->pollIndex];
 
     pollPtr->fd = fd;
@@ -517,9 +521,9 @@ Tcl_CreateFileHandler(
 	pollPtr->events &= ~POLLOUT;
     }
     if (mask & TCL_EXCEPTION) {
-	pollPtr->events |= POLLERR | POLLHUP;
+	pollPtr->events |= POLLERR | POLLHUP | POLLNVAL;
     } else {
-	pollPtr->events &= ~(POLLERR | POLLHUP);
+	pollPtr->events &= ~(POLLERR | POLLHUP | POLLNVAL);
     }
 }
 
@@ -572,6 +576,7 @@ Tcl_DeleteFileHandler(
      * descriptors too if necessary.
      */
 
+    tsdPtr->addEpoch++;
     tsdPtr->pollInfo.nfds--;
     if (filePtr->pollIndex != tsdPtr->pollInfo.nfds) {
 	register FileHandler *file2Ptr;
@@ -708,7 +713,7 @@ Tcl_WaitForEvent(
      */
 
     struct timeval timeout, *timeoutPtr;
-    int numFound;
+    int numFound, i;
 #endif /* TCL_THREADS */
     ThreadSpecificData *tsdPtr;
 
@@ -804,7 +809,10 @@ Tcl_WaitForEvent(
 	waitingListPtr = tsdPtr;
 	tsdPtr->onList = 1;
 
-	write(triggerPipe, "", 1);
+	if (tsdPtr->addEpoch != tsdPtr->lastWaitEpoch) {
+	    tsdPtr->lastWaitEpoch = tsdPtr->addEpoch;
+	    write(triggerPipe, "", 1);
+	}
     }
 
     if (!tsdPtr->eventReady) {
@@ -834,6 +842,9 @@ Tcl_WaitForEvent(
     }
 
 #else /* !TCL_THREADS */
+    for (i=0 ; i<tsdPtr->nfds ; i++) {
+	tsdPtr->pollInfo.fds[i].revents = 0;
+    }
     if (timeoutPtr) {
 	numFound = poll(tsdPtr->pollInfo.fds, tsdPtr->pollInfo.nfds,
 		1000*timeoutPtr->tv_sec + timeoutPtr->tv_usec/1000);
@@ -858,7 +869,7 @@ Tcl_WaitForEvent(
 	if (pollPtr->revents & POLLOUT) {
 	    mask |= TCL_WRITABLE;
 	}
-	if (pollPtr->revents & (POLLERR | POLLHUP)) {
+	if (pollPtr->revents & (POLLERR | POLLHUP | POLLNVAL)) {
 	    mask |= TCL_EXCEPTION;
 	}
 
@@ -916,9 +927,8 @@ NotifierThreadProc(
 {
     ThreadSpecificData *tsdPtr;
     int fds[2];
-    int i, j, receivePipe, bound;
+    int i, j, receivePipe, bound, recomputeMergedFds;
     long found;
-    char buf[2];
     PollData pollData;
     struct pollfd *ptr, *ptr2;
 
@@ -967,58 +977,58 @@ NotifierThreadProc(
      * Look for file events and report them to interested threads.
      */
 
+    recomputeMergedFds = 1;
     while (1) {
 	/*
-	 * Compute the logical OR of the select masks from all the waiting
-	 * notifiers.
+	 * Compute the merged poll array all the waiting notifiers.
+	 *
+	 * Everything is made more complicated by the fact that multiple
+	 * threads could be waiting on the same fd (whether for the same or
+	 * different events) yet poll() will only notify for one of the
+	 * entries per call. This means we've got to compute a merged list.
 	 */
 
-	Tcl_MutexLock(&notifierMutex);
-	bound = 1;
-	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
-	    bound += tsdPtr->pollInfo.nfds;
-	}
-	if (bound > pollData.maxNfds) {
-	    if (pollData.fds != pollData.defaultFds) {
-		ckfree(pollData.fds);
+	if (recomputeMergedFds) {
+	    Tcl_MutexLock(&notifierMutex);
+	    bound = 1;
+	    for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
+		bound += tsdPtr->pollInfo.nfds;
 	    }
-	    pollData.fds = ckalloc(bound * sizeof(struct pollfd));
-	    pollData.maxNfds = bound;
-	}
-	ptr = pollData.fds;
-	ptr->fd = receivePipe;
-	ptr->events = POLLIN;
-	ptr++;
-	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
-	    for (i=0 ; i<tsdPtr->pollInfo.nfds ; i++) {
-		ptr2 = tsdPtr->pollInfo.fds;
-		for (j=0 ; pollData.fds+j<ptr ; j++) {
-		    if (pollData.fds[j].fd == ptr2->fd) {
-			pollData.fds[j].events |= ptr2->events;
-			goto nextFD;
-		    }
+	    if (bound > pollData.maxNfds) {
+		if (pollData.fds != pollData.defaultFds) {
+		    ckfree(pollData.fds);
 		}
-		memcpy(ptr++, ptr2, sizeof(struct pollfd));
-	    nextFD:
-		(void) 0;
+		pollData.fds = ckalloc(bound * sizeof(struct pollfd));
+		pollData.maxNfds = bound;
 	    }
+	    ptr = pollData.fds;
+	    ptr->fd = receivePipe;
+	    ptr->events = POLLIN;
+	    ptr++;
+	    for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
+		for (i=0 ; i<tsdPtr->pollInfo.nfds ; i++) {
+		    ptr2 = tsdPtr->pollInfo.fds;
+		    for (j=0 ; pollData.fds+j<ptr ; j++) {
+			if (pollData.fds[j].fd == ptr2->fd) {
+			    pollData.fds[j].events |= ptr2->events;
+			    goto nextFD;
+			}
+		    }
+		    memcpy(ptr++, ptr2, sizeof(struct pollfd));
+		nextFD:
+		    (void) 0;
+		}
+		if (tsdPtr->pollState & POLL_WANT) {
+		    tsdPtr->pollState |= POLL_DONE;
+		}
+	    }
+	    Tcl_MutexUnlock(&notifierMutex);
+
+	    pollData.nfds = ptr - pollData.fds;
+	    qsort(pollData.fds, pollData.nfds, sizeof(struct pollfd),
+		    ComparePollFDStructures);
+	    recomputeMergedFds = 0;
 	}
-	Tcl_MutexUnlock(&notifierMutex);
-
-	pollData.nfds = ptr - pollData.fds;
-	qsort(pollData.fds, pollData.nfds, sizeof(struct pollfd),
-		ComparePollFDStructures);
-
-#if 0
-	if (tsdPtr->pollState & POLL_WANT) {
-	    /*
-	     * Here we make sure we go through select() with the same mask
-	     * bits that were present when the thread tried to poll.
-	     */
-
-	    tsdPtr->pollState |= POLL_DONE;
-	}
-#endif
 
 	do {
 	    for (i=0 ; i<pollData.nfds ; i++) {
@@ -1091,10 +1101,13 @@ NotifierThreadProc(
 	 */
 
 	for (i=0 ; i<pollData.nfds ; i++) {
-	    if ((pollData.fds[i].fd == receivePipe)
-		    && (pollData.fds[i].revents & POLLIN)) {
-		i = read(receivePipe, buf, 1);
+	    if (pollData.fds[i].fd != receivePipe) {
+		continue;
+	    }
+	    if (pollData.fds[i].revents & POLLIN) {
+		char buf[2];
 
+		i = read(receivePipe, buf, 1);
 		if ((i == 0) || ((i == 1) && (buf[0] == 'q'))) {
 		    /*
 		     * Someone closed the write end of the pipe or sent us a
@@ -1105,7 +1118,11 @@ NotifierThreadProc(
 
 		    goto cleanup;
 		}
+		if (i == 1 && buf[0] == '\0') {
+		    recomputeMergedFds = 1;
+		}
 	    }
+	    break;
 	}
     }
 
