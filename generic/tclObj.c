@@ -576,9 +576,24 @@ TclContinuationsEnter(
 {
     int newEntry;
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
-    Tcl_HashEntry *hPtr =
-	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
+    Tcl_HashEntry *hPtr;
+    ContLineLoc *clLocPtr;
+
+    if (!num) {
+        /* Kill still existing stale information, if any.
+         */
+
+	hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
+        if (hPtr) {
+            if (Tcl_GetHashValue(hPtr)) {
+                ckfree(Tcl_GetHashValue(hPtr));
+            }
+            Tcl_DeleteHashEntry(hPtr);
+        }
+        return NULL;
+    }
+
+    hPtr = Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
 
     if (!newEntry) {
 	/*
@@ -604,6 +619,8 @@ TclContinuationsEnter(
 
 	ckfree(Tcl_GetHashValue(hPtr));
     }
+
+    clLocPtr = ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
 
     clLocPtr->num = num;
     memcpy(&clLocPtr->loc, loc, num*sizeof(int));
@@ -702,6 +719,8 @@ TclContinuationsEnterDerived(
 		Tcl_Panic("Derived ICL data for object using offsets from before the script");
 	    }
 	}
+    } else {
+        TclContinuationsEnter(objPtr, 0, 0);
     }
 }
 
@@ -826,7 +845,7 @@ TclThreadFinalizeContLines(
  *
  * ContLineLocFree --
  *
- *	The freProc for continuation line location tables.
+ *	The freeProc for continuation line location tables.
  *
  * Results:
  *	None.
@@ -1371,29 +1390,6 @@ TclFreeObj(
 	}
 	ObjDeletionUnlock(context);
     }
-
-    /*
-     * We cannot use TclGetContinuationTable() here, because that may
-     * re-initialize the thread-data for calls coming after the finalization.
-     * We have to access it using the low-level call and then check for
-     * validity. This function can be called after TclFinalizeThreadData() has
-     * already killed the thread-global data structures. Performing
-     * TCL_TSD_INIT will leave us with an un-initialized memory block upon
-     * which we crash (if we where to access the uninitialized hashtable).
-     */
-
-    {
-	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-        Tcl_HashEntry *hPtr;
-
-	if (tsdPtr->lineCLPtr) {
-            hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
-	    if (hPtr) {
-		Tcl_EventuallyFree(Tcl_GetHashValue(hPtr), ContLineLocFree);
-		Tcl_DeleteHashEntry(hPtr);
-	    }
-	}
-    }
 }
 #else /* TCL_MEM_DEBUG */
 
@@ -1460,29 +1456,6 @@ TclFreeObj(
 		TclIncrObjsFreed();
 	    }
 	    ObjDeletionUnlock(context);
-	}
-    }
-
-    /*
-     * We cannot use TclGetContinuationTable() here, because that may
-     * re-initialize the thread-data for calls coming after the finalization.
-     * We have to access it using the low-level call and then check for
-     * validity. This function can be called after TclFinalizeThreadData() has
-     * already killed the thread-global data structures. Performing
-     * TCL_TSD_INIT will leave us with an un-initialized memory block upon
-     * which we crash (if we where to access the uninitialized hashtable).
-     */
-
-    {
-	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-        Tcl_HashEntry *hPtr;
-
-	if (tsdPtr->lineCLPtr) {
-            hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
-	    if (hPtr) {
-		Tcl_EventuallyFree(Tcl_GetHashValue(hPtr), ContLineLocFree);
-		Tcl_DeleteHashEntry(hPtr);
-	    }
 	}
     }
 }

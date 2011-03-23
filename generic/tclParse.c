@@ -2347,9 +2347,7 @@ TclSubstTokens(
 	     * which will be compiled.
 	     */
 
-	    if (numCL) {
-		TclContinuationsEnter(result, numCL, clPosition);
-	    }
+	    TclContinuationsEnter(result, numCL, clPosition);
 
 	    /*
 	     * Release the temp table we used to collect the locations of

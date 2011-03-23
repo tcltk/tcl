@@ -2081,11 +2081,9 @@ TclCompileTokens(
 		numObjsToConcat++;
 		Tcl_DStringFree(&textBuffer);
 
-		if (numCL) {
-		    TclContinuationsEnter(
-			    envPtr->literalArrayPtr[literal].objPtr, numCL,
-			    clPosition);
-		}
+		TclContinuationsEnter(
+		        envPtr->literalArrayPtr[literal].objPtr, numCL,
+		        clPosition);
 		numCL = 0;
 	    }
 
@@ -2134,10 +2132,8 @@ TclCompileTokens(
 	TclEmitPush(literal, envPtr);
 	numObjsToConcat++;
 
-	if (numCL) {
-	    TclContinuationsEnter(envPtr->literalArrayPtr[literal].objPtr,
-		    numCL, clPosition);
-	}
+        TclContinuationsEnter(envPtr->literalArrayPtr[literal].objPtr,
+                numCL, clPosition);
 	numCL = 0;
     }
 
