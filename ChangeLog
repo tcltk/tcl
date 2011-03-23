@@ -1,3 +1,8 @@
+2011-03-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclObj.c: exploit HAVE_FAST_TSD for the deletion context
+	in TclFreeObj()
+
 2011-03-22  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclThreadAlloc.c: simpler initialization of Cache
