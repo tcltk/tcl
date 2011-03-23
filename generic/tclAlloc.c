@@ -130,11 +130,13 @@ typedef struct Block {
 	struct {
 	    unsigned char magic1;	/* First magic number. */
 	    unsigned char bucket;	/* Bucket block allocated from. */
-	    unsigned char unused;	/* Padding. */
+	    unsigned char inUse;	/* Block memory currently in use, as
+					 * a fraction of the block size, in
+					 * 255ths*/ 
 	    unsigned char magic2;	/* Second magic number. */
 	} s;
     } u;
-    size_t reqSize;			/* Requested allocation size. */
+    long refCount;
 } Block;
 
 #define OFFSET      ALIGN(sizeof(Block))
@@ -143,7 +145,7 @@ typedef struct Block {
 #define sourceBucket	u.s.bucket
 #define magicNum1	u.s.magic1
 #define magicNum2	u.s.magic2
-#define blockReqSize    reqSize
+#define used	        u.s.inUse
 #define MAGIC		0xEF
 
 /*
@@ -180,7 +182,6 @@ typedef struct Bucket {
     long numInserts;		/* Number of inserts into bucket */
     long numWaits;		/* Number of waits to acquire a lock */
     long numLocks;		/* Number of locks acquired */
-    long totalAssigned;		/* Total space assigned to bucket */
 #endif
 } Bucket;
 
@@ -214,9 +215,6 @@ typedef struct Cache {
 #if USE_ZIPPY
 #if defined(TCL_THREADS)
     Tcl_ThreadId owner;		/* Which thread's cache is this? */
-#endif
-#if defined(ZIPPY_STATS)
-    int totalAssigned;		/* Total space assigned to thread */
 #endif
     Bucket buckets[NBUCKETS];	/* The buckets for this thread */
 #endif /* USE_ZIPPY, ie TCL_ALLOCATOR != aNATIVE */
@@ -693,14 +691,6 @@ MoveObjs(
  * the magic number at the end of the requested memory.
  */
 
-#ifndef RCHECK
-#  ifdef  NDEBUG
-#    define RCHECK		0
-#  else
-#    define RCHECK		1
-#  endif
-#endif
-
 
 /*
  *----------------------------------------------------------------------
@@ -725,14 +715,23 @@ Block2Ptr(
     unsigned int reqSize)
 {
     register void *ptr;
-
+    
     blockPtr->magicNum1 = blockPtr->magicNum2 = MAGIC;
+    if (bucket == NBUCKETS) {
+	blockPtr->used = 255;
+    } else {
+	/*
+	 * This relies on not overflowing, which will be the case if nobody
+	 * makes NBUCKETS way too large.
+	 */
+	
+	size_t maxSize = bucketInfo[bucket].blockSize - OFFSET;
+
+	blockPtr->used = ((maxSize -1 + reqSize*255)/maxSize);
+    }
     blockPtr->sourceBucket = bucket;
-    blockPtr->reqSize = reqSize;
     ptr = (void *) (((char *)blockPtr) + OFFSET);
-#if RCHECK
-    ((unsigned char *)(ptr))[reqSize] = MAGIC;
-#endif
+    blockPtr->refCount = 0;
     return (char *) ptr;
 }
 
@@ -747,13 +746,6 @@ Ptr2Block(
 	Tcl_Panic("alloc: invalid block: %p: %x %x",
 		blockPtr, blockPtr->magicNum1, blockPtr->magicNum2);
     }
-#if RCHECK
-    if (((unsigned char *) ptr)[blockPtr->reqSize] != MAGIC) {
-	Tcl_Panic("alloc: invalid block: %p: %x %x %x",
-		blockPtr, blockPtr->magicNum1, blockPtr->magicNum2,
-		((unsigned char *) ptr)[blockPtr->reqSize]);
-    }
-#endif
     return blockPtr;
 }
 
@@ -796,7 +788,7 @@ TclpAlloc(
 	const size_t zero = 0;
 	const size_t max = ~zero;
 
-	if (((size_t) reqSize) > max - OFFSET - RCHECK) {
+	if (((size_t) reqSize) > max - OFFSET) {
 	    /* Requested allocation exceeds memory */
 	    return NULL;
 	}
@@ -811,17 +803,9 @@ TclpAlloc(
      */
 
     size = reqSize + OFFSET;
-#if RCHECK
-    size++;
-#endif
     if (size > MAXALLOC) {
 	bucket = NBUCKETS;
 	blockPtr = malloc(size);
-#ifdef ZIPPY_STATS
-	if (blockPtr != NULL) {
-	    cachePtr->totalAssigned += reqSize;
-	}
-#endif
     } else {
 	blockPtr = NULL;
 	bucket = 0;
@@ -834,7 +818,6 @@ TclpAlloc(
 	    cachePtr->buckets[bucket].numFree--;
 #ifdef ZIPPY_STATS
 	    cachePtr->buckets[bucket].numRemoves++;
-	    cachePtr->buckets[bucket].totalAssigned += reqSize;
 #endif
 	}
 	if (blockPtr == NULL) {
@@ -878,33 +861,25 @@ TclpFree(
 	return;
     }
 
-#ifdef ZIPPY_STATS
-    GETCACHE(cachePtr);
-#endif
-
+    blockPtr = Ptr2Block(ptr);
+    if (blockPtr->refCount != 0) {
+	/* Tcl_Panic("trying to free a preserved pointer");*/
+    }
+    
     /*
      * Get the block back from the user pointer and call system free directly
      * for large blocks. Otherwise, push the block back on the bucket and move
      * blocks to the shared cache if there are now too many free.
      */
 
-    blockPtr = Ptr2Block(ptr);
     bucket = blockPtr->sourceBucket;
     if (bucket == NBUCKETS) {
-#ifdef ZIPPY_STATS
-	cachePtr->totalAssigned -= blockPtr->reqSize;
-#endif
 	free(blockPtr);
 	return;
     }
 
-#ifndef ZIPPY_STATS
     GETCACHE(cachePtr);
-#endif
 
-#ifdef ZIPPY_STATS
-    cachePtr->buckets[bucket].totalAssigned -= blockPtr->reqSize;
-#endif
     blockPtr->nextBlock = cachePtr->buckets[bucket].firstPtr;
     cachePtr->buckets[bucket].firstPtr = blockPtr;
     cachePtr->buckets[bucket].numFree++;
@@ -940,7 +915,6 @@ TclpRealloc(
     char *ptr,
     unsigned int reqSize)
 {
-    Cache *cachePtr;
     Block *blockPtr;
     void *newPtr;
     size_t size, min;
@@ -952,8 +926,6 @@ TclpRealloc(
     }
 #endif
     
-    GETCACHE(cachePtr);
-
     if (ptr == NULL) {
 	return TclpAlloc(reqSize);
     }
@@ -964,7 +936,7 @@ TclpRealloc(
 	const size_t zero = 0;
 	const size_t max = ~zero;
 
-	if (((size_t) reqSize) > max - OFFSET - RCHECK) {
+	if (((size_t) reqSize) > max - OFFSET) {
 	    /* Requested allocation exceeds memory */
 	    return NULL;
 	}
@@ -978,10 +950,11 @@ TclpRealloc(
      */
 
     blockPtr = Ptr2Block(ptr);
+    if (blockPtr->refCount != 0) {
+	Tcl_Panic("trying to realloc a preserved pointer");
+    }
+    
     size = reqSize + OFFSET;
-#if RCHECK
-    size++;
-#endif
     bucket = blockPtr->sourceBucket;
     if (bucket != NBUCKETS) {
 	if (bucket > 0) {
@@ -990,17 +963,9 @@ TclpRealloc(
 	    min = 0;
 	}
 	if (size > min && size <= bucketInfo[bucket].blockSize) {
-#ifdef ZIPPY_STATS
-	    cachePtr->buckets[bucket].totalAssigned -= blockPtr->reqSize;
-	    cachePtr->buckets[bucket].totalAssigned += reqSize;
-#endif
 	    return Block2Ptr(blockPtr, bucket, reqSize);
 	}
     } else if (size > MAXALLOC) {
-#ifdef ZIPPY_STATS
-	cachePtr->totalAssigned -= blockPtr->reqSize;
-	cachePtr->totalAssigned += reqSize;
-#endif
 	blockPtr = realloc(blockPtr, size);
 	if (blockPtr == NULL) {
 	    return NULL;
@@ -1014,10 +979,14 @@ TclpRealloc(
 
     newPtr = TclpAlloc(reqSize);
     if (newPtr != NULL) {
-	if (reqSize > blockPtr->reqSize) {
-	    reqSize = blockPtr->reqSize;
+	size_t maxSize = bucketInfo[bucket].blockSize - OFFSET;
+	size_t toCopy = ((blockPtr->used) * maxSize)/255;
+
+	if (toCopy > reqSize) {
+	    toCopy = reqSize;
 	}
-	memcpy(newPtr, ptr, reqSize);
+	
+	memcpy(newPtr, ptr, toCopy);
 	TclpFree(ptr);
     }
     return newPtr;
@@ -1043,8 +1012,9 @@ TclpRealloc(
 {
     Block *blockPtr;
     int bucket;
-    size_t oldSize, newSize;
+    size_t size;
 
+	return UINT_MAX;
 #if TCL_ALLOCATOR == aMULTI
     if (allocator < aNONE) {
 	/*
@@ -1066,20 +1036,9 @@ TclpRealloc(
 	return UINT_MAX;
     }
 
-    oldSize = blockPtr->reqSize;
-    newSize = bucketInfo[bucket].blockSize - OFFSET - RCHECK;
-    blockPtr->reqSize = newSize;
-#if RCHECK
-    ((unsigned char *)(ptr))[newSize] = MAGIC;
-#endif
-#ifdef ZIPPY_STATS
-    {
-	Cache *cachePtr;
-	GETCACHE(cachePtr);
-	cachePtr->buckets[bucket].totalAssigned += (newSize - oldSize);
-    }
-#endif
-    return newSize;
+    size = bucketInfo[bucket].blockSize - OFFSET;
+    blockPtr->used = 255;
+    return size;
 }
 
 #ifdef ZIPPY_STATS
@@ -1128,7 +1087,6 @@ Tcl_GetMemoryInfo(
 		    cachePtr->buckets[n].numFree,
 		    cachePtr->buckets[n].numRemoves,
 		    cachePtr->buckets[n].numInserts,
-		    cachePtr->buckets[n].totalAssigned,
 		    cachePtr->buckets[n].numLocks,
 		    cachePtr->buckets[n].numWaits);
 	    Tcl_DStringAppendElement(dsPtr, buf);
@@ -1390,6 +1348,214 @@ ChooseAllocator()
     }
 }
 #endif
+
+#if USE_NEW_PRESERVE
+
+typedef struct PreserveData {
+    struct PreserveData *nextPtr;
+    char *ptr;
+    Tcl_FreeProc *freeProc;	/* Function to call to free. */
+} PreserveData;
+
+static PreserveData *pdataPtr = NULL;
+TCL_DECLARE_MUTEX(preserveMutex) /* To protect the above statics */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFinalizePreserve --
+ *
+ *	Called during exit processing to clean up the reference array.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Frees the storage of the reference array.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+void
+TclFinalizePreserve(void)
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Preserve --
+ *
+ *	This function is used by a function to declare its interest in a
+ *	particular block of memory, so that the block will not be reallocated
+ *	until a matching call to Tcl_Release has been made.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Information is retained so that the block of memory will not be freed
+ *	until at least the matching call to Tcl_Release.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_Preserve(
+    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
+{
+    char *ptr = (char *) clientData;
+    Block *blockPtr;
+    long refCount;
+
+    blockPtr = Ptr2Block(ptr);
+    refCount = blockPtr->refCount;
+    
+    if (refCount > 0) {
+	++blockPtr->refCount;
+    } else if (refCount < 0) {
+	/*
+	 * TclEventuallyFree has already been called on this with
+	 * (freeProc != TCL_DYNAMIC)
+	 */
+	
+	--blockPtr->refCount;
+    } else {
+	/*
+	 * First preserve call: add one refcount for use by EventuallyFree 
+	 */
+  
+	blockPtr->refCount = 2;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Release --
+ *
+ *	This function is called to cancel a previous call to Tcl_Preserve,
+ *	thereby allowing a block of memory to be freed (if no one else cares
+ *	about it).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If Tcl_EventuallyFree has been called for clientData, and if no other
+ *	call to Tcl_Preserve is still in effect, the block of memory is freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_Release(
+    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
+{
+    char *ptr = (char *) clientData;
+    Block *blockPtr = Ptr2Block(ptr);
+    long refCount = blockPtr->refCount;
+    int hasFreeProc = (refCount < 0);
+    
+    if (refCount > 0) {
+	refCount = --blockPtr->refCount;
+    } else if (refCount < 0) {
+	refCount = ++blockPtr->refCount;
+    } else {
+	Tcl_Panic("Tcl_Release couldn't find reference for %p", clientData);
+    }
+    
+    if (refCount == 0) {
+	if (!hasFreeProc) {
+	    TclpFree(ptr);
+	} else {
+	    PreserveData *thisPtr = pdataPtr, *lastPtr = NULL;
+	    Tcl_MutexLock(&preserveMutex);
+	    while (thisPtr && (thisPtr->ptr != ptr)) {
+		lastPtr = thisPtr;
+		thisPtr = thisPtr->nextPtr;
+	    }
+	    if (!thisPtr) {
+		Tcl_Panic("Tcl_Release couldn't find reference for %p", clientData);
+	    }
+	    if (lastPtr) {
+		lastPtr->nextPtr = thisPtr->nextPtr;
+	    } else {
+		pdataPtr = thisPtr->nextPtr;
+	    }
+	    Tcl_MutexUnlock(&preserveMutex);
+	    
+	    pdataPtr->freeProc(clientData);
+	    TclSmallFree(pdataPtr);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_EventuallyFree --
+ *
+ *	Free up a block of memory, unless a call to Tcl_Preserve is in effect
+ *	for that block. In this case, defer the free until all calls to
+ *	Tcl_Preserve have been undone by matching calls to Tcl_Release.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Ptr may be released by calling free().
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_EventuallyFree(
+    ClientData clientData,	/* Pointer to malloc'ed block of memory. */
+    Tcl_FreeProc *freeProc)	/* Function to actually do free. */
+{
+    char *ptr = (char *) clientData;
+    Block *blockPtr = Ptr2Block(ptr);
+    PreserveData *thisPtr;
+    long refCount = blockPtr->refCount;
+    int hasFreeProc = (refCount < 0);
+
+    if (hasFreeProc) {
+	Tcl_Panic("Tcl_EventuallyFree called twice for %p", clientData);
+    }
+
+    if (refCount < 2) {
+	/*
+	 * No other reference for this block.  Free it now.
+	 */
+
+	blockPtr->refCount = 0;
+	if (freeProc == TCL_DYNAMIC) {
+	    ckfree(clientData);
+	} else {
+	    freeProc(clientData);
+	}
+	return;
+    }
+
+    --blockPtr->refCount;
+    
+    if (freeProc != TCL_DYNAMIC) {	
+	blockPtr->refCount = -blockPtr->refCount;
+	TclCkSmallAlloc(sizeof(PreserveData), thisPtr);
+
+	thisPtr->ptr = ptr;
+	thisPtr->freeProc = freeProc;	
+	Tcl_MutexLock(&preserveMutex);
+	thisPtr->nextPtr = pdataPtr;
+	pdataPtr = thisPtr;
+	Tcl_MutexUnlock(&preserveMutex);
+    }
+}
+#endif /* USE_NEW_PRESERVE */
+
 #endif /* USE_ZIPPY */
 
 /*
