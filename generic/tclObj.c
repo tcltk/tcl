@@ -150,6 +150,10 @@ typedef struct PendingObjData {
 static PendingObjData pendingObjData;
 #define ObjInitDeletionContext(contextPtr) \
     PendingObjData *const contextPtr = &pendingObjData
+#elif HAVE_FAST_TSD
+static __thread PendingObjData pendingObjData;
+#define ObjInitDeletionContext(contextPtr) \
+    PendingObjData *const contextPtr = &pendingObjData
 #else
 static Tcl_ThreadDataKey pendingObjDataKey;
 #define ObjInitDeletionContext(contextPtr) \
