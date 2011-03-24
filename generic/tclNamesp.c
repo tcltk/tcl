@@ -3230,8 +3230,6 @@ NRNamespaceEvalCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    CmdFrame *invoker;
-    int word;
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
     Tcl_Obj *objPtr;
@@ -3285,14 +3283,7 @@ NRNamespaceEvalCmd(
     }
 
     if (objc == 3) {
-	/*
-	 * TIP #280: Make actual argument location available to eval'd script.
-	 */
-
 	objPtr = objv[2];
-	invoker = iPtr->cmdFramePtr;
-	word = 3;
-	TclArgumentGet(interp, objPtr, &invoker, &word);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -3301,17 +3292,11 @@ NRNamespaceEvalCmd(
 	 */
 
 	objPtr = Tcl_ConcatObj(objc-2, objv+2);
-	invoker = NULL;
-	word = 0;
     }
-
-    /*
-     * TIP #280: Make invoking context available to eval'd script.
-     */
 
     TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "eval",
 	    NULL, NULL);
-    return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
+    return TclNREvalObjEx(interp, objPtr, 0);
 }
 
 static int
@@ -3776,7 +3761,7 @@ NRNamespaceInscopeCmd(
 
     TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "inscope",
 	    NULL, NULL);
-    return TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
+    return TclNREvalObjEx(interp, cmdObjPtr, 0);
 }
 
 /*

@@ -1743,10 +1743,6 @@ Tcl_FSEvalFileEx(
     Tcl_IncrRefCount(iPtr->scriptFile);
     string = Tcl_GetStringFromObj(objPtr, &length);
 
-    /*
-     * TIP #280 Force the evaluator to open a frame for a sourced file.
-     */
-
     iPtr->evalFlags |= TCL_EVAL_FILE;
     result = Tcl_EvalEx(interp, string, length, 0);
 
@@ -1854,14 +1850,10 @@ TclNREvalFile(
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
 
-    /*
-     * TIP #280: Force the evaluator to open a frame for a sourced file.
-     */
-
     iPtr->evalFlags |= TCL_EVAL_FILE;
     TclNRAddCallback(interp, EvalFileCallback, oldScriptFile, pathPtr, objPtr,
 	    NULL);
-    return TclNREvalObjEx(interp, objPtr, 0, NULL, INT_MIN);
+    return TclNREvalObjEx(interp, objPtr, 0);
 }
 
 static int

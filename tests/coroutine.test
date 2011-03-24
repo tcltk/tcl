@@ -16,6 +16,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 testConstraint testnrelevels [llength [info commands testnrelevels]]
 testConstraint memory [llength [info commands memory]]
+testConstraint infoframe [expr ![catch {info frame 0}]]
 
 set lambda [list {{start 0} {stop 10}} {
     # init
@@ -293,7 +294,7 @@ test coroutine-3.2 {info frame computation} -setup {
 } -cleanup {
     rename a {}
     rename b {}
-} -result 1
+} -result 1 -constraints infoframe
 test coroutine-3.3 {info coroutine} -setup {
     proc a {} {info coroutine}
     proc b {} a
@@ -338,7 +339,7 @@ test coroutine-3.6 {info frame, bug #2910094} -setup {
 } -cleanup {
     rename stack {}
     rename a {}
-} -result {}
+} -result {} -constraints infoframe
 
 test coroutine-4.1 {bug #2093188} -setup {
     proc foo {} {
@@ -455,7 +456,7 @@ test coroutine-5.1 {right numLevels on coro return} -constraints {testnrelevels}
     }
     set res {}
 } -body {
-    set base [getNumLevel]
+    set base [relativeLevel 0]
     lappend res [relativeLevel $base]
     eval {coroutine a foo}
     # back to base level

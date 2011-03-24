@@ -234,6 +234,8 @@ typedef struct AssemblyEnv {
 
 static void		AddBasicBlockRangeToErrorInfo(AssemblyEnv*,
 			    BasicBlock*);
+static void             AdvanceLines(int *line, const char *start,
+	                    const char *end);
 static BasicBlock *	AllocBB(AssemblyEnv*);
 static int		AssembleOneLine(AssemblyEnv* envPtr);
 static void		BBAdjustStackDepth(BasicBlock* bbPtr, int consumed,
@@ -498,6 +500,21 @@ static unsigned char NonThrowingByteCodes[] = {
     INST_REVERSE,						/* 126 */
     INST_NOP							/* 132 */
 };
+
+static void
+AdvanceLines(
+    int *line,
+    const char *start,
+    const char *end)
+{
+    register const char *p;
+
+    for (p = start; p < end; p++) {
+	if (*p == '\n') {
+	    (*line)++;
+	}
+    }
+}
 
 /*
  * Helper macros.
@@ -843,17 +860,14 @@ CompileAssembleObj(
 	}
     }
 
-    /*
-     * Set up the compilation environment, and assemble the code.
-     */
+    /* Set up the compilation environment, and assemble the code */
 
     source = TclGetStringFromObj(objPtr, &sourceLen);
-    TclInitCompileEnv(interp, &compEnv, source, sourceLen, NULL, 0);
+    TclInitCompileEnv(interp, &compEnv, source, sourceLen);
     status = TclAssembleCode(&compEnv, source, sourceLen, TCL_EVAL_DIRECT);
     if (status != TCL_OK) {
-	/*
-	 * Assembly failed. Clean up and report the error.
-	 */
+	
+	/* Assembly failed. Clean up and report the error */
 
 	TclFreeCompileEnv(&compEnv);
 	return NULL;
@@ -1019,10 +1033,8 @@ TclAssembleCode(
 	 * Advance the pointers around any leading commentary.
 	 */
 
-	TclAdvanceLines(&assemEnvPtr->cmdLine, instPtr,
+	AdvanceLines(&assemEnvPtr->cmdLine, instPtr,
 		parsePtr->commandStart);
-	TclAdvanceContinuations(&assemEnvPtr->cmdLine, &assemEnvPtr->clNext,
-		parsePtr->commandStart - envPtr->source);
 
 	/*
 	 * Process the line of code.
@@ -1060,10 +1072,8 @@ TclAssembleCode(
 	nextPtr = parsePtr->commandStart + parsePtr->commandSize;
 	bytesLeft -= (nextPtr - instPtr);
 	instPtr = nextPtr;
-	TclAdvanceLines(&assemEnvPtr->cmdLine, parsePtr->commandStart,
+	AdvanceLines(&assemEnvPtr->cmdLine, parsePtr->commandStart,
 		instPtr);
-	TclAdvanceContinuations(&assemEnvPtr->cmdLine, &assemEnvPtr->clNext,
-		instPtr - envPtr->source);
 	Tcl_FreeParse(parsePtr);
     } while (bytesLeft > 0);
 
@@ -1104,8 +1114,7 @@ NewAssemblyEnv(
 
     assemEnvPtr->envPtr = envPtr;
     assemEnvPtr->parsePtr = parsePtr;
-    assemEnvPtr->cmdLine = envPtr->line;
-    assemEnvPtr->clNext = envPtr->clNext;
+    assemEnvPtr->cmdLine = 1;
 
     /*
      * Make the hashtables that store symbol resolution.

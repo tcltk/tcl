@@ -693,8 +693,7 @@ TclOODefineObjCmd(
 
     AddRef(oPtr);
     if (objc == 3) {
-	result = TclEvalObjEx(interp, objv[2], 0,
-		((Interp *)interp)->cmdFramePtr, 2);
+	result = Tcl_EvalObjEx(interp, objv[2], 0);
 
 	if (result == TCL_ERROR) {
 	    int length;
@@ -812,8 +811,7 @@ TclOOObjDefObjCmd(
 
     AddRef(oPtr);
     if (objc == 3) {
-	result = TclEvalObjEx(interp, objv[2], 0,
-		((Interp *)interp)->cmdFramePtr, 2);
+	result = Tcl_EvalObjEx(interp, objv[2], 0);
 
 	if (result == TCL_ERROR) {
 	    int length;
@@ -931,8 +929,7 @@ TclOODefineSelfObjCmd(
 
     AddRef(oPtr);
     if (objc == 2) {
-	result = TclEvalObjEx(interp, objv[1], 0,
-		((Interp *)interp)->cmdFramePtr, 2);
+	result = Tcl_EvalObjEx(interp, objv[1], 0);
 
 	if (result == TCL_ERROR) {
 	    int length;

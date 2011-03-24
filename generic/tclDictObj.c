@@ -2401,7 +2401,6 @@ DictForNRCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Interp *iPtr = (Interp *) interp;
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
     Tcl_Obj **varv, *keyObj, *valueObj;
     Tcl_DictSearch *searchPtr;
@@ -2477,7 +2476,7 @@ DictForNRCmd(
 
     TclNRAddCallback(interp, DictForLoopCallback, searchPtr, keyVarObj,
 	    valueVarObj, scriptObj);
-    return TclNREvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 3);
+    return TclNREvalObjEx(interp, scriptObj, 0);
 
     /*
      * For unwinding everything on error.
@@ -2498,7 +2497,6 @@ DictForLoopCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Interp *iPtr = (Interp *) interp;
     Tcl_DictSearch *searchPtr = data[0];
     Tcl_Obj *keyVarObj = data[1];
     Tcl_Obj *valueVarObj = data[2];
@@ -2563,7 +2561,7 @@ DictForLoopCallback(
 
     TclNRAddCallback(interp, DictForLoopCallback, searchPtr, keyVarObj,
 	    valueVarObj, scriptObj);
-    return TclNREvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 3);
+    return TclNREvalObjEx(interp, scriptObj, 0);
 
     /*
      * For unwinding everything once the iterating is done.
@@ -2722,7 +2720,6 @@ DictFilterCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Interp *iPtr = (Interp *) interp;
     static const char *const filters[] = {
 	"key", "script", "value", NULL
     };
@@ -2903,11 +2900,7 @@ DictFilterCmd(
 		goto abnormalResult;
 	    }
 
-	    /*
-	     * TIP #280. Make invoking context available to loop body.
-	     */
-
-	    result = TclEvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 4);
+	    result = Tcl_EvalObjEx(interp, scriptObj, 0);
 	    switch (result) {
 	    case TCL_OK:
 		boolObj = Tcl_GetObjResult(interp);
@@ -3006,7 +2999,6 @@ DictUpdateCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Interp *iPtr = (Interp *) interp;
     Tcl_Obj *dictPtr, *objPtr;
     int i, dummy;
 
@@ -3050,7 +3042,7 @@ DictUpdateCmd(
     Tcl_IncrRefCount(objv[1]);
     TclNRAddCallback(interp, FinalizeDictUpdate, objv[1], objPtr, NULL,NULL);
 
-    return TclNREvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
+    return TclNREvalObjEx(interp, objv[objc-1], 0);
 }
 
 static int
@@ -3165,7 +3157,6 @@ DictWithCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Interp *iPtr = (Interp *) interp;
     Tcl_Obj *dictPtr, *keysPtr, *keyPtr = NULL, *valPtr = NULL, *pathPtr;
     Tcl_DictSearch s;
     int done;
@@ -3217,8 +3208,7 @@ DictWithCmd(
     }
 
     /*
-     * Execute the body, while making the invoking context available to the
-     * loop body (TIP#280) and postponing the cleanup until later (NRE).
+     * Execute the body, while postponing the cleanup until later (NRE).
      */
 
     pathPtr = NULL;
@@ -3230,7 +3220,7 @@ DictWithCmd(
     TclNRAddCallback(interp, FinalizeDictWith, objv[1], keysPtr, pathPtr,
 	    NULL);
 
-    return TclNREvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
+    return TclNREvalObjEx(interp, objv[objc-1], 0);
 }
 
 static int

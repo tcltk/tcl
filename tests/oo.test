@@ -13,6 +13,8 @@ if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+testConstraint infoframe [expr ![catch {info frame 0}]]
+
 testConstraint memory [llength [info commands memory]]
 if {[testConstraint memory]} {
     proc getbytes {} {
@@ -2230,7 +2232,7 @@ test oo-22.1 {OO and info frame} -setup {
 	}
     }
     list [i level] [i frames] [dict get [c frame] object]
-} -cleanup {
+} -constraints infoframe -cleanup {
     c destroy
 } -result {1 {{type source line * file * cmd {info frame 0} method frames class ::c level 0} {type source line * file * cmd {info frame 0} method frames object ::i level 0}} ::c}
 test oo-22.2 {OO and info frame: Bug 3001438} -setup {
@@ -2242,7 +2244,7 @@ test oo-22.2 {OO and info frame: Bug 3001438} -setup {
 	info frame 0
     }
     [c new] test
-} -match glob -cleanup {
+} -match glob -constraints infoframe -cleanup {
     c destroy
 } -result {* cmd {info frame 0} method test class ::c level 0}
 

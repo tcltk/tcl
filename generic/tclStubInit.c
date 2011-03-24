@@ -286,8 +286,8 @@ static const TclIntStubs tclIntStubs = {
     TclPtrMakeUpvar, /* 229 */
     TclObjLookupVar, /* 230 */
     TclGetNamespaceFromObj, /* 231 */
-    TclEvalObjEx, /* 232 */
-    TclGetSrcInfoForPc, /* 233 */
+    0, /* 232 */
+    0, /* 233 */
     TclVarHashCreateVar, /* 234 */
     TclInitVarHashTable, /* 235 */
     0, /* 236 */

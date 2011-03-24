@@ -829,12 +829,12 @@ test regexpComp-21.5 {regexp command compiling tests} {
 } 0
 test regexpComp-21.6 {regexp command compiling tests} {
     evalInProc {
-	regexp -n foo dogfoOd
+	regexp -nocase foo dogfoOd
     }
 } 1
 test regexpComp-21.7 {regexp command compiling tests} {
     evalInProc {
-	regexp -no -- FoO dogfood
+	regexp -nocase -- FoO dogfood
     }
 } 1
 test regexpComp-21.8 {regexp command compiling tests} {
@@ -944,13 +944,13 @@ test regexpComp-24.5 {regexp command compiling tests} {
 test regexpComp-24.6 {regexp command compiling tests} {
     evalInProc {
 	set re foo
-	regexp -n $re dogfoOd
+	regexp -nocase $re dogfoOd
     }
 } 1
 test regexpComp-24.7 {regexp command compiling tests} {
     evalInProc {
 	set re FoO
-	regexp -no -- $re dogfood
+	regexp -nocase -- $re dogfood
     }
 } 1
 test regexpComp-24.8 {regexp command compiling tests} {

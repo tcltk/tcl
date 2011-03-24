@@ -296,7 +296,6 @@ TclNRCatchObjCmd(
 {
     Tcl_Obj *varNamePtr = NULL;
     Tcl_Obj *optionVarNamePtr = NULL;
-    Interp *iPtr = (Interp *) interp;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -314,11 +313,7 @@ TclNRCatchObjCmd(
     TclNRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
 	    varNamePtr, optionVarNamePtr, NULL);
 
-    /*
-     * TIP #280. Make invoking context available to caught script.
-     */
-
-    return TclNREvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr, 1);
+    return TclNREvalObjEx(interp, objv[1], 0);
 }
 
 static int
@@ -742,9 +737,6 @@ Tcl_EvalObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register Tcl_Obj *objPtr;
-    Interp *iPtr = (Interp *) interp;
-    CmdFrame *invoker = NULL;
-    int word = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
@@ -752,28 +744,18 @@ Tcl_EvalObjCmd(
     }
 
     if (objc == 2) {
-	/*
-	 * TIP #280. Make argument location available to eval'd script.
-	 */
-
-	invoker = iPtr->cmdFramePtr;
-	word = 1;
 	objPtr = objv[1];
-	TclArgumentGet(interp, objPtr, &invoker, &word);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
 	 * between, then evaluate the result. Tcl_EvalObjEx will delete the
 	 * object when it decrements its refcount after eval'ing it.
-	 *
-	 * TIP #280. Make invoking context available to eval'd script, done
-	 * with the default values.
 	 */
 
 	objPtr = Tcl_ConcatObj(objc-1, objv+1);
     }
     TclNRAddCallback(interp, EvalCmdErrMsg, NULL, NULL, NULL, NULL);
-    return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
+    return TclNREvalObjEx(interp, objPtr, 0);
 }
 
 /*
@@ -2340,12 +2322,11 @@ TclNRForObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Interp *iPtr = (Interp *) interp;
     ForIterData *iterPtr;
 
     if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 1, objv, "start test next command");
-	return TCL_ERROR;
+        Tcl_WrongNumArgs(interp, 1, objv, "start test next command");
+        return TCL_ERROR;
     }
 
     TclSmallAllocEx(interp, sizeof(ForIterData), iterPtr);
@@ -2353,15 +2334,9 @@ TclNRForObjCmd(
     iterPtr->body = objv[4];
     iterPtr->next = objv[3];
     iterPtr->msg  = "\n    (\"for\" body line %d)";
-    iterPtr->word = 4;
 
     TclNRAddCallback(interp, ForSetupCallback, iterPtr, NULL, NULL, NULL);
-
-    /*
-     * TIP #280. Make invoking context available to initial script.
-     */
-
-    return TclNREvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr, 1);
+    return TclNREvalObjEx(interp, objv[1], 0);
 }
 
 static int
@@ -2424,7 +2399,6 @@ ForCondCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Interp *iPtr = (Interp *) interp;
     ForIterData *iterPtr = data[0];
     Tcl_Obj *boolObj = data[1];
     int value;
@@ -2441,7 +2415,6 @@ ForCondCallback(
     Tcl_DecrRefCount(boolObj);
 
     if (value) {
-	/* TIP #280. */
 	if (iterPtr->next) {
 	    TclNRAddCallback(interp, ForNextCallback, iterPtr, NULL, NULL,
 		    NULL);
@@ -2449,8 +2422,7 @@ ForCondCallback(
 	    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
 		    NULL, NULL);
 	}
-	return TclNREvalObjEx(interp, iterPtr->body, 0, iPtr->cmdFramePtr,
-		iterPtr->word);
+	return TclNREvalObjEx(interp, iterPtr->body, 0);
     }
     TclSmallFreeEx(interp, iterPtr);
     return result;
@@ -2462,19 +2434,13 @@ ForNextCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Interp *iPtr = (Interp *) interp;
     ForIterData *iterPtr = data[0];
     Tcl_Obj *next = iterPtr->next;
 
     if ((result == TCL_OK) || (result == TCL_CONTINUE)) {
 	TclNRAddCallback(interp, ForPostNextCallback, iterPtr, NULL, NULL,
 		NULL);
-
-	/*
-	 * TIP #280. Make invoking context available to next script.
-	 */
-
-	return TclNREvalObjEx(interp, next, 0, iPtr->cmdFramePtr, 3);
+	return TclNREvalObjEx(interp, next, 0);
     }
 
     TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
@@ -2625,8 +2591,7 @@ TclNRForeachCmd(
 	}
 
 	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
-	return TclNREvalObjEx(interp, objv[objc-1], 0,
-		((Interp *) interp)->cmdFramePtr, objc-1);
+	return TclNREvalObjEx(interp, objv[objc-1], 0);
     }
 
     /*
@@ -2684,8 +2649,7 @@ ForeachLoopStep(
 	}
 
 	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
-	return TclNREvalObjEx(interp, statePtr->bodyPtr, 0,
-		((Interp *) interp)->cmdFramePtr, statePtr->bodyIdx);
+	return TclNREvalObjEx(interp, statePtr->bodyPtr, 0);
     }
 
     /*

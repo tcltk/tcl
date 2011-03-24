@@ -546,11 +546,8 @@ EXTERN Var *		TclObjLookupVar(Tcl_Interp *interp,
 /* 231 */
 EXTERN int		TclGetNamespaceFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
-/* 232 */
-EXTERN int		TclEvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
-				int flags, const CmdFrame *invoker, int word);
-/* 233 */
-EXTERN void		TclGetSrcInfoForPc(CmdFrame *contextPtr);
+/* Slot 232 is reserved */
+/* Slot 233 is reserved */
 /* 234 */
 EXTERN Var *		TclVarHashCreateVar(TclVarHashTable *tablePtr,
 				const char *key, int *newPtr);
@@ -573,7 +570,7 @@ EXTERN int		TclNRRunCallbacks(Tcl_Interp *interp, int result,
 				struct NRE_callback *rootPtr);
 /* 241 */
 EXTERN int		TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
-				int flags, const CmdFrame *invoker, int word);
+				int flags);
 /* 242 */
 EXTERN int		TclNREvalObjv(Tcl_Interp *interp, int objc,
 				Tcl_Obj *const objv[], int flags,
@@ -838,8 +835,8 @@ typedef struct TclIntStubs {
     int (*tclPtrMakeUpvar) (Tcl_Interp *interp, Var *otherP1Ptr, const char *myName, int myFlags, int index); /* 229 */
     Var * (*tclObjLookupVar) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, const char *part2, int flags, const char *msg, const int createPart1, const int createPart2, Var **arrayPtrPtr); /* 230 */
     int (*tclGetNamespaceFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr); /* 231 */
-    int (*tclEvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 232 */
-    void (*tclGetSrcInfoForPc) (CmdFrame *contextPtr); /* 233 */
+    void (*reserved232)(void);
+    void (*reserved233)(void);
     Var * (*tclVarHashCreateVar) (TclVarHashTable *tablePtr, const char *key, int *newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
     void (*reserved236)(void);
@@ -847,7 +844,7 @@ typedef struct TclIntStubs {
     int (*tclNRInterpProc) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, int skip, ProcErrorProc *errorProc); /* 239 */
     int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct NRE_callback *rootPtr); /* 240 */
-    int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 241 */
+    int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 241 */
     int (*tclNREvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags, Command *cmdPtr); /* 242 */
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
     Tcl_HashTable * (*tclGetNamespaceChildTable) (Tcl_Namespace *nsPtr); /* 244 */
@@ -1244,10 +1241,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclObjLookupVar) /* 230 */
 #define TclGetNamespaceFromObj \
 	(tclIntStubsPtr->tclGetNamespaceFromObj) /* 231 */
-#define TclEvalObjEx \
-	(tclIntStubsPtr->tclEvalObjEx) /* 232 */
-#define TclGetSrcInfoForPc \
-	(tclIntStubsPtr->tclGetSrcInfoForPc) /* 233 */
+/* Slot 232 is reserved */
+/* Slot 233 is reserved */
 #define TclVarHashCreateVar \
 	(tclIntStubsPtr->tclVarHashCreateVar) /* 234 */
 #define TclInitVarHashTable \

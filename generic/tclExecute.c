@@ -176,7 +176,6 @@ typedef struct TEBCdata {
     int cleanup;		/* new codePtr was received for NR */
     Tcl_Obj *auxObjList;	/* execution. */
     int checkInterp;
-    CmdFrame cmdFrame;
     void * stack[1];            /* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */
@@ -776,6 +775,35 @@ ReleaseDictIterator(
 
     objPtr->typePtr = NULL;
 }
+
+static void UpdateStringOfBcSource(Tcl_Obj *objPtr);
+
+static const Tcl_ObjType bcSourceType = {
+    "bcSource",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    UpdateStringOfBcSource,	/* updateStringProc */
+    NULL			/* setFromAnyProc */
+};
+
+static void
+UpdateStringOfBcSource(
+    Tcl_Obj *objPtr)
+{
+    int len;
+    const char *bytes;
+    unsigned char *pc = objPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr2;
+
+    bytes = GetSrcInfoForPc(pc, codePtr, &len, NULL);
+    objPtr->bytes = (char *) ckalloc((unsigned) len + 1);
+    memcpy(objPtr->bytes, bytes, len);
+    objPtr->bytes[len] = '\0';
+    objPtr->length = len;
+}
+
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -1470,14 +1498,10 @@ CompileExprObj(
 	}
     }
     if (objPtr->typePtr != &exprCodeType) {
-	/*
-	 * TIP #280: No invoker (yet) - Expression compilation.
-	 */
-
 	int length;
 	const char *string = TclGetStringFromObj(objPtr, &length);
 
-	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
+	TclInitCompileEnv(interp, &compEnv, string, length);
 	TclCompileExpr(interp, string, length, &compEnv, 0);
 
 	/*
@@ -1601,9 +1625,7 @@ FreeExprCodeInternalRep(
 ByteCode *
 TclCompileObj(
     Tcl_Interp *interp,
-    Tcl_Obj *objPtr,
-    const CmdFrame *invoker,
-    int word)
+    Tcl_Obj *objPtr)
 {
     register Interp *iPtr = (Interp *) interp;
     register ByteCode *codePtr;	/* Tcl Internal type of bytecode. */
@@ -1660,92 +1682,6 @@ TclCompileObj(
 	}
 
 	/*
-	 * #280.
-	 * Literal sharing fix. This part of the fix is not required by 8.4
-	 * nor 8.5, because they eval-direct any literals, so just saving the
-	 * argument locations per command in bytecode is enough, embedded
-	 * 'eval' commands, etc. get the correct information.
-	 *
-	 * But in 8.6 all the embedded script are compiled, and the resulting
-	 * bytecode stored in the literal. Now the shared literal has bytecode
-	 * with location data for _one_ particular location this literal is
-	 * found at. If we get executed from a different location the bytecode
-	 * has to be recompiled to get the correct locations. Not doing this
-	 * will execute the saved bytecode with data for a different location,
-	 * causing 'info frame' to point to the wrong place in the sources.
-	 *
-	 * Future optimizations ...
-	 * (1) Save the location data (ExtCmdLoc) keyed by start line. In that
-	 *     case we recompile once per location of the literal, but not
-	 *     continously, because the moment we have all locations we do not
-	 *     need to recompile any longer.
-	 *
-	 * (2) Alternative: Do not recompile, tell the execution engine the
-	 *     offset between saved starting line and actual one. Then modify
-	 *     the users to adjust the locations they have by this offset.
-	 *
-	 * (3) Alternative 2: Do not fully recompile, adjust just the location
-	 *     information.
-	 */
-
-	{
-	    Tcl_HashEntry *hePtr =
-		    Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
-
-	    if (hePtr) {
-		ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
-		int redo = 0;
-
-		if (invoker) {
-		    CmdFrame *ctxPtr = TclStackAlloc(interp,sizeof(CmdFrame));
-		    *ctxPtr = *invoker;
-
-		    if (invoker->type == TCL_LOCATION_BC) {
-			/*
-			 * Note: Type BC => ctx.data.eval.path    is not used.
-			 *		    ctx.data.tebc.codePtr used instead
-			 */
-
-			TclGetSrcInfoForPc(ctxPtr);
-			if (ctxPtr->type == TCL_LOCATION_SOURCE) {
-			    /*
-			     * The reference made by 'TclGetSrcInfoForPc' is
-			     * dead.
-			     */
-
-			    Tcl_DecrRefCount(ctxPtr->data.eval.path);
-			    ctxPtr->data.eval.path = NULL;
-			}
-		    }
-
-		    if (word < ctxPtr->nline) {
-			/*
-			 * Note: We do not care if the line[word] is -1. This
-			 * is a difference and requires a recompile (location
-			 * changed from absolute to relative, literal is used
-			 * fixed and through variable)
-			 *
-			 * Example:
-			 * test info-32.0 using literal of info-24.8
-			 *     (dict with ... vs           set body ...).
-			 */
-
-			redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
-				    && (eclPtr->start != ctxPtr->line[word]))
-				|| ((eclPtr->type == TCL_LOCATION_BC)
-				    && (ctxPtr->type == TCL_LOCATION_SOURCE));
-		    }
-
-		    TclStackFree(interp, ctxPtr);
-		}
-
-		if (redo) {
-		    goto recompileObj;
-		}
-	    }
-	}
-
-	/*
 	 * Increment the code's ref count while it is being executed. If
 	 * afterwards no references to it remain, free the code.
 	 */
@@ -1757,17 +1693,7 @@ TclCompileObj(
   recompileObj:
     iPtr->errorLine = 1;
 
-    /*
-     * TIP #280. Remember the invoker for a moment in the interpreter
-     * structures so that the byte code compiler can pick it up when
-     * initializing the compilation environment, i.e. the extended location
-     * information.
-     */
-
-    iPtr->invokeCmdFramePtr = invoker;
-    iPtr->invokeWord = word;
     tclByteCodeType.setFromAnyProc(interp, objPtr);
-    iPtr->invokeCmdFramePtr = NULL;
     codePtr = objPtr->internalRep.otherValuePtr;
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
@@ -1920,7 +1846,6 @@ TclIncrObj(
  *
  *----------------------------------------------------------------------
  */
-#define	bcFramePtr	(&TD->cmdFrame)
 #define	initCatchTop	((ptrdiff_t *) (&TD->stack[-1]))
 #define	initTosPtr	((Tcl_Obj **) (initCatchTop+codePtr->maxExceptDepth))
 #define esPtr           (iPtr->execEnvPtr->execStackPtr)
@@ -1947,7 +1872,7 @@ TclNRExecuteByteCode(
      * Reserve the stack, setup the TEBCdataPtr (TD) and CallFrame
      *
      * The execution uses a unified stack: first a TEBCdata, immediately
-     * above it a CmdFrame, then the catch stack, then the execution stack.
+     * above it the catch stack, then the execution stack.
      *
      * Make sure the catch stack is large enough to hold the maximum number of
      * catch commands that could ever be executing at the same time (this will
@@ -1964,25 +1889,6 @@ TclNRExecuteByteCode(
     TD->cleanup     = 0;
     TD->auxObjList  = NULL;
     TD->checkInterp = 0;
-    
-    /*
-     * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
-     * every time that we call out from this TD, popped when we return to it.
-     */
-
-    bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
-	    ? TCL_LOCATION_PREBC : TCL_LOCATION_BC);
-    bcFramePtr->level = (iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level+1 : 1);
-    bcFramePtr->numLevels = iPtr->numLevels;
-    bcFramePtr->framePtr = iPtr->framePtr;
-    bcFramePtr->nextPtr = iPtr->cmdFramePtr;
-    bcFramePtr->nline = 0;
-    bcFramePtr->line = NULL;
-    bcFramePtr->litarg = NULL;
-    bcFramePtr->data.tebc.codePtr = codePtr;
-    bcFramePtr->data.tebc.pc = NULL;
-    bcFramePtr->cmd.str.cmd = NULL;
-    bcFramePtr->cmd.str.len = 0;
 
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.numExecutions++;
@@ -2088,6 +1994,9 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
     traceInstructions = (tclTraceExec == 3);
 #endif
+    Tcl_Obj *srcPtr = Tcl_NewObj();
+    srcPtr->typePtr = &bcSourceType;
+    TclInvalidateStringRep(srcPtr);
 
     TEBC_DATA_DIG();
 
@@ -2102,11 +2011,6 @@ TEBCresume(
     if (data[1] /* resume from invocation */) {
 	if (iPtr->execEnvPtr->rewind) {
 	    result = TCL_ERROR;
-	}
-	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
-	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
-	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
 	}
 	if (codePtr->flags & TCL_BYTECODE_RECOMPILE) {
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
@@ -2700,8 +2604,6 @@ TEBCresume(
     case INST_EXPR_STK: {
 	ByteCode *newCodePtr;
 
-	bcFramePtr->data.tebc.pc = (char *) pc;
-	iPtr->cmdFramePtr = bcFramePtr;
 	DECACHE_STACK_INFO();
 	newCodePtr = CompileExprObj(interp, OBJ_AT_TOS);
 	CACHE_STACK_INFO();
@@ -2717,13 +2619,10 @@ TEBCresume(
 
     instEvalStk:
     case INST_EVAL_STK:
-	bcFramePtr->data.tebc.pc = (char *) pc;
-	iPtr->cmdFramePtr = bcFramePtr;
-
 	cleanup = 1;
 	pc += 1;
 	TEBC_YIELD();
-	return TclNREvalObjEx(interp, OBJ_AT_TOS, 0, NULL, 0);
+	return TclNREvalObjEx(interp, OBJ_AT_TOS, 0);
 
     case INST_INVOKE_EXPANDED:
 	CLANG_ASSERT(auxObjList);
@@ -2777,20 +2676,13 @@ TEBCresume(
 
 	/*
 	 * Finally, let TclEvalObjv handle the command.
-	 *
-	 * TIP #280: Record the last piece of info needed by
-	 * 'TclGetSrcInfoForPc', and push the frame.
 	 */
 
-	bcFramePtr->data.tebc.pc = (char *) pc;
-	iPtr->cmdFramePtr = bcFramePtr;
-
-	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
-		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	if (!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
+	    srcPtr->internalRep.twoPtrValue.ptr1 = (unsigned char *) pc;
+	    srcPtr->internalRep.twoPtrValue.ptr2 = codePtr;
+	    iPtr->cmdSourcePtr = srcPtr;
 	}
-
-	DECACHE_STACK_INFO();
 
 	pc += pcAdjustment;
 	TEBC_YIELD();
@@ -6397,10 +6289,9 @@ TEBCresume(
 		    (unsigned) CURR_DEPTH, (unsigned) 0);
 	    Tcl_Panic("TclNRExecuteByteCode execution failure: end stack top < start stack top");
 	}
-	CLANG_ASSERT(bcFramePtr);
     }
 
-    iPtr->cmdFramePtr = bcFramePtr->nextPtr;
+    TclDecrRefCount(srcPtr);
     if (--codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
@@ -6411,8 +6302,6 @@ TEBCresume(
 
 #undef codePtr
 #undef iPtr
-#undef bcFramePtr
-#undef initCatchTop
 #undef initTosPtr
 #undef auxObjList
 #undef catchTop
@@ -7996,76 +7885,6 @@ IllegalExprOperandType(
  *
  *----------------------------------------------------------------------
  */
-
-const char *
-TclGetSrcInfoForCmd(
-    Interp *iPtr,
-    int *lenPtr)
-{
-    CmdFrame *cfPtr = iPtr->cmdFramePtr;
-    ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
-
-    return GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
-			   codePtr, lenPtr, NULL);
-}
-
-void
-TclGetSrcInfoForPc(
-    CmdFrame *cfPtr)
-{
-    ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
-
-    if (cfPtr->cmd.str.cmd == NULL) {
-	cfPtr->cmd.str.cmd = GetSrcInfoForPc(
-		(unsigned char *) cfPtr->data.tebc.pc, codePtr,
-		&cfPtr->cmd.str.len, NULL);
-    }
-
-    if (cfPtr->cmd.str.cmd != NULL) {
-	/*
-	 * We now have the command. We can get the srcOffset back and from
-	 * there find the list of word locations for this command.
-	 */
-
-	ExtCmdLoc *eclPtr;
-	ECL *locPtr = NULL;
-	int srcOffset, i;
-	Interp *iPtr = (Interp *) *codePtr->interpHandle;
-	Tcl_HashEntry *hePtr =
-		Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
-
-	if (!hePtr) {
-	    return;
-	}
-
-	srcOffset = cfPtr->cmd.str.cmd - codePtr->source;
-	eclPtr = Tcl_GetHashValue(hePtr);
-
-	for (i=0; i < eclPtr->nuloc; i++) {
-	    if (eclPtr->loc[i].srcOffset == srcOffset) {
-		locPtr = eclPtr->loc+i;
-		break;
-	    }
-	}
-	if (locPtr == NULL) {
-	    Tcl_Panic("LocSearch failure");
-	}
-
-	cfPtr->line = locPtr->line;
-	cfPtr->nline = locPtr->nline;
-	cfPtr->type = eclPtr->type;
-
-	if (eclPtr->type == TCL_LOCATION_SOURCE) {
-	    cfPtr->data.eval.path = eclPtr->path;
-	    Tcl_IncrRefCount(cfPtr->data.eval.path);
-	}
-
-	/*
-	 * Do not set cfPtr->data.eval.path NULL for non-SOURCE. Needed for
-	 * cfPtr->data.tebc.codePtr.
-	 */
-    }
-}
 
 static const char *
 GetSrcInfoForPc(

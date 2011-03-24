@@ -919,13 +919,13 @@ declare 231 {
 }
 
 # Bits and pieces of TIP#280's guts
-declare 232 {
-    int TclEvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
-	    const CmdFrame *invoker, int word)
-}
-declare 233 {
-    void TclGetSrcInfoForPc(CmdFrame *contextPtr)
-}
+#declare 232 {
+#    int TclEvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
+#	    const CmdFrame *invoker, int word)
+#}
+#declare 233 {
+#    void TclGetSrcInfoForPc(CmdFrame *contextPtr)
+#}
 
 # Exports for VarReform compat: Itcl, XOTcl like to peek into our varTables :(
 declare 234 {
@@ -962,8 +962,7 @@ declare 240 {
 	      struct NRE_callback *rootPtr)
 }
 declare 241 {
-    int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
-	    const CmdFrame *invoker, int word)
+    int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 242 {
     int TclNREvalObjv(Tcl_Interp *interp, int objc,

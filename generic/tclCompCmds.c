@@ -38,8 +38,7 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 static int		PushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
-			    int *simpleVarNamePtr, int *isScalarPtr,
-			    int line, int *clNext);
+			    int *simpleVarNamePtr, int *isScalarPtr);
 
 /*
  * Macro that encapsulates an efficiency trick that avoids a function call for
@@ -49,38 +48,14 @@ static int		PushVarName(Tcl_Interp *interp,
  *			    Tcl_Interp *interp, int word);
  */
 
-#define CompileWord(envPtr, tokenPtr, interp, word) \
+#define CompileWord(envPtr, tokenPtr, interp) \
     if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) {			\
 	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
 		(tokenPtr)[1].size), (envPtr));				\
     } else {								\
-	envPtr->line = mapPtr->loc[eclIndex].line[word];		\
-	envPtr->clNext = mapPtr->loc[eclIndex].next[word];		\
 	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
 		(envPtr));						\
     }
-
-/*
- * TIP #280: Remember the per-word line information of the current command. An
- * index is used instead of a pointer as recursive compilation may reallocate,
- * i.e. move, the array. This is also the reason to save the nuloc now, it may
- * change during the course of the function.
- *
- * Macro to encapsulate the variable definition and setup.
- */
-
-#define DefineLineInformation \
-    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
-    int eclIndex = mapPtr->nuloc - 1
-
-#define SetLineInformation(word) \
-    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
-    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
-
-#define PushVarNameWord(i,v,e,f,l,s,sc,word) \
-    PushVarName(i,v,e,f,l,s,sc,						\
-	    mapPtr->loc[eclIndex].line[(word)],				\
-	    mapPtr->loc[eclIndex].next[(word)])
 
 /*
  * Flags bits used by PushVarName.
@@ -135,7 +110,6 @@ TclCompileAppendCmd(
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int simpleVarName, isScalar, localIndex, numWords;
-    DefineLineInformation;	/* TIP #280 */
 
     numWords = parsePtr->numWords;
     if (numWords == 1) {
@@ -164,8 +138,8 @@ TclCompileAppendCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+    PushVarName(interp, varTokenPtr, envPtr, 0,
+	    &localIndex, &simpleVarName, &isScalar);
 
     /*
      * We are doing an assignment, otherwise TclCompileSetCmd was called, so
@@ -175,7 +149,7 @@ TclCompileAppendCmd(
 
     if (numWords > 2) {
 	valueTokenPtr = TokenAfter(varTokenPtr);
-	CompileWord(envPtr, valueTokenPtr, interp, 2);
+	CompileWord(envPtr, valueTokenPtr, interp);
     }
 
     /*
@@ -279,7 +253,6 @@ TclCompileCatchCmd(
     int resultIndex, optsIndex, nameChars, range;
     int initStackDepth = envPtr->currStackDepth;
     int savedStackDepth;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * If syntax does not match what we expect for [catch], do not compile.
@@ -363,7 +336,6 @@ TclCompileCatchCmd(
      * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
      */
 
-    SetLineInformation(1);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	savedStackDepth = envPtr->currStackDepth;
 	TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
@@ -580,7 +552,6 @@ TclCompileDictSetCmd(
 {
     Tcl_Token *tokenPtr;
     int numWords, i;
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
     int dictVarIndex, nameChars;
     const char *name;
@@ -620,7 +591,7 @@ TclCompileDictSetCmd(
     tokenPtr = TokenAfter(varTokenPtr);
     numWords = parsePtr->numWords-1;
     for (i=1 ; i<numWords ; i++) {
-	CompileWord(envPtr, tokenPtr, interp, i);
+	CompileWord(envPtr, tokenPtr, interp);
 	tokenPtr = TokenAfter(tokenPtr);
     }
 
@@ -642,7 +613,6 @@ TclCompileDictIncrCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *keyTokenPtr;
     int dictVarIndex, nameChars, incrAmount;
     const char *name;
@@ -708,7 +678,7 @@ TclCompileDictIncrCmd(
      * Emit the key and the code to actually do the increment.
      */
 
-    CompileWord(envPtr, keyTokenPtr, interp, 3);
+    CompileWord(envPtr, keyTokenPtr, interp);
     TclEmitInstInt4( INST_DICT_INCR_IMM, incrAmount,	envPtr);
     TclEmitInt4(     dictVarIndex,			envPtr);
     return TCL_OK;
@@ -725,7 +695,6 @@ TclCompileDictGetCmd(
 {
     Tcl_Token *tokenPtr;
     int numWords, i;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * There must be at least two arguments after the command (the single-arg
@@ -743,7 +712,7 @@ TclCompileDictGetCmd(
      */
 
     for (i=0 ; i<numWords ; i++) {
-	CompileWord(envPtr, tokenPtr, interp, i);
+	CompileWord(envPtr, tokenPtr, interp);
 	tokenPtr = TokenAfter(tokenPtr);
     }
     TclEmitInstInt4(INST_DICT_GET, numWords-1, envPtr);
@@ -759,7 +728,6 @@ TclCompileDictForCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
     int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
     int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
@@ -843,7 +811,7 @@ TclCompileDictForCmd(
      * errors at this point.
      */
 
-    CompileWord(envPtr, dictTokenPtr, interp, 3);
+    CompileWord(envPtr, dictTokenPtr, interp);
     TclEmitInstInt4( INST_DICT_FIRST, infoIndex,		envPtr);
     emptyTargetOffset = CurrentOffset(envPtr);
     TclEmitInstInt4( INST_JUMP_TRUE4, 0,			envPtr);
@@ -878,7 +846,6 @@ TclCompileDictForCmd(
      * Compile the loop body itself. It should be stack-neutral.
      */
 
-    SetLineInformation(4);
     CompileBody(envPtr, bodyTokenPtr, interp);
     TclEmitOpcode(   INST_POP,					envPtr);
 
@@ -967,7 +934,6 @@ TclCompileDictUpdateCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    DefineLineInformation;	/* TIP #280 */
     const char *name;
     int i, nameChars, dictIndex, numVars, range, infoIndex;
     Tcl_Token **keyTokenPtrs, *dictVarTokenPtr, *bodyTokenPtr, *tokenPtr;
@@ -1073,7 +1039,7 @@ TclCompileDictUpdateCmd(
     infoIndex = TclCreateAuxData(duiPtr, &tclDictUpdateInfoType, envPtr);
 
     for (i=0 ; i<numVars ; i++) {
-	CompileWord(envPtr, keyTokenPtrs[i], interp, i);
+	CompileWord(envPtr, keyTokenPtrs[i], interp);
     }
     TclEmitInstInt4( INST_LIST, numVars,			envPtr);
     TclEmitInstInt4( INST_DICT_UPDATE_START, dictIndex,		envPtr);
@@ -1137,7 +1103,6 @@ TclCompileDictAppendCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     int i, dictVarIndex;
 
@@ -1177,7 +1142,7 @@ TclCompileDictAppendCmd(
 
     tokenPtr = TokenAfter(tokenPtr);
     for (i=2 ; i<parsePtr->numWords ; i++) {
-	CompileWord(envPtr, tokenPtr, interp, i);
+	CompileWord(envPtr, tokenPtr, interp);
 	tokenPtr = TokenAfter(tokenPtr);
     }
     if (parsePtr->numWords > 4) {
@@ -1201,7 +1166,6 @@ TclCompileDictLappendCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *keyTokenPtr, *valueTokenPtr;
     int dictVarIndex, nameChars;
     const char *name;
@@ -1229,8 +1193,8 @@ TclCompileDictLappendCmd(
     if (dictVarIndex < 0) {
 	return TCL_ERROR;
     }
-    CompileWord(envPtr, keyTokenPtr, interp, 3);
-    CompileWord(envPtr, valueTokenPtr, interp, 4);
+    CompileWord(envPtr, keyTokenPtr, interp);
+    CompileWord(envPtr, valueTokenPtr, interp);
     TclEmitInstInt4( INST_DICT_LAPPEND, dictVarIndex, envPtr);
     return TCL_OK;
 }
@@ -1327,7 +1291,6 @@ TclCompileErrorCmd(
      * However, we only deal with the case where there is just a message.
      */
     Tcl_Token *messageTokenPtr;
-    DefineLineInformation;	/* TIP #280 */
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
@@ -1335,7 +1298,7 @@ TclCompileErrorCmd(
     messageTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     PushLiteral(envPtr, "-code error -level 0", 20);
-    CompileWord(envPtr, messageTokenPtr, interp, 1);
+    CompileWord(envPtr, messageTokenPtr, interp);
     TclEmitOpcode(INST_RETURN_STK, envPtr);
     return TCL_OK;
 }
@@ -1372,13 +1335,6 @@ TclCompileExprCmd(
     if (parsePtr->numWords == 1) {
 	return TCL_ERROR;
     }
-
-    /*
-     * TIP #280: Use the per-word line information of the current command.
-     */
-
-    envPtr->line = envPtr->extCmdMapPtr->loc[
-	    envPtr->extCmdMapPtr->nuloc-1].line[1];
 
     firstWordPtr = TokenAfter(parsePtr->tokenPtr);
     TclCompileExprWords(interp, firstWordPtr, parsePtr->numWords-1, envPtr);
@@ -1417,7 +1373,6 @@ TclCompileForCmd(
     int testCodeOffset, bodyCodeOffset, nextCodeOffset, jumpDist;
     int bodyRange, nextRange;
     int savedStackDepth = envPtr->currStackDepth;
-    DefineLineInformation;	/* TIP #280 */
 
     if (parsePtr->numWords != 5) {
 	return TCL_ERROR;
@@ -1460,7 +1415,6 @@ TclCompileForCmd(
      * Inline compile the initial command.
      */
 
-    SetLineInformation(1);
     CompileBody(envPtr, startTokenPtr, interp);
     TclEmitOpcode(INST_POP, envPtr);
 
@@ -1483,7 +1437,6 @@ TclCompileForCmd(
      */
 
     bodyCodeOffset = ExceptionRangeStarts(envPtr, bodyRange);
-    SetLineInformation(4);
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, bodyRange);
     envPtr->currStackDepth = savedStackDepth + 1;
@@ -1495,7 +1448,6 @@ TclCompileForCmd(
 
     envPtr->currStackDepth = savedStackDepth;
     nextCodeOffset = ExceptionRangeStarts(envPtr, nextRange);
-    SetLineInformation(3);
     CompileBody(envPtr, nextTokenPtr, interp);
     ExceptionRangeEnds(envPtr, nextRange);
     envPtr->currStackDepth = savedStackDepth + 1;
@@ -1516,7 +1468,6 @@ TclCompileForCmd(
 	testCodeOffset += 3;
     }
 
-    SetLineInformation(2);
     envPtr->currStackDepth = savedStackDepth;
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
@@ -1592,7 +1543,6 @@ TclCompileForeachCmd(
     int jumpBackDist, jumpBackOffset, infoIndex, range, bodyIndex;
     int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
     int savedStackDepth = envPtr->currStackDepth;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * We parse the variable list argument words and create two arrays:
@@ -1767,7 +1717,6 @@ TclCompileForeachCmd(
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	if ((i%2 == 0) && (i > 0)) {
-	    SetLineInformation(i);
 	    CompileTokens(envPtr, tokenPtr, interp);
 	    tempVar = (firstValueTemp + loopIndex);
 	    if (tempVar <= 255) {
@@ -1799,7 +1748,6 @@ TclCompileForeachCmd(
      * Inline compile the loop body.
      */
 
-    SetLineInformation(bodyIndex);
     ExceptionRangeStarts(envPtr, range);
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);
@@ -2045,7 +1993,6 @@ TclCompileGlobalCmd(
 {
     Tcl_Token *varTokenPtr;
     int localIndex, numWords, i;
-    DefineLineInformation;	/* TIP #280 */
 
     numWords = parsePtr->numWords;
     if (numWords < 2) {
@@ -2078,7 +2025,7 @@ TclCompileGlobalCmd(
 	    return TCL_ERROR;
 	}
 
-	CompileWord(envPtr, varTokenPtr, interp, 1);
+	CompileWord(envPtr, varTokenPtr, interp);
 	TclEmitInstInt4(INST_NSUPVAR, localIndex, envPtr);
     }
 
@@ -2137,7 +2084,6 @@ TclCompileIfCmd(
 				 * "if 0 {..}" */
     int boolVal;		/* Value of static condition. */
     int compileScripts = 1;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * Only compile the "if" command if all arguments are simple words, in
@@ -2214,7 +2160,6 @@ TclCompileIfCmd(
 		    compileScripts = 0;
 		}
 	    } else {
-		SetLineInformation(wordIdx);
 		Tcl_ResetResult(interp);
 		TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 		if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
@@ -2256,7 +2201,6 @@ TclCompileIfCmd(
 	 */
 
 	if (compileScripts) {
-	    SetLineInformation(wordIdx);
 	    envPtr->currStackDepth = savedStackDepth;
 	    CompileBody(envPtr, tokenPtr, interp);
 	}
@@ -2344,7 +2288,6 @@ TclCompileIfCmd(
 	     * Compile the else command body.
 	     */
 
-	    SetLineInformation(wordIdx);
 	    CompileBody(envPtr, tokenPtr, interp);
 	}
 
@@ -2438,7 +2381,6 @@ TclCompileIncrCmd(
 {
     Tcl_Token *varTokenPtr, *incrTokenPtr;
     int simpleVarName, isScalar, localIndex, haveImmValue, immValue;
-    DefineLineInformation;	/* TIP #280 */
 
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
 	return TCL_ERROR;
@@ -2446,8 +2388,8 @@ TclCompileIncrCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_LARGE_INDEX,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+    PushVarName(interp, varTokenPtr, envPtr, TCL_NO_LARGE_INDEX,
+	    &localIndex, &simpleVarName, &isScalar);
 
     /*
      * If an increment is given, push it, but see first if it's a small
@@ -2474,7 +2416,6 @@ TclCompileIncrCmd(
 		PushLiteral(envPtr, word, numBytes);
 	    }
 	} else {
-	    SetLineInformation(2);
 	    CompileTokens(envPtr, incrTokenPtr, interp);
 	}
     } else {			/* No incr amount given so use 1. */
@@ -2557,7 +2498,6 @@ TclCompileInfoExistsCmd(
 {
     Tcl_Token *tokenPtr;
     int isScalar, simpleVarName, localIndex;
-    DefineLineInformation;	/* TIP #280 */
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
@@ -2572,8 +2512,8 @@ TclCompileInfoExistsCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, tokenPtr, envPtr, 0, &localIndex,
-	    &simpleVarName, &isScalar, 1);
+    PushVarName(interp, tokenPtr, envPtr, 0, &localIndex,
+	    &simpleVarName, &isScalar);
 
     /*
      * Emit instruction to check the variable for existence.
@@ -2629,7 +2569,6 @@ TclCompileLappendCmd(
 {
     Tcl_Token *varTokenPtr;
     int simpleVarName, isScalar, localIndex, numWords;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * If we're not in a procedure, don't compile.
@@ -2661,8 +2600,8 @@ TclCompileLappendCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+    PushVarName(interp, varTokenPtr, envPtr, 0,
+	    &localIndex, &simpleVarName, &isScalar);
 
     /*
      * If we are doing an assignment, push the new value. In the no values
@@ -2672,7 +2611,7 @@ TclCompileLappendCmd(
     if (numWords > 2) {
 	Tcl_Token *valueTokenPtr = TokenAfter(varTokenPtr);
 
-	CompileWord(envPtr, valueTokenPtr, interp, 2);
+	CompileWord(envPtr, valueTokenPtr, interp);
     }
 
     /*
@@ -2738,7 +2677,6 @@ TclCompileLassignCmd(
 {
     Tcl_Token *tokenPtr;
     int simpleVarName, isScalar, localIndex, numWords, idx;
-    DefineLineInformation;	/* TIP #280 */
 
     numWords = parsePtr->numWords;
 
@@ -2755,7 +2693,7 @@ TclCompileLassignCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp, 1);
+    CompileWord(envPtr, tokenPtr, interp);
 
     /*
      * Generate code to assign values from the list to variables.
@@ -2768,8 +2706,8 @@ TclCompileLassignCmd(
 	 * Generate the next variable name.
 	 */
 
-	PushVarNameWord(interp, tokenPtr, envPtr, 0, &localIndex,
-		&simpleVarName, &isScalar, idx+2);
+	PushVarName(interp, tokenPtr, envPtr, 0, &localIndex,
+		&simpleVarName, &isScalar);
 
 	/*
 	 * Emit instructions to get the idx'th item out of the list value on
@@ -2853,7 +2791,6 @@ TclCompileLindexCmd(
 {
     Tcl_Token *idxTokenPtr, *valTokenPtr;
     int i, numWords = parsePtr->numWords;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * Quit if too few args.
@@ -2886,7 +2823,7 @@ TclCompileLindexCmd(
 	     * by an "immediate lindex" which is the most efficient variety.
 	     */
 
-	    CompileWord(envPtr, valTokenPtr, interp, 1);
+	    CompileWord(envPtr, valTokenPtr, interp);
 	    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
 	    return TCL_OK;
 	}
@@ -2903,7 +2840,7 @@ TclCompileLindexCmd(
 
   emitComplexLindex:
     for (i=1 ; i<numWords ; i++) {
-	CompileWord(envPtr, valTokenPtr, interp, i);
+	CompileWord(envPtr, valTokenPtr, interp);
 	valTokenPtr = TokenAfter(valTokenPtr);
     }
 
@@ -2948,8 +2885,6 @@ TclCompileListCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    DefineLineInformation;	/* TIP #280 */
-
     /*
      * If we're not in a procedure, don't compile.
      */
@@ -2976,7 +2911,7 @@ TclCompileListCmd(
 
 	valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
 	for (i = 1; i < numWords; i++) {
-	    CompileWord(envPtr, valueTokenPtr, interp, i);
+	    CompileWord(envPtr, valueTokenPtr, interp);
 	    valueTokenPtr = TokenAfter(valueTokenPtr);
 	}
 	TclEmitInstInt4(INST_LIST, numWords - 1, envPtr);
@@ -3013,14 +2948,13 @@ TclCompileLlengthCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
-    DefineLineInformation;	/* TIP #280 */
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
     }
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    CompileWord(envPtr, varTokenPtr, interp, 1);
+    CompileWord(envPtr, varTokenPtr, interp);
     TclEmitOpcode(INST_LIST_LENGTH, envPtr);
     return TCL_OK;
 }
@@ -3082,7 +3016,6 @@ TclCompileLsetCmd(
     int simpleVarName;		/* Flag == 1 if var name is simple. */
     int isScalar;		/* Flag == 1 if scalar, 0 if array. */
     int i;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * Check argument count.
@@ -3105,8 +3038,8 @@ TclCompileLsetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+    PushVarName(interp, varTokenPtr, envPtr, 0,
+	    &localIndex, &simpleVarName, &isScalar);
 
     /*
      * Push the "index" args and the new element value.
@@ -3114,7 +3047,7 @@ TclCompileLsetCmd(
 
     for (i=2 ; i<parsePtr->numWords ; ++i) {
 	varTokenPtr = TokenAfter(varTokenPtr);
-	CompileWord(envPtr, varTokenPtr, interp, i);
+	CompileWord(envPtr, varTokenPtr, interp);
     }
 
     /*
@@ -3235,7 +3168,6 @@ TclCompileNamespaceUpvarCmd(
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
     int simpleVarName, isScalar, localIndex, numWords, i;
-    DefineLineInformation;	/* TIP #280 */
 
     if (envPtr->procPtr == NULL) {
 	return TCL_ERROR;
@@ -3255,7 +3187,7 @@ TclCompileNamespaceUpvarCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp, 1);
+    CompileWord(envPtr, tokenPtr, interp);
 
     /*
      * Loop over the (otherVar, thisVar) pairs. If any of the thisVar is not a
@@ -3268,9 +3200,9 @@ TclCompileNamespaceUpvarCmd(
 	otherTokenPtr = TokenAfter(localTokenPtr);
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
-	CompileWord(envPtr, otherTokenPtr, interp, 1);
-	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &simpleVarName, &isScalar, 1);
+	CompileWord(envPtr, otherTokenPtr, interp);
+	PushVarName(interp, localTokenPtr, envPtr, 0,
+		&localIndex, &simpleVarName, &isScalar);
 
 	if ((localIndex < 0) || !isScalar) {
 	    return TCL_ERROR;
@@ -3318,7 +3250,6 @@ TclCompileRegexpCmd(
 				 * parse of the RE or string. */
     int i, len, nocase, exact, sawLast, simple;
     const char *str;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * We are only interested in compiling simple regexp cases. Currently
@@ -3421,7 +3352,7 @@ TclCompileRegexpCmd(
     }
 
     if (!simple) {
-	CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords-2);
+	CompileWord(envPtr, varTokenPtr, interp);
     }
 
     /*
@@ -3429,7 +3360,7 @@ TclCompileRegexpCmd(
      */
 
     varTokenPtr = TokenAfter(varTokenPtr);
-    CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords-1);
+    CompileWord(envPtr, varTokenPtr, interp);
 
     if (simple) {
 	if (exact && !nocase) {
@@ -3489,7 +3420,6 @@ TclCompileReturnCmd(
     int numOptionWords = numWords - 1 - explicitResult;
     Tcl_Obj *returnOpts, **objv;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * Check for special case which can always be compiled:
@@ -3506,8 +3436,8 @@ TclCompileReturnCmd(
 	Tcl_Token *optsTokenPtr = TokenAfter(wordTokenPtr);
 	Tcl_Token *msgTokenPtr = TokenAfter(optsTokenPtr);
 
-	CompileWord(envPtr, optsTokenPtr, interp, 2);
-	CompileWord(envPtr, msgTokenPtr,  interp, 3);
+	CompileWord(envPtr, optsTokenPtr, interp);
+	CompileWord(envPtr, msgTokenPtr,  interp);
 	TclEmitOpcode(INST_RETURN_STK, envPtr);
 	return TCL_OK;
     }
@@ -3558,7 +3488,7 @@ TclCompileReturnCmd(
      */
 
     if (explicitResult) {
-	 CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
+	 CompileWord(envPtr, wordTokenPtr, interp);
     } else {
 	/*
 	 * No explict result argument, so default result is empty string.
@@ -3676,7 +3606,6 @@ TclCompileUpvarCmd(
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
     int simpleVarName, isScalar, localIndex, numWords, i;
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *objPtr = Tcl_NewObj();
 
     if (envPtr->procPtr == NULL) {
@@ -3712,7 +3641,7 @@ TclCompileUpvarCmd(
 	    if (numWords%2) {
 		return TCL_ERROR;
 	    }
-	    CompileWord(envPtr, tokenPtr, interp, 1);
+	    CompileWord(envPtr, tokenPtr, interp);
 	    otherTokenPtr = TokenAfter(tokenPtr);
 	    i = 4;
 	} else {
@@ -3737,9 +3666,9 @@ TclCompileUpvarCmd(
     for (; i<=numWords; i+=2, otherTokenPtr = TokenAfter(localTokenPtr)) {
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
-	CompileWord(envPtr, otherTokenPtr, interp, 1);
-	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &simpleVarName, &isScalar, 1);
+	CompileWord(envPtr, otherTokenPtr, interp);
+	PushVarName(interp, localTokenPtr, envPtr, 0,
+		&localIndex, &simpleVarName, &isScalar);
 
 	if ((localIndex < 0) || !isScalar) {
 	    return TCL_ERROR;
@@ -3785,7 +3714,6 @@ TclCompileVariableCmd(
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int localIndex, numWords, i;
-    DefineLineInformation;	/* TIP #280 */
 
     numWords = parsePtr->numWords;
     if (numWords < 2) {
@@ -3815,7 +3743,7 @@ TclCompileVariableCmd(
 	    return TCL_ERROR;
 	}
 
-	CompileWord(envPtr, varTokenPtr, interp, 1);
+	CompileWord(envPtr, varTokenPtr, interp);
 	TclEmitInstInt4(INST_VARIABLE, localIndex, envPtr);
 
 	if (i != numWords) {
@@ -3823,7 +3751,7 @@ TclCompileVariableCmd(
 	     * A value has been given: set the variable, pop the value
 	     */
 
-	    CompileWord(envPtr, valueTokenPtr, interp, 1);
+	    CompileWord(envPtr, valueTokenPtr, interp);
 	    if (localIndex < 0x100) {
 		TclEmitInstInt1(INST_STORE_SCALAR1, localIndex, envPtr);
 	    } else {
@@ -3964,10 +3892,7 @@ PushVarName(
     int flags,			/* TCL_NO_LARGE_INDEX. */
     int *localIndexPtr,		/* Must not be NULL. */
     int *simpleVarNamePtr,	/* Must not be NULL. */
-    int *isScalarPtr,		/* Must not be NULL. */
-    int line,			/* Line the token starts on. */
-    int *clNext)		/* Reference to offset of next hidden cont.
-				 * line. */
+    int *isScalarPtr)		/* Must not be NULL. */
 {
     register const char *p;
     const char *name, *elName;
@@ -4147,8 +4072,6 @@ PushVarName(
 
 	if (elName != NULL) {
 	    if (elNameChars) {
-		envPtr->line = line;
-		envPtr->clNext = clNext;
 		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
 			envPtr);
 	    } else {
@@ -4160,8 +4083,6 @@ PushVarName(
 	 * The var name isn't simple: compile and push it.
 	 */
 
-	envPtr->line = line;
-	envPtr->clNext = clNext;
 	CompileTokens(envPtr, varTokenPtr, interp);
     }
 
