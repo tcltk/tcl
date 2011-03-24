@@ -1,3 +1,9 @@
+2011-03-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclFCmd.c (TclFileAttrsCmd): Ensure that any reference to
+	temporary index tables is squelched immediately rather than hanging
+	around to trip us up in the future.
+
 2011-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/configure, unix/tcl.m4: SHLIB_LD_LIBS='${LIBS}' for OSF1-V*.
