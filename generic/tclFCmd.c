@@ -1067,6 +1067,9 @@ TclFileAttrsCmd(
 		"option", 0, &index) != TCL_OK) {
 	    goto end;
 	}
+	if (attributeStringsAllocated != NULL) {
+	    TclFreeIntRep(objv[0]);
+	}
 	if (Tcl_FSFileAttrsGet(interp, index, filePtr,
 		&objPtr) != TCL_OK) {
 	    goto end;
@@ -1090,6 +1093,9 @@ TclFileAttrsCmd(
 	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
 		    "option", 0, &index) != TCL_OK) {
 		goto end;
+	    }
+	    if (attributeStringsAllocated != NULL) {
+		TclFreeIntRep(objv[i]);
 	    }
 	    if (i + 1 == objc) {
 		Tcl_AppendResult(interp, "value for \"",
