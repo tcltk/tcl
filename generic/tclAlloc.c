@@ -1382,6 +1382,21 @@ TCL_DECLARE_MUTEX(preserveMutex) /* To protect the above statics */
 void
 TclFinalizePreserve(void)
 {
+    PreserveData *thisPtr;
+    
+    while (pdataPtr) {
+	Tcl_MutexLock(&preserveMutex);
+	if (!pdataPtr) {
+	    Tcl_MutexUnlock(&preserveMutex);
+	    break;
+	}   
+	thisPtr = pdataPtr;
+	pdataPtr = pdataPtr->nextPtr;
+	Tcl_MutexUnlock(&preserveMutex);
+	
+	thisPtr->freeProc(thisPtr->ptr);
+	TclSmallFree(thisPtr);
+    }
 }
 
 /*
