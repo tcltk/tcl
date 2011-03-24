@@ -1487,8 +1487,8 @@ Tcl_Release(
 	    }
 	    Tcl_MutexUnlock(&preserveMutex);
 	    
-	    pdataPtr->freeProc(clientData);
-	    TclSmallFree(pdataPtr);
+	    thisPtr->freeProc(clientData);
+	    TclSmallFree(thisPtr);
 	}
     }
 }
