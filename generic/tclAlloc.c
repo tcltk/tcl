@@ -130,9 +130,8 @@ typedef struct Block {
 	struct {
 	    unsigned char magic1;	/* First magic number. */
 	    unsigned char bucket;	/* Bucket block allocated from. */
-	    unsigned char inUse;	/* Block memory currently in use, as
-					 * a fraction of the block size, in
-					 * 255ths*/ 
+	    unsigned char inUse;	/* Block memory currently in use, see
+					 * details in TclpAlloc/Realloc. */
 	    unsigned char magic2;	/* Second magic number. */
 	} s;
     } u;
@@ -191,6 +190,7 @@ typedef struct Bucket {
 
 static struct {
     size_t blockSize;		/* Bucket blocksize. */
+    int shift;
 #if defined(TCL_THREADS)
     int maxBlocks;		/* Max blocks before move to share. */
     int numMove;		/* Num blocks to move to share. */
@@ -345,9 +345,14 @@ static void
 InitBucketInfo ()
 {
     int i;
-
+    int shift = 0;
+    
     for (i = 0; i < NBUCKETS; ++i) {
-	bucketInfo[i].blockSize = MINALLOC << i;    
+	bucketInfo[i].blockSize = MINALLOC << i;
+	while (((bucketInfo[i].blockSize -OFFSET) >> shift) > 255) {
+	    ++shift;
+	}
+	bucketInfo[i].shift = shift;
 #if defined(TCL_THREADS)
 	/* TODO: clearer logic? Change move to keep? */
 	bucketInfo[i].maxBlocks = 1 << (NBUCKETS - 1 - i);
@@ -719,14 +724,7 @@ Block2Ptr(
     if (bucket == NBUCKETS) {
 	blockPtr->used = 255;
     } else {
-	/*
-	 * This relies on not overflowing, which will be the case if nobody
-	 * makes NBUCKETS way too large.
-	 */
-	
-	size_t maxSize = bucketInfo[bucket].blockSize - OFFSET;
-
-	blockPtr->used = ((maxSize -1 + reqSize*255)/maxSize);
+	blockPtr->used = (reqSize >> bucketInfo[bucket].shift);
     }
     blockPtr->sourceBucket = bucket;
     ptr = (void *) (((char *)blockPtr) + OFFSET);
@@ -943,9 +941,10 @@ TclpRealloc(
 #endif
 
     /*
-     * If the block is not a system block and fits in place, simply return the
-     * existing pointer. Otherwise, if the block is a system block and the new
-     * size would also require a system block, call realloc() directly.
+     * If the block is not a system block and belongs in the same block,
+     * simply return the existing pointer. Otherwise, if the block is a system
+     * block and the new size would also require a system block, call
+     * realloc() directly. 
      */
 
     blockPtr = Ptr2Block(ptr);
@@ -979,8 +978,11 @@ TclpRealloc(
     newPtr = TclpAlloc(reqSize);
     if (newPtr != NULL) {
 	size_t maxSize = bucketInfo[bucket].blockSize - OFFSET;
-	size_t toCopy = ((blockPtr->used) * maxSize)/255;
+	size_t toCopy = ((blockPtr->used + 1) << bucketInfo[bucket].shift);
 
+	if (toCopy > maxSize) {
+	    toCopy = maxSize;
+	}
 	if (toCopy > reqSize) {
 	    toCopy = reqSize;
 	}
@@ -1423,7 +1425,8 @@ Tcl_Preserve(
 	--blockPtr->refCount;
     } else {
 	/*
-	 * First preserve call: add one refcount for use by EventuallyFree 
+	 * First preserve call: add one refcount to signal that EventuallyFree
+	 * has not yet been called (role of the old '!mustFree')
 	 */
   
 	blockPtr->refCount = 2;
