@@ -986,6 +986,11 @@ TclFileAttrsCmd(interp, objc, objv)
 		"option", 0, &index) != TCL_OK) {
 	    goto end;
 	}
+	if (numObjStrings != -1 && objv[0]->typePtr != NULL
+		&& objv[0]->typePtr->freeIntRepProc != NULL) {
+	    objv[0]->typePtr->freeIntRepProc(objv[0]);
+	    objv[0]->typePtr = NULL;
+	}
 	if (Tcl_FSFileAttrsGet(interp, index, filePtr,
 		&objPtr) != TCL_OK) {
 	    goto end;
@@ -1010,6 +1015,11 @@ TclFileAttrsCmd(interp, objc, objv)
 		    "option", 0, &index) != TCL_OK) {
 		goto end;
     	    }
+	    if (numObjStrings != -1 && objv[i]->typePtr != NULL
+		    && objv[i]->typePtr->freeIntRepProc != NULL) {
+		objv[i]->typePtr->freeIntRepProc(objv[i]);
+		objv[i]->typePtr = NULL;
+	    }
 	    if (i + 1 == objc) {
 		Tcl_AppendResult(interp, "value for \"",
 			Tcl_GetString(objv[i]), "\" missing",
