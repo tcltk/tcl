@@ -1,30 +1,36 @@
+2011-03-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclFCmd.c (TclFileAttrsCmd): Ensure that any reference to
+	temporary index tables is squelched immediately rather than hanging
+	around to trip us up in the future.
+
 2011-03-23  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclObj.c: exploit HAVE_FAST_TSD for the deletion context
-	in TclFreeObj()
+	* generic/tclObj.c: Exploit HAVE_FAST_TSD for the deletion context in
+	TclFreeObj()
 
 2011-03-22  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclThreadAlloc.c: simpler initialization of Cache
-	under HAVE_FAST_TSD, from mig-alloc-reform.
+	* generic/tclThreadAlloc.c: Simpler initialization of Cache under
+	HAVE_FAST_TSD, from mig-alloc-reform.
 
 2011-03-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/tclLoadDl.c:    [Bug #3216070] Loading extension libraries
+	* unix/tclLoadDl.c:    [Bug #3216070]: Loading extension libraries
 	* unix/tclLoadDyld.c:  from embedded Tcl applications.
 
 2011-03-21  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCkAlloc.c:
-	* generic/tclInt.h: remove one level of allocator indirection in
-	non memdebug builds, imported from mig-alloc-reform.
+	* generic/tclInt.h: Remove one level of allocator indirection in
+	non-memdebug builds, imported from mig-alloc-reform.
 
 2011-03-20  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclThreadAlloc.c: imported HAVE_FAST_TSD support from
-	mig-alloc-reform. The feature has to be enabled by hand: no
-	autoconf support has been added. It is not clear how universal
-	a build using this will be: it also requires some loader support.
+	* generic/tclThreadAlloc.c: Imported HAVE_FAST_TSD support from
+	mig-alloc-reform. The feature has to be enabled by hand: no autoconf
+	support has been added. It is not clear how universal a build using
+	this will be: it also requires some loader support.
 
 2011-03-17  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -56,8 +62,8 @@
 
 2011-03-14  Kevin B. Kenny  <kennykb@acm.org>
 
-	* tools/tclZIC.tcl (onDayOfMonth): Allow for leading zeroes
-	in month and day so that tzdata2011d parses correctly.
+	* tools/tclZIC.tcl (onDayOfMonth): Allow for leading zeroes in month
+	and day so that tzdata2011d parses correctly.
 	* library/tzdata/America/Havana:
 	* library/tzdata/America/Juneau:
 	* library/tzdata/America/Santiago:
@@ -66,14 +72,13 @@
 	* library/tzdata/Pacific/Easter:
 	* library/tzdata/Pacific/Honolulu:  tzdata2011d
 
-	* generic/tclAssembly.c (BBEmitInstInt1): Changed parameter
-	data types in an effort to silence a MSVC warning reported by
-	Ashok P. Nadkarni. Unable to test, since both forms work on
-	my machine in VC2005, 2008. 2010, in both release and debug
-	builds.
-	* tests/tclTest.c (TestdstringCmd): Restored MSVC buildability
-	broken by [5574bdd262], which changed the effective return type
-	of 'ckalloc' from 'char*' to 'void*'.
+	* generic/tclAssembly.c (BBEmitInstInt1): Changed parameter data types
+	in an effort to silence a MSVC warning reported by Ashok P. Nadkarni.
+	Unable to test, since both forms work on my machine in VC2005, 2008,
+	2010, in both release and debug builds.
+	* tests/tclTest.c (TestdstringCmd): Restored MSVC buildability broken
+	by [5574bdd262], which changed the effective return type of 'ckalloc'
+	from 'char*' to 'void*'.
 
 2011-03-13  Miguel Sofer  <msofer@users.sf.net>
 
