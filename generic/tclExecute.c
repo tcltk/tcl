@@ -1569,12 +1569,7 @@ TclNRExecuteByteCode(
      */
 
     TD = ckalloc(size);
-    size = TclAllocMaximize(TD);
-    if (size == UINT_MAX) {
-	TD->capacity = codePtr->maxStackDepth;
-    } else {
-	TD->capacity = size2capacity(size);
-    }
+    TD->capacity = codePtr->maxStackDepth;
         
     TD->tosPtr = initTosPtr;
     

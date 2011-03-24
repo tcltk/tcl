@@ -79,7 +79,6 @@ NewListIntRep(
     Tcl_Obj *const objv[])
 {
     List *listRepPtr;
-    unsigned int allocSize;
     
     if (objc <= 0) {
 	return NULL;
@@ -100,13 +99,10 @@ NewListIntRep(
     if (listRepPtr == NULL) {
 	return NULL;
     }
-    allocSize = TclAllocMaximize(listRepPtr);
     
     listRepPtr->canonicalFlag = 0;
     listRepPtr->refCount = 0;
-    listRepPtr->maxElemCount = (allocSize == UINT_MAX)
-	? objc
-	: Size2Elems(allocSize);
+    listRepPtr->maxElemCount = objc;
 
     if (objv) {
 	Tcl_Obj **elemPtrs;
@@ -585,6 +581,13 @@ Tcl_ListObjAppendElement(
      */
 
     if (numRequired > listRepPtr->maxElemCount){
+	unsigned int allocSize = TclAllocMaximize(listRepPtr);
+	if (allocSize != UINT_MAX) {
+	    listRepPtr->maxElemCount = Size2Elems(allocSize);
+	}
+    }
+	
+    if (numRequired > listRepPtr->maxElemCount){
 	newMax = 2 * numRequired;
 	newSize = Elems2Size(newMax);
     } else {
@@ -851,6 +854,13 @@ Tcl_ListObjReplace(
 
     isShared = (listRepPtr->refCount > 1);
     numRequired = numElems - count + objc;
+
+    if (numRequired > listRepPtr->maxElemCount){
+	unsigned int allocSize = TclAllocMaximize(listRepPtr);
+	if (allocSize != UINT_MAX) {
+	    listRepPtr->maxElemCount = Size2Elems(allocSize);
+	}
+    }
 
     if ((numRequired <= listRepPtr->maxElemCount) && !isShared) {
 	int shift;
