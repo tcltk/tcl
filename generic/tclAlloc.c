@@ -151,14 +151,13 @@ typedef struct Block {
 /*
  * The following defines the minimum and maximum block sizes and the number
  * of buckets in the bucket cache.
- *                        32b    64b    Apple-32b
+ *                        32b    64b    Apple-32b(?)
  *     TCL_ALLOCALIGN       8     16       16
  *     sizeof(Block)        8     16       16
  *     OFFSET               8     16       16
- *     ALLOCBASE           24     48       24
- *     MINALLOC            24     48       24
- *     NBUCKETS            11     10       11
- *     MAXALLOC         24576  24576    24576
+ *     MINALLOC            16     32       32
+ *     NBUCKETS            11     10       10
+ *     MAXALLOC         16384  16384    16384
  *     small allocs      1024    512     1024
  *        at a time
  */
