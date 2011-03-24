@@ -1,3 +1,8 @@
+2011-03-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h (ckfree,etc.): Restored C++ usability to the memory
+	allocation and free macros.
+
 2011-03-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclFCmd.c (TclFileAttrsCmd): Ensure that any reference to
