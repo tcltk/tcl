@@ -465,9 +465,9 @@ EXTERN int		TclChannelTransform _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN void		TclChannelEventScriptInvoker _ANSI_ARGS_((
 				ClientData clientData, int flags));
 /* 163 */
-EXTERN void *		TclGetInstructionTable _ANSI_ARGS_((void));
+EXTERN VOID *		TclGetInstructionTable _ANSI_ARGS_((void));
 /* 164 */
-EXTERN void		TclExpandCodeArray _ANSI_ARGS_((void * envPtr));
+EXTERN void		TclExpandCodeArray _ANSI_ARGS_((VOID * envPtr));
 /* 165 */
 EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
 /* 166 */
@@ -722,8 +722,8 @@ typedef struct TclIntStubs {
     void *reserved160;
     int (*tclChannelTransform) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan, Tcl_Obj * cmdObjPtr)); /* 161 */
     void (*tclChannelEventScriptInvoker) _ANSI_ARGS_((ClientData clientData, int flags)); /* 162 */
-    void * (*tclGetInstructionTable) _ANSI_ARGS_((void)); /* 163 */
-    void (*tclExpandCodeArray) _ANSI_ARGS_((void * envPtr)); /* 164 */
+    VOID * (*tclGetInstructionTable) _ANSI_ARGS_((void)); /* 163 */
+    void (*tclExpandCodeArray) _ANSI_ARGS_((VOID * envPtr)); /* 164 */
     void (*tclpSetInitialEncodings) _ANSI_ARGS_((void)); /* 165 */
     int (*tclListObjSetElement) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int index, Tcl_Obj * valuePtr)); /* 166 */
     void (*tclSetStartupScriptPath) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 167 */
