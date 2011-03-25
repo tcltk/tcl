@@ -1093,11 +1093,11 @@ declare 303 generic {
 }
 declare 304 generic {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    CONST VOID *tablePtr, int offset, CONST char *msg, int flags,
+	    CONST void *tablePtr, int offset, CONST char *msg, int flags,
 	    int *indexPtr)
 }
 declare 305 generic {
-    VOID *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
+    void *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
 }
 declare 306 generic {
     Tcl_Obj *Tcl_GetVar2Ex(Tcl_Interp *interp, CONST char *part1,
