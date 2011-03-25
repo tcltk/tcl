@@ -31,6 +31,8 @@
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
 #undef Tcl_CreateHashEntry
+#define TclpLocaltime_unix TclpLocaltime
+#define TclpGmtime_unix TclpGmtime
 
 /*
  * Keep a record of the original Notifier procedures, created in the
