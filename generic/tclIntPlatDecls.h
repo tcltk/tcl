@@ -189,11 +189,11 @@ EXTERN OSErr		TclMacInstallExitToShellPatch _ANSI_ARGS_((
 /* 16 */
 EXTERN int		TclMacOSErrorToPosixError _ANSI_ARGS_((int error));
 /* 17 */
-EXTERN void		TclMacRemoveTimer _ANSI_ARGS_((void * timerToken));
+EXTERN void		TclMacRemoveTimer _ANSI_ARGS_((VOID * timerToken));
 /* 18 */
-EXTERN void *		TclMacStartTimer _ANSI_ARGS_((long ms));
+EXTERN VOID *		TclMacStartTimer _ANSI_ARGS_((long ms));
 /* 19 */
-EXTERN int		TclMacTimerExpired _ANSI_ARGS_((void * timerToken));
+EXTERN int		TclMacTimerExpired _ANSI_ARGS_((VOID * timerToken));
 /* 20 */
 EXTERN int		TclMacRegisterResourceFork _ANSI_ARGS_((
 				short fileRef, Tcl_Obj * tokenPtr, 
@@ -285,9 +285,9 @@ typedef struct TclIntPlatStubs {
     void (*tclMacInitExitToShell) _ANSI_ARGS_((int usePatch)); /* 14 */
     OSErr (*tclMacInstallExitToShellPatch) _ANSI_ARGS_((ExitToShellProcPtr newProc)); /* 15 */
     int (*tclMacOSErrorToPosixError) _ANSI_ARGS_((int error)); /* 16 */
-    void (*tclMacRemoveTimer) _ANSI_ARGS_((void * timerToken)); /* 17 */
-    void * (*tclMacStartTimer) _ANSI_ARGS_((long ms)); /* 18 */
-    int (*tclMacTimerExpired) _ANSI_ARGS_((void * timerToken)); /* 19 */
+    void (*tclMacRemoveTimer) _ANSI_ARGS_((VOID * timerToken)); /* 17 */
+    VOID * (*tclMacStartTimer) _ANSI_ARGS_((long ms)); /* 18 */
+    int (*tclMacTimerExpired) _ANSI_ARGS_((VOID * timerToken)); /* 19 */
     int (*tclMacRegisterResourceFork) _ANSI_ARGS_((short fileRef, Tcl_Obj * tokenPtr, int insert)); /* 20 */
     short (*tclMacUnRegisterResourceFork) _ANSI_ARGS_((char * tokenPtr, Tcl_Obj * resultPtr)); /* 21 */
     int (*tclMacCreateEnv) _ANSI_ARGS_((void)); /* 22 */
@@ -588,5 +588,8 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 /* !END!: Do not edit above this line. */
+
+#undef TclpLocaltime_unix
+#undef TclpGmtime_unix
 
 #endif /* _TCLINTPLATDECLS */
