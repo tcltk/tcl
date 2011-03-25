@@ -90,6 +90,11 @@ static Tcl_HashEntry *	BogusFind _ANSI_ARGS_((Tcl_HashTable *tablePtr,
 			    CONST char *key));
 static Tcl_HashEntry *	BogusCreate _ANSI_ARGS_((Tcl_HashTable *tablePtr,
 			    CONST char *key, int *newPtr));
+static Tcl_HashEntry *	FindHashEntry _ANSI_ARGS_((Tcl_HashTable *tablePtr,
+			    CONST char *key));
+static Tcl_HashEntry *  CreateHashEntry _ANSI_ARGS_((Tcl_HashTable *tablePtr,
+			    CONST char *key, int *newPtr));
+
 #endif
 
 static void		RebuildTable _ANSI_ARGS_((Tcl_HashTable *tablePtr));
@@ -204,8 +209,8 @@ Tcl_InitCustomHashTable(tablePtr, keyType, typePtr)
     tablePtr->mask = 3;
     tablePtr->keyType = keyType;
 #if TCL_PRESERVE_BINARY_COMPATABILITY
-    tablePtr->findProc = Tcl_FindHashEntry;
-    tablePtr->createProc = Tcl_CreateHashEntry;
+    tablePtr->findProc = FindHashEntry;
+    tablePtr->createProc = CreateHashEntry;
 
     if (typePtr == NULL) {
 	/*
@@ -272,6 +277,16 @@ Tcl_HashEntry *
 Tcl_FindHashEntry(tablePtr, key)
     Tcl_HashTable *tablePtr;	/* Table in which to lookup entry. */
     CONST char *key;		/* Key to use to find matching entry. */
+#if TCL_PRESERVE_BINARY_COMPATABILITY
+{
+    return tablePtr->findProc(tablePtr, key);
+}
+
+static Tcl_HashEntry *
+FindHashEntry(tablePtr, key)
+    Tcl_HashTable *tablePtr;	/* Table in which to lookup entry. */
+    CONST char *key;		/* Key to use to find matching entry. */
+#endif /* TCL_PRESERVE_BINARY_COMPATABILITY */
 {
     register Tcl_HashEntry *hPtr;
     Tcl_HashKeyType *typePtr;
@@ -371,6 +386,19 @@ Tcl_CreateHashEntry(tablePtr, key, newPtr)
 				 * entry. */
     int *newPtr;		/* Store info here telling whether a new
 				 * entry was created. */
+#if TCL_PRESERVE_BINARY_COMPATABILITY
+{
+    return tablePtr->createProc(tablePtr, key, newPtr);
+}
+
+static Tcl_HashEntry *
+CreateHashEntry(tablePtr, key, newPtr)
+    Tcl_HashTable *tablePtr;	/* Table in which to lookup entry. */
+    CONST char *key;		/* Key to use to find or create matching
+				 * entry. */
+    int *newPtr;		/* Store info here telling whether a new
+				 * entry was created. */
+#endif /* TCL_PRESERVE_BINARY_COMPATABILITY */
 {
     register Tcl_HashEntry *hPtr;
     Tcl_HashKeyType *typePtr;
