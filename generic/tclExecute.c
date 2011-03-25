@@ -177,8 +177,8 @@ typedef struct TEBCdata {
     int cleanup;		/* new codePtr was received for NR */
     Tcl_Obj *auxObjList;	/* execution. */
     int checkInterp;
-    CmdFrame cmdFrame;
     unsigned int capacity;
+    CmdFrame cmdFrame;
     void * stack[1];            /* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */
@@ -1569,16 +1569,15 @@ TclNRExecuteByteCode(
      */
 
     TD = ckalloc(size);
-    TD->capacity = codePtr->maxStackDepth;
-        
-    TD->tosPtr = initTosPtr;
     
     TD->codePtr     = codePtr;
+    TD->tosPtr = initTosPtr;
     TD->pc          = codePtr->codeStart;
     TD->catchDepth  = -1;
     TD->cleanup     = 0;
     TD->auxObjList  = NULL;
     TD->checkInterp = 0;
+    TD->capacity = codePtr->maxStackDepth;
     
     /*
      * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
