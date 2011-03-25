@@ -640,7 +640,7 @@ declare 162 generic {
 # correct type when calling this procedure.
 
 declare 163 generic {
-	void * TclGetInstructionTable (void)
+	VOID *TclGetInstructionTable(void)
 }
 
 # ALERT: The argument of 'TclExpandCodeArray' is actually a
@@ -648,7 +648,7 @@ declare 163 generic {
 # "tclInt.h". It is described in "tclCompile.h".
 
 declare 164 generic {
-	void TclExpandCodeArray (void *envPtr)
+	void TclExpandCodeArray(VOID *envPtr)
 }
 
 # These functions are vfs aware, but are generally only useful internally.
@@ -790,13 +790,13 @@ declare 16 mac {
     int TclMacOSErrorToPosixError(int error)
 }
 declare 17 mac {
-    void TclMacRemoveTimer(void *timerToken)
+    void TclMacRemoveTimer(VOID *timerToken)
 }
 declare 18 mac {
-    void * TclMacStartTimer(long ms)
+    VOID *TclMacStartTimer(long ms)
 }
 declare 19 mac {
-    int TclMacTimerExpired(void *timerToken)
+    int TclMacTimerExpired(VOID *timerToken)
 }
 declare 20 mac {
     int TclMacRegisterResourceFork(short fileRef, Tcl_Obj *tokenPtr,
