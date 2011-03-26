@@ -431,17 +431,6 @@ TclpGmtime(
 
     return &tsdPtr->gmtime_buf;
 }
-
-/*
- * Forwarder for obsolete item in Stubs
- */
-
-struct tm *
-TclpGmtime_unix(
-    const time_t *timePtr)
-{
-    return TclpGmtime(timePtr);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -481,15 +470,6 @@ TclpLocaltime(
 #endif
 
     return &tsdPtr->localtime_buf;
-}
-/*
- * Forwarder for obsolete item in Stubs
- */
-struct tm*
-TclpLocaltime_unix(
-    const time_t *timePtr)
-{
-    return TclpLocaltime(timePtr);
 }
 
 /*

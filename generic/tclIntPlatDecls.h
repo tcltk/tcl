@@ -426,5 +426,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
+#undef TclpLocaltime_unix
+#undef TclpGmtime_unix
 
 #endif /* _TCLINTPLATDECLS */

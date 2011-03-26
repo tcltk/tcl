@@ -191,7 +191,7 @@ typedef struct TEBCdata {
     TclNRAddCallback(interp, TEBCresume, TD,	\
 	    INT2PTR(1), NULL, NULL)
     
-#define TEBC_DATA_DIG()				\
+#define TEBC_DATA_DIG() \
     pc = TD->pc;				\
     cleanup = TD->cleanup;			\
     tosPtr = TD->tosPtr
@@ -199,15 +199,15 @@ typedef struct TEBCdata {
 
 #define PUSH_TAUX_OBJ(objPtr) \
     do {							\
-	objPtr->internalRep.twoPtrValue.ptr2 = auxObjList;	\
+	objPtr->internalRep.ptrAndLongRep.ptr = auxObjList;	\
 	auxObjList = objPtr;					\
     } while (0)
 
 #define POP_TAUX_OBJ() \
-    do {								\
-	tmpPtr = auxObjList;						\
-	auxObjList = (Tcl_Obj *) tmpPtr->internalRep.twoPtrValue.ptr2;	\
-	Tcl_DecrRefCount(tmpPtr);					\
+    do {							\
+	tmpPtr = auxObjList;					\
+	auxObjList = tmpPtr->internalRep.ptrAndLongRep.ptr;	\
+	Tcl_DecrRefCount(tmpPtr);				\
     } while (0)
 
 /*
@@ -1071,7 +1071,7 @@ CompileExprObj(
     if (objPtr->typePtr == &exprCodeType) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
@@ -1111,7 +1111,7 @@ CompileExprObj(
 	TclInitByteCodeObj(objPtr, &compEnv);
 	objPtr->typePtr = &exprCodeType;
 	TclFreeCompileEnv(&compEnv);
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.otherValuePtr;
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
@@ -1183,7 +1183,7 @@ static void
 FreeExprCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
 
     objPtr->typePtr = NULL;
     objPtr->internalRep.otherValuePtr = NULL;
@@ -1244,7 +1244,7 @@ TclCompileObj(
 	 * here.
 	 */
 
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
@@ -1302,67 +1302,59 @@ TclCompileObj(
 	{
 	    Tcl_HashEntry *hePtr =
 		    Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
+	    ExtCmdLoc *eclPtr;
+	    CmdFrame *ctxPtr;
+	    int redo;
 
-	    if (hePtr) {
-		ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
-		int redo = 0;
+	    if (!hePtr || !invoker) {
+		return codePtr;
+	    }
 
-		if (invoker) {
-		    CmdFrame *ctxPtr = ckalloc(sizeof(CmdFrame));
-		    *ctxPtr = *invoker;
+	    eclPtr = Tcl_GetHashValue(hePtr);
+	    redo = 0;
+	    ctxPtr = ckalloc(sizeof(CmdFrame));
+	    *ctxPtr = *invoker;
 
-		    if (invoker->type == TCL_LOCATION_BC) {
-			/*
-			 * Note: Type BC => ctx.data.eval.path    is not used.
-			 *		    ctx.data.tebc.codePtr used instead
-			 */
+	    if (invoker->type == TCL_LOCATION_BC) {
+		/*
+		 * Note: Type BC => ctx.data.eval.path    is not used.
+		 *		    ctx.data.tebc.codePtr used instead
+		 */
 
-			TclGetSrcInfoForPc(ctxPtr);
-			if (ctxPtr->type == TCL_LOCATION_SOURCE) {
-			    /*
-			     * The reference made by 'TclGetSrcInfoForPc' is
-			     * dead.
-			     */
+		TclGetSrcInfoForPc(ctxPtr);
+		if (ctxPtr->type == TCL_LOCATION_SOURCE) {
+		    /*
+		     * The reference made by 'TclGetSrcInfoForPc' is dead.
+		     */
 
-			    Tcl_DecrRefCount(ctxPtr->data.eval.path);
-			    ctxPtr->data.eval.path = NULL;
-			}
-		    }
-
-		    if (word < ctxPtr->nline) {
-			/*
-			 * Note: We do not care if the line[word] is -1. This
-			 * is a difference and requires a recompile (location
-			 * changed from absolute to relative, literal is used
-			 * fixed and through variable)
-			 *
-			 * Example:
-			 * test info-32.0 using literal of info-24.8
-			 *     (dict with ... vs           set body ...).
-			 */
-
-			redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
-				    && (eclPtr->start != ctxPtr->line[word]))
-				|| ((eclPtr->type == TCL_LOCATION_BC)
-				    && (ctxPtr->type == TCL_LOCATION_SOURCE));
-		    }
-
-		    ckfree(ctxPtr);
-		}
-
-		if (redo) {
-		    goto recompileObj;
+		    Tcl_DecrRefCount(ctxPtr->data.eval.path);
+		    ctxPtr->data.eval.path = NULL;
 		}
 	    }
+
+	    if (word < ctxPtr->nline) {
+		/*
+		 * Note: We do not care if the line[word] is -1. This is a
+		 * difference and requires a recompile (location changed from
+		 * absolute to relative, literal is used fixed and through
+		 * variable)
+		 *
+		 * Example:
+		 * test info-32.0 using literal of info-24.8
+		 *     (dict with ... vs           set body ...).
+		 */
+
+		redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
+			    && (eclPtr->start != ctxPtr->line[word]))
+			|| ((eclPtr->type == TCL_LOCATION_BC)
+			    && (ctxPtr->type == TCL_LOCATION_SOURCE));
+	    }
+
+	    ckfree(ctxPtr);
+	    if (!redo) {
+		return codePtr;
+	    }
 	}
-
-	/*
-	 * Increment the code's ref count while it is being executed. If
-	 * afterwards no references to it remain, free the code.
-	 */
-
-    runCompiledObj:
-	return codePtr;
     }
 
   recompileObj:
@@ -1384,7 +1376,7 @@ TclCompileObj(
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
     }
-    goto runCompiledObj;
+    return codePtr;
 }
 
 /*
@@ -1540,7 +1532,7 @@ TclIncrObj(
 
 #define size2capacity(s) \
     (((s - sizeof(TEBCdata))/sizeof(void *)) - codePtr->maxExceptDepth + 1)
-    
+
 int
 TclNRExecuteByteCode(
     Tcl_Interp *interp,		/* Token for command interpreter. */
@@ -1735,8 +1727,8 @@ TEBCresume(
 	    }
 #endif
 	    /*
-	     * Push the call's object result and continue execution with
-	     * the next instruction.
+	     * Push the call's object result and continue execution with the
+	     * next instruction.
 	     */
 	    
 	    TRACE_WITH_OBJ(("%u => ... after \"%.20s\": TCL_OK, result=",
@@ -1746,15 +1738,13 @@ TEBCresume(
 	    
 	    /*
 	     * Reset the interp's result to avoid possible duplications of
-	     * large objects [Bug 781585]. We do not call Tcl_ResetResult
-	     * to avoid any side effects caused by the resetting of
-	     * errorInfo and errorCode [Bug 804681], which are not needed
-	     * here. We chose instead to manipulate the interp's object
-	     * result directly. 
+	     * large objects [Bug 781585]. We do not call Tcl_ResetResult to
+	     * avoid any side effects caused by the resetting of errorInfo and
+	     * errorCode [Bug 804681], which are not needed here. We chose
+	     * instead to manipulate the interp's object result directly.
 	     *
-	     * Note that the result object is now in objResultPtr, it
-	     * keeps the refCount it had in its role of
-	     * iPtr->objResultPtr. 
+	     * Note that the result object is now in objResultPtr, it keeps
+	     * the refCount it had in its role of iPtr->objResultPtr.
 	     */
 	    
 	    TclNewObj(objPtr);
@@ -2250,7 +2240,7 @@ TEBCresume(
 	 */
 
 	TclNewObj(objPtr);
-	objPtr->internalRep.twoPtrValue.ptr1 = (void *) CURR_DEPTH;
+	objPtr->internalRep.ptrAndLongRep.value = CURR_DEPTH;
 	PUSH_TAUX_OBJ(objPtr);
 	NEXT_INST_F(1, 0, 0);
 
@@ -2290,7 +2280,7 @@ TEBCresume(
 	if (reqWords > TD->capacity) {
 	    ptrdiff_t depth;
 	    unsigned int size = capacity2size(reqWords);
-	    
+
 	    depth = tosPtr - initTosPtr;
 	    TD = ckrealloc(TD, size);
 	    size = TclAllocMaximize(TD);
@@ -2301,7 +2291,7 @@ TEBCresume(
 	    }
 	    tosPtr = initTosPtr + depth;
 	}
-	
+
 	/*
 	 * Expand the list at stacktop onto the stack; free the list. Knowing
 	 * that it has a freeIntRepProc we use Tcl_DecrRefCount().
@@ -2344,8 +2334,7 @@ TEBCresume(
 
     case INST_INVOKE_EXPANDED:
 	CLANG_ASSERT(auxObjList);
-	objc = CURR_DEPTH
-		- (ptrdiff_t) auxObjList->internalRep.twoPtrValue.ptr1;
+	objc = CURR_DEPTH - auxObjList->internalRep.ptrAndLongRep.value;
 	POP_TAUX_OBJ();
 	if (objc) {
 	    pcAdjustment = 1;
@@ -4018,6 +4007,7 @@ TEBCresume(
 	     * strings.  We can use memcmp in all (n)eq cases because we
 	     * don't need to worry about lexical LE/BE variance.
 	     */
+
 	    typedef int (*memCmpFn_t)(const void*, const void*, size_t);
 	    memCmpFn_t memCmpFn;
 	    int checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
@@ -5831,7 +5821,8 @@ TEBCresume(
 	    const unsigned char *pcBeg;
 
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length, &pcBeg);
-	    TclLogCommandInfo(interp, codePtr->source, bytes, bytes ? length : 0, pcBeg, tosPtr);
+	    TclLogCommandInfo(interp, codePtr->source, bytes,
+		    bytes ? length : 0, pcBeg, tosPtr);
 	    checkInterp = 1;
 	}
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
