@@ -1,5 +1,8 @@
 2011-03-26  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclNamesp.c (Tcl_Export, Tcl_Import, DoImport): More
+	generation of errorCode information.
+
 	* generic/tclCompExpr.c, generic/tclCompile.c, generic/tclExecute.c:
 	* generic/tclListObj.c, generic/tclNamesp.c, generic/tclObj.c:
 	* generic/tclStringObj.c, generic/tclUtil.c: Reduce the number of
