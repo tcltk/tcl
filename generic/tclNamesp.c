@@ -2798,18 +2798,18 @@ GetNamespaceFromObj(
 	 * cross interps.
 	 */
 
-	resNamePtr = (ResolvedNsName *) objPtr->internalRep.twoPtrValue.ptr1;
+	resNamePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	nsPtr = resNamePtr->nsPtr;
 	refNsPtr = resNamePtr->refNsPtr;
 	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp) &&
 		(!refNsPtr || ((interp == refNsPtr->interp) &&
-		 (refNsPtr== (Namespace *) Tcl_GetCurrentNamespace(interp))))) {
+		(refNsPtr== (Namespace *) Tcl_GetCurrentNamespace(interp))))){
 	    *nsPtrPtr = (Tcl_Namespace *) nsPtr;
 	    return TCL_OK;
 	}
     }
     if (SetNsNameFromAny(interp, objPtr) == TCL_OK) {
-	resNamePtr = (ResolvedNsName *) objPtr->internalRep.twoPtrValue.ptr1;
+	resNamePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	*nsPtrPtr = (Tcl_Namespace *) resNamePtr->nsPtr;
 	return TCL_OK;
     }
