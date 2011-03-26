@@ -1057,7 +1057,7 @@ Tcl_ConcatObj(
 		continue;
 	    }
 	}
-	listRepPtr = (List *) objPtr->internalRep.twoPtrValue.ptr1;
+	listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (objPtr->bytes != NULL && !listRepPtr->canonicalFlag) {
 	    break;
 	}
