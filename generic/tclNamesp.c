@@ -1335,6 +1335,7 @@ Tcl_Export(
     if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
 	Tcl_AppendResult(interp, "invalid export pattern \"", pattern,
 		"\": pattern can't specify a namespace", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "EXPORT", "INVALID", NULL);
 	return TCL_ERROR;
     }
 
@@ -1539,6 +1540,7 @@ Tcl_Import(
 
     if (strlen(pattern) == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty import pattern",-1));
+        Tcl_SetErrorCode(interp, "TCL", "IMPORT", "EMPTY", NULL);
 	return TCL_ERROR;
     }
     TclGetNamespaceForQualName(interp, pattern, nsPtr,
@@ -1556,10 +1558,12 @@ Tcl_Import(
 	    Tcl_AppendResult(interp,
 		    "no namespace specified in import pattern \"", pattern,
 		    "\"", NULL);
+            Tcl_SetErrorCode(interp, "TCL", "IMPORT", "ORIGIN", NULL);
 	} else {
 	    Tcl_AppendResult(interp, "import pattern \"", pattern,
 		    "\" tries to import from namespace \"",
 		    importNsPtr->name, "\" into itself", NULL);
+            Tcl_SetErrorCode(interp, "TCL", "IMPORT", "SELF", NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1681,6 +1685,7 @@ DoImport(
 			    "\" would create a loop containing command \"",
 			    Tcl_DStringValue(&ds), "\"", NULL);
 		    Tcl_DStringFree(&ds);
+                    Tcl_SetErrorCode(interp, "TCL", "IMPORT", "LOOP", NULL);
 		    return TCL_ERROR;
 		}
 	    }
@@ -1720,6 +1725,7 @@ DoImport(
 	}
 	Tcl_AppendResult(interp, "can't import command \"", cmdName,
 		"\": already exists", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "IMPORT", "OVERWRITE", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
