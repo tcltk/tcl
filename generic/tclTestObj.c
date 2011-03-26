@@ -523,7 +523,7 @@ TestindexobjCmd(
 	}
 
 	Tcl_GetIndexFromObj(NULL, objv[1], tablePtr, "token", 0, &index);
-	indexRep = (struct IndexRep *) objv[1]->internalRep.otherValuePtr;
+	indexRep = objv[1]->internalRep.otherValuePtr;
 	indexRep->index = index2;
 	result = Tcl_GetIndexFromObj(NULL, objv[1],
 		tablePtr, "token", 0, &index);
@@ -560,7 +560,7 @@ TestindexobjCmd(
 
     if (objv[3]->typePtr != NULL
 	    && !strcmp("index", objv[3]->typePtr->name)) {
-	indexRep = (struct IndexRep *) objv[3]->internalRep.otherValuePtr;
+	indexRep = objv[3]->internalRep.otherValuePtr;
 	if (indexRep->tablePtr == (void *) argv) {
 	    objv[3]->typePtr->freeIntRepProc(objv[3]);
 	    objv[3]->typePtr = NULL;
@@ -1200,8 +1200,7 @@ TeststringobjCmd(
 	    if (varPtr[varIndex] != NULL) {
 		Tcl_ConvertToType(NULL, varPtr[varIndex],
 			Tcl_GetObjType("string"));
-		strPtr = (TestString *)
-		    (varPtr[varIndex])->internalRep.otherValuePtr;
+		strPtr = varPtr[varIndex]->internalRep.otherValuePtr;
 		length = (int) strPtr->allocated;
 	    } else {
 		length = -1;
@@ -1255,8 +1254,7 @@ TeststringobjCmd(
 	    if (varPtr[varIndex] != NULL) {
 		Tcl_ConvertToType(NULL, varPtr[varIndex],
 			Tcl_GetObjType("string"));
-		strPtr = (TestString *)
-		    (varPtr[varIndex])->internalRep.otherValuePtr;
+		strPtr = varPtr[varIndex]->internalRep.otherValuePtr;
 		length = strPtr->maxChars;
 	    } else {
 		length = -1;
