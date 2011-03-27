@@ -942,7 +942,7 @@ CompileSubstObj(
     if (objPtr->typePtr == &substCodeType) {
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = (ByteCode *) objPtr->internalRep.ptrAndLongRep.ptr;
+	codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
 	if ((unsigned long)flags != objPtr->internalRep.ptrAndLongRep.value
 		|| ((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
@@ -3878,7 +3878,7 @@ TclGetInnerContext(
 
 	Tcl_ListObjLength(interp, result, &len);
         Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
-    }    
+    }
     Tcl_ListObjAppendElement(NULL, result, TclNewInstNameObj(*pc));
 
     for (; objc>0 ; objc--) {
@@ -3913,7 +3913,7 @@ TclNewInstNameObj(
     unsigned char inst)
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
-    
+
     objPtr->typePtr = &tclInstNameType;
     objPtr->internalRep.longValue = (long) inst;
     objPtr->bytes = NULL;

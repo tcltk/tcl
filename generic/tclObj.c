@@ -4001,7 +4001,7 @@ SetCmdNameFromAny(
 
     if (cmdPtr) {
 	cmdPtr->refCount++;
-	resPtr = (ResolvedCmdName *) objPtr->internalRep.otherValuePtr;
+	resPtr = objPtr->internalRep.otherValuePtr;
 	if ((objPtr->typePtr == &tclCmdNameType)
 		&& resPtr && (resPtr->refCount == 1)) {
 	    /*
