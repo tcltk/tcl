@@ -6018,6 +6018,9 @@ TclNREvalObjEx(
 						 * iPtr->varFramePtr in case
 						 * TCL_EVAL_GLOBAL was set. */
 
+        if (TclInterpReady(interp) != TCL_OK) {
+            return TCL_ERROR;
+        }
 	if (flags & TCL_EVAL_GLOBAL) {
 	    savedVarFramePtr = iPtr->varFramePtr;
 	    iPtr->varFramePtr = iPtr->rootFramePtr;
