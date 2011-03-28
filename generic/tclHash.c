@@ -1191,8 +1191,6 @@ RebuildTable(tablePtr)
 	for (hPtr = *oldChainPtr; hPtr != NULL; hPtr = *oldChainPtr) {
 	    *oldChainPtr = hPtr->nextPtr;
 
-	    key = (VOID *) Tcl_GetHashKey (tablePtr, hPtr);
-
 #if TCL_HASH_KEY_STORE_HASH
 	    if (typePtr->hashKeyProc == NULL
 		|| typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
@@ -1203,6 +1201,7 @@ RebuildTable(tablePtr)
 	    hPtr->nextPtr = tablePtr->buckets[index];
 	    tablePtr->buckets[index] = hPtr;
 #else
+	    key = (VOID *) Tcl_GetHashKey (tablePtr, hPtr);
 	    if (typePtr->hashKeyProc) {
 		unsigned int hash;
 		hash = typePtr->hashKeyProc (tablePtr, (VOID *) key);
