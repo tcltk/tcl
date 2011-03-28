@@ -134,10 +134,9 @@ typedef struct String {
 #define stringAlloc(numChars) \
 	(String *) ckalloc((unsigned) STRING_SIZE(numChars) )
 #define stringRealloc(ptr, numChars) \
-	(String *) ckrealloc((char *) ptr, (unsigned) STRING_SIZE(numChars) )
+    (String *) ckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
 #define stringAttemptRealloc(ptr, numChars) \
-	(String *) attemptckrealloc((char *) ptr, \
-		(unsigned) STRING_SIZE(numChars) )
+    (String *) attemptckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
 #define GET_STRING(objPtr) \
 	((String *) (objPtr)->internalRep.otherValuePtr)
 #define SET_STRING(objPtr, stringPtr) \

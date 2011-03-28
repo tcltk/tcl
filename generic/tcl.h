@@ -799,11 +799,14 @@ typedef struct Tcl_Obj {
 	    void *ptr1;
 	    void *ptr2;
 	} twoPtrValue;
-	struct {		/*   - internal rep as a wide int, tightly
-				 *     packed fields. */
-	    void *ptr;		/* Pointer to digits. */
-	    unsigned long value;/* Alloc, used, and signum packed into a
-				 * single word. */
+	struct {		/*   - internal rep as a pointer and a long,
+				 *     the main use of which is a bignum's
+				 *     tightly packed fields, where the alloc,
+				 *     used and signum flags are packed into a
+				 *     single word with everything else hung
+				 *     off the pointer. */
+	    void *ptr;
+	    unsigned long value;
 	} ptrAndLongRep;
     } internalRep;
 } Tcl_Obj;

@@ -1,3 +1,21 @@
+2011-03-27  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TclNREvalObjEx): fix performance issue,
+	notably apparent in tclbench's "LIST lset foreach". Many thanks to
+	twylite for patiently researching the issue and explaining it to
+	me: a missing Tcl_ResetObjResult that causes unwanted sharing of
+	the current result Tcl_Obj. 
+
+2011-03-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclNamesp.c (Tcl_Export, Tcl_Import, DoImport): More
+	generation of errorCode information.
+
+	* generic/tclCompExpr.c, generic/tclCompile.c, generic/tclExecute.c:
+	* generic/tclListObj.c, generic/tclNamesp.c, generic/tclObj.c:
+	* generic/tclStringObj.c, generic/tclUtil.c: Reduce the number of
+	casts used to manage Tcl_Obj internal representations.
+
 2011-03-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h (ckfree,etc.): Restored C++ usability to the memory
