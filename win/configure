@@ -3932,6 +3932,11 @@ echo "${ECHO_T}$CELIB_DIR" >&6
     # Set some defaults (may get changed below)
     EXTRA_CFLAGS=""
 
+cat >>confdefs.h <<\_ACEOF
+#define MODULE_SCOPE extern
+_ACEOF
+
+
     # Extract the first word of "cygpath", so it can be a program name with args.
 set dummy cygpath; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
