@@ -6543,6 +6543,11 @@ echo "${ECHO_T}$tcl_cv_cc_visibility_hidden" >&6
 
 	CFLAGS="$CFLAGS -fvisibility=hidden"
 
+cat >>confdefs.h <<\_ACEOF
+#define MODULE_SCOPE extern
+_ACEOF
+
+
 else
 
 
@@ -8164,6 +8169,7 @@ cat >>confdefs.h <<\_ACEOF
 #define MODULE_SCOPE __private_extern__
 _ACEOF
 
+		tcl_cv_cc_visibility_hidden=yes
 
 fi
 
@@ -9033,6 +9039,22 @@ fi
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
 	esac
+fi
+
+
+    if test "$tcl_cv_cc_visibility_hidden" != yes; then
+
+
+cat >>confdefs.h <<\_ACEOF
+#define MODULE_SCOPE extern
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define NO_VIZ
+_ACEOF
+
+
 fi
 
 
