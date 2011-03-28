@@ -5481,7 +5481,7 @@ DeleteArray(
 /*
  *----------------------------------------------------------------------
  *
- * TclTclObjVarErrMsg --
+ * TclObjVarErrMsg --
  *
  *	Generate a reasonable error message describing why a variable
  *	operation failed.
