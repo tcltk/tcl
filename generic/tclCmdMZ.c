@@ -383,12 +383,8 @@ Tcl_RegexpObjCmd(
 		    return TCL_ERROR;
 		}
 	    } else {
-		Tcl_Obj *valuePtr;
-
-		valuePtr = Tcl_ObjSetVar2(interp, objv[i], NULL, newPtr, 0);
-		if (valuePtr == NULL) {
-		    Tcl_AppendResult(interp, "couldn't set variable \"",
-			    TclGetString(objv[i]), "\"", NULL);
+		if (Tcl_ObjSetVar2(interp, objv[i], NULL, newPtr,
+			TCL_LEAVE_ERR_MSG) == NULL) {
 		    return TCL_ERROR;
 		}
 	    }
@@ -816,9 +812,8 @@ Tcl_RegsubObjCmd(
 	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
     }
     if (objc == 4) {
-	if (Tcl_ObjSetVar2(interp, objv[3], NULL, resultPtr, 0) == NULL) {
-	    Tcl_AppendResult(interp, "couldn't set variable \"",
-		    TclGetString(objv[3]), "\"", NULL);
+	if (Tcl_ObjSetVar2(interp, objv[3], NULL, resultPtr,
+		TCL_LEAVE_ERR_MSG) == NULL) {
 	    result = TCL_ERROR;
 	} else {
 	    /*
