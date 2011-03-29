@@ -1055,8 +1055,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     ])
     AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
 	CFLAGS="$CFLAGS -fvisibility=hidden"
+	AC_DEFINE(MODULE_SCOPE, [extern], [No need to mark inidividual symbols as hidden])
     ], [
-	AC_DEFINE(NO_VIZ, [], [No visibility attribute])
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	AC_TRY_LINK([
 	    extern __attribute__((__visibility__("hidden"))) void f(void);
@@ -1663,6 +1663,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test "$tcl_cv_cc_visibility_hidden" != yes], [
 		AC_DEFINE(MODULE_SCOPE, [__private_extern__],
 		    [Compiler support for module scope symbols])
+		tcl_cv_cc_visibility_hidden=yes
 	    ])
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
@@ -2060,6 +2061,12 @@ dnl # preprocessing tests use only CPPFLAGS.
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
 	esac])
+
+    AS_IF([test "$tcl_cv_cc_visibility_hidden" != yes], [
+	AC_DEFINE(MODULE_SCOPE, [extern],
+	    [No Compiler support for module scope symbols])
+	AC_DEFINE(NO_VIZ, [], [No visibility attribute])
+    ])
 
     AS_IF([test "$SHARED_LIB_SUFFIX" = ""], [
 	SHARED_LIB_SUFFIX='${VERSION}${SHLIB_SUFFIX}'])
