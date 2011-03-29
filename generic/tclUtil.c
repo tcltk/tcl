@@ -221,6 +221,8 @@ TclFindElement(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "list element in braces followed by \"%.*s\" "
 			    "instead of space", (int) (p2-p), p));
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "JUNK",
+			    NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -280,6 +282,8 @@ TclFindElement(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "list element in quotes followed by \"%.*s\" "
 			    "instead of space", (int) (p2-p), p));
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "JUNK",
+			    NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -297,12 +301,16 @@ TclFindElement(
 	    if (interp != NULL) {
 		Tcl_SetResult(interp, "unmatched open brace in list",
 			TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "BRACE",
+			NULL);
 	    }
 	    return TCL_ERROR;
 	} else if (inQuotes) {
 	    if (interp != NULL) {
 		Tcl_SetResult(interp, "unmatched open quote in list",
 			TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "QUOTE",
+			NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -451,9 +459,6 @@ Tcl_SplitList(
 		&elSize, &brace);
 	length -= (list - prevList);
 	if (result != TCL_OK) {
-	    if (interp != NULL) {
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", NULL);
-	    }
 	    ckfree(argv);
 	    return result;
 	}
@@ -2119,10 +2124,9 @@ Tcl_PrintDouble(
     char *p, c;
     int exponent;
     int signum;
-    char* digits;
-    char* end;
-
-    int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int)sizeof(int));
+    char *digits;
+    char *end;
+    int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int) sizeof(int));
 
     /*
      * Handle NaN.
@@ -2156,26 +2160,26 @@ Tcl_PrintDouble(
     
     if (*precisionPtr == 0) {
 	digits = TclDoubleDigits(value, -1, TCL_DD_SHORTEST,
-				 &exponent, &signum, &end);
+		&exponent, &signum, &end);
     } else {
 	/*
 	 * There are at least two possible interpretations for tcl_precision.
 	 *
 	 * The first is, "choose the decimal representation having
-	 * $tcl_precision digits of significance that is nearest to the
-	 * given number, breaking ties by rounding to even, and then
-	 * trimming trailing zeros." This gives the greatest possible
-	 * precision in the decimal string, but offers the anomaly that
-	 * [expr 0.1] will be "0.10000000000000001".
+	 * $tcl_precision digits of significance that is nearest to the given
+	 * number, breaking ties by rounding to even, and then trimming
+	 * trailing zeros." This gives the greatest possible precision in the
+	 * decimal string, but offers the anomaly that [expr 0.1] will be
+	 * "0.10000000000000001".
 	 *
-	 * The second is "choose the decimal representation having at
-	 * most $tcl_precision digits of significance that is nearest
-	 * to the given number. If no such representation converts
-	 * exactly to the given number, choose the one that is closest,
-	 * breaking ties by rounding to even. If more than one such
-	 * representation converts exactly to the given number, choose
-	 * the shortest, breaking ties in favour of the nearest, breaking
-	 * remaining ties in favour of the one ending in an even digit."
+	 * The second is "choose the decimal representation having at most
+	 * $tcl_precision digits of significance that is nearest to the given
+	 * number. If no such representation converts exactly to the given
+	 * number, choose the one that is closest, breaking ties by rounding
+	 * to even. If more than one such representation converts exactly to
+	 * the given number, choose the shortest, breaking ties in favour of
+	 * the nearest, breaking remaining ties in favour of the one ending in
+	 * an even digit."
 	 *
 	 * Tcl 8.4 implements the first of these, which gives rise to
 	 * anomalies in formatting:
@@ -2188,13 +2192,13 @@ Tcl_PrintDouble(
 	 * 9.9999999999999995e-08
 	 *
 	 * For human readability, it appears better to choose the second rule,
-	 * and let [expr 0.1] return 0.1. But for 8.4 compatibility, we
-	 * prefer the first (the recommended zero value for tcl_precision
-	 * avoids the problem entirely).
+	 * and let [expr 0.1] return 0.1. But for 8.4 compatibility, we prefer
+	 * the first (the recommended zero value for tcl_precision avoids the
+	 * problem entirely).
 	 *
-	 * Uncomment TCL_DD_SHORTEN_FLAG in the next call to prefer the
-	 * method that allows floating point values to be shortened if
-	 * it can be done without loss of precision.
+	 * Uncomment TCL_DD_SHORTEN_FLAG in the next call to prefer the method
+	 * that allows floating point values to be shortened if it can be done
+	 * without loss of precision.
 	 */
 
 	digits = TclDoubleDigits(value, *precisionPtr,
@@ -2219,10 +2223,12 @@ Tcl_PrintDouble(
 		c = *++p;
 	    }
 	}
+
 	/*
 	 * Tcl 8.4 appears to format with at least a two-digit exponent;
 	 * preserve that behaviour when tcl_precision != 0
 	 */
+
 	if (*precisionPtr == 0) {
 	    sprintf(dst, "e%+d", exponent);
 	} else {
@@ -2410,6 +2416,7 @@ TclNeedSpace(
 	 * NOTE: Remove this if other Unicode spaces ever get accepted as
 	 * list-element separators.
 	 */
+
 	return 1;
     }
     switch (*end) {
@@ -2434,19 +2441,19 @@ TclNeedSpace(
  *	This procedure formats an integer into a sequence of decimal digit
  *	characters in a buffer. If the integer is negative, a minus sign is
  *	inserted at the start of the buffer. A null character is inserted at
- *	the end of the formatted characters. It is the caller's
- *	responsibility to ensure that enough storage is available. This
- *	procedure has the effect of sprintf(buffer, "%ld", n) but is faster
- *	as proven in benchmarks.  This is key to UpdateStringOfInt, which
- *	is a common path for a lot of code (e.g. int-indexed arrays).
+ *	the end of the formatted characters. It is the caller's responsibility
+ *	to ensure that enough storage is available. This procedure has the
+ *	effect of sprintf(buffer, "%ld", n) but is faster as proven in
+ *	benchmarks.  This is key to UpdateStringOfInt, which is a common path
+ *	for a lot of code (e.g. int-indexed arrays).
  *
  * Results:
  *	An integer representing the number of characters formatted, not
  *	including the terminating \0.
  *
  * Side effects:
- *	The formatted characters are written into the storage pointer to
- *	by the "buffer" argument.
+ *	The formatted characters are written into the storage pointer to by
+ *	the "buffer" argument.
  *
  *----------------------------------------------------------------------
  */
@@ -2733,7 +2740,7 @@ SetEndOffsetFromAny(
 	 */
 
 	if (isspace(UCHAR(bytes[4]))) {
-	    return TCL_ERROR;
+	    goto badIndexFormat;
 	}
 	if (Tcl_GetInt(interp, bytes+4, &offset) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2746,6 +2753,7 @@ SetEndOffsetFromAny(
 	 * Conversion failed. Report the error.
 	 */
 
+    badIndexFormat:
 	if (interp != NULL) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
@@ -2853,7 +2861,8 @@ ClearHash(
 
     for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_Obj *objPtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+	Tcl_Obj *objPtr = Tcl_GetHashValue(hPtr);
+
 	Tcl_DecrRefCount(objPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
@@ -2910,7 +2919,7 @@ static void
 FreeThreadHash(
     ClientData clientData)
 {
-    Tcl_HashTable *tablePtr = (Tcl_HashTable *) clientData;
+    Tcl_HashTable *tablePtr = clientData;
 
     ClearHash(tablePtr);
     Tcl_DeleteHashTable(tablePtr);
@@ -2996,8 +3005,7 @@ TclSetProcessGlobalValue(
     Tcl_IncrRefCount(newValue);
     cacheMap = GetThreadHash(&pgvPtr->key);
     ClearHash(cacheMap);
-    hPtr = Tcl_CreateHashEntry(cacheMap,
-	    INT2PTR(pgvPtr->epoch), &dummy);
+    hPtr = Tcl_CreateHashEntry(cacheMap, INT2PTR(pgvPtr->epoch), &dummy);
     Tcl_SetHashValue(hPtr, newValue);
     Tcl_MutexUnlock(&pgvPtr->mutex);
 }
@@ -3273,9 +3281,10 @@ TclReToGlob(
 
     if ((reStrLen >= 4) && (memcmp("***=", reStr, 4) == 0)) {
 	/*
-	 * At most, the glob pattern has length 2*reStrLen + 2 to
-	 * backslash escape every character and have * at each end.
+	 * At most, the glob pattern has length 2*reStrLen + 2 to backslash
+	 * escape every character and have * at each end.
 	 */
+
 	Tcl_DStringSetLength(dsPtr, reStrLen + 2);
 	dsStr = dsStrStart = Tcl_DStringValue(dsPtr);
 	*dsStr++ = '*';
@@ -3299,8 +3308,8 @@ TclReToGlob(
     }
 
     /*
-     * At most, the glob pattern has length reStrLen + 2 to account
-     * for possible * at each end.
+     * At most, the glob pattern has length reStrLen + 2 to account for
+     * possible * at each end.
      */
 
     Tcl_DStringSetLength(dsPtr, reStrLen + 2);
@@ -3310,9 +3319,8 @@ TclReToGlob(
      * Check for anchored REs (ie ^foo$), so we can use string equal if
      * possible. Do not alter the start of str so we can free it correctly.
      *
-     * Keep track of the last char being an unescaped star to prevent
-     * multiple instances.  Simpler than checking that the last star
-     * may be escaped.
+     * Keep track of the last char being an unescaped star to prevent multiple
+     * instances.  Simpler than checking that the last star may be escaped.
      */
 
     msg = NULL;
@@ -3420,6 +3428,7 @@ TclReToGlob(
 	 * Heuristic: if >1 non-anchoring *, the risk is large that glob
 	 * matching is slower than the RE engine, so report invalid.
 	 */
+
 	msg = "excessive recursive glob backtrack potential";
 	goto invalidGlob;
     }
