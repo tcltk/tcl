@@ -1,5 +1,5 @@
 #!/bin/sh
-#
+# 
 # ldAix ldCmd ldArg ldArg ...
 #
 # This shell script provides a wrapper for ld under AIX in order to
