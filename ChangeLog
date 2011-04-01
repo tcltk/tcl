@@ -1,3 +1,7 @@
+2011-04-01  Reinhard Max  <max@suse.de>
+
+	* library/init.tcl: TIP#131 implementation.
+
 2011-03-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclGetDate.y, generic/tclDate.c (TclClockOldscanObjCmd):
