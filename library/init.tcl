@@ -836,3 +836,14 @@ proc tcl::rmmadwiw {} {
     }
     binary format H* $logic
 }
+
+proc tcl::mathfunc::rmmadwiw {} {
+    set age [expr {9*6}]
+    set mind ""
+    while {$age} {
+        lappend mind [expr {$age%13}]
+        set age [expr {$age/13}]
+    }
+    set matter [lreverse $mind]
+    return [join $matter ""]
+}
