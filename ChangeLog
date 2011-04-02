@@ -1,5 +1,8 @@
 2011-04-02  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclInterp.c, generic/tclListObj.c, generic/tclLoad.c:
+	More generation of errorCodes ([interp], [lset], [load], [unload]).
+
 	* generic/tclEvent.c, generic/tclFileName.c: More generation of
 	errorCode information (default [bgerror] and [glob]).
 
