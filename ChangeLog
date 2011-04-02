@@ -1,3 +1,9 @@
+2011-04-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c (QuickConversion): Replaced another couple
+	of 'double' declarations with 'volatile double' to work around
+	misrounding issues in mingw-gcc 3.4.5.
+
 2011-03-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclFCmd.c (TclFileAttrsCmd): Ensure that any reference to
