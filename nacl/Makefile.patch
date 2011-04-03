@@ -1,0 +1,139 @@
+--- Makefile	2011-04-04 01:21:50.082364873 +0200
++++ tweaked.Makefile	2011-04-04 01:21:02.141607374 +0200
+@@ -102,12 +102,20 @@
+ #CFLAGS			= $(CFLAGS_DEBUG)
+ #CFLAGS			= $(CFLAGS_OPTIMIZE)
+ #CFLAGS			= $(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
+-CFLAGS			= $(CFLAGS_OPTIMIZE) -Wno-long-long -pthread -DNACL -pipe -fvisibility=hidden 
++CFLAGS			= $(CFLAGS_OPTIMIZE) -pipe -fvisibility=hidden 
++
++
++CFLAGS += -Wno-long-long -pthread -DNACL 
+ 
+ # Flags to pass to the linker
+ LDFLAGS_DEBUG		= 
+ LDFLAGS_OPTIMIZE	= 
+-LDFLAGS			= $(LDFLAGS_OPTIMIZE)  -Wl,--export-dynamic 
++LDFLAGS			= $(LDFLAGS_OPTIMIZE)  -Wl,--export-dynamic -lm \
++	  -lppruntime \
++          -lpthread \
++          -lgoogle_nacl_platform \
++          -lgio \
++          -lsrpc
+ 
+ # To disable ANSI-C procedure prototypes reverse the comment characters on the
+ # following lines:
+@@ -176,7 +184,7 @@
+ 
+ STLIB_LD		= ${AR} cr
+ SHLIB_LD		= ${CC} -shared ${CFLAGS} ${LDFLAGS}
+-SHLIB_CFLAGS		= -fPIC -DBUILD_tcl
++SHLIB_CFLAGS		= -DBUILD_tcl
+ SHLIB_LD_LIBS		= ${LIBS}
+ TCL_SHLIB_LD_EXTRAS	= 
+ 
+@@ -216,7 +224,8 @@
+ # by hand.
+ #--------------------------------------------------------------------------
+ 
+-COMPAT_OBJS		=  waitpid.o fake-rfc2553.o memcmp.o strstr.o strtoul.o strtod.o fixstrtod.o
++#COMPAT_OBJS		=  waitpid.o fake-rfc2553.o memcmp.o strstr.o strtoul.o strtod.o fixstrtod.o
++IGNORE_COMPAT_OBJS		=  waitpid.o fake-rfc2553.o memcmp.o strstr.o strtoul.o strtod.o fixstrtod.o
+ 
+ AC_FLAGS		= -DPACKAGE_NAME=\"tcl\" -DPACKAGE_TARNAME=\"tcl\" -DPACKAGE_VERSION=\"8.6\" -DPACKAGE_STRING=\"tcl\ 8.6\" -DPACKAGE_BUGREPORT=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DNO_VALUES_H=1 -DHAVE_LIMITS_H=1 -DNO_DLFCN_H=1 -DHAVE_SYS_PARAM_H=1 -DTCL_CFGVAL_ENCODING=\"iso8859-1\" -DSTATIC_BUILD=1 -DHAVE_ZLIB=1 -DMODULE_SCOPE=extern -DTCL_SHLIB_EXT=\".so\" -DTCL_CFG_OPTIMIZED=1 -DTCL_CFG_DEBUG=1 -DTCL_TOMMATH=1 -DMP_PREC=4 -DTCL_WIDE_INT_TYPE=long\ long -DUSEGETWD=1 -DHAVE_MKSTEMP=1 -DHAVE_OPENDIR=1 -DHAVE_STRTOL=1 -DNO_GETWD=1 -DNO_WAIT3=1 -DNO_UNAME=1 -DNO_REALPATH=1 -DNEED_FAKE_RFC2553=1 -DHAVE_SYS_TIME_H=1 -DTIME_WITH_SYS_TIME=1 -DHAVE_GMTIME_R=1 -DHAVE_LOCALTIME_R=1 -DHAVE_MKTIME=1 -DHAVE_TIMEZONE_VAR=1 -DHAVE_STRUCT_STAT_ST_BLOCKS=1 -DHAVE_STRUCT_STAT_ST_BLKSIZE=1 -DHAVE_BLKCNT_T=1 -DNO_FSTATFS=1 -Dstrtod=fixstrtod -Dsocklen_t=int -DHAVE_INTPTR_T=1 -DHAVE_UINTPTR_T=1 -DNO_UNION_WAIT=1 -DHAVE_SIGNED_CHAR=1 -DHAVE_LANGINFO=1 -DHAVE_MKSTEMPS=1 -DTCL_UNLOAD_DLLS=1 
+ AR			= nacl-ar
+@@ -229,7 +238,7 @@
+ TOMMATH_DIR		= $(TOP_DIR)/libtommath
+ COMPAT_DIR		= $(TOP_DIR)/compat
+ TOOL_DIR		= $(TOP_DIR)/tools
+-UNIX_DIR		= $(TOP_DIR)/unix
++UNIX_DIR		= $(BUILD_DIR)
+ MAC_OSX_DIR		= $(TOP_DIR)/macosx
+ PKGS_DIR		= $(TOP_DIR)/pkgs
+ # Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
+@@ -241,6 +250,8 @@
+ ZLIB_INCLUDE		= -I${ZLIB_DIR}
+ 
+ CC			= nacl-gcc
++CCPLUS			= nacl-g++
++
+ #CC			= purify -best-effort nacl-gcc -DPURIFY
+ 
+ # Flags to be passed to installManPage to control how the manpages should be
+@@ -335,12 +346,13 @@
+ 
+ STUB_LIB_OBJS = tclStubLib.o tclTomMathStubLib.o tclOOStubLib.o ${COMPAT_OBJS}
+ 
+-UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
++UNIX_OBJS = naclMissing.o  tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
+ 	tclUnixFile.o tclUnixPipe.o tclUnixSock.o \
+ 	tclUnixTime.o tclUnixInit.o tclUnixThrd.o \
+ 	tclUnixCompat.o
+ 
+ NOTIFY_OBJS = tclUnixNotfy.o
++IGN =  
+ 
+ MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
+ 
+@@ -600,7 +612,7 @@
+ 
+ all: binaries libraries doc packages
+ 
+-binaries: ${LIB_FILE} $(STUB_LIB_FILE) ${TCL_EXE}
++binaries: ${LIB_FILE} $(STUB_LIB_FILE) tcl.nmf
+ 
+ libraries:
+ 
+@@ -634,8 +646,15 @@
+ # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
+ ${NATIVE_TCLSH}:
+ 
+-Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
+-	$(SHELL) config.status
++tcl.nexe: naclMain.o libtcl8.6.a
++	$(CCPLUS)  $^ $(LDFLAGS) -m32 -o $@
++
++tcl.nmf: tcl.nexe
++	@echo "Creating tcl.nmf..."
++	tools/nexe2nmf tcl.nexe
++
++#Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
++#	$(SHELL) config.status
+ #tclConfig.h: $(UNIX_DIR)/tclConfig.h.in
+ #	$(SHELL) config.status
+ 
+@@ -794,7 +813,6 @@
+ 	    echo "Installing $(STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
+ 	    $(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)"/$(STUB_LIB_FILE) ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(STUB_LIB_FILE)) ; \
+ 	fi
+-	
+ 	@echo "Installing pkg-config file to $(LIB_INSTALL_DIR)/pkgconfig/"
+ 	@$(INSTALL_DATA_DIR) $(LIB_INSTALL_DIR)/pkgconfig
+ 	@$(INSTALL_DATA) tcl.pc $(LIB_INSTALL_DIR)/pkgconfig/tcl.pc
+@@ -1517,6 +1535,9 @@
+ tclUnixThrd.o: $(UNIX_DIR)/tclUnixThrd.c
+ 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixThrd.c
+ 
++tclNaclPort.o: $(UNIX_DIR)/tclNaclPort.c
++	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclNaclPort.c
++
+ tclUnixTime.o: $(UNIX_DIR)/tclUnixTime.c
+ 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixTime.c
+ 
+@@ -2031,13 +2052,13 @@
+ 
+ html: ${NATIVE_TCLSH}
+ 	$(BUILD_HTML)
+-	
++
+ html-tcl: ${NATIVE_TCLSH}
+ 	$(BUILD_HTML) --tcl
+-	
++
+ html-tk: ${NATIVE_TCLSH}
+ 	$(BUILD_HTML) --tk
+-	
++
+ 
+ BUILD_HTML = \
+ 	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
