@@ -1,3 +1,11 @@
+2011-04-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclNamesp.c, generic/tclObj.c, generic/tclPathObj.c:
+	* generic/tclPipe.c, generic/tclPkg.c, generic/tclProc.c:
+	* generic/tclScan.c: More generation of error codes (namespace
+	creation, path normalization, pipeline creation, package handling,
+	procedures, [scan] formats)
+
 2011-04-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclStrToD.c (QuickConversion): Replaced another couple
