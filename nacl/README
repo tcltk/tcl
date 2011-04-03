@@ -29,7 +29,7 @@ Building Tcl for Nacl
 
  - run 'patch -p0 < Makefile.patch' to fix the generated Makefile
 
- - run 'make'. This creates tcl.nmf and tcl.nexe.
+ - run 'make'. This creates tcl.nmf and tcl.nexe (for x86-32)
 
  - launch the NaCl-provided python-based webserver, and make it see your nacl dir somewhere in its document tree: python httpd.py 5103
 
@@ -38,17 +38,32 @@ Building Tcl for Nacl
 Overview of the porting method
 ------------------------------
 
-Nacl  comes  with a  very  incomplete libc  and  set  of headers.  The
+Nacl  comes with  a  very incomplete  libc  and set  of headers.   The
 strategy,  then,  is to  simply  "plug"  missing  syscalls or  library
 functions with either explicitly  failing stubs (returning -1 or NULL,
-and setting  errno), and  to build a  big include  file (naclcompat.h)
-with all the necessary type and macro definitions to compile.
+and  setting errno)  or emulators,  and to  build a  big  include file
+(naclcompat.h) with  all the necessary  type and macro  definitions to
+compile.
  
 Of course,  when one  of the  failing stubs is  called at  runtime, an
 error is raised.  But one cannot hope much more, it's  a sandbox for a
 reason.
 
 This approach allows to compile Tcl for Nacl without changing a single
-line of  the original source distribution;  all new things  are in the
-nacl subdir.
+line of the original source distribution; all new things are in the
+nacl subdir. Moreover, many files are just symlinks to ../unix. Here
+they are, since fossil wrongly extracts them as files:
 
+	configure -> ../unix/configure
+	tclLoadDl.c -> ../unix/tclLoadDl.c
+	tclUnixChan.c -> ../unix/tclUnixChan.c
+	tclUnixCompat.c -> ../unix/tclUnixCompat.c
+	tclUnixEvent.c -> ../unix/tclUnixEvent.c
+	tclUnixFCmd.c -> ../unix/tclUnixFCmd.c
+	tclUnixFile.c -> ../unix/tclUnixFile.c
+	tclUnixInit.c -> ../unix/tclUnixInit.c
+	tclUnixNotfy.c -> ../unix/tclUnixNotfy.c
+	tclUnixPipe.c -> ../unix/tclUnixPipe.c
+	tclUnixSock.c -> ../unix/tclUnixSock.c
+	tclUnixThrd.c -> ../unix/tclUnixThrd.c
+	tclUnixTime.c -> ../unix/tclUnixTime.c
