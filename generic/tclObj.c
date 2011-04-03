@@ -2265,6 +2265,8 @@ Tcl_GetDoubleFromObj(
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "floating point value is Not a Number", -1));
+                    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
+                            NULL);
 		}
 		return TCL_ERROR;
 	    }
