@@ -1487,9 +1487,10 @@ TclMergeReturnOptions(
 	     */
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad -errorstack value: "
-			     "expected a list but got \"",
-			     TclGetString(valuePtr), "\"", NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "NONLIST_ERRORSTACK", NULL);
+		    "expected a list but got \"", TclGetString(valuePtr),
+                    "\"", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "NONLIST_ERRORSTACK",
+                    NULL);
 	    goto error;
 	}
         if (length % 2) {
@@ -1497,9 +1498,11 @@ TclMergeReturnOptions(
              * Errorstack must always be an even-sized list
              */
             Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "forbidden odd-sized list for -errorstack: \"",
-			     TclGetString(valuePtr), "\"", NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "ODDSIZEDLIST_ERRORSTACK", NULL);
+	    Tcl_AppendResult(interp,
+                    "forbidden odd-sized list for -errorstack: \"",
+		    TclGetString(valuePtr), "\"", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "RESULT",
+                    "ODDSIZEDLIST_ERRORSTACK", NULL);
 	    goto error;
         }
     }

@@ -154,11 +154,13 @@ Tcl_ProcObjCmd(
     if (nsPtr == NULL) {
 	Tcl_AppendResult(interp, "can't create procedure \"", fullName,
 		"\": unknown namespace", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", NULL);
 	return TCL_ERROR;
     }
     if (procName == NULL) {
 	Tcl_AppendResult(interp, "can't create procedure \"", fullName,
 		"\": bad procedure name", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", NULL);
 	return TCL_ERROR;
     }
     if ((nsPtr != iPtr->globalNsPtr)
@@ -166,6 +168,7 @@ Tcl_ProcObjCmd(
 	Tcl_AppendResult(interp, "can't create procedure \"", procName,
 		"\" in non-global namespace with name starting with \":\"",
 		NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", NULL);
 	return TCL_ERROR;
     }
 
@@ -490,6 +493,8 @@ TclCreateProc(
 		    "procedure \"%s\": arg list contains %d entries, "
 		    "precompiled header expects %d", procName, numArgs,
 		    procPtr->numArgs));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+		    "BYTECODELIES", NULL);
 	    goto procError;
 	}
 	localPtr = procPtr->firstLocalPtr;
@@ -516,11 +521,15 @@ TclCreateProc(
 	    Tcl_AppendResult(interp,
 		    "too many fields in argument specifier \"",
 		    argArray[i], "\"", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+		    "FORMALARGUMENTFORMAT", NULL);
 	    goto procError;
 	}
 	if ((fieldCount == 0) || (*fieldValues[0] == 0)) {
 	    ckfree(fieldValues);
 	    Tcl_AppendResult(interp, "argument with no name", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+		    "FORMALARGUMENTFORMAT", NULL);
 	    goto procError;
 	}
 
@@ -547,12 +556,16 @@ TclCreateProc(
 		    Tcl_AppendResult(interp, "formal parameter \"",
 			    fieldValues[0], "\" is an array element", NULL);
 		    ckfree(fieldValues);
+		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			    "FORMALARGUMENTFORMAT", NULL);
 		    goto procError;
 		}
 	    } else if ((*p == ':') && (*(p+1) == ':')) {
 		Tcl_AppendResult(interp, "formal parameter \"",
 			fieldValues[0], "\" is not a simple name", NULL);
 		ckfree(fieldValues);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			"FORMALARGUMENTFORMAT", NULL);
 		goto procError;
 	    }
 	    p++;
@@ -580,6 +593,8 @@ TclCreateProc(
 			"procedure \"%s\": formal parameter %d is "
 			"inconsistent with precompiled body", procName, i));
 		ckfree(fieldValues);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			"BYTECODELIES", NULL);
 		goto procError;
 	    }
 
@@ -599,6 +614,8 @@ TclCreateProc(
 			    "default value inconsistent with precompiled body",
 			    procName, fieldValues[0]));
 		    ckfree(fieldValues);
+		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			    "BYTECODELIES", NULL);
 		    goto procError;
 		}
 	    }
@@ -752,6 +769,7 @@ TclGetFrame(
   levelError:
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, "bad level \"", name, "\"", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "VALUE", "STACKLEVEL", NULL);
     return -1;
 }
 
@@ -884,7 +902,7 @@ TclObjGetFrame(
   levelError:
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, "bad level \"", name, "\"", NULL);
-    Tcl_SetErrorCode(interp, "TCL", "VALUE", "LEVEL", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "VALUE", "STACKLEVEL", NULL);
     return -1;
 }
 
@@ -1863,6 +1881,7 @@ InterpProcNR2(
 	Tcl_AppendResult(interp, "invoked \"",
 		((result == TCL_BREAK) ? "break" : "continue"),
 		"\" outside of a loop", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "RESULT", "UNEXPECTED", NULL);
 	result = TCL_ERROR;
 
 	/*
@@ -1980,6 +1999,8 @@ TclProcCompileProc(
 	    if ((Interp *) *codePtr->interpHandle != iPtr) {
 		Tcl_AppendResult(interp,
 			"a precompiled script jumped interps", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			"CROSSINTERPBYTECODE", NULL);
 		return TCL_ERROR;
 	    }
 	    codePtr->compileEpoch = iPtr->compileEpoch;
@@ -2468,6 +2489,7 @@ SetLambdaFromAny(
 	Tcl_AppendObjToObj(errPtr, objPtr);
 	Tcl_AppendToObj(errPtr, "\" as a lambda expression", -1);
 	Tcl_SetObjResult(interp, errPtr);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", NULL);
 	return TCL_ERROR;
     }
 
@@ -2893,26 +2915,28 @@ Tcl_DisassembleObjCmd(
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "procName");
 	    return TCL_ERROR;
-	} else {
-	    procPtr = TclFindProc((Interp *) interp, TclGetString(objv[2]));
-	    if (procPtr == NULL) {
-		Tcl_AppendResult(interp, "\"", TclGetString(objv[2]),
-			"\" isn't a procedure", NULL);
-		return TCL_ERROR;
-	    }
-
-	    /*
-	     * Compile (if uncompiled) and disassemble a procedure.
-	     */
-
-	    result = PushProcCallFrame(procPtr, interp, 2, objv+1, 1);
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	    TclPopStackFrame(interp);
-	    codeObjPtr = procPtr->bodyPtr;
-	    break;
 	}
+
+	procPtr = TclFindProc((Interp *) interp, TclGetString(objv[2]));
+	if (procPtr == NULL) {
+	    Tcl_AppendResult(interp, "\"", TclGetString(objv[2]),
+		    "\" isn't a procedure", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROC",
+		    TclGetString(objv[2]), NULL);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Compile (if uncompiled) and disassemble a procedure.
+	 */
+
+	result = PushProcCallFrame(procPtr, interp, 2, objv+1, 1);
+	if (result != TCL_OK) {
+	    return result;
+	}
+	TclPopStackFrame(interp);
+	codeObjPtr = procPtr->bodyPtr;
+	break;
     case DISAS_SCRIPT:
 	/*
 	 * Compile and disassemble a script.
@@ -2947,6 +2971,8 @@ Tcl_DisassembleObjCmd(
 	if (oPtr->classPtr == NULL) {
 	    Tcl_AppendResult(interp, "\"", TclGetString(objv[2]),
 		    "\" is not a class", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		    TclGetString(objv[2]), NULL);
 	    return TCL_ERROR;
 	}
 	hPtr = Tcl_FindHashEntry(&oPtr->classPtr->classMethods,
@@ -2980,12 +3006,16 @@ Tcl_DisassembleObjCmd(
 	unknownMethod:
 	    Tcl_AppendResult(interp, "unknown method \"",
 		    TclGetString(objv[3]), "\"", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		    TclGetString(objv[3]), NULL);
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
 	if (procPtr == NULL) {
 	    Tcl_AppendResult(interp,
 		    "body not available for this kind of method", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "METHODTYPE", NULL);
 	    return TCL_ERROR;
 	}
 	if (procPtr->bodyPtr->typePtr != &tclByteCodeType) {
@@ -3019,6 +3049,8 @@ Tcl_DisassembleObjCmd(
     if (((ByteCode *) codeObjPtr->internalRep.otherValuePtr)->flags
 	    & TCL_BYTECODE_PRECOMPILED) {
 	Tcl_AppendResult(interp,"may not disassemble prebuilt bytecode",NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		"BYTECODE", NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, TclDisassembleByteCodeObj(codeObjPtr));
