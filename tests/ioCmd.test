@@ -386,13 +386,13 @@ test iocmd-11.1 {I/O to command pipelines} {unixOrPc unixExecs} {
     set f [open $path(test4) w]
     close $f
     list [catch {open "| cat < \"$path(test4)\" > \"$path(test5)\"" w} msg] $msg $::errorCode
-} {1 {can't write input to command: standard input was redirected} NONE}
+} {1 {can't write input to command: standard input was redirected} {TCL OPERATION EXEC BADREDIRECT}}
 test iocmd-11.2 {I/O to command pipelines} {unixOrPc unixExecs} {
     list [catch {open "| echo > \"$path(test5)\"" r} msg] $msg $::errorCode
-} {1 {can't read output from command: standard output was redirected} NONE}
+} {1 {can't read output from command: standard output was redirected} {TCL OPERATION EXEC BADREDIRECT}}
 test iocmd-11.3 {I/O to command pipelines} {unixOrPc unixExecs} {
     list [catch {open "| echo > \"$path(test5)\"" r+} msg] $msg $::errorCode
-} {1 {can't read output from command: standard output was redirected} NONE}
+} {1 {can't read output from command: standard output was redirected} {TCL OPERATION EXEC BADREDIRECT}}
 test iocmd-11.4 {I/O to command pipelines} unixOrPc {
     list [catch {open "| no_such_command_exists" rb} msg] $msg $::errorCode
 } {1 {couldn't execute "no_such_command_exists": no such file or directory} {POSIX ENOENT {no such file or directory}}}
