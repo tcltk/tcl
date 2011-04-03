@@ -1,0 +1,54 @@
+
+		Tcl in Nacl
+
+
+Overview
+--------
+
+NaCl == Native Client is Google's neat sandboxing technology, allowing
+to  run  untrusted  code  compiled  natively,  in  the  context  of  a
+browser. See http://code.google.com/p/nativeclient/.
+
+The idea  is that with Tcl  running in this context,  and a supporting
+browser (currently,  Chrome only; possibly FF +  Nacl plugin shortly),
+one could  develop client-side  code mainly in  Tcl, with a  very thin
+layer of JS in the page; so, basically, Tcl to control the HTML5 DOM !
+
+Building Tcl for Nacl
+---------------------
+
+ - install the NaCl SDK (for me native_client_sdk_0_1_721_0)
+
+ - set your PATH so that nacl-gcc et al become reachable
+
+ - untar the present archive as an 'nacl' subdir in a Tcl source tree, as a sibling  of 'unix"
+
+ - cd inside it
+
+ - run './nacl.genconf' (which is a ./configure command line with proper flags)
+
+ - run 'patch -p0 < Makefile.patch' to fix the generated Makefile
+
+ - run 'make'. This creates tcl.nmf and tcl.nexe.
+
+ - launch the NaCl-provided python-based webserver, and make it see your nacl dir somewhere in its document tree: python httpd.py 5103
+
+ - start 'chromedebug' (provided), and point Chrome to the index.html in nacl.
+
+Overview of the porting method
+------------------------------
+
+Nacl  comes  with a  very  incomplete libc  and  set  of headers.  The
+strategy,  then,  is to  simply  "plug"  missing  syscalls or  library
+functions with either explicitly  failing stubs (returning -1 or NULL,
+and setting  errno), and  to build a  big include  file (naclcompat.h)
+with all the necessary type and macro definitions to compile.
+ 
+Of course,  when one  of the  failing stubs is  called at  runtime, an
+error is raised.  But one cannot hope much more, it's  a sandbox for a
+reason.
+
+This approach allows to compile Tcl for Nacl without changing a single
+line of  the original source distribution;  all new things  are in the
+nacl subdir.
+

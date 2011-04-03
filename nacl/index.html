@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <!--
+  Copyright (c) 2010 The Native Client Authors. All rights reserved.
+  Use of this source code is governed by a BSD-style license that can be
+  found in the LICENSE file.
+  -->
+<head>
+  <title>Tcl in Nacl</title>
+
+  <script type="text/javascript">
+    tclModule = null;  // Global application object.
+    statusText = 'NO-STATUS';
+
+    function moduleDidLoad() {
+      tclModule = document.getElementById('tcl');
+      updateStatus('SUCCESS');
+    }
+
+    // If the page loads before the Native Client module loads, then set the
+    // status message indicating that the module is still loading.  Otherwise,
+    // do not change the status message.
+    function pageDidLoad() {
+      if (tclModule == null) {
+        updateStatus('LOADING...');
+      } else {
+        // It's possible that the Native Client module onload event fired
+        // before the page's onload event.  In this case, the status message
+        // will reflect 'SUCCESS', but won't be displayed.  This call will
+        // display the current message.
+        updateStatus();
+      }
+    }
+
+    function doeval() {
+      try {
+        alert(tclModule.eval(this.the_form.input_id.value));
+      } catch(e) {
+        alert(e.message);
+      }
+    }
+
+    // Set the global status message.  If the element with id 'statusField'
+    // exists, then set its HTML to the status message as well.
+    // opt_message The message test.  If this is null or undefined, then
+    //     attempt to set the element with id 'statusField' to the value of
+    //     |statusText|.
+    function updateStatus(opt_message) {
+      if (opt_message)
+        statusText = opt_message;
+      var statusField = document.getElementById('status_field');
+      if (statusField) {
+        statusField.innerHTML = statusText;
+      }
+    }
+  </script>
+</head>
+<body onload="pageDidLoad()">
+
+<h1>Native Client Tcl Module</h1>
+<p>
+  <form name="the_form" action="" method="get">
+  <input type="text" id="input_id" name="inputbox" value="list a b c"><p>
+  <input type="button" value="Call eval()" onclick="doeval()">
+  </form>
+  <!-- Load the published .nexe.  This includes the 'nacl' attribute which
+  shows how to load multi-architecture modules.  Each entry in the "nexes"
+  object in the  .nmf manifest file is a key-value pair: the key is the runtime
+  ('x86-32', 'x86-64', etc.); the value is a URL for the desired NaCl module.
+  To load the debug versions of your .nexes, set the 'nacl' attribute to the
+  _dbg.nmf version of the manifest file.
+  -->
+  <embed name="nacl_module"
+         id="tcl"
+         width=0 height=0
+         nacl="tcl.nmf"
+         type="application/x-nacl"
+         onload="moduleDidLoad();" />
+</p>
+
+<p>If the module is working correctly, a click on the "Call eval()" button
+  should open a popup dialog containing the Tcl result as its value.</p>
+
+<h2>Status</h2>
+<div id="status_field">NO-STATUS</div>
+</body>
+</html>

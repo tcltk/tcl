@@ -1,3 +1,9 @@
+2011-04-04 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* nacl/...: New branch ferrieux-nacl : a port of Tcl to
+	Google's Nacl (Native Client)
+
+
 2011-04-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclNamesp.c, generic/tclObj.c, generic/tclPathObj.c:

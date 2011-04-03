@@ -1,0 +1,2 @@
+#! /bin/sh -x
+CC=nacl-gcc CPP=nacl-cpp  CFLAGS="-Wno-long-long -pthread -DNACL" ./configure --host nacl --disable-threads --disable-shared
