@@ -1401,6 +1401,7 @@ Tcl_NewObjectInstance(
 	    TCL_NAMESPACE_ONLY)) {
 	Tcl_AppendResult(interp, "can't create object \"", nameStr,
 		"\": command already exists with that name", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", NULL);
 	return NULL;
     }
 
@@ -1459,6 +1460,7 @@ Tcl_NewObjectInstance(
 	    if (result != TCL_ERROR && (flags & OBJECT_DELETED)) {
 		Tcl_SetResult(interp, "object deleted in constructor",
 			TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
 		result = TCL_ERROR;
 	    }
 	    TclOODeleteContext(contextPtr);
@@ -1514,6 +1516,7 @@ TclNRNewObjectInstance(
 	    TCL_NAMESPACE_ONLY)) {
 	Tcl_AppendResult(interp, "can't create object \"", nameStr,
 		"\": command already exists with that name", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", NULL);
 	return TCL_ERROR;
     }
 
@@ -1592,6 +1595,7 @@ FinalizeAlloc(
 
     if (result != TCL_ERROR && (flags & OBJECT_DELETED)) {
 	Tcl_SetResult(interp, "object deleted in constructor", TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
 	result = TCL_ERROR;
     }
     TclOODeleteContext(contextPtr);
@@ -1646,10 +1650,12 @@ Tcl_CopyObjectInstance(
     if (targetName == NULL && oPtr->classPtr != NULL) {
 	Tcl_AppendResult(interp, "must supply a name when copying a class",
 		NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "NO_COPY_TARGET", NULL);
 	return NULL;
     }
     if (oPtr->flags & ROOT_CLASS) {
 	Tcl_AppendResult(interp, "may not clone the class of classes", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "CLONING_CLASS", NULL);
 	return NULL;
     }
 
@@ -2265,6 +2271,8 @@ TclOOObjectCmdCore(
 	    Tcl_AppendResult(interp, "impossible to invoke method \"",
 		    TclGetString(methodNamePtr),
 		    "\": no defined method or unknown method", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD_MAPPED",
+		    TclGetString(methodNamePtr), NULL);
 	    return TCL_ERROR;
 	}
     } else {
@@ -2279,6 +2287,8 @@ TclOOObjectCmdCore(
 	    Tcl_AppendResult(interp, "impossible to invoke method \"",
 		    TclGetString(methodNamePtr),
 		    "\": no defined method or unknown method", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		    TclGetString(methodNamePtr), NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -2304,6 +2314,8 @@ TclOOObjectCmdCore(
 	if (contextPtr->index >= contextPtr->callPtr->numChain) {
 	    Tcl_SetResult(interp, "no valid method implementation",
 		    TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		    TclGetString(methodNamePtr), NULL);
 	    TclOODeleteContext(contextPtr);
 	    return TCL_ERROR;
 	}
@@ -2384,6 +2396,7 @@ Tcl_ObjectContextInvokeNext(
 
 	Tcl_AppendResult(interp, "no next ", methodType, " implementation",
 		NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", NULL);
 	return TCL_ERROR;
     }
 
@@ -2452,6 +2465,7 @@ TclNRObjectContextInvokeNext(
 
 	Tcl_AppendResult(interp, "no next ", methodType, " implementation",
 		NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", NULL);
 	return TCL_ERROR;
     }
 
@@ -2529,6 +2543,8 @@ Tcl_GetObjectFromObj(
   notAnObject:
     Tcl_AppendResult(interp, TclGetString(objPtr),
 	    " does not refer to an object", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "OBJECT", TclGetString(objPtr),
+	    NULL);
     return NULL;
 }
 

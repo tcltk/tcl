@@ -216,30 +216,22 @@ InfoObjectClassCmd(
 		TclOOObjectName(interp, oPtr->selfCls->thisPtr));
 	return TCL_OK;
     } else {
-	Object *o2Ptr;
-	Class *mixinPtr;
+	Class *mixinPtr, *o2clsPtr;
 	int i;
 
-	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-	if (o2Ptr == NULL) {
-	    return TCL_ERROR;
-	}
-	if (o2Ptr->classPtr == NULL) {
-	    Tcl_AppendResult(interp, "object \"", TclGetString(objv[2]),
-		    "\" is not a class", NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), NULL);
+	o2clsPtr = GetClassFromObj(interp, objv[2]);
+	if (o2clsPtr == NULL) {
 	    return TCL_ERROR;
 	}
 
 	FOREACH(mixinPtr, oPtr->mixins) {
-	    if (TclOOIsReachable(o2Ptr->classPtr, mixinPtr)) {
+	    if (TclOOIsReachable(o2clsPtr, mixinPtr)) {
 		Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
 		return TCL_OK;
 	    }
 	}
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(
-		TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls)));
+		TclOOIsReachable(o2clsPtr, oPtr->selfCls)));
 	return TCL_OK;
     }
 }
@@ -496,6 +488,7 @@ InfoObjectIsACmd(
 	}
 	if (o2Ptr->classPtr == NULL) {
 	    Tcl_AppendResult(interp, "non-classes cannot be mixins", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "NONCLASS", NULL);
 	    return TCL_ERROR;
 	} else {
 	    Class *mixinPtr;
@@ -520,6 +513,7 @@ InfoObjectIsACmd(
 	}
 	if (o2Ptr->classPtr == NULL) {
 	    Tcl_AppendResult(interp, "non-classes cannot be types", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "NONCLASS", NULL);
 	    return TCL_ERROR;
 	}
 	if (TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls)) {
@@ -882,6 +876,7 @@ InfoClassConstrCmd(
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp,
 		"definition not available for this kind of method", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "METHOD_TYPE", NULL);
 	return TCL_ERROR;
     }
 
@@ -1009,6 +1004,7 @@ InfoClassDestrCmd(
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp,
 		"definition not available for this kind of method", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "METHOD_TYPE", NULL);
 	return TCL_ERROR;
     }
 
