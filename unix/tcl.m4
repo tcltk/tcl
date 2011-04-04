@@ -1210,12 +1210,11 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	BSD/OS-4.*)
-	    SHLIB_CFLAGS="-export-dynamic -fPIC"
+	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -export-dynamic"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
@@ -1239,7 +1238,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	Haiku*)
-	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_SUFFIX=".so"
 	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
@@ -1389,7 +1387,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
@@ -1421,7 +1418,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS=""
 	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    AS_IF([test "`uname -m`" = "alpha"], [CFLAGS="$CFLAGS -mieee"])
@@ -1433,7 +1429,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-mshared -ldl"
-	    LD_FLAGS="-Wl,--export-dynamic"
+	    LD_FLAGS=""
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
@@ -1523,9 +1519,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	yes
 #endif
 		], tcl_cv_ld_elf=yes, tcl_cv_ld_elf=no)])
-	    AS_IF([test $tcl_cv_ld_elf = yes], [
-		LDFLAGS=-Wl,-export-dynamic
-	    ], [LDFLAGS=""])
+	    LDFLAGS=""
 	    AS_IF([test "${TCL_THREADS}" = "1"], [
 		# On OpenBSD:	Compile with -pthread
 		#		Don't link with -lpthread
@@ -1544,7 +1538,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -export-dynamic"
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}

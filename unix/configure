@@ -6550,11 +6550,6 @@ _ACEOF
 
 else
 
-
-cat >>confdefs.h <<\_ACEOF
-#define NO_VIZ
-_ACEOF
-
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -7046,12 +7041,11 @@ fi
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	BSD/OS-4.*)
-	    SHLIB_CFLAGS="-export-dynamic -fPIC"
+	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -export-dynamic"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
@@ -7075,7 +7069,6 @@ fi
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	Haiku*)
-	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_SUFFIX=".so"
 	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
@@ -7510,7 +7503,6 @@ fi
 	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -7610,7 +7602,6 @@ fi
 	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS=""
 	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    if test "`uname -m`" = "alpha"; then
@@ -7625,7 +7616,7 @@ fi
 	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-mshared -ldl"
-	    LD_FLAGS="-Wl,--export-dynamic"
+	    LD_FLAGS=""
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -7775,14 +7766,7 @@ rm -f conftest*
 fi
 echo "$as_me:$LINENO: result: $tcl_cv_ld_elf" >&5
 echo "${ECHO_T}$tcl_cv_ld_elf" >&6
-	    if test $tcl_cv_ld_elf = yes; then
-
-		LDFLAGS=-Wl,-export-dynamic
-
-else
-  LDFLAGS=""
-fi
-
+	    LDFLAGS=""
 	    if test "${TCL_THREADS}" = "1"; then
 
 		# On OpenBSD:	Compile with -pthread
@@ -7804,7 +7788,6 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -export-dynamic"
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
