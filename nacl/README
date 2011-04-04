@@ -26,10 +26,8 @@ Building Tcl for Nacl
 
  - cd inside it
 
- - run  './nacl.genconf' (which  is  a ./configure  command line  with
-   proper flags)
-
- - run 'patch -p0 < Makefile.patch' to fix the generated Makefile
+ - run './configure' (which calls ../unix/configure with proper flags,
+   and patches the generated Makefile)
 
  - run 'make'. This creates tcl.nmf and tcl.nexe (for x86-32)
 
@@ -65,19 +63,6 @@ reason.
 
 This approach allows to compile Tcl for Nacl without changing a single
 line of the original source distribution; all new things are in the
-nacl subdir. Moreover, many files are just symlinks to ../unix. Here
-they are, since fossil wrongly extracts them as files:
+nacl subdir. Also, much is reused from ../unix.
 
-	configure -> ../unix/configure
-	tclLoadDl.c -> ../unix/tclLoadDl.c
-	tclUnixChan.c -> ../unix/tclUnixChan.c
-	tclUnixCompat.c -> ../unix/tclUnixCompat.c
-	tclUnixEvent.c -> ../unix/tclUnixEvent.c
-	tclUnixFCmd.c -> ../unix/tclUnixFCmd.c
-	tclUnixFile.c -> ../unix/tclUnixFile.c
-	tclUnixInit.c -> ../unix/tclUnixInit.c
-	tclUnixNotfy.c -> ../unix/tclUnixNotfy.c
-	tclUnixPipe.c -> ../unix/tclUnixPipe.c
-	tclUnixSock.c -> ../unix/tclUnixSock.c
-	tclUnixThrd.c -> ../unix/tclUnixThrd.c
-	tclUnixTime.c -> ../unix/tclUnixTime.c
+
