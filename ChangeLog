@@ -1,6 +1,23 @@
+2011-04-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c (QuickConversion): Replaced another couple
+	of 'double' declarations with 'volatile double' to work around
+	misrounding issues in mingw-gcc 3.4.5.
+
+2011-03-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclFCmd.c (TclFileAttrsCmd): Ensure that any reference to
+	temporary index tables is squelched immediately rather than hanging
+	around to trip us up in the future.
+
+2011-03-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclLoadDl.c:    [Bug #3216070]: Loading extension libraries
+	* unix/tclLoadDyld.c:  from embedded Tcl applications.
+
 2011-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclCkalloc.c: [Bug #3197864] pointer truncation on Win64
+	* generic/tclCkalloc.c: [Bug #3197864]: pointer truncation on Win64
 	TCL_MEM_DEBUG builds
 
 2011-03-16  Don Porter  <dgp@users.sourceforge.net>

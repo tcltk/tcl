@@ -452,11 +452,11 @@ STUB_CFLAGS     = $(cflags) $(cdebug:-GL=) $(OPTDEFINES)
 #---------------------------------------------------------------------
 
 !if $(DEBUG)
-ldebug	= -debug:full -debugtype:cv
+ldebug	= -debug -debugtype:cv
 !else
 ldebug	= -release -opt:ref -opt:icf,3
 !if $(SYMBOLS)
-ldebug	= $(ldebug) -debug:full -debugtype:cv
+ldebug	= $(ldebug) -debug -debugtype:cv
 !endif
 !endif
 
@@ -715,7 +715,7 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 @DEFS@               $(TCL_CFLAGS)
 @CFLAGS_DEBUG@       -nologo -c -W3 -YX -Fp$(TMP_DIR)\ -MDd
 @CFLAGS_OPTIMIZE@    -nologo -c -W3 -YX -Fp$(TMP_DIR)\ -MD
-@LDFLAGS_DEBUG@      -nologo -machine:$(MACHINE) -debug:full -debugtype:cv
+@LDFLAGS_DEBUG@      -nologo -machine:$(MACHINE) -debug -debugtype:cv
 @LDFLAGS_OPTIMIZE@   -nologo -machine:$(MACHINE) -release -opt:ref -opt:icf,3
 @TCL_DBGX@           $(SUFX)
 @TCL_LIB_FILE@       $(PROJECT)$(VERSION)$(SUFX).lib
