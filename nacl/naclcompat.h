@@ -89,6 +89,9 @@ struct servent
 
 #define SO_PROTOCOL		38
 #define SO_DOMAIN		39
+
+typedef socklen_t __socklen_t;
+
 struct addrinfo
 {
   int ai_flags;			/* Input flags.  */
@@ -1051,6 +1054,28 @@ extern int getpeername (int __fd, __SOCKADDR_ARG __addr,
 			socklen_t *__restrict __len) __THROW;
 
 
+/* Return entry from network data base for network with NAME and
+   protocol PROTO.
+
+   This function is a possible cancellation point and therefore not
+   marked with __THROW.  */
+extern struct servent *getservbyname (__const char *__name,
+				      __const char *__proto);
+
+/* Check the first NFDS descriptors each in READFDS (if not NULL) for read
+   readiness, in WRITEFDS (if not NULL) for write readiness, and in EXCEPTFDS
+   (if not NULL) for exceptional conditions.  If TIMEOUT is not NULL, time out
+   after waiting the interval specified therein.  Returns the number of ready
+   descriptors, or -1 for errors.
+
+   This function is a cancellation point and therefore not marked with
+   __THROW.  */
+extern int select (int __nfds, fd_set *__restrict __readfds,
+		   fd_set *__restrict __writefds,
+		   fd_set *__restrict __exceptfds,
+		   struct timeval *__restrict __timeout);
+
+
 /* Send N bytes of BUF to socket FD.  Returns the number sent or -1.
 
    This function is a cancellation point and therefore not marked with
@@ -1131,6 +1156,110 @@ extern int listen (int __fd, int __n) __THROW;
 extern int accept (int __fd, __SOCKADDR_ARG __addr,
 		   socklen_t *__restrict __addr_len);
 
+#define __nonnull(x) 
+#define __USE_BSD 1
+#define __wur 
+
+#if defined __USE_BSD || defined __USE_XOPEN_EXTENDED || defined __USE_XOPEN2K
+
+/* Truncate the file FD is open on to LENGTH bytes.  */
+# ifndef __USE_FILE_OFFSET64
+extern int ftruncate (int __fd, __off_t __length) __THROW __wur;
+# else
+#  ifdef __REDIRECT_NTH
+extern int __REDIRECT_NTH (ftruncate, (int __fd, __off64_t __length),
+			   ftruncate64) __wur;
+#  else
+#   define ftruncate ftruncate64
+#  endif
+# endif
+# ifdef __USE_LARGEFILE64
+extern int ftruncate64 (int __fd, __off64_t __length) __THROW __wur;
+# endif
+
+#endif /* Use BSD || X/Open Unix || POSIX 2003.  */
+
+#if defined __USE_BSD || defined __USE_XOPEN_EXTENDED
+# ifndef __USE_FILE_OFFSET64
+/* Get file attributes about FILE and put them in BUF.
+   If FILE is a symbolic link, do not follow it.  */
+extern int lstat (__const char *__restrict __file,
+		  struct stat *__restrict __buf) __THROW __nonnull ((1, 2));
+# else
+#  ifdef __REDIRECT_NTH
+extern int __REDIRECT_NTH (lstat,
+			   (__const char *__restrict __file,
+			    struct stat *__restrict __buf), lstat64)
+     __nonnull ((1, 2));
+#  else
+#   define lstat lstat64
+#  endif
+# endif
+# ifdef __USE_LARGEFILE64
+extern int lstat64 (__const char *__restrict __file,
+		    struct stat64 *__restrict __buf)
+     __THROW __nonnull ((1, 2));
+# endif
+#endif
+
+
+/* Create a device file named PATH, with permission and special bits MODE
+   and device number DEV (which can be constructed from major and minor
+   device numbers with the `makedev' macro above).  */
+#if defined __USE_MISC || defined __USE_BSD || defined __USE_XOPEN_EXTENDED
+extern int mknod (__const char *__path, __mode_t __mode, __dev_t __dev)
+     __THROW __nonnull ((1));
+#endif
+
+/* Create a new FIFO named PATH, with permission bits MODE.  */
+extern int mkfifo (__const char *__path, __mode_t __mode)
+     __THROW __nonnull ((1));
+
+/* Set the file creation mask of the current process to MASK,
+   and return the old creation mask.  */
+extern __mode_t umask (__mode_t __mask) __THROW;
+
+/* Set the access and modification times of FILE to those given in
+   *FILE_TIMES.  If FILE_TIMES is NULL, set them to the current time.  */
+extern int utime (__const char *__file,
+		  __const struct utimbuf *__file_times)
+     __THROW __nonnull ((1));
+
+/* Rewind DIRP to the beginning of the directory.  */
+extern void rewinddir (DIR *__dirp) __THROW __nonnull ((1));
+
+
+#if defined __USE_BSD || defined __USE_XOPEN_EXTENDED
+/* Put the absolute pathname of the current working directory in BUF.
+   If successful, return BUF.  If not, put an error message in
+   BUF and return NULL.  BUF should be at least PATH_MAX bytes long.  */
+extern char *getwd (char *__buf)
+     __THROW __nonnull ((1)) __wur;
+#endif
+
+
+#if defined __USE_BSD || defined __USE_UNIX98
+/* Put the name of the current host in no more than LEN bytes of NAME.
+   The result is null-terminated if LEN is large enough for the full
+   name and the terminator.  */
+extern int gethostname (char *__name, size_t __len) __THROW __nonnull ((1));
+#endif
+
+
+/* Return entry from host data base which address match ADDR with
+   length LEN and type TYPE.
+
+   This function is a possible cancellation point and therefore not
+   marked with __THROW.  */
+extern struct hostent *gethostbyaddr (__const void *__addr, __socklen_t __len,
+				      int __type);
+
+/* Return entry from host data base for host with NAME.
+
+   This function is a possible cancellation point and therefore not
+   marked with __THROW.  */
+extern struct hostent *gethostbyname (__const char *__name);
+
 #ifdef __USE_GNU
 /* Similar to 'accept' but takes an additional parameter to specify flags.
 
@@ -1170,10 +1299,14 @@ extern int isfdtype (int __fd, int __fdtype) __THROW;
 
 
 #define __USE_POSIX
+#define __USE_GNU 
+
 /* Extension from POSIX.1g.  */
 #ifdef	__USE_POSIX
 
+
 # ifdef __USE_GNU
+
 
 /* Lookup mode.  */
 #  define GAI_WAIT	0
@@ -1239,7 +1372,33 @@ extern int isfdtype (int __fd, int __fdtype) __THROW;
 					code points.  */
 #  define NI_IDN_USE_STD3_ASCII_RULES 128 /* Validate strings according to
 					     STD3 rules.  */
-# endif
+/* Translate name of a service location and/or a service name to set of
+   socket addresses.
+
+   This function is a possible cancellation point and therefore not
+   marked with __THROW.  */
+extern int getaddrinfo (__const char *__restrict __name,
+			__const char *__restrict __service,
+			__const struct addrinfo *__restrict __req,
+			struct addrinfo **__restrict __pai);
+
+/* Free `addrinfo' structure AI including associated storage.  */
+extern void freeaddrinfo (struct addrinfo *__ai) __THROW;
+
+/* Convert error return from getaddrinfo() to a string.  */
+extern __const char *gai_strerror (int __ecode) __THROW;
+
+/* Translate a socket address to a location and service name.
+
+   This function is a possible cancellation point and therefore not
+   marked with __THROW.  */
+extern int getnameinfo (__const struct sockaddr *__restrict __sa,
+			socklen_t __salen, char *__restrict __host,
+			socklen_t __hostlen, char *__restrict __serv,
+			socklen_t __servlen, unsigned int __flags);
+
+# endif	 /* POSIX */
+
 
 #endif
 /* We can optimize calls to the conversion functions.  Either nothing has
@@ -1261,4 +1420,8 @@ extern int isfdtype (int __fd, int __fdtype) __THROW;
 #  endif
 # endif
 extern int timezone;
+
+/* Convert Internet number in IN to ASCII representation.  The return value
+   is a pointer to an internal array containing the string.  */
+extern char *inet_ntoa (struct in_addr __in) __THROW;
 
