@@ -1609,7 +1609,6 @@ AppendUtfToUtfRep(
     objPtr->bytes[newLength] = 0;
     objPtr->length = newLength;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1706,7 +1705,7 @@ Tcl_AppendFormatToObj(
     int objc,
     Tcl_Obj *const objv[])
 {
-    const char *span = format, *msg;
+    const char *span = format, *msg, *errCode;
     int numBytes = 0, objIndex = 0, gotXpg = 0, gotSequential = 0;
     int originalLength, limit;
     static const char *mixedXPG =
@@ -1744,6 +1743,7 @@ Tcl_AppendFormatToObj(
 	if (numBytes) {
 	    if (numBytes > limit) {
 		msg = overflow;
+		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
 	    Tcl_AppendToObj(appendObj, span, numBytes);
@@ -1783,18 +1783,21 @@ Tcl_AppendFormatToObj(
 	if (newXpg) {
 	    if (gotSequential) {
 		msg = mixedXPG;
+		errCode = "MIXEDSPECTYPES";
 		goto errorMsg;
 	    }
 	    gotXpg = 1;
 	} else {
 	    if (gotXpg) {
 		msg = mixedXPG;
+		errCode = "MIXEDSPECTYPES";
 		goto errorMsg;
 	    }
 	    gotSequential = 1;
 	}
 	if ((objIndex < 0) || (objIndex >= objc)) {
 	    msg = badIndex[gotXpg];
+	    errCode = gotXpg ? "INDEXRANGE" : "FIELDVARMISMATCH";
 	    goto errorMsg;
 	}
 
@@ -1842,6 +1845,7 @@ Tcl_AppendFormatToObj(
 	} else if (ch == '*') {
 	    if (objIndex >= objc - 1) {
 		msg = badIndex[gotXpg];
+		errCode = gotXpg ? "INDEXRANGE" : "FIELDVARMISMATCH";
 		goto errorMsg;
 	    }
 	    if (TclGetIntFromObj(interp, objv[objIndex], &width) != TCL_OK) {
@@ -1857,6 +1861,7 @@ Tcl_AppendFormatToObj(
 	}
 	if (width > limit) {
 	    msg = overflow;
+	    errCode = "OVERFLOW";
 	    goto errorMsg;
 	}
 
@@ -1877,6 +1882,7 @@ Tcl_AppendFormatToObj(
 	} else if (ch == '*') {
 	    if (objIndex >= objc - 1) {
 		msg = badIndex[gotXpg];
+		errCode = gotXpg ? "INDEXRANGE" : "FIELDVARMISMATCH";
 		goto errorMsg;
 	    }
 	    if (TclGetIntFromObj(interp, objv[objIndex], &precision)
@@ -1934,6 +1940,7 @@ Tcl_AppendFormatToObj(
 	switch (ch) {
 	case '\0':
 	    msg = "format string ended in middle of field specifier";
+	    errCode = "INCOMPLETE";
 	    goto errorMsg;
 	case 's':
 	    if (gotPrecision) {
@@ -1963,6 +1970,7 @@ Tcl_AppendFormatToObj(
 	case 'u':
 	    if (useBig) {
 		msg = "unsigned bignum format is invalid";
+		errCode = "BADUNSIGNED";
 		goto errorMsg;
 	    }
 	case 'd':
@@ -2110,6 +2118,7 @@ Tcl_AppendFormatToObj(
 		}
 		if (toAppend > segmentLimit) {
 		    msg = overflow;
+		    errCode = "OVERFLOW";
 		    goto errorMsg;
 		}
 		Tcl_AppendToObj(segment, bytes, toAppend);
@@ -2165,6 +2174,7 @@ Tcl_AppendFormatToObj(
 		    }
 		    if (numDigits > INT_MAX) {
 			msg = overflow;
+			errCode = "OVERFLOW";
 			goto errorMsg;
 		    }
 		} else if (!useBig) {
@@ -2232,6 +2242,7 @@ Tcl_AppendFormatToObj(
 		}
 		if (toAppend > segmentLimit) {
 		    msg = overflow;
+		    errCode = "OVERFLOW";
 		    goto errorMsg;
 		}
 		Tcl_AppendObjToObj(segment, pure);
@@ -2285,6 +2296,7 @@ Tcl_AppendFormatToObj(
 		p += sprintf(p, "%d", precision);
 		if (precision > INT_MAX - length) {
 		    msg = overflow;
+		    errCode = "OVERFLOW";
 		    goto errorMsg;
 		}
 		length += precision;
@@ -2301,11 +2313,13 @@ Tcl_AppendFormatToObj(
 	    allocSegment = 1;
 	    if (!Tcl_AttemptSetObjLength(segment, length)) {
 		msg = overflow;
+		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
 	    bytes = TclGetString(segment);
 	    if (!Tcl_AttemptSetObjLength(segment, sprintf(bytes, spec, d))) {
 		msg = overflow;
+		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
 	    break;
@@ -2314,6 +2328,7 @@ Tcl_AppendFormatToObj(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
 			Tcl_ObjPrintf("bad field specifier \"%c\"", ch));
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", NULL);
 	    }
 	    goto error;
 	}
@@ -2345,6 +2360,7 @@ Tcl_AppendFormatToObj(
 		Tcl_DecrRefCount(segment);
 	    }
 	    msg = overflow;
+	    errCode = "OVERFLOW";
 	    goto errorMsg;
 	}
 	Tcl_AppendObjToObj(appendObj, segment);
@@ -2367,6 +2383,7 @@ Tcl_AppendFormatToObj(
     if (numBytes) {
 	if (numBytes > limit) {
 	    msg = overflow;
+	    errCode = "OVERFLOW";
 	    goto errorMsg;
 	}
 	Tcl_AppendToObj(appendObj, span, numBytes);
@@ -2379,6 +2396,7 @@ Tcl_AppendFormatToObj(
   errorMsg:
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	Tcl_SetErrorCode(interp, "TCL", "FORMAT", errCode, NULL);
     }
   error:
     Tcl_SetObjLength(appendObj, originalLength);
