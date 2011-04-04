@@ -32,12 +32,13 @@ Building Tcl for Nacl
  - run 'make'. This creates tcl.nmf and tcl.nexe (for x86-32)
 
  - launch the  NaCl-provided python-based  webserver, and make  it see
-   your nacl dir somewhere in its document tree: python httpd.py 5103
+   your nacl dir somewhere in its document tree. e.g. 
+   cd $NACL/examples; ln -s /..../tcl/nacl nacl; python httpd.py 5103
 
  - (once) open about:flags in Chrome and enable Native Client
 
  - start 'chromedebug' (provided), and  point Chrome to the index.html
-   in nacl.
+   in nacl. e.g. chromedebug http://localhost:5103/nacl
 
  - (every  time)  make  sure  no  non-chromedebug  chrome  process  is
    running, otherwise it  will be used instead, and  NaCl will fail to
