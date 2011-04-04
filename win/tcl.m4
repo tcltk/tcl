@@ -402,6 +402,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     # Set some defaults (may get changed below)
     EXTRA_CFLAGS=""
+	AC_DEFINE(MODULE_SCOPE, [extern], [No need to mark inidividual symbols as hidden])
 
     AC_CHECK_PROG(CYGPATH, cygpath, cygpath -w, echo)
 
@@ -782,7 +783,7 @@ file for information about building with Mingw.])
 
 	EXTRA_CFLAGS=""
 	CFLAGS_WARNING="-W3"
-	LDFLAGS_DEBUG="-debug:full"
+	LDFLAGS_DEBUG="-debug"
 	LDFLAGS_OPTIMIZE="-release"
 
 	# Specify the CC output file names based on the target name

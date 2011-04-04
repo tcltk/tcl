@@ -831,9 +831,12 @@ Tcl_AfterObjCmd(
 		    &index) != TCL_OK)) {
 	index = -1;
 	if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
-	    Tcl_AppendResult(interp, "bad argument \"",
-		    Tcl_GetString(objv[1]),
+            const char *arg = Tcl_GetString(objv[1]);
+
+	    Tcl_AppendResult(interp, "bad argument \"", arg,
 		    "\": must be cancel, idle, info, or an integer", NULL);
+            Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument",
+                    arg, NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -947,9 +950,7 @@ Tcl_AfterObjCmd(
 	Tcl_DoWhenIdle(AfterProc, afterPtr);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
 	break;
-    case AFTER_INFO: {
-	Tcl_Obj *resultListPtr;
-
+    case AFTER_INFO:
 	if (objc == 2) {
 	    for (afterPtr = assocPtr->firstAfterPtr; afterPtr != NULL;
 		    afterPtr = afterPtr->nextPtr) {
@@ -966,17 +967,22 @@ Tcl_AfterObjCmd(
 	}
 	afterPtr = GetAfterEvent(assocPtr, objv[2]);
 	if (afterPtr == NULL) {
-	    Tcl_AppendResult(interp, "event \"", TclGetString(objv[2]),
-		    "\" doesn't exist", NULL);
+            const char *eventStr = TclGetString(objv[2]);
+
+	    Tcl_AppendResult(interp, "event \"", eventStr, "\" doesn't exist",
+                    NULL);
+            Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, NULL);
 	    return TCL_ERROR;
-	}
-	resultListPtr = Tcl_NewObj();
-	Tcl_ListObjAppendElement(interp, resultListPtr, afterPtr->commandPtr);
-	Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
-		(afterPtr->token == NULL) ? "idle" : "timer", -1));
-	Tcl_SetObjResult(interp, resultListPtr);
+	} else {
+            Tcl_Obj *resultListPtr = Tcl_NewObj();
+
+            Tcl_ListObjAppendElement(interp, resultListPtr,
+                    afterPtr->commandPtr);
+            Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
+		    (afterPtr->token == NULL) ? "idle" : "timer", -1));
+            Tcl_SetObjResult(interp, resultListPtr);
+        }
 	break;
-    }
     default:
 	Tcl_Panic("Tcl_AfterObjCmd: bad subcommand index to afterSubCmds");
     }

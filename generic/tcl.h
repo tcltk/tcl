@@ -799,11 +799,14 @@ typedef struct Tcl_Obj {
 	    void *ptr1;
 	    void *ptr2;
 	} twoPtrValue;
-	struct {		/*   - internal rep as a wide int, tightly
-				 *     packed fields. */
-	    void *ptr;		/* Pointer to digits. */
-	    unsigned long value;/* Alloc, used, and signum packed into a
-				 * single word. */
+	struct {		/*   - internal rep as a pointer and a long,
+				 *     the main use of which is a bignum's
+				 *     tightly packed fields, where the alloc,
+				 *     used and signum flags are packed into a
+				 *     single word with everything else hung
+				 *     off the pointer. */
+	    void *ptr;
+	    unsigned long value;
 	} ptrAndLongRep;
     } internalRep;
 } Tcl_Obj;
@@ -2405,13 +2408,13 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define ckalloc(x) \
     ((VOID *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
 #   define ckfree(x) \
-    Tcl_DbCkfree((VOID *)(x), __FILE__, __LINE__)
+    Tcl_DbCkfree((char *)(x), __FILE__, __LINE__)
 #   define ckrealloc(x,y) \
-    ((VOID *) Tcl_DbCkrealloc((VOID *)(x), (unsigned)(y), __FILE__, __LINE__))
+    ((VOID *) Tcl_DbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
 #   define attemptckalloc(x) \
     ((VOID *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
 #   define attemptckrealloc(x,y) \
-    ((VOID *) Tcl_AttemptDbCkrealloc((VOID *)(x), (unsigned)(y), __FILE__, __LINE__))
+    ((VOID *) Tcl_AttemptDbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
 
 #else /* !TCL_MEM_DEBUG */
 
@@ -2424,13 +2427,13 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define ckalloc(x) \
     ((VOID *) Tcl_Alloc((unsigned)(x)))
 #   define ckfree(x) \
-    Tcl_Free((VOID *)(x))
+    Tcl_Free((char *)(x))
 #   define ckrealloc(x,y) \
-    ((VOID *) Tcl_Realloc((VOID *)(x), (unsigned)(y)))
+    ((VOID *) Tcl_Realloc((char *)(x), (unsigned)(y)))
 #   define attemptckalloc(x) \
     ((VOID *) Tcl_AttemptAlloc((unsigned)(x)))
 #   define attemptckrealloc(x,y) \
-    ((VOID *) Tcl_AttemptRealloc((VOID *)(x), (unsigned)(y)))
+    ((VOID *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
 #   undef  Tcl_InitMemory
 #   define Tcl_InitMemory(x)
 #   undef  Tcl_DumpActiveMemory
