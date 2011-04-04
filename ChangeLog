@@ -1,3 +1,14 @@
+2011-04-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCmdAH.c:  Better error-message in case of errors
+	* generic/tclCmdIL.c:  related to setting a variable. This fixes
+	* generic/tclDictObj.c: a warning: "Why make your own error
+	* generic/tclScan.c:   message? Why?"
+	* generic/tclTest.c:
+	* test/error.test:
+	* test/info.test:
+	* test/scan.test:
+
 2011-04-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclNamesp.c, generic/tclObj.c, generic/tclPathObj.c:
