@@ -2455,18 +2455,12 @@ DictForNRCmd(
      */
 
     Tcl_IncrRefCount(valueObj);
-    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj, 0) == NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "couldn't set key variable: \"",
-		TclGetString(keyVarObj), "\"", NULL);
+    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj, TCL_LEAVE_ERR_MSG) == NULL) {
 	TclDecrRefCount(valueObj);
 	goto error;
     }
     TclDecrRefCount(valueObj);
-    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, 0) == NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "couldn't set value variable: \"",
-		TclGetString(valueVarObj), "\"", NULL);
+    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, TCL_LEAVE_ERR_MSG) == NULL) {
 	goto error;
     }
 
@@ -2538,19 +2532,13 @@ DictForLoopCallback(
      */
 
     Tcl_IncrRefCount(valueObj);
-    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj, 0) == NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "couldn't set key variable: \"",
-		TclGetString(keyVarObj), "\"", NULL);
+    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj, TCL_LEAVE_ERR_MSG) == NULL) {
 	TclDecrRefCount(valueObj);
 	result = TCL_ERROR;
 	goto done;
     }
     TclDecrRefCount(valueObj);
-    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, 0) == NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "couldn't set value variable: \"",
-		TclGetString(valueVarObj), "\"", NULL);
+    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, TCL_LEAVE_ERR_MSG) == NULL) {
 	result = TCL_ERROR;
 	goto done;
     }

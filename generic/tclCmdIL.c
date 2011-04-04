@@ -951,7 +951,7 @@ InfoDefaultCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    const char *procName, *argName, *varName;
+    const char *procName, *argName;
     Proc *procPtr;
     CompiledLocal *localPtr;
     Tcl_Obj *valueObjPtr;
@@ -978,18 +978,18 @@ InfoDefaultCmd(
 		&& (strcmp(argName, localPtr->name) == 0)) {
 	    if (localPtr->defValuePtr != NULL) {
 		valueObjPtr = Tcl_ObjSetVar2(interp, objv[3], NULL,
-			localPtr->defValuePtr, 0);
+			localPtr->defValuePtr, TCL_LEAVE_ERR_MSG);
 		if (valueObjPtr == NULL) {
-		    goto defStoreError;
+		    return TCL_ERROR;
 		}
 		Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
 	    } else {
 		Tcl_Obj *nullObjPtr = Tcl_NewObj();
 
 		valueObjPtr = Tcl_ObjSetVar2(interp, objv[3], NULL,
-			nullObjPtr, 0);
+			nullObjPtr, TCL_LEAVE_ERR_MSG);
 		if (valueObjPtr == NULL) {
-		    goto defStoreError;
+		    return TCL_ERROR;
 		}
 		Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
 	    }
@@ -1000,12 +1000,6 @@ InfoDefaultCmd(
     Tcl_AppendResult(interp, "procedure \"", procName,
 	    "\" doesn't have an argument \"", argName, "\"", NULL);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARGUMENT", argName, NULL);
-    return TCL_ERROR;
-
-  defStoreError:
-    varName = TclGetString(objv[3]);
-    Tcl_AppendResult(interp, "couldn't store default value in variable \"",
-	    varName, "\"", NULL);
     return TCL_ERROR;
 }
 
@@ -1043,7 +1037,7 @@ InfoErrorStackCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "?interp?");
 	return TCL_ERROR;
     }
-    
+
     target = interp;
     if (objc == 2) {
         target = Tcl_GetSlave(interp, Tcl_GetString(objv[1]));
@@ -1054,7 +1048,7 @@ InfoErrorStackCmd(
 
     iPtr = (Interp *) target;
     Tcl_SetObjResult(interp, iPtr->errorStack);
-    
+
     return TCL_OK;
 }
 

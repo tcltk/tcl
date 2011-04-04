@@ -690,6 +690,8 @@ Tcl_CreateNamespace(
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "can't create namespace \"\": "
 		"only global namespace can have empty name", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
+                "CREATEGLOBAL", NULL);
 	return NULL;
     } else {
 	/*
@@ -725,6 +727,8 @@ Tcl_CreateNamespace(
 	) {
 	    Tcl_AppendResult(interp, "can't create namespace \"", name,
 		    "\": already exists", NULL);
+            Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
+                    "CREATEEXISTING", NULL);
 	    return NULL;
 	}
     }

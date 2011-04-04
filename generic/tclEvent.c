@@ -333,6 +333,7 @@ TclDefaultBgErrorHandlerObjCmd(
     if (valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-level\"", -1));
+	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, valuePtr, &level) == TCL_ERROR) {
@@ -345,6 +346,7 @@ TclDefaultBgErrorHandlerObjCmd(
     if (valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-code\"", -1));
+	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, valuePtr, &code) == TCL_ERROR) {

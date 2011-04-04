@@ -2710,7 +2710,7 @@ StrictQuickFormat(
 
 inline static char *
 QuickConversion(
-    double d,			/* Number to format. */
+    double e,			/* Number to format. */
     int k,			/* floor(log10(d)), approximately. */
     int k_check,		/* 0 if k is exact, 1 if it may be too high */
     int flags,			/* Flags passed to dtoa:
@@ -2729,12 +2729,14 @@ QuickConversion(
     char *retval;		/* Returned string. */
     char *end;			/* Pointer to the terminal null byte in the
 				 * returned string. */
+    volatile double d;		/* Workaround for a bug in mingw gcc 3.4.5 */
 
     /*
      * Bring d into the range [1 .. 10).
      */
 
-    ieps = AdjustRange(&d, k);
+    ieps = AdjustRange(&e, k);
+    d = e;
 
     /*
      * If the guessed value of k didn't get d into range, adjust it by one. If

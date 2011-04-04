@@ -3939,10 +3939,8 @@ TestregexpObjCmd(
 			info.matches[ii].end - 1);
 	    }
 	}
-	valuePtr = Tcl_ObjSetVar2(interp, varPtr, NULL, newPtr, 0);
+	valuePtr = Tcl_ObjSetVar2(interp, varPtr, NULL, newPtr, TCL_LEAVE_ERR_MSG);
 	if (valuePtr == NULL) {
-	    Tcl_AppendResult(interp, "couldn't set variable \"",
-		    Tcl_GetString(varPtr), "\"", NULL);
 	    return TCL_ERROR;
 	}
     }

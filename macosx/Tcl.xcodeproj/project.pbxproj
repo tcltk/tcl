@@ -829,7 +829,6 @@
 		F96D446708F272B9004A47F5 /* tclUnixSock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclUnixSock.c; sourceTree = "<group>"; };
 		F96D446808F272B9004A47F5 /* tclUnixTest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclUnixTest.c; sourceTree = "<group>"; };
 		F96D446908F272B9004A47F5 /* tclUnixThrd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclUnixThrd.c; sourceTree = "<group>"; };
-		F96D446A08F272B9004A47F5 /* tclUnixThrd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclUnixThrd.h; sourceTree = "<group>"; };
 		F96D446B08F272B9004A47F5 /* tclUnixTime.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclUnixTime.c; sourceTree = "<group>"; };
 		F96D446C08F272B9004A47F5 /* tclXtNotify.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclXtNotify.c; sourceTree = "<group>"; };
 		F96D446D08F272B9004A47F5 /* tclXtTest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclXtTest.c; sourceTree = "<group>"; };
@@ -1732,7 +1731,6 @@
 				F96D446708F272B9004A47F5 /* tclUnixSock.c */,
 				F96D446808F272B9004A47F5 /* tclUnixTest.c */,
 				F96D446908F272B9004A47F5 /* tclUnixThrd.c */,
-				F96D446A08F272B9004A47F5 /* tclUnixThrd.h */,
 				F96D446B08F272B9004A47F5 /* tclUnixTime.c */,
 				F96D446C08F272B9004A47F5 /* tclXtNotify.c */,
 				F96D446D08F272B9004A47F5 /* tclXtTest.c */,
