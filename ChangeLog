@@ -1,3 +1,9 @@
+2011-04-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c, generic/tclStringObj.c, generic/tclTimer.c,
+	* generic/tclTrace.c, generic/tclUtil.c: More generation of error
+	codes ([format], [after], [trace], RE optimizer).
+
 2011-04-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCmdAH.c:  Better error-message in case of errors
