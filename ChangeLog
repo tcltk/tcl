@@ -1,4 +1,11 @@
-2010-03-25  Jan Nijtmans  <nijtmans@users.sf.net>
+2011-04-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* README:	Updated README files, repairing broken URLs and
+	* macosx/README:	removing other bits that were clearly wrong.
+	* unix/README:	Still could use more eyeballs on the detailed build
+	* win/README:	advice on various plaforms. [Bug 3202030]
+
+2011-03-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclHash.c: [Bug 3007895]: Tcl_(Find|Create)HashEntry
 	stub entries can never be called. They still cannot be called
