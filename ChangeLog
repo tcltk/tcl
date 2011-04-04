@@ -1,5 +1,9 @@
 2011-04-04  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c, generic/tclOOBasic.c, generic/tclOODefineCmds.c
+	* generic/tclOOInfo.c, generic/tclOOMethod.c: More generation of
+	error codes (TclOO miscellany).
+
 	* generic/tclCmdAH.c, generic/tclCmdIL.c: More generation of error
 	codes (miscellaneous commands mostly already handled).
 
