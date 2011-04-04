@@ -823,6 +823,7 @@ proc tcl::CopyDirectory {action src dest} {
 }
 
 # TIP 131
+if 0 {
 proc tcl::rmmadwiw {} {
     set magic {
         42 83 fe f6 ff f8 f1 e5 c6 f9 eb fd ff fb f1 e5 cc f5 ec f5 e3 fd fe
@@ -846,4 +847,5 @@ proc tcl::mathfunc::rmmadwiw {} {
     }
     set matter [lreverse $mind]
     return [join $matter ""]
+}
 }
