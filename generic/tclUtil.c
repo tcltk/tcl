@@ -470,6 +470,8 @@ Tcl_SplitList(
 	    if (interp != NULL) {
 		Tcl_SetResult(interp, "internal error in Tcl_SplitList",
 			TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
+			NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3270,7 +3272,7 @@ TclReToGlob(
 {
     int anchorLeft, anchorRight, lastIsStar, numStars;
     char *dsStr, *dsStrStart;
-    const char *msg, *p, *strEnd;
+    const char *msg, *p, *strEnd, *code;
 
     strEnd = reStr + reStrLen;
     Tcl_DStringInit(dsPtr);
@@ -3324,6 +3326,7 @@ TclReToGlob(
      */
 
     msg = NULL;
+    code = NULL;
     p = reStr;
     anchorRight = 0;
     lastIsStar = 0;
@@ -3380,6 +3383,7 @@ TclReToGlob(
 		break;
 	    default:
 		msg = "invalid escape sequence";
+		code = "BADESCAPE";
 		goto invalidGlob;
 	    }
 	    break;
@@ -3408,6 +3412,7 @@ TclReToGlob(
 	case '$':
 	    if (p+1 != strEnd) {
 		msg = "$ not anchor";
+		code = "NONANCHOR";
 		goto invalidGlob;
 	    }
 	    anchorRight = 1;
@@ -3415,8 +3420,8 @@ TclReToGlob(
 	case '*': case '+': case '?': case '|': case '^':
 	case '{': case '}': case '(': case ')': case '[': case ']':
 	    msg = "unhandled RE special char";
+	    code = "UNHANDLED";
 	    goto invalidGlob;
-	    break;
 	default:
 	    *dsStr++ = *p;
 	    break;
@@ -3430,6 +3435,7 @@ TclReToGlob(
 	 */
 
 	msg = "excessive recursive glob backtrack potential";
+	code = "OVERCOMPLEX";
 	goto invalidGlob;
     }
 
@@ -3458,6 +3464,7 @@ TclReToGlob(
 #endif
     if (interp != NULL) {
 	Tcl_AppendResult(interp, msg, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, NULL);
     }
     Tcl_DStringFree(dsPtr);
     return TCL_ERROR;
