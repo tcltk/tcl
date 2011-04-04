@@ -1,3 +1,10 @@
+2011-04-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* README:	Updated README files, repairing broken URLs and
+	* macosx/README:	removing other bits that were clearly wrong.
+	* unix/README:	Still could use more eyeballs on the detailed build
+	* win/README:	advice on various plaforms. [Bug 3202030]
+
 2011-04-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclStrToD.c (QuickConversion): Replaced another couple
