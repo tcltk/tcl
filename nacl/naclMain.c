@@ -13,6 +13,7 @@
 
 #include <errno.h>
 #include "tcl.h"
+#include "tclInt.h"
 
 static Tcl_Interp *interp = NULL;
 
@@ -52,7 +53,7 @@ static Tcl_Interp *NewTcl(void)
   }
   return ii;
 }
-static char *EvalTcl(char *s)
+static const char *EvalTcl(char *s)
 {
   if (!interp) return "No Tcl Interp!!!";
   Tcl_Eval(interp,s);
@@ -117,10 +118,10 @@ static struct PP_Var StrToVar(const char* str) {
 /**
  * A simple function that always returns 42.
  * @return always returns the integer 42
- */
 static struct PP_Var FortyTwo() {
   return PP_MakeInt32(42);
 }
+ */
 
 /**
  * Called when the NaCl module is instantiated on the web page. The identifier
@@ -278,7 +279,7 @@ static struct PP_Var Tcl_Call(void* object,
           v = StrToVar("Arg from Javascript is not a string!");
         } else {
           char* str = strdup(VarToCStr(argv[0]));
-	  char* res = EvalTcl(str);
+	  const char* res = EvalTcl(str);
           v = StrToVar(res);
           free(str);
         }

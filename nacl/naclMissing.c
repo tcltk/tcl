@@ -5,7 +5,9 @@
  */
 
 
+#include <stdio.h>
 #include <errno.h>
+#include <string.h>
 
 int timezone;
 
@@ -22,7 +24,6 @@ char * getwd (char *buf)
 
 int access(const char *name, int mode)
 {
-  struct MyVfs *my;
   printf("*BADSYSCALL:access(\"%s\",%d)\n",name,mode);
   return 0;
   errno=ENOENT;return -1;
