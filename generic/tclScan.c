@@ -1001,8 +1001,12 @@ Tcl_ScanObjCmd(
 		continue;
 	    }
 	    result++;
-	    /* In case of multiple errors in setting variables, just report
-	     * the first one. */
+
+	    /*
+	     * In case of multiple errors in setting variables, just report
+	     * the first one.
+	     */
+
 	    if (Tcl_ObjSetVar2(interp, objv[i+3], NULL, objs[i],
 		    (code == TCL_OK) ? TCL_LEAVE_ERR_MSG : 0) == NULL) {
 		code = TCL_ERROR;
@@ -1050,7 +1054,7 @@ Tcl_ScanObjCmd(
     }
     return code;
 }
-
+
 /*
  * Local Variables:
  * mode: c
