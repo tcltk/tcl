@@ -345,10 +345,7 @@ CatchObjCmdCallback(
 
     if (objc >= 3) {
 	if (NULL == Tcl_ObjSetVar2(interp, varNamePtr, NULL,
-		Tcl_GetObjResult(interp), 0)) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp,
-		    "couldn't save command result in variable", NULL);
+		Tcl_GetObjResult(interp), TCL_LEAVE_ERR_MSG)) {
 	    return TCL_ERROR;
 	}
     }
@@ -356,11 +353,8 @@ CatchObjCmdCallback(
 	Tcl_Obj *options = Tcl_GetReturnOptions(interp, result);
 
 	if (NULL == Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL,
-		options, 0)) {
+		options, TCL_LEAVE_ERR_MSG)) {
 	    Tcl_DecrRefCount(options);
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp,
-		    "couldn't save return options in variable", NULL);
 	    return TCL_ERROR;
 	}
     }
