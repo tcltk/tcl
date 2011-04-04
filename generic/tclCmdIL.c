@@ -4254,7 +4254,7 @@ SortCompare(
 	    Tcl_ResetResult(infoPtr->interp);
 	    Tcl_AppendResult(infoPtr->interp,
 		    "-compare command returned non-integer result", NULL);
-            Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
+            Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
                     "COMPARISONFAILED", NULL);
 	    infoPtr->resultCode = TCL_ERROR;
 	    return 0;
@@ -4472,7 +4472,7 @@ SelectObjFromSublist(
 	    Tcl_AppendResult(infoPtr->interp, "element ", buffer,
 		    " missing from sublist \"", TclGetString(objPtr), "\"",
 		    NULL);
-            Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
+            Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
                     "INDEXFAILED", NULL);
 	    infoPtr->resultCode = TCL_ERROR;
 	    return NULL;
