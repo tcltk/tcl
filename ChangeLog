@@ -1,5 +1,8 @@
 2011-04-04  Donal K. Fellows  <dkf@users.sf.net>
 
+	* library/init.tcl (tcl::mathfunc::rmmadwiw): Disable by default to
+	make test suite work.
+
 	* generic/tclBasic.c, generic/tclStringObj.c, generic/tclTimer.c,
 	* generic/tclTrace.c, generic/tclUtil.c: More generation of error
 	codes ([format], [after], [trace], RE optimizer).
