@@ -1,5 +1,5 @@
 
-		Tcl in Nacl
+		NaTcl : Tcl in Nacl
 
 
 Overview
@@ -21,19 +21,33 @@ Building Tcl for Nacl
 
  - set your PATH so that nacl-gcc et al become reachable
 
- - untar the present archive as an 'nacl' subdir in a Tcl source tree, as a sibling  of 'unix"
+ - untar the present archive as an 'nacl' subdir in a Tcl source tree,
+   as a sibling of 'unix"
 
  - cd inside it
 
- - run './nacl.genconf' (which is a ./configure command line with proper flags)
+ - run  './nacl.genconf' (which  is  a ./configure  command line  with
+   proper flags)
 
  - run 'patch -p0 < Makefile.patch' to fix the generated Makefile
 
  - run 'make'. This creates tcl.nmf and tcl.nexe (for x86-32)
 
- - launch the NaCl-provided python-based webserver, and make it see your nacl dir somewhere in its document tree: python httpd.py 5103
+ - launch the  NaCl-provided python-based  webserver, and make  it see
+   your nacl dir somewhere in its document tree: python httpd.py 5103
 
- - start 'chromedebug' (provided), and point Chrome to the index.html in nacl.
+ - (once) open about:flags in Chrome and enable Native Client
+
+ - start 'chromedebug' (provided), and  point Chrome to the index.html
+   in nacl.
+
+ - (every  time)  make  sure  no  non-chromedebug  chrome  process  is
+   running, otherwise it  will be used instead, and  NaCl will fail to
+   load.
+
+ - note:  'chromedebug' just  sets an  env  var for  debug output  (on
+   stderr), and  stars chrome with '--no-sandbox',  which is currently
+   needed for NaCl to be really enabled on Linux.
 
 Overview of the porting method
 ------------------------------
