@@ -331,6 +331,7 @@ ValidateFormat(
 	    Tcl_SetResult(interp,
 		    "cannot mix \"%\" and \"%n$\" conversion specifiers",
 		    TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES", NULL);
 	    goto error;
 	}
 
@@ -377,6 +378,7 @@ ValidateFormat(
 		Tcl_SetResult(interp,
 			"field width may not be specified in %c conversion",
 			TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", NULL);
 		goto error;
 	    }
 	    /*
@@ -390,6 +392,7 @@ ValidateFormat(
 		Tcl_AppendResult(interp,
 			"field size modifier may not be specified in %", buf,
 			" conversion", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", NULL);
 		goto error;
 	    }
 	    /*
@@ -408,6 +411,7 @@ ValidateFormat(
 	    if (flags & SCAN_BIG) {
 		Tcl_SetResult(interp,
 			"unsigned bignum scans are invalid", TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADUNSIGNED",NULL);
 		goto error;
 	    }
 	    break;
@@ -444,11 +448,13 @@ ValidateFormat(
 	badSet:
 	    Tcl_SetResult(interp, "unmatched [ in format string",
 		    TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", NULL);
 	    goto error;
 	default:
 	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 	    Tcl_AppendResult(interp, "bad scan conversion character \"", buf,
 		    "\"", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", NULL);
 	    goto error;
 	}
 	if (!(flags & SCAN_SUPPRESS)) {
@@ -494,6 +500,7 @@ ValidateFormat(
 	    Tcl_SetResult(interp,
 		    "variable is assigned by multiple \"%n$\" conversion specifiers",
 		    TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED", NULL);
 	    goto error;
 	} else if (!xpgSize && (nassign[i] == 0)) {
 	    /*
@@ -504,6 +511,7 @@ ValidateFormat(
 	    Tcl_SetResult(interp,
 		    "variable is not assigned by any conversion specifiers",
 		    TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED", NULL);
 	    goto error;
 	}
     }
@@ -515,10 +523,12 @@ ValidateFormat(
     if (gotXpg) {
 	Tcl_SetResult(interp, "\"%n$\" argument index out of range",
 		TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", NULL);
     } else {
 	Tcl_SetResult(interp,
 		"different numbers of variable names and field specifiers",
 		TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH", NULL);
     }
 
   error:
@@ -990,9 +1000,14 @@ Tcl_ScanObjCmd(
 		continue;
 	    }
 	    result++;
-	    if (Tcl_ObjSetVar2(interp, objv[i+3], NULL, objs[i], 0) == NULL) {
-		Tcl_AppendResult(interp, "couldn't set variable \"",
-			TclGetString(objv[i+3]), "\"", NULL);
+
+	    /*
+	     * In case of multiple errors in setting variables, just report
+	     * the first one.
+	     */
+
+	    if (Tcl_ObjSetVar2(interp, objv[i+3], NULL, objs[i],
+		    (code == TCL_OK) ? TCL_LEAVE_ERR_MSG : 0) == NULL) {
 		code = TCL_ERROR;
 	    }
 	    Tcl_DecrRefCount(objs[i]);
@@ -1038,7 +1053,7 @@ Tcl_ScanObjCmd(
     }
     return code;
 }
-
+
 /*
  * Local Variables:
  * mode: c

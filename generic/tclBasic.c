@@ -2491,7 +2491,8 @@ TclRenameCommand(
     if (Tcl_FindHashEntry(&newNsPtr->cmdTable, newTail) != NULL) {
 	Tcl_AppendResult(interp, "can't rename to \"", newName,
 		 "\": command already exists", NULL);
-        Tcl_SetErrorCode(interp, "TCL", "RENAME", "TARGET_EXISTS", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "OPERATION", "RENAME",
+                "TARGET_EXISTS", NULL);
 	result = TCL_ERROR;
 	goto done;
     }
@@ -3876,82 +3877,79 @@ Tcl_Canceled(
     register Interp *iPtr = (Interp *) interp;
 
     /*
-	 * Has the current script in progress for this interpreter been
-	 * canceled or is the stack being unwound due to the previous script
-	 * cancellation?
-	 */
+     * Has the current script in progress for this interpreter been canceled
+     * or is the stack being unwound due to the previous script cancellation?
+     */
 
-    if (TclCanceled(iPtr)) {
-	    /*
-	     * The CANCELED flag is a one-shot flag that is reset immediately
-	     * upon being detected; however, if the TCL_CANCEL_UNWIND flag is
-	     * set we will continue to report that the script in progress has
-	     * been canceled thereby allowing the evaluation stack for the
-	     * interp to be fully unwound.
-	     */
-
-	    iPtr->flags &= ~CANCELED;
-
-	    /*
-	     * The CANCELED flag was detected and reset; however, if the
-	     * caller specified the TCL_CANCEL_UNWIND flag, we only return
-	     * TCL_ERROR (indicating that the script in progress has been
-	     * canceled) if the evaluation stack for the interp is being fully
-	     * unwound.
-	     */
-
-	    if (!(flags & TCL_CANCEL_UNWIND)
-		    || (iPtr->flags & TCL_CANCEL_UNWIND)) {
-		/*
-		 * If the TCL_LEAVE_ERR_MSG flags bit is set, place an error
-		 * in the interp's result; otherwise, we leave it alone.
-		 */
-
-		if (flags & TCL_LEAVE_ERR_MSG) {
-		    const char *id, *message = NULL;
-		    int length;
-
-		    /*
-		     * Setup errorCode variables so that we can differentiate
-		     * between being canceled and unwound.
-		     */
-
-		    if (iPtr->asyncCancelMsg != NULL) {
-			message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg,
-				&length);
-		    } else {
-			length = 0;
-		    }
-
-		    if (iPtr->flags & TCL_CANCEL_UNWIND) {
-			id = "IUNWIND";
-			if (length == 0) {
-			    message = "eval unwound";
-			}
-		    } else {
-			id = "ICANCEL";
-			if (length == 0) {
-			    message = "eval canceled";
-			}
-		    }
-
-		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, message, NULL);
-		    Tcl_SetErrorCode(interp, "TCL", id, message, NULL);
-		}
-
-		/*
-		 * Return TCL_ERROR to the caller (not necessarily just the
-		 * Tcl core itself) that indicates further processing of the
-		 * script or command in progress should halt gracefully and as
-		 * soon as possible.
-		 */
-
-		return TCL_ERROR;
-	    }
+    if (!TclCanceled(iPtr)) {
+        return TCL_OK;
     }
 
-    return TCL_OK;
+    /*
+     * The CANCELED flag is a one-shot flag that is reset immediately upon
+     * being detected; however, if the TCL_CANCEL_UNWIND flag is set we will
+     * continue to report that the script in progress has been canceled
+     * thereby allowing the evaluation stack for the interp to be fully
+     * unwound.
+     */
+
+    iPtr->flags &= ~CANCELED;
+
+    /*
+     * The CANCELED flag was detected and reset; however, if the caller
+     * specified the TCL_CANCEL_UNWIND flag, we only return TCL_ERROR
+     * (indicating that the script in progress has been canceled) if the
+     * evaluation stack for the interp is being fully unwound.
+     */
+
+    if ((flags & TCL_CANCEL_UNWIND) && !(iPtr->flags & TCL_CANCEL_UNWIND)) {
+        return TCL_OK;
+    }
+
+    /*
+     * If the TCL_LEAVE_ERR_MSG flags bit is set, place an error in the
+     * interp's result; otherwise, we leave it alone.
+     */
+
+    if (flags & TCL_LEAVE_ERR_MSG) {
+        const char *id, *message = NULL;
+        int length;
+
+        /*
+         * Setup errorCode variables so that we can differentiate between
+         * being canceled and unwound.
+         */
+
+        if (iPtr->asyncCancelMsg != NULL) {
+            message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg, &length);
+        } else {
+            length = 0;
+        }
+
+        if (iPtr->flags & TCL_CANCEL_UNWIND) {
+            id = "IUNWIND";
+            if (length == 0) {
+                message = "eval unwound";
+            }
+        } else {
+            id = "ICANCEL";
+            if (length == 0) {
+                message = "eval canceled";
+            }
+        }
+
+        Tcl_ResetResult(interp);
+        Tcl_AppendResult(interp, message, NULL);
+        Tcl_SetErrorCode(interp, "TCL", "CANCEL", id, message, NULL);
+    }
+
+    /*
+     * Return TCL_ERROR to the caller (not necessarily just the Tcl core
+     * itself) that indicates further processing of the script or command in
+     * progress should halt gracefully and as soon as possible.
+     */
+
+    return TCL_ERROR;
 }
 
 /*

@@ -821,3 +821,31 @@ proc tcl::CopyDirectory {action src dest} {
     }
     return
 }
+
+# TIP 131
+if 0 {
+proc tcl::rmmadwiw {} {
+    set magic {
+        42 83 fe f6 ff f8 f1 e5 c6 f9 eb fd ff fb f1 e5 cc f5 ec f5 e3 fd fe
+        ff f5 fa f3 e1 c7 f9 f2 fd ff f9 fe f9 ed f4 fa f6 e6 f9 f2 e6 fd f9
+        ff f9 f6 e6 fa fd ff fc fb fc f9 f1 ed
+    }
+    foreach mystic [lassign $magic tragic] {
+        set comic [expr (0x$mystic ^ 0x$tragic) - 255 + 0x$tragic]
+        append logic [format %x $comic]
+        set tragic $mystic
+    }
+    binary format H* $logic
+}
+
+proc tcl::mathfunc::rmmadwiw {} {
+    set age [expr {9*6}]
+    set mind ""
+    while {$age} {
+        lappend mind [expr {$age%13}]
+        set age [expr {$age/13}]
+    }
+    set matter [lreverse $mind]
+    return [join $matter ""]
+}
+}
