@@ -1,3 +1,12 @@
+2011-04-05  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/Africa/Casablanca: Update to Olson's tzdata2011e
+	* library/tzdata/America/Santiago:
+	* library/tzdata/Pacific/Easter:
+	* library/tzdata/America/Metlakatla: (new)
+	* library/tzdata/America/North_Dakota/Beulah: (new)
+	* library/tzdata/America/Sitka: (new)
+
 2011-04-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c, generic/tclOOBasic.c, generic/tclOODefineCmds.c
