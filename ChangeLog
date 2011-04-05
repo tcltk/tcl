@@ -1,3 +1,40 @@
+2011-04-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c, generic/tclOOBasic.c, generic/tclOODefineCmds.c
+	* generic/tclOOInfo.c, generic/tclOOMethod.c: More generation of
+	error codes (TclOO miscellany).
+
+	* generic/tclCmdAH.c, generic/tclCmdIL.c: More generation of error
+	codes (miscellaneous commands mostly already handled).
+
+2011-04-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* README:	Updated README files, repairing broken URLs and
+	* macosx/README:	removing other bits that were clearly wrong.
+	* unix/README:	Still could use more eyeballs on the detailed build
+	* win/README:	advice on various plaforms. [Bug 3202030]
+
+2011-04-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/init.tcl (tcl::mathfunc::rmmadwiw): Disable by default to
+	make test suite work.
+
+	* generic/tclBasic.c, generic/tclStringObj.c, generic/tclTimer.c,
+	* generic/tclTrace.c, generic/tclUtil.c: More generation of error
+	codes ([format], [after], [trace], RE optimizer).
+
+2011-04-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCmdAH.c:  Better error-message in case of errors
+	* generic/tclCmdIL.c:  related to setting a variable. This fixes
+	* generic/tclDictObj.c: a warning: "Why make your own error
+	* generic/tclScan.c:   message? Why?"
+	* generic/tclTest.c:
+	* test/error.test:
+	* test/info.test:
+	* test/scan.test:
+	* unix/tclUnixThrd.h:  Remove this unused header file.
+
 2011-04-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclNamesp.c, generic/tclObj.c, generic/tclPathObj.c:
