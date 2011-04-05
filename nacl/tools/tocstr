@@ -1,0 +1,10 @@
+#! /bin/sh
+#\
+exec tclsh $0 "$@"
+
+while {[gets stdin line]>=0} {
+    regsub -all {[""\\]} $line {\\&} line
+    puts " \"$line\\n\""
+}
+flush stdout
+exit 0

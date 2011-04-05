@@ -1,5 +1,5 @@
---- Makefile	2011-04-04 01:21:50.082364873 +0200
-+++ tweaked.Makefile	2011-04-04 01:21:02.141607374 +0200
+--- Makefile	2011-04-05 22:26:49.575779998 +0200
++++ tweaked.Makefile	2011-04-05 22:28:51.774529577 +0200
 @@ -102,12 +102,20 @@
  #CFLAGS			= $(CFLAGS_DEBUG)
  #CFLAGS			= $(CFLAGS_OPTIMIZE)
@@ -75,12 +75,18 @@
  
  libraries:
  
-@@ -634,8 +646,15 @@
+@@ -634,8 +646,21 @@
  # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
  ${NATIVE_TCLSH}:
  
 -Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 -	$(SHELL) config.status
++init.tcl.c: ../library/init.tcl
++	tocstr < ../library/init.tcl > init.tcl.c
++
++naclMain.o:	naclMain.c init.tcl.c
++	$(CC) -c $(CC_SWITCHES) naclMain.c
++
 +tcl.nexe: naclMain.o libtcl8.6.a
 +	$(CCPLUS)  $^ $(LDFLAGS) -m32 -o $@
 +
@@ -93,7 +99,7 @@
  #tclConfig.h: $(UNIX_DIR)/tclConfig.h.in
  #	$(SHELL) config.status
  
-@@ -794,7 +813,6 @@
+@@ -794,7 +819,6 @@
  	    echo "Installing $(STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
  	    $(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)"/$(STUB_LIB_FILE) ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(STUB_LIB_FILE)) ; \
  	fi
@@ -101,17 +107,7 @@
  	@echo "Installing pkg-config file to $(LIB_INSTALL_DIR)/pkgconfig/"
  	@$(INSTALL_DATA_DIR) $(LIB_INSTALL_DIR)/pkgconfig
  	@$(INSTALL_DATA) tcl.pc $(LIB_INSTALL_DIR)/pkgconfig/tcl.pc
-@@ -1517,6 +1535,9 @@
- tclUnixThrd.o: $(UNIX_DIR)/tclUnixThrd.c
- 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixThrd.c
- 
-+tclNaclPort.o: $(UNIX_DIR)/tclNaclPort.c
-+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclNaclPort.c
-+
- tclUnixTime.o: $(UNIX_DIR)/tclUnixTime.c
- 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixTime.c
- 
-@@ -2031,13 +2052,13 @@
+@@ -2031,13 +2055,13 @@
  
  html: ${NATIVE_TCLSH}
  	$(BUILD_HTML)
