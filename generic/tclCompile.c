@@ -4366,7 +4366,7 @@ TclGetInnerContext(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_Obj *
+Tcl_Obj *
 TclNewInstNameObj(
     unsigned char inst)
 {
