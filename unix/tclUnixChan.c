@@ -139,6 +139,7 @@ typedef struct TtyAttrs {
     if (interp) {						\
 	Tcl_AppendResult(interp, (detail),			\
 		" not supported for this platform", NULL);	\
+	Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);	\
     }
 
 /*
@@ -699,6 +700,8 @@ TtySetOptionProc(
 		Tcl_AppendResult(interp, "bad value for -handshake: "
 			"must be one of xonxoff, rtscts, dtrdsr or none",
 			NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -719,6 +722,8 @@ TtySetOptionProc(
 	    if (interp) {
 		Tcl_AppendResult(interp, "bad value for -xchar: "
 			"should be a list of two elements", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE", NULL);
 	    }
 	    ckfree(argv);
 	    return TCL_ERROR;
@@ -770,6 +775,8 @@ TtySetOptionProc(
 	    if (interp) {
 		Tcl_AppendResult(interp, "bad value for -ttycontrol: "
 			"should be a list of signal,value pairs", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE", NULL);
 	    }
 	    ckfree(argv);
 	    return TCL_ERROR;
@@ -818,6 +825,8 @@ TtySetOptionProc(
 		    Tcl_AppendResult(interp, "bad signal \"", argv[i],
 			    "\" for -ttycontrol: must be "
 			    "DTR, RTS or BREAK", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE", NULL);
 		}
 		ckfree(argv);
 		return TCL_ERROR;
@@ -1381,6 +1390,7 @@ TtyParseMode(
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, bad, ": should be baud,parity,data,stop",
 		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1409,6 +1419,7 @@ TtyParseMode(
 		    "n, o, or e",
 #endif /* PAREXT|USE_TERMIO */
 		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1417,12 +1428,14 @@ TtyParseMode(
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, bad, " data: should be 5, 6, 7, or 8",
 		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", NULL);
 	}
 	return TCL_ERROR;
     }
     if ((*stopPtr < 0) || (*stopPtr > 2)) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, bad, " stop: should be 1 or 2", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1832,9 +1845,13 @@ Tcl_GetOpenFile(
     if ((forWriting) && ((chanMode & TCL_WRITABLE) == 0)) {
 	Tcl_AppendResult(interp, "\"", chanID, "\" wasn't opened for writing",
 		NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NOT_WRITABLE",
+		NULL);
 	return TCL_ERROR;
     } else if ((!forWriting) && ((chanMode & TCL_READABLE) == 0)) {
 	Tcl_AppendResult(interp, "\"", chanID, "\" wasn't opened for reading",
+		NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NOT_READABLE",
 		NULL);
 	return TCL_ERROR;
     }
@@ -1866,6 +1883,8 @@ Tcl_GetOpenFile(
 	    if (f == NULL) {
 		Tcl_AppendResult(interp, "cannot get a FILE * for \"", chanID,
 			"\"", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL",
+			"FILE_FAILURE", NULL);
 		return TCL_ERROR;
 	    }
 	    *filePtr = f;
@@ -1875,6 +1894,8 @@ Tcl_GetOpenFile(
 
     Tcl_AppendResult(interp, "\"", chanID,
 	    "\" cannot be used to get a FILE *", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NO_DESCRIPTOR",
+	    NULL);
     return TCL_ERROR;
 }
 
