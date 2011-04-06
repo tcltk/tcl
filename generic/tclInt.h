@@ -19,11 +19,6 @@
 #ifndef _TCLINT
 #define _TCLINT
 
-#ifdef MODULE_SCOPE
-#undef MODULE_SCOPE
-#define MODULE_SCOPE
-#endif
-
 /*
  * Some numerics configuration options.
  */
