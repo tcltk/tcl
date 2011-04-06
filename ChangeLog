@@ -1,3 +1,44 @@
+2011-04-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclAppInit.c:  Make symbols "main" and "Tcl_AppInit"
+	MODULE_SCOPE: there is absolutely no reason for exporting them.
+	* unix/tcl.m4:        Don't use -fvisibility=hidden with static
+	* unix/configure      libraries (--disable-shared)
+
+2011-04-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclFCmd.c, macosx/tclMacOSXFCmd.c, unix/tclUnixChan.c,
+	* unix/tclUnixFCmd.c, win/tclWinChan.c, win/tclWinDde.c,
+	* win/tclWinFCmd.c, win/tclWinLoad.c, win/tclWinPipe.c,
+	* win/tclWinReg.c, win/tclWinSerial.c, win/tclWinSock.c: More
+	generation of error codes (most platform-specific parts not already
+	using Tcl_PosixError).
+
+2011-04-05  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/Africa/Casablanca: Update to Olson's tzdata2011e
+	* library/tzdata/America/Santiago:
+	* library/tzdata/Pacific/Easter:
+	* library/tzdata/America/Metlakatla: (new)
+	* library/tzdata/America/North_Dakota/Beulah: (new)
+	* library/tzdata/America/Sitka: (new)
+
+2011-04-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c, generic/tclOOBasic.c, generic/tclOODefineCmds.c
+	* generic/tclOOInfo.c, generic/tclOOMethod.c: More generation of
+	error codes (TclOO miscellany).
+
+	* generic/tclCmdAH.c, generic/tclCmdIL.c: More generation of error
+	codes (miscellaneous commands mostly already handled).
+
+2011-04-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* README:	Updated README files, repairing broken URLs and
+	* macosx/README:	removing other bits that were clearly wrong.
+	* unix/README:	Still could use more eyeballs on the detailed build
+	* win/README:	advice on various plaforms. [Bug 3202030]
+
 2011-04-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/init.tcl (tcl::mathfunc::rmmadwiw): Disable by default to

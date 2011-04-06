@@ -100,6 +100,7 @@ TclOO_Class_Create(
 
 	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
 		"\" is not a class", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "INSTANTIATE_NONCLASS", NULL);
 	return TCL_ERROR;
     }
 
@@ -163,6 +164,7 @@ TclOO_Class_CreateNs(
 
 	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
 		"\" is not a class", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "INSTANTIATE_NONCLASS", NULL);
 	return TCL_ERROR;
     }
 
@@ -231,6 +233,7 @@ TclOO_Class_New(
 
 	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
 		"\" is not a class", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "INSTANTIATE_NONCLASS", NULL);
 	return TCL_ERROR;
     }
 
