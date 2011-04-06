@@ -1,5 +1,5 @@
---- Makefile	2011-04-05 22:26:49.575779998 +0200
-+++ tweaked.Makefile	2011-04-05 22:28:51.774529577 +0200
+--- Makefile	2011-04-06 23:31:24.155518378 +0200
++++ tweaked.Makefile	2011-04-06 23:30:31.386769870 +0200
 @@ -102,12 +102,20 @@
  #CFLAGS			= $(CFLAGS_DEBUG)
  #CFLAGS			= $(CFLAGS_OPTIMIZE)
@@ -75,7 +75,7 @@
  
  libraries:
  
-@@ -634,8 +646,21 @@
+@@ -634,14 +646,34 @@
  # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
  ${NATIVE_TCLSH}:
  
@@ -83,6 +83,10 @@
 -	$(SHELL) config.status
 +init.tcl.c: ../library/init.tcl
 +	tools/tocstr < ../library/init.tcl > init.tcl.c
++
++tclUnixPort.h: ../unix/tclUnixPort.h tclUnixPort.h.patch
++	cat ../unix/tclUnixPort.h > tclUnixPort.h
++	patch -p0 < tclUnixPort.h.patch
 +
 +naclMain.o:	naclMain.c init.tcl.c
 +	$(CC) -c $(CC_SWITCHES) naclMain.c
@@ -94,12 +98,22 @@
 +	@echo "Creating tcl.nmf..."
 +	tools/nexe2nmf tcl.nexe
 +
++$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS): tclUnixPort.h
++
 +#Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 +#	$(SHELL) config.status
  #tclConfig.h: $(UNIX_DIR)/tclConfig.h.in
  #	$(SHELL) config.status
  
-@@ -794,7 +819,6 @@
+ clean: clean-packages
+ 	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
+-		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl 
++		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl \
++		tcl.nexe tcl.nmf init.tcl.c tclUnixPort.h
+ 	cd dltest ; $(MAKE) clean
+ 
+ distclean: distclean-packages clean
+@@ -794,7 +826,6 @@
  	    echo "Installing $(STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
  	    $(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)"/$(STUB_LIB_FILE) ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(STUB_LIB_FILE)) ; \
  	fi
@@ -107,7 +121,7 @@
  	@echo "Installing pkg-config file to $(LIB_INSTALL_DIR)/pkgconfig/"
  	@$(INSTALL_DATA_DIR) $(LIB_INSTALL_DIR)/pkgconfig
  	@$(INSTALL_DATA) tcl.pc $(LIB_INSTALL_DIR)/pkgconfig/tcl.pc
-@@ -2031,13 +2055,13 @@
+@@ -2031,13 +2062,13 @@
  
  html: ${NATIVE_TCLSH}
  	$(BUILD_HTML)
