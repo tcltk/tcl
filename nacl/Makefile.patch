@@ -82,7 +82,7 @@
 -Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 -	$(SHELL) config.status
 +init.tcl.c: ../library/init.tcl
-+	tocstr < ../library/init.tcl > init.tcl.c
++	tools/tocstr < ../library/init.tcl > init.tcl.c
 +
 +naclMain.o:	naclMain.c init.tcl.c
 +	$(CC) -c $(CC_SWITCHES) naclMain.c
