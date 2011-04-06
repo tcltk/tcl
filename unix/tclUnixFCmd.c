@@ -1483,6 +1483,8 @@ SetGroupAttribute(
 		Tcl_AppendResult(interp, "could not set group for file \"",
 			TclGetString(fileName), "\": group \"", string,
 			"\" does not exist", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETGRP",
+			"NO_GROUP", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1547,6 +1549,8 @@ SetOwnerAttribute(
 		Tcl_AppendResult(interp, "could not set owner for file \"",
 			TclGetString(fileName), "\": user \"", string,
 			"\" does not exist", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETOWN",
+			"NO_USER", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1640,6 +1644,7 @@ SetPermissionsAttribute(
 	    if (interp != NULL) {
 		Tcl_AppendResult(interp, "unknown permission string format \"",
 			modeStringPtr, "\"", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PERMISSION", NULL);
 	    }
 	    return TCL_ERROR;
 	}
