@@ -1060,6 +1060,7 @@ TclFileAttrsCmd(
 	    Tcl_AppendResult(interp, "bad option \"", TclGetString(objv[0]),
 		    "\", there are no file attributes in this filesystem.",
 		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", NULL);
 	    goto end;
 	}
 
@@ -1086,6 +1087,7 @@ TclFileAttrsCmd(
 	    Tcl_AppendResult(interp, "bad option \"", TclGetString(objv[0]),
 		    "\", there are no file attributes in this filesystem.",
 		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", NULL);
 	    goto end;
 	}
 
@@ -1100,6 +1102,8 @@ TclFileAttrsCmd(
 	    if (i + 1 == objc) {
 		Tcl_AppendResult(interp, "value for \"",
 			TclGetString(objv[i]), "\" missing", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FATTR",
+			"NOVALUE", NULL);
 		goto end;
 	    }
 	    if (Tcl_FSFileAttrsSet(interp, index, filePtr,
@@ -1213,6 +1217,7 @@ TclFileLinkCmd(
 		Tcl_AppendResult(interp, "could not create new link \"",
 			TclGetString(objv[index]),
 			"\": that path already exists", NULL);
+		Tcl_PosixError(interp);
 	    } else if (errno == ENOENT) {
 		/*
 		 * There are two cases here: either the target doesn't exist,
@@ -1232,11 +1237,14 @@ TclFileLinkCmd(
 		    Tcl_AppendResult(interp, "could not create new link \"",
 			    TclGetString(objv[index]),
 			    "\": no such file or directory", NULL);
+		    Tcl_PosixError(interp);
 		} else {
 		    Tcl_AppendResult(interp, "could not create new link \"",
 			    TclGetString(objv[index]), "\": target \"",
 			    TclGetString(objv[index+1]), "\" doesn't exist",
 			    NULL);
+		    errno = ENOENT;
+		    Tcl_PosixError(interp);
 		}
 	    } else {
 		Tcl_AppendResult(interp, "could not create new link \"",
