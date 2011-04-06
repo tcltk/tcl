@@ -2,6 +2,8 @@
 
 	* unix/tclAppInit.c:  Make symbols "main" and "Tcl_AppInit"
 	MODULE_SCOPE: there is absolutely no reason for exporting them.
+	* unix/tcl.m4:        Don't use -fvisibility=hidden with static
+	* unix/configure      libraries (--disable-shared)
 
 2011-04-06  Donal K. Fellows  <dkf@users.sf.net>
 
