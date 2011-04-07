@@ -29,6 +29,17 @@ static int    Pkga_EqObjCmd(ClientData clientData,
 		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int    Pkga_QuoteObjCmd(ClientData clientData,
 		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+/*
+ * Function to be backlinked from the tcltest executable
+ */
+#if 0
+extern const char *Tcltest_Foo();
+#else
+EXTERN const char *Tcltest_Foo() {
+    return "I'm in pkga.c";
+}
+#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -99,11 +110,15 @@ Pkga_QuoteObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
-    if (objc != 2) {
+    if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
+    if (objc == 1) {
+	Tcl_SetResult(interp, (char *) Tcltest_Foo(), TCL_VOLATILE);
+    } else {
     Tcl_SetObjResult(interp, objv[1]);
+    }
     return TCL_OK;
 }
 
