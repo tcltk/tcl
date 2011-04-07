@@ -1,8 +1,11 @@
 2011-04-06  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclExecute.c (TclCompileObj): earlier return if Tip280
+	gymnastics not needed.
+
 	* generic/tclExecute.c: fix for [Bug 3274728], making *catchTop an
 	unsigned long.
-	
+
 2011-04-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclAppInit.c:  Make symbols "main" and "Tcl_AppInit"
