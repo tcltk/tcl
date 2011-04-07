@@ -1136,6 +1136,8 @@ TclpCreateProcess(
 	    Tcl_AppendResult(interp,
 		    "DOS application process not supported on this platform",
 		    (char *) NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "DOS_APP",
+		    NULL);
 	    goto end;
 	}
     }

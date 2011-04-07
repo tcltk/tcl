@@ -997,6 +997,8 @@ TclpOpenFileChannel(
 	channel = NULL;
 	Tcl_AppendResult(interp, "couldn't open \"", TclGetString(pathPtr),
 		"\": bad file type", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE",
+		NULL);
 	break;
     }
 

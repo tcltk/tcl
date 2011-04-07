@@ -12,6 +12,8 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef BUILD_tcl
+#undef STATIC_BUILD
 #include "tcl.h"
 
 #ifdef TCL_TEST
@@ -33,7 +35,8 @@ extern int		Tclxttest_Init(Tcl_Interp *interp);
 #ifndef TCL_LOCAL_APPINIT
 #define TCL_LOCAL_APPINIT Tcl_AppInit
 #endif
-extern int TCL_LOCAL_APPINIT(Tcl_Interp *interp);
+MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
+MODULE_SCOPE int main(int, char **);
 
 /*
  * The following #if block allows you to change how Tcl finds the startup
@@ -151,6 +154,14 @@ Tcl_AppInit(
 
     return TCL_OK;
 }
+
+#ifdef TCL_TEST
+#   undef TCL_STORAGE_CLASS
+#   define TCL_STORAGE_CLASS DLLEXPORT
+EXTERN const char *Tcltest_Foo() {
+    return "I'm in tclAppInit.c";
+}
+#endif /* TCL_TEST */
 
 /*
  * Local Variables:
