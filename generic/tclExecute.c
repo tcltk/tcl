@@ -1688,6 +1688,10 @@ TclCompileObj(
 	 *     information.
 	 */
 
+	if (!invoker) {
+	    return codePtr;
+	}
+	
 	{
 	    Tcl_HashEntry *hePtr =
 		    Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
@@ -1695,7 +1699,7 @@ TclCompileObj(
 	    CmdFrame *ctxPtr;
 	    int redo;
 
-	    if (!hePtr || !invoker) {
+	    if (!hePtr) {
 		return codePtr;
 	    }
 
