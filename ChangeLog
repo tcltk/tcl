@@ -1,3 +1,8 @@
+2011-04-06  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TclCompEvalObj): earlier return if Tip280 
+	gymnastics not needed.
+
 2011-04-05  Venkat Iyer <venkat@comit.com>
 
 	* library/tzdata/Africa/Casablanca: Update to Olson's tzdata2011e
