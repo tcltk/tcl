@@ -1,0 +1,28 @@
+#------ Std preamble
+proc after {ms script} {
+    regsub -all {[""''\\]} $script {\\&} script
+    append ::JS "setTimeout(\"tclDo('$script')\",$ms);\n"
+}
+proc domset {element inner} {
+    regsub -all {[''\\]} $inner {\\&} inner
+    regsub -all \n $inner \t inner
+    append ::JS "$element.innerHTML='$inner';\n"
+}
+
+#------ App callbacks
+
+set cnt 0
+
+proc daemon {} {
+    after 1000 daemon
+    printf DAEMON:$::cnt
+    domset statusField "<h1 align='center'>DAEMON:$::cnt</h1>"
+    incr ::cnt
+    if {$::cnt>10} {
+       error "Oh, I barfed !"
+    }
+}
+
+#------ Runtime
+printf Salut!!!
+daemon

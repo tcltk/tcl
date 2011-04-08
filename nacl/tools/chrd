@@ -1,3 +1,4 @@
 #! /bin/sh -x
-./chromedebug http://localhost:5103/tcl/
+./chromedebug http://localhost:5103/tcl/${1:-balls.html}
+
 

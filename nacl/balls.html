@@ -9,21 +9,54 @@
   <title>Tcl in Nacl</title>
 
   <script type="text/javascript">
-    tclModule = null;  // Global application object.
-    statusText = 'NO-STATUS';
+     
+     tclModule = null;  // Global application object.
+xhr = null;
+tclReportError = "";
+statusText = 'NO-STATUS';
+
+function tclDo(s) {
+    console.log("do:"+s);
+    try {
+	t = tclModule.eval("naclwrap {"+s+"}");
+	console.log("ret:"+t);
+	eval(t);
+    } catch(err) {
+	console.log("err:"+err);
+	tclReportError="bgerror {"+err+" -- while doing: "+t+"}";
+	setTimeout('tclDo(tclReportError)',0);
+    }
+}
 
     function moduleDidLoad() {
       tclModule = document.getElementById('tcl');
-      updateStatus('SUCCESS');
+      tclModule.eval('proc bgerror s {printf "### BGERROR: $s";regsub -all {[\'\'\\\\]} $s {\\\\&} s;regsub -all \\n $s \t s;return "alert(\'### BGERROR: $s\');";}');
+      tclModule.eval('proc naclwrap s {set ::JS "";if {[catch {uplevel 1 $s} err]} {set ::JS [bgerror $err]};return $::JS} ');
+      updateStatus('NaTcl Loaded ; fetching script...');
+      xhr = new XMLHttpRequest();
+      xhr.open("GET","balls.natcl",true);
+      xhr.send(null);
+      xhr.onreadystatechange = function() {
+	  if (xhr.readyState==4)
+	      {
+		  if (xhr.status==200) {
+		      updateStatus("Running");
+		      tclDo(xhr.responseText);
+		  } else {
+		      updateStatus("Cannot load script: "+xhr.status+" "+xhr.statusText);
+		  }
+	      }
+      };
     }
 
+     var statusField = null;
     // If the page loads before the Native Client module loads, then set the
     // status message indicating that the module is still loading.  Otherwise,
     // do not change the status message.
     function pageDidLoad() {
+      statusField = document.getElementById('status');
       if (tclModule == null) {
-        updateStatus('LOADING...');
-    alert(' FOO \'  BAR \\ BAZ');
+        updateStatus('Loading Nacl...');
       } else {
         // It's possible that the Native Client module onload event fired
         // before the page's onload event.  In this case, the status message
@@ -41,15 +74,14 @@
       }
     }
 
-    // Set the global status message.  If the element with id 'statusField'
+    // Set the global status message.  If the element with id 'status'
     // exists, then set its HTML to the status message as well.
     // opt_message The message test.  If this is null or undefined, then
-    //     attempt to set the element with id 'statusField' to the value of
+    //     attempt to set the element with id 'status' to the value of
     //     |statusText|.
     function updateStatus(opt_message) {
       if (opt_message)
         statusText = opt_message;
-      var statusField = document.getElementById('status_field');
       if (statusField) {
         statusField.innerHTML = statusText;
       }
@@ -83,6 +115,7 @@
   should open a popup dialog containing the Tcl result as its value.</p>
 
 <h2>Status</h2>
-<div id="status_field">NO-STATUS</div>
+<div id="status">NO-STATUS</div>
+<hr>
 </body>
 </html>
