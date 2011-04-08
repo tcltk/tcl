@@ -1,4 +1,6 @@
 #! /bin/sh -x
 
-NACLVERBOSITY=2 google-chrome --no-sandbox "$@"
+google-chrome --no-sandbox "$@"
+
+#NACLVERBOSITY=2 google-chrome --no-sandbox "$@"
 #PPAPI_BROWSER_DEBUG=1 NACL_PLUGIN_DEBUG=1 NACL_PPAPI_PROXY_DEBUG=1 NACLVERBOSITY=15 google-chrome --no-sandbox "$@"

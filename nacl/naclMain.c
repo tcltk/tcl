@@ -16,41 +16,56 @@
 #include "tclInt.h"
 
 static Tcl_Interp *interp = NULL;
+static int pid = 0;
 
 const char *init_tcl_contents =
 "set ::tcl_library {/}\n"
 # include "init.tcl.c"
   ;
 
+static int PrintfObjCmd(
+			ClientData clientData,
+			Tcl_Interp *interp,
+			int objc,
+			Tcl_Obj *const objv[])
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string");
+	return TCL_ERROR;
+    }
+    printf("NaTcl(%d): %s\n", pid, Tcl_GetString(objv[1]));
+    return TCL_OK;
+}
+
+
 static Tcl_Interp *NewTcl(void)
 {
   Tcl_Interp *ii;
 
-  printf("DBUG:TclInitSubsystems\n");
+  //printf("DBUG:TclInitSubsystems\n");
   TclInitSubsystems();
-  printf("DBUG:TclpSetInitialEncodings\n");
+  //printf("DBUG:TclpSetInitialEncodings\n");
   TclpSetInitialEncodings();
 
-  printf("DBUG:Busyloop-check\n");
   {
     volatile int x;
 
     x=0;
-    if (x) printf("BUSYLOOP : break out by resetting the var (set $eax=0)\n");
-    else printf("NO-BUSYLOOP\n");
+    if (x) printf("NaTcl(%d): BUSYLOOP : break out by resetting the var (set $eax=0)\n",pid);
     while(x) {}
   }
-  printf("DBUG:CreateInterp\n");
+  //  printf("DBUG:CreateInterp\n");
   ii=Tcl_CreateInterp();
   if (!ii) {
-    printf("Tcl CreateInterp Failed !!!\n");
+    printf("NaTcl(%d): Tcl CreateInterp Failed !!!\n",pid);
     return NULL;
   }
-  printf("DBUG:Tcl_Init2\n");
+  //printf("DBUG:Tcl_Init2\n");
   if (Tcl_Eval(ii,init_tcl_contents)!=TCL_OK) {
-    printf("Tcl Init Failed: %s !!!\n",Tcl_GetStringResult(ii));
+    printf("NaTcl(%d): Tcl Init Failed: %s !!!\n",pid,Tcl_GetStringResult(ii));
     return NULL;
   }
+  Tcl_CreateObjCommand(ii,"printf",PrintfObjCmd,NULL,NULL);
   return ii;
 }
 static const char *EvalTcl(char *s)
@@ -232,8 +247,9 @@ static PP_Bool Instance_HandleInputEvent(PP_Instance instance,
  * @return A scriptable object.
  */
 static struct PP_Var Instance_GetInstanceObject(PP_Instance instance) {
-  if (var_interface)
+  if (var_interface) {
     return var_interface->CreateObject(instance, &ppp_class, NULL);
+  }
   return PP_MakeUndefined();
 }
 
@@ -302,11 +318,12 @@ static struct PP_Var Tcl_Call(void* object,
  */
 PP_EXPORT int32_t PPP_InitializeModule(PP_Module a_module_id,
                                        PPB_GetInterface get_browser) {
+  pid = getpid();
   module_id = a_module_id;
   var_interface =
       (struct PPB_Var_Deprecated*)(get_browser(PPB_VAR_DEPRECATED_INTERFACE));
 
-  printf("DBUG:begin\n");
+  printf("NaTcl(%d): DBUG: NaTcl starting\n",pid);
   interp = NewTcl();
   if (!interp) return PP_ERROR_FAILED;
 
