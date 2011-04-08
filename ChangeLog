@@ -1,3 +1,9 @@
+2011-04-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h: fix for [Bug 3280043]: win2k: unresolved DLL imports
+	* win/configure.in
+	* win/configure
+
 2011-04-06  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c (TclCompileObj): earlier return if Tip280
