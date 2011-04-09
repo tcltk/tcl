@@ -301,7 +301,7 @@ AC_TRY_COMPILE([
         tcl_have_wspiapi_h=yes,
         tcl_have_wspiapi_h=no)
 )
-if test "tcl_have_wspiapi_h" = "yes"; then
+if test "$tcl_have_wspiapi_h" = "yes"; then
     AC_DEFINE(HAVE_WSPIAPI_H, 1,
             [Defined when wspiapi.h exists])
 fi
