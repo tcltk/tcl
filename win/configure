@@ -3758,7 +3758,7 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 echo "$as_me:$LINENO: result: $tcl_have_wspiapi_h" >&5
 echo "${ECHO_T}$tcl_have_wspiapi_h" >&6
-if test "tcl_have_wspiapi_h" = "yes"; then
+if test "$tcl_have_wspiapi_h" = "yes"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_WSPIAPI_H 1
