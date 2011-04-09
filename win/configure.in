@@ -291,6 +291,21 @@ if test "$tcl_cv_intrinsics" = "yes"; then
             [Defined when the compilers supports intrinsics])
 fi
 
+# See if the <wspiapi.h> header file is present    
+
+AC_CACHE_CHECK(for wspiapi.h,
+    tcl_have_wspiapi_h,
+AC_TRY_COMPILE([
+#include <wspiapi.h>
+], [],
+        tcl_have_wspiapi_h=yes,
+        tcl_have_wspiapi_h=no)
+)
+if test "$tcl_have_wspiapi_h" = "yes"; then
+    AC_DEFINE(HAVE_WSPIAPI_H, 1,
+            [Defined when wspiapi.h exists])
+fi
+
 #--------------------------------------------------------------------
 # Determines the correct binary file extension (.o, .obj, .exe etc.)
 #--------------------------------------------------------------------
