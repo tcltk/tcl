@@ -13,7 +13,14 @@
 
      // NaTcl -- JS glue
      
-tclModule = null;  // our singleton Tcl interp
+var tclModule = null;  // our singleton Tcl interp
+
+var canvas = null;
+var context = null;
+var canvcoords = [];
+
+// give it global scope. will be regen'd by canv code.
+function repaint() {}
 
 // debugging stuff
 
@@ -104,6 +111,8 @@ function moduleDidLoad() {
 
 function pageDidLoad() {
     statusField = document.getElementById('modstatus');
+    canvas=document.getElementById('canvas');
+    context=canvas.getContext("2d");
     if (tclModule == null) {
         updateStatus('Loading Nacl...');
     } else {
@@ -131,11 +140,9 @@ function doeval() {
 
 <h1>NaTcl -- Native Client Tcl Module</h1>
 <p>
-  <form name="the_form" action="" method="get">
-  <textarea id="input_id" name="inputbox" rows="15" cols="80">list a b c
-</textarea><p>
-  <input type="button" value="Call eval()" onclick="doeval()">
-  </form>
+
+  <canvas id="canvas" width="576" height="300"></canvas>
+
   <!-- Load the published .nexe.  This includes the 'nacl' attribute which
   shows how to load multi-architecture modules.  Each entry in the "nexes"
   object in the  .nmf manifest file is a key-value pair: the key is the runtime
