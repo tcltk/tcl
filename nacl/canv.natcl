@@ -1,0 +1,125 @@
+#
+#  crude canvas emulation for NaTcl -- mapping to HTML5 canvas
+#
+
+set ::canv_uniq 1
+set ::canv_hooked 0
+set ::canv_tlist {}
+set ::canv_jlist {}
+set ::canv_status_func 0
+set ::canv_status_coords 0
+
+# canv_status_coords : 1: some old items moved
+# canv_status_func: 0:unchanged 1:new-items-on-top 2:changed
+
+proc canv_addhook {} {
+    if {$::canv_hooked} return
+    set ::canv_hooked 1
+    lappend ::naclhooks canv_hook
+}
+
+proc canv_new_items {} {
+    return [lrange $::canv_tlist [llength $::canv_jlist] end]
+}
+
+proc canv_compile_repaint l {
+    set j ""
+    set oldprep ""
+    foreach i $l {
+	set prep $::canv_jprep($i)
+	if {[string compare $prep $oldprep]} {
+	    set oldprep $prep
+	    append j $prep
+	}
+	append j $::canv_jdraw($i)
+    }
+    return $j
+}
+
+proc canv_hook {} {
+    set ::canv_hooked 0
+    set repaint 0
+    if {$::canv_status_coords} {
+	set repaint 1
+    }
+    if {![info exists ::canv_jcode]} {
+	set ::canv_status_func 2
+    }
+    switch $::canv_status_func {
+	0 {
+	    # valid, do nothing
+	}
+	1 {
+	    # incremental, append
+	    set jnew [canv_compile_repaint [canv_new_items]]
+	    append ::canv_jcode $jnew
+	    append js "repaint = function(){\n$::canv_jcode\n}\n"
+	    if {!$repaint} {
+		# old ones didn't move: just draw the new ones
+		append js $jnew
+	    }
+	    set ::canv_jlist $::canv_tlist
+	}
+	2 {
+	    # invalid, recompute
+	    set ::canv_jcode "context.clearRect(0,0,canvas.width,canvas.height);
+\n"
+	    append ::canv_jcode [canv_compile_repaint $::canv_tlist]
+	    append js "repaint=function(){\n$::canv_jcode\n}\n"
+	    set ::canv_jlist $::canv_tlist
+	    set repaint 1
+	}
+    }
+    foreach i [array names ::canv_moved] {
+	append js "canvcoords\[$i\]=\[[join $::canv_coords($i) ,]\];\n"
+    }
+    if {$repaint} {
+	append js "repaint();\n"
+    }
+    set ::canv_status_func 0
+    set ::canv_status_coords 0
+    array unset ::canv_moved
+
+    if {[info exists js]} {
+	printf "CANV_HOOK emits:\n$js\n"
+	append ::JS $js
+    }
+}
+
+proc canv_create {ty args} {
+    set id $::canv_uniq
+    incr ::canv_uniq
+    lappend ::canv_tlist $id
+    set att(-fill) "#FFFFFF"
+    set att(-outline) "#000000"
+    switch -exact -- $ty {
+	rect {
+	    set ::canv_coords($id) [lrange $args 0 3]
+	    array set att [lrange $args 4 end]
+	    set ::canv_jprep($id) "context.strokeStyle='$att(-outline)';context.fillStyle='$att(-fill)';\n"
+	    set ::canv_jdraw($id) "context.beginPath();context.rect(canvcoords\[$id\]\[0\],canvcoords\[$id\]\[1\],canvcoords\[$id\]\[2\]-canvcoords\[$id\]\[0\],canvcoords\[$id\]\[3\]-canvcoords\[$id\]\[1\]);context.fill();context.stroke();\n"
+	}
+	default {error "Unknown canv item type '$ty'"}
+    }
+    if {!$::canv_status_func} {
+	# incremental
+	set ::canv_status_func 1
+    }
+    set ::canv_moved($id) 1
+    canv_addhook
+    return $id
+}
+
+proc canv_move {id dx dy} {
+    set cc {}
+    foreach {x y} $::canv_coords($id) {
+	incr x $dx
+	incr y $dy
+	lappend cc $x $y
+    }
+    set ::canv_coords($id) $cc
+    if {![info exists ::canv_moved($id)]} {
+	set ::canv_moved($id) 1
+	set ::canv_status_coords 1
+    }
+}

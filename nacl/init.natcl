@@ -9,13 +9,18 @@ proc jsquote s {
 }
 
 proc bgerror s {
-    printf "### BGERROR: $s"
+    printf "### BGERROR: $s\n# [info errorstack]"
     set ::JS "alert([jsquote "BGERROR: $s"]);"
 }
 
+set ::naclhooks {}
+
 proc naclwrap s {
     set ::JS ""
-    if {[catch {uplevel 1 $s} err]} {
+    if {[catch {
+	uplevel 1 $s
+	foreach x $::naclhooks {uplevel #0 $x}
+    } err]} {
 	printf "Wrapper error: $err"
 	bgerror $err
     }

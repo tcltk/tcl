@@ -1,6 +1,7 @@
 printf BEFORE-TOPLEVEL-SOURCE
 source a.natcl
 source b.natcl
+source canv.natcl
 printf AFTER-TOPLEVEL-SOURCE
 
 set cnt 0
@@ -15,6 +16,20 @@ proc daemon {} {
     }
 }
 
+proc daemon2 {} {
+    after 100 daemon2
+    foreach id $::lst {
+        canv_move $id [expr {-3+int(rand()*7)}] [expr {-3+int(rand()*7)}]
+    }
+}
+
 #------ Runtime
 printf Salut!!!
+
+lappend lst [canv_create rect 100 60 150 80 -fill "#FF0000" -outline "#00FF00"]
+lappend lst [canv_create rect 110 70 120 90 -fill "#0000FF" -outline "#FFFF00"]
+lappend lst [canv_create rect 150 30 180 40 -fill "#FF00FF" -outline "#00FFFF"]
+
+
 daemon
+daemon2
