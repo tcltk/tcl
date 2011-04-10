@@ -1,15 +1,7 @@
-#------ Std preamble
-proc after {ms script} {
-    regsub -all {[""''\\]} $script {\\&} script
-    append ::JS "setTimeout(\"tclDo('$script')\",$ms);\n"
-}
-proc domset {element inner} {
-    regsub -all {[''\\]} $inner {\\&} inner
-    regsub -all \n $inner \t inner
-    append ::JS "$element.innerHTML='$inner';\n"
-}
-
-#------ App callbacks
+printf BEFORE-TOPLEVEL-SOURCE
+source a.natcl
+source b.natcl
+printf AFTER-TOPLEVEL-SOURCE
 
 set cnt 0
 

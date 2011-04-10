@@ -37,12 +37,15 @@ Building Tcl for Nacl
 
  - (once) open about:flags in Chrome and enable Native Client
 
- - start 'chromedebug' (provided), and  point Chrome to the index.html
-   in nacl. e.g. chromedebug http://localhost:5103/nacl
+ - start   '(cd  tools;./chromedebug)',  and   point  Chrome   to  the
+   index.html in nacl. e.g. chromedebug http://localhost:5103/nacl.
+
+ - alternatively, use './chrd' to load the 'balls' demo.
 
  - (every  time)  make  sure  no  non-chromedebug  chrome  process  is
    running, otherwise it  will be used instead, and  NaCl will fail to
-   load.
+   load. Also, when you update or tweak anything, it is a good idea to
+   flush your browser's cache !
 
  - note:  'chromedebug' just  sets an  env  var for  debug output  (on
    stderr), and  stars chrome with '--no-sandbox',  which is currently
@@ -66,4 +69,67 @@ This approach allows to compile Tcl for Nacl without changing a single
 line of the original source distribution; all new things are in the
 nacl subdir. Also, much is reused from ../unix.
 
+Nacl context specifics
+----------------------
+
+One thing to keep in mind is  that NaCl lets us run in our sandbox, in
+a  dedicated process, but  at the  time of  writing, it  is in  a very
+synchronous  "lockstep"  interaction with  the  main renderer  process
+executing  JS  code.  A  more  async  API  allowing  us  to  be  in  a
+free-floating thread and exchanging messages  with JS is in the works,
+but not baked yet.
+
+Given  this,  NaTcl  simply   obeys  the  rules  of  the  synchronous,
+event-driven  world of JS:  do everything  in quickly  returning event
+callbacks,  never stick  for too  long.  Note that  most Tcl/Tk  users
+should feel at  home, since it is exactly the  recipe for a responsive
+Tk GUI.
+
+For maximal genericity, the way NaTcl "retroacts" on the JS context is
+by returning a JS string to eval(). Then you can do whatever you want,
+including of course  arranging for future JS events  to call back into
+NaTcl. See [domset] and [after] (in init.natcl, which is compiled into
+the binray .nexe) as two very simple examples.
+
+In   an  universe   without   syscalls,  loading   other  scripts   is
+problematic. To circumvent this (and bootstrap the loading of the main
+script), [source $url] is  reimplemented over a JS XmlHttpRequest. And
+to preserve  the blocking semantics of traditional  [source] while XHR
+is purely  async, this implementation is coro-based  and calls [yield]
+after starting the request. When the download completes, JS calls back
+into Tcl to resume the  coro, and continue the sequential execution of
+the Tcl  script where  it left. This  allows for arbitrary  series and
+nesting of [source].
+
+For this reason, the main script is bootstrapped by evaluating:
+
+     coroutine main_coro source $url
+
+This means that all  the init code in the script will  run in the coro
+context (for [source]'s  benefit, but that could be  extended to other
+things).  But once  the  execution has  fallen  back out  of the  main
+script, hopefully after setting up  many (JS) event handlers, it is up
+to the app to establish other coro contexts if needed.
+
+The bottom line is this:
+
+   - a simple,  ol'good-Tk-style event-driven script will  not have to
+     bother about coros
+
+   - a more  advanced, coro-savvy script  can use coros to  do lengthy
+     things (be they computations  of network downloads) while leaving
+     the GUI responsive
+
+   - in all cases, [source] works  as usual to fetch scripts over HTTP
+     (in   the   same  domain   as   the   page   serving  the   NaTcl
+     plugin). Relative URLs work: [source foo.natcl].
+
+   - in all cases, falling back  out of the main scripts is equivalent
+     to going  back to the Tk eventloop  in wish (except it  is the JS
+     eventloop).
+
+Future work
+-----------
+
+ Coming soon: [domget], [canvas], and a decent bouncing-balls demo ;-)
 

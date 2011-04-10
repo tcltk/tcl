@@ -1,5 +1,5 @@
---- Makefile	2011-04-06 23:31:24.155518378 +0200
-+++ tweaked.Makefile	2011-04-06 23:30:31.386769870 +0200
+--- Makefile	2011-04-10 13:21:12.773175132 +0200
++++ tweaked.Makefile	2011-04-10 12:34:27.256426620 +0200
 @@ -102,12 +102,20 @@
  #CFLAGS			= $(CFLAGS_DEBUG)
  #CFLAGS			= $(CFLAGS_OPTIMIZE)
@@ -81,8 +81,8 @@
  
 -Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 -	$(SHELL) config.status
-+init.tcl.c: ../library/init.tcl
-+	tools/tocstr < ../library/init.tcl > init.tcl.c
++init.tcl.c: ../library/init.tcl init.natcl
++	cat $^ | tools/tocstr > $@
 +
 +tclUnixPort.h: ../unix/tclUnixPort.h tclUnixPort.h.patch
 +	cat ../unix/tclUnixPort.h > tclUnixPort.h

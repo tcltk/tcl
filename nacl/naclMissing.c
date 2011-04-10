@@ -25,7 +25,7 @@ char * getwd (char *buf)
 int access(const char *name, int mode)
 {
   printf("*BADSYSCALL:access(\"%s\",%d)\n",name,mode);
-  return 0;
+  // return 0;
   errno=ENOENT;return -1;
 }
 
