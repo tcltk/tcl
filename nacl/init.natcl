@@ -1,0 +1,43 @@
+#------ Standard NaTcl preamble
+
+
+# core JS/Tcl interaction
+proc jsquote s {
+    regsub -all {[''\\]} $s {\\&} s
+    regsub -all \n $s {'+"\\n"+'} s
+    return '${s}'
+}
+
+proc bgerror s {
+    printf "### BGERROR: $s"
+    set ::JS "alert([jsquote "BGERROR: $s"]);"
+}
+
+proc naclwrap s {
+    set ::JS ""
+    if {[catch {uplevel 1 $s} err]} {
+	printf "Wrapper error: $err"
+	bgerror $err
+    }
+    return $::JS
+}
+
+# Coro-based [source] necessary for bootstrapping
+proc source url {
+    set j "tclsource([jsquote $url],[jsquote [info coroutine]]);\n"
+    append ::JS $j
+    set x [yield]
+    uplevel 1 $x
+}
+
+# Async [after] using JS's setTimeout()
+proc after {ms script} {
+    if {[regexp \n $script]} {error "JS hates multiline :)"}
+    append ::JS "setTimeout(\"tclDo([jsquote $script])\",$ms);\n"
+}
+
+# Delayed DOM-setting through the tclDo() trampoline
+proc domset {element inner} {
+    append ::JS "$element.innerHTML=[jsquote $inner];\n"
+}
+
