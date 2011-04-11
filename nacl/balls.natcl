@@ -202,7 +202,7 @@ proc updateStage {} {
 	    set vx [expr {-$vx*(1.0-$::collisionDamper)}]
 	}
 	set ::b($id) [list $x $y $vx $vy $rx $ry]
-	canv_moveto $id [expr {int($x)}] [expr {int($y)}]
+	canv_moveto $id [expr {int($x+0.5)}] [expr {int($y+0.5)}]
     }
 }
     
