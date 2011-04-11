@@ -1,11 +1,12 @@
 #
 #  crude canvas emulation for NaTcl -- mapping to HTML5 canvas
 #
+set ::canv_verbose 0
 
 set ::canv_uniq 1
 set ::canv_hooked 0
 set ::canv_tlist {}
-set ::canv_jlist {}
+set ::canv_jcnt 0
 set ::canv_status_func 0
 set ::canv_status_coords 0
 
@@ -19,7 +20,7 @@ proc canv_addhook {} {
 }
 
 proc canv_new_items {} {
-    return [lrange $::canv_tlist [llength $::canv_jlist] end]
+    return [lrange $::canv_tlist $::canv_jcnt end]
 }
 
 proc canv_compile_repaint l {
@@ -58,7 +59,7 @@ proc canv_hook {} {
 		# old ones didn't move: just draw the new ones
 		append js $jnew
 	    }
-	    set ::canv_jlist $::canv_tlist
+	    set ::canv_jcnt [llength $::canv_tlist]
 	}
 	2 {
 	    # invalid, recompute
@@ -66,7 +67,7 @@ proc canv_hook {} {
 \n"
 	    append ::canv_jcode [canv_compile_repaint $::canv_tlist]
 	    append js "repaint=function(){\n$::canv_jcode\n}\n"
-	    set ::canv_jlist $::canv_tlist
+	    set ::canv_jcnt [llength $::canv_tlist]
 	    set repaint 1
 	}
     }
@@ -81,9 +82,46 @@ proc canv_hook {} {
     array unset ::canv_moved
 
     if {[info exists js]} {
-	printf "CANV_HOOK emits:\n$js\n"
+	if {$::canv_verbose} {
+	    printf "CANV_HOOK emits:\n$js\n"
+	}
 	append ::JS $js
     }
+}
+
+proc lremove {l e} {
+     set out {}
+    foreach x $l {
+	if {$x==$e} continue
+	lappend out $x
+    }
+    return $out
+}
+
+proc canv_delete id { 
+    if {$id=="all"} {
+	array unset ::canv_moved
+	array unset ::canv_coords
+	array unset ::canv_jprep
+	array unset ::canv_jdraw
+	set ::canv_tlist {}
+	set ::canv_status_func 2
+    } else {
+	catch {unset ::canv_moved($id)}
+	unset ::canv_coords($id)
+	unset ::canv_jprep($id)
+	unset ::canv_jdraw($id)
+	set ::canv_tlist [lremove $::canv_tlist $id]
+	set ::canv_status_func 2
+    }
+    canv_addhook
+}
+
+proc canv_find tag {
+    if {$tag!="all"} {
+	error "Unsupported tag '$tag'"
+    }
+    return $::canv_tlist
 }
 
 proc canv_create {ty args} {
@@ -94,13 +132,29 @@ proc canv_create {ty args} {
     set att(-outline) "#000000"
     switch -exact -- $ty {
 	rect {
-	    set ::canv_coords($id) [lrange $args 0 3]
+	    foreach {x1 y1 x2 y2} $args break
+	    set ::canv_coords($id) [list $x1 $y1 [expr {$x2-$x1}] [expr {$y2-$y1}]]
 	    array set att [lrange $args 4 end]
-	    set ::canv_jprep($id) "context.strokeStyle='$att(-outline)';context.fillStyle='$att(-fill)';\n"
-	    set ::canv_jdraw($id) "context.beginPath();context.rect(canvcoords\[$id\]\[0\],canvcoords\[$id\]\[1\],canvcoords\[$id\]\[2\]-canvcoords\[$id\]\[0\],canvcoords\[$id\]\[3\]-canvcoords\[$id\]\[1\]);context.fill();context.stroke();\n"
+	    set prep ""
+	    set draw ""
+	    if {$att(-outline)!=""} {append prep "context.strokeStyle='$att(-outline)';";append draw "context.stroke();"}
+	    if {$att(-fill)!=""} {append prep "context.fillStyle='$att(-fill)';";append draw "context.fill();"}
+	    set ::canv_jprep($id) $prep
+	    set ::canv_jdraw($id) "context.beginPath();context.rect(canvcoords\[$id\]\[0\],canvcoords\[$id\]\[1\],canvcoords\[$id\]\[2\],canvcoords\[$id\]\[3\]);$draw\n"
+	}
+	circle {
+	    set ::canv_coords($id) [lrange $args 0 2]
+	    array set att [lrange $args 3 end]
+	    set prep ""
+	    set draw ""
+	    if {$att(-outline)!=""} {append prep "context.strokeStyle='$att(-outline)';";append draw "context.stroke();"}
+	    if {$att(-fill)!=""} {append prep "context.fillStyle='$att(-fill)';";append draw "context.fill();"}
+	    set ::canv_jprep($id) $prep
+	    set ::canv_jdraw($id) "context.beginPath();context.arc(canvcoords\[$id\]\[0\],canvcoords\[$id\]\[1\],canvcoords\[$id\]\[2\],0,2*Math.PI,0);$draw\n"
 	}
 	default {error "Unknown canv item type '$ty'"}
     }
+    set ::canv_type($id) $ty
     if {!$::canv_status_func} {
 	# incremental
 	set ::canv_status_func 1
@@ -111,15 +165,41 @@ proc canv_create {ty args} {
 }
 
 proc canv_move {id dx dy} {
-    set cc {}
-    foreach {x y} $::canv_coords($id) {
-	incr x $dx
-	incr y $dy
-	lappend cc $x $y
-    }
-    set ::canv_coords($id) $cc
+    foreach {x y} $::canv_coords($id) break
+    incr x $dx
+    incr y $dy
+    set ::canv_coords($id) [concat [list $x $y] [lrange $::canv_coords($id) 2 end]]
     if {![info exists ::canv_moved($id)]} {
 	set ::canv_moved($id) 1
 	set ::canv_status_coords 1
+    }
+}
+
+proc canv_moveto {id x y} {
+    set ::canv_coords($id) [concat [list $x $y] [lrange $::canv_coords($id) 2 end]]
+    if {![info exists ::canv_moved($id)]} {
+	set ::canv_moved($id) 1
+	set ::canv_status_coords 1
+    }
+}
+
+proc canv_bind {evt cb} {
+    switch -exact -- $evt {
+	<Motion> {
+	    append ::JS "canvas.onmousemove = function (evt) {
+			tclDo([jsquote "$cb "]+(evt.clientX-canvas.offsetLeft)+' '+(evt.clientY-canvas.offsetTop));
+		};\n"
+	}
+	<Leave> {
+	    append ::JS "canvas.onmouseout = function (evt) {
+			tclDo([jsquote "$cb "]);
+		};\n"
+	}
+	<Enter> {
+	    append ::JS "canvas.onmouseover = function (evt) {
+			tclDo([jsquote "$cb "]);
+		};\n"
+	}
+	default {error "Unsupported event '$evt'"}
     }
 }

@@ -128,8 +128,33 @@ The bottom line is this:
      to going  back to the Tk eventloop  in wish (except it  is the JS
      eventloop).
 
+
+The "Google Balls" demo
+-----------------------
+
+If you point your chrome to "balls.html" (eg with chrd), you'll get a
+full NaTcl emulation of the nice Javascript demo at:
+
+ http://www.html5canvastutorials.com/labs/html5-canvas-google-bouncing-balls
+
+This uses a canvas emulation script "canv.natcl", which demonstrates a
+possible  (among  many)  way  of  organizing  Tcl-JS  interaction  for
+graphics.  In the balls demo,  items are never destroyed nor shuffled,
+which is  a favourable case for  lazy recompilation of  the JS repaint
+function (basically the func is written just once, and only the coords
+stored in a global array get updated, hence allowing for JIT compiling
+of this function).
+
+Perf measurements: the NaTcl version currently costs 3x the CPU of the
+JS version,  so at  40fps it consumes  a full  core of my  2GHz laptop
+(against 33% for the JS one). 
+
+One should  note that the pure  string API used precludes  any used of
+the  internal reps of  coordinates, so  there are  many string/integer
+conversions. To be continued.
+
 Future work
 -----------
 
- Coming soon: [domget], [canvas], and a decent bouncing-balls demo ;-)
+ Coming soon: [domget], more [canvas] features, and optimizations ;-)
 

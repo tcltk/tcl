@@ -124,15 +124,6 @@ function pageDidLoad() {
     }
 }
 
-function doeval() {
-    try {
-        alert(tclModule.eval(this.the_form.input_id.value));
-    } catch(e) {
-        alert(e.message);
-    }
-}
-
-
 </script>
 </head>
 
@@ -158,8 +149,7 @@ function doeval() {
          onload="moduleDidLoad();" />
 </p>
 
-<p>If the module is working correctly, a click on the "Call eval()" button
-  should open a popup dialog containing the Tcl result as its value.</p>
+<p>This is a NaTcl emulation of the "Google Balls" Javascript demo at <a href="http://www.html5canvastutorials.com/labs/html5-canvas-google-bouncing-balls/">http://www.html5canvastutorials.com/labs/html5-canvas-google-bouncing-balls/</a></p>
 
 <h2>Status</h2>
 <div id="modstatus">NO-STATUS</div>
