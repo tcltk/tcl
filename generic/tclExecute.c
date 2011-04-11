@@ -173,7 +173,7 @@ typedef struct TEBCdata {
 				/* -----------------------------------------*/
     Tcl_Obj **tosPtr;
     const unsigned char *pc;	/* These fields are used on return TO this */
-    int catchDepth;	        /* this level: they record the state when a */
+    unsigned long catchDepth;	        /* this level: they record the state when a */
     int cleanup;		/* new codePtr was received for NR */
     Tcl_Obj *auxObjList;	/* execution. */
     int checkInterp;
@@ -323,7 +323,7 @@ VarHashCreateVar(
 
 #define OBJ_AT_DEPTH(n)	*(tosPtr-(n))
 
-#define CURR_DEPTH	(tosPtr - initTosPtr)
+#define CURR_DEPTH	((unsigned long) (tosPtr - initTosPtr))
 
 /*
  * Macros used to trace instruction execution. The macros TRACE,
@@ -1299,6 +1299,10 @@ TclCompileObj(
 	 *     information.
 	 */
 
+	if (!invoker) {
+	    return codePtr;
+	}
+	
 	{
 	    Tcl_HashEntry *hePtr =
 		    Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
@@ -1306,7 +1310,7 @@ TclCompileObj(
 	    CmdFrame *ctxPtr;
 	    int redo;
 
-	    if (!hePtr || !invoker) {
+	    if (!hePtr) {
 		return codePtr;
 	    }
 

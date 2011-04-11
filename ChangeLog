@@ -1,3 +1,28 @@
+2011-04-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* tests/coroutine.test: insure that 'coroutine eval' runs the initial
+	command in the proper context, [Bug 3282869]
+	
+2011-04-11  Jan Nijtmans  <nijtmans@users.sf.net>
+	* generic/tcl.h:    fix for [Bug 3281728]: Tcl sources from 2011-04-06 do
+	* unix/tcl.m4:      not build on GCC9 (RH9)
+	* unix/configure:
+
+2011-04-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h: fix for [Bug 3280043]: win2k: unresolved DLL imports
+	* win/configure.in
+	* win/configure
+
+2011-04-06  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TclCompileObj): earlier return if Tip280
+	gymnastics not needed.
+
+	* generic/tclExecute.c: fix for [Bug 3274728], making *catchTop an
+	unsigned long.
+
 2011-04-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclAppInit.c:  Make symbols "main" and "Tcl_AppInit"
