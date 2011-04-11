@@ -37,6 +37,9 @@
 #define INCL_WINSOCK_API_TYPEDEFS   1
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#ifdef HAVE_WSPIAPI_H
+#   include <wspiapi.h>
+#endif
 
 #ifdef CHECK_UNICODE_CALLS
 #   define _UNICODE
