@@ -435,6 +435,30 @@ test coroutine-4.5 {bug #2724403} -constraints {memory} \
     unset i ns start end
 } -result 0
 
+test coroutine-4.6 {compile context, bug #3282869} -setup {
+    unset ::x
+    proc f x {
+	coroutine D eval {yield X$x;yield Y}
+    }
+} -body {
+    f 12
+} -cleanup {
+    rename f {}
+} -returnCodes error -match glob -result {can't read *}
+
+test coroutine-4.7 {compile context, bug #3282869} -setup {
+    proc f x {
+	coroutine D eval {yield X$x;yield Y$x}
+    }
+} -body {
+    set ::x 15
+    set ::x [f 12]
+    D
+} -cleanup {
+    unset ::x
+    rename f {}
+} -result YX15
+
 test coroutine-5.1 {right numLevels on coro return} -constraints {testnrelevels} \
 -setup {
     proc nestedYield {{val {}}} {

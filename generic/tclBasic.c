@@ -8866,6 +8866,7 @@ TclNRCoroutineObjCmd(
     const char *fullName, *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
+    Namespace *lookupNsPtr = iPtr->varFramePtr->nsPtr;
     
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
@@ -8952,7 +8953,7 @@ TclNRCoroutineObjCmd(
     }
 
     /*
-     * Save the base context.
+     * Create the base context.
      */
 
     corPtr->running.framePtr = iPtr->rootFramePtr;
@@ -8972,13 +8973,19 @@ TclNRCoroutineObjCmd(
     corPtr->callerEEPtr = iPtr->execEnvPtr;
     corPtr->eePtr->corPtr = corPtr;
     
+    SAVE_CONTEXT(corPtr->caller);
+    corPtr->callerEEPtr = iPtr->execEnvPtr;
+    RESTORE_CONTEXT(corPtr->running);
     iPtr->execEnvPtr = corPtr->eePtr;
 
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
 
-    iPtr->lookupNsPtr = iPtr->varFramePtr->nsPtr;
+    iPtr->lookupNsPtr = lookupNsPtr;
     Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);
+
+    SAVE_CONTEXT(corPtr->running);
+    RESTORE_CONTEXT(corPtr->caller);
     iPtr->execEnvPtr = corPtr->callerEEPtr;
     
     /*
