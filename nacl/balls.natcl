@@ -226,14 +226,3 @@ canv_bind <Leave> leavecb
 
 every $frameInterval updateStage
 every 1000 computeFps
-
-#------ Runtime
-printf Salut!!!
-
-#lappend lst [canv_create rect 100 60 150 80 -fill "#FF0000" -outline "#00FF00"]
-#lappend lst [canv_create rect 110 70 120 90 -fill "#0000FF" -outline "#FFFF00"]
-#lappend lst [canv_create rect 150 30 180 40 -fill "#FF00FF" -outline "#00FFFF"]
-#lappend lst [canv_create circle 170 90 40 -fill "#FF0000" -outline ""]
-#lappend lst [canv_create circle 90 30 20 -fill "" -outline "#FF00FF"]
-
-

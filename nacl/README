@@ -10,7 +10,7 @@ to  run  untrusted  code  compiled  natively,  in  the  context  of  a
 browser. See http://code.google.com/p/nativeclient/.
 
 The idea  is that with Tcl  running in this context,  and a supporting
-browser (currently,  Chrome only; possibly FF +  Nacl plugin shortly),
+browser (currently,  Chrome only; in the future,  other browsers too),
 one could  develop client-side  code mainly in  Tcl, with a  very thin
 layer of JS in the page; so, basically, Tcl to control the HTML5 DOM !
 
@@ -21,15 +21,18 @@ Building Tcl for Nacl
 
  - set your PATH so that nacl-gcc et al become reachable
 
- - untar the present archive as an 'nacl' subdir in a Tcl source tree,
-   as a sibling of 'unix"
-
- - cd inside it
+ - cd (Tcl-source-tree)/nacl 
 
  - run './configure' (which calls ../unix/configure with proper flags,
    and patches the generated Makefile)
 
- - run 'make'. This creates tcl.nmf and tcl.nexe (for x86-32)
+ - run  'make'. This  creates  tcl.nmf and  tcl32.nexe or  tcl64.nexe,
+   depending on the kind of x86 you're currently on.
+
+ - (optional) to also build the  other kind, do 'make distclean', then
+   './configure -m32  (or -m64)',  then 'make'. The  provided manifest
+   file (tcl.nmf) points to both, to be compatible with both builds of
+   Chrome.
 
  - launch the  NaCl-provided python-based  webserver, and make  it see
    your nacl dir somewhere in its document tree. e.g. 
@@ -50,6 +53,7 @@ Building Tcl for Nacl
  - note:  'chromedebug' just  sets an  env  var for  debug output  (on
    stderr), and  stars chrome with '--no-sandbox',  which is currently
    needed for NaCl to be really enabled on Linux.
+
 
 Overview of the porting method
 ------------------------------
@@ -95,11 +99,11 @@ In   an  universe   without   syscalls,  loading   other  scripts   is
 problematic. To circumvent this (and bootstrap the loading of the main
 script), [source $url] is  reimplemented over a JS XmlHttpRequest. And
 to preserve  the blocking semantics of traditional  [source] while XHR
-is purely  async, this implementation is coro-based  and calls [yield]
-after starting the request. When the download completes, JS calls back
-into Tcl to resume the  coro, and continue the sequential execution of
-the Tcl  script where  it left. This  allows for arbitrary  series and
-nesting of [source].
+is  purely async,  this  implementation is  coroutine-based and  calls
+[yield] after  starting the request.  When the download  completes, JS
+calls back  into Tcl to resume  the coro, and  continue the sequential
+execution of the  Tcl script where it left.  This allows for arbitrary
+series and nesting of [source].
 
 For this reason, the main script is bootstrapped by evaluating:
 
