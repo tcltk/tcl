@@ -1,3 +1,9 @@
+2011-04-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Repair corruption in [string reverse]
+	* tests/string.test:	when string rep invalidation failed to also
+	reset the bytes allocated for string rep to zero [Bug 3285472].
+
 2011-04-12  Venkat Iyer <venkat@comit.com>
 
 	* library/tzdata/Atlantic/Stanley: Update to Olson tzdata2011f
