@@ -1,3 +1,7 @@
+2011-04-06  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/Atlantic/Stanley: Update to Olson tzdata2011f
+
 2011-04-06  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c (TclCompEvalObj): earlier return if Tip280 
