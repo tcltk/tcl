@@ -1,6 +1,37 @@
-#! /bin/sh -ex
-CC=nacl-gcc CPP=nacl-cpp  CFLAGS="-Wno-long-long -pthread -DNACL" ../unix/configure --host nacl --disable-threads --disable-shared
+#! /bin/sh
+
+tmp=/tmp/nacl-configure.$$
+
+findarch()
+{
+    echo -n "Finding default arch ..." >&2
+    echo "int foo(x) {return x*x;}" > $tmp.c
+    nacl-gcc -c $tmp.c -o $tmp.o
+    kind=`file $tmp.o`
+    /bin/rm $tmp.[co]
+    case "$kind" in
+	*32-bit*) arch=32;;
+	*64-bit*) arch=64;;
+	*) echo "### Cannot compute default arch. Please specify -m32 or -m64.">&2;exit 1;;
+    esac
+    echo " -m$arch" >&2
+}
+
+case "$1" in
+    -m32) arch=32;;
+    -m64) arch=64;;
+    "") findarch;;
+    *) echo "Usage: ./configure [-m32|-m64]">&2;exit 1;;
+esac
+export arch
+set -ex
+CC="nacl-gcc -m$arch" CPP="nacl-cpp -m$arch" CFLAGS="-Wno-long-long -pthread -DNACL" ../unix/configure --host nacl --disable-threads --disable-shared
 rm -f a.out core.* || true
+cat Makefile > $tmp.mk
+sed -e '/^CC[ 	]*=/ a\
+CCPLUS			= nacl-g++ -m'$arch'\
+arch='$arch'
+' < $tmp.mk > Makefile
 patch -p0 < Makefile.patch
 set +x
 echo "
