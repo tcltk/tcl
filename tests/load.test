@@ -82,10 +82,6 @@ test load-2.3 {loading with no _Init procedure} -constraints [list $dll $loaded]
 test load-2.4 {loading with no _SafeInit procedure} [list $dll $loaded] {
     list [catch {load [file join $testDir pkga$ext] {} child} msg] $msg
 } {1 {can't use package in a safe interpreter: no Pkga_SafeInit procedure}}
-# This test fails due to --export-dynamic
-test load-2.5 {loading package with symbol conflict, this test fails when using  --export-dynamic} [list $dll $loaded] {
-    pkga_quote
-} {I'm in pkga.c}
 
 test load-3.1 {error in _Init procedure, same interpreter} \
 	[list $dll $loaded] {
