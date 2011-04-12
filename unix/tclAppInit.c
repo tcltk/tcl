@@ -154,14 +154,6 @@ Tcl_AppInit(
 
     return TCL_OK;
 }
-
-#ifdef TCL_TEST
-#   undef TCL_STORAGE_CLASS
-#   define TCL_STORAGE_CLASS DLLEXPORT
-EXTERN const char *Tcltest_Foo() {
-    return "I'm in tclAppInit.c";
-}
-#endif /* TCL_TEST */
 
 /*
  * Local Variables:
