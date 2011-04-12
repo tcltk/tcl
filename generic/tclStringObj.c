@@ -2758,6 +2758,7 @@ TclStringObjReverse(
 	    source[i++] = tmp;
 	}
 	Tcl_InvalidateStringRep(objPtr);
+	stringPtr->allocated = 0;
 	return objPtr;
     }
 
