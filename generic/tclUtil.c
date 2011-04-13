@@ -1110,10 +1110,15 @@ Tcl_ConcatObj(
 
     allocSize = 0;
     for (i = 0;  i < objc;  i++) {
+	int oldAllocSize = allocSize;
+
 	objPtr = objv[i];
 	element = TclGetStringFromObj(objPtr, &length);
 	if ((element != NULL) && (length > 0)) {
 	    allocSize += (length + 1);
+	    if (allocSize < oldAllocSize) {
+		Tcl_Panic("too much memory required");
+	    }
 	}
     }
     if (allocSize == 0) {
