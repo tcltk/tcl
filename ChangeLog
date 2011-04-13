@@ -1,3 +1,14 @@
+2011-04-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	Rewrite of Tcl_Concat*() routines to 
+	prevent segfaults on buffer overflow.  Build them out of existing
+	primitives already coded to handle overflow properly.  Uses the
+	new TclTrim*() routines. [Bug 3285375]
+
+	* generic/tclCmdMZ.c:	New internal utility routines TclTrimLeft()
+	* generic/tclInt.h:	and TclTrimRight().  Refactor the
+	* generic/tclUtil.c:	[string trim*] implementations to use them.
+
 2011-04-13  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c: fix for [Bug 2662380], crash caused by
