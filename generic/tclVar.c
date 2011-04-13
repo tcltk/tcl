@@ -2699,7 +2699,8 @@ Tcl_AppendObjCmd(dummy, interp, objc, objv)
 
 	    varValuePtr = TclPtrSetVar(interp, varPtr, arrayPtr, part1, NULL, 
 	            objv[i], (TCL_APPEND_VALUE | TCL_LEAVE_ERR_MSG));
-	    if (varValuePtr == NULL) {
+	    if ((varValuePtr == NULL) ||
+		    (varValuePtr == ((Interp *) interp)->emptyObjPtr)) {
 		return TCL_ERROR;
 	    }
 	}
