@@ -1,3 +1,15 @@
+2011-04-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/string.test:	Test for [Bug 3285472]. Not buggy in trunk.
+
+2011-04-12  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/Atlantic/Stanley: Update to Olson tzdata2011f
+
+2011-04-12  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c: fix for [Bug 2440625], kbk's patch
+
 2011-04-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:

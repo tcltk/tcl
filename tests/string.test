@@ -1618,6 +1618,11 @@ test string-24.11 {string reverse command - corner case} {
     set y \udead
     string reverse $x$y
 } \udead\ubeef
+test string-24.12 {string reverse command - corner case} {
+    set x \ubeef
+    set y \udead
+    string is ascii [string reverse $x$y]
+} 0
 
 test string-25.1 {string is list} {
     string is list {a b c}

@@ -7049,6 +7049,12 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
+	    if test "$SHARED_BUILD" = 0; then
+
+		LDFLAGS="$LDFLAGS -export-dynamic"
+
+fi
+
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
@@ -7073,6 +7079,12 @@ fi
 	    ;;
 	Haiku*)
 	    SHLIB_CFLAGS="-fPIC"
+	    if test "$SHARED_BUILD" = 0; then
+
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+
+fi
+
 	    SHLIB_SUFFIX=".so"
 	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
 	    DL_OBJS="tclLoadDl.o"
@@ -7506,6 +7518,12 @@ fi
 	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
+	    if test "$SHARED_BUILD" = 0; then
+
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+
+fi
+
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -7605,6 +7623,12 @@ fi
 	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS=""
 	    DL_LIBS="-ldl"
+	    if test "$SHARED_BUILD" = 0; then
+
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+
+fi
+
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    if test "`uname -m`" = "alpha"; then
@@ -7619,7 +7643,12 @@ fi
 	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-mshared -ldl"
-	    LD_FLAGS=""
+	    if test "$SHARED_BUILD" = 0; then
+
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+
+fi
+
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -7769,7 +7798,12 @@ rm -f conftest*
 fi
 echo "$as_me:$LINENO: result: $tcl_cv_ld_elf" >&5
 echo "${ECHO_T}$tcl_cv_ld_elf" >&6
-	    LDFLAGS=""
+	    if test $tcl_cv_ld_elf = yes -a "$SHARED_BUILD" = 0; then
+
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+
+fi
+
 	    if test "${TCL_THREADS}" = "1"; then
 
 		# On OpenBSD:	Compile with -pthread
@@ -7791,6 +7825,12 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
+	    if test "$SHARED_BUILD" = 0; then
+
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+
+fi
+
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'

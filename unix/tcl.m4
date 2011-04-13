@@ -120,8 +120,7 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 
 	if test x"${ac_cv_c_tclconfig}" = x ; then
 	    TCL_BIN_DIR="# no Tcl configs found"
-	    AC_MSG_WARN([Can't find Tcl configuration definitions])
-	    exit 0
+	    AC_MSG_ERROR([Can't find Tcl configuration definitions. Use --with-tcl to specify a directory containing tclConfig.sh])
 	else
 	    no_tcl=
 	    TCL_BIN_DIR="${ac_cv_c_tclconfig}"
@@ -251,8 +250,7 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 
 	if test x"${ac_cv_c_tkconfig}" = x ; then
 	    TK_BIN_DIR="# no Tk configs found"
-	    AC_MSG_WARN([Can't find Tk configuration definitions])
-	    exit 0
+	    AC_MSG_ERROR([Can't find Tk configuration definitions. Use --with-tk to specify a directory containing tkConfig.sh])
 	else
 	    no_tk=
 	    TK_BIN_DIR="${ac_cv_c_tkconfig}"
@@ -307,7 +305,7 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
     elif test "`uname -s`" = "Darwin"; then
 	# If Tcl was built as a framework, attempt to use the libraries
 	# from the framework at the given location so that linking works
-	# against Tcl.framework installed in an arbitary location.
+	# against Tcl.framework installed in an arbitrary location.
 	case ${TCL_DEFS} in
 	    *TCL_FRAMEWORK*)
 		if test -f "${TCL_BIN_DIR}/${TCL_LIB_FILE}"; then
@@ -390,7 +388,7 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
     elif test "`uname -s`" = "Darwin"; then
 	# If Tk was built as a framework, attempt to use the libraries
 	# from the framework at the given location so that linking works
-	# against Tk.framework installed in an arbitary location.
+	# against Tk.framework installed in an arbitrary location.
 	case ${TK_DEFS} in
 	    *TK_FRAMEWORK*)
 		if test -f "${TK_BIN_DIR}/${TK_LIB_FILE}"; then
@@ -1218,6 +1216,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
+	    AS_IF([test "$SHARED_BUILD" = 0], [
+		LDFLAGS="$LDFLAGS -export-dynamic"
+	    ])
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
@@ -1242,6 +1243,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ;;
 	Haiku*)
 	    SHLIB_CFLAGS="-fPIC"
+	    AS_IF([test "$SHARED_BUILD" = 0], [
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	    ])
 	    SHLIB_SUFFIX=".so"
 	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
 	    DL_OBJS="tclLoadDl.o"
@@ -1390,6 +1394,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
+	    AS_IF([test "$SHARED_BUILD" = 0], [
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	    ])
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
@@ -1421,6 +1428,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS=""
 	    DL_LIBS="-ldl"
+	    AS_IF([test "$SHARED_BUILD" = 0], [
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	    ])
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    AS_IF([test "`uname -m`" = "alpha"], [CFLAGS="$CFLAGS -mieee"])
@@ -1432,7 +1442,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-mshared -ldl"
-	    LD_FLAGS=""
+	    AS_IF([test "$SHARED_BUILD" = 0], [
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	    ])
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
@@ -1522,7 +1534,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	yes
 #endif
 		], tcl_cv_ld_elf=yes, tcl_cv_ld_elf=no)])
-	    LDFLAGS=""
+	    AS_IF([test $tcl_cv_ld_elf = yes -a "$SHARED_BUILD" = 0], [
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	    ])
 	    AS_IF([test "${TCL_THREADS}" = "1"], [
 		# On OpenBSD:	Compile with -pthread
 		#		Don't link with -lpthread
@@ -1541,6 +1555,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
+	    AS_IF([test "$SHARED_BUILD" = 0], [
+		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	    ])
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
@@ -2364,7 +2381,7 @@ closedir(d);
 #
 # Results:
 #
-#	Sets the the following vars:
+#	Sets the following vars:
 #		XINCLUDES
 #		XLIBSW
 #
