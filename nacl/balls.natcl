@@ -1,4 +1,5 @@
 source canv.natcl
+#set ::canv_verbose 1
 domset statusField "Running..."
 
 # will be retrieved by [domget]
