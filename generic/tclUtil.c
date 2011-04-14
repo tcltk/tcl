@@ -994,12 +994,12 @@ TclTrimRight(
 
 	if (bytesLeft == 0) {
 	    /* No match; trim task done; *p is last non-trimmed char */
+	    p += pInc;
 	    break;
 	}
-	pInc = 0;
     } while (p > bytes);
 
-    return numBytes - (p - bytes) - pInc;
+    return numBytes - (p - bytes);
 }
 
 /*
@@ -1011,8 +1011,7 @@ TclTrimRight(
  *	first string all characters found in the second string.
  *
  * Results:
- *	An integer index into the first string, pointing to the first
- *	character not to be trimmed.
+ *	The number of bytes to be removed from the start of the string.
  *
  * Side effects:
  *	None.
@@ -1089,59 +1088,77 @@ TclTrimLeft(
  *----------------------------------------------------------------------
  */
 
+/* The whitespace characters trimmed during [concat] operations */
+#define CONCAT_WS " \f\v\r\t\n"
+#define CONCAT_WS_SIZE (int) (sizeof(CONCAT_WS "") - 1)
+
 char *
 Tcl_Concat(
     int argc,			/* Number of strings to concatenate. */
     CONST char * CONST *argv)	/* Array of strings to concatenate. */
 {
-    int totalSize, i;
-    char *p;
-    char *result;
+    int i, needSpace = 0, bytesNeeded = 0;
+    char *result, *p;
 
-    for (totalSize = 1, i = 0; i < argc; i++) {
-	totalSize += strlen(argv[i]) + 1;
-	if (totalSize <= 0) {
+    /* Dispose of the empty result corner case first to simplify later code */
+    if (argc == 0) {
+	result = (char *) ckalloc(1);
+	result[0] = '\0';
+	return result;
+    }
+
+    /* First allocate the result buffer at the size required */
+    for (i = 0;  i < argc;  i++) {
+	bytesNeeded += strlen(argv[i]);
+	if (bytesNeeded < 0) {
 	    Tcl_Panic("Tcl_Concat: max size of Tcl value exceeded");
 	}
     }
-    result = (char *) ckalloc((unsigned) totalSize);
-    if (argc == 0) {
-	*result = '\0';
-	return result;
+    if (bytesNeeded + argc - 1 < 0) {
+	/*
+	 * Panic test could be tighter, but not going to bother for 
+	 * this legacy routine.
+	 */
+	Tcl_Panic("Tcl_Concat: max size of Tcl value exceeded");
     }
-    for (p = result, i = 0; i < argc; i++) {
-	CONST char *element;
-	int length;
+    /* All element bytes + (argc - 1) spaces + 1 terminating NULL */
+    result = (char *) ckalloc((unsigned) (bytesNeeded + argc));
+
+    for (p = result, i = 0;  i < argc;  i++) {
+	int trim, elemLength;
+	const char *element;
+	
+	element = argv[i];
+	elemLength = strlen(argv[i]);
+
+	/* Trim away the leading whitespace */
+	trim = TclTrimLeft(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	element += trim;
+	elemLength -= trim;
 
 	/*
-	 * Clip white space off the front and back of the string to generate a
-	 * neater result, and ignore any empty elements.
+	 * Trim away the trailing whitespace.  Do not permit trimming
+	 * to expose a final backslash character.
 	 */
 
-	element = argv[i];
-	while (isspace(UCHAR(*element))) { /* INTL: ISO space. */
-	    element++;
-	}
-	for (length = strlen(element);
-		(length > 0)
-		&& (isspace(UCHAR(element[length-1]))) /* INTL: ISO space. */
-		&& ((length < 2) || (element[length-2] != '\\'));
-		length--) {
-	    /* Null loop body. */
-	}
-	if (length == 0) {
+	trim = TclTrimRight(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim -= trim && (element[elemLength - trim - 1] == '\\');
+	elemLength -= trim;
+
+	/* If we're left with empty element after trimming, do nothing */
+	if (elemLength == 0) {
 	    continue;
 	}
-	memcpy(p, element, (size_t) length);
-	p += length;
-	*p = ' ';
-	p++;
+
+	/* Append to the result with space if needed */
+	if (needSpace) {
+	    *p++ = ' ';
+	}
+	memcpy(p, element, (size_t) elemLength);
+	p += elemLength;
+	needSpace = 1;
     }
-    if (p != result) {
-	p[-1] = 0;
-    } else {
-	*p = 0;
-    }
+    *p = '\0';
     return result;
 }
 
@@ -1168,7 +1185,8 @@ Tcl_ConcatObj(
     int objc,			/* Number of objects to concatenate. */
     Tcl_Obj *CONST objv[])	/* Array of objects to concatenate. */
 {
-    int i, needSpace = 0;
+    int i, elemLength, needSpace = 0, bytesNeeded = 0;
+    const char *element;
     Tcl_Obj *objPtr, *resPtr;
 
     /*
@@ -1233,16 +1251,30 @@ Tcl_ConcatObj(
      * the slow way, using the string representations.
      */
 
-    TclNewObj(resPtr);
+    /* First try to pre-allocate the size required */
     for (i = 0;  i < objc;  i++) {
-	int trim, elemLength;
-	const char *element;
+	element = TclGetStringFromObj(objv[i], &elemLength);
+	bytesNeeded += elemLength;
+	if (bytesNeeded < 0) {
+	    break;
+	}
+    }
+    /*
+     * Does not matter if this fails, will simply try later to build up
+     * the string with each Append reallocating as needed with the usual
+     * string append algorithm.  When that fails it will report the error.
+     */
+    TclNewObj(resPtr);
+    Tcl_AttemptSetObjLength(resPtr, bytesNeeded + objc - 1);
+    Tcl_SetObjLength(resPtr, 0);
+
+    for (i = 0;  i < objc;  i++) {
+	int trim;
 	
-	objPtr = objv[i];
-	element = TclGetStringFromObj(objPtr, &elemLength);
+	element = TclGetStringFromObj(objv[i], &elemLength);
 
 	/* Trim away the leading whitespace */
-	trim = TclTrimLeft(element, elemLength, " \f\v\r\t\n", 6);
+	trim = TclTrimLeft(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
 	element += trim;
 	elemLength -= trim;
 
@@ -1251,7 +1283,7 @@ Tcl_ConcatObj(
 	 * to expose a final backslash character.
 	 */
 
-	trim = TclTrimRight(element, elemLength, " \f\v\r\t\n", 6);
+	trim = TclTrimRight(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
 	trim -= trim && (element[elemLength - trim - 1] == '\\');
 	elemLength -= trim;
 
