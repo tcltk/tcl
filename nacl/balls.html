@@ -11,7 +11,7 @@
 
   <script type="text/javascript">
 
-     // NaTcl -- JS glue
+// NaTcl -- JS glue
      
 var tclModule = null;  // our singleton Tcl interp
 
@@ -89,7 +89,7 @@ function tclsource(url,tcb) {
 // ---------- GUI and standard NaCl-loading machinery --------
 
 var statusField = null;
-modstatus = 'NO-STATUS';
+modstatus = 'Loading...';
 
 function updateStatus(opt_message) {
     if (statusField) {
@@ -151,8 +151,17 @@ function pageDidLoad() {
 
 <p>This is a NaTcl emulation of the "Google Balls" Javascript demo at <a href="http://www.html5canvastutorials.com/labs/html5-canvas-google-bouncing-balls/">http://www.html5canvastutorials.com/labs/html5-canvas-google-bouncing-balls/</a></p>
 
-<h2>Status</h2>
-<div id="modstatus">NO-STATUS</div>
+Status: <b><span id="modstatus">NO-STATUS</span></b>
 <hr>
+<p style="font-size : smaller;">
+To run this demo, you need
+<ul style="font-size : smaller;">
+<li> An x86-family processor
+<li> Chrome 10 or higher
+<li> Enabled "Native Client" item in about:flags
+<li> (if on Linux) the --no-sandbox command-line flag to Chrome
+<li> if everything else fails, try the Nacl demos at <a href="http://code.google.com/chrome/nativeclient/docs/examples.html">http://code.google.com/chrome/nativeclient/docs/examples.html</a>
+</ul>
+</p>
 </body>
 </html>
