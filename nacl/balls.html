@@ -89,11 +89,10 @@ function tclsource(url,tcb) {
 // ---------- GUI and standard NaCl-loading machinery --------
 
 var statusField = null;
-modstatus = 'Loading...';
 
-function updateStatus(opt_message) {
+function updateStatus(s) {
     if (statusField) {
-        statusField.innerHTML = modstatus;
+        statusField.innerHTML = s;
     }
 }
 
@@ -114,13 +113,7 @@ function pageDidLoad() {
     canvas=document.getElementById('canvas');
     context=canvas.getContext("2d");
     if (tclModule == null) {
-        updateStatus('Loading Nacl...');
-    } else {
-        // It's possible that the Native Client module onload event fired
-        // before the page's onload event.  In this case, the status message
-        // will reflect 'SUCCESS', but won't be displayed.  This call will
-        // display the current message.
-        updateStatus();
+        updateStatus('Loading NaTcl...');
     }
 }
 
@@ -151,7 +144,7 @@ function pageDidLoad() {
 
 <p>This is a NaTcl emulation of the "Google Balls" Javascript demo at <a href="http://www.html5canvastutorials.com/labs/html5-canvas-google-bouncing-balls/">http://www.html5canvastutorials.com/labs/html5-canvas-google-bouncing-balls/</a></p>
 
-Status: <b><span id="modstatus">NO-STATUS</span></b>
+Status: <b><span id="modstatus">Loading...</span></b>
 <hr>
 <p style="font-size : smaller;">
 To run this demo, you need
