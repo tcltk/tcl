@@ -1,9 +1,16 @@
+2011-04-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclFCmd.c (TclFileAttrsCmd): Tidied up the memory management
+	a bit to try to ensure that the dynamic and static cases don't get
+	confused while still promoting caching where possible. Added a panic
+	to trap problems in the case where an extension is misusing the API.
+
 2011-04-13  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclUtil.c:	Rewrite of Tcl_Concat*() routines to 
-	prevent segfaults on buffer overflow.  Build them out of existing
-	primitives already coded to handle overflow properly.  Uses the
-	new TclTrim*() routines. [Bug 3285375]
+	* generic/tclUtil.c:	[Bug 3285375]: Rewrite of Tcl_Concat*()
+	routines to prevent segfaults on buffer overflow.  Build them out of
+	existing primitives already coded to handle overflow properly.  Uses
+	the new TclTrim*() routines.
 
 	* generic/tclCmdMZ.c:	New internal utility routines TclTrimLeft()
 	* generic/tclInt.h:	and TclTrimRight().  Refactor the
@@ -11,14 +18,14 @@
 
 2011-04-13  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c: fix for [Bug 2662380], crash caused by
-	appending to a variable with a write trace that unsets it.
+	* generic/tclVar.c: [Bug 2662380]: Fix crash caused by appending to a
+	variable with a write trace that unsets it.
 
 2011-04-12  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStringObj.c:	Repair corruption in [string reverse]
-	* tests/string.test:	when string rep invalidation failed to also
-	reset the bytes allocated for string rep to zero [Bug 3285472].
+	* generic/tclStringObj.c:	[Bug 3285472]: Repair corruption in
+	* tests/string.test:	[string reverse] when string rep invalidation
+	failed to also reset the bytes allocated for string rep to zero.
 
 2011-04-12  Venkat Iyer <venkat@comit.com>
 
@@ -26,7 +33,7 @@
 
 2011-04-06  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c (TclCompEvalObj): earlier return if Tip280 
+	* generic/tclExecute.c (TclCompEvalObj): Earlier return if Tip280
 	gymnastics not needed.
 
 2011-04-05  Venkat Iyer <venkat@comit.com>
@@ -47,8 +54,8 @@
 
 2011-04-02  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tclStrToD.c (QuickConversion): Replaced another couple
-	of 'double' declarations with 'volatile double' to work around
+	* generic/tclStrToD.c (QuickConversion): Replaced another couple of
+	'double' declarations with 'volatile double' to work around
 	misrounding issues in mingw-gcc 3.4.5.
 
 2011-03-24  Donal K. Fellows  <dkf@users.sf.net>
