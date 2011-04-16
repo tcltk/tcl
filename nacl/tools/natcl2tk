@@ -1,0 +1,34 @@
+#! /bin/sh
+#\
+exec wish $0 "$@"
+
+if {!$argc} {
+    puts stderr "Usage: [file tail $::argv0] <file.natcl> \[<file.natcl> ...\]"
+    exit 1
+}
+foreach fn $argv {
+    set direct($fn) 1
+}
+set mydir [info script].dir
+rename source _source
+proc source fn {
+    if {![info exists ::direct($fn)]} {
+	set fn $::mydir/[file tail $fn]
+    }
+    uplevel 1 [list _source $fn]
+}
+
+proc domset {x y} {wm title . $y}
+
+set ::uniqEv 1
+proc every {ms scr} {
+    set fn every#$::uniqEv
+    incr ::uniqEv
+    proc $fn {} "after $ms $fn;uplevel #0 {$scr}"
+    after 0 $fn
+}
+
+proc printf s {puts stderr $s}
+    
+source [lindex $argv 0]
+

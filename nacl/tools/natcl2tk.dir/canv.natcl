@@ -1,0 +1,50 @@
+#
+# emu/canv.tcl: reimplement NaTcl's canv verbs in Tk
+#
+
+set width 578
+set height 200
+
+canvas .c -width $width -height $height -bg white
+pack .c
+update
+
+proc canv_create {ty a b c args} {
+    switch -exact -- $ty {
+	circle {
+	    set cc [list [expr {$a-$c}] [expr {$b-$c}] \
+			[expr {$a+$c}] [expr {$b+$c}]]
+	    set ty oval
+	}
+	default {
+	    error "Unknown canv item type '$ty'"
+	}
+    }
+    set it [eval .c create $ty $cc $args]
+    set ::canvx($it) $a
+    set ::canvy($it) $b
+    return $it
+}
+
+proc canv_moveto {it x y} {
+    set dx [expr {$x-$::canvx($it)}]
+    set ::canvx($it) $x
+    set dy [expr {$y-$::canvy($it)}]
+    set ::canvy($it) $y
+    .c move $it $dx $dy
+}
+
+proc canv_bind {evt cb} {
+    switch -exact -- $evt {
+	<Motion> {
+	    bind .c <Motion> "$cb %x %y"
+	}
+	<Enter> - <Leave> {
+	    bind .c $evt $cb
+	}
+	default {
+	    error "Unknown canv event type '$evt'"
+	}
+    }
+}
+	

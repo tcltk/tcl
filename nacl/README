@@ -157,6 +157,13 @@ One should  note that the pure  string API used precludes  any used of
 the  internal reps of  coordinates, so  there are  many string/integer
 conversions. To be continued.
 
+Comparison with native Tcl/Tk
+-----------------------------
+
+With the  command 'tools/natcl2tk balls.natcl',  you can run  the same
+code  in pure  Tcl/Tk,  in a  true wish  canvas.  You can  use it  for
+performance and rendering comparisons.
+
 Future work
 -----------
 
