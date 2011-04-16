@@ -1,15 +1,67 @@
+2011-04-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclFCmd.c (TclFileAttrsCmd): Add comments to make this code
+	easier to understand. Added a panic to handle the case where the VFS
+	layer does something odd.
+
+2011-04-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	[Bug 3285375]: Rewrite of Tcl_Concat*()
+	routines to prevent segfaults on buffer overflow.  Build them out of
+	existing primitives already coded to handle overflow properly.  Uses
+	the new TclTrim*() routines.
+
+	* generic/tclCmdMZ.c:	New internal utility routines TclTrimLeft()
+	* generic/tclInt.h:	and TclTrimRight().  Refactor the
+	* generic/tclUtil.c:	[string trim*] implementations to use them.
+
+2011-04-13  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c: [Bug 2662380]: Fix crash caused by appending to a
+	variable with a write trace that unsets it.
+
+2011-04-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclUtil.c (Tcl_ConcatObj): [Bug 3285375]: Make the crash
+	less mysterious through the judicious use of a panic. Not yet properly
+	fixed, but at least now clearer what the failure mode is.
+
+2011-04-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/string.test:	Test for [Bug 3285472]. Not buggy in trunk.
+
+2011-04-12  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/Atlantic/Stanley: Update to Olson tzdata2011f
+
+2011-04-12  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c: Fix for [Bug 2440625], kbk's patch
+
+2011-04-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* tests/coroutine.test: [Bug 3282869]: Ensure that 'coroutine eval'
+	runs the initial command in the proper context.
+
+2011-04-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:    Fix for [Bug 3281728]: Tcl sources from 2011-04-06
+	* unix/tcl.m4:      do not build on GCC9 (RH9)
+	* unix/configure:
+
 2011-04-08  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h: fix for [Bug 3280043]: win2k: unresolved DLL imports
-	* win/configure.in
+	* win/tclWinPort.h: Fix for [Bug 3280043]: win2k: unresolved DLL
+	* win/configure.in: imports.
 	* win/configure
 
 2011-04-06  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c (TclCompileObj): earlier return if Tip280
+	* generic/tclExecute.c (TclCompileObj): Earlier return if Tip280
 	gymnastics not needed.
 
-	* generic/tclExecute.c: fix for [Bug 3274728], making *catchTop an
+	* generic/tclExecute.c: Fix for [Bug 3274728]: making *catchTop an
 	unsigned long.
 
 2011-04-06  Jan Nijtmans  <nijtmans@users.sf.net>

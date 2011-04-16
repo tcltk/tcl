@@ -4265,27 +4265,13 @@ TclNREvalObjv(
      * a callback to do the actual running.
      */
 
-#if 0
-    {
-        Tcl_ObjCmdProc *objProc = cmdPtr->nreProc;
-        
-        if (!objProc) {
-            objProc = cmdPtr->objProc;
-        }
-        
-        TclNRAddCallback(interp, NRRunObjProc, objProc, cmdPtr->objClientData,
-                INT2PTR(objc), (ClientData) objv);
-    }
-    return TCL_OK;
-#else
     if (cmdPtr->nreProc) {
-        TclNRAddCallback(interp, NRRunObjProc, cmdPtr->nreProc,
-                cmdPtr->objClientData, INT2PTR(objc), (ClientData) objv);
+        TclNRAddCallback(interp, NRRunObjProc, cmdPtr,
+                INT2PTR(objc), (ClientData) objv, NULL);
         return TCL_OK;
     } else {
 	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
     }        
-#endif
 }
 
 void
@@ -4373,15 +4359,11 @@ NRRunObjProc(
 {
     /* OPT: do not call? */
 
-    Tcl_ObjCmdProc *objProc = (Tcl_ObjCmdProc *)data[0];
-    ClientData objClientData = data[1];
-    int objc = PTR2INT(data[2]);
-    Tcl_Obj **objv = data[3];
+    Command* cmdPtr = data[0];
+    int objc = PTR2INT(data[1]);
+    Tcl_Obj **objv = data[2];
 
-    if (result == TCL_OK) {
-	return objProc(objClientData, interp, objc, objv);
-    }
-    return result;
+    return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
 }
 
 
@@ -8866,6 +8848,7 @@ TclNRCoroutineObjCmd(
     const char *fullName, *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
+    Namespace *lookupNsPtr = iPtr->varFramePtr->nsPtr;
     
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
@@ -8952,7 +8935,7 @@ TclNRCoroutineObjCmd(
     }
 
     /*
-     * Save the base context.
+     * Create the base context.
      */
 
     corPtr->running.framePtr = iPtr->rootFramePtr;
@@ -8972,13 +8955,19 @@ TclNRCoroutineObjCmd(
     corPtr->callerEEPtr = iPtr->execEnvPtr;
     corPtr->eePtr->corPtr = corPtr;
     
+    SAVE_CONTEXT(corPtr->caller);
+    corPtr->callerEEPtr = iPtr->execEnvPtr;
+    RESTORE_CONTEXT(corPtr->running);
     iPtr->execEnvPtr = corPtr->eePtr;
 
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
 
-    iPtr->lookupNsPtr = iPtr->varFramePtr->nsPtr;
+    iPtr->lookupNsPtr = lookupNsPtr;
     Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);
+
+    SAVE_CONTEXT(corPtr->running);
+    RESTORE_CONTEXT(corPtr->caller);
     iPtr->execEnvPtr = corPtr->callerEEPtr;
     
     /*

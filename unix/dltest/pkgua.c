@@ -13,7 +13,6 @@
 
 #undef STATIC_BUILD
 #include "tcl.h"
-#include <stdio.h>
 
 /*
  * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
@@ -176,21 +175,11 @@ PkguaQuoteObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
-    if (objc > 2) {
+    if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
-    if (objc == 1) {
-	int major, minor, patch, type;
-	char result[128];
-
-#undef Tcl_GetVersion /* Link this symbol without stubs */
-	Tcl_GetVersion(&major, &minor, &patch, &type);
-	sprintf(result, "%d %d %d %d", major, minor, patch, type);
-	Tcl_SetResult(interp, result, TCL_VOLATILE);
-    } else {
     Tcl_SetObjResult(interp, objv[1]);
-    }
     return TCL_OK;
 }
 
