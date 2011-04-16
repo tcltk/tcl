@@ -1,9 +1,15 @@
+2011-04-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclFCmd.c (TclFileAttrsCmd): Add comments to make this code
+	easier to understand. Added a panic to handle the case where the VFS
+	layer does something odd.
+
 2011-04-13  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclUtil.c:	Rewrite of Tcl_Concat*() routines to 
-	prevent segfaults on buffer overflow.  Build them out of existing
-	primitives already coded to handle overflow properly.  Uses the
-	new TclTrim*() routines. [Bug 3285375]
+	* generic/tclUtil.c:	[Bug 3285375]: Rewrite of Tcl_Concat*()
+	routines to prevent segfaults on buffer overflow.  Build them out of
+	existing primitives already coded to handle overflow properly.  Uses
+	the new TclTrim*() routines.
 
 	* generic/tclCmdMZ.c:	New internal utility routines TclTrimLeft()
 	* generic/tclInt.h:	and TclTrimRight().  Refactor the
@@ -11,8 +17,8 @@
 
 2011-04-13  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c: fix for [Bug 2662380], crash caused by
-	appending to a variable with a write trace that unsets it.
+	* generic/tclVar.c: [Bug 2662380]: Fix crash caused by appending to a
+	variable with a write trace that unsets it.
 
 2011-04-13  Donal K. Fellows  <dkf@users.sf.net>
 
