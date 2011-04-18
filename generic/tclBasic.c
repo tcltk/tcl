@@ -4900,8 +4900,7 @@ TclArgumentGet(interp,obj,cfPtrPtr,wordPtr)
      * up by the caller. It knows better than us.
      */
 
-    if ((!obj->bytes) || ((obj->typePtr == &tclListType) &&
-	    ((List *)obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
+    if ((obj->bytes == NULL) || TclListObjIsCanonical(obj)) {
 	return;
     }
 
@@ -5083,61 +5082,50 @@ TclEvalObjEx(
      * internal rep).
      */
 
-    if (objPtr->typePtr == &tclListType) {	/* is a list... */
-	List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    if (TclListObjIsCanonical(objPtr)) {
+	/*
+	 * TIP #280 Structures for tracking lines. As we know that this is
+	 * dynamic execution we ignore the invoker, even if known.
+	 */
 
-	if (objPtr->bytes == NULL ||	/* ...without a string rep */
-	    listRepPtr->canonicalFlag) {/* ...or that is canonical */
-	    /*
-	     * TIP #280 Structures for tracking lines. As we know that this is
-	     * dynamic execution we ignore the invoker, even if known.
-	     */
-
-	    int nelements;
-	    Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
-	    CmdFrame *eoFramePtr = (CmdFrame *)
+	int nelements;
+	Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
+	CmdFrame *eoFramePtr = (CmdFrame *)
 		TclStackAlloc(interp, sizeof(CmdFrame));
 
-	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
-	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
-				 1 : iPtr->cmdFramePtr->level + 1);
-	    eoFramePtr->framePtr = iPtr->framePtr;
-	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
+	eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
+	eoFramePtr->level = (iPtr->cmdFramePtr == NULL?  1 
+		: iPtr->cmdFramePtr->level + 1);
+	eoFramePtr->framePtr = iPtr->framePtr;
+	eoFramePtr->nextPtr = iPtr->cmdFramePtr;
 
-	    eoFramePtr->nline = 0;
-	    eoFramePtr->line = NULL;
+	eoFramePtr->nline = 0;
+	eoFramePtr->line = NULL;
 
-	    eoFramePtr->cmd.listPtr  = objPtr;
-	    Tcl_IncrRefCount(eoFramePtr->cmd.listPtr);
-	    eoFramePtr->data.eval.path = NULL;
+	eoFramePtr->cmd.listPtr  = objPtr;
+	Tcl_IncrRefCount(eoFramePtr->cmd.listPtr);
+	eoFramePtr->data.eval.path = NULL;
 
-	    /*
-	     * TIP #280 We do _not_ compute all the line numbers for the words
-	     * in the command. For the eval of a pure list the most sensible
-	     * choice is to put all words on line 1. Given that we neither
-	     * need memory for them nor compute anything.  'line' is left
-	     * NULL. The two places using this information (TclInfoFrame, and
-	     * TclInitCompileEnv), are special-cased to use the proper line
-	     * number directly instead of accessing the 'line' array.
-	     */
+	/*
+	 * TIP #280 We do _not_ compute all the line numbers for the words
+	 * in the command. For the eval of a pure list the most sensible
+	 * choice is to put all words on line 1. Given that we neither
+	 * need memory for them nor compute anything.  'line' is left
+	 * NULL. The two places using this information (TclInfoFrame, and
+	 * TclInitCompileEnv), are special-cased to use the proper line
+	 * number directly instead of accessing the 'line' array.
+	 */
 
-	    Tcl_ListObjGetElements(NULL, copyPtr,
-				   &nelements, &elements);
+	Tcl_ListObjGetElements(NULL, copyPtr, &nelements, &elements);
 
-	    iPtr->cmdFramePtr = eoFramePtr;
-	    result = Tcl_EvalObjv(interp, nelements, elements,
-				  flags);
+	iPtr->cmdFramePtr = eoFramePtr;
+	result = Tcl_EvalObjv(interp, nelements, elements, flags);
 
-	    Tcl_DecrRefCount(copyPtr);
-	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-	    Tcl_DecrRefCount(eoFramePtr->cmd.listPtr);
-	    TclStackFree(interp, eoFramePtr);
-
-	    goto done;
-	}
-    }
-
-    if (flags & TCL_EVAL_DIRECT) {
+	Tcl_DecrRefCount(copyPtr);
+	iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
+	Tcl_DecrRefCount(eoFramePtr->cmd.listPtr);
+	TclStackFree(interp, eoFramePtr);
+    } else if (flags & TCL_EVAL_DIRECT) {
 	/*
 	 * We're not supposed to use the compiler or byte-code interpreter.
 	 * Let Tcl_EvalEx evaluate the command directly (and probably more
@@ -5297,7 +5285,6 @@ TclEvalObjEx(
 	iPtr->varFramePtr = savedVarFramePtr;
     }
 
-  done:
     TclDecrRefCount(objPtr);
     return result;
 }

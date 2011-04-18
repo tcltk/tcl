@@ -1,3 +1,9 @@
+2011-04-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Define and use macros that test whether
+	* generic/tclBasic.c:	a Tcl list value is canonical.
+	* generic/tclUtil.c:
+
 2011-04-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h: fix for [Bug 3288345]: Wrong Tcl_StatBuf
