@@ -447,7 +447,7 @@ Tcl_ListObjGetElements(
 	    return result;
 	}
     }
-    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
+    listRepPtr = ListRepPtr(listPtr);
     *objcPtr = listRepPtr->elemCount;
     *objvPtr = &listRepPtr->elements;
     return TCL_OK;
@@ -565,7 +565,7 @@ Tcl_ListObjAppendElement(
 	}
     }
 
-    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
+    listRepPtr = ListRepPtr(listPtr);
     numElems = listRepPtr->elemCount;
     numRequired = numElems + 1 ;
 
@@ -676,7 +676,7 @@ Tcl_ListObjIndex(
 	}
     }
 
-    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
+    listRepPtr = ListRepPtr(listPtr);
     if ((index < 0) || (index >= listRepPtr->elemCount)) {
 	*objPtrPtr = NULL;
     } else {
@@ -731,7 +731,7 @@ Tcl_ListObjLength(
 	}
     }
 
-    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
+    listRepPtr = ListRepPtr(listPtr);
     *intPtr = listRepPtr->elemCount;
     return TCL_OK;
 }
@@ -818,7 +818,7 @@ Tcl_ListObjReplace(
      * Resist any temptation to optimize this case.
      */
 
-    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
+    listRepPtr = ListRepPtr(listPtr);
     elemPtrs = &listRepPtr->elements;
     numElems = listRepPtr->elemCount;
 
@@ -1502,7 +1502,7 @@ TclListObjSetElement(
 	}
     }
 
-    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
+    listRepPtr = ListRepPtr(listPtr);
     elemCount = listRepPtr->elemCount;
     elemPtrs = &listRepPtr->elements;
 
@@ -1587,7 +1587,7 @@ static void
 FreeListInternalRep(
     Tcl_Obj *listPtr)		/* List object with internal rep to free. */
 {
-    register List *listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
+    register List *listRepPtr = ListRepPtr(listPtr);
     register Tcl_Obj **elemPtrs = &listRepPtr->elements;
     register Tcl_Obj *objPtr;
     int numElems = listRepPtr->elemCount;
@@ -1627,7 +1627,7 @@ DupListInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
-    List *listRepPtr = (List *) srcPtr->internalRep.twoPtrValue.ptr1;
+    List *listRepPtr = ListRepPtr(srcPtr);
 
     listRepPtr->refCount++;
     copyPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
@@ -1843,7 +1843,7 @@ UpdateStringOfList(
 {
 #   define LOCAL_SIZE 20
     int localFlags[LOCAL_SIZE], *flagPtr;
-    List *listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
+    List *listRepPtr = ListRepPtr(listPtr);
     int numElems = listRepPtr->elemCount;
     register int i;
     char *elem, *dst;
