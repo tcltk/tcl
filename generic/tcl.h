@@ -372,24 +372,14 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__GNUC__)
-#      define TCL_WIDE_INT_TYPE long long
-#      if defined(__WIN32__) && !defined(__CYGWIN__)
-#         define TCL_LL_MODIFIER        "I64"
-#         define TCL_LL_MODIFIER_SIZE   3
-#      else
-#      define TCL_LL_MODIFIER	"ll"
-#      define TCL_LL_MODIFIER_SIZE	2
-#      endif
-typedef struct stat	Tcl_StatBuf;
-#   elif defined(__WIN32__)
+#   if defined(__WIN32__)
 #      define TCL_WIDE_INT_TYPE __int64
 #      ifdef __BORLANDC__
 typedef struct stati64 Tcl_StatBuf;
 #         define TCL_LL_MODIFIER	"L"
 #         define TCL_LL_MODIFIER_SIZE	1
 #      else /* __BORLANDC__ */
-#         if _MSC_VER < 1400 || !defined(_M_IX86)
+#         if (defined(_MSC_VER) && (_MSC_VER < 1400)) || !defined(_M_IX86)
 typedef struct _stati64	Tcl_StatBuf;
 #         else
 typedef struct _stat64 Tcl_StatBuf;
@@ -397,6 +387,11 @@ typedef struct _stat64 Tcl_StatBuf;
 #         define TCL_LL_MODIFIER	"I64"
 #         define TCL_LL_MODIFIER_SIZE	3
 #      endif /* __BORLANDC__ */
+#   elif defined(__GNUC__)
+#      define TCL_WIDE_INT_TYPE long long
+#      define TCL_LL_MODIFIER	"ll"
+#      define TCL_LL_MODIFIER_SIZE	2
+typedef struct stat	Tcl_StatBuf;
 #   else /* __WIN32__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what
