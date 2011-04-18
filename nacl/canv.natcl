@@ -71,9 +71,12 @@ proc canv_hook {} {
 	    set repaint 1
 	}
     }
+    set l {}
     foreach i [array names ::canv_moved] {
-	append js "canvcoords\[$i\]=\[[join $::canv_coords($i) ,]\];\n"
+	#append js "canvcoords\[$i\]=\[[join $::canv_coords($i) ,]\];\n"
+	lappend l "$i,\[[join $::canv_coords($i) ,]\]"
     }
+    append js "updateCoords(\[[join $l ,]\]);\n"
     if {$repaint} {
 	append js "repaint();\n"
     }

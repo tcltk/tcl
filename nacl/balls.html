@@ -19,6 +19,15 @@ var canvas = null;
 var context = null;
 var canvcoords = [];
 
+function updateCoords(ar)
+{
+    var i,n;
+
+    n=ar.length;
+    for(i=0;i<n;i+=2)
+	canvcoords[ar[i]]=ar[i+1];
+}
+
 // give it global scope. will be regen'd by canv code.
 function repaint() {}
 
