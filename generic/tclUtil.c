@@ -1204,19 +1204,14 @@ Tcl_ConcatObj(
      */
 
     for (i = 0;  i < objc;  i++) {
-	List *listRepPtr;
+	int length;
 
 	objPtr = objv[i];
-	if (objPtr->typePtr != &tclListType) {
-	    TclGetString(objPtr);
-	    if (objPtr->length) {
-		break;
-	    } else {
-		continue;
-	    }
+	if (TclListObjIsCanonical(objPtr)) {
+	    continue;
 	}
-	listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
-	if (objPtr->bytes != NULL && !listRepPtr->canonicalFlag) {
+	Tcl_GetStringFromObj(objPtr, &length);
+	if (length > 0) {
 	    break;
 	}
     }
@@ -1236,7 +1231,7 @@ Tcl_ConcatObj(
 	     */
 
 	    objPtr = objv[i];
-	    if (objPtr->bytes && !objPtr->length) {
+	    if (objPtr->bytes && objPtr->length == 0) {
 		continue;
 	    }
 	    TclListObjGetElements(NULL, objPtr, &listc, &listv);
