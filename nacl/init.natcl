@@ -37,18 +37,15 @@ proc source url {
 
 # Async [after] using JS's setTimeout()
 proc after {ms script} {
-    if {[regexp \n $script]} {error "JS hates multiline :)"}
-    append ::JS "setTimeout(\"tclDo([jsquote $script])\",$ms);\n"
+    append ::JS "setTimeout(function(){tclDo([jsquote $script]);},$ms);\n"
 }
 
 # Async [every] using JS's setInterval()
 proc every {ms script} {
-    if {[regexp \n $script]} {error "JS hates multiline :)"}
-    append ::JS "setInterval(\"tclDo([jsquote $script])\",$ms);\n"
+    append ::JS "setInterval(function(){tclDo([jsquote $script]);},$ms);\n"
 }
 
 # Delayed DOM-setting through the tclDo() trampoline
 proc domset {element inner} {
     append ::JS "$element.innerHTML=[jsquote $inner];\n"
 }
-
