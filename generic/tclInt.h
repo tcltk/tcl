@@ -2455,6 +2455,9 @@ typedef struct List {
 #define ListObjLength(listPtr, len) \
     ((len) = ListRepPtr(listPtr)->elemCount)
 
+#define ListObjIsCanonical(listPtr) \
+    (((listPtr)->bytes == NULL) || ListRepPtr(listPtr)->canonicalFlag)
+
 #define TclListObjGetElements(interp, listPtr, objcPtr, objvPtr) \
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjGetElements((listPtr), *(objcPtr), *(objvPtr))), TCL_OK)\
@@ -2464,6 +2467,9 @@ typedef struct List {
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
 	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))
+
+#define TclListObjIsCanonical(listPtr) \
+    (((listPtr)->typePtr == &tclListType) ? ListObjIsCanonical((listPtr)) : 0)
 
 /*
  * Macros providing a faster path to integers: Tcl_GetLongFromObj everywhere,
