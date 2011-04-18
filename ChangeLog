@@ -1,5 +1,9 @@
 2011-04-18  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdIL.c:	Use ListRepPtr(.) and other cleanup.
+	* generic/tclConfig.c:
+	* generic/tclListObj.c:
+
 	* generic/tclInt.h:	Define and use macros that test whether
 	* generic/tclBasic.c:	a Tcl list value is canonical.
 	* generic/tclUtil.c:
