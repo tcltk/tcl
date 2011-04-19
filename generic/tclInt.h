@@ -2220,6 +2220,9 @@ typedef struct List {
 #define ListObjLength(listPtr, len) \
     ((len) = ListRepPtr(listPtr)->elemCount)
 
+#define ListObjIsCanonical(listPtr) \
+    (((listPtr)->bytes == NULL) || ListRepPtr(listPtr)->canonicalFlag)
+
 #define TclListObjGetElements(interp, listPtr, objcPtr, objvPtr) \
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjGetElements((listPtr), *(objcPtr), *(objvPtr))), TCL_OK)\
@@ -2229,6 +2232,9 @@ typedef struct List {
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
 	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))
+
+#define TclListObjIsCanonical(listPtr) \
+    (((listPtr)->typePtr == &tclListType) ? ListObjIsCanonical((listPtr)) : 0)
 
 /*
  * Macros providing a faster path to integers: Tcl_GetLongFromObj everywhere,
@@ -2849,6 +2855,10 @@ MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int count, int *tokensLeftPtr);
+MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
+			    const char *trim, int numTrim);
+MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
+			    const char *trim, int numTrim);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
