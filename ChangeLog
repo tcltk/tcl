@@ -1,3 +1,22 @@
+2011-04-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdIL.c:	Use ListRepPtr(.) and other cleanup.
+	* generic/tclConfig.c:
+	* generic/tclListObj.c:
+
+	* generic/tclInt.h:	Define and use macros that test whether
+	* generic/tclBasic.c:	a Tcl list value is canonical.
+	* generic/tclUtil.c:
+
+2011-04-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/dict.n: [Bug 3288696]: Command summary was confusingly wrong
+	when it came to [dict filter] with a 'value' filter.
+
+2011-04-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h: [Bug 3288345]: Fix wrong Tcl_StatBuf used on MinGW.
+
 2011-04-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclFCmd.c (TclFileAttrsCmd): Add comments to make this code

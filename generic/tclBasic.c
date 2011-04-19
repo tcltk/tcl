@@ -5717,8 +5717,7 @@ TclArgumentGet(
      * up by the caller. It knows better than us.
      */
 
-    if ((!obj->bytes) || ((obj->typePtr == &tclListType) &&
-	    ((List *) obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
+    if ((obj->bytes == NULL) || TclListObjIsCanonical(obj)) {
 	return;
     }
 
@@ -5897,7 +5896,6 @@ TclNREvalObjEx(
 {
     Interp *iPtr = (Interp *) interp;
     int result;
-    List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     /*
      * This function consists of three independent blocks for: direct
@@ -5905,9 +5903,7 @@ TclNREvalObjEx(
      * finally direct evaluation. Precisely one of these blocks will be run.
      */
 
-    if ((objPtr->typePtr == &tclListType) &&		/* is a list */
-	    ((objPtr->bytes == NULL ||			/* no string rep */
-		    listRepPtr->canonicalFlag))) {	/* or is canonical */
+    if (TclListObjIsCanonical(objPtr)) {
 	Tcl_Obj *listPtr = objPtr;
 	CmdFrame *eoFramePtr = NULL;
 	int objc;
