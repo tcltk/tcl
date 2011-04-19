@@ -1,3 +1,8 @@
+2011-04-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclConfig.c:	Reduce internals access in the implementation
+	of [<foo>::pkgconfig list].
+
 2011-04-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdIL.c:	Use ListRepPtr(.) and other cleanup.
