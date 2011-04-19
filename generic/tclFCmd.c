@@ -966,6 +966,10 @@ TclFileAttrsCmd(
     result = TCL_ERROR;
     Tcl_SetErrno(0);
 
+    /*
+     * Get the set of attribute names from the filesystem.
+     */
+
     attributeStrings = Tcl_FSFileAttrStrings(filePtr, &objStrings);
     if (attributeStrings == NULL) {
 	int index;
@@ -980,9 +984,8 @@ TclFileAttrsCmd(
 		Tcl_AppendResult(interp, "could not read \"",
 			TclGetString(filePtr), "\": ", Tcl_PosixError(interp),
 			NULL);
-		return TCL_ERROR;
 	    }
-	    goto end;
+	    return TCL_ERROR;
 	}
 
 	/*
@@ -1006,7 +1009,16 @@ TclFileAttrsCmd(
 	}
 	attributeStringsAllocated[index] = NULL;
 	attributeStrings = attributeStringsAllocated;
+    } else if (objStrings != NULL) {
+	Tcl_Panic("must not update objPtrRef's variable and return non-NULL");
     }
+
+    /*
+     * Process the attributes to produce a list of all of them, the value of a
+     * particular attribute, or to set one or more attributes (depending on
+     * the number of arguments).
+     */
+
     if (objc == 0) {
 	/*
 	 * Get all attributes.
@@ -1114,21 +1126,17 @@ TclFileAttrsCmd(
     }
     result = TCL_OK;
 
+    /*
+     * Free up the array we allocated and drop our reference to any list of
+     * attribute names issued by the filesystem.
+     */
+
   end:
     if (attributeStringsAllocated != NULL) {
-	/*
-	 * Free up the array we allocated.
-	 */
-
 	ckfree((void *) attributeStringsAllocated);
-
-	/*
-	 * We don't need this object that was passed to us any more.
-	 */
-
-	if (objStrings != NULL) {
-	    Tcl_DecrRefCount(objStrings);
-	}
+    }
+    if (objStrings != NULL) {
+	Tcl_DecrRefCount(objStrings);
     }
     return result;
 }

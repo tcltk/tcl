@@ -1666,7 +1666,6 @@ InfoLoadedCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *interpName;
-    int result;
 
     if ((objc != 1) && (objc != 2)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?interp?");
@@ -1678,8 +1677,7 @@ InfoLoadedCmd(
     } else {			/* Get pkgs just in specified interp. */
 	interpName = TclGetString(objv[1]);
     }
-    result = TclGetLoadedPackages(interp, interpName);
-    return result;
+    return TclGetLoadedPackages(interp, interpName);
 }
 
 /*
@@ -2502,7 +2500,7 @@ Tcl_LrangeObjCmd(
     }
 
     if (Tcl_IsShared(objv[1]) ||
-	    (((List *) objv[1]->internalRep.twoPtrValue.ptr1)->refCount > 1)) {
+	    ((ListRepPtr(objv[1])->refCount > 1))) {
 	Tcl_SetObjResult(interp, Tcl_NewListObj(last - first + 1,
 		&elemPtrs[first]));
     } else {
@@ -2607,7 +2605,7 @@ Tcl_LrepeatObjCmd(
 
     listPtr = Tcl_NewListObj(totalElems, NULL);
     if (totalElems) {
-	List *listRepPtr = listPtr->internalRep.twoPtrValue.ptr1;
+	List *listRepPtr = ListRepPtr(listPtr);
 
 	listRepPtr->elemCount = elementCount*objc;
 	dataArray = &listRepPtr->elements;
@@ -2796,15 +2794,15 @@ Tcl_LreverseObjCmd(
 	return TCL_OK;
     }
 
-    if (Tcl_IsShared(objv[1])) {
+    if (Tcl_IsShared(objv[1])
+	    || (ListRepPtr(objv[1])->refCount > 1)) {	/* Bug 1675044 */
 	Tcl_Obj *resultObj, **dataArray;
-	List *listPtr;
+	List *listRepPtr;
 
-    makeNewReversedList:
 	resultObj = Tcl_NewListObj(elemc, NULL);
-	listPtr = resultObj->internalRep.twoPtrValue.ptr1;
-	listPtr->elemCount = elemc;
-	dataArray = &listPtr->elements;
+	listRepPtr = ListRepPtr(resultObj);
+	listRepPtr->elemCount = elemc;
+	dataArray = &listRepPtr->elements;
 
 	for (i=0,j=elemc-1 ; i<elemc ; i++,j--) {
 	    dataArray[j] = elemv[i];
@@ -2813,15 +2811,6 @@ Tcl_LreverseObjCmd(
 
 	Tcl_SetObjResult(interp, resultObj);
     } else {
-	/*
-	 * It is theoretically possible for a list object to have a shared
-	 * internal representation, but be an unshared object. Check for this
-	 * and use the "shared" code if we have that problem. [Bug 1675044]
-	 */
-
-	if (((List *) objv[1]->internalRep.twoPtrValue.ptr1)->refCount > 1) {
-	    goto makeNewReversedList;
-	}
 
 	/*
 	 * Not shared, so swap "in place". This relies on Tcl_LOGE above
@@ -4007,7 +3996,7 @@ Tcl_LsortObjCmd(
 	Tcl_Obj **newArray, *objPtr;
 
 	resultPtr = Tcl_NewListObj(sortInfo.numElements * groupSize, NULL);
-	listRepPtr = resultPtr->internalRep.twoPtrValue.ptr1;
+	listRepPtr = ListRepPtr(resultPtr);
 	newArray = &listRepPtr->elements;
 	if (group) {
 	    for (i=0; elementPtr!=NULL ; elementPtr=elementPtr->nextPtr) {

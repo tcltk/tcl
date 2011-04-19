@@ -4258,27 +4258,13 @@ TclNREvalObjv(
      * a callback to do the actual running.
      */
 
-#if 0
-    {
-        Tcl_ObjCmdProc *objProc = cmdPtr->nreProc;
-        
-        if (!objProc) {
-            objProc = cmdPtr->objProc;
-        }
-        
-        TclNRAddCallback(interp, NRRunObjProc, objProc, cmdPtr->objClientData,
-                INT2PTR(objc), (ClientData) objv);
-    }
-    return TCL_OK;
-#else
     if (cmdPtr->nreProc) {
-        TclNRAddCallback(interp, NRRunObjProc, cmdPtr->nreProc,
-                cmdPtr->objClientData, INT2PTR(objc), (ClientData) objv);
+        TclNRAddCallback(interp, NRRunObjProc, cmdPtr,
+                INT2PTR(objc), (ClientData) objv, NULL);
         return TCL_OK;
     } else {
 	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
     }        
-#endif
 }
 
 void
@@ -4366,15 +4352,11 @@ NRRunObjProc(
 {
     /* OPT: do not call? */
 
-    Tcl_ObjCmdProc *objProc = (Tcl_ObjCmdProc *)data[0];
-    ClientData objClientData = data[1];
-    int objc = PTR2INT(data[2]);
-    Tcl_Obj **objv = data[3];
+    Command* cmdPtr = data[0];
+    int objc = PTR2INT(data[1]);
+    Tcl_Obj **objv = data[2];
 
-    if (result == TCL_OK) {
-	return objProc(objClientData, interp, objc, objv);
-    }
-    return result;
+    return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
 }
 
 
@@ -5727,8 +5709,7 @@ TclArgumentGet(
      * up by the caller. It knows better than us.
      */
 
-    if ((!obj->bytes) || ((obj->typePtr == &tclListType) &&
-	    ((List *) obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
+    if ((obj->bytes == NULL) || TclListObjIsCanonical(obj)) {
 	return;
     }
 
@@ -5907,7 +5888,6 @@ TclNREvalObjEx(
 {
     Interp *iPtr = (Interp *) interp;
     int result;
-    List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     /*
      * This function consists of three independent blocks for: direct
@@ -5915,9 +5895,7 @@ TclNREvalObjEx(
      * finally direct evaluation. Precisely one of these blocks will be run.
      */
 
-    if ((objPtr->typePtr == &tclListType) &&		/* is a list */
-	    ((objPtr->bytes == NULL ||			/* no string rep */
-		    listRepPtr->canonicalFlag))) {	/* or is canonical */
+    if (TclListObjIsCanonical(objPtr)) {
 	Tcl_Obj *listPtr = objPtr;
 	CmdFrame *eoFramePtr = NULL;
 	int objc;

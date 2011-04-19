@@ -277,8 +277,7 @@ QueryConfigObjCmd(
 	}
 
 	if (n) {
-	    List *listRepPtr = (List *)
-		    listPtr->internalRep.twoPtrValue.ptr1;
+	    List *listRepPtr = ListRepPtr(listPtr);
 	    Tcl_DictSearch s;
 	    Tcl_Obj *key, **vals;
 	    int done, i = 0;

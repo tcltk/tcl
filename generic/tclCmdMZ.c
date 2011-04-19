@@ -3110,10 +3110,8 @@ StringTrimCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch, trim;
-    register const char *p, *end;
-    const char *check, *checkEnd, *string1, *string2;
-    int offset, length1, length2;
+    const char *string1, *string2;
+    int triml, trimr, length1, length2;
 
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
@@ -3125,58 +3123,12 @@ StringTrimCmd(
 	return TCL_ERROR;
     }
     string1 = TclGetStringFromObj(objv[1], &length1);
-    checkEnd = string2 + length2;
 
-    /*
-     * The outer loop iterates over the string. The inner loop iterates over
-     * the trim characters. The loops terminate as soon as a non-trim
-     * character is discovered and string1 is left pointing at the first
-     * non-trim character.
-     */
+    triml = TclTrimLeft(string1, length1, string2, length2);
+    trimr = TclTrimRight(string1 + triml, length1 - triml, string2, length2);
 
-    end = string1 + length1;
-    for (p = string1; p < end; p += offset) {
-	offset = TclUtfToUniChar(p, &ch);
-
-	for (check = string2; ; ) {
-	    if (check >= checkEnd) {
-		p = end;
-		break;
-	    }
-	    check += TclUtfToUniChar(check, &trim);
-	    if (ch == trim) {
-		length1 -= offset;
-		string1 += offset;
-		break;
-	    }
-	}
-    }
-
-    /*
-     * The outer loop iterates over the string. The inner loop iterates over
-     * the trim characters. The loops terminate as soon as a non-trim
-     * character is discovered and length1 marks the last non-trim character.
-     */
-
-    end = string1;
-    for (p = string1 + length1; p > end; ) {
-	p = Tcl_UtfPrev(p, string1);
-	offset = TclUtfToUniChar(p, &ch);
-	check = string2;
-	while (1) {
-	    if (check >= checkEnd) {
-		p = end;
-		break;
-	    }
-	    check += TclUtfToUniChar(check, &trim);
-	    if (ch == trim) {
-		length1 -= offset;
-		break;
-	    }
-	}
-    }
-
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(string1, length1));
+    Tcl_SetObjResult(interp,
+	    Tcl_NewStringObj(string1 + triml, length1 - triml - trimr));
     return TCL_OK;
 }
 
@@ -3206,10 +3158,8 @@ StringTrimLCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch, trim;
-    register const char *p, *end;
-    const char *check, *checkEnd, *string1, *string2;
-    int offset, length1, length2;
+    const char *string1, *string2;
+    int trim, length1, length2;
 
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
@@ -3221,34 +3171,10 @@ StringTrimLCmd(
 	return TCL_ERROR;
     }
     string1 = TclGetStringFromObj(objv[1], &length1);
-    checkEnd = string2 + length2;
 
-    /*
-     * The outer loop iterates over the string. The inner loop iterates over
-     * the trim characters. The loops terminate as soon as a non-trim
-     * character is discovered and string1 is left pointing at the first
-     * non-trim character.
-     */
+    trim = TclTrimLeft(string1, length1, string2, length2);
 
-    end = string1 + length1;
-    for (p = string1; p < end; p += offset) {
-	offset = TclUtfToUniChar(p, &ch);
-
-	for (check = string2; ; ) {
-	    if (check >= checkEnd) {
-		p = end;
-		break;
-	    }
-	    check += TclUtfToUniChar(check, &trim);
-	    if (ch == trim) {
-		length1 -= offset;
-		string1 += offset;
-		break;
-	    }
-	}
-    }
-
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(string1, length1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(string1+trim, length1-trim));
     return TCL_OK;
 }
 
@@ -3278,10 +3204,8 @@ StringTrimRCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch, trim;
-    register const char *p, *end;
-    const char *check, *checkEnd, *string1, *string2;
-    int offset, length1, length2;
+    const char *string1, *string2;
+    int trim, length1, length2;
 
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
@@ -3293,33 +3217,10 @@ StringTrimRCmd(
 	return TCL_ERROR;
     }
     string1 = TclGetStringFromObj(objv[1], &length1);
-    checkEnd = string2 + length2;
 
-    /*
-     * The outer loop iterates over the string. The inner loop iterates over
-     * the trim characters. The loops terminate as soon as a non-trim
-     * character is discovered and length1 marks the last non-trim character.
-     */
+    trim = TclTrimRight(string1, length1, string2, length2);
 
-    end = string1;
-    for (p = string1 + length1; p > end; ) {
-	p = Tcl_UtfPrev(p, string1);
-	offset = TclUtfToUniChar(p, &ch);
-	check = string2;
-	while (1) {
-	    if (check >= checkEnd) {
-		p = end;
-		break;
-	    }
-	    check += TclUtfToUniChar(check, &trim);
-	    if (ch == trim) {
-		length1 -= offset;
-		break;
-	    }
-	}
-    }
-
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(string1, length1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(string1, length1-trim));
     return TCL_OK;
 }
 

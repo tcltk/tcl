@@ -373,27 +373,23 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__GNUC__)
-#      define TCL_WIDE_INT_TYPE long long
-#      if defined(__WIN32__) && !defined(__CYGWIN__)
-#         define TCL_LL_MODIFIER        "I64"
-#      else
-#         define TCL_LL_MODIFIER	"ll"
-#      endif
-typedef struct stat	Tcl_StatBuf;
-#   elif defined(__WIN32__)
+#   if defined(__WIN32__)
 #      define TCL_WIDE_INT_TYPE __int64
 #      ifdef __BORLANDC__
 typedef struct stati64 Tcl_StatBuf;
 #         define TCL_LL_MODIFIER	"L"
 #      else /* __BORLANDC__ */
-#         if _MSC_VER < 1400 || !defined(_M_IX86)
+#         if (defined(_MSC_VER) && (_MSC_VER < 1400)) || !defined(_M_IX86) || defined(__GNUC__)
 typedef struct _stati64	Tcl_StatBuf;
 #         else
 typedef struct _stat64	Tcl_StatBuf;
 #         endif /* _MSC_VER < 1400 */
 #         define TCL_LL_MODIFIER	"I64"
 #      endif /* __BORLANDC__ */
+#   elif defined(__GNUC__)
+#      define TCL_WIDE_INT_TYPE long long
+#      define TCL_LL_MODIFIER	"ll"
+typedef struct stat	Tcl_StatBuf;
 #   else /* __WIN32__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
