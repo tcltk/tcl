@@ -1074,6 +1074,7 @@ TclFileAttrsCmd(
 	}
 	if (didAlloc) {
 	    TclFreeIntRep(objv[0]);
+	    objv[0]->typePtr = NULL;
 	}
 	if (Tcl_FSFileAttrsGet(interp, index, filePtr,
 		&objPtr) != TCL_OK) {
@@ -1101,6 +1102,7 @@ TclFileAttrsCmd(
     	    }
 	    if (didAlloc) {
 		TclFreeIntRep(objv[i]);
+		objv[i]->typePtr = NULL;
 	    }
 	    if (i + 1 == objc) {
 		Tcl_AppendResult(interp, "value for \"",

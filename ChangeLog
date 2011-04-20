@@ -1,3 +1,11 @@
+2011-04-20  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclFCmd.c (TclFileAttrsCmd): Added commands to reset the
+	typePtr of the Tcl_Obj* whose int-rep was just purged. Required to
+	prevent a dangling IndexRep* to reused, smashing the heap. See
+	also the entries at 2011-04-16 and 2011-03-24 for the history of
+	the problem.
+
 2011-04-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclConfig.c:	Reduce internals access in the implementation
