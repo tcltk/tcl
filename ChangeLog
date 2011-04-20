@@ -1,3 +1,9 @@
+2011-04-20  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/info.test: Fixed the shift in line numbers used for
+	testing 'info frame' introduced by checkin [79367df0f0]
+	(Mar 2, 2011).
+
 2011-04-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:       fix for [Bug 3288345]: Wrong Tcl_StatBuf
