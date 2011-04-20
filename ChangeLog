@@ -1,7 +1,9 @@
 2011-04-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h: fix for [Bug 3288345]: Wrong Tcl_StatBuf
-	used on MinGW. Follow-up: get it right for cygwin and WIN64
+	* generic/tcl.h:       fix for [Bug 3288345]: Wrong Tcl_StatBuf
+	* generic/tclInt.h:    used on MinGW. Follow-up: get it right
+	* generic/tclIOUtil.c: for cygwin and WIN64 as well.
+	* win/tclWinFile.c:
 
 2011-04-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
