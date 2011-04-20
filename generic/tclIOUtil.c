@@ -1910,7 +1910,7 @@ Tcl_FSStat(pathPtr, buf)
 {
     Tcl_Filesystem *fsPtr;
 #ifdef USE_OBSOLETE_FS_HOOKS
-    struct stat oldStyleStatBuffer;
+    Tcl_StatBuf oldStyleStatBuffer;
     int retVal = -1;
 
     /*
