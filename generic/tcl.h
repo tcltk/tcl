@@ -372,17 +372,19 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__WIN32__)
+#   if defined(__WIN32__) && !defined(__CYGWIN__)
 #      define TCL_WIDE_INT_TYPE __int64
 #      ifdef __BORLANDC__
 typedef struct stati64 Tcl_StatBuf;
 #         define TCL_LL_MODIFIER	"L"
 #         define TCL_LL_MODIFIER_SIZE	1
 #      else /* __BORLANDC__ */
-#         if (defined(_MSC_VER) && (_MSC_VER < 1400)) || !defined(_M_IX86)
+#         if defined(_WIN64)
+typedef struct _stat64 Tcl_StatBuf;
+#         elif (defined(_MSC_VER) && (_MSC_VER < 1400))
 typedef struct _stati64	Tcl_StatBuf;
 #         else
-typedef struct _stat64 Tcl_StatBuf;
+typedef struct _stat32i64 Tcl_StatBuf;
 #         endif /* _MSC_VER < 1400 */
 #         define TCL_LL_MODIFIER	"I64"
 #         define TCL_LL_MODIFIER_SIZE	3

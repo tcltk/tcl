@@ -12,8 +12,9 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-//#define _WIN32_WINNT  0x0500
-
+#ifndef _WIN64
+#   define _USE_32BIT_TIME_T
+#endif
 #include "tclWinInt.h"
 #include <winioctl.h>
 #include <sys/stat.h>
