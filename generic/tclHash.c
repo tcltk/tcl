@@ -1147,7 +1147,6 @@ RebuildTable(tablePtr)
     register Tcl_HashEntry **oldChainPtr, **newChainPtr;
     register Tcl_HashEntry *hPtr;
     Tcl_HashKeyType *typePtr;
-    VOID *key;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;
@@ -1201,7 +1200,7 @@ RebuildTable(tablePtr)
 	    hPtr->nextPtr = tablePtr->buckets[index];
 	    tablePtr->buckets[index] = hPtr;
 #else
-	    key = (VOID *) Tcl_GetHashKey (tablePtr, hPtr);
+	    VOID *key = (VOID *) Tcl_GetHashKey (tablePtr, hPtr);
 	    if (typePtr->hashKeyProc) {
 		unsigned int hash;
 		hash = typePtr->hashKeyProc (tablePtr, (VOID *) key);
