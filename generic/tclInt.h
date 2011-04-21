@@ -2451,6 +2451,12 @@ typedef struct List {
 #define ListRepPtr(listPtr) \
     ((List *) (listPtr)->internalRep.twoPtrValue.ptr1)
 
+#define ListSetIntRep(objPtr, listRepPtr) \
+    (objPtr)->internalRep.twoPtrValue.ptr1 = (void *)(listRepPtr), \
+    (objPtr)->internalRep.twoPtrValue.ptr2 = NULL, \
+    (listRepPtr)->refCount++, \
+    (objPtr)->typePtr = &tclListType
+
 #define ListObjGetElements(listPtr, objc, objv) \
     ((objv) = &(ListRepPtr(listPtr)->elements), \
      (objc) = ListRepPtr(listPtr)->elemCount)
