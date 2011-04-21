@@ -1,3 +1,10 @@
+2011-04-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c:		Make sure SetFooFromAny routines react
+	* generic/tclIndexObj.c:	reasonably when passed a NULL interp.
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+
 2011-04-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:       fix for [Bug 3288345]: Wrong Tcl_StatBuf
