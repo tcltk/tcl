@@ -3597,6 +3597,10 @@ SetCmdNameFromAny(interp, objPtr)
     Namespace *currNsPtr;
     register ResolvedCmdName *resPtr;
 
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
+
     /*
      * Get "objPtr"s string representation. Make it up-to-date if necessary.
      */

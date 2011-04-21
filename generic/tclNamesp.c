@@ -3913,6 +3913,10 @@ SetNsNameFromAny(interp, objPtr)
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
     register ResolvedNsName *resNamePtr;
 
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
+
     /*
      * Get the string representation. Make it up-to-date if necessary.
      */
