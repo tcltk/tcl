@@ -234,11 +234,7 @@ Tcl_NewListObj(
      */
 
     Tcl_InvalidateStringRep(listPtr);
-    listPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
-    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    listPtr->typePtr = &tclListType;
-    listRepPtr->refCount++;
-
+    ListSetIntRep(listPtr, listRepPtr);
     return listPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -303,10 +299,7 @@ Tcl_DbNewListObj(
      */
 
     Tcl_InvalidateStringRep(listPtr);
-    listPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
-    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    listPtr->typePtr = &tclListType;
-    listRepPtr->refCount++;
+    ListSetIntRep(listPtr, listRepPtr);
 
     return listPtr;
 }
@@ -376,10 +369,7 @@ Tcl_SetListObj(
 
     if (objc > 0) {
 	listRepPtr = NewListIntRep(objc, objv, 1);
-	objPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
-	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	objPtr->typePtr = &tclListType;
-	listRepPtr->refCount++;
+	ListSetIntRep(objPtr, listRepPtr);
     } else {
 	objPtr->bytes = tclEmptyStringRep;
 	objPtr->length = 0;
@@ -1675,10 +1665,7 @@ DupListInternalRep(
 {
     List *listRepPtr = ListRepPtr(srcPtr);
 
-    listRepPtr->refCount++;
-    copyPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
-    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    copyPtr->typePtr = &tclListType;
+    ListSetIntRep(copyPtr, listRepPtr);
 }
 
 /*
@@ -1849,11 +1836,8 @@ SetListFromAny(
      */
 
   commitRepresentation:
-    listRepPtr->refCount++;
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    objPtr->typePtr = &tclListType;
+    ListSetIntRep(objPtr, listRepPtr);
     return TCL_OK;
 }
 
