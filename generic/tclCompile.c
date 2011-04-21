@@ -333,12 +333,12 @@ Tcl_ObjType tclByteCodeType = {
  *	compiling its string representation.  This function also takes
  *	a hook procedure that will be invoked to perform any needed post
  *	processing on the compilation results before generating byte
- *	codes.
+ *	codes.  interp is compilation context and may not be NULL.
  *
  * Results:
  *	The return value is a standard Tcl object result. If an error occurs
  *	during compilation, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
+ *	result.
  *
  * Side effects:
  *	Frees the old internal representation. If no error occurs, then the
@@ -515,6 +515,9 @@ SetByteCodeFromAny(interp, objPtr)
 				 * being compiled.  Must not be NULL. */
     Tcl_Obj *objPtr;		/* The object to make a ByteCode object. */
 {
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
     return TclSetByteCodeFromAny(interp, objPtr,
 	    (CompileHookProc *) NULL, (ClientData) NULL);
 }
