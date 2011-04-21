@@ -358,10 +358,12 @@ typedef long LONG;
 typedef struct stati64 Tcl_StatBuf;
 #         define TCL_LL_MODIFIER	"L"
 #      else /* __BORLANDC__ */
-#         if (defined(_MSC_VER) && (_MSC_VER < 1400)) || !defined(_M_IX86) || defined(__GNUC__)
+#         if defined(_WIN64)
+typedef struct _stat64 Tcl_StatBuf;
+#         elif (defined(_MSC_VER) && (_MSC_VER < 1400))
 typedef struct _stati64	Tcl_StatBuf;
 #         else
-typedef struct _stat64	Tcl_StatBuf;
+typedef struct _stat32i64 Tcl_StatBuf;
 #         endif /* _MSC_VER < 1400 */
 #         define TCL_LL_MODIFIER	"I64"
 #      endif /* __BORLANDC__ */
