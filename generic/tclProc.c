@@ -2478,12 +2478,16 @@ SetLambdaFromAny(
     int objc, result;
     Proc *procPtr;
 
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
+
     /*
      * Convert objPtr to list type first; if it cannot be converted, or if its
      * length is not 2, then it cannot be converted to lambdaType.
      */
 
-    result = TclListObjGetElements(interp, objPtr, &objc, &objv);
+    result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	TclNewLiteralStringObj(errPtr, "can't interpret \"");
 	Tcl_AppendObjToObj(errPtr, objPtr);
