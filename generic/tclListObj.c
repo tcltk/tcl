@@ -1693,9 +1693,11 @@ SetListFromAny(
 	Tcl_DictObjSize(NULL, objPtr, &size);
 	listRepPtr = NewListIntRep(size > 0 ? 2*size : 1, NULL);
 	if (!listRepPtr) {
-	    Tcl_SetResult(interp,
-		    "insufficient memory to allocate list working space",
-		    TCL_STATIC);
+	    if (interp) {
+		Tcl_SetResult(interp,
+			"insufficient memory to allocate list working space",
+			TCL_STATIC);
+	    }
 	    return TCL_ERROR;
 	}
 	listRepPtr->elemCount = 2 * size;
@@ -1753,8 +1755,10 @@ SetListFromAny(
 
     listRepPtr = NewListIntRep(estCount, NULL);
     if (!listRepPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Not enough memory to allocate the list internal rep", -1));
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "Not enough memory to allocate the list internal rep", -1));
+	}
 	return TCL_ERROR;
     }
     elemPtrs = &listRepPtr->elements;
