@@ -1,3 +1,11 @@
+2011-04-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:       fix for [Bug 3288345]: Wrong Tcl_StatBuf
+	* generic/tclInt.h:    used on MinGW. Make sure that all _WIN32
+	* win/tclWinFile.c:    compilers use exactly the same layout
+	* win/configure.in:    for Tcl_StatBuf - the one used by MSVC6 -
+	* win/configure:       in all situations.
+
 2011-04-20  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclFCmd.c (TclFileAttrsCmd): Added commands to reset the
@@ -20,11 +28,6 @@
 	* generic/tclInt.h:	Define and use macros that test whether
 	* generic/tclBasic.c:	a Tcl list value is canonical.
 	* generic/tclUtil.c:
-
-2011-04-18  Jan Nijtmans  <nijtmans@users.sf.net>
-
-	* generic/tcl.h: fix for [Bug 3288345]: Wrong Tcl_StatBuf
-	used on MinGW.
 
 2011-04-16  Donal K. Fellows  <dkf@users.sf.net>
 
