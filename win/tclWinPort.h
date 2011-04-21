@@ -117,17 +117,23 @@
  */
 #if !defined(__BORLANDC__) && !defined(_MSC_VER) && !defined(_WIN64) && !defined(HAVE_STRUCT_STAT32I64)
   struct _stat32i64 {
-    _dev_t st_dev;
-    _ino_t st_ino;
+    dev_t st_dev;
+    ino_t st_ino;
     unsigned short st_mode;
     short st_nlink;
     short st_uid;
     short st_gid;
-    _dev_t st_rdev;
+    dev_t st_rdev;
     __int64 st_size;
+#ifdef __CYGWIN__
+    struct {long tv_sec;} st_atim;
+    struct {long tv_sec;} st_mtim;
+    struct {long tv_sec;} st_ctim;
+#else
     long st_atime;
     long st_mtime;
     long st_ctime;
+#endif
   };
 #endif
 
