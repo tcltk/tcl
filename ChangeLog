@@ -1,5 +1,10 @@
 2011-04-21  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdIL.c:	Limits on list length were too strict.
+	* generic/tclInt.h:	Revised panics to errors where possible.
+	* generic/tclListObj.c:
+	* tests/lrepeat.test:
+
 	* generic/tclCompile.c:	Make sure SetFooFromAny routines react
 	* generic/tclIO.c:	reasonably when passed a NULL interp.
 	* generic/tclIndexObj.c:
