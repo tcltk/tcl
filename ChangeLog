@@ -1,20 +1,17 @@
+2011-04-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:       fix for [Bug 3288345]: Wrong Tcl_StatBuf
+	* generic/tclInt.h:    used on MinGW. Make sure that all _WIN32
+	* generic/tclIOUtil.c: compilers use exactly the same layout
+	* win/tclWinFile.c:    for Tcl_StatBuf - the one used by MSVC6 -
+	* win/configure.in:    in all situations.
+	* win/configure:
+
 2011-04-20  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/info.test: Fixed the shift in line numbers used for
 	testing 'info frame' introduced by checkin [79367df0f0]
 	(Mar 2, 2011).
-
-2011-04-20  Jan Nijtmans  <nijtmans@users.sf.net>
-
-	* generic/tcl.h:       fix for [Bug 3288345]: Wrong Tcl_StatBuf
-	* generic/tclInt.h:    used on MinGW. Follow-up: get it right
-	* generic/tclIOUtil.c: for cygwin and WIN64 as well.
-	* win/tclWinFile.c:
-
-2011-04-18  Jan Nijtmans  <nijtmans@users.sf.net>
-
-	* generic/tcl.h: fix for [Bug 3288345]: Wrong Tcl_StatBuf
-	used on MinGW.
 
 2011-04-13  Miguel Sofer  <msofer@users.sf.net>
 
