@@ -1,3 +1,35 @@
+2011-04-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Use macro to set List intreps.
+	* generic/tclListObj.c:
+
+	* generic/tclCmdIL.c:	Limits on list length were too strict.
+	* generic/tclInt.h:	Revised panics to errors where possible.
+	* generic/tclListObj.c:
+	* tests/lrepeat.test:
+
+	* generic/tclCompile.c:	Make sure SetFooFromAny routines react
+	* generic/tclIO.c:	reasonably when passed a NULL interp.
+	* generic/tclIndexObj.c:
+	* generic/tclListObj.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclProc.c:
+	* macosx/tclMacOSXFCmd.c:
+
+2011-04-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:       fix for [Bug 3288345]: Wrong Tcl_StatBuf
+	* generic/tclInt.h:    used on MinGW. Make sure that all _WIN32
+	* win/tclWinFile.c:    compilers use exactly the same layout
+	* win/configure.in:    for Tcl_StatBuf - the one used by MSVC6 -
+	* win/configure:       in all situations.
+
+2011-04-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclConfig.c:	Reduce internals access in the implementation
+	of [<foo>::pkgconfig list].
+
 2011-04-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdIL.c:	Use ListRepPtr(.) and other cleanup.
@@ -12,10 +44,6 @@
 
 	* doc/dict.n: [Bug 3288696]: Command summary was confusingly wrong
 	when it came to [dict filter] with a 'value' filter.
-
-2011-04-18  Jan Nijtmans  <nijtmans@users.sf.net>
-
-	* generic/tcl.h: [Bug 3288345]: Fix wrong Tcl_StatBuf used on MinGW.
 
 2011-04-16  Donal K. Fellows  <dkf@users.sf.net>
 

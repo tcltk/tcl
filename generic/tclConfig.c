@@ -277,18 +277,13 @@ QueryConfigObjCmd(
 	}
 
 	if (n) {
-	    List *listRepPtr = ListRepPtr(listPtr);
 	    Tcl_DictSearch s;
-	    Tcl_Obj *key, **vals;
-	    int done, i = 0;
-
-	    listRepPtr->elemCount = n;
-	    vals = &listRepPtr->elements;
+	    Tcl_Obj *key;
+	    int done;
 
 	    for (Tcl_DictObjFirst(interp, pkgDict, &s, &key, NULL, &done);
 		    !done; Tcl_DictObjNext(&s, &key, NULL, &done)) {
-		vals[i++] = key;
-		Tcl_IncrRefCount(key);
+		Tcl_ListObjAppendElement(NULL, listPtr, key);
 	    }
 	}
 

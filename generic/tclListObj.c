@@ -17,7 +17,9 @@
  * Prototypes for functions defined later in this file:
  */
 
-static List *		NewListIntRep(int objc, Tcl_Obj *const objv[]);
+static List *		AttemptNewList(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static List *		NewListIntRep(int objc, Tcl_Obj *const objv[], int p);
 static void		DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		FreeListInternalRep(Tcl_Obj *listPtr);
 static int		SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -49,16 +51,16 @@ const Tcl_ObjType tclListType = {
  *
  * NewListIntRep --
  *
- *	If objc>0 and objv!=NULL, this function creates a list internal rep
- *	with objc elements given in the array objv. If objc>0 and objv==NULL
- *	it creates the list internal rep of a list with 0 elements, where
- *	enough space has been preallocated to store objc elements. If objc<=0,
- *	it returns NULL.
+ *	Creates a list internal rep with space for objc elements.  objc
+ *	must be > 0.  If objv!=NULL, initializes with the first objc values
+ *	in that array.  If objv==NULL, initalize list internal rep to have
+ *	0 elements, with space to add objc more.  Flag value "p" indicates
+ *	how to behave on failure.
  *
  * Results:
- *	A new List struct is returned. If objc<=0 or if the allocation fails
- *	for lack of memory, NULL is returned. The list returned has refCount
- *	0.
+ *	A new List struct with refCount 0 is returned. If some failure
+ *	prevents this then if p=0, NULL is returned and otherwise the
+ *	routine panics.
  *
  * Side effects:
  *	The ref counts of the elements in objv are incremented since the
@@ -70,12 +72,13 @@ const Tcl_ObjType tclListType = {
 static List *
 NewListIntRep(
     int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[],
+    int p)
 {
     List *listRepPtr;
 
     if (objc <= 0) {
-	return NULL;
+	Tcl_Panic("NewListIntRep: expects postive element count");
     }
 
     /*
@@ -85,12 +88,20 @@ NewListIntRep(
      * requires API changes to fix. See [Bug 219196] for a discussion.
      */
 
-    if ((size_t)objc > INT_MAX/sizeof(Tcl_Obj *)) {
+    if ((size_t)objc > LIST_MAX) {
+	if (p) {
+	    Tcl_Panic("max length of a Tcl list (%d elements) exceeded",
+		    LIST_MAX);
+	}
 	return NULL;
     }
 
     listRepPtr = attemptckalloc(sizeof(List) + ((objc-1) * sizeof(Tcl_Obj*)));
     if (listRepPtr == NULL) {
+	if (p) {
+	    Tcl_Panic("list creation failed: unable to alloc %u bytes",
+		    sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *)));
+	}
 	return NULL;
     }
 
@@ -110,6 +121,51 @@ NewListIntRep(
 	}
     } else {
 	listRepPtr->elemCount = 0;
+    }
+    return listRepPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AttemptNewList --
+ *
+ *	Creates a list internal rep with space for objc elements.  objc
+ *	must be > 0.  If objv!=NULL, initializes with the first objc values
+ *	in that array.  If objv==NULL, initalize list internal rep to have
+ *	0 elements, with space to add objc more.  
+ *
+ * Results:
+ *	A new List struct with refCount 0 is returned. If some failure
+ *	prevents this then NULL is returned, and an error message is left
+ *	in the interp result, unless interp is NULL.
+ *
+ * Side effects:
+ *	The ref counts of the elements in objv are incremented since the
+ *	resulting list now refers to them.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static List *
+AttemptNewList(
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *CONST objv[])
+{
+    List *listRepPtr = NewListIntRep(objc, objv, 0);
+
+    if (interp != NULL && listRepPtr == NULL) {
+	if (objc > LIST_MAX) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max length of a Tcl list (%d elements) exceeded",
+		    LIST_MAX));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "list creation failed: unable to alloc %u bytes",
+		    sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *))));
+	}
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
     return listRepPtr;
 }
@@ -171,21 +227,14 @@ Tcl_NewListObj(
      * Create the internal rep.
      */
 
-    listRepPtr = NewListIntRep(objc, objv);
-    if (!listRepPtr) {
-	Tcl_Panic("Not enough memory to allocate list");
-    }
+    listRepPtr = NewListIntRep(objc, objv, 1);
 
     /*
      * Now create the object.
      */
 
     Tcl_InvalidateStringRep(listPtr);
-    listPtr->internalRep.twoPtrValue.ptr1 = listRepPtr;
-    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    listPtr->typePtr = &tclListType;
-    listRepPtr->refCount++;
-
+    ListSetIntRep(listPtr, listRepPtr);
     return listPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -243,20 +292,14 @@ Tcl_DbNewListObj(
      * Create the internal rep.
      */
 
-    listRepPtr = NewListIntRep(objc, objv);
-    if (!listRepPtr) {
-	Tcl_Panic("Not enough memory to allocate list");
-    }
+    listRepPtr = NewListIntRep(objc, objv, 1);
 
     /*
      * Now create the object.
      */
 
     Tcl_InvalidateStringRep(listPtr);
-    listPtr->internalRep.twoPtrValue.ptr1 = listRepPtr;
-    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    listPtr->typePtr = &tclListType;
-    listRepPtr->refCount++;
+    ListSetIntRep(listPtr, listRepPtr);
 
     return listPtr;
 }
@@ -325,14 +368,8 @@ Tcl_SetListObj(
      */
 
     if (objc > 0) {
-	listRepPtr = NewListIntRep(objc, objv);
-	if (!listRepPtr) {
-	    Tcl_Panic("Cannot allocate enough memory for Tcl_SetListObj");
-	}
-	objPtr->internalRep.twoPtrValue.ptr1 = listRepPtr;
-	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	objPtr->typePtr = &tclListType;
-	listRepPtr->refCount++;
+	listRepPtr = NewListIntRep(objc, objv, 1);
+	ListSetIntRep(objPtr, listRepPtr);
     } else {
 	objPtr->bytes = tclEmptyStringRep;
 	objPtr->length = 0;
@@ -586,9 +623,9 @@ Tcl_ListObjAppendElement(
 	List *oldListRepPtr = listRepPtr;
 	Tcl_Obj **oldElems;
 
-	listRepPtr = NewListIntRep(newMax, NULL);
-	if (!listRepPtr) {
-	    Tcl_Panic("Not enough memory to allocate list");
+	listRepPtr = AttemptNewList(interp, newMax, NULL);
+	if (listRepPtr == NULL) {
+	    return TCL_ERROR;
 	}
 	oldElems = &oldListRepPtr->elements;
 	elemPtrs = &listRepPtr->elements;
@@ -882,9 +919,9 @@ Tcl_ListObjReplace(
 	    newMax = listRepPtr->maxElemCount;
 	}
 
-	listRepPtr = NewListIntRep(newMax, NULL);
-	if (!listRepPtr) {
-	    Tcl_Panic("Not enough memory to allocate list");
+	listRepPtr = AttemptNewList(interp, newMax, NULL);
+	if (listRepPtr == NULL) {
+	    return TCL_ERROR;
 	}
 
 	listPtr->internalRep.twoPtrValue.ptr1 = listRepPtr;
@@ -1550,9 +1587,9 @@ TclListObjSetElement(
 	Tcl_Obj **oldElemPtrs = elemPtrs;
 	int i;
 
-	listRepPtr = NewListIntRep(listRepPtr->maxElemCount, NULL);
+	listRepPtr = AttemptNewList(interp, listRepPtr->maxElemCount, NULL);
 	if (listRepPtr == NULL) {
-	    Tcl_Panic("Not enough memory to allocate list");
+	    return TCL_ERROR;
 	}
 	listRepPtr->canonicalFlag = oldListRepPtr->canonicalFlag;
 	elemPtrs = &listRepPtr->elements;
@@ -1653,10 +1690,7 @@ DupListInternalRep(
 {
     List *listRepPtr = ListRepPtr(srcPtr);
 
-    listRepPtr->refCount++;
-    copyPtr->internalRep.twoPtrValue.ptr1 = listRepPtr;
-    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    copyPtr->typePtr = &tclListType;
+    ListSetIntRep(copyPtr, listRepPtr);
 }
 
 /*
@@ -1716,12 +1750,8 @@ SetListFromAny(
 	 */
 
 	Tcl_DictObjSize(NULL, objPtr, &size);
-	listRepPtr = NewListIntRep(size > 0 ? 2*size : 1, NULL);
+	listRepPtr = AttemptNewList(interp, size > 0 ? 2*size : 1, NULL);
 	if (!listRepPtr) {
-	    Tcl_SetResult(interp,
-		    "insufficient memory to allocate list working space",
-		    TCL_STATIC);
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    return TCL_ERROR;
 	}
 	listRepPtr->elemCount = 2 * size;
@@ -1777,11 +1807,8 @@ SetListFromAny(
      * strings.
      */
 
-    listRepPtr = NewListIntRep(estCount, NULL);
-    if (!listRepPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Not enough memory to allocate the list internal rep", -1));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    listRepPtr = AttemptNewList(interp, estCount, NULL);
+    if (listRepPtr == NULL) {
 	return TCL_ERROR;
     }
     elemPtrs = &listRepPtr->elements;
@@ -1838,11 +1865,8 @@ SetListFromAny(
      */
 
   commitRepresentation:
-    listRepPtr->refCount++;
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.twoPtrValue.ptr1 = listRepPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    objPtr->typePtr = &tclListType;
+    ListSetIntRep(objPtr, listRepPtr);
     return TCL_OK;
 }
 
