@@ -2006,8 +2006,7 @@ TclProcCompileProc(
 	    codePtr->compileEpoch = iPtr->compileEpoch;
 	    codePtr->nsPtr = nsPtr;
 	} else {
-	    bodyPtr->typePtr->freeIntRepProc(bodyPtr);
-	    bodyPtr->typePtr = NULL;
+	    TclFreeIntRep(bodyPtr);
 	}
     }
 
@@ -2635,7 +2634,7 @@ SetLambdaFromAny(
      * conversion to lambdaType.
      */
 
-    objPtr->typePtr->freeIntRepProc(objPtr);
+    TclFreeIntRep(objPtr);
 
     objPtr->internalRep.twoPtrValue.ptr1 = procPtr;
     objPtr->internalRep.twoPtrValue.ptr2 = nsObjPtr;

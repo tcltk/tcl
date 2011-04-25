@@ -562,8 +562,7 @@ TestindexobjCmd(
 	    && !strcmp("index", objv[3]->typePtr->name)) {
 	indexRep = objv[3]->internalRep.otherValuePtr;
 	if (indexRep->tablePtr == (void *) argv) {
-	    objv[3]->typePtr->freeIntRepProc(objv[3]);
-	    objv[3]->typePtr = NULL;
+	    TclFreeIntRep(objv[3]);
 	}
     }
 
