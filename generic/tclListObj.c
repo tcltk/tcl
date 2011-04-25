@@ -99,8 +99,8 @@ NewListIntRep(
     listRepPtr = attemptckalloc(sizeof(List) + ((objc-1) * sizeof(Tcl_Obj*)));
     if (listRepPtr == NULL) {
 	if (p) {
-	    Tcl_Panic("list creation failed: unable to alloc %lu bytes",
-		    (unsigned long) (sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *))));
+	    Tcl_Panic("list creation failed: unable to alloc %u bytes",
+		    (unsigned)(sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *))));
 	}
 	return NULL;
     }
@@ -162,8 +162,8 @@ AttemptNewList(
 		    LIST_MAX));
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "list creation failed: unable to alloc %lu bytes",
-		    (unsigned long) (sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *)))));
+		    "list creation failed: unable to alloc %u bytes",
+		    (unsigned)(sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *)))));
 	}
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
