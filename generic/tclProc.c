@@ -2434,6 +2434,7 @@ FreeLambdaInternalRep(
 	TclProcCleanupProc(procPtr);
     }
     TclDecrRefCount(nsObjPtr);
+    objPtr->typePtr = NULL;
 }
 
 static int
