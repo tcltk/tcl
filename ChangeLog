@@ -1,5 +1,7 @@
 2011-04-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclListObj.c:	FreeListInternalRep() cleanup.
+
 	* generic/tclBinary.c:	Backport fix for [Bug 2857044].
 	* generic/tclDictObj.c:	All freeIntRepProcs set typePtr to NULL.
 	* generic/tclEncoding.c:
