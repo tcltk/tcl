@@ -989,7 +989,6 @@ ResetObjResult(
 	    objResultPtr->length = 0;
 	}
 	TclFreeIntRep(objResultPtr);
-	objResultPtr->typePtr = NULL;
     }
 }
 
