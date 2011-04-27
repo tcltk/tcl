@@ -703,7 +703,6 @@ TclObjLookupVarEx(
      */
 
     TclFreeIntRep(part1Ptr);
-    part1Ptr->typePtr = NULL;
 
     varPtr = TclLookupSimpleVar(interp, part1Ptr, flags, createPart1,
 	    &errMsg, &index);
@@ -2361,7 +2360,6 @@ TclPtrUnsetVar(
 
     if (part1Ptr->typePtr == &tclNsVarNameType) {
 	TclFreeIntRep(part1Ptr);
-	part1Ptr->typePtr = NULL;
     }
 #endif
 
