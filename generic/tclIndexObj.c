@@ -217,7 +217,6 @@ GetIndexFromObjList(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->typePtr = NULL;
     ckfree(tablePtr);
 
     return result;
