@@ -358,7 +358,6 @@ Tcl_SetListObj(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->typePtr = NULL;
     Tcl_InvalidateStringRep(objPtr);
 
     /*
