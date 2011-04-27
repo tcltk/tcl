@@ -757,7 +757,6 @@ Tcl_SetStringObj(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->typePtr = NULL;
 
     /*
      * Free any old string rep, then set the string rep to a copy of the
