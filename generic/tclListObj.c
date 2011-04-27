@@ -1623,16 +1623,14 @@ static void
 FreeListInternalRep(
     Tcl_Obj *listPtr)		/* List object with internal rep to free. */
 {
-    register List *listRepPtr = ListRepPtr(listPtr);
-    register Tcl_Obj **elemPtrs = &listRepPtr->elements;
-    register Tcl_Obj *objPtr;
-    int numElems = listRepPtr->elemCount;
-    int i;
+    List *listRepPtr = ListRepPtr(listPtr);
 
     if (--listRepPtr->refCount <= 0) {
+	Tcl_Obj **elemPtrs = &listRepPtr->elements;
+	int i, numElems = listRepPtr->elemCount;
+
 	for (i = 0;  i < numElems;  i++) {
-	    objPtr = elemPtrs[i];
-	    Tcl_DecrRefCount(objPtr);
+	    Tcl_DecrRefCount(elemPtrs[i]);
 	}
 	ckfree((char *) listRepPtr);
     }
