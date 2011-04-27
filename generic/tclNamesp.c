@@ -4739,7 +4739,6 @@ SetNsNameFromAny(
 
 	if (objPtr->typePtr == &nsNameType) {
 	    TclFreeIntRep(objPtr);
-	    objPtr->typePtr = NULL;
 	}
 	return TCL_ERROR;
     }
