@@ -1,5 +1,15 @@
 2011-04-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdMZ.c:	TclFreeIntRep() correction & cleanup.
+	* generic/tclExecute.c:
+	* generic/tclIndexObj.c:
+	* generic/tclInt.h:
+	* generic/tclListObj.c:
+	* generic/tclNamesp.c:
+	* generic/tclResult.c:
+	* generic/tclStringObj.c:
+	* generic/tclVar.c:
+
 	* generic/tclListObj.c:	FreeListInternalRep() cleanup.
 
 2011-04-21  Don Porter  <dgp@users.sourceforge.net>
