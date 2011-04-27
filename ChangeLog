@@ -1,3 +1,7 @@
+2011-04-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclListObj.c:	FreeListInternalRep() cleanup.
+
 2011-04-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	Use macro to set List intreps.
