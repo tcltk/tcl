@@ -4194,6 +4194,7 @@ FreeCmdNameInternalRep(
 	    ckfree((char *) resPtr);
 	}
     }
+    objPtr->typePtr = NULL;
 }
 
 /*
