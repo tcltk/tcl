@@ -1,3 +1,17 @@
+2011-04-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBinary.c:	Backport fix for [Bug 2857044].
+	* generic/tclDictObj.c:	All freeIntRepProcs set typePtr to NULL.
+	* generic/tclEncoding.c:
+	* generic/tclListObj.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclPathObj.c:
+	* generic/tclProc.c:
+	* generic/tclRegexp.c:
+	* generic/tclStringObj.c:
+	* generic/tclVar.c:
+
 2011-04-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	Use macro to set List intreps.

@@ -3056,6 +3056,7 @@ FreeStringInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
     ckfree((char *) GET_STRING(objPtr));
+    objPtr->typePtr = NULL;
 }
 
 /*

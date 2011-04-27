@@ -4615,6 +4615,7 @@ FreeNsNameInternalRep(
 	}
 	ckfree((char *) resNamePtr);
     }
+    objPtr->typePtr = NULL;
 }
 
 /*
