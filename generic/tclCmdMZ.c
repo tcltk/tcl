@@ -1560,7 +1560,6 @@ StringIsCmd(
 	    if (stop < end) {
 		result = 0;
 		TclFreeIntRep(objPtr);
-		objPtr->typePtr = NULL;
 	    }
 	}
 	break;
@@ -1617,7 +1616,6 @@ StringIsCmd(
 
 		failat = stop - string1;
 		TclFreeIntRep(objPtr);
-		objPtr->typePtr = NULL;
 	    }
 	} else {
 	    /*
