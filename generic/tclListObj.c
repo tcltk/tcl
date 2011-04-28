@@ -1765,13 +1765,7 @@ SetListFromAny(
      * elements by counting the number of space characters in the list.
      */
 
-    limit = string + length;
-    estCount = 1;
-    for (p = string;  p < limit;  p++) {
-	if (isspace(UCHAR(*p))) { /* INTL: ISO space. */
-	    estCount++;
-	}
-    }
+    estCount = TclCountSpaceRuns(string, length, &limit) + 1;
 
     /*
      * Allocate a new List structure with enough room for "estCount" elements.
