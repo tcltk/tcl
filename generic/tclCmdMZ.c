@@ -1665,7 +1665,7 @@ StringIsCmd(
 		     * if it is the first "element" that has the failure.
 		     */
 
-		    while (isspace(UCHAR(*p))) {		/* INTL: ? */
+		    while (TclIsSpaceProc(*p)) {
 			p++;
 		    }
 		    TclNewStringObj(tmpStr, string1, p-string1);
