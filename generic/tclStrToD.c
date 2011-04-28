@@ -536,7 +536,7 @@ TclParseNumber(
 	     * I, N, and whitespace.
 	     */
 
-	    if (isspace(UCHAR(c))) {
+	    if (TclIsSpaceProc(c)) {
 		if (flags & TCL_PARSE_NO_WHITESPACE) {
 		    goto endgame;
 		}
@@ -1050,7 +1050,7 @@ TclParseNumber(
 	    }
 	    /* FALLTHROUGH */
 	case sNANPAREN:
-	    if (isspace(UCHAR(c))) {
+	    if (TclIsSpaceProc(c)) {
 		break;
 	    }
 	    if (numSigDigs < 13) {
@@ -1101,7 +1101,7 @@ TclParseNumber(
 	     * Accept trailing whitespace.
 	     */
 
-	    while (len != 0 && isspace(UCHAR(*p))) {
+	    while (len != 0 && TclIsSpaceProc(*p)) {
 		p++;
 		len--;
 	    }
