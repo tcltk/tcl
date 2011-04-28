@@ -610,6 +610,30 @@ Tcl_ParseCommand(
 /*
  *----------------------------------------------------------------------
  *
+ * TclIsSpaceProc --
+ *
+ *	Report whether byte is in the set of whitespace characters used by
+ *	Tcl to separate words in scripts or elements in lists.
+ *
+ * Results:
+ *	Returns 1, if byte is in the set, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclIsSpaceProc(
+    char byte)
+{
+    return CHAR_TYPE(byte) & (TYPE_SPACE) || byte == '\n';
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ParseWhiteSpace --
  *
  *	Scans up to numBytes bytes starting at src, consuming white space
@@ -1758,7 +1782,7 @@ Tcl_ParseBraces(
 		openBrace = 0;
 		break;
 	    case '#' :
-		if (openBrace && isspace(UCHAR(src[-1]))) {
+		if (openBrace && TclIsSpaceProc(src[-1])) {
 		    Tcl_AppendResult(parsePtr->interp,
 			    ": possible unbalanced brace in comment", NULL);
 		    goto error;
