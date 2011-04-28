@@ -3907,7 +3907,9 @@ TclCompileSwitchCmd(
     int savedStackDepth = envPtr->currStackDepth;
     int noCase;			/* Has the -nocase flag been given? */
     int foundMode = 0;		/* Have we seen a mode flag yet? */
+#if 0
     int isListedArms = 0;
+#endif
     int i, valueIndex;
     DefineLineInformation;	/* TIP #280 */
     int* clNext = envPtr->clNext;
@@ -4047,6 +4049,7 @@ TclCompileSwitchCmd(
      */
 
     if (numWords == 1) {
+#if 0
 	Tcl_DString bodyList;
 	const char **argv = NULL, *tokenStartPtr, *p;
 	int bline;		/* TIP #280: line of the pattern/action list,
@@ -4085,7 +4088,9 @@ TclCompileSwitchCmd(
 	    return TCL_ERROR;
 	}
 
+#if 0
 	isListedArms = 1;
+#endif
 	bodyTokenArray = (Tcl_Token *) ckalloc(sizeof(Tcl_Token) * numWords);
 	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numWords);
 	bodyLines = (int *) ckalloc(sizeof(int) * numWords);
@@ -4178,6 +4183,91 @@ TclCompileSwitchCmd(
 	    ckfree((char *) bodyNext);
 	    return TCL_ERROR;
 	}
+#else
+	CONST char *bytes, *p;
+	int maxLen, braced, numBytes;
+	int bline;		/* TIP #280: line of the pattern/action list,
+				 * and start of list for when tracking the
+				 * location. This list comes immediately after
+				 * the value we switch on. */
+
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    return TCL_ERROR;
+	}
+	bytes = tokenPtr[1].start;
+	numBytes = tokenPtr[1].size;
+
+	/*
+	 * A list can have at most one more element than the number
+	 * of runs of element-separating white space.
+	 */
+
+	maxLen = TclCountSpaceRuns(bytes, numBytes, NULL) + 1;
+	if (maxLen < 2) {
+	    return TCL_ERROR;
+	}
+	bodyTokenArray = (Tcl_Token *) ckalloc(sizeof(Tcl_Token) * maxLen);
+	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * maxLen);
+	bodyLines = (int *) ckalloc(sizeof(int) * maxLen);
+	bodyNext  = (int **) ckalloc(sizeof(int*) * maxLen);
+
+	bline = mapPtr->loc[eclIndex].line[valueIndex+1];
+	p = bytes;
+	numWords = 0;
+
+	while (numBytes > 0) {
+	    CONST char *start, *prevBytes = bytes;
+	    int size;
+
+	    if (TCL_OK != TclFindElement(NULL, bytes, numBytes, &start,
+		    &bytes, &size, &braced)) {
+	    abort:
+		ckfree((char *) bodyToken);
+		ckfree((char *) bodyTokenArray);
+		ckfree((char *) bodyLines);
+		ckfree((char *) bodyNext);
+		return TCL_ERROR;
+	    }
+	    numBytes -= (bytes - prevBytes);
+
+	    if (numWords == 0 && numBytes == 0) {
+		break;
+	    }
+
+	    bodyTokenArray[numWords].type = TCL_TOKEN_TEXT;
+	    bodyTokenArray[numWords].start = start;
+	    bodyTokenArray[numWords].size = size;
+	    bodyTokenArray[numWords].numComponents = 0;
+	    bodyToken[numWords] = bodyTokenArray + numWords;
+
+	    if (!braced) {
+		while (size--) {
+		    if (*start++ == '\\') {
+			goto abort;
+		    }
+		}
+	    }
+
+	    /*
+	     * TIP #280: Now determine the line the list element starts on
+	     * (there is no need to do it earlier, due to the possibility of
+	     * aborting, see above).
+	     */
+
+	    TclAdvanceLines(&bline, p, bodyTokenArray[numWords].start);
+	    TclAdvanceContinuations (&bline, &clNext,
+		    bodyTokenArray[numWords].start - envPtr->source);
+	    bodyLines[numWords] = bline;
+	    bodyNext[numWords] = clNext;
+	    p = bodyTokenArray[numWords].start;
+
+	    numWords++;
+	}
+	if (numWords % 2) {
+	    goto abort;
+	}
+
+#endif
 
     } else if (numWords % 2 || numWords == 0) {
 	/*
@@ -4205,8 +4295,11 @@ TclCompileSwitchCmd(
 	     * traces, etc.
 	     */
 
-	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
-		    tokenPtr->numComponents != 1) {
+	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD
+#if 0
+		    || tokenPtr->numComponents != 1
+#endif
+		    ) {
 		ckfree((char *) bodyToken);
 		ckfree((char *) bodyLines);
 		ckfree((char *) bodyNext);
@@ -4255,7 +4348,15 @@ TclCompileSwitchCmd(
      * but it handles the most common case well enough.
      */
 
-    if (isListedArms && mode == Switch_Exact && !noCase) {
+    if (
+#if 0
+	    isListedArms &&
+#endif
+	    mode == Switch_Exact
+#if 0
+	    && !noCase
+#endif
+	    ) {
 	JumptableInfo *jtPtr;
 	int infoIndex, isNew, *finalFixups, numRealBodies = 0, jumpLocation;
 	int mustGenerate, jumpToDefault;
