@@ -2730,7 +2730,7 @@ TclGetIntForIndex(
      * Leading whitespace is acceptable in an index.
      */
 
-    while (length && isspace(UCHAR(*bytes))) {		/* INTL: ISO space. */
+    while (length && TclIsSpaceProc(*bytes)) {
 	bytes++;
 	length--;
     }
@@ -2743,7 +2743,7 @@ TclGetIntForIndex(
 	if ((savedOp != '+') && (savedOp != '-')) {
 	    goto parseError;
 	}
-	if (isspace(UCHAR(opPtr[1]))) {
+	if (TclIsSpaceProc(opPtr[1])) {
 	    goto parseError;
 	}
 	*opPtr = '\0';
@@ -2890,7 +2890,7 @@ SetEndOffsetFromAny(
 	 * after "end-" to Tcl_GetInt, then reverse for offset.
 	 */
 
-	if (isspace(UCHAR(bytes[4]))) {
+	if (TclIsSpaceProc(bytes[4])) {
 	    goto badIndexFormat;
 	}
 	if (Tcl_GetInt(interp, bytes+4, &offset) != TCL_OK) {
@@ -2957,7 +2957,7 @@ TclCheckBadOctal(
      * zero. Try to generate a meaningful error message.
      */
 
-    while (isspace(UCHAR(*p))) {	/* INTL: ISO space. */
+    while (TclIsSpaceProc(*p)) {
 	p++;
     }
     if (*p == '+' || *p == '-') {
@@ -2970,7 +2970,7 @@ TclCheckBadOctal(
 	while (isdigit(UCHAR(*p))) {	/* INTL: digit. */
 	    p++;
 	}
-	while (isspace(UCHAR(*p))) {	/* INTL: ISO space. */
+	while (TclIsSpaceProc(*p)) {
 	    p++;
 	}
 	if (*p == '\0') {
