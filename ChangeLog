@@ -7,26 +7,9 @@
 	* generic/tclCmdMZ.c:	Use new routines to replace calls to
 	* generic/tclListObj.c:	isspace() and their /* INTL */ risk.
 	* generic/tclStrToD.c:
+	* generic/tclUtf.c:
+	* unix/tclUnixFile.c:
 	
-2011-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
-
-	* unix/tcl.m4:    Make SHLIB_LD_LIBS='${LIBS}' the default and
-	* unix/configure: set to "" on per-platform necessary basis.
-	Backported from TEA, but kept all original platform code which was
-	removed from TEA.
-
-2011-03-14  Kevin B. Kenny  <kennykb@acm.org>
-
-	* tools/tclZIC.tcl (onDayOfMonth): Allow for leading zeroes
-	in month and day so that tzdata2011d parses correctly.
-	* library/tzdata/America/Havana:
-	* library/tzdata/America/Juneau:
-	* library/tzdata/America/Santiago:
-	* library/tzdata/Europe/Istanbul:
-	* library/tzdata/Pacific/Apia:
-	* library/tzdata/Pacific/Easter:
-	* library/tzdata/Pacific/Honolulu:  tzdata2011d
-
 2011-04-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclListObj.c:	FreeListInternalRep() cleanup.
