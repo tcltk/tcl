@@ -88,6 +88,58 @@ const Tcl_ObjType tclEndOffsetType = {
 /*
  *----------------------------------------------------------------------
  *
+ * TclCountSpaceRuns --
+ *
+ *	Given 'bytes' pointing to 'numBytes' bytes, scan through them and
+ *	count the number of whitespace runs that could be list element
+ *	separators.  If 'numBytes' is -1, scan to the terminating '\0'.
+ *
+ * Results:
+ *	Returns the count.  If 'endPtr' is not NULL, writes a pointer to
+ *	the end of the string scanned there.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCountSpaceRuns(
+    CONST char *bytes,
+    int numBytes,
+    CONST char **endPtr)
+{
+    int count = 0;
+
+    while (numBytes) {
+	if ((numBytes == -1) && (*bytes == '\0')) {
+	    break;
+	}
+	if (TclIsSpaceProc(*bytes)) {
+	    /* Space run started; bump count */
+	    count++;
+	    do {
+		bytes++;
+		numBytes -= (numBytes != -1);
+	    } while (numBytes && TclIsSpaceProc(*bytes));
+	    if (numBytes == 0) {
+		break;
+	    }
+	    /* (*bytes) is non-space; return to counting state */
+	}
+	bytes++;
+	numBytes -= (numBytes != -1);
+    }
+    if (endPtr) {
+	*endPtr = bytes;
+    }
+    return count;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclFindElement --
  *
  *	Given a pointer into a Tcl list, locate the first (or next) element in
@@ -154,7 +206,7 @@ TclFindElement(
      */
 
     limit = (list + listLength);
-    while ((p < limit) && (isspace(UCHAR(*p)))) { /* INTL: ISO space. */
+    while ((p < limit) && (TclIsSpaceProc(*p))) {
 	p++;
     }
     if (p == limit) {		/* no element found */
@@ -202,8 +254,7 @@ TclFindElement(
 	    } else if (openBraces == 1) {
 		size = (p - elemStart);
 		p++;
-		if ((p >= limit)
-			|| isspace(UCHAR(*p))) {	/* INTL: ISO space. */
+		if ((p >= limit) || TclIsSpaceProc(*p)) {
 		    goto done;
 		}
 
@@ -213,8 +264,7 @@ TclFindElement(
 
 		if (interp != NULL) {
 		    p2 = p;
-		    while ((p2 < limit)
-			    && (!isspace(UCHAR(*p2)))	/* INTL: ISO space. */
+		    while ((p2 < limit) && (!TclIsSpaceProc(*p2))
 			    && (p2 < p+20)) {
 			p2++;
 		    }
@@ -263,8 +313,7 @@ TclFindElement(
 	    if (inQuotes) {
 		size = (p - elemStart);
 		p++;
-		if ((p >= limit)
-			|| isspace(UCHAR(*p))) {	/* INTL: ISO space */
+		if ((p >= limit) || TclIsSpaceProc(*p)) {
 		    goto done;
 		}
 
@@ -274,8 +323,7 @@ TclFindElement(
 
 		if (interp != NULL) {
 		    p2 = p;
-		    while ((p2 < limit)
-			    && (!isspace(UCHAR(*p2)))	/* INTL: ISO space */
+		    while ((p2 < limit) && (!TclIsSpaceProc(*p2))
 			    && (p2 < p+20)) {
 			p2++;
 		    }
@@ -318,7 +366,7 @@ TclFindElement(
     }
 
   done:
-    while ((p < limit) && (isspace(UCHAR(*p)))) { /* INTL: ISO space. */
+    while ((p < limit) && (TclIsSpaceProc(*p))) {
 	p++;
     }
     *elementPtr = elemStart;
@@ -416,7 +464,7 @@ Tcl_SplitList(
     const char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to list elements. */
 {
-    const char **argv, *l, *element;
+    const char **argv, *end, *element;
     char *p;
     int length, size, i, result, elSize, brace;
 
@@ -427,29 +475,8 @@ Tcl_SplitList(
      * the list.
      */
 
-    for (size = 2, l = list; *l != 0; l++) {
-	if (isspace(UCHAR(*l))) {			/* INTL: ISO space. */
-	    size++;
-
-	    /*
-	     * Consecutive space can only count as a single list delimiter.
-	     */
-
-	    while (1) {
-		char next = *(l + 1);
-
-		if (next == '\0') {
-		    break;
-		}
-		l++;
-		if (isspace(UCHAR(next))) {		/* INTL: ISO space. */
-		    continue;
-		}
-		break;
-	    }
-	}
-    }
-    length = l - list;
+    size = TclCountSpaceRuns(list, -1, &end) + 2;
+    length = end - list;
     argv = ckalloc((size * sizeof(char *)) + length + 1);
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
