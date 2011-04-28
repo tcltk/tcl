@@ -1,3 +1,7 @@
+2011-04-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Improved reaction to out of memory.
+
 2011-04-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:	TclFreeIntRep() correction & cleanup.
