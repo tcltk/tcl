@@ -131,6 +131,8 @@ typedef struct String {
 	Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
 		STRING_MAXCHARS); \
     }
+#define stringAttemptAlloc(numChars) \
+	(String *) attemptckalloc((unsigned) STRING_SIZE(numChars) )
 #define stringAlloc(numChars) \
 	(String *) ckalloc((unsigned) STRING_SIZE(numChars) )
 #define stringRealloc(ptr, numChars) \
@@ -2856,7 +2858,11 @@ DupStringInternalRep(
 	} else {
 	    copyMaxChars = srcStringPtr->maxChars;
 	}
-	copyStringPtr = stringAlloc(copyMaxChars);
+	copyStringPtr = stringAttemptAlloc(copyMaxChars);
+	if (copyStringPtr == NULL) {
+	    copyMaxChars = srcStringPtr->numChars;
+	    copyStringPtr = stringAlloc(copyMaxChars);
+	}
 	copyStringPtr->maxChars = copyMaxChars;
 	memcpy(copyStringPtr->unicode, srcStringPtr->unicode,
 		srcStringPtr->numChars * sizeof(Tcl_UniChar));
