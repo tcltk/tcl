@@ -2900,6 +2900,8 @@ MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
 MODULE_SCOPE ContLineLoc *TclContinuationsGet(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 			    Tcl_Obj *originObjPtr);
+MODULE_SCOPE int	TclCountSpaceRuns(CONST char *bytes, int numBytes,
+			    CONST char **endPtr);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 /* TIP #280 - Modified token based evulation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
@@ -2991,6 +2993,7 @@ MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsLocalScalar(const char *src, int len);
+MODULE_SCOPE int	TclIsSpaceProc(char byte);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
