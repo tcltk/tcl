@@ -806,7 +806,7 @@ TclpFinalizeCondition(condPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclpReaddir, TclpLocaltime, TclpGmtime, TclpInetNtoa --
+ * TclpReaddir, TclpInetNtoa --
  *
  *	These procedures replace core C versions to be used in a
  *	threaded environment.
