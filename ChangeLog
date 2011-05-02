@@ -18,6 +18,8 @@
 	scenario.  Simply looking for the braces where they must be is the
 	revision available to those callers, and it will backport cleanly.
 
+	* tests/parse.test:	Tests for expanded literals quoting detection.
+
 	* generic/tclCompCmds.c:	New TclFindElement() is also a better
 	fit for the [switch] compiler.
 
