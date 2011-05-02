@@ -558,7 +558,7 @@ SetDictFromAny(
 {
     char *string, *s;
     const char *elemStart, *nextElem;
-    int lenRemain, length, elemSize, hasBrace, result, isNew;
+    int lenRemain, length, elemSize, result, isNew;
     char *limit;		/* Points just after string's last byte. */
     register const char *p;
     register Tcl_Obj *keyPtr, *valuePtr;
@@ -639,8 +639,10 @@ SetDictFromAny(
     for (p = string, lenRemain = length;
 	    lenRemain > 0;
 	    p = nextElem, lenRemain = (limit - nextElem)) {
+	int literal;
+
 	result = TclFindElement(interp, p, lenRemain,
-		&elemStart, &nextElem, &elemSize, &hasBrace);
+		&elemStart, &nextElem, &elemSize, &literal);
 	if (result != TCL_OK) {
 	    goto errorExit;
 	}
@@ -654,7 +656,7 @@ SetDictFromAny(
 	 */
 
 	s = ckalloc((unsigned) elemSize + 1);
-	if (hasBrace) {
+	if (literal) {
 	    memcpy(s, elemStart, (size_t) elemSize);
 	    s[elemSize] = 0;
 	} else {
@@ -672,7 +674,7 @@ SetDictFromAny(
 	}
 
 	result = TclFindElement(interp, p, lenRemain,
-		&elemStart, &nextElem, &elemSize, &hasBrace);
+		&elemStart, &nextElem, &elemSize, &literal);
 	if (result != TCL_OK) {
 	    TclDecrRefCount(keyPtr);
 	    goto errorExit;
@@ -687,7 +689,7 @@ SetDictFromAny(
 	 */
 
 	s = ckalloc((unsigned) elemSize + 1);
-	if (hasBrace) {
+	if (literal) {
 	    memcpy((void *) s, (void *) elemStart, (size_t) elemSize);
 	    s[elemSize] = 0;
 	} else {
