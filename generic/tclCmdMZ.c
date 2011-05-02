@@ -1643,7 +1643,7 @@ StringIsCmd(
 	     */
 
 	    const char *elemStart, *nextElem;
-	    int lenRemain, elemSize, hasBrace;
+	    int lenRemain, elemSize;
 	    register const char *p;
 
 	    string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1652,7 +1652,7 @@ StringIsCmd(
 	    for (p=string1, lenRemain=length1; lenRemain > 0;
 		    p=nextElem, lenRemain=end-nextElem) {
 		if (TCL_ERROR == TclFindElement(NULL, p, lenRemain,
-			&elemStart, &nextElem, &elemSize, &hasBrace)) {
+			&elemStart, &nextElem, &elemSize, NULL)) {
 		    Tcl_Obj *tmpStr;
 
 		    /*
