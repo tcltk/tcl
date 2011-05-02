@@ -18,6 +18,8 @@
 	scenario.  Simply looking for the braces where they must be is the
 	revision available to those callers, and it will backport cleanly.
 
+	* tests/parse.test:	Tests for expanded literals quoting detection.
+
 	* generic/tclInt.h:	Replace TclCountSpaceRuns() with
 	* generic/tclListObj.c:	TclMaxListLength() which is the function we
 	* generic/tclUtil.c:	actually want.
