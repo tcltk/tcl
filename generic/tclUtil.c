@@ -88,15 +88,19 @@ const Tcl_ObjType tclEndOffsetType = {
 /*
  *----------------------------------------------------------------------
  *
- * TclCountSpaceRuns --
+ * TclMaxListLength --
  *
  *	Given 'bytes' pointing to 'numBytes' bytes, scan through them and
  *	count the number of whitespace runs that could be list element
  *	separators.  If 'numBytes' is -1, scan to the terminating '\0'.
+ *	Not a full list parser.  Typically used to get a quick and dirty
+ *	overestimate of length size in order to allocate space for an
+ *	actual list parser to operate with.
  *
  * Results:
- *	Returns the count.  If 'endPtr' is not NULL, writes a pointer to
- *	the end of the string scanned there.
+ *	Returns the largest number of list elements that could possibly
+ *	be in this string, interpreted as a Tcl list.  If 'endPtr' is not
+ *	NULL, writes a pointer to the end of the string scanned there.
  *
  * Side effects:
  *	None.
@@ -105,13 +109,22 @@ const Tcl_ObjType tclEndOffsetType = {
  */
 
 int
-TclCountSpaceRuns(
+TclMaxListLength(
     CONST char *bytes,
     int numBytes,
     CONST char **endPtr)
 {
     int count = 0;
 
+    if ((numBytes == 0) || ((numBytes == -1) && (*bytes == '\0'))) {
+	/* Empty string case - quick exit */
+	goto done;
+    }
+
+    /* No list element before leading white space */
+    count += 1 - TclIsSpaceProc(*bytes); 
+
+    /* Count white space runs as potential element separators */
     while (numBytes) {
 	if ((numBytes == -1) && (*bytes == '\0')) {
 	    break;
@@ -131,6 +144,11 @@ TclCountSpaceRuns(
 	bytes++;
 	numBytes -= (numBytes != -1);
     }
+
+    /* No list element following trailing white space */
+    count -= TclIsSpaceProc(bytes[-1]); 
+
+    done:
     if (endPtr) {
 	*endPtr = bytes;
     }
@@ -469,15 +487,18 @@ Tcl_SplitList(
     int length, size, i, result, elSize, brace;
 
     /*
-     * Figure out how much space to allocate. There must be enough space for
-     * both the array of pointers and also for a copy of the list. To estimate
-     * the number of pointers needed, count the number of space characters in
-     * the list.
+     * Allocate enough space to work in. A (CONST char *) for each
+     * (possible) list element plus one more for terminating NULL,
+     * plus as many bytes as in the original string value, plus one
+     * more for a terminating '\0'.  Space used to hold element separating
+     * white space in the original string gets re-purposed to hold '\0'
+     * characters in the argv array.
      */
 
-    size = TclCountSpaceRuns(list, -1, &end) + 2;
+    size = TclMaxListLength(list, -1, &end) + 1;
     length = end - list;
     argv = ckalloc((size * sizeof(char *)) + length + 1);
+
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
 	const char *prevList = list;

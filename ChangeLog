@@ -1,3 +1,9 @@
+2011-05-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Replace TclCountSpaceRuns() with
+	* generic/tclListObj.c:	TclMaxListLength() which is the function we
+	* generic/tclUtil.c:	actually want.
+
 2011-04-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	New utility routines:
