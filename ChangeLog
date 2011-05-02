@@ -20,9 +20,17 @@
 
 	* tests/parse.test:	Tests for expanded literals quoting detection.
 
+	* generic/tclCompCmdsSZ.c:	New TclFindElement() is also a better
+	fit for the [switch] compiler.
+
 	* generic/tclInt.h:	Replace TclCountSpaceRuns() with
 	* generic/tclListObj.c:	TclMaxListLength() which is the function we
 	* generic/tclUtil.c:	actually want.
+	* generic/tclCompCmdsSZ.c:
+
+	* generic/tclCompCmdsSZ.c: Rewrite of parts of the switch compiler to
+	better use the powers of TclFindElement() and do less parsing on
+	its own.
 
 2011-04-28  Don Porter  <dgp@users.sourceforge.net>
 
