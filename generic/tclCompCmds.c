@@ -4197,19 +4197,8 @@ TclCompileSwitchCmd(
 	bytes = tokenPtr[1].start;
 	numBytes = tokenPtr[1].size;
 
-	/* Smallest possible two-element list has 3 byte string rep */
-	if (numBytes < 3) {
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * A list can have at most one more element than the number
-	 * of runs of (potentially) element-separating white space.
-	 * And one less each if whitespace leads or trails.  
-	 */
-
-	maxLen = TclCountSpaceRuns(bytes, numBytes, NULL) + 1
-		- TclIsSpaceProc(*bytes) - TclIsSpaceProc(bytes[numBytes-1]);
+	/* Allocate enough space to work in. */
+	maxLen = TclMaxListLength(bytes, numBytes, NULL);
 	if (maxLen < 2) {
 	    return TCL_ERROR;
 	}
