@@ -4211,11 +4211,12 @@ TclCompileSwitchCmd(
 	numWords = 0;
 
 	while (numBytes > 0) {
-	    CONST char *start, *prevBytes = bytes;
-	    int size, braced;
+	    CONST char *prevBytes = bytes;
+	    int literal;
 
-	    if (TCL_OK != TclFindElement(NULL, bytes, numBytes, &start,
-		    &bytes, &size, &braced)) {
+	    if (TCL_OK != TclFindElement(NULL, bytes, numBytes,
+		    &(bodyTokenArray[numWords].start), &bytes,
+		    &(bodyTokenArray[numWords].size), &literal) || !literal) {
 	    abort:
 		ckfree((char *) bodyToken);
 		ckfree((char *) bodyTokenArray);
@@ -4225,18 +4226,8 @@ TclCompileSwitchCmd(
 	    }
 
 	    bodyTokenArray[numWords].type = TCL_TOKEN_TEXT;
-	    bodyTokenArray[numWords].start = start;
-	    bodyTokenArray[numWords].size = size;
 	    bodyTokenArray[numWords].numComponents = 0;
 	    bodyToken[numWords] = bodyTokenArray + numWords;
-
-	    if (!braced) {
-		while (size--) {
-		    if (*start++ == '\\') {
-			goto abort;
-		    }
-		}
-	    }
 
 	    /*
 	     * TIP #280: Now determine the line the list element starts on
