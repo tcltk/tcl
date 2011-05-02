@@ -4184,8 +4184,8 @@ TclCompileSwitchCmd(
 	    return TCL_ERROR;
 	}
 #else
-	CONST char *bytes, *p;
-	int maxLen, braced, numBytes;
+	CONST char *bytes;
+	int maxLen, numBytes;
 	int bline;		/* TIP #280: line of the pattern/action list,
 				 * and start of list for when tracking the
 				 * location. This list comes immediately after
@@ -4197,12 +4197,19 @@ TclCompileSwitchCmd(
 	bytes = tokenPtr[1].start;
 	numBytes = tokenPtr[1].size;
 
+	/* Smallest possible two-element list has 3 byte string rep */
+	if (numBytes < 3) {
+	    return TCL_ERROR;
+	}
+
 	/*
 	 * A list can have at most one more element than the number
-	 * of runs of element-separating white space.
+	 * of runs of (potentially) element-separating white space.
+	 * And one less each if whitespace leads or trails.  
 	 */
 
-	maxLen = TclCountSpaceRuns(bytes, numBytes, NULL) + 1;
+	maxLen = TclCountSpaceRuns(bytes, numBytes, NULL) + 1
+		- TclIsSpaceProc(*bytes) - TclIsSpaceProc(bytes[numBytes-1]);
 	if (maxLen < 2) {
 	    return TCL_ERROR;
 	}
@@ -4212,12 +4219,11 @@ TclCompileSwitchCmd(
 	bodyNext  = (int **) ckalloc(sizeof(int*) * maxLen);
 
 	bline = mapPtr->loc[eclIndex].line[valueIndex+1];
-	p = bytes;
 	numWords = 0;
 
 	while (numBytes > 0) {
 	    CONST char *start, *prevBytes = bytes;
-	    int size;
+	    int size, braced;
 
 	    if (TCL_OK != TclFindElement(NULL, bytes, numBytes, &start,
 		    &bytes, &size, &braced)) {
@@ -4227,11 +4233,6 @@ TclCompileSwitchCmd(
 		ckfree((char *) bodyLines);
 		ckfree((char *) bodyNext);
 		return TCL_ERROR;
-	    }
-	    numBytes -= (bytes - prevBytes);
-
-	    if (numWords == 0 && numBytes == 0) {
-		break;
 	    }
 
 	    bodyTokenArray[numWords].type = TCL_TOKEN_TEXT;
@@ -4254,13 +4255,15 @@ TclCompileSwitchCmd(
 	     * aborting, see above).
 	     */
 
-	    TclAdvanceLines(&bline, p, bodyTokenArray[numWords].start);
+	    TclAdvanceLines(&bline, prevBytes, bodyTokenArray[numWords].start);
 	    TclAdvanceContinuations (&bline, &clNext,
 		    bodyTokenArray[numWords].start - envPtr->source);
 	    bodyLines[numWords] = bline;
 	    bodyNext[numWords] = clNext;
-	    p = bodyTokenArray[numWords].start;
+	    TclAdvanceLines(&bline, bodyTokenArray[numWords].start, bytes);
+	    TclAdvanceContinuations (&bline, &clNext, bytes - envPtr->source);
 
+	    numBytes -= (bytes - prevBytes);
 	    numWords++;
 	}
 	if (numWords % 2) {
