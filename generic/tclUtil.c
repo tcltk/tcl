@@ -88,6 +88,76 @@ const Tcl_ObjType tclEndOffsetType = {
 /*
  *----------------------------------------------------------------------
  *
+ * TclMaxListLength --
+ *
+ *	Given 'bytes' pointing to 'numBytes' bytes, scan through them and
+ *	count the number of whitespace runs that could be list element
+ *	separators.  If 'numBytes' is -1, scan to the terminating '\0'.
+ *	Not a full list parser.  Typically used to get a quick and dirty
+ *	overestimate of length size in order to allocate space for an
+ *	actual list parser to operate with.
+ *
+ * Results:
+ *	Returns the largest number of list elements that could possibly
+ *	be in this string, interpreted as a Tcl list.  If 'endPtr' is not
+ *	NULL, writes a pointer to the end of the string scanned there.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclMaxListLength(
+    CONST char *bytes,
+    int numBytes,
+    CONST char **endPtr)
+{
+    int count = 0;
+
+    if ((numBytes == 0) || ((numBytes == -1) && (*bytes == '\0'))) {
+	/* Empty string case - quick exit */
+	goto done;
+    }
+
+    /* No list element before leading white space */
+    count += 1 - TclIsSpaceProc(*bytes); 
+
+    /* Count white space runs as potential element separators */
+    while (numBytes) {
+	if ((numBytes == -1) && (*bytes == '\0')) {
+	    break;
+	}
+	if (TclIsSpaceProc(*bytes)) {
+	    /* Space run started; bump count */
+	    count++;
+	    do {
+		bytes++;
+		numBytes -= (numBytes != -1);
+	    } while (numBytes && TclIsSpaceProc(*bytes));
+	    if (numBytes == 0) {
+		break;
+	    }
+	    /* (*bytes) is non-space; return to counting state */
+	}
+	bytes++;
+	numBytes -= (numBytes != -1);
+    }
+
+    /* No list element following trailing white space */
+    count -= TclIsSpaceProc(bytes[-1]); 
+
+    done:
+    if (endPtr) {
+	*endPtr = bytes;
+    }
+    return count;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclFindElement --
  *
  *	Given a pointer into a Tcl list, locate the first (or next) element in
@@ -110,8 +180,13 @@ const Tcl_ObjType tclEndOffsetType = {
  *	after the opening brace and *sizePtr will not include either of the
  *	braces. If there isn't an element in the list, *sizePtr will be zero,
  *	and both *elementPtr and *termPtr will point just after the last
- *	character in the list. Note: this function does NOT collapse backslash
- *	sequences.
+ *	character in the list. If literalPtr is non-NULL, *literalPtr is set
+ *	to a boolean value indicating whether the substring returned as
+ *	the values of **elementPtr and *sizePtr is the literal value of
+ *	a list element.  If not, a call to TclCopyAndCollapse() is needed
+ *	to produce the actual value of the list element.  Note: this function
+ *	does NOT collapse backslash sequences, but uses *literalPtr to tell
+ * 	callers when it is required for them to do so.
  *
  * Side effects:
  *	None.
@@ -135,8 +210,12 @@ TclFindElement(
 				 * argument (next arg or end of list). */
     int *sizePtr,		/* If non-zero, fill in with size of
 				 * element. */
-    int *bracePtr)		/* If non-zero, fill in with non-zero/zero to
-				 * indicate that arg was/wasn't in braces. */
+    int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
+				 * indicate that the substring of *sizePtr
+				 * bytes starting at **elementPtr is/is not
+				 * the literal list element and therefore
+				 * does not/does require a call to 
+				 * TclCopyAndCollapse() by the caller. */
 {
     const char *p = list;
     const char *elemStart;	/* Points to first byte of first element. */
@@ -145,6 +224,7 @@ TclFindElement(
     int inQuotes = 0;
     int size = 0;		/* lint. */
     int numChars;
+    int literal = 1;
     const char *p2;
 
     /*
@@ -154,7 +234,7 @@ TclFindElement(
      */
 
     limit = (list + listLength);
-    while ((p < limit) && (isspace(UCHAR(*p)))) { /* INTL: ISO space. */
+    while ((p < limit) && (TclIsSpaceProc(*p))) {
 	p++;
     }
     if (p == limit) {		/* no element found */
@@ -170,9 +250,6 @@ TclFindElement(
 	p++;
     }
     elemStart = p;
-    if (bracePtr != 0) {
-	*bracePtr = openBraces;
-    }
 
     /*
      * Find element's end (a space, close brace, or the end of the string).
@@ -202,8 +279,7 @@ TclFindElement(
 	    } else if (openBraces == 1) {
 		size = (p - elemStart);
 		p++;
-		if ((p >= limit)
-			|| isspace(UCHAR(*p))) {	/* INTL: ISO space. */
+		if ((p >= limit) || TclIsSpaceProc(*p)) {
 		    goto done;
 		}
 
@@ -213,8 +289,7 @@ TclFindElement(
 
 		if (interp != NULL) {
 		    p2 = p;
-		    while ((p2 < limit)
-			    && (!isspace(UCHAR(*p2)))	/* INTL: ISO space. */
+		    while ((p2 < limit) && (!TclIsSpaceProc(*p2))
 			    && (p2 < p+20)) {
 			p2++;
 		    }
@@ -234,6 +309,15 @@ TclFindElement(
 	     */
 
 	case '\\':
+	    if (openBraces == 0) {
+		/*
+		 * A backslash sequence not within a brace quoted element
+		 * means the value of the element is different from the
+		 * substring we are parsing.  A call to TclCopyAndCollapse()
+		 * is needed to produce the element value.  Inform the caller.
+		 */
+		literal = 0;
+	    }
 	    TclParseBackslash(p, limit - p, &numChars, NULL);
 	    p += (numChars - 1);
 	    break;
@@ -263,8 +347,7 @@ TclFindElement(
 	    if (inQuotes) {
 		size = (p - elemStart);
 		p++;
-		if ((p >= limit)
-			|| isspace(UCHAR(*p))) {	/* INTL: ISO space */
+		if ((p >= limit) || TclIsSpaceProc(*p)) {
 		    goto done;
 		}
 
@@ -274,8 +357,7 @@ TclFindElement(
 
 		if (interp != NULL) {
 		    p2 = p;
-		    while ((p2 < limit)
-			    && (!isspace(UCHAR(*p2)))	/* INTL: ISO space */
+		    while ((p2 < limit) && (!TclIsSpaceProc(*p2))
 			    && (p2 < p+20)) {
 			p2++;
 		    }
@@ -318,13 +400,16 @@ TclFindElement(
     }
 
   done:
-    while ((p < limit) && (isspace(UCHAR(*p)))) { /* INTL: ISO space. */
+    while ((p < limit) && (TclIsSpaceProc(*p))) {
 	p++;
     }
     *elementPtr = elemStart;
     *nextPtr = p;
     if (sizePtr != 0) {
 	*sizePtr = size;
+    }
+    if (literalPtr != 0) {
+	*literalPtr = literal;
     }
     return TCL_OK;
 }
@@ -416,47 +501,30 @@ Tcl_SplitList(
     const char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to list elements. */
 {
-    const char **argv, *l, *element;
+    const char **argv, *end, *element;
     char *p;
-    int length, size, i, result, elSize, brace;
+    int length, size, i, result, elSize;
 
     /*
-     * Figure out how much space to allocate. There must be enough space for
-     * both the array of pointers and also for a copy of the list. To estimate
-     * the number of pointers needed, count the number of space characters in
-     * the list.
+     * Allocate enough space to work in. A (CONST char *) for each
+     * (possible) list element plus one more for terminating NULL,
+     * plus as many bytes as in the original string value, plus one
+     * more for a terminating '\0'.  Space used to hold element separating
+     * white space in the original string gets re-purposed to hold '\0'
+     * characters in the argv array.
      */
 
-    for (size = 2, l = list; *l != 0; l++) {
-	if (isspace(UCHAR(*l))) {			/* INTL: ISO space. */
-	    size++;
-
-	    /*
-	     * Consecutive space can only count as a single list delimiter.
-	     */
-
-	    while (1) {
-		char next = *(l + 1);
-
-		if (next == '\0') {
-		    break;
-		}
-		l++;
-		if (isspace(UCHAR(next))) {		/* INTL: ISO space. */
-		    continue;
-		}
-		break;
-	    }
-	}
-    }
-    length = l - list;
+    size = TclMaxListLength(list, -1, &end) + 1;
+    length = end - list;
     argv = ckalloc((size * sizeof(char *)) + length + 1);
+
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
 	const char *prevList = list;
+	int literal;
 
 	result = TclFindElement(interp, list, length, &element, &list,
-		&elSize, &brace);
+		&elSize, &literal);
 	length -= (list - prevList);
 	if (result != TCL_OK) {
 	    ckfree(argv);
@@ -476,7 +544,7 @@ Tcl_SplitList(
 	    return TCL_ERROR;
 	}
 	argv[i] = p;
-	if (brace) {
+	if (literal) {
 	    memcpy(p, element, (size_t) elSize);
 	    p += elSize;
 	    *p = 0;
@@ -2703,7 +2771,7 @@ TclGetIntForIndex(
      * Leading whitespace is acceptable in an index.
      */
 
-    while (length && isspace(UCHAR(*bytes))) {		/* INTL: ISO space. */
+    while (length && TclIsSpaceProc(*bytes)) {
 	bytes++;
 	length--;
     }
@@ -2716,7 +2784,7 @@ TclGetIntForIndex(
 	if ((savedOp != '+') && (savedOp != '-')) {
 	    goto parseError;
 	}
-	if (isspace(UCHAR(opPtr[1]))) {
+	if (TclIsSpaceProc(opPtr[1])) {
 	    goto parseError;
 	}
 	*opPtr = '\0';
@@ -2863,7 +2931,7 @@ SetEndOffsetFromAny(
 	 * after "end-" to Tcl_GetInt, then reverse for offset.
 	 */
 
-	if (isspace(UCHAR(bytes[4]))) {
+	if (TclIsSpaceProc(bytes[4])) {
 	    goto badIndexFormat;
 	}
 	if (Tcl_GetInt(interp, bytes+4, &offset) != TCL_OK) {
@@ -2930,7 +2998,7 @@ TclCheckBadOctal(
      * zero. Try to generate a meaningful error message.
      */
 
-    while (isspace(UCHAR(*p))) {	/* INTL: ISO space. */
+    while (TclIsSpaceProc(*p)) {
 	p++;
     }
     if (*p == '+' || *p == '-') {
@@ -2943,7 +3011,7 @@ TclCheckBadOctal(
 	while (isdigit(UCHAR(*p))) {	/* INTL: digit. */
 	    p++;
 	}
-	while (isspace(UCHAR(*p))) {	/* INTL: ISO space. */
+	while (TclIsSpaceProc(*p)) {
 	    p++;
 	}
 	if (*p == '\0') {

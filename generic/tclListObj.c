@@ -100,7 +100,7 @@ NewListIntRep(
     if (listRepPtr == NULL) {
 	if (p) {
 	    Tcl_Panic("list creation failed: unable to alloc %u bytes",
-		    sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *)));
+		    (unsigned)(sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *))));
 	}
 	return NULL;
     }
@@ -163,7 +163,7 @@ AttemptNewList(
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "list creation failed: unable to alloc %u bytes",
-		    sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *))));
+		    (unsigned)(sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *)))));
 	}
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
@@ -358,7 +358,6 @@ Tcl_SetListObj(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->typePtr = NULL;
     Tcl_InvalidateStringRep(objPtr);
 
     /*
@@ -1647,16 +1646,14 @@ static void
 FreeListInternalRep(
     Tcl_Obj *listPtr)		/* List object with internal rep to free. */
 {
-    register List *listRepPtr = ListRepPtr(listPtr);
-    register Tcl_Obj **elemPtrs = &listRepPtr->elements;
-    register Tcl_Obj *objPtr;
-    int numElems = listRepPtr->elemCount;
-    int i;
+    List *listRepPtr = ListRepPtr(listPtr);
 
     if (--listRepPtr->refCount <= 0) {
+	Tcl_Obj **elemPtrs = &listRepPtr->elements;
+	int i, numElems = listRepPtr->elemCount;
+
 	for (i = 0;  i < numElems;  i++) {
-	    objPtr = elemPtrs[i];
-	    Tcl_DecrRefCount(objPtr);
+	    Tcl_DecrRefCount(elemPtrs[i]);
 	}
 	ckfree(listRepPtr);
     }
@@ -1720,7 +1717,7 @@ SetListFromAny(
     const char *string;
     char *s;
     const char *elemStart, *nextElem;
-    int lenRemain, length, estCount, elemSize, hasBrace, i, j, result;
+    int lenRemain, length, estCount, elemSize, i, j, result;
     const char *limit;		/* Points just after string's last byte. */
     register const char *p;
     register Tcl_Obj **elemPtrs;
@@ -1786,38 +1783,28 @@ SetListFromAny(
 
     /*
      * Parse the string into separate string objects, and create a List
-     * structure that points to the element string objects. We use a modified
-     * version of Tcl_SplitList's implementation to avoid one malloc and a
-     * string copy for each list element. First, estimate the number of
-     * elements by counting the number of space characters in the list.
+     * structure that points to the element string objects. 
+     *
+     * First, allocate enough space to hold a (Tcl_Obj *) for each
+     * (possible) list element.
      */
 
-    limit = string + length;
-    estCount = 1;
-    for (p = string;  p < limit;  p++) {
-	if (isspace(UCHAR(*p))) { /* INTL: ISO space. */
-	    estCount++;
-	}
-    }
-
-    /*
-     * Allocate a new List structure with enough room for "estCount" elements.
-     * Each element is a pointer to a Tcl_Obj with the appropriate string rep.
-     * The initial "estCount" elements are set using the corresponding "argv"
-     * strings.
-     */
-
+    estCount = TclMaxListLength(string, length, &limit);
+    estCount += (estCount == 0); /* Smallest List struct holds 1 element. */
     listRepPtr = AttemptNewList(interp, estCount, NULL);
     if (listRepPtr == NULL) {
 	return TCL_ERROR;
     }
     elemPtrs = &listRepPtr->elements;
 
+    /* Each iteration, parse and store a list element */
     for (p=string, lenRemain=length, i=0;
 	    lenRemain > 0;
 	    p=nextElem, lenRemain=limit-nextElem, i++) {
+	int literal;
+
 	result = TclFindElement(interp, p, lenRemain, &elemStart, &nextElem,
-		&elemSize, &hasBrace);
+		&elemSize, &literal);
 	if (result != TCL_OK) {
 	    for (j = 0;  j < i;  j++) {
 		elemPtr = elemPtrs[j];
@@ -1842,7 +1829,7 @@ SetListFromAny(
 	 */
 
 	s = ckalloc(elemSize + 1);
-	if (hasBrace) {
+	if (literal) {
 	    memcpy(s, elemStart, (size_t) elemSize);
 	    s[elemSize] = 0;
 	} else {

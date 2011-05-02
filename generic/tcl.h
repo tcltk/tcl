@@ -380,7 +380,7 @@ typedef struct stati64 Tcl_StatBuf;
 #         define TCL_LL_MODIFIER	"L"
 #      else /* __BORLANDC__ */
 #         if defined(_WIN64)
-typedef struct _stat64 Tcl_StatBuf;
+typedef struct __stat64 Tcl_StatBuf;
 #         elif (defined(_MSC_VER) && (_MSC_VER < 1400))
 typedef struct _stati64	Tcl_StatBuf;
 #         else
@@ -391,8 +391,12 @@ typedef struct _stat32i64 Tcl_StatBuf;
 #   elif defined(__GNUC__)
 #      define TCL_WIDE_INT_TYPE long long
 #      define TCL_LL_MODIFIER	"ll"
+#      if defined(__WIN32__)
+typedef struct _stat32i64 Tcl_StatBuf;
+#      else
 typedef struct stat	Tcl_StatBuf;
-#   else /* __WIN32__ */
+#      endif
+#   else /* ! __WIN32__ && ! __GNUC__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...

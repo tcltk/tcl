@@ -83,6 +83,9 @@
 
 #ifdef __CYGWIN__
 #   include <unistd.h>
+#   ifndef _vsnprintf
+#	define _vsnprintf vsnprintf
+#   endif
 #   ifndef _wcsicmp
 #	define _wcsicmp wcscasecmp
 #   endif
