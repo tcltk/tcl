@@ -181,8 +181,13 @@ TclMaxListLength(
  *	after the opening brace and *sizePtr will not include either of the
  *	braces. If there isn't an element in the list, *sizePtr will be zero,
  *	and both *elementPtr and *termPtr will point just after the last
- *	character in the list. Note: this function does NOT collapse backslash
- *	sequences.
+ *	character in the list. If literalPtr is non-NULL, *literalPtr is set
+ *	to a boolean value indicating whether the substring returned as
+ *	the values of **elementPtr and *sizePtr is the literal value of
+ *	a list element.  If not, a call to TclCopyAndCollapse() is needed
+ *	to produce the actual value of the list element.  Note: this function
+ *	does NOT collapse backslash sequences, but uses *literalPtr to tell
+ * 	callers when it is required for them to do so.
  *
  * Side effects:
  *	None.
@@ -206,8 +211,12 @@ TclFindElement(
 				 * argument (next arg or end of list). */
     int *sizePtr,		/* If non-zero, fill in with size of
 				 * element. */
-    int *bracePtr)		/* If non-zero, fill in with non-zero/zero to
-				 * indicate that arg was/wasn't in braces. */
+    int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
+				 * indicate that the substring of *sizePtr
+				 * bytes starting at **elementPtr is/is not
+				 * the literal list element and therefore
+				 * does not/does require a call to 
+				 * TclCopyAndCollapse() by the caller. */
 {
     CONST char *p = list;
     CONST char *elemStart;	/* Points to first byte of first element. */
@@ -216,6 +225,7 @@ TclFindElement(
     int inQuotes = 0;
     int size = 0;		/* lint. */
     int numChars;
+    int literal = 1;
     CONST char *p2;
 
     /*
@@ -241,9 +251,6 @@ TclFindElement(
 	p++;
     }
     elemStart = p;
-    if (bracePtr != 0) {
-	*bracePtr = openBraces;
-    }
 
     /*
      * Find element's end (a space, close brace, or the end of the string).
@@ -301,6 +308,15 @@ TclFindElement(
 	     */
 
 	case '\\':
+	    if (openBraces == 0) {
+		/*
+		 * A backslash sequence not within a brace quoted element
+		 * means the value of the element is different from the
+		 * substring we are parsing.  A call to TclCopyAndCollapse()
+		 * is needed to produce the element value.  Inform the caller.
+		 */
+		literal = 0;
+	    }
 	    TclParseBackslash(p, limit - p, &numChars, NULL);
 	    p += (numChars - 1);
 	    break;
@@ -384,6 +400,9 @@ TclFindElement(
     *nextPtr = p;
     if (sizePtr != 0) {
 	*sizePtr = size;
+    }
+    if (literalPtr != 0) {
+	*literalPtr = literal;
     }
     return TCL_OK;
 }
@@ -477,7 +496,7 @@ Tcl_SplitList(
 {
     CONST char **argv, *end, *element;
     char *p;
-    int length, size, i, result, elSize, brace;
+    int length, size, i, result, elSize;
 
     /*
      * Allocate enough space to work in. A (CONST char *) for each
@@ -496,9 +515,10 @@ Tcl_SplitList(
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
 	CONST char *prevList = list;
+	int literal;
 
 	result = TclFindElement(interp, list, length, &element, &list,
-		&elSize, &brace);
+		&elSize, &literal);
 	length -= (list - prevList);
 	if (result != TCL_OK) {
 	    ckfree((char *) argv);
@@ -516,7 +536,7 @@ Tcl_SplitList(
 	    return TCL_ERROR;
 	}
 	argv[i] = p;
-	if (brace) {
+	if (literal) {
 	    memcpy(p, element, (size_t) elSize);
 	    p += elSize;
 	    *p = 0;
