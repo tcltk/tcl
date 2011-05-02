@@ -433,7 +433,7 @@ Tcl_ParseCommand(
 	    }
 
 	    if (isLiteral) {
-		int elemCount = 0, code = TCL_OK, nakedbs = 0;
+		int elemCount = 0, code = TCL_OK, literal = 1;
 		const char *nextElem, *listEnd, *elemStart;
 
 		/*
@@ -455,33 +455,24 @@ Tcl_ParseCommand(
 		 */
 
 		while (nextElem < listEnd) {
-		    int size, brace;
+		    int size;
 
 		    code = TclFindElement(NULL, nextElem, listEnd - nextElem,
-			    &elemStart, &nextElem, &size, &brace);
-		    if (code != TCL_OK) {
+			    &elemStart, &nextElem, &size, &literal);
+		    if ((code != TCL_OK) || !literal) {
 			break;
-		    }
-		    if (!brace) {
-			const char *s;
-
-			for(s=elemStart;size>0;s++,size--) {
-			    if ((*s)=='\\') {
-				nakedbs=1;
-				break;
-			    }
-			}
 		    }
 		    if (elemStart < listEnd) {
 			elemCount++;
 		    }
 		}
 
-		if ((code != TCL_OK) || nakedbs) {
+		if ((code != TCL_OK) || !literal) {
 		    /*
-		     * Some  list element  could not  be parsed,  or contained
-		     * naked  backslashes. This means  the literal  string was
-		     * not  in fact  a  valid nor  canonical  list. Defer  the
+		     * Some list element could not be parsed, or is not
+		     * present as a literal substring of the script.  The
+		     * compiler cannot handle list elements that get generated
+		     * by a call to TclCopyAndCollapse(). Defer  the
 		     * handling of  this to  compile/eval time, where  code is
 		     * already  in place to  report the  "attempt to  expand a
 		     * non-list" error or expand lists that require
@@ -525,7 +516,7 @@ Tcl_ParseCommand(
 
 		    nextElem = tokenPtr[1].start;
 		    while (nextElem < listEnd) {
-			int quoted, brace;
+			int quoted;
 	
 			tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
 			tokenPtr->numComponents = 1;
@@ -535,9 +526,10 @@ Tcl_ParseCommand(
 			tokenPtr->numComponents = 0;
 			TclFindElement(NULL, nextElem, listEnd - nextElem,
 				&(tokenPtr->start), &nextElem,
-				&(tokenPtr->size), &brace);
+				&(tokenPtr->size), NULL);
 
-			quoted = brace || tokenPtr->start[-1] == '"';
+			quoted = tokenPtr->start[-1] == '{'
+				|| tokenPtr->start[-1] == '"';
 			tokenPtr[-1].start = tokenPtr->start - quoted;
 			tokenPtr[-1].size = tokenPtr->start + tokenPtr->size
 				- tokenPtr[-1].start + quoted;
