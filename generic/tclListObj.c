@@ -1717,7 +1717,7 @@ SetListFromAny(
     const char *string;
     char *s;
     const char *elemStart, *nextElem;
-    int lenRemain, length, estCount, elemSize, hasBrace, i, j, result;
+    int lenRemain, length, estCount, elemSize, i, j, result;
     const char *limit;		/* Points just after string's last byte. */
     register const char *p;
     register Tcl_Obj **elemPtrs;
@@ -1801,8 +1801,10 @@ SetListFromAny(
     for (p=string, lenRemain=length, i=0;
 	    lenRemain > 0;
 	    p=nextElem, lenRemain=limit-nextElem, i++) {
+	int literal;
+
 	result = TclFindElement(interp, p, lenRemain, &elemStart, &nextElem,
-		&elemSize, &hasBrace);
+		&elemSize, &literal);
 	if (result != TCL_OK) {
 	    for (j = 0;  j < i;  j++) {
 		elemPtr = elemPtrs[j];
@@ -1827,7 +1829,7 @@ SetListFromAny(
 	 */
 
 	s = ckalloc(elemSize + 1);
-	if (hasBrace) {
+	if (literal) {
 	    memcpy(s, elemStart, (size_t) elemSize);
 	    s[elemSize] = 0;
 	} else {
