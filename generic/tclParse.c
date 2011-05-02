@@ -496,6 +496,7 @@ Tcl_ParseCommand(
 		     * tokens representing the expanded list.
 		     */
 
+		    CONST char *listStart;
 		    int growthNeeded = wordIndex + 2*elemCount
 			    - parsePtr->numTokens;
 		    parsePtr->numWords += elemCount - 1;
@@ -514,7 +515,7 @@ Tcl_ParseCommand(
 		     * word value.
 		     */
 
-		    nextElem = tokenPtr[1].start;
+		    listStart = nextElem = tokenPtr[1].start;
 		    while (nextElem < listEnd) {
 			int quoted;
 	
@@ -528,8 +529,9 @@ Tcl_ParseCommand(
 				&(tokenPtr->start), &nextElem,
 				&(tokenPtr->size), NULL);
 
-			quoted = tokenPtr->start[-1] == '{'
-				|| tokenPtr->start[-1] == '"';
+			quoted = (tokenPtr->start[-1] == '{'
+				|| tokenPtr->start[-1] == '"')
+				&& tokenPtr->start > listStart;
 			tokenPtr[-1].start = tokenPtr->start - quoted;
 			tokenPtr[-1].size = tokenPtr->start + tokenPtr->size
 				- tokenPtr[-1].start + quoted;
