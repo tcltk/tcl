@@ -1759,27 +1759,21 @@ SetListFromAny(
 
     /*
      * Parse the string into separate string objects, and create a List
-     * structure that points to the element string objects. We use a modified
-     * version of Tcl_SplitList's implementation to avoid one malloc and a
-     * string copy for each list element. First, estimate the number of
-     * elements by counting the number of space characters in the list.
+     * structure that points to the element string objects. 
+     *
+     * First, allocate enough space to hold a (Tcl_Obj *) for each
+     * (possible) list element.
      */
 
-    estCount = TclCountSpaceRuns(string, length, &limit) + 1;
-
-    /*
-     * Allocate a new List structure with enough room for "estCount" elements.
-     * Each element is a pointer to a Tcl_Obj with the appropriate string rep.
-     * The initial "estCount" elements are set using the corresponding "argv"
-     * strings.
-     */
-
+    estCount = TclMaxListLength(string, length, &limit);
+    estCount += (estCount == 0); /* Smallest List struct holds 1 element. */
     listRepPtr = AttemptNewList(interp, estCount, NULL);
     if (listRepPtr == NULL) {
 	return TCL_ERROR;
     }
     elemPtrs = &listRepPtr->elements;
 
+    /* Each iteration, parse and store a list element */
     for (p=string, lenRemain=length, i=0;
 	    lenRemain > 0;
 	    p=nextElem, lenRemain=limit-nextElem, i++) {
