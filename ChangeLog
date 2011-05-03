@@ -1,3 +1,11 @@
+2011-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	Tighten Tcl_SplitList().
+	* generic/tclListObj.c:	Tighten SetListFromAny().
+	* generic/tclDictObj.c:	Tighten SetDictFromAny().
+	* tests/join.test:
+	* tests/mathop.test:
+
 2011-05-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:	Revised TclFindElement() interface.  The

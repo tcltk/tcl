@@ -179,7 +179,7 @@ TclMaxListLength(
  *	the element is in braces, then *elementPtr will point to the character
  *	after the opening brace and *sizePtr will not include either of the
  *	braces. If there isn't an element in the list, *sizePtr will be zero,
- *	and both *elementPtr and *termPtr will point just after the last
+ *	and both *elementPtr and *nextPtr will point just after the last
  *	character in the list. If literalPtr is non-NULL, *literalPtr is set
  *	to a boolean value indicating whether the substring returned as
  *	the values of **elementPtr and *sizePtr is the literal value of
@@ -550,8 +550,7 @@ Tcl_SplitList(
 	    *p = 0;
 	    p++;
 	} else {
-	    TclCopyAndCollapse(elSize, element, p);
-	    p += elSize+1;
+	    p += 1 + TclCopyAndCollapse(elSize, element, p);
 	}
     }
 
