@@ -1,3 +1,7 @@
+2011-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclDictObj.c:	Tighten SetDictFromAny().
+
 2011-05-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:	Revised TclFindElement() interface.  The
