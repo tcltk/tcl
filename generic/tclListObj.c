@@ -1691,14 +1691,8 @@ SetListFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
-    char *string, *s;
-    const char *elemStart, *nextElem;
-    int lenRemain, length, estCount, elemSize, i, j, result;
-    const char *limit;		/* Points just after string's last byte. */
-    register const char *p;
-    register Tcl_Obj **elemPtrs;
-    register Tcl_Obj *elemPtr;
     List *listRepPtr;
+    Tcl_Obj **elemPtrs;
 
     /*
      * Dictionaries are a special case; they have a string representation such
@@ -1735,88 +1729,62 @@ SetListFromAny(
 
 	elemPtrs = &listRepPtr->elements;
 	Tcl_DictObjFirst(NULL, objPtr, &search, &keyPtr, &valuePtr, &done);
-	i = 0;
 	while (!done) {
-	    elemPtrs[i++] = keyPtr;
-	    elemPtrs[i++] = valuePtr;
+	    *elemPtrs++ = keyPtr;
+	    *elemPtrs++ = valuePtr;
 	    Tcl_IncrRefCount(keyPtr);
 	    Tcl_IncrRefCount(valuePtr);
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
+    } else {
+	int estCount, length;
+	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
 
 	/*
-	 * Swap the representations.
+	 * Allocate enough space to hold a (Tcl_Obj *) for each
+	 * (possible) list element.
 	 */
 
-	goto commitRepresentation;
-    }
+	estCount = TclMaxListLength(nextElem, length, &limit);
+	estCount += (estCount == 0); /* Smallest List struct holds 1 element. */
+	listRepPtr = AttemptNewList(interp, estCount, NULL);
+	if (listRepPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	elemPtrs = &listRepPtr->elements;
 
-    /*
-     * Get the string representation. Make it up-to-date if necessary.
-     */
+	/* Each iteration, parse and store a list element */
+	while (nextElem < limit) {
+	    const char *elemStart;
+	    int elemSize, literal;
 
-    string = TclGetStringFromObj(objPtr, &length);
-
-    /*
-     * Parse the string into separate string objects, and create a List
-     * structure that points to the element string objects. 
-     *
-     * First, allocate enough space to hold a (Tcl_Obj *) for each
-     * (possible) list element.
-     */
-
-    estCount = TclMaxListLength(string, length, &limit);
-    estCount += (estCount == 0); /* Smallest List struct holds 1 element. */
-    listRepPtr = AttemptNewList(interp, estCount, NULL);
-    if (listRepPtr == NULL) {
-	return TCL_ERROR;
-    }
-    elemPtrs = &listRepPtr->elements;
-
-    /* Each iteration, parse and store a list element */
-    for (p=string, lenRemain=length, i=0;
-	    lenRemain > 0;
-	    p=nextElem, lenRemain=limit-nextElem, i++) {
-	int literal;
-
-	result = TclFindElement(interp, p, lenRemain, &elemStart, &nextElem,
-		&elemSize, &literal);
-	if (result != TCL_OK) {
-	    for (j = 0;  j < i;  j++) {
-		elemPtr = elemPtrs[j];
-		Tcl_DecrRefCount(elemPtr);
+	    if (TCL_OK != TclFindElement(interp, nextElem, (limit - nextElem),
+		    &elemStart, &nextElem, &elemSize, &literal)) {
+		while (--elemPtrs >= &listRepPtr->elements) {
+		    Tcl_DecrRefCount(*elemPtrs);
+		}
+		ckfree((char *) listRepPtr);
+		return TCL_ERROR;
 	    }
-	    ckfree((char *) listRepPtr);
-	    return result;
-	}
-	if (elemStart >= limit) {
-	    break;
-	}
-	if (i > estCount) {
-	    Tcl_Panic("SetListFromAny: bad size estimate for list");
+	    if (elemStart == limit) {
+		break;
+	    }
+
+	    /* TODO: replace panic with error on alloc failure? */
+	    if (literal) {
+		TclNewStringObj(*elemPtrs, elemStart, elemSize);
+	    } else {
+		TclNewObj(*elemPtrs);
+		(*elemPtrs)->bytes = ckalloc((unsigned) elemSize + 1);
+		(*elemPtrs)->length = TclCopyAndCollapse(elemSize, elemStart,
+			(*elemPtrs)->bytes);
+	    }
+
+	    Tcl_IncrRefCount(*elemPtrs++);/* Since list now holds ref to it. */
 	}
 
-	/*
-	 * Allocate a Tcl object for the element and initialize it from the
-	 * "elemSize" bytes starting at "elemStart".
-	 */
-
-	s = ckalloc((unsigned) elemSize + 1);
-	if (literal) {
-	    memcpy(s, elemStart, (size_t) elemSize);
-	    s[elemSize] = 0;
-	} else {
-	    elemSize = TclCopyAndCollapse(elemSize, elemStart, s);
-	}
-
-	TclNewObj(elemPtr);
-	elemPtr->bytes = s;
-	elemPtr->length = elemSize;
-	elemPtrs[i] = elemPtr;
-	Tcl_IncrRefCount(elemPtr);	/* Since list now holds ref to it. */
+ 	listRepPtr->elemCount = elemPtrs - &listRepPtr->elements;
     }
-
-    listRepPtr->elemCount = i;
 
     /*
      * Free the old internalRep before setting the new one. We do this as late
@@ -1824,7 +1792,6 @@ SetListFromAny(
      * Tcl_GetStringFromObj, to use that old internalRep.
      */
 
-  commitRepresentation:
     TclFreeIntRep(objPtr);
     ListSetIntRep(objPtr, listRepPtr);
     return TCL_OK;
