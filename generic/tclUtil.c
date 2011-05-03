@@ -542,8 +542,7 @@ Tcl_SplitList(
 	    *p = 0;
 	    p++;
 	} else {
-	    TclCopyAndCollapse(elSize, element, p);
-	    p += elSize+1;
+	    p += 1 + TclCopyAndCollapse(elSize, element, p);
 	}
     }
 
