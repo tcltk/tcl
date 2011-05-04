@@ -1,0 +1,3 @@
+printf "I'm a.natcl"
+source c.natcl
+

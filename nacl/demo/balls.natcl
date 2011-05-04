@@ -1,0 +1,228 @@
+source canv.natcl
+#set ::canv_verbose 1
+domset statusField "Running..."
+
+# will be retrieved by [domget]
+set width 578
+set height 200
+
+# animation globals
+set t 0
+set frameInterval 25
+
+# ball globals
+set ballRadius 10
+
+# physics global
+set collisionDamper 0.3
+set floorFriction [expr {0.0005*$frameInterval}]
+set mouseForceMultiplier [expr {1.0*$frameInterval}]
+set restoreForce  [expr {0.002*$frameInterval}]
+
+set mouseX 99999
+set mouseY 99999
+
+set balls {}
+
+set blue   "#3A5BCD"
+set red    "#EF2B36"
+set yellow "#FFC636"
+set green  "#02A817"
+
+proc newball {x y vx vy col} {
+    set id [canv_create circle $x $y $::ballRadius -fill $col -outline ""]
+    set ::b($id) [list $x $y $vx $vy $x $y]
+    lappend ::balls $id
+}
+
+# G
+newball 173 63 0 0 $blue
+newball 158 53 0 0 $blue
+newball 143 52 0 0 $blue
+newball 130 53 0 0 $blue
+newball 117 58 0 0 $blue
+newball 110 70 0 0 $blue
+newball 102 82 0 0 $blue
+newball 104 96 0 0 $blue
+newball 105 107 0 0 $blue
+newball 110 120 0 0 $blue
+newball 124 130 0 0 $blue
+newball 139 136 0 0 $blue
+newball 152 136 0 0 $blue
+newball 166 136 0 0 $blue
+newball 174 127 0 0 $blue
+newball 179 110 0 0 $blue
+newball 166 109 0 0 $blue
+newball 156 110 0 0 $blue
+
+# O
+newball 210 81 0 0 $red
+newball 197 91 0 0 $red
+newball 196 103 0 0 $red
+newball 200 116 0 0 $red
+newball 209 127 0 0 $red
+newball 223 130 0 0 $red
+newball 237 127 0 0 $red
+newball 244 114 0 0 $red
+newball 242 98 0 0 $red
+newball 237 86 0 0 $red
+newball 225 81 0 0 $red
+
+# O
+set oOffset 67
+newball [expr {$oOffset + 210}] 81 0 0 $yellow
+newball [expr {$oOffset + 197}] 91 0 0 $yellow
+newball [expr {$oOffset + 196}] 103 0 0 $yellow
+newball [expr {$oOffset + 200}] 116 0 0 $yellow
+newball [expr {$oOffset + 209}] 127 0 0 $yellow
+newball [expr {$oOffset + 223}] 130 0 0 $yellow
+newball [expr {$oOffset + 237}] 127 0 0 $yellow
+newball [expr {$oOffset + 244}] 114 0 0 $yellow
+newball [expr {$oOffset + 242}] 98 0 0 $yellow
+newball [expr {$oOffset + 237}] 86 0 0 $yellow
+newball [expr {$oOffset + 225}] 81 0 0 $yellow
+
+# G
+newball 370 80 0 0 $blue
+newball 358 79 0 0 $blue
+newball 346 79 0 0 $blue
+newball 335 84 0 0 $blue
+newball 330 98 0 0 $blue
+newball 334 111 0 0 $blue
+newball 348 116 0 0 $blue
+newball 362 109 0 0 $blue
+newball 362 94 0 0 $blue
+newball 355 128 0 0 $blue
+newball 340 135 0 0 $blue
+newball 327 142 0 0 $blue
+newball 325 155 0 0 $blue
+newball 339 165 0 0 $blue
+newball 352 166 0 0 $blue
+newball 367 161 0 0 $blue
+newball 371 149 0 0 $blue
+newball 366 137 0 0 $blue
+
+# L
+newball 394 49 0 0 $green
+newball 381 50 0 0 $green
+newball 391 61 0 0 $green
+newball 390 73 0 0 $green
+newball 392 89 0 0 $green
+newball 390 105 0 0 $green
+newball 390 118 0 0 $green
+newball 388 128 0 0 $green
+newball 400 128 0 0 $green
+
+# E
+newball 426 101 0 0 $red
+newball 436 98 0 0 $red
+newball 451 95 0 0 $red
+newball 449 83 0 0 $red
+newball 443 78 0 0 $red
+newball 430 77 0 0 $red
+newball 418 82 0 0 $red
+newball 414 93 0 0 $red
+newball 412 108 0 0 $red
+newball 420 120 0 0 $red
+newball 430 127 0 0 $red
+newball 442 130 0 0 $red
+newball 450 125 0 0 $red
+
+set oldcnt 0
+proc computeFps {} {
+     set fps [expr $::cnt-$::oldcnt]
+     set ::oldcnt $::cnt
+     domset statusField "Running - $fps fps"
+}
+
+set cnt 0
+proc updateStage {} {
+    incr ::cnt
+    foreach id $::balls {
+	foreach {x y vx vy rx ry} $::b($id) break
+	# set ball position based on velocity
+	set x [expr {$x+$vx}]
+	set y [expr {$y+$vy}]
+	# restore forces
+	if {$x>$rx} {
+	    set vx [expr {$vx-$::restoreForce}]
+	} else {
+	    set vx [expr {$vx+$::restoreForce}]
+	}
+	if {$y>$ry} {
+	    set vy [expr {$vy-$::restoreForce}]
+	} else {
+	    set vy [expr {$vy+$::restoreForce}]
+	}
+	# mouse forces
+	set distX [expr {$x-$::mouseX}]
+	set distY [expr {$y-$::mouseY}]
+	set radius [expr {hypot($distX,$distY)}]
+	set totalDist [expr {abs($distX)+abs($distY)}]
+	set forceX [expr {(abs($distX)/double($totalDist))*(1.0/$radius)*$::mouseForceMultiplier}]
+	set forceY [expr {(abs($distY)/double($totalDist))*(1.0/$radius)*$::mouseForceMultiplier}]
+	if {$distX>0} { # mouse is left of ball
+	    set vx [expr {$vx+$forceX}]
+	} else {
+	    set vx [expr {$vx-$forceX}]
+	}
+	if {$distY>0} { # mouse is on top of ball
+	    set vy [expr {$vy+$forceY}]
+	} else {
+	    set vy [expr {$vy-$forceY}]
+	}
+	# floor friction
+	if {$vx>0} {
+	    set vx [expr {$vx-$::floorFriction}]
+	} elseif {$vx<0} {
+	    set vx [expr {$vx+$::floorFriction}]
+	}
+	if {$vy>0} {
+	    set vy [expr {$vy-$::floorFriction}]
+	} elseif {$vy<0} {
+	    set vy [expr {$vy+$::floorFriction}]
+	}
+	# floor condition
+	if {$y>($::height-$::ballRadius)} {
+	    set y [expr {$::height-$::ballRadius-2}]
+	    set vy [expr {-$vy*(1.0-$::collisionDamper)}]
+	}
+	# ceiling condition
+	if {$y<$::ballRadius} {
+	    set y [expr {$::ballRadius+2}]
+	    set vy [expr {-$vy*(1.0-$::collisionDamper)}]
+	}
+	# right wall condition
+	if {$x>($::width-$::ballRadius)} {
+	    set x [expr {$::width-$::ballRadius-2}]
+	    set vx [expr {-$vx*(1.0-$::collisionDamper)}]
+	}
+	# left wall condition
+	if {$x<$::ballRadius} {
+	    set x [expr {$::ballRadius+2}]
+	    set vx [expr {-$vx*(1.0-$::collisionDamper)}]
+	}
+	set ::b($id) [list $x $y $vx $vy $rx $ry]
+	canv_moveto $id [expr {int($x+0.5)}] [expr {int($y+0.5)}]
+    }
+}
+
+proc motioncb {x y} {
+    set ::mouseX $x
+    set ::mouseY $y
+}
+proc entercb {} {
+    printf "Enter Canvas !!!"
+}
+proc leavecb {} {
+    printf "Leave Canvas !!!"
+    set ::mouseX 99999
+    set ::mouseY 99999
+}
+
+canv_bind <Motion> motioncb
+canv_bind <Enter> entercb
+canv_bind <Leave> leavecb
+
+every $frameInterval updateStage
+every 1000 computeFps
