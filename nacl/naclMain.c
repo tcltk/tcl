@@ -17,6 +17,7 @@
 
 static Tcl_Interp *interp = NULL;
 static int pid = 0;
+static int verbose = 0;
 
 const char *init_tcl_contents =
 "set ::tcl_library {/}\n"
@@ -66,8 +67,10 @@ static Tcl_Interp *NewTcl(void)
     return NULL;
   }
   Tcl_CreateObjCommand(ii,"printf",PrintfObjCmd,NULL,NULL);
+  Tcl_LinkVar(ii, "::nacl::verbose", (char *)&verbose, TCL_LINK_INT);
   return ii;
 }
+
 static const char *EvalTcl(char *s)
 {
   if (!interp) return "No Tcl Interp!!!";
@@ -164,6 +167,29 @@ static PP_Bool Instance_DidCreate(PP_Instance instance,
                                   uint32_t argc,
                                   const char* argn[],
                                   const char* argv[]) {
+    printf("NaTcl(%d): DBUG: Instance_DidCreate %x\n", getpid(), (unsigned int)instance);
+  int i;
+  Tcl_Obj *args[1+argc+argc];
+
+  args[0] = Tcl_NewStringObj("::nacl::start",-1);
+  Tcl_IncrRefCount(args[0]);
+
+  for (i = 0; i < argc; i++) {
+      printf("NaTcl(%d): DBUG: Instance_DidCreate arg %s=%s\n", getpid(), argn[i], argv[i]);
+
+      args[(2*i)+1] = Tcl_NewStringObj(argn[i], -1);
+      Tcl_IncrRefCount(args[(2*i)+1]);
+
+      args[(2*i)+2] = Tcl_NewStringObj(argv[i], -1);
+      Tcl_IncrRefCount(args[(2*i)+2]);
+  }
+
+  Tcl_EvalObjv(interp, argc*2+1, args, 0);
+  for (i = 0; i < (2*argc)+1; i++) {
+      Tcl_DecrRefCount(args[i]);
+  }
+  printf("NaTcl(%d): Instance_DidCreate result: %s\n", pid, Tcl_GetStringResult(interp));
+
   return PP_TRUE;
 }
 
@@ -247,6 +273,7 @@ static PP_Bool Instance_HandleInputEvent(PP_Instance instance,
  * @return A scriptable object.
  */
 static struct PP_Var Instance_GetInstanceObject(PP_Instance instance) {
+    printf("NaTcl(%d): DBUG: NaTcl GetInstanceObject %x\n",getpid(), (unsigned int)instance);
   if (var_interface) {
     return var_interface->CreateObject(instance, &ppp_class, NULL);
   }
@@ -266,8 +293,10 @@ static bool Tcl_HasMethod(void* object,
                                  struct PP_Var* exception) {
   const char* method_name = VarToCStr(name);
   if (NULL != method_name) {
-    if (strcmp(method_name, "eval") == 0)
-      return true;
+      if (strcmp(method_name, "eval") == 0)
+          return true;
+      else if (strcmp(method_name, "evall") == 0)
+          return true;
   }
   return false;
 }
@@ -295,17 +324,53 @@ static struct PP_Var Tcl_Call(void* object,
           v = StrToVar("Arg from Javascript is not a string!");
         } else {
           char* str = strdup(VarToCStr(argv[0]));
+          if (verbose) {
+              printf("NaTcl(%d): EVAL of: %s\n",pid, str);
+          }
 	  const char* res = EvalTcl(str);
+          if (verbose) {
+              printf("NaTcl(%d): EVAL result: %s\n",pid, Tcl_GetStringResult(interp));
+          }
           v = StrToVar(res);
           free(str);
         }
       } else {
         v = StrToVar("Unexpected number of args");
       }
+    } else if (strcmp(method_name, "evall") == 0) {
+        Tcl_Obj *args[argc+1];
+        uint32_t len = 0;
+        int i;
+
+        args[0] = Tcl_NewStringObj("::nacl::evall",-1);
+        Tcl_IncrRefCount(args[0]);
+
+        for (i = 0; i < argc; i++) {
+            if (argv[i].type != PP_VARTYPE_STRING) {
+                v = StrToVar("Arg from Javascript is not a string!");
+            } else {
+                const char *bytes = var_interface->VarToUtf8(argv[i], &len);
+                args[i+1] = Tcl_NewStringObj(bytes, len);
+                Tcl_IncrRefCount(args[i+1]);
+                if (verbose) {
+                    printf("NaTcl(%d): EVALL arg: '%s'\n",pid, bytes);
+                }
+            }
+        }
+        Tcl_EvalObjv(interp, argc+1, args, 0);
+        if (verbose) {
+            printf("NaTcl(%d): EVALL result: '%s'\n",pid, Tcl_GetStringResult(interp));
+        }
+
+        for (i = 0; i < argc+1; i++) {
+            Tcl_DecrRefCount(args[i]);
+        }
+        v = StrToVar(Tcl_GetStringResult(interp));
     } else {
-      v = StrToVar("Unknown method");
+        v = StrToVar("Unknown method");
     }
   }
+
   return v;
 }
 
@@ -323,7 +388,7 @@ PP_EXPORT int32_t PPP_InitializeModule(PP_Module a_module_id,
   var_interface =
       (struct PPB_Var_Deprecated*)(get_browser(PPB_VAR_DEPRECATED_INTERFACE));
 
-  printf("NaTcl(%d): DBUG: NaTcl starting\n",pid);
+  printf("NaTcl(%d): DBUG: PPP_InitializeModule\n",pid);
   interp = NewTcl();
   if (!interp) return PP_ERROR_FAILED;
 
@@ -340,6 +405,7 @@ PP_EXPORT int32_t PPP_InitializeModule(PP_Module a_module_id,
  * @return pointer to the interface
  */
 PP_EXPORT const void* PPP_GetInterface(const char* interface_name) {
+    printf("NaTcl(%d): DBUG: PPP_GetInterface '%s'\n", getpid(), (char *)interface_name);
   if (strcmp(interface_name, PPP_INSTANCE_INTERFACE) == 0)
     return &instance_interface;
   return NULL;

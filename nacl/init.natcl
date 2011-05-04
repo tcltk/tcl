@@ -1,51 +1,119 @@
 #------ Standard NaTcl preamble
 
+namespace eval ::nacl {
+    variable verbose 0
 
-# core JS/Tcl interaction
-proc jsquote s {
-    regsub -all {[''\\]} $s {\\&} s
-    regsub -all \n $s {'+"\\n"+'} s
-    return '${s}'
-}
-
-proc bgerror s {
-    printf "### BGERROR: $s\n# [info errorstack]"
-    set ::JS "alert([jsquote "BGERROR: $s"]);"
-}
-
-set ::naclhooks {}
-
-proc naclwrap s {
-    set ::JS ""
-    if {[catch {
-	uplevel 1 $s
-	foreach x $::naclhooks {uplevel #0 $x}
-    } err]} {
-	printf "Wrapper error: $err"
-	bgerror $err
+    # core JS/Tcl interaction
+    proc jsquote s {
+        regsub -all {[''\\]} $s {\\&} s
+        regsub -all \n $s {'+"\\n"+'} s
+        return '${s}'
     }
-    return $::JS
+
+    # hook - append Tcl hooks to be evaluated per ???
+    variable hooks {}
+    proc hook {args} {
+        variable hooks
+        lappend hooks {*}$args
+    }
+
+    # js - append javascript to be evaluated in nacl
+    # as a result of currently evaluating Tcl script
+    variable JS {}	;# accumulation of javascript to evaluate
+    proc js {args} {
+        variable JS
+        append JS [join $args \;\n] \n
+    }
+
+    variable defaults {}
+    proc opts {args} {
+	set type ""
+	if {[llength $args]%2} {
+	    set args [lassign $args type]
+	}
+
+	set opts {}
+	variable defaults
+	if {$type ne "" && [dict exists $defaults $type]} {
+	    set args [list {*}[dict get $defaults $type] {*}$args]
+	}
+	dict for {n v} $args {
+	    if {$v eq ""} {
+		set v "''"	;# ensure we don't send naked names
+	    }
+	    lappend opts "$n:$v"
+	}
+
+	if {$opts eq ""} {
+	    return ""
+	} else {
+	    return "\{[join $opts ,]\}"
+	}
+    }
+
+    proc bgerror {args} {
+        printf "### BGERROR: [join $args]\n# [info errorstack]"
+        js "alert([jsquote "BGERROR: [join $args]"])"
+    }
+
+    proc wrap {s} {
+        variable JS ""
+        variable hooks
+        if {[catch {
+            uplevel #0 $s
+            foreach x $hooks {uplevel #0 $x}
+        } err eo]} {
+            printf "Wrapper error: $err ($eo)"
+            bgerror "$err ($eo)"
+        }
+        return $JS
+    }
+
+    # evall - evaluate a list as a command
+    # returns javascript to evaluate in nacl
+    proc evall {args} {
+        variable JS ""
+        variable hooks
+        if {[catch {
+            uplevel #0 {*}$args
+            foreach x $hooks {uplevel #0 $x}
+        } err eo]} {
+            printf "evall error: $err ($eo)"
+            bgerror "$err ($eo)"
+        }
+        return $JS
+    }
+
+    # start - natcl module has been loaded with the following args
+    proc start {args} {
+        set ::argv $args
+        if {[dict exists $args verbose]} {
+            variable verbose [dict get $args verbose]
+        }
+    }
+
+    namespace export -clear *
+    namespace ensemble create -subcommands {}
 }
 
 # Coro-based [source] necessary for bootstrapping
-proc source url {
-    set j "tclsource([jsquote $url],[jsquote [info coroutine]]);\n"
-    append ::JS $j
+proc ::source {url} {
+    nacl js "tclsource([::nacl::jsquote $url],[::nacl::jsquote [info coroutine]])"
     set x [yield]
-    uplevel 1 $x
+    uplevel #0 $x
 }
 
 # Async [after] using JS's setTimeout()
-proc after {ms script} {
-    append ::JS "setTimeout(function(){tclDo([jsquote $script]);},$ms);\n"
+proc ::after {ms script} {
+    nacl js "setTimeout(function(){tclDo([::nacl::jsquote $script]);},$ms)"
 }
 
 # Async [every] using JS's setInterval()
-proc every {ms script} {
-    append ::JS "setInterval(function(){tclDo([jsquote $script]);},$ms);\n"
+proc ::every {ms script} {
+    nacl js "setInterval(function(){tclDo([::nacl::jsquote $script]);},$ms)"
 }
 
 # Delayed DOM-setting through the tclDo() trampoline
-proc domset {element inner} {
-    append ::JS "$element.innerHTML=[jsquote $inner];\n"
+proc ::domset {element inner} {
+    nacl js "$element.innerHTML=[::nacl::jsquote $inner]"
 }

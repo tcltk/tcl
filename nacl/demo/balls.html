@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="loader.js"></script>
+  </head>
+  <body>
+
+   <embed
+      name='nacl_module'
+      id='tcl'
+      width=0 height=0
+      nacl='tcl.nmf'
+      type='application/x-nacl'
+      onload='moduleDidLoad();'
+      verbose=0
+      source='balls.natcl'>
+         <canvas id="canvas" width="578" height="200"></canvas>
+         <h2>Status</h2>
+         <div id="modstatus">NO-STATUS</div>
+   </embed>
+
+   <p style="font-size : smaller;">
+      To run this demo, you need
+      <ul style="font-size : smaller;">
+        <li> An x86-family processor</li>
+        <li> Chrome 10 or higher</li>
+        <li> Enabled "Native Client" item in about:flags</li>
+        <li> (if on Linux) the --no-sandbox command-line flag to Chrome</li>
+       <li> if everything else fails, try the Nacl demos at <a href="http://code.google.com/chrome/nativeclient/docs/examples.html">http://code.google.com/chrome/nativeclient/docs/examples.html</a></li>
+      </ul>
+   </p>
+
+    <script type="text/javascript">
+      var statusField = document.getElementById('modstatus');
+      var canvas = document.getElementById('canvas');
+      var context=canvas.getContext("2d");
+      var repaint = function () {};
+      var canvcoords = [];
+    </script>
+
+  </body>
+</html>
