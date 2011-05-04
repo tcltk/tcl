@@ -36,6 +36,13 @@
       var context=canvas.getContext("2d");
       var repaint = function () {};
       var canvcoords = [];
+      function updateCoords(ar) {
+          var i,n;
+          n=ar.length;
+          for(i=0;i<n;i+=2)
+             canvcoords[ar[i]]=ar[i+1];
+      }
+
     </script>
 
   </body>
