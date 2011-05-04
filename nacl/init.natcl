@@ -117,3 +117,7 @@ proc ::every {ms script} {
 proc ::domset {element inner} {
     nacl js "$element.innerHTML=[::nacl::jsquote $inner]"
 }
+
+proc tclInit {} {
+        printf "### tclInit called"
+}

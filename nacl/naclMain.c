@@ -68,6 +68,7 @@ static Tcl_Interp *NewTcl(void)
   }
   Tcl_CreateObjCommand(ii,"printf",PrintfObjCmd,NULL,NULL);
   Tcl_LinkVar(ii, "::nacl::verbose", (char *)&verbose, TCL_LINK_INT);
+  TclSetPreInitScript("proc ::tclInit {} {}");
   return ii;
 }
 
