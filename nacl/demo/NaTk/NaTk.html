@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="../loader.js"></script>
+    <script type="text/javascript" src="NaTk.js"></script>
+  </head>
+  <body>
+
+   <embed
+      name='nacl_module'
+      id='tcl'
+      width=0 height=0
+      nacl='tcl.nmf'
+      type='application/x-nacl'
+      onload='moduleDidLoad();'
+      verbose=0
+      source='NaTk.tcl'
+      script='script'
+      toplevel='toplevel'/>
+
+   <div id="toplevel">Loading ...</div>
+
+   <script id='script' type="text/tcl">
+     button .b -text "Hello, Tk!" -command {alert HELLO} -grid {0 0}
+   </script>
+
+  </body>
+</html>
