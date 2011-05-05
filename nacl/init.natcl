@@ -56,6 +56,10 @@ namespace eval ::nacl {
         js "alert([jsquote "BGERROR: [join $args]"])"
     }
 
+    proc alert {args} {
+        js "alert([jsquote [join $args]])"
+    }
+
     proc wrap {s} {
         variable JS ""
         variable hooks
@@ -86,10 +90,33 @@ namespace eval ::nacl {
 
     # start - natcl module has been loaded with the following args
     proc start {args} {
-        set ::argv $args
+        set defaults {
+            verbose 0
+            script script
+            toplevel toplevel
+        }
+        set ::argv [dict merge $defaults $args]
         if {[dict exists $args verbose]} {
             variable verbose [dict get $args verbose]
         }
+    }
+
+    namespace export -clear *
+    namespace ensemble create -subcommands {}
+}
+
+namespace eval ::dom {
+    # Delayed DOM-setting through the tclDo() trampoline
+    proc put {element inner} {
+        nacl js "$element.innerHTML=[nacl jsquote $inner]"
+    }
+
+    # get - get element's innerHTML and pass it to callback
+    proc get {element args} {
+        if {![llength $args]} {
+            set args [info coroutine]
+        }
+        nacl js "tcl('[join $args "', '"]', '{'+$element.innerHTML+'}')"
     }
 
     namespace export -clear *
