@@ -1400,8 +1400,10 @@ TclLsetFlat(
 
 	if (index < 0 || index >= elemCount) {
 	    /* ...the index points outside the sublist. */
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("list index out of range", -1));
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("list index out of range", -1));
+	    }
 	    break;
 	}
 
@@ -1557,8 +1559,10 @@ TclListObjSetElement(
 	    (void) TclGetStringFromObj(listPtr, &length);
 	}
 	if (!length) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("list index out of range", -1));
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("list index out of range", -1));
+	    }
 	    return TCL_ERROR;
 	}
 	result = SetListFromAny(interp, listPtr);
