@@ -588,7 +588,11 @@ Tcl_ListObjAppendElement(
     if (listPtr->typePtr != &tclListType) {
 	int result, length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	if (listPtr->typePtr == &tclDictType) {
+	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
+	} else {
+	    (void) TclGetStringFromObj(listPtr, &length);
+	}
 	if (!length) {
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
@@ -698,7 +702,11 @@ Tcl_ListObjIndex(
     if (listPtr->typePtr != &tclListType) {
 	int result, length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	if (listPtr->typePtr == &tclDictType) {
+	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
+	} else {
+	    (void) TclGetStringFromObj(listPtr, &length);
+	}
 	if (!length) {
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
@@ -753,7 +761,20 @@ Tcl_ListObjLength(
     if (listPtr->typePtr != &tclListType) {
 	int result, length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	if (listPtr->typePtr == &tclDictType) {
+	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
+	    /*
+	     * It's tempting to just report 2*length as the list length
+	     * of this dict, but arguably that's false since the max sizes
+	     * for dicts and lists are not the same, so some dicts don't
+	     * actually convert to lists, and it's good to get that error
+	     * back from the SetListFromAny() call below instead of a false
+	     * indication we can treat the value as a list.  ([llength $val]
+	     * often used as a "listiness" test)
+	     */
+	} else {
+	    (void) TclGetStringFromObj(listPtr, &length);
+	}
 	if (!length) {
 	    *intPtr = 0;
 	    return TCL_OK;
@@ -828,7 +849,11 @@ Tcl_ListObjReplace(
     if (listPtr->typePtr != &tclListType) {
 	int length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	if (listPtr->typePtr == &tclDictType) {
+	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
+	} else {
+	    (void) TclGetStringFromObj(listPtr, &length);
+	}
 	if (!length) {
 	    if (objc) {
 		Tcl_SetListObj(listPtr, objc, NULL);
@@ -1373,8 +1398,10 @@ TclLsetFlat(
 
 	if (index < 0 || index > elemCount) {
 	    /* ...the index points outside the sublist. */
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("list index out of range", -1));
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("list index out of range", -1));
+	    }
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET", "BADINDEX",
 		    NULL);
 	    break;
@@ -1545,10 +1572,16 @@ TclListObjSetElement(
     if (listPtr->typePtr != &tclListType) {
 	int length, result;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	if (listPtr->typePtr == &tclDictType) {
+	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
+	} else {
+	    (void) TclGetStringFromObj(listPtr, &length);
+	}
 	if (!length) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("list index out of range", -1));
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("list index out of range", -1));
+	    }
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET", "BADINDEX",
 		    NULL);
 	    return TCL_ERROR;
