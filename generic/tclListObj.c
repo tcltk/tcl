@@ -461,7 +461,7 @@ Tcl_ListObjGetElements(
 
     if (listPtr->typePtr != &tclListType) {
 	int result, length;
-
+#if 0
 	/*
 	 * Don't get the string version of a dictionary; that transformation
 	 * is not lossy, but is expensive.
@@ -477,7 +477,7 @@ Tcl_ListObjGetElements(
 	    *objvPtr = NULL;
 	    return TCL_OK;
 	}
-
+#endif
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -588,7 +588,7 @@ Tcl_ListObjAppendElement(
     }
     if (listPtr->typePtr != &tclListType) {
 	int result, length;
-
+#if 0
 	if (listPtr->typePtr == &tclDictType) {
 	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
 	} else {
@@ -598,7 +598,7 @@ Tcl_ListObjAppendElement(
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
 	}
-
+#endif
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -703,7 +703,7 @@ Tcl_ListObjIndex(
 
     if (listPtr->typePtr != &tclListType) {
 	int result, length;
-
+#if 0
 	if (listPtr->typePtr == &tclDictType) {
 	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
 	} else {
@@ -713,7 +713,7 @@ Tcl_ListObjIndex(
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
 	}
-
+#endif
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -762,7 +762,7 @@ Tcl_ListObjLength(
 
     if (listPtr->typePtr != &tclListType) {
 	int result, length;
-
+#if 0
 	if (listPtr->typePtr == &tclDictType) {
 	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
 	    /*
@@ -781,7 +781,7 @@ Tcl_ListObjLength(
 	    *intPtr = 0;
 	    return TCL_OK;
 	}
-
+#endif
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -850,7 +850,7 @@ Tcl_ListObjReplace(
     }
     if (listPtr->typePtr != &tclListType) {
 	int length;
-
+#if 0
 	if (listPtr->typePtr == &tclDictType) {
 	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
 	} else {
@@ -863,12 +863,15 @@ Tcl_ListObjReplace(
 		return TCL_OK;
 	    }
 	} else {
+#endif
 	    int result = SetListFromAny(interp, listPtr);
 
 	    if (result != TCL_OK) {
 		return result;
 	    }
+#if 0
 	}
+#endif
     }
 
     /*
@@ -1552,7 +1555,7 @@ TclListObjSetElement(
     }
     if (listPtr->typePtr != &tclListType) {
 	int length, result;
-
+#if 0
 	if (listPtr->typePtr == &tclDictType) {
 	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
 	} else {
@@ -1565,6 +1568,7 @@ TclListObjSetElement(
 	    }
 	    return TCL_ERROR;
 	}
+#endif
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
