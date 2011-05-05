@@ -41,9 +41,10 @@ function tclDo(s) {
 }
 
 function tcl() {
+    var t;
     try {
         //printf.apply(this, arguments);
-	t = tclModule.evall.apply(tclModule, arguments);
+        t = tclModule.evall.apply(tclModule, arguments);
         //printf("ret:", t);
     } catch (err) {
 	//printf("JS-err:", err);
