@@ -1,7 +1,7 @@
 2011-05-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclListObj.c:	Stop generating string rep of dict when
-	converting to list.
+	converting to list.  Tolerate NULL interps more completely.
 
 2011-05-03  Don Porter  <dgp@users.sourceforge.net>
 
