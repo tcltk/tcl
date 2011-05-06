@@ -602,18 +602,18 @@ test string-6.91 {string is double, bad doubles} {
     }
     set result
 } {1 1 0 0 0 1 0 0}
-test string-6.92 {string is double, 32-bit overflow} {
+test string-6.92 {string is integer, 32-bit overflow} {
     # Bug 718878
     set x 0x100000000
     list [string is integer -failindex var $x] $var
 } {0 -1}
-test string-6.93 {string is double, 32-bit overflow} {
+test string-6.93 {string is integer, 32-bit overflow} {
     # Bug 718878
     set x 0x100000000
     append x ""
     list [string is integer -failindex var $x] $var
 } {0 -1}
-test string-6.94 {string is double, 32-bit overflow} {
+test string-6.94 {string is integer, 32-bit overflow} {
     # Bug 718878
     set x 0x100000000
     list [string is integer -failindex var [expr {$x}]] $var
