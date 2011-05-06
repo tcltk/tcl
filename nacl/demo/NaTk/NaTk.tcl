@@ -202,7 +202,7 @@ class create ::NaTk {
         }
         Interp alias $n grid [self] grid
 
-        ::dom get [dict get $::argv script] [self] start
+        #::dom get [dict get $::argv script] [self] start
     }
 }
 
@@ -1247,4 +1247,8 @@ Debug on widgets
 Debug on widget
 Debug on interp
 
-::NaTk new
+set ::nacl::verbose 1
+
+# fetch all the <script> elements which are type text/tcl
+# pass them as one big string to the NaTk object for evaluation.
+::nacl js "runTclScripts('[::NaTk new] start')"
