@@ -59,6 +59,51 @@ function tcl() {
     }
 }
 
+function serialT (thing) {
+    alert("serialT " + thing.type + " " + thing.toString());
+    var result = '{';
+    switch (thing.type) {
+
+    case 'string':
+        return tclEsc(thing);
+        break;
+
+    case 'array':
+        for (var i=0; i < thing.length(); i++) {
+            result = result + " " + serialT(thing[i]);
+        }
+        result = result + '}';
+        break;
+
+    case 'object':
+        for (var prop in thing) {
+            result = result + " " + serialT(prop) + " " + serialT(thing[prop]);
+        }
+        result = result + '}';
+        break;
+
+    case 'function':
+        result = thing.toString();
+        break;
+
+    default:
+        return undefined;
+        break;
+    }
+    return result;
+}
+
+function callback(to,js) {
+    alert("callback " + to + " " + js);
+    try {
+	tclDo(to + " " + serialT(eval(js)));
+    } catch (err) {
+        alert("JS-error " + err);
+	//printf("JS-err:", err);
+	setTimeout('tcl("::nacl::bgerror,"'+ err + ',' + js + ')',0);
+    }
+}
+
 // --- tclsource starts an XHR, and calls the given 'tcb' (Tcl
 // --- Callback) on completion. A catchable Tcl-level error is raised
 // --- in case of not-200. Used by [source].
@@ -80,10 +125,51 @@ function tclsource(url,tcb) {
     };
 }
 
+// traverse - apply function to subtree of dom returning object
+function traverse(fn)
+{
+        var result;
+        var target;
+        if (arguments.length() > 1) {
+           target = arguments[1];
+        } else {
+          target = document;
+        }
+
+        result[target]=fn.apply(target);
+
+        for (var i=0; i<target.childNodes.length; i++) {
+            var child = target.childNodes[i];
+            var traversal = traverse(fn, child);
+            for (var prop in traversal) {
+               result[prop] = traversal[prop];
+            }
+	}
+
+        return result;
+}
+
 // ---------- GUI and standard NaCl-loading machinery --------
 
 function moduleDidLoad() {
     tclModule = document.getElementById('tcl');
     // tcl('lappend', '::JS', "alert('ARGV:[join $::argv]')");
     tcl('eval', 'coroutine', '::main_coro', 'source', '[dict get $::argv source]');
+}
+
+// runTclScripts - collect all <script> elements with type text/tcl
+// Pass them to the Tcl header given in 'where' (or uplevel)
+function runTclScripts(where) {
+    if (where == undefined) {
+        where = "uplevel #0";
+    }
+
+    var scripts = document.getElementsByTagName('script');
+    var script = "";
+    for (var i = 0; i < scripts.length; i++) {
+        if (scripts[i].getAttribute('type') == 'text/tcl') {
+            script = script + '\n' + scripts[i].innerHTML;
+        }
+    }
+    tclDo(where + " {" + tclEsc(script)+ "}");
 }

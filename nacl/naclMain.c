@@ -347,18 +347,20 @@ static struct PP_Var Tcl_Call(void* object,
         Tcl_IncrRefCount(args[0]);
 
         for (i = 0; i < argc; i++) {
-            if (argv[i].type != PP_VARTYPE_STRING) {
-                v = StrToVar("Arg from Javascript is not a string!");
-            } else {
+            if (argv[i].type == PP_VARTYPE_STRING) {
                 const char *bytes = var_interface->VarToUtf8(argv[i], &len);
                 args[i+1] = Tcl_NewStringObj(bytes, len);
                 Tcl_IncrRefCount(args[i+1]);
                 if (verbose) {
                     printf("NaTcl(%d): EVALL arg: '%s'\n",pid, bytes);
                 }
+            } else {
+                v = StrToVar("Arg from Javascript is not a string!");
             }
         }
+
         Tcl_EvalObjv(interp, argc+1, args, 0);
+
         if (verbose) {
             printf("NaTcl(%d): EVALL result: '%s'\n",pid, Tcl_GetStringResult(interp));
         }

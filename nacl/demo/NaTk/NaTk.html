@@ -15,12 +15,12 @@
       onload='moduleDidLoad();'
       verbose=0
       source='NaTk.tcl'
-      script='script'
       toplevel='toplevel'/>
 
    <div id="toplevel">Loading ...</div>
 
    <script id='script' type="text/tcl">
+     # this script will be evaluated by NaTk
      button .b -text "Hello, Tk!" -command {alert HELLO} -grid {0 0}
    </script>
 
