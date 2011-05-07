@@ -1,3 +1,8 @@
+2011-05-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.h: fix USE_TCLALLOC so that it can be enabled
+	* unix/Makefile.in: without editing the Makefile
+
 2011-04-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c:		Make sure SetFooFromAny routines react

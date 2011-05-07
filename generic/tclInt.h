@@ -2515,6 +2515,13 @@ EXTERN void TclpFreeAllocCache _ANSI_ARGS_((void *));
 
 #else /* not TCL_MEM_DEBUG */
 
+#if defined(USE_TCLALLOC) && USE_TCLALLOC
+    MODULE_SCOPE void TclFinalizeAllocSubsystem();
+    MODULE_SCOPE void TclInitAlloc();
+#else
+#   define USE_TCLALLOC 0
+#endif
+
 #ifdef TCL_THREADS
 /* declared in tclObj.c */
 extern Tcl_Mutex tclObjMutex;
