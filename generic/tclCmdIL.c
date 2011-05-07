@@ -2242,24 +2242,15 @@ Tcl_LrepeatObjCmd(
     objc -= 2;
     objv += 2;
 
-    /*
-     * Final sanity check. Total number of elements must fit in a signed
-     * integer. We also limit the number of elements to 512M-1 so allocations
-     * on 32-bit machines are guaranteed to be less than 2GB! [Bug 2130992]
-     */
+    /* Final sanity check. Do not exceed limits on max list length. */
 
+    if (elementCount && objc > LIST_MAX/elementCount) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"max length of a Tcl list (%d elements) exceeded", LIST_MAX));
+        Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	return TCL_ERROR;
+    }
     totalElems = objc * elementCount;
-    if (totalElems != 0 && (totalElems/objc != elementCount
-	    || totalElems/elementCount != objc)) {
-	Tcl_AppendResult(interp, "too many elements in result list", NULL);
-        Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	return TCL_ERROR;
-    }
-    if (totalElems >= 0x20000000) {
-	Tcl_AppendResult(interp, "too many elements in result list", NULL);
-        Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	return TCL_ERROR;
-    }
 
     /*
      * Get an empty list object that is allocated large enough to hold each

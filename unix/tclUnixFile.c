@@ -82,7 +82,7 @@ TclpFindExecutable(
      */
 
     while (1) {
-	while (isspace(UCHAR(*p))) {			/* INTL: BUG */
+	while (TclIsSpaceProc(*p)) {
 	    p++;
 	}
 	name = p;

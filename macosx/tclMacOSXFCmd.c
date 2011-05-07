@@ -639,9 +639,11 @@ SetOSTypeFromAny(
     Tcl_UtfToExternalDString(encoding, string, length, &ds);
 
     if (Tcl_DStringLength(&ds) > 4) {
-	Tcl_AppendResult(interp, "expected Macintosh OS type but got \"",
-		string, "\": ", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "MAC_OSTYPE", NULL);
+	if (interp) {
+	    Tcl_AppendResult(interp, "expected Macintosh OS type but got \"",
+		    string, "\": ", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "MAC_OSTYPE", NULL);
+	}
 	result = TCL_ERROR;
     } else {
 	OSType osType;

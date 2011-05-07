@@ -46,13 +46,11 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
 			    int valueIndex, Tcl_Token *valueTokenPtr,
-			    int numWords, Tcl_Token **bodyToken,
-			    int *bodyLines, int **bodyNext);
+			    int numWords, Tcl_Token **bodyToken);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int valueIndex,
 			    Tcl_Token *valueTokenPtr, int numWords,
-			    Tcl_Token **bodyToken, int *bodyLines,
-			    int **bodyContLines);
+			    Tcl_Token **bodyToken);
 static int		IssueTryFinallyInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,
@@ -855,17 +853,15 @@ TclCompileSwitchCmd(
 {
     Tcl_Token *tokenPtr;	/* Pointer to tokens in command. */
     int numWords;		/* Number of words in command. */
+
     Tcl_Token *valueTokenPtr;	/* Token for the value to switch on. */
     enum {Switch_Exact, Switch_Glob, Switch_Regexp} mode;
 				/* What kind of switch are we doing? */
+
     Tcl_Token *bodyTokenArray;	/* Array of real pattern list items. */
     Tcl_Token **bodyToken;	/* Array of pointers to pattern list items. */
-    int *bodyLines;		/* Array of line numbers for body list
-				 * items. */
-    int **bodyContLines;	/* Array of continuation line info. */
     int noCase;			/* Has the -nocase flag been given? */
     int foundMode = 0;		/* Have we seen a mode flag yet? */
-    int isListedArms = 0;
     int i, valueIndex;
     int result = TCL_ERROR;
 
@@ -1004,110 +1000,48 @@ TclCompileSwitchCmd(
      */
 
     if (numWords == 1) {
-	Tcl_DString bodyList;
-	const char **argv = NULL, *tokenStartPtr, *p;
-	int isTokenBraced;
-
-	/*
-	 * Test that we've got a suitable body list as a simple (i.e. braced)
-	 * word, and that the elements of the body are simple words too. This
-	 * is really rather nasty indeed.
-	 */
+	const char *bytes;
+	int maxLen, numBytes;
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    return TCL_ERROR;
 	}
+	bytes = tokenPtr[1].start;
+	numBytes = tokenPtr[1].size;
 
-	Tcl_DStringInit(&bodyList);
-	Tcl_DStringAppend(&bodyList, tokenPtr[1].start, tokenPtr[1].size);
-	if (Tcl_SplitList(NULL, Tcl_DStringValue(&bodyList), &numWords,
-		&argv) != TCL_OK) {
-	    Tcl_DStringFree(&bodyList);
+	/* Allocate enough space to work in. */
+	maxLen = TclMaxListLength(bytes, numBytes, NULL);
+	if (maxLen < 2)  {
 	    return TCL_ERROR;
 	}
-	Tcl_DStringFree(&bodyList);
+	bodyTokenArray = ckalloc(sizeof(Tcl_Token) * maxLen);
+	bodyToken = ckalloc(sizeof(Tcl_Token *) * maxLen);
 
-	/*
-	 * Now we know what the switch arms are, we've got to see whether we
-	 * can synthesize tokens for the arms. First check whether we've got a
-	 * valid number of arms since we can do that now.
-	 */
+	numWords = 0;
 
-	if (numWords == 0 || numWords % 2) {
-	    ckfree(argv);
-	    return TCL_ERROR;
-	}
+	while (numBytes > 0) {
+	    const char *prevBytes = bytes;
+	    int literal;
 
-	isListedArms = 1;
-	bodyTokenArray = ckalloc(sizeof(Tcl_Token) * numWords);
-	bodyToken = ckalloc(sizeof(Tcl_Token *) * numWords);
-	bodyLines = ckalloc(sizeof(int) * numWords);
-	bodyContLines = ckalloc(sizeof(int*) * numWords);
-
-	/*
-	 * Locate the start of the arms within the overall word.
-	 */
-
-	p = tokenStartPtr = tokenPtr[1].start;
-	while (isspace(UCHAR(*tokenStartPtr))) {
-	    tokenStartPtr++;
-	}
-	if (*tokenStartPtr == '{') {
-	    tokenStartPtr++;
-	    isTokenBraced = 1;
-	} else {
-	    isTokenBraced = 0;
-	}
-
-	for (i=0 ; i<numWords ; i++) {
-	    bodyTokenArray[i].type = TCL_TOKEN_TEXT;
-	    bodyTokenArray[i].start = tokenStartPtr;
-	    bodyTokenArray[i].size = strlen(argv[i]);
-	    bodyTokenArray[i].numComponents = 0;
-	    bodyToken[i] = bodyTokenArray+i;
-	    tokenStartPtr += bodyTokenArray[i].size;
-
-	    /*
-	     * Test to see if we have guessed the end of the word correctly;
-	     * if not, we can't feed the real string to the sub-compilation
-	     * engine, and we're then stuck and so have to punt out to doing
-	     * everything at runtime.
-	     */
-
-	    if ((isTokenBraced && *(tokenStartPtr++) != '}') ||
-		    (tokenStartPtr < tokenPtr[1].start+tokenPtr[1].size
-		    && !isspace(UCHAR(*tokenStartPtr)))) {
-		ckfree(argv);
-		goto freeTemporaries;
+	    if (TCL_OK != TclFindElement(NULL, bytes, numBytes,
+		    &(bodyTokenArray[numWords].start), &bytes,
+		    &(bodyTokenArray[numWords].size), &literal) || !literal) {
+	    abort:
+		ckfree((char *) bodyToken);
+		ckfree((char *) bodyTokenArray);
+		return TCL_ERROR;
 	    }
 
-	    p = bodyTokenArray[i].start;
+	    bodyTokenArray[numWords].type = TCL_TOKEN_TEXT;
+	    bodyTokenArray[numWords].numComponents = 0;
+	    bodyToken[numWords] = bodyTokenArray + numWords;
 
-	    while (isspace(UCHAR(*tokenStartPtr))) {
-		tokenStartPtr++;
-		if (tokenStartPtr >= tokenPtr[1].start+tokenPtr[1].size) {
-		    break;
-		}
-	    }
-	    if (*tokenStartPtr == '{') {
-		tokenStartPtr++;
-		isTokenBraced = 1;
-	    } else {
-		isTokenBraced = 0;
-	    }
+	    numBytes -= (bytes - prevBytes);
+	    numWords++;
 	}
-	ckfree(argv);
-
-	/*
-	 * Check that we've parsed everything we thought we were going to
-	 * parse. If not, something odd is going on (I believe it is possible
-	 * to defeat the code above) and we should bail out.
-	 */
-
-	if (tokenStartPtr != tokenPtr[1].start+tokenPtr[1].size) {
-	    goto freeTemporaries;
+	if (numWords % 2) {
+	    goto abort;
 	}
-
     } else if (numWords % 2 || numWords == 0) {
 	/*
 	 * Odd number of words (>1) available, or no words at all available.
@@ -1124,8 +1058,6 @@ TclCompileSwitchCmd(
 	 */
 
 	bodyToken = ckalloc(sizeof(Tcl_Token *) * numWords);
-	bodyLines = ckalloc(sizeof(int) * numWords);
-	bodyContLines = ckalloc(sizeof(int*) * numWords);
 	bodyTokenArray = NULL;
 	for (i=0 ; i<numWords ; i++) {
 	    /*
@@ -1134,8 +1066,7 @@ TclCompileSwitchCmd(
 	     * traces, etc.
 	     */
 
-	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
-		    tokenPtr->numComponents != 1) {
+	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		goto freeTemporaries;
 	    }
 	    bodyToken[i] = tokenPtr+1;
@@ -1162,13 +1093,12 @@ TclCompileSwitchCmd(
      * but it handles the most common case well enough.
      */
 
-    if ((isListedArms) && (mode == Switch_Exact) && (!noCase)) {
+    if (mode == Switch_Exact) {
 	IssueSwitchJumpTable(interp, envPtr, valueIndex,
-		valueTokenPtr, numWords, bodyToken, bodyLines, bodyContLines);
+		valueTokenPtr, numWords, bodyToken);
     } else {
 	IssueSwitchChainedTests(interp, envPtr, mode,noCase,
-		valueIndex, valueTokenPtr, numWords, bodyToken, bodyLines,
-		bodyContLines);
+		valueIndex, valueTokenPtr, numWords, bodyToken);
     }
     result = TCL_OK;
 
@@ -1178,8 +1108,6 @@ TclCompileSwitchCmd(
 
   freeTemporaries:
     ckfree(bodyToken);
-    ckfree(bodyLines);
-    ckfree(bodyContLines);
     if (bodyTokenArray != NULL) {
 	ckfree(bodyTokenArray);
     }
@@ -1213,10 +1141,7 @@ IssueSwitchChainedTests(
     int numBodyTokens,		/* Number of tokens describing things the
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
-    Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    int *bodyLines,		/* Array of line numbers for body list
-				 * items. */
-    int **bodyContLines)	/* Array of continuation line info. */
+    Tcl_Token **bodyToken)	/* Array of pointers to pattern list items. */
 {
     enum {Switch_Exact, Switch_Glob, Switch_Regexp};
     int savedStackDepth = envPtr->currStackDepth;
@@ -1472,10 +1397,7 @@ IssueSwitchJumpTable(
     int numBodyTokens,		/* Number of tokens describing things the
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
-    Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    int *bodyLines,		/* Array of line numbers for body list
-				 * items. */
-    int **bodyContLines)	/* Array of continuation line info. */
+    Tcl_Token **bodyToken)	/* Array of pointers to pattern list items. */
 {
     JumptableInfo *jtPtr;
     int infoIndex, isNew, *finalFixups, numRealBodies = 0, jumpLocation;
