@@ -1,3 +1,8 @@
+2011-05-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclLoad.c (TclGetLoadedPackages): Convert to use Tcl_Obj API
+	for result generation.
+
 2011-05-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInt.h: fix USE_TCLALLOC so that it can be enabled
@@ -23,7 +28,7 @@
 	* generic/tclListObj.c:	of a boolean var, where the caller can be told
 	* generic/tclParse.c:	whether or not the parsed list element was
 	* generic/tclUtil.c:	enclosed in braces.  In practice, no callers
-	really care about that.  What the callers really want to know is 
+	really care about that.  What the callers really want to know is
 	whether the list element value exists as a literal substring of the
 	string being parsed, or whether a call to TclCopyAndCollpase() is
 	needed to produce the list element value.  Now the final argument
@@ -61,7 +66,7 @@
 	* generic/tclStrToD.c:
 	* generic/tclUtf.c:
 	* unix/tclUnixFile.c:
-	
+
 	* generic/tclStringObj.c:	Improved reaction to out of memory.
 
 2011-04-27  Don Porter  <dgp@users.sourceforge.net>
