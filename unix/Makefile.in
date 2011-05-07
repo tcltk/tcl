@@ -1007,11 +1007,8 @@ regerror.o: $(REGHDRS) $(GENERIC_DIR)/regerrs.h $(GENERIC_DIR)/regerror.c
 tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 	$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c
 
-# On Unix we want to use the normal malloc/free implementation, so we
-# specifically set the USE_TCLALLOC flag.
-
 tclAlloc.o: $(GENERIC_DIR)/tclAlloc.c
-	$(CC) -c $(CC_SWITCHES) -DUSE_TCLALLOC=0 $(GENERIC_DIR)/tclAlloc.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAlloc.c
 
 tclAssembly.o: $(GENERIC_DIR)/tclAssembly.c $(COMPILEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAssembly.c
