@@ -4278,6 +4278,10 @@ SetCmdNameFromAny(
     Namespace *currNsPtr;
     register ResolvedCmdName *resPtr;
 
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
+
     /*
      * Find the Command structure, if any, that describes the command called
      * "name". Build a ResolvedCmdName that holds a cached pointer to this

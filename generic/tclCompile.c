@@ -509,12 +509,13 @@ static const Tcl_ObjType tclInstNameType = {
  *	generate an byte code internal form for the Tcl object "objPtr" by
  *	compiling its string representation. This function also takes a hook
  *	procedure that will be invoked to perform any needed post processing
- *	on the compilation results before generating byte codes.
+ *	on the compilation results before generating byte codes. interp is
+ *	compilation context and may not be NULL.
  *
  * Results:
  *	The return value is a standard Tcl object result. If an error occurs
  *	during compilation, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
+ *	result.
  *
  * Side effects:
  *	Frees the old internal representation. If no error occurs, then the
@@ -672,6 +673,9 @@ SetByteCodeFromAny(
 				 * compiled. Must not be NULL. */
     Tcl_Obj *objPtr)		/* The object to make a ByteCode object. */
 {
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
     TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
     return TCL_OK;
 }

@@ -2162,7 +2162,6 @@ TEBCresume(
 #if !TCL_COMPILE_DEBUG
 	    if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
 		TclFreeIntRep(objResultPtr);
-		objResultPtr->typePtr = NULL;
 		objResultPtr->bytes = ckrealloc(bytes, length+appendLen+1);
 		objResultPtr->length = length + appendLen;
 		p = TclGetString(objResultPtr) + length;

@@ -233,6 +233,12 @@ test parse-5.28 {Tcl_ParseCommand: {*} parsing, expanded literals} testparser {
 test parse-5.29 {Tcl_ParseCommand: {*} parsing, expanded literals, naked backslashes} testparser {
     testparser {{*}{a \n b}} 0
 } {- {{*}{a \n b}} 1 expand {{*}{a \n b}} 1 text {a \n b} 0 {}}
+test parse-5.30 {Tcl_ParseCommand: {*} parsing, expanded literals} testparser {
+    testparser {{*}"a b"} 0
+} {- {{*}"a b"} 2 simple a 1 text a 0 simple b 1 text b 0 {}}
+test parse-5.31 {Tcl_ParseCommand: {*} parsing, expanded literals, naked backslashes} testparser {
+    testparser {{*}"a \n b"} 0
+} {- {{*}"a \n b"} 1 expand {{*}"a \n b"} 3 text {a } 0 backslash {\n} 0 text { b} 0 {}}
 
 test parse-6.1 {ParseTokens procedure, empty word} testparser {
     testparser {""} 0

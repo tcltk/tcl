@@ -160,25 +160,25 @@ static const Tcl_ObjType nsNameType = {
  */
 
 static const EnsembleImplMap defaultNamespaceMap[] = {
-    {"children",        NamespaceChildrenCmd},
-    {"code",            NamespaceCodeCmd},
-    {"current",         NamespaceCurrentCmd},
-    {"delete",          NamespaceDeleteCmd},
-    {"ensemble",        TclNamespaceEnsembleCmd},
-    {"eval",            NamespaceEvalCmd,       NULL, NRNamespaceEvalCmd},
-    {"exists",          NamespaceExistsCmd},
-    {"export",          NamespaceExportCmd},
-    {"forget",          NamespaceForgetCmd},
-    {"import",          NamespaceImportCmd},
-    {"inscope",         NamespaceInscopeCmd,    NULL, NRNamespaceInscopeCmd},
-    {"origin",          NamespaceOriginCmd},
-    {"parent",          NamespaceParentCmd},
-    {"path",            NamespacePathCmd},
-    {"qualifiers",      NamespaceQualifiersCmd},
-    {"tail",            NamespaceTailCmd},
-    {"unknown",         NamespaceUnknownCmd},
-    {"upvar",           NamespaceUpvarCmd,      TclCompileNamespaceUpvarCmd},
-    {"which",           NamespaceWhichCmd},
+    {"children",        NamespaceChildrenCmd, NULL, NULL, NULL, 0},
+    {"code",            NamespaceCodeCmd, NULL, NULL, NULL, 0},
+    {"current",         NamespaceCurrentCmd, NULL, NULL, NULL, 0},
+    {"delete",          NamespaceDeleteCmd, NULL, NULL, NULL, 0},
+    {"ensemble",        TclNamespaceEnsembleCmd, NULL, NULL, NULL, 0},
+    {"eval",            NamespaceEvalCmd,       NULL, NRNamespaceEvalCmd, NULL, 0},
+    {"exists",          NamespaceExistsCmd, NULL, NULL, NULL, 0},
+    {"export",          NamespaceExportCmd, NULL, NULL, NULL, 0},
+    {"forget",          NamespaceForgetCmd, NULL, NULL, NULL, 0},
+    {"import",          NamespaceImportCmd, NULL, NULL, NULL, 0},
+    {"inscope",         NamespaceInscopeCmd,    NULL, NULL, NRNamespaceInscopeCmd, 0},
+    {"origin",          NamespaceOriginCmd, NULL, NULL, NULL, 0},
+    {"parent",          NamespaceParentCmd, NULL, NULL, NULL, 0},
+    {"path",            NamespacePathCmd, NULL, NULL, NULL, 0},
+    {"qualifiers",      NamespaceQualifiersCmd, NULL, NULL, NULL, 0},
+    {"tail",            NamespaceTailCmd, NULL, NULL, NULL, 0},
+    {"unknown",         NamespaceUnknownCmd, NULL, NULL, NULL, 0},
+    {"upvar",           NamespaceUpvarCmd,      TclCompileNamespaceUpvarCmd, NULL, NULL, 0},
+    {"which",           NamespaceWhichCmd, NULL, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -4712,8 +4712,13 @@ SetNsNameFromAny(
     const char *dummy;
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
     register ResolvedNsName *resNamePtr;
-    const char *name = TclGetString(objPtr);
+    const char *name;
 
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
+
+    name = TclGetString(objPtr);
     TclGetNamespaceForQualName(interp, name, NULL, TCL_FIND_ONLY_NS,
 	     &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
 
@@ -4731,7 +4736,6 @@ SetNsNameFromAny(
 
 	if (objPtr->typePtr == &nsNameType) {
 	    TclFreeIntRep(objPtr);
-	    objPtr->typePtr = NULL;
 	}
 	return TCL_ERROR;
     }

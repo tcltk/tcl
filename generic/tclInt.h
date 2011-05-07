@@ -2389,12 +2389,21 @@ typedef struct List {
 				 * accomodate all elements. */
 } List;
 
+#define LIST_MAX \
+	(1 + (int)(((size_t)UINT_MAX - sizeof(List))/sizeof(Tcl_Obj *)))
+
 /*
  * Macro used to get the elements of a list object.
  */
 
 #define ListRepPtr(listPtr) \
     ((List *) (listPtr)->internalRep.twoPtrValue.ptr1)
+
+#define ListSetIntRep(objPtr, listRepPtr) \
+    (objPtr)->internalRep.twoPtrValue.ptr1 = (void *)(listRepPtr), \
+    (objPtr)->internalRep.twoPtrValue.ptr2 = NULL, \
+    (listRepPtr)->refCount++, \
+    (objPtr)->typePtr = &tclListType
 
 #define ListObjGetElements(listPtr, objc, objv) \
     ((objv) = &(ListRepPtr(listPtr)->elements), \
@@ -2920,6 +2929,7 @@ MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsLocalScalar(const char *src, int len);
+MODULE_SCOPE int	TclIsSpaceProc(char byte);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
@@ -2937,6 +2947,8 @@ MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
+MODULE_SCOPE int	TclMaxListLength(CONST char *bytes, int numBytes,
+			    CONST char **endPtr);
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
@@ -3978,9 +3990,10 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
  */
 
 #define TclFreeIntRep(objPtr) \
-    if ((objPtr)->typePtr != NULL && \
-	    (objPtr)->typePtr->freeIntRepProc != NULL) { \
-	(objPtr)->typePtr->freeIntRepProc(objPtr); \
+    if ((objPtr)->typePtr != NULL) { \
+	if ((objPtr)->typePtr->freeIntRepProc != NULL) { \
+	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
+	} \
 	(objPtr)->typePtr = NULL; \
     }
 

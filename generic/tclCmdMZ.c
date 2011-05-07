@@ -1560,7 +1560,6 @@ StringIsCmd(
 	    if (stop < end) {
 		result = 0;
 		TclFreeIntRep(objPtr);
-		objPtr->typePtr = NULL;
 	    }
 	}
 	break;
@@ -1617,7 +1616,6 @@ StringIsCmd(
 
 		failat = stop - string1;
 		TclFreeIntRep(objPtr);
-		objPtr->typePtr = NULL;
 	    }
 	} else {
 	    /*
@@ -1645,7 +1643,7 @@ StringIsCmd(
 	     */
 
 	    const char *elemStart, *nextElem;
-	    int lenRemain, elemSize, hasBrace;
+	    int lenRemain, elemSize;
 	    register const char *p;
 
 	    string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1654,7 +1652,7 @@ StringIsCmd(
 	    for (p=string1, lenRemain=length1; lenRemain > 0;
 		    p=nextElem, lenRemain=end-nextElem) {
 		if (TCL_ERROR == TclFindElement(NULL, p, lenRemain,
-			&elemStart, &nextElem, &elemSize, &hasBrace)) {
+			&elemStart, &nextElem, &elemSize, NULL)) {
 		    Tcl_Obj *tmpStr;
 
 		    /*
@@ -1667,7 +1665,7 @@ StringIsCmd(
 		     * if it is the first "element" that has the failure.
 		     */
 
-		    while (isspace(UCHAR(*p))) {		/* INTL: ? */
+		    while (TclIsSpaceProc(*p)) {
 			p++;
 		    }
 		    TclNewStringObj(tmpStr, string1, p-string1);

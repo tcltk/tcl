@@ -1,3 +1,115 @@
+2011-05-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.h: fix USE_TCLALLOC so that it can be enabled
+	* unix/Makefile.in: without editing the Makefile
+
+2011-05-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclListObj.c:	Stop generating string rep of dict when
+	converting to list.  Tolerate NULL interps more completely.
+
+2011-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	Tighten Tcl_SplitList().
+	* generic/tclListObj.c:	Tighten SetListFromAny().
+	* generic/tclDictObj.c:	Tighten SetDictFromAny().
+	* tests/join.test:
+	* tests/mathop.test:
+
+2011-05-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:	Revised TclFindElement() interface.  The
+	* generic/tclDictObj.c:	final argument had been bracePtr, the address
+	* generic/tclListObj.c:	of a boolean var, where the caller can be told
+	* generic/tclParse.c:	whether or not the parsed list element was
+	* generic/tclUtil.c:	enclosed in braces.  In practice, no callers
+	really care about that.  What the callers really want to know is 
+	whether the list element value exists as a literal substring of the
+	string being parsed, or whether a call to TclCopyAndCollpase() is
+	needed to produce the list element value.  Now the final argument
+	is changed to do what callers actually need.  This is a better fit
+	for the calls in tclParse.c, where now a good deal of post-processing
+	checking for "naked backslashes" is no longer necessary.
+	***POTENTIAL INCOMPATIBILITY***
+	For any callers calling in via the internal stubs table who really
+	do use the final argument explicitly to check for the enclosing brace
+	scenario.  Simply looking for the braces where they must be is the
+	revision available to those callers, and it will backport cleanly.
+
+	* tests/parse.test:	Tests for expanded literals quoting detection.
+
+	* generic/tclCompCmdsSZ.c:	New TclFindElement() is also a better
+	fit for the [switch] compiler.
+
+	* generic/tclInt.h:	Replace TclCountSpaceRuns() with
+	* generic/tclListObj.c:	TclMaxListLength() which is the function we
+	* generic/tclUtil.c:	actually want.
+	* generic/tclCompCmdsSZ.c:
+
+	* generic/tclCompCmdsSZ.c: Rewrite of parts of the switch compiler to
+	better use the powers of TclFindElement() and do less parsing on
+	its own.
+
+2011-04-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	New utility routines:
+	* generic/tclParse.c:	TclIsSpaceProc() and
+	* generic/tclUtil.c:	TclCountSpaceRuns()
+
+	* generic/tclCmdMZ.c:	Use new routines to replace calls to
+	* generic/tclListObj.c:	isspace() and their /* INTL */ risk.
+	* generic/tclStrToD.c:
+	* generic/tclUtf.c:
+	* unix/tclUnixFile.c:
+	
+	* generic/tclStringObj.c:	Improved reaction to out of memory.
+
+2011-04-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:	TclFreeIntRep() correction & cleanup.
+	* generic/tclExecute.c:
+	* generic/tclIndexObj.c:
+	* generic/tclInt.h:
+	* generic/tclListObj.c:
+	* generic/tclNamesp.c:
+	* generic/tclResult.c:
+	* generic/tclStringObj.c:
+	* generic/tclVar.c:
+
+	* generic/tclListObj.c:	FreeListInternalRep() cleanup.
+
+2011-04-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Use macro to set List intreps.
+	* generic/tclListObj.c:
+
+	* generic/tclCmdIL.c:	Limits on list length were too strict.
+	* generic/tclInt.h:	Revised panics to errors where possible.
+	* generic/tclListObj.c:
+	* tests/lrepeat.test:
+
+	* generic/tclCompile.c:	Make sure SetFooFromAny routines react
+	* generic/tclIO.c:	reasonably when passed a NULL interp.
+	* generic/tclIndexObj.c:
+	* generic/tclListObj.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclProc.c:
+	* macosx/tclMacOSXFCmd.c:
+
+2011-04-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:       fix for [Bug 3288345]: Wrong Tcl_StatBuf
+	* generic/tclInt.h:    used on MinGW. Make sure that all _WIN32
+	* win/tclWinFile.c:    compilers use exactly the same layout
+	* win/configure.in:    for Tcl_StatBuf - the one used by MSVC6 -
+	* win/configure:       in all situations.
+
+2011-04-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclConfig.c:	Reduce internals access in the implementation
+	of [<foo>::pkgconfig list].
+
 2011-04-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdIL.c:	Use ListRepPtr(.) and other cleanup.
@@ -12,10 +124,6 @@
 
 	* doc/dict.n: [Bug 3288696]: Command summary was confusingly wrong
 	when it came to [dict filter] with a 'value' filter.
-
-2011-04-18  Jan Nijtmans  <nijtmans@users.sf.net>
-
-	* generic/tcl.h: [Bug 3288345]: Fix wrong Tcl_StatBuf used on MinGW.
 
 2011-04-16  Donal K. Fellows  <dkf@users.sf.net>
 

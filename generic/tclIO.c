@@ -11196,6 +11196,9 @@ SetChannelFromAny(
     ChannelState *statePtr;
     Interp *interpPtr;
 
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
     if (objPtr->typePtr == &tclChannelType) {
 	/*
 	 * The channel is valid until any call to DetachChannel occurs.

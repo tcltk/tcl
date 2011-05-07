@@ -564,15 +564,11 @@ SetDictFromAny(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr)
 {
-    const char *string;
-    char *s;
-    const char *elemStart, *nextElem;
-    int lenRemain, length, elemSize, hasBrace, result, isNew;
-    const char *limit;	/* Points just after string's last byte. */
-    register const char *p;
-    register Tcl_Obj *keyPtr, *valuePtr;
-    Dict *dict;
     Tcl_HashEntry *hPtr;
+    int isNew, result;
+    Dict *dict = ckalloc(sizeof(Dict));
+
+    InitChainTable(dict);
 
     /*
      * Since lists and dictionaries have very closely-related string
@@ -584,29 +580,15 @@ SetDictFromAny(
 	int objc, i;
 	Tcl_Obj **objv;
 
-	if (TclListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
-	    return TCL_ERROR;
-	}
+	/* Cannot fail, we already know the Tcl_ObjType is "list". */
+	TclListObjGetElements(NULL, objPtr, &objc, &objv);
 	if (objc & 1) {
-	    if (interp != NULL) {
-		Tcl_SetResult(interp, "missing value to go with key",
-			TCL_STATIC);
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
-	    }
-	    return TCL_ERROR;
+	    goto missingValue;
 	}
 
-	/*
-	 * Build the hash of key/value pairs.
-	 */
-
-	dict = ckalloc(sizeof(Dict));
-	InitChainTable(dict);
 	for (i=0 ; i<objc ; i+=2) {
-	    /*
-	     * Store key and value in the hash table we're building.
-	     */
-
+	
+	    /* Store key and value in the hash table we're building. */
 	    hPtr = CreateChainEntry(dict, objv[i], &isNew);
 	    if (!isNew) {
 		Tcl_Obj *discardedValue = Tcl_GetHashValue(hPtr);
@@ -624,112 +606,68 @@ SetDictFromAny(
 	    Tcl_SetHashValue(hPtr, objv[i+1]);
 	    Tcl_IncrRefCount(objv[i+1]); /* Since hash now holds ref to it */
 	}
+    } else {
+	int length;
+	const char *nextElem = TclGetStringFromObj(objPtr, &length);
+	const char *limit = (nextElem + length);
 
-	/*
-	 * Share type-setting code with the string-conversion case.
-	 */
+	while (nextElem < limit) {
+	    Tcl_Obj *keyPtr, *valuePtr;
+	    const char *elemStart;
+	    int elemSize, literal;
 
-	goto installHash;
+	    result = TclFindElement(interp, nextElem, (limit - nextElem),
+		    &elemStart, &nextElem, &elemSize, &literal);
+	    if (result != TCL_OK) {
+		goto errorExit;
+	    }
+	    if (elemStart == limit) {
+		break;
+	    }
+	    if (nextElem == limit) {
+		goto missingValue;
+	    }
+
+	    if (literal) {
+		TclNewStringObj(keyPtr, elemStart, elemSize);
+	    } else {
+		/* Avoid double copy */
+		TclNewObj(keyPtr);
+		keyPtr->bytes = ckalloc((unsigned) elemSize + 1);
+		keyPtr->length = TclCopyAndCollapse(elemSize, elemStart,
+			keyPtr->bytes);
+	    }
+
+	    result = TclFindElement(interp, nextElem, (limit - nextElem),
+		    &elemStart, &nextElem, &elemSize, &literal);
+	    if (result != TCL_OK) {
+		TclDecrRefCount(keyPtr);
+		goto errorExit;
+	    }
+
+	    if (literal) {
+		TclNewStringObj(valuePtr, elemStart, elemSize);
+	    } else {
+		/* Avoid double copy */
+		TclNewObj(valuePtr);
+		valuePtr->bytes = ckalloc((unsigned) elemSize + 1);
+		valuePtr->length = TclCopyAndCollapse(elemSize, elemStart,
+			valuePtr->bytes);
+	    }
+
+	    /* Store key and value in the hash table we're building. */
+	    hPtr = CreateChainEntry(dict, keyPtr, &isNew);
+	    if (!isNew) {
+		Tcl_Obj *discardedValue = Tcl_GetHashValue(hPtr);
+
+		TclDecrRefCount(keyPtr);
+		TclDecrRefCount(discardedValue);
+	    }
+	    Tcl_SetHashValue(hPtr, valuePtr);
+	    Tcl_IncrRefCount(valuePtr); /* since hash now holds ref to it */
+	}
     }
 
-    /*
-     * Get the string representation. Make it up-to-date if necessary.
-     */
-
-    string = TclGetStringFromObj(objPtr, &length);
-    limit = (string + length);
-
-    /*
-     * Allocate a new HashTable that has objects for keys and objects for
-     * values.
-     */
-
-    dict = ckalloc(sizeof(Dict));
-    InitChainTable(dict);
-    for (p = string, lenRemain = length;
-	    lenRemain > 0;
-	    p = nextElem, lenRemain = (limit - nextElem)) {
-	result = TclFindElement(interp, p, lenRemain,
-		&elemStart, &nextElem, &elemSize, &hasBrace);
-	if (result != TCL_OK) {
-	    if (interp != NULL) {
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
-	    }
-	    goto errorExit;
-	}
-	if (elemStart >= limit) {
-	    break;
-	}
-
-	/*
-	 * Allocate a Tcl object for the element and initialize it from the
-	 * "elemSize" bytes starting at "elemStart".
-	 */
-
-	s = ckalloc(elemSize + 1);
-	if (hasBrace) {
-	    memcpy(s, elemStart, (size_t) elemSize);
-	    s[elemSize] = 0;
-	} else {
-	    elemSize = TclCopyAndCollapse(elemSize, elemStart, s);
-	}
-
-	TclNewObj(keyPtr);
-	keyPtr->bytes = s;
-	keyPtr->length = elemSize;
-
-	p = nextElem;
-	lenRemain = (limit - nextElem);
-	if (lenRemain <= 0) {
-	    goto missingKey;
-	}
-
-	result = TclFindElement(interp, p, lenRemain,
-		&elemStart, &nextElem, &elemSize, &hasBrace);
-	if (result != TCL_OK) {
-	    if (interp != NULL) {
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
-	    }
-	    TclDecrRefCount(keyPtr);
-	    goto errorExit;
-	}
-	if (elemStart >= limit) {
-	    goto missingKey;
-	}
-
-	/*
-	 * Allocate a Tcl object for the element and initialize it from the
-	 * "elemSize" bytes starting at "elemStart".
-	 */
-
-	s = ckalloc(elemSize + 1);
-	if (hasBrace) {
-	    memcpy(s, elemStart, (size_t) elemSize);
-	    s[elemSize] = 0;
-	} else {
-	    elemSize = TclCopyAndCollapse(elemSize, elemStart, s);
-	}
-
-	TclNewObj(valuePtr);
-	valuePtr->bytes = s;
-	valuePtr->length = elemSize;
-
-	/*
-	 * Store key and value in the hash table we're building.
-	 */
-
-	hPtr = CreateChainEntry(dict, keyPtr, &isNew);
-	if (!isNew) {
-	    Tcl_Obj *discardedValue = Tcl_GetHashValue(hPtr);
-
-	    TclDecrRefCount(keyPtr);
-	    TclDecrRefCount(discardedValue);
-	}
-	Tcl_SetHashValue(hPtr, valuePtr);
-	Tcl_IncrRefCount(valuePtr);	/* Since hash now holds ref to it. */
-    }
-
-  installHash:
     /*
      * Free the old internalRep before setting the new one. We do this as late
      * as possible to allow the conversion code, in particular
@@ -744,15 +682,17 @@ SetDictFromAny(
     objPtr->typePtr = &tclDictType;
     return TCL_OK;
 
-  missingKey:
+  missingValue:
     if (interp != NULL) {
 	Tcl_SetResult(interp, "missing value to go with key", TCL_STATIC);
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
     }
-    TclDecrRefCount(keyPtr);
     result = TCL_ERROR;
 
   errorExit:
+    if (interp != NULL) {
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
+    }
     DeleteChainTable(dict);
     ckfree(dict);
     return result;
