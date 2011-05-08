@@ -25,7 +25,7 @@ function ljoin()
 //  to [bgerror].
 
 function tclEsc(text) {
-  return text.replace(/[][\\$""]/g,'\\$0');
+    return text.replace(/[][\\$""]/g,'\\$0');
 }
 
 function tclDo(s) {
@@ -45,13 +45,13 @@ function tcl() {
     try {
         //printf.apply(this, arguments);
         t = tclModule.evall.apply(tclModule, arguments);
-        //printf("ret:", t);
     } catch (err) {
 	//printf("JS-err:", err);
 	setTimeout('tcl("::nacl::bgerror,"'+ err + ',' + t + ')',0);
     }
 
     try {
+        //printf("ret:", t);
 	eval(t);
     } catch(err) {
 	//printf("JS-err:", err);
@@ -115,38 +115,38 @@ function tclsource(url,tcb) {
     xs.onreadystatechange = function() {
 	//printf("XHR-source:"+xs.readyState);
 	if (xs.readyState==4)
-	    {
-		if (xs.status==200) {
-		    tclDo(tcb+" {"+xs.responseText+"}");
-		} else {
-		    tclDo(tcb+" {error \"Can't source -- "+xs.statusText+"\"}");
-		}
-	    }
+        {
+            if (xs.status==200) {
+                tclDo(tcb+" {"+xs.responseText+"}");
+            } else {
+                tclDo(tcb+" {error \"Can't source -- "+xs.statusText+"\"}");
+            }
+        }
     };
 }
 
 // traverse - apply function to subtree of dom returning object
 function traverse(fn)
 {
-        var result;
-        var target;
-        if (arguments.length() > 1) {
-           target = arguments[1];
-        } else {
-          target = document;
+    var result;
+    var target;
+    if (arguments.length() > 1) {
+        target = arguments[1];
+    } else {
+        target = document;
+    }
+
+    result[target]=fn.apply(target);
+
+    for (var i=0; i<target.childNodes.length; i++) {
+        var child = target.childNodes[i];
+        var traversal = traverse(fn, child);
+        for (var prop in traversal) {
+            result[prop] = traversal[prop];
         }
+    }
 
-        result[target]=fn.apply(target);
-
-        for (var i=0; i<target.childNodes.length; i++) {
-            var child = target.childNodes[i];
-            var traversal = traverse(fn, child);
-            for (var prop in traversal) {
-               result[prop] = traversal[prop];
-            }
-	}
-
-        return result;
+    return result;
 }
 
 // ---------- GUI and standard NaCl-loading machinery --------

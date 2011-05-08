@@ -225,7 +225,8 @@ class create ::NaTk {
 }
 
 class create ::NaTk::Widget {
-    variable id props widget interp parent connection
+    variable id props widget interp parent connection rendered
+
     method js {} {return ""}
 
     method element {} {
@@ -371,38 +372,63 @@ class create ::NaTk::Widget {
         return $result
     }
 
-    method compound {text} {
+    # getvalue - return a widget's textvariable or text, where applicable
+    method getvalue {} {
+        if {[dict exists $props textvariable]} {
+            set result [my iget? [dict get $props textvariable]]
+            Debug.widgets {[self] getvalue from textvariable:'[dict get $props textvariable]' value:'$result'}
+        } elseif {[dict exists $props text]} {
+            set result [dict get $props text]
+            Debug.widgets {[self] getvalue from text '$result'}
+        } else {
+            Debug.widgets {[self] getvalue default to ""}
+            set result ""
+        }
+        return $result
+    }
+
+    # compound - return a widget's image/value compound
+    method compound {args} {
+        if {[llength $args] == 1} {
+            set text [lindex $args 0]
+            Debug.widget {[self] compound explicit '$text'}
+        } else {
+            set text [my getvalue]
+            Debug.widget {[self] compound implicit '$text'}
+        }
         set text [armour $text]
 
         set image [dict get? $props image]
         if {$image ne ""} {
             set image [$image render]
         }
-
+        set result ""
         switch -- [dict get? $props compound] {
             left {
-                return $image$text
+                set result $image$text
             }
             right {
-                return $text$image
+                set result $text$image
             }
             center -
             top {
-                return "$image[my <br>]$text"
+                set result "$image[my <br>]$text"
             }
             bottom {
-                return "$text[my <br>]$image"
+                set result "$text[my <br>]$image"
             }
             none -
             default {
                 # image instead of text
                 if {$image ne ""} {
-                    return "$image"
+                    set result "$image"
                 } else {
-                    return "$text"
+                    set result "$text"
                 }
             }
         }
+        Debug.widget {[self] compound ($args) -> $result}
+        return $result
     }
 
     # access interp variables
@@ -455,21 +481,6 @@ class create ::NaTk::Widget {
         }
     }
 
-    method getvalue {} {
-        if {[dict exists $props textvariable]} {
-            set val [my iget? [dict get $props textvariable]]
-            Debug.widgets {[self] getvalue from textvariable:'[dict get $props textvariable]' value:'$val'}
-            set result $val
-        } elseif {[dict exists $props exists text]} {
-            Debug.widgets {[self] getvalue from text '$text'}
-            set result $text
-        } else {
-            Debug.widgets {[self] getvalue default to ""}
-            set result ""
-        }
-        return $result
-    }
-
     # Configure - reflect configuration in $props dict
     # give trace-effect to -textvariable and -variable opts
     method Configure {args} {
@@ -479,9 +490,15 @@ class create ::NaTk::Widget {
             error "Configure requires even number of args"
         }
 
+        # clean the '-' prefix from property names
         dict for {n v} $args {
-            set n [string trim $n -]
+            if {[string match -* $n]} {
+                dict unset args $n
+                dict set args [string trim $n -] $v
+            }
+        }
 
+        dict for {n v} $args {
             switch -- $n {
                 variable -
                 textvariable {
@@ -500,8 +517,14 @@ class create ::NaTk::Widget {
                             {*}$interp eval [list ::variable ::$v]
                         }
 
+                        if {[dict exists $args text]} {
+                            my iset $v [dict get $args text]
+                        }
+
                         # track changes to textvariable
                         my itrace [dict get $props $n] $widget $n
+                    } else {
+                        catch {dict unset props $n}
                     }
                 }
 
@@ -542,7 +565,6 @@ class create ::NaTk::Widget {
     }
 
     destructor {
-        variable connection
         $connection delwidget [self]	;# remove full widget name
     }
 
@@ -550,9 +572,20 @@ class create ::NaTk::Widget {
         return $id
     }
 
+    method nacl {args} {
+        if {!$rendered} return
+        set script [join $args \;\n]
+        ::nacl js $script
+    }
+
+    method render {args} {
+        incr rendered
+    }
+
     constructor {args} {
         variable grid {}
         set id [namespace tail [self]]
+        set rendered 0	;# not yet rendered
 
         # get structural vars from NaTk mkwidget
         foreach v {widget interp parent connection} {
@@ -572,14 +605,15 @@ class create ::NaTk::Widget {
 
 class create ::NaTk::button {
     superclass ::NaTk::Widget
-    variable id props widget interp parent
+    variable id props widget interp parent connection rendered
 
     # button - textvariable command
 
     # textvariable - interp's textvariable has changed
     method textvariable {} {
+        variable ignore; if {$ignore} return
         set val [my iget [dict get $props textvariable]]
-        ::nacl js [my element].whatever
+        my nacl [my element].innerHTML='[my compound]'
     }
 
     method changed {} {
@@ -590,24 +624,19 @@ class create ::NaTk::button {
     }
 
     method render {args} {
-        if {[dict exists $props textvariable]} {
-            set text [my iget [dict get $props textvariable]]
-        } else {
-            set text [dict get? $props text]
-        }
+        next
         set event [list onclick "tcl(\"[self]\",\"changed\");"]
-        return [my <button> $id id $id class button {*}$event {*}[my style $args] [my compound $text]]
+        return [my <button> $id id $id class button {*}$event {*}[my style $args] [my compound]]
     }
 
     constructor {args} {
-        variable on 0
         next justify left {*}$args
     }
 }
 
 class create ::NaTk::entry {
     superclass ::NaTk::Widget
-    variable id props widget interp parent
+    variable id props widget interp parent connection rendered
 
     # entry - textvariable validatecommand
 
@@ -616,7 +645,7 @@ class create ::NaTk::entry {
     method textvariable {args} {
         variable ignore; if {$ignore} return
         set val [my iget [dict get $props textvariable]]
-        ::nacl js [my element].value='$val'
+        my nacl [my element].value='$val'
     }
 
     method changed {value} {
@@ -628,6 +657,7 @@ class create ::NaTk::entry {
     }
 
     method render {args} {
+        next
         Debug.widgets {[info coroutine] rendering Entry [self]}
 
         switch -- [dict get? $props type] {
@@ -648,6 +678,7 @@ class create ::NaTk::entry {
     }
 
     constructor {args} {
+        variable ignore 1
         next {*}[dict merge {
             justify left
             state normal width 16
@@ -658,19 +689,47 @@ class create ::NaTk::entry {
         if {[dict exists $props show] && ![dict exists $props type]} {
             my configure -type password
         }
+        incr ignore -1
     }
 }
 
+class create ::NaTk::label {
+    superclass ::NaTk::Widget
+    variable id props widget interp parent connection rendered
+
+    # label - textvariable text
+
+    method textvariable {args} {
+        variable ignore; if {$ignore} return
+        Debug.widget {label $id: getvalue: '[my getvalue]'}
+        my nacl [my element].innerHTML='[my compound]'
+    }
+
+    method render {args} {
+        next
+        return [my <div> id $id class label {*}[my style $args] [my compound]]
+    }
+
+    constructor {args} {
+        variable ignore; incr ignore
+        next justify left {*}$args
+        if {![dict exists $props textvariable]} {
+            my Configure textvariable [lindex [split $widget .] end]
+        }
+        incr ignore -1
+    }
+}
 
 class create ::NaTk::checkbutton {
     superclass ::NaTk::Widget
-    variable id props widget interp parent
+    variable id props widget interp parent connection rendered
 
     # checkbutton - textvariable command variable
 
     method textvariable {} {
+        variable ignore; if {$ignore} return
         set val [my iget [dict get $props textvariable]]
-        ::nacl js [my element].whatever
+        my nacl [my element].whatever
     }
 
     # changed - button state in browser - reflect to var/command
@@ -688,6 +747,7 @@ class create ::NaTk::checkbutton {
     }
 
     method render {args} {
+        next
         Debug.widgets {checkbutton render: getting '[dict get $props variable]' == [my iget [dict get $props variable]]}
 
         set val [my iget [dict get $props variable]]
@@ -698,7 +758,7 @@ class create ::NaTk::checkbutton {
         }
 
         Debug.widgets {[self] checkbox render: checked:$checked}
-        return [my <checkbox> $id id $id {*}[my style $args] checked $checked [tclarmour [my compound [my getvalue]]]]
+        return [my <checkbox> $id id $id {*}[my style $args] checked $checked [tclarmour [my compound]]]
     }
 
     constructor {args} {
@@ -714,9 +774,10 @@ class create ::NaTk::checkbutton {
 # radiobuttons sharing the same variable.
 class create ::NaTk::rb {
     superclass ::NaTk::Widget
-    variable id props widget interp parent
+    variable id props widget interp parent connection rendered
 
     method render {args} {
+        next
         error "Can't render an rbC"
     }
 
@@ -727,18 +788,19 @@ class create ::NaTk::rb {
 
 class create ::NaTk::radiobutton {
     superclass ::NaTk::Widget
-    variable id props widget interp parent
+    variable id props widget interp parent connection rendered
 
     # radiobutton - textvariable command variable value
 
     method textvariable {} {
+        variable ignore; if {$ignore} return
         set val [my iget [dict get $props textvariable]]
-        ::nacl js [my element].whatever
+        my nacl [my element].whatever
     }
 
     method variable {} {
         set val [my iget [dict get $props textvariable]]
-        ::nacl js [my element].whatever
+        my nacl [my element].whatever
     }
 
     # changed - button state in browser - reflect to var/command
@@ -774,7 +836,8 @@ class create ::NaTk::radiobutton {
     }
 
     method render {args} {
-        set label [tclarmour [my compound [my getvalue]]]
+        next
+        set label [tclarmour [my compound]]
         return [my update {*}$args label $label]
     }
 
@@ -788,29 +851,9 @@ class create ::NaTk::radiobutton {
     }
 }
 
-class create ::NaTk::label {
-    superclass ::NaTk::Widget
-    variable id props widget interp parent
-
-    # label - textvariable text
-
-    method textvariable {args} {
-        Debug.widget {label $id: getvalue: '[my getvalue]'}
-        ::nacl js [my element].innerHTML='[my compound [my getvalue]]'
-    }
-
-    method render {args} {
-        return [my <div> id $id class label {*}[my style $args] [my compound [my getvalue]]]
-    }
-
-    constructor {args} {
-        next justify left {*}$args
-    }
-}
-
 class create ::NaTk::scale {
     superclass ::NaTk::Widget
-    variable id props widget interp parent
+    variable id props widget interp parent connection rendered
 
     # scale - command variable
 
@@ -828,7 +871,7 @@ class create ::NaTk::scale {
     method variable {} {
         variable ignore; if {$ignore} return
         set val [my iget [dict get $props variable]]
-        ::nacl js [my element].whatever
+        my nacl [my element].whatever
     }
 
     # js - javascript to track changes to the browser widget
@@ -848,6 +891,7 @@ class create ::NaTk::scale {
     }
 
     method render {args} {
+        next
         Debug.widgets {scale $id render $args}
         set result ""
         if {[dict get? $props label] ne ""} {
@@ -874,18 +918,19 @@ class create ::NaTk::scale {
 
 class create ::NaTk::select {
     superclass ::NaTk::Widget
-    variable id props widget interp parent
+    variable id props widget interp parent connection rendered
 
     method textvariable {} {
+        variable ignore; if {$ignore} return
         set val [my iget [dict get $props textvariable]]
-        ::nacl js [my element].value='$val'
+        my nacl [my element].value='$val'
     }
 
     # variable - interp var has changed - reflect to browser widget
     method variable {} {
         variable ignore; if {$ignore} return
         set val [my iget [dict get $props variable]]
-        ::nacl js [my element].value='$val'
+        my nacl [my element].value='$val'
     }
 
     # select value has changed in browser
@@ -899,6 +944,7 @@ class create ::NaTk::select {
     }
 
     method render {args} {
+        next
         set var [dict get $props textvariable]
         if {[my iexists $var]} {
             set val [my iget $var]
@@ -934,12 +980,13 @@ class create ::NaTk::select {
 
 class create ::NaTk::combobox {
     superclass ::NaTk::select
-    variable id props widget interp parent
+    variable id props widget interp parent connection rendered
 
     method render {} {
+        next
         Debug.widgets {combobox}
         set result [next]
-        ::nacl js [my element].combobox()
+        my nacl [my element].combobox()
         return $result
     }
 
@@ -950,7 +997,7 @@ class create ::NaTk::combobox {
 
 # grid store grid info in an x/y array gridLayout(column.row)
 class create ::NaTk::grid {
-    variable id props widget interp parent 
+    variable id props widget interp parent connection rendered
 
     # traverse grid looking for changes.
     method changes {r} {
@@ -1087,7 +1134,7 @@ class create ::NaTk::grid {
         } else {
             set b [list border $border]
         }
-        
+
         set content [my <table> class grid {*}$b {*}[my style $args] $content]
         Debug.grid {Grid '[namespace tail [self]]' rendered ($content)}
         return $content
@@ -1189,7 +1236,6 @@ class create ::NaTk::grid {
         if {$slave eq $widget} {
             return [$parent grid remove $widget {*}$args]
         }
-        variable connection
         [$connection widget $slave] hide
     }
 
@@ -1223,7 +1269,6 @@ class create ::NaTk::grid {
             set maxrows $height
         }
 
-        variable connection
         set object [$connection widget $slave]
 
         variable grid
@@ -1256,10 +1301,11 @@ class create ::NaTk::grid {
 class create ::NaTk::frame {
     superclass ::NaTk::Widget
     mixin ::NaTk::grid
-    variable id props widget interp parent
+    variable id props widget interp parent connection rendered
 
     # render widget
     method render {args} {
+        next
         Debug.widgets {Frame [namespace tail [self]] render}
         if {[dict exists $props div]
             || [dict get? $props text] eq ""
@@ -1292,14 +1338,15 @@ class create ::NaTk::frame {
 class create ::NaTk::toplevel {
     superclass ::NaTk::Widget
     mixin ::NaTk::grid
-    variable id props widget interp parent
+    variable id props widget interp parent connection rendered
 
     # render widget
     method render {args} {
+        next
         Debug.widgets {[namespace tail [self]] toplevel render}
 
-        ::nacl js toplevel.innerHTML=[::nacl jsquote [my <form> form_$id onsubmit "return false;" [my grid_render {*}$args]]]
-        ::nacl js [::nacl jsquote [my grid_js]]
+        my nacl toplevel.innerHTML=[::nacl jsquote [my <form> form_$id onsubmit "return false;" [my grid_render {*}$args]]]
+        my nacl [::nacl jsquote [my grid_js]]
     }
 
     constructor {args} {
