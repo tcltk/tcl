@@ -626,7 +626,7 @@ class create ::NaTk::button {
     method render {args} {
         next
         set event [list onclick "tcl(\"[self]\",\"changed\");"]
-        return [my <button> $id id $id class button {*}$event {*}[my style $args] [my compound]]
+        return [my <button> $id id $id type button class button {*}$event {*}[my style $args] [my compound]]
     }
 
     constructor {args} {
