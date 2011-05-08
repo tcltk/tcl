@@ -51,41 +51,41 @@ namespace eval ::nacl {
 	}
     }
 
-    proc bgerror {args} {
-        printf "### BGERROR: [join $args]\n# [info errorstack]"
-        js "alert([jsquote "BGERROR: [join $args]"])"
-    }
-
     proc alert {args} {
         js "alert([jsquote [join $args]])"
     }
 
+    proc bgerror {args} {
+        printf "### BGERROR: [join $args]\n# [info errorstack]"
+        js "alert([jsquote [join $args]])"
+    }
+
     proc wrap {s} {
-        variable JS ""
         variable hooks
         if {[catch {
             uplevel #0 $s
             foreach x $hooks {uplevel #0 $x}
         } err eo]} {
-            printf "Wrapper error: $err ($eo)"
             bgerror "$err ($eo)"
         }
-        return $JS
+
+        variable JS; set toJS $JS; set JS ""
+        return $toJS
     }
 
     # evall - evaluate a list as a command
     # returns javascript to evaluate in nacl
     proc evall {args} {
-        variable JS ""
         variable hooks
         if {[catch {
             uplevel #0 {*}$args
             foreach x $hooks {uplevel #0 $x}
         } err eo]} {
-            printf "evall error: $err ($eo)"
             bgerror "$err ($eo)"
         }
-        return $JS
+
+        variable JS; set toJS $JS; set JS ""
+        return $toJS
     }
 
     # start - natcl module has been loaded with the following args

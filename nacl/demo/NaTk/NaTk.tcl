@@ -81,6 +81,8 @@ class create ::NaTk {
         variable interp
         variable widgets
 
+        Debug.widget {mkwidget $widget of type $type ($args)}
+
         if {$widget ne "."} {
             set parent [join [lrange [split $widget .] 0 end-1] .]
             if {$parent eq ""} {
@@ -99,6 +101,16 @@ class create ::NaTk {
         # construct a widget of given type
         Debug.widget {::NaTk::$type new -widget $widget $args -interp $interp $p -connection [self]}
         set cmd [::NaTk::$type new -widget $widget {*}$args -interp $interp {*}$p -connection [self]]
+        return $widget
+
+        if {[catch {
+            ::NaTk::$type new -widget $widget {*}$args -interp $interp {*}$p -connection [self]
+        } cmd eo]} {
+            Debug.widget {FAILED $widget of type '$type' as obj: $cmd ($eo)}
+            return -options $eo $cmd
+        } else {
+            Debug.widget {created $widget of type '$type' as obj:$cmd}
+        }
 
         return $widget
     }
@@ -125,6 +137,7 @@ class create ::NaTk {
     }
 
     method grid {args} {
+        Debug.grid {NATK GRID: $args}
         if {[string index [lindex $args 0]] in {x . ^}} {
             set args [linsert $args 0 configure]
         }
@@ -178,6 +191,11 @@ class create ::NaTk {
         my toplevel render
     }
 
+    method bgerror {args} {
+        Debug.interp "INTERP BGERROR: $args"
+        ::nacl bgerror {*}$args [Interp info errorstack]
+    }
+
     constructor {args} {
         Debug.widgets {[self] Creating ::NaTk $args}
         variable safe 0
@@ -188,15 +206,15 @@ class create ::NaTk {
 
         # create an interpreter for NaTk program
         variable interp [::interp create {*}[expr {$safe?"-safe":""}] ${ns}::Interp]
-        Interp alias bgerror [self] bgerror
-        Interp alias alert ::nacl alert
+        Interp alias ::bgerror [self] bgerror
+        Interp alias ::alert ::nacl alert
 
         my mkwidget toplevel .
 
         # install each widget creator as alias in the interp
-        foreach n {button entry label
+        foreach n {button entry label frame
             checkbutton radiobutton scale
-            select combobox frame
+            select combobox
         } {
             Interp alias $n [self] mkwidget $n
         }
@@ -233,6 +251,7 @@ class create ::NaTk::Widget {
 
     # grid - percolates up to the parent containing a grid
     method grid {args} {
+        Debug.grid {percolating grid to $parent: grid $args}
         tailcall $parent grid {*}$args
     }
 
@@ -280,7 +299,7 @@ class create ::NaTk::Widget {
         return [my grid configure $widget {*}$ga {*}$gargs]
     }
 
-    # style - construct an HTML style form
+    # style - make an HTML style form
     method style {gridding} {
         set attrs {}
         foreach {css tk} {
@@ -540,6 +559,7 @@ class create ::NaTk::Widget {
             set $v [dict get $args -$v]
             dict unset args -$v
         }
+        Debug.widgets "create $widget ([self])  parent: $parent"
 
         # add widget to Interp and mapping
         $connection addwidget $widget [self]
@@ -552,7 +572,7 @@ class create ::NaTk::Widget {
 
 class create ::NaTk::button {
     superclass ::NaTk::Widget
-    variable id props widget interp
+    variable id props widget interp parent
 
     # button - textvariable command
 
@@ -587,7 +607,7 @@ class create ::NaTk::button {
 
 class create ::NaTk::entry {
     superclass ::NaTk::Widget
-    variable id props widget interp
+    variable id props widget interp parent
 
     # entry - textvariable validatecommand
 
@@ -644,7 +664,7 @@ class create ::NaTk::entry {
 
 class create ::NaTk::checkbutton {
     superclass ::NaTk::Widget
-    variable id props widget interp
+    variable id props widget interp parent
 
     # checkbutton - textvariable command variable
 
@@ -694,7 +714,7 @@ class create ::NaTk::checkbutton {
 # radiobuttons sharing the same variable.
 class create ::NaTk::rb {
     superclass ::NaTk::Widget
-    variable id props widget interp
+    variable id props widget interp parent
 
     method render {args} {
         error "Can't render an rbC"
@@ -707,7 +727,7 @@ class create ::NaTk::rb {
 
 class create ::NaTk::radiobutton {
     superclass ::NaTk::Widget
-    variable id props widget interp
+    variable id props widget interp parent
 
     # radiobutton - textvariable command variable value
 
@@ -770,7 +790,7 @@ class create ::NaTk::radiobutton {
 
 class create ::NaTk::label {
     superclass ::NaTk::Widget
-    variable id props widget interp
+    variable id props widget interp parent
 
     # label - textvariable text
 
@@ -790,7 +810,7 @@ class create ::NaTk::label {
 
 class create ::NaTk::scale {
     superclass ::NaTk::Widget
-    variable id props widget interp
+    variable id props widget interp parent
 
     # scale - command variable
 
@@ -854,22 +874,28 @@ class create ::NaTk::scale {
 
 class create ::NaTk::select {
     superclass ::NaTk::Widget
-    variable id props widget interp
+    variable id props widget interp parent
 
     method textvariable {} {
         set val [my iget [dict get $props textvariable]]
-        ::nacl js [my element].whatever
+        ::nacl js [my element].value='$val'
     }
 
     # variable - interp var has changed - reflect to browser widget
     method variable {} {
         variable ignore; if {$ignore} return
         set val [my iget [dict get $props variable]]
-        ::nacl js [my element].whatever
+        ::nacl js [my element].value='$val'
     }
 
-    method js {} {
-        #::nacl js [my element].click(buttonTk)
+    # select value has changed in browser
+    method changed {value} {
+        variable ignore; incr ignore
+        my iset [dict get $props variable] $value
+        incr ignore -1
+        if {[dict exists $props command]} {
+            {*}$interp eval [dict get $props command]
+        }
     }
 
     method render {args} {
@@ -879,7 +905,7 @@ class create ::NaTk::select {
         }
 
         set values [dict get $props values]
-        Debug.widgets {val=$val values=$values}
+        Debug.widgets {select: val=$val values=$values}
         foreach opt $values {
             lappend opts [my <option> value [tclarmour $opt]]
         }
@@ -891,22 +917,30 @@ class create ::NaTk::select {
         } {
             lappend class combobox
         }
-        return [my <select> $id id $id class [join $class] {*}[my style $args] $opts]
+
+        set event [list onclick "tcl(\"[self]\",\"changed\",[my element].value);return false;"]
+
+        return [my <select> $id id $id {*}$event class [join $class] {*}[my style $args] $opts]
     }
 
     constructor {args} {
         variable ignore 0
         next justify left {*}$args
+        if {![dict exists $props variable]} {
+            my Configure variable [lindex [split $widget .] end]
+        }
     }
 }
 
 class create ::NaTk::combobox {
     superclass ::NaTk::select
-    variable id props widget interp
+    variable id props widget interp parent
 
-    method js {} {
-        Debug.widgets {combobox js}
-        return "[next?]; [my element].combobox();"
+    method render {} {
+        Debug.widgets {combobox}
+        set result [next]
+        ::nacl js [my element].combobox()
+        return $result
     }
 
     constructor {args} {
@@ -916,25 +950,25 @@ class create ::NaTk::combobox {
 
 # grid store grid info in an x/y array gridLayout(column.row)
 class create ::NaTk::grid {
-    variable id props widget interp 
+    variable id props widget interp parent 
 
     # traverse grid looking for changes.
     method changes {r} {
         if {[dict exists $r -repaint]} {
             # repaint short-circuits change search
-            #Debug.widgets {Grid '[namespace tail [self]]' repainting}
+            #Debug.grid {Grid '[namespace tail [self]]' repainting}
             return [list $r {}]
         }
 
         variable grid;variable oldgrid
-        #Debug.widgets {Grid detecting changes: '[namespace tail [self]]'}
+        #Debug.grid {Grid detecting changes: '[namespace tail [self]]'}
 
         # look for modified grid entries, these will cause a repaint
         dict for {row rval} $grid {
             dict for {col val} $rval {
                 if {$val ne [dict oldgrid.$row.$col?]} {
                     # grid has changed ... force reload
-                    Debug.widgets {[namespace tail [self]] repainting}
+                    Debug.grid {[namespace tail [self]] repainting}
                     dict set r -repaint 1
                     return [list $r {}]	;# return the dict of changes by id
                 }
@@ -943,7 +977,7 @@ class create ::NaTk::grid {
 
         if {[dict size [dict ni $oldgrid [dict keys $grid]]]} {
             # a grid element has been deleted
-            Debug.widgets {Grid repainting: '[namespace tail [self]]'}
+            Debug.grid {Grid repainting: '[namespace tail [self]]'}
             dict set r -repaint 1
             return [list $r {}]	;# return the dict of changes by id
         }
@@ -959,26 +993,26 @@ class create ::NaTk::grid {
                         notebook -
                         frame {
                             # propagate change request to geometry managing widgets
-                            #Debug.widgets {Grid changing $type '$widget' at ($row,$col)}
+                            #Debug.grid {Grid changing $type '$widget' at ($row,$col)}
                             set changed [lassign [uplevel 1 [list $widget changes $r]] r]
                             if {[dict exists $r -repaint]} {
-                                Debug.widgets {Grid '[namespace tail [self]]' subgrid repaint $type '$widget'}
+                                Debug.grid {Grid '[namespace tail [self]]' subgrid repaint $type '$widget'}
                                 return [list $r {}]	;# repaint
                             } else {
-                                #Debug.widgets {Grid '[namespace tail [self]]' subgrid [string totitle $type] '$widget' at ($row,$col) ($val) -> ($changed)}
+                                #Debug.grid {Grid '[namespace tail [self]]' subgrid [string totitle $type] '$widget' at ($row,$col) ($val) -> ($changed)}
                             }
                         }
 
                         default {
                             if {[uplevel 1 [list $widget changed?]]} {
-                                Debug.widgets {[namespace tail [self]] changing: ($row,$col) $widget [uplevel 1 [list $widget type]] reports it's changed}
+                                Debug.grid {[namespace tail [self]] changing: ($row,$col) $widget [uplevel 1 [list $widget type]] reports it's changed}
                                 uplevel 1 [list $widget reset]
                                 set changed $widget
                                 lappend changed [uplevel 1 [list $widget wid]]
                                 lappend changed [uplevel 1 [list $widget update]]
                                 lappend changed [uplevel 1 [list $widget type]]
 
-                                Debug.widgets {Grid '[namespace tail [self]]' accumulate changes to [string totitle $type] '$widget' at ($row,$col) ($val) -> ($changed)}
+                                Debug.grid {Grid '[namespace tail [self]]' accumulate changes to [string totitle $type] '$widget' at ($row,$col) ($val) -> ($changed)}
                             }
                         }
                     }
@@ -997,7 +1031,7 @@ class create ::NaTk::grid {
     # render - construct a grid's <table>
     method grid_render {args} {
         variable maxrows; variable maxcols; variable grid
-        Debug.widgets {grid render [dict keys grid] over $maxrows/$maxcols}
+        Debug.grid {grid render [dict keys grid] over $maxrows/$maxcols}
 
         set rows {}	;# accumulate rows
         for {set row 0} {$row < $maxrows} {incr row} {
@@ -1008,7 +1042,7 @@ class create ::NaTk::grid {
                 if {[dict exists $grid $row $col]} {
                     set el [dict get $grid $row $col]
                     dict with el {
-                        Debug.widgets {'[namespace tail [self]]' grid rendering $widget/$object}
+                        Debug.grid {'[namespace tail [self]]' grid rendering $widget/$object}
                         for {set rt $row} {$rt < $rowspan} {incr rt} {
                             set rspan($widget,[expr {$row + $rt}].$col) 1
                             for {set ct $col} {$ct < $columnspan} {incr ct} {
@@ -1044,15 +1078,18 @@ class create ::NaTk::grid {
         variable oldgrid $grid	;# record the old grid
         set content [my <tbody> [join $rows \n]]
         dict set args width 100%
-        variable border
-        if {[dict get $props border]} {
-            set b [list border 1px]
-        } else {
-            set b {}
-        }
 
+        set border [dict get? $props border]
+        if {$border eq ""} {
+            set b {}
+        } elseif {[string is integer -strict $border]} {
+            set b [list border ${border}px]
+        } else {
+            set b [list border $border]
+        }
+        
         set content [my <table> class grid {*}$b {*}[my style $args] $content]
-        Debug.widgets {Grid '[namespace tail [self]]' rendered ($content)}
+        Debug.grid {Grid '[namespace tail [self]]' rendered ($content)}
         return $content
     }
 
@@ -1068,34 +1105,49 @@ class create ::NaTk::grid {
     }
 
     method grid_anchor {master {anchor ""}} {
+        if {$master ne $widget} {
+            return [$parent grid anchor $master {*}$args]
+        }
     }
 
     method grid_bbox {master args} {
+        if {$master ne $widget} {
+            return [$parent grid bbox $master {*}$args]
+        }
     }
     method grid_columnconfigure {master index args} {
-    }
-    method grid_forget {widget} {
-    }
-    method grid_info {widget} {
+        if {$master ne $widget} {
+            return [$parent grid columnconfigure $master $index {*}$args]
+        }
     }
     method grid_location {master x y} {
+        if {$master ne $widget} {
+            return [$parent grid location $master $x $y]
+        }
     }
     method grid_propagate {master boolean} {
+        if {$master ne $widget} {
+            return [$parent grid propagate $master $boolean]
+        }
     }
     method grid_rowconfigure {master index args} {
-    }
-
-    method grid_remove {widget} {
-        variable connection
-        [$connection widget $widget] hide
+        if {$master ne $widget} {
+            return [$parent grid rowconfigure $master $index {*}$args]
+        }
     }
 
     method grid_size {master} {
+        if {$master ne $widget} {
+            return [$parent grid size $master]
+        }
         variable maxcols; variable maxrows
         return [list $maxcols $maxrows]
     }
 
     method grid_slaves {master {option all} {value 0}} {
+        if {$master ne $widget} {
+            return [$parent grid slaves $master $option $value]
+        }
         variable grid
         switch -- $option {
             -row {
@@ -1121,7 +1173,31 @@ class create ::NaTk::grid {
         return $result
     }
 
-    method grid_configure {widget args} {
+    method grid_forget {slave} {
+        if {$slave eq $widget} {
+            return [$parent grid forget $widget {*}$args]
+        }
+    }
+
+    method grid_info {slave} {
+        if {$slave eq $widget} {
+            return [$parent grid info $widget {*}$args]
+        }
+    }
+
+    method grid_remove {slave} {
+        if {$slave eq $widget} {
+            return [$parent grid remove $widget {*}$args]
+        }
+        variable connection
+        [$connection widget $slave] hide
+    }
+
+    method grid_configure {slave args} {
+        if {$slave eq $widget} {
+            return [$parent grid configure $widget {*}$args]
+        }
+
         # set defaults
         set column 0
         set row 0
@@ -1148,22 +1224,23 @@ class create ::NaTk::grid {
         }
 
         variable connection
-        set object [$connection widget $widget]
+        set object [$connection widget $slave]
 
         variable grid
-        dict set grid $row $column [list widget $widget columnspan $columnspan rowspan $rowspan sticky $sticky in $in style $style object $object]
+        dict set grid $row $column [list widget $slave columnspan $columnspan rowspan $rowspan sticky $sticky in $in style $style object $object]
         $object gridded columnspan $columnspan rowspan $rowspan sticky $sticky in $in style $style
 
-        Debug.widgets {[namespace tail [self]] configure gridding $widget/$object}
-        return $widget
+        Debug.grid {[namespace tail [self]] configure gridding $slave/$object}
+        return $slave
     }
 
     method grid {cmd args} {
+        Debug.grid {[self] Calling grid_$cmd $args}
         tailcall my grid_$cmd {*}$args
     }
 
     constructor {args} {
-        Debug.widgets {[self] GRID constructed ($args)}
+        Debug.grid {[self] GRID constructing ($args)}
         variable maxcols 1
         variable maxrows 1
         variable border 0
@@ -1171,6 +1248,7 @@ class create ::NaTk::grid {
         variable connection [dict get $args -connection]
 
         next {*}$args
+        Debug.grid {[self] GRID constructed ($args)}
     }
 }
 
@@ -1178,12 +1256,14 @@ class create ::NaTk::grid {
 class create ::NaTk::frame {
     superclass ::NaTk::Widget
     mixin ::NaTk::grid
-    variable id props widget interp
+    variable id props widget interp parent
 
     # render widget
     method render {args} {
         Debug.widgets {Frame [namespace tail [self]] render}
-        if {[dict exists $props div] || [dict get? $props text] eq ""} {
+        if {[dict exists $props div]
+            || [dict get? $props text] eq ""
+        } {
             append content \n [my grid_render {*}$args]
             return [my <div> id $id class frame {*}[my style $args] $content]
         } else {
@@ -1202,15 +1282,8 @@ class create ::NaTk::frame {
     }
 
     constructor {args} {
-        set args [dict merge {} $args]
-        if {[dict exists $args -width]} {
-            variable width [dict get $args -width]
-            set w [list width $width]
-            dict unset args -width
-        } else {
-            set w {}
-        }
-        next {*}$args
+        Debug.widgets {creating Frame [self]}
+        next -border 0 {*}$args
         Debug.widgets {created Frame [self]}
     }
 }
@@ -1219,11 +1292,10 @@ class create ::NaTk::frame {
 class create ::NaTk::toplevel {
     superclass ::NaTk::Widget
     mixin ::NaTk::grid
-    variable id props widget interp
+    variable id props widget interp parent
 
     # render widget
     method render {args} {
-        variable tgrid
         Debug.widgets {[namespace tail [self]] toplevel render}
 
         ::nacl js toplevel.innerHTML=[::nacl jsquote [my <form> form_$id onsubmit "return false;" [my grid_render {*}$args]]]
@@ -1240,6 +1312,7 @@ Debug on form
 Debug on widgets
 Debug on widget
 Debug on interp
+Debug on grid
 
 set ::nacl::verbose 1
 
