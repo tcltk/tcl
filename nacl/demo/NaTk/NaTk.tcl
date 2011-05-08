@@ -15,7 +15,7 @@ proc package {cmd args} {
     switch -- $cmd {
         require {
             lassign $args what
-            if {$what in {Tcl Tk}} return
+            if {$what in {Tcl Tk TclOO}} return
             if {$what in $::_packages} return
             source lib/Utilities/[lindex $args 0].tcl
         }
@@ -211,6 +211,7 @@ class create ::NaTk::Widget {
     method js {} {return ""}
 
     method element {} {
+        return $id;
         #return "document.getElementById('$id')"
         return "\$('#$id')"	;# if jQuery
     }
@@ -354,12 +355,12 @@ class create ::NaTk::Widget {
     method compound {text} {
         set text [armour $text]
 
-        set image [my cget? image]
+        set image [dict get? $props image]
         if {$image ne ""} {
             set image [$image render]
         }
 
-        switch -- [my cget? compound] {
+        switch -- [dict get? $props compound] {
             left {
                 return $image$text
             }
@@ -385,30 +386,27 @@ class create ::NaTk::Widget {
         }
     }
 
-    method getvalue {} {
-        if {[dict exists $props textvariable]} {
-            Debug.widgets {[self] getvalue from textvariable:'[my cget -textvariable]' value:'[my iget [my cget -textvariable]]'}
-            set val [my iget [my cget -textvariable]]
-            set result $val
-        } elseif {[dict exists $props exists text]} {
-            Debug.widgets {[self] getvalue from text '$text'}
-            set result $text
-        } else {
-            Debug.widgets {[self] getvalue default to ""}
-            set result ""
-        }
-        return $result
-    }
-
     # access interp variables
     method iset {n v} {
         Debug.interp {iset '$n' <- '$v' traces:([{*}$interp eval [list trace info variable $n]]) ([lrange [info level -1] 0 1])}
-        return [{*}$interp eval [list set $n $v]]
+        return [{*}$interp eval [list ::set $n $v]]
+    }
+
+    method iget? {n} {
+        try {
+            Debug.widgets {iget $n: {*}$interp eval ::if \{\[info exists $n\]\} \{set $n\}}
+            set result [{*}$interp eval ::if \{\[info exists $n\]\} \{set $n\}]
+        } on error {e eo} {
+            set result ""
+        }
+
+        Debug.interp {iget '$n' -> '$result' ([lrange [info level -1] 0 1])}
+        return $result
     }
 
     method iget {n} {
         try {
-            set result [{*}$interp eval [list set $n]]
+            set result [{*}$interp eval [list ::set $n]]
         } on error {e eo} {
             set result ""
         }
@@ -418,26 +416,9 @@ class create ::NaTk::Widget {
     }
 
     method iexists {n} {
-        set result [{*}$interp eval [list info exists $n]]
+        set result [{*}$interp eval [list ::info exists $n]]
         Debug.interp {iexists '$n' -> $result}
         return $result
-    }
-
-    method cget {opt} {
-        return [dict get $props [string trimleft $opt -]]
-    }
-
-    method cget? {opt} {
-        set opt [string trim $opt -]
-        if {[dict exists $props $opt]} {
-            return [dict get $props $opt]
-        } else {
-            return ""
-        }
-    }
-
-    method cexists {opt} {
-        return [dict exists $props $opt]
     }
 
     # itrace - trace an Interp variable
@@ -453,6 +434,21 @@ class create ::NaTk::Widget {
             Debug.interp {itrace removed $what $args ([dict get $trace $what]) leaving ([{*}$interp eval [list trace info variable $what]])}
             dict unset trace $what
         }
+    }
+
+    method getvalue {} {
+        if {[dict exists $props textvariable]} {
+            set val [my iget? [dict get $props textvariable]]
+            Debug.widgets {[self] getvalue from textvariable:'[dict get $props textvariable]' value:'$val'}
+            set result $val
+        } elseif {[dict exists $props exists text]} {
+            Debug.widgets {[self] getvalue from text '$text'}
+            set result $text
+        } else {
+            Debug.widgets {[self] getvalue default to ""}
+            set result ""
+        }
+        return $result
     }
 
     # Configure - reflect configuration in $props dict
@@ -567,8 +563,9 @@ class create ::NaTk::button {
     }
 
     method changed {} {
-        if {[dict get? $props command] ne ""} {
-            {*}$interp eval [dict get $props command]
+        set cmd [dict get? $props command]
+        if {$cmd ne ""} {
+            {*}$interp eval $cmd
         }
     }
 
@@ -578,7 +575,8 @@ class create ::NaTk::button {
         } else {
             set text [dict get? $props text]
         }
-        return [my <button> $id id $id onclick "tcl(\"[self]\",\"changed\");" {*}[my style $args] [my compound $text]]
+        set event [list onclick "tcl(\"[self]\",\"changed\");"]
+        return [my <button> $id id $id class button {*}$event {*}[my style $args] [my compound $text]]
     }
 
     constructor {args} {
@@ -589,52 +587,43 @@ class create ::NaTk::button {
 
 class create ::NaTk::entry {
     superclass ::NaTk::Widget
-    variable id props
+    variable id props widget interp
 
     # entry - textvariable validatecommand
 
     # textvariable - interp's textvariable has changed
     # reflect change onto browser widget
-    method textvariable {} {
+    method textvariable {args} {
+        variable ignore; if {$ignore} return
         set val [my iget [dict get $props textvariable]]
-        ::nacl js [my element].whatever
+        ::nacl js [my element].value='$val'
     }
 
     method changed {value} {
         # the entry value has changed
         # TODO call validation cmd
+        variable ignore; incr ignore
         my iset [dict get $props textvariable] $value
-    }
-
-    method js {} {
-        set result ""
-        if {[my cexists type]} {
-            switch -- [my cget type] {
-                date {
-                    append result [my element].datepicker();
-                }
-            }
-        }
-
-        append result [my element].change(variableTk)
-        return $result
+        incr ignore -1
     }
 
     method render {args} {
         Debug.widgets {[info coroutine] rendering Entry [self]}
 
-        switch -- [my cget? type] {
+        switch -- [dict get? $props type] {
             password {
                 set tag <password>
             }
-            date -
+            date {
+                set tag <text>
+                #append js [my element].datepicker();
+            }
             default {
                 set tag <text>
             }
         }
-
-        set class {class variable}
-        set result [my $tag $id id $id {*}$class {*}[my style $args] size [my cget -width] [tclarmour [my getvalue]]]
+        set event [list onchange "tcl(\"[self]\",\"changed\",[my element].value);return false;"]
+        set result [my $tag $id id $id class var {*}$event {*}[my style $args] size [dict get $props width] [tclarmour [my getvalue]]]
         return $result
     }
 
@@ -643,7 +632,10 @@ class create ::NaTk::entry {
             justify left
             state normal width 16
         } $args]
-        if {[my cexists -show] && ![my cexists -type]} {
+        if {![dict exists $props textvariable]} {
+            my Configure textvariable [lindex [split $widget .] end]
+        }
+        if {[dict exists $props show] && ![dict exists $props type]} {
             my configure -type password
         }
     }
@@ -652,7 +644,7 @@ class create ::NaTk::entry {
 
 class create ::NaTk::checkbutton {
     superclass ::NaTk::Widget
-    variable id props widget
+    variable id props widget interp
 
     # checkbutton - textvariable command variable
 
@@ -676,9 +668,9 @@ class create ::NaTk::checkbutton {
     }
 
     method render {args} {
-        Debug.widgets {checkbutton render: getting '[my cget variable]' == [my iget [my cget variable]]}
+        Debug.widgets {checkbutton render: getting '[dict get $props variable]' == [my iget [dict get $props variable]]}
 
-        set val [my iget [my cget variable]]
+        set val [my iget [dict get $props variable]]
         if {$val ne "" && $val} {
             set checked 1
         } else {
@@ -702,7 +694,7 @@ class create ::NaTk::checkbutton {
 # radiobuttons sharing the same variable.
 class create ::NaTk::rb {
     superclass ::NaTk::Widget
-    variable id props
+    variable id props widget interp
 
     method render {args} {
         error "Can't render an rbC"
@@ -715,7 +707,7 @@ class create ::NaTk::rb {
 
 class create ::NaTk::radiobutton {
     superclass ::NaTk::Widget
-    variable id props
+    variable id props widget interp
 
     # radiobutton - textvariable command variable value
 
@@ -744,19 +736,19 @@ class create ::NaTk::radiobutton {
     }
 
     method update {args} {
-        Debug.widgets {radiobutton render: getting '[my cget variable]' == [my iget [my cget variable]]}
+        Debug.widgets {radiobutton render: getting '[dict get $props variable]' == [my iget [dict get $props variable]]}
 
         set checked 0
-        set var [my cget variable]
+        set var [dict get $props variable]
         if {[my iexists $var]} {
             set val [my iget $var]
-            if {$val eq [my cget value]} {
+            if {$val eq [dict get $props value]} {
                 set checked 1
             }
         }
 
         Debug.widgets {[self] radiobox render: checked:$checked}
-        set result [my <radio> [[my connection rbvar $var] widget] id $id class rbutton {*}[my style $args] checked $checked value [my cget value] [dict args.label?]]
+        set result [my <radio> [[my connection rbvar $var] widget] id $id class rbutton {*}[my style $args] checked $checked value [dict get $props value] [dict args.label?]]
         Debug.widgets {RADIO html: $result}
         return $result
     }
@@ -778,13 +770,13 @@ class create ::NaTk::radiobutton {
 
 class create ::NaTk::label {
     superclass ::NaTk::Widget
-    variable id props
+    variable id props widget interp
 
     # label - textvariable text
 
-    method textvariable {} {
-        set val [my iget [dict get $props textvariable]]
-        ::nacl js [my element].whatever
+    method textvariable {args} {
+        Debug.widget {label $id: getvalue: '[my getvalue]'}
+        ::nacl js [my element].innerHTML='[my compound [my getvalue]]'
     }
 
     method render {args} {
@@ -798,7 +790,7 @@ class create ::NaTk::label {
 
 class create ::NaTk::scale {
     superclass ::NaTk::Widget
-    variable id props
+    variable id props widget interp
 
     # scale - command variable
 
@@ -822,10 +814,10 @@ class create ::NaTk::scale {
     # js - javascript to track changes to the browser widget
     method js {} {
         # need to generate the slider interaction
-        lappend opts orientation '[my cget orient]'
-        lappend opts min [my cget from]
-        lappend opts max [my cget to]
-        lappend opts value [my iget [my cget -variable]]
+        lappend opts orientation '[dict get $props orient]'
+        lappend opts min [dict get $props from]
+        lappend opts max [dict get $props to]
+        lappend opts value [my iget [dict get $props variable]]
         lappend opts change [string map [list %ID% $id] {
             function (event,ui) {
                 sliderTk(event, '%ID%', ui);
@@ -838,8 +830,8 @@ class create ::NaTk::scale {
     method render {args} {
         Debug.widgets {scale $id render $args}
         set result ""
-        if {[my cget? label] ne ""} {
-            set result [my <label> [my cget label]]
+        if {[dict get? $props label] ne ""} {
+            set result [my <label> [dict get $props label]]
         }
 
         append result [my <div> id $id class slider {*}[my style $args] {}]
@@ -862,7 +854,7 @@ class create ::NaTk::scale {
 
 class create ::NaTk::select {
     superclass ::NaTk::Widget
-    variable id props
+    variable id props widget interp
 
     method textvariable {} {
         set val [my iget [dict get $props textvariable]]
@@ -881,12 +873,12 @@ class create ::NaTk::select {
     }
 
     method render {args} {
-        set var [my cget textvariable]
+        set var [dict get $props textvariable]
         if {[my iexists $var]} {
             set val [my iget $var]
         }
 
-        set values [my cget -values]
+        set values [dict get $props values]
         Debug.widgets {val=$val values=$values}
         foreach opt $values {
             lappend opts [my <option> value [tclarmour $opt]]
@@ -894,8 +886,8 @@ class create ::NaTk::select {
         set opts [join $opts \n]
 
         set class {variable ui-widget ui-state-default ui-corner-all}
-        if {[my cexists combobox]
-            && [my cget combobox]
+        if {[dict exists $props combobox]
+            && [dict get $props combobox]
         } {
             lappend class combobox
         }
@@ -910,7 +902,7 @@ class create ::NaTk::select {
 
 class create ::NaTk::combobox {
     superclass ::NaTk::select
-    variable id props
+    variable id props widget interp
 
     method js {} {
         Debug.widgets {combobox js}
@@ -924,6 +916,8 @@ class create ::NaTk::combobox {
 
 # grid store grid info in an x/y array gridLayout(column.row)
 class create ::NaTk::grid {
+    variable id props widget interp 
+
     # traverse grid looking for changes.
     method changes {r} {
         if {[dict exists $r -repaint]} {
@@ -1051,7 +1045,7 @@ class create ::NaTk::grid {
         set content [my <tbody> [join $rows \n]]
         dict set args width 100%
         variable border
-        if {[my cget border]} {
+        if {[dict get $props border]} {
             set b [list border 1px]
         } else {
             set b {}
@@ -1184,16 +1178,16 @@ class create ::NaTk::grid {
 class create ::NaTk::frame {
     superclass ::NaTk::Widget
     mixin ::NaTk::grid
-    variable id props
+    variable id props widget interp
 
     # render widget
     method render {args} {
         Debug.widgets {Frame [namespace tail [self]] render}
-        if {[my cexists -div] || [my cget? -text] eq ""} {
+        if {[dict exists $props div] || [dict get? $props text] eq ""} {
             append content \n [my grid_render {*}$args]
             return [my <div> id $id class frame {*}[my style $args] $content]
         } else {
-            set label [my cget? -text]
+            set label [dict get? $props text]
             if {$label ne ""} {
                 set content [my <legend> [tclarmour $label]]
             }
@@ -1225,7 +1219,7 @@ class create ::NaTk::frame {
 class create ::NaTk::toplevel {
     superclass ::NaTk::Widget
     mixin ::NaTk::grid
-    variable id props
+    variable id props widget interp
 
     # render widget
     method render {args} {
