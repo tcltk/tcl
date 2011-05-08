@@ -168,11 +168,12 @@ function runTclScripts(where) {
     var script = "";
     for (var i = 0; i < scripts.length; i++) {
         if (scripts[i].getAttribute('type') == 'text/tcl') {
+            if (scripts[i].hasAttribute('src')) {
+                script = script + '\nsource ' + scripts[i].getAttribute('src');
+            }
             var s = scripts[i].innerHTML;
             if (s != "") {
                 script = script + '\n' + s;
-            } else if (scripts[i].hasAttribute('src')) {
-                script = script + '\nsource' + scripts[i].getAttribute('src');
             }
         }
     }
