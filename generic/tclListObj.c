@@ -460,24 +460,9 @@ Tcl_ListObjGetElements(
     register List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
-#if 0
-	int result, length;
-	/*
-	 * Don't get the string version of a dictionary; that transformation
-	 * is not lossy, but is expensive.
-	 */
-
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
-#else
 	int result;
 
 	if (listPtr->bytes == tclEmptyStringRep) {
-#endif
 	    *objcPtr = 0;
 	    *objvPtr = NULL;
 	    return TCL_OK;
@@ -591,19 +576,9 @@ Tcl_ListObjAppendElement(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendElement");
     }
     if (listPtr->typePtr != &tclListType) {
-#if 0
-	int result, length;
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
-#else
 	int result;
 
 	if (listPtr->bytes == tclEmptyStringRep) {
-#endif
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
 	}
@@ -710,19 +685,9 @@ Tcl_ListObjIndex(
     register List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
-#if 0
-	int result, length;
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
-#else
 	int result;
 
 	if (listPtr->bytes == tclEmptyStringRep) {
-#endif
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
 	}
@@ -773,28 +738,9 @@ Tcl_ListObjLength(
     register List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
-#if 0
-	int result, length;
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	    /*
-	     * It's tempting to just report 2*length as the list length
-	     * of this dict, but arguably that's false since the max sizes
-	     * for dicts and lists are not the same, so some dicts don't
-	     * actually convert to lists, and it's good to get that error
-	     * back from the SetListFromAny() call below instead of a false
-	     * indication we can treat the value as a list.  ([llength $val]
-	     * often used as a "listiness" test)
-	     */
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
-#else
 	int result;
 
 	if (listPtr->bytes == tclEmptyStringRep) {
-#endif
 	    *intPtr = 0;
 	    return TCL_OK;
 	}
@@ -865,18 +811,7 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
     if (listPtr->typePtr != &tclListType) {
-#if 0
-	int length;
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
-#else
 	if (listPtr->bytes == tclEmptyStringRep) {
-#endif
-
 	    if (objc) {
 		Tcl_SetListObj(listPtr, objc, NULL);
 	    } else {
@@ -1571,19 +1506,9 @@ TclListObjSetElement(
 	Tcl_Panic("%s called with shared object", "TclListObjSetElement");
     }
     if (listPtr->typePtr != &tclListType) {
-#if 0
-	int length, result;
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
-#else
 	int result;
 
 	if (listPtr->bytes == tclEmptyStringRep) {
-#endif
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("list index out of range", -1));
