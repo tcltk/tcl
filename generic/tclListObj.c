@@ -460,8 +460,8 @@ Tcl_ListObjGetElements(
     register List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
-	int result, length;
 #if 0
+	int result, length;
 	/*
 	 * Don't get the string version of a dictionary; that transformation
 	 * is not lossy, but is expensive.
@@ -473,11 +473,15 @@ Tcl_ListObjGetElements(
 	    (void) TclGetStringFromObj(listPtr, &length);
 	}
 	if (!length) {
+#else
+	int result;
+
+	if (listPtr->bytes == tclEmptyStringRep) {
+#endif
 	    *objcPtr = 0;
 	    *objvPtr = NULL;
 	    return TCL_OK;
 	}
-#endif
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -587,18 +591,22 @@ Tcl_ListObjAppendElement(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendElement");
     }
     if (listPtr->typePtr != &tclListType) {
-	int result, length;
 #if 0
+	int result, length;
 	if (listPtr->typePtr == &tclDictType) {
 	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
 	} else {
 	    (void) TclGetStringFromObj(listPtr, &length);
 	}
 	if (!length) {
+#else
+	int result;
+
+	if (listPtr->bytes == tclEmptyStringRep) {
+#endif
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
 	}
-#endif
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -702,18 +710,22 @@ Tcl_ListObjIndex(
     register List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
-	int result, length;
 #if 0
+	int result, length;
 	if (listPtr->typePtr == &tclDictType) {
 	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
 	} else {
 	    (void) TclGetStringFromObj(listPtr, &length);
 	}
 	if (!length) {
+#else
+	int result;
+
+	if (listPtr->bytes == tclEmptyStringRep) {
+#endif
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
 	}
-#endif
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -761,8 +773,8 @@ Tcl_ListObjLength(
     register List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
-	int result, length;
 #if 0
+	int result, length;
 	if (listPtr->typePtr == &tclDictType) {
 	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
 	    /*
@@ -778,10 +790,14 @@ Tcl_ListObjLength(
 	    (void) TclGetStringFromObj(listPtr, &length);
 	}
 	if (!length) {
+#else
+	int result;
+
+	if (listPtr->bytes == tclEmptyStringRep) {
+#endif
 	    *intPtr = 0;
 	    return TCL_OK;
 	}
-#endif
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -849,29 +865,30 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
     if (listPtr->typePtr != &tclListType) {
-	int length;
 #if 0
+	int length;
 	if (listPtr->typePtr == &tclDictType) {
 	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
 	} else {
 	    (void) TclGetStringFromObj(listPtr, &length);
 	}
 	if (!length) {
+#else
+	if (listPtr->bytes == tclEmptyStringRep) {
+#endif
+
 	    if (objc) {
 		Tcl_SetListObj(listPtr, objc, NULL);
 	    } else {
 		return TCL_OK;
 	    }
 	} else {
-#endif
 	    int result = SetListFromAny(interp, listPtr);
 
 	    if (result != TCL_OK) {
 		return result;
 	    }
-#if 0
 	}
-#endif
     }
 
     /*
@@ -1554,21 +1571,25 @@ TclListObjSetElement(
 	Tcl_Panic("%s called with shared object", "TclListObjSetElement");
     }
     if (listPtr->typePtr != &tclListType) {
-	int length, result;
 #if 0
+	int length, result;
 	if (listPtr->typePtr == &tclDictType) {
 	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
 	} else {
 	    (void) TclGetStringFromObj(listPtr, &length);
 	}
 	if (!length) {
+#else
+	int result;
+
+	if (listPtr->bytes == tclEmptyStringRep) {
+#endif
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("list index out of range", -1));
 	    }
 	    return TCL_ERROR;
 	}
-#endif
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
