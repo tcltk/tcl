@@ -793,7 +793,6 @@ Tcl_AfterObjCmd(
     AfterAssocData *assocPtr;
     int length;
     int index;
-    char buf[16 + TCL_INTEGER_SPACE];
     static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
@@ -952,13 +951,16 @@ Tcl_AfterObjCmd(
 	break;
     case AFTER_INFO:
 	if (objc == 2) {
+            Tcl_Obj *resultObj = Tcl_NewObj();
+
 	    for (afterPtr = assocPtr->firstAfterPtr; afterPtr != NULL;
 		    afterPtr = afterPtr->nextPtr) {
 		if (assocPtr->interp == interp) {
-		    sprintf(buf, "after#%d", afterPtr->id);
-		    Tcl_AppendElement(interp, buf);
+                    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_ObjPrintf(
+                            "after#%d", afterPtr->id));
 		}
 	    }
+            Tcl_SetObjResult(interp, resultObj);
 	    return TCL_OK;
 	}
 	if (objc != 3) {
