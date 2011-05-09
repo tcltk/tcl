@@ -1,3 +1,8 @@
+2011-05-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclListObj.c:	Revise empty string tests so that we avoid
+	potentially expensive string rep generations, especially for dicts.
+
 2011-05-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclLoad.c (TclGetLoadedPackages): Convert to use Tcl_Obj API
