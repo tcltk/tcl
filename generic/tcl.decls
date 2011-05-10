@@ -774,10 +774,10 @@ declare 217 generic {
     void Tcl_ResetResult(Tcl_Interp *interp)
 }
 declare 218 generic {
-    int Tcl_ScanElement(CONST char *str, int *flagPtr)
+    int Tcl_ScanElement(CONST char *src, int *flagPtr)
 }
 declare 219 generic {
-    int Tcl_ScanCountedElement(CONST char *str, int length, int *flagPtr)
+    int Tcl_ScanCountedElement(CONST char *src, int length, int *flagPtr)
 }
 # Obsolete
 declare 220 generic {
@@ -1093,11 +1093,11 @@ declare 303 generic {
 }
 declare 304 generic {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    CONST VOID *tablePtr, int offset, CONST char *msg, int flags,
+	    CONST void *tablePtr, int offset, CONST char *msg, int flags,
 	    int *indexPtr)
 }
 declare 305 generic {
-    VOID *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
+    void *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
 }
 declare 306 generic {
     Tcl_Obj *Tcl_GetVar2Ex(Tcl_Interp *interp, CONST char *part1,

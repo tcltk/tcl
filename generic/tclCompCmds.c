@@ -3907,7 +3907,6 @@ TclCompileSwitchCmd(
     int savedStackDepth = envPtr->currStackDepth;
     int noCase;			/* Has the -nocase flag been given? */
     int foundMode = 0;		/* Have we seen a mode flag yet? */
-    int isListedArms = 0;
     int i, valueIndex;
     DefineLineInformation;	/* TIP #280 */
     int* clNext = envPtr->clNext;
@@ -4047,89 +4046,40 @@ TclCompileSwitchCmd(
      */
 
     if (numWords == 1) {
-	Tcl_DString bodyList;
-	const char **argv = NULL, *tokenStartPtr, *p;
+	CONST char *bytes;
+	int maxLen, numBytes;
 	int bline;		/* TIP #280: line of the pattern/action list,
 				 * and start of list for when tracking the
 				 * location. This list comes immediately after
 				 * the value we switch on. */
-	int isTokenBraced;
-
-	/*
-	 * Test that we've got a suitable body list as a simple (i.e. braced)
-	 * word, and that the elements of the body are simple words too. This
-	 * is really rather nasty indeed.
-	 */
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    return TCL_ERROR;
 	}
+	bytes = tokenPtr[1].start;
+	numBytes = tokenPtr[1].size;
 
-	Tcl_DStringInit(&bodyList);
-	Tcl_DStringAppend(&bodyList, tokenPtr[1].start, tokenPtr[1].size);
-	if (Tcl_SplitList(NULL, Tcl_DStringValue(&bodyList), &numWords,
-		&argv) != TCL_OK) {
-	    Tcl_DStringFree(&bodyList);
+	/* Allocate enough space to work in. */
+	maxLen = TclMaxListLength(bytes, numBytes, NULL);
+	if (maxLen < 2) {
 	    return TCL_ERROR;
 	}
-	Tcl_DStringFree(&bodyList);
-
-	/*
-	 * Now we know what the switch arms are, we've got to see whether we
-	 * can synthesize tokens for the arms. First check whether we've got a
-	 * valid number of arms since we can do that now.
-	 */
-
-	if (numWords == 0 || numWords % 2) {
-	    ckfree((char *) argv);
-	    return TCL_ERROR;
-	}
-
-	isListedArms = 1;
-	bodyTokenArray = (Tcl_Token *) ckalloc(sizeof(Tcl_Token) * numWords);
-	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numWords);
-	bodyLines = (int *) ckalloc(sizeof(int) * numWords);
-	bodyNext  = (int **) ckalloc(sizeof(int*) * numWords);
-
-	/*
-	 * Locate the start of the arms within the overall word.
-	 */
+	bodyTokenArray = (Tcl_Token *) ckalloc(sizeof(Tcl_Token) * maxLen);
+	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * maxLen);
+	bodyLines = (int *) ckalloc(sizeof(int) * maxLen);
+	bodyNext  = (int **) ckalloc(sizeof(int*) * maxLen);
 
 	bline = mapPtr->loc[eclIndex].line[valueIndex+1];
-	p = tokenStartPtr = tokenPtr[1].start;
-	while (isspace(UCHAR(*tokenStartPtr))) {
-	    tokenStartPtr++;
-	}
-	if (*tokenStartPtr == '{') {
-	    tokenStartPtr++;
-	    isTokenBraced = 1;
-	} else {
-	    isTokenBraced = 0;
-	}
+	numWords = 0;
 
-	/*
-	 * TIP #280: Count lines within the literal list.
-	 */
+	while (numBytes > 0) {
+	    CONST char *prevBytes = bytes;
+	    int literal;
 
-	for (i=0 ; i<numWords ; i++) {
-	    bodyTokenArray[i].type = TCL_TOKEN_TEXT;
-	    bodyTokenArray[i].start = tokenStartPtr;
-	    bodyTokenArray[i].size = strlen(argv[i]);
-	    bodyTokenArray[i].numComponents = 0;
-	    bodyToken[i] = bodyTokenArray+i;
-	    tokenStartPtr += bodyTokenArray[i].size;
-
-	    /*
-	     * Test to see if we have guessed the end of the word correctly;
-	     * if not, we can't feed the real string to the sub-compilation
-	     * engine, and we're then stuck and so have to punt out to doing
-	     * everything at runtime.
-	     */
-
-	    if ((isTokenBraced && *(tokenStartPtr++) != '}') ||
-		    (tokenStartPtr < tokenPtr[1].start+tokenPtr[1].size
-		    && !isspace(UCHAR(*tokenStartPtr)))) {
-		ckfree((char *) argv);
+	    if (TCL_OK != TclFindElement(NULL, bytes, numBytes,
+		    &(bodyTokenArray[numWords].start), &bytes,
+		    &(bodyTokenArray[numWords].size), &literal) || !literal) {
+	    abort:
 		ckfree((char *) bodyToken);
 		ckfree((char *) bodyTokenArray);
 		ckfree((char *) bodyLines);
@@ -4137,48 +4087,30 @@ TclCompileSwitchCmd(
 		return TCL_ERROR;
 	    }
 
+	    bodyTokenArray[numWords].type = TCL_TOKEN_TEXT;
+	    bodyTokenArray[numWords].numComponents = 0;
+	    bodyToken[numWords] = bodyTokenArray + numWords;
+
 	    /*
 	     * TIP #280: Now determine the line the list element starts on
 	     * (there is no need to do it earlier, due to the possibility of
 	     * aborting, see above).
 	     */
 
-	    TclAdvanceLines(&bline, p, bodyTokenArray[i].start);
+	    TclAdvanceLines(&bline, prevBytes, bodyTokenArray[numWords].start);
 	    TclAdvanceContinuations (&bline, &clNext,
-				 bodyTokenArray[i].start - envPtr->source);
-	    bodyLines[i] = bline;
-	    bodyNext[i] = clNext;
-	    p = bodyTokenArray[i].start;
+		    bodyTokenArray[numWords].start - envPtr->source);
+	    bodyLines[numWords] = bline;
+	    bodyNext[numWords] = clNext;
+	    TclAdvanceLines(&bline, bodyTokenArray[numWords].start, bytes);
+	    TclAdvanceContinuations (&bline, &clNext, bytes - envPtr->source);
 
-	    while (isspace(UCHAR(*tokenStartPtr))) {
-		tokenStartPtr++;
-		if (tokenStartPtr >= tokenPtr[1].start+tokenPtr[1].size) {
-		    break;
-		}
-	    }
-	    if (*tokenStartPtr == '{') {
-		tokenStartPtr++;
-		isTokenBraced = 1;
-	    } else {
-		isTokenBraced = 0;
-	    }
+	    numBytes -= (bytes - prevBytes);
+	    numWords++;
 	}
-	ckfree((char *) argv);
-
-	/*
-	 * Check that we've parsed everything we thought we were going to
-	 * parse. If not, something odd is going on (I believe it is possible
-	 * to defeat the code above) and we should bail out.
-	 */
-
-	if (tokenStartPtr != tokenPtr[1].start+tokenPtr[1].size) {
-	    ckfree((char *) bodyToken);
-	    ckfree((char *) bodyTokenArray);
-	    ckfree((char *) bodyLines);
-	    ckfree((char *) bodyNext);
-	    return TCL_ERROR;
+	if (numWords % 2) {
+	    goto abort;
 	}
-
     } else if (numWords % 2 || numWords == 0) {
 	/*
 	 * Odd number of words (>1) available, or no words at all available.
@@ -4205,8 +4137,7 @@ TclCompileSwitchCmd(
 	     * traces, etc.
 	     */
 
-	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
-		    tokenPtr->numComponents != 1) {
+	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		ckfree((char *) bodyToken);
 		ckfree((char *) bodyLines);
 		ckfree((char *) bodyNext);
@@ -4255,7 +4186,7 @@ TclCompileSwitchCmd(
      * but it handles the most common case well enough.
      */
 
-    if (isListedArms && mode == Switch_Exact && !noCase) {
+    if (mode == Switch_Exact) {
 	JumptableInfo *jtPtr;
 	int infoIndex, isNew, *finalFixups, numRealBodies = 0, jumpLocation;
 	int mustGenerate, jumpToDefault;

@@ -705,11 +705,13 @@ AC_CACHE_CHECK([if the C stack grows upwards in memory], tcl_cv_stack_grows_up, 
     AC_TRY_RUN([
 	int StackGrowsUp(int *parent) {
 	    int here;
-	    return (&here < parent);
+	    if (parent)
+		return (&here < parent);
+	    else
+		return StackGrowsUp(&here);
 	}
 	int main (int argc, char *argv[]) {
-	    int foo;
-	    return StackGrowsUp(&foo);
+	    return StackGrowsUp(0);
 	}
     ], tcl_cv_stack_grows_up=yes, tcl_cv_stack_grows_up=no,
     tcl_cv_stack_grows_up=unknown)])
