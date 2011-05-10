@@ -467,20 +467,28 @@ UpdateStringOfDict(
     Tcl_Obj *dictPtr)
 {
 #define LOCAL_SIZE 20
-    int localFlags[LOCAL_SIZE], *flagPtr;
+    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
     Dict *dict = dictPtr->internalRep.otherValuePtr;
     ChainEntry *cPtr;
     Tcl_Obj *keyPtr, *valuePtr;
-    int numElems, i, length;
+    int i, length, bytesNeeded = 0;
     const char *elem;
     char *dst;
+    const int maxFlags = UINT_MAX / sizeof(int);
 
     /*
      * This field is the most useful one in the whole hash structure, and it
      * is not exposed by any API function...
      */
 
-    numElems = dict->table.numEntries * 2;
+    int numElems = dict->table.numEntries * 2;
+
+    /* Handle empty list case first, simplifies what follows */
+    if (numElems == 0) {
+	dictPtr->bytes = tclEmptyStringRep;
+	dictPtr->length = 0;
+	return;
+    }
 
     /*
      * Pass 1: estimate space, gather flags.
@@ -488,55 +496,63 @@ UpdateStringOfDict(
 
     if (numElems <= LOCAL_SIZE) {
 	flagPtr = localFlags;
+    } else if (numElems > maxFlags) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     } else {
 	flagPtr = ckalloc(numElems * sizeof(int));
     }
-    dictPtr->length = 1;
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	/*
 	 * Assume that cPtr is never NULL since we know the number of array
 	 * elements already.
 	 */
 
+	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	elem = TclGetStringFromObj(keyPtr, &length);
-	dictPtr->length += Tcl_ScanCountedElement(elem, length,
-		&flagPtr[i]) + 1;
+	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
+	if (bytesNeeded < 0) {
+	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+	}
 
+	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
 	valuePtr = Tcl_GetHashValue(&cPtr->entry);
 	elem = TclGetStringFromObj(valuePtr, &length);
-	dictPtr->length += Tcl_ScanCountedElement(elem, length,
-		&flagPtr[i+1]) + 1;
+	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
+	if (bytesNeeded < 0) {
+	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+	}
     }
+    if (bytesNeeded > INT_MAX - numElems + 1) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+    }
+    bytesNeeded += numElems;
 
     /*
      * Pass 2: copy into string rep buffer.
      */
 
-    dictPtr->bytes = ckalloc(dictPtr->length);
+    dictPtr->length = bytesNeeded - 1;
+    dictPtr->bytes = ckalloc(bytesNeeded);
     dst = dictPtr->bytes;
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
+	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	elem = TclGetStringFromObj(keyPtr, &length);
-	dst += Tcl_ConvertCountedElement(elem, length, dst,
-		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH));
-	*(dst++) = ' ';
+	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
+	*dst++ = ' ';
 
+	flagPtr[i+1] |= TCL_DONT_QUOTE_HASH;
 	valuePtr = Tcl_GetHashValue(&cPtr->entry);
 	elem = TclGetStringFromObj(valuePtr, &length);
-	dst += Tcl_ConvertCountedElement(elem, length, dst,
-		flagPtr[i+1] | TCL_DONT_QUOTE_HASH);
-	*(dst++) = ' ';
+	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
+	*dst++ = ' ';
     }
+    dictPtr->bytes[dictPtr->length] = '\0';
+
     if (flagPtr != localFlags) {
 	ckfree(flagPtr);
     }
-    if (dst == dictPtr->bytes) {
-	*dst = 0;
-    } else {
-	*(--dst) = 0;
-    }
-    dictPtr->length = dst - dictPtr->bytes;
 }
 
 /*
