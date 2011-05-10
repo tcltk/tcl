@@ -3664,6 +3664,7 @@ TclEvalObjvInternal(
 	}
     }
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	char *a[10];
 	int i = 0;
@@ -3682,6 +3683,7 @@ TclEvalObjvInternal(
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1]);
 	TclDecrRefCount(info);
     }
+#endif /* USE_DTRACE */
 
     /*
      * Finally, invoke the command's Tcl_ObjCmdProc.
@@ -3756,12 +3758,14 @@ TclEvalObjvInternal(
 	(void) Tcl_GetObjResult(interp);
     }
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_RESULT_ENABLED()) {
 	Tcl_Obj *r;
 
 	r = Tcl_GetObjResult(interp);
 	TCL_DTRACE_CMD_RESULT(TclGetString(objv[0]), code, TclGetString(r),r);
     }
+#endif /* USE_DTRACE */
 
   done:
     if (savedVarFramePtr) {
@@ -4896,8 +4900,7 @@ TclArgumentGet(interp,obj,cfPtrPtr,wordPtr)
      * up by the caller. It knows better than us.
      */
 
-    if ((!obj->bytes) || ((obj->typePtr == &tclListType) &&
-	    ((List *)obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
+    if ((obj->bytes == NULL) || TclListObjIsCanonical(obj)) {
 	return;
     }
 
@@ -5079,61 +5082,50 @@ TclEvalObjEx(
      * internal rep).
      */
 
-    if (objPtr->typePtr == &tclListType) {	/* is a list... */
-	List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    if (TclListObjIsCanonical(objPtr)) {
+	/*
+	 * TIP #280 Structures for tracking lines. As we know that this is
+	 * dynamic execution we ignore the invoker, even if known.
+	 */
 
-	if (objPtr->bytes == NULL ||	/* ...without a string rep */
-	    listRepPtr->canonicalFlag) {/* ...or that is canonical */
-	    /*
-	     * TIP #280 Structures for tracking lines. As we know that this is
-	     * dynamic execution we ignore the invoker, even if known.
-	     */
-
-	    int nelements;
-	    Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
-	    CmdFrame *eoFramePtr = (CmdFrame *)
+	int nelements;
+	Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
+	CmdFrame *eoFramePtr = (CmdFrame *)
 		TclStackAlloc(interp, sizeof(CmdFrame));
 
-	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
-	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
-				 1 : iPtr->cmdFramePtr->level + 1);
-	    eoFramePtr->framePtr = iPtr->framePtr;
-	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
+	eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
+	eoFramePtr->level = (iPtr->cmdFramePtr == NULL?  1 
+		: iPtr->cmdFramePtr->level + 1);
+	eoFramePtr->framePtr = iPtr->framePtr;
+	eoFramePtr->nextPtr = iPtr->cmdFramePtr;
 
-	    eoFramePtr->nline = 0;
-	    eoFramePtr->line = NULL;
+	eoFramePtr->nline = 0;
+	eoFramePtr->line = NULL;
 
-	    eoFramePtr->cmd.listPtr  = objPtr;
-	    Tcl_IncrRefCount(eoFramePtr->cmd.listPtr);
-	    eoFramePtr->data.eval.path = NULL;
+	eoFramePtr->cmd.listPtr  = objPtr;
+	Tcl_IncrRefCount(eoFramePtr->cmd.listPtr);
+	eoFramePtr->data.eval.path = NULL;
 
-	    /*
-	     * TIP #280 We do _not_ compute all the line numbers for the words
-	     * in the command. For the eval of a pure list the most sensible
-	     * choice is to put all words on line 1. Given that we neither
-	     * need memory for them nor compute anything.  'line' is left
-	     * NULL. The two places using this information (TclInfoFrame, and
-	     * TclInitCompileEnv), are special-cased to use the proper line
-	     * number directly instead of accessing the 'line' array.
-	     */
+	/*
+	 * TIP #280 We do _not_ compute all the line numbers for the words
+	 * in the command. For the eval of a pure list the most sensible
+	 * choice is to put all words on line 1. Given that we neither
+	 * need memory for them nor compute anything.  'line' is left
+	 * NULL. The two places using this information (TclInfoFrame, and
+	 * TclInitCompileEnv), are special-cased to use the proper line
+	 * number directly instead of accessing the 'line' array.
+	 */
 
-	    Tcl_ListObjGetElements(NULL, copyPtr,
-				   &nelements, &elements);
+	Tcl_ListObjGetElements(NULL, copyPtr, &nelements, &elements);
 
-	    iPtr->cmdFramePtr = eoFramePtr;
-	    result = Tcl_EvalObjv(interp, nelements, elements,
-				  flags);
+	iPtr->cmdFramePtr = eoFramePtr;
+	result = Tcl_EvalObjv(interp, nelements, elements, flags);
 
-	    Tcl_DecrRefCount(copyPtr);
-	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-	    Tcl_DecrRefCount(eoFramePtr->cmd.listPtr);
-	    TclStackFree(interp, eoFramePtr);
-
-	    goto done;
-	}
-    }
-
-    if (flags & TCL_EVAL_DIRECT) {
+	Tcl_DecrRefCount(copyPtr);
+	iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
+	Tcl_DecrRefCount(eoFramePtr->cmd.listPtr);
+	TclStackFree(interp, eoFramePtr);
+    } else if (flags & TCL_EVAL_DIRECT) {
 	/*
 	 * We're not supposed to use the compiler or byte-code interpreter.
 	 * Let Tcl_EvalEx evaluate the command directly (and probably more
@@ -5293,7 +5285,6 @@ TclEvalObjEx(
 	iPtr->varFramePtr = savedVarFramePtr;
     }
 
-  done:
     TclDecrRefCount(objPtr);
     return result;
 }
@@ -6477,16 +6468,16 @@ ExprAbsFunc(
 	    goto unChanged;
 	} else if (l == (long)0) {
 	    const char *string = objv[1]->bytes;
-	    if (!string) {
-	    /* There is no string representation, so internal one is correct */
-		goto unChanged;
+	    if (string) {
+		while (*string != '0') {
+		    if (*string == '-') {
+			Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
+			return TCL_OK;
+		    }
+		    string++;
+		}
 	    }
-	    while (isspace(UCHAR(*string))) {
-	    	++string;
-	    }
-	    if (*string != '-') {
-		goto unChanged;
-	    }
+	    goto unChanged;
 	} else if (l == LONG_MIN) {
 	    TclBNInitBignumFromLong(&big, l);
 	    goto tooLarge;

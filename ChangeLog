@@ -1,3 +1,262 @@
+2011-05-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclListObj.c:	Revise empty string tests so that we avoid
+	potentially expensive string rep generations, especially for dicts.
+
+2011-05-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.h: fix USE_TCLALLOC so that it can be enabled
+	* unix/Makefile.in: without editing the Makefile
+
+2011-05-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclListObj.c:	Stop generating string rep of dict when
+	converting to list.  Tolerate NULL interps more completely.
+
+2011-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	Tighten Tcl_SplitList().
+	* generic/tclListObj.c:	Tighten SetListFromAny().
+	* generic/tclDictObj.c:	Tighten SetDictFromAny().
+
+2011-05-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:	Revised TclFindElement() interface.  The
+	* generic/tclDictObj.c:	final argument had been bracePtr, the address
+	* generic/tclListObj.c:	of a boolean var, where the caller can be told
+	* generic/tclParse.c:	whether or not the parsed list element was
+	* generic/tclUtil.c:	enclosed in braces.  In practice, no callers
+	really care about that.  What the callers really want to know is 
+	whether the list element value exists as a literal substring of the
+	string being parsed, or whether a call to TclCopyAndCollpase() is
+	needed to produce the list element value.  Now the final argument
+	is changed to do what callers actually need.  This is a better fit
+	for the calls in tclParse.c, where now a good deal of post-processing
+	checking for "naked backslashes" is no longer necessary.
+	***POTENTIAL INCOMPATIBILITY***
+	For any callers calling in via the internal stubs table who really
+	do use the final argument explicitly to check for the enclosing brace
+	scenario.  Simply looking for the braces where they must be is the
+	revision available to those callers, and it will backport cleanly.
+
+	* tests/parse.test:	Tests for expanded literals quoting detection.
+
+	* generic/tclCompCmds.c:	New TclFindElement() is also a better
+	fit for the [switch] compiler.
+
+	* generic/tclInt.h:	Replace TclCountSpaceRuns() with
+	* generic/tclListObj.c:	TclMaxListLength() which is the function we
+	* generic/tclUtil.c:	actually want.
+	* generic/tclCompCmds.c:
+
+	* generic/tclCompCmds.c: Rewrite of parts of the switch compiler to
+	better use the powers of TclFindElement() and do less parsing on
+	its own.
+
+2011-04-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	New utility routines:
+	* generic/tclParse.c:	TclIsSpaceProc() and
+	* generic/tclUtil.c:	TclCountSpaceRuns()
+
+	* generic/tclCmdMZ.c:	Use new routines to replace calls to
+	* generic/tclListObj.c:	isspace() and their /* INTL */ risk.
+	* generic/tclStrToD.c:
+	* generic/tclUtf.c:
+	* unix/tclUnixFile.c:
+	
+2011-04-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclListObj.c:	FreeListInternalRep() cleanup.
+
+	* generic/tclBinary.c:	Backport fix for [Bug 2857044].
+	* generic/tclDictObj.c:	All freeIntRepProcs set typePtr to NULL.
+	* generic/tclEncoding.c:
+	* generic/tclIndexObj.c:
+	* generic/tclListObj.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclPathObj.c:
+	* generic/tclProc.c:
+	* generic/tclRegexp.c:
+	* generic/tclStringObj.c:
+	* generic/tclVar.c:
+
+2011-04-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Use macro to set List intreps.
+	* generic/tclListObj.c:
+
+	* generic/tclCmdIL.c:	Limits on list length were too strict.
+	* generic/tclInt.h:	Revised panics to errors where possible.
+	* generic/tclListObj.c:
+
+	* generic/tclCompile.c:	Make sure SetFooFromAny routines react
+	* generic/tclIO.c:	reasonably when passed a NULL interp.
+	* generic/tclIndexObj.c:
+	* generic/tclListObj.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclProc.c:
+	* macosx/tclMacOSXFCmd.c:
+
+2011-04-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:       fix for [Bug 3288345]: Wrong Tcl_StatBuf
+	* generic/tclInt.h:    used on MinGW. Make sure that all _WIN32
+	* win/tclWinFile.c:    compilers use exactly the same layout
+	* win/configure.in:    for Tcl_StatBuf - the one used by MSVC6 -
+	* win/configure:       in all situations.
+
+2011-04-20  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclFCmd.c (TclFileAttrsCmd): Added commands to reset the
+	typePtr of the Tcl_Obj* whose int-rep was just purged. Required to
+	prevent a dangling IndexRep* to reused, smashing the heap. See
+	also the entries at 2011-04-16 and 2011-03-24 for the history of
+	the problem.
+
+2011-04-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclConfig.c:	Reduce internals access in the implementation
+	of [<foo>::pkgconfig list].
+
+2011-04-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdIL.c:	Use ListRepPtr(.) and other cleanup.
+	* generic/tclConfig.c:
+	* generic/tclListObj.c:
+
+	* generic/tclInt.h:	Define and use macros that test whether
+	* generic/tclBasic.c:	a Tcl list value is canonical.
+	* generic/tclUtil.c:
+
+2011-04-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclFCmd.c (TclFileAttrsCmd): Tidied up the memory management
+	a bit to try to ensure that the dynamic and static cases don't get
+	confused while still promoting caching where possible. Added a panic
+	to trap problems in the case where an extension is misusing the API.
+
+2011-04-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	[Bug 3285375]: Rewrite of Tcl_Concat*()
+	routines to prevent segfaults on buffer overflow.  Build them out of
+	existing primitives already coded to handle overflow properly.  Uses
+	the new TclTrim*() routines.
+
+	* generic/tclCmdMZ.c:	New internal utility routines TclTrimLeft()
+	* generic/tclInt.h:	and TclTrimRight().  Refactor the
+	* generic/tclUtil.c:	[string trim*] implementations to use them.
+
+2011-04-13  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c: [Bug 2662380]: Fix crash caused by appending to a
+	variable with a write trace that unsets it.
+
+2011-04-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	[Bug 3285472]: Repair corruption in
+	* tests/string.test:	[string reverse] when string rep invalidation
+	failed to also reset the bytes allocated for string rep to zero.
+
+2011-04-12  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/Atlantic/Stanley: Update to Olson tzdata2011f
+
+2011-04-06  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TclCompEvalObj): Earlier return if Tip280
+	gymnastics not needed.
+
+2011-04-05  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/Africa/Casablanca: Update to Olson's tzdata2011e
+	* library/tzdata/America/Santiago:
+	* library/tzdata/Pacific/Easter:
+	* library/tzdata/America/Metlakatla: (new)
+	* library/tzdata/America/North_Dakota/Beulah: (new)
+	* library/tzdata/America/Sitka: (new)
+
+2011-04-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* README:	Updated README files, repairing broken URLs and
+	* macosx/README:	removing other bits that were clearly wrong.
+	* unix/README:	Still could use more eyeballs on the detailed build
+	* win/README:	advice on various plaforms. [Bug 3202030]
+
+2011-04-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c (QuickConversion): Replaced another couple of
+	'double' declarations with 'volatile double' to work around
+	misrounding issues in mingw-gcc 3.4.5.
+
+2011-03-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclFCmd.c (TclFileAttrsCmd): Ensure that any reference to
+	temporary index tables is squelched immediately rather than hanging
+	around to trip us up in the future.
+
+2011-03-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclLoadDl.c:    [Bug #3216070]: Loading extension libraries
+	* unix/tclLoadDyld.c:  from embedded Tcl applications.
+
+2011-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCkalloc.c: [Bug #3197864]: pointer truncation on Win64
+	TCL_MEM_DEBUG builds
+
+2011-03-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Some rewrites to eliminate calls to
+	* generic/tclParse.c:	isspace() and their /* INTL */ risk.
+	* generic/tclProc.c:
+
+2011-03-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4:    Make SHLIB_LD_LIBS='${LIBS}' the default and
+	* unix/configure: set to "" on per-platform necessary basis.
+	Backported from TEA, but kept all original platform code which was
+	removed from TEA.
+
+2011-03-14  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tools/tclZIC.tcl (onDayOfMonth): Allow for leading zeroes
+	in month and day so that tzdata2011d parses correctly.
+	* library/tzdata/America/Havana:
+	* library/tzdata/America/Juneau:
+	* library/tzdata/America/Santiago:
+	* library/tzdata/Europe/Istanbul:
+	* library/tzdata/Pacific/Apia:
+	* library/tzdata/Pacific/Easter:
+	* library/tzdata/Pacific/Honolulu:  tzdata2011d
+
+
+	* unix/configure.in  [Bug 3205320]: stack space detection defeated by inlining
+	* unix/configure:    (autoconf-2.59)
+
+2011-03-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c:	Tighten the detector of nested [namespace code]
+	* tests/namespace.test:	quoting that the quoted scripts function
+	properly even in a namespace that contains a custom "namespace"
+	command.  [Bug 3202171]
+
+	* doc/tclvars.n:	Formatting fix.  Thanks to Pat Thotys.
+
+2011-03-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c: Fix gcc warnings: variable set but not used
+
+2011-03-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Remove TclMarkList() routine, an experimental
+	* generic/tclUtil.c:	dead-end from the 8.5 alpha days.
+
+	* generic/tclResult.c (ResetObjResult):	Correct failure to clear
+	invalid intrep.  Thanks to Colin McDonald. [Bug 3202905]
+
 2011-03-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	More replacements of Tcl_UtfBackslash() calls
