@@ -995,8 +995,6 @@ typedef struct Tcl_DString {
  *	is safe to leave the hash unquoted when the element is not the first
  *	element of a list, and this flag can be used by the caller to indicate
  *	that condition.
- * (Careful! If you change these flag values be sure to change the definitions
- * at the front of tclUtil.c).
  */
 
 #define TCL_DONT_USE_BRACES	1

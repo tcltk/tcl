@@ -125,6 +125,10 @@ test list-3.1 {SetListFromAny and lrange/concat results} {
     slowsort {fred julie alex carol bill annie}
 } {alex annie bill carol fred julie}
 
+test list-4.1 {Bug 3173086} {
+    string is list "{[list \\\\\}]}"
+} 1
+
 # cleanup
 ::tcltest::cleanupTests
 return
