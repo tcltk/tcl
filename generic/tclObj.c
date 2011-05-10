@@ -4194,6 +4194,7 @@ FreeCmdNameInternalRep(
 	    ckfree((char *) resPtr);
 	}
     }
+    objPtr->typePtr = NULL;
 }
 
 /*
@@ -4263,6 +4264,10 @@ SetCmdNameFromAny(
     register Command *cmdPtr;
     Namespace *currNsPtr;
     register ResolvedCmdName *resPtr;
+
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
 
     /*
      * Find the Command structure, if any, that describes the command called

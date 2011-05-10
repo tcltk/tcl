@@ -2193,6 +2193,9 @@ typedef struct List {
 				 * accomodate all elements. */
 } List;
 
+#define LIST_MAX \
+	(1 + (int)(((size_t)UINT_MAX - sizeof(List))/sizeof(Tcl_Obj *)))
+
 /*
  * Macro used to get the elements of a list object.
  */
@@ -2200,12 +2203,21 @@ typedef struct List {
 #define ListRepPtr(listPtr) \
     ((List *) (listPtr)->internalRep.twoPtrValue.ptr1)
 
+#define ListSetIntRep(objPtr, listRepPtr) \
+    (objPtr)->internalRep.twoPtrValue.ptr1 = (void *)(listRepPtr), \
+    (objPtr)->internalRep.twoPtrValue.ptr2 = NULL, \
+    (listRepPtr)->refCount++, \
+    (objPtr)->typePtr = &tclListType
+
 #define ListObjGetElements(listPtr, objc, objv) \
     ((objv) = &(ListRepPtr(listPtr)->elements), \
      (objc) = ListRepPtr(listPtr)->elemCount)
 
 #define ListObjLength(listPtr, len) \
     ((len) = ListRepPtr(listPtr)->elemCount)
+
+#define ListObjIsCanonical(listPtr) \
+    (((listPtr)->bytes == NULL) || ListRepPtr(listPtr)->canonicalFlag)
 
 #define TclListObjGetElements(interp, listPtr, objcPtr, objvPtr) \
     (((listPtr)->typePtr == &tclListType) \
@@ -2216,6 +2228,9 @@ typedef struct List {
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
 	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))
+
+#define TclListObjIsCanonical(listPtr) \
+    (((listPtr)->typePtr == &tclListType) ? ListObjIsCanonical((listPtr)) : 0)
 
 /*
  * Macros providing a faster path to integers: Tcl_GetLongFromObj everywhere,
@@ -2646,6 +2661,7 @@ MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsLocalScalar(const char *src, int len);
+MODULE_SCOPE int	TclIsSpaceProc(char byte);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
@@ -2669,9 +2685,8 @@ MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
-MODULE_SCOPE int	TclMarkList(Tcl_Interp *interp, const char *list,
-			    const char *end, int *argcPtr,
-			    const int **argszPtr, const char ***argvPtr);
+MODULE_SCOPE int	TclMaxListLength(CONST char *bytes, int numBytes,
+			    CONST char **endPtr);
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
@@ -2791,6 +2806,10 @@ MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int *clNextOuter, CONST char *outerScript);
 MODULE_SCOPE void	TclTransferResult(Tcl_Interp *sourceInterp, int result,
 			    Tcl_Interp *targetInterp);
+MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
+			    const char *trim, int numTrim);
+MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
+			    const char *trim, int numTrim);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE Tcl_PackageInitProc *TclpFindSymbol(Tcl_Interp *interp,
@@ -3506,6 +3525,13 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 	TclThreadFreeObj((objPtr))
 
 #else /* not PURIFY or USE_THREAD_ALLOC */
+
+#if defined(USE_TCLALLOC) && USE_TCLALLOC
+    MODULE_SCOPE void TclFinalizeAllocSubsystem();
+    MODULE_SCOPE void TclInitAlloc();
+#else
+#   define USE_TCLALLOC 0
+#endif
 
 #ifdef TCL_THREADS
 /* declared in tclObj.c */

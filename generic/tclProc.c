@@ -320,8 +320,10 @@ Tcl_ProcObjCmd(
     }
 
     if ((procArgs[0] == 'a') && (strncmp(procArgs, "args", 4) == 0)) {
+	int numBytes;
+
 	procArgs +=4;
-	while(*procArgs != '\0') {
+	while (*procArgs != '\0') {
 	    if (*procArgs != ' ') {
 		goto done;
 	    }
@@ -332,12 +334,9 @@ Tcl_ProcObjCmd(
 	 * The argument list is just "args"; check the body
 	 */
 
-	procBody = TclGetString(objv[3]);
-	while (*procBody != '\0') {
-	    if (!isspace(UCHAR(*procBody))) {
-		goto done;
-	    }
-	    procBody++;
+	procBody = Tcl_GetStringFromObj(objv[3], &numBytes);
+	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
+	    goto done;
 	}
 
 	/*
@@ -1712,6 +1711,7 @@ TclObjInterpProcCore(
     }
 #endif /*TCL_COMPILE_DEBUG*/
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
 	char *a[10];
 	int i = 0;
@@ -1732,6 +1732,7 @@ TclObjInterpProcCore(
 	TCL_DTRACE_PROC_INFO(a[0], a[1], a[2], a[3], i[0], i[1]);
 	TclDecrRefCount(info);
     }
+#endif /* USE_DTRACE */
 
     /*
      * Invoke the commands in the procedure's body.
@@ -1747,6 +1748,7 @@ TclObjInterpProcCore(
 		procPtr->bodyPtr->internalRep.otherValuePtr;
 
 	codePtr->refCount++;
+#ifdef USE_DTRACE
 	if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
 	    int l;
 
@@ -1755,6 +1757,7 @@ TclObjInterpProcCore(
 		    iPtr->varFramePtr->objc - l,
 		    (Tcl_Obj **)(iPtr->varFramePtr->objv + l));
 	}
+#endif /* USE_DTRACE */
 	result = TclExecuteByteCode(interp, codePtr);
 	if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
 	    TCL_DTRACE_PROC_RETURN(TclGetString(procNameObj), result);
@@ -1825,6 +1828,7 @@ TclObjInterpProcCore(
 	(void) 0;		/* do nothing */
     }
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
 	Tcl_Obj *r;
 
@@ -1832,6 +1836,7 @@ TclObjInterpProcCore(
 	TCL_DTRACE_PROC_RESULT(TclGetString(procNameObj), result,
 		TclGetString(r), r);
     }
+#endif /* USE_DTRACE */
 
   procDone:
     /*
@@ -2429,6 +2434,7 @@ FreeLambdaInternalRep(
 	TclProcCleanupProc(procPtr);
     }
     TclDecrRefCount(nsObjPtr);
+    objPtr->typePtr = NULL;
 }
 
 static int
@@ -2442,12 +2448,16 @@ SetLambdaFromAny(
     int objc, result;
     Proc *procPtr;
 
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
+
     /*
      * Convert objPtr to list type first; if it cannot be converted, or if its
      * length is not 2, then it cannot be converted to lambdaType.
      */
 
-    result = TclListObjGetElements(interp, objPtr, &objc, &objv);
+    result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	TclNewLiteralStringObj(errPtr, "can't interpret \"");
 	Tcl_AppendObjToObj(errPtr, objPtr);

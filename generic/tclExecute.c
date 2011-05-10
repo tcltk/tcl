@@ -1473,57 +1473,55 @@ TclCompEvalObj(
 	 *     information.
 	 */
 
-	{
+	if (invoker) {
 	    Tcl_HashEntry *hePtr =
 		    Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
 
 	    if (hePtr) {
 		ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
 		int redo = 0;
+		CmdFrame *ctxPtr = TclStackAlloc(interp,sizeof(CmdFrame));
 
-		if (invoker) {
-		    CmdFrame *ctxPtr = TclStackAlloc(interp,sizeof(CmdFrame));
-		    *ctxPtr = *invoker;
+		*ctxPtr = *invoker;
 
-		    if (invoker->type == TCL_LOCATION_BC) {
+		if (invoker->type == TCL_LOCATION_BC) {
+		    /*
+		     * Note: Type BC => ctx.data.eval.path    is not used.
+		     *		    ctx.data.tebc.codePtr used instead
+		     */
+		    
+		    TclGetSrcInfoForPc(ctxPtr);
+		    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
 			/*
-			 * Note: Type BC => ctx.data.eval.path    is not used.
-			 *		    ctx.data.tebc.codePtr used instead
+			 * The reference made by 'TclGetSrcInfoForPc' is
+			 * dead.
 			 */
-
-			TclGetSrcInfoForPc(ctxPtr);
-			if (ctxPtr->type == TCL_LOCATION_SOURCE) {
-			    /*
-			     * The reference made by 'TclGetSrcInfoForPc' is
-			     * dead.
-			     */
-
-			    Tcl_DecrRefCount(ctxPtr->data.eval.path);
-			    ctxPtr->data.eval.path = NULL;
-			}
+			
+			Tcl_DecrRefCount(ctxPtr->data.eval.path);
+			ctxPtr->data.eval.path = NULL;
 		    }
-
-		    if (word < ctxPtr->nline) {
-			/*
-			 * Note: We do not care if the line[word] is -1. This
-			 * is a difference and requires a recompile (location
-			 * changed from absolute to relative, literal is used
-			 * fixed and through variable)
-			 *
-			 * Example:
-			 * test info-32.0 using literal of info-24.8
-			 *     (dict with ... vs           set body ...).
-			 */
-
-			redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
-				    && (eclPtr->start != ctxPtr->line[word]))
-				|| ((eclPtr->type == TCL_LOCATION_BC)
-				    && (ctxPtr->type == TCL_LOCATION_SOURCE));
-		    }
-
-		    TclStackFree(interp, ctxPtr);
 		}
-
+		
+		if (word < ctxPtr->nline) {
+		    /*
+		     * Note: We do not care if the line[word] is -1. This
+		     * is a difference and requires a recompile (location
+		     * changed from absolute to relative, literal is used
+		     * fixed and through variable)
+		     *
+		     * Example:
+		     * test info-32.0 using literal of info-24.8
+		     *     (dict with ... vs           set body ...).
+		     */
+		    
+		    redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
+			    && (eclPtr->start != ctxPtr->line[word]))
+			|| ((eclPtr->type == TCL_LOCATION_BC)
+				&& (ctxPtr->type == TCL_LOCATION_SOURCE));
+		}
+		
+		TclStackFree(interp, ctxPtr);
+	    
 		if (redo) {
 		    goto recompileObj;
 		}
