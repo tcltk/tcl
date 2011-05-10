@@ -304,7 +304,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}}} {
 proc genStubs::emitSlots {name textVar} {
     upvar $textVar text
 
-    forAllStubs $name makeSlot 1 text {"    void *reserved$i;\n"}
+    forAllStubs $name makeSlot 1 text {"    VOID *reserved$i;\n"}
     return
 }
 
