@@ -394,6 +394,9 @@ proc parseON {on} {
 #----------------------------------------------------------------------
 
 proc onDayOfMonth {day year month} {
+    scan $day %d day
+    scan $year %d year
+    scan $month %d month
     set date [::tcl::clock::GetJulianDayFromEraYearMonthDay \
 	    [dict create era CE year $year month $month dayOfMonth $day] \
 		 2361222]

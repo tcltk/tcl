@@ -536,7 +536,7 @@ TclParseNumber(
 	     * I, N, and whitespace.
 	     */
 
-	    if (isspace(UCHAR(c))) {
+	    if (TclIsSpaceProc(c)) {
 		if (flags & TCL_PARSE_NO_WHITESPACE) {
 		    goto endgame;
 		}
@@ -1050,7 +1050,7 @@ TclParseNumber(
 	    }
 	    /* FALLTHROUGH */
 	case sNANPAREN:
-	    if (isspace(UCHAR(c))) {
+	    if (TclIsSpaceProc(c)) {
 		break;
 	    }
 	    if (numSigDigs < 13) {
@@ -1101,7 +1101,7 @@ TclParseNumber(
 	     * Accept trailing whitespace.
 	     */
 
-	    while (len != 0 && isspace(UCHAR(*p))) {
+	    while (len != 0 && TclIsSpaceProc(*p)) {
 		p++;
 		len--;
 	    }
@@ -2668,7 +2668,7 @@ StrictQuickFormat(double d,	/* Number to convert */
  */
 
 inline static char*
-QuickConversion(double d,	/* Number to format */
+QuickConversion(double e,	/* Number to format */
 		int k,		/* floor(log10(d)), approximately */
 		int k_check,	/* 0 if k is exact, 1 if it may be too high */
 		int flags,	/* Flags passed to dtoa:
@@ -2686,11 +2686,13 @@ QuickConversion(double d,	/* Number to format */
     char* retval;		/* Returned string */
     char* end;			/* Pointer to the terminal null byte in the
 				 * returned string */
+    volatile double d;		/* Workaround for a bug in mingw gcc 3.4.5 */
 
     /*
      * Bring d into the range [1 .. 10)
      */
-    ieps = AdjustRange(&d, k);
+    ieps = AdjustRange(&e, k);
+    d = e;
 
     /*
      * If the guessed value of k didn't get d into range, adjust it

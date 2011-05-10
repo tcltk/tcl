@@ -1154,7 +1154,6 @@ Tcl_FSConvertToPathType(
 	    UpdateStringOfFsPath(pathPtr);
 	}
 	FreeFsPathInternalRep(pathPtr);
-	pathPtr->typePtr = NULL;
     }
 
     return Tcl_ConvertToType(interp, pathPtr, &tclFsPathType);
@@ -1173,7 +1172,6 @@ Tcl_FSConvertToPathType(
      *             UpdateStringOfFsPath(pathPtr);
      *         }
      *         FreeFsPathInternalRep(pathPtr);
-     *         pathPtr->typePtr = NULL;
      *         return Tcl_ConvertToType(interp, pathPtr, &tclFsPathType);
      *     }
      * }
@@ -1963,7 +1961,6 @@ Tcl_FSGetNormalizedPath(
 		UpdateStringOfFsPath(pathPtr);
 	    }
 	    FreeFsPathInternalRep(pathPtr);
-	    pathPtr->typePtr = NULL;
 	    if (Tcl_ConvertToType(interp, pathPtr, &tclFsPathType) != TCL_OK) {
 		return NULL;
 	    }
@@ -2270,7 +2267,6 @@ TclFSEnsureEpochOk(
 	    UpdateStringOfFsPath(pathPtr);
 	}
 	FreeFsPathInternalRep(pathPtr);
-	pathPtr->typePtr = NULL;
 	if (SetFsPathFromAny(NULL, pathPtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -2660,6 +2656,7 @@ FreeFsPathInternalRep(
     }
 
     ckfree((char *) fsPathPtr);
+    pathPtr->typePtr = NULL;
 }
 
 static void
