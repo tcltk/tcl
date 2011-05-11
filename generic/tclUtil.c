@@ -1786,7 +1786,7 @@ Tcl_ConcatObj(
 	    /*
 	     * Tcl_ListObjAppendList could be used here, but this saves us a
 	     * bit of type checking (since we've already done it). Use of
-	     * INT_MAX tells us to always put the new stuff on the end. It
+	     * LIST_MAX tells us to always put the new stuff on the end. It
 	     * will be set right in Tcl_ListObjReplace.
 	     * Note that all objs at this point are either lists or have an
 	     * empty string rep.
@@ -1799,7 +1799,7 @@ Tcl_ConcatObj(
 	    TclListObjGetElements(NULL, objPtr, &listc, &listv);
 	    if (listc) {
 		if (resPtr) {
-		    Tcl_ListObjReplace(NULL, resPtr, INT_MAX, 0, listc, listv);
+		    Tcl_ListObjReplace(NULL, resPtr, LIST_MAX, 0, listc, listv);
 		} else {
 		    resPtr = TclListObjCopy(NULL, objPtr);
 		}
