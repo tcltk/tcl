@@ -13,6 +13,10 @@
 
 #include "tclInt.h"
 
+#ifndef TCL_GROWTH_MIN_ALLOC
+#define TCL_GROWTH_MIN_ALLOC 1024
+#endif
+
 /*
  * Prototypes for functions defined later in this file:
  */
@@ -482,16 +486,13 @@ Tcl_ListObjGetElements(
  *
  * Tcl_ListObjAppendList --
  *
- *	This function appends the objects in the list referenced by
- *	elemListPtr to the list object referenced by listPtr. If listPtr is
- *	not already a list object, an attempt will be made to convert it to
- *	one.
+ *	This function appends the elements in the list value referenced by
+ *	elemListPtr to the list value referenced by listPtr.
  *
  * Results:
  *	The return value is normally TCL_OK. If listPtr or elemListPtr do not
- *	refer to list objects and they can not be converted to one, TCL_ERROR
- *	is returned and an error message is left in the interpreter's result
- *	if interp is not NULL.
+ *	refer to list values, TCL_ERROR is returned and an error message is
+ *	left in the interpreter's result if interp is not NULL.
  *
  * Side effects:
  *	The reference counts of the elements in elemListPtr are incremented
@@ -516,10 +517,12 @@ Tcl_ListObjAppendList(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendList");
     }
 
+/*
     result = TclListObjLength(interp, listPtr, &listLen);
     if (result != TCL_OK) {
 	return result;
     }
+*/
 
     result = TclListObjGetElements(interp, elemListPtr, &objc, &objv);
     if (result != TCL_OK) {
@@ -531,7 +534,7 @@ Tcl_ListObjAppendList(
      * Delete zero existing elements.
      */
 
-    return Tcl_ListObjReplace(interp, listPtr, listLen, 0, objc, objv);
+    return Tcl_ListObjReplace(interp, listPtr, /*listLen*/LIST_MAX, 0, objc, objv);
 }
 
 /*
@@ -567,6 +570,9 @@ Tcl_ListObjAppendElement(
     Tcl_Obj *listPtr,		/* List object to append objPtr to. */
     Tcl_Obj *objPtr)		/* Object to append to listPtr's list. */
 {
+#if 1
+    return Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0, 1, &objPtr);
+#else
     register List *listRepPtr;
     register Tcl_Obj **elemPtrs;
     int numElems, numRequired, newMax, newSize, i;
@@ -645,6 +651,7 @@ Tcl_ListObjAppendElement(
 
     Tcl_InvalidateStringRep(listPtr);
     return TCL_OK;
+#endif
 }
 
 /*
@@ -898,9 +905,20 @@ Tcl_ListObjReplace(
 	    newMax = listRepPtr->maxElemCount;
 	}
 
-	listRepPtr = AttemptNewList(interp, newMax, NULL);
+	listRepPtr = AttemptNewList(NULL, newMax, NULL);
 	if (listRepPtr == NULL) {
-	    return TCL_ERROR;
+	    unsigned int limit = LIST_MAX - numRequired;
+	    unsigned int extra = numRequired - listRepPtr->elemCount
+		    + TCL_GROWTH_MIN_ALLOC/sizeof(Tcl_Obj *);
+	    int growth = (int) ((extra > limit) ? limit : extra);
+
+	    listRepPtr = AttemptNewList(NULL, numRequired + growth, NULL);
+	    if (listRepPtr == NULL) {
+		listRepPtr = AttemptNewList(interp, numRequired, NULL);
+		if (listRepPtr == NULL) {
+		    return TCL_ERROR;
+		}
+	    }
 	}
 
 	listPtr->internalRep.twoPtrValue.ptr1 = listRepPtr;
