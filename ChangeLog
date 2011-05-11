@@ -1,3 +1,11 @@
+2011-05-11  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c (TcpWatchProc): No need to check for server
+	sockets here, as the generic server code already takes care of
+	that.
+	* tests/socket.test (accept): Add tests to make sure that this
+	remains so.
+
 2011-05-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:     New internal routines TclScanElement() and
