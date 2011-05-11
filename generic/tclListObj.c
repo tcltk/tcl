@@ -908,7 +908,7 @@ Tcl_ListObjReplace(
 	listRepPtr = AttemptNewList(NULL, newMax, NULL);
 	if (listRepPtr == NULL) {
 	    unsigned int limit = LIST_MAX - numRequired;
-	    unsigned int extra = numRequired - listRepPtr->elemCount
+	    unsigned int extra = numRequired - numElems
 		    + TCL_GROWTH_MIN_ALLOC/sizeof(Tcl_Obj *);
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
