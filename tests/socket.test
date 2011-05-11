@@ -800,6 +800,24 @@ test socket_$af-6.1 {accept callback error} -constraints [list socket supported_
     interp bgerror {} $handler
 } -result {divide by zero}
 
+test socket_$af-6.2 {
+    readable fileevent on server socket
+} -setup {
+    set sock [socket -server dummy 0]
+} -body {
+    fileevent $sock readable dummy
+} -cleanup {
+    close $sock
+} -returnCodes 1 -result "channel is not readable"
+
+test socket_$af-6.3 {writable fileevent on server socket} -setup {
+    set sock [socket -server dummy 0]
+} -body {
+    fileevent $sock writable dummy
+} -cleanup {
+    close $sock
+} -returnCodes 1 -result "channel is not writable"
+
 test socket_$af-7.1 {testing socket specific options} -setup {
     file delete $path(script)
     set f [open $path(script) w]

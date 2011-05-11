@@ -785,25 +785,16 @@ TcpWatchProc(
 				 * TCL_EXCEPTION. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
+    TcpFdList *fds;
 
-    /*
-     * Make sure we don't mess with server sockets since they will never be
-     * readable or writable at the Tcl level. This keeps Tcl scripts from
-     * interfering with the -accept behavior.
-     */
-
-    if (!statePtr->acceptProc) {
-	TcpFdList *fds;
-
-	for (fds = statePtr->fds; fds != NULL; fds = fds->next) {
-	    if (mask) {
-		Tcl_CreateFileHandler(fds->fd, mask,
-			(Tcl_FileProc *) Tcl_NotifyChannel,
-			(ClientData) statePtr->channel);
-	    } else {
-		Tcl_DeleteFileHandler(fds->fd);
-	    }
-	}
+    for (fds = statePtr->fds; fds != NULL; fds = fds->next) {
+        if (mask) {
+            Tcl_CreateFileHandler(fds->fd, mask,
+                                  (Tcl_FileProc *) Tcl_NotifyChannel,
+                                  (ClientData) statePtr->channel);
+        } else {
+            Tcl_DeleteFileHandler(fds->fd);
+        }
     }
 }
 
