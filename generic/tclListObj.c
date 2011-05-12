@@ -13,10 +13,6 @@
 
 #include "tclInt.h"
 
-#ifndef TCL_GROWTH_MIN_ALLOC
-#define TCL_GROWTH_MIN_ALLOC 1024
-#endif
-
 /*
  * Prototypes for functions defined later in this file:
  */
@@ -49,6 +45,11 @@ const Tcl_ObjType tclListType = {
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny		/* setFromAnyProc */
 };
+
+#ifndef TCL_MIN_ELEMENT_GROWTH
+#define TCL_MIN_ELEMENT_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Obj *)
+#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -909,7 +910,7 @@ Tcl_ListObjReplace(
 	if (listRepPtr == NULL) {
 	    unsigned int limit = LIST_MAX - numRequired;
 	    unsigned int extra = numRequired - numElems
-		    + TCL_GROWTH_MIN_ALLOC/sizeof(Tcl_Obj *);
+		    + TCL_MIN_ELEMENT_GROWTH;
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    listRepPtr = AttemptNewList(NULL, numRequired + growth, NULL);
