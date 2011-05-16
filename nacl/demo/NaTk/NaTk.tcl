@@ -672,7 +672,7 @@ class create ::NaTk::entry {
                 set tag <text>
             }
         }
-        set event [list onchange "tcl(\"[self]\",\"changed\",[my element].value);return false;"]
+        set event [list onchange "tcl(\"[self]\",\"changed\",tclEsc([my element].value));return false;"]
         set result [my $tag $id id $id class var {*}$event {*}[my style $args] size [dict get $props width] [tclarmour [my getvalue]]]
         return $result
     }

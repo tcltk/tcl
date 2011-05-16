@@ -78,7 +78,7 @@ namespace eval ::nacl {
     proc evall {args} {
         variable hooks
         if {[catch {
-            uplevel #0 {*}$args
+            uplevel #0 $args
             foreach x $hooks {uplevel #0 $x}
         } err eo]} {
             bgerror "$err ($eo)"
