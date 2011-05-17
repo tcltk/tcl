@@ -1,3 +1,13 @@
+2011-05-17  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCompile.c (TclFixupForwardJump): Tracked down and fixed
+	* generic/tclBasic.c (TclArgumentBCEnter): the cause of a violation
+	of my assertion that 'ePtr->nline == objc' in TclArgumentBCEnter.
+	When a bytecode was grown during jump fixup the pc -> command line
+	mapping was not updated. When things aligned just wrong the mapping
+	would direct command A to the data for command B, with a different
+	number of arguments.
+
 2011-05-11  Reinhard Max  <max@suse.de>
 
 	* unix/tclUnixSock.c (TcpWatchProc): No need to check for server
