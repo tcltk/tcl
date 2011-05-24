@@ -313,13 +313,6 @@ proc msgcat::mcset {locale src {dest ""}} {
 
     set locale [string tolower $locale]
 
-    # create nested dictionaries if they do not exist
-    if {![dict exists $Msgs $locale]} {
-        dict set Msgs $locale  [dict create]
-    }
-    if {![dict exists $Msgs $locale $ns]} {
-        dict set Msgs $locale $ns [dict create]
-    }
     dict set Msgs $locale $ns $src $dest
     return $dest
 }
@@ -347,13 +340,6 @@ proc msgcat::mcmset {locale pairs } {
     set locale [string tolower $locale]
     set ns [uplevel 1 [list ::namespace current]]
 
-    # create nested dictionaries if they do not exist
-    if {![dict exists $Msgs $locale]} {
-        dict set Msgs $locale  [dict create]
-    }
-    if {![dict exists $Msgs $locale $ns]} {
-        dict set Msgs $locale $ns [dict create]
-    }
     foreach {src dest} $pairs {
         dict set Msgs $locale $ns $src $dest
     }

@@ -2642,6 +2642,8 @@ MODULE_SCOPE int	TclClearRootEnsemble(ClientData data[],
 			    Tcl_Interp *interp, int result);
 MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
+MODULE_SCOPE int	TclConvertElement(const char *src, int length,
+			    char *dst, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
@@ -2745,8 +2747,8 @@ MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
-MODULE_SCOPE int	TclMaxListLength(CONST char *bytes, int numBytes,
-			    CONST char **endPtr);
+MODULE_SCOPE int	TclMaxListLength(const char *bytes, int numBytes,
+			    const char **endPtr);
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
@@ -2841,6 +2843,8 @@ MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
 			    int reStrLen, Tcl_DString *dsPtr, int *flagsPtr);
+MODULE_SCOPE int	TclScanElement(const char *string, int length,
+			    int *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
 MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
