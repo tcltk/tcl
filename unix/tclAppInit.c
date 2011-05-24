@@ -35,6 +35,9 @@ extern int		Tclxttest_Init(Tcl_Interp *interp);
 #ifndef TCL_LOCAL_APPINIT
 #define TCL_LOCAL_APPINIT Tcl_AppInit
 #endif
+#ifndef MODULE_SCOPE
+#   define MODULE_SCOPE extern
+#endif
 MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
 MODULE_SCOPE int main(int, char **);
 

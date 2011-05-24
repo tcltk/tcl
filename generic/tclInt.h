@@ -2900,6 +2900,8 @@ MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
 MODULE_SCOPE ContLineLoc *TclContinuationsGet(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 			    Tcl_Obj *originObjPtr);
+MODULE_SCOPE int	TclConvertElement(const char *src, int length,
+			    char *dst, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 /* TIP #280 - Modified token based evulation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
@@ -3009,8 +3011,8 @@ MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
-MODULE_SCOPE int	TclMaxListLength(CONST char *bytes, int numBytes,
-			    CONST char **endPtr);
+MODULE_SCOPE int	TclMaxListLength(const char *bytes, int numBytes,
+			    const char **endPtr);
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
@@ -3105,6 +3107,8 @@ MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
 			    int reStrLen, Tcl_DString *dsPtr, int *flagsPtr);
+MODULE_SCOPE int	TclScanElement(const char *string, int length,
+			    int *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
 MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
@@ -3939,6 +3943,13 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
     } while (0)
 
 #else /* not PURIFY or USE_THREAD_ALLOC */
+
+#if defined(USE_TCLALLOC) && USE_TCLALLOC
+    MODULE_SCOPE void TclFinalizeAllocSubsystem();
+    MODULE_SCOPE void TclInitAlloc();
+#else
+#   define USE_TCLALLOC 0
+#endif
 
 #ifdef TCL_THREADS
 /* declared in tclObj.c */
