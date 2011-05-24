@@ -3320,6 +3320,70 @@ TclFixupForwardJump(
 		    rangePtr->type);
 	}
     }
+
+    /*
+     * TIP #280: Adjust the mapping from PC values to the per-command
+     * information about arguments and their line numbers.
+     *
+     * Note: We cannot simply remove an out-of-date entry and then reinsert
+     * with the proper PC, because then we might overwrite another entry which
+     * was at that location. Therefore we pull (copy + delete) all effected
+     * entries (beyond the fixed PC) into an array, update them there, and at
+     * last reinsert them all.
+     */
+
+    {
+	ExtCmdLoc* eclPtr = envPtr->extCmdMapPtr;
+
+	/* A helper structure */
+
+	typedef struct {
+	    int pc;
+	    int cmd;
+	} MAP;
+
+	/*
+	 * And the helper array. At most the whole hashtable is placed into
+	 * this.
+	 */
+
+	MAP *map = (MAP*) ckalloc (sizeof(MAP) * eclPtr->litInfo.numEntries);
+
+	Tcl_HashSearch hSearch;
+	Tcl_HashEntry* hPtr;
+	int n, k, isnew;
+
+	/*
+	 * Phase I: Locate the affected entries, and save them in adjusted
+	 * form to the array. This removes them from the hash.
+	 */
+
+	for (n = 0, hPtr = Tcl_FirstHashEntry(&eclPtr->litInfo, &hSearch);
+	     hPtr != NULL;
+	     hPtr = Tcl_NextHashEntry(&hSearch)) {
+
+	    map [n].cmd = PTR2INT(Tcl_GetHashValue(hPtr));
+	    map [n].pc  = PTR2INT(Tcl_GetHashKey (&eclPtr->litInfo,hPtr));
+
+	    if (map[n].pc >= (jumpFixupPtr->codeOffset + 2)) {
+		Tcl_DeleteHashEntry(hPtr);
+		map [n].pc += 3;
+		n++;
+	    }
+	}
+
+	/*
+	 * Phase II: Re-insert the modified entries into the hash.
+	 */
+
+	for (k=0;k<n;k++) {
+	    hPtr = Tcl_CreateHashEntry(&eclPtr->litInfo, INT2PTR(map[k].pc), &isnew);
+	    Tcl_SetHashValue(hPtr, INT2PTR(map[k].cmd));
+	}
+
+	ckfree (map);
+    }
+
     return 1;			/* the jump was grown */
 }
 

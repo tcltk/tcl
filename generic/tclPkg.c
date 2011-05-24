@@ -882,18 +882,25 @@ Tcl_PackageObjCmd(
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
-	}
-	tablePtr = &iPtr->packageTable;
-	for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
-		hPtr = Tcl_NextHashEntry(&search)) {
-	    pkgPtr = Tcl_GetHashValue(hPtr);
-	    if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
-		Tcl_AppendElement(interp, Tcl_GetHashKey(tablePtr, hPtr));
+	} else {
+	    Tcl_Obj *resultObj;
+
+	    resultObj = Tcl_NewObj();
+	    tablePtr = &iPtr->packageTable;
+	    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
+		    hPtr = Tcl_NextHashEntry(&search)) {
+		pkgPtr = Tcl_GetHashValue(hPtr);
+		if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
+		    Tcl_ListObjAppendElement(NULL,resultObj, Tcl_NewStringObj(
+			    Tcl_GetHashKey(tablePtr, hPtr), -1));
+		}
 	    }
+	    Tcl_SetObjResult(interp, resultObj);
 	}
 	break;
     case PKG_PRESENT: {
 	const char *name;
+
 	if (objc < 3) {
 	    goto require;
 	}
@@ -1098,23 +1105,27 @@ Tcl_PackageObjCmd(
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "package");
 	    return TCL_ERROR;
-	}
-	argv2 = TclGetString(objv[2]);
-	hPtr = Tcl_FindHashEntry(&iPtr->packageTable, argv2);
-	if (hPtr != NULL) {
-	    pkgPtr = Tcl_GetHashValue(hPtr);
-	    for (availPtr = pkgPtr->availPtr; availPtr != NULL;
-		    availPtr = availPtr->nextPtr) {
-		Tcl_AppendElement(interp, availPtr->version);
+	} else {
+	    Tcl_Obj *resultObj = Tcl_NewObj();
+
+	    argv2 = TclGetString(objv[2]);
+	    hPtr = Tcl_FindHashEntry(&iPtr->packageTable, argv2);
+	    if (hPtr != NULL) {
+		pkgPtr = Tcl_GetHashValue(hPtr);
+		for (availPtr = pkgPtr->availPtr; availPtr != NULL;
+			availPtr = availPtr->nextPtr) {
+		    Tcl_ListObjAppendElement(NULL, resultObj,
+			    Tcl_NewStringObj(availPtr->version, -1));
+		}
 	    }
+	    Tcl_SetObjResult(interp, resultObj);
 	}
 	break;
     case PKG_VSATISFIES: {
 	char *argv2i = NULL;
 
 	if (objc < 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "version ?requirement ...?");
+	    Tcl_WrongNumArgs(interp, 2, objv, "version ?requirement ...?");
 	    return TCL_ERROR;
 	}
 

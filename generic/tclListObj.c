@@ -157,7 +157,7 @@ static List *
 AttemptNewList(
     Tcl_Interp *interp,
     int objc,
-    Tcl_Obj *CONST objv[])
+    Tcl_Obj *const objv[])
 {
     List *listRepPtr = NewListIntRep(objc, objv, 0);
 
@@ -465,24 +465,13 @@ Tcl_ListObjGetElements(
     register List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
-	int result, length;
+	int result;
 
-	/*
-	 * Don't get the string version of a dictionary; that transformation
-	 * is not lossy, but is expensive.
-	 */
-
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
+	if (listPtr->bytes == tclEmptyStringRep) {
 	    *objcPtr = 0;
 	    *objvPtr = NULL;
 	    return TCL_OK;
 	}
-
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -592,18 +581,12 @@ Tcl_ListObjAppendElement(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendElement");
     }
     if (listPtr->typePtr != &tclListType) {
-	int result, length;
+	int result;
 
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
+	if (listPtr->bytes == tclEmptyStringRep) {
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
 	}
-
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -716,18 +699,12 @@ Tcl_ListObjIndex(
     register List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
-	int result, length;
+	int result;
 
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
+	if (listPtr->bytes == tclEmptyStringRep) {
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
 	}
-
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -775,27 +752,12 @@ Tcl_ListObjLength(
     register List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
-	int result, length;
+	int result;
 
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	    /*
-	     * It's tempting to just report 2*length as the list length
-	     * of this dict, but arguably that's false since the max sizes
-	     * for dicts and lists are not the same, so some dicts don't
-	     * actually convert to lists, and it's good to get that error
-	     * back from the SetListFromAny() call below instead of a false
-	     * indication we can treat the value as a list.  ([llength $val]
-	     * often used as a "listiness" test)
-	     */
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
+	if (listPtr->bytes == tclEmptyStringRep) {
 	    *intPtr = 0;
 	    return TCL_OK;
 	}
-
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -863,14 +825,7 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
     if (listPtr->typePtr != &tclListType) {
-	int length;
-
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
+	if (listPtr->bytes == tclEmptyStringRep) {
 	    if (objc) {
 		Tcl_SetListObj(listPtr, objc, NULL);
 	    } else {
@@ -1593,14 +1548,9 @@ TclListObjSetElement(
 	Tcl_Panic("%s called with shared object", "TclListObjSetElement");
     }
     if (listPtr->typePtr != &tclListType) {
-	int length, result;
+	int result;
 
-	if (listPtr->typePtr == &tclDictType) {
-	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
-	} else {
-	    (void) TclGetStringFromObj(listPtr, &length);
-	}
-	if (!length) {
+	if (listPtr->bytes == tclEmptyStringRep) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("list index out of range", -1));
@@ -1902,19 +1852,29 @@ UpdateStringOfList(
     Tcl_Obj *listPtr)		/* List object with string rep to update. */
 {
 #   define LOCAL_SIZE 20
-    int localFlags[LOCAL_SIZE], *flagPtr;
+    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
     List *listRepPtr = ListRepPtr(listPtr);
     int numElems = listRepPtr->elemCount;
-    register int i;
+    int i, length, bytesNeeded = 0;
     const char *elem;
     char *dst;
-    int length;
     Tcl_Obj **elemPtrs;
 
     /*
-     * Convert each element of the list to string form and then convert it to
-     * proper list element form, adding it to the result buffer.
+     * Mark the list as being canonical; although it will now have a string
+     * rep, it is one we derived through proper "canonical" quoting and so
+     * it's known to be free from nasties relating to [concat] and [eval].
      */
+
+    listRepPtr->canonicalFlag = 1;
+
+    /* Handle empty list case first, so rest of the routine is simpler */
+
+    if (numElems == 0) {
+	listPtr->bytes = tclEmptyStringRep;
+	listPtr->length = 0;
+	return;
+    }
 
     /*
      * Pass 1: estimate space, gather flags.
@@ -1923,54 +1883,41 @@ UpdateStringOfList(
     if (numElems <= LOCAL_SIZE) {
 	flagPtr = localFlags;
     } else {
+	/* We know numElems <= LIST_MAX, so this is safe. */
 	flagPtr = ckalloc(numElems * sizeof(int));
     }
-    listPtr->length = 1;
     elemPtrs = &listRepPtr->elements;
     for (i = 0; i < numElems; i++) {
+	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
-	listPtr->length += Tcl_ScanCountedElement(elem, length, flagPtr+i)+1;
-
-	/*
-	 * Check for continued sanity. [Bug 1267380]
-	 */
-
-	if (listPtr->length < 1) {
-	    Tcl_Panic("string representation size exceeds sane bounds");
+	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
+	if (bytesNeeded < 0) {
+	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
     }
+    if (bytesNeeded > INT_MAX - numElems + 1) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+    }
+    bytesNeeded += numElems;
 
     /*
      * Pass 2: copy into string rep buffer.
      */
 
-    listPtr->bytes = ckalloc(listPtr->length);
+    listPtr->length = bytesNeeded - 1;
+    listPtr->bytes = ckalloc(bytesNeeded);
     dst = listPtr->bytes;
     for (i = 0; i < numElems; i++) {
+	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
-	dst += Tcl_ConvertCountedElement(elem, length, dst,
-		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH));
-	*dst = ' ';
-	dst++;
+	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
+	*dst++ = ' ';
     }
+    listPtr->bytes[listPtr->length] = '\0';
+
     if (flagPtr != localFlags) {
 	ckfree(flagPtr);
     }
-    if (dst == listPtr->bytes) {
-	*dst = 0;
-    } else {
-	dst--;
-	*dst = 0;
-    }
-    listPtr->length = dst - listPtr->bytes;
-
-    /*
-     * Mark the list as being canonical; although it has a string rep, it is
-     * one we derived through proper "canonical" quoting and so it's known to
-     * be free from nasties relating to [concat] and [eval].
-     */
-
-    listRepPtr->canonicalFlag = 1;
 }
 
 /*

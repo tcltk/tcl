@@ -496,7 +496,7 @@ Tcl_ParseCommand(
 		     * tokens representing the expanded list.
 		     */
 
-		    CONST char *listStart;
+		    const char *listStart;
 		    int growthNeeded = wordIndex + 2*elemCount
 			    - parsePtr->numTokens;
 

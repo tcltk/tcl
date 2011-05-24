@@ -5582,6 +5582,10 @@ TclArgumentBCEnter(
 	 * have to save them at compile time.
 	 */
 
+        if (ePtr->nline != objc) {
+            Tcl_Panic ("TIP 280 data structure inconsistency");
+        }
+
 	for (word = 1; word < objc; word++) {
 	    if (ePtr->line[word] >= 0) {
 		int isnew;

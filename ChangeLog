@@ -1,3 +1,56 @@
+2011-05-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/msgcat/msgcat.tcl (msgcat::mcset, msgcat::mcmset): Remove
+	some useless code; [dict set] builds dictionary levels for us.
+
+2011-05-17  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCompile.c (TclFixupForwardJump): Tracked down and fixed
+	* generic/tclBasic.c (TclArgumentBCEnter): the cause of a violation
+	of my assertion that 'ePtr->nline == objc' in TclArgumentBCEnter.
+	When a bytecode was grown during jump fixup the pc -> command line
+	mapping was not updated. When things aligned just wrong the mapping
+	would direct command A to the data for command B, with a different
+	number of arguments.
+
+2011-05-11  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c (TcpWatchProc): No need to check for server
+	sockets here, as the generic server code already takes care of
+	that.
+	* tests/socket.test (accept): Add tests to make sure that this
+	remains so.
+
+2011-05-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:     New internal routines TclScanElement() and
+	* generic/tclUtil.c:    TclConvertElement() are rewritten guts of
+	machinery to produce string rep of lists.  The new routines avoid
+	and correct [Bug 3173086].  See comments for much more detail.
+
+	* generic/tclDictObj.c:         Update all callers.
+	* generic/tclIndexObj.c:
+	* generic/tclListObj.c:
+	* generic/tclUtil.c:
+	* tests/list.test:
+
+2011-05-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclNamesp.c (NamespacePathCmd): Convert to use Tcl_Obj API
+	* generic/tclPkg.c (Tcl_PackageObjCmd):   for result generation in
+	* generic/tclTimer.c (Tcl_AfterObjCmd):   [after info], [namespace
+	path] and [package versions].
+
+2011-05-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclListObj.c:	Revise empty string tests so that we avoid
+	potentially expensive string rep generations, especially for dicts.
+
+2011-05-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclLoad.c (TclGetLoadedPackages): Convert to use Tcl_Obj API
+	for result generation.
+
 2011-05-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInt.h: fix USE_TCLALLOC so that it can be enabled
@@ -23,7 +76,7 @@
 	* generic/tclListObj.c:	of a boolean var, where the caller can be told
 	* generic/tclParse.c:	whether or not the parsed list element was
 	* generic/tclUtil.c:	enclosed in braces.  In practice, no callers
-	really care about that.  What the callers really want to know is 
+	really care about that.  What the callers really want to know is
 	whether the list element value exists as a literal substring of the
 	string being parsed, or whether a call to TclCopyAndCollpase() is
 	needed to produce the list element value.  Now the final argument
@@ -61,7 +114,7 @@
 	* generic/tclStrToD.c:
 	* generic/tclUtf.c:
 	* unix/tclUnixFile.c:
-	
+
 	* generic/tclStringObj.c:	Improved reaction to out of memory.
 
 2011-04-27  Don Porter  <dgp@users.sourceforge.net>
