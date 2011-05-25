@@ -25,6 +25,17 @@ takes an argument, \fIsubcommand\fR, that tells it what sort of information is
 actually desired; if omitted the result will be the same as if \fBself
 object\fR was invoked. The supported subcommands are:
 .TP
+\fBself call\fR
+.
+This returns a two-element list describing the method implementations used to
+implement the current call chain. The first element is the same as would be
+reported by \fBinfo object call\fR for the current method (except that this
+also reports useful values from within constructors and destructors, whose
+names are reported as \fB<constructor>\fR and \fB<destructor>\fR
+respectively), and the second element is an index into the first element's
+list that indicates which actual implementation is currently executing (the
+first implementation to execute is always at index 0).
+.TP
 \fBself caller\fR
 .
 When the method was invoked from inside another object method, this subcommand
@@ -108,6 +119,28 @@ c create a
 c create b
 a foo                \fI\(-> prints "this is the ::a object"\fR
 b foo                \fI\(-> prints "this is the ::b object"\fR
+.CE
+.PP
+This demonstrates what a method call chain looks like, and how traversing
+along it changes the index into it:
+.PP
+.CS
+oo::class create c {
+    method x {} {
+        puts "Cls: [\fBself call\fR]"
+    }
+}
+c create a
+oo::objdefine a {
+    method x {} {
+        puts "Obj: [\fBself call\fR]"
+        next
+        puts "Obj: [\fBself call\fR]"
+    }
+}
+a x     \fI\(-> Obj: {{method x object method} {method x ::c method}} 0\fR
+        \fI\(-> Cls: {{method x object method} {method x ::c method}} 1\fR
+        \fI\(-> Obj: {{method x object method} {method x ::c method}} 0\fR
 .CE
 .SH "SEE ALSO"
 info(n), next(n)

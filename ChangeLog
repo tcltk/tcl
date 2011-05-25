@@ -1,3 +1,13 @@
+2011-05-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	IMPLEMENTATION OF TIP#381.
+
+	* doc/next.n, doc/ooInfo.n, doc/self.n, generic/tclOO.c,
+	* generic/tclOOBasic.c, generic/tclOOCall.c, generic/tclOOInfo.c,
+	* generic/tclOOInt.h, tests/oo.test, tests/ooNext2.test: Added
+	introspection of call chains ([self call], [info object call], [info
+	class call]) and ability to skip ahead in chain ([nextto]).
+
 2011-05-24  Venkat Iyer <venkat@comit.com>
 
 	* library/tzdata/Africa/Cairo: Update to Olson tzdata2011g
