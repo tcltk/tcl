@@ -3081,7 +3081,7 @@ TclFixupForwardJump(
 	    Tcl_SetHashValue(hPtr, INT2PTR(map[k].cmd));
 	}
 
-	ckfree (map);
+	ckfree ((char *) map);
     }
 
     return 1;			/* the jump was grown */
