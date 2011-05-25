@@ -1,3 +1,10 @@
+2011-05-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/msgcat/msgcat.tcl:	Backport improvements to msgcat
+	* library/msgcat/pkgIndex.tcl:	package.  Bump to 1.4.4
+	* unix/Makefile.in
+	* win/Makefile.in
+
 2011-05-24  Venkat Iyer <venkat@comit.com>
 
 	* library/tzdata/Africa/Cairo: Update to Olson tzdata2011g

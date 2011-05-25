@@ -13,7 +13,7 @@
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.4.3
+package provide msgcat 1.4.4
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
@@ -175,7 +175,7 @@ namespace eval msgcat {
 #	args	Args to pass to the format command
 #
 # Results:
-#	Returns the translated string.  Propagates errors thrown by the 
+#	Returns the translated string.  Propagates errors thrown by the
 #	format command.
 
 proc msgcat::mc {src args} {
@@ -187,7 +187,7 @@ proc msgcat::mc {src args} {
     variable Locale
 
     set ns [uplevel 1 [list ::namespace current]]
-    
+
     while {$ns != ""} {
 	foreach loc $Loclist {
 	    if {[dict exists $Msgs $loc $ns $src]} {
@@ -310,16 +310,9 @@ proc msgcat::mcset {locale src {dest ""}} {
     }
 
     set ns [uplevel 1 [list ::namespace current]]
-    
+
     set locale [string tolower $locale]
-    
-    # create nested dictionaries if they do not exist
-    if {![dict exists $Msgs $locale]} {
-        dict set Msgs $locale  [dict create] 
-    }
-    if {![dict exists $Msgs $locale $ns]} {
-        dict set Msgs $locale $ns [dict create]
-    }
+
     dict set Msgs $locale $ns $src $dest
     return $dest
 }
@@ -343,17 +336,10 @@ proc msgcat::mcmset {locale pairs } {
 	return -code error "bad translation list:\
 		 should be \"[lindex [info level 0] 0] locale {src dest ...}\""
     }
-    
+
     set locale [string tolower $locale]
     set ns [uplevel 1 [list ::namespace current]]
 
-    # create nested dictionaries if they do not exist
-    if {![dict exists $Msgs $locale]} {
-        dict set Msgs $locale  [dict create] 
-    }
-    if {![dict exists $Msgs $locale $ns]} {
-        dict set Msgs $locale $ns [dict create]
-    }    
     foreach {src dest} $pairs {
         dict set Msgs $locale $ns $src $dest
     }
@@ -366,7 +352,7 @@ proc msgcat::mcmset {locale pairs } {
 #	This routine is called by msgcat::mc if a translation cannot
 #	be found for a string.  This routine is intended to be replaced
 #	by an application specific routine for error reporting
-#	purposes.  The default behavior is to return the source string.  
+#	purposes.  The default behavior is to return the source string.
 #	If additional args are specified, the format command will be used
 #	to work them into the traslated string.
 #
@@ -388,7 +374,7 @@ proc msgcat::mcunknown {locale src args} {
 
 # msgcat::mcmax --
 #
-#	Calculates the maximum length of the translated strings of the given 
+#	Calculates the maximum length of the translated strings of the given
 #	list.
 #
 # Arguments:
@@ -474,14 +460,14 @@ proc msgcat::Init {} {
     }
     #
     # On Windows, try to set locale depending on registry settings,
-    # or fall back on locale of "C".  
+    # or fall back on locale of "C".
     #
-    set key {HKEY_CURRENT_USER\Control Panel\International}
     if {[catch {
 	package require registry
+	set key {HKEY_CURRENT_USER\Control Panel\International}
 	set locale [registry get $key "locale"]
     }]} {
-	mclocale C
+        mclocale C
 	return
     }
     #
