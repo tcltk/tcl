@@ -1,3 +1,10 @@
+2011-05-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/msgcat/msgcat.tcl:	Bump to msgcat 1.4.4.
+	* library/msgcat/pkgIndex.tcl:
+	* unix/Makefile.in
+	* win/Makefile.in
+
 2011-05-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.h (TCLOO_VERSION): Bump version.
