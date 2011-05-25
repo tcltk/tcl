@@ -9,7 +9,7 @@
 #
 # RCS: @(#) $Id: oo.test,v 1.59 2011/01/18 16:10:48 dkf Exp $
 
-package require -exact TclOO 0.6.2 ;# Must match value in configure.in
+package require -exact TclOO 0.6.3 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
