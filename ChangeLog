@@ -1,3 +1,11 @@
+2011-05-27  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c: Fix [socket -async], so that all addresses
+	returned by getaddrinfo() are tried, not just the first one. This
+	requires the event loop to be running while the async connection
+	is in progress. ***POTENTIAL INCOMPATIBILITY***
+	* tests/socket.test: Add a test for the above.
+
 2011-05-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/msgcat/msgcat.tcl:	Bump to msgcat 1.4.4.
