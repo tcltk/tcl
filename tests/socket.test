@@ -1699,6 +1699,28 @@ if {$remoteProcChan ne ""} {
 catch {close $commandSocket}
 catch {close $remoteProcChan}
 }
+unset ::tcl::unsupported::socketAF
+test socket-14.0 {async when server only listens on one address family} \
+    -constraints [list socket supported_any] \
+    -setup {
+        proc accept {s a p} {
+            global x
+            puts $s bye
+            close $s
+            set x ok
+        }
+        set server [socket -server accept -myaddr 127.0.0.1 0]
+        set port [lindex [fconfigure $server -sockname] 2]
+    } -body {
+        set client [socket -async localhost $port]
+        # fileevent $client readable [list set x [fconfigure $client -error]]
+        after 1000 {set x [fconfigure $client -error]}
+        vwait x
+        set x
+    } -cleanup {
+        close $server
+        close $client
+    } -result ok
 ::tcltest::cleanupTests
 flush stdout
 return

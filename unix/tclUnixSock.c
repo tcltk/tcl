@@ -49,9 +49,22 @@ struct TcpState {
     TcpFdList *fds;		/* The file descriptors of the sockets. */
     int flags;			/* ORed combination of the bitfields defined
 				 * below. */
-    Tcl_TcpAcceptProc *acceptProc;
+    union {
+        struct {
+            /* Only needed for server sockets */
+            Tcl_TcpAcceptProc *acceptProc;
 				/* Proc to call on accept. */
-    ClientData acceptProcData;	/* The data for the accept proc. */
+            ClientData acceptProcData;
+				/* The data for the accept proc. */
+        };
+        struct {
+            /* Only needed for client sockets */
+            struct addrinfo *addrlist;
+            struct addrinfo *myaddrlist;
+            struct addrinfo *addr;
+            struct addrinfo *myaddr;
+        };
+    };
 };
 
 /*
@@ -89,9 +102,8 @@ struct TcpState {
  * Static routines for this file:
  */
 
-static TcpState *	CreateClientSocket(Tcl_Interp *interp, int port,
-			    const char *host, const char *myaddr,
-			    int myport, int async);
+static int		CreateClientSocket(Tcl_Interp *interp,
+                                           TcpState *state);
 static void		TcpAccept(ClientData data, int mask);
 static int		TcpBlockModeProc(ClientData data, int mode);
 static int		TcpCloseProc(ClientData instanceData,
@@ -829,17 +841,27 @@ TcpGetHandleProc(
     return TCL_OK;
 }
 
+static void
+TcpAsyncCallback(
+    ClientData clientData,	/* The socket state. */
+    int mask)			/* Events of interest; an OR-ed combination of
+				 * TCL_READABLE, TCL_WRITABLE and
+				 * TCL_EXCEPTION. */
+{
+    CreateClientSocket(NULL, clientData);
+}
+
 /*
  *----------------------------------------------------------------------
  *
- * CreateSocket --
+ * CreateClientSocket --
  *
- *	This function opens a new socket in client or server mode and
- *	initializes the TcpState structure.
+ *	This function opens a new socket in client mode.
  *
  * Results:
- *	Returns a new TcpState, or NULL with an error in the interp's result,
- *	if interp is not NULL.
+ *      TCL_OK, if the socket was successfully connected or an asynchronous
+ *      connection is in progress. If an error occurs, TCL_ERROR is returned
+ *      and an error message is left in interp.
  *
  * Side effects:
  *	Opens a socket.
@@ -847,37 +869,22 @@ TcpGetHandleProc(
  *----------------------------------------------------------------------
  */
 
-static TcpState *
+static int
 CreateClientSocket(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
-    int port,			/* Port number to open. */
-    const char *host,		/* Name of host on which to open port. */
-    const char *myaddr,		/* Optional client-side address.
-                                 * NULL implies INADDR_ANY/in6addr_any */
-    int myport,			/* Optional client-side port */
-    int async)			/* If nonzero and creating a client socket,
-				 * attempt to do an async connect. Otherwise
-				 * do a synchronous connect or bind. */
+    TcpState *state)
 {
-    int status = -1, connected = 0, sock = -1;
-    struct addrinfo *addrlist = NULL, *addrPtr;
-                                /* Socket address */
-    struct addrinfo *myaddrlist = NULL, *myaddrPtr;
-                                /* Socket address for client */
-    TcpState *statePtr;
-    const char *errorMsg = NULL;
+    int status = -1, connected = 0;
+    int async = state->flags & TCP_ASYNC_CONNECT;
 
-    if (!TclCreateSocketAddress(interp, &addrlist, host, port, 0, &errorMsg)) {
-	goto error;
+    if (state->addr != NULL) {
+        goto coro_continue;
     }
-    if (!TclCreateSocketAddress(interp, &myaddrlist, myaddr, myport, 1, &errorMsg)) {
-	goto error;
-    }
-
-    for (addrPtr = addrlist; addrPtr != NULL;
-         addrPtr = addrPtr->ai_next) {
-        for (myaddrPtr = myaddrlist; myaddrPtr != NULL;
-             myaddrPtr = myaddrPtr->ai_next) {
+    
+    for (state->addr = state->addrlist; state->addr != NULL;
+         state->addr = state->addr->ai_next) {
+        for (state->myaddr = state->myaddrlist; state->myaddr != NULL;
+             state->myaddr = state->myaddr->ai_next) {
             int reuseaddr;
             
 	    /*
@@ -885,12 +892,12 @@ CreateClientSocket(
 	     * different families.
 	     */
 
-	    if (myaddrPtr->ai_family != addrPtr->ai_family) {
+	    if (state->myaddr->ai_family != state->addr->ai_family) {
 		continue;
 	    }
 
-	    sock = socket(addrPtr->ai_family, SOCK_STREAM, 0);
-	    if (sock < 0) {
+	    state->fds->fd = socket(state->addr->ai_family, SOCK_STREAM, 0);
+	    if (state->fds->fd < 0) {
 		continue;
 	    }
 
@@ -899,25 +906,26 @@ CreateClientSocket(
 	     * inherited by child processes.
 	     */
 	    
-	    fcntl(sock, F_SETFD, FD_CLOEXEC);
+	    fcntl(state->fds->fd, F_SETFD, FD_CLOEXEC);
 	    
 	    /*
 	     * Set kernel space buffering
 	     */
 	    
-	    TclSockMinimumBuffers(INT2PTR(sock), SOCKET_BUFSIZE);
+	    TclSockMinimumBuffers(INT2PTR(state->fds->fd), SOCKET_BUFSIZE);
     
 	    if (async) {
-		status = TclUnixSetBlockingMode(sock, TCL_MODE_NONBLOCKING);
+		status = TclUnixSetBlockingMode(state->fds->fd, TCL_MODE_NONBLOCKING);
 		if (status < 0) {
 		    goto looperror;
 		}
 	    }
 
             reuseaddr = 1;
-            (void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+            (void) setsockopt(state->fds->fd, SOL_SOCKET, SO_REUSEADDR,
                     (char *) &reuseaddr, sizeof(reuseaddr));
-            status = bind(sock, myaddrPtr->ai_addr, myaddrPtr->ai_addrlen);
+            status = bind(state->fds->fd, state->myaddr->ai_addr,
+                          state->myaddr->ai_addrlen);
             if (status < 0) {
                 goto looperror;
             }
@@ -929,27 +937,39 @@ CreateClientSocket(
 	     * in being informed when the connect completes.
 	     */
 	    
-	    status = connect(sock, addrPtr->ai_addr, addrPtr->ai_addrlen);
+	    status = connect(state->fds->fd, state->addr->ai_addr,
+                             state->addr->ai_addrlen);
 	    if (status < 0 && errno == EINPROGRESS) {
-		status = 0;
-	    }
+                Tcl_CreateFileHandler(state->fds->fd, TCL_WRITABLE,
+                                      TcpAsyncCallback, state);
+                // fprintf(stderr, "here: %d \n", state->fds->fd);
+                return TCL_OK;
+            coro_continue:
+                do {
+                    socklen_t optlen = sizeof(int);
+                    Tcl_DeleteFileHandler(state->fds->fd);
+                    getsockopt(state->fds->fd, SOL_SOCKET, SO_ERROR,
+                               (char *)&status, &optlen);             
+                    // fprintf(stderr, "there: %d \n", state->fds->fd);
+                } while (0);
+            }
 	    if (status == 0) {
 		connected = 1;
 		break;
 	    }
 	looperror:
-	    if (sock != -1) {
-		close(sock);
-		sock = -1;
+	    if (state->fds->fd != -1) {
+		close(state->fds->fd);
+		state->fds->fd = -1;
 	    }
 	}
 	if (connected) {
 	    break;
 	} 
 	status = -1;
-	if (sock >= 0) {
-	    close(sock);
-	    sock = -1;
+	if (state->fds->fd >= 0) {
+	    close(state->fds->fd);
+	    state->fds->fd = -1;
 	}
     }
     if (async) {
@@ -957,42 +977,25 @@ CreateClientSocket(
 	 * Restore blocking mode.
 	 */
 
-	status = TclUnixSetBlockingMode(sock, TCL_MODE_BLOCKING);
+	status = TclUnixSetBlockingMode(state->fds->fd, TCL_MODE_BLOCKING);
     }
 
-error:
-    if (addrlist) {
-	freeaddrinfo(addrlist);
-    }
-    if (myaddrlist) {
-	freeaddrinfo(myaddrlist);
-    }
-    
-    if (status < 0) {
-	if (interp != NULL) {
+    freeaddrinfo(state->addrlist);
+    freeaddrinfo(state->myaddrlist);
+
+    if (status < 0 && !async) {
+        if (interp != NULL) {
 	    Tcl_AppendResult(interp, "couldn't open socket: ",
-		    Tcl_PosixError(interp), NULL);
-	    if (errorMsg != NULL) {
-		Tcl_AppendResult(interp, " (", errorMsg, ")", NULL);
-	    }
+                             Tcl_PosixError(interp), NULL);
 	}
-	if (sock != -1) {
-	    close(sock);
+	if (state->fds->fd != -1) {
+	    close(state->fds->fd);
 	}
-	return NULL;
+        ckfree(state->fds);
+        ckfree(state);
+	return TCL_ERROR;
     }
-
-    /*
-     * Allocate a new TcpState for this socket.
-     */
-
-    statePtr = ckalloc(sizeof(TcpState));
-    statePtr->flags = async ? TCP_ASYNC_CONNECT : 0;
-    statePtr->fds = ckalloc(sizeof(TcpFdList));
-    memset(statePtr->fds, (int) 0, sizeof(TcpFdList));
-    statePtr->fds->fd = sock;
-
-    return statePtr;
+    return TCL_OK;
 }
 
 /*
@@ -1023,31 +1026,63 @@ Tcl_OpenTcpClient(
 				 * connect. Otherwise we do a blocking
 				 * connect. */
 {
-    TcpState *statePtr;
-    char channelName[16 + TCL_INTEGER_SPACE];
+    TcpState *state;
+    const char *errorMsg = NULL;
+    struct addrinfo *addrlist, *myaddrlist;
+    char channelName[4+16+1];	/* "sock" + up to 16 hex chars + \0 */
+
+
+    /*
+     * Do the name lookups for the local and remote addresses.
+     */
+    if (!TclCreateSocketAddress(interp, &addrlist, host, port, 0, &errorMsg)) {
+	goto error;
+    }
+    if (!TclCreateSocketAddress(interp, &myaddrlist, myaddr, myport, 1,
+                                &errorMsg)) {
+        freeaddrinfo(addrlist);
+        goto error;
+    }
+
+    /*
+     * Allocate a new TcpState for this socket.
+     */
+    state = ckalloc(sizeof(TcpState));
+    memset(state, 0, sizeof(TcpState));
+    state->flags = async ? TCP_ASYNC_CONNECT : 0;
+    state->addrlist = addrlist;
+    state->myaddrlist = myaddrlist;
+    state->fds = ckalloc(sizeof(TcpFdList));
+    memset(state->fds, (int) 0, sizeof(TcpFdList));
+    state->fds->fd = -1;
 
     /*
      * Create a new client socket and wrap it in a channel.
      */
-
-    statePtr = CreateClientSocket(interp, port, host, myaddr, myport, async);
-    if (statePtr == NULL) {
-	return NULL;
+    if (CreateClientSocket(interp, state) != TCL_OK) {
+        goto error;
     }
 
-    statePtr->acceptProc = NULL;
-    statePtr->acceptProcData = NULL;
+    sprintf(channelName, "sock%lx", (long)state);
 
-    sprintf(channelName, "sock%d", statePtr->fds->fd);
-
-    statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    statePtr, (TCL_READABLE | TCL_WRITABLE));
-    if (Tcl_SetChannelOption(interp, statePtr->channel, "-translation",
+    state->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
+                                       state, (TCL_READABLE | TCL_WRITABLE));
+    if (Tcl_SetChannelOption(interp, state->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
-	Tcl_Close(NULL, statePtr->channel);
+	Tcl_Close(NULL, state->channel);
 	return NULL;
     }
-    return statePtr->channel;
+    return state->channel;
+
+error:
+    if (interp != NULL) {
+        Tcl_AppendResult(interp, "couldn't open socket: ",
+                         Tcl_PosixError(interp), NULL);
+        if (errorMsg != NULL) {
+            Tcl_AppendResult(interp, " (", errorMsg, ")", NULL);
+        }
+    }
+    return NULL;
 }
 
 /*
