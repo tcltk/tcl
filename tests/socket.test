@@ -1700,7 +1700,7 @@ catch {close $commandSocket}
 catch {close $remoteProcChan}
 }
 unset ::tcl::unsupported::socketAF
-test socket-14.0 {async when server only listens on one address family} \
+test socket-14.0 {[socket -async] when server only listens on one address family} \
     -constraints [list socket supported_any] \
     -setup {
         proc accept {s a p} {
@@ -1713,7 +1713,6 @@ test socket-14.0 {async when server only listens on one address family} \
         set port [lindex [fconfigure $server -sockname] 2]
     } -body {
         set client [socket -async localhost $port]
-        # fileevent $client readable [list set x [fconfigure $client -error]]
         after 1000 {set x [fconfigure $client -error]}
         vwait x
         set x
@@ -1721,6 +1720,42 @@ test socket-14.0 {async when server only listens on one address family} \
         close $server
         close $client
     } -result ok
+test socket-14.1 {[socket -async] fileevent while still connecting} \
+    -constraints [list socket supported_any] \
+    -setup {
+        proc accept {s a p} {
+            global x
+            puts $s bye
+            close $s
+            set x ok
+        }
+        set server [socket -server accept -myaddr 127.0.0.1 2222]
+        set port [lindex [fconfigure $server -sockname] 2]
+    } -body {
+        set client [socket -async localhost $port]
+        fileevent $client readable {lappend x [fconfigure $client -error]}
+        set after [after 1000 {set x timeout}]
+        vwait x
+        vwait x
+        set x
+    } -cleanup {
+        after cancel $after
+        close $server
+        close $client
+    } -result {ok {}}
+test socket-14.2 {[socket -async] fileevent connection refused} \
+    -constraints [list socket supported_any] \
+    -body {
+        set client [socket -async localhost 0]
+        fileevent $client readable {set x [fconfigure $client -error]}
+        set after [after 1000 {set x timeout}]
+        vwait x
+        set x
+    } -cleanup {
+        after cancel $after
+        close $client
+    } -result "connection refused"
+
 ::tcltest::cleanupTests
 flush stdout
 return
