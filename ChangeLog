@@ -1,3 +1,11 @@
+2011-05-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Use a complete growth algorithm for lists
+	* generic/tclListObj.c:	so that length limits do not overconstrain 
+	* generic/tclStringObj.c:	by a factor of 2.  [Bug 3293874]
+	* generic/tclUtil.c:	Fix includes rooting all growth routines
+	by default on a commone tunable parameter TCL_MIN_GROWTH.
+
 2011-05-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/msgcat/msgcat.tcl:	Bump to msgcat 1.4.4.
