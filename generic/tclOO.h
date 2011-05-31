@@ -24,7 +24,7 @@
  * win/tclooConfig.sh
  */
 
-#define TCLOO_VERSION "0.6.2"
+#define TCLOO_VERSION "0.6.3"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
 
 /*

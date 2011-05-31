@@ -1,3 +1,49 @@
+2011-05-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/msgcat/msgcat.tcl:	Bump to msgcat 1.4.4.
+	* library/msgcat/pkgIndex.tcl:
+	* unix/Makefile.in
+	* win/Makefile.in
+
+2011-05-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.h (TCLOO_VERSION): Bump version.
+
+	IMPLEMENTATION OF TIP#381.
+
+	* doc/next.n, doc/ooInfo.n, doc/self.n, generic/tclOO.c,
+	* generic/tclOOBasic.c, generic/tclOOCall.c, generic/tclOOInfo.c,
+	* generic/tclOOInt.h, tests/oo.test, tests/ooNext2.test: Added
+	introspection of call chains ([self call], [info object call], [info
+	class call]) and ability to skip ahead in chain ([nextto]).
+
+2011-05-24  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/Africa/Cairo: Update to Olson tzdata2011g
+
+2011-05-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/msgcat/msgcat.tcl (msgcat::mcset, msgcat::mcmset): Remove
+	some useless code; [dict set] builds dictionary levels for us.
+
+2011-05-17  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCompile.c (TclFixupForwardJump): Tracked down and fixed
+	* generic/tclBasic.c (TclArgumentBCEnter): the cause of a violation
+	of my assertion that 'ePtr->nline == objc' in TclArgumentBCEnter.
+	When a bytecode was grown during jump fixup the pc -> command line
+	mapping was not updated. When things aligned just wrong the mapping
+	would direct command A to the data for command B, with a different
+	number of arguments.
+
+2011-05-11  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c (TcpWatchProc): No need to check for server
+	sockets here, as the generic server code already takes care of
+	that.
+	* tests/socket.test (accept): Add tests to make sure that this
+	remains so.
+
 2011-05-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:     New internal routines TclScanElement() and
