@@ -13,7 +13,7 @@
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.4.3
+package provide msgcat 1.4.4
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
@@ -313,13 +313,6 @@ proc msgcat::mcset {locale src {dest ""}} {
 
     set locale [string tolower $locale]
 
-    # create nested dictionaries if they do not exist
-    if {![dict exists $Msgs $locale]} {
-        dict set Msgs $locale  [dict create]
-    }
-    if {![dict exists $Msgs $locale $ns]} {
-        dict set Msgs $locale $ns [dict create]
-    }
     dict set Msgs $locale $ns $src $dest
     return $dest
 }
@@ -347,13 +340,6 @@ proc msgcat::mcmset {locale pairs } {
     set locale [string tolower $locale]
     set ns [uplevel 1 [list ::namespace current]]
 
-    # create nested dictionaries if they do not exist
-    if {![dict exists $Msgs $locale]} {
-        dict set Msgs $locale  [dict create]
-    }
-    if {![dict exists $Msgs $locale $ns]} {
-        dict set Msgs $locale $ns [dict create]
-    }
     foreach {src dest} $pairs {
         dict set Msgs $locale $ns $src $dest
     }

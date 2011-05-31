@@ -2443,6 +2443,8 @@ typedef struct List {
 
 #define LIST_MAX \
 	(1 + (int)(((size_t)UINT_MAX - sizeof(List))/sizeof(Tcl_Obj *)))
+#define LIST_SIZE(numElems) \
+	(unsigned)(sizeof(List) + (((numElems) - 1) * sizeof(Tcl_Obj *)))
 
 /*
  * Macro used to get the elements of a list object.
