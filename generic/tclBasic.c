@@ -4143,7 +4143,7 @@ TclNREvalObjv(
 	TclNRAddCallback(interp, NRCommand, NULL, INT2PTR(1), objc, objv);
 	iPtr->evalFlags &= ~TCL_EVAL_REDIRECT;
     } else {
-	TclNRAddCallback(interp, NRCommand, NULL, NULL, objc, objv);
+	TclNRAddCallback(interp, NRCommand, NULL, NULL, INT2PTR(objc), objv);
     }
     cmdPtrPtr = (Command **) &(TOP_CB(interp)->data[0]);
 
