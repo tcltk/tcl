@@ -1,3 +1,8 @@
+2011-06-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c: using the two free data elements in
+	NRCommand to store objc and objv - useful for debugging.
+
 2011-06-01  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclUtil.c:   fix for [Bug 3309871]: Valgrind finds:
