@@ -885,10 +885,12 @@ CreateClientSocket(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
     TcpState *state)
 {
+    socklen_t optlen;
+    int in_coro = (state->addr != NULL);
     int status, connected = 0;
     int async = state->flags & TCP_ASYNC_CONNECT;
 
-    if (state->addr != NULL) {
+    if (in_coro) {
         goto coro_continue;
     }
     
@@ -966,53 +968,51 @@ CreateClientSocket(
                 Tcl_CreateFileHandler(state->fds->fd, TCL_WRITABLE,
                                       TcpAsyncCallback, state);
                 return TCL_OK;
+
             coro_continue:
-                do {
-                    socklen_t optlen = sizeof(int);
-                    Tcl_DeleteFileHandler(state->fds->fd);
-                    getsockopt(state->fds->fd, SOL_SOCKET, SO_ERROR,
-                               (char *)&status, &optlen);
-                    state->status = status;
-                } while (0);
+                Tcl_DeleteFileHandler(state->fds->fd);
+                /*
+                 * Read the error state from the socket, to see if the async
+                 * connection has succeeded or failed and store the status in
+                 * the socket state for later retrieval by [fconfigure -error]
+                 */
+                optlen = sizeof(int);
+                getsockopt(state->fds->fd, SOL_SOCKET, SO_ERROR,
+                           (char *)&status, &optlen);
+                state->status = status;
             }
 	    if (status == 0) {
-		connected = 1;
-		break;
+                goto out;
 	    }
 	}
-	if (connected) {
-	    break;
-	} 
     }
-    if (async) {
-	/*
-	 * Restore blocking mode.
-	 */
 
-	status = TclUnixSetBlockingMode(state->fds->fd, TCL_MODE_BLOCKING);
-    }
+out:
 
     freeaddrinfo(state->addrlist);
     freeaddrinfo(state->myaddrlist);
 
     if (async) {
         CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
-        if (state->filehandlers != 0) {
-            TcpWatchProc(state, state->filehandlers);
-        }
-        return TCL_OK;
+        TcpWatchProc(state, state->filehandlers);
+        TclUnixSetBlockingMode(state->fds->fd, TCL_MODE_BLOCKING);
     }
+
     if (status < 0) {
-        if (interp != NULL) {
-	    Tcl_AppendResult(interp, "couldn't open socket: ",
-                             Tcl_PosixError(interp), NULL);
-	}
-	if (state->fds->fd != -1) {
-	    close(state->fds->fd);
-	}
-        ckfree(state->fds);
-        ckfree(state);
-	return TCL_ERROR;
+        if (in_coro) {
+            Tcl_NotifyChannel(state->fds->fd, TCL_WRITABLE);
+        } else {
+            if (interp != NULL) {
+                Tcl_AppendResult(interp, "couldn't open socket: ",
+                                 Tcl_PosixError(interp), NULL);
+            }
+            if (state->fds->fd != -1) {
+                close(state->fds->fd);
+            }
+            ckfree(state->fds);
+            ckfree(state);
+            return TCL_ERROR;
+        }
     }
     return TCL_OK;
 }
