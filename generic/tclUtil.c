@@ -408,8 +408,8 @@ TclMaxListLength(
 	    do {
 		bytes++;
 		numBytes -= (numBytes != -1);
-	    } while (numBytes && TclIsSpaceProc(*bytes));
-	    if (numBytes == 0) {
+	    } while (numBytes && (*bytes != '\0') && TclIsSpaceProc(*bytes));
+	    if ((numBytes == 0) || (*bytes == '\0')) {
 		break;
 	    }
 	    /* (*bytes) is non-space; return to counting state */
