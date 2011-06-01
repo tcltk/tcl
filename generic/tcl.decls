@@ -774,10 +774,10 @@ declare 217 generic {
     void Tcl_ResetResult(Tcl_Interp *interp)
 }
 declare 218 generic {
-    int Tcl_ScanElement(CONST char *str, int *flagPtr)
+    int Tcl_ScanElement(CONST char *src, int *flagPtr)
 }
 declare 219 generic {
-    int Tcl_ScanCountedElement(CONST char *str, int length, int *flagPtr)
+    int Tcl_ScanCountedElement(CONST char *src, int length, int *flagPtr)
 }
 # Obsolete
 declare 220 generic {

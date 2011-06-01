@@ -1312,12 +1312,12 @@ EXTERN void		Tcl_ResetResult(Tcl_Interp *interp);
 #ifndef Tcl_ScanElement_TCL_DECLARED
 #define Tcl_ScanElement_TCL_DECLARED
 /* 218 */
-EXTERN int		Tcl_ScanElement(CONST char *str, int *flagPtr);
+EXTERN int		Tcl_ScanElement(CONST char *src, int *flagPtr);
 #endif
 #ifndef Tcl_ScanCountedElement_TCL_DECLARED
 #define Tcl_ScanCountedElement_TCL_DECLARED
 /* 219 */
-EXTERN int		Tcl_ScanCountedElement(CONST char *str, int length,
+EXTERN int		Tcl_ScanCountedElement(CONST char *src, int length,
 				int *flagPtr);
 #endif
 #ifndef Tcl_SeekOld_TCL_DECLARED
@@ -3661,8 +3661,8 @@ typedef struct TclStubs {
     void (*tcl_RegExpRange) (Tcl_RegExp regexp, int index, CONST84 char **startPtr, CONST84 char **endPtr); /* 215 */
     void (*tcl_Release) (ClientData clientData); /* 216 */
     void (*tcl_ResetResult) (Tcl_Interp *interp); /* 217 */
-    int (*tcl_ScanElement) (CONST char *str, int *flagPtr); /* 218 */
-    int (*tcl_ScanCountedElement) (CONST char *str, int length, int *flagPtr); /* 219 */
+    int (*tcl_ScanElement) (CONST char *src, int *flagPtr); /* 218 */
+    int (*tcl_ScanCountedElement) (CONST char *src, int length, int *flagPtr); /* 219 */
     int (*tcl_SeekOld) (Tcl_Channel chan, int offset, int mode); /* 220 */
     int (*tcl_ServiceAll) (void); /* 221 */
     int (*tcl_ServiceEvent) (int flags); /* 222 */
