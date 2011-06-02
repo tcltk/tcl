@@ -2564,8 +2564,6 @@ MODULE_SCOPE double	TclCeil(mp_int *a);
 MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp, const char *value);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
-MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp *interp,
-			    LiteralTable *tablePtr);
 MODULE_SCOPE ContLineLoc* TclContinuationsEnter(Tcl_Obj *objPtr, int num,
 			    int *loc);
 MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
