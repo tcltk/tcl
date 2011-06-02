@@ -1,6 +1,13 @@
+2011-06-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h (TclInvalidateNsCmdLookup): [Bug 3185407]: Extend
+	the set of epochs that are potentially bumped when a command is
+	created, for a slight performance drop (in some circumstances) and
+	improved semantics.
+
 2011-06-01  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclUtil.c:   fix for [Bug 3309871]: Valgrind finds:
+	* generic/tclUtil.c:   Fix for [Bug 3309871]: Valgrind finds:
 	invalid read in TclMaxListLength()
 
 2011-05-25  Don Porter  <dgp@users.sourceforge.net>
