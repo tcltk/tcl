@@ -3727,8 +3727,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, CONST char *file,
  */
 
 #define TclUtfToUniChar(str, chPtr) \
-	((((unsigned char) *(str)) < 0xC0) ? \
-	    ((*(chPtr) = (Tcl_UniChar) *(str)), 1) \
+	((((unsigned char) *(str)) < 0xC0) ?		\
+	    ((*(chPtr) = (Tcl_UniChar) *(str)), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
 
 /*
@@ -3759,8 +3759,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, CONST char *file,
  */
 
 #define TclInvalidateNsCmdLookup(nsPtr) \
-    if ((nsPtr)->numExportPatterns) { \
-	(nsPtr)->exportLookupEpoch++; \
+    if ((nsPtr)->numExportPatterns) {		\
+	(nsPtr)->exportLookupEpoch++;		\
+    }						\
+    if ((nsPtr)->commandPathLength) {		\
+	(nsPtr)->cmdRefEpoch++;			\
     }
 
 /*
