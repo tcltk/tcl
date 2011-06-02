@@ -1,18 +1,25 @@
+2011-06-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h (TclInvalidateNsCmdLookup): [Bug 3185407]: Extend
+	the set of epochs that are potentially bumped when a command is
+	created, for a slight performance drop (in some circumstances) and
+	improved semantics.
+
 2011-06-01  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c: using the two free data elements in
-	NRCommand to store objc and objv - useful for debugging.
+	* generic/tclBasic.c: Using the two free data elements in NRCommand to
+	store objc and objv - useful for debugging.
 
 2011-06-01  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclUtil.c:   fix for [Bug 3309871]: Valgrind finds:
+	* generic/tclUtil.c:   Fix for [Bug 3309871]: Valgrind finds:
 	invalid read in TclMaxListLength()
 
 2011-05-31  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	Use a complete growth algorithm for lists
-	* generic/tclListObj.c:	so that length limits do not overconstrain 
-	* generic/tclStringObj.c:	by a factor of 2.  [Bug 3293874]
+	* generic/tclListObj.c:	so that length limits do not overconstrain
+	* generic/tclStringObj.c:	by a factor of 2.  [Bug 3293874]:
 	* generic/tclUtil.c:	Fix includes rooting all growth routines
 	by default on a commone tunable parameter TCL_MIN_GROWTH.
 
