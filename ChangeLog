@@ -1,3 +1,9 @@
+2011-06-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tests/socket.test: Add test constraint, so 6.2 and
+	  6.3 don't fail when the machine does not have support
+	  for ip6. Follow-up to checkin from 2011-05-11 by rmax.
+
 2011-06-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Removed TclCleanupLiteralTable(), and old
