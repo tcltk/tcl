@@ -409,7 +409,7 @@ TclMaxListLength(
 		bytes++;
 		numBytes -= (numBytes != -1);
 	    } while (numBytes && TclIsSpaceProc(*bytes));
-	    if (numBytes == 0) {
+	    if ((numBytes == 0) || ((numBytes == -1) && (*bytes == '\0'))) {
 		break;
 	    }
 	    /* (*bytes) is non-space; return to counting state */
@@ -1778,31 +1778,16 @@ Tcl_ConcatObj(
 	}
     }
     if (i == objc) {
-	Tcl_Obj **listv;
-	int listc;
-
 	resPtr = NULL;
 	for (i = 0;  i < objc;  i++) {
-	    /*
-	     * Tcl_ListObjAppendList could be used here, but this saves us a
-	     * bit of type checking (since we've already done it). Use of
-	     * INT_MAX tells us to always put the new stuff on the end. It
-	     * will be set right in Tcl_ListObjReplace.
-	     * Note that all objs at this point are either lists or have an
-	     * empty string rep.
-	     */
-
 	    objPtr = objv[i];
 	    if (objPtr->bytes && objPtr->length == 0) {
 		continue;
 	    }
-	    TclListObjGetElements(NULL, objPtr, &listc, &listv);
-	    if (listc) {
-		if (resPtr) {
-		    Tcl_ListObjReplace(NULL, resPtr, INT_MAX, 0, listc, listv);
-		} else {
-		    resPtr = TclListObjCopy(NULL, objPtr);
-		}
+	    if (resPtr) {
+		Tcl_ListObjAppendList(NULL, resPtr, objPtr);
+	    } else {
+		resPtr = TclListObjCopy(NULL, objPtr);
 	    }
 	}
 	if (!resPtr) {

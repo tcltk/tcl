@@ -152,8 +152,7 @@ typedef struct String {
  *
  *   Attempt to allocate 2 * (originalLength + appendLength)
  *   On failure:
- *	attempt to allocate originalLength + 2*appendLength +
- *			TCL_GROWTH_MIN_ALLOC
+ *	attempt to allocate originalLength + 2*appendLength + TCL_MIN_GROWTH
  *
  * This algorithm allows very good performance, as it rapidly increases the
  * memory allocated for a given string, which minimizes the number of
@@ -166,20 +165,20 @@ typedef struct String {
  * cover the request, but which hopefully will be less than the total
  * available memory.
  *
- * The addition of TCL_GROWTH_MIN_ALLOC allows for efficient handling of very
+ * The addition of TCL_MIN_GROWTH allows for efficient handling of very
  * small appends. Without this extra slush factor, a sequence of several small
  * appends would cause several memory allocations. As long as
- * TCL_GROWTH_MIN_ALLOC is a reasonable size, we can avoid that behavior.
+ * TCL_MIN_GROWTH is a reasonable size, we can avoid that behavior.
  *
  * The growth algorithm can be tuned by adjusting the following parameters:
  *
- * TCL_GROWTH_MIN_ALLOC		Additional space, in bytes, to allocate when
+ * TCL_MIN_GROWTH		Additional space, in bytes, to allocate when
  *				the double allocation has failed. Default is
- *				1024 (1 kilobyte).
+ *				1024 (1 kilobyte).  See tclInt.h.
  */
 
-#ifndef TCL_GROWTH_MIN_ALLOC
-#define TCL_GROWTH_MIN_ALLOC	1024
+#ifndef TCL_MIN_UNICHAR_GROWTH
+#define TCL_MIN_UNICHAR_GROWTH	TCL_MIN_GROWTH/sizeof(Tcl_UniChar)
 #endif
 
 static void
@@ -214,7 +213,7 @@ GrowStringBuffer(
 	     */
 
 	    unsigned int limit = INT_MAX - needed;
-	    unsigned int extra = needed - objPtr->length + TCL_GROWTH_MIN_ALLOC;
+	    unsigned int extra = needed - objPtr->length + TCL_MIN_GROWTH;
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    attempt = needed + growth;
@@ -265,7 +264,7 @@ GrowUnicodeBuffer(
 
 	    unsigned int limit = STRING_MAXCHARS - needed;
 	    unsigned int extra = needed - stringPtr->numChars
-		    + TCL_GROWTH_MIN_ALLOC/sizeof(Tcl_UniChar);
+		    + TCL_MIN_UNICHAR_GROWTH;
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    attempt = needed + growth;
