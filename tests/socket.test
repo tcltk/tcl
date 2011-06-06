@@ -804,7 +804,7 @@ test socket_$af-6.2 {
     readable fileevent on server socket
 } -setup {
     set sock [socket -server dummy 0]
-} -body {
+} -constraints [list socket supported_$af] -body {
     fileevent $sock readable dummy
 } -cleanup {
     close $sock
@@ -812,7 +812,7 @@ test socket_$af-6.2 {
 
 test socket_$af-6.3 {writable fileevent on server socket} -setup {
     set sock [socket -server dummy 0]
-} -body {
+} -constraints [list socket supported_$af] -body {
     fileevent $sock writable dummy
 } -cleanup {
     close $sock
