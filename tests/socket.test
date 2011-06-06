@@ -85,7 +85,7 @@ puts $s2 test1; gets $s1
 puts $s2 test2; gets $s1
 close $s1; close $s2
 set t2 [clock milliseconds]
-set latency [expr {$t2-$t1}]
+set latency [expr {($t2-$t1)*2}]; # doubled as a safety margin
 unset t1 t2 s1 s2 server
 
 # If remoteServerIP or remoteServerPort are not set, check in the environment
@@ -1768,7 +1768,7 @@ test socket-14.1 {[socket -async] fileevent while still connecting} \
 test socket-14.2 {[socket -async] fileevent connection refused} \
     -constraints [list socket supported_any] \
     -body {
-        set client [socket -async localhost 0]
+        set client [socket -async localhost [randport]]
         fileevent $client writable {set x [fconfigure $client -error]}
         set after [after 1000 {set x timeout}]
         vwait x
