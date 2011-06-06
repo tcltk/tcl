@@ -20,6 +20,10 @@
 #define SET_BITS(var, bits)	((var) |= (bits))
 #define CLEAR_BITS(var, bits)	((var) &= ~(bits))
 
+/* "sock" + a pointer in hex + \0 */
+#define SOCK_CHAN_LENGTH 4 + sizeof(void*) * 2 + 1
+#define SOCK_TEMPLATE "sock%lx"
+
 /*
  * This is needed to comply with the strict aliasing rules of GCC, but it also
  * simplifies casting between the different sockaddr types.
@@ -887,7 +891,7 @@ CreateClientSocket(
 {
     socklen_t optlen;
     int in_coro = (state->addr != NULL);
-    int status, connected = 0;
+    int status;
     int async = state->flags & TCP_ASYNC_CONNECT;
 
     if (in_coro) {
@@ -1000,7 +1004,7 @@ out:
 
     if (status < 0) {
         if (in_coro) {
-            Tcl_NotifyChannel(state->fds->fd, TCL_WRITABLE);
+            Tcl_NotifyChannel(state->channel, TCL_WRITABLE);
         } else {
             if (interp != NULL) {
                 Tcl_AppendResult(interp, "couldn't open socket: ",
@@ -1047,20 +1051,25 @@ Tcl_OpenTcpClient(
 {
     TcpState *state;
     const char *errorMsg = NULL;
-    struct addrinfo *addrlist, *myaddrlist;
-    char channelName[4+16+1];	/* "sock" + up to 16 hex chars + \0 */
-
+    struct addrinfo *addrlist = NULL, *myaddrlist = NULL;
+    char channelName[SOCK_CHAN_LENGTH];
 
     /*
      * Do the name lookups for the local and remote addresses.
      */
-    if (!TclCreateSocketAddress(interp, &addrlist, host, port, 0, &errorMsg)) {
-	goto error;
-    }
-    if (!TclCreateSocketAddress(interp, &myaddrlist, myaddr, myport, 1,
-                                &errorMsg)) {
-        freeaddrinfo(addrlist);
-        goto error;
+    if (!TclCreateSocketAddress(interp, &addrlist, host, port, 0, &errorMsg) ||
+        !TclCreateSocketAddress(interp, &myaddrlist, myaddr, myport, 1, &errorMsg)) {
+        if (addrlist != NULL) {
+            freeaddrinfo(addrlist);
+        }
+        if (interp != NULL) {
+            Tcl_AppendResult(interp, "couldn't open socket: ",
+                             Tcl_PosixError(interp), NULL);
+            if (errorMsg != NULL) {
+                Tcl_AppendResult(interp, " (", errorMsg, ")", NULL);
+            }
+        }
+        return NULL;
     }
 
     /*
@@ -1079,10 +1088,10 @@ Tcl_OpenTcpClient(
      * Create a new client socket and wrap it in a channel.
      */
     if (CreateClientSocket(interp, state) != TCL_OK) {
-        goto error;
+        return NULL;
     }
 
-    sprintf(channelName, "sock%lx", (long)state);
+    sprintf(channelName, SOCK_TEMPLATE, (long)state);
 
     state->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
                                        state, (TCL_READABLE | TCL_WRITABLE));
@@ -1092,16 +1101,6 @@ Tcl_OpenTcpClient(
 	return NULL;
     }
     return state->channel;
-
-error:
-    if (interp != NULL) {
-        Tcl_AppendResult(interp, "couldn't open socket: ",
-                         Tcl_PosixError(interp), NULL);
-        if (errorMsg != NULL) {
-            Tcl_AppendResult(interp, " (", errorMsg, ")", NULL);
-        }
-    }
-    return NULL;
 }
 
 /*
@@ -1151,7 +1150,7 @@ TclpMakeTcpClientChannelMode(
 				 * TCL_WRITABLE to indicate file mode. */
 {
     TcpState *statePtr;
-    char channelName[16 + TCL_INTEGER_SPACE];
+    char channelName[SOCK_CHAN_LENGTH];
 
     statePtr = ckalloc(sizeof(TcpState));
     memset(statePtr, 0, sizeof(TcpState));
@@ -1160,7 +1159,7 @@ TclpMakeTcpClientChannelMode(
     statePtr->fds->fd = PTR2INT(sock);
     statePtr->flags = 0;
 
-    sprintf(channelName, "sock%d", statePtr->fds->fd);
+    sprintf(channelName, SOCK_TEMPLATE, (long)statePtr);
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, mode);
@@ -1202,7 +1201,7 @@ Tcl_OpenTcpServer(
     int status = 0, sock = -1, reuseaddr = 1, chosenport = 0;
     struct addrinfo *addrlist = NULL, *addrPtr;	/* socket address */
     TcpState *statePtr = NULL;
-    char channelName[16 + TCL_INTEGER_SPACE];
+    char channelName[SOCK_CHAN_LENGTH];
     const char *errorMsg = NULL;
     TcpFdList *fds = NULL, *newfds;
 
@@ -1295,7 +1294,7 @@ Tcl_OpenTcpServer(
             statePtr->fds = newfds;
             statePtr->acceptProc = acceptProc;
             statePtr->acceptProcData = acceptProcData;
-            sprintf(channelName, "sock%d", sock);
+            sprintf(channelName, SOCK_TEMPLATE, (long)statePtr);
         } else {
             fds->next = newfds;
         }
@@ -1360,7 +1359,7 @@ TcpAccept(
     TcpState *newSockState;	/* State for new socket. */
     address addr;		/* The remote address */
     socklen_t len;		/* For accept interface */
-    char channelName[16 + TCL_INTEGER_SPACE];
+    char channelName[SOCK_CHAN_LENGTH];
     char host[NI_MAXHOST], port[NI_MAXSERV];
     
     len = sizeof(addr);
@@ -1383,7 +1382,7 @@ TcpAccept(
     memset(newSockState->fds, (int) 0, sizeof(TcpFdList));
     newSockState->fds->fd = newsock;
 
-    sprintf(channelName, "sock%d", newsock);
+    sprintf(channelName, SOCK_TEMPLATE, (long)newSockState);
     newSockState->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newSockState, (TCL_READABLE | TCL_WRITABLE));
 
