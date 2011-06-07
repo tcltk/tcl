@@ -50,7 +50,7 @@ typedef struct TcpFdList {
 
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this file. */
-    TcpFdList *fds;		/* The file descriptors of the sockets. */
+    TcpFdList fds;		/* The file descriptors of the sockets. */
     int flags;			/* ORed combination of the bitfields defined
 				 * below. */
     /*
@@ -348,7 +348,7 @@ TcpBlockModeProc(
     } else {
 	SET_BITS(statePtr->flags, TCP_ASYNC_SOCKET);
     }
-    if (TclUnixSetBlockingMode(statePtr->fds->fd, mode) < 0) {
+    if (TclUnixSetBlockingMode(statePtr->fds.fd, mode) < 0) {
 	return errno;
     }
     return 0;
@@ -390,7 +390,7 @@ WaitForConnect(
 	    timeOut = -1;
 	}
 	errno = 0;
-	state = TclUnixWaitForFile(statePtr->fds->fd,
+	state = TclUnixWaitForFile(statePtr->fds.fd,
 		TCL_WRITABLE | TCL_EXCEPTION, timeOut);
 	if (state & TCL_EXCEPTION) {
 	    return -1;
@@ -443,7 +443,7 @@ TcpInputProc(
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    bytesRead = recv(statePtr->fds->fd, buf, (size_t) bufSize, 0);
+    bytesRead = recv(statePtr->fds.fd, buf, (size_t) bufSize, 0);
     if (bytesRead > -1) {
 	return bytesRead;
     }
@@ -493,7 +493,7 @@ TcpOutputProc(
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    written = send(statePtr->fds->fd, buf, (size_t) toWrite, 0);
+    written = send(statePtr->fds.fd, buf, (size_t) toWrite, 0);
     if (written > -1) {
 	return written;
     }
@@ -537,13 +537,15 @@ TcpCloseProc(
      * that called this function, so we do not have to delete them here.
      */
     
-    for (fds = statePtr->fds; fds != NULL; fds = statePtr->fds) {
-	statePtr->fds = fds->next;
+    for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
 	Tcl_DeleteFileHandler(fds->fd);
 	if (close(fds->fd) < 0) {
 	    errorCode = errno;
 	}
-	ckfree(fds);
+    
+    }
+    for (fds = statePtr->fds.next; fds != NULL; fds = fds->next) {
+        ckfree(fds);
     }
     if (statePtr->addrlist != NULL) {
         freeaddrinfo(statePtr->addrlist);
@@ -600,7 +602,7 @@ TcpClose2Proc(
         }
         return TCL_ERROR;
     }
-    if (shutdown(statePtr->fds->fd,sd) < 0) {
+    if (shutdown(statePtr->fds.fd,sd) < 0) {
 	errorCode = errno;
     }
 
@@ -654,7 +656,7 @@ TcpGetOptionProc(
 	int err, ret;
 
         if (statePtr->status == 0) {
-            ret = getsockopt(statePtr->fds->fd, SOL_SOCKET, SO_ERROR,
+            ret = getsockopt(statePtr->fds.fd, SOL_SOCKET, SO_ERROR,
                              (char *)&err, &optlen);
             if (ret < 0) {
                 err = errno;
@@ -679,7 +681,7 @@ TcpGetOptionProc(
         address peername;
         socklen_t size = sizeof(peername);
 
-	if (getpeername(statePtr->fds->fd, &peername.sa, &size) >= 0) {
+	if (getpeername(statePtr->fds.fd, &peername.sa, &size) >= 0) {
 	    if (len == 0) {
 		Tcl_DStringAppendElement(dsPtr, "-peername");
 		Tcl_DStringStartSublist(dsPtr);
@@ -726,7 +728,7 @@ TcpGetOptionProc(
 	    Tcl_DStringAppendElement(dsPtr, "-sockname");
 	    Tcl_DStringStartSublist(dsPtr);
 	}
-	for (fds = statePtr->fds; fds != NULL; fds = fds->next) {
+	for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
 	    size = sizeof(sockname);
 	    if (getsockname(fds->fd, &(sockname.sa), &size) >= 0) {
                 int flags = reverseDNS;
@@ -817,11 +819,11 @@ TcpWatchProc(
          * need to cache this request until the connection has succeeded. */
         statePtr->filehandlers = mask;
     } else if (mask) {
-        Tcl_CreateFileHandler(statePtr->fds->fd, mask,
+        Tcl_CreateFileHandler(statePtr->fds.fd, mask,
                               (Tcl_FileProc *) Tcl_NotifyChannel,
                               (ClientData) statePtr->channel);
     } else {
-        Tcl_DeleteFileHandler(statePtr->fds->fd);
+        Tcl_DeleteFileHandler(statePtr->fds.fd);
     }
 }
 
@@ -852,7 +854,7 @@ TcpGetHandleProc(
 {
     TcpState *statePtr = (TcpState *) instanceData;
 
-    *handlePtr = INT2PTR(statePtr->fds->fd);
+    *handlePtr = INT2PTR(statePtr->fds.fd);
     return TCL_OK;
 }
 
@@ -920,13 +922,13 @@ CreateClientSocket(
              * Close the socket if it is still open from the last unsuccessful
              * iteration.
              */
-            if (state->fds->fd >= 0) {
-		close(state->fds->fd);
-		state->fds->fd = -1;
+            if (state->fds.fd >= 0) {
+		close(state->fds.fd);
+		state->fds.fd = -1;
 	    }
 
-	    state->fds->fd = socket(state->addr->ai_family, SOCK_STREAM, 0);
-	    if (state->fds->fd < 0) {
+	    state->fds.fd = socket(state->addr->ai_family, SOCK_STREAM, 0);
+	    if (state->fds.fd < 0) {
 		continue;
 	    }
 
@@ -935,25 +937,25 @@ CreateClientSocket(
 	     * inherited by child processes.
 	     */
 	    
-	    fcntl(state->fds->fd, F_SETFD, FD_CLOEXEC);
+	    fcntl(state->fds.fd, F_SETFD, FD_CLOEXEC);
 	    
 	    /*
 	     * Set kernel space buffering
 	     */
 	    
-	    TclSockMinimumBuffers(INT2PTR(state->fds->fd), SOCKET_BUFSIZE);
+	    TclSockMinimumBuffers(INT2PTR(state->fds.fd), SOCKET_BUFSIZE);
     
 	    if (async) {
-		status = TclUnixSetBlockingMode(state->fds->fd, TCL_MODE_NONBLOCKING);
+		status = TclUnixSetBlockingMode(state->fds.fd, TCL_MODE_NONBLOCKING);
 		if (status < 0) {
                     continue;
 		}
 	    }
 
             reuseaddr = 1;
-            (void) setsockopt(state->fds->fd, SOL_SOCKET, SO_REUSEADDR,
+            (void) setsockopt(state->fds.fd, SOL_SOCKET, SO_REUSEADDR,
                     (char *) &reuseaddr, sizeof(reuseaddr));
-            status = bind(state->fds->fd, state->myaddr->ai_addr,
+            status = bind(state->fds.fd, state->myaddr->ai_addr,
                           state->myaddr->ai_addrlen);
             if (status < 0) {
                 continue;
@@ -966,22 +968,22 @@ CreateClientSocket(
 	     * in being informed when the connect completes.
 	     */
 	    
-	    status = connect(state->fds->fd, state->addr->ai_addr,
+	    status = connect(state->fds.fd, state->addr->ai_addr,
                              state->addr->ai_addrlen);
 	    if (status < 0 && errno == EINPROGRESS) {
-                Tcl_CreateFileHandler(state->fds->fd, TCL_WRITABLE,
+                Tcl_CreateFileHandler(state->fds.fd, TCL_WRITABLE,
                                       TcpAsyncCallback, state);
                 return TCL_OK;
 
             coro_continue:
-                Tcl_DeleteFileHandler(state->fds->fd);
+                Tcl_DeleteFileHandler(state->fds.fd);
                 /*
                  * Read the error state from the socket, to see if the async
                  * connection has succeeded or failed and store the status in
                  * the socket state for later retrieval by [fconfigure -error]
                  */
                 optlen = sizeof(int);
-                getsockopt(state->fds->fd, SOL_SOCKET, SO_ERROR,
+                getsockopt(state->fds.fd, SOL_SOCKET, SO_ERROR,
                            (char *)&status, &optlen);
                 state->status = status;
             }
@@ -996,7 +998,7 @@ out:
     if (async) {
         CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
         TcpWatchProc(state, state->filehandlers);
-        TclUnixSetBlockingMode(state->fds->fd, TCL_MODE_BLOCKING);
+        TclUnixSetBlockingMode(state->fds.fd, TCL_MODE_BLOCKING);
     }
 
     if (status < 0) {
@@ -1072,9 +1074,7 @@ Tcl_OpenTcpClient(
     state->flags = async ? TCP_ASYNC_CONNECT : 0;
     state->addrlist = addrlist;
     state->myaddrlist = myaddrlist;
-    state->fds = ckalloc(sizeof(TcpFdList));
-    memset(state->fds, (int) 0, sizeof(TcpFdList));
-    state->fds->fd = -1;
+    state->fds.fd = -1;
 
     /*
      * Create a new client socket and wrap it in a channel.
@@ -1147,9 +1147,7 @@ TclpMakeTcpClientChannelMode(
 
     statePtr = ckalloc(sizeof(TcpState));
     memset(statePtr, 0, sizeof(TcpState));
-    statePtr->fds = ckalloc(sizeof(TcpFdList));
-    memset(statePtr->fds, (int) 0, sizeof(TcpFdList));
-    statePtr->fds->fd = PTR2INT(sock);
+    statePtr->fds.fd = PTR2INT(sock);
     statePtr->flags = 0;
 
     sprintf(channelName, SOCK_TEMPLATE, (long)statePtr);
@@ -1275,8 +1273,6 @@ Tcl_OpenTcpServer(
             close(sock);
             continue;
         }
-        newfds = ckalloc(sizeof(TcpFdList));
-        memset(newfds, (int) 0, sizeof(TcpFdList));
         if (statePtr == NULL) {
             /*
              * Allocate a new TcpState for this socket.
@@ -1284,11 +1280,13 @@ Tcl_OpenTcpServer(
             
             statePtr = ckalloc(sizeof(TcpState));
             memset(statePtr, 0, sizeof(TcpState));
-            statePtr->fds = newfds;
             statePtr->acceptProc = acceptProc;
             statePtr->acceptProcData = acceptProcData;
             sprintf(channelName, SOCK_TEMPLATE, (long)statePtr);
+            newfds = &statePtr->fds;
         } else {
+            newfds = ckalloc(sizeof(TcpFdList));
+            memset(newfds, (int) 0, sizeof(TcpFdList));
             fds->next = newfds;
         }
         newfds->fd = sock;
@@ -1371,9 +1369,7 @@ TcpAccept(
     newSockState = ckalloc(sizeof(TcpState));
     memset(newSockState, 0, sizeof(TcpState));
     newSockState->flags = 0;
-    newSockState->fds = ckalloc(sizeof(TcpFdList));
-    memset(newSockState->fds, (int) 0, sizeof(TcpFdList));
-    newSockState->fds->fd = newsock;
+    newSockState->fds.fd = newsock;
 
     sprintf(channelName, SOCK_TEMPLATE, (long)newSockState);
     newSockState->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
