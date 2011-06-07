@@ -53,27 +53,21 @@ struct TcpState {
     TcpFdList *fds;		/* The file descriptors of the sockets. */
     int flags;			/* ORed combination of the bitfields defined
 				 * below. */
-    union {
-        struct {
-            /* Only needed for server sockets */
-            Tcl_TcpAcceptProc *acceptProc;
-				/* Proc to call on accept. */
-            ClientData acceptProcData;
-				/* The data for the accept proc. */
-        };
-        struct {
-            /*
-             * Only needed for client sockets
-             */
-            struct addrinfo *addrlist;	/* addresses to connect to        */
-            struct addrinfo *addr;	/* iterator over addrlist         */
-            struct addrinfo *myaddrlist; /* local address                 */
-            struct addrinfo *myaddr;	/* iterator over myaddrlist       */
-            int filehandlers;	/* Caches FileHandlers that get set up while
-                                 * an async socket is not yet connected   */
-            int status;         /* Cache status of async socket */
-        };
-    };
+    /*
+     * Only needed for server sockets
+     */
+    Tcl_TcpAcceptProc *acceptProc; /* Proc to call on accept. */
+    ClientData acceptProcData;     /* The data for the accept proc. */
+    /*
+     * Only needed for client sockets
+     */
+    struct addrinfo *addrlist;	 /* addresses to connect to        */
+    struct addrinfo *addr;	 /* iterator over addrlist         */
+    struct addrinfo *myaddrlist; /* local address                  */
+    struct addrinfo *myaddr;	 /* iterator over myaddrlist       */
+    int filehandlers;	/* Caches FileHandlers that get set up while
+                         * an async socket is not yet connected   */
+    int status;         /* Cache status of async socket */
 };
 
 /*
@@ -551,6 +545,12 @@ TcpCloseProc(
 	}
 	ckfree(fds);
     }
+    if (statePtr->addrlist != NULL) {
+        freeaddrinfo(statePtr->addrlist);
+    }
+    if (statePtr->myaddrlist != NULL) {
+        freeaddrinfo(statePtr->myaddrlist);
+    }
     ckfree(statePtr);
     return errorCode;
 }
@@ -993,9 +993,6 @@ CreateClientSocket(
 
 out:
 
-    freeaddrinfo(state->addrlist);
-    freeaddrinfo(state->myaddrlist);
-
     if (async) {
         CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
         TcpWatchProc(state, state->filehandlers);
@@ -1010,11 +1007,6 @@ out:
                 Tcl_AppendResult(interp, "couldn't open socket: ",
                                  Tcl_PosixError(interp), NULL);
             }
-            if (state->fds->fd != -1) {
-                close(state->fds->fd);
-            }
-            ckfree(state->fds);
-            ckfree(state);
             return TCL_ERROR;
         }
     }
@@ -1088,6 +1080,7 @@ Tcl_OpenTcpClient(
      * Create a new client socket and wrap it in a channel.
      */
     if (CreateClientSocket(interp, state) != TCL_OK) {
+        TcpCloseProc(state, NULL);
         return NULL;
     }
 
