@@ -1,3 +1,7 @@
+2011-06-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStrToD.c:  [Bug 3315098] Mem leak fix from Gustaf Neumann.
+
 2011-06-08  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclExecute.c: Reverted the fix for [Bug 3274728]
