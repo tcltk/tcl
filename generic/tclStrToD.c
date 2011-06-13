@@ -3790,7 +3790,7 @@ ShorteningBignumConversion(Double* dPtr,
     if (m2plus > m2minus) {
 	mp_clear(&mplus);
     }
-    mp_clear_multi(&b, &mminus, &temp, NULL);
+    mp_clear_multi(&b, &mminus, &temp, &dig, &S, NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
