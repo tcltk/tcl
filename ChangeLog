@@ -1,8 +1,24 @@
+2011-06-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStrToD.c:  [Bug 3315098] Mem leak fix from Gustaf Neumann.
+
+2011-06-08  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclExecute.c: Reverted the fix for [Bug 3274728]
+	committed on 2011-04-06 and replaced with one which is
+	64bit-safe. The existing fix crashed tclsh on Windows 64bit.
+
+2011-06-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/fileSystem.test: Reduce the amount of use of duplication of
+	complex code to perform common tests, and convert others to do the
+	test result check directly using Tcltest's own primitives.
+
 2011-06-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tests/socket.test: Add test constraint, so 6.2 and
-	  6.3 don't fail when the machine does not have support
-	  for ip6. Follow-up to checkin from 2011-05-11 by rmax.
+	* tests/socket.test: Add test constraint, so 6.2 and 6.3 don't fail
+	when the machine does not have support for ip6. Follow-up to checkin
+	from 2011-05-11 by rmax.
 
 2011-06-02  Don Porter  <dgp@users.sourceforge.net>
 
