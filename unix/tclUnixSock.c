@@ -971,7 +971,8 @@ CreateClientSocket(
 	    status = connect(state->fds.fd, state->addr->ai_addr,
                              state->addr->ai_addrlen);
 	    if (status < 0 && errno == EINPROGRESS) {
-                Tcl_CreateFileHandler(state->fds.fd, TCL_WRITABLE,
+                Tcl_CreateFileHandler(state->fds.fd,
+                                      TCL_WRITABLE | TCL_EXCEPTION,
                                       TcpAsyncCallback, state);
                 return TCL_OK;
 
