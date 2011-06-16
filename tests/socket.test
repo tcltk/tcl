@@ -1772,6 +1772,9 @@ test socket-14.2 {[socket -async] fileevent connection refused} \
         fileevent $client writable {set x [fconfigure $client -error]}
         set after [after 1000 {set x timeout}]
         vwait x
+        if {$x eq "timeout"} {
+            append x ": [fconfigure $client -error]"
+        }
         set x
     } -cleanup {
         after cancel $after
