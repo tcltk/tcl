@@ -804,7 +804,7 @@ test socket_$af-6.2 {
     readable fileevent on server socket
 } -setup {
     set sock [socket -server dummy 0]
-} -body {
+} -constraints [list socket supported_$af] -body {
     fileevent $sock readable dummy
 } -cleanup {
     close $sock
@@ -812,7 +812,7 @@ test socket_$af-6.2 {
 
 test socket_$af-6.3 {writable fileevent on server socket} -setup {
     set sock [socket -server dummy 0]
-} -body {
+} -constraints [list socket supported_$af] -body {
     fileevent $sock writable dummy
 } -cleanup {
     close $sock
@@ -1610,7 +1610,7 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
     # If the socket is still open after 5 seconds, the script1 process must
     # have inherited the accepted socket.
     set failed 0
-    after 5000 set failed 1
+    set after [after 5000 [list set failed 1]]
     proc getdata { file } {
 	# Read handler on the client socket.
 	global x
@@ -1637,6 +1637,7 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
     vwait x
     return $x
 } -cleanup {
+    after cancel $after
     catch {close $p}
 } -result {accepted socket was not inherited}
 

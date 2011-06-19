@@ -172,7 +172,7 @@ typedef struct TEBCdata {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
     const unsigned char *pc;	/* These fields are used on return TO this */
-    unsigned long *catchTop;	/* this level: they record the state when a */
+    ptrdiff_t *catchTop;	/* this level: they record the state when a */
     int cleanup;		/* new codePtr was received for NR */
     Tcl_Obj *auxObjList;	/* execution. */
     int checkInterp;
@@ -1917,7 +1917,7 @@ TclIncrObj(
  *----------------------------------------------------------------------
  */
 #define	bcFramePtr	(&TD->cmdFrame)
-#define	initCatchTop	((unsigned long *) (&TD->stack[-1]))
+#define	initCatchTop	((ptrdiff_t *) (&TD->stack[-1]))
 #define	initTosPtr	((Tcl_Obj **) (initCatchTop+codePtr->maxExceptDepth))
 #define esPtr           (iPtr->execEnvPtr->execStackPtr)
 
@@ -6265,7 +6265,7 @@ TEBCresume(
 
 	while (auxObjList) {
 	    if ((catchTop != initCatchTop) &&
-		    (*catchTop>auxObjList->internalRep.ptrAndLongRep.value)) {
+		(*catchTop > ((ptrdiff_t) auxObjList->internalRep.ptrAndLongRep.value))) {
 		break;
 	    }
 	    POP_TAUX_OBJ();
