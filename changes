@@ -7480,3 +7480,42 @@ memory with buffer backup (ferrieux)
 	*** POTENTIAL INCOMPATIBILITY ***
 
 --- Released 8.5.9, September 8, 2010 --- See ChangeLog for details ---
+
+2010-09-24 (bug fix)[3056775] race condition in Win sockets (twylite,kupries)
+
+2010-10-23 (update)[3085863] Update Unicode data to 6.0 (nijtmans)
+
+2010-11-02 Safe Tcl handling of empty path lists (cassoff)
+
+2010-11-03 (bug fix)[3098302] crash in compiled [catch] (kenny)
+
+2010-11-15 (enhancement)[3081184] improved TIP 280 performance (kupries)
+
+2010-11-30 (enhancement) Restore TclFormatInt for performance (hobbs)
+
+2010-11-30 (enhancement) Tcl_PrintDouble performance improvements (kenny)
+
+2010-12-12 (platform) OpenBSD build improvements (cassoff)
+
+2010-12-17 (platform) Revisions to support rpm 4.4.2 (cassoff)
+
+2011-01-13 (bug fix)[3142026] GrowEvaluationStack OBOE (harder,sofer)
+
+2011-01-17 [3148192] Dropped legacy syntax [puts $f $s nonewline] (nijtmans)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2011-01-19 (bug fix)[3072640] protect writes to ::error* variables (sofer)
+
+2011-03-06 (bug fix)[3200987,3192636] parser buffer overruns (porter)
+
+2011-03-21 (bug fix)[3216070] [load] extension from embed Tcl apps (nijtmans)
+
+2011-04-12 tzdata updated to Olson's tzdata2011f (iyer)
+
+
+
+
+
+
+
+
