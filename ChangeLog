@@ -289,7 +289,7 @@
 	* library/tzdata/Pacific/Honolulu:  tzdata2011d
 
 
-	* unix/configure.in  [Bug 3205320]: stack space detection defeated by inlining
+	* unix/configure.in: [Bug 3205320]: stack space detection defeated by inlining
 	* unix/configure:    (autoconf-2.59)
 
 2011-03-09  Don Porter  <dgp@users.sourceforge.net>
