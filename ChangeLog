@@ -1,3 +1,7 @@
+2011-06-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStrToD.c:  [Bug 3315098] Mem leak fix from Gustaf Neumann.
+
 2011-06-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Removed TclCleanupLiteralTable(), and old
@@ -285,7 +289,7 @@
 	* library/tzdata/Pacific/Honolulu:  tzdata2011d
 
 
-	* unix/configure.in  [Bug 3205320]: stack space detection defeated by inlining
+	* unix/configure.in: [Bug 3205320]: stack space detection defeated by inlining
 	* unix/configure:    (autoconf-2.59)
 
 2011-03-09  Don Porter  <dgp@users.sourceforge.net>
