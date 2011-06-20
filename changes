@@ -7480,3 +7480,62 @@ memory with buffer backup (ferrieux)
 	*** POTENTIAL INCOMPATIBILITY ***
 
 --- Released 8.5.9, September 8, 2010 --- See ChangeLog for details ---
+
+2010-09-24 (bug fix)[3056775] race condition in Win sockets (twylite,kupries)
+
+2010-10-23 (update)[3085863] Update Unicode data to 6.0 (nijtmans)
+
+2010-11-02 Safe Tcl handling of empty path lists (cassoff)
+
+2010-11-03 (bug fix)[3098302] crash in compiled [catch] (kenny)
+
+2010-11-15 (TIP 378)[3081184] improved TIP 280 performance (kupries)
+
+2010-11-30 (enhancement) Restore TclFormatInt for performance (hobbs)
+
+2010-11-30 (enhancement) Tcl_PrintDouble performance improvements (kenny)
+
+2010-12-12 (platform) OpenBSD build improvements (cassoff)
+
+2010-12-17 (platform) Revisions to support rpm 4.4.2 (cassoff)
+
+2011-01-13 (bug fix)[3142026] GrowEvaluationStack OBOE (harder,sofer)
+
+2011-01-19 (bug fix)[3072640] protect writes to ::error* variables (sofer)
+
+2011-03-06 (bug fix)[3200987,3192636] parser buffer overruns (porter)
+
+2011-03-08 (bug fix)[3202905] failed intrep release of interp result (mccormack)
+
+2011-03-09 (bug fix)[3202171] repair [namespace inscope] optimizer (porter)
+
+2011-03-14 (bug fix) Fixes from libtommath 0.42.0 release (fellows)
+
+2011-03-21 (bug fix)[3216070] [load] extension from embed Tcl apps (nijtmans)
+
+2011-04-12 (bug fix)[3285472] intrep corruption in [string reverse] (porter)
+
+2011-04-13 (bug fix)[2662380] crash when variable append trace unsets (sofer)
+
+2011-04-13 (bug fix)[3285375] Buffer overflow in [concat] (porter)
+
+2011-05-02 (internals change) revised TclFindElement() interface (porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2011-05-05 (enhancement) dict->list w/o string rep generation (porter)
+
+2011-05-10 (bug fix)[3173086] Crash parsing long lists (rogers,porter)
+
+2011-05-12 (bug fix)[2715421] surplus \n in POST (passadyn,thoyts)
+=> http 2.7.6
+
+2011-05-24 tzdata updated to Olson's tzdata2011g (iyer)
+
+2011-05-25 (enhancement) msgcat internal improvements (fellows)
+=> msgcat 1.4.4
+
+2011-06-02 (bug fix)[3185407] cmd resolution epoch flaw (nadkarni,fellows)
+
+2011-06-13 (bug fix)[3315098] mem leak generating double string rep (neumann)
+
+--- Released 8.5.10, June 22, 2011 --- See ChangeLog for details ---
