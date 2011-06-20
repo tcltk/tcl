@@ -7501,21 +7501,35 @@ memory with buffer backup (ferrieux)
 
 2011-01-13 (bug fix)[3142026] GrowEvaluationStack OBOE (harder,sofer)
 
-2011-01-17 [3148192] Dropped legacy syntax [puts $f $s nonewline] (nijtmans)
-	*** POTENTIAL INCOMPATIBILITY ***
-
 2011-01-19 (bug fix)[3072640] protect writes to ::error* variables (sofer)
 
 2011-03-06 (bug fix)[3200987,3192636] parser buffer overruns (porter)
 
 2011-03-21 (bug fix)[3216070] [load] extension from embed Tcl apps (nijtmans)
 
-2011-04-12 tzdata updated to Olson's tzdata2011f (iyer)
+2011-04-12 (bug fix)[3285472] intrep corruption in [string reverse] (porter)
 
+2011-04-13 (bug fix)[2662380] crash when variable append trace unsets (sofer)
 
+2011-04-13 (bug fix)[3285375] Buffer overflow in [concat] (porter)
 
+2011-05-02 (internals change) revised TclFindElement() interface (porter)
+	*** POTENTIAL INCOMPATIBILITY ***
 
+2011-05-05 (enhancement) dict->list w/o string rep generation (porter)
 
+2011-05-10 (bug fix)[3173086] Crash parsing long lists (rogers,porter)
 
+2011-05-12 (bug fix)[2715421] surplus \n in POST (passadyn,thoyts)
+=> http 2.7.6
 
+2011-05-24 tzdata updated to Olson's tzdata2011g (iyer)
 
+2011-05-25 (enhancement) msgcat internal improvements (fellows)
+=> msgcat 1.4.4
+
+2011-06-02 (bug fix)[3185407] cmd resolution epoch flaw (nadkarni,fellows)
+
+2011-06-13 (bug fix)[3315098] mem leak generating double string rep (neumann)
+
+--- Released 8.5.10, June 22, 2011 --- See ChangeLog for details ---
