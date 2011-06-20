@@ -140,7 +140,7 @@ Tcl_PutsObjCmd(
 	    string = objv[3];
 	    break;
 #if TCL_MAJOR_VERSION < 9
-	} else if (strcmp(TclGetString(objv[2]), "nonewline") == 0) {
+	} else if (strcmp(TclGetString(objv[3]), "nonewline") == 0) {
 	    /*
 	     * The code below provides backwards compatibility with an old
 	     * form of the command that is no longer recommended or
