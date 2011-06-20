@@ -7489,7 +7489,7 @@ memory with buffer backup (ferrieux)
 
 2010-11-03 (bug fix)[3098302] crash in compiled [catch] (kenny)
 
-2010-11-15 (enhancement)[3081184] improved TIP 280 performance (kupries)
+2010-11-15 (TIP 378)[3081184] improved TIP 280 performance (kupries)
 
 2010-11-30 (enhancement) Restore TclFormatInt for performance (hobbs)
 
@@ -7504,6 +7504,10 @@ memory with buffer backup (ferrieux)
 2011-01-19 (bug fix)[3072640] protect writes to ::error* variables (sofer)
 
 2011-03-06 (bug fix)[3200987,3192636] parser buffer overruns (porter)
+
+2011-03-08 (bug fix)[3202905] failed intrep release of interp result (mccormack)
+
+2011-03-09 (bug fix)[3202171] repair [namespace inscope] optimizer (porter)
 
 2011-03-21 (bug fix)[3216070] [load] extension from embed Tcl apps (nijtmans)
 
