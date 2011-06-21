@@ -7538,4 +7538,7 @@ memory with buffer backup (ferrieux)
 
 2011-06-13 (bug fix)[3315098] mem leak generating double string rep (neumann)
 
+2011-06-21 (new cmd) [tcltest::loadIntoSlaveInterpreter] (fellows)
+=> tcltest 2.3.3
+
 --- Released 8.5.10, June 22, 2011 --- See ChangeLog for details ---
