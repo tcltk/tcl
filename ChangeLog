@@ -1,5 +1,13 @@
 2011-06-21  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/tcltest/tcltest.tcl (loadIntoSlaveInterpreter):
+	* library/tcltest/pkgIndex.tcl: Backport tcltest 2.3.3 for release
+	* unix/Makefile.in: with Tcl 8.5.*.
+	* win/Makefile.in:
+
+	* tests/init.test:	Update test files to use new command.
+	* tests/pkg.test:
+
 	* generic/tclLink.c:	Prevent multiple links to a single Tcl
 	variable when calling Tcl_LinkVar(). [Bug 3317466]
 
