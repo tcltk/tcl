@@ -1,5 +1,7 @@
 2011-06-21  Don Porter  <dgp@users.sourceforge.net>
 
+	* changes:	Update for 8.5.10 release.
+
 	* library/tcltest/tcltest.tcl (loadIntoSlaveInterpreter):
 	* library/tcltest/pkgIndex.tcl: Backport tcltest 2.3.3 for release
 	* unix/Makefile.in: with Tcl 8.5.*.
