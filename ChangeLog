@@ -1,3 +1,8 @@
+2011-06-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclLink.c:	Prevent multiple links to a single Tcl
+	variable when calling Tcl_LinkVar(). [Bug 3317466]
+
 2011-06-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStrToD.c:  [Bug 3315098] Mem leak fix from Gustaf Neumann.
