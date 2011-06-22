@@ -1,3 +1,9 @@
+2011-06-22  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/pkgIndex.tcl: Updated to platform 1.0.10. Added
+	* library/platform/platform.tcl: handling of the DEB_HOST_MULTIARCH
+	location change for libc.
+
 2011-05-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInt.h: fix USE_TCLALLOC so that it can be enabled
