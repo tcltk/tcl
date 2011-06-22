@@ -71,12 +71,14 @@ port number will be chosen at random by the system software.
 This option will cause the client socket to be connected
 asynchronously. This means that the socket will be created immediately
 but may not yet be connected to the server, when the call to
-\fBsocket\fR returns. When a \fBgets\fR or \fBflush\fR is done on the
-socket before the connection attempt succeeds or fails, if the socket
-is in blocking mode, the operation will wait until the connection is
-completed or fails. If the socket is in nonblocking mode and a
-\fBgets\fR or \fBflush\fR is done on the socket before the connection
-attempt succeeds or fails, the operation returns immediately and
+\fBsocket\fR returns.
+
+When a \fBgets\fR or \fBflush\fR is done on the socket before the
+connection attempt succeeds or fails, if the socket is in blocking
+mode, the operation will wait until the connection is completed or
+fails. If the socket is in nonblocking mode and a \fBgets\fR or
+\fBflush\fR is done on the socket before the connection attempt
+succeeds or fails, the operation returns immediately and
 \fBfblocked\fR on the socket returns 1. Synchronous client sockets may
 be switched (after they have connected) to operating in asynchronous
 mode using:
@@ -87,6 +89,15 @@ mode using:
 .CE
 .PP
 See the \fBchan\fR \fBconfigure\fR command for more details.
+
+The Tcl event loop should be running while an asynchronous connection
+is in progress, because it may have to do several connection attempts
+in the background. Runnig the event loop also allows you to set up a
+writable channel event on the socket to get notified when the
+asyncronous connection has succeeded or failed. See the \fBvwait\fR
+and the \fBchan\fR comands for more details on the event loop and
+channel events.
+
 .RE
 .SH "SERVER SOCKETS"
 .PP
