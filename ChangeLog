@@ -1,3 +1,8 @@
+2011-06-22  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclInt.h: Fixed the inadvertently committed disabling of
+	  stack checks, see my 2010-11-15 commit.
+
 2011-06-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* changes:	Update for 8.5.10 release.
