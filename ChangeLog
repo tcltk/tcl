@@ -1,5 +1,10 @@
 2011-06-22  Andreas Kupries  <andreask@activestate.com>
 
+	* library/platform/pkgIndex.tcl: Updated to platform 1.0.10. Added
+	* library/platform/platform.tcl: handling of the DEB_HOST_MULTIARCH
+	* unix/Makefile.in: location change for libc.
+	* win/Makefile.in:
+
 	* generic/tclInt.h: Fixed the inadvertently committed disabling of
 	  stack checks, see my 2010-11-15 commit.
 
