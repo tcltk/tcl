@@ -74,7 +74,8 @@ proc randport {} { expr {int(rand()*16383+49152)} }
 # Test the latency of tcp connections over the loopback interface. Some OSes
 # (e.g. NetBSD) seem to use the Nagle algorithm and delayed ACKs, so it takes
 # up to 200ms for a packet sent to localhost to arrive. We're measuring this
-# here, so that OSes that don't have this problem can
+# here, so that OSes that don't have this problem can run the tests at full
+# speed.
 set server [socket -server {apply {{s a p} {set ::s1 $s}}} 0]
 set s2 [socket localhost [lindex [fconfigure $server -sockname] 2]]
 vwait s1; close $server
