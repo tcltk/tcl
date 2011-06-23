@@ -17,8 +17,6 @@
 #ifndef _TCLINT
 #define _TCLINT
 
-#define TCL_NO_STACK_CHECK /* DISABLE C RUNTIME STACK CHECK - Test AIX */
-
 /*
  * Some numerics configuration options.
  */

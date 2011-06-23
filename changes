@@ -7541,4 +7541,7 @@ memory with buffer backup (ferrieux)
 2011-06-21 (new cmd) [tcltest::loadIntoSlaveInterpreter] (fellows)
 => tcltest 2.3.3
 
---- Released 8.5.10, June 22, 2011 --- See ChangeLog for details ---
+2011-06-22 (new feature) DEB_HOST_MULTIARCH support (kupries)
+=> platform 1.0.10
+
+--- Released 8.5.10, June 23, 2011 --- See ChangeLog for details ---
