@@ -7938,6 +7938,9 @@ memory with buffer backup (ferrieux)
 
 2011-06-13 (bug fix)[3315098] mem leak generating double string rep (neumann)
 
+2011-06-22 (new feature) DEB_HOST_MULTIARCH support (kupries)
+=> platform 1.0.10
+
 Many more Tcl built-in command errors now set an -errorcode.
 
 --- Released 8.6b2, XXX XX, 2011 --- See ChangeLog for details ---
