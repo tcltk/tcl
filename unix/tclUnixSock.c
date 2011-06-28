@@ -858,6 +858,17 @@ TcpGetHandleProc(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TcpAsyncCallback --
+ *
+ *	Called by the event handler that CreateClientSocket sets up
+ *	internally for [socket -async] to get notified when the
+ *	asyncronous connection attempt has succeeded or failed.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 TcpAsyncCallback(
     ClientData clientData,	/* The socket state. */
@@ -883,6 +894,18 @@ TcpAsyncCallback(
  * Side effects:
  *	Opens a socket.
  *
+ * Remarks:
+ *	A single host name may resolve to more than one IP address, e.g. for
+ *	an IPv4/IPv6 dual stack host. For handling asyncronously connecting
+ *	sockets in the background for such hosts, this function can act as a
+ *	coroutine. On the first call, it sets up the control variables for the
+ *	two nested loops over the local and remote addresses. Once the first
+ *	connection attempt is in progress, it sets up itself as a writable
+ *	event handler for that socket, and returns. When the callback occurs,
+ *	control is transferred to the "reenter" label, right after the initial
+ *	return and the loops resume as if they had never been interrupted.
+ *	For syncronously connecting sockets, the loops work the usual way.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -892,14 +915,14 @@ CreateClientSocket(
     TcpState *state)
 {
     socklen_t optlen;
-    int in_coro = (state->addr != NULL);
+    int async_callback = (state->addr != NULL);
     int status;
     int async = state->flags & TCP_ASYNC_CONNECT;
 
-    if (in_coro) {
-        goto coro_continue;
+    if (async_callback) {
+        goto reenter;
     }
-    
+
     for (state->addr = state->addrlist; state->addr != NULL;
          state->addr = state->addr->ai_next) {
 
@@ -976,12 +999,13 @@ CreateClientSocket(
                                       TcpAsyncCallback, state);
                 return TCL_OK;
 
-            coro_continue:
+            reenter:
                 Tcl_DeleteFileHandler(state->fds.fd);
                 /*
-                 * Read the error state from the socket, to see if the async
-                 * connection has succeeded or failed and store the status in
-                 * the socket state for later retrieval by [fconfigure -error]
+                 * Read the error state from the socket to see if the async
+                 * connection has succeeded or failed. As this clears the
+                 * error condition, we cache the status in the socket state
+                 * struct for later retrieval by [fconfigure -error].
                  */
                 optlen = sizeof(int);
                 getsockopt(state->fds.fd, SOL_SOCKET, SO_ERROR,
@@ -996,22 +1020,35 @@ CreateClientSocket(
 
 out:
 
-    if (async) {
+    if (async_callback) {
+        /*
+         * An asynchonous connection has finally succeeded or failed.
+         */
         CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
         TcpWatchProc(state, state->filehandlers);
         TclUnixSetBlockingMode(state->fds.fd, TCL_MODE_BLOCKING);
-    }
 
-    if (status < 0) {
-        if (in_coro) {
-            Tcl_NotifyChannel(state->channel, TCL_WRITABLE);
-        } else {
-            if (interp != NULL) {
-                Tcl_AppendResult(interp, "couldn't open socket: ",
-                                 Tcl_PosixError(interp), NULL);
-            }
-            return TCL_ERROR;
+        /*
+         * We need to forward the writable event that brought us here, bcasue
+         * upon reading of getsockopt(SO_ERROR), at least some OSes clear the
+         * writable state from the socket, and so a subsequent select() on
+         * behalf of a script level [fileevent] would not fire. It doesn't
+         * hurt that this is also called in the successful case and will save
+         * the event mechanism one roundtrip through select().
+         */
+        Tcl_NotifyChannel(state->channel, TCL_WRITABLE);
+
+    } else if (status != 0) {
+        /*
+         * Failure for either a synchronous connection, or an async one that
+         * failed before it could enter background mode, e.g. because an
+         * invalid -myaddr was given.
+         */
+        if (interp != NULL) {
+            Tcl_AppendResult(interp, "couldn't open socket: ",
+                             Tcl_PosixError(interp), NULL);
         }
+        return TCL_ERROR;
     }
     return TCL_OK;
 }
