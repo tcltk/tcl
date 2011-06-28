@@ -117,15 +117,28 @@ if 0 {
 }
 
 foreach {af localhost} {
+    inet 127.0.0.1
+    inet6 ::1
+} {
+    # Check if the family is supported and set the constraint accordingly
+    testConstraint supported_$af [expr {![catch {socket -server foo -myaddr $localhost 0} sock]}]
+    catch {close $sock}
+}
+testConstraint supported_any [expr {[testConstraint supported_inet] || [testConstraint supported_inet6]}]
+
+set sock [socket -server foo -myaddr localhost 0]
+set sockname [fconfigure $sock -sockname]
+close $sock
+testConstraint localhost_v4 [expr {"127.0.0.1" in $sockname}]
+testConstraint localhost_v6 [expr {"::1" in $sockname}]
+
+
+foreach {af localhost} {
     any 127.0.0.1
     inet 127.0.0.1
     inet6 ::1
 } {
     set ::tcl::unsupported::socketAF $af
-    # Check if the family is supported and set the constraint accordingly
-    testConstraint supported_$af [expr {![catch {socket -server foo 0} sock]}]
-    catch {close $sock}
-    
 #
 # Check if we're supposed to do tests against the remote server
 #
@@ -1719,7 +1732,7 @@ catch {close $remoteProcChan}
 }
 unset ::tcl::unsupported::socketAF
 test socket-14.0 {[socket -async] when server only listens on IPv4} \
-    -constraints [list socket supported_any] \
+    -constraints [list socket supported_any localhost_v4] \
     -setup {
         proc accept {s a p} {
             global x
@@ -1749,7 +1762,7 @@ test socket-14.1 {[socket -async] fileevent while still connecting} \
             close $s
 	    lappend x ok
         }
-        set server [socket -server accept -myaddr 127.0.0.1 0]
+        set server [socket -server accept -myaddr localhost 0]
         set port [lindex [fconfigure $server -sockname] 2]
         set x ""
     } -body {
@@ -1785,7 +1798,7 @@ test socket-14.2 {[socket -async] fileevent connection refused} \
         unset x
     } -result "connection refused"
 test socket-14.3 {[socket -async] when server only listens on IPv6} \
-    -constraints [list socket supported_any] \
+    -constraints [list socket supported_any localhost_v6] \
     -setup {
         proc accept {s a p} {
             global x
@@ -1813,7 +1826,7 @@ test socket-14.4 {[socket -async] and both, readdable and writable fileevents} \
             puts $s bye
             close $s
         }
-        set server [socket -server accept -myaddr 127.0.0.1 0]
+        set server [socket -server accept -myaddr localhost 0]
         set port [lindex [fconfigure $server -sockname] 2]
         set x ""
     } -body {
@@ -1836,7 +1849,7 @@ test socket-14.4 {[socket -async] and both, readdable and writable fileevents} \
 test socket-14.5 {[socket -async] which fails before any connect() can be made} \
     -constraints [list socket supported_any] \
     -body {
-        # addresses from rfc5737
+        # address from rfc5737
         socket -async -myaddr 192.0.2.42 127.0.0.1 [randport]
     } \
     -returnCodes 1 \
