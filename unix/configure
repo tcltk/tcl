@@ -18705,10 +18705,12 @@ cat >>conftest.$ac_ext <<_ACEOF
 
 	int StackGrowsUp(int *parent) {
 	    int here;
+	    volatile int result;
 	    if (parent)
-		return (&here < parent);
+		result = (&here < parent);
 	    else
-		return StackGrowsUp(&here);
+		result = StackGrowsUp(&here);
+	    return result;
 	}
 	int main (int argc, char *argv[]) {
 	    return StackGrowsUp(0);

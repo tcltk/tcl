@@ -1,3 +1,9 @@
+2011-06-30  Reinhard Max  <max@suse.de>
+
+	* unix/configure.in: Add a volatile declaration to the test for
+	TCL_STACK_GROWS_UP to prevent gcc 4.6 from producing invalid
+	results due to aggressive optimisation.
+
 2011-06-23  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.10 TAGGED FOR RELEASE ***
