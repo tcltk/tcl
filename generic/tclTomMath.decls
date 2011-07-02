@@ -217,3 +217,6 @@ declare 61 {
 declare 62 {
     int TclBN_mp_set_int(mp_int* a, unsigned long i)
 }
+declare 63 {
+    int TclBN_mp_cnt_lsb(mp_int* a)
+}
