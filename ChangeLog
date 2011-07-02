@@ -4,7 +4,7 @@
 	posting of the writable fileevent at the end of an asynchronous
 	connection attempt. Improve comments for some of the trickery
 	around [socket -async]. [Bug 3325339]
-	
+
 	* tests/socket.test: Adjust tests to the async code changes. Add
 	more tests for corner cases of async sockets.
 
