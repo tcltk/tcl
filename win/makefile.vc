@@ -362,6 +362,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_cmp.obj \
 	$(TMP_DIR)\bn_mp_cmp_d.obj \
 	$(TMP_DIR)\bn_mp_cmp_mag.obj \
+	$(TMP_DIR)\bn_mp_cnt_lsb.obj \
 	$(TMP_DIR)\bn_mp_copy.obj \
 	$(TMP_DIR)\bn_mp_count_bits.obj \
 	$(TMP_DIR)\bn_mp_div.obj \
