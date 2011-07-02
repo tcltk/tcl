@@ -1,3 +1,18 @@
+2011-07-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c:
+	* generic/tclTomMath.decls:
+	* generic/tclTomMathDecls.h:
+	* macosx/Tcl.xcode/project.pbxproj:
+	* macosx/Tcl.xcodeproj/project.pbxproj:
+	* tests/util.test:
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/Makefile.vc:
+	Fix a bug where bignum->double conversion is "round up" and
+	not "round to nearest" (causing expr double(1[string repeat 0 23])
+	not to be 1e+23). [Bug 3349507]
+
 2011-06-28  Reinhard Max  <max@suse.de>
 
 	* unix/tclUnixSock.c (CreateClientSocket): Fix and simplify
