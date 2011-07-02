@@ -63,6 +63,7 @@
 #define mp_cmp TclBN_mp_cmp
 #define mp_cmp_d TclBN_mp_cmp_d
 #define mp_cmp_mag TclBN_mp_cmp_mag
+#define mp_cnt_lsb TclBN_mp_cnt_lsb
 #define mp_copy TclBN_mp_copy
 #define mp_count_bits TclBN_mp_count_bits
 #define mp_div TclBN_mp_div
@@ -461,6 +462,11 @@ EXTERN int		TclBN_mp_init_set_int(mp_int*a, unsigned long i);
 /* 62 */
 EXTERN int		TclBN_mp_set_int(mp_int*a, unsigned long i);
 #endif
+#ifndef TclBN_mp_cnt_lsb_TCL_DECLARED
+#define TclBN_mp_cnt_lsb_TCL_DECLARED
+/* 63 */
+EXTERN int		TclBN_mp_cnt_lsb(mp_int*a);
+#endif
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -529,6 +535,7 @@ typedef struct TclTomMathStubs {
     int (*tclBN_s_mp_sub) (mp_int *a, mp_int *b, mp_int *c); /* 60 */
     int (*tclBN_mp_init_set_int) (mp_int*a, unsigned long i); /* 61 */
     int (*tclBN_mp_set_int) (mp_int*a, unsigned long i); /* 62 */
+    int (*tclBN_mp_cnt_lsb) (mp_int*a); /* 63 */
 } TclTomMathStubs;
 
 #ifdef __cplusplus
@@ -796,6 +803,10 @@ extern TclTomMathStubs *tclTomMathStubsPtr;
 #ifndef TclBN_mp_set_int
 #define TclBN_mp_set_int \
 	(tclTomMathStubsPtr->tclBN_mp_set_int) /* 62 */
+#endif
+#ifndef TclBN_mp_cnt_lsb
+#define TclBN_mp_cnt_lsb \
+	(tclTomMathStubsPtr->tclBN_mp_cnt_lsb) /* 63 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
