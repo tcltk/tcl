@@ -443,8 +443,8 @@ directories named in the path leading to the file.  The stat structure
 includes info regarding device, inode (always 0 on Windows),
 privilege mode, nlink (always 1 on Windows), user id (always 0 on
 Windows), group id (always 0 on Windows), rdev (same as device on
-Windows), size, last access time, last modification time, and creation
-time.
+Windows), size, last access time, last modification time, and
+last metadata change time.
 .PP
 If \fIpath\fR exists, \fBTcl_FSLstat\fR returns 0 and the stat structure
 is filled with data.  Otherwise, -1 is returned, and no stat info is
@@ -501,8 +501,8 @@ directories named in the path leading to the file.  The stat structure
 includes info regarding device, inode (always 0 on Windows),
 privilege mode, nlink (always 1 on Windows), user id (always 0 on
 Windows), group id (always 0 on Windows), rdev (same as device on
-Windows), size, last access time, last modification time, and creation
-time.
+Windows), size, last access time, last modification time, and
+last metadata change time.
 .PP
 If \fIpath\fR exists, \fBTcl_FSStat\fR returns 0 and the stat structure
 is filled with data.  Otherwise, -1 is returned, and no stat info is
@@ -1076,8 +1076,8 @@ to all directories named in the path leading to the file.  The stat
 structure includes info regarding device, inode (always 0 on Windows),
 privilege mode, nlink (always 1 on Windows), user id (always 0 on
 Windows), group id (always 0 on Windows), rdev (same as device on
-Windows), size, last access time, last modification time, and creation
-time.
+Windows), size, last access time, last modification time, and
+last metadata change time.
 .PP
 If the file represented by \fIpathPtr\fR exists, the
 \fBTcl_FSStatProc\fR returns 0 and the stat structure is filled with
