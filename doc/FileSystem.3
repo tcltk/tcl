@@ -500,8 +500,9 @@ directories named in the path leading to the file. The \fITcl_StatBuf\fR
 structure includes info regarding device, inode (always 0 on Windows),
 privilege mode, nlink (always 1 on Windows), user id (always 0 on
 Windows), group id (always 0 on Windows), rdev (same as device on
-Windows), size, last access time, last modification time, and creation
-time. See \fBPORTABLE STAT RESULT API\fR for a description of how to write
+Windows), size, last access time, last modification time, and
+last metadata change time.
+See \fBPORTABLE STAT RESULT API\fR for a description of how to write
 portable code to allocate and access the \fITcl_StatBuf\fR structure.
 .PP
 If \fIpath\fR exists, \fBTcl_FSLstat\fR returns 0 and the stat structure
@@ -559,8 +560,9 @@ directories named in the path leading to the file. The \fITcl_StatBuf\fR
 structure includes info regarding device, inode (always 0 on Windows),
 privilege mode, nlink (always 1 on Windows), user id (always 0 on
 Windows), group id (always 0 on Windows), rdev (same as device on
-Windows), size, last access time, last modification time, and creation
-time. See \fBPORTABLE STAT RESULT API\fR for a description of how to write
+Windows), size, last access time, last modification time, and
+last metadata change time.
+See \fBPORTABLE STAT RESULT API\fR for a description of how to write
 portable code to allocate and access the \fITcl_StatBuf\fR structure.
 .PP
 If \fIpath\fR exists, \fBTcl_FSStat\fR returns 0 and the stat structure
@@ -1162,8 +1164,8 @@ to all directories named in the path leading to the file. The stat
 structure includes info regarding device, inode (always 0 on Windows),
 privilege mode, nlink (always 1 on Windows), user id (always 0 on
 Windows), group id (always 0 on Windows), rdev (same as device on
-Windows), size, last access time, last modification time, and creation
-time.
+Windows), size, last access time, last modification time, and
+last metadata change time.
 .PP
 If the file represented by \fIpathPtr\fR exists, the
 \fBTcl_FSStatProc\fR returns 0 and the stat structure is filled with
