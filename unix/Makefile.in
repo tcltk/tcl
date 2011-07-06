@@ -315,7 +315,8 @@ OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
 TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_fast_s_mp_sqr.o bn_mp_add.o bn_mp_and.o \
         bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
-        bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o bn_mp_copy.o \
+        bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o \
+	bn_mp_cnt_lsb.o bn_mp_copy.o \
 	bn_mp_count_bits.o bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o \
 	bn_mp_div_2d.o bn_mp_div_3.o \
         bn_mp_exch.o bn_mp_expt_d.o bn_mp_grow.o bn_mp_init.o \
@@ -484,6 +485,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_cmp_d.c \
 	$(TOMMATH_DIR)/bn_mp_cmp_mag.c \
 	$(TOMMATH_DIR)/bn_mp_copy.c \
+	$(TOMMATH_DIR)/bn_mp_cnt_lsb.c \
 	$(TOMMATH_DIR)/bn_mp_count_bits.c \
 	$(TOMMATH_DIR)/bn_mp_div.c \
 	$(TOMMATH_DIR)/bn_mp_div_d.c \
@@ -839,8 +841,8 @@ install-libraries: libraries
 	@echo "Installing package tcltest 2.3.3 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.3.tm;
 
-	@echo "Installing package platform 1.0.9 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.9.tm;
+	@echo "Installing package platform 1.0.10 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.10.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
 
@@ -1336,6 +1338,9 @@ bn_mp_cmp_d.o: $(TOMMATH_DIR)/bn_mp_cmp_d.c $(MATHHDRS)
 
 bn_mp_cmp_mag.o: $(TOMMATH_DIR)/bn_mp_cmp_mag.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp_mag.c
+
+bn_mp_cnt_lsb.o: $(TOMMATH_DIR)/bn_mp_cnt_lsb.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cnt_lsb.c
 
 bn_mp_copy.o: $(TOMMATH_DIR)/bn_mp_copy.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_copy.c

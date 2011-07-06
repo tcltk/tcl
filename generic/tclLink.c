@@ -112,6 +112,14 @@ Tcl_LinkVar(
     Link *linkPtr;
     int code;
 
+    linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName, TCL_GLOBAL_ONLY,
+	    LinkTraceProc, (ClientData) NULL);
+    if (linkPtr != NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"variable '%s' is already linked", varName));
+	return TCL_ERROR;
+    }
+
     linkPtr = ckalloc(sizeof(Link));
     linkPtr->interp = interp;
     linkPtr->varName = Tcl_NewStringObj(varName, -1);

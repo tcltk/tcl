@@ -3858,6 +3858,35 @@ test util-16.1.17.307 {8.4 compatible formatting of doubles} \
     {expr 1e307} \
     9.9999999999999999e+306
 
+test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
+    set r {}
+    foreach {input} {
+	0x1ffffffffffffc000
+	0x1ffffffffffffc800
+	0x1ffffffffffffd000
+	0x1ffffffffffffd800
+	0x1ffffffffffffe000
+	0x1ffffffffffffe800
+	0x1fffffffffffff000
+	0x1fffffffffffff800
+    } {
+	binary scan [binary format q [expr double($input)]] wu x
+	lappend r [format %#llx $x]
+	binary scan [binary format q [expr double(-$input)]] wu x
+	lappend r [format %#llx $x]
+    }
+    set r
+} [list {*}{
+    0x43fffffffffffffc 0xc3fffffffffffffc 
+    0x43fffffffffffffc 0xc3fffffffffffffc
+    0x43fffffffffffffd 0xc3fffffffffffffd
+    0x43fffffffffffffe 0xc3fffffffffffffe
+    0x43fffffffffffffe 0xc3fffffffffffffe
+    0x43fffffffffffffe 0xc3fffffffffffffe
+    0x43ffffffffffffff 0xc3ffffffffffffff
+    0x4400000000000000 0xc400000000000000
+}]
+
 set ::tcl_precision $saved_precision
 
 # cleanup

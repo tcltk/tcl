@@ -7867,4 +7867,80 @@ memory with buffer backup (ferrieux)
 
 2010-11-09 (bug fix)[3105999] fixed memleak in OO var resolver (fellows)
 
---- Released 8.6b2, November 15, 2010 --- See ChangeLog for details ---
+2010-11-15 (TIP 378)[3081184] improved TIP 280 performance (kupries)
+
+2010-11-18 (bug fix)[3111059] leak in [namespace delete] w coroutines (sofer)
+
+2010-11-28 [3120139,3105247] Tcl_PrintDouble improvements (kenny)
+
+2010-11-29 (new cmd) [tcl::unsupported::inject] (ferrieux,sofer)
+
+2010-11-30 (enhancement) Restore TclFormatInt for performance (hobbs)
+
+2010-12-09 (new feature) [file] is now a [namespace ensemble] (fellows)
+
+2010-12-12 (platform) OpenBSD build improvements (cassoff)
+
+2010-12-17 (platform) Revisions to support rpm 4.4.2 (cassoff)
+
+2010-12-30 (bug fix)[3142026] GrowEvaluationStack OBOE (harder,sofer)
+
+2011-01-18 (bug fix)[3001438] [info frame -1] crash (mccormack,fellows)
+
+2011-03-01 (performance)[3168398] optimize [interp cancel] (mistachkin)
+
+2011-03-05 (bug fix)[3185009] crash in OO variables (danckaert,fellows)
+
+2011-03-05 (new cmd) [tcl::unsupported::assemble] (ugurlu,kenny)
+
+2011-03-06 (bug fix)[3200987,3192636] parser buffer overruns (porter)
+
+2011-03-08 (bug fix)[3202905] failed intrep release of interp result (mccormack)
+
+2011-03-09 (bug fix)[3202171] repair [namespace inscope] optimizer (porter)
+
+2011-03-10 (new version) better tcltest reporting from child interps (fellows)
+=> tcltest 2.3.3
+
+2011-03-10 (new feature) [namespace] is now a [namespace ensemble] (fellows)
+
+2011-03-12 (interface) reduce casting by ckalloc(), ckfree() callers (fellows)
+
+2011-03-14 (bug fix) Fixes from libtommath 0.42.0 release (fellows)
+
+2011-03-21 (bug fix)[3216070] [load] extension from embed Tcl apps (nijtmans)
+
+2011-03-27 (performance) NRE: LIST lset foreach benchmark (twylite)
+
+2011-04-11 (bug fix)[3282869] coroutine + eval + locals crash (ferrieux,sofer)
+
+2011-04-13 (bug fix)[2662380] crash when variable append trace unsets (sofer)
+
+2011-04-13 (bug fix)[3285375] Buffer overflow in [concat] (porter)
+
+2011-05-02 (internals change) revised TclFindElement() interface (porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2011-05-05 (enhancement) dict->list w/o string rep generation (porter)
+
+2011-05-10 (bug fix)[3173086] Crash parsing long lists (rogers,porter)
+
+2011-05-24 (enhancement) msgcat internal improvements (fellows)
+=> msgcat 1.4.4
+
+2011-05-24 tzdata updated to Olson's tzdata2011g (iyer)
+
+2011-05-25 (TIP 381) [info object|class call] [self call] [nextto] (fellows)
+
+2011-05-31 (bug fix)[3293874] let lists grow all the way to the limit (porter)
+
+2011-06-02 (bug fix)[3185407] cmd resolution epoch flaw (nadkarni,fellows)
+
+2011-06-13 (bug fix)[3315098] mem leak generating double string rep (neumann)
+
+2011-06-22 (new feature) DEB_HOST_MULTIARCH support (kupries)
+=> platform 1.0.10
+
+Many more Tcl built-in command errors now set an -errorcode.
+
+--- Released 8.6b2, XXX XX, 2011 --- See ChangeLog for details ---

@@ -1,3 +1,60 @@
+2011-07-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/FileSystem.3: Corrected statements about ctime field of 'struct
+	stat'; that was always the time of the last metadata change, not the
+	time of creation.
+
+2011-07-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c:
+	* generic/tclTomMath.decls:
+	* generic/tclTomMathDecls.h:
+	* macosx/Tcl.xcode/project.pbxproj:
+	* macosx/Tcl.xcodeproj/project.pbxproj:
+	* tests/util.test:
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/Makefile.vc:
+	Fix a bug where bignum->double conversion is "round up" and
+	not "round to nearest" (causing expr double(1[string repeat 0 23])
+	not to be 1e+23). [Bug 3349507]
+
+2011-06-28  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c (CreateClientSocket): Fix and simplify
+	posting of the writable fileevent at the end of an asynchronous
+	connection attempt. Improve comments for some of the trickery
+	around [socket -async]. [Bug 3325339]
+
+	* tests/socket.test: Adjust tests to the async code changes. Add
+	more tests for corner cases of async sockets.
+
+2011-06-22  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/pkgIndex.tcl: Updated to platform 1.0.10. Added
+	* library/platform/platform.tcl: handling of the DEB_HOST_MULTIARCH
+	* unix/Makefile.in: location change for libc.
+	* win/Makefile.in:
+
+	* generic/tclInt.h: Fixed the inadvertently committed disabling of
+	  stack checks, see my 2010-11-15 commit.
+
+2011-06-22  Reinhard Max  <max@suse.de>
+
+	Merge from rmax-ipv6-branch:
+	* unix/tclUnixSock.c: Fix [socket -async], so that all addresses
+	returned by getaddrinfo() are tried, not just the first one. This
+	requires the event loop to be running while the async connection
+	is in progress. ***POTENTIAL INCOMPATIBILITY***
+	* tests/socket.test: Add a test for the above.
+	* doc/socket: Document the fact that -async needs the event loop
+	* generic/tclIOSock.c: AI_ADDRCONFIG is broken on HP-UX
+
+2011-06-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclLink.c:	Prevent multiple links to a single Tcl
+	variable when calling Tcl_LinkVar(). [Bug 3317466]
+
 2011-06-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStrToD.c:  [Bug 3315098] Mem leak fix from Gustaf Neumann.
