@@ -178,8 +178,11 @@ TclCreateSocketAddress(
     }
 
     hints.ai_socktype = SOCK_STREAM;
-#if defined(AI_ADDRCONFIG) && !defined(_AIX)
-    /* Missing on: OpenBSD, NetBSD.  Causes failure when used on AIX 5.1 */
+#if defined(AI_ADDRCONFIG) && !defined(_AIX) && !defined(__hpux)
+    /*
+     * Missing on: OpenBSD, NetBSD.
+     * Causes failure when used on AIX 5.1 and HP-UX
+     */
     hints.ai_flags |= AI_ADDRCONFIG;
 #endif
     if (willBind) {

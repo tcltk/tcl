@@ -4563,12 +4563,13 @@ TclBignumToDouble(
     const mp_int *a)			/* Integer to convert. */
 {
     mp_int b;
-    int bits, shift, i;
+    int bits, shift, i, lsb;
     double r;
 
+
     /*
-     * Determine how many bits we need, and extract that many from the input.
-     * Round to nearest unit in the last place.
+     * We need a 'mantBits'-bit significand.  Determine what shift will 
+     * give us that.
      */
 
     bits = mp_count_bits(a);
@@ -4580,17 +4581,54 @@ TclBignumToDouble(
 	    return -HUGE_VAL;
 	}
     }
-    shift = mantBits + 1 - bits;
+    shift = mantBits - bits;
+
+    /* 
+     * If shift > 0, shift the significand left by the requisite number of
+     * bits.  If shift == 0, the significand is already exactly 'mantBits'
+     * in length.  If shift < 0, we will need to shift the significand right
+     * by the requisite number of bits, and round it. If the '1-shift'
+     * least significant bits are 0, but the 'shift'th bit is nonzero,
+     * then the significand lies exactly between two values and must be
+     * 'rounded to even'.
+     */
+
     mp_init(&b);
-    if (shift > 0) {
+    if (shift == 0) {
+	mp_copy(a, &b);
+    } else if (shift > 0) {
 	mp_mul_2d(a, shift, &b);
     } else if (shift < 0) {
-	mp_div_2d(a, -shift, &b, NULL);
-    } else {
-	mp_copy(a, &b);
+	lsb = mp_cnt_lsb(a);
+	if (lsb == -1-shift) {
+
+	    /*
+	     * Round to even
+	     */
+
+	    mp_div_2d(a, -shift, &b, NULL);
+	    if (mp_isodd(&b)) {
+		if (b.sign == MP_ZPOS) {
+		    mp_add_d(&b, 1, &b);
+		} else {
+		    mp_sub_d(&b, 1, &b);
+		}
+	    }
+	} else {
+
+	    /*
+	     * Ordinary rounding
+	     */
+
+	    mp_div_2d(a, -1-shift, &b, NULL);
+	    if (b.sign == MP_ZPOS) {
+		mp_add_d(&b, 1, &b);
+	    } else {
+		mp_sub_d(&b, 1, &b);
+	    }
+	    mp_div_2d(&b, 1, &b, NULL);
+	}
     }
-    mp_add_d(&b, 1, &b);
-    mp_div_2d(&b, 1, &b, NULL);
 
     /*
      * Accumulate the result, one mp_digit at a time.
