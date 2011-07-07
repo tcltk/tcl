@@ -1,3 +1,7 @@
+2011-07-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c: add missing INT2PTR
+	
 2011-07-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/FileSystem.3: Corrected statements about ctime field of 'struct
