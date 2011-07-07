@@ -767,7 +767,7 @@ test assemble-7.43 {uplus} {
     -returnCodes error
     -result {can't use non-numeric floating-point value as operand of "+"}
 }
-test assemble-7.43 {tryCvtToNumeric} {
+test assemble-7.43.1 {tryCvtToNumeric} {
     -body {
 	assemble {
 	    push NaN; tryCvtToNumeric
@@ -1562,7 +1562,7 @@ test assemble-15.6 {listIndexImm} {
     }
     -result b
 }
-test assemble-15.6 {listIndexImm} {
+test assemble-15.7 {listIndexImm} {
     -body {
 	assemble {push {a b c}; listIndexImm end}
     }
