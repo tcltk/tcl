@@ -1039,7 +1039,7 @@ foreach {r p vs vc} {
     incr n
 }
 
-test package-11.0 {package vcompare at 32bit boundary} {
+test package-11.0.0 {package vcompare at 32bit boundary} {
     package vcompare [expr {1<<31}] [expr {(1<<31)-1}]
 } 1
 
