@@ -1,3 +1,7 @@
+2011-07-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/http.n: [FRQ 3358415]: State what RFC defines HTTP/1.1.
+
 2011-07-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/FileSystem.3: Corrected statements about ctime field of 'struct
