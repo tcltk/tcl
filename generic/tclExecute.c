@@ -335,7 +335,7 @@ VarHashCreateVar(
 
 #define OBJ_AT_DEPTH(n)	*(tosPtr-(n))
 
-#define CURR_DEPTH	((unsigned long) (tosPtr - initTosPtr))
+#define CURR_DEPTH	((ptrdiff_t) (tosPtr - initTosPtr))
 
 /*
  * Macros used to trace instruction execution. The macros TRACE,
