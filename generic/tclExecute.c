@@ -3919,14 +3919,16 @@ TclExecuteByteCode(interp, codePtr)
 	    TclGetWide(w,valuePtr);
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_NewWideIntObj(~w);
-		TRACE(("0x%llx => (%llu)\n", w, ~w));
+		TRACE(("0x%" TCL_LL_MODIFIER "x => (%" TCL_LL_MODIFIER "u)\n",
+			w, ~w));
 		NEXT_INST_F(1, 1, 1);
 	    } else {
 		/*
 		 * valuePtr is unshared. Modify it directly.
 		 */
 		Tcl_SetWideIntObj(valuePtr, ~w);
-		TRACE(("0x%llx => (%llu)\n", w, ~w));
+		TRACE(("0x%" TCL_LL_MODIFIER "x => (%" TCL_LL_MODIFIER "u)\n",
+			w, ~w));
 		NEXT_INST_F(1, 0, 0);
 	    }
 	} else {
@@ -4575,7 +4577,7 @@ PrintByteCodeInfo(codePtr)
 	    0.0);
 #endif
 #ifdef TCL_COMPILE_STATS
-    fprintf(stdout, "  Code %d = header %d+inst %d+litObj %d+exc %d+aux %d+cmdMap %d\n",
+    fprintf(stdout, "  Code %ld = header %lu+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
 	    codePtr->structureSize,
 	    (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
 	    codePtr->numCodeBytes,
@@ -6239,7 +6241,7 @@ EvalStatsCmd(unused, interp, objc, objv)
 	    statsPtr->totalByteCodeBytes);
     fprintf(stdout, "    Literal bytes		%.6g\n",
 	    totalLiteralBytes);
-    fprintf(stdout, "      table %d + bkts %d + entries %ld + objects %ld + strings %.6g\n",
+    fprintf(stdout, "      table %lu + bkts %lu + entries %ld + objects %ld + strings %.6g\n",
 	    sizeof(LiteralTable),
 	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
 	    statsPtr->numLiteralsCreated * sizeof(LiteralEntry),
@@ -6260,7 +6262,7 @@ EvalStatsCmd(unused, interp, objc, objv)
 	    statsPtr->currentByteCodeBytes);
     fprintf(stdout, "    Literal bytes		%.6g\n",
 	    currentLiteralBytes);
-    fprintf(stdout, "      table %d + bkts %d + entries %d + objects %d + strings %.6g\n",
+    fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    sizeof(LiteralTable),
 	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
 	    iPtr->literalTable.numEntries * sizeof(LiteralEntry),
@@ -6355,7 +6357,7 @@ EvalStatsCmd(unused, interp, objc, objv)
 	    (sharingBytesSaved * 100.0) / (objBytesIfUnshared + strBytesIfUnshared));
     fprintf(stdout, "    Bytes with sharing		%.6g\n",
 	    currentLiteralBytes);
-    fprintf(stdout, "      table %d + bkts %d + entries %d + objects %d + strings %.6g\n",
+    fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    sizeof(LiteralTable),
 	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
 	    iPtr->literalTable.numEntries * sizeof(LiteralEntry),
@@ -6370,7 +6372,7 @@ EvalStatsCmd(unused, interp, objc, objv)
     fprintf(stdout, "  Literal mgmt overhead	 	%ld (%0.1f%% of bytes with sharing)\n",
 	    literalMgmtBytes,
 	    (literalMgmtBytes * 100.0) / currentLiteralBytes);
-    fprintf(stdout, "    table %d + buckets %d + entries %d\n",
+    fprintf(stdout, "    table %lu + buckets %lu + entries %lu\n",
 	    sizeof(LiteralTable),
 	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
 	    iPtr->literalTable.numEntries * sizeof(LiteralEntry));
