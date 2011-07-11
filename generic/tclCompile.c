@@ -2071,7 +2071,7 @@ TclInitByteCodeObj(objPtr, envPtr)
 #else
     nextPtr = EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
     if (((size_t)(nextPtr - p)) != cmdLocBytes) {	
-	panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d\n", (nextPtr - p), cmdLocBytes);
+	panic("TclInitByteCodeObj: encoded cmd location bytes %ld != expected size %ld\n", (nextPtr - p), cmdLocBytes);
     }
 #endif
     
@@ -3555,7 +3555,7 @@ TclPrintByteCodeObj(interp, objPtr)
 #endif
 #ifdef TCL_COMPILE_STATS
     fprintf(stdout,
-	    "  Code %d = header %d+inst %d+litObj %d+exc %d+aux %d+cmdMap %d\n",
+	    "  Code %ld = header %lu+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
 	    codePtr->structureSize,
 	    (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
 	    codePtr->numCodeBytes,
