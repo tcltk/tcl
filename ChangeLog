@@ -1,3 +1,8 @@
+2011-07-11  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclExecute.c: [Bug 3339502]: Correct cast for CURR_DEPTH to
+	silence compiler warning.
+
 2011-07-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/http.n: [FRQ 3358415]: State what RFC defines HTTP/1.1.
