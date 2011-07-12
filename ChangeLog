@@ -1,3 +1,8 @@
+2011-07-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUnixSock.c:  [Bug 3364777] Stop segfault caused by
+	reading from struct after it had been freed. 
+
 2011-07-11  Joe Mistachkin  <joe@mistachkin.com>
 
 	* generic/tclExecute.c: [Bug 3339502]: Correct cast for CURR_DEPTH to
