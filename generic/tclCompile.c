@@ -2468,7 +2468,7 @@ TclInitByteCodeObj(
 #else
     nextPtr = EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
     if (((size_t)(nextPtr - p)) != cmdLocBytes) {
-	Tcl_Panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d", (nextPtr - p), cmdLocBytes);
+	Tcl_Panic("TclInitByteCodeObj: encoded cmd location bytes %lu != expected size %lu", (unsigned long)(nextPtr - p), (unsigned long)cmdLocBytes);
     }
 #endif
 
