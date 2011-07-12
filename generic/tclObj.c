@@ -1330,7 +1330,7 @@ TclFreeObj(
     ObjInitDeletionContext(context);
 
     if (objPtr->refCount < -1) {
-	Tcl_Panic("Reference count for %lx was negative", objPtr);
+	Tcl_Panic("Reference count for %p was negative", objPtr);
     }
 
     /*
@@ -3724,7 +3724,7 @@ Tcl_DbIncrRefCount(
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("%s%s",
-		    "Trying to incr ref count of "
+		    "Trying to incr ref count of ",
 		    "Tcl_Obj allocated in another thread");
 	}
     }
@@ -3789,7 +3789,7 @@ Tcl_DbDecrRefCount(
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("%s%s",
-		    "Trying to decr ref count of "
+		    "Trying to decr ref count of ",
 		    "Tcl_Obj allocated in another thread");
 	}
 
@@ -3868,7 +3868,7 @@ Tcl_DbIsShared(
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("%s%s",
-		    "Trying to check shared status of"
+		    "Trying to check shared status of",
 		    "Tcl_Obj allocated in another thread");
 	}
     }
