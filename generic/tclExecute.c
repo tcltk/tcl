@@ -8441,7 +8441,7 @@ EvalStatsCmd(
     Tcl_AppendPrintfToObj(objPtr, "\n----------------------------------------------------------------\n");
     Tcl_AppendPrintfToObj(objPtr,
 	    "Compilation and execution statistics for interpreter %#lx\n",
-	    iPtr);
+	    (long int)iPtr);
 
     Tcl_AppendPrintfToObj(objPtr, "\nNumber ByteCodes executed\t%ld\n",
 	    statsPtr->numExecutions);
