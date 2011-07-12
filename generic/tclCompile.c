@@ -3555,13 +3555,13 @@ TclPrintByteCodeObj(interp, objPtr)
 #endif
 #ifdef TCL_COMPILE_STATS
     fprintf(stdout,
-	    "  Code %ld = header %lu+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
-	    codePtr->structureSize,
-	    (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
+	    "  Code %u = header %u+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
+	    (unsigned int)codePtr->structureSize,
+	    (unsigned int)(sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
 	    codePtr->numCodeBytes,
-	    (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
-	    (codePtr->numExceptRanges * sizeof(ExceptionRange)),
-	    (codePtr->numAuxDataItems * sizeof(AuxData)),
+	    (unsigned long)(codePtr->numLitObjects * sizeof(Tcl_Obj *)),
+	    (unsigned long)(codePtr->numExceptRanges * sizeof(ExceptionRange)),
+	    (unsigned long)(codePtr->numAuxDataItems * sizeof(AuxData)),
 	    codePtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
     
