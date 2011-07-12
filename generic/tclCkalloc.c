@@ -179,9 +179,9 @@ TclDumpMemoryInfo(ClientData clientData, int flags)
 	    total_mallocs,
 	    total_frees,
 	    current_malloc_packets,
-	    current_bytes_malloced,
+	    (unsigned long)current_bytes_malloced,
 	    maximum_malloc_packets,
-	    maximum_bytes_malloced);
+	    (unsigned long)maximum_bytes_malloced);
     if (flags == 0) {
 	fprintf((FILE *)clientData, buf);
     } else {
