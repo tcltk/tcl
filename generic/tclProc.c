@@ -1155,7 +1155,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 
 	len = Tcl_ScanCountedElement(procName, nameLen, &flags);
 	if (len != nameLen) {
-	    char *procName1 = ckalloc((unsigned) len);
+	    char *procName1 = ckalloc((unsigned) len + 1);
 	    len = Tcl_ConvertCountedElement(procName, nameLen, procName1, flags);
 	    Tcl_AppendToObj(objResult, procName1, len);
 	    ckfree(procName1);
