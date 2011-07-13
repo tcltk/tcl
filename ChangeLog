@@ -1,3 +1,10 @@
+2011-07-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclProc.c:	[Bug 3366265] Buffer for storing the command
+	* tests/indexObj.test:	name formatted as a list element is allocated
+	* tests/proc.test:	one byte too small, causing buffer overflow
+	when the proc with the empty name raises a "wrong num args" error.
+
 2011-07-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/FileSystem.3: Corrected statements about ctime field of 'struct
