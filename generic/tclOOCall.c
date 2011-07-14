@@ -1453,7 +1453,6 @@ TclOORenderCallChain(
 	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name, -1);
 
 	objv[i] = Tcl_NewListObj(4, descObjs);
-	Tcl_IncrRefCount(objv[i]);
     }
 
     /*

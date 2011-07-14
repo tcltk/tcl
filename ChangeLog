@@ -1,3 +1,8 @@
+2011-07-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOORenderCallChain): [Bug 3365156]: Remove
+	stray refcount bump that caused a memory leak.
+
 2011-07-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/http.n: [FRQ 3358415]: State what RFC defines HTTP/1.1.
