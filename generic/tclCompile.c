@@ -4012,6 +4012,11 @@ RecordByteCodeStats(codePtr)
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
     register ByteCodeStats *statsPtr = &(iPtr->stats);
 
+    if (iPtr == NULL) {
+	/* Avoid segfaulting in case we're called in a deleted interp */
+	return;
+    }
+
     statsPtr->numCompilations++;
     statsPtr->totalSrcBytes        += (double) codePtr->numSrcBytes;
     statsPtr->totalByteCodeBytes   += (double) codePtr->structureSize;
