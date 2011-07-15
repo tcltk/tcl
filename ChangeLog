@@ -1,3 +1,8 @@
+2011-07-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c: Avoid segfaults when RecordByteCodeStats()
+	is called in a deleted interp.
+
 2011-07-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclProc.c:	[Bug 3366265] Buffer for storing the command
