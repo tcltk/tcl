@@ -2443,7 +2443,19 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
     for (i = 0;  i < numLitObjects;  i++) {
-	codePtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
+	if (objPtr == envPtr->literalArrayPtr[i].objPtr) {
+	    /*
+	     * Prevent circular reference where the bytecode intrep of
+	     * a value contains a literal which is that same value.
+	     * If this is allowed to happen, refcount decrements may not
+	     * reach zero, and memory may leak.  Bugs 467523, 3357771
+	     */
+	    codePtr->objArrayPtr[i] = Tcl_DuplicateObj(objPtr);
+	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
+	    Tcl_DecrRefCount(objPtr);
+	} else {
+	    codePtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
+	}
     }
 
     p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
