@@ -1,3 +1,9 @@
+2011-07-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c:	[Bug 467523, 3357771] Prevent circular
+	references in values with ByteCode intreps.  They can lead to
+	memory leaks. 
+
 2011-07-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (TclOORenderCallChain): [Bug 3365156]: Remove
