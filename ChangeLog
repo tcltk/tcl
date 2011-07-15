@@ -1,5 +1,8 @@
 2011-07-15  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompile.c: Avoid segfaults when RecordByteCodeStats()
+	is called in a deleted interp.
+
 	* generic/tclCompile.c:	[Bug 467523, 3357771] Prevent circular
 	references in values with ByteCode intreps.  They can lead to
 	memory leaks. 
