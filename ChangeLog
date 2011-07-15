@@ -1,7 +1,12 @@
+2011-07-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOORenderCallChain): [Bug 3365156]: Remove
+	stray refcount bump that caused a memory leak.
+
 2011-07-12  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclUnixSock.c:  [Bug 3364777] Stop segfault caused by
-	reading from struct after it had been freed. 
+	* generic/tclUnixSock.c:  [Bug 3364777]: Stop segfault caused by
+	reading from struct after it had been freed.
 
 2011-07-11  Joe Mistachkin  <joe@mistachkin.com>
 
