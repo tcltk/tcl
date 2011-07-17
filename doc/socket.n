@@ -88,7 +88,7 @@ mode using:
 \fBchan configure \fIchan \fB\-blocking 0\fR
 .CE
 .PP
-See the \fBchan\fR \fBconfigure\fR command for more details.
+See the \fBchan configure\fR command for more details.
 
 The Tcl event loop should be running while an asynchronous connection
 is in progress, because it may have to do several connection attempts
