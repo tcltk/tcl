@@ -239,7 +239,7 @@ names must use the short, cryptic, path format (e.g., using
 instead of
 .QW applbakery.default ),
 which can be obtained with the
-.QW "\fBfile attributes \fIfileName \fB\-shortname\fR"
+.QW "\fBfile attributes\fI fileName \fB\-shortname\fR"
 command.
 .PP
 Two or more forward or backward slashes in a row in a path refer to a

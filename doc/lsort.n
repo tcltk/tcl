@@ -88,7 +88,7 @@ For example,
 .RS
 .PP
 .CS
-lsort -integer -index 1 \e
+\fBlsort\fR -integer -index 1 \e
       {{First 24} {Second 18} {Third 30}}
 .CE
 .PP
@@ -98,7 +98,7 @@ returns \fB{Second 18} {First 24} {Third 30}\fR,
 '\" This example is from the test suite!
 '\"
 .CS
-lsort -index end-1 \e
+\fBlsort\fR -index end-1 \e
         {{a 1 e i} {b 2 3 f g} {c 4 5 6 d h}}
 .CE
 .PP
@@ -106,7 +106,7 @@ returns \fB{c 4 5 6 d h} {a 1 e i} {b 2 3 f g}\fR,
 and
 .PP
 .CS
-lsort -index {0 1} {
+\fBlsort\fR -index {0 1} {
     {{b i g} 12345}
     {{d e m o} 34512}
     {{c o d e} 54321}
@@ -135,7 +135,7 @@ in turn must be at least 2.
 For example,
 .PP
 .CS
-lsort \-stride 2 {carrot 10 apple 50 banana 25}
+\fBlsort\fR \-stride 2 {carrot 10 apple 50 banana 25}
 .CE
 .PP
 returns
@@ -143,7 +143,7 @@ returns
 and
 .PP
 .CS
-lsort \-stride 2 \-index 1 \-integer {carrot 10 apple 50 banana 25}
+\fBlsort\fR \-stride 2 \-index 1 \-integer {carrot 10 apple 50 banana 25}
 .CE
 .PP
 returns
