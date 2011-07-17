@@ -54,7 +54,7 @@ if the interpreter is deleted.
 This mandatory subcommand is called first, and then never again (for the given
 \fIhandle\fR). Its responsibility is to initialize all parts of the
 transformation at the Tcl level. The \fImode\fR is a list containing any of
-\fBread\fR and \fBwrite\fR.
+\fBread \fRand \fBwrite\fR.
 .RS
 .TP
 \fBwrite\fR
@@ -73,7 +73,7 @@ as error thrown by \fBchan push\fR.
 .SS "READ-RELATED SUBCOMMANDS"
 .PP
 These subcommands are used for handling transformations applied to readable
-channels; though strictly \fBread\fR is optional, it must be supported if any
+channels; though strictly \fBread \fRis optional, it must be supported if any
 of the others is or the channel will be made non-readable.
 .TP
 \fIcmdPrefix \fBdrain \fIhandle\fR

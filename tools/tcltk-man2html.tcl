@@ -810,11 +810,27 @@ array set remap_link_target {
     stdin  Tcl_GetStdChannel
     stdout Tcl_GetStdChannel
     stderr Tcl_GetStdChannel
-    safe   {Safe&nbsp;Base}
     style  ttk::style
     {style map} ttk::style
+    {tk busy}   busy
+    library     auto_execok
+    safe-tcl    safe
+    tclvars     env
+    tcl_break   catch
+    tcl_continue catch
+    tcl_error   catch
+    tcl_ok      catch
+    tcl_return  catch
+    int()       mathfunc
+    wide()      mathfunc
+    packagens   pkg::create
+    pkgMkIndex  pkg_mkIndex
+    pkg_mkIndex pkg_mkIndex
+    Tcl_Obj     Tcl_NewObj
+    Tcl_ObjType Tcl_RegisterObjType
 }
 array set exclude_refs_map {
+    bind.n		{button destroy option}
     clock.n		{next}
     history.n		{exec}
     next.n		{unknown}
@@ -822,13 +838,16 @@ array set exclude_refs_map {
     canvas.n		{bitmap text}
     checkbutton.n	{image}
     clipboard.n		{string}
+    interp.n		{time}
     menu.n		{checkbutton radiobutton}
     options.n		{bitmap image set}
     radiobutton.n	{image}
+    safe.n		{join split}
     scrollbar.n		{set}
     selection.n		{string}
     tcltest.n		{error}
     tkvars.n		{tk}
+    tm.n		{exec}
     ttk_checkbutton.n	{variable}
     ttk_combobox.n	{selection}
     ttk_entry.n		{focus variable}

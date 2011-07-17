@@ -138,7 +138,7 @@ returned.  For example,
 .RS
 .PP
 .CS
-\fBfile dirname c:/\fR
+\fBfile dirname\fR c:/
 .CE
 .PP
 returns \fBc:/\fR. 
@@ -147,13 +147,13 @@ Note that tilde substitution will only be
 performed if it is necessary to complete the command. For example,
 .PP
 .CS
-\fBfile dirname ~/src/foo.c\fR
+\fBfile dirname\fR ~/src/foo.c
 .CE
 .PP
 returns \fB~/src\fR, whereas
 .PP
 .CS
-\fBfile dirname ~\fR
+\fBfile dirname\fR ~
 .CE
 .PP
 returns \fB/home\fR (or something similar).
@@ -193,7 +193,7 @@ proceed from the current argument.  For example,
 .RS
 .PP
 .CS
-\fBfile join a b /foo bar\fR
+\fBfile join\fR a b /foo bar
 .CE
 .PP
 returns \fB/foo/bar\fR.
@@ -380,7 +380,7 @@ For example, under Unix
 .RS
 .PP
 .CS
-file split /foo/~bar/baz
+\fBfile split\fR /foo/~bar/baz
 .CE
 .PP
 returns

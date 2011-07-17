@@ -39,19 +39,19 @@ to return a stack trace reflecting the original point of occurrence
 of the error:
 .PP
 .CS
-\fBcatch {...} errMsg
+catch {...} errMsg
 set savedInfo $::errorInfo
 \&...
-error $errMsg $savedInfo\fR
+\fBerror\fR $errMsg $savedInfo
 .CE
 .PP
 When working with Tcl 8.5 or later, the following code
 should be used instead:
 .PP
 .CS
-\fBcatch {...} errMsg options
+catch {...} errMsg options
 \&...
-return -options $options $errMsg\fR
+return -options $options $errMsg
 .CE
 .PP
 If the \fIcode\fR argument is present, then its value is stored
@@ -73,3 +73,6 @@ if {1+2 != 3} {
 catch(n), return(n)
 .SH KEYWORDS
 error, exception
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
