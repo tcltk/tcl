@@ -29,7 +29,7 @@ object\fR was invoked. The supported subcommands are:
 .
 This returns a two-element list describing the method implementations used to
 implement the current call chain. The first element is the same as would be
-reported by \fBinfo object call\fR for the current method (except that this
+reported by \fBinfo object\fR \fBcall\fR for the current method (except that this
 also reports useful values from within constructors and destructors, whose
 names are reported as \fB<constructor>\fR and \fB<destructor>\fR
 respectively), and the second element is an index into the first element's

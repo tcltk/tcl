@@ -26,13 +26,13 @@ Finally, it accepts a new value for an element of \fIvarName\fR.
 If no indices are presented, the command takes the form:
 .PP
 .CS
-lset varName newValue
+\fBlset\fR varName newValue
 .CE
 .PP
 or
 .PP
 .CS
-lset varName {} newValue
+\fBlset\fR varName {} newValue
 .CE
 .PP
 In this case, \fInewValue\fR replaces the old value of the variable
@@ -68,13 +68,13 @@ allowing the script to alter elements in sublists (or append elements
 to sublists).  The command,
 .PP
 .CS
-lset a 1 2 newValue
+\fBlset\fR a 1 2 newValue
 .CE
 .PP
 or
 .PP
 .CS
-lset a {1 2} newValue
+\fBlset\fR a {1 2} newValue
 .CE
 .PP
 replaces element 2 of sublist 1 with \fInewValue\fR.

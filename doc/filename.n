@@ -38,7 +38,7 @@ type of a given path.
 .SH "PATH SYNTAX"
 .PP
 The rules for native names depend on the value reported in the Tcl
-array element \fBtcl_platform(platform)\fR:
+\fBplatform\fR element of the \fBtcl_platform\fR array:
 .TP 10
 \fBUnix\fR
 On Unix and Apple MacOS X platforms, Tcl uses path names where the
