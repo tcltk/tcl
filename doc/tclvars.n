@@ -102,7 +102,8 @@ This variable is only used when initializing the \fBauto_path\fR variable.
 .TP
 \fBenv(TCL_INTERP_DEBUG_FRAME)\fR
 .
-If existing, it has the same effect as running \fBinterp debug {} -frame 1\fR
+If existing, it has the same effect as running \fBinterp debug\fR
+\fB{} -frame 1\fR
 as the very first command of each new Tcl interpreter.
 .RE
 .TP
