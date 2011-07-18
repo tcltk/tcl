@@ -79,7 +79,7 @@ the values themselves.
 \fB\-index\0\fIindexList\fR
 .
 If this option is specified, each of the elements of \fIlist\fR must
-itself be a proper Tcl sublist (unless \fB-stride\fR is used).
+itself be a proper Tcl sublist (unless \fB\-stride\fR is used).
 Instead of sorting based on whole sublists, \fBlsort\fR will extract
 the \fIindexList\fR'th element from each sublist (as if the overall
 element and the \fIindexList\fR were passed to \fBlindex\fR) and sort
@@ -161,7 +161,7 @@ effect if combined with the \fB\-dictionary\fR, \fB\-integer\fR, or
 If this option is specified, then only the last set of duplicate
 elements found in the list will be retained.  Note that duplicates are
 determined relative to the comparison used in the sort.  Thus if 
-\fI\-index 0\fR is used, \fB{1 a}\fR and \fB{1 b}\fR would be
+\fB\-index 0\fR is used, \fB{1 a}\fR and \fB{1 b}\fR would be
 considered duplicates and only the second element, \fB{1 b}\fR, would
 be retained.
 .SH "NOTES"

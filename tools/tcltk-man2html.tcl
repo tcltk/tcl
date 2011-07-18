@@ -836,22 +836,31 @@ array set exclude_refs_map {
     next.n		{unknown}
     zlib.n		{binary close filename text}
     canvas.n		{bitmap text}
+    console.n		{eval}
     checkbutton.n	{image}
     clipboard.n		{string}
+    entry.n		{string}
+    event.n		{return}
+    font.n		{menu}
+    getOpenFile.n	{file open text}
+    grab.n		{global}
     interp.n		{time}
     menu.n		{checkbutton radiobutton}
+    messageBox.n	{error info}
     options.n		{bitmap image set}
     radiobutton.n	{image}
     safe.n		{join split}
+    scale.n		{label variable}
     scrollbar.n		{set}
     selection.n		{string}
     tcltest.n		{error}
     tkvars.n		{tk}
+    tkwait.n		{variable}
     tm.n		{exec}
     ttk_checkbutton.n	{variable}
     ttk_combobox.n	{selection}
     ttk_entry.n		{focus variable}
-    ttk_intro.n		{focus}
+    ttk_intro.n		{focus text}
     ttk_label.n		{font text}
     ttk_labelframe.n	{text}
     ttk_menubutton.n	{flush}
@@ -879,6 +888,9 @@ array set exclude_when_followed_by_map {
     }
     ttk_image.n {
 	image imageSpec
+    }
+    fontchooser.n {
+	tk fontchooser
     }
 }
 
