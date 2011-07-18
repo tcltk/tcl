@@ -411,7 +411,7 @@ an event to the current thread's queue.
 To add an event to another thread's queue, use \fBTcl_ThreadQueueEvent\fR.
 \fBTcl_ThreadQueueEvent\fR accepts as an argument a Tcl_ThreadId argument,
 which uniquely identifies a thread in a Tcl application.  To obtain the
-Tcl_ThreadID for the current thread, use the \fBTcl_GetCurrentThread\fR
+Tcl_ThreadId for the current thread, use the \fBTcl_GetCurrentThread\fR
 procedure.  (A thread would then need to pass this identifier to other
 threads for those threads to be able to add events to its queue.)
 After adding an event to another thread's queue, you then typically
