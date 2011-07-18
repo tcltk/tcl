@@ -623,7 +623,7 @@ proc cross-reference {ref} {
     global ensemble_commands exclude_refs_map exclude_when_followed_by_map
     set manname $manual(name)
     set mantail $manual(tail)
-    if {[string match "Tcl_*" $ref] || [string match "Tk_*" $ref]} {
+    if {[string match "Tcl_*" $ref] || [string match "Tk_*" $ref] || [string match "Ttk_*" $ref]} {
 	set lref $ref
 	##
 	## apply a link remapping if available
@@ -758,6 +758,7 @@ proc insert-cross-references {text} {
 	    bold       {<B>}	end-bold   {</B>}
 	    tcl        {Tcl_}
 	    tk         {Tk_}
+	    ttk	       {Ttk_}
 	    Tcl1       {Tcl manual entry}
 	    Tcl2       {Tcl overview manual entry}
 	    url	       {http://}
@@ -795,7 +796,7 @@ proc insert-cross-references {text} {
 		if {$offset(end-quote) < 0} {
 		    return [reference-error "Missing end quote" $text]
 		}
-		if {$invert([lindex $offsets 1]) in {tcl tk}} {
+		if {$invert([lindex $offsets 1]) in {tcl tk ttk}} {
 		    set offsets [lreplace $offsets 1 1]
 		}
 		switch -exact -- $invert([lindex $offsets 1]) {
@@ -824,7 +825,7 @@ proc insert-cross-references {text} {
 		if {$offset(end-bold) < 0} {
 		    return [append result $text]
 		}
-		if {$invert([lindex $offsets 1]) in {tcl tk}} {
+		if {$invert([lindex $offsets 1]) in {tcl tk ttk}} {
 		    set offsets [lreplace $offsets 1 1]
 		}
 		switch -exact -- $invert([lindex $offsets 1]) {
@@ -856,6 +857,18 @@ proc insert-cross-references {text} {
 		append result [string range $text 0 [expr {$offset(tk)-1}]]
 		if {![regexp -indices -start $offset(tk) {Tk_\w+} $text range]} {
 		    return [reference-error "Tk regexp failed" $text]
+		}
+		set body [string range $text {*}$range]
+		set text [string range $text[set text ""] \
+			      [expr {[lindex $range 1]+1}] end]
+		set tail $text
+		append result [cross-reference $body]
+		continue
+	    }
+	    ttk {
+		append result [string range $text 0 [expr {$offset(ttk)-1}]]
+		if {![regexp -indices -start $offset(ttk) {Ttk_\w+} $text range]} {
+		    return [reference-error "Ttk regexp failed" $text]
 		}
 		set body [string range $text {*}$range]
 		set text [string range $text[set text ""] \
