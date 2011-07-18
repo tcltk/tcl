@@ -4,7 +4,7 @@
 ## by Tcl and Tk; they do not cope with arbitrary nroff markup.
 ##
 ## Copyright (c) 1995-1997 Roger E. Critchlow Jr
-## Copyright (c) 2004-2010 Donal K. Fellows
+## Copyright (c) 2004-2011 Donal K. Fellows
 
 set ::manual(report-level) 1
 
@@ -491,7 +491,7 @@ proc output-IP-list {context code rest} {
 	set dl "<DL class=\"[string tolower $manual(section)]\">"
 	set enddl "</DL>"
 	if {$code eq ".IP"} {
-	    if {[regexp {^\[[\da-f]+\]$} $rest]} {
+	    if {[regexp {^\[[\da-f]+\]|\(?[\da-f]+\)$} $rest]} {
 		set dl "<OL class=\"[string tolower $manual(section)]\">"
 		set enddl "</OL>"
 	    } elseif {"&#8226;" eq $rest} {
@@ -517,6 +517,8 @@ proc output-IP-list {context code rest} {
 			if {$manual(section) eq "ARGUMENTS"} {
 			    man-puts "$para<DT>$rest<DD>"
 			} elseif {[regexp {^\[([\da-f]+)\]$} $rest -> value]} {
+			    man-puts "$para<LI value=\"$value\">"
+			} elseif {[regexp {^\(?([\da-f]+)\)$} $rest -> value]} {
 			    man-puts "$para<LI value=\"$value\">"
 			} elseif {"&#8226;" eq $rest} {
 			    man-puts "$para<LI>"
@@ -624,7 +626,7 @@ proc cross-reference {ref} {
     set manname $manual(name)
     set mantail $manual(tail)
     if {[string match "Tcl_*" $ref] || [string match "Tk_*" $ref] || [string match "Ttk_*" $ref]} {
-	set lref $ref
+	regexp {^\w+} $ref lref
 	##
 	## apply a link remapping if available
 	##

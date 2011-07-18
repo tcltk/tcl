@@ -141,7 +141,7 @@ trampoline.
 .PP
 \fBTcl_NRCmdSwap\fR allows for trampoline evaluation of a command whose
 resolution is already known.  The \fIcmd\fR parameter gives a
-\fBTcl_Command\fR object (returned from \fBTcl_CreateObjCmd\fR or
+\fBTcl_Command\fR object (returned from \fBTcl_CreateObjCommand\fR or
 \fBTcl_GetCommandFromObj\fR) identifying the command to be invoked in
 the trampoline; this command must match the word in \fIobjv[0]\fR.
 The remaining arguments are as for \fBTcl_NREvalObj\fR.
