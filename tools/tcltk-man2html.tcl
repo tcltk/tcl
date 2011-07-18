@@ -828,6 +828,33 @@ array set remap_link_target {
     pkg_mkIndex pkg_mkIndex
     Tcl_Obj     Tcl_NewObj
     Tcl_ObjType Tcl_RegisterObjType
+    Tcl_OpenFileChannelProc Tcl_FSOpenFileChannel
+    errorinfo 	env
+    errorcode 	env
+    tcl_pkgpath env
+    Tcl_Command Tcl_CreateObjCommand
+    Tcl_CmdProc Tcl_CreateObjCommand
+    Tcl_Channel Tcl_OpenFileChannel
+    Tcl_WideInt Tcl_NewIntObj
+    Tcl_ChannelType Tcl_CreateChannel
+    Tcl_DString Tcl_DStringInit
+    Tcl_Namespace Tcl_AppendExportList
+    Tcl_Object  Tcl_NewObjectInstance
+    Tcl_Class   Tcl_GetObjectAsClass
+    Tcl_Event   Tcl_QueueEvent
+    Tcl_Time	Tcl_GetTime
+    Tcl_ThreadId Tcl_CreateThread
+    Tk_Window	Tk_WindowId
+    Tk_3DBorder Tk_Get3DBorder
+    Tk_Anchor	Tk_GetAnchor
+    Tk_Cursor	Tk_GetCursor
+    Tk_Dash	Tk_GetDash
+    Tk_Font	Tk_GetFont
+    Tk_Image	Tk_GetImage
+    Tk_ImageMaster Tk_GetImage
+    Tk_ItemType Tk_CreateItemType
+    Tk_Justify	Tk_GetJustify
+    Ttk_Theme	Ttk_GetTheme
 }
 array set exclude_refs_map {
     bind.n		{button destroy option}
