@@ -194,11 +194,11 @@ given name already exists in this master.
 The initial recursion limit of the slave interpreter is set to the
 current recursion limit of its parent interpreter.
 .TP
-\fBinterp\fR \fBdebug \fIpath\fR ?\fI\-frame\fR ?\fIbool\fR??
+\fBinterp\fR \fBdebug \fIpath\fR ?\fB\-frame\fR ?\fIbool\fR??
 .
 Controls whether frame-level stack information is captured in the
 slave interpreter identified by \fIpath\fR.  If no arguments are
-given, option and current setting are returned.  If \fI\-frame\fR
+given, option and current setting are returned.  If \fB\-frame\fR
 is given, the debug setting is set to the given boolean if provided
 and the current setting is returned.
 This only effects the output of \fBinfo frame\fR, in that exact
