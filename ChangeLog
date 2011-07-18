@@ -1,3 +1,16 @@
+2011-07-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump version number to 8.6b2.
+	* library/init.tcl:
+	* unix/configure.in:
+	* win/configure.in:
+	* unix/tcl.spec:
+	* tools/tcl.wse.in:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 2011-07-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c: Avoid segfaults when RecordByteCodeStats()
