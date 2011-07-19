@@ -175,6 +175,12 @@ test util-3.5.1 {Tcl_ConverCountedElement procedure - quote leading '#'} {
     rename #\{ {}
     set result
 } {#}
+test util-3.6 {Tcl_ConvertElement, Bug 3371644} {
+    interp create #\\
+    interp alias {} x #\\ concat
+    interp target {} x ;# Crash if bug not fixed
+    interp delete #\\
+} {}
 
 test util-4.1 {Tcl_ConcatObj - backslash-space at end of argument} {
     concat a {b\ } c
