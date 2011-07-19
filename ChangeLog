@@ -1,3 +1,7 @@
+2011-07-19 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclUtil.c: Fix [bug 3371644] -- crash on Tcl_ConvertElement with leading pound.
+
 2011-07-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/*.3, doc/*.n: Many small fixes to documentation as part of
