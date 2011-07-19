@@ -1,3 +1,8 @@
+2011-07-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	[Bug 3371644] Repair failure to properly handle 
+	* tests/util.test: (length == -1) scanning in TclConvertElement().
+
 2011-07-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c: Avoid segfaults when RecordByteCodeStats()
