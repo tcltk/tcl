@@ -1261,7 +1261,9 @@ int TclConvertElement(
 	    p[1] = '#';
 	    p += 2;
 	    src++;
-	    length--;
+	    if (length > 0) {
+		length--;
+	    }
 	} else {
 	    conversion = CONVERT_BRACE;
 	}
