@@ -1,3 +1,7 @@
+2011-07-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h: [Bug 3372130] Fix hypot math function with MSVC10
+
 2011-07-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclUtil.c:	[Bug 3371644] Repair failure to properly handle 
