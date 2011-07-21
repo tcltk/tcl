@@ -391,7 +391,7 @@
 #    define environ _environ
 #    if defined(_MSC_VER) && (_MSC_VER < 1600)
 #	define hypot _hypot
-#    endif*/
+#    endif
 #    define exception _exception
 #    undef EDEADLOCK
 #    if defined(__MINGW32__) && !defined(__MSVCRT__)
