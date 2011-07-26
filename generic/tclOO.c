@@ -130,6 +130,7 @@ static const DeclaredClassMethod objMethods[] = {
 };
 
 static char initScript[] =
+    "package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
     "namespace eval ::oo { variable version " TCLOO_VERSION " };"
     "namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
 /*     "tcl_findLibrary tcloo $oo::version $oo::version" */
