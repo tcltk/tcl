@@ -1,3 +1,9 @@
+2011-07-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclEncoding.c (UtfToUtfProc): Start to rough out what needs
+	to change to transition Tcl to being able to work with non-BMP
+	characters, at least at a basic level.
+
 2011-07-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (initScript): Ensure that TclOO is properly found by

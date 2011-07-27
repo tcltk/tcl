@@ -191,6 +191,14 @@ static Tcl_Encoding systemEncoding;
 static unsigned short emptyPage[256];
 
 /*
+ * Constants used in the (external) UTF-8 <--> (internal) Modified UTF-8
+ * conversion code.
+ */
+
+#define FROM_STANDARD_UTF8	0
+#define TO_STANDARD_UTF8	1
+
+/*
  * Functions used only in this module.
  */
 
@@ -2158,7 +2166,7 @@ UtfIntToUtfExtProc(
 				 * output buffer. */
 {
     return UtfToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
-	    srcReadPtr, dstWrotePtr, dstCharsPtr, 1);
+	    srcReadPtr, dstWrotePtr, dstCharsPtr, TO_STANDARD_UTF8);
 }
 
 /*
@@ -2207,7 +2215,7 @@ UtfExtToUtfIntProc(
 				 * output buffer. */
 {
     return UtfToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
-	    srcReadPtr, dstWrotePtr, dstCharsPtr, 0);
+	    srcReadPtr, dstWrotePtr, dstCharsPtr, FROM_STANDARD_UTF8);
 }
 
 /*
@@ -2254,7 +2262,7 @@ UtfToUtfProc(
     int *dstCharsPtr,		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
-    int pureNullMode)		/* Convert embedded nulls from internal
+    int conversionMode)		/* Convert embedded nulls from internal
 				 * representation to real null-bytes or vice
 				 * versa. */
 {
@@ -2289,15 +2297,16 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && pureNullMode == 0)) {
+	if (UCHAR(*src) < 0x80 &&
+		!(UCHAR(*src) == 0 && conversionMode == FROM_STANDARD_UTF8)) {
 	    /*
 	     * Copy 7bit chatacters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to 0xc080.
 	     */
 
 	    *dst++ = *src++;
-	} else if (pureNullMode == 1 && UCHAR(*src) == 0xc0 &&
-		UCHAR(*(src+1)) == 0x80) {
+	} else if (conversionMode == TO_STANDARD_UTF8 && UCHAR(*src) == 0xc0
+		&& UCHAR(*(src+1)) == 0x80) {
 	    /*
 	     * Convert 0xc080 to real nulls when we are in output mode.
 	     */
@@ -2308,13 +2317,19 @@ UtfToUtfProc(
 	    /*
 	     * Always check before using Tcl_UtfToUniChar. Not doing can so
 	     * cause it run beyond the endof the buffer! If we happen such an
-	     * incomplete char its byts are made to represent themselves.
+	     * incomplete char, its bytes are made to represent themselves.
 	     */
 
 	    ch = (unsigned char) *src;
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
+	    /*
+	     * This is where we ought to do surrogate pair handling, with the
+	     * correct way of doing it depending on the conversionMode
+	     * parameter. But we don't. Yet. KNOWN BUG/MISFEATURE!
+	     */
+
 	    src += Tcl_UtfToUniChar(src, &ch);
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
