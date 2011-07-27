@@ -1,6 +1,16 @@
+2011-07-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (initScript): Ensure that TclOO is properly found by
+	all the various package mechanisms (by adding a dummy ifneeded script)
+	and not just some of them.
+
+2011-07-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h: [Bug 3372130]: Fix hypot math function with MSVC10
+
 2011-07-19  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclUtil.c:	[Bug 3371644] Repair failure to properly handle 
+	* generic/tclUtil.c:	[Bug 3371644]: Repair failure to properly handle
 	* tests/util.test: (length == -1) scanning in TclConvertElement().
 	Thanks to Thomas Sader and Alexandre Ferrieux.
 
