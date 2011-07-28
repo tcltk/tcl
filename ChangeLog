@@ -1,3 +1,24 @@
+2011-07-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tzdata/Asia/Anadyr: Update to Olson's tzdata2011h
+	* library/tzdata/Asia/Irkutsk:
+	* library/tzdata/Asia/Kamchatka:
+	* library/tzdata/Asia/Krasnoyarsk:
+	* library/tzdata/Asia/Magadan:
+	* library/tzdata/Asia/Novokuznetsk:
+	* library/tzdata/Asia/Novosibirsk:
+	* library/tzdata/Asia/Omsk:
+	* library/tzdata/Asia/Sakhalin:
+	* library/tzdata/Asia/Vladivostok:
+	* library/tzdata/Asia/Yakutsk:
+	* library/tzdata/Asia/Yekaterinburg:
+	* library/tzdata/Europe/Kaliningrad:
+	* library/tzdata/Europe/Moscow:
+	* library/tzdata/Europe/Samara:
+	* library/tzdata/Europe/Volgograd:
+	* library/tzdata/America/Kralendijk: (new)
+	* library/tzdata/America/Lower_Princes: (new)
+
 2011-07-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinPort.h: [Bug 3372130] Fix hypot math function with MSVC10
