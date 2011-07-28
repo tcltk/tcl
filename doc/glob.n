@@ -230,9 +230,9 @@ and will not be
 interpreted as a wildcard character. One solution to this problem is
 to use the Unix style forward slash as a path separator. Windows style
 paths can be converted to Unix style paths with the command
-.QW "\fBfile join $path\fR"
+.QW "\fBfile join\fR \fB$path\fR"
 or
-.QW "\fBfile normalize $path\fR" .
+.QW "\fBfile normalize\fR \fB$path\fR" .
 .SH EXAMPLES
 .PP
 Find all the Tcl files in the current directory:

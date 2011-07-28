@@ -1,3 +1,66 @@
+2011-07-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (initScript): Ensure that TclOO is properly found by
+	all the various package mechanisms (by adding a dummy ifneeded script)
+	and not just some of them.
+
+2011-07-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h: [Bug 3372130]: Fix hypot math function with MSVC10
+
+2011-07-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	[Bug 3371644]: Repair failure to properly handle
+	* tests/util.test: (length == -1) scanning in TclConvertElement().
+	Thanks to Thomas Sader and Alexandre Ferrieux.
+
+2011-07-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/*.3, doc/*.n: Many small fixes to documentation as part of
+	project to improve quality of generated HTML docs.
+
+	* tools/tcltk-man2html.tcl (remap_link_target): More complete set of
+	definitions of link targets, especially for major C API types.
+	* tools/tcltk-man2html-utils.tcl (output-IP-list, cross-reference):
+	Update to generation to produce proper HTML bulleted and enumerated
+	lists.
+
+2011-07-19 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* doc/upvar.n: Undocument long gone limitation of [upvar].
+
+2011-07-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c: Avoid segfaults when RecordByteCodeStats()
+	is called in a deleted interp.
+
+	* generic/tclCompile.c:	[Bug 467523, 3357771]: Prevent circular
+	references in values with ByteCode intreps.  They can lead to
+	memory leaks.
+
+2011-07-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOORenderCallChain): [Bug 3365156]: Remove
+	stray refcount bump that caused a memory leak.
+
+2011-07-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUnixSock.c:  [Bug 3364777]: Stop segfault caused by
+	reading from struct after it had been freed.
+
+2011-07-11  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclExecute.c: [Bug 3339502]: Correct cast for CURR_DEPTH to
+	silence compiler warning.
+
+2011-07-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/http.n: [FRQ 3358415]: State what RFC defines HTTP/1.1.
+
+2011-07-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c: add missing INT2PTR
+
 2011-07-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/FileSystem.3: Corrected statements about ctime field of 'struct

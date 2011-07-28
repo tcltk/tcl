@@ -671,7 +671,7 @@ test oo-call-2.10 {class call introspection - errors} -body {
 test oo-call-2.11 {class call introspection - errors} -body {
     info class call notaclass x
 } -returnCodes error -result {notaclass does not refer to an object}
-test oo-call-2.11 {class call introspection - errors} -setup {
+test oo-call-2.12 {class call introspection - errors} -setup {
     oo::class create root
 } -body {
     root create notaclass

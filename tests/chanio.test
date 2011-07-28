@@ -7720,7 +7720,7 @@ test chan-io-73.1 {channel Tcl_Obj SetChannelFromAny} -body {
 
 # cleanup
 foreach file [list fooBar longfile script output test1 pipe my_script \
-	test2 test3 cat stdout kyrillic.txt utf8-fcopy.txt utf8-rp.txt] {
+	test2 test3 cat kyrillic.txt utf8-fcopy.txt utf8-rp.txt] {
     removeFile $file
 }
 cleanupTests
