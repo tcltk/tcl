@@ -7869,6 +7869,8 @@ memory with buffer backup (ferrieux)
 
 2010-11-15 (TIP 378)[3081184] improved TIP 280 performance (kupries)
 
+2010-11-16 (platform) VS 2005 SP1 MSVC compiler (nijtmans)
+
 2010-11-18 (bug fix)[3111059] leak in [namespace delete] w coroutines (sofer)
 
 2010-11-28 [3120139,3105247] Tcl_PrintDouble improvements (kenny)
@@ -7879,9 +7881,13 @@ memory with buffer backup (ferrieux)
 
 2010-12-09 (new feature) [file] is now a [namespace ensemble] (fellows)
 
+2010-12-19 (bug fix) [fcopy -size 1 -command] asynchronous (ferrieux)
+
 2010-12-12 (platform) OpenBSD build improvements (cassoff)
 
 2010-12-17 (platform) Revisions to support rpm 4.4.2 (cassoff)
+
+2010-12-27 (bug fix) crash in [lsort] w multiple -index options (fellows)
 
 2010-12-30 (bug fix)[3142026] GrowEvaluationStack OBOE (harder,sofer)
 
@@ -7928,8 +7934,6 @@ memory with buffer backup (ferrieux)
 2011-05-24 (enhancement) msgcat internal improvements (fellows)
 => msgcat 1.4.4
 
-2011-05-24 tzdata updated to Olson's tzdata2011g (iyer)
-
 2011-05-25 (TIP 381) [info object|class call] [self call] [nextto] (fellows)
 
 2011-05-31 (bug fix)[3293874] let lists grow all the way to the limit (porter)
@@ -7941,6 +7945,10 @@ memory with buffer backup (ferrieux)
 2011-06-22 (new feature) DEB_HOST_MULTIARCH support (kupries)
 => platform 1.0.10
 
+2011-07-15 (bug fix)[3357771] Prevent circular refs in bytecode (porter)
+
+2011-07-28 tzdata updated to Olson's tzdata2011h (porter)
+
 Many more Tcl built-in command errors now set an -errorcode.
 
---- Released 8.6b2, XXX XX, 2011 --- See ChangeLog for details ---
+--- Released 8.6b2, August 3, 2011 --- See ChangeLog for details ---
