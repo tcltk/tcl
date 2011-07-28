@@ -1,3 +1,9 @@
+2011-07-28  Reinhard Max  <max@suse.de>
+
+	* unix/tcl.m4 (SC_TCL_IPV6): Fix AC_DEFINE invocation for
+	NEED_FAKE_RFC2553.
+	* unix/configure:	autoconf-2.59
+
 2011-07-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* changes:	Updates for 8.6b2 release.
