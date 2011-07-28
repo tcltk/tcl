@@ -2236,6 +2236,155 @@ UtfExtToUtfIntProc(
  *-------------------------------------------------------------------------
  */
 
+static INLINE int
+IntToUtf(
+    unsigned ch,		/* The character to be stored in the
+				 * buffer. */
+    char *buf)			/* Buffer in which the UTF-8 representation of
+				 * the character is stored. Buffer must be
+				 * large enough to hold the UTF-8 character
+				 * (at most 6 bytes). */
+{
+    if ((ch > 0) && (ch < 0x80)) {
+	buf[0] = (char) ch;
+	return 1;
+    }
+    if (ch >= 0) {
+	if (ch <= 0x7FF) {
+	    buf[1] = (char) ((ch | 0x80) & 0xBF);
+	    buf[0] = (char) ((ch >> 6) | 0xC0);
+	    return 2;
+	}
+	if (ch <= 0xFFFF) {
+	three:
+	    buf[2] = (char) ((ch | 0x80) & 0xBF);
+	    buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
+	    buf[0] = (char) ((ch >> 12) | 0xE0);
+	    return 3;
+	}
+	if (ch <= 0x1FFFFF) {
+	    buf[3] = (char) ((ch | 0x80) & 0xBF);
+	    buf[2] = (char) (((ch >> 6) | 0x80) & 0xBF);
+	    buf[1] = (char) (((ch >> 12) | 0x80) & 0xBF);
+	    buf[0] = (char) ((ch >> 18) | 0xF0);
+	    return 4;
+	}
+	if (ch <= 0x3FFFFFF) {
+	    buf[4] = (char) ((ch | 0x80) & 0xBF);
+	    buf[3] = (char) (((ch >> 6) | 0x80) & 0xBF);
+	    buf[2] = (char) (((ch >> 12) | 0x80) & 0xBF);
+	    buf[1] = (char) (((ch >> 18) | 0x80) & 0xBF);
+	    buf[0] = (char) ((ch >> 24) | 0xF8);
+	    return 5;
+	}
+	if (ch <= 0x7FFFFFFF) {
+	    buf[5] = (char) ((ch | 0x80) & 0xBF);
+	    buf[4] = (char) (((ch >> 6) | 0x80) & 0xBF);
+	    buf[3] = (char) (((ch >> 12) | 0x80) & 0xBF);
+	    buf[2] = (char) (((ch >> 18) | 0x80) & 0xBF);
+	    buf[1] = (char) (((ch >> 24) | 0x80) & 0xBF);
+	    buf[0] = (char) ((ch >> 30) | 0xFC);
+	    return 6;
+	}
+    }
+
+    ch = 0xFFFD;
+    goto three;
+}
+
+static INLINE int
+UtfToInt(
+    const char *src,		/* The UTF-8 string. */
+    unsigned *chPtr)		/* Filled with the character represented by
+				 * the front of the UTF-8 string. */
+{
+    register int byte;
+
+    /*
+     * Unroll 1 to 6 byte UTF-8 sequences, use loop to handle longer ones.
+     */
+
+    byte = *((unsigned char *) src);
+    if (byte < 0xC0) {
+	/*
+	 * Handles properly formed UTF-8 characters between 0x01 and 0x7F.
+	 * Also treats \0 and naked trail bytes 0x80 to 0xBF as valid
+	 * characters representing themselves.
+	 */
+
+	*chPtr = (Tcl_UniChar) byte;
+	return 1;
+    } else if (byte < 0xE0) {
+	if ((src[1] & 0xC0) == 0x80) {
+	    /*
+	     * Two-byte-character lead-byte followed by a trail-byte.
+	     */
+
+	    *chPtr = (Tcl_UniChar) (((byte & 0x1F) << 6) | (src[1] & 0x3F));
+	    return 2;
+	}
+
+	/*
+	 * A two-byte-character lead-byte not followed by trail-byte
+	 * represents itself.
+	 */
+
+	*chPtr = (Tcl_UniChar) byte;
+	return 1;
+    } else if (byte < 0xF0) {
+	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)) {
+	    /*
+	     * Three-byte-character lead byte followed by two trail bytes.
+	     */
+
+	    *chPtr = (Tcl_UniChar) (((byte & 0x0F) << 12)
+		    | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F));
+	    return 3;
+	}
+
+	/*
+	 * A three-byte-character lead-byte not followed by two trail-bytes
+	 * represents itself.
+	 */
+
+	*chPtr = (Tcl_UniChar) byte;
+	return 1;
+    } else {
+	int ch, total, trail;
+	static const unsigned char totalBytes[256] = {
+	    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+	    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,6,6,6,6
+	};
+
+	total = totalBytes[byte];
+	trail = total - 1;
+	if (trail > 0) {
+	    ch = byte & (0x3F >> trail);
+	    do {
+		src++;
+		if ((*src & 0xC0) != 0x80) {
+		    *chPtr = byte;
+		    return 1;
+		}
+		ch <<= 6;
+		ch |= (*src & 0x3F);
+		trail--;
+	    } while (trail > 0);
+	    *chPtr = ch;
+	    return total;
+	} else {
+	    *chPtr = (Tcl_UniChar) byte;
+	    return 1;
+	}
+    }
+}
+
 static int
 UtfToUtfProc(
     ClientData clientData,	/* Not used. */
@@ -2330,8 +2479,38 @@ UtfToUtfProc(
 	     * parameter. But we don't. Yet. KNOWN BUG/MISFEATURE!
 	     */
 
-	    src += Tcl_UtfToUniChar(src, &ch);
-	    dst += Tcl_UniCharToUtf(ch, dst);
+	    if (conversionMode == TO_STANDARD_UTF8) {
+		const char *origin = src;
+
+		src += Tcl_UtfToUniChar(src, &ch);
+		if (ch >= 0xD800 && ch < 0xDBFF) {
+		    unsigned fullChar = ((unsigned)(ch - 0xD800)) << 10;
+
+		    src += Tcl_UtfToUniChar(src, &ch);
+		    if (ch >= 0xDC00 && ch < 0xDFFF) {
+			fullChar += (unsigned) (ch - 0xDC00);
+			dst += IntToUtf(fullChar, dst);
+			continue;
+		    } else {
+			src = origin + Tcl_UtfToUniChar(origin, &ch);
+		    }
+		}
+		dst += Tcl_UniCharToUtf(ch, dst);
+	    } else {
+		unsigned fullChar;
+
+		src += UtfToInt(src, &fullChar);
+		if (fullChar > 0xFFFF) {
+		    fullChar -= 0x10000;
+		    ch = (Tcl_UniChar) (((fullChar & 0xFFC00) >> 10) + 0xD800);
+		    dst += Tcl_UniCharToUtf(ch, dst);
+		    ch = (Tcl_UniChar) ((fullChar & 0x3FF) + 0xDC00);
+		    dst += Tcl_UniCharToUtf(ch, dst);
+		} else {
+		    ch = (Tcl_UniChar) fullChar;
+		    dst += Tcl_UniCharToUtf(ch, dst);
+		}
+	    }
 	}
     }
 
