@@ -827,7 +827,7 @@ proc insert-cross-references {text} {
 		if {$offset(end-bold) < 0} {
 		    return [append result $text]
 		}
-		if {$invert([lindex $offsets 1]) in {tcl tk ttk}} {
+		if {[string match "c.*" $invert([lindex $offsets 1])]} {
 		    set offsets [lreplace $offsets 1 1]
 		}
 		switch -exact -- $invert([lindex $offsets 1]) {
@@ -861,7 +861,7 @@ proc insert-cross-references {text} {
 		set body [string range $text {*}$range]
 		set text [string range $text[set text ""] \
 			      [expr {[lindex $range 1]+1}] end]
-		lappend result [cross-reference $body]
+		append result [cross-reference $body]
 		continue
 	    }
 	    Tcl1 - Tcl2 {
