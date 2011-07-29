@@ -804,7 +804,7 @@ set ensemble_commands {
     after array binary chan clock dde dict encoding file history info interp
     memory namespace package registry self string trace update zlib
     clipboard console font grab grid image option pack place selection tk
-    tkwait ttk::style winfo wm
+    tkwait ttk::style winfo wm itcl::delete itcl::find itcl::is
 }
 array set remap_link_target {
     stdin  Tcl_GetStdChannel
@@ -834,6 +834,8 @@ array set remap_link_target {
     tcl_pkgpath env
     Tcl_Command Tcl_CreateObjCommand
     Tcl_CmdProc Tcl_CreateObjCommand
+    Tcl_CmdDeleteProc Tcl_CreateObjCommand
+    Tcl_ObjCmdProc Tcl_CreateObjCommand
     Tcl_Channel Tcl_OpenFileChannel
     Tcl_WideInt Tcl_NewIntObj
     Tcl_ChannelType Tcl_CreateChannel
