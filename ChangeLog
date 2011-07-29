@@ -1,3 +1,10 @@
+2011-07-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (ensemble_commands, remap_link_target):
+	Small enhancements to improve cross-linking with contributed packages.
+	* tools/tcltk-man2html-utils.tcl (insert-cross-references): Enhance to
+	cope with contributed packages' C API.
+
 2011-07-28  Reinhard Max  <max@suse.de>
 
 	* unix/tcl.m4 (SC_TCL_IPV6): Fix AC_DEFINE invocation for
