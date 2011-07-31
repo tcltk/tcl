@@ -1,3 +1,39 @@
+2011-07-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (ensemble_commands, remap_link_target):
+	Small enhancements to improve cross-linking with contributed packages.
+	* tools/tcltk-man2html-utils.tcl (insert-cross-references): Enhance to
+	cope with contributed packages' C API.
+
+2011-07-28  Reinhard Max  <max@suse.de>
+
+	* unix/tcl.m4 (SC_TCL_IPV6): Fix AC_DEFINE invocation for
+	NEED_FAKE_RFC2553.
+	* unix/configure:	autoconf-2.59
+
+2011-07-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Updates for 8.6b2 release.
+
+	* library/tzdata/Asia/Anadyr: Update to Olson's tzdata2011h
+	* library/tzdata/Asia/Irkutsk:
+	* library/tzdata/Asia/Kamchatka:
+	* library/tzdata/Asia/Krasnoyarsk:
+	* library/tzdata/Asia/Magadan:
+	* library/tzdata/Asia/Novokuznetsk:
+	* library/tzdata/Asia/Novosibirsk:
+	* library/tzdata/Asia/Omsk:
+	* library/tzdata/Asia/Sakhalin:
+	* library/tzdata/Asia/Vladivostok:
+	* library/tzdata/Asia/Yakutsk:
+	* library/tzdata/Asia/Yekaterinburg:
+	* library/tzdata/Europe/Kaliningrad:
+	* library/tzdata/Europe/Moscow:
+	* library/tzdata/Europe/Samara:
+	* library/tzdata/Europe/Volgograd:
+	* library/tzdata/America/Kralendijk: (new)
+	* library/tzdata/America/Lower_Princes: (new)
+
 2011-07-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclEncoding.c (UtfToUtfProc): Start to rough out what needs

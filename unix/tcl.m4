@@ -3261,7 +3261,8 @@ AC_DEFUN([SC_TCL_IPV6],[
 #include <netdb.h>
 ]])
 if test "x$NEED_FAKE_RFC2553" = "x1"; then
-   AC_DEFINE(NEED_FAKE_RFC2553)
+   AC_DEFINE([NEED_FAKE_RFC2553], 1,
+        [Use compat implementation of getaddrinfo() and friends])
    AC_LIBOBJ([fake-rfc2553])
    AC_CHECK_FUNC(strlcpy)
 fi
