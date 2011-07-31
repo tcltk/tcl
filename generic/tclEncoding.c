@@ -2249,43 +2249,41 @@ IntToUtf(
 	buf[0] = (char) ch;
 	return 1;
     }
-    if (ch >= 0) {
-	if (ch <= 0x7FF) {
-	    buf[1] = (char) ((ch | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 6) | 0xC0);
-	    return 2;
-	}
-	if (ch <= 0xFFFF) {
-	three:
-	    buf[2] = (char) ((ch | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 12) | 0xE0);
-	    return 3;
-	}
-	if (ch <= 0x1FFFFF) {
-	    buf[3] = (char) ((ch | 0x80) & 0xBF);
-	    buf[2] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 12) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 18) | 0xF0);
-	    return 4;
-	}
-	if (ch <= 0x3FFFFFF) {
-	    buf[4] = (char) ((ch | 0x80) & 0xBF);
-	    buf[3] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[2] = (char) (((ch >> 12) | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 18) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 24) | 0xF8);
-	    return 5;
-	}
-	if (ch <= 0x7FFFFFFF) {
-	    buf[5] = (char) ((ch | 0x80) & 0xBF);
-	    buf[4] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[3] = (char) (((ch >> 12) | 0x80) & 0xBF);
-	    buf[2] = (char) (((ch >> 18) | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 24) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 30) | 0xFC);
-	    return 6;
-	}
+    if (ch <= 0x7FF) {
+	buf[1] = (char) ((ch | 0x80) & 0xBF);
+	buf[0] = (char) ((ch >> 6) | 0xC0);
+	return 2;
+    }
+    if (ch <= 0xFFFF) {
+    three:
+	buf[2] = (char) ((ch | 0x80) & 0xBF);
+	buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
+	buf[0] = (char) ((ch >> 12) | 0xE0);
+	return 3;
+    }
+    if (ch <= 0x1FFFFF) {
+	buf[3] = (char) ((ch | 0x80) & 0xBF);
+	buf[2] = (char) (((ch >> 6) | 0x80) & 0xBF);
+	buf[1] = (char) (((ch >> 12) | 0x80) & 0xBF);
+	buf[0] = (char) ((ch >> 18) | 0xF0);
+	return 4;
+    }
+    if (ch <= 0x3FFFFFF) {
+	buf[4] = (char) ((ch | 0x80) & 0xBF);
+	buf[3] = (char) (((ch >> 6) | 0x80) & 0xBF);
+	buf[2] = (char) (((ch >> 12) | 0x80) & 0xBF);
+	buf[1] = (char) (((ch >> 18) | 0x80) & 0xBF);
+	buf[0] = (char) ((ch >> 24) | 0xF8);
+	return 5;
+    }
+    if (ch <= 0x7FFFFFFF) {
+	buf[5] = (char) ((ch | 0x80) & 0xBF);
+	buf[4] = (char) (((ch >> 6) | 0x80) & 0xBF);
+	buf[3] = (char) (((ch >> 12) | 0x80) & 0xBF);
+	buf[2] = (char) (((ch >> 18) | 0x80) & 0xBF);
+	buf[1] = (char) (((ch >> 24) | 0x80) & 0xBF);
+	buf[0] = (char) ((ch >> 30) | 0xFC);
+	return 6;
     }
 
     ch = 0xFFFD;
@@ -2488,7 +2486,7 @@ UtfToUtfProc(
 
 		    src += Tcl_UtfToUniChar(src, &ch);
 		    if (ch >= 0xDC00 && ch < 0xDFFF) {
-			fullChar += (unsigned) (ch - 0xDC00);
+			fullChar += 0x2400 + (unsigned) ch;
 			dst += IntToUtf(fullChar, dst);
 			continue;
 		    } else {
@@ -2502,7 +2500,7 @@ UtfToUtfProc(
 		src += UtfToInt(src, &fullChar);
 		if (fullChar > 0xFFFF) {
 		    fullChar -= 0x10000;
-		    ch = (Tcl_UniChar) (((fullChar & 0xFFC00) >> 10) + 0xD800);
+		    ch = (Tcl_UniChar) ((fullChar >> 10) + 0xD800);
 		    dst += Tcl_UniCharToUtf(ch, dst);
 		    ch = (Tcl_UniChar) ((fullChar & 0x3FF) + 0xDC00);
 		    dst += Tcl_UniCharToUtf(ch, dst);

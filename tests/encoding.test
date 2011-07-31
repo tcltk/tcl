@@ -316,6 +316,15 @@ test encoding-15.3 {UtfToUtfProc null character input} {
     list [string bytelength $x] [string bytelength $y] $z
 } {1 2 c080}
 
+test encoding-15.4 {UtfToUtfProc: UTF-8 to UTF-16 and back} {
+    set x \xF0\xA4\xAD\xA2; # U+024B62
+    set y [encoding convertfrom utf-8 $x]
+    set z [encoding convertto utf-8 $y]
+    list [string length $x] [string length $y] [string length $z] \
+	[format 0x%04x.0x%04x {*}[scan $y %c%c]] \
+	[format %02x.%02x.%02x.%02x {*}[scan $z %c%c%c%c]]
+} {4 2 4 0xd852.0xdf62 f0.a4.ad.a2}
+
 test encoding-16.1 {UnicodeToUtfProc} {
     set val [encoding convertfrom unicode NN]
     list $val [format %x [scan $val %c]]
