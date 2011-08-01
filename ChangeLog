@@ -1,3 +1,9 @@
+2011-08-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (plus-pkgs): [Bug 3382474]: Added code to
+	determine the version number of contributed packages from their
+	directory names so that HTML documentation builds are less confusing.
+
 2011-07-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl (ensemble_commands, remap_link_target):
