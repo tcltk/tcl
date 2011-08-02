@@ -766,23 +766,31 @@ proc plus-pkgs {type args} {
     if {!$build_tcl} return
     set result {}
     foreach {dir name} $args {
-	set globpat $tcltkdir/$tcldir/pkgs/$dir/doc/*.$type
+	set globpat $tcltkdir/$tcldir/pkgs/$dir*/doc/*.$type
 	if {![llength [glob -nocomplain $globpat]]} {
 	    # Fallback for manpages generated using doctools
-	    set globpat $tcltkdir/$tcldir/pkgs/$dir/doc/man/*.$type
+	    set globpat $tcltkdir/$tcldir/pkgs/$dir*/doc/man/*.$type
 	    if {![llength [glob -nocomplain $globpat]]} {
 		continue
 	    }
 	}
+	regexp "pkgs/$dir(.*)/doc$" [glob $tcltkdir/$tcldir/pkgs/$dir*/doc] \
+	    -> version
 	switch $type {
 	    n {
 		set title "$name Package Commands"
+		if {$version ne ""} {
+		    append title ", version $version"
+		}
 		set dir [string totitle $dir]Cmd
 		set desc \
 		    "The additional commands provided by the $name package."
 	    }
 	    3 {
 		set title "$name Package Library"
+		if {$version ne ""} {
+		    append title ", version $version"
+		}
 		set dir [string totitle $dir]Lib
 		set desc \
 		    "The additional C functions provided by the $name package."
@@ -804,7 +812,7 @@ set ensemble_commands {
     after array binary chan clock dde dict encoding file history info interp
     memory namespace package registry self string trace update zlib
     clipboard console font grab grid image option pack place selection tk
-    tkwait ttk::style winfo wm
+    tkwait ttk::style winfo wm itcl::delete itcl::find itcl::is
 }
 array set remap_link_target {
     stdin  Tcl_GetStdChannel
@@ -834,6 +842,8 @@ array set remap_link_target {
     tcl_pkgpath env
     Tcl_Command Tcl_CreateObjCommand
     Tcl_CmdProc Tcl_CreateObjCommand
+    Tcl_CmdDeleteProc Tcl_CreateObjCommand
+    Tcl_ObjCmdProc Tcl_CreateObjCommand
     Tcl_Channel Tcl_OpenFileChannel
     Tcl_WideInt Tcl_NewIntObj
     Tcl_ChannelType Tcl_CreateChannel
@@ -943,8 +953,8 @@ try {
 	append appdir "$tkdir"
     }
 
-    # Get the list of packages to try, and what their human-readable
-    # names are.
+    # Get the list of packages to try, and what their human-readable names
+    # are. Note that the package directory list should be version-less.
     try {
 	set packageDirNameMap {}
 	if {$build_tcl} {
