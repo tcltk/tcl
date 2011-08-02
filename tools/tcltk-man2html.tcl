@@ -973,7 +973,7 @@ try {
 	set packageDirNameMap {
 	    itcl {[incr Tcl]}
 	    tdbc {TDBC}
-	    Thread Thread
+	    thread Thread
 	}
     }
 
