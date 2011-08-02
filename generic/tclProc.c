@@ -1939,6 +1939,13 @@ TclProcCompileProc(
 		CompiledLocal *toFree = clPtr;
 
 		clPtr = clPtr->nextPtr;
+		if (toFree->resolveInfo) {
+		    if (toFree->resolveInfo->deleteProc) {
+			toFree->resolveInfo->deleteProc(toFree->resolveInfo);
+		    } else {
+			ckfree(toFree->resolveInfo);
+		    }
+		}
 		ckfree(toFree);
 	    }
 	    procPtr->numCompiledLocals = procPtr->numArgs;

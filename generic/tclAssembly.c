@@ -1047,8 +1047,8 @@ TclAssembleCode(
 
 #ifdef TCL_COMPILE_DEBUG
 	    if ((tclTraceCompile >= 2) && (envPtr->procPtr == NULL)) {
-		printf("  %4d Assembling: ",
-			envPtr->codeNext - envPtr->codeStart);
+		printf("  %4ld Assembling: ",
+			(long)(envPtr->codeNext - envPtr->codeStart));
 		TclPrintSource(stdout, parsePtr->commandStart,
 			TclMin(instLen, 55));
 		printf("\n");

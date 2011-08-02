@@ -61,10 +61,18 @@ on how the alias mechanism works.
 A qualified interpreter name is a proper Tcl lists containing a subset of its
 ancestors in the interpreter hierarchy, terminated by the string naming the
 interpreter in its immediate master. Interpreter names are relative to the
-interpreter in which they are used. For example, if \fBa\fR is a slave of
-the current interpreter and it has a slave \fBa1\fR, which in turn has a
-slave \fBa11\fR, the qualified name of \fBa11\fR in \fBa\fR is the list
-\fBa1 a11\fR.
+interpreter in which they are used. For example, if
+.QW \fBa\fR
+is a slave of the current interpreter and it has a slave
+.QW \fBa1\fR ,
+which in turn has a slave
+.QW \fBa11\fR ,
+the qualified name of
+.QW \fBa11\fR
+in
+.QW \fBa\fR
+is the list
+.QW "\fBa1 a11\fR" .
 .PP
 The \fBinterp\fR command, described below, accepts qualified interpreter
 names as arguments; the interpreter in which the command is being evaluated
@@ -108,10 +116,12 @@ invoking the command.
 interpreter.  For example,
 .QW "\fBa b\fR"
 identifies an interpreter
-\fBb\fR, which is a slave of interpreter \fBa\fR, which is a slave
-of the invoking interpreter.  An empty list specifies the interpreter
-invoking the command.  \fIsrcCmd\fR gives the name of a new
-command, which will be created in the source interpreter.
+.QW \fBb\fR ,
+which is a slave of interpreter
+.QW \fBa\fR ,
+which is a slave of the invoking interpreter.  An empty list specifies
+the interpreter invoking the command.  \fIsrcCmd\fR gives the name of
+a new command, which will be created in the source interpreter.
 \fITargetPath\fR and \fItargetCmd\fR specify a target interpreter
 and command, and the \fIarg\fR arguments, if any, specify additional
 arguments to \fItargetCmd\fR which are prepended to any arguments specified
@@ -184,18 +194,18 @@ given name already exists in this master.
 The initial recursion limit of the slave interpreter is set to the
 current recursion limit of its parent interpreter.
 .TP
-\fBinterp\fR \fBdebug \fIpath\fR ?\fI\-frame\fR ?\fIbool\fR??
+\fBinterp\fR \fBdebug \fIpath\fR ?\fB\-frame\fR ?\fIbool\fR??
 .
 Controls whether frame-level stack information is captured in the
 slave interpreter identified by \fIpath\fR.  If no arguments are
-given, option and current setting are returned.  If \fI\-frame\fR
+given, option and current setting are returned.  If \fB\-frame\fR
 is given, the debug setting is set to the given boolean if provided
 and the current setting is returned.
 This only effects the output of \fBinfo frame\fR, in that exact
 frame-level information for command invocation at the bytecode level
 is only captured with this setting on.
-.PP
 .RS
+.PP
 For example, with code like
 .PP
 .CS
@@ -332,7 +342,7 @@ already trusted.
 Returns the maximum allowable nesting depth for the interpreter
 specified by \fIpath\fR.  If \fInewlimit\fR is specified,
 the interpreter recursion limit will be set so that nesting
-of more than \fInewlimit\fR calls to \fBTcl_Eval()\fR
+of more than \fInewlimit\fR calls to \fBTcl_Eval\fR
 and related procedures in that interpreter will return an error.
 The \fInewlimit\fR value is also returned.
 The \fInewlimit\fR value must be a positive integer between 1 and the
