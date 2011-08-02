@@ -1,3 +1,25 @@
+2011-08-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclObj.c (Tcl_DbIncrRefCount, Tcl_DbDecrRefCount)
+	(Tcl_DbIsShared): [Bug 3384007]: Fix the panic messages so they share
+	what should be shared and have the right number of spaces.
+
+2011-08-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c (TclProcCompileProc): [Bug 3383616]: Fix for leak
+	of resolveInfo when recompiling procs. Thanks go to Gustaf Neumann for
+	detecting the bug and providing the fix.
+
+2011-08-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/tclvars.n (EXAMPLES): Added some examples of how some of the
+	standard global variables can be used, following prompting by a
+	request by Robert Hicks.
+
+	* tools/tcltk-man2html.tcl (plus-pkgs): [Bug 3382474]: Added code to
+	determine the version number of contributed packages from their
+	directory names so that HTML documentation builds are less confusing.
+
 2011-07-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl (ensemble_commands, remap_link_target):
