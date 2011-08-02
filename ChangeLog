@@ -1,3 +1,7 @@
+2011-08-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Updates for 8.6b2 release.
+
 2011-08-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclObj.c (Tcl_DbIncrRefCount, Tcl_DbDecrRefCount)
