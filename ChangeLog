@@ -1,8 +1,14 @@
+2011-08-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclObj.c (Tcl_DbIncrRefCount, Tcl_DbDecrRefCount)
+	(Tcl_DbIsShared): [Bug 3384007]: Fix the panic messages so they share
+	what should be shared and have the right number of spaces.
+
 2011-08-01  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclProc.c (TclProcCompileProc): fix for leak of
-	resolveInfo when recompiling procs, [Bug 3383616]. Thx go to
-	Gustaf Neumann for detecting the bug and providing the fix.
+	* generic/tclProc.c (TclProcCompileProc): [Bug 3383616]: Fix for leak
+	of resolveInfo when recompiling procs. Thanks go to Gustaf Neumann for
+	detecting the bug and providing the fix.
 
 2011-08-01  Donal K. Fellows  <dkf@users.sf.net>
 
