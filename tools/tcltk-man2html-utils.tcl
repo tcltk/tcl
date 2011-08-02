@@ -625,7 +625,7 @@ proc cross-reference {ref} {
     global ensemble_commands exclude_refs_map exclude_when_followed_by_map
     set manname $manual(name)
     set mantail $manual(tail)
-    if {[string match "Tcl_*" $ref] || [string match "Tk_*" $ref] || [string match "Ttk_*" $ref]} {
+    if {[string match "Tcl_*" $ref] || [string match "Tk_*" $ref] || [string match "Ttk_*" $ref] || [string match "Itcl_*" $ref] || [string match "Tdbc_*" $ref]} {
 	regexp {^\w+} $ref lref
 	##
 	## apply a link remapping if available
@@ -705,7 +705,7 @@ proc cross-reference {ref} {
     ## exceptions, sigh, to the rule
     ##
     if {[info exists exclude_when_followed_by_map($mantail)]} {
-	upvar 1 tail tail
+	upvar 1 text tail
 	set following_word [lindex [regexp -inline {\S+} $tail] 0]
 	foreach {this that} $exclude_when_followed_by_map($mantail) {
 	    # only a ref if $this is not followed by $that
@@ -758,9 +758,11 @@ proc insert-cross-references {text} {
 	    anchor     {<A }	end-anchor {</A>}
 	    quote      {``}	end-quote  {''}
 	    bold       {<B>}	end-bold   {</B>}
-	    tcl        {Tcl_}
-	    tk         {Tk_}
-	    ttk	       {Ttk_}
+	    c.tcl      {Tcl_}
+	    c.tk       {Tk_}
+	    c.ttk      {Ttk_}
+	    c.tdbc     {Tdbc_}
+	    c.itcl     {Itcl_}
 	    Tcl1       {Tcl manual entry}
 	    Tcl2       {Tcl overview manual entry}
 	    url	       {http://}
@@ -808,12 +810,10 @@ proc insert-cross-references {text} {
 				      [expr {$offset(end-quote)-1}]]
 			set text [string range $text[set text ""] \
 				      [expr {$offset(end-quote)+2}] end]
-			set tail $text
 			append result `` [cross-reference $body] ''
 			continue
 		    }
-		    bold -
-		    anchor {
+		    bold - anchor {
 			append result [string range $text \
 				      0 [expr {$offset(end-quote)+1}]]
 			set text [string range $text[set text ""] \
@@ -827,7 +827,7 @@ proc insert-cross-references {text} {
 		if {$offset(end-bold) < 0} {
 		    return [append result $text]
 		}
-		if {$invert([lindex $offsets 1]) in {tcl tk ttk}} {
+		if {[string match "c.*" $invert([lindex $offsets 1])]} {
 		    set offsets [lreplace $offsets 1 1]
 		}
 		switch -exact -- $invert([lindex $offsets 1]) {
@@ -838,7 +838,6 @@ proc insert-cross-references {text} {
 				      [expr {$offset(end-bold)-1}]]
 			set text [string range $text[set text ""] \
 				      [expr {$offset(end-bold)+4}] end]
-			set tail $text
 			regsub {http://[\w/.]+} $body {<A HREF="&">&</A>} body
 			append result <B> [cross-reference $body] </B>
 			continue
@@ -855,48 +854,20 @@ proc insert-cross-references {text} {
 		    }
 		}
 	    }
-	    tk {
-		append result [string range $text 0 [expr {$offset(tk)-1}]]
-		if {![regexp -indices -start $offset(tk) {Tk_\w+} $text range]} {
-		    return [reference-error "Tk regexp failed" $text]
-		}
+	    c.tk - c.ttk - c.tcl - c.tdbc - c.itcl {
+		append result [string range $text 0 \
+				   [expr {[lindex $offsets 0]-1}]]
+		regexp -indices -start [lindex $offsets 0] {\w+} $text range
 		set body [string range $text {*}$range]
 		set text [string range $text[set text ""] \
 			      [expr {[lindex $range 1]+1}] end]
-		set tail $text
 		append result [cross-reference $body]
 		continue
 	    }
-	    ttk {
-		append result [string range $text 0 [expr {$offset(ttk)-1}]]
-		if {![regexp -indices -start $offset(ttk) {Ttk_\w+} $text range]} {
-		    return [reference-error "Ttk regexp failed" $text]
-		}
-		set body [string range $text {*}$range]
-		set text [string range $text[set text ""] \
-			      [expr {[lindex $range 1]+1}] end]
-		set tail $text
-		append result [cross-reference $body]
-		continue
-	    }
-	    tcl {
-		append result [string range $text 0 [expr {$offset(tcl)-1}]]
-		if {![regexp -indices -start $offset(tcl) {Tcl_\w+} $text range]} {
-		    return [reference-error "Tcl regexp failed" $text]
-		}
-		set body [string range $text {*}$range]
-		set text [string range $text[set text ""] \
-			      [expr {[lindex $range 1]+1}] end]
-		set tail $text
-		append result [cross-reference $body]
-		continue
-	    }
-	    Tcl1 -
-	    Tcl2 {
+	    Tcl1 - Tcl2 {
 		set off [lindex $offsets 0]
 		append result [string range $text 0 [expr {$off-1}]]
 		set text [string range $text[set text ""] [expr {$off+3}] end]
-		set tail $text
 		append result [cross-reference Tcl]
 		continue
 	    }
@@ -910,9 +881,7 @@ proc insert-cross-references {text} {
 			      [expr {[lindex $range 1]+1}] end]
 		continue
 	    }
-	    end-anchor -
-	    end-bold -
-	    end-quote {
+	    end-anchor - end-bold - end-quote {
 		return [reference-error "Out of place $invert([lindex $offsets 0])" $text]
 	    }
 	}
