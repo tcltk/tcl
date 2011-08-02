@@ -7949,6 +7949,8 @@ memory with buffer backup (ferrieux)
 
 2011-07-28 tzdata updated to Olson's tzdata2011h (porter)
 
+2011-08-01 (bug fix)[3383616] memleak exposed by XOTcl (neumann,sofer)
+
 Many more Tcl built-in command errors now set an -errorcode.
 
---- Released 8.6b2, August 3, 2011 --- See ChangeLog for details ---
+--- Released 8.6b2, August 5, 2011 --- See ChangeLog for details ---
