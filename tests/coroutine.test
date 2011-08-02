@@ -455,6 +455,7 @@ test coroutine-4.7 {compile context, bug #3282869} -setup {
     set ::x [f 12]
     D
 } -cleanup {
+    D
     unset ::x
     rename f {}
 } -result YX15

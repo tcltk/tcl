@@ -766,23 +766,31 @@ proc plus-pkgs {type args} {
     if {!$build_tcl} return
     set result {}
     foreach {dir name} $args {
-	set globpat $tcltkdir/$tcldir/pkgs/$dir/doc/*.$type
+	set globpat $tcltkdir/$tcldir/pkgs/$dir*/doc/*.$type
 	if {![llength [glob -nocomplain $globpat]]} {
 	    # Fallback for manpages generated using doctools
-	    set globpat $tcltkdir/$tcldir/pkgs/$dir/doc/man/*.$type
+	    set globpat $tcltkdir/$tcldir/pkgs/$dir*/doc/man/*.$type
 	    if {![llength [glob -nocomplain $globpat]]} {
 		continue
 	    }
 	}
+	regexp "pkgs/$dir(.*)/doc$" [glob $tcltkdir/$tcldir/pkgs/$dir*/doc] \
+	    -> version
 	switch $type {
 	    n {
 		set title "$name Package Commands"
+		if {$version ne ""} {
+		    append title ", version $version"
+		}
 		set dir [string totitle $dir]Cmd
 		set desc \
 		    "The additional commands provided by the $name package."
 	    }
 	    3 {
 		set title "$name Package Library"
+		if {$version ne ""} {
+		    append title ", version $version"
+		}
 		set dir [string totitle $dir]Lib
 		set desc \
 		    "The additional C functions provided by the $name package."
@@ -804,35 +812,92 @@ set ensemble_commands {
     after array binary chan clock dde dict encoding file history info interp
     memory namespace package registry self string trace update zlib
     clipboard console font grab grid image option pack place selection tk
-    tkwait ttk::style winfo wm
+    tkwait ttk::style winfo wm itcl::delete itcl::find itcl::is
 }
 array set remap_link_target {
     stdin  Tcl_GetStdChannel
     stdout Tcl_GetStdChannel
     stderr Tcl_GetStdChannel
-    safe   {Safe&nbsp;Base}
     style  ttk::style
     {style map} ttk::style
+    {tk busy}   busy
+    library     auto_execok
+    safe-tcl    safe
+    tclvars     env
+    tcl_break   catch
+    tcl_continue catch
+    tcl_error   catch
+    tcl_ok      catch
+    tcl_return  catch
+    int()       mathfunc
+    wide()      mathfunc
+    packagens   pkg::create
+    pkgMkIndex  pkg_mkIndex
+    pkg_mkIndex pkg_mkIndex
+    Tcl_Obj     Tcl_NewObj
+    Tcl_ObjType Tcl_RegisterObjType
+    Tcl_OpenFileChannelProc Tcl_FSOpenFileChannel
+    errorinfo 	env
+    errorcode 	env
+    tcl_pkgpath env
+    Tcl_Command Tcl_CreateObjCommand
+    Tcl_CmdProc Tcl_CreateObjCommand
+    Tcl_CmdDeleteProc Tcl_CreateObjCommand
+    Tcl_ObjCmdProc Tcl_CreateObjCommand
+    Tcl_Channel Tcl_OpenFileChannel
+    Tcl_WideInt Tcl_NewIntObj
+    Tcl_ChannelType Tcl_CreateChannel
+    Tcl_DString Tcl_DStringInit
+    Tcl_Namespace Tcl_AppendExportList
+    Tcl_Object  Tcl_NewObjectInstance
+    Tcl_Class   Tcl_GetObjectAsClass
+    Tcl_Event   Tcl_QueueEvent
+    Tcl_Time	Tcl_GetTime
+    Tcl_ThreadId Tcl_CreateThread
+    Tk_Window	Tk_WindowId
+    Tk_3DBorder Tk_Get3DBorder
+    Tk_Anchor	Tk_GetAnchor
+    Tk_Cursor	Tk_GetCursor
+    Tk_Dash	Tk_GetDash
+    Tk_Font	Tk_GetFont
+    Tk_Image	Tk_GetImage
+    Tk_ImageMaster Tk_GetImage
+    Tk_ItemType Tk_CreateItemType
+    Tk_Justify	Tk_GetJustify
+    Ttk_Theme	Ttk_GetTheme
 }
 array set exclude_refs_map {
+    bind.n		{button destroy option}
     clock.n		{next}
     history.n		{exec}
     next.n		{unknown}
     zlib.n		{binary close filename text}
     canvas.n		{bitmap text}
+    console.n		{eval}
     checkbutton.n	{image}
     clipboard.n		{string}
+    entry.n		{string}
+    event.n		{return}
+    font.n		{menu}
+    getOpenFile.n	{file open text}
+    grab.n		{global}
+    interp.n		{time}
     menu.n		{checkbutton radiobutton}
+    messageBox.n	{error info}
     options.n		{bitmap image set}
     radiobutton.n	{image}
+    safe.n		{join split}
+    scale.n		{label variable}
     scrollbar.n		{set}
     selection.n		{string}
     tcltest.n		{error}
     tkvars.n		{tk}
+    tkwait.n		{variable}
+    tm.n		{exec}
     ttk_checkbutton.n	{variable}
     ttk_combobox.n	{selection}
     ttk_entry.n		{focus variable}
-    ttk_intro.n		{focus}
+    ttk_intro.n		{focus text}
     ttk_label.n		{font text}
     ttk_labelframe.n	{text}
     ttk_menubutton.n	{flush}
@@ -861,6 +926,9 @@ array set exclude_when_followed_by_map {
     ttk_image.n {
 	image imageSpec
     }
+    fontchooser.n {
+	tk fontchooser
+    }
 }
 
 try {
@@ -885,8 +953,8 @@ try {
 	append appdir "$tkdir"
     }
 
-    # Get the list of packages to try, and what their human-readable
-    # names are.
+    # Get the list of packages to try, and what their human-readable names
+    # are. Note that the package directory list should be version-less.
     try {
 	set packageDirNameMap {}
 	if {$build_tcl} {

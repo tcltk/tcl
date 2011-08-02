@@ -507,8 +507,8 @@ class named \fIclass\fR.
 .VS 8.6
 This subcommand returns a list of direct subclasses of class \fIclass\fR. If
 the optional \fIpattern\fR argument is present, it constrains the list of
-returned classes to those that match it according to the rules of \fBstring
-match\fR.
+returned classes to those that match it according to the rules of
+\fBstring match\fR.
 .VE 8.6
 .TP
 \fBinfo class superclasses\fI class\fR

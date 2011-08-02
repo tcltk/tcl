@@ -2443,7 +2443,19 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
     for (i = 0;  i < numLitObjects;  i++) {
-	codePtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
+	if (objPtr == envPtr->literalArrayPtr[i].objPtr) {
+	    /*
+	     * Prevent circular reference where the bytecode intrep of
+	     * a value contains a literal which is that same value.
+	     * If this is allowed to happen, refcount decrements may not
+	     * reach zero, and memory may leak.  Bugs 467523, 3357771
+	     */
+	    codePtr->objArrayPtr[i] = Tcl_DuplicateObj(objPtr);
+	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
+	    Tcl_DecrRefCount(objPtr);
+	} else {
+	    codePtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
+	}
     }
 
     p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
@@ -2468,7 +2480,7 @@ TclInitByteCodeObj(
 #else
     nextPtr = EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
     if (((size_t)(nextPtr - p)) != cmdLocBytes) {
-	Tcl_Panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d", (nextPtr - p), cmdLocBytes);
+	Tcl_Panic("TclInitByteCodeObj: encoded cmd location bytes %lu != expected size %lu", (unsigned long)(nextPtr - p), (unsigned long)cmdLocBytes);
     }
 #endif
 
@@ -4559,6 +4571,11 @@ RecordByteCodeStats(
 {
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
     register ByteCodeStats *statsPtr = &iPtr->stats;
+
+    if (iPtr == NULL) {
+	/* Avoid segfaulting in case we're called in a deleted interp */
+	return;
+    }
 
     statsPtr->numCompilations++;
     statsPtr->totalSrcBytes += (double) codePtr->numSrcBytes;

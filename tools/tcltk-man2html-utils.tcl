@@ -4,7 +4,7 @@
 ## by Tcl and Tk; they do not cope with arbitrary nroff markup.
 ##
 ## Copyright (c) 1995-1997 Roger E. Critchlow Jr
-## Copyright (c) 2004-2010 Donal K. Fellows
+## Copyright (c) 2004-2011 Donal K. Fellows
 
 set ::manual(report-level) 1
 
@@ -489,6 +489,16 @@ proc output-IP-list {context code rest} {
 	    man-puts <P>
 	}
 	set dl "<DL class=\"[string tolower $manual(section)]\">"
+	set enddl "</DL>"
+	if {$code eq ".IP"} {
+	    if {[regexp {^\[[\da-f]+\]|\(?[\da-f]+\)$} $rest]} {
+		set dl "<OL class=\"[string tolower $manual(section)]\">"
+		set enddl "</OL>"
+	    } elseif {"&#8226;" eq $rest} {
+		set dl "<UL class=\"[string tolower $manual(section)]\">"
+		set enddl "</UL>"
+	    }
+	}
 	man-puts $dl
 	lappend manual(section-toc) $dl
 	backup-text 1
@@ -504,11 +514,14 @@ proc output-IP-list {context code rest} {
 			    output-IP-list .IP $code $rest
 			    continue
 			}
-			if {$manual(section) eq "ARGUMENTS" || \
-				[regexp {^\[\d+\]$} $rest]} {
+			if {$manual(section) eq "ARGUMENTS"} {
 			    man-puts "$para<DT>$rest<DD>"
+			} elseif {[regexp {^\[([\da-f]+)\]$} $rest -> value]} {
+			    man-puts "$para<LI value=\"$value\">"
+			} elseif {[regexp {^\(?([\da-f]+)\)$} $rest -> value]} {
+			    man-puts "$para<LI value=\"$value\">"
 			} elseif {"&#8226;" eq $rest} {
-			    man-puts "$para<DT><DD>$rest&nbsp;"
+			    man-puts "$para<LI>"
 			} else {
 			    man-puts "$para<DT>[long-toc $rest]<DD>"
 			}
@@ -542,14 +555,13 @@ proc output-IP-list {context code rest} {
 			} elseif {[match-text @rest .RE]} {
 			    # gad, this is getting ridiculous
 			    if {!$accept_RE} {
-				man-puts "</DL><P>$rest<DL>"
+				man-puts "$enddl<P>$rest$dl"
 				backup-text 1
 				set para {}
 				break
-			    } else {
-				man-puts "<P>$rest"
-				incr accept_RE -1
 			    }
+			    man-puts "<P>$rest"
+			    incr accept_RE -1
 			} elseif {$accept_RE} {
 			    output-directive $line
 			} else {
@@ -574,8 +586,8 @@ proc output-IP-list {context code rest} {
 	    }
 	    set para <P>
 	}
-	man-puts "$para</DL>"
-	lappend manual(section-toc) </DL>
+	man-puts "$para$enddl"
+	lappend manual(section-toc) $enddl
 	if {$accept_RE} {
 	    manerror "missing .RE in output-IP-list"
 	}
@@ -611,31 +623,44 @@ proc output-name {line} {
 proc cross-reference {ref} {
     global manual remap_link_target
     global ensemble_commands exclude_refs_map exclude_when_followed_by_map
-    set lref [string tolower $ref]
-    if {[string match "Tcl_*" $ref] || [string match "Tk_*" $ref]} {
-	set lref $ref
+    set manname $manual(name)
+    set mantail $manual(tail)
+    if {[string match "Tcl_*" $ref] || [string match "Tk_*" $ref] || [string match "Ttk_*" $ref] || [string match "Itcl_*" $ref] || [string match "Tdbc_*" $ref]} {
+	regexp {^\w+} $ref lref
+	##
+	## apply a link remapping if available
+	##
+	if {[info exists remap_link_target($lref)]} {
+	    set lref $remap_link_target($lref)
+	}
     } elseif {$ref eq "Tcl"} {
 	set lref $ref
     } elseif {
 	[regexp {^[A-Z0-9 ?!]+$} $ref]
-	&& [info exists manual($manual(name)-id-$ref)]
+	&& [info exists manual($manname-id-$ref)]
     } {
-	return "<A HREF=\"#$manual($manual(name)-id-$ref)\">$ref</A>"
-    }
-    ##
-    ## apply a link remapping if available
-    ##
-    if {[info exists remap_link_target($lref)]} {
-	set lref $remap_link_target($lref)
+	return "<A HREF=\"#$manual($manname-id-$ref)\">$ref</A>"
+    } else {
+	set lref [string tolower $ref]
+	##
+	## apply a link remapping if available
+	##
+	if {[info exists remap_link_target($lref)]} {
+	    set lref $remap_link_target($lref)
+	}
     }
     ##
     ## nothing to reference
     ##
     if {![info exists manual(name-$lref)]} {
 	foreach name $ensemble_commands {
-	    if {[regexp "^$name \[a-z0-9]*\$" $lref] && \
-		    [info exists manual(name-$name)] && \
-		    $manual(tail) ne "$name.n"} {
+	    if {
+		[regexp "^$name \[a-z0-9]*\$" $lref] &&
+		[info exists manual(name-$name)] &&
+		$mantail ne "$name.n" &&
+		(![info exists exclude_refs_map($mantail)] ||
+		$manual(name-$name) ni $exclude_refs_map($mantail))
+	    } {
 		return "<A HREF=\"../$manual(name-$name).htm\">$ref</A>"
 	    }
 	}
@@ -644,43 +669,45 @@ proc cross-reference {ref} {
 	}
 	return $ref
     }
+    set manref $manual(name-$lref)
     ##
     ## would be a self reference
     ##
-    foreach name $manual(name-$lref) {
-	if {"$manual(wing-file)/$manual(name)" in $name} {
+    foreach name $manref {
+	if {"$manual(wing-file)/$manname" in $name} {
 	    return $ref
 	}
     }
     ##
     ## multiple choices for reference
     ##
-    if {[llength $manual(name-$lref)] > 1} {
-	set tcl_i [lsearch -glob $manual(name-$lref) *TclCmd*]
-	set tcl_ref [lindex $manual(name-$lref) $tcl_i]
-	set tk_i [lsearch -glob $manual(name-$lref) *TkCmd*]
-	set tk_ref [lindex $manual(name-$lref) $tk_i]
+    if {[llength $manref] > 1} {
+	set tcl_i [lsearch -glob $manref *TclCmd*]
 	if {$tcl_i >= 0 && $manual(wing-file) eq "TclCmd"
 		|| $manual(wing-file) eq "TclLib"} {
+	    set tcl_ref [lindex $manref $tcl_i]
 	    return "<A HREF=\"../$tcl_ref.htm\">$ref</A>"
 	}
+	set tk_i [lsearch -glob $manref *TkCmd*]
 	if {$tk_i >= 0 && $manual(wing-file) eq "TkCmd"
 		|| $manual(wing-file) eq "TkLib"} {
+	    set tk_ref [lindex $manref $tk_i]
 	    return "<A HREF=\"../$tk_ref.htm\">$ref</A>"
 	}
-	if {$lref eq "exit" && $manual(tail) eq "tclsh.1" && $tcl_i >= 0} {
+	if {$lref eq "exit" && $mantail eq "tclsh.1" && $tcl_i >= 0} {
+	    set tcl_ref [lindex $manref $tcl_i]
 	    return "<A HREF=\"../$tcl_ref.htm\">$ref</A>"
 	}
-	puts stderr "multiple cross reference to $ref in $manual(name-$lref) from $manual(wing-file)/$manual(tail)"
+	puts stderr "multiple cross reference to $ref in $manref from $manual(wing-file)/$mantail"
 	return $ref
     }
     ##
     ## exceptions, sigh, to the rule
     ##
-    if {[info exists exclude_when_followed_by_map($manual(tail))]} {
-	upvar 1 tail tail
+    if {[info exists exclude_when_followed_by_map($mantail)]} {
+	upvar 1 text tail
 	set following_word [lindex [regexp -inline {\S+} $tail] 0]
-	foreach {this that} $exclude_when_followed_by_map($manual(tail)) {
+	foreach {this that} $exclude_when_followed_by_map($mantail) {
 	    # only a ref if $this is not followed by $that
 	    if {$lref eq $this && [string match $that* $following_word]} {
 		return $ref
@@ -688,15 +715,15 @@ proc cross-reference {ref} {
 	}
     }
     if {
-	[info exists exclude_refs_map($manual(tail))]
-	&& $lref in $exclude_refs_map($manual(tail))
+	[info exists exclude_refs_map($mantail)]
+	&& $lref in $exclude_refs_map($mantail)
     } {
 	return $ref
     }
     ##
     ## return the cross reference
     ##
-    return "<A HREF=\"../$manual(name-$lref).htm\">$ref</A>"
+    return "<A HREF=\"../$manref.htm\">$ref</A>"
 }
 ##
 ## reference generation errors
@@ -711,148 +738,152 @@ proc reference-error {msg text} {
 ##
 proc insert-cross-references {text} {
     global manual
-    ##
-    ## we identify cross references by:
-    ##     ``quotation''
-    ##    <B>emboldening</B>
-    ##    Tcl_ prefix
-    ##    Tk_ prefix
-    ##	  [a-zA-Z0-9]+ manual entry
-    ## and we avoid messing with already anchored text
-    ##
-    ##
-    ## find where each item lives
-    ##
-    array set offset [list \
-	    anchor [string first {<A } $text] \
-	    end-anchor [string first {</A>} $text] \
-	    quote [string first {``} $text] \
-	    end-quote [string first {''} $text] \
-	    bold [string first {<B>} $text] \
-	    end-bold [string first {</B>} $text] \
-	    tcl [string first {Tcl_} $text] \
-	    tk [string first {Tk_} $text] \
-	    Tcl1 [string first {Tcl manual entry} $text] \
-	    Tcl2 [string first {Tcl overview manual entry} $text] \
-	    ]
-    ##
-    ## accumulate a list
-    ##
-    foreach name [array names offset] {
-	if {$offset($name) >= 0} {
-	    set invert($offset($name)) $name
-	    lappend offsets $offset($name)
+    set result ""
+
+    while 1 {
+	##
+	## we identify cross references by:
+	##     ``quotation''
+	##    <B>emboldening</B>
+	##    Tcl_ prefix
+	##    Tk_ prefix
+	##	  [a-zA-Z0-9]+ manual entry
+	## and we avoid messing with already anchored text
+	##
+	##
+	## find where each item lives - EXPENSIVE - and accumulate a list
+	##
+	unset -nocomplain offsets
+	foreach {name pattern} {
+	    anchor     {<A }	end-anchor {</A>}
+	    quote      {``}	end-quote  {''}
+	    bold       {<B>}	end-bold   {</B>}
+	    c.tcl      {Tcl_}
+	    c.tk       {Tk_}
+	    c.ttk      {Ttk_}
+	    c.tdbc     {Tdbc_}
+	    c.itcl     {Itcl_}
+	    Tcl1       {Tcl manual entry}
+	    Tcl2       {Tcl overview manual entry}
+	    url	       {http://}
+	} {
+	    set o [string first $pattern $text]
+	    if {[set offset($name) $o] >= 0} {
+		set invert($o) $name
+		lappend offsets $o
+	    }
 	}
-    }
-    ##
-    ## if nothing, then we're done.
-    ##
-    if {![info exists offsets]} {
-	return $text
-    }
-    ##
-    ## sort the offsets
-    ##
-    set offsets [lsort -integer $offsets]
-    ##
-    ## see which we want to use
-    ##
-    switch -exact -- $invert([lindex $offsets 0]) {
-	anchor {
-	    if {$offset(end-anchor) < 0} {
-		return [reference-error {Missing end anchor} $text]
-	    }
-	    set head [string range $text 0 $offset(end-anchor)]
-	    set tail [string range $text [expr {$offset(end-anchor)+1}] end]
-	    return $head[insert-cross-references $tail]
+	##
+	## if nothing, then we're done.
+	##
+	if {![info exists offsets]} {
+	    return [append result $text]
 	}
-	quote {
-	    if {$offset(end-quote) < 0} {
-		return [reference-error "Missing end quote" $text]
-	    }
-	    if {$invert([lindex $offsets 1]) eq "tk"} {
-		set offsets [lreplace $offsets 1 1]
-	    }
-	    if {$invert([lindex $offsets 1]) eq "tcl"} {
-		set offsets [lreplace $offsets 1 1]
-	    }
-	    switch -exact -- $invert([lindex $offsets 1]) {
-		end-quote {
-		    set head [string range $text 0 [expr {$offset(quote)-1}]]
-		    set body [string range $text [expr {$offset(quote)+2}] \
-			    [expr {$offset(end-quote)-1}]]
-		    set tail [string range $text \
-			    [expr {$offset(end-quote)+2}] end]
-		    return "$head``[cross-reference $body]''[insert-cross-references $tail]"
+	##
+	## sort the offsets
+	##
+	set offsets [lsort -integer $offsets]
+	##
+	## see which we want to use
+	##
+	switch -exact -- $invert([lindex $offsets 0]) {
+	    anchor {
+		if {$offset(end-anchor) < 0} {
+		    return [reference-error {Missing end anchor} $text]
 		}
-		bold -
-		anchor {
-		    set head [string range $text \
-			    0 [expr {$offset(end-quote)+1}]]
-		    set tail [string range $text \
-			    [expr {$offset(end-quote)+2}] end]
-		    return "$head[insert-cross-references $tail]"
+		append result [string range $text 0 $offset(end-anchor)]
+		set text [string range $text[set text ""] \
+			      [expr {$offset(end-anchor)+1}] end]
+		continue
+	    }
+	    quote {
+		if {$offset(end-quote) < 0} {
+		    return [reference-error "Missing end quote" $text]
+		}
+		if {$invert([lindex $offsets 1]) in {tcl tk ttk}} {
+		    set offsets [lreplace $offsets 1 1]
+		}
+		switch -exact -- $invert([lindex $offsets 1]) {
+		    end-quote {
+			append result [string range $text 0 [expr {$offset(quote)-1}]]
+			set body [string range $text [expr {$offset(quote)+2}] \
+				      [expr {$offset(end-quote)-1}]]
+			set text [string range $text[set text ""] \
+				      [expr {$offset(end-quote)+2}] end]
+			append result `` [cross-reference $body] ''
+			continue
+		    }
+		    bold - anchor {
+			append result [string range $text \
+				      0 [expr {$offset(end-quote)+1}]]
+			set text [string range $text[set text ""] \
+				      [expr {$offset(end-quote)+2}] end]
+			continue
+		    }
+		}
+		return [reference-error "Uncaught quote case" $text]
+	    }
+	    bold {
+		if {$offset(end-bold) < 0} {
+		    return [append result $text]
+		}
+		if {[string match "c.*" $invert([lindex $offsets 1])]} {
+		    set offsets [lreplace $offsets 1 1]
+		}
+		switch -exact -- $invert([lindex $offsets 1]) {
+		    url - end-bold {
+			append result \
+			    [string range $text 0 [expr {$offset(bold)-1}]]
+			set body [string range $text [expr {$offset(bold)+3}] \
+				      [expr {$offset(end-bold)-1}]]
+			set text [string range $text[set text ""] \
+				      [expr {$offset(end-bold)+4}] end]
+			regsub {http://[\w/.]+} $body {<A HREF="&">&</A>} body
+			append result <B> [cross-reference $body] </B>
+			continue
+		    }
+		    anchor {
+			append result \
+			    [string range $text 0 [expr {$offset(end-bold)+3}]]
+			set text [string range $text[set text ""] \
+				      [expr {$offset(end-bold)+4}] end]
+			continue
+		    }
+		    default {
+			return [reference-error "Uncaught bold case" $text]
+		    }
 		}
 	    }
-	    return [reference-error "Uncaught quote case" $text]
-	}
-	bold {
-	    if {$offset(end-bold) < 0} {
-		return $text
+	    c.tk - c.ttk - c.tcl - c.tdbc - c.itcl {
+		append result [string range $text 0 \
+				   [expr {[lindex $offsets 0]-1}]]
+		regexp -indices -start [lindex $offsets 0] {\w+} $text range
+		set body [string range $text {*}$range]
+		set text [string range $text[set text ""] \
+			      [expr {[lindex $range 1]+1}] end]
+		append result [cross-reference $body]
+		continue
 	    }
-	    if {$invert([lindex $offsets 1]) eq "tk"} {
-		set offsets [lreplace $offsets 1 1]
+	    Tcl1 - Tcl2 {
+		set off [lindex $offsets 0]
+		append result [string range $text 0 [expr {$off-1}]]
+		set text [string range $text[set text ""] [expr {$off+3}] end]
+		append result [cross-reference Tcl]
+		continue
 	    }
-	    if {$invert([lindex $offsets 1]) eq "tcl"} {
-		set offsets [lreplace $offsets 1 1]
+	    url {
+		set off [lindex $offsets 0]
+		append result [string range $text 0 [expr {$off-1}]]
+		regexp -indices -start $off {http://[\w/.]+} $text range
+		set url [string range $text {*}$range]
+		append result "<A HREF=\"$url\">" $url "</A>"
+		set text [string range $text[set text ""] \
+			      [expr {[lindex $range 1]+1}] end]
+		continue
 	    }
-	    switch -exact -- $invert([lindex $offsets 1]) {
-		end-bold {
-		    set head [string range $text 0 [expr {$offset(bold)-1}]]
-		    set body [string range $text [expr {$offset(bold)+3}] \
-			    [expr {$offset(end-bold)-1}]]
-		    set tail [string range $text \
-			    [expr {$offset(end-bold)+4}] end]
-		    return "$head<B>[cross-reference $body]</B>[insert-cross-references $tail]"
-		}
-		anchor {
-		    set head [string range $text \
-			    0 [expr {$offset(end-bold)+3}]]
-		    set tail [string range $text \
-			    [expr {$offset(end-bold)+4}] end]
-		    return "$head[insert-cross-references $tail]"
-		}
+	    end-anchor - end-bold - end-quote {
+		return [reference-error "Out of place $invert([lindex $offsets 0])" $text]
 	    }
-	    return [reference-error "Uncaught bold case" $text]
-	}
-	tk {
-	    set head [string range $text 0 [expr {$offset(tk)-1}]]
-	    set tail [string range $text $offset(tk) end]
-	    if {![regexp {^(Tk_\w+)(.*)$} $tail all body tail]} {
-		return [reference-error "Tk regexp failed" $text]
-	    }
-	    return $head[cross-reference $body][insert-cross-references $tail]
-	}
-	tcl {
-	    set head [string range $text 0 [expr {$offset(tcl)-1}]]
-	    set tail [string range $text $offset(tcl) end]
-	    if {![regexp {^(Tcl_\w+)(.*)$} $tail all body tail]} {
-		return [reference-error {Tcl regexp failed} $text]
-	    }
-	    return $head[cross-reference $body][insert-cross-references $tail]
-	}
-	Tcl1 -
-	Tcl2 {
-	    set off [lindex $offsets 0]
-	    set head [string range $text 0 [expr {$off-1}]]
-	    set body Tcl
-	    set tail [string range $text [expr {$off+3}] end]
-	    return $head[cross-reference $body][insert-cross-references $tail]
-	}
-	end-anchor -
-	end-bold -
-	end-quote {
-	    return [reference-error "Out of place $invert([lindex $offsets 0])" $text]
 	}
     }
 }

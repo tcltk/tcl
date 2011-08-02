@@ -544,8 +544,11 @@ TcpCloseProc(
 	}
     
     }
-    for (fds = statePtr->fds.next; fds != NULL; fds = fds->next) {
+    fds = statePtr->fds.next;
+    while (fds != NULL) {
+	TcpFdList *next = fds->next;
         ckfree(fds);
+	fds = next;
     }
     if (statePtr->addrlist != NULL) {
         freeaddrinfo(statePtr->addrlist);

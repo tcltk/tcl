@@ -323,7 +323,7 @@ VarHashCreateVar(
 
 #define OBJ_AT_DEPTH(n)	*(tosPtr-(n))
 
-#define CURR_DEPTH	((unsigned long) (tosPtr - initTosPtr))
+#define CURR_DEPTH	((ptrdiff_t) (tosPtr - initTosPtr))
 
 /*
  * Macros used to trace instruction execution. The macros TRACE,
@@ -8012,7 +8012,7 @@ EvalStatsCmd(
     Tcl_AppendPrintfToObj(objPtr, "\n----------------------------------------------------------------\n");
     Tcl_AppendPrintfToObj(objPtr,
 	    "Compilation and execution statistics for interpreter %#lx\n",
-	    iPtr);
+	    (long int)iPtr);
 
     Tcl_AppendPrintfToObj(objPtr, "\nNumber ByteCodes executed\t%ld\n",
 	    statsPtr->numExecutions);

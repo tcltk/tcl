@@ -1,3 +1,124 @@
+2011-08-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclObj.c (Tcl_DbIncrRefCount, Tcl_DbDecrRefCount)
+	(Tcl_DbIsShared): [Bug 3384007]: Fix the panic messages so they share
+	what should be shared and have the right number of spaces.
+
+2011-08-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c (TclProcCompileProc): [Bug 3383616]: Fix for leak
+	of resolveInfo when recompiling procs. Thanks go to Gustaf Neumann for
+	detecting the bug and providing the fix.
+
+2011-08-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/tclvars.n (EXAMPLES): Added some examples of how some of the
+	standard global variables can be used, following prompting by a
+	request by Robert Hicks.
+
+	* tools/tcltk-man2html.tcl (plus-pkgs): [Bug 3382474]: Added code to
+	determine the version number of contributed packages from their
+	directory names so that HTML documentation builds are less confusing.
+
+2011-07-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (ensemble_commands, remap_link_target):
+	Small enhancements to improve cross-linking with contributed packages.
+	* tools/tcltk-man2html-utils.tcl (insert-cross-references): Enhance to
+	cope with contributed packages' C API.
+
+2011-07-28  Reinhard Max  <max@suse.de>
+
+	* unix/tcl.m4 (SC_TCL_IPV6): Fix AC_DEFINE invocation for
+	NEED_FAKE_RFC2553.
+	* unix/configure:	autoconf-2.59
+
+2011-07-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Updates for 8.6b2 release.
+
+	* library/tzdata/Asia/Anadyr: Update to Olson's tzdata2011h
+	* library/tzdata/Asia/Irkutsk:
+	* library/tzdata/Asia/Kamchatka:
+	* library/tzdata/Asia/Krasnoyarsk:
+	* library/tzdata/Asia/Magadan:
+	* library/tzdata/Asia/Novokuznetsk:
+	* library/tzdata/Asia/Novosibirsk:
+	* library/tzdata/Asia/Omsk:
+	* library/tzdata/Asia/Sakhalin:
+	* library/tzdata/Asia/Vladivostok:
+	* library/tzdata/Asia/Yakutsk:
+	* library/tzdata/Asia/Yekaterinburg:
+	* library/tzdata/Europe/Kaliningrad:
+	* library/tzdata/Europe/Moscow:
+	* library/tzdata/Europe/Samara:
+	* library/tzdata/Europe/Volgograd:
+	* library/tzdata/America/Kralendijk: (new)
+	* library/tzdata/America/Lower_Princes: (new)
+
+2011-07-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (initScript): Ensure that TclOO is properly found by
+	all the various package mechanisms (by adding a dummy ifneeded script)
+	and not just some of them.
+
+2011-07-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h: [Bug 3372130]: Fix hypot math function with MSVC10
+
+2011-07-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	[Bug 3371644]: Repair failure to properly handle
+	* tests/util.test: (length == -1) scanning in TclConvertElement().
+	Thanks to Thomas Sader and Alexandre Ferrieux.
+
+2011-07-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/*.3, doc/*.n: Many small fixes to documentation as part of
+	project to improve quality of generated HTML docs.
+
+	* tools/tcltk-man2html.tcl (remap_link_target): More complete set of
+	definitions of link targets, especially for major C API types.
+	* tools/tcltk-man2html-utils.tcl (output-IP-list, cross-reference):
+	Update to generation to produce proper HTML bulleted and enumerated
+	lists.
+
+2011-07-19 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* doc/upvar.n: Undocument long gone limitation of [upvar].
+
+2011-07-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c: Avoid segfaults when RecordByteCodeStats()
+	is called in a deleted interp.
+
+	* generic/tclCompile.c:	[Bug 467523, 3357771]: Prevent circular
+	references in values with ByteCode intreps.  They can lead to
+	memory leaks.
+
+2011-07-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOORenderCallChain): [Bug 3365156]: Remove
+	stray refcount bump that caused a memory leak.
+
+2011-07-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUnixSock.c:  [Bug 3364777]: Stop segfault caused by
+	reading from struct after it had been freed.
+
+2011-07-11  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclExecute.c: [Bug 3339502]: Correct cast for CURR_DEPTH to
+	silence compiler warning.
+
+2011-07-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/http.n: [FRQ 3358415]: State what RFC defines HTTP/1.1.
+
+2011-07-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c: add missing INT2PTR
+
 2011-07-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/FileSystem.3: Corrected statements about ctime field of 'struct
