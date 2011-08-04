@@ -1,3 +1,8 @@
+2011-08-04  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclPtrSetVar): fix valgrind-detected error
+	when newValuePtr is the interp's result obj.
+	
 2011-08-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclAssembly.c (FreeAssemblyEnv): [Bug 3384840]: Plug another
