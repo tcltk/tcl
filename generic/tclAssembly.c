@@ -1244,8 +1244,6 @@ AssembleOneLine(
      */
 
     tokenPtr = parsePtr->tokenPtr;
-    instNameObj = Tcl_NewObj();
-    Tcl_IncrRefCount(instNameObj);
     if (GetNextOperand(assemEnvPtr, &tokenPtr, &instNameObj) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2087,17 +2085,14 @@ GetBooleanOperand(
     Tcl_Token* tokenPtr = *tokenPtrPtr;
 				/* INOUT: Pointer to the next token in the
 				 * source code */
-    Tcl_Obj* intObj = Tcl_NewObj();
-				/* Integer from the source code */
+    Tcl_Obj* intObj;		/* Integer from the source code */
     int status;			/* Tcl status return */
 
     /*
      * Extract the next token as a string.
      */
 
-    Tcl_IncrRefCount(intObj);
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &intObj) != TCL_OK) {
-	Tcl_DecrRefCount(intObj);
 	return TCL_ERROR;
     }
 
@@ -2143,17 +2138,14 @@ GetIntegerOperand(
     Tcl_Token* tokenPtr = *tokenPtrPtr;
 				/* INOUT: Pointer to the next token in the
 				 * source code */
-    Tcl_Obj* intObj = Tcl_NewObj();
-				/* Integer from the source code */
+    Tcl_Obj* intObj;		/* Integer from the source code */
     int status;			/* Tcl status return */
 
     /*
      * Extract the next token as a string.
      */
 
-    Tcl_IncrRefCount(intObj);
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &intObj) != TCL_OK) {
-	Tcl_DecrRefCount(intObj);
 	return TCL_ERROR;
     }
 
@@ -2199,17 +2191,14 @@ GetListIndexOperand(
     Tcl_Token* tokenPtr = *tokenPtrPtr;
 				/* INOUT: Pointer to the next token in the
 				 * source code */
-    Tcl_Obj* intObj = Tcl_NewObj();
-				/* Integer from the source code */
+    Tcl_Obj* intObj;		/* Integer from the source code */
     int status;			/* Tcl status return */
 
     /*
      * Extract the next token as a string.
      */
 
-    Tcl_IncrRefCount(intObj);
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &intObj) != TCL_OK) {
-	Tcl_DecrRefCount(intObj);
 	return TCL_ERROR;
     }
 
@@ -2256,15 +2245,12 @@ FindLocalVar(
     Tcl_Token* tokenPtr = *tokenPtrPtr;
 				/* INOUT: Pointer to the next token
 				 * in the source code */
-    Tcl_Obj* varNameObj = Tcl_NewObj();
-				/* Name of the variable */
+    Tcl_Obj* varNameObj;	/* Name of the variable */
     const char* varNameStr;
     int varNameLen;
     int localVar;		/* Index of the variable in the LVT */
 
-    Tcl_IncrRefCount(varNameObj);
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
-	Tcl_DecrRefCount(varNameObj);
 	return -1;
     }
     varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
