@@ -1173,24 +1173,10 @@ FreeAssemblyEnv(
     }
 
     /*
-     * Free the label hash.
-     */
-
-    while (1) {
-	Tcl_HashEntry* hashEntry;
-	Tcl_HashSearch hashSearch;
-
-	hashEntry = Tcl_FirstHashEntry(&assemEnvPtr->labelHash, &hashSearch);
-	if (hashEntry == NULL) {
-	    break;
-	}
-	Tcl_DeleteHashEntry(hashEntry);
-    }
-
-    /*
      * Dispose what's left.
      */
 
+    Tcl_DeleteHashTable(&assemEnvPtr->labelHash);
     TclStackFree(interp, assemEnvPtr->parsePtr);
     TclStackFree(interp, assemEnvPtr);
 }
@@ -2255,6 +2241,7 @@ FindLocalVar(
     }
     varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
     if (CheckNamespaceQualifiers(interp, varNameStr, varNameLen)) {
+	Tcl_DecrRefCount(varNameObj);
 	return -1;
     }
     localVar = TclFindCompiledLocal(varNameStr, varNameLen, 1, envPtr);
