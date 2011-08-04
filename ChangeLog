@@ -1,3 +1,13 @@
+2011-08-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclAssembly.c (AssembleOneLine, GetBooleanOperand)
+	(GetIntegerOperand, GetListIndexOperand, FindLocalVar): [Bug 3384840]:
+	A Tcl_Obj is allocated by GetNextOperand, so callers of it must not
+	hold a reference to one in the 'out' parameter when calling it. This
+	was causing a great many memory leaks.
+	* tests/assemble.test (assemble-51.*): Added group of memory leak
+	tests.
+
 2011-08-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* changes:	Updates for 8.6b2 release.
