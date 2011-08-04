@@ -7532,7 +7532,7 @@ evaluation in extensions (sofer,kenny)
 
 2009-05-08 (bug fix)[2414858] tailcall in oo constructor (fellows)
 
-2009-05-14 (new subcommand) [info object namespace] (fellows)
+2009-05-14 (new subcommand)[TIP 354] [info object namespace] (fellows)
 
 2009-05-29 (platform support) account for ia64_32 (kupries)
 => platform 1.0.5
@@ -7726,7 +7726,7 @@ memory with buffer backup (ferrieux)
 
 2010-03-20 (enhancement) permit [fcopy] of > 2**31 bytes (fellows)
 
-2010-03-24 (new feature)[TIP 354] [info object methodtype] (fellows)
+2010-03-24 (new feature) [info object methodtype] (fellows)
 
 2010-03-24 (bug fix)[2383005] [return -errorcode] reject non-list (porter)
 
