@@ -1,8 +1,13 @@
+2011-08-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ZlibTransformClose): [Bug 3386197]: Plug a memory
+	leak found by Miguel with valgrind.
+
 2011-08-04  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c (TclPtrSetVar): fix valgrind-detected error
-	when newValuePtr is the interp's result obj.
-	
+	* generic/tclVar.c (TclPtrSetVar): Fix valgrind-detected error when
+	newValuePtr is the interp's result obj.
+
 2011-08-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclAssembly.c (FreeAssemblyEnv): [Bug 3384840]: Plug another
@@ -149,7 +154,7 @@
 
 2011-07-07  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c: add missing INT2PTR
+	* generic/tclBasic.c: Add missing INT2PTR
 
 2011-07-03  Donal K. Fellows  <dkf@users.sf.net>
 
