@@ -1,14 +1,15 @@
-<<<<<<< BEGIN MERGE CONFLICT: local copy shown first <<<<<<<<<<<<<<<
+2011-08-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclAssembly.c (FreeAssemblyEnv): [Bug 3384840]: Plug another
+	possible memory leak due to over-complex code for freeing the table of
+	labels.
+
 2011-08-04  Reinhard Max  <max@suse.de>
 
 	* generic/tclIOSock.c (TclCreateSocketAddress): Don't bother using
 	AI_ADDRCONFIG for now, as it was causing problems in various
 	situations.
-	
-2011-08-02  Don Porter  <dgp@users.sourceforge.net>
-======= COMMON ANCESTOR content follows ============================
-2011-08-02  Don Porter  <dgp@users.sourceforge.net>
-======= MERGED IN content follows ==================================
+
 2011-08-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclAssembly.c (AssembleOneLine, GetBooleanOperand)
@@ -20,7 +21,6 @@
 	tests.
 
 2011-08-02  Don Porter  <dgp@users.sourceforge.net>
->>>>>>> END MERGE CONFLICT >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 	* changes:	Updates for 8.6b2 release.
 	* tools/tcltk-man2html.tcl: Variable substitution botch.
