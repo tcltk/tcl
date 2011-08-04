@@ -7563,7 +7563,7 @@ avoid otherwise very tricky multi-thread finalization bugs. (staplin,ferrieux)
 
 2009-07-16 (bug fix)[2819200] underflow settings on MIPS systems (porter)
 
-2009-07-19 (interface) new public routine Tcl_GetObjectName() (fellows)
+2009-07-19 (interface)[TIP 354] new routine Tcl_GetObjectName() (fellows)
 
 2009-07-20 (performance) favor [string is] success cases over empty (fellows)
 
@@ -7726,7 +7726,7 @@ memory with buffer backup (ferrieux)
 
 2010-03-20 (enhancement) permit [fcopy] of > 2**31 bytes (fellows)
 
-2010-03-24 (new feature) [info object methodtype] (fellows)
+2010-03-24 (new feature)[TIP 354] [info object methodtype] (fellows)
 
 2010-03-24 (bug fix)[2383005] [return -errorcode] reject non-list (porter)
 
