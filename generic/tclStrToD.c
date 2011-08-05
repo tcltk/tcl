@@ -1384,11 +1384,9 @@ TclParseNumber(
 
     if (status != TCL_OK) {
 	if (interp != NULL) {
-	    Tcl_Obj *msg;
+	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got \"",
+		    expected);
 
-	    TclNewLiteralStringObj(msg, "expected ");
-	    Tcl_AppendToObj(msg, expected, -1);
-	    Tcl_AppendToObj(msg, " but got \"", -1);
 	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
 	    Tcl_AppendToObj(msg, "\"", -1);
 	    if (state == BAD_OCTAL) {
