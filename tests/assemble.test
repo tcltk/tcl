@@ -30,6 +30,23 @@ proc fillTables {} {
     }
     return $s
 }
+
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	return [lindex $lines 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+	set end [getbytes]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [getbytes]
+	}
+	return [expr {$end - $tmp}]
+    }
+}
 
 # assemble-1 - TclNRAssembleObjCmd
 
@@ -3198,6 +3215,71 @@ test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
     }
     -result {1 2 16 4 16 16 52 8 52 16 52 16 40 52 160 16 52 52 88 20 64 52 160 24 88 40 9232 52 88}
 }
+
+test assemble-51.1 {memory leak testing} memory {
+    leaktest {
+	apply {{} {assemble {push hello}}}
+    }
+} 0
+test assemble-51.2 {memory leak testing} memory {
+    leaktest {
+	apply {{{x 0}} {assemble {incrImm x 1}}}
+    }
+} 0
+test assemble-51.3 {memory leak testing} memory {
+    leaktest {
+	apply {{n} {
+	    assemble {
+		load n;		# max
+		dup;		# max n
+		jump start;     # max n
+	    
+		label loop;	# max n
+		over 1;         # max n max
+		over 1;		# max in max n
+		ge;             # man n max>=n
+		jumpTrue skip;  # max n
+
+		reverse 2;      # n max
+		pop;            # n
+		dup;            # n n
+	    
+		label skip;	# max n
+		dup;            # max n n
+		push 2;         # max n n 2
+		mod;            # max n n%2
+		jumpTrue odd;   # max n
+	    
+		push 2;         # max n 2
+		div;            # max n/2 -> max n
+		jump start;     # max n
+	     
+		label odd;	# max n
+		push 3;         # max n 3
+		mult;           # max 3*n
+		push 1;         # max 3*n 1
+		add;            # max 3*n+1
+	    
+		label start;	# max n
+		dup;		# max n n
+		push 1;		# max n n 1
+		neq;		# max n n>1
+		jumpTrue loop;	# max n
+	    
+		pop;		# max
+	    }
+	}} 1
+    }
+} 0
+test assemble-51.4 {memory leak testing} memory {
+    leaktest {
+	catch {
+	    apply {{} {
+		assemble {reverse polish notation}
+	    }}
+	}
+    }
+} 0
 
 rename fillTables {}
 rename assemble {}

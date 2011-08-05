@@ -2253,7 +2253,16 @@ ZlibTransformClose(
     ZlibChannelData *cd = instanceData;
     int e, result = TCL_OK;
 
+    /*
+     * Delete the support timer.
+     */
+
     ZlibTransformTimerKill(cd);
+
+    /*
+     * Flush any data waiting to be compressed.
+     */
+
     if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	cd->outStream.avail_in = 0;
 	do {
@@ -2286,10 +2295,14 @@ ZlibTransformClose(
 		}
 	    }
 	} while (e != Z_STREAM_END);
-	e = deflateEnd(&cd->inStream);
+	e = deflateEnd(&cd->outStream);
     } else {
-	e = inflateEnd(&cd->outStream);
+	e = inflateEnd(&cd->inStream);
     }
+
+    /*
+     * Release all memory.
+     */
 
     if (cd->inBuffer) {
 	ckfree(cd->inBuffer);
@@ -2299,6 +2312,7 @@ ZlibTransformClose(
 	ckfree(cd->outBuffer);
 	cd->outBuffer = NULL;
     }
+    ckfree(cd);
     return result;
 }
 
