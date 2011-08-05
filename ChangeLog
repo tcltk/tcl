@@ -1,5 +1,9 @@
 2011-08-05  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclAssembly.c (AssembleOneLine): Ensure that memory isn't
+	leaked when an unknown instruction is encountered. Also simplify code
+	through use of Tcl_ObjPrintf in error message generation.
+
 	* generic/tclZlib.c (ZlibTransformClose): [Bug 3386197]: Plug a memory
 	leak found by Miguel with valgrind, and ensure that the correct
 	direction's buffers are released.
