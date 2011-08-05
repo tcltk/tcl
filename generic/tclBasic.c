@@ -3645,12 +3645,8 @@ Tcl_GetMathFuncInfo(
      */
 
     if (cmdPtr == NULL) {
-	Tcl_Obj *message;
-
-	TclNewLiteralStringObj(message, "unknown math function \"");
-	Tcl_AppendToObj(message, name, -1);
-	Tcl_AppendToObj(message, "\"", 1);
-	Tcl_SetObjResult(interp, message);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "unknown math function \"%s\"", name));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "MATHFUNC", name, NULL);
 	*numArgsPtr = -1;
 	*argTypesPtr = NULL;
