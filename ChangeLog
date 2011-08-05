@@ -1,7 +1,8 @@
 2011-08-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (ZlibTransformClose): [Bug 3386197]: Plug a memory
-	leak found by Miguel with valgrind.
+	leak found by Miguel with valgrind, and ensure that the correct
+	direction's buffers are released.
 
 2011-08-04  Miguel Sofer  <msofer@users.sf.net>
 
