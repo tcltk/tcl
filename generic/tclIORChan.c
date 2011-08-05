@@ -605,11 +605,9 @@ TclChanCreateObjCmd(
      */
 
     if (Tcl_ListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
-	TclNewLiteralStringObj(err, "chan handler \"");
-	Tcl_AppendObjToObj(err, cmdObj);
-	Tcl_AppendToObj(err, " initialize\" returned non-list: ", -1);
-	Tcl_AppendObjToObj(err, resObj);
-	Tcl_SetObjResult(interp, err);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "chan handler \"%s initialize\" returned non-list: %s",
+                Tcl_GetString(cmdObj), Tcl_GetString(resObj)));
 	Tcl_DecrRefCount(resObj);
 	goto error;
     }
@@ -633,42 +631,37 @@ TclChanCreateObjCmd(
     Tcl_DecrRefCount(resObj);
 
     if ((REQUIRED_METHODS & methods) != REQUIRED_METHODS) {
-	TclNewLiteralStringObj(err, "chan handler \"");
-	Tcl_AppendObjToObj(err, cmdObj);
-	Tcl_AppendToObj(err, "\" does not support all required methods", -1);
-	Tcl_SetObjResult(interp, err);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "chan handler \"%s\" does not support all required methods",
+                Tcl_GetString(cmdObj)));
 	goto error;
     }
 
     if ((mode & TCL_READABLE) && !HAS(methods, METH_READ)) {
-	TclNewLiteralStringObj(err, "chan handler \"");
-	Tcl_AppendObjToObj(err, cmdObj);
-	Tcl_AppendToObj(err, "\" lacks a \"read\" method", -1);
-	Tcl_SetObjResult(interp, err);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "chan handler \"%s\" lacks a \"read\" method",
+                Tcl_GetString(cmdObj)));
 	goto error;
     }
 
     if ((mode & TCL_WRITABLE) && !HAS(methods, METH_WRITE)) {
-	TclNewLiteralStringObj(err, "chan handler \"");
-	Tcl_AppendObjToObj(err, cmdObj);
-	Tcl_AppendToObj(err, "\" lacks a \"write\" method", -1);
-	Tcl_SetObjResult(interp, err);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "chan handler \"%s\" lacks a \"write\" method",
+                Tcl_GetString(cmdObj)));
 	goto error;
     }
 
     if (!IMPLIES(HAS(methods, METH_CGET), HAS(methods, METH_CGETALL))) {
-	TclNewLiteralStringObj(err, "chan handler \"");
-	Tcl_AppendObjToObj(err, cmdObj);
-	Tcl_AppendToObj(err, "\" supports \"cget\" but not \"cgetall\"", -1);
-	Tcl_SetObjResult(interp, err);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "chan handler \"%s\" supports \"cget\" but not \"cgetall\"",
+                Tcl_GetString(cmdObj)));
 	goto error;
     }
 
     if (!IMPLIES(HAS(methods, METH_CGETALL), HAS(methods, METH_CGET))) {
-	TclNewLiteralStringObj(err, "chan handler \"");
-	Tcl_AppendObjToObj(err, cmdObj);
-	Tcl_AppendToObj(err, "\" supports \"cgetall\" but not \"cget\"", -1);
-	Tcl_SetObjResult(interp, err);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "chan handler \"%s\" supports \"cgetall\" but not \"cget\"",
+                Tcl_GetString(cmdObj)));
 	goto error;
     }
 
