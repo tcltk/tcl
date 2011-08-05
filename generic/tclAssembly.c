@@ -2292,15 +2292,12 @@ CheckNamespaceQualifiers(
     const char* name,		/* Variable name to check */
     int nameLen)		/* Length of the variable */
 {
-    Tcl_Obj* result;		/* Error message */
     const char* p;
 
     for (p = name; p+2 < name+nameLen;  p++) {
 	if ((*p == ':') && (p[1] == ':')) {
-	    result = Tcl_NewStringObj("variable \"", -1);
-	    Tcl_AppendToObj(result, name, -1);
-	    Tcl_AppendToObj(result, "\" is not local", -1);
-	    Tcl_SetObjResult(interp, result);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "variable \"%s\" is not local", name));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NONLOCAL", name, NULL);
 	    return TCL_ERROR;
 	}

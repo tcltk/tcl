@@ -207,7 +207,7 @@ test iortrans-2.14 {chan push, initialize failed, bad result, mode/handler misma
 } -returnCodes error -cleanup {
     tempdone
     rename foo {}
-} -match glob -result {*makes the channel inacessible}
+} -match glob -result {*makes the channel inaccessible}
 # iortrans-2.15 event/watch methods elimimated, removed these tests.
 # iortrans-2.16
 test iortrans-2.17 {chan push, initialize failed, bad result, drain/read mismatch} -body {
