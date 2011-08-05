@@ -2295,9 +2295,9 @@ ZlibTransformClose(
 		}
 	    }
 	} while (e != Z_STREAM_END);
-	e = deflateEnd(&cd->inStream);
+	e = deflateEnd(&cd->outStream);
     } else {
-	e = inflateEnd(&cd->outStream);
+	e = inflateEnd(&cd->inStream);
     }
 
     /*
