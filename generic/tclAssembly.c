@@ -783,11 +783,6 @@ TclNRAssembleObjCmd(
      * Use NRE to evaluate the bytecode from the trampoline.
      */
 
-#if 0
-    Tcl_NRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), codePtr,
-	    NULL, NULL);
-    return TCL_OK;
-#endif
     return TclNRExecuteByteCode(interp, codePtr);
 }
 
@@ -817,11 +812,17 @@ CompileAssembleObj(
     CompileEnv compEnv;		/* Compilation environment structure */
     register ByteCode *codePtr = NULL;
 				/* Bytecode resulting from the assembly */
+    register const AuxData * auxDataPtr;
+				/* Pointer to an auxiliary data element
+				 * in a compilation environment being
+				 * destroyed. */
     Namespace* namespacePtr;	/* Namespace in which variable and command
 				 * names in the bytecode resolve */
     int status;			/* Status return from Tcl_AssembleCode */
     const char* source;		/* String representation of the source code */
     int sourceLen;		/* Length of the source code in bytes */
+    int i;
+
 
     /*
      * Get the expression ByteCode from the object. If it exists, make sure it
@@ -858,7 +859,15 @@ CompileAssembleObj(
 	/*
 	 * Assembly failed. Clean up and report the error.
 	 */
-
+	for (i = 0; i < compEnv.literalArrayNext; i++) {
+	    TclReleaseLiteral(interp, compEnv.literalArrayPtr[i].objPtr);
+	}
+	for (i = 0; i < compEnv.auxDataArrayNext; i++) {
+	    auxDataPtr = compEnv.auxDataArrayPtr + i;
+	    if (auxDataPtr->type->freeProc != NULL) {
+		(auxDataPtr->type->freeProc)(auxDataPtr->clientData);
+	    }
+	}
 	TclFreeCompileEnv(&compEnv);
 	return NULL;
     }
