@@ -3855,6 +3855,7 @@ StrictBignumConversion(Double* dPtr,
      * S = 2**s2 * 5*s5
      */
 
+    mp_init_multi(&temp, &dig, NULL);
     TclBNInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set_int(&S, 1);
@@ -3870,11 +3871,9 @@ StrictBignumConversion(Double* dPtr,
 	ilim =ilim1;
 	--k;
     }
-    mp_init(&temp);
 
     /* Convert the leading digit */
 
-    mp_init(&dig);
     i = 0;
     mp_div(&b, &S, &dig, &b);
     if (dig.used > 1 || dig.dp[0] >= 10) {
@@ -3957,7 +3956,7 @@ StrictBignumConversion(Double* dPtr,
      * Endgame - store the location of the decimal point and the end of the
      * string.
      */
-    mp_clear_multi(&b, &temp, NULL);
+    mp_clear_multi(&b, &S, &temp, &dig, NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
