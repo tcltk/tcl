@@ -3893,10 +3893,17 @@ BuildExceptionRanges(
 	prevPtr = bbPtr;
     }
 
+    /* Make sure that all catches are closed */
+
     if (catchDepth != 0) {
 	Tcl_Panic("unclosed catch at end of code in "
 		"tclAssembly.c:BuildExceptionRanges, can't happen");
     }
+
+    /* Free temp storage */
+
+    ckfree(catchIndices);
+    ckfree(catches);
 
     return TCL_OK;
 }
