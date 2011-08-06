@@ -1,6 +1,7 @@
 2011-08-06  Kevin B, Kenny  <kennykb@acm.org>
 
 	* generic/tclAssemnbly.c: Plug another memory leak. [Bug 3384840]
+	* generic/tclStrToD.c: Plug another memory leak. [Bug 3386975]
 
 2011-08-05  Kevin B. Kenny  <kennykb@acm.org>
 
