@@ -1,3 +1,8 @@
+2011-08-05:  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c: Plugged a memory leak in double->string
+	conversion. [Bug 3386975]
+
 2011-07-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tzdata/Asia/Anadyr: Update to Olson's tzdata2011h
