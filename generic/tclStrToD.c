@@ -4479,6 +4479,9 @@ TclFinalizeDoubleConversion(void)
     for (i=0; i<9; ++i) {
 	mp_clear(pow5 + i);
     }
+    for (i=0; i < 5; ++i) {
+	mp_clear(pow5_13 + i);
+    }
 }
 
 /*
