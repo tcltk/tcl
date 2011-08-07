@@ -1,12 +1,17 @@
+2011-08-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOInfo.c (InfoClassCallCmd): [Bug 3387082]: Plug memory
+	leak in call chain introspection.
+
 2011-08-06  Kevin B, Kenny  <kennykb@acm.org>
 
-	* generic/tclAssemnbly.c: Plug another memory leak. [Bug 3384840]
-	* generic/tclStrToD.c: Plug another memory leak. [Bug 3386975]
+	* generic/tclAssemnbly.c: [Bug 3384840]: Plug another memory leak.
+	* generic/tclStrToD.c: [Bug 3386975]: Plug another memory leak.
 
 2011-08-05  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tclStrToD.c: Plugged a memory leak in double->string
-	conversion. [Bug 3386975]
+	* generic/tclStrToD.c: [Bug 3386975]: Plugged a memory leak in
+	double->string conversion.
 
 2011-08-05  Donal K. Fellows  <dkf@users.sf.net>
 
