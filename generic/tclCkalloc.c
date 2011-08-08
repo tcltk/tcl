@@ -20,6 +20,12 @@
 #define FALSE	0
 #define TRUE	1
 
+#undef Tcl_Alloc
+#undef Tcl_Free
+#undef Tcl_Realloc
+#undef Tcl_AttemptAlloc
+#undef Tcl_AttemptRealloc
+
 #ifdef TCL_MEM_DEBUG
 
 /*
@@ -81,7 +87,7 @@ static struct mem_header *allocHead = NULL;  /* List of allocated structures */
  */
 
 #define BODY_OFFSET \
-	((unsigned long) (&((struct mem_header *) 0)->body))
+	((size_t) (&((struct mem_header *) 0)->body))
 
 static int total_mallocs = 0;
 static int total_frees = 0;
@@ -179,9 +185,9 @@ TclDumpMemoryInfo(ClientData clientData, int flags)
 	    total_mallocs,
 	    total_frees,
 	    current_malloc_packets,
-	    current_bytes_malloced,
+	    (unsigned long)current_bytes_malloced,
 	    maximum_malloc_packets,
-	    maximum_bytes_malloced);
+	    (unsigned long)maximum_bytes_malloced);
     if (flags == 0) {
 	fprintf((FILE *)clientData, "%s", buf);
     } else {
@@ -595,7 +601,7 @@ Tcl_DbCkfree(
      * words on these machines).
      */
 
-    memp = (struct mem_header *) (((unsigned long) ptr) - BODY_OFFSET);
+    memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
 
     if (alloc_tracing) {
 	fprintf(stderr, "ckfree %lx %ld %s %d\n",
@@ -672,7 +678,7 @@ Tcl_DbCkrealloc(
      * See comment from Tcl_DbCkfree before you change the following line.
      */
 
-    memp = (struct mem_header *) (((unsigned long) ptr) - BODY_OFFSET);
+    memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
 
     copySize = size;
     if (copySize > (unsigned int) memp->length) {
@@ -703,7 +709,7 @@ Tcl_AttemptDbCkrealloc(
      * See comment from Tcl_DbCkfree before you change the following line.
      */
 
-    memp = (struct mem_header *) (((unsigned long) ptr) - BODY_OFFSET);
+    memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
 
     copySize = size;
     if (copySize > (unsigned int) memp->length) {
@@ -735,12 +741,6 @@ Tcl_AttemptDbCkrealloc(
  *
  *----------------------------------------------------------------------
  */
-
-#undef Tcl_Alloc
-#undef Tcl_Free
-#undef Tcl_Realloc
-#undef Tcl_AttemptAlloc
-#undef Tcl_AttemptRealloc
 
 char *
 Tcl_Alloc(
@@ -852,9 +852,9 @@ MemoryCmd(
 		"%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10lu\n%-25s %10d\n%-25s %10lu\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
 		"current packets allocated", current_malloc_packets,
-		"current bytes allocated", current_bytes_malloced,
+		"current bytes allocated", (unsigned long)current_bytes_malloced,
 		"maximum packets allocated", maximum_malloc_packets,
-		"maximum bytes allocated", maximum_bytes_malloced));
+		"maximum bytes allocated", (unsigned long)maximum_bytes_malloced));
 	return TCL_OK;
     }
     if (strcmp(argv[1],"init") == 0) {

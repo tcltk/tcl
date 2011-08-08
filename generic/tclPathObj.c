@@ -1156,7 +1156,6 @@ Tcl_FSConvertToPathType(
 	    UpdateStringOfFsPath(pathPtr);
 	}
 	FreeFsPathInternalRep(pathPtr);
-	pathPtr->typePtr = NULL;
     }
 
     return Tcl_ConvertToType(interp, pathPtr, &tclFsPathType);
@@ -1175,7 +1174,6 @@ Tcl_FSConvertToPathType(
      *             UpdateStringOfFsPath(pathPtr);
      *         }
      *         FreeFsPathInternalRep(pathPtr);
-     *         pathPtr->typePtr = NULL;
      *         return Tcl_ConvertToType(interp, pathPtr, &tclFsPathType);
      *     }
      * }
@@ -1523,6 +1521,8 @@ TclFSMakePathFromNormalized(
 		    Tcl_ResetResult(interp);
 		    Tcl_AppendResult(interp, "can't find object"
 			    "string representation", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "WTF",
+			    NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -1901,7 +1901,6 @@ Tcl_FSGetNormalizedPath(
 		UpdateStringOfFsPath(pathPtr);
 	    }
 	    FreeFsPathInternalRep(pathPtr);
-	    pathPtr->typePtr = NULL;
 	    if (Tcl_ConvertToType(interp, pathPtr, &tclFsPathType) != TCL_OK) {
 		return NULL;
 	    }
@@ -2212,7 +2211,6 @@ TclFSEnsureEpochOk(
 	    UpdateStringOfFsPath(pathPtr);
 	}
 	FreeFsPathInternalRep(pathPtr);
-	pathPtr->typePtr = NULL;
 	if (SetFsPathFromAny(NULL, pathPtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -2423,6 +2421,8 @@ SetFsPathFromAny(
 		    Tcl_ResetResult(interp);
 		    Tcl_AppendResult(interp, "couldn't find HOME environment "
 			    "variable to expand path", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
+			    "HOMELESS", NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2440,6 +2440,8 @@ SetFsPathFromAny(
 		    Tcl_ResetResult(interp);
 		    Tcl_AppendResult(interp, "user \"", name+1,
 			    "\" doesn't exist", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
+			    NULL);
 		}
 		Tcl_DStringFree(&temp);
 		if (split != len) {

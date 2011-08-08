@@ -402,6 +402,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     # Set some defaults (may get changed below)
     EXTRA_CFLAGS=""
+	AC_DEFINE(MODULE_SCOPE, [extern], [No need to mark inidividual symbols as hidden])
 
     AC_CHECK_PROG(CYGPATH, cygpath, cygpath -w, echo)
 
@@ -587,6 +588,21 @@ file for information about building with Mingw.])
 	    ia64)
 		MACHINE="IA64"
 		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		;;
+	    *)
+		AC_TRY_COMPILE([
+			#ifdef _WIN64
+			#error 64-bit
+			#endif
+		], [],
+			tcl_win_64bit=no,
+			tcl_win_64bit=yes
+		)
+		if test "$tcl_win_64bit" = "yes" ; then
+			do64bit=amd64
+			MACHINE="AMD64"
+			AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		fi
 		;;
 	esac
     else
@@ -782,7 +798,7 @@ file for information about building with Mingw.])
 
 	EXTRA_CFLAGS=""
 	CFLAGS_WARNING="-W3"
-	LDFLAGS_DEBUG="-debug:full"
+	LDFLAGS_DEBUG="-debug"
 	LDFLAGS_OPTIMIZE="-release"
 
 	# Specify the CC output file names based on the target name

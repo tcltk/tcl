@@ -237,6 +237,8 @@ QueryConfigObjCmd(
 	 */
 
 	Tcl_SetResult(interp, "package not known", TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "FATAL", "PKGCFG_BASE",
+		Tcl_GetString(pkgName), NULL);
 	return TCL_ERROR;
     }
 
@@ -247,9 +249,11 @@ QueryConfigObjCmd(
 	    return TCL_ERROR;
 	}
 
-	if (Tcl_DictObjGet(interp, pkgDict, objv [2], &val) != TCL_OK
+	if (Tcl_DictObjGet(interp, pkgDict, objv[2], &val) != TCL_OK
 		|| val == NULL) {
 	    Tcl_SetResult(interp, "key not known", TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONFIG",
+		    Tcl_GetString(objv[2]), NULL);
 	    return TCL_ERROR;
 	}
 
@@ -268,23 +272,18 @@ QueryConfigObjCmd(
 	if (!listPtr) {
 	    Tcl_SetResult(interp, "insufficient memory to create list",
 		    TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    return TCL_ERROR;
 	}
 
 	if (n) {
-	    List *listRepPtr = (List *)
-		    listPtr->internalRep.twoPtrValue.ptr1;
 	    Tcl_DictSearch s;
-	    Tcl_Obj *key, **vals;
-	    int done, i = 0;
-
-	    listRepPtr->elemCount = n;
-	    vals = &listRepPtr->elements;
+	    Tcl_Obj *key;
+	    int done;
 
 	    for (Tcl_DictObjFirst(interp, pkgDict, &s, &key, NULL, &done);
 		    !done; Tcl_DictObjNext(&s, &key, NULL, &done)) {
-		vals[i++] = key;
-		Tcl_IncrRefCount(key);
+		Tcl_ListObjAppendElement(NULL, listPtr, key);
 	    }
 	}
 

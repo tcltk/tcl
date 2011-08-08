@@ -703,7 +703,6 @@ TclObjLookupVarEx(
      */
 
     TclFreeIntRep(part1Ptr);
-    part1Ptr->typePtr = NULL;
 
     varPtr = TclLookupSimpleVar(interp, part1Ptr, flags, createPart1,
 	    &errMsg, &index);
@@ -1827,6 +1826,7 @@ TclPtrSetVar(
     Tcl_Obj *oldValuePtr;
     Tcl_Obj *resultPtr = NULL;
     int result;
+    int cleanupOnEarlyError = (newValuePtr->refCount == 0);
 
     /*
      * If the variable is in a hashtable and its hPtr field is NULL, then we
@@ -1998,7 +1998,7 @@ TclPtrSetVar(
     return resultPtr;
 
   earlyError:
-    if (newValuePtr->refCount == 0) {
+    if (cleanupOnEarlyError) {
 	Tcl_DecrRefCount(newValuePtr);
     }
     goto cleanup;
@@ -2361,7 +2361,6 @@ TclPtrUnsetVar(
 
     if (part1Ptr->typePtr == &tclNsVarNameType) {
 	TclFreeIntRep(part1Ptr);
-	part1Ptr->typePtr = NULL;
     }
 #endif
 
@@ -2670,13 +2669,14 @@ Tcl_AppendObjCmd(
 	    /*
 	     * Note that we do not need to increase the refCount of the Var
 	     * pointers: should a trace delete the variable, the return value
-	     * of TclPtrSetVar will be NULL, and we will not access the
-	     * variable again.
+	     * of TclPtrSetVar will be NULL or emptyObjPtr, and we will not
+	     * access the variable again.
 	     */
 
 	    varValuePtr = TclPtrSetVar(interp, varPtr, arrayPtr, objv[1],
 		    NULL, objv[i], TCL_APPEND_VALUE|TCL_LEAVE_ERR_MSG, -1);
-	    if (varValuePtr == NULL) {
+	    if ((varValuePtr == NULL) ||
+		    (varValuePtr == ((Interp *) interp)->emptyObjPtr)) {
 		return TCL_ERROR;
 	    }
 	}
@@ -5481,7 +5481,7 @@ DeleteArray(
 /*
  *----------------------------------------------------------------------
  *
- * TclTclObjVarErrMsg --
+ * TclObjVarErrMsg --
  *
  *	Generate a reasonable error message describing why a variable
  *	operation failed.

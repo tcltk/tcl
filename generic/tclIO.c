@@ -2095,12 +2095,9 @@ Tcl_GetChannelHandle(
 
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
     if (!chanPtr->typePtr->getHandleProc) {
-	Tcl_Obj *err;
-
-	TclNewLiteralStringObj(err, "channel \"");
-	Tcl_AppendToObj(err, Tcl_GetChannelName(chan), -1);
-	Tcl_AppendToObj(err, "\" does not support OS handles", -1);
-	Tcl_SetChannelError(chan, err);
+        Tcl_SetChannelError(chan, Tcl_ObjPrintf(
+                "channel \"%s\" does not support OS handles",
+                Tcl_GetChannelName(chan)));
 	return TCL_ERROR;
     }
     result = chanPtr->typePtr->getHandleProc(chanPtr->instanceData, direction,
@@ -11196,6 +11193,9 @@ SetChannelFromAny(
     ChannelState *statePtr;
     Interp *interpPtr;
 
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
     if (objPtr->typePtr == &tclChannelType) {
 	/*
 	 * The channel is valid until any call to DetachChannel occurs.

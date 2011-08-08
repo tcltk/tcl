@@ -1428,7 +1428,6 @@ DeleteInterpProc(
      * table, as it will be freed later in this function without further use.
      */
 
-    TclCleanupLiteralTable(interp, &iPtr->literalTable);
     TclHandleFree(iPtr->handle);
     TclTeardownNamespace(iPtr->globalNsPtr);
 
@@ -2498,7 +2497,8 @@ TclRenameCommand(
     if (Tcl_FindHashEntry(&newNsPtr->cmdTable, newTail) != NULL) {
 	Tcl_AppendResult(interp, "can't rename to \"", newName,
 		 "\": command already exists", NULL);
-        Tcl_SetErrorCode(interp, "TCL", "RENAME", "TARGET_EXISTS", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "OPERATION", "RENAME",
+                "TARGET_EXISTS", NULL);
 	result = TCL_ERROR;
 	goto done;
     }
@@ -3645,12 +3645,8 @@ Tcl_GetMathFuncInfo(
      */
 
     if (cmdPtr == NULL) {
-	Tcl_Obj *message;
-
-	TclNewLiteralStringObj(message, "unknown math function \"");
-	Tcl_AppendToObj(message, name, -1);
-	Tcl_AppendToObj(message, "\"", 1);
-	Tcl_SetObjResult(interp, message);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "unknown math function \"%s\"", name));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "MATHFUNC", name, NULL);
 	*numArgsPtr = -1;
 	*argTypesPtr = NULL;
@@ -3883,82 +3879,79 @@ Tcl_Canceled(
     register Interp *iPtr = (Interp *) interp;
 
     /*
-	 * Has the current script in progress for this interpreter been
-	 * canceled or is the stack being unwound due to the previous script
-	 * cancellation?
-	 */
+     * Has the current script in progress for this interpreter been canceled
+     * or is the stack being unwound due to the previous script cancellation?
+     */
 
-    if (TclCanceled(iPtr)) {
-	    /*
-	     * The CANCELED flag is a one-shot flag that is reset immediately
-	     * upon being detected; however, if the TCL_CANCEL_UNWIND flag is
-	     * set we will continue to report that the script in progress has
-	     * been canceled thereby allowing the evaluation stack for the
-	     * interp to be fully unwound.
-	     */
-
-	    iPtr->flags &= ~CANCELED;
-
-	    /*
-	     * The CANCELED flag was detected and reset; however, if the
-	     * caller specified the TCL_CANCEL_UNWIND flag, we only return
-	     * TCL_ERROR (indicating that the script in progress has been
-	     * canceled) if the evaluation stack for the interp is being fully
-	     * unwound.
-	     */
-
-	    if (!(flags & TCL_CANCEL_UNWIND)
-		    || (iPtr->flags & TCL_CANCEL_UNWIND)) {
-		/*
-		 * If the TCL_LEAVE_ERR_MSG flags bit is set, place an error
-		 * in the interp's result; otherwise, we leave it alone.
-		 */
-
-		if (flags & TCL_LEAVE_ERR_MSG) {
-		    const char *id, *message = NULL;
-		    int length;
-
-		    /*
-		     * Setup errorCode variables so that we can differentiate
-		     * between being canceled and unwound.
-		     */
-
-		    if (iPtr->asyncCancelMsg != NULL) {
-			message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg,
-				&length);
-		    } else {
-			length = 0;
-		    }
-
-		    if (iPtr->flags & TCL_CANCEL_UNWIND) {
-			id = "IUNWIND";
-			if (length == 0) {
-			    message = "eval unwound";
-			}
-		    } else {
-			id = "ICANCEL";
-			if (length == 0) {
-			    message = "eval canceled";
-			}
-		    }
-
-		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, message, NULL);
-		    Tcl_SetErrorCode(interp, "TCL", id, message, NULL);
-		}
-
-		/*
-		 * Return TCL_ERROR to the caller (not necessarily just the
-		 * Tcl core itself) that indicates further processing of the
-		 * script or command in progress should halt gracefully and as
-		 * soon as possible.
-		 */
-
-		return TCL_ERROR;
-	    }
+    if (!TclCanceled(iPtr)) {
+        return TCL_OK;
     }
 
-    return TCL_OK;
+    /*
+     * The CANCELED flag is a one-shot flag that is reset immediately upon
+     * being detected; however, if the TCL_CANCEL_UNWIND flag is set we will
+     * continue to report that the script in progress has been canceled
+     * thereby allowing the evaluation stack for the interp to be fully
+     * unwound.
+     */
+
+    iPtr->flags &= ~CANCELED;
+
+    /*
+     * The CANCELED flag was detected and reset; however, if the caller
+     * specified the TCL_CANCEL_UNWIND flag, we only return TCL_ERROR
+     * (indicating that the script in progress has been canceled) if the
+     * evaluation stack for the interp is being fully unwound.
+     */
+
+    if ((flags & TCL_CANCEL_UNWIND) && !(iPtr->flags & TCL_CANCEL_UNWIND)) {
+        return TCL_OK;
+    }
+
+    /*
+     * If the TCL_LEAVE_ERR_MSG flags bit is set, place an error in the
+     * interp's result; otherwise, we leave it alone.
+     */
+
+    if (flags & TCL_LEAVE_ERR_MSG) {
+        const char *id, *message = NULL;
+        int length;
+
+        /*
+         * Setup errorCode variables so that we can differentiate between
+         * being canceled and unwound.
+         */
+
+        if (iPtr->asyncCancelMsg != NULL) {
+            message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg, &length);
+        } else {
+            length = 0;
+        }
+
+        if (iPtr->flags & TCL_CANCEL_UNWIND) {
+            id = "IUNWIND";
+            if (length == 0) {
+                message = "eval unwound";
+            }
+        } else {
+            id = "ICANCEL";
+            if (length == 0) {
+                message = "eval canceled";
+            }
+        }
+
+        Tcl_ResetResult(interp);
+        Tcl_AppendResult(interp, message, NULL);
+        Tcl_SetErrorCode(interp, "TCL", "CANCEL", id, message, NULL);
+    }
+
+    /*
+     * Return TCL_ERROR to the caller (not necessarily just the Tcl core
+     * itself) that indicates further processing of the script or command in
+     * progress should halt gracefully and as soon as possible.
+     */
+
+    return TCL_ERROR;
 }
 
 /*
@@ -4142,10 +4135,10 @@ TclNREvalObjv(
      */
 
     if (iPtr->evalFlags & TCL_EVAL_REDIRECT) {
-	TclNRAddCallback(interp, NRCommand, NULL, INT2PTR(1), NULL, NULL);
+	TclNRAddCallback(interp, NRCommand, NULL, INT2PTR(1), INT2PTR(objc), objv);
 	iPtr->evalFlags &= ~TCL_EVAL_REDIRECT;
     } else {
-	TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, NRCommand, NULL, NULL, INT2PTR(objc), objv);
     }
     cmdPtrPtr = (Command **) &(TOP_CB(interp)->data[0]);
 
@@ -4267,27 +4260,13 @@ TclNREvalObjv(
      * a callback to do the actual running.
      */
 
-#if 0
-    {
-        Tcl_ObjCmdProc *objProc = cmdPtr->nreProc;
-        
-        if (!objProc) {
-            objProc = cmdPtr->objProc;
-        }
-        
-        TclNRAddCallback(interp, NRRunObjProc, objProc, cmdPtr->objClientData,
-                INT2PTR(objc), (ClientData) objv);
-    }
-    return TCL_OK;
-#else
     if (cmdPtr->nreProc) {
-        TclNRAddCallback(interp, NRRunObjProc, cmdPtr->nreProc,
-                cmdPtr->objClientData, INT2PTR(objc), (ClientData) objv);
+        TclNRAddCallback(interp, NRRunObjProc, cmdPtr,
+                INT2PTR(objc), (ClientData) objv, NULL);
         return TCL_OK;
     } else {
 	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
     }        
-#endif
 }
 
 void
@@ -4375,15 +4354,11 @@ NRRunObjProc(
 {
     /* OPT: do not call? */
 
-    Tcl_ObjCmdProc *objProc = (Tcl_ObjCmdProc *)data[0];
-    ClientData objClientData = data[1];
-    int objc = PTR2INT(data[2]);
-    Tcl_Obj **objv = data[3];
+    Command* cmdPtr = data[0];
+    int objc = PTR2INT(data[1]);
+    Tcl_Obj **objv = data[2];
 
-    if (result == TCL_OK) {
-	return objProc(objClientData, interp, objc, objv);
-    }
-    return result;
+    return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
 }
 
 
@@ -5595,6 +5570,10 @@ TclArgumentBCEnter(
 	 * have to save them at compile time.
 	 */
 
+        if (ePtr->nline != objc) {
+            Tcl_Panic ("TIP 280 data structure inconsistency");
+        }
+
 	for (word = 1; word < objc; word++) {
 	    if (ePtr->line[word] >= 0) {
 		int isnew;
@@ -5722,8 +5701,7 @@ TclArgumentGet(
      * up by the caller. It knows better than us.
      */
 
-    if ((!obj->bytes) || ((obj->typePtr == &tclListType) &&
-	    ((List *) obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
+    if ((obj->bytes == NULL) || TclListObjIsCanonical(obj)) {
 	return;
     }
 
@@ -5902,7 +5880,6 @@ TclNREvalObjEx(
 {
     Interp *iPtr = (Interp *) interp;
     int result;
-    List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 
     /*
@@ -5911,9 +5888,7 @@ TclNREvalObjEx(
      * finally direct evaluation. Precisely one of these blocks will be run.
      */
 
-    if ((objPtr->typePtr == &tclListType) &&		/* is a list */
-	    ((objPtr->bytes == NULL ||			/* no string rep */
-		    listRepPtr->canonicalFlag))) {	/* or is canonical */
+    if (TclListObjIsCanonical(objPtr)) {
 	Tcl_Obj *listPtr = objPtr;
 	CmdFrame *eoFramePtr = NULL;
 	int objc;
@@ -6003,6 +5978,9 @@ TclNREvalObjEx(
 						 * iPtr->varFramePtr in case
 						 * TCL_EVAL_GLOBAL was set. */
 
+        if (TclInterpReady(interp) != TCL_OK) {
+            return TCL_ERROR;
+        }
 	if (flags & TCL_EVAL_GLOBAL) {
 	    savedVarFramePtr = iPtr->varFramePtr;
 	    iPtr->varFramePtr = iPtr->rootFramePtr;
@@ -7398,21 +7376,16 @@ ExprAbsFunc(
 	    goto unChanged;
 	} else if (l == (long)0) {
 	    const char *string = objv[1]->bytes;
-
-	    if (!string) {
-		/*
-		 * There is no string representation, so internal one is
-		 * correct.
-		 */
-
-		goto unChanged;
+	    if (string) {
+		while (*string != '0') {
+		    if (*string == '-') {
+			Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
+			return TCL_OK;
+		    }
+		    string++;
+		}
 	    }
-	    while (isspace(UCHAR(*string))) {
-	    	string++;
-	    }
-	    if (*string != '-') {
-		goto unChanged;
-	    }
+	    goto unChanged;
 	} else if (l == LONG_MIN) {
 	    TclBNInitBignumFromLong(&big, l);
 	    goto tooLarge;
@@ -8850,6 +8823,7 @@ TclNRCoroutineObjCmd(
     const char *fullName, *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
+    Namespace *lookupNsPtr = iPtr->varFramePtr->nsPtr;
     
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
@@ -8936,7 +8910,7 @@ TclNRCoroutineObjCmd(
     }
 
     /*
-     * Save the base context.
+     * Create the base context.
      */
 
     corPtr->running.framePtr = iPtr->rootFramePtr;
@@ -8956,13 +8930,19 @@ TclNRCoroutineObjCmd(
     corPtr->callerEEPtr = iPtr->execEnvPtr;
     corPtr->eePtr->corPtr = corPtr;
     
+    SAVE_CONTEXT(corPtr->caller);
+    corPtr->callerEEPtr = iPtr->execEnvPtr;
+    RESTORE_CONTEXT(corPtr->running);
     iPtr->execEnvPtr = corPtr->eePtr;
 
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
 
-    iPtr->lookupNsPtr = iPtr->varFramePtr->nsPtr;
+    iPtr->lookupNsPtr = lookupNsPtr;
     Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);
+
+    SAVE_CONTEXT(corPtr->running);
+    RESTORE_CONTEXT(corPtr->caller);
     iPtr->execEnvPtr = corPtr->callerEEPtr;
     
     /*

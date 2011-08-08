@@ -11,9 +11,6 @@ The information in this file is maintained on the web at:
 
 	http://www.tcl.tk/doc/howto/compile.html#win
 
-The above URL includes a lengthy discussion of compiler macros necessary
-when compiling Tcl extensions that will be dynamically loaded.
-
 2. Compiling Tcl
 ----------------
 

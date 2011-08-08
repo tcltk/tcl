@@ -217,7 +217,6 @@ GetIndexFromObjList(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->typePtr = NULL;
     ckfree(tablePtr);
 
     return result;
@@ -410,9 +409,11 @@ SetIndexFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
+    if (interp) {
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "can't convert value to index except via Tcl_GetIndexFromObj API",
 	    -1));
+    }
     return TCL_ERROR;
 }
 
@@ -949,12 +950,14 @@ Tcl_WrongNumArgs(
 	    } else {
 		elementStr = TclGetStringFromObj(origObjv[i], &elemLen);
 	    }
-	    len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
+	    flags = 0;
+	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp, (unsigned)len);
+		char *quotedElementStr = TclStackAlloc(interp,
+			(unsigned)len + 1);
 
-		len = Tcl_ConvertCountedElement(elementStr, elemLen,
+		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
 		Tcl_AppendToObj(objPtr, quotedElementStr, len);
 		TclStackFree(interp, quotedElementStr);
@@ -1003,12 +1006,14 @@ Tcl_WrongNumArgs(
 	     */
 
 	    elementStr = TclGetStringFromObj(objv[i], &elemLen);
-	    len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
+	    flags = 0;
+	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp,(unsigned) len);
+		char *quotedElementStr = TclStackAlloc(interp,
+			(unsigned) len + 1);
 
-		len = Tcl_ConvertCountedElement(elementStr, elemLen,
+		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
 		Tcl_AppendToObj(objPtr, quotedElementStr, len);
 		TclStackFree(interp, quotedElementStr);

@@ -160,6 +160,8 @@ Tcl_LoadObjCmd(
 	Tcl_SetResult(interp,
 		"must specify either file name or package name",
 		TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOLIBRARY",
+		NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -226,6 +228,8 @@ Tcl_LoadObjCmd(
 	    Tcl_AppendResult(interp, "file \"", fullFileName,
 		    "\" is already loaded for package \"",
 		    pkgPtr->packageName, "\"", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
+		    "SPLITPERSONALITY", NULL);
 	    code = TCL_ERROR;
 	    Tcl_MutexUnlock(&packageMutex);
 	    goto done;
@@ -261,6 +265,8 @@ Tcl_LoadObjCmd(
 	if (fullFileName[0] == 0) {
 	    Tcl_AppendResult(interp, "package \"", packageName,
 		    "\" isn't loaded statically", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOTSTATIC",
+		    NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -312,6 +318,8 @@ Tcl_LoadObjCmd(
 		    Tcl_AppendResult(interp,
 			    "couldn't figure out package name for ",
 			    fullFileName, NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
+			    "WHATPACKAGE", NULL);
 		    code = TCL_ERROR;
 		    goto done;
 		}
@@ -407,45 +415,60 @@ Tcl_LoadObjCmd(
 	    Tcl_AppendResult(interp,
 		    "can't use package in a safe interpreter: no ",
 		    pkgPtr->packageName, "_SafeInit procedure", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "UNSAFE",
+		    NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
 	code = pkgPtr->safeInitProc(target);
     } else {
+	if (pkgPtr->initProc == NULL) {
+	    Tcl_AppendResult(interp,
+		    "can't attach package to interpreter: no ",
+		    pkgPtr->packageName, "_Init procedure", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "ENTRYPOINT",
+		    NULL);
+	    code = TCL_ERROR;
+	    goto done;
+	}
 	code = pkgPtr->initProc(target);
+    }
+
+    /*
+     * Test for whether the initialization failed. If so, transfer the error
+     * from the target interpreter to the originating one.
+     */
+
+    if (code != TCL_OK) {
+	Tcl_TransferResult(target, code, interp);
+	goto done;
     }
 
     /*
      * Record the fact that the package has been loaded in the target
      * interpreter.
+     *
+     * Update the proper reference count.
      */
 
-    if (code == TCL_OK) {
-	/*
-	 * Update the proper reference count.
-	 */
-
-	Tcl_MutexLock(&packageMutex);
-	if (Tcl_IsSafe(target)) {
-	    pkgPtr->safeInterpRefCount++;
-	} else {
-	    pkgPtr->interpRefCount++;
-	}
-	Tcl_MutexUnlock(&packageMutex);
-
-	/*
-	 * Refetch ipFirstPtr: loading the package may have introduced
-	 * additional static packages at the head of the linked list!
-	 */
-
-	ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
-	ipPtr = ckalloc(sizeof(InterpPackage));
-	ipPtr->pkgPtr = pkgPtr;
-	ipPtr->nextPtr = ipFirstPtr;
-	Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
+    Tcl_MutexLock(&packageMutex);
+    if (Tcl_IsSafe(target)) {
+	pkgPtr->safeInterpRefCount++;
     } else {
-	Tcl_TransferResult(target, code, interp);
+	pkgPtr->interpRefCount++;
     }
+    Tcl_MutexUnlock(&packageMutex);
+
+    /*
+     * Refetch ipFirstPtr: loading the package may have introduced additional
+     * static packages at the head of the linked list!
+     */
+
+    ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
+    ipPtr = ckalloc(sizeof(InterpPackage));
+    ipPtr->pkgPtr = pkgPtr;
+    ipPtr->nextPtr = ipFirstPtr;
+    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
 
   done:
     Tcl_DStringFree(&pkgName);
@@ -555,6 +578,8 @@ Tcl_UnloadObjCmd(
 	Tcl_SetResult(interp,
 		"must specify either file name or package name",
 		TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NOLIBRARY",
+		NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -626,6 +651,8 @@ Tcl_UnloadObjCmd(
 
 	Tcl_AppendResult(interp, "package \"", packageName,
 		"\" is loaded statically and cannot be unloaded", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "STATIC",
+		NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -636,6 +663,8 @@ Tcl_UnloadObjCmd(
 
 	Tcl_AppendResult(interp, "file \"", fullFileName,
 		"\" has never been loaded", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
+		NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -663,6 +692,8 @@ Tcl_UnloadObjCmd(
 
 	Tcl_AppendResult(interp, "file \"", fullFileName,
 		"\" has never been loaded in this interpreter", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
+		NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -677,6 +708,8 @@ Tcl_UnloadObjCmd(
 	if (pkgPtr->safeUnloadProc == NULL) {
 	    Tcl_AppendResult(interp, "file \"", fullFileName,
 		    "\" cannot be unloaded under a safe interpreter", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
+		    NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -685,6 +718,8 @@ Tcl_UnloadObjCmd(
 	if (pkgPtr->unloadProc == NULL) {
 	    Tcl_AppendResult(interp, "file \"", fullFileName,
 		    "\" cannot be unloaded under a trusted interpreter", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
+		    NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -771,8 +806,7 @@ Tcl_UnloadObjCmd(
 	 */
 
 	if (pkgPtr->fileName[0] != '\0') {
-
-		Tcl_MutexLock(&packageMutex);
+	    Tcl_MutexLock(&packageMutex);
 	    if (Tcl_FSUnloadFile(interp, pkgPtr->loadHandle) == TCL_OK) {
 		/*
 		 * Remove this library from the loaded library cache.
@@ -824,6 +858,8 @@ Tcl_UnloadObjCmd(
 #else
 	Tcl_AppendResult(interp, "file \"", fullFileName,
 		"\" cannot be unloaded: unloading disabled", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "DISABLED",
+		NULL);
 	code = TCL_ERROR;
 #endif
     }
@@ -999,28 +1035,27 @@ TclGetLoadedPackages(
 				 * otherwise, just return info about this
 				 * interpreter. */
 {
-    /* TODO: Use Tcl_Obj APIs to generate this info for cleanliness. */
     Tcl_Interp *target;
     LoadedPackage *pkgPtr;
     InterpPackage *ipPtr;
-    const char *prefix;
+    Tcl_Obj *resultObj, *pkgDesc[2];
 
     if (targetName == NULL) {
 	/*
 	 * Return information about all of the available packages.
 	 */
 
-	prefix = "{";
+	resultObj = Tcl_NewObj();
 	Tcl_MutexLock(&packageMutex);
 	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
 		pkgPtr = pkgPtr->nextPtr) {
-	    Tcl_AppendResult(interp, prefix, NULL);
-	    Tcl_AppendElement(interp, pkgPtr->fileName);
-	    Tcl_AppendElement(interp, pkgPtr->packageName);
-	    Tcl_AppendResult(interp, "}", NULL);
-	    prefix = " {";
+	    pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);
+	    pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, -1);
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    Tcl_NewListObj(2, pkgDesc));
 	}
 	Tcl_MutexUnlock(&packageMutex);
+	Tcl_SetObjResult(interp, resultObj);
 	return TCL_OK;
     }
 
@@ -1034,15 +1069,14 @@ TclGetLoadedPackages(
 	return TCL_ERROR;
     }
     ipPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
-    prefix = "{";
+    resultObj = Tcl_NewObj();
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	pkgPtr = ipPtr->pkgPtr;
-	Tcl_AppendResult(interp, prefix, NULL);
-	Tcl_AppendElement(interp, pkgPtr->fileName);
-	Tcl_AppendElement(interp, pkgPtr->packageName);
-	Tcl_AppendResult(interp, "}", NULL);
-	prefix = " {";
+	pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);
+	pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, -1);
+	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewListObj(2, pkgDesc));
     }
+    Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
 

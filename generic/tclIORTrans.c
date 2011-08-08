@@ -601,11 +601,9 @@ TclChanPushObjCmd(
      */
 
     if (Tcl_ListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
-	TclNewLiteralStringObj(err, "chan handler \"");
-	Tcl_AppendObjToObj(err, cmdObj);
-	Tcl_AppendToObj(err, " initialize\" returned non-list: ", -1);
-	Tcl_AppendObjToObj(err, resObj);
-	Tcl_SetObjResult(interp, err);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "chan handler \"%s initialize\" returned non-list: %s",
+                Tcl_GetString(cmdObj), Tcl_GetString(resObj)));
 	Tcl_DecrRefCount(resObj);
 	goto error;
     }
@@ -629,10 +627,9 @@ TclChanPushObjCmd(
     Tcl_DecrRefCount(resObj);
 
     if ((REQUIRED_METHODS & methods) != REQUIRED_METHODS) {
-	TclNewLiteralStringObj(err, "chan handler \"");
-	Tcl_AppendObjToObj(err, cmdObj);
-	Tcl_AppendToObj(err, "\" does not support all required methods", -1);
-	Tcl_SetObjResult(interp, err);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "chan handler \"%s\" does not support all required methods",
+                Tcl_GetString(cmdObj)));
 	goto error;
     }
 
@@ -652,10 +649,9 @@ TclChanPushObjCmd(
     }
 
     if (!mode) {
-	TclNewLiteralStringObj(err, "chan handler \"");
-	Tcl_AppendObjToObj(err, cmdObj);
-	Tcl_AppendToObj(err, "\" makes the channel inacessible", -1);
-	Tcl_SetObjResult(interp, err);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "chan handler \"%s\" makes the channel inaccessible",
+                Tcl_GetString(cmdObj)));
 	goto error;
     }
 
@@ -664,18 +660,16 @@ TclChanPushObjCmd(
      */
 
     if (!IMPLIES(HAS(methods, METH_DRAIN), HAS(methods, METH_READ))) {
-	TclNewLiteralStringObj(err, "chan handler \"");
-	Tcl_AppendObjToObj(err, cmdObj);
-	Tcl_AppendToObj(err, "\" supports \"drain\" but not \"read\"", -1);
-	Tcl_SetObjResult(interp, err);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "chan handler \"%s\" supports \"drain\" but not \"read\"",
+                Tcl_GetString(cmdObj)));
 	goto error;
     }
 
     if (!IMPLIES(HAS(methods, METH_FLUSH), HAS(methods, METH_WRITE))) {
-	TclNewLiteralStringObj(err, "chan handler \"");
-	Tcl_AppendObjToObj(err, cmdObj);
-	Tcl_AppendToObj(err, "\" supports \"flush\" but not \"write\"", -1);
-	Tcl_SetObjResult(interp, err);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "chan handler \"%s\" supports \"flush\" but not \"write\"",
+                Tcl_GetString(cmdObj)));
 	goto error;
     }
 

@@ -287,8 +287,7 @@ InitSockets(void)
     DWORD id;
     WSADATA wsaData;
     DWORD err;
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
-	    TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     if (!initialized) {
 	initialized = 1;
@@ -482,9 +481,8 @@ SocketExitHandler(
 void
 TclpFinalizeSockets(void)
 {
-    ThreadSpecificData *tsdPtr;
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
-    tsdPtr = (ThreadSpecificData *) TclThreadDataKeyGet(&dataKey);
     if (tsdPtr != NULL) {
 	if (tsdPtr->socketThread != NULL) {
 	    if (tsdPtr->hwnd != NULL) {
@@ -810,7 +808,7 @@ TcpBlockProc(
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
-    SocketInfo *infoPtr = (SocketInfo *) instanceData;
+    SocketInfo *infoPtr = instanceData;
 
     if (mode == TCL_MODE_NONBLOCKING) {
 	infoPtr->flags |= SOCKET_ASYNC;
@@ -844,7 +842,7 @@ TcpCloseProc(
     ClientData instanceData,	/* The socket to close. */
     Tcl_Interp *interp)		/* Unused. */
 {
-    SocketInfo *infoPtr = (SocketInfo *) instanceData;
+    SocketInfo *infoPtr = instanceData;
     /* TIP #218 */
     int errorCode = 0;
     /* ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey); */
@@ -902,7 +900,7 @@ TcpClose2Proc(
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
-    SocketInfo *infoPtr = (SocketInfo *) instanceData;
+    SocketInfo *infoPtr = instanceData;
     int errorCode = 0;
     int sd;
 
@@ -919,7 +917,8 @@ TcpClose2Proc(
 	    break;
 	default:
 	    if (interp) {
-		Tcl_AppendResult(interp, "Socket close2proc called bidirectionally", NULL);
+		Tcl_AppendResult(interp,
+			"Socket close2proc called bidirectionally", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1018,8 +1017,7 @@ CreateSocket(
     const char *errorMsg = NULL;
     SOCKET sock = INVALID_SOCKET;
     SocketInfo *infoPtr = NULL;	/* The returned value. */
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
-	    TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -1138,10 +1136,10 @@ CreateSocket(
 	    }
 	}
     } else {
-        for (addrPtr = addrlist; addrPtr != NULL;
-             addrPtr = addrPtr->ai_next) {
-            for (myaddrPtr = myaddrlist; myaddrPtr != NULL;
-                 myaddrPtr = myaddrPtr->ai_next) {
+	for (addrPtr = addrlist; addrPtr != NULL;
+		addrPtr = addrPtr->ai_next) {
+	    for (myaddrPtr = myaddrlist; myaddrPtr != NULL;
+		    myaddrPtr = myaddrPtr->ai_next) {
 		/*
 		 * No need to try combinations of local and remote addresses
 		 * of different families.
@@ -1365,8 +1363,7 @@ WaitForSocketEvent(
 {
     int result = 1;
     int oldMode;
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
-	    TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     /*
      * Be sure to disable event servicing so we are truly modal.
@@ -1498,7 +1495,7 @@ Tcl_MakeTcpClientChannel(
 	return NULL;
     }
 
-    tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+    tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     /*
      * Set kernel space buffering and non-blocking.
@@ -1609,8 +1606,7 @@ TcpAccept(
     SOCKADDR_IN addr;
     int len;
     char channelName[16 + TCL_INTEGER_SPACE];
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
-	    TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     /*
      * Accept the incoming connection request.
@@ -1723,11 +1719,10 @@ TcpInputProc(
     int toRead,			/* Maximum number of bytes to read. */
     int *errorCodePtr)		/* Where to store error codes. */
 {
-    SocketInfo *infoPtr = (SocketInfo *) instanceData;
+    SocketInfo *infoPtr = instanceData;
     int bytesRead;
     DWORD error;
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
-	    TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     *errorCodePtr = 0;
 
@@ -1861,11 +1856,10 @@ TcpOutputProc(
     int toWrite,		/* Maximum number of bytes to write. */
     int *errorCodePtr)		/* Where to store error codes. */
 {
-    SocketInfo *infoPtr = (SocketInfo *) instanceData;
+    SocketInfo *infoPtr = instanceData;
     int bytesWritten;
     DWORD error;
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
-	    TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     *errorCodePtr = 0;
 
@@ -1970,7 +1964,7 @@ TcpSetOptionProc(
     const char *optionName,	/* Name of the option to set. */
     const char *value)		/* New value for option. */
 {
-    SocketInfo *infoPtr;
+    SocketInfo *infoPtr = instanceData;
     SOCKET sock;
 
     /*
@@ -1986,7 +1980,6 @@ TcpSetOptionProc(
 	return TCL_ERROR;
     }
 
-    infoPtr = (SocketInfo *) instanceData;
     sock = infoPtr->sockets->fd;
 
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
@@ -2070,7 +2063,7 @@ TcpGetOptionProc(
     Tcl_DString *dsPtr)		/* Where to store the computed value;
 				 * initialized by caller. */
 {
-    SocketInfo *infoPtr;
+    SocketInfo *infoPtr = instanceData;
     char host[NI_MAXHOST], port[NI_MAXSERV];
     SOCKET sock;
     size_t len = 0;
@@ -2090,7 +2083,6 @@ TcpGetOptionProc(
 	return TCL_ERROR;
     }
 
-    infoPtr = (SocketInfo *) instanceData;
     sock = infoPtr->sockets->fd;
     if (optionName != NULL) {
 	len = strlen(optionName);
@@ -2116,7 +2108,7 @@ TcpGetOptionProc(
     }
 
     if (interp != NULL && Tcl_GetVar(interp, SUPPRESS_RDNS_VAR, 0) != NULL) {
-        reverseDNS = NI_NUMERICHOST;
+	reverseDNS = NI_NUMERICHOST;
     }
 
     if ((len == 0) || ((len > 1) && (optionName[1] == 'p') &&
@@ -2130,10 +2122,10 @@ TcpGetOptionProc(
 	    }
 
 	    getnameinfo(&(peername.sa), size, host, sizeof(host),
-                        NULL, 0, NI_NUMERICHOST);
+		    NULL, 0, NI_NUMERICHOST);
 	    Tcl_DStringAppendElement(dsPtr, host);
 	    getnameinfo(&(peername.sa), size, host, sizeof(host),
-                        port, sizeof(port), reverseDNS | NI_NUMERICSERV);
+		    port, sizeof(port), reverseDNS | NI_NUMERICSERV);
 	    Tcl_DStringAppendElement(dsPtr, host);
 	    Tcl_DStringAppendElement(dsPtr, port);
 	    if (len == 0) {
@@ -2162,10 +2154,9 @@ TcpGetOptionProc(
 
     if ((len == 0) || ((len > 1) && (optionName[1] == 's') &&
 	    (strncmp(optionName, "-sockname", len) == 0))) {
-
 	TcpFdList *fds;
-        address sockname;
-        socklen_t size;
+	address sockname;
+	socklen_t size;
 	int found = 0;
 
 	if (len == 0) {
@@ -2180,7 +2171,7 @@ TcpGetOptionProc(
 		found = 1;
 
 		getnameinfo(&sockname.sa, size, host, sizeof(host),
-			    NULL, 0, NI_NUMERICHOST);
+			NULL, 0, NI_NUMERICHOST);
 		Tcl_DStringAppendElement(dsPtr, host);
 
 		/*
@@ -2194,17 +2185,17 @@ TcpGetOptionProc(
 		    }
 		} else if (sockname.sa.sa_family == AF_INET6) {
 		    if ((IN6_ARE_ADDR_EQUAL(&sockname.sa6.sin6_addr,
-					    &in6addr_any))
-			|| (IN6_IS_ADDR_V4MAPPED(&sockname.sa6.sin6_addr) &&
-			    sockname.sa6.sin6_addr.s6_addr[12] == 0 &&
-			    sockname.sa6.sin6_addr.s6_addr[13] == 0 &&
-			    sockname.sa6.sin6_addr.s6_addr[14] == 0 &&
-			    sockname.sa6.sin6_addr.s6_addr[15] == 0)) {
+				&in6addr_any)) ||
+			    (IN6_IS_ADDR_V4MAPPED(&sockname.sa6.sin6_addr)
+			    && sockname.sa6.sin6_addr.s6_addr[12] == 0
+			    && sockname.sa6.sin6_addr.s6_addr[13] == 0
+			    && sockname.sa6.sin6_addr.s6_addr[14] == 0
+			    && sockname.sa6.sin6_addr.s6_addr[15] == 0)) {
 			flags |= NI_NUMERICHOST;
 		    }
 		}
 		getnameinfo(&sockname.sa, size, host, sizeof(host),
-			    port, sizeof(port), flags);
+			port, sizeof(port), flags);
 		Tcl_DStringAppendElement(dsPtr, host);
 		Tcl_DStringAppendElement(dsPtr, port);
 	    }
@@ -2219,7 +2210,7 @@ TcpGetOptionProc(
 	    if (interp) {
 		TclWinConvertWSAError((DWORD) WSAGetLastError());
 		Tcl_AppendResult(interp, "can't get sockname: ",
-				 Tcl_PosixError(interp), NULL);
+			Tcl_PosixError(interp), NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2253,8 +2244,7 @@ TcpGetOptionProc(
 	    Tcl_DStringAppendElement(dsPtr, "-nagle");
 	}
 	optlen = sizeof(BOOL);
-	getsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&opt,
-		&optlen);
+	getsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&opt, &optlen);
 	if (opt) {
 	    Tcl_DStringAppendElement(dsPtr, "0");
 	} else {
@@ -2303,7 +2293,7 @@ TcpWatchProc(
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
-    SocketInfo *infoPtr = (SocketInfo *) instanceData;
+    SocketInfo *infoPtr = instanceData;
 
     /*
      * Update the watch events mask. Only if the socket is not a server
@@ -2354,7 +2344,7 @@ TcpGetHandleProc(
     int direction,		/* Not used. */
     ClientData *handlePtr)	/* Where to store the handle. */
 {
-    SocketInfo *statePtr = (SocketInfo *) instanceData;
+    SocketInfo *statePtr = instanceData;
 
     *handlePtr = INT2PTR(statePtr->sockets->fd);
     return TCL_OK;
@@ -2381,7 +2371,7 @@ SocketThread(
     LPVOID arg)
 {
     MSG msg;
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) arg;
+    ThreadSpecificData *tsdPtr = arg;
 
     /*
      * Create a dummy window receiving socket events.
@@ -2779,7 +2769,7 @@ TcpThreadActionProc(
     int action)
 {
     ThreadSpecificData *tsdPtr;
-    SocketInfo *infoPtr = (SocketInfo *) instanceData;
+    SocketInfo *infoPtr = instanceData;
     int notifyCmd;
 
     if (action == TCL_CHANNEL_THREAD_INSERT) {

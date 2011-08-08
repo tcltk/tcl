@@ -512,12 +512,13 @@ static const Tcl_ObjType tclInstNameType = {
  *	generate an byte code internal form for the Tcl object "objPtr" by
  *	compiling its string representation. This function also takes a hook
  *	procedure that will be invoked to perform any needed post processing
- *	on the compilation results before generating byte codes.
+ *	on the compilation results before generating byte codes. interp is
+ *	compilation context and may not be NULL.
  *
  * Results:
  *	The return value is a standard Tcl object result. If an error occurs
  *	during compilation, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
+ *	result.
  *
  * Side effects:
  *	Frees the old internal representation. If no error occurs, then the
@@ -675,6 +676,9 @@ SetByteCodeFromAny(
 				 * compiled. Must not be NULL. */
     Tcl_Obj *objPtr)		/* The object to make a ByteCode object. */
 {
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
     TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
     return TCL_OK;
 }
@@ -1004,7 +1008,7 @@ CompileSubstObj(
     if (objPtr->typePtr == &substCodeType) {
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = (ByteCode *) objPtr->internalRep.ptrAndLongRep.ptr;
+	codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
 	if ((unsigned long)flags != objPtr->internalRep.ptrAndLongRep.value
 		|| ((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
@@ -2437,7 +2441,19 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
     for (i = 0;  i < numLitObjects;  i++) {
-	codePtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
+	if (objPtr == envPtr->literalArrayPtr[i].objPtr) {
+	    /*
+	     * Prevent circular reference where the bytecode intrep of
+	     * a value contains a literal which is that same value.
+	     * If this is allowed to happen, refcount decrements may not
+	     * reach zero, and memory may leak.  Bugs 467523, 3357771
+	     */
+	    codePtr->objArrayPtr[i] = Tcl_DuplicateObj(objPtr);
+	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
+	    Tcl_DecrRefCount(objPtr);
+	} else {
+	    codePtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
+	}
     }
 
     p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
@@ -2462,7 +2478,7 @@ TclInitByteCodeObj(
 #else
     nextPtr = EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
     if (((size_t)(nextPtr - p)) != cmdLocBytes) {
-	Tcl_Panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d", (nextPtr - p), cmdLocBytes);
+	Tcl_Panic("TclInitByteCodeObj: encoded cmd location bytes %lu != expected size %lu", (unsigned long)(nextPtr - p), (unsigned long)cmdLocBytes);
     }
 #endif
 
@@ -3314,6 +3330,70 @@ TclFixupForwardJump(
 		    rangePtr->type);
 	}
     }
+
+    /*
+     * TIP #280: Adjust the mapping from PC values to the per-command
+     * information about arguments and their line numbers.
+     *
+     * Note: We cannot simply remove an out-of-date entry and then reinsert
+     * with the proper PC, because then we might overwrite another entry which
+     * was at that location. Therefore we pull (copy + delete) all effected
+     * entries (beyond the fixed PC) into an array, update them there, and at
+     * last reinsert them all.
+     */
+
+    {
+	ExtCmdLoc* eclPtr = envPtr->extCmdMapPtr;
+
+	/* A helper structure */
+
+	typedef struct {
+	    int pc;
+	    int cmd;
+	} MAP;
+
+	/*
+	 * And the helper array. At most the whole hashtable is placed into
+	 * this.
+	 */
+
+	MAP *map = (MAP*) ckalloc (sizeof(MAP) * eclPtr->litInfo.numEntries);
+
+	Tcl_HashSearch hSearch;
+	Tcl_HashEntry* hPtr;
+	int n, k, isnew;
+
+	/*
+	 * Phase I: Locate the affected entries, and save them in adjusted
+	 * form to the array. This removes them from the hash.
+	 */
+
+	for (n = 0, hPtr = Tcl_FirstHashEntry(&eclPtr->litInfo, &hSearch);
+	     hPtr != NULL;
+	     hPtr = Tcl_NextHashEntry(&hSearch)) {
+
+	    map [n].cmd = PTR2INT(Tcl_GetHashValue(hPtr));
+	    map [n].pc  = PTR2INT(Tcl_GetHashKey (&eclPtr->litInfo,hPtr));
+
+	    if (map[n].pc >= (jumpFixupPtr->codeOffset + 2)) {
+		Tcl_DeleteHashEntry(hPtr);
+		map [n].pc += 3;
+		n++;
+	    }
+	}
+
+	/*
+	 * Phase II: Re-insert the modified entries into the hash.
+	 */
+
+	for (k=0;k<n;k++) {
+	    hPtr = Tcl_CreateHashEntry(&eclPtr->litInfo, INT2PTR(map[k].pc), &isnew);
+	    Tcl_SetHashValue(hPtr, INT2PTR(map[k].cmd));
+	}
+
+	ckfree (map);
+    }
+
     return 1;			/* the jump was grown */
 }
 
@@ -4364,7 +4444,7 @@ TclGetInnerContext(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_Obj *
+Tcl_Obj *
 TclNewInstNameObj(
     unsigned char inst)
 {
@@ -4489,6 +4569,11 @@ RecordByteCodeStats(
 {
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
     register ByteCodeStats *statsPtr = &iPtr->stats;
+
+    if (iPtr == NULL) {
+	/* Avoid segfaulting in case we're called in a deleted interp */
+	return;
+    }
 
     statsPtr->numCompilations++;
     statsPtr->totalSrcBytes += (double) codePtr->numSrcBytes;

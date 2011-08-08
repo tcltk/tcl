@@ -49,7 +49,7 @@ The command will be executed at global level (outside the context
 of any Tcl procedure).
 If an error occurs while executing the delayed command then 
 the background error will be reported by the command
-registered with \fB interp bgerror\fR.
+registered with \fBinterp bgerror\fR.
 The \fBafter\fR command returns an identifier that can be used
 to cancel the delayed command using \fBafter cancel\fR.
 .TP
@@ -82,7 +82,7 @@ The command returns an identifier that can be used
 to cancel the delayed command using \fBafter cancel\fR.
 If an error occurs while executing the script then the
 background error will be reported by the command
-registered with \fB interp bgerror\fR.
+registered with \fBinterp bgerror\fR.
 .TP
 \fBafter info \fR?\fIid\fR?
 .

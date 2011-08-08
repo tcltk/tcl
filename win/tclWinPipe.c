@@ -475,7 +475,7 @@ TempFileName(
     TCHAR name[MAX_PATH])	/* Buffer in which name for temporary file
 				 * gets stored. */
 {
-    TCHAR *prefix = TEXT("TCL");
+    const TCHAR *prefix = TEXT("TCL");
     if (GetTempPath(MAX_PATH, name) != 0) {
 	if (GetTempFileName(name, prefix, 0, name) != 0) {
 	    return 1;
@@ -1136,6 +1136,8 @@ TclpCreateProcess(
 	    Tcl_AppendResult(interp,
 		    "DOS application process not supported on this platform",
 		    (char *) NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "DOS_APP",
+		    NULL);
 	    goto end;
 	}
     }
@@ -3099,7 +3101,7 @@ TclpOpenTemporaryFile(
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);
     } else {
-	TCHAR *baseStr = TEXT("TCL");
+	const TCHAR *baseStr = TEXT("TCL");
 	int length = 3 * sizeof(TCHAR);
 
 	memcpy(namePtr, baseStr, length);

@@ -207,7 +207,7 @@ test iortrans-2.14 {chan push, initialize failed, bad result, mode/handler misma
 } -returnCodes error -cleanup {
     tempdone
     rename foo {}
-} -match glob -result {*makes the channel inacessible}
+} -match glob -result {*makes the channel inaccessible}
 # iortrans-2.15 event/watch methods elimimated, removed these tests.
 # iortrans-2.16
 test iortrans-2.17 {chan push, initialize failed, bad result, drain/read mismatch} -body {
@@ -1790,6 +1790,7 @@ test iortrans.tf-11.0 {origin thread of moved transform gone} -setup {
 } -constraints {testchannel testthread} -match glob -body {
     # Set up channel in thread
     testthread send $tida $helperscript
+    testthread send $tidb $helperscript
     set chan [testthread send $tida {
 	proc foo {args} {
 	    handle.initialize clear drain flush limit? read write
@@ -1816,8 +1817,8 @@ test iortrans.tf-11.0 {origin thread of moved transform gone} -setup {
     # The 'tell' is ok, as it passed through the transform to the base
     # channel without invoking the transform handler.
 } -cleanup {
+    testthread send $tidb tempdone
     tcltest::threadReap
-    tempdone
 } -result {1 {Owner lost} 0 0 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
 test iortrans.tf-11.1 {origin thread of moved transform destroyed during access} -setup {
     #puts <<$tcltest::mainThread>>main
@@ -1825,7 +1826,8 @@ test iortrans.tf-11.1 {origin thread of moved transform destroyed during access}
     set tidb [testthread create];	#puts <<$tidb>>
 } -constraints {testchannel testthread} -match glob -body {
     # Set up channel in thread
-    set chan [testthread send $tida $helperscript]
+    testthread send $tida $helperscript
+    testthread send $tidb $helperscript
     set chan [testthread send $tida {
 	proc foo {args} {
 	    handle.initialize clear drain flush limit? read write
@@ -1857,8 +1859,8 @@ test iortrans.tf-11.1 {origin thread of moved transform destroyed during access}
     vwait ::res
     return $res
 } -cleanup {
+    testthread send $tidb tempdone
     tcltest::threadReap
-    tempdone
 } -result {Owner lost}
 
 # ### ### ### ######### ######### #########

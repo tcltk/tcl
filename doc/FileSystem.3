@@ -500,8 +500,9 @@ directories named in the path leading to the file. The \fITcl_StatBuf\fR
 structure includes info regarding device, inode (always 0 on Windows),
 privilege mode, nlink (always 1 on Windows), user id (always 0 on
 Windows), group id (always 0 on Windows), rdev (same as device on
-Windows), size, last access time, last modification time, and creation
-time. See \fBPORTABLE STAT RESULT API\fR for a description of how to write
+Windows), size, last access time, last modification time, and
+last metadata change time.
+See \fBPORTABLE STAT RESULT API\fR for a description of how to write
 portable code to allocate and access the \fITcl_StatBuf\fR structure.
 .PP
 If \fIpath\fR exists, \fBTcl_FSLstat\fR returns 0 and the stat structure
@@ -559,8 +560,9 @@ directories named in the path leading to the file. The \fITcl_StatBuf\fR
 structure includes info regarding device, inode (always 0 on Windows),
 privilege mode, nlink (always 1 on Windows), user id (always 0 on
 Windows), group id (always 0 on Windows), rdev (same as device on
-Windows), size, last access time, last modification time, and creation
-time. See \fBPORTABLE STAT RESULT API\fR for a description of how to write
+Windows), size, last access time, last modification time, and
+last metadata change time.
+See \fBPORTABLE STAT RESULT API\fR for a description of how to write
 portable code to allocate and access the \fITcl_StatBuf\fR structure.
 .PP
 If \fIpath\fR exists, \fBTcl_FSStat\fR returns 0 and the stat structure
@@ -716,14 +718,14 @@ sequences (these have been expanded to their current
 representation in the filesystem). The object returned is owned by the
 caller, which must store it or call Tcl_DecrRefCount to ensure memory is
 freed. This function is of little practical use, and
-\fBTcl_FSGetNormalizedPath\fR or \fBTcl_GetNativePath\fR are usually
+\fBTcl_FSGetNormalizedPath\fR or \fBTcl_FSGetNativePath\fR are usually
 better functions to use for most purposes.
 .PP
 \fBTcl_FSGetTranslatedStringPath\fR does the same as
 \fBTcl_FSGetTranslatedPath\fR, but returns a character string or NULL.
 The string returned is dynamically allocated and owned by the caller,
 which must store it or call \fBckfree\fR to ensure it is freed. Again,
-\fBTcl_FSGetNormalizedPath\fR or \fBTcl_GetNativePath\fR are usually
+\fBTcl_FSGetNormalizedPath\fR or \fBTcl_FSGetNativePath\fR are usually
 better functions to use for most purposes.
 .PP
 \fBTcl_FSNewNativePath\fR performs something like the reverse of the
@@ -790,7 +792,7 @@ It returns one of \fBTCL_PATH_ABSOLUTE\fR, \fBTCL_PATH_RELATIVE\fR, or
 .PP
 \fBTcl_AllocStatBuf\fR allocates a \fITcl_StatBuf\fR on the system heap (which
 may be deallocated by being passed to \fBckfree\fR). This allows extensions to
-invoke \fBTcl_FSStat\fR and \fBTcl_FSLStat\fR without being dependent on the
+invoke \fBTcl_FSStat\fR and \fBTcl_FSLstat\fR without being dependent on the
 size of the buffer. That in turn depends on the flags used to build Tcl.
 .PP
 .VS 8.6
@@ -1162,8 +1164,8 @@ to all directories named in the path leading to the file. The stat
 structure includes info regarding device, inode (always 0 on Windows),
 privilege mode, nlink (always 1 on Windows), user id (always 0 on
 Windows), group id (always 0 on Windows), rdev (same as device on
-Windows), size, last access time, last modification time, and creation
-time.
+Windows), size, last access time, last modification time, and
+last metadata change time.
 .PP
 If the file represented by \fIpathPtr\fR exists, the
 \fBTcl_FSStatProc\fR returns 0 and the stat structure is filled with
