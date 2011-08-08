@@ -1,3 +1,10 @@
+2011-08-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ZlibStreamCmd): Make the -buffersize option to
+	'$zstream add' function correctly instead of having its value just be
+	discarded unceremoniously. Also generate error codes from more of the
+	code, not just the low-level code but also the Tcl infrastructure.
+
 2011-08-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOInfo.c (InfoClassCallCmd): [Bug 3387082]: Plug memory
