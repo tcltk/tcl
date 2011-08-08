@@ -1,3 +1,66 @@
+2011-08-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOInfo.c (InfoClassCallCmd): [Bug 3387082]: Plug memory
+	leak in call chain introspection.
+
+2011-08-06  Kevin B, Kenny  <kennykb@acm.org>
+
+	* generic/tclAssemnbly.c: [Bug 3384840]: Plug another memory leak.
+	* generic/tclStrToD.c: [Bug 3386975]: Plug another memory leak.
+
+2011-08-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c: [Bug 3386975]: Plugged a memory leak in
+	double->string conversion.
+
+2011-08-05  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.6b2 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for 8.6b2 release.
+
+2011-08-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclAssembly.c (AssembleOneLine): Ensure that memory isn't
+	leaked when an unknown instruction is encountered. Also simplify code
+	through use of Tcl_ObjPrintf in error message generation.
+
+	* generic/tclZlib.c (ZlibTransformClose): [Bug 3386197]: Plug a memory
+	leak found by Miguel with valgrind, and ensure that the correct
+	direction's buffers are released.
+
+2011-08-04  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclPtrSetVar): Fix valgrind-detected error when
+	newValuePtr is the interp's result obj.
+
+2011-08-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclAssembly.c (FreeAssemblyEnv): [Bug 3384840]: Plug another
+	possible memory leak due to over-complex code for freeing the table of
+	labels.
+
+2011-08-04  Reinhard Max  <max@suse.de>
+
+	* generic/tclIOSock.c (TclCreateSocketAddress): Don't bother using
+	AI_ADDRCONFIG for now, as it was causing problems in various
+	situations.
+	
+2011-08-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclAssembly.c (AssembleOneLine, GetBooleanOperand)
+	(GetIntegerOperand, GetListIndexOperand, FindLocalVar): [Bug 3384840]:
+	A Tcl_Obj is allocated by GetNextOperand, so callers of it must not
+	hold a reference to one in the 'out' parameter when calling it. This
+	was causing a great many memory leaks.
+	* tests/assemble.test (assemble-51.*): Added group of memory leak
+	tests.
+
+2011-08-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Updates for 8.6b2 release.
+	* tools/tcltk-man2html.tcl: Variable substitution botch.
+
 2011-08-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclObj.c (Tcl_DbIncrRefCount, Tcl_DbDecrRefCount)
@@ -93,6 +156,19 @@
 
 	* doc/upvar.n: Undocument long gone limitation of [upvar].
 
+2011-07-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump version number to 8.6b2.
+	* library/init.tcl:
+	* unix/configure.in:
+	* win/configure.in:
+	* unix/tcl.spec:
+	* tools/tcl.wse.in:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 2011-07-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c: Avoid segfaults when RecordByteCodeStats()
@@ -123,7 +199,7 @@
 
 2011-07-07  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c: add missing INT2PTR
+	* generic/tclBasic.c: Add missing INT2PTR
 
 2011-07-03  Donal K. Fellows  <dkf@users.sf.net>
 

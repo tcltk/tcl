@@ -203,7 +203,7 @@ Tcl_ErrnoId(void)
 #ifdef ELIBEXEC
     case ELIBEXEC: return "ELIBEXEC";
 #endif
-#ifdef ELIBMAX
+#if defined(ELIBMAX) && (!defined(ECANCELED) || (ELIBMAX != ECANCELED))
     case ELIBMAX: return "ELIBMAX";
 #endif
 #ifdef ELIBSCN
@@ -662,7 +662,7 @@ Tcl_ErrnoMsg(
 #ifdef ELIBEXEC
     case ELIBEXEC: return "cannot exec a shared library directly";
 #endif
-#ifdef ELIBMAX
+#if defined(ELIBMAX) && (!defined(ECANCELED) || (ELIBMAX != ECANCELED))
     case ELIBMAX: return
 	    "attempting to link in more shared libraries than system limit";
 #endif

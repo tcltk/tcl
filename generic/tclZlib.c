@@ -1606,8 +1606,7 @@ ZlibCmd(
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command arg ?...?");
 	return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], commands, "command", 0,
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], commands, "command", 0,
 	    &command) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1960,8 +1959,7 @@ ZlibCmd(
 			    "value missing for -limit option", NULL);
 		    return TCL_ERROR;
 		}
-		if (Tcl_GetIntFromObj(interp, objv[i],
-			(int *) &limit) != TCL_OK) {
+		if (Tcl_GetIntFromObj(interp, objv[i], (int *) &limit) != TCL_OK) {
 		    Tcl_AddErrorInfo(interp, "\n    (in -limit option)");
 		    return TCL_ERROR;
 		}
@@ -1971,6 +1969,10 @@ ZlibCmd(
 		break;
 	    }
 	}
+
+	/*
+	 * Actually do the push of the instance of the transform.
+	 */
 
 	if (ZlibStackChannelTransform(interp, mode, format, level, chan,
 		headerObj) == NULL) {
@@ -2012,7 +2014,7 @@ ZlibStreamCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = cd;
-    int command, index, count, code, buffersize, flush = -1, i;
+    int command, index, count, code, buffersize = -1, flush = -1, i;
     Tcl_Obj *obj;
     static const char *const cmds[] = {
 	"add", "checksum", "close", "eof", "finalize", "flush",
@@ -2030,15 +2032,21 @@ ZlibStreamCmd(
 	ao_buffer, ao_finalize, ao_flush, ao_fullflush
     };
 
+    /*
+     * Basic syntax checks.
+     */
+
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option data ?...?");
 	return TCL_ERROR;
-    }
-
-    if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "option", 0,
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "option", 0,
 	    &command) != TCL_OK) {
 	return TCL_ERROR;
     }
+
+    /*
+     * Execute a relevant subcommand.
+     */
 
     switch ((enum zlibStreamCommands) command) {
     case zs_add:		/* $strm add ?$flushopt? $data */
@@ -2081,6 +2089,11 @@ ZlibStreamCmd(
 			&buffersize) != TCL_OK) {
 		    return TCL_ERROR;
 		}
+		if (buffersize < 1 || buffersize > 65536) {
+		    Tcl_AppendResult(interp, "buffer size must be between "
+			    "1 byte and 64 kibibytes", NULL);
+		    return TCL_ERROR;
+		}
 	    }
 
 	    if (flush == -2) {
@@ -2093,12 +2106,11 @@ ZlibStreamCmd(
 	    flush = 0;
 	}
 
-	if (Tcl_ZlibStreamPut(zstream, objv[objc-1],
-		flush) != TCL_OK) {
+	if (Tcl_ZlibStreamPut(zstream, objv[objc-1], flush) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	TclNewObj(obj);
-	code = Tcl_ZlibStreamGet(zstream, obj, -1);
+	code = Tcl_ZlibStreamGet(zstream, obj, buffersize);
 	if (code == TCL_OK) {
 	    Tcl_SetObjResult(interp, obj);
 	} else {
@@ -2253,7 +2265,16 @@ ZlibTransformClose(
     ZlibChannelData *cd = instanceData;
     int e, result = TCL_OK;
 
+    /*
+     * Delete the support timer.
+     */
+
     ZlibTransformTimerKill(cd);
+
+    /*
+     * Flush any data waiting to be compressed.
+     */
+
     if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	cd->outStream.avail_in = 0;
 	do {
@@ -2286,10 +2307,14 @@ ZlibTransformClose(
 		}
 	    }
 	} while (e != Z_STREAM_END);
-	e = deflateEnd(&cd->inStream);
+	e = deflateEnd(&cd->outStream);
     } else {
-	e = inflateEnd(&cd->outStream);
+	e = inflateEnd(&cd->inStream);
     }
+
+    /*
+     * Release all memory.
+     */
 
     if (cd->inBuffer) {
 	ckfree(cd->inBuffer);
@@ -2299,6 +2324,7 @@ ZlibTransformClose(
 	ckfree(cd->outBuffer);
 	cd->outBuffer = NULL;
     }
+    ckfree(cd);
     return result;
 }
 

@@ -774,7 +774,7 @@ proc plus-pkgs {type args} {
 		continue
 	    }
 	}
-	regexp "pkgs/$dir(.*)/doc$" [glob $tcltkdir/$tcldir/pkgs/$dir*/doc] \
+	regexp "pkgs/${dir}(.*)/doc$" [glob $tcltkdir/$tcldir/pkgs/$dir*/doc] \
 	    -> version
 	switch $type {
 	    n {
@@ -973,7 +973,7 @@ try {
 	set packageDirNameMap {
 	    itcl {[incr Tcl]}
 	    tdbc {TDBC}
-	    Thread Thread
+	    thread Thread
 	}
     }
 
