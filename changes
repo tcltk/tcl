@@ -7953,4 +7953,4 @@ memory with buffer backup (ferrieux)
 
 Many more Tcl built-in command errors now set an -errorcode.
 
---- Released 8.6b2, August 5, 2011 --- See ChangeLog for details ---
+--- Released 8.6b2, August 8, 2011 --- See ChangeLog for details ---
