@@ -1826,6 +1826,7 @@ TclPtrSetVar(
     Tcl_Obj *oldValuePtr;
     Tcl_Obj *resultPtr = NULL;
     int result;
+    int cleanupOnEarlyError = (newValuePtr->refCount == 0);
 
     /*
      * If the variable is in a hashtable and its hPtr field is NULL, then we
@@ -1997,7 +1998,7 @@ TclPtrSetVar(
     return resultPtr;
 
   earlyError:
-    if (newValuePtr->refCount == 0) {
+    if (cleanupOnEarlyError) {
 	Tcl_DecrRefCount(newValuePtr);
     }
     goto cleanup;

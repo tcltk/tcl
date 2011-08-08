@@ -1384,11 +1384,9 @@ TclParseNumber(
 
     if (status != TCL_OK) {
 	if (interp != NULL) {
-	    Tcl_Obj *msg;
+	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got \"",
+		    expected);
 
-	    TclNewLiteralStringObj(msg, "expected ");
-	    Tcl_AppendToObj(msg, expected, -1);
-	    Tcl_AppendToObj(msg, " but got \"", -1);
 	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
 	    Tcl_AppendToObj(msg, "\"", -1);
 	    if (state == BAD_OCTAL) {
@@ -3877,6 +3875,7 @@ StrictBignumConversion(
      * S = 2**s2 * 5*s5
      */
 
+    mp_init_multi(&temp, &dig, NULL);
     TclBNInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set_int(&S, 1);
@@ -3891,13 +3890,11 @@ StrictBignumConversion(
 	ilim =ilim1;
 	--k;
     }
-    mp_init(&temp);
 
     /*
      * Convert the leading digit.
      */
 
-    mp_init(&dig);
     i = 0;
     mp_div(&b, &S, &dig, &b);
     if (dig.used > 1 || dig.dp[0] >= 10) {
@@ -3985,7 +3982,7 @@ StrictBignumConversion(
      * string.
      */
 
-    mp_clear_multi(&b, &temp, NULL);
+    mp_clear_multi(&b, &S, &temp, &dig, NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -4481,6 +4478,9 @@ TclFinalizeDoubleConversion(void)
     ckfree(pow10_wide);
     for (i=0; i<9; ++i) {
 	mp_clear(pow5 + i);
+    }
+    for (i=0; i < 5; ++i) {
+	mp_clear(pow5_13 + i);
     }
 }
 
