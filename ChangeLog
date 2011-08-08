@@ -13,6 +13,12 @@
 	* generic/tclStrToD.c: [Bug 3386975]: Plugged a memory leak in
 	double->string conversion.
 
+2011-08-05  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.6b2 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for 8.6b2 release.
+
 2011-08-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclAssembly.c (AssembleOneLine): Ensure that memory isn't
@@ -39,7 +45,7 @@
 	* generic/tclIOSock.c (TclCreateSocketAddress): Don't bother using
 	AI_ADDRCONFIG for now, as it was causing problems in various
 	situations.
-
+	
 2011-08-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclAssembly.c (AssembleOneLine, GetBooleanOperand)
@@ -143,6 +149,19 @@
 2011-07-19 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* doc/upvar.n: Undocument long gone limitation of [upvar].
+
+2011-07-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump version number to 8.6b2.
+	* library/init.tcl:
+	* unix/configure.in:
+	* win/configure.in:
+	* unix/tcl.spec:
+	* tools/tcl.wse.in:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
 
 2011-07-15  Don Porter  <dgp@users.sourceforge.net>
 
