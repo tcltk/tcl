@@ -1144,7 +1144,7 @@ ConsoleReaderThread(
 {
     ConsoleInfo *infoPtr = (ConsoleInfo *)arg;
     HANDLE *handle = infoPtr->handle;
-    DWORD count, waitResult;
+    DWORD waitResult;
     HANDLE wEvents[2];
 
     /* The first event takes precedence. */
@@ -1166,8 +1166,6 @@ ConsoleReaderThread(
 
 	    break;
 	}
-
-	count = 0;
 
 	/*
 	 * Look for data on the console, but first ignore any events that are
