@@ -3029,7 +3029,7 @@ MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 MODULE_SCOPE int	TclParseBackslash(const char *src,
 			    int numBytes, int *readPtr, char *dst);
 MODULE_SCOPE int	TclParseHex(const char *src, int numBytes,
-			    Tcl_UniChar *resultPtr);
+			    int *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    const char *expected, const char *bytes,
 			    int numBytes, const char **endPtrPtr, int flags);
