@@ -3787,6 +3787,8 @@ MODULE_SCOPE int	TclCompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 MODULE_SCOPE void	TclFreeObjEntry(Tcl_HashEntry *hPtr);
 MODULE_SCOPE unsigned	TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
+MODULE_SCOPE int	TclFullFinalizationRequested(void);
+
 /*
  *----------------------------------------------------------------
  * Macros used by the Tcl core to create and release Tcl objects.
