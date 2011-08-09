@@ -1,4 +1,11 @@
-2011-08-05:  Kevin B. Kenny  <kennykb@acm.org>
+2011-08-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinConsole.c: [Bug 3388350] mingw64 compiler warnings
+	* win/tclWinDde.c
+	* win/tclWinPipe.c
+	* win/tclWinSerial.c
+
+2011-08-05  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclStrToD.c: Plugged a memory leak in double->string
 	conversion. [Bug 3386975]
