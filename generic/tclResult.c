@@ -1599,6 +1599,29 @@ Tcl_GetReturnOptions(
 /*
  *-------------------------------------------------------------------------
  *
+ * TclNoErrorStack --
+ *
+ *	Removes the -errorstack entry from an options dict to avoid reference cycles
+ *
+ * Results:
+ *	The (unshared) argument options dict, modified in -place.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options)
+{
+    Tcl_Obj **keys = GetKeys();
+    
+    Tcl_DictObjRemove(interp, options, keys[KEY_ERRORSTACK]);
+
+    return options;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
  * Tcl_SetReturnOptions --
  *
  *	Accepts an interp and a dictionary of return options, and sets the
