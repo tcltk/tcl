@@ -1,3 +1,9 @@
+2011-08-09 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclCompCmds.c: [Bug 3386417] avoid a reference loop between
+	* generic/tclInt.h:      the bytecode and its companion errostack
+	* generic/tclResult.c:   when compiling a syntax error.
+
 2011-08-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinConsole.c: [Bug 3388350] mingw64 compiler warnings
