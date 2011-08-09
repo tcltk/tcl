@@ -1,3 +1,8 @@
+2011-08-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.h: Change the signature of TclParseHex(), such that
+	* generic/tclParse.c: it can now parse up to 8 hex characters.
+
 2011-08-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (ZlibStreamCmd): Make the -buffersize option to
