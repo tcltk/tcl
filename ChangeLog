@@ -1,3 +1,8 @@
+2011-08-10 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclTestObj.c: [Bug 3386721] Allow multiple [load]ing of
+	the Tcltest package
+
 2011-08-09 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclBasic.c: [Bug 2919042] Restore "valgrindability" of Tcl
