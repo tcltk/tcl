@@ -689,7 +689,6 @@ TclGetMainLoop(void)
 
     return tsdPtr->mainLoopProc;
 }
-#endif /* !TCL_ASCII_MAIN */
 
 /*
  *----------------------------------------------------------------------
@@ -726,6 +725,7 @@ TclFullFinalizationRequested(void)
     return finalize;
 #endif
 }
+#endif /* !TCL_ASCII_MAIN */
 
 /*
  *----------------------------------------------------------------------
