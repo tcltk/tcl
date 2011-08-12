@@ -1,3 +1,8 @@
+2011-08-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:	[Bug 3389764] Eliminate possibility that dup
+	of a "path" value can create reference cycle.
+
 2011-08-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinConsole.c: [Bug 3388350] mingw64 compiler warnings
