@@ -754,7 +754,7 @@ TclParseHex(
     while (numBytes--) {
 	unsigned char digit = UCHAR(*p);
 
-	if (!isxdigit(digit)) {
+	if (!isxdigit(digit) || (result > 0x10fff)) {
 	    break;
 	}
 
@@ -866,7 +866,7 @@ TclParseBackslash(
 	result = 0xb;
 	break;
     case 'x':
-	count += TclParseHex(p+1, numBytes-2, &result);
+	count += TclParseHex(p+1, (numBytes > 3) ? 2 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
 	     * No hexadigits -> This is just "x".
@@ -887,6 +887,15 @@ TclParseBackslash(
 	     * No hexadigits -> This is just "u".
 	     */
 	    result = 'u';
+	}
+	break;
+    case 'U':
+	count += TclParseHex(p+1, (numBytes > 9) ? 8 : numBytes-2, &result);
+	if (count == 2) {
+	    /*
+	     * No hexadigits -> This is just "U".
+	     */
+	    result = 'U';
 	}
 	break;
     case '\n':
@@ -917,7 +926,7 @@ TclParseBackslash(
 	    result = (result << 3) + (*p - '0');
 	    p++;
 	    if ((numBytes == 3) || !isdigit(UCHAR(*p))	/* INTL: digit */
-		    || (UCHAR(*p) >= '8')) {
+		    || (UCHAR(*p) >= '8') || (result >= 0x20)) {
 		break;
 	    }
 	    count = 4;
