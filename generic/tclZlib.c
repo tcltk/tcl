@@ -2460,7 +2460,7 @@ ZlibTransformOutput(
 	return -1;
     }
 
-    return toWrite - cd->outStream.avail_out;
+    return toWrite - cd->outStream.avail_in;
 }
 
 static int
