@@ -1,3 +1,8 @@
+2011-08-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* doc/FindExec.3: [Patch 3124554]: Move WishPanic from Tk to Tcl
+	* doc/Panic.3     Added Documentation
+
 2011-08-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c:	[Bug 3389764] Eliminate possibility that dup
