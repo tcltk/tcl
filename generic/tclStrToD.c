@@ -3096,7 +3096,7 @@ ShouldBankerRoundUpPowD(mp_int* b,
 				/* 1 if the digit is odd, 0 if even */
 {
     int i;
-    const static mp_digit topbit = (1<<(DIGIT_BIT-1));
+    static const mp_digit topbit = (1<<(DIGIT_BIT-1));
     if (b->used < sd || (b->dp[sd-1] & topbit) == 0) {
 	return 0;
     }
