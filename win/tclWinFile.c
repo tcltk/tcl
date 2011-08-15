@@ -123,17 +123,17 @@ typedef struct _REPARSE_DATA_BUFFER {
 	    WORD PrintNameOffset;
 	    WORD PrintNameLength;
 	    ULONG Flags;
-	    WCHAR PathBuffer[1];
+	    WCHAR PathBuffer[2];
 	} SymbolicLinkReparseBuffer;
 	struct {
 	    WORD SubstituteNameOffset;
 	    WORD SubstituteNameLength;
 	    WORD PrintNameOffset;
 	    WORD PrintNameLength;
-	    WCHAR PathBuffer[1];
+	    WCHAR PathBuffer[2];
 	} MountPointReparseBuffer;
 	struct {
-	    BYTE DataBuffer[1];
+	    BYTE DataBuffer[2];
 	} GenericReparseBuffer;
     };
 } REPARSE_DATA_BUFFER;
