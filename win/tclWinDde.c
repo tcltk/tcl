@@ -844,8 +844,8 @@ DdeServicesOnAck(HWND hwnd, WPARAM wParam, LPARAM lParam)
     es = (ddeEnumServices *)GetWindowLong(hwnd, GWL_USERDATA);
 #endif
 
-    if ((es->service == (ATOM)NULL || es->service == service)
-	&& (es->topic == (ATOM)NULL || es->topic == topic)) {
+    if ((es->service == (ATOM)0 || es->service == service)
+	&& (es->topic == (ATOM)0 || es->topic == topic)) {
 	Tcl_Obj *matchPtr = Tcl_NewListObj(0, NULL);
 
 	GlobalGetAtomName(service, sz, 255);
@@ -890,9 +890,9 @@ DdeGetServicesList(Tcl_Interp *interp, char *serviceName, char *topicName)
     es.interp = interp;
     es.result = TCL_OK;
     es.service = (serviceName == NULL)
-	? (ATOM)NULL : GlobalAddAtom(serviceName);
+	? (ATOM)0 : GlobalAddAtom(serviceName);
     es.topic = (topicName == NULL)
-	? (ATOM)NULL : GlobalAddAtom(topicName);
+	? (ATOM)0 : GlobalAddAtom(topicName);
     
     Tcl_ResetResult(interp); /* our list is to be appended to result. */
     DdeCreateClient(&es);
@@ -900,9 +900,9 @@ DdeGetServicesList(Tcl_Interp *interp, char *serviceName, char *topicName)
     
     if (IsWindow(es.hwnd))
         DestroyWindow(es.hwnd);
-    if (es.service != (ATOM)NULL)
+    if (es.service != (ATOM)0)
 	GlobalDeleteAtom(es.service);
-    if (es.topic != (ATOM)NULL)
+    if (es.topic != (ATOM)0)
 	GlobalDeleteAtom(es.topic);
     return es.result;
 }

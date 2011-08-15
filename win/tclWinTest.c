@@ -538,7 +538,7 @@ TestplatformChmod(CONST char *nativePath, int pmode)
       | FILE_ADD_SUBDIRECTORY | FILE_WRITE_EA |  FILE_APPEND_DATA 
       | FILE_WRITE_DATA | DELETE;
 
-    BYTE *secDesc = 0;
+    PSECURITY_DESCRIPTOR secDesc = 0;
     DWORD secDescLen;
 
     const BOOL set_readOnly = !(pmode & 0222);
@@ -670,9 +670,8 @@ TestplatformChmod(CONST char *nativePath, int pmode)
     if (!getFileSecurityProc(nativePath, infoBits, NULL, 0, &secDescLen)) {
 	if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
 	    DWORD secDescLen2 = 0;
-	    secDesc = (BYTE *) ckalloc(secDescLen);
-	    if (!getFileSecurityProc(nativePath, infoBits,
-				     (PSECURITY_DESCRIPTOR)secDesc, 
+	    secDesc = (PSECURITY_DESCRIPTOR) ckalloc(secDescLen);
+	    if (!getFileSecurityProc(nativePath, infoBits, secDesc, 
 				     secDescLen, &secDescLen2) 
 		|| (secDescLen < secDescLen2)) {
 		goto done;

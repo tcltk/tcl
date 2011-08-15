@@ -1199,7 +1199,7 @@ TraverseWinTree(
 {
     DWORD sourceAttr;
     TCHAR *nativeSource, *nativeTarget, *nativeErrfile;
-    int result, found, sourceLen, targetLen, oldSourceLen, oldTargetLen;
+    int result, found, sourceLen, targetLen = 0, oldSourceLen, oldTargetLen;
     HANDLE handle;
     WIN32_FIND_DATAT data;
 

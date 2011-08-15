@@ -7,6 +7,7 @@
 	* win/tclWinPort.h
 	* win/tclWinChan.c
 	* win/tclWinDde.c
+	* win/tclWinFCmd.c
 	* win/tclWinPipe.c
 	* win/tclWinReg.c
 	* win/tclWinSerial.c
