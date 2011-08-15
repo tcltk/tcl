@@ -1,6 +1,7 @@
 2011-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tcl.m4:       [Bug 3388350] mingw64 compiler warnings
+	* win/configure.in
 	* win/configure
 	* win/tclMtherr.c
 	* win/tclWinPort.h
