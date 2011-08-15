@@ -266,7 +266,7 @@ TestwinclockCmd( ClientData dummy,
 		 Tcl_Obj *CONST objv[] )
 				/* Argument vector */
 {
-    CONST static FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
+    static CONST FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
 				/* The Posix epoch, expressed as a
 				 * Windows FILETIME */
     Tcl_Time tclTime;		/* Tcl clock */
