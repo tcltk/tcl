@@ -475,8 +475,7 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     DWORD moveMethod;
-    DWORD newPos, newPosHigh;
-    DWORD oldPos, oldPosHigh;
+    LONG newPos, newPosHigh, oldPos, oldPosHigh;
 
     *errorCodePtr = 0;
     if (mode == SEEK_SET) {
@@ -552,7 +551,7 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     DWORD moveMethod;
-    DWORD newPos, newPosHigh;
+    LONG newPos, newPosHigh;
 
     *errorCodePtr = 0;
     if (mode == SEEK_SET) {
@@ -781,8 +780,8 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
                                          * it? */
 {
     Tcl_Channel channel = 0;
-    int channelPermissions;
-    DWORD accessMode, createMode, shareMode, flags;
+    int channelPermissions = 0;
+    DWORD accessMode = 0, createMode, shareMode, flags;
     CONST TCHAR *nativeName;
     HANDLE handle;
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -1160,10 +1159,10 @@ TclpGetDefaultStdChannel(type)
 {
     Tcl_Channel channel;
     HANDLE handle;
-    int mode;
-    char *bufMode;
-    DWORD handleId;		/* Standard handle to retrieve. */
-
+    int mode = -1;
+    char *bufMode = NULL;
+    DWORD handleId = (DWORD)INVALID_HANDLE_VALUE;
+				/* Standard handle to retrieve. */
 
     switch (type) {
 	case TCL_STDIN:

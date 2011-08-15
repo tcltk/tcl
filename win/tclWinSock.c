@@ -1008,7 +1008,6 @@ TcpCloseProc(instanceData, interp)
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
     /* TIP #218 */
     int errorCode = 0;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
      * Check that WinSock is initialized; do not call it if not, to
@@ -1988,9 +1987,9 @@ TcpSetOptionProc (
     CONST char *optionName,	/* Name of the option to set. */
     CONST char *value)		/* New value for option. */
 {
+/*
     SocketInfo *infoPtr;
     SOCKET sock;
-/*
     BOOL val = FALSE;
     int boolVar, rtn;
 */
@@ -2008,10 +2007,10 @@ TcpSetOptionProc (
         return TCL_ERROR;
     }
 
+/*
     infoPtr = (SocketInfo *) instanceData;
     sock = infoPtr->socket;
 
-/*
     if (!stricmp(optionName, "-keepalive")) {
 	if (Tcl_GetBoolean(interp, value, &boolVar) != TCL_OK) {
 	    return TCL_ERROR;
