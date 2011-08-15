@@ -1,6 +1,9 @@
 2011-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPosixStr.c:    [Bug 3388350] mingw64 compiler warnings
+	* win/tclWinPort.h:
+	* win/configure.in
+	* win/configure
 
 2011-08-14  Jan Nijtmans  <nijtmans@users.sf.net>
 

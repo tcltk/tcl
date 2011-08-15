@@ -3485,8 +3485,8 @@ fi
 
 # Check to see if struct _stat32i64 exists in mingw's sys/stat.h
 
-echo "$as_me:$LINENO: checking struct _stat32i64" >&5
-echo $ECHO_N "checking struct _stat32i64... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking if struct _stat32i64 missing" >&5
+echo $ECHO_N "checking if struct _stat32i64 missing... $ECHO_C" >&6
 if test "${tcl_struct_stat32i64+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -3532,12 +3532,12 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  tcl_struct_stat32i64=yes
+  tcl_struct_stat32i64=no
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-tcl_struct_stat32i64=no
+tcl_struct_stat32i64=yes
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -3547,7 +3547,7 @@ echo "${ECHO_T}$tcl_struct_stat32i64" >&6
 if test "$tcl_struct_stat32i64" = "yes" ; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_STRUCT_STAT32I64 1
+#define HAVE_NO_STRUCT_STAT32I64 1
 _ACEOF
 
 fi
