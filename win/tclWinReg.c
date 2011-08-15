@@ -253,7 +253,7 @@ RegistryObjCmd(
     Tcl_Obj * CONST objv[])	/* Argument values. */
 {
     int index;
-    char *errString;
+    char *errString = NULL;
 
     static CONST char *subcommands[] = {
 	"broadcast", "delete", "get", "keys", "set", "type", "values",
@@ -806,7 +806,7 @@ GetValue(
 	 * Save binary data as a byte array.
 	 */
 
-	Tcl_SetByteArrayObj(resultPtr, Tcl_DStringValue(&data), (int) length);
+	Tcl_SetByteArrayObj(resultPtr, (BYTE *) Tcl_DStringValue(&data), (int) length);
     }
     Tcl_DStringFree(&data);
     return result;
@@ -1327,7 +1327,7 @@ SetValue(
 		(BYTE*)data, (DWORD) length);
 	Tcl_DStringFree(&buf);
     } else {
-	char *data;
+	BYTE *data;
 
 	/*
 	 * Store binary data in the registry.
@@ -1335,7 +1335,7 @@ SetValue(
 
 	data = Tcl_GetByteArrayFromObj(dataObj, &length);
 	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, type,
-		(BYTE *)data, (DWORD) length);
+		data, (DWORD) length);
     }
     Tcl_DStringFree(&nameBuf);
     RegCloseKey(key);
@@ -1371,7 +1371,8 @@ BroadcastValue(
     int objc,			/* Number of arguments. */
     Tcl_Obj * CONST objv[])	/* Argument values. */
 {
-    LRESULT result, sendResult;
+    LRESULT result;
+    DWORD_PTR sendResult;
     UINT timeout = 3000;
     int len;
     char *str;

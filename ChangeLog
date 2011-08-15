@@ -4,6 +4,12 @@
 	* win/configure
 	* win/tclMtherr.c
 	* win/tclWinPort.h
+	* win/tclWinChan.c
+	* win/tclWinDde.c
+	* win/tclWinPipe.c
+	* win/tclWinReg.c
+	* win/tclWinSerial.c
+	* win/tclWinSock.c
 	* win/tclWinTest.c
 	* win/tclWinTime.c
 	* generic/tclPosixStr.c

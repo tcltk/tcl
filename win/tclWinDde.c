@@ -122,15 +122,11 @@ int
 Dde_Init(
     Tcl_Interp *interp)
 {
-    ThreadSpecificData *tsdPtr;
-
     if (!Tcl_InitStubs(interp, "8.0", 0)) {
 	return TCL_ERROR;
     }
 
     Tcl_CreateObjCommand(interp, "dde", Tcl_DdeObjCmd, NULL, NULL);
-
-    tsdPtr = TCL_TSD_INIT(&dataKey);
 
     Tcl_CreateExitHandler(DdeExitProc, NULL);
 
@@ -236,7 +232,6 @@ DdeSetServerName(
 				 * unique. */
     )
 {
-    int suffix, offset;
     RegisteredInterp *riPtr, *prevPtr;
     Tcl_DString dString;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -285,8 +280,6 @@ DdeSetServerName(
      * unique.
      */
 
-    suffix = 1;
-    offset = 0;
     Tcl_DStringInit(&dString);
 
     /*
@@ -558,7 +551,7 @@ DdeServerProc (
 	    }
 
 	    if (convPtr != NULL) {
-		char *returnString;
+		BYTE *returnString;
 
 		len = DdeQueryString(ddeInstance, ddeItem, NULL, 0,
 			CP_WINANSI);
@@ -569,7 +562,7 @@ DdeServerProc (
                         (DWORD) len + 1, CP_WINANSI);
 		if (stricmp(utilString, "$TCLEVAL$EXECUTE$RESULT") == 0) {
 		    returnString =
-		        Tcl_GetStringFromObj(convPtr->returnPackagePtr, &len);
+		        (BYTE *)Tcl_GetStringFromObj(convPtr->returnPackagePtr, &len);
 		    ddeReturn = DdeCreateDataHandle(ddeInstance,
 			    returnString, (DWORD) len+1, 0, ddeItem, CF_TEXT,
 			    0);
@@ -578,7 +571,7 @@ DdeServerProc (
 			    convPtr->riPtr->interp, utilString, NULL, 
 			    TCL_GLOBAL_ONLY);
 		    if (variableObjPtr != NULL) {
-			returnString = Tcl_GetStringFromObj(variableObjPtr,
+			returnString = (BYTE *)Tcl_GetStringFromObj(variableObjPtr,
 				&len);
 			ddeReturn = DdeCreateDataHandle(ddeInstance,
 				returnString, (DWORD) len+1, 0, ddeItem,
@@ -881,7 +874,7 @@ DdeServicesOnAck(HWND hwnd, WPARAM wParam, LPARAM lParam)
 static BOOL CALLBACK
 DdeEnumWindowsCallback(HWND hwndTarget, LPARAM lParam)
 {
-    LRESULT dwResult = 0;
+    DWORD_PTR dwResult = 0;
     ddeEnumServices *es = (ddeEnumServices *)lParam;
     SendMessageTimeout(hwndTarget, WM_DDE_INITIATE,
 		       (WPARAM)es->hwnd,
@@ -894,12 +887,11 @@ static int
 DdeGetServicesList(Tcl_Interp *interp, char *serviceName, char *topicName)
 {
     ddeEnumServices es;
-    int r = TCL_OK;
     es.interp = interp;
     es.result = TCL_OK;
-    es.service = (serviceName == NULL) 
+    es.service = (serviceName == NULL)
 	? (ATOM)NULL : GlobalAddAtom(serviceName);
-    es.topic = (topicName == NULL) 
+    es.topic = (topicName == NULL)
 	? (ATOM)NULL : GlobalAddAtom(topicName);
     
     Tcl_ResetResult(interp); /* our list is to be appended to result. */
@@ -1011,9 +1003,9 @@ Tcl_DdeObjCmd(
     HDDEDATA ddeItemData = NULL;
     HCONV hConv = NULL;
     HSZ ddeCookie = 0;
-    char *serviceName, *topicName, *itemString, *dataString;
+    char *serviceName, *topicName = NULL, *itemString;
     char *string;
-    int firstArg, length, dataLength;
+    int firstArg = 0, length, dataLength;
     DWORD ddeResult;
     HDDEDATA ddeReturn;
     RegisteredInterp *riPtr;
@@ -1174,7 +1166,8 @@ Tcl_DdeObjCmd(
 	    break;
 	}
 	case DDE_EXECUTE: {
-	    dataString = Tcl_GetStringFromObj(objv[firstArg + 2], &dataLength);
+	    BYTE *dataString = (BYTE *) Tcl_GetStringFromObj(
+		    objv[firstArg + 2], &dataLength);
 	    if (dataLength == 0) {
 		Tcl_SetStringObj(Tcl_GetObjResult(interp),
 			"cannot execute null data", -1);
@@ -1240,13 +1233,13 @@ Tcl_DdeObjCmd(
 			result = TCL_ERROR;
 		    } else {
 			DWORD tmp;
-			dataString = DdeAccessData(ddeData, &tmp);
+			BYTE *dataString = (BYTE *) DdeAccessData(ddeData, &tmp);
 			dataLength = tmp;
 			if (binary) {
 			    returnObjPtr = Tcl_NewByteArrayObj(dataString,
 				    dataLength);
 			} else {
-			    returnObjPtr = Tcl_NewStringObj(dataString, -1);
+			    returnObjPtr = Tcl_NewStringObj((char *) dataString, -1);
 			}
 			DdeUnaccessData(ddeData);
 			DdeFreeDataHandle(ddeData);
@@ -1262,12 +1255,13 @@ Tcl_DdeObjCmd(
 	}
 	case DDE_POKE: {
 	    itemString = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
+	    BYTE *dataString;
 	    if (length == 0) {
 		Tcl_SetStringObj(Tcl_GetObjResult(interp),
 			"cannot have a null item", -1);
 		goto errorNoResult;
 	    }
-	    dataString = Tcl_GetStringFromObj(objv[firstArg + 3], &length);
+	    dataString = (BYTE *) Tcl_GetStringFromObj(objv[firstArg + 3], &length);
 	    
 	    hConv = DdeConnect(ddeInstance, ddeService, ddeTopic, NULL);
 	    DdeFreeStringHandle(ddeInstance, ddeService);
@@ -1387,7 +1381,7 @@ Tcl_DdeObjCmd(
 		
 		objPtr = Tcl_ConcatObj(objc, objv);
 		string = Tcl_GetStringFromObj(objPtr, &length);
-		ddeItemData = DdeCreateDataHandle(ddeInstance, string,
+		ddeItemData = DdeCreateDataHandle(ddeInstance, (BYTE *) string,
 			(DWORD) length+1, 0, 0, CF_TEXT, 0);
 		
 		if (async) {
@@ -1431,7 +1425,7 @@ Tcl_DdeObjCmd(
 		    length = DdeGetData(ddeData, NULL, 0, 0);
 		    Tcl_SetObjLength(resultPtr, length);
 		    string = Tcl_GetString(resultPtr);
-		    DdeGetData(ddeData, string, (DWORD) length, 0);
+		    DdeGetData(ddeData, (BYTE *) string, (DWORD) length, 0);
 		    Tcl_SetObjLength(resultPtr, (int) strlen(string));
 		    
 		    if (Tcl_ListObjIndex(NULL, resultPtr, 0, &objPtr)
