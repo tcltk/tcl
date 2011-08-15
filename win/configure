@@ -1265,8 +1265,8 @@ fi
 
 # Check to see if struct _stat32i64 exists in mingw's sys/stat.h
 
-echo $ac_n "checking struct _stat32i64""... $ac_c" 1>&6
-echo "configure:1270: checking struct _stat32i64" >&5
+echo $ac_n "checking if struct _stat32i64 missing""... $ac_c" 1>&6
+echo "configure:1270: checking if struct _stat32i64 missing" >&5
 if eval "test \"`echo '$''{'tcl_struct_stat32i64'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1285,12 +1285,12 @@ int main() {
 EOF
 if { (eval echo configure:1287: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
-  tcl_struct_stat32i64=yes
+  tcl_struct_stat32i64=no
 else
   echo "configure: failed program was:" >&5
   cat conftest.$ac_ext >&5
   rm -rf conftest*
-  tcl_struct_stat32i64=no
+  tcl_struct_stat32i64=yes
 fi
 rm -f conftest*
 
@@ -1299,7 +1299,7 @@ fi
 echo "$ac_t""$tcl_struct_stat32i64" 1>&6
 if test "$tcl_struct_stat32i64" = "yes" ; then
     cat >> confdefs.h <<\EOF
-#define HAVE_STRUCT_STAT32I64 1
+#define HAVE_NO_STRUCT_STAT32I64 1
 EOF
 
 fi
