@@ -1,3 +1,7 @@
+2011-08-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c: [Bug 3390272] Leak of [info script] value.
+
 2011-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tcl.m4:       [Bug 3388350] mingw64 compiler warnings
