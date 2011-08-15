@@ -119,7 +119,7 @@ static TimeInfo timeInfo = {
     0
 };
 
-CONST static FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
+static CONST FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
     
 /*
  * Declarations for functions defined later in this file.
