@@ -758,7 +758,7 @@ TestplatformChmod(CONST char *nativePath, int pmode)
     }
 
  done:
-    if (secDesc) ckfree(secDesc);
+    if (secDesc) ckfree((char *)secDesc);
     if (newAcl) ckfree((char *)newAcl);
     if (userSid) ckfree((char *)userSid);
     if (userDomain) ckfree(userDomain);

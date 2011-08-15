@@ -1385,9 +1385,7 @@ TclWinSerialReopen(handle, name, access)
     CONST TCHAR *name;
     DWORD access;
 {
-    ThreadSpecificData *tsdPtr;
-
-    tsdPtr = SerialInit();
+    SerialInit();
 
     /* 
     * Multithreaded I/O needs the overlapped flag set
