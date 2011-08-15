@@ -1,3 +1,9 @@
+2011-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h:    [Bug 3388350] mingw64 compiler warnings
+	* generic/tclPosixStr.c
+	* generic/tclStrToD.c
+
 2011-08-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c:	[Bug 3389764] Eliminate possibility that dup
