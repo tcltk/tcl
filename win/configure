@@ -1670,7 +1670,7 @@ echo "configure:1596: checking compiler flags" >&5
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wconversion"
+	CFLAGS_WARNING="-Wall -fno-strict-aliasing"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 

@@ -519,7 +519,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wconversion"
+	CFLAGS_WARNING="-Wall -fno-strict-aliasing"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 
@@ -918,8 +918,8 @@ AC_DEFUN([SC_EMBED_MANIFEST], [
 	[  --enable-embedded-manifest         embed manifest if possible (default: yes)],
 	[embed_ok=$enableval], [embed_ok=yes])
 
-	VC_MANIFEST_EMBED_DLL=
-	VC_MANIFEST_EMBED_EXE=
+    VC_MANIFEST_EMBED_DLL=
+    VC_MANIFEST_EMBED_EXE=
     result=no
     if test "$embed_ok" = "yes" -a "${SHARED_BUILD}" = "1" \
        -a "$GCC" != "yes" ; then
