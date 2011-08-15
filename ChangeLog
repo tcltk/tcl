@@ -1,3 +1,15 @@
+2011-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4:       [Bug 3388350] mingw64 compiler warnings
+	* win/configure
+	* win/tclMtherr.c
+	* win/tclWinPort.h
+	* win/tclWinTest.c
+	* win/tclWinTime.c
+	* generic/tclPosixStr.c
+	* unix/tcl.m4:      Quoting and AC_DEFINE fixes (All backported from
+	* unix/configure    Tcl 8.5
+
 2011-07-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinPort.h: [Bug 3372130] Fix hypot math function with MSVC10
