@@ -1,3 +1,22 @@
+2011-08-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCmdAH.c:    [Bug 3388350] mingw64 compiler warnings
+	* generic/tclFCmd.c      In mingw, sys/stat.h must be included
+	* generic/tclFileName.c  before winsock2.h, so make sure of that.
+	* generic/tclIOUtil.c
+	* generic/tclBasic.c
+	* generic/tclBinary.c
+	* generic/tclHash.c
+	* generic/tclTest.c
+	* win/tclWinChan.c
+	* win/tclWinConsole.c
+	* win/tclWinDde.c
+	* win/tclWinFile.c
+	* win/tclWinReg.c
+	* win/tclWinSerial.c
+	* win/tclWinSock.c
+	* win/tclWinThrd.c
+
 2011-08-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c: [Bug 3390272] Leak of [info script] value.

@@ -434,7 +434,7 @@ Tcl_DeleteHashEntry(
 #if TCL_HASH_KEY_STORE_HASH
     if (typePtr->hashKeyProc == NULL
 	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-	index = RANDOM_INDEX (tablePtr, entryPtr->hash);
+	index = RANDOM_INDEX(tablePtr, PTR2UINT(entryPtr->hash));
     } else {
 	index = PTR2UINT(entryPtr->hash) & tablePtr->mask;
     }
@@ -1064,7 +1064,7 @@ RebuildTable(
 #if TCL_HASH_KEY_STORE_HASH
 	    if (typePtr->hashKeyProc == NULL
 		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-		index = RANDOM_INDEX (tablePtr, hPtr->hash);
+		index = RANDOM_INDEX (tablePtr, PTR2UINT(hPtr->hash));
 	    } else {
 		index = PTR2UINT(hPtr->hash) & tablePtr->mask;
 	    }
