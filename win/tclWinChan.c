@@ -1224,7 +1224,7 @@ TclpGetDefaultStdChannel(
     HANDLE handle;
     int mode = -1;
     char *bufMode = NULL;
-    DWORD handleId = (DWORD)INVALID_HANDLE_VALUE;
+    DWORD handleId = (DWORD)-1;
 				/* Standard handle to retrieve. */
 
     switch (type) {
@@ -1337,7 +1337,7 @@ TclWinOpenFileChannel(
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    wsprintfA(channelName, "file%lx", (int) infoPtr);
+    wsprintfA(channelName, "file%lx", PTR2INT(infoPtr));
 
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    (ClientData) infoPtr, permissions);
