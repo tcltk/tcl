@@ -5,7 +5,10 @@
 	* generic/tclFileName.c  before winsock2.h, so make sure of that.
 	* generic/tclIOUtil.c
 	* generic/tclTest.c
-	* win/tclWinFile.c
+	* win/tclWin32Dll.c
+	* win/tclWinChan.c
+	* win/tclWinDde.c
+	* win/tclWinFCmd.c
 
 2011-08-15  Don Porter  <dgp@users.sourceforge.net>
 
