@@ -359,7 +359,6 @@ Tcl_GetIndexFromObjStruct(
 	int count;
 
 	TclNewObj(resultPtr);
-	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_AppendStringsToObj(resultPtr,
 		(numAbbrev>1 && !(flags & TCL_EXACT) ? "ambiguous " : "bad "),
 		msg, " \"", key, NULL);
@@ -379,6 +378,7 @@ Tcl_GetIndexFromObjStruct(
 		}
 	    }
 	}
+	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, NULL);
     }
     return TCL_ERROR;
@@ -410,7 +410,7 @@ SetIndexFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     if (interp) {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "can't convert value to index except via Tcl_GetIndexFromObj API",
 	    -1));
     }
@@ -593,14 +593,16 @@ PrefixMatchObjCmd(
 	case PRFMATCH_MESSAGE:
 	    if (i > (objc - 4)) {
 		Tcl_AppendResult(interp, "missing message", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", NULL);
 		return TCL_ERROR;
 	    }
 	    i++;
 	    message = Tcl_GetString(objv[i]);
 	    break;
 	case PRFMATCH_ERROR:
-	    if (i > (objc - 4)) {
+	    if (i > objc-4) {
 		Tcl_AppendResult(interp, "missing error options", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", NULL);
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -611,6 +613,7 @@ PrefixMatchObjCmd(
 	    if ((errorLength % 2) != 0) {
 		Tcl_AppendResult(interp, "error options must have an even"
 			" number of elements", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
 		return TCL_ERROR;
 	    }
 	    errorPtr = objv[i];
@@ -1093,7 +1096,7 @@ Tcl_ParseArgsObjv(
 				/* Pointer to the current entry in the table
 				 * of argument descriptions. */
     const Tcl_ArgvInfo *matchPtr;
-				/* Descriptor that matches current argument. */
+				/* Descriptor that matches current argument */
     Tcl_Obj *curArg;		/* Current argument */
     const char *str = NULL;
     register char c;		/* Second character of current arg (used for
@@ -1106,7 +1109,7 @@ Tcl_ParseArgsObjv(
 				 * being processed, primarily for error
 				 * reporting. */
     int objc;			/* # arguments in objv still to process. */
-    int length;			/* Number of characters in current argument. */
+    int length;			/* Number of characters in current argument */
 
     if (remObjv != NULL) {
 	/*
@@ -1147,8 +1150,7 @@ Tcl_ParseArgsObjv(
 
 	matchPtr = NULL;
 	infoPtr = argTable;
-	for (; (infoPtr != NULL) && (infoPtr->type != TCL_ARGV_END);
-		infoPtr++) {
+	for (; infoPtr != NULL && infoPtr->type != TCL_ARGV_END ; infoPtr++) {
 	    if (infoPtr->keyStr == NULL) {
 		continue;
 	    }
@@ -1242,7 +1244,8 @@ Tcl_ParseArgsObjv(
 	    objc--;
 	    break;
 	case TCL_ARGV_FUNC: {
-	    Tcl_ArgvFuncProc *handlerProc;
+	    Tcl_ArgvFuncProc *handlerProc = (Tcl_ArgvFuncProc *)
+		    infoPtr->srcPtr;
 	    Tcl_Obj *argObj;
 
 	    if (objc == 0) {
@@ -1250,7 +1253,6 @@ Tcl_ParseArgsObjv(
 	    } else {
 		argObj = objv[srcIndex];
 	    }
-	    handlerProc = (Tcl_ArgvFuncProc *) infoPtr->srcPtr;
 	    if (handlerProc(infoPtr->clientData, argObj, infoPtr->dstPtr)) {
 		srcIndex++;
 		objc--;
@@ -1258,9 +1260,9 @@ Tcl_ParseArgsObjv(
 	    break;
 	}
 	case TCL_ARGV_GENFUNC: {
-	    Tcl_ArgvGenFuncProc *handlerProc;
+	    Tcl_ArgvGenFuncProc *handlerProc = (Tcl_ArgvGenFuncProc *)
+		    infoPtr->srcPtr;
 
-	    handlerProc = (Tcl_ArgvGenFuncProc *) infoPtr->srcPtr;
 	    objc = handlerProc(infoPtr->clientData, interp, objc,
 		    &objv[srcIndex], infoPtr->dstPtr);
 	    if (objc < 0) {
@@ -1271,14 +1273,10 @@ Tcl_ParseArgsObjv(
 	case TCL_ARGV_HELP:
 	    PrintUsage(interp, argTable);
 	    goto error;
-	default: {
-	    char buf[64 + TCL_INTEGER_SPACE];
-
-	    sprintf(buf, "bad argument type %d in Tcl_ArgvInfo",
-		    infoPtr->type);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+	default:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad argument type %d in Tcl_ArgvInfo", infoPtr->type));
 	    goto error;
-	}
 	}
     }
 
@@ -1444,18 +1442,18 @@ int
 TclGetCompletionCodeFromObj(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Obj *value,
-    int *code)	/* Argument objects. */
+    int *code)			/* Argument objects. */
 {
     static const char *const returnCodes[] = {
-	    "ok", "error", "return", "break", "continue", NULL
+	"ok", "error", "return", "break", "continue", NULL
     };
 
     if ((value->typePtr != &indexType)
 	    && (TCL_OK == TclGetIntFromObj(NULL, value, code))) {
 	return TCL_OK;
     }
-    if (TCL_OK == Tcl_GetIndexFromObj(
-	    NULL, value, returnCodes, NULL, TCL_EXACT, code)) {
+    if (TCL_OK == Tcl_GetIndexFromObj(NULL, value, returnCodes, NULL,
+		TCL_EXACT, code)) {
 	return TCL_OK;
     }
     /*
@@ -1472,7 +1470,7 @@ TclGetCompletionCodeFromObj(
     }
     return TCL_ERROR;
 }
-
+
 /*
  * Local Variables:
  * mode: c
