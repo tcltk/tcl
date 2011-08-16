@@ -529,7 +529,7 @@ int
 TclpCheckStackSpace()
 {
 
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(__WIN64__)
     EXCEPTION_REGISTRATION registration;
 #endif
     int retval = 0;
