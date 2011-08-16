@@ -173,7 +173,7 @@ Initialize(void)
     if (ddeInstance == 0) {
 	Tcl_MutexLock(&ddeMutex);
 	if (ddeInstance == 0) {
-	    if (DdeInitialize(&ddeInstance, DdeServerProc,
+	    if (DdeInitialize(&ddeInstance, (PFNCALLBACK) DdeServerProc,
 		    CBF_SKIP_REGISTRATIONS
 		    | CBF_SKIP_UNREGISTRATIONS
 		    | CBF_FAIL_POKES, 0) 
