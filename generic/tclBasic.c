@@ -1355,10 +1355,11 @@ DeleteInterpProc(
     int i;
 
     /*
-     * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup.
+     * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup,
+	 * unless we are exiting.
      */
 
-    if (iPtr->numLevels > 0) {
+    if ((iPtr->numLevels > 0) && !TclInExit()) {
 	Tcl_Panic("DeleteInterpProc called with active evals");
     }
 
@@ -1481,7 +1482,7 @@ DeleteInterpProc(
      * namespace. The order is important [Bug 1658572].
      */
 
-    if (iPtr->framePtr != iPtr->rootFramePtr) {
+    if ((iPtr->framePtr != iPtr->rootFramePtr) && !TclInExit()) {
 	Tcl_Panic("DeleteInterpProc: popping rootCallFrame with other frames on top");
     }
     Tcl_PopCallFrame(interp);
@@ -1527,6 +1528,10 @@ DeleteInterpProc(
     }
     if (iPtr->execEnvPtr != NULL) {
 	TclDeleteExecEnv(iPtr->execEnvPtr);
+    }
+    if (iPtr->scriptFile) {
+	Tcl_DecrRefCount(iPtr->scriptFile);
+	iPtr->scriptFile = NULL;
     }
     Tcl_DecrRefCount(iPtr->emptyObjPtr);
     iPtr->emptyObjPtr = NULL;
@@ -1602,7 +1607,7 @@ DeleteInterpProc(
      * know which arguments will be used as scripts and which will not.
      */
 
-    if (iPtr->lineLAPtr->numEntries) {
+    if (iPtr->lineLAPtr->numEntries && !TclInExit()) {
 	/*
 	 * When the interp goes away we have nothing on the stack, so there
 	 * are no arguments, so this table has to be empty.
@@ -1612,10 +1617,10 @@ DeleteInterpProc(
     }
 
     Tcl_DeleteHashTable(iPtr->lineLAPtr);
-    ckfree(iPtr->lineLAPtr);
+    ckfree((char *) iPtr->lineLAPtr);
     iPtr->lineLAPtr = NULL;
 
-    if (iPtr->lineLABCPtr->numEntries) {
+    if (iPtr->lineLABCPtr->numEntries && !TclInExit()) {
 	/*
 	 * When the interp goes away we have nothing on the stack, so there
 	 * are no arguments, so this table has to be empty.
