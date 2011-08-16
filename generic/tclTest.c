@@ -16,6 +16,7 @@
  */
 
 #define TCL_TEST
+#include <sys/stat.h>
 #include "tclInt.h"
 #include "tclPort.h"
 
