@@ -1499,7 +1499,7 @@ TclWinOpenSerialChannel(
      * are shared between multiple channels (stdin/stdout).
      */
 
-    wsprintfA(channelName, "file%lx", (int) infoPtr);
+    wsprintfA(channelName, "file%lx", PTR2INT(infoPtr));
 
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    (ClientData) infoPtr, permissions);

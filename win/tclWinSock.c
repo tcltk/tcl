@@ -1326,7 +1326,7 @@ Tcl_MakeTcpClientChannel(
      * Set kernel space buffering and non-blocking.
      */
 
-    TclSockMinimumBuffers((int) sock, TCP_BUFFER_SIZE);
+    TclSockMinimumBuffers(PTR2INT(sock), TCP_BUFFER_SIZE);
 
     infoPtr = NewSocketInfo((SOCKET) sock);
 
