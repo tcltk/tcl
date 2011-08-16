@@ -227,7 +227,7 @@ fi
 
 # Check to see if struct _stat32i64 exists in mingw's sys/stat.h
 
-AC_CACHE_CHECK(struct _stat32i64,
+AC_CACHE_CHECK(if struct _stat32i64 missing,
     tcl_struct_stat32i64,
 AC_TRY_COMPILE([
 #include <sys/types.h>
@@ -236,12 +236,12 @@ AC_TRY_COMPILE([
 [
   struct _stat32i64 foo;
 ],
-        tcl_struct_stat32i64=yes,
-        tcl_struct_stat32i64=no)
+        tcl_struct_stat32i64=no,
+        tcl_struct_stat32i64=yes)
 )
 if test "$tcl_struct_stat32i64" = "yes" ; then
-    AC_DEFINE(HAVE_STRUCT_STAT32I64, 1,
-            [Defined when sys/stat.h has struct_stat32i64])
+    AC_DEFINE(HAVE_NO_STRUCT_STAT32I64, 1,
+            [Defined when sys/stat.h is missing struct _stat32i64])
 fi
 
 
@@ -399,7 +399,7 @@ AC_CHECK_TYPE([intptr_t], [
     for tcl_cv_intptr_t in "int" "long" "long long" none; do
 	if test "$tcl_cv_intptr_t" != none; then
 	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_intptr_t)]])], 
+		    [[sizeof (void *) <= sizeof ($tcl_cv_intptr_t)]])],
 		[tcl_ok=yes], [tcl_ok=no])
 	    test "$tcl_ok" = yes && break; fi
     done])
@@ -415,7 +415,7 @@ AC_CHECK_TYPE([uintptr_t], [
 	    none; do
 	if test "$tcl_cv_uintptr_t" != none; then
 	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_uintptr_t)]])], 
+		    [[sizeof (void *) <= sizeof ($tcl_cv_uintptr_t)]])],
 		[tcl_ok=yes], [tcl_ok=no])
 	    test "$tcl_ok" = yes && break; fi
     done])

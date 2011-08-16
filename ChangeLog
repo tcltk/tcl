@@ -1,3 +1,74 @@
+2011-08-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclListObj.c (TclLindexList, TclLsetFlat): Silence warnings
+	about (unreachable) cases of uninitialized variables.
+	* generic/tclCmdIL.c (SelectObjFromSublist): Improve the generation of
+	* generic/tclIndexObj.c (Tcl_ParseArgsObjv): messages through the use
+	* generic/tclVar.c (ArrayStartSearchCmd):    of Tcl_ObjPrintf.
+
+2011-08-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c: [Bug 3390272]: Leak of [info script] value.
+
+2011-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPosixStr.c:    [Bug 3388350]: mingw64 compiler warnings
+	* win/tclWinPort.h:
+	* win/configure.in
+	* win/configure
+
+2011-08-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* doc/FindExec.3: [Patch 3124554]: Move WishPanic from Tk to Tcl
+	* doc/Panic.3     Added Documentation
+
+2011-08-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:	[Bug 3389764]: Eliminate possibility that dup
+	of a "path" value can create reference cycle.
+
+2011-08-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ZlibTransformOutput): [Bug 3390073]: Return the
+	correct length of written data for a compressing transform.
+
+2011-08-10 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclTestObj.c: [Bug 3386721]: Allow multiple [load]ing of the
+	Tcltest package.
+
+2011-08-09 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclBasic.c: [Bug 2919042]: Restore "valgrindability" of Tcl
+	* generic/tclEvent.c: that was lost by the streamlining of [exit], by
+	* generic/tclExecute.c: conditionally forcing a full Finalize:
+	* generic/tclInt.h:  use -DPURIFY or ::env(TCL_FINALIZE_ON_EXIT)
+
+2011-08-09 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclCompCmds.c: [Bug 3386417]: Avoid a reference loop between
+	* generic/tclInt.h:      the bytecode and its companion errostack
+	* generic/tclResult.c:   when compiling a syntax error.
+
+2011-08-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinConsole.c: [Bug 3388350]: mingw64 compiler warnings
+	* win/tclWinDde.c
+	* win/tclWinPipe.c
+	* win/tclWinSerial.c
+
+2011-08-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.h: Change the signature of TclParseHex(), such that
+	* generic/tclParse.c: it can now parse up to 8 hex characters.
+
+2011-08-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ZlibStreamCmd): Make the -buffersize option to
+	'$zstream add' function correctly instead of having its value just be
+	discarded unceremoniously. Also generate error codes from more of the
+	code, not just the low-level code but also the Tcl infrastructure.
+
 2011-08-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOInfo.c (InfoClassCallCmd): [Bug 3387082]: Plug memory

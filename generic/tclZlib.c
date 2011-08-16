@@ -576,6 +576,7 @@ Tcl_ZlibStreamInit(
 		&cmdinfo) == 1) {
 	    Tcl_SetResult(interp,
 		    "BUG: Stream command name already exists", TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "BUG", "EXISTING_CMD", NULL);
 	    Tcl_DStringFree(&cmdname);
 	    goto error;
 	}
@@ -898,6 +899,7 @@ Tcl_ZlibStreamPut(
 	if (zshPtr->interp) {
 	    Tcl_SetResult(zshPtr->interp,
 		    "already past compressed stream end", TCL_STATIC);
+	    Tcl_SetErrorCode(zshPtr->interp, "TCL", "ZIP", "CLOSED", NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1083,6 +1085,8 @@ Tcl_ZlibStreamGet(
 		    Tcl_SetResult(zshPtr->interp,
 			"Unexpected zlib internal state during decompression",
 			TCL_STATIC);
+		    Tcl_SetErrorCode(zshPtr->interp, "TCL", "ZIP", "STATE",
+			    NULL);
 		}
 		Tcl_SetByteArrayLength(data, existing);
 		return TCL_ERROR;
@@ -1906,12 +1910,14 @@ ZlibCmd(
 	    Tcl_AppendResult(interp,
 		    "compression may only be applied to writable channels",
 		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNWRITABLE", NULL);
 	    return TCL_ERROR;
 	}
 	if (mode == TCL_ZLIB_STREAM_INFLATE && !(chanMode & TCL_READABLE)) {
 	    Tcl_AppendResult(interp,
 		    "decompression may only be applied to readable channels",
 		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNREADABLE", NULL);
 	    return TCL_ERROR;
 	}
 
@@ -1930,6 +1936,7 @@ ZlibCmd(
 		if (++i > objc-1) {
 		    Tcl_AppendResult(interp,
 			    "value missing for -header option", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		    return TCL_ERROR;
 		}
 		headerObj = objv[i];
@@ -1942,6 +1949,7 @@ ZlibCmd(
 		if (++i > objc-1) {
 		    Tcl_AppendResult(interp,
 			    "value missing for -level option", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		    return TCL_ERROR;
 		}
 		if (Tcl_GetIntFromObj(interp, objv[i],
@@ -1958,6 +1966,7 @@ ZlibCmd(
 		if (++i > objc-1) {
 		    Tcl_AppendResult(interp,
 			    "value missing for -limit option", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		    return TCL_ERROR;
 		}
 		if (Tcl_GetIntFromObj(interp, objv[i],
@@ -1985,12 +1994,14 @@ ZlibCmd(
 
   badLevel:
     Tcl_AppendResult(interp, "level must be 0 to 9", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL", NULL);
     if (extraInfoStr) {
 	Tcl_AddErrorInfo(interp, extraInfoStr);
     }
     return TCL_ERROR;
   badBuffer:
     Tcl_AppendResult(interp, "buffer size must be 32 to 65536", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE", NULL);
     return TCL_ERROR;
 }
 
@@ -2012,7 +2023,7 @@ ZlibStreamCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = cd;
-    int command, index, count, code, buffersize, flush = -1, i;
+    int command, index, count, code, buffersize = -1, flush = -1, i;
     Tcl_Obj *obj;
     static const char *const cmds[] = {
 	"add", "checksum", "close", "eof", "finalize", "flush",
@@ -2075,10 +2086,18 @@ ZlibStreamCmd(
 		    Tcl_AppendResult(interp, "\"-buffer\" option must be "
 			    "followed by integer decompression buffersize",
 			    NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		    return TCL_ERROR;
 		}
 		if (Tcl_GetIntFromObj(interp, objv[i+1],
 			&buffersize) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (buffersize < 1 || buffersize > 65536) {
+		    Tcl_AppendResult(interp,
+			    "buffer size must be 32 to 65536", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE",
+			    NULL);
 		    return TCL_ERROR;
 		}
 	    }
@@ -2086,6 +2105,7 @@ ZlibStreamCmd(
 	    if (flush == -2) {
 		Tcl_AppendResult(interp, "\"-flush\", \"-fullflush\" and "
 			"\"-finalize\" options are mutually exclusive", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ZIP", "EXCLUSIVE", NULL);
 		return TCL_ERROR;
 	    }
 	}
@@ -2093,12 +2113,11 @@ ZlibStreamCmd(
 	    flush = 0;
 	}
 
-	if (Tcl_ZlibStreamPut(zstream, objv[objc-1],
-		flush) != TCL_OK) {
+	if (Tcl_ZlibStreamPut(zstream, objv[objc-1], flush) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	TclNewObj(obj);
-	code = Tcl_ZlibStreamGet(zstream, obj, -1);
+	code = Tcl_ZlibStreamGet(zstream, obj, buffersize);
 	if (code == TCL_OK) {
 	    Tcl_SetObjResult(interp, obj);
 	} else {
@@ -2143,6 +2162,7 @@ ZlibStreamCmd(
 	    if (flush == -2) {
 		Tcl_AppendResult(interp, "\"-flush\", \"-fullflush\" and "
 			"\"-finalize\" options are mutually exclusive", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ZIP", "EXCLUSIVE", NULL);
 		return TCL_ERROR;
 	    }
 	}
@@ -2440,7 +2460,7 @@ ZlibTransformOutput(
 	return -1;
     }
 
-    return toWrite - cd->outStream.avail_out;
+    return toWrite - cd->outStream.avail_in;
 }
 
 static int
@@ -2461,17 +2481,19 @@ ZlibTransformSetOption(			/* not used */
 
 	if (value[0] == 'f' && strcmp(value, "full") == 0) {
 	    flushType = Z_FULL_FLUSH;
-	    goto doFlush;
-	}
-	if (value[0] == 's' && strcmp(value, "sync") == 0) {
+	} else if (value[0] == 's' && strcmp(value, "sync") == 0) {
 	    flushType = Z_SYNC_FLUSH;
-	    goto doFlush;
+	} else {
+	    Tcl_AppendResult(interp, "unknown -flush type \"", value,
+		    "\": must be full or sync", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "FLUSH", NULL);
+	    return TCL_ERROR;
 	}
-	Tcl_AppendResult(interp, "unknown -flush type \"", value,
-		"\": must be full or sync", NULL);
-	return TCL_ERROR;
 
-    doFlush:
+	/*
+	 * Try to actually do the flush now.
+	 */
+
 	cd->outStream.avail_in = 0;
 	do {
 	    int e;
@@ -2851,6 +2873,7 @@ Tcl_ZlibStreamInit(
     Tcl_ZlibStream *zshandle)
 {
     Tcl_SetResult(interp, "unimplemented", TCL_STATIC);
+    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
     return TCL_ERROR;
 }
 
@@ -2916,6 +2939,7 @@ Tcl_ZlibDeflate(
     Tcl_Obj *gzipHeaderDictObj)
 {
     Tcl_SetResult(interp, "unimplemented", TCL_STATIC);
+    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
     return TCL_ERROR;
 }
 
@@ -2928,6 +2952,7 @@ Tcl_ZlibInflate(
     Tcl_Obj *gzipHeaderDictObj)
 {
     Tcl_SetResult(interp, "unimplemented", TCL_STATIC);
+    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
     return TCL_ERROR;
 }
 
