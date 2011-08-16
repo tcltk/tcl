@@ -15,9 +15,9 @@
 #ifndef _WIN64
 #   define _USE_32BIT_TIME_T
 #endif
+#include <sys/stat.h>
 #include "tclWinInt.h"
 #include <winioctl.h>
-#include <sys/stat.h>
 #include <shlobj.h>
 #include <lmaccess.h>		/* For TclpGetUserHome(). */
 
