@@ -1,3 +1,8 @@
+2011-08-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclGet.c: [Bug 3393150] Overlooked free of intreps.
+	(It matters for bignums!)
+
 2011-08-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c: [Bug 3392070] More complete prevention of
