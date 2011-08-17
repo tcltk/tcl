@@ -1,10 +1,23 @@
+2011-08-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c: [Bug 3392070] More complete prevention of
+	Tcl_Obj reference cycles when producing an intrep of ByteCode.
+
+2011-08-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclListObj.c (TclLindexList, TclLsetFlat): Silence warnings
+	about (unreachable) cases of uninitialized variables.
+	* generic/tclCmdIL.c (SelectObjFromSublist): Improve the generation of
+	* generic/tclIndexObj.c (Tcl_ParseArgsObjv): messages through the use
+	* generic/tclVar.c (ArrayStartSearchCmd):    of Tcl_ObjPrintf.
+
 2011-08-15  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c: [Bug 3390272] Leak of [info script] value.
+	* generic/tclBasic.c: [Bug 3390272]: Leak of [info script] value.
 
 2011-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclPosixStr.c:    [Bug 3388350] mingw64 compiler warnings
+	* generic/tclPosixStr.c:    [Bug 3388350]: mingw64 compiler warnings
 	* win/tclWinPort.h:
 	* win/configure.in
 	* win/configure
@@ -16,7 +29,7 @@
 
 2011-08-12  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclPathObj.c:	[Bug 3389764] Eliminate possibility that dup
+	* generic/tclPathObj.c:	[Bug 3389764]: Eliminate possibility that dup
 	of a "path" value can create reference cycle.
 
 2011-08-12  Donal K. Fellows  <dkf@users.sf.net>
