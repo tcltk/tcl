@@ -1,3 +1,8 @@
+2011-08-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c: [Bug 3392070] More complete prevention of
+	Tcl_Obj reference cycles when producing an intrep of ByteCode.
+
 2011-08-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclListObj.c (TclLindexList, TclLsetFlat): Silence warnings
