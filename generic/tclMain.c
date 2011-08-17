@@ -392,7 +392,7 @@ Tcl_MainEx(
 	/*
 	 * Arrange for final deletion of the main interp
 	 */
-	// ARGH Munchhausen effect 
+	/* ARGH Munchhausen effect  */
 	Tcl_CreateExitHandler(FreeMainInterp, (ClientData)interp);
     }
 
@@ -928,7 +928,7 @@ FreeMainInterp(
 {
 	Tcl_Interp *interp = (Tcl_Interp *) clientData;
 
-	//if (TclInExit()) return;
+	/*if (TclInExit()) return;*/
 
 	if (!Tcl_InterpDeleted(interp)) {
 	    Tcl_DeleteInterp(interp);

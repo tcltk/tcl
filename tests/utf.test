@@ -27,9 +27,12 @@ test utf-1.3 {Tcl_UniCharToUtf: 2 byte sequences} {
 test utf-1.4 {Tcl_UniCharToUtf: 3 byte sequences} {
     set x "\u4e4e"
 } [bytestring "\xe4\xb9\x8e"]
-test utf-1.5 {Tcl_UniCharToUtf: negative Tcl_UniChar} {
-    string length [format %c -1]
-} 1
+test utf-1.5 {Tcl_UniCharToUtf: overflowed Tcl_UniChar} {
+    format %c 0x110000
+} [bytestring "\xef\xbf\xbd"]
+test utf-1.6 {Tcl_UniCharToUtf: negative Tcl_UniChar} {
+    format %c -1
+} [bytestring "\xef\xbf\xbd"]
 
 test utf-2.1 {Tcl_UtfToUniChar: low ascii} {
     string length "abc"
