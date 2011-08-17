@@ -1,3 +1,7 @@
+2011-08-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* doc/interp.n: Document TIP 378's one-way-ness.
+	
 2011-08-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclGet.c: [Bug 3393150] Overlooked free of intreps.
