@@ -1,3 +1,8 @@
+2011-08-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclGet.c: [Bug 3393150] Overlooked free of intreps.
+	(It matters for bignums!)
+
 2011-08-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCmdAH.c:    [Bug 3388350] mingw64 compiler warnings
