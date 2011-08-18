@@ -536,10 +536,10 @@ CopyFile(src, dst, statBufPtr)
     buffer = ckalloc(blockSize);
     while (1) {
 	nread = read(srcFd, buffer, blockSize);
-	if ((nread == -1) || (nread == 0)) {
+	if ((nread == (size_t) -1) || (nread == 0)) {
 	    break;
 	}
-	if (write(dstFd, buffer, nread) != nread) {
+	if (write(dstFd, buffer, nread) != (int)nread) {
 	    nread = (size_t) -1;
 	    break;
 	}
@@ -547,7 +547,7 @@ CopyFile(src, dst, statBufPtr)
 
     ckfree(buffer);
     close(srcFd);
-    if ((close(dstFd) != 0) || (nread == -1)) {
+    if ((close(dstFd) != 0) || (nread == (size_t) -1)) {
 	unlink(dst);					/* INTL: Native. */
 	return TCL_ERROR;
     }
