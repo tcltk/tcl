@@ -1,3 +1,23 @@
+2011-08-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUniData.c: [Bug 3393714] overflow in toupper delta
+	* tools/uniParse.tcl
+	* tests/utf.test
+
+2011-08-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c:  [Bug 2946474] Consistently resume backgrounded
+	* tests/ioCmd.test: flushes+closes when exiting.
+
+2011-08-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* doc/interp.n: Document TIP 378's one-way-ness.
+	
+2011-08-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclGet.c: [Bug 3393150] Overlooked free of intreps.
+	(It matters for bignums!)
+
 2011-08-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c: [Bug 3392070] More complete prevention of
