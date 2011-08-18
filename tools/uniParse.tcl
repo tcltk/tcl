@@ -214,9 +214,6 @@ static const unsigned short pageMap\[\] = {"
     set last [expr {[llength $pMap] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
 	append line [lindex $pMap $i]
-	if {[lindex $pMap $i] == 17} {
-	    puts stdout [list ZZZZ: $i]
-	}
 	if {$i != $last} {
 	    append line ", "
 	}
@@ -242,9 +239,6 @@ static const unsigned char groupMap\[\] = {"
 	set lastj [expr {[llength $page] - 1}]
 	for {set j 0} {$j <= $lastj} {incr j} {
 	    append line [lindex $page $j]
-	    if {[lindex $page $j] == 71} {
-		puts stdout [list YYYY: $i $j]
-	    }
 	    if {$j != $lastj || $i != $lasti} {
 		append line ", "
 	    }
@@ -312,12 +306,7 @@ static const int groups\[\] = {"
 	    set delta 0
 	}
 
-	set val [expr {($delta << 15) | ($case << 5) | $type}]
-	if {($val > 0x3fffffff) || ($val < -0x3fffffff)} {
-		puts stdout [list "XXXXXXXXXXX:" $i $delta $val]
-	}
-
-	append line [format "%d" $val]
+	append line [expr {($delta << 15) | ($case << 5) | $type}]
 	if {$i != $last} {
 	    append line ", "
 	}
