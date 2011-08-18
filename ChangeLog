@@ -1,3 +1,9 @@
+2011-08-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUniData.c: [Bug 3393714] overflow in toupper delta
+	* tools/uniParse.tcl
+	* tests/utf.test
+
 2011-08-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclGet.c: [Bug 3393150] Overlooked free of intreps.
