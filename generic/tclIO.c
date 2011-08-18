@@ -79,7 +79,7 @@ static int		DetachChannel(Tcl_Interp *interp, Tcl_Channel chan);
 static void		DiscardInputQueued(ChannelState *statePtr,
 			    int discardSavedBuffers);
 static void		DiscardOutputQueued(ChannelState *chanPtr);
-static int		DoRead(Channel *chanPtr, char *srcPtr, int slen);
+static int		DoRead(Channel *chanPtr, char *srcPtr, int slen, int allowShortReads);
 static int		DoWrite(Channel *chanPtr, const char *src, int srcLen);
 static int		DoReadChars(Channel *chan, Tcl_Obj *objPtr, int toRead,
 			    int appendFlag);
@@ -5444,7 +5444,7 @@ Tcl_Read(
 	return -1;
     }
 
-    return DoRead(chanPtr, dst, bytesToRead);
+    return DoRead(chanPtr, dst, bytesToRead, 0);
 }
 
 /*
@@ -9169,7 +9169,8 @@ CopyData(
 	    }
 
 	    if (inBinary || sameEncoding) {
-		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb);
+		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb,
+                              !GotFlag(inStatePtr, CHANNEL_NONBLOCKING));
 	    } else {
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
 			0 /* No append */);
@@ -9408,7 +9409,8 @@ static int
 DoRead(
     Channel *chanPtr,		/* The channel from which to read. */
     char *bufPtr,		/* Where to store input read. */
-    int toRead)			/* Maximum number of bytes to read. */
+    int toRead,			/* Maximum number of bytes to read. */
+    int allowShortReads)	/* Allow half-blocking (pipes,sockets) */
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
@@ -9449,7 +9451,10 @@ DoRead(
 		}
 		goto done;
 	    }
-	}
+	} else if (allowShortReads) {
+            copied += copiedNow;
+            break;
+        }
     }
 
     ResetFlag(statePtr, CHANNEL_BLOCKED);
