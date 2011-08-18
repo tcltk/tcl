@@ -179,7 +179,7 @@ proc uni::main {} {
     buildTables $data
     puts "X = [llength $pMap]  Y= [llength $pages]  A= [llength $groups]"
     set size [expr {[llength $pMap] + [llength $pages]*(1<<$shift)}]
-    puts "shift = 6, space = $size"
+    puts "shift = $shift, space = $size"
     puts "title case count = $titleCount"
 
     set f [open [file join [lindex $argv 1] tclUniData.c] w]
@@ -214,6 +214,9 @@ static CONST unsigned short pageMap\[\] = {"
     set last [expr {[llength $pMap] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
 	append line [lindex $pMap $i]
+	if {[lindex $pMap $i] == 17} {
+	    puts stdout [list ZZZZ: $i]
+	}
 	if {$i != $last} {
 	    append line ", "
 	}
@@ -239,6 +242,9 @@ static CONST unsigned char groupMap\[\] = {"
 	set lastj [expr {[llength $page] - 1}]
 	for {set j 0} {$j <= $lastj} {incr j} {
 	    append line [lindex $page $j]
+	    if {[lindex $page $j] == 71} {
+		puts stdout [list YYYY: $i $j]
+	    }
 	    if {$j != $lastj || $i != $lasti} {
 		append line ", "
 	    }
@@ -264,9 +270,9 @@ static CONST unsigned char groupMap\[\] = {"
  *				 101 = sub delta for upper, sub 1 for title
  *				 110 = sub delta for upper, add delta for lower
  *
- * Bits 8-21	Reserved for future use.
+ * Bits 8-14	Reserved for future use.
  *
- * Bits 22-31	Case delta: delta for case conversions.  This should be the
+ * Bits 15-31	Case delta: delta for case conversions.  This should be the
  *			    highest field so we can easily sign extend.
  */
 
@@ -306,7 +312,10 @@ static CONST int groups\[\] = {"
 	    set delta 0
 	}
 
-	set val [expr {($delta << 22) | ($case << 5) | $type}]
+	set val [expr {($delta << 15) | ($case << 5) | $type}]
+	if {($val > 0x3fffffff) || ($val < -0x3fffffff)} {
+		puts stdout [list "XXXXXXXXXXX:" $i $delta $val]
+	}
 
 	append line [format "%d" $val]
 	if {$i != $last} {
@@ -368,7 +377,7 @@ enum {
 
 #define GetCaseType(info) (((info) & 0xE0) >> 5)
 #define GetCategory(info) ((info) & 0x1F)
-#define GetDelta(info) (((info) > 0) ? ((info) >> 22) : (~(~((info)) >> 22)))
+#define GetDelta(info) (((info) > 0) ? ((info) >> 15) : (~(~((info)) >> 15)))
 
 /*
  * This macro extracts the information about a character from the
