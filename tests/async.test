@@ -175,7 +175,7 @@ proc hang3 {handle} [concat {
     set aresult {Async event not delivered}
     testasync marklater $handle
     set i 0
-} [string repeat {;incr i;} 1500000] {
+} "[string repeat {;incr i;} 1500000]after 10;" {
     return $aresult
 }]
 
