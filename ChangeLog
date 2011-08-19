@@ -1,3 +1,8 @@
+2011-08-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c: Preserve the chanPtr during FlushChannel so that
+	channel drivers don't yank it away before we're done with it.
+
 2011-08-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclTest.c: [Bug 2981154] async-4.3 segfault.
