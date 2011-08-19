@@ -1,3 +1,7 @@
+2011-08-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclTest.c: [Bug 2981154] async-4.3 segfault.
+
 2011-08-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclUniData.c: [Bug 3393714] overflow in toupper delta
