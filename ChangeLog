@@ -1,5 +1,9 @@
 2011-08-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclIO.c: [Bugs 3394654, 3393276] Revise FlushChannel() to
+	account for the possibility that the ChanWrite() call might recycle
+	the buffer out from under us.
+
 	* generic/tclIO.c: Preserve the chanPtr during FlushChannel so that
 	channel drivers don't yank it away before we're done with it.
 
