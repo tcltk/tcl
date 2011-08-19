@@ -1,5 +1,8 @@
 2011-08-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclIORTrans.c: [Bugs 3393279, 3393280] ReflectClose(.) is
+	missing Tcl_EventuallyFree() calls at some of its exits.
+
 	* generic/tclIO.c: [Bugs 3394654, 3393276] Revise FlushChannel() to
 	account for the possibility that the ChanWrite() call might recycle
 	the buffer out from under us.
