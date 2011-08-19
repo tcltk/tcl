@@ -2510,7 +2510,9 @@ FlushChannel(
 	    wroteSome = 1;
 	}
 
-	bufPtr->nextRemoved += written;
+	if (!IsBufferEmpty(bufPtr)) {
+	    bufPtr->nextRemoved += written;
+	}
 
 	/*
 	 * If this buffer is now empty, recycle it.
