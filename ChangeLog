@@ -1,6 +1,7 @@
 2011-08-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclTest.c: [Bug 2981154] async-4.3 segfault.
+	* tests/async.test:  [Bug 1774689] async-4.3 sometimes fails.
 
 2011-08-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
