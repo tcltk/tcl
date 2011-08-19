@@ -2356,6 +2356,7 @@ FlushChannel(
      * of the queued output to the channel.
      */
 
+    Tcl_Preserve(chanPtr);
     while (1) {
 	/*
 	 * If the queue is empty and there is a ready current buffer, OR if
@@ -2385,7 +2386,8 @@ FlushChannel(
 	 */
 
 	if (!calledFromAsyncFlush && GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
-	    return 0;
+	    errorCode = 0;
+	    goto done;
 	}
 
 	/*
@@ -2532,7 +2534,7 @@ FlushChannel(
 
     if (GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 	if (wroteSome) {
-	    return errorCode;
+	    goto done;
 	} else if (statePtr->outQueueHead == NULL) {
 	    ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 	    ChanWatch(chanPtr, statePtr->interestMask);
@@ -2549,7 +2551,8 @@ FlushChannel(
 	    (statePtr->outQueueHead == NULL) &&
 	    ((statePtr->curOutPtr == NULL) ||
 	    IsBufferEmpty(statePtr->curOutPtr))) {
-	return CloseChannel(interp, chanPtr, errorCode);
+	errorCode = CloseChannel(interp, chanPtr, errorCode);
+	goto done;
     }
 
     /*
@@ -2562,8 +2565,12 @@ FlushChannel(
 	    (statePtr->outQueueHead == NULL) &&
 	    ((statePtr->curOutPtr == NULL) ||
 	    IsBufferEmpty(statePtr->curOutPtr))) {
-	return CloseChannelPart(interp, chanPtr, errorCode, TCL_CLOSE_WRITE);
+	errorCode = CloseChannelPart(interp, chanPtr, errorCode, TCL_CLOSE_WRITE);
+	goto done;
     }
+
+  done:
+    Tcl_Release(chanPtr);
     return errorCode;
 }
 
