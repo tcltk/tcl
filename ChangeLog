@@ -1,6 +1,10 @@
+2011-08-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclTest.c: [Bug 2981154] async-4.3 segfault.
+
 2011-08-18  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclIO.c [Bug 3096275] Sync fcopy buffers input.
+	* generic/tclIO.c: [Bug 3096275] Sync fcopy buffers input.
 
 2011-08-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -16,7 +20,7 @@
 2011-08-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* doc/interp.n: Document TIP 378's one-way-ness.
-	
+
 2011-08-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclGet.c: [Bug 3393150] Overlooked free of intreps.
