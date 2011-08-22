@@ -1,3 +1,9 @@
+2011-08-22  Andreas Kupries  <andreask@activestate.com>
+
+	* win/tclWinDde.c (Tcl_DdeObjCmd): Fixed use of the C99 feature
+	(Variable declaration within statement block) rejected by
+	MSVC6. Moved the declaration to the beginning of the block.
+
 2011-08-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclUniData.c: [Bug 3393714] overflow in toupper delta
