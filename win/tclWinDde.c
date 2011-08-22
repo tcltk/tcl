@@ -1254,8 +1254,8 @@ Tcl_DdeObjCmd(
 	    break;
 	}
 	case DDE_POKE: {
-	    itemString = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
 	    BYTE *dataString;
+	    itemString = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
 	    if (length == 0) {
 		Tcl_SetStringObj(Tcl_GetObjResult(interp),
 			"cannot have a null item", -1);
