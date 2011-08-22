@@ -940,6 +940,7 @@ ReflectClose(
 	int errorCode;
 
 	if (!TransformDrain(rtPtr, &errorCode)) {
+	    Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
 	    return errorCode;
 	}
     }
@@ -948,6 +949,7 @@ ReflectClose(
 	int errorCode;
 
 	if (!TransformFlush(rtPtr, &errorCode, FLUSH_WRITE)) {
+	    Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
 	    return errorCode;
 	}
     }
