@@ -2657,96 +2657,96 @@ Tcl_Obj *
 TclStringObjReverse(
     Tcl_Obj *objPtr)
 {
-    String *stringPtr;
-    char *src = NULL, *dest = NULL;
-    Tcl_UniChar *usrc = NULL, *udest = NULL;
-    Tcl_Obj *resultPtr = NULL;
+    char *src, *dest;
+    Tcl_Obj *resultPtr = objPtr;
+    char c;
 
-    SetStringFromAny(NULL, objPtr);
-    stringPtr = GET_STRING(objPtr);
-
-    if (stringPtr->hasUnicode == 0) {
-	if (stringPtr->numChars == -1) {
-	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
-	}
-	if (stringPtr->numChars <= 1) {
-	    return objPtr;
-	}
-	if (stringPtr->numChars == objPtr->length) {
-	    /*
-	     * All one-byte chars. Reverse in objPtr->bytes.
-	     */
-
-	    if (Tcl_IsShared(objPtr)) {
-		resultPtr = Tcl_NewObj();
-		Tcl_SetObjLength(resultPtr, objPtr->length);
-		dest = TclGetString(resultPtr);
-		src = objPtr->bytes + objPtr->length - 1;
-		while (src >= objPtr->bytes) {
-		    *dest++ = *src--;
-		}
-		return resultPtr;
-	    }
-
-	    /*
-	     * Unshared. Reverse objPtr->bytes in place.
-	     */
-
-	    dest = objPtr->bytes;
-	    src = dest + objPtr->length - 1;
-	    while (dest < src) {
-		char tmp = *src;
-
-		*src-- = *dest;
-		*dest++ = tmp;
-	    }
-	    return objPtr;
-	}
-	FillUnicodeRep(objPtr);
-	stringPtr = GET_STRING(objPtr);
-    }
-    if (stringPtr->numChars <= 1) {
-	return objPtr;
-    }
-
-    /*
-     * Reverse the Unicode rep.
-     */
-
+    src = TclGetString(objPtr);
     if (Tcl_IsShared(objPtr)) {
+	resultPtr = Tcl_NewObj();
+	Tcl_SetObjLength(resultPtr, objPtr->length);
+	dest = TclGetString(resultPtr);
+	memcpy(dest, src, objPtr->length);
+    } else {
+	TclFreeIntRep(objPtr);
+	dest = src;
+    }
+
+    src = dest + objPtr->length;
+
+    /* Pass 1: reverse individual bytes of UTF-8 representation. */
+    while (dest < src) {
 	Tcl_UniChar ch = 0;
-
-	/*
-	 * Create a non-empty, pure unicode value, so we can coax
-	 * Tcl_SetObjLength into growing the unicode rep buffer.
-	 */
-
-	resultPtr = Tcl_NewUnicodeObj(&ch, 1);
-	Tcl_SetObjLength(resultPtr, stringPtr->numChars);
-	udest = Tcl_GetUnicode(resultPtr);
-	usrc = stringPtr->unicode + stringPtr->numChars - 1;
-	while (usrc >= stringPtr->unicode) {
-	    *udest++ = *usrc--;
+	switch (Tcl_UtfToUniChar(dest, &ch)) {
+	case 1: {
+		++dest;
+		break;
+	    }
+	case 2: {
+		c = dest[0];
+		dest[0] = dest[1];
+		dest[1] = c;
+		dest += 2;
+		break;
+	    }
+	case 3: {
+		c = dest[0];
+		dest[0] = dest[2];
+		dest[2] = c;
+		dest += 3;
+		break;
+	    }
+#if TCL_UTF_MAX > 4
+	case 5: {
+		c = dest[0];
+		dest[0] = dest[4];
+		dest[4] = c;
+		c = dest[1];
+		dest[1] = dest[3];
+		dest[3] = c;
+		dest += 5;
+		break;
+	    }
+#endif
+#if TCL_UTF_MAX > 5
+	case 6: {
+		c = dest[0];
+		dest[0] = dest[5];
+		dest[5] = c;
+		c = dest[1];
+		dest[1] = dest[4];
+		dest[4] = c;
+		c = dest[0];
+		dest[2] = dest[3];
+		dest[3] = c;
+		dest += 6;
+		break;
+	    }
+#endif
+	default: {
+#if TCL_UTF_MAX > 3
+		c = dest[0];
+		dest[0] = dest[3];
+		dest[3] = c;
+		c = dest[1];
+		dest[1] = dest[2];
+		dest[2] = c;
+		dest += 4;
+#endif
+		break;
+	    }
 	}
-	return resultPtr;
     }
 
-    /*
-     * Unshared. Reverse objPtr->bytes in place.
-     */
+	/* Pass 2: Reverse byte string. */
+	dest = TclGetString(resultPtr);
 
-    udest = stringPtr->unicode;
-    usrc = udest + stringPtr->numChars - 1;
-    while (udest < usrc) {
-	Tcl_UniChar tmp = *usrc;
-
-	*usrc-- = *udest;
-	*udest++ = tmp;
-    }
-
-    TclInvalidateStringRep(objPtr);
-    stringPtr->allocated = 0;
-    return objPtr;
+	while (dest < --src) {
+		c = *src;
+		*src = *dest;
+		*dest++ = c;
+	}
+    return resultPtr;
 }
 
 /*
