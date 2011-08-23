@@ -799,7 +799,7 @@ TestasyncCmd(
 	asyncPtr->id = nextId;
 	nextId++;
 	asyncPtr->handler = Tcl_AsyncCreate(AsyncHandlerProc,
-                                            (ClientData) asyncPtr->id);
+                                            INT2PTR(asyncPtr->id));
 	asyncPtr->nextPtr = firstHandler;
 	firstHandler = asyncPtr;
         Tcl_MutexUnlock(&asyncTestMutex);
@@ -899,7 +899,7 @@ AsyncHandlerProc(
     int code)			/* Current return code from command. */
 {
     TestAsyncHandler *asyncPtr;
-    int id = (int) clientData;
+    int id = PTR2INT(clientData);
     const char *listArgv[4], *cmd;
     char string[TCL_INTEGER_SPACE];
 
