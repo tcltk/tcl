@@ -564,8 +564,7 @@ Tcl_NumUtfChars(
 				 * for strlen(string). */
 {
     Tcl_UniChar ch = 0;
-    register Tcl_UniChar *chPtr = &ch;
-    register int i;
+    register int i, n;
 
     /*
      * The separate implementations are faster.
@@ -577,18 +576,23 @@ Tcl_NumUtfChars(
     i = 0;
     if (length < 0) {
 	while (*src != '\0') {
-	    src += TclUtfToUniChar(src, chPtr);
+	    n = TclUtfToUniChar(src, &ch);
+	    if (!n) {
+	        n = Tcl_UtfToUniChar(src, &ch);
+	    }
+	    src += n;
 	    i++;
 	}
     } else {
-	register int n;
-
 	while (length > 0) {
 	    if (UCHAR(*src) < 0xC0) {
 		length--;
 		src++;
 	    } else {
-		n = Tcl_UtfToUniChar(src, chPtr);
+		n = Tcl_UtfToUniChar(src, &ch);
+		if (!n) {
+		    n = Tcl_UtfToUniChar(src, &ch);
+		}
 		length -= n;
 		src += n;
 	    }
@@ -823,7 +827,7 @@ Tcl_UtfAtIndex(
     int len;
 
     while (index > 0) {
-    index--;
+	index--;
 	len = TclUtfToUniChar(src, &ch);
 	if (!len) {
 	    len = TclUtfToUniChar(src, &ch);
