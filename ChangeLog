@@ -1,3 +1,7 @@
+2011-08-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIORChan.c:	[Bug 3396948] Leak of ReflectedChannelMap.
+
 2011-08-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclStringObj.c: [FRQ 3396731] inline string reverse
