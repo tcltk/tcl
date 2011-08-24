@@ -44,17 +44,17 @@ proc uni::getValue {items index} {
     # Extract character info
 
     set category [lindex $items 2]
-    if {[scan [lindex $items 12] %4x toupper] == 1} {
+    if {[scan [lindex $items 12] %6x toupper] == 1} {
 	set toupper [expr {$index - $toupper}]
     } else {
 	set toupper {}
     }
-    if {[scan [lindex $items 13] %4x tolower] == 1} {
+    if {[scan [lindex $items 13] %6x tolower] == 1} {
 	set tolower [expr {$tolower - $index}]
     } else {
 	set tolower {}
     }
-    if {[scan [lindex $items 14] %4x totitle] == 1} {
+    if {[scan [lindex $items 14] %6x totitle] == 1} {
 	set totitle [expr {$index - $totitle}]
     } else {
 	set totitle {}
@@ -101,25 +101,30 @@ proc uni::buildTables {data} {
     variable pMap {}
     variable pages {}
     variable groups {{0,,,}}
+    variable next 0
     set info {}			;# temporary page info
 
     set mask [expr {(1 << $shift) - 1}]
 
-    set next 0
-
     foreach line [split $data \n] {
 	if {$line eq ""} {
-	    set line "FFFF;;Cn;0;ON;;;;;N;;;;;\n"
+	    if {!($next & $mask)} {
+		# next character is already on page boundary
+		continue
+	    }
+	    # fill remaining page
+	    set line [format %X [expr {($next-1)|$mask}]]
+	    append line ";;Cn;0;ON;;;;;N;;;;;\n"
 	}
 
 	set items [split $line \;]
 
 	scan [lindex $items 0] %x index
-	if {$index > 0xFFFF} then {
-	    # Ignore non-BMP characters, as long as Tcl doesn't support them
+	if {$index >= 0xE0000} then {
+	    # Ignore those characters, as they don't have case variants anyway
 	    continue
 	}
-	set index [format 0x%0.4x $index]
+	set index [format %d $index]
 
 	set gIndex [getGroup [getValue $items $index]]
 
@@ -167,6 +172,7 @@ proc uni::main {} {
     variable groups
     variable shift
     variable titleCount
+    variable next
 
     if {$argc != 2} {
 	puts stderr "\nusage: $argv0 <datafile> <outdir>\n"
@@ -178,7 +184,7 @@ proc uni::main {} {
 
     buildTables $data
     puts "X = [llength $pMap]  Y= [llength $pages]  A= [llength $groups]"
-    set size [expr {[llength $pMap] + [llength $pages]*(1<<$shift)}]
+    set size [expr {[llength $pMap]*2 + [llength $pages]*(1<<$shift)}]
     puts "shift = $shift, space = $size"
     puts "title case count = $titleCount"
 
@@ -316,15 +322,17 @@ static const int groups\[\] = {"
 	}
     }
     puts $f $line
-    puts $f "};
+    puts -nonewline $f "};
 
 /*
  * The following constants are used to determine the category of a
  * Unicode character.
  */
 
-#define UNICODE_CATEGORY_MASK 0X1F
-
+#define UNICODE_CATEGORY_MASK 0x1F
+#define UNICODE_OUT_OF_RANGE "
+    puts $f [format 0x%Xu $next]
+    puts $f "
 enum {
     UNASSIGNED,
     UPPERCASE_LETTER,
@@ -365,15 +373,15 @@ enum {
  */
 
 #define GetCaseType(info) (((info) & 0xE0) >> 5)
-#define GetCategory(info) ((info) & 0x1F)
+#define GetCategory(ch) (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK)
 #define GetDelta(info) (((info) > 0) ? ((info) >> 15) : (~(~((info)) >> 15)))
 
 /*
  * This macro extracts the information about a character from the
- * Unicode character tables.
+ * Unicode character tables. It may only be used for (unsigned) ch < UNICODE_OUT_OF_RANGE
  */
 
-#define GetUniCharInfo(ch) (groups\[groupMap\[(pageMap\[(((int)(ch)) & 0xffff) >> OFFSET_BITS\] << OFFSET_BITS) | ((ch) & ((1 << OFFSET_BITS)-1))\]\])
+#define GetUniCharInfo(ch) (groups\[groupMap\[(pageMap\[((int)(ch)) >> OFFSET_BITS\] << OFFSET_BITS) | ((ch) & ((1 << OFFSET_BITS)-1))\]\])
 "
 
     close $f
