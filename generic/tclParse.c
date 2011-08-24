@@ -808,7 +808,7 @@ TclParseBackslash(
 				 * written there. */
 {
     register const char *p = src+1;
-    Tcl_UniChar unichar;
+    Tcl_UniChar unichar = 0;
     int result;
     int count;
     char buf[TCL_UTF_MAX];
@@ -957,6 +957,15 @@ TclParseBackslash(
   done:
     if (readPtr != NULL) {
 	*readPtr = count;
+    }
+    if ((result & 0xF800) == 0xD800) {
+	/* If result is a surrogate, Tcl_UniCharToUtf will try to
+	 * handle that especially, but we don't want that here.
+	 */
+	dst[2] = (char) ((result | 0x80) & 0xBF);
+	dst[1] = (char) (((result >> 6) | 0x80) & 0xBF);
+	dst[0] = (char) ((result >> 12) | 0xE0);
+	return 3;
     }
     return Tcl_UniCharToUtf(result, dst);
 }
@@ -1356,7 +1365,7 @@ Tcl_ParseVarName(
     register const char *src;
     unsigned char c;
     int varIndex, offset;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     unsigned array;
 
     if ((numBytes == 0) || (start == NULL)) {

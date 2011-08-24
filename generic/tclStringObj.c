@@ -531,7 +531,7 @@ Tcl_GetCharLength(
  *----------------------------------------------------------------------
  */
 
-Tcl_UniChar
+int
 Tcl_GetUniChar(
     Tcl_Obj *objPtr,		/* The object to get the Unicode charater
 				 * from. */
@@ -548,7 +548,7 @@ Tcl_GetUniChar(
     if (TclIsPureByteArray(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
 
-	return (Tcl_UniChar) bytes[index];
+	return (int) bytes[index];
     }
 
     /*
@@ -572,7 +572,7 @@ Tcl_GetUniChar(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    return stringPtr->unicode[index];
+    return (int) stringPtr->unicode[index];
 }
 
 /*
@@ -1708,6 +1708,7 @@ Tcl_AppendFormatToObj(
     const char *span = format, *msg, *errCode;
     int numBytes = 0, objIndex = 0, gotXpg = 0, gotSequential = 0;
     int originalLength, limit;
+    Tcl_UniChar ch = 0;
     static const char *mixedXPG =
 	    "cannot mix \"%\" and \"%n$\" conversion specifiers";
     static const char *const badIndex[2] = {
@@ -1732,7 +1733,6 @@ Tcl_AppendFormatToObj(
 	int width, gotPrecision, precision, useShort, useWide, useBig;
 	int newXpg, numChars, allocSegment = 0, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
-	Tcl_UniChar ch;
 	int step = Tcl_UtfToUniChar(format, &ch);
 
 	format += step;
