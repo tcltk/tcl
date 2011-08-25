@@ -2661,6 +2661,31 @@ TclStringObjReverse(
     Tcl_Obj *resultPtr = objPtr;
     char c;
 
+    /* Special case: Pure Unicode array */
+    if ((objPtr->typePtr == &tclStringType) && !objPtr->bytes) {
+	String *strPtr = GET_STRING(objPtr);
+	if (strPtr->hasUnicode) {
+		String *dstStrPtr = stringAlloc(strPtr->numChars);
+	    Tcl_UniChar *chars = strPtr->unicode;
+	    Tcl_UniChar *dstChars = dstStrPtr->unicode + strPtr->numChars;
+
+	    resultPtr = Tcl_NewObj();
+	    resultPtr->bytes = NULL;
+	    SET_STRING(resultPtr, dstStrPtr);
+	    resultPtr->typePtr = &tclStringType;
+	    dstStrPtr->maxChars = strPtr->numChars;
+	    dstStrPtr->unicode[strPtr->numChars] = 0;
+	    dstStrPtr->numChars = strPtr->numChars;
+	    dstStrPtr->hasUnicode = 1;
+	    dstStrPtr->allocated = 0;
+
+	    while (--dstChars >= dstStrPtr->unicode) {
+		*dstChars = *chars++;
+	    }
+	    return resultPtr;
+	}
+    }
+
     src = TclGetString(objPtr);
     if (Tcl_IsShared(objPtr)) {
 	resultPtr = Tcl_NewObj();
