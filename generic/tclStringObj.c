@@ -2653,99 +2653,135 @@ Tcl_ObjPrintf(
  *---------------------------------------------------------------------------
  */
 
+void
+ReverseBytes(
+    unsigned char *to,		/* Copy bytes into here... */
+    unsigned char *from,	/* ...from here... */
+    int count)		/* Until this many are copied, */
+				/* reversing as you go. */
+{
+    if (to == from) {
+	/* Reversing in place */
+	from += count - 1;
+	while (to < from) {
+	    unsigned char c = *from;
+	    *from-- = *to;
+	    *to++ = c;
+	}
+    }  else {
+	from += count - 1;
+	while (count--) {
+	    *to++ = *from--;
+	}
+    }
+}
+
+void
+ReverseUniChars(
+    Tcl_UniChar *to,		/* Copy Tcl_UniChars into here... */
+    Tcl_UniChar *from,		/* ...from here... */
+    unsigned int count)		/* Until this many are copied, */
+				/* reversing as you go. */
+{
+    if (to == from) {
+	/* Reversing in place */
+	from += count - 1;
+	while (to < from) {
+	    Tcl_UniChar c = *from;
+	    *from-- = *to;
+	    *to++ = c;
+	}
+    }  else {
+	from += count - 1;
+	while (count--) {
+	    *to++ = *from--;
+	}
+    }
+}
+
 Tcl_Obj *
 TclStringObjReverse(
     Tcl_Obj *objPtr)
 {
     String *stringPtr;
-    char *src = NULL, *dest = NULL;
-    Tcl_UniChar *usrc = NULL, *udest = NULL;
-    Tcl_Obj *resultPtr = NULL;
+
+    if (TclIsPureByteArray(objPtr)) {
+	int numBytes;
+	unsigned char *from = Tcl_GetByteArrayFromObj(objPtr, &numBytes);
+
+	if (Tcl_IsShared(objPtr)) {
+	    objPtr = Tcl_NewByteArrayObj(NULL, numBytes);
+	}
+	ReverseBytes(Tcl_GetByteArrayFromObj(objPtr, NULL), from, numBytes);
+	return objPtr;
+    }
 
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
-    if (stringPtr->hasUnicode == 0) {
-	if (stringPtr->numChars == -1) {
-	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
-	}
-	if (stringPtr->numChars <= 1) {
-	    return objPtr;
-	}
-	if (stringPtr->numChars == objPtr->length) {
+    if (stringPtr->hasUnicode) {
+	Tcl_UniChar *from = Tcl_GetUnicode(objPtr);
+
+	if (Tcl_IsShared(objPtr)) {
 	    /*
-	     * All one-byte chars. Reverse in objPtr->bytes.
+	     * Create a non-empty, pure unicode value, so we can coax
+	     * Tcl_SetObjLength into growing the unicode rep buffer.
 	     */
 
-	    if (Tcl_IsShared(objPtr)) {
-		resultPtr = Tcl_NewObj();
-		Tcl_SetObjLength(resultPtr, objPtr->length);
-		dest = TclGetString(resultPtr);
-		src = objPtr->bytes + objPtr->length - 1;
-		while (src >= objPtr->bytes) {
-		    *dest++ = *src--;
-		}
-		return resultPtr;
-	    }
+	    Tcl_UniChar ch = 0;
+	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
+	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
+	}
+	ReverseUniChars(Tcl_GetUnicode(objPtr), from, stringPtr->numChars);
+    }
 
+    if (objPtr->bytes) {
+	int numChars = stringPtr->numChars;
+	int numBytes = objPtr->length;
+	char *to, *from = objPtr->bytes;
+
+	if (Tcl_IsShared(objPtr)) {
+	    objPtr = Tcl_NewObj();
+	    Tcl_SetObjLength(objPtr, numBytes);
+	}
+	to = objPtr->bytes;
+
+	if (numChars < numBytes) {
 	    /*
-	     * Unshared. Reverse objPtr->bytes in place.
+	     * Either numChars == -1 and we don't know how many chars are
+	     * represented by objPtr->bytes and we need Pass 1 just in case,
+	     * or numChars >= 0 and we know we have fewer chars than bytes,
+	     * so we know there's a multibyte character needing Pass 1.
+	     *
+	     * Pass 1. Reverse the bytes of each multi-byte character.
 	     */
+	    int charCount = 0;
+	    int bytesLeft = numBytes;
 
-	    dest = objPtr->bytes;
-	    src = dest + objPtr->length - 1;
-	    while (dest < src) {
-		char tmp = *src;
+	    while (bytesLeft) {
+		/*
+		 * NOTE: We know that the from buffer is NUL-terminated.
+		 * It's part of the contract for objPtr->bytes values.
+		 * Thus, we can skip calling Tcl_UtfCharComplete() here.
+		 */
+		Tcl_UniChar ch = 0;
+		int bytesInChar = Tcl_UtfToUniChar(from, &ch);
 
-		*src-- = *dest;
-		*dest++ = tmp;
+		ReverseBytes((unsigned char *)to, (unsigned char *)from,
+			bytesInChar);
+		to += bytesInChar;
+		from += bytesInChar;
+		bytesLeft -= bytesInChar;
+		charCount++;
 	    }
-	    return objPtr;
+
+	    from = to = objPtr->bytes;
+	    stringPtr->numChars = charCount;
 	}
-	FillUnicodeRep(objPtr);
-	stringPtr = GET_STRING(objPtr);
-    }
-    if (stringPtr->numChars <= 1) {
-	return objPtr;
+	/* Pass 2. Reverse all the bytes. */
+	ReverseBytes((unsigned char *)to, (unsigned char *)from, numBytes);
     }
 
-    /*
-     * Reverse the Unicode rep.
-     */
-
-    if (Tcl_IsShared(objPtr)) {
-	Tcl_UniChar ch = 0;
-
-	/*
-	 * Create a non-empty, pure unicode value, so we can coax
-	 * Tcl_SetObjLength into growing the unicode rep buffer.
-	 */
-
-	resultPtr = Tcl_NewUnicodeObj(&ch, 1);
-	Tcl_SetObjLength(resultPtr, stringPtr->numChars);
-	udest = Tcl_GetUnicode(resultPtr);
-	usrc = stringPtr->unicode + stringPtr->numChars - 1;
-	while (usrc >= stringPtr->unicode) {
-	    *udest++ = *usrc--;
-	}
-	return resultPtr;
-    }
-
-    /*
-     * Unshared. Reverse objPtr->bytes in place.
-     */
-
-    udest = stringPtr->unicode;
-    usrc = udest + stringPtr->numChars - 1;
-    while (udest < usrc) {
-	Tcl_UniChar tmp = *usrc;
-
-	*usrc-- = *udest;
-	*udest++ = tmp;
-    }
-
-    TclInvalidateStringRep(objPtr);
-    stringPtr->allocated = 0;
     return objPtr;
 }
 
