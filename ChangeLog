@@ -1,10 +1,12 @@
+2011-08-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:  [RFE 3396731] Revise the [string reverse]
+	* tests/string.test:	implementation to operate on the representation
+	that comes in, avoid conversion to other reps.
+
 2011-08-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIORChan.c:	[Bug 3396948] Leak of ReflectedChannelMap.
-
-2011-08-23  Jan Nijtmans  <nijtmans@users.sf.net>
-
-	* generic/tclStringObj.c: [FRQ 3396731] inline string reverse
 
 2011-08-19  Don Porter  <dgp@users.sourceforge.net>
 
