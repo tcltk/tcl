@@ -2660,18 +2660,17 @@ ReverseBytes(
     int count)		/* Until this many are copied, */
 				/* reversing as you go. */
 {
+    unsigned char *src = from + count - 1;
     if (to == from) {
 	/* Reversing in place */
-	from += count - 1;
-	while (to < from) {
-	    unsigned char c = *from;
-	    *from-- = *to;
+	while (to < src) {
+	    unsigned char c = *src;
+	    *src-- = *to;
 	    *to++ = c;
 	}
     }  else {
-	from += count - 1;
-	while (count--) {
-	    *to++ = *from--;
+	while (src >= from) {
+	    *to++ = *src--;
 	}
     }
 }
@@ -2683,18 +2682,18 @@ ReverseUniChars(
     unsigned int count)		/* Until this many are copied, */
 				/* reversing as you go. */
 {
+    Tcl_UniChar *src = from + count - 1;
     if (to == from) {
 	/* Reversing in place */
 	from += count - 1;
-	while (to < from) {
-	    Tcl_UniChar c = *from;
-	    *from-- = *to;
+	while (to < src) {
+	    Tcl_UniChar c = *src;
+	    *src-- = *to;
 	    *to++ = c;
 	}
     }  else {
-	from += count - 1;
-	while (count--) {
-	    *to++ = *from--;
+	while (src >= from) {
+	    *to++ = *src--;
 	}
     }
 }
