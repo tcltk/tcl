@@ -816,6 +816,15 @@ TcpWatchProc(
 				 * TCL_EXCEPTION. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
+
+    if (statePtr->acceptProc != NULL) {
+        /*
+         * Make sure we don't mess with server sockets since they will never
+         * be readable or writable at the Tcl level. This keeps Tcl scripts
+         * from interfering with the -accept behavior (bug #3394732).
+         */
+    	return;
+    }
      
     if (statePtr->flags & TCP_ASYNC_CONNECT) {
         /* Async sockets use a FileHandler internally while connecting, so we
