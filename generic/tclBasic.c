@@ -1359,7 +1359,7 @@ DeleteInterpProc(
 	 * unless we are exiting.
      */
 
-    if ((iPtr->numLevels > 0) && !TclInExit()) {
+    if ((iPtr->numLevels > 0) && !TclInExit() && !TclInThreadExit()) {
 	Tcl_Panic("DeleteInterpProc called with active evals");
     }
 
@@ -1482,7 +1482,8 @@ DeleteInterpProc(
      * namespace. The order is important [Bug 1658572].
      */
 
-    if ((iPtr->framePtr != iPtr->rootFramePtr) && !TclInExit()) {
+    if ((iPtr->framePtr != iPtr->rootFramePtr) && !TclInExit()
+	    && !TclInThreadExit()) {
 	Tcl_Panic("DeleteInterpProc: popping rootCallFrame with other frames on top");
     }
     Tcl_PopCallFrame(interp);
@@ -1607,7 +1608,7 @@ DeleteInterpProc(
      * know which arguments will be used as scripts and which will not.
      */
 
-    if (iPtr->lineLAPtr->numEntries && !TclInExit()) {
+    if (iPtr->lineLAPtr->numEntries && !TclInExit() && !TclInThreadExit()) {
 	/*
 	 * When the interp goes away we have nothing on the stack, so there
 	 * are no arguments, so this table has to be empty.
@@ -1620,7 +1621,7 @@ DeleteInterpProc(
     ckfree((char *) iPtr->lineLAPtr);
     iPtr->lineLAPtr = NULL;
 
-    if (iPtr->lineLABCPtr->numEntries && !TclInExit()) {
+    if (iPtr->lineLABCPtr->numEntries && !TclInExit() && !TclInThreadExit()) {
 	/*
 	 * When the interp goes away we have nothing on the stack, so there
 	 * are no arguments, so this table has to be empty.

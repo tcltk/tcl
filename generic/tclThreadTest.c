@@ -139,6 +139,7 @@ static void		ThreadFreeProc(ClientData clientData);
 static int		ThreadDeleteEvent(Tcl_Event *eventPtr,
 			    ClientData clientData);
 static void		ThreadExitProc(ClientData clientData);
+static void		ReleaseInterp(ClientData clientData);
 extern int		Tcltest_Init(Tcl_Interp *interp);
 
 /*
@@ -326,8 +327,9 @@ ThreadObjCmd(
 	    return TCL_ERROR;
 	}
 	ListRemove(NULL);
+	Tcl_DeleteInterp(interp);
 	Tcl_ExitThread(0);
-	return TCL_OK;
+	return TCL_ERROR;
     case THREAD_ID:
 	if (objc == 2 || objc == 3) {
 	    Tcl_Obj *idObj;
@@ -564,6 +566,7 @@ NewTestThread(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     int result;
     char *threadEvalScript;
+    int fullFinal = TclFullFinalizationRequested();
 
     /*
      * Initialize the interpreter. This should be more general.
@@ -614,7 +617,13 @@ NewTestThread(
      */
 
     Tcl_Preserve(tsdPtr->interp);
+    if (fullFinal) {
+	Tcl_CreateThreadExitHandler(ReleaseInterp, tsdPtr->interp);
+    }
     result = Tcl_Eval(tsdPtr->interp, threadEvalScript);
+    if (fullFinal) {
+	Tcl_DeleteThreadExitHandler(ReleaseInterp, tsdPtr->interp);
+    }
     if (result != TCL_OK) {
 	ThreadErrorProc(tsdPtr->interp);
     }
@@ -629,6 +638,15 @@ NewTestThread(
     Tcl_ExitThread(result);
 
     TCL_THREAD_CREATE_RETURN;
+}
+
+static void
+ReleaseInterp(
+    ClientData clientData)
+{
+    Tcl_Interp *interp = (Tcl_Interp *) clientData;
+
+    Tcl_Release(interp);
 }
 
 /*
@@ -1024,11 +1042,19 @@ ThreadEventProc(
 	errorCode = "THREAD";
 	errorInfo = "";
     } else {
+	int fullFinal = TclFullFinalizationRequested();
+
 	Tcl_Preserve(interp);
 	Tcl_ResetResult(interp);
+	if (fullFinal) {
+	    Tcl_CreateThreadExitHandler(ReleaseInterp, tsdPtr->interp);
+	}
 	Tcl_CreateThreadExitHandler(ThreadFreeProc, threadEventPtr->script);
 	code = Tcl_GlobalEval(interp, threadEventPtr->script);
 	Tcl_DeleteThreadExitHandler(ThreadFreeProc, threadEventPtr->script);
+	if (fullFinal) {
+	    Tcl_DeleteThreadExitHandler(ReleaseInterp, tsdPtr->interp);
+	}
 	if (code != TCL_OK) {
 	    errorCode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
 	    errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
