@@ -2200,6 +2200,9 @@ DeleteReflectedTransformMap(
      * interpreter. They have already been marked as dead.
      */
 
+    if (TclInThreadExit()) {
+	return;
+    }
     rtmPtr = GetThreadReflectedTransformMap();
     for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
 	    hPtr != NULL;

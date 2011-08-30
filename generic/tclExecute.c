@@ -898,7 +898,7 @@ static void
 DeleteExecStack(
     ExecStack *esPtr)
 {
-    if (esPtr->markerPtr && !cachedInExit) {
+    if (esPtr->markerPtr && !cachedInExit && !TclInThreadExit()) {
 	Tcl_Panic("freeing an execStack which is still in use");
     }
 
@@ -934,10 +934,10 @@ TclDeleteExecEnv(
 
     TclDecrRefCount(eePtr->constants[0]);
     TclDecrRefCount(eePtr->constants[1]);
-    if (eePtr->callbackPtr && !cachedInExit) {
+    if (eePtr->callbackPtr && !cachedInExit && !TclInThreadExit()) {
 	Tcl_Panic("Deleting execEnv with pending TEOV callbacks!");
     }
-    if (eePtr->corPtr && !cachedInExit) {
+    if (eePtr->corPtr && !cachedInExit &&!TclInThreadExit()) {
 	Tcl_Panic("Deleting execEnv with existing coroutine");
     }
     ckfree(eePtr);

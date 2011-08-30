@@ -1,3 +1,11 @@
+2011-08-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:		Prevent leak of interps when
+	* generic/tclExecute.c:		using the [testthread exit] command.
+	* generic/tclIORChan.c:
+	* generic/tclIORTrans.c:
+	* generic/tclThreadtest.c:
+
 2011-08-30  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInterp.c (SlaveCommandLimitCmd, SlaveTimeLimitCmd):
