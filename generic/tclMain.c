@@ -621,7 +621,8 @@ Tcl_MainEx(
 }
 
 #ifndef UNICODE
-void
+#undef Tcl_Main
+extern DLLEXPORT void
 Tcl_Main(
     int argc,			/* Number of arguments. */
     TCHAR **argv,		/* Array of argument strings. */
