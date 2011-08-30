@@ -1623,6 +1623,17 @@ test string-24.12 {string reverse command - corner case} {
     set y \udead
     string is ascii [string reverse $x$y]
 } 0
+test string-24.13 {string reverse command - pure Unicode string} {
+    string reverse [string range \ubeef\udead\ubeef\udead\ubeef\udead 1 5]
+} \udead\ubeef\udead\ubeef\udead
+test string-24.14 {string reverse command - pure bytearray} {
+    binary scan [string reverse [binary format H* 010203]] H* x
+    set x
+} 030201
+test string-24.15 {string reverse command - pure bytearray} {
+    binary scan [tcl::string::reverse [binary format H* 010203]] H* x
+    set x
+} 030201
 
 test string-25.1 {string is list} {
     string is list {a b c}

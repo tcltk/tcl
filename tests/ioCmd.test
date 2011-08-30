@@ -2592,7 +2592,38 @@ test iocmd.tf-24.15 {chan write, EAGAIN means that writing is not allowed at thi
 } -cleanup {
     rename foo {}
     unset res
+    update
 } -result {{write rc* ABC} {watch rc* write} {}} \
+    -constraints {testchannel testthread}
+
+test iocmd.tf-24.16 {chan write, note the background flush setup by close due to the EAGAIN leaving data in buffers.} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	# Note: The EAGAIN signals that the channel cannot accept
+	# write requests right now, this in turn causes the IO core to
+	# request the generation of writable events (see expected
+	# result below, and compare to case 24.14 above).
+	error EAGAIN
+    }
+    set c [chan create {r w} foo]
+} -body {
+    notes [inthread $c {
+	note [puts -nonewline $c ABC ; flush $c]
+	close $c
+	notes
+    } c]
+    # Replace handler with all-tracking one which doesn't error.
+    # This will tell us if a write-due-flush is there.
+    proc foo {args} { note BG ; track }
+    # Flush (sic!) the event-queue to capture the write from a
+    # BG-flush.
+    update
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {{write rc* ABC} {watch rc* write} {} BG {write rc* ABC}} \
     -constraints {testchannel testthread}
 
 # --- === *** ###########################

@@ -1,3 +1,76 @@
+2011-08-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInterp.c (SlaveCommandLimitCmd, SlaveTimeLimitCmd):
+	[Bug 3398794]: Ensure that low-level conditions in the limit API are
+	enforced at the script level through errors, not a Tcl_Panic. This
+	means that interpreters cannot read their own limits (writing already
+	did not work).
+
+2011-08-30  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c (TcpWatchProc): [Bug 3394732]: Put back the check
+	for server sockets.
+
+2011-08-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIORTrans.c: Leak of ReflectedTransformMap.
+
+2011-08-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:  [RFE 3396731]: Revise the [string reverse]
+	* tests/string.test:	implementation to operate on the representation
+	that comes in, avoid conversion to other reps.
+
+2011-08-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIORChan.c:	[Bug 3396948]: Leak of ReflectedChannelMap.
+
+2011-08-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIORTrans.c: [Bugs 3393279, 3393280]: ReflectClose(.) is
+	missing Tcl_EventuallyFree() calls at some of its exits.
+
+	* generic/tclIO.c: [Bugs 3394654, 3393276]: Revise FlushChannel() to
+	account for the possibility that the ChanWrite() call might recycle
+	the buffer out from under us.
+
+	* generic/tclIO.c: Preserve the chanPtr during FlushChannel so that
+	channel drivers don't yank it away before we're done with it.
+
+2011-08-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclTest.c: [Bug 2981154]: async-4.3 segfault.
+	* tests/async.test:  [Bug 1774689]: async-4.3 sometimes fails.
+
+2011-08-18  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c: [Bug 3096275]: Sync fcopy buffers input.
+
+2011-08-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUniData.c: [Bug 3393714]: Overflow in toupper delta
+	* tools/uniParse.tcl
+	* tests/utf.test
+
+2011-08-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c:  [Bug 2946474]: Consistently resume backgrounded
+	* tests/ioCmd.test: flushes+closes when exiting.
+
+2011-08-17  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* doc/interp.n: Document TIP 378's one-way-ness.
+
+2011-08-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclGet.c: [Bug 3393150]: Overlooked free of intreps.
+	(It matters for bignums!)
+
+2011-08-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c: [Bug 3392070]: More complete prevention of
+	Tcl_Obj reference cycles when producing an intrep of ByteCode.
+
 2011-08-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclListObj.c (TclLindexList, TclLsetFlat): Silence warnings
@@ -116,7 +189,7 @@
 	* generic/tclIOSock.c (TclCreateSocketAddress): Don't bother using
 	AI_ADDRCONFIG for now, as it was causing problems in various
 	situations.
-	
+
 2011-08-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclAssembly.c (AssembleOneLine, GetBooleanOperand)
@@ -283,16 +356,16 @@
 	* unix/Makefile.in:
 	* win/Makefile.in:
 	* win/Makefile.vc:
-	Fix a bug where bignum->double conversion is "round up" and
-	not "round to nearest" (causing expr double(1[string repeat 0 23])
-	not to be 1e+23). [Bug 3349507]
+	[Bug 3349507]: Fix a bug where bignum->double conversion is "round up"
+	and not "round to nearest" (causing expr double(1[string repeat 0 23])
+	not to be 1e+23).
 
 2011-06-28  Reinhard Max  <max@suse.de>
 
-	* unix/tclUnixSock.c (CreateClientSocket): Fix and simplify
-	posting of the writable fileevent at the end of an asynchronous
-	connection attempt. Improve comments for some of the trickery
-	around [socket -async]. [Bug 3325339]
+	* unix/tclUnixSock.c (CreateClientSocket): [Bug 3325339]: Fix and
+	simplify posting of the writable fileevent at the end of an
+	asynchronous connection attempt. Improve comments for some of the
+	trickery around [socket -async].
 
 	* tests/socket.test: Adjust tests to the async code changes. Add
 	more tests for corner cases of async sockets.
@@ -320,12 +393,12 @@
 
 2011-06-21  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclLink.c:	Prevent multiple links to a single Tcl
-	variable when calling Tcl_LinkVar(). [Bug 3317466]
+	* generic/tclLink.c:	[Bug 3317466]: Prevent multiple links to a
+	single Tcl variable when calling Tcl_LinkVar().
 
 2011-06-13  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStrToD.c:  [Bug 3315098] Mem leak fix from Gustaf Neumann.
+	* generic/tclStrToD.c:  [Bug 3315098]: Mem leak fix from Gustaf Neumann.
 
 2011-06-08  Andreas Kupries  <andreask@activestate.com>
 
@@ -681,10 +754,10 @@
 
 2011-04-04  Don Porter  <dgp@users.sourceforge.net>
 
-	* README:	Updated README files, repairing broken URLs and
-	* macosx/README:	removing other bits that were clearly wrong.
+	* README:	[Bug 3202030]: Updated README files, repairing broken
+	* macosx/README:URLs and removing other bits that were clearly wrong.
 	* unix/README:	Still could use more eyeballs on the detailed build
-	* win/README:	advice on various plaforms. [Bug 3202030]
+	* win/README:	advice on various plaforms.
 
 2011-04-04  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -908,10 +981,10 @@
 
 2011-03-09  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclNamesp.c:	Tighten the detector of nested [namespace code]
-	* tests/namespace.test:	quoting that the quoted scripts function
-	properly even in a namespace that contains a custom "namespace"
-	command.  [Bug 3202171]
+	* generic/tclNamesp.c:	[Bug 3202171]: Tighten the detector of nested
+	* tests/namespace.test:	[namespace code] quoting that the quoted
+	scripts function properly even in a namespace that contains a custom
+	"namespace" command.
 
 	* doc/tclvars.n:	Formatting fix.  Thanks to Pat Thotys.
 
@@ -934,8 +1007,8 @@
 	* generic/tclInt.h:	Remove TclMarkList() routine, an experimental
 	* generic/tclUtil.c:	dead-end from the 8.5 alpha days.
 
-	* generic/tclResult.c (ResetObjResult):	Correct failure to clear
-	invalid intrep.  Thanks to Colin McDonald. [Bug 3202905]
+	* generic/tclResult.c (ResetObjResult): [Bug 3202905]: Correct failure
+	to clear invalid intrep.  Thanks to Colin McDonald.
 
 2011-03-08  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -950,13 +1023,13 @@
 	* generic/tclParse.c:
 	* generic/tclUtil.c:
 
-	* generic/tclUtil.c (TclFindElement):	Guard escape sequence scans
-	to not overrun the string end.  [Bug 3192636]
+	* generic/tclUtil.c (TclFindElement):	[Bug 3192636]: Guard escape
+	sequence scans to not overrun the string end.
 
 2011-03-05  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclParse.c (TclParseBackslash): Correct trunction checks in
-	* tests/parse.test:	\x and \u substitutions.  [Bug 3200987]
+	* generic/tclParse.c (TclParseBackslash): [Bug 3200987]: Correct
+	* tests/parse.test:	trunction checks in \x and \u substitutions.
 
 2011-03-05  Miguel Sofer  <msofer@users.sf.net>
 
@@ -1029,17 +1102,17 @@
 	* generic/tclStubInit.c:
 	* win/makefile.vc:
 
-	* generic/tclExecute.c (ExprObjCallback): fix object leak
+	* generic/tclExecute.c (ExprObjCallback): Fix object leak
 
-	* generic/tclExecute.c (TEBCresume): store local var array and
+	* generic/tclExecute.c (TEBCresume): Store local var array and
 	constants in automatic vars to reduce indirection, slight perf
 	increase
 
-	* generic/tclOOCall.c (TclOODeleteContext): added missing '*' so
+	* generic/tclOOCall.c (TclOODeleteContext): Added missing '*' so
 	that trunk compiles.
 
-	* generic/tclBasic.c (TclNRRunCallbacks): don't do the trampoline
-	dance for commands that do not have an nreProc, [Patch 3168229]
+	* generic/tclBasic.c (TclNRRunCallbacks): [Patch 3168229]: Don't do
+	the trampoline dance for commands that do not have an nreProc.
 
 2011-03-01  Donal K. Fellows  <dkf@users.sf.net>
 
