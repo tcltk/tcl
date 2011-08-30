@@ -2525,6 +2525,9 @@ DeleteReflectedChannelMap(
      * interpreter. They have already been marked as dead.
      */
 
+    if (TclInThreadExit()) {
+	return;
+    }
     rcmPtr = GetThreadReflectedChannelMap();
     for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
 	    hPtr != NULL;
