@@ -75,6 +75,8 @@ typedef struct TestAsyncHandler {
 				/* Next is list of handlers. */
 } TestAsyncHandler;
 
+TCL_DECLARE_MUTEX(asyncTestMutex);
+
 static TestAsyncHandler *firstHandler = NULL;
 
 /*
@@ -791,17 +793,20 @@ TestasyncCmd(
 	    goto wrongNumArgs;
 	}
 	asyncPtr = ckalloc(sizeof(TestAsyncHandler));
+	asyncPtr->command = ckalloc(strlen(argv[2]) + 1);
+	strcpy(asyncPtr->command, argv[2]);
+        Tcl_MutexLock(&asyncTestMutex);
 	asyncPtr->id = nextId;
 	nextId++;
 	asyncPtr->handler = Tcl_AsyncCreate(AsyncHandlerProc,
-		(ClientData) asyncPtr);
-	asyncPtr->command = ckalloc(strlen(argv[2]) + 1);
-	strcpy(asyncPtr->command, argv[2]);
+                                            INT2PTR(asyncPtr->id));
 	asyncPtr->nextPtr = firstHandler;
 	firstHandler = asyncPtr;
+        Tcl_MutexUnlock(&asyncTestMutex);
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(asyncPtr->id));
     } else if (strcmp(argv[1], "delete") == 0) {
 	if (argc == 2) {
+            Tcl_MutexLock(&asyncTestMutex);
 	    while (firstHandler != NULL) {
 		asyncPtr = firstHandler;
 		firstHandler = asyncPtr->nextPtr;
@@ -809,6 +814,7 @@ TestasyncCmd(
 		ckfree(asyncPtr->command);
 		ckfree(asyncPtr);
 	    }
+            Tcl_MutexUnlock(&asyncTestMutex);
 	    return TCL_OK;
 	}
 	if (argc != 3) {
@@ -817,6 +823,7 @@ TestasyncCmd(
 	if (Tcl_GetInt(interp, argv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+        Tcl_MutexLock(&asyncTestMutex);
 	for (prevPtr = NULL, asyncPtr = firstHandler; asyncPtr != NULL;
 		prevPtr = asyncPtr, asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id != id) {
@@ -832,6 +839,7 @@ TestasyncCmd(
 	    ckfree(asyncPtr);
 	    break;
 	}
+        Tcl_MutexUnlock(&asyncTestMutex);
     } else if (strcmp(argv[1], "mark") == 0) {
 	if (argc != 5) {
 	    goto wrongNumArgs;
@@ -862,7 +870,7 @@ TestasyncCmd(
 	    if (asyncPtr->id == id) {
 		Tcl_ThreadId threadID;
 		if (Tcl_CreateThread(&threadID, AsyncThreadProc,
-			(ClientData) asyncPtr, TCL_THREAD_STACK_DEFAULT,
+			INT2PTR(id), TCL_THREAD_STACK_DEFAULT,
 			TCL_THREAD_NOFLAGS) != TCL_OK) {
 		    Tcl_SetResult(interp, "can't create thread", TCL_STATIC);
 		    return TCL_ERROR;
@@ -886,14 +894,28 @@ TestasyncCmd(
 
 static int
 AsyncHandlerProc(
-    ClientData clientData,	/* Pointer to TestAsyncHandler structure. */
+    ClientData clientData,	/* If of TestAsyncHandler structure. 
+                                 * in global list. */
     Tcl_Interp *interp,		/* Interpreter in which command was
 				 * executed, or NULL. */
     int code)			/* Current return code from command. */
 {
-    TestAsyncHandler *asyncPtr = (TestAsyncHandler *) clientData;
+    TestAsyncHandler *asyncPtr;
+    int id = PTR2INT(clientData);
     const char *listArgv[4], *cmd;
     char string[TCL_INTEGER_SPACE];
+
+    Tcl_MutexLock(&asyncTestMutex);
+    for (asyncPtr = firstHandler; asyncPtr != NULL;
+         asyncPtr = asyncPtr->nextPtr) {
+        if (asyncPtr->id == id) break;
+    }
+    Tcl_MutexUnlock(&asyncTestMutex);
+
+    if (!asyncPtr) {
+        /* Woops - this one was deleted between the AsyncMark and now */
+        return TCL_OK;
+    }
 
     TclFormatInt(string, code);
     listArgv[0] = asyncPtr->command;
@@ -932,12 +954,22 @@ AsyncHandlerProc(
 #ifdef TCL_THREADS
 static Tcl_ThreadCreateType
 AsyncThreadProc(
-    ClientData clientData)	/* Parameter is a pointer to a
+    ClientData clientData)	/* Parameter is the id of a
 				 * TestAsyncHandler, defined above. */
 {
-    TestAsyncHandler *asyncPtr = clientData;
+    TestAsyncHandler *asyncPtr;
+    int id = PTR2INT(clientData);
+
     Tcl_Sleep(1);
-    Tcl_AsyncMark(asyncPtr->handler);
+    Tcl_MutexLock(&asyncTestMutex);
+    for (asyncPtr = firstHandler; asyncPtr != NULL;
+         asyncPtr = asyncPtr->nextPtr) {
+        if (asyncPtr->id == id) {
+            Tcl_AsyncMark(asyncPtr->handler);
+            break;
+        }
+    }
+    Tcl_MutexUnlock(&asyncTestMutex);
     Tcl_ExitThread(TCL_OK);
     TCL_THREAD_CREATE_RETURN;
 }
@@ -7054,5 +7086,7 @@ TestconcatobjCmd(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
