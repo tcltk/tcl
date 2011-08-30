@@ -1050,6 +1050,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     # Step 3: set configuration options based on system name and version.
 
     do64bit_ok=no
+    # default to '{$LIBS}' and set to "" on per-platform necessary basis
+    SHLIB_LD_LIBS='${LIBS}'
     LDFLAGS_ORIG="$LDFLAGS"
     TCL_EXPORT_FILE_SUFFIX=""
     UNSHARED_LIB_SUFFIX=""
@@ -1093,9 +1095,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    fi
 	    LIBS="$LIBS -lc"
 	    SHLIB_CFLAGS=""
-	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
-	    # symbols when dynamically loaded into tclsh.
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
 	    DL_OBJS="tclLoadDl.o"
@@ -1167,7 +1166,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	BeOS*)
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -nostart"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1182,7 +1180,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	BSD/OS-2.1*|BSD/OS-3*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="shlicc -r"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1192,7 +1189,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	BSD/OS-4.*)
 	    SHLIB_CFLAGS="-export-dynamic -fPIC"
 	    SHLIB_LD='${CC} -shared'
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1203,7 +1199,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	CYGWIN_*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD='${CC} -shared'
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dll"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1220,10 +1215,19 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
+	Haiku*)
+	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	    SHLIB_CFLAGS="-fPIC"
+	    SHLIB_SUFFIX=".so"
+	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS="-lroot"
+	    AC_CHECK_LIB(network, inet_ntoa, [LIBS="$LIBS -lnetwork"])
+	    ;;
 	HP-UX-*.11.*)
 	    # Use updated header definitions where possible
-	    AC_DEFINE(_XOPEN_SOURCE)          # Use the XOPEN network library
-	    AC_DEFINE(_XOPEN_SOURCE_EXTENDED) # Use the XOPEN network library
+	    AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1, [Do we want to use the XOPEN network library?])
+	    AC_DEFINE(_XOPEN_SOURCE, 1, [Do we want to use the XOPEN network library?])
 	    LIBS="$LIBS -lxnet"               # Use the XOPEN network library
 
 	    if test "`uname -m`" = "ia64" ; then
@@ -1235,7 +1239,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    if test "$tcl_ok" = yes; then
 		SHLIB_CFLAGS="+z"
 		SHLIB_LD="ld -b"
-		SHLIB_LD_LIBS='${LIBS}'
 		DL_OBJS="tclLoadShl.o"
 		DL_LIBS="-ldld"
 		LDFLAGS="$LDFLAGS -Wl,-E"
@@ -1245,7 +1248,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    fi
 	    if test "$GCC" = "yes" ; then
 		SHLIB_LD="gcc -shared"
-		SHLIB_LD_LIBS='${LIBS}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    fi
 
@@ -1261,7 +1263,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 			    # 64-bit gcc in use.  Fix flags for GNU ld.
 			    do64bit_ok=yes
 			    SHLIB_LD="${CC} -shared"
-			    SHLIB_LD_LIBS='${LIBS}'
 			    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 			    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 			    ;;
@@ -1295,7 +1296,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_CFLAGS="-G 0"
 	    SHLIB_SUFFIX=".a"
 	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
 	    LDFLAGS="$LDFLAGS -Wl,-D,08000000"
@@ -1306,7 +1306,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	IRIX-5.*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="ld -shared -rdata_shared"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1316,7 +1315,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	IRIX-6.*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="ld -n32 -shared -rdata_shared"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1341,7 +1339,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	IRIX64-6.*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="ld -n32 -shared -rdata_shared"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1363,10 +1360,9 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	Linux*)
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
-	    CFLAGS_OPTIMIZE=-O2
+	    CFLAGS_OPTIMIZE="-O2"
 	    # egcs-2.91.66 on Redhat Linux 6.0 generates lots of warnings
 	    # when you inline the string and math operations.  Turn this off to
 	    # get rid of the warnings.
@@ -1419,11 +1415,10 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	GNU*)
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
 	    if test "$have_dl" = yes; then
-		SHLIB_LD="${CC} -shared"
+		SHLIB_LD='${CC} -shared'
 		DL_OBJS=""
 		DL_LIBS="-ldl"
 		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
@@ -1443,10 +1438,9 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	Lynx*)
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    CFLAGS_OPTIMIZE=-02
-	    SHLIB_LD="${CC} -shared "
+	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-mshared -ldl"
 	    LD_FLAGS="-Wl,--export-dynamic"
@@ -1455,7 +1449,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	MP-RAS-02*)
 	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD="cc -G"
+	    SHLIB_LD='${CC} -G'
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -1465,7 +1459,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	MP-RAS-*)
 	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD="cc -G"
+	    SHLIB_LD='${CC} -G'
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -1474,13 +1468,12 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	NetBSD-*|FreeBSD-[[1-2]].*)
+	NetBSD-1.*|FreeBSD-[[1-2]].*)
 	    # Not available on all versions:  check for include file.
 	    AC_CHECK_HEADER(dlfcn.h, [
 		# NetBSD/SPARC needs -fPIC, -fpic will not do.
 		SHLIB_CFLAGS="-fPIC"
 		SHLIB_LD="ld -Bshareable -x"
-		SHLIB_LD_LIBS='${LIBS}'
 		SHLIB_SUFFIX=".so"
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS=""
@@ -1500,7 +1493,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ], [
 		SHLIB_CFLAGS=""
 		SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r"
-		SHLIB_LD_LIBS='${LIBS}'
 		SHLIB_SUFFIX=".a"
 		DL_OBJS="tclLoadAout.o"
 		DL_LIBS=""
@@ -1515,11 +1507,11 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	OpenBSD-*)
-	    case `arch -s` in
+	    arch=`arch -s`
+	    case "$arch" in
 	    m88k|vax)
 		SHLIB_CFLAGS=""
 		SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r"
-		SHLIB_LD_LIBS='${LIBS}'
 		SHLIB_SUFFIX=".a"
 		DL_OBJS="tclLoadAout.o"
 		DL_LIBS=""
@@ -1537,7 +1529,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    SHLIB_CFLAGS="-fpic";;
 	        esac
 		SHLIB_LD="${CC} -shared ${SHLIB_CFLAGS}"
-		SHLIB_LD_LIBS='${LIBS}'
 		SHLIB_SUFFIX=".so"
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS=""
@@ -1562,17 +1553,19 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
-	FreeBSD-*)
+	NetBSD-*|FreeBSD-[[3-4]].*)
 	    # FreeBSD 3.* and greater have ELF.
+	    # NetBSD 2.* has ELF and can use 'cc -shared' to build shared libs
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD="ld -Bshareable -x"
-	    SHLIB_LD_LIBS='${LIBS}'
+	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
 	    LDFLAGS="$LDFLAGS -export-dynamic"
-	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-	    LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
+	    if test $doRpath = yes ; then
+		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    fi
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    if test "${TCL_THREADS}" = "1" ; then
 		# The -pthread needs to go in the CFLAGS, not LIBS
 		LIBS=`echo $LIBS | sed s/-pthread//`
@@ -1582,11 +1575,36 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    case $system in
 	    FreeBSD-3.*)
 	    	# FreeBSD-3 doesn't handle version numbers with dots.
-	    	UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
-	    	SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so'
+	    	UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
+	    	SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
 	    	TCL_LIB_VERSIONS_OK=nodots
 		;;
 	    esac
+	    ;;
+	FreeBSD-*)
+	    # This configuration from FreeBSD Ports.
+	    SHLIB_CFLAGS="-fPIC"
+	    SHLIB_LD="${CC} -shared"
+	    TCL_SHLIB_LD_EXTRAS="-soname \$[@]"
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS=""
+	    LDFLAGS=""
+	    if test $doRpath = yes ; then
+		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
+		fi
+	    if test "${TCL_THREADS}" = "1" ; then
+		# The -pthread needs to go in the LDFLAGS, not LIBS
+		LIBS=`echo $LIBS | sed s/-pthread//`
+		CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+		LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
+		fi
+	    # Version numbers are dot-stripped by system policy.
+	    TCL_TRIM_DOTS=`echo ${VERSION} | tr -d .`
+	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1'
+	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	Darwin-*)
 	    CFLAGS_OPTIMIZE="-Os"
@@ -1644,7 +1662,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    if test $tcl_cv_ld_single_module = yes; then
 		SHLIB_LD="${SHLIB_LD} -Wl,-single_module"
 	    fi
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
@@ -1721,6 +1738,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	OS/390-*)
+	    SHLIB_LD_LIBS=""
 	    CFLAGS_OPTIMIZE=""		# Optimizer is buggy
 	    AC_DEFINE(_OE_SOCKETS, 1,	# needed in sys/socket.h
 		[Should OS/390 do the right thing with sockets?])
@@ -1760,7 +1778,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    else
 	        SHLIB_LD='ld -non_shared -expect_unresolved "*"'
 	    fi
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1801,7 +1818,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	RISCos-*)
 	    SHLIB_CFLAGS="-G 0"
 	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".a"
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
@@ -1869,10 +1885,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 
 	    SHLIB_CFLAGS="-KPIC"
 
-	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
-	    # symbols when dynamically loaded into tclsh.
-
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1947,10 +1959,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 		fi
 	    fi
 
-	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
-	    # symbols when dynamically loaded into tclsh.
-
-	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
@@ -1986,7 +1994,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_CFLAGS="-G 0"
 	    SHLIB_SUFFIX=".a"
 	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
-	    SHLIB_LD_LIBS='${LIBS}'
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
 	    LDFLAGS="$LDFLAGS -Wl,-D,08000000"
@@ -1998,7 +2005,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	UNIX_SV* | UnixWare-5*)
 	    SHLIB_CFLAGS="-KPIC"
-	    SHLIB_LD="cc -G"
+	    SHLIB_LD='${CC} -G'
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -2130,30 +2137,19 @@ dnl # preprocessing tests use only CPPFLAGS.
     # libraries to the right flags for gcc, instead of those for the
     # standard manufacturer compiler.
 
-    if test "$DL_OBJS" != "tclLoadNone.o" ; then
-	if test "$GCC" = "yes" ; then
-	    case $system in
-		AIX-*)
-		    ;;
-		BSD/OS*)
-		    ;;
-		IRIX*)
-		    ;;
-		NetBSD-*|FreeBSD-*|OpenBSD-*)
-		    ;;
-		Darwin-*)
-		    ;;
-		RISCos-*)
-		    ;;
-		SCO_SV-3.2*)
-		    ;;
-		ULTRIX-4.*)
-		    ;;
-		*)
-		    SHLIB_CFLAGS="-fPIC"
-		    ;;
-	    esac
-	fi
+    if test "$DL_OBJS" != "tclLoadNone.o" -a "$GCC" = yes ; then
+	case $system in
+	    AIX-*) ;;
+	    BSD/OS*) ;;
+	    CYGWIN_*) ;;
+	    IRIX*) ;;
+	    NetBSD-*|FreeBSD-*|OpenBSD-*) ;;
+	    Darwin-*) ;;
+	    RISCos-*) ;;
+	    SCO_SV-3.2*) ;;
+	    ULTRIX-4.*) ;;
+	    *) SHLIB_CFLAGS="-fPIC" ;;
+	esac
     fi
 
     if test "$SHARED_LIB_SUFFIX" = "" ; then
@@ -2177,20 +2173,6 @@ dnl # preprocessing tests use only CPPFLAGS.
             MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
             INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(LIB_INSTALL_DIR)/$(LIB_FILE) ; (cd $(LIB_INSTALL_DIR) ; $(RANLIB) $(LIB_FILE))'
         fi
-
-dnl        Not at all clear what this was doing in Tcl's configure.in
-dnl        or why it was needed was needed. In any event, this sort of
-dnl        things needs to be done in the big loop above.
-dnl        REMOVE THIS BLOCK LATER! (mdejong)
-dnl        case $system in
-dnl            BSD/OS*)
-dnl                ;;
-dnl            AIX-[[1-4]].*)
-dnl                ;;
-dnl            *)
-dnl                SHLIB_LD_LIBS=""
-dnl                ;;
-dnl        esac
     fi
 
 
