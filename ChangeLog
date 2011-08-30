@@ -1,22 +1,30 @@
+2011-08-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInterp.c (SlaveCommandLimitCmd, SlaveTimeLimitCmd):
+	[Bug 3398794]: Ensure that low-level conditions in the limit API are
+	enforced at the script level through errors, not a Tcl_Panic. This
+	means that interpreters cannot read their own limits (writing already
+	did not work).
+
 2011-08-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclTest.c: [Bug 2981154] async-4.3 segfault.
-	* tests/async.test:  [Bug 1774689] async-4.3 sometimes fails.
+	* generic/tclTest.c: [Bug 2981154]: async-4.3 segfault.
+	* tests/async.test:  [Bug 1774689]: async-4.3 sometimes fails.
 
 2011-08-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclUniData.c: [Bug 3393714] overflow in toupper delta
+	* generic/tclUniData.c: [Bug 3393714]: Overflow in toupper delta
 	* tools/uniParse.tcl
 	* tests/utf.test
 
 2011-08-17  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclGet.c: [Bug 3393150] Overlooked free of intreps.
+	* generic/tclGet.c: [Bug 3393150]: Overlooked free of intreps.
 	(It matters for bignums!)
 
 2011-08-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclCmdAH.c:    [Bug 3388350] mingw64 compiler warnings
+	* generic/tclCmdAH.c:    [Bug 3388350]: mingw64 compiler warnings
 	* generic/tclFCmd.c      In mingw, sys/stat.h must be included
 	* generic/tclFileName.c  before winsock2.h, so make sure of that.
 	* generic/tclIOUtil.c
@@ -35,11 +43,11 @@
 
 2011-08-15  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c: [Bug 3390272] Leak of [info script] value.
+	* generic/tclBasic.c: [Bug 3390272]: Leak of [info script] value.
 
 2011-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h:    [Bug 3388350] mingw64 compiler warnings
+	* win/tclWinPort.h:    [Bug 3388350]: mingw64 compiler warnings
 	* win/tclWinPipe.c
 	* win/tclWinSock.c
 	* win/configure.in
@@ -49,20 +57,20 @@
 
 2011-08-12  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclPathObj.c:	[Bug 3389764] Eliminate possibility that dup
+	* generic/tclPathObj.c:	[Bug 3389764]: Eliminate possibility that dup
 	of a "path" value can create reference cycle.
 
 2011-08-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinConsole.c: [Bug 3388350] mingw64 compiler warnings
+	* win/tclWinConsole.c: [Bug 3388350]: mingw64 compiler warnings
 	* win/tclWinDde.c
 	* win/tclWinPipe.c
 	* win/tclWinSerial.c
 
 2011-08-05  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tclStrToD.c: Plugged a memory leak in double->string
-	conversion. [Bug 3386975]
+	* generic/tclStrToD.c: [Bug 3386975]: Plugged a memory leak in
+	double->string conversion.
 
 2011-07-28  Don Porter  <dgp@users.sourceforge.net>
 
@@ -87,11 +95,11 @@
 
 2011-07-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h: [Bug 3372130] Fix hypot math function with MSVC10
+	* win/tclWinPort.h: [Bug 3372130]: Fix hypot math function with MSVC10
 
 2011-07-19  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclUtil.c:	[Bug 3371644] Repair failure to properly handle 
+	* generic/tclUtil.c:	[Bug 3371644]: Repair failure to properly handle
 	* tests/util.test: (length == -1) scanning in TclConvertElement().
 
 2011-07-15  Don Porter  <dgp@users.sourceforge.net>

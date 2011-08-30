@@ -3429,6 +3429,13 @@ test interp-35.22 {interp time limits normalize milliseconds} -body {
 } -cleanup {
     interp delete $i
 } -result {2 500}
+# Bug 3398794
+test interp-35.23 {interp command limits can't touch current interp} -body {
+    interp limit {} commands -value 10
+} -returnCodes error -result {limits on current interpreter inaccessible}
+test interp-35.24 {interp time limits can't touch current interp} -body {
+    interp limit {} time -seconds 2
+} -returnCodes error -result {limits on current interpreter inaccessible}
 
 test interp-36.1 {interp bgerror syntax} -body {
     interp bgerror
