@@ -1029,31 +1029,31 @@ TclParseNumber(
 		state = sINFI;
 		break;
 	    }
-	    goto endgame;
+	    goto checktrail;
 	case sINFI:
 	    if (c == 'n' || c == 'N') {
 		state = sINFIN;
 		break;
 	    }
-	    goto endgame;
+	    goto checktrail;
 	case sINFIN:
 	    if (c == 'i' || c == 'I') {
 		state = sINFINI;
 		break;
 	    }
-	    goto endgame;
+	    goto checktrail;
 	case sINFINI:
 	    if (c == 't' || c == 'T') {
 		state = sINFINIT;
 		break;
 	    }
-	    goto endgame;
+	    goto checktrail;
 	case sINFINIT:
 	    if (c == 'y' || c == 'Y') {
 		state = sINFINITY;
 		break;
 	    }
-	    goto endgame;
+	    goto checktrail;
 
 	    /*
 	     * Parse NaN's.
@@ -1079,7 +1079,7 @@ TclParseNumber(
 		state = sNANPAREN;
 		break;
 	    }
-	    goto endgame;
+	    goto checktrail;
 
 	    /*
 	     * Parse NaN(hexdigits)
@@ -1114,13 +1114,23 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-	    goto endgame;
+	    goto checktrail;
 	}
 	p++;
 	len--;
+
+	while(0) {
+	checktrail:
+	    if ((c>='0')&&(c<='9')||(c>='A')&&(c<='Z')||(c>='a')&&(c<='z')||(c=='_')) {
+		/* bareword prefixed by Nan, Inf, etc. */
+		acceptState = INITIAL;
+	    }
+	    goto endgame;
+	}
     }
 
-  endgame:
+ 
+ endgame:
     if (acceptState == INITIAL) {
 	/*
 	 * No numeric string at all found.
