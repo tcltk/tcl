@@ -907,6 +907,9 @@ test expr-22.9 {non-numeric floats: shared object equality and NaN} {
     set x NaN
     expr {$x == $x}
 } 0
+test expr-22.10 {bareword prefixed by a non-numeric} -body {
+    list [catch {expr {nancy}} msg] $msg
+} -match glob -result {1 {invalid bareword "nancy"*}}
 
 # Tests for exponentiation handling
 test expr-23.1 {CompileExponentialExpr: just exponential expr} {expr 4**2} 16
