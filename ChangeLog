@@ -1,3 +1,9 @@
+2011-09-01  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* unix/tclUnixSock.c: [Bug 3401422] Cache script-level changes to
+	the nonblocking flag of an async client socket in progress, and
+	commit them on completion.
+
 2011-09-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStrToD.c:	[Bug 3402540] Corrections to TclParseNumber()
