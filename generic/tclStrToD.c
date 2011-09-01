@@ -1101,7 +1101,10 @@ TclParseNumber(
 		    d = 10 + c - 'a';
 		} else if (c >= 'A' && c <= 'F') {
 		    d = 10 + c - 'A';
+		} else {
+		    goto endgame;
 		}
+		numSigDigs++;
 		significandWide = (significandWide << 4) + d;
 		state = sNANHEX;
 		break;

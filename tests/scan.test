@@ -753,11 +753,11 @@ testConstraint ieeeFloatingPoint [testIEEE]
 
 # scan infinities - not working
 
-test scan-14.1 {infinity} ieeeFloatingPoint {
+test scan-14.1 {infinity} {
     scan Inf %g d
     set d
 } Inf
-test scan-14.2 {infinity} ieeeFloatingPoint {
+test scan-14.2 {infinity} {
     scan -Inf %g d
     set d
 } -Inf
