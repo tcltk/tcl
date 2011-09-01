@@ -1,3 +1,10 @@
+2011-09-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStrToD.c:	[Bug 3402540] Corrections to TclParseNumber()
+	* tests/binary.test:	to make it reject invalid Nan(Hex) strings.
+
+	* tests/scan.test:	[scan Inf %g] is portable; remove constraint.
+
 2011-08-30  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInterp.c (SlaveCommandLimitCmd, SlaveTimeLimitCmd):
