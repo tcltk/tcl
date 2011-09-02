@@ -1,3 +1,8 @@
+2011-09-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/http.test:	Convert [testthread] use to Thread package use.
+	Eliminates memory leak seen in `make valgrind`.
+
 2011-09-01  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* unix/tclUnixSock.c: [Bug 3401422] Cache script-level changes to
