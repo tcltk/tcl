@@ -1932,6 +1932,12 @@ ParseLexeme(
 	    return (end-start);
 	} else {
 	    unsigned char lexeme;
+	    const char *p = start;
+	    while (p < end) {
+		if (!isalnum(UCHAR(*p++))) {
+		    goto number;
+		}
+	    }
 	    ParseLexeme(end, numBytes-(end-start), &lexeme, NULL);
 	    if ((NODE_TYPE & lexeme) == BINARY) {
 		goto number;
