@@ -219,16 +219,6 @@ static const int itens [] = {
     100000000
 };
 
-static const Tcl_WideUInt wtens[] = {
-    1, 10, 100, 1000, 10000, 100000, 1000000,
-    (Tcl_WideUInt) 1000000*10, 		(Tcl_WideUInt) 1000000*100,
-    (Tcl_WideUInt) 1000000*1000, 	(Tcl_WideUInt) 1000000*10000,
-    (Tcl_WideUInt) 1000000*100000, 	(Tcl_WideUInt) 1000000*1000000,
-    (Tcl_WideUInt) 1000000*1000000*10, 	(Tcl_WideUInt) 1000000*1000000*100,
-    (Tcl_WideUInt) 1000000*1000000*1000,(Tcl_WideUInt) 1000000*1000000*10000
-    
-};
-
 static const double bigtens[] = {
     1e016, 1e032, 1e064, 1e128, 1e256
 };
