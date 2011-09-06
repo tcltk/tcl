@@ -620,18 +620,19 @@ Tcl_MainEx(
     Tcl_Exit(exitCode);
 }
 
-#ifndef UNICODE
-void
+#if (TCL_MAJOR_VERSION == 8) && !defined(UNICODE)
+#undef Tcl_Main
+extern DLLEXPORT void
 Tcl_Main(
     int argc,			/* Number of arguments. */
-    TCHAR **argv,		/* Array of argument strings. */
+    char **argv,		/* Array of argument strings. */
     Tcl_AppInitProc *appInitProc)
 				/* Application-specific initialization
 				 * function to call after most initialization
 				 * but before starting to execute commands. */
 {
     Tcl_FindExecutable(argv[0]);
-	Tcl_MainEx(argc, argv, appInitProc, Tcl_CreateInterp());
+    Tcl_MainEx(argc, argv, appInitProc, Tcl_CreateInterp());
 }
 #endif
 
