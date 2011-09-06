@@ -883,8 +883,7 @@ EXTERN void		Tcl_AppendResultVA _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN void		Tcl_AppendStringsToObjVA _ANSI_ARGS_((
 				Tcl_Obj * objPtr, va_list argList));
 /* 269 */
-EXTERN CONST84_RETURN char * Tcl_HashStats _ANSI_ARGS_((
-				Tcl_HashTable * tablePtr));
+EXTERN char *		Tcl_HashStats _ANSI_ARGS_((Tcl_HashTable * tablePtr));
 /* 270 */
 EXTERN CONST84_RETURN char * Tcl_ParseVar _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * str, CONST84 char ** termPtr));
@@ -1976,7 +1975,7 @@ typedef struct TclStubs {
     void (*tcl_ValidateAllMemory) _ANSI_ARGS_((CONST char * file, int line)); /* 266 */
     void (*tcl_AppendResultVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 267 */
     void (*tcl_AppendStringsToObjVA) _ANSI_ARGS_((Tcl_Obj * objPtr, va_list argList)); /* 268 */
-    CONST84_RETURN char * (*tcl_HashStats) _ANSI_ARGS_((Tcl_HashTable * tablePtr)); /* 269 */
+    char * (*tcl_HashStats) _ANSI_ARGS_((Tcl_HashTable * tablePtr)); /* 269 */
     CONST84_RETURN char * (*tcl_ParseVar) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, CONST84 char ** termPtr)); /* 270 */
     CONST84_RETURN char * (*tcl_PkgPresent) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version, int exact)); /* 271 */
     CONST84_RETURN char * (*tcl_PkgPresentEx) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version, int exact, ClientData * clientDataPtr)); /* 272 */
