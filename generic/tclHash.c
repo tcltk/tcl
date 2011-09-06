@@ -765,7 +765,7 @@ Tcl_NextHashEntry(searchPtr)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_HashStats(tablePtr)
     Tcl_HashTable *tablePtr;		/* Table for which to produce stats. */
 {

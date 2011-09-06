@@ -3339,7 +3339,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	}
 
 	case ARRAY_STATISTICS: {
-	    CONST char *stats;
+	    char *stats;
 
 	    if (notArray) {
 		goto error;
