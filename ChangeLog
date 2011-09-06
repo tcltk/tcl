@@ -1,9 +1,11 @@
 2011-09-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.decls: Tcl_HashStats does not return a CONST
-	* generic/tclDecls.h (Backported from Tcl 8.5)
-	* generic/tclHash.c
-	* generic/tclVar.c
+	* generic/tclDecls.h: (Backported from Tcl 8.5)
+	* generic/tclHash.c:
+	* generic/tclVar.c:
+	* unix/tcl.m4:    Add --disable-rpath option to configure
+	* unix/configure: script (backported from Tcl 8.5)
 
 2011-08-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
