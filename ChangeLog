@@ -1,3 +1,14 @@
+2011-09-06  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/America/Goose_Bay: Update to Olson's tzdata2011i
+	* library/tzdata/America/Metlakatla:
+	* library/tzdata/America/Resolute:
+	* library/tzdata/America/St_Johns:
+	* library/tzdata/Europe/Kaliningrad:
+	* library/tzdata/Pacific/Apia:
+	* library/tzdata/Pacific/Honolulu:
+	* library/tzdata/Africa/Juba: (new)
+
 2011-09-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStrToD.c:	[Bug 3402540] Corrections to TclParseNumber()
