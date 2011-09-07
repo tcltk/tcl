@@ -1919,7 +1919,8 @@ ParseLexeme(
     literal = Tcl_NewObj();
     if (TclParseNumber(NULL, literal, NULL, start, numBytes, &end,
 	    TCL_PARSE_NO_WHITESPACE) == TCL_OK) {
-	if (!isalnum(UCHAR(*end)) && UCHAR(*end) != '_') {
+	if (end < start + numBytes && !isalnum(UCHAR(*end))
+		&& UCHAR(*end) != '_') {
 	
 	number:
 	    TclInitStringRep(literal, start, end-start);
@@ -1932,16 +1933,38 @@ ParseLexeme(
 	    return (end-start);
 	} else {
 	    unsigned char lexeme;
-	    const char *p = start;
-	    while (p < end) {
-		if (!isalnum(UCHAR(*p++))) {
-		    goto number;
+
+	    /*
+	     * We have a number followed directly by bareword characters
+	     * (alpha, digit, underscore).  Is this a number followed by
+	     * bareword syntax error?  Or should we join into one bareword?
+	     * Example: Inf + luence + () becomes a valid function call.
+	     * [Bug 3401704]
+	     */
+	    if (literal->typePtr == &tclDoubleType) {
+		const char *p = start;
+		while (p < end) {
+		    if (!isalnum(UCHAR(*p++))) {
+			/*
+			 * The number has non-bareword characters, so we 
+			 * must treat it as a number.
+			 */
+			goto number;
+		    }
 		}
 	    }
 	    ParseLexeme(end, numBytes-(end-start), &lexeme, NULL);
 	    if ((NODE_TYPE & lexeme) == BINARY) {
+		/*
+		 * The bareword characters following the number take the
+		 * form of an operator (eq, ne, in, ni, ...) so we treat
+		 * as number + operator.
+		 */
 		goto number;
 	    }
+	    /*
+	     * Otherwise, fall through and parse the whole as a bareword.
+	     */
 	}
     }
 
