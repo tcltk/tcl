@@ -997,10 +997,6 @@ test parseExpr-21.63 {error message} -body {
 } -returnCodes error -result "missing close-brace
 in expression \"...12345678901234567890*\[\{abcdefghijklmnopqrstuv...\""
 
-test parseExpr-18.1 {LogSyntaxError procedure, error in expr longer than 60 chars} -constraints testexprparser -body {
-    testexprparser {(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)/} -1
-} -returnCodes error -match glob -result *
-
 test parseExpr-22.1 {Bug 3401704} -constraints testexprparser -body {
     testexprparser 2a() 1
 } -result {- {} 0 subexpr 2 1 text 2 0 {}}
