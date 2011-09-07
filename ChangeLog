@@ -1,3 +1,11 @@
+2011-09-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c: [Bug 3401704] Allow function names like
+	* tests/parseExpr.test:	 influence(), nanobot(), and 99bottles()
+	that have been parsed as missing operator syntax errors before
+	with the form NUMBER + FUNCTION.
+	***POTENTIAL INCOMPATIBILITY***
+
 2011-09-06  Venkat Iyer <venkat@comit.com>
 
 	* library/tzdata/America/Goose_Bay: Update to Olson's tzdata2011i
