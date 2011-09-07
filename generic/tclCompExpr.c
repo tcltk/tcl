@@ -651,12 +651,6 @@ ParseExpr(
 	Tcl_Obj *literal;	/* Filled by the ParseLexeme() call when
 				 * a literal is parsed that has a Tcl_Obj
 				 * rep worth preserving. */
-	const char *lastStart = start - scanned;
-				/* Compute where the lexeme parsed the
-				 * previous pass through the loop began.
-				 * This is helpful for detecting invalid
-				 * octals and providing more complete error
-				 * messages. */
 
 	/*
 	 * Each pass through this loop adds up to one more OpNode. Allocate
@@ -742,29 +736,30 @@ ParseExpr(
 				" or \"%.*s%s(...)\" or ...",
 				(scanned < limit) ? scanned : limit - 3,
 				start, (scanned < limit) ? "" : "...");
-			if (NotOperator(lastParsed)) {
-			    if ((lastStart[0] == '0')
-				    && ((lastStart[1] == 'o')
-				    || (lastStart[1] == 'O'))
-				    && (lastStart[2] >= '0')
-				    && (lastStart[2] <= '9')) {
-				const char *end = lastStart + 2;
-				Tcl_Obj* copy;
-				while (isdigit(UCHAR(*end))) {
-				    end++;
-				}
-				copy = Tcl_NewStringObj(lastStart,
-					end - lastStart);
-				if (TclCheckBadOctal(NULL,
-					Tcl_GetString(copy))) {
+			if (start[0] == '0') {
+			    const char *stop;
+			    TclParseNumber(NULL, NULL, NULL, start, scanned,
+				    &stop, TCL_PARSE_NO_WHITESPACE);
+
+			    if (isdigit(UCHAR(*stop)) || (stop == start + 1)) {
+				parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
+
+				switch (start[1]) {
+				case 'b':
 				    Tcl_AppendToObj(post,
-					    "(invalid octal number?)", -1);
+					    " (invalid binary number?)", -1);
+				    break;
+				case 'o':
+				    Tcl_AppendToObj(post,
+					    " (invalid octal number?)", -1);
+				default:
+				    if (isdigit(UCHAR(start[1]))) {
+				        Tcl_AppendToObj(post,
+						" (invalid octal number?)", -1);
+				    }
+				    break;
 				}
-				Tcl_DecrRefCount(copy);
 			    }
-			    scanned = 0;
-			    insertMark = 1;
-			    parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 			}
 			goto error;
 		    }
@@ -809,18 +804,8 @@ ParseExpr(
 
 	    if (NotOperator(lastParsed)) {
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
-		if (lastStart[0] == '0') {
-		    Tcl_Obj *copy = Tcl_NewStringObj(lastStart,
-			    start + scanned - lastStart);
-		    if (TclCheckBadOctal(NULL, Tcl_GetString(copy))) {
-			TclNewLiteralStringObj(post,
-				"looks like invalid octal number");
-		    }
-		    Tcl_DecrRefCount(copy);
-		}
 		scanned = 0;
 		insertMark = 1;
-		parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 
 		/* Free any literal to avoid a memleak. */
 		if ((lexeme == NUMBER) || (lexeme == BOOLEAN)) {
@@ -1934,14 +1919,53 @@ ParseLexeme(
     literal = Tcl_NewObj();
     if (TclParseNumber(NULL, literal, NULL, start, numBytes, &end,
 	    TCL_PARSE_NO_WHITESPACE) == TCL_OK) {
-	TclInitStringRep(literal, start, end-start);
-	*lexemePtr = NUMBER;
-	if (literalPtr) {
-	    *literalPtr = literal;
+	if (end < start + numBytes && !isalnum(UCHAR(*end))
+		&& UCHAR(*end) != '_') {
+	
+	number:
+	    TclInitStringRep(literal, start, end-start);
+	    *lexemePtr = NUMBER;
+	    if (literalPtr) {
+		*literalPtr = literal;
+	    } else {
+		Tcl_DecrRefCount(literal);
+	    }
+	    return (end-start);
 	} else {
-	    Tcl_DecrRefCount(literal);
+	    unsigned char lexeme;
+
+	    /*
+	     * We have a number followed directly by bareword characters
+	     * (alpha, digit, underscore).  Is this a number followed by
+	     * bareword syntax error?  Or should we join into one bareword?
+	     * Example: Inf + luence + () becomes a valid function call.
+	     * [Bug 3401704]
+	     */
+	    if (literal->typePtr == &tclDoubleType) {
+		const char *p = start;
+		while (p < end) {
+		    if (!isalnum(UCHAR(*p++))) {
+			/*
+			 * The number has non-bareword characters, so we 
+			 * must treat it as a number.
+			 */
+			goto number;
+		    }
+		}
+	    }
+	    ParseLexeme(end, numBytes-(end-start), &lexeme, NULL);
+	    if ((NODE_TYPE & lexeme) == BINARY) {
+		/*
+		 * The bareword characters following the number take the
+		 * form of an operator (eq, ne, in, ni, ...) so we treat
+		 * as number + operator.
+		 */
+		goto number;
+	    }
+	    /*
+	     * Otherwise, fall through and parse the whole as a bareword.
+	     */
 	}
-	return (end-start);
     }
 
     if (Tcl_UtfCharComplete(start, numBytes)) {
@@ -1952,7 +1976,7 @@ ParseLexeme(
 	utfBytes[numBytes] = '\0';
 	scanned = Tcl_UtfToUniChar(utfBytes, &ch);
     }
-    if (!isalpha(UCHAR(ch))) {
+    if (!isalnum(UCHAR(ch))) {
 	*lexemePtr = INVALID;
 	Tcl_DecrRefCount(literal);
 	return scanned;
