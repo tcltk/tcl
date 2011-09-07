@@ -752,6 +752,7 @@ ParseExpr(
 				case 'o':
 				    Tcl_AppendToObj(post,
 					    " (invalid octal number?)", -1);
+				    break;
 				default:
 				    if (isdigit(UCHAR(start[1]))) {
 				        Tcl_AppendToObj(post,
