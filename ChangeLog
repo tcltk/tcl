@@ -1,8 +1,8 @@
 2011-09-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/chanio.test:	[Bug 3389733] Convert [testthread] use to
-	Thread package use in chan-io-70.1.  Eliminates a memory leak in
-	`make valgrind TESTFLAGS="-file chanio.test"`.
+	* tests/io.test:	Thread package use in *io-70.1.  Eliminates a
+	memory leak in `make valgrind`.
 
 2011-09-07  Don Porter  <dgp@users.sourceforge.net>
 
