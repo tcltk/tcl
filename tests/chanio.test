@@ -7512,7 +7512,7 @@ test chan-io-70.1 {Transfer channel} -setup {
 	set res
     }]
 } -cleanup {
-    thread::release
+    thread::release $tid
     removeFile cutsplice
 } -result {0 1 0}
 
