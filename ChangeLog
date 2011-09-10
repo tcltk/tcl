@@ -6,16 +6,16 @@
 
 2011-09-09  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/chanio.test:	[Bug 3389733] Convert [testthread] use to
+	* tests/chanio.test:	[Bug 3389733]: Convert [testthread] use to
 	* tests/io.test:	Thread package use in *io-70.1.  Eliminates a
 	memory leak in `make valgrind`.
 
 2011-09-07  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCompExpr.c: [Bug 3401704] Allow function names like
-	* tests/parseExpr.test:	 influence(), nanobot(), and 99bottles()
-	that have been parsed as missing operator syntax errors before
-	with the form NUMBER + FUNCTION.
+	* generic/tclCompExpr.c: [Bug 3401704]: Allow function names like
+	* tests/parseExpr.test:	 influence(), nanobot(), and 99bottles() that
+	have been parsed as missing operator syntax errors before with the
+	form NUMBER + FUNCTION.
 	***POTENTIAL INCOMPATIBILITY***
 
 2011-09-06  Venkat Iyer <venkat@comit.com>
@@ -42,13 +42,13 @@
 
 2011-09-01  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* unix/tclUnixSock.c: [Bug 3401422] Cache script-level changes to
-	the nonblocking flag of an async client socket in progress, and
-	commit them on completion.
+	* unix/tclUnixSock.c: [Bug 3401422]: Cache script-level changes to the
+	nonblocking flag of an async client socket in progress, and commit
+	them on completion.
 
 2011-09-01  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStrToD.c:	[Bug 3402540] Corrections to TclParseNumber()
+	* generic/tclStrToD.c:	[Bug 3402540]: Corrections to TclParseNumber()
 	* tests/binary.test:	to make it reject invalid Nan(Hex) strings.
 
 	* tests/scan.test:	[scan Inf %g] is portable; remove constraint.
