@@ -1,3 +1,9 @@
+2011-09-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (InitEnsembleRewrite): [Bug 3400658]: Set the
+	ensemble-like rewriting up correctly for forwarded methods so that
+	computed error messages are correct.
+
 2011-09-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/chanio.test:	[Bug 3389733] Convert [testthread] use to
