@@ -117,6 +117,13 @@
   };
 #endif
 
+/* Those codes, from Visual Studio 2010, conflict with other values */
+#undef ENODATA
+#undef ENOMSG
+#undef ENOSR
+#undef ENOSTR
+#undef EPROTO
+
 /*
  * The following defines redefine the Windows Socket errors as
  * BSD errors so Tcl_PosixError can do the right thing.
