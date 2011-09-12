@@ -23,6 +23,10 @@ testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
 
 if {[testConstraint testthread]} {
     testthread errorproc ThreadError
+}
+if {[testConstraint thread]} {
+    thread::errorproc ThreadError
+}
 
     proc ThreadError {id info} {
 	global threadId threadError
@@ -33,7 +37,6 @@ if {[testConstraint testthread]} {
     proc ThreadNullError {id info} {
 	# ignore
     }
-}
 
 
 test thread-1.1 {Tcl_ThreadObjCmd: no args} {testthread} {
@@ -959,6 +962,7 @@ test thread-7.26 {cancel: send async cancel bad interp path} {thread} {
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     catch {thread::send $serverthread {interp cancel -- bad}} msg
+    thread::send -async $serverthread {interp cancel -unwind}
     thread::release -wait $serverthread
     list [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
