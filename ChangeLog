@@ -1,5 +1,8 @@
 2011-09-11  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/thread.test:	Convert [testthread] use to Thread package
+	use in thread-6.1.  Eliminates a memory leak in `make valgrind`.
+
 	* tests/socket.test:	[Bug 3390699]: Convert [testthread] use to
 	Thread package use in socket_*-13.1.  Eliminates a memory leak in
 	`make valgrind`.
