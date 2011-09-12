@@ -938,28 +938,28 @@ test thread-7.25 {cancel: nested catch inside pure inside-command loop} {testthr
 	      [expr {[info exists ::threadError] ? \
 		  [lindex [split $::threadError \n] 0] : "" }]
 } {{} 1 0 {}}
-test thread-7.26 {cancel: send async cancel bad interp path} {testthread} {
-    threadReap
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
-    set serverthread [testthread create -joinable {
+test thread-7.26 {cancel: send async cancel bad interp path} {thread} {
+    unset -nocomplain ::threadIdStarted
+    set serverthread [thread::create -preserved \
+	[string map [list MAIN [thread::id]] {
 	proc foobar {} {
 	    while {1} {
 		if {![info exists foo]} then {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
-		    testthread send [testthread id -main] \
-			    [list set ::threadIdStarted [testthread id]]
+		    thread::send MAIN \
+			    [list set ::threadIdStarted [thread::id]]
 		    set foo 1
 		}
 		update
 	    }
 	}
 	foobar
-    }]
+    }]]
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
-    catch {testthread send $serverthread {interp cancel -- bad}} msg
-    threadReap
+    catch {thread::send $serverthread {interp cancel -- bad}} msg
+    thread::release -wait $serverthread
     list [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 		  $msg
