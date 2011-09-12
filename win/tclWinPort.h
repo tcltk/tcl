@@ -250,11 +250,11 @@
 #ifndef EOTHER
 #   define EOTHER	131	/* Other error */
 #endif
-#ifndef EOVERFLOW
-#   define EOVERFLOW	132	/* File too big */
-#endif
+/* workaround for mingw-w64 bug 3407992 */
+#undef EOVERFLOW
+#define EOVERFLOW	132	/* File too big */
 #ifndef EOWNERDEAD
-#   define EOWNERDEAD	133	/* File too big */
+#   define EOWNERDEAD	133	/* Owner dead */
 #endif
 #ifndef EPROTO
 #   define EPROTO	134	/* Protocol error */
