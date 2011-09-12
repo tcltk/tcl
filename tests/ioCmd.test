@@ -2609,7 +2609,7 @@ test iocmd.tf-24.16 {chan write, note the background flush setup by close due to
 } -cleanup {
     rename foo {}
     unset res
-} -result {{write rc* ABC} {watch rc* write} {} BG {write rc* ABC}} \
+} -result {{write rc* ABC} {watch rc* write} {} BG {write rc* ABC} BG {finalize rc*}} \
     -constraints {testchannel thread}
 
 # --- === *** ###########################
