@@ -200,29 +200,24 @@ test thread-4.5 {TclThreadSend preserve errorCode} {thread} {
 } {1 ERR CODE}
 
 
-test thread-5.0 {Joining threads} {testthread} {
-    threadReap
-    set serverthread [testthread create -joinable]
-    testthread send -async $serverthread {after 1000 ; testthread exit}
-    set res [testthread join $serverthread]
-    threadReap
-    set res
+test thread-5.0 {Joining threads} {thread} {
+    set serverthread [thread::create -joinable -preserved]
+    thread::send -async $serverthread {after 1000 ; thread::release}
+    thread::join $serverthread
 } {0}
-test thread-5.1 {Joining threads after the fact} {testthread} {
-    threadReap
-    set serverthread [testthread create -joinable]
-    testthread send -async $serverthread {testthread exit}
+test thread-5.1 {Joining threads after the fact} {thread} {
+    set serverthread [thread::create -joinable -preserved]
+    thread::send -async $serverthread {thread::release}
     after 2000
-    set res [testthread join $serverthread]
-    threadReap
-    set res
+    thread::join $serverthread
 } {0}
-test thread-5.2 {Try to join a detached thread} {testthread} {
-    threadReap
-    set serverthread [testthread create]
-    testthread send -async $serverthread {after 1000 ; testthread exit}
-    catch {set res [testthread join $serverthread]} msg
-    threadReap
+test thread-5.2 {Try to join a detached thread} {thread} {
+    set serverthread [thread::create -preserved]
+    thread::send -async $serverthread {after 1000 ; thread::release}
+    catch {set res [thread::join $serverthread]} msg
+    while {[llength [thread::names]] > 1} {
+	after 20
+    }
     lrange $msg 0 2
 } {cannot join thread}
 
