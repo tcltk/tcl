@@ -19,6 +19,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # Some tests require the testthread command
 
 testConstraint testthread [expr {[info commands testthread] != {}}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
 
 if {[testConstraint testthread]} {
     testthread errorproc ThreadError
@@ -239,22 +240,18 @@ test thread-5.2 {Try to join a detached thread} {testthread} {
     lrange $msg 0 2
 } {cannot join thread}
 
-test thread-6.1 {freeing very large object trees in a thread} testthread {
+test thread-6.1 {freeing very large object trees in a thread} thread {
     # conceptual duplicate of obj-32.1
-    threadReap
-    set serverthread [testthread create -joinable]
-    testthread send -async $serverthread {
+    set serverthread [thread::create -preserved]
+    thread::send -async $serverthread {
 	set x {}
 	for {set i 0} {$i<100000} {incr i} {
 	    set x [list $x {}]
 	}
 	unset x
-	testthread exit
     }
-    catch {set res [testthread join $serverthread]} msg
-    threadReap
-    set res
-} {0}
+    thread::release -wait $serverthread
+} 0
 
 # TIP #285: Script cancellation support
 test thread-7.1 {cancel: args} {testthread} {
