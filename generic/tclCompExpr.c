@@ -2471,8 +2471,30 @@ CompileExprTree(
 
 		if (ExecConstantExprTree(interp, nodes, next, litObjvPtr)
 			== TCL_OK) {
-		    TclEmitPush(TclAddLiteralObj(envPtr,
-			    Tcl_GetObjResult(interp), NULL), envPtr);
+		    int index;
+		    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
+
+		    /*
+		     * Don't generate a string rep, but if we have one
+		     * already, then use it to share via the literal table.
+		     */
+		    if (objPtr->bytes) {
+			Tcl_Obj *tableValue;
+
+			index = TclRegisterNewLiteral(envPtr, objPtr->bytes,
+				objPtr->length);
+			tableValue = envPtr->literalArrayPtr[index].objPtr;
+			if ((tableValue->typePtr == NULL) &&
+				(objPtr->typePtr != NULL)) {
+			    /* Same intrep surgery as for OT_LITERAL */
+			    tableValue->typePtr = objPtr->typePtr;
+			    tableValue->internalRep = objPtr->internalRep;
+			    objPtr->typePtr = NULL;
+			}
+		    } else {
+			index = TclAddLiteralObj(envPtr, objPtr, NULL);
+		    }
+		    TclEmitPush(index, envPtr);
 		} else {
 		    TclCompileSyntaxError(interp, envPtr);
 		}
