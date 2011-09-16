@@ -1760,6 +1760,7 @@ test socket-14.1 {[socket -async] fileevent while still connecting} \
         set client [socket -async localhost $port]
         fileevent $client writable {
             lappend x [fconfigure $client -error]
+	    fileevent $client writable {}
         }
         set after [after 1000 {lappend x timeout}]
         while {[llength $x] < 2 && "timeout" ni $x} {
