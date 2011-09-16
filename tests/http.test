@@ -327,6 +327,30 @@ test http-3.23 {http::geturl parse failures} -body {
 test http-3.24 {http::geturl parse failures} -body {
     http::geturl http://somewhere/path?%query
 } -returnCodes error -result {Illegal encoding character usage "%qu" in URL path}
+test http-3.25 {http::geturl: -headers override -type} -body {
+    set token [http::geturl $url/headers -type "text/plain" -query dummy \
+	    -headers [list "Content-Type" "text/plain;charset=utf-8"]]
+    http::data $token
+} -cleanup {
+    http::cleanup $token
+} -match regexp -result {(?n)Accept \*/\*
+Host .*
+User-Agent .*
+Connection close
+Content-Type {text/plain;charset=utf-8}
+Content-Length 5}
+test http-3.26 {http::geturl: -headers override -type default} -body {
+    set token [http::geturl $url/headers -query dummy \
+	    -headers [list "Content-Type" "text/plain;charset=utf-8"]]
+    http::data $token
+} -cleanup {
+    http::cleanup $token
+} -match regexp -result {(?n)Accept \*/\*
+Host .*
+User-Agent .*
+Connection close
+Content-Type {text/plain;charset=utf-8}
+Content-Length 5}
 
 test http-4.1 {http::Event} {
     set token [http::geturl $url -keepalive 0]
