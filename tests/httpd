@@ -175,6 +175,14 @@ proc httpdRespond { sock } {
 	    set html "Got [string length $data(query)] bytes"
 	    set type text/plain
 	}
+	*headers* {
+	    set html ""
+	    set type text/plain
+	    foreach {key value} $data(meta) {
+		append html [list $key $value] "\n"
+	    }
+	    set html [string trim $html]
+	}
 	default {
 	    set type text/html
 
