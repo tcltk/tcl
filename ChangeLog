@@ -1,3 +1,22 @@
+2011-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	IMPLEMENTATION OF TIP #388
+
+	* doc/Tcl.n
+	* doc/re_syntax.n
+	* generic/regc_lex.c
+	* generic/regcomp.c
+	* generic/regcustom.h
+	* generic/tcl.h
+	* generic/tclParse.c
+	* tests/reg.test
+	* tests/utf.test
+
+2011-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:        Don't change Tcl_UniChar type when
+	* generic/regcustom.h:  TCL_UTF_MAX == 4 (not supported anyway)
+
 2011-09-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclProc.c (ProcWrongNumArgs): [Bugs 3400658,3408830]:
