@@ -2191,6 +2191,7 @@ DeleteReflectedTransformMap(
 
 	Tcl_ConditionNotify(&resultPtr->done);
     }
+    Tcl_MutexUnlock(&rtForwardMutex);
 
     /*
      * Get the map of all channels handled by the current thread. This is a
@@ -2215,8 +2216,6 @@ DeleteReflectedTransformMap(
 
 	Tcl_DeleteHashEntry(hPtr);
     }
-
-    Tcl_MutexUnlock(&rtForwardMutex);
 #endif
 }
 
@@ -2323,6 +2322,7 @@ DeleteThreadReflectedTransformMap(
 
 	Tcl_ConditionNotify(&resultPtr->done);
     }
+    Tcl_MutexUnlock(&rtForwardMutex);
 
     /*
      * Get the map of all channels handled by the current thread. This is a
@@ -2339,8 +2339,7 @@ DeleteThreadReflectedTransformMap(
 	rtPtr->interp = NULL;
 	Tcl_DeleteHashEntry(hPtr);
     }
-
-    Tcl_MutexUnlock(&rtForwardMutex);
+    ckfree(rtmPtr);
 }
 
 static void
