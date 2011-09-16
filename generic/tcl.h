@@ -2373,8 +2373,10 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
  */
 
-EXTERN void		Tcl_Main(int argc, char **argv,
-			    Tcl_AppInitProc *appInitProc);
+#define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
+	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
+EXTERN void		Tcl_MainEx(int argc, char **argv,
+			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
