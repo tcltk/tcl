@@ -171,7 +171,7 @@ bsCheck \x	120
 bsCheck \xa	10
 bsCheck \xA	10
 bsCheck \x41	65
-bsCheck \x541	65
+bsCheck \x541	84
 bsCheck \u	117
 bsCheck \uk	117
 bsCheck \u41	65
@@ -180,6 +180,18 @@ bsCheck \uA	10
 bsCheck \340	224
 bsCheck \ua1	161
 bsCheck \u4e21	20001
+bsCheck \741	60
+bsCheck \U	85
+bsCheck \Uk	85
+bsCheck \U41	65
+bsCheck \Ua	10
+bsCheck \UA	10
+bsCheck \Ua1	161
+bsCheck \U4e21	20001
+bsCheck \U004e21	20001
+bsCheck \U00004e21	20001
+bsCheck \U00110000	65533
+bsCheck \Uffffffff	65533
 
 test utf-11.1 {Tcl_UtfToUpper} {
     string toupper {}
