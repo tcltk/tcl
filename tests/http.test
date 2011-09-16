@@ -364,6 +364,32 @@ test http-3.26 {http::meta} -setup {
     http::cleanup $token
     unset -nocomplain m token
 } -result {Content-Length Content-Type Date X-Check}
+test http-3.27 {http::geturl: -headers override -type} -body {
+    set token [http::geturl $url/headers -type "text/plain" -query dummy \
+	    -headers [list "Content-Type" "text/plain;charset=utf-8"]]
+    http::data $token
+} -cleanup {
+    http::cleanup $token
+} -match regexp -result {(?n)Accept \*/\*
+Host .*
+User-Agent .*
+Connection close
+Content-Type {text/plain;charset=utf-8}
+Accept-Encoding .*
+Content-Length 5}
+test http-3.28 {http::geturl: -headers override -type default} -body {
+    set token [http::geturl $url/headers -query dummy \
+	    -headers [list "Content-Type" "text/plain;charset=utf-8"]]
+    http::data $token
+} -cleanup {
+    http::cleanup $token
+} -match regexp -result {(?n)Accept \*/\*
+Host .*
+User-Agent .*
+Connection close
+Content-Type {text/plain;charset=utf-8}
+Accept-Encoding .*
+Content-Length 5}
 
 test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]
