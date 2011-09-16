@@ -1,5 +1,9 @@
 2011-09-16  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclProc.c (ProcWrongNumArgs): [Bugs 3400658,3408830]:
+	Ensemble-like rewriting of error messages is complex, and TclOO (in
+	combination with iTcl) hits the most tricky cases.
+
 	* library/http/http.tcl (http::geturl): [Bug 3391977]: Ensure that the
 	-headers option overrides the -type option (important because -type
 	has a default that is not always appropriate, and the header must not
@@ -32,12 +36,6 @@
 	* tests/socket.test:	[Bug 3390699]: Convert [testthread] use to
 	Thread package use in socket_*-13.1.  Eliminates a memory leak in
 	`make valgrind`.
-
-2011-09-10  Donal K. Fellows  <dkf@users.sf.net>
-
-	* generic/tclOOMethod.c (InitEnsembleRewrite): [Bug 3400658]: Set the
-	ensemble-like rewriting up correctly for forwarded methods so that
-	computed error messages are correct.
 
 2011-09-09  Don Porter  <dgp@users.sourceforge.net>
 
