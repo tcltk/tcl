@@ -2244,7 +2244,7 @@ typedef struct Tcl_Parse {
  * This represents a Unicode character.  Any changes to this should
  * also be reflected in regcustom.h.
  */
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX > 4
     /*
      * unsigned int isn't 100% accurate as it should be a strict 4-byte
      * value (perhaps wchar_t).  64-bit systems may have troubles.  The
