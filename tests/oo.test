@@ -863,7 +863,7 @@ test oo-6.16 {Bug 3400658: forwarding and wrongargs rewriting - via alias} -setu
 } -result {wrong # args: should be "foo test d"}
 test oo-6.17 {Bug 3400658: forwarding and wrongargs rewriting - via ensemble} -setup {
     oo::class create fooClass
-} -constraints knownBug -body {
+} -body {
     oo::define fooClass {
 	forward test handler1 foo bar boo
 	forward handler2 my handler
