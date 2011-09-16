@@ -1595,7 +1595,7 @@ InitEnsembleRewrite(
     if (isRootEnsemble) {
 	iPtr->ensembleRewrite.sourceObjs = objv;
 	iPtr->ensembleRewrite.numRemovedObjs = toRewrite;
-	iPtr->ensembleRewrite.numInsertedObjs = rewriteLength - 1;
+	iPtr->ensembleRewrite.numInsertedObjs = rewriteLength;
     } else {
 	int numIns = iPtr->ensembleRewrite.numInsertedObjs;
 
