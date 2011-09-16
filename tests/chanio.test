@@ -37,7 +37,7 @@ namespace eval ::tcl::test::io {
     testConstraint testfevent       [llength [info commands testfevent]]
     testConstraint testchannelevent [llength [info commands testchannelevent]]
     testConstraint testmainthread   [llength [info commands testmainthread]]
-    testConstraint testthread       [llength [info commands testthread]]
+    testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
 
     # You need a *very* special environment to do some tests.  In particular,
     # many file systems do not support large-files...
@@ -7413,7 +7413,6 @@ test chan-io-59.1 {Thread reference of channels} {testmainthread testchannel} {
     # More complicated tests (like that the reference changes as a channel is
     # moved from thread to thread) can be done only in the extension which
     # fully implements the moving of channels between threads, i.e. 'Threads'.
-    # Or we have to extend [testthread] as well.
     set f [open $path(longfile) r]
     set result [testchannel mthread $f]
     chan close $f
@@ -7494,37 +7493,26 @@ test chan-io-70.0 {Cutting & Splicing channels} -setup {
     chan close $c
     removeFile cutsplice
 } -result {0 1 0}
-# Duplicate of code in "thread.test". Find a better way of doing this without
-# duplication. Maybe placement into a proc which transforms to nop after the
-# first call, and placement of its defintion in a central location.
-if {[testConstraint testthread]} {
-    testthread errorproc ThreadError
-    proc ThreadError {id info} {
-	global threadError
-	set threadError $info
-    }
-    proc ThreadNullError {id info} {
-	# ignore
-    }
-}
+
 test chan-io-70.1 {Transfer channel} -setup {
     set f [makeFile {... dummy ...} cutsplice]
     set res {}
-} -constraints {testchannel testthread} -body {
+} -constraints {testchannel thread} -body {
     set c [open $f r]
     lappend res [catch {chan seek $c 0 start}]
     testchannel cut $c
     lappend res [catch {chan seek $c 0 start}]
-    set tid [testthread create]
-    testthread send $tid [list set c $c]
-    lappend res [testthread send $tid {
+    set tid [thread::create -preserved]
+    thread::send $tid [list set c $c]
+    thread::send $tid {load {} Tcltest}
+    lappend res [thread::send $tid {
 	testchannel splice $c
 	set res [catch {chan seek $c 0 start}]
 	chan close $c
 	set res
     }]
 } -cleanup {
-    tcltest::threadReap
+    thread::release $tid
     removeFile cutsplice
 } -result {0 1 0}
 
