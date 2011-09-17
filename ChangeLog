@@ -1,21 +1,31 @@
+2011-09-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclProc.c (ProcWrongNumArgs): [Bugs 3400658,3408830]:
+	Ensemble-like rewriting of error messages is complex, and TclOO (in
+	combination with iTcl) hits the most tricky cases.
+
+	* library/http/http.tcl (http::geturl): [Bug 3391977]: Ensure that the
+	-headers option overrides the -type option (important because -type
+	has a default that is not always appropriate, and the header must not
+	be duplicated).
+
 2011-09-15  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCompExpr.c: [Bug 3408408] Partial improvement by 
-	sharing as literals the computed values of constant subexpressions
-	when we can do so without incurring the cost of string rep
-	generation.
+	* generic/tclCompExpr.c: [Bug 3408408]: Partial improvement by sharing
+	as literals the computed values of constant subexpressions when we can
+	do so without incurring the cost of string rep generation.
 
 2011-09-13  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclUtil.c:	[Bug 3390638] Workaround broken solaris
+	* generic/tclUtil.c:	[Bug 3390638]: Workaround broken solaris
 	studio cc optimizer.  Thanks to Wolfgang S. Kechel.
 
-	* generic/tclDTrace.d:	[Bug 3405652] Portability workaround for
+	* generic/tclDTrace.d:	[Bug 3405652]: Portability workaround for
 	broken system DTrace support.  Thanks to Dagobert Michelson.
 
 2011-09-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h: [Bug 3407070] tclPosixStr.c won't build with
+	* win/tclWinPort.h: [Bug 3407070]: tclPosixStr.c won't build with
 	EOVERFLOW==E2BIG
 
 2011-09-11  Don Porter  <dgp@users.sourceforge.net>
@@ -26,12 +36,6 @@
 	* tests/socket.test:	[Bug 3390699]: Convert [testthread] use to
 	Thread package use in socket_*-13.1.  Eliminates a memory leak in
 	`make valgrind`.
-
-2011-09-10  Donal K. Fellows  <dkf@users.sf.net>
-
-	* generic/tclOOMethod.c (InitEnsembleRewrite): [Bug 3400658]: Set the
-	ensemble-like rewriting up correctly for forwarded methods so that
-	computed error messages are correct.
 
 2011-09-09  Don Porter  <dgp@users.sourceforge.net>
 
