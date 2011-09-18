@@ -2575,9 +2575,10 @@ test iocmd.tf-24.15 {chan write, EAGAIN means that writing is not allowed at thi
     } c]
     set res
 } -cleanup {
+    proc foo {args} {onfinal; set ::done-24.15 1; return 3}
+    vwait done-24.15
     rename foo {}
     unset res
-    update
 } -result {{write rc* ABC} {watch rc* write} {}} \
     -constraints {testchannel thread}
 
@@ -2601,15 +2602,17 @@ test iocmd.tf-24.16 {chan write, note the background flush setup by close due to
     } c]
     # Replace handler with all-tracking one which doesn't error.
     # This will tell us if a write-due-flush is there.
-    proc foo {args} { note BG ; track }
+    proc foo {args} { onfinal; note BG ; track ; set ::endbody-24.16 1}
     # Flush (sic!) the event-queue to capture the write from a
     # BG-flush.
-    update
+    vwait endbody-24.16
     set res
 } -cleanup {
+    proc foo {args} {onfinal; set ::done-24.16 1; return 3}
+    vwait done-24.16
     rename foo {}
     unset res
-} -result {{write rc* ABC} {watch rc* write} {} BG {write rc* ABC} BG {finalize rc*}} \
+} -result {{write rc* ABC} {watch rc* write} {} BG {write rc* ABC}} \
     -constraints {testchannel thread}
 
 # --- === *** ###########################
