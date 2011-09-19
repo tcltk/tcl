@@ -1,5 +1,12 @@
 2011-09-15  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/thread.test:	Plug most memory leaks in thread.test  Constrain
+	the rest to be skipped during `make valgrind`.  Tests using the
+	[testthread cancel] testing command are leaky.  Corrections wait for
+	either addition of [thread::cancel] to the Thread package, or improvements
+	to the [testthread] testing command to make leak-free versions of these
+	tests possible.
+
 	* generic/tclIORChan.c:	Plug all memory leaks in ioCmd.test exposed
 	* tests/ioCmd.test:	by `make valgrind`.
 	* unix/Makefile.in:
