@@ -1,5 +1,8 @@
 2011-09-15  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/ioTrans.test:	Conversion from [testthread] to Thread package
+	stops most memory leaks.  
+
 	* tests/thread.test:	Plug most memory leaks in thread.test  Constrain
 	the rest to be skipped during `make valgrind`.  Tests using the
 	[testthread cancel] testing command are leaky.  Corrections wait for
