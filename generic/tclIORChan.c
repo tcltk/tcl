@@ -2927,7 +2927,9 @@ ForwardProc(
 	    int written;
 
 	    if (Tcl_GetIntFromObj(interp, resObj, &written) != TCL_OK) {
-		ForwardSetObjError(paramPtr, MarshallError(interp));
+		Tcl_DecrRefCount(resObj);
+		resObj = MarshallError(interp);
+		ForwardSetObjError(paramPtr, resObj);
 		paramPtr->output.toWrite = -1;
 	    } else if (written==0 || paramPtr->output.toWrite<written) {
 		ForwardSetStaticError(paramPtr, msg_write_toomuch);
@@ -2970,7 +2972,9 @@ ForwardProc(
 		    paramPtr->seek.offset = newLoc;
 		}
 	    } else {
-		ForwardSetObjError(paramPtr, MarshallError(interp));
+		Tcl_DecrRefCount(resObj);
+		resObj = MarshallError(interp);
+		ForwardSetObjError(paramPtr, resObj);
 		paramPtr->seek.offset = -1;
 	    }
 	}
@@ -3061,7 +3065,9 @@ ForwardProc(
 
 	    if (Tcl_ListObjGetElements(interp, resObj, &listc,
                                        &listv) != TCL_OK) {
-		ForwardSetObjError(paramPtr, MarshallError(interp));
+		Tcl_DecrRefCount(resObj);
+		resObj = MarshallError(interp);
+		ForwardSetObjError(paramPtr, resObj);
 	    } else if ((listc % 2) == 1) {
 		/*
 		 * Odd number of elements is wrong. [x].

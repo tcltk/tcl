@@ -2508,7 +2508,6 @@ test iocmd.tf-24.11 {chan write, failed write, custom return is error} -match gl
 } -result {{write rc* snarfsnarfsnarf} 1 *bad code*} \
     -constraints {testchannel thread}
 test iocmd.tf-24.12 {chan write, failed write, non-numeric return is error} -match glob -body {
-#LEAKS!
     set res {}
     proc foo {args} {oninit; onfinal; track; return BANG}
     set c [chan create {r w} foo]
@@ -2583,7 +2582,6 @@ test iocmd.tf-24.15 {chan write, EAGAIN means that writing is not allowed at thi
     -constraints {testchannel thread}
 
 test iocmd.tf-24.16 {chan write, note the background flush setup by close due to the EAGAIN leaving data in buffers.} -match glob -setup {
-#LEAKS!
     set res {}
     proc foo {args} {
 	oninit; onfinal; track
@@ -2677,7 +2675,6 @@ test iocmd.tf-25.4 {chan configure, cgetall, bad result, list of uneven length} 
     set res
 } -constraints {testchannel thread} -result {{cgetall rc*} 1 {Expected list with even number of elements, got 1 element instead}}
 test iocmd.tf-25.5 {chan configure, cgetall, bad result, not a list} -match glob -body {
-#LEAKS!
     set res {}
     proc foo {args} {
 	oninit cget cgetall; onfinal; track
@@ -3110,7 +3107,6 @@ test iocmd.tf-28.8 {chan tell, negative return} -match glob -body {
 } -result {{seek rc* 0 current} 1 {Tried to seek before origin}} \
     -constraints {testchannel thread}
 test iocmd.tf-28.9 {chan tell, string return} -match glob -body {
-#LEAKS!
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return BOGUS}
     set c [chan create {r w} foo]
@@ -3224,7 +3220,6 @@ test iocmd.tf-28.16 {chan seek, bogus return, negative location} -match glob -bo
 } -result {{seek rc* 0 start} 1 {Tried to seek before origin}} \
     -constraints {testchannel thread}
 test iocmd.tf-28.17 {chan seek, bogus return, string return} -match glob -body {
-#LEAKS!
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return BOGUS}
     set c [chan create {r w} foo]
