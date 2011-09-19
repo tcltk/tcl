@@ -3510,7 +3510,6 @@ test iocmd.tf-31.8 {chan postevent, bad input} -match glob -body {
 # B. Must not crash, must return proper errors.
 
 test iocmd.tf-32.0 {origin thread of moved channel gone} -match glob -body {
-#LEAKS!
 
     #puts <<$tcltest::mainThread>>main
     set tida [thread::create -preserved];#puts <<$tida>>
@@ -3548,8 +3547,20 @@ test iocmd.tf-32.0 {origin thread of moved channel gone} -match glob -body {
 } -constraints {testchannel thread} \
     -result {1 {Owner lost} 1 {Owner lost} 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
 
+
+# The test iocmd.tf-32.1 unavoidably exhibits a memory leak.  We are testing
+# the ability of the reflected channel system to react to the situation where
+# the thread in which the driver routines runs exits during driver operations.
+# In this case, thread exit handlers signal back to the owner thread so that the 
+# channel operation does not hang.  There's no way to test this without actually
+# exiting a thread in mid-operation, and that action is unavoidably leaky (which
+# is why [thread::exit] is advised against).
+#
+# Use constraints to skip this test while valgrinding so this expected leak
+# doesn't prevent a finding of "leak-free".
+#
+testConstraint notValgrind [expr {![testConstraint valgrind]}]
 test iocmd.tf-32.1 {origin thread of moved channel destroyed during access} -match glob -body {
-#LEAKS!
 
     #puts <<$tcltest::mainThread>>main
     set tida [thread::create -preserved];#puts <<$tida>>
@@ -3564,7 +3575,7 @@ test iocmd.tf-32.1 {origin thread of moved channel destroyed during access} -mat
 	    oninit; onfinal; track;
 	    # destroy thread during channel access
 	    thread::exit
-	    return}
+	    }
 	set chan [chan create {r w} foo]
 	fconfigure $chan -buffering none
 	set chan
@@ -3592,7 +3603,7 @@ test iocmd.tf-32.1 {origin thread of moved channel destroyed during access} -mat
     catch {thread::release $tida}
     thread::release $tidb
     set res
-} -constraints {testchannel thread} \
+} -constraints {testchannel thread notValgrind} \
     -result {Owner lost}
 
 # ### ### ### ######### ######### #########
