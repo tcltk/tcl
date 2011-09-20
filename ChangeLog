@@ -1,3 +1,126 @@
+2011-09-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/ioTrans.test:	Conversion from [testthread] to Thread package
+	stops most memory leaks.  
+
+	* tests/thread.test:	Plug most memory leaks in thread.test  Constrain
+	the rest to be skipped during `make valgrind`.  Tests using the
+	[testthread cancel] testing command are leaky.  Corrections wait for
+	either addition of [thread::cancel] to the Thread package, or improvements
+	to the [testthread] testing command to make leak-free versions of these
+	tests possible.
+
+	* generic/tclIORChan.c:	Plug all memory leaks in ioCmd.test exposed
+	* tests/ioCmd.test:	by `make valgrind`.
+	* unix/Makefile.in:
+
+2011-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	IMPLEMENTATION OF TIP #388
+
+	* doc/Tcl.n
+	* doc/re_syntax.n
+	* generic/regc_lex.c
+	* generic/regcomp.c
+	* generic/regcustom.h
+	* generic/tcl.h
+	* generic/tclParse.c
+	* tests/reg.test
+	* tests/utf.test
+
+2011-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:        Don't change Tcl_UniChar type when
+	* generic/regcustom.h:  TCL_UTF_MAX == 4 (not supported anyway)
+
+2011-09-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclProc.c (ProcWrongNumArgs): [Bugs 3400658,3408830]:
+	Ensemble-like rewriting of error messages is complex, and TclOO (in
+	combination with iTcl) hits the most tricky cases.
+
+	* library/http/http.tcl (http::geturl): [Bug 3391977]: Ensure that the
+	-headers option overrides the -type option (important because -type
+	has a default that is not always appropriate, and the header must not
+	be duplicated).
+
+2011-09-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c: [Bug 3408408]: Partial improvement by sharing
+	as literals the computed values of constant subexpressions when we can
+	do so without incurring the cost of string rep generation.
+
+2011-09-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	[Bug 3390638]: Workaround broken solaris
+	studio cc optimizer.  Thanks to Wolfgang S. Kechel.
+
+	* generic/tclDTrace.d:	[Bug 3405652]: Portability workaround for
+	broken system DTrace support.  Thanks to Dagobert Michelson.
+
+2011-09-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h: [Bug 3407070]: tclPosixStr.c won't build with
+	EOVERFLOW==E2BIG
+
+2011-09-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/thread.test:	Convert [testthread] use to Thread package
+	use in thread-6.1.  Eliminates a memory leak in `make valgrind`.
+
+	* tests/socket.test:	[Bug 3390699]: Convert [testthread] use to
+	Thread package use in socket_*-13.1.  Eliminates a memory leak in
+	`make valgrind`.
+
+2011-09-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/chanio.test:	[Bug 3389733]: Convert [testthread] use to
+	* tests/io.test:	Thread package use in *io-70.1.  Eliminates a
+	memory leak in `make valgrind`.
+
+2011-09-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c: [Bug 3401704]: Allow function names like
+	* tests/parseExpr.test:	 influence(), nanobot(), and 99bottles() that
+	have been parsed as missing operator syntax errors before with the
+	form NUMBER + FUNCTION.
+	***POTENTIAL INCOMPATIBILITY***
+
+2011-09-06  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/America/Goose_Bay: Update to Olson's tzdata2011i
+	* library/tzdata/America/Metlakatla:
+	* library/tzdata/America/Resolute:
+	* library/tzdata/America/St_Johns:
+	* library/tzdata/Europe/Kaliningrad:
+	* library/tzdata/Pacific/Apia:
+	* library/tzdata/Pacific/Honolulu:
+	* library/tzdata/Africa/Juba: (new)
+
+2011-09-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:   [RFE 1711975]: Tcl_MainEx() (like Tk_MainEx())
+	* generic/tclDecls.h
+	* generic/tclMain.c
+
+2011-09-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/http.test:	Convert [testthread] use to Thread package use.
+	Eliminates memory leak seen in `make valgrind`.
+
+2011-09-01  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* unix/tclUnixSock.c: [Bug 3401422]: Cache script-level changes to the
+	nonblocking flag of an async client socket in progress, and commit
+	them on completion.
+
+2011-09-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStrToD.c:	[Bug 3402540]: Corrections to TclParseNumber()
+	* tests/binary.test:	to make it reject invalid Nan(Hex) strings.
+
+	* tests/scan.test:	[scan Inf %g] is portable; remove constraint.
+
 2011-08-30  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInterp.c (SlaveCommandLimitCmd, SlaveTimeLimitCmd):

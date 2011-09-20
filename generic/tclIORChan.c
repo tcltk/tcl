@@ -439,6 +439,7 @@ static ReflectedChannel * NewReflectedChannel(Tcl_Interp *interp,
 			    Tcl_Obj *cmdpfxObj, int mode, Tcl_Obj *handleObj);
 static Tcl_Obj *	NextHandle(void);
 static void		FreeReflectedChannel(ReflectedChannel *rcPtr);
+static void		FreeReflectedChannelArgs(ReflectedChannel *rcPtr);
 static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 			    const char *method, Tcl_Obj *argOneObj,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
@@ -1066,15 +1067,9 @@ ReflectClose(
 	    ForwardOpToOwnerThread(rcPtr, ForwardedClose, &p);
 	    result = p.base.code;
 
-	    /*
-	     * FreeReflectedChannel is done in the forwarded operation!, in
-	     * the other thread. rcPtr here is gone!
-	     */
-
 	    if (result != TCL_OK) {
 		FreeReceivedError(&p);
 	    }
-	    return EOK;
 	}
 #endif
 
@@ -1105,10 +1100,7 @@ ReflectClose(
 	ForwardOpToOwnerThread(rcPtr, ForwardedClose, &p);
 	result = p.base.code;
 
-	/*
-	 * FreeReflectedChannel is done in the forwarded operation!, in the
-	 * other thread. rcPtr here is gone!
-	 */
+        Tcl_EventuallyFree (rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 
 	if (result != TCL_OK) {
 	    PassReceivedErrorInterp(interp, &p);
@@ -2130,21 +2122,14 @@ NextHandle(void)
 }
 
 static void
-FreeReflectedChannel(
+FreeReflectedChannelArgs(
     ReflectedChannel *rcPtr)
 {
-    Channel *chanPtr = (Channel *) rcPtr->chan;
-    int i, n;
+    int i, n = rcPtr->argc - 2;
 
-    if (chanPtr->typePtr != &tclRChannelType) {
-	/*
-	 * Delete a cloned ChannelType structure.
-	 */
-
-	ckfree(chanPtr->typePtr);
+    if (n < 0) {
+	return;
     }
-
-    n = rcPtr->argc - 2;
     for (i=0; i<n; i++) {
 	Tcl_DecrRefCount(rcPtr->argv[i]);
     }
@@ -2154,6 +2139,25 @@ FreeReflectedChannel(
      */
 
     Tcl_DecrRefCount(rcPtr->argv[n+1]);
+
+    rcPtr->argc = 1;
+}
+
+static void
+FreeReflectedChannel(
+    ReflectedChannel *rcPtr)
+{
+    Channel *chanPtr = (Channel *) rcPtr->chan;
+
+    if (chanPtr->typePtr != &tclRChannelType) {
+	/*
+	 * Delete a cloned ChannelType structure.
+	 */
+
+	ckfree(chanPtr->typePtr);
+    }
+
+    FreeReflectedChannelArgs(rcPtr);
 
     ckfree(rcPtr->argv);
     ckfree(rcPtr);
@@ -2506,6 +2510,11 @@ DeleteReflectedChannelMap(
 	 */
 
 	evPtr = resultPtr->evPtr;
+
+	/* Basic crash safety until this routine can get revised [3411310] */
+	if (evPtr == NULL) {
+	    continue;
+	}
 	paramPtr = evPtr->param;
 
 	evPtr->resultPtr = NULL;
@@ -2639,6 +2648,11 @@ DeleteThreadReflectedChannelMap(
 	 */
 
 	evPtr = resultPtr->evPtr;
+
+	/* Basic crash safety until this routine can get revised [3411310] */
+	if (evPtr == NULL ) {
+	    continue;
+	}
 	paramPtr = evPtr->param;
 
 	evPtr->resultPtr = NULL;
@@ -2665,6 +2679,7 @@ DeleteThreadReflectedChannelMap(
 	ReflectedChannel *rcPtr = Tcl_GetChannelInstanceData(chan);
 
 	rcPtr->interp = NULL;
+	FreeReflectedChannelArgs(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
     ckfree(rcmPtr);
@@ -2862,7 +2877,7 @@ ForwardProc(
                                  Tcl_GetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
 
-        Tcl_EventuallyFree (rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
+	FreeReflectedChannelArgs(rcPtr);
 	break;
 
     case ForwardedInput: {
@@ -2927,7 +2942,9 @@ ForwardProc(
 	    int written;
 
 	    if (Tcl_GetIntFromObj(interp, resObj, &written) != TCL_OK) {
-		ForwardSetObjError(paramPtr, MarshallError(interp));
+		Tcl_DecrRefCount(resObj);
+		resObj = MarshallError(interp);
+		ForwardSetObjError(paramPtr, resObj);
 		paramPtr->output.toWrite = -1;
 	    } else if (written==0 || paramPtr->output.toWrite<written) {
 		ForwardSetStaticError(paramPtr, msg_write_toomuch);
@@ -2970,7 +2987,9 @@ ForwardProc(
 		    paramPtr->seek.offset = newLoc;
 		}
 	    } else {
-		ForwardSetObjError(paramPtr, MarshallError(interp));
+		Tcl_DecrRefCount(resObj);
+		resObj = MarshallError(interp);
+		ForwardSetObjError(paramPtr, resObj);
 		paramPtr->seek.offset = -1;
 	    }
 	}
@@ -3061,7 +3080,9 @@ ForwardProc(
 
 	    if (Tcl_ListObjGetElements(interp, resObj, &listc,
                                        &listv) != TCL_OK) {
-		ForwardSetObjError(paramPtr, MarshallError(interp));
+		Tcl_DecrRefCount(resObj);
+		resObj = MarshallError(interp);
+		ForwardSetObjError(paramPtr, resObj);
 	    } else if ((listc % 2) == 1) {
 		/*
 		 * Odd number of elements is wrong. [x].

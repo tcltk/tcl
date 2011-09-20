@@ -63,8 +63,8 @@
 package require tcltest 2
 namespace import -force ::tcltest::*
 
-# Some tests require the testthread and exec commands
-testConstraint testthread [llength [info commands testthread]]
+# Some tests require the Thread package or exec command
+testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
 testConstraint exec [llength [info commands exec]]
 
 # Produce a random port number in the Dynamic/Private range
@@ -1672,9 +1672,9 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
     catch {close $p}
 } -result {accepted socket was not inherited}
 
-test socket_$af-13.1 {Testing use of shared socket between two threads} -setup {
-    threadReap
-    set path(script) [makeFile [string map [list @localhost@ $localhost] {
+test socket_$af-13.1 {Testing use of shared socket between two threads} -body {
+    # create a thread
+    set serverthread [thread::create -preserved [string map [list @localhost@ $localhost] {
         set f [socket -server accept -myaddr @localhost@ 0]
         set listen [lindex [fconfigure $f -sockname] 2]
         proc accept {s a p} {
@@ -1696,15 +1696,8 @@ test socket_$af-13.1 {Testing use of shared socket between two threads} -setup {
         set i 0
         vwait x
         close $f
-        # thread cleans itself up.
-        testthread exit
-    }] script]
-} -constraints [list socket supported_$af testthread] -body {
-    # create a thread
-    set serverthread [testthread create [list source $path(script) ] ]
-    update
-    set port [testthread send $serverthread {set listen}]
-    update
+    }]]
+    set port [thread::send $serverthread {set listen}]
     set s [socket $localhost $port]
     fconfigure $s -buffering line
     catch {
@@ -1712,11 +1705,9 @@ test socket_$af-13.1 {Testing use of shared socket between two threads} -setup {
         gets $s result
     }
     close $s
-    update
-    append result " " [threadReap]
-} -cleanup {
-    removeFile script
-} -result {hello 1}
+    thread::release $serverthread
+    append result " " [llength [thread::names]]
+} -result {hello 1} -constraints [list socket supported_$af thread] 
 
 # ----------------------------------------------------------------------
 
@@ -1769,6 +1760,7 @@ test socket-14.1 {[socket -async] fileevent while still connecting} \
         set client [socket -async localhost $port]
         fileevent $client writable {
             lappend x [fconfigure $client -error]
+	    fileevent $client writable {}
         }
         set after [after 1000 {lappend x timeout}]
         while {[llength $x] < 2 && "timeout" ni $x} {
