@@ -407,6 +407,7 @@ static ReflectedTransform * NewReflectedTransform(Tcl_Interp *interp,
 			    Tcl_Channel parentChan);
 static Tcl_Obj *	NextHandle(void);
 static void		FreeReflectedTransform(ReflectedTransform *rtPtr);
+static void		FreeReflectedTransformArgs(ReflectedTransform *rtPtr);
 static int		InvokeTclMethod(ReflectedTransform *rtPtr,
 			    const char *method, Tcl_Obj *argOneObj,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
@@ -881,6 +882,7 @@ ReflectClose(
     Tcl_Interp *interp)
 {
     ReflectedTransform *rtPtr = clientData;
+    int errorCode, errorCodeSet = 0;
     int result;			/* Result code for 'close' */
     Tcl_Obj *resObj;		/* Result data for 'close' */
     ReflectedTransformMap *rtmPtr;
@@ -912,15 +914,9 @@ ReflectClose(
 	    ForwardOpToOwnerThread(rtPtr, ForwardedClose, &p);
 	    result = p.base.code;
 
-	    /*
-	     * FreeReflectedTransform is done in the forwarded operation!, in
-	     * the other thread. rtPtr here is gone!
-	     */
-
 	    if (result != TCL_OK) {
 		FreeReceivedError(&p);
 	    }
-	    return EOK;
 	}
 #endif
 
@@ -937,20 +933,30 @@ ReflectClose(
      */
 
     if (HAS(rtPtr->methods, METH_DRAIN) && !rtPtr->readIsDrained) {
-	int errorCode;
-
 	if (!TransformDrain(rtPtr, &errorCode)) {
-	    Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
-	    return errorCode;
+#ifdef TCL_THREADS
+	    if (rtPtr->thread != Tcl_GetCurrentThread()) {
+		Tcl_EventuallyFree (rtPtr,
+			(Tcl_FreeProc *) FreeReflectedTransform);
+		return errorCode;
+	    } 
+#endif
+	    errorCodeSet = 1;
+	    goto cleanup;
 	}
     }
 
     if (HAS(rtPtr->methods, METH_FLUSH)) {
-	int errorCode;
-
 	if (!TransformFlush(rtPtr, &errorCode, FLUSH_WRITE)) {
-	    Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
-	    return errorCode;
+#ifdef TCL_THREADS
+	    if (rtPtr->thread != Tcl_GetCurrentThread()) {
+		Tcl_EventuallyFree (rtPtr,
+			(Tcl_FreeProc *) FreeReflectedTransform);
+		return errorCode;
+	    } 
+#endif
+	    errorCodeSet = 1;
+	    goto cleanup;
 	}
     }
 
@@ -965,10 +971,7 @@ ReflectClose(
 	ForwardOpToOwnerThread(rtPtr, ForwardedClose, &p);
 	result = p.base.code;
 
-	/*
-	 * FreeReflectedTransform is done in the forwarded operation!, in the
-	 * other thread. rtPtr here is gone!
-	 */
+	Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
 
 	if (result != TCL_OK) {
 	    PassReceivedErrorInterp(interp, &p);
@@ -989,6 +992,8 @@ ReflectClose(
 
     Tcl_DecrRefCount(resObj);	/* Remove reference we held from the
 				 * invoke. */
+
+  cleanup:
 
     /*
      * Remove the transform from the map before releasing the memory, to
@@ -1026,7 +1031,7 @@ ReflectClose(
 #endif
 
     Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
-    return (result == TCL_OK) ? EOK : EINVAL;
+    return errorCodeSet ? errorCode : ((result == TCL_OK) ? EOK : EINVAL);
 }
 
 /*
@@ -1866,18 +1871,18 @@ NextHandle(void)
 }
 
 static void
-FreeReflectedTransform(
+FreeReflectedTransformArgs(
     ReflectedTransform *rtPtr)
 {
-    int i, n;
+    int i, n = rtPtr->argc - 2;
 
-    TimerKill(rtPtr);
-    ResultClear(&rtPtr->result);
+    if (n < 0) {
+	return;
+    }
 
     Tcl_DecrRefCount(rtPtr->handle);
     rtPtr->handle = NULL;
 
-    n = rtPtr->argc - 2;
     for (i=0; i<n; i++) {
 	Tcl_DecrRefCount(rtPtr->argv[i]);
     }
@@ -1887,6 +1892,18 @@ FreeReflectedTransform(
      * n+1 = argc-1.
      */
     Tcl_DecrRefCount(rtPtr->argv[n+1]);
+
+    rtPtr->argc = 1;
+}
+
+static void
+FreeReflectedTransform(
+    ReflectedTransform *rtPtr)
+{
+    TimerKill(rtPtr);
+    ResultClear(&rtPtr->result);
+
+    FreeReflectedTransformArgs(rtPtr);
 
     ckfree(rtPtr->argv);
     ckfree(rtPtr);
@@ -2337,6 +2354,7 @@ DeleteThreadReflectedTransformMap(
 	ReflectedTransform *rtPtr = Tcl_GetHashValue(hPtr);
 
 	rtPtr->interp = NULL;
+	FreeReflectedTransformArgs(rtPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
     ckfree(rtmPtr);
@@ -2541,7 +2559,7 @@ ForwardProc(
 	hPtr = Tcl_FindHashEntry(&rtmPtr->map, Tcl_GetString(rtPtr->handle));
 	Tcl_DeleteHashEntry(hPtr);
 
-	Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+	FreeReflectedTransformArgs(rtPtr);
 	break;
 
     case ForwardedInput: {
