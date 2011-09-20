@@ -18,10 +18,10 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 # Custom constraints used in this file
 testConstraint testchannel [llength [info commands testchannel]]
-testConstraint testthread  [llength [info commands testthread]]
+testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
 
 # testchannel cut|splice  Both needed to test the reflection in threads.
-# testthread  send 
+# thread::send
 
 #----------------------------------------------------------------------
 
@@ -1046,22 +1046,6 @@ test iortrans-11.2 {delete interp of reflected transform} -setup {
 ## gaps due to tests not applicable to forwarding are left to keep this
 ## association.
 
-# Duplicate of code in "thread.test", and "ioCmd.test". Find a better way of
-# doing this without duplication. Maybe placement into a proc which transforms
-# to nop after the first call, and placement of its defintion in a central
-# location.
-
-if {[testConstraint testthread]} {
-    testthread errorproc ThreadError
-    proc ThreadError {id info} {
-	global threadError
-	set threadError $info
-    }
-    proc ThreadNullError {id info} {
-	# ignore
-    }
-}
-
 # ### ### ### ######### ######### #########
 ## Helper command. Runs a script in a separate thread and returns the result.
 ## A channel is transfered into the thread as well, and a list of configuation
@@ -1069,7 +1053,8 @@ if {[testConstraint testthread]} {
 
 proc inthread {chan script args} {
     # Test thread.
-    set tid [testthread create]
+    set tid [thread::create -preserved]
+    thread::send $tid {load {} Tcltest}
 
     # Init thread configuration.
     # - Listed variables
@@ -1078,10 +1063,10 @@ proc inthread {chan script args} {
 
     foreach v $args {
 	upvar 1 $v x
-	testthread send $tid [list set $v $x]
+	thread::send $tid [list set $v $x]
     }
-    testthread send $tid [list set mid $tcltest::mainThread]
-    testthread send $tid {
+    thread::send $tid [list set mid [thread::id]]
+    thread::send $tid {
 	proc notes {} {
 	    return $::notes
 	}
@@ -1092,27 +1077,27 @@ proc inthread {chan script args} {
 	    } $opts]
 	}
     }
-    testthread send $tid [list proc s {} [list uplevel 1 $script]]; # (*)
+    thread::send $tid [list proc s {} [list uplevel 1 $script]]; # (*)
 
     # Transfer channel (cut/splice aka detach/attach)
 
     testchannel cut $chan
-    testthread send $tid [list testchannel splice $chan]
+    thread::send $tid [list testchannel splice $chan]
 
     # Run test script, also run local event loop!  The local event loop waits
     # for the result to come back.  It is also necessary for the execution of
     # forwarded channel operations.
 
     set ::tres ""
-    testthread send -async $tid {
+    thread::send -async $tid {	
 	after 50
 	catch {s} res;	# This runs the script, 's' was defined at (*)
-	testthread send -async $mid [list set ::tres $res]
+	thread::send -async $mid [list set ::tres $res]
     }
     vwait ::tres
     # Remove test thread, and return the captured result.
 
-    tcltest::threadReap
+    thread::release $tid
     return $::tres
 }
 
@@ -1120,7 +1105,7 @@ proc inthread {chan script args} {
 
 test iortrans.tf-3.2 {chan finalize, for close} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	lappend ::res $args
 	handle.initialize
@@ -1139,7 +1124,7 @@ test iortrans.tf-3.2 {chan finalize, for close} -setup {
 } -result {{initialize rt* {read write}} file* {finalize rt*} {} foo}
 test iortrans.tf-3.3 {chan finalize, for close, error, close error} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	lappend ::res $args
 	handle.initialize
@@ -1157,7 +1142,7 @@ test iortrans.tf-3.3 {chan finalize, for close, error, close error} -setup {
 } -result {{initialize rt* {read write}} file* {finalize rt*} 1 5 {}}
 test iortrans.tf-3.4 {chan finalize, for close, error, close errror} -setup {
     set res {}
-} -constraints {testchannel testthread} -body {
+} -constraints {testchannel thread} -body {
     proc foo {args} {
 	lappend ::res $args
 	handle.initialize
@@ -1173,7 +1158,7 @@ test iortrans.tf-3.4 {chan finalize, for close, error, close errror} -setup {
 } -result {{initialize rt* {read write}} file* {finalize rt*} 1 FOO}
 test iortrans.tf-3.5 {chan finalize, for close, arbitrary result} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	lappend ::res $args
 	handle.initialize
@@ -1189,7 +1174,7 @@ test iortrans.tf-3.5 {chan finalize, for close, arbitrary result} -setup {
 } -result {{initialize rt* {read write}} file* {finalize rt*} 0 {}}
 test iortrans.tf-3.6 {chan finalize, for close, break, close error} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	lappend ::res $args
 	handle.initialize
@@ -1205,7 +1190,7 @@ test iortrans.tf-3.6 {chan finalize, for close, break, close error} -setup {
 } -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
 test iortrans.tf-3.7 {chan finalize, for close, continue, close error} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	lappend ::res $args
 	handle.initialize
@@ -1221,7 +1206,7 @@ test iortrans.tf-3.7 {chan finalize, for close, continue, close error} -setup {
 } -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
 test iortrans.tf-3.8 {chan finalize, for close, custom code, close error} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	lappend ::res $args
 	handle.initialize
@@ -1237,7 +1222,7 @@ test iortrans.tf-3.8 {chan finalize, for close, custom code, close error} -setup
 } -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
 test iortrans.tf-3.9 {chan finalize, for close, ignore level, close error} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	lappend ::res $args
 	handle.initialize
@@ -1258,7 +1243,7 @@ test iortrans.tf-3.9 {chan finalize, for close, ignore level, close error} -setu
 
 test iortrans.tf-4.1 {chan read, transform call and return} -setup {
     set res {}
-} -constraints {testchannel testthread} -body {
+} -constraints {testchannel thread} -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1278,7 +1263,7 @@ test iortrans.tf-4.1 {chan read, transform call and return} -setup {
 }} snarf}
 test iortrans.tf-4.2 {chan read, for non-readable channel} -setup {
     set res {}
-} -constraints {testchannel testthread} -body {
+} -constraints {testchannel thread} -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1296,7 +1281,7 @@ test iortrans.tf-4.2 {chan read, for non-readable channel} -setup {
 } -match glob -result {1 {channel "file*" wasn't opened for reading}}
 test iortrans.tf-4.3 {chan read, error return} -setup {
     set res {}
-} -constraints {testchannel testthread} -body {
+} -constraints {testchannel thread} -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1316,7 +1301,7 @@ test iortrans.tf-4.3 {chan read, error return} -setup {
 }} 1 BOOM!}
 test iortrans.tf-4.4 {chan read, break return is error} -setup {
     set res {}
-} -constraints {testchannel testthread} -body {
+} -constraints {testchannel thread} -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1336,7 +1321,7 @@ test iortrans.tf-4.4 {chan read, break return is error} -setup {
 }} 1 *bad code*}
 test iortrans.tf-4.5 {chan read, continue return is error} -setup {
     set res {}
-} -constraints {testchannel testthread} -body {
+} -constraints {testchannel thread} -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1356,7 +1341,7 @@ test iortrans.tf-4.5 {chan read, continue return is error} -setup {
 }} 1 *bad code*}
 test iortrans.tf-4.6 {chan read, custom return is error} -setup {
     set res {}
-} -constraints {testchannel testthread} -body {
+} -constraints {testchannel thread} -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1376,7 +1361,7 @@ test iortrans.tf-4.6 {chan read, custom return is error} -setup {
 }} 1 *bad code*}
 test iortrans.tf-4.7 {chan read, level is squashed} -setup {
     set res {}
-} -constraints {testchannel testthread} -body {
+} -constraints {testchannel thread} -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1401,7 +1386,7 @@ test iortrans.tf-4.7 {chan read, level is squashed} -setup {
 
 test iortrans.tf-5.1 {chan write, regular write} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1421,7 +1406,7 @@ test iortrans.tf-5.1 {chan write, regular write} -setup {
 } -result {{write rt* snarf} transformresult}
 test iortrans.tf-5.2 {chan write, no write is ok, no change to file} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1441,7 +1426,7 @@ test iortrans.tf-5.2 {chan write, no write is ok, no change to file} -setup {
 } -result {{write rt* snarfsnarfsnarf} {test data}}
 test iortrans.tf-5.3 {chan write, failed write} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1461,7 +1446,7 @@ test iortrans.tf-5.3 {chan write, failed write} -setup {
 } -result {{write rt* snarfsnarfsnarf} 1 FAIL!}
 test iortrans.tf-5.4 {chan write, non-writable channel} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1483,7 +1468,7 @@ test iortrans.tf-5.4 {chan write, non-writable channel} -setup {
 } -result {1 {channel "file*" wasn't opened for writing}}
 test iortrans.tf-5.5 {chan write, failed write, error return} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1505,7 +1490,7 @@ test iortrans.tf-5.5 {chan write, failed write, error return} -setup {
 } -result {{write rt* snarfsnarfsnarf} 1 BOOM!}
 test iortrans.tf-5.6 {chan write, failed write, error return} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1527,7 +1512,7 @@ test iortrans.tf-5.6 {chan write, failed write, error return} -setup {
 } -result {{write rt* snarfsnarfsnarf} 1 BOOM!}
 test iortrans.tf-5.7 {chan write, failed write, break return is error} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1549,7 +1534,7 @@ test iortrans.tf-5.7 {chan write, failed write, break return is error} -setup {
 } -result {{write rt* snarfsnarfsnarf} 1 *bad code*}
 test iortrans.tf-5.8 {chan write, failed write, continue return is error} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1570,7 +1555,7 @@ test iortrans.tf-5.8 {chan write, failed write, continue return is error} -setup
 } -result {{write rt* snarfsnarfsnarf} 1 *bad code*}
 test iortrans.tf-5.9 {chan write, failed write, custom return is error} -setup {
     set res {}
-} -constraints {testchannel testthread} -body {
+} -constraints {testchannel thread} -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1592,7 +1577,7 @@ test iortrans.tf-5.9 {chan write, failed write, custom return is error} -setup {
 } -match glob -result {{write rt* snarfsnarfsnarf} 1 *bad code*}
 test iortrans.tf-5.10 {chan write, failed write, level is ignored} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize
 	handle.finalize
@@ -1619,7 +1604,7 @@ test iortrans.tf-5.10 {chan write, failed write, level is ignored} -setup {
 
 test iortrans.tf-6.1 {chan read, read limits} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize limit?
 	handle.finalize
@@ -1640,7 +1625,7 @@ test iortrans.tf-6.1 {chan read, read limits} -setup {
 }} {limit? rt*} @@}
 test iortrans.tf-6.2 {chan read, read transform drain on eof} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize drain
 	handle.finalize
@@ -1665,7 +1650,7 @@ test iortrans.tf-6.2 {chan read, read transform drain on eof} -setup {
 
 test iortrans.tf-7.1 {chan write, write clears read buffers} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize clear
 	handle.finalize
@@ -1686,7 +1671,7 @@ test iortrans.tf-7.1 {chan write, write clears read buffers} -setup {
 } -result {{clear rt*} {write rt* snarf}}
 test iortrans.tf-7.2 {seek clears read buffers} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize clear
 	handle.finalize
@@ -1705,7 +1690,7 @@ test iortrans.tf-7.2 {seek clears read buffers} -setup {
 } -result {{clear rt*}}
 test iortrans.tf-7.3 {clear, any result is ignored} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize clear
 	handle.finalize
@@ -1728,7 +1713,7 @@ test iortrans.tf-7.3 {clear, any result is ignored} -setup {
 
 test iortrans.tf-8.1 {seek flushes write buffers, ignores data} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize flush
 	handle.finalize
@@ -1755,7 +1740,7 @@ test iortrans.tf-8.1 {seek flushes write buffers, ignores data} -setup {
 } -result {{flush rt*} {flush rt*} | {} | {teXt data}}
 test iortrans.tf-8.2 {close flushes write buffers, writes data} -setup {
     set res {}
-} -constraints {testchannel testthread} -match glob -body {
+} -constraints {testchannel thread} -match glob -body {
     proc foo {args} {
 	handle.initialize flush
 	lappend ::res $args
@@ -1785,13 +1770,15 @@ test iortrans.tf-8.2 {close flushes write buffers, writes data} -setup {
 
 test iortrans.tf-11.0 {origin thread of moved transform gone} -setup {
     #puts <<$tcltest::mainThread>>main
-    set tida [testthread create];	#puts <<$tida>>
-    set tidb [testthread create];	#puts <<$tidb>>
-} -constraints {testchannel testthread} -match glob -body {
+    set tida [thread::create -preserved];	#puts <<$tida>>
+    thread::send $tida {load {} Tcltest}
+    set tidb [thread::create -preserved];	#puts <<$tida>>
+    thread::send $tidb {load {} Tcltest}
+} -constraints {testchannel thread} -match glob -body {
     # Set up channel in thread
-    testthread send $tida $helperscript
-    testthread send $tidb $helperscript
-    set chan [testthread send $tida {
+    thread::send $tida $helperscript
+    thread::send $tidb $helperscript
+    set chan [thread::send $tida {
 	proc foo {args} {
 	    handle.initialize clear drain flush limit? read write
 	    handle.finalize
@@ -1802,65 +1789,73 @@ test iortrans.tf-11.0 {origin thread of moved transform gone} -setup {
 	fconfigure $chan -buffering none
 	set chan
     }]
+
     # Move channel to 2nd thread, transform goes with it.
-    testthread send $tida [list testchannel cut $chan]
-    testthread send $tidb [list testchannel splice $chan]
+    thread::send $tida [list testchannel cut $chan]
+    thread::send $tidb [list testchannel splice $chan]
+
     # Kill origin thread, then access channel from 2nd thread.
-    testthread send -async $tida {testthread exit}
-    after 50
+    thread::release -wait $tida
+
     set res {}
-    lappend res [catch {testthread send $tidb [list puts $chan shoo]} msg] $msg
-    lappend res [catch {testthread send $tidb [list tell $chan]} msg] $msg
-    lappend res [catch {testthread send $tidb [list seek $chan 1]} msg] $msg
-    lappend res [catch {testthread send $tidb [list gets $chan]} msg] $msg
-    lappend res [catch {testthread send $tidb [list close $chan]} msg] $msg
+    lappend res [catch {thread::send $tidb [list puts $chan shoo]} msg] $msg
+    lappend res [catch {thread::send $tidb [list tell $chan]} msg] $msg
+    lappend res [catch {thread::send $tidb [list seek $chan 1]} msg] $msg
+    lappend res [catch {thread::send $tidb [list gets $chan]} msg] $msg
+    lappend res [catch {thread::send $tidb [list close $chan]} msg] $msg
     # The 'tell' is ok, as it passed through the transform to the base
     # channel without invoking the transform handler.
 } -cleanup {
-    testthread send $tidb tempdone
-    tcltest::threadReap
+    thread::send $tidb tempdone
+    thread::release $tidb
 } -result {1 {Owner lost} 0 0 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
+
+testConstraint notValgrind [expr {![testConstraint valgrind]}]
+
 test iortrans.tf-11.1 {origin thread of moved transform destroyed during access} -setup {
     #puts <<$tcltest::mainThread>>main
-    set tida [testthread create];	#puts <<$tida>>
-    set tidb [testthread create];	#puts <<$tidb>>
-} -constraints {testchannel testthread} -match glob -body {
+    set tida [thread::create -preserved];	#puts <<$tida>>
+    thread::send $tida {load {} Tcltest}
+    set tidb [thread::create -preserved];	#puts <<$tidb>>
+    thread::send $tidb {load {} Tcltest}
+} -constraints {testchannel thread notValgrind} -match glob -body {
     # Set up channel in thread
-    testthread send $tida $helperscript
-    testthread send $tidb $helperscript
-    set chan [testthread send $tida {
+    thread::send $tida $helperscript
+    thread::send $tidb $helperscript
+    set chan [thread::send $tida {
 	proc foo {args} {
 	    handle.initialize clear drain flush limit? read write
 	    handle.finalize
 	    lappend ::res $args
 	    # destroy thread during channel access
-	    testthread exit
-	    return
+	    thread::exit
 	}
 	set chan [chan push [tempchan] foo]
 	fconfigure $chan -buffering none
 	set chan
     }]
+
     # Move channel to 2nd thread, transform goes with it.
-    testthread send $tida [list testchannel cut $chan]
-    testthread send $tidb [list testchannel splice $chan]
+    thread::send $tida [list testchannel cut $chan]
+    thread::send $tidb [list testchannel splice $chan]
+
     # Run access from thread B, wait for response from A (A is not using event
     # loop at this point, so the event pile up in the queue.
-    testthread send $tidb [list set chan $chan]
-    testthread send $tidb [list set mid $tcltest::mainThread]
-    testthread send -async $tidb {
+    thread::send $tidb [list set chan $chan]
+    thread::send $tidb [list set mid [thread::id]]
+    thread::send -async $tidb {
 	# Wait a bit, give the main thread the time to start its event loop to
 	# wait for the response from B
 	after 50
 	catch { puts $chan shoo } res
 	catch { close $chan }
-	testthread send -async $mid [list set ::res $res]
+	thread::send -async $mid [list set ::res $res]
     }
     vwait ::res
-    return $res
+    set res
 } -cleanup {
-    testthread send $tidb tempdone
-    tcltest::threadReap
+    thread::send $tidb tempdone
+    thread::release $tidb
 } -result {Owner lost}
 
 # ### ### ### ######### ######### #########
