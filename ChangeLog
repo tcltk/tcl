@@ -1,5 +1,10 @@
 2011-09-20  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclIORChan.c: Re-using the "interp" field to signal a dead
+	channel (via NULL value) interfered with conditional cleanup tasks
+	testing for "the right interp". Added a new field "dead" to perform
+	the dead channel signalling task so the corrupted logic is avoided.
+
 	* generic/tclIORTrans.c: Revised ReflectClose() and
 	FreeReflectedTransform() so that we stop leaking ReflectedTransforms,
 	yet free all Tcl_Obj values in the same thread that alloced them.
