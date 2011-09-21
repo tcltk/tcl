@@ -1,3 +1,10 @@
+2011-09-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclThreadTest.c: Revise the thread exit handling of the
+	[testthread] command so that it properly maintains the per-process
+	data structures even when the thread exits for reasons other than
+	the [testthread exit] command.
+
 2011-09-21  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* unix/tclIO.c: [Bug 3412487]: Now short reads are allowed in
