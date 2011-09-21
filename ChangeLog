@@ -1,3 +1,49 @@
+2011-09-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIORChan.c: Re-using the "interp" field to signal a dead
+	channel (via NULL value) interfered with conditional cleanup tasks
+	testing for "the right interp". Added a new field "dead" to perform
+	the dead channel signalling task so the corrupted logic is avoided.
+
+	* generic/tclIORTrans.c: Revised ReflectClose() and
+	FreeReflectedTransform() so that we stop leaking ReflectedTransforms,
+	yet free all Tcl_Obj values in the same thread that alloced them.
+
+2011-09-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/ioTrans.test:	Conversion from [testthread] to Thread package
+	stops most memory leaks.  
+
+	* tests/thread.test:	Plug most memory leaks in thread.test.
+	Constrain the rest to be skipped during `make valgrind`.  Tests using
+	the [testthread cancel] testing command are leaky.  Corrections wait
+	for either addition of [thread::cancel] to the Thread package, or
+	improvements to the [testthread] testing command to make leak-free
+	versions of these tests possible.
+
+	* generic/tclIORChan.c:	Plug all memory leaks in ioCmd.test exposed
+	* tests/ioCmd.test:	by `make valgrind`.
+	* unix/Makefile.in:
+
+2011-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	IMPLEMENTATION OF TIP #388
+
+	* doc/Tcl.n
+	* doc/re_syntax.n
+	* generic/regc_lex.c
+	* generic/regcomp.c
+	* generic/regcustom.h
+	* generic/tcl.h
+	* generic/tclParse.c
+	* tests/reg.test
+	* tests/utf.test
+
+2011-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:        Don't change Tcl_UniChar type when
+	* generic/regcustom.h:  TCL_UTF_MAX == 4 (not supported anyway)
+
 2011-09-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclProc.c (ProcWrongNumArgs): [Bugs 3400658,3408830]:
