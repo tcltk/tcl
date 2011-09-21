@@ -70,7 +70,6 @@ test thread-1.5 {Tcl_ThreadObjCmd: thread create one shot} {thread} {
     set l
 } {1}
 test thread-1.6 {Tcl_ThreadObjCmd: thread exit} {thread} {
-    threadReap
     thread::create {{*}{}}
     update
     after 10
