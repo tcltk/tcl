@@ -2480,7 +2480,7 @@ test namespace-51.16 {Bug 1566526} {
 test namespace-51.17 {resolution epoch handling: Bug 2898722} -setup {
     set result {}
     catch {namespace delete ::a}
-} -constraints knownBug -body {
+} -body {
     namespace eval ::a {
 	proc c {} {lappend ::result A}
 	c
