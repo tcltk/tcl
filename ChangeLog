@@ -1,3 +1,8 @@
+2011-09-21  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* unix/tclIO.c: [Bug 3412487]: Now short reads are allowed in
+	synchronous fcopy, avoid mistaking them as nonblocking ones.
+
 2011-09-21  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORTrans.c (ForwardOpToOwnerThread): Fixed the
