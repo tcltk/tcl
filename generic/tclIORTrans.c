@@ -2403,6 +2403,7 @@ ForwardOpToOwnerThread(
 
     resultPtr->src = Tcl_GetCurrentThread();
     resultPtr->dst = dst;
+    resultPtr->dsti = rtPtr->interp;
     resultPtr->done = NULL;
     resultPtr->result = -1;
     resultPtr->evPtr = evPtr;

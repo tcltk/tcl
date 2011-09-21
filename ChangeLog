@@ -1,3 +1,9 @@
+2011-09-21  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORTrans.c (ForwardOpToOwnerThread): Fixed the
+	missing initialization of the 'dsti' field. Reported by Don
+	Porter, on chat.
+
 2011-09-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIORChan.c: Re-using the "interp" field to signal a dead
