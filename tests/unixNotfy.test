@@ -69,9 +69,8 @@ test unixNotfy-2.1 {Tcl_DeleteFileHandler} \
 	fileevent $f writable {set x 1}
 	vwait x
 	close $f
-   	set t [thread::create -preserved "thread::send [thread::id] {set x ok}"]
+   	thread::create "thread::send [thread::id] {set x ok}"
 	vwait x
-	thread::release $t
 	set x
     } \
     -result {ok} \
@@ -91,9 +90,8 @@ test unixNotfy-2.2 {Tcl_DeleteFileHandler} \
 	close $f1
 	vwait y
 	close $f2
-   	set t [thread::create -preserved "thread::send [thread::id] {set x ok}"]
+   	thread::create "thread::send [thread::id] {set x ok}"
 	vwait x
-	thread::release $t
 	set x
     } \
     -result {ok} \
