@@ -1,3 +1,10 @@
+2011-09-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/re_syntax.n: [Bug 2903743]: Add more magic so that we can do at
+	least something sane on Solaris.
+	* tools/tcltk-man2html-utils.tcl (process-text): Teach the HTML
+	generator how to handle this magic.
+
 2011-09-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclThreadTest.c: Revise the thread exit handling of the
