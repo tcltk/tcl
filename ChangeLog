@@ -19,9 +19,8 @@
 
 2011-09-21  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclIORTrans.c (ForwardOpToOwnerThread): Fixed the
-	missing initialization of the 'dsti' field. Reported by Don
-	Porter, on chat.
+	* generic/tclIORTrans.c (ForwardOpToOwnerThread): Fixed the missing
+	initialization of the 'dsti' field. Reported by Don Porter, on chat.
 
 2011-09-20  Don Porter  <dgp@users.sourceforge.net>
 
@@ -37,17 +36,17 @@
 2011-09-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/ioTrans.test:	Conversion from [testthread] to Thread package
-	stops most memory leaks.  
+	stops most memory leaks.
 
 	* tests/thread.test:	Plug most memory leaks in thread.test.
-	Constrain the rest to be skipped during `make valgrind`.  Tests using
+	Constrain the rest to be skipped during `make valgrind'.  Tests using
 	the [testthread cancel] testing command are leaky.  Corrections wait
 	for either addition of [thread::cancel] to the Thread package, or
 	improvements to the [testthread] testing command to make leak-free
 	versions of these tests possible.
 
 	* generic/tclIORChan.c:	Plug all memory leaks in ioCmd.test exposed
-	* tests/ioCmd.test:	by `make valgrind`.
+	* tests/ioCmd.test:	by `make valgrind'.
 	* unix/Makefile.in:
 
 2011-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
@@ -2227,7 +2226,7 @@
 
 	[BRANCH: dogeen-assembler-branch]
 
-	* generic/tclAssembly.c (new file): 
+	* generic/tclAssembly.c (new file):
 	* generic/tclAssembly.h:
 	* generic/tclBasic.c (builtInCmds, Tcl_CreateInterp):
 	* generic/tclInt.h:
