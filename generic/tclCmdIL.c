@@ -1163,7 +1163,7 @@ InfoFrameCmd(
             lastPtr = runPtr;
             runPtr = runPtr->nextPtr;
         }
-        if (lastPtr && !runPtr) {
+        if (lastPtr && (runPtr != NULL)) {
             lastPtr->nextPtr = corPtr->caller.cmdFramePtr;
         }
     }
