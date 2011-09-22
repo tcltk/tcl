@@ -110,6 +110,7 @@ proc htmlize-text {text {charmap {}}} {
     # contains some extras for use in nroff->html processing
     # build on the list passed in, if any
     lappend charmap \
+	"&ndash;" "&ndash;" \
 	{&}	{&amp;} \
 	{\\}	"&#92;" \
 	{\e}	"&#92;" \
@@ -143,8 +144,8 @@ proc process-text {text} {
 	    {\fP}	{\fR} \
 	    {\.}	. \
 	    {\(bu}	"&#8226;" \
+	    {\*(qo}	"&ocirc;" \
 	    ]
-    lappend charmap {\o'o^'} {&ocirc;} ; # o-circumflex in re_syntax.n
     lappend charmap {\-\|\-} --        ; # two hyphens
     lappend charmap {\-} -             ; # a hyphen
 
@@ -1063,23 +1064,15 @@ proc output-directive {line} {
 	    output-IP-list .IP .IP $rest
 	    return
 	}
-	.PP {
+	.PP - .sp {
 	    man-puts <P>
 	}
 	.RS {
 	    output-RS-list
 	    return
 	}
-	.RE {
-	    manerror "unexpected .RE"
-	    return
-	}
 	.br {
 	    man-puts <BR>
-	    return
-	}
-	.DE {
-	    manerror "unexpected .DE"
 	    return
 	}
 	.DS {
@@ -1108,16 +1101,6 @@ proc output-directive {line} {
 		manerror "unexpected .CS format:\n[expand-next-text 2]"
 	    }
 	    return
-	}
-	.CE {
-	    manerror "unexpected .CE"
-	    return
-	}
-	.sp {
-	    man-puts <P>
-	}
-	.ta {
-	    manerror "ignoring $line"
 	}
 	.nf {
 	    if {[match-text @more .fi]} {
@@ -1174,13 +1157,11 @@ proc output-directive {line} {
 		manerror "ignoring $line"
 	    }
 	}
-	.fi {
-	    manerror "ignoring $line"
+	.RE - .DE - .CE {
+	    manerror "unexpected $code"
+	    return
 	}
-	.na -
-	.ad -
-	.UL -
-	.ne {
+	.ta - .fi - .na - .ad - .UL - .ie - .el - .ne {
 	    manerror "ignoring $line"
 	}
 	default {
