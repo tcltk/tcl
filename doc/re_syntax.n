@@ -6,6 +6,8 @@
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
 .so man.macros
+.ie '\w'o''\w'\C'^o''' .ds qo \C'^o'
+.el .ds qo u
 .TH re_syntax n "8.1" Tcl "Tcl Built-In Commands"
 .BS
 .SH NAME
@@ -290,12 +292,12 @@ treatment is as if the enclosing delimiters were
 .QW \fB[.\fR \&
 and
 .QW \fB.]\fR .)
-For example, if \fBo\fR and \fB\N'244'\fR are the members of an
+For example, if \fBo\fR and \fB\*(qo\fR are the members of an
 equivalence class, then
 .QW \fB[[=o=]]\fR ,
-.QW \fB[[=\N'244'=]]\fR ,
+.QW \fB[[=\*(qo=]]\fR ,
 and
-.QW \fB[o\N'244']\fR \&
+.QW \fB[o\*(qo]\fR \&
 are all synonymous. An equivalence class may not be an endpoint of a range.
 .RS
 .PP
