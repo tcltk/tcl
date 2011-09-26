@@ -1,3 +1,7 @@
+2011-09-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/rules.vc:  Support Visual Studio 11
+
 2011-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:        Don't change Tcl_UniChar type when

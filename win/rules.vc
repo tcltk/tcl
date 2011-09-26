@@ -6,7 +6,7 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
+#
 # Copyright (c) 2001-2003 David Gravereaux.
 # Copyright (c) 2003-2006 Patrick Thoyts
 #------------------------------------------------------------------------------
@@ -27,18 +27,6 @@ _INSTALLDIR	= C:\Program Files\Tcl
 _INSTALLDIR	= $(INSTALLDIR:/=\)
 !endif
 
-!ifndef MACHINE
-!if "$(CPU)" == "" || "$(CPU)" == "i386"
-MACHINE		= IX86
-!else
-MACHINE         = $(CPU)
-!endif
-!endif
-
-!ifndef CFG_ENCODING
-CFG_ENCODING	= \"cp1252\"
-!endif
-
 #----------------------------------------------------------
 # Set the proper copy method to avoid overwrite questions
 # to the user when copying files and selecting the right
@@ -47,17 +35,66 @@ CFG_ENCODING	= \"cp1252\"
 
 !if "$(OS)" == "Windows_NT"
 RMDIR	= rmdir /S /Q
+ERRNULL  = 2>NUL
 !if ![ver | find "4.0" > nul]
-CPY	= echo y | xcopy /i
+CPY	= echo y | xcopy /i >NUL
+COPY	= copy >NUL
 !else
 CPY	= xcopy /i /y >NUL
+COPY	= copy /y >NUL
 !endif
-!else
-CPY	= xcopy /i
+!else # "$(OS)" != "Windows_NT"
+CPY	= xcopy /i >_JUNK.OUT # On Win98 NUL does not work here.
+COPY	= copy >_JUNK.OUT # On Win98 NUL does not work here.
 RMDIR	= deltree /Y
+NULL    = \NUL # Used in testing directory existence
+ERRNULL = >NUL # Win9x shell cannot redirect stderr
 !endif
 MKDIR   = mkdir
-COPY    = copy /y >NUL
+
+#------------------------------------------------------------------------------
+# Determine the host and target architectures and compiler version.
+#------------------------------------------------------------------------------
+
+_HASH=^#
+_VC_MANIFEST_EMBED_EXE=
+_VC_MANIFEST_EMBED_DLL=
+VCVER=0
+!if ![echo VCVERSION=_MSC_VER > vercl.x] \
+    && ![echo $(_HASH)if defined(_M_IX86) >> vercl.x] \
+    && ![echo ARCH=IX86 >> vercl.x] \
+    && ![echo $(_HASH)elif defined(_M_AMD64) >> vercl.x] \
+    && ![echo ARCH=AMD64 >> vercl.x] \
+    && ![echo $(_HASH)endif >> vercl.x] \
+    && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
+!include vercl.i
+!if ![echo VCVER= ^\> vercl.vc] \
+    && ![set /a $(VCVERSION) / 100 - 6 >> vercl.vc]
+!include vercl.vc
+!endif
+!endif
+!if ![del $(ERRNUL) /q/f vercl.x vercl.i vercl.vc]
+!endif
+
+!if ![reg query HKLM\Hardware\Description\System\CentralProcessor\0 /v Identifier | findstr /i x86]
+NATIVE_ARCH=IX86
+!else
+NATIVE_ARCH=AMD64
+!endif
+
+# Since MSVC8 we must deal with manifest resources.
+!if $(VCVERSION) >= 1400
+_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
+!endif
+
+!ifndef MACHINE
+MACHINE=$(ARCH)
+!endif
+
+!ifndef CFG_ENCODING
+CFG_ENCODING	= \"cp1252\"
+!endif
 
 !message ===============================================================================
 
@@ -116,13 +153,10 @@ OPTIMIZATIONS  = $(OPTIMIZATIONS) -GL
 
 DEBUGFLAGS     =
 
-#  the platform SDK has broken headers that break the runtime checks for amd64
-!if "$(MACHINE)" != "AMD64"
 !if [nmakehlp -c -RTC1]
 DEBUGFLAGS     = $(DEBUGFLAGS) -RTC1
 !elseif [nmakehlp -c -GZ]
 DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
-!endif
 !endif
 
 COMPILERFLAGS  =-W3
@@ -171,36 +205,6 @@ LINKERFLAGS     =
 
 !if [nmakehlp -l -ltcg]
 LINKERFLAGS     =-ltcg
-!endif
-
-#----------------------------------------------------------
-# MSVC8 (ships with Visual Studio 2005) generates a manifest
-# file that we should link into the binaries. This is how.
-#----------------------------------------------------------
-
-_VC_MANIFEST_EMBED_EXE=
-_VC_MANIFEST_EMBED_DLL=
-VCVER=0
-!if ![echo VCVERSION=_MSC_VER > vercl.x] \
-    && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
-!include vercl.i
-!if $(VCVERSION) >= 1600
-VCVER=10
-!elseif $(VCVERSION) >= 1500
-VCVER=9
-!elseif $(VCVERSION) >= 1400
-VCVER=8
-!elseif $(VCVERSION) >= 1300
-VCVER=7
-!elseif $(VCVERSION) >= 1200
-VCVER=6
-!endif
-!endif
-
-# Since MSVC8 we must deal with manifest resources.
-!if $(VCVERSION) >= 1400
-_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
-_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
 !endif
 
 #----------------------------------------------------------
@@ -506,7 +510,7 @@ TCLTOOLSDIR	= $(_TCLDIR)\tools
 !message *** Output directory will be '$(OUT_DIR)'
 !message *** Suffix for binaries will be '$(SUFX)'
 !message *** Optional defines are '$(OPTDEFINES)'
-!message *** Compiler version $(VCVER)
+!message *** Compiler version $(VCVER). Target machine is $(MACHINE)
 !message *** Compiler options '$(OPTIMIZATIONS) $(DEBUGFLAGS)'
 !message *** Link options '$(LINKERFLAGS)'
 
