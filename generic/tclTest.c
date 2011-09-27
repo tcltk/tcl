@@ -7123,6 +7123,7 @@ TestparseargsCmd(
     result[1] = Tcl_NewIntObj(count);
     result[2] = Tcl_NewListObj(count, remObjv);
     Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
+    ckfree(remObjv);
     return TCL_OK;
 }
 
