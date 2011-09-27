@@ -1222,7 +1222,14 @@ Tcl_ParseArgsObjv(
 	    objc--;
 	    break;
 	case TCL_ARGV_REST:
-	    *((int *) infoPtr->dstPtr) = dstIndex;
+	    /*
+	     * Only store the point where we got to if it's not to be written
+	     * to NULL, so that TCL_ARGV_AUTO_REST works.
+	     */
+
+	    if (infoPtr->dstPtr != NULL) {
+		*((int *) infoPtr->dstPtr) = dstIndex;
+	    }
 	    goto argsDone;
 	case TCL_ARGV_FLOAT:
 	    if (objc == 0) {
