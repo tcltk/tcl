@@ -1,3 +1,10 @@
+2011-09-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIndexObj.c (Tcl_ParseArgsObjv): [Bug 3413857]: Corrected
+	the memory management for the code parsing arguments when returning
+	"large" numbers of arguments. Also unbroke the TCL_ARGV_AUTO_REST
+	macro in passing.
+
 2011-09-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdAH.c (TclMakeFileCommandSafe): [Bug 3211758]: Also
