@@ -2080,8 +2080,16 @@ TclInitByteCodeObj(
 	     * a value contains a literal which is that same value.
 	     * If this is allowed to happen, refcount decrements may not
 	     * reach zero, and memory may leak.  Bugs 467523, 3357771
+	     *
+	     * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
+	     * on the string value, and do not call Tcl_DuplicateObj() so we
+             * can be sure we do not have any lingering cycles hiding in
+	     * the intrep.
 	     */
-	    codePtr->objArrayPtr[i] = Tcl_DuplicateObj(objPtr);
+	    int numBytes;
+	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+
+	    codePtr->objArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
 	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
 	    Tcl_DecrRefCount(objPtr);
 	} else {

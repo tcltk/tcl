@@ -4109,12 +4109,9 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 	if (currentObj == NULL) {
-	    char buffer[TCL_INTEGER_SPACE];
-
-	    TclFormatInt(buffer, index);
-	    Tcl_AppendResult(infoPtr->interp, "element ", buffer,
-		    " missing from sublist \"", TclGetString(objPtr), "\"",
-		    NULL);
+            Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+                    "element %d missing from sublist \"%s\"",
+                    index, TclGetString(objPtr)));
             Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
                     "INDEXFAILED", NULL);
 	    infoPtr->resultCode = TCL_ERROR;

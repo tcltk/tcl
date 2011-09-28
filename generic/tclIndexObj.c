@@ -359,7 +359,6 @@ Tcl_GetIndexFromObjStruct(
 	int count;
 
 	TclNewObj(resultPtr);
-	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_AppendStringsToObj(resultPtr,
 		(numAbbrev>1 && !(flags & TCL_EXACT) ? "ambiguous " : "bad "),
 		msg, " \"", key, NULL);
@@ -379,6 +378,7 @@ Tcl_GetIndexFromObjStruct(
 		}
 	    }
 	}
+	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, NULL);
     }
     return TCL_ERROR;
@@ -410,7 +410,7 @@ SetIndexFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     if (interp) {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "can't convert value to index except via Tcl_GetIndexFromObj API",
 	    -1));
     }
@@ -593,14 +593,16 @@ PrefixMatchObjCmd(
 	case PRFMATCH_MESSAGE:
 	    if (i > (objc - 4)) {
 		Tcl_AppendResult(interp, "missing message", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", NULL);
 		return TCL_ERROR;
 	    }
 	    i++;
 	    message = Tcl_GetString(objv[i]);
 	    break;
 	case PRFMATCH_ERROR:
-	    if (i > (objc - 4)) {
+	    if (i > objc-4) {
 		Tcl_AppendResult(interp, "missing error options", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", NULL);
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -611,6 +613,7 @@ PrefixMatchObjCmd(
 	    if ((errorLength % 2) != 0) {
 		Tcl_AppendResult(interp, "error options must have an even"
 			" number of elements", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
 		return TCL_ERROR;
 	    }
 	    errorPtr = objv[i];
@@ -1093,7 +1096,7 @@ Tcl_ParseArgsObjv(
 				/* Pointer to the current entry in the table
 				 * of argument descriptions. */
     const Tcl_ArgvInfo *matchPtr;
-				/* Descriptor that matches current argument. */
+				/* Descriptor that matches current argument */
     Tcl_Obj *curArg;		/* Current argument */
     const char *str = NULL;
     register char c;		/* Second character of current arg (used for
@@ -1106,17 +1109,19 @@ Tcl_ParseArgsObjv(
 				 * being processed, primarily for error
 				 * reporting. */
     int objc;			/* # arguments in objv still to process. */
-    int length;			/* Number of characters in current argument. */
+    int length;			/* Number of characters in current argument */
 
     if (remObjv != NULL) {
 	/*
-	 * Then we should copy the name of the command (0th argument).
+	 * Then we should copy the name of the command (0th argument). The
+	 * upper bound on the number of elements is known, and (undocumented,
+	 * but historically true) there should be a NULL argument after the
+	 * last result. [Bug 3413857]
 	 */
 
 	nrem = 1;
-	leftovers = ckalloc((nrem + 1) * sizeof(Tcl_Obj *));
-	leftovers[nrem-1] = objv[0];
-	leftovers[nrem] = NULL;
+	leftovers = ckalloc((1 + *objcPtr) * sizeof(Tcl_Obj *));
+	leftovers[0] = objv[0];
     } else {
 	nrem = 0;
 	leftovers = NULL;
@@ -1147,8 +1152,7 @@ Tcl_ParseArgsObjv(
 
 	matchPtr = NULL;
 	infoPtr = argTable;
-	for (; (infoPtr != NULL) && (infoPtr->type != TCL_ARGV_END);
-		infoPtr++) {
+	for (; infoPtr != NULL && infoPtr->type != TCL_ARGV_END ; infoPtr++) {
 	    if (infoPtr->keyStr == NULL) {
 		continue;
 	    }
@@ -1180,14 +1184,7 @@ Tcl_ParseArgsObjv(
 	    }
 
 	    dstIndex++;		/* This argument is now handled */
-	    nrem++;
-
-	    /*
-	     * Allocate nrem (+1 extra for NULL terminator) pointers.
-	     */
-
-	    leftovers = ckrealloc(leftovers, (nrem+1) * sizeof(Tcl_Obj *));
-	    leftovers[nrem-1] = curArg;
+	    leftovers[nrem++] = curArg;
 	    continue;
 	}
 
@@ -1225,7 +1222,14 @@ Tcl_ParseArgsObjv(
 	    objc--;
 	    break;
 	case TCL_ARGV_REST:
-	    *((int *) infoPtr->dstPtr) = dstIndex;
+	    /*
+	     * Only store the point where we got to if it's not to be written
+	     * to NULL, so that TCL_ARGV_AUTO_REST works.
+	     */
+
+	    if (infoPtr->dstPtr != NULL) {
+		*((int *) infoPtr->dstPtr) = dstIndex;
+	    }
 	    goto argsDone;
 	case TCL_ARGV_FLOAT:
 	    if (objc == 0) {
@@ -1242,7 +1246,8 @@ Tcl_ParseArgsObjv(
 	    objc--;
 	    break;
 	case TCL_ARGV_FUNC: {
-	    Tcl_ArgvFuncProc *handlerProc;
+	    Tcl_ArgvFuncProc *handlerProc = (Tcl_ArgvFuncProc *)
+		    infoPtr->srcPtr;
 	    Tcl_Obj *argObj;
 
 	    if (objc == 0) {
@@ -1250,7 +1255,6 @@ Tcl_ParseArgsObjv(
 	    } else {
 		argObj = objv[srcIndex];
 	    }
-	    handlerProc = (Tcl_ArgvFuncProc *) infoPtr->srcPtr;
 	    if (handlerProc(infoPtr->clientData, argObj, infoPtr->dstPtr)) {
 		srcIndex++;
 		objc--;
@@ -1258,9 +1262,9 @@ Tcl_ParseArgsObjv(
 	    break;
 	}
 	case TCL_ARGV_GENFUNC: {
-	    Tcl_ArgvGenFuncProc *handlerProc;
+	    Tcl_ArgvGenFuncProc *handlerProc = (Tcl_ArgvGenFuncProc *)
+		    infoPtr->srcPtr;
 
-	    handlerProc = (Tcl_ArgvGenFuncProc *) infoPtr->srcPtr;
 	    objc = handlerProc(infoPtr->clientData, interp, objc,
 		    &objv[srcIndex], infoPtr->dstPtr);
 	    if (objc < 0) {
@@ -1271,20 +1275,18 @@ Tcl_ParseArgsObjv(
 	case TCL_ARGV_HELP:
 	    PrintUsage(interp, argTable);
 	    goto error;
-	default: {
-	    char buf[64 + TCL_INTEGER_SPACE];
-
-	    sprintf(buf, "bad argument type %d in Tcl_ArgvInfo",
-		    infoPtr->type);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+	default:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad argument type %d in Tcl_ArgvInfo", infoPtr->type));
 	    goto error;
-	}
 	}
     }
 
     /*
      * If we broke out of the loop because of an OPT_REST argument, copy the
-     * remaining arguments down.
+     * remaining arguments down. Note that there is always at least one
+     * argument left over - the command name - so we always have a result if
+     * our caller is willing to receive it. [Bug 3413857]
      */
 
   argsDone:
@@ -1297,19 +1299,12 @@ Tcl_ParseArgsObjv(
     }
 
     if (objc > 0) {
-	leftovers = ckrealloc(leftovers, (nrem+objc+1) * sizeof(Tcl_Obj *));
-	while (objc) {
-	    leftovers[nrem] = objv[srcIndex];
-	    nrem++;
-	    srcIndex++;
-	    objc--;
-	}
-    } else if (leftovers != NULL) {
-	ckfree(leftovers);
+	memcpy(leftovers+nrem, objv+srcIndex, objc*sizeof(Tcl_Obj *));
+	nrem += objc;
     }
     leftovers[nrem] = NULL;
-    *objcPtr = nrem;
-    *remObjv = leftovers;
+    *objcPtr = nrem++;
+    *remObjv = ckrealloc(leftovers, nrem * sizeof(Tcl_Obj *));
     return TCL_OK;
 
     /*
@@ -1444,18 +1439,18 @@ int
 TclGetCompletionCodeFromObj(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Obj *value,
-    int *code)	/* Argument objects. */
+    int *code)			/* Argument objects. */
 {
     static const char *const returnCodes[] = {
-	    "ok", "error", "return", "break", "continue", NULL
+	"ok", "error", "return", "break", "continue", NULL
     };
 
     if ((value->typePtr != &indexType)
 	    && (TCL_OK == TclGetIntFromObj(NULL, value, code))) {
 	return TCL_OK;
     }
-    if (TCL_OK == Tcl_GetIndexFromObj(
-	    NULL, value, returnCodes, NULL, TCL_EXACT, code)) {
+    if (TCL_OK == Tcl_GetIndexFromObj(NULL, value, returnCodes, NULL,
+		TCL_EXACT, code)) {
 	return TCL_OK;
     }
     /*
@@ -1472,7 +1467,7 @@ TclGetCompletionCodeFromObj(
     }
     return TCL_ERROR;
 }
-
+
 /*
  * Local Variables:
  * mode: c

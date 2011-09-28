@@ -732,6 +732,16 @@ Tcl_EvalObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    return Tcl_NRCallObjProc(interp, TclNREvalObjCmd, dummy, objc, objv);    
+}
+
+int
+TclNREvalObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
     register Tcl_Obj *objPtr;
 
     if (objc < 2) {
@@ -1035,6 +1045,17 @@ TclMakeFileCommandSafe(
     }
     Tcl_DStringFree(&oldBuf);
     Tcl_DStringFree(&newBuf);
+
+    /*
+     * Ugh. The [file] command is now actually safe, but it is assumed by
+     * scripts that it is not, which messes up security policies. [Bug
+     * 3211758]
+     */
+
+    if (Tcl_HideCommand(interp, "file", "file") != TCL_OK) {
+	Tcl_Panic("problem making 'file' safe: %s",
+		Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
     return TCL_OK;
 }
 

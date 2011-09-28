@@ -1006,6 +1006,8 @@ ProcWrongNumArgs(
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
     } else {
+	((Interp *) interp)->ensembleRewrite.numInsertedObjs -= skip - 1;
+
 #ifdef AVOID_HACKS_FOR_ITCL
 	desiredObjs[0] = framePtr->objv[skip-1];
 #else
@@ -2312,7 +2314,7 @@ SetLambdaFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     const char *name;
-    Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv, *errPtr;
+    Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv;
     int objc, result;
     Proc *procPtr;
 
@@ -2327,10 +2329,9 @@ SetLambdaFromAny(
 
     result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
-	TclNewLiteralStringObj(errPtr, "can't interpret \"");
-	Tcl_AppendObjToObj(errPtr, objPtr);
-	Tcl_AppendToObj(errPtr, "\" as a lambda expression", -1);
-	Tcl_SetObjResult(interp, errPtr);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't interpret \"%s\" as a lambda expression",
+		Tcl_GetString(objPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", NULL);
 	return TCL_ERROR;
     }
