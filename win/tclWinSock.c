@@ -1964,8 +1964,10 @@ TcpSetOptionProc(
     const char *optionName,	/* Name of the option to set. */
     const char *value)		/* New value for option. */
 {
+#ifdef TCL_FEATURE_KEEPALIVE_NAGLE
     SocketInfo *infoPtr = instanceData;
     SOCKET sock;
+#endif /*TCL_FEATURE_KEEPALIVE_NAGLE*/
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -1980,9 +1982,9 @@ TcpSetOptionProc(
 	return TCL_ERROR;
     }
 
+#ifdef TCL_FEATURE_KEEPALIVE_NAGLE
     sock = infoPtr->sockets->fd;
 
-#ifdef TCL_FEATURE_KEEPALIVE_NAGLE
     if (!strcasecmp(optionName, "-keepalive")) {
 	BOOL val = FALSE;
 	int boolVar, rtn;

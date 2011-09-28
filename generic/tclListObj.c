@@ -49,7 +49,6 @@ const Tcl_ObjType tclListType = {
 #ifndef TCL_MIN_ELEMENT_GROWTH
 #define TCL_MIN_ELEMENT_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Obj *)
 #endif
-
 
 /*
  *----------------------------------------------------------------------
@@ -524,7 +523,10 @@ Tcl_ListObjAppendList(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendList");
     }
 
-    /* Pull the elements to append from elemListPtr */
+    /*
+     * Pull the elements to append from elemListPtr.
+     */
+
     if (TCL_OK != TclListObjGetElements(interp, elemListPtr, &objc, &objv)) {
 	return TCL_ERROR;
     }
@@ -639,7 +641,10 @@ Tcl_ListObjAppendElement(
     }
 
     if (needGrow && !isShared) {
-	/* Need to grow + unshared intrep => try to realloc */
+	/*
+	 * Need to grow + unshared intrep => try to realloc
+	 */
+
 	attempt = 2 * numRequired;
 	if (attempt <= LIST_MAX) {
 	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
@@ -665,10 +670,10 @@ Tcl_ListObjAppendElement(
 	Tcl_Obj **dst, **src = &listRepPtr->elements;
 
 	/*
-	 * Either we have a shared intrep and we must copy to write,
-	 * or we need to grow and realloc attempts failed.
-	 * Attempt intrep copy.
+	 * Either we have a shared intrep and we must copy to write, or we
+	 * need to grow and realloc attempts failed.  Attempt intrep copy.
 	 */
+
 	attempt = 2 * numRequired;
 	newPtr = AttemptNewList(NULL, attempt, NULL);
 	if (newPtr == NULL) {
@@ -683,7 +688,10 @@ Tcl_ListObjAppendElement(
 	    newPtr = AttemptNewList(interp, attempt, NULL);
 	}
 	if (newPtr == NULL) {
-	    /* All growth attempts failed; throw the error */
+	    /*
+	     * All growth attempts failed; throw the error.
+	     */
+
 //>>>>>>> END MERGE CONFLICT: conflict last >>>>>>>>>>>>>>>>>>
 	    return TCL_ERROR;
 	}
@@ -695,8 +703,8 @@ Tcl_ListObjAppendElement(
 
 	if (isShared) {
 	    /*
-	     * The original intrep must remain undisturbed.
-	     * Copy into the new one and bump refcounts
+	     * The original intrep must remain undisturbed.  Copy into the new
+	     * one and bump refcounts
 	     */
 	    while (numElems--) {
 		*dst = *src++;
@@ -704,9 +712,11 @@ Tcl_ListObjAppendElement(
 	    }
 	    listRepPtr->refCount--;
 	} else {
-	    /* Old intrep to be freed, re-use refCounts */
-	    memcpy(dst, src, (size_t) numElems * sizeof(Tcl_Obj *));
+	    /*
+	     * Old intrep to be freed, re-use refCounts.
+	     */
 
+	    memcpy(dst, src, (size_t) numElems * sizeof(Tcl_Obj *));
 	    ckfree(listRepPtr);
 	}
 	listRepPtr = newPtr;
@@ -894,11 +904,10 @@ Tcl_ListObjReplace(
     }
     if (listPtr->typePtr != &tclListType) {
 	if (listPtr->bytes == tclEmptyStringRep) {
-	    if (objc) {
-		Tcl_SetListObj(listPtr, objc, NULL);
-	    } else {
+	    if (!objc) {
 		return TCL_OK;
 	    }
+	    Tcl_SetListObj(listPtr, objc, NULL);
 	} else {
 	    int result = SetListFromAny(interp, listPtr);
 
@@ -931,8 +940,9 @@ Tcl_ListObjReplace(
     } else if (numElems < first+count || first+count < 0) {
 	/*
 	 * The 'first+count < 0' condition here guards agains integer
-	 * overflow in determining 'first+count'
+	 * overflow in determining 'first+count'.
 	 */
+
 	count = numElems - first;
     }
 
@@ -1122,8 +1132,6 @@ TclLindexList(
 {
 
     int index;			/* Index into the list. */
-    Tcl_Obj **indices;		/* Array of list indices. */
-    int indexCount;		/* Size of the array of list indices. */
     Tcl_Obj *indexListCopy;
 
     /*
@@ -1163,8 +1171,19 @@ TclLindexList(
 	return TclLindexFlat(interp, listPtr, 1, &argPtr);
     }
 
-    TclListObjGetElements(NULL, indexListCopy, &indexCount, &indices);
-    listPtr = TclLindexFlat(interp, listPtr, indexCount, indices);
+    if (indexListCopy->typePtr == &tclListType) {
+	List *listRepPtr = ListRepPtr(indexListCopy);
+
+	listPtr = TclLindexFlat(interp, listPtr, listRepPtr->elemCount,
+		&listRepPtr->elements);
+    } else {
+	int indexCount = -1;	/* Size of the array of list indices. */
+	Tcl_Obj **indices = NULL;
+				/* Array of list indices. */
+
+	Tcl_ListObjGetElements(NULL, indexListCopy, &indexCount, &indices);
+	listPtr = TclLindexFlat(interp, listPtr, indexCount, indices);
+    }
     Tcl_DecrRefCount(indexListCopy);
     return listPtr;
 }
@@ -1422,6 +1441,7 @@ TclLsetFlat(
 
     retValuePtr = subListPtr;
     chainPtr = NULL;
+    result = TCL_OK;
 
     /*
      * Loop through all the index arguments, and for each one dive into the
@@ -1432,11 +1452,14 @@ TclLsetFlat(
 	int elemCount;
 	Tcl_Obj *parentList, **elemPtrs;
 
-	/* Check for the possible error conditions... */
-	result = TCL_ERROR;
+	/*
+	 * Check for the possible error conditions...
+	 */
+
 	if (TclListObjGetElements(interp, subListPtr, &elemCount, &elemPtrs)
 		!= TCL_OK) {
 	    /* ...the sublist we're indexing into isn't a list at all. */
+	    result = TCL_ERROR;
 	    break;
 	}
 
@@ -1448,6 +1471,7 @@ TclLsetFlat(
 	if (TclGetIntForIndexM(interp, *indexArray, elemCount - 1, &index)
 		!= TCL_OK)  {
 	    /* ...the index we're trying to use isn't an index at all. */
+	    result = TCL_ERROR;
 	    indexArray++;
 	    break;
 	}
@@ -1458,9 +1482,10 @@ TclLsetFlat(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("list index out of range", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET",
+			"BADINDEX", NULL);
 	    }
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET", "BADINDEX",
-		    NULL);
+	    result = TCL_ERROR;
 	    break;
 	}
 
@@ -1471,7 +1496,6 @@ TclLsetFlat(
 	 * modify it.
 	 */
 
-	result = TCL_OK;
 	if (--indexCount) {
 	    parentList = subListPtr;
 	    if (index == elemCount) {
@@ -1561,10 +1585,13 @@ TclLsetFlat(
     }
 
     /*
-     * Store valuePtr in proper sublist and return.
+     * Store valuePtr in proper sublist and return. The -1 is to avoid a
+     * compiler warning (not a problem because we checked that we have a
+     * proper list - or something convertible to one - above).
      */
 
-    Tcl_ListObjLength(NULL, subListPtr, &len);
+    len = -1;
+    TclListObjLength(NULL, subListPtr, &len);
     if (index == len) {
 	Tcl_ListObjAppendElement(NULL, subListPtr, valuePtr);
     } else {
@@ -1633,9 +1660,9 @@ TclListObjSetElement(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("list index out of range", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET",
+			"BADINDEX", NULL);
 	    }
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET", "BADINDEX",
-		    NULL);
 	    return TCL_ERROR;
 	}
 	result = SetListFromAny(interp, listPtr);
@@ -1858,19 +1885,23 @@ SetListFromAny(
 	 */
 
 	estCount = TclMaxListLength(nextElem, length, &limit);
-	estCount += (estCount == 0); /* Smallest List struct holds 1 element. */
+	estCount += (estCount == 0);	/* Smallest list struct holds 1
+					 * element. */
 	listRepPtr = AttemptNewList(interp, estCount, NULL);
 	if (listRepPtr == NULL) {
 	    return TCL_ERROR;
 	}
 	elemPtrs = &listRepPtr->elements;
 
-	/* Each iteration, parse and store a list element */
+	/*
+	 * Each iteration, parse and store a list element.
+	 */
+
 	while (nextElem < limit) {
 	    const char *elemStart;
 	    int elemSize, literal;
 
-	    if (TCL_OK != TclFindElement(interp, nextElem, (limit - nextElem),
+	    if (TCL_OK != TclFindElement(interp, nextElem, limit - nextElem,
 		    &elemStart, &nextElem, &elemSize, &literal)) {
 		while (--elemPtrs >= &listRepPtr->elements) {
 		    Tcl_DecrRefCount(*elemPtrs);
@@ -1951,7 +1982,9 @@ UpdateStringOfList(
 
     listRepPtr->canonicalFlag = 1;
 
-    /* Handle empty list case first, so rest of the routine is simpler */
+    /*
+     * Handle empty list case first, so rest of the routine is simpler.
+     */
 
     if (numElems == 0) {
 	listPtr->bytes = tclEmptyStringRep;
@@ -1966,12 +1999,15 @@ UpdateStringOfList(
     if (numElems <= LOCAL_SIZE) {
 	flagPtr = localFlags;
     } else {
-	/* We know numElems <= LIST_MAX, so this is safe. */
+	/*
+	 * We know numElems <= LIST_MAX, so this is safe.
+	 */
+
 	flagPtr = ckalloc(numElems * sizeof(int));
     }
     elemPtrs = &listRepPtr->elements;
     for (i = 0; i < numElems; i++) {
-	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
+	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	if (bytesNeeded < 0) {
@@ -1991,7 +2027,7 @@ UpdateStringOfList(
     listPtr->bytes = ckalloc(bytesNeeded);
     dst = listPtr->bytes;
     for (i = 0; i < numElems; i++) {
-	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
+	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';

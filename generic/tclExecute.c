@@ -53,6 +53,8 @@
 static int execInitialized = 0;
 TCL_DECLARE_MUTEX(execMutex)
 
+static int cachedInExit = 0;
+
 #ifdef TCL_COMPILE_DEBUG
 /*
  * Variable that controls whether execution tracing is enabled and, if so,
@@ -868,16 +870,18 @@ void
 TclDeleteExecEnv(
     ExecEnv *eePtr)		/* Execution environment to free. */
 {
+	cachedInExit = TclInExit();
+
     /*
      * Delete all stacks in this exec env.
      */
 
     TclDecrRefCount(eePtr->constants[0]);
     TclDecrRefCount(eePtr->constants[1]);
-    if (eePtr->callbackPtr) {
-	Tcl_Panic("Deleting execEnv with pending NRE callbacks!");
+    if (eePtr->callbackPtr && !cachedInExit) {
+	Tcl_Panic("Deleting execEnv with pending TEOV callbacks!");
     }
-    if (eePtr->corPtr) {
+    if (eePtr->corPtr && !cachedInExit) {
 	Tcl_Panic("Deleting execEnv with existing coroutine");
     }
     ckfree(eePtr);

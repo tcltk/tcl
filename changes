@@ -7532,7 +7532,7 @@ evaluation in extensions (sofer,kenny)
 
 2009-05-08 (bug fix)[2414858] tailcall in oo constructor (fellows)
 
-2009-05-14 (new subcommand) [info object namespace] (fellows)
+2009-05-14 (new subcommand)[TIP 354] [info object namespace] (fellows)
 
 2009-05-29 (platform support) account for ia64_32 (kupries)
 => platform 1.0.5
@@ -7563,7 +7563,7 @@ avoid otherwise very tricky multi-thread finalization bugs. (staplin,ferrieux)
 
 2009-07-16 (bug fix)[2819200] underflow settings on MIPS systems (porter)
 
-2009-07-19 (interface) new public routine Tcl_GetObjectName() (fellows)
+2009-07-19 (interface)[TIP 354] new routine Tcl_GetObjectName() (fellows)
 
 2009-07-20 (performance) favor [string is] success cases over empty (fellows)
 
@@ -7949,6 +7949,8 @@ memory with buffer backup (ferrieux)
 
 2011-07-28 tzdata updated to Olson's tzdata2011h (porter)
 
+2011-08-01 (bug fix)[3383616] memleak exposed by XOTcl (neumann,sofer)
+
 Many more Tcl built-in command errors now set an -errorcode.
 
---- Released 8.6b2, August 3, 2011 --- See ChangeLog for details ---
+--- Released 8.6b2, August 8, 2011 --- See ChangeLog for details ---

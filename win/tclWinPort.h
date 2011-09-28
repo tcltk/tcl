@@ -118,7 +118,7 @@
 /*
  * Not all mingw32 versions have this struct.
  */
-#if !defined(__BORLANDC__) && !defined(_MSC_VER) && !defined(_WIN64) && !defined(HAVE_STRUCT_STAT32I64)
+#if !defined(__BORLANDC__) && !defined(_MSC_VER) && !defined(_WIN64) && defined(HAVE_NO_STRUCT_STAT32I64)
   struct _stat32i64 {
     dev_t st_dev;
     ino_t st_ino;
@@ -250,11 +250,11 @@
 #ifndef EOTHER
 #   define EOTHER	131	/* Other error */
 #endif
-#ifndef EOVERFLOW
-#   define EOVERFLOW	132	/* File too big */
-#endif
+/* workaround for mingw-w64 bug 3407992 */
+#undef EOVERFLOW
+#define EOVERFLOW	132	/* File too big */
 #ifndef EOWNERDEAD
-#   define EOWNERDEAD	133	/* File too big */
+#   define EOWNERDEAD	133	/* Owner dead */
 #endif
 #ifndef EPROTO
 #   define EPROTO	134	/* Protocol error */

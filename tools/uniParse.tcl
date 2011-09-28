@@ -179,7 +179,7 @@ proc uni::main {} {
     buildTables $data
     puts "X = [llength $pMap]  Y= [llength $pages]  A= [llength $groups]"
     set size [expr {[llength $pMap] + [llength $pages]*(1<<$shift)}]
-    puts "shift = 6, space = $size"
+    puts "shift = $shift, space = $size"
     puts "title case count = $titleCount"
 
     set f [open [file join [lindex $argv 1] tclUniData.c] w]
@@ -264,9 +264,9 @@ static const unsigned char groupMap\[\] = {"
  *				 101 = sub delta for upper, sub 1 for title
  *				 110 = sub delta for upper, add delta for lower
  *
- * Bits 8-21	Reserved for future use.
+ * Bits 8-14	Reserved for future use.
  *
- * Bits 22-31	Case delta: delta for case conversions.  This should be the
+ * Bits 15-31	Case delta: delta for case conversions.  This should be the
  *			    highest field so we can easily sign extend.
  */
 
@@ -306,9 +306,7 @@ static const int groups\[\] = {"
 	    set delta 0
 	}
 
-	set val [expr {($delta << 22) | ($case << 5) | $type}]
-
-	append line [format "%d" $val]
+	append line [expr {($delta << 15) | ($case << 5) | $type}]
 	if {$i != $last} {
 	    append line ", "
 	}
@@ -368,7 +366,7 @@ enum {
 
 #define GetCaseType(info) (((info) & 0xE0) >> 5)
 #define GetCategory(info) ((info) & 0x1F)
-#define GetDelta(info) (((info) > 0) ? ((info) >> 22) : (~(~((info)) >> 22)))
+#define GetDelta(info) (((info) > 0) ? ((info) >> 15) : (~(~((info)) >> 15)))
 
 /*
  * This macro extracts the information about a character from the

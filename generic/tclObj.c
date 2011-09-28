@@ -2662,12 +2662,9 @@ Tcl_GetLongFromObj(
 #endif
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (interp != NULL) {
-		Tcl_Obj *msg;
-
-		TclNewLiteralStringObj(msg, "expected integer but got \"");
-		Tcl_AppendObjToObj(msg, objPtr);
-		Tcl_AppendToObj(msg, "\"", -1);
-		Tcl_SetObjResult(interp, msg);
+                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                        "expected integer but got \"%s\"",
+                        Tcl_GetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -2966,12 +2963,9 @@ Tcl_GetWideIntFromObj(
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (interp != NULL) {
-		Tcl_Obj *msg;
-
-		TclNewLiteralStringObj(msg, "expected integer but got \"");
-		Tcl_AppendObjToObj(msg, objPtr);
-		Tcl_AppendToObj(msg, "\"", -1);
-		Tcl_SetObjResult(interp, msg);
+                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                        "expected integer but got \"%s\"",
+                        Tcl_GetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3300,12 +3294,9 @@ GetBignumFromObj(
 #endif
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (interp != NULL) {
-		Tcl_Obj *msg;
-
-		TclNewLiteralStringObj(msg, "expected integer but got \"");
-		Tcl_AppendObjToObj(msg, objPtr);
-		Tcl_AppendToObj(msg, "\"", -1);
-		Tcl_SetObjResult(interp, msg);
+                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                        "expected integer but got \"%s\"",
+                        Tcl_GetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;

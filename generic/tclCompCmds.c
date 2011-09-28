@@ -3642,7 +3642,7 @@ TclCompileSyntaxError(
     TclErrorStackResetIf(interp, bytes, numBytes);
     TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
-	    Tcl_GetReturnOptions(interp, TCL_ERROR));
+			  TclNoErrorStack(interp, Tcl_GetReturnOptions(interp, TCL_ERROR)));
 }
 
 /*

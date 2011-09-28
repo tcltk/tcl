@@ -46,7 +46,7 @@ static Tcl_ThreadDataKey dataKey;
  * protected by threadMutex.
  */
 
-static ThreadSpecificData *threadList;
+static ThreadSpecificData *threadList = NULL;
 
 /*
  * The following bit-values are legal for the "flags" field of the
@@ -623,9 +623,9 @@ NewTestThread(
      * Clean up.
      */
 
-    ListRemove(tsdPtr);
-    Tcl_Release(tsdPtr->interp);
     Tcl_DeleteInterp(tsdPtr->interp);
+    Tcl_Release(tsdPtr->interp);
+    ListRemove(tsdPtr);
     Tcl_ExitThread(result);
 
     TCL_THREAD_CREATE_RETURN;
@@ -744,6 +744,7 @@ ListRemove(
 	tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
     }
     tsdPtr->nextPtr = tsdPtr->prevPtr = 0;
+    tsdPtr->interp = NULL;
     Tcl_MutexUnlock(&threadMutex);
 }
 
@@ -1148,6 +1149,11 @@ ThreadExitProc(
     char *threadEvalScript = clientData;
     ThreadEventResult *resultPtr, *nextPtr;
     Tcl_ThreadId self = Tcl_GetCurrentThread();
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (tsdPtr->interp != NULL) {
+	ListRemove(tsdPtr);
+    }
 
     Tcl_MutexLock(&threadMutex);
 

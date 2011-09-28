@@ -360,7 +360,7 @@ proc make-man-pages {html args} {
 		    continue
 		}
 		switch -exact -- $code {
-		    .if - .nr - .ti - .in -
+		    .if - .nr - .ti - .in - .ie - .el -
 		    .ad - .na - .so - .ne - .AS - .VE - .VS - . {
 			# ignore
 			continue
@@ -379,21 +379,22 @@ proc make-man-pages {html args} {
 			lappend manual(text) "$code [unquote $rest]"
 		    }
 		    .QW {
-			set rest [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest]
-			addbuffer $LQ [unquote [lindex $rest 0]] $RQ \
-			    [unquote [lindex $rest 1]]
+			lassign [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest] \
+			    inQuote afterwards
+			addbuffer $LQ [unquote $inQuote] $RQ [unquote $afterwards]
 		    }
 		    .PQ {
-			set rest [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest]
-			addbuffer ( $LQ [unquote [lindex $rest 0]] $RQ \
-			    [unquote [lindex $rest 1]] ) \
-			    [unquote [lindex $rest 2]]
+			lassign [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest] \
+			    inQuote punctuation afterwards
+			addbuffer ( $LQ [unquote $inQuote] $RQ \
+			    [unquote $punctuation] ) \
+			    [unquote $afterwards]
 		    }
 		    .QR {
-			set rest [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest]
-			addbuffer $LQ [unquote [lindex $rest 0]] - \
-			    [unquote [lindex $rest 1]] $RQ \
-			    [unquote [lindex $rest 2]]
+			lassign [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest] \
+			    rangeFrom rangeTo afterwards
+			addbuffer $LQ [unquote $rangeFrom] "&ndash;" \
+			    [unquote $rangeTo] $RQ [unquote $afterwards]
 		    }
 		    .MT {
 			addbuffer $LQ$RQ
@@ -404,7 +405,7 @@ proc make-man-pages {html args} {
 		    }
 		    .BS - .BE - .br - .fi - .sp - .nf {
 			flushbuffer
-			if {"$rest" ne {}} {
+			if {$rest ne ""} {
 			    if {!$verbose} {
 				puts stderr ""
 			    }
@@ -435,8 +436,9 @@ proc make-man-pages {html args} {
 		    }
 		    .OP {
 			flushbuffer
+			lassign $rest cmdName dbName dbClass
 			lappend manual(text) [concat .OP [process-text \
-				"\\fB[lindex $rest 0]\\fR \\fB[lindex $rest 1]\\fR \\fB[lindex $rest 2]\\fR"]]
+				"\\fB$cmdName\\fR \\fB$dbName\\fR \\fB$dbClass\\fR"]]
 		    }
 		    .PP - .LP {
 			flushbuffer
@@ -774,7 +776,7 @@ proc plus-pkgs {type args} {
 		continue
 	    }
 	}
-	regexp "pkgs/$dir(.*)/doc$" [glob $tcltkdir/$tcldir/pkgs/$dir*/doc] \
+	regexp "pkgs/${dir}(.*)/doc$" [glob $tcltkdir/$tcldir/pkgs/$dir*/doc] \
 	    -> version
 	switch $type {
 	    n {
@@ -973,7 +975,7 @@ try {
 	set packageDirNameMap {
 	    itcl {[incr Tcl]}
 	    tdbc {TDBC}
-	    Thread Thread
+	    thread Thread
 	}
     }
 

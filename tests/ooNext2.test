@@ -513,6 +513,21 @@ test oo-call-1.18 {object call introspection - memory leaks} -body {
 	info object call oo::object destroy
     }
 } -constraints memory -result 0
+test oo-call-1.19 {object call introspection - memory leaks} -setup {
+    oo::class create leaktester { method foo {} {dummy} }
+} -body {
+    leaktest {
+	set lt [leaktester new]
+	oo::objdefine $lt method foobar {} {dummy}
+	list [info object call $lt destroy] \
+	    [info object call $lt foo] \
+	    [info object call $lt bar] \
+	    [info object call $lt foobar] \
+	    [$lt destroy]
+    }
+} -cleanup {
+    leaktester destroy
+} -constraints memory -result 0
 
 test oo-call-2.1 {class call introspection} -setup {
     oo::class create root
@@ -682,6 +697,16 @@ test oo-call-2.12 {class call introspection - errors} -setup {
 test oo-call-2.13 {class call introspection - memory leaks} -body {
     leaktest {
 	info class call oo::class destroy
+    }
+} -constraints memory -result 0
+test oo-call-2.14 {class call introspection - memory leaks} -body {
+    leaktest {
+	oo::class create leaktester { method foo {} {dummy} }
+	[leaktester new] destroy
+	list [info class call leaktester destroy] \
+	    [info class call leaktester foo] \
+	    [info class call leaktester bar] \
+	    [leaktester destroy]
     }
 } -constraints memory -result 0
 
