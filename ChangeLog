@@ -1,3 +1,10 @@
+2011-09-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl, tools/tcltk-man2html-utils.tcl: More
+	refactoring so that more of the utility code is decently out of the
+	way. Adjusted the header-material generator so that version numbers
+	are only included in locations where there is room.
+
 2011-09-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclOO.h:      [RFE 3010352]: make all TclOO API functions
