@@ -1992,9 +1992,8 @@ TclNRExecuteByteCode(
      * Push the callback for bytecode execution
      */
     
-    TclNRAddCallback(interp, TEBCresume, TD,
-	    /*resume*/ INT2PTR(0), NULL, NULL);
-    
+    TclNRAddCallback(interp, TEBCresume, TD, /*resume*/ INT2PTR(0),
+	    NULL, NULL);
     return TCL_OK;
 }
 
@@ -5625,7 +5624,7 @@ TEBCresume(
 
     {
 	int opnd2, allocateDict, done, i, allocdict;
-	Tcl_Obj *dictPtr, *statePtr, *keyPtr;
+	Tcl_Obj *dictPtr, *statePtr, *keyPtr, *listPtr, *varNamePtr, *keysPtr;
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
 	Tcl_DictSearch *searchPtr;
 	DictUpdateInfo *duiPtr;
@@ -6105,6 +6104,44 @@ TEBCresume(
 	    }
 	}
 	NEXT_INST_F(9, 1, 0);
+
+    case INST_DICT_EXPAND:
+	dictPtr = OBJ_UNDER_TOS;
+	listPtr = OBJ_AT_TOS;
+	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	    TRACE_WITH_OBJ(("%.30s %.30s => ERROR: ",
+		    O2S(dictPtr), O2S(listPtr)), Tcl_GetObjResult(interp));
+	    goto gotError;
+	}
+	objResultPtr = TclDictWithInit(interp, dictPtr, objc, objv);
+	if (objResultPtr == NULL) {
+	    TRACE_WITH_OBJ(("%.30s %.30s => ERROR: ",
+		    O2S(dictPtr), O2S(listPtr)), Tcl_GetObjResult(interp));
+	    goto gotError;
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(1, 2, 1);
+
+    case INST_DICT_RECOMBINE:
+	varNamePtr = OBJ_AT_DEPTH(2);
+	listPtr = OBJ_UNDER_TOS;
+	keysPtr = OBJ_AT_TOS;
+	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	    TRACE_WITH_OBJ(("%.30s %.30s %.30s => ERROR: ",
+		    O2S(varNamePtr), O2S(listPtr), O2S(keysPtr)),
+		    Tcl_GetObjResult(interp));
+	    goto gotError;
+	}
+	if (TclDictWithFinish(interp, varNamePtr, objc, objv,
+		keysPtr) != TCL_OK) {
+	    TRACE_WITH_OBJ(("%.30s %.30s %.30s => ERROR: ",
+		    O2S(varNamePtr), O2S(listPtr), O2S(keysPtr)),
+		    Tcl_GetObjResult(interp));
+	    goto gotError;
+	}
+	TclDecrRefCount(keysPtr);
+	POP_OBJECT();
+	NEXT_INST_F(1, 2, 0);
     }
 
     /*
