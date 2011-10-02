@@ -167,135 +167,135 @@ enum Marks {
 
 /* Leaf lexemes */
 
-#define NUMBER		( LEAF | 1)	/* For literal numbers */
-#define SCRIPT		( LEAF | 2)	/* Script substitution; [foo] */
-#define BOOLEAN		( LEAF | BAREWORD)	/* For literal booleans */
-#define BRACED		( LEAF | 4)	/* Braced string; {foo bar} */
-#define VARIABLE	( LEAF | 5)	/* Variable substitution; $x */
-#define QUOTED		( LEAF | 6)	/* Quoted string; "foo $bar [soom]" */
-#define EMPTY		( LEAF | 7)	/* Used only for an empty argument
-					 * list to a function. Represents the
-					 * empty string within parens in the
-					 * expression: rand() */
+#define NUMBER		(LEAF | 1)
+				/* For literal numbers */
+#define SCRIPT		(LEAF | 2)
+				/* Script substitution; [foo] */
+#define BOOLEAN		(LEAF | BAREWORD)
+				/* For literal booleans */
+#define BRACED		(LEAF | 4)
+				/* Braced string; {foo bar} */
+#define VARIABLE	(LEAF | 5)
+				/* Variable substitution; $x */
+#define QUOTED		(LEAF | 6)
+				/* Quoted string; "foo $bar [soom]" */
+#define EMPTY		(LEAF | 7)
+				/* Used only for an empty argument list to a
+				 * function. Represents the empty string
+				 * within parens in the expression: rand() */
 
 /* Unary operator lexemes */
 
-#define UNARY_PLUS	( UNARY | PLUS)
-#define UNARY_MINUS	( UNARY | MINUS)
-#define FUNCTION	( UNARY | BAREWORD)	/* This is a bit of "creative
-					 * interpretation" on the part of the
-					 * parser. A function call is parsed
-					 * into the parse tree according to
-					 * the perspective that the function
-					 * name is a unary operator and its
-					 * argument list, enclosed in parens,
-					 * is its operand. The additional
-					 * requirements not implied generally
-					 * by treatment as a unary operator --
-					 * for example, the requirement that
-					 * the operand be enclosed in parens
-					 * -- are hard coded in the relevant
-					 * portions of ParseExpr(). We trade
-					 * off the need to include such
-					 * exceptional handling in the code
-					 * against the need we would otherwise
-					 * have for more lexeme categories. */
-#define START		( UNARY | 4)	/* This lexeme isn't parsed from the
-					 * expression text at all. It
-					 * represents the start of the
-					 * expression and sits at the root of
-					 * the parse tree where it serves as
-					 * the start/end point of
-					 * traversals. */
-#define OPEN_PAREN	( UNARY | 5)	/* Another bit of creative
-					 * interpretation, where we treat "("
-					 * as a unary operator with the
-					 * sub-expression between it and its
-					 * matching ")" as its operand. See
-					 * CLOSE_PAREN below. */
-#define NOT		( UNARY | 6)
-#define BIT_NOT		( UNARY | 7)
+#define UNARY_PLUS	(UNARY | PLUS)
+#define UNARY_MINUS	(UNARY | MINUS)
+#define FUNCTION	(UNARY | BAREWORD)
+				/* This is a bit of "creative interpretation"
+				 * on the part of the parser. A function call
+				 * is parsed into the parse tree according to
+				 * the perspective that the function name is a
+				 * unary operator and its argument list,
+				 * enclosed in parens, is its operand. The
+				 * additional requirements not implied
+				 * generally by treatment as a unary operator
+				 * -- for example, the requirement that the
+				 * operand be enclosed in parens -- are hard
+				 * coded in the relevant portions of
+				 * ParseExpr(). We trade off the need to
+				 * include such exceptional handling in the
+				 * code against the need we would otherwise
+				 * have for more lexeme categories. */
+#define START		(UNARY | 4)
+				/* This lexeme isn't parsed from the
+				 * expression text at all. It represents the
+				 * start of the expression and sits at the
+				 * root of the parse tree where it serves as
+				 * the start/end point of traversals. */
+#define OPEN_PAREN	(UNARY | 5)
+				/* Another bit of creative interpretation,
+				 * where we treat "(" as a unary operator with
+				 * the sub-expression between it and its
+				 * matching ")" as its operand. See
+				 * CLOSE_PAREN below. */
+#define NOT		(UNARY | 6)
+#define BIT_NOT		(UNARY | 7)
 
 /* Binary operator lexemes */
 
-#define BINARY_PLUS	( BINARY |  PLUS)
-#define BINARY_MINUS	( BINARY |  MINUS)
-#define COMMA		( BINARY |  3)	/* The "," operator is a low
-					 * precedence binary operator that
-					 * separates the arguments in a
-					 * function call. The additional
-					 * constraint that this operator can
-					 * only legally appear at the right
-					 * places within a function call
-					 * argument list are hard coded within
-					 * ParseExpr().  */
-#define MULT		( BINARY |  4)
-#define DIVIDE		( BINARY |  5)
-#define MOD		( BINARY |  6)
-#define LESS		( BINARY |  7)
-#define GREATER		( BINARY |  8)
-#define BIT_AND		( BINARY |  9)
-#define BIT_XOR		( BINARY | 10)
-#define BIT_OR		( BINARY | 11)
-#define QUESTION	( BINARY | 12)	/* These two lexemes make up the */
-#define COLON		( BINARY | 13)	/* ternary conditional operator,
-					 * $x ? $y : $z . We treat them as two
-					 * binary operators to avoid another
-					 * lexeme category, and code the
-					 * additional constraints directly in
-					 * ParseExpr(). For instance, the
-					 * right operand of a "?" operator
-					 * must be a ":" operator. */
-#define LEFT_SHIFT	( BINARY | 14)
-#define RIGHT_SHIFT	( BINARY | 15)
-#define LEQ		( BINARY | 16)
-#define GEQ		( BINARY | 17)
-#define EQUAL		( BINARY | 18)
-#define NEQ		( BINARY | 19)
-#define AND		( BINARY | 20)
-#define OR		( BINARY | 21)
-#define STREQ		( BINARY | 22)
-#define STRNEQ		( BINARY | 23)
-#define EXPON		( BINARY | 24)	/* Unlike the other binary operators,
-					 * EXPON is right associative and this
-					 * distinction is coded directly in
-					 * ParseExpr(). */
-#define IN_LIST		( BINARY | 25)
-#define NOT_IN_LIST	( BINARY | 26)
-#define CLOSE_PAREN	( BINARY | 27)	/* By categorizing the CLOSE_PAREN
-					 * lexeme as a BINARY operator, the
-					 * normal parsing rules for binary
-					 * operators assure that a close paren
-					 * will not directly follow another
-					 * operator, and the machinery already
-					 * in place to connect operands to
-					 * operators according to precedence
-					 * performs most of the work of
-					 * matching open and close parens for
-					 * us. In the end though, a close
-					 * paren is not really a binary
-					 * operator, and some special coding
-					 * in ParseExpr() make sure we never
-					 * put an actual CLOSE_PAREN node in
-					 * the parse tree. The sub-expression
-					 * between parens becomes the single
-					 * argument of the matching OPEN_PAREN
-					 * unary operator. */
-#define END		( BINARY | 28)	/* This lexeme represents the end of
-					 * the string being parsed. Treating
-					 * it as a binary operator follows the
-					 * same logic as the CLOSE_PAREN
-					 * lexeme and END pairs with START, in
-					 * the same way that CLOSE_PAREN pairs
-					 * with OPEN_PAREN. */
+#define BINARY_PLUS	(BINARY |  PLUS)
+#define BINARY_MINUS	(BINARY |  MINUS)
+#define COMMA		(BINARY |  3)
+				/* The "," operator is a low precedence binary
+				 * operator that separates the arguments in a
+				 * function call. The additional constraint
+				 * that this operator can only legally appear
+				 * at the right places within a function call
+				 * argument list are hard coded within
+				 * ParseExpr().  */
+#define MULT		(BINARY |  4)
+#define DIVIDE		(BINARY |  5)
+#define MOD		(BINARY |  6)
+#define LESS		(BINARY |  7)
+#define GREATER		(BINARY |  8)
+#define BIT_AND		(BINARY |  9)
+#define BIT_XOR		(BINARY | 10)
+#define BIT_OR		(BINARY | 11)
+#define QUESTION	(BINARY | 12)
+				/* These two lexemes make up the */
+#define COLON		(BINARY | 13)
+				/* ternary conditional operator, $x ? $y : $z.
+				 * We treat them as two binary operators to
+				 * avoid another lexeme category, and code the
+				 * additional constraints directly in
+				 * ParseExpr(). For instance, the right
+				 * operand of a "?" operator must be a ":"
+				 * operator. */
+#define LEFT_SHIFT	(BINARY | 14)
+#define RIGHT_SHIFT	(BINARY | 15)
+#define LEQ		(BINARY | 16)
+#define GEQ		(BINARY | 17)
+#define EQUAL		(BINARY | 18)
+#define NEQ		(BINARY | 19)
+#define AND		(BINARY | 20)
+#define OR		(BINARY | 21)
+#define STREQ		(BINARY | 22)
+#define STRNEQ		(BINARY | 23)
+#define EXPON		(BINARY | 24)
+				/* Unlike the other binary operators, EXPON is
+				 * right associative and this distinction is
+				 * coded directly in ParseExpr(). */
+#define IN_LIST		(BINARY | 25)
+#define NOT_IN_LIST	(BINARY | 26)
+#define CLOSE_PAREN	(BINARY | 27)
+				/* By categorizing the CLOSE_PAREN lexeme as a
+				 * BINARY operator, the normal parsing rules
+				 * for binary operators assure that a close
+				 * paren will not directly follow another
+				 * operator, and the machinery already in
+				 * place to connect operands to operators
+				 * according to precedence performs most of
+				 * the work of matching open and close parens
+				 * for us. In the end though, a close paren is
+				 * not really a binary operator, and some
+				 * special coding in ParseExpr() make sure we
+				 * never put an actual CLOSE_PAREN node in the
+				 * parse tree. The sub-expression between
+				 * parens becomes the single argument of the
+				 * matching OPEN_PAREN unary operator. */
+#define END		(BINARY | 28)
+				/* This lexeme represents the end of the
+				 * string being parsed. Treating it as a
+				 * binary operator follows the same logic as
+				 * the CLOSE_PAREN lexeme and END pairs with
+				 * START, in the same way that CLOSE_PAREN
+				 * pairs with OPEN_PAREN. */
+
 /*
  * When ParseExpr() builds the parse tree it must choose which operands to
  * connect to which operators.  This is done according to operator precedence.
- * The greater an operator's precedence the greater claim it has to link to
- * an available operand.  The Precedence enumeration lists the precedence
- * values used by Tcl expression operators, from lowest to highest claim.
- * Each precedence level is commented with the operators that hold that
- * precedence.
+ * The greater an operator's precedence the greater claim it has to link to an
+ * available operand.  The Precedence enumeration lists the precedence values
+ * used by Tcl expression operators, from lowest to highest claim.  Each
+ * precedence level is commented with the operators that hold that precedence.
  */
 
 enum Precedence {
@@ -320,9 +320,9 @@ enum Precedence {
 };
 
 /*
- * Here the same information contained in the comments above is stored
- * in inverted form, so that given a lexeme, one can quickly look up 
- * its precedence value.
+ * Here the same information contained in the comments above is stored in
+ * inverted form, so that given a lexeme, one can quickly look up its
+ * precedence value.
  */
 
 static const unsigned char prec[] = {
@@ -599,7 +599,10 @@ ParseExpr(
 				 * actual leaf at the time the complete tree
 				 * is needed. */
 
-    /* These variables control generation of the error message. */
+    /*
+     * These variables control generation of the error message.
+     */
+
     Tcl_Obj *msg = NULL;	/* The error message. */
     Tcl_Obj *post = NULL;	/* In a few cases, an additional postscript
 				 * for the error message, supplying more
@@ -801,17 +804,19 @@ ParseExpr(
 	    }
 	}	/* Uncategorized lexemes */
 
-	/* Handle lexeme based on its category. */
-	switch (NODE_TYPE & lexeme) {
-
 	/*
-	 * Each LEAF results in either a literal getting appended to the
-	 * litList, or a sequence of Tcl_Tokens representing a Tcl word
-	 * getting appended to the parsePtr->tokens. No OpNode is filled for
-	 * this lexeme.
+	 * Handle lexeme based on its category.
 	 */
 
+	switch (NODE_TYPE & lexeme) {
 	case LEAF: {
+	    /*
+	     * Each LEAF results in either a literal getting appended to the
+	     * litList, or a sequence of Tcl_Tokens representing a Tcl word
+	     * getting appended to the parsePtr->tokens. No OpNode is filled
+	     * for this lexeme.
+	     */
+
 	    Tcl_Token *tokenPtr;
 	    const char *end = start;
 	    int wordIndex;
@@ -828,7 +833,10 @@ ParseExpr(
 		scanned = 0;
 		insertMark = 1;
 
-		/* Free any literal to avoid a memleak. */
+		/*
+		 * Free any literal to avoid a memleak.
+		 */
+
 		if ((lexeme == NUMBER) || (lexeme == BOOLEAN)) {
 		    Tcl_DecrRefCount(literal);
 		}
@@ -1027,7 +1035,10 @@ ParseExpr(
 		goto error;
 	    }
 
-	    /* Create an OpNode for the unary operator */
+	    /*
+	     * Create an OpNode for the unary operator.
+	     */
+
 	    nodePtr->lexeme = lexeme;
 	    nodePtr->precedence = prec[lexeme];
 	    nodePtr->mark = MARK_RIGHT;
@@ -1498,7 +1509,10 @@ ConvertTreeToTokens(
 
 	case OT_LITERAL:
 
-	    /* Skip any white space that comes before the literal */
+	    /*
+	     * Skip any white space that comes before the literal.
+	     */
+
 	    scanned = TclParseAllWhiteSpace(start, numBytes);
 	    start += scanned;
 	    numBytes -= scanned;
@@ -1581,7 +1595,10 @@ ConvertTreeToTokens(
 
 	default:
 
-	    /* Advance to the child node, which is an operator. */
+	    /*
+	     * Advance to the child node, which is an operator.
+	     */
+
 	    nodePtr = nodes + next;
 
 	    /*
@@ -1662,7 +1679,10 @@ ConvertTreeToTokens(
 	case MARK_RIGHT:
 	    next = nodePtr->right;
 
-	    /* Skip any white space that comes before the operator */
+	    /*
+	     * Skip any white space that comes before the operator.
+	     */
+
 	    scanned = TclParseAllWhiteSpace(start, numBytes);
 	    start += scanned;
 	    numBytes -= scanned;
@@ -1679,7 +1699,10 @@ ConvertTreeToTokens(
 	    case COMMA:
 	    case COLON:
 
-		/* No tokens for these lexemes -> nothing to do. */
+		/*
+		 * No tokens for these lexemes -> nothing to do.
+		 */
+
 		break;
 
 	    default:
@@ -1714,7 +1737,10 @@ ConvertTreeToTokens(
 
 	    case OPEN_PAREN:
 
-		/* Skip past matching close paren. */
+		/*
+		 * Skip past matching close paren.
+		 */
+
 		scanned = TclParseAllWhiteSpace(start, numBytes);
 		start += scanned;
 		numBytes -= scanned;
@@ -1723,7 +1749,7 @@ ConvertTreeToTokens(
 		numBytes -= scanned;
 		break;
 
-	    default: {
+	    default:
 
 		/*
 		 * Before we leave this node/operator/subexpression for the
@@ -1756,7 +1782,6 @@ ConvertTreeToTokens(
 		subExprTokenPtr[1].numComponents = 0;
 		subExprTokenIdx = parentIdx;
 		break;
-	    }
 	    }
 
 	    /*
@@ -2009,6 +2034,7 @@ ParseLexeme(
 	     */
 	    if (literal->typePtr == &tclDoubleType) {
 		const char *p = start;
+
 		while (p < end) {
 		    if (!isalnum(UCHAR(*p++))) {
 			/*
@@ -2028,6 +2054,7 @@ ParseLexeme(
 		 */
 		goto number;
 	    }
+
 	    /*
 	     * Otherwise, fall through and parse the whole as a bareword.
 	     */
@@ -2290,22 +2317,22 @@ CompileExprTree(
 		break;
 	    }
 	    case QUESTION:
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &(jumpPtr->jump));
+		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
 		break;
 	    case COLON:
 		CLANG_ASSERT(jumpPtr);
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			&(jumpPtr->next->jump));
+			&jumpPtr->next->jump);
 		envPtr->currStackDepth = jumpPtr->depth;
 		jumpPtr->offset = (envPtr->codeNext - envPtr->codeStart);
 		jumpPtr->convert = convert;
 		convert = 1;
 		break;
 	    case AND:
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &(jumpPtr->jump));
+		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
 		break;
 	    case OR:
-		TclEmitForwardJump(envPtr, TCL_TRUE_JUMP, &(jumpPtr->jump));
+		TclEmitForwardJump(envPtr, TCL_TRUE_JUMP, &jumpPtr->jump);
 		break;
 	    }
 	} else {
@@ -2348,12 +2375,12 @@ CompileExprTree(
 		break;
 	    case COLON:
 		CLANG_ASSERT(jumpPtr);
-		if (TclFixupForwardJump(envPtr, &(jumpPtr->next->jump),
+		if (TclFixupForwardJump(envPtr, &jumpPtr->next->jump,
 			(envPtr->codeNext - envPtr->codeStart)
 			- jumpPtr->next->jump.codeOffset, 127)) {
 		    jumpPtr->offset += 3;
 		}
-		TclFixupForwardJump(envPtr, &(jumpPtr->jump),
+		TclFixupForwardJump(envPtr, &jumpPtr->jump,
 			jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
 		convert |= jumpPtr->convert;
 		envPtr->currStackDepth = jumpPtr->depth + 1;
@@ -2369,18 +2396,18 @@ CompileExprTree(
 		CLANG_ASSERT(jumpPtr);
 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
 			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP,
-			&(jumpPtr->next->jump));
+			&jumpPtr->next->jump);
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "1" : "0", 1), envPtr);
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			&(jumpPtr->next->next->jump));
-		TclFixupForwardJumpToHere(envPtr, &(jumpPtr->next->jump), 127);
-		if (TclFixupForwardJumpToHere(envPtr, &(jumpPtr->jump), 127)) {
+			&jumpPtr->next->next->jump);
+		TclFixupForwardJumpToHere(envPtr, &jumpPtr->next->jump, 127);
+		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
 		    jumpPtr->next->next->jump.codeOffset += 3;
 		}
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
-		TclFixupForwardJumpToHere(envPtr, &(jumpPtr->next->next->jump),
+		TclFixupForwardJumpToHere(envPtr, &jumpPtr->next->next->jump,
 			127);
 		convert = 0;
 		envPtr->currStackDepth = jumpPtr->depth + 1;
@@ -2400,8 +2427,8 @@ CompileExprTree(
 		break;
 	    }
 	    if (nodePtr == rootPtr) {
-
 		/* We're done */
+
 		return;
 	    }
 	    nodePtr = nodes + nodePtr->p.parent;
@@ -2478,6 +2505,7 @@ CompileExprTree(
 		     * Don't generate a string rep, but if we have one
 		     * already, then use it to share via the literal table.
 		     */
+
 		    if (objPtr->bytes) {
 			Tcl_Obj *tableValue;
 
@@ -2486,7 +2514,10 @@ CompileExprTree(
 			tableValue = envPtr->literalArrayPtr[index].objPtr;
 			if ((tableValue->typePtr == NULL) &&
 				(objPtr->typePtr != NULL)) {
-			    /* Same intrep surgery as for OT_LITERAL */
+			    /*
+			     * Same intrep surgery as for OT_LITERAL.
+			     */
+
 			    tableValue->typePtr = objPtr->typePtr;
 			    tableValue->internalRep = objPtr->internalRep;
 			    objPtr->typePtr = NULL;
@@ -2511,6 +2542,7 @@ CompileExprTree(
  *----------------------------------------------------------------------
  *
  * TclSingleOpCmd --
+ *
  *	Implements the commands: ~, !, <<, >>, %, !=, ne, in, ni
  *	in the ::tcl::mathop namespace.  These commands have no
  *	extension to arbitrary arguments; they accept only exactly one
@@ -2537,7 +2569,7 @@ TclSingleOpCmd(
     OpNode nodes[2];
     Tcl_Obj *const *litObjv = objv + 1;
 
-    if (objc != 1+occdPtr->i.numArgs) {
+    if (objc != 1 + occdPtr->i.numArgs) {
 	Tcl_WrongNumArgs(interp, 1, objv, occdPtr->expected);
 	return TCL_ERROR;
     }
