@@ -1,3 +1,10 @@
+2011-10-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (TclDictWithInit, TclDictWithFinish):
+	* generic/tclCompCmds.c (TclCompileDictWithCmd): Experimental
+	compilation for the [dict with] subcommand, using parts factored out
+	from the interpreted version of the command.
+
 2011-09-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl, tools/tcltk-man2html-utils.tcl: More
