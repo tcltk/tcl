@@ -426,10 +426,14 @@ InstructionDesc const tclInstructionTable[] = {
          * variables with matched names. Produces list of keys bound as
          * result. Part of [dict with].
 	 * Stack:  ... dict path => ... keyList */
-    {"dictRecombine",    1,    -3,        0,    {OPERAND_NONE}},
+    {"dictRecombineStk", 1,    -3,        0,    {OPERAND_NONE}},
         /* Map variable contents back into a dictionary in a variable. Part of
          * [dict with].
 	 * Stack:  ... dictVarName path keyList => ... */
+    {"dictRecombineImm", 1,    -2,        1,    {OPERAND_LVT4}},
+        /* Map variable contents back into a dictionary in the local variable
+         * indicated by the LVT index. Part of [dict with].
+	 * Stack:  ... path keyList => ... */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
