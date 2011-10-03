@@ -370,6 +370,7 @@ TalInstDesc TalInstructionTable[] = {
     {"bitxor",		ASSEM_1BYTE,	INST_BITXOR,		2,	1},
     {"concat",		ASSEM_CONCAT1,	INST_CONCAT1,		INT_MIN,1},
     {"dictAppend",	ASSEM_LVT4,	INST_DICT_APPEND,	2,	1},
+    {"dictExpand",	ASSEM_1BYTE,	INST_DICT_EXPAND,	3,	1},
     {"dictGet",		ASSEM_DICT_GET, INST_DICT_GET,		INT_MIN,1},
     {"dictIncrImm",	ASSEM_SINT4_LVT4,
 					INST_DICT_INCR_IMM,	1,	1},
