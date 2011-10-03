@@ -3161,6 +3161,7 @@ FinalizeDictWith(
     Tcl_Obj *varName = data[0];
     Tcl_Obj *keysPtr = data[1];
     Tcl_Obj *pathPtr = data[2];
+    Var *varPtr, *arrayPtr;
 
     if (result == TCL_ERROR) {
 	Tcl_AddErrorInfo(interp, "\n    (body of \"dict with\")");
@@ -3183,7 +3184,14 @@ FinalizeDictWith(
      * Pack from local variables back into the dictionary.
      */
 
-    result = TclDictWithFinish(interp, varName, pathc, pathv, keysPtr);
+    varPtr = TclObjLookupVarEx(interp, varName, NULL, TCL_LEAVE_ERR_MSG, "set",
+	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+    if (varPtr == NULL) {
+	result = TCL_ERROR;
+    } else {
+	result = TclDictWithFinish(interp, varPtr, arrayPtr, varName, NULL, -1,
+		pathc, pathv, keysPtr);
+    }
 
     /*
      * Tidy up and return the real result (unless we had an error).
@@ -3289,11 +3297,27 @@ TclDictWithInit(
 
 int
 TclDictWithFinish(
-    Tcl_Interp *interp,
-    Tcl_Obj *varName,
-    int pathc,
-    Tcl_Obj *const pathv[],
-    Tcl_Obj *keysPtr)
+    Tcl_Interp *interp,		/* Command interpreter in which variable
+				 * exists. Used for state management, traces
+				 * and error reporting. */
+    Var *varPtr,		/* Reference to the variable holding the
+				 * dictionary. */
+    Var *arrayPtr,		/* Reference to the array containing the
+				 * variable, or NULL if the variable is a
+				 * scalar. */
+    Tcl_Obj *part1Ptr,		/* Name of an array (if part2 is non-NULL) or
+				 * the name of a variable. NULL if the 'index'
+				 * parameter is >= 0 */
+    Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
+				 * in the array part1. */
+    int index,			/* Index into the local variable table of the
+				 * variable, or -1. Only used when part1Ptr is
+				 * NULL. */
+    int pathc,			/* The number of elements in the path into the
+				 * dictionary. */
+    Tcl_Obj *const pathv[],	/* The elements of the path to the subdict. */
+    Tcl_Obj *keysPtr)		/* List of keys to be synchronized. This is
+				 * the result value from TclDictWithInit. */
 {
     Tcl_Obj *dictPtr, *leafPtr, *valPtr;
     int i, allocdict, keyc;
@@ -3303,7 +3327,8 @@ TclDictWithFinish(
      * If the dictionary variable doesn't exist, drop everything silently.
      */
 
-    dictPtr = Tcl_ObjGetVar2(interp, varName, NULL, 0);
+    dictPtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
+	    TCL_LEAVE_ERR_MSG, index);
     if (dictPtr == NULL) {
 	return TCL_OK;
     }
@@ -3385,8 +3410,8 @@ TclDictWithFinish(
      * Write back the outermost dictionary to the variable.
      */
 
-    if (Tcl_ObjSetVar2(interp, varName, NULL, dictPtr,
-	    TCL_LEAVE_ERR_MSG) == NULL) {
+    if (TclPtrSetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr, dictPtr,
+	    TCL_LEAVE_ERR_MSG, index) == NULL) {
 	if (allocdict) {
 	    TclDecrRefCount(dictPtr);
 	}
