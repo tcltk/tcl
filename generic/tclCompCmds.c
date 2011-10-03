@@ -1245,7 +1245,7 @@ TclCompileDictWithCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int i, range, varNameTmp, pathTmp, keysTmp, gotPath;
+    int i, range, varNameTmp, pathTmp, keysTmp, gotPath, dictVar = -1;
     Tcl_Token *dictVarTokenPtr, *tokenPtr;
     int savedStackDepth = envPtr->currStackDepth;
     JumpFixup jumpFixup;
@@ -1281,7 +1281,32 @@ TclCompileDictWithCmd(
      */
 
     gotPath = (parsePtr->numWords > 3);
-    varNameTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    if (dictVarTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	const char *ptr = dictVarTokenPtr[1].start;
+	const char *end = ptr + dictVarTokenPtr[1].size;
+	int notArray = 1;
+
+	/*
+	 * A conservative check for if we're working with an array since we
+	 * have a reasonable fallback if things are tricky.
+	 */
+
+	for (; ptr<end ; ptr++) {
+	    if (*ptr == '(' || *ptr == ')') {
+		notArray = 0;
+		break;
+	    }
+	}
+	if (notArray) {
+	    dictVar = TclFindCompiledLocal(dictVarTokenPtr[1].start,
+		    dictVarTokenPtr[1].size, 1, envPtr);
+	}
+    }
+    if (dictVar == -1) {
+	varNameTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    } else {
+	varNameTmp = -1;
+    }
     if (gotPath) {
 	pathTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     } else {
@@ -1294,11 +1319,13 @@ TclCompileDictWithCmd(
      */
 
     tokenPtr = dictVarTokenPtr;
-    CompileWord(envPtr, tokenPtr, interp, 0);
-    if (varNameTmp <= 255) {
-	TclEmitInstInt1(	INST_STORE_SCALAR1, varNameTmp,	envPtr);
-    } else {
-	TclEmitInstInt4(	INST_STORE_SCALAR4, varNameTmp,	envPtr);
+    if (varNameTmp > -1) {
+	CompileWord(envPtr, tokenPtr, interp, 0);
+	if (varNameTmp <= 255) {
+	    TclEmitInstInt1(	INST_STORE_SCALAR1, varNameTmp,	envPtr);
+	} else {
+	    TclEmitInstInt4(	INST_STORE_SCALAR4, varNameTmp,	envPtr);
+	}
     }
     tokenPtr = TokenAfter(tokenPtr);
     if (gotPath) {
@@ -1314,7 +1341,13 @@ TclCompileDictWithCmd(
 	}
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
-    TclEmitOpcode(		INST_LOAD_STK,			envPtr);
+    if (dictVar == -1) {
+	TclEmitOpcode(		INST_LOAD_STK,			envPtr);
+    } else if (dictVar <= 255) {
+	TclEmitInstInt1(	INST_LOAD_SCALAR1, dictVar,	envPtr);
+    } else {
+	TclEmitInstInt4(	INST_LOAD_SCALAR4, dictVar,	envPtr);
+    }
     if (gotPath) {
 	if (pathTmp <= 255) {
 	    TclEmitInstInt1(	INST_LOAD_SCALAR1, pathTmp,	envPtr);
@@ -1351,9 +1384,9 @@ TclCompileDictWithCmd(
      */
 
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
-    if (varNameTmp <= 255) {
+    if (varNameTmp > -1 && varNameTmp <= 255) {
 	TclEmitInstInt1(	INST_LOAD_SCALAR1, varNameTmp,	envPtr);
-    } else {
+    } else if (varNameTmp > -1) {
 	TclEmitInstInt4(	INST_LOAD_SCALAR4, varNameTmp,	envPtr);
     }
     if (gotPath) {
@@ -1370,7 +1403,11 @@ TclCompileDictWithCmd(
     } else {
 	TclEmitInstInt4(	INST_LOAD_SCALAR4, keysTmp,	envPtr);
     }
-    TclEmitOpcode(		INST_DICT_RECOMBINE,		envPtr);
+    if (dictVar == -1) {
+	TclEmitOpcode(		INST_DICT_RECOMBINE_STK,	envPtr);
+    } else {
+	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+    }
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
 
     /*
@@ -1381,9 +1418,9 @@ TclCompileDictWithCmd(
     TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
-    if (varNameTmp <= 255) {
+    if (varNameTmp > -1 && varNameTmp <= 255) {
 	TclEmitInstInt1(	INST_LOAD_SCALAR1, varNameTmp,	envPtr);
-    } else {
+    } else if (varNameTmp > -1) {
 	TclEmitInstInt4(	INST_LOAD_SCALAR4, varNameTmp,	envPtr);
     }
     if (parsePtr->numWords > 3) {
@@ -1400,7 +1437,11 @@ TclCompileDictWithCmd(
     } else {
 	TclEmitInstInt4(	INST_LOAD_SCALAR4, keysTmp,	envPtr);
     }
-    TclEmitOpcode(		INST_DICT_RECOMBINE,		envPtr);
+    if (dictVar == -1) {
+	TclEmitOpcode(		INST_DICT_RECOMBINE_STK,	envPtr);
+    } else {
+	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+    }
     TclEmitOpcode(		INST_RETURN_STK,		envPtr);
 
     /*
