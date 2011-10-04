@@ -1,3 +1,16 @@
+2011-10-03  Venkat Iyer <venkat@comit.com>
+	* library/tzdata/Africa/Dar_es_Salaam: Update to Olson's tzdata2011k
+	* library/tzdata/Africa/Kampala
+	* library/tzdata/Africa/Nairobi
+	* library/tzdata/Asia/Gaza
+	* library/tzdata/Europe/Kaliningrad
+	* library/tzdata/Europe/Kiev
+	* library/tzdata/Europe/Minsk
+	* library/tzdata/Europe/Simferopol
+	* library/tzdata/Europe/Uzhgorod
+	* library/tzdata/Europe/Zaporozhye
+	* library/tzdata/Pacific/Apia
+
 2011-09-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl, tools/tcltk-man2html-utils.tcl: More
@@ -104,6 +117,11 @@
 	* generic/tclParse.c
 	* tests/reg.test
 	* tests/utf.test
+
+2011-09-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclProc.c (ProcWrongNumArgs): [Bugs 3400658,3408830]:
+	Corrected the handling of procedure error messages (found by TclOO).
 
 2011-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
