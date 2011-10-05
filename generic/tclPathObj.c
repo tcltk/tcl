@@ -1269,6 +1269,12 @@ TclNewFSPathObj(
     Tcl_Obj *newPath, *tail = Tcl_NewStringObj(addStrRep, len);
 
     Tcl_IncrRefCount(tail);
+    if (addStrRep[0] == '~') {
+	newPath = AppendPath(dirPtr, tail);
+	Tcl_DecrRefCount(tail);
+	return newPath;
+    }
+
     newPath = Tcl_FSJoinToPath(dirPtr, 1, &tail);
     if (newPath != tail) {
 	Tcl_DecrRefCount(tail);
