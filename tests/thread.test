@@ -23,23 +23,41 @@ testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
 
 testConstraint notValgrind [expr {![testConstraint valgrind]}]
 
-if {[testConstraint testthread]} {
-    testthread errorproc ThreadError
+proc ThreadError {id info} {
+    global threadId threadError
+    set threadId $id
+    set threadError $info
 }
+
 if {[testConstraint thread]} {
     thread::errorproc ThreadError
 }
 
-    proc ThreadError {id info} {
-	global threadId threadError
-	set threadId $id
-	set threadError $info
-    }
+if {[testConstraint testthread]} {
+    testthread errorproc ThreadError
+
+    set mainThread [testthread id]
 
     proc ThreadNullError {id info} {
 	# ignore
     }
 
+    proc threadReap {} {
+	testthread errorproc ThreadNullError
+	while {[llength [testthread names]] > 1} {
+	    foreach tid [testthread names] {
+		if {$tid != [testthread id]} {
+		    catch {
+			testthread send -async $tid {testthread exit}
+		    }
+		}
+	    }
+	    after 1
+	}
+	testthread errorproc ThreadError
+	return [llength [testthread names]]
+    }
+}
 
 test thread-1.1 {Tcl_ThreadObjCmd: no args} {testthread} {
     list [catch {testthread} msg] $msg
@@ -70,7 +88,6 @@ test thread-1.5 {Tcl_ThreadObjCmd: thread create one shot} {thread} {
     set l
 } {1}
 test thread-1.6 {Tcl_ThreadObjCmd: thread exit} {thread} {
-    threadReap
     thread::create {{*}{}}
     update
     after 10
@@ -81,14 +98,14 @@ test thread-1.7 {Tcl_ThreadObjCmd: thread id args} {testthread} {
     list $x $msg
 } {1 {wrong # args: should be "testthread id"}}
 test thread-1.8 {Tcl_ThreadObjCmd: thread id} {testthread} {
-    string compare [testthread id] $::tcltest::mainThread
+    string compare [testthread id] $mainThread
 } {0}
 test thread-1.9 {Tcl_ThreadObjCmd: thread names args} {testthread} {
     set x [catch {testthread names x} msg]
     list $x $msg
 } {1 {wrong # args: should be "testthread names"}}
 test thread-1.10 {Tcl_ThreadObjCmd: thread id} {testthread} {
-    string compare [testthread names] $::tcltest::mainThread
+    string compare [testthread names] $mainThread
 } {0}
 test thread-1.11 {Tcl_ThreadObjCmd: send args} {testthread} {
     set x [catch {testthread send} msg]
@@ -105,7 +122,7 @@ test thread-1.13 {Tcl_ThreadObjCmd: send args} {thread} {
     set five
 } 5
 test thread-1.14 {Tcl_ThreadObjCmd: send bad id} {testthread} {
-    set tid [expr $::tcltest::mainThread + 10]
+    set tid [expr $mainThread + 10]
     set x [catch {testthread send $tid {set x 5}} msg]
     list $x $msg
 } {1 {invalid thread id}}
@@ -249,7 +266,7 @@ test thread-7.2 {cancel: nonint} {testthread} {
     list $x $msg
 } {1 {expected integer but got "abc"}}
 test thread-7.3 {cancel: bad id} {testthread} {
-    set tid [expr $::tcltest::mainThread + 10]
+    set tid [expr $mainThread + 10]
     set x [catch {testthread cancel $tid} msg]
     list $x $msg
 } {1 {invalid thread id}}
