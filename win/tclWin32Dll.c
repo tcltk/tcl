@@ -17,20 +17,6 @@
 #endif
 
 /*
- * The following data structures are used when loading the thunking library
- * for execing child processes under Win32s.
- */
-
-typedef DWORD (WINAPI UT32PROC)(LPVOID lpBuff, DWORD dwUserDefined,
-	LPVOID *lpTranslationList);
-
-typedef BOOL (WINAPI UTREGISTER)(HANDLE hModule, LPCSTR SixteenBitDLL,
-	LPCSTR InitName, LPCSTR ProcName, UT32PROC **ThirtyTwoBitThunk,
-	FARPROC UT32Callback, LPVOID Buff);
-
-typedef void (WINAPI UTUNREGISTER)(HANDLE hModule);
-
-/*
  * The following variables keep track of information about this DLL on a
  * per-instance basis. Each time this DLL is loaded, it gets its own new data
  * segment with its own copy of all static and global information.
@@ -65,72 +51,6 @@ typedef struct EXCEPTION_REGISTRATION {
 #endif
 
 static Tcl_Encoding winTCharEncoding = NULL;
-
-/*
- * The following function table is used to dispatch to wide-character
- * versions of the operating system calls.
- */
-
-static const TclWinProcs winProcs = {
-    1,
-    (BOOL (WINAPI *)(const TCHAR *, LPDCB)) BuildCommDCB,
-    (TCHAR *(WINAPI *)(TCHAR *)) CharLower,
-    (BOOL (WINAPI *)(const TCHAR *, const TCHAR *, BOOL)) CopyFile,
-    (BOOL (WINAPI *)(const TCHAR *, LPSECURITY_ATTRIBUTES)) CreateDirectory,
-    (HANDLE (WINAPI *)(const TCHAR *, DWORD, DWORD, SECURITY_ATTRIBUTES *,
-	    DWORD, DWORD, HANDLE)) CreateFile,
-    (BOOL (WINAPI *)(const TCHAR *, TCHAR *, LPSECURITY_ATTRIBUTES,
-	    LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, const TCHAR *,
-	    LPSTARTUPINFO, LPPROCESS_INFORMATION)) CreateProcess,
-    (BOOL (WINAPI *)(const TCHAR *)) DeleteFile,
-    (HANDLE (WINAPI *)(const TCHAR *, WIN32_FIND_DATAT *)) FindFirstFile,
-    (BOOL (WINAPI *)(HANDLE, WIN32_FIND_DATAT *)) FindNextFile,
-    (BOOL (WINAPI *)(TCHAR *, LPDWORD)) GetComputerName,
-    (DWORD (WINAPI *)(DWORD, TCHAR *)) GetCurrentDirectory,
-    (DWORD (WINAPI *)(const TCHAR *)) GetFileAttributes,
-    (DWORD (WINAPI *)(const TCHAR *, DWORD nBufferLength, TCHAR *,
-	    TCHAR **)) GetFullPathName,
-    (DWORD (WINAPI *)(const TCHAR *, TCHAR *, DWORD)) GetShortPathName,
-    (UINT (WINAPI *)(const TCHAR *, const TCHAR *, UINT uUnique,
-	    TCHAR *)) GetTempFileName,
-    (DWORD (WINAPI *)(DWORD, TCHAR *)) GetTempPath,
-    (BOOL (WINAPI *)(const TCHAR *, TCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
-	    TCHAR *, DWORD)) GetVolumeInformation,
-    (HINSTANCE (WINAPI *)(const TCHAR *, HANDLE, DWORD)) LoadLibraryEx,
-    (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFile,
-    (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectory,
-    (DWORD (WINAPI *)(const TCHAR *, const TCHAR *, const TCHAR *, DWORD,
-	    TCHAR *, TCHAR **)) SearchPath,
-    (BOOL (WINAPI *)(const TCHAR *)) SetCurrentDirectory,
-    (BOOL (WINAPI *)(const TCHAR *, DWORD)) SetFileAttributes,
-    (BOOL (WINAPI *)(const TCHAR *, GET_FILEEX_INFO_LEVELS,
-	    LPVOID)) GetFileAttributesEx,
-    (BOOL (WINAPI *)(const TCHAR *, const TCHAR*,
-	    LPSECURITY_ATTRIBUTES)) CreateHardLink,
-    (HANDLE (WINAPI *)(const TCHAR*, UINT, LPVOID, UINT,
-	    LPVOID, DWORD)) FindFirstFileEx,
-    (BOOL (WINAPI *)(const TCHAR*, TCHAR*,
-	    DWORD)) GetVolumeNameForVolumeMountPoint,
-    (DWORD (WINAPI *)(const TCHAR*, TCHAR*,
-	    DWORD)) GetLongPathName,
-    /* Security SDK */
-    (BOOL (WINAPI *)(LPCTSTR, SECURITY_INFORMATION,
-	    PSECURITY_DESCRIPTOR, DWORD, LPDWORD)) GetFileSecurity,
-    (BOOL (WINAPI *) (SECURITY_IMPERSONATION_LEVEL)) ImpersonateSelf,
-    (BOOL (WINAPI *) (HANDLE, DWORD, BOOL, PHANDLE)) OpenThreadToken,
-    (BOOL (WINAPI *) (void)) RevertToSelf,
-    (void (WINAPI *) (PDWORD, PGENERIC_MAPPING)) MapGenericMask,
-    (BOOL (WINAPI *)(PSECURITY_DESCRIPTOR, HANDLE, DWORD,
-	    PGENERIC_MAPPING, PPRIVILEGE_SET, LPDWORD, LPDWORD, LPBOOL)) AccessCheck,
-    /* ReadConsole and WriteConsole */
-    (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsole,
-    (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsole,
-    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserName,
-    (const TCHAR *(*)(const char *, int, Tcl_DString *)) Tcl_WinUtfToTChar,
-    (const char *(*)(const TCHAR *, int, Tcl_DString *)) Tcl_WinTCharToUtf
-};
-
-const TclWinProcs *const tclWinProcs = &winProcs;
 
 /*
  * The following declaration is for the VC++ DLL entry point.

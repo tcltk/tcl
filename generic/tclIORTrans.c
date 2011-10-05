@@ -161,6 +161,8 @@ typedef struct {
     int mode;			/* Mask of R/W mode */
     int nonblocking;		/* Flag: Channel is blocking or not. */
     int readIsDrained;		/* Flag: Read buffers are flushed. */
+    int dead;			/* Boolean signal that some operations
+				 * should no longer be attempted. */
     ResultBuffer result;
 } ReflectedTransform;
 
@@ -1008,27 +1010,27 @@ ReflectClose(
      * the per-interp DeleteReflectedTransformMap exit-handler.
      */
 
-    if (rtPtr->interp) {
+    if (!rtPtr->dead) {
 	rtmPtr = GetReflectedTransformMap(rtPtr->interp);
 	hPtr = Tcl_FindHashEntry(&rtmPtr->map, Tcl_GetString(rtPtr->handle));
 	if (hPtr) {
 	    Tcl_DeleteHashEntry(hPtr);
 	}
-    }
 
-    /*
-     * In a threaded interpreter we manage a per-thread map as well, to allow
-     * us to survive if the script level pulls the rug out under a channel by
-     * deleting the owning thread.
-     */
+	/*
+	 * In a threaded interpreter we manage a per-thread map as well,
+	 * to allow us to survive if the script level pulls the rug out
+	 * under a channel by deleting the owning thread.
+	 */
 
 #ifdef TCL_THREADS
-    rtmPtr = GetThreadReflectedTransformMap();
-    hPtr = Tcl_FindHashEntry(&rtmPtr->map, Tcl_GetString(rtPtr->handle));
-    if (hPtr) {
-	Tcl_DeleteHashEntry(hPtr);
-    }
+	rtmPtr = GetThreadReflectedTransformMap();
+	hPtr = Tcl_FindHashEntry(&rtmPtr->map, Tcl_GetString(rtPtr->handle));
+	if (hPtr) {
+	    Tcl_DeleteHashEntry(hPtr);
+	}
 #endif
+    }
 
     Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
     return errorCodeSet ? errorCode : ((result == TCL_OK) ? EOK : EINVAL);
@@ -1771,6 +1773,7 @@ NewReflectedTransform(
     rtPtr->readIsDrained = 0;
     rtPtr->nonblocking =
 	    (((Channel *) parentChan)->state->flags & CHANNEL_NONBLOCKING);
+    rtPtr->dead = 0;
 
     /*
      * Query parent for current blocking mode.
@@ -1950,7 +1953,7 @@ InvokeTclMethod(
     int result;			/* Result code of method invokation */
     Tcl_Obj *resObj = NULL;	/* Result of method invokation. */
 
-    if (!rtPtr->interp) {
+    if (rtPtr->dead) {
 	/*
 	 * The transform is marked as dead. Bail out immediately, with an
 	 * appropriate error.
@@ -2163,7 +2166,8 @@ DeleteReflectedTransformMap(
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch)) {
 	rtPtr = Tcl_GetHashValue(hPtr);
-	rtPtr->interp = NULL;
+
+	rtPtr->dead = 1;
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(&rtmPtr->map);
@@ -2173,6 +2177,32 @@ DeleteReflectedTransformMap(
     /*
      * The origin interpreter for one or more reflected channels is gone.
      */
+
+    /*
+     * Get the map of all channels handled by the current thread. This is a
+     * ReflectedTransformMap, but on a per-thread basis, not per-interp. Go
+     * through the channels and remove all which were handled by this
+     * interpreter. They have already been marked as dead.
+     */
+
+    rtmPtr = GetThreadReflectedTransformMap();
+    for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
+	    hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&hSearch)) {
+	rtPtr = Tcl_GetHashValue(hPtr);
+
+	if (rtPtr->interp != interp) {
+	    /*
+	     * Ignore entries for other interpreters.
+	     */
+
+	    continue;
+	}
+
+	rtPtr->dead = 1;
+	FreeReflectedTransformArgs(rtPtr);
+	Tcl_DeleteHashEntry(hPtr);
+    }
 
     /*
      * Go through the list of pending results and cancel all whose events were
@@ -2210,29 +2240,6 @@ DeleteReflectedTransformMap(
     }
     Tcl_MutexUnlock(&rtForwardMutex);
 
-    /*
-     * Get the map of all channels handled by the current thread. This is a
-     * ReflectedTransformMap, but on a per-thread basis, not per-interp. Go
-     * through the channels and remove all which were handled by this
-     * interpreter. They have already been marked as dead.
-     */
-
-    rtmPtr = GetThreadReflectedTransformMap();
-    for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
-	    hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&hSearch)) {
-	rtPtr = Tcl_GetHashValue(hPtr);
-
-	if (rtPtr->interp != interp) {
-	    /*
-	     * Ignore entries for other interpreters.
-	     */
-
-	    continue;
-	}
-
-	Tcl_DeleteHashEntry(hPtr);
-    }
 #endif
 }
 
@@ -2303,6 +2310,24 @@ DeleteThreadReflectedTransformMap(
      */
 
     /*
+     * Get the map of all channels handled by the current thread. This is a
+     * ReflectedTransformMap, but on a per-thread basis, not per-interp. Go
+     * through the channels, remove all, mark them as dead.
+     */
+
+    rtmPtr = GetThreadReflectedTransformMap();
+    for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
+	    hPtr != NULL;
+	    hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch)) {
+	ReflectedTransform *rtPtr = Tcl_GetHashValue(hPtr);
+
+	rtPtr->dead = 1;
+	FreeReflectedTransformArgs(rtPtr);
+	Tcl_DeleteHashEntry(hPtr);
+    }
+    ckfree(rtmPtr);
+
+    /*
      * Go through the list of pending results and cancel all whose events were
      * destined for this thread. While this is in progress we block any
      * other access to the list of pending results.
@@ -2340,24 +2365,6 @@ DeleteThreadReflectedTransformMap(
 	Tcl_ConditionNotify(&resultPtr->done);
     }
     Tcl_MutexUnlock(&rtForwardMutex);
-
-    /*
-     * Get the map of all channels handled by the current thread. This is a
-     * ReflectedTransformMap, but on a per-thread basis, not per-interp. Go
-     * through the channels, remove all, mark them as dead.
-     */
-
-    rtmPtr = GetThreadReflectedTransformMap();
-    for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
-	    hPtr != NULL;
-	    hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch)) {
-	ReflectedTransform *rtPtr = Tcl_GetHashValue(hPtr);
-
-	rtPtr->interp = NULL;
-	FreeReflectedTransformArgs(rtPtr);
-	Tcl_DeleteHashEntry(hPtr);
-    }
-    ckfree(rtmPtr);
 }
 
 static void
@@ -2377,7 +2384,7 @@ ForwardOpToOwnerThread(
 
     Tcl_MutexLock(&rtForwardMutex);
 
-    if (rtPtr->interp == NULL) {
+    if (rtPtr->dead) {
 	/*
 	 * The channel is marked as dead. Bail out immediately, with an
 	 * appropriate error. Do not forget to unlock the mutex on this path.
@@ -2403,6 +2410,7 @@ ForwardOpToOwnerThread(
 
     resultPtr->src = Tcl_GetCurrentThread();
     resultPtr->dst = dst;
+    resultPtr->dsti = rtPtr->interp;
     resultPtr->done = NULL;
     resultPtr->result = -1;
     resultPtr->evPtr = evPtr;
