@@ -1,7 +1,7 @@
 2011-10-05  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclWinInt.h:   Remove tclWinProcs, as it is no longer
-	* generic/tclWin32Dll.c: being used.
+	* win/tclWinInt.h:   Remove tclWinProcs, as it is no longer
+	* win/tclWin32Dll.c: being used.
 
 2011-10-03  Venkat Iyer <venkat@comit.com>
 
