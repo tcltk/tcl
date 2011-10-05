@@ -868,7 +868,7 @@ Tcl_FSJoinPath(
 	char *strElt, *ptr;
 
 	Tcl_ListObjIndex(NULL, listObj, i, &elt);
-
+#if 0
 	/*
 	 * This is a special case where we can be much more efficient, where
 	 * we are joining a single relative path onto an object that is
@@ -951,6 +951,7 @@ Tcl_FSJoinPath(
 		}
 	    }
 	}
+#endif
 	strElt = Tcl_GetStringFromObj(elt, &strEltLen);
 	type = TclGetPathType(elt, &fsPtr, &driveNameLength, &driveName);
 	if (type != TCL_PATH_RELATIVE) {
@@ -1264,6 +1265,16 @@ TclNewFSPathObj(
     const char *addStrRep,
     int len)
 {
+#if 1
+    Tcl_Obj *newPath, *tail = Tcl_NewStringObj(addStrRep, len);
+
+    Tcl_IncrRefCount(tail);
+    newPath = Tcl_FSJoinToPath(dirPtr, 1, &tail);
+    if (newPath != tail) {
+	Tcl_DecrRefCount(tail);
+    }
+    return newPath;
+#else
     FsPath *fsPathPtr;
     Tcl_Obj *pathPtr;
     ThreadSpecificData *tsdPtr;
@@ -1358,6 +1369,7 @@ TclNewFSPathObj(
     }
 
     return pathPtr;
+#endif
 }
 
 static Tcl_Obj *
