@@ -1992,9 +1992,8 @@ TclNRExecuteByteCode(
      * Push the callback for bytecode execution
      */
     
-    TclNRAddCallback(interp, TEBCresume, TD,
-	    /*resume*/ INT2PTR(0), NULL, NULL);
-    
+    TclNRAddCallback(interp, TEBCresume, TD, /*resume*/ INT2PTR(0),
+	    NULL, NULL);
     return TCL_OK;
 }
 
@@ -5625,7 +5624,7 @@ TEBCresume(
 
     {
 	int opnd2, allocateDict, done, i, allocdict;
-	Tcl_Obj *dictPtr, *statePtr, *keyPtr;
+	Tcl_Obj *dictPtr, *statePtr, *keyPtr, *listPtr, *varNamePtr, *keysPtr;
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
 	Tcl_DictSearch *searchPtr;
 	DictUpdateInfo *duiPtr;
@@ -6105,6 +6104,78 @@ TEBCresume(
 	    }
 	}
 	NEXT_INST_F(9, 1, 0);
+
+    case INST_DICT_EXPAND:
+	dictPtr = OBJ_UNDER_TOS;
+	listPtr = OBJ_AT_TOS;
+	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	    TRACE_WITH_OBJ(("%.30s %.30s => ERROR: ",
+		    O2S(dictPtr), O2S(listPtr)), Tcl_GetObjResult(interp));
+	    goto gotError;
+	}
+	objResultPtr = TclDictWithInit(interp, dictPtr, objc, objv);
+	if (objResultPtr == NULL) {
+	    TRACE_WITH_OBJ(("%.30s %.30s => ERROR: ",
+		    O2S(dictPtr), O2S(listPtr)), Tcl_GetObjResult(interp));
+	    goto gotError;
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(1, 2, 1);
+
+    case INST_DICT_RECOMBINE_STK:
+	keysPtr = POP_OBJECT();
+	varNamePtr = OBJ_UNDER_TOS;
+	listPtr = OBJ_AT_TOS;
+	TRACE(("\"%.30s\" \"%.30s\" \"%.30s\" => ",
+		O2S(varNamePtr), O2S(valuePtr), O2S(keysPtr)));
+	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    TclDecrRefCount(keysPtr);
+	    goto gotError;
+	}
+	varPtr = TclObjLookupVarEx(interp, varNamePtr, NULL,
+		TCL_LEAVE_ERR_MSG, "set", 1, 1, &arrayPtr);
+	if (varPtr == NULL) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    TclDecrRefCount(keysPtr);
+	    goto gotError;
+	}
+	DECACHE_STACK_INFO();
+	result = TclDictWithFinish(interp, varPtr,arrayPtr,varNamePtr,NULL,-1,
+		objc, objv, keysPtr);
+	CACHE_STACK_INFO();
+	TclDecrRefCount(keysPtr);
+	if (result != TCL_OK) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    goto gotError;
+	}
+	TRACE_APPEND(("OK\n"));
+	NEXT_INST_F(1, 2, 0);
+
+    case INST_DICT_RECOMBINE_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	listPtr = OBJ_UNDER_TOS;
+	keysPtr = OBJ_AT_TOS;
+	varPtr = LOCAL(opnd);
+	TRACE(("%u <- \"%.30s\" \"%.30s\" => ", opnd, O2S(valuePtr),
+		O2S(keysPtr)));
+	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    goto gotError;
+	}
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	DECACHE_STACK_INFO();
+	result = TclDictWithFinish(interp, varPtr, NULL, NULL, NULL, opnd,
+		objc, objv, keysPtr);
+	CACHE_STACK_INFO();
+	if (result != TCL_OK) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    goto gotError;
+	}
+	TRACE_APPEND(("OK\n"));
+	NEXT_INST_F(5, 2, 0);
     }
 
     /*

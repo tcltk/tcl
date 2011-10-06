@@ -1,3 +1,10 @@
+2011-10-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (TclDictWithInit, TclDictWithFinish):
+	* generic/tclCompCmds.c (TclCompileDictWithCmd): Experimental
+	compilation for the [dict with] subcommand, using parts factored out
+	from the interpreted version of the command.
+
 2011-10-05  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinInt.h:   Remove tclWinProcs, as it is no longer
