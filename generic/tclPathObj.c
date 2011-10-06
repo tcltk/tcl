@@ -1284,7 +1284,7 @@ TclNewFSPathObj(
     Tcl_Obj *newPath, *tail = Tcl_NewStringObj(addStrRep, len);
 
     Tcl_IncrRefCount(tail);
-    if (addStrRep[0] == '~') {
+    if (len == 0 || addStrRep[0] == '~') {
 	newPath = AppendPath(dirPtr, tail);
 	Tcl_DecrRefCount(tail);
 	return newPath;
