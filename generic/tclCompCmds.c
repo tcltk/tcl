@@ -1234,6 +1234,226 @@ TclCompileDictLappendCmd(
     TclEmitInstInt4( INST_DICT_LAPPEND, dictVarIndex, envPtr);
     return TCL_OK;
 }
+
+int
+TclCompileDictWithCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    int i, range, varNameTmp, pathTmp, keysTmp, gotPath, dictVar = -1;
+    Tcl_Token *dictVarTokenPtr, *tokenPtr;
+    int savedStackDepth = envPtr->currStackDepth;
+    JumpFixup jumpFixup;
+
+    /*
+     * There must be at least one argument after the command and we must be in
+     * a procedure so we can have local temporaries.
+     */
+
+    if (envPtr->procPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (parsePtr->numWords < 3) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse the command (trivially). Expect the following:
+     *   dict with <any (varName)> ?<any> ...? <literal>
+     */
+
+    dictVarTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    tokenPtr = TokenAfter(dictVarTokenPtr);
+    for (i=3 ; i<parsePtr->numWords ; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Allocate local (unnamed, untraced) working variables.
+     */
+
+    gotPath = (parsePtr->numWords > 3);
+    if (dictVarTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	const char *ptr = dictVarTokenPtr[1].start;
+	const char *end = ptr + dictVarTokenPtr[1].size;
+	int notArray = 1;
+
+	/*
+	 * A conservative check for if we're working with an array since we
+	 * have a reasonable fallback if things are tricky.
+	 */
+
+	for (; ptr<end ; ptr++) {
+	    if (*ptr == '(' || *ptr == ')') {
+		notArray = 0;
+		break;
+	    }
+	}
+	if (notArray) {
+	    dictVar = TclFindCompiledLocal(dictVarTokenPtr[1].start,
+		    dictVarTokenPtr[1].size, 1, envPtr);
+	}
+    }
+    if (dictVar == -1) {
+	varNameTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    } else {
+	varNameTmp = -1;
+    }
+    if (gotPath) {
+	pathTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    } else {
+	pathTmp = -1;
+    }
+    keysTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+
+    /*
+     * Issue instructions. First, the part to expand the dictionary.
+     */
+
+    tokenPtr = dictVarTokenPtr;
+    if (varNameTmp > -1) {
+	CompileWord(envPtr, tokenPtr, interp, 0);
+	if (varNameTmp <= 255) {
+	    TclEmitInstInt1(	INST_STORE_SCALAR1, varNameTmp,	envPtr);
+	} else {
+	    TclEmitInstInt4(	INST_STORE_SCALAR4, varNameTmp,	envPtr);
+	}
+    }
+    tokenPtr = TokenAfter(tokenPtr);
+    if (gotPath) {
+	for (i=2 ; i<parsePtr->numWords-1 ; i++) {
+	    CompileWord(envPtr, tokenPtr, interp, i-1);
+	    tokenPtr = TokenAfter(tokenPtr);
+	}
+	TclEmitInstInt4(	INST_LIST, parsePtr->numWords-3,envPtr);
+	if (pathTmp <= 255) {
+	    TclEmitInstInt1(	INST_STORE_SCALAR1, pathTmp,	envPtr);
+	} else {
+	    TclEmitInstInt4(	INST_STORE_SCALAR4, pathTmp,	envPtr);
+	}
+	TclEmitOpcode(		INST_POP,			envPtr);
+    }
+    if (dictVar == -1) {
+	TclEmitOpcode(		INST_LOAD_STK,			envPtr);
+    } else if (dictVar <= 255) {
+	TclEmitInstInt1(	INST_LOAD_SCALAR1, dictVar,	envPtr);
+    } else {
+	TclEmitInstInt4(	INST_LOAD_SCALAR4, dictVar,	envPtr);
+    }
+    if (gotPath) {
+	if (pathTmp <= 255) {
+	    TclEmitInstInt1(	INST_LOAD_SCALAR1, pathTmp,	envPtr);
+	} else {
+	    TclEmitInstInt4(	INST_LOAD_SCALAR4, pathTmp,	envPtr);
+	}
+    } else {
+	PushLiteral(envPtr, "", 0);
+    }
+    TclEmitOpcode(		INST_DICT_EXPAND,		envPtr);
+    if (keysTmp <= 255) {
+	TclEmitInstInt1(	INST_STORE_SCALAR1, keysTmp,	envPtr);
+    } else {
+	TclEmitInstInt4(	INST_STORE_SCALAR4, keysTmp,	envPtr);
+    }
+    TclEmitOpcode(		INST_POP,			envPtr);
+
+    /*
+     * Now the body of the [dict with].
+     */
+
+    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    TclEmitInstInt4(		INST_BEGIN_CATCH4, range,	envPtr);
+
+    ExceptionRangeStarts(envPtr, range);
+    envPtr->currStackDepth++;
+    SetLineInformation(parsePtr->numWords-1);
+    CompileBody(envPtr, tokenPtr, interp);
+    envPtr->currStackDepth = savedStackDepth;
+    ExceptionRangeEnds(envPtr, range);
+
+    /*
+     * Now fold the results back into the dictionary in the OK case.
+     */
+
+    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    if (varNameTmp > -1 && varNameTmp <= 255) {
+	TclEmitInstInt1(	INST_LOAD_SCALAR1, varNameTmp,	envPtr);
+    } else if (varNameTmp > -1) {
+	TclEmitInstInt4(	INST_LOAD_SCALAR4, varNameTmp,	envPtr);
+    }
+    if (gotPath) {
+	if (pathTmp <= 255) {
+	    TclEmitInstInt1(	INST_LOAD_SCALAR1, pathTmp,	envPtr);
+	} else {
+	    TclEmitInstInt4(	INST_LOAD_SCALAR4, pathTmp,	envPtr);
+	}
+    } else {
+	PushLiteral(envPtr, "", 0);
+    }
+    if (keysTmp <= 255) {
+	TclEmitInstInt1(	INST_LOAD_SCALAR1, keysTmp,	envPtr);
+    } else {
+	TclEmitInstInt4(	INST_LOAD_SCALAR4, keysTmp,	envPtr);
+    }
+    if (dictVar == -1) {
+	TclEmitOpcode(		INST_DICT_RECOMBINE_STK,	envPtr);
+    } else {
+	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+    }
+    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
+
+    /*
+     * Now fold the results back into the dictionary in the exception case.
+     */
+
+    ExceptionRangeTarget(envPtr, range, catchOffset);
+    TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
+    TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
+    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    if (varNameTmp > -1 && varNameTmp <= 255) {
+	TclEmitInstInt1(	INST_LOAD_SCALAR1, varNameTmp,	envPtr);
+    } else if (varNameTmp > -1) {
+	TclEmitInstInt4(	INST_LOAD_SCALAR4, varNameTmp,	envPtr);
+    }
+    if (parsePtr->numWords > 3) {
+	if (pathTmp <= 255) {
+	    TclEmitInstInt1(	INST_LOAD_SCALAR1, pathTmp,	envPtr);
+	} else {
+	    TclEmitInstInt4(	INST_LOAD_SCALAR4, pathTmp,	envPtr);
+	}
+    } else {
+	PushLiteral(envPtr, "", 0);
+    }
+    if (keysTmp <= 255) {
+	TclEmitInstInt1(	INST_LOAD_SCALAR1, keysTmp,	envPtr);
+    } else {
+	TclEmitInstInt4(	INST_LOAD_SCALAR4, keysTmp,	envPtr);
+    }
+    if (dictVar == -1) {
+	TclEmitOpcode(		INST_DICT_RECOMBINE_STK,	envPtr);
+    } else {
+	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+    }
+    TclEmitOpcode(		INST_RETURN_STK,		envPtr);
+
+    /*
+     * Prepare for the start of the next command.
+     */
+
+    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
+	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
+		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
+    }
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
