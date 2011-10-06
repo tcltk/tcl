@@ -84,8 +84,10 @@ typedef struct FsPath {
     Tcl_Obj *cwdPtr;		/* If null, path is absolute, else this points
 				 * to the cwd object used for this path. We
 				 * have a refCount on the object. */
+#if 0
     int flags;			/* Flags to describe interpretation - see
 				 * below. */
+#endif
     ClientData nativePathPtr;	/* Native representation of this path, which
 				 * is filesystem dependent. */
     int filesystemEpoch;	/* Used to ensure the path representation was
@@ -97,12 +99,14 @@ typedef struct FsPath {
 				 * use for this path. */
 } FsPath;
 
+#if 0
 /*
  * Flag values for FsPath->flags.
  */
 
 #define TCLPATH_APPENDED 1
 #define TCLPATH_NEEDNORM 4
+#endif
 
 /*
  * Define some macros to give us convenient access to path-object specific
@@ -112,7 +116,9 @@ typedef struct FsPath {
 #define PATHOBJ(pathPtr) ((FsPath *) (pathPtr)->internalRep.otherValuePtr)
 #define SETPATHOBJ(pathPtr,fsPathPtr) \
 	((pathPtr)->internalRep.otherValuePtr = (void *) (fsPathPtr))
+#if 0
 #define PATHFLAGS(pathPtr) (PATHOBJ(pathPtr)->flags)
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -511,8 +517,11 @@ TclFSGetPathType(
 		NULL);
     }
 
+#if 0
     if (PATHFLAGS(pathPtr) == 0) {
+#endif
 	/* The path is not absolute... */
+
 #ifdef __WIN32__
 	/* ... on Windows we must make another call to determine whether
 	 * it's relative or volumerelative [Bug 2571597]. */
@@ -522,9 +531,11 @@ TclFSGetPathType(
 	/* On other systems, quickly deduce !absolute -> relative */
 	return TCL_PATH_RELATIVE;
 #endif
+#if 0
     }
     return TclFSGetPathType(fsPathPtr->cwdPtr, filesystemPtrPtr,
 	    driveNameLengthPtr);
+#endif
 }
 
 /*
@@ -564,9 +575,9 @@ TclPathPart(
     Tcl_Obj *pathPtr,		/* Path to take dirname of */
     Tcl_PathPart portion)	/* Requested portion of name */
 {
+#if 0
     if (pathPtr->typePtr == &tclFsPathType) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
-
 	if (TclFSEpochOk(fsPathPtr->filesystemEpoch)
 		&& (PATHFLAGS(pathPtr) != 0)) {
 	    switch (portion) {
@@ -689,10 +700,12 @@ TclPathPart(
 	    goto standardPath;
 	}
     } else {
+#endif
 	int splitElements;
 	Tcl_Obj *splitPtr, *resultPtr;
-
+#if 0
     standardPath:
+#endif
 	resultPtr = NULL;
 	if (portion == TCL_PATH_EXTENSION) {
 	    return GetExtension(pathPtr);
@@ -765,7 +778,9 @@ TclPathPart(
 	Tcl_IncrRefCount(resultPtr);
 	TclDecrRefCount(splitPtr);
 	return resultPtr;
+#if 0
     }
+#endif
 }
 
 /*
@@ -1452,6 +1467,7 @@ TclFSMakePathRelative(
     int cwdLen, len;
     const char *tempStr;
 
+#if 0
     if (pathPtr->typePtr == &tclFsPathType) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
 
@@ -1460,6 +1476,7 @@ TclFSMakePathRelative(
 	    return fsPathPtr->normPathPtr;
 	}
     }
+#endif
 
     /*
      * We know the cwd is a normalised object which does not end in a
@@ -1568,7 +1585,9 @@ TclFSMakePathFromNormalized(
     fsPathPtr->filesystemEpoch = tsdPtr->filesystemEpoch;
 
     SETPATHOBJ(pathPtr, fsPathPtr);
+#if 0
     PATHFLAGS(pathPtr) = 0;
+#endif
     pathPtr->typePtr = &tclFsPathType;
 
     return TCL_OK;
@@ -1647,7 +1666,9 @@ Tcl_FSNewNativePath(
     fsPathPtr->filesystemEpoch = tsdPtr->filesystemEpoch;
 
     SETPATHOBJ(pathPtr, fsPathPtr);
+#if 0
     PATHFLAGS(pathPtr) = 0;
+#endif
     pathPtr->typePtr = &tclFsPathType;
 
     return pathPtr;
@@ -1685,6 +1706,7 @@ Tcl_FSGetTranslatedPath(
     }
     srcFsPathPtr = PATHOBJ(pathPtr);
     if (srcFsPathPtr->translatedPathPtr == NULL) {
+#if 0
 	if (PATHFLAGS(pathPtr) != 0) {
 	    /*
 	     * We lack a translated path result, but we have a directory
@@ -1705,6 +1727,7 @@ Tcl_FSGetTranslatedPath(
 	    Tcl_IncrRefCount(retObj);
 	    Tcl_DecrRefCount(translatedCwdPtr);
 	} else {
+#endif
 	    /*
 	     * It is a pure absolute, normalized path object. This is
 	     * something like being a 'pure list'. The object's string,
@@ -1712,7 +1735,9 @@ Tcl_FSGetTranslatedPath(
 	     */
 
 	    retObj = srcFsPathPtr->normPathPtr;
+#if 0
 	}
+#endif
     } else {
 	/*
 	 * It is an ordinary path object.
@@ -1797,6 +1822,7 @@ Tcl_FSGetNormalizedPath(
     }
     fsPathPtr = PATHOBJ(pathPtr);
 
+#if 0
     if (PATHFLAGS(pathPtr) != 0) {
 	/*
 	 * This is a special path object which is the result of something like
@@ -1908,6 +1934,7 @@ Tcl_FSGetNormalizedPath(
 	}
 	PATHFLAGS(pathPtr) = 0;
     }
+#endif
 
     /*
      * Ensure cwd hasn't changed.
@@ -2570,7 +2597,9 @@ SetFsPathFromAny(
 
     TclFreeIntRep(pathPtr);
     SETPATHOBJ(pathPtr, fsPathPtr);
+#if 0
     PATHFLAGS(pathPtr) = 0;
+#endif
     pathPtr->typePtr = &tclFsPathType;
 #if defined(__CYGWIN__) && defined(__WIN32__)
     if (copied) {
@@ -2660,7 +2689,9 @@ DupFsPathInternalRep(
 	Tcl_IncrRefCount(copyFsPathPtr->cwdPtr);
     }
 
+#if 0
     copyFsPathPtr->flags = srcFsPathPtr->flags;
+#endif
 
     if (srcFsPathPtr->fsRecPtr != NULL
 	    && srcFsPathPtr->nativePathPtr != NULL) {
@@ -2709,7 +2740,11 @@ UpdateStringOfFsPath(
     int cwdLen;
     Tcl_Obj *copy;
 
-    if (PATHFLAGS(pathPtr) == 0 || fsPathPtr->cwdPtr == NULL) {
+    if (
+#if 0
+PATHFLAGS(pathPtr) == 0 ||
+#endif
+		fsPathPtr->cwdPtr == NULL) {
 	Tcl_Panic("Called UpdateStringOfFsPath with invalid object");
     }
 
