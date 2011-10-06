@@ -375,6 +375,8 @@ TalInstDesc TalInstructionTable[] = {
     {"dictIncrImm",	ASSEM_SINT4_LVT4,
 					INST_DICT_INCR_IMM,	1,	1},
     {"dictLappend",	ASSEM_LVT4,	INST_DICT_LAPPEND,	2,	1},
+    {"dictRecombineStk",ASSEM_1BYTE,	INST_DICT_RECOMBINE_STK,3,	0},
+    {"dictRecombineImm",ASSEM_LVT4,	INST_DICT_RECOMBINE_IMM,2,	0},
     {"dictSet",		ASSEM_DICT_SET, INST_DICT_SET,		INT_MIN,1},
     {"dictUnset",	ASSEM_DICT_UNSET,
 					INST_DICT_UNSET,	INT_MIN,1},
