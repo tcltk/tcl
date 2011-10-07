@@ -885,7 +885,7 @@ ReflectClose(
 {
     ReflectedTransform *rtPtr = clientData;
     int errorCode, errorCodeSet = 0;
-    int result;			/* Result code for 'close' */
+    int result = TCL_OK;	/* Result code for 'close' */
     Tcl_Obj *resObj;		/* Result data for 'close' */
     ReflectedTransformMap *rtmPtr;
 				/* Map of reflected transforms with handlers
