@@ -1151,7 +1151,7 @@ ConsoleReaderThread(LPVOID arg)
 	    DWORD err;
 	    err = GetLastError();
 	    
-	    if (err == EOF) {
+	    if (err == (DWORD)EOF) {
 		infoPtr->readFlags = CONSOLE_EOF;
 	    }
 	}
