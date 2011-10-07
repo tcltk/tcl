@@ -1,4 +1,10 @@
+2011-10-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIORChan.c:    Fix gcc warning
+	(discovered with latest mingw, based on gcc 4.6.1)
+
 2011-10-03  Venkat Iyer <venkat@comit.com>
+
 	* library/tzdata/Africa/Dar_es_Salaam: Update to Olson's tzdata2011k
 	* library/tzdata/Africa/Kampala
 	* library/tzdata/Africa/Nairobi
