@@ -75,6 +75,8 @@ typedef struct TestAsyncHandler {
 				/* Next is list of handlers. */
 } TestAsyncHandler;
 
+TCL_DECLARE_MUTEX(asyncTestMutex);
+
 static TestAsyncHandler *firstHandler = NULL;
 
 /*
@@ -309,6 +311,8 @@ static int		TestpanicCmd(ClientData dummy,
 static int		TestfinexitObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int              TestparseargsCmd(ClientData dummy, Tcl_Interp *interp,
+                            int objc, Tcl_Obj *const objv[]);
 static int		TestparserObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -622,6 +626,7 @@ Tcltest_Init(
 	    NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfinexit", TestfinexitObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testparseargs", TestparseargsCmd,NULL,NULL);
     Tcl_CreateObjCommand(interp, "testparser", TestparserObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparsevar", TestparsevarObjCmd,
@@ -791,17 +796,20 @@ TestasyncCmd(
 	    goto wrongNumArgs;
 	}
 	asyncPtr = ckalloc(sizeof(TestAsyncHandler));
+	asyncPtr->command = ckalloc(strlen(argv[2]) + 1);
+	strcpy(asyncPtr->command, argv[2]);
+        Tcl_MutexLock(&asyncTestMutex);
 	asyncPtr->id = nextId;
 	nextId++;
 	asyncPtr->handler = Tcl_AsyncCreate(AsyncHandlerProc,
-		(ClientData) asyncPtr);
-	asyncPtr->command = ckalloc(strlen(argv[2]) + 1);
-	strcpy(asyncPtr->command, argv[2]);
+                                            INT2PTR(asyncPtr->id));
 	asyncPtr->nextPtr = firstHandler;
 	firstHandler = asyncPtr;
+        Tcl_MutexUnlock(&asyncTestMutex);
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(asyncPtr->id));
     } else if (strcmp(argv[1], "delete") == 0) {
 	if (argc == 2) {
+            Tcl_MutexLock(&asyncTestMutex);
 	    while (firstHandler != NULL) {
 		asyncPtr = firstHandler;
 		firstHandler = asyncPtr->nextPtr;
@@ -809,6 +817,7 @@ TestasyncCmd(
 		ckfree(asyncPtr->command);
 		ckfree(asyncPtr);
 	    }
+            Tcl_MutexUnlock(&asyncTestMutex);
 	    return TCL_OK;
 	}
 	if (argc != 3) {
@@ -817,6 +826,7 @@ TestasyncCmd(
 	if (Tcl_GetInt(interp, argv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+        Tcl_MutexLock(&asyncTestMutex);
 	for (prevPtr = NULL, asyncPtr = firstHandler; asyncPtr != NULL;
 		prevPtr = asyncPtr, asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id != id) {
@@ -832,6 +842,7 @@ TestasyncCmd(
 	    ckfree(asyncPtr);
 	    break;
 	}
+        Tcl_MutexUnlock(&asyncTestMutex);
     } else if (strcmp(argv[1], "mark") == 0) {
 	if (argc != 5) {
 	    goto wrongNumArgs;
@@ -862,7 +873,7 @@ TestasyncCmd(
 	    if (asyncPtr->id == id) {
 		Tcl_ThreadId threadID;
 		if (Tcl_CreateThread(&threadID, AsyncThreadProc,
-			(ClientData) asyncPtr, TCL_THREAD_STACK_DEFAULT,
+			INT2PTR(id), TCL_THREAD_STACK_DEFAULT,
 			TCL_THREAD_NOFLAGS) != TCL_OK) {
 		    Tcl_SetResult(interp, "can't create thread", TCL_STATIC);
 		    return TCL_ERROR;
@@ -886,14 +897,28 @@ TestasyncCmd(
 
 static int
 AsyncHandlerProc(
-    ClientData clientData,	/* Pointer to TestAsyncHandler structure. */
+    ClientData clientData,	/* If of TestAsyncHandler structure. 
+                                 * in global list. */
     Tcl_Interp *interp,		/* Interpreter in which command was
 				 * executed, or NULL. */
     int code)			/* Current return code from command. */
 {
-    TestAsyncHandler *asyncPtr = (TestAsyncHandler *) clientData;
+    TestAsyncHandler *asyncPtr;
+    int id = PTR2INT(clientData);
     const char *listArgv[4], *cmd;
     char string[TCL_INTEGER_SPACE];
+
+    Tcl_MutexLock(&asyncTestMutex);
+    for (asyncPtr = firstHandler; asyncPtr != NULL;
+         asyncPtr = asyncPtr->nextPtr) {
+        if (asyncPtr->id == id) break;
+    }
+    Tcl_MutexUnlock(&asyncTestMutex);
+
+    if (!asyncPtr) {
+        /* Woops - this one was deleted between the AsyncMark and now */
+        return TCL_OK;
+    }
 
     TclFormatInt(string, code);
     listArgv[0] = asyncPtr->command;
@@ -932,12 +957,22 @@ AsyncHandlerProc(
 #ifdef TCL_THREADS
 static Tcl_ThreadCreateType
 AsyncThreadProc(
-    ClientData clientData)	/* Parameter is a pointer to a
+    ClientData clientData)	/* Parameter is the id of a
 				 * TestAsyncHandler, defined above. */
 {
-    TestAsyncHandler *asyncPtr = clientData;
+    TestAsyncHandler *asyncPtr;
+    int id = PTR2INT(clientData);
+
     Tcl_Sleep(1);
-    Tcl_AsyncMark(asyncPtr->handler);
+    Tcl_MutexLock(&asyncTestMutex);
+    for (asyncPtr = firstHandler; asyncPtr != NULL;
+         asyncPtr = asyncPtr->nextPtr) {
+        if (asyncPtr->id == id) {
+            Tcl_AsyncMark(asyncPtr->handler);
+            break;
+        }
+    }
+    Tcl_MutexUnlock(&asyncTestMutex);
     Tcl_ExitThread(TCL_OK);
     TCL_THREAD_CREATE_RETURN;
 }
@@ -3939,10 +3974,8 @@ TestregexpObjCmd(
 			info.matches[ii].end - 1);
 	    }
 	}
-	valuePtr = Tcl_ObjSetVar2(interp, varPtr, NULL, newPtr, 0);
+	valuePtr = Tcl_ObjSetVar2(interp, varPtr, NULL, newPtr, TCL_LEAVE_ERR_MSG);
 	if (valuePtr == NULL) {
-	    Tcl_AppendResult(interp, "couldn't set variable \"",
-		    Tcl_GetString(varPtr), "\"", NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -7052,9 +7085,54 @@ TestconcatobjCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TestparseargsCmd --
+ *
+ *	This procedure implements the "testparseargs" command. It is used to
+ *	test that Tcl_ParseArgsObjv does indeed return the right number of
+ *	arguments. In other words, that [Bug 3413857] was fixed properly.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestparseargsCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    int count = objc, foo = 0;
+    Tcl_Obj **remObjv, *result[3];
+    Tcl_ArgvInfo argTable[] = {
+        {TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
+        TCL_ARGV_AUTO_REST, TCL_ARGV_AUTO_HELP, TCL_ARGV_TABLE_END
+    };
+
+    if (Tcl_ParseArgsObjv(interp, argTable, &count, objv, &remObjv)!=TCL_OK) {
+        return TCL_ERROR;
+    }
+    result[0] = Tcl_NewIntObj(foo);
+    result[1] = Tcl_NewIntObj(count);
+    result[2] = Tcl_NewListObj(count, remObjv);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
+    ckfree(remObjv);
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */

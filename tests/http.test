@@ -51,14 +51,13 @@ if {![file exists $httpdFile]} {
     set removeHttpd 1
 }
 
-if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
-    set httpthread [testthread create "
-	source [list $httpdFile]
-	testthread wait
-    "]
-    testthread send $httpthread [list set port $port]
-    testthread send $httpthread [list set bindata $bindata]
-    testthread send $httpthread {httpd_init $port}
+catch {package require Thread 2.6}
+if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
+    set httpthread [thread::create -preserved]
+    thread::send $httpthread [list source $httpdFile]
+    thread::send $httpthread [list set port $port]
+    thread::send $httpthread [list set bindata $bindata]
+    thread::send $httpthread {httpd_init $port}
     puts "Running httpd in thread $httpthread"
 } else {
     if {![file exists $httpdFile]} {
@@ -365,6 +364,32 @@ test http-3.26 {http::meta} -setup {
     http::cleanup $token
     unset -nocomplain m token
 } -result {Content-Length Content-Type Date X-Check}
+test http-3.27 {http::geturl: -headers override -type} -body {
+    set token [http::geturl $url/headers -type "text/plain" -query dummy \
+	    -headers [list "Content-Type" "text/plain;charset=utf-8"]]
+    http::data $token
+} -cleanup {
+    http::cleanup $token
+} -match regexp -result {(?n)Accept \*/\*
+Host .*
+User-Agent .*
+Connection close
+Content-Type {text/plain;charset=utf-8}
+Accept-Encoding .*
+Content-Length 5}
+test http-3.28 {http::geturl: -headers override -type default} -body {
+    set token [http::geturl $url/headers -query dummy \
+	    -headers [list "Content-Type" "text/plain;charset=utf-8"]]
+    http::data $token
+} -cleanup {
+    http::cleanup $token
+} -match regexp -result {(?n)Accept \*/\*
+Host .*
+User-Agent .*
+Connection close
+Content-Type {text/plain;charset=utf-8}
+Accept-Encoding .*
+Content-Length 5}
 
 test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]
@@ -590,9 +615,7 @@ catch {unset badurl}
 catch {unset port}
 catch {unset data}
 if {[info exists httpthread]} {
-    testthread send -async $httpthread {
-	testthread exit
-    }
+    thread::release $httpthread
 } else {
     close $listen
 }

@@ -435,36 +435,40 @@ Tcl_LoadObjCmd(
     }
 
     /*
-     * Record the fact that the package has been loaded in the target
-     * interpreter.
+     * Test for whether the initialization failed. If so, transfer the error
+     * from the target interpreter to the originating one.
      */
 
-    if (code == TCL_OK) {
-	/*
-	 * Update the proper reference count.
-	 */
-
-	Tcl_MutexLock(&packageMutex);
-	if (Tcl_IsSafe(target)) {
-	    pkgPtr->safeInterpRefCount++;
-	} else {
-	    pkgPtr->interpRefCount++;
-	}
-	Tcl_MutexUnlock(&packageMutex);
-
-	/*
-	 * Refetch ipFirstPtr: loading the package may have introduced
-	 * additional static packages at the head of the linked list!
-	 */
-
-	ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
-	ipPtr = ckalloc(sizeof(InterpPackage));
-	ipPtr->pkgPtr = pkgPtr;
-	ipPtr->nextPtr = ipFirstPtr;
-	Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
-    } else {
+    if (code != TCL_OK) {
 	Tcl_TransferResult(target, code, interp);
+	goto done;
     }
+
+    /*
+     * Record the fact that the package has been loaded in the target
+     * interpreter.
+     *
+     * Update the proper reference count.
+     */
+
+    Tcl_MutexLock(&packageMutex);
+    if (Tcl_IsSafe(target)) {
+	pkgPtr->safeInterpRefCount++;
+    } else {
+	pkgPtr->interpRefCount++;
+    }
+    Tcl_MutexUnlock(&packageMutex);
+
+    /*
+     * Refetch ipFirstPtr: loading the package may have introduced additional
+     * static packages at the head of the linked list!
+     */
+
+    ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
+    ipPtr = ckalloc(sizeof(InterpPackage));
+    ipPtr->pkgPtr = pkgPtr;
+    ipPtr->nextPtr = ipFirstPtr;
+    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
 
   done:
     Tcl_DStringFree(&pkgName);
@@ -1031,28 +1035,27 @@ TclGetLoadedPackages(
 				 * otherwise, just return info about this
 				 * interpreter. */
 {
-    /* TODO: Use Tcl_Obj APIs to generate this info for cleanliness. */
     Tcl_Interp *target;
     LoadedPackage *pkgPtr;
     InterpPackage *ipPtr;
-    const char *prefix;
+    Tcl_Obj *resultObj, *pkgDesc[2];
 
     if (targetName == NULL) {
 	/*
 	 * Return information about all of the available packages.
 	 */
 
-	prefix = "{";
+	resultObj = Tcl_NewObj();
 	Tcl_MutexLock(&packageMutex);
 	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
 		pkgPtr = pkgPtr->nextPtr) {
-	    Tcl_AppendResult(interp, prefix, NULL);
-	    Tcl_AppendElement(interp, pkgPtr->fileName);
-	    Tcl_AppendElement(interp, pkgPtr->packageName);
-	    Tcl_AppendResult(interp, "}", NULL);
-	    prefix = " {";
+	    pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);
+	    pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, -1);
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    Tcl_NewListObj(2, pkgDesc));
 	}
 	Tcl_MutexUnlock(&packageMutex);
+	Tcl_SetObjResult(interp, resultObj);
 	return TCL_OK;
     }
 
@@ -1066,15 +1069,14 @@ TclGetLoadedPackages(
 	return TCL_ERROR;
     }
     ipPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
-    prefix = "{";
+    resultObj = Tcl_NewObj();
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	pkgPtr = ipPtr->pkgPtr;
-	Tcl_AppendResult(interp, prefix, NULL);
-	Tcl_AppendElement(interp, pkgPtr->fileName);
-	Tcl_AppendElement(interp, pkgPtr->packageName);
-	Tcl_AppendResult(interp, "}", NULL);
-	prefix = " {";
+	pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);
+	pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, -1);
+	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewListObj(2, pkgDesc));
     }
+    Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
 

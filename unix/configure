@@ -1335,7 +1335,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL="b1.2"
+TCL_PATCH_LEVEL="b2"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
@@ -6479,7 +6479,7 @@ if test "${tcl_cv_cc_visibility_hidden+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
-	    if test "$GCC" = yes; then
+	    if test "$SHARED_BUILD" = 1; then
 
 		hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fvisibility=hidden -Werror"
 		cat >conftest.$ac_ext <<_ACEOF
@@ -6492,6 +6492,9 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
+#if !defined(__GNUC__) || __GNUC__ < 4
+#error visibility hidden is not supported for this compiler
+#endif
 
   ;
   return 0;
@@ -6549,11 +6552,6 @@ _ACEOF
 
 
 else
-
-
-cat >>confdefs.h <<\_ACEOF
-#define NO_VIZ
-_ACEOF
 
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	cat >conftest.$ac_ext <<_ACEOF
@@ -11383,7 +11381,8 @@ else
 fi
 
 if test "x$NEED_FAKE_RFC2553" = "x1"; then
-   cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define NEED_FAKE_RFC2553 1
 _ACEOF
 

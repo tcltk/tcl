@@ -17,7 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 
 testConstraint testinterpdelete [llength [info commands testinterpdelete]]
 
-set hidden_cmds {cd encoding exec exit fconfigure glob load open pwd socket source tcl:file:atime tcl:file:attributes tcl:file:copy tcl:file:delete tcl:file:dirname tcl:file:executable tcl:file:exists tcl:file:extension tcl:file:isdirectory tcl:file:isfile tcl:file:link tcl:file:lstat tcl:file:mkdir tcl:file:mtime tcl:file:nativename tcl:file:normalize tcl:file:owned tcl:file:readable tcl:file:readlink tcl:file:rename tcl:file:rootname tcl:file:size tcl:file:stat tcl:file:tail tcl:file:tempfile tcl:file:type tcl:file:volumes tcl:file:writable unload}
+set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source tcl:file:atime tcl:file:attributes tcl:file:copy tcl:file:delete tcl:file:dirname tcl:file:executable tcl:file:exists tcl:file:extension tcl:file:isdirectory tcl:file:isfile tcl:file:link tcl:file:lstat tcl:file:mkdir tcl:file:mtime tcl:file:nativename tcl:file:normalize tcl:file:owned tcl:file:readable tcl:file:readlink tcl:file:rename tcl:file:rootname tcl:file:size tcl:file:stat tcl:file:tail tcl:file:tempfile tcl:file:type tcl:file:volumes tcl:file:writable unload}
 
 foreach i [interp slaves] {
   interp delete $i
@@ -584,7 +584,6 @@ test interp-14.10 {testing interp-alias: error messages} -setup {
     invoked from within
 "a 1"}
 
-
 # part 15: testing file sharing
 test interp-15.1 {testing file sharing} {
     catch {interp delete z}
@@ -665,8 +664,7 @@ test interp-15.8 {testing file transferring} -body {
 # Torture tests for interpreter deletion order
 #
 proc kill {} {interp delete xxx}
-
-test interp-15.9 {testing deletion order} {
+test interp-16.0 {testing deletion order} {
     catch {interp delete xxx}
     interp create xxx
     xxx alias kill kill
@@ -3497,6 +3495,13 @@ test interp-35.22 {interp time limits normalize milliseconds} -body {
 } -cleanup {
     interp delete $i
 } -result {2 500}
+# Bug 3398794
+test interp-35.23 {interp command limits can't touch current interp} -body {
+    interp limit {} commands -value 10
+} -returnCodes error -result {limits on current interpreter inaccessible}
+test interp-35.24 {interp time limits can't touch current interp} -body {
+    interp limit {} time -seconds 2
+} -returnCodes error -result {limits on current interpreter inaccessible}
 
 test interp-36.1 {interp bgerror syntax} -body {
     interp bgerror
@@ -3610,7 +3615,6 @@ test interp-38.8 {interp debug basic setup} -body {
 } -returnCodes {
     error
 } -result {wrong # args: should be "interp debug path ?-frame ?bool??"}
-
 
 # cleanup
 unset -nocomplain hidden_cmds

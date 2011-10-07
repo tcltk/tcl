@@ -27,18 +27,6 @@ _INSTALLDIR	= C:\Program Files\Tcl
 _INSTALLDIR	= $(INSTALLDIR:/=\)
 !endif
 
-!ifndef MACHINE
-!if "$(CPU)" == "" || "$(CPU)" == "i386"
-MACHINE		= IX86
-!else
-MACHINE         = $(CPU)
-!endif
-!endif
-
-!ifndef CFG_ENCODING
-CFG_ENCODING	= \"cp1252\"
-!endif
-
 #----------------------------------------------------------
 # Set the proper copy method to avoid overwrite questions
 # to the user when copying files and selecting the right
@@ -63,6 +51,50 @@ NULL    = \NUL # Used in testing directory existence
 ERRNULL = >NUL # Win9x shell cannot redirect stderr
 !endif
 MKDIR   = mkdir
+
+#------------------------------------------------------------------------------
+# Determine the host and target architectures and compiler version.
+#------------------------------------------------------------------------------
+
+_HASH=^#
+_VC_MANIFEST_EMBED_EXE=
+_VC_MANIFEST_EMBED_DLL=
+VCVER=0
+!if ![echo VCVERSION=_MSC_VER > vercl.x] \
+    && ![echo $(_HASH)if defined(_M_IX86) >> vercl.x] \
+    && ![echo ARCH=IX86 >> vercl.x] \
+    && ![echo $(_HASH)elif defined(_M_AMD64) >> vercl.x] \
+    && ![echo ARCH=AMD64 >> vercl.x] \
+    && ![echo $(_HASH)endif >> vercl.x] \
+    && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
+!include vercl.i
+!if ![echo VCVER= ^\> vercl.vc] \
+    && ![set /a $(VCVERSION) / 100 - 6 >> vercl.vc]
+!include vercl.vc
+!endif
+!endif
+!if ![del $(ERRNUL) /q/f vercl.x vercl.i vercl.vc]
+!endif
+
+!if ![reg query HKLM\Hardware\Description\System\CentralProcessor\0 /v Identifier | findstr /i x86]
+NATIVE_ARCH=IX86
+!else
+NATIVE_ARCH=AMD64
+!endif
+
+# Since MSVC8 we must deal with manifest resources.
+!if $(VCVERSION) >= 1400
+_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
+!endif
+
+!ifndef MACHINE
+MACHINE=$(ARCH)
+!endif
+
+!ifndef CFG_ENCODING
+CFG_ENCODING	= \"cp1252\"
+!endif
 
 !message ===============================================================================
 
@@ -173,36 +205,6 @@ LINKERFLAGS     =
 
 !if [nmakehlp -l -ltcg]
 LINKERFLAGS     =-ltcg
-!endif
-
-#----------------------------------------------------------
-# MSVC8 (ships with Visual Studio 2005) generates a manifest
-# file that we should link into the binaries. This is how.
-#----------------------------------------------------------
-
-_VC_MANIFEST_EMBED_EXE=
-_VC_MANIFEST_EMBED_DLL=
-VCVER=0
-!if ![echo VCVERSION=_MSC_VER > vercl.x] \
-    && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
-!include vercl.i
-!if $(VCVERSION) >= 1600
-VCVER=10
-!elseif $(VCVERSION) >= 1500
-VCVER=9
-!elseif $(VCVERSION) >= 1400
-VCVER=8
-!elseif $(VCVERSION) >= 1300
-VCVER=7
-!elseif $(VCVERSION) >= 1200
-VCVER=6
-!endif
-!endif
-
-# Since MSVC8 we must deal with manifest resources.
-!if $(VCVERSION) >= 1400
-_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
-_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
 !endif
 
 #----------------------------------------------------------
@@ -698,6 +700,7 @@ TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 !message *** Suffix for binaries will be '$(SUFX)'
 !message *** Optional defines are '$(OPTDEFINES)'
 !message *** Compiler version $(VCVER). Target machine is $(MACHINE)
+!message *** Host architecture is $(NATIVE_ARCH)
 !message *** Compiler options '$(COMPILERFLAGS) $(OPTIMIZATIONS) $(DEBUGFLAGS) $(WARNINGS)'
 !message *** Link options '$(LINKERFLAGS)'
 

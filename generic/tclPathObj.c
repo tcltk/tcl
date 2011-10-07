@@ -1156,7 +1156,6 @@ Tcl_FSConvertToPathType(
 	    UpdateStringOfFsPath(pathPtr);
 	}
 	FreeFsPathInternalRep(pathPtr);
-	pathPtr->typePtr = NULL;
     }
 
     return Tcl_ConvertToType(interp, pathPtr, &tclFsPathType);
@@ -1175,7 +1174,6 @@ Tcl_FSConvertToPathType(
      *             UpdateStringOfFsPath(pathPtr);
      *         }
      *         FreeFsPathInternalRep(pathPtr);
-     *         pathPtr->typePtr = NULL;
      *         return Tcl_ConvertToType(interp, pathPtr, &tclFsPathType);
      *     }
      * }
@@ -1903,7 +1901,6 @@ Tcl_FSGetNormalizedPath(
 		UpdateStringOfFsPath(pathPtr);
 	    }
 	    FreeFsPathInternalRep(pathPtr);
-	    pathPtr->typePtr = NULL;
 	    if (Tcl_ConvertToType(interp, pathPtr, &tclFsPathType) != TCL_OK) {
 		return NULL;
 	    }
@@ -2214,7 +2211,6 @@ TclFSEnsureEpochOk(
 	    UpdateStringOfFsPath(pathPtr);
 	}
 	FreeFsPathInternalRep(pathPtr);
-	pathPtr->typePtr = NULL;
 	if (SetFsPathFromAny(NULL, pathPtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -2621,29 +2617,29 @@ DupFsPathInternalRep(
 
     SETPATHOBJ(copyPtr, copyFsPathPtr);
 
-    if (srcFsPathPtr->translatedPathPtr != NULL) {
+    if (srcFsPathPtr->translatedPathPtr == srcPtr) {
+	/* Cycle in src -> make cycle in copy. */
+	copyFsPathPtr->translatedPathPtr = copyPtr;
+    } else {
 	copyFsPathPtr->translatedPathPtr = srcFsPathPtr->translatedPathPtr;
-	if (copyFsPathPtr->translatedPathPtr != copyPtr) {
+	if (copyFsPathPtr->translatedPathPtr != NULL) {
 	    Tcl_IncrRefCount(copyFsPathPtr->translatedPathPtr);
 	}
-    } else {
-	copyFsPathPtr->translatedPathPtr = NULL;
     }
 
-    if (srcFsPathPtr->normPathPtr != NULL) {
+    if (srcFsPathPtr->normPathPtr == srcPtr) {
+	/* Cycle in src -> make cycle in copy. */
+	copyFsPathPtr->normPathPtr = copyPtr;
+    } else {
 	copyFsPathPtr->normPathPtr = srcFsPathPtr->normPathPtr;
-	if (copyFsPathPtr->normPathPtr != copyPtr) {
+	if (copyFsPathPtr->normPathPtr != NULL) {
 	    Tcl_IncrRefCount(copyFsPathPtr->normPathPtr);
 	}
-    } else {
-	copyFsPathPtr->normPathPtr = NULL;
     }
 
-    if (srcFsPathPtr->cwdPtr != NULL) {
-	copyFsPathPtr->cwdPtr = srcFsPathPtr->cwdPtr;
+    copyFsPathPtr->cwdPtr = srcFsPathPtr->cwdPtr;
+    if (copyFsPathPtr->cwdPtr != NULL) {
 	Tcl_IncrRefCount(copyFsPathPtr->cwdPtr);
-    } else {
-	copyFsPathPtr->cwdPtr = NULL;
     }
 
     copyFsPathPtr->flags = srcFsPathPtr->flags;

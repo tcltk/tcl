@@ -175,6 +175,12 @@ test util-3.5.1 {Tcl_ConverCountedElement procedure - quote leading '#'} {
     rename #\{ {}
     set result
 } {#}
+test util-3.6 {Tcl_ConvertElement, Bug 3371644} {
+    interp create #\\
+    interp alias {} x #\\ concat
+    interp target {} x ;# Crash if bug not fixed
+    interp delete #\\
+} {}
 
 test util-4.1 {Tcl_ConcatObj - backslash-space at end of argument} {
     concat a {b\ } c
@@ -3857,6 +3863,35 @@ test util-16.1.17.306 {8.4 compatible formatting of doubles} \
 test util-16.1.17.307 {8.4 compatible formatting of doubles} \
     {expr 1e307} \
     9.9999999999999999e+306
+
+test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
+    set r {}
+    foreach {input} {
+	0x1ffffffffffffc000
+	0x1ffffffffffffc800
+	0x1ffffffffffffd000
+	0x1ffffffffffffd800
+	0x1ffffffffffffe000
+	0x1ffffffffffffe800
+	0x1fffffffffffff000
+	0x1fffffffffffff800
+    } {
+	binary scan [binary format q [expr double($input)]] wu x
+	lappend r [format %#llx $x]
+	binary scan [binary format q [expr double(-$input)]] wu x
+	lappend r [format %#llx $x]
+    }
+    set r
+} [list {*}{
+    0x43fffffffffffffc 0xc3fffffffffffffc 
+    0x43fffffffffffffc 0xc3fffffffffffffc
+    0x43fffffffffffffd 0xc3fffffffffffffd
+    0x43fffffffffffffe 0xc3fffffffffffffe
+    0x43fffffffffffffe 0xc3fffffffffffffe
+    0x43fffffffffffffe 0xc3fffffffffffffe
+    0x43ffffffffffffff 0xc3ffffffffffffff
+    0x4400000000000000 0xc400000000000000
+}]
 
 set ::tcl_precision $saved_precision
 

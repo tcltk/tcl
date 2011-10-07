@@ -345,10 +345,7 @@ CatchObjCmdCallback(
 
     if (objc >= 3) {
 	if (NULL == Tcl_ObjSetVar2(interp, varNamePtr, NULL,
-		Tcl_GetObjResult(interp), 0)) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp,
-		    "couldn't save command result in variable", NULL);
+		Tcl_GetObjResult(interp), TCL_LEAVE_ERR_MSG)) {
 	    return TCL_ERROR;
 	}
     }
@@ -356,11 +353,8 @@ CatchObjCmdCallback(
 	Tcl_Obj *options = Tcl_GetReturnOptions(interp, result);
 
 	if (NULL == Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL,
-		options, 0)) {
+		options, TCL_LEAVE_ERR_MSG)) {
 	    Tcl_DecrRefCount(options);
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp,
-		    "couldn't save return options in variable", NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -647,6 +641,8 @@ EncodingDirsObjCmd(
     if (Tcl_SetEncodingSearchPath(objv[1]) == TCL_ERROR) {
 	Tcl_AppendResult(interp, "expected directory list but got \"",
 		TclGetString(objv[1]), "\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
+		NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, objv[1]);
@@ -736,6 +732,16 @@ EvalCmdErrMsg(
 
 int
 Tcl_EvalObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, TclNREvalObjCmd, dummy, objc, objv);    
+}
+
+int
+TclNREvalObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -1057,6 +1063,17 @@ TclMakeFileCommandSafe(
     }
     Tcl_DStringFree(&oldBuf);
     Tcl_DStringFree(&newBuf);
+
+    /*
+     * Ugh. The [file] command is now actually safe, but it is assumed by
+     * scripts that it is not, which messes up security policies. [Bug
+     * 3211758]
+     */
+
+    if (Tcl_HideCommand(interp, "file", "file") != TCL_OK) {
+	Tcl_Panic("problem making 'file' safe: %s",
+		Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
     return TCL_OK;
 }
 
@@ -1788,6 +1805,8 @@ PathFilesystemCmd(
     fsInfo = Tcl_FSFileSystemInfo(objv[1]);
     if (fsInfo == NULL) {
 	Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
+		Tcl_GetString(objv[1]), NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, fsInfo);
@@ -1939,6 +1958,8 @@ PathSplitCmd(
     if (res == NULL) {
 	Tcl_AppendResult(interp, "could not read \"", TclGetString(objv[1]),
 		"\": no such file or directory", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH",
+		NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, res);
@@ -2038,6 +2059,8 @@ FilesystemSeparatorCmd(
 
 	if (separatorObj == NULL) {
 	    Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
+		    Tcl_GetString(objv[1]), NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, separatorObj);
@@ -2592,6 +2615,8 @@ TclNRForeachCmd(
 		&statePtr->varcList[i], &statePtr->varvList[i]);
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_AppendResult(interp, "foreach varlist is empty", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FOREACH",
+		    "NEEDVARS", NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}

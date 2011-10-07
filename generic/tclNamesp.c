@@ -160,25 +160,25 @@ static const Tcl_ObjType nsNameType = {
  */
 
 static const EnsembleImplMap defaultNamespaceMap[] = {
-    {"children",        NamespaceChildrenCmd},
-    {"code",            NamespaceCodeCmd},
-    {"current",         NamespaceCurrentCmd},
-    {"delete",          NamespaceDeleteCmd},
-    {"ensemble",        TclNamespaceEnsembleCmd},
-    {"eval",            NamespaceEvalCmd,       NULL, NRNamespaceEvalCmd},
-    {"exists",          NamespaceExistsCmd},
-    {"export",          NamespaceExportCmd},
-    {"forget",          NamespaceForgetCmd},
-    {"import",          NamespaceImportCmd},
-    {"inscope",         NamespaceInscopeCmd,    NULL, NRNamespaceInscopeCmd},
-    {"origin",          NamespaceOriginCmd},
-    {"parent",          NamespaceParentCmd},
-    {"path",            NamespacePathCmd},
-    {"qualifiers",      NamespaceQualifiersCmd},
-    {"tail",            NamespaceTailCmd},
-    {"unknown",         NamespaceUnknownCmd},
-    {"upvar",           NamespaceUpvarCmd,      TclCompileNamespaceUpvarCmd},
-    {"which",           NamespaceWhichCmd},
+    {"children",        NamespaceChildrenCmd, NULL, NULL, NULL, 0},
+    {"code",            NamespaceCodeCmd, NULL, NULL, NULL, 0},
+    {"current",         NamespaceCurrentCmd, NULL, NULL, NULL, 0},
+    {"delete",          NamespaceDeleteCmd, NULL, NULL, NULL, 0},
+    {"ensemble",        TclNamespaceEnsembleCmd, NULL, NULL, NULL, 0},
+    {"eval",            NamespaceEvalCmd,       NULL, NRNamespaceEvalCmd, NULL, 0},
+    {"exists",          NamespaceExistsCmd, NULL, NULL, NULL, 0},
+    {"export",          NamespaceExportCmd, NULL, NULL, NULL, 0},
+    {"forget",          NamespaceForgetCmd, NULL, NULL, NULL, 0},
+    {"import",          NamespaceImportCmd, NULL, NULL, NULL, 0},
+    {"inscope",         NamespaceInscopeCmd,    NULL, NULL, NRNamespaceInscopeCmd, 0},
+    {"origin",          NamespaceOriginCmd, NULL, NULL, NULL, 0},
+    {"parent",          NamespaceParentCmd, NULL, NULL, NULL, 0},
+    {"path",            NamespacePathCmd, NULL, NULL, NULL, 0},
+    {"qualifiers",      NamespaceQualifiersCmd, NULL, NULL, NULL, 0},
+    {"tail",            NamespaceTailCmd, NULL, NULL, NULL, 0},
+    {"unknown",         NamespaceUnknownCmd, NULL, NULL, NULL, 0},
+    {"upvar",           NamespaceUpvarCmd,      TclCompileNamespaceUpvarCmd, NULL, NULL, 0},
+    {"which",           NamespaceWhichCmd, NULL, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -3959,16 +3959,15 @@ NamespacePathCmd(
      */
 
     if (objc == 1) {
-	/*
-	 * Not a very fast way to compute this, but easy to get right.
-	 */
+        Tcl_Obj *resultObj = Tcl_NewObj();
 
 	for (i=0 ; i<nsPtr->commandPathLength ; i++) {
 	    if (nsPtr->commandPathArray[i].nsPtr != NULL) {
-		Tcl_AppendElement(interp,
-			nsPtr->commandPathArray[i].nsPtr->fullName);
+                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
+                        nsPtr->commandPathArray[i].nsPtr->fullName, -1));
 	    }
 	}
+        Tcl_SetObjResult(interp, resultObj);
 	return TCL_OK;
     }
 
@@ -4715,8 +4714,13 @@ SetNsNameFromAny(
     const char *dummy;
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
     register ResolvedNsName *resNamePtr;
-    const char *name = TclGetString(objPtr);
+    const char *name;
 
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
+
+    name = TclGetString(objPtr);
     TclGetNamespaceForQualName(interp, name, NULL, TCL_FIND_ONLY_NS,
 	     &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
 
@@ -4734,7 +4738,6 @@ SetNsNameFromAny(
 
 	if (objPtr->typePtr == &nsNameType) {
 	    TclFreeIntRep(objPtr);
-	    objPtr->typePtr = NULL;
 	}
 	return TCL_ERROR;
     }
@@ -4840,8 +4843,9 @@ TclLogCommandInfo(
 				 * the error. */
     int length,			/* Number of bytes in command (-1 means use
 				 * all bytes up to first null byte). */
-    const unsigned char *pc,    /* current pc of bytecode execution context */
-    Tcl_Obj **tosPtr)           /* current stack of bytecode execution context */
+    const unsigned char *pc,    /* Current pc of bytecode execution context */
+    Tcl_Obj **tosPtr)           /* Current stack of bytecode execution
+                                 * context */
 {
     register const char *p;
     Interp *iPtr = (Interp *) interp;
@@ -4926,32 +4930,46 @@ TclLogCommandInfo(
 
         iPtr->resetErrorStack = 0;
 	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
-        /* reset while keeping the list intrep as much as possible */
+
+        /*
+         * Reset while keeping the list intrep as much as possible.
+         */
+
         Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
         if (pc != NULL) {
             Tcl_Obj *innerContext;
 
             innerContext = TclGetInnerContext(interp, pc, tosPtr);
             if (innerContext != NULL) {
-                Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->innerLiteral);
+                Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
+                        iPtr->innerLiteral);
                 Tcl_ListObjAppendElement(NULL, iPtr->errorStack, innerContext);
             }
         } else if (command != NULL) {
-            Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->innerLiteral);
-            Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewStringObj(command, length));
+            Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
+                    iPtr->innerLiteral);
+            Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
+                    Tcl_NewStringObj(command, length));
         }
     } 
 
     if (!iPtr->framePtr->objc) {
-        /* special frame, nothing to report */
+        /*
+         * Special frame, nothing to report.
+         */
     } else if (iPtr->varFramePtr != iPtr->framePtr) {
-        /* uplevel case, [lappend errorstack UP $relativelevel] */
+        /*
+         * uplevel case, [lappend errorstack UP $relativelevel]
+         */
 
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(
 		iPtr->framePtr->level - iPtr->varFramePtr->level));
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
-        /* normal case, [lappend errorstack CALL [info level 0]] */
+        /*
+         * normal case, [lappend errorstack CALL [info level 0]]
+         */
+
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->callLiteral);
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewListObj(
 		iPtr->framePtr->objc, iPtr->framePtr->objv));
@@ -4975,7 +4993,12 @@ TclLogCommandInfo(
  *
  *----------------------------------------------------------------------
  */
-void TclErrorStackResetIf(Tcl_Interp *interp, const char *msg, int length)
+
+void
+TclErrorStackResetIf(
+    Tcl_Interp *interp,
+    const char *msg,
+    int length)
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -4992,10 +5015,15 @@ void TclErrorStackResetIf(Tcl_Interp *interp, const char *msg, int length)
 
         iPtr->resetErrorStack = 0;
 	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
-        /* reset while keeping the list intrep as much as possible */
+
+        /*
+         * Reset while keeping the list intrep as much as possible.
+         */
+
         Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
         Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->innerLiteral);
-        Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewStringObj(msg, length));
+        Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
+                Tcl_NewStringObj(msg, length));
     } 
 }
 

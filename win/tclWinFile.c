@@ -12,6 +12,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#ifndef _WIN64
+#   define _USE_32BIT_TIME_T
+#endif
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
 #include <winioctl.h>
@@ -249,9 +252,7 @@ WinLink(
 	 * It is a file.
 	 */
 
-	if (CreateHardLink == NULL) {
-	    Tcl_SetErrno(ENOTDIR);
-	} else if (linkAction & TCL_CREATE_HARD_LINK) {
+	if (linkAction & TCL_CREATE_HARD_LINK) {
 	    if (CreateHardLink(linkSourcePath, linkTargetPath, NULL)) {
 		/*
 		 * Success!
@@ -922,24 +923,16 @@ TclpMatchInDirectory(
 
 	    int len;
 	    DWORD attr;
+	    WIN32_FILE_ATTRIBUTE_DATA data;
 	    const char *str = Tcl_GetStringFromObj(norm,&len);
 
 	    native = Tcl_FSGetNativePath(pathPtr);
 
-	    if (GetFileAttributesEx == NULL) {
-		attr = GetFileAttributes(native);
-		if (attr == INVALID_FILE_ATTRIBUTES) {
-		    return TCL_OK;
-		}
-	    } else {
-		WIN32_FILE_ATTRIBUTE_DATA data;
-
-		if (GetFileAttributesEx(native,
-			GetFileExInfoStandard, &data) != TRUE) {
-		    return TCL_OK;
-		}
-		attr = data.dwFileAttributes;
+	    if (GetFileAttributesEx(native,
+		    GetFileExInfoStandard, &data) != TRUE) {
+		return TCL_OK;
 	    }
+	    attr = data.dwFileAttributes;
 
 	    if (NativeMatchType(WinIsDrive(str,len), attr, native, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
@@ -1020,8 +1013,7 @@ TclpMatchInDirectory(
 	}
 
 	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
-	if (FindFirstFileEx == NULL || (types == NULL)
-		|| (types->type != TCL_GLOB_TYPE_DIR)) {
+	if ((types == NULL) || (types->type != TCL_GLOB_TYPE_DIR)) {
 	    handle = FindFirstFile(native, &data);
 	} else {
 	    /*

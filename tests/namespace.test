@@ -2480,7 +2480,7 @@ test namespace-51.16 {Bug 1566526} {
 test namespace-51.17 {resolution epoch handling: Bug 2898722} -setup {
     set result {}
     catch {namespace delete ::a}
-} -constraints knownBug -body {
+} -body {
     namespace eval ::a {
 	proc c {} {lappend ::result A}
 	c
@@ -2517,6 +2517,22 @@ test namespace-51.17 {resolution epoch handling: Bug 2898722} -setup {
     catch {rename ::c {}}
     unset result
 } -result {A 1 . A A . B B . B B . B B . B B . G G}
+test namespace-51.18 {Bug 3185407} -setup {
+    namespace eval ::test_ns_1 {}
+} -body {
+    namespace eval ::test_ns_1 {
+	variable result {}
+	namespace eval ns {proc foo {} {}}
+	namespace eval ns2 {proc foo {} {}}
+	namespace path {ns ns2}
+	variable x foo
+	lappend result [namespace which $x]
+	proc foo {} {}
+	lappend result [namespace which $x]
+    }
+} -cleanup {
+    namespace delete ::test_ns_1
+} -result {::test_ns_1::ns::foo ::test_ns_1::foo}
 
 # TIP 181 - namespace unknown tests
 test namespace-52.1 {unknown: default handler ::unknown} {

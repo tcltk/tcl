@@ -1120,6 +1120,8 @@ ProcWrongNumArgs(
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
     } else {
+	((Interp *) interp)->ensembleRewrite.numInsertedObjs -= skip - 1;
+
 #ifdef AVOID_HACKS_FOR_ITCL
 	desiredObjs[0] = framePtr->objv[skip-1];
 #else
@@ -2006,8 +2008,7 @@ TclProcCompileProc(
 	    codePtr->compileEpoch = iPtr->compileEpoch;
 	    codePtr->nsPtr = nsPtr;
 	} else {
-	    bodyPtr->typePtr->freeIntRepProc(bodyPtr);
-	    bodyPtr->typePtr = NULL;
+	    TclFreeIntRep(bodyPtr);
 	}
     }
 
@@ -2064,6 +2065,13 @@ TclProcCompileProc(
 		CompiledLocal *toFree = clPtr;
 
 		clPtr = clPtr->nextPtr;
+		if (toFree->resolveInfo) {
+		    if (toFree->resolveInfo->deleteProc) {
+			toFree->resolveInfo->deleteProc(toFree->resolveInfo);
+		    } else {
+			ckfree(toFree->resolveInfo);
+		    }
+		}
 		ckfree(toFree);
 	    }
 	    procPtr->numCompiledLocals = procPtr->numArgs;
@@ -2474,21 +2482,24 @@ SetLambdaFromAny(
 {
     Interp *iPtr = (Interp *) interp;
     const char *name;
-    Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv, *errPtr;
+    Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv;
     int objc, result;
     Proc *procPtr;
+
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
 
     /*
      * Convert objPtr to list type first; if it cannot be converted, or if its
      * length is not 2, then it cannot be converted to lambdaType.
      */
 
-    result = TclListObjGetElements(interp, objPtr, &objc, &objv);
+    result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
-	TclNewLiteralStringObj(errPtr, "can't interpret \"");
-	Tcl_AppendObjToObj(errPtr, objPtr);
-	Tcl_AppendToObj(errPtr, "\" as a lambda expression", -1);
-	Tcl_SetObjResult(interp, errPtr);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't interpret \"%s\" as a lambda expression",
+		Tcl_GetString(objPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", NULL);
 	return TCL_ERROR;
     }
@@ -2631,7 +2642,7 @@ SetLambdaFromAny(
      * conversion to lambdaType.
      */
 
-    objPtr->typePtr->freeIntRepProc(objPtr);
+    TclFreeIntRep(objPtr);
 
     objPtr->internalRep.twoPtrValue.ptr1 = procPtr;
     objPtr->internalRep.twoPtrValue.ptr2 = nsObjPtr;

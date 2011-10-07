@@ -58,10 +58,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   6
 #define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
-#define TCL_RELEASE_SERIAL  1
+#define TCL_RELEASE_SERIAL  2
 
 #define TCL_VERSION	    "8.6"
-#define TCL_PATCH_LEVEL	    "8.6b1.2"
+#define TCL_PATCH_LEVEL	    "8.6b2"
 
 /*
  *----------------------------------------------------------------------------
@@ -193,7 +193,7 @@ extern "C" {
 #   endif
 #else
 #   define DLLIMPORT
-#   if defined(__GNUC__) && !defined(NO_VIZ) && !defined(STATIC_BUILD)
+#   if defined(__GNUC__) && __GNUC__ > 3
 #       define DLLEXPORT __attribute__ ((visibility("default")))
 #   else
 #       define DLLEXPORT
@@ -373,28 +373,30 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__GNUC__)
-#      define TCL_WIDE_INT_TYPE long long
-#      if defined(__WIN32__) && !defined(__CYGWIN__)
-#         define TCL_LL_MODIFIER        "I64"
-#      else
-#         define TCL_LL_MODIFIER	"ll"
-#      endif
-typedef struct stat	Tcl_StatBuf;
-#   elif defined(__WIN32__)
+#   if defined(__WIN32__) && !defined(__CYGWIN__)
 #      define TCL_WIDE_INT_TYPE __int64
 #      ifdef __BORLANDC__
 typedef struct stati64 Tcl_StatBuf;
 #         define TCL_LL_MODIFIER	"L"
 #      else /* __BORLANDC__ */
-#         if _MSC_VER < 1400 || !defined(_M_IX86)
+#         if defined(_WIN64)
+typedef struct __stat64 Tcl_StatBuf;
+#         elif (defined(_MSC_VER) && (_MSC_VER < 1400))
 typedef struct _stati64	Tcl_StatBuf;
 #         else
-typedef struct _stat64	Tcl_StatBuf;
+typedef struct _stat32i64 Tcl_StatBuf;
 #         endif /* _MSC_VER < 1400 */
 #         define TCL_LL_MODIFIER	"I64"
 #      endif /* __BORLANDC__ */
-#   else /* __WIN32__ */
+#   elif defined(__GNUC__)
+#      define TCL_WIDE_INT_TYPE long long
+#      define TCL_LL_MODIFIER	"ll"
+#      if defined(__WIN32__)
+typedef struct _stat32i64 Tcl_StatBuf;
+#      else
+typedef struct stat	Tcl_StatBuf;
+#      endif
+#   else /* ! __WIN32__ && ! __GNUC__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
@@ -993,8 +995,6 @@ typedef struct Tcl_DString {
  *	is safe to leave the hash unquoted when the element is not the first
  *	element of a list, and this flag can be used by the caller to indicate
  *	that condition.
- * (Careful! If you change these flag values be sure to change the definitions
- * at the front of tclUtil.c).
  */
 
 #define TCL_DONT_USE_BRACES	1
@@ -2153,12 +2153,12 @@ typedef struct Tcl_EncodingType {
 
 /*
  * The maximum number of bytes that are necessary to represent a single
- * Unicode character in UTF-8. The valid values should be 3 or 6 (or perhaps 1
- * if we want to support a non-unicode enabled core). If 3, then Tcl_UniChar
- * must be 2-bytes in size (UCS-2) (the default). If 6, then Tcl_UniChar must
- * be 4-bytes in size (UCS-4). At this time UCS-2 mode is the default and
- * recommended mode. UCS-4 is experimental and not recommended. It works for
- * the core, but most extensions expect UCS-2.
+ * Unicode character in UTF-8. The valid values should be 3, 4 or 6
+ * (or perhaps 1 if we want to support a non-unicode enabled core). If 3 or
+ * 4, then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If 6,
+ * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UCS-2 mode
+ * is the default and recommended mode. UCS-4 is experimental and not
+ * recommended. It works for the core, but most extensions expect UCS-2.
  */
 
 #ifndef TCL_UTF_MAX
@@ -2170,7 +2170,7 @@ typedef struct Tcl_EncodingType {
  * reflected in regcustom.h.
  */
 
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX > 4
     /*
      * unsigned int isn't 100% accurate as it should be a strict 4-byte value
      * (perhaps wchar_t). 64-bit systems may have troubles. The size of this
@@ -2276,12 +2276,12 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 
 #define TCL_ARGV_AUTO_HELP \
     {TCL_ARGV_HELP,	"-help",	NULL,	NULL, \
-	    "Print summary of command-line options and abort"}
+	    "Print summary of command-line options and abort", NULL}
 #define TCL_ARGV_AUTO_REST \
     {TCL_ARGV_REST,	"--",		NULL,	NULL, \
-	    "Marks the end of the options"}
+	    "Marks the end of the options", NULL}
 #define TCL_ARGV_TABLE_END \
-    {TCL_ARGV_END}
+    {TCL_ARGV_END, NULL, NULL, NULL, NULL, NULL}
 
 /*
  *----------------------------------------------------------------------------
@@ -2373,8 +2373,10 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
  */
 
-EXTERN void		Tcl_Main(int argc, char **argv,
-			    Tcl_AppInitProc *appInitProc);
+#define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
+	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
+EXTERN void		Tcl_MainEx(int argc, char **argv,
+			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
