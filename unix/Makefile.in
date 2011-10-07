@@ -468,7 +468,7 @@ OO_SRCS = \
 STUB_SRCS = \
 	$(GENERIC_DIR)/tclStubLib.c \
 	$(GENERIC_DIR)/tclTomMathStubLib.c \
-	$(GENERIC_DIR)/tclOOStubLib.o
+	$(GENERIC_DIR)/tclOOStubLib.c
 
 TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bncore.c \
