@@ -2,6 +2,8 @@
 
 	* generic/tclIORChan.c:    Fix gcc warning
 	(discovered with latest mingw, based on gcc 4.6.1)
+	* tests/env.test:      Fix env.test, when running
+	under wine 1.3 (partly backported from Tcl 8.6)
 
 2011-10-03  Venkat Iyer <venkat@comit.com>
 
