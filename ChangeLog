@@ -1,17 +1,125 @@
-2011-09-15  Don Porter  <dgp@users.sourceforge.net>
+2011-10-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:        Fix gcc warnings (discovered with
+	* generic/tclIORChan.c: latest mingw, based on gcc 4.6.1)
+
+2011-10-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (TclDictWithInit, TclDictWithFinish):
+	* generic/tclCompCmds.c (TclCompileDictWithCmd): Experimental
+	compilation for the [dict with] subcommand, using parts factored out
+	from the interpreted version of the command.
+
+2011-10-05  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinInt.h:   Remove tclWinProcs, as it is no longer
+	* win/tclWin32Dll.c: being used.
+
+2011-10-03  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/Africa/Dar_es_Salaam: Update to Olson's tzdata2011k
+	* library/tzdata/Africa/Kampala
+	* library/tzdata/Africa/Nairobi
+	* library/tzdata/Asia/Gaza
+	* library/tzdata/Europe/Kaliningrad
+	* library/tzdata/Europe/Kiev
+	* library/tzdata/Europe/Minsk
+	* library/tzdata/Europe/Simferopol
+	* library/tzdata/Europe/Uzhgorod
+	* library/tzdata/Europe/Zaporozhye
+	* library/tzdata/Pacific/Apia
+
+2011-09-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl, tools/tcltk-man2html-utils.tcl: More
+	refactoring so that more of the utility code is decently out of the
+	way. Adjusted the header-material generator so that version numbers
+	are only included in locations where there is room.
+
+2011-09-28  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclOO.h:      [RFE 3010352]: make all TclOO API functions
+	* generic/tclOODecls.h: MODULE_SCOPE
+	* generic/tclOOIntDecls.h:
+
+2011-09-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIndexObj.c (Tcl_ParseArgsObjv): [Bug 3413857]: Corrected
+	the memory management for the code parsing arguments when returning
+	"large" numbers of arguments. Also unbroke the TCL_ARGV_AUTO_REST
+	macro in passing.
+
+2011-09-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdAH.c (TclMakeFileCommandSafe): [Bug 3211758]: Also
+	make the main [file] command hidden by default in safe interpreters,
+	because that's what existing code expects. This will reduce the amount
+	which the code breaks, but not necessarily eliminate it...
+
+2011-09-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIORTrans.c: More revisions to get finalization of
+	ReflectedTransforms correct, including adopting a "dead" field as
+	was done in tclIORChan.c.
+
+	* tests/thread.test:	Stop using the deprecated thread management
+	commands of the tcltest package.  The test suite ought to provide
+	these tools for itself.  They do not belong in a testing harness.
+
+2011-09-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdIL.c:	Revise [info frame] so that it stops creating
+	cycles in the iPtr->cmdFramePtr stack.
+
+2011-09-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/re_syntax.n: [Bug 2903743]: Add more magic so that we can do at
+	least something sane on Solaris.
+	* tools/tcltk-man2html-utils.tcl (process-text): Teach the HTML
+	generator how to handle this magic.
+
+2011-09-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclThreadTest.c: Revise the thread exit handling of the
+	[testthread] command so that it properly maintains the per-process
+	data structures even when the thread exits for reasons other than
+	the [testthread exit] command.
+
+2011-09-21  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* unix/tclIO.c: [Bug 3412487]: Now short reads are allowed in
+	synchronous fcopy, avoid mistaking them as nonblocking ones.
+
+2011-09-21  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORTrans.c (ForwardOpToOwnerThread): Fixed the missing
+	initialization of the 'dsti' field. Reported by Don Porter, on chat.
+
+2011-09-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIORChan.c: Re-using the "interp" field to signal a dead
+	channel (via NULL value) interfered with conditional cleanup tasks
+	testing for "the right interp". Added a new field "dead" to perform
+	the dead channel signalling task so the corrupted logic is avoided.
+
+	* generic/tclIORTrans.c: Revised ReflectClose() and
+	FreeReflectedTransform() so that we stop leaking ReflectedTransforms,
+	yet free all Tcl_Obj values in the same thread that alloced them.
+
+2011-09-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/ioTrans.test:	Conversion from [testthread] to Thread package
-	stops most memory leaks.  
+	stops most memory leaks.
 
-	* tests/thread.test:	Plug most memory leaks in thread.test  Constrain
-	the rest to be skipped during `make valgrind`.  Tests using the
-	[testthread cancel] testing command are leaky.  Corrections wait for
-	either addition of [thread::cancel] to the Thread package, or improvements
-	to the [testthread] testing command to make leak-free versions of these
-	tests possible.
+	* tests/thread.test:	Plug most memory leaks in thread.test.
+	Constrain the rest to be skipped during `make valgrind'.  Tests using
+	the [testthread cancel] testing command are leaky.  Corrections wait
+	for either addition of [thread::cancel] to the Thread package, or
+	improvements to the [testthread] testing command to make leak-free
+	versions of these tests possible.
 
 	* generic/tclIORChan.c:	Plug all memory leaks in ioCmd.test exposed
-	* tests/ioCmd.test:	by `make valgrind`.
+	* tests/ioCmd.test:	by `make valgrind'.
 	* unix/Makefile.in:
 
 2011-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
@@ -27,6 +135,11 @@
 	* generic/tclParse.c
 	* tests/reg.test
 	* tests/utf.test
+
+2011-09-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclProc.c (ProcWrongNumArgs): [Bugs 3400658,3408830]:
+	Corrected the handling of procedure error messages (found by TclOO).
 
 2011-09-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -2197,7 +2310,7 @@
 
 	[BRANCH: dogeen-assembler-branch]
 
-	* generic/tclAssembly.c (new file): 
+	* generic/tclAssembly.c (new file):
 	* generic/tclAssembly.h:
 	* generic/tclBasic.c (builtInCmds, Tcl_CreateInterp):
 	* generic/tclInt.h:

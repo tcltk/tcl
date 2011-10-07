@@ -1113,13 +1113,15 @@ Tcl_ParseArgsObjv(
 
     if (remObjv != NULL) {
 	/*
-	 * Then we should copy the name of the command (0th argument).
+	 * Then we should copy the name of the command (0th argument). The
+	 * upper bound on the number of elements is known, and (undocumented,
+	 * but historically true) there should be a NULL argument after the
+	 * last result. [Bug 3413857]
 	 */
 
 	nrem = 1;
-	leftovers = ckalloc((nrem + 1) * sizeof(Tcl_Obj *));
-	leftovers[nrem-1] = objv[0];
-	leftovers[nrem] = NULL;
+	leftovers = ckalloc((1 + *objcPtr) * sizeof(Tcl_Obj *));
+	leftovers[0] = objv[0];
     } else {
 	nrem = 0;
 	leftovers = NULL;
@@ -1182,14 +1184,7 @@ Tcl_ParseArgsObjv(
 	    }
 
 	    dstIndex++;		/* This argument is now handled */
-	    nrem++;
-
-	    /*
-	     * Allocate nrem (+1 extra for NULL terminator) pointers.
-	     */
-
-	    leftovers = ckrealloc(leftovers, (nrem+1) * sizeof(Tcl_Obj *));
-	    leftovers[nrem-1] = curArg;
+	    leftovers[nrem++] = curArg;
 	    continue;
 	}
 
@@ -1227,7 +1222,14 @@ Tcl_ParseArgsObjv(
 	    objc--;
 	    break;
 	case TCL_ARGV_REST:
-	    *((int *) infoPtr->dstPtr) = dstIndex;
+	    /*
+	     * Only store the point where we got to if it's not to be written
+	     * to NULL, so that TCL_ARGV_AUTO_REST works.
+	     */
+
+	    if (infoPtr->dstPtr != NULL) {
+		*((int *) infoPtr->dstPtr) = dstIndex;
+	    }
 	    goto argsDone;
 	case TCL_ARGV_FLOAT:
 	    if (objc == 0) {
@@ -1282,7 +1284,9 @@ Tcl_ParseArgsObjv(
 
     /*
      * If we broke out of the loop because of an OPT_REST argument, copy the
-     * remaining arguments down.
+     * remaining arguments down. Note that there is always at least one
+     * argument left over - the command name - so we always have a result if
+     * our caller is willing to receive it. [Bug 3413857]
      */
 
   argsDone:
@@ -1295,19 +1299,12 @@ Tcl_ParseArgsObjv(
     }
 
     if (objc > 0) {
-	leftovers = ckrealloc(leftovers, (nrem+objc+1) * sizeof(Tcl_Obj *));
-	while (objc) {
-	    leftovers[nrem] = objv[srcIndex];
-	    nrem++;
-	    srcIndex++;
-	    objc--;
-	}
-    } else if (leftovers != NULL) {
-	ckfree(leftovers);
+	memcpy(leftovers+nrem, objv+srcIndex, objc*sizeof(Tcl_Obj *));
+	nrem += objc;
     }
     leftovers[nrem] = NULL;
-    *objcPtr = nrem;
-    *remObjv = leftovers;
+    *objcPtr = nrem++;
+    *remObjv = ckrealloc(leftovers, nrem * sizeof(Tcl_Obj *));
     return TCL_OK;
 
     /*

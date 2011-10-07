@@ -121,6 +121,9 @@ typedef struct {
     int interest;		/* Mask of events the channel is interested
 				 * in. */
 
+    int dead;			/* Boolean signal that some operations
+				 * should no longer be attempted. */
+
     /*
      * Note regarding the usage of timers.
      *
@@ -1128,7 +1131,7 @@ ReflectClose(
 	 * the per-interp DeleteReflectedChannelMap exit-handler.
 	 */
 
-	if (rcPtr->interp) {
+	if (!rcPtr->dead) {
 	    rcmPtr = GetReflectedChannelMap(rcPtr->interp);
 	    hPtr = Tcl_FindHashEntry(&rcmPtr->map,
 		    Tcl_GetChannelName(rcPtr->chan));
@@ -2022,6 +2025,7 @@ NewReflectedChannel(
     rcPtr->chan = NULL;
     rcPtr->methods = 0;
     rcPtr->interp = interp;
+    rcPtr->dead = 0;
 #ifdef TCL_THREADS
     rcPtr->thread = Tcl_GetCurrentThread();
 #endif
@@ -2155,6 +2159,7 @@ FreeReflectedChannel(
 	 */
 
 	ckfree(chanPtr->typePtr);
+	chanPtr->typePtr = NULL;
     }
 
     FreeReflectedChannelArgs(rcPtr);
@@ -2201,7 +2206,7 @@ InvokeTclMethod(
     int result;			/* Result code of method invokation */
     Tcl_Obj *resObj = NULL;	/* Result of method invokation. */
 
-    if (!rcPtr->interp) {
+    if (rcPtr->dead) {
 	/*
 	 * The channel is marked as dead. Bail out immediately, with an
 	 * appropriate error.
@@ -2365,7 +2370,7 @@ ErrnoReturn(
     int code;
     Tcl_InterpState sr;		/* State of handler interp */
 
-    if (!rcPtr->interp) {
+    if (rcPtr->dead) {
 	return 0;
     }
 
@@ -2474,7 +2479,7 @@ DeleteReflectedChannelMap(
 	chan = Tcl_GetHashValue(hPtr);
 	rcPtr = Tcl_GetChannelInstanceData(chan);
 
-	rcPtr->interp = NULL;
+	rcPtr->dead = 1;
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(&rcmPtr->map);
@@ -2549,6 +2554,8 @@ DeleteReflectedChannelMap(
 	    continue;
 	}
 
+	rcPtr->dead = 1;
+	FreeReflectedChannelArgs(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
 #endif
@@ -2678,7 +2685,7 @@ DeleteThreadReflectedChannelMap(
 	Tcl_Channel chan = Tcl_GetHashValue(hPtr);
 	ReflectedChannel *rcPtr = Tcl_GetChannelInstanceData(chan);
 
-	rcPtr->interp = NULL;
+	rcPtr->dead = 1;
 	FreeReflectedChannelArgs(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
@@ -2702,7 +2709,7 @@ ForwardOpToOwnerThread(
 
     Tcl_MutexLock(&rcForwardMutex);
 
-    if (rcPtr->interp == NULL) {
+    if (rcPtr->dead) {
 	/*
 	 * The channel is marked as dead. Bail out immediately, with an
 	 * appropriate error. Do not forget to unlock the mutex on this path.

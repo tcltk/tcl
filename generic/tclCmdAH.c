@@ -1063,6 +1063,17 @@ TclMakeFileCommandSafe(
     }
     Tcl_DStringFree(&oldBuf);
     Tcl_DStringFree(&newBuf);
+
+    /*
+     * Ugh. The [file] command is now actually safe, but it is assumed by
+     * scripts that it is not, which messes up security policies. [Bug
+     * 3211758]
+     */
+
+    if (Tcl_HideCommand(interp, "file", "file") != TCL_OK) {
+	Tcl_Panic("problem making 'file' safe: %s",
+		Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
     return TCL_OK;
 }
 
