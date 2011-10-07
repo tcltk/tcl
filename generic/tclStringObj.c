@@ -114,7 +114,7 @@ typedef struct String {
 	? (sizeof(String) - sizeof(Tcl_UniChar) + (ualloc)) \
 	: sizeof(String)))
 #define stringCheckLimits(numChars) \
-    if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) { \
+    if ((unsigned)(numChars) > (unsigned)(STRING_MAXCHARS)) { \
 	Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
 		STRING_MAXCHARS); \
     }
