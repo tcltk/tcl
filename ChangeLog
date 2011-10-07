@@ -1,3 +1,8 @@
+2011-10-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:        Fix gcc warnings (discovered with
+	* generic/tclIORChan.c: latest mingw, based on gcc 4.6.1)
+
 2011-10-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (TclDictWithInit, TclDictWithFinish):
