@@ -474,8 +474,8 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     int *errorCodePtr;		/* To store error code. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
-    DWORD moveMethod;
-    LONG newPos, newPosHigh, oldPos, oldPosHigh;
+    DWORD moveMethod, newPos, oldPos;
+    LONG newPosHigh, oldPosHigh;
 
     *errorCodePtr = 0;
     if (mode == SEEK_SET) {
@@ -489,7 +489,7 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     /*
      * Save our current place in case we need to roll-back the seek.
      */
-    oldPosHigh = (DWORD)0;
+    oldPosHigh = (LONG)0;
     oldPos = SetFilePointer(infoPtr->handle, (LONG)0, &oldPosHigh,
 	    FILE_CURRENT);
     if (oldPos == INVALID_SET_FILE_POINTER) {
@@ -501,7 +501,7 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
 	}
     }
 
-    newPosHigh = (DWORD)(offset < 0 ? -1 : 0);
+    newPosHigh = (LONG)(offset < 0 ? -1 : 0);
     newPos = SetFilePointer(infoPtr->handle, (LONG) offset, &newPosHigh,
 			    moveMethod);
     if (newPos == INVALID_SET_FILE_POINTER) {
@@ -550,8 +550,8 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
     int *errorCodePtr;		/* To store error code. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
-    DWORD moveMethod;
-    LONG newPos, newPosHigh;
+    DWORD moveMethod, newPos;
+    LONG newPosHigh;
 
     *errorCodePtr = 0;
     if (mode == SEEK_SET) {
