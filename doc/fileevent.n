@@ -123,7 +123,7 @@ proc GetData {chan} {
 }
 
 fconfigure $chan -blocking 0 -encoding binary
-fileevent $chan readable [list GetData $chan]
+\fBfileevent\fR $chan readable [list GetData $chan]
 .CE
 .PP
 The next example demonstrates use of \fBgets\fR to read line-oriented
@@ -140,7 +140,7 @@ proc GetData {chan} {
 }
 
 fconfigure $chan -blocking 0 -buffering line -translation crlf
-fileevent $chan readable [list GetData $chan]
+\fBfileevent\fR $chan readable [list GetData $chan]
 .CE
 .SH CREDITS
 .PP

@@ -161,7 +161,7 @@ If this option is given, the index result from this command (or every
 index result when \fB\-all\fR is also specified) will be a complete
 path (suitable for use with \fBlindex\fR or \fBlset\fR) within the
 overall list to the term found.  This option has no effect unless the
-\fI\-index\fR is also specified, and is just a convenience short-cut.
+\fB\-index\fR is also specified, and is just a convenience short-cut.
 .SH EXAMPLES
 .PP
 Basic searching:

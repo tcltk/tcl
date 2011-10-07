@@ -433,7 +433,7 @@ Tcl_ParseCommand(
 	    }
 
 	    if (isLiteral) {
-		int elemCount = 0, code = TCL_OK, nakedbs = 0;
+		int elemCount = 0, code = TCL_OK, literal = 1;
 		const char *nextElem, *listEnd, *elemStart;
 
 		/*
@@ -455,35 +455,26 @@ Tcl_ParseCommand(
 		 */
 
 		while (nextElem < listEnd) {
-		    int size, brace;
+		    int size;
 
 		    code = TclFindElement(NULL, nextElem, listEnd - nextElem,
-			    &elemStart, &nextElem, &size, &brace);
-		    if (code != TCL_OK) {
+			    &elemStart, &nextElem, &size, &literal);
+		    if ((code != TCL_OK) || !literal) {
 			break;
-		    }
-		    if (!brace) {
-			const char *s;
-
-			for(s=elemStart;size>0;s++,size--) {
-			    if ((*s)=='\\') {
-				nakedbs = 1;
-				break;
-			    }
-			}
 		    }
 		    if (elemStart < listEnd) {
 			elemCount++;
 		    }
 		}
 
-		if ((code != TCL_OK) || nakedbs) {
+		if ((code != TCL_OK) || !literal) {
 		    /*
-		     * Some list element could not be parsed, or contained
-		     * naked backslashes. This means the literal string was
-		     * not in fact a valid nor canonical list. Defer the
-		     * handling of this to compile/eval time, where code is
-		     * already in place to report the "attempt to expand a
+		     * Some list element could not be parsed, or is not
+		     * present as a literal substring of the script.  The
+		     * compiler cannot handle list elements that get generated
+		     * by a call to TclCopyAndCollapse(). Defer  the
+		     * handling of  this to  compile/eval time, where  code is
+		     * already  in place to  report the  "attempt to  expand a
 		     * non-list" error or expand lists that require
 		     * substitution.
 		     */
@@ -505,6 +496,7 @@ Tcl_ParseCommand(
 		     * tokens representing the expanded list.
 		     */
 
+		    const char *listStart;
 		    int growthNeeded = wordIndex + 2*elemCount
 			    - parsePtr->numTokens;
 
@@ -524,9 +516,9 @@ Tcl_ParseCommand(
 		     * word value.
 		     */
 
-		    nextElem = tokenPtr[1].start;
+		    listStart = nextElem = tokenPtr[1].start;
 		    while (nextElem < listEnd) {
-			int quoted, brace;
+			int quoted;
 	
 			tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
 			tokenPtr->numComponents = 1;
@@ -536,9 +528,11 @@ Tcl_ParseCommand(
 			tokenPtr->numComponents = 0;
 			TclFindElement(NULL, nextElem, listEnd - nextElem,
 				&(tokenPtr->start), &nextElem,
-				&(tokenPtr->size), &brace);
+				&(tokenPtr->size), NULL);
 
-			quoted = brace || tokenPtr->start[-1] == '"';
+			quoted = (tokenPtr->start[-1] == '{'
+				|| tokenPtr->start[-1] == '"')
+				&& tokenPtr->start > listStart;
 			tokenPtr[-1].start = tokenPtr->start - quoted;
 			tokenPtr[-1].size = tokenPtr->start + tokenPtr->size
 				- tokenPtr[-1].start + quoted;
@@ -606,6 +600,30 @@ Tcl_ParseCommand(
     Tcl_FreeParse(parsePtr);
     parsePtr->commandSize = parsePtr->end - parsePtr->commandStart;
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIsSpaceProc --
+ *
+ *	Report whether byte is in the set of whitespace characters used by
+ *	Tcl to separate words in scripts or elements in lists.
+ *
+ * Results:
+ *	Returns 1, if byte is in the set, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclIsSpaceProc(
+    char byte)
+{
+    return CHAR_TYPE(byte) & (TYPE_SPACE) || byte == '\n';
 }
 
 /*
@@ -726,17 +744,17 @@ int
 TclParseHex(
     const char *src,		/* First character to parse. */
     int numBytes,		/* Max number of byes to scan */
-    Tcl_UniChar *resultPtr)	/* Points to storage provided by caller where
-				 * the Tcl_UniChar resulting from the
+    int *resultPtr)	/* Points to storage provided by caller where
+				 * the character resulting from the
 				 * conversion is to be written. */
 {
-    Tcl_UniChar result = 0;
+    int result = 0;
     register const char *p = src;
 
     while (numBytes--) {
 	unsigned char digit = UCHAR(*p);
 
-	if (!isxdigit(digit)) {
+	if (!isxdigit(digit) || (result > 0x10fff)) {
 	    break;
 	}
 
@@ -790,7 +808,8 @@ TclParseBackslash(
 				 * written there. */
 {
     register const char *p = src+1;
-    Tcl_UniChar result;
+    Tcl_UniChar unichar;
+    int result;
     int count;
     char buf[TCL_UTF_MAX];
 
@@ -847,7 +866,7 @@ TclParseBackslash(
 	result = 0xb;
 	break;
     case 'x':
-	count += TclParseHex(p+1, numBytes-2, &result);
+	count += TclParseHex(p+1, (numBytes > 3) ? 2 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
 	     * No hexadigits -> This is just "x".
@@ -870,6 +889,15 @@ TclParseBackslash(
 	    result = 'u';
 	}
 	break;
+    case 'U':
+	count += TclParseHex(p+1, (numBytes > 9) ? 8 : numBytes-2, &result);
+	if (count == 2) {
+	    /*
+	     * No hexadigits -> This is just "U".
+	     */
+	    result = 'U';
+	}
+	break;
     case '\n':
 	count--;
 	do {
@@ -888,17 +916,17 @@ TclParseBackslash(
 	 */
 
 	if (isdigit(UCHAR(*p)) && (UCHAR(*p) < '8')) {	/* INTL: digit */
-	    result = UCHAR(*p - '0');
+	    result = *p - '0';
 	    p++;
 	    if ((numBytes == 2) || !isdigit(UCHAR(*p))	/* INTL: digit */
 		    || (UCHAR(*p) >= '8')) {
 		break;
 	    }
 	    count = 3;
-	    result = UCHAR((result << 3) + (*p - '0'));
+	    result = (result << 3) + (*p - '0');
 	    p++;
 	    if ((numBytes == 3) || !isdigit(UCHAR(*p))	/* INTL: digit */
-		    || (UCHAR(*p) >= '8')) {
+		    || (UCHAR(*p) >= '8') || (result >= 0x20)) {
 		break;
 	    }
 	    count = 4;
@@ -914,14 +942,15 @@ TclParseBackslash(
 	 */
 
 	if (Tcl_UtfCharComplete(p, numBytes - 1)) {
-	    count = Tcl_UtfToUniChar(p, &result) + 1;	/* +1 for '\' */
+	    count = Tcl_UtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
 	} else {
 	    char utfBytes[TCL_UTF_MAX];
 
 	    memcpy(utfBytes, p, (size_t) (numBytes - 1));
 	    utfBytes[numBytes - 1] = '\0';
-	    count = Tcl_UtfToUniChar(utfBytes, &result) + 1;
+	    count = Tcl_UtfToUniChar(utfBytes, &unichar) + 1;
 	}
+	result = unichar;
 	break;
     }
 
@@ -929,7 +958,7 @@ TclParseBackslash(
     if (readPtr != NULL) {
 	*readPtr = count;
     }
-    return Tcl_UniCharToUtf((int) result, dst);
+    return Tcl_UniCharToUtf(result, dst);
 }
 
 /*
@@ -1757,7 +1786,7 @@ Tcl_ParseBraces(
 		openBrace = 0;
 		break;
 	    case '#' :
-		if (openBrace && isspace(UCHAR(src[-1]))) {
+		if (openBrace && TclIsSpaceProc(src[-1])) {
 		    Tcl_AppendResult(parsePtr->interp,
 			    ": possible unbalanced brace in comment", NULL);
 		    goto error;

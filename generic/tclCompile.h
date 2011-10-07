@@ -676,8 +676,12 @@ typedef struct ByteCode {
 #define INST_UNSET_ARRAY_STK		136
 #define INST_UNSET_STK			137
 
+#define INST_DICT_EXPAND		138
+#define INST_DICT_RECOMBINE_STK		139
+#define INST_DICT_RECOMBINE_IMM		140
+
 /* The last opcode */
-#define LAST_INST_OPCODE		137
+#define LAST_INST_OPCODE		140
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying

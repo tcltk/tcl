@@ -1001,10 +1001,14 @@ Tcl_ScanObjCmd(
 		continue;
 	    }
 	    result++;
-#warning Why make your own error message? Why?
-	    if (Tcl_ObjSetVar2(interp, objv[i+3], NULL, objs[i], 0) == NULL) {
-		Tcl_AppendResult(interp, "couldn't set variable \"",
-			TclGetString(objv[i+3]), "\"", NULL);
+
+	    /*
+	     * In case of multiple errors in setting variables, just report
+	     * the first one.
+	     */
+
+	    if (Tcl_ObjSetVar2(interp, objv[i+3], NULL, objs[i],
+		    (code == TCL_OK) ? TCL_LEAVE_ERR_MSG : 0) == NULL) {
 		code = TCL_ERROR;
 	    }
 	    Tcl_DecrRefCount(objs[i]);
@@ -1050,7 +1054,7 @@ Tcl_ScanObjCmd(
     }
     return code;
 }
-
+
 /*
  * Local Variables:
  * mode: c

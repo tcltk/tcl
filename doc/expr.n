@@ -28,7 +28,7 @@ Expressions almost always yield numeric results
 For example, the expression
 .PP
 .CS
-\fBexpr 8.2 + 6\fR
+\fBexpr\fR 8.2 + 6
 .CE
 .PP
 evaluates to 14.2.
@@ -68,7 +68,8 @@ Operands may be specified in any of the following ways:
 .IP [1]
 As a numeric value, either integer or floating-point.
 .IP [2]
-As a boolean value, using any form understood by \fBstring is boolean\fR.
+As a boolean value, using any form understood by \fBstring is\fR
+\fBboolean\fR.
 .IP [3]
 As a Tcl variable, using standard \fB$\fR notation.
 The variable's value will be used as the operand.
@@ -225,7 +226,7 @@ just as in C, which means that operands are not evaluated if they are
 not needed to determine the outcome.  For example, in the command
 .PP
 .CS
-\fBexpr {$v ? [a] : [b]}\fR
+\fBexpr\fR {$v ? [a] : [b]}
 .CE
 .PP
 only one of
@@ -248,19 +249,19 @@ Tcl function in the \fBtcl::mathfunc\fR namespace.  The processing
 of an expression such as:
 .PP
 .CS
-\fBexpr {sin($x+$y)}\fR
+\fBexpr\fR {sin($x+$y)}
 .CE
 .PP
 is the same in every way as the processing of:
 .PP
 .CS
-\fBexpr {[tcl::mathfunc::sin [expr {$x+$y}]]}\fR
+\fBexpr\fR {[tcl::mathfunc::sin [\fBexpr\fR {$x+$y}]]}
 .CE
 .PP
 which in turn is the same as the processing of:
 .PP
 .CS
-\fBtcl::mathfunc::sin [expr {$x+$y}]\fR
+tcl::mathfunc::sin [\fBexpr\fR {$x+$y}]
 .CE
 .PP
 The executor will search for \fBtcl::mathfunc::sin\fR using the usual
@@ -335,8 +336,8 @@ is that produced by the \fB%g\fR format specifier of Tcl's
 \fBformat\fR command.  For example, the commands
 .PP
 .CS
-\fBexpr {"0x03" > "2"}\fR
-\fBexpr {"0y" < "0x12"}\fR
+\fBexpr\fR {"0x03" > "2"}
+\fBexpr\fR {"0y" < "0x12"}
 .CE
 .PP
 both return 1.  The first comparison is done using integer
@@ -358,9 +359,9 @@ once by the Tcl parser and once by the \fBexpr\fR command.
 For example, the commands
 .PP
 .CS
-\fBset a 3\fR
-\fBset b {$a + 2}\fR
-\fBexpr $b*4\fR
+set a 3
+set b {$a + 2}
+\fBexpr\fR $b*4
 .CE
 .PP
 return 11, not a multiple of 4.
@@ -444,3 +445,6 @@ Copyright (c) 1993 The Regents of the University of California.
 Copyright (c) 1994-2000 Sun Microsystems Incorporated.
 Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
 .fi
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

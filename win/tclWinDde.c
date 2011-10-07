@@ -139,14 +139,11 @@ int
 Dde_Init(
     Tcl_Interp *interp)
 {
-    ThreadSpecificData *tsdPtr;
-
     if (!Tcl_InitStubs(interp, "8.1", 0)) {
 	return TCL_ERROR;
     }
 
     Tcl_CreateObjCommand(interp, "dde", DdeObjCmd, NULL, NULL);
-    tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_CreateExitHandler(DdeExitProc, NULL);
     return Tcl_PkgProvide(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION);
 }
@@ -531,6 +528,7 @@ ExecuteRemoteObject(
 	Tcl_SetObjResult(riPtr->interp, Tcl_NewStringObj("permission denied: "
 		"a handler procedure must be defined for use in a safe "
 		"interp", -1));
+	Tcl_SetErrorCode(riPtr->interp, "TCL", "DDE", "SECURITY_CHECK", NULL);
 	result = TCL_ERROR;
     }
 
@@ -898,6 +896,7 @@ MakeDdeConnection(
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "no registered server named \"",
 		    name, "\"", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NO_SERVER", NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1100,25 +1099,30 @@ static void
 SetDdeError(
     Tcl_Interp *interp)	    /* The interp to put the message in. */
 {
-    const char *errorMessage;
+    const char *errorMessage, *errorCode;
 
     switch (DdeGetLastError(ddeInstance)) {
     case DMLERR_DATAACKTIMEOUT:
     case DMLERR_EXECACKTIMEOUT:
     case DMLERR_POKEACKTIMEOUT:
 	errorMessage = "remote interpreter did not respond";
+	errorCode = "TIMEOUT";
 	break;
     case DMLERR_BUSY:
 	errorMessage = "remote server is busy";
+	errorCode = "BUSY";
 	break;
     case DMLERR_NOTPROCESSED:
 	errorMessage = "remote server cannot handle this command";
+	errorCode = "NOCANDO";
 	break;
     default:
 	errorMessage = "dde command failed";
+	errorCode = "FAILED";
     }
 
     Tcl_SetObjResult(interp, Tcl_NewStringObj(errorMessage, -1));
+    Tcl_SetErrorCode(interp, "TCL", "DDE", errorCode, NULL);
 }
 
 /*
@@ -1355,6 +1359,7 @@ DdeObjCmd(
 	if (dataLength == 0) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("cannot execute null data", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", NULL);
 	    result = TCL_ERROR;
 	    break;
 	}
@@ -1397,6 +1402,7 @@ DdeObjCmd(
 	if (length == 0) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("cannot request value of null data", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
 	}
@@ -1447,6 +1453,7 @@ DdeObjCmd(
 	if (length == 0) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("cannot have a null item", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
 	}
@@ -1489,6 +1496,7 @@ DdeObjCmd(
 	if (serviceName == NULL) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("invalid service name \"\"", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NO_SERVER", NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
 	}
@@ -1536,6 +1544,8 @@ DdeObjCmd(
 		Tcl_SetResult(riPtr->interp, "permission denied: "
 			"a handler procedure must be defined for use in "
 			"a safe interp", TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "DDE", "SECURITY_CHECK",
+			NULL);
 		result = TCL_ERROR;
 	    }
 
@@ -1600,6 +1610,7 @@ DdeObjCmd(
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("invalid data returned from server",
 			-1));
+		Tcl_SetErrorCode(interp, "TCL", "DDE", "BAD_RESPONSE", NULL);
 		result = TCL_ERROR;
 		goto cleanup;
 	    }

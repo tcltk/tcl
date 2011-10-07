@@ -102,7 +102,8 @@ This variable is only used when initializing the \fBauto_path\fR variable.
 .TP
 \fBenv(TCL_INTERP_DEBUG_FRAME)\fR
 .
-If existing, it has the same effect as running \fBinterp debug {} -frame 1\fR
+If existing, it has the same effect as running \fBinterp debug\fR
+\fB{} -frame 1\fR
 as the very first command of each new Tcl interpreter.
 .RE
 .TP
@@ -484,6 +485,7 @@ bug fixes that retain backward compatibility.
 The value of this variable is returned by the \fBinfo tclversion\fR
 command.
 .SH "OTHER GLOBAL VARIABLES"
+.PP
 The following variables are only guaranteed to exist in \fBtclsh\fR
 and \fBwish\fR executables; the Tcl library does not define them
 itself but many Tcl environments do.
@@ -507,6 +509,42 @@ was invoked.
 Contains 1 if \fBtclsh\fR or \fBwish\fR is running interactively (no
 script was specified and standard input is a terminal-like device), 0
 otherwise.
+.SH EXAMPLES
+.PP
+To add a directory to the collection of locations searched by
+\fBpackage require\fR, e.g., because of some application-specific
+packages that are used, the \fBauto_path\fR variable needs to be
+updated:
+.PP
+.CS
+lappend ::\fBauto_path\fR [file join [pwd] "theLibDir"]
+.CE
+.PP
+A simple though not very robust way to handle command line arguments
+of the form
+.QW "\-foo 1 \-bar 2"
+is to load them into an array having first loaded in the default settings:
+.CS
+array set arguments {-foo 0 -bar 0 -grill 0}
+array set arguments $::\fBargv\fR
+puts "foo is $arguments(-foo)"
+puts "bar is $arguments(-bar)"
+puts "grill is $arguments(-grill)"
+.CE
+.PP
+The \fBargv0\fR global variable can be used (in conjunction with the
+\fBinfo script\fR command) to determine whether the current script is
+being executed as the main script or loaded as a library.  This is
+useful because it allows a single script to be used as both a library
+and a demonstration of that library:
+.PP
+.CS
+if {$::\fBargv0\fR eq [info script]} {
+    # running as: tclsh example.tcl
+} else {
+    package provide Example 1.0
+}
+.CE
 .SH "SEE ALSO"
 eval(n), library(n), tclsh(1), tkvars(n), wish(1)
 .SH KEYWORDS

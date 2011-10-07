@@ -215,14 +215,14 @@ test info-6.9 {info default option} -returnCodes error -setup {
     set a(0) 88
     proc t1 {a b} {}
     info default t1 a a
-} -returnCodes error -result {couldn't store default value in variable "a"}
+} -returnCodes error -result {can't set "a": variable is array}
 test info-6.10 {info default option} -setup {
     catch {unset a}
 } -cleanup {unset a} -body {
     set a(0) 88
     proc t1 {{a 18} b} {}
     info default t1 a a
-} -returnCodes error -result {couldn't store default value in variable "a"}
+} -returnCodes error -result {can't set "a": variable is array}
 test info-6.11 {info default option} {
     catch {namespace delete test_ns_info2}
     namespace eval test_ns_info2 {
@@ -1826,7 +1826,7 @@ test info-30.46 {TIP 280 for compiled [subst]} {
 } YES
 test info-30.47 {TIP 280 for compiled [subst]} {
     unset -nocomplain a
-    set a(\n1831) YES;  set a(\n1830) 1830; set a(\n1832) 1832 
+    set a(\n1831) YES;  set a(\n1830) 1830; set a(\n1832) 1832
     subst {$a(
 [dict get [info frame 0] line])} ; # 1831
 } YES

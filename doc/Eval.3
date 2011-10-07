@@ -159,10 +159,12 @@ instead of taking a variable number of arguments it takes an argument
 list. Like \fBTcl_VarEval\fR, \fBTcl_VarEvalVA\fR is deprecated.
 
 .SH "FLAG BITS"
+.PP
 Any ORed combination of the following values may be used for the
 \fIflags\fR argument to procedures such as \fBTcl_EvalObjEx\fR:
 .TP 23
 \fBTCL_EVAL_DIRECT\fR
+.
 This flag is only used by \fBTcl_EvalObjEx\fR; it is ignored by
 other procedures.  If this flag bit is set, the script is not
 compiled to bytecodes; instead it is executed directly
@@ -173,10 +175,11 @@ bytecodes will not be reused in a future execution.  In this case,
 it is faster to execute the script directly.
 .TP 23
 \fBTCL_EVAL_GLOBAL\fR
+.
 If this flag is set, the script is processed at global level.  This
 means that it is evaluated in the global namespace and its variable
 context consists of global variables only (it ignores any Tcl
-procedures at are active).
+procedures that are active).
 
 .SH "MISCELLANEOUS DETAILS"
 .PP

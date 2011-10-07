@@ -185,9 +185,9 @@ TclDumpMemoryInfo(ClientData clientData, int flags)
 	    total_mallocs,
 	    total_frees,
 	    current_malloc_packets,
-	    current_bytes_malloced,
+	    (unsigned long)current_bytes_malloced,
 	    maximum_malloc_packets,
-	    maximum_bytes_malloced);
+	    (unsigned long)maximum_bytes_malloced);
     if (flags == 0) {
 	fprintf((FILE *)clientData, "%s", buf);
     } else {
@@ -852,9 +852,9 @@ MemoryCmd(
 		"%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10lu\n%-25s %10d\n%-25s %10lu\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
 		"current packets allocated", current_malloc_packets,
-		"current bytes allocated", current_bytes_malloced,
+		"current bytes allocated", (unsigned long)current_bytes_malloced,
 		"maximum packets allocated", maximum_malloc_packets,
-		"maximum bytes allocated", maximum_bytes_malloced));
+		"maximum bytes allocated", (unsigned long)maximum_bytes_malloced));
 	return TCL_OK;
     }
     if (strcmp(argv[1],"init") == 0) {

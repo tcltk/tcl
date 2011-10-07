@@ -797,8 +797,8 @@ namespace eval tcltest {
 
     proc loadIntoSlaveInterpreter {slave args} {
 	variable Version
-	interp eval $slave [list set ::argv $args]
-	interp eval $slave [list package require tcltest $Version]
+	interp eval $slave [package ifneeded tcltest $Version]
+	interp eval $slave "tcltest::configure {*}{$args}"
 	interp alias $slave ::tcltest::ReportToMaster \
 	    {} ::tcltest::ReportedFromSlave
     }

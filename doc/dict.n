@@ -67,7 +67,7 @@ dictionary, and a condition of \fBTCL_CONTINUE\fR is equivalent to a false
 result. The key/value pairs are tested in the order in which the keys
 were inserted into the dictionary.
 .TP
-\fBdict filter \fIdictionaryValue \fBvalue \fIglobPattern\fR
+\fBdict filter \fIdictionaryValue \fBvalue \fR?\fIglobPattern ...\fR?
 .VS 8.6
 The value rule only matches those key/value pairs whose values match any
 of the given patterns (in the style of \fBstring match\fR.)

@@ -4345,6 +4345,19 @@ SlaveCommandLimitCmd(
     ScriptLimitCallback *limitCBPtr;
     Tcl_HashEntry *hPtr;
 
+    /*
+     * First, ensure that we are not reading or writing the calling
+     * interpreter's limits; it may only manipulate its children. Note that
+     * the low level API enforces this with Tcl_Panic, which we want to
+     * avoid. [Bug 3398794]
+     */
+
+    if (interp == slaveInterp) {
+	Tcl_AppendResult(interp,
+		"limits on current interpreter inaccessible", NULL);
+	return TCL_ERROR;
+    }
+
     if (objc == consumedObjc) {
 	Tcl_Obj *dictPtr;
 
@@ -4518,6 +4531,19 @@ SlaveTimeLimitCmd(
     ScriptLimitCallbackKey key;
     ScriptLimitCallback *limitCBPtr;
     Tcl_HashEntry *hPtr;
+
+    /*
+     * First, ensure that we are not reading or writing the calling
+     * interpreter's limits; it may only manipulate its children. Note that
+     * the low level API enforces this with Tcl_Panic, which we want to
+     * avoid. [Bug 3398794]
+     */
+
+    if (interp == slaveInterp) {
+	Tcl_AppendResult(interp,
+		"limits on current interpreter inaccessible", NULL);
+	return TCL_ERROR;
+    }
 
     if (objc == consumedObjc) {
 	Tcl_Obj *dictPtr;

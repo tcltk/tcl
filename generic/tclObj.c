@@ -1330,7 +1330,7 @@ TclFreeObj(
     ObjInitDeletionContext(context);
 
     if (objPtr->refCount < -1) {
-	Tcl_Panic("Reference count for %lx was negative", objPtr);
+	Tcl_Panic("Reference count for %p was negative", objPtr);
     }
 
     /*
@@ -2763,12 +2763,9 @@ Tcl_GetLongFromObj(
 #endif
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (interp != NULL) {
-		Tcl_Obj *msg;
-
-		TclNewLiteralStringObj(msg, "expected integer but got \"");
-		Tcl_AppendObjToObj(msg, objPtr);
-		Tcl_AppendToObj(msg, "\"", -1);
-		Tcl_SetObjResult(interp, msg);
+                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                        "expected integer but got \"%s\"",
+                        Tcl_GetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3067,12 +3064,9 @@ Tcl_GetWideIntFromObj(
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (interp != NULL) {
-		Tcl_Obj *msg;
-
-		TclNewLiteralStringObj(msg, "expected integer but got \"");
-		Tcl_AppendObjToObj(msg, objPtr);
-		Tcl_AppendToObj(msg, "\"", -1);
-		Tcl_SetObjResult(interp, msg);
+                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                        "expected integer but got \"%s\"",
+                        Tcl_GetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3401,12 +3395,9 @@ GetBignumFromObj(
 #endif
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (interp != NULL) {
-		Tcl_Obj *msg;
-
-		TclNewLiteralStringObj(msg, "expected integer but got \"");
-		Tcl_AppendObjToObj(msg, objPtr);
-		Tcl_AppendToObj(msg, "\"", -1);
-		Tcl_SetObjResult(interp, msg);
+                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                        "expected integer but got \"%s\"",
+                        Tcl_GetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
@@ -3713,23 +3704,21 @@ Tcl_DbIncrRefCount(
      */
 
     if (!TclInExit()) {
-	Tcl_HashTable *tablePtr;
-	Tcl_HashEntry *hPtr;
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+	Tcl_HashTable *tablePtr = tsdPtr->objThreadMap;
+	Tcl_HashEntry *hPtr;
 
-	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
 	    Tcl_Panic("object table not initialized");
 	}
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
-	    Tcl_Panic("%s%s",
-		    "Trying to incr ref count of "
-		    "Tcl_Obj allocated in another thread");
+	    Tcl_Panic("Trying to %s of Tcl_Obj allocated in another thread",
+                    "incr ref count");
 	}
     }
-# endif
-#endif
+# endif /* TCL_THREADS */
+#endif /* TCL_MEM_DEBUG */
     ++(objPtr)->refCount;
 }
 
@@ -3778,19 +3767,17 @@ Tcl_DbDecrRefCount(
      */
 
     if (!TclInExit()) {
-	Tcl_HashTable *tablePtr;
-	Tcl_HashEntry *hPtr;
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+	Tcl_HashTable *tablePtr = tsdPtr->objThreadMap;
+	Tcl_HashEntry *hPtr;
 
-	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
 	    Tcl_Panic("object table not initialized");
 	}
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
-	    Tcl_Panic("%s%s",
-		    "Trying to decr ref count of "
-		    "Tcl_Obj allocated in another thread");
+	    Tcl_Panic("Trying to %s of Tcl_Obj allocated in another thread",
+                    "decr ref count");
 	}
 
 	/*
@@ -3807,8 +3794,9 @@ Tcl_DbDecrRefCount(
 	    Tcl_DeleteHashEntry(hPtr);
 	}
     }
-# endif
-#endif
+# endif /* TCL_THREADS */
+#endif /* TCL_MEM_DEBUG */
+
     if (--(objPtr)->refCount <= 0) {
 	TclFreeObj(objPtr);
     }
@@ -3858,22 +3846,21 @@ Tcl_DbIsShared(
      */
 
     if (!TclInExit()) {
-	Tcl_HashTable *tablePtr;
-	Tcl_HashEntry *hPtr;
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-	tablePtr = tsdPtr->objThreadMap;
+	Tcl_HashTable *tablePtr = tsdPtr->objThreadMap;
+	Tcl_HashEntry *hPtr;
+
 	if (!tablePtr) {
 	    Tcl_Panic("object table not initialized");
 	}
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
-	    Tcl_Panic("%s%s",
-		    "Trying to check shared status of"
-		    "Tcl_Obj allocated in another thread");
+	    Tcl_Panic("Trying to %s of Tcl_Obj allocated in another thread",
+                    "check shared status");
 	}
     }
-# endif
-#endif
+# endif /* TCL_THREADS */
+#endif /* TCL_MEM_DEBUG */
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
@@ -3885,7 +3872,7 @@ Tcl_DbIsShared(
 	tclObjsShared[0]++;
     }
     Tcl_MutexUnlock(&tclObjMutex);
-#endif
+#endif /* TCL_COMPILE_STATS */
 
     return ((objPtr)->refCount > 1);
 }
@@ -4378,6 +4365,10 @@ SetCmdNameFromAny(
     register Command *cmdPtr;
     Namespace *currNsPtr;
     register ResolvedCmdName *resPtr;
+
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
 
     /*
      * Find the Command structure, if any, that describes the command called

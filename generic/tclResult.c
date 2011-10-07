@@ -989,7 +989,6 @@ ResetObjResult(
 	    objResultPtr->length = 0;
 	}
 	TclFreeIntRep(objResultPtr);
-	objResultPtr->typePtr = NULL;
     }
 }
 
@@ -1594,6 +1593,29 @@ Tcl_GetReturnOptions(
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
 		Tcl_NewIntObj(iPtr->errorLine));
     }
+    return options;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclNoErrorStack --
+ *
+ *	Removes the -errorstack entry from an options dict to avoid reference cycles
+ *
+ * Results:
+ *	The (unshared) argument options dict, modified in -place.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options)
+{
+    Tcl_Obj **keys = GetKeys();
+    
+    Tcl_DictObjRemove(interp, options, keys[KEY_ERRORSTACK]);
+
     return options;
 }
 

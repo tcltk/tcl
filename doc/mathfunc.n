@@ -195,16 +195,19 @@ Returns the floating-point remainder of the division of \fIx\fR by
 .TP
 \fBhypot \fIx y\fR
 .
-Computes the length of the hypotenuse of a right-angled triangle
-.QW "\fBsqrt\fR [\fBexpr\fR {\fIx\fB*\fIx\fB+\fIy\fB*\fIy\fR}]".
+Computes the length of the hypotenuse of a right-angled triangle,
+approximately
+.QW "\fBsqrt\fR [\fBexpr\fR {\fIx\fB*\fIx\fB+\fIy\fB*\fIy\fR}]"
+except for being more numerically stable when the two arguments have
+substantially different magnitudes.
 .TP
 \fBint \fIarg\fR
 .
 The argument may be any numeric value.  The integer part of \fIarg\fR
 is determined, and then the low order bits of that integer value up
 to the machine word size are returned as an integer value.  For reference,
-the number of bytes in the machine word are stored in
-\fBtcl_platform(wordSize)\fR.
+the number of bytes in the machine word are stored in the \fBwordSize\fR
+element of the \fBtcl_platform\fR array.
 .TP
 \fBisqrt \fIarg\fR
 .

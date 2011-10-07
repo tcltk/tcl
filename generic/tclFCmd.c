@@ -966,6 +966,10 @@ TclFileAttrsCmd(
     result = TCL_ERROR;
     Tcl_SetErrno(0);
 
+    /*
+     * Get the set of attribute names from the filesystem.
+     */
+
     attributeStrings = Tcl_FSFileAttrStrings(filePtr, &objStrings);
     if (attributeStrings == NULL) {
 	int index;
@@ -980,9 +984,8 @@ TclFileAttrsCmd(
 		Tcl_AppendResult(interp, "could not read \"",
 			TclGetString(filePtr), "\": ", Tcl_PosixError(interp),
 			NULL);
-		return TCL_ERROR;
 	    }
-	    goto end;
+	    return TCL_ERROR;
 	}
 
 	/*
@@ -1006,7 +1009,16 @@ TclFileAttrsCmd(
 	}
 	attributeStringsAllocated[index] = NULL;
 	attributeStrings = attributeStringsAllocated;
+    } else if (objStrings != NULL) {
+	Tcl_Panic("must not update objPtrRef's variable and return non-NULL");
     }
+
+    /*
+     * Process the attributes to produce a list of all of them, the value of a
+     * particular attribute, or to set one or more attributes (depending on
+     * the number of arguments).
+     */
+
     if (objc == 0) {
 	/*
 	 * Get all attributes.
@@ -1060,6 +1072,7 @@ TclFileAttrsCmd(
 	    Tcl_AppendResult(interp, "bad option \"", TclGetString(objv[0]),
 		    "\", there are no file attributes in this filesystem.",
 		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", NULL);
 	    goto end;
 	}
 
@@ -1086,6 +1099,7 @@ TclFileAttrsCmd(
 	    Tcl_AppendResult(interp, "bad option \"", TclGetString(objv[0]),
 		    "\", there are no file attributes in this filesystem.",
 		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", NULL);
 	    goto end;
 	}
 
@@ -1100,6 +1114,8 @@ TclFileAttrsCmd(
 	    if (i + 1 == objc) {
 		Tcl_AppendResult(interp, "value for \"",
 			TclGetString(objv[i]), "\" missing", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FATTR",
+			"NOVALUE", NULL);
 		goto end;
 	    }
 	    if (Tcl_FSFileAttrsSet(interp, index, filePtr,
@@ -1110,21 +1126,17 @@ TclFileAttrsCmd(
     }
     result = TCL_OK;
 
+    /*
+     * Free up the array we allocated and drop our reference to any list of
+     * attribute names issued by the filesystem.
+     */
+
   end:
     if (attributeStringsAllocated != NULL) {
-	/*
-	 * Free up the array we allocated.
-	 */
-
 	TclStackFree(interp, (void *) attributeStringsAllocated);
-
-	/*
-	 * We don't need this object that was passed to us any more.
-	 */
-
-	if (objStrings != NULL) {
-	    Tcl_DecrRefCount(objStrings);
-	}
+    }
+    if (objStrings != NULL) {
+	Tcl_DecrRefCount(objStrings);
     }
     return result;
 }
@@ -1213,6 +1225,7 @@ TclFileLinkCmd(
 		Tcl_AppendResult(interp, "could not create new link \"",
 			TclGetString(objv[index]),
 			"\": that path already exists", NULL);
+		Tcl_PosixError(interp);
 	    } else if (errno == ENOENT) {
 		/*
 		 * There are two cases here: either the target doesn't exist,
@@ -1232,11 +1245,14 @@ TclFileLinkCmd(
 		    Tcl_AppendResult(interp, "could not create new link \"",
 			    TclGetString(objv[index]),
 			    "\": no such file or directory", NULL);
+		    Tcl_PosixError(interp);
 		} else {
 		    Tcl_AppendResult(interp, "could not create new link \"",
 			    TclGetString(objv[index]), "\": target \"",
 			    TclGetString(objv[index+1]), "\" doesn't exist",
 			    NULL);
+		    errno = ENOENT;
+		    Tcl_PosixError(interp);
 		}
 	    } else {
 		Tcl_AppendResult(interp, "could not create new link \"",

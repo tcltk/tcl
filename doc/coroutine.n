@@ -111,7 +111,7 @@ for {set i 1} {$i <= 20} {incr i} {
 .SS "DETAILED SEMANTICS"
 .PP
 This example demonstrates that coroutines start from the global namespace, and
-that\fIcommand\fR resolution happens before the coroutine stack is created.
+that \fIcommand\fR resolution happens before the coroutine stack is created.
 .PP
 .CS
 proc report {where level} {

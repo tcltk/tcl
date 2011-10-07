@@ -156,6 +156,7 @@ test zlib-8.3 {zlib transformation and fileevent} -constraints zlib -setup {
     close $srv
     removeFile $file
 } -result 81920-->81920
+
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
     set file [makeFile {} test.gz]
@@ -569,6 +570,37 @@ test zlib-10.2 "bug #2818131 (mismatch gets)" -constraints {
     rename bgerror {}
     rename zlibRead {}
 } -result {error {invalid block type}}
+
+test zlib-11.1 "Bug #3390073: mis-appled gzip filtering" -setup {
+    set file [makeFile {} test.input]
+} -constraints zlib -body {
+    set f [open $file wb]
+    puts -nonewline [zlib push gzip $f] [string repeat "hello" 1000]
+    close $f
+    set f [open $file rb]
+    set d [read $f]
+    close $f
+    set d [zlib gunzip $d]
+    list [regexp -all "hello" $d] [string length [regsub -all "hello" $d {}]]
+} -cleanup {
+    removeFile $file
+} -result {1000 0}
+test zlib-11.2 "Bug #3390073: mis-appled gzip filtering" -setup {
+    set file [makeFile {} test.input]
+} -constraints zlib -body {
+    set f [open $file wb]
+    puts -nonewline [zlib push gzip $f -header {filename /foo/bar}] \
+	[string repeat "hello" 1000]
+    close $f
+    set f [open $file rb]
+    set d [read $f]
+    close $f
+    set d [zlib gunzip $d -header h]
+    list [regexp -all "hello" $d] [dict get $h filename] \
+	[string length [regsub -all "hello" $d {}]]
+} -cleanup {
+    removeFile $file
+} -result {1000 /foo/bar 0}
 
 ::tcltest::cleanupTests
 return

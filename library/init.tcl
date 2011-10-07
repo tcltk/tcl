@@ -15,7 +15,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.6b1.2
+package require -exact Tcl 8.6b2
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -823,6 +823,7 @@ proc tcl::CopyDirectory {action src dest} {
 }
 
 # TIP 131
+if 0 {
 proc tcl::rmmadwiw {} {
     set magic {
         42 83 fe f6 ff f8 f1 e5 c6 f9 eb fd ff fb f1 e5 cc f5 ec f5 e3 fd fe
@@ -846,4 +847,5 @@ proc tcl::mathfunc::rmmadwiw {} {
     }
     set matter [lreverse $mind]
     return [join $matter ""]
+}
 }

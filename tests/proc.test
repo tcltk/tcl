@@ -187,6 +187,11 @@ test proc-3.6 {TclObjInterpProc, proper quoting of proc name, Bug 942757} -body 
     {a b  c}
 } -returnCodes error -result {wrong # args: should be "{a b  c} x"}
 
+test proc-3.7 {TclObjInterpProc, wrong num args, Bug 3366265} {
+    proc {} {x} {}
+    list [catch {{}} msg] $msg
+} {1 {wrong # args: should be "{} x"}}
+
 catch {namespace delete {*}[namespace children :: test_ns_*]}
 catch {rename p ""}
 catch {rename {} ""}

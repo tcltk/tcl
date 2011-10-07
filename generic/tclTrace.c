@@ -368,6 +368,7 @@ Tcl_TraceObjCmd(
   badVarOps:
     Tcl_AppendResult(interp, "bad operations \"", flagOps,
 	    "\": should be one or more of rwua", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "BADOPS", NULL);
     return TCL_ERROR;
 }
 
@@ -436,6 +437,8 @@ TraceExecutionObjCmd(
 	    Tcl_SetResult(interp, "bad operation list \"\": must be "
 		    "one or more of enter, leave, enterstep, or leavestep",
 		    TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
+		    NULL);
 	    return TCL_ERROR;
 	}
 	for (i = 0; i < listLen; i++) {
@@ -676,6 +679,8 @@ TraceCommandObjCmd(
 	if (listLen == 0) {
 	    Tcl_SetResult(interp, "bad operation list \"\": must be "
 		    "one or more of delete or rename", TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
+		    NULL);
 	    return TCL_ERROR;
 	}
 
@@ -872,6 +877,8 @@ TraceVariableObjCmd(
 	if (listLen == 0) {
 	    Tcl_SetResult(interp, "bad operation list \"\": must be "
 		    "one or more of array, read, unset, or write", TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
+		    NULL);
 	    return TCL_ERROR;
 	}
 	for (i = 0; i < listLen ; i++) {
@@ -2021,6 +2028,7 @@ TraceVarProc(
 	    }
 	    if (code != TCL_OK) {		/* copy error msg to result */
 		Tcl_Obj *errMsgObj = Tcl_GetObjResult(interp);
+
 		Tcl_IncrRefCount(errMsgObj);
 		result = (char *) errMsgObj;
 	    }
@@ -2875,6 +2883,16 @@ Tcl_UntraceVar2(
      * The code below makes it possible to delete traces while traces are
      * active: it makes sure that the deleted trace won't be processed by
      * TclCallVarTraces.
+     *
+     * Caveat (Bug 3062331): When an unset trace handler on a variable
+     * tries to delete a different unset trace handler on the same variable,
+     * the results may be surprising.  When variable unset traces fire, the
+     * traced variable is already gone.  So the TclLookupVar() call above
+     * will not find that variable, and not finding it will never reach here
+     * to perform the deletion.  This means callers of Tcl_UntraceVar*()
+     * attempting to delete unset traces from within the handler of another
+     * unset trace have to account for the possibility that their call to
+     * Tcl_UntraceVar*() is a no-op.
      */
 
     for (activePtr = iPtr->activeVarTracePtr;  activePtr != NULL;

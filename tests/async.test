@@ -196,7 +196,7 @@ test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
 	set aresult {Async event not delivered}
 	testasync marklater $handle
 	set i 0
-    } [string repeat {;incr i;} 1500000] {
+    } "[string repeat {;incr i;} 1500000]after 10;" {
 	return $aresult
     }]] $hm
 } -result {test pattern} -cleanup {

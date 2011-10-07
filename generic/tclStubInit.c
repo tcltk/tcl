@@ -464,6 +464,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_s_mp_sub, /* 60 */
     TclBN_mp_init_set_int, /* 61 */
     TclBN_mp_set_int, /* 62 */
+    TclBN_mp_cnt_lsb, /* 63 */
 };
 
 static const TclStubHooks tclStubHooks = {

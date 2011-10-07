@@ -626,16 +626,24 @@ expectMatch	13.13 P		"a\\nb"		"a\nb"	"a\nb"
 expectMatch	13.14 P		"a\\rb"		"a\rb"	"a\rb"
 expectMatch	13.15 P		"a\\tb"		"a\tb"	"a\tb"
 expectMatch	13.16 P		"a\\u0008x"	"a\bx"	"a\bx"
-expectError	13.17 -		{a\u008x}	EESCAPE
+expectMatch	13.17 P		{a\u008x}	"a\bx"	"a\bx"
 expectMatch	13.18 P		"a\\u00088x"	"a\b8x"	"a\b8x"
 expectMatch	13.19 P		"a\\U00000008x"	"a\bx"	"a\bx"
-expectError	13.20 -		{a\U0000008x}	EESCAPE
+expectMatch	13.20 P		{a\U0000008x}	"a\bx"	"a\bx"
 expectMatch	13.21 P		"a\\vb"		"a\vb"	"a\vb"
 expectMatch	13.22 MP	"a\\x08x"	"a\bx"	"a\bx"
 expectError	13.23 -		{a\xq}		EESCAPE
-expectMatch	13.24 MP	"a\\x0008x"	"a\bx"	"a\bx"
+expectMatch	13.24 MP	"a\\x08x"	"a\bx"	"a\bx"
 expectError	13.25 -		{a\z}		EESCAPE
 expectMatch	13.26 MP	"a\\010b"	"a\bb"	"a\bb"
+expectMatch	13.27 P		"a\\U00001234x"	"a\u1234x"	"a\u1234x"
+expectMatch	13.28 P		{a\U00001234x}	"a\u1234x"	"a\u1234x"
+expectMatch	13.29 P		"a\\U0001234x"	"a\u1234x"	"a\u1234x"
+expectMatch	13.30 P		{a\U0001234x}	"a\u1234x"	"a\u1234x"
+expectMatch	13.31 P		"a\\U000012345x"	"a\u12345x"	"a\u12345x"
+expectMatch	13.32 P		{a\U000012345x}	"a\u12345x"	"a\u12345x"
+expectMatch	13.33 P		"a\\U1000000x"	"a\ufffd0x"	"a\ufffd0x"
+expectMatch	13.34 P		{a\U1000000x}	"a\ufffd0x"	"a\ufffd0x"
 
 
 doing 14 "back references"
@@ -682,6 +690,7 @@ expectError	15.9  -	{a((((((((((b\10))))))))))c}	ESUBREG
 expectMatch	15.10 MP	"a\\12b"	"a\nb"	"a\nb"
 expectError	15.11 b		{a\12b}		ESUBREG
 expectMatch	15.12 eAS	{a\12b}		a12b	a12b
+expectMatch	15.13 MP	{a\701b}	a\u00381b	a\u00381b
 
 
 doing 16 "expanded syntax"

@@ -76,7 +76,7 @@ If the \fIslave\fR argument is omitted, a name will be generated.
 \fB::safe::interpInit\fR \fIslave\fR ?\fIoptions...\fR?
 This command is similar to \fBinterpCreate\fR except it that does not
 create the safe interpreter. \fIslave\fR must have been created by some
-other means, like \fBinterp create \-safe\fR.
+other means, like \fBinterp create\fR \fB\-safe\fR.
 .TP
 \fB::safe::interpConfigure\fR \fIslave\fR ?\fIoptions...\fR?
 If no \fIoptions\fR are given, returns the settings for all options for the
@@ -354,3 +354,6 @@ interp(n), library(n), load(n), package(n), source(n), unknown(n)
 .SH KEYWORDS
 alias, auto\-loading, auto_mkindex, load, master interpreter, safe
 interpreter, slave interpreter, source
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -1527,7 +1527,7 @@ Tcl_UniCharIsSpace(
      */
 
     if (ch < 0x80) {
-	return isspace(UCHAR(ch)); /* INTL: ISO space */
+	return TclIsSpaceProc((char)ch);
     } else {
 	category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
 	return ((SPACE_BITS >> category) & 1);

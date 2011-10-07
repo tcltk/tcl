@@ -17,6 +17,7 @@
 #include "tclOOInt.h"
 
 static inline Class *	GetClassFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static Tcl_ObjCmdProc InfoObjectCallCmd;
 static Tcl_ObjCmdProc InfoObjectClassCmd;
 static Tcl_ObjCmdProc InfoObjectDefnCmd;
 static Tcl_ObjCmdProc InfoObjectFiltersCmd;
@@ -28,6 +29,7 @@ static Tcl_ObjCmdProc InfoObjectMixinsCmd;
 static Tcl_ObjCmdProc InfoObjectNsCmd;
 static Tcl_ObjCmdProc InfoObjectVarsCmd;
 static Tcl_ObjCmdProc InfoObjectVariablesCmd;
+static Tcl_ObjCmdProc InfoClassCallCmd;
 static Tcl_ObjCmdProc InfoClassConstrCmd;
 static Tcl_ObjCmdProc InfoClassDefnCmd;
 static Tcl_ObjCmdProc InfoClassDestrCmd;
@@ -48,6 +50,7 @@ struct NameProcMap { const char *name; Tcl_ObjCmdProc *proc; };
  */
 
 static const struct NameProcMap infoObjectCmds[] = {
+    {"::oo::InfoObject::call",		InfoObjectCallCmd},
     {"::oo::InfoObject::class",		InfoObjectClassCmd},
     {"::oo::InfoObject::definition",	InfoObjectDefnCmd},
     {"::oo::InfoObject::filters",	InfoObjectFiltersCmd},
@@ -67,6 +70,7 @@ static const struct NameProcMap infoObjectCmds[] = {
  */
 
 static const struct NameProcMap infoClassCmds[] = {
+    {"::oo::InfoClass::call",		InfoClassCallCmd},
     {"::oo::InfoClass::constructor",	InfoClassConstrCmd},
     {"::oo::InfoClass::definition",	InfoClassDefnCmd},
     {"::oo::InfoClass::destructor",	InfoClassDestrCmd},
@@ -216,30 +220,22 @@ InfoObjectClassCmd(
 		TclOOObjectName(interp, oPtr->selfCls->thisPtr));
 	return TCL_OK;
     } else {
-	Object *o2Ptr;
-	Class *mixinPtr;
+	Class *mixinPtr, *o2clsPtr;
 	int i;
 
-	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-	if (o2Ptr == NULL) {
-	    return TCL_ERROR;
-	}
-	if (o2Ptr->classPtr == NULL) {
-	    Tcl_AppendResult(interp, "object \"", TclGetString(objv[2]),
-		    "\" is not a class", NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), NULL);
+	o2clsPtr = GetClassFromObj(interp, objv[2]);
+	if (o2clsPtr == NULL) {
 	    return TCL_ERROR;
 	}
 
 	FOREACH(mixinPtr, oPtr->mixins) {
-	    if (TclOOIsReachable(o2Ptr->classPtr, mixinPtr)) {
+	    if (TclOOIsReachable(o2clsPtr, mixinPtr)) {
 		Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
 		return TCL_OK;
 	    }
 	}
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(
-		TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls)));
+		TclOOIsReachable(o2clsPtr, oPtr->selfCls)));
 	return TCL_OK;
     }
 }
@@ -496,6 +492,7 @@ InfoObjectIsACmd(
 	}
 	if (o2Ptr->classPtr == NULL) {
 	    Tcl_AppendResult(interp, "non-classes cannot be mixins", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "NONCLASS", NULL);
 	    return TCL_ERROR;
 	} else {
 	    Class *mixinPtr;
@@ -520,6 +517,7 @@ InfoObjectIsACmd(
 	}
 	if (o2Ptr->classPtr == NULL) {
 	    Tcl_AppendResult(interp, "non-classes cannot be types", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "NONCLASS", NULL);
 	    return TCL_ERROR;
 	}
 	if (TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls)) {
@@ -882,6 +880,7 @@ InfoClassConstrCmd(
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp,
 		"definition not available for this kind of method", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "METHOD_TYPE", NULL);
 	return TCL_ERROR;
     }
 
@@ -1009,6 +1008,7 @@ InfoClassDestrCmd(
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp,
 		"definition not available for this kind of method", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "METHOD_TYPE", NULL);
 	return TCL_ERROR;
     }
 
@@ -1456,6 +1456,93 @@ InfoClassVariablesCmd(
 	Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
     }
     Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectCallCmd --
+ *
+ *	Implements [info object call $objName $methodName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+InfoObjectCallCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Object *oPtr;
+    CallContext *contextPtr;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName methodName");
+	return TCL_ERROR;
+    }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Get the call context and render its call chain.
+     */
+
+    contextPtr = TclOOGetCallContext(oPtr, objv[2], PUBLIC_METHOD, NULL);
+    if (contextPtr == NULL) {
+	Tcl_AppendResult(interp, "cannot construct any call chain", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp,
+	    TclOORenderCallChain(interp, contextPtr->callPtr));
+    TclOODeleteContext(contextPtr);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassCallCmd --
+ *
+ *	Implements [info class call $clsName $methodName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+InfoClassCallCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Class *clsPtr;
+    CallChain *callPtr;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className methodName");
+	return TCL_ERROR;
+    }
+    clsPtr = GetClassFromObj(interp, objv[1]);
+    if (clsPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Get an render the stereotypical call chain.
+     */
+
+    callPtr = TclOOGetStereotypeCallChain(clsPtr, objv[2], PUBLIC_METHOD);
+    if (callPtr == NULL) {
+	Tcl_AppendResult(interp, "cannot construct any call chain", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, TclOORenderCallChain(interp, callPtr));
+    TclOODeleteChain(callPtr);
     return TCL_OK;
 }
 

@@ -249,15 +249,6 @@ static const int itens [] = {
     100000000
 };
 
-static const Tcl_WideUInt wtens[] = {
-    1, 10, 100, 1000, 10000, 100000, 1000000,
-    (Tcl_WideUInt) 1000000*10, 		(Tcl_WideUInt) 1000000*100,
-    (Tcl_WideUInt) 1000000*1000, 	(Tcl_WideUInt) 1000000*10000,
-    (Tcl_WideUInt) 1000000*100000, 	(Tcl_WideUInt) 1000000*1000000,
-    (Tcl_WideUInt) 1000000*1000000*10, 	(Tcl_WideUInt) 1000000*1000000*100,
-    (Tcl_WideUInt) 1000000*1000000*1000,(Tcl_WideUInt) 1000000*1000000*10000
-};
-
 static const double bigtens[] = {
     1e016, 1e032, 1e064, 1e128, 1e256
 };
@@ -571,7 +562,7 @@ TclParseNumber(
 	     * I, N, and whitespace.
 	     */
 
-	    if (isspace(UCHAR(c))) {
+	    if (TclIsSpaceProc(c)) {
 		if (flags & TCL_PARSE_NO_WHITESPACE) {
 		    goto endgame;
 		}
@@ -1091,7 +1082,7 @@ TclParseNumber(
 	    }
 	    /* FALLTHROUGH */
 	case sNANPAREN:
-	    if (isspace(UCHAR(c))) {
+	    if (TclIsSpaceProc(c)) {
 		break;
 	    }
 	    if (numSigDigs < 13) {
@@ -1101,7 +1092,10 @@ TclParseNumber(
 		    d = 10 + c - 'a';
 		} else if (c >= 'A' && c <= 'F') {
 		    d = 10 + c - 'A';
+		} else {
+		    goto endgame;
 		}
+		numSigDigs++;
 		significandWide = (significandWide << 4) + d;
 		state = sNANHEX;
 		break;
@@ -1142,7 +1136,7 @@ TclParseNumber(
 	     * Accept trailing whitespace.
 	     */
 
-	    while (len != 0 && isspace(UCHAR(*p))) {
+	    while (len != 0 && TclIsSpaceProc(*p)) {
 		p++;
 		len--;
 	    }
@@ -1384,11 +1378,9 @@ TclParseNumber(
 
     if (status != TCL_OK) {
 	if (interp != NULL) {
-	    Tcl_Obj *msg;
+	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got \"",
+		    expected);
 
-	    TclNewLiteralStringObj(msg, "expected ");
-	    Tcl_AppendToObj(msg, expected, -1);
-	    Tcl_AppendToObj(msg, " but got \"", -1);
 	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
 	    Tcl_AppendToObj(msg, "\"", -1);
 	    if (state == BAD_OCTAL) {
@@ -3820,7 +3812,7 @@ ShorteningBignumConversion(
     if (m2plus > m2minus) {
 	mp_clear(&mplus);
     }
-    mp_clear_multi(&b, &mminus, &temp, NULL);
+    mp_clear_multi(&b, &mminus, &temp, &dig, &S, NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -3877,6 +3869,7 @@ StrictBignumConversion(
      * S = 2**s2 * 5*s5
      */
 
+    mp_init_multi(&temp, &dig, NULL);
     TclBNInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set_int(&S, 1);
@@ -3891,13 +3884,11 @@ StrictBignumConversion(
 	ilim =ilim1;
 	--k;
     }
-    mp_init(&temp);
 
     /*
      * Convert the leading digit.
      */
 
-    mp_init(&dig);
     i = 0;
     mp_div(&b, &S, &dig, &b);
     if (dig.used > 1 || dig.dp[0] >= 10) {
@@ -3985,7 +3976,7 @@ StrictBignumConversion(
      * string.
      */
 
-    mp_clear_multi(&b, &temp, NULL);
+    mp_clear_multi(&b, &S, &temp, &dig, NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -4482,6 +4473,9 @@ TclFinalizeDoubleConversion(void)
     for (i=0; i<9; ++i) {
 	mp_clear(pow5 + i);
     }
+    for (i=0; i < 5; ++i) {
+	mp_clear(pow5_13 + i);
+    }
 }
 
 /*
@@ -4563,12 +4557,13 @@ TclBignumToDouble(
     const mp_int *a)			/* Integer to convert. */
 {
     mp_int b;
-    int bits, shift, i;
+    int bits, shift, i, lsb;
     double r;
 
+
     /*
-     * Determine how many bits we need, and extract that many from the input.
-     * Round to nearest unit in the last place.
+     * We need a 'mantBits'-bit significand.  Determine what shift will 
+     * give us that.
      */
 
     bits = mp_count_bits(a);
@@ -4580,17 +4575,54 @@ TclBignumToDouble(
 	    return -HUGE_VAL;
 	}
     }
-    shift = mantBits + 1 - bits;
+    shift = mantBits - bits;
+
+    /* 
+     * If shift > 0, shift the significand left by the requisite number of
+     * bits.  If shift == 0, the significand is already exactly 'mantBits'
+     * in length.  If shift < 0, we will need to shift the significand right
+     * by the requisite number of bits, and round it. If the '1-shift'
+     * least significant bits are 0, but the 'shift'th bit is nonzero,
+     * then the significand lies exactly between two values and must be
+     * 'rounded to even'.
+     */
+
     mp_init(&b);
-    if (shift > 0) {
+    if (shift == 0) {
+	mp_copy(a, &b);
+    } else if (shift > 0) {
 	mp_mul_2d(a, shift, &b);
     } else if (shift < 0) {
-	mp_div_2d(a, -shift, &b, NULL);
-    } else {
-	mp_copy(a, &b);
+	lsb = mp_cnt_lsb(a);
+	if (lsb == -1-shift) {
+
+	    /*
+	     * Round to even
+	     */
+
+	    mp_div_2d(a, -shift, &b, NULL);
+	    if (mp_isodd(&b)) {
+		if (b.sign == MP_ZPOS) {
+		    mp_add_d(&b, 1, &b);
+		} else {
+		    mp_sub_d(&b, 1, &b);
+		}
+	    }
+	} else {
+
+	    /*
+	     * Ordinary rounding
+	     */
+
+	    mp_div_2d(a, -1-shift, &b, NULL);
+	    if (b.sign == MP_ZPOS) {
+		mp_add_d(&b, 1, &b);
+	    } else {
+		mp_sub_d(&b, 1, &b);
+	    }
+	    mp_div_2d(&b, 1, &b, NULL);
+	}
     }
-    mp_add_d(&b, 1, &b);
-    mp_div_2d(&b, 1, &b, NULL);
 
     /*
      * Accumulate the result, one mp_digit at a time.

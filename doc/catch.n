@@ -78,13 +78,13 @@ the corresponding level; or it may be
 in which case the parameter is
 the relative level (as in \fBuplevel\fR) of the previous \fBCALL\fR. The
 salient differences wrt \fB\-errorinfo\fR are that:
-.IP (1)
+.IP [1]
 it is a machine-readable form that is amenable to processing with
 [\fBforeach\fR {tok prm} ...],
-.IP (2)
+.IP [2]
 it contains the true (substituted) values passed to the functions, instead of
 the static text of the calling sites, and
-.IP (3)
+.IP [3]
 it is coarser-grained, with only one element per stack frame (like procs; no
 separate elements for \fBforeach\fR constructs for example).
 .VE 8.6

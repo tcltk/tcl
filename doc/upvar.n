@@ -21,8 +21,7 @@ This command arranges for one or more local variables in the current
 procedure to refer to variables in an enclosing procedure call or
 to global variables.
 \fILevel\fR may have any of the forms permitted for the \fBuplevel\fR
-command, and may be omitted if the first letter of the first \fIotherVar\fR
-is not \fB#\fR or a digit (it defaults to \fB1\fR).
+command, and may be omitted (it defaults to \fB1\fR).
 For each \fIotherVar\fR argument, \fBupvar\fR makes the variable
 by that name in the procedure frame given by \fIlevel\fR (or at
 global level, if \fIlevel\fR is \fB#0\fR) accessible

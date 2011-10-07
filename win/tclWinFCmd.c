@@ -1653,6 +1653,8 @@ ConvertFileNameFormat(
 	    Tcl_AppendResult(interp, "could not read \"",
 		    Tcl_GetString(fileName), "\": no such file or directory",
 		    (char *) NULL);
+	    errno = ENOENT;
+	    Tcl_PosixError(interp);
 	}
 	goto cleanup;
     }
@@ -1944,9 +1946,10 @@ CannotSetAttribute(
     Tcl_AppendResult(interp, "cannot set attribute \"",
 	    tclpFileAttrStrings[objIndex], "\" for file \"",
 	    Tcl_GetString(fileName), "\": attribute is readonly", NULL);
+    errno = EINVAL;
+    Tcl_PosixError(interp);
     return TCL_ERROR;
 }
-
 
 /*
  *---------------------------------------------------------------------------

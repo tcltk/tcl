@@ -6,7 +6,7 @@ library tclOO
 
 interface tclOO
 hooks tclOOInt
-scspec EXTERN
+scspec TCLOOAPI
 
 declare 0 {
     Tcl_Object Tcl_CopyObjectInstance(Tcl_Interp *interp,

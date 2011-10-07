@@ -125,20 +125,27 @@ TclpDlopen(
 
 	switch (lastError) {
 	case ERROR_MOD_NOT_FOUND:
+	    Tcl_SetErrorCode(interp, "WIN_LOAD", "MOD_NOT_FOUND", NULL);
+	    goto notFoundMsg;
 	case ERROR_DLL_NOT_FOUND:
+	    Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_NOT_FOUND", NULL);
+	notFoundMsg:
 	    Tcl_AppendResult(interp, "this library or a dependent library"
 		    " could not be found in library path", NULL);
 	    break;
 	case ERROR_PROC_NOT_FOUND:
+	    Tcl_SetErrorCode(interp, "WIN_LOAD", "PROC_NOT_FOUND", NULL);
 	    Tcl_AppendResult(interp, "A function specified in the import"
 		    " table could not be resolved by the system.  Windows"
 		    " is not telling which one, I'm sorry.", NULL);
 	    break;
 	case ERROR_INVALID_DLL:
+	    Tcl_SetErrorCode(interp, "WIN_LOAD", "INVALID_DLL", NULL);
 	    Tcl_AppendResult(interp, "this library or a dependent library"
 		    " is damaged", NULL);
 	    break;
 	case ERROR_DLL_INIT_FAILED:
+	    Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_INIT_FAILED", NULL);
 	    Tcl_AppendResult(interp, "the library initialization"
 		    " routine failed", NULL);
 	    break;
@@ -147,14 +154,18 @@ TclpDlopen(
 	    Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
 	}
 	return TCL_ERROR;
-    } else {
-	handlePtr = ckalloc(sizeof(struct Tcl_LoadHandle_));
-	handlePtr->clientData = (ClientData) hInstance;
-	handlePtr->findSymbolProcPtr = &FindSymbol;
-	handlePtr->unloadFileProcPtr = &UnloadFile;
-	*loadHandle = handlePtr;
-	*unloadProcPtr = &UnloadFile;
     }
+
+    /*
+     * Succeded; package everything up for Tcl.
+     */
+
+    handlePtr = ckalloc(sizeof(struct Tcl_LoadHandle_));
+    handlePtr->clientData = (ClientData) hInstance;
+    handlePtr->findSymbolProcPtr = &FindSymbol;
+    handlePtr->unloadFileProcPtr = &UnloadFile;
+    *loadHandle = handlePtr;
+    *unloadProcPtr = &UnloadFile;
     return TCL_OK;
 }
 
@@ -344,7 +355,7 @@ TclpTempFileNameForLibrary(Tcl_Interp* interp, /* Tcl interpreter */
     }
     if (dllDirectoryName == NULL) {
 	Tcl_AppendResult(interp, "couldn't create temporary directory: ",
-			 Tcl_PosixError(interp), NULL);
+		Tcl_PosixError(interp), NULL);
     }
     fileName = TclpNativeToNormalized(dllDirectoryName);
     tail = TclPathPart(interp, path, TCL_PATH_TAIL);

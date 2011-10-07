@@ -1210,7 +1210,7 @@ Tcl_GlobObjCmd(
     int index, i, globFlags, length, join, dir, result;
     char *string;
     const char *separators;
-    Tcl_Obj *typePtr, *resultPtr, *look;
+    Tcl_Obj *typePtr, *look;
     Tcl_Obj *pathOrDir = NULL;
     Tcl_DString prefix;
     static const char *const options[] = {
@@ -1497,8 +1497,8 @@ Tcl_GlobObjCmd(
 	    } else {
 		Tcl_Obj *item;
 
-		if ((Tcl_ListObjLength(NULL, look, &len) == TCL_OK) &&
-			(len == 3)) {
+		if ((Tcl_ListObjLength(NULL, look, &len) == TCL_OK)
+			&& (len == 3)) {
 		    Tcl_ListObjIndex(interp, look, 0, &item);
 		    if (!strcmp("macintosh", Tcl_GetString(item))) {
 			Tcl_ListObjIndex(interp, look, 1, &item);
@@ -1528,10 +1528,9 @@ Tcl_GlobObjCmd(
 		 */
 
 	    badTypesArg:
-		TclNewObj(resultPtr);
-		Tcl_AppendToObj(resultPtr, "bad argument to \"-types\": ", -1);
-		Tcl_AppendObjToObj(resultPtr, look);
-		Tcl_SetObjResult(interp, resultPtr);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad argument to \"-types\": %s",
+			Tcl_GetString(look)));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", NULL);
 		result = TCL_ERROR;
 		join = 0;
@@ -1624,6 +1623,7 @@ Tcl_GlobObjCmd(
 		Tcl_AppendResult(interp, Tcl_DStringValue(&prefix), NULL);
 	    } else {
 		const char *sep = "";
+
 		for (i = 0; i < objc; i++) {
 		    string = Tcl_GetString(objv[i]);
 		    Tcl_AppendResult(interp, sep, string, NULL);

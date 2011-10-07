@@ -133,7 +133,7 @@ holds true:
 .RS
 .PP
 .CS
-(\fIx \fB/ \fIy\fR) \fB* \fIy \fB== \fIx \fB-\fR (\fIx \fB% \fIy\fR)
+(\fIx \fB/ \fIy\fR) \fB* \fIy \fB== \fIx \fB\-\fR (\fIx \fB% \fIy\fR)
 .CE
 .RE
 .TP

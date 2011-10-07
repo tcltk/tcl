@@ -541,6 +541,22 @@ test safe-12.7 {glob is restricted} -setup {
 } -cleanup {
     safe::interpDelete $i
 } -match glob -result *
+
+test safe-13.1 {safe file ensemble does not surprise code} -setup {
+    set i [interp create -safe]
+} -body {
+    set result [expr {"file" in [interp hidden $i]}]
+    lappend result [interp eval $i {tcl::file::split a/b/c}]
+    lappend result [catch {interp eval $i {tcl::file::isdirectory .}}]
+    lappend result [interp invokehidden $i file split a/b/c]
+    lappend result [catch {interp eval $i {file split a/b/c}} msg] $msg
+    lappend result [catch {interp invokehidden $i file isdirectory .}]
+    interp expose $i file
+    lappend result [catch {interp eval $i {file split a/b/c}} msg] $msg
+    lappend result [catch {interp eval $i {file isdirectory .}} msg] $msg
+} -cleanup {
+    interp delete $i
+} -result {1 {a b c} 1 {a b c} 1 {invalid command name "file"} 1 0 {a b c} 1 {invalid command name "::tcl::file::isdirectory"}}
 
 set ::auto_path $saveAutoPath
 # cleanup

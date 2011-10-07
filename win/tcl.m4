@@ -589,6 +589,21 @@ file for information about building with Mingw.])
 		MACHINE="IA64"
 		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 		;;
+	    *)
+		AC_TRY_COMPILE([
+			#ifdef _WIN64
+			#error 64-bit
+			#endif
+		], [],
+			tcl_win_64bit=no,
+			tcl_win_64bit=yes
+		)
+		if test "$tcl_win_64bit" = "yes" ; then
+			do64bit=amd64
+			MACHINE="AMD64"
+			AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		fi
+		;;
 	esac
     else
 	if test "${SHARED_BUILD}" = "0" ; then
