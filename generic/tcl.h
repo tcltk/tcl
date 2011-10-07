@@ -2276,12 +2276,12 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 
 #define TCL_ARGV_AUTO_HELP \
     {TCL_ARGV_HELP,	"-help",	NULL,	NULL, \
-	    "Print summary of command-line options and abort"}
+	    "Print summary of command-line options and abort", NULL}
 #define TCL_ARGV_AUTO_REST \
     {TCL_ARGV_REST,	"--",		NULL,	NULL, \
-	    "Marks the end of the options"}
+	    "Marks the end of the options", NULL}
 #define TCL_ARGV_TABLE_END \
-    {TCL_ARGV_END}
+    {TCL_ARGV_END, NULL, NULL, NULL, NULL, NULL}
 
 /*
  *----------------------------------------------------------------------------
