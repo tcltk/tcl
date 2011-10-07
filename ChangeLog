@@ -2,6 +2,8 @@
 
 	* generic/tcl.h:        Fix gcc warnings (discovered with
 	* generic/tclIORChan.c: latest mingw, based on gcc 4.6.1)
+	* tests/env.test:       Fix env.test, when running
+	under wine 1.3
 
 2011-10-06  Donal K. Fellows  <dkf@users.sf.net>
 
