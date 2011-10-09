@@ -1,3 +1,9 @@
+2011-10-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictWithCmd): Corrected handling of
+	qualified names, and added spacial cases for empty bodies (used when
+	[dict with] is just used for extracting variables).
+
 2011-10-07  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:        Fix gcc warnings (discovered with
