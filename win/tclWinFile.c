@@ -1074,7 +1074,7 @@ static int WinIsReserved(
  * volume, because for NTFS root volumes, the getFileAttributesProc
  * returns a 'hidden' attribute when it should not.
  * 
- * We never make any calss to a 'get attributes' routine here,
+ * We never make any calls to a 'get attributes' routine here,
  * since we have arranged things so that our caller already knows
  * such information.
  * 
@@ -2023,8 +2023,8 @@ NativeStatMode(DWORD attr, int checkLinks, int isExec)
      * other positions.
      */
 
-    mode |= (mode & 0x0700) >> 3;
-    mode |= (mode & 0x0700) >> 6;
+    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 3;
+    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 6;
     return (unsigned short)mode;
 }
 
