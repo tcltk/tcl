@@ -1,3 +1,8 @@
+2011-10-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c:    [Bug 2935503] Incorrect mode field
+	* tests/io.test:       returned by file stat command
+
 2011-10-07  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinChan.c:    Fix various gcc warnings
