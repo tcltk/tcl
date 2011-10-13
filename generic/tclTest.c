@@ -75,7 +75,7 @@ typedef struct TestAsyncHandler {
 				/* Next is list of handlers. */
 } TestAsyncHandler;
 
-TCL_DECLARE_MUTEX(asyncTestMutex);
+TCL_DECLARE_MUTEX(asyncTestMutex)
 
 static TestAsyncHandler *firstHandler = NULL;
 
@@ -7109,7 +7109,8 @@ TestparseargsCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Arguments. */
 {
-    int count = objc, foo = 0;
+    static int foo = 0;
+    int count = objc;
     Tcl_Obj **remObjv, *result[3];
     Tcl_ArgvInfo argTable[] = {
         {TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
