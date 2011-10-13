@@ -72,6 +72,8 @@ TclpFindExecutable(argv0)
 	return tclNativeExecutableName;
     }
 
+    Tcl_DStringInit(&buffer);
+
     /*
      * The executable name is sometimes available to us directly, which is
      * useful because it's not always there in argv[0]; that's a value that is
@@ -105,8 +107,6 @@ TclpFindExecutable(argv0)
 	goto gotName;
     }
 #endif
-
-    Tcl_DStringInit(&buffer);
 
     name = argv0;
     for (p = name; *p != '\0'; p++) {
