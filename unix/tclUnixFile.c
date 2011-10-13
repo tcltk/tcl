@@ -82,7 +82,10 @@ TclpFindExecutable(argv0)
     }
 #endif
 #ifndef NO_DLFCN_H
-    sym = dlsym(RTLD_DEFAULT, "_main");
+    sym = dlsym(RTLD_DEFAULT, "main");
+    if (sym == NULL) {
+	sym = dlsym(RTLD_DEFAULT, "_main");
+    }
     if (sym != NULL && dladdr(sym, &dlinfoBuffer)
 	    && dlinfoBuffer.dli_fname[0] == '/') {
 	name = dlinfoBuffer.dli_fname;
