@@ -170,7 +170,7 @@ static const EnsembleImplMap defaultNamespaceMap[] = {
     {"export",          NamespaceExportCmd, NULL, NULL, NULL, 0},
     {"forget",          NamespaceForgetCmd, NULL, NULL, NULL, 0},
     {"import",          NamespaceImportCmd, NULL, NULL, NULL, 0},
-    {"inscope",         NamespaceInscopeCmd,    NULL, NULL, NRNamespaceInscopeCmd, 0},
+    {"inscope",         NamespaceInscopeCmd,    NULL, NRNamespaceInscopeCmd, NULL, 0},
     {"origin",          NamespaceOriginCmd, NULL, NULL, NULL, 0},
     {"parent",          NamespaceParentCmd, NULL, NULL, NULL, 0},
     {"path",            NamespacePathCmd, NULL, NULL, NULL, 0},
