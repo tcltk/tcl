@@ -7117,6 +7117,7 @@ TestparseargsCmd(
         TCL_ARGV_AUTO_REST, TCL_ARGV_AUTO_HELP, TCL_ARGV_TABLE_END
     };
 
+    foo = 0;
     if (Tcl_ParseArgsObjv(interp, argTable, &count, objv, &remObjv)!=TCL_OK) {
         return TCL_ERROR;
     }
