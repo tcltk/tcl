@@ -12,6 +12,9 @@
 
 #include "tclInt.h"
 #include "tclPort.h"
+#ifndef NO_DLFCN_H
+#include <dlfcn.h>
+#endif
 
 static int NativeMatchType(CONST char* nativeName, Tcl_GlobTypeData *types);
 
@@ -49,6 +52,18 @@ TclpFindExecutable(argv0)
     Tcl_StatBuf statBuf;
     int length;
     Tcl_DString buffer, nameString;
+#ifndef DJGPP
+    int i;
+    static CONST char *exepaths[] = {
+      "/proc/self/exe", "/proc/%lu/exe", "/proc/%lu/file",
+      "/proc/%lu/object/a.out"
+    };
+    char buf1[PATH_MAX+1], buf2[128];
+#endif
+#ifndef NO_DLFCN_H
+    Dl_info dlinfoBuffer;
+    void *sym;
+#endif
 
     if (argv0 == NULL) {
 	return NULL;
@@ -56,6 +71,24 @@ TclpFindExecutable(argv0)
     if (tclNativeExecutableName != NULL) {
 	return tclNativeExecutableName;
     }
+
+#ifndef DJGPP
+    for (i=0 ; i<sizeof(exepaths)/sizeof(*exepaths) ; i++) {
+	sprintf(buf2,exepaths[i],(unsigned long)getpid());
+	if (readlink(buf2,buf1,PATH_MAX) > 0 && buf1[0] == '/') {
+	    name = buf1;
+	    goto gotName;
+	}
+    }
+#endif
+#ifndef NO_DLFCN_H
+    sym = dlsym(RTLD_DEFAULT, "_main");
+    if (sym != NULL && dladdr(sym, &dlinfoBuffer)
+	    && dlinfoBuffer.dli_fname[0] == '/') {
+	name = dlinfoBuffer.dli_fname;
+	goto gotName;
+    }
+#endif
 
     Tcl_DStringInit(&buffer);
 
