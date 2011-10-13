@@ -5228,9 +5228,9 @@ test io-40.1 {POSIX open access modes: RDWR} {
     close $f
     set x
 } {zzy abzzy}
-test io-40.2 {POSIX open access modes: CREAT} {
+test io-40.2 {POSIX open access modes: CREAT} {unixOnly} {
     file delete $path(test3)
-    set f [open $path(test3) {WRONLY CREAT} 0666]
+    set f [open $path(test3) {WRONLY CREAT} 0600]
     file stat $path(test3) stats
     set x [format "0%o" [expr $stats(mode)&0777]]
     puts $f "line 1"
@@ -5239,7 +5239,7 @@ test io-40.2 {POSIX open access modes: CREAT} {
     lappend x [gets $f]
     close $f
     set x
-} {0666 {line 1}}
+} {0600 {line 1}}
 
 # some tests can only be run is umask is 2
 # if "umask" cannot be run, the tests will be skipped.
