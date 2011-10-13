@@ -1,7 +1,20 @@
+2011-10-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c:    [Bug 2935503] Incorrect mode field
+	returned by file stat command
+
+2011-10-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictWithCmd): Corrected handling of
+	qualified names, and added spacial cases for empty bodies (used when
+	[dict with] is just used for extracting variables).
+
 2011-10-07  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:        Fix gcc warnings (discovered with
 	* generic/tclIORChan.c: latest mingw, based on gcc 4.6.1)
+	* tests/env.test:       Fix env.test, when running
+	under wine 1.3
 
 2011-10-06  Donal K. Fellows  <dkf@users.sf.net>
 

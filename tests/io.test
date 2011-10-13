@@ -5205,16 +5205,16 @@ test io-40.1 {POSIX open access modes: RDWR} {
 } {zzy abzzy}
 test io-40.2 {POSIX open access modes: CREAT} {unix} {
     file delete $path(test3)
-    set f [open $path(test3) {WRONLY CREAT} 0600]
+    set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
-    set x [format "0%o" [expr $stats(mode)&0o777]]
+    set x [format "0o%o" [expr $stats(mode)&0o777]]
     puts $f "line 1"
     close $f
     set f [open $path(test3) r]
     lappend x [gets $f]
     close $f
     set x
-} {0600 {line 1}}
+} {0o600 {line 1}}
 test io-40.3 {POSIX open access modes: CREAT} {unix umask} {
     # This test only works if your umask is 2, like ouster's.
     file delete $path(test3)

@@ -676,6 +676,7 @@ typedef struct ByteCode {
 #define INST_UNSET_ARRAY_STK		136
 #define INST_UNSET_STK			137
 
+/* For [dict with] compilation */
 #define INST_DICT_EXPAND		138
 #define INST_DICT_RECOMBINE_STK		139
 #define INST_DICT_RECOMBINE_IMM		140
