@@ -1424,6 +1424,54 @@ test dict-22.17 {dict with: compiled} {
 	array get d
     }} e
 } {e {p {q {a 2.1 b 2}}}}
+test dict-22.18 {dict with: compiled} {
+    set ::d {a 1 b 2}
+    apply {{} {
+	dict with ::d {
+	    set a $b.$a
+	}
+	return $::d
+    }}
+} {a 2.1 b 2}
+test dict-22.19 {dict with: compiled} {
+    set ::d {p {q {r {a 1 b 2}}}}
+    apply {{} {
+	dict with ::d p q r {
+	    set a $b.$a
+	}
+	return $::d
+    }}
+} {p {q {r {a 2.1 b 2}}}}
+test dict-22.20 {dict with: compiled} {
+    apply {d {
+	dict with d {
+	}
+	return $a,$b
+    }} {a 1 b 2}
+} 1,2
+test dict-22.21 {dict with: compiled} {
+    apply {d {
+	dict with d p q {
+	}
+	return $a,$b
+    }} {p {q {a 1 b 2}}}
+} 1,2
+test dict-22.22 {dict with: compiled} {
+    set ::d {a 1 b 2}
+    apply {{} {
+	dict with ::d {
+	}
+	return $a,$b
+    }}
+} 1,2
+test dict-22.23 {dict with: compiled} {
+    set ::d {p {q {a 1 b 2}}}
+    apply {{} {
+	dict with ::d p q {
+	}
+	return $a,$b
+    }}
+} 1,2
 
 # cleanup
 ::tcltest::cleanupTests
