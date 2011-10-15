@@ -1,3 +1,8 @@
+2011-10-15  Venkat Iyer <venkat@comit.com>
+	* library/tzdata/America/Sitka : Update to Olson's tzdata2011l
+	* library/tzdata/Pacific/Fiji
+	* library/tzdata/Asia/Hebron (New)
+
 2011-10-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinFile.c:    [Bug 2935503] Incorrect mode field
