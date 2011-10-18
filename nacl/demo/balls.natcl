@@ -8,7 +8,7 @@ set height 200
 
 # animation globals
 set t 0
-set frameInterval 25
+set frameInterval 33
 
 # ball globals
 set ballRadius 10

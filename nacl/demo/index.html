@@ -12,10 +12,22 @@
     tclModule = null;  // Global application object.
     statusText = 'NO-STATUS';
 
+	function nil() {};
+
+    // Handle a message coming from the NaCl module.
+    function handleMessage(message_event) {
+      alert("Result: "+message_event.data);
+    }
+
+
+
     function moduleDidLoad() {
       tclModule = document.getElementById('tcl');
+	  tclModule.addEventListener('message', handleMessage, false);
       updateStatus('SUCCESS');
     }
+
+
 
     // If the page loads before the Native Client module loads, then set the
     // status message indicating that the module is still loading.  Otherwise,
@@ -34,7 +46,7 @@
 
     function doeval() {
       try {
-        alert(tclModule.eval(this.the_form.input_id.value));
+        tclModule.postMessage("eval:"+this.the_form.input_id.value);
       } catch(e) {
         alert(e.message);
       }
@@ -59,23 +71,36 @@
 
 <h1>Native Client Tcl Module</h1>
 <p>
-  <form name="the_form" action="" method="get">
+  <form name="the_form" action="javascript:doeval()">
   <input type="text" id="input_id" name="inputbox" value="list a b c"><p>
   <input type="button" value="Call eval()" onclick="doeval()">
   </form>
-  <!-- Load the published .nexe.  This includes the 'nacl' attribute which
+
+  <!-- Load the published .nexe.  This includes the 'src' attribute which
   shows how to load multi-architecture modules.  Each entry in the "nexes"
   object in the  .nmf manifest file is a key-value pair: the key is the runtime
   ('x86-32', 'x86-64', etc.); the value is a URL for the desired NaCl module.
-  To load the debug versions of your .nexes, set the 'nacl' attribute to the
+  To load the debug versions of your .nexes, set the 'src' attribute to the
   _dbg.nmf version of the manifest file.
+
+  Note that the <EMBED> element is wrapped inside a <DIV>, which has a 'load'
+  event listener attached.  This method is used instead of attaching the 'load'
+  event listener directly to the <EMBED> element to ensure that the listener
+  is active before the NaCl module 'load' event fires.
   -->
-  <embed name="nacl_module"
-         id="tcl"
-         width=0 height=0
-         nacl="tcl.nmf"
-         type="application/x-nacl"
-         onload="moduleDidLoad();" />
+  <div id="listener">
+    <script type="text/javascript">
+      document.getElementById('listener')
+          .addEventListener('load', moduleDidLoad, true);
+    </script>
+
+    <embed name="nacl_module"
+           id="tcl"
+           width=0 height=0
+           src="tcl.nmf"
+           type="application/x-nacl"/>
+  </div>
+
 </p>
 
 <p>If the module is working correctly, a click on the "Call eval()" button

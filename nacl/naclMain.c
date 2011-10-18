@@ -1,15 +1,29 @@
 #include <stdlib.h>
 #include <string.h>
-#include <ppapi/c/dev/ppb_var_deprecated.h>
-#include <ppapi/c/dev/ppp_class_deprecated.h>
+//#include <ppapi/c/dev/ppb_var_deprecated.h>
+//#include <ppapi/c/dev/ppp_class_deprecated.h>
+
 #include <ppapi/c/pp_errors.h>
-#include <ppapi/c/pp_var.h>
 #include <ppapi/c/pp_module.h>
+#include <ppapi/c/pp_var.h>
+
 #include <ppapi/c/ppb.h>
 #include <ppapi/c/ppb_instance.h>
+#include <ppapi/c/ppb_messaging.h>
+#include <ppapi/c/ppb_var.h>
+
 #include <ppapi/c/ppp.h>
 #include <ppapi/c/ppp_instance.h>
+#include <ppapi/c/ppp_messaging.h>
 
+struct MessageInfo {
+  PP_Instance instance;
+  struct PP_Var message;
+};
+
+static struct PPB_Messaging* messaging_interface = NULL;
+static struct PPB_Var* var_interface = NULL;
+static PP_Module module_id = 0;
 
 #include <errno.h>
 #include "tcl.h"
@@ -43,9 +57,9 @@ static Tcl_Interp *NewTcl(void)
 {
   Tcl_Interp *ii;
 
-  //printf("DBUG:TclInitSubsystems\n");
+  printf("DBUG:TclInitSubsystems\n");
   TclInitSubsystems();
-  //printf("DBUG:TclpSetInitialEncodings\n");
+  printf("DBUG:TclpSetInitialEncodings\n");
   TclpSetInitialEncodings();
 
   {
@@ -55,13 +69,13 @@ static Tcl_Interp *NewTcl(void)
     if (x) printf("NaTcl(%d): BUSYLOOP : break out by resetting the var (set $eax=0)\n",pid);
     while(x) {}
   }
-  //  printf("DBUG:CreateInterp\n");
+  printf("DBUG:CreateInterp\n");
   ii=Tcl_CreateInterp();
   if (!ii) {
     printf("NaTcl(%d): Tcl CreateInterp Failed !!!\n",pid);
     return NULL;
   }
-  //printf("DBUG:Tcl_Init2\n");
+  printf("DBUG:Tcl_Init2\n");
   if (Tcl_Eval(ii,init_tcl_contents)!=TCL_OK) {
     printf("NaTcl(%d): Tcl Init Failed: %s !!!\n",pid,Tcl_GetStringResult(ii));
     return NULL;
@@ -72,7 +86,7 @@ static Tcl_Interp *NewTcl(void)
   return ii;
 }
 
-static const char *EvalTcl(char *s)
+static const char *EvalTcl(const char *s)
 {
   if (!interp) return "No Tcl Interp!!!";
   Tcl_Eval(interp,s);
@@ -80,44 +94,27 @@ static const char *EvalTcl(char *s)
 }
 
 
-static PP_Bool Instance_DidCreate(PP_Instance instance,
-                                  uint32_t argc,
-                                  const char* argn[],
-                                  const char* argv[]);
-static void Instance_DidDestroy(PP_Instance instance);
-static void Instance_DidChangeView(PP_Instance instance,
-                                   const struct PP_Rect* position,
-                                   const struct PP_Rect* clip);
-static void Instance_DidChangeFocus(PP_Instance instance,
-                                    PP_Bool has_focus);
-static PP_Bool Instance_HandleInputEvent(PP_Instance instance,
-                                         const struct PP_InputEvent* event);
-static struct PP_Var Instance_GetInstanceObject(PP_Instance instance);
-
-static PP_Module module_id = 0;
-static struct PPB_Var_Deprecated* var_interface = NULL;
-static struct PPP_Class_Deprecated ppp_class;
-static struct PPP_Instance instance_interface = {
-  &Instance_DidCreate,
-  &Instance_DidDestroy,
-  &Instance_DidChangeView,
-  &Instance_DidChangeFocus,
-  &Instance_HandleInputEvent,
-  NULL,  /* HandleDocumentLoad is not supported by NaCl modules. */
-  &Instance_GetInstanceObject,
-};
-
-
 /**
- * Returns C string contained in the @a var or NULL if @a var is not string.
+ * Returns a mutable C string contained in the @a var or NULL if @a var is not
+ * string.  This makes a copy of the string in the @ var and adds a NULL
+ * terminator.  Note that VarToUtf8() does not guarantee the NULL terminator on
+ * the returned string.  See the comments for VatToUtf8() in ppapi/c/ppb_var.h
+ * for more info.  The caller is responsible for freeing the returned memory.
  * @param[in] var PP_Var containing string.
  * @return a C string representation of @a var.
- * @note Returned pointer will be invalid after destruction of @a var.
+ * @note The caller is responsible for freeing the returned string.
  */
-static const char* VarToCStr(struct PP_Var var) {
+static char* VarToCStr(struct PP_Var var) {
   uint32_t len = 0;
-  if (NULL != var_interface)
-    return var_interface->VarToUtf8(var, &len);
+  if (var_interface != NULL) {
+    const char* var_c_str = var_interface->VarToUtf8(var, &len);
+    if (len > 0) {
+      char* c_str = (char*)malloc(len + 1);
+      memcpy(c_str, var_c_str, len);
+      c_str[len] = 0;
+      return c_str;
+    }
+  }
   return NULL;
 }
 
@@ -243,138 +240,65 @@ static void Instance_DidChangeFocus(PP_Instance instance,
 }
 
 /**
- * General handler for input events. Returns true if the event was handled or
- * false if it was not.
- *
- * If the event was handled, it will not be forwarded to the web page or
- * browser. If it was not handled, it will bubble according to the normal
- * rules. So it is important that the NaCl module respond accurately with
- * whether event propogation should continue.
- *
- * Event propogation also controls focus. If you handle an event like a mouse
- * event, typically your NaCl module will be given focus. Returning false means
- * that the click will be given to a lower part of the page and your NaCl
- * module will not receive focus. This allows a plugin to be partially
- * transparent, where clicks on the transparent areas will behave like clicks
- * to the underlying page.
+ * Handler that gets called after a full-frame module is instantiated based on
+ * registered MIME types.  This function is not called on NaCl modules.  This
+ * function is essentially a place-holder for the required function pointer in
+ * the PPP_Instance structure.
  * @param[in] instance The identifier of the instance representing this NaCl
  *     module.
- * @param[in] event The event.
- * @return PP_TRUE if @a event was handled, PP_FALSE otherwise.
+ * @param[in] url_loader A PP_Resource an open PPB_URLLoader instance.
+ * @return PP_FALSE.
  */
-static PP_Bool Instance_HandleInputEvent(PP_Instance instance,
-                                         const struct PP_InputEvent* event) {
-  /* We don't handle any events. */
+static PP_Bool Instance_HandleDocumentLoad(PP_Instance instance,
+                                           PP_Resource url_loader) {
+  /* NaCl modules do not need to handle the document load function. */
   return PP_FALSE;
 }
 
 /**
- * Create scriptable object for the given instance.
+ * Handler for messages coming in from the browser via postMessage.  Extracts
+ * the method call from @a message, parses it for method name and value, then
+ * calls the appropriate function.
  * @param[in] instance The instance ID.
- * @return A scriptable object.
+ * @param[in] message The contents, copied by value, of the message sent from
+ *     browser via postMessage.
  */
-static struct PP_Var Instance_GetInstanceObject(PP_Instance instance) {
-    printf("NaTcl(%d): DBUG: NaTcl GetInstanceObject %x\n",getpid(), (unsigned int)instance);
-  if (var_interface) {
-    return var_interface->CreateObject(instance, &ppp_class, NULL);
-  }
-  return PP_MakeUndefined();
-}
+void Messaging_HandleMessage(PP_Instance instance, struct PP_Var var_message) {
 
-/**
- * Check existence of the function associated with @a name.
- * @param[in] object unused
- * @param[in] name method name
- * @param[out] exception pointer to the exception object, unused
- * @return If the method does exist, return true.
- * If the method does not exist, return false and don't set the exception.
- */
-static bool Tcl_HasMethod(void* object,
-                                 struct PP_Var name,
-                                 struct PP_Var* exception) {
-  const char* method_name = VarToCStr(name);
-  if (NULL != method_name) {
-      if (strcmp(method_name, "eval") == 0)
-          return true;
-      else if (strcmp(method_name, "evall") == 0)
-          return true;
-  }
-  return false;
-}
-
-/**
- * Invoke the function associated with @a name.
- * @param[in] object unused
- * @param[in] name method name
- * @param[in] argc number of arguments
- * @param[in] argv array of arguments
- * @param[out] exception pointer to the exception object, unused
- * @return If the method does exist, return true.
- */
-static struct PP_Var Tcl_Call(void* object,
-                                     struct PP_Var name,
-                                     uint32_t argc,
-                                     struct PP_Var* argv,
-                                     struct PP_Var* exception) {
   struct PP_Var v = PP_MakeUndefined();
-  const char* method_name = VarToCStr(name);
-  if (NULL != method_name) {
-    if (strcmp(method_name, "eval") == 0) {
-      if (argc == 1) {
-        if (argv[0].type != PP_VARTYPE_STRING) {
-          v = StrToVar("Arg from Javascript is not a string!");
-        } else {
-          char* str = strdup(VarToCStr(argv[0]));
-          if (verbose) {
-              printf("NaTcl(%d): EVAL of: %s\n",pid, str);
-          }
-	  const char* res = EvalTcl(str);
-          if (verbose) {
-              printf("NaTcl(%d): EVAL result: %s\n",pid, Tcl_GetStringResult(interp));
-          }
-          v = StrToVar(res);
-          free(str);
-        }
-      } else {
-        v = StrToVar("Unexpected number of args");
-      }
-    } else if (strcmp(method_name, "evall") == 0) {
-        Tcl_Obj *args[argc+1];
-        uint32_t len = 0;
-        int i;
+  const char *message = NULL;
 
-        args[0] = Tcl_NewStringObj("::nacl::evall",-1);
-        Tcl_IncrRefCount(args[0]);
-
-        for (i = 0; i < argc; i++) {
-            if (argv[i].type == PP_VARTYPE_STRING) {
-                const char *bytes = var_interface->VarToUtf8(argv[i], &len);
-                args[i+1] = Tcl_NewStringObj(bytes, len);
-                Tcl_IncrRefCount(args[i+1]);
-                if (verbose) {
-                    printf("NaTcl(%d): EVALL arg: '%s'\n",pid, bytes);
-                }
-            } else {
-                v = StrToVar("Arg from Javascript is not a string!");
-            }
-        }
-
-        Tcl_EvalObjv(interp, argc+1, args, 0);
-
-        if (verbose) {
-            printf("NaTcl(%d): EVALL result: '%s'\n",pid, Tcl_GetStringResult(interp));
-        }
-
-        for (i = 0; i < argc+1; i++) {
-            Tcl_DecrRefCount(args[i]);
-        }
-        v = StrToVar(Tcl_GetStringResult(interp));
-    } else {
-        v = StrToVar("Unknown method");
-    }
+  if (var_message.type != PP_VARTYPE_STRING) {
+    /* Only handle string messages */
+	v = StrToVar("ERROR:Method+Arg from Javascript is not a string!");
+    goto post;
   }
-
-  return v;
+  message = VarToCStr(var_message);
+  if (message == NULL) {
+	v = StrToVar("ERROR:Method+Arg from Javascript is empty!");
+    goto post;
+  }
+  if (strncmp(message, "eval:", 5) == 0) {
+	const char* str = message+5;
+	if (verbose) {
+	  printf("NaTcl(%d): EVAL of: %s\n",pid, str);
+	}
+	const char* res = EvalTcl(str);
+	if (verbose) {
+	  printf("NaTcl(%d): EVAL result: %s\n",pid, res);
+	}
+	v = StrToVar(res);
+	goto post;
+  } else {
+	v = StrToVar("Unknown method");
+	goto post;
+  }
+ post:
+  if (message) free((void *)message);
+  messaging_interface->PostMessage(instance, v);
+  if (v.type == PP_VARTYPE_STRING) {
+    var_interface->Release(v);
+  }
 }
 
 /**
@@ -388,16 +312,15 @@ PP_EXPORT int32_t PPP_InitializeModule(PP_Module a_module_id,
                                        PPB_GetInterface get_browser) {
   pid = getpid();
   module_id = a_module_id;
+  messaging_interface =
+      (struct PPB_Messaging*)(get_browser(PPB_MESSAGING_INTERFACE));
   var_interface =
-      (struct PPB_Var_Deprecated*)(get_browser(PPB_VAR_DEPRECATED_INTERFACE));
+      (struct PPB_Var*)(get_browser(PPB_VAR_INTERFACE));
 
   printf("NaTcl(%d): DBUG: PPP_InitializeModule\n",pid);
   interp = NewTcl();
   if (!interp) return PP_ERROR_FAILED;
 
-  memset(&ppp_class, 0, sizeof(ppp_class));
-  ppp_class.Call = Tcl_Call;
-  ppp_class.HasMethod = Tcl_HasMethod;
   return PP_OK;
 }
 
@@ -408,9 +331,22 @@ PP_EXPORT int32_t PPP_InitializeModule(PP_Module a_module_id,
  * @return pointer to the interface
  */
 PP_EXPORT const void* PPP_GetInterface(const char* interface_name) {
-    printf("NaTcl(%d): DBUG: PPP_GetInterface '%s'\n", getpid(), (char *)interface_name);
-  if (strcmp(interface_name, PPP_INSTANCE_INTERFACE) == 0)
-    return &instance_interface;
+  printf("NaTcl(%d): DBUG: PPP_GetInterface '%s'\n", getpid(), (char *)interface_name);
+  if (strcmp(interface_name, PPP_INSTANCE_INTERFACE) == 0) {
+    static struct PPP_Instance itf = {
+      &Instance_DidCreate,
+      &Instance_DidDestroy,
+      &Instance_DidChangeView,
+      &Instance_DidChangeFocus,
+      &Instance_HandleDocumentLoad,
+    };
+    return &itf;
+  } else if (strcmp(interface_name, PPP_MESSAGING_INTERFACE) == 0) {
+    static struct PPP_Messaging itf = {
+      &Messaging_HandleMessage
+    };
+    return &itf;
+  }
   return NULL;
 }
 

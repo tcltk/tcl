@@ -1,6 +1,6 @@
 {
-  "nexes": {
-    "x86-32": "tcl32.nexe",
-    "x86-64": "tcl64.nexe",
+  "program": {
+    "x86-32": {"url":"tcl32.nexe"},
+    "x86-64": {"url":"tcl64.nexe"}
   }
 }

@@ -32,7 +32,7 @@ sed -e '/^CC[ 	]*=/ a\
 CCPLUS			= nacl-g++ -m'$arch'\
 arch='$arch'
 ' < $tmp.mk > Makefile
-patch -p0 < Makefile.patch
+patch -l -p0 < Makefile.patch
 set +x
 echo "
    Makefile generated and patched for NaCl. Ready for 'make' :)

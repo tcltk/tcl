@@ -4,28 +4,33 @@
     <script type="text/javascript" src="loader.js"></script>
   </head>
   <body>
+	 <div id="listener">
+    	<script type="text/javascript">
+      		document.getElementById('listener')
+        	  .addEventListener('load', moduleDidLoad, true);
+    	</script>
 
-   <embed
+    <embed
       name='nacl_module'
       id='tcl'
       width=0 height=0
-      nacl='tcl.nmf'
+      src='tcl.nmf'
       type='application/x-nacl'
-      onload='moduleDidLoad();'
       verbose=0
       source='balls.natcl'>
+
          <canvas id="canvas" width="578" height="200"></canvas>
          <h2>Status</h2>
          <div id="modstatus">NO-STATUS</div>
    </embed>
+</div>
 
    <p style="font-size : smaller;">
       To run this demo, you need
       <ul style="font-size : smaller;">
         <li> An x86-family processor</li>
-        <li> Chrome 10 or higher</li>
+        <li> Chrome 15 or higher</li>
         <li> Enabled "Native Client" item in about:flags</li>
-        <li> (if on Linux) the --no-sandbox command-line flag to Chrome</li>
        <li> if everything else fails, try the Nacl demos at <a href="http://code.google.com/chrome/nativeclient/docs/examples.html">http://code.google.com/chrome/nativeclient/docs/examples.html</a></li>
       </ul>
    </p>
