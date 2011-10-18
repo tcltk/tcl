@@ -63,7 +63,7 @@
  
  libraries:
  
-@@ -634,14 +646,30 @@
+@@ -634,14 +646,36 @@
  # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
  ${NATIVE_TCLSH}:
  
@@ -83,6 +83,12 @@
 +	$(CCPLUS)  $^ $(LDFLAGS) -o $@
 +
 +$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS): tclUnixPort.h
++
++server:
++	tclsh trivhttpd.tcl 5103 &
++
++balls:
++	google-chrome http://localhost:5103/demo/balls.html
 +
 +#Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 +#	$(SHELL) config.status
