@@ -17,43 +17,36 @@ layer of JS in the page; so, basically, Tcl to control the HTML5 DOM !
 Building Tcl for Nacl
 ---------------------
 
- - install the NaCl SDK (for me native_client_sdk_0_1_721_0)
+ - install the NaCl SDK at http://code.google.com/chrome/nativeclient/docs/download.html
 
- - set your PATH so that nacl-gcc et al become reachable
+ - for now, only use the pepper_14 bundle
+
+ - add (Nacl-SDK-top-dir)/pepper_14/native_client_sdk_0_5_1052/toolchain/linux_x86/bin to your PATH
 
  - cd (Tcl-source-tree)/nacl 
 
  - run './configure' (which calls ../unix/configure with proper flags,
    and patches the generated Makefile)
 
- - run  'make'. This  creates  tcl.nmf and  tcl32.nexe or  tcl64.nexe,
-   depending on the kind of x86 you're currently on.
+ - run  'make  binaries'.  This  creates  tcl.nmf  and  tcl32.nexe  or
+   tcl64.nexe, depending on  the kind of x86 you're  currently on. You
+   can also  simply type  'make' but the  libraries are not  usable by
+   NaCl yet (no dynamic linking).
 
  - (optional) to also build the  other kind, do 'make distclean', then
-   './configure -m32  (or -m64)',  then 'make'. The  provided manifest
-   file (tcl.nmf) points to both, to be compatible with both builds of
-   Chrome.
+   './configure -m32  (or -m64)',  then 'make binaries'.  The provided
+   manifest file (tcl.nmf) points to  both, to be compatible with both
+   builds of Chrome.
 
- - launch the  NaCl-provided python-based  webserver, and make  it see
-   your nacl dir somewhere in its document tree. e.g. 
-   cd $NACL/examples; ln -s /..../tcl/nacl nacl; python httpd.py 5103
+ - run 'make sever'. This starts  (on port 5103) a tiny, trivial httpd
+   written  in Tcl,  whose  sole purpose  is  to server  the few  demo
+   files. Note that NaCl is explicitly disabled on file:// urls.
 
- - (once) open about:flags in Chrome and enable Native Client
+ - (once) open  about:flags in Chrome  and enable Native  Client (note
+   this will  be saved  in your per-user  Chrome preferences  and will
+   even survive a Chrome upgrade)
 
- - start   '(cd  tools;./chromedebug)',  and   point  Chrome   to  the
-   index.html in nacl. e.g. chromedebug http://localhost:5103/nacl.
-
- - alternatively, use './chrd' to load the 'balls' demo.
-
- - (every  time)  make  sure  no  non-chromedebug  chrome  process  is
-   running, otherwise it  will be used instead, and  NaCl will fail to
-   load. Also, when you update or tweak anything, it is a good idea to
-   flush your browser's cache !
-
- - note:  'chromedebug' just  sets an  env  var for  debug output  (on
-   stderr), and  stars chrome with '--no-sandbox',  which is currently
-   needed for NaCl to be really enabled on Linux.
-
+ - run 'make balls'
 
 Overview of the porting method
 ------------------------------
@@ -76,24 +69,24 @@ nacl subdir. Also, much is reused from ../unix.
 Nacl context specifics
 ----------------------
 
-One thing to keep in mind is  that NaCl lets us run in our sandbox, in
-a  dedicated process, but  at the  time of  writing, it  is in  a very
-synchronous  "lockstep"  interaction with  the  main renderer  process
-executing  JS  code.  A  more  async  API  allowing  us  to  be  in  a
-free-floating thread and exchanging messages  with JS is in the works,
-but not baked yet.
+ NaCl lets  us run in  our sandbox, in  a dedicated process;  the only
+possible interactions with the browser process are:
 
-Given  this,  NaTcl  simply   obeys  the  rules  of  the  synchronous,
-event-driven  world of JS:  do everything  in quickly  returning event
-callbacks,  never stick  for too  long.  Note that  most Tcl/Tk  users
-should feel at  home, since it is exactly the  recipe for a responsive
-Tk GUI.
+   - at init time, one of our functions is called
+
+   - then, each side can post a string message to the other one
+
+   - on  reception,   a  callback  is   called  with  the   string  as
+     argument. This happens on each side's single thread.
+
+This  asynchronous communication  method ensures  that the  JS context
+will never be blocked, whatever the sandboxed child does. 
 
 For maximal genericity, the way NaTcl "retroacts" on the JS context is
-by returning a JS string to eval(). Then you can do whatever you want,
-including of course  arranging for future JS events  to call back into
-NaTcl. See [domset] and [after] (in init.natcl, which is compiled into
-the binray .nexe) as two very simple examples.
+by posting  back a JS string to  eval(). Then you can  do whatever you
+want, including of course arranging  for future JS events to call back
+into NaTcl. See [domset] and [after] (in init.natcl, which is compiled
+into the binray .nexe) as two very simple examples.
 
 In   an  universe   without   syscalls,  loading   other  scripts   is
 problematic. To circumvent this (and bootstrap the loading of the main
@@ -115,14 +108,17 @@ things).  But once  the  execution has  fallen  back out  of the  main
 script, hopefully after setting up  many (JS) event handlers, it is up
 to the app to establish other coro contexts if needed.
 
-The bottom line is this:
+A few things about GUI and blocking:
 
-   - a simple,  ol'good-Tk-style event-driven script will  not have to
-     bother about coros
+   - a simple,  ol'good-Tk-style event-driven script will work as usual
 
-   - a more  advanced, coro-savvy script  can use coros to  do lengthy
-     things (be they computations  of network downloads) while leaving
-     the GUI responsive
+   - lengthy computations  on the Tcl  side will *not* block  the JS's
+     side autonomous GUI elements, thanks to the new async interaction
+     described above
+
+   - however, to be able ot interrupt the computation from the GUI, or
+     to have Tcl code implement part of the GUI reactions, one must of
+     course let the Tcl code return quickly.
 
    - in all cases, [source] works  as usual to fetch scripts over HTTP
      (in   the   same  domain   as   the   page   serving  the   NaTcl
@@ -136,8 +132,8 @@ The bottom line is this:
 The "Google Balls" demo
 -----------------------
 
-If you point your chrome to "balls.html" (eg with chrd), you'll get a
-full NaTcl emulation of the nice Javascript demo at:
+If you point your chrome  to "demo/balls.html" (eg with 'make balls'),
+you'll get a full NaTcl emulation of the nice Javascript demo at:
 
  http://www.html5canvastutorials.com/labs/html5-canvas-google-bouncing-balls
 
@@ -153,9 +149,9 @@ Perf measurements: the NaTcl version currently costs 3x the CPU of the
 JS version,  so at  40fps it consumes  a full  core of my  2GHz laptop
 (against 33% for the JS one). 
 
-One should  note that the pure  string API used precludes  any used of
-the  internal reps of  coordinates, so  there are  many string/integer
-conversions. To be continued.
+One should note that the  pure string API used currently precludes any
+use  of  the   internal  reps  of  coordinates,  so   there  are  many
+string/integer conversions. To be continued.
 
 Comparison with native Tcl/Tk
 -----------------------------
