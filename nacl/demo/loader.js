@@ -6,15 +6,7 @@ function printf()
     // I like debugging to stderr instead of console.log,
     // because when things go wrong, the JS console is not
     // alays reachable.
-    tclModule.evall('printf', arguments.join(' '));
-}
-
-function ljoin()
-{
-    // yeah. 'arguments' is 'similar to an array but not quite'
-    // that's why I think JS has no soul.
-
-    return Array.prototype.slice.call(arguments).join("\n");
+    tclModule.postMessage('eval:printf '+Array.prototype.slice.call(arguments).join(' '));
 }
 
 // --- tclDo is the main JS-Tcl trampoline.
@@ -29,33 +21,23 @@ function tclEsc(text) {
 }
 
 function tclDo(s) {
-    try {
-        //printf("do:"+s);
-	t = tclModule.eval("::nacl::wrap {" + s + "}");
-	//printf("ret:"+t);
-	eval(t);
-    } catch(err) {
-	//printf("JS-err:"+err);
-	setTimeout('tcl("::nacl::bgerror,"'+ err + ',' + t + ')',0);
-    }
+	tclModule.postMessage("eval:::nacl::wrap {" + s + "}");
+}
+function tcl()
+{
+	tclDo(Array.prototype.slice.call(arguments).join(" "));
 }
 
-function tcl() {
-    var t;
+// Handle a message coming from the NaCl module.
+function handleMessage(message_event) {
     try {
-        //printf.apply(this, arguments);
-        t = tclModule.evall.apply(tclModule, arguments);
-    } catch (err) {
-	//printf("JS-err:", err);
-	setTimeout('tcl("::nacl::bgerror,"'+ err + ',' + t + ')',0);
-    }
-
-    try {
-        //printf("ret:", t);
-	eval(t);
+		
+		t = message_event.data;
+		//printf("ret:"+t);
+		eval(t);
     } catch(err) {
-	//printf("JS-err:", err);
-	setTimeout('tcl("::nacl::bgerror,"'+ err + ',' + t + ')',0);
+		//printf("JS-err:"+err);
+		alert("ERROR:"+err);
     }
 }
 
@@ -108,7 +90,7 @@ function callback(to,js) {
 // --- Callback) on completion. A catchable Tcl-level error is raised
 // --- in case of not-200. Used by [source].
 function tclsource(url,tcb) {
-    //printf('tclsource');
+    //printf('tclsource:'+url);
     xs = new XMLHttpRequest();
     xs.open("GET",url,true);
     xs.send(null);
@@ -153,6 +135,7 @@ function traverse(fn)
 
 function moduleDidLoad() {
     tclModule = document.getElementById('tcl');
+	tclModule.addEventListener('message', handleMessage, false);
     // tcl('lappend', '::JS', "alert('ARGV:[join $::argv]')");
     tcl('eval', 'coroutine', '::main_coro', 'source', '[dict get $::argv source]');
 }

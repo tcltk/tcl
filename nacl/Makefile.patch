@@ -1,10 +1,10 @@
 --- Makefile	2011-04-10 13:21:12.773175132 +0200
 +++ tweaked.Makefile	2011-04-10 12:34:27.256426620 +0200
-@@ -102,12 +102,20 @@
+@@ -102,12 +102,17 @@
  #CFLAGS			= $(CFLAGS_DEBUG)
  #CFLAGS			= $(CFLAGS_OPTIMIZE)
  #CFLAGS			= $(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
--CFLAGS			= $(CFLAGS_OPTIMIZE) -Wno-long-long -pthread -DNACL -pipe -fvisibility=hidden 
+-CFLAGS			= $(CFLAGS_OPTIMIZE) -Wno-long-long -pthread -DNACL -pipe
 +CFLAGS			= $(CFLAGS_OPTIMIZE) -pipe -fvisibility=hidden 
 +
 +
@@ -15,11 +15,8 @@
  LDFLAGS_OPTIMIZE	= 
 -LDFLAGS			= $(LDFLAGS_OPTIMIZE)  -Wl,--export-dynamic 
 +LDFLAGS			= $(LDFLAGS_OPTIMIZE)  -Wl,--export-dynamic -lm \
-+	  -lppruntime \
-+          -lpthread \
-+          -lgoogle_nacl_platform \
-+          -lgio \
-+          -lsrpc
++	       -lppapi \
++          -lpthread
  
  # To disable ANSI-C procedure prototypes reverse the comment characters on the
  # following lines:
