@@ -7149,7 +7149,7 @@ InterpCmdResolver(
         varFramePtr->procPtr : NULL;
     Namespace *ns2NsPtr;
 
-    ns2NsPtr = Tcl_FindNamespace(interp, "::ns2", NULL, 0);
+    ns2NsPtr = (Namespace *)Tcl_FindNamespace(interp, "::ns2", NULL, 0);
 
     if (procPtr && (procPtr->cmdPtr->nsPtr == iPtr->globalNsPtr
             || (ns2NsPtr && procPtr->cmdPtr->nsPtr == ns2NsPtr))) {
@@ -7256,7 +7256,7 @@ MyCompiledVarFetch(
      * Tcl's FreeVarEntry(); for cleanup, we provide our own HashVarFree();
      */
 
-    VarHashRefCount(var);
+    VarHashRefCount(var) ++;
     return var;
 }
 
