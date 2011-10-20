@@ -411,7 +411,7 @@ static int		TestHashSystemHashCmd(ClientData clientData,
 static int		TestNRELevels(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestInterpResolversCmd(ClientData clientData,
+static int		TestInterpResolverCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
@@ -678,7 +678,7 @@ Tcltest_Init(
 
     Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testinterpresolver", TestInterpResolversCmd,
+    Tcl_CreateObjCommand(interp, "testinterpresolver", TestInterpResolverCmd,
 	    NULL, NULL);
 
     if (TclObjTest_Init(interp) != TCL_OK) {
@@ -7288,7 +7288,7 @@ InterpCompiledVarResolver(
 }
 
 static int
-TestInterpResolversCmd(
+TestInterpResolverCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
