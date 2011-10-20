@@ -1,3 +1,13 @@
+2011-10-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclLiteral.c (TclInvalidateCmdLiteral): [Bug 3418547]:
+	Additional code for handling the invalidation of literals.
+	* generic/tclBasic.c (Tcl_CreateObjCommand, Tcl_CreateCommand)
+	(TclRenameCommand, Tcl_ExposeCommand): The four additional places that
+	need extra care when dealing with literals.
+	* generic/tclTest.c (TestInterpResolverCmd): Additional test machinery
+	for interpreter resolvers.
+
 2011-10-15  Venkat Iyer <venkat@comit.com>
 	* library/tzdata/America/Sitka : Update to Olson's tzdata2011l
 	* library/tzdata/Pacific/Fiji
