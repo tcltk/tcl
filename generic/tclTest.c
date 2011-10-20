@@ -411,6 +411,9 @@ static int		TestHashSystemHashCmd(ClientData clientData,
 static int		TestNRELevels(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TestInterpResolverCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -674,6 +677,8 @@ Tcltest_Init(
 	    NULL);
 
     Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testinterpresolver", TestInterpResolverCmd,
 	    NULL, NULL);
 
     if (TclObjTest_Init(interp) != TCL_OK) {
@@ -7126,6 +7131,195 @@ TestparseargsCmd(
     result[2] = Tcl_NewListObj(count, remObjv);
     Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
     ckfree(remObjv);
+    return TCL_OK;
+}
+
+/**
+ * Test harness for command and variable resolvers.
+ */
+
+static int
+InterpCmdResolver(
+    Tcl_Interp *interp,
+    const char *name,
+    Tcl_Namespace *context,
+    int flags,
+    Tcl_Command *rPtr)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
+    Proc *procPtr = (varFramePtr->isProcCallFrame & FRAME_IS_PROC) ?
+            varFramePtr->procPtr : NULL;
+    Namespace *ns2NsPtr = (Namespace *)
+            Tcl_FindNamespace(interp, "::ns2", NULL, 0);
+
+    if (procPtr && (procPtr->cmdPtr->nsPtr == iPtr->globalNsPtr
+            || (ns2NsPtr && procPtr->cmdPtr->nsPtr == ns2NsPtr))) {
+        const char *callingCmdName =
+                Tcl_GetCommandName(interp, (Tcl_Command) procPtr->cmdPtr);
+
+        if ((callingCmdName[0] == 'x') && (callingCmdName[1] == '\0')
+                && (name[0] == 'z') && (name[1] == '\0')) {
+            Tcl_Command sourceCmdPtr = Tcl_FindCommand(interp, "y", NULL,
+                    TCL_GLOBAL_ONLY);
+
+            if (sourceCmdPtr != NULL) {
+                *rPtr = sourceCmdPtr;
+                return TCL_OK;
+            }
+        }
+    }
+    return TCL_CONTINUE;
+}
+
+static int
+InterpVarResolver(
+    Tcl_Interp *interp,
+    const char *name,
+    Tcl_Namespace *context,
+    int flags,
+    Tcl_Var *rPtr)
+{
+    /*
+     * Don't resolve the variable; use standard rules.
+     */
+
+    return TCL_CONTINUE;
+}
+
+typedef struct MyResolvedVarInfo {
+    Tcl_ResolvedVarInfo vInfo;  /* This must be the first element. */
+    Tcl_Var var;
+    Tcl_Obj *nameObj;
+} MyResolvedVarInfo;
+
+static inline void
+HashVarFree(
+    Tcl_Var var)
+{
+    if (VarHashRefCount(var) < 2) {
+        ckfree(var);
+    } else {
+        VarHashRefCount(var)--;
+    }
+}
+
+static void
+MyCompiledVarFree(
+    Tcl_ResolvedVarInfo *vInfoPtr)
+{
+    MyResolvedVarInfo *resVarInfo = (MyResolvedVarInfo *) vInfoPtr;
+
+    Tcl_DecrRefCount(resVarInfo->nameObj);
+    if (resVarInfo->var) {
+        HashVarFree(resVarInfo->var);
+    }
+    ckfree(vInfoPtr);
+}
+
+#define TclVarHashGetValue(hPtr) \
+    ((Var *) ((char *)hPtr - TclOffset(VarInHash, entry)))
+
+static Tcl_Var
+MyCompiledVarFetch(
+    Tcl_Interp *interp,
+    Tcl_ResolvedVarInfo *vinfoPtr)
+{
+    MyResolvedVarInfo *resVarInfo = (MyResolvedVarInfo *) vinfoPtr;
+    Tcl_Var var = resVarInfo->var;
+    int isNewVar;
+    Interp *iPtr = (Interp *) interp;
+    Tcl_HashEntry *hPtr;
+
+    if (var != NULL) {
+        if (!(((Var *) var)->flags & VAR_DEAD_HASH)) {
+            /*
+             * The cached variable is valid, return it.
+             */
+
+            return var;
+        }
+
+        /*
+         * The variable is not valid anymore. Clean it up.
+         */
+
+        HashVarFree(var);
+    }
+
+    hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) &iPtr->globalNsPtr->varTable,
+            (char *) resVarInfo->nameObj, &isNewVar);
+    if (hPtr) {
+        var = (Tcl_Var) TclVarHashGetValue(hPtr);
+    } else {
+        var = NULL;
+    }
+    resVarInfo->var = var;
+
+    /*
+     * Increment the reference counter to avoid ckfree() of the variable in
+     * Tcl's FreeVarEntry(); for cleanup, we provide our own HashVarFree();
+     */
+
+    VarHashRefCount(var)++;
+    return var;
+}
+
+static int
+InterpCompiledVarResolver(
+    Tcl_Interp *interp,
+    const char *name,
+    int length,
+    Tcl_Namespace *context,
+    Tcl_ResolvedVarInfo **rPtr)
+{
+    if (*name == 'T') {
+ 	MyResolvedVarInfo *resVarInfo = ckalloc(sizeof(MyResolvedVarInfo));
+
+ 	resVarInfo->vInfo.fetchProc = MyCompiledVarFetch;
+ 	resVarInfo->vInfo.deleteProc = MyCompiledVarFree;
+ 	resVarInfo->var = NULL;
+ 	resVarInfo->nameObj = Tcl_NewStringObj(name, -1);
+ 	Tcl_IncrRefCount(resVarInfo->nameObj);
+ 	*rPtr = &resVarInfo->vInfo;
+ 	return TCL_OK;
+    }
+    return TCL_CONTINUE;
+}
+
+static int
+TestInterpResolverCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    static const char *const table[] = {
+        "down", "up", NULL
+    };
+    int idx;
+#define RESOLVER_KEY "testInterpResolver"
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "up|down");
+ 	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], table, "operation", TCL_EXACT,
+            &idx) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    switch (idx) {
+    case 1: /* up */
+        Tcl_AddInterpResolvers(interp, RESOLVER_KEY, InterpCmdResolver,
+                InterpVarResolver, InterpCompiledVarResolver);
+        break;
+    case 0: /*down*/
+        if (!Tcl_RemoveInterpResolvers(interp, RESOLVER_KEY)) {
+            Tcl_AppendResult(interp, "could not remove the resolver scheme",
+                    NULL);
+            return TCL_ERROR;
+        }
+    }
     return TCL_OK;
 }
 
