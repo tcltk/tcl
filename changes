@@ -7954,3 +7954,38 @@ memory with buffer backup (ferrieux)
 Many more Tcl built-in command errors now set an -errorcode.
 
 --- Released 8.6b2, August 8, 2011 --- See ChangeLog for details ---
+
+2011-07-02 (bug fix)[3349507] correct double(1[string repeat 0 23]) (kenny)
+
+2011-07-19 (bug fix)[3371644] Tcl_ConvertElement() segfault (sader, ferrieux)
+
+2011-07-21 (bug fix)[3372130] hypot(.) segfault (nijtmans)
+
+2011-08-12 (bug fix)[3389764] memleaks due to reference cycles in dup'd paths
+
+2011-08-15 (bug fix)[3390272] leak of [info script] value (porter)
+
+2011-08-17 (bug fix)[3393150] bignum leaks in Tcl_Get*() routines (porter)
+
+2011-08-18 (bug fix)[3393714] [string toupper] overflow (nijtmans)
+
+2011-08-30 (bug fix)[3398794] panic in interp limit setting (gavlian,fellows)
+
+2011-09-08 (bug fix)[3401704] revised expr parser to permit function names
+like "nano()" instead of parsing as "nan o()" with missing op (duquette,porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2011-09-13 (bug fix)[3390638] solaris studio cc workaround (kechel,porter)
+
+2011-09-13 (bug fix)[3405652] DTrace workaround (michelson,porter)
+
+2011-09-16 (bug fix)[3391977] -headers overrides -type (ziegenhagen,fellows)
+=> http 2.7.7
+
+2011-09-16 (bug fix)[3400658] wrong num args msg with TclOO (rsooltan,fellows)
+
+2011-10-11 (bug fix)[2935503] [file stat] returns bad mode (nadkarni,nijtmans)
+
+2011-10-15 tzdata updated to Olson's tzdata2011l (iyer)
+
+--- Released 8.6b3, November 20, 2011 --- See ChangeLog for details ---
