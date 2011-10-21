@@ -6,8 +6,8 @@
  * Copyright (c) 1996-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998 by Scriptics Corporation.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #ifndef USE_TCL_STUBS
@@ -38,8 +38,8 @@
  */
 
 typedef struct Pipe {
-    TclFile readFile;		/* File handle for reading from the pipe.
-				 * NULL means pipe doesn't exist yet. */
+    TclFile readFile;		/* File handle for reading from the pipe. NULL
+				 * means pipe doesn't exist yet. */
     TclFile writeFile;		/* File handle for writing from the pipe. */
     int readCount;		/* Number of times the file handler for this
 				 * file has triggered and the file was
@@ -699,7 +699,7 @@ TestchmodCmd(
     char *rest;
 
     if (argc < 2) {
-	usage:
+    usage:
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		" mode file ?file ...?", NULL);
 	return TCL_ERROR;
@@ -727,3 +727,12 @@ TestchmodCmd(
     }
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * tab-width: 8
+ * End:
+ */
