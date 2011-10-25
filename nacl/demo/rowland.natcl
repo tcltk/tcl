@@ -1,0 +1,20 @@
+proc tcl::mathfunc::gcd {a b} { 
+     while {$b} {set b [expr {$a % [set a $b]}]} 
+     return $a 
+}
+# Rowland's: compute a(n)-a(n-1) where a(1)=7 and 
+#   a(n) = a(n – 1) + gcd(n, a(n – 1)) 
+
+proc rowland m {
+    set a 7   
+    set n 1 
+    set out {}
+    while {$n<=$m} { 
+	incr n 
+	set b $a 
+	set a [expr {$b+gcd($n,$b)}] 
+	set p [expr {$a-$b}] 
+	if {$p>1} {lappend out $p} 
+    }
+    return $out
+}

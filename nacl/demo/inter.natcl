@@ -1,0 +1,36 @@
+# sourced by inter.html demo
+
+::nacl::js {
+    t0=document.getElementById('txt');
+    function bot(w) {
+        len=w.value.length+1;
+	w.setSelectionRange(len,len);
+   	w.focus();     
+    }
+    t0.value = "# Type Tcl code in there\n";
+    t0.onkeydown=function(event) {
+	if (event.which==13) {
+	    bot(t0);
+	    tclDoCoro("swallow \""+tclEsc(t0.value.replace(/.*\n/g,''))+"\"");
+	    bot(t0);
+	}
+	return true;
+    }
+    bot(t0);
+}
+
+proc swallow s {
+    append ::accu $s \n
+    if {[info complete $::accu]} {
+	set x $::accu
+	unset ::accu
+	set res [uplevel #0 $x]
+	::nacl::js "t0.value+=[::nacl::jsquote $res\n];bot(t0);"
+    }
+}
+
+proc ::nacl::bgerror s {
+    ::nacl::js "t0.value+=[::nacl::jsquote ###$s\n];bot(t0);"
+}
+
+source rowland.natcl
