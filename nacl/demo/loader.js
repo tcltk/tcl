@@ -17,11 +17,15 @@ function printf()
 //  to [bgerror].
 
 function tclEsc(text) {
-    return text.replace(/[][\\$""]/g,'\\$0');
+    return text.replace(/([\[\]\\$""{}])/g,'\\$1');
 }
 
 function tclDo(s) {
-	tclModule.postMessage("eval:::nacl::wrap {" + s + "}");
+    //console.log("TclDo: "+s);
+    tclModule.postMessage("eval:::nacl::wrap {" + s + "}");
+}
+function tclDoCoro(s) {
+    tclModule.postMessage("eval:coroutine ::main_coro ::nacl::wrap \"" + tclEsc(s) + "\"");
 }
 function tcl()
 {
@@ -33,8 +37,8 @@ function handleMessage(message_event) {
     try {
 		
 		t = message_event.data;
-		//printf("ret:"+t);
-		eval(t);
+		//console.log("JSdo:"+t);
+		window.eval(t);
     } catch(err) {
 		//printf("JS-err:"+err);
 		alert("ERROR:"+err);

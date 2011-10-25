@@ -52,12 +52,12 @@ namespace eval ::nacl {
     }
 
     proc alert {args} {
-        js "alert([jsquote [join $args]])"
+        js "alert([::nacl::jsquote [join $args]])"
     }
 
     proc bgerror {args} {
         printf "### BGERROR: [join $args]\n# [info errorstack]"
-        js "alert([jsquote [join $args]])"
+        js "alert([::nacl::jsquote [join $args]])"
     }
 
     proc wrap {s} {
