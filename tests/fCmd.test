@@ -750,9 +750,20 @@ test fCmd-9.3 {file rename: comprehensive: file to new name} -setup {
     file rename tf2 tf4
     list [lsort [glob tf*]] [file writable tf3] [file writable tf4]
 } -result {{tf3 tf4} 1 0}
-test fCmd-9.4 {file rename: comprehensive: dir to new name} -setup {
+test fCmd-9.4.a {file rename: comprehensive: dir to new name} -setup {
     cleanup
-} -constraints {unixOrPc notRoot testchmod notDarwin9 win2000orXP} -body {
+} -constraints {testchmod win2000orXP} -body {
+    file mkdir td1 td2
+    testchmod 555 td2
+    file rename td1 td3
+    file rename td2 td4
+    list [lsort [glob td*]] [file writable td3] [file writable td4]
+} -cleanup {
+    cleanup
+} -result {{td3 td4} 1 0}
+test fCmd-9.4.b {file rename: comprehensive: dir to new name} -setup {
+    cleanup
+} -constraints {unix notRoot testchmod notDarwin9} -body {
     file mkdir td1 td2
     testchmod 555 td2
     file rename td1 td3
@@ -770,9 +781,19 @@ test fCmd-9.5 {file rename: comprehensive: file to self} {notRoot testchmod} {
     file rename -force tf2 tf2
     list [contents tf1] [contents tf2] [file writable tf1] [file writable tf2]
 } {tf1 tf2 1 0}
-test fCmd-9.6 {file rename: comprehensive: dir to self} -setup {
+test fCmd-9.6.a {file rename: comprehensive: dir to self} -setup {
     cleanup
-} -constraints {notRoot unixOrPc testchmod win2000orXP} -body {
+} -constraints {testchmod win2000orXP} -body {
+    file mkdir td1
+    file mkdir td2
+    testchmod 555 td2
+    file rename -force td1 .
+    file rename -force td2 .
+    list [lsort [glob td*]] [file writable td1] [file writable td2]
+} -result {{td1 td2} 1 0}
+test fCmd-9.6.b {file rename: comprehensive: dir to self} -setup {
+    cleanup
+} -constraints {notRoot unix testchmod} -body {
     file mkdir td1
     file mkdir td2
     testchmod 555 td2
@@ -976,7 +997,7 @@ test fCmd-10.2 {file copy: comprehensive: file to new name} {notRoot testchmod} 
 } {{tf1 tf2 tf3 tf4} tf1 tf2 1 0}
 test fCmd-10.3 {file copy: comprehensive: dir to new name} -setup {
     cleanup
-} -constraints {notRoot unixOrPc 95or98 testchmod} -body {
+} -constraints {notRoot unix testchmod} -body {
     file mkdir [file join td1 tdx]
     file mkdir [file join td2 tdy]
     testchmod 555 td2
@@ -1077,7 +1098,7 @@ test fCmd-10.7 {file rename: comprehensive: file to new name and dir} -setup {
 } -result [subst {{tf1 tf2} {[file join td1 tf3] [file join td1 tf4]} 1 0}]
 test fCmd-10.8 {file rename: comprehensive: dir to new name and dir} -setup {
     cleanup
-} -constraints {notRoot unixOrPc 95or98 testchmod} -body {
+} -constraints {notRoot unix testchmod} -body {
     file mkdir td1
     file mkdir td2
     file mkdir td3
