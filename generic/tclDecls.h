@@ -3791,8 +3791,6 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_MainEx Tcl_MainExW
     EXTERN void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-#   define Tcl_Main(argc, argv, proc) Tcl_MainExW(argc, argv, proc, \
-	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
 #endif
 
 #undef TCL_STORAGE_CLASS

@@ -83,6 +83,18 @@ static int		PushVarName(Tcl_Interp *interp,
 	    mapPtr->loc[eclIndex].next[(word)])
 
 /*
+ * Often want to issue one of two versions of an instruction based on whether
+ * the argument will fit in a single byte or not. This makes it much clearer.
+ */
+
+#define Emit14Inst(nm,idx,envPtr) \
+    if (idx <= 255) {							\
+	TclEmitInstInt1(nm##1,idx,envPtr);				\
+    } else {								\
+	TclEmitInstInt4(nm##4,idx,envPtr);				\
+    }
+
+/*
  * Flags bits used by PushVarName.
  */
 
@@ -186,18 +198,14 @@ TclCompileAppendCmd(
 	if (isScalar) {
 	    if (localIndex < 0) {
 		TclEmitOpcode(INST_APPEND_STK, envPtr);
-	    } else if (localIndex <= 255) {
-		TclEmitInstInt1(INST_APPEND_SCALAR1, localIndex, envPtr);
 	    } else {
-		TclEmitInstInt4(INST_APPEND_SCALAR4, localIndex, envPtr);
+		Emit14Inst(INST_APPEND_SCALAR, localIndex, envPtr);
 	    }
 	} else {
 	    if (localIndex < 0) {
 		TclEmitOpcode(INST_APPEND_ARRAY_STK, envPtr);
-	    } else if (localIndex <= 255) {
-		TclEmitInstInt1(INST_APPEND_ARRAY1, localIndex, envPtr);
 	    } else {
-		TclEmitInstInt4(INST_APPEND_ARRAY4, localIndex, envPtr);
+		Emit14Inst(INST_APPEND_ARRAY, localIndex, envPtr);
 	    }
 	}
     } else {
@@ -366,16 +374,16 @@ TclCompileCatchCmd(
     SetLineInformation(1);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	savedStackDepth = envPtr->currStackDepth;
-	TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
+	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
 	CompileBody(envPtr, cmdTokenPtr, interp);
     } else {
 	CompileTokens(envPtr, cmdTokenPtr, interp);
 	savedStackDepth = envPtr->currStackDepth;
-	TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
+	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
-	TclEmitOpcode(INST_DUP, envPtr);
-	TclEmitOpcode(INST_EVAL_STK, envPtr);
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_EVAL_STK,			envPtr);
     }
     /* Stack at this point:
      *    nonsimple:  script <mark> result
@@ -399,8 +407,8 @@ TclCompileCatchCmd(
     envPtr->currStackDepth = savedStackDepth;
     ExceptionRangeTarget(envPtr, range, catchOffset);
     /* Stack at this point:  ?script? */
-    TclEmitOpcode(INST_PUSH_RESULT, envPtr);
-    TclEmitOpcode(INST_PUSH_RETURN_CODE, envPtr);
+    TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
+    TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
 
     /*
      * Update the target of the jump after the "no errors" code. 
@@ -415,7 +423,7 @@ TclCompileCatchCmd(
     /* Push the return options if the caller wants them */
 
     if (optsIndex != -1) {
-	TclEmitOpcode(INST_PUSH_RETURN_OPTIONS, envPtr);
+	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
     }
 
     /*
@@ -423,7 +431,7 @@ TclCompileCatchCmd(
      */
 
     ExceptionRangeEnds(envPtr, range);
-    TclEmitOpcode(INST_END_CATCH, envPtr);
+    TclEmitOpcode(		INST_END_CATCH,			envPtr);
 
     /*
      * At this point, the top of the stack is inconveniently ordered:
@@ -432,9 +440,9 @@ TclCompileCatchCmd(
      */
 
     if (optsIndex != -1) {
-	TclEmitInstInt4(INST_REVERSE, 3, envPtr);
+	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
     } else {
-	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
     }
 
     /*
@@ -442,13 +450,9 @@ TclCompileCatchCmd(
      */
 
     if (resultIndex != -1) {
-	if (resultIndex <= 255) {
-	    TclEmitInstInt1(INST_STORE_SCALAR1, resultIndex, envPtr);
-	} else {
-	    TclEmitInstInt4(INST_STORE_SCALAR4, resultIndex, envPtr);
-	}
+	Emit14Inst(		INST_STORE_SCALAR, resultIndex,	envPtr);
     }
-    TclEmitOpcode(INST_POP, envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
 
     /*
      * Stack is now ?script? ?returnOptions? returnCode.
@@ -458,13 +462,9 @@ TclCompileCatchCmd(
      */
 
     if (optsIndex != -1) {
-	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
-	if (optsIndex <= 255) {
-	    TclEmitInstInt1(INST_STORE_SCALAR1, optsIndex, envPtr);
-	} else {
-	    TclEmitInstInt4(INST_STORE_SCALAR4, optsIndex, envPtr);
-	}
-	TclEmitOpcode(INST_POP, envPtr);
+	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
+	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
     /* 
@@ -473,8 +473,8 @@ TclCompileCatchCmd(
      */
 
     if (cmdTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
-	TclEmitOpcode(INST_POP, envPtr);
+	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
     /* 
@@ -844,9 +844,9 @@ TclCompileDictForCmd(
      */
 
     CompileWord(envPtr, dictTokenPtr, interp, 3);
-    TclEmitInstInt4( INST_DICT_FIRST, infoIndex,		envPtr);
+    TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,		envPtr);
     emptyTargetOffset = CurrentOffset(envPtr);
-    TclEmitInstInt4( INST_JUMP_TRUE4, 0,			envPtr);
+    TclEmitInstInt4(	INST_JUMP_TRUE4, 0,			envPtr);
 
     /*
      * Now we catch errors from here on so that we can finalize the search
@@ -854,7 +854,7 @@ TclCompileDictForCmd(
      */
 
     catchRange = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
-    TclEmitInstInt4( INST_BEGIN_CATCH4, catchRange,		envPtr);
+    TclEmitInstInt4(	INST_BEGIN_CATCH4, catchRange,		envPtr);
     ExceptionRangeStarts(envPtr, catchRange);
 
     /*
@@ -862,10 +862,10 @@ TclCompileDictForCmd(
      */
 
     bodyTargetOffset = CurrentOffset(envPtr);
-    TclEmitInstInt4( INST_STORE_SCALAR4, keyVarIndex,		envPtr);
-    TclEmitOpcode(   INST_POP,					envPtr);
-    TclEmitInstInt4( INST_STORE_SCALAR4, valueVarIndex,		envPtr);
-    TclEmitOpcode(   INST_POP,					envPtr);
+    Emit14Inst(		INST_STORE_SCALAR, keyVarIndex,		envPtr);
+    TclEmitOpcode(	INST_POP,				envPtr);
+    Emit14Inst(		INST_STORE_SCALAR, valueVarIndex,	envPtr);
+    TclEmitOpcode(	INST_POP,				envPtr);
 
     /*
      * Set up the loop exception targets.
@@ -880,7 +880,7 @@ TclCompileDictForCmd(
 
     SetLineInformation(4);
     CompileBody(envPtr, bodyTokenPtr, interp);
-    TclEmitOpcode(   INST_POP,					envPtr);
+    TclEmitOpcode(	INST_POP,				envPtr);
 
     /*
      * Both exception target ranges (error and loop) end here.
@@ -896,11 +896,11 @@ TclCompileDictForCmd(
      */
 
     ExceptionRangeTarget(envPtr, loopRange, continueOffset);
-    TclEmitInstInt4( INST_DICT_NEXT, infoIndex,			envPtr);
+    TclEmitInstInt4(	INST_DICT_NEXT, infoIndex,		envPtr);
     jumpDisplacement = bodyTargetOffset - CurrentOffset(envPtr);
-    TclEmitInstInt4( INST_JUMP_FALSE4, jumpDisplacement,	envPtr);
-    TclEmitOpcode(   INST_POP,					envPtr);
-    TclEmitOpcode(   INST_POP,					envPtr);
+    TclEmitInstInt4(	INST_JUMP_FALSE4, jumpDisplacement,	envPtr);
+    TclEmitOpcode(	INST_POP,				envPtr);
+    TclEmitOpcode(	INST_POP,				envPtr);
 
     /*
      * Now do the final cleanup for the no-error case (this is where we break
@@ -911,11 +911,11 @@ TclCompileDictForCmd(
      */
 
     ExceptionRangeTarget(envPtr, loopRange, breakOffset);
-    TclEmitInstInt1( INST_UNSET_SCALAR, 0,			envPtr);
-    TclEmitInt4(     infoIndex,					envPtr);
-    TclEmitOpcode(   INST_END_CATCH,				envPtr);
+    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
+    TclEmitInt4(	infoIndex,				envPtr);
+    TclEmitOpcode(	INST_END_CATCH,				envPtr);
     endTargetOffset = CurrentOffset(envPtr);
-    TclEmitInstInt4( INST_JUMP4, 0,				envPtr);
+    TclEmitInstInt4(	INST_JUMP4, 0,				envPtr);
 
     /*
      * Error handler "finally" clause, which force-terminates the iteration
@@ -923,12 +923,12 @@ TclCompileDictForCmd(
      */
 
     ExceptionRangeTarget(envPtr, catchRange, catchOffset);
-    TclEmitOpcode(   INST_PUSH_RETURN_OPTIONS,			envPtr);
-    TclEmitOpcode(   INST_PUSH_RESULT,				envPtr);
-    TclEmitInstInt1( INST_UNSET_SCALAR, 0,			envPtr);
-    TclEmitInt4(     infoIndex,					envPtr);
-    TclEmitOpcode(   INST_END_CATCH,				envPtr);
-    TclEmitOpcode(   INST_RETURN_STK,				envPtr);
+    TclEmitOpcode(	INST_PUSH_RETURN_OPTIONS,		envPtr);
+    TclEmitOpcode(	INST_PUSH_RESULT,			envPtr);
+    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
+    TclEmitInt4(	infoIndex,				envPtr);
+    TclEmitOpcode(	INST_END_CATCH,				envPtr);
+    TclEmitOpcode(	INST_RETURN_STK,			envPtr);
 
     /*
      * Otherwise we're done (the jump after the DICT_FIRST points here) and we
@@ -940,10 +940,10 @@ TclCompileDictForCmd(
     jumpDisplacement = CurrentOffset(envPtr) - emptyTargetOffset;
     TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
 	    envPtr->codeStart + emptyTargetOffset);
-    TclEmitOpcode(   INST_POP,					envPtr);
-    TclEmitOpcode(   INST_POP,					envPtr);
-    TclEmitInstInt1( INST_UNSET_SCALAR, 0,			envPtr);
-    TclEmitInt4(     infoIndex,					envPtr);
+    TclEmitOpcode(	INST_POP,				envPtr);
+    TclEmitOpcode(	INST_POP,				envPtr);
+    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
+    TclEmitInt4(	infoIndex,				envPtr);
 
     /*
      * Final stage of the command (normal case) is that we push an empty
@@ -1075,12 +1075,12 @@ TclCompileDictUpdateCmd(
     for (i=0 ; i<numVars ; i++) {
 	CompileWord(envPtr, keyTokenPtrs[i], interp, i);
     }
-    TclEmitInstInt4( INST_LIST, numVars,			envPtr);
-    TclEmitInstInt4( INST_DICT_UPDATE_START, dictIndex,		envPtr);
-    TclEmitInt4(     infoIndex,					envPtr);
+    TclEmitInstInt4(	INST_LIST, numVars,			envPtr);
+    TclEmitInstInt4(	INST_DICT_UPDATE_START, dictIndex,	envPtr);
+    TclEmitInt4(	infoIndex,				envPtr);
 
     range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
-    TclEmitInstInt4( INST_BEGIN_CATCH4, range,			envPtr);
+    TclEmitInstInt4(	INST_BEGIN_CATCH4, range,		envPtr);
 
     ExceptionRangeStarts(envPtr, range);
     envPtr->currStackDepth++;
@@ -1093,10 +1093,10 @@ TclCompileDictUpdateCmd(
      * the body evaluation: swap them and finish the update code.
      */
 
-    TclEmitOpcode(   INST_END_CATCH,				envPtr);
-    TclEmitInstInt4( INST_REVERSE, 2,				envPtr);
-    TclEmitInstInt4( INST_DICT_UPDATE_END, dictIndex,		envPtr);
-    TclEmitInt4(     infoIndex,					envPtr);
+    TclEmitOpcode(	INST_END_CATCH,				envPtr);
+    TclEmitInstInt4(	INST_REVERSE, 2,			envPtr);
+    TclEmitInstInt4(	INST_DICT_UPDATE_END, dictIndex,	envPtr);
+    TclEmitInt4(	infoIndex,				envPtr);
 
     /*
      * Jump around the exceptional termination code.
@@ -1111,14 +1111,14 @@ TclCompileDictUpdateCmd(
      */
 
     ExceptionRangeTarget(envPtr, range, catchOffset);
-    TclEmitOpcode(   INST_PUSH_RESULT,				envPtr);
-    TclEmitOpcode(   INST_PUSH_RETURN_OPTIONS,			envPtr);
-    TclEmitOpcode(   INST_END_CATCH,				envPtr);
-    TclEmitInstInt4( INST_REVERSE, 3,				envPtr);
+    TclEmitOpcode(	INST_PUSH_RESULT,			envPtr);
+    TclEmitOpcode(	INST_PUSH_RETURN_OPTIONS,		envPtr);
+    TclEmitOpcode(	INST_END_CATCH,				envPtr);
+    TclEmitInstInt4(	INST_REVERSE, 3,			envPtr);
 
-    TclEmitInstInt4( INST_DICT_UPDATE_END, dictIndex,		envPtr);
-    TclEmitInt4(     infoIndex,					envPtr);
-    TclEmitOpcode(   INST_RETURN_STK,				envPtr);
+    TclEmitInstInt4(	INST_DICT_UPDATE_END, dictIndex,	envPtr);
+    TclEmitInt4(	infoIndex,				envPtr);
+    TclEmitOpcode(	INST_RETURN_STK,			envPtr);
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
@@ -1231,7 +1231,270 @@ TclCompileDictLappendCmd(
     }
     CompileWord(envPtr, keyTokenPtr, interp, 3);
     CompileWord(envPtr, valueTokenPtr, interp, 4);
-    TclEmitInstInt4( INST_DICT_LAPPEND, dictVarIndex, envPtr);
+    TclEmitInstInt4(	INST_DICT_LAPPEND, dictVarIndex,	envPtr);
+    return TCL_OK;
+}
+
+int
+TclCompileDictWithCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    int i, range, varNameTmp, pathTmp, keysTmp, gotPath, dictVar = -1;
+    int bodyIsEmpty = 1;
+    Tcl_Token *varTokenPtr, *tokenPtr;
+    int savedStackDepth = envPtr->currStackDepth;
+    JumpFixup jumpFixup;
+    const char *ptr, *end;
+
+    /*
+     * There must be at least one argument after the command.
+     */
+
+    if (parsePtr->numWords < 3) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse the command (trivially). Expect the following:
+     *   dict with <any (varName)> ?<any> ...? <literal>
+     */
+
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    tokenPtr = TokenAfter(varTokenPtr);
+    for (i=3 ; i<parsePtr->numWords ; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Test if the last word is an empty script; if so, we can compile it in
+     * all cases, but if it is non-empty we need local variable table entries
+     * to hold the temporary variables (used to keep stack usage simple).
+     */
+
+    for (ptr=tokenPtr[1].start,end=ptr+tokenPtr[1].size ; ptr!=end ; ptr++) {
+	if (*ptr!=' ' && *ptr!='\t' && *ptr!='\n' && *ptr!='\r') {
+	    if (envPtr->procPtr == NULL) {
+		return TCL_ERROR;
+	    }
+	    bodyIsEmpty = 0;
+	    break;
+	}
+    }
+
+    /*
+     * Determine if we're manipulating a dict in a simple local variable.
+     */
+
+    gotPath = (parsePtr->numWords > 3);
+    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD &&
+	    TclIsLocalScalar(varTokenPtr[1].start, varTokenPtr[1].size)) {
+	dictVar = TclFindCompiledLocal(varTokenPtr[1].start,
+		varTokenPtr[1].size, 1, envPtr);
+    }
+
+    /*
+     * Special case: an empty body means we definitely have no need to issue
+     * try-finally style code or to allocate local variable table entries for
+     * storing temporaries. Still need to do both INST_DICT_EXPAND and
+     * INST_DICT_RECOMBINE_* though, because we can't determine if we're free
+     * of traces.
+     */
+
+    if (bodyIsEmpty) {
+	if (dictVar >= 0) {
+	    if (gotPath) {
+		/*
+		 * Case: Path into dict in LVT with empty body.
+		 */
+
+		tokenPtr = TokenAfter(varTokenPtr);
+		for (i=2 ; i<parsePtr->numWords-1 ; i++) {
+		    CompileWord(envPtr, tokenPtr, interp, i-1);
+		    tokenPtr = TokenAfter(tokenPtr);
+		}
+		TclEmitInstInt4(INST_LIST, parsePtr->numWords-3,envPtr);
+		Emit14Inst(	INST_LOAD_SCALAR, dictVar,	envPtr);
+		TclEmitInstInt4(INST_OVER, 1,			envPtr);
+		TclEmitOpcode(	INST_DICT_EXPAND,		envPtr);
+		TclEmitInstInt4(INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+		PushLiteral(envPtr, "", 0);
+	    } else {
+		/*
+		 * Case: Direct dict in LVT with empty body.
+		 */
+
+		PushLiteral(envPtr, "", 0);
+		Emit14Inst(	INST_LOAD_SCALAR, dictVar,	envPtr);
+		PushLiteral(envPtr, "", 0);
+		TclEmitOpcode(	INST_DICT_EXPAND,		envPtr);
+		TclEmitInstInt4(INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+		PushLiteral(envPtr, "", 0);
+	    }
+	} else {
+	    if (gotPath) {
+		/*
+		 * Case: Path into dict in non-simple var with empty body.
+		 */
+
+		tokenPtr = varTokenPtr;
+		for (i=1 ; i<parsePtr->numWords-1 ; i++) {
+		    CompileWord(envPtr, tokenPtr, interp, i-1);
+		    tokenPtr = TokenAfter(tokenPtr);
+		}
+		TclEmitInstInt4(INST_LIST, parsePtr->numWords-3,envPtr);
+		TclEmitInstInt4(INST_OVER, 1,			envPtr);
+		TclEmitOpcode(	INST_LOAD_STK,			envPtr);
+		TclEmitInstInt4(INST_OVER, 1,			envPtr);
+		TclEmitOpcode(	INST_DICT_EXPAND,		envPtr);
+		TclEmitOpcode(	INST_DICT_RECOMBINE_STK,	envPtr);
+		PushLiteral(envPtr, "", 0);
+	    } else {
+		/*
+		 * Case: Direct dict in non-simple var with empty body.
+		 */
+
+		CompileWord(envPtr, varTokenPtr, interp, 0);
+		TclEmitOpcode(	INST_DUP,			envPtr);
+		TclEmitOpcode(	INST_LOAD_STK,			envPtr);
+		PushLiteral(envPtr, "", 0);
+		TclEmitOpcode(	INST_DICT_EXPAND,		envPtr);
+		PushLiteral(envPtr, "", 0);
+		TclEmitInstInt4(INST_REVERSE, 2,		envPtr);
+		TclEmitOpcode(	INST_DICT_RECOMBINE_STK,	envPtr);
+		PushLiteral(envPtr, "", 0);
+	    }
+	}
+	return TCL_OK;
+    }
+
+    /*
+     * OK, we have a non-trivial body. This means that the focus is on
+     * generating a try-finally structure where the INST_DICT_RECOMBINE_* goes
+     * in the 'finally' clause.
+     *
+     * Start by allocating local (unnamed, untraced) working variables.
+     */
+
+    if (dictVar == -1) {
+	varNameTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    } else {
+	varNameTmp = -1;
+    }
+    if (gotPath) {
+	pathTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    } else {
+	pathTmp = -1;
+    }
+    keysTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+
+    /*
+     * Issue instructions. First, the part to expand the dictionary.
+     */
+
+    if (varNameTmp > -1) {
+	CompileWord(envPtr, varTokenPtr, interp, 0);
+	Emit14Inst(		INST_STORE_SCALAR, varNameTmp,	envPtr);
+    }
+    tokenPtr = TokenAfter(varTokenPtr);
+    if (gotPath) {
+	for (i=2 ; i<parsePtr->numWords-1 ; i++) {
+	    CompileWord(envPtr, tokenPtr, interp, i-1);
+	    tokenPtr = TokenAfter(tokenPtr);
+	}
+	TclEmitInstInt4(	INST_LIST, parsePtr->numWords-3,envPtr);
+	Emit14Inst(		INST_STORE_SCALAR, pathTmp,	envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+    }
+    if (dictVar == -1) {
+	TclEmitOpcode(		INST_LOAD_STK,			envPtr);
+    } else {
+	Emit14Inst(		INST_LOAD_SCALAR, dictVar,	envPtr);
+    }
+    if (gotPath) {
+	Emit14Inst(		INST_LOAD_SCALAR, pathTmp,	envPtr);
+    } else {
+	PushLiteral(envPtr, "", 0);
+    }
+    TclEmitOpcode(		INST_DICT_EXPAND,		envPtr);
+    Emit14Inst(			INST_STORE_SCALAR, keysTmp,	envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
+
+    /*
+     * Now the body of the [dict with].
+     */
+
+    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    TclEmitInstInt4(		INST_BEGIN_CATCH4, range,	envPtr);
+
+    ExceptionRangeStarts(envPtr, range);
+    envPtr->currStackDepth++;
+    SetLineInformation(parsePtr->numWords-1);
+    CompileBody(envPtr, tokenPtr, interp);
+    envPtr->currStackDepth = savedStackDepth;
+    ExceptionRangeEnds(envPtr, range);
+
+    /*
+     * Now fold the results back into the dictionary in the OK case.
+     */
+
+    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    if (varNameTmp > -1) {
+	Emit14Inst(		INST_LOAD_SCALAR, varNameTmp,	envPtr);
+    }
+    if (gotPath) {
+	Emit14Inst(		INST_LOAD_SCALAR, pathTmp,	envPtr);
+    } else {
+	PushLiteral(envPtr, "", 0);
+    }
+    Emit14Inst(			INST_LOAD_SCALAR, keysTmp,	envPtr);
+    if (dictVar == -1) {
+	TclEmitOpcode(		INST_DICT_RECOMBINE_STK,	envPtr);
+    } else {
+	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+    }
+    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
+
+    /*
+     * Now fold the results back into the dictionary in the exception case.
+     */
+
+    ExceptionRangeTarget(envPtr, range, catchOffset);
+    TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
+    TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
+    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    if (varNameTmp > -1) {
+	Emit14Inst(		INST_LOAD_SCALAR, varNameTmp,	envPtr);
+    }
+    if (parsePtr->numWords > 3) {
+	Emit14Inst(		INST_LOAD_SCALAR, pathTmp,	envPtr);
+    } else {
+	PushLiteral(envPtr, "", 0);
+    }
+    Emit14Inst(			INST_LOAD_SCALAR, keysTmp,	envPtr);
+    if (dictVar == -1) {
+	TclEmitOpcode(		INST_DICT_RECOMBINE_STK,	envPtr);
+    } else {
+	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+    }
+    TclEmitOpcode(		INST_RETURN_STK,		envPtr);
+
+    /*
+     * Prepare for the start of the next command.
+     */
+
+    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
+	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
+		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
+    }
     return TCL_OK;
 }
 
@@ -1770,12 +2033,8 @@ TclCompileForeachCmd(
 	    SetLineInformation(i);
 	    CompileTokens(envPtr, tokenPtr, interp);
 	    tempVar = (firstValueTemp + loopIndex);
-	    if (tempVar <= 255) {
-		TclEmitInstInt1(INST_STORE_SCALAR1, tempVar, envPtr);
-	    } else {
-		TclEmitInstInt4(INST_STORE_SCALAR4, tempVar, envPtr);
-	    }
-	    TclEmitOpcode(INST_POP, envPtr);
+	    Emit14Inst(		INST_STORE_SCALAR, tempVar,	envPtr);
+	    TclEmitOpcode(	INST_POP,			envPtr);
 	    loopIndex++;
 	}
     }
@@ -1784,7 +2043,7 @@ TclCompileForeachCmd(
      * Initialize the temporary var that holds the count of loop iterations.
      */
 
-    TclEmitInstInt4(INST_FOREACH_START4, infoIndex, envPtr);
+    TclEmitInstInt4(		INST_FOREACH_START4, infoIndex,	envPtr);
 
     /*
      * Top of loop code: assign each loop variable and check whether
@@ -1792,7 +2051,7 @@ TclCompileForeachCmd(
      */
 
     ExceptionRangeTarget(envPtr, range, continueOffset);
-    TclEmitInstInt4(INST_FOREACH_STEP4, infoIndex, envPtr);
+    TclEmitInstInt4(		INST_FOREACH_STEP4, infoIndex,	envPtr);
     TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFalseFixup);
 
     /*
@@ -1804,7 +2063,7 @@ TclCompileForeachCmd(
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);
     envPtr->currStackDepth = savedStackDepth + 1;
-    TclEmitOpcode(INST_POP, envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
 
     /*
      * Jump back to the test at the top of the loop. Generate a 4 byte jump if
@@ -2079,14 +2338,14 @@ TclCompileGlobalCmd(
 	}
 
 	CompileWord(envPtr, varTokenPtr, interp, 1);
-	TclEmitInstInt4(INST_NSUPVAR, localIndex, envPtr);
+	TclEmitInstInt4(	INST_NSUPVAR, localIndex,	envPtr);
     }
 
     /*
      * Pop the namespace, and set the result to empty
      */
 
-    TclEmitOpcode(INST_POP, envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
     PushLiteral(envPtr, "", 0);
     return TCL_OK;
 }
@@ -2485,43 +2744,41 @@ TclCompileIncrCmd(
      * Emit the instruction to increment the variable.
      */
 
-    if (simpleVarName) {
-	if (isScalar) {
-	    if (localIndex >= 0) {
-		if (haveImmValue) {
-		    TclEmitInstInt1(INST_INCR_SCALAR1_IMM, localIndex, envPtr);
-		    TclEmitInt1(immValue, envPtr);
-		} else {
-		    TclEmitInstInt1(INST_INCR_SCALAR1, localIndex, envPtr);
-		}
+    if (!simpleVarName) {
+	if (haveImmValue) {
+	    TclEmitInstInt1(	INST_INCR_STK_IMM, immValue,	envPtr);
+	} else {
+	    TclEmitOpcode(	INST_INCR_STK,			envPtr);
+	}
+    } else if (isScalar) {	/* Simple scalar variable. */
+	if (localIndex >= 0) {
+	    if (haveImmValue) {
+		TclEmitInstInt1(INST_INCR_SCALAR1_IMM, localIndex, envPtr);
+		TclEmitInt1(immValue, envPtr);
 	    } else {
-		if (haveImmValue) {
-		    TclEmitInstInt1(INST_INCR_SCALAR_STK_IMM, immValue, envPtr);
-		} else {
-		    TclEmitOpcode(INST_INCR_SCALAR_STK, envPtr);
-		}
+		TclEmitInstInt1(INST_INCR_SCALAR1, localIndex,	envPtr);
 	    }
 	} else {
-	    if (localIndex >= 0) {
-		if (haveImmValue) {
-		    TclEmitInstInt1(INST_INCR_ARRAY1_IMM, localIndex, envPtr);
-		    TclEmitInt1(immValue, envPtr);
-		} else {
-		    TclEmitInstInt1(INST_INCR_ARRAY1, localIndex, envPtr);
-		}
+	    if (haveImmValue) {
+		TclEmitInstInt1(INST_INCR_SCALAR_STK_IMM, immValue, envPtr);
 	    } else {
-		if (haveImmValue) {
-		    TclEmitInstInt1(INST_INCR_ARRAY_STK_IMM, immValue, envPtr);
-		} else {
-		    TclEmitOpcode(INST_INCR_ARRAY_STK, envPtr);
-		}
+		TclEmitOpcode(	INST_INCR_SCALAR_STK,		envPtr);
 	    }
 	}
-    } else {			/* Non-simple variable name. */
-	if (haveImmValue) {
-	    TclEmitInstInt1(INST_INCR_STK_IMM, immValue, envPtr);
+    } else {			/* Simple array variable. */
+	if (localIndex >= 0) {
+	    if (haveImmValue) {
+		TclEmitInstInt1(INST_INCR_ARRAY1_IMM, localIndex, envPtr);
+		TclEmitInt1(immValue, envPtr);
+	    } else {
+		TclEmitInstInt1(INST_INCR_ARRAY1, localIndex,	envPtr);
+	    }
 	} else {
-	    TclEmitOpcode(INST_INCR_STK, envPtr);
+	    if (haveImmValue) {
+		TclEmitInstInt1(INST_INCR_ARRAY_STK_IMM, immValue, envPtr);
+	    } else {
+		TclEmitOpcode(	INST_INCR_ARRAY_STK,		envPtr);
+	    }
 	}
     }
 
@@ -2579,22 +2836,20 @@ TclCompileInfoExistsCmd(
      * Emit instruction to check the variable for existence.
      */
 
-    if (simpleVarName) {
-	if (isScalar) {
-	    if (localIndex < 0) {
-		TclEmitOpcode(INST_EXIST_STK, envPtr);
-	    } else {
-		TclEmitInstInt4(INST_EXIST_SCALAR, localIndex, envPtr);
-	    }
+    if (!simpleVarName) {
+	TclEmitOpcode(		INST_EXIST_STK,			envPtr);
+    } else if (isScalar) {
+	if (localIndex < 0) {
+	    TclEmitOpcode(	INST_EXIST_STK,			envPtr);
 	} else {
-	    if (localIndex < 0) {
-		TclEmitOpcode(INST_EXIST_ARRAY_STK, envPtr);
-	    } else {
-		TclEmitInstInt4(INST_EXIST_ARRAY, localIndex, envPtr);
-	    }
+	    TclEmitInstInt4(	INST_EXIST_SCALAR, localIndex,	envPtr);
 	}
     } else {
-	TclEmitOpcode(INST_EXIST_STK, envPtr);
+	if (localIndex < 0) {
+	    TclEmitOpcode(	INST_EXIST_ARRAY_STK,		envPtr);
+	} else {
+	    TclEmitInstInt4(	INST_EXIST_ARRAY, localIndex,	envPtr);
+	}
     }
 
     return TCL_OK;
@@ -2684,26 +2939,20 @@ TclCompileLappendCmd(
      * LOAD/STORE instructions.
      */
 
-    if (simpleVarName) {
-	if (isScalar) {
-	    if (localIndex < 0) {
-		TclEmitOpcode(INST_LAPPEND_STK, envPtr);
-	    } else if (localIndex <= 255) {
-		TclEmitInstInt1(INST_LAPPEND_SCALAR1, localIndex, envPtr);
-	    } else {
-		TclEmitInstInt4(INST_LAPPEND_SCALAR4, localIndex, envPtr);
-	    }
+    if (!simpleVarName) {
+	TclEmitOpcode(		INST_LAPPEND_STK,		envPtr);
+    } else if (isScalar) {
+	if (localIndex < 0) {
+	    TclEmitOpcode(	INST_LAPPEND_STK,		envPtr);
 	} else {
-	    if (localIndex < 0) {
-		TclEmitOpcode(INST_LAPPEND_ARRAY_STK, envPtr);
-	    } else if (localIndex <= 255) {
-		TclEmitInstInt1(INST_LAPPEND_ARRAY1, localIndex, envPtr);
-	    } else {
-		TclEmitInstInt4(INST_LAPPEND_ARRAY4, localIndex, envPtr);
-	    }
+	    Emit14Inst(		INST_LAPPEND_SCALAR, localIndex, envPtr);
 	}
     } else {
-	TclEmitOpcode(INST_LAPPEND_STK, envPtr);
+	if (localIndex < 0) {
+	    TclEmitOpcode(	INST_LAPPEND_ARRAY_STK,		envPtr);
+	} else {
+	    Emit14Inst(		INST_LAPPEND_ARRAY, localIndex,	envPtr);
+	}
     }
 
     return TCL_OK;
@@ -2776,50 +3025,44 @@ TclCompileLassignCmd(
 	 * the stack and assign it to the variable.
 	 */
 
-	if (simpleVarName) {
-	    if (isScalar) {
-		if (localIndex >= 0) {
-		    TclEmitOpcode(INST_DUP, envPtr);
-		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
-		    if (localIndex <= 255) {
-			TclEmitInstInt1(INST_STORE_SCALAR1,localIndex,envPtr);
-		    } else {
-			TclEmitInstInt4(INST_STORE_SCALAR4,localIndex,envPtr);
-		    }
-		} else {
-		    TclEmitInstInt4(INST_OVER, 1, envPtr);
-		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
-		    TclEmitOpcode(INST_STORE_SCALAR_STK, envPtr);
-		}
+	if (!simpleVarName) {
+	    TclEmitInstInt4(	INST_OVER, 1,			envPtr);
+	    TclEmitInstInt4(	INST_LIST_INDEX_IMM, idx,	envPtr);
+	    TclEmitOpcode(	INST_STORE_STK,			envPtr);
+	    TclEmitOpcode(	INST_POP,			envPtr);
+	} else if (isScalar) {
+	    if (localIndex >= 0) {
+		TclEmitOpcode(	INST_DUP,			envPtr);
+		TclEmitInstInt4(INST_LIST_INDEX_IMM, idx,	envPtr);
+		Emit14Inst(	INST_STORE_SCALAR, localIndex,	envPtr);
+		TclEmitOpcode(	INST_POP,			envPtr);
 	    } else {
-		if (localIndex >= 0) {
-		    TclEmitInstInt4(INST_OVER, 1, envPtr);
-		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
-		    if (localIndex <= 255) {
-			TclEmitInstInt1(INST_STORE_ARRAY1, localIndex, envPtr);
-		    } else {
-			TclEmitInstInt4(INST_STORE_ARRAY4, localIndex, envPtr);
-		    }
-		} else {
-		    TclEmitInstInt4(INST_OVER, 2, envPtr);
-		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
-		    TclEmitOpcode(INST_STORE_ARRAY_STK, envPtr);
-		}
+		TclEmitInstInt4(INST_OVER, 1,			envPtr);
+		TclEmitInstInt4(INST_LIST_INDEX_IMM, idx,	envPtr);
+		TclEmitOpcode(	INST_STORE_SCALAR_STK,		envPtr);
+		TclEmitOpcode(	INST_POP,			envPtr);
 	    }
 	} else {
-	    TclEmitInstInt4(INST_OVER, 1, envPtr);
-	    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
-	    TclEmitOpcode(INST_STORE_STK, envPtr);
+	    if (localIndex >= 0) {
+		TclEmitInstInt4(INST_OVER, 1,			envPtr);
+		TclEmitInstInt4(INST_LIST_INDEX_IMM, idx,	envPtr);
+		Emit14Inst(	INST_STORE_ARRAY, localIndex,	envPtr);
+		TclEmitOpcode(	INST_POP,			envPtr);
+	    } else {
+		TclEmitInstInt4(INST_OVER, 2,			envPtr);
+		TclEmitInstInt4(INST_LIST_INDEX_IMM, idx,	envPtr);
+		TclEmitOpcode(	INST_STORE_ARRAY_STK,		envPtr);
+		TclEmitOpcode(	INST_POP,			envPtr);
+	    }
 	}
-	TclEmitOpcode(INST_POP, envPtr);
     }
 
     /*
      * Generate code to leave the rest of the list on the stack.
      */
 
-    TclEmitInstInt4(INST_LIST_RANGE_IMM, idx, envPtr);
-    TclEmitInt4(-2, envPtr);	/* -2 == "end" */
+    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx,	envPtr);
+    TclEmitInt4(		-2 /* == "end" */,		envPtr);
 
     return TCL_OK;
 }
@@ -2887,7 +3130,7 @@ TclCompileLindexCmd(
 	     */
 
 	    CompileWord(envPtr, valTokenPtr, interp, 1);
-	    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
+	    TclEmitInstInt4(	INST_LIST_INDEX_IMM, idx,	envPtr);
 	    return TCL_OK;
 	}
 
@@ -2913,9 +3156,9 @@ TclCompileLindexCmd(
      */
 
     if (numWords == 3) {
-	TclEmitOpcode(INST_LIST_INDEX, envPtr);
+	TclEmitOpcode(		INST_LIST_INDEX,		envPtr);
     } else {
-	TclEmitInstInt4(INST_LIST_INDEX_MULTI, numWords-1, envPtr);
+	TclEmitInstInt4(	INST_LIST_INDEX_MULTI, numWords-1, envPtr);
     }
 
     return TCL_OK;
@@ -2949,6 +3192,8 @@ TclCompileListCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *valueTokenPtr;
+    int i, numWords;
 
     /*
      * If we're not in a procedure, don't compile.
@@ -2969,17 +3214,13 @@ TclCompileListCmd(
 	 * Push the all values onto the stack.
 	 */
 
-	Tcl_Token *valueTokenPtr;
-	int i, numWords;
-
 	numWords = parsePtr->numWords;
-
 	valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
 	for (i = 1; i < numWords; i++) {
 	    CompileWord(envPtr, valueTokenPtr, interp, i);
 	    valueTokenPtr = TokenAfter(valueTokenPtr);
 	}
-	TclEmitInstInt4(INST_LIST, numWords - 1, envPtr);
+	TclEmitInstInt4(	INST_LIST, numWords - 1,	envPtr);
     }
 
     return TCL_OK;
@@ -3021,7 +3262,7 @@ TclCompileLlengthCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     CompileWord(envPtr, varTokenPtr, interp, 1);
-    TclEmitOpcode(INST_LIST_LENGTH, envPtr);
+    TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
     return TCL_OK;
 }
 
@@ -3127,7 +3368,7 @@ TclCompileLsetCmd(
 	} else {
 	    tempDepth = parsePtr->numWords - 1;
 	}
-	TclEmitInstInt4(INST_OVER, tempDepth, envPtr);
+	TclEmitInstInt4(	INST_OVER, tempDepth,		envPtr);
     }
 
     /*
@@ -3140,7 +3381,7 @@ TclCompileLsetCmd(
 	} else {
 	    tempDepth = parsePtr->numWords - 2;
 	}
-	TclEmitInstInt4(INST_OVER, tempDepth, envPtr);
+	TclEmitInstInt4(	INST_OVER, tempDepth,		envPtr);
     }
 
     /*
@@ -3148,22 +3389,18 @@ TclCompileLsetCmd(
      */
 
     if (!simpleVarName) {
-	TclEmitOpcode(INST_LOAD_STK, envPtr);
+	TclEmitOpcode(		INST_LOAD_STK,			envPtr);
     } else if (isScalar) {
 	if (localIndex < 0) {
-	    TclEmitOpcode(INST_LOAD_SCALAR_STK, envPtr);
-	} else if (localIndex < 0x100) {
-	    TclEmitInstInt1(INST_LOAD_SCALAR1, localIndex, envPtr);
+	    TclEmitOpcode(	INST_LOAD_SCALAR_STK,		envPtr);
 	} else {
-	    TclEmitInstInt4(INST_LOAD_SCALAR4, localIndex, envPtr);
+	    Emit14Inst(		INST_LOAD_SCALAR, localIndex,	envPtr);
 	}
     } else {
 	if (localIndex < 0) {
-	    TclEmitOpcode(INST_LOAD_ARRAY_STK, envPtr);
-	} else if (localIndex < 0x100) {
-	    TclEmitInstInt1(INST_LOAD_ARRAY1, localIndex, envPtr);
+	    TclEmitOpcode(	INST_LOAD_ARRAY_STK,		envPtr);
 	} else {
-	    TclEmitInstInt4(INST_LOAD_ARRAY4, localIndex, envPtr);
+	    Emit14Inst(		INST_LOAD_ARRAY, localIndex,	envPtr);
 	}
     }
 
@@ -3172,9 +3409,9 @@ TclCompileLsetCmd(
      */
 
     if (parsePtr->numWords == 4) {
-	TclEmitOpcode(INST_LSET_LIST, envPtr);
+	TclEmitOpcode(		INST_LSET_LIST,			envPtr);
     } else {
-	TclEmitInstInt4(INST_LSET_FLAT, parsePtr->numWords-1, envPtr);
+	TclEmitInstInt4(	INST_LSET_FLAT, parsePtr->numWords-1, envPtr);
     }
 
     /*
@@ -3182,22 +3419,18 @@ TclCompileLsetCmd(
      */
 
     if (!simpleVarName) {
-	TclEmitOpcode(INST_STORE_STK, envPtr);
+	TclEmitOpcode(		INST_STORE_STK,			envPtr);
     } else if (isScalar) {
 	if (localIndex < 0) {
-	    TclEmitOpcode(INST_STORE_SCALAR_STK, envPtr);
-	} else if (localIndex < 0x100) {
-	    TclEmitInstInt1(INST_STORE_SCALAR1, localIndex, envPtr);
+	    TclEmitOpcode(	INST_STORE_SCALAR_STK,		envPtr);
 	} else {
-	    TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
+	    Emit14Inst(		INST_STORE_SCALAR, localIndex,	envPtr);
 	}
     } else {
 	if (localIndex < 0) {
-	    TclEmitOpcode(INST_STORE_ARRAY_STK, envPtr);
-	} else if (localIndex < 0x100) {
-	    TclEmitInstInt1(INST_STORE_ARRAY1, localIndex, envPtr);
+	    TclEmitOpcode(	INST_STORE_ARRAY_STK,		envPtr);
 	} else {
-	    TclEmitInstInt4(INST_STORE_ARRAY4, localIndex, envPtr);
+	    Emit14Inst(		INST_STORE_ARRAY, localIndex,	envPtr);
 	}
     }
 
@@ -3275,14 +3508,14 @@ TclCompileNamespaceUpvarCmd(
 	if ((localIndex < 0) || !isScalar) {
 	    return TCL_ERROR;
 	}
-	TclEmitInstInt4(INST_NSUPVAR, localIndex, envPtr);
+	TclEmitInstInt4(	INST_NSUPVAR, localIndex,	envPtr);
     }
 
     /*
      * Pop the namespace, and set the result to empty
      */
 
-    TclEmitOpcode(INST_POP, envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
     PushLiteral(envPtr, "", 0);
     return TCL_OK;
 }
@@ -3433,9 +3666,9 @@ TclCompileRegexpCmd(
 
     if (simple) {
 	if (exact && !nocase) {
-	    TclEmitOpcode(INST_STR_EQ, envPtr);
+	    TclEmitOpcode(	INST_STR_EQ,			envPtr);
 	} else {
-	    TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
+	    TclEmitInstInt1(	INST_STR_MATCH, nocase,		envPtr);
 	}
     } else {
 	/*
@@ -3446,7 +3679,7 @@ TclCompileRegexpCmd(
 
 	int cflags = TCL_REG_ADVANCED | (nocase ? TCL_REG_NOCASE : 0);
 
-	TclEmitInstInt1(INST_REGEXP, cflags, envPtr);
+	TclEmitInstInt1(	INST_REGEXP, cflags,		envPtr);
     }
 
     return TCL_OK;
@@ -3644,7 +3877,7 @@ TclCompileSyntaxError(
     TclErrorStackResetIf(interp, bytes, numBytes);
     TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
-	    Tcl_GetReturnOptions(interp, TCL_ERROR));
+	    TclNoErrorStack(interp, Tcl_GetReturnOptions(interp, TCL_ERROR)));
 }
 
 /*
@@ -3744,14 +3977,14 @@ TclCompileUpvarCmd(
 	if ((localIndex < 0) || !isScalar) {
 	    return TCL_ERROR;
 	}
-	TclEmitInstInt4(INST_UPVAR, localIndex, envPtr);
+	TclEmitInstInt4(	INST_UPVAR, localIndex,		envPtr);
     }
 
     /*
      * Pop the frame index, and set the result to empty
      */
 
-    TclEmitOpcode(INST_POP, envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
     PushLiteral(envPtr, "", 0);
     return TCL_OK;
 }
@@ -3816,7 +4049,7 @@ TclCompileVariableCmd(
 	}
 
 	CompileWord(envPtr, varTokenPtr, interp, 1);
-	TclEmitInstInt4(INST_VARIABLE, localIndex, envPtr);
+	TclEmitInstInt4(	INST_VARIABLE, localIndex,	envPtr);
 
 	if (i != numWords) {
 	    /*
@@ -3824,12 +4057,8 @@ TclCompileVariableCmd(
 	     */
 
 	    CompileWord(envPtr, valueTokenPtr, interp, 1);
-	    if (localIndex < 0x100) {
-		TclEmitInstInt1(INST_STORE_SCALAR1, localIndex, envPtr);
-	    } else {
-		TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
-	    }
-	    TclEmitOpcode(INST_POP, envPtr);
+	    Emit14Inst(		INST_STORE_SCALAR, localIndex,	envPtr);
+	    TclEmitOpcode(	INST_POP,			envPtr);
 	}
     }
 

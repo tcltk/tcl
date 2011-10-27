@@ -421,6 +421,20 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Make general variable cease to exist; unparsed variable name is
 	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
 
+    {"dictExpand",       1,    -1,        0,    {OPERAND_NONE}},
+        /* Probe into a dict and extract it (or a subdict of it) into
+         * variables with matched names. Produces list of keys bound as
+         * result. Part of [dict with].
+	 * Stack:  ... dict path => ... keyList */
+    {"dictRecombineStk", 1,    -3,        0,    {OPERAND_NONE}},
+        /* Map variable contents back into a dictionary in a variable. Part of
+         * [dict with].
+	 * Stack:  ... dictVarName path keyList => ... */
+    {"dictRecombineImm", 1,    -2,        1,    {OPERAND_LVT4}},
+        /* Map variable contents back into a dictionary in the local variable
+         * indicated by the LVT index. Part of [dict with].
+	 * Stack:  ... path keyList => ... */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -2447,8 +2461,16 @@ TclInitByteCodeObj(
 	     * a value contains a literal which is that same value.
 	     * If this is allowed to happen, refcount decrements may not
 	     * reach zero, and memory may leak.  Bugs 467523, 3357771
+	     *
+	     * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
+	     * on the string value, and do not call Tcl_DuplicateObj() so we
+             * can be sure we do not have any lingering cycles hiding in
+	     * the intrep.
 	     */
-	    codePtr->objArrayPtr[i] = Tcl_DuplicateObj(objPtr);
+	    int numBytes;
+	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+
+	    codePtr->objArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
 	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
 	    Tcl_DecrRefCount(objPtr);
 	} else {

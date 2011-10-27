@@ -11,7 +11,7 @@
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.2
+package provide http 2.8.3
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -684,12 +684,16 @@ proc http::geturl {url args} {
 	    puts $sock "Proxy-Connection: Keep-Alive"
         }
         set accept_encoding_seen 0
+	set content_type_seen 0
 	foreach {key value} $state(-headers) {
 	    if {[string equal -nocase $key "host"]} {
 		continue
 	    }
 	    if {[string equal -nocase $key "accept-encoding"]} {
 		set accept_encoding_seen 1
+	    }
+	    if {[string equal -nocase $key "content-type"]} {
+		set content_type_seen 1
 	    }
 	    set value [string map [list \n "" \r ""] $value]
 	    set key [string trim $key]
@@ -733,7 +737,9 @@ proc http::geturl {url args} {
 	# response.
 
 	if {$isQuery || $isQueryChannel} {
-	    puts $sock "Content-Type: $state(-type)"
+	    if {!$content_type_seen} {
+		puts $sock "Content-Type: $state(-type)"
+	    }
 	    if {!$contDone} {
 		puts $sock "Content-Length: $state(querylength)"
 	    }

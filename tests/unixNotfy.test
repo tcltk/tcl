@@ -20,7 +20,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 # When run in a Tk shell, these tests hang.
-testConstraint noTk       [expr {![info exists tk_version]}]
+testConstraint noTk [expr {0 != [catch {package present Tk}]}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
 testConstraint testthread [expr {[info commands testthread] != {}}]
 # Darwin always uses a threaded notifier
 testConstraint unthreaded [expr {
@@ -61,16 +62,15 @@ test unixNotfy-1.2 {Tcl_DeleteFileHandler} -constraints {noTk unix unthreaded} -
 }
 
 test unixNotfy-2.1 {Tcl_DeleteFileHandler} \
-    -constraints {noTk unix testthread} \
+    -constraints {noTk unix thread} \
     -body {
 	update
 	set f [open [makeFile "" foo] w]
 	fileevent $f writable {set x 1}
 	vwait x
 	close $f
-   	testthread create "testthread send [testthread id] {set x ok}"
+   	thread::create "thread::send [thread::id] {set x ok}"
 	vwait x
-	threadReap
 	set x
     } \
     -result {ok} \
@@ -79,7 +79,7 @@ test unixNotfy-2.1 {Tcl_DeleteFileHandler} \
 	catch { removeFile foo }
     }
 test unixNotfy-2.2 {Tcl_DeleteFileHandler} \
-    -constraints {noTk unix testthread} \
+    -constraints {noTk unix thread} \
     -body {
 	update
 	set f1 [open [makeFile "" foo] w]
@@ -90,9 +90,8 @@ test unixNotfy-2.2 {Tcl_DeleteFileHandler} \
 	close $f1
 	vwait y
 	close $f2
-   	testthread create "testthread send [testthread id] {set x ok}"
+   	thread::create "thread::send [thread::id] {set x ok}"
 	vwait x
-	threadReap
 	set x
     } \
     -result {ok} \

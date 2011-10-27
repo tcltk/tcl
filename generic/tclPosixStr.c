@@ -35,7 +35,7 @@ const char *
 Tcl_ErrnoId(void)
 {
     switch (errno) {
-#ifdef E2BIG
+#if defined(E2BIG) && (!defined(EOVERFLOW) || (E2BIG != EOVERFLOW))
     case E2BIG: return "E2BIG";
 #endif
 #ifdef EACCES
@@ -494,7 +494,7 @@ Tcl_ErrnoMsg(
      int err)			/* Error number (such as in errno variable). */
 {
     switch (err) {
-#ifdef E2BIG
+#if defined(E2BIG) && (!defined(EOVERFLOW) || (E2BIG != EOVERFLOW))
     case E2BIG: return "argument list too long";
 #endif
 #ifdef EACCES

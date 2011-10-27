@@ -215,7 +215,7 @@ static const CmdInfo builtInCmds[] = {
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	1},
     {"coroutine",	NULL,			NULL,			TclNRCoroutineObjCmd,	1},
     {"error",		Tcl_ErrorObjCmd,	TclCompileErrorCmd,	NULL,	1},
-    {"eval",		Tcl_EvalObjCmd,		NULL,			NULL,	1},
+    {"eval",		Tcl_EvalObjCmd,		NULL,			TclNREvalObjCmd,	1},
     {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	TclNRExprObjCmd,	1},
     {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	TclNRForObjCmd,	1},
     {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	TclNRForeachCmd,	1},
@@ -1355,10 +1355,11 @@ DeleteInterpProc(
     int i;
 
     /*
-     * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup.
+     * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup,
+	 * unless we are exiting.
      */
 
-    if (iPtr->numLevels > 0) {
+    if ((iPtr->numLevels > 0) && !TclInExit()) {
 	Tcl_Panic("DeleteInterpProc called with active evals");
     }
 
@@ -1481,7 +1482,7 @@ DeleteInterpProc(
      * namespace. The order is important [Bug 1658572].
      */
 
-    if (iPtr->framePtr != iPtr->rootFramePtr) {
+    if ((iPtr->framePtr != iPtr->rootFramePtr) && !TclInExit()) {
 	Tcl_Panic("DeleteInterpProc: popping rootCallFrame with other frames on top");
     }
     Tcl_PopCallFrame(interp);
@@ -1527,6 +1528,10 @@ DeleteInterpProc(
     }
     if (iPtr->execEnvPtr != NULL) {
 	TclDeleteExecEnv(iPtr->execEnvPtr);
+    }
+    if (iPtr->scriptFile) {
+	Tcl_DecrRefCount(iPtr->scriptFile);
+	iPtr->scriptFile = NULL;
     }
     Tcl_DecrRefCount(iPtr->emptyObjPtr);
     iPtr->emptyObjPtr = NULL;
@@ -1602,7 +1607,7 @@ DeleteInterpProc(
      * know which arguments will be used as scripts and which will not.
      */
 
-    if (iPtr->lineLAPtr->numEntries) {
+    if (iPtr->lineLAPtr->numEntries && !TclInExit()) {
 	/*
 	 * When the interp goes away we have nothing on the stack, so there
 	 * are no arguments, so this table has to be empty.
@@ -1612,10 +1617,10 @@ DeleteInterpProc(
     }
 
     Tcl_DeleteHashTable(iPtr->lineLAPtr);
-    ckfree(iPtr->lineLAPtr);
+    ckfree((char *) iPtr->lineLAPtr);
     iPtr->lineLAPtr = NULL;
 
-    if (iPtr->lineLABCPtr->numEntries) {
+    if (iPtr->lineLABCPtr->numEntries && !TclInExit()) {
 	/*
 	 * When the interp goes away we have nothing on the stack, so there
 	 * are no arguments, so this table has to be empty.
@@ -1917,6 +1922,17 @@ Tcl_ExposeCommand(
     }
 
     /*
+     * Command resolvers (per-interp, per-namespace) might have resolved to a
+     * command for the given namespace scope with this command not being
+     * registered with the namespace's command table. During BC compilation,
+     * the so-resolved command turns into a CmdName literal. Without
+     * invalidating a possible CmdName literal here explicitly, such literals
+     * keep being reused while pointing to overhauled commands.
+     */
+
+    TclInvalidateCmdLiteral(interp, cmdName, nsPtr);
+
+    /*
      * The list of command exported from the namespace might have changed.
      * However, we do not need to recompute this just yet; next time we need
      * the info will be soon enough.
@@ -2063,6 +2079,18 @@ Tcl_CreateCommand(
 	    ckfree(Tcl_GetHashValue(hPtr));
 	}
     } else {
+	/*
+	 * Command resolvers (per-interp, per-namespace) might have resolved
+	 * to a command for the given namespace scope with this command not
+	 * being registered with the namespace's command table. During BC
+	 * compilation, the so-resolved command turns into a CmdName literal.
+	 * Without invalidating a possible CmdName literal here explicitly,
+	 * such literals keep being reused while pointing to overhauled
+	 * commands.
+	 */
+
+	TclInvalidateCmdLiteral(interp, tail, nsPtr);
+
 	/*
 	 * The list of command exported from the namespace might have changed.
 	 * However, we do not need to recompute this just yet; next time we
@@ -2236,6 +2264,18 @@ Tcl_CreateObjCommand(
 	    ckfree(Tcl_GetHashValue(hPtr));
 	}
     } else {
+	/*
+	 * Command resolvers (per-interp, per-namespace) might have resolved
+	 * to a command for the given namespace scope with this command not
+	 * being registered with the namespace's command table. During BC
+	 * compilation, the so-resolved command turns into a CmdName literal.
+	 * Without invalidating a possible CmdName literal here explicitly,
+	 * such literals keep being reused while pointing to overhauled
+	 * commands.
+	 */
+
+	TclInvalidateCmdLiteral(interp, tail, nsPtr);
+
 	/*
 	 * The list of command exported from the namespace might have changed.
 	 * However, we do not need to recompute this just yet; next time we
@@ -2544,6 +2584,17 @@ TclRenameCommand(
 
     TclInvalidateNsCmdLookup(cmdNsPtr);
     TclInvalidateNsCmdLookup(cmdPtr->nsPtr);
+
+    /*
+     * Command resolvers (per-interp, per-namespace) might have resolved to a
+     * command for the given namespace scope with this command not being
+     * registered with the namespace's command table. During BC compilation,
+     * the so-resolved command turns into a CmdName literal. Without
+     * invalidating a possible CmdName literal here explicitly, such literals
+     * keep being reused while pointing to overhauled commands.
+     */
+
+    TclInvalidateCmdLiteral(interp, newTail, cmdPtr->nsPtr);
 
     /*
      * Script for rename traces can delete the command "oldName". Therefore

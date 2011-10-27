@@ -676,8 +676,13 @@ typedef struct ByteCode {
 #define INST_UNSET_ARRAY_STK		136
 #define INST_UNSET_STK			137
 
+/* For [dict with] compilation */
+#define INST_DICT_EXPAND		138
+#define INST_DICT_RECOMBINE_STK		139
+#define INST_DICT_RECOMBINE_IMM		140
+
 /* The last opcode */
-#define LAST_INST_OPCODE		137
+#define LAST_INST_OPCODE		140
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -955,6 +960,8 @@ MODULE_SCOPE void	TclRegisterAuxDataType(const AuxDataType *typePtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
+MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp, 
+			    const char *name, Namespace *nsPtr);
 MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);

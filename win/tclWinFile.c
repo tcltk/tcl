@@ -252,9 +252,7 @@ WinLink(
 	 * It is a file.
 	 */
 
-	if (CreateHardLink == NULL) {
-	    Tcl_SetErrno(ENOTDIR);
-	} else if (linkAction & TCL_CREATE_HARD_LINK) {
+	if (linkAction & TCL_CREATE_HARD_LINK) {
 	    if (CreateHardLink(linkSourcePath, linkTargetPath, NULL)) {
 		/*
 		 * Success!
@@ -925,24 +923,16 @@ TclpMatchInDirectory(
 
 	    int len;
 	    DWORD attr;
+	    WIN32_FILE_ATTRIBUTE_DATA data;
 	    const char *str = Tcl_GetStringFromObj(norm,&len);
 
 	    native = Tcl_FSGetNativePath(pathPtr);
 
-	    if (GetFileAttributesEx == NULL) {
-		attr = GetFileAttributes(native);
-		if (attr == INVALID_FILE_ATTRIBUTES) {
-		    return TCL_OK;
-		}
-	    } else {
-		WIN32_FILE_ATTRIBUTE_DATA data;
-
-		if (GetFileAttributesEx(native,
-			GetFileExInfoStandard, &data) != TRUE) {
-		    return TCL_OK;
-		}
-		attr = data.dwFileAttributes;
+	    if (GetFileAttributesEx(native,
+		    GetFileExInfoStandard, &data) != TRUE) {
+		return TCL_OK;
 	    }
+	    attr = data.dwFileAttributes;
 
 	    if (NativeMatchType(WinIsDrive(str,len), attr, native, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
@@ -1023,8 +1013,7 @@ TclpMatchInDirectory(
 	}
 
 	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
-	if (FindFirstFileEx == NULL || (types == NULL)
-		|| (types->type != TCL_GLOB_TYPE_DIR)) {
+	if ((types == NULL) || (types->type != TCL_GLOB_TYPE_DIR)) {
 	    handle = FindFirstFile(native, &data);
 	} else {
 	    /*
@@ -1299,7 +1288,7 @@ WinIsReserved(
  *	because for NTFS root volumes, the getFileAttributesProc returns a
  *	'hidden' attribute when it should not.
  *
- *	We never make any calss to a 'get attributes' routine here, since we
+ *	We never make any calls to a 'get attributes' routine here, since we
  *	have arranged things so that our caller already knows such
  *	information.
  *
@@ -2189,8 +2178,8 @@ NativeStatMode(
      * positions.
      */
 
-    mode |= (mode & 0x0700) >> 3;
-    mode |= (mode & 0x0700) >> 6;
+    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 3;
+    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 6;
     return (unsigned short) mode;
 }
 

@@ -79,7 +79,7 @@ static int		DetachChannel(Tcl_Interp *interp, Tcl_Channel chan);
 static void		DiscardInputQueued(ChannelState *statePtr,
 			    int discardSavedBuffers);
 static void		DiscardOutputQueued(ChannelState *chanPtr);
-static int		DoRead(Channel *chanPtr, char *srcPtr, int slen);
+static int		DoRead(Channel *chanPtr, char *srcPtr, int slen, int allowShortReads);
 static int		DoWrite(Channel *chanPtr, const char *src, int srcLen);
 static int		DoReadChars(Channel *chan, Tcl_Obj *objPtr, int toRead,
 			    int appendFlag);
@@ -414,8 +414,8 @@ TclFinalizeIOSubsystem(void)
 		statePtr != NULL;
 		statePtr = statePtr->nextCSPtr) {
 	    chanPtr = statePtr->topChanPtr;
-	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED |
-		    CHANNEL_DEAD)) {
+            if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED | CHANNEL_DEAD)
+                || GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 		active = 1;
 		break;
 	    }
@@ -458,6 +458,7 @@ TclFinalizeIOSubsystem(void)
 		 * The refcount is greater than zero, so flush the channel.
 		 */
 
+                ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		Tcl_Flush((Tcl_Channel) chanPtr);
 
 		/*
@@ -2355,6 +2356,7 @@ FlushChannel(
      * of the queued output to the channel.
      */
 
+    Tcl_Preserve(chanPtr);
     while (1) {
 	/*
 	 * If the queue is empty and there is a ready current buffer, OR if
@@ -2384,7 +2386,8 @@ FlushChannel(
 	 */
 
 	if (!calledFromAsyncFlush && GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
-	    return 0;
+	    errorCode = 0;
+	    goto done;
 	}
 
 	/*
@@ -2507,7 +2510,9 @@ FlushChannel(
 	    wroteSome = 1;
 	}
 
-	bufPtr->nextRemoved += written;
+	if (!IsBufferEmpty(bufPtr)) {
+	    bufPtr->nextRemoved += written;
+	}
 
 	/*
 	 * If this buffer is now empty, recycle it.
@@ -2531,7 +2536,7 @@ FlushChannel(
 
     if (GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 	if (wroteSome) {
-	    return errorCode;
+	    goto done;
 	} else if (statePtr->outQueueHead == NULL) {
 	    ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 	    ChanWatch(chanPtr, statePtr->interestMask);
@@ -2548,7 +2553,8 @@ FlushChannel(
 	    (statePtr->outQueueHead == NULL) &&
 	    ((statePtr->curOutPtr == NULL) ||
 	    IsBufferEmpty(statePtr->curOutPtr))) {
-	return CloseChannel(interp, chanPtr, errorCode);
+	errorCode = CloseChannel(interp, chanPtr, errorCode);
+	goto done;
     }
 
     /*
@@ -2561,8 +2567,12 @@ FlushChannel(
 	    (statePtr->outQueueHead == NULL) &&
 	    ((statePtr->curOutPtr == NULL) ||
 	    IsBufferEmpty(statePtr->curOutPtr))) {
-	return CloseChannelPart(interp, chanPtr, errorCode, TCL_CLOSE_WRITE);
+	errorCode = CloseChannelPart(interp, chanPtr, errorCode, TCL_CLOSE_WRITE);
+	goto done;
     }
+
+  done:
+    Tcl_Release(chanPtr);
     return errorCode;
 }
 
@@ -5443,7 +5453,7 @@ Tcl_Read(
 	return -1;
     }
 
-    return DoRead(chanPtr, dst, bytesToRead);
+    return DoRead(chanPtr, dst, bytesToRead, 0);
 }
 
 /*
@@ -9168,7 +9178,8 @@ CopyData(
 	    }
 
 	    if (inBinary || sameEncoding) {
-		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb);
+		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb,
+                              !GotFlag(inStatePtr, CHANNEL_NONBLOCKING));
 	    } else {
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
 			0 /* No append */);
@@ -9204,8 +9215,8 @@ CopyData(
 	    if ((size == 0) && Tcl_Eof(inChan) && !(cmdPtr && (mask == 0))) {
 		break;
 	    }
-	    if (((!Tcl_Eof(inChan)) || (cmdPtr && (mask == 0))) &&
-		    !(mask & TCL_READABLE)) {
+	    if (cmdPtr && (!Tcl_Eof(inChan) || (mask == 0)) &&
+                !(mask & TCL_READABLE)) {
 		if (mask & TCL_WRITABLE) {
 		    Tcl_DeleteChannelHandler(outChan, CopyEventProc, csPtr);
 		}
@@ -9407,7 +9418,8 @@ static int
 DoRead(
     Channel *chanPtr,		/* The channel from which to read. */
     char *bufPtr,		/* Where to store input read. */
-    int toRead)			/* Maximum number of bytes to read. */
+    int toRead,			/* Maximum number of bytes to read. */
+    int allowShortReads)	/* Allow half-blocking (pipes,sockets) */
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
@@ -9448,7 +9460,10 @@ DoRead(
 		}
 		goto done;
 	    }
-	}
+	} else if (allowShortReads) {
+            copied += copiedNow;
+            break;
+        }
     }
 
     ResetFlag(statePtr, CHANNEL_BLOCKED);

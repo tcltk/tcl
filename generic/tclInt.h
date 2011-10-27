@@ -2844,7 +2844,7 @@ MODULE_SCOPE char	tclEmptyString;
  */
 
 MODULE_SCOPE Tcl_ObjCmdProc TclNRApplyObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNREvalObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRCatchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRExprObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRForObjCmd;
@@ -2854,6 +2854,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRSourceObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSubstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSwitchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRTryObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
 
 MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
@@ -3098,6 +3099,7 @@ MODULE_SCOPE int	TclMaxListLength(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
+MODULE_SCOPE Tcl_Obj *  TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
 MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -3111,7 +3113,7 @@ MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 MODULE_SCOPE int	TclParseBackslash(const char *src,
 			    int numBytes, int *readPtr, char *dst);
 MODULE_SCOPE int	TclParseHex(const char *src, int numBytes,
-			    Tcl_UniChar *resultPtr);
+			    int *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    const char *expected, const char *bytes,
 			    int numBytes, const char **endPtrPtr, int flags);
@@ -3314,6 +3316,12 @@ MODULE_SCOPE int	TclDefaultBgErrorHandlerObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE Tcl_Command TclInitDictCmd(Tcl_Interp *interp);
+MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
+			    Var *arrayPtr, Tcl_Obj *part1Ptr,
+			    Tcl_Obj *part2Ptr, int index, int pathc,
+			    Tcl_Obj *const pathv[], Tcl_Obj *keysPtr);
+MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    int pathc, Tcl_Obj *const pathv[]);
 MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3576,6 +3584,9 @@ MODULE_SCOPE int	TclCompileDictSetCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileDictUpdateCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictWithCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileEnsemble(Tcl_Interp *interp,
@@ -3870,6 +3881,8 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
 MODULE_SCOPE int	TclCompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 MODULE_SCOPE void	TclFreeObjEntry(Tcl_HashEntry *hPtr);
 MODULE_SCOPE unsigned	TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
+
+MODULE_SCOPE int	TclFullFinalizationRequested(void);
 
 /*
  *----------------------------------------------------------------

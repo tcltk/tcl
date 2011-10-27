@@ -35895,6 +35895,39 @@ test clock-38.1 {regression - convertUTCToLocalViaC - east of Greenwich} \
     } \
     -result {01:00:00}
 
+test clock-38.2 {make sure TZ is not cached after unset} \
+    -setup {
+	if { [info exists env(TZ)] } {
+	    set oldTZ $env(TZ)
+            unset env(TZ)
+	}
+	if { [info exists env(TCL_TZ)] } {
+	    set oldTCLTZ $env(TCL_TZ)
+            unset env(TCL_TZ)
+	}
+    } \
+    -body {
+        set t1 [clock format 0]
+        # a time zone that is unlikely to anywhere
+        set env(TZ) "+04:20"
+        set t2 [clock format 0]
+        unset env(TZ)
+        set t3 [clock format 0]
+        expr {$t1 eq $t3 && $t1 ne $t2}
+    } \
+    -cleanup {
+        if { [info exists oldTZ] } {
+            set env(TZ) $oldTZ
+            unset oldTZ
+        }
+        if { [info exists oldTclTZ] } {
+            set env(TCL_TZ) $oldTclTZ
+            unset oldTclTZ
+        }
+    } \
+    -result 1
+        
+
 test clock-39.1 {regression - synonym timezones} {
     clock format 0 -format {%H:%M:%S} -timezone :US/Eastern
 } {19:00:00}

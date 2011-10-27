@@ -19,21 +19,45 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # Some tests require the testthread command
 
 testConstraint testthread [expr {[info commands testthread] != {}}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
+
+testConstraint notValgrind [expr {![testConstraint valgrind]}]
+
+proc ThreadError {id info} {
+    global threadId threadError
+    set threadId $id
+    set threadError $info
+}
+
+if {[testConstraint thread]} {
+    thread::errorproc ThreadError
+}
 
 if {[testConstraint testthread]} {
     testthread errorproc ThreadError
 
-    proc ThreadError {id info} {
-	global threadId threadError
-	set threadId $id
-	set threadError $info
-    }
+    set mainThread [testthread id]
 
     proc ThreadNullError {id info} {
 	# ignore
     }
-}
 
+    proc threadReap {} {
+	testthread errorproc ThreadNullError
+	while {[llength [testthread names]] > 1} {
+	    foreach tid [testthread names] {
+		if {$tid != [testthread id]} {
+		    catch {
+			testthread send -async $tid {testthread exit}
+		    }
+		}
+	    }
+	    after 1
+	}
+	testthread errorproc ThreadError
+	return [llength [testthread names]]
+    }
+}
 
 test thread-1.1 {Tcl_ThreadObjCmd: no args} {testthread} {
     list [catch {testthread} msg] $msg
@@ -41,54 +65,47 @@ test thread-1.1 {Tcl_ThreadObjCmd: no args} {testthread} {
 test thread-1.2 {Tcl_ThreadObjCmd: bad option} {testthread} {
     list [catch {testthread foo} msg] $msg
 } {1 {bad option "foo": must be cancel, create, event, exit, id, join, names, send, wait, or errorproc}}
-test thread-1.3 {Tcl_ThreadObjCmd: initial thread list} {testthread} {
-    list [threadReap] [llength [testthread names]]
-} {1 1}
-test thread-1.4 {Tcl_ThreadObjCmd: thread create } {testthread} {
-    threadReap
-    set serverthread [testthread create]
-    update
-    set numthreads [llength [testthread names]]
-    threadReap
+test thread-1.3 {Tcl_ThreadObjCmd: initial thread list} {thread} {
+    llength [thread::names]
+} 1
+test thread-1.4 {Tcl_ThreadObjCmd: thread create } {thread} {
+    set serverthread [thread::create -preserved]
+    set numthreads [llength [thread::names]]
+    thread::release $serverthread
     set numthreads
 } {2}
-test thread-1.5 {Tcl_ThreadObjCmd: thread create one shot} {testthread} {
-    threadReap
-    testthread create {set x 5}
+test thread-1.5 {Tcl_ThreadObjCmd: thread create one shot} {thread} {
+    thread::create {set x 5}
     foreach try {0 1 2 4 5 6} {
 	# Try various ways to yield
 	update
 	after 10
-	set l [llength [testthread names]]
+	set l [llength [thread::names]]
 	if {$l == 1} {
 	    break
 	}
     }
-    threadReap
     set l
 } {1}
-test thread-1.6 {Tcl_ThreadObjCmd: thread exit} {testthread} {
-    threadReap
-    testthread create {testthread exit}
+test thread-1.6 {Tcl_ThreadObjCmd: thread exit} {thread} {
+    thread::create {{*}{}}
     update
     after 10
-    set result [llength [testthread names]]
-    threadReap
-    set result
+    llength [thread::names]
 } {1}
 test thread-1.7 {Tcl_ThreadObjCmd: thread id args} {testthread} {
     set x [catch {testthread id x} msg]
     list $x $msg
 } {1 {wrong # args: should be "testthread id"}}
 test thread-1.8 {Tcl_ThreadObjCmd: thread id} {testthread} {
-    string compare [testthread id] $::tcltest::mainThread
+    string compare [testthread id] $mainThread
 } {0}
 test thread-1.9 {Tcl_ThreadObjCmd: thread names args} {testthread} {
     set x [catch {testthread names x} msg]
     list $x $msg
 } {1 {wrong # args: should be "testthread names"}}
 test thread-1.10 {Tcl_ThreadObjCmd: thread id} {testthread} {
-    string compare [testthread names] $::tcltest::mainThread
+    string compare [testthread names] $mainThread
 } {0}
 test thread-1.11 {Tcl_ThreadObjCmd: send args} {testthread} {
     set x [catch {testthread send} msg]
@@ -98,23 +115,21 @@ test thread-1.12 {Tcl_ThreadObjCmd: send nonint} {testthread} {
     set x [catch {testthread send abc command} msg]
     list $x $msg
 } {1 {expected integer but got "abc"}}
-test thread-1.13 {Tcl_ThreadObjCmd: send args} {testthread} {
-    threadReap
-    set serverthread [testthread create]
-    set five [testthread send $serverthread {set x 5}]
-    threadReap
+test thread-1.13 {Tcl_ThreadObjCmd: send args} {thread} {
+    set serverthread [thread::create -preserved]
+    set five [thread::send $serverthread {set x 5}]
+    thread::release $serverthread
     set five
 } 5
 test thread-1.14 {Tcl_ThreadObjCmd: send bad id} {testthread} {
-    set tid [expr $::tcltest::mainThread + 10]
+    set tid [expr $mainThread + 10]
     set x [catch {testthread send $tid {set x 5}} msg]
     list $x $msg
 } {1 {invalid thread id}}
-test thread-1.15 {Tcl_ThreadObjCmd: wait} {testthread} {
-    threadReap
-    set serverthread [testthread create {set z 5 ; testthread wait}]
-    set five [testthread send $serverthread {set z}]
-    threadReap
+test thread-1.15 {Tcl_ThreadObjCmd: wait} {thread} {
+    set serverthread [thread::create -preserved {set z 5 ; thread::wait}]
+    set five [thread::send $serverthread {set z}]
+    thread::release $serverthread
     set five
 } 5
 test thread-1.16 {Tcl_ThreadObjCmd: errorproc args} {testthread} {
@@ -131,130 +146,115 @@ test thread-1.17 {Tcl_ThreadObjCmd: errorproc change} {testthread} {
 # NewThread, safe and regular
 # ThreadErrorProc, except for printing to standard error
 
-test thread-2.1 {ListUpdateInner and ListRemove} {testthread} {
-    threadReap
+test thread-2.1 {ListUpdateInner and ListRemove} {thread} {
     catch {unset tid}
     foreach t {0 1 2} {
 	upvar #0 t$t tid
-	set tid [testthread create]
+	set tid [thread::create -preserved]
     }
-    threadReap
+    foreach t {0 1 2} {
+	upvar #0 t$t tid
+	thread::release $tid
+    }
+    llength [thread::names]
 } 1
 
-test thread-3.1 {TclThreadList} {testthread} {
-    threadReap
+test thread-3.1 {TclThreadList} {thread} {
     catch {unset tid}
-    set len [llength [testthread names]]
+    set len [llength [thread::names]]
     set l1  {}
     foreach t {0 1 2} {
-	lappend l1 [testthread create]
+	lappend l1 [thread::create -preserved]
     }
-    set l2 [testthread names]
-    list $l1 $l2
-    set c [string compare \
-	    [lsort -integer [concat $::tcltest::mainThread $l1]] \
-	    [lsort -integer $l2]]
-    threadReap
+    set l2 [thread::names]
+    set c [string compare [lsort [concat [thread::id] $l1]] [lsort $l2]]
+    foreach t $l1 {
+	thread::release $t
+    }
     list $len $c
 } {1 0}
 
-test thread-4.1 {TclThreadSend to self} {testthread} {
+test thread-4.1 {TclThreadSend to self} {thread} {
     catch {unset x}
-    testthread send [testthread id] {
+    thread::send [thread::id] {
 	set x 4
     }
     set x
 } {4}
-test thread-4.2 {TclThreadSend -async} {testthread} {
-    threadReap
-    set len [llength [testthread names]]
-    set serverthread [testthread create]
-    testthread send -async $serverthread {
-	after 1000
-	testthread exit
+test thread-4.2 {TclThreadSend -async} {thread} {
+    set len [llength [thread::names]]
+    set serverthread [thread::create -preserved]
+    thread::send -async $serverthread {
+	after 1 {thread::release}
     }
-    set two [llength [testthread names]]
-    after 1500 {set done 1}
+    set two [llength [thread::names]]
+    after 100 {set done 1}
     vwait done
-    threadReap
-    list $len [llength [testthread names]] $two
+    list $len [llength [thread::names]] $two
 } {1 1 2}
-test thread-4.3 {TclThreadSend preserve errorInfo} {testthread} {
-    threadReap
-    set len [llength [testthread names]]
-    set serverthread [testthread create]
-    set x [catch {testthread send $serverthread {set undef}} msg]
+test thread-4.3 {TclThreadSend preserve errorInfo} {thread} {
+    set len [llength [thread::names]]
+    set serverthread [thread::create -preserved]
+    set x [catch {thread::send $serverthread {set undef}} msg]
     set savedErrorInfo $::errorInfo
-    threadReap
+    thread::release $serverthread
     list $len $x $msg $savedErrorInfo
 } {1 1 {can't read "undef": no such variable} {can't read "undef": no such variable
     while executing
 "set undef"
     invoked from within
-"testthread send $serverthread {set undef}"}}
-test thread-4.4 {TclThreadSend preserve code} {testthread} {
-    threadReap
-    set len [llength [testthread names]]
-    set serverthread [testthread create]
+"thread::send $serverthread {set undef}"}}
+test thread-4.4 {TclThreadSend preserve code} {thread} {
+    set len [llength [thread::names]]
+    set serverthread [thread::create -preserved]
     set ::errorInfo {}
-    set x [catch {testthread send $serverthread {set ::errorInfo {}; break}} msg]
+    set x [catch {thread::send $serverthread {set ::errorInfo {}; break}} msg]
     set savedErrorInfo $::errorInfo
-    threadReap
+    thread::release $serverthread
     list $len $x $msg $savedErrorInfo
 } {1 3 {} {}}
-test thread-4.5 {TclThreadSend preserve errorCode} {testthread} {
-    threadReap
-    set ::tcltest::mainThread [testthread names]
-    set serverthread [testthread create]
-    set x [catch {testthread send $serverthread {error ERR INFO CODE}} msg]
+test thread-4.5 {TclThreadSend preserve errorCode} {thread} {
+    set serverthread [thread::create]
+    set x [catch {thread::send $serverthread {error ERR INFO CODE}} msg]
     set savedErrorCode $::errorCode
-    threadReap
+    thread::release $serverthread
     list $x $msg $savedErrorCode
 } {1 ERR CODE}
 
 
-test thread-5.0 {Joining threads} {testthread} {
-    threadReap
-    set serverthread [testthread create -joinable]
-    testthread send -async $serverthread {after 1000 ; testthread exit}
-    set res [testthread join $serverthread]
-    threadReap
-    set res
+test thread-5.0 {Joining threads} {thread} {
+    set serverthread [thread::create -joinable -preserved]
+    thread::send -async $serverthread {after 1000 ; thread::release}
+    thread::join $serverthread
 } {0}
-test thread-5.1 {Joining threads after the fact} {testthread} {
-    threadReap
-    set serverthread [testthread create -joinable]
-    testthread send -async $serverthread {testthread exit}
+test thread-5.1 {Joining threads after the fact} {thread} {
+    set serverthread [thread::create -joinable -preserved]
+    thread::send -async $serverthread {thread::release}
     after 2000
-    set res [testthread join $serverthread]
-    threadReap
-    set res
+    thread::join $serverthread
 } {0}
-test thread-5.2 {Try to join a detached thread} {testthread} {
-    threadReap
-    set serverthread [testthread create]
-    testthread send -async $serverthread {after 1000 ; testthread exit}
-    catch {set res [testthread join $serverthread]} msg
-    threadReap
+test thread-5.2 {Try to join a detached thread} {thread} {
+    set serverthread [thread::create -preserved]
+    thread::send -async $serverthread {after 1000 ; thread::release}
+    catch {set res [thread::join $serverthread]} msg
+    while {[llength [thread::names]] > 1} {
+	after 20
+    }
     lrange $msg 0 2
 } {cannot join thread}
 
-test thread-6.1 {freeing very large object trees in a thread} testthread {
+test thread-6.1 {freeing very large object trees in a thread} thread {
     # conceptual duplicate of obj-32.1
-    threadReap
-    set serverthread [testthread create -joinable]
-    testthread send -async $serverthread {
+    set serverthread [thread::create -preserved]
+    thread::send -async $serverthread {
 	set x {}
 	for {set i 0} {$i<100000} {incr i} {
 	    set x [list $x {}]
 	}
 	unset x
-	testthread exit
     }
-    catch {set res [testthread join $serverthread]} msg
-    threadReap
-    set res
-} {0}
+    thread::release -wait $serverthread
+} 0
 
 # TIP #285: Script cancellation support
 test thread-7.1 {cancel: args} {testthread} {
@@ -266,7 +266,7 @@ test thread-7.2 {cancel: nonint} {testthread} {
     list $x $msg
 } {1 {expected integer but got "abc"}}
 test thread-7.3 {cancel: bad id} {testthread} {
-    set tid [expr $::tcltest::mainThread + 10]
+    set tid [expr $mainThread + 10]
     set x [catch {testthread cancel $tid} msg]
     list $x $msg
 } {1 {invalid thread id}}
@@ -874,7 +874,7 @@ test thread-7.23 {cancel: slave interp -unwind} {testthread} {
 	      [expr {[info exists ::threadError] ? \
 		  [lindex [split $::threadError \n] 0] : "" }]
 } {{} 1 1 {eval unwound}}
-test thread-7.24 {cancel: nested catch inside pure bytecode loop} {testthread} {
+test thread-7.24 {cancel: nested catch inside pure bytecode loop} {notValgrind testthread} {
     threadReap
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
     set serverthread [testthread create -joinable {
@@ -916,7 +916,7 @@ test thread-7.24 {cancel: nested catch inside pure bytecode loop} {testthread} {
 	      [expr {[info exists ::threadError] ? \
 		  [lindex [split $::threadError \n] 0] : "" }]
 } {{} 1 0 {}}
-test thread-7.25 {cancel: nested catch inside pure inside-command loop} {testthread} {
+test thread-7.25 {cancel: nested catch inside pure inside-command loop} {notValgrind testthread} {
     threadReap
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
     set serverthread [testthread create -joinable {
@@ -960,28 +960,29 @@ test thread-7.25 {cancel: nested catch inside pure inside-command loop} {testthr
 	      [expr {[info exists ::threadError] ? \
 		  [lindex [split $::threadError \n] 0] : "" }]
 } {{} 1 0 {}}
-test thread-7.26 {cancel: send async cancel bad interp path} {testthread} {
-    threadReap
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
-    set serverthread [testthread create -joinable {
+test thread-7.26 {cancel: send async cancel bad interp path} {thread} {
+    unset -nocomplain ::threadIdStarted
+    set serverthread [thread::create -preserved \
+	[string map [list MAIN [thread::id]] {
 	proc foobar {} {
 	    while {1} {
 		if {![info exists foo]} then {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
-		    testthread send [testthread id -main] \
-			    [list set ::threadIdStarted [testthread id]]
+		    thread::send MAIN \
+			    [list set ::threadIdStarted [thread::id]]
 		    set foo 1
 		}
 		update
 	    }
 	}
 	foobar
-    }]
+    }]]
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
-    catch {testthread send $serverthread {interp cancel -- bad}} msg
-    threadReap
+    catch {thread::send $serverthread {interp cancel -- bad}} msg
+    thread::send -async $serverthread {interp cancel -unwind}
+    thread::release -wait $serverthread
     list [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 		  $msg
@@ -1021,7 +1022,7 @@ test thread-7.27 {cancel: send async cancel -- switch} {testthread} {
 	      [expr {[info exists ::threadError] ? \
 		  [lindex [split $::threadError \n] 0] : "" }]
 } {{} 1 1 {eval canceled}}
-test thread-7.28 {cancel: send async cancel nested catch inside pure bytecode loop} {testthread} {
+test thread-7.28 {cancel: send async cancel nested catch inside pure bytecode loop} {notValgrind testthread} {
     threadReap
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
     set serverthread [testthread create -joinable {
@@ -1063,7 +1064,7 @@ test thread-7.28 {cancel: send async cancel nested catch inside pure bytecode lo
 	      [expr {[info exists ::threadError] ? \
 		  [lindex [split $::threadError \n] 0] : "" }]
 } {{} 1 0 {}}
-test thread-7.29 {cancel: send async cancel nested catch pure inside-command loop} {testthread} {
+test thread-7.29 {cancel: send async cancel nested catch pure inside-command loop} {notValgrind testthread} {
     threadReap
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
     set serverthread [testthread create -joinable {
@@ -1107,7 +1108,7 @@ test thread-7.29 {cancel: send async cancel nested catch pure inside-command loo
 	      [expr {[info exists ::threadError] ? \
 		  [lindex [split $::threadError \n] 0] : "" }]
 } {{} 1 0 {}}
-test thread-7.30 {cancel: send async testthread cancel nested catch inside pure bytecode loop} {testthread} {
+test thread-7.30 {cancel: send async testthread cancel nested catch inside pure bytecode loop} {notValgrind testthread} {
     threadReap
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
     set serverthread [testthread create -joinable {
@@ -1149,7 +1150,7 @@ test thread-7.30 {cancel: send async testthread cancel nested catch inside pure 
 	      [expr {[info exists ::threadError] ? \
 		  [lindex [split $::threadError \n] 0] : "" }]
 } {{} 1 0 {}}
-test thread-7.31 {cancel: send async testthread cancel nested catch pure inside-command loop} {testthread} {
+test thread-7.31 {cancel: send async testthread cancel nested catch pure inside-command loop} {notValgrind testthread} {
     threadReap
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
     set serverthread [testthread create -joinable {

@@ -68,6 +68,7 @@ struct TcpState {
     int filehandlers;	/* Caches FileHandlers that get set up while
                          * an async socket is not yet connected   */
     int status;         /* Cache status of async socket */
+    int cachedBlocking; /* Cache blocking mode of async socket */
 };
 
 /*
@@ -347,6 +348,10 @@ TcpBlockModeProc(
 	CLEAR_BITS(statePtr->flags, TCP_ASYNC_SOCKET);
     } else {
 	SET_BITS(statePtr->flags, TCP_ASYNC_SOCKET);
+    }
+    if (statePtr->flags & TCP_ASYNC_CONNECT) {
+        statePtr->cachedBlocking = mode;
+        return 0;
     }
     if (TclUnixSetBlockingMode(statePtr->fds.fd, mode) < 0) {
 	return errno;
@@ -816,6 +821,15 @@ TcpWatchProc(
 				 * TCL_EXCEPTION. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
+
+    if (statePtr->acceptProc != NULL) {
+        /*
+         * Make sure we don't mess with server sockets since they will never
+         * be readable or writable at the Tcl level. This keeps Tcl scripts
+         * from interfering with the -accept behavior (bug #3394732).
+         */
+    	return;
+    }
      
     if (statePtr->flags & TCP_ASYNC_CONNECT) {
         /* Async sockets use a FileHandler internally while connecting, so we
@@ -1029,7 +1043,7 @@ out:
          */
         CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
         TcpWatchProc(state, state->filehandlers);
-        TclUnixSetBlockingMode(state->fds.fd, TCL_MODE_BLOCKING);
+        TclUnixSetBlockingMode(state->fds.fd, state->cachedBlocking);
 
         /*
          * We need to forward the writable event that brought us here, bcasue
@@ -1113,6 +1127,7 @@ Tcl_OpenTcpClient(
     state = ckalloc(sizeof(TcpState));
     memset(state, 0, sizeof(TcpState));
     state->flags = async ? TCP_ASYNC_CONNECT : 0;
+    state->cachedBlocking = TCL_MODE_BLOCKING;
     state->addrlist = addrlist;
     state->myaddrlist = myaddrlist;
     state->fds.fd = -1;

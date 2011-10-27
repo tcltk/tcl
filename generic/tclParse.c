@@ -1098,17 +1098,17 @@ int
 TclParseHex(
     const char *src,		/* First character to parse. */
     int numBytes,		/* Max number of byes to scan */
-    Tcl_UniChar *resultPtr)	/* Points to storage provided by caller where
-				 * the Tcl_UniChar resulting from the
+    int *resultPtr)	/* Points to storage provided by caller where
+				 * the character resulting from the
 				 * conversion is to be written. */
 {
-    Tcl_UniChar result = 0;
+    int result = 0;
     register const char *p = src;
 
     while (numBytes--) {
 	unsigned char digit = UCHAR(*p);
 
-	if (!isxdigit(digit)) {
+	if (!isxdigit(digit) || (result > 0x10fff)) {
 	    break;
 	}
 
@@ -1162,7 +1162,8 @@ TclParseBackslash(
 				 * written there. */
 {
     register const char *p = src+1;
-    Tcl_UniChar result;
+    Tcl_UniChar unichar;
+    int result;
     int count;
     char buf[TCL_UTF_MAX];
 
@@ -1219,7 +1220,7 @@ TclParseBackslash(
 	result = 0xb;
 	break;
     case 'x':
-	count += TclParseHex(p+1, numBytes-2, &result);
+	count += TclParseHex(p+1, (numBytes > 3) ? 2 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
 	     * No hexadigits -> This is just "x".
@@ -1242,6 +1243,15 @@ TclParseBackslash(
 	    result = 'u';
 	}
 	break;
+    case 'U':
+	count += TclParseHex(p+1, (numBytes > 9) ? 8 : numBytes-2, &result);
+	if (count == 2) {
+	    /*
+	     * No hexadigits -> This is just "U".
+	     */
+	    result = 'U';
+	}
+	break;
     case '\n':
 	count--;
 	do {
@@ -1260,17 +1270,17 @@ TclParseBackslash(
 	 */
 
 	if (isdigit(UCHAR(*p)) && (UCHAR(*p) < '8')) {	/* INTL: digit */
-	    result = UCHAR(*p - '0');
+	    result = *p - '0';
 	    p++;
 	    if ((numBytes == 2) || !isdigit(UCHAR(*p))	/* INTL: digit */
 		    || (UCHAR(*p) >= '8')) {
 		break;
 	    }
 	    count = 3;
-	    result = UCHAR((result << 3) + (*p - '0'));
+	    result = (result << 3) + (*p - '0');
 	    p++;
 	    if ((numBytes == 3) || !isdigit(UCHAR(*p))	/* INTL: digit */
-		    || (UCHAR(*p) >= '8')) {
+		    || (UCHAR(*p) >= '8') || (result >= 0x20)) {
 		break;
 	    }
 	    count = 4;
@@ -1286,14 +1296,15 @@ TclParseBackslash(
 	 */
 
 	if (Tcl_UtfCharComplete(p, numBytes - 1)) {
-	    count = Tcl_UtfToUniChar(p, &result) + 1;	/* +1 for '\' */
+	    count = Tcl_UtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
 	} else {
 	    char utfBytes[TCL_UTF_MAX];
 
 	    memcpy(utfBytes, p, (size_t) (numBytes - 1));
 	    utfBytes[numBytes - 1] = '\0';
-	    count = Tcl_UtfToUniChar(utfBytes, &result) + 1;
+	    count = Tcl_UtfToUniChar(utfBytes, &unichar) + 1;
 	}
+	result = unichar;
 	break;
     }
 
@@ -1301,7 +1312,7 @@ TclParseBackslash(
     if (readPtr != NULL) {
 	*readPtr = count;
     }
-    return Tcl_UniCharToUtf((int) result, dst);
+    return Tcl_UniCharToUtf(result, dst);
 }
 
 /*

@@ -1140,32 +1140,40 @@ InfoFrameCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    int level, topLevel;
-    CmdFrame *framePtr;
+    int level, topLevel, code = TCL_OK;
+    CmdFrame *runPtr, *framePtr;
+    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?number?");
+	return TCL_ERROR;
+    }
 
     topLevel = ((iPtr->cmdFramePtr == NULL)
 	    ? 0
 	    : iPtr->cmdFramePtr->level);
 
-
-    if (iPtr->execEnvPtr->corPtr) {
+    if (corPtr) {
 	/*
 	 * A coroutine: must fix the level computations AND the cmdFrame chain,
 	 * which is interrupted at the base.
 	 */
+	CmdFrame *lastPtr = NULL;
 
-        CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-        CmdFrame *runPtr = iPtr->cmdFramePtr;
-        CmdFrame *lastPtr = NULL;
+        runPtr = iPtr->cmdFramePtr;
 
+	/* TODO - deal with overflow */
         topLevel += corPtr->caller.cmdFramePtr->level;
-        while (runPtr && (runPtr != corPtr->caller.cmdFramePtr)) {
-            lastPtr = runPtr;
-            runPtr = runPtr->nextPtr;
-        }
-        if (lastPtr && !runPtr) {
-            lastPtr->nextPtr = corPtr->caller.cmdFramePtr;
-        }
+	while (runPtr) {
+	    runPtr->level += corPtr->caller.cmdFramePtr->level;
+	    lastPtr = runPtr;
+	    runPtr = runPtr->nextPtr;
+	}
+	if (lastPtr) {
+	    lastPtr->nextPtr = corPtr->caller.cmdFramePtr;
+	} else {
+	    iPtr->cmdFramePtr = corPtr->caller.cmdFramePtr;
+	}
     }
 
     if (objc == 1) {
@@ -1174,10 +1182,7 @@ InfoFrameCmd(
 	 */
 
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(topLevel));
-	return TCL_OK;
-    } else if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?number?");
-	return TCL_ERROR;
+	goto done;
     }
 
     /*
@@ -1185,7 +1190,8 @@ InfoFrameCmd(
      */
 
     if (TclGetIntFromObj(interp, objv[1], &level) != TCL_OK) {
-	return TCL_ERROR;
+	code = TCL_ERROR;
+	goto done;
     }
 
     if ((level > topLevel) || (level <= - topLevel)) {
@@ -1194,7 +1200,8 @@ InfoFrameCmd(
 		NULL);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_FRAME",
 		TclGetString(objv[1]), NULL);
-	return TCL_ERROR;
+	code = TCL_ERROR;
+	goto done;
     }
 
     /*
@@ -1214,7 +1221,24 @@ InfoFrameCmd(
     }
 
     Tcl_SetObjResult(interp, TclInfoFrame(interp, framePtr));
-    return TCL_OK;
+
+  done:
+    if (corPtr) {
+
+	if (iPtr->cmdFramePtr == corPtr->caller.cmdFramePtr) {
+	    iPtr->cmdFramePtr = NULL;
+	} else {
+	    runPtr = iPtr->cmdFramePtr;
+	    while (runPtr->nextPtr != corPtr->caller.cmdFramePtr) {
+	    	runPtr->level -= corPtr->caller.cmdFramePtr->level;
+		runPtr = runPtr->nextPtr;
+	    }
+	    runPtr->level = 1;
+	    runPtr->nextPtr = NULL;
+	}
+
+    }
+    return code;
 }
 
 /*
@@ -4446,12 +4470,9 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 	if (currentObj == NULL) {
-	    char buffer[TCL_INTEGER_SPACE];
-
-	    TclFormatInt(buffer, index);
-	    Tcl_AppendResult(infoPtr->interp, "element ", buffer,
-		    " missing from sublist \"", TclGetString(objPtr), "\"",
-		    NULL);
+            Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+                    "element %d missing from sublist \"%s\"",
+                    index, TclGetString(objPtr)));
             Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
                     "INDEXFAILED", NULL);
 	    infoPtr->resultCode = TCL_ERROR;

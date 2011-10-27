@@ -1358,6 +1358,120 @@ test dict-22.11 {dict with command: no recursive structures [Bug 1786481]} -body
 } -cleanup {
     unset foo t inner
 } -result OK
+test dict-22.12 {dict with: compiled} {
+    apply {{} {
+	set d {a 1 b 2}
+	list [dict with d {
+	    set a $b
+	    unset b
+	    dict set d c 3
+	    list ok
+	}] $d
+    }}
+} {ok {a 2 c 3}}
+test dict-22.13 {dict with: compiled} {
+    apply {i {
+	set d($i) {a 1 b 2}
+	list [dict with d($i) {
+	    set a $b
+	    unset b
+	    dict set d($i) c 3
+	    list ok
+	}] [array get d]
+    }} e
+} {ok {e {a 2 c 3}}}
+test dict-22.14 {dict with: compiled} {
+    apply {{} {
+	set d {a 1 b 2}
+	foreach x {1 2 3} {
+	    dict with d {
+		incr a $b
+		if {$x == 2} break
+	    }
+	    unset a b
+	}
+	list $a $b $x $d
+    }}
+} {5 2 2 {a 5 b 2}}
+test dict-22.15 {dict with: compiled} {
+    apply {i {
+	set d($i) {a 1 b 2}
+	foreach x {1 2 3} {
+	    dict with d($i) {
+		incr a $b
+		if {$x == 2} break
+	    }
+	    unset a b
+	}
+	list $a $b $x [array get d]
+    }} e
+} {5 2 2 {e {a 5 b 2}}}
+test dict-22.16 {dict with: compiled} {
+    apply {{} {
+	set d {p {q {a 1 b 2}}}
+	dict with d p q {
+	    set a $b.$a
+	}
+	return $d
+    }}
+} {p {q {a 2.1 b 2}}}
+test dict-22.17 {dict with: compiled} {
+    apply {i {
+	set d($i) {p {q {a 1 b 2}}}
+	dict with d($i) p q {
+	    set a $b.$a
+	}
+	array get d
+    }} e
+} {e {p {q {a 2.1 b 2}}}}
+test dict-22.18 {dict with: compiled} {
+    set ::d {a 1 b 2}
+    apply {{} {
+	dict with ::d {
+	    set a $b.$a
+	}
+	return $::d
+    }}
+} {a 2.1 b 2}
+test dict-22.19 {dict with: compiled} {
+    set ::d {p {q {r {a 1 b 2}}}}
+    apply {{} {
+	dict with ::d p q r {
+	    set a $b.$a
+	}
+	return $::d
+    }}
+} {p {q {r {a 2.1 b 2}}}}
+test dict-22.20 {dict with: compiled} {
+    apply {d {
+	dict with d {
+	}
+	return $a,$b
+    }} {a 1 b 2}
+} 1,2
+test dict-22.21 {dict with: compiled} {
+    apply {d {
+	dict with d p q {
+	}
+	return $a,$b
+    }} {p {q {a 1 b 2}}}
+} 1,2
+test dict-22.22 {dict with: compiled} {
+    set ::d {a 1 b 2}
+    apply {{} {
+	dict with ::d {
+	}
+	return $a,$b
+    }}
+} 1,2
+test dict-22.23 {dict with: compiled} {
+    set ::d {p {q {a 1 b 2}}}
+    apply {{} {
+	dict with ::d p q {
+	}
+	return $a,$b
+    }}
+} 1,2
 
 # cleanup
 ::tcltest::cleanupTests

@@ -139,14 +139,11 @@ int
 Dde_Init(
     Tcl_Interp *interp)
 {
-    ThreadSpecificData *tsdPtr;
-
     if (!Tcl_InitStubs(interp, "8.1", 0)) {
 	return TCL_ERROR;
     }
 
     Tcl_CreateObjCommand(interp, "dde", DdeObjCmd, NULL, NULL);
-    tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_CreateExitHandler(DdeExitProc, NULL);
     return Tcl_PkgProvide(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION);
 }

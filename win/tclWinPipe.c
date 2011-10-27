@@ -320,7 +320,6 @@ PipeSetupProc(
     PipeInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
     int block = 1;
-    WinFile *filePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!(flags & TCL_FILE_EVENTS)) {
@@ -334,13 +333,11 @@ PipeSetupProc(
     for (infoPtr = tsdPtr->firstPipePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask & TCL_WRITABLE) {
-	    filePtr = (WinFile*) infoPtr->writeFile;
 	    if (WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT) {
 		block = 0;
 	    }
 	}
 	if (infoPtr->watchMask & TCL_READABLE) {
-	    filePtr = (WinFile*) infoPtr->readFile;
 	    if (WaitForRead(infoPtr, 0) >= 0) {
 		block = 0;
 	    }
@@ -375,7 +372,6 @@ PipeCheckProc(
 {
     PipeInfo *infoPtr;
     PipeEvent *evPtr;
-    WinFile *filePtr;
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -398,13 +394,11 @@ PipeCheckProc(
 	 */
 
 	needEvent = 0;
-	filePtr = (WinFile*) infoPtr->writeFile;
 	if ((infoPtr->watchMask & TCL_WRITABLE) &&
 		(WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT)) {
 	    needEvent = 1;
 	}
 
-	filePtr = (WinFile*) infoPtr->readFile;
 	if ((infoPtr->watchMask & TCL_READABLE) &&
 		(WaitForRead(infoPtr, 0) >= 0)) {
 	    needEvent = 1;
@@ -2239,7 +2233,6 @@ PipeEventProc(
 {
     PipeEvent *pipeEvPtr = (PipeEvent *)evPtr;
     PipeInfo *infoPtr;
-    WinFile *filePtr;
     int mask;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -2276,14 +2269,12 @@ PipeEventProc(
      * detected EOF.
      */
 
-    filePtr = (WinFile*) ((PipeInfo*)infoPtr)->writeFile;
     mask = 0;
     if ((infoPtr->watchMask & TCL_WRITABLE) &&
 	    (WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT)) {
 	mask = TCL_WRITABLE;
     }
 
-    filePtr = (WinFile*) ((PipeInfo*)infoPtr)->readFile;
     if ((infoPtr->watchMask & TCL_READABLE) && (WaitForRead(infoPtr,0) >= 0)) {
 	if (infoPtr->readFlags & PIPE_EOF) {
 	    mask = TCL_READABLE;
