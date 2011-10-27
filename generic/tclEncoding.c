@@ -133,6 +133,17 @@ typedef struct EscapeEncodingData {
 #define ENCODING_ESCAPE		3
 
 /*
+ * Data used for an alias encoding.
+ */
+
+typedef struct {
+    Tcl_Obj *aliasName;		/* The name of the encoding that this is an
+				 * alias for. */
+    Tcl_Encoding aliasEncoding;	/* Reference to the encoding that this is an
+				 * alias for. Will not be an alias itself. */
+} AliasEncoding;
+
+/*
  * A list of directories in which Tcl should look for *.enc files. This list
  * is shared by all threads. Access is governed by a mutex lock.
  */
@@ -200,6 +211,17 @@ static int		BinaryProc(ClientData clientData,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr);
 static void		DupEncodingIntRep(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
+static void		AliasFreeProc(ClientData clientData);
+static int		AliasFromUtfProc(ClientData clientData,
+			    const char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr);
+static int		AliasToUtfProc(ClientData clientData,
+			    const char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr);
 static void		EscapeFreeProc(ClientData clientData);
 static int		EscapeFromUtfProc(ClientData clientData,
 			    const char *src, int srcLen, int flags,
@@ -220,6 +242,7 @@ static Tcl_Encoding	LoadEncodingFile(Tcl_Interp *interp, const char *name);
 static Tcl_Encoding	LoadTableEncoding(const char *name, int type,
 			    Tcl_Channel chan);
 static Tcl_Encoding	LoadEscapeEncoding(const char *name, Tcl_Channel chan);
+static Tcl_Encoding	LoadAliasEncoding(const char *name, Tcl_Channel chan);
 static Tcl_Channel	OpenEncodingFileChannel(Tcl_Interp *interp,
 			    const char *name);
 static void		TableFreeProc(ClientData clientData);
@@ -1614,6 +1637,9 @@ LoadEncodingFile(
     case 'E':
 	encoding = LoadEscapeEncoding(name, chan);
 	break;
+    case 'A':
+	encoding = LoadAliasEncoding(name, chan);
+	break;
     }
     if ((encoding == NULL) && (interp != NULL)) {
 	Tcl_AppendResult(interp, "invalid encoding file \"", name, "\"", NULL);
@@ -2047,6 +2073,71 @@ LoadEscapeEncoding(
     type.freeProc	= EscapeFreeProc;
     type.nullSize	= 1;
     type.clientData	= dataPtr;
+
+    return Tcl_CreateEncoding(&type);
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * LoadAliasEncoding --
+ *
+ *	Helper function for LoadEncodingTable(). Loads an alias to another
+ *	encoding.
+ *
+ *	File contains text data that describes what the encoding is an alias
+ *	for.
+ *
+ * Results:
+ *	The return value is the new encoding, or NULL if the encoding could
+ *	not be created (because the file contained invalid data).
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static Tcl_Encoding
+LoadAliasEncoding(
+    const char *name,		/* Name for new encoding. */
+    Tcl_Channel chan)		/* File containing new encoding. */
+{
+    Tcl_Obj *objPtr;
+    AliasEncoding *aliasPtr;
+    Tcl_EncodingType type;
+
+    TclNewObj(objPtr);
+    Tcl_IncrRefCount(objPtr);
+    if (Tcl_GetsObj(chan, objPtr) < 0) {
+	Tcl_DecrRefCount(objPtr);
+	return NULL;
+    }
+    aliasPtr = ckalloc(sizeof(AliasEncoding));
+    aliasPtr->aliasName = objPtr;
+    if (Tcl_GetEncodingFromObj(NULL, objPtr,
+	    &aliasPtr->aliasEncoding) != TCL_OK) {
+	ckfree(aliasPtr);
+	Tcl_DecrRefCount(objPtr);
+	return NULL;
+    }
+
+    /*
+     * Check for (and prohibit) alias loops.
+     */
+
+    if (((Encoding *) aliasPtr->aliasEncoding)->freeProc == AliasFreeProc) {
+	ckfree(aliasPtr);
+	Tcl_DecrRefCount(objPtr);
+	return NULL;
+    }
+
+    type.encodingName = name;
+    type.toUtfProc = AliasToUtfProc;
+    type.fromUtfProc = AliasFromUtfProc;
+    type.freeProc = AliasFreeProc;
+    type.nullSize = 1;
+    type.clientData = aliasPtr;
 
     return Tcl_CreateEncoding(&type);
 }
@@ -3573,6 +3664,89 @@ InitializeEncodingSearchPath(
     *valuePtr = ckalloc(numBytes + 1);
     memcpy(*valuePtr, bytes, (size_t) numBytes + 1);
     Tcl_DecrRefCount(searchPathObj);
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * AliasFreeProc --
+ *
+ *	How to dispose of an alias encoding.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static void
+AliasFreeProc(
+    ClientData clientData)
+{
+    AliasEncoding *aliasPtr = clientData;
+
+    FreeEncoding(aliasPtr->aliasEncoding);
+    Tcl_DecrRefCount(aliasPtr->aliasName);
+    ckfree(aliasPtr);
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * AliasToUtfProc --
+ *
+ *	How to convert from Tcl's internal quasi-UTF8 format to an encoding
+ *	that is an alias for another one.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+AliasFromUtfProc(
+    ClientData clientData,
+    const char *src,
+    int srcLen,
+    int flags,
+    Tcl_EncodingState *statePtr,
+    char *dst,
+    int dstLen,
+    int *srcReadPtr,
+    int *dstWrotePtr,
+    int *dstCharsPtr)
+{
+    AliasEncoding *aliasPtr = clientData;
+
+    return Tcl_UtfToExternal(NULL, aliasPtr->aliasEncoding, src, srcLen,
+	    flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
+	    dstCharsPtr);
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * AliasToUtfProc --
+ *
+ *	How to convert from an encoding that is an alias for another one to
+ *	Tcl's internal quasi-UTF8 format.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+AliasToUtfProc(
+    ClientData clientData,
+    const char *src,
+    int srcLen,
+    int flags,
+    Tcl_EncodingState *statePtr,
+    char *dst,
+    int dstLen,
+    int *srcReadPtr,
+    int *dstWrotePtr,
+    int *dstCharsPtr)
+{
+    AliasEncoding *aliasPtr = clientData;
+
+    return Tcl_ExternalToUtf(NULL, aliasPtr->aliasEncoding, src, srcLen,
+	    flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
+	    dstCharsPtr);
 }
 
 /*
