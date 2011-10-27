@@ -1,0 +1,86 @@
+# TODO: Get libdir and mandir from tclConfig.sh or tclsh?
+# TODO: Get default value of TCLSH_PROG
+
+MIN_TCL		= 8.5
+PACKAGE		= @PACKAGE_NAME@
+VERSION		= @PACKAGE_VERSION@
+
+srcdir		= @srcdir@
+
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+libdir 		= @libdir@
+mandir		= @mandir@
+
+TCLSH_PROG	= $(srcdir)/../../unix/tclsh
+DIST_ROOT	= /tmp/dist
+
+# Install files under $(DESTDIR)
+INSTALL_ROOT	= $(DESTDIR)
+LIB_INSTALL_DIR	= $(INSTALL_ROOT)$(libdir)
+MAN_INSTALL_DIR	= $(INSTALL_ROOT)$(mandir)
+MANN_INSTALL_DIR	= $(MAN_INSTALL_DIR)/mann
+MODULE_INSTALL_DIR	= $(LIB_INSTALL_DIR)/tcl8/$(MIN_TCL)
+
+MANTAIL		= $(PACKAGE).n
+MANPAGE		= $(srcdir)/doc/$(MANTAIL)
+TESTTAIL	= $(PACKAGE).test
+TESTFILE	= $(srcdir)/tests/$(TESTTAIL)
+SOURCE		= $(srcdir)/$(PACKAGE).tcl
+MODULE_STEM	= $(PACKAGE)-$(VERSION)
+MODULE		= $(MODULE_STEM).tm
+DIST_DIR	= $(DIST_ROOT)/$(MODULE_STEM)
+
+all: $(MODULE)
+
+$(MODULE): $(SOURCE)
+	cp -f $< $@
+
+# Test package in place using $(TCLSH_PROG)
+test: $(MODULE)
+	TCL$(subst .,_,$(MIN_TCL))_TM_PATH=. $(TCLSH_PROG) $(TESTFILE)
+
+install: install-module install-doc
+
+install-module: $(MODULE)
+	@echo "Installing package '$(PACKAGE) $(VERSION)' as Tcl Module"
+	@mkdir -p "$(MODULE_INSTALL_DIR)"
+	@cp -f "$(MODULE)" "$(MODULE_INSTALL_DIR)"
+	@chmod 644 "$(MODULE_INSTALL_DIR)/$(MODULE)"
+
+install-doc: $(MANPAGE)
+	@echo "Installing package '$(PACKAGE) $(VERSION)' documentation"
+	@mkdir -p "$(MANN_INSTALL_DIR)"
+	@cp -f "$(MANPAGE)" "$(MANN_INSTALL_DIR)"
+	@chmod 644 "$(MANN_INSTALL_DIR)/$(MANTAIL)"
+
+# Clean away files made by `make all`
+clean:
+	-rm -f $(MODULE)
+
+# Clean away files made by configure
+distclean: clean
+	-rm -f Makefile
+	-rm -f config.log config.status
+
+# TODO
+# Build distribution tarball under $(DIST_ROOT)
+dist: dist-clean
+	mkdir -p $(DIST_DIR)
+
+dist-clean:
+	-rm -rf $(DIST_DIR) $(DIST_ROOT)/$(MODULE_STEM).tar.*
+
+Makefile: $(srcdir)/Makefile.in config.status
+	-rm -f $(MODULE)
+	$(SHELL) config.status
+
+config.status: $(srcdir)/configure
+	$(SHELL) config.status --recheck
+
+$(srcdir)/configure:	$(SOURCE)
+	-$(MAKE) -C $(srcdir) -f configure.make \
+	"PACKAGE=$(PACKAGE)" "TCLSH=$(TCLSH_PROG)"
+
+.PHONY: all test install install-module install-doc clean distclean dist
+

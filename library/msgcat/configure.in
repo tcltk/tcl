@@ -1,0 +1,2 @@
+AC_INIT([msgcat], [1.4.3])
+AC_OUTPUT([Makefile])
