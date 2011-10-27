@@ -1367,6 +1367,22 @@ AppendPath(
     const char *bytes;
     Tcl_Obj *copy = Tcl_DuplicateObj(head);
 
+#if 1
+    /*
+     * This is likely buggy when dealing with virtual filesystem drivers
+     * that use some character other than "/" as a path separator.  I know
+     * of no evidence that such a foolish thing exists.  This solution was
+     * chosen so that "JoinPath" operations that pass through either path
+     * intrep produce the same results; that is, bugward compatibility.  If
+     * we need to fix that bug here, it needs fixing in Tcl_FSJoinPath() too.
+     */
+    bytes = Tcl_GetStringFromObj(tail, &numBytes);
+    if (numBytes == 0) {
+	Tcl_AppendToObj(copy, "/", 1);
+    } else {
+	TclpNativeJoinPath(copy, bytes);
+    }
+#else
     bytes = Tcl_GetStringFromObj(copy, &numBytes);
 
     /*
@@ -1398,6 +1414,7 @@ AppendPath(
     }
 
     Tcl_AppendObjToObj(copy, tail);
+#endif
     return copy;
 }
 
