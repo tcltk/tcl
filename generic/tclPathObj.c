@@ -1367,7 +1367,6 @@ AppendPath(
     const char *bytes;
     Tcl_Obj *copy = Tcl_DuplicateObj(head);
 
-#if 1
     /*
      * This is likely buggy when dealing with virtual filesystem drivers
      * that use some character other than "/" as a path separator.  I know
@@ -1382,39 +1381,6 @@ AppendPath(
     } else {
 	TclpNativeJoinPath(copy, bytes);
     }
-#else
-    bytes = Tcl_GetStringFromObj(copy, &numBytes);
-
-    /*
-     * Should we perhaps use 'Tcl_FSPathSeparator'? But then what about the
-     * Windows special case? Perhaps we should just check if cwd is a root
-     * volume. We should never get numBytes == 0 in this code path.
-     */
-
-    switch (tclPlatform) {
-    case TCL_PLATFORM_UNIX:
-	if (bytes[numBytes-1] != '/') {
-	    Tcl_AppendToObj(copy, "/", 1);
-	}
-	break;
-
-    case TCL_PLATFORM_WINDOWS:
-	/*
-	 * We need the extra 'numBytes != 2', and ':' checks because a volume
-	 * relative path doesn't get a '/'. For example 'glob C:*cat*.exe'
-	 * will return 'C:cat32.exe'
-	 */
-
-	if (bytes[numBytes-1] != '/' && bytes[numBytes-1] != '\\') {
-	    if (numBytes!= 2 || bytes[1] != ':') {
-		Tcl_AppendToObj(copy, "/", 1);
-	    }
-	}
-	break;
-    }
-
-    Tcl_AppendObjToObj(copy, tail);
-#endif
     return copy;
 }
 
