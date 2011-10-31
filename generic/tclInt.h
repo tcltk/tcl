@@ -2741,7 +2741,7 @@ MODULE_SCOPE int	TclpMatchFiles(Tcl_Interp *interp, char *separators,
 			    Tcl_DString *dirPtr, char *pattern, char *tail);
 MODULE_SCOPE int	TclpObjNormalizePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, int nextCheckpoint);
-MODULE_SCOPE void	TclpNativeJoinPath(Tcl_Obj *prefix, char *joining);
+MODULE_SCOPE void	TclpNativeJoinPath(Tcl_Obj *prefix, const char *joining);
 MODULE_SCOPE Tcl_Obj *	TclpNativeSplitPath(Tcl_Obj *pathPtr, int *lenPtr);
 MODULE_SCOPE Tcl_PathType TclpGetNativePathType(Tcl_Obj *pathPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);

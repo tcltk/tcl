@@ -823,10 +823,11 @@ Tcl_FSJoinToPath(
 void
 TclpNativeJoinPath(
     Tcl_Obj *prefix,
-    char *joining)
+    const char *joining)
 {
     int length, needsSep;
-    char *dest, *p, *start;
+    const char *p;
+    char *dest, *start;
 
     start = Tcl_GetStringFromObj(prefix, &length);
 
