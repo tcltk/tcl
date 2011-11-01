@@ -868,7 +868,7 @@ TestasyncCmd(
 	    if (asyncPtr->id == id) {
 		Tcl_ThreadId threadID;
 		if (Tcl_CreateThread(&threadID, AsyncThreadProc,
-			(ClientData) id, TCL_THREAD_STACK_DEFAULT,
+			(ClientData) INT2PTR(id), TCL_THREAD_STACK_DEFAULT,
 			TCL_THREAD_NOFLAGS) != TCL_OK) {
 		    Tcl_SetResult(interp, "can't create thread", TCL_STATIC);
 		    return TCL_ERROR;
@@ -956,7 +956,7 @@ AsyncThreadProc(
 				 * TestAsyncHandler, defined above. */
 {
     TestAsyncHandler *asyncPtr;
-    int id = (int) clientData;
+    int id = PTR2INT(clientData);
 
     Tcl_Sleep(1);
     Tcl_MutexLock(&asyncTestMutex);
