@@ -7579,4 +7579,4 @@ like "nano()" instead of parsing as "nan o()" with missing op (duquette,porter)
 
 2011-10-15 tzdata updated to Olson's tzdata2011l (iyer)
 
---- Released 8.5.11, November 1, 2011 --- See ChangeLog for details ---
+--- Released 8.5.11, November 4, 2011 --- See ChangeLog for details ---
