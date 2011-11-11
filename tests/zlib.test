@@ -197,7 +197,7 @@ test zlib-9.2 "socket fcopy with push" -constraints zlib -setup {
 test zlib-9.3 "socket fcopy bg (identity)" -constraints {tempNotWin zlib} -setup {
     set srv [socket -myaddr localhost -server {apply {{c a p} {
         #puts "connection from $a:$p on $c"
-        chan configure $c -encoding binary -translation binary
+        chan configure $c -encoding binary -translation binary -blocking 0
         puts -nonewline $c [string repeat a 81920]
         close $c
     }}} 0]
