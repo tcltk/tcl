@@ -31,6 +31,7 @@ proc runtests {} {
 testConstraint testencoding [llength [info commands testencoding]]
 testConstraint exec [llength [info commands exec]]
 testConstraint testgetdefenc [llength [info commands testgetdefenc]]
+testConstraint testfinexit [llength [info commands testfinexit]]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -417,7 +418,7 @@ test encoding-24.1 {EscapeFreeProc on open channels} exec {
 	gets $f
     }
 } {}
-test encoding-24.2 {EscapeFreeProc on open channels} exec {
+test encoding-24.2 {EscapeFreeProc on open channels} {exec testfinexit} {
     # Bug #524674 output
     viewable [runInSubprocess {
 	encoding system cp1252;	# Bug #2891556 crash revelator
