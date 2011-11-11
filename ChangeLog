@@ -1,3 +1,22 @@
+2011-11-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/tclWinConsole.c: Refactor common thread handling patterns.
+
+2011-11-11  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* tests/zlib.test: [Bug 3428756]: Use nonblocking writes in
+	single-threaded IO tests to avoid deadlocks when going beyond OS
+	buffers.  Tidy up [chan configure] flags across zlib.test.
+
+2011-11-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixCompat.c (TclpGetPwNam, TclpGetPwUid, TclpGetGrNam)
+	(TclpGetGrGid): Use the elaborate memory management scheme outlined on
+	http://www.opengroup.org/austin/docs/austin_328.txt to handle Tcl's
+	use of standard reentrant versions of the passwd/group access
+	functions so that everything can work on all BSDs. Problem identified
+	by Stuart Cassoff.
+
 2011-10-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/http/http.tcl:        Bump to version 2.8.3
