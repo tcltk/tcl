@@ -1,8 +1,12 @@
+2011-11-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/tclWinConsole.c: Refactor common thread handling patterns.
+
 2011-11-11  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* tests/zlib.test: Use nonblocking writes in single-threaded IO
-	tests to avoid deadlocks when going beyond OS buffers [Bug 3428756].
-	Tidy up [chan configure] flags across zlib.test.
+	* tests/zlib.test: [Bug 3428756]: Use nonblocking writes in
+	single-threaded IO tests to avoid deadlocks when going beyond OS
+	buffers.  Tidy up [chan configure] flags across zlib.test.
 
 2011-11-03  Donal K. Fellows  <dkf@users.sf.net>
 
