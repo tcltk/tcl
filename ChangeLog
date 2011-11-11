@@ -1,3 +1,8 @@
+2011-11-11  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* tests/zlib.test: Use nonblocking writes in single-threaded IO
+	tests to avoid deadlocks when going beyond OS buffers [Bug 3428756].
+
 2011-11-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclUnixCompat.c (TclpGetPwNam, TclpGetPwUid, TclpGetGrNam)
