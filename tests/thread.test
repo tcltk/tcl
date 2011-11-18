@@ -26,10 +26,21 @@ testConstraint thread [expr {0 == [catch {package require Thread 2.7}]}]
 
 testConstraint notValgrind [expr {![testConstraint valgrind]}]
 
+set threadSuperKillScript {
+    rename catch ""
+    rename while ""
+    rename update ""
+    thread::release
+}
+
+proc getThreadError { info } {
+    return [lindex [split [lindex $info 0] \n] 0]
+}
+
 proc ThreadError {id info} {
     global threadId threadError
     set threadId $id
-    set threadError $info
+    lappend threadError($id) $info
 }
 
 if {[testConstraint thread]} {
@@ -244,7 +255,7 @@ test thread-7.4 {cancel: pure bytecode loop} -constraints {thread} -setup {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
@@ -274,7 +285,7 @@ test thread-7.5 {cancel: pure inside-command loop} -constraints {thread} -setup 
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
@@ -303,7 +314,7 @@ test thread-7.6 {cancel: pure bytecode loop -unwind} -constraints {thread} -setu
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -333,7 +344,7 @@ test thread-7.7 {cancel: pure inside-command loop -unwind} -constraints thread -
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -362,7 +373,7 @@ test thread-7.8 {cancel: pure bytecode loop custom result} -constraints thread -
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {the eval was canceled}}
@@ -394,7 +405,7 @@ test thread-7.9 {cancel: pure inside-command loop custom result} -constraints {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {the eval was canceled}}
@@ -425,7 +436,7 @@ test thread-7.10 {cancel: pure bytecode loop custom result -unwind} -constraints
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {the eval was unwound}}
@@ -457,7 +468,7 @@ test thread-7.11 {cancel: pure inside-command loop custom result -unwind} -const
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {the eval was unwound}}
@@ -481,7 +492,7 @@ test thread-7.12 {cancel: after} -constraints thread -setup {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
@@ -505,7 +516,7 @@ test thread-7.13 {cancel: after -unwind} -constraints thread -setup {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -529,7 +540,7 @@ test thread-7.14 {cancel: vwait} -constraints thread -setup {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
@@ -553,7 +564,7 @@ test thread-7.15 {cancel: vwait -unwind} -constraints thread -setup {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -582,7 +593,7 @@ test thread-7.16 {cancel: expr} -constraints thread -setup {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
@@ -610,7 +621,7 @@ test thread-7.17 {cancel: expr -unwind} -constraints thread -setup {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -642,8 +653,8 @@ test thread-7.18 {cancel: expr bignum} {thread knownBug} {
                   $::threadIdStarted == $serverthread : 0}] \
               [expr {[info exists ::threadId] ? \
                   $::threadId == $serverthread : 0}] \
-              [expr {[info exists ::threadError] ? \
-                  [lindex [split $::threadError \n] 0] : "" }]
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [getThreadError $::threadError($serverthread)] : "" }]
 } {{} 1 0 {}}
 test thread-7.19 {cancel: expr bignum -unwind} {thread knownBug} {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
@@ -673,8 +684,8 @@ test thread-7.19 {cancel: expr bignum -unwind} {thread knownBug} {
                   $::threadIdStarted == $serverthread : 0}] \
               [expr {[info exists ::threadId] ? \
                   $::threadId == $serverthread : 0}] \
-              [expr {[info exists ::threadError] ? \
-                  [lindex [split $::threadError \n] 0] : "" }]
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [getThreadError $::threadError($serverthread)] : "" }]
 } {{} 1 0 {}}
 test thread-7.20 {cancel: subst} -constraints {thread} -setup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
@@ -700,7 +711,7 @@ test thread-7.20 {cancel: subst} -constraints {thread} -setup {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
@@ -728,7 +739,7 @@ test thread-7.21 {cancel: subst -unwind} -constraints {thread} -setup {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -756,7 +767,7 @@ test thread-7.22 {cancel: slave interp} -constraints {thread} -setup {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
@@ -784,7 +795,7 @@ test thread-7.23 {cancel: slave interp -unwind} -constraints {thread} -setup {
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -819,13 +830,14 @@ test thread-7.24 {cancel: nested catch inside pure bytecode loop} {thread} {
     vwait ::threadIdStarted; after 1000
     set res [thread::cancel $serverthread]
     after 1000; # wait for ThreadErrorProc to be called.
-    catch {thread::release $serverthread}
+    thread::send $serverthread $::threadSuperKillScript
+    thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [getThreadError $::threadError($serverthread)] : "" }]
 } {{} 1 0 {}}
 test thread-7.25 {cancel: nested catch inside pure inside-command loop} {thread} {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
@@ -860,17 +872,18 @@ test thread-7.25 {cancel: nested catch inside pure inside-command loop} {thread}
     vwait ::threadIdStarted; after 1000
     set res [thread::cancel $serverthread]
     after 1000; # wait for ThreadErrorProc to be called.
-    catch {thread::release $serverthread}
+    thread::send $serverthread $::threadSuperKillScript
+    thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [getThreadError $::threadError($serverthread)] : "" }]
 } {{} 1 0 {}}
 test thread-7.26 {cancel: send async cancel bad interp path} {thread} {
     unset -nocomplain ::threadIdStarted
-    set serverthread [thread::create -preserved \
+    set serverthread [thread::create -joinable \
 	[string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
@@ -889,7 +902,7 @@ test thread-7.26 {cancel: send async cancel bad interp path} {thread} {
     vwait ::threadIdStarted
     catch {thread::send $serverthread {interp cancel -- bad}} msg
     thread::send -async $serverthread {interp cancel -unwind}
-    thread::release -wait $serverthread
+    thread::join $serverthread
     list [expr {$::threadIdStarted == $serverthread}] $msg
 } {1 {could not find interpreter "bad"}}
 test thread-7.27 {cancel: send async cancel -- switch} -constraints {thread} -setup {
@@ -921,7 +934,7 @@ test thread-7.27 {cancel: send async cancel -- switch} -constraints {thread} -se
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
@@ -956,13 +969,14 @@ test thread-7.28 {cancel: send async cancel nested catch inside pure bytecode lo
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {interp cancel}]
     after 1000; # wait for ThreadErrorProc to be called.
-    catch {thread::release $serverthread}
+    thread::send $serverthread $::threadSuperKillScript
+    thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [getThreadError $::threadError($serverthread)] : "" }]
 } {{} 1 0 {}}
 test thread-7.29 {cancel: send async cancel nested catch pure inside-command loop} {thread} {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
@@ -997,13 +1011,14 @@ test thread-7.29 {cancel: send async cancel nested catch pure inside-command loo
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {interp cancel}]
     after 1000; # wait for ThreadErrorProc to be called.
-    catch {thread::release $serverthread}
+    thread::send $serverthread $::threadSuperKillScript
+    thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [getThreadError $::threadError($serverthread)] : "" }]
 } {{} 1 0 {}}
 test thread-7.30 {cancel: send async thread cancel nested catch inside pure bytecode loop} {thread} {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
@@ -1036,13 +1051,14 @@ test thread-7.30 {cancel: send async thread cancel nested catch inside pure byte
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {thread::cancel [thread::id]}]
     after 1000; # wait for ThreadErrorProc to be called.
-    catch {thread::release $serverthread}
+    thread::send $serverthread $::threadSuperKillScript
+    thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [getThreadError $::threadError($serverthread)] : "" }]
 } {{} 1 0 {}}
 test thread-7.31 {cancel: send async thread cancel nested catch pure inside-command loop} {thread} {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
@@ -1077,13 +1093,14 @@ test thread-7.31 {cancel: send async thread cancel nested catch pure inside-comm
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {thread::cancel [thread::id]}]
     after 1000; # wait for ThreadErrorProc to be called.
-    catch {thread::release $serverthread}
+    thread::send $serverthread $::threadSuperKillScript
+    thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [getThreadError $::threadError($serverthread)] : "" }]
 } {{} 1 0 {}}
 test thread-7.32 {cancel: nested catch inside pure bytecode loop -unwind} -constraints {thread} -setup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
@@ -1118,7 +1135,7 @@ test thread-7.32 {cancel: nested catch inside pure bytecode loop -unwind} -const
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -1157,7 +1174,7 @@ test thread-7.33 {cancel: nested catch inside pure inside-command loop -unwind} 
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -1196,7 +1213,7 @@ test thread-7.34 {cancel: send async cancel nested catch inside pure bytecode lo
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -1237,7 +1254,7 @@ test thread-7.35 {cancel: send async cancel nested catch inside pure inside-comm
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -1276,7 +1293,7 @@ test thread-7.36 {cancel: send async thread cancel nested catch inside pure byte
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
@@ -1317,7 +1334,7 @@ test thread-7.37 {cancel: send async thread cancel nested catch inside pure insi
     thread::join $serverthread
     list $res [expr {$::threadIdStarted == $serverthread}] \
 	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+	      [getThreadError $::threadError($serverthread)]
 } -cleanup {
     unset -nocomplain ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
