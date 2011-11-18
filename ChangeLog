@@ -1,3 +1,8 @@
+2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclThreadTest.c: For [testthread cancel], avoid creating a
+	new Tcl_Obj when the default script cancellation result is desired.
+
 2011-11-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* win/tclWinConsole.c: Refactor common thread handling patterns.
