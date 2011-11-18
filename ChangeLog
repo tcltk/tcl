@@ -1,5 +1,14 @@
 2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
 
+	* tests/thread.test: Refactor all the remaining thread-7.x tests that
+	were using [testthread].  Note that this test file now requires the
+	very latest version of the Thread package to pass all tests.  In
+	addition, the thread-7.18 and thread-7.19 tests have been flagged as
+	knownBug because they cannot pass without modifications to the [expr]
+	command, persuant to TIP #392.
+
+2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
+
 	* generic/tclThreadTest.c: For [testthread cancel], avoid creating a
 	new Tcl_Obj when the default script cancellation result is desired.
 
