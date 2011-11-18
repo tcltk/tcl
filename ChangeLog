@@ -1,3 +1,11 @@
+2011-11-18  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tests/thread.test: Remove all use of thread::release from the thread
+	7.x tests, replacing it with a script that can easily cause "stuck"
+	threads to self-destruct for those test cases that require it.  Also,
+	make the error message handling far more robust by keeping track of
+	every asynchronous error.
+
 2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
 
 	* tests/thread.test: Refactor all the remaining thread-7.x tests that
