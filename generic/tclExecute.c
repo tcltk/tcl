@@ -1652,14 +1652,16 @@ TclCompileObj(
 	    }
 	}
 
-	if (codePtr->procPtr == NULL) {
-	    /*
-	     * Check that any compiled locals do refer to the current proc
-	     * environment! If not, recompile.
-	     */
+	if (!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
+	    if (codePtr->procPtr == NULL) {
+		/*
+		 * Check that any compiled locals do refer to the current proc
+		 * environment! If not, recompile.
+		 */
 
-	    if (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr) {
-		goto recompileObj;
+		if (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr) {
+		    goto recompileObj;
+		}
 	    }
 	}
 
