@@ -3,7 +3,14 @@
 	* tests/thread.test: Remove unnecessary [after] calls from the thread
 	tests.  Make error message matching more robust for tests that may
 	have built-in race conditions.  Test thread-7.26 must first unset all
-	thread testing related variables.
+	thread testing related variables.  Revise results of the thread-7.28
+	through thread-7.31 tests to account for the fact they are canceled
+	via a script sent to the thread asynchronously, which then impacts the
+	error message handling.  Attempt to manually drain the event queue for
+	the main thread after joining the test thread to make sure no stray
+	events are processed at the wrong time on the main thread.  Revise all
+	the synchronization and comparison semantics related to the thread id
+	and error message.
 
 2011-11-18  Joe Mistachkin  <joe@mistachkin.com>
 
