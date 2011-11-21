@@ -29,12 +29,24 @@ testConstraint notValgrind [expr {![testConstraint valgrind]}]
 set threadSuperKillScript {
     rename catch ""
     rename while ""
+    rename unknown ""
     rename update ""
     thread::release
 }
 
 proc getThreadError { info } {
-    return [lindex [split [lindex $info 0] \n] 0]
+    foreach error [lreverse $info] {
+        set list [split $error \n]
+        set idx [lsearch -glob $list "*eval*unwound*"]
+        if {$idx != -1} then {
+          return [lindex $list $idx]
+        }
+        set idx [lsearch -glob $list "*eval*canceled*"]
+        if {$idx != -1} then {
+          return [lindex $list $idx]
+        }
+    }
+    return ""; # some other error we do not care about.
 }
 
 proc ThreadError {id info} {
@@ -829,7 +841,6 @@ test thread-7.24 {cancel: nested catch inside pure bytecode loop} {thread} {
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::cancel $serverthread]
-    after 1000; # wait for ThreadErrorProc to be called.
     thread::send $serverthread $::threadSuperKillScript
     thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
@@ -871,7 +882,6 @@ test thread-7.25 {cancel: nested catch inside pure inside-command loop} {thread}
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::cancel $serverthread]
-    after 1000; # wait for ThreadErrorProc to be called.
     thread::send $serverthread $::threadSuperKillScript
     thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
@@ -882,7 +892,7 @@ test thread-7.25 {cancel: nested catch inside pure inside-command loop} {thread}
 		  [getThreadError $::threadError($serverthread)] : "" }]
 } {{} 1 0 {}}
 test thread-7.26 {cancel: send async cancel bad interp path} {thread} {
-    unset -nocomplain ::threadIdStarted
+    unset -nocomplain ::threadError ::threadId ::threadIdStarted
     set serverthread [thread::create -joinable \
 	[string map [list %ID% [thread::id]] {
 	proc foobar {} {
@@ -968,7 +978,6 @@ test thread-7.28 {cancel: send async cancel nested catch inside pure bytecode lo
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {interp cancel}]
-    after 1000; # wait for ThreadErrorProc to be called.
     thread::send $serverthread $::threadSuperKillScript
     thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
@@ -1010,7 +1019,6 @@ test thread-7.29 {cancel: send async cancel nested catch pure inside-command loo
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {interp cancel}]
-    after 1000; # wait for ThreadErrorProc to be called.
     thread::send $serverthread $::threadSuperKillScript
     thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
@@ -1050,7 +1058,6 @@ test thread-7.30 {cancel: send async thread cancel nested catch inside pure byte
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {thread::cancel [thread::id]}]
-    after 1000; # wait for ThreadErrorProc to be called.
     thread::send $serverthread $::threadSuperKillScript
     thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
@@ -1092,7 +1099,6 @@ test thread-7.31 {cancel: send async thread cancel nested catch pure inside-comm
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
     set res [thread::send -async $serverthread {thread::cancel [thread::id]}]
-    after 1000; # wait for ThreadErrorProc to be called.
     thread::send $serverthread $::threadSuperKillScript
     thread::join $serverthread
     list $res [expr {[info exists ::threadIdStarted] ? \
