@@ -1,3 +1,10 @@
+2011-11-20  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tests/thread.test: Remove unnecessary [after] calls from the thread
+	tests.  Make error message matching more robust for tests that may
+	have built-in race conditions.  Test thread-7.26 must first unset all
+	thread testing related variables.
+
 2011-11-18  Joe Mistachkin  <joe@mistachkin.com>
 
 	* tests/thread.test: Remove all use of thread::release from the thread
