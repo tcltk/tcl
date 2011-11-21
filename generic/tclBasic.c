@@ -5949,7 +5949,7 @@ TclNREvalObjEx(
 
     /*
      * This function consists of three independent blocks for: direct
-     * evaluation of canonical lists, compileation and bytecode execution and
+     * evaluation of canonical lists, compilation and bytecode execution and
      * finally direct evaluation. Precisely one of these blocks will be run.
      */
 
