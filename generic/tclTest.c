@@ -15,10 +15,10 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <math.h>
-
 #define TCL_TEST
 #include "tclInt.h"
+
+#include <math.h>
 
 /*
  * Required for Testregexp*Cmd
