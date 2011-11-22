@@ -1,3 +1,9 @@
+2011-11-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h:   [Bug 2935503] Windows: file mtime
+	* win/tclWinFile.c:  sets wrong time (VS2005+ only)
+	* generic/tclTest.c:
+
 2011-11-20  Joe Mistachkin  <joe@mistachkin.com>
 
 	* tests/thread.test: Remove unnecessary [after] calls from the thread
