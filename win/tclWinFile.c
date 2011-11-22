@@ -13,6 +13,7 @@
  */
 
 #ifndef _WIN64
+/* See [Bug 2935503]: file mtime sets wrong time */
 #   define _USE_32BIT_TIME_T
 #endif
 #include <sys/stat.h>
