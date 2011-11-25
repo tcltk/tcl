@@ -1,3 +1,8 @@
+2011-11-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/history.tcl (history): Simplify the dance of variable
+	management used when chaining to the implementation command.
+
 2011-11-22  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclExecute.c (TclCompileObj): Simplify and de-indent the
