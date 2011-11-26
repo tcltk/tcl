@@ -19,14 +19,54 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # Some tests require the testthread command
 
 testConstraint testthread [expr {[info commands testthread] != {}}]
+
+# Some tests require the Thread package
+
 testConstraint thread [expr {0 == [catch {package require Thread 2.7}]}]
+
+# Some tests may not work under valgrind
 
 testConstraint notValgrind [expr {![testConstraint valgrind]}]
 
+set threadSuperKillScript {
+    rename catch ""
+    rename while ""
+    rename unknown ""
+    rename update ""
+    thread::release
+}
+
+proc getThreadErrorFromInfo { info } {
+    set list [split $info \n]
+    set idx [lsearch -glob $list "*eval*unwound*"]
+    if {$idx != -1} then {
+        return [lindex $list $idx]
+    }
+    set idx [lsearch -glob $list "*eval*canceled*"]
+    if {$idx != -1} then {
+        return [lindex $list $idx]
+    }
+    return ""; # some other error we do not care about.
+}
+
+proc findThreadError { info } {
+    foreach error [lreverse $info] {
+        set error [getThreadErrorFromInfo $error]
+        if {[string length $error] > 0} then {
+            return $error
+        }
+    }
+    return ""; # some other error we do not care about.
+}
+
 proc ThreadError {id info} {
-    global threadId threadError
-    set threadId $id
-    set threadError $info
+    global threadSawError
+    if {[string length [getThreadErrorFromInfo $info]] > 0} then {
+        global threadId threadError
+        set threadId $id
+        lappend threadError($id) $info
+    }
+    set threadSawError($id) true; # signal main thread to exit [vwait].
 }
 
 if {[testConstraint thread]} {
@@ -34,6 +74,12 @@ if {[testConstraint thread]} {
 }
 
 if {[testConstraint testthread]} {
+    proc drainEventQueue {} {
+	while {[set x [testthread event]]} {
+	    puts "WARNING: drained $x event(s) on main thread"
+	}
+    }
+
     testthread errorproc ThreadError
 
     set mainThread [testthread id]
@@ -58,6 +104,10 @@ if {[testConstraint testthread]} {
 	return [llength [testthread names]]
     }
 }
+
+# Some tests require manual draining of the event queue
+
+testConstraint drainEventQueue [expr {[info commands drainEventQueue] != {}}]
 
 test thread-1.3 {Tcl_ThreadObjCmd: initial thread list} {thread} {
     llength [thread::names]
@@ -216,8 +266,8 @@ test thread-6.1 {freeing very large object trees in a thread} thread {
 } 0
 
 # TIP #285: Script cancellation support
-test thread-7.4 {cancel: pure bytecode loop} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.4 {cancel: pure bytecode loop} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -237,16 +287,18 @@ test thread-7.4 {cancel: pure bytecode loop} -constraints {thread} -setup {
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::cancel $serverthread]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
-test thread-7.5 {cancel: pure inside-command loop} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.5 {cancel: pure inside-command loop} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -265,18 +317,20 @@ test thread-7.5 {cancel: pure inside-command loop} -constraints {thread} -setup 
 	foobar
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel $serverthread]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
-test thread-7.6 {cancel: pure bytecode loop -unwind} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.6 {cancel: pure bytecode loop -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -294,18 +348,20 @@ test thread-7.6 {cancel: pure bytecode loop -unwind} -constraints {thread} -setu
 	foobar
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel -unwind $serverthread]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.7 {cancel: pure inside-command loop -unwind} -constraints thread -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.7 {cancel: pure inside-command loop -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -324,18 +380,20 @@ test thread-7.7 {cancel: pure inside-command loop -unwind} -constraints thread -
 	foobar
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel -unwind $serverthread]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.8 {cancel: pure bytecode loop custom result} -constraints thread -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.8 {cancel: pure bytecode loop custom result} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -353,20 +411,23 @@ test thread-7.8 {cancel: pure bytecode loop custom result} -constraints thread -
 	foobar
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel $serverthread "the eval was canceled"]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {the eval was canceled}}
 test thread-7.9 {cancel: pure inside-command loop custom result} -constraints {
     thread
+    drainEventQueue
 } -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -385,20 +446,23 @@ test thread-7.9 {cancel: pure inside-command loop custom result} -constraints {
 	foobar
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel $serverthread "the eval was canceled"]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {the eval was canceled}}
 test thread-7.10 {cancel: pure bytecode loop custom result -unwind} -constraints {
     thread
+    drainEventQueue
 } -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -416,20 +480,23 @@ test thread-7.10 {cancel: pure bytecode loop custom result -unwind} -constraints
 	foobar
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel -unwind $serverthread "the eval was unwound"]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {the eval was unwound}}
 test thread-7.11 {cancel: pure inside-command loop custom result -unwind} -constraints {
     thread
+    drainEventQueue
 } -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -448,18 +515,20 @@ test thread-7.11 {cancel: pure inside-command loop custom result -unwind} -const
 	foobar
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel -unwind $serverthread "the eval was unwound"]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {the eval was unwound}}
-test thread-7.12 {cancel: after} -constraints thread -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.12 {cancel: after} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -472,18 +541,20 @@ test thread-7.12 {cancel: after} -constraints thread -setup {
 	after 30000
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel $serverthread]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
-test thread-7.13 {cancel: after -unwind} -constraints thread -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.13 {cancel: after -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -496,18 +567,20 @@ test thread-7.13 {cancel: after -unwind} -constraints thread -setup {
 	after 30000
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel -unwind $serverthread]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.14 {cancel: vwait} -constraints thread -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.14 {cancel: vwait} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID [thread::id]] {
@@ -520,18 +593,20 @@ test thread-7.14 {cancel: vwait} -constraints thread -setup {
 	vwait forever
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel $serverthread]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
-test thread-7.15 {cancel: vwait -unwind} -constraints thread -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.15 {cancel: vwait -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -544,18 +619,20 @@ test thread-7.15 {cancel: vwait -unwind} -constraints thread -setup {
 	vwait forever
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel -unwind $serverthread]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.16 {cancel: expr} -constraints thread -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.16 {cancel: expr} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID [thread::id]] {
@@ -573,18 +650,20 @@ test thread-7.16 {cancel: expr} -constraints thread -setup {
 	}
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel $serverthread]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
-test thread-7.17 {cancel: expr -unwind} -constraints thread -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.17 {cancel: expr -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -601,86 +680,84 @@ test thread-7.17 {cancel: expr -unwind} -constraints thread -setup {
 	}
     }]]
     # wait for other thread to signal "ready to cancel"
-    vwait threadIdStarted
+    vwait ::threadIdStarted
     set res [thread::cancel -unwind $serverthread]
-    vwait threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.18 {cancel: expr bignum} {testthread} {
-    threadReap
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
-    set serverthread [testthread create -joinable {
+test thread-7.18 {cancel: expr bignum} {thread drainEventQueue knownBug} {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
+    set serverthread [thread::create -joinable \
+	    [string map [list %ID% [thread::id]] {
         set i [interp create]
-        interp alias $i testthread {} testthread
+	$i eval "package require -exact Thread [package present Thread]"
         $i eval {
             if {![info exists foo]} then {
                 # signal the primary thread that we are ready
                 # to be canceled now (we are running).
-                testthread send [testthread id -main] \
-                        [list set ::threadIdStarted [testthread id]]
+                thread::send %ID% [list set ::threadIdStarted [thread::id]]
                 set foo 1
             }
             #
-      # TODO: This will not cancel because libtommath
-      #       does not check Tcl_Canceled.
-      #
+            # BUGBUG: This will not cancel because libtommath
+            #         does not check Tcl_Canceled.
+            #
             expr {2**99999}
         }
-    }]
+    }]]
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
-    set res [testthread cancel $serverthread]
-    testthread join $serverthread
-    while {[testthread event]} {}; # force events to service
-    threadReap
+    set res [thread::cancel $serverthread]
+    vwait ::threadSawError($serverthread); # WARNING: Never returns (see above).
+    thread::join $serverthread; drainEventQueue; # WARNING: Never returns (see above).
     list $res [expr {[info exists ::threadIdStarted] ? \
                   $::threadIdStarted == $serverthread : 0}] \
               [expr {[info exists ::threadId] ? \
                   $::threadId == $serverthread : 0}] \
-              [expr {[info exists ::threadError] ? \
-                  [lindex [split $::threadError \n] 0] : "" }]
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } {{} 1 0 {}}
-test thread-7.19 {cancel: expr bignum -unwind} {testthread} {
-    threadReap
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
-    set serverthread [testthread create -joinable {
+test thread-7.19 {cancel: expr bignum -unwind} {thread drainEventQueue knownBug} {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
+    set serverthread [thread::create -joinable \
+	    [string map [list %ID% [thread::id]] {
         set i [interp create]
-        interp alias $i testthread {} testthread
+	$i eval "package require -exact Thread [package present Thread]"
         $i eval {
             if {![info exists foo]} then {
                 # signal the primary thread that we are ready
                 # to be canceled now (we are running).
-                testthread send [testthread id -main] \
-                        [list set ::threadIdStarted [testthread id]]
+                thread::send %ID% [list set ::threadIdStarted [thread::id]]
                 set foo 1
             }
             #
-      # TODO: This will not cancel because libtommath
-      #       does not check Tcl_Canceled.
-      #
+            # BUGBUG: This will not cancel because libtommath
+            #         does not check Tcl_Canceled.
+            #
             expr {2**99999}
         }
-    }]
+    }]]
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
-    set res [testthread cancel -unwind $serverthread]
-    testthread join $serverthread
-    while {[testthread event]} {}; # force events to service
-    threadReap
+    set res [thread::cancel -unwind $serverthread]
+    vwait ::threadSawError($serverthread); # WARNING: Never returns (see above).
+    thread::join $serverthread; drainEventQueue; # WARNING: Never returns (see above).
     list $res [expr {[info exists ::threadIdStarted] ? \
                   $::threadIdStarted == $serverthread : 0}] \
               [expr {[info exists ::threadId] ? \
                   $::threadId == $serverthread : 0}] \
-              [expr {[info exists ::threadError] ? \
-                  [lindex [split $::threadError \n] 0] : "" }]
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } {{} 1 0 {}}
-test thread-7.20 {cancel: subst} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.20 {cancel: subst} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -699,16 +776,18 @@ test thread-7.20 {cancel: subst} -constraints {thread} -setup {
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::cancel $serverthread]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
-test thread-7.21 {cancel: subst -unwind} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.21 {cancel: subst -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -727,16 +806,18 @@ test thread-7.21 {cancel: subst -unwind} -constraints {thread} -setup {
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::cancel -unwind $serverthread]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.22 {cancel: slave interp} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.22 {cancel: slave interp} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -755,16 +836,18 @@ test thread-7.22 {cancel: slave interp} -constraints {thread} -setup {
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::cancel $serverthread]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
-test thread-7.23 {cancel: slave interp -unwind} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.23 {cancel: slave interp -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -783,25 +866,26 @@ test thread-7.23 {cancel: slave interp -unwind} -constraints {thread} -setup {
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::cancel -unwind $serverthread]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.24 {cancel: nested catch inside pure bytecode loop} {notValgrind testthread} {
-    threadReap
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
-    set serverthread [testthread create -joinable {
+test thread-7.24 {cancel: nested catch inside pure bytecode loop} {thread drainEventQueue} {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
+    set serverthread [thread::create -joinable \
+	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
 		if {![info exists foo]} then {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
-		    testthread send [testthread id -main] \
-			    [list set ::threadIdStarted [testthread id]]
+		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
 		    set foo 1
 		}
 		catch {
@@ -818,25 +902,24 @@ test thread-7.24 {cancel: nested catch inside pure bytecode loop} {notValgrind t
 	    }
 	}
 	foobar
-    }]
+    }]]
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
-    set res [testthread cancel $serverthread]
-    after 1000; # wait for ThreadErrorProc to be called.
-    while {[testthread event]} {}; # force events to service
-    catch {testthread send $serverthread {testthread exit}}
-    threadReap
+    set res [thread::cancel $serverthread]
+    thread::send $serverthread $::threadSuperKillScript
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [findThreadError $::threadError($serverthread)] : ""}]
 } {{} 1 0 {}}
-test thread-7.25 {cancel: nested catch inside pure inside-command loop} {notValgrind testthread} {
-    threadReap
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
-    set serverthread [testthread create -joinable {
+test thread-7.25 {cancel: nested catch inside pure inside-command loop} {thread drainEventQueue} {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
+    set serverthread [thread::create -joinable \
+	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    set catch catch
 	    set while while
@@ -844,8 +927,7 @@ test thread-7.25 {cancel: nested catch inside pure inside-command loop} {notValg
 		if {![info exists foo]} then {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
-		    testthread send [testthread id -main] \
-			    [list set ::threadIdStarted [testthread id]]
+		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
 		    set foo 1
 		}
 		$catch {
@@ -862,24 +944,23 @@ test thread-7.25 {cancel: nested catch inside pure inside-command loop} {notValg
 	    }
 	}
 	foobar
-    }]
+    }]]
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
-    set res [testthread cancel $serverthread]
-    after 1000; # wait for ThreadErrorProc to be called.
-    while {[testthread event]} {}; # force events to service
-    catch {testthread send $serverthread {testthread exit}}
-    threadReap
+    set res [thread::cancel $serverthread]
+    thread::send $serverthread $::threadSuperKillScript
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [findThreadError $::threadError($serverthread)] : ""}]
 } {{} 1 0 {}}
-test thread-7.26 {cancel: send async cancel bad interp path} {thread} {
-    unset -nocomplain ::threadIdStarted
-    set serverthread [thread::create -preserved \
+test thread-7.26 {cancel: send async cancel bad interp path} {thread drainEventQueue} {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
+    set serverthread [thread::create -joinable \
 	[string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
@@ -898,11 +979,12 @@ test thread-7.26 {cancel: send async cancel bad interp path} {thread} {
     vwait ::threadIdStarted
     catch {thread::send $serverthread {interp cancel -- bad}} msg
     thread::send -async $serverthread {interp cancel -unwind}
-    thread::release -wait $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list [expr {$::threadIdStarted == $serverthread}] $msg
 } {1 {could not find interpreter "bad"}}
-test thread-7.27 {cancel: send async cancel -- switch} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.27 {cancel: send async cancel -- switch} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -926,25 +1008,26 @@ test thread-7.27 {cancel: send async cancel -- switch} -constraints {thread} -se
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::send -async $serverthread {interp cancel -- -unwind}]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
-test thread-7.28 {cancel: send async cancel nested catch inside pure bytecode loop} {notValgrind testthread} {
-    threadReap
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
-    set serverthread [testthread create -joinable {
+test thread-7.28 {cancel: send async cancel nested catch inside pure bytecode loop} {thread drainEventQueue} {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
+    set serverthread [thread::create -joinable \
+	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
 		if {![info exists foo]} then {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
-		    testthread send [testthread id -main] \
-			    [list set ::threadIdStarted [testthread id]]
+		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
 		    set foo 1
 		}
 		catch {
@@ -961,25 +1044,24 @@ test thread-7.28 {cancel: send async cancel nested catch inside pure bytecode lo
 	    }
 	}
 	foobar
-    }]
+    }]]
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
-    set res [testthread send -async $serverthread {interp cancel}]
-    after 1000; # wait for ThreadErrorProc to be called.
-    while {[testthread event]} {}; # force events to service
-    catch {testthread send $serverthread {testthread exit}}
-    threadReap
+    set res [thread::send -async $serverthread {interp cancel}]
+    thread::send $serverthread $::threadSuperKillScript
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
-} {{} 1 0 {}}
-test thread-7.29 {cancel: send async cancel nested catch pure inside-command loop} {notValgrind testthread} {
-    threadReap
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
-    set serverthread [testthread create -joinable {
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [findThreadError $::threadError($serverthread)] : ""}]
+} {{} 1 1 {eval canceled}}
+test thread-7.29 {cancel: send async cancel nested catch pure inside-command loop} {thread drainEventQueue} {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
+    set serverthread [thread::create -joinable \
+	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    set catch catch
 	    set while while
@@ -987,8 +1069,7 @@ test thread-7.29 {cancel: send async cancel nested catch pure inside-command loo
 		if {![info exists foo]} then {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
-		    testthread send [testthread id -main] \
-			    [list set ::threadIdStarted [testthread id]]
+		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
 		    set foo 1
 		}
 		$catch {
@@ -1005,32 +1086,30 @@ test thread-7.29 {cancel: send async cancel nested catch pure inside-command loo
 	    }
 	}
 	foobar
-    }]
+    }]]
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
-    set res [testthread send -async $serverthread {interp cancel}]
-    after 1000; # wait for ThreadErrorProc to be called.
-    while {[testthread event]} {}; # force events to service
-    catch {testthread send $serverthread {testthread exit}}
-    threadReap
+    set res [thread::send -async $serverthread {interp cancel}]
+    thread::send $serverthread $::threadSuperKillScript
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
-} {{} 1 0 {}}
-test thread-7.30 {cancel: send async testthread cancel nested catch inside pure bytecode loop} {notValgrind testthread} {
-    threadReap
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
-    set serverthread [testthread create -joinable {
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [findThreadError $::threadError($serverthread)] : ""}]
+} {{} 1 1 {eval canceled}}
+test thread-7.30 {cancel: send async thread cancel nested catch inside pure bytecode loop} {thread drainEventQueue} {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
+    set serverthread [thread::create -joinable \
+	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
 		if {![info exists foo]} then {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
-		    testthread send [testthread id -main] \
-			    [list set ::threadIdStarted [testthread id]]
+		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
 		    set foo 1
 		}
 		catch {
@@ -1047,25 +1126,24 @@ test thread-7.30 {cancel: send async testthread cancel nested catch inside pure 
 	    }
 	}
 	foobar
-    }]
+    }]]
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
-    set res [testthread send -async $serverthread {testthread cancel [testthread id]}]
-    after 1000; # wait for ThreadErrorProc to be called.
-    while {[testthread event]} {}; # force events to service
-    catch {testthread send $serverthread {testthread exit}}
-    threadReap
+    set res [thread::send -async $serverthread {thread::cancel [thread::id]}]
+    thread::send $serverthread $::threadSuperKillScript
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
-} {{} 1 0 {}}
-test thread-7.31 {cancel: send async testthread cancel nested catch pure inside-command loop} {notValgrind testthread} {
-    threadReap
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
-    set serverthread [testthread create -joinable {
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [findThreadError $::threadError($serverthread)] : ""}]
+} {{} 1 1 {eval canceled}}
+test thread-7.31 {cancel: send async thread cancel nested catch pure inside-command loop} {thread drainEventQueue} {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
+    set serverthread [thread::create -joinable \
+	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    set catch catch
 	    set while while
@@ -1073,8 +1151,7 @@ test thread-7.31 {cancel: send async testthread cancel nested catch pure inside-
 		if {![info exists foo]} then {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
-		    testthread send [testthread id -main] \
-			    [list set ::threadIdStarted [testthread id]]
+		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
 		    set foo 1
 		}
 		$catch {
@@ -1091,23 +1168,22 @@ test thread-7.31 {cancel: send async testthread cancel nested catch pure inside-
 	    }
 	}
 	foobar
-    }]
+    }]]
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted; after 1000
-    set res [testthread send -async $serverthread {testthread cancel [testthread id]}]
-    after 1000; # wait for ThreadErrorProc to be called.
-    while {[testthread event]} {}; # force events to service
-    catch {testthread send $serverthread {testthread exit}}
-    threadReap
+    set res [thread::send -async $serverthread {thread::cancel [thread::id]}]
+    thread::send $serverthread $::threadSuperKillScript
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {[info exists ::threadIdStarted] ? \
 		  $::threadIdStarted == $serverthread : 0}] \
 	      [expr {[info exists ::threadId] ? \
 		  $::threadId == $serverthread : 0}] \
-	      [expr {[info exists ::threadError] ? \
-		  [lindex [split $::threadError \n] 0] : "" }]
-} {{} 1 0 {}}
-test thread-7.32 {cancel: nested catch inside pure bytecode loop -unwind} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+	      [expr {[info exists ::threadError($serverthread)] ? \
+		  [findThreadError $::threadError($serverthread)] : ""}]
+} {{} 1 1 {eval canceled}}
+test thread-7.32 {cancel: nested catch inside pure bytecode loop -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -1135,16 +1211,18 @@ test thread-7.32 {cancel: nested catch inside pure bytecode loop -unwind} -const
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::cancel -unwind $serverthread]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.33 {cancel: nested catch inside pure inside-command loop -unwind} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.33 {cancel: nested catch inside pure inside-command loop -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -1174,16 +1252,18 @@ test thread-7.33 {cancel: nested catch inside pure inside-command loop -unwind} 
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::cancel -unwind $serverthread]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.34 {cancel: send async cancel nested catch inside pure bytecode loop -unwind} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.34 {cancel: send async cancel nested catch inside pure bytecode loop -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -1213,16 +1293,18 @@ test thread-7.34 {cancel: send async cancel nested catch inside pure bytecode lo
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::send -async $serverthread {interp cancel -unwind}]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.35 {cancel: send async cancel nested catch inside pure inside-command loop -unwind} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.35 {cancel: send async cancel nested catch inside pure inside-command loop -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -1254,16 +1336,18 @@ test thread-7.35 {cancel: send async cancel nested catch inside pure inside-comm
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::send -async $serverthread {interp cancel -unwind}]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.36 {cancel: send async thread cancel nested catch inside pure bytecode loop -unwind} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.36 {cancel: send async thread cancel nested catch inside pure bytecode loop -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
@@ -1293,16 +1377,18 @@ test thread-7.36 {cancel: send async thread cancel nested catch inside pure byte
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::send -async $serverthread {thread::cancel -unwind [thread::id]}]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.37 {cancel: send async thread cancel nested catch inside pure inside-command loop -unwind} -constraints {thread} -setup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+test thread-7.37 {cancel: send async thread cancel nested catch inside pure inside-command loop -unwind} -constraints {thread drainEventQueue} -setup {
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID [thread::id]] {
@@ -1334,13 +1420,15 @@ test thread-7.37 {cancel: send async thread cancel nested catch inside pure insi
     # wait for other thread to signal "ready to cancel"
     vwait ::threadIdStarted
     set res [thread::send -async $serverthread {thread::cancel -unwind [thread::id]}]
-    vwait ::threadId
-    thread::join $serverthread
+    vwait ::threadSawError($serverthread)
+    thread::join $serverthread; drainEventQueue
     list $res [expr {$::threadIdStarted == $serverthread}] \
-	      [expr {$::threadId == $serverthread}] \
-	      [lindex [split $::threadError \n] 0]
+              [expr {[info exists ::threadId] ? \
+                  $::threadId == $serverthread : 0}] \
+              [expr {[info exists ::threadError($serverthread)] ? \
+                  [findThreadError $::threadError($serverthread)] : ""}]
 } -cleanup {
-    unset -nocomplain ::threadError ::threadId ::threadIdStarted
+    unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
 
 # cleanup
