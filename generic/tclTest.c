@@ -15,14 +15,14 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <math.h>
-
 #undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
 #include "tclInt.h"
 #include "tclOO.h"
+#include <math.h>
+
 /*
  * Required for Testregexp*Cmd
  */
