@@ -1,3 +1,55 @@
+2011-11-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/history.tcl (history): Simplify the dance of variable
+	management used when chaining to the implementation command.
+
+2011-11-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TclCompileObj): Simplify and de-indent the
+	logic so that it is easier to comprehend.
+
+2011-11-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h:   [Bug 2935503]: Windows: file mtime
+	* win/tclWinFile.c:  sets wrong time (VS2005+ only)
+	* generic/tclTest.c:
+
+2011-11-20  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tests/thread.test: Remove unnecessary [after] calls from the thread
+	tests.  Make error message matching more robust for tests that may
+	have built-in race conditions.  Test thread-7.26 must first unset all
+	thread testing related variables.  Revise results of the thread-7.28
+	through thread-7.31 tests to account for the fact they are canceled
+	via a script sent to the thread asynchronously, which then impacts the
+	error message handling.  Attempt to manually drain the event queue for
+	the main thread after joining the test thread to make sure no stray
+	events are processed at the wrong time on the main thread.  Revise all
+	the synchronization and comparison semantics related to the thread id
+	and error message.
+
+2011-11-18  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tests/thread.test: Remove all use of thread::release from the thread
+	7.x tests, replacing it with a script that can easily cause "stuck"
+	threads to self-destruct for those test cases that require it.  Also,
+	make the error message handling far more robust by keeping track of
+	every asynchronous error.
+
+2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tests/thread.test: Refactor all the remaining thread-7.x tests that
+	were using [testthread].  Note that this test file now requires the
+	very latest version of the Thread package to pass all tests.  In
+	addition, the thread-7.18 and thread-7.19 tests have been flagged as
+	knownBug because they cannot pass without modifications to the [expr]
+	command, persuant to TIP #392.
+
+2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclThreadTest.c: For [testthread cancel], avoid creating a
+	new Tcl_Obj when the default script cancellation result is desired.
+
 2011-11-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* win/tclWinConsole.c: Refactor common thread handling patterns.
