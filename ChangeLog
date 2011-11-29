@@ -1,3 +1,9 @@
+2011-11-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* doc/tclsh.1:  Use the same shebang comment everywhere.
+	* tools/str2c
+	* tools/tcltk-man2html.tcl
+
 2011-11-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCmdAH.c:   [Bug 2935503] Windows: file mtime
