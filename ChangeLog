@@ -1,3 +1,9 @@
+2011-11-30  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/tcltest/tcltest.tcl: [Bug 967195]: Make tcltest work
+	when tclsh is compiled without using the setargv() function on mingw.
+	(no need to incr the version, since 2.2.10 is never released)
+
 2011-11-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/Makefile.in: don't install tommath_(super)?class.h
