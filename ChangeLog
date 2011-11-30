@@ -1,3 +1,8 @@
+2011-11-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in: don't install tommath_(super)?class.h
+	* unix/Makefile.in: don't install directories like 8.2 and 8.3
+
 2011-11-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/history.tcl (history): Simplify the dance of variable
