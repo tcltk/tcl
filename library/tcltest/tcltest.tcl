@@ -483,8 +483,10 @@ namespace eval tcltest {
 	variable Verify
 	variable Usage
 	variable OptionControlledVariables
+	variable DefaultValue
 	set Usage($option) $usage
 	set Verify($option) $verify
+	set DefaultValue($option) $value
 	if {[catch {$verify $value} msg]} {
 	    return -code error $msg
 	} else {
@@ -707,7 +709,7 @@ namespace eval tcltest {
 	    }
 	}
     }
-    Option -limitconstraints false {
+    Option -limitconstraints 0 {
 	whether to run only tests with the constraints
     } AcceptBoolean limitConstraints 
     trace variable Option(-limitconstraints) w \
@@ -2664,6 +2666,7 @@ proc tcltest::runAllTests { {shell ""} } {
     variable numTestFiles
     variable numTests
     variable failFiles
+    variable DefaultValue
 
     FillFilesExisted
     if {[llength [info level 0]] == 1} {
@@ -2728,7 +2731,12 @@ proc tcltest::runAllTests { {shell ""} } {
 	    set childargv [list]
 	    foreach opt [Configure] {
 		if {[string equal $opt -outfile]} {continue}
-		lappend childargv $opt [Configure $opt]
+		set value [Configure $opt]
+		# Don't bother passing default configuration options
+		if {[string equal $value $DefaultValue($opt)]} {
+			continue
+		}
+		lappend childargv $opt $value
 	    }
 	    set cmd [linsert $childargv 0 | $shell $file]
 	    if {[catch {
