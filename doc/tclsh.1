@@ -75,7 +75,7 @@ following three lines:
 .CS
 \fB#!/bin/sh
 # the next line restarts using tclsh \e
-exec tclsh "$0" "$@"\fR
+exec tclsh "$0" ${1+"$@"}\fR
 .CE
 This approach has three advantages over the approach in the previous
 paragraph.  First, the location of the \fBtclsh\fR binary does not have
