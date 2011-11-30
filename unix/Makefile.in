@@ -742,7 +742,7 @@ install-libraries: libraries $(INSTALL_TZDATA) install-msgs
 		else true; \
 		fi; \
 	    done;
-	@for i in opt0.4 http1.0 encoding ../tcl8 ../tcl8/8.3 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5; \
+	@for i in opt0.4 http1.0 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5; \
 	    do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
