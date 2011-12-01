@@ -7512,6 +7512,7 @@ memory with buffer backup (ferrieux)
 2011-03-14 (bug fix) Fixes from libtommath 0.42.0 release (fellows)
 
 2011-03-21 (bug fix)[3216070] [load] extension from embed Tcl apps (nijtmans)
+	***POTENTIAL INCOMPATIBILITY***
 
 2011-04-12 (bug fix)[3285472] intrep corruption in [string reverse] (porter)
 
