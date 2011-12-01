@@ -1229,6 +1229,10 @@
 
 	* unix/tclLoadDl.c:    [Bug #3216070]: Loading extension libraries
 	* unix/tclLoadDyld.c:  from embedded Tcl applications.
+	***POTENTIAL INCOMPATIBILITY***
+	For extensions which rely on symbols from other extensions being
+	present in the global symbol table. For an example and some discussion
+	of workarounds, see http://stackoverflow.com/q/8330614/301832
 
 2011-03-21  Miguel Sofer  <msofer@users.sf.net>
 
