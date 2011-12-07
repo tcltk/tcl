@@ -44,20 +44,20 @@ proc uni::getValue {items index} {
     # Extract character info
 
     set category [lindex $items 2]
-    if {[scan [lindex $items 12] %4x toupper] == 1} {
+    if {[scan [lindex $items 12] %6x toupper] == 1} {
 	set toupper [expr {$index - $toupper}]
     } else {
-	set toupper {}
+	set toupper 0
     }
-    if {[scan [lindex $items 13] %4x tolower] == 1} {
+    if {[scan [lindex $items 13] %6x tolower] == 1} {
 	set tolower [expr {$tolower - $index}]
     } else {
-	set tolower {}
+	set tolower 0
     }
-    if {[scan [lindex $items 14] %4x totitle] == 1} {
+    if {[scan [lindex $items 14] %6x totitle] == 1} {
 	set totitle [expr {$index - $totitle}]
     } else {
-	set totitle {}
+	set totitle 0
     }
 
     set categoryIndex [lsearch -exact $categories $category]
@@ -100,16 +100,21 @@ proc uni::buildTables {data} {
 
     variable pMap {}
     variable pages {}
-    variable groups {{0,,,}}
+    variable groups {{0,0,0,0}}
+    variable next 0
     set info {}			;# temporary page info
 
     set mask [expr {(1 << $shift) - 1}]
 
-    set next 0
-
     foreach line [split $data \n] {
 	if {$line eq ""} {
-	    set line "FFFF;;Cn;0;ON;;;;;N;;;;;\n"
+	    if {!($next & $mask)} {
+		# next character is already on page boundary
+		continue
+	    }
+	    # fill remaining page
+	    set line [format %X [expr {($next-1)|$mask}]]
+	    append line ";;Cn;0;ON;;;;;N;;;;;\n"
 	}
 
 	set items [split $line \;]
@@ -119,7 +124,7 @@ proc uni::buildTables {data} {
 	    # Ignore non-BMP characters, as long as Tcl doesn't support them
 	    continue
 	}
-	set index [format 0x%0.4x $index]
+	set index [format %d $index]
 
 	set gIndex [getGroup [getValue $items $index]]
 
@@ -167,6 +172,7 @@ proc uni::main {} {
     variable groups
     variable shift
     variable titleCount
+    variable next
 
     if {$argc != 2} {
 	puts stderr "\nusage: $argv0 <datafile> <outdir>\n"
@@ -178,7 +184,7 @@ proc uni::main {} {
 
     buildTables $data
     puts "X = [llength $pMap]  Y= [llength $pages]  A= [llength $groups]"
-    set size [expr {[llength $pMap] + [llength $pages]*(1<<$shift)}]
+    set size [expr {[llength $pMap]*2 + [llength $pages]*(1<<$shift)}]
     puts "shift = $shift, space = $size"
     puts "title case count = $titleCount"
 
@@ -278,12 +284,12 @@ static CONST int groups\[\] = {"
 
 	# Compute the case conversion type and delta
 
-	if {$totitle ne ""} {
+	if {$totitle} {
 	    if {$totitle == $toupper} {
 		# subtract delta for title or upper
 		set case 4
 		set delta $toupper
-	    } elseif {$toupper ne ""} {
+	    } elseif {$toupper} {
 		# subtract delta for upper, subtract 1 for title
 		set case 5
 		set delta $toupper
@@ -292,11 +298,11 @@ static CONST int groups\[\] = {"
 		set case 3
 		set delta $tolower
 	    }
-	} elseif {$toupper ne ""} {
+	} elseif {$toupper} {
 	    # subtract delta for upper, add delta for lower
 	    set case 6
 	    set delta $toupper
-	} elseif {$tolower ne ""} {
+	} elseif {$tolower} {
 	    # add delta for lower
 	    set case 2
 	    set delta $tolower
@@ -316,15 +322,17 @@ static CONST int groups\[\] = {"
 	}
     }
     puts $f $line
-    puts $f "};
+    puts -nonewline $f "};
 
 /*
  * The following constants are used to determine the category of a
  * Unicode character.
  */
 
-#define UNICODE_CATEGORY_MASK 0X1F
-
+#define UNICODE_CATEGORY_MASK 0x1F
+#define UNICODE_OUT_OF_RANGE "
+    puts $f [format 0x%Xu $next]
+    puts $f "
 enum {
     UNASSIGNED,
     UPPERCASE_LETTER,
@@ -365,7 +373,7 @@ enum {
  */
 
 #define GetCaseType(info) (((info) & 0xE0) >> 5)
-#define GetCategory(info) ((info) & 0x1F)
+#define GetCategory(ch) (GetUniCharInfo(ch) & 0x1F)
 #define GetDelta(info) (((info) > 0) ? ((info) >> 15) : (~(~((info)) >> 15)))
 
 /*
