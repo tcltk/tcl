@@ -1,3 +1,9 @@
+2011-12-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/uniParse.tcl:    [Bug 3444754] string tolower \u01c5 is wrong
+	* generic/tclUniData.c:
+	* tests/utf.test:
+
 2011-11-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/tcltest/tcltest.tcl: [Bug 967195]: Make tcltest work
