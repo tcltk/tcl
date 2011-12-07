@@ -259,8 +259,8 @@ test utf-16.1 {Tcl_UniCharToLower, negative delta} {
     string tolower aA
 } aa
 test utf-16.2 {Tcl_UniCharToLower, positive delta} {
-    string tolower \u0178\u00ff\uA78D
-} \u00ff\u00ff\u0265
+    string tolower \u0178\u00ff\uA78D\u01c5
+} \u00ff\u00ff\u0265\u01c6
 
 test utf-17.1 {Tcl_UniCharToLower, no delta} {
     string tolower !
