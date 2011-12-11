@@ -1,3 +1,8 @@
+2011-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regc_locale.c: [Bug 3457031]: Some Unicode 6.0 chars not
+	* tests/utf.test:        in [:print:] class
+
 2011-12-07  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/uniParse.tcl:    [Bug 3444754] string tolower \u01c5 is wrong
