@@ -282,6 +282,10 @@ test utf-21.2 {unicode alnum char in regc_locale.c} {
     # this returns 1 with Unicode 6 compliance
     list [regexp {^[[:alnum:]]+$} \u1040\u021f\u0220] [regexp {^\w+$} \u1040\u021f\u0220]
 } {1 1}
+test utf-21.3 {unicode print char in regc_locale.c} {
+    # this returns 1 with Unicode 6 compliance
+    regexp {^[[:print:]]+$} \ufbc1
+} 1
 
 test utf-22.1 {TclUniCharIsWordChar} {
     string wordend "xyz123_bar fg" 0
