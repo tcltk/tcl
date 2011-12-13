@@ -1,3 +1,9 @@
+2011-12-13  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCompile.c (TclInitAuxDataTypeTable): Extended to
+	register the DictUpdateInfo structure as an AuxData type. For use
+	by tbcload, tclcompiler.
+
 2011-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/regc_locale.c: [Bug 3457031]: Some Unicode 6.0 chars not
