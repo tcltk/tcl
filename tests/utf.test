@@ -27,9 +27,12 @@ test utf-1.3 {Tcl_UniCharToUtf: 2 byte sequences} {
 test utf-1.4 {Tcl_UniCharToUtf: 3 byte sequences} {
     set x "\u4e4e"
 } [bytestring "\xe4\xb9\x8e"]
-test utf-1.5 {Tcl_UniCharToUtf: negative Tcl_UniChar} {
-    string length [format %c -1]
-} 1
+test utf-1.5 {Tcl_UniCharToUtf: overflowed Tcl_UniChar} {
+    format %c 0x110000
+} [bytestring "\xef\xbf\xbd"]
+test utf-1.6 {Tcl_UniCharToUtf: negative Tcl_UniChar} {
+    format %c -1
+} [bytestring "\xef\xbf\xbd"]
 
 test utf-2.1 {Tcl_UtfToUniChar: low ascii} {
     string length "abc"
@@ -282,6 +285,14 @@ test utf-21.2 {unicode alnum char in regc_locale.c} {
     # this returns 1 with Unicode 6 compliance
     list [regexp {^[[:alnum:]]+$} \u1040\u021f\u0220] [regexp {^\w+$} \u1040\u021f\u0220]
 } {1 1}
+test utf-21.4 {TclUniCharIsGraph} {
+    # [Bug 3464428]
+    string is graph \u0120
+} {1}
+test utf-21.5 {unicode graph char in regc_locale.c} {
+    # [Bug 3464428]
+    regexp {^[[:graph:]]+$} \u0120
+} {1}
 
 test utf-22.1 {TclUniCharIsWordChar} {
     string wordend "xyz123_bar fg" 0
@@ -355,3 +366,7 @@ test utf-25.4 {Tcl_UniCharNcasecmp} teststringobj {
 # cleanup
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:
