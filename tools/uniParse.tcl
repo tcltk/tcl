@@ -30,45 +30,39 @@ namespace eval uni {
 	Cc Cf Co Cs Pc Pd Ps Pe Pi Pf Po Sm Sc Sk So
     };				# Ordered list of character categories, must
 				# match the enumeration in the header file.
-
-    variable titleCount 0;	# Count of the number of title case
-				# characters.  This value is used in the
-				# regular expression code to allocate enough
-				# space for the title case variants.
 }
 
 proc uni::getValue {items index} {
     variable categories
-    variable titleCount
 
     # Extract character info
 
     set category [lindex $items 2]
-    if {[scan [lindex $items 12] %6x toupper] == 1} {
+    if {[scan [lindex $items 12] %x toupper] == 1} {
 	set toupper [expr {$index - $toupper}]
     } else {
 	set toupper 0
     }
-    if {[scan [lindex $items 13] %6x tolower] == 1} {
+    if {[scan [lindex $items 13] %x tolower] == 1} {
 	set tolower [expr {$tolower - $index}]
     } else {
 	set tolower 0
     }
-    if {[scan [lindex $items 14] %6x totitle] == 1} {
+    if {[scan [lindex $items 14] %x totitle] == 1} {
 	set totitle [expr {$index - $totitle}]
-    } else {
+    } elseif {$tolower} {
 	set totitle 0
+    } else {
+	set totitle $toupper
     }
 
     set categoryIndex [lsearch -exact $categories $category]
     if {$categoryIndex < 0} {
 	puts "Unexpected character category: $index($category)"
 	set categoryIndex 0
-    } elseif {$category eq "Lt"} {
-	incr titleCount
     }
 
-    return "$categoryIndex,$toupper,$tolower,$totitle"
+    return [list $categoryIndex $toupper $tolower $totitle]
 }
 
 proc uni::getGroup {value} {
@@ -100,7 +94,7 @@ proc uni::buildTables {data} {
 
     variable pMap {}
     variable pages {}
-    variable groups {{0,0,0,0}}
+    variable groups {{0 0 0 0}}
     variable next 0
     set info {}			;# temporary page info
 
@@ -120,7 +114,7 @@ proc uni::buildTables {data} {
 	set items [split $line \;]
 
 	scan [lindex $items 0] %x index
-	if {$index > 0xFFFF} then {
+	if {$index > 0xffff} then {
 	    # Ignore non-BMP characters, as long as Tcl doesn't support them
 	    continue
 	}
@@ -171,7 +165,6 @@ proc uni::main {} {
     variable pages
     variable groups
     variable shift
-    variable titleCount
     variable next
 
     if {$argc != 2} {
@@ -186,7 +179,6 @@ proc uni::main {} {
     puts "X = [llength $pMap]  Y= [llength $pages]  A= [llength $groups]"
     set size [expr {[llength $pMap]*2 + [llength $pages]*(1<<$shift)}]
     puts "shift = $shift, space = $size"
-    puts "title case count = $titleCount"
 
     set f [open [file join [lindex $argv 1] tclUniData.c] w]
     fconfigure $f -translation lf
@@ -280,7 +272,7 @@ static CONST int groups\[\] = {"
     set line "    "
     set last [expr {[llength $groups] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
-	foreach {type toupper tolower totitle} [split [lindex $groups $i] ,] {}
+	foreach {type toupper tolower totitle} [lindex $groups $i] {}
 
 	# Compute the case conversion type and delta
 
@@ -329,9 +321,9 @@ static CONST int groups\[\] = {"
  * Unicode character.
  */
 
-#define UNICODE_CATEGORY_MASK 0x1F
+#define UNICODE_CATEGORY_MASK 0x1f
 #define UNICODE_OUT_OF_RANGE "
-    puts $f [format 0x%Xu $next]
+    puts $f [format 0x%xu $next]
     puts $f "
 enum {
     UNASSIGNED,
@@ -372,8 +364,8 @@ enum {
  * to do sign extension on right shifts.
  */
 
-#define GetCaseType(info) (((info) & 0xE0) >> 5)
-#define GetCategory(ch) (GetUniCharInfo(ch) & 0x1F)
+#define GetCaseType(info) (((info) & 0xe0) >> 5)
+#define GetCategory(ch) (GetUniCharInfo(ch) & 0x1f)
 #define GetDelta(info) (((info) > 0) ? ((info) >> 15) : (~(~((info)) >> 15)))
 
 /*
