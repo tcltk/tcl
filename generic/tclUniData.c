@@ -775,7 +775,7 @@ static const int groups[] = {
  * Unicode character.
  */
 
-#define UNICODE_CATEGORY_MASK 0x1F
+#define UNICODE_CATEGORY_MASK 0x1f
 #define UNICODE_OUT_OF_RANGE 0x10000u
 
 enum {
@@ -817,8 +817,8 @@ enum {
  * to do sign extension on right shifts.
  */
 
-#define GetCaseType(info) (((info) & 0xE0) >> 5)
-#define GetCategory(ch) (GetUniCharInfo(ch) & 0x1F)
+#define GetCaseType(info) (((info) & 0xe0) >> 5)
+#define GetCategory(ch) (GetUniCharInfo(ch) & 0x1f)
 #define GetDelta(info) (((info) > 0) ? ((info) >> 15) : (~(~((info)) >> 15)))
 
 /*
