@@ -1,3 +1,12 @@
+2011-12-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUtf.c:     [Bug 3464428] string is graph \u0120 is wrong
+	* generic/tclUniData.c:
+	* generic/regc_locale.c:
+	* tests/utf.test:
+	* tools/uniParse.tcl:   clean up some unused stuff, and be more robust
+	against changes in UnicodeData.txt syntax
+
 2011-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/regc_locale.c: [Bug 3457031]: Some Unicode 6.0 chars not
