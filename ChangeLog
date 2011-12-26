@@ -1,3 +1,8 @@
+2011-12-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUniData.c: [Frq 3464401] Support Unicode 6.1
+	* generic/regc_locale.c: (not to be merged until Unicode 6.1 is final!!!)
+
 2011-12-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclUtf.c:     [Bug 3464428] string is graph \u0120 is wrong
