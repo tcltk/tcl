@@ -635,7 +635,7 @@ install-libraries: libraries install-tzdata install-msgs
 		else true; \
 		fi; \
 	    done;
-	@for i in http1.0 opt0.4 encoding ../tcl8 ../tcl8/8.2 ../tcl8/8.3 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6; \
+	@for i in http1.0 opt0.4 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -648,9 +648,7 @@ install-libraries: libraries install-tzdata install-msgs
 		"$(GENERIC_DIR)/tclOO.h" "$(GENERIC_DIR)/tclOODecls.h" \
 		"$(GENERIC_DIR)/tclPlatDecls.h" \
 		"$(GENERIC_DIR)/tclTomMath.h" \
-		"$(GENERIC_DIR)/tclTomMathDecls.h" \
-		"$(TOMMATH_DIR)/tommath_class.h" \
-		"$(TOMMATH_DIR)/tommath_superclass.h" ; \
+		"$(GENERIC_DIR)/tclTomMathDecls.h"; \
 	    do \
 	    $(COPY) "$$i" "$(INCLUDE_INSTALL_DIR)"; \
 	    done;
@@ -673,8 +671,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.4.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.4.4.tm;
-	@echo "Installing package tcltest 2.3.3 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.3.tm;
+	@echo "Installing package tcltest 2.3.4 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.4.tm;
 	@echo "Installing package platform 1.0.10 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.10.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";

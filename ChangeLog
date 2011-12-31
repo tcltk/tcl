@@ -1,3 +1,42 @@
+2011-12-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUtf.c:     [Bug 3464428] string is graph \u0120 is wrong
+	* generic/tclUniData.c:
+	* generic/regc_locale.c:
+	* tests/utf.test:
+	* tools/uniParse.tcl:   clean up some unused stuff, and be more robust
+	against changes in UnicodeData.txt syntax
+
+2011-12-13  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCompile.c (TclInitAuxDataTypeTable): Extended to
+	register the DictUpdateInfo structure as an AuxData type. For use
+	by tbcload, tclcompiler.
+
+2011-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regc_locale.c: [Bug 3457031]: Some Unicode 6.0 chars not
+	* tests/utf.test:        in [:print:] class
+
+2011-12-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/uniParse.tcl:    [Bug 3444754] string tolower \u01c5 is wrong
+	* generic/tclUniData.c:
+	* tests/utf.test:
+
+2011-11-30  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/tcltest/tcltest.tcl: [Bug 967195]: Make tcltest work
+	when tclsh is compiled without using the setargv() function on mingw.
+	(no need to incr the version, since 2.2.10 is never released)
+
+2011-11-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in: don't install tommath_(super)?class.h
+	* unix/Makefile.in: don't install directories like 8.2 and 8.3
+	* generic/tclTomMath.h: [Bug 2991415]: move include tclInt.h from
+	* generic/tclTomMathInt.h: tclTomMath.h to tclTomMathInt.h
+
 2011-11-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/history.tcl (history): Simplify the dance of variable
@@ -1216,6 +1255,10 @@
 
 	* unix/tclLoadDl.c:    [Bug #3216070]: Loading extension libraries
 	* unix/tclLoadDyld.c:  from embedded Tcl applications.
+	***POTENTIAL INCOMPATIBILITY***
+	For extensions which rely on symbols from other extensions being
+	present in the global symbol table. For an example and some discussion
+	of workarounds, see http://stackoverflow.com/q/8330614/301832
 
 2011-03-21  Miguel Sofer  <msofer@users.sf.net>
 
