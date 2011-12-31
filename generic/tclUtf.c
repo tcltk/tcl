@@ -1425,7 +1425,7 @@ Tcl_UniCharIsGraph(
     int ch)			/* Unicode character to test. */
 {
     register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
-    return (((PRINT_BITS >> category) & 1) && ((unsigned char) ch != ' '));
+    return (((PRINT_BITS >> category) & 1) && (ch != ' '));
 }
 
 /*

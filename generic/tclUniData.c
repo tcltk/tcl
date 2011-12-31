@@ -751,7 +751,7 @@ static const int groups[] = {
     7602306, -3964863, 9830530, -6389630, 6881345, 6750273, 6717505,
     2588737, 6619201, 6651969, 6783041, -3178366, 6914113, 6848577,
     -5341054, 6979649, -4259710, 7012417, 7143489, 7110721, 7176257,
-    5, -1834878, 65633, 32931, 65698, 2588802, -3178431, -1834943,
+    5, -1834878, 65633, 32963, 65698, 2588802, -3178431, -1834943,
     -4259775, 353730625, -5341119, 353632321, -354385790, -6389695,
     2261057, 2326593, -353337214, -353238910, -353304446, 6881410,
     6750338, 6717570, 6619266, 6652034, 6783106, -1385430910, 6848642,
@@ -775,7 +775,8 @@ static const int groups[] = {
  * Unicode character.
  */
 
-#define UNICODE_CATEGORY_MASK 0X1F
+#define UNICODE_CATEGORY_MASK 0x1f
+#define UNICODE_OUT_OF_RANGE 0x10000u
 
 enum {
     UNASSIGNED,
@@ -816,8 +817,8 @@ enum {
  * to do sign extension on right shifts.
  */
 
-#define GetCaseType(info) (((info) & 0xE0) >> 5)
-#define GetCategory(info) ((info) & 0x1F)
+#define GetCaseType(info) (((info) & 0xe0) >> 5)
+#define GetCategory(ch) (GetUniCharInfo(ch) & 0x1f)
 #define GetDelta(info) (((info) > 0) ? ((info) >> 15) : (~(~((info)) >> 15)))
 
 /*
