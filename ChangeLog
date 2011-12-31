@@ -1,3 +1,13 @@
+2011-12-30  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/America/Bahia : Update to Olson's tzdata2011n
+	* library/tzdata/America/Havana
+	* library/tzdata/Europe/Kiev
+	* library/tzdata/Europe/Simferopol
+	* library/tzdata/Europe/Uzhgorod
+	* library/tzdata/Europe/Zaporozhye
+	* library/tzdata/Pacific/Fiji
+
 2011-12-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclUtf.c:     [Bug 3464428] string is graph \u0120 is wrong
