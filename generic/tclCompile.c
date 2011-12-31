@@ -3572,6 +3572,7 @@ TclInitAuxDataTypeTable(void)
 
     TclRegisterAuxDataType(&tclForeachInfoType);
     TclRegisterAuxDataType(&tclJumptableInfoType);
+    TclRegisterAuxDataType(&tclDictUpdateInfoType);
 }
 
 /*
