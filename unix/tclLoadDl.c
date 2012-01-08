@@ -210,6 +210,7 @@ UnloadFile(
 {
     void *handle = loadHandle->clientData;
 
+    fprintf(stderr, "dlclose???\n"); fflush(stderr);
     dlclose(handle);
     ckfree(loadHandle);
 }
