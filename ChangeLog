@@ -1,3 +1,12 @@
+2012-01-08  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (ReadZoneinfoFile): Corrected a bug where loading
+	* tests/clock.test (clock-56.4):        zoneinfo would fail if one
+	timezone abbreviation was a proper tail of another, and zic used the
+	same bytes of the file to represent both of them.  Added a test case
+	for the bug, using the same data that caused the observed failure
+	"in the wild." [Bug 3470928]
+
 2011-12-30  Venkat Iyer <venkat@comit.com>
 
 	* library/tzdata/America/Bahia : Update to Olson's tzdata2011n
