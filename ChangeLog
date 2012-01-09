@@ -1,3 +1,10 @@
+2012-01-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUtf.c:      [Bug 3464428] string is graph \u0120 is wrong
+	* generic/regc_locale.c: Add table for Unicode [:cntrl:] class
+	* tools/uniClass.tcl:    Generate Unicode [:cntrl:] class table
+	* tests/utf.test:
+
 2012-01-08  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl (ReadZoneinfoFile): Corrected a bug where loading
