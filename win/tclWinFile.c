@@ -1550,14 +1550,25 @@ NativeAccess(
 	return -1;
     }
 
-    if ((mode & W_OK)
-	    && (tclWinProcs->getFileSecurityProc == NULL)
-	    && (attr & FILE_ATTRIBUTE_READONLY)) {
+    if (mode == F_OK) {
 	/*
-	 * We don't have the advanced 'getFileSecurityProc', and our
-	 * attributes say the file is not writable. If we do have
-	 * 'getFileSecurityProc', we'll do a more robust XP-related check
-	 * below.
+	 * File exists, nothing else to check.
+	 */
+
+	return 0;
+    }
+
+    if ((mode & W_OK)
+	&& (attr & FILE_ATTRIBUTE_READONLY)
+	&& !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+	/*
+	 * The attributes say the file is not writable.	 If the file is a
+	 * regular file (i.e., not a directory), then the file is not
+	 * writable, full stop.	 For directories, the read-only bit is
+	 * (mostly) ignored by Windows, so we can't ascertain anything about
+	 * directory access from the attrib data.  However, if we have the
+	 * advanced 'getFileSecurityProc', then more robust ACL checks
+	 * will be done below.
 	 */
 
 	Tcl_SetErrno(EACCES);
@@ -1587,9 +1598,12 @@ NativeAccess(
      * readable' is 5-6 times slower than 'file exists').
      */
 
-    if ((mode != F_OK) && (tclWinProcs->getFileSecurityProc != NULL)) {
+    if (tclWinProcs->getFileSecurityProc != NULL) {
 	SECURITY_DESCRIPTOR *sdPtr = NULL;
 	unsigned long size;
+	SID *pSid = 0;
+	BOOL SidDefaulted;
+	SID_IDENTIFIER_AUTHORITY samba_unmapped = { 0, 0, 0, 0, 0, 22 };
 	GENERIC_MAPPING genMap;
 	HANDLE hToken = NULL;
 	DWORD desiredAccess = 0, grantedAccess = 0;
@@ -1605,7 +1619,8 @@ NativeAccess(
 	size = 0;
 	(*tclWinProcs->getFileSecurityProc)(nativePath,
 		OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION
-		| DACL_SECURITY_INFORMATION, 0, 0, &size);
+		| DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION,
+		0, 0, &size);
 
 	/*
 	 * Should have failed with ERROR_INSUFFICIENT_BUFFER
@@ -1638,12 +1653,33 @@ NativeAccess(
 
 	if (!(*tclWinProcs->getFileSecurityProc)(nativePath,
 		OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION
-		| DACL_SECURITY_INFORMATION, sdPtr, size, &size)) {
+		| DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION,
+		sdPtr, size, &size)) {
 	    /*
 	     * Error getting owner SD
 	     */
 
 	    goto accessError;
+	}
+
+	/*
+	 * As of Samba 3.0.23 (10-Jul-2006), unmapped users and groups are
+	 * assigned to SID domains S-1-22-1 and S-1-22-2, where "22" is the
+	 * top-level authority.	 If the file owner and group is unmapped then
+	 * the ACL access check below will only test against world access,
+	 * which is likely to be more restrictive than the actual access
+	 * restrictions.  Since the ACL tests are more likely wrong than
+	 * right, skip them.  Moreover, the unix owner access permissions are
+	 * usually mapped to the Windows attributes, so if the user is the
+	 * file owner then the attrib checks above are correct (as far as they
+	 * go).
+	 */
+
+	if(!GetSecurityDescriptorOwner(sdPtr,&pSid,&SidDefaulted) ||
+	   memcmp(GetSidIdentifierAuthority(pSid),&samba_unmapped,
+		  sizeof(SID_IDENTIFIER_AUTHORITY))==0) {
+	    HeapFree(GetProcessHeap(), 0, sdPtr);
+	    return 0; /* Attrib tests say access allowed. */
 	}
 
 	/*
@@ -1723,17 +1759,6 @@ NativeAccess(
 	    return -1;
 	}
 
-	/*
-	 * For directories the above checks are ok. For files, though, we must
-	 * still check the 'attr' value.
-	 */
-
-	if ((mode & W_OK)
-		&& !(attr & FILE_ATTRIBUTE_DIRECTORY)
-		&& (attr & FILE_ATTRIBUTE_READONLY)) {
-	    Tcl_SetErrno(EACCES);
-	    return -1;
-	}
     }
     return 0;
 }
