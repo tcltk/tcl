@@ -157,6 +157,9 @@ This option gets the current error status of the given socket.  This
 is useful when you need to determine if an asynchronous connect
 operation succeeded.  If there was an error, the error message is
 returned.  If there was no error, an empty string is returned.
+
+Note that the error status is reset by the read operation; this mimics
+the underlying getsockopt(SO_ERROR) call.
 .TP
 \fB\-sockname\fR
 .

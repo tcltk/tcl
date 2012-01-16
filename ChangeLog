@@ -1,3 +1,28 @@
+2012-01-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/http/http.tcl (http::Connect): [Bug 3472316]: Ensure that we
+	only try to read the socket error exactly once.
+
+2012-01-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/tclvars.n: [Bug 3466506]: Document more environment variables.
+
+2012-01-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUtf.c:      [Bug 3464428]: string is graph \u0120 is wrong
+	* generic/regc_locale.c: Add table for Unicode [:cntrl:] class
+	* tools/uniClass.tcl:    Generate Unicode [:cntrl:] class table
+	* tests/utf.test:
+
+2012-01-08  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (ReadZoneinfoFile): [Bug 3470928]: Corrected a bug
+	* tests/clock.test (clock-56.4):        where loading zoneinfo would
+	fail if one timezone abbreviation was a proper tail of another, and
+	zic used the same bytes of the file to represent both of them. Added a
+	test case for the bug, using the same data that caused the observed
+	failure "in the wild."
+
 2011-12-30  Venkat Iyer <venkat@comit.com>
 
 	* library/tzdata/America/Bahia : Update to Olson's tzdata2011n
@@ -10,18 +35,18 @@
 
 2011-12-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclUtf.c:     [Bug 3464428] string is graph \u0120 is wrong
+	* generic/tclUtf.c:     [Bug 3464428]: string is graph \u0120 is wrong.
 	* generic/tclUniData.c:
 	* generic/regc_locale.c:
 	* tests/utf.test:
-	* tools/uniParse.tcl:   clean up some unused stuff, and be more robust
+	* tools/uniParse.tcl:   Clean up some unused stuff, and be more robust
 	against changes in UnicodeData.txt syntax
 
 2011-12-13  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclCompile.c (TclInitAuxDataTypeTable): Extended to
-	register the DictUpdateInfo structure as an AuxData type. For use
-	by tbcload, tclcompiler.
+	* generic/tclCompile.c (TclInitAuxDataTypeTable): Extended to register
+	the DictUpdateInfo structure as an AuxData type. For use by tbcload,
+	tclcompiler.
 
 2011-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -30,7 +55,7 @@
 
 2011-12-07  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tools/uniParse.tcl:    [Bug 3444754] string tolower \u01c5 is wrong
+	* tools/uniParse.tcl:    [Bug 3444754]: string tolower \u01c5 is wrong
 	* generic/tclUniData.c:
 	* tests/utf.test:
 

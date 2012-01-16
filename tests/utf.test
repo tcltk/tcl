@@ -309,6 +309,34 @@ test utf-21.5 {unicode graph char in regc_locale.c} {
     # [Bug 3464428]
     regexp {^[[:graph:]]+$} \u0120
 } {1}
+test utf-21.6 {TclUniCharIsGraph} {
+    # [Bug 3464428]
+    string is graph \u00a0
+} {0}
+test utf-21.7 {unicode graph char in regc_locale.c} {
+    # [Bug 3464428]
+    regexp {[[:graph:]]} \u0020\u00a0\u2028\u2029
+} {0}
+test utf-21.8 {TclUniCharIsPrint} {
+    # [Bug 3464428]
+    string is print \u0009
+} {0}
+test utf-21.9 {unicode print char in regc_locale.c} {
+    # [Bug 3464428]
+    regexp {[[:print:]]} \u0009
+} {0}
+test utf-21.10 {unicode print char in regc_locale.c} {
+    # [Bug 3464428]
+    regexp {[[:print:]]} \u0009
+} {0}
+test utf-21.11 {TclUniCharIsControl} {
+    # [Bug 3464428]
+    string is control \u00ad
+} {1}
+test utf-21.12 {unicode control char in regc_locale.c} {
+    # [Bug 3464428]
+    regexp {^[[:cntrl:]]$} \u00ad
+} {1}
 
 test utf-22.1 {TclUniCharIsWordChar} {
     string wordend "xyz123_bar fg" 0
