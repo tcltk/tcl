@@ -707,6 +707,7 @@ proc http::cleanup {token} {
 proc http::Connect {token} {
     variable $token
     upvar 0 $token state
+    set err "due to unexpected EOF"
     if {[eof $state(sock)] ||
 	    [string length [set err [fconfigure $state(sock) -error]]]} {
 	Finish $token "connect failed $err" 1
