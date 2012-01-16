@@ -87,6 +87,7 @@ puts "/*
 
 foreach {type desc} {
     alpha "alphabetic characters"
+    control "control characters"
     digit "decimal digit characters"
     punct "punctuation characters"
     space "white space characters"
