@@ -1,3 +1,8 @@
+2012-01-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/http/http.tcl (http::Connect): [Bug 3472316]: Ensure that we
+	only try to read the socket error exactly once.
+
 2012-01-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclUtf.c:      [Bug 3464428] string is graph \u0120 is wrong
