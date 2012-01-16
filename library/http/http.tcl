@@ -867,12 +867,12 @@ proc http::cleanup {token} {
 proc http::Connect {token} {
     variable $token
     upvar 0 $token state
-    global errorInfo errorCode
+    set err "due to unexpected EOF"
     if {
 	[eof $state(sock)] ||
-	[string length [fconfigure $state(sock) -error]]
+	[set err [fconfigure $state(sock) -error]] ne ""
     } {
-	Finish $token "connect failed [fconfigure $state(sock) -error]" 1
+	Finish $token "connect failed $err" 1
     } else {
 	set state(status) connect
 	fileevent $state(sock) writable {}
