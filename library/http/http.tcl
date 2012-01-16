@@ -867,6 +867,7 @@ proc http::cleanup {token} {
 proc http::Connect {token} {
     variable $token
     upvar 0 $token state
+    set err "due to unexpected EOF"
     if {
 	[eof $state(sock)] ||
 	[set err [fconfigure $state(sock) -error]] ne ""
