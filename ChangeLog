@@ -1,3 +1,12 @@
+2012-01-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:        [Bug-3474726]: Eliminate detection of struct
+	* generic/tclWinPort.h: _stat32i64, just use _stati64 in combination
+	* generic/tclFCmd.c:    with _USE_32BIT_TIME_T, which is the same then.
+	* generic/tclTest.c:    Only keep _stat32i64 usage for cygwin, so it
+	* win/configure.in:     will not conflict with cygwin's own struct stat.
+	* win/configure:
+
 2012-01-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:	[Bug 3475667] Prevent buffer read overflow.
