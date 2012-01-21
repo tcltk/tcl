@@ -282,7 +282,7 @@ Tcl_RegexpObjCmd(
 	 * start of the string unless the previous character is a newline.
 	 */
 
-	if ((offset == 0) || ((offset > 0) &&
+	if ((offset == 0) || ((offset > 0) && (offset < stringLength) &&
 		(Tcl_GetUniChar(objPtr, offset-1) == (Tcl_UniChar) '\n'))) {
 	    eflags = 0;
 	} else {
