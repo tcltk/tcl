@@ -360,7 +360,7 @@ typedef struct stati64 Tcl_StatBuf;
 #      else /* __BORLANDC__ */
 #         if defined(_WIN64)
 typedef struct __stat64 Tcl_StatBuf;
-#         elif (defined(_MSC_VER) && (_MSC_VER < 1400))
+#         elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
 typedef struct _stati64	Tcl_StatBuf;
 #         else
 typedef struct _stat32i64 Tcl_StatBuf;
