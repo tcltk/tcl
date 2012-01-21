@@ -225,26 +225,6 @@ if test "$tcl_cv_cast_to_union" = "yes"; then
             [Defined when compiler supports casting to union type.])
 fi
 
-# Check to see if struct _stat32i64 exists in mingw's sys/stat.h
-
-AC_CACHE_CHECK(if struct _stat32i64 missing,
-    tcl_struct_stat32i64,
-AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/stat.h>
-],
-[
-  struct _stat32i64 foo;
-],
-        tcl_struct_stat32i64=no,
-        tcl_struct_stat32i64=yes)
-)
-if test "$tcl_struct_stat32i64" = "yes" ; then
-    AC_DEFINE(HAVE_NO_STRUCT_STAT32I64, 1,
-            [Defined when sys/stat.h is missing struct _stat32i64])
-fi
-
-
 # See if declarations like FINDEX_INFO_LEVELS are
 # missing from winbase.h. This is known to be
 # a problem with VC++ 5.2.
