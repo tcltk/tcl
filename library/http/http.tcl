@@ -22,7 +22,7 @@
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
 # in Makefiles
-package provide http 2.5.5
+package provide http 2.5.6
 
 namespace eval http {
     variable http
@@ -707,6 +707,7 @@ proc http::cleanup {token} {
 proc http::Connect {token} {
     variable $token
     upvar 0 $token state
+    set err "due to unexpected EOF"
     if {[eof $state(sock)] ||
 	    [string length [set err [fconfigure $state(sock) -error]]]} {
 	Finish $token "connect failed $err" 1
