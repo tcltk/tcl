@@ -114,7 +114,7 @@ proc uni::buildTables {data} {
 	set items [split $line \;]
 
 	scan [lindex $items 0] %x index
-	if {$index > 0xffff} then {
+	if {$index > 0x2ffff} then {
 	    # Ignore non-BMP characters, as long as Tcl doesn't support them
 	    continue
 	}
@@ -173,7 +173,7 @@ proc uni::main {} {
 
     buildTables $data
     puts "X = [llength $pMap]  Y= [llength $pages]  A= [llength $groups]"
-    set size [expr {[llength $pMap]*2 + [llength $pages]*(1<<$shift)}]
+    set size [expr {[llength $pMap]*2 + ([llength $pages]<<$shift)}]
     puts "shift = $shift, space = $size"
 
     set f [open [file join [lindex $argv 1] tclUniData.c] w]
@@ -207,6 +207,14 @@ static CONST unsigned short pageMap\[\] = {"
     set line "    "
     set last [expr {[llength $pMap] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
+	if {$i == [expr {0x10000 >> $shift}]} {
+	    set line [string trimright $line " \t,"]
+	    puts $f $line
+	    set lastpage [expr {[lindex $line end] >> $shift}]
+	    puts stdout "lastpage: $lastpage"
+	    puts $f "#if TCL_UTF_MAX > 3"
+	    set line "    ,"
+	}
 	append line [lindex $pMap $i]
 	if {$i != $last} {
 	    append line ", "
@@ -217,6 +225,7 @@ static CONST unsigned short pageMap\[\] = {"
 	}
     }
     puts $f $line
+    puts $f "#endif /* TCL_UTF_MAX > 3 */"
     puts $f "};
 
 /*
@@ -231,6 +240,11 @@ static CONST unsigned char groupMap\[\] = {"
     for {set i 0} {$i <= $lasti} {incr i} {
 	set page [lindex $pages $i]
 	set lastj [expr {[llength $page] - 1}]
+	if {$i == ($lastpage + 1)} {
+	    puts $f [string trimright $line " \t,"]
+	    puts $f "#if TCL_UTF_MAX > 3"
+	    set line "    ,"
+	}
 	for {set j 0} {$j <= $lastj} {incr j} {
 	    append line [lindex $page $j]
 	    if {$j != $lastj || $i != $lasti} {
@@ -243,6 +257,7 @@ static CONST unsigned char groupMap\[\] = {"
 	}
     }
     puts $f $line
+    puts $f "#endif /* TCL_UTF_MAX > 3 */"
     puts $f "};
 
 /*
