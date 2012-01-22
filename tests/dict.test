@@ -214,9 +214,7 @@ test dict-9.2 {dict exists command} {dict exists {a b} b} 0
 test dict-9.3 {dict exists command} {dict exists {a {b c}} a b} 1
 test dict-9.4 {dict exists command} {dict exists {a {b c}} a c} 0
 test dict-9.5 {dict exists command} {dict exists {a {b c}} b c} 0
-test dict-9.6 {dict exists command} -returnCodes error -body {
-    dict exists {a {b c d}} a c
-} -result {missing value to go with key}
+test dict-9.6 {dict exists command} {dict exists {a {b c d}} a c} 0
 test dict-9.7 {dict exists command} -returnCodes error -body {
     dict exists
 } -result {wrong # args: should be "dict exists dictionary key ?key ...?"}
