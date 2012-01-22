@@ -1,3 +1,11 @@
+2012-01-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/uniClass.tcl:    [Frq 3473670]: Various Unicode-related 
+	* tools/uniParse.tcl:    speedups/robustness. Enhanced tools to
+	* generic/tclUniData.c:  be able to handle characters > 0xffff
+	* generic/tclUtf.c:      Done in all branches in order to simplify
+	* generic/regc_locale.c: merges for new Unicode versions (such as 6.1)
+
 2012-01-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:        [Bug-3474726]: Eliminate detection of struct
