@@ -1,6 +1,13 @@
+2012-01-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (DictExistsCmd): [Bug 3475264]: Ensure that
+	errors only ever happen when insufficient arguments are supplied, and
+	not when a path doesn't exist or a dictionary is poorly formatted (the
+	two cases can't be easily distinguished).
+
 2012-01-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h:        [Bug-3474726]: Eliminate detection of struct
+	* generic/tcl.h:        [Bug 3474726]: Eliminate detection of struct
 	* generic/tclWinPort.h: _stat32i64, just use _stati64 in combination
 	* generic/tclFCmd.c:    with _USE_32BIT_TIME_T, which is the same then.
 	* generic/tclTest.c:    Only keep _stat32i64 usage for cygwin, so it
@@ -9,7 +16,7 @@
 
 2012-01-21  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdMZ.c:	[Bug 3475667] Prevent buffer read overflow.
+	* generic/tclCmdMZ.c:	[Bug 3475667]: Prevent buffer read overflow.
 	Thanks to "sebres" for the report and fix.
 
 2012-01-17  Donal K. Fellows  <dkf@users.sf.net>
@@ -31,7 +38,7 @@
 
 2012-01-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclUtf.c:      [Bug 3464428] string is graph \u0120 is wrong
+	* generic/tclUtf.c:      [Bug 3464428]: string is graph \u0120 is wrong
 	* generic/regc_locale.c: Add table for Unicode [:cntrl:] class
 	* tools/uniClass.tcl:    Generate Unicode [:cntrl:] class table
 	* tests/utf.test:
