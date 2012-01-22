@@ -15,6 +15,11 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#ifndef _WIN64
+/* See [Bug 2935503]: file mtime sets wrong time */
+#   define _USE_32BIT_TIME_T
+#endif
+
 #undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
