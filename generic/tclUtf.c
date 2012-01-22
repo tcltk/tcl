@@ -1125,10 +1125,9 @@ Tcl_UniCharToUpper(
     int info = GetUniCharInfo(ch);
 
     if (GetCaseType(info) & 0x04) {
-	return (Tcl_UniChar) (ch - GetDelta(info));
-    } else {
-	return ch;
+	ch -= GetDelta(info);
     }
+    return (Tcl_UniChar) ch;
 }
 
 /*
@@ -1154,10 +1153,9 @@ Tcl_UniCharToLower(
     int info = GetUniCharInfo(ch);
 
     if (GetCaseType(info) & 0x02) {
-	return (Tcl_UniChar) (ch + GetDelta(info));
-    } else {
-	return ch;
+	ch += GetDelta(info);
     }
+    return (Tcl_UniChar) ch;
 }
 
 /*
@@ -1188,12 +1186,11 @@ Tcl_UniCharToTitle(
 	 * Subtract or add one depending on the original case.
 	 */
 
-	return (Tcl_UniChar) (ch + ((mode & 0x4) ? -1 : 1));
+	ch += ((mode & 0x4) ? -1 : 1);
     } else if (mode == 0x4) {
-	return (Tcl_UniChar) (ch - GetDelta(info));
-    } else {
-	return ch;
+	ch -= GetDelta(info);
     }
+    return (Tcl_UniChar) ch;
 }
 
 /*
