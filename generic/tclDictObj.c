@@ -103,7 +103,7 @@ static const EnsembleImplMap implementationMap[] = {
     {"unset",	DictUnsetCmd, NULL, NULL, NULL, 0 },
     {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL, 0 },
     {"values",	DictValuesCmd, NULL, NULL, NULL, 0 },
-    {"with",	DictWithCmd, NULL, NULL, NULL, 0 },
+    {"with",	DictWithCmd,	TclCompileDictWithCmd, NULL, NULL, 0 },
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -1982,7 +1982,6 @@ DictExistsCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr;
-    int result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary key ?key ...?");
@@ -1991,18 +1990,13 @@ DictExistsCmd(
 
     dictPtr = TclTraceDictPath(interp, objv[1], objc-3, objv+2,
 	    DICT_PATH_EXISTS);
-    if (dictPtr == NULL) {
-	return TCL_ERROR;
-    }
-    if (dictPtr == DICT_PATH_NON_EXISTENT) {
+    if (dictPtr == NULL || dictPtr == DICT_PATH_NON_EXISTENT
+	    || Tcl_DictObjGet(interp, dictPtr, objv[objc-1],
+		    &valuePtr) != TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
-	return TCL_OK;
+    } else {
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(valuePtr != NULL));
     }
-    result = Tcl_DictObjGet(interp, dictPtr, objv[objc-1], &valuePtr);
-    if (result != TCL_OK) {
-	return result;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(valuePtr != NULL));
     return TCL_OK;
 }
 
@@ -3110,9 +3104,7 @@ DictWithCmd(
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *dictPtr, *keysPtr, *keyPtr = NULL, *valPtr = NULL, *pathPtr;
-    Tcl_DictSearch s;
-    int done;
+    Tcl_Obj *dictPtr, *keysPtr, *pathPtr;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVar ?key ...? script");
@@ -3127,38 +3119,12 @@ DictWithCmd(
     if (dictPtr == NULL) {
 	return TCL_ERROR;
     }
-    if (objc > 3) {
-	dictPtr = TclTraceDictPath(interp, dictPtr, objc-3, objv+2,
-		DICT_PATH_READ);
-	if (dictPtr == NULL) {
-	    return TCL_ERROR;
-	}
-    }
 
-    /*
-     * Go over the list of keys and write each corresponding value to a
-     * variable in the current context with the same name. Also keep a copy of
-     * the keys so we can write back properly later on even if the dictionary
-     * has been structurally modified.
-     */
-
-    if (Tcl_DictObjFirst(interp, dictPtr, &s, &keyPtr, &valPtr,
-	    &done) != TCL_OK) {
+    keysPtr = TclDictWithInit(interp, dictPtr, objc-3, objv+2);
+    if (keysPtr == NULL) {
 	return TCL_ERROR;
     }
-
-    TclNewObj(keysPtr);
     Tcl_IncrRefCount(keysPtr);
-
-    for (; !done ; Tcl_DictObjNext(&s, &keyPtr, &valPtr, &done)) {
-	Tcl_ListObjAppendElement(NULL, keysPtr, keyPtr);
-	if (Tcl_ObjSetVar2(interp, keyPtr, NULL, valPtr,
-		TCL_LEAVE_ERR_MSG) == NULL) {
-	    TclDecrRefCount(keysPtr);
-	    Tcl_DictObjDone(&s);
-	    return TCL_ERROR;
-	}
-    }
 
     /*
      * Execute the body, while making the invoking context available to the
@@ -3183,55 +3149,200 @@ FinalizeDictWith(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj **keyv, *leafPtr, *dictPtr, *valPtr;
-    int keyc, i, allocdict = 0;
+    Tcl_Obj **pathv;
+    int pathc;
     Tcl_InterpState state;
     Tcl_Obj *varName = data[0];
     Tcl_Obj *keysPtr = data[1];
     Tcl_Obj *pathPtr = data[2];
+    Var *varPtr, *arrayPtr;
 
     if (result == TCL_ERROR) {
 	Tcl_AddErrorInfo(interp, "\n    (body of \"dict with\")");
     }
 
     /*
+     * Save the result state; TDWF doesn't guarantee to not modify that on
+     * TCL_OK result.
+     */
+
+    state = Tcl_SaveInterpState(interp, result);
+    if (pathPtr != NULL) {
+	Tcl_ListObjGetElements(NULL, pathPtr, &pathc, &pathv);
+    } else {
+	pathc = 0;
+	pathv = NULL;
+    }
+
+    /*
+     * Pack from local variables back into the dictionary.
+     */
+
+    varPtr = TclObjLookupVarEx(interp, varName, NULL, TCL_LEAVE_ERR_MSG, "set",
+	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+    if (varPtr == NULL) {
+	result = TCL_ERROR;
+    } else {
+	result = TclDictWithFinish(interp, varPtr, arrayPtr, varName, NULL, -1,
+		pathc, pathv, keysPtr);
+    }
+
+    /*
+     * Tidy up and return the real result (unless we had an error).
+     */
+
+    TclDecrRefCount(varName);
+    TclDecrRefCount(keysPtr);
+    if (pathPtr != NULL) {
+	TclDecrRefCount(pathPtr);
+    }
+    if (result != TCL_OK) {
+	Tcl_DiscardInterpState(state);
+	return TCL_ERROR;
+    }
+    return Tcl_RestoreInterpState(interp, state);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDictWithInit --
+ *
+ *	Part of the core of [dict with]. Pokes into a dictionary and converts
+ *	the mappings there into assignments to (presumably) local variables.
+ *	Returns a list of all the names that were mapped so that removal of
+ *	either the variable or the dictionary entry won't surprise us when we
+ *	come to stuffing everything back.
+ *
+ * Result:
+ *	List of mapped names, or NULL if there was an error.
+ *
+ * Side effects:
+ *	Assigns to variables, so potentially legion due to traces.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclDictWithInit(
+    Tcl_Interp *interp,
+    Tcl_Obj *dictPtr,
+    int pathc,
+    Tcl_Obj *const pathv[])
+{
+    Tcl_DictSearch s;
+    Tcl_Obj *keyPtr, *valPtr, *keysPtr;
+    int done;
+
+    if (pathc > 0) {
+	dictPtr = TclTraceDictPath(interp, dictPtr, pathc, pathv,
+		DICT_PATH_READ);
+	if (dictPtr == NULL) {
+	    return NULL;
+	}
+    }
+
+    /*
+     * Go over the list of keys and write each corresponding value to a
+     * variable in the current context with the same name. Also keep a copy of
+     * the keys so we can write back properly later on even if the dictionary
+     * has been structurally modified.
+     */
+
+    if (Tcl_DictObjFirst(interp, dictPtr, &s, &keyPtr, &valPtr,
+	    &done) != TCL_OK) {
+	return NULL;
+    }
+
+    TclNewObj(keysPtr);
+
+    for (; !done ; Tcl_DictObjNext(&s, &keyPtr, &valPtr, &done)) {
+	Tcl_ListObjAppendElement(NULL, keysPtr, keyPtr);
+	if (Tcl_ObjSetVar2(interp, keyPtr, NULL, valPtr,
+		TCL_LEAVE_ERR_MSG) == NULL) {
+	    TclDecrRefCount(keysPtr);
+	    Tcl_DictObjDone(&s);
+	    return NULL;
+	}
+    }
+
+    return keysPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDictWithFinish --
+ *
+ *	Part of the core of [dict with]. Reassembles the piece of the dict (in
+ *	varName, location given by pathc/pathv) from the variables named in
+ *	the keysPtr argument. NB, does not try to preserve errors or manage
+ *	argument lifetimes.
+ *
+ * Result:
+ *	TCL_OK if we succeeded, or TCL_ERROR if we failed.
+ *
+ * Side effects:
+ *	Assigns to a variable, so potentially legion due to traces. Updates
+ *	the dictionary in the named variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclDictWithFinish(
+    Tcl_Interp *interp,		/* Command interpreter in which variable
+				 * exists. Used for state management, traces
+				 * and error reporting. */
+    Var *varPtr,		/* Reference to the variable holding the
+				 * dictionary. */
+    Var *arrayPtr,		/* Reference to the array containing the
+				 * variable, or NULL if the variable is a
+				 * scalar. */
+    Tcl_Obj *part1Ptr,		/* Name of an array (if part2 is non-NULL) or
+				 * the name of a variable. NULL if the 'index'
+				 * parameter is >= 0 */
+    Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
+				 * in the array part1. */
+    int index,			/* Index into the local variable table of the
+				 * variable, or -1. Only used when part1Ptr is
+				 * NULL. */
+    int pathc,			/* The number of elements in the path into the
+				 * dictionary. */
+    Tcl_Obj *const pathv[],	/* The elements of the path to the subdict. */
+    Tcl_Obj *keysPtr)		/* List of keys to be synchronized. This is
+				 * the result value from TclDictWithInit. */
+{
+    Tcl_Obj *dictPtr, *leafPtr, *valPtr;
+    int i, allocdict, keyc;
+    Tcl_Obj **keyv;
+
+    /*
      * If the dictionary variable doesn't exist, drop everything silently.
      */
 
-    dictPtr = Tcl_ObjGetVar2(interp, varName, NULL, 0);
+    dictPtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
+	    TCL_LEAVE_ERR_MSG, index);
     if (dictPtr == NULL) {
-	TclDecrRefCount(varName);
-	TclDecrRefCount(keysPtr);
-	if (pathPtr) {
-	    TclDecrRefCount(pathPtr);
-	}
-	return result;
+	return TCL_OK;
     }
 
     /*
      * Double-check that it is still a dictionary.
      */
 
-    state = Tcl_SaveInterpState(interp, result);
     if (Tcl_DictObjSize(interp, dictPtr, &i) != TCL_OK) {
-	TclDecrRefCount(varName);
-	TclDecrRefCount(keysPtr);
-	if (pathPtr) {
-	    TclDecrRefCount(pathPtr);
-	}
-	Tcl_DiscardInterpState(state);
 	return TCL_ERROR;
     }
 
     if (Tcl_IsShared(dictPtr)) {
 	dictPtr = Tcl_DuplicateObj(dictPtr);
 	allocdict = 1;
+    } else {
+	allocdict = 0;
     }
 
-    if (pathPtr != NULL) {
-	Tcl_Obj **pathv;
-	int pathc;
-
+    if (pathc > 0) {
 	/*
 	 * Want to get to the dictionary which we will update; need to do
 	 * prepare-for-update de-sharing along the path *but* avoid generating
@@ -3241,26 +3352,19 @@ FinalizeDictWith(
 	 * perfectly efficient (but no memory should be leaked).
 	 */
 
-	Tcl_ListObjGetElements(NULL, pathPtr, &pathc, &pathv);
 	leafPtr = TclTraceDictPath(interp, dictPtr, pathc, pathv,
 		DICT_PATH_EXISTS | DICT_PATH_UPDATE);
-	TclDecrRefCount(pathPtr);
 	if (leafPtr == NULL) {
-	    TclDecrRefCount(varName);
-	    TclDecrRefCount(keysPtr);
 	    if (allocdict) {
 		TclDecrRefCount(dictPtr);
 	    }
-	    Tcl_DiscardInterpState(state);
 	    return TCL_ERROR;
 	}
 	if (leafPtr == DICT_PATH_NON_EXISTENT) {
-	    TclDecrRefCount(varName);
-	    TclDecrRefCount(keysPtr);
 	    if (allocdict) {
 		TclDecrRefCount(dictPtr);
 	    }
-	    return Tcl_RestoreInterpState(interp, state);
+	    return TCL_OK;
 	}
     } else {
 	leafPtr = dictPtr;
@@ -3286,14 +3390,13 @@ FinalizeDictWith(
 	    Tcl_DictObjPut(NULL, leafPtr, keyv[i], valPtr);
 	}
     }
-    TclDecrRefCount(keysPtr);
 
     /*
      * Ensure that none of the dictionaries in the chain still have a string
      * rep.
      */
 
-    if (pathPtr != NULL) {
+    if (pathc > 0) {
 	InvalidateDictChain(leafPtr);
     }
 
@@ -3301,13 +3404,14 @@ FinalizeDictWith(
      * Write back the outermost dictionary to the variable.
      */
 
-    if (Tcl_ObjSetVar2(interp, varName, NULL, dictPtr,
-	    TCL_LEAVE_ERR_MSG) == NULL) {
-	Tcl_DiscardInterpState(state);
+    if (TclPtrSetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr, dictPtr,
+	    TCL_LEAVE_ERR_MSG, index) == NULL) {
+	if (allocdict) {
+	    TclDecrRefCount(dictPtr);
+	}
 	return TCL_ERROR;
     }
-    TclDecrRefCount(varName);
-    return Tcl_RestoreInterpState(interp, state);
+    return TCL_OK;
 }
 
 /*

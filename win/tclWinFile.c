@@ -12,9 +12,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#ifndef _WIN64
-#   define _USE_32BIT_TIME_T
-#endif
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
 #include <winioctl.h>
@@ -1288,7 +1285,7 @@ WinIsReserved(
  *	because for NTFS root volumes, the getFileAttributesProc returns a
  *	'hidden' attribute when it should not.
  *
- *	We never make any calss to a 'get attributes' routine here, since we
+ *	We never make any calls to a 'get attributes' routine here, since we
  *	have arranged things so that our caller already knows such
  *	information.
  *
@@ -2178,8 +2175,8 @@ NativeStatMode(
      * positions.
      */
 
-    mode |= (mode & 0x0700) >> 3;
-    mode |= (mode & 0x0700) >> 6;
+    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 3;
+    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 6;
     return (unsigned short) mode;
 }
 
