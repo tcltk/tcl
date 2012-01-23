@@ -15,7 +15,10 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <math.h>
+#ifndef _WIN64
+/* See [Bug 2935503]: file mtime sets wrong time */
+#   define _USE_32BIT_TIME_T
+#endif
 
 #undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
@@ -23,6 +26,8 @@
 #endif
 #include "tclInt.h"
 #include "tclOO.h"
+#include <math.h>
+
 /*
  * Required for Testregexp*Cmd
  */
