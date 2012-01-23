@@ -810,7 +810,7 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	@for i in opt0.4 http1.0 encoding ../tcl8 ../tcl8/8.3 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6; \
+	@for i in opt0.4 http1.0 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6; \
 	    do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -829,8 +829,8 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/http1.0; \
 	    done;
-	@echo "Installing package http 2.8.2 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.2.tm;
+	@echo "Installing package http 2.8.3 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.3.tm;
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/";
 	@for i in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
@@ -838,8 +838,8 @@ install-libraries: libraries
 	    done;
 	@echo "Installing package msgcat 1.4.4 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.4.4.tm;
-	@echo "Installing package tcltest 2.3.3 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.3.tm;
+	@echo "Installing package tcltest 2.3.4 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.4.tm;
 
 	@echo "Installing package platform 1.0.10 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.10.tm;

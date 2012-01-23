@@ -26,27 +26,26 @@
 #define ALPHA_BITS ((1 << UPPERCASE_LETTER) | (1 << LOWERCASE_LETTER) \
 	| (1 << TITLECASE_LETTER) | (1 << MODIFIER_LETTER) | (1<<OTHER_LETTER))
 
+#define CONTROL_BITS ((1 << CONTROL) | (1 << FORMAT) | (1 << PRIVATE_USE))
+
 #define DIGIT_BITS (1 << DECIMAL_DIGIT_NUMBER)
 
 #define SPACE_BITS ((1 << SPACE_SEPARATOR) | (1 << LINE_SEPARATOR) \
 	| (1 << PARAGRAPH_SEPARATOR))
 
-#define CONNECTOR_BITS (1 << CONNECTOR_PUNCTUATION)
-
-#define PRINT_BITS (ALPHA_BITS | DIGIT_BITS | SPACE_BITS | \
-	(1 << NON_SPACING_MARK) | (1 << ENCLOSING_MARK) | \
-	(1 << COMBINING_SPACING_MARK) | (1 << LETTER_NUMBER) | \
-	(1 << OTHER_NUMBER) | (1 << CONNECTOR_PUNCTUATION) | \
-	(1 << DASH_PUNCTUATION) | (1 << OPEN_PUNCTUATION) | \
-	(1 << CLOSE_PUNCTUATION) | (1 << INITIAL_QUOTE_PUNCTUATION) | \
-	(1 << FINAL_QUOTE_PUNCTUATION) | (1 << OTHER_PUNCTUATION) | \
-	(1 << MATH_SYMBOL) | (1 << CURRENCY_SYMBOL) | \
-	(1 << MODIFIER_SYMBOL) | (1 << OTHER_SYMBOL))
+#define WORD_BITS (ALPHA_BITS | DIGIT_BITS | (1 << CONNECTOR_PUNCTUATION))
 
 #define PUNCT_BITS ((1 << CONNECTOR_PUNCTUATION) | \
 	(1 << DASH_PUNCTUATION) | (1 << OPEN_PUNCTUATION) | \
 	(1 << CLOSE_PUNCTUATION) | (1 << INITIAL_QUOTE_PUNCTUATION) | \
 	(1 << FINAL_QUOTE_PUNCTUATION) | (1 << OTHER_PUNCTUATION))
+
+#define GRAPH_BITS (WORD_BITS | PUNCT_BITS | \
+	(1 << NON_SPACING_MARK) | (1 << ENCLOSING_MARK) | \
+	(1 << COMBINING_SPACING_MARK) | (1 << LETTER_NUMBER) | \
+	(1 << OTHER_NUMBER) | \
+	(1 << MATH_SYMBOL) | (1 << CURRENCY_SYMBOL) | \
+	(1 << MODIFIER_SYMBOL) | (1 << OTHER_SYMBOL))
 
 /*
  * Unicode characters less than this value are represented by themselves in
@@ -1247,13 +1246,14 @@ int
 Tcl_UniCharToUpper(
     int ch)			/* Unicode character to convert. */
 {
-    int info = (ch < UNICODE_OUT_OF_RANGE) ? GetUniCharInfo(ch) : 0;
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	int info = GetUniCharInfo(ch);
 
-    if (GetCaseType(info) & 0x04) {
-	return ch - GetDelta(info);
-    } else {
-	return ch;
+	if (GetCaseType(info) & 0x04) {
+	    ch -= GetDelta(info);
+	}
     }
+    return ch & 0x1fffff;
 }
 
 /*
@@ -1276,13 +1276,14 @@ int
 Tcl_UniCharToLower(
     int ch)			/* Unicode character to convert. */
 {
-    int info = (ch < UNICODE_OUT_OF_RANGE) ? GetUniCharInfo(ch) : 0;
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	int info = GetUniCharInfo(ch);
 
-    if (GetCaseType(info) & 0x02) {
-	return ch + GetDelta(info);
-    } else {
-	return ch;
+	if (GetCaseType(info) & 0x02) {
+	    ch += GetDelta(info);
+	}
     }
+    return ch & 0x1fffff;
 }
 
 /*
@@ -1305,20 +1306,21 @@ int
 Tcl_UniCharToTitle(
     int ch)			/* Unicode character to convert. */
 {
-    int info = (ch < UNICODE_OUT_OF_RANGE) ? GetUniCharInfo(ch) : 0;
-    int mode = GetCaseType(info);
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	int info = GetUniCharInfo(ch);
+	int mode = GetCaseType(info);
 
-    if (mode & 0x1) {
-	/*
-	 * Subtract or add one depending on the original case.
-	 */
+	if (mode & 0x1) {
+	    /*
+	     * Subtract or add one depending on the original case.
+	     */
 
-	return (Tcl_UniChar) (ch + ((mode & 0x4) ? -1 : 1));
-    } else if (mode == 0x4) {
-	return ch - GetDelta(info);
-    } else {
-	return ch;
+	    ch += ((mode & 0x4) ? -1 : 1);
+	} else if (mode == 0x4) {
+	    ch -= GetDelta(info);
+	}
     }
+    return ch & 0x1fffff;
 }
 
 /*
@@ -1452,10 +1454,10 @@ int
 Tcl_UniCharIsAlnum(
     int ch)			/* Unicode character to test. */
 {
-    if (ch > UNICODE_OUT_OF_RANGE) {
+    if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     }
-	return (((ALPHA_BITS | DIGIT_BITS) >> GetCategory(ch)) & 1);
+    return (((ALPHA_BITS | DIGIT_BITS) >> GetCategory(ch)) & 1);
 }
 
 /*
@@ -1478,7 +1480,7 @@ int
 Tcl_UniCharIsAlpha(
     int ch)			/* Unicode character to test. */
 {
-    if (ch > UNICODE_OUT_OF_RANGE) {
+    if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     }
     return ((ALPHA_BITS >> GetCategory(ch)) & 1);
@@ -1504,10 +1506,10 @@ int
 Tcl_UniCharIsControl(
     int ch)			/* Unicode character to test. */
 {
-    if (ch > UNICODE_OUT_OF_RANGE) {
+    if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     }
-    return (GetCategory(ch) == CONTROL);
+    return ((CONTROL_BITS >> GetCategory(ch)) & 1);
 }
 
 /*
@@ -1530,7 +1532,7 @@ int
 Tcl_UniCharIsDigit(
     int ch)			/* Unicode character to test. */
 {
-    if (ch > UNICODE_OUT_OF_RANGE) {
+    if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     }
     return (GetCategory(ch) == DECIMAL_DIGIT_NUMBER);
@@ -1556,10 +1558,11 @@ int
 Tcl_UniCharIsGraph(
     int ch)			/* Unicode character to test. */
 {
-    if ((ch == ' ') || (ch > UNICODE_OUT_OF_RANGE)) {
-	return (ch >= 0xE0100u) && (ch <= 0xE01EFu);
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	ch &= 0x1fffff;
+	return (ch >= 0xe0100u) && (ch <= 0xe01efu);
     }
-   return ((PRINT_BITS >> GetCategory(ch)) & 1);
+    return ((GRAPH_BITS >> GetCategory(ch)) & 1);
 }
 
 /*
@@ -1582,7 +1585,7 @@ int
 Tcl_UniCharIsLower(
     int ch)			/* Unicode character to test. */
 {
-    if (ch > UNICODE_OUT_OF_RANGE) {
+    if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     }
     return (GetCategory(ch) == LOWERCASE_LETTER);
@@ -1608,10 +1611,11 @@ int
 Tcl_UniCharIsPrint(
     int ch)			/* Unicode character to test. */
 {
-    if (ch > UNICODE_OUT_OF_RANGE) {
-	return (ch >= 0xE0100u) && (ch <= 0xE01EFu);
+    if (UNICODE_OUT_OF_RANGE(ch)) {
+	ch &= 0x1fffff;
+	return (ch >= 0xe0100u) && (ch <= 0xe01efu);
     }
-    return ((PRINT_BITS >> GetCategory(ch)) & 1);
+    return (((GRAPH_BITS|SPACE_BITS) >> GetCategory(ch)) & 1);
 }
 
 /*
@@ -1634,7 +1638,7 @@ int
 Tcl_UniCharIsPunct(
     int ch)			/* Unicode character to test. */
 {
-    if (ch > UNICODE_OUT_OF_RANGE) {
+    if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     }
     return ((PUNCT_BITS >> GetCategory(ch)) & 1);
@@ -1665,9 +1669,9 @@ Tcl_UniCharIsSpace(
      * standard C function, otherwise consult the Unicode table.
      */
 
-    if (ch < 0x80) {
-	return TclIsSpaceProc((char)ch);
-    } else if (ch > UNICODE_OUT_OF_RANGE) {
+    if ((ch & 0x1fffff) < 0x80) {
+	return isspace(UCHAR(ch)); /* INTL: ISO space */
+    } else if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     } else {
 	return ((SPACE_BITS >> GetCategory(ch)) & 1);
@@ -1694,7 +1698,7 @@ int
 Tcl_UniCharIsUpper(
     int ch)			/* Unicode character to test. */
 {
-    if (ch > UNICODE_OUT_OF_RANGE) {
+    if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     }
     return (GetCategory(ch) == UPPERCASE_LETTER);
@@ -1720,10 +1724,10 @@ int
 Tcl_UniCharIsWordChar(
     int ch)			/* Unicode character to test. */
 {
-    if (ch > UNICODE_OUT_OF_RANGE) {
+    if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     }
-    return (((ALPHA_BITS | DIGIT_BITS | CONNECTOR_BITS) >> GetCategory(ch)) & 1);
+    return ((WORD_BITS >> GetCategory(ch)) & 1);
 }
 
 /*

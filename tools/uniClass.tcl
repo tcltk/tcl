@@ -13,22 +13,36 @@ exec tclsh "$0" ${1+"$@"}
 #
 
 proc emitRange {first last} {
-    global ranges numranges chars numchars
+    global ranges numranges chars numchars extchars extranges
 
     if {$first < ($last-1)} {
-	append ranges [format "{0x%04x, 0x%04x}, " \
+	if {!$extranges && ($first) > 0xffff} {
+	    set extranges 1
+	    set numranges 0
+	    set ranges [string trimright $ranges " \n\r\t,"]
+	    append ranges "\n#if MAX_UTF_CHAR > 4\n    ,"
+	}
+	append ranges [format "{0x%x, 0x%x}, " \
 		$first $last]
 	if {[incr numranges] % 4 == 0} {
+	    set ranges [string trimright $ranges]
 	    append ranges "\n    "
 	}
     } else {
-	append chars [format "0x%04x, " $first]
+	if {!$extchars && ($first) > 0xffff} {
+	    set extchars 1
+	    set numchars 0
+	    set chars [string trimright $chars " \n\r\t,"]
+	    append chars "\n#if MAX_UTF_CHAR > 4\n    ,"
+	}
+	append chars [format "0x%x, " $first]
 	incr numchars
 	if {$numchars % 9 == 0} {
+	    set chars [string trimright $chars]
 	    append chars "\n    "
 	}
 	if {$first != $last} {
-	    append chars [format "0x%04x, " $last]
+	    append chars [format "0x%x, " $last]
 	    incr numchars
 	    if {$numchars % 9 == 0} {
 		append chars "\n    "
@@ -38,7 +52,7 @@ proc emitRange {first last} {
 }
 
 proc genTable {type} {
-    global first last ranges numranges chars numchars
+    global first last ranges numranges chars numchars extchars extranges
     set first -2
     set last -2
 
@@ -46,8 +60,14 @@ proc genTable {type} {
     set numranges 0
     set chars "    "
     set numchars 0
+    set extchars 0
+    set extranges 0
 
-    for {set i 0} {$i <= 0xFFFF} {incr i} {
+    for {set i 0} {$i <= 0x10ffff} {incr i} {
+    if {$i == 0xd800} {
+	# Skip surrogates
+	set i 0xdc00
+    }
 	if {[string is $type [format %c $i]]} {
 	    if {$i == ($last + 1)} {
 		set last $i
@@ -63,7 +83,13 @@ proc genTable {type} {
     emitRange $first $last
 
     set ranges [string trimright $ranges "\t\n ,"]
+    if {$extranges} {
+	append ranges "\n#endif"
+    }
     set chars  [string trimright $chars "\t\n ,"]
+    if {$extchars} {
+	append chars "\n#endif"
+    }
     if {$ranges ne ""} {
 	puts "static const crange ${type}RangeTable\[\] = {\n$ranges\n};\n"
 	puts "#define NUM_[string toupper $type]_RANGE (sizeof(${type}RangeTable)/sizeof(crange))\n"
@@ -87,6 +113,7 @@ puts "/*
 
 foreach {type desc} {
     alpha "alphabetic characters"
+    control "control characters"
     digit "decimal digit characters"
     punct "punctuation characters"
     space "white space characters"

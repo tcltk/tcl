@@ -1,3 +1,239 @@
+2012-01-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/uniClass.tcl:    [Frq 3473670]: Various Unicode-related 
+	* tools/uniParse.tcl:    speedups/robustness. Enhanced tools to
+	* generic/tclUniData.c:  be able to handle characters > 0xffff
+	* generic/tclUtf.c:      Done in all branches in order to simplify
+	* generic/regc_locale.c: merges for new Unicode versions (such as 6.1)
+
+2012-01-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (DictExistsCmd): [Bug 3475264]: Ensure that
+	errors only ever happen when insufficient arguments are supplied, and
+	not when a path doesn't exist or a dictionary is poorly formatted (the
+	two cases can't be easily distinguished).
+
+2012-01-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:        [Bug 3474726]: Eliminate detection of struct
+	* generic/tclWinPort.h: _stat32i64, just use _stati64 in combination
+	* generic/tclFCmd.c:    with _USE_32BIT_TIME_T, which is the same then.
+	* generic/tclTest.c:    Only keep _stat32i64 usage for cygwin, so it
+	* win/configure.in:     will not conflict with cygwin's own struct stat.
+	* win/configure:
+
+2012-01-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:	[Bug 3475667]: Prevent buffer read overflow.
+	Thanks to "sebres" for the report and fix.
+
+2012-01-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/dict.n (dict with): [Bug 3474512]: Explain better what is going
+	on when a dictionary key and the dictionary variable collide.
+
+2012-01-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/http/http.tcl (http::Connect): [Bug 3472316]: Ensure that we
+	only try to read the socket error exactly once.
+
+2012-01-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/tclvars.n: [Bug 3466506]: Document more environment variables.
+
+2012-01-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUtf.c:      [Bug 3464428]: string is graph \u0120 is wrong
+	* generic/regc_locale.c: Add table for Unicode [:cntrl:] class
+	* tools/uniClass.tcl:    Generate Unicode [:cntrl:] class table
+	* tests/utf.test:
+
+2012-01-08  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (ReadZoneinfoFile): [Bug 3470928]: Corrected a bug
+	* tests/clock.test (clock-56.4):        where loading zoneinfo would
+	fail if one timezone abbreviation was a proper tail of another, and
+	zic used the same bytes of the file to represent both of them. Added a
+	test case for the bug, using the same data that caused the observed
+	failure "in the wild."
+
+2011-12-30  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/America/Bahia : Update to Olson's tzdata2011n
+	* library/tzdata/America/Havana
+	* library/tzdata/Europe/Kiev
+	* library/tzdata/Europe/Simferopol
+	* library/tzdata/Europe/Uzhgorod
+	* library/tzdata/Europe/Zaporozhye
+	* library/tzdata/Pacific/Fiji
+
+2011-12-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUtf.c:     [Bug 3464428]: string is graph \u0120 is wrong.
+	* generic/tclUniData.c:
+	* generic/regc_locale.c:
+	* tests/utf.test:
+	* tools/uniParse.tcl:   Clean up some unused stuff, and be more robust
+	against changes in UnicodeData.txt syntax
+
+2011-12-13  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCompile.c (TclInitAuxDataTypeTable): Extended to register
+	the DictUpdateInfo structure as an AuxData type. For use by tbcload,
+	tclcompiler.
+
+2011-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regc_locale.c: [Bug 3457031]: Some Unicode 6.0 chars not
+	* tests/utf.test:        in [:print:] class
+
+2011-12-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/uniParse.tcl:    [Bug 3444754]: string tolower \u01c5 is wrong
+	* generic/tclUniData.c:
+	* tests/utf.test:
+
+2011-11-30  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/tcltest/tcltest.tcl: [Bug 967195]: Make tcltest work
+	when tclsh is compiled without using the setargv() function on mingw.
+	(no need to incr the version, since 2.2.10 is never released)
+
+2011-11-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in: don't install tommath_(super)?class.h
+	* unix/Makefile.in: don't install directories like 8.2 and 8.3
+	* generic/tclTomMath.h: [Bug 2991415]: move include tclInt.h from
+	* generic/tclTomMathInt.h: tclTomMath.h to tclTomMathInt.h
+
+2011-11-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/history.tcl (history): Simplify the dance of variable
+	management used when chaining to the implementation command.
+
+2011-11-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TclCompileObj): Simplify and de-indent the
+	logic so that it is easier to comprehend.
+
+2011-11-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h:   [Bug 2935503]: Windows: file mtime
+	* win/tclWinFile.c:  sets wrong time (VS2005+ only)
+	* generic/tclTest.c:
+
+2011-11-20  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tests/thread.test: Remove unnecessary [after] calls from the thread
+	tests.  Make error message matching more robust for tests that may
+	have built-in race conditions.  Test thread-7.26 must first unset all
+	thread testing related variables.  Revise results of the thread-7.28
+	through thread-7.31 tests to account for the fact they are canceled
+	via a script sent to the thread asynchronously, which then impacts the
+	error message handling.  Attempt to manually drain the event queue for
+	the main thread after joining the test thread to make sure no stray
+	events are processed at the wrong time on the main thread.  Revise all
+	the synchronization and comparison semantics related to the thread id
+	and error message.
+
+2011-11-18  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tests/thread.test: Remove all use of thread::release from the thread
+	7.x tests, replacing it with a script that can easily cause "stuck"
+	threads to self-destruct for those test cases that require it.  Also,
+	make the error message handling far more robust by keeping track of
+	every asynchronous error.
+
+2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tests/thread.test: Refactor all the remaining thread-7.x tests that
+	were using [testthread].  Note that this test file now requires the
+	very latest version of the Thread package to pass all tests.  In
+	addition, the thread-7.18 and thread-7.19 tests have been flagged as
+	knownBug because they cannot pass without modifications to the [expr]
+	command, persuant to TIP #392.
+
+2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclThreadTest.c: For [testthread cancel], avoid creating a
+	new Tcl_Obj when the default script cancellation result is desired.
+
+2011-11-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/tclWinConsole.c: Refactor common thread handling patterns.
+
+2011-11-11  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* tests/zlib.test: [Bug 3428756]: Use nonblocking writes in
+	single-threaded IO tests to avoid deadlocks when going beyond OS
+	buffers.  Tidy up [chan configure] flags across zlib.test.
+
+2011-11-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixCompat.c (TclpGetPwNam, TclpGetPwUid, TclpGetGrNam)
+	(TclpGetGrGid): Use the elaborate memory management scheme outlined on
+	http://www.opengroup.org/austin/docs/austin_328.txt to handle Tcl's
+	use of standard reentrant versions of the passwd/group access
+	functions so that everything can work on all BSDs. Problem identified
+	by Stuart Cassoff.
+
+2011-10-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/http/http.tcl:        Bump to version 2.8.3
+	* library/http/pkgIndex.tcl:
+	* unix/Makefile.in:
+	* win/Makefile.in:
+
+	* changes:	Updates toward 8.6b3 release.
+
+2011-10-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclLiteral.c (TclInvalidateCmdLiteral): [Bug 3418547]:
+	Additional code for handling the invalidation of literals.
+	* generic/tclBasic.c (Tcl_CreateObjCommand, Tcl_CreateCommand)
+	(TclRenameCommand, Tcl_ExposeCommand): The four additional places that
+	need extra care when dealing with literals.
+	* generic/tclTest.c (TestInterpResolverCmd): Additional test machinery
+	for interpreter resolvers.
+
+2011-10-18  Reinhard Max  <max@suse.de>
+
+	* library/clock.tcl (::tcl::clock::GetSystemTimeZone): Cache the time
+	zone only if it was detected by one of the expensive methods.
+	Otherwise after unsetting TCL_TZ or TZ the previous value will still
+	be used.
+
+2011-10-15  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/America/Sitka : Update to Olson's tzdata2011l
+	* library/tzdata/Pacific/Fiji
+	* library/tzdata/Asia/Hebron (New)
+
+2011-10-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c:    [Bug 2935503]: Incorrect mode field returned by
+	[file stat] command.
+
+2011-10-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictWithCmd): Corrected handling of
+	qualified names, and added spacial cases for empty bodies (used when
+	[dict with] is just used for extracting variables).
+
+2011-10-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:        Fix gcc warnings (discovered with
+	* generic/tclIORChan.c: latest mingw, based on gcc 4.6.1)
+	* tests/env.test:       Fix env.test, when running
+	under wine 1.3
+
+2011-10-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (TclDictWithInit, TclDictWithFinish):
+	* generic/tclCompCmds.c (TclCompileDictWithCmd): Experimental
+	compilation for the [dict with] subcommand, using parts factored out
+	from the interpreted version of the command.
+
 2011-10-05  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinInt.h:   Remove tclWinProcs, as it is no longer
@@ -1088,6 +1324,10 @@
 
 	* unix/tclLoadDl.c:    [Bug #3216070]: Loading extension libraries
 	* unix/tclLoadDyld.c:  from embedded Tcl applications.
+	***POTENTIAL INCOMPATIBILITY***
+	For extensions which rely on symbols from other extensions being
+	present in the global symbol table. For an example and some discussion
+	of workarounds, see http://stackoverflow.com/q/8330614/301832
 
 2011-03-21  Miguel Sofer  <msofer@users.sf.net>
 

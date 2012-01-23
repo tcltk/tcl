@@ -387,3 +387,12 @@ TclWinConvertWSAError(
 	Tcl_SetErrno(EINVAL);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * tab-width: 8
+ * End:
+ */
