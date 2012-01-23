@@ -1,6 +1,21 @@
+2012-01-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/uniClass.tcl:    [Frq 3473670]: Various Unicode-related 
+	* tools/uniParse.tcl:    speedups/robustness. Enhanced tools to
+	* generic/tclUniData.c:  be able to handle characters > 0xffff
+	* generic/tclUtf.c:      Done in all branches in order to simplify
+	* generic/regc_locale.c: merges for new Unicode versions (such as 6.1)
+
+2012-01-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (DictExistsCmd): [Bug 3475264]: Ensure that
+	errors only ever happen when insufficient arguments are supplied, and
+	not when a path doesn't exist or a dictionary is poorly formatted (the
+	two cases can't be easily distinguished).
+
 2012-01-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h:        [Bug-3474726]: Eliminate detection of struct
+	* generic/tcl.h:        [Bug 3474726]: Eliminate detection of struct
 	* generic/tclWinPort.h: _stat32i64, just use _stati64 in combination
 	* generic/tclFCmd.c:    with _USE_32BIT_TIME_T, which is the same then.
 	* generic/tclTest.c:    Only keep _stat32i64 usage for cygwin, so it
@@ -9,7 +24,7 @@
 
 2012-01-21  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdMZ.c:	[Bug 3475667] Prevent buffer read overflow.
+	* generic/tclCmdMZ.c:	[Bug 3475667]: Prevent buffer read overflow.
 	Thanks to "sebres" for the report and fix.
 
 2012-01-17  Donal K. Fellows  <dkf@users.sf.net>
