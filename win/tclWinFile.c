@@ -1592,10 +1592,6 @@ NativeAccess(
      * we have a more complex permissions structure so we try to check that.
      * The code below is remarkably complex for such a simple thing as finding
      * what permissions the OS has set for a file.
-     *
-     * If we are simply checking for file existence, then we don't need all
-     * these complications (which are really quite slow: with this code 'file
-     * readable' is 5-6 times slower than 'file exists').
      */
 
     if (tclWinProcs->getFileSecurityProc != NULL) {
