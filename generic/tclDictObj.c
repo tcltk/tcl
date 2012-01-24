@@ -1969,7 +1969,6 @@ DictExistsCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr;
-    int result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary key ?key ...?");
@@ -1978,18 +1977,13 @@ DictExistsCmd(
 
     dictPtr = TclTraceDictPath(interp, objv[1], objc-3, objv+2,
 	    DICT_PATH_EXISTS);
-    if (dictPtr == NULL) {
-	return TCL_ERROR;
-    }
-    if (dictPtr == DICT_PATH_NON_EXISTENT) {
+    if (dictPtr == NULL || dictPtr == DICT_PATH_NON_EXISTENT
+	    || Tcl_DictObjGet(interp, dictPtr, objv[objc-1],
+		    &valuePtr) != TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
-	return TCL_OK;
+    } else {
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(valuePtr != NULL));
     }
-    result = Tcl_DictObjGet(interp, dictPtr, objv[objc-1], &valuePtr);
-    if (result != TCL_OK) {
-	return result;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(valuePtr != NULL));
     return TCL_OK;
 }
 
