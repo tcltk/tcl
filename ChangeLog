@@ -1,6 +1,12 @@
+2012-01-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_CopyObjectInstance): [Bug 3474460]: When
+	copying an object, make sure that the configuration of the variable
+	resolver is also duplicated.
+
 2012-01-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tools/uniClass.tcl:    [Frq 3473670]: Various Unicode-related 
+	* tools/uniClass.tcl:    [FRQ 3473670]: Various Unicode-related
 	* tools/uniParse.tcl:    speedups/robustness. Enhanced tools to
 	* generic/tclUniData.c:  be able to handle characters > 0xffff
 	* generic/tclUtf.c:      Done in all branches in order to simplify
