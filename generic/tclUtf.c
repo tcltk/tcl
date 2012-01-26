@@ -1507,6 +1507,11 @@ Tcl_UniCharIsControl(
     int ch)			/* Unicode character to test. */
 {
     if (UNICODE_OUT_OF_RANGE(ch)) {
+	ch &= 0x1fffff;
+	if ((ch == 0xe0001) || ((ch >= 0xe0020) && (ch <= 0xe007f)))
+	    return 1;
+	if ((ch >= 0xf0000) && ((ch & 0xffff) <= 0xfffd))
+	    return 1;
 	return 0;
     }
     return ((CONTROL_BITS >> GetCategory(ch)) & 1);
@@ -1560,7 +1565,7 @@ Tcl_UniCharIsGraph(
 {
     if (UNICODE_OUT_OF_RANGE(ch)) {
 	ch &= 0x1fffff;
-	return (ch >= 0xe0100u) && (ch <= 0xe01efu);
+	return (ch >= 0xe0100) && (ch <= 0xe01ef);
     }
     return ((GRAPH_BITS >> GetCategory(ch)) & 1);
 }
@@ -1613,7 +1618,7 @@ Tcl_UniCharIsPrint(
 {
     if (UNICODE_OUT_OF_RANGE(ch)) {
 	ch &= 0x1fffff;
-	return (ch >= 0xe0100u) && (ch <= 0xe01efu);
+	return (ch >= 0xe0100) && (ch <= 0xe01ef);
     }
     return (((GRAPH_BITS|SPACE_BITS) >> GetCategory(ch)) & 1);
 }

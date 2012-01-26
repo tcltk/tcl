@@ -1334,7 +1334,7 @@ static const int groups[] = {
     -2768575, 1859714, -9044927, -10823615, 18, 17, 10305, 10370
 };
 
-#if UTF_MAX_LEN > 3
+#if TCL_UTF_MAX > 3
 #   define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1fffff) >= 0x2fa20)
 #else
 #   define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1f0000) != 0)
@@ -1393,4 +1393,4 @@ enum {
  * Unicode character tables.
  */
 
-#define GetUniCharInfo(ch) (groups[groupMap[pageMap[((ch) & 0xffff) >> OFFSET_BITS] | ((ch) & ((1 << OFFSET_BITS)-1))]])
+#define GetUniCharInfo(ch) (groups[groupMap[pageMap[((ch) & 0x1fffff) >> OFFSET_BITS] | ((ch) & ((1 << OFFSET_BITS)-1))]])

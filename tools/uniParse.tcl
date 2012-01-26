@@ -337,7 +337,7 @@ static const int groups\[\] = {"
     puts $f $line
     puts -nonewline $f "};
 
-#if UTF_MAX_LEN > 3
+#if TCL_UTF_MAX > 3
 #   define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1fffff) >= [format 0x%x $next])
 #else
 #   define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1f0000) != 0)
@@ -396,7 +396,7 @@ enum {
  * Unicode character tables.
  */
 
-#define GetUniCharInfo(ch) (groups\[groupMap\[pageMap\[((ch) & 0xffff) >> OFFSET_BITS\] | ((ch) & ((1 << OFFSET_BITS)-1))\]\])
+#define GetUniCharInfo(ch) (groups\[groupMap\[pageMap\[((ch) & 0x1fffff) >> OFFSET_BITS\] | ((ch) & ((1 << OFFSET_BITS)-1))\]\])
 "
 
     close $f
