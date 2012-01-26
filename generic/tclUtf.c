@@ -21,36 +21,35 @@
  * The following macros are used for fast character category tests.  The
  * x_BITS values are shifted right by the category value to determine whether
  * the given category is included in the set.
- */ 
+ */
 
 #define ALPHA_BITS ((1 << UPPERCASE_LETTER) | (1 << LOWERCASE_LETTER) \
     | (1 << TITLECASE_LETTER) | (1 << MODIFIER_LETTER) | (1 << OTHER_LETTER))
+
+#define CONTROL_BITS ((1 << CONTROL) | (1 << FORMAT) | (1 << PRIVATE_USE))
 
 #define DIGIT_BITS (1 << DECIMAL_DIGIT_NUMBER)
 
 #define SPACE_BITS ((1 << SPACE_SEPARATOR) | (1 << LINE_SEPARATOR) \
     | (1 << PARAGRAPH_SEPARATOR))
 
-#define CONNECTOR_BITS (1 << CONNECTOR_PUNCTUATION)
-
-#define PRINT_BITS (ALPHA_BITS | DIGIT_BITS | SPACE_BITS | \
-	    (1 << NON_SPACING_MARK) | (1 << ENCLOSING_MARK) | \
-	    (1 << COMBINING_SPACING_MARK) | (1 << LETTER_NUMBER) | \
-	    (1 << OTHER_NUMBER) | (1 << CONNECTOR_PUNCTUATION) | \
-	    (1 << DASH_PUNCTUATION) | (1 << OPEN_PUNCTUATION) | \
-	    (1 << CLOSE_PUNCTUATION) | (1 << INITIAL_QUOTE_PUNCTUATION) | \
-	    (1 << FINAL_QUOTE_PUNCTUATION) | (1 << OTHER_PUNCTUATION) | \
-	    (1 << MATH_SYMBOL) | (1 << CURRENCY_SYMBOL) | \
-	    (1 << MODIFIER_SYMBOL) | (1 << OTHER_SYMBOL))
+#define WORD_BITS (ALPHA_BITS | DIGIT_BITS | (1 << CONNECTOR_PUNCTUATION))
 
 #define PUNCT_BITS ((1 << CONNECTOR_PUNCTUATION) | \
 	    (1 << DASH_PUNCTUATION) | (1 << OPEN_PUNCTUATION) | \
 	    (1 << CLOSE_PUNCTUATION) | (1 << INITIAL_QUOTE_PUNCTUATION) | \
 	    (1 << FINAL_QUOTE_PUNCTUATION) | (1 << OTHER_PUNCTUATION))
 
+#define GRAPH_BITS (WORD_BITS | PUNCT_BITS | \
+	    (1 << NON_SPACING_MARK) | (1 << ENCLOSING_MARK) | \
+	    (1 << COMBINING_SPACING_MARK) | (1 << LETTER_NUMBER) | \
+	    (1 << OTHER_NUMBER) | \
+	    (1 << MATH_SYMBOL) | (1 << CURRENCY_SYMBOL) | \
+	    (1 << MODIFIER_SYMBOL) | (1 << OTHER_SYMBOL))
+
 /*
- * Unicode characters less than this value are represented by themselves 
- * in UTF-8 strings. 
+ * Unicode characters less than this value are represented by themselves
+ * in UTF-8 strings.
  */
 
 #define UNICODE_SELF	0x80
@@ -108,7 +107,7 @@ static int UtfCount _ANSI_ARGS_((int ch));
  *
  *---------------------------------------------------------------------------
  */
- 
+
 INLINE static int
 UtfCount(ch)
     int ch;			/* The Tcl_UniChar whose size is returned. */
@@ -146,14 +145,14 @@ UtfCount(ch)
  *
  * Results:
  *	The return values is the number of bytes in the buffer that
- *	were consumed.  
+ *	were consumed.
  *
  * Side effects:
  *	None.
  *
  *---------------------------------------------------------------------------
  */
- 
+
 INLINE int
 Tcl_UniCharToUtf(ch, str)
     int ch;			/* The Tcl_UniChar to be stored in the
@@ -230,7 +229,7 @@ Tcl_UniCharToUtf(ch, str)
  *
  *---------------------------------------------------------------------------
  */
- 
+
 char *
 Tcl_UniCharToUtfDString(wString, numChars, dsPtr)
     CONST Tcl_UniChar *wString;	/* Unicode string to convert to UTF-8. */
@@ -289,7 +288,7 @@ Tcl_UniCharToUtfDString(wString, numChars, dsPtr)
  *
  *---------------------------------------------------------------------------
  */
- 
+
 int
 Tcl_UtfToUniChar(str, chPtr)
     register CONST char *str;	 /* The UTF-8 string. */
@@ -297,7 +296,7 @@ Tcl_UtfToUniChar(str, chPtr)
 				  * by the UTF-8 string. */
 {
     register int byte;
-    
+
     /*
      * Unroll 1 to 3 byte UTF-8 sequences, use loop to handle longer ones.
      */
@@ -334,7 +333,7 @@ Tcl_UtfToUniChar(str, chPtr)
 	     * Three-byte-character lead byte followed by two trail bytes.
 	     */
 
-	    *chPtr = (Tcl_UniChar) (((byte & 0x0F) << 12) 
+	    *chPtr = (Tcl_UniChar) (((byte & 0x0F) << 12)
 		    | ((str[1] & 0x3F) << 6) | (str[2] & 0x3F));
 	    return 3;
 	}
@@ -474,15 +473,15 @@ Tcl_UtfCharComplete(str, len)
  *	Plan 9 utflen() and utfnlen().
  *
  * Results:
- *	As above.  
+ *	As above.
  *
  * Side effects:
  *	None.
  *
  *---------------------------------------------------------------------------
  */
- 
-int 
+
+int
 Tcl_NumUtfChars(str, len)
     register CONST char *str;	/* The UTF-8 string to measure. */
     int len;			/* The length of the string in bytes, or -1
@@ -549,7 +548,7 @@ Tcl_UtfFindFirst(string, ch)
 {
     int len;
     Tcl_UniChar find;
-    
+
     while (1) {
 	len = TclUtfToUniChar(string, &find);
 	if (find == ch) {
@@ -590,7 +589,7 @@ Tcl_UtfFindLast(string, ch)
     int len;
     Tcl_UniChar find;
     CONST char *last;
-	
+
     last = NULL;
     while (1) {
 	len = TclUtfToUniChar(string, &find);
@@ -624,9 +623,9 @@ Tcl_UtfFindLast(string, ch)
  *
  *---------------------------------------------------------------------------
  */
- 
+
 CONST char *
-Tcl_UtfNext(str) 
+Tcl_UtfNext(str)
     CONST char *str;		    /* The current location in the string. */
 {
     Tcl_UniChar ch;
@@ -664,7 +663,7 @@ Tcl_UtfPrev(str, start)
 {
     CONST char *look;
     int i, byte;
-    
+
     str--;
     look = str;
     for (i = 0; i < TCL_UTF_MAX; i++) {
@@ -685,7 +684,7 @@ Tcl_UtfPrev(str, start)
     }
     return str;
 }
-	
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -702,7 +701,7 @@ Tcl_UtfPrev(str, start)
  *
  *---------------------------------------------------------------------------
  */
- 
+
 Tcl_UniChar
 Tcl_UniCharAtIndex(src, index)
     register CONST char *src;	/* The UTF-8 string to dereference. */
@@ -740,7 +739,7 @@ Tcl_UtfAtIndex(src, index)
     register int index;		/* The position of the desired character. */
 {
     Tcl_UniChar ch;
-    
+
     while (index > 0) {
 	index--;
 	src += TclUtfToUniChar(src, &ch);
@@ -760,7 +759,7 @@ Tcl_UtfAtIndex(src, index)
  *	returns the number of bytes written to dst.  At most TCL_UTF_MAX
  *	bytes are written to dst; dst must have been large enough to accept
  *	those bytes.  If readPtr isn't NULL then it is filled in with a
- *	count of the number of bytes in the backslash sequence.  
+ *	count of the number of bytes in the backslash sequence.
  *
  * Side effects:
  *	The maximum number of bytes it takes to represent a Unicode
@@ -839,7 +838,7 @@ Tcl_UtfToUpper(str)
 	 * the conversion (thereby causing a segfault), only copy the
 	 * upper case char to dst if its size is <= the original char.
 	 */
-	
+
 	if (bytes < UtfCount(upChar)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
@@ -877,7 +876,7 @@ Tcl_UtfToLower(str)
     Tcl_UniChar ch, lowChar;
     char *src, *dst;
     int bytes;
-    
+
     /*
      * Iterate over the string until we hit the terminating null.
      */
@@ -892,7 +891,7 @@ Tcl_UtfToLower(str)
 	 * the conversion (thereby causing a segfault), only copy the
 	 * lower case char to dst if its size is <= the original char.
 	 */
-	
+
 	if (bytes < UtfCount(lowChar)) {
 	    memcpy(dst, src, (size_t) bytes);
 	    dst += bytes;
@@ -931,7 +930,7 @@ Tcl_UtfToTitle(str)
     Tcl_UniChar ch, titleChar, lowChar;
     char *src, *dst;
     int bytes;
-    
+
     /*
      * Capitalize the first character and then lowercase the rest of the
      * characters until we get to a null.
@@ -1123,10 +1122,9 @@ Tcl_UniCharToUpper(ch)
     int info = GetUniCharInfo(ch);
 
     if (GetCaseType(info) & 0x04) {
-	return (Tcl_UniChar) (ch - GetDelta(info));
-    } else {
-	return ch;
+	ch -= GetDelta(info);
     }
+    return (Tcl_UniChar) ch;
 }
 
 /*
@@ -1152,10 +1150,9 @@ Tcl_UniCharToLower(ch)
     int info = GetUniCharInfo(ch);
 
     if (GetCaseType(info) & 0x02) {
-	return (Tcl_UniChar) (ch + GetDelta(info));
-    } else {
-	return ch;
+	ch += GetDelta(info);
     }
+    return (Tcl_UniChar) ch;
 }
 
 /*
@@ -1186,12 +1183,11 @@ Tcl_UniCharToTitle(ch)
 	 * Subtract or add one depending on the original case.
 	 */
 
-	return (Tcl_UniChar) (ch + ((mode & 0x4) ? -1 : 1));
+	ch += ((mode & 0x4) ? -1 : 1);
     } else if (mode == 0x4) {
-	return (Tcl_UniChar) (ch - GetDelta(info));
-    } else {
-	return ch;
+	ch -= GetDelta(info);
     }
+    return (Tcl_UniChar) ch;
 }
 
 /*
@@ -1216,7 +1212,7 @@ Tcl_UniCharLen(str)
     CONST Tcl_UniChar *str;	/* Unicode string to find length of. */
 {
     int len = 0;
-    
+
     while (*str != '\0') {
 	len++;
 	str++;
@@ -1322,9 +1318,7 @@ int
 Tcl_UniCharIsAlnum(ch)
     int ch;			/* Unicode character to test. */
 {
-    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
-
-    return (((ALPHA_BITS | DIGIT_BITS) >> category) & 1);
+    return (((ALPHA_BITS | DIGIT_BITS) >> GetCategory(ch)) & 1);
 }
 
 /*
@@ -1347,8 +1341,7 @@ int
 Tcl_UniCharIsAlpha(ch)
     int ch;			/* Unicode character to test. */
 {
-    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
-    return ((ALPHA_BITS >> category) & 1);
+    return ((ALPHA_BITS >> GetCategory(ch)) & 1);
 }
 
 /*
@@ -1371,7 +1364,7 @@ int
 Tcl_UniCharIsControl(ch)
     int ch;			/* Unicode character to test. */
 {
-    return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK) == CONTROL);
+    return ((CONTROL_BITS >> GetCategory(ch)) & 1);
 }
 
 /*
@@ -1394,8 +1387,7 @@ int
 Tcl_UniCharIsDigit(ch)
     int ch;			/* Unicode character to test. */
 {
-    return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK)
-	    == DECIMAL_DIGIT_NUMBER);
+    return (GetCategory(ch) == DECIMAL_DIGIT_NUMBER);
 }
 
 /*
@@ -1418,8 +1410,7 @@ int
 Tcl_UniCharIsGraph(ch)
     int ch;			/* Unicode character to test. */
 {
-    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
-    return (((PRINT_BITS >> category) & 1) && (ch != ' '));
+    return ((GRAPH_BITS >> GetCategory(ch)) & 1);
 }
 
 /*
@@ -1442,7 +1433,7 @@ int
 Tcl_UniCharIsLower(ch)
     int ch;			/* Unicode character to test. */
 {
-    return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK) == LOWERCASE_LETTER);
+    return (GetCategory(ch) == LOWERCASE_LETTER);
 }
 
 /*
@@ -1465,8 +1456,7 @@ int
 Tcl_UniCharIsPrint(ch)
     int ch;			/* Unicode character to test. */
 {
-    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
-    return ((PRINT_BITS >> category) & 1);
+    return (((GRAPH_BITS|SPACE_BITS) >> GetCategory(ch)) & 1);
 }
 
 /*
@@ -1489,8 +1479,7 @@ int
 Tcl_UniCharIsPunct(ch)
     int ch;			/* Unicode character to test. */
 {
-    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
-    return ((PUNCT_BITS >> category) & 1);
+    return ((PUNCT_BITS >> GetCategory(ch)) & 1);
 }
 
 /*
@@ -1513,18 +1502,15 @@ int
 Tcl_UniCharIsSpace(ch)
     int ch;			/* Unicode character to test. */
 {
-    register int category;
-
     /*
      * If the character is within the first 127 characters, just use the
      * standard C function, otherwise consult the Unicode table.
      */
 
-    if (ch < 0x80) {
+    if (((Tcl_UniChar) ch) < ((Tcl_UniChar) 0x80)) {
 	return isspace(UCHAR(ch)); /* INTL: ISO space */
     } else {
-	category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
-	return ((SPACE_BITS >> category) & 1);
+	return ((SPACE_BITS >> GetCategory(ch)) & 1);
     }
 }
 
@@ -1548,7 +1534,7 @@ int
 Tcl_UniCharIsUpper(ch)
     int ch;			/* Unicode character to test. */
 {
-    return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK) == UPPERCASE_LETTER);
+    return (GetCategory(ch) == UPPERCASE_LETTER);
 }
 
 /*
@@ -1572,9 +1558,7 @@ int
 Tcl_UniCharIsWordChar(ch)
     int ch;			/* Unicode character to test. */
 {
-    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
-
-    return (((ALPHA_BITS | DIGIT_BITS | CONNECTOR_BITS) >> category) & 1);
+    return ((WORD_BITS >> GetCategory(ch)) & 1);
 }
 
 /*
@@ -1609,16 +1593,16 @@ Tcl_UniCharCaseMatch(string, pattern, nocase)
     int nocase;			/* 0 for case sensitive, 1 for insensitive */
 {
     Tcl_UniChar ch1, p;
-    
+
     while (1) {
 	p = *pattern;
-	
+
 	/*
 	 * See if we're at the end of both the pattern and the string.  If
 	 * so, we succeeded.  If we're at the end of the pattern but not at
 	 * the end of the string, we failed.
 	 */
-	
+
 	if (p == 0) {
 	    return (*string == 0);
 	}
@@ -1633,7 +1617,7 @@ Tcl_UniCharCaseMatch(string, pattern, nocase)
 	 * recursively for each postfix of string, until either we match or we
 	 * reach the end of the string.
 	 */
-	
+
 	if (p == '*') {
 	    /*
 	     * Skip all successive *'s in the pattern
@@ -1688,7 +1672,7 @@ Tcl_UniCharCaseMatch(string, pattern, nocase)
 	 * by a list of characters that are acceptable, or by a range
 	 * (two characters separated by "-").
 	 */
-	
+
 	if (p == '[') {
 	    Tcl_UniChar startChar, endChar;
 
@@ -1818,7 +1802,7 @@ TclUniCharMatch(string, strLen, pattern, ptnLen, nocase)
 	 * recursively for each postfix of string, until either we match or we
 	 * reach the end of the string.
 	 */
-	
+
 	if (p == '*') {
 	    /*
 	     * Skip all successive *'s in the pattern
@@ -1876,7 +1860,7 @@ TclUniCharMatch(string, strLen, pattern, ptnLen, nocase)
 	 * by a list of characters that are acceptable, or by a range
 	 * (two characters separated by "-").
 	 */
-	
+
 	if (p == '[') {
 	    Tcl_UniChar ch1, startChar, endChar;
 

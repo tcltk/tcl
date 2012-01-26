@@ -285,7 +285,7 @@ Standard character classes are:
 \fBdigit\fR	A decimal digit. 
 \fBxdigit\fR	A hexadecimal digit. 
 \fBalnum\fR	An alphanumeric (letter or digit). 
-\fBprint\fR	An alphanumeric (same as alnum).
+\fBprint\fR	A "printable" (same as graph, except also including space).
 \fBblank\fR	A space or tab character.
 \fBspace\fR	A character producing white space in displayed text. 
 \fBpunct\fR	A punctuation character. 
