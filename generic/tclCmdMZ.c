@@ -264,8 +264,11 @@ Tcl_RegexpObjCmd(
 	 * start of the string unless the previous character is a newline.
 	 */
 
-	if ((offset == 0) || ((offset > 0) && (offset < stringLength) &&
-		(Tcl_GetUniChar(objPtr, offset-1) == (Tcl_UniChar)'\n'))) {
+	if (offset == 0) {
+	    eflags = 0;
+	} else if (offset > stringLength) {
+	    eflags = TCL_REG_NOTBOL;
+	} else if (Tcl_GetUniChar(objPtr, offset-1) == (Tcl_UniChar)'\n') {
 	    eflags = 0;
 	} else {
 	    eflags = TCL_REG_NOTBOL;
