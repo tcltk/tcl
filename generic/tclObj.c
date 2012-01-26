@@ -384,6 +384,9 @@ typedef struct ResolvedCmdName {
 void
 TclInitObjSubsystem(void)
 {
+    ObjInitDeletionContext(context);
+    ObjDeletionLock(context);
+
     Tcl_MutexLock(&tableMutex);
     typeTableInitialized = 1;
     Tcl_InitHashTable(&typeTable, TCL_STRING_KEYS);
@@ -485,6 +488,9 @@ TclFinalizeThreadObjects(void)
 void
 TclFinalizeObjects(void)
 {
+    ObjInitDeletionContext(context);
+    ObjDeletionUnlock(context);
+
     Tcl_MutexLock(&tableMutex);
     if (typeTableInitialized) {
 	Tcl_DeleteHashTable(&typeTable);
