@@ -126,10 +126,13 @@ Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 false.
 .IP \fBgraph\fR 12
 Any Unicode printing character, except space.
-.IP \fBinteger\fR 12
+.IP \fBint\fR 12
 Any of the valid string formats for a 32-bit integer value in Tcl,
 with optional surrounding whitespace.  In case of under/overflow in
 the value, 0 is returned and the \fIvarname\fR will contain \-1.
+.IP \fBinteger\fR 12
+Any of the valid string formats for an integer value in Tcl as allowed by
+\fBTcl_GetBigNnum\fR, with optional surrounding whitespace.
 .IP \fBlist\fR 12
 Any proper list structure, with optional surrounding whitespace. In
 case of improper list structure, 0 is returned and the \fIvarname\fR
