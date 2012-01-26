@@ -378,7 +378,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     while (1) {
 	match = Tcl_RegExpExecObj(interp, regExpr, objPtr,
 		offset /* offset */, numMatchesSaved, eflags 
-		| ((offset > 0 &&
+		| ((offset > 0 && offset < stringLength &&
 		   (Tcl_GetUniChar(objPtr,offset-1) != (Tcl_UniChar)'\n'))
 		   ? TCL_REG_NOTBOL : 0));
 

@@ -3,20 +3,20 @@
  * This file is #included by regcomp.c.
  *
  * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
- * 
+ *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
  * Corporation, none of whom are responsible for the results.  The author
- * thanks all of them. 
- * 
+ * thanks all of them.
+ *
  * Redistribution and use in source and binary forms -- with or without
  * modification -- are permitted for any purpose, provided that
  * redistributions in source form retain this entire copyright notice and
  * indicate the origin and nature of any modifications.
- * 
+ *
  * I'd appreciate being given credit for this package in the documentation
  * of software which uses it, but that is not a requirement.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
  * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
  * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
@@ -113,38 +113,6 @@ addrange(cv, from, to)
 }
 
 /*
- - addmcce - add an MCCE to a cvec
- ^ static VOID addmcce(struct cvec *, chr *, chr *);
- */
-static VOID
-addmcce(cv, startp, endp)
-    struct cvec *cv;			/* character vector */
-    chr *startp;			/* beginning of text */
-    chr *endp;				/* just past end of text */
-{
-    int len;
-    int i;
-    chr *s;
-    chr *d;
-
-    if (startp == NULL && endp == NULL) {
-	return;
-    }
-    len = endp - startp;
-    assert(len > 0);
-    assert(cv->nchrs + len < cv->chrspace - cv->nmccechrs);
-    assert(cv->nmcces < cv->mccespace);
-    d = &cv->chrs[cv->chrspace - cv->nmccechrs - len - 1];
-    cv->mcces[cv->nmcces++] = d;
-    for (s = startp, i = len; i > 0; s++, i--) {
-	*d++ = *s;
-    }
-    *d++ = 0;				/* endmarker */
-    assert(d == &cv->chrs[cv->chrspace - cv->nmccechrs]);
-    cv->nmccechrs += len + 1;
-}
-
-/*
  - haschr - does a cvec contain this chr?
  ^ static int haschr(struct cvec *, pchr);
  */
@@ -171,24 +139,23 @@ haschr(cv, c)
 
 /*
  - getcvec - get a cvec, remembering it as v->cv
- ^ static struct cvec *getcvec(struct vars *, int, int, int);
+ ^ static struct cvec *getcvec(struct vars *, int, int);
  */
 static struct cvec *
-getcvec(v, nchrs, nranges, nmcces)
+getcvec(v, nchrs, nranges)
     struct vars *v;			/* context */
     int nchrs;				/* to hold this many chrs... */
     int nranges;			/* ... and this many ranges... */
-    int nmcces;				/* ... and this many MCCEs */
 {
     if (v->cv != NULL && nchrs <= v->cv->chrspace &&
-	    nranges <= v->cv->rangespace && nmcces <= v->cv->mccespace) {
+	    nranges <= v->cv->rangespace) {
 	return clearcvec(v->cv);
     }
 
     if (v->cv != NULL) {
 	freecvec(v->cv);
     }
-    v->cv = newcvec(nchrs, nranges, nmcces);
+    v->cv = newcvec(nchrs, nranges, 0);
     if (v->cv == NULL) {
 	ERR(REG_ESPACE);
     }
