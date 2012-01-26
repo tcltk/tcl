@@ -312,10 +312,10 @@ test string-6.4 {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5 {string is, class check} {
     list [catch {string is bogus str} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, int, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.6 {string is, ambiguous class} {
     list [catch {string is al str} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, int, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.7 {string is alpha, all ok} {
     string is alpha -strict -failindex var abc
 } 1
@@ -448,44 +448,44 @@ test string-6.47 {string is false, false} {
     catch {unset var}
     list [string is false -fail var offensive] $var
 } {0 0}
-test string-6.48 {string is integer, true} {
-    string is integer +1234567890
+test string-6.48 {string is int, true} {
+    string is int +1234567890
 } 1
-test string-6.49 {string is integer, true on type} {
-    string is integer [expr int(50.0)]
+test string-6.49 {string is int, true on type} {
+    string is int [expr int(50.0)]
 } 1
-test string-6.50 {string is integer, true} {
-    string is integer [list -10]
+test string-6.50 {string is int, true} {
+    string is int [list -10]
 } 1
-test string-6.51 {string is integer, true as hex} {
-    string is integer 0xabcdef
+test string-6.51 {string is int, true as hex} {
+    string is int 0xabcdef
 } 1
-test string-6.52 {string is integer, true as octal} {
-    string is integer 012345
+test string-6.52 {string is int, true as octal} {
+    string is int 012345
 } 1
-test string-6.53 {string is integer, true with whitespace} {
-    string is integer "  \n1234\v"
+test string-6.53 {string is int, true with whitespace} {
+    string is int "  \n1234\v"
 } 1
-test string-6.54 {string is integer, false} {
-    list [string is integer -fail var 123abc] $var
+test string-6.54 {string is int, false} {
+    list [string is int -fail var 123abc] $var
 } {0 3}
-test string-6.55 {string is integer, false on overflow} {
-    list [string is integer -fail var +[largest_int]0] $var
+test string-6.55 {string is int, false on overflow} {
+    list [string is int -fail var +[largest_int]0] $var
 } {0 -1}
-test string-6.56 {string is integer, false} {
-    list [string is integer -fail var [expr double(1)]] $var
+test string-6.56 {string is int, false} {
+    list [string is int -fail var [expr double(1)]] $var
 } {0 1}
-test string-6.57 {string is integer, false} {
-    list [string is integer -fail var "    "] $var
+test string-6.57 {string is int, false} {
+    list [string is int -fail var "    "] $var
 } {0 0}
-test string-6.58 {string is integer, false on bad octal} {
+test string-6.58 {string is int, false on bad octal} {
     list [string is integer -fail var 0o36963] $var
 } {0 4}
-test string-6.58.1 {string is integer, false on bad octal} {
-    list [string is integer -fail var 0o36963] $var
+test string-6.58.1 {string is int, false on bad octal} {
+    list [string is int -fail var 0o36963] $var
 } {0 4}
-test string-6.59 {string is integer, false on bad hex} {
-    list [string is integer -fail var 0X345XYZ] $var
+test string-6.59 {string is int, false on bad hex} {
+    list [string is int -fail var 0X345XYZ] $var
 } {0 5}
 test string-6.60 {string is lower, true} {
     string is lower abc
@@ -602,21 +602,21 @@ test string-6.91 {string is double, bad doubles} {
     }
     set result
 } {1 1 0 0 0 1 0 0}
-test string-6.92 {string is integer, 32-bit overflow} {
+test string-6.92 {string is int, 32-bit overflow} {
     # Bug 718878
     set x 0x100000000
-    list [string is integer -failindex var $x] $var
+    list [string is int -failindex var $x] $var
 } {0 -1}
-test string-6.93 {string is integer, 32-bit overflow} {
+test string-6.93 {string is int, 32-bit overflow} {
     # Bug 718878
     set x 0x100000000
     append x ""
-    list [string is integer -failindex var $x] $var
+    list [string is int -failindex var $x] $var
 } {0 -1}
-test string-6.94 {string is integer, 32-bit overflow} {
+test string-6.94 {string is int, 32-bit overflow} {
     # Bug 718878
     set x 0x100000000
-    list [string is integer -failindex var [expr {$x}]] $var
+    list [string is int -failindex var [expr {$x}]] $var
 } {0 -1}
 test string-6.95 {string is wideinteger, true} {
     string is wideinteger +1234567890
@@ -674,6 +674,42 @@ test string-6.108 {string is double, Bug 1382287} {
 test string-6.109 {string is double, Bug 1360532} {
     string is double 1\u00a0
 } 0
+test string-6.110 {string is integer, true} {
+    string is integer +1234567890
+} 1
+test string-6.111 {string is integer, true on type} {
+    string is integer [expr int(50.0)]
+} 1
+test string-6.112 {string is integer, true} {
+    string is integer [list -10]
+} 1
+test string-6.113 {string is integer, true as hex} {
+    string is integer 0xabcdef
+} 1
+test string-6.114 {string is integer, true as octal} {
+    string is integer 012345
+} 1
+test string-6.115 {string is integer, true with whitespace} {
+    string is integer "  \n1234\v"
+} 1
+test string-6.116 {string is integer, false} {
+    list [string is integer -fail var 123abc] $var
+} {0 3}
+test string-6.117 {string is integer, true on integer overflow} {
+    string is integer +[largest_int]0
+} 1
+test string-6.118 {string is integer, false} {
+    list [string is integer -fail var [expr double(1)]] $var
+} {0 1}
+test string-6.119 {string is integer, false} {
+    list [string is integer -fail var "    "] $var
+} {0 0}
+test string-6.120 {string is integer, false on bad octal} {
+    list [string is integer -fail var 0o36963] $var
+} {0 4}
+test string-6.121 {string is integer, false on bad hex} {
+    list [string is integer -fail var 0X345XYZ] $var
+} {0 5}
 
 catch {rename largest_int {}}
 
