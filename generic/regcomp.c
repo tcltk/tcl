@@ -3,20 +3,20 @@
  * This file #includes several others (see the bottom).
  *
  * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
- * 
+ *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
  * Corporation, none of whom are responsible for the results.  The author
- * thanks all of them. 
- * 
+ * thanks all of them.
+ *
  * Redistribution and use in source and binary forms -- with or without
  * modification -- are permitted for any purpose, provided that
  * redistributions in source form retain this entire copyright notice and
  * indicate the origin and nature of any modifications.
- * 
+ *
  * I'd appreciate being given credit for this package in the documentation
  * of software which uses it, but that is not a requirement.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
  * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
  * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
@@ -53,7 +53,6 @@ static VOID bracket _ANSI_ARGS_((struct vars *, struct state *, struct state *))
 static VOID cbracket _ANSI_ARGS_((struct vars *, struct state *, struct state *));
 static VOID brackpart _ANSI_ARGS_((struct vars *, struct state *, struct state *));
 static chr *scanplain _ANSI_ARGS_((struct vars *));
-static VOID leaders _ANSI_ARGS_((struct vars *, struct cvec *));
 static VOID onechr _ANSI_ARGS_((struct vars *, pchr, struct state *, struct state *));
 static VOID dovec _ANSI_ARGS_((struct vars *, struct cvec *, struct state *, struct state *));
 static celt nextleader _ANSI_ARGS_((struct vars *, pchr, pchr));
@@ -171,14 +170,10 @@ static struct cvec *newcvec _ANSI_ARGS_((int, int, int));
 static struct cvec *clearcvec _ANSI_ARGS_((struct cvec *));
 static VOID addchr _ANSI_ARGS_((struct cvec *, pchr));
 static VOID addrange _ANSI_ARGS_((struct cvec *, pchr, pchr));
-static VOID addmcce _ANSI_ARGS_((struct cvec *, chr *, chr *));
 static int haschr _ANSI_ARGS_((struct cvec *, pchr));
-static struct cvec *getcvec _ANSI_ARGS_((struct vars *, int, int, int));
+static struct cvec *getcvec _ANSI_ARGS_((struct vars *, int, int));
 static VOID freecvec _ANSI_ARGS_((struct cvec *));
 /* === regc_locale.c === */
-static int nmcces _ANSI_ARGS_((struct vars *));
-static int nleaders _ANSI_ARGS_((struct vars *));
-static struct cvec *allmcces _ANSI_ARGS_((struct vars *, struct cvec *));
 static celt element _ANSI_ARGS_((struct vars *, CONST chr *, CONST chr *));
 static struct cvec *range _ANSI_ARGS_((struct vars *, celt, celt, int));
 static int before _ANSI_ARGS_((celt, celt));
@@ -351,14 +346,6 @@ int flags;
 	v->cv = newcvec(100, 20, 10);
 	if (v->cv == NULL)
 		return freev(v, REG_ESPACE);
-	i = nmcces(v);
-	if (i > 0) {
-		v->mcces = newcvec(nleaders(v), 0, i);
-		CNOERR();
-		v->mcces = allmcces(v, v->mcces);
-		leaders(v, v->mcces);
-		addmcce(v->mcces, (chr *)NULL, (chr *)NULL);	/* dummy */
-	}
 	CNOERR();
 
 	/* parsing */
@@ -1356,7 +1343,7 @@ struct state *rp;
 	assert(right->nins == 0);
 	freestate(v->nfa, right);
 }
-			
+
 /*
  - brackpart - handle one item (or range) within a bracket expression
  ^ static VOID brackpart(struct vars *, struct state *, struct state *);
@@ -1493,50 +1480,6 @@ struct vars *v;
 }
 
 /*
- - leaders - process a cvec of collating elements to also include leaders
- * Also gives all characters involved their own colors, which is almost
- * certainly necessary, and sets up little disconnected subNFA.
- ^ static VOID leaders(struct vars *, struct cvec *);
- */
-static VOID
-leaders(v, cv)
-struct vars *v;
-struct cvec *cv;
-{
-	int mcce;
-	chr *p;
-	chr leader;
-	struct state *s;
-	struct arc *a;
-
-	v->mccepbegin = newstate(v->nfa);
-	v->mccepend = newstate(v->nfa);
-	NOERR();
-
-	for (mcce = 0; mcce < cv->nmcces; mcce++) {
-		p = cv->mcces[mcce];
-		leader = *p;
-		if (!haschr(cv, leader)) {
-			addchr(cv, leader);
-			s = newstate(v->nfa);
-			newarc(v->nfa, PLAIN, subcolor(v->cm, leader),
-							v->mccepbegin, s);
-			okcolors(v->nfa, v->cm);
-		} else {
-			a = findarc(v->mccepbegin, PLAIN,
-						GETCOLOR(v->cm, leader));
-			assert(a != NULL);
-			s = a->to;
-			assert(s != v->mccepend);
-		}
-		p++;
-		assert(*p != 0 && *(p+1) == 0);	/* only 2-char MCCEs for now */
-		newarc(v->nfa, PLAIN, subcolor(v->cm, *p), s, v->mccepend);
-		okcolors(v->nfa, v->cm);
-	}
-}
-
-/*
  - onechr - fill in arcs for a plain character, and possible case complements
  * This is mostly a shortcut for efficient handling of the common case.
  ^ static VOID onechr(struct vars *, pchr, struct state *, struct state *);
@@ -1581,19 +1524,7 @@ struct state *rp;
 	struct state *s;
 	struct state *ps;	/* state in prototype */
 
-	/* need a place to store leaders, if any */
-	if (nmcces(v) > 0) {
-		assert(v->mcces != NULL);
-		if (v->cv2 == NULL || v->cv2->nchrs < v->mcces->nchrs) {
-			if (v->cv2 != NULL)
-				free(v->cv2);
-			v->cv2 = newcvec(v->mcces->nchrs, 0, v->mcces->nmcces);
-			NOERR();
-			leads = v->cv2;
-		} else
-			leads = clearcvec(v->cv2);
-	} else
-		leads = NULL;
+	leads = NULL;
 
 	/* first, get the ordinary characters out of the way */
 	for (p = cv->chrs, i = cv->nchrs; i > 0; p++, i--) {
@@ -2067,7 +1998,7 @@ FILE *f;
 								GUTSMAGIC);
 
 	fprintf(f, "\n\n\n========= DUMP ==========\n");
-	fprintf(f, "nsub %d, info 0%lo, csize %d, ntree %d\n", 
+	fprintf(f, "nsub %d, info 0%lo, csize %d, ntree %d\n",
 		re->re_nsub, re->re_info, re->re_csize, g->ntree);
 
 	dumpcolors(&g->cmap, f);
