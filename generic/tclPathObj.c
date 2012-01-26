@@ -2551,7 +2551,10 @@ SetFsPathFromAny(
 	}
 	Tcl_DStringFree(&temp);
     } else {
+	/* Bug 3479689: protect 0-refcount pathPth from getting freed */
+	pathPtr->refCount++;
 	transPtr = Tcl_FSJoinToPath(pathPtr, 0, NULL);
+	pathPtr->refCount--;
     }
 
 #if defined(__CYGWIN__) && defined(__WIN32__)
