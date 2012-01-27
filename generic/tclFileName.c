@@ -787,32 +787,28 @@ Tcl_FSJoinToPath(
     int objc,			/* Number of array elements to join */
     Tcl_Obj *const objv[])	/* Path elements to join. */
 {
-    int i;
-    Tcl_Obj *lobj, *ret;
-
     if (pathPtr == NULL) {
-	lobj = Tcl_NewListObj(0, NULL);
+	return TclJoinPath(objc, objv);
+    }
+    if (objc == 0) {
+	return TclJoinPath(1, &pathPtr);
+    }
+    if (objc == 1) {
+	Tcl_Obj *pair[2];
+
+	pair[0] = pathPtr;
+	pair[1] = objv[0];
+	return TclJoinPath(2, pair);
     } else {
-	lobj = Tcl_NewListObj(1, &pathPtr);
+	int elemc = objc + 1;
+	Tcl_Obj *ret, **elemv = ckalloc(elemc*sizeof(Tcl_Obj **));
+
+	elemv[0] = pathPtr;
+	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj **));
+	ret = TclJoinPath(elemc, elemv);
+	ckfree(elemv);
+	return ret;
     }
-
-    for (i = 0; i<objc;i++) {
-	Tcl_ListObjAppendElement(NULL, lobj, objv[i]);
-    }
-    ret = Tcl_FSJoinPath(lobj, -1);
-
-    /*
-     * It is possible that 'ret' is just a member of the list and is therefore
-     * going to be freed here. Therefore we must adjust the refCount manually.
-     * (It would be better if we changed the documentation of this function
-     * and Tcl_FSJoinPath so that the returned object already has a refCount
-     * for the caller, hence avoiding these subtleties (and code ugliness)).
-     */
-
-    Tcl_IncrRefCount(ret);
-    Tcl_DecrRefCount(lobj);
-    ret->refCount--;
-    return ret;
 }
 
 /*
