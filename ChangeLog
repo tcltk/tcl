@@ -1,5 +1,13 @@
 2012-01-26  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdAH.c:		New internal routine TclJoinPath().
+	* generic/tclFCmd.c:		Refactor all the *Join*Path* routines
+	* generic/tclFileName.c:	to give them more useful interfaces
+	* generic/tclInt.h:		that are easier to manage getting the
+	* generic/tclPathObj.c:		refcounts right. [Bug 3479689]
+
+2012-01-26  Don Porter  <dgp@users.sourceforge.net>
+
 	* generic/tclPathObj.c:	[Bug 3475569]: Add checks for unshared values
 	before calls demanding them.  [Bug 3479689]: Stop memory corruption
 	when shimmering 0-refCount value to "path" type.
