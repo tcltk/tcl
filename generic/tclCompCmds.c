@@ -390,6 +390,32 @@ TclCompileCatchCmd(
      *    simple:            <mark> result
      */
 
+    if (resultIndex == -1) {
+	/*
+	 * Special case when neither result nor options are being saved. In
+	 * that case, we can skip quite a bit of the command epilogue; all we
+	 * have to do is drop the result and push the return code (and, of
+	 * course, finish the catch context).
+	 */
+
+	TclEmitOpcode(		INST_POP,			envPtr);
+	PushLiteral(envPtr, "0", 1);
+	TclEmitInstInt1(	INST_JUMP1, 3,			envPtr);
+	envPtr->currStackDepth = savedStackDepth;
+	ExceptionRangeTarget(envPtr, range, catchOffset);
+	TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
+	ExceptionRangeEnds(envPtr, range);
+	TclEmitOpcode(		INST_END_CATCH,			envPtr);
+
+	/*
+	 * Stack at this point:
+	 *    nonsimple:  script <mark> returnCode
+	 *    simple:            <mark> returnCode
+	 */
+
+	goto dropScriptAtEnd;
+    }
+
     /*
      * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch
      * result, and jump around the "error case" code.
@@ -467,7 +493,9 @@ TclCompileCatchCmd(
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
-    /* 
+  dropScriptAtEnd:
+
+    /*
      * Stack is now ?script? result. Get rid of the subst'ed script
      * if it's hanging arond.
      */
