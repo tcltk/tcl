@@ -1,10 +1,16 @@
+2012-01-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileCatchCmd): Added a more efficient
+	bytecode generator for the case where 'catch' is used without any
+	variable arguments; don't capture the result just to discard it.
+
 2012-01-26  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdAH.c:		New internal routine TclJoinPath().
-	* generic/tclFCmd.c:		Refactor all the *Join*Path* routines
-	* generic/tclFileName.c:	to give them more useful interfaces
-	* generic/tclInt.h:		that are easier to manage getting the
-	* generic/tclPathObj.c:		refcounts right. [Bug 3479689]
+	* generic/tclCmdAH.c:		[Bug 3479689]: New internal routine
+	* generic/tclFCmd.c:		TclJoinPath(). Refactor all the
+	* generic/tclFileName.c:	*Join*Path* routines to give them more
+	* generic/tclInt.h:		useful interfaces that are easier to
+	* generic/tclPathObj.c:		manage getting the refcounts right.
 
 2012-01-26  Don Porter  <dgp@users.sourceforge.net>
 
