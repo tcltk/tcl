@@ -269,6 +269,14 @@ TclFSNormalizeAbsolutePath(
 		}
 		if (!first || (tclPlatform == TCL_PLATFORM_UNIX)) {
 		    link = Tcl_FSLink(retVal, NULL, 0);
+
+		    /* Safety check in case driver caused sharing */
+		    if (Tcl_IsShared(retVal)) {
+			TclDecrRefCount(retVal);
+			retVal = Tcl_DuplicateObj(retVal);
+			Tcl_IncrRefCount(retVal);
+		    }
+
 		    if (link != NULL) {
 			/*
 			 * Got a link. Need to check if the link is relative
@@ -292,11 +300,6 @@ TclFSNormalizeAbsolutePath(
 				    break;
 				}
 			    }
-			    if (Tcl_IsShared(retVal)) {
-				TclDecrRefCount(retVal);
-				retVal = Tcl_DuplicateObj(retVal);
-				Tcl_IncrRefCount(retVal);
-			    }
 
 			    /*
 			     * We want the trailing slash.
@@ -312,7 +315,12 @@ TclFSNormalizeAbsolutePath(
 			     */
 
 			    TclDecrRefCount(retVal);
-			    retVal = link;
+			    if (Tcl_IsShared(link)) {
+				retVal = Tcl_DuplicateObj(link);
+				TclDecrRefCount(link);
+			    } else {
+				retVal = link;
+			    }
 			    linkStr = Tcl_GetStringFromObj(retVal, &curLen);
 
 			    /*
@@ -1072,6 +1080,12 @@ Tcl_FSJoinPath(
 
 		if (sep != NULL) {
 		    separator = TclGetString(sep)[0];
+		}
+		/* Safety check in case the VFS driver caused sharing */
+		if (Tcl_IsShared(res)) {
+		    TclDecrRefCount(res);
+		    res = Tcl_DuplicateObj(res);
+		    Tcl_IncrRefCount(res);
 		}
 	    }
 
@@ -2537,7 +2551,10 @@ SetFsPathFromAny(
 	}
 	Tcl_DStringFree(&temp);
     } else {
+	/* Bug 3479689: protect 0-refcount pathPth from getting freed */
+	pathPtr->refCount++;
 	transPtr = Tcl_FSJoinToPath(pathPtr, 0, NULL);
+	pathPtr->refCount--;
     }
 
 #if defined(__CYGWIN__) && defined(__WIN32__)
