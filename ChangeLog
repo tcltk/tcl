@@ -1,3 +1,7 @@
+2012-02-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/AddErrInfo.3: [Bug 3482614]: Documentation nit.
+
 2012-01-30  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileCatchCmd): Added a more efficient
