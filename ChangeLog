@@ -1,3 +1,8 @@
+2012-02-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUniData.c: [Frq 3464401] Support Unicode 6.1
+	* generic/regc_locale.c:
+
 2012-02-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* win/tclWinFile.c:	[Bugs 2974459,2879351,1951574,1852572,
