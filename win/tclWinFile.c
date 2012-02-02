@@ -1584,7 +1584,7 @@ NativeAccess(
      * what permissions the OS has set for a file.
      */
 
-#ifndef UNICODE
+#ifdef UNICODE
     {
 	SECURITY_DESCRIPTOR *sdPtr = NULL;
 	unsigned long size;
