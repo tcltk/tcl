@@ -1,3 +1,13 @@
+2012-02-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinFile.c:	[Bugs 2974459,2879351,1951574,1852572,
+	1661378,1613456]: Revisions to the NativeAccess() routine that
+	queries file permissions on Windows native filesystems.  Meant to
+	fix numerous bugs where [file writable|readable|executable] "lies"
+	about what operations are possible, especially when the file resides
+	on a Samba share.  Patch cherrypicked off the fix-win-native-access
+	branch.
+
 2012-01-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/uniClass.tcl:    [Frq 3473670]: Various Unicode-related 
