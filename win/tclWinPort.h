@@ -513,6 +513,10 @@ EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((CONST char *string,
 #define INVALID_SET_FILE_POINTER 0xFFFFFFFF
 #endif /* INVALID_SET_FILE_POINTER */
 
+#ifndef LABEL_SECURITY_INFORMATION
+#   define LABEL_SECURITY_INFORMATION (0x00000010L)
+#endif
+
 #include "tclPlatDecls.h"
 #include "tclIntPlatDecls.h"
 
