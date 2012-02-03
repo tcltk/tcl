@@ -110,8 +110,13 @@ set(ZLIB_SRCS
     trees.c
     uncompr.c
     zutil.c
-    win32/zlib1.rc
 )
+
+if(NOT MINGW)
+    set(ZLIB_SRCS ${ZLIB_SRCS}
+        win32/zlib1.rc # If present will override custom build rule below.
+    )
+endif()
 
 # parse the full version number from zlib.h and include in ZLIB_FULL_VERSION
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/zlib.h _zlib_h_contents)
@@ -120,8 +125,12 @@ string(REGEX REPLACE ".*#define[ \t]+ZLIB_VERSION[ \t]+\"([0-9A-Za-z.]+)\".*"
 
 if(MINGW)
     # This gets us DLL resource information when compiling on MinGW.
+    if(NOT CMAKE_RC_COMPILER)
+        SET(CMAKE_RC_COMPILER windres.exe)
+    endif()
+
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/zlib1rc.obj
-                       COMMAND windres.exe
+                       COMMAND ${CMAKE_RC_COMPILER}
                             -D GCC_WINDRES
                             -I ${CMAKE_CURRENT_SOURCE_DIR}
                             -I ${CMAKE_CURRENT_BINARY_DIR}
@@ -171,20 +180,20 @@ endif()
 # Example binaries
 #============================================================================
 
-add_executable(example example.c)
+add_executable(example test/example.c)
 target_link_libraries(example zlib)
 add_test(example example)
 
-add_executable(minigzip minigzip.c)
+add_executable(minigzip test/minigzip.c)
 target_link_libraries(minigzip zlib)
 
 if(HAVE_OFF64_T)
-    add_executable(example64 example.c)
+    add_executable(example64 test/example.c)
     target_link_libraries(example64 zlib)
     set_target_properties(example64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
     add_test(example64 example64)
 
-    add_executable(minigzip64 minigzip.c)
+    add_executable(minigzip64 test/minigzip.c)
     target_link_libraries(minigzip64 zlib)
     set_target_properties(minigzip64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
 endif()

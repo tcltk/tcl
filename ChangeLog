@@ -1,3 +1,9 @@
+2012-02-??  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/zlib/* [Frq 3483854] zlib-1.2.6
+	!!Not to be merged to trunk until the official zlib1.dll is
+	is released as well!!
+
 2012-02-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclUniData.c: [Frq 3464401] Support Unicode 6.1

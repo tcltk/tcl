@@ -25,7 +25,7 @@
 
 STATICLIB = libz.a
 SHAREDLIB = zlib1.dll
-IMPLIB    = libzdll.a
+IMPLIB    = libz.dll.a
 
 #
 # Set to 1 if shared object needs to be installed
@@ -59,7 +59,7 @@ CP = cp -fp
 INSTALL = $(CP)
 RM = rm -f
 
-prefix = /usr/local
+prefix ?= /usr/local
 exec_prefix = $(prefix)
 
 OBJS = adler32.o compress.o crc32.o deflate.o gzclose.o gzlib.o gzread.o \
@@ -108,6 +108,12 @@ minigzip_d.exe: minigzip.o $(IMPLIB)
 	$(LD) $(LDFLAGS) -o $@ minigzip.o $(IMPLIB)
 	$(STRIP) $@
 
+example.o: test/example.c zlib.h zconf.h
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -I. -c -o $@ test/example.c
+
+minigzip.o: test/minigzip.c zlib.h zconf.h
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -I. -c -o $@ test/minigzip.c
+
 zlibrc.o: win32/zlib1.rc
 	$(RC) $(RCFLAGS) -o $@ win32/zlib1.rc
 
@@ -117,8 +123,12 @@ zlibrc.o: win32/zlib1.rc
 .PHONY: install uninstall clean
 
 install: zlib.h zconf.h $(STATICLIB) $(IMPLIB)
+	@if test -z "$(INCLUDE_PATH)" -o -z "$(LIBRARY_PATH)" -o -z "$(BINARY_PATH)"; then \
+		echo INCLUDE_PATH, LIBRARY_PATH, and BINARY_PATH must be specified; \
+		exit 1; \
+	fi
 	-@mkdir -p $(INCLUDE_PATH)
-	-@mkdir -p $(LIBRARY_PATH)
+	-@mkdir -p $(LIBRARY_PATH) $(LIBRARY_PATH)/pkgconfig
 	-if [ "$(SHARED_MODE)" = "1" ]; then \
 		mkdir -p $(BINARY_PATH); \
 		$(INSTALL) $(SHAREDLIB) $(BINARY_PATH); \
@@ -127,6 +137,14 @@ install: zlib.h zconf.h $(STATICLIB) $(IMPLIB)
 	-$(INSTALL) zlib.h $(INCLUDE_PATH)
 	-$(INSTALL) zconf.h $(INCLUDE_PATH)
 	-$(INSTALL) $(STATICLIB) $(LIBRARY_PATH)
+	sed \
+		-e 's|@prefix@|${prefix}|g' \
+		-e 's|@exec_prefix@|${exec_prefix}|g' \
+		-e 's|@libdir@|$(LIBRARY_PATH)|g' \
+		-e 's|@sharedlibdir@|$(LIBRARY_PATH)|g' \
+		-e 's|@includedir@|$(INCLUDE_PATH)|g' \
+		-e 's|@VERSION@|'`sed -n -e '/VERSION "/s/.*"\(.*\)".*/\1/p' zlib.h`'|g' \
+		zlib.pc.in > $(LIBRARY_PATH)/pkgconfig/zlib.pc
 
 uninstall:
 	-if [ "$(SHARED_MODE)" = "1" ]; then \
@@ -149,7 +167,6 @@ adler32.o: zlib.h zconf.h
 compress.o: zlib.h zconf.h
 crc32.o: crc32.h zlib.h zconf.h
 deflate.o: deflate.h zutil.h zlib.h zconf.h
-example.o: zlib.h zconf.h
 gzclose.o: zlib.h zconf.h gzguts.h
 gzlib.o: zlib.h zconf.h gzguts.h
 gzread.o: zlib.h zconf.h gzguts.h
@@ -158,7 +175,6 @@ inffast.o: zutil.h zlib.h zconf.h inftrees.h inflate.h inffast.h
 inflate.o: zutil.h zlib.h zconf.h inftrees.h inflate.h inffast.h
 infback.o: zutil.h zlib.h zconf.h inftrees.h inflate.h inffast.h
 inftrees.o: zutil.h zlib.h zconf.h inftrees.h
-minigzip.o: zlib.h zconf.h
 trees.o: deflate.h zutil.h zlib.h zconf.h trees.h
 uncompr.o: zlib.h zconf.h
 zutil.o: zutil.h zlib.h zconf.h
