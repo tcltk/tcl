@@ -1,3 +1,35 @@
+2012-02-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUniData.c: [Frq 3464401] Support Unicode 6.1
+	* generic/regc_locale.c:
+
+2012-02-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinFile.c:	[Bugs 2974459,2879351,1951574,1852572,
+	1661378,1613456]: Revisions to the NativeAccess() routine that
+	queries file permissions on Windows native filesystems.  Meant to
+	fix numerous bugs where [file writable|readable|executable] "lies"
+	about what operations are possible, especially when the file resides
+	on a Samba share.
+
+2012-02-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/AddErrInfo.3: [Bug 3482614]: Documentation nit.
+
+2012-01-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileCatchCmd): Added a more efficient
+	bytecode generator for the case where 'catch' is used without any
+	variable arguments; don't capture the result just to discard it.
+
+2012-01-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdAH.c:		[Bug 3479689]: New internal routine
+	* generic/tclFCmd.c:		TclJoinPath(). Refactor all the
+	* generic/tclFileName.c:	*Join*Path* routines to give them more
+	* generic/tclInt.h:		useful interfaces that are easier to
+	* generic/tclPathObj.c:		manage getting the refcounts right.
+
 2012-01-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c:	[Bug 3475569]: Add checks for unshared values

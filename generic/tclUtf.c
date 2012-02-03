@@ -1508,10 +1508,12 @@ Tcl_UniCharIsControl(
 {
     if (UNICODE_OUT_OF_RANGE(ch)) {
 	ch &= 0x1fffff;
-	if ((ch == 0xe0001) || ((ch >= 0xe0020) && (ch <= 0xe007f)))
+	if ((ch == 0xe0001) || ((ch >= 0xe0020) && (ch <= 0xe007f))) {
 	    return 1;
-	if ((ch >= 0xf0000) && ((ch & 0xffff) <= 0xfffd))
+	}
+	if ((ch >= 0xf0000) && ((ch & 0xffff) <= 0xfffd)) {
 	    return 1;
+	}
 	return 0;
     }
     return ((CONTROL_BITS >> GetCategory(ch)) & 1);

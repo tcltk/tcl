@@ -838,44 +838,39 @@ Tcl_FSJoinPath(
 				 * reference count. */
     int elements)		/* Number of elements to use (-1 = all) */
 {
+    Tcl_Obj *copy, *res;
+    int objc;
+    Tcl_Obj **objv;
+
+    if (Tcl_ListObjLength(NULL, listObj, &objc) != TCL_OK) {
+	return NULL;
+    }
+
+    elements = ((elements >= 0) && (elements <= objc)) ? elements : objc;
+    copy = TclListObjCopy(NULL, listObj);
+    Tcl_ListObjGetElements(NULL, listObj, &objc, &objv);
+    res = TclJoinPath(elements, objv);
+    Tcl_DecrRefCount(copy);
+    return res;
+}
+
+Tcl_Obj *
+TclJoinPath(
+    int elements,
+    Tcl_Obj * const objv[])
+{
     Tcl_Obj *res;
     int i;
     const Tcl_Filesystem *fsPtr = NULL;
 
-    if (elements < 0) {
-	if (Tcl_ListObjLength(NULL, listObj, &elements) != TCL_OK) {
-	    return NULL;
-	}
-    } else {
-	/*
-	 * Just make sure it is a valid list.
-	 */
-
-	int listTest;
-
-	if (Tcl_ListObjLength(NULL, listObj, &listTest) != TCL_OK) {
-	    return NULL;
-	}
-
-	/*
-	 * Correct this if it is too large, otherwise we will waste our time
-	 * joining null elements to the path.
-	 */
-
-	if (elements > listTest) {
-	    elements = listTest;
-	}
-    }
-
     res = NULL;
 
     for (i = 0; i < elements; i++) {
-	Tcl_Obj *elt, *driveName = NULL;
 	int driveNameLength, strEltLen, length;
 	Tcl_PathType type;
 	char *strElt, *ptr;
-
-	Tcl_ListObjIndex(NULL, listObj, i, &elt);
+	Tcl_Obj *driveName = NULL;
+	Tcl_Obj *elt = objv[i];
 
 	/*
 	 * This is a special case where we can be much more efficient, where
@@ -889,9 +884,8 @@ Tcl_FSJoinPath(
 	if ((i == (elements-2)) && (i == 0)
 		&& (elt->typePtr == &tclFsPathType)
 		&& !((elt->bytes != NULL) && (elt->bytes[0] == '\0'))) {
-	    Tcl_Obj *tailObj;
+	    Tcl_Obj *tailObj = objv[i+1];
 
-	    Tcl_ListObjIndex(NULL, listObj, i+1, &tailObj);
 	    type = TclGetPathType(tailObj, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
 		const char *str;
@@ -1389,7 +1383,7 @@ AppendPath(
      * of no evidence that such a foolish thing exists.  This solution was
      * chosen so that "JoinPath" operations that pass through either path
      * intrep produce the same results; that is, bugward compatibility.  If
-     * we need to fix that bug here, it needs fixing in Tcl_FSJoinPath() too.
+     * we need to fix that bug here, it needs fixing in TclJoinPath() too.
      */
     bytes = Tcl_GetStringFromObj(tail, &numBytes);
     if (numBytes == 0) {
@@ -2499,10 +2493,7 @@ SetFsPathFromAny(
 	}
 	Tcl_DStringFree(&temp);
     } else {
-	/* Bug 3479689: protect 0-refcount pathPth from getting freed */
-	pathPtr->refCount++;
-	transPtr = Tcl_FSJoinToPath(pathPtr, 0, NULL);
-	pathPtr->refCount--;
+	transPtr = TclJoinPath(1, &pathPtr);
     }
 
 #if defined(__CYGWIN__) && defined(__WIN32__)
