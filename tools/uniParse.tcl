@@ -337,7 +337,7 @@ static const int groups\[\] = {"
     puts $f $line
     puts -nonewline $f "};
 
-#if UTF_MAX_LEN > 3
+#if TCL_UTF_MAX > 3
 #   define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1fffff) >= [format 0x%x $next])
 #else
 #   define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1f0000) != 0)
