@@ -352,8 +352,8 @@ TclCompileCatchCmd(
     }
 
     /*
-     * We will compile the catch command. Declare the exception range
-     * that it uses.
+     * We will compile the catch command. Declare the exception range that it
+     * uses.
      */
 
     range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
@@ -362,10 +362,10 @@ TclCompileCatchCmd(
      * If the body is a simple word, compile a BEGIN_CATCH instruction,
      * followed by the instructions to eval the body.
      * Otherwise, compile instructions to substitute the body text before
-     * starting the catch, then BEGIN_CATCH, and then EVAL_STK to
-     * evaluate the substituted body.
-     * Care has to be taken to make sure that substitution happens outside
-     * the catch range so that errors in the substitution are not caught.
+     * starting the catch, then BEGIN_CATCH, and then EVAL_STK to evaluate the
+     * substituted body.
+     * Care has to be taken to make sure that substitution happens outside the
+     * catch range so that errors in the substitution are not caught.
      * [Bug 219184]
      * The reason for duplicating the script is that EVAL_STK would otherwise
      * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
@@ -390,9 +390,35 @@ TclCompileCatchCmd(
      *    simple:            <mark> result
      */
 
+    if (resultIndex == -1) {
+	/*
+	 * Special case when neither result nor options are being saved. In
+	 * that case, we can skip quite a bit of the command epilogue; all we
+	 * have to do is drop the result and push the return code (and, of
+	 * course, finish the catch context).
+	 */
+
+	TclEmitOpcode(		INST_POP,			envPtr);
+	PushLiteral(envPtr, "0", 1);
+	TclEmitInstInt1(	INST_JUMP1, 3,			envPtr);
+	envPtr->currStackDepth = savedStackDepth;
+	ExceptionRangeTarget(envPtr, range, catchOffset);
+	TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
+	ExceptionRangeEnds(envPtr, range);
+	TclEmitOpcode(		INST_END_CATCH,			envPtr);
+
+	/*
+	 * Stack at this point:
+	 *    nonsimple:  script <mark> returnCode
+	 *    simple:            <mark> returnCode
+	 */
+
+	goto dropScriptAtEnd;
+    }
+
     /*
-     * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch
-     * result, and jump around the "error case" code.
+     * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch result,
+     * and jump around the "error case" code.
      */
 
     PushLiteral(envPtr, "0", 1);
@@ -400,8 +426,8 @@ TclCompileCatchCmd(
     /* Stack at this point: ?script? <mark> result TCL_OK */
 
     /* 
-     * Emit the "error case" epilogue. Push the interpreter result
-     * and the return code.
+     * Emit the "error case" epilogue. Push the interpreter result and the
+     * return code.
      */
 
     envPtr->currStackDepth = savedStackDepth;
@@ -420,7 +446,9 @@ TclCompileCatchCmd(
 		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
 
-    /* Push the return options if the caller wants them */
+    /*
+     * Push the return options if the caller wants them.
+     */
 
     if (optsIndex != -1) {
 	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
@@ -446,19 +474,17 @@ TclCompileCatchCmd(
     }
 
     /*
-     * Store the result if requested, and remove it from the stack
+     * Store the result and remove it from the stack.
      */
 
-    if (resultIndex != -1) {
-	Emit14Inst(		INST_STORE_SCALAR, resultIndex,	envPtr);
-    }
+    Emit14Inst(			INST_STORE_SCALAR, resultIndex,	envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
 
     /*
      * Stack is now ?script? ?returnOptions? returnCode.
-     * If the options dict has been requested, it is buried on the stack
-     * under the return code. Reverse the stack to bring it to the top,
-     * store it and remove it from the stack.
+     * If the options dict has been requested, it is buried on the stack under
+     * the return code. Reverse the stack to bring it to the top, store it and
+     * remove it from the stack.
      */
 
     if (optsIndex != -1) {
@@ -467,9 +493,11 @@ TclCompileCatchCmd(
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
-    /* 
-     * Stack is now ?script? result. Get rid of the subst'ed script
-     * if it's hanging arond.
+  dropScriptAtEnd:
+
+    /*
+     * Stack is now ?script? result. Get rid of the subst'ed script if it's
+     * hanging arond.
      */
 
     if (cmdTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -478,8 +506,8 @@ TclCompileCatchCmd(
     }
 
     /* 
-     * Result of all this, on either branch, should have been to leave
-     * one operand -- the return code -- on the stack.
+     * Result of all this, on either branch, should have been to leave one
+     * operand -- the return code -- on the stack.
      */
 
     if (envPtr->currStackDepth != initStackDepth + 1) {
