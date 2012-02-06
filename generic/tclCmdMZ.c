@@ -4019,8 +4019,18 @@ Tcl_TraceCommand(interp, cmdName, flags, proc, clientData)
     tracePtr->nextPtr = cmdPtr->tracePtr;
     tracePtr->refCount = 1;
     cmdPtr->tracePtr = tracePtr;
-    if (tracePtr->flags & TCL_TRACE_ANY_EXEC) {
+    if ((tracePtr->flags & TCL_TRACE_ANY_EXEC) 
+	    && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
         cmdPtr->flags |= CMD_HAS_EXEC_TRACES;
+
+	/*
+	 * Bug 3484621: New execution trace means we no longer compile
+	 * this command if we normally would.  Invalidate bytecode.
+	 */
+
+	if (cmdPtr->compileProc != NULL) {
+	    ((Interp *)interp)->compileEpoch++;
+	}
     }
     return TCL_OK;
 }
@@ -4123,6 +4133,15 @@ Tcl_UntraceCommand(interp, cmdName, flags, proc, clientData)
 	 * traces.  We therefore remove this flag:
 	 */
 	cmdPtr->flags &= ~CMD_HAS_EXEC_TRACES;
+
+	/*
+	 * Bug 3484621: No more execution trace means we can compile
+	 * the command again.  If we will, invalidate bytecode.
+	 */
+
+	if (cmdPtr->compileProc != NULL) {
+	    ((Interp *)interp)->compileEpoch++;
+	}
     }
 }
 
