@@ -6325,7 +6325,8 @@ TclCompileEnsemble(
     Tcl_IncrRefCount(targetCmdObj);
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, targetCmdObj);
     TclDecrRefCount(targetCmdObj);
-    if (cmdPtr == NULL || cmdPtr->compileProc == NULL) {
+    if (cmdPtr == NULL || cmdPtr->compileProc == NULL
+	    || cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
 	/*
 	 * Maps to an undefined command or a command without a compiler.
 	 * Cannot compile.
