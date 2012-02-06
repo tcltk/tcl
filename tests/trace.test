@@ -2404,6 +2404,39 @@ test trace-34.6 {Bug 1458266} -setup {
     rename isTracedInside_2 {}
 } -result ok
 
+test trace-39 {bug #3484621: tracing Bc'ed commands} -setup {
+    set ::traceLog 0
+    set ::traceCalls 0
+    set ::bar [list 0 1 2 3]
+    set res {}
+    proc dotrace args {
+        incr ::traceLog
+    }
+    proc foo {} {
+        incr ::traceCalls
+        # choose a BC'ed command that is 'unlikely' to interfere with tcltest's
+        # internals
+        lset ::bar 1 2
+    }
+} -body {
+    foo
+    lappend res $::traceLog
+
+    trace add execution lset enter dotrace
+    foo
+    lappend res $::traceLog
+
+    trace remove execution lset enter dotrace
+    foo
+    lappend res $::traceLog
+
+    linsert $res 0 $::traceCalls |
+} -cleanup {
+    unset ::traceLog ::traceCalls ::bar res
+    rename dotrace {}
+    rename foo {}
+} -result {3 | 0 1 1}
+
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
 catch {rename foobar {}}
