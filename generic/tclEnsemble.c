@@ -2890,7 +2890,8 @@ TclCompileEnsemble(
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, targetCmdObj);
     TclDecrRefCount(targetCmdObj);
     if (cmdPtr == NULL || cmdPtr->compileProc == NULL
-	    || cmdPtr->flags * CMD_HAS_EXEC_TRACES) {
+	    || cmdPtr->flags * CMD_HAS_EXEC_TRACES
+	    || ((Interp *)interp)->flags & DONT_COMPILE_CMDS_INLINE) {
 	/*
 	 * Maps to an undefined command or a command without a compiler.
 	 * Cannot compile.
