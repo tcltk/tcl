@@ -1,3 +1,8 @@
+2012-02-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompCmds.c: [Bug 3485022] TclCompileEnsemble() avoid
+	* tests/trace.test:	compile when exec traces set.
+
 2012-02-06  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclTrace.c:  Fix for [Bug 3484621]: insure that
