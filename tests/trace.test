@@ -2591,8 +2591,36 @@ test trace-39 {bug #3484621: tracing Bc'ed commands} -setup {
     rename foo {}
 } -result {3 | 0 1 1}
     
+test trace-39.1 {bug #3485022: tracing Bc'ed commands} -setup {
+    set ::traceLog 0
+    set ::traceCalls 0
+    set res {}
+    proc dotrace args {
+	incr ::traceLog
+    }
+    proc foo {} {
+	incr ::traceCalls
+	string equal zip zap
+    }
+} -body {
+    foo
+    lappend res $::traceLog
 
+    trace add execution ::tcl::string::equal enter dotrace
+    foo
+    lappend res $::traceLog
 
+    trace remove execution tcl::string::equal enter dotrace
+    foo
+    lappend res $::traceLog
+
+    list $::traceCalls | {*}$res
+} -cleanup {
+    unset ::traceLog ::traceCalls res
+    rename dotrace {}
+    rename foo {}
+} -result {3 | 0 1 1}
+    
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
 catch {rename foobar {}}
