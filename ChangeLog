@@ -1,3 +1,9 @@
+2012-02-06  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclTrace.c:  Fix for [Bug 3484621]: insure that
+	* tests/trace.test:    execution traces on bytecoded commands bump
+	the interp's compile epoch.
+	
 2012-02-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclUniData.c: [Frq 3464401] Support Unicode 6.1
