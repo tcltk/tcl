@@ -1,3 +1,8 @@
+2012-02-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:	[Bug 3484621] Invalidate bytecode when exec
+	* tests/trace.test:	traces are added/removed from compiled cmd.
+
 2012-02-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclUniData.c: [Frq 3464401] Support Unicode 6.1
