@@ -1126,6 +1126,16 @@ Tcl_TraceCommand(
     if (tracePtr->flags & TCL_TRACE_ANY_EXEC) {
 	cmdPtr->flags |= CMD_HAS_EXEC_TRACES;
     }
+
+    /*
+     * Bug 3484621: up the interp's epoch if this is a BC'ed command
+     */
+
+    if (cmdPtr->compileProc != NULL) {
+	Interp *iPtr = (Interp *) interp;
+	iPtr->compileEpoch++;
+    }
+    
     return TCL_OK;
 }
 
@@ -1228,6 +1238,15 @@ Tcl_UntraceCommand(
 	 */
 
 	cmdPtr->flags &= ~CMD_HAS_EXEC_TRACES;
+
+        /*
+	 * Bug 3484621: up the interp's epoch if this is a BC'ed command
+	 */
+	
+	if (cmdPtr->compileProc != NULL) {
+	    Interp *iPtr = (Interp *) interp;
+	    iPtr->compileEpoch++;
+	}
     }
 }
 
