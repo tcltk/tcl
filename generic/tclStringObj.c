@@ -1308,7 +1308,7 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
     numChars = stringPtr->numChars + appendNumChars;
     stringCheckLimits(numChars);
 
-    if (STRING_UALLOC(numChars) >= stringPtr->uallocated) {
+    if (STRING_UALLOC(numChars) > stringPtr->uallocated) {
 	/*
 	 * Protect against case where unicode points into the existing
 	 * stringPtr->unicode array.  Force it to follow any relocations
@@ -1316,7 +1316,7 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
 	 */
 	int offset = -1;
 	if (unicode >= stringPtr->unicode && unicode <= stringPtr->unicode
-		+ 1 + stringPtr->uallocated / sizeof(Tcl_UniChar)) {
+		+ stringPtr->uallocated / sizeof(Tcl_UniChar)) {
 	    offset = unicode - stringPtr->unicode;
 	}
 
@@ -1334,7 +1334,7 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
      * trailing null.
      */
 
-    memcpy((VOID*) (stringPtr->unicode + stringPtr->numChars), unicode,
+    memmove((VOID*) (stringPtr->unicode + stringPtr->numChars), unicode,
 	    appendNumChars * sizeof(Tcl_UniChar));
     stringPtr->unicode[numChars] = 0;
     stringPtr->numChars = numChars;
@@ -1514,7 +1514,7 @@ AppendUtfToUtfRep(objPtr, bytes, numBytes)
     stringPtr->numChars = -1;
     stringPtr->hasUnicode = 0;
     
-    memcpy((VOID *) (objPtr->bytes + oldLength), (VOID *) bytes,
+    memmove((VOID *) (objPtr->bytes + oldLength), (VOID *) bytes,
 	    (size_t) numBytes);
     objPtr->bytes[newLength] = 0;
     objPtr->length = newLength;
