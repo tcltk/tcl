@@ -13,6 +13,7 @@
  */
 
 #include "tclInt.h"
+#include "tclParse.h"
 #include <float.h>
 #include <math.h>
 
@@ -964,6 +965,7 @@ TclScanElement(
     }
 
     while (length) {
+      if (CHAR_TYPE(*p) != TYPE_NORMAL) {
 	switch (*p) {
 	case '{':
 #if COMPAT
@@ -1040,6 +1042,7 @@ TclScanElement(
 	    /* TODO: Panic on improper encoding? */
 	    break;
 	}
+      }
 	length -= (length > 0);
 	p++;
     }
