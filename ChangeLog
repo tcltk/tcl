@@ -1,3 +1,9 @@
+2012-02-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	[Bug 3484402] Correct Off-By-One
+	error appending unicode. Thanks to Poor Yorick. Also corrected test
+	for when growth is needed. 
+
 2012-02-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:	[Bug 3484621] Invalidate bytecode when exec
