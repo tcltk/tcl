@@ -1,3 +1,9 @@
+2012-02-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Converted the memcpy() calls in 
+	append operations to memmove() calls.  This adds safety in the case
+	of overlapping copies, and improves performance on some benchmarks.
+
 2012-02-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclEnsemble.c: [Bug 3485022] TclCompileEnsemble() avoid
