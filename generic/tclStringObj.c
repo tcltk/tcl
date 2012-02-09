@@ -1308,7 +1308,7 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
     numChars = stringPtr->numChars + appendNumChars;
     stringCheckLimits(numChars);
 
-    if (STRING_UALLOC(numChars) >= stringPtr->uallocated) {
+    if (STRING_UALLOC(numChars) > stringPtr->uallocated) {
 	/*
 	 * Protect against case where unicode points into the existing
 	 * stringPtr->unicode array.  Force it to follow any relocations
@@ -1316,7 +1316,7 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
 	 */
 	int offset = -1;
 	if (unicode >= stringPtr->unicode && unicode <= stringPtr->unicode
-		+ 1 + stringPtr->uallocated / sizeof(Tcl_UniChar)) {
+		+ stringPtr->uallocated / sizeof(Tcl_UniChar)) {
 	    offset = unicode - stringPtr->unicode;
 	}
 
