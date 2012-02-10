@@ -928,6 +928,7 @@ COMPILEHDR=$(GENERIC_DIR)/tclCompile.h
 FSHDR=$(GENERIC_DIR)/tclFileSystem.h
 IOHDR=$(GENERIC_DIR)/tclIO.h
 MATHHDRS=$(GENERIC_DIR)/tommath.h $(GENERIC_DIR)/tclTomMath.h
+PARSEHDR=$(GENERIC_DIR)/tclParse.h
 
 regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
 		$(GENERIC_DIR)/regc_color.c $(GENERIC_DIR)/regc_locale.c \
@@ -1090,7 +1091,7 @@ tclNamesp.o: $(GENERIC_DIR)/tclNamesp.c
 tclNotify.o: $(GENERIC_DIR)/tclNotify.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNotify.c
 
-tclParse.o: $(GENERIC_DIR)/tclParse.c
+tclParse.o: $(GENERIC_DIR)/tclParse.c $(PARSEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclParse.c
 
 tclPanic.o: $(GENERIC_DIR)/tclPanic.c
@@ -1162,7 +1163,7 @@ tclStubInit.o: $(GENERIC_DIR)/tclStubInit.c
 tclTrace.o: $(GENERIC_DIR)/tclTrace.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTrace.c
 
-tclUtil.o: $(GENERIC_DIR)/tclUtil.c
+tclUtil.o: $(GENERIC_DIR)/tclUtil.c $(PARSEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtil.c
 
 tclUtf.o: $(GENERIC_DIR)/tclUtf.c $(GENERIC_DIR)/tclUniData.c
