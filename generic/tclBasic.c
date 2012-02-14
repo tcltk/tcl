@@ -3020,7 +3020,7 @@ GetCommandSource(
     if (!command) {
 	return Tcl_NewListObj(objc, objv);
     }
-    if (command == (char *) -1 || command == (char *) -2) {
+    if (command == (char *) -1 || command == ENSEMBLE_PSEUDO_COMMAND) {
 	command = TclGetSrcInfoForCmd(iPtr, &numChars);
 	if (!command) {
 	    return Tcl_NewListObj(objc, objv);
@@ -3536,8 +3536,10 @@ TclEvalObjvInternal(
 				 * for traces. NULL if the string
 				 * representation of the command is unknown is
 				 * to be generated from (objc,objv), -1 if it
-				 * is to be generated from bytecode
-				 * source. This is only needed the traces. */
+				 * is to be generated from bytecode source,
+				 * ENSEMBLE_PSEUDO_COMMAND if it is to be
+				 * determined from the ensemble context. This
+				 * is only needed the traces. */
     int length,			/* Number of bytes in command; if -1, all
 				 * characters up to the first null byte are
 				 * used. */

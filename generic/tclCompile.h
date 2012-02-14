@@ -843,6 +843,14 @@ typedef struct {
 	int identity;
     } i;
 } TclOpCmdClientData;
+
+/*
+ * Special sentinel value for TclEvalObjvInternal's 'command' parameter to
+ * cause it to retrieve command information for an ensemble from the
+ * containing command.
+ */
+
+#define ENSEMBLE_PSEUDO_COMMAND ((char *)(-2))
 
 /*
  *----------------------------------------------------------------

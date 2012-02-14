@@ -6230,10 +6230,12 @@ NsEnsembleImplementationCmd(
 
 	/*
 	 * Hand off to the target command.
-	 * [sebres] call from ensemble -- -2 (to retrive subcommand from main ensemble)
+	 * [sebres] call from ensemble using ENSEMBLE_PSEUDO_COMMAND to
+	 * retrive subcommand from main ensemble.
 	 */
 
-	result = TclEvalObjvInternal(interp, objc-2+prefixObjc, tempObjv, (char *)-2, -2,
+	result = TclEvalObjvInternal(interp, objc-2+prefixObjc, tempObjv,
+		ENSEMBLE_PSEUDO_COMMAND, -2 /*TclGetSrcInfoForCmd sentinel*/,
 		TCL_EVAL_INVOKE);
 
 	/*
