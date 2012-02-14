@@ -7769,11 +7769,35 @@ TclGetSrcInfoForCmd(
     Interp *iPtr,
     int *lenPtr)
 {
-    CmdFrame *cfPtr = iPtr->cmdFramePtr;
-    ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
+    int len;
+    ByteCode *codePtr;
 
-    return GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
-	    codePtr, lenPtr);
+    CmdFrame *cfPtr = iPtr->cmdFramePtr;
+    const char * command;
+
+    if (!cfPtr)
+	return NULL;
+    codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
+    if (!codePtr)
+	return NULL;
+    if (!cfPtr->data.tebc.pc)
+	return NULL;
+
+    command = GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
+	    codePtr, &len);
+
+    // [sebres] if ensemble call - shift string ptr to subcommand (string range -> range) :
+    if (command && len && (lenPtr && *lenPtr == -2) && codePtr->objArrayPtr) {
+	Tcl_Obj * objPtr = codePtr->objArrayPtr[0];
+	if (len > objPtr->length) {
+	    command += objPtr->length + 1;
+	    len -= objPtr->length + 1;
+	}
+    }
+
+    if (lenPtr != NULL)
+	*lenPtr = len;
+    return command;
 }
 
 void

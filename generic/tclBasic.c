@@ -3020,8 +3020,11 @@ GetCommandSource(
     if (!command) {
 	return Tcl_NewListObj(objc, objv);
     }
-    if (command == (char *) -1) {
+    if (command == (char *) -1 || command == (char *) -2) {
 	command = TclGetSrcInfoForCmd(iPtr, &numChars);
+	if (!command) {
+	    return Tcl_NewListObj(objc, objv);
+	}
     }
     return Tcl_NewStringObj(command, numChars);
 }

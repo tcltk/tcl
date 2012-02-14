@@ -44,6 +44,10 @@
  * Declare external functions used in Windows tests.
  */
 
+#if (defined( _MSC_VER ))
+typedef void * intptr_t;
+#endif
+ 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc; used to collect
  * the results of the various deletion callbacks.
