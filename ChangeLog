@@ -1,3 +1,9 @@
+2012-02-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictForCmd): [Bug 3487626]: Fix
+	crash in compilation of [dict for] when its implementation command is
+	used directly rather than through the ensemble.
+
 2012-02-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	Converted the memcpy() calls in append
