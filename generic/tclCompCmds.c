@@ -906,7 +906,7 @@ TclCompileDictForCmd(
      * Compile the loop body itself. It should be stack-neutral.
      */
 
-    SetLineInformation(4);
+    SetLineInformation(3);
     CompileBody(envPtr, bodyTokenPtr, interp);
     TclEmitOpcode(	INST_POP,				envPtr);
 
@@ -1112,6 +1112,7 @@ TclCompileDictUpdateCmd(
 
     ExceptionRangeStarts(envPtr, range);
     envPtr->currStackDepth++;
+    SetLineInformation(parsePtr->numWords - 1);
     CompileBody(envPtr, bodyTokenPtr, interp);
     envPtr->currStackDepth = savedStackDepth;
     ExceptionRangeEnds(envPtr, range);
