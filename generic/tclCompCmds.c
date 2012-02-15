@@ -3147,13 +3147,24 @@ TclCompileLindexCmd(
 
 	tmpObj = Tcl_NewStringObj(idxTokenPtr[1].start, idxTokenPtr[1].size);
 	result = TclGetIntFromObj(NULL, tmpObj, &idx);
+	if (result == TCL_OK) {
+	    if (idx < 0) {
+		result = TCL_ERROR;
+	    }
+	} else {
+	    result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx);
+	    if (result == TCL_OK && idx > -2) {
+		result = TCL_ERROR;
+	    }
+	}
 	TclDecrRefCount(tmpObj);
 
-	if (result == TCL_OK && idx >= 0) {
+	if (result == TCL_OK) {
 	    /*
-	     * All checks have been completed, and we have exactly this
-	     * construct:
+	     * All checks have been completed, and we have exactly one of
+	     * these constructs:
 	     *	 lindex <arbitraryValue> <posInt>
+	     *	 lindex <arbitraryValue> end-<posInt>
 	     * This is best compiled as a push of the arbitrary value followed
 	     * by an "immediate lindex" which is the most efficient variety.
 	     */
@@ -3292,6 +3303,102 @@ TclCompileLlengthCmd(
 
     CompileWord(envPtr, varTokenPtr, interp, 1);
     TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLrangeCmd --
+ *
+ *	How to compile the "lrange" command. We only bother because we needed
+ *	the opcode anyway for "lassign".
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLrangeCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for context. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    Tcl_Token *tokenPtr, *listTokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Obj *tmpObj;
+    int idx1, idx2, result;
+
+    if (parsePtr->numWords != 4) {
+	return TCL_ERROR;
+    }
+    listTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    /*
+     * Parse the first index. Will only compile if it is constant and not an
+     * _integer_ less than zero (since we reserve negative indices here for
+     * end-relative indexing).
+     */
+
+    tokenPtr = TokenAfter(listTokenPtr);
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
+    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
+    if (result == TCL_OK) {
+	if (idx1 < 0) {
+	    result = TCL_ERROR;
+	}
+    } else {
+	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
+	if (result == TCL_OK && idx1 > -2) {
+	    result = TCL_ERROR;
+	}
+    }
+    TclDecrRefCount(tmpObj);
+    if (result != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse the second index. Will only compile if it is constant and not an
+     * _integer_ less than zero (since we reserve negative indices here for
+     * end-relative indexing).
+     */
+
+    tokenPtr = TokenAfter(tokenPtr);
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
+    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
+    if (result == TCL_OK) {
+	if (idx2 < 0) {
+	    result = TCL_ERROR;
+	}
+    } else {
+	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
+	if (result == TCL_OK && idx2 > -2) {
+	    result = TCL_ERROR;
+	}
+    }
+    TclDecrRefCount(tmpObj);
+    if (result != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Issue instructions. It's not safe to skip doing the LIST_RANGE, as
+     * we've not proved that the 'list' argument is really a list. Not that it
+     * is worth trying to do that given current knowledge.
+     */
+
+    CompileWord(envPtr, listTokenPtr, interp, 1);
+    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx1,	envPtr);
+    TclEmitInt4(		idx2,				envPtr);
     return TCL_OK;
 }
 
