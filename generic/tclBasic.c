@@ -230,7 +230,7 @@ static const CmdInfo builtInCmds[] = {
     {"linsert",		Tcl_LinsertObjCmd,	NULL,			NULL,	1},
     {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	NULL,	1},
     {"llength",		Tcl_LlengthObjCmd,	TclCompileLlengthCmd,	NULL,	1},
-    {"lrange",		Tcl_LrangeObjCmd,	NULL,			NULL,	1},
+    {"lrange",		Tcl_LrangeObjCmd,	TclCompileLrangeCmd,	NULL,	1},
     {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			NULL,	1},
     {"lreplace",	Tcl_LreplaceObjCmd,	NULL,			NULL,	1},
     {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	1},
