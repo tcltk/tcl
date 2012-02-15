@@ -1,12 +1,18 @@
+2012-02-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictForCmd): [Bug 3487626]: Fix
+	crash in compilation of [dict for] when its implementation command is
+	used directly rather than through the ensemble.
+
 2012-02-09  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStringObj.c:	[Bug 3484402] Correct Off-By-One
+	* generic/tclStringObj.c:	[Bug 3484402]: Correct Off-By-One
 	error appending unicode. Thanks to Poor Yorick. Also corrected test
-	for when growth is needed. 
+	for when growth is needed.
 
 2012-02-06  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCompCmds.c: [Bug 3485022] TclCompileEnsemble() avoid
+	* generic/tclCompCmds.c: [Bug 3485022]: TclCompileEnsemble() avoid
 	* tests/trace.test:	compile when exec traces set.
 
 2012-02-06  Miguel Sofer  <msofer@users.sf.net>
@@ -14,10 +20,10 @@
 	* generic/tclTrace.c:  Fix for [Bug 3484621]: insure that
 	* tests/trace.test:    execution traces on bytecoded commands bump
 	the interp's compile epoch.
-	
+
 2012-02-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclUniData.c: [Frq 3464401] Support Unicode 6.1
+	* generic/tclUniData.c: [FRQ 3464401]: Support Unicode 6.1
 	* generic/regc_locale.c:
 
 2012-02-02  Don Porter  <dgp@users.sourceforge.net>
