@@ -1,8 +1,10 @@
 2012-02-15  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclCompCmds.c (TclCompileLrangeCmd): Add compiler for
-	[lrange] with constant indices so we can take advantage of existing
-	TCL_LIST_RANGE_IMM opcode.
+	* generic/tclCompCmds.c (TclCompileLreplaceCmd): Added a compilation
+	strategy for [lreplace] that tackles the cases which are equivalent to
+	a static [lrange].
+	(TclCompileLrangeCmd): Add compiler for [lrange] with constant indices
+	so we can take advantage of existing TCL_LIST_RANGE_IMM opcode.
 	(TclCompileLindexCmd): Improve coverage of constant-index-style
 	compliation using technique developed for [lrange] above.
 
