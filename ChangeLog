@@ -1,8 +1,14 @@
 2012-02-15  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclCompCmds.c (TclCompileDictForCmd): [Bug 3487626]: Fix
-	crash in compilation of [dict for] when its implementation command is
-	used directly rather than through the ensemble.
+	* generic/tclCompCmds.c (TclCompileLrangeCmd): Add compiler for
+	[lrange] with constant indices so we can take advantage of existing
+	TCL_LIST_RANGE_IMM opcode.
+	(TclCompileLindexCmd): Improve coverage of constant-index-style
+	compliation using technique developed for [lrange] above.
+
+	(TclCompileDictForCmd): [Bug 3487626]: Fix crash in compilation of
+	[dict for] when its implementation command is used directly rather
+	than through the ensemble.
 
 2012-02-09  Don Porter  <dgp@users.sourceforge.net>
 
