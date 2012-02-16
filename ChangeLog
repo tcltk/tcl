@@ -1,3 +1,8 @@
+2012-02-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIOUtil.c: [Bug 2233954] AIX: compile error
+	* unix/tclUnixPort.h:
+
 2012-02-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclExecute.c (INST_LIST_RANGE_IMM): Enhance implementation
