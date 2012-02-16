@@ -18,6 +18,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#ifdef HAVE_SYS_STAT_H
+#   include <sys/stat.h>
+#endif
 #include "tclInt.h"
 #ifdef __WIN32__
 #   include "tclWinInt.h"
