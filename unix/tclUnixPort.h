@@ -96,7 +96,9 @@ typedef off_t		Tcl_SeekOffset;
 #ifdef HAVE_SYS_SELECT_H
 #   include <sys/select.h>
 #endif
-#include <sys/stat.h>
+#ifdef HAVE_SYS_STAT_H
+#   include <sys/stat.h>
+#endif
 #if TIME_WITH_SYS_TIME
 #   include <sys/time.h>
 #   include <time.h>
