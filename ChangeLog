@@ -1,3 +1,9 @@
+2012-02-??  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIOUtil.c:	[Bug bug-3466099] BOM in Unicode
+	* generic/tclEncoding.c:
+	* tests/source.test
+
 2012-02-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	[Bug 3484402] Correct Off-By-One

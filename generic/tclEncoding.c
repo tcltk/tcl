@@ -764,13 +764,13 @@ Tcl_GetEncodingNames(interp)
 int
 Tcl_SetSystemEncoding(interp, name)
     Tcl_Interp *interp;		/* Interp for error reporting, if not NULL. */
-    CONST char *name;		/* The name of the desired encoding, or NULL
+    CONST char *name;		/* The name of the desired encoding, or NULL/""
 				 * to reset to default encoding. */
 {
     Tcl_Encoding encoding;
     Encoding *encodingPtr;
 
-    if (name == NULL) {
+    if (!name || !*name) {
 	Tcl_MutexLock(&encodingMutex);
 	encoding = defaultEncoding;
 	encodingPtr = (Encoding *) encoding;
