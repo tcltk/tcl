@@ -121,16 +121,16 @@ test source-2.6 {source error conditions} -setup {
 test source-2.7 {utf-8 with BOM} -setup {
     set sourcefile [makeFile {} source.file]
     set saveencoding [encoding system]
+} -body {
     encoding system utf-8
     set out [open $sourcefile w]
     puts $out "\ufffeset y new-y"
     close $out
-} -body {
-   set y old-y
+    set y old-y
     source $sourcefile
-    set y
+    return $y
 } -cleanup {
-    removeFile source.file
+    removeFile $sourcefile
     encoding system $saveencoding
 } -result {new-y}
 
