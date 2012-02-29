@@ -112,7 +112,7 @@ test source-2.7 {utf-8 with BOM} -setup {
 } -body {
     set out [open $sourcefile w]
     fconfigure $out -encoding utf-8
-    puts $out "\ufffeset y new-y"
+    puts $out "\ufeffset y new-y"
     close $out
     set y old-y
     source -encoding utf-8 $sourcefile
