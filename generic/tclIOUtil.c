@@ -1770,7 +1770,7 @@ Tcl_FSEvalFile(interp, pathPtr)
      * otherwise replace them [Bug 3466099].
      */
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbf\xbe", 3)) < 0) {
+	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"",
 		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
