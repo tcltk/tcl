@@ -1755,11 +1755,25 @@ Tcl_FSEvalFile(interp, pathPtr)
      * [Bug: 2040]
      */
     Tcl_SetChannelOption(interp, chan, "-eofchar", "\32");
-    if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
-        Tcl_Close(interp, chan);
+    /* Try to read first character of stream, so we can
+     * check for utf-8 BOM to be handled especially.
+     */
+    if (Tcl_ReadChars(chan, objPtr, 1, 0) < 0) {
+	Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"", 
-		Tcl_GetString(pathPtr),
-		"\": ", Tcl_PosixError(interp), (char *) NULL);
+		Tcl_GetString(pathPtr),	"\": ", Tcl_PosixError(interp), NULL);
+	goto end;
+    }
+    string = Tcl_GetString(objPtr);
+    /*
+     * If first character is not a BOM, append the remaining characters,
+     * otherwise replace them [Bug 3466099].
+     */
+    if (Tcl_ReadChars(chan, objPtr, -1,
+	    memcmp(string, "\xef\xbf\xbe", 3)) < 0) {
+	Tcl_Close(interp, chan);
+	Tcl_AppendResult(interp, "couldn't read file \"",
+		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
 	goto end;
     }
     if (Tcl_Close(interp, chan) != TCL_OK) {
