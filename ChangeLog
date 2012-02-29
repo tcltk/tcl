@@ -1,3 +1,9 @@
+2012-02-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIOUtil.c:	[Bug 3466099] BOM in Unicode
+	* generic/tclEncoding.c:
+	* tests/source.test
+
 2012-02-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/reg.test (14.21-23): Add tests relating to bug 1115587. Actual
