@@ -6235,8 +6235,8 @@ NsEnsembleImplementationCmd(
 	 */
 
 	result = TclEvalObjvInternal(interp, objc-2+prefixObjc, tempObjv,
-		ENSEMBLE_PSEUDO_COMMAND, -2 /*TclGetSrcInfoForCmd sentinel*/,
-		TCL_EVAL_INVOKE);
+		/* call from TEBC, TclGetSrcInfoForCmd sentinel */(char *) -1, 
+		ENSEMBLE_PSEUDO_COMMAND, TCL_EVAL_INVOKE);
 
 	/*
 	 * Clean up.

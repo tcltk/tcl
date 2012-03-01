@@ -7757,6 +7757,8 @@ IllegalExprOperandType(
  *	at pc, information about the closest enclosing command is returned. If
  *	no matching command is found, NULL is returned and *lengthPtr is
  *	unchanged.
+ *	As input parameter '*lengthPtr' could be used an ENSEMBLE_PSEUDO_COMMAND 
+ *	to advise call of the ensemble command.
  *
  * Side effects:
  *	The CmdFrame at *cfPtr is updated.
@@ -7786,11 +7788,11 @@ TclGetSrcInfoForCmd(
 	    codePtr, &len);
 
     /*
-     * [sebres]: If ensemble call (sentinel length == -2), shift string ptr to
-     * subcommand (string range -> range).
+     * [sebres]: If ensemble call (sentinel length == ENSEMBLE_PSEUDO_COMMAND), 
+     * shift string ptr to subcommand (string range -> range).
      */
 
-    if (command && len && (lenPtr && *lenPtr == -2) && codePtr->objArrayPtr) {
+    if (command && len && (lenPtr && *lenPtr == ENSEMBLE_PSEUDO_COMMAND) && codePtr->objArrayPtr) {
 	Tcl_Obj *objPtr = codePtr->objArrayPtr[0];
 
 	if (len > objPtr->length) {
