@@ -1437,7 +1437,7 @@ BroadcastValue(
     Tcl_Obj *CONST objv[])	/* Argument values. */
 {
     LRESULT result;
-    DWORD_PTR sendResult;
+    DWORD sendResult;
     UINT timeout = 3000;
     int len;
     CONST char *str;
