@@ -18,6 +18,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#if defined(HAVE_SYS_STAT_H) && !defined _WIN32
+#   include <sys/stat.h>
+#endif
 #include "tclInt.h"
 #ifdef __WIN32__
 #   include "tclWinInt.h"
@@ -1785,7 +1788,22 @@ Tcl_FSEvalFileEx(
 
     objPtr = Tcl_NewObj();
     Tcl_IncrRefCount(objPtr);
-    if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
+    /* Try to read first character of stream, so we can
+     * check for utf-8 BOM to be handled especially.
+     */
+    if (Tcl_ReadChars(chan, objPtr, 1, 0) < 0) {
+	Tcl_Close(interp, chan);
+	Tcl_AppendResult(interp, "couldn't read file \"",
+		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	goto end;
+    }
+    string = Tcl_GetString(objPtr);
+    /*
+     * If first character is not a BOM, append the remaining characters,
+     * otherwise replace them [Bug 3466099].
+     */
+    if (Tcl_ReadChars(chan, objPtr, -1,
+	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"",
 		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);

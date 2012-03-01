@@ -1,12 +1,34 @@
+2012-02-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIOUtil.c:	[Bug 3466099] BOM in Unicode
+	* generic/tclEncoding.c:
+	* tests/source.test
+
+2012-02-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/reg.test (14.21-23): Add tests relating to bug 1115587. Actual
+	bug is characterised by test marked with 'knownBug'.
+
+2012-02-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIOUtil.c: [Bug 2233954]: AIX: compile error
+	* unix/tclUnixPort.h:
+
+2012-02-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictForCmd): [Bug 3487626]: Fix
+	crash in compilation of [dict for] when its implementation command is
+	used directly rather than through the ensemble.
+
 2012-02-09  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStringObj.c:	[Bug 3484402] Correct Off-By-One
+	* generic/tclStringObj.c:	[Bug 3484402]: Correct Off-By-One
 	error appending unicode. Thanks to Poor Yorick. Also corrected test
-	for when growth is needed. 
+	for when growth is needed.
 
 2012-02-06  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCompCmds.c: [Bug 3485022] TclCompileEnsemble() avoid
+	* generic/tclCompCmds.c: [Bug 3485022]: TclCompileEnsemble() avoid
 	* tests/trace.test:	compile when exec traces set.
 
 2012-02-06  Miguel Sofer  <msofer@users.sf.net>
@@ -14,10 +36,10 @@
 	* generic/tclTrace.c:  Fix for [Bug 3484621]: insure that
 	* tests/trace.test:    execution traces on bytecoded commands bump
 	the interp's compile epoch.
-	
+
 2012-02-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclUniData.c: [Frq 3464401] Support Unicode 6.1
+	* generic/tclUniData.c: [FRQ 3464401]: Support Unicode 6.1
 	* generic/regc_locale.c:
 
 2012-02-02  Don Porter  <dgp@users.sourceforge.net>
@@ -2302,7 +2324,7 @@
 
 	* unix/tclUnixChan.c:		TclUnixWaitForFile(): use FD_* macros
 	* macosx/tclMacOSXNotify.c:	to manipulate select masks (Cassoff).
-					[Bug 1960647]
+					[Freq 1960647] [Bug 3486554]
 
 	* unix/tclLoadDyld.c:		use RTLD_GLOBAL instead of RTLD_LOCAL.
 					[Bug 1961211]
