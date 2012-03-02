@@ -1,6 +1,12 @@
+2012-03-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBinary.c (Tcl_SetByteArrayObj): Only zero out the memory
+	block if it is not being immediately overwritten. (Caller might still
+	overwrite, but we should at least avoid known-useless work.)
+
 2012-02-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclIOUtil.c:	[Bug 3466099] BOM in Unicode
+	* generic/tclIOUtil.c:	[Bug 3466099]: BOM in Unicode
 	* generic/tclEncoding.c:
 	* tests/source.test
 
