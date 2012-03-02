@@ -1,8 +1,9 @@
 2012-03-02  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclBinary.c (Tcl_SetByteArrayObj): Only zero out the memory
-	block if it is not being immediately overwritten. (Caller might still
-	overwrite, but we should at least avoid known-useless work.)
+	* generic/tclBinary.c (Tcl_SetByteArrayObj): [Bug 3496014]: Only zero
+	out the memory block if it is not being immediately overwritten. (Our
+	caller might still overwrite, but we should at least avoid
+	known-useless work.)
 
 2012-02-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
