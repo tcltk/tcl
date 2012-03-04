@@ -3195,12 +3195,21 @@ TclUnixWaitForFile(fd, mask, timeout)
 {
     Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
     struct timeval blockTime, *timeoutPtr;
-    int index, numFound, result = 0;
-    fd_mask bit;
-    fd_mask readyMasks[3*MASK_SIZE];
-				/* This array reflects the readable/writable
-				 * conditions that were found to exist by the
-				 * last call to select. */
+    int numFound, result = 0;
+    fd_set readableMask;
+    fd_set writableMask;
+    fd_set exceptionalMask;
+
+#ifndef _DARWIN_C_SOURCE
+    /*
+     * Sanity check fd.
+     */
+
+    if (fd >= FD_SETSIZE) {
+	Tcl_Panic("TclUnixWaitForFile can't handle file id %d", fd);
+	/* must never get here, or select masks overrun will occur below */
+    }
+#endif
 
     /*
      * If there is a non-zero finite timeout, compute the time when
@@ -3225,15 +3234,12 @@ TclUnixWaitForFile(fd, mask, timeout)
     }
 
     /*
-     * Initialize the ready masks and compute the mask offsets.
+     * Initialize the select masks.
      */
 
-    if (fd >= FD_SETSIZE) {
-	panic("TclWaitForFile can't handle file id %d", fd);
-    }
-    memset((VOID *) readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
-    index = fd/(NBBY*sizeof(fd_mask));
-    bit = ((fd_mask) 1) << (fd%(NBBY*sizeof(fd_mask)));
+    FD_ZERO(&readableMask);
+    FD_ZERO(&writableMask);
+    FD_ZERO(&exceptionalMask);
 
     /*
      * Loop in a mini-event loop of our own, waiting for either the
@@ -3255,34 +3261,33 @@ TclUnixWaitForFile(fd, mask, timeout)
 	}
 
 	/*
-	 * Set the appropriate bit in the ready masks for the fd.
+	 * Setup the select masks for the fd.
 	 */
 
-	if (mask & TCL_READABLE) {
-	    readyMasks[index] |= bit;
+	if (mask & TCL_READABLE)  {
+	    FD_SET(fd, &readableMask);
 	}
-	if (mask & TCL_WRITABLE) {
-	    (readyMasks+MASK_SIZE)[index] |= bit;
+	if (mask & TCL_WRITABLE)  {
+	    FD_SET(fd, &writableMask);
 	}
 	if (mask & TCL_EXCEPTION) {
-	    (readyMasks+2*(MASK_SIZE))[index] |= bit;
+	    FD_SET(fd, &exceptionalMask);
 	}
 
 	/*
 	 * Wait for the event or a timeout.
 	 */
 
-	numFound = select(fd+1, (SELECT_MASK *) &readyMasks[0],
-		(SELECT_MASK *) &readyMasks[MASK_SIZE],
-		(SELECT_MASK *) &readyMasks[2*MASK_SIZE], timeoutPtr);
+	numFound = select(fd + 1, &readableMask, &writableMask,
+		&exceptionalMask, timeoutPtr);
 	if (numFound == 1) {
-	    if (readyMasks[index] & bit) {
+	    if (FD_ISSET(fd, &readableMask))   {
 		result |= TCL_READABLE;
 	    }
-	    if ((readyMasks+MASK_SIZE)[index] & bit) {
+	    if (FD_ISSET(fd, &writableMask))  {
 		result |= TCL_WRITABLE;
 	    }
-	    if ((readyMasks+2*(MASK_SIZE))[index] & bit) {
+	    if (FD_ISSET(fd, &exceptionalMask)) { 
 		result |= TCL_EXCEPTION;
 	    }
 	    result &= mask;
