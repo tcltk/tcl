@@ -1955,6 +1955,12 @@ test info-38.2 {location information for uplevel, dl, direct-literal} -match glo
 * {type source line 1951 file info.test cmd etrace level 1}
 * {type source line 1949 file info.test cmd uplevel\\ \\\\ level 1}} -cleanup {interp delete sub}
 
+# This test at the end of this file _only_ to avoid disturbing above line
+# numbers. It _belongs_ after info-9.12
+test info-9.13 {info level option, value in global context} -body {
+    uplevel #0 {info level 2}
+} -returnCodes error -result {bad level "2"}
+
 # -------------------------------------------------------------------------
 unset -nocomplain res
 
