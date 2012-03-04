@@ -2817,20 +2817,45 @@ TclCompileIncrCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileInfoExistsCmd --
+ * TclCompileInfo*Cmd --
  *
- *	Procedure called to compile the "info exists" subcommand.
+ *	Procedures called to compile "info" subcommands.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  *	evaluation to runtime.
  *
  * Side effects:
- *	Instructions are added to envPtr to execute the "info exists"
- *	subcommand at runtime.
+ *	Instructions are added to envPtr to execute the "info" subcommand at
+ *	runtime.
  *
  *----------------------------------------------------------------------
  */
+
+int
+TclCompileInfoCoroutineCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Only compile [info coroutine] without arguments.
+     */
+
+    if (parsePtr->numWords != 1) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Not much to do; we compile to a single instruction...
+     */
+
+    TclEmitOpcode(		INST_COROUTINE_NAME,		envPtr);
+    return TCL_OK;
+}
 
 int
 TclCompileInfoExistsCmd(
@@ -2881,6 +2906,42 @@ TclCompileInfoExistsCmd(
 	}
     }
 
+    return TCL_OK;
+}
+
+int
+TclCompileInfoLevelCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Only compile [info level] without arguments or with a single argument.
+     */
+
+    if (parsePtr->numWords == 1) {
+	/*
+	 * Not much to do; we compile to a single instruction...
+	 */
+
+	TclEmitOpcode(		INST_INFO_LEVEL_NUM,		envPtr);
+    } else if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    } else {
+	DefineLineInformation;	/* TIP #280 */
+
+	/*
+	 * Compile the argument, then add the instruction to convert it into a
+	 * list of arguments.
+	 */
+
+	SetLineInformation(1);
+	CompileTokens(envPtr, TokenAfter(parsePtr->tokenPtr), interp);
+	TclEmitOpcode(		INST_INFO_LEVEL_ARGS,		envPtr);
+    }
     return TCL_OK;
 }
 
@@ -3700,11 +3761,11 @@ TclCompileLsetCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileNamespaceCmd --
+ * TclCompileNamespace*Cmd --
  *
- *	Procedure called to compile the "namespace" command; currently, only
- *	the subcommand "namespace upvar" is compiled to bytecodes, and then
- *	only inside a procedure(-like) context.
+ *	Procedures called to compile the "namespace" command; currently, only
+ *	the subcommands "namespace current" and "namespace upvar" are compiled
+ *	to bytecodes, and the latter only inside a procedure(-like) context.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
@@ -3716,6 +3777,31 @@ TclCompileLsetCmd(
  *
  *----------------------------------------------------------------------
  */
+
+int
+TclCompileNamespaceCurrentCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Only compile [namespace current] without arguments.
+     */
+
+    if (parsePtr->numWords != 1) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Not much to do; we compile to a single instruction...
+     */
+
+    TclEmitOpcode(		INST_NS_CURRENT,		envPtr);
+    return TCL_OK;
+}
 
 int
 TclCompileNamespaceUpvarCmd(

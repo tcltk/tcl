@@ -37,7 +37,7 @@ TCL_DECLARE_MUTEX(tableMutex)
 int tclTraceCompile = 0;
 static int traceInitialized = 0;
 #endif
-
+
 /*
  * A table describing the Tcl bytecode instructions. Entries in this table
  * must correspond to the instruction opcode definitions in tclCompile.h. The
@@ -434,6 +434,20 @@ InstructionDesc const tclInstructionTable[] = {
         /* Map variable contents back into a dictionary in the local variable
          * indicated by the LVT index. Part of [dict with].
 	 * Stack:  ... path keyList => ... */
+
+    {"nscurrent",	 1,    +1,	  0,	{OPERAND_NONE}},
+	/* Push the name of the interpreter's current namespace as an object
+	 * on the stack. */
+    {"coroName",         1,    +1,	  0,	{OPERAND_NONE}},
+	/* Push the name of the interpreter's current coroutine as an object
+	 * on the stack. */
+    {"infoLevelNumber",  1,    +1,	  0,	{OPERAND_NONE}},
+	/* Push the stack depth (i.e., [info level]) of the interpreter as an
+	 * object on the stack. */
+    {"infoLevelArgs",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Push the argument words to a stack depth (i.e., [info level <n>])
+	 * of the interpreter as an object on the stack.
+	 * Stack:  ... depth => ... argList */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -1673,10 +1687,10 @@ TclCompileScript(
 			    && !(cmdPtr->nsPtr->flags&NS_SUPPRESS_COMPILATION)
 			    && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
 			    && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
-			int savedNumCmds = envPtr->numCommands;
+			int code, savedNumCmds = envPtr->numCommands;
 			unsigned savedCodeNext =
 				envPtr->codeNext - envPtr->codeStart;
-			int update = 0, code;
+			int update = 0;
 
 			/*
 			 * Mark the start of the command; the proper bytecode
@@ -4627,6 +4641,5 @@ RecordByteCodeStats(
  * c-basic-offset: 4
  * fill-column: 78
  * tab-width: 8
- * indent-tabs-mode: nil
  * End:
  */
