@@ -369,6 +369,7 @@ TalInstDesc TalInstructionTable[] = {
     {"bitor",		ASSEM_1BYTE,	INST_BITOR,		2,	1},
     {"bitxor",		ASSEM_1BYTE,	INST_BITXOR,		2,	1},
     {"concat",		ASSEM_CONCAT1,	INST_CONCAT1,		INT_MIN,1},
+    {"coroName",	ASSEM_1BYTE,	INST_COROUTINE_NAME,	0,	1},
     {"dictAppend",	ASSEM_LVT4,	INST_DICT_APPEND,	2,	1},
     {"dictExpand",	ASSEM_1BYTE,	INST_DICT_EXPAND,	3,	1},
     {"dictGet",		ASSEM_DICT_GET, INST_DICT_GET,		INT_MIN,1},
@@ -406,6 +407,8 @@ TalInstDesc TalInstructionTable[] = {
     {"incrStk",		ASSEM_1BYTE,	INST_INCR_SCALAR_STK,	2,	1},
     {"incrStkImm",	ASSEM_SINT1,	INST_INCR_SCALAR_STK_IMM,
 								1,	1},
+    {"infoLevelArgs",	ASSEM_1BYTE,	INST_INFO_LEVEL_ARGS,	1,	1},
+    {"infoLevelNumber",	ASSEM_1BYTE,	INST_INFO_LEVEL_NUM,	0,	1},
     {"invokeStk",	ASSEM_INVOKE,	(INST_INVOKE_STK1 << 8
 					 | INST_INVOKE_STK4),	INT_MIN,1},
     {"jump",		ASSEM_JUMP,	INST_JUMP1,		0,	0},
@@ -449,6 +452,7 @@ TalInstDesc TalInstructionTable[] = {
     {"neq",		ASSEM_1BYTE,	INST_NEQ,		2,	1},
     {"nop",		ASSEM_1BYTE,	INST_NOP,		0,	0},
     {"not",		ASSEM_1BYTE,	INST_LNOT,		1,	1},
+    {"nscurrent",	ASSEM_1BYTE,	INST_NS_CURRENT,	0,	1},
     {"nsupvar",		ASSEM_LVT4,	INST_NSUPVAR,		2,	1},
     {"over",		ASSEM_OVER,	INST_OVER,		INT_MIN,-1-1},
     {"pop",		ASSEM_1BYTE,	INST_POP,		1,	0},
@@ -499,7 +503,10 @@ static unsigned char NonThrowingByteCodes[] = {
     INST_OVER,							/* 95 */
     INST_PUSH_RETURN_OPTIONS,					/* 108 */
     INST_REVERSE,						/* 126 */
-    INST_NOP							/* 132 */
+    INST_NOP,							/* 132 */
+    INST_NS_CURRENT,						/* 141 */
+    INST_COROUTINE_NAME,					/* 142 */
+    INST_INFO_LEVEL_NUM						/* 143 */
 };
 
 /*
