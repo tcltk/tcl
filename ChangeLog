@@ -1,3 +1,9 @@
+2012-03-04  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+	* unix/tclUnixChan.c: TclUnixWaitForFile(): use FD_* macros
+	* macosx/tclMacOSXNotify.c: to manipulate select masks (Cassoff).
+	[Bug  3486554].  Backport  of  das' checkin  [e496f9ef50].  Allows
+	Tcl8.4 to have sane fileevents on x86_64 at last.
+
 2012-03-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclLoad.c: Patch from the cygwin folks
