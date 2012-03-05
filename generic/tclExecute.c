@@ -7757,6 +7757,8 @@ IllegalExprOperandType(
  *	at pc, information about the closest enclosing command is returned. If
  *	no matching command is found, NULL is returned and *lengthPtr is
  *	unchanged.
+ *	As input parameter '*lengthPtr' could be used an ENSEMBLE_PSEUDO_COMMAND 
+ *	to advise call of the ensemble command.
  *
  * Side effects:
  *	The CmdFrame at *cfPtr is updated.
@@ -7770,10 +7772,38 @@ TclGetSrcInfoForCmd(
     int *lenPtr)
 {
     CmdFrame *cfPtr = iPtr->cmdFramePtr;
-    ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
+    const char *command;
+    ByteCode *codePtr;
+    int len;
 
-    return GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
-	    codePtr, lenPtr);
+    if (!cfPtr)
+	return NULL;
+    codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
+    if (!codePtr)
+	return NULL;
+    if (!cfPtr->data.tebc.pc)
+	return NULL;
+
+    command = GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
+	    codePtr, &len);
+
+    /*
+     * [sebres]: If ensemble call (sentinel length == ENSEMBLE_PSEUDO_COMMAND), 
+     * shift string ptr to subcommand (string range -> range).
+     */
+
+    if (command && len && (lenPtr && *lenPtr == ENSEMBLE_PSEUDO_COMMAND) && codePtr->objArrayPtr) {
+	Tcl_Obj *objPtr = codePtr->objArrayPtr[0];
+
+	if (len > objPtr->length) {
+	    command += objPtr->length + 1;
+	    len -= objPtr->length + 1;
+	}
+    }
+
+    if (lenPtr != NULL)
+	*lenPtr = len;
+    return command;
 }
 
 void

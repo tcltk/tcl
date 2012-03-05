@@ -25,6 +25,7 @@
  */
 
 #include "tclInt.h"
+#include "tclCompile.h"
 
 /*
  * Thread-local storage used to avoid having a global lock on data that is not
@@ -6229,10 +6230,13 @@ NsEnsembleImplementationCmd(
 
 	/*
 	 * Hand off to the target command.
+	 * [sebres] call from ensemble using ENSEMBLE_PSEUDO_COMMAND to
+	 * retrive subcommand from main ensemble.
 	 */
 
-	result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
-		TCL_EVAL_INVOKE);
+	result = TclEvalObjvInternal(interp, objc-2+prefixObjc, tempObjv,
+		/* call from TEBC, TclGetSrcInfoForCmd sentinel */(char *) -1, 
+		ENSEMBLE_PSEUDO_COMMAND, TCL_EVAL_INVOKE);
 
 	/*
 	 * Clean up.
