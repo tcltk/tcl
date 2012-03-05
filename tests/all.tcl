@@ -15,3 +15,4 @@ package require tcltest 2.2
 namespace import tcltest::*
 configure {*}$argv -testdir [file dir [info script]]
 runAllTests
+proc exit args {}

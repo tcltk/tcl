@@ -1650,6 +1650,28 @@ test oo-15.3 {OO: class cloning} {
     bar destroy
     return $result
 } {::foo->::baseline ::foo->::baseline ::bar->::tester ::bar->::tester}
+test oo-15.4 {OO: object cloning - Bug 3474460} -setup {
+    oo::class create ArbitraryClass
+} -body {
+    ArbitraryClass create foo
+    oo::objdefine foo variable a b c
+    oo::copy foo bar
+    info object variable bar
+} -cleanup {
+    ArbitraryClass destroy
+} -result {a b c}
+test oo-15.5 {OO: class cloning - Bug 3474460} -setup {
+    oo::class create ArbitraryClass
+} -body {
+    oo::class create Foo {
+	superclass ArbitraryClass
+	variable a b c
+    }
+    oo::copy Foo Bar
+    info class variable Bar
+} -cleanup {
+    ArbitraryClass destroy
+} -result {a b c}
 
 test oo-16.1 {OO: object introspection} -body {
     info object

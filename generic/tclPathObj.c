@@ -269,6 +269,14 @@ TclFSNormalizeAbsolutePath(
 		}
 		if (!first || (tclPlatform == TCL_PLATFORM_UNIX)) {
 		    linkObj = Tcl_FSLink(retVal, NULL, 0);
+
+		    /* Safety check in case driver caused sharing */
+		    if (Tcl_IsShared(retVal)) {
+			TclDecrRefCount(retVal);
+			retVal = Tcl_DuplicateObj(retVal);
+			Tcl_IncrRefCount(retVal);
+		    }
+
 		    if (linkObj != NULL) {
 			/*
 			 * Got a link. Need to check if the link is relative
@@ -293,11 +301,6 @@ TclFSNormalizeAbsolutePath(
 				    break;
 				}
 			    }
-			    if (Tcl_IsShared(retVal)) {
-				TclDecrRefCount(retVal);
-				retVal = Tcl_DuplicateObj(retVal);
-				Tcl_IncrRefCount(retVal);
-			    }
 
 			    /*
 			     * We want the trailing slash.
@@ -313,7 +316,12 @@ TclFSNormalizeAbsolutePath(
 			     */
 
 			    TclDecrRefCount(retVal);
-			    retVal = linkObj;
+			    if (Tcl_IsShared(linkObj)) {
+				retVal = Tcl_DuplicateObj(linkObj);
+				TclDecrRefCount(linkObj);
+			    } else {
+				retVal = linkObj;
+			    }
 			    linkStr = Tcl_GetStringFromObj(retVal, &curLen);
 
 			    /*
@@ -830,44 +838,39 @@ Tcl_FSJoinPath(
 				 * reference count. */
     int elements)		/* Number of elements to use (-1 = all) */
 {
+    Tcl_Obj *copy, *res;
+    int objc;
+    Tcl_Obj **objv;
+
+    if (Tcl_ListObjLength(NULL, listObj, &objc) != TCL_OK) {
+	return NULL;
+    }
+
+    elements = ((elements >= 0) && (elements <= objc)) ? elements : objc;
+    copy = TclListObjCopy(NULL, listObj);
+    Tcl_ListObjGetElements(NULL, listObj, &objc, &objv);
+    res = TclJoinPath(elements, objv);
+    Tcl_DecrRefCount(copy);
+    return res;
+}
+
+Tcl_Obj *
+TclJoinPath(
+    int elements,
+    Tcl_Obj * const objv[])
+{
     Tcl_Obj *res;
     int i;
     const Tcl_Filesystem *fsPtr = NULL;
 
-    if (elements < 0) {
-	if (Tcl_ListObjLength(NULL, listObj, &elements) != TCL_OK) {
-	    return NULL;
-	}
-    } else {
-	/*
-	 * Just make sure it is a valid list.
-	 */
-
-	int listTest;
-
-	if (Tcl_ListObjLength(NULL, listObj, &listTest) != TCL_OK) {
-	    return NULL;
-	}
-
-	/*
-	 * Correct this if it is too large, otherwise we will waste our time
-	 * joining null elements to the path.
-	 */
-
-	if (elements > listTest) {
-	    elements = listTest;
-	}
-    }
-
     res = NULL;
 
     for (i = 0; i < elements; i++) {
-	Tcl_Obj *elt, *driveName = NULL;
 	int driveNameLength, strEltLen, length;
 	Tcl_PathType type;
 	char *strElt, *ptr;
-
-	Tcl_ListObjIndex(NULL, listObj, i, &elt);
+	Tcl_Obj *driveName = NULL;
+	Tcl_Obj *elt = objv[i];
 
 	/*
 	 * This is a special case where we can be much more efficient, where
@@ -881,9 +884,8 @@ Tcl_FSJoinPath(
 	if ((i == (elements-2)) && (i == 0)
 		&& (elt->typePtr == &tclFsPathType)
 		&& !((elt->bytes != NULL) && (elt->bytes[0] == '\0'))) {
-	    Tcl_Obj *tailObj;
+	    Tcl_Obj *tailObj = objv[i+1];
 
-	    Tcl_ListObjIndex(NULL, listObj, i+1, &tailObj);
 	    type = TclGetPathType(tailObj, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
 		const char *str;
@@ -1074,6 +1076,12 @@ Tcl_FSJoinPath(
 
 		if (sep != NULL) {
 		    separator = TclGetString(sep)[0];
+		}
+		/* Safety check in case the VFS driver caused sharing */
+		if (Tcl_IsShared(res)) {
+		    TclDecrRefCount(res);
+		    res = Tcl_DuplicateObj(res);
+		    Tcl_IncrRefCount(res);
 		}
 	    }
 
@@ -1369,37 +1377,20 @@ AppendPath(
     const char *bytes;
     Tcl_Obj *copy = Tcl_DuplicateObj(head);
 
-    bytes = Tcl_GetStringFromObj(copy, &numBytes);
-
     /*
-     * Should we perhaps use 'Tcl_FSPathSeparator'? But then what about the
-     * Windows special case? Perhaps we should just check if cwd is a root
-     * volume. We should never get numBytes == 0 in this code path.
+     * This is likely buggy when dealing with virtual filesystem drivers
+     * that use some character other than "/" as a path separator.  I know
+     * of no evidence that such a foolish thing exists.  This solution was
+     * chosen so that "JoinPath" operations that pass through either path
+     * intrep produce the same results; that is, bugward compatibility.  If
+     * we need to fix that bug here, it needs fixing in TclJoinPath() too.
      */
-
-    switch (tclPlatform) {
-    case TCL_PLATFORM_UNIX:
-	if (bytes[numBytes-1] != '/') {
-	    Tcl_AppendToObj(copy, "/", 1);
-	}
-	break;
-
-    case TCL_PLATFORM_WINDOWS:
-	/*
-	 * We need the extra 'numBytes != 2', and ':' checks because a volume
-	 * relative path doesn't get a '/'. For example 'glob C:*cat*.exe'
-	 * will return 'C:cat32.exe'
-	 */
-
-	if (bytes[numBytes-1] != '/' && bytes[numBytes-1] != '\\') {
-	    if (numBytes!= 2 || bytes[1] != ':') {
-		Tcl_AppendToObj(copy, "/", 1);
-	    }
-	}
-	break;
+    bytes = Tcl_GetStringFromObj(tail, &numBytes);
+    if (numBytes == 0) {
+	Tcl_AppendToObj(copy, "/", 1);
+    } else {
+	TclpNativeJoinPath(copy, bytes);
     }
-
-    Tcl_AppendObjToObj(copy, tail);
     return copy;
 }
 
@@ -2502,7 +2493,7 @@ SetFsPathFromAny(
 	}
 	Tcl_DStringFree(&temp);
     } else {
-	transPtr = Tcl_FSJoinToPath(pathPtr, 0, NULL);
+	transPtr = TclJoinPath(1, &pathPtr);
     }
 
 #if defined(__CYGWIN__) && defined(__WIN32__)

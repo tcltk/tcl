@@ -3570,6 +3570,7 @@ TclInitAuxDataTypeTable(void)
 
     TclRegisterAuxDataType(&tclForeachInfoType);
     TclRegisterAuxDataType(&tclJumptableInfoType);
+    TclRegisterAuxDataType(&tclDictUpdateInfoType);
 }
 
 /*
@@ -4590,12 +4591,13 @@ RecordByteCodeStats(
 				 * to add to accumulated statistics. */
 {
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
-    register ByteCodeStats *statsPtr = &iPtr->stats;
+    register ByteCodeStats *statsPtr;
 
     if (iPtr == NULL) {
 	/* Avoid segfaulting in case we're called in a deleted interp */
 	return;
     }
+    statsPtr = &(iPtr->stats);
 
     statsPtr->numCompilations++;
     statsPtr->totalSrcBytes += (double) codePtr->numSrcBytes;

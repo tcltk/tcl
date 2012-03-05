@@ -230,9 +230,9 @@ static const CmdInfo builtInCmds[] = {
     {"linsert",		Tcl_LinsertObjCmd,	NULL,			NULL,	1},
     {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	NULL,	1},
     {"llength",		Tcl_LlengthObjCmd,	TclCompileLlengthCmd,	NULL,	1},
-    {"lrange",		Tcl_LrangeObjCmd,	NULL,			NULL,	1},
+    {"lrange",		Tcl_LrangeObjCmd,	TclCompileLrangeCmd,	NULL,	1},
     {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			NULL,	1},
-    {"lreplace",	Tcl_LreplaceObjCmd,	NULL,			NULL,	1},
+    {"lreplace",	Tcl_LreplaceObjCmd,	TclCompileLreplaceCmd,	NULL,	1},
     {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	1},
     {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	1},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	1},
@@ -5935,7 +5935,7 @@ TclNREvalObjEx(
 
     /*
      * This function consists of three independent blocks for: direct
-     * evaluation of canonical lists, compileation and bytecode execution and
+     * evaluation of canonical lists, compilation and bytecode execution and
      * finally direct evaluation. Precisely one of these blocks will be run.
      */
 

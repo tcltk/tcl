@@ -14,6 +14,11 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
+#ifndef _WIN64
+/* See [Bug 2935503]: file mtime sets wrong time */
+#   define _USE_32BIT_TIME_T
+#endif
+
 /*
  * We must specify the lower version we intend to support.
  *
@@ -116,9 +121,9 @@
 #include <time.h>
 
 /*
- * Not all mingw32 versions have this struct.
+ * cygwin does not have this struct.
  */
-#if !defined(__BORLANDC__) && !defined(_MSC_VER) && !defined(_WIN64) && defined(HAVE_NO_STRUCT_STAT32I64)
+#ifdef __CYGWIN__
   struct _stat32i64 {
     dev_t st_dev;
     ino_t st_ino;
@@ -128,15 +133,9 @@
     short st_gid;
     dev_t st_rdev;
     __int64 st_size;
-#ifdef __CYGWIN__
     struct {long tv_sec;} st_atim;
     struct {long tv_sec;} st_mtim;
     struct {long tv_sec;} st_ctim;
-#else
-    long st_atime;
-    long st_mtime;
-    long st_ctime;
-#endif
   };
 #endif
 
@@ -588,5 +587,9 @@
 #ifndef INVALID_SET_FILE_POINTER
 #define INVALID_SET_FILE_POINTER 0xFFFFFFFF
 #endif /* INVALID_SET_FILE_POINTER */
+
+#ifndef LABEL_SECURITY_INFORMATION
+#   define LABEL_SECURITY_INFORMATION (0x00000010L)
+#endif
 
 #endif /* _TCLWINPORT */

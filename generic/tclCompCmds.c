@@ -352,8 +352,8 @@ TclCompileCatchCmd(
     }
 
     /*
-     * We will compile the catch command. Declare the exception range
-     * that it uses.
+     * We will compile the catch command. Declare the exception range that it
+     * uses.
      */
 
     range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
@@ -362,10 +362,10 @@ TclCompileCatchCmd(
      * If the body is a simple word, compile a BEGIN_CATCH instruction,
      * followed by the instructions to eval the body.
      * Otherwise, compile instructions to substitute the body text before
-     * starting the catch, then BEGIN_CATCH, and then EVAL_STK to
-     * evaluate the substituted body.
-     * Care has to be taken to make sure that substitution happens outside
-     * the catch range so that errors in the substitution are not caught.
+     * starting the catch, then BEGIN_CATCH, and then EVAL_STK to evaluate the
+     * substituted body.
+     * Care has to be taken to make sure that substitution happens outside the
+     * catch range so that errors in the substitution are not caught.
      * [Bug 219184]
      * The reason for duplicating the script is that EVAL_STK would otherwise
      * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
@@ -390,9 +390,35 @@ TclCompileCatchCmd(
      *    simple:            <mark> result
      */
 
+    if (resultIndex == -1) {
+	/*
+	 * Special case when neither result nor options are being saved. In
+	 * that case, we can skip quite a bit of the command epilogue; all we
+	 * have to do is drop the result and push the return code (and, of
+	 * course, finish the catch context).
+	 */
+
+	TclEmitOpcode(		INST_POP,			envPtr);
+	PushLiteral(envPtr, "0", 1);
+	TclEmitInstInt1(	INST_JUMP1, 3,			envPtr);
+	envPtr->currStackDepth = savedStackDepth;
+	ExceptionRangeTarget(envPtr, range, catchOffset);
+	TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
+	ExceptionRangeEnds(envPtr, range);
+	TclEmitOpcode(		INST_END_CATCH,			envPtr);
+
+	/*
+	 * Stack at this point:
+	 *    nonsimple:  script <mark> returnCode
+	 *    simple:            <mark> returnCode
+	 */
+
+	goto dropScriptAtEnd;
+    }
+
     /*
-     * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch
-     * result, and jump around the "error case" code.
+     * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch result,
+     * and jump around the "error case" code.
      */
 
     PushLiteral(envPtr, "0", 1);
@@ -400,8 +426,8 @@ TclCompileCatchCmd(
     /* Stack at this point: ?script? <mark> result TCL_OK */
 
     /* 
-     * Emit the "error case" epilogue. Push the interpreter result
-     * and the return code.
+     * Emit the "error case" epilogue. Push the interpreter result and the
+     * return code.
      */
 
     envPtr->currStackDepth = savedStackDepth;
@@ -420,7 +446,9 @@ TclCompileCatchCmd(
 		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
 
-    /* Push the return options if the caller wants them */
+    /*
+     * Push the return options if the caller wants them.
+     */
 
     if (optsIndex != -1) {
 	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
@@ -446,19 +474,17 @@ TclCompileCatchCmd(
     }
 
     /*
-     * Store the result if requested, and remove it from the stack
+     * Store the result and remove it from the stack.
      */
 
-    if (resultIndex != -1) {
-	Emit14Inst(		INST_STORE_SCALAR, resultIndex,	envPtr);
-    }
+    Emit14Inst(			INST_STORE_SCALAR, resultIndex,	envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
 
     /*
      * Stack is now ?script? ?returnOptions? returnCode.
-     * If the options dict has been requested, it is buried on the stack
-     * under the return code. Reverse the stack to bring it to the top,
-     * store it and remove it from the stack.
+     * If the options dict has been requested, it is buried on the stack under
+     * the return code. Reverse the stack to bring it to the top, store it and
+     * remove it from the stack.
      */
 
     if (optsIndex != -1) {
@@ -467,9 +493,11 @@ TclCompileCatchCmd(
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
-    /* 
-     * Stack is now ?script? result. Get rid of the subst'ed script
-     * if it's hanging arond.
+  dropScriptAtEnd:
+
+    /*
+     * Stack is now ?script? result. Get rid of the subst'ed script if it's
+     * hanging arond.
      */
 
     if (cmdTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -478,8 +506,8 @@ TclCompileCatchCmd(
     }
 
     /* 
-     * Result of all this, on either branch, should have been to leave
-     * one operand -- the return code -- on the stack.
+     * Result of all this, on either branch, should have been to leave one
+     * operand -- the return code -- on the stack.
      */
 
     if (envPtr->currStackDepth != initStackDepth + 1) {
@@ -878,7 +906,7 @@ TclCompileDictForCmd(
      * Compile the loop body itself. It should be stack-neutral.
      */
 
-    SetLineInformation(4);
+    SetLineInformation(3);
     CompileBody(envPtr, bodyTokenPtr, interp);
     TclEmitOpcode(	INST_POP,				envPtr);
 
@@ -1084,6 +1112,7 @@ TclCompileDictUpdateCmd(
 
     ExceptionRangeStarts(envPtr, range);
     envPtr->currStackDepth++;
+    SetLineInformation(parsePtr->numWords - 1);
     CompileBody(envPtr, bodyTokenPtr, interp);
     envPtr->currStackDepth = savedStackDepth;
     ExceptionRangeEnds(envPtr, range);
@@ -3118,13 +3147,24 @@ TclCompileLindexCmd(
 
 	tmpObj = Tcl_NewStringObj(idxTokenPtr[1].start, idxTokenPtr[1].size);
 	result = TclGetIntFromObj(NULL, tmpObj, &idx);
+	if (result == TCL_OK) {
+	    if (idx < 0) {
+		result = TCL_ERROR;
+	    }
+	} else {
+	    result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx);
+	    if (result == TCL_OK && idx > -2) {
+		result = TCL_ERROR;
+	    }
+	}
 	TclDecrRefCount(tmpObj);
 
-	if (result == TCL_OK && idx >= 0) {
+	if (result == TCL_OK) {
 	    /*
-	     * All checks have been completed, and we have exactly this
-	     * construct:
+	     * All checks have been completed, and we have exactly one of
+	     * these constructs:
 	     *	 lindex <arbitraryValue> <posInt>
+	     *	 lindex <arbitraryValue> end-<posInt>
 	     * This is best compiled as a push of the arbitrary value followed
 	     * by an "immediate lindex" which is the most efficient variety.
 	     */
@@ -3263,6 +3303,226 @@ TclCompileLlengthCmd(
 
     CompileWord(envPtr, varTokenPtr, interp, 1);
     TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLrangeCmd --
+ *
+ *	How to compile the "lrange" command. We only bother because we needed
+ *	the opcode anyway for "lassign".
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLrangeCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for context. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    Tcl_Token *tokenPtr, *listTokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Obj *tmpObj;
+    int idx1, idx2, result;
+
+    if (parsePtr->numWords != 4) {
+	return TCL_ERROR;
+    }
+    listTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    /*
+     * Parse the first index. Will only compile if it is constant and not an
+     * _integer_ less than zero (since we reserve negative indices here for
+     * end-relative indexing).
+     */
+
+    tokenPtr = TokenAfter(listTokenPtr);
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
+    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
+    if (result == TCL_OK) {
+	if (idx1 < 0) {
+	    result = TCL_ERROR;
+	}
+    } else {
+	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
+	if (result == TCL_OK && idx1 > -2) {
+	    result = TCL_ERROR;
+	}
+    }
+    TclDecrRefCount(tmpObj);
+    if (result != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse the second index. Will only compile if it is constant and not an
+     * _integer_ less than zero (since we reserve negative indices here for
+     * end-relative indexing).
+     */
+
+    tokenPtr = TokenAfter(tokenPtr);
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
+    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
+    if (result == TCL_OK) {
+	if (idx2 < 0) {
+	    result = TCL_ERROR;
+	}
+    } else {
+	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
+	if (result == TCL_OK && idx2 > -2) {
+	    result = TCL_ERROR;
+	}
+    }
+    TclDecrRefCount(tmpObj);
+    if (result != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Issue instructions. It's not safe to skip doing the LIST_RANGE, as
+     * we've not proved that the 'list' argument is really a list. Not that it
+     * is worth trying to do that given current knowledge.
+     */
+
+    CompileWord(envPtr, listTokenPtr, interp, 1);
+    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx1,	envPtr);
+    TclEmitInt4(		idx2,				envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLreplaceCmd --
+ *
+ *	How to compile the "lreplace" command. We only bother with the case
+ *	where there are no elements to insert and where both the 'first' and
+ *	'last' arguments are constant and one can be deterined to be at the
+ *	end of the list. (This is the case that could also be written with
+ *	"lrange".)
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLreplaceCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for context. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    Tcl_Token *tokenPtr, *listTokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Obj *tmpObj;
+    int idx1, idx2, result, guaranteedDropAll = 0;
+
+    if (parsePtr->numWords != 4) {
+	return TCL_ERROR;
+    }
+    listTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    /*
+     * Parse the first index. Will only compile if it is constant and not an
+     * _integer_ less than zero (since we reserve negative indices here for
+     * end-relative indexing).
+     */
+
+    tokenPtr = TokenAfter(listTokenPtr);
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
+    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
+    if (result == TCL_OK) {
+	if (idx1 < 0) {
+	    result = TCL_ERROR;
+	}
+    } else {
+	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
+	if (result == TCL_OK && idx1 > -2) {
+	    result = TCL_ERROR;
+	}
+    }
+    TclDecrRefCount(tmpObj);
+    if (result != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse the second index. Will only compile if it is constant and not an
+     * _integer_ less than zero (since we reserve negative indices here for
+     * end-relative indexing).
+     */
+
+    tokenPtr = TokenAfter(tokenPtr);
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
+    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
+    if (result == TCL_OK) {
+	if (idx2 < 0) {
+	    result = TCL_ERROR;
+	}
+    } else {
+	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
+	if (result == TCL_OK && idx2 > -2) {
+	    result = TCL_ERROR;
+	}
+    }
+    TclDecrRefCount(tmpObj);
+    if (result != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Sanity check: can only issue when we're removing a range at one or
+     * other end of the list. If we're at one end or the other, convert the
+     * indices into the equivalent for an [lrange].
+     */
+
+    if (idx1 == 0) {
+	if (idx2 == -2) {
+	    guaranteedDropAll = 1;
+	}
+	idx1 = idx2 + 1;
+	idx2 = -2;
+    } else if (idx2 == -2) {
+	idx2 = idx1 - 1;
+	idx1 = 0;
+    } else {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Issue instructions. It's not safe to skip doing the LIST_RANGE, as
+     * we've not proved that the 'list' argument is really a list. Not that it
+     * is worth trying to do that given current knowledge.
+     */
+
+    CompileWord(envPtr, listTokenPtr, interp, 1);
+    if (guaranteedDropAll) {
+	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+	PushLiteral(envPtr, "", 0);
+    } else {
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx1,	envPtr);
+	TclEmitInt4(		idx2,				envPtr);
+    }
     return TCL_OK;
 }
 
