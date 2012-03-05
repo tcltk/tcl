@@ -7757,8 +7757,9 @@ IllegalExprOperandType(
  *	at pc, information about the closest enclosing command is returned. If
  *	no matching command is found, NULL is returned and *lengthPtr is
  *	unchanged.
- *	As input parameter '*lengthPtr' could be used an ENSEMBLE_PSEUDO_COMMAND 
- *	to advise call of the ensemble command.
+ *
+ *	If input parameter '*lengthPtr' has value ENSEMBLE_PSEUDO_COMMAND,
+ *	we're servicing a subcomand dispatch.
  *
  * Side effects:
  *	The CmdFrame at *cfPtr is updated.
@@ -7776,13 +7777,13 @@ TclGetSrcInfoForCmd(
     ByteCode *codePtr;
     int len;
 
-    if (!cfPtr)
+    if (!cfPtr) {
 	return NULL;
+    }
     codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
-    if (!codePtr)
+    if (!codePtr || !cfPtr->data.tebc.pc) {
 	return NULL;
-    if (!cfPtr->data.tebc.pc)
-	return NULL;
+    }
 
     command = GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
 	    codePtr, &len);
@@ -7792,7 +7793,8 @@ TclGetSrcInfoForCmd(
      * shift string ptr to subcommand (string range -> range).
      */
 
-    if (command && len && (lenPtr && *lenPtr == ENSEMBLE_PSEUDO_COMMAND) && codePtr->objArrayPtr) {
+    if (command && len && lenPtr && *lenPtr == ENSEMBLE_PSEUDO_COMMAND
+	    && codePtr->objArrayPtr) {
 	Tcl_Obj *objPtr = codePtr->objArrayPtr[0];
 
 	if (len > objPtr->length) {
@@ -7801,8 +7803,9 @@ TclGetSrcInfoForCmd(
 	}
     }
 
-    if (lenPtr != NULL)
+    if (lenPtr != NULL) {
 	*lenPtr = len;
+    }
     return command;
 }
 

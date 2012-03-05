@@ -3005,10 +3005,11 @@ CallCommandTraces(
  *	This function returns a Tcl_Obj with the full source string for the
  *	command. This insures that traces get a correct NUL-terminated command
  *	string.
- *	If parameter 'command' is (char*)-1 it returns a pointer to the command's 
- *	source using TclGetSrcInfoForCmd. As parameter 'numChars' could be used 
- *	an ENSEMBLE_PSEUDO_COMMAND to advise call of the ensemble command.
  *
+ *	If 'command' has value (char*)-1, this function calls
+ *	TclGetSrcInfoForCmd() to obtain the source string.  This is used
+ *	to retrieve suitable source strings for bytecode exection and
+ *	ensemble subcommand dispatch.
  *----------------------------------------------------------------------
  */
 
@@ -3540,8 +3541,8 @@ TclEvalObjvInternal(
 				 * representation of the command is unknown is
 				 * to be generated from (objc,objv), -1 if it
 				 * is to be generated from bytecode source,
-				 * with length ENSEMBLE_PSEUDO_COMMAND it is 
-				 * to be determined from the ensemble context. 
+				 * or, when length is ENSEMBLE_PSEUDO_COMMAND,
+				 * determined from the ensemble context. 
 				 * This is only needed the traces. */
     int length,			/* Number of bytes in command; if -1, all
 				 * characters up to the first null byte are
