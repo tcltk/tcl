@@ -19,6 +19,12 @@
 #   define _USE_32BIT_TIME_T
 #endif
 
+/* Compatibility to older visual studio / windows platform SDK */
+#if !defined(MAXULONG_PTR)
+typedef DWORD DWORD_PTR;
+typedef DWORD_PTR * PDWORD_PTR;
+#endif
+
 /*
  * We must specify the lower version we intend to support.
  *
