@@ -18,6 +18,12 @@
 #   include "tclInt.h"
 #endif
 
+/* Compatibility to older visual studio / windows platform SDK */
+#if !defined(MAXULONG_PTR)
+typedef DWORD DWORD_PTR;
+typedef DWORD_PTR * PDWORD_PTR;
+#endif
+
 #ifdef CHECK_UNICODE_CALLS
 #   define _UNICODE
 #   define UNICODE
