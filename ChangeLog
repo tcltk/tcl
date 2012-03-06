@@ -1,3 +1,7 @@
+2012-03-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h: Compatibility with older Visual Studio versions.
+
 2012-03-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclLoad.c: Patch from the cygwin folks
