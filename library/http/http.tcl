@@ -11,7 +11,7 @@
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.3
+package provide http 2.8.4
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -43,11 +43,11 @@ namespace eval http {
 	for {set i 0} {$i <= 256} {incr i} {
 	    set c [format %c $i]
 	    if {![string match {[-._~a-zA-Z0-9]} $c]} {
-		set map($c) %[format %.2x $i]
+		set map($c) %[format %.2X $i]
 	    }
 	}
 	# These are handled specially
-	set map(\n) %0d%0a
+	set map(\n) %0D%0A
 	variable formMap [array get map]
 
 	# Create a map for HTTP/1.1 open sockets
