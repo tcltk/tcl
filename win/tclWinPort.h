@@ -19,12 +19,6 @@
 #   define _USE_32BIT_TIME_T
 #endif
 
-/* Compatibility to older visual studio / windows platform SDK */
-#if !defined(MAXULONG_PTR)
-typedef DWORD DWORD_PTR;
-typedef DWORD_PTR * PDWORD_PTR;
-#endif
-
 /*
  * We must specify the lower version we intend to support.
  *
@@ -41,6 +35,12 @@ typedef DWORD_PTR * PDWORD_PTR;
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
+
+/* Compatibility to older visual studio / windows platform SDK */
+#if !defined(MAXULONG_PTR)
+typedef DWORD DWORD_PTR;
+typedef DWORD_PTR * PDWORD_PTR;
+#endif
 
 /*
  * Ask for the winsock function typedefs, also.
