@@ -337,6 +337,8 @@ typedef struct ChannelState {
 					 * Used by Channel Tcl_Obj type to
 					 * determine if we have to revalidate
 					 * the channel. */
+#define CHANNEL_CHECKBOM		(1<<21)	/* Check for BOM before continuing.
+					 * If BOM is found, switch channel encoding to utf-8 */
 
 /*
  * For each channel handler registered in a call to Tcl_CreateChannelHandler,

@@ -844,7 +844,7 @@ test socket-7.3 {testing socket specific options} {socket} {
     close $s
     update
     llength $l
-} 14
+} 16
 test socket-7.4 {testing socket specific options} {socket} {
     set s [socket -server accept -myaddr 127.0.0.1 0]
     proc accept {s a p} {

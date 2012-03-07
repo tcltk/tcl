@@ -120,6 +120,24 @@ test source-2.7 {utf-8 with BOM} -setup {
 } -cleanup {
     removeFile $sourcefile
 } -result {new-y}
+foreach {n e} {8 identity 9 cp1250 10 cp1251 11 cp1252 12 cp1253 13 cp1254 14 cp1255 15 cp1256 16 cp1257 17 cp1258} {
+test source-2.$n [list $e with BOM] -setup {
+    set sourcefile [makeFile {} source.file]
+    set saveencoding [encoding system]
+} -body {
+    encoding system $e
+    set out [open $sourcefile w]
+    fconfigure $out -encoding utf-8
+    puts $out "\ufeffset y new-y\xe9"
+    close $out
+    set y old-y
+    source $sourcefile
+    return $y
+} -cleanup {
+    encoding system $saveencoding
+    removeFile $sourcefile
+} -result "new-y\xe9"
+}
 
 test source-3.1 {return in middle of source file} -setup {
     set sourcefile [makeFile {

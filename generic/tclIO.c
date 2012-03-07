@@ -7203,6 +7203,16 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
+    if (len == 0 || HaveOpt(2, "-checkbom")) {
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-checkbom");
+	}
+	Tcl_DStringAppendElement(dsPtr,
+		(flags & CHANNEL_CHECKBOM) ? "1" : "0");
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
     if (len == 0 || HaveOpt(2, "-encoding")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-encoding");
@@ -7429,7 +7439,19 @@ Tcl_SetChannelOption(
 	    return TCL_ERROR;
 	}
 	Tcl_SetChannelBufferSize(chan, newBufferSize);
-    } else if (HaveOpt(2, "-encoding")) {
+    } else if (HaveOpt(2, "-checkbom")) {
+	int newCheckBomFlag;
+
+	if (Tcl_GetBoolean(interp, newValue, &newCheckBomFlag) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (newCheckBomFlag) {
+	    SetFlag(statePtr, CHANNEL_CHECKBOM);
+	} else {
+	    ResetFlag(statePtr, CHANNEL_CHECKBOM);
+	}
+
+   } else if (HaveOpt(2, "-encoding")) {
 	Tcl_Encoding encoding;
 
 	if ((newValue[0] == '\0') || (strcmp(newValue, "binary") == 0)) {
@@ -10859,7 +10881,7 @@ DumpFlags(
     char *str,
     int flags)
 {
-    char buf[20];
+    char buf[24];
     int i = 0;
 
 #define ChanFlag(chr,bit) (buf[i++] = ((flags & (bit)) ? (chr) : '_'))
@@ -10884,6 +10906,7 @@ DumpFlags(
     ChanFlag('H', CHANNEL_HAS_MORE_DATA);
 #endif /* TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING */
     ChanFlag('x', CHANNEL_INCLOSE);
+    ChanFlag('b', CHANNEL_CHECKBOM);
 
     buf[i] ='\0';
 
