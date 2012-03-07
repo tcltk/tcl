@@ -22,7 +22,7 @@
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
 # in Makefiles
-package provide http 2.5.6
+package provide http 2.5.7
 
 namespace eval http {
     variable http
@@ -44,11 +44,11 @@ namespace eval http {
 	for {set i 0} {$i <= 256} {incr i} {
 	    set c [format %c $i]
 	    if {![string match {[-._~a-zA-Z0-9]} $c]} {
-		set map($c) %[format %.2x $i]
+		set map($c) %[format %.2X $i]
 	    }
 	}
 	# These are handled specially
-	set map(\n) %0d%0a
+	set map(\n) %0D%0A
 	variable formMap [array get map]
     }
     init

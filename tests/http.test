@@ -477,17 +477,17 @@ test http-5.1 {http::formatQuery} {
 # test http-5.2 obsoleted by 5.4 and 5.5 with http 2.5
 test http-5.3 {http::formatQuery} {
     http::formatQuery lines "line1\nline2\nline3"
-} {lines=line1%0d%0aline2%0d%0aline3}
+} {lines=line1%0D%0Aline2%0D%0Aline3}
 test http-5.4 {http::formatQuery} {
     http::formatQuery name1 ~bwelch name2 \xa1\xa2\xa2
-} {name1=~bwelch&name2=%c2%a1%c2%a2%c2%a2}
+} {name1=~bwelch&name2=%C2%A1%C2%A2%C2%A2}
 test http-5.5 {http::formatQuery} {
     set enc [http::config -urlencoding]
     http::config -urlencoding iso8859-1
     set res [http::formatQuery name1 ~bwelch name2 \xa1\xa2\xa2]
     http::config -urlencoding $enc
     set res
-} {name1=~bwelch&name2=%a1%a2%a2}
+} {name1=~bwelch&name2=%A1%A2%A2}
 
 test http-6.1 {http::ProxyRequired} {
     http::config -proxyhost [info hostname] -proxyport $port
@@ -503,12 +503,12 @@ test http-6.1 {http::ProxyRequired} {
 
 test http-7.1 {http::mapReply} {
     http::mapReply "abc\$\[\]\"\\()\}\{"
-} {abc%24%5b%5d%22%5c%28%29%7d%7b}
+} {abc%24%5B%5D%22%5C%28%29%7D%7B}
 test http-7.2 {http::mapReply} {
     # RFC 2718 specifies that we pass urlencoding on utf-8 chars by default,
     # so make sure this gets converted to utf-8 then urlencoded.
     http::mapReply "\u2208"
-} {%e2%88%88}
+} {%E2%88%88}
 test http-7.3 {http::formatQuery} {
     set enc [http::config -urlencoding]
     # this would be reverting to http <=2.4 behavior
@@ -525,7 +525,7 @@ test http-7.4 {http::formatQuery} {
     set res [http::mapReply "\u2208"]
     http::config -urlencoding $enc
     set res
-} {%3f}
+} {%3F}
 
 # cleanup
 catch {unset url}
