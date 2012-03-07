@@ -843,7 +843,6 @@ typedef struct {
 	int identity;
     } i;
 } TclOpCmdClientData;
-
 
 /*
  *----------------------------------------------------------------

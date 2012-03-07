@@ -7772,11 +7772,13 @@ TclGetSrcInfoForCmd(
     CmdFrame *cfPtr = iPtr->cmdFramePtr;
     ByteCode *codePtr;
 
-    if (!cfPtr)
+    if (!cfPtr) {
 	return NULL;
+    }
     codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
-    if (!codePtr || !cfPtr->data.tebc.pc)
+    if (!codePtr || !cfPtr->data.tebc.pc) {
 	return NULL;
+    }
 
     return GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
 	    codePtr, lenPtr);
