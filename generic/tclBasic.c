@@ -3008,8 +3008,7 @@ CallCommandTraces(
  *
  *	If 'command' has value (char*)-1, this function calls
  *	TclGetSrcInfoForCmd() to obtain the source string.  This is used
- *	to retrieve suitable source strings for bytecode exection and
- *	ensemble subcommand dispatch.
+ *	to retrieve suitable source strings for bytecode exection.
  *----------------------------------------------------------------------
  */
 
@@ -3021,16 +3020,13 @@ GetCommandSource(
     int objc,
     Tcl_Obj *const objv[])
 {
-    if (!command) {
-	return Tcl_NewListObj(objc, objv);
-    }
     if (command == (char *) -1) {
 	command = TclGetSrcInfoForCmd(iPtr, &numChars);
-	if (!command) {
-	    return Tcl_NewListObj(objc, objv);
-	}
     }
-    return Tcl_NewStringObj(command, numChars);
+    if (command) {
+	return Tcl_NewStringObj(command, numChars);
+    }
+    return Tcl_NewListObj(objc, objv);
 }
 
 /*
@@ -3540,9 +3536,7 @@ TclEvalObjvInternal(
 				 * for traces. NULL if the string
 				 * representation of the command is unknown is
 				 * to be generated from (objc,objv), -1 if it
-				 * is to be generated from bytecode source,
-				 * or, when length is ENSEMBLE_PSEUDO_COMMAND,
-				 * determined from the ensemble context. 
+				 * is to be generated from bytecode source.
 				 * This is only needed the traces. */
     int length,			/* Number of bytes in command; if -1, all
 				 * characters up to the first null byte are

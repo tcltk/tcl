@@ -7758,9 +7758,6 @@ IllegalExprOperandType(
  *	no matching command is found, NULL is returned and *lengthPtr is
  *	unchanged.
  *
- *	If input parameter '*lengthPtr' has value ENSEMBLE_PSEUDO_COMMAND,
- *	we're servicing a subcomand dispatch.
- *
  * Side effects:
  *	The CmdFrame at *cfPtr is updated.
  *
@@ -7773,40 +7770,16 @@ TclGetSrcInfoForCmd(
     int *lenPtr)
 {
     CmdFrame *cfPtr = iPtr->cmdFramePtr;
-    const char *command;
     ByteCode *codePtr;
-    int len;
 
-    if (!cfPtr) {
+    if (!cfPtr)
 	return NULL;
-    }
     codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
-    if (!codePtr || !cfPtr->data.tebc.pc) {
+    if (!codePtr || !cfPtr->data.tebc.pc)
 	return NULL;
-    }
 
-    command = GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
-	    codePtr, &len);
-
-    /*
-     * [sebres]: If ensemble call (sentinel length == ENSEMBLE_PSEUDO_COMMAND), 
-     * shift string ptr to subcommand (string range -> range).
-     */
-
-    if (command && len && lenPtr && *lenPtr == ENSEMBLE_PSEUDO_COMMAND
-	    && codePtr->objArrayPtr) {
-	Tcl_Obj *objPtr = codePtr->objArrayPtr[0];
-
-	if (len > objPtr->length) {
-	    command += objPtr->length + 1;
-	    len -= objPtr->length + 1;
-	}
-    }
-
-    if (lenPtr != NULL) {
-	*lenPtr = len;
-    }
-    return command;
+    return GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
+	    codePtr, lenPtr);
 }
 
 void
