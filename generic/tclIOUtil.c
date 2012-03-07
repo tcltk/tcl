@@ -1778,17 +1778,18 @@ Tcl_FSEvalFileEx(
      * it (and use the system encoding) Report error on unknown encoding.
      */
 
-    if (Tcl_SetChannelOption(interp, chan, "-checkbom", "1")
-	    != TCL_OK) {
-	Tcl_Close(interp,chan);
-	return result;
-    }
     if (encodingName != NULL) {
 	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 		!= TCL_OK) {
 	    Tcl_Close(interp,chan);
 	    return result;
 	}
+    } else {
+    	if (Tcl_SetChannelOption(interp, chan, "-checkbom", "1")
+    		!= TCL_OK) {
+    	    Tcl_Close(interp,chan);
+    	    return result;
+    	}
     }
 
     objPtr = Tcl_NewObj();
