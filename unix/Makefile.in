@@ -773,8 +773,8 @@ install-libraries: libraries $(INSTALL_TZDATA) install-msgs
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/http1.0; \
 	    done;
-	@echo "Installing package http 2.7.8 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/http-2.7.8.tm;
+	@echo "Installing package http 2.7.9 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/http-2.7.9.tm;
 	@echo "Installing library opt0.4 directory";
 	@for i in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
