@@ -1,3 +1,11 @@
+2012-03-07  Andreas Kupries  <andreask@activestate.com>
+
+	* library/http/http.tcl: [Bug 3498327]: Generate upper-case
+	* library/http/pkgIndex.tcl: hexadecimal output for compliance
+	* tests/http.test: with RFC 3986. Bumped version to 2.7.9.
+	* unix/Makefile.in:
+	* win/Makefile.in:
+
 2012-03-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinPort.h: Compatibility with older Visual Studio versions.
