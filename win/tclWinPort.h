@@ -19,15 +19,15 @@
 #   define _USE_32BIT_TIME_T
 #endif
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+
 /* Compatibility to older visual studio / windows platform SDK */
 #if !defined(MAXULONG_PTR)
 typedef DWORD DWORD_PTR;
 typedef DWORD_PTR * PDWORD_PTR;
 #endif
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#undef WIN32_LEAN_AND_MEAN
 
 /*
  * Ask for the winsock function typedefs, also.
