@@ -1,7 +1,7 @@
 2012-03-08  Donal K. Fellows  <dkf@users.sf.net>
 
-	* doc/info.n: Various minor fixes (prompted by Andreas Kupries
-	detecting a spelling mistake).
+	* doc/info.n:   Various minor fixes (prompted by Andreas Kupries
+	* doc/socket.n: detecting a spelling mistake).
 
 2012-03-07  Andreas Kupries  <andreask@activestate.com>
 
