@@ -1228,6 +1228,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    DL_LIBS="-ldl"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
+	    TCL_NEEDS_EXP_FILE=1
+	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.dll.a'
+	    TCL_SHLIB_LD_EXTRAS='-Wl,--out-implib,$[@].a'
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
