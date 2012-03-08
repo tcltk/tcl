@@ -14,6 +14,7 @@
  */
  
 #include "tclInt.h"
+#include "tclParse.h"
 
 /*
  * The following table provides parsing information about each possible 8-bit
@@ -41,18 +42,7 @@
  * TYPE_BRACE -		Character is a curly brace (either left or right).
  */
 
-#define TYPE_NORMAL		0
-#define TYPE_SPACE		0x1
-#define TYPE_COMMAND_END	0x2
-#define TYPE_SUBS		0x4
-#define TYPE_QUOTE		0x8
-#define TYPE_CLOSE_PAREN	0x10
-#define TYPE_CLOSE_BRACK	0x20
-#define TYPE_BRACE		0x40
-
-#define CHAR_TYPE(c) (charTypeTable+128)[(int)(c)]
-
-static const char charTypeTable[] = {
+const char charTypeTable[] = {
     /*
      * Negative character values, from -128 to -1:
      */
