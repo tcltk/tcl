@@ -305,6 +305,12 @@ Tcl_LoadObjCmd(
 			&& (pkgGuess[2] == 'b')) {
 		    pkgGuess += 3;
 		}
+#ifdef __CYGWIN__
+		if ((pkgGuess[0] == 'c') && (pkgGuess[1] == 'y')
+			&& (pkgGuess[2] == 'g')) {
+		    pkgGuess += 3;
+		}
+#endif /* __CYGWIN__ */
 		for (p = pkgGuess; *p != 0; p += offset) {
 		    offset = Tcl_UtfToUniChar(p, &ch);
 		    if ((ch > 0x100)
