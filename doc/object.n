@@ -40,7 +40,7 @@ current namespace whenever a method of the object is invoked (including a
 method of the class of the object). When the object is destroyed, its instance
 namespace is deleted. The instance namespace contains the object's \fBmy\fR
 command, which may be used to invoke non-exported methods of the object or to
-create a reference to the object for the purpose of invokation which persists
+create a reference to the object for the purpose of invocation which persists
 across renamings of the object.
 .SS CONSTRUCTOR
 The \fBoo::object\fR class does not define an explicit constructor.
@@ -69,7 +69,7 @@ associated with \fIobj\fR, returning the result of the evaluation.
 .
 This method is called when an attempt to invoke the method \fImethodName\fR on
 object \fIobj\fR fails. The arguments that the user supplied to the method are
-given as \fIarg\fR argments. The default implementation (i.e. the one defined
+given as \fIarg\fR arguments. The default implementation (i.e. the one defined
 by the \fBoo::object\fR class) generates a suitable error, detailing what
 methods the object supports given whether the object was invoked by its public
 name or through the \fBmy\fR command.
