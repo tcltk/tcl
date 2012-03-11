@@ -53,7 +53,7 @@ error).
 There is one special case to permit procedures with
 variable numbers of arguments.  If the last formal argument has the name
 \fBargs\fR, then a call to the procedure may contain more actual arguments
-than the procedure has formals.  In this case, all of the actual arguments
+than the procedure has formal arguments.  In this case, all of the actual arguments
 starting at the one that would be assigned to \fBargs\fR are combined into
 a list (as if the \fBlist\fR command had been used); this combined value
 is assigned to the local variable \fBargs\fR.
@@ -66,7 +66,7 @@ Other variables can only be accessed by invoking one of the \fBglobal\fR,
 \fBvariable\fR, \fBupvar\fR or \fBnamespace upvar\fR commands.
 The current namespace when \fIbody\fR is executed will be the
 namespace that the procedure's name exists in, which will be the
-namespace that itwas created in unless it has been changed with
+namespace that it was created in unless it has been changed with
 \fBrename\fR.
 '\" We may change this! It makes [variable] unstable when renamed and is
 '\" frankly pretty crazy, but doing it right is harder than it looks.

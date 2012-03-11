@@ -51,7 +51,7 @@ allowed to use \fBTcl_SetChannelError\fR and \fBTcl_SetChannelErrorInterp\fR
 to place arbitrary error messages in \fBbypass areas\fR defined for channels
 and interpreters. And the generic I/O layer uses \fBTcl_GetChannelError\fR and
 \fBTcl_GetChannelErrorInterp\fR to look for messages in the bypass areas and
-arrange for their return as errors. The posix error codes set by a driver are
+arrange for their return as errors. The POSIX error codes set by a driver are
 used now if and only if no messages are present.
 .PP
 \fBTcl_SetChannelError\fR stores error information in the bypass area of the

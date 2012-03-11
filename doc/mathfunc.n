@@ -299,3 +299,7 @@ Copyright (c) 1993 The Regents of the University of California.
 Copyright (c) 1994-2000 Sun Microsystems Incorporated.
 Copyright (c) 2005, 2006 by Kevin B. Kenny <kennykb@acm.org>.
 .fi
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:
