@@ -1588,9 +1588,9 @@ NativeAccess(
     {
 	SECURITY_DESCRIPTOR *sdPtr = NULL;
 	unsigned long size;
-	SID *pSid = 0;
+	PSID pSid = 0;
 	BOOL SidDefaulted;
-	SID_IDENTIFIER_AUTHORITY samba_unmapped = { 0, 0, 0, 0, 0, 22 };
+	SID_IDENTIFIER_AUTHORITY samba_unmapped = {{0, 0, 0, 0, 0, 22}};
 	GENERIC_MAPPING genMap;
 	HANDLE hToken = NULL;
 	DWORD desiredAccess = 0, grantedAccess = 0;
