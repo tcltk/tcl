@@ -1470,6 +1470,21 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 		    }
 		    error "found .. outside of .de"
 		}
+		.ds {
+		    regexp {^(\S+) ([^\s""]+|".*")$} $rest var rest
+		    if {$var eq "UB"} {
+			variable ImageUrlBase [unquote $rest]
+		    }
+		}
+		.FI {
+		    flushbuffer
+		    regexp {^(\S+) ([^\s""]+|".*")$} $rest fig caption
+		    variable ImageUrlBase
+		    set fig $ImageUrlBase$fig.png
+		    set caption [process-text [unquote $caption]]
+		    lappend manual(text) \
+			"<center><img src=\"$fig\"><br>$caption</center>"
+		}
 		default {
 		    if {!$verbose} {
 			puts stderr ""

@@ -1,6 +1,12 @@
+2012-03-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html-utils.tcl (make-manpage-section): Start of some
+	* doc/man.macros (.FI): support for a macro for figures, which is
+	mainly intended for use with Tk.
+
 2012-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinFile.c: [Bug 3388350] mingw64 compiler warnings
+	* win/tclWinFile.c: [Bug 3388350]: mingw64 compiler warnings
 
 2012-03-11  Donal K. Fellows  <dkf@users.sf.net>
 

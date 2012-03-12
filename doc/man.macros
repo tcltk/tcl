@@ -67,6 +67,14 @@
 .\"	Print an open parenthesis, arg1 in quotes, then arg2 normally
 .\"	(for trailing punctuation) and then a closing parenthesis.
 .\"
+.\" .FI pictureName caption
+.\"	Creates a figure from the picture called "pictureName". This
+.\"	translates into a URL to a PNG version of the picture when formatted
+.\"	for a terminal, a use of the EPS version of the picture when
+.\"	formatting for printed output, and a centered inline image (from the
+.\"	PNG) in the version for the web. The caption is added below, with
+.\"	appropriate numbering.
+.\"
 .\"	# Set up traps and other miscellaneous stuff for Tcl/Tk man pages.
 .if t .wh -1.3i ^B
 .nr ^l \n(.l
@@ -264,4 +272,19 @@ Database Class:	\\fB\\$3\\fR
 .\"	# MT - "empty" string
 .de MT
 .QW ""
+..
+.\"	# FI - figure with caption
+.ds UB http://www.tcl.tk/man/tcl8.6/img/
+.nr fi 0 1
+.de FI
+.RS
+.PP
+.ie n \{\
+.ce
+<\\*(UB\\$1.png>
+.\}
+.el .PSPIC img/\\$1.eps
+.ce
+Figure \\n+(fi: \\$2
+.RE
 ..
