@@ -1,3 +1,7 @@
+2012-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3388350] mingw64 compiler warnings
+
 2012-03-07  Andreas Kupries  <andreask@activestate.com>
 
 	* library/http/http.tcl: [Bug 3498327]: Generate upper-case
