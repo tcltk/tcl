@@ -1164,6 +1164,40 @@ TclpUtime(
 {
     return utime(Tcl_FSGetNativePath(pathPtr), tval);
 }
+#ifdef __CYGWIN__
+int TclOSstat(const char *name, Tcl_StatBuf *statBuf) {
+    struct stat buf;
+    int result = stat(name, &buf);
+    statBuf->st_mode = buf.st_mode;
+    statBuf->st_ino = buf.st_ino;
+    statBuf->st_dev = buf.st_dev;
+    statBuf->st_rdev = buf.st_rdev;
+    statBuf->st_nlink = buf.st_nlink;
+    statBuf->st_uid = buf.st_uid;
+    statBuf->st_gid = buf.st_gid;
+    statBuf->st_size = buf.st_size;
+    statBuf->st_atime = buf.st_atime;
+    statBuf->st_mtime = buf.st_mtime;
+    statBuf->st_ctime = buf.st_ctime;
+    return result;
+}
+int TclOSlstat(const char *name, Tcl_StatBuf *statBuf) {
+    struct stat buf;
+    int result = lstat(name, &buf);
+    statBuf->st_mode = buf.st_mode;
+    statBuf->st_ino = buf.st_ino;
+    statBuf->st_dev = buf.st_dev;
+    statBuf->st_rdev = buf.st_rdev;
+    statBuf->st_nlink = buf.st_nlink;
+    statBuf->st_uid = buf.st_uid;
+    statBuf->st_gid = buf.st_gid;
+    statBuf->st_size = buf.st_size;
+    statBuf->st_atime = buf.st_atime;
+    statBuf->st_mtime = buf.st_mtime;
+    statBuf->st_ctime = buf.st_ctime;
+    return result;
+}
+#endif
 
 /*
  * Local Variables:

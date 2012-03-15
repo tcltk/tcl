@@ -1,3 +1,12 @@
+2012-03-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h: [Bug 3288345] Wrong Tcl_StatBuf used on Cygwin
+	* unix/tclUnixFile.c
+	* unix/tclUnixPort.h
+	* win/cat.c:           Remove cygwin stuff no longer needed
+	* win/tclWinFile.c
+	* win/tclWinPort.h
+
 2012-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinFile.c: [Bug 3388350] mingw64 compiler warnings
