@@ -92,21 +92,11 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <signal.h>
 #include <limits.h>
 
-#ifdef __CYGWIN__
-#   include <unistd.h>
-#   ifndef _vsnprintf
-#	define _vsnprintf vsnprintf
-#   endif
-#   ifndef _wcsicmp
-#	define _wcsicmp wcscasecmp
-#   endif
-#else
-#   ifndef strncasecmp
-#	define strncasecmp strnicmp
-#   endif
-#   ifndef strcasecmp
-#	define strcasecmp stricmp
-#   endif
+#ifndef strncasecmp
+#   define strncasecmp strnicmp
+#endif
+#ifndef strcasecmp
+#   define strcasecmp stricmp
 #endif
 
 /*
@@ -125,25 +115,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif /* __MWERKS__ */
 
 #include <time.h>
-
-/*
- * cygwin does not have this struct.
- */
-#ifdef __CYGWIN__
-  struct _stat32i64 {
-    dev_t st_dev;
-    ino_t st_ino;
-    unsigned short st_mode;
-    short st_nlink;
-    short st_uid;
-    short st_gid;
-    dev_t st_rdev;
-    __int64 st_size;
-    struct {long tv_sec;} st_atim;
-    struct {long tv_sec;} st_mtim;
-    struct {long tv_sec;} st_ctim;
-  };
-#endif
 
 /*
  * The following defines redefine the Windows Socket errors as
@@ -549,18 +520,12 @@ typedef DWORD_PTR * PDWORD_PTR;
  * use by tclAlloc.c.
  */
 
-#ifdef __CYGWIN__
-#   define TclpSysAlloc(size, isBin)	malloc((size))
-#   define TclpSysFree(ptr)		free((ptr))
-#   define TclpSysRealloc(ptr, size)	realloc((ptr), (size))
-#else
-#   define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
+#define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
 					    (DWORD)0, (DWORD)size))
-#   define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
+#define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
 					    (DWORD)0, (HGLOBAL)ptr))
-#   define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
+#define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
 					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
-#endif
 
 /*
  * The following defines map from standard socket names to our internal
