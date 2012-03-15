@@ -352,7 +352,7 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__WIN32__) && !defined(__CYGWIN__)
+#   if defined(__WIN32__)
 #      define TCL_WIDE_INT_TYPE __int64
 #      ifdef __BORLANDC__
 typedef struct stati64 Tcl_StatBuf;
@@ -415,7 +415,21 @@ typedef struct stat	Tcl_StatBuf;
  * or some other strange platform.
  */
 #   ifndef TCL_LL_MODIFIER
-#      ifdef HAVE_STRUCT_STAT64
+#      ifdef __CYGWIN__
+typedef struct _stat32i64 {
+    dev_t st_dev;
+    ino_t st_ino;
+    unsigned short st_mode;
+    short st_nlink;
+    short st_uid;
+    short st_gid;
+    dev_t st_rdev;
+    long long st_size;
+    struct {long tv_sec;} st_atim;
+    struct {long tv_sec;} st_mtim;
+    struct {long tv_sec;} st_ctim;
+} Tcl_StatBuf;
+#      elif defined(HAVE_STRUCT_STAT64)
 typedef struct stat64	Tcl_StatBuf;
 #      else
 typedef struct stat	Tcl_StatBuf;
@@ -427,7 +441,7 @@ typedef struct stat	Tcl_StatBuf;
 #   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* TCL_WIDE_INT_IS_LONG */
-
+
 /*
  * Data structures defined opaquely in this module. The definitions below just
  * provide dummy types. A few fields are made visible in Tcl_Interp
