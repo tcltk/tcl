@@ -51,12 +51,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  *---------------------------------------------------------------------------
  */
 
-#ifdef __CYGWIN__
-#   include <unistd.h>
-#   include <wchar.h>
-#else
-#   include <io.h>
-#endif
+#include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -68,18 +63,11 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <string.h>
 #include <limits.h>
 
-#ifdef __CYGWIN__
-#   include <unistd.h>
-#   ifndef _wcsicmp
-#	define _wcsicmp wcscasecmp
-#   endif
-#else
-#   ifndef strncasecmp
-#	define strncasecmp strnicmp
-#   endif
-#   ifndef strcasecmp
-#	define strcasecmp stricmp
-#   endif
+#ifndef strncasecmp
+#   define strncasecmp strnicmp
+#endif
+#ifndef strcasecmp
+#   define strcasecmp stricmp
 #endif
 
 /*
@@ -112,25 +100,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 
 #undef ENOTSUP
 #define ENOTSUP	-1030507
-
-/*
- * cygwin does not have this struct.
- */
-#ifdef __CYGWIN__
-  struct _stat32i64 {
-    dev_t st_dev;
-    ino_t st_ino;
-    unsigned short st_mode;
-    short st_nlink;
-    short st_uid;
-    short st_gid;
-    dev_t st_rdev;
-    __int64 st_size;
-    struct {long tv_sec;} st_atim;
-    struct {long tv_sec;} st_mtim;
-    struct {long tv_sec;} st_ctim;
-  };
-#endif
 
 /* Those codes, from Visual Studio 2010, conflict with other values */
 #undef ENODATA
@@ -478,18 +447,12 @@ typedef DWORD_PTR * PDWORD_PTR;
  * use by tclAlloc.c.
  */
 
-#ifdef __CYGWIN__
-#   define TclpSysAlloc(size, isBin)	malloc((size))
-#   define TclpSysFree(ptr)		free((ptr))
-#   define TclpSysRealloc(ptr, size)	realloc((ptr), (size))
-#else
-#   define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
+#define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
 					    (DWORD)0, (DWORD)size))
-#   define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
+#define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
 					    (DWORD)0, (HGLOBAL)ptr))
-#   define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
+#define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
 					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
-#endif
 
 /*
  * The following defines map from standard socket names to our internal
