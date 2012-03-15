@@ -36,7 +36,7 @@
  * Exported function declarations:
  */
 
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if defined(__CYGWIN__) || !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
 #ifndef TclGetAndDetachPids_TCL_DECLARED
 #define TclGetAndDetachPids_TCL_DECLARED
 /* 0 */
@@ -375,7 +375,7 @@ typedef struct TclIntPlatStubs {
     int magic;
     struct TclIntPlatStubHooks *hooks;
 
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if defined(__CYGWIN__) || !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 0 */
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
@@ -462,7 +462,7 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
  * Inline function declarations:
  */
 
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if defined(__CYGWIN__) || !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
 #ifndef TclGetAndDetachPids
 #define TclGetAndDetachPids \
 	(tclIntPlatStubsPtr->tclGetAndDetachPids) /* 0 */
