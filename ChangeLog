@@ -1,3 +1,11 @@
+2012-03-19  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c (Tcl_OpenTcpServer): Use the values returned
+	by getaddrinfo() for all three arguments to socket() instead of
+	only using ai_family. Try to keep the most meaningful error while
+	iterating over the result list, because using the last error can
+	be misleading.
+
 2012-03-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h: [Bug 3288345] Wrong Tcl_StatBuf used on Cygwin
