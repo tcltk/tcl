@@ -55,8 +55,7 @@ EXTERN TclFile		TclpOpenFile _ANSI_ARGS_((CONST char * fname,
 EXTERN int		TclUnixWaitForFile _ANSI_ARGS_((int fd, int mask, 
 				int timeout));
 /* 9 */
-EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((
-				CONST char * contents));
+EXTERN int		TclWinGetPlatformId _ANSI_ARGS_((void));
 /* 10 */
 EXTERN Tcl_DirEntry *	TclpReaddir _ANSI_ARGS_((DIR * dir));
 /* 11 */
@@ -66,6 +65,17 @@ EXTERN struct tm *	TclpLocaltime_unix _ANSI_ARGS_((
 EXTERN struct tm *	TclpGmtime_unix _ANSI_ARGS_((TclpTime_t_CONST clock));
 /* 13 */
 EXTERN char *		TclpInetNtoa _ANSI_ARGS_((struct in_addr addr));
+/* Slot 14 is reserved */
+/* Slot 15 is reserved */
+/* Slot 16 is reserved */
+/* Slot 17 is reserved */
+/* Slot 18 is reserved */
+/* Slot 19 is reserved */
+/* Slot 20 is reserved */
+/* Slot 21 is reserved */
+/* 22 */
+EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((
+				CONST char * contents));
 #endif /* UNIX */
 #ifdef __WIN32__
 /* 0 */
@@ -229,11 +239,20 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpMakeFile) _ANSI_ARGS_((Tcl_Channel channel, int direction)); /* 6 */
     TclFile (*tclpOpenFile) _ANSI_ARGS_((CONST char * fname, int mode)); /* 7 */
     int (*tclUnixWaitForFile) _ANSI_ARGS_((int fd, int mask, int timeout)); /* 8 */
-    TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 9 */
+    int (*tclWinGetPlatformId) _ANSI_ARGS_((void)); /* 9 */
     Tcl_DirEntry * (*tclpReaddir) _ANSI_ARGS_((DIR * dir)); /* 10 */
     struct tm * (*tclpLocaltime_unix) _ANSI_ARGS_((TclpTime_t_CONST clock)); /* 11 */
     struct tm * (*tclpGmtime_unix) _ANSI_ARGS_((TclpTime_t_CONST clock)); /* 12 */
     char * (*tclpInetNtoa) _ANSI_ARGS_((struct in_addr addr)); /* 13 */
+    void *reserved14;
+    void *reserved15;
+    void *reserved16;
+    void *reserved17;
+    void *reserved18;
+    void *reserved19;
+    void *reserved20;
+    void *reserved21;
+    TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 22 */
 #endif /* UNIX */
 #ifdef __WIN32__
     void (*tclWinConvertError) _ANSI_ARGS_((DWORD errCode)); /* 0 */
@@ -346,9 +365,9 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclUnixWaitForFile \
 	(tclIntPlatStubsPtr->tclUnixWaitForFile) /* 8 */
 #endif
-#ifndef TclpCreateTempFile
-#define TclpCreateTempFile \
-	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 9 */
+#ifndef TclWinGetPlatformId
+#define TclWinGetPlatformId \
+	(tclIntPlatStubsPtr->tclWinGetPlatformId) /* 9 */
 #endif
 #ifndef TclpReaddir
 #define TclpReaddir \
@@ -365,6 +384,18 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #ifndef TclpInetNtoa
 #define TclpInetNtoa \
 	(tclIntPlatStubsPtr->tclpInetNtoa) /* 13 */
+#endif
+/* Slot 14 is reserved */
+/* Slot 15 is reserved */
+/* Slot 16 is reserved */
+/* Slot 17 is reserved */
+/* Slot 18 is reserved */
+/* Slot 19 is reserved */
+/* Slot 20 is reserved */
+/* Slot 21 is reserved */
+#ifndef TclpCreateTempFile
+#define TclpCreateTempFile \
+	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 22 */
 #endif
 #endif /* UNIX */
 #ifdef __WIN32__
