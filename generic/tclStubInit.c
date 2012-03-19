@@ -58,7 +58,13 @@ Tcl_NotifierProcs tclOriginalNotifier = {
 };
 
 #ifdef __CYGWIN__
+
 #define TclWinGetPlatformId winGetPlatformId
+#define Tcl_WinUtfToTChar winUtfToTChar
+#define Tcl_WinTCharToUtf winTCharToUtf
+
+static Tcl_Encoding winTCharEncoding;
+
 static int
 TclWinGetPlatformId()
 {
@@ -66,8 +72,46 @@ TclWinGetPlatformId()
      * because VER_PLATFORM_WIN32_NT is the only supported platform */
     return 2; /* VER_PLATFORM_WIN32_NT */;
 }
+
+static char *
+Tcl_WinUtfToTChar(string, len, dsPtr)
+    CONST char *string;
+    int len;
+    Tcl_DString *dsPtr;
+{
+    if (!winTCharEncoding) {
+	winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
+    }
+    return Tcl_UtfToExternalDString(winTCharEncoding,
+	    string, len, dsPtr);
+}
+
+char *
+Tcl_WinTCharToUtf(string, len, dsPtr)
+    CONST char *string;
+    int len;
+    Tcl_DString *dsPtr;
+{
+    if (!winTCharEncoding) {
+	winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
+    }
+    return Tcl_ExternalToUtfDString(winTCharEncoding,
+	    string, len, dsPtr);
+}
+
+#define TclWinCPUID 0 /* TODO: to be implemented for cygwin */
+#define Tcl_MacOSXOpenBundleResources (int (*) _ANSI_ARGS_(( \
+		Tcl_Interp *, CONST char *, int, int, char *))) Tcl_WinUtfToTChar
+#define Tcl_MacOSXOpenVersionedBundleResources (int (*) _ANSI_ARGS_(( \
+		Tcl_Interp *, CONST char *, CONST char *, int, int, char *))) Tcl_WinTCharToUtf
+
 #elif !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
-#define TclWinGetPlatformId (int (*)()) TclpCreateTempFile
+#   define TclWinGetPlatformId (int (*)()) TclpCreateTempFile
+#   define TclWinCPUID 0
+#   ifndef MAC_OSX_TCL
+#	define Tcl_MacOSXOpenBundleResources 0
+#	define Tcl_MacOSXOpenVersionedBundleResources 0
+#   endif
 #endif
 
 /*
@@ -334,6 +378,13 @@ TclIntPlatStubs tclIntPlatStubs = {
     NULL, /* 20 */
     NULL, /* 21 */
     TclpCreateTempFile, /* 22 */
+    NULL, /* 23 */
+    NULL, /* 24 */
+    NULL, /* 25 */
+    NULL, /* 26 */
+    NULL, /* 27 */
+    NULL, /* 28 */
+    TclWinCPUID, /* 29 */
 #endif /* UNIX */
 #ifdef __WIN32__
     TclWinConvertError, /* 0 */
@@ -401,6 +452,10 @@ TclIntPlatStubs tclIntPlatStubs = {
 TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+    Tcl_MacOSXOpenBundleResources, /* 0 */
+    Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
+#endif /* UNIX */
 #ifdef __WIN32__
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
@@ -416,10 +471,6 @@ TclPlatStubs tclPlatStubs = {
     strncasecmp, /* 7 */
     strcasecmp, /* 8 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    Tcl_MacOSXOpenBundleResources, /* 0 */
-    Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
-#endif /* MAC_OSX_TCL */
 };
 
 static TclStubHooks tclStubHooks = {
