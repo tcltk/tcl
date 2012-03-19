@@ -76,6 +76,15 @@ EXTERN char *		TclpInetNtoa _ANSI_ARGS_((struct in_addr addr));
 /* 22 */
 EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((
 				CONST char * contents));
+/* Slot 23 is reserved */
+/* Slot 24 is reserved */
+/* Slot 25 is reserved */
+/* Slot 26 is reserved */
+/* Slot 27 is reserved */
+/* Slot 28 is reserved */
+/* 29 */
+EXTERN int		TclWinCPUID _ANSI_ARGS_((unsigned int index, 
+				unsigned int * regs));
 #endif /* UNIX */
 #ifdef __WIN32__
 /* 0 */
@@ -253,6 +262,13 @@ typedef struct TclIntPlatStubs {
     void *reserved20;
     void *reserved21;
     TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 22 */
+    void *reserved23;
+    void *reserved24;
+    void *reserved25;
+    void *reserved26;
+    void *reserved27;
+    void *reserved28;
+    int (*tclWinCPUID) _ANSI_ARGS_((unsigned int index, unsigned int * regs)); /* 29 */
 #endif /* UNIX */
 #ifdef __WIN32__
     void (*tclWinConvertError) _ANSI_ARGS_((DWORD errCode)); /* 0 */
@@ -396,6 +412,16 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #ifndef TclpCreateTempFile
 #define TclpCreateTempFile \
 	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 22 */
+#endif
+/* Slot 23 is reserved */
+/* Slot 24 is reserved */
+/* Slot 25 is reserved */
+/* Slot 26 is reserved */
+/* Slot 27 is reserved */
+/* Slot 28 is reserved */
+#ifndef TclWinCPUID
+#define TclWinCPUID \
+	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
 #endif
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -622,5 +648,11 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #undef TclpLocaltime_unix
 #undef TclpGmtime_unix
+
+#if !defined(__WIN32__) && !defined(MAC_TCL) && !defined(__CYGWIN__) && defined(USE_TCL_STUBS)
+#undef TclpCreateTempFile
+#define TclpCreateTempFile \
+	((TclFile (*)_ANSI_ARGS_((CONST char *))) tclIntPlatStubsPtr->tclWinGetPlatformId)
+#endif
 
 #endif /* _TCLINTPLATDECLS */

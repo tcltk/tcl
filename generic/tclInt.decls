@@ -1011,4 +1011,7 @@ declare 13 unix {
 declare 22 unix {
     TclFile TclpCreateTempFile(CONST char *contents)
 }
+declare 29 unix {
+    int TclWinCPUID(unsigned int index, unsigned int *regs)
+}
 
