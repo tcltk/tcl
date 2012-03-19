@@ -1,3 +1,33 @@
+2012-03-19  Venkat Iyer <venkat@comit.com>
+
+	* library/tzdata/America/Atikokan: Update to tzdata2012b.
+	* library/tzdata/America/Blanc-Sablon
+	* library/tzdata/America/Dawson_Creek
+	* library/tzdata/America/Edmonton
+	* library/tzdata/America/Glace_Bay
+	* library/tzdata/America/Goose_Bay
+	* library/tzdata/America/Halifax
+	* library/tzdata/America/Havana
+	* library/tzdata/America/Moncton
+	* library/tzdata/America/Montreal
+	* library/tzdata/America/Nipigon
+	* library/tzdata/America/Rainy_River
+	* library/tzdata/America/Regina
+	* library/tzdata/America/Santiago
+	* library/tzdata/America/St_Johns
+	* library/tzdata/America/Swift_Current
+	* library/tzdata/America/Toronto
+	* library/tzdata/America/Vancouver
+	* library/tzdata/America/Winnipeg
+	* library/tzdata/Antarctica/Casey
+	* library/tzdata/Antarctica/Davis
+	* library/tzdata/Antarctica/Palmer
+	* library/tzdata/Asia/Yerevan
+	* library/tzdata/Atlantic/Stanley
+	* library/tzdata/Pacific/Easter
+	* library/tzdata/Pacific/Fakaofo
+	* library/tzdata/America/Creston: (new)
+
 2012-03-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h: [Bug 3288345] Wrong Tcl_StatBuf used on Cygwin
