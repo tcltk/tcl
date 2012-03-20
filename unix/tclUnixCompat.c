@@ -144,7 +144,7 @@ CopyArray(char **src, int elsize, char *buf, int buflen)
 
 
 static int
-CopyString(char *src, char *buf, int buflen)
+CopyString(CONST char *src, char *buf, int buflen)
 {
     int len = 0;
 
@@ -666,3 +666,40 @@ TclpGetHostByAddr(const char *addr, int length, int type)
     return NULL; /* Not reached */
 #endif /* TCL_THREADS */
 }
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclWinCPUID --
+ *
+ *	Get CPU ID information on an Intel box under UNIX (either Linux or Cygwin)
+ *
+ * Results:
+ *	Returns TCL_OK if successful, TCL_ERROR if CPUID is not supported or
+ *	fails.
+ *
+ * Side effects:
+ *	If successful, stores EAX, EBX, ECX and EDX registers after the CPUID
+ *	instruction in the four integers designated by 'regsPtr'
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclWinCPUID(
+    unsigned int index,		/* Which CPUID value to retrieve. */
+    unsigned int *regsPtr)	/* Registers after the CPUID. */
+{
+    int status = TCL_ERROR;
+
+    /* There is no reason this couldn't be implemented on UNIX as well */
+    return status;
+}
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
