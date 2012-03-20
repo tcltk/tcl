@@ -1,3 +1,12 @@
+2012-03-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.decls:           [Bug 3508771] load tclreg.dll in cygwin tclsh
+	* generic/tclInt.decls:        Implement TclWinGetPlatformId, Tcl_WinUtfToTChar,
+	* generic/tclIntPlatDecls.h:   Tcl_WinTCharToUtf (and a dummy TclWinCPUID) for 
+	* generic/tclPlatDecls.h:      Cygwin, so win32 extensions using those can be
+	* generic/tclStubInit.c:       loaded in the cygwin version of tclsh.
+	* unix/tclUnixCompat.c:
+
 2012-03-19  Venkat Iyer <venkat@comit.com>
 
 	* library/tzdata/America/Atikokan: Update to tzdata2012b.
