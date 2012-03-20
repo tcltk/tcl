@@ -207,6 +207,7 @@ proc genStubs::rewriteFile {file text} {
     }
     set in [open ${file} r]
     set out [open ${file}.new w]
+    fconfigure $out -translation lf
 
     while {![eof $in]} {
 	set line [gets $in]
@@ -946,9 +947,9 @@ proc genStubs::emitHeader {name} {
 
     emitSlots $name text
 
-    append text "} ${capName}Stubs;\n"
+    append text "} ${capName}Stubs;\n\n"
 
-    append text "\n#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
+    append text "#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
     append text "extern ${capName}Stubs *${name}StubsPtr;\n"
     append text "#ifdef __cplusplus\n}\n#endif\n"
 
@@ -970,7 +971,6 @@ proc genStubs::emitHeader {name} {
 #	Returns the formatted output.
 
 proc genStubs::emitInit {name textVar} {
-    variable stubs
     variable hooks
     upvar $textVar text
 

@@ -1107,8 +1107,9 @@ declare 8 unix {
 
 # Added in 8.1:
 
+# On non-cygwin, this is actually a reference to TclpCreateTempFile
 declare 9 unix {
-    TclFile TclpCreateTempFile(CONST char *contents)
+    int TclWinGetPlatformId(void)
 }
 
 # Added in 8.4:
@@ -1157,6 +1158,13 @@ declare 18 macosx {
 }
 declare 19 macosx {
     void TclMacOSXNotifierAddRunLoopMode(CONST void *runLoopMode)
+}
+
+declare 22 unix {
+    TclFile TclpCreateTempFile(CONST char *contents)
+}
+declare 29 unix {
+    int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
 
 
