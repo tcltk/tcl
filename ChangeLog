@@ -1,10 +1,16 @@
 2012-03-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.decls:           [Bug 3508771] load tclreg.dll in cygwin tclsh
-	* generic/tclInt.decls:        Implement TclWinGetPlatformId, Tcl_WinUtfToTChar,
-	* generic/tclIntPlatDecls.h:   Tcl_WinTCharToUtf (and a dummy TclWinCPUID) for 
-	* generic/tclPlatDecls.h:      Cygwin, so win32 extensions using those can be
-	* generic/tclStubInit.c:       loaded in the cygwin version of tclsh.
+	* generic/tcl.h:             [Bug 3288345] Wrong Tcl_StatBuf used on Cygwin
+	* unix/tclUnixFile.c
+	* unix/tclUnixPort.h
+	* win/tclWinFile.c           Remove cygwin stuff no longer needed
+	* win/tclWinPort.h
+
+	* generic/tcl.decls:         [Bug 3508771] load tclreg.dll in cygwin tclsh
+	* generic/tclInt.decls:      Implement TclWinGetPlatformId, Tcl_WinUtfToTChar,
+	* generic/tclIntPlatDecls.h: Tcl_WinTCharToUtf (and a dummy TclWinCPUID) for 
+	* generic/tclPlatDecls.h:    Cygwin, so win32 extensions using those can be
+	* generic/tclStubInit.c:     loaded in the cygwin version of tclsh.
 	* unix/tclUnixCompat.c:
 
 2012-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
