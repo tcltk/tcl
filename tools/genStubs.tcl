@@ -1,8 +1,8 @@
 # genStubs.tcl --
 #
 #	This script generates a set of stub files for a given
-#	interface.  
-#	
+#	interface.
+#
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # See the file "license.terms" for information on usage and redistribution
@@ -14,7 +14,7 @@ namespace eval genStubs {
     # libraryName --
     #
     #	The name of the entire library.  This value is used to compute
-    #	the USE_*_STUB_PROCS macro and the name of the init file.
+    #	the USE_*_STUBS macro and the name of the init file.
 
     variable libraryName "UNKNOWN"
 
@@ -131,10 +131,15 @@ proc genStubs::declare {args} {
     variable stubs
     variable curName
 
-    if {[llength $args] != 3} {
+    if {[llength $args] == 2} {
+	lassign $args index decl
+	set platformList generic
+    } elseif {[llength $args] == 3} {
+	lassign $args index platformList decl
+    } else {
 	puts stderr "wrong # args: declare $args"
+	return
     }
-    lassign $args index platformList decl
 
     # Check for duplicate declarations, then add the declaration and
     # bump the lastNum counter if necessary.
@@ -179,6 +184,7 @@ proc genStubs::rewriteFile {file text} {
     }
     set in [open ${file} r]
     set out [open ${file}.new w]
+    fconfigure $out -translation lf
 
     while {![eof $in]} {
 	set line [gets $in]
@@ -251,7 +257,6 @@ proc genStubs::addPlatformGuard {plat text} {
 #	None.
 
 proc genStubs::emitSlots {name textVar} {
-    variable stubs
     upvar $textVar text
 
     forAllStubs $name makeSlot 1 text {"    void *reserved$i;\n"}
@@ -379,11 +384,14 @@ proc genStubs::makeDecl {name decl index} {
 	    foreach arg $args {
 		append line $sep
 		set next {}
-		append next [lindex $arg 0] " " [lindex $arg 1] \
-			[lindex $arg 2]
+		append next [lindex $arg 0]
+		if {[string index $next end] ne "*"} {
+		    append next " "
+		}
+		append next [lindex $arg 1] [lindex $arg 2]
 		if {[string length $line] + [string length $next] \
 			+ $pad > 76} {
-		    append text $line \n
+		    append text [string trimright $line] \n
 		    set line "\t\t\t\t"
 		    set pad 28
 		}
@@ -393,10 +401,7 @@ proc genStubs::makeDecl {name decl index} {
 	    append line ")"
 	}
     }
-    append text $line
-    
-    append text ");\n"
-    return $text
+    return "$text$line);\n"
 }
 
 # genStubs::makeMacro --
@@ -538,14 +543,17 @@ proc genStubs::makeSlot {name decl index} {
 	default {
 	    set sep "("
 	    foreach arg $args {
-		append text $sep [lindex $arg 0] " " [lindex $arg 1] \
-			[lindex $arg 2]
+		append text $sep [lindex $arg 0]
+		if {[string index $text end] ne "*"} {
+		    append text " "
+		}
+		append text [lindex $arg 1] [lindex $arg 2]
 		set sep ", "
 	    }
 	    append text ")"
 	}
     }
-    
+
     append text "); /* $index */\n"
     return $text
 }
@@ -588,7 +596,7 @@ proc genStubs::makeInit {name decl index} {
 # Results:
 #	None.
 
-proc genStubs::forAllStubs {name slotProc onAll textVar \
+proc genStubs::forAllStubs {name slotProc onAll textVar
 	{skipString {"/* Slot $i is reserved */\n"}}} {
     variable stubs
     upvar $textVar text
@@ -607,7 +615,8 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 	    set emit 0
 	    if {[info exists stubs($name,generic,$i)]} {
 		if {[llength $slots] > 1} {
-		    puts stderr "platform entry duplicates generic entry: $i"
+		    puts stderr "conflicting generic and platform entries:\
+			    $name $i"
 		}
 		append text [$slotProc $name $stubs($name,generic,$i) $i]
 		set emit 1
@@ -706,10 +715,10 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 		    eval {append temp} $skipString
 		} else {
 			append temp [$slotProc $name $stubs($name,x11,$i) $i]
-		    }
 		}
-		append text [addPlatformGuard x11 $temp]
 	    }
+	    append text [addPlatformGuard x11 $temp]
+	}
     }
 }
 
@@ -725,7 +734,6 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 #	None.
 
 proc genStubs::emitDeclarations {name textVar} {
-    variable stubs
     upvar $textVar text
 
     append text "\n/*\n * Exported function declarations:\n */\n\n"
@@ -745,14 +753,13 @@ proc genStubs::emitDeclarations {name textVar} {
 #	None.
 
 proc genStubs::emitMacros {name textVar} {
-    variable stubs
     variable libraryName
     upvar $textVar text
 
     set upName [string toupper $libraryName]
     append text "\n#if defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS)\n"
     append text "\n/*\n * Inline function declarations:\n */\n\n"
-    
+
     forAllStubs $name makeMacro 0 text
 
     append text "\n#endif /* defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS) */\n"
@@ -794,9 +801,9 @@ proc genStubs::emitHeader {name} {
 
     emitSlots $name text
 
-    append text "} ${capName}Stubs;\n"
+    append text "} ${capName}Stubs;\n\n"
 
-    append text "\n#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
+    append text "#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
     append text "extern ${capName}Stubs *${name}StubsPtr;\n"
     append text "#ifdef __cplusplus\n}\n#endif\n"
 
@@ -839,7 +846,6 @@ proc genStubs::emitStubs {name} {
 #	Returns the formatted output.
 
 proc genStubs::emitInit {name textVar} {
-    variable stubs
     variable hooks
     upvar $textVar text
 
@@ -847,7 +853,7 @@ proc genStubs::emitInit {name textVar} {
     append capName [string range $name 1 end]
 
     if {[info exists hooks($name)]} {
- 	append text "\nstatic ${capName}StubHooks ${name}StubHooks = \{\n"
+	append text "\nstatic ${capName}StubHooks ${name}StubHooks = \{\n"
 	set sep "    "
 	foreach sub $hooks($name) {
 	    append text $sep "&${sub}Stubs"
@@ -862,7 +868,7 @@ proc genStubs::emitInit {name textVar} {
     } else {
 	append text "    NULL,\n"
     }
-    
+
     forAllStubs $name makeInit 1 text {"    NULL, /* $i */\n"}
 
     append text "\};\n"
@@ -953,13 +959,14 @@ proc genStubs::init {} {
 # Results:
 #	Returns any values that were not assigned to variables.
 
-proc lassign {valueList args} {
-  if {[llength $args] == 0} {
-      error "wrong # args: lassign list varname ?varname..?"
-  }
-
-  uplevel [list foreach $args $valueList {break}]
-  return [lrange $valueList [llength $args] end]
+if {[string length [namespace which lassign]] == 0} {
+    proc lassign {valueList args} {
+	if {[llength $args] == 0} {
+	    error "wrong # args: should be \"lassign list varName ?varName ...?\""
+	}
+	uplevel [list foreach $args $valueList {break}]
+	return [lrange $valueList [llength $args] end]
+    }
 }
 
 genStubs::init
