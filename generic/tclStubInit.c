@@ -86,7 +86,7 @@ Tcl_WinUtfToTChar(string, len, dsPtr)
 	    string, len, dsPtr);
 }
 
-char *
+static char *
 Tcl_WinTCharToUtf(string, len, dsPtr)
     CONST char *string;
     int len;
