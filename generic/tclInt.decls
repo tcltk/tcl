@@ -1168,8 +1168,9 @@ declare 8 unix {
 
 # Added in 8.1:
 
+# On non-cygwin, this is actually a reference to TclpCreateTempFile
 declare 9 unix {
-    TclFile TclpCreateTempFile(const char *contents)
+    int TclWinGetPlatformId(void)
 }
 
 # Added in 8.4:
@@ -1194,6 +1195,13 @@ declare 13 unix {
 declare 14 unix {
     int TclUnixCopyFile(const char *src, const char *dst,
 	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
+}
+
+declare 22 unix {
+    TclFile TclpCreateTempFile(const char *contents)
+}
+declare 29 unix {
+    int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
 
 ################################

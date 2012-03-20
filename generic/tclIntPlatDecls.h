@@ -61,7 +61,7 @@ EXTERN TclFile		TclpOpenFile(const char *fname, int mode);
 /* 8 */
 EXTERN int		TclUnixWaitForFile(int fd, int mask, int timeout);
 /* 9 */
-EXTERN TclFile		TclpCreateTempFile(const char *contents);
+EXTERN int		TclWinGetPlatformId(void);
 /* 10 */
 EXTERN Tcl_DirEntry *	TclpReaddir(DIR *dir);
 /* 11 */
@@ -74,6 +74,23 @@ EXTERN char *		TclpInetNtoa(struct in_addr addr);
 EXTERN int		TclUnixCopyFile(const char *src, const char *dst,
 				const Tcl_StatBuf *statBufPtr,
 				int dontCopyAtts);
+/* Slot 15 is reserved */
+/* Slot 16 is reserved */
+/* Slot 17 is reserved */
+/* Slot 18 is reserved */
+/* Slot 19 is reserved */
+/* Slot 20 is reserved */
+/* Slot 21 is reserved */
+/* 22 */
+EXTERN TclFile		TclpCreateTempFile(const char *contents);
+/* Slot 23 is reserved */
+/* Slot 24 is reserved */
+/* Slot 25 is reserved */
+/* Slot 26 is reserved */
+/* Slot 27 is reserved */
+/* Slot 28 is reserved */
+/* 29 */
+EXTERN int		TclWinCPUID(unsigned int index, unsigned int *regs);
 #endif /* UNIX */
 #ifdef __WIN32__ /* WIN */
 /* 0 */
@@ -165,7 +182,7 @@ EXTERN TclFile		TclpOpenFile(const char *fname, int mode);
 /* 8 */
 EXTERN int		TclUnixWaitForFile(int fd, int mask, int timeout);
 /* 9 */
-EXTERN TclFile		TclpCreateTempFile(const char *contents);
+EXTERN int		TclWinGetPlatformId(void);
 /* 10 */
 EXTERN Tcl_DirEntry *	TclpReaddir(DIR *dir);
 /* 11 */
@@ -198,6 +215,18 @@ EXTERN int		TclMacOSXMatchType(Tcl_Interp *interp,
 /* 19 */
 EXTERN void		TclMacOSXNotifierAddRunLoopMode(
 				const void *runLoopMode);
+/* Slot 20 is reserved */
+/* Slot 21 is reserved */
+/* 22 */
+EXTERN TclFile		TclpCreateTempFile(const char *contents);
+/* Slot 23 is reserved */
+/* Slot 24 is reserved */
+/* Slot 25 is reserved */
+/* Slot 26 is reserved */
+/* Slot 27 is reserved */
+/* Slot 28 is reserved */
+/* 29 */
+EXTERN int		TclWinCPUID(unsigned int index, unsigned int *regs);
 #endif /* MACOSX */
 
 typedef struct TclIntPlatStubs {
@@ -214,12 +243,27 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 6 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
-    TclFile (*tclpCreateTempFile) (const char *contents); /* 9 */
+    int (*tclWinGetPlatformId) (void); /* 9 */
     Tcl_DirEntry * (*tclpReaddir) (DIR *dir); /* 10 */
     struct tm * (*tclpLocaltime_unix) (const time_t *clock); /* 11 */
     struct tm * (*tclpGmtime_unix) (const time_t *clock); /* 12 */
     char * (*tclpInetNtoa) (struct in_addr addr); /* 13 */
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 14 */
+    void (*reserved15)(void);
+    void (*reserved16)(void);
+    void (*reserved17)(void);
+    void (*reserved18)(void);
+    void (*reserved19)(void);
+    void (*reserved20)(void);
+    void (*reserved21)(void);
+    TclFile (*tclpCreateTempFile) (const char *contents); /* 22 */
+    void (*reserved23)(void);
+    void (*reserved24)(void);
+    void (*reserved25)(void);
+    void (*reserved26)(void);
+    void (*reserved27)(void);
+    void (*reserved28)(void);
+    int (*tclWinCPUID) (unsigned int index, unsigned int *regs); /* 29 */
 #endif /* UNIX */
 #ifdef __WIN32__ /* WIN */
     void (*tclWinConvertError) (unsigned long errCode); /* 0 */
@@ -263,7 +307,7 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 6 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
-    TclFile (*tclpCreateTempFile) (const char *contents); /* 9 */
+    int (*tclWinGetPlatformId) (void); /* 9 */
     Tcl_DirEntry * (*tclpReaddir) (DIR *dir); /* 10 */
     struct tm * (*tclpLocaltime_unix) (const time_t *clock); /* 11 */
     struct tm * (*tclpGmtime_unix) (const time_t *clock); /* 12 */
@@ -274,6 +318,16 @@ typedef struct TclIntPlatStubs {
     int (*tclMacOSXCopyFileAttributes) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr); /* 17 */
     int (*tclMacOSXMatchType) (Tcl_Interp *interp, const char *pathName, const char *fileName, Tcl_StatBuf *statBufPtr, Tcl_GlobTypeData *types); /* 18 */
     void (*tclMacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 19 */
+    void (*reserved20)(void);
+    void (*reserved21)(void);
+    TclFile (*tclpCreateTempFile) (const char *contents); /* 22 */
+    void (*reserved23)(void);
+    void (*reserved24)(void);
+    void (*reserved25)(void);
+    void (*reserved26)(void);
+    void (*reserved27)(void);
+    void (*reserved28)(void);
+    int (*tclWinCPUID) (unsigned int index, unsigned int *regs); /* 29 */
 #endif /* MACOSX */
 } TclIntPlatStubs;
 
@@ -309,8 +363,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclpOpenFile) /* 7 */
 #define TclUnixWaitForFile \
 	(tclIntPlatStubsPtr->tclUnixWaitForFile) /* 8 */
-#define TclpCreateTempFile \
-	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 9 */
+#define TclWinGetPlatformId \
+	(tclIntPlatStubsPtr->tclWinGetPlatformId) /* 9 */
 #define TclpReaddir \
 	(tclIntPlatStubsPtr->tclpReaddir) /* 10 */
 #define TclpLocaltime_unix \
@@ -321,6 +375,23 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclpInetNtoa) /* 13 */
 #define TclUnixCopyFile \
 	(tclIntPlatStubsPtr->tclUnixCopyFile) /* 14 */
+/* Slot 15 is reserved */
+/* Slot 16 is reserved */
+/* Slot 17 is reserved */
+/* Slot 18 is reserved */
+/* Slot 19 is reserved */
+/* Slot 20 is reserved */
+/* Slot 21 is reserved */
+#define TclpCreateTempFile \
+	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 22 */
+/* Slot 23 is reserved */
+/* Slot 24 is reserved */
+/* Slot 25 is reserved */
+/* Slot 26 is reserved */
+/* Slot 27 is reserved */
+/* Slot 28 is reserved */
+#define TclWinCPUID \
+	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
 #endif /* UNIX */
 #ifdef __WIN32__ /* WIN */
 #define TclWinConvertError \
@@ -396,8 +467,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclpOpenFile) /* 7 */
 #define TclUnixWaitForFile \
 	(tclIntPlatStubsPtr->tclUnixWaitForFile) /* 8 */
-#define TclpCreateTempFile \
-	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 9 */
+#define TclWinGetPlatformId \
+	(tclIntPlatStubsPtr->tclWinGetPlatformId) /* 9 */
 #define TclpReaddir \
 	(tclIntPlatStubsPtr->tclpReaddir) /* 10 */
 #define TclpLocaltime_unix \
@@ -418,6 +489,18 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclMacOSXMatchType) /* 18 */
 #define TclMacOSXNotifierAddRunLoopMode \
 	(tclIntPlatStubsPtr->tclMacOSXNotifierAddRunLoopMode) /* 19 */
+/* Slot 20 is reserved */
+/* Slot 21 is reserved */
+#define TclpCreateTempFile \
+	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 22 */
+/* Slot 23 is reserved */
+/* Slot 24 is reserved */
+/* Slot 25 is reserved */
+/* Slot 26 is reserved */
+/* Slot 27 is reserved */
+/* Slot 28 is reserved */
+#define TclWinCPUID \
+	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
 #endif /* MACOSX */
 
 #endif /* defined(USE_TCL_STUBS) */
@@ -428,5 +511,11 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TCL_STORAGE_CLASS DLLIMPORT
 #undef TclpLocaltime_unix
 #undef TclpGmtime_unix
+
+#if !defined(__WIN32__) && !defined(__CYGWIN__) && defined(USE_TCL_STUBS)
+#undef TclpCreateTempFile
+#define TclpCreateTempFile \
+	((TclFile (*)_ANSI_ARGS_((CONST char *))) tclIntPlatStubsPtr->tclWinGetPlatformId)
+#endif
 
 #endif /* _TCLINTPLATDECLS */
