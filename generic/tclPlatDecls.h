@@ -46,6 +46,18 @@
  * Exported function declarations:
  */
 
+#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+/* 0 */
+EXTERN int		Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
+				const char *bundleName, int hasResourceFile,
+				int maxPathLen, char *libraryPath);
+/* 1 */
+EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
+				Tcl_Interp *interp, const char *bundleName,
+				const char *bundleVersion,
+				int hasResourceFile, int maxPathLen,
+				char *libraryPath);
+#endif /* UNIX */
 #ifdef __WIN32__ /* WIN */
 /* 0 */
 EXTERN TCHAR *		Tcl_WinUtfToTChar(const char *str, int len,
@@ -71,6 +83,10 @@ typedef struct TclPlatStubs {
     int magic;
     const struct TclPlatStubHooks *hooks;
 
+#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+    int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp *interp, const char *bundleName, int hasResourceFile, int maxPathLen, char *libraryPath); /* 0 */
+    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, int maxPathLen, char *libraryPath); /* 1 */
+#endif /* UNIX */
 #ifdef __WIN32__ /* WIN */
     TCHAR * (*tcl_WinUtfToTChar) (const char *str, int len, Tcl_DString *dsPtr); /* 0 */
     char * (*tcl_WinTCharToUtf) (const TCHAR *str, int len, Tcl_DString *dsPtr); /* 1 */
@@ -95,6 +111,12 @@ extern const TclPlatStubs *tclPlatStubsPtr;
  * Inline function declarations:
  */
 
+#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#define Tcl_MacOSXOpenBundleResources \
+	(tclPlatStubsPtr->tcl_MacOSXOpenBundleResources) /* 0 */
+#define Tcl_MacOSXOpenVersionedBundleResources \
+	(tclPlatStubsPtr->tcl_MacOSXOpenVersionedBundleResources) /* 1 */
+#endif /* UNIX */
 #ifdef __WIN32__ /* WIN */
 #define Tcl_WinUtfToTChar \
 	(tclPlatStubsPtr->tcl_WinUtfToTChar) /* 0 */
