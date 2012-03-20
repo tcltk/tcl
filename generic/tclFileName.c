@@ -2645,17 +2645,6 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 			Tcl_DStringAppend(headPtr, ".", 1);
 		    }
 		}
-#if defined(__CYGWIN__) && defined(__WIN32__)
-		{
-		extern int cygwin_conv_to_win32_path 
-		    _ANSI_ARGS_((CONST char *, char *));
-		char winbuf[MAX_PATH+1];
-
-		cygwin_conv_to_win32_path(Tcl_DStringValue(headPtr), winbuf);
-		Tcl_DStringFree(headPtr);
-		Tcl_DStringAppend(headPtr, winbuf, -1);
-		}
-#endif /* __CYGWIN__ && __WIN32__ */
 		/* 
 		 * Convert to forward slashes.  This is required to pass
 		 * some Tcl tests.  We should probably remove the conversions

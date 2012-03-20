@@ -73,7 +73,13 @@ typedef off_t		Tcl_SeekOffset;
 #   define TclOSopen		open
 #endif
 
-#ifdef HAVE_STRUCT_STAT64
+#ifdef __CYGWIN__
+EXTERN int TclOSstat(const char *name, Tcl_StatBuf *statBuf);
+EXTERN int TclOSlstat(const char *name, Tcl_StatBuf *statBuf);
+#undef HAVE_ST_BLKSIZE
+#define NO_FSTATFS
+#undef HAVE_FTS
+#elif defined(HAVE_STRUCT_STAT64)
 #   define TclOSstat		stat64
 #   define TclOSlstat		lstat64
 #else
