@@ -68,9 +68,9 @@ Tcl_NotifierProcs tclOriginalNotifier = {
 #define TclWinAddProcess winAddProcess
 #define TclpGetTZName pGetTZName
 #define TclWinNoBackslash winNoBackslash
-#define TclWinSetInterfaces winSetInterfaces
-#define TclWinFlushDirtyChannels winFlushDirtyChannels
-#define TclWinResetInterfaces winResetInterfaces
+#define TclWinSetInterfaces (void (*) _ANSI_ARGS_((int))) doNothing
+#define TclWinFlushDirtyChannels doNothing
+#define TclWinResetInterfaces doNothing
 
 static Tcl_Encoding winTCharEncoding;
 
@@ -84,60 +84,55 @@ TclWinGetPlatformId()
 
 static int TclWinGetTclInstance()
 {
-    /* TODO: implementation */
+	Tcl_Panic("TclWinGetTclInstance not yet implemented for CYGWIN");
     return 0;
 }
 
 static unsigned short
 TclWinNToHS(unsigned short ns)
 {
-    /* TODO: implementation */
+	Tcl_Panic("TclWinNToHS not yet implemented for CYGWIN");
     return (unsigned short) -1;
 }
 static int
 TclWinSetSockOpt(int s, int level, int optname,
 	    const char *optval, int optlen)
 {
-    /* TODO: implementation */
+	Tcl_Panic("TclWinSetSockOpt not yet implemented for CYGWIN");
     return -1;
 }
 
 static void
 TclWinAddProcess(void *hProcess, unsigned long id)
 {
-    /* TODO: implementation */
+	Tcl_Panic("TclWinAddProcess not yet implemented for CYGWIN");
 }
 
 static char *
 TclpGetTZName(int isdst)
 {
     /* TODO: implementation */
+	Tcl_Panic("TclpGetTZName not yet implemented for CYGWIN");
     return 0;
 }
 
 static char *
 TclWinNoBackslash(char *path)
 {
-    /* TODO: implementation */
-    return 0;
+    char *p;
+
+    for (p = path; *p != '\0'; p++) {
+	if (*p == '\\') {
+	    *p = '/';
+	}
+    }
+    return path;
 }
 
 static void
-TclWinSetInterfaces(int wide)
+doNothing(void)
 {
-    /* TODO: implementation */
-}
-
-static void
-TclWinFlushDirtyChannels(void)
-{
-    /* TODO: implementation */
-}
-
-static void
-TclWinResetInterfaces(void)
-{
-    /* TODO: implementation */
+    /* dummy implementation, no need to do anything */
 }
 
 static char *
@@ -177,6 +172,8 @@ Tcl_WinTCharToUtf(
 #define TclMacOSXNotifierAddRunLoopMode (void (*) _ANSI_ARGS_((CONST void *))) TclpOpenFile
 
 #elif !defined(__WIN32__) /* UNIX and MAC */
+#   define TclWinConvertError (void (*) _ANSI_ARGS_((unsigned int))) TclGetAndDetachPids
+#   define TclWinConvertWSAError (void (*) _ANSI_ARGS_((unsigned int))) TclpCloseFile
 #   define TclWinGetPlatformId (int (*)()) TclpCreateTempFile
 #   define TclWinGetTclInstance (int (*)()) TclpCreateProcess
 #   define TclWinNToHS (unsigned short (*) _ANSI_ARGS_((unsigned short ns))) TclpMakeFile
@@ -437,8 +434,8 @@ TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
-    TclGetAndDetachPids, /* 0 */
-    TclpCloseFile, /* 1 */
+    TclWinConvertError, /* 0 */
+    TclWinConvertWSAError, /* 1 */
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
     TclWinGetTclInstance, /* 4 */
@@ -467,6 +464,8 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclWinFlushDirtyChannels, /* 27 */
     TclWinResetInterfaces, /* 28 */
     TclWinCPUID, /* 29 */
+    TclGetAndDetachPids, /* 30 */
+    TclpCloseFile, /* 31 */
 #endif /* UNIX */
 #ifdef __WIN32__
     TclWinConvertError, /* 0 */
