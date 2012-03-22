@@ -414,8 +414,8 @@ TclFinalizeIOSubsystem(void)
 		statePtr != NULL;
 		statePtr = statePtr->nextCSPtr) {
 	    chanPtr = statePtr->topChanPtr;
-            if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED | CHANNEL_DEAD)
-                || GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED |
+		    CHANNEL_DEAD)) {
 		active = 1;
 		break;
 	    }
@@ -458,7 +458,6 @@ TclFinalizeIOSubsystem(void)
 		 * The refcount is greater than zero, so flush the channel.
 		 */
 
-                ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		Tcl_Flush((Tcl_Channel) chanPtr);
 
 		/*
