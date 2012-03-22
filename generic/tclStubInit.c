@@ -110,7 +110,7 @@ Tcl_WinTCharToUtf(string, len, dsPtr)
 #define Tcl_MacOSXOpenVersionedBundleResources (int (*) _ANSI_ARGS_(( \
 		Tcl_Interp *, CONST char *, CONST char *, int, int, char *))) Tcl_WinTCharToUtf
 
-#elif !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#elif !defined(__WIN32__) /* UNIX and MAC */
 #   define TclWinGetPlatformId (int (*)()) TclpCreateTempFile
 #   ifndef MAC_OSX_TCL
 #	define Tcl_MacOSXOpenBundleResources 0
