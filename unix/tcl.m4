@@ -1207,12 +1207,10 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
-	    DL_OBJS="tclLoadDl.o"
+	    DL_OBJS="tclLoadDl.o tclWinError.o"
 	    DL_LIBS="-ldl"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
-	    TCL_NEEDS_EXP_FILE=1
-	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.dll.a'
 	    TCL_SHLIB_LD_EXTRAS='-Wl,--out-implib,$[@].a'
 	    ;;
 	dgux*)
