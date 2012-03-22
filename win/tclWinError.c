@@ -10,14 +10,22 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclWinInt.h"
+#include "tclPort.h"
+
+#ifndef WSAEWOULDBLOCK
+#   define WSAEWOULDBLOCK 10035L
+#endif
+
+#ifndef __WIN32__
+#   define DWORD unsigned int
+#endif
 
 /*
  * The following table contains the mapping from Win32 errors to
  * errno errors.
  */
 
-static char errorTable[] = {
+static CONST unsigned char errorTable[] = {
     0,
     EINVAL,	/* ERROR_INVALID_FUNCTION	1 */
     ENOENT,	/* ERROR_FILE_NOT_FOUND		2 */
@@ -285,17 +293,15 @@ static char errorTable[] = {
     EINVAL,	/* 264 */
     EINVAL,	/* 265 */
     EINVAL,	/* 266 */
-    ENOTDIR,	/* ERROR_DIRECTORY		267 */
+    ENOTDIR	/* ERROR_DIRECTORY		267 */
 };
-
-static const unsigned int tableLen = sizeof(errorTable);
 
 /*
  * The following table contains the mapping from WinSock errors to
  * errno errors.
  */
 
-static int wsaErrorTable[] = {
+static CONST unsigned char wsaErrorTable[] = {
     EWOULDBLOCK,	/* WSAEWOULDBLOCK */
     EINPROGRESS,	/* WSAEINPROGRESS */
     EALREADY,		/* WSAEALREADY */
@@ -332,7 +338,7 @@ static int wsaErrorTable[] = {
     EUSERS,		/* WSAEUSERS */
     EDQUOT,		/* WSAEDQUOT */
     ESTALE,		/* WSAESTALE */
-    EREMOTE,		/* WSAEREMOTE */
+    EREMOTE		/* WSAEREMOTE */
 };
 
 /*
@@ -355,7 +361,7 @@ void
 TclWinConvertError(errCode)
     DWORD errCode;		/* Win32 error code. */
 {
-    if (errCode >= tableLen) {
+    if (errCode >= sizeof(errorTable)) {
 	Tcl_SetErrno(EINVAL);
     } else {
 	Tcl_SetErrno(errorTable[errCode]);
@@ -382,8 +388,9 @@ void
 TclWinConvertWSAError(errCode)
     DWORD errCode;		/* Win32 error code. */
 {
-    if ((errCode >= WSAEWOULDBLOCK) && (errCode <= WSAEREMOTE)) {
-	Tcl_SetErrno(wsaErrorTable[errCode - WSAEWOULDBLOCK]);
+	errCode -= WSAEWOULDBLOCK;
+    if ((errCode <= (DWORD) sizeof(wsaErrorTable))) {
+	Tcl_SetErrno(wsaErrorTable[errCode]);
     } else {
 	Tcl_SetErrno(EINVAL);
     }
