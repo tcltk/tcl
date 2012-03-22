@@ -62,6 +62,15 @@ Tcl_NotifierProcs tclOriginalNotifier = {
 #define TclWinGetPlatformId winGetPlatformId
 #define Tcl_WinUtfToTChar winUtfToTChar
 #define Tcl_WinTCharToUtf winTCharToUtf
+#define TclWinGetTclInstance winGetTclInstance
+#define TclWinNToHS winNToHS
+#define TclWinSetSockOpt winSetSockOpt
+#define TclWinAddProcess winAddProcess
+#define TclpGetTZName pGetTZName
+#define TclWinNoBackslash winNoBackslash
+#define TclWinSetInterfaces winSetInterfaces
+#define TclWinFlushDirtyChannels winFlushDirtyChannels
+#define TclWinResetInterfaces winResetInterfaces
 
 static Tcl_Encoding winTCharEncoding;
 
@@ -73,6 +82,64 @@ TclWinGetPlatformId()
     return 2; /* VER_PLATFORM_WIN32_NT */;
 }
 
+static int TclWinGetTclInstance()
+{
+    /* TODO: implementation */
+    return 0;
+}
+
+static unsigned short
+TclWinNToHS(unsigned short ns)
+{
+    /* TODO: implementation */
+    return (unsigned short) -1;
+}
+static int
+TclWinSetSockOpt(int s, int level, int optname,
+	    const char *optval, int optlen)
+{
+    /* TODO: implementation */
+    return -1;
+}
+
+static void
+TclWinAddProcess(void *hProcess, unsigned long id)
+{
+    /* TODO: implementation */
+}
+
+static char *
+TclpGetTZName(int isdst)
+{
+    /* TODO: implementation */
+    return 0;
+}
+
+static char *
+TclWinNoBackslash(char *path)
+{
+    /* TODO: implementation */
+    return 0;
+}
+
+static void
+TclWinSetInterfaces(int wide)
+{
+    /* TODO: implementation */
+}
+
+static void
+TclWinFlushDirtyChannels(void)
+{
+    /* TODO: implementation */
+}
+
+static void
+TclWinResetInterfaces(void)
+{
+    /* TODO: implementation */
+}
+
 static char *
 Tcl_WinUtfToTChar(string, len, dsPtr)
     CONST char *string;
@@ -80,20 +147,20 @@ Tcl_WinUtfToTChar(string, len, dsPtr)
     Tcl_DString *dsPtr;
 {
     if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
+	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
     }
     return Tcl_UtfToExternalDString(winTCharEncoding,
 	    string, len, dsPtr);
 }
 
 static char *
-Tcl_WinTCharToUtf(string, len, dsPtr)
-    CONST char *string;
-    int len;
-    Tcl_DString *dsPtr;
+Tcl_WinTCharToUtf(
+    CONST char *string,
+    int len,
+    Tcl_DString *dsPtr)
 {
     if (!winTCharEncoding) {
-	winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
+	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
     }
     return Tcl_ExternalToUtfDString(winTCharEncoding,
 	    string, len, dsPtr);
@@ -103,9 +170,26 @@ Tcl_WinTCharToUtf(string, len, dsPtr)
 		Tcl_Interp *, CONST char *, int, int, char *))) Tcl_WinUtfToTChar
 #define Tcl_MacOSXOpenVersionedBundleResources (int (*) _ANSI_ARGS_(( \
 		Tcl_Interp *, CONST char *, CONST char *, int, int, char *))) Tcl_WinTCharToUtf
+#define TclMacOSXGetFileAttribute (int(*) _ANSI_ARGS_((Tcl_Interp *,  \
+		int, Tcl_Obj *, Tcl_Obj **))) TclpCreateProcess
+#define TclMacOSXMatchType (int (*) _ANSI_ARGS_((Tcl_Interp *, CONST char *, \
+		CONST char *, Tcl_StatBuf *, Tcl_GlobTypeData *))) TclpMakeFile
+#define TclMacOSXNotifierAddRunLoopMode (void (*) _ANSI_ARGS_((CONST void *))) TclpOpenFile
 
 #elif !defined(__WIN32__) /* UNIX and MAC */
 #   define TclWinGetPlatformId (int (*)()) TclpCreateTempFile
+#   define TclWinGetTclInstance (int (*)()) TclpCreateProcess
+#   define TclWinNToHS (unsigned short (*) _ANSI_ARGS_((unsigned short ns))) TclpMakeFile
+#   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((int, int, int, const char *, int))) TclpOpenFile
+#   define TclWinAddProcess 0
+#   define TclpGetTZName 0
+#   define TclWinNoBackslash 0
+#   define TclWinSetInterfaces 0
+#   define TclWinFlushDirtyChannels 0
+#   define TclWinResetInterfaces 0
+#   define TclMacOSXGetFileAttribute 0 /* Only implemented in Tcl >= 8.5 */
+#   define TclMacOSXMatchType 0 /* Only implemented in Tcl >= 8.5 */
+#   define TclMacOSXNotifierAddRunLoopMode 0 /* Only implemented in Tcl >= 8.5 */
 #   ifndef MAC_OSX_TCL
 #	define Tcl_MacOSXOpenBundleResources 0
 #	define Tcl_MacOSXOpenVersionedBundleResources 0
@@ -357,10 +441,10 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
-    TclpCreateProcess, /* 4 */
+    TclWinGetTclInstance, /* 4 */
     NULL, /* 5 */
-    TclpMakeFile, /* 6 */
-    TclpOpenFile, /* 7 */
+    TclWinNToHS, /* 6 */
+    TclWinSetSockOpt, /* 7 */
     TclUnixWaitForFile, /* 8 */
     TclWinGetPlatformId, /* 9 */
     TclpReaddir, /* 10 */
@@ -368,20 +452,20 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpGmtime_unix, /* 12 */
     TclpInetNtoa, /* 13 */
     NULL, /* 14 */
-    NULL, /* 15 */
+    TclMacOSXGetFileAttribute, /* 15 */
     NULL, /* 16 */
     NULL, /* 17 */
-    NULL, /* 18 */
-    NULL, /* 19 */
-    NULL, /* 20 */
+    TclMacOSXMatchType, /* 18 */
+    TclMacOSXNotifierAddRunLoopMode, /* 19 */
+    TclWinAddProcess, /* 20 */
     NULL, /* 21 */
     TclpCreateTempFile, /* 22 */
-    NULL, /* 23 */
-    NULL, /* 24 */
+    TclpGetTZName, /* 23 */
+    TclWinNoBackslash, /* 24 */
     NULL, /* 25 */
-    NULL, /* 26 */
-    NULL, /* 27 */
-    NULL, /* 28 */
+    TclWinSetInterfaces, /* 26 */
+    TclWinFlushDirtyChannels, /* 27 */
+    TclWinResetInterfaces, /* 28 */
     TclWinCPUID, /* 29 */
 #endif /* UNIX */
 #ifdef __WIN32__
