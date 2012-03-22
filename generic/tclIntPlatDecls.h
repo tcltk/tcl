@@ -512,10 +512,4 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclpLocaltime_unix
 #undef TclpGmtime_unix
 
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && defined(USE_TCL_STUBS)
-#undef TclpCreateTempFile
-#define TclpCreateTempFile \
-	((TclFile (*)_ANSI_ARGS_((CONST char *))) tclIntPlatStubsPtr->tclWinGetPlatformId)
-#endif
-
 #endif /* _TCLINTPLATDECLS */
