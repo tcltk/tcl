@@ -427,12 +427,8 @@ TclFinalizeIOSubsystem(void)
 
 	if (active) {
 	    /*
-	     * Set the channel back into blocking mode to ensure that we wait
-	     * for all data to flush out.
+	     * TIP #398: we no longer set the channel back into blocking mode
 	     */
-
-	    (void) Tcl_SetChannelOption(NULL, (Tcl_Channel) chanPtr,
-		    "-blocking", "on");
 
 	    if ((chanPtr == (Channel *) tsdPtr->stdinChannel) ||
 		    (chanPtr == (Channel *) tsdPtr->stdoutChannel) ||
