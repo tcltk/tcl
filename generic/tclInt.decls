@@ -941,11 +941,13 @@ declare 29 win {
 
 # Pipe channel functions
 
+# On non-cygwin, this is actually a reference to TclGetAndDetachPids
 declare 0 unix {
-    void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
+    void TclWinConvertError(unsigned int errCode)
 }
+# On non-cygwin, this is actually a reference to TclpCloseFile
 declare 1 unix {
-    int TclpCloseFile(TclFile file)
+    void TclWinConvertWSAError(unsigned int errCode)
 }
 declare 2 unix {
     Tcl_Channel TclpCreateCommandChannel(TclFile readFile,
@@ -1037,6 +1039,12 @@ declare 28 unix {
 }
 declare 29 unix {
     int TclWinCPUID(unsigned int index, unsigned int *regs)
+}
+declare 30 unix {
+    void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
+}
+declare 31 unix {
+    int TclpCloseFile(TclFile file)
 }
 
 
