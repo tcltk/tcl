@@ -258,7 +258,7 @@ TOP_DIR			= $(SRC_DIR)/..
 GENERIC_DIR		= $(TOP_DIR)/generic
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
-UNIX_DIR		= $(SRC_DIR)
+UNIX_DIR		= $(TOP_DIR)/unix
 MAC_OSX_DIR		= $(TOP_DIR)/macosx
 # Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
 DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
@@ -1101,6 +1101,10 @@ tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
 
 tclMacOSXNotify.o: $(MAC_OSX_DIR)/tclMacOSXNotify.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXNotify.c
+
+# The following is a CYGWIN only source:
+tclWinError.o: $(TOP_DIR)/win/tclWinError.c
+	$(CC) -c $(CC_SWITCHES) $(TOP_DIR)/win/tclWinError.c
 
 # DTrace support
 
