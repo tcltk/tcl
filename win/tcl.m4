@@ -461,19 +461,23 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	extra_cflags="-pipe"
 	extra_ldflags="-pipe"
 
-	if test "$ac_cv_cygwin" = "yes"; then
-	  touch ac$$.c
-	  if ${CC} -c -mwin32 ac$$.c >/dev/null 2>&1; then
-	    case "$extra_cflags" in
-	      *-mwin32*) ;;
-	      *) extra_cflags="-mwin32 $extra_cflags" ;;
-	    esac
-	    case "$extra_ldflags" in
-	      *-mwin32*) ;;
-	      *) extra_ldflags="-mwin32 $extra_ldflags" ;;
-	    esac
-	  fi
-	  rm -f ac$$.o ac$$.c
+	if test "$ac_cv_cygwin" != "yes"; then
+	    case "$do64bit" in
+		amd64|x64|yes)
+		    CC="x86_64-w64-mingw32-gcc"
+		    LD="x86_64-w64-mingw32-ld"
+		    AR="x86_64-w64-mingw32-ar"
+		    RANLIB="x86_64-w64-mingw32-ranlib"
+		    RC="x86_64-w64-mingw32-windres"
+	    ;;
+	*)
+		    CC="i686-w64-mingw32-gcc"
+		    LD="i686-w64-mingw32-ld"
+		    AR="i686-w64-mingw32-ar"
+		    RANLIB="i686-w64-mingw32-ranlib"
+		    RC="i686-w64-mingw32-windres"
+	    ;;
+	esac
 	fi
 
 	if test "${SHARED_BUILD}" = "0" ; then
@@ -629,14 +633,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # The space-based-path will work for the Makefile, but will
 	    # not work if AC_TRY_COMPILE is called.  TEA has the
 	    # TEA_PATH_NOSPACE to avoid this issue.
-	    CC="\"${PATH64}/cl.exe\" -I\"${MSSDK}/Include\" \
-		-I\"${MSSDK}/Include/crt\" -I\"${MSSDK}/Include/crt/sys\""
-	    RC="\"${MSSDK}/bin/rc.exe\""
+	    CC="${PATH64}/cl.exe"
+	    CFLAGS="-I\"${MSSDK}/Include\" -I\"${MSSDK}/Include/crt\" -I\"${MSSDK}/Include/crt/sys\" ${CFLAGS}"
+	    RC="${MSSDK}/bin/rc.exe"
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
 	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
 	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
 	    lflags="-nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
-	    LINKBIN="\"${PATH64}/link.exe\""
+	    LINKBIN="${PATH64}/link.exe"
 	    # Avoid 'unresolved external symbol __security_cookie' errors.
 	    # c.f. http://support.microsoft.com/?id=894573
 	    LIBS="$LIBS bufferoverflowU.lib"
