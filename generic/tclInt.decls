@@ -992,9 +992,11 @@ declare 10 unix {
 }
 # Slots 11 and 12 are forwarders for functions that were promoted to
 # generic Stubs
+# On cygwin, this is actually a reference to TclGetAndDetachPids
 declare 11 unix {
     struct tm *TclpLocaltime_unix(TclpTime_t_CONST clock)
 }
+# On cygwin, this is actually a reference to TclpCloseFile
 declare 12 unix {
     struct tm *TclpGmtime_unix(TclpTime_t_CONST clock)
 }
