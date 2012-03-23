@@ -1,4 +1,4 @@
-2012-03-20  Jan Nijtmans  <nijtmans@users.sf.net>
+2012-03-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.decls        Revert some cygwin-related signature changes from
 	* generic/tclIntPlatDecls.h   [835f8e1e9d] (2010-01-22). They were an attempt to
