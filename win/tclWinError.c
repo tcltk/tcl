@@ -1,15 +1,16 @@
-/* 
+/*
  * tclWinError.c --
  *
- *	This file contains code for converting from Win32 errors to
- *	errno errors.
+ *	This file contains code for converting from Win32 errors to errno
+ *	errors.
  *
  * Copyright (c) 1995-1996 by Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include "tclInt.h"
 #include "tclPort.h"
 
 #ifndef WSAEWOULDBLOCK
@@ -21,8 +22,7 @@
 #endif
 
 /*
- * The following table contains the mapping from Win32 errors to
- * errno errors.
+ * The following table contains the mapping from Win32 errors to errno errors.
  */
 
 static CONST unsigned char errorTable[] = {
@@ -301,7 +301,7 @@ static CONST unsigned char errorTable[] = {
  * errno errors.
  */
 
-static CONST unsigned char wsaErrorTable[] = {
+static CONST int wsaErrorTable[] = {
     EWOULDBLOCK,	/* WSAEWOULDBLOCK */
     EINPROGRESS,	/* WSAEINPROGRESS */
     EALREADY,		/* WSAEALREADY */
@@ -358,10 +358,10 @@ static CONST unsigned char wsaErrorTable[] = {
  */
 
 void
-TclWinConvertError(errCode)
-    DWORD errCode;		/* Win32 error code. */
+TclWinConvertError(
+    DWORD errCode)		/* Win32 error code. */
 {
-    if (errCode >= sizeof(errorTable)) {
+    if (errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
 	Tcl_SetErrno(EINVAL);
     } else {
 	Tcl_SetErrno(errorTable[errCode]);
@@ -385,13 +385,22 @@ TclWinConvertError(errCode)
  */
 
 void
-TclWinConvertWSAError(errCode)
-    DWORD errCode;		/* Win32 error code. */
+TclWinConvertWSAError(
+    DWORD errCode)		/* Win32 error code. */
 {
-	errCode -= WSAEWOULDBLOCK;
-    if ((errCode <= (DWORD) sizeof(wsaErrorTable))) {
-	Tcl_SetErrno(wsaErrorTable[errCode]);
-    } else {
+    errCode -= WSAEWOULDBLOCK;
+    if (errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
 	Tcl_SetErrno(EINVAL);
+    } else {
+	Tcl_SetErrno(wsaErrorTable[errCode]);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * tab-width: 8
+ * End:
+ */
