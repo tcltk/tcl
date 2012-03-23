@@ -144,12 +144,12 @@ EXTERN int		TclWinCPUID(unsigned int index, unsigned int *regs);
 #ifndef TclWinConvertError_TCL_DECLARED
 #define TclWinConvertError_TCL_DECLARED
 /* 0 */
-EXTERN void		TclWinConvertError(unsigned long errCode);
+EXTERN void		TclWinConvertError(DWORD errCode);
 #endif
 #ifndef TclWinConvertWSAError_TCL_DECLARED
 #define TclWinConvertWSAError_TCL_DECLARED
 /* 1 */
-EXTERN void		TclWinConvertWSAError(unsigned long errCode);
+EXTERN void		TclWinConvertWSAError(DWORD errCode);
 #endif
 #ifndef TclWinGetServByName_TCL_DECLARED
 #define TclWinGetServByName_TCL_DECLARED
@@ -160,7 +160,7 @@ EXTERN struct servent *	 TclWinGetServByName(CONST char *nm,
 #ifndef TclWinGetSockOpt_TCL_DECLARED
 #define TclWinGetSockOpt_TCL_DECLARED
 /* 3 */
-EXTERN int		TclWinGetSockOpt(int s, int level, int optname,
+EXTERN int		TclWinGetSockOpt(SOCKET s, int level, int optname,
 				char FAR *optval, int FAR *optlen);
 #endif
 #ifndef TclWinGetTclInstance_TCL_DECLARED
@@ -177,7 +177,7 @@ EXTERN u_short		TclWinNToHS(u_short ns);
 #ifndef TclWinSetSockOpt_TCL_DECLARED
 #define TclWinSetSockOpt_TCL_DECLARED
 /* 7 */
-EXTERN int		TclWinSetSockOpt(int s, int level, int optname,
+EXTERN int		TclWinSetSockOpt(SOCKET s, int level, int optname,
 				CONST char FAR *optval, int optlen);
 #endif
 #ifndef TclpGetPid_TCL_DECLARED
@@ -237,7 +237,7 @@ EXTERN TclFile		TclpOpenFile(CONST char *fname, int mode);
 #ifndef TclWinAddProcess_TCL_DECLARED
 #define TclWinAddProcess_TCL_DECLARED
 /* 20 */
-EXTERN void		TclWinAddProcess(VOID *hProcess, unsigned long id);
+EXTERN void		TclWinAddProcess(HANDLE hProcess, DWORD id);
 #endif
 /* Slot 21 is reserved */
 #ifndef TclpCreateTempFile_TCL_DECLARED
@@ -449,14 +449,14 @@ typedef struct TclIntPlatStubs {
     int (*tclWinCPUID) (unsigned int index, unsigned int *regs); /* 29 */
 #endif /* UNIX */
 #ifdef __WIN32__ /* WIN */
-    void (*tclWinConvertError) (unsigned long errCode); /* 0 */
-    void (*tclWinConvertWSAError) (unsigned long errCode); /* 1 */
+    void (*tclWinConvertError) (DWORD errCode); /* 0 */
+    void (*tclWinConvertWSAError) (DWORD errCode); /* 1 */
     struct servent * (*tclWinGetServByName) (CONST char *nm, CONST char *proto); /* 2 */
-    int (*tclWinGetSockOpt) (int s, int level, int optname, char FAR *optval, int FAR *optlen); /* 3 */
+    int (*tclWinGetSockOpt) (SOCKET s, int level, int optname, char FAR *optval, int FAR *optlen); /* 3 */
     HINSTANCE (*tclWinGetTclInstance) (void); /* 4 */
     VOID *reserved5;
     u_short (*tclWinNToHS) (u_short ns); /* 6 */
-    int (*tclWinSetSockOpt) (int s, int level, int optname, CONST char FAR *optval, int optlen); /* 7 */
+    int (*tclWinSetSockOpt) (SOCKET s, int level, int optname, CONST char FAR *optval, int optlen); /* 7 */
     unsigned long (*tclpGetPid) (Tcl_Pid pid); /* 8 */
     int (*tclWinGetPlatformId) (void); /* 9 */
     VOID *reserved10;
@@ -469,7 +469,7 @@ typedef struct TclIntPlatStubs {
     VOID *reserved17;
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 18 */
     TclFile (*tclpOpenFile) (CONST char *fname, int mode); /* 19 */
-    void (*tclWinAddProcess) (VOID *hProcess, unsigned long id); /* 20 */
+    void (*tclWinAddProcess) (HANDLE hProcess, DWORD id); /* 20 */
     VOID *reserved21;
     TclFile (*tclpCreateTempFile) (CONST char *contents); /* 22 */
     char * (*tclpGetTZName) (int isdst); /* 23 */
