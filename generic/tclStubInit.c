@@ -31,8 +31,6 @@
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
 #undef Tcl_CreateHashEntry
-#define TclpLocaltime_unix TclpLocaltime
-#define TclpGmtime_unix TclpGmtime
 
 /*
  * Keep a record of the original Notifier procedures, created in the
@@ -165,11 +163,13 @@ Tcl_WinTCharToUtf(
 		Tcl_Interp *, CONST char *, int, int, char *))) Tcl_WinUtfToTChar
 #define Tcl_MacOSXOpenVersionedBundleResources (int (*) _ANSI_ARGS_(( \
 		Tcl_Interp *, CONST char *, CONST char *, int, int, char *))) Tcl_WinTCharToUtf
-#define TclMacOSXGetFileAttribute (int(*) _ANSI_ARGS_((Tcl_Interp *,  \
+#define TclMacOSXGetFileAttribute (int (*) _ANSI_ARGS_((Tcl_Interp *,  \
 		int, Tcl_Obj *, Tcl_Obj **))) TclpCreateProcess
 #define TclMacOSXMatchType (int (*) _ANSI_ARGS_((Tcl_Interp *, CONST char *, \
 		CONST char *, Tcl_StatBuf *, Tcl_GlobTypeData *))) TclpMakeFile
 #define TclMacOSXNotifierAddRunLoopMode (void (*) _ANSI_ARGS_((CONST void *))) TclpOpenFile
+#define TclpLocaltime_unix (struct tm *(*) _ANSI_ARGS_((TclpTime_t_CONST))) TclGetAndDetachPids
+#define TclpGmtime_unix (struct tm *(*) _ANSI_ARGS_((TclpTime_t_CONST))) TclpCloseFile
 
 #elif !defined(__WIN32__) /* UNIX and MAC */
 #   define TclWinConvertError (void (*) _ANSI_ARGS_((unsigned int))) TclGetAndDetachPids
@@ -191,6 +191,8 @@ Tcl_WinTCharToUtf(
 #	define Tcl_MacOSXOpenBundleResources 0
 #	define Tcl_MacOSXOpenVersionedBundleResources 0
 #   endif
+#   define TclpLocaltime_unix TclpLocaltime
+#   define TclpGmtime_unix TclpGmtime
 #endif
 
 /*
