@@ -683,12 +683,12 @@ declare 169 generic {
 }
 declare 170 generic {
     int TclCheckInterpTraces(Tcl_Interp *interp, CONST char *command,
-            int numChars, Command *cmdPtr, int result, int traceFlags,
+	    int numChars, Command *cmdPtr, int result, int traceFlags,
 	    int objc, Tcl_Obj *CONST objv[])
 }
 declare 171 generic {
     int TclCheckExecutionTraces(Tcl_Interp *interp, CONST char *command,
-            int numChars, Command *cmdPtr, int result, int traceFlags,
+	    int numChars, Command *cmdPtr, int result, int traceFlags,
 	    int objc, Tcl_Obj *CONST objv[])
 }
 declare 172 generic {
@@ -955,17 +955,17 @@ interface tclIntPlat
 # Windows specific functions
 
 declare 0 win {
-    void TclWinConvertError(unsigned long errCode)
+    void TclWinConvertError(DWORD errCode)
 }
 declare 1 win {
-    void TclWinConvertWSAError(unsigned long errCode)
+    void TclWinConvertWSAError(DWORD errCode)
 }
 declare 2 win {
     struct servent *TclWinGetServByName(CONST char *nm,
 	    CONST char *proto)
 }
 declare 3 win {
-    int TclWinGetSockOpt(int s, int level, int optname,
+    int TclWinGetSockOpt(SOCKET s, int level, int optname,
 	    char FAR *optval, int FAR *optlen)
 }
 declare 4 win {
@@ -979,7 +979,7 @@ declare 6 win {
     u_short TclWinNToHS(u_short ns)
 }
 declare 7 win {
-    int TclWinSetSockOpt(int s, int level, int optname,
+    int TclWinSetSockOpt(SOCKET s, int level, int optname,
 	    CONST char FAR *optval, int optlen)
 }
 declare 8 win {
@@ -1027,7 +1027,7 @@ declare 19 win {
     TclFile TclpOpenFile(CONST char *fname, int mode)
 }
 declare 20 win {
-    void TclWinAddProcess(void *hProcess, unsigned long id)
+    void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
 
 # removed permanently for 8.4
