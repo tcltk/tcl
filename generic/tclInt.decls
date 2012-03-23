@@ -689,12 +689,12 @@ declare 169 {
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
-            int numChars, Command *cmdPtr, int result, int traceFlags,
+	    int numChars, Command *cmdPtr, int result, int traceFlags,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 171 {
     int TclCheckExecutionTraces(Tcl_Interp *interp, const char *command,
-            int numChars, Command *cmdPtr, int result, int traceFlags,
+	    int numChars, Command *cmdPtr, int result, int traceFlags,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 172 {
@@ -1016,10 +1016,10 @@ interface tclIntPlat
 # Windows specific functions
 
 declare 0 win {
-    void TclWinConvertError(unsigned long errCode)
+    void TclWinConvertError(DWORD errCode)
 }
 declare 1 win {
-    void TclWinConvertWSAError(unsigned long errCode)
+    void TclWinConvertWSAError(DWORD errCode)
 }
 declare 2 win {
     struct servent *TclWinGetServByName(const char *nm,
@@ -1088,7 +1088,7 @@ declare 19 win {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 20 win {
-    void TclWinAddProcess(void *hProcess, unsigned long id)
+    void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
 
 # removed permanently for 8.4
