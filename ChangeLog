@@ -1,3 +1,13 @@
+2012-03-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls:      [Bug 3508771] load tclreg.dll in cygwin tclsh
+	* generic/tclIntPlatDecls.h: Implement TclWinConvertError, TclWinConvertWSAError,
+	* generic/tclStubInit.c:     and various more win32-specific internal functions for 
+	* unix/Makefile.in:          Cygwin, so win32 extensions using those can be
+	* unix/tcl.m4:               loaded in the cygwin version of tclsh.
+	* unix/configure:
+	* win/tclWinError.c:
+
 2012-03-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:             [Bug 3288345] Wrong Tcl_StatBuf used on Cygwin

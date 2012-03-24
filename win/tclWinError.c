@@ -1,23 +1,31 @@
-/* 
+/*
  * tclWinError.c --
  *
- *	This file contains code for converting from Win32 errors to
- *	errno errors.
+ *	This file contains code for converting from Win32 errors to errno
+ *	errors.
  *
  * Copyright (c) 1995-1996 by Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclWinInt.h"
+#include "tclInt.h"
+#include "tclPort.h"
+
+#ifndef WSAEWOULDBLOCK
+#   define WSAEWOULDBLOCK 10035L
+#endif
+
+#ifndef __WIN32__
+#   define DWORD unsigned int
+#endif
 
 /*
- * The following table contains the mapping from Win32 errors to
- * errno errors.
+ * The following table contains the mapping from Win32 errors to errno errors.
  */
 
-static char errorTable[] = {
+static CONST unsigned char errorTable[] = {
     0,
     EINVAL,	/* ERROR_INVALID_FUNCTION	1 */
     ENOENT,	/* ERROR_FILE_NOT_FOUND		2 */
@@ -285,17 +293,15 @@ static char errorTable[] = {
     EINVAL,	/* 264 */
     EINVAL,	/* 265 */
     EINVAL,	/* 266 */
-    ENOTDIR,	/* ERROR_DIRECTORY		267 */
+    ENOTDIR	/* ERROR_DIRECTORY		267 */
 };
-
-static const unsigned int tableLen = sizeof(errorTable);
 
 /*
  * The following table contains the mapping from WinSock errors to
  * errno errors.
  */
 
-static int wsaErrorTable[] = {
+static CONST int wsaErrorTable[] = {
     EWOULDBLOCK,	/* WSAEWOULDBLOCK */
     EINPROGRESS,	/* WSAEINPROGRESS */
     EALREADY,		/* WSAEALREADY */
@@ -332,7 +338,7 @@ static int wsaErrorTable[] = {
     EUSERS,		/* WSAEUSERS */
     EDQUOT,		/* WSAEDQUOT */
     ESTALE,		/* WSAESTALE */
-    EREMOTE,		/* WSAEREMOTE */
+    EREMOTE		/* WSAEREMOTE */
 };
 
 /*
@@ -352,10 +358,10 @@ static int wsaErrorTable[] = {
  */
 
 void
-TclWinConvertError(errCode)
-    DWORD errCode;		/* Win32 error code. */
+TclWinConvertError(
+    DWORD errCode)		/* Win32 error code. */
 {
-    if (errCode >= tableLen) {
+    if (errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
 	Tcl_SetErrno(EINVAL);
     } else {
 	Tcl_SetErrno(errorTable[errCode]);
@@ -379,12 +385,22 @@ TclWinConvertError(errCode)
  */
 
 void
-TclWinConvertWSAError(errCode)
-    DWORD errCode;		/* Win32 error code. */
+TclWinConvertWSAError(
+    DWORD errCode)		/* Win32 error code. */
 {
-    if ((errCode >= WSAEWOULDBLOCK) && (errCode <= WSAEREMOTE)) {
-	Tcl_SetErrno(wsaErrorTable[errCode - WSAEWOULDBLOCK]);
-    } else {
+    errCode -= WSAEWOULDBLOCK;
+    if (errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
 	Tcl_SetErrno(EINVAL);
+    } else {
+	Tcl_SetErrno(wsaErrorTable[errCode]);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * tab-width: 8
+ * End:
+ */
