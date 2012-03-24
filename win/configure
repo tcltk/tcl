@@ -1276,7 +1276,7 @@ echo "configure:1260: checking compiler flags" >&5
 	extra_cflags="-pipe"
 	extra_ldflags="-pipe"
 
-	if test "$ac_cv_cygwin" != "yes"; then
+	if test "$ac_cv_cygwin" = "yes"; then
 	    case "$do64bit" in
 		amd64|x64|yes)
 		    CC="x86_64-w64-mingw32-gcc"
@@ -1284,14 +1284,14 @@ echo "configure:1260: checking compiler flags" >&5
 		    AR="x86_64-w64-mingw32-ar"
 		    RANLIB="x86_64-w64-mingw32-ranlib"
 		    RC="x86_64-w64-mingw32-windres"
-	    ;;
-	*)
+		;;
+		*)
 		    CC="i686-w64-mingw32-gcc"
 		    LD="i686-w64-mingw32-ld"
 		    AR="i686-w64-mingw32-ar"
 		    RANLIB="i686-w64-mingw32-ranlib"
 		    RC="i686-w64-mingw32-windres"
-	    ;;
+		;;
 	esac
 	fi
 
