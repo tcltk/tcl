@@ -461,7 +461,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	extra_cflags="-pipe"
 	extra_ldflags="-pipe"
 
-	if test "$ac_cv_cygwin" != "yes"; then
+	if test "$ac_cv_cygwin" = "yes"; then
 	    case "$do64bit" in
 		amd64|x64|yes)
 		    CC="x86_64-w64-mingw32-gcc"
@@ -469,8 +469,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    AR="x86_64-w64-mingw32-ar"
 		    RANLIB="x86_64-w64-mingw32-ranlib"
 		    RC="x86_64-w64-mingw32-windres"
-	    ;;
-	*)
+		;;
+		*)
 		    CC="i686-w64-mingw32-gcc"
 		    LD="i686-w64-mingw32-ld"
 		    AR="i686-w64-mingw32-ar"
