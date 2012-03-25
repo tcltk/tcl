@@ -1012,6 +1012,117 @@ declare 250 {
 
 interface tclIntPlat
 
+########################
+# Mac specific internals
+
+declare 0 mac {
+    VOID *TclpSysAlloc(long size, int isBin)
+}
+declare 1 mac {
+    void TclpSysFree(VOID *ptr)
+}
+declare 2 mac {
+    VOID *TclpSysRealloc(VOID *cp, unsigned int size)
+}
+declare 3 mac {
+    void TclpExit(int status)
+}
+
+# Prototypes for functions found in the tclMacUtil.c compatability library.
+
+declare 4 mac {
+    int FSpGetDefaultDir(FSSpecPtr theSpec)
+}
+declare 5 mac {
+    int FSpSetDefaultDir(FSSpecPtr theSpec)
+}
+declare 6 mac {
+    OSErr FSpFindFolder(short vRefNum, OSType folderType,
+	    Boolean createFolder, FSSpec *spec)
+}
+declare 7 mac {
+    void GetGlobalMouseTcl(Point *mouse)
+}
+
+# The following routines are utility functions in Tcl.  They are exported
+# here because they are needed in Tk.  They are not officially supported,
+# however.  The first set are from the MoreFiles package.
+
+declare 8 mac {
+    pascal OSErr FSpGetDirectoryIDTcl(CONST FSSpec *spec, long *theDirID,
+	    Boolean *isDirectory)
+}
+declare 9 mac {
+    pascal short FSpOpenResFileCompatTcl(CONST FSSpec *spec,
+	    SignedByte permission)
+}
+declare 10 mac {
+    pascal void FSpCreateResFileCompatTcl(CONST FSSpec *spec, OSType creator,
+	    OSType fileType, ScriptCode scriptTag)
+}
+
+# Like the MoreFiles routines these fix problems in the standard
+# Mac calls.  These routines are from tclMacUtils.h.
+
+declare 11 mac {
+    int FSpLocationFromPath(int length, CONST char *path, FSSpecPtr theSpec)
+}
+declare 12 mac {
+    OSErr FSpPathFromLocation(FSSpecPtr theSpec, int *length,
+	    Handle *fullPath)
+}
+
+# Prototypes of Mac only internal functions.
+
+declare 13 mac {
+    void TclMacExitHandler(void)
+}
+declare 14 mac {
+    void TclMacInitExitToShell(int usePatch)
+}
+declare 15 mac {
+    OSErr TclMacInstallExitToShellPatch(ExitToShellProcPtr newProc)
+}
+declare 16 mac {
+    int TclMacOSErrorToPosixError(int error)
+}
+declare 17 mac {
+    void TclMacRemoveTimer(VOID *timerToken)
+}
+declare 18 mac {
+    VOID *TclMacStartTimer(long ms)
+}
+declare 19 mac {
+    int TclMacTimerExpired(VOID *timerToken)
+}
+declare 20 mac {
+    int TclMacRegisterResourceFork(short fileRef, Tcl_Obj *tokenPtr,
+	    int insert)
+}	
+declare 21 mac {
+    short TclMacUnRegisterResourceFork(char *tokenPtr, Tcl_Obj *resultPtr)
+}	
+declare 22 mac {
+    int TclMacCreateEnv(void)
+}
+declare 23 mac {
+    FILE *TclMacFOpenHack(CONST char *path, CONST char *mode)
+}
+# Replaced in 8.1 by TclpReadLink:
+#  declare 24 mac {
+#      int TclMacReadlink(char *path, char *buf, int size)
+#  }
+declare 24 mac {
+    char *TclpGetTZName(int isdst)
+}
+declare 25 mac {
+    int TclMacChmod(CONST char *path, int mode)
+}
+# version of FSpLocationFromPath that doesn't resolve the last path component
+declare 26 mac {
+    int FSpLLocationFromPath(int length, CONST char *path, FSSpecPtr theSpec)
+}
+
 ################################
 # Windows specific functions
 
@@ -1134,11 +1245,13 @@ declare 29 win {
 
 # Pipe channel functions
 
+# On non-cygwin, this is actually a reference to TclGetAndDetachPids
 declare 0 unix {
-    void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
+    void TclWinConvertError(unsigned int errCode)
 }
+# On non-cygwin, this is actually a reference to TclpCloseFile
 declare 1 unix {
-    int TclpCloseFile(TclFile file)
+    void TclWinConvertWSAError(unsigned int errCode)
 }
 declare 2 unix {
     Tcl_Channel TclpCreateCommandChannel(TclFile readFile,
@@ -1147,20 +1260,23 @@ declare 2 unix {
 declare 3 unix {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
+# On non-cygwin, this is actually a reference to TclpCreateProcess
 declare 4 unix {
-    int TclpCreateProcess(Tcl_Interp *interp, int argc, const char **argv,
-	    TclFile inputFile, TclFile outputFile, TclFile errorFile,
-	    Tcl_Pid *pidPtr)
+    int TclWinGetTclInstance(void)
 }
 # Signature changed in 8.1:
 #  declare 5 unix {
 #      TclFile TclpCreateTempFile(char *contents, Tcl_DString *namePtr)
 #  }
+
+# On non-cygwin, this is actually a reference to TclpMakeFile
 declare 6 unix {
-    TclFile TclpMakeFile(Tcl_Channel channel, int direction)
+    unsigned short TclWinNToHS(unsigned short ns)
 }
+# On non-cygwin, this is actually a reference to TclpOpenFile
 declare 7 unix {
-    TclFile TclpOpenFile(const char *fname, int mode)
+    int TclWinSetSockOpt(int s, int level, int optname,
+	    const char *optval, int optlen)
 }
 declare 8 unix {
     int TclUnixWaitForFile(int fd, int mask, int timeout)
@@ -1180,9 +1296,11 @@ declare 10 unix {
 }
 # Slots 11 and 12 are forwarders for functions that were promoted to
 # Stubs
+# On cygwin, this is actually a reference to TclGetAndDetachPids
 declare 11 unix {
     struct tm *TclpLocaltime_unix(const time_t *clock)
 }
+# On cygwin, this is actually a reference to TclpCloseFile
 declare 12 unix {
     struct tm *TclpGmtime_unix(const time_t *clock)
 }
@@ -1197,17 +1315,11 @@ declare 14 unix {
 	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
 }
 
-declare 22 unix {
-    TclFile TclpCreateTempFile(const char *contents)
-}
-declare 29 unix {
-    int TclWinCPUID(unsigned int index, unsigned int *regs)
-}
-
 ################################
 # Mac OS X specific functions
 
-declare 15 macosx {
+#On cygwin, TclpCreateProcess is here
+declare 15 {unix macosx} {
     int TclMacOSXGetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)
 }
@@ -1219,13 +1331,45 @@ declare 17 macosx {
     int TclMacOSXCopyFileAttributes(const char *src, const char *dst,
 	    const Tcl_StatBuf *statBufPtr)
 }
-declare 18 macosx {
+#On cygwin, TclpMakeFile is here
+declare 18 {unix macosx} {
     int TclMacOSXMatchType(Tcl_Interp *interp, const char *pathName,
 	    const char *fileName, Tcl_StatBuf *statBufPtr,
 	    Tcl_GlobTypeData *types)
 }
-declare 19 macosx {
-    void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+#On cygwin, TclpOpenFile is here
+declare 19 {unix macosx} {
+   void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+}
+declare 20 unix {
+    void TclWinAddProcess(void *hProcess, unsigned long id)
+}
+declare 22 unix {
+    TclFile TclpCreateTempFile(const char *contents)
+}
+declare 23 unix {
+    char *TclpGetTZName(int isdst)
+}
+declare 24 unix {
+    char *TclWinNoBackslash(char *path)
+}
+declare 26 unix {
+    void TclWinSetInterfaces(int wide)
+}
+declare 27 unix {
+    void TclWinFlushDirtyChannels(void)
+}
+declare 28 unix {
+    void TclWinResetInterfaces(void)
+}
+declare 29 unix {
+    int TclWinCPUID(unsigned int index, unsigned int *regs)
+}
+declare 30 unix {
+    void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
+}
+declare 31 unix {
+    int TclpCloseFile(TclFile file)
 }
 
 
