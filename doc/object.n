@@ -65,14 +65,19 @@ This method concatenates the arguments, \fIarg\fR, as if with \fBconcat\fR,
 and then evaluates the resulting script in the namespace that is uniquely
 associated with \fIobj\fR, returning the result of the evaluation.
 .TP
-\fIobj \fBunknown \fImethodName\fR ?\fIarg ...\fR?
+\fIobj \fBunknown ?\fImethodName\fR? ?\fIarg ...\fR?
 .
 This method is called when an attempt to invoke the method \fImethodName\fR on
 object \fIobj\fR fails. The arguments that the user supplied to the method are
-given as \fIarg\fR arguments. The default implementation (i.e. the one defined
-by the \fBoo::object\fR class) generates a suitable error, detailing what
-methods the object supports given whether the object was invoked by its public
-name or through the \fBmy\fR command.
+given as \fIarg\fR arguments.
+.VS
+If \fImethodName\fR is absent, the object was invoked with no method name at
+all (or any other arguments).
+.VE
+The default implementation (i.e., the one defined by the \fBoo::object\fR
+class) generates a suitable error, detailing what methods the object supports
+given whether the object was invoked by its public name or through the
+\fBmy\fR command.
 .TP
 \fIobj \fBvariable \fR?\fIvarName ...\fR?
 .
