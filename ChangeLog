@@ -1,34 +1,59 @@
+2012-03-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	IMPLEMENTATION OF TIP#380.
+
+	* doc/define.n, doc/object.n, generic/tclOO.c, generic/tclOOBasic.c:
+	* generic/tclOOCall.c, generic/tclOODefineCmds.c, generic/tclOOInt.h:
+	* tests/oo.test: Switch definitions of lists of things in objects and
+	classes to a slot-based approach, which gives a lot more flexibility
+	and programmability at the script-level. Introduce new [::oo::Slot]
+	class which is the implementation of these things.
+
+	***POTENTIAL INCOMPATIBILITY***
+	The unknown method handler now may be asked to deal with the case
+	where no method name is provided at all. The default implementation
+	generates a compatible error message, and any override that forces the
+	presence of a first argument (i.e., a method name) will continue to
+	function as at present as well, so this is a pretty small change.
+
+	* generic/tclOOBasic.c (TclOO_Object_Destroy): Made it easier to do a
+	tailcall inside a normally-invoked destructor; prevented leakage out
+	to calling command.
+
 2012-03-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.decls:      [Bug 3508771] load tclreg.dll in cygwin tclsh
-	* generic/tclIntPlatDecls.h: Implement TclWinConvertError, TclWinConvertWSAError,
-	* generic/tclStubInit.c:     and various more win32-specific internal functions for 
-	* unix/Makefile.in:          Cygwin, so win32 extensions using those can be
-	* unix/tcl.m4:               loaded in the cygwin version of tclsh.
-	* unix/configure:
-	* win/tclWinError.c:
+	* generic/tclInt.decls:      [Bug 3508771]: load tclreg.dll in cygwin
+	* generic/tclIntPlatDecls.h: tclsh. Implement TclWinConvertError,
+	* generic/tclStubInit.c:     TclWinConvertWSAError, and various more
+	* unix/Makefile.in:          win32-specific internal functions for
+	* unix/tcl.m4:               Cygwin, so win32 extensions using those
+	* unix/configure:            can be loaded in the cygwin version of
+	* win/tclWinError.c:         tclsh.
 
 2012-03-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.decls        Revert some cygwin-related signature changes from
-	* generic/tclIntPlatDecls.h   [835f8e1e9d] (2010-01-22). They were an attempt to
-	* win/tclWinError.c           make the cygwin port compile again, but since cygwin
-	                              is based on unix this serves no purpose any more.
-	* win/tclWinSerial.c:         Use EAGAIN in stead of EWOULDBLOCK, because in
-	* win/tclWinSock.c:           VS10+ the value of EWOULDBLOCK is no longer the
-	                              same as EAGAIN
-	* unix/Makefile.in            Add tclWinError.c to the CYGWIN build.
-	* unix/tcl.m4
-	* unix/configure
+	* generic/tclInt.decls:       Revert some cygwin-related signature
+	* generic/tclIntPlatDecls.h:  changes from [835f8e1e9d] (2010-01-22).
+	* win/tclWinError.c:          They were an attempt to make the cygwin
+	                              port compile again, but since cygwin is
+	                              based on unix this serves no purpose any
+	                              more.
+	* win/tclWinSerial.c:         Use EAGAIN in stead of EWOULDBLOCK,
+	* win/tclWinSock.c:           because in VS10+ the value of
+	                              EWOULDBLOCK is no longer the same as
+	                              EAGAIN.
+	* unix/Makefile.in:           Add tclWinError.c to the CYGWIN build.
+	* unix/tcl.m4:
+	* unix/configure:
 
 2012-03-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.decls:           [Bug 3508771] load tclreg.dll in cygwin tclsh
-	* generic/tclInt.decls:        Implement TclWinGetPlatformId, Tcl_WinUtfToTChar,
-	* generic/tclIntPlatDecls.h:   Tcl_WinTCharToUtf (and a dummy TclWinCPUID) for 
-	* generic/tclPlatDecls.h:      Cygwin, so win32 extensions using those can be
-	* generic/tclStubInit.c:       loaded in the cygwin version of tclsh.
-	* unix/tclUnixCompat.c:
+	* generic/tcl.decls:         [Bug 3508771]: load tclreg.dll in cygwin
+	* generic/tclInt.decls:      tclsh. Implement TclWinGetPlatformId,
+	* generic/tclIntPlatDecls.h: Tcl_WinUtfToTChar, Tcl_WinTCharToUtf (and
+	* generic/tclPlatDecls.h:    a dummy TclWinCPUID) for Cygwin, so win32
+	* generic/tclStubInit.c:     extensions using those can be loaded in
+	* unix/tclUnixCompat.c:      the cygwin version of tclsh.
 
 2012-03-19  Venkat Iyer <venkat@comit.com>
 
@@ -70,7 +95,7 @@
 
 2012-03-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h: [Bug 3288345] Wrong Tcl_StatBuf used on Cygwin
+	* generic/tcl.h: [Bug 3288345]: Wrong Tcl_StatBuf used on Cygwin
 	* unix/tclUnixFile.c
 	* unix/tclUnixPort.h
 	* win/cat.c:           Remove cygwin stuff no longer needed
@@ -79,7 +104,7 @@
 
 2012-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinFile.c: [Bug 3388350] mingw64 compiler warnings
+	* win/tclWinFile.c: [Bug 3388350]: mingw64 compiler warnings
 
 2012-03-11  Donal K. Fellows  <dkf@users.sf.net>
 
