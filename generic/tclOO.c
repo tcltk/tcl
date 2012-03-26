@@ -28,27 +28,20 @@ static const struct {
     {"deletemethod", TclOODefineDeleteMethodObjCmd, 0},
     {"destructor", TclOODefineDestructorObjCmd, 0},
     {"export", TclOODefineExportObjCmd, 0},
-    {"filter", TclOODefineFilterObjCmd, 0},
     {"forward", TclOODefineForwardObjCmd, 0},
     {"method", TclOODefineMethodObjCmd, 0},
-    {"mixin", TclOODefineMixinObjCmd, 0},
     {"renamemethod", TclOODefineRenameMethodObjCmd, 0},
     {"self", TclOODefineSelfObjCmd, 0},
-    {"superclass", TclOODefineSuperclassObjCmd, 0},
     {"unexport", TclOODefineUnexportObjCmd, 0},
-    {"variable", TclOODefineVariablesObjCmd, 0},
     {NULL, NULL, 0}
 }, objdefCmds[] = {
     {"class", TclOODefineClassObjCmd, 1},
     {"deletemethod", TclOODefineDeleteMethodObjCmd, 1},
     {"export", TclOODefineExportObjCmd, 1},
-    {"filter", TclOODefineFilterObjCmd, 1},
     {"forward", TclOODefineForwardObjCmd, 1},
     {"method", TclOODefineMethodObjCmd, 1},
-    {"mixin", TclOODefineMixinObjCmd, 1},
     {"renamemethod", TclOODefineRenameMethodObjCmd, 1},
     {"unexport", TclOODefineUnexportObjCmd, 1},
-    {"variable", TclOODefineVariablesObjCmd, 1},
     {NULL, NULL, 0}
 };
 
@@ -79,7 +72,7 @@ static int		FinalizeNext(ClientData data[],
 			    Tcl_Interp *interp, int result);
 static int		FinalizeObjectCall(ClientData data[],
 			    Tcl_Interp *interp, int result);
-static void		InitFoundation(Tcl_Interp *interp);
+static int		InitFoundation(Tcl_Interp *interp);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
 static void		MyDeleted(ClientData clientData);
@@ -136,6 +129,35 @@ static char initScript[] =
 /*     "tcl_findLibrary tcloo $oo::version $oo::version" */
 /*     " tcloo.tcl OO_LIBRARY oo::library;"; */
 
+static const char *slotScript =
+"::oo::define ::oo::Slot {\n"
+"    method Get {} {error unimplemented}\n"
+"    method Set list {error unimplemented}\n"
+"    method -set args {\n"
+"        uplevel 1 [list [namespace which my] Set $args]\n"
+"    }\n"
+"    method -append args {\n"
+"        uplevel 1 [list [namespace which my] Set [list"
+"                {*}[uplevel 1 [list [namespace which my] Get]] {*}$args]]\n"
+"    }\n"
+"    method -clear {} {uplevel 1 [list [namespace which my] Set {}]}\n"
+"    forward --default-operation my -append\n"
+"    method unknown {args} {\n"
+"        set def --default-operation\n"
+"        if {[llength $args] == 0} {\n"
+"            return [uplevel 1 [list [namespace which my] $def]]\n"
+"        } elseif {![string match -* [lindex $args 0]]} {\n"
+"            return [uplevel 1 [list [namespace which my] $def {*}$args]]\n"
+"        }\n"
+"        next {*}$args\n"
+"    }\n"
+"    export -set -append -clear\n"
+"    unexport unknown destroy\n"
+"}\n"
+"::oo::objdefine ::oo::define::superclass forward --default-operation my -set\n"
+"::oo::objdefine ::oo::define::mixin forward --default-operation my -set\n"
+"::oo::objdefine ::oo::objdefine::mixin forward --default-operation my -set\n";
+
 MODULE_SCOPE const TclOOStubs tclOOStubs;
 
 /*
@@ -144,6 +166,17 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 
 #define GetFoundation(interp) \
 	((Foundation *)((Interp *)(interp))->objectFoundation)
+
+/*
+ * Macros to make inspecting into the guts of an object cleaner. Note that the
+ * roots oo::object and oo::class have _both_ their object and class flags
+ * tagged with ROOT_OBJECT and ROOT_CLASS respectively.
+ */
+
+#define Deleted(oPtr) (((Object *)(oPtr))->command == NULL)
+#define IsRootObject(ocPtr) ((ocPtr)->flags & ROOT_OBJECT)
+#define IsRootClass(ocPtr) ((ocPtr)->flags & ROOT_CLASS)
+#define IsRoot(ocPtr) ((ocPtr)->flags & (ROOT_OBJECT|ROOT_CLASS))
 
 /*
  * ----------------------------------------------------------------------
@@ -170,7 +203,9 @@ TclOOInit(
      * Build the core of the OO system.
      */
 
-    InitFoundation(interp);
+    if (InitFoundation(interp) != TCL_OK) {
+	return TCL_ERROR;
+    }
 
     /*
      * Run our initialization script and, if that works, declare the package
@@ -214,7 +249,7 @@ TclOOGetFoundation(
  * ----------------------------------------------------------------------
  */
 
-static void
+static int
 InitFoundation(
     Tcl_Interp *interp)
 {
@@ -292,11 +327,13 @@ InitFoundation(
 	    AllocObject(interp, "::oo::class", NULL));
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
     fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
+    fPtr->objectCls->flags |= ROOT_OBJECT;
     fPtr->objectCls->superclasses.num = 0;
     ckfree(fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
     fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
     fPtr->classCls->thisPtr->flags |= ROOT_CLASS;
+    fPtr->classCls->flags |= ROOT_CLASS;
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
     TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
     AddRef(fPtr->objectCls->thisPtr);
@@ -357,6 +394,15 @@ InitFoundation(
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::copy", TclOOCopyObjectCmd, NULL,NULL);
     TclOOInitInfo(interp);
+
+    /*
+     * Now make the class of slots.
+     */
+
+    if (TclOODefineSlots(fPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    return Tcl_Eval(interp, slotScript);
 }
 
 /*
@@ -669,8 +715,7 @@ ObjectRenamedTrace(
     int flags)			/* Why was the object deleted? */
 {
     Object *oPtr = clientData;
-    Class *clsPtr;
-    CallContext *contextPtr;
+    Foundation *fPtr = oPtr->fPtr;
 
     /*
      * If this is a rename and not a delete of the object, we just flush the
@@ -702,17 +747,20 @@ ObjectRenamedTrace(
      */
 
     AddRef(oPtr);
+    AddRef(fPtr->classCls);
+    AddRef(fPtr->objectCls);
+    AddRef(fPtr->classCls->thisPtr);
+    AddRef(fPtr->objectCls->thisPtr);
     oPtr->command = NULL;
-    oPtr->flags |= OBJECT_DELETED;
 
-    if (!(oPtr->flags & DESTRUCTOR_CALLED) && (!Tcl_InterpDeleted(interp)
-	    || (oPtr->flags & (ROOT_OBJECT|ROOT_CLASS)))) {
-	contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
+    if (!(oPtr->flags & DESTRUCTOR_CALLED) && !Tcl_InterpDeleted(interp)) {
+	CallContext *contextPtr =
+		TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
+	int result;
+	Tcl_InterpState state;
+
 	oPtr->flags |= DESTRUCTOR_CALLED;
 	if (contextPtr != NULL) {
-	    int result;
-	    Tcl_InterpState state;
-
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
@@ -731,25 +779,20 @@ ObjectRenamedTrace(
      * and nuke the namespace (which triggers the final crushing of the object
      * structure itself).
      *
-     * The class of classes needs some special care; if it is deleted (and
+     * The class of objects needs some special care; if it is deleted (and
      * we're not killing the whole interpreter) we force the delete of the
-     * class of objects now as well. Due to the incestuous nature of those two
+     * class of classes now as well. Due to the incestuous nature of those two
      * classes, if one goes the other must too and yet the tangle can
      * sometimes not go away automatically; we force it here. [Bug 2962664]
      */
 
-    if (!Tcl_InterpDeleted(interp)) {
-	if ((oPtr->flags & ROOT_OBJECT) && oPtr->fPtr->classCls != NULL) {
-	    Tcl_DeleteCommandFromToken(interp,
-		    oPtr->fPtr->classCls->thisPtr->command);
-	} else if (oPtr->flags & ROOT_CLASS) {
-	    oPtr->fPtr->classCls = NULL;
-	}
+    if (!Tcl_InterpDeleted(interp) && IsRootObject(oPtr)
+	    && !Deleted(fPtr->classCls->thisPtr)) {
+	Tcl_DeleteCommandFromToken(interp, fPtr->classCls->thisPtr->command);
     }
 
-    clsPtr = oPtr->classPtr;
-    if (clsPtr != NULL) {
-	AddRef(clsPtr);
+    if (oPtr->classPtr != NULL) {
+	AddRef(oPtr->classPtr);
 	ReleaseClassContents(interp, oPtr);
     }
 
@@ -761,9 +804,13 @@ ObjectRenamedTrace(
     if (((Namespace *) oPtr->namespacePtr)->earlyDeleteProc != NULL) {
 	Tcl_DeleteNamespace(oPtr->namespacePtr);
     }
-    if (clsPtr) {
-	DelRef(clsPtr);
+    if (oPtr->classPtr) {
+	DelRef(oPtr->classPtr);
     }
+    DelRef(fPtr->classCls->thisPtr);
+    DelRef(fPtr->objectCls->thisPtr);
+    DelRef(fPtr->classCls);
+    DelRef(fPtr->objectCls);
     DelRef(oPtr);
 }
 
@@ -783,76 +830,127 @@ ReleaseClassContents(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Object *oPtr)		/* The object representing the class. */
 {
-    int i, n;
-    Class *clsPtr = oPtr->classPtr, **list;
-    Object **insts;
+    FOREACH_HASH_DECLS;
+    int i;
+    Class *clsPtr = oPtr->classPtr, *mixinSubclassPtr, *subclassPtr;
+    Object *instancePtr;
+    Foundation *fPtr = oPtr->fPtr;
 
     /*
-     * Must empty list before processing the members of the list so that
-     * things happen in the correct order even if something tries to play
-     * fast-and-loose.
+     * Sanity check!
      */
 
-    list = clsPtr->mixinSubs.list;
-    n = clsPtr->mixinSubs.num;
-    clsPtr->mixinSubs.list = NULL;
-    clsPtr->mixinSubs.num = 0;
-    clsPtr->mixinSubs.size = 0;
-    for (i=0 ; i<n ; i++) {
-	AddRef(list[i]);
-	AddRef(list[i]->thisPtr);
-    }
-    for (i=0 ; i<n ; i++) {
-	if (!(list[i]->thisPtr->flags & OBJECT_DELETED)) {
-	    list[i]->thisPtr->flags |= OBJECT_DELETED;
-	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
+    if (!Deleted(oPtr)) {
+	if (IsRootClass(oPtr)) {
+	    Tcl_Panic("deleting class structure for non-deleted %s",
+		    "::oo::class");
+	} else if (IsRootObject(oPtr)) {
+	    Tcl_Panic("deleting class structure for non-deleted %s",
+		    "::oo::object");
+	} else {
+	    Tcl_Panic("deleting class structure for non-deleted %s",
+		    "general object");
 	}
-	DelRef(list[i]->thisPtr);
-	DelRef(list[i]);
-    }
-    if (list != NULL) {
-	ckfree(list);
     }
 
-    list = clsPtr->subclasses.list;
-    n = clsPtr->subclasses.num;
-    clsPtr->subclasses.list = NULL;
-    clsPtr->subclasses.num = 0;
-    clsPtr->subclasses.size = 0;
-    for (i=0 ; i<n ; i++) {
-	AddRef(list[i]);
-	AddRef(list[i]->thisPtr);
-    }
-    for (i=0 ; i<n ; i++) {
-	if (!(list[i]->thisPtr->flags & OBJECT_DELETED)) {
-	    list[i]->thisPtr->flags |= OBJECT_DELETED;
-	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
+    /*
+     * Lock a number of dependent objects until we've stopped putting our
+     * fingers in them.
+     */
+
+    FOREACH(mixinSubclassPtr, clsPtr->mixinSubs) {
+	if (mixinSubclassPtr != NULL) {
+	    AddRef(mixinSubclassPtr);
+	    AddRef(mixinSubclassPtr->thisPtr);
 	}
-	DelRef(list[i]->thisPtr);
-	DelRef(list[i]);
     }
-    if (list != NULL) {
-	ckfree(list);
+    FOREACH(subclassPtr, clsPtr->subclasses) {
+	if (subclassPtr != NULL && !IsRoot(subclassPtr)) {
+	    AddRef(subclassPtr);
+	    AddRef(subclassPtr->thisPtr);
+	}
+    }
+    if (!IsRootClass(oPtr)) {
+	FOREACH(instancePtr, clsPtr->instances) {
+	    if (instancePtr != NULL && !IsRoot(instancePtr)) {
+		AddRef(instancePtr);
+	    }
+	}
     }
 
-    insts = clsPtr->instances.list;
-    n = clsPtr->instances.num;
-    clsPtr->instances.list = NULL;
-    clsPtr->instances.num = 0;
-    clsPtr->instances.size = 0;
-    for (i=0 ; i<n ; i++) {
-	AddRef(insts[i]);
-    }
-    for (i=0 ; i<n ; i++) {
-	if (!(insts[i]->flags & OBJECT_DELETED)) {
-	    insts[i]->flags |= OBJECT_DELETED;
-	    Tcl_DeleteCommandFromToken(interp, insts[i]->command);
+    /*
+     * Squelch classes that this class has been mixed into.
+     */
+
+    FOREACH(mixinSubclassPtr, clsPtr->mixinSubs) {
+	if (mixinSubclassPtr == NULL) {
+	    continue;
 	}
-	DelRef(insts[i]);
+	if (!Deleted(mixinSubclassPtr->thisPtr)) {
+	    Tcl_DeleteCommandFromToken(interp,
+		    mixinSubclassPtr->thisPtr->command);
+	}
+	DelRef(mixinSubclassPtr->thisPtr);
+	DelRef(mixinSubclassPtr);
     }
-    if (insts != NULL) {
-	ckfree(insts);
+    if (clsPtr->mixinSubs.list != NULL) {
+	ckfree(clsPtr->mixinSubs.list);
+	clsPtr->mixinSubs.list = NULL;
+	clsPtr->mixinSubs.num = 0;
     }
+
+    /*
+     * Squelch subclasses of this class.
+     */
+
+    FOREACH(subclassPtr, clsPtr->subclasses) {
+	if (subclassPtr == NULL || IsRoot(subclassPtr)) {
+	    continue;
+	}
+	if (!Deleted(subclassPtr->thisPtr)) {
+	    Tcl_DeleteCommandFromToken(interp, subclassPtr->thisPtr->command);
+	}
+	DelRef(subclassPtr->thisPtr);
+	DelRef(subclassPtr);
+    }
+    if (clsPtr->subclasses.list != NULL) {
+	ckfree(clsPtr->subclasses.list);
+	clsPtr->subclasses.list = NULL;
+	clsPtr->subclasses.num = 0;
+    }
+
+    /*
+     * Squelch instances of this class (includes objects we're mixed into).
+     */
+
+    if (!IsRootClass(oPtr)) {
+	FOREACH(instancePtr, clsPtr->instances) {
+	    if (instancePtr == NULL || IsRoot(instancePtr)) {
+		continue;
+	    }
+	    if (!Deleted(instancePtr)) {
+		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
+	    }
+	    DelRef(instancePtr);
+	}
+    }
+    if (clsPtr->instances.list != NULL) {
+	ckfree(clsPtr->instances.list);
+	clsPtr->instances.list = NULL;
+	clsPtr->instances.num = 0;
+    }
+
+    /*
+     * Special: We delete these after everything else.
+     */
+
+    if (IsRootClass(oPtr) && !Deleted(fPtr->objectCls->thisPtr)) {
+	Tcl_DeleteCommandFromToken(interp, fPtr->objectCls->thisPtr->command);
+    }
+
+    /*
+     * Squelch method implementation chain caches.
+     */
 
     if (clsPtr->constructorChainPtr) {
 	TclOODeleteChain(clsPtr->constructorChainPtr);
@@ -863,7 +961,6 @@ ReleaseClassContents(
 	clsPtr->destructorChainPtr = NULL;
     }
     if (clsPtr->classChainCache) {
-	FOREACH_HASH_DECLS;
 	CallChain *callPtr;
 
 	FOREACH_HASH_VALUE(callPtr, clsPtr->classChainCache) {
@@ -873,6 +970,10 @@ ReleaseClassContents(
 	ckfree(clsPtr->classChainCache);
 	clsPtr->classChainCache = NULL;
     }
+
+    /*
+     * Squelch our filter list.
+     */
 
     if (clsPtr->filters.num) {
 	Tcl_Obj *filterObj;
@@ -884,9 +985,11 @@ ReleaseClassContents(
 	clsPtr->filters.num = 0;
     }
 
+    /*
+     * Squelch our metadata.
+     */
 
     if (clsPtr->metadataPtr != NULL) {
-	FOREACH_HASH_DECLS;
 	Tcl_ObjectMetadataType *metadataTypePtr;
 	ClientData value;
 
@@ -922,7 +1025,7 @@ ObjectNamespaceDeleted(
     Class *clsPtr = oPtr->classPtr, *mixinPtr;
     Method *mPtr;
     Tcl_Obj *filterObj, *variableObj;
-    int i, preserved = !(oPtr->flags & OBJECT_DELETED);
+    int i;
 
     /*
      * Instruct everyone to no longer use any allocated fields of the object.
@@ -931,19 +1034,11 @@ ObjectNamespaceDeleted(
      * point into freed memory, allowing crashes.
      */
 
-    oPtr->flags |= OBJECT_DELETED;
     if (oPtr->command) {
 	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
     }
     if (oPtr->myCommand) {
 	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->myCommand);
-    }
-    if (preserved) {
-	AddRef(oPtr);
-	if (clsPtr != NULL) {
-	    AddRef(clsPtr);
-	    ReleaseClassContents(NULL, oPtr);
-	}
     }
 
     /*
@@ -951,7 +1046,7 @@ ObjectNamespaceDeleted(
      * methods on the object.
      */
 
-    if (!(oPtr->flags & ROOT_OBJECT)) {
+    if (!IsRootObject(oPtr)) {
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
     }
 
@@ -1007,11 +1102,10 @@ ObjectNamespaceDeleted(
 
     if (clsPtr != NULL) {
 	Class *superPtr;
+	Tcl_ObjectMetadataType *metadataTypePtr;
+	ClientData value;
 
 	if (clsPtr->metadataPtr != NULL) {
-	    Tcl_ObjectMetadataType *metadataTypePtr;
-	    ClientData value;
-
 	    FOREACH_HASH(metadataTypePtr, value, clsPtr->metadataPtr) {
 		metadataTypePtr->deleteProc(value);
 	    }
@@ -1028,7 +1122,7 @@ ObjectNamespaceDeleted(
 	    clsPtr->filters.num = 0;
 	}
 	FOREACH(mixinPtr, clsPtr->mixins) {
-	    if (!(mixinPtr->thisPtr->flags & OBJECT_DELETED)) {
+	    if (!Deleted(mixinPtr->thisPtr)) {
 		TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
 	    }
 	}
@@ -1037,7 +1131,7 @@ ObjectNamespaceDeleted(
 	    clsPtr->mixins.num = 0;
 	}
 	FOREACH(superPtr, clsPtr->superclasses) {
-	    if (!(superPtr->thisPtr->flags & OBJECT_DELETED)) {
+	    if (!Deleted(superPtr->thisPtr)) {
 		TclOORemoveFromSubclasses(clsPtr, superPtr);
 	    }
 	}
@@ -1080,12 +1174,6 @@ ObjectNamespaceDeleted(
      */
 
     DelRef(oPtr);
-    if (preserved) {
-	if (clsPtr) {
-	    DelRef(clsPtr);
-	}
-	DelRef(oPtr);
-    }
 }
 
 /*
@@ -1116,12 +1204,16 @@ TclOORemoveFromInstances(
     return;
 
   removeInstance:
-    clsPtr->instances.num--;
-    if (i < clsPtr->instances.num) {
-	clsPtr->instances.list[i] =
-		clsPtr->instances.list[clsPtr->instances.num];
+    if (Deleted(clsPtr->thisPtr)) {
+	clsPtr->instances.list[i] = NULL;
+    } else {
+	clsPtr->instances.num--;
+	if (i < clsPtr->instances.num) {
+	    clsPtr->instances.list[i] =
+		    clsPtr->instances.list[clsPtr->instances.num];
+	}
+	clsPtr->instances.list[clsPtr->instances.num] = NULL;
     }
-    clsPtr->instances.list[clsPtr->instances.num] = NULL;
 }
 
 /*
@@ -1142,6 +1234,9 @@ TclOOAddToInstances(
 				 * assumed that the class is not already
 				 * present as an instance in the class. */
 {
+    if (Deleted(clsPtr->thisPtr)) {
+	return;
+    }
     if (clsPtr->instances.num >= clsPtr->instances.size) {
 	clsPtr->instances.size += ALLOC_CHUNK;
 	if (clsPtr->instances.size == ALLOC_CHUNK) {
@@ -1182,12 +1277,16 @@ TclOORemoveFromSubclasses(
     return;
 
   removeSubclass:
-    superPtr->subclasses.num--;
-    if (i < superPtr->subclasses.num) {
-	superPtr->subclasses.list[i] =
-		superPtr->subclasses.list[superPtr->subclasses.num];
+    if (Deleted(superPtr->thisPtr)) {
+	superPtr->subclasses.list[i] = NULL;
+    } else {
+	superPtr->subclasses.num--;
+	if (i < superPtr->subclasses.num) {
+	    superPtr->subclasses.list[i] =
+		    superPtr->subclasses.list[superPtr->subclasses.num];
+	}
+	superPtr->subclasses.list[superPtr->subclasses.num] = NULL;
     }
-    superPtr->subclasses.list[superPtr->subclasses.num] = NULL;
 }
 
 /*
@@ -1208,6 +1307,9 @@ TclOOAddToSubclasses(
 				 * is assumed that the class is not already
 				 * present as a subclass in the superclass. */
 {
+    if (Deleted(superPtr->thisPtr)) {
+	return;
+    }
     if (superPtr->subclasses.num >= superPtr->subclasses.size) {
 	superPtr->subclasses.size += ALLOC_CHUNK;
 	if (superPtr->subclasses.size == ALLOC_CHUNK) {
@@ -1248,12 +1350,16 @@ TclOORemoveFromMixinSubs(
     return;
 
   removeSubclass:
-    superPtr->mixinSubs.num--;
-    if (i < superPtr->mixinSubs.num) {
-	superPtr->mixinSubs.list[i] =
-		superPtr->mixinSubs.list[superPtr->mixinSubs.num];
+    if (Deleted(superPtr->thisPtr)) {
+	superPtr->mixinSubs.list[i] = NULL;
+    } else {
+	superPtr->mixinSubs.num--;
+	if (i < superPtr->mixinSubs.num) {
+	    superPtr->mixinSubs.list[i] =
+		    superPtr->mixinSubs.list[superPtr->mixinSubs.num];
+	}
+	superPtr->mixinSubs.list[superPtr->mixinSubs.num] = NULL;
     }
-    superPtr->mixinSubs.list[superPtr->mixinSubs.num] = NULL;
 }
 
 /*
@@ -1274,6 +1380,9 @@ TclOOAddToMixinSubs(
 				 * is assumed that the class is not already
 				 * present as a subclass in the superclass. */
 {
+    if (Deleted(superPtr->thisPtr)) {
+	return;
+    }
     if (superPtr->mixinSubs.num >= superPtr->mixinSubs.size) {
 	superPtr->mixinSubs.size += ALLOC_CHUNK;
 	if (superPtr->mixinSubs.size == ALLOC_CHUNK) {
@@ -1460,7 +1569,7 @@ Tcl_NewObjectInstance(
 	     * errors by accident...) [Bug 2903011]
 	     */
 
-	    if (result != TCL_ERROR && (flags & OBJECT_DELETED)) {
+	    if (result != TCL_ERROR && Deleted(oPtr)) {
 		Tcl_SetResult(interp, "object deleted in constructor",
 			TCL_STATIC);
 		Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
@@ -1475,7 +1584,7 @@ Tcl_NewObjectInstance(
 		 * bad. [Bug 2903011]
 		 */
 
-		if (!(flags & OBJECT_DELETED)) {
+		if (!Deleted(oPtr)) {
 		    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 		}
 		return NULL;
@@ -1572,6 +1681,7 @@ TclNRNewObjectInstance(
      * Fire off the constructors non-recursively.
      */
 
+    AddRef(oPtr);
     TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
 	    objectPtr);
     TclPushTailcallPoint(interp);
@@ -1588,7 +1698,7 @@ FinalizeAlloc(
     Object *oPtr = data[1];
     Tcl_InterpState state = data[2];
     Tcl_Object *objectPtr = data[3];
-    int flags = oPtr->flags;
+    //int flags = oPtr->flags;
 
     /*
      * It's an error if the object was whacked in the constructor. Force this
@@ -1596,7 +1706,7 @@ FinalizeAlloc(
      * [Bug 2903011]
      */
 
-    if (result != TCL_ERROR && (flags & OBJECT_DELETED)) {
+    if (result != TCL_ERROR && Deleted(oPtr)) {
 	Tcl_SetResult(interp, "object deleted in constructor", TCL_STATIC);
 	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
 	result = TCL_ERROR;
@@ -1610,13 +1720,15 @@ FinalizeAlloc(
 	 * 2903011]
 	 */
 
-	if (!(flags & OBJECT_DELETED)) {
+	if (!Deleted(oPtr)) {
 	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 	}
+	DelRef(oPtr);
 	return TCL_ERROR;
     }
     Tcl_RestoreInterpState(interp, state);
     *objectPtr = (Tcl_Object) oPtr;
+    DelRef(oPtr);
     return TCL_OK;
 }
 
@@ -1656,7 +1768,7 @@ Tcl_CopyObjectInstance(
 	Tcl_SetErrorCode(interp, "TCL", "OO", "NO_COPY_TARGET", NULL);
 	return NULL;
     }
-    if (oPtr->flags & ROOT_CLASS) {
+    if (IsRootClass(oPtr)) {
 	Tcl_AppendResult(interp, "may not clone the class of classes", NULL);
 	Tcl_SetErrorCode(interp, "TCL", "OO", "CLONING_CLASS", NULL);
 	return NULL;
@@ -1728,7 +1840,7 @@ Tcl_CopyObjectInstance(
      */
 
     o2Ptr->flags = oPtr->flags & ~(
-	    OBJECT_DELETED | ROOT_OBJECT | FILTER_HANDLING);
+	    OBJECT_DELETED | ROOT_OBJECT | ROOT_CLASS | FILTER_HANDLING);
 
     /*
      * Copy the object's metadata.
@@ -2254,9 +2366,15 @@ TclOOObjectCmdCore(
     Tcl_Obj *methodNamePtr;
     int result;
 
+    /*
+     * If we've no method name, throw this directly into the unknown
+     * processing.
+     */
+
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "method ?arg ...?");
-	return TCL_ERROR;
+	flags |= FORCE_UNKNOWN;
+	methodNamePtr = NULL;
+	goto noMapping;
     }
 
     /*
@@ -2710,7 +2828,7 @@ int
 Tcl_ObjectDeleted(
     Tcl_Object object)
 {
-    return (((Object *)object)->flags & OBJECT_DELETED) ? 1 : 0;
+    return Deleted(object) ? 1 : 0;
 }
 
 Tcl_Object
