@@ -18,7 +18,6 @@ library tcl
 # Define the unsupported generic interfaces.
 
 interface tclInt
-scspec EXTERN
 
 # Declare each of the functions in the unsupported internal Tcl
 # interface.  These interfaces are allowed to changed between versions.
@@ -746,7 +745,7 @@ declare 177 {
 #	    const char *file, int line)
 #}
 
-# TclpGmtime and TclpLocaltime promoted to the interface from unix
+# TclpGmtime and TclpLocaltime promoted to the generic interface from unix
 
 declare 182 {
      struct tm *TclpLocaltime(const time_t *clock)
@@ -999,7 +998,6 @@ declare 249 {
     char* TclDoubleDigits(double dv, int ndigits, int flags,
 			  int* decpt, int* signum, char** endPtr)
 }
-
 # TIP #285: Script cancellation support.
 declare 250 {
     void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
@@ -1011,117 +1009,6 @@ declare 250 {
 # only available on the designated platform.
 
 interface tclIntPlat
-
-########################
-# Mac specific internals
-
-declare 0 mac {
-    VOID *TclpSysAlloc(long size, int isBin)
-}
-declare 1 mac {
-    void TclpSysFree(VOID *ptr)
-}
-declare 2 mac {
-    VOID *TclpSysRealloc(VOID *cp, unsigned int size)
-}
-declare 3 mac {
-    void TclpExit(int status)
-}
-
-# Prototypes for functions found in the tclMacUtil.c compatability library.
-
-declare 4 mac {
-    int FSpGetDefaultDir(FSSpecPtr theSpec)
-}
-declare 5 mac {
-    int FSpSetDefaultDir(FSSpecPtr theSpec)
-}
-declare 6 mac {
-    OSErr FSpFindFolder(short vRefNum, OSType folderType,
-	    Boolean createFolder, FSSpec *spec)
-}
-declare 7 mac {
-    void GetGlobalMouseTcl(Point *mouse)
-}
-
-# The following routines are utility functions in Tcl.  They are exported
-# here because they are needed in Tk.  They are not officially supported,
-# however.  The first set are from the MoreFiles package.
-
-declare 8 mac {
-    pascal OSErr FSpGetDirectoryIDTcl(CONST FSSpec *spec, long *theDirID,
-	    Boolean *isDirectory)
-}
-declare 9 mac {
-    pascal short FSpOpenResFileCompatTcl(CONST FSSpec *spec,
-	    SignedByte permission)
-}
-declare 10 mac {
-    pascal void FSpCreateResFileCompatTcl(CONST FSSpec *spec, OSType creator,
-	    OSType fileType, ScriptCode scriptTag)
-}
-
-# Like the MoreFiles routines these fix problems in the standard
-# Mac calls.  These routines are from tclMacUtils.h.
-
-declare 11 mac {
-    int FSpLocationFromPath(int length, CONST char *path, FSSpecPtr theSpec)
-}
-declare 12 mac {
-    OSErr FSpPathFromLocation(FSSpecPtr theSpec, int *length,
-	    Handle *fullPath)
-}
-
-# Prototypes of Mac only internal functions.
-
-declare 13 mac {
-    void TclMacExitHandler(void)
-}
-declare 14 mac {
-    void TclMacInitExitToShell(int usePatch)
-}
-declare 15 mac {
-    OSErr TclMacInstallExitToShellPatch(ExitToShellProcPtr newProc)
-}
-declare 16 mac {
-    int TclMacOSErrorToPosixError(int error)
-}
-declare 17 mac {
-    void TclMacRemoveTimer(VOID *timerToken)
-}
-declare 18 mac {
-    VOID *TclMacStartTimer(long ms)
-}
-declare 19 mac {
-    int TclMacTimerExpired(VOID *timerToken)
-}
-declare 20 mac {
-    int TclMacRegisterResourceFork(short fileRef, Tcl_Obj *tokenPtr,
-	    int insert)
-}	
-declare 21 mac {
-    short TclMacUnRegisterResourceFork(char *tokenPtr, Tcl_Obj *resultPtr)
-}	
-declare 22 mac {
-    int TclMacCreateEnv(void)
-}
-declare 23 mac {
-    FILE *TclMacFOpenHack(CONST char *path, CONST char *mode)
-}
-# Replaced in 8.1 by TclpReadLink:
-#  declare 24 mac {
-#      int TclMacReadlink(char *path, char *buf, int size)
-#  }
-declare 24 mac {
-    char *TclpGetTZName(int isdst)
-}
-declare 25 mac {
-    int TclMacChmod(CONST char *path, int mode)
-}
-# version of FSpLocationFromPath that doesn't resolve the last path component
-declare 26 mac {
-    int FSpLLocationFromPath(int length, CONST char *path, FSSpecPtr theSpec)
-}
 
 ################################
 # Windows specific functions
@@ -1217,7 +1104,7 @@ declare 23 win {
 declare 24 win {
     char *TclWinNoBackslash(char *path)
 }
-# replaced by TclGetPlatform
+# replaced by generic TclGetPlatform
 #declare 25 win {
 #    TclPlatformType *TclWinGetPlatform(void)
 #}
@@ -1295,7 +1182,7 @@ declare 10 unix {
     Tcl_DirEntry *TclpReaddir(DIR *dir)
 }
 # Slots 11 and 12 are forwarders for functions that were promoted to
-# Stubs
+# generic Stubs
 # On cygwin, this is actually a reference to TclGetAndDetachPids
 declare 11 unix {
     struct tm *TclpLocaltime_unix(const time_t *clock)
@@ -1339,7 +1226,7 @@ declare 18 {unix macosx} {
 }
 #On cygwin, TclpOpenFile is here
 declare 19 {unix macosx} {
-   void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+    void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
 declare 20 unix {
     void TclWinAddProcess(void *hProcess, unsigned long id)
