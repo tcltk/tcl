@@ -25,13 +25,13 @@
 #endif
 
 #if !defined(__WIN32__) /* UNIX */
-EXTERN int TclpCreateProcess _ANSI_ARGS_((Tcl_Interp *interp,
+EXTERN int TclpCreateProcess(Tcl_Interp *interp,
 	int argc, CONST char **argv, TclFile inputFile,
-	TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr));
-EXTERN TclFile TclpMakeFile _ANSI_ARGS_((Tcl_Channel channel,
-	int direction));
-EXTERN TclFile TclpOpenFile _ANSI_ARGS_((CONST char *fname,
-	int mode));
+	TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr);
+EXTERN TclFile TclpMakeFile(Tcl_Channel channel,
+	int direction);
+EXTERN TclFile TclpOpenFile(CONST char *fname,
+	int mode);
 #endif
 
 /*
@@ -573,5 +573,25 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TCL_STORAGE_CLASS DLLIMPORT
 #undef TclpLocaltime_unix
 #undef TclpGmtime_unix
+
+#if !defined(__WIN32__) && defined(USE_TCL_STUBS)
+#   ifdef __CYGWIN__
+#	define TclpCreateProcess ((int (*) _ANSI_ARGS_((Tcl_Interp *, int, \
+		CONST char **, TclFile, TclFile, TclFile, Tcl_Pid *))) \
+		tclIntPlatStubsPtr->tclMacOSXGetFileAttribute)
+#	define TclpMakeFile ((TclFile (*) _ANSI_ARGS_((Tcl_Channel channel, \
+	    int direction))) tclIntPlatStubsPtr->tclMacOSXMatchType)
+#	define TclpOpenFile ((TclFile (*) _ANSI_ARGS_((CONST char *, int))) \
+	    tclIntPlatStubsPtr->tclMacOSXNotifierAddRunLoopMode)
+#   else
+#	define TclpCreateProcess ((int (*) _ANSI_ARGS_((Tcl_Interp *, int, \
+		CONST char **, TclFile, TclFile, TclFile, Tcl_Pid *))) \
+		tclIntPlatStubsPtr->tclWinGetTclInstance)
+#	define TclpMakeFile ((TclFile (*) _ANSI_ARGS_((Tcl_Channel channel, \
+	    int direction))) tclIntPlatStubsPtr->tclWinNToHS)
+#	define TclpOpenFile ((TclFile (*) _ANSI_ARGS_((CONST char *, int))) \
+	    tclIntPlatStubsPtr->tclWinNToHS)
+#   endif
+#endif
 
 #endif /* _TCLINTPLATDECLS */
