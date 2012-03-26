@@ -462,18 +462,22 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	extra_ldflags="-pipe"
 
 	if test "$ac_cv_cygwin" = "yes"; then
-	  touch ac$$.c
-	  if ${CC} -c -mwin32 ac$$.c >/dev/null 2>&1; then
-	    case "$extra_cflags" in
-	      *-mwin32*) ;;
-	      *) extra_cflags="-mwin32 $extra_cflags" ;;
-	    esac
-	    case "$extra_ldflags" in
-	      *-mwin32*) ;;
-	      *) extra_ldflags="-mwin32 $extra_ldflags" ;;
-	    esac
-	  fi
-	  rm -f ac$$.o ac$$.c
+	    case "$do64bit" in
+		amd64|x64|yes)
+		    CC="x86_64-w64-mingw32-gcc"
+		    LD="x86_64-w64-mingw32-ld"
+		    AR="x86_64-w64-mingw32-ar"
+		    RANLIB="x86_64-w64-mingw32-ranlib"
+		    RC="x86_64-w64-mingw32-windres"
+		;;
+		*)
+		    CC="i686-w64-mingw32-gcc"
+		    LD="i686-w64-mingw32-ld"
+		    AR="i686-w64-mingw32-ar"
+		    RANLIB="i686-w64-mingw32-ranlib"
+		    RC="i686-w64-mingw32-windres"
+	    ;;
+	esac
 	fi
 
 	if test "${SHARED_BUILD}" = "0" ; then
