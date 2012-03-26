@@ -85,13 +85,6 @@ AC_PROG_MAKE_SET
 
 AC_CYGWIN
 
-if test "$ac_cv_cygwin" = "yes" ; then
-    AC_MSG_ERROR([Compiling under Cygwin is not currently supported.
-A maintainer for the Cygwin port of Tcl/Tk is needed. See the README
-file for information about building with Mingw.])
-fi
-
-
 AC_CACHE_CHECK(for SEH support in compiler,
     tcl_cv_seh,
 AC_TRY_RUN([
