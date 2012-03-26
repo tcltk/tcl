@@ -1172,7 +1172,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		 * associated with a file, so we always return 1.
 		 */
 
-#if (defined(__WIN32__) || defined(MAC_TCL))
+#if defined(__WIN32__) || defined(MAC_TCL) || defined(__CYGWIN__)
 		value = 1;
 #else
 		value = (geteuid() == buf.st_uid);
