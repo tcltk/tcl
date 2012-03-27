@@ -320,6 +320,8 @@ typedef struct Foundation {
 				 * constructor. */
     Tcl_Obj *destructorName;	/* Shared object containing the "name" of a
 				 * destructor. */
+    Tcl_Obj *clonedName;	/* Shared object containing the name of a
+				 * "<cloned>" pseudo-constructor. */
 } Foundation;
 
 /*
