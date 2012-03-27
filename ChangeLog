@@ -1,8 +1,15 @@
+2012-03-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	IMPLEMENTATION OF TIP#395.
+
+	* generic/tclCmdMZ.c (StringIsCmd): Implementation of the [string is
+	entier] check. Code by Jos Decoster.
+
 2012-03-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h:             [Bug 3508771] Wrong Tcl_StatBuf used on MinGW
-	* generic/tclFCmd.c:         [Bug 2015723] duplicate inodes from file stat on
-	* generic/tclCmdAH.c:        windows (but now for cygwin as well)
+	* generic/tcl.h:      [Bug 3508771]: Wrong Tcl_StatBuf used on MinGW.
+	* generic/tclFCmd.c:  [Bug 2015723]: Duplicate inodes from file stat
+	* generic/tclCmdAH.c: on windows (but now for cygwin as well).
 	* generic/tclOODefineCmds.c: minor gcc warning
 
 2012-03-27  Donal K. Fellows  <dkf@users.sf.net>
