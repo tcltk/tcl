@@ -122,12 +122,33 @@ static const DeclaredClassMethod objMethods[] = {
     {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 };
 
-static char initScript[] =
-    "package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
-    "namespace eval ::oo { variable version " TCLOO_VERSION " };"
-    "namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
-/*     "tcl_findLibrary tcloo $oo::version $oo::version" */
-/*     " tcloo.tcl OO_LIBRARY oo::library;"; */
+/*
+ * Scripted parts of TclOO. First, the master script (cannot be outside this
+ * file).
+ */
+
+static const char *initScript =
+"package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
+"namespace eval ::oo { variable version " TCLOO_VERSION " };"
+"namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
+/* "tcl_findLibrary tcloo $oo::version $oo::version" */
+/* " tcloo.tcl OO_LIBRARY oo::library;"; */
+
+/*
+ * The body of the constructor for oo::class.
+ */
+
+static const char *classConstructorBody =
+"set script [list ::oo::define [self] $definitionScript];"
+"lassign [::oo::UpCatch $script] msg opts;"
+"if {[dict get $opts -code] == 1} {"
+"    dict set opts -errorline 0xDeadBeef"
+"};"
+"return -options $opts $msg;";
+
+/*
+ * The scripted part of the definitions of slots.
+ */
 
 static const char *slotScript =
 "::oo::define ::oo::Slot {\n"
@@ -158,6 +179,38 @@ static const char *slotScript =
 "::oo::objdefine ::oo::define::mixin forward --default-operation my -set\n"
 "::oo::objdefine ::oo::objdefine::mixin forward --default-operation my -set\n";
 
+/*
+ * The body of the <cloned> method of oo::object.
+ */
+
+static const char *clonedBody =
+"foreach p [info procs [info object namespace $originObject]::*] {"
+"    set args [info args $p];"
+"    set idx -1;"
+"    foreach a $args {"
+"        lset args [incr idx] "
+"            [if {[info default $p $a d]} {list $a $d} {list $a}]"
+"    };"
+"    set b [info body $p];"
+"    set p [namespace tail $p];"
+"    proc $p $args $b;"
+"};"
+"foreach v [info vars [info object namespace $originObject]::*] {"
+"    upvar 0 $v vOrigin;"
+"    namespace upvar [namespace current] [namespace tail $v] vNew;"
+"    if {[info exists vOrigin]} {"
+"        if {[array exists vOrigin]} {"
+"            array set vNew [array get vOrigin];"
+"        } else {"
+"            set vNew $vOrigin;"
+"        }"
+"    }"
+"}";
+
+/*
+ * The actual definition of the variable holding the TclOO stub table.
+ */
+
 MODULE_SCOPE const TclOOStubs tclOOStubs;
 
 /*
@@ -168,15 +221,18 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 	((Foundation *)((Interp *)(interp))->objectFoundation)
 
 /*
- * Macros to make inspecting into the guts of an object cleaner. Note that the
- * roots oo::object and oo::class have _both_ their object and class flags
- * tagged with ROOT_OBJECT and ROOT_CLASS respectively.
+ * Macros to make inspecting into the guts of an object cleaner.
+ *
+ * The ocPtr parameter (only in these macros) is assumed to work fine with
+ * either an oPtr or a classPtr. Note that the roots oo::object and oo::class
+ * have _both_ their object and class flags tagged with ROOT_OBJECT and
+ * ROOT_CLASS respectively.
  */
 
-#define Deleted(oPtr) (((Object *)(oPtr))->command == NULL)
-#define IsRootObject(ocPtr) ((ocPtr)->flags & ROOT_OBJECT)
-#define IsRootClass(ocPtr) ((ocPtr)->flags & ROOT_CLASS)
-#define IsRoot(ocPtr) ((ocPtr)->flags & (ROOT_OBJECT|ROOT_CLASS))
+#define Deleted(oPtr)		(((Object *)(oPtr))->command == NULL)
+#define IsRootObject(ocPtr)	((ocPtr)->flags & ROOT_OBJECT)
+#define IsRootClass(ocPtr)	((ocPtr)->flags & ROOT_CLASS)
+#define IsRoot(ocPtr)		((ocPtr)->flags & (ROOT_OBJECT|ROOT_CLASS))
 
 /*
  * ----------------------------------------------------------------------
@@ -280,17 +336,19 @@ InitFoundation(
 	    DeletedHelpersNamespace);
     fPtr->epoch = 0;
     fPtr->tsdPtr = tsdPtr;
-    fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
-    fPtr->constructorName = Tcl_NewStringObj("<constructor>", -1);
-    fPtr->destructorName = Tcl_NewStringObj("<destructor>", -1);
+    TclNewLiteralStringObj(fPtr->unknownMethodNameObj, "unknown");
+    TclNewLiteralStringObj(fPtr->constructorName, "<constructor>");
+    TclNewLiteralStringObj(fPtr->destructorName, "<destructor>");
+    TclNewLiteralStringObj(fPtr->clonedName, "<cloned>");
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
+    Tcl_IncrRefCount(fPtr->clonedName);
     Tcl_NRCreateCommand(interp, "::oo::UpCatch", TclOOUpcatchCmd,
 	    TclOONRUpcatch, NULL, NULL);
     Tcl_CreateObjCommand(interp, "::oo::UnknownDefinition",
 	    TclOOUnknownDefinition, NULL, NULL);
-    namePtr = Tcl_NewStringObj("::oo::UnknownDefinition", -1);
+    TclNewLiteralStringObj(namePtr, "::oo::UnknownDefinition");
     Tcl_SetNamespaceUnknownHandler(interp, fPtr->defineNs, namePtr);
     Tcl_SetNamespaceUnknownHandler(interp, fPtr->objdefNs, namePtr);
 
@@ -351,6 +409,18 @@ InitFoundation(
     }
 
     /*
+     * Create the default <cloned> method implementation, used when 'oo::copy'
+     * is called to finish the copying of one object to another.
+     */
+
+    TclNewLiteralStringObj(argsPtr, "originObject");
+    Tcl_IncrRefCount(argsPtr);
+    bodyPtr = Tcl_NewStringObj(clonedBody, -1);
+    TclOONewProcMethod(interp, fPtr->objectCls, 0, fPtr->clonedName, argsPtr,
+	    bodyPtr, NULL);
+    Tcl_DecrRefCount(argsPtr);
+
+    /*
      * Finish setting up the class of classes by marking the 'new' method as
      * private; classes, unlike general objects, must have explicit names. We
      * also need to create the constructor for classes.
@@ -360,19 +430,13 @@ InitFoundation(
      * that is confusing.
      */
 
-    namePtr = Tcl_NewStringObj("new", -1);
+    TclNewLiteralStringObj(namePtr, "new");
     Tcl_NewInstanceMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
 	    namePtr /* keeps ref */, 0 /* ==private */, NULL, NULL);
 
-    argsPtr = Tcl_NewStringObj("{definitionScript {}}", -1);
+    TclNewLiteralStringObj(argsPtr, "{definitionScript {}}");
     Tcl_IncrRefCount(argsPtr);
-    bodyPtr = Tcl_NewStringObj(
-	    "set script [list ::oo::define [self] $definitionScript];"
-	    "lassign [::oo::UpCatch $script] msg opts\n"
-	    "if {[dict get $opts -code] == 1} {"
-	    "    dict set opts -errorline 0xDeadBeef\n"
-	    "}\n"
-	    "return -options $opts $msg", -1);
+    bodyPtr = Tcl_NewStringObj(classConstructorBody, -1);
     fPtr->classCls->constructorPtr = TclOONewProcMethod(interp,
 	    fPtr->classCls, 0, NULL, argsPtr, bodyPtr, NULL);
     Tcl_DecrRefCount(argsPtr);
@@ -468,6 +532,7 @@ KillFoundation(
     Tcl_DecrRefCount(fPtr->unknownMethodNameObj);
     Tcl_DecrRefCount(fPtr->constructorName);
     Tcl_DecrRefCount(fPtr->destructorName);
+    Tcl_DecrRefCount(fPtr->clonedName);
     ckfree(fPtr);
 }
 
@@ -1755,19 +1820,14 @@ Tcl_CopyObjectInstance(
     FOREACH_HASH_DECLS;
     Method *mPtr;
     Class *mixinPtr;
-    Tcl_Obj *keyPtr, *filterObj, *variableObj;
-    int i;
+    CallContext *contextPtr;
+    Tcl_Obj *keyPtr, *filterObj, *variableObj, *args[3];
+    int i, result;
 
     /*
-     * Sanity checks.
+     * Sanity check.
      */
 
-    if (targetName == NULL && oPtr->classPtr != NULL) {
-	Tcl_AppendResult(interp, "must supply a name when copying a class",
-		NULL);
-	Tcl_SetErrorCode(interp, "TCL", "OO", "NO_COPY_TARGET", NULL);
-	return NULL;
-    }
     if (IsRootClass(oPtr)) {
 	Tcl_AppendResult(interp, "may not clone the class of classes", NULL);
 	Tcl_SetErrorCode(interp, "TCL", "OO", "CLONING_CLASS", NULL);
@@ -1988,6 +2048,26 @@ Tcl_CopyObjectInstance(
 			    duplicate);
 		}
 	    }
+	}
+    }
+
+    contextPtr = TclOOGetCallContext(o2Ptr, oPtr->fPtr->clonedName, 0, NULL);
+    if (contextPtr) {
+	args[0] = TclOOObjectName(interp, o2Ptr);
+	args[1] = oPtr->fPtr->clonedName;
+	args[2] = TclOOObjectName(interp, oPtr);
+	Tcl_IncrRefCount(args[0]);
+	Tcl_IncrRefCount(args[1]);
+	Tcl_IncrRefCount(args[2]);
+	result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr, 3,
+		args);
+	TclDecrRefCount(args[0]);
+	TclDecrRefCount(args[1]);
+	TclDecrRefCount(args[2]);
+	TclOODeleteContext(contextPtr);
+	if (result != TCL_OK) {
+	    Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
+	    return NULL;
 	}
     }
 
