@@ -1679,6 +1679,53 @@ test oo-15.5 {OO: class cloning - Bug 3474460} -setup {
 } -cleanup {
     ArbitraryClass destroy
 } -result {a b c}
+test oo-15.6 {OO: object cloning copies namespace contents} -setup {
+    oo::class create ArbitraryClass {export eval}
+} -body {
+    ArbitraryClass create a
+    a eval {proc foo x {
+	variable y
+	return [string repeat $x [incr y]]
+    }}
+    set result [list [a eval {foo 2}] [a eval {foo 3}]]
+    oo::copy a b
+    a eval {rename foo bar}
+    lappend result [b eval {foo 2}] [b eval {foo 3}] [a eval {bar 4}]
+} -cleanup {
+    ArbitraryClass destroy
+} -result {2 33 222 3333 444}
+test oo-15.7 {OO: classes can be cloned anonymously} -setup {
+    oo::class create ArbitraryClassA
+    oo::class create ArbitraryClassB {superclass ArbitraryClassA}
+} -body {
+    info object isa class [oo::copy ArbitraryClassB]
+} -cleanup {
+    ArbitraryClassA destroy
+} -result 1
+test oo-15.8 {OO: intercept object cloning} -setup {
+    oo::class create Foo
+    set result {}
+} -body {
+    oo::define Foo {
+	constructor {msg} {
+	    variable v $msg
+	}
+	method <cloned> {from} {
+	    next $from
+	    lappend ::result cloned $from [self]
+	}
+	method check {} {
+	    variable v
+	    lappend ::result check [self] $v
+	}
+    }
+    Foo create foo ok
+    oo::copy foo bar
+    foo check
+    bar check
+} -cleanup {
+    Foo destroy
+} -result {cloned ::foo ::bar check ::foo ok check ::bar ok}
 
 test oo-16.1 {OO: object introspection} -body {
     info object
@@ -1774,10 +1821,10 @@ test oo-16.11 {OO: object introspection} -setup {
 } -body {
     oo::define foo method spong {} {...}
     oo::objdefine bar method boo {a {b c} args} {the body}
-    list [info object methods bar -all] [info object methods bar -all -private]
+    list [lsort [info object methods bar -all]] [lsort [info object methods bar -all -private]]
 } -cleanup {
     foo destroy
-} -result {{boo destroy spong} {boo destroy eval spong unknown variable varname}}
+} -result {{boo destroy spong} {<cloned> boo destroy eval spong unknown variable varname}}
 test oo-16.12 {OO: object introspection} -setup {
     oo::object create foo
 } -cleanup {
@@ -1858,11 +1905,11 @@ test oo-17.9 {OO: class introspection} -setup {
 	}
     }
     oo::define subfoo method boo {a {b c} args} {the body}
-    list [info class methods subfoo -all] \
-	[info class methods subfoo -all -private]
+    list [lsort [info class methods subfoo -all]] \
+	[lsort [info class methods subfoo -all -private]]
 } -cleanup {
     foo destroy
-} -result {{bar boo destroy} {bar boo destroy eval unknown variable varname}}
+} -result {{bar boo destroy} {<cloned> bar boo destroy eval unknown variable varname}}
 test oo-17.10 {OO: class introspection} -setup {
     oo::class create foo
 } -cleanup {
