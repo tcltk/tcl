@@ -91,6 +91,16 @@ must not have any namespace separators in it. The result is the empty string.
 .
 This method returns the globally qualified name of the variable \fIvarName\fR
 in the unique namespace for the object \fIobj\fR.
+.TP
+\fIobj \fB<cloned> \fIsourceObjectName\fR
+.VS
+This method is used by the \fBoo::object\fR command to copy the state of one
+object to another. It is responsible for copying the procedures and variables
+of the namespace of the source object (\fIsourceObjectName\fR) to the current
+object. It does not copy any other types of commands or any traces on the
+variables; that can be added if desired by overriding this method in a
+subclass.
+.VE
 .SH EXAMPLES
 .PP
 This example demonstrates basic use of an object.
