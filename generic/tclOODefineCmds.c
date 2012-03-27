@@ -104,7 +104,7 @@ static const struct DeclaredSlot slots[] = {
     SLOT("objdefine::filter",   ObjFilterGet,   ObjFilterSet),
     SLOT("objdefine::mixin",    ObjMixinGet,    ObjMixinSet),
     SLOT("objdefine::variable", ObjVarsGet,     ObjVarsSet),
-    {NULL}
+    {NULL, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
 };
 
 /*
