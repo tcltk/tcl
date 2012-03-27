@@ -11,6 +11,8 @@
 	* generic/tclFCmd.c:  [Bug 2015723]: Duplicate inodes from file stat
 	* generic/tclCmdAH.c: on windows (but now for cygwin as well).
 	* generic/tclOODefineCmds.c: minor gcc warning
+	* win/tclWinPort.h:   Use lower numbers, preventing integer overflow.
+	  (and remove the workaround for mingw-w64 bug 3407992. It's long fixed)
 
 2012-03-27  Donal K. Fellows  <dkf@users.sf.net>
 
