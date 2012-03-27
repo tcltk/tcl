@@ -1618,7 +1618,7 @@ Tcl_NewObjectInstance(
 		TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL);
 
 	if (contextPtr != NULL) {
-	    int result, flags;
+	    int result;
 	    Tcl_InterpState state;
 
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
@@ -1626,7 +1626,6 @@ Tcl_NewObjectInstance(
 	    contextPtr->skip = skip;
 	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
 		    objc, objv);
-	    flags = oPtr->flags;
 
 	    /*
 	     * It's an error if the object was whacked in the constructor.
