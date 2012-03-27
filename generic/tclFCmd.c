@@ -516,20 +516,23 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	    goto done;
 	}
 
-        /* 
-         * Prevent copying or renaming a file onto itself.  Under Windows, 
-         * stat always returns 0 for st_ino.  However, the Windows-specific 
-         * code knows how to deal with copying or renaming a file on top of
-         * itself.  It might be a good idea to write a stat that worked.
-         */
-     
-        if ((sourceStatBuf.st_ino != 0) && (targetStatBuf.st_ino != 0)) {
-            if ((sourceStatBuf.st_ino == targetStatBuf.st_ino) &&
-            	    (sourceStatBuf.st_dev == targetStatBuf.st_dev)) {
-            	result = TCL_OK;
-            	goto done;
-            }
-        }
+	/*
+	 * Prevent copying or renaming a file onto itself. On Windows since
+	 * 8.5 we do get an inode number, however the unsigned short field is
+	 * insufficient to accept the Win32 API file id so it is truncated to
+	 * 16 bits and we get collisions. See bug #2015723.
+	 */
+
+#if !defined(WIN32) && !defined(__CYGWIN__)
+	if ((sourceStatBuf.st_ino != 0) && (targetStatBuf.st_ino != 0)) {
+	    if ((sourceStatBuf.st_ino == targetStatBuf.st_ino) &&
+		    (sourceStatBuf.st_dev == targetStatBuf.st_dev)) {
+		result = TCL_OK;
+		goto done;
+	    }
+	}
+#endif
+
 
 	/*
 	 * Prevent copying/renaming a file onto a directory and
