@@ -72,7 +72,8 @@ This option will cause the client socket to be connected
 asynchronously. This means that the socket will be created immediately
 but may not yet be connected to the server, when the call to
 \fBsocket\fR returns.
-
+.RS
+.PP
 When a \fBgets\fR or \fBflush\fR is done on the socket before the
 connection attempt succeeds or fails, if the socket is in blocking
 mode, the operation will wait until the connection is completed or
@@ -82,22 +83,20 @@ succeeds or fails, the operation returns immediately and
 \fBfblocked\fR on the socket returns 1. Synchronous client sockets may
 be switched (after they have connected) to operating in asynchronous
 mode using:
-.RS
 .PP
 .CS
 \fBchan configure \fIchan \fB\-blocking 0\fR
 .CE
 .PP
 See the \fBchan configure\fR command for more details.
-
+.PP
 The Tcl event loop should be running while an asynchronous connection
 is in progress, because it may have to do several connection attempts
-in the background. Runnig the event loop also allows you to set up a
+in the background. Running the event loop also allows you to set up a
 writable channel event on the socket to get notified when the
-asyncronous connection has succeeded or failed. See the \fBvwait\fR
-and the \fBchan\fR comands for more details on the event loop and
+asynchronous connection has succeeded or failed. See the \fBvwait\fR
+and the \fBchan\fR commands for more details on the event loop and
 channel events.
-
 .RE
 .SH "SERVER SOCKETS"
 .PP
@@ -157,9 +156,11 @@ This option gets the current error status of the given socket.  This
 is useful when you need to determine if an asynchronous connect
 operation succeeded.  If there was an error, the error message is
 returned.  If there was no error, an empty string is returned.
-
+.RS
+.PP
 Note that the error status is reset by the read operation; this mimics
 the underlying getsockopt(SO_ERROR) call.
+.RE
 .TP
 \fB\-sockname\fR
 .
@@ -168,14 +169,15 @@ client connects to a server socket) this option returns a list of
 three elements, the address, the host name and the port number for the
 socket. If the host name cannot be computed, the second element is
 identical to the address, the first element of the list.
-
+.RS
+.PP
 For server sockets this option returns a list of a multiple of three
 elements each group of which have the same meaning as described
 above. The list contains more than one group when the server socket
 was created without \fB\-myaddr\fR or with the argument to
 \fB\-myaddr\fR being a domain name that resolves multiple IP addresses
 that are local to the invoking host.
-
+.RE
 .TP
 \fB\-peername\fR
 .

@@ -125,7 +125,7 @@ the length of an object's string representation.
 .AP "const char" *string in
 Null-terminated string value to append to \fIobjPtr\fR.
 .AP va_list argList in
-An argument list which must have been initialised using
+An argument list which must have been initialized using
 \fBva_start\fR, and cleared using \fBva_end\fR.
 .AP int limit in
 Maximum number of bytes to be appended.
@@ -230,7 +230,7 @@ object's new string representation.
 \fIobjPtr\fR.  If the object has an invalid Unicode representation,
 then \fIunicode\fR is converted to the UTF format and appended to the
 object's string representation.  Appends are optimized to handle
-repeated appends relatively efficiently (it overallocates the string
+repeated appends relatively efficiently (it over-allocates the string
 or Unicode space to avoid repeated reallocations and copies of
 object's string value).
 .PP
