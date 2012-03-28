@@ -92,21 +92,11 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <signal.h>
 #include <limits.h>
 
-#ifdef __CYGWIN__
-#   include <unistd.h>
-#   ifndef _vsnprintf
-#	define _vsnprintf vsnprintf
-#   endif
-#   ifndef _wcsicmp
-#	define _wcsicmp wcscasecmp
-#   endif
-#else
-#   ifndef strncasecmp
-#	define strncasecmp strnicmp
-#   endif
-#   ifndef strcasecmp
-#	define strcasecmp stricmp
-#   endif
+#ifndef strncasecmp
+#   define strncasecmp strnicmp
+#endif
+#ifndef strcasecmp
+#   define strcasecmp stricmp
 #endif
 
 /*
@@ -125,25 +115,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif /* __MWERKS__ */
 
 #include <time.h>
-
-/*
- * cygwin does not have this struct.
- */
-#ifdef __CYGWIN__
-  struct _stat32i64 {
-    dev_t st_dev;
-    ino_t st_ino;
-    unsigned short st_mode;
-    short st_nlink;
-    short st_uid;
-    short st_gid;
-    dev_t st_rdev;
-    __int64 st_size;
-    struct {long tv_sec;} st_atim;
-    struct {long tv_sec;} st_mtim;
-    struct {long tv_sec;} st_ctim;
-  };
-#endif
 
 /*
  * The following defines redefine the Windows Socket errors as
@@ -255,9 +226,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef EOTHER
 #   define EOTHER	131	/* Other error */
 #endif
-/* workaround for mingw-w64 bug 3407992 */
-#undef EOVERFLOW
-#define EOVERFLOW	132	/* File too big */
+#ifndef EOVERFLOW
+#   define EOVERFLOW	132	/* File too big */
+#endif
 #ifndef EOWNERDEAD
 #   define EOWNERDEAD	133	/* Owner dead */
 #endif
@@ -284,20 +255,28 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 
-#undef ESOCKTNOSUPPORT
-#define ESOCKTNOSUPPORT WSAESOCKTNOSUPPORT	/* Socket type not supported */
-#undef ESHUTDOWN
-#define ESHUTDOWN	WSAESHUTDOWN	/* Can't send after socket shutdown */
-#undef ETOOMANYREFS
-#define ETOOMANYREFS	WSAETOOMANYREFS	/* Too many references: can't splice */
-#undef EHOSTDOWN
-#define EHOSTDOWN	WSAEHOSTDOWN	/* Host is down */
-#undef EUSERS
-#define EUSERS	WSAEUSERS	/* Too many users (for UFS) */
-#undef EDQUOT
-#define EDQUOT	WSAEDQUOT	/* Disc quota exceeded */
-#undef ESTALE
-#define ESTALE	WSAESTALE	/* Stale NFS file handle */
+/* Visual Studio doesn't have these, so just choose some high numbers */
+#ifndef ESOCKTNOSUPPORT
+#   define ESOCKTNOSUPPORT 240	/* Socket type not supported */
+#endif
+#ifndef ESHUTDOWN
+#   define ESHUTDOWN	241	/* Can't send after socket shutdown */
+#endif
+#ifndef ETOOMANYREFS
+#   define ETOOMANYREFS	242	/* Too many references: can't splice */
+#endif
+#ifndef EHOSTDOWN
+#   define EHOSTDOWN	243	/* Host is down */
+#endif
+#ifndef EUSERS
+#   define EUSERS	244	/* Too many users (for UFS) */
+#endif
+#ifndef EDQUOT
+#   define EDQUOT	245	/* Disc quota exceeded */
+#endif
+#ifndef ESTALE
+#   define ESTALE	246	/* Stale NFS file handle */
+#endif
 
 /*
  * Signals not known to the standard ANSI signal.h.  These are used
@@ -549,18 +528,12 @@ typedef DWORD_PTR * PDWORD_PTR;
  * use by tclAlloc.c.
  */
 
-#ifdef __CYGWIN__
-#   define TclpSysAlloc(size, isBin)	malloc((size))
-#   define TclpSysFree(ptr)		free((ptr))
-#   define TclpSysRealloc(ptr, size)	realloc((ptr), (size))
-#else
-#   define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
+#define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
 					    (DWORD)0, (DWORD)size))
-#   define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
+#define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
 					    (DWORD)0, (HGLOBAL)ptr))
-#   define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
+#define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
 					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
-#endif
 
 /*
  * The following defines map from standard socket names to our internal
