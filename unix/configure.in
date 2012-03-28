@@ -213,7 +213,9 @@ SC_TIME_HANDLER
 #	Some systems (e.g., IRIX 4.0.5) lack the st_blksize field
 #	in struct stat.  But we might be able to use fstatfs instead.
 #--------------------------------------------------------------------
+if test "$ac_cv_cygwin" != "yes"; then
 AC_STRUCT_ST_BLKSIZE
+fi
 AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS)])
 
 #--------------------------------------------------------------------

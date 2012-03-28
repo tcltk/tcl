@@ -433,7 +433,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	cyg_conftest=
     fi
 
-    if test "$CYGPATH" = "echo" || test "$ac_cv_cygwin" = "yes"; then
+    if test "$CYGPATH" = "echo"; then
         DEPARG='"$<"'
     else
         DEPARG='"$(shell $(CYGPATH) $<)"'
@@ -441,16 +441,52 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     # set various compiler flags depending on whether we are using gcc or cl
 
-	AC_CACHE_CHECK(for Cygwin version of gcc,
-	    ac_cv_cygwin,
+    AC_CACHE_CHECK(for Cygwin version of gcc,
+	ac_cv_cygwin,
+	AC_TRY_COMPILE([
+	    #ifdef __CYGWIN__
+		#error cygwin
+	    #endif
+	], [],
+	ac_cv_cygwin=no,
+	ac_cv_cygwin=yes)
+    )
+
+    if test "$ac_cv_cygwin" = "yes"; then
+	case "$do64bit" in
+	    amd64|x64|yes)
+		CC="x86_64-w64-mingw32-gcc"
+		LD="x86_64-w64-mingw32-ld"
+		AR="x86_64-w64-mingw32-ar"
+		RANLIB="x86_64-w64-mingw32-ranlib"
+		RC="x86_64-w64-mingw32-windres"
+	    ;;
+	    *)
+		CC="i686-w64-mingw32-gcc"
+		LD="i686-w64-mingw32-ld"
+		AR="i686-w64-mingw32-ar"
+		RANLIB="i686-w64-mingw32-ranlib"
+		RC="i686-w64-mingw32-windres"
+	    ;;
+	esac
+    fi
+
+    if test "${GCC}" = "yes" ; then
+	AC_CACHE_CHECK(for mingw32 version of gcc,
+	    ac_cv_win32,
 	    AC_TRY_COMPILE([
-		#ifdef __CYGWIN__
-		    #error cygwin
+		#ifdef __WIN32__
+		    #error win32
 		#endif
 	    ], [],
-	    ac_cv_cygwin=no,
-	    ac_cv_cygwin=yes)
+	    ac_cv_win32=no,
+	    ac_cv_win32=yes)
 	)
+	if test "ac_cv_win32" != "yes"; then
+	    AC_MSG_ERROR([${CC} cannot produce win32 executables.])
+	fi
+    fi
+
 
     AC_MSG_CHECKING([compiler flags])
     if test "${GCC}" = "yes" ; then
@@ -471,25 +507,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	extra_cflags="-pipe"
 	extra_ldflags="-pipe"
-
-	if test "$ac_cv_cygwin" = "yes"; then
-	    case "$do64bit" in
-		amd64|x64|yes)
-		    CC="x86_64-w64-mingw32-gcc"
-		    LD="x86_64-w64-mingw32-ld"
-		    AR="x86_64-w64-mingw32-ar"
-		    RANLIB="x86_64-w64-mingw32-ranlib"
-		    RC="x86_64-w64-mingw32-windres"
-		;;
-		*)
-		    CC="i686-w64-mingw32-gcc"
-		    LD="i686-w64-mingw32-ld"
-		    AR="i686-w64-mingw32-ar"
-		    RANLIB="i686-w64-mingw32-ranlib"
-		    RC="i686-w64-mingw32-windres"
-		;;
-	    esac
-	fi
 
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
@@ -570,9 +587,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		;;
 	    *)
 		AC_TRY_COMPILE([
-			#ifdef _WIN64
+		    #ifdef _WIN64
 			#error 64-bit
-			#endif
+		    #endif
 		], [],
 			tcl_win_64bit=no,
 			tcl_win_64bit=yes
