@@ -795,32 +795,32 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	fi
     fi
 
-	if test "${GCC}" = "yes" ; then
+    if test "${GCC}" = "yes" ; then
 	AC_CACHE_CHECK(for SEH support in compiler,
 	    tcl_cv_seh,
 	AC_TRY_RUN([
-	#define WIN32_LEAN_AND_MEAN
-	#include <windows.h>
-	#undef WIN32_LEAN_AND_MEAN
-	
-	int main(int argc, char** argv) {
-	    int a, b = 0;
-	    __try {
-	        a = 666 / b;
+#	    define WIN32_LEAN_AND_MEAN
+#	    include <windows.h>
+#	    undef WIN32_LEAN_AND_MEAN
+
+	    int main(int argc, char** argv) {
+		int a, b = 0;
+		__try {
+		    a = 666 / b;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+		    return 0;
+		}
+		return 1;
 	    }
-	    __except (EXCEPTION_EXECUTE_HANDLER) {
-	        return 0;
-	    }
-	    return 1;
-	}
 	],
-	        tcl_cv_seh=yes,
-	        tcl_cv_seh=no,
-	        tcl_cv_seh=no)
+	    tcl_cv_seh=yes,
+	    tcl_cv_seh=no,
+	    tcl_cv_seh=no)
 	)
 	if test "$tcl_cv_seh" = "no" ; then
 	    AC_DEFINE(HAVE_NO_SEH, 1,
-	            [Defined when mingw does not support SEH])
+		    [Defined when mingw does not support SEH])
 	fi
 	
 	#
@@ -831,68 +831,64 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	#
 	AC_CACHE_CHECK(for EXCEPTION_DISPOSITION support in include files,
 	    tcl_cv_eh_disposition,
-	AC_TRY_COMPILE([
-	#define WIN32_LEAN_AND_MEAN
-	#include <windows.h>
-	#undef WIN32_LEAN_AND_MEAN
-	],
-	[
-	  EXCEPTION_DISPOSITION x;
-	],
-	        tcl_cv_eh_disposition=yes,
-	        tcl_cv_eh_disposition=no)
+	    AC_TRY_COMPILE([
+#	    define WIN32_LEAN_AND_MEAN
+#	    include <windows.h>
+#	    undef WIN32_LEAN_AND_MEAN
+	    ],[
+		EXCEPTION_DISPOSITION x;
+	    ],
+		tcl_cv_eh_disposition=yes,
+		tcl_cv_eh_disposition=no)
 	)
 	if test "$tcl_cv_eh_disposition" = "no" ; then
-	    AC_DEFINE(EXCEPTION_DISPOSITION, int,
-	            [Defined when cygwin/mingw does not support EXCEPTION DISPOSITION])
+	AC_DEFINE(EXCEPTION_DISPOSITION, int,
+		[Defined when cygwin/mingw does not support EXCEPTION DISPOSITION])
 	fi
-	
-	
+
 	# Check to see if winnt.h defines CHAR, SHORT, and LONG
 	# even if VOID has already been #defined. The win32api
 	# used by mingw and cygwin is known to do this.
-	
+
 	AC_CACHE_CHECK(for winnt.h that ignores VOID define,
 	    tcl_cv_winnt_ignore_void,
-	AC_TRY_COMPILE([
-	#define VOID void
-	#define WIN32_LEAN_AND_MEAN
-	#include <windows.h>
-	#undef WIN32_LEAN_AND_MEAN
-	],
-	[
-	  CHAR c;
-	  SHORT s;
-	  LONG l;
-	],
-	        tcl_cv_winnt_ignore_void=yes,
-	        tcl_cv_winnt_ignore_void=no)
+	    AC_TRY_COMPILE([
+#		define VOID void
+#		define WIN32_LEAN_AND_MEAN
+#		include <windows.h>
+#		undef WIN32_LEAN_AND_MEAN
+	    ], [
+		CHAR c;
+		SHORT s;
+		LONG l;
+	    ],
+        tcl_cv_winnt_ignore_void=yes,
+        tcl_cv_winnt_ignore_void=no)
 	)
 	if test "$tcl_cv_winnt_ignore_void" = "yes" ; then
 	    AC_DEFINE(HAVE_WINNT_IGNORE_VOID, 1,
-	            [Defined when cygwin/mingw ignores VOID define in winnt.h])
+		    [Defined when cygwin/mingw ignores VOID define in winnt.h])
 	fi
 	
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler
 	# warning when initializing a union member.
-	
+
 	AC_CACHE_CHECK(for cast to union support,
 	    tcl_cv_cast_to_union,
-	AC_TRY_COMPILE([],
-	[
-	  union foo { int i; double d; };
-	  union foo f = (union foo) (int) 0;
-	],
-	        tcl_cv_cast_to_union=yes,
-	        tcl_cv_cast_to_union=no)
+	    AC_TRY_COMPILE([],
+	    [
+		  union foo { int i; double d; };
+		  union foo f = (union foo) (int) 0;
+	    ],
+	    tcl_cv_cast_to_union=yes,
+	    tcl_cv_cast_to_union=no)
 	)
 	if test "$tcl_cv_cast_to_union" = "yes"; then
 	    AC_DEFINE(HAVE_CAST_TO_UNION, 1,
-	            [Defined when compiler supports casting to union type.])
+		    [Defined when compiler supports casting to union type.])
 	fi
-	fi
-	
+    fi
 
     # DL_LIBS is empty, but then we match the Unix version
     AC_SUBST(DL_LIBS)
