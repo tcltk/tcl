@@ -281,6 +281,7 @@ TclOO_Object_Destroy(
 	    contextPtr->skip = 0;
 	    TclNRAddCallback(interp, AfterNRDestructor, contextPtr,
 		    NULL, NULL, NULL);
+	    TclPushTailcallPoint(interp);
 	    return TclOOInvokeContext(contextPtr, interp, 0, NULL);
 	}
     }
@@ -434,8 +435,14 @@ TclOO_Object_Unknown(
     const char **methodNames;
     int numMethodNames, i, skip = Tcl_ObjectContextSkippedArgs(context);
 
+    /*
+     * If no method name, generate an error asking for a method name. (Only by
+     * overriding *this* method can an object handle the absence of a method
+     * name without an error).
+     */
+
     if (objc < skip+1) {
-	Tcl_WrongNumArgs(interp, skip, objv, "methodName ?arg ...?");
+	Tcl_WrongNumArgs(interp, skip, objv, "method ?arg ...?");
 	return TCL_ERROR;
     }
 

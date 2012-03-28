@@ -121,6 +121,12 @@ outside of the [0\-9] range.
 Any of the valid forms for a double in Tcl, with optional surrounding
 whitespace.  In case of under/overflow in the value, 0 is returned and
 the \fIvarname\fR will contain \-1.
+.IP \fBentier\fR 12
+.VS 8.6
+Any of the valid string formats for an integer value of arbitrary size
+in Tcl, with optional surrounding whitespace. The formats accepted are
+exactly those accepted by the C routine \fBTcl_GetBignumFromObj\fR.
+.VE
 .IP \fBfalse\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 false.
