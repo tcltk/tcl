@@ -1212,6 +1212,19 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    TCL_SHLIB_LD_EXTRAS='-Wl,--out-implib,$[@].a'
+	    AC_CACHE_CHECK(for Cygwin version of gcc,
+		ac_cv_cygwin,
+		AC_TRY_COMPILE([
+#		ifdef __CYGWIN__
+#		    error cygwin
+#		endif
+		], [],
+		ac_cv_cygwin=no,
+		ac_cv_cygwin=yes)
+	    )
+	    if test "$ac_cv_cygwin" = "no"; then
+		AC_MSG_ERROR([${CC} is not a cygwin compiler.])
+	    fi
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
