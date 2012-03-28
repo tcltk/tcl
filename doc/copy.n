@@ -26,10 +26,23 @@ resolved relative to the current namespace if not an absolute qualified name.
 If \fItargetObject\fR is omitted, a new name is chosen. The copied object will
 be of the same class as the source object, and will have all its per-object
 methods copied. If it is a class, it will also have all the class methods in
-the class copied, but it will not have any of its instances copied. The
-contents of the source object's private namespace \fIwill not\fR be copied; it
-is up to the caller to do this. The result of this command will be the
-fully-qualified name of the new object or class.
+the class copied, but it will not have any of its instances copied.
+.PP
+.VS
+After the \fItargetObject\fR has been created and all definitions of its
+configuration (e.g., methods, filters, mixins) copied, the \fB<cloned>\fR
+method of \fItargetObject\fR will be invoked, to allow for customization of
+the created object such as installing related variable traces. The only
+argument given will be \fIsourceObject\fR. The default implementation of this
+method (in \fBoo::object\fR) just copies the procedures and variables in the
+namespace of \fIsourceObject\fR to the namespace of \fItargetObject\fR. If
+this method call does not return a result that is successful (i.e., an error
+or other kind of exception) then the \fItargetObject\fR will be deleted and an
+error returned.
+.VE
+.PP
+The result of the \fBoo::copy\fR command will be the fully-qualified name of
+the new object or class.
 .SH EXAMPLES
 .PP
 This example creates an object, copies it, modifies the source object, and
