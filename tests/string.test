@@ -312,10 +312,10 @@ test string-6.4 {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5 {string is, class check} {
     list [catch {string is bogus str} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.6 {string is, ambiguous class} {
     list [catch {string is al str} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.7 {string is alpha, all ok} {
     string is alpha -strict -failindex var abc
 } 1
@@ -592,7 +592,7 @@ test string-6.90 {string is integer, bad integers} {
     foreach num $numbers {
 	lappend result [string is int -strict $num]
     }
-    set result
+    return $result
 } {1 1 0 0 0 1 0 0}
 test string-6.91 {string is double, bad doubles} {
     set result ""
@@ -600,7 +600,7 @@ test string-6.91 {string is double, bad doubles} {
     foreach num $numbers {
 	lappend result [string is double -strict $num]
     }
-    set result
+    return $result
 } {1 1 0 0 0 1 0 0}
 test string-6.92 {string is integer, 32-bit overflow} {
     # Bug 718878
@@ -664,7 +664,7 @@ test string-6.107 {string is integer, bad integers} {
     foreach num $numbers {
 	lappend result [string is wideinteger -strict $num]
     }
-    set result
+    return $result
 } {1 1 0 0 0 1 0 0}
 test string-6.108 {string is double, Bug 1382287} {
     set x 2turtledoves
@@ -674,6 +674,78 @@ test string-6.108 {string is double, Bug 1382287} {
 test string-6.109 {string is double, Bug 1360532} {
     string is double 1\u00a0
 } 0
+test string-6.110 {string is entier, true} {
+    string is entier +1234567890
+} 1
+test string-6.111 {string is entier, true on type} {
+    string is entier [expr wide(50.0)]
+} 1
+test string-6.112 {string is entier, true} {
+    string is entier [list -10]
+} 1
+test string-6.113 {string is entier, true as hex} {
+    string is entier 0xabcdef
+} 1
+test string-6.114 {string is entier, true as octal} {
+    string is entier 0123456
+} 1
+test string-6.115 {string is entier, true with whitespace} {
+    string is entier "  \n1234\v"
+} 1
+test string-6.116 {string is entier, false} {
+    list [string is entier -fail var 123abc] $var
+} {0 3}
+test string-6.117 {string is entier, false} {
+    list [string is entier -fail var 123123123123123123123123123123123123123123123123123123123123123123123123123123123123abc] $var
+} {0 84}
+test string-6.118 {string is entier, false} {
+    list [string is entier -fail var [expr double(1)]] $var
+} {0 1}
+test string-6.119 {string is entier, false} {
+    list [string is entier -fail var "    "] $var
+} {0 0}
+test string-6.120 {string is entier, false on bad octal} {
+    list [string is entier -fail var 0o36963] $var
+} {0 4}
+test string-6.121.1 {string is entier, false on bad octal} {
+    list [string is entier -fail var 0o36963] $var
+} {0 4}
+test string-6.122 {string is entier, false on bad hex} {
+    list [string is entier -fail var 0X345XYZ] $var
+} {0 5}
+test string-6.123 {string is entier, bad integers} {
+    # SF bug #634856
+    set result ""
+    set numbers [list 1 +1 ++1 +-1 -+1 -1 --1 "- +1"]
+    foreach num $numbers {
+	lappend result [string is entier -strict $num]
+    }
+    return $result
+} {1 1 0 0 0 1 0 0}
+test string-6.124 {string is entier, true} {
+    string is entier +1234567890123456789012345678901234567890
+} 1
+test string-6.125 {string is entier, true} {
+    string is entier [list -10000000000000000000000000000000000000000000000000000000000000000000000000000000000000]
+} 1
+test string-6.126 {string is entier, true as hex} {
+    string is entier 0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef
+} 1
+test string-6.127 {string is entier, true as octal} {
+    string is entier 0123456112341234561234565623456123456123456123456123456123456123456123456123456123456
+} 1
+test string-6.128 {string is entier, true with whitespace} {
+    string is entier "  \n12340000000000000000000000000000000000000000000000000000000000000000000000000000000000000\v"
+} 1
+test string-6.129 {string is entier, false on bad octal} {
+    list [string is entier -fail var 0o1234561123412345612345656234561234561234561234561234561234561234561234561234561234536963] $var
+} {0 87}
+test string-6.130.1 {string is entier, false on bad octal} {
+    list [string is entier -fail var 0o1234561123412345612345656234561234561234561234561234561234561234561234561234561234536963] $var
+} {0 87}
+test string-6.131 {string is entier, false on bad hex} {
+    list [string is entier -fail var 0X12345611234123456123456562345612345612345612345612345612345612345612345612345612345345XYZ] $var
+} {0 88}
 
 catch {rename largest_int {}}
 

@@ -226,9 +226,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef EOTHER
 #   define EOTHER	131	/* Other error */
 #endif
-/* workaround for mingw-w64 bug 3407992 */
-#undef EOVERFLOW
-#define EOVERFLOW	132	/* File too big */
+#ifndef EOVERFLOW
+#   define EOVERFLOW	132	/* File too big */
+#endif
 #ifndef EOWNERDEAD
 #   define EOWNERDEAD	133	/* Owner dead */
 #endif
@@ -255,20 +255,28 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 
-#undef ESOCKTNOSUPPORT
-#define ESOCKTNOSUPPORT WSAESOCKTNOSUPPORT	/* Socket type not supported */
-#undef ESHUTDOWN
-#define ESHUTDOWN	WSAESHUTDOWN	/* Can't send after socket shutdown */
-#undef ETOOMANYREFS
-#define ETOOMANYREFS	WSAETOOMANYREFS	/* Too many references: can't splice */
-#undef EHOSTDOWN
-#define EHOSTDOWN	WSAEHOSTDOWN	/* Host is down */
-#undef EUSERS
-#define EUSERS	WSAEUSERS	/* Too many users (for UFS) */
-#undef EDQUOT
-#define EDQUOT	WSAEDQUOT	/* Disc quota exceeded */
-#undef ESTALE
-#define ESTALE	WSAESTALE	/* Stale NFS file handle */
+/* Visual Studio doesn't have these, so just choose some high numbers */
+#ifndef ESOCKTNOSUPPORT
+#   define ESOCKTNOSUPPORT 240	/* Socket type not supported */
+#endif
+#ifndef ESHUTDOWN
+#   define ESHUTDOWN	241	/* Can't send after socket shutdown */
+#endif
+#ifndef ETOOMANYREFS
+#   define ETOOMANYREFS	242	/* Too many references: can't splice */
+#endif
+#ifndef EHOSTDOWN
+#   define EHOSTDOWN	243	/* Host is down */
+#endif
+#ifndef EUSERS
+#   define EUSERS	244	/* Too many users (for UFS) */
+#endif
+#ifndef EDQUOT
+#   define EDQUOT	245	/* Disc quota exceeded */
+#endif
+#ifndef ESTALE
+#   define ESTALE	246	/* Stale NFS file handle */
+#endif
 
 /*
  * Signals not known to the standard ANSI signal.h.  These are used

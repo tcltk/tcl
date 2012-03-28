@@ -1036,7 +1036,7 @@ SerialOutputProc(
 	 * the channel is in non-blocking mode.
 	 */
 
-	errno = EWOULDBLOCK;
+	errno = EAGAIN;
 	goto error1;
     }
 
