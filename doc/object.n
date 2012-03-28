@@ -65,14 +65,19 @@ This method concatenates the arguments, \fIarg\fR, as if with \fBconcat\fR,
 and then evaluates the resulting script in the namespace that is uniquely
 associated with \fIobj\fR, returning the result of the evaluation.
 .TP
-\fIobj \fBunknown \fImethodName\fR ?\fIarg ...\fR?
+\fIobj \fBunknown ?\fImethodName\fR? ?\fIarg ...\fR?
 .
 This method is called when an attempt to invoke the method \fImethodName\fR on
 object \fIobj\fR fails. The arguments that the user supplied to the method are
-given as \fIarg\fR arguments. The default implementation (i.e. the one defined
-by the \fBoo::object\fR class) generates a suitable error, detailing what
-methods the object supports given whether the object was invoked by its public
-name or through the \fBmy\fR command.
+given as \fIarg\fR arguments.
+.VS
+If \fImethodName\fR is absent, the object was invoked with no method name at
+all (or any other arguments).
+.VE
+The default implementation (i.e., the one defined by the \fBoo::object\fR
+class) generates a suitable error, detailing what methods the object supports
+given whether the object was invoked by its public name or through the
+\fBmy\fR command.
 .TP
 \fIobj \fBvariable \fR?\fIvarName ...\fR?
 .
@@ -86,6 +91,16 @@ must not have any namespace separators in it. The result is the empty string.
 .
 This method returns the globally qualified name of the variable \fIvarName\fR
 in the unique namespace for the object \fIobj\fR.
+.TP
+\fIobj \fB<cloned> \fIsourceObjectName\fR
+.VS
+This method is used by the \fBoo::object\fR command to copy the state of one
+object to another. It is responsible for copying the procedures and variables
+of the namespace of the source object (\fIsourceObjectName\fR) to the current
+object. It does not copy any other types of commands or any traces on the
+variables; that can be added if desired by overriding this method in a
+subclass.
+.VE
 .SH EXAMPLES
 .PP
 This example demonstrates basic use of an object.
