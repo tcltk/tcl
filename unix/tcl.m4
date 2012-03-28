@@ -1215,9 +1215,9 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_CACHE_CHECK(for Cygwin version of gcc,
 		ac_cv_cygwin,
 		AC_TRY_COMPILE([
-#		ifdef __CYGWIN__
-#		    error cygwin
-#		endif
+		#ifdef __CYGWIN__
+		    #error cygwin
+		#endif
 		], [],
 		ac_cv_cygwin=no,
 		ac_cv_cygwin=yes)
