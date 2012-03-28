@@ -82,7 +82,7 @@ resulting list of implementations as possible.
 .PP
 When an object has a list of filter names set upon it, or is an instance of a
 class (or has mixed in a class) that has a list of filter names set upon it,
-before every invokation of any method the filters are processed. Filter
+before every invocation of any method the filters are processed. Filter
 implementations are found in class traversal order, as are the lists of filter
 names (each of which is traversed in natural list order). Explicitly invoking
 a method used as a filter will cause that method to be invoked twice, once as
@@ -93,7 +93,7 @@ forward to the proper implementation of the method (which it does by invoking
 the \fBnext\fR command as filters are inserted into the front of the method
 call chain) and is responsible for returning the result of \fBnext\fR.
 .PP
-Filters are not invoked when processing an invokation of the \fBunknown\fR
+Filters are not invoked when processing an invocation of the \fBunknown\fR
 method because of a failure to locate a method implementation, or when
 invoking either constructors or destructors.
 .SH EXAMPLES
@@ -135,7 +135,7 @@ in the superclass, args = pureSynthesis
 after chaining from subclass
 before chaining from subclass, args = 
 in the superclass, args = a b
-in the superclassm args = pureSynthesis
+in the superclass, args = pureSynthesis
 after chaining from subclass
 .CE
 .PP
@@ -165,7 +165,7 @@ oo::class create cache {
     method flushCache {} {
         my variable ValueCache
         unset ValueCache
-        \fI# Skip the cacheing\fR
+        \fI# Skip the caching\fR
         return -level 2 ""
     }
 }

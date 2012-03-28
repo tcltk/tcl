@@ -1544,6 +1544,10 @@ tclMacOSXFCmd.o: $(MAC_OSX_DIR)/tclMacOSXFCmd.c
 tclMacOSXNotify.o: $(MAC_OSX_DIR)/tclMacOSXNotify.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXNotify.c
 
+# The following is a CYGWIN only source:
+tclWinError.o: $(TOP_DIR)/win/tclWinError.c
+	$(CC) -c $(CC_SWITCHES) $(TOP_DIR)/win/tclWinError.c
+
 # DTrace support
 
 $(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS): @DTRACE_HDR@
