@@ -83,9 +83,18 @@ TclSockGetPort(interp, string, proto, portPtr)
  *----------------------------------------------------------------------
  */
 
+#ifdef _WIN64
+    /* See bug 510001: TclSockMinimumBuffers needs plat imp */
+#   define TclSockMinimumBuffers TclSockMinimumBuffersWin64
+#endif
+
 int
 TclSockMinimumBuffers(sock, size)
+#ifdef _WIN64
+    SOCKET sock;		/* Socket file descriptor */
+#else
     int sock;			/* Socket file descriptor */
+#endif
     int size;			/* Minimum buffer size */
 {
     int current;

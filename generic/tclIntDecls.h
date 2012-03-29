@@ -1409,4 +1409,17 @@ extern TclIntStubs *tclIntStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#ifdef _WIN64
+    /* See bug 510001: TclSockMinimumBuffers needs plat imp */
+    extern int TclSockMinimumBuffersWin64(unsigned __int64,int);
+
+#   ifdef USE_TCL_STUBS
+#	undef TclSockMinimumBuffers
+#	define TclSockMinimumBuffers ((int (*)(SOCKET,int)) \
+	    tclIntStubsPtr->tclSockMinimumBuffers)
+#   else
+#	define TclSockMinimumBuffers TclSockMinimumBuffersWin64
+#   endif
+#endif
+
 #endif /* _TCLINTDECLS */
