@@ -76,7 +76,6 @@ typedef off_t		Tcl_SeekOffset;
 #ifdef __CYGWIN__
 EXTERN int TclOSstat(const char *name, Tcl_StatBuf *statBuf);
 EXTERN int TclOSlstat(const char *name, Tcl_StatBuf *statBuf);
-#undef HAVE_ST_BLKSIZE
 #define NO_FSTATFS
 #undef HAVE_FTS
 #elif defined(HAVE_STRUCT_STAT64)
