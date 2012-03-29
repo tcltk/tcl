@@ -1203,7 +1203,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	CYGWIN_*)
+	CYGWIN_*|MINGW32*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
@@ -1212,6 +1212,19 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    TCL_SHLIB_LD_EXTRAS='-Wl,--out-implib,$[@].a'
+	    AC_CACHE_CHECK(for Cygwin version of gcc,
+		ac_cv_cygwin,
+		AC_TRY_COMPILE([
+		#ifdef __CYGWIN__
+		    #error cygwin
+		#endif
+		], [],
+		ac_cv_cygwin=no,
+		ac_cv_cygwin=yes)
+	    )
+	    if test "$ac_cv_cygwin" = "no"; then
+		AC_MSG_ERROR([${CC} is not a cygwin compiler.])
+	    fi
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
@@ -2166,7 +2179,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	case $system in
 	    AIX-*) ;;
 	    BSD/OS*) ;;
-	    CYGWIN_*) ;;
+	    CYGWIN_*|MINGW32_*) ;;
 	    IRIX*) ;;
 	    NetBSD-*|FreeBSD-*|OpenBSD-*) ;;
 	    Darwin-*) ;;
@@ -2210,6 +2223,24 @@ dnl # preprocessing tests use only CPPFLAGS.
         INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) $(LIB_INSTALL_DIR)/$(STUB_LIB_FILE) ; (cd $(LIB_INSTALL_DIR) ; $(RANLIB) $(STUB_LIB_FILE))'
     fi
 
+	# See if the compiler supports casting to a union type.
+	# This is used to stop gcc from printing a compiler
+	# warning when initializing a union member.
+
+	AC_CACHE_CHECK(for cast to union support,
+	    tcl_cv_cast_to_union,
+	    AC_TRY_COMPILE([],
+	    [
+		  union foo { int i; double d; };
+		  union foo f = (union foo) (int) 0;
+	    ],
+	    tcl_cv_cast_to_union=yes,
+	    tcl_cv_cast_to_union=no)
+	)
+	if test "$tcl_cv_cast_to_union" = "yes"; then
+	    AC_DEFINE(HAVE_CAST_TO_UNION, 1,
+		    [Defined when compiler supports casting to union type.])
+	fi
 
     AC_SUBST(DL_LIBS)
 
