@@ -408,7 +408,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     # which requires x86|amd64|ia64.
     MACHINE="X86"
 
-    AC_CACHE_CHECK(for cross-compile version of gcc,
+    if test "$GCC" = "yes"; then
+
+      AC_CACHE_CHECK(for cross-compile version of gcc,
 	ac_cv_cross,
 	AC_TRY_COMPILE([
 	    #ifdef __WIN32__
@@ -417,9 +419,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	], [],
 	ac_cv_cross=yes,
 	ac_cv_cross=no)
-    )
+      )
 
-    if test "$ac_cv_cross" = "yes"; then
+      if test "$ac_cv_cross" = "yes"; then
 	case "$do64bit" in
 	    amd64|x64|yes)
 		CC="x86_64-w64-mingw32-gcc"
@@ -436,6 +438,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		RC="i686-w64-mingw32-windres"
 	    ;;
 	esac
+      fi
     fi
 
     # Check for a bug in gcc's windres that causes the
