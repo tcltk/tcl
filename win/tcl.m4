@@ -408,6 +408,36 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     # which requires x86|amd64|ia64.
     MACHINE="X86"
 
+    AC_CACHE_CHECK(for Cygwin version of gcc,
+	ac_cv_cygwin,
+	AC_TRY_COMPILE([
+	    #ifdef __CYGWIN__
+		#error cygwin
+	    #endif
+	], [],
+	ac_cv_cygwin=no,
+	ac_cv_cygwin=yes)
+    )
+
+    if test "$ac_cv_cygwin" = "yes"; then
+	case "$do64bit" in
+	    amd64|x64|yes)
+		CC="x86_64-w64-mingw32-gcc"
+		LD="x86_64-w64-mingw32-ld"
+		AR="x86_64-w64-mingw32-ar"
+		RANLIB="x86_64-w64-mingw32-ranlib"
+		RC="x86_64-w64-mingw32-windres"
+	    ;;
+	    *)
+		CC="i686-w64-mingw32-gcc"
+		LD="i686-w64-mingw32-ld"
+		AR="i686-w64-mingw32-ar"
+		RANLIB="i686-w64-mingw32-ranlib"
+		RC="i686-w64-mingw32-windres"
+	    ;;
+	esac
+    fi
+
     # Check for a bug in gcc's windres that causes the
     # compile to fail when a Windows native path is
     # passed into windres. The mingw toolchain requires
@@ -441,36 +471,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     # set various compiler flags depending on whether we are using gcc or cl
 
-    AC_CACHE_CHECK(for Cygwin version of gcc,
-	ac_cv_cygwin,
-	AC_TRY_COMPILE([
-	    #ifdef __CYGWIN__
-		#error cygwin
-	    #endif
-	], [],
-	ac_cv_cygwin=no,
-	ac_cv_cygwin=yes)
-    )
-
-    if test "$ac_cv_cygwin" = "yes"; then
-	case "$do64bit" in
-	    amd64|x64|yes)
-		CC="x86_64-w64-mingw32-gcc"
-		LD="x86_64-w64-mingw32-ld"
-		AR="x86_64-w64-mingw32-ar"
-		RANLIB="x86_64-w64-mingw32-ranlib"
-		RC="x86_64-w64-mingw32-windres"
-	    ;;
-	    *)
-		CC="i686-w64-mingw32-gcc"
-		LD="i686-w64-mingw32-ld"
-		AR="i686-w64-mingw32-ar"
-		RANLIB="i686-w64-mingw32-ranlib"
-		RC="i686-w64-mingw32-windres"
-	    ;;
-	esac
-    fi
-
     if test "${GCC}" = "yes" ; then
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
@@ -482,11 +482,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ac_cv_win32=no,
 	    ac_cv_win32=yes)
 	)
-	if test "ac_cv_win32" != "yes"; then
+	if test "$ac_cv_win32" != "yes"; then
 	    AC_MSG_ERROR([${CC} cannot produce win32 executables.])
 	fi
     fi
-
 
     AC_MSG_CHECKING([compiler flags])
     if test "${GCC}" = "yes" ; then
@@ -816,9 +815,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	AC_CACHE_CHECK(for SEH support in compiler,
 	    tcl_cv_seh,
 	AC_TRY_RUN([
-#	    define WIN32_LEAN_AND_MEAN
-#	    include <windows.h>
-#	    undef WIN32_LEAN_AND_MEAN
+	    #define WIN32_LEAN_AND_MEAN
+	    #include <windows.h>
+	    #undef WIN32_LEAN_AND_MEAN
 
 	    int main(int argc, char** argv) {
 		int a, b = 0;
@@ -839,7 +838,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AC_DEFINE(HAVE_NO_SEH, 1,
 		    [Defined when mingw does not support SEH])
 	fi
-	
+
 	#
 	# Check to see if the excpt.h include file provided contains the
 	# definition for EXCEPTION_DISPOSITION; if not, which is the case
@@ -870,10 +869,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	AC_CACHE_CHECK(for winnt.h that ignores VOID define,
 	    tcl_cv_winnt_ignore_void,
 	    AC_TRY_COMPILE([
-#		define VOID void
-#		define WIN32_LEAN_AND_MEAN
-#		include <windows.h>
-#		undef WIN32_LEAN_AND_MEAN
+		#define VOID void
+		#define WIN32_LEAN_AND_MEAN
+		#include <windows.h>
+		#undef WIN32_LEAN_AND_MEAN
 	    ], [
 		CHAR c;
 		SHORT s;
@@ -886,7 +885,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AC_DEFINE(HAVE_WINNT_IGNORE_VOID, 1,
 		    [Defined when cygwin/mingw ignores VOID define in winnt.h])
 	fi
-	
+
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler
 	# warning when initializing a union member.
