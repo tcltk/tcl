@@ -55,6 +55,13 @@ Tcl_NotifierProcs tclOriginalNotifier = {
     NULL
 };
 
+#ifdef _WIN64
+/* See bug 510001: TclSockMinimumBuffers needs plat imp */
+#   undef TclSockMinimumBuffers
+#   define TclSockMinimumBuffers ((int (*)(int, int)) \
+	    TclSockMinimumBuffersWin64)
+#endif
+
 #ifdef __CYGWIN__
 
 #define TclWinGetPlatformId winGetPlatformId
