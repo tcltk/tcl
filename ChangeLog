@@ -1,8 +1,8 @@
 2012-03-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCmdMZ.c (StringIsCmd): Faster mem-leak free
-	implementation of [string is entier]
- 
+	implementation of [string is entier].
+
 2012-03-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	IMPLEMENTATION OF TIP#395.
@@ -17,7 +17,7 @@
 	* generic/tclCmdAH.c: on windows (but now for cygwin as well).
 	* generic/tclOODefineCmds.c: minor gcc warning
 	* win/tclWinPort.h:   Use lower numbers, preventing integer overflow.
-	  (and remove the workaround for mingw-w64 bug 3407992. It's long fixed)
+	Remove the workaround for mingw-w64 [bug 3407992]. It's long fixed.
 
 2012-03-27  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -182,7 +182,7 @@
 
 2012-02-23  Donal K. Fellows  <dkf@users.sf.net>
 
-	* tests/reg.test (14.21-23): Add tests relating to bug 1115587. Actual
+	* tests/reg.test (14.21-23): Add tests relating to Bug 1115587. Actual
 	bug is characterised by test marked with 'knownBug'.
 
 2012-02-17  Jan Nijtmans  <nijtmans@users.sf.net>
@@ -391,8 +391,8 @@
 
 2011-11-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h:   [Bug 2935503]: Windows: file mtime
-	* win/tclWinFile.c:  sets wrong time (VS2005+ only)
+	* win/tclWinPort.h: [Bug 2935503]: Windows: [file mtime] sets wrong
+	* win/tclWinFile.c: time (VS2005+ only).
 	* generic/tclTest.c:
 
 2011-11-20  Joe Mistachkin  <joe@mistachkin.com>
