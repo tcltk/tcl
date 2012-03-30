@@ -72,7 +72,7 @@ EXTERN int		TclpCreatePipe(TclFile *readPipe, TclFile *writePipe);
 #ifndef TclWinGetTclInstance_TCL_DECLARED
 #define TclWinGetTclInstance_TCL_DECLARED
 /* 4 */
-EXTERN int		TclWinGetTclInstance(void);
+EXTERN VOID *		TclWinGetTclInstance(void);
 #endif
 /* Slot 5 is reserved */
 #ifndef TclWinNToHS_TCL_DECLARED
@@ -83,7 +83,7 @@ EXTERN unsigned short	TclWinNToHS(unsigned short ns);
 #ifndef TclWinSetSockOpt_TCL_DECLARED
 #define TclWinSetSockOpt_TCL_DECLARED
 /* 7 */
-EXTERN int		TclWinSetSockOpt(int s, int level, int optname,
+EXTERN int		TclWinSetSockOpt(VOID *s, int level, int optname,
 				CONST char *optval, int optlen);
 #endif
 #ifndef TclUnixWaitForFile_TCL_DECLARED
@@ -149,7 +149,7 @@ EXTERN void		TclMacOSXNotifierAddRunLoopMode(
 #ifndef TclWinAddProcess_TCL_DECLARED
 #define TclWinAddProcess_TCL_DECLARED
 /* 20 */
-EXTERN void		TclWinAddProcess(VOID *hProcess, unsigned long id);
+EXTERN void		TclWinAddProcess(VOID *hProcess, unsigned int id);
 #endif
 /* Slot 21 is reserved */
 #ifndef TclpCreateTempFile_TCL_DECLARED
@@ -221,7 +221,7 @@ EXTERN struct servent *	 TclWinGetServByName(CONST char *nm,
 #define TclWinGetSockOpt_TCL_DECLARED
 /* 3 */
 EXTERN int		TclWinGetSockOpt(SOCKET s, int level, int optname,
-				char FAR *optval, int FAR *optlen);
+				char *optval, int *optlen);
 #endif
 #ifndef TclWinGetTclInstance_TCL_DECLARED
 #define TclWinGetTclInstance_TCL_DECLARED
@@ -238,7 +238,7 @@ EXTERN u_short		TclWinNToHS(u_short ns);
 #define TclWinSetSockOpt_TCL_DECLARED
 /* 7 */
 EXTERN int		TclWinSetSockOpt(SOCKET s, int level, int optname,
-				CONST char FAR *optval, int optlen);
+				CONST char *optval, int optlen);
 #endif
 #ifndef TclpGetPid_TCL_DECLARED
 #define TclpGetPid_TCL_DECLARED
@@ -363,7 +363,7 @@ EXTERN int		TclpCreatePipe(TclFile *readPipe, TclFile *writePipe);
 #ifndef TclWinGetTclInstance_TCL_DECLARED
 #define TclWinGetTclInstance_TCL_DECLARED
 /* 4 */
-EXTERN int		TclWinGetTclInstance(void);
+EXTERN VOID *		TclWinGetTclInstance(void);
 #endif
 /* Slot 5 is reserved */
 #ifndef TclWinNToHS_TCL_DECLARED
@@ -374,7 +374,7 @@ EXTERN unsigned short	TclWinNToHS(unsigned short ns);
 #ifndef TclWinSetSockOpt_TCL_DECLARED
 #define TclWinSetSockOpt_TCL_DECLARED
 /* 7 */
-EXTERN int		TclWinSetSockOpt(int s, int level, int optname,
+EXTERN int		TclWinSetSockOpt(VOID *s, int level, int optname,
 				CONST char *optval, int optlen);
 #endif
 #ifndef TclUnixWaitForFile_TCL_DECLARED
@@ -452,7 +452,7 @@ EXTERN void		TclMacOSXNotifierAddRunLoopMode(
 #ifndef TclWinAddProcess_TCL_DECLARED
 #define TclWinAddProcess_TCL_DECLARED
 /* 20 */
-EXTERN void		TclWinAddProcess(VOID *hProcess, unsigned long id);
+EXTERN void		TclWinAddProcess(VOID *hProcess, unsigned int id);
 #endif
 /* Slot 21 is reserved */
 #ifndef TclpCreateTempFile_TCL_DECLARED
@@ -513,10 +513,10 @@ typedef struct TclIntPlatStubs {
     void (*tclWinConvertWSAError) (unsigned int errCode); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
-    int (*tclWinGetTclInstance) (void); /* 4 */
+    VOID * (*tclWinGetTclInstance) (void); /* 4 */
     VOID *reserved5;
     unsigned short (*tclWinNToHS) (unsigned short ns); /* 6 */
-    int (*tclWinSetSockOpt) (int s, int level, int optname, CONST char *optval, int optlen); /* 7 */
+    int (*tclWinSetSockOpt) (VOID *s, int level, int optname, CONST char *optval, int optlen); /* 7 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
     int (*tclWinGetPlatformId) (void); /* 9 */
     Tcl_DirEntry * (*tclpReaddir) (DIR *dir); /* 10 */
@@ -529,7 +529,7 @@ typedef struct TclIntPlatStubs {
     VOID *reserved17;
     int (*tclMacOSXMatchType) (Tcl_Interp *interp, CONST char *pathName, CONST char *fileName, Tcl_StatBuf *statBufPtr, Tcl_GlobTypeData *types); /* 18 */
     void (*tclMacOSXNotifierAddRunLoopMode) (CONST VOID *runLoopMode); /* 19 */
-    void (*tclWinAddProcess) (VOID *hProcess, unsigned long id); /* 20 */
+    void (*tclWinAddProcess) (VOID *hProcess, unsigned int id); /* 20 */
     VOID *reserved21;
     TclFile (*tclpCreateTempFile) (CONST char *contents); /* 22 */
     char * (*tclpGetTZName) (int isdst); /* 23 */
@@ -546,11 +546,11 @@ typedef struct TclIntPlatStubs {
     void (*tclWinConvertError) (DWORD errCode); /* 0 */
     void (*tclWinConvertWSAError) (DWORD errCode); /* 1 */
     struct servent * (*tclWinGetServByName) (CONST char *nm, CONST char *proto); /* 2 */
-    int (*tclWinGetSockOpt) (SOCKET s, int level, int optname, char FAR *optval, int FAR *optlen); /* 3 */
+    int (*tclWinGetSockOpt) (SOCKET s, int level, int optname, char *optval, int *optlen); /* 3 */
     HINSTANCE (*tclWinGetTclInstance) (void); /* 4 */
     VOID *reserved5;
     u_short (*tclWinNToHS) (u_short ns); /* 6 */
-    int (*tclWinSetSockOpt) (SOCKET s, int level, int optname, CONST char FAR *optval, int optlen); /* 7 */
+    int (*tclWinSetSockOpt) (SOCKET s, int level, int optname, CONST char *optval, int optlen); /* 7 */
     unsigned long (*tclpGetPid) (Tcl_Pid pid); /* 8 */
     int (*tclWinGetPlatformId) (void); /* 9 */
     VOID *reserved10;
@@ -579,10 +579,10 @@ typedef struct TclIntPlatStubs {
     void (*tclWinConvertWSAError) (unsigned int errCode); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
-    int (*tclWinGetTclInstance) (void); /* 4 */
+    VOID * (*tclWinGetTclInstance) (void); /* 4 */
     VOID *reserved5;
     unsigned short (*tclWinNToHS) (unsigned short ns); /* 6 */
-    int (*tclWinSetSockOpt) (int s, int level, int optname, CONST char *optval, int optlen); /* 7 */
+    int (*tclWinSetSockOpt) (VOID *s, int level, int optname, CONST char *optval, int optlen); /* 7 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
     int (*tclWinGetPlatformId) (void); /* 9 */
     Tcl_DirEntry * (*tclpReaddir) (DIR *dir); /* 10 */
@@ -595,7 +595,7 @@ typedef struct TclIntPlatStubs {
     int (*tclMacOSXCopyFileAttributes) (CONST char *src, CONST char *dst, CONST Tcl_StatBuf *statBufPtr); /* 17 */
     int (*tclMacOSXMatchType) (Tcl_Interp *interp, CONST char *pathName, CONST char *fileName, Tcl_StatBuf *statBufPtr, Tcl_GlobTypeData *types); /* 18 */
     void (*tclMacOSXNotifierAddRunLoopMode) (CONST VOID *runLoopMode); /* 19 */
-    void (*tclWinAddProcess) (VOID *hProcess, unsigned long id); /* 20 */
+    void (*tclWinAddProcess) (VOID *hProcess, unsigned int id); /* 20 */
     VOID *reserved21;
     TclFile (*tclpCreateTempFile) (CONST char *contents); /* 22 */
     char * (*tclpGetTZName) (int isdst); /* 23 */

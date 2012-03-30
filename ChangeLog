@@ -1,5 +1,12 @@
 2012-03-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* generic/tclInt.decls:      [Bug 3508771] load tclreg.dll in cygwin tclsh
+	* generic/tclIntPlatDecls.h: Implement TclWinGetTclInstance, TclpGetTZName,
+	* generic/tclStubInit.c:     and various more win32-specific internal functions for
+	Cygwin, so win32 extensions using those can be loaded in the cygwin version of tclsh.
+
+2012-03-30  Jan Nijtmans  <nijtmans@users.sf.net>
+
 	* unix/tcl.m4:               [Bug 3511806] Compiler checks too early
 	* unix/configure.in:         This change allows to build the cygwin
 	* unix/tclUnixPort.h:        and mingw32 ports of Tcl/Tk to build
