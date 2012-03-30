@@ -63,20 +63,30 @@ MODULE_SCOPE TclTomMathStubs tclTomMathStubs;
 
 #ifdef __CYGWIN__
 
+/* Trick, so we don't have to include <windows.h> here, which
+ * - b.t.w. - lacks this function anyway */
+#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
+int __stdcall GetModuleHandleExW(unsigned int, const char *, void *);
+
 #define TclWinGetPlatformId winGetPlatformId
 #define Tcl_WinUtfToTChar winUtfToTChar
 #define Tcl_WinTCharToUtf winTCharToUtf
 #define TclWinGetTclInstance winGetTclInstance
 #define TclWinNToHS winNToHS
 #define TclWinSetSockOpt winSetSockOpt
-#define TclWinAddProcess winAddProcess
 #define TclpGetTZName pGetTZName
 #define TclWinNoBackslash winNoBackslash
-#define TclWinSetInterfaces (void (*) _ANSI_ARGS_((int))) doNothing
+#define TclWinSetInterfaces (void (*) (int)) doNothing
+#define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #define TclWinFlushDirtyChannels doNothing
 #define TclWinResetInterfaces doNothing
 
 static Tcl_Encoding winTCharEncoding;
+
+typedef struct ThreadSpecificData {
+    char tzName[64];		/* Time zone name */
+} ThreadSpecificData;
+static Tcl_ThreadDataKey dataKey;
 
 static int
 TclWinGetPlatformId()
@@ -86,38 +96,35 @@ TclWinGetPlatformId()
     return 2; /* VER_PLATFORM_WIN32_NT */;
 }
 
-static int TclWinGetTclInstance()
+static void *TclWinGetTclInstance()
 {
-	Tcl_Panic("TclWinGetTclInstance not yet implemented for CYGWIN");
-    return 0;
+    void *hInstance = NULL;
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+	    (const char *)&winTCharEncoding, &hInstance);
+    return hInstance;
 }
 
 static unsigned short
 TclWinNToHS(unsigned short ns)
 {
-	Tcl_Panic("TclWinNToHS not yet implemented for CYGWIN");
-    return (unsigned short) -1;
-}
-static int
-TclWinSetSockOpt(int s, int level, int optname,
-	    const char *optval, int optlen)
-{
-	Tcl_Panic("TclWinSetSockOpt not yet implemented for CYGWIN");
-    return -1;
+    return ntohs(ns);
 }
 
-static void
-TclWinAddProcess(void *hProcess, unsigned long id)
+static int
+TclWinSetSockOpt(void *s, int level, int optname,
+	    const char *optval, int optlen)
 {
-	Tcl_Panic("TclWinAddProcess not yet implemented for CYGWIN");
+    return setsockopt((int) s, level, optname, optval, optlen);
 }
 
 static char *
 TclpGetTZName(int isdst)
 {
-    /* TODO: implementation */
-	Tcl_Panic("TclpGetTZName not yet implemented for CYGWIN");
-    return 0;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    const char *zone = getenv("TZ");
+    Tcl_ExternalToUtf(NULL, NULL, zone, strlen(zone), 0, NULL,
+	    tsdPtr->tzName, sizeof(tsdPtr->tzName), NULL, NULL, NULL);
+    return tsdPtr->tzName;
 }
 
 static char *
@@ -181,9 +188,9 @@ Tcl_WinTCharToUtf(
 #   define TclWinConvertError (void (*) _ANSI_ARGS_((unsigned int))) TclGetAndDetachPids
 #   define TclWinConvertWSAError (void (*) _ANSI_ARGS_((unsigned int))) TclpCloseFile
 #   define TclWinGetPlatformId (int (*)()) TclpCreateTempFile
-#   define TclWinGetTclInstance (int (*)()) TclpCreateProcess
+#   define TclWinGetTclInstance (void *(*)()) TclpCreateProcess
 #   define TclWinNToHS (unsigned short (*) _ANSI_ARGS_((unsigned short ns))) TclpMakeFile
-#   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((int, int, int, const char *, int))) TclpOpenFile
+#   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, const char *, int))) TclpOpenFile
 #   define TclWinAddProcess 0
 #   define TclpGetTZName 0
 #   define TclWinNoBackslash 0

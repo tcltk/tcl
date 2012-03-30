@@ -13,14 +13,6 @@
 #include "tclInt.h"
 #include "tclPort.h"
 
-#ifndef WSAEWOULDBLOCK
-#   define WSAEWOULDBLOCK 10035L
-#endif
-
-#ifndef __WIN32__
-#   define DWORD unsigned int
-#endif
-
 /*
  * The following table contains the mapping from Win32 errors to errno errors.
  */
@@ -341,6 +333,11 @@ static CONST int wsaErrorTable[] = {
     EREMOTE		/* WSAEREMOTE */
 };
 
+#ifdef __CYGWIN__
+#   include <windows.h>
+#   define DWORD unsigned int
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -362,7 +359,12 @@ TclWinConvertError(
     DWORD errCode)		/* Win32 error code. */
 {
     if (errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
-	Tcl_SetErrno(EINVAL);
+	errCode -= WSAEWOULDBLOCK;
+	if (errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
+	    Tcl_SetErrno(errorTable[1]);
+	} else {
+	    Tcl_SetErrno(wsaErrorTable[errCode]);
+	}
     } else {
 	Tcl_SetErrno(errorTable[errCode]);
     }
@@ -388,11 +390,15 @@ void
 TclWinConvertWSAError(
     DWORD errCode)		/* Win32 error code. */
 {
-    errCode -= WSAEWOULDBLOCK;
-    if (errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
-	Tcl_SetErrno(EINVAL);
+    if (errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
+	errCode -= WSAEWOULDBLOCK;
+	if (errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
+	    Tcl_SetErrno(errorTable[1]);
+	} else {
+	    Tcl_SetErrno(wsaErrorTable[errCode]);
+	}
     } else {
-	Tcl_SetErrno(wsaErrorTable[errCode]);
+	Tcl_SetErrno(errorTable[errCode]);
     }
 }
 
