@@ -2480,7 +2480,7 @@ InitializeHostName(
 
 int
 TclWinGetSockOpt(
-    int s,
+    SOCKET s,
     int level,
     int optname,
     char * optval,
@@ -2496,12 +2496,12 @@ TclWinGetSockOpt(
 	return SOCKET_ERROR;
     }
 
-    return getsockopt((SOCKET)s, level, optname, optval, optlen);
+    return getsockopt(s, level, optname, optval, optlen);
 }
 
 int
 TclWinSetSockOpt(
-    int s,
+    SOCKET s,
     int level,
     int optname,
     const char * optval,
@@ -2517,7 +2517,7 @@ TclWinSetSockOpt(
 	return SOCKET_ERROR;
     }
 
-    return setsockopt((SOCKET)s, level, optname, optval, optlen);
+    return setsockopt(s, level, optname, optval, optlen);
 }
 
 u_short
