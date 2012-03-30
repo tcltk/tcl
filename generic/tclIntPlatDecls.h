@@ -50,12 +50,12 @@ EXTERN Tcl_Channel	TclpCreateCommandChannel _ANSI_ARGS_((
 EXTERN int		TclpCreatePipe _ANSI_ARGS_((TclFile *readPipe,
 				TclFile *writePipe));
 /* 4 */
-EXTERN int		TclWinGetTclInstance _ANSI_ARGS_((void));
+EXTERN void *		TclWinGetTclInstance _ANSI_ARGS_((void));
 /* Slot 5 is reserved */
 /* 6 */
 EXTERN unsigned short	TclWinNToHS _ANSI_ARGS_((unsigned short ns));
 /* 7 */
-EXTERN int		TclWinSetSockOpt _ANSI_ARGS_((int s, int level,
+EXTERN int		TclWinSetSockOpt _ANSI_ARGS_((void *s, int level,
 				int optname, CONST char *optval, int optlen));
 /* 8 */
 EXTERN int		TclUnixWaitForFile _ANSI_ARGS_((int fd, int mask,
@@ -88,7 +88,7 @@ EXTERN void		TclMacOSXNotifierAddRunLoopMode _ANSI_ARGS_((
 				CONST void *runLoopMode));
 /* 20 */
 EXTERN void		TclWinAddProcess _ANSI_ARGS_((void *hProcess,
-				unsigned long id));
+				unsigned int id));
 /* Slot 21 is reserved */
 /* 22 */
 EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((CONST char *contents));
@@ -122,8 +122,7 @@ EXTERN struct servent *	 TclWinGetServByName _ANSI_ARGS_((CONST char *nm,
 				CONST char *proto));
 /* 3 */
 EXTERN int		TclWinGetSockOpt _ANSI_ARGS_((SOCKET s, int level,
-				int optname, char FAR *optval,
-				int FAR *optlen));
+				int optname, char *optval, int *optlen));
 /* 4 */
 EXTERN HINSTANCE	TclWinGetTclInstance _ANSI_ARGS_((void));
 /* Slot 5 is reserved */
@@ -131,8 +130,7 @@ EXTERN HINSTANCE	TclWinGetTclInstance _ANSI_ARGS_((void));
 EXTERN u_short		TclWinNToHS _ANSI_ARGS_((u_short ns));
 /* 7 */
 EXTERN int		TclWinSetSockOpt _ANSI_ARGS_((SOCKET s, int level,
-				int optname, CONST char FAR *optval,
-				int optlen));
+				int optname, CONST char *optval, int optlen));
 /* 8 */
 EXTERN unsigned long	TclpGetPid _ANSI_ARGS_((Tcl_Pid pid));
 /* 9 */
@@ -266,10 +264,10 @@ typedef struct TclIntPlatStubs {
     void (*tclWinConvertWSAError) _ANSI_ARGS_((unsigned int errCode)); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) _ANSI_ARGS_((TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)); /* 2 */
     int (*tclpCreatePipe) _ANSI_ARGS_((TclFile *readPipe, TclFile *writePipe)); /* 3 */
-    int (*tclWinGetTclInstance) _ANSI_ARGS_((void)); /* 4 */
+    void * (*tclWinGetTclInstance) _ANSI_ARGS_((void)); /* 4 */
     void *reserved5;
     unsigned short (*tclWinNToHS) _ANSI_ARGS_((unsigned short ns)); /* 6 */
-    int (*tclWinSetSockOpt) _ANSI_ARGS_((int s, int level, int optname, CONST char *optval, int optlen)); /* 7 */
+    int (*tclWinSetSockOpt) _ANSI_ARGS_((void *s, int level, int optname, CONST char *optval, int optlen)); /* 7 */
     int (*tclUnixWaitForFile) _ANSI_ARGS_((int fd, int mask, int timeout)); /* 8 */
     int (*tclWinGetPlatformId) _ANSI_ARGS_((void)); /* 9 */
     Tcl_DirEntry * (*tclpReaddir) _ANSI_ARGS_((DIR *dir)); /* 10 */
@@ -282,7 +280,7 @@ typedef struct TclIntPlatStubs {
     void *reserved17;
     int (*tclMacOSXMatchType) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *pathName, CONST char *fileName, Tcl_StatBuf *statBufPtr, Tcl_GlobTypeData *types)); /* 18 */
     void (*tclMacOSXNotifierAddRunLoopMode) _ANSI_ARGS_((CONST void *runLoopMode)); /* 19 */
-    void (*tclWinAddProcess) _ANSI_ARGS_((void *hProcess, unsigned long id)); /* 20 */
+    void (*tclWinAddProcess) _ANSI_ARGS_((void *hProcess, unsigned int id)); /* 20 */
     void *reserved21;
     TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char *contents)); /* 22 */
     char * (*tclpGetTZName) _ANSI_ARGS_((int isdst)); /* 23 */
@@ -299,11 +297,11 @@ typedef struct TclIntPlatStubs {
     void (*tclWinConvertError) _ANSI_ARGS_((DWORD errCode)); /* 0 */
     void (*tclWinConvertWSAError) _ANSI_ARGS_((DWORD errCode)); /* 1 */
     struct servent * (*tclWinGetServByName) _ANSI_ARGS_((CONST char *nm, CONST char *proto)); /* 2 */
-    int (*tclWinGetSockOpt) _ANSI_ARGS_((SOCKET s, int level, int optname, char FAR *optval, int FAR *optlen)); /* 3 */
+    int (*tclWinGetSockOpt) _ANSI_ARGS_((SOCKET s, int level, int optname, char *optval, int *optlen)); /* 3 */
     HINSTANCE (*tclWinGetTclInstance) _ANSI_ARGS_((void)); /* 4 */
     void *reserved5;
     u_short (*tclWinNToHS) _ANSI_ARGS_((u_short ns)); /* 6 */
-    int (*tclWinSetSockOpt) _ANSI_ARGS_((SOCKET s, int level, int optname, CONST char FAR *optval, int optlen)); /* 7 */
+    int (*tclWinSetSockOpt) _ANSI_ARGS_((SOCKET s, int level, int optname, CONST char *optval, int optlen)); /* 7 */
     unsigned long (*tclpGetPid) _ANSI_ARGS_((Tcl_Pid pid)); /* 8 */
     int (*tclWinGetPlatformId) _ANSI_ARGS_((void)); /* 9 */
     void *reserved10;
