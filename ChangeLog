@@ -1,3 +1,12 @@
+2012-03-30  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4:               [Bug 3511806] Compiler checks too early
+	* unix/configure.in:         This change allows to build the cygwin
+	* unix/tclUnixPort.h:        and mingw32 ports of Tcl/Tk to build
+	* win/tcl.m4:                out-of-the-box using a native or cross-
+	* win/configure.in:          compiler.
+	* win/tclWinPort.h:          (autoconf still to be run!)
+
 2012-03-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:             [Bug 3508771] Wrong Tcl_StatBuf used on MinGW
