@@ -864,7 +864,7 @@ Tcl_ZlibStreamEof(
  */
 
 int
-Tcl_ZlibStreamGetZstreamp(
+Tcl_ZlibStreamChecksum(
     Tcl_ZlibStream zshandle)	/* As obtained from Tcl_ZlibStreamInit */
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
