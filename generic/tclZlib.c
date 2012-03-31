@@ -64,6 +64,9 @@ typedef struct {
     int wbits;			/* The encoded compression mode, so we can
 				 * restart the stream if necessary. */
     Tcl_Command cmd;		/* Token for the associated Tcl command. */
+    Tcl_Obj *compDictObj;	/* Byte-array object containing compression
+				 * dictionary (not dictObj!) to use if
+				 * necessary. */
 } ZlibStreamHandle;
 
 /*
@@ -209,6 +212,7 @@ ConvertError(
 	case Z_MEM_ERROR:	codeStr = "MEM";	break;
 	case Z_BUF_ERROR:	codeStr = "BUF";	break;
 	case Z_VERSION_ERROR:	codeStr = "VERSION";	break;
+	case Z_NEED_DICT:	codeStr = "NEED_DICT";	break;
 	default:
 	    codeStr = "unknown";
 	    codeStr2 = codeStrBuf;
@@ -542,6 +546,7 @@ Tcl_ZlibStreamInit(
     zshPtr->wbits = wbits;
     zshPtr->currentInput = NULL;
     zshPtr->streamEnd = 0;
+    zshPtr->compDictObj = NULL;
     memset(&zshPtr->stream, 0, sizeof(z_stream));
 
     /*
@@ -551,6 +556,14 @@ Tcl_ZlibStreamInit(
     if (mode == TCL_ZLIB_STREAM_DEFLATE) {
 	e = deflateInit2(&zshPtr->stream, level, Z_DEFLATED, wbits,
 		MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+	if (e == Z_OK && zshPtr->compDictObj) {
+	    int dictLen;
+	    unsigned char *dictBytes =
+		    Tcl_GetByteArrayFromObj(zshPtr->compDictObj, &dictLen);
+
+	    e = deflateSetDictionary(&zshPtr->stream, dictBytes,
+		    (unsigned) dictLen);
+	}
     } else {
 	e = inflateInit2(&zshPtr->stream, wbits);
     }
@@ -618,6 +631,9 @@ Tcl_ZlibStreamInit(
 
     return TCL_OK;
  error:
+    if (zshPtr->compDictObj) {
+	Tcl_DecrRefCount(zshPtr->compDictObj);
+    }
     ckfree(zshPtr);
     return TCL_ERROR;
 }
@@ -725,6 +741,9 @@ ZlibStreamCleanup(
     if (zshPtr->currentInput) {
 	Tcl_DecrRefCount(zshPtr->currentInput);
     }
+    if (zshPtr->compDictObj) {
+	Tcl_DecrRefCount(zshPtr->compDictObj);
+    }
 
     ckfree(zshPtr);
 }
@@ -777,6 +796,14 @@ Tcl_ZlibStreamReset(
     if (zshPtr->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	e = deflateInit2(&zshPtr->stream, zshPtr->level, Z_DEFLATED,
 		zshPtr->wbits, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+	if (e == Z_OK && zshPtr->compDictObj) {
+	    int dictLen;
+	    unsigned char *dictBytes =
+		    Tcl_GetByteArrayFromObj(zshPtr->compDictObj, &dictLen);
+
+	    e = deflateSetDictionary(&zshPtr->stream, dictBytes,
+		    (unsigned) dictLen);
+	}
     } else {
 	e = inflateInit2(&zshPtr->stream, zshPtr->wbits);
     }
@@ -1091,7 +1118,22 @@ Tcl_ZlibStreamGet(
 	    }
 	}
 
-	e = inflate(&zshPtr->stream, zshPtr->flush);
+	while (1) {
+	    e = inflate(&zshPtr->stream, zshPtr->flush);
+	    if (e != Z_NEED_DICT || zshPtr->compDictObj == NULL) {
+		break;
+	    } else {
+		int dictLen;
+		unsigned char *dictBytes =
+			Tcl_GetByteArrayFromObj(zshPtr->compDictObj,&dictLen);
+
+		e = inflateSetDictionary(&zshPtr->stream, dictBytes,
+			(unsigned) dictLen);
+		if (e != Z_OK) {
+		    break;
+		}
+	    }
+	}
 	Tcl_ListObjLength(NULL, zshPtr->inData, &listLen);
 
 	while ((zshPtr->stream.avail_out > 0)
@@ -1145,7 +1187,23 @@ Tcl_ZlibStreamGet(
 	     * And call inflate again.
 	     */
 
-	    e = inflate(&zshPtr->stream, zshPtr->flush);
+	    while (1) {
+		e = inflate(&zshPtr->stream, zshPtr->flush);
+		if (e != Z_NEED_DICT || zshPtr->compDictObj == NULL) {
+		    break;
+		} else {
+		    int dictLen;
+		    unsigned char *dictBytes =
+			    Tcl_GetByteArrayFromObj(zshPtr->compDictObj,
+			    &dictLen);
+
+		    e = inflateSetDictionary(&zshPtr->stream, dictBytes,
+			    (unsigned) dictLen);
+		    if (e != Z_OK) {
+			break;
+		    }
+		}
+	    }
 	}
 	if (zshPtr->stream.avail_out > 0) {
 	    Tcl_SetByteArrayLength(data,
@@ -2993,6 +3051,13 @@ Tcl_ZlibAdler32(
     int len)
 {
     return 0;
+}
+
+void *
+Tcl_ZlibStreamGetZstreamp(
+    Tcl_ZlibStream zshandle)
+{
+    return NULL;
 }
 #endif /* HAVE_ZLIB */
 
