@@ -864,12 +864,33 @@ Tcl_ZlibStreamEof(
  */
 
 int
-Tcl_ZlibStreamChecksum(
+Tcl_ZlibStreamGetZstreamp(
     Tcl_ZlibStream zshandle)	/* As obtained from Tcl_ZlibStreamInit */
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
 
     return zshPtr->stream.adler;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ZlibStreamGetZstreamp --
+ *
+ *	Return the z_streamp for the stream (though not typed as such, so as
+ *	to avoid type interface poisoning).  Shouldn't be used to poke around
+ *	excessively.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void *
+Tcl_ZlibStreamGetZstreamp(
+    Tcl_ZlibStream zshandle)
+{
+    ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
+
+    return &zshPtr->stream;
 }
 
 /*
