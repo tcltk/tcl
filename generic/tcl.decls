@@ -2318,6 +2318,10 @@ declare 629 {
     int Tcl_FSUnloadFile(Tcl_Interp *interp, Tcl_LoadHandle handlePtr)
 }
 
+declare 630 {
+    void* Tcl_ZlibStreamGetZstreamp(Tcl_ZlibStream zshandle)
+}
+
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
 ##############################################################################
