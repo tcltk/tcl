@@ -258,6 +258,7 @@ static const CmdInfo builtInCmds[] = {
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	1},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	1},
     {"yield",		NULL,			NULL,			TclNRYieldObjCmd,	1},
+    {"yieldto",		NULL,			NULL,			TclNRYieldToObjCmd,	1},
 
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.
@@ -830,10 +831,6 @@ Tcl_CreateInterp(void)
             TclNRAssembleObjCmd, NULL, NULL);
     cmdPtr->compileProc = &TclCompileAssembleCmd;
 
-    Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldTo", NULL,
-	    TclNRYieldToObjCmd, NULL, NULL);
-    Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldm", NULL,
-	    TclNRYieldObjCmd, INT2PTR(CORO_ACTIVATE_YIELDM), NULL);
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
 	    NRCoroInjectObjCmd, NULL, NULL);
     
@@ -8511,7 +8508,7 @@ TclNRYieldToObjCmd(
     }
 
     if (!corPtr) {
-	Tcl_SetResult(interp, "yieldTo can only be called in a coroutine",
+	Tcl_SetResult(interp, "yieldto can only be called in a coroutine",
 		TCL_STATIC);
 	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", NULL);
 	return TCL_ERROR;
@@ -8529,7 +8526,7 @@ TclNRYieldToObjCmd(
     nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
     if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
 	    || (nsPtr != ns1Ptr)) {
-	Tcl_Panic("yieldTo failed to find the proper namespace");
+	Tcl_Panic("yieldto failed to find the proper namespace");
     }
     Tcl_IncrRefCount(nsObjPtr);
 
@@ -8542,7 +8539,7 @@ TclNRYieldToObjCmd(
 	    NULL);
     iPtr->execEnvPtr = corPtr->eePtr;
 
-    return TclNRYieldObjCmd(clientData, interp, 1, objv);
+    return TclNRYieldObjCmd(INT2PTR(CORO_ACTIVATE_YIELDM), interp, 1, objv);
 }
 
 static int
