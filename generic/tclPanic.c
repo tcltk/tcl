@@ -114,6 +114,8 @@ Tcl_PanicVA(
 #   else
     DebugBreak();
 #   endif
+#endif
+#if defined(_WIN32)
     ExitProcess(1);
 #else
     abort();
