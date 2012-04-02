@@ -328,19 +328,19 @@ InitSockets(void)
 
 	err = WSAStartup((WORD)WSA_VERSION_REQD, &wsaData);
 	if (err != 0) {
-	    TclWinConvertWSAError(err);
+	    TclWinConvertError(err);
 	    goto initFailure;
 	}
 
 	/*
-	 * Note the byte positions are swapped for the comparison, so that
+	 * Note the byte positions ae swapped for the comparison, so that
 	 * 0x0002 (2.0, MAKEWORD(2,0)) doesn't look less than 0x0101 (1.1).
 	 * We want the comparison to be 0x0200 < 0x0101.
 	 */
 
 	if (MAKEWORD(HIBYTE(wsaData.wVersion), LOBYTE(wsaData.wVersion))
 		< MAKEWORD(WSA_VERSION_MINOR, WSA_VERSION_MAJOR)) {
-	    TclWinConvertWSAError(WSAVERNOTSUPPORTED);
+	    TclWinConvertError(WSAVERNOTSUPPORTED);
 	    WSACleanup();
 	    goto initFailure;
 	}
@@ -861,7 +861,7 @@ TcpCloseProc(
 	 */
 
 	if (closesocket(infoPtr->sockets->fd) == SOCKET_ERROR) {
-	    TclWinConvertWSAError((DWORD) WSAGetLastError());
+	    TclWinConvertError((DWORD) WSAGetLastError());
 	    errorCode = Tcl_GetErrno();
 	}
     }
@@ -923,7 +923,7 @@ TcpClose2Proc(
 	    return TCL_ERROR;
 	}
     if (shutdown(infoPtr->sockets->fd,sd) == SOCKET_ERROR) {
-	TclWinConvertWSAError((DWORD) WSAGetLastError());
+	TclWinConvertError((DWORD) WSAGetLastError());
 	errorCode = Tcl_GetErrno();
     }
 
@@ -1041,7 +1041,7 @@ CreateSocket(
 	for (addrPtr = addrlist; addrPtr != NULL; addrPtr = addrPtr->ai_next) {
 	    sock = socket(addrPtr->ai_family, SOCK_STREAM, 0);
 	    if (sock == INVALID_SOCKET) {
-		TclWinConvertWSAError((DWORD) WSAGetLastError());
+		TclWinConvertError((DWORD) WSAGetLastError());
 		continue;
 	    }
 
@@ -1082,7 +1082,7 @@ CreateSocket(
 
 	    if (bind(sock, addrPtr->ai_addr, addrPtr->ai_addrlen)
 		== SOCKET_ERROR) {
-		TclWinConvertWSAError((DWORD) WSAGetLastError());
+		TclWinConvertError((DWORD) WSAGetLastError());
 		closesocket(sock);
 		continue;
 	    }
@@ -1105,7 +1105,7 @@ CreateSocket(
 	     */
 
 	    if (listen(sock, SOMAXCONN) == SOCKET_ERROR) {
-		TclWinConvertWSAError((DWORD) WSAGetLastError());
+		TclWinConvertError((DWORD) WSAGetLastError());
 		closesocket(sock);
 		continue;
 	    }
@@ -1150,7 +1150,7 @@ CreateSocket(
 
 		sock = socket(myaddrPtr->ai_family, SOCK_STREAM, 0);
 		if (sock == INVALID_SOCKET) {
-		    TclWinConvertWSAError((DWORD) WSAGetLastError());
+		    TclWinConvertError((DWORD) WSAGetLastError());
 		    continue;
 		}
 
@@ -1173,7 +1173,7 @@ CreateSocket(
 
 		if (bind(sock, myaddrPtr->ai_addr, myaddrPtr->ai_addrlen)
 		    == SOCKET_ERROR) {
-		    TclWinConvertWSAError((DWORD) WSAGetLastError());
+		    TclWinConvertError((DWORD) WSAGetLastError());
 		    goto looperror;
 		}
 		/*
@@ -1183,7 +1183,7 @@ CreateSocket(
 		if (async) {
 		    if (ioctlsocket(sock, (long) FIONBIO, &flag)
 			== SOCKET_ERROR) {
-			TclWinConvertWSAError((DWORD) WSAGetLastError());
+			TclWinConvertError((DWORD) WSAGetLastError());
 			goto looperror;
 		    }
 		}
@@ -1194,7 +1194,7 @@ CreateSocket(
 
 		if (connect(sock, addrPtr->ai_addr, addrPtr->ai_addrlen)
 		    == SOCKET_ERROR) {
-		    TclWinConvertWSAError((DWORD) WSAGetLastError());
+		    TclWinConvertError((DWORD) WSAGetLastError());
 		    if (Tcl_GetErrno() != EAGAIN) {
 			goto looperror;
 		    }
@@ -1809,7 +1809,7 @@ TcpInputProc(
 	 */
 
 	if ((infoPtr->flags & SOCKET_ASYNC) || (error != WSAEWOULDBLOCK)) {
-	    TclWinConvertWSAError(error);
+	    TclWinConvertError(error);
 	    *errorCodePtr = Tcl_GetErrno();
 	    bytesRead = -1;
 	    break;
@@ -1918,7 +1918,7 @@ TcpOutputProc(
 		break;
 	    }
 	} else {
-	    TclWinConvertWSAError(error);
+	    TclWinConvertError(error);
 	    *errorCodePtr = Tcl_GetErrno();
 	    bytesWritten = -1;
 	    break;
@@ -1998,7 +1998,7 @@ TcpSetOptionProc(
 	rtn = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
 		(const char *) &val, sizeof(BOOL));
 	if (rtn != 0) {
-	    TclWinConvertWSAError(WSAGetLastError());
+	    TclWinConvertError(WSAGetLastError());
 	    if (interp) {
 		Tcl_AppendResult(interp, "couldn't set socket option: ",
 			Tcl_PosixError(interp), NULL);
@@ -2019,7 +2019,7 @@ TcpSetOptionProc(
 	rtn = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
 		(const char *) &val, sizeof(BOOL));
 	if (rtn != 0) {
-	    TclWinConvertWSAError(WSAGetLastError());
+	    TclWinConvertError(WSAGetLastError());
 	    if (interp) {
 		Tcl_AppendResult(interp, "couldn't set socket option: ",
 			Tcl_PosixError(interp), NULL);
@@ -2103,7 +2103,7 @@ TcpGetOptionProc(
 	    err = WSAGetLastError();
 	}
 	if (err) {
-	    TclWinConvertWSAError(err);
+	    TclWinConvertError(err);
 	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
 	}
 	return TCL_OK;
@@ -2144,7 +2144,7 @@ TcpGetOptionProc(
 	     */
 
 	    if (len) {
-		TclWinConvertWSAError((DWORD) WSAGetLastError());
+		TclWinConvertError((DWORD) WSAGetLastError());
 		if (interp) {
 		    Tcl_AppendResult(interp, "can't get peername: ",
 			    Tcl_PosixError(interp), NULL);
@@ -2210,7 +2210,7 @@ TcpGetOptionProc(
 	    }
 	} else {
 	    if (interp) {
-		TclWinConvertWSAError((DWORD) WSAGetLastError());
+		TclWinConvertError((DWORD) WSAGetLastError());
 		Tcl_AppendResult(interp, "can't get sockname: ",
 			Tcl_PosixError(interp), NULL);
 	    }
@@ -2518,7 +2518,7 @@ SocketProc(
 		     */
 
 		    if (error != ERROR_SUCCESS) {
-			TclWinConvertWSAError((DWORD) error);
+			TclWinConvertError((DWORD) error);
 			infoPtr->lastError = Tcl_GetErrno();
 		    }
 		}
@@ -2526,7 +2526,7 @@ SocketProc(
 		if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
 		    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
 		    if (error != ERROR_SUCCESS) {
-			TclWinConvertWSAError((DWORD) error);
+			TclWinConvertError((DWORD) error);
 			infoPtr->lastError = Tcl_GetErrno();
 		    }
 		    infoPtr->readyEvents |= FD_WRITE;
