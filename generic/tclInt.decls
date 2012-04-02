@@ -1025,7 +1025,7 @@ declare 2 win {
 }
 declare 3 win {
     int TclWinGetSockOpt(SOCKET s, int level, int optname,
-	    char FAR *optval, int FAR *optlen)
+	    char *optval, int *optlen)
 }
 declare 4 win {
     HINSTANCE TclWinGetTclInstance(void)
@@ -1039,7 +1039,7 @@ declare 6 win {
 }
 declare 7 win {
     int TclWinSetSockOpt(SOCKET s, int level, int optname,
-	    const char FAR *optval, int optlen)
+	    const char *optval, int optlen)
 }
 declare 8 win {
     unsigned long TclpGetPid(Tcl_Pid pid)
@@ -1149,7 +1149,7 @@ declare 3 unix {
 }
 # On non-cygwin, this is actually a reference to TclpCreateProcess
 declare 4 unix {
-    int TclWinGetTclInstance(void)
+    void *TclWinGetTclInstance(void)
 }
 # Signature changed in 8.1:
 #  declare 5 unix {
@@ -1162,7 +1162,7 @@ declare 6 unix {
 }
 # On non-cygwin, this is actually a reference to TclpOpenFile
 declare 7 unix {
-    int TclWinSetSockOpt(int s, int level, int optname,
+    int TclWinSetSockOpt(void *s, int level, int optname,
 	    const char *optval, int optlen)
 }
 declare 8 unix {
@@ -1229,7 +1229,7 @@ declare 19 {unix macosx} {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
 declare 20 unix {
-    void TclWinAddProcess(void *hProcess, unsigned long id)
+    void TclWinAddProcess(void *hProcess, unsigned int id)
 }
 declare 22 unix {
     TclFile TclpCreateTempFile(const char *contents)
