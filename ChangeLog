@@ -3,6 +3,7 @@
 	* generic/tclStubInit.c      Remove the TclpGetTZName implementation for
 	* generic/tclIntDecls.h:     Cygwin (from previous commit) , re-generated
 	* generic/tclIntPlatDecls.h:
+	* generic/tcl.decls:         cleanup unnecessary "generic" argument
 
 2012-03-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
