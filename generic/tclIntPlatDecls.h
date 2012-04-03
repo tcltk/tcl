@@ -157,11 +157,7 @@ EXTERN void		TclWinAddProcess(VOID *hProcess, unsigned int id);
 /* 22 */
 EXTERN TclFile		TclpCreateTempFile(CONST char *contents);
 #endif
-#ifndef TclpGetTZName_TCL_DECLARED
-#define TclpGetTZName_TCL_DECLARED
-/* 23 */
-EXTERN char *		TclpGetTZName(int isdst);
-#endif
+/* Slot 23 is reserved */
 #ifndef TclWinNoBackslash_TCL_DECLARED
 #define TclWinNoBackslash_TCL_DECLARED
 /* 24 */
@@ -460,11 +456,7 @@ EXTERN void		TclWinAddProcess(VOID *hProcess, unsigned int id);
 /* 22 */
 EXTERN TclFile		TclpCreateTempFile(CONST char *contents);
 #endif
-#ifndef TclpGetTZName_TCL_DECLARED
-#define TclpGetTZName_TCL_DECLARED
-/* 23 */
-EXTERN char *		TclpGetTZName(int isdst);
-#endif
+/* Slot 23 is reserved */
 #ifndef TclWinNoBackslash_TCL_DECLARED
 #define TclWinNoBackslash_TCL_DECLARED
 /* 24 */
@@ -532,7 +524,7 @@ typedef struct TclIntPlatStubs {
     void (*tclWinAddProcess) (VOID *hProcess, unsigned int id); /* 20 */
     VOID *reserved21;
     TclFile (*tclpCreateTempFile) (CONST char *contents); /* 22 */
-    char * (*tclpGetTZName) (int isdst); /* 23 */
+    VOID *reserved23;
     char * (*tclWinNoBackslash) (char *path); /* 24 */
     VOID *reserved25;
     void (*tclWinSetInterfaces) (int wide); /* 26 */
@@ -598,7 +590,7 @@ typedef struct TclIntPlatStubs {
     void (*tclWinAddProcess) (VOID *hProcess, unsigned int id); /* 20 */
     VOID *reserved21;
     TclFile (*tclpCreateTempFile) (CONST char *contents); /* 22 */
-    char * (*tclpGetTZName) (int isdst); /* 23 */
+    VOID *reserved23;
     char * (*tclWinNoBackslash) (char *path); /* 24 */
     VOID *reserved25;
     void (*tclWinSetInterfaces) (int wide); /* 26 */
@@ -705,10 +697,7 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclpCreateTempFile \
 	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 22 */
 #endif
-#ifndef TclpGetTZName
-#define TclpGetTZName \
-	(tclIntPlatStubsPtr->tclpGetTZName) /* 23 */
-#endif
+/* Slot 23 is reserved */
 #ifndef TclWinNoBackslash
 #define TclWinNoBackslash \
 	(tclIntPlatStubsPtr->tclWinNoBackslash) /* 24 */
@@ -930,10 +919,7 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclpCreateTempFile \
 	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 22 */
 #endif
-#ifndef TclpGetTZName
-#define TclpGetTZName \
-	(tclIntPlatStubsPtr->tclpGetTZName) /* 23 */
-#endif
+/* Slot 23 is reserved */
 #ifndef TclWinNoBackslash
 #define TclWinNoBackslash \
 	(tclIntPlatStubsPtr->tclWinNoBackslash) /* 24 */
