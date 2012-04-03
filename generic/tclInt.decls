@@ -319,9 +319,10 @@ declare 76 {
 declare 77 {
     void TclpGetTime(Tcl_Time *time)
 }
-declare 78 {
-    int TclpGetTimeZone(unsigned long time)
-}
+# Removed in 8.6:
+#declare 78 {
+#    int TclpGetTimeZone(unsigned long time)
+#}
 # Replaced by Tcl_FSListVolumes in 8.4:
 #declare 79 {
 #    int TclpListVolumes(Tcl_Interp *interp)
@@ -1098,9 +1099,10 @@ declare 20 win {
 declare 22 win {
     TclFile TclpCreateTempFile(const char *contents)
 }
-declare 23 win {
-    char *TclpGetTZName(int isdst)
-}
+# Removed in 8.6:
+#declare 23 win {
+#    char *TclpGetTZName(int isdst)
+#}
 declare 24 win {
     char *TclWinNoBackslash(char *path)
 }
@@ -1234,9 +1236,10 @@ declare 20 unix {
 declare 22 unix {
     TclFile TclpCreateTempFile(const char *contents)
 }
-declare 23 unix {
-    char *TclpGetTZName(int isdst)
-}
+# Removed in 8.6:
+#declare 23 unix {
+#    char *TclpGetTZName(int isdst)
+#}
 declare 24 unix {
     char *TclWinNoBackslash(char *path)
 }
