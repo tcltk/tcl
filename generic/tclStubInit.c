@@ -74,7 +74,6 @@ int __stdcall GetModuleHandleExW(unsigned int, const char *, void *);
 #define TclWinGetTclInstance winGetTclInstance
 #define TclWinNToHS winNToHS
 #define TclWinSetSockOpt winSetSockOpt
-#define TclpGetTZName pGetTZName
 #define TclWinNoBackslash winNoBackslash
 #define TclWinSetInterfaces (void (*) (int)) doNothing
 #define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
@@ -82,11 +81,6 @@ int __stdcall GetModuleHandleExW(unsigned int, const char *, void *);
 #define TclWinResetInterfaces doNothing
 
 static Tcl_Encoding winTCharEncoding;
-
-typedef struct ThreadSpecificData {
-    char tzName[64];		/* Time zone name */
-} ThreadSpecificData;
-static Tcl_ThreadDataKey dataKey;
 
 static int
 TclWinGetPlatformId()
@@ -115,16 +109,6 @@ TclWinSetSockOpt(void *s, int level, int optname,
 	    const char *optval, int optlen)
 {
     return setsockopt((int) s, level, optname, optval, optlen);
-}
-
-static char *
-TclpGetTZName(int isdst)
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    const char *zone = getenv("TZ");
-    Tcl_ExternalToUtf(NULL, NULL, zone, strlen(zone), 0, NULL,
-	    tsdPtr->tzName, sizeof(tsdPtr->tzName), NULL, NULL, NULL);
-    return tsdPtr->tzName;
 }
 
 static char *
@@ -192,7 +176,6 @@ Tcl_WinTCharToUtf(
 #   define TclWinNToHS (unsigned short (*) _ANSI_ARGS_((unsigned short ns))) TclpMakeFile
 #   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, const char *, int))) TclpOpenFile
 #   define TclWinAddProcess 0
-#   define TclpGetTZName 0
 #   define TclWinNoBackslash 0
 #   define TclWinSetInterfaces 0
 #   define TclWinFlushDirtyChannels 0
@@ -498,7 +481,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclWinAddProcess, /* 20 */
     NULL, /* 21 */
     TclpCreateTempFile, /* 22 */
-    TclpGetTZName, /* 23 */
+    NULL, /* 23 */
     TclWinNoBackslash, /* 24 */
     NULL, /* 25 */
     TclWinSetInterfaces, /* 26 */
@@ -564,7 +547,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclWinAddProcess, /* 20 */
     NULL, /* 21 */
     TclpCreateTempFile, /* 22 */
-    TclpGetTZName, /* 23 */
+    NULL, /* 23 */
     TclWinNoBackslash, /* 24 */
     NULL, /* 25 */
     TclWinSetInterfaces, /* 26 */
