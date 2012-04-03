@@ -126,8 +126,8 @@ declare 25 {
 #  }
 # Removed in 8.5
 #declare 27 {
-#    int TclGetDate(char *p, unsigned long now, long zone,
-#	    unsigned long *timePtr)
+#    int TclGetDate(char *p, Tcl_WideInt now, long zone,
+#	    Tcl_WideInt *timePtr)
 #}
 declare 28 {
     Tcl_Channel TclpGetDefaultStdChannel(int type)
@@ -735,16 +735,6 @@ declare 177 {
 #    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
 #}
 
-# REMOVED
-# Allocate lists without copying arrays
-# declare 180 {
-#    Tcl_Obj *TclNewListObjDirect(int objc, Tcl_Obj **objv)
-# }
-#declare 181 {
-#    Tcl_Obj *TclDbNewListObjDirect(int objc, Tcl_Obj **objv,
-#	    const char *file, int line)
-#}
-
 # TclpGmtime and TclpLocaltime promoted to the generic interface from unix
 
 declare 182 {
@@ -1233,9 +1223,6 @@ declare 20 unix {
 }
 declare 22 unix {
     TclFile TclpCreateTempFile(const char *contents)
-}
-declare 23 unix {
-    char *TclpGetTZName(int isdst)
 }
 declare 24 unix {
     char *TclWinNoBackslash(char *path)
