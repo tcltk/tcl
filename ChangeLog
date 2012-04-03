@@ -1,3 +1,9 @@
+2012-04-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclStubInit.c      Remove the TclpGetTZName implementation for
+	* generic/tclIntDecls.h:     Cygwin (from 2012-04-02 commit) , re-generated
+	* generic/tclIntPlatDecls.h:
+
 2012-04-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	IMPLEMENTATION OF TIP#396.
