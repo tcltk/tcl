@@ -1,3 +1,16 @@
+2012-04-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:        Let genStubs.tcl do the void -> VOID and
+	const -> CONST translations, so we cannot forget it in the *.decls file
+	* generic/tclInt.decls:      VOID -> void and CONST -> const, so depend
+	on genStubs.tcl to generate the correct form in the *Decls.h file.
+	This brings tclInt.decls in the same form as Tcl 8.5/8.6, so a diff
+	can show us the real signature differences.
+	(Backported from Tcl 8.5, no change in any function signature)
+	* generic/tclStubInit.c      Remove the TclpGetTZName implementation for
+	* generic/tclIntDecls.h:     Cygwin (from previous commit) , re-generated
+	* generic/tclIntPlatDecls.h:
+
 2012-03-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.decls:      [Bug 3508771] load tclreg.dll in cygwin tclsh

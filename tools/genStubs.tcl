@@ -149,6 +149,8 @@ proc genStubs::declare {args} {
 	    puts stderr "Duplicate entry: declare $args"
 	}
     }
+    regsub -all const $decl CONST decl
+    regsub -all _XCONST $decl _Xconst decl
     regsub -all "\[ \t\n\]+" [string trim $decl] " " decl
     set decl [parseDecl $decl]
 
@@ -259,7 +261,7 @@ proc genStubs::addPlatformGuard {plat text} {
 proc genStubs::emitSlots {name textVar} {
     upvar $textVar text
 
-    forAllStubs $name makeSlot 1 text {"    void *reserved$i;\n"}
+    forAllStubs $name makeSlot 1 text {"    VOID *reserved$i;\n"}
     return
 }
 
@@ -360,6 +362,9 @@ proc genStubs::makeDecl {name decl index} {
     lassign $decl rtype fname args
 
     append text "/* $index */\n"
+    if {($rtype != "void") && ($rtype != "pascal void")} {
+	regsub -all void $rtype VOID rtype
+    }
     set line "EXTERN $rtype"
     set count [expr {2 - ([string length $line] / 8)}]
     append line [string range "\t\t\t" 0 $count]
@@ -370,9 +375,10 @@ proc genStubs::makeDecl {name decl index} {
     }
     append line "$fname _ANSI_ARGS_("
 
+    regsub -all void $args VOID args
     set arg1 [lindex $args 0]
     switch -exact $arg1 {
-	void {
+	VOID {
 	    append line "(void)"
 	}
 	TCL_VARARGS {
@@ -529,11 +535,15 @@ proc genStubs::makeSlot {name decl index} {
     append lfname [string range $fname 1 end]
 
     set text "    "
+    if {($rtype != "void") && ($rtype != "pascal void")} {
+	regsub -all void $rtype VOID rtype
+    }
     append text $rtype " (*" $lfname ") _ANSI_ARGS_("
 
+    regsub -all void $args VOID args
     set arg1 [lindex $args 0]
     switch -exact $arg1 {
-	void {
+	VOID {
 	    append text "(void)"
 	}
 	TCL_VARARGS {
