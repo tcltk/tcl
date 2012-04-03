@@ -76,11 +76,6 @@ int __stdcall GetModuleHandleExW(unsigned int, const char *, void *);
 
 static Tcl_Encoding winTCharEncoding;
 
-typedef struct ThreadSpecificData {
-    char tzName[64];		/* Time zone name */
-} ThreadSpecificData;
-static Tcl_ThreadDataKey dataKey;
-
 static int
 TclWinGetPlatformId()
 {
