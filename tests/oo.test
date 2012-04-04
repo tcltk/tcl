@@ -339,7 +339,7 @@ test oo-2.6 {OO constructor and tailcall - Bug 2414858} -setup {
 } -result good
 test oo-2.7 {construction, method calls and ensembles - Bug 3514761} -setup {
     namespace eval k {}
-} -constraints knownBug -body {
+} -body {
     namespace eval k {
 	oo::class create s {
 	    constructor {j} {
@@ -353,6 +353,29 @@ test oo-2.7 {construction, method calls and ensembles - Bug 3514761} -setup {
 } -returnCodes error -cleanup {
     namespace delete k
 } -result {wrong # args: should be "k s create X j"}
+test oo-2.8 {construction, method calls and ensembles - Bug 3514761} -setup {
+    namespace eval k {}
+} -body {
+    namespace eval k {
+	oo::class create s {
+	    constructor {j} {
+		# nothing
+	    }
+	}
+	oo::class create t {
+	    superclass s
+	    constructor args {
+		k next {*}$args
+	    }
+	}
+	interp alias {} ::k::next {} ::oo::Helpers::next
+	namespace export t next
+	namespace ensemble create
+    }
+    k t create X
+} -returnCodes error -cleanup {
+    namespace delete k
+} -result {wrong # args: should be "k next j"}
 
 test oo-3.1 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as we're
@@ -1742,6 +1765,17 @@ test oo-15.8 {OO: intercept object cloning} -setup {
 } -cleanup {
     Foo destroy
 } -result {cloned ::foo ::bar check ::foo ok check ::bar ok}
+test oo-15.9 {ensemble rewriting must not bleed through oo::copy} -setup {
+    oo::class create Foo
+} -body {
+    oo::define Foo {
+	method <cloned> {a b} {}
+    }
+    interp alias {} Bar {} oo::copy [Foo create foo]
+    Bar bar
+} -returnCodes error -cleanup {
+    Foo destroy
+} -result {wrong # args: should be "::bar <cloned> a b"}
 
 test oo-16.1 {OO: object introspection} -body {
     info object
