@@ -31,6 +31,7 @@
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
 #undef Tcl_CreateHashEntry
+#undef TclpGetPid
 
 /*
  * Keep a record of the original Notifier procedures, created in the
@@ -85,6 +86,7 @@ int __stdcall GetModuleHandleExW(unsigned int, const char *, void *);
 #define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #define TclWinFlushDirtyChannels doNothing
 #define TclWinResetInterfaces doNothing
+#define TclpGetPid getPid
 
 static Tcl_Encoding winTCharEncoding;
 
@@ -128,6 +130,12 @@ TclWinNoBackslash(char *path)
 	}
     }
     return path;
+}
+
+static unsigned long
+TclpGetPid(Tcl_Pid pid)
+{
+    return (unsigned long) (size_t) pid;
 }
 
 static void
@@ -186,6 +194,7 @@ Tcl_WinTCharToUtf(
 #   define TclWinSetInterfaces 0
 #   define TclWinFlushDirtyChannels 0
 #   define TclWinResetInterfaces 0
+#   define TclpGetPid 0
 #   define TclMacOSXGetFileAttribute 0 /* Only implemented in Tcl >= 8.5 */
 #   define TclMacOSXMatchType 0 /* Only implemented in Tcl >= 8.5 */
 #   define TclMacOSXNotifierAddRunLoopMode 0 /* Only implemented in Tcl >= 8.5 */
@@ -454,7 +463,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     NULL, /* 5 */
     TclWinNToHS, /* 6 */
     TclWinSetSockOpt, /* 7 */
-    TclUnixWaitForFile, /* 8 */
+    TclpGetPid, /* 8 */
     TclWinGetPlatformId, /* 9 */
     TclpReaddir, /* 10 */
     TclpLocaltime_unix, /* 11 */
@@ -478,6 +487,13 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclWinCPUID, /* 29 */
     TclGetAndDetachPids, /* 30 */
     TclpCloseFile, /* 31 */
+    NULL, /* 32 */
+    NULL, /* 33 */
+    TclpCreateProcess, /* 34 */
+    NULL, /* 35 */
+    TclpMakeFile, /* 36 */
+    TclpOpenFile, /* 37 */
+    TclUnixWaitForFile, /* 38 */
 #endif /* UNIX */
 #ifdef __WIN32__
     TclWinConvertError, /* 0 */
