@@ -2453,15 +2453,6 @@ DoGlob(
 		}
 	    }
 
-#if defined(__CYGWIN__) && defined(__WIN32__)
-	    {
-		char winbuf[MAX_PATH+1];
-
-		cygwin_conv_to_win32_path(Tcl_DStringValue(&append), winbuf);
-		Tcl_DStringFree(&append);
-		Tcl_DStringAppend(&append, winbuf, -1);
-	    }
-#endif /* __CYGWIN__ && __WIN32__ */
 	    break;
 
 	case TCL_PLATFORM_UNIX:
