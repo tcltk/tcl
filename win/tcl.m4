@@ -27,6 +27,9 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
     else
 	TCL_BIN_DIR_DEFAULT=../../tcl/win
     fi
+    if test ! -f $TCL_BIN_DIR_DEFAULT/tclConfig.sh; then
+	TCL_BIN_DIR_DEFAULT="${TCL_BIN_DIR_DEFAULT}/../unix"
+    fi
 
     AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.4 binaries from DIR],
 	    TCL_BIN_DIR=$withval, TCL_BIN_DIR=`cd $TCL_BIN_DIR_DEFAULT; pwd`)
