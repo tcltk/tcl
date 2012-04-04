@@ -31,6 +31,7 @@
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
 #undef Tcl_CreateHashEntry
+#undef TclSockMinimumBuffers
 
 /*
  * Keep a record of the original Notifier procedures, created in the
@@ -59,7 +60,6 @@ Tcl_NotifierProcs tclOriginalNotifier = {
 #ifdef _WIN64
 #   define TclSockMinimumBuffersOld 0
 #else
-#undef TclSockMinimumBuffers
 int TclSockMinimumBuffersOld(sock, size)
     int sock;
     int size;
