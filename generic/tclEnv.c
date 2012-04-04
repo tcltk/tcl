@@ -48,10 +48,6 @@ static void		ReplaceString _ANSI_ARGS_((CONST char *oldStr,
 void			TclSetEnv _ANSI_ARGS_((CONST char *name,
 			    CONST char *value));
 void			TclUnsetEnv _ANSI_ARGS_((CONST char *name));
-
-#if defined (__CYGWIN__) && defined(__WIN32__)
-static void		TclCygwinPutenv _ANSI_ARGS_((CONST char *string));
-#endif
 
 /*
  *----------------------------------------------------------------------
