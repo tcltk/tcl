@@ -988,8 +988,8 @@ declare 248 {
 }
 
 declare 249 {
-    char* TclDoubleDigits(double dv, int ndigits, int flags,
-			  int* decpt, int* signum, char** endPtr)
+    char *TclDoubleDigits(double dv, int ndigits, int flags,
+			  int *decpt, int *signum, char **endPtr)
 }
 # TIP #285: Script cancellation support.
 declare 250 {
