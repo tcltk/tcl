@@ -83,25 +83,30 @@ TclSockGetPort(interp, string, proto, portPtr)
  *----------------------------------------------------------------------
  */
 
+#undef TclSockMinimumBuffers
+#ifndef _WIN32
+#   define SOCKET int
+#endif
+
 int
 TclSockMinimumBuffers(sock, size)
-    int sock;			/* Socket file descriptor */
+    void *sock;			/* Socket file descriptor */
     int size;			/* Minimum buffer size */
 {
     int current;
     socklen_t len;
 
     len = sizeof(int);
-    getsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *)&current, &len);
+    getsockopt((SOCKET)sock, SOL_SOCKET, SO_SNDBUF, (char *)&current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *)&size, len);
+	setsockopt((SOCKET)sock, SOL_SOCKET, SO_SNDBUF, (char *)&size, len);
     }
     len = sizeof(int);
-    getsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&current, &len);
+    getsockopt((SOCKET)sock, SOL_SOCKET, SO_RCVBUF, (char *)&current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&size, len);
+	setsockopt((SOCKET)sock, SOL_SOCKET, SO_RCVBUF, (char *)&size, len);
     }
     return TCL_OK;
 }
