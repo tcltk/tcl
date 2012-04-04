@@ -978,8 +978,9 @@ declare 7 unix {
     int TclWinSetSockOpt(void *s, int level, int optname,
 	    const char *optval, int optlen)
 }
+# On non-cygwin, this is actually a reference to TclUnixWaitForFile
 declare 8 unix {
-    int TclUnixWaitForFile(int fd, int mask, int timeout)
+    unsigned long TclpGetPid(Tcl_Pid pid)
 }
 
 # Added in 8.1:
@@ -1049,7 +1050,30 @@ declare 30 unix {
 declare 31 unix {
     int TclpCloseFile(TclFile file)
 }
-
+#declare 32 unix {
+#    Tcl_Channel TclpCreateCommandChannel(TclFile readFile,
+#	    TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)
+#}
+#declare 33 unix {
+#    int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
+#}
+declare 34 unix {
+    int TclpCreateProcess (Tcl_Interp *interp,
+	    int argc, const char **argv, TclFile inputFile,
+	    TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr)
+}
+#declare 35 unix {
+#    char *TclpInetNtoa(struct in_addr addr)
+#}
+declare 36 unix {
+    TclFile TclpMakeFile (Tcl_Channel channel, int direction)
+}
+declare 37 unix {
+    TclFile TclpOpenFile (const char *fname, int mode)
+}
+declare 38 unix {
+    int TclUnixWaitForFile(int fd, int mask, int timeout)
+}
 
 # Local Variables:
 # mode: tcl
