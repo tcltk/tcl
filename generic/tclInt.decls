@@ -726,7 +726,7 @@ declare 177 {
 	    const char *operation, const char *reason)
 }
 declare 178 {
-    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char* encodingName)
+    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
 }
 declare 179 {
     Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
@@ -932,8 +932,8 @@ declare 243 {
 }
 
 declare 249 {
-    char* TclDoubleDigits(double dv, int ndigits, int flags,
-			  int* decpt, int* signum, char** endPtr)
+    char *TclDoubleDigits(double dv, int ndigits, int flags,
+			  int *decpt, int *signum, char **endPtr)
 }
 
 ##############################################################################

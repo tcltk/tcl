@@ -2408,9 +2408,6 @@ SetFsPathFromAny(
     FsPath *fsPathPtr;
     Tcl_Obj *transPtr;
     char *name;
-#if defined(__CYGWIN__) && defined(__WIN32__)
-    int copied = 0;
-#endif
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
 
     if (pathPtr->typePtr == &tclFsPathType) {
@@ -2557,30 +2554,6 @@ SetFsPathFromAny(
 	pathPtr->refCount--;
     }
 
-#if defined(__CYGWIN__) && defined(__WIN32__)
-    {
-	char winbuf[MAX_PATH+1];
-
-	/*
-	 * In the Cygwin world, call conv_to_win32_path in order to use the
-	 * mount table to translate the file name into something Windows will
-	 * understand. Take care when converting empty strings!
-	 */
-
-	name = Tcl_GetStringFromObj(transPtr, &len);
-	if (len > 0) {
-	    cygwin_conv_to_win32_path(name, winbuf);
-	    TclWinNoBackslash(winbuf);
-	    if (Tcl_IsShared(transPtr)) {
-		copied = 1;
-		transPtr = Tcl_DuplicateObj(transPtr);
-		Tcl_IncrRefCount(transPtr);
-	    }
-	    Tcl_SetStringObj(transPtr, winbuf, -1);
-	}
-    }
-#endif /* __CYGWIN__ && __WIN32__ */
-
     /*
      * Now we have a translated filename in 'transPtr'. This will have forward
      * slashes on Windows, and will not contain any ~user sequences.
@@ -2606,12 +2579,6 @@ SetFsPathFromAny(
     SETPATHOBJ(pathPtr, fsPathPtr);
     PATHFLAGS(pathPtr) = 0;
     pathPtr->typePtr = &tclFsPathType;
-#if defined(__CYGWIN__) && defined(__WIN32__)
-    if (copied) {
-	Tcl_DecrRefCount(transPtr);
-    }
-#endif
-
     return TCL_OK;
 }
 
