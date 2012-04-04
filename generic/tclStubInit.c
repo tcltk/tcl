@@ -60,6 +60,7 @@ Tcl_NotifierProcs tclOriginalNotifier = {
 #ifdef _WIN64
 #   define TclSockMinimumBuffersOld 0
 #else
+#undef TclSockMinimumBuffers
 int TclSockMinimumBuffersOld(sock, size)
     int sock;
     int size;
