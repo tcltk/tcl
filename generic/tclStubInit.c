@@ -55,6 +55,18 @@ Tcl_NotifierProcs tclOriginalNotifier = {
     NULL
 };
 
+/* See bug 510001: TclSockMinimumBuffers needs plat imp */
+#ifdef _WIN64
+#   define TclSockMinimumBuffersOld 0
+#else
+int TclSockMinimumBuffersOld(sock, size)
+    int sock;
+    int size;
+{
+    return TclSockMinimumBuffers((void *) (size_t) sock, size);
+}
+#endif
+
 MODULE_SCOPE TclIntStubs tclIntStubs;
 MODULE_SCOPE TclIntPlatStubs tclIntPlatStubs;
 MODULE_SCOPE TclPlatStubs tclPlatStubs;
@@ -306,13 +318,21 @@ TclIntStubs tclIntStubs = {
     TclSetPreInitScript, /* 101 */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
-    TclSockMinimumBuffers, /* 104 */
+    TclSockMinimumBuffersOld, /* 104 */
     NULL, /* 105 */
     NULL, /* 106 */
     NULL, /* 107 */
     TclTeardownNamespace, /* 108 */
     TclUpdateReturnInfo, /* 109 */
-    NULL, /* 110 */
+#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+    TclSockMinimumBuffers, /* 110 */
+#endif /* UNIX */
+#ifdef __WIN32__ /* WIN */
+    TclSockMinimumBuffers, /* 110 */
+#endif /* WIN */
+#ifdef MAC_OSX_TCL /* MACOSX */
+    TclSockMinimumBuffers, /* 110 */
+#endif /* MACOSX */
     Tcl_AddInterpResolvers, /* 111 */
     Tcl_AppendExportList, /* 112 */
     Tcl_CreateNamespace, /* 113 */
