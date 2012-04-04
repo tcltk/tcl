@@ -2311,7 +2311,7 @@ declare 627 {
 		     Tcl_LoadHandle *handlePtr)
 }
 declare 628 {
-    void* Tcl_FindSymbol(Tcl_Interp *interp, Tcl_LoadHandle handle,
+    void *Tcl_FindSymbol(Tcl_Interp *interp, Tcl_LoadHandle handle,
 			 const char *symbol)
 }
 declare 629 {
