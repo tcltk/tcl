@@ -1,3 +1,11 @@
+2012-04-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinSock.c:     [Bug 510001]: TclSockMinimumBuffers needs plat imp
+	* generic/tclIOSock.c:
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+
 2012-04-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclStubInit.c      Remove the TclpGetTZName implementation for
