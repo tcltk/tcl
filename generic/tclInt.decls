@@ -420,7 +420,10 @@ declare 103 {
 	    int *portPtr)
 }
 declare 104 {
-    int TclSockMinimumBuffers(ClientData sock, int size)
+    int TclSockMinimumBuffersOld(int sock, int size)
+}
+declare 110 {
+    int TclSockMinimumBuffers(void *sock, int size)
 }
 # Replaced by Tcl_FSStat in 8.4:
 #declare 105 {
