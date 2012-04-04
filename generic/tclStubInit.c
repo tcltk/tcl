@@ -40,6 +40,19 @@
 #undef Tcl_Panic
 #undef Tcl_FindExecutable
 
+/* See bug 510001: TclSockMinimumBuffers needs plat imp */
+#ifdef _WIN64
+#   define TclSockMinimumBuffersOld 0
+#else
+#define TclSockMinimumBuffersOld sockMinimumBuffersOld
+static int TclSockMinimumBuffersOld(sock, size)
+    int sock;
+    int size;
+{
+    return TclSockMinimumBuffers(INT2PTR(sock), size);
+}
+#endif
+
 #ifdef __CYGWIN__
 
 /* Trick, so we don't have to include <windows.h> here, which
@@ -289,13 +302,13 @@ static const TclIntStubs tclIntStubs = {
     TclSetPreInitScript, /* 101 */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
-    TclSockMinimumBuffers, /* 104 */
+    TclSockMinimumBuffersOld, /* 104 */
     0, /* 105 */
     0, /* 106 */
     0, /* 107 */
     TclTeardownNamespace, /* 108 */
     TclUpdateReturnInfo, /* 109 */
-    0, /* 110 */
+    TclSockMinimumBuffers, /* 110 */
     Tcl_AddInterpResolvers, /* 111 */
     Tcl_AppendExportList, /* 112 */
     Tcl_CreateNamespace, /* 113 */
