@@ -597,8 +597,8 @@ EXTERN int		TclCopyChannel(Tcl_Interp *interp,
 				Tcl_Channel inChan, Tcl_Channel outChan,
 				Tcl_WideInt toRead, Tcl_Obj *cmdPtr);
 /* 249 */
-EXTERN char*		TclDoubleDigits(double dv, int ndigits, int flags,
-				int*decpt, int*signum, char**endPtr);
+EXTERN char *		TclDoubleDigits(double dv, int ndigits, int flags,
+				int *decpt, int *signum, char **endPtr);
 /* 250 */
 EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
@@ -856,7 +856,7 @@ typedef struct TclIntStubs {
     int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, int numRemoved, int numInserted, Tcl_Obj *const *objv); /* 246 */
     void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
-    char* (*tclDoubleDigits) (double dv, int ndigits, int flags, int*decpt, int*signum, char**endPtr); /* 249 */
+    char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
 } TclIntStubs;
 
