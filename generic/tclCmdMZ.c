@@ -3275,7 +3275,7 @@ TclInitStringCmd(
 	{"trimright",	StringTrimRCmd,	NULL},
 	{"wordend",	StringEndCmd,	NULL},
 	{"wordstart",	StringStartCmd,	NULL},
-	{NULL}
+	{NULL, NULL, NULL}
     };
 
     return TclMakeEnsemble(interp, "string", stringImplMap);
