@@ -1156,7 +1156,7 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
      * Set kernel space buffering
      */
 
-    TclSockMinimumBuffers((int) sock, TCP_BUFFER_SIZE);
+    TclSockMinimumBuffers((void *)sock, TCP_BUFFER_SIZE);
 
     if (server) {
 	/*
@@ -1517,7 +1517,7 @@ Tcl_MakeTcpClientChannel(sock)
      * Set kernel space buffering and non-blocking.
      */
 
-    TclSockMinimumBuffers((int) sock, TCP_BUFFER_SIZE);
+    TclSockMinimumBuffers(sock, TCP_BUFFER_SIZE);
 
     infoPtr = NewSocketInfo((SOCKET) sock);
 
@@ -2645,7 +2645,7 @@ Tcl_GetHostName()
 
 int
 TclWinGetSockOpt(SOCKET s, int level, int optname, char * optval,
-	int FAR *optlen)
+	int *optlen)
 {
     /*
      * Check that WinSock is initialized; do not call it if not, to

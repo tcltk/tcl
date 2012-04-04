@@ -291,12 +291,12 @@ EXTERN int		TclSockGetPort _ANSI_ARGS_((Tcl_Interp *interp,
 				char *str, char *proto, int *portPtr));
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 104 */
-EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((int sock,
+EXTERN int		TclSockMinimumBuffersOld _ANSI_ARGS_((int sock,
 				int size));
 #endif /* UNIX */
 #ifdef __WIN32__
 /* 104 */
-EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((int sock,
+EXTERN int		TclSockMinimumBuffersOld _ANSI_ARGS_((int sock,
 				int size));
 #endif /* __WIN32__ */
 /* Slot 105 is reserved */
@@ -308,7 +308,16 @@ EXTERN int		TclStatInsertProc _ANSI_ARGS_((TclStatProc_ *proc));
 EXTERN void		TclTeardownNamespace _ANSI_ARGS_((Namespace *nsPtr));
 /* 109 */
 EXTERN int		TclUpdateReturnInfo _ANSI_ARGS_((Interp *iPtr));
-/* Slot 110 is reserved */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+/* 110 */
+EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((VOID *sock,
+				int size));
+#endif /* UNIX */
+#ifdef __WIN32__
+/* 110 */
+EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((VOID *sock,
+				int size));
+#endif /* __WIN32__ */
 /* 111 */
 EXTERN void		Tcl_AddInterpResolvers _ANSI_ARGS_((
 				Tcl_Interp *interp, CONST char *name,
@@ -653,10 +662,10 @@ typedef struct TclIntStubs {
     void (*tclSetupEnv) _ANSI_ARGS_((Tcl_Interp *interp)); /* 102 */
     int (*tclSockGetPort) _ANSI_ARGS_((Tcl_Interp *interp, char *str, char *proto, int *portPtr)); /* 103 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
-    int (*tclSockMinimumBuffers) _ANSI_ARGS_((int sock, int size)); /* 104 */
+    int (*tclSockMinimumBuffersOld) _ANSI_ARGS_((int sock, int size)); /* 104 */
 #endif /* UNIX */
 #ifdef __WIN32__
-    int (*tclSockMinimumBuffers) _ANSI_ARGS_((int sock, int size)); /* 104 */
+    int (*tclSockMinimumBuffersOld) _ANSI_ARGS_((int sock, int size)); /* 104 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     VOID *reserved104;
@@ -666,7 +675,15 @@ typedef struct TclIntStubs {
     int (*tclStatInsertProc) _ANSI_ARGS_((TclStatProc_ *proc)); /* 107 */
     void (*tclTeardownNamespace) _ANSI_ARGS_((Namespace *nsPtr)); /* 108 */
     int (*tclUpdateReturnInfo) _ANSI_ARGS_((Interp *iPtr)); /* 109 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+    int (*tclSockMinimumBuffers) _ANSI_ARGS_((VOID *sock, int size)); /* 110 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    int (*tclSockMinimumBuffers) _ANSI_ARGS_((VOID *sock, int size)); /* 110 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
     VOID *reserved110;
+#endif /* MAC_TCL */
     void (*tcl_AddInterpResolvers) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *name, Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, Tcl_ResolveCompiledVarProc *compiledVarProc)); /* 111 */
     int (*tcl_AppendExportList) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Namespace *nsPtr, Tcl_Obj *objPtr)); /* 112 */
     Tcl_Namespace * (*tcl_CreateNamespace) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *name, ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)); /* 113 */
@@ -1103,15 +1120,15 @@ extern TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclSockGetPort) /* 103 */
 #endif
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
-#ifndef TclSockMinimumBuffers
-#define TclSockMinimumBuffers \
-	(tclIntStubsPtr->tclSockMinimumBuffers) /* 104 */
+#ifndef TclSockMinimumBuffersOld
+#define TclSockMinimumBuffersOld \
+	(tclIntStubsPtr->tclSockMinimumBuffersOld) /* 104 */
 #endif
 #endif /* UNIX */
 #ifdef __WIN32__
-#ifndef TclSockMinimumBuffers
-#define TclSockMinimumBuffers \
-	(tclIntStubsPtr->tclSockMinimumBuffers) /* 104 */
+#ifndef TclSockMinimumBuffersOld
+#define TclSockMinimumBuffersOld \
+	(tclIntStubsPtr->tclSockMinimumBuffersOld) /* 104 */
 #endif
 #endif /* __WIN32__ */
 /* Slot 105 is reserved */
@@ -1131,7 +1148,18 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclUpdateReturnInfo \
 	(tclIntStubsPtr->tclUpdateReturnInfo) /* 109 */
 #endif
-/* Slot 110 is reserved */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#ifndef TclSockMinimumBuffers
+#define TclSockMinimumBuffers \
+	(tclIntStubsPtr->tclSockMinimumBuffers) /* 110 */
+#endif
+#endif /* UNIX */
+#ifdef __WIN32__
+#ifndef TclSockMinimumBuffers
+#define TclSockMinimumBuffers \
+	(tclIntStubsPtr->tclSockMinimumBuffers) /* 110 */
+#endif
+#endif /* __WIN32__ */
 #ifndef Tcl_AddInterpResolvers
 #define Tcl_AddInterpResolvers \
 	(tclIntStubsPtr->tcl_AddInterpResolvers) /* 111 */
@@ -1405,5 +1433,11 @@ extern TclIntStubs *tclIntStubsPtr;
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 /* !END!: Do not edit above this line. */
+
+#if !defined(_WIN64)
+/* See bug 510001: TclSockMinimumBuffers needs plat imp */
+#   undef TclSockMinimumBuffers
+#   define TclSockMinimumBuffers(a,b) TclSockMinimumBuffersOld((int)(a),b)
+#endif
 
 #endif /* _TCLINTDECLS */
