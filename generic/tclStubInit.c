@@ -55,6 +55,18 @@ Tcl_NotifierProcs tclOriginalNotifier = {
     NULL
 };
 
+/* See bug 510001: TclSockMinimumBuffers needs plat imp */
+#ifdef _WIN64
+#   define TclSockMinimumBuffersOld 0
+#else
+int TclSockMinimumBuffersOld(sock, size)
+    int sock;
+    int size;
+{
+    return TclSockMinimumBuffers((void *) (size_t) sock, size);
+}
+#endif
+
 #ifdef __CYGWIN__
 
 /* Trick, so we don't have to include <windows.h> here, which
@@ -317,10 +329,10 @@ TclIntStubs tclIntStubs = {
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
-    TclSockMinimumBuffers, /* 104 */
+    TclSockMinimumBuffersOld, /* 104 */
 #endif /* UNIX */
 #ifdef __WIN32__
-    TclSockMinimumBuffers, /* 104 */
+    TclSockMinimumBuffersOld, /* 104 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     NULL, /* 104 */
@@ -330,7 +342,15 @@ TclIntStubs tclIntStubs = {
     TclStatInsertProc, /* 107 */
     TclTeardownNamespace, /* 108 */
     TclUpdateReturnInfo, /* 109 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+    TclSockMinimumBuffers, /* 110 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    TclSockMinimumBuffers, /* 110 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
     NULL, /* 110 */
+#endif /* MAC_TCL */
     Tcl_AddInterpResolvers, /* 111 */
     Tcl_AppendExportList, /* 112 */
     Tcl_CreateNamespace, /* 113 */
