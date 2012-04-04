@@ -1,6 +1,16 @@
+2012-04-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_NewObjectInstance, TclNRNewObjectInstance):
+	[Bug 3514761]: Fixed bogosity with automated argument description
+	handling when constructing an instance of a class that is itself a
+	member of an ensemble. Thanks to Andreas Kupries for identifying that
+	this was a problem case at all!
+	(Tcl_CopyObjectInstance): Fix potential bleed-over of ensemble
+	information into [oo::copy].
+
 2012-04-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinSock.c:     [Bug 510001]: TclSockMinimumBuffers needs plat imp
+	* win/tclWinSock.c: [Bug 510001]: TclSockMinimumBuffers needs plat imp
 	* generic/tclIOSock.c:
 	* generic/tclInt.decls:
 	* generic/tclIntDecls.h:
@@ -8,8 +18,8 @@
 
 2012-04-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclStubInit.c      Remove the TclpGetTZName implementation for
-	* generic/tclIntDecls.h:     Cygwin (from 2012-04-02 commit) , re-generated
+	* generic/tclStubInit.c: Remove the TclpGetTZName implementation for
+	* generic/tclIntDecls.h: Cygwin (from 2012-04-02 commit), re-generated
 	* generic/tclIntPlatDecls.h:
 
 2012-04-02  Donal K. Fellows  <dkf@users.sf.net>
