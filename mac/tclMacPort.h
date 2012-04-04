@@ -215,7 +215,6 @@ extern char **environ;
  * address platform-specific issues.
  */
  
-#define TclpGetPid(pid)	    	((unsigned long) (pid))
 #define TclSetSystemEnv(a,b)
 #define tzset()
 

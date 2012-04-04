@@ -22,7 +22,8 @@ static int NativeMatchType(CONST char* nativeName, Tcl_GlobTypeData *types);
  * TclpFindExecutable --
  *
  *	This procedure computes the absolute path name of the current
- *	application, given its argv[0] value.
+ *	application, given its argv[0] value. For Cygwin, argv[0] is
+ *	ignored and the path is determined the same as under win32.
  *
  * Results:
  *	A dirty UTF string that is the path to the executable.  At this
@@ -45,18 +46,44 @@ TclpFindExecutable(argv0)
     CONST char *argv0;		/* The value of the application's argv[0]
 				 * (native). */
 {
+    int length;
+#ifdef __CYGWIN__
+    char buf[PATH_MAX * TCL_UTF_MAX + 1];
+    char name[PATH_MAX * TCL_UTF_MAX + 1];
+#else
     CONST char *name, *p;
     Tcl_StatBuf statBuf;
-    int length;
     Tcl_DString buffer, nameString;
+#endif
 
-    if (argv0 == NULL) {
-	return NULL;
-    }
     if (tclNativeExecutableName != NULL) {
 	return tclNativeExecutableName;
     }
 
+#ifdef __CYGWIN__
+
+    /* Make some symbols available without including <windows.h> */
+#   define CP_UTF8 65001
+    extern int cygwin_conv_to_full_posix_path(const char *, char *);
+    extern __stdcall int GetModuleFileNameW(void *, const char *, int);
+    extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
+		const char *, int, const char *, const char *);
+
+    GetModuleFileNameW(NULL, name, PATH_MAX);
+    WideCharToMultiByte(CP_UTF8, 0, name, -1, buf, PATH_MAX, NULL, NULL);
+    cygwin_conv_to_full_posix_path(buf, name);
+    length = strlen(name);
+    if ((length > 4) && !strcasecmp(name + length - 4, ".exe")) {
+	/* Strip '.exe' part. */
+	length -= 4;
+    }
+    tclNativeExecutableName = (char *) ckalloc(length + 1);
+    memcpy(tclNativeExecutableName, name, length);
+    buf[length] = '\0';
+#else
+    if (argv0 == NULL) {
+	return NULL;
+    }
     Tcl_DStringInit(&buffer);
 
     name = argv0;
@@ -174,6 +201,7 @@ gotName:
     
 done:
     Tcl_DStringFree(&buffer);
+#endif
     return tclNativeExecutableName;
 }
 
