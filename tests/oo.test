@@ -337,6 +337,22 @@ test oo-2.6 {OO constructor and tailcall - Bug 2414858} -setup {
 } -cleanup {
     foo destroy
 } -result good
+test oo-2.7 {construction, method calls and ensembles - Bug 3514761} -setup {
+    namespace eval k {}
+} -constraints knownBug -body {
+    namespace eval k {
+	oo::class create s {
+	    constructor {j} {
+		# nothing
+	    }
+	}
+	namespace export s
+	namespace ensemble create
+    }
+    k s create X
+} -returnCodes error -cleanup {
+    namespace delete k
+} -result {wrong # args: should be "k s create X j"}
 
 test oo-3.1 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as we're
