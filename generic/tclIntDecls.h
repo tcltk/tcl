@@ -831,7 +831,7 @@ EXTERN void		TclVarErrMsg(Tcl_Interp *interp, CONST char *part1,
 #define Tcl_SetStartupScript_TCL_DECLARED
 /* 178 */
 EXTERN void		Tcl_SetStartupScript(Tcl_Obj *pathPtr,
-				CONST char*encodingName);
+				CONST char *encodingName);
 #endif
 #ifndef Tcl_GetStartupScript_TCL_DECLARED
 #define Tcl_GetStartupScript_TCL_DECLARED
@@ -1066,8 +1066,8 @@ EXTERN void		TclDbDumpActiveObjects(FILE *outFile);
 #ifndef TclDoubleDigits_TCL_DECLARED
 #define TclDoubleDigits_TCL_DECLARED
 /* 249 */
-EXTERN char*		TclDoubleDigits(double dv, int ndigits, int flags,
-				int*decpt, int*signum, char**endPtr);
+EXTERN char *		TclDoubleDigits(double dv, int ndigits, int flags,
+				int *decpt, int *signum, char **endPtr);
 #endif
 
 typedef struct TclIntStubs {
@@ -1260,7 +1260,7 @@ typedef struct TclIntStubs {
     int (*tclCallVarTraces) (Interp *iPtr, Var *arrayPtr, Var *varPtr, CONST char *part1, CONST char *part2, int flags, int leaveErrMsg); /* 175 */
     void (*tclCleanupVar) (Var *varPtr, Var *arrayPtr); /* 176 */
     void (*tclVarErrMsg) (Tcl_Interp *interp, CONST char *part1, CONST char *part2, CONST char *operation, CONST char *reason); /* 177 */
-    void (*tcl_SetStartupScript) (Tcl_Obj *pathPtr, CONST char*encodingName); /* 178 */
+    void (*tcl_SetStartupScript) (Tcl_Obj *pathPtr, CONST char *encodingName); /* 178 */
     Tcl_Obj * (*tcl_GetStartupScript) (CONST char **encodingNamePtr); /* 179 */
     VOID *reserved180;
     VOID *reserved181;
@@ -1331,7 +1331,7 @@ typedef struct TclIntStubs {
     VOID *reserved246;
     VOID *reserved247;
     VOID *reserved248;
-    char* (*tclDoubleDigits) (double dv, int ndigits, int flags, int*decpt, int*signum, char**endPtr); /* 249 */
+    char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
 } TclIntStubs;
 
 #ifdef __cplusplus

@@ -397,7 +397,7 @@ InstructionDesc tclInstructionTable[] = {
 	 * stknext */
     {"existStk",	 1,    0,         0,	{OPERAND_NONE}},
 	/* Test if general variable exists; unparsed variable name is stktop*/
-    {0}
+    {0, 0, 0, 0, {0}}
 };
 
 /*

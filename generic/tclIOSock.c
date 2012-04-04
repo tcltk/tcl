@@ -83,7 +83,7 @@ TclSockGetPort(
 
 #undef TclSockMinimumBuffers
 #ifndef _WIN32
-#   define SOCKET int
+#   define SOCKET size_t
 #endif
 
 int
