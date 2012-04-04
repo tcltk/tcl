@@ -658,7 +658,6 @@ extern int copyfile(const char *from, const char *to, void *state,
  * address platform-specific issues.
  */
 
-#define TclpGetPid(pid)		((unsigned long) (pid))
 #define TclpReleaseFile(file)	/* Nothing. */
 
 /*
