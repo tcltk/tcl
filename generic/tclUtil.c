@@ -4121,20 +4121,9 @@ TclReToGlob(
 	*exactPtr = (anchorLeft && anchorRight);
     }
 
-#if 0
-    fprintf(stderr, "INPUT RE '%.*s' OUTPUT GLOB '%s' anchor %d:%d \n",
-	    reStrLen, reStr,
-	    Tcl_DStringValue(dsPtr), anchorLeft, anchorRight);
-    fflush(stderr);
-#endif
     return TCL_OK;
 
   invalidGlob:
-#if 0
-    fprintf(stderr, "INPUT RE '%.*s' NO OUTPUT GLOB %s (%c)\n",
-	    reStrLen, reStr, msg, *p);
-    fflush(stderr);
-#endif
     if (interp != NULL) {
 	Tcl_AppendResult(interp, msg, NULL);
 	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, NULL);
