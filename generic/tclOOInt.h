@@ -381,21 +381,6 @@ typedef struct CallContext {
 #define DESTRUCTOR	  0x10	/* This is a destructor. */
 
 /*
- * Assorted flags for call frames. Note that bits 1 and 2 are already taken by
- * Tcl itself.
- */
-
-#if 0
-#define FRAME_IS_METHOD	0x4	/* The frame is a method body, and the frame's
-				 * clientData field contains a CallContext
-				 * reference. */
-#define FRAME_IS_OO_DEFINE 0x8	/* The frame is part of the inside workings of
-				 * the [oo::define] command; the clientData
-				 * field contains an Object reference that has
-				 * been confirmed to refer to a class. */
-#endif
-
-/*
  * Structure containing definition information about basic class methods.
  */
 
