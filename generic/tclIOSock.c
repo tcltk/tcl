@@ -177,6 +177,7 @@ TclCreateSocketAddress(
     }
 
     hints.ai_socktype = SOCK_STREAM;
+
 #if 0
     /*
      * We found some problems when using AI_ADDRCONFIG, e.g. on systems that
@@ -184,15 +185,16 @@ TclCreateSocketAddress(
      * localhost. See bugs 3385024, 3382419, 3382431. As the advantage of
      * using AI_ADDRCONFIG in situations where it works, is probably low,
      * we'll leave it out for now. After all, it is just an optimisation.
-     */
-#if defined(AI_ADDRCONFIG) && !defined(_AIX) && !defined(__hpux)
-    /*
+     *
      * Missing on: OpenBSD, NetBSD.
      * Causes failure when used on AIX 5.1 and HP-UX
      */
+
+#if defined(AI_ADDRCONFIG) && !defined(_AIX) && !defined(__hpux)
     hints.ai_flags |= AI_ADDRCONFIG;
-#endif
-#endif
+#endif /* AI_ADDRCONFIG && !_AIX && !__hpux */
+#endif /* 0 */
+
     if (willBind) {
 	hints.ai_flags |= AI_PASSIVE;
     } 
