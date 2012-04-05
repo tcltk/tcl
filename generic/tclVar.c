@@ -762,7 +762,7 @@ TclObjLookupVarEx(
     }
 
   donePart1:
-#if 0
+#if 0 /* ENABLE_NS_VARNAME_CACHING perhaps? */
     if (varPtr == NULL) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    part1 = TclGetString(part1Ptr);
@@ -1892,7 +1892,7 @@ TclPtrSetVar(
 	varPtr->value.objPtr = NULL;
     }
     if (flags & (TCL_APPEND_VALUE|TCL_LIST_ELEMENT)) {
-#if 0
+#if 0 /* ENABLE_NS_VARNAME_CACHING perhaps? */
 	/*
 	 * Can't happen now!
 	 */

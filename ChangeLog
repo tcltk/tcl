@@ -1,13 +1,52 @@
+2012-04-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_NewObjectInstance, TclNRNewObjectInstance):
+	[Bug 3514761]: Fixed bogosity with automated argument description
+	handling when constructing an instance of a class that is itself a
+	member of an ensemble. Thanks to Andreas Kupries for identifying that
+	this was a problem case at all!
+	(Tcl_CopyObjectInstance): Fix potential bleed-over of ensemble
+	information into [oo::copy].
+
+2012-04-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinSock.c: [Bug 510001]: TclSockMinimumBuffers needs plat imp
+	* generic/tclIOSock.c:
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+
+2012-04-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclStubInit.c: Remove the TclpGetTZName implementation for
+	* generic/tclIntDecls.h: Cygwin (from 2012-04-02 commit), re-generated
+	* generic/tclIntPlatDecls.h:
+
+2012-04-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	IMPLEMENTATION OF TIP#396.
+
+	* generic/tclBasic.c (builtInCmds, TclNRYieldToObjCmd): Convert the
+	formerly-unsupported yieldm and yieldTo commands into [yieldto].
+
+2012-04-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls: [Bug 3508771]: load tclreg.dll in cygwin tclsh
+	* generic/tclIntPlatDecls.h: Implement TclWinGetTclInstance,
+	* generic/tclStubInit.c:     TclpGetTZName, and various more
+	win32-specific internal functions for Cygwin, so win32 extensions
+	using those can be loaded in the cygwin version of tclsh.
+
 2012-03-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/tcl.m4:        [Bug 3511806] Compiler checks too early
-	* unix/configure.in:  This change allows to build the cygwin
-	* unix/tclUnixPort.h: and mingw32 ports of Tcl/Tk to build
-	* win/tcl.m4:         out-of-the-box using a native or cross-
-	* win/configure.in:   compiler.
-	* win/tclWinPort.h:   (autoconf still to be run!)
-	* win/README          Document how to build win32 or win64
-	executables with Linux, Cygwin or Darwin.
+	* unix/tcl.m4:        [Bug 3511806]: Compiler checks too early
+	* unix/configure.in:  This change allows to build the cygwin and
+	* unix/tclUnixPort.h: mingw32 ports of Tcl/Tk to build out-of-the-box
+	* win/tcl.m4:         using a native or cross-compiler.
+	* win/configure.in:
+	* win/tclWinPort.h:
+	* win/README          Document how to build win32 or win64 executables
+	with Linux, Cygwin or Darwin.
 
 2012-03-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
