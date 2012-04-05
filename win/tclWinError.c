@@ -11,15 +11,6 @@
  */
 
 #include "tclInt.h"
-
-#ifndef WSAEWOULDBLOCK
-#   define WSAEWOULDBLOCK 10035L
-#endif
-
-#ifndef __WIN32__
-#   define DWORD unsigned int
-#endif
-
 /*
  * The following table contains the mapping from Win32 errors to errno errors.
  */
@@ -340,6 +331,11 @@ static const unsigned char wsaErrorTable[] = {
     EREMOTE		/* WSAEREMOTE */
 };
 
+#ifdef __CYGWIN__
+#   include <windows.h>
+#   define DWORD unsigned int
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -361,40 +357,66 @@ TclWinConvertError(
     DWORD errCode)		/* Win32 error code. */
 {
     if (errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
-	Tcl_SetErrno(EINVAL);
+	errCode -= WSAEWOULDBLOCK;
+	if (errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
+	    Tcl_SetErrno(errorTable[1]);
+	} else {
+	    Tcl_SetErrno(wsaErrorTable[errCode]);
+	}
     } else {
 	Tcl_SetErrno(errorTable[errCode]);
     }
 }
-
+
+#ifdef __CYGWIN__
 /*
  *----------------------------------------------------------------------
  *
- * TclWinConvertWSAError --
+ * tclWinDebugPanic --
  *
- *	This routine converts a WinSock error into an errno value.
+ *	Display a message. If a debugger is present, present it directly to
+ *	the debugger, otherwise send it to stderr.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Sets the errno global variable.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclWinConvertWSAError(
-    DWORD errCode)		/* Win32 error code. */
+tclWinDebugPanic(
+    const char *format, ...)
 {
-    errCode -= WSAEWOULDBLOCK;
-    if (errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
-	Tcl_SetErrno(EINVAL);
+#define TCL_MAX_WARN_LEN 1024
+    va_list argList;
+    va_start(argList, format);
+
+    if (IsDebuggerPresent()) {
+	WCHAR msgString[TCL_MAX_WARN_LEN];
+	char buf[TCL_MAX_WARN_LEN * TCL_UTF_MAX];
+
+	vsnprintf(buf, sizeof(buf), format, argList);
+	msgString[TCL_MAX_WARN_LEN-1] = L'\0';
+	MultiByteToWideChar(CP_UTF8, 0, buf, -1, msgString, TCL_MAX_WARN_LEN);
+
+	/*
+	 * Truncate MessageBox string if it is too long to not overflow the buffer.
+	 */
+
+	if (msgString[TCL_MAX_WARN_LEN-1] != L'\0') {
+	    memcpy(msgString + (TCL_MAX_WARN_LEN - 5), L" ...", 5 * sizeof(WCHAR));
+	}
+	OutputDebugStringW(msgString);
     } else {
-	Tcl_SetErrno(wsaErrorTable[errCode]);
+	vfprintf(stderr, format, argList);
+	fprintf(stderr, "\n");
+	fflush(stderr);
     }
 }
-
+#endif
 /*
  * Local Variables:
  * mode: c

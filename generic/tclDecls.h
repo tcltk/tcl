@@ -1802,7 +1802,7 @@ EXTERN int		Tcl_LoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 				const char *const symv[], int flags,
 				void *procPtrs, Tcl_LoadHandle *handlePtr);
 /* 628 */
-EXTERN void*		Tcl_FindSymbol(Tcl_Interp *interp,
+EXTERN void *		Tcl_FindSymbol(Tcl_Interp *interp,
 				Tcl_LoadHandle handle, const char *symbol);
 /* 629 */
 EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
@@ -2472,7 +2472,7 @@ typedef struct TclStubs {
     int (*tcl_NRExprObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *resultPtr); /* 625 */
     int (*tcl_NRSubstObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 626 */
     int (*tcl_LoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *const symv[], int flags, void *procPtrs, Tcl_LoadHandle *handlePtr); /* 627 */
-    void* (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
+    void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void* (*tcl_ZlibStreamGetZstreamp) (Tcl_ZlibStream zshandle); /* 630 */
 } TclStubs;

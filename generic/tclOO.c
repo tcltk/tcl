@@ -1624,6 +1624,15 @@ Tcl_NewObjectInstance(
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
 	    contextPtr->callPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
+
+	    /*
+	     * Adjust the ensmble tracking record if necessary. [Bug 3514761]
+	     */
+
+	    if (((Interp*) interp)->ensembleRewrite.sourceObjs) {
+		((Interp*) interp)->ensembleRewrite.numInsertedObjs += skip-1;
+		((Interp*) interp)->ensembleRewrite.numRemovedObjs += skip-1;
+	    }
 	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
 		    objc, objv);
 
@@ -1740,6 +1749,15 @@ TclNRNewObjectInstance(
     state = Tcl_SaveInterpState(interp, TCL_OK);
     contextPtr->callPtr->flags |= CONSTRUCTOR;
     contextPtr->skip = skip;
+
+    /*
+     * Adjust the ensmble tracking record if necessary. [Bug 3514761]
+     */
+
+    if (((Interp *) interp)->ensembleRewrite.sourceObjs) {
+	((Interp *) interp)->ensembleRewrite.numInsertedObjs += skip - 1;
+	((Interp *) interp)->ensembleRewrite.numRemovedObjs += skip - 1;
+    }
 
     /*
      * Fire off the constructors non-recursively.
@@ -2050,6 +2068,7 @@ Tcl_CopyObjectInstance(
 	}
     }
 
+    TclResetRewriteEnsemble(interp, 1);
     contextPtr = TclOOGetCallContext(o2Ptr, oPtr->fPtr->clonedName, 0, NULL);
     if (contextPtr) {
 	args[0] = TclOOObjectName(interp, o2Ptr);
@@ -2064,6 +2083,10 @@ Tcl_CopyObjectInstance(
 	TclDecrRefCount(args[1]);
 	TclDecrRefCount(args[2]);
 	TclOODeleteContext(contextPtr);
+	if (result == TCL_ERROR) {
+	    Tcl_AddErrorInfo(interp,
+		    "\n    (while performing post-copy callback)");
+	}
 	if (result != TCL_OK) {
 	    Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
 	    return NULL;

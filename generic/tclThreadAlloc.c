@@ -812,15 +812,7 @@ LockBucket(
     Cache *cachePtr,
     int bucket)
 {
-#if 0
-    if (Tcl_MutexTryLock(bucketInfo[bucket].lockPtr) != TCL_OK) {
-	Tcl_MutexLock(bucketInfo[bucket].lockPtr);
-	cachePtr->buckets[bucket].numWaits++;
-	sharedPtr->buckets[bucket].numWaits++;
-    }
-#else
     Tcl_MutexLock(bucketInfo[bucket].lockPtr);
-#endif
     cachePtr->buckets[bucket].numLocks++;
     sharedPtr->buckets[bucket].numLocks++;
 }
