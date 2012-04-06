@@ -1232,7 +1232,7 @@ else
 #line 1233 "configure"
 #include "confdefs.h"
 
-	    #ifdef __WIN32__
+	    #ifndef __WIN32__
 		#error cross-compiler
 	    #endif
 	
@@ -1242,12 +1242,12 @@ int main() {
 EOF
 if { (eval echo configure:1244: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
-  ac_cv_cross=yes
+  ac_cv_cross=no
 else
   echo "configure: failed program was:" >&5
   cat conftest.$ac_ext >&5
   rm -rf conftest*
-  ac_cv_cross=no
+  ac_cv_cross=yes
 fi
 rm -f conftest*
       
@@ -1449,8 +1449,8 @@ echo "configure:1351: checking compiler flags" >&5
 #line 1450 "configure"
 #include "confdefs.h"
 
-		    #ifdef _WIN64
-			#error 64-bit
+		    #ifndef _WIN64
+			#error 32-bit
 		    #endif
 		
 int main() {
@@ -1459,12 +1459,12 @@ int main() {
 EOF
 if { (eval echo configure:1461: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
-  tcl_win_64bit=no
+  tcl_win_64bit=yes
 else
   echo "configure: failed program was:" >&5
   cat conftest.$ac_ext >&5
   rm -rf conftest*
-  tcl_win_64bit=yes
+  tcl_win_64bit=no
 		
 fi
 rm -f conftest*
