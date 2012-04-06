@@ -133,10 +133,10 @@ TclWinNoBackslash(char *path)
     return path;
 }
 
-static unsigned long
+static int
 TclpGetPid(Tcl_Pid pid)
 {
-    return (unsigned long) (size_t) pid;
+    return (int) (size_t) pid;
 }
 
 static void

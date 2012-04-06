@@ -27,9 +27,6 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
     else
 	TCL_BIN_DIR_DEFAULT=../../tcl/win
     fi
-    if test ! -f $TCL_BIN_DIR_DEFAULT/tclConfig.sh; then
-	TCL_BIN_DIR_DEFAULT="${TCL_BIN_DIR_DEFAULT}/../unix"
-    fi
 
     AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.4 binaries from DIR],
 	    TCL_BIN_DIR=$withval, TCL_BIN_DIR=`cd $TCL_BIN_DIR_DEFAULT; pwd`)
@@ -37,7 +34,11 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 	AC_MSG_ERROR(Tcl directory $TCL_BIN_DIR does not exist)
     fi
     if test ! -f $TCL_BIN_DIR/tclConfig.sh; then
-	AC_MSG_ERROR(There is no tclConfig.sh in $TCL_BIN_DIR:  perhaps you did not specify the Tcl *build* directory (not the toplevel Tcl directory) or you forgot to configure Tcl?)
+	if test ! -f $TCL_BIN_DIR/../unix/tclConfig.sh; then
+	    AC_MSG_ERROR(There is no tclConfig.sh in $TCL_BIN_DIR:  perhaps you did not specify the Tcl *build* directory (not the toplevel Tcl directory) or you forgot to configure Tcl?)
+	fi
+	TCL_BIN_DIR=`cd ${TCL_BIN_DIR}/../unix; pwd`
+	CFLAGS="$CFLAGS -mwin32"
     fi
     AC_MSG_RESULT($TCL_BIN_DIR/tclConfig.sh)
 ])
@@ -416,12 +417,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
       AC_CACHE_CHECK(for cross-compile version of gcc,
 	ac_cv_cross,
 	AC_TRY_COMPILE([
-	    #ifdef __WIN32__
+	    #ifndef __WIN32__
 		#error cross-compiler
 	    #endif
 	], [],
-	ac_cv_cross=yes,
-	ac_cv_cross=no)
+	ac_cv_cross=no,
+	ac_cv_cross=yes)
       )
 
       if test "$ac_cv_cross" = "yes"; then
@@ -592,12 +593,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		;;
 	    *)
 		AC_TRY_COMPILE([
-		    #ifdef _WIN64
-			#error 64-bit
+		    #ifndef _WIN64
+			#error 32-bit
 		    #endif
 		], [],
-			tcl_win_64bit=no,
-			tcl_win_64bit=yes
+			tcl_win_64bit=yes,
+			tcl_win_64bit=no
 		)
 		if test "$tcl_win_64bit" = "yes" ; then
 			do64bit=amd64
