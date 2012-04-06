@@ -856,7 +856,7 @@ declare 7 win {
 	    const char *optval, int optlen)
 }
 declare 8 win {
-    unsigned long TclpGetPid(Tcl_Pid pid)
+    int TclpGetPid(Tcl_Pid pid)
 }
 declare 9 win {
     int TclWinGetPlatformId(void)
@@ -980,7 +980,7 @@ declare 7 unix {
 }
 # On non-cygwin, this is actually a reference to TclUnixWaitForFile
 declare 8 unix {
-    unsigned long TclpGetPid(Tcl_Pid pid)
+    int TclpGetPid(Tcl_Pid pid)
 }
 
 # Added in 8.1:

@@ -48,7 +48,7 @@ EXTERN unsigned short	TclWinNToHS _ANSI_ARGS_((unsigned short ns));
 EXTERN int		TclWinSetSockOpt _ANSI_ARGS_((VOID *s, int level,
 				int optname, CONST char *optval, int optlen));
 /* 8 */
-EXTERN unsigned long	TclpGetPid _ANSI_ARGS_((Tcl_Pid pid));
+EXTERN int		TclpGetPid _ANSI_ARGS_((Tcl_Pid pid));
 /* 9 */
 EXTERN int		TclWinGetPlatformId _ANSI_ARGS_((void));
 /* 10 */
@@ -137,7 +137,7 @@ EXTERN u_short		TclWinNToHS _ANSI_ARGS_((u_short ns));
 EXTERN int		TclWinSetSockOpt _ANSI_ARGS_((SOCKET s, int level,
 				int optname, CONST char *optval, int optlen));
 /* 8 */
-EXTERN unsigned long	TclpGetPid _ANSI_ARGS_((Tcl_Pid pid));
+EXTERN int		TclpGetPid _ANSI_ARGS_((Tcl_Pid pid));
 /* 9 */
 EXTERN int		TclWinGetPlatformId _ANSI_ARGS_((void));
 /* Slot 10 is reserved */
@@ -273,7 +273,7 @@ typedef struct TclIntPlatStubs {
     VOID *reserved5;
     unsigned short (*tclWinNToHS) _ANSI_ARGS_((unsigned short ns)); /* 6 */
     int (*tclWinSetSockOpt) _ANSI_ARGS_((VOID *s, int level, int optname, CONST char *optval, int optlen)); /* 7 */
-    unsigned long (*tclpGetPid) _ANSI_ARGS_((Tcl_Pid pid)); /* 8 */
+    int (*tclpGetPid) _ANSI_ARGS_((Tcl_Pid pid)); /* 8 */
     int (*tclWinGetPlatformId) _ANSI_ARGS_((void)); /* 9 */
     Tcl_DirEntry * (*tclpReaddir) _ANSI_ARGS_((DIR *dir)); /* 10 */
     struct tm * (*tclpLocaltime_unix) _ANSI_ARGS_((TclpTime_t_CONST clock)); /* 11 */
@@ -314,7 +314,7 @@ typedef struct TclIntPlatStubs {
     VOID *reserved5;
     u_short (*tclWinNToHS) _ANSI_ARGS_((u_short ns)); /* 6 */
     int (*tclWinSetSockOpt) _ANSI_ARGS_((SOCKET s, int level, int optname, CONST char *optval, int optlen)); /* 7 */
-    unsigned long (*tclpGetPid) _ANSI_ARGS_((Tcl_Pid pid)); /* 8 */
+    int (*tclpGetPid) _ANSI_ARGS_((Tcl_Pid pid)); /* 8 */
     int (*tclWinGetPlatformId) _ANSI_ARGS_((void)); /* 9 */
     VOID *reserved10;
     void (*tclGetAndDetachPids) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Channel chan)); /* 11 */
