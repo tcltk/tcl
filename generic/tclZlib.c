@@ -1879,52 +1879,111 @@ ZlibCmd(
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
-    case CMD_STREAM:			/* stream deflate/inflate/...gunzip \
+    case CMD_STREAM: {			/* stream deflate/inflate/...gunzip \
 					 *    ?level?
 					 *	-> handleCmd */
-	if (objc < 3 || objc > 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "mode ?level?");
+	Tcl_Obj *compDictObj = NULL;
+	Tcl_Obj *gzipHeaderObj = NULL;
+
+	if (objc < 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "mode ?options...?");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats, "mode", 0,
 		&format) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	mode = TCL_ZLIB_STREAM_INFLATE;
 	switch ((enum zlibFormats) format) {
 	case FMT_DEFLATE:
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
-	case FMT_INFLATE:
-	    format = TCL_ZLIB_FORMAT_RAW;
-	    break;
-	case FMT_COMPRESS:
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
-	case FMT_DECOMPRESS:
-	    format = TCL_ZLIB_FORMAT_ZLIB;
-	    break;
-	case FMT_GZIP:
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
-	case FMT_GUNZIP:
-	    format = TCL_ZLIB_FORMAT_GZIP;
-	    break;
-	}
-	if (objc == 4) {
-	    if (Tcl_GetIntFromObj(interp, objv[3],
-		    (int *) &level) != TCL_OK) {
+	    if (objc > 4) {
+		Tcl_WrongNumArgs(interp, 2, objv, "mode ?level?");
 		return TCL_ERROR;
 	    }
-	    if (level < 0 || level > 9) {
-		goto badLevel;
-	    }
-	} else {
+	    mode = TCL_ZLIB_STREAM_DEFLATE;
+	    format = TCL_ZLIB_FORMAT_RAW;
 	    level = Z_DEFAULT_COMPRESSION;
+	    if (objc == 4) {
+		if (Tcl_GetIntFromObj(interp, objv[3], &level) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (level < 0 || level > 9) {
+		    goto badLevel;
+		}
+	    }
+	    break;
+	case FMT_INFLATE:
+	    if (objc > 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "mode");
+		return TCL_ERROR;
+	    }
+	    mode = TCL_ZLIB_STREAM_INFLATE;
+	    format = TCL_ZLIB_FORMAT_RAW;
+	    level = Z_DEFAULT_COMPRESSION;
+	    break;
+	case FMT_COMPRESS:
+	    if (objc > 4) {
+		Tcl_WrongNumArgs(interp, 2, objv, "mode ?level?");
+		return TCL_ERROR;
+	    }
+	    mode = TCL_ZLIB_STREAM_DEFLATE;
+	    format = TCL_ZLIB_FORMAT_ZLIB;
+	    level = Z_DEFAULT_COMPRESSION;
+	    if (objc == 4) {
+		if (Tcl_GetIntFromObj(interp, objv[3], &level) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (level < 0 || level > 9) {
+		    goto badLevel;
+		}
+	    }
+	    break;
+	case FMT_DECOMPRESS:
+	    if (objc > 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "mode");
+		return TCL_ERROR;
+	    }
+	    mode = TCL_ZLIB_STREAM_INFLATE;
+	    format = TCL_ZLIB_FORMAT_ZLIB;
+	    level = Z_DEFAULT_COMPRESSION;
+	    break;
+	case FMT_GZIP:
+	    if (objc > 4) {
+		Tcl_WrongNumArgs(interp, 2, objv, "mode ?level?");
+		return TCL_ERROR;
+	    }
+	    mode = TCL_ZLIB_STREAM_DEFLATE;
+	    format = TCL_ZLIB_FORMAT_GZIP;
+	    level = Z_DEFAULT_COMPRESSION;
+	    if (objc == 4) {
+		if (Tcl_GetIntFromObj(interp, objv[3], &level) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (level < 0 || level > 9) {
+		    goto badLevel;
+		}
+	    }
+	    break;
+	case FMT_GUNZIP:
+	    if (objc > 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "mode");
+		return TCL_ERROR;
+	    }
+	    mode = TCL_ZLIB_STREAM_INFLATE;
+	    format = TCL_ZLIB_FORMAT_GZIP;
+	    level = Z_DEFAULT_COMPRESSION;
+	    break;
 	}
-	if (Tcl_ZlibStreamInit(interp, mode, format, level, NULL,
+	if (Tcl_ZlibStreamInit(interp, mode, format, level, gzipHeaderObj,
 		&zh) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	if (compDictObj != NULL) {
+	    ((ZlibStreamHandle *) zh)->compDictObj = compDictObj;
+	    Tcl_IncrRefCount(compDictObj);
+	}
 	Tcl_SetObjResult(interp, Tcl_ZlibStreamGetCommandName(zh));
 	return TCL_OK;
+    }
     case CMD_PUSH: {			/* push mode channel options...
 					 *	-> channel */
 	Tcl_Channel chan;
