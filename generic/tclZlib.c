@@ -67,6 +67,8 @@ typedef struct {
     Tcl_Obj *compDictObj;	/* Byte-array object containing compression
 				 * dictionary (not dictObj!) to use if
 				 * necessary. */
+    GzipHeader *gzHeaderPtr;	/* If we've allocated a gzip header
+				 * structure. */
 } ZlibStreamHandle;
 
 /*
@@ -298,7 +300,9 @@ GenerateHeader(
 		NULL);
 	headerPtr->nativeCommentBuf[len] = '\0';
 	headerPtr->header.comment = (Bytef *) headerPtr->nativeCommentBuf;
-	*extraSizePtr += len;
+	if (extraSizePtr != NULL) {
+	    *extraSizePtr += len;
+	}
     }
 
     if (GetValue(interp, dictObj, "crc", &value) != TCL_OK) {
@@ -316,7 +320,9 @@ GenerateHeader(
 		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len, NULL);
 	headerPtr->nativeFilenameBuf[len] = '\0';
 	headerPtr->header.name = (Bytef *) headerPtr->nativeFilenameBuf;
-	*extraSizePtr += len;
+	if (extraSizePtr != NULL) {
+	    *extraSizePtr += len;
+	}
     }
 
     if (GetValue(interp, dictObj, "os", &value) != TCL_OK) {
@@ -480,6 +486,7 @@ Tcl_ZlibStreamInit(
     ZlibStreamHandle *zshPtr = NULL;
     Tcl_DString cmdname;
     Tcl_CmdInfo cmdinfo;
+    GzipHeader *gzHeaderPtr = NULL;
 
     switch (mode) {
     case TCL_ZLIB_STREAM_DEFLATE:
@@ -494,6 +501,15 @@ Tcl_ZlibStreamInit(
 	    break;
 	case TCL_ZLIB_FORMAT_GZIP:
 	    wbits = WBITS_GZIP;
+	    if (dictObj) {
+		gzHeaderPtr = ckalloc(sizeof(GzipHeader));
+		memset(gzHeaderPtr, 0, sizeof(GzipHeader));
+		if (GenerateHeader(interp, dictObj, gzHeaderPtr,
+			NULL) != TCL_OK) {
+		    ckfree(gzHeaderPtr);
+		    return TCL_ERROR;
+		}
+	    }
 	    break;
 	case TCL_ZLIB_FORMAT_ZLIB:
 	    wbits = WBITS_ZLIB;
@@ -520,6 +536,14 @@ Tcl_ZlibStreamInit(
 	    break;
 	case TCL_ZLIB_FORMAT_GZIP:
 	    wbits = WBITS_GZIP;
+	    gzHeaderPtr = ckalloc(sizeof(GzipHeader));
+	    memset(gzHeaderPtr, 0, sizeof(GzipHeader));
+	    gzHeaderPtr->header.name = (Bytef *)
+		    gzHeaderPtr->nativeFilenameBuf;
+	    gzHeaderPtr->header.name_max = MAXPATHLEN - 1;
+	    gzHeaderPtr->header.comment = (Bytef *)
+		    gzHeaderPtr->nativeCommentBuf;
+	    gzHeaderPtr->header.name_max = MAX_COMMENT_LEN - 1;
 	    break;
 	case TCL_ZLIB_FORMAT_ZLIB:
 	    wbits = WBITS_ZLIB;
@@ -547,6 +571,7 @@ Tcl_ZlibStreamInit(
     zshPtr->currentInput = NULL;
     zshPtr->streamEnd = 0;
     zshPtr->compDictObj = NULL;
+    zshPtr->gzHeaderPtr = gzHeaderPtr;
     memset(&zshPtr->stream, 0, sizeof(z_stream));
 
     /*
@@ -556,6 +581,10 @@ Tcl_ZlibStreamInit(
     if (mode == TCL_ZLIB_STREAM_DEFLATE) {
 	e = deflateInit2(&zshPtr->stream, level, Z_DEFLATED, wbits,
 		MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+	if (e == Z_OK && zshPtr->gzHeaderPtr) {
+	    e = deflateSetHeader(&zshPtr->stream,
+		    &zshPtr->gzHeaderPtr->header);
+	}
 	if (e == Z_OK && zshPtr->compDictObj) {
 	    int dictLen;
 	    unsigned char *dictBytes =
@@ -566,6 +595,10 @@ Tcl_ZlibStreamInit(
 	}
     } else {
 	e = inflateInit2(&zshPtr->stream, wbits);
+	if (e == Z_OK && zshPtr->gzHeaderPtr) {
+	    e = inflateGetHeader(&zshPtr->stream,
+		    &zshPtr->gzHeaderPtr->header);
+	}
     }
 
     if (e != Z_OK) {
@@ -630,9 +663,13 @@ Tcl_ZlibStreamInit(
     }
 
     return TCL_OK;
- error:
+
+  error:
     if (zshPtr->compDictObj) {
 	Tcl_DecrRefCount(zshPtr->compDictObj);
+    }
+    if (zshPtr->gzHeaderPtr) {
+	ckfree(zshPtr->gzHeaderPtr);
     }
     ckfree(zshPtr);
     return TCL_ERROR;
@@ -743,6 +780,9 @@ ZlibStreamCleanup(
     }
     if (zshPtr->compDictObj) {
 	Tcl_DecrRefCount(zshPtr->compDictObj);
+    }
+    if (zshPtr->gzHeaderPtr) {
+	ckfree(zshPtr->gzHeaderPtr);
     }
 
     ckfree(zshPtr);
@@ -2880,11 +2920,9 @@ ZlibStackChannelTransform(
     if (format == TCL_ZLIB_FORMAT_GZIP || format == TCL_ZLIB_FORMAT_AUTO) {
 	if (mode == TCL_ZLIB_STREAM_DEFLATE) {
 	    if (gzipHeaderDictPtr) {
-		int dummy = 0;
-
 		cd->flags |= OUT_HEADER;
 		if (GenerateHeader(interp, gzipHeaderDictPtr, &cd->outHeader,
-			&dummy) != TCL_OK) {
+			NULL) != TCL_OK) {
 		    goto error;
 		}
 	    }
