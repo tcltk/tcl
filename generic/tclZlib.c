@@ -1920,13 +1920,34 @@ ZlibCmd(
 	}
 	return TCL_OK;
     case CMD_STREAM: {			/* stream deflate/inflate/...gunzip \
-					 *    ?level?
+					 *    ?options...?
 					 *	-> handleCmd */
+	typedef struct {
+	    const char *name;
+	    Tcl_Obj **valueVar;
+	} OptDescriptor;
 	Tcl_Obj *compDictObj = NULL;
 	Tcl_Obj *gzipHeaderObj = NULL;
+	Tcl_Obj *levelObj = NULL;
+	OptDescriptor compressionOpts[] = {
+	    { "-dictionary", &compDictObj },
+	    { "-level", &levelObj },
+	    { NULL, NULL }
+	};
+	OptDescriptor gzipOpts[] = {
+	    { "-dictionary", &compDictObj },
+	    { "-header", &gzipHeaderObj },
+	    { "-level", &levelObj },
+	    { NULL, NULL }
+	};
+	OptDescriptor expansionOpts[] = {
+	    { "-dictionary", &compDictObj },
+	    { NULL, NULL }
+	};
+	OptDescriptor *desc;
 
-	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "mode ?options...?");
+	if (objc < 3 || !(objc & 1)) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "mode ?-option value...?");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats, "mode", 0,
@@ -1935,90 +1956,69 @@ ZlibCmd(
 	}
 	switch ((enum zlibFormats) format) {
 	case FMT_DEFLATE:
-	    if (objc > 4) {
-		Tcl_WrongNumArgs(interp, 2, objv, "mode ?level?");
-		return TCL_ERROR;
-	    }
+	    desc = compressionOpts;
 	    mode = TCL_ZLIB_STREAM_DEFLATE;
 	    format = TCL_ZLIB_FORMAT_RAW;
-	    level = Z_DEFAULT_COMPRESSION;
-	    if (objc == 4) {
-		if (Tcl_GetIntFromObj(interp, objv[3], &level) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		if (level < 0 || level > 9) {
-		    goto badLevel;
-		}
-	    }
 	    break;
 	case FMT_INFLATE:
-	    if (objc > 3) {
-		Tcl_WrongNumArgs(interp, 2, objv, "mode");
-		return TCL_ERROR;
-	    }
+	    desc = expansionOpts;
 	    mode = TCL_ZLIB_STREAM_INFLATE;
 	    format = TCL_ZLIB_FORMAT_RAW;
-	    level = Z_DEFAULT_COMPRESSION;
 	    break;
 	case FMT_COMPRESS:
-	    if (objc > 4) {
-		Tcl_WrongNumArgs(interp, 2, objv, "mode ?level?");
-		return TCL_ERROR;
-	    }
+	    desc = compressionOpts;
 	    mode = TCL_ZLIB_STREAM_DEFLATE;
 	    format = TCL_ZLIB_FORMAT_ZLIB;
-	    level = Z_DEFAULT_COMPRESSION;
-	    if (objc == 4) {
-		if (Tcl_GetIntFromObj(interp, objv[3], &level) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		if (level < 0 || level > 9) {
-		    goto badLevel;
-		}
-	    }
 	    break;
 	case FMT_DECOMPRESS:
-	    if (objc > 3) {
-		Tcl_WrongNumArgs(interp, 2, objv, "mode");
-		return TCL_ERROR;
-	    }
+	    desc = expansionOpts;
 	    mode = TCL_ZLIB_STREAM_INFLATE;
 	    format = TCL_ZLIB_FORMAT_ZLIB;
-	    level = Z_DEFAULT_COMPRESSION;
 	    break;
 	case FMT_GZIP:
-	    if (objc > 4) {
-		Tcl_WrongNumArgs(interp, 2, objv, "mode ?level?");
-		return TCL_ERROR;
-	    }
+	    desc = gzipOpts;
 	    mode = TCL_ZLIB_STREAM_DEFLATE;
 	    format = TCL_ZLIB_FORMAT_GZIP;
-	    level = Z_DEFAULT_COMPRESSION;
-	    if (objc == 4) {
-		if (Tcl_GetIntFromObj(interp, objv[3], &level) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		if (level < 0 || level > 9) {
-		    goto badLevel;
-		}
-	    }
 	    break;
 	case FMT_GUNZIP:
-	    if (objc > 3) {
-		Tcl_WrongNumArgs(interp, 2, objv, "mode");
-		return TCL_ERROR;
-	    }
+	    desc = expansionOpts;
 	    mode = TCL_ZLIB_STREAM_INFLATE;
 	    format = TCL_ZLIB_FORMAT_GZIP;
-	    level = Z_DEFAULT_COMPRESSION;
 	    break;
 	}
+
+	for (i=3 ; i<objc ; i+=2) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], desc,
+		    sizeof(OptDescriptor), "option", 0, &option) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    *desc[option].valueVar = objv[i+1];
+
+	    /*
+	     * Drop the cache on the option name; table address not constant.
+	     */
+
+	    TclFreeIntRep(objv[i]);
+	}
+
+	level = Z_DEFAULT_COMPRESSION;
+	if (levelObj != NULL) {
+	    if (Tcl_GetIntFromObj(interp, levelObj, &level) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (level < 0 || level > 9) {
+		goto badLevel;
+	    }
+	}
+
 	if (Tcl_ZlibStreamInit(interp, mode, format, level, gzipHeaderObj,
 		&zh) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (compDictObj != NULL) {
-	    ((ZlibStreamHandle *) zh)->compDictObj = compDictObj;
+	    ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zh;
+
+	    zshPtr->compDictObj = compDictObj;
 	    Tcl_IncrRefCount(compDictObj);
 	}
 	Tcl_SetObjResult(interp, Tcl_ZlibStreamGetCommandName(zh));
