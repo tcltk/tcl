@@ -1,9 +1,10 @@
 2012-04-10  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tcl.h (TCL_DEPRECATED_API): Added macro that can be used to
-	mark parts of Tcl's API as deprecated. Currently only used for fields
-	of Tcl_Interp, which TIPs 330 and 336 have deprecated with a migration
-	strategy; we want to encourage people to move away from those fields.
+	* generic/tcl.h (TCL_DEPRECATED_API): [Bug 2458976]: Added macro that
+	can be used to mark parts of Tcl's API as deprecated. Currently only
+	used for fields of Tcl_Interp, which TIPs 330 and 336 have deprecated
+	with a migration strategy; we want to encourage people to move away
+	from those fields.
 
 2012-04-09  Donal K. Fellows  <dkf@users.sf.net>
 
