@@ -1780,7 +1780,6 @@ FinalizeAlloc(
     Object *oPtr = data[1];
     Tcl_InterpState state = data[2];
     Tcl_Object *objectPtr = data[3];
-    //int flags = oPtr->flags;
 
     /*
      * It's an error if the object was whacked in the constructor. Force this

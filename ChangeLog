@@ -1,3 +1,14 @@
+2012-04-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (ClassVarsSet, ObjVarsSet): [Bug 3396896]:
+	Ensure that the lists of variable names used to drive variable
+	resolution will never have the same name twice.
+
+	* generic/tclVar.c (AppendLocals): [Bug 2712377]: Fix problem with
+	reporting of declared variables in methods. It's really a problem with
+	how [info vars] interacts with variable resolvers; this is just a bit
+	of a hack so it is no longer a big problem.
+
 2012-04-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (Tcl_NewObjectInstance, TclNRNewObjectInstance):
