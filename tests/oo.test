@@ -2946,6 +2946,92 @@ test oo-27.18 {variables declaration - multiple use} -setup {
     foo create bar
     list [bar boo] [bar boo]
 } -returnCodes error -match glob -result {unknown method "-?": must be *}
+test oo-27.19 {variables declaration and [info vars]: Bug 2712377} -setup {
+    oo::class create Foo
+    set result {}
+} -body {
+    # This is really a test of problems to do with Tcl's introspection when a
+    # variable resolver is present...
+    oo::define Foo {
+	variable foo bar
+	method setvars {f b} {
+	    set foo $f
+	    set bar $b
+	}
+	method dump1 {} {
+	    lappend ::result <1>
+	    foreach v [lsort [info vars *]] {
+		lappend ::result $v=[set $v]
+	    }
+	    lappend ::result [info locals] [info locals *]
+	}
+	method dump2 {} {
+	    lappend ::result <2>
+	    foreach v [lsort [info vars *]] {
+		lappend ::result $v=[set $v]
+	    }
+	    lappend ::result | foo=$foo [info locals] [info locals *]
+	}
+    }
+    Foo create stuff
+    stuff setvars what ever
+    stuff dump1
+    stuff dump2
+    return $result
+} -cleanup {
+    Foo destroy
+} -result {<1> bar=ever foo=what v v <2> bar=ever foo=what | foo=what v v}
+test oo-27.20 {variables declaration and [info vars]: Bug 2712377} -setup {
+    oo::class create Foo
+    set result {}
+} -body {
+    # This is really a test of problems to do with Tcl's introspection when a
+    # variable resolver is present...
+    oo::define Foo {
+	variable foo bar
+	method setvars {f b} {
+	    set foo $f
+	    set bar $b
+	}
+	method dump1 {} {
+	    lappend ::result <1>
+	    foreach v [lsort [info vars *o]] {
+		lappend ::result $v=[set $v]
+	    }
+	    lappend ::result [info locals] [info locals *]
+	}
+	method dump2 {} {
+	    lappend ::result <2>
+	    foreach v [lsort [info vars *o]] {
+		lappend ::result $v=[set $v]
+	    }
+	    lappend ::result | foo=$foo [info locals] [info locals *]
+	}
+    }
+    Foo create stuff
+    stuff setvars what ever
+    stuff dump1
+    stuff dump2
+    return $result
+} -cleanup {
+    Foo destroy
+} -result {<1> foo=what v v <2> foo=what | foo=what v v}
+test oo-27.21 {variables declaration uniqueifies: Bug 3396896} -setup {
+    oo::class create Foo
+} -body {
+    oo::define Foo variable v v v t t v t
+    info class variable Foo
+} -cleanup {
+    Foo destroy
+} -result {v t}
+test oo-27.22 {variables declaration uniqueifies: Bug 3396896} -setup {
+    oo::object create foo
+} -body {
+    oo::objdefine foo variable v v v t t v t
+    info object variable foo
+} -cleanup {
+    foo destroy
+} -result {v t}
 
 # A feature that's not supported because the mechanism may change without
 # warning, but is supposed to work...
