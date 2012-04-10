@@ -774,10 +774,10 @@ declare 216 {
 declare 217 {
     void Tcl_ResetResult(Tcl_Interp *interp)
 }
-declare 218 generic {
+declare 218 {
     int Tcl_ScanElement(const char *src, int *flagPtr)
 }
-declare 219 generic {
+declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
 # Obsolete
