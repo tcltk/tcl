@@ -28,12 +28,6 @@
 
 #if USE_TCLALLOC
 
-#ifdef TCL_DEBUG
-#   define DEBUG
-/* #define MSTATS */
-#   define RCHECK
-#endif
-
 /*
  * We should really make use of AC_CHECK_TYPE(caddr_t)
  * here, but it can wait until Tcl uses config.h properly.
@@ -71,7 +65,7 @@ union overhead {
 	unsigned char	ovu_index;	/* bucket # */
 	unsigned char	ovu_unused;	/* unused */
 	unsigned char	ovu_magic1;	/* other magic number */
-#ifdef RCHECK
+#ifndef NDEBUG
 	unsigned short	ovu_rmagic;	/* range magic number */
 	unsigned long	ovu_size;	/* actual block size */
 	unsigned short  ovu_unused2;    /* padding to 8-byte align */
@@ -88,7 +82,7 @@ union overhead {
 #define MAGIC		0xef		/* magic # on accounting info */
 #define RMAGIC		0x5555		/* magic # on range info */
 
-#ifdef RCHECK
+#ifndef NDEBUG
 #define	RSLOP		sizeof (unsigned short)
 #else
 #define	RSLOP		0
@@ -148,7 +142,7 @@ static	unsigned int nmalloc[NBUCKETS+1];
 #include <stdio.h>
 #endif
 
-#if defined(DEBUG) || defined(RCHECK)
+#if !defined(NDEBUG)
 #define	ASSERT(p)   if (!(p)) panic(# p)
 #define RANGE_ASSERT(p) if (!(p)) panic(# p)
 #else
@@ -304,7 +298,7 @@ TclpAlloc(nbytes)
 #ifdef MSTATS
 	nmalloc[NBUCKETS]++;
 #endif
-#ifdef RCHECK
+#ifndef NDEBUG
 	/*
 	 * Record allocated size of block and
 	 * bound space with magic numbers.
@@ -355,7 +349,7 @@ TclpAlloc(nbytes)
 #ifdef MSTATS
     nmalloc[bucket]++;
 #endif
-#ifdef RCHECK
+#ifndef NDEBUG
     /*
      * Record allocated size of block and
      * bound space with magic numbers.
@@ -567,7 +561,7 @@ TclpRealloc(cp, nbytes)
 #ifdef MSTATS
 	nmalloc[NBUCKETS]++;
 #endif
-#ifdef RCHECK
+#ifndef NDEBUG
 	/*
 	 * Record allocated size of block and update magic number bounds.
 	 */
@@ -606,7 +600,7 @@ TclpRealloc(cp, nbytes)
     /*
      * Ok, we don't have to copy, it fits as-is
      */
-#ifdef RCHECK
+#ifndef NDEBUG
     op->ov_size = (nbytes + RSLOP - 1) & ~(RSLOP - 1);
     *(unsigned short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
