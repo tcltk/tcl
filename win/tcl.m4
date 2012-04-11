@@ -34,7 +34,10 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 	AC_MSG_ERROR(Tcl directory $TCL_BIN_DIR does not exist)
     fi
     if test ! -f $TCL_BIN_DIR/tclConfig.sh; then
-	AC_MSG_ERROR(There is no tclConfig.sh in $TCL_BIN_DIR:  perhaps you did not specify the Tcl *build* directory (not the toplevel Tcl directory) or you forgot to configure Tcl?)
+	if test ! -f $TCL_BIN_DIR/../unix/tclConfig.sh; then
+	    AC_MSG_ERROR(There is no tclConfig.sh in $TCL_BIN_DIR:  perhaps you did not specify the Tcl *build* directory (not the toplevel Tcl directory) or you forgot to configure Tcl?)
+	fi
+	TCL_BIN_DIR=`cd ${TCL_BIN_DIR}/../unix; pwd`
     fi
     AC_MSG_RESULT($TCL_BIN_DIR/tclConfig.sh)
 ])
@@ -300,6 +303,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
 	DBGX=""
+	AC_DEFINE(NDEBUG, 1, [Is no debugging enabled?])
 	AC_MSG_RESULT([no])
 
 	AC_DEFINE(TCL_CFG_OPTIMIZED)
@@ -313,15 +317,14 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
     fi
     AC_SUBST(CFLAGS_DEFAULT)
     AC_SUBST(LDFLAGS_DEFAULT)
-    AC_DEFINE(TCL_CFG_DEBUG)
 
     if test "$tcl_ok" = "mem" -o "$tcl_ok" = "all"; then
-	AC_DEFINE(TCL_MEM_DEBUG)
+	AC_DEFINE(TCL_MEM_DEBUG, 1, [Is memory debugging enabled?])
     fi
 
     if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
-	AC_DEFINE(TCL_COMPILE_DEBUG)
-	AC_DEFINE(TCL_COMPILE_STATS)
+	AC_DEFINE(TCL_COMPILE_DEBUG, 1, [Is bytecode debugging enabled?])
+	AC_DEFINE(TCL_COMPILE_STATS, 1, [Are bytecode statistics enabled?])
     fi
 
     if test "$tcl_ok" != "yes" -a "$tcl_ok" != "no"; then
@@ -416,12 +419,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
       AC_CACHE_CHECK(for cross-compile version of gcc,
 	ac_cv_cross,
 	AC_TRY_COMPILE([
-	    #ifdef __WIN32__
+	    #ifndef __WIN32__
 		#error cross-compiler
 	    #endif
 	], [],
-	ac_cv_cross=yes,
-	ac_cv_cross=no)
+	ac_cv_cross=no,
+	ac_cv_cross=yes)
       )
 
       if test "$ac_cv_cross" = "yes"; then
@@ -593,12 +596,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		;;
 	    *)
 		AC_TRY_COMPILE([
-		    #ifdef _WIN64
-			#error 64-bit
+		    #ifndef _WIN64
+			#error 32-bit
 		    #endif
 		], [],
-			tcl_win_64bit=no,
-			tcl_win_64bit=yes
+			tcl_win_64bit=yes,
+			tcl_win_64bit=no
 		)
 		if test "$tcl_win_64bit" = "yes" ; then
 			do64bit=amd64
