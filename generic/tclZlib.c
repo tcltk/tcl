@@ -95,6 +95,9 @@ typedef struct {
     GzipHeader outHeader;	/* Header to write to an output stream, when
 				 * compressing a gzip stream. */
     Tcl_TimerToken timer;	/* Timer used for keeping events fresh. */
+    Tcl_Obj *compDictObj;	/* Byte-array object containing compression
+				 * dictionary (not dictObj!) to use if
+				 * necessary. */
 } ZlibChannelData;
 
 /*
@@ -146,7 +149,8 @@ static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
 			    GzipHeader *headerPtr, int *extraSizePtr);
 static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
 			    int mode, int format, int level,
-			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr);
+			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr,
+			    Tcl_Obj *compDictObj);
 static void		ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
 static void		ZlibTransformTimerKill(ZlibChannelData *cd);
 static void		ZlibTransformTimerRun(ClientData clientData);
@@ -448,6 +452,34 @@ ExtractHeader(
     }
 }
 
+static int
+SetInflateDictionary(
+    z_streamp strm,
+    Tcl_Obj *compDictObj)
+{
+    if (compDictObj != NULL) {
+	int length;
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
+
+	return inflateSetDictionary(strm, bytes, (unsigned) length);
+    }
+    return Z_OK;
+}
+
+static int
+SetDeflateDictionary(
+    z_streamp strm,
+    Tcl_Obj *compDictObj)
+{
+    if (compDictObj != NULL) {
+	int length;
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
+
+	return deflateSetDictionary(strm, bytes, (unsigned) length);
+    }
+    return Z_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -586,18 +618,16 @@ Tcl_ZlibStreamInit(
 		    &zshPtr->gzHeaderPtr->header);
 	}
 	if (e == Z_OK && zshPtr->compDictObj) {
-	    int dictLen;
-	    unsigned char *dictBytes =
-		    Tcl_GetByteArrayFromObj(zshPtr->compDictObj, &dictLen);
-
-	    e = deflateSetDictionary(&zshPtr->stream, dictBytes,
-		    (unsigned) dictLen);
+	    e = SetDeflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
 	}
     } else {
 	e = inflateInit2(&zshPtr->stream, wbits);
 	if (e == Z_OK && zshPtr->gzHeaderPtr) {
 	    e = inflateGetHeader(&zshPtr->stream,
 		    &zshPtr->gzHeaderPtr->header);
+	}
+	if (format==TCL_ZLIB_FORMAT_RAW && zshPtr->compDictObj && e==Z_OK) {
+	    e = SetInflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
 	}
     }
 
@@ -837,15 +867,14 @@ Tcl_ZlibStreamReset(
 	e = deflateInit2(&zshPtr->stream, zshPtr->level, Z_DEFLATED,
 		zshPtr->wbits, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
 	if (e == Z_OK && zshPtr->compDictObj) {
-	    int dictLen;
-	    unsigned char *dictBytes =
-		    Tcl_GetByteArrayFromObj(zshPtr->compDictObj, &dictLen);
-
-	    e = deflateSetDictionary(&zshPtr->stream, dictBytes,
-		    (unsigned) dictLen);
+	    e = SetDeflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
 	}
     } else {
 	e = inflateInit2(&zshPtr->stream, zshPtr->wbits);
+	if (zshPtr->format == TCL_ZLIB_FORMAT_RAW && zshPtr->compDictObj
+		&& e == Z_OK) {
+	    e = SetInflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
+	}
     }
 
     if (e != Z_OK) {
@@ -1158,22 +1187,13 @@ Tcl_ZlibStreamGet(
 	    }
 	}
 
-	while (1) {
-	    e = inflate(&zshPtr->stream, zshPtr->flush);
-	    if (e != Z_NEED_DICT || zshPtr->compDictObj == NULL) {
-		break;
-	    } else {
-		int dictLen;
-		unsigned char *dictBytes =
-			Tcl_GetByteArrayFromObj(zshPtr->compDictObj,&dictLen);
-
-		e = inflateSetDictionary(&zshPtr->stream, dictBytes,
-			(unsigned) dictLen);
-		if (e != Z_OK) {
-		    break;
-		}
+	e = inflate(&zshPtr->stream, zshPtr->flush);
+	if (e == Z_NEED_DICT && zshPtr->compDictObj) {
+	    e = SetInflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
+	    if (e == Z_OK) {
+		e = inflate(&zshPtr->stream, zshPtr->flush);
 	    }
-	}
+	};
 	Tcl_ListObjLength(NULL, zshPtr->inData, &listLen);
 
 	while ((zshPtr->stream.avail_out > 0)
@@ -1227,21 +1247,11 @@ Tcl_ZlibStreamGet(
 	     * And call inflate again.
 	     */
 
-	    while (1) {
-		e = inflate(&zshPtr->stream, zshPtr->flush);
-		if (e != Z_NEED_DICT || zshPtr->compDictObj == NULL) {
-		    break;
-		} else {
-		    int dictLen;
-		    unsigned char *dictBytes =
-			    Tcl_GetByteArrayFromObj(zshPtr->compDictObj,
-			    &dictLen);
-
-		    e = inflateSetDictionary(&zshPtr->stream, dictBytes,
-			    (unsigned) dictLen);
-		    if (e != Z_OK) {
-			break;
-		    }
+	    e = inflate(&zshPtr->stream, zshPtr->flush);
+	    if (e == Z_NEED_DICT && zshPtr->compDictObj) {
+		e = SetInflateDictionary(&zshPtr->stream,zshPtr->compDictObj);
+		if (e == Z_OK) {
+		    e = inflate(&zshPtr->stream, zshPtr->flush);
 		}
 	    }
 	}
@@ -2160,7 +2170,7 @@ ZlibCmd(
 	}
 
 	if (ZlibStackChannelTransform(interp, mode, format, level, chan,
-		headerObj) == NULL) {
+		headerObj, NULL) == NULL) {
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, objv[3]);
@@ -2481,12 +2491,10 @@ ZlibTransformClose(
 		    /* TODO: is this the right way to do errors on close?
 		     * Note: when close is called from FinalizeIOSubsystem
 		     * then interp may be NULL */
-		    if (!TclInThreadExit()) {
-			if (interp) {
-			    Tcl_AppendResult(interp,
-				    "error while finalizing file: ",
-				    Tcl_PosixError(interp), NULL);
-			}
+		    if (!TclInThreadExit() && interp) {
+			Tcl_AppendResult(interp,
+				"error while finalizing file: ",
+				Tcl_PosixError(interp), NULL);
 		    }
 		    result = TCL_ERROR;
 		    break;
@@ -2538,6 +2546,12 @@ ZlibTransformInput(
     }
     while (1) {
 	e = inflate(&cd->inStream, flush);
+	if (e == Z_NEED_DICT && cd->compDictObj) {
+	    e = SetInflateDictionary(&cd->inStream, cd->compDictObj);
+	    if (e == Z_OK) {
+		continue;
+	    }
+	}
 	if ((e == Z_STREAM_END) || (e==Z_OK && cd->inStream.avail_out==0)) {
 	    return toRead - cd->inStream.avail_out;
 	}
@@ -2651,8 +2665,12 @@ ZlibTransformSetOption(			/* not used */
     ZlibChannelData *cd = instanceData;
     Tcl_DriverSetOptionProc *setOptionProc =
 	    Tcl_ChannelSetOptionProc(Tcl_GetChannelType(cd->parent));
-    static const char *chanOptions = "flush";
+    static const char *chanOptions = "dictionary flush";
     int haveFlushOpt = (cd->mode == TCL_ZLIB_STREAM_DEFLATE);
+
+    if (optionName && strcmp(optionName, "-dictionary") == 0) {
+	// TODO dictionary option
+    }
 
     if (haveFlushOpt && optionName && strcmp(optionName, "-flush") == 0) {
 	int flushType;
@@ -2715,7 +2733,7 @@ ZlibTransformGetOption(
     ZlibChannelData *cd = instanceData;
     Tcl_DriverGetOptionProc *getOptionProc =
 	    Tcl_ChannelGetOptionProc(Tcl_GetChannelType(cd->parent));
-    static const char *chanOptions = "checksum header";
+    static const char *chanOptions = "checksum dictionary header";
 
     /*
      * The "crc" option reports the current CRC (calculated with the Adler32
@@ -2741,6 +2759,10 @@ ZlibTransformGetOption(
 	    Tcl_DStringAppend(dsPtr, buf, -1);
 	    return TCL_OK;
 	}
+    }
+
+    if (optionName == NULL || strcmp(optionName, "-dictionary") == 0) {
+	// TODO dictionary option
     }
 
     /*
@@ -2901,9 +2923,12 @@ ZlibStackChannelTransform(
     int level,			/* What compression level to use. Ignored for
 				 * decompressing transforms. */
     Tcl_Channel channel,	/* The channel to attach to. */
-    Tcl_Obj *gzipHeaderDictPtr)	/* A description of header to use, or NULL to
+    Tcl_Obj *gzipHeaderDictPtr,	/* A description of header to use, or NULL to
 				 * use a default. Ignored if not compressing
 				 * to produce gzip-format data. */
+    Tcl_Obj *compDictObj)	/* Byte-array object containing compression
+				 * dictionary (not dictObj!) to use if
+				 * necessary. */
 {
     ZlibChannelData *cd = ckalloc(sizeof(ZlibChannelData));
     Tcl_Channel chan;
@@ -2935,6 +2960,12 @@ ZlibStackChannelTransform(
 		    &cd->inHeader.nativeCommentBuf;
 	    cd->inHeader.header.comm_max = MAX_COMMENT_LEN - 1;
 	}
+    }
+
+    if (compDictObj != NULL) {
+	cd->compDictObj = Tcl_DuplicateObj(compDictObj);
+	Tcl_IncrRefCount(cd->compDictObj);
+	Tcl_GetByteArrayFromObj(cd->compDictObj, NULL);
     }
 
     if (format == TCL_ZLIB_FORMAT_RAW) {
@@ -2980,6 +3011,12 @@ ZlibStackChannelTransform(
 		goto error;
 	    }
 	}
+	if (cd->compDictObj) {
+	    e = SetDeflateDictionary(&cd->outStream, cd->compDictObj);
+	    if (e != Z_OK) {
+		goto error;
+	    }
+	}
     }
 
     chan = Tcl_StackChannel(interp, &zlibChannelType, cd,
@@ -3000,6 +3037,9 @@ ZlibStackChannelTransform(
     if (cd->outBuffer) {
 	ckfree(cd->outBuffer);
 	deflateEnd(&cd->outStream);
+    }
+    if (cd->compDictObj) {
+	Tcl_DecrRefCount(cd->compDictObj);
     }
     ckfree(cd);
     return NULL;
