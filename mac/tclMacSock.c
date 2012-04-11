@@ -37,7 +37,7 @@ static int initialized = 0;
  * and most code should handle such errors ok.
  */
 
-#ifndef TCL_DEBUG
+#ifdef NDEBUG
     #define Debugger()
 #endif
 

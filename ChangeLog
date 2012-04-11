@@ -1,3 +1,11 @@
+2012-04-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinInit.c:     [Bug 3448512]: clock scan "1958-01-01" fails only
+	* win/tcl.m4:           in debug compilation.
+	* win/configure:
+	* unix/tcl.m4:          Use NDEBUG consistantly meaning: no debugging.
+	* unix/configure:
+
 2012-04-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinSock.c:     [Bug 510001]: TclSockMinimumBuffers needs plat imp
