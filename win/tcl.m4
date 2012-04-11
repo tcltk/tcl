@@ -38,7 +38,6 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 	    AC_MSG_ERROR(There is no tclConfig.sh in $TCL_BIN_DIR:  perhaps you did not specify the Tcl *build* directory (not the toplevel Tcl directory) or you forgot to configure Tcl?)
 	fi
 	TCL_BIN_DIR=`cd ${TCL_BIN_DIR}/../unix; pwd`
-	CFLAGS="$CFLAGS -mwin32"
     fi
     AC_MSG_RESULT($TCL_BIN_DIR/tclConfig.sh)
 ])
@@ -304,6 +303,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
 	DBGX=""
+	AC_DEFINE(NDEBUG, 1, [Is no debugging enabled?])
 	AC_MSG_RESULT([no])
     else
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
@@ -317,12 +317,12 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
     AC_SUBST(LDFLAGS_DEFAULT)
 
     if test "$tcl_ok" = "mem" -o "$tcl_ok" = "all"; then
-	AC_DEFINE(TCL_MEM_DEBUG)
+	AC_DEFINE(TCL_MEM_DEBUG, 1, [Is memory debugging enabled?])
     fi
 
     if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
-	AC_DEFINE(TCL_COMPILE_DEBUG)
-	AC_DEFINE(TCL_COMPILE_STATS)
+	AC_DEFINE(TCL_COMPILE_DEBUG, 1, [Is bytecode debugging enabled?])
+	AC_DEFINE(TCL_COMPILE_STATS, 1, [Are bytecode statistics enabled?])
     fi
 
     if test "$tcl_ok" != "yes" -a "$tcl_ok" != "no"; then
