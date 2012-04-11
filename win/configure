@@ -3329,7 +3329,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-	    #ifdef __WIN32__
+	    #ifndef __WIN32__
 		#error cross-compiler
 	    #endif
 
@@ -3363,12 +3363,12 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_cross=yes
+  ac_cv_cross=no
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_cross=no
+ac_cv_cross=yes
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -3617,8 +3617,8 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-		    #ifdef _WIN64
-			#error 64-bit
+		    #ifndef _WIN64
+			#error 32-bit
 		    #endif
 
 int
@@ -3651,12 +3651,12 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  tcl_win_64bit=no
+  tcl_win_64bit=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-tcl_win_64bit=yes
+tcl_win_64bit=no
 
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -4629,6 +4629,11 @@ fi;
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
 	DBGX=""
+
+cat >>confdefs.h <<\_ACEOF
+#define NDEBUG 1
+_ACEOF
+
 	echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 
@@ -4647,24 +4652,23 @@ echo "${ECHO_T}yes (standard debugging)" >&6
     fi
 
 
-    cat >>confdefs.h <<\_ACEOF
-#define TCL_CFG_DEBUG 1
-_ACEOF
-
 
     if test "$tcl_ok" = "mem" -o "$tcl_ok" = "all"; then
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define TCL_MEM_DEBUG 1
 _ACEOF
 
     fi
 
     if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define TCL_COMPILE_DEBUG 1
 _ACEOF
 
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define TCL_COMPILE_STATS 1
 _ACEOF
 
