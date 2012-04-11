@@ -9319,6 +9319,11 @@ fi;
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
+
+cat >>confdefs.h <<\_ACEOF
+#define NDEBUG 1
+_ACEOF
+
 	echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 
@@ -9335,12 +9340,6 @@ echo "${ECHO_T}yes (standard debugging)" >&6
 	fi
     fi
 
-
-    ### FIXME: Surely TCL_CFG_DEBUG should be set to whether we're debugging?
-
-cat >>confdefs.h <<\_ACEOF
-#define TCL_CFG_DEBUG 1
-_ACEOF
 
 
     if test "$tcl_ok" = "mem" -o "$tcl_ok" = "all"; then

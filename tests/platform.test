@@ -18,8 +18,6 @@ testConstraint testWinCPUID [llength [info commands testwincpuid]]
 
 test platform-1.1 {TclpSetVariables: tcl_platform} {
     interp create i
-    i eval {catch {unset tcl_platform(debug)}}
-    i eval {catch {unset tcl_platform(threaded)}}
     set result [i eval {lsort [array names tcl_platform]}]
     interp delete i
     set result
