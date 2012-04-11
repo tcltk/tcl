@@ -341,7 +341,7 @@
 #undef TCL_CFGVAL_ENCODING
 
 /* Is debugging enabled? */
-#undef TCL_CFG_DEBUG
+#undef NDEBUG
 
 /* Is this a 64-bit build? */
 #undef TCL_CFG_DO64BIT
