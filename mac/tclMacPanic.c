@@ -161,7 +161,7 @@ TclpPanic TCL_VARARGS_DEF(CONST char *, format)
     CloseWindow(macWinPtr);
 
   exitNow:
-#ifdef TCL_DEBUG
+#ifndef NDEBUG
     Debugger();
 #else
     abort();
