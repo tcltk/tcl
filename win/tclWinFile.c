@@ -223,7 +223,7 @@ WinLink(LinkSource, LinkTarget, linkAction)
 
     /* Make sure source file doesn't exist */
     attr = (*tclWinProcs->getFileAttributesProc)(LinkSource);
-    if (attr != 0xffffffff) {
+    if (attr != -1) {
 	Tcl_SetErrno(EEXIST);
 	return -1;
     }
@@ -237,7 +237,7 @@ WinLink(LinkSource, LinkTarget, linkAction)
     }
     /* Check the target */
     attr = (*tclWinProcs->getFileAttributesProc)(LinkTarget);
-    if (attr == 0xffffffff) {
+    if (attr == -1) {
 	/* The target doesn't exist */
 	TclWinConvertError(GetLastError());
 	return -1;
@@ -301,7 +301,7 @@ WinReadLink(LinkSource)
 
     /* Make sure source file does exist */
     attr = (*tclWinProcs->getFileAttributesProc)(LinkSource);
-    if (attr == 0xffffffff) {
+    if (attr == -1) {
 	/* The source doesn't exist */
 	TclWinConvertError(GetLastError());
 	return NULL;
