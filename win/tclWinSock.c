@@ -1411,7 +1411,7 @@ Tcl_OpenTcpClient(
 	Tcl_Close(NULL, infoPtr->channel);
 	return NULL;
     }
-    return infoPtr->channel
+    return infoPtr->channel;
 }
 
 /*
