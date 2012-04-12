@@ -214,8 +214,7 @@ EXTERN unsigned long	TclpGetClicks(void);
 EXTERN unsigned long	TclpGetSeconds(void);
 /* 77 */
 EXTERN void		TclpGetTime(Tcl_Time *time);
-/* 78 */
-EXTERN int		TclpGetTimeZone(unsigned long time);
+/* Slot 78 is reserved */
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
 /* 81 */
@@ -685,7 +684,7 @@ typedef struct TclIntStubs {
     unsigned long (*tclpGetClicks) (void); /* 75 */
     unsigned long (*tclpGetSeconds) (void); /* 76 */
     void (*tclpGetTime) (Tcl_Time *time); /* 77 */
-    int (*tclpGetTimeZone) (unsigned long time); /* 78 */
+    void (*reserved78)(void);
     void (*reserved79)(void);
     void (*reserved80)(void);
     char * (*tclpRealloc) (char *ptr, unsigned int size); /* 81 */
@@ -996,8 +995,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclpGetSeconds) /* 76 */
 #define TclpGetTime \
 	(tclIntStubsPtr->tclpGetTime) /* 77 */
-#define TclpGetTimeZone \
-	(tclIntStubsPtr->tclpGetTimeZone) /* 78 */
+/* Slot 78 is reserved */
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
 #define TclpRealloc \
