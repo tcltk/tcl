@@ -1,3 +1,12 @@
+2012-04-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls:      [Bug 3514475]: remove TclpGetTimeZone
+	* generic/tclIntDecls.h:     and TclpGetTZName
+	* generic/tclIntPlatDecls.h:
+	* generic/tclStubInit.c:
+	* unix/tclUnixTime.c:
+	* unix/tclWinTilemc:
+
 2012-04-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinInit.c:     [Bug 3448512]: clock scan "1958-01-01" fails only
