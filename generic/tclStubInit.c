@@ -277,7 +277,7 @@ static const TclIntStubs tclIntStubs = {
     TclpGetClicks, /* 75 */
     TclpGetSeconds, /* 76 */
     TclpGetTime, /* 77 */
-    TclpGetTimeZone, /* 78 */
+    0, /* 78 */
     0, /* 79 */
     0, /* 80 */
     TclpRealloc, /* 81 */
@@ -513,7 +513,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinAddProcess, /* 20 */
     0, /* 21 */
     TclpCreateTempFile, /* 22 */
-    TclpGetTZName, /* 23 */
+    0, /* 23 */
     TclWinNoBackslash, /* 24 */
     0, /* 25 */
     TclWinSetInterfaces, /* 26 */
