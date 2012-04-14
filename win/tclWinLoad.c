@@ -28,7 +28,7 @@ static Tcl_Mutex dllDirectoryNameMutex;
 
 static void *		FindSymbol(Tcl_Interp *interp,
 			    Tcl_LoadHandle loadHandle, const char *symbol);
-static void		InitDLLDirectoryName(void);
+static int		InitDLLDirectoryName(void);
 static void		UnloadFile(Tcl_LoadHandle loadHandle);
 
 /*
