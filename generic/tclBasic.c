@@ -833,7 +833,7 @@ Tcl_CreateInterp(void)
 
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
 	    NRCoroInjectObjCmd, NULL, NULL);
-    
+
 #ifdef USE_DTRACE
     /*
      * Register the tcl::dtrace command.
@@ -3113,8 +3113,8 @@ Tcl_DeleteCommandFromToken(
      * from a CmdName Tcl object in some ByteCode code sequence. In that case,
      * delay the cleanup until all references are either discarded (when a
      * ByteCode is freed) or replaced by a new reference (when a cached
-     * CmdName Command reference is found to be invalid and TclNRExecuteByteCode
-     * looks up the command in the command hashtable).
+     * CmdName Command reference is found to be invalid and
+     * TclNRExecuteByteCode looks up the command in the command hashtable).
      */
 
     TclCleanupCommandMacro(cmdPtr);
@@ -4303,7 +4303,7 @@ TclNREvalObjv(
         return TCL_OK;
     } else {
 	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
-    }        
+    }
 }
 
 void
@@ -8333,7 +8333,7 @@ TclNRTailcallObjCmd(
         Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
         Tcl_Namespace *ns1Ptr;
         NRE_callback *tailcallPtr;
-        
+
         listPtr = Tcl_NewListObj(objc-1, objv+1);
         Tcl_IncrRefCount(listPtr);
 
@@ -8344,7 +8344,8 @@ TclNRTailcallObjCmd(
         }
         Tcl_IncrRefCount(nsObjPtr);
 
-        TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
+        TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr,
+                NULL, NULL);
         tailcallPtr = TOP_CB(interp);
         TOP_CB(interp) = tailcallPtr->nextPtr;
         iPtr->varFramePtr->tailcallPtr = tailcallPtr;
@@ -8374,7 +8375,7 @@ NRTailcallEval(
          * Tailcall execution was preempted, eg by an intervening catch or by
          * a now-gone namespace: cleanup and return.
          */
-        
+
         TailcallCleanup(data, interp, result);
         return result;
     }
@@ -8457,6 +8458,7 @@ TclNRYieldObjCmd(
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?returnValue?");
 	return TCL_ERROR;
@@ -8626,7 +8628,7 @@ NRCoroutineCallerCallback(
     NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
     SAVE_CONTEXT(corPtr->running);
     RESTORE_CONTEXT(corPtr->caller);
-    
+
     if (cmdPtr->flags & CMD_IS_DELETED) {
 	/*
 	 * The command was deleted while it was running: wind down the
@@ -8688,16 +8690,21 @@ NRCoroutineExitCallback(
     return result;
 }
 
-
 /*
+ *----------------------------------------------------------------------
+ *
  * NRCoroutineActivateCallback --
  *
- * This is the workhorse for coroutines: it implements both yield and resume.
+ *      This is the workhorse for coroutines: it implements both yield and
+ *      resume.
  *
- * It is important that both be implemented in the same callback: the
- * detection of the impossibility to suspend due to a busy C-stack relies on
- * the precise position of a local variable in the stack. We do not want the
- * compiler to play tricks on us, either by moving things around or inlining.
+ *      It is important that both be implemented in the same callback: the
+ *      detection of the impossibility to suspend due to a busy C-stack relies
+ *      on the precise position of a local variable in the stack. We do not
+ *      want the compiler to play tricks on us, either by moving things around
+ *      or inlining.
+ *
+ *----------------------------------------------------------------------
  */
 
 static int
@@ -8714,18 +8721,18 @@ NRCoroutineActivateCallback(
     if (!corPtr->stackLevel) {
         /*
          * -- Coroutine is suspended --
-         * Push the callback to restore the caller's context on yield or return
+         * Push the callback to restore the caller's context on yield or
+         * return.
          */
 
-        TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
-                NULL);
+        TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr,
+                NULL, NULL, NULL);
 
         /*
          * Record the stackLevel at which the resume is happening, then swap
-         * the interp's environment to make it suitable to run this
-         * coroutine. 
+         * the interp's environment to make it suitable to run this coroutine.
          */
-        
+
         corPtr->stackLevel = stackLevel;
         numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = iPtr->numLevels;
@@ -8735,8 +8742,6 @@ NRCoroutineActivateCallback(
         RESTORE_CONTEXT(corPtr->running);
         iPtr->execEnvPtr = corPtr->eePtr;
         iPtr->numLevels += numLevels;
-        
-        return TCL_OK;
     } else {
         /*
          * Coroutine is active: yield
@@ -8749,15 +8754,15 @@ NRCoroutineActivateCallback(
                     NULL);
             return TCL_ERROR;
         }
-        
-        if (type == CORO_ACTIVATE_YIELD) { 
+
+        if (type == CORO_ACTIVATE_YIELD) {
             corPtr->nargs = COROUTINE_ARGUMENTS_SINGLE_OPTIONAL;
         } else if (type == CORO_ACTIVATE_YIELDM) {
             corPtr->nargs = COROUTINE_ARGUMENTS_ARBITRARY;
         } else {
             Tcl_Panic("Yield received an option which is not implemented");
         }
-        
+
         corPtr->stackLevel = NULL;
 
         numLevels = iPtr->numLevels;
@@ -8765,10 +8770,20 @@ NRCoroutineActivateCallback(
         corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
 
         iPtr->execEnvPtr = corPtr->callerEEPtr;
-        return TCL_OK;
     }
+
+    return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NRCoroInjectObjCmd --
+ *
+ *      Implementation of [::tcl::unsupported::inject] command.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 NRCoroInjectObjCmd(
@@ -8780,7 +8795,7 @@ NRCoroInjectObjCmd(
     Command *cmdPtr;
     CoroutineData *corPtr;
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
-    
+
     /*
      * Usage more or less like tailcall:
      *   inject coroName cmd ?arg1 arg2 ...?
@@ -8793,25 +8808,30 @@ NRCoroInjectObjCmd(
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
     if ((!cmdPtr) || (cmdPtr->nreProc != NRInterpCoroutine)) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("can only inject a command into a coroutine", -1));
+        Tcl_AppendResult(interp, "can only inject a command into a coroutine",
+                NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
+                TclGetString(objv[1]), NULL);
         return TCL_ERROR;
     }
 
-    corPtr = (CoroutineData *) cmdPtr->objClientData;
+    corPtr = cmdPtr->objClientData;
     if (!COR_IS_SUSPENDED(corPtr)) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("can only inject a command into a suspended coroutine", -1));
+        Tcl_AppendResult(interp,
+                "can only inject a command into a suspended coroutine", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", NULL);
         return TCL_ERROR;
     }
 
     /*
      * Add the callback to the coro's execEnv, so that it is the first thing
-     * to happen when the coro is resumed
+     * to happen when the coro is resumed.
      */
-    
+
     iPtr->execEnvPtr = corPtr->eePtr;
-    Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);    
+    TclNREvalObjEx(interp, Tcl_NewListObj(objc-2, objv+2), 0, NULL, INT_MIN);
     iPtr->execEnvPtr = savedEEPtr;
-    
+
     return TCL_OK;
 }
 
@@ -8868,6 +8888,17 @@ NRInterpCoroutine(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNRCoroutineObjCmd --
+ *
+ *      Implementation of [coroutine] command; see documentation for
+ *      description of what this does.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TclNRCoroutineObjCmd(
     ClientData dummy,		/* Not used. */
@@ -8881,7 +8912,7 @@ TclNRCoroutineObjCmd(
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
     Namespace *lookupNsPtr = iPtr->varFramePtr->nsPtr;
-    
+
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
 	return TCL_ERROR;
@@ -8977,16 +9008,16 @@ TclNRCoroutineObjCmd(
     corPtr->stackLevel = NULL;
     corPtr->auxNumLevels = 0;
     iPtr->numLevels--;
-    
+
     /*
      * Create the coro's execEnv, switch to it to push the exit and coro
-     * command callbacks, then switch back. 
+     * command callbacks, then switch back.
      */
 
     corPtr->eePtr = TclCreateExecEnv(interp, CORO_STACK_INITIAL_SIZE);
     corPtr->callerEEPtr = iPtr->execEnvPtr;
     corPtr->eePtr->corPtr = corPtr;
-    
+
     SAVE_CONTEXT(corPtr->caller);
     corPtr->callerEEPtr = iPtr->execEnvPtr;
     RESTORE_CONTEXT(corPtr->running);
@@ -9001,7 +9032,7 @@ TclNRCoroutineObjCmd(
     SAVE_CONTEXT(corPtr->running);
     RESTORE_CONTEXT(corPtr->caller);
     iPtr->execEnvPtr = corPtr->callerEEPtr;
-    
+
     /*
      * Now just resume the coroutine. Take care to insure that the command is
      * looked up in the correct namespace.
