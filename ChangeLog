@@ -1,5 +1,9 @@
 2012-04-15  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclEnsemble.c (NsEnsembleImplementationCmdNR):
+	* generic/tclIOUtil.c (Tcl_FSEvalFileEx): Cut out levels of the C
+	stack by going direct to the relevant internal evaluation function.
+
 	* generic/tclZlib.c (ZlibTransformSetOption): [Bug 3517696]: Make
 	flushing work correctly in a pushed compressing channel transform.
 
