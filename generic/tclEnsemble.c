@@ -1849,7 +1849,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	iPtr->evalFlags |= TCL_EVAL_REDIRECT;
-	return Tcl_NREvalObj(interp, copyPtr, TCL_EVAL_INVOKE);
+	return TclNREvalObjEx(interp, copyPtr, TCL_EVAL_INVOKE, NULL,INT_MIN);
     }
 
   unknownOrAmbiguousSubcommand:
