@@ -1,7 +1,12 @@
+2012-04-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ZlibTransformSetOption): [Bug 3517696]: Make
+	flushing work correctly in a pushed compressing channel transform.
+
 2012-04-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.decls:      [Bug 3514475]: remove TclpGetTimeZone
-	* generic/tclIntDecls.h:     and TclpGetTZName
+	* generic/tclInt.decls:      [Bug 3514475]: Remove TclpGetTimeZone and
+	* generic/tclIntDecls.h:     TclpGetTZName
 	* generic/tclIntPlatDecls.h:
 	* generic/tclStubInit.c:
 	* unix/tclUnixTime.c:
@@ -9,20 +14,21 @@
 
 2012-04-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinInit.c:     [Bug 3448512]: clock scan "1958-01-01" fails only
-	* win/tcl.m4:           in debug compilation.
+	* win/tclWinInit.c:     [Bug 3448512]: clock scan "1958-01-01" fails
+	* win/tcl.m4:           only in debug compilation.
 	* win/configure:
 	* unix/tcl.m4:          Use NDEBUG consistantly meaning: no debugging.
 	* unix/configure:
 	* generic/tclBasic.c:
-	* library/dde/pkgIndex.tcl   Use [::tcl::pkgconfig get debug] in stead
+	* library/dde/pkgIndex.tcl   Use [::tcl::pkgconfig get debug] instead
 	* library/reg/pkgIndex.tcl   of [info exists ::tcl_platform(debug)]
 
 	***POTENTIAL INCOMPATIBILITY***
-	The variables $tcl_platform(debug) and $tcl_platform(threaded) no longer
-	exist. They don't belong in the tcl_platform array, were never documented,
-	disturbed the platform-1.1 test, $tcl_platform(debug) was only available
-	on Windows anyway, and TIP #59 provides a much better alternative.
+	The variables $tcl_platform(debug) and $tcl_platform(threaded) no
+	longer exist. They don't belong in the tcl_platform array, were never
+	documented, disturbed the platform-1.1 test, $tcl_platform(debug) was
+	only available on Windows anyway, and TIP #59 provides a much better
+	alternative.
 
 2012-04-10  Donal K. Fellows  <dkf@users.sf.net>
 
