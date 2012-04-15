@@ -147,11 +147,15 @@ static void		ConvertError(Tcl_Interp *interp, int code);
 static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
 static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
 			    GzipHeader *headerPtr, int *extraSizePtr);
+static int		ZlibPushSubcmd(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
 			    int mode, int format, int level,
 			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr,
 			    Tcl_Obj *compDictObj);
 static void		ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
+static int		ZlibStreamSubcmd(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static void		ZlibTransformTimerKill(ZlibChannelData *cd);
 static void		ZlibTransformTimerRun(ClientData clientData);
 static void		ZlibTransformTimerSetup(ZlibChannelData *cd);
@@ -1712,11 +1716,10 @@ ZlibCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int command, dlen, mode, format, i, option, level = -1;
+    int command, dlen, i, option, level = -1;
     unsigned start, buffersize = 0;
-    Tcl_ZlibStream zh;
     Byte *data;
-    Tcl_Obj *headerDictObj, *headerVarObj;
+    Tcl_Obj *headerDictObj;
     const char *extraInfoStr = NULL;
     static const char *const commands[] = {
 	"adler32", "compress", "crc32", "decompress", "deflate", "gunzip",
@@ -1726,14 +1729,6 @@ ZlibCmd(
     enum zlibCommands {
 	CMD_ADLER, CMD_COMPRESS, CMD_CRC, CMD_DECOMPRESS, CMD_DEFLATE,
 	CMD_GUNZIP, CMD_GZIP, CMD_INFLATE, CMD_PUSH, CMD_STREAM
-    };
-    static const char *const stream_formats[] = {
-	"compress", "decompress", "deflate", "gunzip", "gzip", "inflate",
-	NULL
-    };
-    enum zlibFormats {
-	FMT_COMPRESS, FMT_DECOMPRESS, FMT_DEFLATE, FMT_GUNZIP, FMT_GZIP,
-	FMT_INFLATE
     };
 
     if (objc < 2) {
@@ -1882,8 +1877,10 @@ ZlibCmd(
 	}
 	return Tcl_ZlibInflate(interp, TCL_ZLIB_FORMAT_ZLIB, objv[2],
 		buffersize, NULL);
-    case CMD_GUNZIP:			/* gunzip gzippeddata ?bufferSize?
+    case CMD_GUNZIP: {			/* gunzip gzippeddata ?bufferSize?
 					 *	-> decompressedData */
+	Tcl_Obj *headerVarObj;
+
 	if (objc < 3 || objc > 5 || ((objc & 1) == 0)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "data ?-headerVar varName?");
 	    return TCL_ERROR;
@@ -1929,253 +1926,14 @@ ZlibCmd(
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
-    case CMD_STREAM: {			/* stream deflate/inflate/...gunzip \
+    }
+    case CMD_STREAM:			/* stream deflate/inflate/...gunzip \
 					 *    ?options...?
 					 *	-> handleCmd */
-	typedef struct {
-	    const char *name;
-	    Tcl_Obj **valueVar;
-	} OptDescriptor;
-	Tcl_Obj *compDictObj = NULL;
-	Tcl_Obj *gzipHeaderObj = NULL;
-	Tcl_Obj *levelObj = NULL;
-	OptDescriptor compressionOpts[] = {
-	    { "-dictionary", &compDictObj },
-	    { "-level", &levelObj },
-	    { NULL, NULL }
-	};
-	OptDescriptor gzipOpts[] = {
-	    { "-dictionary", &compDictObj },
-	    { "-header", &gzipHeaderObj },
-	    { "-level", &levelObj },
-	    { NULL, NULL }
-	};
-	OptDescriptor expansionOpts[] = {
-	    { "-dictionary", &compDictObj },
-	    { NULL, NULL }
-	};
-	OptDescriptor *desc;
-
-	if (objc < 3 || !(objc & 1)) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "mode ?-option value...?");
-	    return TCL_ERROR;
-	}
-	if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats, "mode", 0,
-		&format) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	switch ((enum zlibFormats) format) {
-	case FMT_DEFLATE:
-	    desc = compressionOpts;
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
-	    format = TCL_ZLIB_FORMAT_RAW;
-	    break;
-	case FMT_INFLATE:
-	    desc = expansionOpts;
-	    mode = TCL_ZLIB_STREAM_INFLATE;
-	    format = TCL_ZLIB_FORMAT_RAW;
-	    break;
-	case FMT_COMPRESS:
-	    desc = compressionOpts;
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
-	    format = TCL_ZLIB_FORMAT_ZLIB;
-	    break;
-	case FMT_DECOMPRESS:
-	    desc = expansionOpts;
-	    mode = TCL_ZLIB_STREAM_INFLATE;
-	    format = TCL_ZLIB_FORMAT_ZLIB;
-	    break;
-	case FMT_GZIP:
-	    desc = gzipOpts;
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
-	    format = TCL_ZLIB_FORMAT_GZIP;
-	    break;
-	case FMT_GUNZIP:
-	    desc = expansionOpts;
-	    mode = TCL_ZLIB_STREAM_INFLATE;
-	    format = TCL_ZLIB_FORMAT_GZIP;
-	    break;
-	}
-
-	for (i=3 ; i<objc ; i+=2) {
-	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], desc,
-		    sizeof(OptDescriptor), "option", 0, &option) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    *desc[option].valueVar = objv[i+1];
-
-	    /*
-	     * Drop the cache on the option name; table address not constant.
-	     */
-
-	    TclFreeIntRep(objv[i]);
-	}
-
-	level = Z_DEFAULT_COMPRESSION;
-	if (levelObj != NULL) {
-	    if (Tcl_GetIntFromObj(interp, levelObj, &level) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    if (level < 0 || level > 9) {
-		goto badLevel;
-	    }
-	}
-
-	if (Tcl_ZlibStreamInit(interp, mode, format, level, gzipHeaderObj,
-		&zh) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (compDictObj != NULL) {
-	    ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zh;
-
-	    zshPtr->compDictObj = compDictObj;
-	    Tcl_IncrRefCount(compDictObj);
-	}
-	Tcl_SetObjResult(interp, Tcl_ZlibStreamGetCommandName(zh));
-	return TCL_OK;
-    }
-    case CMD_PUSH: {			/* push mode channel options...
+	return ZlibStreamSubcmd(interp, objc, objv);
+    case CMD_PUSH:			/* push mode channel options...
 					 *	-> channel */
-	Tcl_Channel chan;
-	int chanMode;
-	static const char *const pushOptions[] = {
-	    "-header", "-level", "-limit",
-	    NULL
-	};
-	enum pushOptions {poHeader, poLevel, poLimit};
-	Tcl_Obj *headerObj = NULL;
-	int limit = 1, dummy;
-
-	if (objc < 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "mode channel ?options...?");
-	    return TCL_ERROR;
-	}
-
-	if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats, "mode", 0,
-		&format) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	switch ((enum zlibFormats) format) {
-	case FMT_DEFLATE:
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
-	    format = TCL_ZLIB_FORMAT_RAW;
-	    break;
-	case FMT_INFLATE:
-	    mode = TCL_ZLIB_STREAM_INFLATE;
-	    format = TCL_ZLIB_FORMAT_RAW;
-	    break;
-	case FMT_COMPRESS:
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
-	    format = TCL_ZLIB_FORMAT_ZLIB;
-	    break;
-	case FMT_DECOMPRESS:
-	    mode = TCL_ZLIB_STREAM_INFLATE;
-	    format = TCL_ZLIB_FORMAT_ZLIB;
-	    break;
-	case FMT_GZIP:
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
-	    format = TCL_ZLIB_FORMAT_GZIP;
-	    break;
-	case FMT_GUNZIP:
-	    mode = TCL_ZLIB_STREAM_INFLATE;
-	    format = TCL_ZLIB_FORMAT_GZIP;
-	    break;
-	default:
-	    Tcl_AppendResult(interp, "IMPOSSIBLE", NULL);
-	    return TCL_ERROR;
-	}
-
-	if (TclGetChannelFromObj(interp, objv[3], &chan, &chanMode,
-		0) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Sanity checks.
-	 */
-
-	if (mode == TCL_ZLIB_STREAM_DEFLATE && !(chanMode & TCL_WRITABLE)) {
-	    Tcl_AppendResult(interp,
-		    "compression may only be applied to writable channels",
-		    NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNWRITABLE", NULL);
-	    return TCL_ERROR;
-	}
-	if (mode == TCL_ZLIB_STREAM_INFLATE && !(chanMode & TCL_READABLE)) {
-	    Tcl_AppendResult(interp,
-		    "decompression may only be applied to readable channels",
-		    NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNREADABLE", NULL);
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Parse options.
-	 */
-
-	level = Z_DEFAULT_COMPRESSION;
-	for (i=4 ; i<objc ; i++) {
-	    if (Tcl_GetIndexFromObj(interp, objv[i], pushOptions, "option", 0,
-		    &option) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    switch ((enum pushOptions) option) {
-	    case poHeader:
-		if (++i > objc-1) {
-		    Tcl_AppendResult(interp,
-			    "value missing for -header option", NULL);
-		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
-		    return TCL_ERROR;
-		}
-		headerObj = objv[i];
-		if (Tcl_DictObjSize(interp, headerObj, &dummy) != TCL_OK) {
-		    Tcl_AddErrorInfo(interp, "\n    (in -header option)");
-		    return TCL_ERROR;
-		}
-		break;
-	    case poLevel:
-		if (++i > objc-1) {
-		    Tcl_AppendResult(interp,
-			    "value missing for -level option", NULL);
-		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
-		    return TCL_ERROR;
-		}
-		if (Tcl_GetIntFromObj(interp, objv[i],
-			(int *) &level) != TCL_OK) {
-		    Tcl_AddErrorInfo(interp, "\n    (in -level option)");
-		    return TCL_ERROR;
-		}
-		if (level < 0 || level > 9) {
-		    extraInfoStr = "\n    (in -level option)";
-		    goto badLevel;
-		}
-		break;
-	    case poLimit:
-		if (++i > objc-1) {
-		    Tcl_AppendResult(interp,
-			    "value missing for -limit option", NULL);
-		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
-		    return TCL_ERROR;
-		}
-		if (Tcl_GetIntFromObj(interp, objv[i],
-			(int *) &limit) != TCL_OK) {
-		    Tcl_AddErrorInfo(interp, "\n    (in -limit option)");
-		    return TCL_ERROR;
-		}
-		if (limit < 1) {
-		    limit = 1;
-		}
-		break;
-	    }
-	}
-
-	if (ZlibStackChannelTransform(interp, mode, format, level, chan,
-		headerObj, NULL) == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, objv[3]);
-	return TCL_OK;
-    }
+	return ZlibPushSubcmd(interp, objc, objv);
     };
 
     return TCL_ERROR;
@@ -2191,6 +1949,321 @@ ZlibCmd(
     Tcl_AppendResult(interp, "buffer size must be 32 to 65536", NULL);
     Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE", NULL);
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZlibStreamSubcmd --
+ *
+ *	Implementation of the [zlib stream] subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ZlibStreamSubcmd(
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    static const char *const stream_formats[] = {
+	"compress", "decompress", "deflate", "gunzip", "gzip", "inflate",
+	NULL
+    };
+    enum zlibFormats {
+	FMT_COMPRESS, FMT_DECOMPRESS, FMT_DEFLATE, FMT_GUNZIP, FMT_GZIP,
+	FMT_INFLATE
+    };
+    int i, format, mode, option, level;
+    typedef struct {
+	const char *name;
+	Tcl_Obj **valueVar;
+    } OptDescriptor;
+    Tcl_Obj *compDictObj = NULL;
+    Tcl_Obj *gzipHeaderObj = NULL;
+    Tcl_Obj *levelObj = NULL;
+    const OptDescriptor compressionOpts[] = {
+	{ "-dictionary", &compDictObj },
+	{ "-level", &levelObj },
+	{ NULL, NULL }
+    };
+    const OptDescriptor gzipOpts[] = {
+	{ "-dictionary", &compDictObj },
+	{ "-header", &gzipHeaderObj },
+	{ "-level", &levelObj },
+	{ NULL, NULL }
+    };
+    const OptDescriptor expansionOpts[] = {
+	{ "-dictionary", &compDictObj },
+	{ NULL, NULL }
+    };
+    const OptDescriptor *desc;
+    Tcl_ZlibStream zh;
+
+    if (objc < 3 || !(objc & 1)) {
+	Tcl_WrongNumArgs(interp, 2, objv, "mode ?-option value...?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats, "mode", 0,
+	    &format) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * The format determines the compression mode and the options that may be
+     * specified.
+     */
+
+    switch ((enum zlibFormats) format) {
+    case FMT_DEFLATE:
+	desc = compressionOpts;
+	mode = TCL_ZLIB_STREAM_DEFLATE;
+	format = TCL_ZLIB_FORMAT_RAW;
+	break;
+    case FMT_INFLATE:
+	desc = expansionOpts;
+	mode = TCL_ZLIB_STREAM_INFLATE;
+	format = TCL_ZLIB_FORMAT_RAW;
+	break;
+    case FMT_COMPRESS:
+	desc = compressionOpts;
+	mode = TCL_ZLIB_STREAM_DEFLATE;
+	format = TCL_ZLIB_FORMAT_ZLIB;
+	break;
+    case FMT_DECOMPRESS:
+	desc = expansionOpts;
+	mode = TCL_ZLIB_STREAM_INFLATE;
+	format = TCL_ZLIB_FORMAT_ZLIB;
+	break;
+    case FMT_GZIP:
+	desc = gzipOpts;
+	mode = TCL_ZLIB_STREAM_DEFLATE;
+	format = TCL_ZLIB_FORMAT_GZIP;
+	break;
+    case FMT_GUNZIP:
+	desc = expansionOpts;
+	mode = TCL_ZLIB_STREAM_INFLATE;
+	format = TCL_ZLIB_FORMAT_GZIP;
+	break;
+    default:
+	Tcl_AppendResult(interp, "IMPOSSIBLE", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse the options.
+     */
+
+    for (i=3 ; i<objc ; i+=2) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], desc,
+		sizeof(OptDescriptor), "option", 0, &option) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*desc[option].valueVar = objv[i+1];
+
+	/*
+	 * Drop the cache on the option name; table address not constant.
+	 */
+
+	TclFreeIntRep(objv[i]);
+    }
+
+    /*
+     * If a compression level was given, parse it (integral: 0..9). Otherwise
+     * use the default.
+     */
+
+    if (levelObj == NULL) {
+	level = Z_DEFAULT_COMPRESSION;
+    } else if (Tcl_GetIntFromObj(interp, levelObj, &level) != TCL_OK) {
+	return TCL_ERROR;
+    } else if (level < 0 || level > 9) {
+	Tcl_AppendResult(interp, "level must be 0 to 9", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL", NULL);
+	Tcl_AddErrorInfo(interp, "\n    (in -level option)");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Construct the stream now we know its configuration.
+     */
+
+    if (Tcl_ZlibStreamInit(interp, mode, format, level, gzipHeaderObj,
+	    &zh) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (compDictObj != NULL) {
+	ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zh;
+
+	zshPtr->compDictObj = compDictObj;
+	Tcl_IncrRefCount(compDictObj);
+    }
+    Tcl_SetObjResult(interp, Tcl_ZlibStreamGetCommandName(zh));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZlibPushSubcmd --
+ *
+ *	Implementation of the [zlib push] subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ZlibPushSubcmd(
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    static const char *const stream_formats[] = {
+	"compress", "decompress", "deflate", "gunzip", "gzip", "inflate",
+	NULL
+    };
+    enum zlibFormats {
+	FMT_COMPRESS, FMT_DECOMPRESS, FMT_DEFLATE, FMT_GUNZIP, FMT_GZIP,
+	FMT_INFLATE
+    };
+    Tcl_Channel chan;
+    int chanMode, format, mode, level, i, option;
+    static const char *const pushOptions[] = {
+	"-header", "-level", "-limit", NULL
+    };
+    enum pushOptions {poHeader, poLevel, poLimit};
+    Tcl_Obj *headerObj = NULL;
+    int limit = 1, dummy;
+
+    if (objc < 4) {
+	Tcl_WrongNumArgs(interp, 2, objv, "mode channel ?options...?");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats, "mode", 0,
+	    &format) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch ((enum zlibFormats) format) {
+    case FMT_DEFLATE:
+	mode = TCL_ZLIB_STREAM_DEFLATE;
+	format = TCL_ZLIB_FORMAT_RAW;
+	break;
+    case FMT_INFLATE:
+	mode = TCL_ZLIB_STREAM_INFLATE;
+	format = TCL_ZLIB_FORMAT_RAW;
+	break;
+    case FMT_COMPRESS:
+	mode = TCL_ZLIB_STREAM_DEFLATE;
+	format = TCL_ZLIB_FORMAT_ZLIB;
+	break;
+    case FMT_DECOMPRESS:
+	mode = TCL_ZLIB_STREAM_INFLATE;
+	format = TCL_ZLIB_FORMAT_ZLIB;
+	break;
+    case FMT_GZIP:
+	mode = TCL_ZLIB_STREAM_DEFLATE;
+	format = TCL_ZLIB_FORMAT_GZIP;
+	break;
+    case FMT_GUNZIP:
+	mode = TCL_ZLIB_STREAM_INFLATE;
+	format = TCL_ZLIB_FORMAT_GZIP;
+	break;
+    default:
+	Tcl_AppendResult(interp, "IMPOSSIBLE", NULL);
+	return TCL_ERROR;
+    }
+
+    if (TclGetChannelFromObj(interp, objv[3], &chan, &chanMode, 0) != TCL_OK){
+	return TCL_ERROR;
+    }
+
+    /*
+     * Sanity checks.
+     */
+
+    if (mode == TCL_ZLIB_STREAM_DEFLATE && !(chanMode & TCL_WRITABLE)) {
+	Tcl_AppendResult(interp,
+		"compression may only be applied to writable channels", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNWRITABLE", NULL);
+	return TCL_ERROR;
+    }
+    if (mode == TCL_ZLIB_STREAM_INFLATE && !(chanMode & TCL_READABLE)) {
+	Tcl_AppendResult(interp,
+		"decompression may only be applied to readable channels",
+		NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNREADABLE", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse options.
+     */
+
+    level = Z_DEFAULT_COMPRESSION;
+    for (i=4 ; i<objc ; i++) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], pushOptions, "option", 0,
+		&option) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch ((enum pushOptions) option) {
+	case poHeader:
+	    if (++i > objc-1) {
+		Tcl_AppendResult(interp, "value missing for -header option",
+			NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
+		return TCL_ERROR;
+	    }
+	    headerObj = objv[i];
+	    if (Tcl_DictObjSize(interp, headerObj, &dummy) != TCL_OK) {
+		Tcl_AddErrorInfo(interp, "\n    (in -header option)");
+		return TCL_ERROR;
+	    }
+	    break;
+	case poLevel:
+	    if (++i > objc-1) {
+		Tcl_AppendResult(interp,
+			"value missing for -level option", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIntFromObj(interp, objv[i], (int*) &level) != TCL_OK) {
+		Tcl_AddErrorInfo(interp, "\n    (in -level option)");
+		return TCL_ERROR;
+	    }
+	    if (level < 0 || level > 9) {
+		Tcl_AppendResult(interp, "level must be 0 to 9", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL",
+			NULL);
+		Tcl_AddErrorInfo(interp, "\n    (in -level option)");
+		return TCL_ERROR;
+	    }
+	    break;
+	case poLimit:
+	    if (++i > objc-1) {
+		Tcl_AppendResult(interp, "value missing for -limit option",
+			NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIntFromObj(interp, objv[i], (int*) &limit) != TCL_OK) {
+		Tcl_AddErrorInfo(interp, "\n    (in -limit option)");
+		return TCL_ERROR;
+	    }
+	    if (limit < 1) {
+		limit = 1;
+	    }
+	    break;
+	}
+    }
+
+    if (ZlibStackChannelTransform(interp, mode, format, level, chan,
+	    headerObj, NULL) == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, objv[3]);
+    return TCL_OK;
 }
 
 /*
