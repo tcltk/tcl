@@ -582,7 +582,7 @@ In addition, if \fIinterp\fR is non-NULL, \fBTcl_FSOpenFileChannel\fR
 leaves an error message in \fIinterp\fR's result after any error.
 .PP
 The newly created channel is not registered in the supplied interpreter; to
-register it, use \fBTcl_RegisterChannel\fR, described below.
+register it, use \fBTcl_RegisterChannel\fR.
 If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it as a
 replacement for the standard channel.
@@ -1218,8 +1218,9 @@ In addition, if \fIinterp\fR is non-NULL, the
 \fBTcl_FSOpenFileChannelProc\fR leaves an error message in \fIinterp\fR's
 result after any error.
 .PP
-The newly created channel is not registered in the supplied
-interpreter; to register it, use \fBTcl_RegisterChannel\fR. If one of
+The newly created channel must not registered in the supplied
+interpreter; that task is up to the caller of
+\fBTcl_FSOpenFileChannel\fR (if necessary). If one of
 the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it
 as a replacement for the standard channel.
