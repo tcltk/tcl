@@ -1,3 +1,10 @@
+2012-04-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/FileSystem.3 (Tcl_FSOpenFileChannelProc): [Bug 3518244]: Fixed
+	documentation of this filesystem callback function; it must not
+	register its created channel - that's the responsibility of the caller
+	of Tcl_FSOpenFileChannel - as that leads to reference leaks.
+
 2012-04-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinInit.c:     [Bug 3448512]: clock scan "1958-01-01" fails only
