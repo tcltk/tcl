@@ -2130,10 +2130,10 @@ ZlibPushSubcmd(
     Tcl_Channel chan;
     int chanMode, format, mode, level, i, option;
     static const char *const pushOptions[] = {
-	"-header", "-level", "-limit", NULL
+	"-dictionary", "-header", "-level", "-limit", NULL
     };
-    enum pushOptions {poHeader, poLevel, poLimit};
-    Tcl_Obj *headerObj = NULL;
+    enum pushOptions {poDictionary, poHeader, poLevel, poLimit};
+    Tcl_Obj *headerObj = NULL, *compDictObj = NULL;
     int limit = 1, dummy;
 
     if (objc < 4) {
@@ -2255,11 +2255,24 @@ ZlibPushSubcmd(
 		limit = 1;
 	    }
 	    break;
+	case poDictionary:
+	    if (++i > objc-1) {
+		Tcl_AppendResult(interp,
+			"value missing for -dictionary option", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
+		return TCL_ERROR;
+	    }
+	    compDictObj = objv[i];
+	    break;
 	}
     }
 
     if (ZlibStackChannelTransform(interp, mode, format, level, chan,
 	    headerObj, NULL) == NULL) {
+	return TCL_ERROR;
+    }
+    if ((compDictObj != NULL) && (Tcl_SetChannelOption(interp, chan,
+	    "-dictionary", TclGetString(compDictObj)) != TCL_OK)) {
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, objv[3]);
@@ -2742,7 +2755,16 @@ ZlibTransformSetOption(			/* not used */
     int haveFlushOpt = (cd->mode == TCL_ZLIB_STREAM_DEFLATE);
 
     if (optionName && strcmp(optionName, "-dictionary") == 0) {
-	// TODO dictionary option
+	Tcl_Obj *compDictObj;
+
+	TclNewStringObj(compDictObj, value, strlen(value));
+	Tcl_IncrRefCount(compDictObj);
+	(void) Tcl_GetByteArrayFromObj(compDictObj, NULL);
+	if (cd->compDictObj) {
+	    TclDecrRefCount(cd->compDictObj);
+	}
+	cd->compDictObj = compDictObj;
+	// TODO: consider whether to apply immediately
     }
 
     if (haveFlushOpt && optionName && strcmp(optionName, "-flush") == 0) {
