@@ -34,13 +34,6 @@
 	* library/dde/pkgIndex.tcl   Use [::tcl::pkgconfig get debug] instead
 	* library/reg/pkgIndex.tcl   of [info exists ::tcl_platform(debug)]
 
-	***POTENTIAL INCOMPATIBILITY***
-	The variables $tcl_platform(debug) and $tcl_platform(threaded) no
-	longer exist. They don't belong in the tcl_platform array, were never
-	documented, disturbed the platform-1.1 test, $tcl_platform(debug) was
-	only available on Windows anyway, and TIP #59 provides a much better
-	alternative.
-
 2012-04-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tcl.h (TCL_DEPRECATED_API): [Bug 2458976]: Added macro that
