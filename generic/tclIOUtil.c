@@ -1729,9 +1729,12 @@ Tcl_FSEvalFileEx(
 
     objPtr = Tcl_NewObj();
     Tcl_IncrRefCount(objPtr);
-    /* Try to read first character of stream, so we can
-     * check for utf-8 BOM to be handled especially.
+
+    /*
+     * Try to read first character of stream, so we can check for utf-8 BOM to
+     * be handled especially.
      */
+
     if (Tcl_ReadChars(chan, objPtr, 1, 0) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"",
@@ -1739,10 +1742,12 @@ Tcl_FSEvalFileEx(
 	goto end;
     }
     string = Tcl_GetString(objPtr);
+
     /*
      * If first character is not a BOM, append the remaining characters,
-     * otherwise replace them [Bug 3466099].
+     * otherwise replace them. [Bug 3466099]
      */
+
     if (Tcl_ReadChars(chan, objPtr, -1,
 	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
@@ -1855,9 +1860,12 @@ TclNREvalFile(
 
     objPtr = Tcl_NewObj();
     Tcl_IncrRefCount(objPtr);
-    /* Try to read first character of stream, so we can
-     * check for utf-8 BOM to be handled especially.
+
+    /*
+     * Try to read first character of stream, so we can check for utf-8 BOM to
+     * be handled especially.
      */
+
     if (Tcl_ReadChars(chan, objPtr, 1, 0) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"",
@@ -1866,15 +1874,17 @@ TclNREvalFile(
 	return TCL_ERROR;
     }
     string = Tcl_GetString(objPtr);
+
     /*
      * If first character is not a BOM, append the remaining characters,
-     * otherwise replace them [Bug 3466099].
+     * otherwise replace them. [Bug 3466099]
      */
+
     if (Tcl_ReadChars(chan, objPtr, -1,
 	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"",
-			Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
 	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }

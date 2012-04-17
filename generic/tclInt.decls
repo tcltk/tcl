@@ -18,7 +18,6 @@ library tcl
 # Define the unsupported generic interfaces.
 
 interface tclInt
-scspec EXTERN
 
 # Declare each of the functions in the unsupported internal Tcl
 # interface.  These interfaces are allowed to changed between versions.
@@ -127,8 +126,8 @@ declare 25 {
 #  }
 # Removed in 8.5
 #declare 27 {
-#    int TclGetDate(char *p, unsigned long now, long zone,
-#	    unsigned long *timePtr)
+#    int TclGetDate(char *p, Tcl_WideInt now, long zone,
+#	    Tcl_WideInt *timePtr)
 #}
 declare 28 {
     Tcl_Channel TclpGetDefaultStdChannel(int type)
@@ -320,9 +319,10 @@ declare 76 {
 declare 77 {
     void TclpGetTime(Tcl_Time *time)
 }
-declare 78 {
-    int TclpGetTimeZone(unsigned long time)
-}
+# Removed in 8.6:
+#declare 78 {
+#    int TclpGetTimeZone(unsigned long time)
+#}
 # Replaced by Tcl_FSListVolumes in 8.4:
 #declare 79 {
 #    int TclpListVolumes(Tcl_Interp *interp)
@@ -421,7 +421,10 @@ declare 103 {
 	    int *portPtr)
 }
 declare 104 {
-    int TclSockMinimumBuffers(ClientData sock, int size)
+    int TclSockMinimumBuffersOld(int sock, int size)
+}
+declare 110 {
+    int TclSockMinimumBuffers(void *sock, int size)
 }
 # Replaced by Tcl_FSStat in 8.4:
 #declare 105 {
@@ -689,12 +692,12 @@ declare 169 {
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
-            int numChars, Command *cmdPtr, int result, int traceFlags,
+	    int numChars, Command *cmdPtr, int result, int traceFlags,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 171 {
     int TclCheckExecutionTraces(Tcl_Interp *interp, const char *command,
-            int numChars, Command *cmdPtr, int result, int traceFlags,
+	    int numChars, Command *cmdPtr, int result, int traceFlags,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 172 {
@@ -736,17 +739,7 @@ declare 177 {
 #    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
 #}
 
-# REMOVED
-# Allocate lists without copying arrays
-# declare 180 {
-#    Tcl_Obj *TclNewListObjDirect(int objc, Tcl_Obj **objv)
-# }
-#declare 181 {
-#    Tcl_Obj *TclDbNewListObjDirect(int objc, Tcl_Obj **objv,
-#	    const char *file, int line)
-#}
-
-# TclpGmtime and TclpLocaltime promoted to the interface from unix
+# TclpGmtime and TclpLocaltime promoted to the generic interface from unix
 
 declare 182 {
      struct tm *TclpLocaltime(const time_t *clock)
@@ -996,10 +989,9 @@ declare 248 {
 }
 
 declare 249 {
-    char* TclDoubleDigits(double dv, int ndigits, int flags,
-			  int* decpt, int* signum, char** endPtr)
+    char *TclDoubleDigits(double dv, int ndigits, int flags,
+			  int *decpt, int *signum, char **endPtr)
 }
-
 # TIP #285: Script cancellation support.
 declare 250 {
     void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
@@ -1016,10 +1008,10 @@ interface tclIntPlat
 # Windows specific functions
 
 declare 0 win {
-    void TclWinConvertError(unsigned long errCode)
+    void TclWinConvertError(DWORD errCode)
 }
 declare 1 win {
-    void TclWinConvertWSAError(unsigned long errCode)
+    void TclWinConvertWSAError(DWORD errCode)
 }
 declare 2 win {
     struct servent *TclWinGetServByName(const char *nm,
@@ -1027,7 +1019,7 @@ declare 2 win {
 }
 declare 3 win {
     int TclWinGetSockOpt(SOCKET s, int level, int optname,
-	    char FAR *optval, int FAR *optlen)
+	    char *optval, int *optlen)
 }
 declare 4 win {
     HINSTANCE TclWinGetTclInstance(void)
@@ -1041,7 +1033,7 @@ declare 6 win {
 }
 declare 7 win {
     int TclWinSetSockOpt(SOCKET s, int level, int optname,
-	    const char FAR *optval, int optlen)
+	    const char *optval, int optlen)
 }
 declare 8 win {
     unsigned long TclpGetPid(Tcl_Pid pid)
@@ -1088,7 +1080,7 @@ declare 19 win {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 20 win {
-    void TclWinAddProcess(void *hProcess, unsigned long id)
+    void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
 
 # removed permanently for 8.4
@@ -1100,13 +1092,14 @@ declare 20 win {
 declare 22 win {
     TclFile TclpCreateTempFile(const char *contents)
 }
-declare 23 win {
-    char *TclpGetTZName(int isdst)
-}
+# Removed in 8.6:
+#declare 23 win {
+#    char *TclpGetTZName(int isdst)
+#}
 declare 24 win {
     char *TclWinNoBackslash(char *path)
 }
-# replaced by TclGetPlatform
+# replaced by generic TclGetPlatform
 #declare 25 win {
 #    TclPlatformType *TclWinGetPlatform(void)
 #}
@@ -1134,11 +1127,13 @@ declare 29 win {
 
 # Pipe channel functions
 
+# On non-cygwin, this is actually a reference to TclGetAndDetachPids
 declare 0 unix {
-    void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
+    void TclWinConvertError(unsigned int errCode)
 }
+# On non-cygwin, this is actually a reference to TclpCloseFile
 declare 1 unix {
-    int TclpCloseFile(TclFile file)
+    void TclWinConvertWSAError(unsigned int errCode)
 }
 declare 2 unix {
     Tcl_Channel TclpCreateCommandChannel(TclFile readFile,
@@ -1147,20 +1142,23 @@ declare 2 unix {
 declare 3 unix {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
+# On non-cygwin, this is actually a reference to TclpCreateProcess
 declare 4 unix {
-    int TclpCreateProcess(Tcl_Interp *interp, int argc, const char **argv,
-	    TclFile inputFile, TclFile outputFile, TclFile errorFile,
-	    Tcl_Pid *pidPtr)
+    void *TclWinGetTclInstance(void)
 }
 # Signature changed in 8.1:
 #  declare 5 unix {
 #      TclFile TclpCreateTempFile(char *contents, Tcl_DString *namePtr)
 #  }
+
+# On non-cygwin, this is actually a reference to TclpMakeFile
 declare 6 unix {
-    TclFile TclpMakeFile(Tcl_Channel channel, int direction)
+    unsigned short TclWinNToHS(unsigned short ns)
 }
+# On non-cygwin, this is actually a reference to TclpOpenFile
 declare 7 unix {
-    TclFile TclpOpenFile(const char *fname, int mode)
+    int TclWinSetSockOpt(void *s, int level, int optname,
+	    const char *optval, int optlen)
 }
 declare 8 unix {
     int TclUnixWaitForFile(int fd, int mask, int timeout)
@@ -1168,8 +1166,9 @@ declare 8 unix {
 
 # Added in 8.1:
 
+# On non-cygwin, this is actually a reference to TclpCreateTempFile
 declare 9 unix {
-    TclFile TclpCreateTempFile(const char *contents)
+    int TclWinGetPlatformId(void)
 }
 
 # Added in 8.4:
@@ -1178,10 +1177,12 @@ declare 10 unix {
     Tcl_DirEntry *TclpReaddir(DIR *dir)
 }
 # Slots 11 and 12 are forwarders for functions that were promoted to
-# Stubs
+# generic Stubs
+# On cygwin, this is actually a reference to TclGetAndDetachPids
 declare 11 unix {
     struct tm *TclpLocaltime_unix(const time_t *clock)
 }
+# On cygwin, this is actually a reference to TclpCloseFile
 declare 12 unix {
     struct tm *TclpGmtime_unix(const time_t *clock)
 }
@@ -1199,7 +1200,8 @@ declare 14 unix {
 ################################
 # Mac OS X specific functions
 
-declare 15 macosx {
+#On cygwin, TclpCreateProcess is here
+declare 15 {unix macosx} {
     int TclMacOSXGetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)
 }
@@ -1211,13 +1213,42 @@ declare 17 macosx {
     int TclMacOSXCopyFileAttributes(const char *src, const char *dst,
 	    const Tcl_StatBuf *statBufPtr)
 }
-declare 18 macosx {
+#On cygwin, TclpMakeFile is here
+declare 18 {unix macosx} {
     int TclMacOSXMatchType(Tcl_Interp *interp, const char *pathName,
 	    const char *fileName, Tcl_StatBuf *statBufPtr,
 	    Tcl_GlobTypeData *types)
 }
-declare 19 macosx {
+#On cygwin, TclpOpenFile is here
+declare 19 {unix macosx} {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+}
+declare 20 unix {
+    void TclWinAddProcess(void *hProcess, unsigned int id)
+}
+declare 22 unix {
+    TclFile TclpCreateTempFile(const char *contents)
+}
+declare 24 unix {
+    char *TclWinNoBackslash(char *path)
+}
+declare 26 unix {
+    void TclWinSetInterfaces(int wide)
+}
+declare 27 unix {
+    void TclWinFlushDirtyChannels(void)
+}
+declare 28 unix {
+    void TclWinResetInterfaces(void)
+}
+declare 29 unix {
+    int TclWinCPUID(unsigned int index, unsigned int *regs)
+}
+declare 30 unix {
+    void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
+}
+declare 31 unix {
+    int TclpCloseFile(TclFile file)
 }
 
 

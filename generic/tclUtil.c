@@ -13,6 +13,7 @@
  */
 
 #include "tclInt.h"
+#include "tclParse.h"
 #include <math.h>
 
 /*
@@ -972,15 +973,16 @@ TclScanElement(
     }
 
     while (length) {
+      if (CHAR_TYPE(*p) != TYPE_NORMAL) {
 	switch (*p) {
-	case '{':
+	case '{':	/* TYPE_BRACE */
 #if COMPAT
 	    braceCount++;
 #endif
 	    extra++;				/* Escape '{' => '\{' */
 	    nestingLevel++;
 	    break;
-	case '}':
+	case '}':	/* TYPE_BRACE */
 #if COMPAT
 	    braceCount++;
 #endif
@@ -991,8 +993,8 @@ TclScanElement(
 		requireEscape = 1;
 	    }
 	    break;
-	case ']':
-	case '"':
+	case ']':	/* TYPE_CLOSE_BRACK */
+	case '"':	/* TYPE_SPACE */
 #if COMPAT
 	    forbidNone = 1;
 	    extra++;		/* Escapes all just prepend a backslash */
@@ -1001,22 +1003,22 @@ TclScanElement(
 #else
 	    /* FLOW THROUGH */
 #endif
-	case '[':
-	case '$':
-	case ';':
-	case ' ':
-	case '\f':
-	case '\n':
-	case '\r':
-	case '\t':
-	case '\v':
+	case '[':	/* TYPE_SUBS */
+	case '$':	/* TYPE_SUBS */
+	case ';':	/* TYPE_COMMAND_END */
+	case ' ':	/* TYPE_SPACE */
+	case '\f':	/* TYPE_SPACE */
+	case '\n':	/* TYPE_COMMAND_END */
+	case '\r':	/* TYPE_SPACE */
+	case '\t':	/* TYPE_SPACE */
+	case '\v':	/* TYPE_SPACE */
 	    forbidNone = 1;
 	    extra++;		/* Escape sequences all one byte longer. */
 #if COMPAT
 	    preferBrace = 1;
 #endif
 	    break;
-	case '\\':
+	case '\\':	/* TYPE_SUBS */
 	    extra++;				/* Escape '\' => '\\' */
 	    if ((length == 1) || ((length == -1) && (p[1] == '\0'))) {
 		/* Final backslash. Cannot format with brace quoting. */
@@ -1041,13 +1043,14 @@ TclScanElement(
 	    preferBrace = 1;
 #endif
 	    break;
-	case '\0':
+	case '\0':	/* TYPE_SUBS */
 	    if (length == -1) {
 		goto endOfString;
 	    }
 	    /* TODO: Panic on improper encoding? */
 	    break;
 	}
+      }
 	length -= (length > 0);
 	p++;
     }
@@ -4118,20 +4121,9 @@ TclReToGlob(
 	*exactPtr = (anchorLeft && anchorRight);
     }
 
-#if 0
-    fprintf(stderr, "INPUT RE '%.*s' OUTPUT GLOB '%s' anchor %d:%d \n",
-	    reStrLen, reStr,
-	    Tcl_DStringValue(dsPtr), anchorLeft, anchorRight);
-    fflush(stderr);
-#endif
     return TCL_OK;
 
   invalidGlob:
-#if 0
-    fprintf(stderr, "INPUT RE '%.*s' NO OUTPUT GLOB %s (%c)\n",
-	    reStrLen, reStr, msg, *p);
-    fflush(stderr);
-#endif
     if (interp != NULL) {
 	Tcl_AppendResult(interp, msg, NULL);
 	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, NULL);

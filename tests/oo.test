@@ -131,6 +131,13 @@ test oo-1.4 {basic test of OO functionality} -body {
 test oo-1.5 {basic test of OO functionality} -body {
     oo::object doesnotexist
 } -returnCodes 1 -result {unknown method "doesnotexist": must be create, destroy or new}
+test oo-1.5.1 {basic test of OO functionality} -setup {
+    oo::object create aninstance
+} -returnCodes error -body {
+    aninstance
+} -cleanup {
+    rename aninstance {}
+} -result {wrong # args: should be "aninstance method ?arg ...?"}
 test oo-1.6 {basic test of OO functionality} -setup {
     oo::object create aninstance
 } -body {
@@ -330,6 +337,45 @@ test oo-2.6 {OO constructor and tailcall - Bug 2414858} -setup {
 } -cleanup {
     foo destroy
 } -result good
+test oo-2.7 {construction, method calls and ensembles - Bug 3514761} -setup {
+    namespace eval k {}
+} -body {
+    namespace eval k {
+	oo::class create s {
+	    constructor {j} {
+		# nothing
+	    }
+	}
+	namespace export s
+	namespace ensemble create
+    }
+    k s create X
+} -returnCodes error -cleanup {
+    namespace delete k
+} -result {wrong # args: should be "k s create X j"}
+test oo-2.8 {construction, method calls and ensembles - Bug 3514761} -setup {
+    namespace eval k {}
+} -body {
+    namespace eval k {
+	oo::class create s {
+	    constructor {j} {
+		# nothing
+	    }
+	}
+	oo::class create t {
+	    superclass s
+	    constructor args {
+		k next {*}$args
+	    }
+	}
+	interp alias {} ::k::next {} ::oo::Helpers::next
+	namespace export t next
+	namespace ensemble create
+    }
+    k t create X
+} -returnCodes error -cleanup {
+    namespace delete k
+} -result {wrong # args: should be "k next j"}
 
 test oo-3.1 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as we're
@@ -1672,6 +1718,64 @@ test oo-15.5 {OO: class cloning - Bug 3474460} -setup {
 } -cleanup {
     ArbitraryClass destroy
 } -result {a b c}
+test oo-15.6 {OO: object cloning copies namespace contents} -setup {
+    oo::class create ArbitraryClass {export eval}
+} -body {
+    ArbitraryClass create a
+    a eval {proc foo x {
+	variable y
+	return [string repeat $x [incr y]]
+    }}
+    set result [list [a eval {foo 2}] [a eval {foo 3}]]
+    oo::copy a b
+    a eval {rename foo bar}
+    lappend result [b eval {foo 2}] [b eval {foo 3}] [a eval {bar 4}]
+} -cleanup {
+    ArbitraryClass destroy
+} -result {2 33 222 3333 444}
+test oo-15.7 {OO: classes can be cloned anonymously} -setup {
+    oo::class create ArbitraryClassA
+    oo::class create ArbitraryClassB {superclass ArbitraryClassA}
+} -body {
+    info object isa class [oo::copy ArbitraryClassB]
+} -cleanup {
+    ArbitraryClassA destroy
+} -result 1
+test oo-15.8 {OO: intercept object cloning} -setup {
+    oo::class create Foo
+    set result {}
+} -body {
+    oo::define Foo {
+	constructor {msg} {
+	    variable v $msg
+	}
+	method <cloned> {from} {
+	    next $from
+	    lappend ::result cloned $from [self]
+	}
+	method check {} {
+	    variable v
+	    lappend ::result check [self] $v
+	}
+    }
+    Foo create foo ok
+    oo::copy foo bar
+    foo check
+    bar check
+} -cleanup {
+    Foo destroy
+} -result {cloned ::foo ::bar check ::foo ok check ::bar ok}
+test oo-15.9 {ensemble rewriting must not bleed through oo::copy} -setup {
+    oo::class create Foo
+} -body {
+    oo::define Foo {
+	method <cloned> {a b} {}
+    }
+    interp alias {} Bar {} oo::copy [Foo create foo]
+    Bar bar
+} -returnCodes error -cleanup {
+    Foo destroy
+} -result {wrong # args: should be "::bar <cloned> a b"}
 
 test oo-16.1 {OO: object introspection} -body {
     info object
@@ -1767,10 +1871,10 @@ test oo-16.11 {OO: object introspection} -setup {
 } -body {
     oo::define foo method spong {} {...}
     oo::objdefine bar method boo {a {b c} args} {the body}
-    list [info object methods bar -all] [info object methods bar -all -private]
+    list [lsort [info object methods bar -all]] [lsort [info object methods bar -all -private]]
 } -cleanup {
     foo destroy
-} -result {{boo destroy spong} {boo destroy eval spong unknown variable varname}}
+} -result {{boo destroy spong} {<cloned> boo destroy eval spong unknown variable varname}}
 test oo-16.12 {OO: object introspection} -setup {
     oo::object create foo
 } -cleanup {
@@ -1851,11 +1955,11 @@ test oo-17.9 {OO: class introspection} -setup {
 	}
     }
     oo::define subfoo method boo {a {b c} args} {the body}
-    list [info class methods subfoo -all] \
-	[info class methods subfoo -all -private]
+    list [lsort [info class methods subfoo -all]] \
+	[lsort [info class methods subfoo -all -private]]
 } -cleanup {
     foo destroy
-} -result {{bar boo destroy} {bar boo destroy eval unknown variable varname}}
+} -result {{bar boo destroy} {<cloned> bar boo destroy eval unknown variable varname}}
 test oo-17.10 {OO: class introspection} -setup {
     oo::class create foo
 } -cleanup {
@@ -2389,7 +2493,7 @@ test oo-22.1 {OO and info frame} -setup {
     list [i level] [i frames] [dict get [c frame] object]
 } -cleanup {
     c destroy
-} -result {1 {{type source line * file * cmd {info frame 0} method frames class ::c level 0} {type source line * file * cmd {info frame 0} method frames object ::i level 0}} ::c}
+} -result {1 {{* cmd {info frame 0} method frames class ::c level 0} {* cmd {info frame 0} method frames object ::i level 0}} ::c}
 test oo-22.2 {OO and info frame: Bug 3001438} -setup {
     oo::class create c
 } -body {
@@ -2460,6 +2564,16 @@ test oo-24.2 {unknown method method - Bug 1965063} -setup {
     }
     obj foo bar
 } -result {unknown method "foo": must be destroy, dummy, dummy2 or unknown}
+test oo-24.3 {unknown method method - absent method name} -setup {
+    set o [oo::object new]
+} -cleanup {
+    $o destroy
+} -body {
+    oo::objdefine $o method unknown args {
+	return "unknown: >>$args<<"
+    }
+    list [$o] [$o foobar] [$o foo bar]
+} -result {{unknown: >><<} {unknown: >>foobar<<} {unknown: >>foo bar<<}}
 
 # Probably need a better set of tests, but this is quite difficult to devise
 test oo-25.1 {call chain caching} -setup {
@@ -2751,6 +2865,173 @@ test oo-27.13 {variables declaration: Bug 3185009: require refcount management} 
 } -cleanup {
     foo destroy
 } -result {0 7 1 7 {} 0 1 {can't read "x": no such variable}}
+test oo-27.14 {variables declaration - multiple use} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x
+	variable y
+	method boo {} {
+	    return [incr x],[incr y]
+	}
+    }
+    foo create bar
+    list [bar boo] [bar boo]
+} -result {1,1 2,2}
+test oo-27.15 {variables declaration - multiple use} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable
+	variable x y
+	method boo {} {
+	    return [incr x],[incr y]
+	}
+    }
+    foo create bar
+    list [bar boo] [bar boo]
+} -result {1,1 2,2}
+test oo-27.16 {variables declaration - multiple use} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x
+	variable -clear
+	variable y
+	method boo {} {
+	    return [incr x],[incr y]
+	}
+    }
+    foo create bar
+    list [bar boo] [bar boo]
+} -result {1,1 1,2}
+test oo-27.17 {variables declaration - multiple use} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x
+	variable -set y
+	method boo {} {
+	    return [incr x],[incr y]
+	}
+    }
+    foo create bar
+    list [bar boo] [bar boo]
+} -result {1,1 1,2}
+test oo-27.18 {variables declaration - multiple use} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x
+	variable -? y
+	method boo {} {
+	    return [incr x],[incr y]
+	}
+    }
+    foo create bar
+    list [bar boo] [bar boo]
+} -returnCodes error -match glob -result {unknown method "-?": must be *}
+test oo-27.19 {variables declaration and [info vars]: Bug 2712377} -setup {
+    oo::class create Foo
+    set result {}
+} -body {
+    # This is really a test of problems to do with Tcl's introspection when a
+    # variable resolver is present...
+    oo::define Foo {
+	variable foo bar
+	method setvars {f b} {
+	    set foo $f
+	    set bar $b
+	}
+	method dump1 {} {
+	    lappend ::result <1>
+	    foreach v [lsort [info vars *]] {
+		lappend ::result $v=[set $v]
+	    }
+	    lappend ::result [info locals] [info locals *]
+	}
+	method dump2 {} {
+	    lappend ::result <2>
+	    foreach v [lsort [info vars *]] {
+		lappend ::result $v=[set $v]
+	    }
+	    lappend ::result | foo=$foo [info locals] [info locals *]
+	}
+    }
+    Foo create stuff
+    stuff setvars what ever
+    stuff dump1
+    stuff dump2
+    return $result
+} -cleanup {
+    Foo destroy
+} -result {<1> bar=ever foo=what v v <2> bar=ever foo=what | foo=what v v}
+test oo-27.20 {variables declaration and [info vars]: Bug 2712377} -setup {
+    oo::class create Foo
+    set result {}
+} -body {
+    # This is really a test of problems to do with Tcl's introspection when a
+    # variable resolver is present...
+    oo::define Foo {
+	variable foo bar
+	method setvars {f b} {
+	    set foo $f
+	    set bar $b
+	}
+	method dump1 {} {
+	    lappend ::result <1>
+	    foreach v [lsort [info vars *o]] {
+		lappend ::result $v=[set $v]
+	    }
+	    lappend ::result [info locals] [info locals *]
+	}
+	method dump2 {} {
+	    lappend ::result <2>
+	    foreach v [lsort [info vars *o]] {
+		lappend ::result $v=[set $v]
+	    }
+	    lappend ::result | foo=$foo [info locals] [info locals *]
+	}
+    }
+    Foo create stuff
+    stuff setvars what ever
+    stuff dump1
+    stuff dump2
+    return $result
+} -cleanup {
+    Foo destroy
+} -result {<1> foo=what v v <2> foo=what | foo=what v v}
+test oo-27.21 {variables declaration uniqueifies: Bug 3396896} -setup {
+    oo::class create Foo
+} -body {
+    oo::define Foo variable v v v t t v t
+    info class variable Foo
+} -cleanup {
+    Foo destroy
+} -result {v t}
+test oo-27.22 {variables declaration uniqueifies: Bug 3396896} -setup {
+    oo::object create foo
+} -body {
+    oo::objdefine foo variable v v v t t v t
+    info object variable foo
+} -cleanup {
+    foo destroy
+} -result {v t}
 
 # A feature that's not supported because the mechanism may change without
 # warning, but is supposed to work...
@@ -2832,6 +3113,148 @@ test oo-31.2 {Bug 3111059: when objects and coroutines entangle} -setup {
 } -cleanup {
     cls destroy
 } -result {0 {}}
+
+oo::class create SampleSlot {
+    superclass oo::Slot
+    constructor {} {
+	variable contents {a b c} ops {}
+    }
+    method contents {} {variable contents; return $contents}
+    method ops {} {variable ops; return $ops}
+    method Get {} {
+	variable contents
+	variable ops
+	lappend ops [info level] Get
+	return $contents
+    }
+    method Set {lst} {
+	variable contents $lst
+	variable ops
+	lappend ops [info level] Set $lst
+	return
+    }
+}
+
+test oo-32.1 {TIP 380: slots - class test} -setup {
+    SampleSlot create sampleSlot
+} -body {
+    list [info level] [sampleSlot contents] [sampleSlot ops]
+} -cleanup {
+    rename sampleSlot {}
+} -result {0 {a b c} {}}
+test oo-32.2 {TIP 380: slots - class test} -setup {
+    SampleSlot create sampleSlot
+} -body {
+    list [info level] [sampleSlot -clear] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup {
+    rename sampleSlot {}
+} -result {0 {} {} {1 Set {}}}
+test oo-32.3 {TIP 380: slots - class test} -setup {
+    SampleSlot create sampleSlot
+} -body {
+    list [info level] [sampleSlot -append g h i] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup {
+    rename sampleSlot {}
+} -result {0 {} {a b c g h i} {1 Get 1 Set {a b c g h i}}}
+test oo-32.4 {TIP 380: slots - class test} -setup {
+    SampleSlot create sampleSlot
+} -body {
+    list [info level] [sampleSlot -set d e f] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup {
+    rename sampleSlot {}
+} -result {0 {} {d e f} {1 Set {d e f}}}
+test oo-32.5 {TIP 380: slots - class test} -setup {
+    SampleSlot create sampleSlot
+} -body {
+    list [info level] [sampleSlot -set d e f] [sampleSlot -append g h i] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup {
+    rename sampleSlot {}
+} -result {0 {} {} {d e f g h i} {1 Set {d e f} 1 Get 1 Set {d e f g h i}}}
+
+test oo-33.1 {TIP 380: slots - defaulting} -setup {
+    set s [SampleSlot new]
+} -body {
+    list [$s x y] [$s contents]
+} -cleanup {
+    rename $s {}
+} -result {{} {a b c x y}}
+test oo-33.2 {TIP 380: slots - defaulting} -setup {
+    set s [SampleSlot new]
+} -body {
+    list [$s destroy; $s unknown] [$s contents]
+} -cleanup {
+    rename $s {}
+} -result {{} {a b c destroy unknown}}
+test oo-32.3 {TIP 380: slots - defaulting} -setup {
+    set s [SampleSlot new]
+} -body {
+    oo::objdefine $s forward --default-operation  my -set
+    list [$s destroy; $s unknown] [$s contents] [$s ops]
+} -cleanup {
+    rename $s {}
+} -result {{} unknown {1 Set destroy 1 Set unknown}}
+test oo-33.4 {TIP 380: slots - errors} -setup {
+    set s [SampleSlot new]
+} -body {
+    # Method names beginning with "-" are special to slots
+    $s -grill q
+} -returnCodes error -cleanup {
+    rename $s {}
+} -result {unknown method "-grill": must be -append, -clear, -set, contents or ops}
+
+SampleSlot destroy
+
+test oo-34.1 {TIP 380: slots - presence} -setup {
+    set obj [oo::object new]
+    set result {}
+} -body {
+    oo::define oo::object {
+	::lappend ::result [::info object class filter]
+	::lappend ::result [::info object class mixin]
+	::lappend ::result [::info object class superclass]
+	::lappend ::result [::info object class variable]
+    }
+    oo::objdefine $obj {
+	::lappend ::result [::info object class filter]
+	::lappend ::result [::info object class mixin]
+	::lappend ::result [::info object class variable]
+    }
+    return $result
+} -cleanup {
+    $obj destroy
+} -result {::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot}
+test oo-34.2 {TIP 380: slots - presence} {
+    lsort [info class instances oo::Slot]
+} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable}
+proc getMethods obj {
+    list [lsort [info object methods $obj -all]] \
+	[lsort [info object methods $obj -private]]
+}
+test oo-34.3 {TIP 380: slots - presence} {
+    getMethods oo::define::filter
+} {{-append -clear -set} {Get Set}}
+test oo-34.4 {TIP 380: slots - presence} {
+    getMethods oo::define::mixin
+} {{-append -clear -set} {--default-operation Get Set}}
+test oo-34.5 {TIP 380: slots - presence} {
+    getMethods oo::define::superclass
+} {{-append -clear -set} {--default-operation Get Set}}
+test oo-34.6 {TIP 380: slots - presence} {
+    getMethods oo::define::variable
+} {{-append -clear -set} {Get Set}}
+test oo-34.7 {TIP 380: slots - presence} {
+    getMethods oo::objdefine::filter
+} {{-append -clear -set} {Get Set}}
+test oo-34.8 {TIP 380: slots - presence} {
+    getMethods oo::objdefine::mixin
+} {{-append -clear -set} {--default-operation Get Set}}
+test oo-34.9 {TIP 380: slots - presence} {
+    getMethods oo::objdefine::variable
+} {{-append -clear -set} {Get Set}}
 
 cleanupTests
 return

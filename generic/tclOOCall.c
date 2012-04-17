@@ -37,7 +37,7 @@ struct ChainBuilder {
 #define DEFINITE_PROTECTED 0x100000
 #define DEFINITE_PUBLIC    0x200000
 #define KNOWN_STATE	   (DEFINITE_PROTECTED | DEFINITE_PUBLIC)
-#define SPECIAL		   (CONSTRUCTOR | DESTRUCTOR)
+#define SPECIAL		   (CONSTRUCTOR | DESTRUCTOR | FORCE_UNKNOWN)
 
 /*
  * Function declarations for things defined in this file.
@@ -995,6 +995,22 @@ TclOOGetCallContext(
     cb.callChainPtr = callPtr;
     cb.filterLength = 0;
     cb.oPtr = oPtr;
+
+    /*
+     * If we're working with a forced use of unknown, do that now.
+     */
+
+    if (flags & FORCE_UNKNOWN) {
+	AddSimpleChainToCallContext(oPtr, oPtr->fPtr->unknownMethodNameObj,
+		&cb, NULL, 0, NULL);
+	callPtr->flags |= OO_UNKNOWN_METHOD;
+	callPtr->epoch = -1;
+	if (callPtr->numChain == 0) {
+	    TclOODeleteChain(callPtr);
+	    return NULL;
+	}
+	goto returnContext;
+    }
 
     /*
      * Add all defined filters (if any, and if we're going to be processing
