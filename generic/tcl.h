@@ -499,7 +499,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
  * Instead, they set a Tcl_Obj member in the "real" structure that can be
  * accessed with Tcl_GetObjResult() and Tcl_SetObjResult().
  */
-
+#if 0
 typedef struct Tcl_Interp {
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
@@ -529,6 +529,8 @@ typedef struct Tcl_Interp {
     int unused5 TCL_DEPRECATED_API("bad field access");
 #endif
 } Tcl_Interp;
+#endif
+typedef struct Tcl_Interp Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
@@ -870,13 +872,13 @@ int		Tcl_IsShared(Tcl_Obj *objPtr);
  */
 
 typedef struct Tcl_SavedResult {
-    char *result;
-    Tcl_FreeProc *freeProc;
+    char *unused1;
+    Tcl_FreeProc *unused2;
     Tcl_Obj *objResultPtr;
-    char *appendResult;
-    int appendAvl;
-    int appendUsed;
-    char resultSpace[TCL_RESULT_SIZE+1];
+    char *unused3;
+    int unused4;
+    int unused5;
+    char unused6[TCL_RESULT_SIZE+1];
 } Tcl_SavedResult;
 
 /*
