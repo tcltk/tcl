@@ -2626,6 +2626,7 @@ Tcl_DStringResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the
 				 * result of interp. */
 {
+#if 0
     Interp *iPtr = (Interp *) interp;
 
     Tcl_ResetResult(interp);
@@ -2637,8 +2638,11 @@ Tcl_DStringResult(
 	iPtr->result = iPtr->resultSpace;
 	memcpy(iPtr->result, dsPtr->string, dsPtr->length + 1);
     } else {
+#endif
 	Tcl_SetResult(interp, dsPtr->string, TCL_VOLATILE);
+#if 0
     }
+#endif
 
     dsPtr->string = dsPtr->staticSpace;
     dsPtr->length = 0;
@@ -2672,6 +2676,7 @@ Tcl_DStringGetResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the result
 				 * of interp. */
 {
+#if 0
     Interp *iPtr = (Interp *) interp;
 
     if (dsPtr->string != dsPtr->staticSpace) {
@@ -2710,6 +2715,14 @@ Tcl_DStringGetResult(
 
     iPtr->result = iPtr->resultSpace;
     iPtr->resultSpace[0] = 0;
+#else
+    int length;
+    char *bytes = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length);
+
+    Tcl_DStringFree(dsPtr);
+    Tcl_DStringAppend(dsPtr, bytes, length);
+    Tcl_ResetResult(interp);
+#endif
 }
 
 /*
