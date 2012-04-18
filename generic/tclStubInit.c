@@ -181,7 +181,7 @@ Tcl_WinTCharToUtf(
 #   define TclWinGetPlatformId (int (*)()) TclpCreateTempFile
 #   define TclWinGetTclInstance (void *(*)()) TclpCreateProcess
 #   define TclWinNToHS (unsigned short (*) _ANSI_ARGS_((unsigned short ns))) TclpMakeFile
-#   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, const char *, int))) TclpOpenFile
+#   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, CONST char *, int))) TclpOpenFile
 #   define TclWinAddProcess 0
 #   define TclWinNoBackslash 0
 #   define TclWinSetInterfaces 0

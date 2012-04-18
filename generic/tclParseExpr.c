@@ -132,7 +132,7 @@ typedef struct ParseInfo {
  * entries must match the order and number of the lexeme definitions above.
  */
 
-static char *lexemeStrings[] = {
+static CONST char *CONST lexemeStrings[] = {
     "LITERAL", "FUNCNAME",
     "[", "{", "(", ")", "$", "\"", ",", "END", "UNKNOWN", "UNKNOWN_CHAR",
     "*", "/", "%", "+", "-",

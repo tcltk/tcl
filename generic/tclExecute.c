@@ -87,7 +87,7 @@ int tclTraceExec = 0;
  * expression opcodes (e.g., INST_LOR) in tclCompile.h.
  */
 
-static char *operatorStrings[] = {
+static CONST char *CONST operatorStrings[] = {
     "||", "&&", "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
     "+", "-", "*", "/", "%", "+", "-", "~", "!",
     "BUILTIN FUNCTION", "FUNCTION",
@@ -100,7 +100,7 @@ static char *operatorStrings[] = {
  */
 
 #ifdef TCL_COMPILE_DEBUG
-static char *resultStrings[] = {
+static CONST char *CONST resultStrings[] = {
     "TCL_OK", "TCL_ERROR", "TCL_RETURN", "TCL_BREAK", "TCL_CONTINUE"
 };
 #endif
@@ -397,7 +397,7 @@ static void		InitByteCodeExecution _ANSI_ARGS_((
 			    Tcl_Interp *interp));
 #ifdef TCL_COMPILE_DEBUG
 static void		PrintByteCodeInfo _ANSI_ARGS_((ByteCode *codePtr));
-static char *		StringForResultCode _ANSI_ARGS_((int result));
+static CONST char *	StringForResultCode _ANSI_ARGS_((int result));
 static void		ValidatePcAndStackTop _ANSI_ARGS_((
 			    ByteCode *codePtr, unsigned char *pc,
 			    int stackTop, int stackLowerBound));
@@ -6564,7 +6564,7 @@ EvalStatsCmd(unused, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
-static char *
+static CONST char *
 StringForResultCode(result)
     int result;			/* The Tcl result code for which to
 				 * generate a string. */
