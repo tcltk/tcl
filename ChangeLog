@@ -1,3 +1,11 @@
+2012-04-18  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/America/Port-au-Prince:
+	* library/tzdata/Asia/Damascus:
+	* library/tzdata/Asia/Gaza:
+	* library/tzdata/Asia/Hebron: tzdata2012c
+
 2012-04-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/FileSystem.3 (Tcl_FSOpenFileChannelProc): [Bug 3518244]: Fixed
