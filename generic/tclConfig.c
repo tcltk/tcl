@@ -213,7 +213,7 @@ QueryConfigObjCmd(
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
     int n, index;
-    static CONST char *subcmdStrings[] = {
+    static const char *subcmdStrings[] = {
 	"get", "list", NULL
     };
     enum subcmds {
