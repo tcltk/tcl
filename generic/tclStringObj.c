@@ -1017,7 +1017,7 @@ Tcl_SetUnicodeObj(objPtr, unicode, numChars)
 
 static int
 UnicodeLength(
-    const Tcl_UniChar *unicode)
+    CONST Tcl_UniChar *unicode)
 {
     int numChars = 0;
 
