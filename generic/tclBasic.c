@@ -64,7 +64,7 @@ extern TclStubs tclStubs;
  */
 
 typedef struct {
-    char *name;			/* Name of object-based command. */
+    CONST char *name;		/* Name of object-based command. */
     Tcl_CmdProc *proc;		/* String-based procedure for command. */
     Tcl_ObjCmdProc *objProc;	/* Object-based procedure for command. */
     CompileProc *compileProc;	/* Procedure called to compile command. */
@@ -77,7 +77,7 @@ typedef struct {
  * The built-in commands, and the procedures that implement them:
  */
 
-static CmdInfo builtInCmds[] = {
+static CONST CmdInfo builtInCmds[] = {
     /*
      * Commands in the generic core. Note that at least one of the proc or
      * objProc members should be non-NULL. This avoids infinitely recursive
@@ -304,7 +304,7 @@ Tcl_CreateInterp()
     BuiltinFunc *builtinFuncPtr;
     MathFunc *mathFuncPtr;
     Tcl_HashEntry *hPtr;
-    CmdInfo *cmdInfoPtr;
+    CONST CmdInfo *cmdInfoPtr;
     int i;
     union {
 	char c[sizeof(short)];
@@ -664,7 +664,7 @@ int
 TclHideUnsafeCommands(interp)
     Tcl_Interp *interp;		/* Hide commands in this interpreter. */
 {
-    register CmdInfo *cmdInfoPtr;
+    register CONST CmdInfo *cmdInfoPtr;
 
     if (interp == (Tcl_Interp *) NULL) {
         return TCL_ERROR;
