@@ -551,11 +551,11 @@ test fCmd-6.18 {CopyRenameOneFile: errno != EXDEV} -setup {
 } -returnCodes error -match glob -result \
     [subst {error renaming "td2" to "[file join td1 td2]": file *}]
 test fCmd-6.19 {CopyRenameOneFile: errno == EXDEV} {unix notRoot} {
-    cleanup /tmp
+    file mkdir /tmp/tcltmptest; cleanup /tmp/tcltmptest
     createfile tf1
-    file rename tf1 /tmp
-    glob -nocomplain tf* /tmp/tf1
-} {/tmp/tf1}
+    file rename tf1 /tmp/tcltmptest
+    glob -nocomplain tf* /tmp/tcltmptest/tf1
+} {/tmp/tcltmptest/tf1}
 test fCmd-6.20 {CopyRenameOneFile: errno == EXDEV} -constraints {win} -setup {
     catch {file delete -force c:/tcl8975@ d:/tcl8975@}
 } -body {
@@ -570,27 +570,27 @@ test fCmd-6.20 {CopyRenameOneFile: errno == EXDEV} -constraints {win} -setup {
 } -result {d:/tcl8975@}
 test fCmd-6.21 {CopyRenameOneFile: copy/rename: S_ISDIR(source)} \
 	{unix notRoot} {
-    cleanup /tmp
+    file mkdir /tmp/tcltmptest; cleanup /tmp/tcltmptest
     file mkdir td1
-    file rename td1 /tmp
-    glob -nocomplain td* /tmp/td*
-} {/tmp/td1}
+    file rename td1 /tmp/tcltmptest
+    glob -nocomplain td* /tmp/tcltmptest/td*
+} {/tmp/tcltmptest/td1}
 test fCmd-6.22 {CopyRenameOneFile: copy/rename: !S_ISDIR(source)} \
 	{unix notRoot} {
-    cleanup /tmp
+    file mkdir /tmp/tcltmptest; cleanup /tmp/tcltmptest
     createfile tf1
-    file rename tf1 /tmp
-    glob -nocomplain tf* /tmp/tf*
-} {/tmp/tf1}
+    file rename tf1 /tmp/tcltmptest
+    glob -nocomplain tf* /tmp/tcltmptest/tf*
+} {/tmp/tcltmptest/tf1}
 test fCmd-6.23 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
-    cleanup /tmp
+    file mkdir /tmp/tcltmptest; cleanup /tmp/tcltmptest
 } -constraints {unix notRoot xdev} -body {
     file mkdir td1/td2/td3
     file attributes td1 -permissions 0000
-    file rename td1 /tmp
+    file rename td1 /tmp/tcltmptest
 } -returnCodes error -cleanup {
     file attributes td1 -permissions 0755
-} -match regexp -result {^error renaming "td1"( to "/tmp/td1")?: permission denied$}
+} -match regexp -result {^error renaming "td1"( to "/tmp/tcltmptest/td1")?: permission denied$}
 test fCmd-6.24 {CopyRenameOneFile: error uses original name} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
@@ -626,54 +626,55 @@ test fCmd-6.26 {CopyRenameOneFile: doesn't use original name} -setup {
     file delete -force ~/td1
 } -result "error copying \"~/td1\" to \"td1\": \"[file join $::env(HOME) td1 td2]\": permission denied"
 test fCmd-6.27 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
-    cleanup /tmp
+    file mkdir /tmp/tcltmptest; cleanup /tmp/tcltmptest
 } -constraints {unix notRoot xdev} -returnCodes error -body {
     file mkdir td1/td2/td3
-    file mkdir /tmp/td1
-    createfile /tmp/td1/tf1
-    file rename -force td1 /tmp
-} -result {error renaming "td1" to "/tmp/td1": file already exists}
+    file mkdir /tmp/tcltmptest/td1
+    createfile /tmp/tcltmptest/td1/tf1
+    file rename -force td1 /tmp/tcltmptest
+} -result {error renaming "td1" to "/tmp/tcltmptest/td1": file already exists}
 test fCmd-6.28 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
-    cleanup /tmp
+    file mkdir /tmp/tcltmptest; cleanup /tmp/tcltmptest
 } -constraints {unix notRoot xdev} -body {
     file mkdir td1/td2/td3
     file attributes td1/td2/td3 -permissions 0000
-    file rename td1 /tmp
+    file rename td1 /tmp/tcltmptest
 } -returnCodes error -cleanup {
     file attributes td1/td2/td3 -permissions 0755
-} -result {error renaming "td1" to "/tmp/td1": "td1/td2/td3": permission denied}
+} -result {error renaming "td1" to "/tmp/tcltmptest/td1": "td1/td2/td3": permission denied}
 test fCmd-6.29 {CopyRenameOneFile: TclpCopyDirectory passed} -setup {
-    cleanup /tmp
+    file mkdir /tmp/tcltmptest; cleanup /tmp/tcltmptest
 } -constraints {unix notRoot xdev} -body {
     file mkdir td1/td2/td3
-    file rename td1 /tmp
-    glob td* /tmp/td1/t*
-} -result {/tmp/td1/td2}
+    file rename td1 /tmp/tcltmptest
+    glob td* /tmp/tcltmptest/td1/t*
+} -result {/tmp/tcltmptest/td1/td2}
 test fCmd-6.30 {CopyRenameOneFile: TclpRemoveDirectory failed} -setup {
     cleanup
+    file mkdir /tmp/tcltmptest; cleanup /tmp/tcltmptest
 } -constraints {unix notRoot} -body {
     file mkdir foo/bar
     file attr foo -perm 040555
-    file rename foo/bar /tmp
+    file rename foo/bar /tmp/tcltmptest
 } -returnCodes error -cleanup {
-    catch {file delete /tmp/bar}
+    catch {file delete /tmp/tcltmptest/bar}
     catch {file attr foo -perm 040777}
     catch {file delete -force foo}
 } -match glob -result {*: permission denied}
 test fCmd-6.31 {CopyRenameOneFile: TclpDeleteFile passed} -setup {
-    catch {cleanup /tmp}
+    catch {cleanup /tmp/tcltmptest}
 } -constraints {unix notRoot xdev} -body {
-    file mkdir /tmp/td1
-    createfile /tmp/td1/tf1
-    file rename /tmp/td1/tf1 tf1
-    list [file exists /tmp/td1/tf1] [file exists tf1]
+    file mkdir /tmp/tcltmptest/td1
+    createfile /tmp/tcltmptest/td1/tf1
+    file rename /tmp/tcltmptest/td1/tf1 tf1
+    list [file exists /tmp/tcltmptest/td1/tf1] [file exists tf1]
 } -result {0 1}
 test fCmd-6.32 {CopyRenameOneFile: copy} -constraints {notRoot} -setup {
     cleanup
 } -returnCodes error -body {
     file copy tf1 tf2
 } -result {error copying "tf1": no such file or directory}
-catch {cleanup /tmp}
+catch {file delete -force /tmp/tcltmptest}
 
 test fCmd-7.1 {FileForceOption: none} -constraints {notRoot} -setup {
     cleanup
@@ -1305,23 +1306,25 @@ test fCmd-12.8 {renamefile: generic error} -setup {
     file delete -force tfa
 } -result {1}
 test fCmd-12.9 {renamefile: moving a file across volumes} -setup {
-    catch {file delete -force -- tfa /tmp/tfa}
+    file mkdir /tmp/tcltmptest
+    catch {file delete -force -- tfa /tmp/tcltmptest/tfa}
 } -constraints {unix notRoot} -body {
     set s [createfile tfa]
-    file rename tfa /tmp
-    list [checkcontent /tmp/tfa $s] [file exists tfa]
+    file rename tfa /tmp/tcltmptest
+    list [checkcontent /tmp/tcltmptest/tfa $s] [file exists tfa]
 } -cleanup {
-    file delete /tmp/tfa
+    file delete -force /tmp/tcltmptest
 } -result {1 0}
 test fCmd-12.10 {renamefile: moving a directory across volumes} -setup {
-    catch {file delete -force -- tfad /tmp/tfad}
+    file mkdir /tmp/tcltmptest
+    catch {file delete -force -- tfad /tmp/tcltmptest/tfad}
 } -constraints {unix notRoot} -body {
     file mkdir tfad
     set s [createfile tfad/a]
-    file rename tfad /tmp
-    list [checkcontent /tmp/tfad/a $s] [file exists tfad]
+    file rename tfad /tmp/tcltmptest
+    list [checkcontent /tmp/tcltmptest/tfad/a $s] [file exists tfad]
 } -cleanup {
-    file delete -force /tmp/tfad
+    file delete -force /tmp/tcltmptest
 } -result {1 0}
 
 #
