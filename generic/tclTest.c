@@ -120,15 +120,6 @@ typedef struct TclEncoding {
     char *fromUtfCmd;
 } TclEncoding;
 
-#if 0
-/*
- * The counter below is used to determine if the TestsaveresultFree routine
- * was called for a result.
- */
-
-static int freeCount;
-#endif
-
 /*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
  */
@@ -5065,9 +5056,6 @@ TestsaveresultCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-#if 0
-    Interp* iPtr = (Interp*) interp;
-#endif
     int discard, result, index;
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
@@ -5118,9 +5106,6 @@ TestsaveresultCmd(
 	break;
     }
 
-#if 0
-    freeCount = 0;
-#endif
     Tcl_SaveResult(interp, &state);
 
     if (((enum options) index) == RESULT_OBJECT) {
@@ -5137,19 +5122,10 @@ TestsaveresultCmd(
     }
 
     switch ((enum options) index) {
-    case RESULT_DYNAMIC: {
-#if 0
-	int present = iPtr->freeProc == TestsaveresultFree;
-	int called = freeCount;
-
-	Tcl_AppendElement(interp, called ? "called" : "notCalled");
-	Tcl_AppendElement(interp, present ? "present" : "missing");
-#else
+    case RESULT_DYNAMIC:
 	Tcl_AppendElement(interp, discard ? "called" : "notCalled");
 	Tcl_AppendElement(interp, !discard ? "present" : "missing");
-#endif
 	break;
-    }
     case RESULT_OBJECT:
 	Tcl_AppendElement(interp, Tcl_GetObjResult(interp) == objPtr
 		? "same" : "different");
@@ -5180,9 +5156,7 @@ static void
 TestsaveresultFree(
     char *blockPtr)
 {
-#if 0
-    freeCount++;
-#endif
+    /* empty... */
 }
 
 /*

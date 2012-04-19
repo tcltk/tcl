@@ -2626,23 +2626,7 @@ Tcl_DStringResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the
 				 * result of interp. */
 {
-#if 0
-    Interp *iPtr = (Interp *) interp;
-
-    Tcl_ResetResult(interp);
-
-    if (dsPtr->string != dsPtr->staticSpace) {
-	iPtr->result = dsPtr->string;
-	iPtr->freeProc = TCL_DYNAMIC;
-    } else if (dsPtr->length < TCL_RESULT_SIZE) {
-	iPtr->result = iPtr->resultSpace;
-	memcpy(iPtr->result, dsPtr->string, dsPtr->length + 1);
-    } else {
-#endif
-	Tcl_SetResult(interp, dsPtr->string, TCL_VOLATILE);
-#if 0
-    }
-#endif
+    Tcl_SetResult(interp, dsPtr->string, TCL_VOLATILE);
 
     dsPtr->string = dsPtr->staticSpace;
     dsPtr->length = 0;
@@ -2676,53 +2660,12 @@ Tcl_DStringGetResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the result
 				 * of interp. */
 {
-#if 0
-    Interp *iPtr = (Interp *) interp;
-
-    if (dsPtr->string != dsPtr->staticSpace) {
-	ckfree(dsPtr->string);
-    }
-
-    /*
-     * If the string result is empty, move the object result to the string
-     * result, then reset the object result.
-     */
-
-    (void) Tcl_GetStringResult(interp);
-
-    dsPtr->length = strlen(iPtr->result);
-    if (iPtr->freeProc != NULL) {
-	if (iPtr->freeProc == TCL_DYNAMIC) {
-	    dsPtr->string = iPtr->result;
-	    dsPtr->spaceAvl = dsPtr->length+1;
-	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
-	    memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
-	    iPtr->freeProc(iPtr->result);
-	}
-	dsPtr->spaceAvl = dsPtr->length+1;
-	iPtr->freeProc = NULL;
-    } else {
-	if (dsPtr->length < TCL_DSTRING_STATIC_SIZE) {
-	    dsPtr->string = dsPtr->staticSpace;
-	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
-	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
-	    dsPtr->spaceAvl = dsPtr->length + 1;
-	}
-	memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
-    }
-
-    iPtr->result = iPtr->resultSpace;
-    iPtr->resultSpace[0] = 0;
-#else
     int length;
     char *bytes = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length);
 
     Tcl_DStringFree(dsPtr);
     Tcl_DStringAppend(dsPtr, bytes, length);
     Tcl_ResetResult(interp);
-#endif
 }
 
 /*
