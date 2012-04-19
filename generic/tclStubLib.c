@@ -37,20 +37,16 @@ HasStubSupport(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
+    static Tcl_Obj errorMsg = {
+	2,	/* Stop anything from trying to deallocate this memory! */
+	"This interpreter does not support stubs-enabled extensions.",
+	59, NULL, {0}
+    };
 
     if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
 	return iPtr->stubTable;
     }
-#if 0
-    iPtr->result =
-	    (char *)"This interpreter does not support stubs-enabled extensions.";
-    iPtr->freeProc = TCL_STATIC;
-#else
-    Tcl_Obj errorMsg = {2,
-	    "This interpreter does not support stubs-enabled extensions.",
-	    59, NULL, {0}};
     iPtr->objResultPtr = &errorMsg;
-#endif
     return NULL;
 }
 

@@ -74,15 +74,6 @@ Tcl_RecordAndEval(
 	Tcl_IncrRefCount(cmdPtr);
 	result = Tcl_RecordAndEvalObj(interp, cmdPtr, flags);
 
-#if 0
-	/*
-	 * Move the interpreter's object result to the string result, then
-	 * reset the object result.
-	 */
-
-	(void) Tcl_GetStringResult(interp);
-#endif
-
 	/*
 	 * Discard the Tcl object created to hold the command.
 	 */

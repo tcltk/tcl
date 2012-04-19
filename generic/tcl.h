@@ -499,37 +499,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
  * Instead, they set a Tcl_Obj member in the "real" structure that can be
  * accessed with Tcl_GetObjResult() and Tcl_SetObjResult().
  */
-#if 0
-typedef struct Tcl_Interp {
-    /* TIP #330: Strongly discourage extensions from using the string
-     * result. */
-#ifdef USE_INTERP_RESULT
-    char *result TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
-				/* If the last command returned a string
-				 * result, this points to it. */
-    void (*freeProc) (char *blockPtr)
-	    TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
-				/* Zero means the string result is statically
-				 * allocated. TCL_DYNAMIC means it was
-				 * allocated with ckalloc and should be freed
-				 * with ckfree. Other values give the address
-				 * of function to invoke to free the result.
-				 * Tcl_Eval must free it before executing next
-				 * command. */
-#else
-    char *unused3 TCL_DEPRECATED_API("bad field access");
-    void (*unused4) (char *) TCL_DEPRECATED_API("bad field access");
-#endif
-#ifdef USE_INTERP_ERRORLINE
-    int errorLine TCL_DEPRECATED_API("use Tcl_GetErrorLine/Tcl_SetErrorLine");
-				/* When TCL_ERROR is returned, this gives the
-				 * line number within the command where the
-				 * error occurred (1 if first line). */
-#else
-    int unused5 TCL_DEPRECATED_API("bad field access");
-#endif
-} Tcl_Interp;
-#endif
+
 typedef struct Tcl_Interp Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
