@@ -125,7 +125,7 @@ doNothing(void)
 
 static char *
 Tcl_WinUtfToTChar(string, len, dsPtr)
-    CONST char *string;
+    const char *string;
     int len;
     Tcl_DString *dsPtr;
 {
@@ -138,7 +138,7 @@ Tcl_WinUtfToTChar(string, len, dsPtr)
 
 static char *
 Tcl_WinTCharToUtf(
-    CONST char *string,
+    const char *string,
     int len,
     Tcl_DString *dsPtr)
 {
@@ -150,16 +150,16 @@ Tcl_WinTCharToUtf(
 }
 
 #define Tcl_MacOSXOpenBundleResources (int (*) _ANSI_ARGS_(( \
-		Tcl_Interp *, CONST char *, int, int, char *))) Tcl_WinUtfToTChar
+		Tcl_Interp *, const char *, int, int, char *))) Tcl_WinUtfToTChar
 #define Tcl_MacOSXOpenVersionedBundleResources (int (*) _ANSI_ARGS_(( \
-		Tcl_Interp *, CONST char *, CONST char *, int, int, char *))) Tcl_WinTCharToUtf
+		Tcl_Interp *, const char *, const char *, int, int, char *))) Tcl_WinTCharToUtf
 #define TclMacOSXGetFileAttribute (int (*) _ANSI_ARGS_((Tcl_Interp *,  \
 		int, Tcl_Obj *, Tcl_Obj **))) TclpCreateProcess
-#define TclMacOSXMatchType (int (*) _ANSI_ARGS_((Tcl_Interp *, CONST char *, \
-		CONST char *, Tcl_StatBuf *, Tcl_GlobTypeData *))) TclpMakeFile
-#define TclMacOSXNotifierAddRunLoopMode (void (*) _ANSI_ARGS_((CONST void *))) TclpOpenFile
-#define TclpLocaltime_unix (struct tm *(*) _ANSI_ARGS_((CONST time_t *))) TclGetAndDetachPids
-#define TclpGmtime_unix (struct tm *(*) _ANSI_ARGS_((CONST time_t *))) TclpCloseFile
+#define TclMacOSXMatchType (int (*) _ANSI_ARGS_((Tcl_Interp *, const char *, \
+		const char *, Tcl_StatBuf *, Tcl_GlobTypeData *))) TclpMakeFile
+#define TclMacOSXNotifierAddRunLoopMode (void (*) _ANSI_ARGS_((const void *))) TclpOpenFile
+#define TclpLocaltime_unix (struct tm *(*) _ANSI_ARGS_((const time_t *))) TclGetAndDetachPids
+#define TclpGmtime_unix (struct tm *(*) _ANSI_ARGS_((const time_t *))) TclpCloseFile
 
 #elif !defined(__WIN32__) /* UNIX and MAC */
 #   define TclWinConvertError (void (*) _ANSI_ARGS_((unsigned int))) TclGetAndDetachPids
