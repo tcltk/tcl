@@ -436,7 +436,7 @@ static const unsigned char instruction[] = {
  * ParseLexeme().
  */
 
-static unsigned char Lexeme[] = {
+static const unsigned char Lexeme[] = {
 	INVALID		/* NUL */,	INVALID		/* SOH */,
 	INVALID		/* STX */,	INVALID		/* ETX */,
 	INVALID		/* EOT */,	INVALID		/* ENQ */,
