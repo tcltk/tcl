@@ -2859,7 +2859,24 @@ ZlibTransformGetOption(
     }
 
     if (optionName == NULL || strcmp(optionName, "-dictionary") == 0) {
-	// TODO dictionary option
+	/*
+	 * Embedded NUL bytes are ok; they'll be C080-encoded.
+	 */
+
+	if (optionName == NULL) {
+	    Tcl_DStringAppendElement(dsPtr, "-dictionary");
+	    if (cd->compDictObj) {
+		Tcl_DStringAppendElement(dsPtr,
+			Tcl_GetString(cd->compDictObj));
+	    } else {
+		Tcl_DStringAppendElement(dsPtr, "");
+	    }
+	} else {
+	    int len;
+	    const char *str = Tcl_GetStringFromObj(cd->compDictObj, &len);
+
+	    Tcl_DStringAppend(dsPtr, str, len);
+	}
     }
 
     /*
