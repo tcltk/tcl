@@ -458,11 +458,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif /* __BORLANDC__ */
 
 #ifdef __WATCOMC__
-    /*
-     * OpenWatcom uses a wine derived winsock2.h that is missing the
-     * LPFN_* typedefs.
-     */
-#   define HAVE_NO_LPFN_DECLS
 #   if !defined(__CHAR_SIGNED__)
 #	error "You must use the -j switch to ensure char is signed."
 #   endif
@@ -519,7 +514,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 /*
  * Older version of Mingw are known to lack a MWMO_ALERTABLE define.
  */
-#if defined(HAVE_NO_MWMO_ALERTABLE)
+#if !defined(MWMO_ALERTABLE)
 #   define MWMO_ALERTABLE 2
 #endif
 
