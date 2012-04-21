@@ -1823,11 +1823,6 @@ NsEnsembleImplementationCmdNR(
 	 * count both as inserted and removed arguments.
 	 */
 
-#if 0
-	if (TclInitRewriteEnsemble(interp, 2 + ensemblePtr->numParameters, prefixObjc + ensemblePtr->numParameters, objv)) {
-	    TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
-	}
-#else
 	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
 	    iPtr->ensembleRewrite.sourceObjs = objv;
 	    iPtr->ensembleRewrite.numRemovedObjs =
@@ -1848,14 +1843,13 @@ NsEnsembleImplementationCmdNR(
 		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc-2;
 	    }
 	}
-#endif
 
 	/*
 	 * Hand off to the target command.
 	 */
 
 	iPtr->evalFlags |= TCL_EVAL_REDIRECT;
-	return Tcl_NREvalObj(interp, copyPtr, TCL_EVAL_INVOKE);
+	return TclNREvalObjEx(interp, copyPtr, TCL_EVAL_INVOKE, NULL,INT_MIN);
     }
 
   unknownOrAmbiguousSubcommand:

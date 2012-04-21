@@ -1211,7 +1211,7 @@ tclPkg.o: $(GENERIC_DIR)/tclPkg.c
 # prefix/exec_prefix but all the different paths individually.
 
 tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
-	$(CC)	-c $(CC_SWITCHES)					\
+	$(CC) -c $(CC_SWITCHES)					\
 		-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR)\"" \
@@ -1269,7 +1269,7 @@ tclVar.o: $(GENERIC_DIR)/tclVar.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVar.c
 
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
-	$(CC) -c $(ZLIB_INCLUDE) $(CC_SWITCHES) $(GENERIC_DIR)/tclZlib.c
+	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
