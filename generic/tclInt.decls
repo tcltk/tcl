@@ -126,8 +126,8 @@ declare 25 {
 #  }
 # Removed in 8.5
 #declare 27 {
-#    int TclGetDate(char *p, unsigned long now, long zone,
-#	    unsigned long *timePtr)
+#    int TclGetDate(char *p, Tcl_WideInt now, long zone,
+#	    Tcl_WideInt *timePtr)
 #}
 declare 28 {
     Tcl_Channel TclpGetDefaultStdChannel(int type)
@@ -319,9 +319,10 @@ declare 76 {
 declare 77 {
     void TclpGetTime(Tcl_Time *time)
 }
-declare 78 {
-    int TclpGetTimeZone(unsigned long time)
-}
+# Removed in 8.6:
+#declare 78 {
+#    int TclpGetTimeZone(unsigned long time)
+#}
 # Replaced by Tcl_FSListVolumes in 8.4:
 #declare 79 {
 #    int TclpListVolumes(Tcl_Interp *interp)
@@ -420,7 +421,10 @@ declare 103 {
 	    int *portPtr)
 }
 declare 104 {
-    int TclSockMinimumBuffers(ClientData sock, int size)
+    int TclSockMinimumBuffersOld(int sock, int size)
+}
+declare 110 {
+    int TclSockMinimumBuffers(void *sock, int size)
 }
 # Replaced by Tcl_FSStat in 8.4:
 #declare 105 {
@@ -735,16 +739,6 @@ declare 177 {
 #    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
 #}
 
-# REMOVED
-# Allocate lists without copying arrays
-# declare 180 {
-#    Tcl_Obj *TclNewListObjDirect(int objc, Tcl_Obj **objv)
-# }
-#declare 181 {
-#    Tcl_Obj *TclDbNewListObjDirect(int objc, Tcl_Obj **objv,
-#	    const char *file, int line)
-#}
-
 # TclpGmtime and TclpLocaltime promoted to the generic interface from unix
 
 declare 182 {
@@ -995,8 +989,8 @@ declare 248 {
 }
 
 declare 249 {
-    char* TclDoubleDigits(double dv, int ndigits, int flags,
-			  int* decpt, int* signum, char** endPtr)
+    char *TclDoubleDigits(double dv, int ndigits, int flags,
+			  int *decpt, int *signum, char **endPtr)
 }
 # TIP #285: Script cancellation support.
 declare 250 {
@@ -1025,7 +1019,7 @@ declare 2 win {
 }
 declare 3 win {
     int TclWinGetSockOpt(SOCKET s, int level, int optname,
-	    char FAR *optval, int FAR *optlen)
+	    char *optval, int *optlen)
 }
 declare 4 win {
     HINSTANCE TclWinGetTclInstance(void)
@@ -1039,7 +1033,7 @@ declare 6 win {
 }
 declare 7 win {
     int TclWinSetSockOpt(SOCKET s, int level, int optname,
-	    const char FAR *optval, int optlen)
+	    const char *optval, int optlen)
 }
 declare 8 win {
     unsigned long TclpGetPid(Tcl_Pid pid)
@@ -1098,9 +1092,10 @@ declare 20 win {
 declare 22 win {
     TclFile TclpCreateTempFile(const char *contents)
 }
-declare 23 win {
-    char *TclpGetTZName(int isdst)
-}
+# Removed in 8.6:
+#declare 23 win {
+#    char *TclpGetTZName(int isdst)
+#}
 declare 24 win {
     char *TclWinNoBackslash(char *path)
 }
@@ -1149,7 +1144,7 @@ declare 3 unix {
 }
 # On non-cygwin, this is actually a reference to TclpCreateProcess
 declare 4 unix {
-    int TclWinGetTclInstance(void)
+    void *TclWinGetTclInstance(void)
 }
 # Signature changed in 8.1:
 #  declare 5 unix {
@@ -1162,7 +1157,7 @@ declare 6 unix {
 }
 # On non-cygwin, this is actually a reference to TclpOpenFile
 declare 7 unix {
-    int TclWinSetSockOpt(int s, int level, int optname,
+    int TclWinSetSockOpt(void *s, int level, int optname,
 	    const char *optval, int optlen)
 }
 declare 8 unix {
@@ -1229,13 +1224,10 @@ declare 19 {unix macosx} {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
 declare 20 unix {
-    void TclWinAddProcess(void *hProcess, unsigned long id)
+    void TclWinAddProcess(void *hProcess, unsigned int id)
 }
 declare 22 unix {
     TclFile TclpCreateTempFile(const char *contents)
-}
-declare 23 unix {
-    char *TclpGetTZName(int isdst)
 }
 declare 24 unix {
     char *TclWinNoBackslash(char *path)

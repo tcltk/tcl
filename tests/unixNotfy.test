@@ -20,7 +20,7 @@ testConstraint noTk [expr {0 != [catch {package present Tk}]}]
 testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
 # Darwin always uses a threaded notifier
 testConstraint unthreaded [expr {
-    (![info exist tcl_platform(threaded)] || !$tcl_platform(threaded))
+    ![::tcl::pkgconfig get threaded]
     && $tcl_platform(os) ne "Darwin"
 }]
 
