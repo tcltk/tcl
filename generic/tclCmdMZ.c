@@ -18,7 +18,6 @@
 
 #include "tclInt.h"
 #include "tclRegexp.h"
-#include "tommath.h"
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
@@ -1434,7 +1433,6 @@ StringIsCmd(
     int i, failat = 0, result = 1, strict = 0, index, length1, length2;
     Tcl_Obj *objPtr, *failVarObj = NULL;
     Tcl_WideInt w;
-    mp_int big;
 
     static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
@@ -1579,10 +1577,50 @@ StringIsCmd(
 	}
 	goto failedIntParse;
     case STR_IS_ENTIER:
-	if (TCL_OK == Tcl_GetBignumFromObj(NULL, objPtr, &big)) {
+	if ((objPtr->typePtr == &tclIntType) ||
+#ifndef NO_WIDE_TYPE
+		(objPtr->typePtr == &tclWideIntType) ||
+#endif
+		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
-	goto failedIntParse;
+	string1 = TclGetStringFromObj(objPtr, &length1);
+	if (length1 == 0) {
+	    if (strict) {
+		result = 0;
+	    }
+	    goto str_is_done;
+	}
+	end = string1 + length1;
+	if (TclParseNumber(NULL, objPtr, NULL, NULL, -1,
+		(const char **) &stop, TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
+	    if (stop == end) {
+		/*
+		 * Entire string parses as an integer.
+		 */
+
+		break;
+	    } else {
+		/*
+		 * Some prefix parsed as an integer, but not the whole string,
+		 * so return failure index as the point where parsing stopped.
+		 * Clear out the internal rep, since keeping it would leave
+		 * *objPtr in an inconsistent state.
+		 */
+
+		result = 0;
+		failat = stop - string1;
+		TclFreeIntRep(objPtr);
+	    }
+	} else {
+	    /*
+	     * No prefix is a valid integer. Fail at beginning.
+	     */
+
+	    result = 0;
+	    failat = 0;
+	}
+	break;
     case STR_IS_WIDE:
 	if (TCL_OK == Tcl_GetWideIntFromObj(NULL, objPtr, &w)) {
 	    break;

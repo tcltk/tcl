@@ -46,7 +46,9 @@ static int		CompareArrayKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 static unsigned int	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
- * Prototypes for the one word hash key methods.
+ * Prototypes for the one word hash key methods. Not actually declared because
+ * this is a critical path that is implemented in the core hash table access
+ * function.
  */
 
 #if 0
