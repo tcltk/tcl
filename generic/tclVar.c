@@ -18,6 +18,7 @@
  */
 
 #include "tclInt.h"
+#include "tclOOInt.h"
 
 /*
  * Prototypes for the variable hash key methods.
@@ -762,7 +763,7 @@ TclObjLookupVarEx(
     }
 
   donePart1:
-#if 0
+#if 0 /* ENABLE_NS_VARNAME_CACHING perhaps? */
     if (varPtr == NULL) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    part1 = TclGetString(part1Ptr);
@@ -1892,7 +1893,7 @@ TclPtrSetVar(
 	varPtr->value.objPtr = NULL;
     }
     if (flags & (TCL_APPEND_VALUE|TCL_LIST_ELEMENT)) {
-#if 0
+#if 0 /* ENABLE_NS_VARNAME_CACHING perhaps? */
 	/*
 	 * Can't happen now!
 	 */
@@ -6083,7 +6084,7 @@ TclInfoVarsCmd(
 		}
 	    }
 	}
-    } else if (((Interp *)interp)->varFramePtr->procPtr != NULL) {
+    } else if (iPtr->varFramePtr->procPtr != NULL) {
 	AppendLocals(interp, listPtr, simplePatternPtr, 1);
     }
 
@@ -6269,17 +6270,21 @@ AppendLocals(
 {
     Interp *iPtr = (Interp *) interp;
     Var *varPtr;
-    int i, localVarCt;
+    int i, localVarCt, added;
     Tcl_Obj **varNamePtr, *objNamePtr;
     const char *varName;
     TclVarHashTable *localVarTablePtr;
     Tcl_HashSearch search;
+    Tcl_HashTable addedTable;
     const char *pattern = patternPtr? TclGetString(patternPtr) : NULL;
 
     localVarCt = iPtr->varFramePtr->numCompiledLocals;
     varPtr = iPtr->varFramePtr->compiledLocals;
     localVarTablePtr = iPtr->varFramePtr->varTablePtr;
     varNamePtr = &iPtr->varFramePtr->localCachePtr->varName0;
+    if (includeLinks) {
+	Tcl_InitObjHashTable(&addedTable);
+    }
 
     for (i = 0; i < localVarCt; i++, varNamePtr++) {
 	/*
@@ -6291,6 +6296,9 @@ AppendLocals(
 	    varName = TclGetString(*varNamePtr);
 	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
 		Tcl_ListObjAppendElement(interp, listPtr, *varNamePtr);
+		if (includeLinks) {
+		    Tcl_CreateHashEntry(&addedTable, *varNamePtr, &added);
+		}
 	    }
 	}
 	varPtr++;
@@ -6301,7 +6309,7 @@ AppendLocals(
      */
 
     if (localVarTablePtr == NULL) {
-	return;
+	goto objectVars;
     }
 
     /*
@@ -6315,9 +6323,13 @@ AppendLocals(
 		    && (includeLinks || !TclIsVarLink(varPtr))) {
 		Tcl_ListObjAppendElement(interp, listPtr,
 			VarHashGetKey(varPtr));
+		if (includeLinks) {
+		    Tcl_CreateHashEntry(&addedTable, VarHashGetKey(varPtr),
+			    &added);
+		}
 	    }
 	}
-	return;
+	goto objectVars;
     }
 
     /*
@@ -6333,9 +6345,41 @@ AppendLocals(
 	    varName = TclGetString(objNamePtr);
 	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
 		Tcl_ListObjAppendElement(interp, listPtr, objNamePtr);
+		if (includeLinks) {
+		    Tcl_CreateHashEntry(&addedTable, objNamePtr, &added);
+		}
 	    }
 	}
     }
+
+  objectVars:
+    if (!includeLinks) {
+	return;
+    }
+
+    if (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_METHOD) {
+	CallContext *contextPtr = iPtr->varFramePtr->clientData;
+	Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
+
+	if (mPtr->declaringObjectPtr) {
+	    FOREACH(objNamePtr, mPtr->declaringObjectPtr->variables) {
+		Tcl_CreateHashEntry(&addedTable, objNamePtr, &added);
+		if (added && (!pattern ||
+			Tcl_StringMatch(TclGetString(objNamePtr), pattern))) {
+		    Tcl_ListObjAppendElement(interp, listPtr, objNamePtr);
+		}
+	    }
+	} else {
+	    FOREACH(objNamePtr, mPtr->declaringClassPtr->variables) {
+		Tcl_CreateHashEntry(&addedTable, objNamePtr, &added);
+		if (added && (!pattern ||
+			Tcl_StringMatch(TclGetString(objNamePtr), pattern))) {
+		    Tcl_ListObjAppendElement(interp, listPtr, objNamePtr);
+		}
+	    }
+	}
+    }
+    Tcl_DeleteHashTable(&addedTable);
 }
 
 /*

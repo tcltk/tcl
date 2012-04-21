@@ -163,6 +163,23 @@ extern "C" {
 #endif
 
 /*
+ * Allow a part of Tcl's API to be explicitly marked as deprecated.
+ *
+ * Used to make TIP 330/336 generate moans even if people use the
+ * compatibility macros. Change your code, guys! We won't support you forever.
+ */
+
+#if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
+#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC__MINOR__ >= 5))
+#	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__ (msg)))
+#   else
+#	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__))
+#   endif
+#else
+#   define TCL_DEPRECATED_API(msg)	/* nothing portable */
+#endif
+
+/*
  *----------------------------------------------------------------------------
  * Macros used to declare a function to be exported by a DLL. Used by Windows,
  * maps to no-op declarations on non-Windows systems. The default build on
@@ -487,9 +504,11 @@ typedef struct Tcl_Interp {
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
 #ifdef USE_INTERP_RESULT
-    char *result;		/* If the last command returned a string
+    char *result TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
+				/* If the last command returned a string
 				 * result, this points to it. */
-    void (*freeProc) (char *blockPtr);
+    void (*freeProc) (char *blockPtr)
+	    TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
 				/* Zero means the string result is statically
 				 * allocated. TCL_DYNAMIC means it was
 				 * allocated with ckalloc and should be freed
@@ -498,15 +517,16 @@ typedef struct Tcl_Interp {
 				 * Tcl_Eval must free it before executing next
 				 * command. */
 #else
-    char *unused3;
-    void (*unused4) (char *);
+    char *unused3 TCL_DEPRECATED_API("bad field access");
+    void (*unused4) (char *) TCL_DEPRECATED_API("bad field access");
 #endif
 #ifdef USE_INTERP_ERRORLINE
-    int errorLine;		/* When TCL_ERROR is returned, this gives the
+    int errorLine TCL_DEPRECATED_API("use Tcl_GetErrorLine/Tcl_SetErrorLine");
+				/* When TCL_ERROR is returned, this gives the
 				 * line number within the command where the
 				 * error occurred (1 if first line). */
 #else
-    int unused5;
+    int unused5 TCL_DEPRECATED_API("bad field access");
 #endif
 } Tcl_Interp;
 
