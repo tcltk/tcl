@@ -81,8 +81,6 @@ typedef off_t		Tcl_SeekOffset;
 #ifdef __CYGWIN__
 MODULE_SCOPE int TclOSstat(const char *name, Tcl_StatBuf *statBuf);
 MODULE_SCOPE int TclOSlstat(const char *name, Tcl_StatBuf *statBuf);
-#undef HAVE_STRUCT_STAT_ST_BLOCKS
-#undef HAVE_STRUCT_STAT_ST_BLKSIZE
 #elif defined(HAVE_STRUCT_STAT64)
 #   define TclOSstat		stat64
 #   define TclOSlstat		lstat64

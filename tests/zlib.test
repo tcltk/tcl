@@ -156,6 +156,18 @@ test zlib-8.3 {zlib transformation and fileevent} -constraints zlib -setup {
     close $srv
     removeFile $file
 } -result 81920-->81920
+test zlib-8.4 {transformation and flushing: Bug 3517696} -setup {
+    set file [makeFile {} test.z]
+    set fd [open $file w]
+} -constraints zlib -body {
+    zlib push compress $fd
+    puts $fd "qwertyuiop"
+    fconfigure $fd -flush sync
+    puts $fd "qwertyuiop"
+} -cleanup {
+    catch {close $fd}
+    removeFile $file
+} -result {}
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
