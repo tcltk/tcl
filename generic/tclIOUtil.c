@@ -18,6 +18,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#if defined(HAVE_SYS_STAT_H) && !defined _WIN32
+#   include <sys/stat.h>
+#endif
 #include "tclInt.h"
 #ifdef __WIN32__
 #   include "tclWinInt.h"
@@ -1726,7 +1729,27 @@ Tcl_FSEvalFileEx(
 
     objPtr = Tcl_NewObj();
     Tcl_IncrRefCount(objPtr);
-    if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
+
+    /*
+     * Try to read first character of stream, so we can check for utf-8 BOM to
+     * be handled especially.
+     */
+
+    if (Tcl_ReadChars(chan, objPtr, 1, 0) < 0) {
+	Tcl_Close(interp, chan);
+	Tcl_AppendResult(interp, "couldn't read file \"",
+		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	goto end;
+    }
+    string = Tcl_GetString(objPtr);
+
+    /*
+     * If first character is not a BOM, append the remaining characters,
+     * otherwise replace them. [Bug 3466099]
+     */
+
+    if (Tcl_ReadChars(chan, objPtr, -1,
+	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"",
 		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
@@ -1748,7 +1771,7 @@ Tcl_FSEvalFileEx(
      */
 
     iPtr->evalFlags |= TCL_EVAL_FILE;
-    result = Tcl_EvalEx(interp, string, length, 0);
+    result = TclEvalEx(interp, string, length, 0, 1, NULL, string);
 
     /*
      * Now we have to be careful; the script may have changed the
@@ -1795,6 +1818,7 @@ TclNREvalFile(
     Tcl_Obj *oldScriptFile, *objPtr;
     Interp *iPtr;
     Tcl_Channel chan;
+    const char *string;
 
     if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
 	return TCL_ERROR;
@@ -1836,7 +1860,28 @@ TclNREvalFile(
 
     objPtr = Tcl_NewObj();
     Tcl_IncrRefCount(objPtr);
-    if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
+
+    /*
+     * Try to read first character of stream, so we can check for utf-8 BOM to
+     * be handled especially.
+     */
+
+    if (Tcl_ReadChars(chan, objPtr, 1, 0) < 0) {
+	Tcl_Close(interp, chan);
+	Tcl_AppendResult(interp, "couldn't read file \"",
+		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_DecrRefCount(objPtr);
+	return TCL_ERROR;
+    }
+    string = Tcl_GetString(objPtr);
+
+    /*
+     * If first character is not a BOM, append the remaining characters,
+     * otherwise replace them. [Bug 3466099]
+     */
+
+    if (Tcl_ReadChars(chan, objPtr, -1,
+	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"",
 		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);

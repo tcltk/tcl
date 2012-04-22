@@ -829,8 +829,8 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/http1.0; \
 	    done;
-	@echo "Installing package http 2.8.3 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.3.tm;
+	@echo "Installing package http 2.8.4 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.4.tm;
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/";
 	@for i in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
@@ -990,6 +990,7 @@ COMPILEHDR=$(GENERIC_DIR)/tclCompile.h
 FSHDR=$(GENERIC_DIR)/tclFileSystem.h
 IOHDR=$(GENERIC_DIR)/tclIO.h
 MATHHDRS=$(GENERIC_DIR)/tommath.h $(GENERIC_DIR)/tclTomMath.h
+PARSEHDR=$(GENERIC_DIR)/tclParse.h
 NREHDR=$(GENERIC_DIR)/tclInt.h
 
 regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
@@ -1186,7 +1187,7 @@ tclOOMethod.o: $(GENERIC_DIR)/tclOOMethod.c
 tclOOStubInit.o: $(GENERIC_DIR)/tclOOStubInit.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOStubInit.c
 
-tclParse.o: $(GENERIC_DIR)/tclParse.c
+tclParse.o: $(GENERIC_DIR)/tclParse.c $(PARSEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclParse.c
 
 tclPanic.o: $(GENERIC_DIR)/tclPanic.c
@@ -1210,7 +1211,7 @@ tclPkg.o: $(GENERIC_DIR)/tclPkg.c
 # prefix/exec_prefix but all the different paths individually.
 
 tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
-	$(CC)	-c $(CC_SWITCHES)					\
+	$(CC) -c $(CC_SWITCHES)					\
 		-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR)\"" \
@@ -1258,7 +1259,7 @@ tclStubInit.o: $(GENERIC_DIR)/tclStubInit.c
 tclTrace.o: $(GENERIC_DIR)/tclTrace.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTrace.c
 
-tclUtil.o: $(GENERIC_DIR)/tclUtil.c
+tclUtil.o: $(GENERIC_DIR)/tclUtil.c $(PARSEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtil.c
 
 tclUtf.o: $(GENERIC_DIR)/tclUtf.c $(GENERIC_DIR)/tclUniData.c
@@ -1268,7 +1269,7 @@ tclVar.o: $(GENERIC_DIR)/tclVar.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVar.c
 
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
-	$(CC) -c $(ZLIB_INCLUDE) $(CC_SWITCHES) $(GENERIC_DIR)/tclZlib.c
+	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
@@ -1539,6 +1540,10 @@ tclMacOSXFCmd.o: $(MAC_OSX_DIR)/tclMacOSXFCmd.c
 
 tclMacOSXNotify.o: $(MAC_OSX_DIR)/tclMacOSXNotify.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXNotify.c
+
+# The following is a CYGWIN only source:
+tclWinError.o: $(TOP_DIR)/win/tclWinError.c
+	$(CC) -c $(CC_SWITCHES) $(TOP_DIR)/win/tclWinError.c
 
 # DTrace support
 
