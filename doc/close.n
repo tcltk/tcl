@@ -23,7 +23,8 @@ Tcl standard channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR),
 the return value from an invocation of \fBopen\fR or \fBsocket\fR, or
 the result of a channel creation command provided by a Tcl extension.
 .PP
-The single-argument form is a simple "full-close":
+The single-argument form is a simple
+.QW "full-close" :
 all buffered output is flushed to the channel's output device,
 any buffered input is discarded, the underlying file or device is closed,
 and \fIchannelId\fR becomes unavailable for use.
@@ -56,16 +57,20 @@ pipeline created with \fBopen\fR returns an error, \fBclose\fR
 generates an error (similar to the \fBexec\fR command.)
 .PP
 .VS 8.6
-The two-argument form is a "half-close": given a bidirectional channel like a
+The two-argument form is a
+.QW "half-close" :
+given a bidirectional channel like a
 socket or command pipeline and a (possibly abbreviated) direction, it closes
-only the substream going in that direction. This means a shutdown() on a
+only the sub-stream going in that direction. This means a shutdown() on a
 socket, and a close() of one end of a pipe for a command pipeline. Then, the
 Tcl-level channel data structure is either kept or freed depending on whether
 the other direction is still open.
 .PP
-A single-argument close on an already half-closed bi-channel is defined to
-just "finish the job. A half-close on an already closed half, or on a
-wrong-sided unidirectional channel, raises an error.
+A single-argument close on an already half-closed bidirectional channel is
+defined to just
+.QW "finish the job" .
+A half-close on an already closed half, or on a wrong-sided unidirectional
+channel, raises an error.
 .PP
 In the case of a command pipeline, the child-reaping duty falls upon the
 shoulders of the last close or half-close, which is thus allowed to report an

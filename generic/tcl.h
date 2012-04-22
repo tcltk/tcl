@@ -163,6 +163,23 @@ extern "C" {
 #endif
 
 /*
+ * Allow a part of Tcl's API to be explicitly marked as deprecated.
+ *
+ * Used to make TIP 330/336 generate moans even if people use the
+ * compatibility macros. Change your code, guys! We won't support you forever.
+ */
+
+#if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
+#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC__MINOR__ >= 5))
+#	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__ (msg)))
+#   else
+#	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__))
+#   endif
+#else
+#   define TCL_DEPRECATED_API(msg)	/* nothing portable */
+#endif
+
+/*
  *----------------------------------------------------------------------------
  * Macros used to declare a function to be exported by a DLL. Used by Windows,
  * maps to no-op declarations on non-Windows systems. The default build on
@@ -373,29 +390,16 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__WIN32__) && !defined(__CYGWIN__)
+#   if defined(__WIN32__)
 #      define TCL_WIDE_INT_TYPE __int64
 #      ifdef __BORLANDC__
-typedef struct stati64 Tcl_StatBuf;
 #         define TCL_LL_MODIFIER	"L"
 #      else /* __BORLANDC__ */
-#         if defined(_WIN64)
-typedef struct __stat64 Tcl_StatBuf;
-#         elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
-typedef struct _stati64	Tcl_StatBuf;
-#         else
-typedef struct _stat32i64 Tcl_StatBuf;
-#         endif /* _MSC_VER < 1400 */
 #         define TCL_LL_MODIFIER	"I64"
 #      endif /* __BORLANDC__ */
 #   elif defined(__GNUC__)
 #      define TCL_WIDE_INT_TYPE long long
 #      define TCL_LL_MODIFIER	"ll"
-#      if defined(__WIN32__)
-typedef struct _stat32i64 Tcl_StatBuf;
-#      else
-typedef struct stat	Tcl_StatBuf;
-#      endif
 #   else /* ! __WIN32__ && ! __GNUC__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
@@ -422,7 +426,6 @@ typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #ifdef TCL_WIDE_INT_IS_LONG
-typedef struct stat	Tcl_StatBuf;
 #   define Tcl_WideAsLong(val)		((long)(val))
 #   define Tcl_LongAsWide(val)		((long)(val))
 #   define Tcl_WideAsDouble(val)	((double)((long)(val)))
@@ -436,11 +439,6 @@ typedef struct stat	Tcl_StatBuf;
  * or some other strange platform.
  */
 #   ifndef TCL_LL_MODIFIER
-#      ifdef HAVE_STRUCT_STAT64
-typedef struct stat64	Tcl_StatBuf;
-#      else
-typedef struct stat	Tcl_StatBuf;
-#      endif /* HAVE_STRUCT_STAT64 */
 #      define TCL_LL_MODIFIER		"ll"
 #   endif /* !TCL_LL_MODIFIER */
 #   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
@@ -448,6 +446,39 @@ typedef struct stat	Tcl_StatBuf;
 #   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* TCL_WIDE_INT_IS_LONG */
+
+#if defined(__WIN32__)
+#   ifdef __BORLANDC__
+	typedef struct stati64 Tcl_StatBuf;
+#   elif defined(_WIN64)
+	typedef struct __stat64 Tcl_StatBuf;
+#   elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
+	typedef struct _stati64	Tcl_StatBuf;
+#   else
+	typedef struct _stat32i64 Tcl_StatBuf;
+#   endif /* _MSC_VER < 1400 */
+#elif defined(__CYGWIN__)
+    typedef struct _stat32i64 {
+	dev_t st_dev;
+	unsigned short st_ino;
+	unsigned short st_mode;
+	short st_nlink;
+	short st_uid;
+	short st_gid;
+	/* Here is a 2-byte gap */
+	dev_t st_rdev;
+	/* Here is a 4-byte gap */
+	long long st_size;
+	struct {long tv_sec;} st_atim;
+	struct {long tv_sec;} st_mtim;
+	struct {long tv_sec;} st_ctim;
+	/* Here is a 4-byte gap */
+    } Tcl_StatBuf;
+#elif defined(HAVE_STRUCT_STAT64)
+    typedef struct stat64 Tcl_StatBuf;
+#else
+    typedef struct stat Tcl_StatBuf;
+#endif
 
 /*
  *----------------------------------------------------------------------------
@@ -473,9 +504,11 @@ typedef struct Tcl_Interp {
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
 #ifdef USE_INTERP_RESULT
-    char *result;		/* If the last command returned a string
+    char *result TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
+				/* If the last command returned a string
 				 * result, this points to it. */
-    void (*freeProc) (char *blockPtr);
+    void (*freeProc) (char *blockPtr)
+	    TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
 				/* Zero means the string result is statically
 				 * allocated. TCL_DYNAMIC means it was
 				 * allocated with ckalloc and should be freed
@@ -484,15 +517,16 @@ typedef struct Tcl_Interp {
 				 * Tcl_Eval must free it before executing next
 				 * command. */
 #else
-    char *unused3;
-    void (*unused4) (char *);
+    char *unused3 TCL_DEPRECATED_API("bad field access");
+    void (*unused4) (char *) TCL_DEPRECATED_API("bad field access");
 #endif
 #ifdef USE_INTERP_ERRORLINE
-    int errorLine;		/* When TCL_ERROR is returned, this gives the
+    int errorLine TCL_DEPRECATED_API("use Tcl_GetErrorLine/Tcl_SetErrorLine");
+				/* When TCL_ERROR is returned, this gives the
 				 * line number within the command where the
 				 * error occurred (1 if first line). */
 #else
-    int unused5;
+    int unused5 TCL_DEPRECATED_API("bad field access");
 #endif
 } Tcl_Interp;
 
