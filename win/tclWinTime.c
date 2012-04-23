@@ -26,11 +26,11 @@
  * each month, where index 1 is January.
  */
 
-static int normalDays[] = {
+static const int normalDays[] = {
     -1, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333, 364
 };
 
-static int leapDays[] = {
+static const int leapDays[] = {
     -1, 30, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 };
 
@@ -668,7 +668,7 @@ ComputeGMT(tp)
     struct tm *tmPtr;
     long tmp, rem;
     int isLeap;
-    int *days;
+    const int *days;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     tmPtr = &tsdPtr->tm;
