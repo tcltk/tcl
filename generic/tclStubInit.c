@@ -46,9 +46,7 @@
 #   define TclSockMinimumBuffersOld 0
 #else
 #define TclSockMinimumBuffersOld sockMinimumBuffersOld
-static int TclSockMinimumBuffersOld(sock, size)
-    int sock;
-    int size;
+static int TclSockMinimumBuffersOld(int sock, int size)
 {
     return TclSockMinimumBuffers(INT2PTR(sock), size);
 }
