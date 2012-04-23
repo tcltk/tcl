@@ -52,7 +52,7 @@ static CONST char *rootKeyNames[] = {
     "HKEY_PERFORMANCE_DATA", "HKEY_DYN_DATA", NULL
 };
 
-static HKEY rootKeys[] = {
+static const HKEY rootKeys[] = {
     HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER,
     HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, HKEY_DYN_DATA
 };
