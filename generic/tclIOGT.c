@@ -143,6 +143,7 @@ static Tcl_ChannelType transformChannelType = {
     NULL,				/* Flush proc. */
     TransformNotifyProc,                /* Handling of events bubbling up */
     TransformWideSeekProc,		/* Wide seek proc */
+    NULL
 };
 
 /*

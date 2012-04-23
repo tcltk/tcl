@@ -453,7 +453,7 @@ BuiltinFunc tclBuiltinFuncTable[] = {
     {"round", 1, {TCL_EITHER}, ExprRoundFunc, 0},
     {"srand", 1, {TCL_INT}, ExprSrandFunc, 0},
     {"wide", 1, {TCL_EITHER}, ExprWideFunc, 0},
-    {0},
+    {0, 0, {TCL_INT}, 0, 0},
 };
 
 /*
