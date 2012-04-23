@@ -440,7 +440,7 @@ TestExceptionCmd(
     int objc,				/* Argument count */
     Tcl_Obj *CONST objv[])		/* Argument vector */
 {
-    static char *cmds[] = {
+    static CONST84 char *cmds[] = {
 	    "access_violation",
 	    "datatype_misalignment",
 	    "array_bounds",
@@ -464,7 +464,7 @@ TestExceptionCmd(
 	    "ctrl+c",
 	    NULL
     };
-    static DWORD exceptions[] = {
+    static const DWORD exceptions[] = {
 	    EXCEPTION_ACCESS_VIOLATION,
 	    EXCEPTION_DATATYPE_MISALIGNMENT,
 	    EXCEPTION_ARRAY_BOUNDS_EXCEEDED,
