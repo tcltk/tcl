@@ -428,7 +428,7 @@ TestExceptionCmd(
 	"invalid_disp", "guard_page", "invalid_handle", "ctrl+c",
 	NULL
     };
-    static DWORD exceptions[] = {
+    static const DWORD exceptions[] = {
 	EXCEPTION_ACCESS_VIOLATION, EXCEPTION_DATATYPE_MISALIGNMENT,
 	EXCEPTION_ARRAY_BOUNDS_EXCEEDED, EXCEPTION_FLT_DENORMAL_OPERAND,
 	EXCEPTION_FLT_DIVIDE_BY_ZERO, EXCEPTION_FLT_INEXACT_RESULT,

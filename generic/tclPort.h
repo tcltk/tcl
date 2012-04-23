@@ -35,7 +35,6 @@
     DLLIMPORT extern int cygwin_conv_to_win32_path(const char *, char *);
     DLLIMPORT extern int cygwin_posix_to_win32_path_list_buf_size(char *value);
     DLLIMPORT extern void cygwin_posix_to_win32_path_list(char *buf, char *value);
-    DLLIMPORT extern void __stdcall SetEnvironmentVariableA(const char*, const char *);
 #endif
 
 #if !defined(LLONG_MIN)
