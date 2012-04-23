@@ -115,10 +115,10 @@ Tcl_TraceTypeObjCmd TclTraceExecutionObjCmd;
 static CONST char *traceTypeOptions[] = {
     "execution", "command", "variable", (char*) NULL
 };
-static Tcl_TraceTypeObjCmd* traceSubCmds[] = {
+static Tcl_TraceTypeObjCmd *CONST traceSubCmds[] = {
     TclTraceExecutionObjCmd,
     TclTraceCommandObjCmd,
-    TclTraceVariableObjCmd,
+    TclTraceVariableObjCmd
 };
 
 /*

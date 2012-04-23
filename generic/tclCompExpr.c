@@ -101,19 +101,19 @@ static int opTableInitialized = 0; /* 0 means not yet initialized. */
 TCL_DECLARE_MUTEX(opMutex)
 
 typedef struct OperatorDesc {
-    char *name;			/* Name of the operator. */
+    CONST char *name;			/* Name of the operator. */
     int numOperands;		/* Number of operands. 0 if the operator
 				 * requires special handling. */
     int instruction;		/* Instruction opcode for the operator.
 				 * Ignored if numOperands is 0. */
 } OperatorDesc;
 
-static OperatorDesc operatorTable[] = {
+static CONST OperatorDesc operatorTable[] = {
     {"*",   2,  INST_MULT},
     {"/",   2,  INST_DIV},
     {"%",   2,  INST_MOD},
-    {"+",   0}, 
-    {"-",   0},
+    {"+",   0,  0},
+    {"-",   0,  0},
     {"<<",  2,  INST_LSHIFT},
     {">>",  2,  INST_RSHIFT},
     {"<",   2,  INST_LT},
@@ -125,14 +125,14 @@ static OperatorDesc operatorTable[] = {
     {"&",   2,  INST_BITAND},
     {"^",   2,  INST_BITXOR},
     {"|",   2,  INST_BITOR},
-    {"&&",  0},
-    {"||",  0},
-    {"?",   0},
+    {"&&",  0,  0},
+    {"||",  0,  0},
+    {"?",   0,  0},
     {"!",   1,  INST_LNOT},
     {"~",   1,  INST_BITNOT},
     {"eq",  2,  INST_STR_EQ},
     {"ne",  2,  INST_STR_NEQ},
-    {NULL}
+    {NULL,  0,  0}
 };
 
 /*
@@ -343,7 +343,7 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
     Tcl_Interp *interp = infoPtr->interp;
     Tcl_Token *tokenPtr, *endPtr = NULL; /* silence gcc 4 warning */
     Tcl_Token *afterSubexprPtr;
-    OperatorDesc *opDescPtr;
+    CONST OperatorDesc *opDescPtr;
     Tcl_HashEntry *hPtr;
     CONST char *operator;
     Tcl_DString opBuf;

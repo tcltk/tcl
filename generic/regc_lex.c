@@ -195,8 +195,8 @@ struct vars *v;
 static VOID
 lexnest(v, beginp, endp)
 struct vars *v;
-chr *beginp;				/* start of interpolation */
-chr *endp;				/* one past end of interpolation */
+CONST chr *beginp;		/* start of interpolation */
+CONST chr *endp;		/* one past end of interpolation */
 {
 	assert(v->savenow == NULL);	/* only one level of nesting */
 	v->savenow = v->now;
@@ -208,47 +208,47 @@ chr *endp;				/* one past end of interpolation */
 /*
  * string constants to interpolate as expansions of things like \d
  */
-static chr backd[] = {		/* \d */
+static CONST chr backd[] = {		/* \d */
 	CHR('['), CHR('['), CHR(':'),
 	CHR('d'), CHR('i'), CHR('g'), CHR('i'), CHR('t'),
 	CHR(':'), CHR(']'), CHR(']')
 };
-static chr backD[] = {		/* \D */
+static CONST chr backD[] = {		/* \D */
 	CHR('['), CHR('^'), CHR('['), CHR(':'),
 	CHR('d'), CHR('i'), CHR('g'), CHR('i'), CHR('t'),
 	CHR(':'), CHR(']'), CHR(']')
 };
-static chr brbackd[] = {	/* \d within brackets */
+static CONST chr brbackd[] = {	/* \d within brackets */
 	CHR('['), CHR(':'),
 	CHR('d'), CHR('i'), CHR('g'), CHR('i'), CHR('t'),
 	CHR(':'), CHR(']')
 };
-static chr backs[] = {		/* \s */
+static CONST chr backs[] = {		/* \s */
 	CHR('['), CHR('['), CHR(':'),
 	CHR('s'), CHR('p'), CHR('a'), CHR('c'), CHR('e'),
 	CHR(':'), CHR(']'), CHR(']')
 };
-static chr backS[] = {		/* \S */
+static CONST chr backS[] = {		/* \S */
 	CHR('['), CHR('^'), CHR('['), CHR(':'),
 	CHR('s'), CHR('p'), CHR('a'), CHR('c'), CHR('e'),
 	CHR(':'), CHR(']'), CHR(']')
 };
-static chr brbacks[] = {	/* \s within brackets */
+static CONST chr brbacks[] = {	/* \s within brackets */
 	CHR('['), CHR(':'),
 	CHR('s'), CHR('p'), CHR('a'), CHR('c'), CHR('e'),
 	CHR(':'), CHR(']')
 };
-static chr backw[] = {		/* \w */
+static CONST chr backw[] = {		/* \w */
 	CHR('['), CHR('['), CHR(':'),
 	CHR('a'), CHR('l'), CHR('n'), CHR('u'), CHR('m'),
 	CHR(':'), CHR(']'), CHR('_'), CHR(']')
 };
-static chr backW[] = {		/* \W */
+static CONST chr backW[] = {		/* \W */
 	CHR('['), CHR('^'), CHR('['), CHR(':'),
 	CHR('a'), CHR('l'), CHR('n'), CHR('u'), CHR('m'),
 	CHR(':'), CHR(']'), CHR('_'), CHR(']')
 };
-static chr brbackw[] = {	/* \w within brackets */
+static CONST chr brbackw[] = {	/* \w within brackets */
 	CHR('['), CHR(':'),
 	CHR('a'), CHR('l'), CHR('n'), CHR('u'), CHR('m'),
 	CHR(':'), CHR(']'), CHR('_')
@@ -660,13 +660,13 @@ lexescape(v)
 struct vars *v;
 {
 	chr c;
-	static chr alert[] = {
+	static CONST chr alert[] = {
 		CHR('a'), CHR('l'), CHR('e'), CHR('r'), CHR('t')
 	};
-	static chr esc[] = {
+	static CONST chr esc[] = {
 		CHR('E'), CHR('S'), CHR('C')
 	};
-	chr *save;
+	CONST chr *save;
 
 	assert(v->cflags&REG_ADVF);
 
@@ -979,7 +979,7 @@ static VOID
 skip(v)
 struct vars *v;
 {
-	chr *start = v->now;
+	CONST chr *start = v->now;
 
 	assert(v->cflags&REG_EXPANDED);
 
@@ -1018,10 +1018,10 @@ newline()
  ^ #endif
  */
 #ifdef REG_DEBUG
-static chr *
+static CONST chr *
 ch()
 {
-	static chr chstr[] = { CHR('c'), CHR('h'), CHR('\0') };
+	static CONST chr chstr[] = { CHR('c'), CHR('h'), CHR('\0') };
 
 	return chstr;
 }
@@ -1036,8 +1036,8 @@ ch()
 static chr
 chrnamed(v, startp, endp, lastresort)
 struct vars *v;
-chr *startp;			/* start of name */
-chr *endp;			/* just past end of name */
+CONST chr *startp;			/* start of name */
+CONST chr *endp;			/* just past end of name */
 pchr lastresort;		/* what to return if name lookup fails */
 {
 	celt c;

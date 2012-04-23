@@ -1168,7 +1168,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_CHECK_LIB(bsd, gettimeofday, libbsd=yes, libbsd=no)
 	    if test $libbsd = yes; then
 	    	MATH_LIBS="$MATH_LIBS -lbsd"
-	    	AC_DEFINE(USE_DELTA_FOR_TZ)
+	    	AC_DEFINE(USE_DELTA_FOR_TZ, 1, [Use delta for TZ])
 	    fi
 	    ;;
 	BeOS*)
@@ -1440,8 +1440,8 @@ dnl AC_CHECK_TOOL(AR, ar)
 	        CFLAGS="$CFLAGS -fno-inline"
 	    fi
 
-	    # XIM peeking works under XFree86.
-	    AC_DEFINE(PEEK_XCLOSEIM)
+	    AC_DEFINE(PEEK_XCLOSEIM, 1,
+		[XIM peeking works under XFree86])
 
 	    ;;
 	GNU*)
@@ -1742,7 +1742,8 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    done; fi; LIBS=$hold_libs])
 		if test $tcl_cv_lib_corefoundation = yes; then
 		    LIBS="$LIBS -framework CoreFoundation"
-		    AC_DEFINE(HAVE_COREFOUNDATION)
+		    AC_DEFINE(HAVE_COREFOUNDATION, 1,
+			[Do we have access to Darwin CoreFoundation.framework?])
 		else
 		    tcl_corefoundation=no
 		fi
@@ -1758,7 +1759,8 @@ dnl AC_CHECK_TOOL(AR, ar)
 			    eval $v'="$hold_'$v'"'
 			done])
 		    if test $tcl_cv_lib_corefoundation_64 = no; then
-			AC_DEFINE(NO_COREFOUNDATION_64)
+			AC_DEFINE(NO_COREFOUNDATION_64, 1,
+			    [Is Darwin CoreFoundation unavailable for 64-bit?])
 		    fi
 		fi
 	    fi
@@ -2197,11 +2199,17 @@ dnl # preprocessing tests use only CPPFLAGS.
     if test "$UNSHARED_LIB_SUFFIX" = "" ; then
 	UNSHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
     fi
+    DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
 
     if test "${SHARED_BUILD}" = "1" && test "${SHLIB_SUFFIX}" != "" ; then
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
         MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
-        INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(LIB_INSTALL_DIR)/$(LIB_FILE)'
+        if test "${SHLIB_SUFFIX}" = ".dll"; then
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(BIN_INSTALL_DIR)/$(LIB_FILE)'
+            DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
+        else
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(LIB_INSTALL_DIR)/$(LIB_FILE)'
+        fi
     else
         LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 
@@ -2270,6 +2278,7 @@ dnl # preprocessing tests use only CPPFLAGS.
     AC_SUBST(MAKE_LIB)
     AC_SUBST(MAKE_STUB_LIB)
     AC_SUBST(INSTALL_LIB)
+    AC_SUBST(DLL_INSTALL_DIR)
     AC_SUBST(INSTALL_STUB_LIB)
     AC_SUBST(RANLIB)
 ])
