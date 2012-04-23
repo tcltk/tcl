@@ -9132,7 +9132,7 @@ fi
 	UNSHARED_LIB_SUFFIX='${VERSION}.a'
 fi
 
-	DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
+    DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
 
     if test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""; then
 
