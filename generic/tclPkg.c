@@ -78,7 +78,7 @@ static void		AddRequirementsToResult(Tcl_Interp* interp, int reqc,
 static void		AddRequirementsToDString(Tcl_DString* dstring,
 			    int reqc, Tcl_Obj *CONST reqv[]);
 static Package *	FindPackage(Tcl_Interp *interp, CONST char *name);
-static const char *	PkgRequireCore(Tcl_Interp *interp, CONST char *name,
+static CONST char *	PkgRequireCore(Tcl_Interp *interp, CONST char *name,
 			    int reqx, Tcl_Obj *CONST reqv[],
 			    ClientData *clientDataPtr);
 #endif
@@ -261,7 +261,7 @@ Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
     Tcl_DString command;
 #else
     Tcl_Obj *ov;
-    const char *result = NULL;
+    CONST char *result = NULL;
 #endif
 
     /*
@@ -373,7 +373,7 @@ Tcl_PkgRequireProc(
 				 * available. */
      ClientData *clientDataPtr)
 {
-    const char *result =
+    CONST char *result =
 	    PkgRequireCore(interp, name, reqc, reqv, clientDataPtr);
 
     if (result == NULL) {
@@ -383,7 +383,7 @@ Tcl_PkgRequireProc(
     return TCL_OK;
 }
 
-static const char *
+static CONST char *
 PkgRequireCore(
      Tcl_Interp *interp,	/* Interpreter in which package is now
 				 * available. */
@@ -1077,7 +1077,7 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
 	break;
     }
     case PKG_PRESENT: {
-	const char *name;
+	CONST char *name;
 	if (objc < 3) {
 	    goto require;
 	}
