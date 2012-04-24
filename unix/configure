@@ -9324,6 +9324,48 @@ fi
 echo "$ac_t""$tcl_ok" 1>&6
 
 #--------------------------------------------------------------------
+# The check below checks whether the cpuid instruction is usable.
+#--------------------------------------------------------------------
+
+echo $ac_n "checking whether the cpuid instruction is usable""... $ac_c" 1>&6
+echo "configure:9332: checking whether the cpuid instruction is usable" >&5
+if eval "test \"`echo '$''{'tcl_cv_cpuid'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    cat > conftest.$ac_ext <<EOF
+#line 9338 "configure"
+#include "confdefs.h"
+
+int main() {
+
+	int index,ax,bx,cx,dx;
+	__asm__ __volatile__ ("cpuid":\
+	"=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (index));
+    
+; return 0; }
+EOF
+if { (eval echo configure:9349: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  tcl_cv_cpuid=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  tcl_cv_cpuid=no
+fi
+rm -f conftest*
+fi
+
+echo "$ac_t""$tcl_cv_cpuid" 1>&6
+if test $tcl_cv_cpuid = yes; then
+    cat >> confdefs.h <<\EOF
+#define HAVE_CPUID 1
+EOF
+
+fi
+
+#--------------------------------------------------------------------
 #	The statements below define a collection of symbols related to
 #	building libtcl as a shared library instead of a static library.
 #--------------------------------------------------------------------
@@ -9352,7 +9394,7 @@ if test "`uname -s`" = "Darwin" ; then
     
     if test "`uname -s`" = "Darwin" ; then
 	echo $ac_n "checking how to package libraries""... $ac_c" 1>&6
-echo "configure:9356: checking how to package libraries" >&5
+echo "configure:9398: checking how to package libraries" >&5
 	# Check whether --enable-framework or --disable-framework was given.
 if test "${enable_framework+set}" = set; then
   enableval="$enable_framework"
