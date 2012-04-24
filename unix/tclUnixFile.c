@@ -39,7 +39,6 @@ TclpFindExecutable(
     CONST char *argv0)		/* The value of the application's argv[0]
 				 * (native). */
 {
-    int length;
 #ifdef __CYGWIN__
     char buf[PATH_MAX * TCL_UTF_MAX + 1];
     char name[PATH_MAX * TCL_UTF_MAX + 1];
@@ -72,7 +71,7 @@ TclpFindExecutable(
     buf[length] = '\0';
 #else
     if (argv0 == NULL) {
-	return NULL;
+	return;
     }
     Tcl_DStringInit(&buffer);
 
