@@ -125,7 +125,7 @@ TclWinSetSockOpt(void *s, int level, int optname,
 
 static int
 TclWinGetSockOpt(void *s, int level, int optname,
-	    char *optval, int optlen)
+	    char *optval, int *optlen)
 {
     return getsockopt((int) s, level, optname, optval, optlen);
 }
