@@ -692,8 +692,11 @@ TclWinCPUID(
 {
     int status = TCL_ERROR;
 
-    /* There is no reason this couldn't be implemented on UNIX as well */
-    return status;
+#ifdef HAVE_CPUID
+    __asm__ __volatile__ ("cpuid":\
+    "=a" (regsPtr[0]), "=b" (regsPtr[1]), "=c" (regsPtr[2]), "=d" (regsPtr[3]) : "a" (index));
+    status = TCL_OK;
+#endif    return status;
 }
 
 /*
