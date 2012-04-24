@@ -698,7 +698,6 @@ EXTERN struct tm *     	TclpLocaltime(TclpTime_t_CONST);
 #ifndef TclpGmtime
 EXTERN struct tm *     	TclpGmtime(TclpTime_t_CONST);
 #endif
-EXTERN char *          	TclpInetNtoa(struct in_addr);
 #define inet_ntoa(x)	TclpInetNtoa(x)
 #else
 typedef int TclpMutex;

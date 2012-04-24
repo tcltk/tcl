@@ -32,13 +32,11 @@ EXTERN void		TclWinConvertError _ANSI_ARGS_((unsigned int errCode));
 EXTERN void		TclWinConvertWSAError _ANSI_ARGS_((
 				unsigned int errCode));
 /* 2 */
-EXTERN Tcl_Channel	TclpCreateCommandChannel _ANSI_ARGS_((
-				TclFile readFile, TclFile writeFile,
-				TclFile errorFile, int numPids,
-				Tcl_Pid *pidPtr));
+EXTERN struct servent *	 TclWinGetServByName _ANSI_ARGS_((CONST char *nm,
+				CONST char *proto));
 /* 3 */
-EXTERN int		TclpCreatePipe _ANSI_ARGS_((TclFile *readPipe,
-				TclFile *writePipe));
+EXTERN int		TclWinGetSockOpt _ANSI_ARGS_((VOID *s, int level,
+				int optname, char *optval, int *optlen));
 /* 4 */
 EXTERN VOID *		TclWinGetTclInstance _ANSI_ARGS_((void));
 /* Slot 5 is reserved */
@@ -59,7 +57,7 @@ EXTERN struct tm *	TclpLocaltime_unix _ANSI_ARGS_((
 /* 12 */
 EXTERN struct tm *	TclpGmtime_unix _ANSI_ARGS_((TclpTime_t_CONST clock));
 /* 13 */
-EXTERN char *		TclpInetNtoa _ANSI_ARGS_((struct in_addr addr));
+EXTERN void		TclIntPlatReserved13 _ANSI_ARGS_((void));
 /* Slot 14 is reserved */
 /* 15 */
 EXTERN int		TclMacOSXGetFileAttribute _ANSI_ARGS_((
@@ -99,14 +97,21 @@ EXTERN void		TclGetAndDetachPids _ANSI_ARGS_((Tcl_Interp *interp,
 				Tcl_Channel chan));
 /* 31 */
 EXTERN int		TclpCloseFile _ANSI_ARGS_((TclFile file));
-/* Slot 32 is reserved */
-/* Slot 33 is reserved */
+/* 32 */
+EXTERN Tcl_Channel	TclpCreateCommandChannel _ANSI_ARGS_((
+				TclFile readFile, TclFile writeFile,
+				TclFile errorFile, int numPids,
+				Tcl_Pid *pidPtr));
+/* 33 */
+EXTERN int		TclpCreatePipe _ANSI_ARGS_((TclFile *readPipe,
+				TclFile *writePipe));
 /* 34 */
 EXTERN int		TclpCreateProcess _ANSI_ARGS_((Tcl_Interp *interp,
 				int argc, CONST char **argv,
 				TclFile inputFile, TclFile outputFile,
 				TclFile errorFile, Tcl_Pid *pidPtr));
-/* Slot 35 is reserved */
+/* 35 */
+EXTERN char *		TclpInetNtoa _ANSI_ARGS_((struct in_addr addr));
 /* 36 */
 EXTERN TclFile		TclpMakeFile _ANSI_ARGS_((Tcl_Channel channel,
 				int direction));
@@ -267,8 +272,8 @@ typedef struct TclIntPlatStubs {
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     void (*tclWinConvertError) _ANSI_ARGS_((unsigned int errCode)); /* 0 */
     void (*tclWinConvertWSAError) _ANSI_ARGS_((unsigned int errCode)); /* 1 */
-    Tcl_Channel (*tclpCreateCommandChannel) _ANSI_ARGS_((TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)); /* 2 */
-    int (*tclpCreatePipe) _ANSI_ARGS_((TclFile *readPipe, TclFile *writePipe)); /* 3 */
+    struct servent * (*tclWinGetServByName) _ANSI_ARGS_((CONST char *nm, CONST char *proto)); /* 2 */
+    int (*tclWinGetSockOpt) _ANSI_ARGS_((VOID *s, int level, int optname, char *optval, int *optlen)); /* 3 */
     VOID * (*tclWinGetTclInstance) _ANSI_ARGS_((void)); /* 4 */
     VOID *reserved5;
     unsigned short (*tclWinNToHS) _ANSI_ARGS_((unsigned short ns)); /* 6 */
@@ -278,7 +283,7 @@ typedef struct TclIntPlatStubs {
     Tcl_DirEntry * (*tclpReaddir) _ANSI_ARGS_((DIR *dir)); /* 10 */
     struct tm * (*tclpLocaltime_unix) _ANSI_ARGS_((TclpTime_t_CONST clock)); /* 11 */
     struct tm * (*tclpGmtime_unix) _ANSI_ARGS_((TclpTime_t_CONST clock)); /* 12 */
-    char * (*tclpInetNtoa) _ANSI_ARGS_((struct in_addr addr)); /* 13 */
+    void (*tclIntPlatReserved13) _ANSI_ARGS_((void)); /* 13 */
     VOID *reserved14;
     int (*tclMacOSXGetFileAttribute) _ANSI_ARGS_((Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)); /* 15 */
     VOID *reserved16;
@@ -297,10 +302,10 @@ typedef struct TclIntPlatStubs {
     int (*tclWinCPUID) _ANSI_ARGS_((unsigned int index, unsigned int *regs)); /* 29 */
     void (*tclGetAndDetachPids) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Channel chan)); /* 30 */
     int (*tclpCloseFile) _ANSI_ARGS_((TclFile file)); /* 31 */
-    VOID *reserved32;
-    VOID *reserved33;
+    Tcl_Channel (*tclpCreateCommandChannel) _ANSI_ARGS_((TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)); /* 32 */
+    int (*tclpCreatePipe) _ANSI_ARGS_((TclFile *readPipe, TclFile *writePipe)); /* 33 */
     int (*tclpCreateProcess) _ANSI_ARGS_((Tcl_Interp *interp, int argc, CONST char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr)); /* 34 */
-    VOID *reserved35;
+    char * (*tclpInetNtoa) _ANSI_ARGS_((struct in_addr addr)); /* 35 */
     TclFile (*tclpMakeFile) _ANSI_ARGS_((Tcl_Channel channel, int direction)); /* 36 */
     TclFile (*tclpOpenFile) _ANSI_ARGS_((CONST char *fname, int mode)); /* 37 */
     int (*tclUnixWaitForFile) _ANSI_ARGS_((int fd, int mask, int timeout)); /* 38 */
@@ -391,13 +396,13 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclWinConvertWSAError \
 	(tclIntPlatStubsPtr->tclWinConvertWSAError) /* 1 */
 #endif
-#ifndef TclpCreateCommandChannel
-#define TclpCreateCommandChannel \
-	(tclIntPlatStubsPtr->tclpCreateCommandChannel) /* 2 */
+#ifndef TclWinGetServByName
+#define TclWinGetServByName \
+	(tclIntPlatStubsPtr->tclWinGetServByName) /* 2 */
 #endif
-#ifndef TclpCreatePipe
-#define TclpCreatePipe \
-	(tclIntPlatStubsPtr->tclpCreatePipe) /* 3 */
+#ifndef TclWinGetSockOpt
+#define TclWinGetSockOpt \
+	(tclIntPlatStubsPtr->tclWinGetSockOpt) /* 3 */
 #endif
 #ifndef TclWinGetTclInstance
 #define TclWinGetTclInstance \
@@ -432,9 +437,9 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclpGmtime_unix \
 	(tclIntPlatStubsPtr->tclpGmtime_unix) /* 12 */
 #endif
-#ifndef TclpInetNtoa
-#define TclpInetNtoa \
-	(tclIntPlatStubsPtr->tclpInetNtoa) /* 13 */
+#ifndef TclIntPlatReserved13
+#define TclIntPlatReserved13 \
+	(tclIntPlatStubsPtr->tclIntPlatReserved13) /* 13 */
 #endif
 /* Slot 14 is reserved */
 #ifndef TclMacOSXGetFileAttribute
@@ -490,13 +495,22 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclpCloseFile \
 	(tclIntPlatStubsPtr->tclpCloseFile) /* 31 */
 #endif
-/* Slot 32 is reserved */
-/* Slot 33 is reserved */
+#ifndef TclpCreateCommandChannel
+#define TclpCreateCommandChannel \
+	(tclIntPlatStubsPtr->tclpCreateCommandChannel) /* 32 */
+#endif
+#ifndef TclpCreatePipe
+#define TclpCreatePipe \
+	(tclIntPlatStubsPtr->tclpCreatePipe) /* 33 */
+#endif
 #ifndef TclpCreateProcess
 #define TclpCreateProcess \
 	(tclIntPlatStubsPtr->tclpCreateProcess) /* 34 */
 #endif
-/* Slot 35 is reserved */
+#ifndef TclpInetNtoa
+#define TclpInetNtoa \
+	(tclIntPlatStubsPtr->tclpInetNtoa) /* 35 */
+#endif
 #ifndef TclpMakeFile
 #define TclpMakeFile \
 	(tclIntPlatStubsPtr->tclpMakeFile) /* 36 */
@@ -734,6 +748,7 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #undef TclpLocaltime_unix
 #undef TclpGmtime_unix
+#undef TclIntPlatReserved13
 
 #if !defined(__WIN32__) && !defined(MAC_TCL)
 # undef TclpGetPid
@@ -743,6 +758,7 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #   undef TclpCreateProcess
 #   undef TclpMakeFile
 #   undef TclpOpenFile
+#   undef TclpCreateCommandChannel
 #   ifdef __CYGWIN__
 #	define TclpCreateProcess ((int (*) _ANSI_ARGS_((Tcl_Interp *, int, \
 		CONST char **, TclFile, TclFile, TclFile, Tcl_Pid *))) \
@@ -751,6 +767,8 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 	    int direction))) tclIntPlatStubsPtr->tclMacOSXMatchType)
 #	define TclpOpenFile ((TclFile (*) _ANSI_ARGS_((CONST char *, int))) \
 	    tclIntPlatStubsPtr->tclMacOSXNotifierAddRunLoopMode)
+#   define TclpCreateCommandChannel ((Tcl_Channel (*) _ANSI_ARGS_((TclFile, TclFile, \
+	    TclFile, int, Tcl_Pid *))) tclIntPlatStubsPtr->tclIntPlatReserved13)
 #   else
 #	define TclpCreateProcess ((int (*) _ANSI_ARGS_((Tcl_Interp *, int, \
 		CONST char **, TclFile, TclFile, TclFile, Tcl_Pid *))) \
@@ -758,11 +776,16 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #	define TclpMakeFile ((TclFile (*) _ANSI_ARGS_((Tcl_Channel channel, \
 	    int direction))) tclIntPlatStubsPtr->tclWinNToHS)
 #	define TclpOpenFile ((TclFile (*) _ANSI_ARGS_((CONST char *, int))) \
-	    tclIntPlatStubsPtr->tclWinNToHS)
+	    tclIntPlatStubsPtr->tclWinSetSockOpt)
+#   define TclpCreateCommandChannel ((Tcl_Channel (*) _ANSI_ARGS_((TclFile, TclFile, \
+	    TclFile, int, Tcl_Pid *))) tclIntPlatStubsPtr->tclWinGetServByName)
 
 #	undef TclpCreateTempFile
 #	undef TclGetAndDetachPids
 #	undef TclpCloseFile
+#   undef TclpCreatePipe
+#	undef TclpInetNtoa
+#   undef TclUnixWaitForFile
 
 #	define TclpCreateTempFile ((TclFile (*) _ANSI_ARGS_((CONST char *))) \
 		tclIntPlatStubsPtr->tclWinGetPlatformId)
@@ -770,6 +793,12 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 	    tclIntPlatStubsPtr->tclWinConvertError)
 #	define TclpCloseFile ((int (*) _ANSI_ARGS_((TclFile))) \
 	    tclIntPlatStubsPtr->tclWinConvertWSAError)
+#   define TclpCreatePipe ((int (*)_ANSI_ARGS_((TclFile *, TclFile *))) \
+	    tclIntPlatStubsPtr->tclWinGetSockOpt)
+#   define TclpInetNtoa ((char *(*) _ANSI_ARGS_((struct in_addr addr))) \
+	    tclIntPlatStubsPtr->tclIntPlatReserved13)
+#   define TclUnixWaitForFile (int (*) _ANSI_ARGS_((int, int, int))) \
+		tclIntPlatStubsPtr->tclpGetPid)
 #   endif
 # endif
 #endif
