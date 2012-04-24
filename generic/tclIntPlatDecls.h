@@ -638,6 +638,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclpLocaltime_unix
 #undef TclpGmtime_unix
 #undef TclIntPlatReserved13
+#undef TclWinConvertWSAError
+#define TclWinConvertWSAError TclWinConvertError
 
 #if !defined(__WIN32__)
 # undef TclpGetPid
