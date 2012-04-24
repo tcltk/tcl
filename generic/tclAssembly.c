@@ -492,7 +492,7 @@ TalInstDesc TalInstructionTable[] = {
  * The instructions must be in ascending order by numeric operation code.
  */
 
-static unsigned char NonThrowingByteCodes[] = {
+static const unsigned char NonThrowingByteCodes[] = {
     INST_PUSH1, INST_PUSH4, INST_POP, INST_DUP,			/* 1-4 */
     INST_JUMP1, INST_JUMP4,					/* 34-35 */
     INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 70-72 */
