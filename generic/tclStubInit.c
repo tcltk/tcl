@@ -82,9 +82,12 @@ int __stdcall GetModuleHandleExW(unsigned int, const char *, void *);
 #define TclWinGetTclInstance winGetTclInstance
 #define TclWinNToHS winNToHS
 #define TclWinSetSockOpt winSetSockOpt
+#define TclWinGetSockOpt winGetSockOpt
+#define TclWinGetServByName winGetServByName
 #define TclWinNoBackslash winNoBackslash
 #define TclWinSetInterfaces (void (*) (int)) doNothing
 #define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
+#define TclIntPlatReserved13 (void (*) ()) TclpCreateCommandChannel
 #define TclWinFlushDirtyChannels doNothing
 #define TclWinResetInterfaces doNothing
 #define TclpGetPid getPid
@@ -118,6 +121,19 @@ TclWinSetSockOpt(void *s, int level, int optname,
 	    const char *optval, int optlen)
 {
     return setsockopt((int) s, level, optname, optval, optlen);
+}
+
+static int
+TclWinGetSockOpt(void *s, int level, int optname,
+	    char *optval, int optlen)
+{
+    return getsockopt((int) s, level, optname, optval, optlen);
+}
+
+struct servent *
+TclWinGetServByName(const char *name, const char *proto)
+{
+    return getservbyname(name, proto);
 }
 
 static char *
@@ -190,6 +206,9 @@ Tcl_WinTCharToUtf(
 #   define TclWinGetTclInstance (void *(*)()) TclpCreateProcess
 #   define TclWinNToHS (unsigned short (*) _ANSI_ARGS_((unsigned short ns))) TclpMakeFile
 #   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, CONST char *, int))) TclpOpenFile
+#   define TclWinGetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, char *, int))) TclpCreatePipe
+#   define TclWinGetServByName (struct servent *(*) _ANSI_ARGS_((const char *nm, const char *proto))) TclpCreateCommandChannel
+#   define TclIntPlatReserved13 (void (*) ()) TclpInetNtoa
 #   define TclWinAddProcess 0
 #   define TclWinNoBackslash 0
 #   define TclWinSetInterfaces 0
@@ -458,8 +477,8 @@ TclIntPlatStubs tclIntPlatStubs = {
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     TclWinConvertError, /* 0 */
     TclWinConvertWSAError, /* 1 */
-    TclpCreateCommandChannel, /* 2 */
-    TclpCreatePipe, /* 3 */
+    TclWinGetServByName, /* 2 */
+    TclWinGetSockOpt, /* 3 */
     TclWinGetTclInstance, /* 4 */
     NULL, /* 5 */
     TclWinNToHS, /* 6 */
@@ -469,7 +488,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpReaddir, /* 10 */
     TclpLocaltime_unix, /* 11 */
     TclpGmtime_unix, /* 12 */
-    TclpInetNtoa, /* 13 */
+    TclIntPlatReserved13, /* 13 */
     NULL, /* 14 */
     TclMacOSXGetFileAttribute, /* 15 */
     NULL, /* 16 */
@@ -488,10 +507,10 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclWinCPUID, /* 29 */
     TclGetAndDetachPids, /* 30 */
     TclpCloseFile, /* 31 */
-    NULL, /* 32 */
-    NULL, /* 33 */
+    TclpCreateCommandChannel, /* 32 */
+    TclpCreatePipe, /* 33 */
     TclpCreateProcess, /* 34 */
-    NULL, /* 35 */
+    TclpInetNtoa, /* 35 */
     TclpMakeFile, /* 36 */
     TclpOpenFile, /* 37 */
     TclUnixWaitForFile, /* 38 */
