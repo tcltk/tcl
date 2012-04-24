@@ -47,6 +47,7 @@ BIN_INSTALL_DIR		= $(INSTALL_ROOT)$(bindir)
 
 # Directory in which to install libtcl.so or libtcl.a:
 LIB_INSTALL_DIR		= $(INSTALL_ROOT)$(libdir)
+DLL_INSTALL_DIR		= @DLL_INSTALL_DIR@
 
 # Path name to use when installing library scripts.
 SCRIPT_INSTALL_DIR	= $(INSTALL_ROOT)$(TCL_LIBRARY)
@@ -782,9 +783,9 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@echo "Installing $(LIB_FILE) to @DLL_INSTALL_DIR@/"
+	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
-	@chmod 555 "@DLL_INSTALL_DIR@"/$(LIB_FILE)
+	@chmod 555 "$(DLL_INSTALL_DIR)"/$(LIB_FILE)
 	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)"/tclsh$(VERSION)${EXE_SUFFIX}
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
