@@ -2591,7 +2591,7 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 
 			    Tcl_ListObjLength(NULL, paths, &end);
 			    while (repair < end) {
-				const char *bytes;
+				CONST char *bytes;
 				int numBytes;
 				Tcl_Obj *fixme, *newObj;
 				Tcl_ListObjIndex(NULL, paths, repair, &fixme);

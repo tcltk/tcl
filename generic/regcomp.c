@@ -52,7 +52,7 @@ static VOID repeat _ANSI_ARGS_((struct vars *, struct state *, struct state *, i
 static VOID bracket _ANSI_ARGS_((struct vars *, struct state *, struct state *));
 static VOID cbracket _ANSI_ARGS_((struct vars *, struct state *, struct state *));
 static VOID brackpart _ANSI_ARGS_((struct vars *, struct state *, struct state *));
-static chr *scanplain _ANSI_ARGS_((struct vars *));
+static CONST chr *scanplain _ANSI_ARGS_((struct vars *));
 static VOID onechr _ANSI_ARGS_((struct vars *, pchr, struct state *, struct state *));
 static VOID dovec _ANSI_ARGS_((struct vars *, struct cvec *, struct state *, struct state *));
 static celt nextleader _ANSI_ARGS_((struct vars *, pchr, pchr));
@@ -76,7 +76,7 @@ static char *stid _ANSI_ARGS_((struct subre *, char *, size_t));
 /* === regc_lex.c === */
 static VOID lexstart _ANSI_ARGS_((struct vars *));
 static VOID prefixes _ANSI_ARGS_((struct vars *));
-static VOID lexnest _ANSI_ARGS_((struct vars *, chr *, chr *));
+static VOID lexnest _ANSI_ARGS_((struct vars *, CONST chr *, CONST chr *));
 static VOID lexword _ANSI_ARGS_((struct vars *));
 static int next _ANSI_ARGS_((struct vars *));
 static int lexescape _ANSI_ARGS_((struct vars *));
@@ -85,9 +85,9 @@ static int brenext _ANSI_ARGS_((struct vars *, pchr));
 static VOID skip _ANSI_ARGS_((struct vars *));
 static chr newline _ANSI_ARGS_((NOPARMS));
 #ifdef REG_DEBUG
-static chr *ch _ANSI_ARGS_((NOPARMS));
+static CONST chr *ch _ANSI_ARGS_((NOPARMS));
 #endif
-static chr chrnamed _ANSI_ARGS_((struct vars *, chr *, chr *, pchr));
+static chr chrnamed _ANSI_ARGS_((struct vars *, CONST chr *, CONST chr *, pchr));
 /* === regc_color.c === */
 static VOID initcm _ANSI_ARGS_((struct vars *, struct colormap *));
 static VOID freecm _ANSI_ARGS_((struct colormap *));
@@ -190,10 +190,10 @@ static int casecmp _ANSI_ARGS_((CONST chr *, CONST chr *, size_t));
 /* internal variables, bundled for easy passing around */
 struct vars {
 	regex_t *re;
-	chr *now;		/* scan pointer into string */
-	chr *stop;		/* end of string */
-	chr *savenow;		/* saved now and stop for "subroutine call" */
-	chr *savestop;
+	CONST chr *now;	/* scan pointer into string */
+	CONST chr *stop;		/* end of string */
+	CONST chr *savenow;		/* saved now and stop for "subroutine call" */
+	CONST chr *savestop;
 	int err;		/* error code (0 if none) */
 	int cflags;		/* copy of compile flags */
 	int lasttype;		/* type of previous token */
@@ -1357,8 +1357,8 @@ struct state *rp;
 	celt startc;
 	celt endc;
 	struct cvec *cv;
-	chr *startp;
-	chr *endp;
+	CONST chr *startp;
+	CONST chr *endp;
 	chr c[1];
 
 	/* parse something, get rid of special cases, take shortcuts */
@@ -1458,11 +1458,11 @@ struct state *rp;
  * to look past the final bracket of the [. etc.
  ^ static chr *scanplain(struct vars *);
  */
-static chr *			/* just after end of sequence */
+static CONST chr *			/* just after end of sequence */
 scanplain(v)
 struct vars *v;
 {
-	chr *endp;
+	CONST chr *endp;
 
 	assert(SEE(COLLEL) || SEE(ECLASS) || SEE(CCLASS));
 	NEXT();
