@@ -17,14 +17,14 @@
  * name and version of this package
  */
 
-static char packageName[] = "procbodytest";
-static char packageVersion[] = "1.0";
+static CONST char packageName[] = "procbodytest";
+static CONST char packageVersion[] = "1.0";
 
 /*
  * Name of the commands exported by this package
  */
 
-static char procCommand[] = "proc";
+static CONST char procCommand[] = "proc";
 
 /*
  * this struct describes an entry in the table of command names and command
@@ -33,7 +33,7 @@ static char procCommand[] = "proc";
 
 typedef struct CmdTable
 {
-    char *cmdName;		/* command name */
+    CONST char *cmdName;	/* command name */
     Tcl_ObjCmdProc *proc;	/* command proc */
     int exportIt;		/* if 1, export the command */
 } CmdTable;
@@ -47,7 +47,7 @@ static int	ProcBodyTestProcObjCmd _ANSI_ARGS_((ClientData dummy,
 static int	ProcBodyTestInitInternal _ANSI_ARGS_((Tcl_Interp *interp,
 			int isSafe));
 static int	RegisterCommand _ANSI_ARGS_((Tcl_Interp* interp,
-			char *namespace, CONST CmdTable *cmdTablePtr));
+			CONST char *namespace, CONST CmdTable *cmdTablePtr));
 int             Procbodytest_Init _ANSI_ARGS_((Tcl_Interp * interp));
 int             Procbodytest_SafeInit _ANSI_ARGS_((Tcl_Interp * interp));
 
@@ -137,7 +137,7 @@ Procbodytest_SafeInit(interp)
 static int RegisterCommand(interp, namespace, cmdTablePtr)
     Tcl_Interp* interp;			/* the Tcl interpreter for which the
                                          * operation is performed */
-    char *namespace;			/* the namespace in which the command
+    CONST char *namespace;		/* the namespace in which the command
                                          * is registered */
     CONST CmdTable *cmdTablePtr;	/* the command to register */
 {

@@ -1367,7 +1367,7 @@ ApplicationType(interp, originalName, fullName)
     Tcl_DString nameBuf, ds;
     CONST TCHAR *nativeName;
     WCHAR nativeFullPath[MAX_PATH];
-    static char extensions[][5] = {"", ".com", ".exe", ".bat"};
+    static const char extensions[][5] = {"", ".com", ".exe", ".bat"};
 
     /* Look for the program as an external program.  First try the name
      * as it is, then try adding .com, .exe, and .bat, in that order, to

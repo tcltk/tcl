@@ -1160,7 +1160,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			char *dest;
 			unsigned char *src;
 			int i;
-			static char hexdigit[] = "0123456789abcdef";
+			static CONST char hexdigit[] = "0123456789abcdef";
 
 			if (arg >= objc) {
 			    DeleteScanNumberCache(numberCachePtr);
