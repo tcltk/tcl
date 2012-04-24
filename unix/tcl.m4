@@ -738,6 +738,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
+	AC_DEFINE(NDEBUG, 1, [Is no debugging enabled?])
 	AC_MSG_RESULT([no])
 	AC_DEFINE(TCL_CFG_OPTIMIZED, 1, [Is this an optimized build?])
     else
@@ -749,8 +750,6 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
     fi
     AC_SUBST(CFLAGS_DEFAULT)
     AC_SUBST(LDFLAGS_DEFAULT)
-    ### FIXME: Surely TCL_CFG_DEBUG should be set to whether we're debugging?
-    AC_DEFINE(TCL_CFG_DEBUG, 1, [Is debugging enabled?])
 
     if test "$tcl_ok" = "mem" -o "$tcl_ok" = "all"; then
 	AC_DEFINE(TCL_MEM_DEBUG, 1, [Is memory debugging enabled?])
@@ -1220,7 +1219,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	CYGWIN_*)
+	CYGWIN_*|MINGW32*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
@@ -1231,6 +1230,19 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    TCL_NEEDS_EXP_FILE=1
 	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.dll.a'
 	    TCL_SHLIB_LD_EXTRAS='-Wl,--out-implib,$[@].a'
+	    AC_CACHE_CHECK(for Cygwin version of gcc,
+		ac_cv_cygwin,
+		AC_TRY_COMPILE([
+		#ifdef __CYGWIN__
+		    #error cygwin
+		#endif
+		], [],
+		ac_cv_cygwin=no,
+		ac_cv_cygwin=yes)
+	    )
+	    if test "$ac_cv_cygwin" = "no"; then
+		AC_MSG_ERROR([${CC} is not a cygwin compiler.])
+	    fi
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
@@ -2058,7 +2070,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	case $system in
 	    AIX-*) ;;
 	    BSD/OS*) ;;
-	    CYGWIN_*) ;;
+	    CYGWIN_*|MINGW32_*) ;;
 	    IRIX*) ;;
 	    NetBSD-*|FreeBSD-*|OpenBSD-*) ;;
 	    Darwin-*) ;;
@@ -2076,7 +2088,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	SHARED_LIB_SUFFIX='${VERSION}${SHLIB_SUFFIX}'])
     AS_IF([test "$UNSHARED_LIB_SUFFIX" = ""], [
 	UNSHARED_LIB_SUFFIX='${VERSION}.a'])
-	DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
+    DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
 
     AS_IF([test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""], [
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
@@ -2114,6 +2126,25 @@ dnl # preprocessing tests use only CPPFLAGS.
     AS_IF([test "x${TCL_LIBS}" = x], [
         TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"])
     AC_SUBST(TCL_LIBS)
+
+	# See if the compiler supports casting to a union type.
+	# This is used to stop gcc from printing a compiler
+	# warning when initializing a union member.
+
+	AC_CACHE_CHECK(for cast to union support,
+	    tcl_cv_cast_to_union,
+	    AC_TRY_COMPILE([],
+	    [
+		  union foo { int i; double d; };
+		  union foo f = (union foo) (int) 0;
+	    ],
+	    tcl_cv_cast_to_union=yes,
+	    tcl_cv_cast_to_union=no)
+	)
+	if test "$tcl_cv_cast_to_union" = "yes"; then
+	    AC_DEFINE(HAVE_CAST_TO_UNION, 1,
+		    [Defined when compiler supports casting to union type.])
+	fi
 
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone

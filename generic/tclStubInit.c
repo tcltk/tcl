@@ -39,8 +39,25 @@
 #undef Tcl_CreateHashEntry
 #undef Tcl_Panic
 #undef Tcl_FindExecutable
+#undef TclSockMinimumBuffers
+
+/* See bug 510001: TclSockMinimumBuffers needs plat imp */
+#ifdef _WIN64
+#   define TclSockMinimumBuffersOld 0
+#else
+#define TclSockMinimumBuffersOld sockMinimumBuffersOld
+static int TclSockMinimumBuffersOld(int sock, int size)
+{
+    return TclSockMinimumBuffers(INT2PTR(sock), size);
+}
+#endif
 
 #ifdef __CYGWIN__
+
+/* Trick, so we don't have to include <windows.h> here, which
+ * - b.t.w. - lacks this function anyway */
+#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
+int __stdcall GetModuleHandleExW(unsigned int, const char *, void *);
 
 #define TclWinGetPlatformId winGetPlatformId
 #define Tcl_WinUtfToTChar winUtfToTChar
@@ -48,10 +65,9 @@
 #define TclWinGetTclInstance winGetTclInstance
 #define TclWinNToHS winNToHS
 #define TclWinSetSockOpt winSetSockOpt
-#define TclWinAddProcess winAddProcess
-#define TclpGetTZName pGetTZName
 #define TclWinNoBackslash winNoBackslash
-#define TclWinSetInterfaces (void (*) _ANSI_ARGS_((int))) doNothing
+#define TclWinSetInterfaces (void (*) (int)) doNothing
+#define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #define TclWinFlushDirtyChannels doNothing
 #define TclWinResetInterfaces doNothing
 
@@ -65,38 +81,25 @@ TclWinGetPlatformId()
     return 2; /* VER_PLATFORM_WIN32_NT */;
 }
 
-static int TclWinGetTclInstance()
+static void *TclWinGetTclInstance()
 {
-	Tcl_Panic("TclWinGetTclInstance not yet implemented for CYGWIN");
-    return 0;
+    void *hInstance = NULL;
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+	    (const char *)&winTCharEncoding, &hInstance);
+    return hInstance;
 }
 
 static unsigned short
 TclWinNToHS(unsigned short ns)
 {
-	Tcl_Panic("TclWinNToHS not yet implemented for CYGWIN");
-    return (unsigned short) -1;
+    return ntohs(ns);
 }
+
 static int
-TclWinSetSockOpt(int s, int level, int optname,
+TclWinSetSockOpt(void *s, int level, int optname,
 	    const char *optval, int optlen)
 {
-	Tcl_Panic("TclWinSetSockOpt not yet implemented for CYGWIN");
-    return -1;
-}
-
-static void
-TclWinAddProcess(void *hProcess, unsigned long id)
-{
-	Tcl_Panic("TclWinAddProcess not yet implemented for CYGWIN");
-}
-
-static char *
-TclpGetTZName(int isdst)
-{
-    /* TODO: implementation */
-	Tcl_Panic("TclpGetTZName not yet implemented for CYGWIN");
-    return 0;
+    return setsockopt((int) s, level, optname, optval, optlen);
 }
 
 static char *
@@ -120,7 +123,7 @@ doNothing(void)
 
 static char *
 Tcl_WinUtfToTChar(string, len, dsPtr)
-    CONST char *string;
+    const char *string;
     int len;
     Tcl_DString *dsPtr;
 {
@@ -133,7 +136,7 @@ Tcl_WinUtfToTChar(string, len, dsPtr)
 
 static char *
 Tcl_WinTCharToUtf(
-    CONST char *string,
+    const char *string,
     int len,
     Tcl_DString *dsPtr)
 {
@@ -145,26 +148,26 @@ Tcl_WinTCharToUtf(
 }
 
 #define Tcl_MacOSXOpenBundleResources (int (*) _ANSI_ARGS_(( \
-		Tcl_Interp *, CONST char *, int, int, char *))) Tcl_WinUtfToTChar
+		Tcl_Interp *, const char *, int, int, char *))) Tcl_WinUtfToTChar
 #define Tcl_MacOSXOpenVersionedBundleResources (int (*) _ANSI_ARGS_(( \
-		Tcl_Interp *, CONST char *, CONST char *, int, int, char *))) Tcl_WinTCharToUtf
+		Tcl_Interp *, const char *, const char *, int, int, char *))) Tcl_WinTCharToUtf
 #define TclMacOSXGetFileAttribute (int (*) _ANSI_ARGS_((Tcl_Interp *,  \
 		int, Tcl_Obj *, Tcl_Obj **))) TclpCreateProcess
-#define TclMacOSXMatchType (int (*) _ANSI_ARGS_((Tcl_Interp *, CONST char *, \
-		CONST char *, Tcl_StatBuf *, Tcl_GlobTypeData *))) TclpMakeFile
-#define TclMacOSXNotifierAddRunLoopMode (void (*) _ANSI_ARGS_((CONST void *))) TclpOpenFile
-#define TclpLocaltime_unix (struct tm *(*) _ANSI_ARGS_((CONST time_t *))) TclGetAndDetachPids
-#define TclpGmtime_unix (struct tm *(*) _ANSI_ARGS_((CONST time_t *))) TclpCloseFile
+#define TclMacOSXMatchType (int (*) _ANSI_ARGS_((Tcl_Interp *, const char *, \
+		const char *, Tcl_StatBuf *, Tcl_GlobTypeData *))) TclpMakeFile
+#define TclMacOSXNotifierAddRunLoopMode (void (*) _ANSI_ARGS_((const void *))) TclpOpenFile
+#define TclpLocaltime_unix (struct tm *(*) _ANSI_ARGS_((const time_t *))) TclGetAndDetachPids
+#define TclpGmtime_unix (struct tm *(*) _ANSI_ARGS_((const time_t *))) TclpCloseFile
 
 #elif !defined(__WIN32__) /* UNIX and MAC */
 #   define TclWinConvertError (void (*) _ANSI_ARGS_((unsigned int))) TclGetAndDetachPids
+#   undef TclWinConvertWSAError
 #   define TclWinConvertWSAError (void (*) _ANSI_ARGS_((unsigned int))) TclpCloseFile
 #   define TclWinGetPlatformId (int (*)()) TclpCreateTempFile
-#   define TclWinGetTclInstance (int (*)()) TclpCreateProcess
+#   define TclWinGetTclInstance (void *(*)()) TclpCreateProcess
 #   define TclWinNToHS (unsigned short (*) _ANSI_ARGS_((unsigned short ns))) TclpMakeFile
-#   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((int, int, int, const char *, int))) TclpOpenFile
+#   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, const char *, int))) TclpOpenFile
 #   define TclWinAddProcess 0
-#   define TclpGetTZName 0
 #   define TclWinNoBackslash 0
 #   define TclWinSetInterfaces 0
 #   define TclWinFlushDirtyChannels 0
@@ -272,7 +275,7 @@ static const TclIntStubs tclIntStubs = {
     TclpGetClicks, /* 75 */
     TclpGetSeconds, /* 76 */
     TclpGetTime, /* 77 */
-    TclpGetTimeZone, /* 78 */
+    0, /* 78 */
     0, /* 79 */
     0, /* 80 */
     TclpRealloc, /* 81 */
@@ -298,13 +301,13 @@ static const TclIntStubs tclIntStubs = {
     TclSetPreInitScript, /* 101 */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
-    TclSockMinimumBuffers, /* 104 */
+    TclSockMinimumBuffersOld, /* 104 */
     0, /* 105 */
     0, /* 106 */
     0, /* 107 */
     TclTeardownNamespace, /* 108 */
     TclUpdateReturnInfo, /* 109 */
-    0, /* 110 */
+    TclSockMinimumBuffers, /* 110 */
     Tcl_AddInterpResolvers, /* 111 */
     Tcl_AppendExportList, /* 112 */
     Tcl_CreateNamespace, /* 113 */
@@ -474,7 +477,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinAddProcess, /* 20 */
     0, /* 21 */
     TclpCreateTempFile, /* 22 */
-    TclpGetTZName, /* 23 */
+    0, /* 23 */
     TclWinNoBackslash, /* 24 */
     0, /* 25 */
     TclWinSetInterfaces, /* 26 */
@@ -508,7 +511,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinAddProcess, /* 20 */
     0, /* 21 */
     TclpCreateTempFile, /* 22 */
-    TclpGetTZName, /* 23 */
+    0, /* 23 */
     TclWinNoBackslash, /* 24 */
     0, /* 25 */
     TclWinSetInterfaces, /* 26 */
@@ -540,7 +543,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinAddProcess, /* 20 */
     0, /* 21 */
     TclpCreateTempFile, /* 22 */
-    TclpGetTZName, /* 23 */
+    0, /* 23 */
     TclWinNoBackslash, /* 24 */
     0, /* 25 */
     TclWinSetInterfaces, /* 26 */

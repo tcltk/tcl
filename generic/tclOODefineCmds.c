@@ -2306,11 +2306,32 @@ ClassVarsSet(
 		    ckalloc(sizeof(Tcl_Obj *) * varc);
 	}
     }
+
+    oPtr->classPtr->variables.num = 0;
     if (varc > 0) {
-	memcpy(oPtr->classPtr->variables.list, varv,
-		sizeof(Tcl_Obj *) * varc);
+	int created, n;
+	Tcl_HashTable uniqueTable;
+
+	Tcl_InitObjHashTable(&uniqueTable);
+	for (i=n=0 ; i<varc ; i++) {
+	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
+	    if (created) {
+		oPtr->classPtr->variables.list[n++] = varv[i];
+	    } else {
+		Tcl_DecrRefCount(varv[i]);
+	    }
+	}
+	oPtr->classPtr->variables.num = n;
+
+	/*
+	 * Shouldn't be necessary, but maintain num/list invariant.
+	 */
+
+	oPtr->classPtr->variables.list = (Tcl_Obj **)
+		ckrealloc((char *) oPtr->classPtr->variables.list,
+		sizeof(Tcl_Obj *) * n);
+	Tcl_DeleteHashTable(&uniqueTable);
     }
-    oPtr->classPtr->variables.num = varc;
     return TCL_OK;
 }
 
@@ -2563,10 +2584,31 @@ ObjVarsSet(
 		    ckalloc(sizeof(Tcl_Obj *) * varc);
 	}
     }
+    oPtr->variables.num = 0;
     if (varc > 0) {
-	memcpy(oPtr->variables.list, varv, sizeof(Tcl_Obj *)*varc);
+	int created, n;
+	Tcl_HashTable uniqueTable;
+
+	Tcl_InitObjHashTable(&uniqueTable);
+	for (i=n=0 ; i<varc ; i++) {
+	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
+	    if (created) {
+		oPtr->variables.list[n++] = varv[i];
+	    } else {
+		Tcl_DecrRefCount(varv[i]);
+	    }
+	}
+	oPtr->variables.num = n;
+
+	/*
+	 * Shouldn't be necessary, but maintain num/list invariant.
+	 */
+
+	oPtr->variables.list = (Tcl_Obj **)
+		ckrealloc((char *) oPtr->variables.list,
+		sizeof(Tcl_Obj *) * n);
+	Tcl_DeleteHashTable(&uniqueTable);
     }
-    oPtr->variables.num = varc;
     return TCL_OK;
 }
 

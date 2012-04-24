@@ -29,10 +29,13 @@
 #   define USE_PUTENV 1
 #   define USE_PUTENV_FOR_UNSET 1
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
-    DLLIMPORT extern char **__cygwin_environ;
-    DLLIMPORT extern int cygwin_conv_to_win32_path(const char *, char *);
 #   define environ __cygwin_environ
 #   define timezone _timezone
+    DLLIMPORT extern char **__cygwin_environ;
+    DLLIMPORT extern int cygwin_conv_to_win32_path(const char *, char *);
+    DLLIMPORT extern int cygwin_posix_to_win32_path_list_buf_size(char *value);
+    DLLIMPORT extern void cygwin_posix_to_win32_path_list(char *buf, char *value);
+    DLLIMPORT extern void __stdcall SetEnvironmentVariableA(const char*, const char *);
 #endif
 
 #if !defined(LLONG_MIN)
