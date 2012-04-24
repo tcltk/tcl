@@ -696,7 +696,8 @@ TclWinCPUID(
     __asm__ __volatile__ ("cpuid":\
     "=a" (regsPtr[0]), "=b" (regsPtr[1]), "=c" (regsPtr[2]), "=d" (regsPtr[3]) : "a" (index));
     status = TCL_OK;
-#endif    return status;
+#endif
+    return status;
 }
 
 /*
