@@ -1,3 +1,13 @@
+2012-04-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls:      [Bug 3508771] load tclreg.dll in cygwin tclsh
+	* generic/tclIntPlatDecls.h: Implement TclWinGetSockOpt, TclWinGetServByName
+	* generic/tclStubInit.c:     and TclWinCPUID for Cygwin
+	* generic/tclUnixCompat.c:
+	* unix/configure.in:
+	* unix/configure:
+	* unix/tclUnixCompat.c:
+
 2012-04-18  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Africa/Casablanca:

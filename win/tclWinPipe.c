@@ -860,7 +860,7 @@ TclpCloseFile(
  *--------------------------------------------------------------------------
  */
 
-unsigned long
+int
 TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
