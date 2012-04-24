@@ -584,7 +584,6 @@ typedef int socklen_t;
  * address platform-specific issues.
  */
 
-#define TclpGetPid(pid)		((unsigned long) (pid))
 #define TclpReleaseFile(file)	/* Nothing. */
 
 /*
@@ -605,7 +604,6 @@ typedef int socklen_t;
 #ifdef TCL_THREADS
 EXTERN struct tm *     	TclpLocaltime(CONST time_t *);
 EXTERN struct tm *     	TclpGmtime(CONST time_t *);
-EXTERN char *          	TclpInetNtoa(struct in_addr);
 /* #define localtime(x)	TclpLocaltime(x)
  * #define gmtime(x)	TclpGmtime(x)    */
 #   undef inet_ntoa

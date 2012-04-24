@@ -1,3 +1,13 @@
+2012-04-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls:      [Bug 3508771] load tclreg.dll in cygwin tclsh
+	* generic/tclIntPlatDecls.h: Implement TclWinGetSockOpt, TclWinGetServByName
+	* generic/tclStubInit.c:     and TclWinCPUID for Cygwin
+	* generic/tclUnixCompat.c:
+	* unix/configure.in:
+	* unix/configure:
+	* unix/tclUnixCompat.c:
+
 2012-04-18  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Africa/Casablanca:
@@ -62,7 +72,7 @@
 
 	* generic/tclInt.decls:      [Bug 3508771] load tclreg.dll in cygwin tclsh
 	* generic/tclIntPlatDecls.h: Implement TclWinConvertError, TclWinConvertWSAError,
-	* generic/tclStubInit.c:     and various more win32-specific internal functions for 
+	* generic/tclStubInit.c:     and various more win32-specific internal functions for
 	* unix/Makefile.in:          Cygwin, so win32 extensions using those can be
 	* unix/tcl.m4:               loaded in the cygwin version of tclsh.
 	* unix/configure:
@@ -82,7 +92,7 @@
 
 	* generic/tcl.decls:           [Bug 3508771] load tclreg.dll in cygwin tclsh
 	* generic/tclInt.decls:        Implement TclWinGetPlatformId, Tcl_WinUtfToTChar,
-	* generic/tclIntPlatDecls.h:   Tcl_WinTCharToUtf (and a dummy TclWinCPUID) for 
+	* generic/tclIntPlatDecls.h:   Tcl_WinTCharToUtf (and a dummy TclWinCPUID) for
 	* generic/tclPlatDecls.h:      Cygwin, so win32 extensions using those can be
 	* generic/tclStubInit.c:       loaded in the cygwin version of tclsh.
 	* unix/tclUnixCompat.c:
@@ -213,7 +223,7 @@
 
 2012-01-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tools/uniClass.tcl:    [Frq 3473670]: Various Unicode-related 
+	* tools/uniClass.tcl:    [Frq 3473670]: Various Unicode-related
 	* tools/uniParse.tcl:    speedups/robustness. Enhanced tools to
 	* generic/tclUniData.c:  be able to handle characters > 0xffff
 	* generic/tclUtf.c:      Done in all branches in order to simplify
@@ -698,7 +708,7 @@
 	* generic/tclListObj.c:	of a boolean var, where the caller can be told
 	* generic/tclParse.c:	whether or not the parsed list element was
 	* generic/tclUtil.c:	enclosed in braces.  In practice, no callers
-	really care about that.  What the callers really want to know is 
+	really care about that.  What the callers really want to know is
 	whether the list element value exists as a literal substring of the
 	string being parsed, or whether a call to TclCopyAndCollpase() is
 	needed to produce the list element value.  Now the final argument
@@ -736,7 +746,7 @@
 	* generic/tclStrToD.c:
 	* generic/tclUtf.c:
 	* unix/tclUnixFile.c:
-	
+
 2011-04-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclListObj.c:	FreeListInternalRep() cleanup.
@@ -1199,7 +1209,7 @@
 
 2010-09-23  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdAH.c:	Fix cases where value returned by 
+	* generic/tclCmdAH.c:	Fix cases where value returned by
 	* generic/tclEvent.c:	Tcl_GetReturnOptions() was leaked.
 	* generic/tclMain.c:	Thanks to Jeff Hobbs for discovery of the
 	anti-pattern to seek and destroy.
@@ -1498,7 +1508,7 @@
 
 	* library/platform/platform.tcl: Fix cpu name for Solaris/Intel 64bit.
 	* library/platform/pkgIndex.tcl: Package updated to version 1.0.8.
-	* unix/Makefile.in:		
+	* unix/Makefile.in:
 	* win/Makefile.in:
 
 2010-04-30  Don Porter  <dgp@users.sourceforge.net>
@@ -1534,7 +1544,7 @@
 	* library/tzdata/Pacific/Apia:
 	* library/tzdata/Pacific/Easter:
 	* library/tzdata/Pacific/Fiji:   Olson's tzdata2010i.
-	
+
 2010-04-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinPort.h: [Patch 2986105]: Conditionally defining
@@ -1870,9 +1880,9 @@
 
 2009-11-27  Donal K. Fellows  <dkf@users.sf.net>
 
-	* doc/BoolObj.3, doc/CrtChannel.3, doc/DictObj.3, doc/DoubleObj.3: 
-	* doc/Ensemble.3, doc/Environment.3, doc/FileSystem.3, doc/Hash.3: 
-	* doc/IntObj.3, doc/Limit.3, doc/ObjectType.3, doc/PkgRequire.3: 
+	* doc/BoolObj.3, doc/CrtChannel.3, doc/DictObj.3, doc/DoubleObj.3:
+	* doc/Ensemble.3, doc/Environment.3, doc/FileSystem.3, doc/Hash.3:
+	* doc/IntObj.3, doc/Limit.3, doc/ObjectType.3, doc/PkgRequire.3:
 	* doc/SetChanErr.3, doc/SetResult.3: [Patch 2903921]: Many small
 	spelling fixes from Larry Virden.
 
@@ -1888,7 +1898,7 @@
 
 	* generic/tclEncoding.c: Fix [Bug 2891556] and improve test to detect
 	* tests/decoding.test:   similar manifestations in the future.
-	
+
 2009-11-12  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.8 TAGGED FOR RELEASE ***
@@ -1917,7 +1927,7 @@
 	* library/http/http.tcl:	[Bug 2891171]: Update the URL syntax
 	check to RFC 3986 compliance on the subject of non-encoded question
 	mark characters.
-	
+
 	* library/http/pkgIndex.tcl:	Bump to http 2.7.5 to avoid any
 	* unix/Makefile.in:		confusion with snapshot "releases"
 	* win/Makefile.in:		that might be in ActiveTcl, etc.
@@ -1943,7 +1953,7 @@
 
 2009-11-09  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c (TclEvalObjEx):	Plug memory leak in 
+	* generic/tclBasic.c (TclEvalObjEx):	Plug memory leak in
 	TCL_EVAL_DIRECT evaluation.
 
 	* tests/info.test:	Resolve ambiguous resolution of variable "res".
@@ -1972,7 +1982,7 @@
 	subdirectories.
 
 2009-11-03  Kevin B. Kenny  <kennykb@acm.org>
-	
+
 	* library/tzdata/Asia/Novokuznetsk: New tzdata locale for Kemerovo
 	oblast', which now keeps Novosibirsk time and not Kranoyarsk time.
 	* library/tzdata/Asia/Damascus: Syrian DST changes.
