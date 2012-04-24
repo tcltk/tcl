@@ -2160,67 +2160,6 @@ DoGlob(
     }
 
     /*
-     * This block of code is not exercised by the Tcl test suite as of Tcl
-     * 8.5a0. Simplifications to the calling paths suggest it may not be
-     * necessary any more, since path separators are handled elsewhere. It is
-     * left in place in case new bugs are reported.
-     */
-
-#if 0 /* PROBABLY_OBSOLETE */
-    /*
-     * Deal with path separators.
-     */
-
-    if (pathPtr == NULL) {
-	/*
-	 * Length used to be the length of the prefix, and lastChar the
-	 * lastChar of the prefix. But, none of this is used any more.
-	 */
-
-	int length = 0;
-	char lastChar = 0;
-
-	switch (tclPlatform) {
-	case TCL_PLATFORM_WINDOWS:
-	    /*
-	     * If this is a drive relative path, add the colon and the
-	     * trailing slash if needed. Otherwise add the slash if this is
-	     * the first absolute element, or a later relative element. Add an
-	     * extra slash if this is a UNC path.
-	     */
-
-	    if (*name == ':') {
-		Tcl_DStringAppend(&append, ":", 1);
-		if (count > 1) {
-		    Tcl_DStringAppend(&append, "/", 1);
-		}
-	    } else if ((*pattern != '\0') && (((length > 0)
-		    && (strchr(separators, lastChar) == NULL))
-		    || ((length == 0) && (count > 0)))) {
-		Tcl_DStringAppend(&append, "/", 1);
-		if ((length == 0) && (count > 1)) {
-		    Tcl_DStringAppend(&append, "/", 1);
-		}
-	    }
-
-	    break;
-	case TCL_PLATFORM_UNIX:
-	    /*
-	     * Add a separator if this is the first absolute element, or a
-	     * later relative element.
-	     */
-
-	    if ((*pattern != '\0') && (((length > 0)
-		    && (strchr(separators, lastChar) == NULL))
-		    || ((length == 0) && (count > 0)))) {
-		Tcl_DStringAppend(&append, "/", 1);
-	    }
-	    break;
-	}
-    }
-#endif /* PROBABLY_OBSOLETE */
-
-    /*
      * Look for the first matching pair of braces or the first directory
      * separator that is not inside a pair of braces.
      */
@@ -2278,8 +2217,8 @@ DoGlob(
 
     if (openBrace != NULL) {
 	char *element;
-
 	Tcl_DString newName;
+
 	Tcl_DStringInit(&newName);
 
 	/*
@@ -2328,12 +2267,13 @@ DoGlob(
      */
 
     if (*p != '\0') {
+	char savedChar = *p;
+
 	/*
 	 * Note that we are modifying the string in place. This won't work if
 	 * the string is a static.
 	 */
 
-	char savedChar = *p;
 	*p = '\0';
 	firstSpecialChar = strpbrk(pattern, "*[]?\\");
 	*p = savedChar;
@@ -2398,6 +2338,7 @@ DoGlob(
 			const char *bytes;
 			int numBytes;
 			Tcl_Obj *fixme, *newObj;
+
 			Tcl_ListObjIndex(NULL, matchesObj, repair, &fixme);
 			bytes = Tcl_GetStringFromObj(fixme, &numBytes);
 			newObj = Tcl_NewStringObj(bytes+2, numBytes-2);
@@ -2418,6 +2359,9 @@ DoGlob(
      */
 
     if (*p == '\0') {
+	int length;
+	Tcl_DString append;
+
 	/*
 	 * This is the code path reached by a command like 'glob foo'.
 	 *
@@ -2429,9 +2373,6 @@ DoGlob(
 	 * use 'Tcl_FSLStat', but for simplicity we keep to a common
 	 * approach).
 	 */
-
-	int length;
-	Tcl_DString append;
 
 	Tcl_DStringInit(&append);
 	Tcl_DStringAppend(&append, pattern, p-pattern);
@@ -2453,15 +2394,6 @@ DoGlob(
 		}
 	    }
 
-#if defined(__CYGWIN__) && defined(__WIN32__)
-	    {
-		char winbuf[MAX_PATH+1];
-
-		cygwin_conv_to_win32_path(Tcl_DStringValue(&append), winbuf);
-		Tcl_DStringFree(&append);
-		Tcl_DStringAppend(&append, winbuf, -1);
-	    }
-#endif /* __CYGWIN__ && __WIN32__ */
 	    break;
 
 	case TCL_PLATFORM_UNIX:
@@ -2473,8 +2405,9 @@ DoGlob(
 		}
 	    }
 #if defined(__CYGWIN__) && !defined(__WIN32__)
-	    DLLIMPORT extern int cygwin_conv_to_posix_path(const char *, char *);
 	    {
+		DLLIMPORT extern int cygwin_conv_to_posix_path(const char *,
+			char *);
 		char winbuf[MAXPATHLEN+1];
 
 		cygwin_conv_to_posix_path(Tcl_DStringValue(&append), winbuf);

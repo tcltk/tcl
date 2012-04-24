@@ -17,9 +17,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 testConstraint testasync [llength [info commands testasync]]
-testConstraint threaded [expr {
-    [info exists ::tcl_platform(threaded)] && $::tcl_platform(threaded)
-}]
+testConstraint threaded [::tcl::pkgconfig get threaded]
 
 proc async1 {result code} {
     global aresult acode

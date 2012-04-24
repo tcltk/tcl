@@ -873,39 +873,9 @@ Tcl_UnloadObjCmd(
   done:
     Tcl_DStringFree(&pkgName);
     Tcl_DStringFree(&tmp);
-    if (!complain && code!=TCL_OK) {
+    if (!complain && (code != TCL_OK)) {
 	code = TCL_OK;
 	Tcl_ResetResult(interp);
-    }
-    if (code == TCL_OK) {
-#if 0
-	/*
-	 * Result of [unload] was not documented in TIP#100, so force to be
-	 * the empty string by commenting this out. DKF.
-	 */
-
-	Tcl_Obj *resultObjPtr, *objPtr[2];
-
-	/*
-	 * Our result is the two reference counts.
-	 */
-
-	TclNewIntObj(objPtr[0], trustedRefCount);
-	TclNewIntObj(objPtr[1], safeRefCount);
-	if (objPtr[0] == NULL || objPtr[1] == NULL) {
-	    if (objPtr[0]) {
-		Tcl_DecrRefCount(objPtr[0]);
-	    }
-	    if (objPtr[1]) {
-		Tcl_DecrRefCount(objPtr[1]);
-	    }
-	} else {
-	    TclNewListObj(resultObjPtr, 2, objPtr);
-	    if (resultObjPtr != NULL) {
-		Tcl_SetObjResult(interp, resultObjPtr);
-	    }
-	}
-#endif
     }
     return code;
 }

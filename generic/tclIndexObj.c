@@ -1350,7 +1350,7 @@ PrintUsage(
     register const Tcl_ArgvInfo *infoPtr;
     int width, numSpaces;
 #define NUM_SPACES 20
-    static char spaces[] = "                    ";
+    static const char spaces[] = "                    ";
     char tmp[TCL_DOUBLE_SPACE];
 
     /*
