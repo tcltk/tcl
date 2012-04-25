@@ -563,9 +563,7 @@ Tcl_EncodingObjCmd(
 	     * truncate the string at the first null byte.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    Tcl_DStringValue(&ds), Tcl_DStringLength(&ds)));
-	    Tcl_DStringFree(&ds);
+	    Tcl_SetObjResult(interp, TclDStringToObj(&ds));
 	} else {
 	    /*
 	     * Store the result as binary data.
@@ -1869,20 +1867,16 @@ PathNativeNameCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    const char *fileName;
     Tcl_DString ds;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    fileName = Tcl_TranslateFileName(interp, TclGetString(objv[1]), &ds);
-    if (fileName == NULL) {
+    if (Tcl_TranslateFileName(interp, TclGetString(objv[1]), &ds) == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(fileName,
-	    Tcl_DStringLength(&ds)));
-    Tcl_DStringFree(&ds);
+    Tcl_SetObjResult(interp, TclDStringToObj(&ds));
     return TCL_OK;
 }
 

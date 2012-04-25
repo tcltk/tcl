@@ -1387,11 +1387,9 @@ GetOwnerAttribute(
 	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_uid);
     } else {
 	Tcl_DString ds;
-	const char *utf;
 
-	utf = Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, -1, &ds);
-	*attributePtrPtr = Tcl_NewStringObj(utf, Tcl_DStringLength(&ds));
-	Tcl_DStringFree(&ds);
+	(void) Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, -1, &ds);
+	*attributePtrPtr = TclDStringToObj(&ds);
     }
     return TCL_OK;
 }
