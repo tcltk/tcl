@@ -2671,6 +2671,64 @@ Tcl_DStringGetResult(
 /*
  *----------------------------------------------------------------------
  *
+ * TclDStringToObj --
+ *
+ *	This function moves a dynamic string's contents to a new Tcl_Obj. Be
+ *	aware that this function does *not* check that the encoding of the
+ *	contents of the dynamic string is correct; this is the caller's
+ *	responsibility to enforce.
+ *
+ * Results:
+ *	The newly-allocated untyped (i.e., typePtr==NULL) Tcl_Obj with a
+ *	reference count of zero.
+ *
+ * Side effects:
+ *	The string is "moved" to the object. dsPtr is reinitialized to an
+ *	empty string; it does not need to be Tcl_DStringFree'd after this if
+ *	not used further.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclDStringToObj(
+    Tcl_DString *dsPtr)
+{
+    Tcl_Obj *result;
+
+    if (dsPtr->length == 0) {
+	TclNewObj(result);
+    } else if (dsPtr->string == dsPtr->staticSpace) {
+	/*
+	 * Static buffer, so must copy.
+	 */
+
+	TclNewStringObj(result, dsPtr->string, dsPtr->length);
+    } else {
+	/*
+	 * Dynamic buffer, so transfer ownership and reset.
+	 */
+
+	TclNewObj(result);
+	result->bytes = dsPtr->string;
+	result->length = dsPtr->length;
+    }
+
+    /*
+     * Re-establish the DString as empty with no buffer allocated.
+     */
+
+    dsPtr->string = dsPtr->staticSpace;
+    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
+    dsPtr->length = 0;
+    dsPtr->staticSpace[0] = '\0';
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_DStringStartSublist --
  *
  *	This function adds the necessary information to a dynamic string

@@ -3255,7 +3255,7 @@ TestlocaleCmd(
 	"ctype", "numeric", "time", "collate", "monetary",
 	"all",	NULL
     };
-    static int lcTypes[] = {
+    static CONST int lcTypes[] = {
 	LC_CTYPE, LC_NUMERIC, LC_TIME, LC_COLLATE, LC_MONETARY,
 	LC_ALL
     };
