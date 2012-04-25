@@ -1,3 +1,14 @@
+2012-04-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclUtil.c (TclDStringToObj): Added internal function to make
+	the fairly-common operation of converting a DString into an Obj a more
+	efficient one; for long strings, it can just transfer the ownership of
+	the buffer directly. Replaces this:
+	   obj=Tcl_NewStringObj(Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
+	   Tcl_DStringFree(&ds);
+	with this:
+	   obj=TclDStringToObj(&ds);
+
 2012-04-24  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.decls:      [Bug 3508771] load tclreg.dll in cygwin tclsh

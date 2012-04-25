@@ -947,10 +947,8 @@ CompileRegexp(
      */
 
     if (TclReToGlob(NULL, string, length, &stringBuf, &exact) == TCL_OK) {
-	regexpPtr->globObjPtr = Tcl_NewStringObj(Tcl_DStringValue(&stringBuf),
-		Tcl_DStringLength(&stringBuf));
+	regexpPtr->globObjPtr = TclDStringToObj(&stringBuf);
 	Tcl_IncrRefCount(regexpPtr->globObjPtr);
-	Tcl_DStringFree(&stringBuf);
     } else {
 	regexpPtr->globObjPtr = NULL;
     }

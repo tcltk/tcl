@@ -1002,12 +1002,8 @@ TclpObjLink(
 	}
 
 	Tcl_ExternalToUtfDString(NULL, link, length, &ds);
-	linkPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
-		Tcl_DStringLength(&ds));
-	Tcl_DStringFree(&ds);
-	if (linkPtr != NULL) {
-	    Tcl_IncrRefCount(linkPtr);
-	}
+	linkPtr = TclDStringToObj(&ds);
+	Tcl_IncrRefCount(linkPtr);
 	return linkPtr;
     }
 }
@@ -1069,19 +1065,9 @@ TclpNativeToNormalized(
     ClientData clientData)
 {
     Tcl_DString ds;
-    Tcl_Obj *objPtr;
-    int len;
 
-    const char *copy;
-    Tcl_ExternalToUtfDString(NULL, (const char*)clientData, -1, &ds);
-
-    copy = Tcl_DStringValue(&ds);
-    len = Tcl_DStringLength(&ds);
-
-    objPtr = Tcl_NewStringObj(copy,len);
-    Tcl_DStringFree(&ds);
-
-    return objPtr;
+    Tcl_ExternalToUtfDString(NULL, (const char *) clientData, -1, &ds);
+    return TclDStringToObj(&ds);
 }
 
 /*
