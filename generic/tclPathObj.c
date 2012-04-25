@@ -2373,7 +2373,6 @@ SetFsPathFromAny(
      */
 
     if (name[0] == '~') {
-	char *expandedUser;
 	Tcl_DString temp;
 	int split;
 	char separator = '/';
@@ -2442,8 +2441,7 @@ SetFsPathFromAny(
 	    }
 	}
 
-	expandedUser = Tcl_DStringValue(&temp);
-	transPtr = Tcl_NewStringObj(expandedUser, Tcl_DStringLength(&temp));
+	transPtr = TclDStringToObj(&temp);
 
 	if (split != len) {
 	    /*
@@ -2488,7 +2486,6 @@ SetFsPathFromAny(
 		transPtr = joined;
 	    }
 	}
-	Tcl_DStringFree(&temp);
     } else {
 	transPtr = TclJoinPath(1, &pathPtr);
     }
