@@ -814,9 +814,9 @@ DdeClientWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	    ddeEnumServices *es;
 	    es = (ddeEnumServices*)lpcs->lpCreateParams;
 #ifdef _WIN64
-	    SetWindowLongPtr(hwnd, GWLP_USERDATA, (long)es);
+	    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR) es);
 #else
-	    SetWindowLong(hwnd, GWL_USERDATA, (long)es);
+	    SetWindowLong(hwnd, GWL_USERDATA, (LONG) es);
 #endif
 	    break;
 	}
