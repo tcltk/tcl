@@ -299,9 +299,8 @@ AppendEnvironment(
 
 	    pathv[pathc - 1] = shortlib;
 	    Tcl_DStringInit(&ds);
-	    str = Tcl_JoinPath(pathc, pathv, &ds);
-	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
-	    Tcl_DStringFree(&ds);
+	    (void) Tcl_JoinPath(pathc, pathv, &ds);
+	    objPtr = TclDStringToObj(&ds);
 	} else {
 	    objPtr = Tcl_NewStringObj(buf, -1);
 	}
