@@ -399,9 +399,7 @@ ExtractHeader(
 
 	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->comment, -1,
 		&tmp);
-	SetValue(dictObj, "comment", Tcl_NewStringObj(Tcl_DStringValue(&tmp),
-		Tcl_DStringLength(&tmp)));
-	Tcl_DStringFree(&tmp);
+	SetValue(dictObj, "comment", TclDStringToObj(&tmp));
     }
     SetValue(dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
     if (headerPtr->name != Z_NULL) {
@@ -418,9 +416,7 @@ ExtractHeader(
 
 	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->name, -1,
 		&tmp);
-	SetValue(dictObj, "filename", Tcl_NewStringObj(Tcl_DStringValue(&tmp),
-		Tcl_DStringLength(&tmp)));
-	Tcl_DStringFree(&tmp);
+	SetValue(dictObj, "filename", TclDStringToObj(&tmp));
     }
     if (headerPtr->os != 255) {
 	SetValue(dictObj, "os", Tcl_NewIntObj(headerPtr->os));
