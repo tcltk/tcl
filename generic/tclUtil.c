@@ -2626,12 +2626,7 @@ Tcl_DStringResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the
 				 * result of interp. */
 {
-    Tcl_SetResult(interp, dsPtr->string, TCL_VOLATILE);
-
-    dsPtr->string = dsPtr->staticSpace;
-    dsPtr->length = 0;
-    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
-    dsPtr->staticSpace[0] = '\0';
+    Tcl_SetObjResult(interp, TclDStringToObj(dsPtr));
 }
 
 /*
