@@ -860,7 +860,7 @@ TclpCloseFile(
  *--------------------------------------------------------------------------
  */
 
-unsigned long
+int
 TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
@@ -1290,7 +1290,7 @@ ApplicationType(
     Tcl_DString nameBuf, ds;
     const TCHAR *nativeName;
     TCHAR nativeFullPath[MAX_PATH];
-    static char extensions[][5] = {"", ".com", ".exe", ".bat"};
+    static const char extensions[][5] = {"", ".com", ".exe", ".bat"};
 
     /*
      * Look for the program as an external program. First try the name as it

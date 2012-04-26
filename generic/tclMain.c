@@ -53,20 +53,23 @@
 #endif
 
 /*
- * Further on, in UNICODE mode, we need to use Tcl_NewUnicodeObj,
- * while otherwise NewNativeObj is needed (which provides proper
- * conversion from native encoding to UTF-8).
+ * Further on, in UNICODE mode we just use Tcl_NewUnicodeObj, otherwise
+ * NewNativeObj is needed (which provides proper conversion from native
+ * encoding to UTF-8).
  */
+
 #ifdef UNICODE
 #   define NewNativeObj Tcl_NewUnicodeObj
 #else /* !UNICODE */
-    static Tcl_Obj *NewNativeObj(char *string, int length) {
-	Tcl_Obj *obj;
-	Tcl_DString ds;
-	Tcl_ExternalToUtfDString(NULL, string, length, &ds);
-	obj = Tcl_NewStringObj(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
-	Tcl_DStringFree(&ds);
-	return obj;
+static inline Tcl_Obj *
+NewNativeObj(
+    char *string,
+    int length)
+{
+    Tcl_DString ds;
+
+    Tcl_ExternalToUtfDString(NULL, string, length, &ds);
+    return TclDStringToObj(&ds);
 }
 #endif /* !UNICODE */
 
