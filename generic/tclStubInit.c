@@ -221,9 +221,6 @@ Tcl_WinTCharToUtf(
 #   define TclWinFlushDirtyChannels 0
 #   define TclWinResetInterfaces 0
 #   define TclpGetPid 0
-#   define TclMacOSXGetFileAttribute 0 /* Only implemented in Tcl >= 8.5 */
-#   define TclMacOSXMatchType 0 /* Only implemented in Tcl >= 8.5 */
-#   define TclMacOSXNotifierAddRunLoopMode 0 /* Only implemented in Tcl >= 8.5 */
 #   ifndef MAC_OSX_TCL
 #	define Tcl_MacOSXOpenBundleResources 0
 #	define Tcl_MacOSXOpenVersionedBundleResources 0
