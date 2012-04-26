@@ -113,7 +113,7 @@ static const char *const traceTypeOptions[] = {
 static Tcl_TraceTypeObjCmd *const traceSubCmds[] = {
     TraceExecutionObjCmd,
     TraceCommandObjCmd,
-    TraceVariableObjCmd,
+    TraceVariableObjCmd
 };
 
 /*
