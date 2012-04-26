@@ -171,28 +171,28 @@ Tcl_WinTCharToUtf(
 	    string, len, dsPtr);
 }
 
-#define Tcl_MacOSXOpenBundleResources (int (*) _ANSI_ARGS_(( \
-		Tcl_Interp *, const char *, int, int, char *))) Tcl_WinUtfToTChar
-#define Tcl_MacOSXOpenVersionedBundleResources (int (*) _ANSI_ARGS_(( \
-		Tcl_Interp *, const char *, const char *, int, int, char *))) Tcl_WinTCharToUtf
-#define TclMacOSXGetFileAttribute (int (*) _ANSI_ARGS_((Tcl_Interp *,  \
-		int, Tcl_Obj *, Tcl_Obj **))) TclpCreateProcess
-#define TclMacOSXMatchType (int (*) _ANSI_ARGS_((Tcl_Interp *, const char *, \
-		const char *, Tcl_StatBuf *, Tcl_GlobTypeData *))) TclpMakeFile
-#define TclMacOSXNotifierAddRunLoopMode (void (*) _ANSI_ARGS_((const void *))) TclpOpenFile
-#define TclpLocaltime_unix (struct tm *(*) _ANSI_ARGS_((const time_t *))) TclGetAndDetachPids
-#define TclpGmtime_unix (struct tm *(*) _ANSI_ARGS_((const time_t *))) TclpCloseFile
+#define Tcl_MacOSXOpenBundleResources (int (*) ( \
+		Tcl_Interp *, const char *, int, int, char *)) Tcl_WinUtfToTChar
+#define Tcl_MacOSXOpenVersionedBundleResources (int (*) ( \
+		Tcl_Interp *, const char *, const char *, int, int, char *)) Tcl_WinTCharToUtf
+#define TclMacOSXGetFileAttribute (int (*) (Tcl_Interp *,  \
+		int, Tcl_Obj *, Tcl_Obj **)) TclpCreateProcess
+#define TclMacOSXMatchType (int (*) (Tcl_Interp *, const char *, \
+		const char *, Tcl_StatBuf *, Tcl_GlobTypeData *)) TclpMakeFile
+#define TclMacOSXNotifierAddRunLoopMode (void (*) (const void *)) TclpOpenFile
+#define TclpLocaltime_unix (struct tm *(*) (const time_t *)) TclGetAndDetachPids
+#define TclpGmtime_unix (struct tm *(*) (const time_t *)) TclpCloseFile
 
 #elif !defined(__WIN32__) /* UNIX and MAC */
-#   define TclWinConvertError (void (*) _ANSI_ARGS_((unsigned int))) TclGetAndDetachPids
+#   define TclWinConvertError (void (*) (unsigned int)) TclGetAndDetachPids
 #   undef TclWinConvertWSAError
-#   define TclWinConvertWSAError (void (*) _ANSI_ARGS_((unsigned int))) TclpCloseFile
+#   define TclWinConvertWSAError (void (*) (unsigned int)) TclpCloseFile
 #   define TclWinGetPlatformId (int (*)()) TclpCreateTempFile
 #   define TclWinGetTclInstance (void *(*)()) TclpCreateProcess
 #   define TclWinNToHS (unsigned short (*) _ANSI_ARGS_((unsigned short ns))) TclpMakeFile
-#   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, const char *, int))) TclpOpenFile
-#   define TclWinGetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, char *, int *))) TclpCreatePipe
-#   define TclWinGetServByName (struct servent *(*) _ANSI_ARGS_((const char *nm, const char *proto))) TclpCreateCommandChannel
+#   define TclWinSetSockOpt (int (*) (void *, int, int, const char *, int)) TclpOpenFile
+#   define TclWinGetSockOpt (int (*) (void *, int, int, char *, int *)) TclpCreatePipe
+#   define TclWinGetServByName (struct servent *(*) (const char *nm, const char *proto)) TclpCreateCommandChannel
 #   define TclIntPlatReserved13 (void (*) ()) TclpInetNtoa
 #   define TclWinAddProcess 0
 #   define TclWinNoBackslash 0
