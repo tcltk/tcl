@@ -2088,7 +2088,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	SHARED_LIB_SUFFIX='${VERSION}${SHLIB_SUFFIX}'])
     AS_IF([test "$UNSHARED_LIB_SUFFIX" = ""], [
 	UNSHARED_LIB_SUFFIX='${VERSION}.a'])
-	DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
+    DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
 
     AS_IF([test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""], [
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}

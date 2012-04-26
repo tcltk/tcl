@@ -668,7 +668,6 @@ typedef int socklen_t;
  *---------------------------------------------------------------------------
  */
 
-#define TclpGetPid(pid)		((unsigned long) (pid))
 #define TclpReleaseFile(file)	/* Nothing. */
 
 /*
