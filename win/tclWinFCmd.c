@@ -50,7 +50,7 @@ enum {
     WIN_SYSTEM_ATTRIBUTE
 };
 
-static int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
+static const int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
 	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM};
 
 
@@ -1011,13 +1011,12 @@ TclpObjRemoveDirectory(
     }
 
     if (ret != TCL_OK) {
-	int len = Tcl_DStringLength(&ds);
-	if (len > 0) {
+	if (Tcl_DStringLength(&ds) > 0) {
 	    if (normPtr != NULL &&
 		    !strcmp(Tcl_DStringValue(&ds), TclGetString(normPtr))) {
 		*errorPtr = pathPtr;
 	    } else {
-		*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+		*errorPtr = TclDStringToObj(&ds);
 	    }
 	    Tcl_IncrRefCount(*errorPtr);
 	}
@@ -1762,6 +1761,7 @@ ConvertFileNameFormat(
 
 	    Tcl_DStringInit(&dsTemp);
 	    Tcl_WinTCharToUtf(nativeName, -1, &dsTemp);
+	    Tcl_DStringFree(&ds);
 
 	    /*
 	     * Deal with issues of tildes being absolute.
@@ -1771,13 +1771,11 @@ ConvertFileNameFormat(
 		TclNewLiteralStringObj(tempPath, "./");
 		Tcl_AppendToObj(tempPath, Tcl_DStringValue(&dsTemp),
 			Tcl_DStringLength(&dsTemp));
+		Tcl_DStringFree(&dsTemp);
 	    } else {
-		tempPath = Tcl_NewStringObj(Tcl_DStringValue(&dsTemp),
-			Tcl_DStringLength(&dsTemp));
+		tempPath = TclDStringToObj(&dsTemp);
 	    }
 	    Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
-	    Tcl_DStringFree(&ds);
-	    Tcl_DStringFree(&dsTemp);
 	    FindClose(handle);
 	}
     }

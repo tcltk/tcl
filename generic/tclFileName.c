@@ -445,8 +445,7 @@ TclpGetNativePathType(
 	    if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
 		*driveNameLengthPtr = rootEnd - path;
 		if (driveNameRef != NULL) {
-		    *driveNameRef = Tcl_NewStringObj(Tcl_DStringValue(&ds),
-			    Tcl_DStringLength(&ds));
+		    *driveNameRef = TclDStringToObj(&ds);
 		    Tcl_IncrRefCount(*driveNameRef);
 		}
 	    }
@@ -724,8 +723,7 @@ SplitWinPath(
      */
 
     if (p != path) {
-	Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj(
-		Tcl_DStringValue(&buf), Tcl_DStringLength(&buf)));
+	Tcl_ListObjAppendElement(NULL, result, TclDStringToObj(&buf));
     }
     Tcl_DStringFree(&buf);
 
@@ -1751,14 +1749,12 @@ TclGlob(
 	    if (head != Tcl_DStringValue(&buffer)) {
 		Tcl_DStringAppend(&buffer, head, -1);
 	    }
-	    pathPrefix = Tcl_NewStringObj(Tcl_DStringValue(&buffer),
-		    Tcl_DStringLength(&buffer));
+	    pathPrefix = TclDStringToObj(&buffer);
 	    Tcl_IncrRefCount(pathPrefix);
 	    globFlags |= TCL_GLOBMODE_DIR;
 	    if (c != '\0') {
 		tail++;
 	    }
-	    Tcl_DStringFree(&buffer);
 	} else {
 	    tail = pattern;
 	}
@@ -2423,8 +2419,7 @@ DoGlob(
 	 */
 
 	if (pathPtr == NULL) {
-	    joinedPtr = Tcl_NewStringObj(Tcl_DStringValue(&append),
-		    Tcl_DStringLength(&append));
+	    joinedPtr = TclDStringToObj(&append);
 	} else if (flags) {
 	    joinedPtr = TclNewFSPathObj(pathPtr, Tcl_DStringValue(&append),
 		    Tcl_DStringLength(&append));
