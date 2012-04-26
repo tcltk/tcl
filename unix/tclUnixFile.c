@@ -40,13 +40,13 @@ TclpFindExecutable(
 				 * (native). */
 {
 #ifdef __CYGWIN__
+    int length;
     char buf[PATH_MAX * TCL_UTF_MAX + 1];
     char name[PATH_MAX * TCL_UTF_MAX + 1];
 #else
     const char *name, *p;
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;
-    Tcl_Encoding encoding;
 #endif
 
 #ifdef __CYGWIN__
@@ -66,9 +66,8 @@ TclpFindExecutable(
 	/* Strip '.exe' part. */
 	length -= 4;
     }
-    tclNativeExecutableName = (char *) ckalloc(length + 1);
-    memcpy(tclNativeExecutableName, name, length);
-    buf[length] = '\0';
+	TclSetObjNameOfExecutable(
+		Tcl_NewStringObj(name, length), Tcl_GetEncoding(NULL, NULL));
 #else
     if (argv0 == NULL) {
 	return;
