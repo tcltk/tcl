@@ -259,8 +259,8 @@ MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 #endif
 
 #ifdef GETTOD_NOT_DECLARED
-EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
-			    struct timezone *tzp));
+EXTERN int		gettimeofday (struct timeval *tp,
+			    struct timezone *tzp);
 #endif
 
 /*
@@ -622,7 +622,7 @@ EXTERN struct tm *     	TclpGmtime(CONST time_t *);
 #	ifdef HAVE_PTHREAD_GETATTR_NP
 #	    define TclpPthreadGetAttrs	pthread_getattr_np
 #	    ifdef GETATTRNP_NOT_DECLARED
-EXTERN int pthread_getattr_np _ANSI_ARGS_((pthread_t, pthread_attr_t *));
+EXTERN int pthread_getattr_np (pthread_t, pthread_attr_t *);
 #	    endif
 #	endif /* HAVE_PTHREAD_GETATTR_NP */
 #   endif /* HAVE_PTHREAD_ATTR_GET_NP */

@@ -1,3 +1,11 @@
+2012-04-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclStubInit.c:    get rid of _ANSI_ARGS_
+	* generic/tclIntPlatDecls.h
+	* unix/tclUnixPort.h
+	* unix/tclAppInit.c
+	* win/tclAppInit.c
+
 2012-04-24  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.decls:      [Bug 3508771] load tclreg.dll in cygwin tclsh
