@@ -191,7 +191,7 @@ Tcl_WinTCharToUtf(
 #   define TclWinGetTclInstance (void *(*)()) TclpCreateProcess
 #   define TclWinNToHS (unsigned short (*) _ANSI_ARGS_((unsigned short ns))) TclpMakeFile
 #   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, const char *, int))) TclpOpenFile
-#   define TclWinGetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, char *, int))) TclpCreatePipe
+#   define TclWinGetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, char *, int *))) TclpCreatePipe
 #   define TclWinGetServByName (struct servent *(*) _ANSI_ARGS_((const char *nm, const char *proto))) TclpCreateCommandChannel
 #   define TclIntPlatReserved13 (void (*) ()) TclpInetNtoa
 #   define TclWinAddProcess 0
