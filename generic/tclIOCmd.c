@@ -521,7 +521,7 @@ Tcl_SeekObjCmd(
     static const char *const originOptions[] = {
 	"start", "current", "end", NULL
     };
-    static CONST int modeArray[] = {SEEK_SET, SEEK_CUR, SEEK_END};
+    static const int modeArray[] = {SEEK_SET, SEEK_CUR, SEEK_END};
 
     if ((objc != 3) && (objc != 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId offset ?origin?");
