@@ -1111,25 +1111,25 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #   undef TclpOpenFile
 #   undef TclpCreateCommandChannel
 #   ifdef __CYGWIN__
-#	define TclpCreateProcess ((int (*) _ANSI_ARGS_((Tcl_Interp *, int, \
-		CONST char **, TclFile, TclFile, TclFile, Tcl_Pid *))) \
+#	define TclpCreateProcess ((int (*) (Tcl_Interp *, int, \
+		CONST char **, TclFile, TclFile, TclFile, Tcl_Pid *)) \
 		tclIntPlatStubsPtr->tclMacOSXGetFileAttribute)
-#	define TclpMakeFile ((TclFile (*) _ANSI_ARGS_((Tcl_Channel channel, \
-	    int direction))) tclIntPlatStubsPtr->tclMacOSXMatchType)
-#	define TclpOpenFile ((TclFile (*) _ANSI_ARGS_((CONST char *, int))) \
+#	define TclpMakeFile ((TclFile (*) (Tcl_Channel channel, \
+	    int direction)) tclIntPlatStubsPtr->tclMacOSXMatchType)
+#	define TclpOpenFile ((TclFile (*) (CONST char *, int)) \
 	    tclIntPlatStubsPtr->tclMacOSXNotifierAddRunLoopMode)
-#	define TclpCreateCommandChannel ((Tcl_Channel (*) _ANSI_ARGS_((TclFile, TclFile, \
-	    TclFile, int, Tcl_Pid *))) tclIntPlatStubsPtr->tclIntPlatReserved13)
+#	define TclpCreateCommandChannel ((Tcl_Channel (*) (TclFile, TclFile, \
+	    TclFile, int, Tcl_Pid *)) tclIntPlatStubsPtr->tclIntPlatReserved13)
 #   else
-#	define TclpCreateProcess ((int (*) _ANSI_ARGS_((Tcl_Interp *, int, \
-		CONST char **, TclFile, TclFile, TclFile, Tcl_Pid *))) \
+#	define TclpCreateProcess ((int (*) (Tcl_Interp *, int, \
+		CONST char **, TclFile, TclFile, TclFile, Tcl_Pid *)) \
 		tclIntPlatStubsPtr->tclWinGetTclInstance)
-#	define TclpMakeFile ((TclFile (*) _ANSI_ARGS_((Tcl_Channel channel, \
-	    int direction))) tclIntPlatStubsPtr->tclWinNToHS)
-#	define TclpOpenFile ((TclFile (*) _ANSI_ARGS_((CONST char *, int))) \
+#	define TclpMakeFile ((TclFile (*) (Tcl_Channel channel, \
+	    int direction)) tclIntPlatStubsPtr->tclWinNToHS)
+#	define TclpOpenFile ((TclFile (*) (CONST char *, int)) \
 	    tclIntPlatStubsPtr->tclWinSetSockOpt)
-#	define TclpCreateCommandChannel ((Tcl_Channel (*) _ANSI_ARGS_((TclFile, TclFile, \
-	    TclFile, int, Tcl_Pid *))) tclIntPlatStubsPtr->tclWinGetServByName)
+#	define TclpCreateCommandChannel ((Tcl_Channel (*) (TclFile, TclFile, \
+	    TclFile, int, Tcl_Pid *)) tclIntPlatStubsPtr->tclWinGetServByName)
 
 #	undef TclpCreateTempFile
 #	undef TclGetAndDetachPids
@@ -1138,17 +1138,17 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #	undef TclpInetNtoa
 #	undef TclUnixWaitForFile
 
-#	define TclpCreateTempFile ((TclFile (*) _ANSI_ARGS_((CONST char *))) \
+#	define TclpCreateTempFile ((TclFile (*) (CONST char *)) \
 		tclIntPlatStubsPtr->tclWinGetPlatformId)
-#	define TclGetAndDetachPids ((void (*) _ANSI_ARGS_((Tcl_Interp *, Tcl_Channel))) \
+#	define TclGetAndDetachPids ((void (*) (Tcl_Interp *, Tcl_Channel)) \
 	    tclIntPlatStubsPtr->tclWinConvertError)
-#	define TclpCloseFile ((int (*) _ANSI_ARGS_((TclFile))) \
+#	define TclpCloseFile ((int (*) (TclFile)) \
 	    tclIntPlatStubsPtr->tclWinConvertWSAError)
-#	define TclpCreatePipe ((int (*)_ANSI_ARGS_((TclFile *, TclFile *))) \
+#	define TclpCreatePipe ((int (*) (TclFile *, TclFile *)) \
 	    tclIntPlatStubsPtr->tclWinGetSockOpt)
-#	define TclpInetNtoa ((char *(*) _ANSI_ARGS_((struct in_addr addr))) \
+#	define TclpInetNtoa ((char *(*) (struct in_addr addr)) \
 	    tclIntPlatStubsPtr->tclIntPlatReserved13)
-#	define TclUnixWaitForFile (int (*) _ANSI_ARGS_((int, int, int))) \
+#	define TclUnixWaitForFile (int (*) (int, int, int)) \
 		tclIntPlatStubsPtr->tclpGetPid)
 #	endif
 # endif
