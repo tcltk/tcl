@@ -2350,13 +2350,9 @@ TclpFilesystemPathType(
 	return NULL;
     } else {
 	Tcl_DString ds;
-	Tcl_Obj *objPtr;
 
 	Tcl_WinTCharToUtf(volType, -1, &ds);
-	objPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
-		Tcl_DStringLength(&ds));
-	Tcl_DStringFree(&ds);
-	return objPtr;
+	return TclDStringToObj(&ds);
     }
 #undef VOL_BUF_SIZE
 }
