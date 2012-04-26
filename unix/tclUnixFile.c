@@ -43,13 +43,6 @@ TclpFindExecutable(
     int length;
     char buf[PATH_MAX * TCL_UTF_MAX + 1];
     char name[PATH_MAX * TCL_UTF_MAX + 1];
-#else
-    const char *name, *p;
-    Tcl_StatBuf statBuf;
-    Tcl_DString buffer, nameString, cwd, utfName;
-#endif
-
-#ifdef __CYGWIN__
 
     /* Make some symbols available without including <windows.h> */
 #   define CP_UTF8 65001
@@ -69,6 +62,11 @@ TclpFindExecutable(
 	TclSetObjNameOfExecutable(
 		Tcl_NewStringObj(name, length), Tcl_GetEncoding(NULL, NULL));
 #else
+    const char *name, *p;
+    Tcl_StatBuf statBuf;
+    Tcl_DString buffer, nameString, cwd, utfName;
+    Tcl_Encoding encoding;
+
     if (argv0 == NULL) {
 	return;
     }
