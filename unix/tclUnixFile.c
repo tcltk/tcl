@@ -39,6 +39,7 @@ TclpFindExecutable(
     const char *argv0)		/* The value of the application's argv[0]
 				 * (native). */
 {
+    Tcl_Encoding encoding;
 #ifdef __CYGWIN__
     int length;
     char buf[PATH_MAX * TCL_UTF_MAX + 1];
@@ -46,9 +47,9 @@ TclpFindExecutable(
 
     /* Make some symbols available without including <windows.h> */
 #   define CP_UTF8 65001
-    extern int cygwin_conv_to_full_posix_path(const char *, char *);
-    extern __stdcall int GetModuleFileNameW(void *, const char *, int);
-    extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
+    DLLIMPORT extern int cygwin_conv_to_full_posix_path(const char *, char *);
+    DLLIMPORT extern __stdcall int GetModuleFileNameW(void *, const char *, int);
+    DLLIMPORT extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
 		const char *, int, const char *, const char *);
 
     GetModuleFileNameW(NULL, name, PATH_MAX);
@@ -59,13 +60,13 @@ TclpFindExecutable(
 	/* Strip '.exe' part. */
 	length -= 4;
     }
+	encoding = Tcl_GetEncoding(NULL, NULL);
 	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(name, length), Tcl_GetEncoding(NULL, NULL));
+		Tcl_NewStringObj(name, length), encoding);
 #else
     const char *name, *p;
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;
-    Tcl_Encoding encoding;
 
     if (argv0 == NULL) {
 	return;
