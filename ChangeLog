@@ -1,3 +1,10 @@
+2012-04-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPort.h:    Move CYGWIN-specific stuff from tclPort.h to
+	* generic/tclEnv.c:     tclUnixPort.h, where it belongs.
+	* unix/tclUnixPort.h:
+	* unix/tclUnixFile.c:
+
 2012-04-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/init.tcl (auto_execok): Allow shell builtins to be detected

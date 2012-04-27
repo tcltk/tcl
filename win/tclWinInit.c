@@ -288,8 +288,6 @@ AppendEnvironment(
 	 */
 
 	if ((pathc > 0) && (lstrcmpiA(shortlib, pathv[pathc - 1]) != 0)) {
-	    const char *str;
-
 	    /*
 	     * TCL_LIBRARY is set but refers to a different tcl installation
 	     * than the current version. Try fiddling with the specified
