@@ -580,7 +580,7 @@ proc auto_execok name {
 	set execExtensions [list {} .com .exe .bat]
     }
 
-    if {[lsearch -exact $shellBuiltins $name] != -1} {
+    if {[lsearch -exact $shellBuiltins [string tolower $name]] != -1} {
 	# When this is command.com for some reason on Win2K, Tcl won't
 	# exec it unless the case is right, which this corrects.  COMSPEC
 	# may not point to a real file, so do the check.
