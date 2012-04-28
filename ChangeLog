@@ -1,3 +1,11 @@
+2012-14-28  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	IMPLEMENTATION OF TIP#398
+
+	* generic/tclIO.c: Quickly Exit with Non-Blocking Blocked Channels
+	* tests/io.test
+	* doc/close.n
+
 2012-04-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPort.h:    Move CYGWIN-specific stuff from tclPort.h to
