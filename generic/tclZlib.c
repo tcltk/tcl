@@ -83,6 +83,9 @@ typedef struct {
 				 * for compression on output, or
 				 * TCL_ZLIB_STREAM_INFLATE for decompression
 				 * on input. */
+    int format;			/* What format of data is going on the wire.
+				 * Needed so that the correct [fconfigure]
+				 * options can be enabled. */
     z_stream inStream;		/* Structure used by zlib for decompression of
 				 * input. */
     z_stream outStream;		/* Structure used by zlib for compression of
@@ -1985,7 +1988,6 @@ ZlibStreamSubcmd(
 	{ NULL, NULL }
     };
     const OptDescriptor gzipOpts[] = {
-	{ "-dictionary", &compDictObj },
 	{ "-header", &gzipHeaderObj },
 	{ "-level", &levelObj },
 	{ NULL, NULL }
@@ -2038,7 +2040,7 @@ ZlibStreamSubcmd(
 	format = TCL_ZLIB_FORMAT_GZIP;
 	break;
     case FMT_GUNZIP:
-	desc = expansionOpts;
+	desc = expansionOpts; // FIXME - get header, not set compDict
 	mode = TCL_ZLIB_STREAM_INFLATE;
 	format = TCL_ZLIB_FORMAT_GZIP;
 	break;
@@ -2256,6 +2258,12 @@ ZlibPushSubcmd(
 		Tcl_AppendResult(interp,
 			"value missing for -dictionary option", NULL);
 		Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
+		return TCL_ERROR;
+	    }
+	    if (format == TCL_ZLIB_FORMAT_GZIP) {
+		Tcl_AppendResult(interp, "a compression dictionary may not "
+			"be set in the gzip format", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ZIP", "BADOPT", NULL);
 		return TCL_ERROR;
 	    }
 	    compDictObj = objv[i];
@@ -2748,9 +2756,11 @@ ZlibTransformSetOption(			/* not used */
     Tcl_DriverSetOptionProc *setOptionProc =
 	    Tcl_ChannelSetOptionProc(Tcl_GetChannelType(cd->parent));
     static const char *chanOptions = "dictionary flush";
+    static const char *gzipChanOptions = "flush";
     int haveFlushOpt = (cd->mode == TCL_ZLIB_STREAM_DEFLATE);
 
-    if (optionName && strcmp(optionName, "-dictionary") == 0) {
+    if (optionName && (strcmp(optionName, "-dictionary") == 0)
+	    && (cd->format != TCL_ZLIB_FORMAT_GZIP)) {
 	Tcl_Obj *compDictObj;
 
 	TclNewStringObj(compDictObj, value, strlen(value));
@@ -2809,7 +2819,11 @@ ZlibTransformSetOption(			/* not used */
     }
 
     if (setOptionProc == NULL) {
-	return Tcl_BadChannelOption(interp, optionName, chanOptions);
+	if (cd->format == TCL_ZLIB_FORMAT_GZIP) {
+	    return Tcl_BadChannelOption(interp, optionName, gzipChanOptions);
+	} else {
+	    return Tcl_BadChannelOption(interp, optionName, chanOptions);
+	}
     }
 
     return setOptionProc(Tcl_GetChannelInstanceData(cd->parent), interp,
@@ -2854,7 +2868,8 @@ ZlibTransformGetOption(
 	}
     }
 
-    if (optionName == NULL || strcmp(optionName, "-dictionary") == 0) {
+    if ((cd->format != TCL_ZLIB_FORMAT_GZIP) &&
+	    (optionName == NULL || strcmp(optionName, "-dictionary") == 0)) {
 	/*
 	 * Embedded NUL bytes are ok; they'll be C080-encoded.
 	 */
@@ -3051,6 +3066,7 @@ ZlibStackChannelTransform(
 
     memset(cd, 0, sizeof(ZlibChannelData));
     cd->mode = mode;
+    cd->format = format;
 
     if (format == TCL_ZLIB_FORMAT_GZIP || format == TCL_ZLIB_FORMAT_AUTO) {
 	if (mode == TCL_ZLIB_STREAM_DEFLATE) {
