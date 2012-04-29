@@ -168,6 +168,26 @@ test zlib-8.4 {transformation and flushing: Bug 3517696} -setup {
     catch {close $fd}
     removeFile $file
 } -result {}
+test zlib-8.5 {transformation and fconfigure} -setup {
+    set file [makeFile {} test.z]
+    set fd [open $file wb]
+} -constraints zlib -body {
+    list [fconfigure $fd] [zlib push compress $fd; fconfigure $fd] \
+	[chan pop $fd; fconfigure $fd]
+} -cleanup {
+    catch {close $fd}
+    removeFile $file
+} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf -checksum 1 -dictionary {}} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf}}
+test zlib-8.6 {transformation and fconfigure} -setup {
+    set file [makeFile {} test.gz]
+    set fd [open $file wb]
+} -constraints zlib -body {
+    list [fconfigure $fd] [zlib push gzip $fd; fconfigure $fd] \
+	[chan pop $fd; fconfigure $fd]
+} -cleanup {
+    catch {close $fd}
+    removeFile $file
+} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf -checksum 0} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf}}
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
