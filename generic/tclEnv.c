@@ -698,6 +698,7 @@ TclFinalizeEnvironment(void)
  * fork) and the Windows environment (in case the application TCL code calls
  * exec, which calls the Windows CreateProcess function).
  */
+DLLIMPORT extern void __stdcall SetEnvironmentVariableA(const char*, const char *);
 
 static void
 TclCygwinPutenv(
