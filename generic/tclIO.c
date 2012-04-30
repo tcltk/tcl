@@ -2118,7 +2118,7 @@ Tcl_GetChannelHandle(
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
     if (!chanPtr->typePtr->getHandleProc) {
         Tcl_SetChannelError(chan, Tcl_ObjPrintf(
-                "channel \"%s\" does not support OS handles",
+                "{channel \"%s\" does not support OS handles}",
                 Tcl_GetChannelName(chan)));
 	return TCL_ERROR;
     }
