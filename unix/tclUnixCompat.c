@@ -991,9 +991,12 @@ TclWinCPUID(
     int status = TCL_ERROR;
 
 #ifdef HAVE_CPUID
+	/* disabled in emergency -- fails on linux */
+# if 0
     __asm__ __volatile__ ("cpuid":\
     "=a" (regsPtr[0]), "=b" (regsPtr[1]), "=c" (regsPtr[2]), "=d" (regsPtr[3]) : "a" (index));
     status = TCL_OK;
+# endif
 #endif
     return status;
 }
