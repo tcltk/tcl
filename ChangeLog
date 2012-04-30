@@ -3,8 +3,8 @@
 	IMPLEMENTATION OF TIP#398
 
 	* generic/tclIO.c: Quickly Exit with Non-Blocking Blocked Channels
-	* tests/io.test
-	* doc/close.n
+	* tests/io.test  : *** POTENTIAL INCOMPATIBILITY ***
+	* doc/close.n    : (compat flag available)
 
 2012-04-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
