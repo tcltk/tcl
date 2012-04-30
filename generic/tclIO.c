@@ -2453,12 +2453,34 @@ FlushChannel(
 	     */
 
 	    if ((errorCode == EWOULDBLOCK) || (errorCode == EAGAIN)) {
-		/*
-		 * This used to check for CHANNEL_NONBLOCKING, and panic if
+
+                
+		/* PREVIOUS RATIONALE -- UNDER EVALUATION
+                 *
+                 * This used to check for CHANNEL_NONBLOCKING, and panic if
 		 * the channel was blocking. However, it appears that setting
 		 * stdin to -blocking 0 has some effect on the stdout when
 		 * it's a tty channel (dup'ed underneath)
 		 */
+
+                /* NEW RATIONALE -- UNDER EVALUATION
+                 *
+                 * We explicitly disallow EAGAIN/EWOULDBLOCK for blocking
+                 * channels, but throw an error instead of panicking, since
+                 * this may be a simple scripting error in a refelected
+                 * channel.
+                 */
+		
+                if (!GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+                    //Tcl_Panic("EAGAIN Illegally thrown by blocking channel");
+
+                    Tcl_SetChannelError((Tcl_Channel) chanPtr,
+                                        Tcl_ObjPrintf("{EAGAIN Illegally thrown by blocking channel \"%s\"}",
+                                                      Tcl_GetChannelName((Tcl_Channel)chanPtr)));
+                    errorCode=EINVAL;
+                    DiscardOutputQueued(statePtr);
+                    goto done;
+                }
 
 		if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 		    SetFlag(statePtr, BG_FLUSH_SCHEDULED);
@@ -2524,7 +2546,6 @@ FlushChannel(
 	     * When we get an error we throw away all the output currently
 	     * queued.
 	     */
-
 	    DiscardOutputQueued(statePtr);
 	    continue;
 	} else {
