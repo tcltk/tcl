@@ -1,4 +1,8 @@
-2012-14-28  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+2012-04-30  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* tests/ioCmd.test: Tame deadlocks in broken refchan tests [Bug 3522560]
+
+2012-04-28  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	IMPLEMENTATION OF TIP#398
 
