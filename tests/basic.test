@@ -656,17 +656,37 @@ test basic-47.2.$noComp {Tcl_EvalEx: error during word expansion} -body {
     run {{*}\{}
 } -constraints $constraints -returnCodes error -result {unmatched open brace in list}
 
+test basic-47.2.$noComp.2 {Tcl_EvalEx: no error for non-list comment word} -body {
+    run {{#}\{}
+} -constraints $constraints
+
 test basic-47.3.$noComp {Tcl_EvalEx, error during substitution} -body {
     run {{*}[error foo]}
+} -constraints $constraints -returnCodes error -result foo
+
+test basic-47.3.$noComp.2 {Tcl_EvalEx, error during substitution} -body {
+    run {{#}[error foo]}
 } -constraints $constraints -returnCodes error -result foo
 
 test basic-47.4.$noComp {Tcl_EvalEx: no expansion} $constraints {
     run {list {*} {*}	{*}}
 } {* * *}
 
+test basic-47.4.$noComp.2 {Tcl_EvalEx: not comment words} $constraints {
+    run {list {#} {#}	{#}}
+} [list \# \# \#]
+
 test basic-47.5.$noComp {Tcl_EvalEx: expansion} $constraints {
     run {list {*}{} {*}	{*}x {*}"y z"}
 } {* x y z}
+
+test basic-47.5.$noComp.2 {Tcl_EvalEx: word comments} $constraints {
+    run {list {#}{} {#}	{#}x {#}"y z"}
+} [list \#]
+
+test basic-47.5.$noComp.3 {Tcl_EvalEx: expansion/comment mix} $constraints {
+    run {list a {*}b {#}{c} {*} d {#}e {#}f\ g {*}h\ i {*}"j k" l}
+} {a b * d h i j k l}
 
 test basic-47.6.$noComp {Tcl_EvalEx: expansion to zero args} $constraints {
     run {list {*}{}}
@@ -685,6 +705,12 @@ test basic-47.9.$noComp {Tcl_EvalEx: expansion and subst order} $constraints {
     run {list [incr x] {*}[incr x] [incr x] \
 		{*}[list [incr x] [incr x]] [incr x]}
 } {1 2 3 4 5 6}
+
+test basic-47.9.$noComp.2 {Tcl_EvalEx: word comment and subst order} $constraints {
+    set x 0
+    run {list [incr x] {#}[incr x] [incr x] \
+		{#}[list [incr x] [incr x]] [incr x]}
+} {1 3 6}
 
 test basic-47.10.$noComp {Tcl_EvalEx: expand and memory management} $constraints {
     run {concat {*}{} a b c d e f g h i j k l m n o p q r}

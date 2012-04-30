@@ -107,6 +107,10 @@ test listobj-5.8 {Tcl_ListObjIndex, error in conversion} {
     set x " \{"
     list [catch {lindex $x 0} msg] $msg
 } {1 {unmatched open brace in list}}
+test listobj-5.9 {Tcl_ListObjIndex, error in conversion} {
+    set x " {#}{a b}c "
+    list [catch {lindex $x 0} msg] $msg
+} {1 {list element in braces followed by "c" instead of space}}
 
 test listobj-6.1 {Tcl_ListObjLength} {
     llength {a b c d}
@@ -170,6 +174,9 @@ test listobj-7.13 {Tcl_ListObjReplace, grow array, insert at end} {
 test listobj-8.1 {SetListFromAny} {
     lindex {0 foo\x00help 2} 1
 } "foo\x00help"
+test listobj-8.2 {SetListFromAny, comment} {
+    lindex {0 {#}foo\ help 2} 1
+} 2
 
 test listobj-9.1 {UpdateStringOfList} {
     string length [list foo\x00help]

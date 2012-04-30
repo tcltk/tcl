@@ -2000,6 +2000,11 @@ typedef struct Tcl_Token {
  *				literal character prefix "{*}". This word is
  *				marked to be expanded - that is, broken into
  *				words after substitution is complete.
+ * TCL_TOKEN_COMMENT_WORD -	This token is just like TCL_TOKEN_WORD except
+ *				that it marks a word that began with the
+ *				literal character prefix "{#}". This word is
+ *				marked to be ignored - that is, treated as 
+ *				if it denotes an expansion of the empty list.
  */
 
 #define TCL_TOKEN_WORD		1
@@ -2011,6 +2016,7 @@ typedef struct Tcl_Token {
 #define TCL_TOKEN_SUB_EXPR	64
 #define TCL_TOKEN_OPERATOR	128
 #define TCL_TOKEN_EXPAND_WORD	256
+#define TCL_TOKEN_COMMENT_WORD	512
 
 /*
  * Parsing error types. On any parsing error, one of these values will be

@@ -130,6 +130,8 @@ test lindex-5.3 {three indices} testevalex {
     testevalex {lindex {{{a b} {c d}} {{e f} {g h}}} 1 0 1}
 } f
 
+# List parsing
+
 test lindex-6.1 {error conditions in parsing list} testevalex {
     list [catch {testevalex {lindex "a \{" 2}} msg] $msg
 } {1 {unmatched open brace in list}}
@@ -341,6 +343,8 @@ test lindex-13.3 {three indices} {
     set result
 } f
 
+# List parsing
+
 test lindex-14.1 {error conditions in parsing list} {
     list [catch { lindex "a \{" 2 } msg] $msg
 } {1 {unmatched open brace in list}}
@@ -349,6 +353,9 @@ test lindex-14.2 {error conditions in parsing list} {
 } {1 {list element in braces followed by "d" instead of space}}
 test lindex-14.3 {error conditions in parsing list} {
     list [catch { lindex {a "b c"def ghi} 2 } msg] $msg
+} {1 {list element in quotes followed by "def" instead of space}}
+test lindex-14.4 {error conditions in parsing list} {
+    list [catch { lindex {a {#}"b c"def ghi} 2 } msg] $msg
 } {1 {list element in quotes followed by "def" instead of space}}
 
 test lindex-15.1 {quoted elements} {
@@ -375,6 +382,24 @@ test lindex-15.4 {quoted elements} {
     } result
     set result
 } {c d "e}
+test lindex-15.5 {comment words} {
+    catch {
+	lindex {a {#}b c d} 1
+    } result
+    set result
+} {c}
+test lindex-15.6 {comment words} {
+    catch {
+	lindex {a {#}"b c" d} 1
+    } result
+    set result
+} {d}
+test lindex-15.7 {comment words} {
+    catch {
+	lindex {{#}a "b c" {#}d} 0
+    } result
+    set result
+} {b c}
 
 test lindex-16.1 {data reuse} {
     set x 0

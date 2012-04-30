@@ -446,7 +446,7 @@ TclMaxListLength(
  *	If TCL_OK is returned, then *elementPtr will be set to point to the
  *	first element of list, and *nextPtr will be set to point to the
  *	character just after any white space following the last character
- *	that's part of the element. If this is the last argument in the list,
+ *	that's part of the element. If this is the last element in the list,
  *	then *nextPtr will point just after the last character in the list
  *	(i.e., at the character at list+listLength). If sizePtr is non-NULL,
  *	*sizePtr is filled in with the number of bytes in the element. If
@@ -496,6 +496,11 @@ TclFindElement(
     const char *limit;		/* Points just after list's last byte. */
     int openBraces = 0;		/* Brace nesting level during parse. */
     int inQuotes = 0;
+    enum TFECommentState {      /* TIP#??? */
+        ELEMENT_WORD,           /* Not in a comment word (that we know). */
+        BEFORE_COMMENT,         /* In a comment before the element. */
+        AFTER_COMMENT           /* In a comment after the element. */
+    } inComment = ELEMENT_WORD;     
     int size = 0;		/* lint. */
     int numChars;
     int literal = 1;
@@ -526,13 +531,15 @@ TclFindElement(
     elemStart = p;
 
     /*
-     * Find element's end (a space, close brace, or the end of the string).
+     * Find end of word (a space, close brace, or the end of the string).
      */
 
+  mainLoop:                     /* Comment words may cause jumping back 
+                                 * to this point in the function. */
     while (p < limit) {
 	switch (*p) {
 	    /*
-	     * Open brace: don't treat specially unless the element is in
+	     * Open brace: don't treat specially unless the word is in
 	     * braces. In this case, keep a nesting count.
 	     */
 
@@ -543,7 +550,7 @@ TclFindElement(
 	    break;
 
 	    /*
-	     * Close brace: if element is in braces, keep nesting count and
+	     * Close brace: if word is in braces, keep nesting count and
 	     * quit when the last close brace is seen.
 	     */
 
@@ -558,22 +565,47 @@ TclFindElement(
 		}
 
 		/*
-		 * Garbage after the closing brace; return an error.
+		 * There is something after the closing brace. Could that 
+		 * be because it is the closing brace of a comment prefix?
 		 */
+                
+                if ((size != 1) || (inComment != ELEMENT_WORD) || 
+                        (*elemStart != '#')) {
+                    
+                    /*
+                     * No, that was no comment prefix, so *p is simply 
+                     * garbage after the closing brace; return an error.
+                     */
 
-		if (interp != NULL) {
-		    p2 = p;
-		    while ((p2 < limit) && (!TclIsSpaceProc(*p2))
-			    && (p2 < p+20)) {
-			p2++;
-		    }
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "list element in braces followed by \"%.*s\" "
-			    "instead of space", (int) (p2-p), p));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "JUNK",
-			    NULL);
-		}
-		return TCL_ERROR;
+                    if (interp != NULL) {
+                        p2 = p;
+                        while ((p2 < limit) && (!TclIsSpaceProc(*p2))
+                                && (p2 < p+20)) {
+                            p2++;
+                        }
+                        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                                "list element in braces followed by \"%.*s\" "
+                                "instead of space", (int) (p2-p), p));
+                        Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "JUNK",
+                                NULL);
+                    }
+                    return TCL_ERROR;
+                }
+                
+		/* 
+		 * Yes, that was a comment prefix. Check if the comment 
+		 * is brace- or quote-delimited.
+		 */
+                
+                inComment = BEFORE_COMMENT;
+                openBraces = 0;
+                if (*p == '{') {
+                    openBraces = 1;
+                    p++;
+                } else if (*p == '"') {
+                    inQuotes = 1;
+                    p++;
+                }
 	    }
 	    break;
 
@@ -585,7 +617,7 @@ TclFindElement(
 	case '\\':
 	    if (openBraces == 0) {
 		/*
-		 * A backslash sequence not within a brace quoted element
+		 * A backslash sequence not within a brace quoted word
 		 * means the value of the element is different from the
 		 * substring we are parsing.  A call to TclCopyAndCollapse()
 		 * is needed to produce the element value.  Inform the caller.
@@ -597,8 +629,8 @@ TclFindElement(
 	    break;
 
 	    /*
-	     * Space: ignore if element is in braces or quotes; otherwise
-	     * terminate element.
+	     * Space: ignore if word is in braces or quotes; otherwise
+	     * terminate word.
 	     */
 
 	case ' ':
@@ -614,7 +646,7 @@ TclFindElement(
 	    break;
 
 	    /*
-	     * Double-quote: if element is in quotes then terminate it.
+	     * Double-quote: if word is in quotes then terminate it.
 	     */
 
 	case '"':
@@ -649,7 +681,7 @@ TclFindElement(
     }
 
     /*
-     * End of list: terminate element.
+     * End of list: terminate word.
      */
 
     if (p == limit) {
@@ -677,14 +709,69 @@ TclFindElement(
     while ((p < limit) && (TclIsSpaceProc(*p))) {
 	p++;
     }
-    *elementPtr = elemStart;
+    if (inComment == BEFORE_COMMENT) {
+        
+	/* 
+	 * The word which has just been read was a comment rather than 
+	 * a list element, so we'll have to do it all again.
+	 */
+        
+        inComment = ELEMENT_WORD;
+        literal = 1;
+        openBraces = 0;
+        inQuotes = 0;
+        if (*p == '{') {
+            openBraces = 1;
+            p++;
+        } else if (*p == '"') {
+            inQuotes = 1;
+            p++;
+        }
+        elemStart = p;
+        goto mainLoop;
+    }
+    if (inComment == ELEMENT_WORD) {
+        
+	/* 
+	 * The word which has just been read was the sought list element.
+	 */
+        
+        *elementPtr = elemStart;
+        if (sizePtr != 0) {
+            *sizePtr = size;
+        }
+        if (literalPtr != 0) {
+            *literalPtr = literal;
+        }
+    }
     *nextPtr = p;
-    if (sizePtr != 0) {
-	*sizePtr = size;
+    
+    /* 
+     * Could there be a comment word after what has been read so far?
+     */
+    
+    if ((limit - p > 3) && (p[0] == '{') && (p[1] == '#') && 
+            (p[2] == '}') && !(TclIsSpaceProc(p[3]))) {
+	/* 
+	 * It appears there is, so go back and scan past it. 
+	 * This is needed because callers use (*nextPtr == limit) as 
+	 * a test for whether this was the last list element.
+	 */
+        
+        p += 3;
+        inComment = AFTER_COMMENT;
+        openBraces = 0;
+        inQuotes = 0;
+        if (*p == '{') {
+            openBraces = 1;
+            p++;
+        } else if (*p == '"') {
+            inQuotes = 1;
+            p++;
+        }
+        goto mainLoop;
     }
-    if (literalPtr != 0) {
-	*literalPtr = literal;
-    }
+    
     return TCL_OK;
 }
 

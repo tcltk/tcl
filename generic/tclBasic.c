@@ -5149,9 +5149,21 @@ TclEvalEx(
 		if (code != TCL_OK) {
 		    break;
 		}
+                
+                if (tokenPtr->type == TCL_TOKEN_COMMENT_WORD) {
+		    /* 
+		     * TIP #???. Word comments are handled by pretending 
+		     * that they are expansions of the empty list. 
+		     * There is probably a less roundabout way to achieve 
+		     * the same end, though.
+		     */
+                    
+                    Tcl_ResetResult(interp);
+                }
+                
 		objv[objectsUsed] = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(objv[objectsUsed]);
-		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+		if (tokenPtr->type & (TCL_TOKEN_EXPAND_WORD | TCL_TOKEN_COMMENT_WORD)) {
 		    int numElements;
 
 		    code = TclListObjLength(interp, objv[objectsUsed],

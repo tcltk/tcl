@@ -1585,7 +1585,7 @@ TclCompileScript(
 	    for (wordIdx = 0, tokenPtr = parsePtr->tokenPtr;
 		    wordIdx < parsePtr->numWords;
 		    wordIdx++, tokenPtr += tokenPtr->numComponents + 1) {
-		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+		if (tokenPtr->type & (TCL_TOKEN_EXPAND_WORD | TCL_TOKEN_COMMENT_WORD)) {
 		    expand = 1;
 		    break;
 		}
@@ -1642,6 +1642,8 @@ TclCompileScript(
 		    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 			TclEmitInstInt4(INST_EXPAND_STKTOP,
 				envPtr->currStackDepth, envPtr);
+		    } else if (tokenPtr->type == TCL_TOKEN_COMMENT_WORD) {
+			TclEmitOpcode(INST_POP, envPtr);
 		    }
 		    continue;
 		}

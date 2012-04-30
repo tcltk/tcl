@@ -297,7 +297,9 @@ Tcl_ParseCommand(
 
     parsePtr->commandStart = src;
     while (1) {
-	int expandWord = 0;
+	int expandWord = 0;         /* 0 = ordinary word,
+	                             * 1 = word with {*} prefix,
+	                             * 2 = word with {#} prefix. */
 
 	/*
 	 * Create the token for the word.
@@ -331,8 +333,9 @@ Tcl_ParseCommand(
 
 	/*
 	 * At this point the word can have one of four forms: something
-	 * enclosed in quotes, something enclosed in braces, and expanding
-	 * word, or an unquoted word (anything else).
+	 * enclosed in quotes, something enclosed in braces, a word with 
+	 * prefix (expanding or comment word), or an unquoted word 
+	 * (anything else).
 	 */
 
     parseWord:
@@ -355,8 +358,8 @@ Tcl_ParseCommand(
 	    numBytes = parsePtr->end - src;
 
 	    /*
-	     * Check whether the braces contained the word expansion prefix
-	     * {*}
+	     * Check whether the braces contained the word expansion 
+	     * prefix {*} or the comment word prefix {#}.
 	     */
 
 	    expPtr = &parsePtr->tokenPtr[expIdx];
@@ -364,15 +367,16 @@ Tcl_ParseCommand(
 		    /* Haven't seen prefix already */
 		    && (1 == parsePtr->numTokens - expIdx)
 		    /* Only one token */
-		    && (((1 == (size_t) expPtr->size)
+		    && ((1 == (size_t) expPtr->size)
 			    /* Same length as prefix */
-			    && (expPtr->start[0] == '*')))
+			    && ((expPtr->start[0] == '*')
+                                    || (expPtr->start[0] == '#')))
 			    /* Is the prefix */
 		    && (numBytes > 0) && (0 == ParseWhiteSpace(termPtr,
 			    numBytes, &parsePtr->incomplete, &type))
 		    && (type != TYPE_COMMAND_END)
 		    /* Non-whitespace follows */) {
-		expandWord = 1;
+		expandWord = (expPtr->start[0] == '#') ? 2 : 1;
 		parsePtr->numTokens--;
 		goto parseWord;
 	    }
@@ -398,7 +402,7 @@ Tcl_ParseCommand(
 	tokenPtr = &parsePtr->tokenPtr[wordIndex];
 	tokenPtr->size = src - tokenPtr->start;
 	tokenPtr->numComponents = parsePtr->numTokens - (wordIndex + 1);
-	if (expandWord) {
+	if (expandWord == 1) {
 	    int i, isLiteral = 1;
 
 	    /*
@@ -538,6 +542,48 @@ Tcl_ParseCommand(
 		 */
 
 		tokenPtr->type = TCL_TOKEN_EXPAND_WORD;
+	    }
+	} else if (expandWord == 2) {
+	    int i, isLiteral = 1;
+
+	    /*
+	     * When a command includes a comment word then processing 
+	     * proceeds in much the same way as for expansion words, but 
+	     * several cases can be pruned. One that remains is that of 
+	     * distinguishing between a literal and non-literal comment, 
+	     * since substitution is carried out in a comment word even 
+	     * if the result of that substitution will always be discarded.
+	     *
+	     * First check whether the thing to be expanded is a literal,
+	     * in the sense of being composed entirely of TCL_TOKEN_TEXT
+	     * tokens.
+	     */
+
+	    for (i = 1; i <= tokenPtr->numComponents; i++) {
+		if (tokenPtr[i].type != TCL_TOKEN_TEXT) {
+		    isLiteral = 0;
+		    break;
+		}
+	    }
+
+	    if (isLiteral) {
+		/*
+		 * The comment is a literal, so just forget about it 
+		 * right away. This is effectively the same as happens 
+		 * when {*} acts on a length 0 literate list.
+		 */
+                
+                parsePtr->numWords--;
+                parsePtr->numTokens = wordIndex;
+
+	    } else {
+		/*
+		 * The comment word is not a literal, so defer
+		 * processing to compile/eval time by marking with a
+		 * TCL_TOKEN_COMMENT_WORD token.
+		 */
+
+		tokenPtr->type = TCL_TOKEN_COMMENT_WORD;
 	    }
 	} else if ((tokenPtr->numComponents == 1)
 		&& (tokenPtr[1].type == TCL_TOKEN_TEXT)) {

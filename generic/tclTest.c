@@ -3619,6 +3619,9 @@ PrintParse(
 	case TCL_TOKEN_EXPAND_WORD:
 	    typeString = "expand";
 	    break;
+	case TCL_TOKEN_COMMENT_WORD:
+	    typeString = "comment";
+	    break;
 	case TCL_TOKEN_WORD:
 	    typeString = "word";
 	    break;

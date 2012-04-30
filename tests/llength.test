@@ -25,6 +25,19 @@ test llength-1.2 {length of list} {
 test llength-1.3 {length of list} {
     llength {}
 } 0
+test llength-1.4 {length of list with comment word} {
+    llength {a b {#}c d}
+} 3
+test llength-1.5 {length of list with comment word} {
+    llength {a {#}"b c" d}
+} 2
+test llength-1.6 {length of list with comment words} {
+    llength {{#}{a b} c {#}\ d}
+} 1
+test llength-1.7 {length of list with comment words only} {
+    llength {{#}"a b" {#}c {#}{d}}
+} 0
+
 
 test llength-2.1 {error conditions} {
     list [catch {llength} msg] $msg
