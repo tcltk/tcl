@@ -2575,6 +2575,7 @@ test iocmd.tf-24.15 {chan write, EAGAIN means that writing is not allowed at thi
     set res
 } -cleanup {
     proc foo {args} {onfinal; set ::done-24.15 1; return 3}
+    after 1000 {set ::done-24.15 2}
     vwait done-24.15
     rename foo {}
     unset res
@@ -2603,10 +2604,12 @@ test iocmd.tf-24.16 {chan write, note the background flush setup by close due to
     proc foo {args} { onfinal; note BG ; track ; set ::endbody-24.16 1}
     # Flush (sic!) the event-queue to capture the write from a
     # BG-flush.
+    after 1000 {set ::endbody-24.16 2}
     vwait endbody-24.16
     set res
 } -cleanup {
     proc foo {args} {onfinal; set ::done-24.16 1; return 3}
+    after 1000 {set ::done-24.16 2}
     vwait done-24.16
     rename foo {}
     unset res
