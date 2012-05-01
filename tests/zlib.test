@@ -188,6 +188,21 @@ test zlib-8.6 {transformation and fconfigure} -setup {
     catch {close $fd}
     removeFile $file
 } -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf -checksum 0} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf}}
+test zlib-8.7 {transformtion and fconfigure} -setup {
+    lassign [chan pipe] inSide outSide
+    set msg [string repeat "am i all that i am at all? i am all that i am!" 400]
+    set dict "thatallam i "
+} -constraints zlib -body {
+    zlib push compress $outSide -dictionary $dict
+    fconfigure $outSide -blocking 0 -translation binary -buffering none
+    fconfigure $inSide -blocking 0 -translation binary
+    puts -nonewline $outSide $msg
+    chan pop $outSide
+    string length [read $inSide]
+} -cleanup {
+    catch {close $outSide}
+    catch {close $inSide}
+} -result 103
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
