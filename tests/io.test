@@ -2750,6 +2750,7 @@ test io-29.33b {TIP#398, no implicit flush of nonblocking on exit} {exec} {
     close $f
 	set t1 [clock seconds]
 	set ff [open "|[list [interpreter] $path(script2)]" w]
+	catch {unset ::env(TCL_FLUSH_NONBLOCKING_ON_EXIT)}
 	exec [interpreter] $path(script) >@ $ff
 	set t2 [clock seconds]
 	close $ff
