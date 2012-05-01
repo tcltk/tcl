@@ -2272,11 +2272,7 @@ ZlibPushSubcmd(
     }
 
     if (ZlibStackChannelTransform(interp, mode, format, level, chan,
-	    headerObj, NULL) == NULL) {
-	return TCL_ERROR;
-    }
-    if ((compDictObj != NULL) && (Tcl_SetChannelOption(interp, chan,
-	    "-dictionary", TclGetString(compDictObj)) != TCL_OK)) {
+	    headerObj, compDictObj) == NULL) {
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, objv[3]);
@@ -2762,6 +2758,7 @@ ZlibTransformSetOption(			/* not used */
     if (optionName && (strcmp(optionName, "-dictionary") == 0)
 	    && (cd->format != TCL_ZLIB_FORMAT_GZIP)) {
 	Tcl_Obj *compDictObj;
+	int code;
 
 	TclNewStringObj(compDictObj, value, strlen(value));
 	Tcl_IncrRefCount(compDictObj);
@@ -2770,7 +2767,14 @@ ZlibTransformSetOption(			/* not used */
 	    TclDecrRefCount(cd->compDictObj);
 	}
 	cd->compDictObj = compDictObj;
-	// TODO: consider whether to apply immediately
+	if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
+	    code = SetDeflateDictionary(&cd->outStream, compDictObj);
+	    if (code != Z_OK) {
+		ConvertError(interp, code);
+		return TCL_ERROR;
+	    }
+	}
+	return TCL_OK;
     }
 
     if (haveFlushOpt && optionName && strcmp(optionName, "-flush") == 0) {
