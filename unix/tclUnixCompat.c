@@ -990,14 +990,13 @@ TclWinCPUID(
 {
     int status = TCL_ERROR;
 
-#if defined(HAVE_CPUID) && defined(__CYGWIN__)
-    __asm__ __volatile__("pushl %%ebx      \n\t" /* save %ebx */
+#if defined(HAVE_CPUID)
+    __asm__ __volatile__("mov %%ebx, %%edi     \n\t" /* save %ebx */
                  "cpuid            \n\t"
-                 "movl %%ebx, %1   \n\t" /* save what cpuid just put in %ebx */
-                 "popl %%ebx       \n\t" /* restore the old %ebx */
-                 : "=a"(regsPtr[0]), "=r"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
-                 : "a"(index)
-                 : "cc");
+                 "mov %%ebx, %%esi   \n\t" /* save what cpuid just put in %ebx */
+                 "mov %%edi, %%ebx  \n\t" /* restore the old %ebx */
+                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+                 : "a"(index));
     status = TCL_OK;
 #endif
     return status;
