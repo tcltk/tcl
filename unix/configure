@@ -9339,13 +9339,17 @@ else
 
 int main() {
 
-	int index,ax,bx,cx,dx;
-	__asm__ __volatile__ ("cpuid":\
-	"=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (index));
+	int index,regsPtr[4];
+    __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
+                 "cpuid            \n\t"
+                 "mov %%ebx, %%esi   \n\t"
+                 "mov %%edi, %%ebx  \n\t"
+                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+                 : "a"(index));
     
 ; return 0; }
 EOF
-if { (eval echo configure:9349: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:9353: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   tcl_cv_cpuid=yes
 else
@@ -9394,7 +9398,7 @@ if test "`uname -s`" = "Darwin" ; then
     
     if test "`uname -s`" = "Darwin" ; then
 	echo $ac_n "checking how to package libraries""... $ac_c" 1>&6
-echo "configure:9398: checking how to package libraries" >&5
+echo "configure:9402: checking how to package libraries" >&5
 	# Check whether --enable-framework or --disable-framework was given.
 if test "${enable_framework+set}" = set; then
   enableval="$enable_framework"
