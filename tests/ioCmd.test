@@ -1214,6 +1214,7 @@ test iocmd-24.15 {chan write, EAGAIN means that writing is not allowed at this t
 	error EAGAIN
     }
     set c [chan create {r w} foo]
+    fconfigure $c -blocking 0
 } -body {
     note [puts -nonewline $c ABC ; flush $c]
     set res
@@ -2566,6 +2567,7 @@ test iocmd.tf-24.15 {chan write, EAGAIN means that writing is not allowed at thi
 	error EAGAIN
     }
     set c [chan create {r w} foo]
+    fconfigure $c -blocking 0
 } -body {
     notes [inthread $c {
 	note [puts -nonewline $c ABC ; flush $c]
@@ -2593,6 +2595,7 @@ test iocmd.tf-24.16 {chan write, note the background flush setup by close due to
 	error EAGAIN
     }
     set c [chan create {r w} foo]
+    fconfigure $c -blocking 0
 } -body {
     notes [inthread $c {
 	note [puts -nonewline $c ABC ; flush $c]
