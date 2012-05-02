@@ -1164,13 +1164,19 @@ DdeObjCmd(
 	DDE_SERVERNAME_EXACT, DDE_SERVERNAME_HANDLER, DDE_SERVERNAME_LAST,
     };
     static const char *const ddeExecOptions[] = {
-	"-async", NULL
+	"-async", "-binary", NULL
+    };
+    enum DdeExecOptions {
+        DDE_EXEC_ASYNC, DDE_EXEC_BINARY
+    };
+    static const char *const ddePokeOptions[] = {
+	"-binary", NULL
     };
     static const char *const ddeReqOptions[] = {
 	"-binary", NULL
     };
 
-    int index, i, length;
+    int index, i, length, argIndex;
     int async = 0, binary = 0, exact = 0;
     int result = TCL_OK, firstArg = 0;
     HSZ ddeService = NULL, ddeTopic = NULL, ddeItem = NULL, ddeCookie = NULL;
@@ -1198,7 +1204,6 @@ DdeObjCmd(
     switch ((enum DdeSubcommands) index) {
     case DDE_SERVERNAME:
 	for (i = 2; i < objc; i++) {
-	    int argIndex;
 	    if (Tcl_GetIndexFromObj(interp, objv[i], ddeSrvOptions,
 		    "option", 0, &argIndex) != TCL_OK) {
 		/*
@@ -1245,39 +1250,52 @@ DdeObjCmd(
 	if (objc == 5) {
 	    firstArg = 2;
 	    break;
-	} else if (objc == 6) {
-	    int dummy;
-	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeExecOptions, "option", 0,
-		    &dummy) == TCL_OK) {
-		async = 1;
-		firstArg = 3;
-		break;
+	} else if (objc >= 6 && objc <= 7) {
+	    firstArg = objc - 3;
+	    for (i = 2; i < firstArg; i++) {
+		if (Tcl_GetIndexFromObj(NULL, objv[2], ddeExecOptions,
+			"option", 0, &argIndex) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (argIndex == DDE_EXEC_ASYNC) {
+		    async = 1;
+		} else {
+		    binary = 1;
+		}
 	    }
+	    break;
 	}
 	/* otherwise... */
 	Tcl_WrongNumArgs(interp, 2, objv,
-		"?-async? serviceName topicName value");
+		"?-async? ?-binary? serviceName topicName value");
 	return TCL_ERROR;
     case DDE_POKE:
-	if (objc != 6) {
-	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "serviceName topicName item value");
-	    return TCL_ERROR;
+	if (objc == 6) {
+	    firstArg = 2;
+	    break;
+	} else if ((objc == 7) && (Tcl_GetIndexFromObj(NULL, objv[2],
+		ddePokeOptions, "option", 0, &argIndex) == TCL_OK)) {
+	    binary = 1;
+	    firstArg = 3;
+	    break;
 	}
-	firstArg = 2;
-	break;
+
+	/*
+	 * Otherwise...
+	 */
+
+	Tcl_WrongNumArgs(interp, 2, objv,
+		"serviceName ?-binary? topicName item value");
+	return TCL_ERROR;
     case DDE_REQUEST:
 	if (objc == 5) {
 	    firstArg = 2;
 	    break;
-	} else if (objc == 6) {
-	    int dummy;
-	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeReqOptions, "option", 0,
-		    &dummy) == TCL_OK) {
-		binary = 1;
-		firstArg = 3;
-		break;
-	    }
+	} else if ((objc == 6) && (Tcl_GetIndexFromObj(NULL, objv[2],
+		ddeReqOptions, "option", 0, &argIndex) == TCL_OK)) {
+	    binary = 1;
+	    firstArg = 3;
+	    break;
 	}
 
 	/*
@@ -1300,11 +1318,9 @@ DdeObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "?-async? serviceName args");
 	    return TCL_ERROR;
 	} else {
-	    int dummy;
-
 	    firstArg = 2;
 	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeExecOptions, "option",
-		    0, &dummy) == TCL_OK) {
+		    0, &argIndex) == TCL_OK) {
 		if (objc < 5) {
 		    goto wrongDdeEvalArgs;
 		}
@@ -1353,8 +1369,15 @@ DdeObjCmd(
 
     case DDE_EXECUTE: {
 	int dataLength;
-	BYTE *dataString = (BYTE *) Tcl_GetStringFromObj(
-		objv[firstArg + 2], &dataLength);
+	BYTE *dataString;
+
+	if (binary) {
+	    dataString = (BYTE *)
+		    Tcl_GetByteArrayFromObj(objv[firstArg + 2], &dataLength);
+	} else {
+	    dataString = (BYTE *)
+		    Tcl_GetStringFromObj(objv[firstArg + 2], &dataLength);
+	}
 
 	if (dataLength == 0) {
 	    Tcl_SetObjResult(interp,
@@ -1415,6 +1438,7 @@ DdeObjCmd(
 	    result = TCL_ERROR;
 	} else {
 	    Tcl_Obj *returnObjPtr;
+
 	    ddeItem = DdeCreateStringHandleA(ddeInstance, (void *) itemString,
 		    CP_WINANSI);
 	    if (ddeItem != NULL) {
@@ -1428,10 +1452,11 @@ DdeObjCmd(
 		    const BYTE *dataString = DdeAccessData(ddeData, &tmp);
 
 		    if (binary) {
-			returnObjPtr = Tcl_NewByteArrayObj(dataString,
-				(int) tmp);
+			returnObjPtr =
+				Tcl_NewByteArrayObj(dataString, (int) tmp);
 		    } else {
-			returnObjPtr = Tcl_NewStringObj((char*)dataString,-1);
+			returnObjPtr =
+				Tcl_NewStringObj((char *) dataString, -1);
 		    }
 		    DdeUnaccessData(ddeData);
 		    DdeFreeDataHandle(ddeData);
@@ -1457,8 +1482,13 @@ DdeObjCmd(
 	    result = TCL_ERROR;
 	    goto cleanup;
 	}
-	dataString = (BYTE *) Tcl_GetStringFromObj(objv[firstArg + 3],
-		&length);
+	if (binary) {
+	    dataString = (BYTE *)
+		    Tcl_GetByteArrayFromObj(objv[firstArg + 3], &length);
+	} else {
+	    dataString = (BYTE *)
+		    Tcl_GetStringFromObj(objv[firstArg + 3], &length);
+	}
 
 	hConv = DdeConnect(ddeInstance, ddeService, ddeTopic, NULL);
 	DdeFreeStringHandle(ddeInstance, ddeService);
