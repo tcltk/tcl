@@ -18925,9 +18925,13 @@ int
 main ()
 {
 
-	int index,ax,bx,cx,dx;
-	__asm__ __volatile__ ("cpuid":\
-	"=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (index));
+	int index,regsPtr[4];
+    __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
+                 "cpuid            \n\t"
+                 "mov %%ebx, %%esi   \n\t"
+                 "mov %%edi, %%ebx  \n\t"
+                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+                 : "a"(index));
 
   ;
   return 0;
@@ -18968,7 +18972,8 @@ fi
 echo "$as_me:$LINENO: result: $tcl_cv_cpuid" >&5
 echo "${ECHO_T}$tcl_cv_cpuid" >&6
 if test $tcl_cv_cpuid = yes; then
-    cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_CPUID 1
 _ACEOF
 
