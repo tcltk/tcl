@@ -990,7 +990,7 @@ TclWinCPUID(
 {
     int status = TCL_ERROR;
 
-#ifdef HAVE_CPUID
+#if defined(HAVE_CPUID) && defined(__CYGWIN__)
     __asm__ __volatile__("pushl %%ebx      \n\t" /* save %ebx */
                  "cpuid            \n\t"
                  "movl %%ebx, %1   \n\t" /* save what cpuid just put in %ebx */
