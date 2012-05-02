@@ -693,8 +693,13 @@ TclWinCPUID(
     int status = TCL_ERROR;
 
 #ifdef HAVE_CPUID
-    __asm__ __volatile__ ("cpuid":\
-    "=a" (regsPtr[0]), "=b" (regsPtr[1]), "=c" (regsPtr[2]), "=d" (regsPtr[3]) : "a" (index));
+    __asm__ __volatile__("pushl %%ebx      \n\t" /* save %ebx */
+                 "cpuid            \n\t"
+                 "movl %%ebx, %1   \n\t" /* save what cpuid just put in %ebx */
+                 "popl %%ebx       \n\t" /* restore the old %ebx */
+                 : "=a"(regsPtr[0]), "=r"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+                 : "a"(index)
+                 : "cc");
     status = TCL_OK;
 #endif
     return status;
