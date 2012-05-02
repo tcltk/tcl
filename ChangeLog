@@ -1,3 +1,9 @@
+2012-05-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/configure.in:    Better detection and implementation for cpuid
+	* generic/configure:       instruction on Intel-derived processors, both
+	* generic/tclUnixCompat.c: 32-bit and 64-bit.
+
 2012-04-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/init.tcl (auto_execok): Allow shell builtins to be detected
