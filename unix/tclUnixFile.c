@@ -44,14 +44,6 @@ TclpFindExecutable(
     int length;
     char buf[PATH_MAX * TCL_UTF_MAX + 1];
     char name[PATH_MAX * TCL_UTF_MAX + 1];
-
-    /* Make some symbols available without including <windows.h> */
-#   define CP_UTF8 65001
-    DLLIMPORT extern int cygwin_conv_to_full_posix_path(const char *, char *);
-    DLLIMPORT extern __stdcall int GetModuleFileNameW(void *, const char *, int);
-    DLLIMPORT extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
-		const char *, int, const char *, const char *);
-
     GetModuleFileNameW(NULL, name, PATH_MAX);
     WideCharToMultiByte(CP_UTF8, 0, name, -1, buf, PATH_MAX, NULL, NULL);
     cygwin_conv_to_full_posix_path(buf, name);
