@@ -13,9 +13,7 @@
 /*
  *  Pull in the typedef of TCHAR for windows.
  */
-#if defined(__CYGWIN__)
-    typedef char TCHAR;
-#elif defined(__WIN32__) && !defined(_TCHAR_DEFINED)
+#if defined(__WIN32__) && !defined(_TCHAR_DEFINED)
 #   include <tchar.h>
 #   ifndef _TCHAR_DEFINED
 	/* Borland seems to forget to set this. */
