@@ -557,7 +557,7 @@ Tcl_AttemptDbCkalloc(size, file, line)
  *----------------------------------------------------------------------
  */
 
-int
+void
 Tcl_DbCkfree(ptr, file, line)
     char       *ptr;
     CONST char *file;
@@ -566,7 +566,7 @@ Tcl_DbCkfree(ptr, file, line)
     struct mem_header *memp;
 
     if (ptr == NULL) {
-	return 0;
+	return;
     }
 
     /*
@@ -616,8 +616,6 @@ Tcl_DbCkfree(ptr, file, line)
         allocHead = memp->flink;
     TclpFree((char *) memp);
     Tcl_MutexUnlock(ckallocMutexPtr);
-
-    return 0;
 }
 
 /*
@@ -1167,14 +1165,13 @@ Tcl_Free (ptr)
     TclpFree(ptr);
 }
 
-int
+void
 Tcl_DbCkfree(ptr, file, line)
     char       *ptr;
     CONST char *file;
     int         line;
 {
     TclpFree(ptr);
-    return 0;
 }
 
 /*

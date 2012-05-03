@@ -40,7 +40,7 @@ declare 3 {
 #  declare 4 {
 #      int TclChdir(Tcl_Interp *interp, char *dirName)
 #  }
-declare 5 {unix win} {
+declare 5 {
     int TclCleanupChildren(Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr,
 	    Tcl_Channel errorChan)
 }
@@ -57,7 +57,7 @@ declare 8 {
 
 # TclCreatePipeline unofficially exported for use by BLT.
 
-declare 9 {unix win} {
+declare 9 {
     int TclCreatePipeline(Tcl_Interp *interp, int argc, const char **argv,
 	    Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr,
 	    TclFile *errFilePtr)
@@ -407,10 +407,10 @@ declare 103 {
     int TclSockGetPort(Tcl_Interp *interp, char *str, char *proto,
 	    int *portPtr)
 }
-declare 104 {unix win} {
+declare 104 {
     int TclSockMinimumBuffersOld(int sock, int size)
 }
-declare 110 {unix win} {
+declare 110 {
     int TclSockMinimumBuffers(void *sock, int size)
 }
 # Replaced by Tcl_FSStat in 8.4:
@@ -1035,6 +1035,9 @@ declare 22 unix {
 }
 declare 24 unix {
     char *TclWinNoBackslash(char *path)
+}
+declare 25 unix {
+    TclPlatformType *TclWinGetPlatform(void)
 }
 declare 26 unix {
     void TclWinSetInterfaces(int wide)
