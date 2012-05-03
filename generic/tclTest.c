@@ -419,9 +419,11 @@ static int		TestNRELevels(ClientData clientData,
 static int		TestInterpResolverCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+#if defined(HAVE_CPUID) || defined(__WIN32__)
 static int		TestcpuidCmd(ClientData dummy,
 			    Tcl_Interp* interp, int objc,
 			    Tcl_Obj *CONST objv[]);
+#endif
 
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -679,8 +681,10 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testexitmainloop", TestexitmainloopCmd,
 	    NULL, NULL);
+#if defined(HAVE_CPUID) || defined(__WIN32__)
     Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
 	    (ClientData) 0, NULL);
+#endif
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
@@ -6654,6 +6658,7 @@ TestNumUtfCharsCmd(
     return TCL_OK;
 }
 
+#if defined(HAVE_CPUID) || defined(__WIN32__)
 /*
  *----------------------------------------------------------------------
  *
@@ -6707,6 +6712,7 @@ TestcpuidCmd(
     Tcl_SetObjResult(interp, Tcl_NewListObj(4, regsObjs));
     return TCL_OK;
 }
+#endif
 
 /*
  * Used to do basic checks of the TCL_HASH_KEY_SYSTEM_HASH flag
