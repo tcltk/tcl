@@ -24,6 +24,8 @@
 #define SOCK_CHAN_LENGTH 4 + sizeof(void*) * 2 + 1
 #define SOCK_TEMPLATE "sock%lx"
 
+#undef SOCKET /* Possible conflict with win32 SOCKET */
+
 /*
  * This is needed to comply with the strict aliasing rules of GCC, but it also
  * simplifies casting between the different sockaddr types.
