@@ -9345,7 +9345,7 @@ int main() {
                  "mov %%ebx, %%esi   \n\t"
                  "mov %%edi, %%ebx  \n\t"
                  : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
-                 : "a"(index));
+                 : "a"(index) : "edi");
     
 ; return 0; }
 EOF

@@ -37,18 +37,10 @@ EXTERN int		TclAccessInsertProc _ANSI_ARGS_((
 /* 3 */
 EXTERN void		TclAllocateFreeObjects _ANSI_ARGS_((void));
 /* Slot 4 is reserved */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 5 */
 EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp *interp,
 				int numPids, Tcl_Pid *pidPtr,
 				Tcl_Channel errorChan));
-#endif /* UNIX */
-#ifdef __WIN32__
-/* 5 */
-EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp *interp,
-				int numPids, Tcl_Pid *pidPtr,
-				Tcl_Channel errorChan));
-#endif /* __WIN32__ */
 /* 6 */
 EXTERN void		TclCleanupCommand _ANSI_ARGS_((Command *cmdPtr));
 /* 7 */
@@ -58,20 +50,11 @@ EXTERN int		TclCopyAndCollapse _ANSI_ARGS_((int count,
 EXTERN int		TclCopyChannel _ANSI_ARGS_((Tcl_Interp *interp,
 				Tcl_Channel inChan, Tcl_Channel outChan,
 				int toRead, Tcl_Obj *cmdPtr));
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 9 */
 EXTERN int		TclCreatePipeline _ANSI_ARGS_((Tcl_Interp *interp,
 				int argc, CONST char **argv,
 				Tcl_Pid **pidArrayPtr, TclFile *inPipePtr,
 				TclFile *outPipePtr, TclFile *errFilePtr));
-#endif /* UNIX */
-#ifdef __WIN32__
-/* 9 */
-EXTERN int		TclCreatePipeline _ANSI_ARGS_((Tcl_Interp *interp,
-				int argc, CONST char **argv,
-				Tcl_Pid **pidArrayPtr, TclFile *inPipePtr,
-				TclFile *outPipePtr, TclFile *errFilePtr));
-#endif /* __WIN32__ */
 /* 10 */
 EXTERN int		TclCreateProc _ANSI_ARGS_((Tcl_Interp *interp,
 				Namespace *nsPtr, CONST char *procName,
@@ -289,16 +272,9 @@ EXTERN void		TclSetupEnv _ANSI_ARGS_((Tcl_Interp *interp));
 /* 103 */
 EXTERN int		TclSockGetPort _ANSI_ARGS_((Tcl_Interp *interp,
 				char *str, char *proto, int *portPtr));
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 104 */
 EXTERN int		TclSockMinimumBuffersOld _ANSI_ARGS_((int sock,
 				int size));
-#endif /* UNIX */
-#ifdef __WIN32__
-/* 104 */
-EXTERN int		TclSockMinimumBuffersOld _ANSI_ARGS_((int sock,
-				int size));
-#endif /* __WIN32__ */
 /* Slot 105 is reserved */
 /* 106 */
 EXTERN int		TclStatDeleteProc _ANSI_ARGS_((TclStatProc_ *proc));
@@ -308,16 +284,9 @@ EXTERN int		TclStatInsertProc _ANSI_ARGS_((TclStatProc_ *proc));
 EXTERN void		TclTeardownNamespace _ANSI_ARGS_((Namespace *nsPtr));
 /* 109 */
 EXTERN int		TclUpdateReturnInfo _ANSI_ARGS_((Interp *iPtr));
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 110 */
 EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((VOID *sock,
 				int size));
-#endif /* UNIX */
-#ifdef __WIN32__
-/* 110 */
-EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((VOID *sock,
-				int size));
-#endif /* __WIN32__ */
 /* 111 */
 EXTERN void		Tcl_AddInterpResolvers _ANSI_ARGS_((
 				Tcl_Interp *interp, CONST char *name,
@@ -546,27 +515,11 @@ typedef struct TclIntStubs {
     int (*tclAccessInsertProc) _ANSI_ARGS_((TclAccessProc_ *proc)); /* 2 */
     void (*tclAllocateFreeObjects) _ANSI_ARGS_((void)); /* 3 */
     VOID *reserved4;
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     int (*tclCleanupChildren) _ANSI_ARGS_((Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan)); /* 5 */
-#endif /* UNIX */
-#ifdef __WIN32__
-    int (*tclCleanupChildren) _ANSI_ARGS_((Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan)); /* 5 */
-#endif /* __WIN32__ */
-#ifdef MAC_TCL
-    VOID *reserved5;
-#endif /* MAC_TCL */
     void (*tclCleanupCommand) _ANSI_ARGS_((Command *cmdPtr)); /* 6 */
     int (*tclCopyAndCollapse) _ANSI_ARGS_((int count, CONST char *src, char *dst)); /* 7 */
     int (*tclCopyChannel) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)); /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     int (*tclCreatePipeline) _ANSI_ARGS_((Tcl_Interp *interp, int argc, CONST char **argv, Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr, TclFile *errFilePtr)); /* 9 */
-#endif /* UNIX */
-#ifdef __WIN32__
-    int (*tclCreatePipeline) _ANSI_ARGS_((Tcl_Interp *interp, int argc, CONST char **argv, Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr, TclFile *errFilePtr)); /* 9 */
-#endif /* __WIN32__ */
-#ifdef MAC_TCL
-    VOID *reserved9;
-#endif /* MAC_TCL */
     int (*tclCreateProc) _ANSI_ARGS_((Tcl_Interp *interp, Namespace *nsPtr, CONST char *procName, Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr, Proc **procPtrPtr)); /* 10 */
     void (*tclDeleteCompiledLocalVars) _ANSI_ARGS_((Interp *iPtr, CallFrame *framePtr)); /* 11 */
     void (*tclDeleteVars) _ANSI_ARGS_((Interp *iPtr, Tcl_HashTable *tablePtr)); /* 12 */
@@ -661,29 +614,13 @@ typedef struct TclIntStubs {
     char * (*tclSetPreInitScript) _ANSI_ARGS_((char *string)); /* 101 */
     void (*tclSetupEnv) _ANSI_ARGS_((Tcl_Interp *interp)); /* 102 */
     int (*tclSockGetPort) _ANSI_ARGS_((Tcl_Interp *interp, char *str, char *proto, int *portPtr)); /* 103 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     int (*tclSockMinimumBuffersOld) _ANSI_ARGS_((int sock, int size)); /* 104 */
-#endif /* UNIX */
-#ifdef __WIN32__
-    int (*tclSockMinimumBuffersOld) _ANSI_ARGS_((int sock, int size)); /* 104 */
-#endif /* __WIN32__ */
-#ifdef MAC_TCL
-    VOID *reserved104;
-#endif /* MAC_TCL */
     VOID *reserved105;
     int (*tclStatDeleteProc) _ANSI_ARGS_((TclStatProc_ *proc)); /* 106 */
     int (*tclStatInsertProc) _ANSI_ARGS_((TclStatProc_ *proc)); /* 107 */
     void (*tclTeardownNamespace) _ANSI_ARGS_((Namespace *nsPtr)); /* 108 */
     int (*tclUpdateReturnInfo) _ANSI_ARGS_((Interp *iPtr)); /* 109 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     int (*tclSockMinimumBuffers) _ANSI_ARGS_((VOID *sock, int size)); /* 110 */
-#endif /* UNIX */
-#ifdef __WIN32__
-    int (*tclSockMinimumBuffers) _ANSI_ARGS_((VOID *sock, int size)); /* 110 */
-#endif /* __WIN32__ */
-#ifdef MAC_TCL
-    VOID *reserved110;
-#endif /* MAC_TCL */
     void (*tcl_AddInterpResolvers) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *name, Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, Tcl_ResolveCompiledVarProc *compiledVarProc)); /* 111 */
     int (*tcl_AppendExportList) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Namespace *nsPtr, Tcl_Obj *objPtr)); /* 112 */
     Tcl_Namespace * (*tcl_CreateNamespace) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *name, ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)); /* 113 */
@@ -803,18 +740,10 @@ extern TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclAllocateFreeObjects) /* 3 */
 #endif
 /* Slot 4 is reserved */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef TclCleanupChildren
 #define TclCleanupChildren \
 	(tclIntStubsPtr->tclCleanupChildren) /* 5 */
 #endif
-#endif /* UNIX */
-#ifdef __WIN32__
-#ifndef TclCleanupChildren
-#define TclCleanupChildren \
-	(tclIntStubsPtr->tclCleanupChildren) /* 5 */
-#endif
-#endif /* __WIN32__ */
 #ifndef TclCleanupCommand
 #define TclCleanupCommand \
 	(tclIntStubsPtr->tclCleanupCommand) /* 6 */
@@ -827,18 +756,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclCopyChannel \
 	(tclIntStubsPtr->tclCopyChannel) /* 8 */
 #endif
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef TclCreatePipeline
 #define TclCreatePipeline \
 	(tclIntStubsPtr->tclCreatePipeline) /* 9 */
 #endif
-#endif /* UNIX */
-#ifdef __WIN32__
-#ifndef TclCreatePipeline
-#define TclCreatePipeline \
-	(tclIntStubsPtr->tclCreatePipeline) /* 9 */
-#endif
-#endif /* __WIN32__ */
 #ifndef TclCreateProc
 #define TclCreateProc \
 	(tclIntStubsPtr->tclCreateProc) /* 10 */
@@ -1119,18 +1040,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclSockGetPort \
 	(tclIntStubsPtr->tclSockGetPort) /* 103 */
 #endif
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef TclSockMinimumBuffersOld
 #define TclSockMinimumBuffersOld \
 	(tclIntStubsPtr->tclSockMinimumBuffersOld) /* 104 */
 #endif
-#endif /* UNIX */
-#ifdef __WIN32__
-#ifndef TclSockMinimumBuffersOld
-#define TclSockMinimumBuffersOld \
-	(tclIntStubsPtr->tclSockMinimumBuffersOld) /* 104 */
-#endif
-#endif /* __WIN32__ */
 /* Slot 105 is reserved */
 #ifndef TclStatDeleteProc
 #define TclStatDeleteProc \
@@ -1148,18 +1061,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclUpdateReturnInfo \
 	(tclIntStubsPtr->tclUpdateReturnInfo) /* 109 */
 #endif
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef TclSockMinimumBuffers
 #define TclSockMinimumBuffers \
 	(tclIntStubsPtr->tclSockMinimumBuffers) /* 110 */
 #endif
-#endif /* UNIX */
-#ifdef __WIN32__
-#ifndef TclSockMinimumBuffers
-#define TclSockMinimumBuffers \
-	(tclIntStubsPtr->tclSockMinimumBuffers) /* 110 */
-#endif
-#endif /* __WIN32__ */
 #ifndef Tcl_AddInterpResolvers
 #define Tcl_AddInterpResolvers \
 	(tclIntStubsPtr->tcl_AddInterpResolvers) /* 111 */
