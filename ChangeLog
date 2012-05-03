@@ -1,3 +1,8 @@
+2012-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclUnixSock.c:	[Bug 3428753] Fix [socket -async] connections
+	that manage to connect synchronously.
+
 2012-05-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/configure.in:    Better detection and implementation for cpuid

@@ -1030,7 +1030,8 @@ CreateClientSocket(
                 state->status = status;
             }
 	    if (status == 0) {
-                goto out;
+		CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
+		goto out;
 	    }
 	}
     }
@@ -1041,7 +1042,6 @@ out:
         /*
          * An asynchonous connection has finally succeeded or failed.
          */
-        CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
         TcpWatchProc(state, state->filehandlers);
         TclUnixSetBlockingMode(state->fds.fd, state->cachedBlocking);
 
