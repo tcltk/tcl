@@ -51,7 +51,7 @@ declare 6 {
     char *Tcl_DbCkalloc(unsigned int size, const char *file, int line)
 }
 declare 7 {
-    int Tcl_DbCkfree(char *ptr, const char *file, int line)
+    void Tcl_DbCkfree(char *ptr, const char *file, int line)
 }
 declare 8 {
     char *Tcl_DbCkrealloc(char *ptr, unsigned int size,

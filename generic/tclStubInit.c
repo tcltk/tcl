@@ -76,12 +76,6 @@ MODULE_SCOPE TclStubs tclStubs;
 MODULE_SCOPE TclTomMathStubs tclTomMathStubs;
 
 #ifdef __CYGWIN__
-
-/* Trick, so we don't have to include <windows.h> here, which
- * - b.t.w. - lacks this function anyway */
-#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
-int __stdcall GetModuleHandleExW(unsigned int, const char *, void *);
-
 #define TclWinGetPlatformId winGetPlatformId
 #define Tcl_WinUtfToTChar winUtfToTChar
 #define Tcl_WinTCharToUtf winTCharToUtf
@@ -353,15 +347,7 @@ TclIntStubs tclIntStubs = {
     NULL, /* 107 */
     TclTeardownNamespace, /* 108 */
     TclUpdateReturnInfo, /* 109 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     TclSockMinimumBuffers, /* 110 */
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-    TclSockMinimumBuffers, /* 110 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    TclSockMinimumBuffers, /* 110 */
-#endif /* MACOSX */
     Tcl_AddInterpResolvers, /* 111 */
     Tcl_AppendExportList, /* 112 */
     Tcl_CreateNamespace, /* 113 */

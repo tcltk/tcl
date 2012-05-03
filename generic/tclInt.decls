@@ -421,7 +421,7 @@ declare 103 {
 declare 104 {
     int TclSockMinimumBuffersOld(int sock, int size)
 }
-declare 110 {unix win} {
+declare 110 {
     int TclSockMinimumBuffers(void *sock, int size)
 }
 # Replaced by Tcl_FSStat in 8.4:
