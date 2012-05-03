@@ -3,6 +3,9 @@
 	* generic/configure.in:    Better detection and implementation for cpuid
 	* generic/configure:       instruction on Intel-derived processors, both
 	* generic/tclUnixCompat.c: 32-bit and 64-bit.
+	* generic/tclTest.c:       Move cpuid testcase from win-specific to generic
+	* win/tclWinTest.c:        tests, as it should work on all Intel-related
+	* tests/platform.test:     platforms now
 
 2012-04-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
