@@ -82,7 +82,8 @@ EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((CONST char *contents));
 /* Slot 23 is reserved */
 /* 24 */
 EXTERN char *		TclWinNoBackslash _ANSI_ARGS_((char *path));
-/* Slot 25 is reserved */
+/* 25 */
+EXTERN TclPlatformType * TclWinGetPlatform _ANSI_ARGS_((void));
 /* 26 */
 EXTERN void		TclWinSetInterfaces _ANSI_ARGS_((int wide));
 /* 27 */
@@ -295,7 +296,7 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char *contents)); /* 22 */
     VOID *reserved23;
     char * (*tclWinNoBackslash) _ANSI_ARGS_((char *path)); /* 24 */
-    VOID *reserved25;
+    TclPlatformType * (*tclWinGetPlatform) _ANSI_ARGS_((void)); /* 25 */
     void (*tclWinSetInterfaces) _ANSI_ARGS_((int wide)); /* 26 */
     void (*tclWinFlushDirtyChannels) _ANSI_ARGS_((void)); /* 27 */
     void (*tclWinResetInterfaces) _ANSI_ARGS_((void)); /* 28 */
@@ -470,7 +471,10 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclWinNoBackslash \
 	(tclIntPlatStubsPtr->tclWinNoBackslash) /* 24 */
 #endif
-/* Slot 25 is reserved */
+#ifndef TclWinGetPlatform
+#define TclWinGetPlatform \
+	(tclIntPlatStubsPtr->tclWinGetPlatform) /* 25 */
+#endif
 #ifndef TclWinSetInterfaces
 #define TclWinSetInterfaces \
 	(tclIntPlatStubsPtr->tclWinSetInterfaces) /* 26 */
