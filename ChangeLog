@@ -1,3 +1,8 @@
+2012-05-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/zlib/*:      Upgrade to zlib 1.2.7 (pre-built dll is still 1.2.5,
+	will be upgraded as soon as the official build is available)
+
 2012-05-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/socket.test:	[Bug 3428754] Test socket-14.2 tolerate
