@@ -74,10 +74,16 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 #ifdef __CYGWIN__
-EXTERN int TclOSstat(const char *name, Tcl_StatBuf *statBuf);
-EXTERN int TclOSlstat(const char *name, Tcl_StatBuf *statBuf);
-#define NO_FSTATFS
-#undef HAVE_FTS
+#   define WSAEWOULDBLOCK 10035
+#   define HINSTANCE void *
+#   define HANDLE void *
+#   define DWORD unsigned int
+#   define SOCKET unsigned int
+#   typedef char TCHAR;
+    EXTERN int TclOSstat(const char *name, Tcl_StatBuf *statBuf);
+    EXTERN int TclOSlstat(const char *name, Tcl_StatBuf *statBuf);
+#   define NO_FSTATFS
+#   undef HAVE_FTS
 #elif defined(HAVE_STRUCT_STAT64)
 #   define TclOSstat		stat64
 #   define TclOSlstat		lstat64
