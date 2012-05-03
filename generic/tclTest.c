@@ -430,10 +430,12 @@ static Tcl_Obj*         SimpleCopy _ANSI_ARGS_ ((Tcl_Obj *pathPtr));
 static int              TestNumUtfCharsCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+#if defined(HAVE_CPUID) || defined(__WIN32__)
 static int	TestcpuidCmd _ANSI_ARGS_(( ClientData dummy,
 					      Tcl_Interp* interp,
 					      int objc,
 					      Tcl_Obj *CONST objv[] ));
+#endif
 
 static Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -699,8 +701,10 @@ Tcltest_Init(interp)
 	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testexitmainloop", TestexitmainloopCmd,
 	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
+#if defined(HAVE_CPUID) || defined(__WIN32__)
     Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
 			 (ClientData) 0, (Tcl_CmdDeleteProc*) NULL );
+#endif
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
@@ -6552,6 +6556,7 @@ TestNumUtfCharsCmd(clientData, interp, objc, objv)
     return TCL_OK;
 }
 
+#if defined(HAVE_CPUID) || defined(__WIN32__)
 /*
  *----------------------------------------------------------------------
  *
@@ -6594,11 +6599,7 @@ TestcpuidCmd( ClientData dummy,
     if ( Tcl_GetIntFromObj( interp, objv[1], &index ) != TCL_OK ) {
 	return TCL_ERROR;
     }
-#ifdef MAC_TCL
-    status = TCL_ERROR;
-#else
     status = TclWinCPUID( (unsigned int) index, regs );
-#endif
     if ( status != TCL_OK ) {
 	Tcl_SetObjResult( interp, Tcl_NewStringObj( "operation not available",
 						    -1 ) );
@@ -6611,3 +6612,4 @@ TestcpuidCmd( ClientData dummy,
     return TCL_OK;
 
 }
+#endif
