@@ -1,5 +1,8 @@
 2012-05-03  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/socket.test:	[Bug 3428754] Test socket-14.2 tolerate
+	[socket -async] connection that connects synchronously.
+
 	* unix/tclUnixSock.c:	[Bug 3428753] Fix [socket -async] connections
 	that manage to connect synchronously.
 
