@@ -456,27 +456,11 @@ EXTERN void		TclTeardownNamespace(Namespace *nsPtr);
 /* 109 */
 EXTERN int		TclUpdateReturnInfo(Interp *iPtr);
 #endif
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
 #ifndef TclSockMinimumBuffers_TCL_DECLARED
 #define TclSockMinimumBuffers_TCL_DECLARED
 /* 110 */
 EXTERN int		TclSockMinimumBuffers(VOID *sock, int size);
 #endif
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-#ifndef TclSockMinimumBuffers_TCL_DECLARED
-#define TclSockMinimumBuffers_TCL_DECLARED
-/* 110 */
-EXTERN int		TclSockMinimumBuffers(VOID *sock, int size);
-#endif
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-#ifndef TclSockMinimumBuffers_TCL_DECLARED
-#define TclSockMinimumBuffers_TCL_DECLARED
-/* 110 */
-EXTERN int		TclSockMinimumBuffers(VOID *sock, int size);
-#endif
-#endif /* MACOSX */
 #ifndef Tcl_AddInterpResolvers_TCL_DECLARED
 #define Tcl_AddInterpResolvers_TCL_DECLARED
 /* 111 */
@@ -1184,15 +1168,7 @@ typedef struct TclIntStubs {
     VOID *reserved107;
     void (*tclTeardownNamespace) (Namespace *nsPtr); /* 108 */
     int (*tclUpdateReturnInfo) (Interp *iPtr); /* 109 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     int (*tclSockMinimumBuffers) (VOID *sock, int size); /* 110 */
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-    int (*tclSockMinimumBuffers) (VOID *sock, int size); /* 110 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    int (*tclSockMinimumBuffers) (VOID *sock, int size); /* 110 */
-#endif /* MACOSX */
     void (*tcl_AddInterpResolvers) (Tcl_Interp *interp, CONST char *name, Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, Tcl_ResolveCompiledVarProc *compiledVarProc); /* 111 */
     int (*tcl_AppendExportList) (Tcl_Interp *interp, Tcl_Namespace *nsPtr, Tcl_Obj *objPtr); /* 112 */
     Tcl_Namespace * (*tcl_CreateNamespace) (Tcl_Interp *interp, CONST char *name, ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc); /* 113 */
@@ -1641,24 +1617,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclUpdateReturnInfo \
 	(tclIntStubsPtr->tclUpdateReturnInfo) /* 109 */
 #endif
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
 #ifndef TclSockMinimumBuffers
 #define TclSockMinimumBuffers \
 	(tclIntStubsPtr->tclSockMinimumBuffers) /* 110 */
 #endif
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
-#ifndef TclSockMinimumBuffers
-#define TclSockMinimumBuffers \
-	(tclIntStubsPtr->tclSockMinimumBuffers) /* 110 */
-#endif
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-#ifndef TclSockMinimumBuffers
-#define TclSockMinimumBuffers \
-	(tclIntStubsPtr->tclSockMinimumBuffers) /* 110 */
-#endif
-#endif /* MACOSX */
 #ifndef Tcl_AddInterpResolvers
 #define Tcl_AddInterpResolvers \
 	(tclIntStubsPtr->tcl_AddInterpResolvers) /* 111 */
