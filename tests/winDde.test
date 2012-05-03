@@ -156,6 +156,20 @@ test winDde-3.5 {DDE request locally} {win dde} {
     dde execute TclEval self {set a "foo"}
     dde request -binary TclEval self a
 } "foo\x00"
+# Set variable a to A with diaeresis (unicode C4) by relying on the fact
+# that utf8 is sent (e.g. "c3 84" on the wire)
+test winDde-3.6 {DDE request utf8} {win dde} {
+    set a "not set"
+    dde execute TclEval self "set a \xc4"
+    scan $a %c
+} 196
+# Set variable a to A with diaeresis (unicode C4) using binary execute
+# and compose utf-8 (e.g. "c3 84" ) manualy
+test winDde-3.7 {DDE request binary} {win dde} {
+    set a "not set"
+    dde execute -binary TclEval self "set a \xc3\x84"
+    scan $a %c
+} 196
 
 # -------------------------------------------------------------------------
 
