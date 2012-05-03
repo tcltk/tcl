@@ -430,6 +430,10 @@ static Tcl_Obj*         SimpleCopy _ANSI_ARGS_ ((Tcl_Obj *pathPtr));
 static int              TestNumUtfCharsCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+static int	TestcpuidCmd _ANSI_ARGS_(( ClientData dummy,
+					      Tcl_Interp* interp,
+					      int objc,
+					      Tcl_Obj *CONST objv[] ));
 
 static Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -695,6 +699,8 @@ Tcltest_Init(interp)
 	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testexitmainloop", TestexitmainloopCmd,
 	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
+			 (ClientData) 0, (Tcl_CmdDeleteProc*) NULL );
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
@@ -2474,7 +2480,7 @@ TestgetplatformCmd(clientData, interp, argc, argv)
     static CONST char *platformStrings[] = { "unix", "mac", "windows" };
     TclPlatformType *platform;
 
-#ifdef __WIN32__
+#if defined(__WIN32__) || defined(__CYGWIN__)
     platform = TclWinGetPlatform();
 #else
     platform = &tclPlatform;
@@ -3708,7 +3714,7 @@ TestsetplatformCmd(clientData, interp, argc, argv)
     size_t length;
     TclPlatformType *platform;
 
-#ifdef __WIN32__
+#if defined(__WIN32__) || defined(__CYGWIN__)
     platform = TclWinGetPlatform();
 #else
     platform = &tclPlatform;
@@ -6544,4 +6550,64 @@ TestNumUtfCharsCmd(clientData, interp, objc, objv)
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestcpuidCmd --
+ *
+ *	Retrieves CPU ID information.
+ *
+ * Usage:
+ *	testcpuid <eax>
+ *
+ * Parameters:
+ *	eax - The value to pass in the EAX register to a CPUID instruction.
+ *
+ * Results:
+ *	Returns a four-element list containing the values from the
+ *	EAX, EBX, ECX and EDX registers returned from the CPUID instruction.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestcpuidCmd( ClientData dummy,
+		 Tcl_Interp* interp, /* Tcl interpreter */
+		 int objc,	/* Parameter count */
+		 Tcl_Obj *CONST * objv ) /* Parameter vector */
+{
+    int status;
+    int index;
+    unsigned int regs[4];
+    Tcl_Obj * regsObjs[4];
+    int i;
+
+    if ( objc != 2 ) {
+	Tcl_WrongNumArgs( interp, 1, objv, "eax" );
+	return TCL_ERROR;
+    }
+    if ( Tcl_GetIntFromObj( interp, objv[1], &index ) != TCL_OK ) {
+	return TCL_ERROR;
+    }
+#ifdef MAC_TCL
+    status = TCL_ERROR;
+#else
+    status = TclWinCPUID( (unsigned int) index, regs );
+#endif
+    if ( status != TCL_OK ) {
+	Tcl_SetObjResult( interp, Tcl_NewStringObj( "operation not available",
+						    -1 ) );
+	return status;
+    }
+    for ( i = 0; i < 4; ++i ) {
+	regsObjs[i] = Tcl_NewIntObj( (int) regs[i] );
+    }
+    Tcl_SetObjResult( interp, Tcl_NewListObj( 4, regsObjs ) );
+    return TCL_OK;
+
 }

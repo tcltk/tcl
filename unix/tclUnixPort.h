@@ -74,12 +74,22 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 #ifdef __CYGWIN__
-#   define WSAEWOULDBLOCK 10035
-#   define HINSTANCE void *
-#   define HANDLE void *
+
+    /* Make some symbols available without including <windows.h> */
 #   define DWORD unsigned int
+#   define CP_UTF8 65001
+#   define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
+#   define HANDLE void *
+#   define HINSTANCE void *
 #   define SOCKET unsigned int
-#   typedef char TCHAR;
+#   define WSAEWOULDBLOCK 10035
+    typedef char TCHAR;
+    DLLIMPORT extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
+    DLLIMPORT extern __stdcall int GetModuleFileNameW(void *, const char *, int);
+    DLLIMPORT extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
+	    const char *, int, const char *, const char *);
+
+    DLLIMPORT extern int cygwin_conv_to_full_posix_path(const char *, char *);
     EXTERN int TclOSstat(const char *name, Tcl_StatBuf *statBuf);
     EXTERN int TclOSlstat(const char *name, Tcl_StatBuf *statBuf);
 #   define NO_FSTATFS

@@ -61,14 +61,6 @@ TclpFindExecutable(argv0)
     }
 
 #ifdef __CYGWIN__
-
-    /* Make some symbols available without including <windows.h> */
-#   define CP_UTF8 65001
-    extern int cygwin_conv_to_full_posix_path(const char *, char *);
-    extern __stdcall int GetModuleFileNameW(void *, const char *, int);
-    extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
-		const char *, int, const char *, const char *);
-
     GetModuleFileNameW(NULL, name, PATH_MAX);
     WideCharToMultiByte(CP_UTF8, 0, name, -1, buf, PATH_MAX, NULL, NULL);
     cygwin_conv_to_full_posix_path(buf, name);

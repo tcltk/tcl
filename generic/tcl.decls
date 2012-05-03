@@ -49,7 +49,7 @@ declare 6 {
     char *Tcl_DbCkalloc(unsigned int size, const char *file, int line)
 }
 declare 7 {
-    int Tcl_DbCkfree(char *ptr, const char *file, int line)
+    void Tcl_DbCkfree(char *ptr, const char *file, int line)
 }
 declare 8 {
     char *Tcl_DbCkrealloc(char *ptr, unsigned int size,
@@ -408,7 +408,7 @@ declare 109 {
 declare 110 {
     void Tcl_DeleteInterp(Tcl_Interp *interp)
 }
-declare 111 {unix win} {
+declare 111 {
     void Tcl_DetachPids(int numPids, Tcl_Pid *pidPtr)
 }
 declare 112 {
@@ -699,7 +699,7 @@ declare 196 {
     Tcl_Obj *Tcl_ObjSetVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags)
 }
-declare 197 {unix win} {
+declare 197 {
     Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, int argc,
 	    CONST84 char **argv, int flags)
 }
@@ -735,7 +735,7 @@ declare 205 {
 declare 206 {
     int Tcl_Read(Tcl_Channel chan, char *bufPtr, int toRead)
 }
-declare 207 {unix win} {
+declare 207 {
     void Tcl_ReapDetachedProcs(void)
 }
 declare 208 {
