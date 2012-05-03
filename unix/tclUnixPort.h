@@ -79,6 +79,12 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 #ifdef __CYGWIN__
+#   define WSAEWOULDBLOCK 10035
+#   define HINSTANCE void *
+#   define HANDLE void *
+#   define DWORD unsigned int
+#   define SOCKET unsigned int
+#   typedef char TCHAR;
 #   define USE_PUTENV 1
 #   define USE_PUTENV_FOR_UNSET 1
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
