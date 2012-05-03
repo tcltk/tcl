@@ -79,12 +79,27 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 #ifdef __CYGWIN__
-#   define WSAEWOULDBLOCK 10035
-#   define HINSTANCE void *
-#   define HANDLE void *
+
+    /* Make some symbols available without including <windows.h> */
 #   define DWORD unsigned int
+#   define CP_UTF8 65001
+#   define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
+#   define HANDLE void *
+#   define HINSTANCE void *
 #   define SOCKET unsigned int
-#   typedef char TCHAR;
+#   define WSAEWOULDBLOCK 10035
+    typedef char TCHAR;
+    typedef unsigned short WCHAR;
+    DLLIMPORT extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
+    DLLIMPORT extern __stdcall int GetModuleFileNameW(void *, const char *, int);
+    DLLIMPORT extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
+	    const char *, int, const char *, const char *);
+    DLLIMPORT extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
+	    WCHAR *, int);
+    DLLIMPORT extern __stdcall void OutputDebugStringW(const WCHAR *);
+    DLLIMPORT extern __stdcall int IsDebuggerPresent();
+
+    DLLIMPORT extern int cygwin_conv_to_full_posix_path(const char *, char *);
 #   define USE_PUTENV 1
 #   define USE_PUTENV_FOR_UNSET 1
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
