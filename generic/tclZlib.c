@@ -1996,6 +1996,9 @@ ZlibStreamSubcmd(
 	{ "-dictionary", &compDictObj },
 	{ NULL, NULL }
     };
+    const OptDescriptor gunzipOpts[] = {
+	{ NULL, NULL }
+    };
     const OptDescriptor *desc;
     Tcl_ZlibStream zh;
 
@@ -2040,7 +2043,7 @@ ZlibStreamSubcmd(
 	format = TCL_ZLIB_FORMAT_GZIP;
 	break;
     case FMT_GUNZIP:
-	desc = expansionOpts; // FIXME - get header, not set compDict
+	desc = gunzipOpts;
 	mode = TCL_ZLIB_STREAM_INFLATE;
 	format = TCL_ZLIB_FORMAT_GZIP;
 	break;
@@ -2301,12 +2304,12 @@ ZlibStreamCmd(
     Tcl_Obj *obj;
     static const char *const cmds[] = {
 	"add", "checksum", "close", "eof", "finalize", "flush",
-	"fullflush", "get", "put", "reset",
+	"fullflush", "get", "header", "put", "reset",
 	NULL
     };
     enum zlibStreamCommands {
 	zs_add, zs_checksum, zs_close, zs_eof, zs_finalize, zs_flush,
-	zs_fullflush, zs_get, zs_put, zs_reset
+	zs_fullflush, zs_get, zs_header, zs_put, zs_reset
     };
     static const char *const add_options[] = {
 	"-buffer", "-finalize", "-flush", "-fullflush", NULL
@@ -2431,6 +2434,7 @@ ZlibStreamCmd(
 	    case ao_buffer:
 		Tcl_AppendResult(interp,
 			"\"-buffer\" option not supported here", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ZIP", "BADOPT", NULL);
 		return TCL_ERROR;
 	    }
 	    if (flush == -2) {
@@ -2528,6 +2532,27 @@ ZlibStreamCmd(
 	    return TCL_ERROR;
 	}
 	return Tcl_ZlibStreamReset(zstream);
+    case zs_header: {		/* $strm header */
+	ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zstream;
+	Tcl_Obj *resultObj;
+
+	if (objc != 2) {
+	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
+	    return TCL_ERROR;
+	} else if (zshPtr->mode != TCL_ZLIB_STREAM_INFLATE
+		|| zshPtr->format != TCL_ZLIB_FORMAT_GZIP) {
+	    Tcl_AppendResult(interp,
+		    "only gunzip streams can produce header information",
+		    NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "ZIP", "BADOP", NULL);
+	    return TCL_ERROR;
+	}
+
+	TclNewObj(resultObj);
+	ExtractHeader(&zshPtr->gzHeaderPtr->header, resultObj);
+	Tcl_SetObjResult(interp, resultObj);
+	return TCL_OK;
+    }
     }
 
     return TCL_OK;
