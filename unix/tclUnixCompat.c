@@ -973,8 +973,7 @@ CopyString(
  *	Get CPU ID information on an Intel box under UNIX (either Linux or Cygwin)
  *
  * Results:
- *	Returns TCL_OK if successful, TCL_ERROR if CPUID is not supported or
- *	fails.
+ *	Returns TCL_OK if successful, TCL_ERROR if CPUID is not supported.
  *
  * Side effects:
  *	If successful, stores EAX, EBX, ECX and EDX registers after the CPUID
@@ -990,13 +989,15 @@ TclWinCPUID(
 {
     int status = TCL_ERROR;
 
-#ifdef HAVE_CPUID
-	/* disabled in emergency -- fails on linux */
-# if 0
-    __asm__ __volatile__ ("cpuid":\
-    "=a" (regsPtr[0]), "=b" (regsPtr[1]), "=c" (regsPtr[2]), "=d" (regsPtr[3]) : "a" (index));
+    /* See: <http://en.wikipedia.org/wiki/CPUID> */
+#if defined(HAVE_CPUID)
+    __asm__ __volatile__("mov %%ebx, %%edi     \n\t" /* save %ebx */
+                 "cpuid            \n\t"
+                 "mov %%ebx, %%esi   \n\t" /* save what cpuid just put in %ebx */
+                 "mov %%edi, %%ebx  \n\t" /* restore the old %ebx */
+                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+                 : "a"(index) : "edi");
     status = TCL_OK;
-# endif
 #endif
     return status;
 }
