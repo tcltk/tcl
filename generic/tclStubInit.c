@@ -54,12 +54,6 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #endif
 
 #ifdef __CYGWIN__
-
-/* Trick, so we don't have to include <windows.h> here, which
- * - b.t.w. - lacks this function anyway */
-#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
-int __stdcall GetModuleHandleExW(unsigned int, const char *, void *);
-
 #define TclWinGetPlatformId winGetPlatformId
 #define Tcl_WinUtfToTChar winUtfToTChar
 #define Tcl_WinTCharToUtf winTCharToUtf

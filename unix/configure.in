@@ -755,12 +755,16 @@ AC_MSG_RESULT([$tcl_ok])
 
 AC_CACHE_CHECK([whether the cpuid instruction is usable], tcl_cv_cpuid, [
     AC_TRY_LINK(, [
-	int index,ax,bx,cx,dx;
-	__asm__ __volatile__ ("cpuid":\
-	"=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (index));
+	int index,regsPtr[4];
+    __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
+                 "cpuid            \n\t"
+                 "mov %%ebx, %%esi   \n\t"
+                 "mov %%edi, %%ebx  \n\t"
+                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+                 : "a"(index) : "edi");
     ], tcl_cv_cpuid=yes, tcl_cv_cpuid=no)])
 if test $tcl_cv_cpuid = yes; then
-    AC_DEFINE(HAVE_CPUID)
+    AC_DEFINE(HAVE_CPUID, 1, [Is the cpuid instruction usable?])
 fi
 
 #--------------------------------------------------------------------
