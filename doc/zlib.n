@@ -1,5 +1,5 @@
 '\"
-'\" Copyright (c) 2008 Donal K. Fellows
+'\" Copyright (c) 2008-2012 Donal K. Fellows
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -317,6 +317,12 @@ A short-cut for
 Return up to \fIcount\fR bytes from \fIstream\fR's internal buffers with the
 transformation applied. If \fIcount\fR is omitted, the entire contents of the
 buffers are returned.
+.
+\fIstream \fBheader\fR
+.
+Return the gzip header description dictionary extracted from the stream. Only
+supported for streams created with their \fImode\fR parameter set to
+\fBgunzip\fR.
 .TP
 \fIstream \fBput\fR ?\fIoption\fR? \fIdata\fR
 .
