@@ -1,3 +1,25 @@
+2012-05-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/zlib/*:      Upgrade to zlib 1.2.7 (pre-built dll is still 1.2.5,
+	will be upgraded as soon as the official build is available)
+
+2012-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/socket.test:	[Bug 3428754] Test socket-14.2 tolerate
+	[socket -async] connection that connects synchronously.
+
+	* unix/tclUnixSock.c:	[Bug 3428753] Fix [socket -async] connections
+	that manage to connect synchronously.
+
+2012-05-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/configure.in:    Better detection and implementation for cpuid
+	* generic/configure:       instruction on Intel-derived processors, both
+	* generic/tclUnixCompat.c: 32-bit and 64-bit.
+	* generic/tclTest.c:       Move cpuid testcase from win-specific to generic
+	* win/tclWinTest.c:        tests, as it should work on all Intel-related
+	* tests/platform.test:     platforms now
+
 2012-04-30  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* tests/ioCmd.test: Tame deadlocks in broken refchan tests [Bug 3522560]
