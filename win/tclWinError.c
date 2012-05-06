@@ -331,11 +331,6 @@ static const unsigned char wsaErrorTable[] = {
     EREMOTE		/* WSAEREMOTE */
 };
 
-#ifdef __CYGWIN__
-#   include <windows.h>
-#   define DWORD unsigned int
-#endif
-
 /*
  *----------------------------------------------------------------------
  *
