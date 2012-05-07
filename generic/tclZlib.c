@@ -399,9 +399,7 @@ ExtractHeader(
 
 	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->comment, -1,
 		&tmp);
-	SetValue(dictObj, "comment", Tcl_NewStringObj(Tcl_DStringValue(&tmp),
-		Tcl_DStringLength(&tmp)));
-	Tcl_DStringFree(&tmp);
+	SetValue(dictObj, "comment", TclDStringToObj(&tmp));
     }
     SetValue(dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
     if (headerPtr->name != Z_NULL) {
@@ -418,9 +416,7 @@ ExtractHeader(
 
 	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->name, -1,
 		&tmp);
-	SetValue(dictObj, "filename", Tcl_NewStringObj(Tcl_DStringValue(&tmp),
-		Tcl_DStringLength(&tmp)));
-	Tcl_DStringFree(&tmp);
+	SetValue(dictObj, "filename", TclDStringToObj(&tmp));
     }
     if (headerPtr->os != 255) {
 	SetValue(dictObj, "os", Tcl_NewIntObj(headerPtr->os));
@@ -2495,27 +2491,29 @@ ZlibTransformSetOption(			/* not used */
 	 */
 
 	cd->outStream.avail_in = 0;
-	do {
+	while (1) {
 	    int e;
 
 	    cd->outStream.next_out = (Bytef *) cd->outBuffer;
 	    cd->outStream.avail_out = cd->outAllocated;
 
 	    e = deflate(&cd->outStream, flushType);
-	    if (e != Z_OK) {
+	    if (e == Z_BUF_ERROR) {
+		break;
+	    } else if (e != Z_OK) {
 		ConvertError(interp, e);
 		return TCL_ERROR;
+	    } else if (cd->outStream.avail_out == 0) {
+		break;
 	    }
 
-	    if (cd->outStream.avail_out > 0) {
-		if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
-			PTR2INT(cd->outStream.next_out)) < 0) {
-		    Tcl_AppendResult(interp, "problem flushing channel: ",
-			    Tcl_PosixError(interp), NULL);
-		    return TCL_ERROR;
-		}
+	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
+		    cd->outStream.next_out - (Bytef*)cd->outBuffer) < 0) {
+		Tcl_AppendResult(interp, "problem flushing channel: ",
+			Tcl_PosixError(interp), NULL);
+		return TCL_ERROR;
 	    }
-	} while (cd->outStream.avail_out > 0);
+	}
 	return TCL_OK;
     }
 

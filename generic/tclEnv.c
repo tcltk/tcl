@@ -45,11 +45,8 @@ MODULE_SCOPE void	TclSetEnv(const char *name, const char *value);
 MODULE_SCOPE void	TclUnsetEnv(const char *name);
 
 #if defined(__CYGWIN__)
-/* On Cygwin, the environment is imported from the Cygwin DLL. */
-     DLLIMPORT extern int cygwin_posix_to_win32_path_list_buf_size(char *value);
-     DLLIMPORT extern void cygwin_posix_to_win32_path_list(char *buf, char *value);
-#    define putenv TclCygwinPutenv
-static void		TclCygwinPutenv(char *string);
+    static void TclCygwinPutenv(char *string);
+#   define putenv TclCygwinPutenv
 #endif
 
 /*
@@ -701,6 +698,7 @@ TclFinalizeEnvironment(void)
  * fork) and the Windows environment (in case the application TCL code calls
  * exec, which calls the Windows CreateProcess function).
  */
+DLLIMPORT extern void __stdcall SetEnvironmentVariableA(const char*, const char *);
 
 static void
 TclCygwinPutenv(
@@ -754,15 +752,11 @@ TclCygwinPutenv(
 	 */
 
 	if (strcmp(name, "Path") == 0) {
-#ifdef __WIN32__
 	    SetEnvironmentVariableA("PATH", NULL);
-#endif
 	    unsetenv("PATH");
 	}
 
-#ifdef __WIN32__
 	SetEnvironmentVariableA(name, value);
-#endif
     } else {
 	char *buf;
 
@@ -770,9 +764,7 @@ TclCygwinPutenv(
 	 * Eliminate any Path variable, to prevent any confusion.
 	 */
 
-#ifdef __WIN32__
 	SetEnvironmentVariableA("Path", NULL);
-#endif
 	unsetenv("Path");
 
 	if (value == NULL) {
@@ -785,9 +777,7 @@ TclCygwinPutenv(
 	    cygwin_posix_to_win32_path_list(value, buf);
 	}
 
-#ifdef __WIN32__
 	SetEnvironmentVariableA(name, buf);
-#endif
     }
 }
 #endif /* __CYGWIN__ */

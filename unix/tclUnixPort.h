@@ -78,7 +78,39 @@ typedef off_t		Tcl_SeekOffset;
 #   define TclOSopen		open
 #endif
 
-#ifdef HAVE_STRUCT_STAT64
+#ifdef __CYGWIN__
+
+    /* Make some symbols available without including <windows.h> */
+#   define DWORD unsigned int
+#   define CP_UTF8 65001
+#   define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
+#   define HANDLE void *
+#   define HINSTANCE void *
+#   define SOCKET unsigned int
+#   define WSAEWOULDBLOCK 10035
+    typedef unsigned short WCHAR;
+    DLLIMPORT extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
+    DLLIMPORT extern __stdcall int GetModuleFileNameW(void *, const char *, int);
+    DLLIMPORT extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
+	    const char *, int, const char *, const char *);
+    DLLIMPORT extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
+	    WCHAR *, int);
+    DLLIMPORT extern __stdcall void OutputDebugStringW(const WCHAR *);
+    DLLIMPORT extern __stdcall int IsDebuggerPresent();
+
+    DLLIMPORT extern int cygwin_conv_to_full_posix_path(const char *, char *);
+#   define USE_PUTENV 1
+#   define USE_PUTENV_FOR_UNSET 1
+/* On Cygwin, the environment is imported from the Cygwin DLL. */
+#   define environ __cygwin_environ
+#   define timezone _timezone
+    DLLIMPORT extern char **__cygwin_environ;
+    DLLIMPORT extern int cygwin_conv_to_win32_path(const char *, char *);
+    DLLIMPORT extern int cygwin_posix_to_win32_path_list_buf_size(char *value);
+    DLLIMPORT extern void cygwin_posix_to_win32_path_list(char *buf, char *value);
+    MODULE_SCOPE int TclOSstat(const char *name, Tcl_StatBuf *statBuf);
+    MODULE_SCOPE int TclOSlstat(const char *name, Tcl_StatBuf *statBuf);
+#elif defined(HAVE_STRUCT_STAT64)
 #   define TclOSstat		stat64
 #   define TclOSlstat		lstat64
 #else
@@ -96,7 +128,9 @@ typedef off_t		Tcl_SeekOffset;
 #ifdef HAVE_SYS_SELECT_H
 #   include <sys/select.h>
 #endif
-#include <sys/stat.h>
+#ifdef HAVE_SYS_STAT_H
+#   include <sys/stat.h>
+#endif
 #if TIME_WITH_SYS_TIME
 #   include <sys/time.h>
 #   include <time.h>
@@ -663,7 +697,6 @@ typedef int socklen_t;
  *---------------------------------------------------------------------------
  */
 
-#define TclpGetPid(pid)		((unsigned long) (pid))
 #define TclpReleaseFile(file)	/* Nothing. */
 
 /*

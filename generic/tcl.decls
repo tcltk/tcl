@@ -774,10 +774,10 @@ declare 216 {
 declare 217 {
     void Tcl_ResetResult(Tcl_Interp *interp)
 }
-declare 218 generic {
+declare 218 {
     int Tcl_ScanElement(const char *src, int *flagPtr)
 }
-declare 219 generic {
+declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
 # Obsolete
@@ -2311,7 +2311,7 @@ declare 627 {
 		     Tcl_LoadHandle *handlePtr)
 }
 declare 628 {
-    void* Tcl_FindSymbol(Tcl_Interp *interp, Tcl_LoadHandle handle,
+    void *Tcl_FindSymbol(Tcl_Interp *interp, Tcl_LoadHandle handle,
 			 const char *symbol)
 }
 declare 629 {
@@ -2346,12 +2346,12 @@ declare 1 win {
 ################################
 # Mac OS X specific functions
 
-declare 0 macosx {
+declare 0 {unix macosx} {
     int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, int hasResourceFile,
 	    int maxPathLen, char *libraryPath)
 }
-declare 1 macosx {
+declare 1 {unix macosx} {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, int maxPathLen, char *libraryPath)

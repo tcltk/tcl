@@ -1470,6 +1470,57 @@ test dict-22.23 {dict with: compiled} {
 	return $a,$b
     }}
 } 1,2
+
+proc linenumber {} {
+    dict get [info frame -1] line
+}
+test dict-23.1 {dict compilation crash: Bug 3487626} {
+    apply {n {
+	set e {}
+	set k {}
+	dict for {a b} {c {d {e {f g}}}} {
+	    ::tcl::dict::for {h i} $b {
+		dict update i e j {
+		    ::tcl::dict::update j f k {
+			return [expr {$n - [linenumber]}]
+		    }
+		}
+	    }
+	}
+    }} [linenumber]
+} 5
+test dict-23.2 {dict compilation crash: Bug 3487626} knownBug {
+    # Something isn't quite right in line number and continuation line
+    # tracking; at time of writing, this test produces 7, not 5, which
+    # indicates that the extra newlines in the non-script argument are
+    # confusing things.
+    apply {n {
+	set e {}
+	set k {}
+	dict for {a {
+b
+}} {c {d {e {f g}}}} {
+	    ::tcl::dict::for {h {
+i
+}} ${
+b
+} {
+		dict update {
+i
+} e {
+j
+} {
+		    ::tcl::dict::update {
+j
+} f k {
+			return [expr {$n - [linenumber]}]
+		    }
+		}
+	    }
+	}
+    }} [linenumber]
+} 5
+rename linenumber {}
 
 # cleanup
 ::tcltest::cleanupTests

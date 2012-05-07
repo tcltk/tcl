@@ -24,6 +24,8 @@
 #define SOCK_CHAN_LENGTH 4 + sizeof(void*) * 2 + 1
 #define SOCK_TEMPLATE "sock%lx"
 
+#undef SOCKET /* Possible conflict with win32 SOCKET */
+
 /*
  * This is needed to comply with the strict aliasing rules of GCC, but it also
  * simplifies casting between the different sockaddr types.
@@ -1030,7 +1032,8 @@ CreateClientSocket(
                 state->status = status;
             }
 	    if (status == 0) {
-                goto out;
+		CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
+		goto out;
 	    }
 	}
     }
@@ -1041,7 +1044,6 @@ out:
         /*
          * An asynchonous connection has finally succeeded or failed.
          */
-        CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
         TcpWatchProc(state, state->filehandlers);
         TclUnixSetBlockingMode(state->fds.fd, state->cachedBlocking);
 
@@ -1252,13 +1254,25 @@ Tcl_OpenTcpServer(
     const char *errorMsg = NULL;
     TcpFdList *fds = NULL, *newfds;
 
+    /*
+     * Try to record and return the most meaningful error message, i.e. the
+     * one from the first socket that went the farthest before it failed.
+     */
+    enum { START, SOCKET, BIND, LISTEN } howfar = START;
+    int my_errno = 0;
+
     if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1, &errorMsg)) {
 	goto error;
     }
 
     for (addrPtr = addrlist; addrPtr != NULL; addrPtr = addrPtr->ai_next) {
-	sock = socket(addrPtr->ai_family, SOCK_STREAM, 0);
+	sock = socket(addrPtr->ai_family, addrPtr->ai_socktype,
+                      addrPtr->ai_protocol);
 	if (sock == -1) {
+	    if (howfar < SOCKET) {
+		howfar = SOCKET;
+		my_errno = errno;
+	    }
 	    continue;
 	}
 	
@@ -1308,6 +1322,10 @@ Tcl_OpenTcpServer(
 
 	status = bind(sock, addrPtr->ai_addr, addrPtr->ai_addrlen);
         if (status == -1) {
+	    if (howfar < BIND) {
+		howfar = BIND;
+		my_errno = errno;
+	    }       
             close(sock);
             continue;
         }
@@ -1326,6 +1344,10 @@ Tcl_OpenTcpServer(
         }
         status = listen(sock, SOMAXCONN);
         if (status < 0) {
+	    if (howfar < LISTEN) {
+		howfar = LISTEN;
+		my_errno = errno;
+	    }
             close(sock);
             continue;
         }
@@ -1367,6 +1389,7 @@ Tcl_OpenTcpServer(
 	return statePtr->channel;
     }
     if (interp != NULL) {
+	errno = my_errno;
 	Tcl_AppendResult(interp, "couldn't open socket: ",
 		Tcl_PosixError(interp), NULL);
 	if (errorMsg != NULL) {

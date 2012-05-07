@@ -1776,17 +1776,20 @@ test socket-14.1 {[socket -async] fileevent while still connecting} \
 test socket-14.2 {[socket -async] fileevent connection refused} \
     -constraints [list socket supported_any] \
     -body {
-        set client [socket -async localhost [randport]]
-        fileevent $client writable {set x [fconfigure $client -error]}
-        set after [after 1000 {set x timeout}]
-        vwait x
-        if {$x eq "timeout"} {
-            append x ": [fconfigure $client -error]"
-        }
+        if {[catch {socket -async localhost [randport]} client]} {
+	    regexp {[^:]*: (.*)} $client -> x
+	} else {
+            fileevent $client writable {set x [fconfigure $client -error]}
+            set after [after 1000 {set x timeout}]
+            vwait x
+	    after cancel $after
+            if {$x eq "timeout"} {
+                append x ": [fconfigure $client -error]"
+            }
+	    close $client
+	}
         set x
     } -cleanup {
-        after cancel $after
-        close $client
         unset x
     } -result "connection refused"
 test socket-14.3 {[socket -async] when server only listens on IPv6} \

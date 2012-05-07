@@ -107,7 +107,12 @@ with the value of \fIcode\fR.  The \fB(Tcl_Obj *)\fR returned
 by \fBTcl_GetReturnOptions\fR points to an unshared
 \fBTcl_Obj\fR with reference count of zero.  The dictionary
 may be written to, either adding, removing, or overwriting
-any entries in it, with the need to check for a shared object.
+any entries in it, without the need to check for a shared object.
+As with any \fBTcl_Obj\fR with reference count of zero, it is up to
+the caller to arrange for its disposal with \fBTcl_DecrRefCount\fR or
+to a reference to it via \fBTcl_IncrRefCount\fR (or one of the many
+functions that call that, notably including \fBTcl_SetObjResult\fR and
+\fBTcl_SetVar2Ex\fR).
 .PP
 A typical usage for \fBTcl_GetReturnOptions\fR is to
 retrieve the stack trace when script evaluation returns
@@ -123,6 +128,7 @@ if (code == TCL_ERROR) {
     Tcl_DictObjGet(NULL, options, key, &stackTrace);
     Tcl_DecrRefCount(key);
     /* Do something with stackTrace */
+    Tcl_DecrRefCount(options);
 }
 .CE
 .PP

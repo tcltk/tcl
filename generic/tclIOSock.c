@@ -87,30 +87,29 @@ TclSockGetPort(
  *----------------------------------------------------------------------
  */
 
-#ifdef _WIN32
-#   define PTR2SOCK(a) (SOCKET)a
-#else
-#   define PTR2SOCK(a) PTR2INT(a)
+#if !defined(_WIN32) && !defined(__CYGWIN__)
+#   define SOCKET int
 #endif
+
 int
 TclSockMinimumBuffers(
-    ClientData sock,			/* Socket file descriptor */
+    void *sock,			/* Socket file descriptor */
     int size)			/* Minimum buffer size */
 {
     int current;
     socklen_t len;
 
     len = sizeof(int);
-    getsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_SNDBUF, (char *)&current, &len);
+    getsockopt((SOCKET)sock, SOL_SOCKET, SO_SNDBUF, (char *)&current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_SNDBUF, (char *)&size, len);
+	setsockopt((SOCKET)sock, SOL_SOCKET, SO_SNDBUF, (char *)&size, len);
     }
     len = sizeof(int);
-    getsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_RCVBUF, (char *)&current, &len);
+    getsockopt((SOCKET)sock, SOL_SOCKET, SO_RCVBUF, (char *)&current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_RCVBUF, (char *)&size, len);
+	setsockopt((SOCKET)sock, SOL_SOCKET, SO_RCVBUF, (char *)&size, len);
     }
     return TCL_OK;
 }
@@ -178,6 +177,7 @@ TclCreateSocketAddress(
     }
 
     hints.ai_socktype = SOCK_STREAM;
+
 #if 0
     /*
      * We found some problems when using AI_ADDRCONFIG, e.g. on systems that
@@ -185,15 +185,16 @@ TclCreateSocketAddress(
      * localhost. See bugs 3385024, 3382419, 3382431. As the advantage of
      * using AI_ADDRCONFIG in situations where it works, is probably low,
      * we'll leave it out for now. After all, it is just an optimisation.
-     */
-#if defined(AI_ADDRCONFIG) && !defined(_AIX) && !defined(__hpux)
-    /*
+     *
      * Missing on: OpenBSD, NetBSD.
      * Causes failure when used on AIX 5.1 and HP-UX
      */
+
+#if defined(AI_ADDRCONFIG) && !defined(_AIX) && !defined(__hpux)
     hints.ai_flags |= AI_ADDRCONFIG;
-#endif
-#endif
+#endif /* AI_ADDRCONFIG && !_AIX && !__hpux */
+#endif /* 0 */
+
     if (willBind) {
 	hints.ai_flags |= AI_PASSIVE;
     } 

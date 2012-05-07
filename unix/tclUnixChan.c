@@ -981,7 +981,7 @@ TtyGetOptionProc(
 #   define TtyGetBaud(speed)	((int) (speed))
 #else /* !DIRECT_BAUD */
 
-static struct {int baud; unsigned long speed;} speeds[] = {
+static const struct {int baud; unsigned long speed;} speeds[] = {
 #ifdef B0
     {0, B0},
 #endif

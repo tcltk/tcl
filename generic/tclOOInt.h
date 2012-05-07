@@ -214,6 +214,8 @@ typedef struct Object {
 				 * class of classes, and should be treated
 				 * specially during teardown (and in a few
 				 * other spots). */
+#define FORCE_UNKNOWN 0x10000	/* States that we are *really* looking up the
+				 * unknown method handler at that point. */
 
 /*
  * And the definition of a class. Note that every class also has an associated
@@ -318,6 +320,8 @@ typedef struct Foundation {
 				 * constructor. */
     Tcl_Obj *destructorName;	/* Shared object containing the "name" of a
 				 * destructor. */
+    Tcl_Obj *clonedName;	/* Shared object containing the name of a
+				 * "<cloned>" pseudo-constructor. */
 } Foundation;
 
 /*
@@ -377,21 +381,6 @@ typedef struct CallContext {
 #define DESTRUCTOR	  0x10	/* This is a destructor. */
 
 /*
- * Assorted flags for call frames. Note that bits 1 and 2 are already taken by
- * Tcl itself.
- */
-
-#if 0
-#define FRAME_IS_METHOD	0x4	/* The frame is a method body, and the frame's
-				 * clientData field contains a CallContext
-				 * reference. */
-#define FRAME_IS_OO_DEFINE 0x8	/* The frame is part of the inside workings of
-				 * the [oo::define] command; the clientData
-				 * field contains an Object reference that has
-				 * been confirmed to refer to a class. */
-#endif
-
-/*
  * Structure containing definition information about basic class methods.
  */
 
@@ -426,28 +415,16 @@ MODULE_SCOPE int	TclOODefineDestructorObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOODefineExportObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineFilterObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineForwardObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineMethodObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineMixinObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, const int objc,
-			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineRenameMethodObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineSuperclassObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineUnexportObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineVariablesObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineClassObjCmd(ClientData clientData,
@@ -514,6 +491,7 @@ MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    const char *nsNameStr, int objc,
 			    Tcl_Obj *const *objv, int skip,
 			    Tcl_Object *objectPtr);
+MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
 MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
