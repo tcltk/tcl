@@ -83,7 +83,6 @@ typedef off_t		Tcl_SeekOffset;
 #   define HINSTANCE void *
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
-    typedef char TCHAR;
     DLLIMPORT extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
     DLLIMPORT extern __stdcall int GetModuleFileNameW(void *, const char *, int);
     DLLIMPORT extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
@@ -627,8 +626,8 @@ typedef int socklen_t;
 #define TclpExit		exit
 
 #ifdef TCL_THREADS
-EXTERN struct tm *     	TclpLocaltime(CONST time_t *);
-EXTERN struct tm *     	TclpGmtime(CONST time_t *);
+EXTERN struct tm *TclpLocaltime(CONST time_t *);
+EXTERN struct tm *TclpGmtime(CONST time_t *);
 /* #define localtime(x)	TclpLocaltime(x)
  * #define gmtime(x)	TclpGmtime(x)    */
 #   undef inet_ntoa
