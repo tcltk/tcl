@@ -1,3 +1,8 @@
+2012-04-28  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c: Properly close nonblocking channels even when
+	not flushing them.
+
 2012-05-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* compat/zlib/*:      Upgrade to zlib 1.2.7 (pre-built dll is still 1.2.5,

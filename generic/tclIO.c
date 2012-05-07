@@ -428,14 +428,15 @@ TclFinalizeIOSubsystem(void)
 		statePtr = statePtr->nextCSPtr) {
 	    chanPtr = statePtr->topChanPtr;
 	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED | CHANNEL_DEAD)
-                || (doflushnb && GotFlag(statePtr, BG_FLUSH_SCHEDULED))) {
+                || GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+                ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		active = 1;
 		break;
 	    }
 	}
 
 	/*
-	 * We've found a live channel. Close it.
+	 * We've found a live (or bg-closing) channel. Close it.
 	 */
 
 	if (active) {
@@ -479,7 +480,6 @@ TclFinalizeIOSubsystem(void)
 		 * The refcount is greater than zero, so flush the channel.
 		 */
 
-                ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		Tcl_Flush((Tcl_Channel) chanPtr);
 
 		/*
