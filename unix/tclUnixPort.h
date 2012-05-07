@@ -88,7 +88,6 @@ typedef off_t		Tcl_SeekOffset;
 #   define HINSTANCE void *
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
-    typedef char TCHAR;
     typedef unsigned short WCHAR;
     DLLIMPORT extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
     DLLIMPORT extern __stdcall int GetModuleFileNameW(void *, const char *, int);
