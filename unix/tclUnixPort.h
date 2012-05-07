@@ -83,7 +83,6 @@ typedef off_t		Tcl_SeekOffset;
 #   define HINSTANCE void *
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
-    typedef char TCHAR;
     DLLIMPORT extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
     DLLIMPORT extern __stdcall int GetModuleFileNameW(void *, const char *, int);
     DLLIMPORT extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
@@ -709,10 +708,10 @@ EXTERN void	TclpMutexLock _ANSI_ARGS_((TclpMutex *mPtr));
 EXTERN void	TclpMutexUnlock _ANSI_ARGS_((TclpMutex *mPtr));
 EXTERN Tcl_DirEntry * 	TclpReaddir(DIR *);
 #ifndef TclpLocaltime
-EXTERN struct tm *     	TclpLocaltime(TclpTime_t_CONST);
+EXTERN struct tm *TclpLocaltime(TclpTime_t_CONST);
 #endif
 #ifndef TclpGmtime
-EXTERN struct tm *     	TclpGmtime(TclpTime_t_CONST);
+EXTERN struct tm *TclpGmtime(TclpTime_t_CONST);
 #endif
 #define inet_ntoa(x)	TclpInetNtoa(x)
 #else
