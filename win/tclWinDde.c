@@ -550,7 +550,7 @@ DdeServerProc (
 	    }
 
 	    if (convPtr != NULL) {
-		BYTE *returnString;
+		char *returnString;
 
 		len = DdeQueryString(ddeInstance, ddeItem, NULL, 0,
 			CP_WINANSI);
@@ -561,19 +561,25 @@ DdeServerProc (
                         (DWORD) len + 1, CP_WINANSI);
 		if (stricmp(utilString, "$TCLEVAL$EXECUTE$RESULT") == 0) {
 		    returnString =
-		        (BYTE *)Tcl_GetStringFromObj(convPtr->returnPackagePtr, &len);
+		        Tcl_GetStringFromObj(convPtr->returnPackagePtr, &len);
+		    Tcl_DStringInit (&dString);
+		    returnString =
+			   Tcl_UtfToExternalDString (NULL, returnString, -1, &dString);
 		    ddeReturn = DdeCreateDataHandle(ddeInstance,
-			    returnString, (DWORD) len+1, 0, ddeItem, CF_TEXT,
+		    		(BYTE *)returnString, (DWORD) len+1, 0, ddeItem, CF_TEXT,
 			    0);
 		} else {
 		    Tcl_Obj *variableObjPtr = Tcl_GetVar2Ex(
 			    convPtr->riPtr->interp, utilString, NULL, 
 			    TCL_GLOBAL_ONLY);
 		    if (variableObjPtr != NULL) {
-			returnString = (BYTE *)Tcl_GetStringFromObj(variableObjPtr,
+			returnString = Tcl_GetStringFromObj(variableObjPtr,
 				&len);
+		    Tcl_DStringInit (&dString);
+		    returnString =
+			    Tcl_UtfToExternalDString (NULL, returnString, -1, &dString);
 			ddeReturn = DdeCreateDataHandle(ddeInstance,
-				returnString, (DWORD) len+1, 0, ddeItem,
+					(BYTE *)returnString, (DWORD) len+1, 0, ddeItem,
 				CF_TEXT, 0);
 		    } else {
 			ddeReturn = NULL;
