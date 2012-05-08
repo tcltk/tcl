@@ -216,13 +216,13 @@ test winDde-4.4 {DDE eval remotely} {stdio win dde} {
 
 test winDde-5.1 {check for bad arguments} -constraints {win dde} -body {
     dde execute "" "" "" ""
-} -returnCodes error -result {ambiguous option "": must be -async or -binary}
+} -returnCodes error -result {wrong # args: should be "dde execute ?-async? ?-binary? serviceName topicName value"}
 test winDde-5.2 {check for bad arguments} -constraints {win dde} -body {
     dde execute "" "" ""
 } -returnCodes error -result {cannot execute null data}
 test winDde-5.3 {check for bad arguments} -constraints {win dde} -body {
     dde execute -foo "" "" ""
-} -returnCodes error -result {bad option "-foo": must be -async or -binary}
+} -returnCodes error -result {wrong # args: should be "dde execute ?-async? ?-binary? serviceName topicName value"}
 test winDde-5.4 {DDE eval bad arguments} -constraints {win dde} -body {
     dde eval "" "foo"
 } -returnCodes error -result {invalid service name ""}
