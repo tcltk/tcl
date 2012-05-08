@@ -1253,9 +1253,9 @@ DdeObjCmd(
 	} else if (objc >= 6 && objc <= 7) {
 	    firstArg = objc - 3;
 	    for (i = 2; i < firstArg; i++) {
-		if (Tcl_GetIndexFromObj(interp, objv[2], ddeExecOptions,
+		if (Tcl_GetIndexFromObj(interp, objv[i], ddeExecOptions,
 			"option", 0, &argIndex) != TCL_OK) {
-		    return TCL_ERROR;
+		    goto wrongDdeExecuteArgs;
 		}
 		if (argIndex == DDE_EXEC_ASYNC) {
 		    async = 1;
@@ -1266,6 +1266,7 @@ DdeObjCmd(
 	    break;
 	}
 	/* otherwise... */
+    wrongDdeExecuteArgs:
 	Tcl_WrongNumArgs(interp, 2, objv,
 		"?-async? ?-binary? serviceName topicName value");
 	return TCL_ERROR;
