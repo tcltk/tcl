@@ -1253,7 +1253,7 @@ DdeObjCmd(
 	} else if (objc >= 6 && objc <= 7) {
 	    firstArg = objc - 3;
 	    for (i = 2; i < firstArg; i++) {
-		if (Tcl_GetIndexFromObj(NULL, objv[2], ddeExecOptions,
+		if (Tcl_GetIndexFromObj(interp, objv[2], ddeExecOptions,
 			"option", 0, &argIndex) != TCL_OK) {
 		    return TCL_ERROR;
 		}
