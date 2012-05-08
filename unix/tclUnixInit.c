@@ -454,8 +454,7 @@ TclpInitLibraryPath(
 	 * If TCL_LIBRARY is set, search there.
 	 */
 
-	objPtr = Tcl_NewStringObj(str, -1);
-	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(str, -1));
 
 	Tcl_SplitPath(str, &pathc, &pathv);
 	if ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc-1]) != 0)) {
@@ -469,9 +468,7 @@ TclpInitLibraryPath(
 
 	    pathv[pathc - 1] = installLib + 4;
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
-	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
-	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	    Tcl_DStringFree(&ds);
+	    Tcl_ListObjAppendElement(NULL, pathPtr, TclDStringToObj(&ds));
 	}
 	ckfree(pathv);
     }

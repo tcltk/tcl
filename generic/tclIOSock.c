@@ -87,8 +87,8 @@ TclSockGetPort(
  *----------------------------------------------------------------------
  */
 
-#ifndef _WIN32
-#   define SOCKET size_t
+#if !defined(_WIN32) && !defined(__CYGWIN__)
+#   define SOCKET int
 #endif
 
 int

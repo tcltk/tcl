@@ -1,3 +1,91 @@
+2012-04-28  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c: Properly close nonblocking channels even when
+	not flushing them.
+
+2012-05-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/zlib/*:      Upgrade to zlib 1.2.7 (pre-built dll is still 1.2.5,
+	will be upgraded as soon as the official build is available)
+
+2012-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/socket.test:	[Bug 3428754] Test socket-14.2 tolerate
+	[socket -async] connection that connects synchronously.
+
+	* unix/tclUnixSock.c:	[Bug 3428753] Fix [socket -async] connections
+	that manage to connect synchronously.
+
+2012-05-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/configure.in:    Better detection and implementation for cpuid
+	* generic/configure:       instruction on Intel-derived processors, both
+	* generic/tclUnixCompat.c: 32-bit and 64-bit.
+	* generic/tclTest.c:       Move cpuid testcase from win-specific to generic
+	* win/tclWinTest.c:        tests, as it should work on all Intel-related
+	* tests/platform.test:     platforms now
+
+2012-04-30  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* tests/ioCmd.test: Tame deadlocks in broken refchan tests [Bug 3522560]
+
+2012-04-28  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	IMPLEMENTATION OF TIP#398
+
+	* generic/tclIO.c: Quickly Exit with Non-Blocking Blocked Channels
+	* tests/io.test  : *** POTENTIAL INCOMPATIBILITY ***
+	* doc/close.n    : (compat flag available)
+
+2012-04-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPort.h:    Move CYGWIN-specific stuff from tclPort.h to
+	* generic/tclEnv.c:     tclUnixPort.h, where it belongs.
+	* unix/tclUnixPort.h:
+	* unix/tclUnixFile.c:
+
+2012-04-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/init.tcl (auto_execok): Allow shell builtins to be detected
+	even if they are upper-cased.
+
+2012-04-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclStubInit.c:    get rid of _ANSI_ARGS_ and CONST
+	* generic/tclIO.c
+	* generic/tclIOCmd.c
+	* generic/tclTest.c
+	* unix/tclUnixChan.c
+
+2012-04-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclUtil.c (TclDStringToObj): Added internal function to make
+	the fairly-common operation of converting a DString into an Obj a more
+	efficient one; for long strings, it can just transfer the ownership of
+	the buffer directly. Replaces this:
+	   obj=Tcl_NewStringObj(Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
+	   Tcl_DStringFree(&ds);
+	with this:
+	   obj=TclDStringToObj(&ds);
+
+2012-04-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls:      [Bug 3508771] load tclreg.dll in cygwin tclsh
+	* generic/tclIntPlatDecls.h: Implement TclWinGetSockOpt, TclWinGetServByName
+	* generic/tclStubInit.c:     and TclWinCPUID for Cygwin
+	* generic/tclUnixCompat.c:
+	* unix/configure.in:
+	* unix/configure:
+	* unix/tclUnixCompat.c:
+
+2012-04-18  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/America/Port-au-Prince:
+	* library/tzdata/Asia/Damascus:
+	* library/tzdata/Asia/Gaza:
+	* library/tzdata/Asia/Hebron: tzdata2012c
+
 2012-04-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/FileSystem.3 (Tcl_FSOpenFileChannelProc): [Bug 3518244]: Fixed

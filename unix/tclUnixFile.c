@@ -22,7 +22,8 @@ static int NativeMatchType(Tcl_Interp *interp, const char* nativeEntry,
  * TclpFindExecutable --
  *
  *	This function computes the absolute path name of the current
- *	application, given its argv[0] value.
+ *	application, given its argv[0] value. For Cygwin, argv[0] is
+ *	ignored and the path is determined the same as under win32.
  *
  * Results:
  *	None.
@@ -38,10 +39,26 @@ TclpFindExecutable(
     const char *argv0)		/* The value of the application's argv[0]
 				 * (native). */
 {
+    Tcl_Encoding encoding;
+#ifdef __CYGWIN__
+    int length;
+    char buf[PATH_MAX * TCL_UTF_MAX + 1];
+    char name[PATH_MAX * TCL_UTF_MAX + 1];
+    GetModuleFileNameW(NULL, name, PATH_MAX);
+    WideCharToMultiByte(CP_UTF8, 0, name, -1, buf, PATH_MAX, NULL, NULL);
+    cygwin_conv_to_full_posix_path(buf, name);
+    length = strlen(name);
+    if ((length > 4) && !strcasecmp(name + length - 4, ".exe")) {
+	/* Strip '.exe' part. */
+	length -= 4;
+    }
+	encoding = Tcl_GetEncoding(NULL, NULL);
+	TclSetObjNameOfExecutable(
+		Tcl_NewStringObj(name, length), encoding);
+#else
     const char *name, *p;
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;
-    Tcl_Encoding encoding;
 
     if (argv0 == NULL) {
 	return;
@@ -174,6 +191,7 @@ TclpFindExecutable(
 
   done:
     Tcl_DStringFree(&buffer);
+#endif
 }
 
 /*
@@ -974,12 +992,8 @@ TclpObjLink(
 	}
 
 	Tcl_ExternalToUtfDString(NULL, link, length, &ds);
-	linkPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
-		Tcl_DStringLength(&ds));
-	Tcl_DStringFree(&ds);
-	if (linkPtr != NULL) {
-	    Tcl_IncrRefCount(linkPtr);
-	}
+	linkPtr = TclDStringToObj(&ds);
+	Tcl_IncrRefCount(linkPtr);
 	return linkPtr;
     }
 }
@@ -1041,19 +1055,9 @@ TclpNativeToNormalized(
     ClientData clientData)
 {
     Tcl_DString ds;
-    Tcl_Obj *objPtr;
-    int len;
 
-    const char *copy;
-    Tcl_ExternalToUtfDString(NULL, (const char*)clientData, -1, &ds);
-
-    copy = Tcl_DStringValue(&ds);
-    len = Tcl_DStringLength(&ds);
-
-    objPtr = Tcl_NewStringObj(copy,len);
-    Tcl_DStringFree(&ds);
-
-    return objPtr;
+    Tcl_ExternalToUtfDString(NULL, (const char *) clientData, -1, &ds);
+    return TclDStringToObj(&ds);
 }
 
 /*

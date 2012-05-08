@@ -396,6 +396,19 @@ TclFinalizeIOSubsystem(void)
     Channel *chanPtr = NULL;	/* Iterates over open channels. */
     ChannelState *statePtr;	/* State of channel stack */
     int active = 1;		/* Flag == 1 while there's still work to do */
+    int doflushnb;
+
+    /* Fetch the pre-TIP#398 compatibility flag */ 
+    {
+        const char *s;
+        Tcl_DString ds;
+        
+        s = TclGetEnv("TCL_FLUSH_NONBLOCKING_ON_EXIT", &ds);
+        doflushnb = ((s != NULL) && strcmp(s, "0"));
+        if (s != NULL) {
+            Tcl_DStringFree(&ds);
+        }
+    }
 
     /*
      * Walk all channel state structures known to this thread and close
@@ -414,25 +427,34 @@ TclFinalizeIOSubsystem(void)
 		statePtr != NULL;
 		statePtr = statePtr->nextCSPtr) {
 	    chanPtr = statePtr->topChanPtr;
-            if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED | CHANNEL_DEAD)
+	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED | CHANNEL_DEAD)
                 || GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+                ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		active = 1;
 		break;
 	    }
 	}
 
 	/*
-	 * We've found a live channel. Close it.
+	 * We've found a live (or bg-closing) channel. Close it.
 	 */
 
 	if (active) {
-	    /*
-	     * Set the channel back into blocking mode to ensure that we wait
-	     * for all data to flush out.
-	     */
 
-	    (void) Tcl_SetChannelOption(NULL, (Tcl_Channel) chanPtr,
-		    "-blocking", "on");
+	    /*
+	     * TIP #398:  by default, we no  longer set the  channel back into
+             * blocking  mode.  To  restore  the old  blocking  behavior,  the
+             * environment variable  TCL_FLUSH_NONBLOCKING_ON_EXIT must be set
+             * and not be "0".
+	     */
+            if (doflushnb) {
+                    /* Set the channel back into blocking mode to ensure that we wait
+                     * for all data to flush out.
+                     */
+                
+                (void) Tcl_SetChannelOption(NULL, (Tcl_Channel) chanPtr,
+                                            "-blocking", "on");                    
+            }
 
 	    if ((chanPtr == (Channel *) tsdPtr->stdinChannel) ||
 		    (chanPtr == (Channel *) tsdPtr->stdoutChannel) ||
@@ -458,7 +480,6 @@ TclFinalizeIOSubsystem(void)
 		 * The refcount is greater than zero, so flush the channel.
 		 */
 
-                ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		Tcl_Flush((Tcl_Channel) chanPtr);
 
 		/*
@@ -8856,7 +8877,7 @@ Tcl_FileEventObjCmd(
     int modeIndex;		/* Index of mode argument. */
     int mask;
     static const char *const modeOptions[] = {"readable", "writable", NULL};
-    static int maskArray[] = {TCL_READABLE, TCL_WRITABLE};
+    static const int maskArray[] = {TCL_READABLE, TCL_WRITABLE};
 
     if ((objc != 3) && (objc != 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId event ?script?");
