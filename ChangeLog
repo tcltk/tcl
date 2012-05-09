@@ -1,6 +1,7 @@
-2012-05-09  Jan Nijtmans  <nijtmans@users.sf.net>
+2012-05-??  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinDde.c:    [Bug 473946]: special characters not correctly sent
+	* library/dde/pkgIndex.tcl  Increase version to 1.2.5
 
 2012-05-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
