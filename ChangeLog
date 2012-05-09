@@ -1,3 +1,11 @@
+2012-05-09  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/ioCmd.test [Bug 3522560]: Added a test which crashes the
+	core if it were not disabled as knownBug. For a reflected channel
+	transfered to a different thread the [chan postevent] run in the
+	handler thread tries to execute the owner threads's fileevent
+	scripts by itself, wrongly reaching across thread boundaries.
+
 2012-04-28  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclIO.c: Properly close nonblocking channels even when
