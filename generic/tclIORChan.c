@@ -934,7 +934,9 @@ TclChanPostEventObjCmd(
      * We have the channel and the events to post.
      */
 
-    {
+    if (rcPtr->owner == rcPtr->thread) {
+        Tcl_NotifyChannel (chan, events);
+    } else {
         ReflectEvent* ev = ckalloc (sizeof (ReflectEvent));
         ev->header.proc = ReflectEventRun;
         ev->events = events;
@@ -947,24 +949,21 @@ TclChanPostEventObjCmd(
          * event is run may generate a situation where the channel structure
          * is deleted but not our structure, crashing in
          * FreeReflectedChannel().
+         *
+         * Force creation of the RCM, for proper cleanup on thread teardown.
+         * The teardown of unprocessed events is currently coupled to the
+         * thread reflected channel map
          */
-
-        /* Force creation of the RCM, for proper cleanup on thread teardown */
-        /* The teardown of unprocessed events is currently coupled to the thread reflected channel map */
         (void) GetThreadReflectedChannelMap ();
 
-        if (rcPtr->owner == rcPtr->thread) {
-            Tcl_QueueEvent ((Tcl_Event*) ev, TCL_QUEUE_TAIL);
-        } else {
-            /* XXX Race condition !!
-             * XXX The destination thread may not exist anymore already.
-             * XXX (Delayed postevent executed after channel got removed).
-             * XXX Can we detect this ? (check the validity of the owner threadid ?)
-             * XXX Actually, in that case the channel should be dead also !
-             */
-            Tcl_ThreadQueueEvent (rcPtr->owner, (Tcl_Event*) ev, TCL_QUEUE_TAIL);
-            Tcl_ThreadAlert (rcPtr->owner);
-        }
+        /* XXX Race condition !!
+         * XXX The destination thread may not exist anymore already.
+         * XXX (Delayed postevent executed after channel got removed).
+         * XXX Can we detect this ? (check the validity of the owner threadid ?)
+         * XXX Actually, in that case the channel should be dead also !
+         */
+        Tcl_ThreadQueueEvent (rcPtr->owner, (Tcl_Event*) ev, TCL_QUEUE_TAIL);
+        Tcl_ThreadAlert (rcPtr->owner);
     }
 
     /*
