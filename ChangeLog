@@ -1,5 +1,11 @@
 2012-05-09  Andreas Kupries  <andreask@activestate.com>
 
+	* generic/tclIORChan.c [Bug 3522560]: Fixed the crash, enabled the
+	test case. Modified [chan postevent] to properly inject the
+	event(s) into the owner thread's event queue for execution in the
+	correct context. Renamed the ForwardOpTo...Thread() function to
+	match with our terminology.
+	
 	* tests/ioCmd.test [Bug 3522560]: Added a test which crashes the
 	core if it were not disabled as knownBug. For a reflected channel
 	transfered to a different thread the [chan postevent] run in the

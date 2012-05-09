@@ -8760,7 +8760,7 @@ CreateScriptRecord(
 
     /*
      * Initialize the structure before calling Tcl_CreateChannelHandler,
-     * because a reflected channel caling 'chan postevent' aka
+     * because a reflected channel calling 'chan postevent' aka
      * 'Tcl_NotifyChannel' in its 'watch'Proc will invoke
      * 'TclChannelEventScriptInvoker' immediately, and we do not wish it to
      * see uninitialized memory and crash. See [Bug 2918110].
