@@ -2617,7 +2617,7 @@ test iocmd.tf-24.16 {chan write, note the background flush setup by close due to
     -constraints {testchannel thread knownBug}
 
 test iocmd.tf-24.17.bug3522560 {postevent for transfered channel} \
-    -constraints {testchannel thread knownBug} -setup {
+    -constraints {testchannel thread} -setup {
     # This test exposes how the execution of postevent in the handler thread causes
     # a crash if we are not properly injecting the events into the owning thread instead.
     # With the injection the test will simply complete without crash.
