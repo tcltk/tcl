@@ -100,6 +100,27 @@ int Tcl_DdeObjCmd(ClientData clientData,	/* Used only for deletion */
 	Tcl_Obj *CONST objv[]);	/* The arguments */
 
 EXTERN int Dde_Init(Tcl_Interp *interp);
+
+/*
+ * The following structures allow us to select between the Unicode and ASCII
+ * interfaces at run time based on whether Unicode APIs are available.  The
+ * Unicode APIs are preferable because they will handle characters outside
+ * of the current code page.
+ */
+
+typedef struct DdeWinProcs {
+    int uFmt;
+} DdeWinProcs;
+
+static DdeWinProcs *ddeWinProcs;
+
+static DdeWinProcs asciiProcs = {
+    CF_TEXT
+};
+
+static DdeWinProcs unicodeProcs = {
+    CF_UNICODETEXT
+};
 
 /*
  *----------------------------------------------------------------------
@@ -123,6 +144,16 @@ Dde_Init(
 {
     if (!Tcl_InitStubs(interp, "8.0", 0)) {
 	return TCL_ERROR;
+    }
+    /*
+     * Determine if the unicode interfaces are available and select the
+     * appropriate dde function table.
+     */
+
+    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_NT) {
+	ddeWinProcs = &unicodeProcs;
+    } else {
+	ddeWinProcs = &asciiProcs;
     }
 
     Tcl_CreateObjCommand(interp, "dde", Tcl_DdeObjCmd, NULL, NULL);
@@ -537,7 +568,7 @@ DdeServerProc (
 	     * last execute.
 	     */
 
-	    if (uFmt != CF_TEXT) {
+	    if ((uFmt != CF_TEXT) && (uFmt != ddeWinProcs->uFmt)) {
 		return (HDDEDATA) FALSE;
 	    }
 
@@ -562,11 +593,14 @@ DdeServerProc (
 		if (stricmp(utilString, "$TCLEVAL$EXECUTE$RESULT") == 0) {
 		    returnString =
 		        Tcl_GetStringFromObj(convPtr->returnPackagePtr, &len);
-		    Tcl_DStringInit (&dString);
-		    returnString =
-			   Tcl_UtfToExternalDString (NULL, returnString, -1, &dString);
+		    if (uFmt == CF_UNICODETEXT) {
+			Tcl_DStringFree(&dString);
+			returnString =
+				Tcl_WinUtfToTChar(returnString, len, &dString);
+			len = Tcl_DStringLength(&dString) + 1;
+		    }
 		    ddeReturn = DdeCreateDataHandle(ddeInstance,
-		    		(BYTE *)returnString, (DWORD) len+1, 0, ddeItem, CF_TEXT,
+		    		(BYTE *)returnString, (DWORD) len+1, 0, ddeItem, uFmt,
 			    0);
 		} else {
 		    Tcl_Obj *variableObjPtr = Tcl_GetVar2Ex(
@@ -575,12 +609,15 @@ DdeServerProc (
 		    if (variableObjPtr != NULL) {
 			returnString = Tcl_GetStringFromObj(variableObjPtr,
 				&len);
-		    Tcl_DStringInit (&dString);
-		    returnString =
-			    Tcl_UtfToExternalDString (NULL, returnString, -1, &dString);
+			if (uFmt == CF_UNICODETEXT) {
+			    Tcl_DStringFree(&dString);
+			    returnString =
+				    Tcl_WinUtfToTChar(returnString, len, &dString);
+				    len = Tcl_DStringLength(&dString) + 1;
+			}
 			ddeReturn = DdeCreateDataHandle(ddeInstance,
-					(BYTE *)returnString, (DWORD) len+1, 0, ddeItem,
-				CF_TEXT, 0);
+				(BYTE *)returnString, (DWORD) len+1, 0, ddeItem,
+				uFmt, 0);
 		    } else {
 			ddeReturn = NULL;
 		    }
