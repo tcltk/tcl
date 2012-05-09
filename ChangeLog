@@ -1,3 +1,7 @@
+2012-05-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:    [Bug 473946]: special characters not correctly sent
+
 2012-05-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/configure.in:    Better detection and implementation for cpuid
