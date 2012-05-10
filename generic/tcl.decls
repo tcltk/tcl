@@ -2318,8 +2318,10 @@ declare 629 {
     int Tcl_FSUnloadFile(Tcl_Interp *interp, Tcl_LoadHandle handlePtr)
 }
 
+# TIP #400
 declare 630 {
-    void* Tcl_ZlibStreamGetZstreamp(Tcl_ZlibStream zshandle)
+    void Tcl_ZlibStreamSetCompressionDictionary(Tcl_ZlibStream zhandle,
+	    Tcl_Obj *compressionDictionaryObj)
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
