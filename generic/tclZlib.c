@@ -67,9 +67,14 @@ typedef struct {
     Tcl_Obj *compDictObj;	/* Byte-array object containing compression
 				 * dictionary (not dictObj!) to use if
 				 * necessary. */
+    int flags;			/* Miscellaneous flag bits. */
     GzipHeader *gzHeaderPtr;	/* If we've allocated a gzip header
 				 * structure. */
 } ZlibStreamHandle;
+
+#define DICT_TO_SET	0x1	/* If we need to set a compression dictionary
+				 * in the low-level engine at the next
+				 * opportunity. */
 
 /*
  * Structure used for stacked channel compression and decompression.
@@ -606,6 +611,7 @@ Tcl_ZlibStreamInit(
     zshPtr->currentInput = NULL;
     zshPtr->streamEnd = 0;
     zshPtr->compDictObj = NULL;
+    zshPtr->flags = 0;
     zshPtr->gzHeaderPtr = gzHeaderPtr;
     memset(&zshPtr->stream, 0, sizeof(z_stream));
 
@@ -974,22 +980,32 @@ Tcl_ZlibStreamChecksum(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ZlibStreamGetZstreamp --
+ * Tcl_ZlibStreamSetCompressionDictionary --
  *
- *	Return the z_streamp for the stream (though not typed as such, so as
- *	to avoid type interface poisoning).  Shouldn't be used to poke around
- *	excessively.
+ *	Sets the compression dictionary for a stream. This will be used as
+ *	appropriate for the next compression or decompression action performed
+ *	on the stream.
  *
  *----------------------------------------------------------------------
  */
 
-void *
-Tcl_ZlibStreamGetZstreamp(
-    Tcl_ZlibStream zshandle)
+void
+Tcl_ZlibStreamSetCompressionDictionary(
+    Tcl_ZlibStream zhandle,
+    Tcl_Obj *compressionDictionaryObj)
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
 
-    return &zshPtr->stream;
+    if (compressionDictionaryObj != NULL) {
+	Tcl_IncrRefCount(compressionDictionaryObj);
+	zshPtr->flags |= DICT_TO_SET;
+    } else {
+	zshPtr->flags &= ~DICT_TO_SET;
+    }
+    if (zshPtr->compDictObj != NULL) {
+	Tcl_DecrRefCount(zshPtr->compDictObj);
+    }
+    zshPtr->compDictObj = compressionDictionaryObj;
 }
 
 /*
@@ -1028,6 +1044,17 @@ Tcl_ZlibStreamPut(
 	zshPtr->stream.next_in = Tcl_GetByteArrayFromObj(data, &size);
 	zshPtr->stream.avail_in = size;
 
+	if (zshPtr->flags & DICT_TO_SET) {
+	    e = SetDeflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
+	    if (e != Z_OK) {
+		if (zshPtr->interp) {
+		    ConvertError(zshPtr->interp, e);
+		}
+		return TCL_ERROR;
+	    }
+	    zshPtr->flags &= ~DICT_TO_SET;
+	}
+
 	/*
 	 * Deflatebound doesn't seem to take various header sizes into
 	 * account, so we add 100 extra bytes.
@@ -1064,6 +1091,12 @@ Tcl_ZlibStreamPut(
 	    zshPtr->stream.next_out = (Bytef *) dataTmp;
 
 	    e = deflate(&zshPtr->stream, flush);
+	}
+	if (e != Z_OK) {
+	    if (zshPtr->interp) {
+		ConvertError(zshPtr->interp, e);
+	    }
+	    return TCL_ERROR;
 	}
 
 	/*
@@ -3345,11 +3378,15 @@ Tcl_ZlibAdler32(
     return 0;
 }
 
-void *
-Tcl_ZlibStreamGetZstreamp(
-    Tcl_ZlibStream zshandle)
+int
+Tcl_ZlibStreamSetCompressionDictionary(
+    Tcl_Interp *interp,
+    Tcl_ZlibStream zhandle,
+    Tcl_Obj *compressionDictionaryObj)
 {
-    return NULL;
+    Tcl_SetResult(interp, "unimplemented", TCL_STATIC);
+    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    return TCL_ERROR;
 }
 #endif /* HAVE_ZLIB */
 

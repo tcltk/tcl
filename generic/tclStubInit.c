@@ -1340,7 +1340,7 @@ const TclStubs tclStubs = {
     Tcl_LoadFile, /* 627 */
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */
-    Tcl_ZlibStreamGetZstreamp, /* 630 */
+    Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
 };
 
 /* !END!: Do not edit above this line. */
