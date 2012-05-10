@@ -1,3 +1,9 @@
+2012-05-10  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* {win,unix}/configure{,.in} [Bug 2812981]: Clean up bundled
+	packages' build directory from within Tcl's ./configure, to avoid
+	stale configuration.
+
 2012-05-09  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c [Bug 3522560]: Fixed the crash, enabled the
