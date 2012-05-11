@@ -88,7 +88,7 @@ static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION		"1.3.3"
+#define TCL_DDE_VERSION		"1.4.0"
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	TEXT("TclEval")
 #define TCL_DDE_EXECUTE_RESULT	TEXT("$TCLEVAL$EXECUTE$RESULT")
@@ -1395,9 +1395,10 @@ DdeObjCmd(
 	} else {
 	    dataString = (BYTE *)
 		    Tcl_GetStringFromObj(objv[firstArg + 2], &dataLength);
+	    dataLength += 1;
 	}
 
-	if (dataLength == 0) {
+	if (dataLength <= (binary ? 0 : sizeof(TCHAR))) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("cannot execute null data", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", NULL);
@@ -1415,7 +1416,7 @@ DdeObjCmd(
 	}
 
 	ddeData = DdeCreateDataHandle(ddeInstance, dataString,
-		(DWORD) dataLength+1, 0, 0, CF_TEXT, 0);
+		(DWORD) dataLength, 0, 0, CF_TEXT, 0);
 	if (ddeData != NULL) {
 	    if (async) {
 		DdeClientTransaction((LPBYTE) ddeData, 0xFFFFFFFF, hConv, 0,
@@ -1504,6 +1505,7 @@ DdeObjCmd(
 	} else {
 	    dataString = (BYTE *)
 		    Tcl_GetStringFromObj(objv[firstArg + 3], &length);
+	    length += 1;
 	}
 
 	hConv = DdeConnect(ddeInstance, ddeService, ddeTopic, NULL);
@@ -1517,7 +1519,7 @@ DdeObjCmd(
 	    ddeItem = DdeCreateStringHandle(ddeInstance, (void *) itemString,
 		    CP_WINUNICODE);
 	    if (ddeItem != NULL) {
-		ddeData = DdeClientTransaction(dataString, (DWORD) length+1,
+		ddeData = DdeClientTransaction(dataString, (DWORD) length,
 			hConv, ddeItem, CF_TEXT, XTYP_POKE, 5000, NULL);
 		if (ddeData == NULL) {
 		    SetDdeError(interp);
