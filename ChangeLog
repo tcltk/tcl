@@ -1,3 +1,33 @@
+2012-05-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:    [Bug 473946]: special characters not correctly sent
+	* library/dde/pkgIndex.tcl  Increase version to 1.3.3
+
+2012-05-10  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* {win,unix}/configure{,.in} [Bug 2812981]: Clean up bundled
+	packages' build directory from within Tcl's ./configure, to avoid
+	stale configuration.
+
+2012-05-09  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORChan.c [Bug 3522560]: Fixed the crash, enabled the
+	test case. Modified [chan postevent] to properly inject the
+	event(s) into the owner thread's event queue for execution in the
+	correct context. Renamed the ForwardOpTo...Thread() function to
+	match with our terminology.
+	
+	* tests/ioCmd.test [Bug 3522560]: Added a test which crashes the
+	core if it were not disabled as knownBug. For a reflected channel
+	transfered to a different thread the [chan postevent] run in the
+	handler thread tries to execute the owner threads's fileevent
+	scripts by itself, wrongly reaching across thread boundaries.
+
+2012-04-28  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c: Properly close nonblocking channels even when
+	not flushing them.
+
 2012-05-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* compat/zlib/*:      Upgrade to zlib 1.2.7 (pre-built dll is still 1.2.5,
