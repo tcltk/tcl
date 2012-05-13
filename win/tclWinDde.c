@@ -775,7 +775,10 @@ DdeServerProc(
 
 	utilString = (char *) DdeAccessData(hData, &dlen);
 	len = dlen;
-	ddeObjectPtr = Tcl_NewStringObj(utilString, -1);
+	if (len && !utilString[len-1]) {
+	    len--;
+	}
+	ddeObjectPtr = Tcl_NewStringObj(utilString, len);
 	Tcl_IncrRefCount(ddeObjectPtr);
 	DdeUnaccessData(hData);
 	if (convPtr->returnPackagePtr != NULL) {
@@ -1423,13 +1426,17 @@ DdeObjCmd(
 		    result = TCL_ERROR;
 		} else {
 		    DWORD tmp;
-		    const BYTE *dataString = DdeAccessData(ddeData, &tmp);
+		    const char *dataString = (const char *) DdeAccessData(ddeData, &tmp);
 
 		    if (binary) {
-			returnObjPtr = Tcl_NewByteArrayObj(dataString,
+			returnObjPtr = Tcl_NewByteArrayObj((BYTE *) dataString,
 				(int) tmp);
 		    } else {
-			returnObjPtr = Tcl_NewStringObj((char *)dataString, -1);
+			if (tmp && !dataString[tmp-1]) {
+			    --tmp;
+			}
+			returnObjPtr = Tcl_NewStringObj(dataString,
+				(int) tmp);
 		    }
 		    DdeUnaccessData(ddeData);
 		    DdeFreeDataHandle(ddeData);
