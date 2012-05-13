@@ -1,3 +1,8 @@
+2012-05-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:   Protect against receiving strings without ending \0,
+	as external applications (or Tcl with TIP #106) could generate that.
+
 2012-05-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinDde.c:    [Bug 473946]: special characters not correctly sent
