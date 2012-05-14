@@ -187,10 +187,6 @@ Tcl_WinTCharToUtf(
 	    string, len, dsPtr);
 }
 
-#define Tcl_MacOSXOpenBundleResources (int (*) _ANSI_ARGS_(( \
-		Tcl_Interp *, CONST char *, int, int, char *))) Tcl_WinUtfToTChar
-#define Tcl_MacOSXOpenVersionedBundleResources (int (*) _ANSI_ARGS_(( \
-		Tcl_Interp *, CONST char *, CONST char *, int, int, char *))) Tcl_WinTCharToUtf
 #define TclMacOSXGetFileAttribute (int (*) _ANSI_ARGS_((Tcl_Interp *,  \
 		int, Tcl_Obj *, Tcl_Obj **))) TclpCreateProcess
 #define TclMacOSXMatchType (int (*) _ANSI_ARGS_((Tcl_Interp *, CONST char *, \
@@ -560,11 +556,7 @@ TclIntPlatStubs tclIntPlatStubs = {
 TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
-    Tcl_MacOSXOpenBundleResources, /* 0 */
-    Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
-#endif /* UNIX */
-#ifdef __WIN32__
+#if defined(__WIN32__) || defined(__CYGWIN__)
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
 #endif /* __WIN32__ */
@@ -579,6 +571,10 @@ TclPlatStubs tclPlatStubs = {
     strncasecmp, /* 7 */
     strcasecmp, /* 8 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    Tcl_MacOSXOpenBundleResources, /* 0 */
+    Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
+#endif /* MAC_OSX_TCL */
 };
 
 static TclStubHooks tclStubHooks = {
