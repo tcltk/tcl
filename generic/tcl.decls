@@ -1493,7 +1493,6 @@ declare 420 {
 declare 421 {
     Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const char *key)
 }
-
 declare 422 {
     Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
 	    const char *key, int *newPtr)
@@ -1798,10 +1797,14 @@ declare 573 {
 
 ##############################################################################
 
-# Define the platform specific public Tcl interface.  These functions are
-# only available on the designated platform.
+# Define the platform specific public Tcl interface. These functions are only
+# available on the designated platform.
 
 interface tclPlat
+
+################################
+# Unix specific functions
+#   (none)
 
 ################################
 # Windows specific functions
@@ -1867,12 +1870,12 @@ declare 8 mac {
 ################################
 # Mac OS X specific functions
 
-declare 0 unix {
+declare 0 macosx {
     int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, int hasResourceFile,
 	    int maxPathLen, char *libraryPath)
 }
-declare 1 unix {
+declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, int maxPathLen, char *libraryPath)
