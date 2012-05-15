@@ -40,25 +40,7 @@
  * Exported function declarations:
  */
 
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
-#ifndef Tcl_MacOSXOpenBundleResources_TCL_DECLARED
-#define Tcl_MacOSXOpenBundleResources_TCL_DECLARED
-/* 0 */
-EXTERN int		Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
-				CONST char *bundleName, int hasResourceFile,
-				int maxPathLen, char *libraryPath);
-#endif
-#ifndef Tcl_MacOSXOpenVersionedBundleResources_TCL_DECLARED
-#define Tcl_MacOSXOpenVersionedBundleResources_TCL_DECLARED
-/* 1 */
-EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
-				Tcl_Interp *interp, CONST char *bundleName,
-				CONST char *bundleVersion,
-				int hasResourceFile, int maxPathLen,
-				char *libraryPath);
-#endif
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
 #ifndef Tcl_WinUtfToTChar_TCL_DECLARED
 #define Tcl_WinUtfToTChar_TCL_DECLARED
 /* 0 */
@@ -95,11 +77,7 @@ typedef struct TclPlatStubs {
     int magic;
     struct TclPlatStubHooks *hooks;
 
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
-    int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp *interp, CONST char *bundleName, int hasResourceFile, int maxPathLen, char *libraryPath); /* 0 */
-    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, CONST char *bundleName, CONST char *bundleVersion, int hasResourceFile, int maxPathLen, char *libraryPath); /* 1 */
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     TCHAR * (*tcl_WinUtfToTChar) (CONST char *str, int len, Tcl_DString *dsPtr); /* 0 */
     char * (*tcl_WinTCharToUtf) (CONST TCHAR *str, int len, Tcl_DString *dsPtr); /* 1 */
 #endif /* WIN */
@@ -123,17 +101,7 @@ extern TclPlatStubs *tclPlatStubsPtr;
  * Inline function declarations:
  */
 
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
-#ifndef Tcl_MacOSXOpenBundleResources
-#define Tcl_MacOSXOpenBundleResources \
-	(tclPlatStubsPtr->tcl_MacOSXOpenBundleResources) /* 0 */
-#endif
-#ifndef Tcl_MacOSXOpenVersionedBundleResources
-#define Tcl_MacOSXOpenVersionedBundleResources \
-	(tclPlatStubsPtr->tcl_MacOSXOpenVersionedBundleResources) /* 1 */
-#endif
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
 #ifndef Tcl_WinUtfToTChar
 #define Tcl_WinUtfToTChar \
 	(tclPlatStubsPtr->tcl_WinUtfToTChar) /* 0 */
