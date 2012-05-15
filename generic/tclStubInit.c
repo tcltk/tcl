@@ -187,10 +187,6 @@ Tcl_WinTCharToUtf(
 	    string, len, dsPtr);
 }
 
-#define Tcl_MacOSXOpenBundleResources (int (*) ( \
-		Tcl_Interp *, const char *, int, int, char *)) Tcl_WinUtfToTChar
-#define Tcl_MacOSXOpenVersionedBundleResources (int (*) ( \
-		Tcl_Interp *, const char *, const char *, int, int, char *)) Tcl_WinTCharToUtf
 #define TclMacOSXGetFileAttribute (int (*) (Tcl_Interp *,  \
 		int, Tcl_Obj *, Tcl_Obj **)) TclpCreateProcess
 #define TclMacOSXMatchType (int (*) (Tcl_Interp *, const char *, \
@@ -611,11 +607,7 @@ TclIntPlatStubs tclIntPlatStubs = {
 TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
-    Tcl_MacOSXOpenBundleResources, /* 0 */
-    Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
 #endif /* WIN */
