@@ -536,8 +536,8 @@ proc genStubs::makeSlot {name decl index} {
 	append text $rtype " *" $lfname "; /* $index */\n"
 	return $text
     }
-    if {[string range $rtype end-7 end] == "CALLBACK"} {
-	append text [string trim [string range $rtype 0 end-8]] " (CALLBACK *" $lfname ") "
+    if {[string range $rtype end-8 end] == "__stdcall"} {
+	append text [string trim [string range $rtype 0 end-9]] " (__stdcall *" $lfname ") "
     } else {
 	append text $rtype " (*" $lfname ") "
     }
