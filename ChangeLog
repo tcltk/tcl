@@ -1,3 +1,11 @@
+2012-05-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdAH.c (TclMakeFileCommandSafe): [Bug 3445787]: Improve
+	the compatibility of safe interpreters' version of 'file' with that of
+	unsafe interpreters.
+	* library/safe.tcl (::safe::InterpInit): Teach the safe-interp scripts
+	about how to expose 'file' properly.
+
 2012-05-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinDde.c:   Protect against receiving strings without ending \0,
@@ -21,7 +29,7 @@
 	event(s) into the owner thread's event queue for execution in the
 	correct context. Renamed the ForwardOpTo...Thread() function to
 	match with our terminology.
-	
+
 	* tests/ioCmd.test [Bug 3522560]: Added a test which crashes the
 	core if it were not disabled as knownBug. For a reflected channel
 	transfered to a different thread the [chan postevent] run in the
