@@ -1,3 +1,9 @@
+2012-05-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/expr.n: [Bug 3525462]: Corrected statement about what happens
+	when comparing "0y" and "0x12"; the previously documented behavior was
+	actually a subtle bug (now long-corrected).
+
 2012-05-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinDde.c:   Protect against receiving strings without ending \0,
