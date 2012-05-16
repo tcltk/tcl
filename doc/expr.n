@@ -364,6 +364,7 @@ returns \fB4.0\fR, not \fB4\fR.
 String values may be used as operands of the comparison operators,
 although the expression evaluator tries to do comparisons as integer
 or floating-point when it can,
+i.e., when all arguments to the operator allow numeric interpretations,
 .VS 8.4
 except in the case of the \fBeq\fR and \fBne\fR operators.
 .VE 8.4
@@ -374,11 +375,10 @@ a string using the C \fIsprintf\fR format specifier
 For example, the commands
 .CS
 \fBexpr {"0x03" > "2"}\fR
-\fBexpr {"0y" < "0x12"}\fR
+\fBexpr {"0y" > "0x12"}\fR
 .CE
 both return 1.  The first comparison is done using integer
-comparison, and the second is done using string comparison after
-the second operand is converted to the string \fB18\fR.
+comparison, and the second is done using string comparison.
 Because of Tcl's tendency to treat values as numbers whenever
 possible, it isn't generally a good idea to use operators like \fB==\fR
 when you really want string comparison and the values of the
