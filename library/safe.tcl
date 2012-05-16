@@ -465,8 +465,18 @@ proc ::safe::InterpInit {
     # This alias lets the slave have access to a subset of the 'file'
     # command functionality.
 
-    AliasSubset $slave file \
-	file  dir.* join root.* ext.* tail path.* split
+    ::interp expose $slave file
+    foreach subcommand {dirname extension rootname tail} {
+	::interp alias $slave ::tcl::file::$subcommand {} file $subcommand
+    }
+    foreach subcommand {
+	atime attributes copy delete executable exists isdirectory isfile
+	link lstat mtime mkdir nativename normalize owned readable readlink
+	rename size stat tempfile type volumes writable
+    } {
+	::interp alias $slave ::tcl::file::$subcommand {} \
+	    ::safe::BadSubcommand $slave file $subcommand
+    }
 
     # Subcommands of info
     foreach {subcommand alias} {
@@ -980,58 +990,33 @@ proc ::safe::DirInAccessPath {slave dir} {
     }
 }
 
-# This procedure enables access from a safe interpreter to only a subset
-# of the subcommands of a command:
+# This procedure is used to report an attempt to use an unsafe member of an
+# ensemble command.
 
-proc ::safe::Subset {slave command okpat args} {
-    set subcommand [lindex $args 0]
-    if {[regexp $okpat $subcommand]} {
-	return [$command {*}$args]
-    }
+proc ::safe::BadSubcommand {slave command subcommand args} {
     set msg "not allowed to invoke subcommand $subcommand of $command"
     Log $slave $msg
-    return -code error $msg
-}
-
-# This procedure installs an alias in a slave that invokes "safesubset" in
-# the master to execute allowed subcommands. It precomputes the pattern of
-# allowed subcommands; you can use wildcards in the pattern if you wish to
-# allow subcommand abbreviation.
-#
-# Syntax is: AliasSubset slave alias target subcommand1 subcommand2...
-
-proc ::safe::AliasSubset {slave alias target args} {
-    set pat "^([join $args |])\$"
-    ::interp alias $slave $alias {}\
-	[namespace current]::Subset $slave $target $pat
+    return -code error -errorcode {TCL SAFE SUBCOMMAND} $msg
 }
 
 # AliasEncoding is the target of the "encoding" alias in safe interpreters.
 
 proc ::safe::AliasEncoding {slave option args} {
-    # Careful; do not want empty option to get through to the [string equal]
-    if {[regexp {^(name.*|convert.*|)$} $option]} {
-	return [::interp invokehidden $slave encoding $option {*}$args]
-    }
-
-    if {[string equal -length [string length $option] $option "system"]} {
-	if {![llength $args]} {
-	    # passed all the tests , lets source it:
-	    try {
-		return [::interp invokehidden $slave encoding system]
-	    } on error msg {
-		Log $slave $msg
-		return -code error "script error"
-	    }
+    # Note that [encoding dirs] is not supported in safe slaves at all
+    set subcommands {convertfrom convertto names system}
+    try {
+	set option [tcl::prefix match -error [list -level 1 -errorcode \
+		[list TCL LOOKUP INDEX option $option]] $subcommands $option]
+	# Special case: [encoding system] ok, but [encoding system foo] not
+	if {$option eq "system" && [llength $args]} {
+	    return -code error -errorcode {TCL WRONGARGS} \
+		"wrong # args: should be \"encoding system\""
 	}
-	set msg "wrong # args: should be \"encoding system\""
-	set code {TCL WRONGARGS}
-    } else {
-	set msg "bad option \"$option\": must be convertfrom, convertto, names, or system"
-	set code [list TCL LOOKUP INDEX option $option]
+    } on error {msg options} {
+	Log $slave $msg
+	return -options $options $msg
     }
-    Log $slave $msg
-    return -code error -errorcode $code $msg
+    tailcall ::interp invokehidden $slave encoding $option {*}$args
 }
 
 # Various minor hiding of platform features. [Bug 2913625]
