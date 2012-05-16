@@ -94,7 +94,7 @@ test safe-3.2 {calling safe::interpCreate on trusted interp} -setup {
     lsort [a aliases]
 } -cleanup {
     safe::interpDelete a
-} -result {::tcl::info::nameofexecutable clock encoding exit file glob load source}
+} -result {::tcl::file::atime ::tcl::file::attributes ::tcl::file::copy ::tcl::file::delete ::tcl::file::dirname ::tcl::file::executable ::tcl::file::exists ::tcl::file::extension ::tcl::file::isdirectory ::tcl::file::isfile ::tcl::file::link ::tcl::file::lstat ::tcl::file::mkdir ::tcl::file::mtime ::tcl::file::nativename ::tcl::file::normalize ::tcl::file::owned ::tcl::file::readable ::tcl::file::readlink ::tcl::file::rename ::tcl::file::rootname ::tcl::file::size ::tcl::file::stat ::tcl::file::tail ::tcl::file::tempfile ::tcl::file::type ::tcl::file::volumes ::tcl::file::writable ::tcl::info::nameofexecutable clock encoding exit glob load source}
 test safe-3.3 {calling safe::interpCreate on trusted interp} -setup {
     catch {safe::interpDelete a}
 } -body {
@@ -556,7 +556,7 @@ test safe-13.1 {safe file ensemble does not surprise code} -setup {
     lappend result [catch {interp eval $i {file isdirectory .}} msg] $msg
 } -cleanup {
     interp delete $i
-} -result {1 {a b c} 1 {a b c} 1 {invalid command name "file"} 1 0 {a b c} 1 {invalid command name "::tcl::file::isdirectory"}}
+} -result {1 {a b c} 1 {a b c} 1 {invalid command name "file"} 1 0 {a b c} 1 {not allowed to invoke subcommand isdirectory of file}}
 
 set ::auto_path $saveAutoPath
 # cleanup
