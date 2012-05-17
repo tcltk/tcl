@@ -1230,7 +1230,7 @@ ReflectInput(
  *
  * ReflectOutput --
  *
- *	This function is invoked when data is writen to the channel.
+ *	This function is invoked when data is written to the channel.
  *
  * Results:
  *	The number of bytes actually written.
