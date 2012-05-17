@@ -17,6 +17,7 @@
 #include "tclInt.h"
 #ifdef HAVE_ZLIB
 #include <zlib.h>
+#include "tclIO.h"
 
 /*
  * Magic flags used with wbits fields to indicate that we're handling the gzip
@@ -90,6 +91,7 @@ typedef struct {
     GzipHeader outHeader;	/* Header to write to an output stream, when
 				 * compressing a gzip stream. */
     Tcl_TimerToken timer;	/* Timer used for keeping events fresh. */
+    Tcl_DString    result;      /* Buffer for decompression results */
 } ZlibChannelData;
 
 /*
@@ -119,6 +121,12 @@ typedef struct {
 #define TRANSFORM_FLUSH_DELAY	5
 
 /*
+ * Convenience macro to make some casts easier to use.
+ */
+
+#define UCHARP(x)	((unsigned char *) (x))
+
+/*
  * Prototypes for private procedures defined later in this file:
  */
 
@@ -146,6 +154,9 @@ static void		ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
 static void		ZlibTransformTimerKill(ZlibChannelData *cd);
 static void		ZlibTransformTimerRun(ClientData clientData);
 static void		ZlibTransformTimerSetup(ZlibChannelData *cd);
+
+static int		ResultCopy(Tcl_DString* r, unsigned char *buf, int toRead);
+static int		ResultGenerate(ZlibChannelData *cd, int n, int flush, int* errorCodePtr);
 
 /*
  * Type of zlib-based compressing and decompressing channels.
@@ -2320,6 +2331,8 @@ ZlibTransformClose(
      * Release all memory.
      */
 
+    Tcl_DStringFree (&cd->result);
+
     if (cd->inBuffer) {
 	ckfree(cd->inBuffer);
 	cd->inBuffer = NULL;
@@ -2342,77 +2355,130 @@ ZlibTransformInput(
     ZlibChannelData *cd = instanceData;
     Tcl_DriverInputProc *inProc =
 	    Tcl_ChannelInputProc(Tcl_GetChannelType(cd->parent));
-    int e, readBytes, flush = Z_NO_FLUSH;
+    int readBytes, gotBytes, copied;
 
     if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	return inProc(Tcl_GetChannelInstanceData(cd->parent), buf, toRead,
 		errorCodePtr);
     }
 
-    cd->inStream.next_out = (Bytef *) buf;
-    cd->inStream.avail_out = toRead;
-    if (cd->inStream.next_in == NULL) {
-	goto doReadFirst;
-    }
-    while (1) {
-	e = inflate(&cd->inStream, flush);
-	if ((e == Z_STREAM_END) || (e==Z_OK && cd->inStream.avail_out==0)) {
-	    return toRead - cd->inStream.avail_out;
+    gotBytes = 0;
+    while (toRead > 0) {
+	/*
+	 * Loop until the request is satisfied (or no data available from
+	 * below, possibly EOF).
+	 */
+
+	copied = ResultCopy(&cd->result, UCHARP(buf), toRead);
+	toRead -= copied;
+	buf += copied;
+	gotBytes += copied;
+
+	if (toRead == 0) {
+	    goto stop;
 	}
 
 	/*
-	 * Z_BUF_ERROR can be ignored as per http://www.zlib.net/zlib_how.html
+	 * The buffer is exhausted, but the caller wants even more. We now
+	 * have to go to the underlying channel, get more bytes and then
+	 * transform them for delivery. We may not get what we want (full EOF
+	 * or temporarily out of data).
 	 *
-	 * Just indicates that the zlib couldn't consume input/produce output,
-	 * and is fixed by supplying more input.
-	 */
-
-	if ((e != Z_OK) && (e != Z_BUF_ERROR)) {
-	    Tcl_Obj *errObj = Tcl_NewListObj(0, NULL);
-
-	    Tcl_ListObjAppendElement(NULL, errObj,
-		    Tcl_NewStringObj(cd->inStream.msg, -1));
-	    Tcl_SetChannelError(cd->parent, errObj);
-	    *errorCodePtr = EINVAL;
-	    return -1;
-	}
-
-	/*
-	 * Check if the inflate stopped early.
-	 */
-
-	if (cd->inStream.avail_in > 0) {
-	    continue;
-	}
-
-	/*
-	 * Emptied the buffer of data from the underlying channel. Get some
-	 * more.
-	 */
-
-    doReadFirst:
-	/*
-	 * Hack for Bug 2762041. Disable pre-reading of lots of input, read
-	 * only one character. This way the Z_END_OF_STREAM can be read
-	 * without triggering an EOF in the base channel. The higher input
-	 * loops in DoReadChars() would react to that by stopping, despite the
-	 * transform still having data which could be read.
+	 * Length (cd->result) == 0, toRead > 0 here.
 	 *
-	 * This is only a hack because other transforms may not be able to
-	 * work around the general problem in this way.
+	 * The zlib transform allows us to read at most one character from the
+	 * underlying channel to properly identify Z_STREAM_END without
+	 * reading over the border.
 	 */
 
 	readBytes = Tcl_ReadRaw(cd->parent, cd->inBuffer, 1);
+
 	if (readBytes < 0) {
+	    /*
+	     * Report errors to caller. The state of the seek system is
+	     * unchanged!
+	     */
+
+	    if ((Tcl_GetErrno() == EAGAIN) && (gotBytes > 0)) {
+		/*
+		 * EAGAIN is a special situation. If we had some data before
+		 * we report that instead of the request to re-try.
+		 */
+
+		goto stop;
+	    }
+
 	    *errorCodePtr = Tcl_GetErrno();
-	    return -1;
-	} else if (readBytes == 0) {
-	    flush = Z_SYNC_FLUSH;
+	    goto error;
 	}
 
-	cd->inStream.next_in = (Bytef *) cd->inBuffer;
-	cd->inStream.avail_in = readBytes;
-    }
+	if (readBytes == 0) {
+	    /*
+	     * Check wether we hit on EOF in 'parent' or not. If not
+	     * differentiate between blocking and non-blocking modes. In
+	     * non-blocking mode we ran temporarily out of data. Signal this
+	     * to the caller via EWOULDBLOCK and error return (-1). In the
+	     * other cases we simply return what we got and let the caller
+	     * wait for more. On the other hand, if we got an EOF we have to
+	     * convert and flush all waiting partial data.
+	     */
+
+	    if (!Tcl_Eof(cd->parent)) {
+		/*
+		 * The state of the seek system is unchanged!
+		 */
+
+		if ((gotBytes == 0) && (cd->flags & ASYNC)) {
+		    *errorCodePtr = EWOULDBLOCK;
+		    goto error;
+		}
+		goto stop;
+	    } else {
+		/*
+		 * (Semi-)Eof in parent.
+		 *
+		 * Now this is a bit different. The partial data waiting is
+		 * converted and returned.
+		 */
+
+		if (ResultGenerate (cd, 0, Z_SYNC_FLUSH, errorCodePtr) < 0) {
+		    goto error;
+		}
+
+		if (Tcl_DStringLength(&cd->result) == 0) {
+		    /*
+		     * The drain delivered nothing.
+		     */
+
+		    goto stop;
+		}
+
+		/*
+		 * Reset eof, force caller to drain result buffer.
+		 */
+
+		((Channel *) cd->parent)->state->flags &= ~CHANNEL_EOF;
+		continue; /* at: while (toRead > 0) */
+	    }
+	} /* readBytes == 0 */
+
+	/*
+	 * Transform the read chunk, which was not empty. Anything we get back
+	 * is a transformation result to be put into our buffers, and the next
+	 * iteration will put it into the result.
+	 */
+
+	if (ResultGenerate (cd, readBytes, Z_NO_FLUSH, errorCodePtr) < 0) {
+	    goto error;
+	}
+    } /* while toRead > 0 */
+
+ stop:
+    return gotBytes;
+
+ error:
+    gotBytes = -1;
+    goto stop;
 }
 
 static int
@@ -2521,6 +2587,11 @@ ZlibTransformSetOption(			/* not used */
 	return Tcl_BadChannelOption(interp, optionName, chanOptions);
     }
 
+    /*
+     * Pass all unknown options down, to deeper transforms and/or the base
+     * channel.
+     */
+
     return setOptionProc(Tcl_GetChannelInstanceData(cd->parent), interp,
 	    optionName, value);
 }
@@ -2615,8 +2686,9 @@ ZlibTransformWatch(
 
     watchProc = Tcl_ChannelWatchProc(Tcl_GetChannelType(cd->parent));
     watchProc(Tcl_GetChannelInstanceData(cd->parent), mask);
-    if (!(mask & TCL_READABLE)
-	    || (cd->inStream.avail_in == (uInt) cd->inAllocated)) {
+
+    if (!(mask & TCL_READABLE) ||
+	(Tcl_DStringLength(&cd->result) == 0)) {
 	ZlibTransformTimerKill(cd);
     } else {
 	ZlibTransformTimerSetup(cd);
@@ -2804,6 +2876,8 @@ ZlibStackChannelTransform(
 	}
     }
 
+    Tcl_DStringInit(&cd->result);
+
     chan = Tcl_StackChannel(interp, &zlibChannelType, cd,
 	    Tcl_GetChannelMode(channel), channel);
     if (chan == NULL) {
@@ -2825,6 +2899,138 @@ ZlibStackChannelTransform(
     }
     ckfree(cd);
     return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ResultCopy --
+ *
+ *	Copies the requested number of bytes from the buffer into the
+ *	specified array and removes them from the buffer afterward. Copies
+ *	less if there is not enough data in the buffer.
+ *
+ * Side effects:
+ *	See above.
+ *
+ * Result:
+ *	The number of actually copied bytes, possibly less than 'toRead'.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ResultCopy(
+    Tcl_DString* ds,		/* The buffer to read from */
+    unsigned char *buf,		/* The buffer to copy into */
+    int toRead)			/* Number of requested bytes */
+{
+    int copied;
+    int have = Tcl_DStringLength (ds);
+
+    if (have == 0) {
+	/*
+	 * Nothing to copy in the case of an empty buffer.
+	 */
+
+	copied = 0;
+    } else if (have > toRead) {
+	/*
+	 * The internal buffer contains more than requested. Copy the
+	 * requested subset to the caller, shift the remaining bytes down, and
+	 * truncate.
+	 */
+
+	char* src = Tcl_DStringValue (ds);
+
+	memcpy(buf, src, toRead);
+	memmove(src, src + toRead, have - toRead);
+
+	Tcl_DStringSetLength (ds, have - toRead);
+	copied = toRead;
+    } else /* have <= toRead */ {
+	/*
+	 * There is just or not enough in the buffer to fully satisfy the
+	 * caller, so take everything as best effort.
+	 */
+
+	memcpy(buf, Tcl_DStringValue (ds), have);
+	Tcl_DStringSetLength (ds, 0);
+	copied = have;
+    }
+
+    /* -- common postwork code ------- */
+
+    return copied;
+}
+
+static int
+ResultGenerate(ZlibChannelData *cd, int n, int flush, int* errorCodePtr)
+{
+#define MAXBUF 1024
+    unsigned char buf [MAXBUF];
+    int e, written;
+
+    cd->inStream.next_in = (Bytef *) cd->inBuffer;
+    cd->inStream.avail_in = n;
+
+    while (1) {
+	cd->inStream.next_out = (Bytef *) buf;
+	cd->inStream.avail_out = MAXBUF;
+
+	e = inflate(&cd->inStream, flush);
+
+	/*
+	 * avail_out is now the left over space in the output.
+	 * Therefore "MAXBUF - avail_out" is the amount of bytes
+	 * generated.
+	 */
+
+	written = MAXBUF - cd->inStream.avail_out;
+
+	if (written) {
+	    Tcl_DStringAppend (&cd->result, (char*) buf, written);
+	}
+
+	if (((flush == Z_SYNC_FLUSH) && (e == Z_BUF_ERROR)) ||
+	    (e == Z_STREAM_END) ||
+	    (e==Z_OK && cd->inStream.avail_out==0)) {
+	    break;
+	}
+
+	/*
+	 * Z_BUF_ERROR can be ignored as per http://www.zlib.net/zlib_how.html
+	 *
+	 * Just indicates that the zlib couldn't consume input/produce output,
+	 * and is fixed by supplying more input.
+	 */
+
+	if ((e != Z_OK) && (e != Z_BUF_ERROR)) {
+	    Tcl_Obj *errObj = Tcl_NewListObj(0, NULL);
+
+	    Tcl_ListObjAppendElement(NULL, errObj,
+				     Tcl_NewStringObj(cd->inStream.msg, -1));
+	    Tcl_SetChannelError(cd->parent, errObj);
+	    *errorCodePtr = EINVAL;
+	    return -1;
+	}
+
+	/*
+	 * Check if the inflate stopped early.
+	 */
+
+	if (cd->inStream.avail_in > 0) {
+	    continue;
+	}
+
+	if (flush == Z_SYNC_FLUSH) {
+	    continue;
+	}
+
+	break;
+    }
+
+    return 0;
 }
 
 /*
