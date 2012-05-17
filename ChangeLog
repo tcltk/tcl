@@ -1,5 +1,14 @@
 2012-05-17  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): [Bug 3106532]: Corrected
+	resulting indexes from -indexvar option to be usable with [string
+	range]; this was always the intention (and is consistent with [regexp
+	-indices] too).
+	***POTENTIAL INCOMPATIBILITY***
+	Uses of [switch -regexp -indexvar] that previously compensated for the
+	wrong offsets (by subtracting 1 from the end indices) now do not need
+	to do so as the value is correct.
+
 	* library/safe.tcl (safe::InterpInit): Ensure that the module path is
 	constructed in the correct order.
 	(safe::AliasGlob): [Bug 2964715]: More extensive handling of what
