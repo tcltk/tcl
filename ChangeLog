@@ -1,5 +1,10 @@
 2012-05-17  Donal K. Fellows  <dkf@users.sf.net>
 
+	* library/safe.tcl (safe::InterpInit): Ensure that the module path is
+	constructed in the correct order.
+	(safe::AliasGlob): [Bug 2964715]: More extensive handling of what
+	globbing is required to support package loading.
+
 	* doc/expr.n: [Bug 3525462]: Corrected statement about what happens
 	when comparing "0y" and "0x12"; the previously documented behavior was
 	actually a subtle bug (now long-corrected).
