@@ -2346,12 +2346,12 @@ declare 1 win {
 ################################
 # Mac OS X specific functions
 
-declare 0 {unix macosx} {
+declare 0 macosx {
     int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, int hasResourceFile,
 	    int maxPathLen, char *libraryPath)
 }
-declare 1 {unix macosx} {
+declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, int maxPathLen, char *libraryPath)
