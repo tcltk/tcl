@@ -991,7 +991,7 @@ Tcl_ZlibStreamChecksum(
 
 void
 Tcl_ZlibStreamSetCompressionDictionary(
-    Tcl_ZlibStream zhandle,
+    Tcl_ZlibStream zshandle,
     Tcl_Obj *compressionDictionaryObj)
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
