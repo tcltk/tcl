@@ -1087,7 +1087,7 @@ TclJoinPath(
 
 	    if (length > 0 && ptr[length -1] != '/') {
 		Tcl_AppendToObj(res, &separator, 1);
-		length++;
+		Tcl_GetStringFromObj(res, &length);
 	    }
 	    Tcl_SetObjLength(res, length + (int) strlen(strElt));
 
