@@ -1,3 +1,10 @@
+2012-05-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:      TIP #106: Add Encoding Abilities to the [dde]
+	* library/dde/pkgIndex.tcl:   Command. Dde version is now 1.4.0.
+	* tests/winDde.test:
+	* doc/dde.n:
+
 2012-05-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOBasic.c (TclOO_Class_Constructor): [Bug 2023112]: Cut
