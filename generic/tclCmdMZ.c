@@ -3758,8 +3758,12 @@ TclNRSwitchObjCmd(
 	    if (indexVarObj != NULL) {
 		Tcl_Obj *rangeObjAry[2];
 
-		rangeObjAry[0] = Tcl_NewLongObj(info.matches[j].start);
-		rangeObjAry[1] = Tcl_NewLongObj(info.matches[j].end);
+		if (info.matches[j].end > 0) {
+		    rangeObjAry[0] = Tcl_NewLongObj(info.matches[j].start);
+		    rangeObjAry[1] = Tcl_NewLongObj(info.matches[j].end-1);
+		} else {
+		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewIntObj(-1);
+		}
 
 		/*
 		 * Never fails; the object is always clean at this point.
