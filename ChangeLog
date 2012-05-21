@@ -1,3 +1,11 @@
+2012-05-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFileName.c:	When using Tcl_SetObjLength() calls to grow
+	* generic/tclPathObj.c:	and shrink the objPtr->bytes buffer, care must be
+	taken that the value cannot possibly become pure Unicode.  Calling
+	Tcl_AppendToObj() has the possibility of making such a conversion.  Bug
+	found while valgrinding the trunk.
+
 2012-05-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): [Bug 3106532]: Corrected
