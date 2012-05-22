@@ -292,7 +292,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}}} {
 	    append text "#endif /* WIN */\n"
 	}
 	unix {
-	    append text "#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TK)\
+	    append text "#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL)\
 		    /* UNIX */\n${iftxt}"
 	    if {$eltxt ne ""} {
 		append text "#else /* UNIX */\n${eltxt}"
