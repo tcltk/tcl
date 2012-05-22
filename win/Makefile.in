@@ -438,7 +438,7 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in dde1.2 reg1.1; \
+	@for i in dde$(DDEDOTVER) reg$(REGDOTVER); \
 	    do \
 	    if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
@@ -462,23 +462,23 @@ install-binaries: binaries
 	    done
 	@if [ -f $(DDE_DLL_FILE) ]; then \
 	    echo installing $(DDE_DLL_FILE); \
-	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde1.2; \
+	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde$(DDEDOTVER); \
 	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
-		$(LIB_INSTALL_DIR)/dde1.2; \
+		$(LIB_INSTALL_DIR)/dde$(DDEDOTVER); \
 	    fi
 	@if [ -f $(DDE_LIB_FILE) ]; then \
 	    echo installing $(DDE_LIB_FILE); \
-	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/dde1.2; \
+	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/dde$(DDEDOTVER); \
 	    fi
 	@if [ -f $(REG_DLL_FILE) ]; then \
 	    echo installing $(REG_DLL_FILE); \
-	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg1.1; \
+	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg$(REGDOTVER); \
 	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
-		$(LIB_INSTALL_DIR)/reg1.1; \
+		$(LIB_INSTALL_DIR)/reg$(REGDOTVER); \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
 	    echo installing $(REG_LIB_FILE); \
-	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg1.1; \
+	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg$(REGDOTVER); \
 	    fi
 
 install-libraries: libraries

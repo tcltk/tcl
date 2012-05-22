@@ -29,14 +29,14 @@
  * Exported function declarations:
  */
 
-#if defined(__WIN32__) || defined(__CYGWIN__)
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
 /* 0 */
 EXTERN TCHAR *		Tcl_WinUtfToTChar _ANSI_ARGS_((CONST char *str,
 				int len, Tcl_DString *dsPtr));
 /* 1 */
 EXTERN char *		Tcl_WinTCharToUtf _ANSI_ARGS_((CONST TCHAR *str,
 				int len, Tcl_DString *dsPtr));
-#endif /* __WIN32__ */
+#endif /* WIN */
 #ifdef MAC_TCL
 /* 0 */
 EXTERN void		Tcl_MacSetEventProc _ANSI_ARGS_((
@@ -68,7 +68,7 @@ EXTERN int		strncasecmp _ANSI_ARGS_((CONST char *s1,
 EXTERN int		strcasecmp _ANSI_ARGS_((CONST char *s1,
 				CONST char *s2));
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
+#ifdef MAC_OSX_TCL /* MACOSX */
 /* 0 */
 EXTERN int		Tcl_MacOSXOpenBundleResources _ANSI_ARGS_((
 				Tcl_Interp *interp, CONST char *bundleName,
@@ -80,16 +80,16 @@ EXTERN int		Tcl_MacOSXOpenVersionedBundleResources _ANSI_ARGS_((
 				CONST char *bundleVersion,
 				int hasResourceFile, int maxPathLen,
 				char *libraryPath));
-#endif /* MAC_OSX_TCL */
+#endif /* MACOSX */
 
 typedef struct TclPlatStubs {
     int magic;
     struct TclPlatStubHooks *hooks;
 
-#if defined(__WIN32__) || defined(__CYGWIN__)
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     TCHAR * (*tcl_WinUtfToTChar) _ANSI_ARGS_((CONST char *str, int len, Tcl_DString *dsPtr)); /* 0 */
     char * (*tcl_WinTCharToUtf) _ANSI_ARGS_((CONST TCHAR *str, int len, Tcl_DString *dsPtr)); /* 1 */
-#endif /* __WIN32__ */
+#endif /* WIN */
 #ifdef MAC_TCL
     void (*tcl_MacSetEventProc) _ANSI_ARGS_((Tcl_MacConvertEventPtr procPtr)); /* 0 */
     char * (*tcl_MacConvertTextResource) _ANSI_ARGS_((Handle resource)); /* 1 */
@@ -101,10 +101,10 @@ typedef struct TclPlatStubs {
     int (*strncasecmp) _ANSI_ARGS_((CONST char *s1, CONST char *s2, size_t n)); /* 7 */
     int (*strcasecmp) _ANSI_ARGS_((CONST char *s1, CONST char *s2)); /* 8 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
+#ifdef MAC_OSX_TCL /* MACOSX */
     int (*tcl_MacOSXOpenBundleResources) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *bundleName, int hasResourceFile, int maxPathLen, char *libraryPath)); /* 0 */
     int (*tcl_MacOSXOpenVersionedBundleResources) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *bundleName, CONST char *bundleVersion, int hasResourceFile, int maxPathLen, char *libraryPath)); /* 1 */
-#endif /* MAC_OSX_TCL */
+#endif /* MACOSX */
 } TclPlatStubs;
 
 #ifdef __cplusplus
@@ -121,7 +121,7 @@ extern TclPlatStubs *tclPlatStubsPtr;
  * Inline function declarations:
  */
 
-#if defined(__WIN32__) || defined(__CYGWIN__)
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
 #ifndef Tcl_WinUtfToTChar
 #define Tcl_WinUtfToTChar \
 	(tclPlatStubsPtr->tcl_WinUtfToTChar) /* 0 */
@@ -130,7 +130,7 @@ extern TclPlatStubs *tclPlatStubsPtr;
 #define Tcl_WinTCharToUtf \
 	(tclPlatStubsPtr->tcl_WinTCharToUtf) /* 1 */
 #endif
-#endif /* __WIN32__ */
+#endif /* WIN */
 #ifdef MAC_TCL
 #ifndef Tcl_MacSetEventProc
 #define Tcl_MacSetEventProc \
@@ -169,7 +169,7 @@ extern TclPlatStubs *tclPlatStubsPtr;
 	(tclPlatStubsPtr->strcasecmp) /* 8 */
 #endif
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
+#ifdef MAC_OSX_TCL /* MACOSX */
 #ifndef Tcl_MacOSXOpenBundleResources
 #define Tcl_MacOSXOpenBundleResources \
 	(tclPlatStubsPtr->tcl_MacOSXOpenBundleResources) /* 0 */
@@ -178,7 +178,7 @@ extern TclPlatStubs *tclPlatStubsPtr;
 #define Tcl_MacOSXOpenVersionedBundleResources \
 	(tclPlatStubsPtr->tcl_MacOSXOpenVersionedBundleResources) /* 1 */
 #endif
-#endif /* MAC_OSX_TCL */
+#endif /* MACOSX */
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
