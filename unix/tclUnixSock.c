@@ -545,6 +545,9 @@ TcpCloseProc(
      */
     
     for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
+	if (fds->fd < 0) {
+	    continue;
+	}
 	Tcl_DeleteFileHandler(fds->fd);
 	if (close(fds->fd) < 0) {
 	    errorCode = errno;
