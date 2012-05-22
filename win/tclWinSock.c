@@ -96,7 +96,7 @@ TCL_DECLARE_MUTEX(socketMutex)
             struct sockaddr FAR *name, int FAR *namelen);
     typedef int (PASCAL FAR *LPFN_GETSOCKOPT)(SOCKET s, int level,
             int optname, char FAR * optval, int FAR *optlen);
-    typedef u_short (PASCAL FAR *LPFN_HTONS)(u_short hostshort);
+    typedef unsigned short (PASCAL FAR *LPFN_HTONS)(unsigned short hostshort);
     typedef unsigned long (PASCAL FAR *LPFN_INET_ADDR)
             (const char FAR * cp);
     typedef char FAR * (PASCAL FAR *LPFN_INET_NTOA)
@@ -104,7 +104,7 @@ TCL_DECLARE_MUTEX(socketMutex)
     typedef int (PASCAL FAR *LPFN_IOCTLSOCKET)(SOCKET s,
             long cmd, u_long FAR *argp);
     typedef int (PASCAL FAR *LPFN_LISTEN)(SOCKET s, int backlog);
-    typedef u_short (PASCAL FAR *LPFN_NTOHS)(u_short netshort);
+    typedef unsigned short (PASCAL FAR *LPFN_NTOHS)(unsigned short netshort);
     typedef int (PASCAL FAR *LPFN_RECV)(SOCKET s, char FAR * buf,
             int len, int flags);
     typedef int (PASCAL FAR *LPFN_SELECT)(int nfds,
@@ -1320,7 +1320,7 @@ CreateSocketAddress(sockaddrPtr, host, port)
 
     ZeroMemory(sockaddrPtr, sizeof(SOCKADDR_IN));
     sockaddrPtr->sin_family = AF_INET;
-    sockaddrPtr->sin_port = winSock.htons((u_short) (port & 0xFFFF));
+    sockaddrPtr->sin_port = winSock.htons((unsigned short) (port & 0xFFFF));
     if (host == NULL) {
 	addr.s_addr = INADDR_ANY;
     } else {
@@ -2678,8 +2678,8 @@ TclWinSetSockOpt(SOCKET s, int level, int optname, const char * optval,
     return winSock.setsockopt(s, level, optname, optval, optlen);
 }
 
-u_short
-TclWinNToHS(u_short netshort)
+unsigned short
+TclWinNToHS(unsigned short netshort)
 {
     /*
      * Check that WinSock is initialized; do not call it if not, to
@@ -2689,10 +2689,27 @@ TclWinNToHS(u_short netshort)
      */
 
     if (!SocketsEnabled()) {
-        return (u_short) -1;
+        return (unsigned short) -1;
     }
 
     return winSock.ntohs(netshort);
+}
+
+char *
+TclpInetNtoa(struct in_addr addr)
+{
+    /*
+     * Check that WinSock is initialized; do not call it if not, to
+     * prevent system crashes. This can happen at exit time if the exit
+     * handler for WinSock ran before other exit handlers that want to
+     * use sockets.
+     */
+
+    if (!SocketsEnabled()) {
+        return NULL;
+    }
+
+    return winSock.inet_ntoa(addr);
 }
 
 struct servent *
