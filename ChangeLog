@@ -1,3 +1,12 @@
+2012-05-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:   Let cygwin share stub table with win32
+	* win/Makefile.in:      Don't hardcode dde and reg dll version numbers
+	* win/tclWinSock.c:     implement TclpInetNtoa for win32
+	* generic/tclInt.decls: Revert most of [ae92de6078], since when
+	  we let cygwin share the win32 stub table this is no longer necessary
+	* generic/tcl*Decls.h:  re-generated
+
 2012-05-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c:	When using Tcl_SetObjLength() calls to grow
