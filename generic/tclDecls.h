@@ -1627,7 +1627,7 @@ typedef struct TclStubs {
 
     int (*tcl_PkgProvideEx) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *name, CONST char *version, ClientData clientData)); /* 0 */
     CONST84_RETURN char * (*tcl_PkgRequireEx) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *name, CONST char *version, int exact, ClientData *clientDataPtr)); /* 1 */
-    void (*tcl_Panic) _ANSI_ARGS_(TCL_VARARGS(CONST char *,format)); /* 2 */
+    void (*tcl_Panic) _ANSI_ARGS_((CONST char *format, ...)); /* 2 */
     char * (*tcl_Alloc) _ANSI_ARGS_((unsigned int size)); /* 3 */
     void (*tcl_Free) _ANSI_ARGS_((char *ptr)); /* 4 */
     char * (*tcl_Realloc) _ANSI_ARGS_((char *ptr, unsigned int size)); /* 5 */
@@ -1637,18 +1637,18 @@ typedef struct TclStubs {
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) _ANSI_ARGS_((int fd, int mask, Tcl_FileProc *proc, ClientData clientData)); /* 9 */
 #endif /* UNIX */
-#ifdef __WIN32__
+#if defined(__WIN32__) /* WIN */
     VOID *reserved9;
-#endif /* __WIN32__ */
+#endif /* WIN */
 #ifdef MAC_TCL
     VOID *reserved9;
 #endif /* MAC_TCL */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     void (*tcl_DeleteFileHandler) _ANSI_ARGS_((int fd)); /* 10 */
 #endif /* UNIX */
-#ifdef __WIN32__
+#if defined(__WIN32__) /* WIN */
     VOID *reserved10;
-#endif /* __WIN32__ */
+#endif /* WIN */
 #ifdef MAC_TCL
     VOID *reserved10;
 #endif /* MAC_TCL */
@@ -1656,7 +1656,7 @@ typedef struct TclStubs {
     void (*tcl_Sleep) _ANSI_ARGS_((int ms)); /* 12 */
     int (*tcl_WaitForEvent) _ANSI_ARGS_((Tcl_Time *timePtr)); /* 13 */
     int (*tcl_AppendAllObjTypes) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *objPtr)); /* 14 */
-    void (*tcl_AppendStringsToObj) _ANSI_ARGS_(TCL_VARARGS(Tcl_Obj *,objPtr)); /* 15 */
+    void (*tcl_AppendStringsToObj) _ANSI_ARGS_((Tcl_Obj *objPtr, ...)); /* 15 */
     void (*tcl_AppendToObj) _ANSI_ARGS_((Tcl_Obj *objPtr, CONST char *bytes, int length)); /* 16 */
     Tcl_Obj * (*tcl_ConcatObj) _ANSI_ARGS_((int objc, Tcl_Obj *CONST objv[])); /* 17 */
     int (*tcl_ConvertToType) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_ObjType *typePtr)); /* 18 */
@@ -1711,7 +1711,7 @@ typedef struct TclStubs {
     void (*tcl_AddObjErrorInfo) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *message, int length)); /* 67 */
     void (*tcl_AllowExceptions) _ANSI_ARGS_((Tcl_Interp *interp)); /* 68 */
     void (*tcl_AppendElement) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *element)); /* 69 */
-    void (*tcl_AppendResult) _ANSI_ARGS_(TCL_VARARGS(Tcl_Interp *,interp)); /* 70 */
+    void (*tcl_AppendResult) _ANSI_ARGS_((Tcl_Interp *interp, ...)); /* 70 */
     Tcl_AsyncHandler (*tcl_AsyncCreate) _ANSI_ARGS_((Tcl_AsyncProc *proc, ClientData clientData)); /* 71 */
     void (*tcl_AsyncDelete) _ANSI_ARGS_((Tcl_AsyncHandler async)); /* 72 */
     int (*tcl_AsyncInvoke) _ANSI_ARGS_((Tcl_Interp *interp, int code)); /* 73 */
@@ -1811,9 +1811,9 @@ typedef struct TclStubs {
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     int (*tcl_GetOpenFile) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *chanID, int forWriting, int checkUsage, ClientData *filePtr)); /* 167 */
 #endif /* UNIX */
-#ifdef __WIN32__
+#if defined(__WIN32__) /* WIN */
     VOID *reserved167;
-#endif /* __WIN32__ */
+#endif /* WIN */
 #ifdef MAC_TCL
     VOID *reserved167;
 #endif /* MAC_TCL */
@@ -1877,7 +1877,7 @@ typedef struct TclStubs {
     int (*tcl_SetChannelOption) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Channel chan, CONST char *optionName, CONST char *newValue)); /* 225 */
     int (*tcl_SetCommandInfo) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *cmdName, CONST Tcl_CmdInfo *infoPtr)); /* 226 */
     void (*tcl_SetErrno) _ANSI_ARGS_((int err)); /* 227 */
-    void (*tcl_SetErrorCode) _ANSI_ARGS_(TCL_VARARGS(Tcl_Interp *,interp)); /* 228 */
+    void (*tcl_SetErrorCode) _ANSI_ARGS_((Tcl_Interp *interp, ...)); /* 228 */
     void (*tcl_SetMaxBlockTime) _ANSI_ARGS_((Tcl_Time *timePtr)); /* 229 */
     void (*tcl_SetPanicProc) _ANSI_ARGS_((Tcl_PanicProc *panicProc)); /* 230 */
     int (*tcl_SetRecursionLimit) _ANSI_ARGS_((Tcl_Interp *interp, int depth)); /* 231 */
@@ -1909,7 +1909,7 @@ typedef struct TclStubs {
     void (*tcl_UpdateLinkedVar) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *varName)); /* 257 */
     int (*tcl_UpVar) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *frameName, CONST char *varName, CONST char *localName, int flags)); /* 258 */
     int (*tcl_UpVar2) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *frameName, CONST char *part1, CONST char *part2, CONST char *localName, int flags)); /* 259 */
-    int (*tcl_VarEval) _ANSI_ARGS_(TCL_VARARGS(Tcl_Interp *,interp)); /* 260 */
+    int (*tcl_VarEval) _ANSI_ARGS_((Tcl_Interp *interp, ...)); /* 260 */
     ClientData (*tcl_VarTraceInfo) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *varName, int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)); /* 261 */
     ClientData (*tcl_VarTraceInfo2) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *part1, CONST char *part2, int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)); /* 262 */
     int (*tcl_Write) _ANSI_ARGS_((Tcl_Channel chan, CONST char *s, int slen)); /* 263 */
