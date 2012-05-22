@@ -934,8 +934,11 @@ TclChanPostEventObjCmd(
      * We have the channel and the events to post.
      */
 
+#ifdef TCL_THREADS
     if (rcPtr->owner == rcPtr->thread) {
+#endif
         Tcl_NotifyChannel (chan, events);
+#ifdef TCL_THREADS
     } else {
         ReflectEvent* ev = ckalloc (sizeof (ReflectEvent));
         ev->header.proc = ReflectEventRun;
@@ -965,6 +968,7 @@ TclChanPostEventObjCmd(
         Tcl_ThreadQueueEvent (rcPtr->owner, (Tcl_Event*) ev, TCL_QUEUE_TAIL);
         Tcl_ThreadAlert (rcPtr->owner);
     }
+#endif
 
     /*
      * Squash interp results left by the event script.
