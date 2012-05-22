@@ -114,13 +114,6 @@ typedef struct {
 #define DEFAULT_BUFFER_SIZE	4096
 
 /*
- * Time to wait (in milliseconds) before flushing the channel when reading
- * data through the transform.
- */
-
-#define TRANSFORM_FLUSH_DELAY	5
-
-/*
  * Convenience macro to make some casts easier to use.
  */
 
@@ -2737,7 +2730,7 @@ ZlibTransformTimerSetup(
     ZlibChannelData *cd)
 {
     if (cd->timer == NULL) {
-	cd->timer = Tcl_CreateTimerHandler(TRANSFORM_FLUSH_DELAY,
+	cd->timer = Tcl_CreateTimerHandler(0,
 		ZlibTransformTimerRun, cd);
     }
 }
