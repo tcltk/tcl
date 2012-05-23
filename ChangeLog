@@ -1,3 +1,10 @@
+2012-05-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ZlibTransformInput): [Bug 3525907]: Ensure that
+	decompressed input is flushed through the transform correctly when the
+	input stream gets to the end. Thanks to Alexandre Ferrieux and Andreas
+	Kupries for their work on this.
+
 2012-05-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c:	When using Tcl_SetObjLength() calls to grow
