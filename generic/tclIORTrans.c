@@ -439,13 +439,6 @@ static const char *msg_dstlost =
  */
 
 /*
- * Number of milliseconds to wait before firing an event to try to flush out
- * information waiting in buffers (fileevent support).
- */
-
-#define FLUSH_DELAY	(5)
-
-/*
  * Helper functions encapsulating some of the thread forwarding to make the
  * control flow in callers easier.
  */
@@ -1230,7 +1223,7 @@ ReflectInput(
  *
  * ReflectOutput --
  *
- *	This function is invoked when data is writen to the channel.
+ *	This function is invoked when data is written to the channel.
  *
  * Results:
  *	The number of bytes actually written.
@@ -2861,7 +2854,7 @@ TimerSetup(
 	return;
     }
 
-    rtPtr->timer = Tcl_CreateTimerHandler(FLUSH_DELAY, TimerRun, rtPtr);
+    rtPtr->timer = Tcl_CreateTimerHandler(0, TimerRun, rtPtr);
 }
 
 /*
