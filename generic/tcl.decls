@@ -2154,6 +2154,14 @@ export {
     void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)
 }
 export {
+    const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,
+	int exact)
+}
+export {
+    const char *TclTomMathInitializeStubs(Tcl_Interp* interp,
+	const char* version, int epoch, int revision)
+}
+export {
     const char *Tcl_PkgInitStubsCheck(Tcl_Interp *interp, const char *version,
 	int exact)
 }
