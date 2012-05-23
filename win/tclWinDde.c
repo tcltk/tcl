@@ -1189,8 +1189,8 @@ DdeObjCmd(
     enum DdeExecOptions {
         DDE_EXEC_ASYNC, DDE_EXEC_BINARY
     };
-    static const char *const ddePokeOptions[] = {
-	"-binary", NULL
+    static const char *const ddeEvalOptions[] = {
+	"-async", NULL
     };
     static const char *const ddeReqOptions[] = {
 	"-binary", NULL
@@ -1295,7 +1295,7 @@ DdeObjCmd(
 	    firstArg = 2;
 	    break;
 	} else if ((objc == 7) && (Tcl_GetIndexFromObj(NULL, objv[2],
-		ddePokeOptions, "option", 0, &argIndex) == TCL_OK)) {
+		ddeReqOptions, "option", 0, &argIndex) == TCL_OK)) {
 	    binary = 1;
 	    firstArg = 3;
 	    break;
@@ -1306,7 +1306,7 @@ DdeObjCmd(
 	 */
 
 	Tcl_WrongNumArgs(interp, 2, objv,
-		"serviceName ?-binary? topicName item value");
+		"?-binary? serviceName topicName item value");
 	return TCL_ERROR;
     case DDE_REQUEST:
 	if (objc == 5) {
@@ -1340,7 +1340,7 @@ DdeObjCmd(
 	    return TCL_ERROR;
 	} else {
 	    firstArg = 2;
-	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeExecOptions, "option",
+	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeEvalOptions, "option",
 		    0, &argIndex) == TCL_OK) {
 		if (objc < 5) {
 		    goto wrongDdeEvalArgs;
