@@ -78,7 +78,9 @@ MODULE_SCOPE TclTomMathStubs tclTomMathStubs;
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
 #   define TclpReaddir 0
+#   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
+#   define TclpIsAtty TclPlatIsAtty
 #   define TclWinSetInterfaces (void (*) (int)) doNothing
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
@@ -86,6 +88,12 @@ MODULE_SCOPE TclTomMathStubs tclTomMathStubs;
 #   define TclpGetTZName 0
 
 static Tcl_Encoding winTCharEncoding;
+
+static int
+TclpIsAtty(int fd)
+{
+    return isatty(fd);
+}
 
 int
 TclWinGetPlatformId()
@@ -451,7 +459,7 @@ TclIntStubs tclIntStubs = {
 TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_TCL) /* UNIX */
     TclGetAndDetachPids, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
@@ -500,7 +508,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateCommandChannel, /* 13 */
     TclpCreatePipe, /* 14 */
     TclpCreateProcess, /* 15 */
-    NULL, /* 16 */
+    TclpIsAtty, /* 16 */
     NULL, /* 17 */
     TclpMakeFile, /* 18 */
     TclpOpenFile, /* 19 */
@@ -649,19 +657,19 @@ TclStubs tclStubs = {
     Tcl_DbCkalloc, /* 6 */
     Tcl_DbCkfree, /* 7 */
     Tcl_DbCkrealloc, /* 8 */
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_CreateFileHandler, /* 9 */
 #endif /* UNIX */
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(__WIN32__) /* WIN */
     NULL, /* 9 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_CreateFileHandler, /* 9 */
 #endif /* MACOSX */
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_DeleteFileHandler, /* 10 */
 #endif /* UNIX */
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(__WIN32__) /* WIN */
     NULL, /* 10 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -823,10 +831,10 @@ TclStubs tclStubs = {
     Tcl_GetMaster, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_GetOpenFile, /* 167 */
 #endif /* UNIX */
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(__WIN32__) /* WIN */
     NULL, /* 167 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
