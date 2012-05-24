@@ -19,6 +19,8 @@
 static inline Tcl_Object *AddConstructionFinalizer(Tcl_Interp *interp);
 static int		AfterNRDestructor(ClientData data[],
 			    Tcl_Interp *interp, int result);
+static int		DecrRefsPostClassConstructor(ClientData data[],
+			    Tcl_Interp *interp, int result);
 static int		FinalizeConstruction(ClientData data[],
 			    Tcl_Interp *interp, int result);
 static int		FinalizeEval(ClientData data[],
@@ -65,6 +67,74 @@ FinalizeConstruction(
     }
     Tcl_SetObjResult(interp, TclOOObjectName(interp, oPtr));
     return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOO_Class_Constructor --
+ *
+ *	Implementation for oo::class constructor.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOO_Class_Constructor(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Tcl_Obj *invoke[3];
+
+    if (objc-1 > Tcl_ObjectContextSkippedArgs(context)) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"?definitionScript?");
+	return TCL_ERROR;
+    } else if (objc == Tcl_ObjectContextSkippedArgs(context)) {
+	return TCL_OK;
+    }
+
+    /*
+     * Delegate to [oo::define] to do the work.
+     */
+
+    invoke[0] = oPtr->fPtr->defineName;
+    invoke[1] = TclOOObjectName(interp, oPtr);
+    invoke[2] = objv[objc-1];
+
+    /*
+     * Must add references or errors in configuration script will cause
+     * trouble.
+     */
+
+    Tcl_IncrRefCount(invoke[0]);
+    Tcl_IncrRefCount(invoke[1]);
+    Tcl_IncrRefCount(invoke[2]);
+    TclNRAddCallback(interp, DecrRefsPostClassConstructor,
+	    invoke[0], invoke[1], invoke[2], NULL);
+
+    /*
+     * Tricky point: do not want the extra reported level in the Tcl stack
+     * trace, so use TCL_EVAL_NOERR.
+     */
+
+    return TclNREvalObjv(interp, 3, invoke, TCL_EVAL_NOERR, NULL);
+}
+
+static int
+DecrRefsPostClassConstructor(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    TclDecrRefCount((Tcl_Obj *) data[0]);
+    TclDecrRefCount((Tcl_Obj *) data[1]);
+    TclDecrRefCount((Tcl_Obj *) data[2]);
+    return result;
 }
 
 /*
@@ -1138,74 +1208,6 @@ TclOOCopyObjectCmd(
 
     Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) o2Ptr));
     return TCL_OK;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * TclOOUpcatchCmd --
- *
- *	Implementation of the [oo::UpCatch] command, which is a combination of
- *	[uplevel 1] and [catch] that makes it easier to write transparent
- *	error handling in scripts.
- *
- * ----------------------------------------------------------------------
- */
-
-int
-TclOOUpcatchCmd(
-    ClientData ignored,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    return Tcl_NRCallObjProc(interp, TclOONRUpcatch, NULL, objc, objv);
-}
-
-static int
-UpcatchCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Interp *iPtr = (Interp *) interp;
-    CallFrame *savedFramePtr = data[0];
-    Tcl_Obj *resultObj[2];
-    int rewind = iPtr->execEnvPtr->rewind;
-
-    iPtr->varFramePtr = savedFramePtr;
-    if (rewind || Tcl_LimitExceeded(interp)) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"UpCatch\" body line %d)", Tcl_GetErrorLine(interp)));
-	return TCL_ERROR;
-    }
-    resultObj[0] = Tcl_GetObjResult(interp);
-    resultObj[1] = Tcl_GetReturnOptions(interp, result);
-    Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObj));
-    return TCL_OK;
-}
-
-int
-TclOONRUpcatch(
-    ClientData ignored,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Interp *iPtr = (Interp *) interp;
-    CallFrame *savedFramePtr = iPtr->varFramePtr;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "script");
-	return TCL_ERROR;
-    }
-    if (iPtr->varFramePtr->callerVarPtr != NULL) {
-	iPtr->varFramePtr = iPtr->varFramePtr->callerVarPtr;
-    }
-
-    Tcl_NRAddCallback(interp, UpcatchCallback, savedFramePtr, NULL,NULL,NULL);
-    return TclNREvalObjEx(interp, objv[1], TCL_EVAL_NOERR,
-	    iPtr->cmdFramePtr, 1);
 }
 
 /*
