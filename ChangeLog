@@ -1,3 +1,32 @@
+2012-05-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ZlibTransformInput): [Bug 3525907]: Ensure that
+	decompressed input is flushed through the transform correctly when the
+	input stream gets to the end. Thanks to Alexandre Ferrieux and Andreas
+	Kupries for their work on this.
+
+2012-05-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFileName.c:	When using Tcl_SetObjLength() calls to grow
+	* generic/tclPathObj.c:	and shrink the objPtr->bytes buffer, care must be
+	taken that the value cannot possibly become pure Unicode.  Calling
+	Tcl_AppendToObj() has the possibility of making such a conversion.  Bug
+	found while valgrinding the trunk.
+
+2012-05-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:      TIP #106: Add Encoding Abilities to the [dde]
+	* library/dde/pkgIndex.tcl:   Command. Dde version is now 1.4.0.
+	* tests/winDde.test:
+	* doc/dde.n:
+
+2012-05-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOBasic.c (TclOO_Class_Constructor): [Bug 2023112]: Cut
+	the amount of hackiness in class constructors, and refactor some of
+	the error message handling from [oo::define] to be saner in the face
+	of odd happenings.
+
 2012-05-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): [Bug 3106532]: Corrected

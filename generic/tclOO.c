@@ -123,6 +123,16 @@ static const DeclaredClassMethod objMethods[] = {
 };
 
 /*
+ * And for the oo::class constructor...
+ */
+
+static const Tcl_MethodType classConstructor = {
+    TCL_OO_METHOD_VERSION_CURRENT,
+    "oo::class constructor",
+    TclOO_Class_Constructor, NULL, NULL
+};
+
+/*
  * Scripted parts of TclOO. First, the master script (cannot be outside this
  * file).
  */
@@ -133,18 +143,6 @@ static const char *initScript =
 "namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
 /* "tcl_findLibrary tcloo $oo::version $oo::version" */
 /* " tcloo.tcl OO_LIBRARY oo::library;"; */
-
-/*
- * The body of the constructor for oo::class.
- */
-
-static const char *classConstructorBody =
-"set script [list ::oo::define [self] $definitionScript];"
-"lassign [::oo::UpCatch $script] msg opts;"
-"if {[dict get $opts -code] == 1} {"
-"    dict set opts -errorline 0xDeadBeef"
-"};"
-"return -options $opts $msg;";
 
 /*
  * The scripted part of the definitions of slots.
@@ -340,12 +338,12 @@ InitFoundation(
     TclNewLiteralStringObj(fPtr->constructorName, "<constructor>");
     TclNewLiteralStringObj(fPtr->destructorName, "<destructor>");
     TclNewLiteralStringObj(fPtr->clonedName, "<cloned>");
+    TclNewLiteralStringObj(fPtr->defineName, "::oo::define");
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
     Tcl_IncrRefCount(fPtr->clonedName);
-    Tcl_NRCreateCommand(interp, "::oo::UpCatch", TclOOUpcatchCmd,
-	    TclOONRUpcatch, NULL, NULL);
+    Tcl_IncrRefCount(fPtr->defineName);
     Tcl_CreateObjCommand(interp, "::oo::UnknownDefinition",
 	    TclOOUnknownDefinition, NULL, NULL);
     TclNewLiteralStringObj(namePtr, "::oo::UnknownDefinition");
@@ -418,28 +416,19 @@ InitFoundation(
     bodyPtr = Tcl_NewStringObj(clonedBody, -1);
     TclOONewProcMethod(interp, fPtr->objectCls, 0, fPtr->clonedName, argsPtr,
 	    bodyPtr, NULL);
-    Tcl_DecrRefCount(argsPtr);
+    TclDecrRefCount(argsPtr);
 
     /*
      * Finish setting up the class of classes by marking the 'new' method as
      * private; classes, unlike general objects, must have explicit names. We
      * also need to create the constructor for classes.
-     *
-     * The 0xDeadBeef is a special signal to the errorInfo logger that is used
-     * by constructors that stops it from generating extra error information
-     * that is confusing.
      */
 
     TclNewLiteralStringObj(namePtr, "new");
     Tcl_NewInstanceMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
 	    namePtr /* keeps ref */, 0 /* ==private */, NULL, NULL);
-
-    TclNewLiteralStringObj(argsPtr, "{definitionScript {}}");
-    Tcl_IncrRefCount(argsPtr);
-    bodyPtr = Tcl_NewStringObj(classConstructorBody, -1);
-    fPtr->classCls->constructorPtr = TclOONewProcMethod(interp,
-	    fPtr->classCls, 0, NULL, argsPtr, bodyPtr, NULL);
-    Tcl_DecrRefCount(argsPtr);
+    fPtr->classCls->constructorPtr = (Method *) Tcl_NewMethod(interp,
+	    (Tcl_Class) fPtr->classCls, NULL, 0, &classConstructor, NULL);
 
     /*
      * Create non-object commands and plug ourselves into the Tcl [info]
@@ -529,10 +518,11 @@ KillFoundation(
 
     DelRef(fPtr->objectCls->thisPtr);
     DelRef(fPtr->objectCls);
-    Tcl_DecrRefCount(fPtr->unknownMethodNameObj);
-    Tcl_DecrRefCount(fPtr->constructorName);
-    Tcl_DecrRefCount(fPtr->destructorName);
-    Tcl_DecrRefCount(fPtr->clonedName);
+    TclDecrRefCount(fPtr->unknownMethodNameObj);
+    TclDecrRefCount(fPtr->constructorName);
+    TclDecrRefCount(fPtr->destructorName);
+    TclDecrRefCount(fPtr->clonedName);
+    TclDecrRefCount(fPtr->defineName);
     ckfree(fPtr);
 }
 
@@ -789,7 +779,7 @@ ObjectRenamedTrace(
 
     if (flags & TCL_TRACE_RENAME) {
 	if (oPtr->cachedNameObj) {
-	    Tcl_DecrRefCount(oPtr->cachedNameObj);
+	    TclDecrRefCount(oPtr->cachedNameObj);
 	    oPtr->cachedNameObj = NULL;
 	}
 	return;
@@ -1044,7 +1034,7 @@ ReleaseClassContents(
 	Tcl_Obj *filterObj;
 
 	FOREACH(filterObj, clsPtr->filters) {
-	    Tcl_DecrRefCount(filterObj);
+	    TclDecrRefCount(filterObj);
 	}
 	ckfree(clsPtr->filters.list);
 	clsPtr->filters.num = 0;
@@ -1123,7 +1113,7 @@ ObjectNamespaceDeleted(
     }
 
     FOREACH(filterObj, oPtr->filters) {
-	Tcl_DecrRefCount(filterObj);
+	TclDecrRefCount(filterObj);
     }
     if (i) {
 	ckfree(oPtr->filters.list);
@@ -1138,7 +1128,7 @@ ObjectNamespaceDeleted(
     }
 
     FOREACH(variableObj, oPtr->variables) {
-	Tcl_DecrRefCount(variableObj);
+	TclDecrRefCount(variableObj);
     }
     if (i) {
 	ckfree(oPtr->variables.list);
@@ -1149,7 +1139,7 @@ ObjectNamespaceDeleted(
     }
 
     if (oPtr->cachedNameObj) {
-	Tcl_DecrRefCount(oPtr->cachedNameObj);
+	TclDecrRefCount(oPtr->cachedNameObj);
 	oPtr->cachedNameObj = NULL;
     }
 
@@ -1180,7 +1170,7 @@ ObjectNamespaceDeleted(
 	}
 
 	FOREACH(filterObj, clsPtr->filters) {
-	    Tcl_DecrRefCount(filterObj);
+	    TclDecrRefCount(filterObj);
 	}
 	if (i) {
 	    ckfree(clsPtr->filters.list);
@@ -1225,7 +1215,7 @@ ObjectNamespaceDeleted(
 	TclOODelMethodRef(clsPtr->destructorPtr);
 
 	FOREACH(variableObj, clsPtr->variables) {
-	    Tcl_DecrRefCount(variableObj);
+	    TclDecrRefCount(variableObj);
 	}
 	if (i) {
 	    ckfree(clsPtr->variables.list);
@@ -2490,7 +2480,7 @@ TclOOObjectCmdCore(
 	result = oPtr->mapMethodNameProc(interp, (Tcl_Object) oPtr,
 		(Tcl_Class *) startClsPtr, mappedMethodName);
 	if (result != TCL_OK) {
-	    Tcl_DecrRefCount(mappedMethodName);
+	    TclDecrRefCount(mappedMethodName);
 	    if (result == TCL_BREAK) {
 		goto noMapping;
 	    } else if (result == TCL_ERROR) {
@@ -2506,7 +2496,7 @@ TclOOObjectCmdCore(
 	Tcl_IncrRefCount(mappedMethodName);
 	contextPtr = TclOOGetCallContext(oPtr, mappedMethodName,
 		flags | (oPtr->flags & FILTER_HANDLING), methodNamePtr);
-	Tcl_DecrRefCount(mappedMethodName);
+	TclDecrRefCount(mappedMethodName);
 	if (contextPtr == NULL) {
 	    Tcl_AppendResult(interp, "impossible to invoke method \"",
 		    TclGetString(methodNamePtr),
