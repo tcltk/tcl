@@ -1084,6 +1084,10 @@ declare 15 win {
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
+# new for 8.4.20+/8.5.12+ Cygwin only
+declare 16 win {
+    int TclpIsAtty(int fd)
+}
 # Signature changed in 8.1:
 #  declare 16 win {
 #      TclFile TclpCreateTempFile(char *contents, Tcl_DString *namePtr)
