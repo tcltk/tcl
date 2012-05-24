@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
@@ -70,7 +70,7 @@ test zlib-7.0 {zlib stream} -constraints zlib -returnCodes error -setup {
     $s ?
 } -cleanup {
     $s close
-} -result {bad option "?": must be add, checksum, close, eof, finalize, flush, fullflush, get, put, or reset}
+} -result {bad option "?": must be add, checksum, close, eof, finalize, flush, fullflush, get, header, put, or reset}
 test zlib-7.1 {zlib stream} zlib {
     set s [zlib stream compress]
     $s put -finalize abcdeEDCBA
@@ -169,7 +169,25 @@ test zlib-8.4 {transformation and flushing: Bug 3517696} -setup {
     catch {close $fd}
     removeFile $file
 } -result {}
-test zlib-8.5 {transformation and fconfigure} -setup {
+test zlib-8.5 {transformation and flushing and fileevents: Bug 3525907} -setup {
+    foreach {r w} [chan pipe] break
+} -constraints zlib -body {
+    set ::res {}
+    fconfigure $w -buffering none
+    zlib push compress $w
+    puts -nonewline $w qwertyuiop
+    chan configure $w -flush sync
+    after 500 {puts -nonewline $w asdfghjkl;close $w}
+    fconfigure $r -blocking 0 -buffering none
+    zlib push decompress $r
+    fileevent $r readable {set msg [read $r];lappend ::res $msg;if {[eof $r]} {set ::done 1}}
+    after 250 {lappend ::res MIDDLE}
+    vwait ::done
+    set ::res
+} -cleanup {
+    catch {close $r}
+} -result {qwertyuiop MIDDLE asdfghjkl}
+test zlib-8.6 {transformation and fconfigure} -setup {
     set file [makeFile {} test.z]
     set fd [open $file wb]
 } -constraints zlib -body {
@@ -179,7 +197,7 @@ test zlib-8.5 {transformation and fconfigure} -setup {
     catch {close $fd}
     removeFile $file
 } -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf -checksum 1 -dictionary {}} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf}}
-test zlib-8.6 {transformation and fconfigure} -setup {
+test zlib-8.7 {transformation and fconfigure} -setup {
     set file [makeFile {} test.gz]
     set fd [open $file wb]
 } -constraints zlib -body {
@@ -189,7 +207,7 @@ test zlib-8.6 {transformation and fconfigure} -setup {
     catch {close $fd}
     removeFile $file
 } -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf -checksum 0} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf}}
-test zlib-8.7 {transformtion and fconfigure} -setup {
+test zlib-8.8 {transformtion and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
     set msg [string repeat "am i all that i am at all? i am all that i am!" 400]
     set dict "thatallam i "
