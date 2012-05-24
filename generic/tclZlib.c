@@ -91,7 +91,7 @@ typedef struct {
     GzipHeader outHeader;	/* Header to write to an output stream, when
 				 * compressing a gzip stream. */
     Tcl_TimerToken timer;	/* Timer used for keeping events fresh. */
-    Tcl_DString result;		/* Buffer for decompression results. */
+    Tcl_DString decompressed;	/* Buffer for decompression results. */
 } ZlibChannelData;
 
 /*
@@ -114,10 +114,10 @@ typedef struct {
 #define DEFAULT_BUFFER_SIZE	4096
 
 /*
- * Convenience macro to make some casts easier to use.
+ * Time to wait before delivering a timer event.
  */
 
-#define UCHARP(x)	((unsigned char *) (x))
+#define TRANSFORM_TIMEOUT	0
 
 /*
  * Prototypes for private procedures defined later in this file:
@@ -128,7 +128,7 @@ static Tcl_DriverBlockModeProc	ZlibTransformBlockMode;
 static Tcl_DriverCloseProc	ZlibTransformClose;
 static Tcl_DriverGetHandleProc	ZlibTransformGetHandle;
 static Tcl_DriverGetOptionProc	ZlibTransformGetOption;
-static Tcl_DriverHandlerProc	ZlibTransformHandler;
+static Tcl_DriverHandlerProc	ZlibTransformEventHandler;
 static Tcl_DriverInputProc	ZlibTransformInput;
 static Tcl_DriverOutputProc	ZlibTransformOutput;
 static Tcl_DriverSetOptionProc	ZlibTransformSetOption;
@@ -140,7 +140,7 @@ static void		ConvertError(Tcl_Interp *interp, int code);
 static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
 static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
 			    GzipHeader *headerPtr, int *extraSizePtr);
-static int		ResultCopy(Tcl_DString *r, unsigned char *buf,
+static inline int	ResultCopy(ZlibChannelData *cd, char *buf,
 			    int toRead);
 static int		ResultGenerate(ZlibChannelData *cd, int n, int flush,
 			    int *errorCodePtr);
@@ -148,9 +148,8 @@ static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
 			    int mode, int format, int level,
 			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr);
 static void		ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
-static void		ZlibTransformTimerKill(ZlibChannelData *cd);
+static inline void	ZlibTransformEventTimerKill(ZlibChannelData *cd);
 static void		ZlibTransformTimerRun(ClientData clientData);
-static void		ZlibTransformTimerSetup(ZlibChannelData *cd);
 
 /*
  * Type of zlib-based compressing and decompressing channels.
@@ -170,7 +169,7 @@ static const Tcl_ChannelType zlibChannelType = {
     NULL,			/* close2Proc */
     ZlibTransformBlockMode,
     NULL,			/* flushProc */
-    ZlibTransformHandler,
+    ZlibTransformEventHandler,
     NULL,			/* wideSeekProc */
     NULL,
     NULL
@@ -2264,6 +2263,12 @@ ZlibStreamCmd(
  *----------------------------------------------------------------------
  *	Set of functions to support channel stacking.
  *----------------------------------------------------------------------
+ *
+ * ZlibTransformClose --
+ *
+ *	How to shut down a stacked compressing/decompressing transform.
+ *
+ *----------------------------------------------------------------------
  */
 
 static int
@@ -2278,7 +2283,7 @@ ZlibTransformClose(
      * Delete the support timer.
      */
 
-    ZlibTransformTimerKill(cd);
+    ZlibTransformEventTimerKill(cd);
 
     /*
      * Flush any data waiting to be compressed.
@@ -2325,7 +2330,7 @@ ZlibTransformClose(
      * Release all memory.
      */
 
-    Tcl_DStringFree (&cd->result);
+    Tcl_DStringFree(&cd->decompressed);
 
     if (cd->inBuffer) {
 	ckfree(cd->inBuffer);
@@ -2338,6 +2343,16 @@ ZlibTransformClose(
     ckfree(cd);
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZlibTransformInput --
+ *
+ *	Reader filter that does decompression.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 ZlibTransformInput(
@@ -2363,13 +2378,13 @@ ZlibTransformInput(
 	 * below, possibly EOF).
 	 */
 
-	copied = ResultCopy(&cd->result, UCHARP(buf), toRead);
+	copied = ResultCopy(cd, buf, toRead);
 	toRead -= copied;
 	buf += copied;
 	gotBytes += copied;
 
 	if (toRead == 0) {
-	    goto stop;
+	    return gotBytes;
 	}
 
 	/*
@@ -2378,7 +2393,7 @@ ZlibTransformInput(
 	 * transform them for delivery. We may not get what we want (full EOF
 	 * or temporarily out of data).
 	 *
-	 * Length (cd->result) == 0, toRead > 0 here.
+	 * Length (cd->decompressed) == 0, toRead > 0 here.
 	 *
 	 * The zlib transform allows us to read at most one character from the
 	 * underlying channel to properly identify Z_STREAM_END without
@@ -2386,6 +2401,16 @@ ZlibTransformInput(
 	 */
 
 	readBytes = Tcl_ReadRaw(cd->parent, cd->inBuffer, 1);
+
+	/*
+	 * Three cases here:
+	 *  1.	Got some data from the underlying channel (readBytes > 0) so
+	 *	it should be fed through the decompression engine.
+	 *  2.	Got an error (readBytes < 0) which we should report up except
+	 *	for the case where we can convert it to a short read.
+	 *  3.	Got an end-of-data from EOF or blocking (readBytes == 0). If
+	 *	it is EOF, try flushing the data out of the decompressor.
+	 */
 
 	if (readBytes < 0) {
 	    /*
@@ -2399,16 +2424,14 @@ ZlibTransformInput(
 		 * we report that instead of the request to re-try.
 		 */
 
-		goto stop;
+		return gotBytes;
 	    }
 
 	    *errorCodePtr = Tcl_GetErrno();
-	    goto error;
-	}
-
-	if (readBytes == 0) {
+	    return -1;
+	} else if (readBytes == 0) {
 	    /*
-	     * Check wether we hit on EOF in 'parent' or not. If not
+	     * Check wether we hit on EOF in 'parent' or not. If not,
 	     * differentiate between blocking and non-blocking modes. In
 	     * non-blocking mode we ran temporarily out of data. Signal this
 	     * to the caller via EWOULDBLOCK and error return (-1). In the
@@ -2424,56 +2447,61 @@ ZlibTransformInput(
 
 		if ((gotBytes == 0) && (cd->flags & ASYNC)) {
 		    *errorCodePtr = EWOULDBLOCK;
-		    goto error;
+		    return -1;
 		}
-		goto stop;
-	    } else {
-		/*
-		 * (Semi-)Eof in parent.
-		 *
-		 * Now this is a bit different. The partial data waiting is
-		 * converted and returned.
-		 */
-
-		if (ResultGenerate(cd, 0, Z_SYNC_FLUSH, errorCodePtr) < 0) {
-		    goto error;
-		}
-
-		if (Tcl_DStringLength(&cd->result) == 0) {
-		    /*
-		     * The drain delivered nothing.
-		     */
-
-		    goto stop;
-		}
-
-		/*
-		 * Reset eof, force caller to drain result buffer.
-		 */
-
-		((Channel *) cd->parent)->state->flags &= ~CHANNEL_EOF;
-		continue; /* at: while (toRead > 0) */
+		return gotBytes;
 	    }
-	} /* readBytes == 0 */
 
-	/*
-	 * Transform the read chunk, which was not empty. Anything we get back
-	 * is a transformation result to be put into our buffers, and the next
-	 * iteration will put it into the result.
-	 */
+	    /*
+	     * (Semi-)Eof in parent.
+	     *
+	     * Now this is a bit different. The partial data waiting is
+	     * converted and returned.
+	     */
 
-	if (ResultGenerate(cd, readBytes, Z_NO_FLUSH, errorCodePtr) < 0) {
-	    goto error;
+	    if (ResultGenerate(cd, 0, Z_SYNC_FLUSH, errorCodePtr) != TCL_OK) {
+		return -1;
+	    }
+
+	    if (Tcl_DStringLength(&cd->decompressed) == 0) {
+		/*
+		 * The drain delivered nothing. Time to deliver what we've
+		 * got.
+		 */
+
+		return gotBytes;
+	    }
+
+	    /*
+	     * Reset eof, force caller to drain result buffer.
+	     */
+
+	    ((Channel *) cd->parent)->state->flags &= ~CHANNEL_EOF;
+	} else /* readBytes > 0 */ {
+	    /*
+	     * Transform the read chunk, which was not empty. Anything we get
+	     * back is a transformation result to be put into our buffers, and
+	     * the next iteration will put it into the result.
+	     */
+
+	    if (ResultGenerate(cd, readBytes, Z_NO_FLUSH,
+		    errorCodePtr) != TCL_OK) {
+		return -1;
+	    }
 	}
-    } /* while toRead > 0 */
-
- stop:
+    }
     return gotBytes;
-
- error:
-    gotBytes = -1;
-    goto stop;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZlibTransformOutput --
+ *
+ *	Writer filter that does compression.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 ZlibTransformOutput(
@@ -2518,6 +2546,16 @@ ZlibTransformOutput(
 
     return toWrite - cd->outStream.avail_in;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZlibTransformSetOption --
+ *
+ *	Writing side of [fconfigure] on our channel.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 ZlibTransformSetOption(			/* not used */
@@ -2568,7 +2606,7 @@ ZlibTransformSetOption(			/* not used */
 	    }
 
 	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
-		    cd->outStream.next_out - (Bytef*)cd->outBuffer) < 0) {
+		    cd->outStream.next_out - (Bytef *) cd->outBuffer) < 0) {
 		Tcl_AppendResult(interp, "problem flushing channel: ",
 			Tcl_PosixError(interp), NULL);
 		return TCL_ERROR;
@@ -2589,6 +2627,16 @@ ZlibTransformSetOption(			/* not used */
     return setOptionProc(Tcl_GetChannelInstanceData(cd->parent), interp,
 	    optionName, value);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZlibTransformGetOption --
+ *
+ *	Reading side of [fconfigure] on our channel.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 ZlibTransformGetOption(
@@ -2665,6 +2713,17 @@ ZlibTransformGetOption(
     }
     return Tcl_BadChannelOption(interp, optionName, chanOptions);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZlibTransformWatch, ZlibTransformEventHandler --
+ *
+ *	If we have data pending, trigger a readable event after a short time
+ *	(in order to allow a real event to catch up).
+ *
+ *----------------------------------------------------------------------
+ */
 
 static void
 ZlibTransformWatch(
@@ -2681,63 +2740,27 @@ ZlibTransformWatch(
     watchProc = Tcl_ChannelWatchProc(Tcl_GetChannelType(cd->parent));
     watchProc(Tcl_GetChannelInstanceData(cd->parent), mask);
 
-    if (!(mask & TCL_READABLE) ||
-	(Tcl_DStringLength(&cd->result) == 0)) {
-	ZlibTransformTimerKill(cd);
-    } else {
-	ZlibTransformTimerSetup(cd);
+    if (!(mask & TCL_READABLE) || Tcl_DStringLength(&cd->decompressed) == 0) {
+	ZlibTransformEventTimerKill(cd);
+    } else if (cd->timer == NULL) {
+	cd->timer = Tcl_CreateTimerHandler(TRANSFORM_TIMEOUT,
+		ZlibTransformTimerRun, cd);
     }
 }
 
 static int
-ZlibTransformGetHandle(
-    ClientData instanceData,
-    int direction,
-    ClientData *handlePtr)
-{
-    ZlibChannelData *cd = instanceData;
-
-    return Tcl_GetChannelHandle(cd->parent, direction, handlePtr);
-}
-
-static int
-ZlibTransformBlockMode(
-    ClientData instanceData,
-    int mode)
-{
-    ZlibChannelData *cd = instanceData;
-
-    if (mode == TCL_MODE_NONBLOCKING) {
-	cd->flags |= ASYNC;
-    } else {
-	cd->flags &= ~ASYNC;
-    }
-    return TCL_OK;
-}
-
-static int
-ZlibTransformHandler(
+ZlibTransformEventHandler(
     ClientData instanceData,
     int interestMask)
 {
     ZlibChannelData *cd = instanceData;
 
-    ZlibTransformTimerKill(cd);
+    ZlibTransformEventTimerKill(cd);
     return interestMask;
 }
 
-static void
-ZlibTransformTimerSetup(
-    ZlibChannelData *cd)
-{
-    if (cd->timer == NULL) {
-	cd->timer = Tcl_CreateTimerHandler(0,
-		ZlibTransformTimerRun, cd);
-    }
-}
-
-static void
-ZlibTransformTimerKill(
+static inline void
+ZlibTransformEventTimerKill(
     ZlibChannelData *cd)
 {
     if (cd->timer != NULL) {
@@ -2754,6 +2777,53 @@ ZlibTransformTimerRun(
 
     cd->timer = NULL;
     Tcl_NotifyChannel(cd->chan, TCL_READABLE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZlibTransformGetHandle --
+ *
+ *	Anything that needs the OS handle is told to get it from what we are
+ *	stacked on top of.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ZlibTransformGetHandle(
+    ClientData instanceData,
+    int direction,
+    ClientData *handlePtr)
+{
+    ZlibChannelData *cd = instanceData;
+
+    return Tcl_GetChannelHandle(cd->parent, direction, handlePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZlibTransformBlockMode --
+ *
+ *	We need to keep track of the blocking mode; it changes our behavior.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ZlibTransformBlockMode(
+    ClientData instanceData,
+    int mode)
+{
+    ZlibChannelData *cd = instanceData;
+
+    if (mode == TCL_MODE_NONBLOCKING) {
+	cd->flags |= ASYNC;
+    } else {
+	cd->flags &= ~ASYNC;
+    }
+    return TCL_OK;
 }
 
 /*
@@ -2870,7 +2940,7 @@ ZlibStackChannelTransform(
 	}
     }
 
-    Tcl_DStringInit(&cd->result);
+    Tcl_DStringInit(&cd->decompressed);
 
     chan = Tcl_StackChannel(interp, &zlibChannelType, cd,
 	    Tcl_GetChannelMode(channel), channel);
@@ -2913,13 +2983,13 @@ ZlibStackChannelTransform(
  *----------------------------------------------------------------------
  */
 
-static int
+static inline int
 ResultCopy(
-    Tcl_DString *ds,		/* The buffer to read from */
-    unsigned char *buf,		/* The buffer to copy into */
+    ZlibChannelData *cd,	/* The location of the buffer to read from. */
+    char *buf,			/* The buffer to copy into */
     int toRead)			/* Number of requested bytes */
 {
-    int have = Tcl_DStringLength(ds);
+    int have = Tcl_DStringLength(&cd->decompressed);
 
     if (have == 0) {
 	/*
@@ -2927,20 +2997,19 @@ ResultCopy(
 	 */
 
 	return 0;
-    }
-    if (have > toRead) {
+    } else if (have > toRead) {
 	/*
 	 * The internal buffer contains more than requested. Copy the
 	 * requested subset to the caller, shift the remaining bytes down, and
 	 * truncate.
 	 */
 
-	char *src = Tcl_DStringValue(ds);
+	char *src = Tcl_DStringValue(&cd->decompressed);
 
 	memcpy(buf, src, toRead);
 	memmove(src, src + toRead, have - toRead);
 
-	Tcl_DStringSetLength(ds, have - toRead);
+	Tcl_DStringSetLength(&cd->decompressed, have - toRead);
 	return toRead;
     } else /* have <= toRead */ {
 	/*
@@ -2948,8 +3017,8 @@ ResultCopy(
 	 * caller, so take everything as best effort.
 	 */
 
-	memcpy(buf, Tcl_DStringValue(ds), have);
-	Tcl_DStringSetLength(ds, 0);
+	memcpy(buf, Tcl_DStringValue(&cd->decompressed), have);
+	Tcl_DStringSetLength(&cd->decompressed, 0);
 	return have;
     }
 }
@@ -2963,7 +3032,7 @@ ResultCopy(
  *	in our working buffer.
  *
  * Result:
- *	Zero on success, -1 on error (with *errorCodePtr updated with reason).
+ *	TCL_OK/TCL_ERROR (with *errorCodePtr updated with reason).
  *
  * Side effects:
  *	See above.
@@ -2998,7 +3067,7 @@ ResultGenerate(
 
 	written = MAXBUF - cd->inStream.avail_out;
 	if (written) {
-	    Tcl_DStringAppend(&cd->result, (char*) buf, written);
+	    Tcl_DStringAppend(&cd->decompressed, (char *) buf, written);
 	}
 
 	/*
@@ -3008,7 +3077,7 @@ ResultGenerate(
 	if (((flush == Z_SYNC_FLUSH) && (e == Z_BUF_ERROR))
 		|| (e == Z_STREAM_END)
 		|| (e == Z_OK && cd->inStream.avail_out == 0)) {
-	    return 0;
+	    return TCL_OK;
 	}
 
 	/*
@@ -3027,7 +3096,7 @@ ResultGenerate(
 		    Tcl_NewStringObj(cd->inStream.msg, -1));
 	    Tcl_SetChannelError(cd->parent, errObj);
 	    *errorCodePtr = EINVAL;
-	    return -1;
+	    return TCL_ERROR;
 	}
 
 	/*
@@ -3035,7 +3104,7 @@ ResultGenerate(
 	 */
 
 	if (cd->inStream.avail_in <= 0 && flush != Z_SYNC_FLUSH) {
-	    return 0;
+	    return TCL_OK;
 	}
     }
 }
