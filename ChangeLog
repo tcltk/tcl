@@ -1,3 +1,11 @@
+2012-05-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:  Take cygwin handling of X11 into account.
+	* generic/tcl*Decls.h: re-generated
+	* generic/tclStubInit.c:  Implement TclpIsAtty, Cygwin only.
+	* doc/dde.n: Doc fix: "dde execute iexplore" doesn't work
+	without -async, because iexplore doesn't return a value
+
 2012-05-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/genStubs.tcl:   Let cygwin share stub table with win32
