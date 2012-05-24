@@ -56,13 +56,21 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
 #   define TclpReaddir 0
+#   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
+#   define TclpIsAtty TclPlatIsAtty
 #   define TclWinSetInterfaces (void (*) (int)) doNothing
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 #   define TclWinResetInterfaces doNothing
 
 static Tcl_Encoding winTCharEncoding;
+
+static int
+TclpIsAtty(int fd)
+{
+    return isatty(fd);
+}
 
 int
 TclWinGetPlatformId()
@@ -489,7 +497,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateCommandChannel, /* 13 */
     TclpCreatePipe, /* 14 */
     TclpCreateProcess, /* 15 */
-    0, /* 16 */
+    TclpIsAtty, /* 16 */
     0, /* 17 */
     TclpMakeFile, /* 18 */
     TclpOpenFile, /* 19 */
