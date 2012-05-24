@@ -726,6 +726,24 @@ elif test $tcl_cv_stack_grows_up = yes; then
 fi
 
 #--------------------------------------------------------------------
+# The check below checks whether the cpuid instruction is usable.
+#--------------------------------------------------------------------
+
+AC_CACHE_CHECK([whether the cpuid instruction is usable], tcl_cv_cpuid, [
+    AC_TRY_LINK(, [
+	int index,regsPtr[4];
+    __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
+                 "cpuid            \n\t"
+                 "mov %%ebx, %%esi   \n\t"
+                 "mov %%edi, %%ebx  \n\t"
+                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+                 : "a"(index) : "edi");
+    ], tcl_cv_cpuid=yes, tcl_cv_cpuid=no)])
+if test $tcl_cv_cpuid = yes; then
+    AC_DEFINE(HAVE_CPUID, 1, [Is the cpuid instruction usable?])
+fi
+
+#--------------------------------------------------------------------
 #	The statements below define a collection of symbols related to
 #	building libtcl as a shared library instead of a static library.
 #--------------------------------------------------------------------
