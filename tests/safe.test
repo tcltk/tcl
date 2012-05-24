@@ -30,7 +30,7 @@ set ::auto_path [info library]
 catch {safe::interpConfigure}
 
 proc equiv {x} {return $x}
-
+
 test safe-1.1 {safe::interpConfigure syntax} {
     list [catch {safe::interpConfigure} msg] $msg;
 } {1 {no value given for parameter "slave" (use -help for full usage) :
@@ -515,6 +515,182 @@ test safe-12.6 {glob is restricted [Bug 2906841]} -setup {
     safe::interpDelete $i
 } -result {}
 
+proc mkfile {filename} {
+    close [open $filename w]
+}
+#### New tests for Safe base glob, with patches @ Bug 2964715
+test safe-13.1 {glob is restricted [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob *
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {permission denied}
+test safe-13.2 {mimic the valid glob call by ::tcl::tm::UnknownHandler [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    set testdir  [file join [temporaryDirectory] deletethisdir]
+    set testdir2 [file join $testdir deletemetoo]
+    set testfile [file join $testdir2 deleteme.tm]
+    file mkdir $testdir2
+    mkfile $testfile
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir2
+    set result [$i eval glob -nocomplain -directory $testdir2 *.tm]
+    if {$result eq [list $testfile]} {
+        return "glob match"
+    } else {
+        return "no match: $result"
+    }
+} -cleanup {
+    safe::interpDelete $i
+    file delete -force $testdir
+} -result {glob match}
+test safe-13.3 {cf 13.2 but test glob failure when -directory is outside access path [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    set testdir  [file join [temporaryDirectory] deletethisdir]
+    set testdir2 [file join $testdir deletemetoo]
+    set testfile [file join $testdir2 deleteme.tm]
+    file mkdir $testdir2
+    mkfile $testfile
+} -body {
+    $i eval glob -directory $testdir2 *.tm
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+    file delete -force $testdir
+} -result {permission denied}
+test safe-13.4 {another valid glob call [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    set testdir  [file join [temporaryDirectory] deletethisdir]
+    set testdir2 [file join $testdir deletemetoo]
+    set testfile [file join $testdir2 deleteme.tm]
+    file mkdir $testdir2
+    mkfile $testfile
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir
+    ::safe::interpAddToAccessPath $i $testdir2
+    set result [$i eval \
+	    glob -nocomplain -directory $testdir [file join deletemetoo *.tm]]
+    if {$result eq [list $testfile]} {
+        return "glob match"
+    } else {
+        return "no match: $result"
+    }
+} -cleanup {
+    safe::interpDelete $i
+    file delete -force $testdir
+} -result {glob match}
+test safe-13.5 {as 13.4 but test glob failure when -directory is outside access path [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    set testdir  [file join [temporaryDirectory] deletethisdir]
+    set testdir2 [file join $testdir deletemetoo]
+    set testfile [file join $testdir2 deleteme.tm]
+    file mkdir $testdir2
+    mkfile $testfile
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir2
+    $i eval \
+	glob -directory $testdir [file join deletemetoo *.tm]
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+    file delete -force $testdir
+} -result {permission denied}
+test safe-13.6 {as 13.4 but test silent failure when result is outside access_path [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    set testdir  [file join [temporaryDirectory] deletethisdir]
+    set testdir2 [file join $testdir deletemetoo]
+    set testfile [file join $testdir2 deleteme.tm]
+    file mkdir $testdir2
+    mkfile $testfile
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir
+    $i eval \
+	glob -nocomplain -directory $testdir [file join deletemetoo *.tm]
+} -cleanup {
+    safe::interpDelete $i
+    file delete -force $testdir
+} -result {}
+test safe-13.7 {mimic the glob call by tclPkgUnknown which gives a deliberate error in a safe interpreter [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    set testdir  [file join [temporaryDirectory] deletethisdir]
+    set testdir2 [file join $testdir deletemetoo]
+    set testfile [file join $testdir2 pkgIndex.tcl]
+    file mkdir $testdir2
+    mkfile $testfile
+} -body {
+    set safeTD [::safe::interpAddToAccessPath $i $testdir]
+    ::safe::interpAddToAccessPath $i $testdir2
+    string map [list $safeTD EXPECTED] [$i eval [list \
+	glob -directory $safeTD -join * pkgIndex.tcl]]
+} -cleanup {
+    safe::interpDelete $i
+    file delete -force $testdir
+} -result {{EXPECTED/deletemetoo/pkgIndex.tcl}}
+# Note the extra {} around the result above; that's *expected* because of the
+# format of virtual path roots.
+test safe-13.8 {mimic the glob call by tclPkgUnknown without the deliberate error that is specific to pkgIndex.tcl [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    set testdir  [file join [temporaryDirectory] deletethisdir]
+    set testdir2 [file join $testdir deletemetoo]
+    set testfile [file join $testdir2 notIndex.tcl]
+    file mkdir $testdir2
+    mkfile $testfile
+} -body {
+    set safeTD [::safe::interpAddToAccessPath $i $testdir]
+    ::safe::interpAddToAccessPath $i $testdir2
+    $i eval [list glob -directory $safeTD -join -nocomplain * notIndex.tcl]
+} -cleanup {
+    safe::interpDelete $i
+    file delete -force $testdir
+} -result {}
+test safe-13.9 {as 13.8 but test glob failure when -directory is outside access path [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    set testdir  [file join [temporaryDirectory] deletethisdir]
+    set testdir2 [file join $testdir deletemetoo]
+    set testfile [file join $testdir2 notIndex.tcl]
+    file mkdir $testdir2
+    mkfile $testfile
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir2
+    set result [$i eval \
+	    glob -directory $testdir -join -nocomplain * notIndex.tcl]
+    if {$result eq [list $testfile]} {
+        return {glob match}
+    } else {
+        return "no match: $result"
+    }
+} -cleanup {
+    safe::interpDelete $i
+    file delete -force $testdir
+} -result {no match: }
+test safe-13.10 {as 13.8 but test silent failure when result is outside access_path [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    set testdir  [file join [temporaryDirectory] deletethisdir]
+    set testdir2 [file join $testdir deletemetoo]
+    set testfile [file join $testdir2 notIndex.tcl]
+    file mkdir $testdir2
+    mkfile $testfile
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir
+    $i eval glob -directory $testdir -join -nocomplain * notIndex.tcl
+} -cleanup {
+    safe::interpDelete $i
+    file delete -force $testdir
+} -result {}
+rename mkfile {}
+
+#### Test for the module path
+test safe-14.1 {Check that module path is the same as in the master interpreter [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    set tm {}
+    foreach token [$i eval ::tcl::tm::path list] {
+        lappend tm [dict get [set ::safe::S${i}(access_path,map)] $token]
+    }
+    return $tm
+} -cleanup {
+    safe::interpDelete $i
+} -result [::tcl::tm::path list]
+
 set ::auto_path $saveAutoPath
 # cleanup
 ::tcltest::cleanupTests

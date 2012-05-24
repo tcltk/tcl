@@ -1129,7 +1129,7 @@ CreateSocketAddress(
 
     ZeroMemory(sockaddrPtr, sizeof(SOCKADDR_IN));
     sockaddrPtr->sin_family = AF_INET;
-    sockaddrPtr->sin_port = htons((u_short) (port & 0xFFFF));
+    sockaddrPtr->sin_port = htons((unsigned short) (port & 0xFFFF));
     if (host == NULL) {
 	addr.s_addr = INADDR_ANY;
     } else {
@@ -2512,9 +2512,25 @@ TclWinSetSockOpt(SOCKET s, int level, int optname, const char *optval,
     return setsockopt(s, level, optname, optval, optlen);
 }
 
-u_short
-TclWinNToHS(
-    u_short netshort)
+unsigned short
+TclWinNToHS(unsigned short netshort)
+{
+    /*
+     * Check that WinSock is initialized; do not call it if not, to
+     * prevent system crashes. This can happen at exit time if the exit
+     * handler for WinSock ran before other exit handlers that want to
+     * use sockets.
+     */
+
+    if (!SocketsEnabled()) {
+        return (unsigned short) -1;
+    }
+
+    return ntohs(netshort);
+}
+
+char *
+TclpInetNtoa(struct in_addr addr)
 {
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -2523,10 +2539,10 @@ TclWinNToHS(
      */
 
     if (!SocketsEnabled()) {
-	return (u_short) -1;
+        return NULL;
     }
 
-    return ntohs(netshort);
+    return inet_ntoa(addr);
 }
 
 struct servent *
