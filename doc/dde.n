@@ -6,14 +6,14 @@
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
 .so man.macros
-.TH dde n 1.3 dde "Tcl Bundled Packages"
+.TH dde n 1.4 dde "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 dde \- Execute a Dynamic Data Exchange command
 .SH SYNOPSIS
 .sp
-\fBpackage require dde 1.3\fR
+\fBpackage require dde 1.4\fR
 .sp
 \fBdde servername\fR ?\fB\-force\fR? ?\fB\-handler \fIproc\fR? ?\fB\-\|\-\fR? ?\fItopic\fR?
 .sp
@@ -156,7 +156,7 @@ unpredictable results.
 .PP
 An external application which wishes to run a script in Tcl should have
 that script store its result in a variable, run the \fBdde execute\fR
-command, and the run \fBdde request\fR to get the value of the
+command, and then run \fBdde request\fR to get the value of the
 variable.
 .PP
 When using DDE, be careful to ensure that the event queue is flushed
