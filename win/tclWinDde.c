@@ -181,7 +181,7 @@ Initialize(void)
 	    ddeIsServer = 1;
 	    Tcl_CreateExitHandler(DdeExitProc, NULL);
 	    ddeServiceGlobal = DdeCreateStringHandle(ddeInstance,
-		    TCL_DDE_SERVICE_NAME, 0);
+		    TCL_DDE_SERVICE_NAME, CP_WINANSI);
 	    DdeNameService(ddeInstance, ddeServiceGlobal, 0L, DNS_REGISTER);
 	} else {
 	    ddeIsServer = 0;
@@ -577,6 +577,7 @@ DdeServerProc(
 	 */
 
 	Tcl_Obj *returnPackagePtr;
+	Tcl_UniChar *uniStr;
 
 	for (convPtr = tsdPtr->currentConversations; (convPtr != NULL)
 		&& (convPtr->hConv != hConv); convPtr = convPtr->nextPtr) {
@@ -590,11 +591,21 @@ DdeServerProc(
 	}
 
 	utilString = (char *) DdeAccessData(hData, &dlen);
-	len = dlen;
-	if (len && !utilString[len-1]) {
-	    len--;
+	uniStr = (Tcl_UniChar *) utilString;
+	if (!dlen) {
+	    /* Empty string. (Since TIP #106 we can create this!) */
+	    ddeObjectPtr = Tcl_NewObj();
+	} else if (0) {
+	    /* Cannot be unicode, so assume utf-8 */
+	    if (!utilString[dlen-1]) {
+		dlen--;
+	    }
+	    ddeObjectPtr = Tcl_NewStringObj(utilString, dlen);
+	} else {
+	    /* unicode */
+	    dlen >>= 1;
+	    ddeObjectPtr = Tcl_NewUnicodeObj(uniStr, dlen);
 	}
-	ddeObjectPtr = Tcl_NewStringObj(utilString, len);
 	Tcl_IncrRefCount(ddeObjectPtr);
 	DdeUnaccessData(hData);
 	if (convPtr->returnPackagePtr != NULL) {
@@ -712,8 +723,8 @@ MakeDdeConnection(
     HSZ ddeTopic, ddeService;
     HCONV ddeConv;
 
-    ddeService = DdeCreateStringHandle(ddeInstance, TCL_DDE_SERVICE_NAME, 0);
-    ddeTopic = DdeCreateStringHandle(ddeInstance, name, 0);
+    ddeService = DdeCreateStringHandle(ddeInstance, TCL_DDE_SERVICE_NAME, CP_WINANSI);
+    ddeTopic = DdeCreateStringHandle(ddeInstance, name, CP_WINANSI);
 
     ddeConv = DdeConnect(ddeInstance, ddeService, ddeTopic, NULL);
     DdeFreeStringHandle(ddeInstance, ddeService);
@@ -989,7 +1000,7 @@ DdeObjCmd(
 	"-binary", NULL
     };
 
-    int index, length;
+    int index, length, argIndex;
     int async = 0, binary = 0;
     int result = TCL_OK, firstArg = 0;
     HSZ ddeService = NULL, ddeTopic = NULL, ddeItem = NULL, ddeCookie = NULL;
@@ -1081,11 +1092,9 @@ DdeObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "?-async? serviceName args");
 	    return TCL_ERROR;
 	} else {
-	    int dummy;
-
 	    firstArg = 2;
 	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeExecOptions, "option",
-		    0, &dummy) == TCL_OK) {
+		    0, &argIndex) == TCL_OK) {
 		if (objc < 5) {
 		    goto wrongDdeEvalArgs;
 		}
@@ -1143,8 +1152,12 @@ DdeObjCmd(
 	    break;
 	}
 	hConv = DdeConnect(ddeInstance, ddeService, ddeTopic, NULL);
-	DdeFreeStringHandle(ddeInstance, ddeService);
-	DdeFreeStringHandle(ddeInstance, ddeTopic);
+	if (ddeService) {
+	    DdeFreeStringHandle(ddeInstance, ddeService);
+	}
+	if (ddeTopic) {
+	    DdeFreeStringHandle(ddeInstance, ddeTopic);
+	}
 
 	if (hConv == NULL) {
 	    SetDdeError(interp);
@@ -1185,8 +1198,12 @@ DdeObjCmd(
 	    goto cleanup;
 	}
 	hConv = DdeConnect(ddeInstance, ddeService, ddeTopic, NULL);
-	DdeFreeStringHandle(ddeInstance, ddeService);
-	DdeFreeStringHandle(ddeInstance, ddeTopic);
+	if (ddeService) {
+	    DdeFreeStringHandle(ddeInstance, ddeService);
+	}
+	if (ddeTopic) {
+	    DdeFreeStringHandle(ddeInstance, ddeTopic);
+	}
 
 	if (hConv == NULL) {
 	    SetDdeError(interp);
@@ -1242,8 +1259,12 @@ DdeObjCmd(
 		&length);
 
 	hConv = DdeConnect(ddeInstance, ddeService, ddeTopic, NULL);
+	if (ddeService) {
 	DdeFreeStringHandle(ddeInstance, ddeService);
+	}
+	if (ddeTopic) {
 	DdeFreeStringHandle(ddeInstance, ddeTopic);
+	}
 
 	if (hConv == NULL) {
 	    SetDdeError(interp);

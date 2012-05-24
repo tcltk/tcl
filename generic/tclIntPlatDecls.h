@@ -134,7 +134,8 @@ EXTERN int		TclpCreateProcess _ANSI_ARGS_((Tcl_Interp *interp,
 				int argc, CONST char **argv,
 				TclFile inputFile, TclFile outputFile,
 				TclFile errorFile, Tcl_Pid *pidPtr));
-/* Slot 16 is reserved */
+/* 16 */
+EXTERN int		TclpIsAtty _ANSI_ARGS_((int fd));
 /* Slot 17 is reserved */
 /* 18 */
 EXTERN TclFile		TclpMakeFile _ANSI_ARGS_((Tcl_Channel channel,
@@ -289,7 +290,7 @@ typedef struct TclIntPlatStubs {
     Tcl_Channel (*tclpCreateCommandChannel) _ANSI_ARGS_((TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)); /* 13 */
     int (*tclpCreatePipe) _ANSI_ARGS_((TclFile *readPipe, TclFile *writePipe)); /* 14 */
     int (*tclpCreateProcess) _ANSI_ARGS_((Tcl_Interp *interp, int argc, CONST char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr)); /* 15 */
-    VOID *reserved16;
+    int (*tclpIsAtty) _ANSI_ARGS_((int fd)); /* 16 */
     VOID *reserved17;
     TclFile (*tclpMakeFile) _ANSI_ARGS_((Tcl_Channel channel, int direction)); /* 18 */
     TclFile (*tclpOpenFile) _ANSI_ARGS_((CONST char *fname, int mode)); /* 19 */
@@ -488,7 +489,10 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclpCreateProcess \
 	(tclIntPlatStubsPtr->tclpCreateProcess) /* 15 */
 #endif
-/* Slot 16 is reserved */
+#ifndef TclpIsAtty
+#define TclpIsAtty \
+	(tclIntPlatStubsPtr->tclpIsAtty) /* 16 */
+#endif
 /* Slot 17 is reserved */
 #ifndef TclpMakeFile
 #define TclpMakeFile \

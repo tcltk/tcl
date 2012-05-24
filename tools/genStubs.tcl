@@ -279,18 +279,26 @@ proc genStubs::rewriteFile {file text} {
 # Results:
 #	Returns the original text inside an appropriate #ifdef.
 
-proc genStubs::addPlatformGuard {plat iftxt {eltxt {}}} {
+proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
     set text ""
     switch $plat {
 	win {
-	    append text "#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */\n${iftxt}"
+	    append text "#if defined(__WIN32__)"
+	    if {$withCygwin} {
+		append text " || defined(__CYGWIN__)"
+	    }
+	    append text " /* WIN */\n${iftxt}"
 	    if {$eltxt != ""} {
 		append text "#else /* WIN */\n${eltxt}"
 	    }
 	    append text "#endif /* WIN */\n"
 	}
 	unix {
-	    append text "#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_TCL)\
+	    append text "#if !defined(__WIN32__)"
+	    if {$withCygwin} {
+		append text " && !defined(__CYGWIN__)"
+	    }
+	    append text " && !defined(MAC_TCL)\
 		    /* UNIX */\n${iftxt}"
 	    if {$eltxt != ""} {
 		append text "#else /* UNIX */\n${eltxt}"
@@ -319,7 +327,11 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}}} {
 	    append text "#endif /* AQUA */\n"
 	}
 	x11 {
-	    append text "#if !(defined(__WIN32__) || defined(__CYGWIN__) || defined(MAC_TCL) || defined(MAC_OSX_TK))\
+	    append text "#if !(defined(__WIN32__)"
+	    if {$withCygwin} {
+		append text " || defined(__CYGWIN__)"
+	    }
+	    append text " || defined(MAC_OSX_TK))\
 		    /* X11 */\n${iftxt}"
 	    if {$eltxt != ""} {
 		append text "#else /* X11 */\n${eltxt}"
@@ -466,7 +478,7 @@ proc genStubs::makeDecl {name decl index} {
 	append line " "
 	set pad 0
     }
-    if {$args eq ""} {
+    if {$args == ""} {
 	append line $fname
 	append text $line
 	append text ";\n"
@@ -490,7 +502,7 @@ proc genStubs::makeDecl {name decl index} {
 		append line $sep
 		set next {}
 		append next [lindex $arg 0]
-		if {[string index $next end] ne "*"} {
+		if {[string index $next end] != "*"} {
 		    append next " "
 		}
 		append next [lindex $arg 1] [lindex $arg 2]
@@ -603,7 +615,7 @@ proc genStubs::makeSlot {name decl index} {
 	    set sep "("
 	    foreach arg $args {
 		append text $sep [lindex $arg 0]
-		if {[string index $text end] ne "*"} {
+		if {[string index $text end] != "*"} {
 		    append text " "
 		}
 		append text [lindex $arg 1] [lindex $arg 2]
@@ -630,7 +642,7 @@ proc genStubs::makeSlot {name decl index} {
 #	Returns the formatted declaration string.
 
 proc genStubs::makeInit {name decl index} {
-    if {[lindex $decl 2] eq ""} {
+    if {[lindex $decl 2] == ""} {
 	append text "    &" [lindex $decl 1] ", /* " $index " */\n"
     } else {
 	append text "    " [lindex $decl 1] ", /* " $index " */\n"
@@ -737,7 +749,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 			append temp [$slotProc $name $stubs($name,$plat,$i) $i]
 		    }
 		}
-		append text [addPlatformGuard $plat $temp]
+		append text [addPlatformGuard $plat $temp {} true]
 	    }
 	}
         # Again, make sure you don't duplicate entries for macosx & aqua.
@@ -780,7 +792,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 			append temp [$slotProc $name $stubs($name,x11,$i) $i]
 		}
 	    }
-	    append text [addPlatformGuard x11 $temp]
+	    append text [addPlatformGuard x11 $temp {} true]
 	}
     }
 }
@@ -820,12 +832,14 @@ proc genStubs::emitMacros {name textVar} {
     upvar $textVar text
 
     set upName [string toupper $libraryName]
-    append text "\n#if defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS)\n"
+    append text "\n#if defined(USE_${upName}_STUBS) &&\
+	    !defined(USE_${upName}_STUB_PROCS)\n"
     append text "\n/*\n * Inline function declarations:\n */\n\n"
 
     forAllStubs $name makeMacro 0 text
 
-    append text "\n#endif /* defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS) */\n"
+    append text "\n#endif /* defined(USE_${upName}_STUBS) &&\
+	    !defined(USE_${upName}_STUB_PROCS) */\n"
     return
 }
 
