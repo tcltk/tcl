@@ -1,3 +1,12 @@
+2012-05-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:   Let cygwin share stub table with win32
+	* win/tclWinSock.c:     implement TclpInetNtoa for win32
+	* generic/tclInt.decls: Revert most of [3caedf05df], since when
+	  we let cygwin share the win32 stub table this is no longer necessary
+	* generic/tcl*Decls.h:  re-generated
+	* doc/dde.n:            1.3 -> 1.4
+
 2012-05-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (ZlibTransformInput): [Bug 3525907]: Ensure that

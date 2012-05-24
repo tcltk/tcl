@@ -2663,9 +2663,9 @@ TclWinSetSockOpt(
     return setsockopt(s, level, optname, optval, optlen);
 }
 
-u_short
+unsigned short
 TclWinNToHS(
-    u_short netshort)
+    unsigned short netshort)
 {
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -2674,10 +2674,27 @@ TclWinNToHS(
      */
 
     if (!SocketsEnabled()) {
-	return (u_short) -1;
+	return (unsigned short) -1;
     }
 
     return ntohs(netshort);
+}
+
+char *
+TclpInetNtoa(
+    struct in_addr addr)
+{
+    /*
+     * Check that WinSock is initialized; do not call it if not, to prevent
+     * system crashes. This can happen at exit time if the exit handler for
+     * WinSock ran before other exit handlers that want to use sockets.
+     */
+
+    if (!SocketsEnabled()) {
+        return NULL;
+    }
+
+    return inet_ntoa(addr);
 }
 
 struct servent *
