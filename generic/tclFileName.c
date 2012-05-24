@@ -857,7 +857,7 @@ TclpNativeJoinPath(
 
 	if (length > 0 && (start[length-1] != '/')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    length++;
+	    Tcl_GetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -893,7 +893,7 @@ TclpNativeJoinPath(
 	if ((length > 0) &&
 		(start[length-1] != '/') && (start[length-1] != ':')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    length++;
+	    Tcl_GetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
