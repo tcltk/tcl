@@ -593,9 +593,9 @@ DdeServerProc(
 	utilString = (char *) DdeAccessData(hData, &dlen);
 	uniStr = (Tcl_UniChar *) utilString;
 	if (!dlen) {
-	    /* Empty string. (Since TIP #106 we can create this!) */
+	    /* Empty binary array. */
 	    ddeObjectPtr = Tcl_NewObj();
-	} else if (0) {
+	} else if ((dlen & 1) || uniStr[(dlen>>1)-1]) {
 	    /* Cannot be unicode, so assume utf-8 */
 	    if (!utilString[dlen-1]) {
 		dlen--;
@@ -604,7 +604,7 @@ DdeServerProc(
 	} else {
 	    /* unicode */
 	    dlen >>= 1;
-	    ddeObjectPtr = Tcl_NewUnicodeObj(uniStr, dlen);
+	    ddeObjectPtr = Tcl_NewUnicodeObj(uniStr, dlen - 1);
 	}
 	Tcl_IncrRefCount(ddeObjectPtr);
 	DdeUnaccessData(hData);
