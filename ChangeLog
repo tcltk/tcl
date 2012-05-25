@@ -1,3 +1,9 @@
+2012-05-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:    [Bug 473946]: special characters not correctly sent,
+	now for XTYP_EXECUTE as well as XTYP_REQUEST.
+	* win/Makefile.in:    Fix "make genstubs" when cross-compiling on UNIX
+
 2012-05-24  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/genStubs.tcl:  Take cygwin handling of X11 into account.
