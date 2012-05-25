@@ -331,7 +331,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
 	    if {$withCygwin} {
 		append text " || defined(__CYGWIN__)"
 	    }
-	    append text " || defined(MAC_OSX_TK))\
+	    append text " || defined(MAC_TCL) || defined(MAC_OSX_TK))\
 		    /* X11 */\n${iftxt}"
 	    if {$eltxt != ""} {
 		append text "#else /* X11 */\n${eltxt}"
