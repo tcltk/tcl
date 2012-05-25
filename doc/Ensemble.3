@@ -159,6 +159,8 @@ code (\fBTCL_OK\fR, or \fBTCL_ERROR\fR if the token does not refer to an
 ensemble) and the dictionary obtained from
 \fBTcl_GetEnsembleMappingDict\fR should always be treated as immutable
 even if it is unshared.
+All command names in prefixes set via \fBTcl_SetEnsembleMappingDict\fR
+must be fully qualified.
 .TP
 \fBformal pre-subcommand parameter list\fR (read-write)
 .VS 8.6
