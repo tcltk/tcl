@@ -849,14 +849,14 @@ $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:
-	$(TCL_EXE) "$(ROOT_DIR_NATIVE)\tools\genStubs.tcl" \
+	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
-	    "$(GENERIC_DIR_NATIVE)\tcl.decls" \
-	    "$(GENERIC_DIR_NATIVE)\tclInt.decls" \
-	    "$(GENERIC_DIR_NATIVE)\tclTomMath.decls"
-	$(TCL_EXE) "$(ROOT_DIR_NATIVE)\tools\genStubs.tcl" \
+	    "$(GENERIC_DIR_NATIVE)/tcl.decls" \
+	    "$(GENERIC_DIR_NATIVE)/tclInt.decls" \
+	    "$(GENERIC_DIR_NATIVE)/tclTomMath.decls"
+	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
-	    "$(GENERIC_DIR_NATIVE)\tclOO.decls"
+	    "$(GENERIC_DIR_NATIVE)/tclOO.decls"
 
 #
 # This target creates the HTML folder for Tcl & Tk and places it in

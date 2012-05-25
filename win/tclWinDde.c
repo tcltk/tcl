@@ -93,6 +93,10 @@ static int ddeIsServer = 0;
 #define TCL_DDE_SERVICE_NAME	TEXT("TclEval")
 #define TCL_DDE_EXECUTE_RESULT	TEXT("$TCLEVAL$EXECUTE$RESULT")
 
+#define DDE_FLAG_ASYNC 1
+#define DDE_FLAG_BINARY 2
+#define DDE_FLAG_FORCE 4
+
 TCL_DECLARE_MUTEX(ddeMutex)
 
 /*
@@ -275,7 +279,7 @@ DdeSetServerName(
     const TCHAR *name, /* The name that will be used to refer to the
 				 * interpreter in later "send" commands. Must
 				 * be globally unique. */
-    int exactName,		/* Should we make a unique name? 0 = unique */
+    int flags,		/* DDE_FLAG_FORCE or 0 */
     Tcl_Obj *handlerPtr)	/* Name of the optional proc/command to handle
 				 * incoming Dde eval's */
 {
@@ -323,16 +327,15 @@ DdeSetServerName(
 	return TEXT("");
     }
 
-    Tcl_DStringInit(&dString);
-
     /*
      * Get the list of currently registered Tcl interpreters by calling the
      * internal implementation of the 'dde services' command.
      */
 
+    Tcl_DStringInit(&dString);
     actualName = name;
 
-    if (!exactName) {
+    if (!(flags & DDE_FLAG_FORCE)) {
 	r = DdeGetServicesList(interp, TCL_DDE_SERVICE_NAME, NULL);
 	if (r == TCL_OK) {
 	    srvListPtr = Tcl_GetObjResult(interp);
@@ -773,6 +776,7 @@ DdeServerProc(
 	 */
 
 	Tcl_Obj *returnPackagePtr;
+	Tcl_UniChar *uniStr;
 
 	for (convPtr = tsdPtr->currentConversations; (convPtr != NULL)
 		&& (convPtr->hConv != hConv); convPtr = convPtr->nextPtr) {
@@ -786,11 +790,21 @@ DdeServerProc(
 	}
 
 	utilString = (TCHAR *) DdeAccessData(hData, &dlen);
-	len = dlen;
-	if (len && !utilString[len-1]) {
-	    len--;
+	uniStr = (Tcl_UniChar *) utilString;
+	if (!dlen) {
+	    /* Empty binary array. */
+	    ddeObjectPtr = Tcl_NewObj();
+	} else if ((dlen & 1) || uniStr[(dlen>>1)-1]) {
+	    /* Cannot be unicode, so assume utf-8 */
+	    if (!utilString[dlen-1]) {
+		dlen--;
+	    }
+	    ddeObjectPtr = Tcl_NewStringObj(utilString, dlen);
+	} else {
+	    /* unicode */
+	    dlen >>= 1;
+	    ddeObjectPtr = Tcl_NewUnicodeObj(uniStr, dlen - 1);
 	}
-	ddeObjectPtr = Tcl_NewStringObj(utilString, len);
 	Tcl_IncrRefCount(ddeObjectPtr);
 	DdeUnaccessData(hData);
 	if (convPtr->returnPackagePtr != NULL) {
@@ -1197,8 +1211,7 @@ DdeObjCmd(
     };
 
     int index, i, length, argIndex;
-    int async = 0, binary = 0, exact = 0;
-    int result = TCL_OK, firstArg = 0;
+    int flags = 0, result = TCL_OK, firstArg = 0;
     HSZ ddeService = NULL, ddeTopic = NULL, ddeItem = NULL, ddeCookie = NULL;
     HDDEDATA ddeData = NULL, ddeItemData = NULL, ddeReturn;
     HCONV hConv = NULL;
@@ -1238,7 +1251,7 @@ DdeObjCmd(
 		break;
 	    }
 	    if (argIndex == DDE_SERVERNAME_EXACT) {
-		exact = 1;
+		flags |= DDE_FLAG_FORCE;
 	    } else if (argIndex == DDE_SERVERNAME_HANDLER) {
 		if ((objc - i) == 1) {	/* return current handler */
 		    RegisteredInterp *riPtr = DdeGetRegistrationPtr(interp);
@@ -1278,9 +1291,9 @@ DdeObjCmd(
 		    goto wrongDdeExecuteArgs;
 		}
 		if (argIndex == DDE_EXEC_ASYNC) {
-		    async = 1;
+		    flags |= DDE_FLAG_ASYNC;
 		} else {
-		    binary = 1;
+		    flags |= DDE_FLAG_BINARY;
 		}
 	    }
 	    break;
@@ -1296,7 +1309,7 @@ DdeObjCmd(
 	    break;
 	} else if ((objc == 7) && (Tcl_GetIndexFromObj(NULL, objv[2],
 		ddeReqOptions, "option", 0, &argIndex) == TCL_OK)) {
-	    binary = 1;
+	    flags |= DDE_FLAG_BINARY;
 	    firstArg = 3;
 	    break;
 	}
@@ -1314,7 +1327,7 @@ DdeObjCmd(
 	    break;
 	} else if ((objc == 6) && (Tcl_GetIndexFromObj(NULL, objv[2],
 		ddeReqOptions, "option", 0, &argIndex) == TCL_OK)) {
-	    binary = 1;
+	    flags |= DDE_FLAG_BINARY;
 	    firstArg = 3;
 	    break;
 	}
@@ -1345,7 +1358,7 @@ DdeObjCmd(
 		if (objc < 5) {
 		    goto wrongDdeEvalArgs;
 		}
-		async = 1;
+		flags |= DDE_FLAG_ASYNC;
 		firstArg++;
 	    }
 	    break;
@@ -1379,7 +1392,7 @@ DdeObjCmd(
 
     switch ((enum DdeSubcommands) index) {
     case DDE_SERVERNAME:
-	serviceName = DdeSetServerName(interp, serviceName, exact,
+	serviceName = DdeSetServerName(interp, serviceName, flags,
 		handlerPtr);
 	if (serviceName != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(serviceName, -1));
@@ -1392,7 +1405,7 @@ DdeObjCmd(
 	int dataLength;
 	BYTE *dataString;
 
-	if (binary) {
+	if (flags & DDE_FLAG_BINARY) {
 	    dataString = (BYTE *)
 		    Tcl_GetByteArrayFromObj(objv[firstArg + 2], &dataLength);
 	} else {
@@ -1401,7 +1414,7 @@ DdeObjCmd(
 	    dataLength += 1;
 	}
 
-	if (dataLength <= (binary ? 0 : sizeof(TCHAR))) {
+	if (dataLength <= ((flags & DDE_FLAG_BINARY) ? 0 : sizeof(TCHAR))) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("cannot execute null data", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", NULL);
@@ -1421,7 +1434,7 @@ DdeObjCmd(
 	ddeData = DdeCreateDataHandle(ddeInstance, dataString,
 		(DWORD) dataLength, 0, 0, CF_TEXT, 0);
 	if (ddeData != NULL) {
-	    if (async) {
+	    if (flags & DDE_FLAG_ASYNC) {
 		DdeClientTransaction((LPBYTE) ddeData, 0xFFFFFFFF, hConv, 0,
 			CF_TEXT, XTYP_EXECUTE, TIMEOUT_ASYNC, &ddeResult);
 		DdeAbandonTransaction(ddeInstance, hConv, ddeResult);
@@ -1472,9 +1485,9 @@ DdeObjCmd(
 		    DWORD tmp;
 		    const char *dataString = (const char *) DdeAccessData(ddeData, &tmp);
 
-		    if (binary) {
-			returnObjPtr = Tcl_NewByteArrayObj((BYTE *) dataString,
-				(int) tmp);
+		    if (flags & DDE_FLAG_BINARY) {
+			returnObjPtr =
+				Tcl_NewByteArrayObj((BYTE *) dataString, (int) tmp);
 		    } else {
 			if (tmp && !dataString[tmp-1]) {
 			    --tmp;
@@ -1506,7 +1519,7 @@ DdeObjCmd(
 	    result = TCL_ERROR;
 	    goto cleanup;
 	}
-	if (binary) {
+	if (flags & DDE_FLAG_BINARY) {
 	    dataString = (BYTE *)
 		    Tcl_GetByteArrayFromObj(objv[firstArg + 3], &length);
 	} else {
@@ -1556,8 +1569,8 @@ DdeObjCmd(
 	    goto cleanup;
 	}
 
-	objc -= (async + 3);
-	objv += (async + 3);
+	objc -= firstArg + 1;
+	objv += firstArg + 1;
 
 	/*
 	 * See if the target interpreter is local. If so, execute the command
@@ -1674,7 +1687,7 @@ DdeObjCmd(
 	    ddeItemData = DdeCreateDataHandle(ddeInstance,
 		    (BYTE *) string, (DWORD) length+1, 0, 0, CF_TEXT, 0);
 
-	    if (async) {
+	    if (flags & DDE_FLAG_ASYNC) {
 		ddeData = DdeClientTransaction((LPBYTE) ddeItemData,
 			0xFFFFFFFF, hConv, 0,
 			CF_TEXT, XTYP_EXECUTE, TIMEOUT_ASYNC, &ddeResult);
@@ -1699,7 +1712,7 @@ DdeObjCmd(
 		goto cleanup;
 	    }
 
-	    if (async == 0) {
+	    if (!(flags & DDE_FLAG_ASYNC)) {
 		Tcl_Obj *resultPtr;
 
 		/*
