@@ -83,6 +83,10 @@ static int ddeIsServer = 0;
 #define TCL_DDE_SERVICE_NAME	"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	"$TCLEVAL$EXECUTE$RESULT"
 
+#define DDE_FLAG_ASYNC 1
+#define DDE_FLAG_BINARY 2
+#define DDE_FLAG_FORCE 4
+
 TCL_DECLARE_MUTEX(ddeMutex)
 
 /*
@@ -265,7 +269,7 @@ DdeSetServerName(
     const char *name, /* The name that will be used to refer to the
 				 * interpreter in later "send" commands. Must
 				 * be globally unique. */
-    int exactName,		/* Should we make a unique name? 0 = unique */
+    int flags,		/* DDE_FLAG_FORCE or 0 */
     Tcl_Obj *handlerPtr)	/* Name of the optional proc/command to handle
 				 * incoming Dde eval's */
 {
@@ -321,7 +325,7 @@ DdeSetServerName(
     Tcl_DStringInit(&dString);
     actualName = name;
 
-    if (!exactName) {
+    if (!(flags & DDE_FLAG_FORCE)) {
 	r = DdeGetServicesList(interp, TCL_DDE_SERVICE_NAME, NULL);
 	if (r == TCL_OK) {
 	    srvListPtr = Tcl_GetObjResult(interp);
@@ -761,6 +765,7 @@ DdeServerProc(
 	 */
 
 	Tcl_Obj *returnPackagePtr;
+	Tcl_UniChar *uniStr;
 
 	for (convPtr = tsdPtr->currentConversations; (convPtr != NULL)
 		&& (convPtr->hConv != hConv); convPtr = convPtr->nextPtr) {
@@ -774,11 +779,21 @@ DdeServerProc(
 	}
 
 	utilString = (char *) DdeAccessData(hData, &dlen);
-	len = dlen;
-	if (len && !utilString[len-1]) {
-	    len--;
+	uniStr = (Tcl_UniChar *) utilString;
+	if (!dlen) {
+	    /* Empty binary array. */
+	    ddeObjectPtr = Tcl_NewObj();
+	} else if ((dlen & 1) || uniStr[(dlen>>1)-1]) {
+	    /* Cannot be unicode, so assume utf-8 */
+	    if (!utilString[dlen-1]) {
+		dlen--;
+	    }
+	    ddeObjectPtr = Tcl_NewStringObj(utilString, dlen);
+	} else {
+	    /* unicode */
+	    dlen >>= 1;
+	    ddeObjectPtr = Tcl_NewUnicodeObj(uniStr, dlen - 1);
 	}
-	ddeObjectPtr = Tcl_NewStringObj(utilString, len);
 	Tcl_IncrRefCount(ddeObjectPtr);
 	DdeUnaccessData(hData);
 	if (convPtr->returnPackagePtr != NULL) {
@@ -966,7 +981,6 @@ DdeClientWindowProc(
     WPARAM wParam,
     LPARAM lParam)		/* (Potentially) our local handle */
 {
-
     switch (uMsg) {
     case WM_CREATE: {
 	LPCREATESTRUCT lpcs = (LPCREATESTRUCT) lParam;
@@ -982,7 +996,6 @@ DdeClientWindowProc(
     }
     case WM_DDE_ACK:
 	return DdeServicesOnAck(hwnd, wParam, lParam);
-	break;
     default:
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
@@ -1174,9 +1187,8 @@ DdeObjCmd(
 	"-binary", NULL
     };
 
-    int index, i, length;
-    int async = 0, binary = 0, exact = 0;
-    int result = TCL_OK, firstArg = 0;
+    int index, i, length, argIndex;
+    int flags = 0, result = TCL_OK, firstArg = 0;
     HSZ ddeService = NULL, ddeTopic = NULL, ddeItem = NULL, ddeCookie = NULL;
     HDDEDATA ddeData = NULL, ddeItemData = NULL, ddeReturn;
     HCONV hConv = NULL;
@@ -1201,7 +1213,6 @@ DdeObjCmd(
     switch ((enum DdeSubcommands) index) {
     case DDE_SERVERNAME:
 	for (i = 2; i < objc; i++) {
-	    int argIndex;
 	    if (Tcl_GetIndexFromObj(interp, objv[i], ddeSrvOptions,
 		    "option", 0, &argIndex) != TCL_OK) {
 		/*
@@ -1216,7 +1227,7 @@ DdeObjCmd(
 		break;
 	    }
 	    if (argIndex == DDE_SERVERNAME_EXACT) {
-		exact = 1;
+		flags |= DDE_FLAG_FORCE;
 	    } else if (argIndex == DDE_SERVERNAME_HANDLER) {
 		if ((objc - i) == 1) {	/* return current handler */
 		    RegisteredInterp *riPtr = DdeGetRegistrationPtr(interp);
@@ -1249,10 +1260,9 @@ DdeObjCmd(
 	    firstArg = 2;
 	    break;
 	} else if (objc == 6) {
-	    int dummy;
 	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeExecOptions, "option", 0,
-		    &dummy) == TCL_OK) {
-		async = 1;
+		    &argIndex) == TCL_OK) {
+		flags |= DDE_FLAG_ASYNC;
 		firstArg = 3;
 		break;
 	    }
@@ -1277,7 +1287,7 @@ DdeObjCmd(
 	    int dummy;
 	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeReqOptions, "option", 0,
 		    &dummy) == TCL_OK) {
-		binary = 1;
+		flags |= DDE_FLAG_BINARY;
 		firstArg = 3;
 		break;
 	    }
@@ -1303,15 +1313,13 @@ DdeObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "?-async? serviceName args");
 	    return TCL_ERROR;
 	} else {
-	    int dummy;
-
 	    firstArg = 2;
 	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeExecOptions, "option",
-		    0, &dummy) == TCL_OK) {
+		    0, &argIndex) == TCL_OK) {
 		if (objc < 5) {
 		    goto wrongDdeEvalArgs;
 		}
-		async = 1;
+		flags |= DDE_FLAG_ASYNC;
 		firstArg++;
 	    }
 	    break;
@@ -1345,7 +1353,7 @@ DdeObjCmd(
 
     switch ((enum DdeSubcommands) index) {
     case DDE_SERVERNAME:
-	serviceName = DdeSetServerName(interp, serviceName, exact,
+	serviceName = DdeSetServerName(interp, serviceName, flags,
 		handlerPtr);
 	if (serviceName != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(serviceName, -1));
@@ -1378,7 +1386,7 @@ DdeObjCmd(
 	ddeData = DdeCreateDataHandle(ddeInstance, dataString,
 		(DWORD) dataLength+1, 0, 0, CF_TEXT, 0);
 	if (ddeData != NULL) {
-	    if (async) {
+	    if (flags & DDE_FLAG_ASYNC) {
 		DdeClientTransaction((LPBYTE) ddeData, 0xFFFFFFFF, hConv, 0,
 			CF_TEXT, XTYP_EXECUTE, TIMEOUT_ASYNC, &ddeResult);
 		DdeAbandonTransaction(ddeInstance, hConv, ddeResult);
@@ -1428,9 +1436,9 @@ DdeObjCmd(
 		    DWORD tmp;
 		    const char *dataString = (const char *) DdeAccessData(ddeData, &tmp);
 
-		    if (binary) {
-			returnObjPtr = Tcl_NewByteArrayObj((BYTE *) dataString,
-				(int) tmp);
+		    if (flags & DDE_FLAG_BINARY) {
+			returnObjPtr =
+				Tcl_NewByteArrayObj((BYTE *) dataString, (int) tmp);
 		    } else {
 			if (tmp && !dataString[tmp-1]) {
 			    --tmp;
@@ -1504,8 +1512,8 @@ DdeObjCmd(
 	    goto cleanup;
 	}
 
-	objc -= (async + 3);
-	objv += (async + 3);
+	objc -= firstArg + 1;
+	objv += firstArg + 1;
 
 	/*
 	 * See if the target interpreter is local. If so, execute the command
@@ -1620,7 +1628,7 @@ DdeObjCmd(
 	    ddeItemData = DdeCreateDataHandle(ddeInstance,
 		    (BYTE *) string, (DWORD) length+1, 0, 0, CF_TEXT, 0);
 
-	    if (async) {
+	    if (flags & DDE_FLAG_ASYNC) {
 		ddeData = DdeClientTransaction((LPBYTE) ddeItemData,
 			0xFFFFFFFF, hConv, 0,
 			CF_TEXT, XTYP_EXECUTE, TIMEOUT_ASYNC, &ddeResult);
@@ -1644,7 +1652,7 @@ DdeObjCmd(
 		result = TCL_ERROR;
 	    }
 
-	    if (async == 0) {
+	    if (!(flags & DDE_FLAG_ASYNC)) {
 		Tcl_Obj *resultPtr;
 
 		/*
