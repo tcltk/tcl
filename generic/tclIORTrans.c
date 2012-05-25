@@ -2854,7 +2854,8 @@ TimerSetup(
 	return;
     }
 
-    rtPtr->timer = Tcl_CreateTimerHandler(0, TimerRun, rtPtr);
+    rtPtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+	    TimerRun, rtPtr);
 }
 
 /*

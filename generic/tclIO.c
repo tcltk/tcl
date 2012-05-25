@@ -8419,8 +8419,8 @@ UpdateInterest(
 	    mask &= ~TCL_EXCEPTION;
 
 	    if (!statePtr->timer) {
-		statePtr->timer = Tcl_CreateTimerHandler(0, ChannelTimerProc,
-			chanPtr);
+		statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+                        ChannelTimerProc, chanPtr);
 	    }
 	}
     }
@@ -8461,7 +8461,8 @@ ChannelTimerProc(
 	 * before UpdateInterest gets called by Tcl_NotifyChannel.
 	 */
 
-	statePtr->timer = Tcl_CreateTimerHandler(0, ChannelTimerProc,chanPtr);
+	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+                ChannelTimerProc,chanPtr);
 
 #ifdef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
 	/*
