@@ -698,6 +698,52 @@ test safe-15.1 {safe file ensemble does not surprise code} -setup {
 } -cleanup {
     interp delete $i
 } -result {1 {a b c} 1 {a b c} 1 {invalid command name "file"} 1 0 {a b c} 1 {not allowed to invoke subcommand isdirectory of file}}
+
+### ~ should have no special meaning in paths in safe interpreters
+test safe-16.1 {Bug 2913625: defang ~ in paths} -setup {
+    set savedHOME $env(HOME)
+    set env(HOME) /foo/bar
+    set i [safe::interpCreate]
+} -constraints knownBug -body {
+    $i eval {
+	set d [format %c 126]
+	list [file dirname $d] [file tail $d] \
+	    [file join [file dirname $d] [file tail $d]]
+    }
+} -cleanup {
+    safe::interpDelete $i
+    set env(HOME) $savedHOME
+} -result {~}
+test safe-16.2 {Bug 2913625: defang ~user in paths} -setup {
+    set i [safe::interpCreate]
+    set user $tcl_platform(user)
+} -constraints knownBug -body {
+    string map [list $user USER] [$i eval \
+	    "file join \[file dirname ~$user\] \[file tail ~$user\]"]
+} -cleanup {
+    safe::interpDelete $i
+} -result {~USER}
+test safe-16.3 {Bug 2913625: defang ~ in globs} -setup {
+    set savedHOME $env(HOME)
+    set env(HOME) /
+    set i [safe::interpCreate]
+} -constraints knownBug -body {
+    $i expose glob realglob
+    $i eval {realglob -nocomplain [join {~ / *} ""]}
+} -cleanup {
+    safe::interpDelete $i
+    set env(HOME) $savedHOME
+} -result {~}
+test safe-16.4 {Bug 2913625: defang ~user in globs} -setup {
+    set i [safe::interpCreate]
+    set user $tcl_platform(user)
+} -constraints knownBug -body {
+    $i expose glob realglob
+    string map [list $user USER] [$i eval [list\
+	realglob -directory ~$user *]]
+} -cleanup {
+    safe::interpDelete $i
+} -result {~USER}
 
 set ::auto_path $saveAutoPath
 # cleanup
