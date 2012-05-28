@@ -467,7 +467,8 @@ proc ::safe::InterpInit {
 
     ::interp expose $slave file
     foreach subcommand {dirname extension rootname tail} {
-	::interp alias $slave ::tcl::file::$subcommand {} file $subcommand
+	::interp alias $slave ::tcl::file::$subcommand {} \
+	    ::safe::AliasFileSubcommand $slave $subcommand
     }
     foreach subcommand {
 	atime attributes copy delete executable exists isdirectory isfile
@@ -675,6 +676,17 @@ proc ::safe::CheckFileName {slave file} {
     }
 }
 
+# AliasFileSubcommand handles selected subcommands of [file] in safe
+# interpreters that are *almost* safe. In particular, it just acts to
+# prevent discovery of what home directories exist.
+
+proc ::safe::AliasFileSubcommand {slave subcommand name} {
+    if {[string match ~* $name]} {
+	set name ./$name
+    }
+    tailcall $slave invokehidden tcl:file:$subcommand $name
+}
+
 # AliasGlob is the target of the "glob" alias in safe interpreters.
 
 proc ::safe::AliasGlob {slave args} {
@@ -761,6 +773,8 @@ proc ::safe::AliasGlob {slave args} {
     foreach opt [lrange $args $at end] {
 	if {![regexp $dirPartRE $opt -> thedir thefile]} {
 	    set thedir .
+	} elseif {[string match ~* $thedir]} {
+	    set thedir ./$thedir
 	}
 	if {$thedir eq "*" &&
 		($thefile eq "pkgIndex.tcl" || $thefile eq "*.tm")} {
