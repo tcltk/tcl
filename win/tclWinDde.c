@@ -241,7 +241,7 @@ Initialize(void)
 	    ddeIsServer = 1;
 	    Tcl_CreateExitHandler(DdeExitProc, NULL);
 	    ddeServiceGlobal = DdeCreateStringHandle(ddeInstance,
-		    TCL_DDE_SERVICE_NAME, 0);
+		    TCL_DDE_SERVICE_NAME, CP_WINUNICODE);
 	    DdeNameService(ddeInstance, ddeServiceGlobal, 0L, DNS_REGISTER);
 	} else {
 	    ddeIsServer = 0;
@@ -932,8 +932,8 @@ MakeDdeConnection(
     HSZ ddeTopic, ddeService;
     HCONV ddeConv;
 
-    ddeService = DdeCreateStringHandle(ddeInstance, TCL_DDE_SERVICE_NAME, 0);
-    ddeTopic = DdeCreateStringHandle(ddeInstance, name, 0);
+    ddeService = DdeCreateStringHandle(ddeInstance, TCL_DDE_SERVICE_NAME, CP_WINUNICODE);
+    ddeTopic = DdeCreateStringHandle(ddeInstance, name, CP_WINUNICODE);
 
     ddeConv = DdeConnect(ddeInstance, ddeService, ddeTopic, NULL);
     DdeFreeStringHandle(ddeInstance, ddeService);
