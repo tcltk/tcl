@@ -1,3 +1,9 @@
+2012-05-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/safe.tcl (safe::AliasFileSubcommand): [Bug 3529949]: Made a
+	more sophisticated method for preventing information leakage; it
+	changes references to "~user" into "./~user", which is safe.
+
 2012-05-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/namespace.n, doc/Ensemble.3: [Bug 3528418]: Document what is
