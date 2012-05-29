@@ -1,3 +1,8 @@
+2012-05-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:    [Bug 3525762]: Encoding handling in dde.
+	* win/Makefile.in:    Fix "make genstubs" when cross-compiling on UNIX
+
 2012-05-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/safe.tcl (safe::AliasFileSubcommand): [Bug 3529949]: Made a
