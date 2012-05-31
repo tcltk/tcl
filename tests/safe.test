@@ -204,6 +204,11 @@ test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -body {
 	    [safe::interpConfigure $i]\
 	    [safe::interpDelete $i]
 } -match glob -result "{\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
+test safe-7.3 {check that safe subinterpreters work} {
+    set i [safe::interpCreate]
+    set j [safe::interpCreate [list $i x]]
+    list [interp eval $j {join {o k} ""}] [safe::interpDelete $i] [interp exists $j]
+} {ok {} 0}
 
 # test source control on file name
 test safe-8.1 {safe source control on file} -setup {
