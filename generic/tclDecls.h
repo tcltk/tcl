@@ -1834,7 +1834,7 @@ typedef struct TclStubs {
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, ClientData clientData); /* 9 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     void (*reserved9)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -1843,7 +1843,7 @@ typedef struct TclStubs {
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_DeleteFileHandler) (int fd); /* 10 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     void (*reserved10)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -2008,7 +2008,7 @@ typedef struct TclStubs {
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     int (*tcl_GetOpenFile) (Tcl_Interp *interp, const char *chanID, int forWriting, int checkUsage, ClientData *filePtr); /* 167 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     void (*reserved167)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
