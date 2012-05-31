@@ -1,3 +1,8 @@
+2012-05-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/safe.n: [Bug 1997845]: Corrected formatting so that generated
+	* tools/tcltk-man2html.tcl (cross-reference): HTML can link properly.
+
 2012-05-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/expr.n, doc/mathop.n: [Bug 2931407]: Clarified semantics of
