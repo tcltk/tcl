@@ -130,12 +130,6 @@ typedef struct {
 #define DEFAULT_BUFFER_SIZE	4096
 
 /*
- * Time to wait before delivering a timer event.
- */
-
-#define TRANSFORM_TIMEOUT	0
-
-/*
  * Prototypes for private procedures defined later in this file:
  */
 
@@ -3126,7 +3120,7 @@ ZlibTransformWatch(
     if (!(mask & TCL_READABLE) || Tcl_DStringLength(&cd->decompressed) == 0) {
 	ZlibTransformEventTimerKill(cd);
     } else if (cd->timer == NULL) {
-	cd->timer = Tcl_CreateTimerHandler(TRANSFORM_TIMEOUT,
+	cd->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 		ZlibTransformTimerRun, cd);
     }
 }
