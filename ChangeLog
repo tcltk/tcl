@@ -1,5 +1,9 @@
 2012-05-31  Donal K. Fellows  <dkf@users.sf.net>
 
+	* library/safe.tcl (safe::AliasFileSubcommand): Don't assume that
+	slaves have corresponding commands, as that is not true for
+	sub-subinterpreters (used in Tk's test suite).
+
 	* doc/safe.n: [Bug 1997845]: Corrected formatting so that generated
 	HTML can link properly.
 
