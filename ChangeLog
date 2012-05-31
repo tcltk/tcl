@@ -1,3 +1,8 @@
+2012-05-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/socket.test (socket*-13.1): Prevented intermittent test
+	failure due to race condition.
+
 2012-05-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/expr.n, doc/mathop.n: [Bug 2931407]: Clarified semantics of
