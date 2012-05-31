@@ -1,5 +1,8 @@
 2012-05-31  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/safe.n: [Bug 1997845]: Corrected formatting so that generated
+	HTML can link properly.
+
 	* tests/socket.test (socket*-13.1): Prevented intermittent test
 	failure due to race condition.
 
