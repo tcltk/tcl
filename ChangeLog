@@ -1,3 +1,52 @@
+2012-05-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/expr.n, doc/mathop.n: [Bug 2931407]: Clarified semantics of
+	division and remainder operators.
+
+2012-05-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:    [Bug 3525762]: Encoding handling in dde.
+	* win/Makefile.in:    Fix "make genstubs" when cross-compiling on UNIX
+
+2012-05-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/safe.tcl (safe::AliasFileSubcommand): [Bug 3529949]: Made a
+	more sophisticated method for preventing information leakage; it
+	changes references to "~user" into "./~user", which is safe.
+
+2012-05-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/namespace.n, doc/Ensemble.3: [Bug 3528418]: Document what is
+	going on with respect to qualification of command prefixes in ensemble
+	subcommand maps.
+
+	* generic/tclIO.h (SYNTHETIC_EVENT_TIME): Factored out the definition
+	of the amount of time that should be waited before firing a synthetic
+	event on a channel.
+
+2012-05-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c: [Bug 473946]: Special characters were not correctly
+	sent, now for XTYP_EXECUTE as well as XTYP_REQUEST.
+	* win/Makefile.in: Fix "make genstubs" when cross-compiling on UNIX
+
+2012-05-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:  Take cygwin handling of X11 into account.
+	* generic/tcl*Decls.h: re-generated
+	* generic/tclStubInit.c:  Implement TclpIsAtty, Cygwin only.
+	* doc/dde.n: Doc fix: "dde execute iexplore" doesn't work
+	without -async, because iexplore doesn't return a value
+
+2012-05-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:   Let cygwin share stub table with win32
+	* win/tclWinSock.c:     implement TclpInetNtoa for win32
+	* generic/tclInt.decls: Revert most of [3caedf05df], since when
+	  we let cygwin share the win32 stub table this is no longer necessary
+	* generic/tcl*Decls.h:  re-generated
+	* doc/dde.n:            1.3 -> 1.4
+
 2012-05-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (ZlibTransformInput): [Bug 3525907]: Ensure that
@@ -7,17 +56,19 @@
 
 2012-05-21  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclFileName.c:	When using Tcl_SetObjLength() calls to grow
-	* generic/tclPathObj.c:	and shrink the objPtr->bytes buffer, care must be
-	taken that the value cannot possibly become pure Unicode.  Calling
-	Tcl_AppendToObj() has the possibility of making such a conversion.  Bug
-	found while valgrinding the trunk.
+	* generic/tclFileName.c:	When using Tcl_SetObjLength() calls to
+	* generic/tclPathObj.c:		grow and shrink the objPtr->bytes
+	buffer, care must be taken that the value cannot possibly become pure
+	Unicode.  Calling Tcl_AppendToObj() has the possibility of making such
+	a conversion.  Bug found while valgrinding the trunk.
 
 2012-05-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinDde.c:      TIP #106: Add Encoding Abilities to the [dde]
-	* library/dde/pkgIndex.tcl:   Command. Dde version is now 1.4.0.
-	* tests/winDde.test:
+	IMPLEMENTATION OF TIP#106
+
+	* win/tclWinDde.c:		Added encoding-related abilities to
+	* library/dde/pkgIndex.tcl:	the [dde] command. The dde package's
+	* tests/winDde.test:		version is now 1.4.0.
 	* doc/dde.n:
 
 2012-05-20  Donal K. Fellows  <dkf@users.sf.net>
