@@ -1,3 +1,10 @@
+2012-05-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclZlib.c:  [Bug 3530536]: zlib-7.4 fails on IRIX64
+	* tests/zlib.test:
+	* doc/zlib.n:         Document that [stream checksum] doesn't do
+	what's expected for "inflate" and "deflate" formats
+
 2012-05-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/safe.tcl (safe::AliasFileSubcommand): Don't assume that
