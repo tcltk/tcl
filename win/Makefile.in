@@ -745,8 +745,22 @@ $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:
-	$(TCL_EXE) "$(ROOT_DIR_NATIVE)\tools\genStubs.tcl" \
+	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
-	    "$(GENERIC_DIR_NATIVE)\tcl.decls" \
-            "$(GENERIC_DIR_NATIVE)\tclInt.decls" \
-	    "$(GENERIC_DIR_NATIVE)\tclTomMath.decls"
+	    "$(GENERIC_DIR_NATIVE)/tcl.decls" \
+            "$(GENERIC_DIR_NATIVE)/tclInt.decls" \
+	    "$(GENERIC_DIR_NATIVE)/tclTomMath.decls"
+
+#
+# The list of all the targets that do not correspond to real files. This stops
+# 'make' from getting confused when someone makes an error in a rule.
+#
+
+.PHONY: all tcltest binaries libraries doc gendate gentommath_h install
+.PHONY: install-binaries install-libraries install-tzdata install-msgs
+.PHONY: install-doc install-private-headers test test-tcl runtest shell
+.PHONY: gdb depend cleanhelp clean distclean packages install-packages
+.PHONY: test-packages clean-packages distclean-packages genstubs html
+.PHONY: html-tcl html-tk
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
