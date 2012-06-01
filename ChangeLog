@@ -1,3 +1,33 @@
+2012-05-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/safe.n: [Bug 1997845]: Corrected formatting so that generated
+	* tools/tcltk-man2html.tcl (cross-reference): HTML can link properly.
+
+2012-05-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/expr.n, doc/mathop.n: [Bug 2931407]: Clarified semantics of
+	division and remainder operators.
+
+2012-05-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/namespace.n, doc/Ensemble.3: [Bug 3528418]: Document what is
+	going on with respect to qualification of command prefixes in ensemble
+	subcommand maps.
+
+2012-05-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:    [Bug 473946]: special characters not correctly sent,
+	now for XTYP_EXECUTE as well as XTYP_REQUEST.
+	* win/Makefile.in:    Fix "make genstubs" when cross-compiling on UNIX
+
+2012-05-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:  Take cygwin handling of X11 into account.
+	* generic/tcl*Decls.h: re-generated
+	* generic/tclStubInit.c:  Implement TclpIsAtty, Cygwin only.
+	* doc/dde.n: Doc fix: "dde execute iexplore" doesn't work
+	without -async, because iexplore doesn't return a value
+
 2012-05-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tools/genStubs.tcl:   Let cygwin share stub table with win32

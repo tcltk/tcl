@@ -148,6 +148,8 @@ code (TCL_OK, or TCL_ERROR if the token does not refer to an
 ensemble) and the dictionary obtained from
 \fBTcl_GetEnsembleMappingDict\fR should always be treated as immutable
 even if it is unshared.
+All command names in prefixes set via \fBTcl_SetEnsembleMappingDict\fR
+must be fully qualified.
 .TP
 \fBsubcommand list\fR (read-write)
 A list of all the subcommand names for the ensemble, or NULL if this
