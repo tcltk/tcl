@@ -947,6 +947,11 @@ proc cross-reference {ref} {
 		return $ref
 	    }
 	}
+	safe.n {
+	    if {$lref in {options}} {
+		return $ref
+	    }
+	}
     }
     ##
     ## return the cross reference

@@ -67,7 +67,7 @@ The following commands are provided in the master interpreter:
 \fB::safe::interpCreate\fR ?\fIslave\fR? ?\fIoptions...\fR?
 Creates a safe interpreter, installs the aliases described in the section
 \fBALIASES\fR and initializes the auto-loading and package mechanism as
-specified by the supplied \fBoptions\fR.
+specified by the supplied \fIoptions\fR.
 See the \fBOPTIONS\fR section below for a description of the
 optional arguments.
 If the \fIslave\fR argument is omitted, a name will be generated.

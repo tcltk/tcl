@@ -281,18 +281,26 @@ proc genStubs::rewriteFile {file text} {
 # Results:
 #	Returns the original text inside an appropriate #ifdef.
 
-proc genStubs::addPlatformGuard {plat iftxt {eltxt {}}} {
+proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
     set text ""
     switch $plat {
 	win {
-	    append text "#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */\n${iftxt}"
+	    append text "#if defined(__WIN32__)"
+	    if {$withCygwin} {
+		append text " || defined(__CYGWIN__)"
+	    }
+	    append text " /* WIN */\n${iftxt}"
 	    if {$eltxt ne ""} {
 		append text "#else /* WIN */\n${eltxt}"
 	    }
 	    append text "#endif /* WIN */\n"
 	}
 	unix {
-	    append text "#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL)\
+	    append text "#if !defined(__WIN32__)"
+	    if {$withCygwin} {
+		append text " && !defined(__CYGWIN__)"
+	    }
+	    append text " && !defined(MAC_OSX_TCL)\
 		    /* UNIX */\n${iftxt}"
 	    if {$eltxt ne ""} {
 		append text "#else /* UNIX */\n${eltxt}"
@@ -314,7 +322,11 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}}} {
 	    append text "#endif /* AQUA */\n"
 	}
 	x11 {
-	    append text "#if !(defined(__WIN32__) || defined(__CYGWIN__) || defined(MAC_OSX_TK))\
+	    append text "#if !(defined(__WIN32__)"
+	    if {$withCygwin} {
+		append text " || defined(__CYGWIN__)"
+	    }
+	    append text " || defined(MAC_OSX_TK))\
 		    /* X11 */\n${iftxt}"
 	    if {$eltxt ne ""} {
 		append text "#else /* X11 */\n${eltxt}"
@@ -467,12 +479,6 @@ proc genStubs::makeDecl {name decl index} {
 	append text ";\n"
 	return $text
     }
-    if {$args == ""} {
-	append line $fname
-	append text $line
-	append text ";\n"
-	return $text
-    }
     append line $fname
 
     regsub -all void $args VOID args
@@ -575,12 +581,12 @@ proc genStubs::makeSlot {name decl index} {
     append lfname [string range $fname 1 end]
 
     set text "    "
-    if {$rtype != "void"} {
-	regsub -all void $rtype VOID rtype
-    }
     if {$args == ""} {
 	append text $rtype " *" $lfname "; /* $index */\n"
 	return $text
+    }
+    if {$rtype ne "void"} {
+	regsub -all void $rtype VOID rtype
     }
     if {[string range $rtype end-8 end] == "__stdcall"} {
 	append text [string trim [string range $rtype 0 end-9]] " (__stdcall *" $lfname ") "
@@ -811,7 +817,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 		    eval {append temp} $skipString
 		}
 	    }
-	    append text [addPlatformGuard $plat $temp]
+	    append text [addPlatformGuard $plat $temp {} true]
 	}
 	## win ##
 	if {$block(win)} {
@@ -825,7 +831,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 		    eval {append temp} $skipString
 		}
 	    }
-	    append text [addPlatformGuard $plat $temp]
+	    append text [addPlatformGuard $plat $temp {} true]
 	}
 	## macosx ##
 	if {$block(macosx) && !$block(aqua) && !$block(x11)} {
@@ -897,7 +903,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 			} else {
 			    eval {set etxt} $skipString
 			    append temp [addPlatformGuard $plat [$slotProc \
-				    $name $stubs($name,$plat,$i) $i] $etxt]
+				    $name $stubs($name,$plat,$i) $i] $etxt true]
 			}
 			set emit 1
 			break
@@ -907,7 +913,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 		    eval {append temp} $skipString
 		}
 	    }
-	    append text [addPlatformGuard x11 $temp]
+	    append text [addPlatformGuard x11 $temp {} true]
 	}
     }
 }
