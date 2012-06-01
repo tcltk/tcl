@@ -103,6 +103,22 @@ test zlib-7.4 {zlib stream} zlib {
     $s close
     lappend result $data
 } {{} 1 abcdeEDCBA}
+test zlib-7.5 {zlib stream} zlib {
+    set s [zlib stream gzip]
+    $s put -finalize abcdeEDCBA
+    set data [$s get]
+    set result [list [$s get] [format %x [$s checksum]]]
+    $s close
+    lappend result [zlib gunzip $data]
+} {{} ffffffffe3b38816 abcdeEDCBA}
+test zlib-7.6 {zlib stream} zlib {
+    set s [zlib stream gunzip]
+    $s put -finalize [zlib gzip abcdeEDCBA]
+    set data [$s get]
+    set result [list [$s get] [format %x [$s checksum]]]
+    $s close
+    lappend result $data
+} {{} ffffffffe3b38816 abcdeEDCBA}
 
 test zlib-8.1 {zlib transformation} -constraints zlib -setup {
     set file [makeFile {} test.gz]
