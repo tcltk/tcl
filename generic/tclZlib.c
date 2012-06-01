@@ -537,6 +537,7 @@ Tcl_ZlibStreamInit(
     zshPtr->currentInput = NULL;
     zshPtr->streamEnd = 0;
     memset(&zshPtr->stream, 0, sizeof(z_stream));
+    zshPtr->stream.adler = 1;
 
     /*
      * No output buffer available yet
