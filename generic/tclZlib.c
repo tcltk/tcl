@@ -146,7 +146,8 @@ static Tcl_DriverWatchProc	ZlibTransformWatch;
 static Tcl_ObjCmdProc		ZlibCmd;
 static Tcl_ObjCmdProc		ZlibStreamCmd;
 
-static void		ConvertError(Tcl_Interp *interp, int code);
+static void		ConvertError(Tcl_Interp *interp, int code,
+			    uLong adler);
 static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
 static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
 			    GzipHeader *headerPtr, int *extraSizePtr);
@@ -210,7 +211,8 @@ static void
 ConvertError(
     Tcl_Interp *interp,		/* Interpreter to store the error in. May be
 				 * NULL, in which case nothing happens. */
-    int code)			/* The zlib error code. */
+    int code,			/* The zlib error code. */
+    uLong adler)		/* The checksum expected (for Z_NEED_DICT) */
 {
     if (interp == NULL) {
 	return;
@@ -228,7 +230,11 @@ ConvertError(
 	case Z_MEM_ERROR:	codeStr = "MEM";	break;
 	case Z_BUF_ERROR:	codeStr = "BUF";	break;
 	case Z_VERSION_ERROR:	codeStr = "VERSION";	break;
-	case Z_NEED_DICT:	codeStr = "NEED_DICT";	break;
+	case Z_NEED_DICT:
+	    codeStr = "NEED_DICT";
+	    codeStr2 = codeStrBuf;
+	    sprintf(codeStrBuf, "%lu", adler);
+	    break;
 	default:
 	    codeStr = "unknown";
 	    codeStr2 = codeStrBuf;
@@ -640,7 +646,7 @@ Tcl_ZlibStreamInit(
     }
 
     if (e != Z_OK) {
-	ConvertError(interp, e);
+	ConvertError(interp, e, zshPtr->stream.adler);
 	goto error;
     }
 
@@ -886,7 +892,7 @@ Tcl_ZlibStreamReset(
     }
 
     if (e != Z_OK) {
-	ConvertError(zshPtr->interp, e);
+	ConvertError(zshPtr->interp, e, zshPtr->stream.adler);
 	/* TODO:cleanup */
 	return TCL_ERROR;
     }
@@ -1047,7 +1053,7 @@ Tcl_ZlibStreamPut(
 	    e = SetDeflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
 	    if (e != Z_OK) {
 		if (zshPtr->interp) {
-		    ConvertError(zshPtr->interp, e);
+		    ConvertError(zshPtr->interp, e, zshPtr->stream.adler);
 		}
 		return TCL_ERROR;
 	    }
@@ -1093,7 +1099,7 @@ Tcl_ZlibStreamPut(
 	}
 	if (e != Z_OK && !(flush==Z_FINISH && e==Z_STREAM_END)) {
 	    if (zshPtr->interp) {
-		ConvertError(zshPtr->interp, e);
+		ConvertError(zshPtr->interp, e, zshPtr->stream.adler);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1296,7 +1302,7 @@ Tcl_ZlibStreamGet(
 	}
 	if (!(e==Z_OK || e==Z_STREAM_END || e==Z_BUF_ERROR)) {
 	    Tcl_SetByteArrayLength(data, existing);
-	    ConvertError(zshPtr->interp, e);
+	    ConvertError(zshPtr->interp, e, zshPtr->stream.adler);
 	    return TCL_ERROR;
 	}
 	if (e == Z_STREAM_END) {
@@ -1512,7 +1518,7 @@ Tcl_ZlibDeflate(
     return TCL_OK;
 
   error:
-    ConvertError(interp, e);
+    ConvertError(interp, e, stream.adler);
     TclDecrRefCount(obj);
     return TCL_ERROR;
 }
@@ -1691,7 +1697,7 @@ Tcl_ZlibInflate(
 
   error:
     TclDecrRefCount(obj);
-    ConvertError(interp, e);
+    ConvertError(interp, e, stream.adler);
     if (nameBuf) {
 	ckfree(nameBuf);
     }
@@ -2629,7 +2635,7 @@ ZlibTransformClose(
 	    if (e != Z_OK && e != Z_STREAM_END) {
 		/* TODO: is this the right way to do errors on close? */
 		if (!TclInThreadExit()) {
-		    ConvertError(interp, e);
+		    ConvertError(interp, e, cd->outStream.adler);
 		}
 		result = TCL_ERROR;
 		break;
@@ -2915,7 +2921,7 @@ ZlibTransformSetOption(			/* not used */
 	if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	    code = SetDeflateDictionary(&cd->outStream, compDictObj);
 	    if (code != Z_OK) {
-		ConvertError(interp, code);
+		ConvertError(interp, code, cd->outStream.adler);
 		return TCL_ERROR;
 	    }
 	}
@@ -2951,7 +2957,7 @@ ZlibTransformSetOption(			/* not used */
 	    if (e == Z_BUF_ERROR) {
 		break;
 	    } else if (e != Z_OK) {
-		ConvertError(interp, e);
+		ConvertError(interp, e, cd->outStream.adler);
 		return TCL_ERROR;
 	    } else if (cd->outStream.avail_out == 0) {
 		break;

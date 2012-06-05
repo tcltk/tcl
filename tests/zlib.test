@@ -230,16 +230,19 @@ test zlib-8.8 {transformtion and fconfigure} -setup {
     set msg "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nX-Robots-Tag: noarchive\r\nLast-Modified: Tue, 05 Jun 2012 02:43:25 GMT\r\nETag: \"1338864205129|#public|0|en|||0\"\r\nExpires: Tue, 05 Jun 2012 16:17:11 GMT\r\nDate: Tue, 05 Jun 2012 16:17:06 GMT\r\nCache-Control: public, max-age=5\r\nX-Content-Type-Options: nosniff\r\nX-XSS-Protection: 1; mode=block\r\nServer: GSE\r\n"
     set dict "optionsgetheadpostputdeletetraceacceptaccept-charsetaccept-encodingaccept-languageauthorizationexpectfromhostif-modified-sinceif-matchif-none-matchif-rangeif-unmodifiedsincemax-forwardsproxy-authorizationrangerefererteuser-agent100101200201202203204205206300301302303304305306307400401402403404405406407408409410411412413414415416417500501502503504505accept-rangesageetaglocationproxy-authenticatepublicretry-afterservervarywarningwww-authenticateallowcontent-basecontent-encodingcache-controlconnectiondatetrailertransfer-encodingupgradeviawarningcontent-languagecontent-lengthcontent-locationcontent-md5content-rangecontent-typeetagexpireslast-modifiedset-cookieMondayTuesdayWednesdayThursdayFridaySaturdaySundayJanFebMarAprMayJunJulAugSepOctNovDecchunkedtext/htmlimage/pngimage/jpgimage/gifapplication/xmlapplication/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1.1statusversionurl"
 } -constraints zlib -body {
-    zlib push deflate $outSide -dictionary $dict
+    zlib push compress $outSide -dictionary $dict
     fconfigure $outSide -blocking 0 -translation binary -buffering none
     fconfigure $inSide -blocking 0 -translation binary
     puts -nonewline $outSide $msg
     chan pop $outSide
-    list [string length [zlib deflate $msg]] [string length [read $inSide]]
+    set compressed [read $inSide]
+    catch {zlib decompress $compressed} err opt
+    list [string length [zlib deflate $msg]] [string length $compressed] \
+	$err [dict get $opt -errorcode] [zlib adler32 $dict]
 } -cleanup {
     catch {close $outSide}
     catch {close $inSide}
-} -result {254 212}
+} -result {254 222 {need dictionary} {TCL ZLIB NEED_DICT 2381337010} 2381337010}
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
