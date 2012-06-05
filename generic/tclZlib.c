@@ -612,6 +612,7 @@ Tcl_ZlibStreamInit(
     zshPtr->flags = 0;
     zshPtr->gzHeaderPtr = gzHeaderPtr;
     memset(&zshPtr->stream, 0, sizeof(z_stream));
+    zshPtr->stream.adler = 1;
 
     /*
      * No output buffer available yet
