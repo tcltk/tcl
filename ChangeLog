@@ -1,3 +1,22 @@
+2012-05-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclZlib.c:  [Bug 3530536]: zlib-7.4 fails on IRIX64
+	* tests/zlib.test:
+	* doc/zlib.n:         Document that [stream checksum] doesn't do
+	what's expected for "inflate" and "deflate" formats
+
+2012-05-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/safe.tcl (safe::AliasFileSubcommand): Don't assume that
+	slaves have corresponding commands, as that is not true for
+	sub-subinterpreters (used in Tk's test suite).
+
+	* doc/safe.n: [Bug 1997845]: Corrected formatting so that generated
+	HTML can link properly.
+
+	* tests/socket.test (socket*-13.1): Prevented intermittent test
+	failure due to race condition.
+
 2012-05-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/expr.n, doc/mathop.n: [Bug 2931407]: Clarified semantics of

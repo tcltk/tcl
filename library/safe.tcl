@@ -494,16 +494,16 @@ proc ::safe::InterpInit {
 
     if {[catch {::interp eval $slave {
 	source [file join $tcl_library init.tcl]
-    }} msg]} {
+    }} msg opt]} {
 	Log $slave "can't source init.tcl ($msg)"
-	return -code error "can't source init.tcl into slave $slave ($msg)"
+	return -options $opt "can't source init.tcl into slave $slave ($msg)"
     }
 
     if {[catch {::interp eval $slave {
 	source [file join $tcl_library tm.tcl]
-    }} msg]} {
+    }} msg opt]} {
 	Log $slave "can't source tm.tcl ($msg)"
-	return -code error "can't source tm.tcl into slave $slave ($msg)"
+	return -options $opt "can't source tm.tcl into slave $slave ($msg)"
     }
 
     # Sync the paths used to search for Tcl modules. This can be done only
@@ -684,7 +684,7 @@ proc ::safe::AliasFileSubcommand {slave subcommand name} {
     if {[string match ~* $name]} {
 	set name ./$name
     }
-    tailcall $slave invokehidden tcl:file:$subcommand $name
+    tailcall ::interp invokehidden $slave tcl:file:$subcommand $name
 }
 
 # AliasGlob is the target of the "glob" alias in safe interpreters.
@@ -882,6 +882,7 @@ proc ::safe::AliasSource {slave args} {
     # because we want to control [info script] in the slave so information
     # doesn't leak so much. [Bug 2913625]
     set old [::interp eval $slave {info script}]
+    set replacementMsg "script error"
     set code [catch {
 	set f [open $realfile]
 	fconfigure $f -eofchar \032
@@ -891,14 +892,17 @@ proc ::safe::AliasSource {slave args} {
 	set contents [read $f]
 	close $f
 	::interp eval $slave [list info script $file]
-	::interp eval $slave $contents
     } msg opt]
+    if {$code == 0} {
+	set code [catch {::interp eval $slave $contents} msg opt]
+	set replacementMsg $msg
+    }
     catch {interp eval $slave [list info script $old]}
     # Note that all non-errors are fine result codes from [source], so we must
     # take a little care to do it properly. [Bug 2923613]
     if {$code == 1} {
 	Log $slave $msg
-	return -code error "script error"
+	return -code error $replacementMsg
     }
     return -code $code -options $opt $msg
 }
