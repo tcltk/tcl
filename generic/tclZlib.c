@@ -1091,7 +1091,7 @@ Tcl_ZlibStreamPut(
 
 	    e = deflate(&zshPtr->stream, flush);
 	}
-	if (e != Z_OK) {
+	if (e != Z_OK && !(flush==Z_FINISH && e==Z_STREAM_END)) {
 	    if (zshPtr->interp) {
 		ConvertError(zshPtr->interp, e);
 	    }
