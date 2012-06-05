@@ -81,8 +81,6 @@ TCL_DECLARE_MUTEX(cancelLock)
  * are used to save the evaluation state between NR calls to each coro.
  */
 
-static const CorContext NULL_CONTEXT = {NULL, NULL, NULL, NULL};
-
 #define SAVE_CONTEXT(context)				\
     (context).framePtr = iPtr->framePtr;		\
     (context).varFramePtr = iPtr->varFramePtr;		\
