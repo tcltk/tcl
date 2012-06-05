@@ -2086,6 +2086,8 @@ set path(pipe)   [makeFile {} pipe]
 set path(output) [makeFile {} output]
 test io-27.6 {FlushChannel, async flushing, async close} \
 	{stdio asyncPipeClose openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
@@ -2645,6 +2647,8 @@ test io-29.30 {Tcl_WriteChars, crlf mode} {
     file size $path(test1)
 } 25
 test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
@@ -2686,6 +2690,8 @@ test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
 } ok
 test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
 	{stdio asyncPipeClose openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
