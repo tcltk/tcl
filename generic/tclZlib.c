@@ -2339,7 +2339,7 @@ ZlibStreamCmd(
 {
     Tcl_ZlibStream zstream = cd;
     int command, index, count, code, buffersize = -1, flush = -1, i;
-    Tcl_Obj *obj;
+    Tcl_Obj *obj, *compDictObj = NULL;
     static const char *const cmds[] = {
 	"add", "checksum", "close", "eof", "finalize", "flush",
 	"fullflush", "get", "header", "put", "reset",
@@ -2404,7 +2404,7 @@ ZlibStreamCmd(
 		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		    return TCL_ERROR;
 		}
-		if (Tcl_GetIntFromObj(interp, objv[i+1],
+		if (Tcl_GetIntFromObj(interp, objv[++i],
 			&buffersize) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -2417,10 +2417,15 @@ ZlibStreamCmd(
 		}
 		break;
 	    case ao_dictionary:
-		Tcl_AppendResult(interp,
-			"\"-dictionary\" option not implemented", NULL);
-		Tcl_SetErrorCode(interp, "TCL", "ZIP", "BADOPT", NULL);
-		return TCL_ERROR;
+		if (i == objc-2) {
+		    Tcl_AppendResult(interp, "\"-dictionary\" option must be "
+			    "followed by compression dictionary bytes",
+			    NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
+		    return TCL_ERROR;
+		}
+		compDictObj = objv[++i];
+		break;
 	    }
 
 	    if (flush == -2) {
@@ -2434,6 +2439,15 @@ ZlibStreamCmd(
 	    flush = 0;
 	}
 
+	if (compDictObj != NULL) {
+	    int len;
+
+	    (void) Tcl_GetByteArrayFromObj(compDictObj, &len);
+	    if (len == 0) {
+		compDictObj = NULL;
+	    }
+	    Tcl_ZlibStreamSetCompressionDictionary(zstream, compDictObj);
+	}
 	if (Tcl_ZlibStreamPut(zstream, objv[objc-1], flush) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -2481,10 +2495,15 @@ ZlibStreamCmd(
 		Tcl_SetErrorCode(interp, "TCL", "ZIP", "BADOPT", NULL);
 		return TCL_ERROR;
 	    case ao_dictionary:
-		Tcl_AppendResult(interp,
-			"\"-dictionary\" option not implemented", NULL);
-		Tcl_SetErrorCode(interp, "TCL", "ZIP", "BADOPT", NULL);
-		return TCL_ERROR;
+		if (i == objc-2) {
+		    Tcl_AppendResult(interp, "\"-dictionary\" option must be "
+			    "followed by compression dictionary bytes",
+			    NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
+		    return TCL_ERROR;
+		}
+		compDictObj = objv[++i];
+		break;
 	    }
 	    if (flush == -2) {
 		Tcl_AppendResult(interp, "\"-flush\", \"-fullflush\" and "
@@ -2495,6 +2514,15 @@ ZlibStreamCmd(
 	}
 	if (flush == -1) {
 	    flush = 0;
+	}
+	if (compDictObj != NULL) {
+	    int len;
+
+	    (void) Tcl_GetByteArrayFromObj(compDictObj, &len);
+	    if (len == 0) {
+		compDictObj = NULL;
+	    }
+	    Tcl_ZlibStreamSetCompressionDictionary(zstream, compDictObj);
 	}
 	return Tcl_ZlibStreamPut(zstream, objv[objc-1], flush);
 
