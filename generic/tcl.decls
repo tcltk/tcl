@@ -1822,12 +1822,12 @@ declare 1 win {
 # Mac declarations
 
 # This is needed by the shells to handle Macintosh events.
- 
+
 declare 0 mac {
     void Tcl_MacSetEventProc(Tcl_MacConvertEventPtr procPtr)
 }
 
-# These routines are useful for handling using scripts from resources 
+# These routines are useful for handling using scripts from resources
 # in the application shell
 
 declare 1 mac {
@@ -1859,7 +1859,7 @@ declare 6 mac {
 
 # These are not in MSL 2.1.2, so we need to export them from the
 # Tcl shared library.  They are found in the compat directory.
- 
+
 declare 7 mac {
     int strncasecmp(const char *s1, const char *s2, size_t n)
 }
