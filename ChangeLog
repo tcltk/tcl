@@ -1,3 +1,8 @@
+2012-06-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixInit.c: On Cygwin, use win32 API in stead of uname()
+	to determine the tcl_platform variables.
+
 2012-05-31  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclZlib.c:  [Bug 3530536]: zlib-7.4 fails on IRIX64
