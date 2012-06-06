@@ -20,6 +20,15 @@
 #include "tclIO.h"
 
 /*
+ * The version of the zlib "package" that this implements. Note that this
+ * thoroughly supersedes the versions included with tclkit, which are "1.1",
+ * so this is at least "2.0" (there's no general *commitment* to have the same
+ * interface, even if that is mostly true).
+ */
+
+#define TCL_ZLIB_VERSION	"2.0"
+
+/*
  * Magic flags used with wbits fields to indicate that we're handling the gzip
  * format or automatic detection of format. Putting it here is slightly less
  * gross!
@@ -3127,7 +3136,7 @@ TclZlibInit(
      */
 
     Tcl_CreateObjCommand(interp, "zlib", ZlibCmd, 0, 0);
-    return TCL_OK;
+    return Tcl_PkgProvide(interp, "zlib", TCL_ZLIB_VERSION);
 }
 
 /*

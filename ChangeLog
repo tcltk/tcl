@@ -1,3 +1,10 @@
+2012-06-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (TclZlibInit): Declare that Tcl is publishing the
+	zlib package (version 2.0) as part of its bootstrap process. This will
+	have an impact on tclkit (which includes zlib 1.1) but otherwise be
+	very low impact.
+
 2012-06-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclUnixInit.c: On Cygwin, use win32 API in stead of uname()
