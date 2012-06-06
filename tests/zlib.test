@@ -259,7 +259,7 @@ test zlib-8.9 {transformtion and fconfigure} -setup {
     catch {close $outSide}
     catch {close $inSide}
     catch {$strm close}
-} -result {260 222}
+} -result {358 358}
 test zlib-8.10 {transformtion and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
 } -constraints zlib -body {
@@ -292,7 +292,7 @@ test zlib-8.11 {transformtion and fconfigure} -setup {
     catch {close $outSide}
     catch {close $inSide}
     catch {$strm close}
-} -result {260 222}
+} -result {358 358}
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
