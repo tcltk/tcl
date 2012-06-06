@@ -2350,10 +2350,10 @@ ZlibStreamCmd(
 	zs_fullflush, zs_get, zs_header, zs_put, zs_reset
     };
     static const char *const add_options[] = {
-	"-buffer", "-finalize", "-flush", "-fullflush", NULL
+	"-buffer", "-dictionary", "-finalize", "-flush", "-fullflush", NULL
     };
     enum addOptions {
-	ao_buffer, ao_finalize, ao_flush, ao_fullflush
+	ao_buffer, ao_dictionary, ao_finalize, ao_flush, ao_fullflush
     };
 
     if (objc < 2) {
@@ -2415,6 +2415,12 @@ ZlibStreamCmd(
 			    NULL);
 		    return TCL_ERROR;
 		}
+		break;
+	    case ao_dictionary:
+		Tcl_AppendResult(interp,
+			"\"-dictionary\" option not implemented", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ZIP", "BADOPT", NULL);
+		return TCL_ERROR;
 	    }
 
 	    if (flush == -2) {
@@ -2472,6 +2478,11 @@ ZlibStreamCmd(
 	    case ao_buffer:
 		Tcl_AppendResult(interp,
 			"\"-buffer\" option not supported here", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ZIP", "BADOPT", NULL);
+		return TCL_ERROR;
+	    case ao_dictionary:
+		Tcl_AppendResult(interp,
+			"\"-dictionary\" option not implemented", NULL);
 		Tcl_SetErrorCode(interp, "TCL", "ZIP", "BADOPT", NULL);
 		return TCL_ERROR;
 	    }
