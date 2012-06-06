@@ -277,10 +277,10 @@ the transformed data.
 The full set of subcommands supported by a streaming instance command,
 \fIstream\fR, is as follows:
 .TP
-\fIstream \fBadd\fR ?\fIoption\fR? \fIdata\fR
+\fIstream \fBadd\fR ?\fIoption...\fR? \fIdata\fR
 .
 A short-cut for
-.QW "\fIstream \fBput \fIoption data\fR"
+.QW "\fIstream \fBput \fR?\fIoption...\fR? \fIdata\fR"
 followed by
 .QW "\fIstream \fBget\fR" .
 .TP
@@ -325,13 +325,23 @@ Return the gzip header description dictionary extracted from the stream. Only
 supported for streams created with their \fImode\fR parameter set to
 \fBgunzip\fR.
 .TP
-\fIstream \fBput\fR ?\fIoption\fR? \fIdata\fR
+\fIstream \fBput\fR ?\fIoption...\fR? \fIdata\fR
 .
 Append the contents of the binary string \fIdata\fR to \fIstream\fR's internal
-buffers while applying the transformation. If present, \fIoption\fR must be
-one of the following (or an unambiguous prefix) which are used to modify the
+buffers while applying the transformation. The following \fIoption\fRs are
+supported (or an unambiguous prefix of them), which are used to modify the
 way in which the transformation is applied:
 .RS
+.TP
+\fB\-buffer\fI bufferSize\fR
+.
+\fITODO: document this\fR
+.TP
+\fB\-dictionary\fI compressionDictionary\fR
+.VS "TIP 400"
+Sets a compression dictionary to use when working with compressing or
+decompressing the data.
+.VE
 .TP
 \fB\-finalize\fR
 .
@@ -340,12 +350,22 @@ compressed or decompressed. For gzip streams, this also ensures that the
 footer is written to the stream. The stream will need to be reset before
 having more data written to it after this, though data can still be read out
 of the stream with the \fBget\fR subcommand.
+.RS
+.PP
+This option is mutually exclusive with the \fB\-flush\fR and \fB\-fullflush\fR
+options.
+.RE
 .TP
 \fB\-flush\fR
 .
 Ensure that a decompressor consuming the bytes that the current (compressing)
 stream is producing will be able to produce all the bytes that have been
 compressed so far, at some performance penalty.
+.RS
+.PP
+This option is mutually exclusive with the \fB\-finalize\fR and
+\fB\-fullflush\fR options.
+.RE
 .TP
 \fB\-fullflush\fR
 .
@@ -353,6 +373,11 @@ Ensure that not only can a decompressor handle all the bytes produced so far
 (as with \fB\-flush\fR above) but also that it can restart from this point if
 it detects that the stream is partially corrupt. This incurs a substantial
 performance penalty.
+.RS
+.PP
+This option is mutually exclusive with the \fB\-finalize\fR and \fB\-flush\fR
+options.
+.RE
 .RE
 .TP
 \fIstream \fBreset\fR
