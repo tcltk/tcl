@@ -799,10 +799,10 @@ declare 19 mac {
 declare 20 mac {
     int TclMacRegisterResourceFork(short fileRef, Tcl_Obj *tokenPtr,
 	    int insert)
-}	
+}
 declare 21 mac {
     short TclMacUnRegisterResourceFork(char *tokenPtr, Tcl_Obj *resultPtr)
-}	
+}
 declare 22 mac {
     int TclMacCreateEnv(void)
 }
