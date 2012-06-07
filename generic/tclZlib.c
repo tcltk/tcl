@@ -1237,6 +1237,22 @@ Tcl_ZlibStreamGet(
 	    }
 	}
 
+	/*
+	 * When dealing with a raw stream, we set the dictionary here, once.
+	 * (You can't do it in response to getting Z_NEED_DATA as raw streams
+	 * don't ever issue that.)
+	 */
+
+	if (zshPtr->format == TCL_ZLIB_FORMAT_RAW && zshPtr->compDictObj) {
+	    e = SetInflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
+	    if (e != Z_OK) {
+		ConvertError(zshPtr->interp, e, zshPtr->stream.adler);
+		return TCL_ERROR;
+	    }
+	    Tcl_DecrRefCount(zshPtr->compDictObj);
+	    zshPtr->compDictObj = NULL;
+	}
+
 	e = inflate(&zshPtr->stream, zshPtr->flush);
 	if (e == Z_NEED_DICT && zshPtr->compDictObj) {
 	    e = SetInflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
