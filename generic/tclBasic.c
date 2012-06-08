@@ -1388,7 +1388,8 @@ DeleteInterpProc(
 		hPtr != NULL;
 		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    CmdFrame *cfPtr = Tcl_GetHashValue(hPtr);
-
+	    Proc *procPtr = (Proc *) Tcl_GetHashKey(iPtr->linePBodyPtr, hPtr);
+	    procPtr->iPtr = NULL;
 	    if (cfPtr->type == TCL_LOCATION_SOURCE) {
 		Tcl_DecrRefCount(cfPtr->data.eval.path);
 	    }
