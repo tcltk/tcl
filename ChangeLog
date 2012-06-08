@@ -1,3 +1,10 @@
+2012-06-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:    Revise the "null data" check: null strings are
+	possible, but empty binary arrays are not.
+	* tests/winDde.test:  Add test-case (winDde-9.4) for transferring
+	null-strings with dde. Convert tests to tcltest-2 syntax.
+
 2012-06-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (TclZlibInit): Declare that Tcl is publishing the

@@ -1443,7 +1443,7 @@ DdeObjCmd(
 	    dataLength += 1;
 	}
 
-	if (dataLength <= ((flags & DDE_FLAG_BINARY) ? 0 : (int)sizeof(TCHAR))) {
+	if (dataLength <= 0) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("cannot execute null data", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", NULL);
