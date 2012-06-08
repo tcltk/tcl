@@ -16173,112 +16173,12 @@ fi
 #	The code below deals with several issues related to gettimeofday:
 #	1. Some systems don't provide a gettimeofday function at all
 #	   (set NO_GETTOD if this is the case).
-#	2. SGI systems don't use the BSD form of the gettimeofday function,
-#	   but they have a BSDgettimeofday function that can be used instead.
-#	3. See if gettimeofday is declared in the <sys/time.h> header file.
+#	2. See if gettimeofday is declared in the <sys/time.h> header file.
 #	   if not, set the GETTOD_NOT_DECLARED flag so that tclPort.h can
 #	   declare it.
 #--------------------------------------------------------------------
 
-echo "$as_me:$LINENO: checking for BSDgettimeofday" >&5
-echo $ECHO_N "checking for BSDgettimeofday... $ECHO_C" >&6
-if test "${ac_cv_func_BSDgettimeofday+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-/* Define BSDgettimeofday to an innocuous variant, in case <limits.h> declares BSDgettimeofday.
-   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define BSDgettimeofday innocuous_BSDgettimeofday
-
-/* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char BSDgettimeofday (); below.
-    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
-    <limits.h> exists even on freestanding compilers.  */
-
-#ifdef __STDC__
-# include <limits.h>
-#else
-# include <assert.h>
-#endif
-
-#undef BSDgettimeofday
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char BSDgettimeofday ();
-/* The GNU C library defines this for functions which it implements
-    to always fail with ENOSYS.  Some functions are actually named
-    something starting with __ and the normal name is an alias.  */
-#if defined (__stub_BSDgettimeofday) || defined (__stub___BSDgettimeofday)
-choke me
-#else
-char (*f) () = BSDgettimeofday;
-#endif
-#ifdef __cplusplus
-}
-#endif
-
-int
-main ()
-{
-return f != BSDgettimeofday;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_func_BSDgettimeofday=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_func_BSDgettimeofday=no
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: $ac_cv_func_BSDgettimeofday" >&5
-echo "${ECHO_T}$ac_cv_func_BSDgettimeofday" >&6
-if test $ac_cv_func_BSDgettimeofday = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_BSDGETTIMEOFDAY 1
-_ACEOF
-
-else
-
-    echo "$as_me:$LINENO: checking for gettimeofday" >&5
+echo "$as_me:$LINENO: checking for gettimeofday" >&5
 echo $ECHO_N "checking for gettimeofday... $ECHO_C" >&6
 if test "${ac_cv_func_gettimeofday+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -16372,11 +16272,10 @@ if test $ac_cv_func_gettimeofday = yes; then
   :
 else
 
+
 cat >>confdefs.h <<\_ACEOF
 #define NO_GETTOD 1
 _ACEOF
-
-fi
 
 
 fi
