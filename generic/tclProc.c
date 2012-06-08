@@ -2198,7 +2198,7 @@ TclProcCleanupProc(
      * the same ProcPtr is overwritten with a new CmdFrame.
      */
 
-    if (!iPtr) {
+    if (iPtr == NULL || iPtr->linePBodyPtr == NULL) {
 	return;
     }
 
