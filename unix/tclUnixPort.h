@@ -626,6 +626,7 @@ typedef int socklen_t;
 #define TclpExit		exit
 
 #ifdef TCL_THREADS
+#  include <pthread.h>
 EXTERN struct tm *TclpLocaltime(CONST time_t *);
 EXTERN struct tm *TclpGmtime(CONST time_t *);
 /* #define localtime(x)	TclpLocaltime(x)
@@ -639,7 +640,6 @@ EXTERN struct tm *TclpGmtime(CONST time_t *);
  * Assume it is in pthread_np.h if it isn't in pthread.h. [Bug 1064882]
  * We might need to revisit this in the future. :^(
  */
-#	    include <pthread.h>
 #	    include <pthread_np.h>
 #	endif
 #   else
