@@ -718,6 +718,7 @@ typedef int socklen_t;
 #define TclpExit	exit
 
 #ifdef TCL_THREADS
+#   include <pthread.h>
 #   undef inet_ntoa
 #   define inet_ntoa(x)	TclpInetNtoa(x)
 #endif /* TCL_THREADS */
