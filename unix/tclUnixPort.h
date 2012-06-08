@@ -276,10 +276,6 @@ MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 
 #ifdef NO_GETTOD
 #   include <sys/times.h>
-#else
-#   ifdef HAVE_BSDGETTIMEOFDAY
-#	define gettimeofday BSDgettimeofday
-#   endif
 #endif
 
 #ifdef GETTOD_NOT_DECLARED
