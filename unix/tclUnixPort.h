@@ -305,10 +305,6 @@ EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((CONST char *string,
 #           define CLK_TCK 60
 #       endif
 #   endif
-#else
-#   ifdef HAVE_BSDGETTIMEOFDAY
-#	define gettimeofday BSDgettimeofday
-#   endif
 #endif
 
 #ifdef GETTOD_NOT_DECLARED

@@ -1,3 +1,9 @@
+2012-06-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure.in:	Update autogoo for gettimeofday().
+	* unix/tclUnixPort.h:	Thanks Joe English.
+	* unix/configure:	autoconf 2.13
+
 2012-06-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclUnixInit.c: On Cygwin, use win32 API in stead of uname()
