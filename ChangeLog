@@ -1,3 +1,9 @@
+2012-06-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclUnixPort.h:	[Bug 3530533] Centralize #include <pthread.h>
+	* unix/tclUnixThrd.c:	in the tclUnixPort.h header so that old unix
+	systems that need inclusion in all compilation units are supported.
+
 2012-06-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclUnixInit.c: On Cygwin, use win32 API in stead of uname()
