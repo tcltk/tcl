@@ -166,6 +166,7 @@ static Tcl_ObjCmdProc		ZlibStreamCmd;
 
 static void		ConvertError(Tcl_Interp *interp, int code,
 			    uLong adler);
+static Tcl_Obj *	ConvertErrorToList(int code, uLong adler);
 static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
 static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
 			    GzipHeader *headerPtr, int *extraSizePtr);
@@ -232,41 +233,130 @@ ConvertError(
     int code,			/* The zlib error code. */
     uLong adler)		/* The checksum expected (for Z_NEED_DICT) */
 {
+    const char *codeStr, *codeStr2 = NULL;
+    char codeStrBuf[TCL_INTEGER_SPACE];
+
     if (interp == NULL) {
 	return;
     }
 
-    if (code == Z_ERRNO) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_PosixError(interp),-1));
-    } else {
-	const char *codeStr, *codeStr2 = NULL;
-	char codeStrBuf[TCL_INTEGER_SPACE];
-
-	switch (code) {
-	case Z_STREAM_ERROR:	codeStr = "STREAM";	break;
-	case Z_DATA_ERROR:	codeStr = "DATA";	break;
-	case Z_MEM_ERROR:	codeStr = "MEM";	break;
-	case Z_BUF_ERROR:	codeStr = "BUF";	break;
-	case Z_VERSION_ERROR:	codeStr = "VERSION";	break;
-	case Z_NEED_DICT:
-	    codeStr = "NEED_DICT";
-	    codeStr2 = codeStrBuf;
-	    sprintf(codeStrBuf, "%lu", adler);
-	    break;
-	default:
-	    codeStr = "unknown";
-	    codeStr2 = codeStrBuf;
-	    sprintf(codeStrBuf, "%d", code);
-	    break;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(zError(code), -1));
-
+    switch (code) {
 	/*
-	 * Tricky point! We might pass NULL twice here (and will when the
-	 * error type is known).
+	 * Firstly, the case that is *different* because it's really coming
+	 * from the OS and is just being reported via zlib. It should be
+	 * really uncommon because Tcl handles all I/O rather than delegating
+	 * it to zlib, but proving it can't happen is hard.
 	 */
 
-	Tcl_SetErrorCode(interp, "TCL", "ZLIB", codeStr, codeStr2, NULL);
+    case Z_ERRNO:
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_PosixError(interp),-1));
+	return;
+
+	/*
+	 * Normal errors/conditions, some of which have additional detail and
+	 * some which don't. (This is not defined by array lookup because zlib
+	 * error codes are sometimes negative.)
+	 */
+
+    case Z_STREAM_ERROR:
+	codeStr = "STREAM";
+	break;
+    case Z_DATA_ERROR:
+	codeStr = "DATA";
+	break;
+    case Z_MEM_ERROR:
+	codeStr = "MEM";
+	break;
+    case Z_BUF_ERROR:
+	codeStr = "BUF";
+	break;
+    case Z_VERSION_ERROR:
+	codeStr = "VERSION";
+	break;
+    case Z_NEED_DICT:
+	codeStr = "NEED_DICT";
+	codeStr2 = codeStrBuf;
+	sprintf(codeStrBuf, "%lu", adler);
+	break;
+    default:
+	codeStr = "unknown";
+	codeStr2 = codeStrBuf;
+	sprintf(codeStrBuf, "%d", code);
+	break;
+
+	/*
+	 * Finally, these should _not_ happen! This function is for dealing
+	 * with error cases, not non-errors!
+	 */
+
+    case Z_OK:
+	Tcl_Panic("unexpected zlib result in error handler: Z_OK");
+    case Z_STREAM_END:
+	Tcl_Panic("unexpected zlib result in error handler: Z_STREAM_END");
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(zError(code), -1));
+
+    /*
+     * Tricky point! We might pass NULL twice here (and will when the error
+     * type is known).
+     */
+
+    Tcl_SetErrorCode(interp, "TCL", "ZLIB", codeStr, codeStr2, NULL);
+}
+
+static Tcl_Obj *
+ConvertErrorToList(
+    int code,			/* The zlib error code. */
+    uLong adler)		/* The checksum expected (for Z_NEED_DICT) */
+{
+    Tcl_Obj *objv[4];
+
+    TclNewLiteralStringObj(objv[0], "TCL");
+    TclNewLiteralStringObj(objv[1], "ZLIB");
+    switch (code) {
+    case Z_STREAM_ERROR:
+	TclNewLiteralStringObj(objv[2], "STREAM");
+	return Tcl_NewListObj(3, objv);
+    case Z_DATA_ERROR:
+	TclNewLiteralStringObj(objv[2], "DATA");
+	return Tcl_NewListObj(3, objv);
+    case Z_MEM_ERROR:
+	TclNewLiteralStringObj(objv[2], "MEM");
+	return Tcl_NewListObj(3, objv);
+    case Z_BUF_ERROR:
+	TclNewLiteralStringObj(objv[2], "BUF");
+	return Tcl_NewListObj(3, objv);
+    case Z_VERSION_ERROR:
+	TclNewLiteralStringObj(objv[2], "VERSION");
+	return Tcl_NewListObj(3, objv);
+    case Z_ERRNO:
+	TclNewLiteralStringObj(objv[2], "POSIX");
+	objv[3] = Tcl_NewStringObj(Tcl_ErrnoId(), -1);
+	return Tcl_NewListObj(4, objv);
+    case Z_NEED_DICT:
+	TclNewLiteralStringObj(objv[2], "NEED_DICT");
+	objv[3] = Tcl_NewWideIntObj((Tcl_WideInt) adler);
+	return Tcl_NewListObj(4, objv);
+
+	/*
+	 * These should _not_ happen! This function is for dealing with error
+	 * cases, not non-errors!
+	 */
+
+    case Z_OK:
+	Tcl_Panic("unexpected zlib result in error handler: Z_OK");
+    case Z_STREAM_END:
+	Tcl_Panic("unexpected zlib result in error handler: Z_STREAM_END");
+
+	/*
+	 * Catch-all. Should be unreachable because all cases are already
+	 * listed above.
+	 */
+
+    default:
+	TclNewLiteralStringObj(objv[2], "unknown");
+	TclNewIntObj(objv[3], code);
+	return Tcl_NewListObj(4, objv);
     }
 }
 
@@ -1832,7 +1922,7 @@ ZlibCmd(
 	}
 	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
-		Tcl_ZlibAdler32(start, data, dlen)));
+		(uLong) Tcl_ZlibAdler32(start, data, dlen)));
 	return TCL_OK;
     case CMD_CRC:			/* crc32 str ?startvalue?
 					 * -> checksum */
@@ -1849,7 +1939,7 @@ ZlibCmd(
 	}
 	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
-		Tcl_ZlibCRC32(start, data, dlen)));
+		(uLong) Tcl_ZlibCRC32(start, data, dlen)));
 	return TCL_OK;
     case CMD_DEFLATE:			/* deflate data ?level?
 					 * -> rawCompressedData */
@@ -2637,7 +2727,7 @@ ZlibStreamCmd(
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
-		Tcl_ZlibStreamChecksum(zstream)));
+		(uLong) Tcl_ZlibStreamChecksum(zstream)));
 	return TCL_OK;
     case zs_reset:		/* $strm reset */
 	if (objc != 2) {
@@ -2924,6 +3014,7 @@ ZlibTransformOutput(
     Tcl_DriverOutputProc *outProc =
 	    Tcl_ChannelOutputProc(Tcl_GetChannelType(cd->parent));
     int e, produced;
+    Tcl_Obj *errObj;
 
     if (cd->mode == TCL_ZLIB_STREAM_INFLATE) {
 	return outProc(Tcl_GetChannelInstanceData(cd->parent), buf, toWrite,
@@ -2947,14 +3038,19 @@ ZlibTransformOutput(
 	}
     } while (e == Z_OK && produced > 0 && cd->outStream.avail_in > 0);
 
-    if (e != Z_OK) {
-	Tcl_SetChannelError(cd->parent,
-		Tcl_NewStringObj(cd->outStream.msg, -1));
-	*errorCodePtr = EINVAL;
-	return -1;
+    if (e == Z_OK) {
+	return toWrite - cd->outStream.avail_in;
     }
 
-    return toWrite - cd->outStream.avail_in;
+    errObj = Tcl_NewListObj(0, NULL);
+    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj("-errorcode",-1));
+    Tcl_ListObjAppendElement(NULL, errObj,
+	    ConvertErrorToList(e, cd->outStream.adler));
+    Tcl_ListObjAppendElement(NULL, errObj,
+	    Tcl_NewStringObj(cd->outStream.msg, -1));
+    Tcl_SetChannelError(cd->parent, errObj);
+    *errorCodePtr = EINVAL;
+    return -1;
 }
 
 /*
@@ -2993,10 +3089,17 @@ ZlibTransformSetOption(			/* not used */
 	    TclDecrRefCount(cd->compDictObj);
 	}
 	cd->compDictObj = compDictObj;
+	code = Z_OK;
 	if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	    code = SetDeflateDictionary(&cd->outStream, compDictObj);
 	    if (code != Z_OK) {
 		ConvertError(interp, code, cd->outStream.adler);
+		return TCL_ERROR;
+	    }
+	} else if (cd->format == TCL_ZLIB_FORMAT_RAW) {
+	    code = SetInflateDictionary(&cd->inStream, compDictObj);
+	    if (code != Z_OK) {
+		ConvertError(interp, code, cd->inStream.adler);
 		return TCL_ERROR;
 	    }
 	}
@@ -3391,6 +3494,14 @@ ZlibStackChannelTransform(
 		goto error;
 	    }
 	}
+	if (cd->format == TCL_ZLIB_FORMAT_RAW && cd->compDictObj) {
+	    e = SetInflateDictionary(&cd->inStream, cd->compDictObj);
+	    if (e != Z_OK) {
+		goto error;
+	    }
+	    TclDecrRefCount(cd->compDictObj);
+	    cd->compDictObj = NULL;
+	}
     } else {
 	e = deflateInit2(&cd->outStream, level, Z_DEFLATED, wbits,
 		MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
@@ -3525,7 +3636,8 @@ ResultGenerate(
 {
 #define MAXBUF	1024
     unsigned char buf[MAXBUF];
-    int e, written;
+    int e, written,total=0;
+    Tcl_Obj *errObj;
 
     cd->inStream.next_in = (Bytef *) cd->inBuffer;
     cd->inStream.avail_in = n;
@@ -3578,13 +3690,7 @@ ResultGenerate(
 	 */
 
 	if ((e != Z_OK) && (e != Z_BUF_ERROR)) {
-	    Tcl_Obj *errObj = Tcl_NewListObj(0, NULL);
-
-	    Tcl_ListObjAppendElement(NULL, errObj,
-		    Tcl_NewStringObj(cd->inStream.msg, -1));
-	    Tcl_SetChannelError(cd->parent, errObj);
-	    *errorCodePtr = EINVAL;
-	    return TCL_ERROR;
+	    goto handleError;
 	}
 
 	/*
@@ -3595,6 +3701,17 @@ ResultGenerate(
 	    return TCL_OK;
 	}
     }
+
+  handleError:
+    errObj = Tcl_NewListObj(0, NULL);
+    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj("-errorcode",-1));
+    Tcl_ListObjAppendElement(NULL, errObj,
+	    ConvertErrorToList(e, cd->inStream.adler));
+    Tcl_ListObjAppendElement(NULL, errObj,
+	    Tcl_NewStringObj(cd->inStream.msg, -1));
+    Tcl_SetChannelError(cd->parent, errObj);
+    *errorCodePtr = EINVAL;
+    return TCL_ERROR;
 }
 
 /*
@@ -3607,6 +3724,8 @@ int
 TclZlibInit(
     Tcl_Interp *interp)
 {
+    Tcl_Config cfg[2];
+
     /*
      * This does two things. It creates a counter used in the creation of
      * stream commands, and it creates the namespace that will contain those
@@ -3620,6 +3739,23 @@ TclZlibInit(
      */
 
     Tcl_CreateObjCommand(interp, "zlib", ZlibCmd, 0, 0);
+
+    /*
+     * Store the underlying configuration information.
+     *
+     * TODO: Describe whether we're using the system version of the library or
+     * a compatibility version built into Tcl?
+     */
+
+    cfg[0].key = "zlibVersion";
+    cfg[0].value = zlibVersion();
+    cfg[1].key = NULL;
+    Tcl_RegisterConfig(interp, "zlib", cfg, "ascii");
+
+    /*
+     * Formally provide the package as a Tcl built-in.
+     */
+
     return Tcl_PkgProvide(interp, "zlib", TCL_ZLIB_VERSION);
 }
 
