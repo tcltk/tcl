@@ -87,6 +87,15 @@ typedef struct {
 				 * opportunity. */
 
 /*
+ * Macros to make it clearer in some of the twiddlier accesses what is
+ * happening.
+ */
+
+#define IsRawStream(zshPtr)	((zshPtr)->format == TCL_ZLIB_FORMAT_RAW)
+#define HaveDictToSet(zshPtr)	((zshPtr)->flags & DICT_TO_SET)
+#define DictWasSet(zshPtr)	((zshPtr)->flags |= ~DICT_TO_SET)
+
+/*
  * Structure used for stacked channel compression and decompression.
  */
 
@@ -640,17 +649,11 @@ Tcl_ZlibStreamInit(
 	    e = deflateSetHeader(&zshPtr->stream,
 		    &zshPtr->gzHeaderPtr->header);
 	}
-	if (e == Z_OK && zshPtr->compDictObj) {
-	    e = SetDeflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
-	}
     } else {
 	e = inflateInit2(&zshPtr->stream, wbits);
 	if (e == Z_OK && zshPtr->gzHeaderPtr) {
 	    e = inflateGetHeader(&zshPtr->stream,
 		    &zshPtr->gzHeaderPtr->header);
-	}
-	if (format==TCL_ZLIB_FORMAT_RAW && zshPtr->compDictObj && e==Z_OK) {
-	    e = SetInflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
 	}
     }
 
@@ -889,14 +892,19 @@ Tcl_ZlibStreamReset(
     if (zshPtr->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	e = deflateInit2(&zshPtr->stream, zshPtr->level, Z_DEFLATED,
 		zshPtr->wbits, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
-	if (e == Z_OK && zshPtr->compDictObj) {
+	if (e == Z_OK && HaveDictToSet(zshPtr)) {
 	    e = SetDeflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
+	    if (e == Z_OK) {
+		DictWasSet(zshPtr);
+	    }
 	}
     } else {
 	e = inflateInit2(&zshPtr->stream, zshPtr->wbits);
-	if (zshPtr->format == TCL_ZLIB_FORMAT_RAW && zshPtr->compDictObj
-		&& e == Z_OK) {
+	if (IsRawStream(zshPtr) && HaveDictToSet(zshPtr) && e == Z_OK) {
 	    e = SetInflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
+	    if (e == Z_OK) {
+		DictWasSet(zshPtr);
+	    }
 	}
     }
 
@@ -1011,6 +1019,10 @@ Tcl_ZlibStreamSetCompressionDictionary(
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
 
     if (compressionDictionaryObj != NULL) {
+	if (Tcl_IsShared(compressionDictionaryObj)) {
+	    compressionDictionaryObj =
+		    Tcl_DuplicateObj(compressionDictionaryObj);
+	}
 	Tcl_IncrRefCount(compressionDictionaryObj);
 	zshPtr->flags |= DICT_TO_SET;
     } else {
@@ -1058,7 +1070,7 @@ Tcl_ZlibStreamPut(
 	zshPtr->stream.next_in = Tcl_GetByteArrayFromObj(data, &size);
 	zshPtr->stream.avail_in = size;
 
-	if (zshPtr->flags & DICT_TO_SET) {
+	if (HaveDictToSet(zshPtr)) {
 	    e = SetDeflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
 	    if (e != Z_OK) {
 		if (zshPtr->interp) {
@@ -1066,7 +1078,7 @@ Tcl_ZlibStreamPut(
 		}
 		return TCL_ERROR;
 	    }
-	    zshPtr->flags &= ~DICT_TO_SET;
+	    DictWasSet(zshPtr);
 	}
 
 	/*
@@ -1243,20 +1255,21 @@ Tcl_ZlibStreamGet(
 	 * don't ever issue that.)
 	 */
 
-	if (zshPtr->format == TCL_ZLIB_FORMAT_RAW && zshPtr->compDictObj) {
+	if (IsRawStream(zshPtr) && HaveDictToSet(zshPtr)) {
 	    e = SetInflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
 	    if (e != Z_OK) {
-		ConvertError(zshPtr->interp, e, zshPtr->stream.adler);
+		if (zshPtr->interp) {
+		    ConvertError(zshPtr->interp, e, zshPtr->stream.adler);
+		}
 		return TCL_ERROR;
 	    }
-	    Tcl_DecrRefCount(zshPtr->compDictObj);
-	    zshPtr->compDictObj = NULL;
+	    DictWasSet(zshPtr);
 	}
-
 	e = inflate(&zshPtr->stream, zshPtr->flush);
-	if (e == Z_NEED_DICT && zshPtr->compDictObj) {
+	if (e == Z_NEED_DICT && HaveDictToSet(zshPtr)) {
 	    e = SetInflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
 	    if (e == Z_OK) {
+		DictWasSet(zshPtr);
 		e = inflate(&zshPtr->stream, zshPtr->flush);
 	    }
 	};
@@ -1313,13 +1326,14 @@ Tcl_ZlibStreamGet(
 	     * And call inflate again.
 	     */
 
-	    e = inflate(&zshPtr->stream, zshPtr->flush);
-	    if (e == Z_NEED_DICT && zshPtr->compDictObj) {
-		e = SetInflateDictionary(&zshPtr->stream,zshPtr->compDictObj);
-		if (e == Z_OK) {
-		    e = inflate(&zshPtr->stream, zshPtr->flush);
+	    do {
+		e = inflate(&zshPtr->stream, zshPtr->flush);
+		if (e != Z_NEED_DICT || !HaveDictToSet(zshPtr)) {
+		    break;
 		}
-	    }
+		e = SetInflateDictionary(&zshPtr->stream,zshPtr->compDictObj);
+		DictWasSet(zshPtr);
+	    } while (e == Z_OK);
 	}
 	if (zshPtr->stream.avail_out > 0) {
 	    Tcl_SetByteArrayLength(data,
@@ -2158,10 +2172,7 @@ ZlibStreamSubcmd(
 	return TCL_ERROR;
     }
     if (compDictObj != NULL) {
-	ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zh;
-
-	zshPtr->compDictObj = compDictObj;
-	Tcl_IncrRefCount(compDictObj);
+	Tcl_ZlibStreamSetCompressionDictionary(zh, compDictObj);
     }
     Tcl_SetObjResult(interp, Tcl_ZlibStreamGetCommandName(zh));
     return TCL_OK;
