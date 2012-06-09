@@ -1,3 +1,20 @@
+2012-06-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure.in:	Update autogoo for gettimeofday().
+	* unix/tclUnixPort.h:	Thanks Joe English.
+	* unix/configure:	autoconf 2.13
+
+	* unix/tclUnixPort.h:	[Bug 3530533] Centralize #include <pthread.h>
+	* unix/tclUnixThrd.c:	in the tclUnixPort.h header so that old unix
+	systems that need inclusion in all compilation units are supported.
+
+2012-06-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:    Revise the "null data" check: null strings are
+	possible, but empty binary arrays are not.
+	* tests/winDde.test:  Add test-case (winDde-9.4) for transferring
+	null-strings with dde. Convert tests to tcltest-2 syntax.
+
 2012-06-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (TclZlibInit): Declare that Tcl is publishing the
