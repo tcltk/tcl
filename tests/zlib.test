@@ -293,15 +293,15 @@ test zlib-8.11 {transformtion and fconfigure} -setup {
     catch {close $inSide}
     catch {$strm close}
 } -result {358 358}
-test zlib-8.13 {transformtion and fconfigure} -setup {
+test zlib-8.12 {transformtion and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream compress]
-} -constraints {zlib knownBug} -body {
-    set data [$strm add -dictionary $spdyDict $spdyHeaders]
+} -constraints zlib -body {
+    $strm put -dictionary $spdyDict -finalize $spdyHeaders
     zlib push decompress $inSide
     fconfigure $outSide -blocking 0 -translation binary
     fconfigure $inSide -translation binary -dictionary $spdyDict
-    puts -nonewline $outSide $data
+    puts -nonewline $outSide [$strm get]
     close $outSide
     list [string length $spdyHeaders] [string length [read $inSide]]
 } -cleanup {
