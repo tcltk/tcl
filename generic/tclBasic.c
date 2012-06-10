@@ -1390,11 +1390,13 @@ DeleteInterpProc(
 	    CmdFrame *cfPtr = Tcl_GetHashValue(hPtr);
 	    Proc *procPtr = (Proc *) Tcl_GetHashKey(iPtr->linePBodyPtr, hPtr);
 	    procPtr->iPtr = NULL;
-	    if (cfPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(cfPtr->data.eval.path);
+	    if (cfPtr) {
+		if (cfPtr->type == TCL_LOCATION_SOURCE) {
+		    Tcl_DecrRefCount(cfPtr->data.eval.path);
+		}
+		ckfree((char *) cfPtr->line);
+		ckfree((char *) cfPtr);
 	    }
-	    ckfree((char *) cfPtr->line);
-	    ckfree((char *) cfPtr);
 	    Tcl_DeleteHashEntry(hPtr);
 	}
 	Tcl_DeleteHashTable(iPtr->linePBodyPtr);
