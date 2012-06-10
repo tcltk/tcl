@@ -2198,7 +2198,7 @@ TclProcCleanupProc(
      * the same ProcPtr is overwritten with a new CmdFrame.
      */
 
-    if (iPtr == NULL || iPtr->linePBodyPtr == NULL) {
+    if (iPtr == NULL) {
 	return;
     }
 
@@ -2209,13 +2209,15 @@ TclProcCleanupProc(
 
     cfPtr = (CmdFrame *) Tcl_GetHashValue(hePtr);
 
-    if (cfPtr->type == TCL_LOCATION_SOURCE) {
-	Tcl_DecrRefCount(cfPtr->data.eval.path);
-	cfPtr->data.eval.path = NULL;
+    if (cfPtr) {
+	if (cfPtr->type == TCL_LOCATION_SOURCE) {
+	    Tcl_DecrRefCount(cfPtr->data.eval.path);
+	    cfPtr->data.eval.path = NULL;
+	}
+	ckfree((char *) cfPtr->line);
+	cfPtr->line = NULL;
+	ckfree((char *) cfPtr);
     }
-    ckfree((char *) cfPtr->line);
-    cfPtr->line = NULL;
-    ckfree((char *) cfPtr);
     Tcl_DeleteHashEntry(hePtr);
 }
 
@@ -2447,7 +2449,7 @@ SetLambdaFromAny(
     Interp *iPtr = (Interp *) interp;
     char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv, *errPtr;
-    int objc, result;
+    int isNew, objc, result;
     Proc *procPtr;
 
     if (interp == NULL) {
@@ -2512,6 +2514,8 @@ SetLambdaFromAny(
      * common elements into a single function.
      */
 
+    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr, (char *) procPtr,
+	    &isNew), NULL);
     if (iPtr->cmdFramePtr) {
 	CmdFrame *contextPtr;
 
@@ -2544,7 +2548,7 @@ SetLambdaFromAny(
 
 	    if (contextPtr->line
 		    && (contextPtr->nline >= 2) && (contextPtr->line[1] >= 0)) {
-		int isNew, buf[2];
+		int buf[2];
 		CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
 
 		/*
