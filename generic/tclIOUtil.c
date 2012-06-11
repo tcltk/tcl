@@ -38,6 +38,8 @@ static void		FsAddMountsToGlobResult(Tcl_Obj *resultPtr,
 			    Tcl_Obj *pathPtr, const char *pattern,
 			    Tcl_GlobTypeData *types);
 static void		FsUpdateCwd(Tcl_Obj *cwdObj, ClientData clientData);
+static void		Claim(void);
+static void		Disclaim(void);
 
 #ifdef TCL_THREADS
 static void		FsRecacheFilesystemList(void);
@@ -594,15 +596,17 @@ FsRecacheFilesystemList(void)
      * Trash the current cache.
      */
 
-    fsRecPtr = tsdPtr->filesystemList;
-    while (fsRecPtr != NULL) {
+    if (tsdPtr->claims <= 0) {
+	fsRecPtr = tsdPtr->filesystemList;
+	while (fsRecPtr != NULL) {
 	tmpFsRecPtr = fsRecPtr->nextPtr;
-	if (--fsRecPtr->fileRefCount <= 0) {
-	    ckfree((char *)fsRecPtr);
+	    if (--fsRecPtr->fileRefCount <= 0) {
+		ckfree((char *)fsRecPtr);
+	    }
+	    fsRecPtr = tmpFsRecPtr;
 	}
-	fsRecPtr = tmpFsRecPtr;
+	tsdPtr->filesystemList = NULL;
     }
-    tsdPtr->filesystemList = NULL;
 
     /*
      * Code below operates on shared data. We are already called under mutex
@@ -627,9 +631,6 @@ FsRecacheFilesystemList(void)
 	*tmpFsRecPtr = *fsRecPtr;
 	tmpFsRecPtr->nextPtr = tsdPtr->filesystemList;
 	tmpFsRecPtr->prevPtr = NULL;
-	if (tsdPtr->filesystemList) {
-	    tsdPtr->filesystemList->prevPtr = tmpFsRecPtr;
-	}
 	tsdPtr->filesystemList = tmpFsRecPtr;
 	fsRecPtr = fsRecPtr->prevPtr;
     }
@@ -678,6 +679,47 @@ TclFSEpochOk(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
     (void) FsGetFirstFilesystem();
     return (filesystemEpoch == tsdPtr->filesystemEpoch);
+}
+
+static void
+Claim()
+{
+#ifdef TCL_THREADS
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+
+    tsdPtr->claims++;
+#endif
+}
+
+static void
+Disclaim()
+{
+#ifdef TCL_THREADS
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+    FilesystemRecord *toRelease, *fsRecPtr = tsdPtr->filesystemList;
+
+    if (--tsdPtr->claims > 0) {
+	return;
+    }
+    /*
+     * No claims held, Release all out of date FilesystemRecords from the
+     * tsdPtr->filesystemList.  First skip the current list.
+     */
+    while (fsRecPtr->fsPtr != &tclNativeFilesystem) {
+	fsRecPtr = fsRecPtr->nextPtr;
+    }
+
+    /* Then release everything that comes after. */
+    toRelease = fsRecPtr->nextPtr;
+    while (toRelease != NULL) {
+	fsRecPtr = toRelease->nextPtr;
+
+	if (--toRelease->fileRefCount <= 0) {
+	    ckfree((char *)toRelease);
+	}
+	toRelease = fsRecPtr;
+    }
+#endif
 }
 
 /*
@@ -1369,6 +1411,9 @@ Tcl_FSData(
 	if (fsRecPtr->fsPtr == fsPtr) {
 	    retVal = fsRecPtr->clientData;
 	}
+	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
+	    break;
+	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
 
@@ -1427,6 +1472,7 @@ TclFSNormalizeToUniquePath(
 
     firstFsRecPtr = FsGetFirstFilesystem();
 
+    Claim();
     fsRecPtr = firstFsRecPtr;
     while (fsRecPtr != NULL) {
 	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
@@ -1445,7 +1491,9 @@ TclFSNormalizeToUniquePath(
 	 * Skip the native system next time through.
 	 */
 
-	if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
+	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
+	    break;
+	} else {
 	    Tcl_FSNormalizePathProc *proc = fsRecPtr->fsPtr->normalizePathProc;
 	    if (proc != NULL) {
 		startAt = (*proc)(interp, pathPtr, startAt);
@@ -1459,6 +1507,7 @@ TclFSNormalizeToUniquePath(
 	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
+    Disclaim();
 
     return startAt;
 }
@@ -2653,6 +2702,7 @@ Tcl_FSGetCwd(
 	 */
 
 	fsRecPtr = FsGetFirstFilesystem();
+	Claim();
 	while ((retVal == NULL) && (fsRecPtr != NULL)) {
 	    Tcl_FSGetCwdProc *proc = fsRecPtr->fsPtr->getCwdProc;
 	    if (proc != NULL) {
@@ -2700,8 +2750,12 @@ Tcl_FSGetCwd(
 		    retVal = (*proc)(interp);
 		}
 	    }
+	    if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
+		break;
+	    }
 	    fsRecPtr = fsRecPtr->nextPtr;
 	}
+	Disclaim();
 
 	/*
 	 * Now the 'cwd' may NOT be normalized, at least on some platforms.
@@ -3648,6 +3702,7 @@ Tcl_FSListVolumes(void)
      */
 
     fsRecPtr = FsGetFirstFilesystem();
+    Claim();
     while (fsRecPtr != NULL) {
 	Tcl_FSListVolumesProc *proc = fsRecPtr->fsPtr->listVolumesProc;
 	if (proc != NULL) {
@@ -3657,8 +3712,12 @@ Tcl_FSListVolumes(void)
 		Tcl_DecrRefCount(thisFsVolumes);
 	    }
 	}
+	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
+	    break;
+	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
+    Disclaim();
 
     return resultPtr;
 }
@@ -3698,6 +3757,7 @@ FsListMounts(
      */
 
     fsRecPtr = FsGetFirstFilesystem();
+    Claim();
     while (fsRecPtr != NULL) {
 	if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
 	    Tcl_FSMatchInDirectoryProc *proc =
@@ -3709,8 +3769,12 @@ FsListMounts(
 		(*proc)(NULL, resultPtr, pathPtr, pattern, &mountsOnly);
 	    }
 	}
+	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
+	    break;
+	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
+    Disclaim();
 
     return resultPtr;
 }
@@ -3829,13 +3893,19 @@ TclFSInternalToNormalized(
 {
     FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
 
+    Claim();
     while (fsRecPtr != NULL) {
 	if (fsRecPtr->fsPtr == fromFilesystem) {
 	    *fsRecPtrPtr = fsRecPtr;
 	    break;
 	}
+	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
+	    fsRecPtr = NULL;
+	    break;
+	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
+    Disclaim();
 
     if ((fsRecPtr != NULL)
 	    && (fromFilesystem->internalToNormalizedProc != NULL)) {
@@ -3948,6 +4018,7 @@ TclFSNonnativePathType(
      */
 
     fsRecPtr = FsGetFirstFilesystem();
+    Claim();
     while (fsRecPtr != NULL) {
 	Tcl_FSListVolumesProc *proc = fsRecPtr->fsPtr->listVolumesProc;
 
@@ -4024,8 +4095,12 @@ TclFSNonnativePathType(
 		}
 	    }
 	}
+	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
+	    break;
+	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
+    Disclaim();
     return type;
 }
 
@@ -4420,6 +4495,7 @@ Tcl_FSGetFileSystemForPath(
      */
 
     fsRecPtr = FsGetFirstFilesystem();
+    Claim();
 
     if (TclFSEnsureEpochOk(pathPtr, &retVal) != TCL_OK) {
 	return NULL;
@@ -4446,8 +4522,12 @@ Tcl_FSGetFileSystemForPath(
 		retVal = fsRecPtr->fsPtr;
 	    }
 	}
+	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
+	    break;
+	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
+    Disclaim();
 
     return retVal;
 }
