@@ -2234,7 +2234,7 @@ TclProcCleanupProc(
      * procbody structures created by tbcload.
      */
 
-    if (!iPtr) {
+    if (iPtr == NULL) {
 	return;
     }
 
@@ -2245,13 +2245,15 @@ TclProcCleanupProc(
 
     cfPtr = Tcl_GetHashValue(hePtr);
 
-    if (cfPtr->type == TCL_LOCATION_SOURCE) {
-	Tcl_DecrRefCount(cfPtr->data.eval.path);
-	cfPtr->data.eval.path = NULL;
+    if (cfPtr) {
+	if (cfPtr->type == TCL_LOCATION_SOURCE) {
+	    Tcl_DecrRefCount(cfPtr->data.eval.path);
+	    cfPtr->data.eval.path = NULL;
+	}
+	ckfree(cfPtr->line);
+	cfPtr->line = NULL;
+	ckfree(cfPtr);
     }
-    ckfree(cfPtr->line);
-    cfPtr->line = NULL;
-    ckfree(cfPtr);
     Tcl_DeleteHashEntry(hePtr);
 }
 
@@ -2483,7 +2485,8 @@ SetLambdaFromAny(
     Interp *iPtr = (Interp *) interp;
     const char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv;
-    int objc, result;
+    int isNew, objc, result;
+    CmdFrame *cfPtr = NULL;
     Proc *procPtr;
 
     if (interp == NULL) {
@@ -2578,14 +2581,14 @@ SetLambdaFromAny(
 
 	    if (contextPtr->line
 		    && (contextPtr->nline >= 2) && (contextPtr->line[1] >= 0)) {
-		int isNew, buf[2];
-		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
+		int buf[2];
 
 		/*
 		 * Move from approximation (line of list cmd word) to actual
 		 * location (line of 2nd list element).
 		 */
 
+		cfPtr = ckalloc(sizeof(CmdFrame));
 		TclListLines(objPtr, contextPtr->line[1], 2, buf, NULL);
 
 		cfPtr->level = -1;
@@ -2601,9 +2604,6 @@ SetLambdaFromAny(
 
 		cfPtr->cmd.str.cmd = NULL;
 		cfPtr->cmd.str.len = 0;
-
-		Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			procPtr, &isNew), cfPtr);
 	    }
 
 	    /*
@@ -2615,6 +2615,8 @@ SetLambdaFromAny(
 	}
 	TclStackFree(interp, contextPtr);
     }
+    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr, procPtr,
+	    &isNew), cfPtr);
 
     /*
      * Set the namespace for this lambda: given by objv[2] understood as a

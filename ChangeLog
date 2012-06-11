@@ -1,3 +1,10 @@
+2012-06-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	[Bug 3532959] Make sure the lifetime management
+	* generic/tclProc.c:	of entries in the linePBodyPtr hash table can
+	* tests/proc.test:	tolerate either order of teardown, interp first,
+	or Proc first.
+
 2012-06-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/configure.in:	Update autogoo for gettimeofday().
