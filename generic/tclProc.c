@@ -2450,6 +2450,7 @@ SetLambdaFromAny(
     char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv, *errPtr;
     int isNew, objc, result;
+    CmdFrame *cfPtr = NULL;
     Proc *procPtr;
 
     if (interp == NULL) {
@@ -2514,8 +2515,6 @@ SetLambdaFromAny(
      * common elements into a single function.
      */
 
-    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr, (char *) procPtr,
-	    &isNew), NULL);
     if (iPtr->cmdFramePtr) {
 	CmdFrame *contextPtr;
 
@@ -2549,13 +2548,13 @@ SetLambdaFromAny(
 	    if (contextPtr->line
 		    && (contextPtr->nline >= 2) && (contextPtr->line[1] >= 0)) {
 		int buf[2];
-		CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
 
 		/*
 		 * Move from approximation (line of list cmd word) to actual
 		 * location (line of 2nd list element).
 		 */
 
+		cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
 		TclListLines(objPtr, contextPtr->line[1], 2, buf, NULL);
 
 		cfPtr->level = -1;
@@ -2571,9 +2570,6 @@ SetLambdaFromAny(
 
 		cfPtr->cmd.str.cmd = NULL;
 		cfPtr->cmd.str.len = 0;
-
-		Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew), cfPtr);
 	    }
 
 	    /*
@@ -2585,6 +2581,8 @@ SetLambdaFromAny(
 	}
 	TclStackFree(interp, contextPtr);
     }
+    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr, (char *) procPtr,
+	    &isNew), cfPtr);
 
     /*
      * Set the namespace for this lambda: given by objv[2] understood as a
