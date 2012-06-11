@@ -26,6 +26,9 @@ test zlib-1.2 {zlib basics} -constraints zlib -returnCodes error -body {
 test zlib-1.3 {zlib basics} -constraints zlib -body {
     zlib::pkgconfig list
 } -result zlibVersion
+test zlib-1.4 {zlib basics} -constraints zlib -body {
+    package present zlib
+} -result 2.0
 
 test zlib-2.1 {zlib compress/decompress} zlib {
     zlib decompress [zlib compress abcdefghijklm]
