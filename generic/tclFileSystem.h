@@ -52,6 +52,7 @@ typedef struct ThreadSpecificData {
     Tcl_Obj *cwdPathPtr;
     ClientData cwdClientData;
     FilesystemRecord *filesystemList;
+    int claims;
 } ThreadSpecificData;
 
 /*
