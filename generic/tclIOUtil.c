@@ -38,11 +38,16 @@ static void		FsAddMountsToGlobResult(Tcl_Obj *resultPtr,
 			    Tcl_Obj *pathPtr, const char *pattern,
 			    Tcl_GlobTypeData *types);
 static void		FsUpdateCwd(Tcl_Obj *cwdObj, ClientData clientData);
-static void		Claim(void);
-static void		Disclaim(void);
 
 #ifdef TCL_THREADS
 static void		FsRecacheFilesystemList(void);
+static void		Purge(FilesystemRecord *fsRecPtr);
+
+#define Claim() (tsdPtr->claims++)
+#define Disclaim() if (--tsdPtr->claims <= 0) Purge(tsdPtr->filesystemList);
+#else
+#define Claim() 
+#define Disclaim()
 #endif
 
 /*
@@ -681,29 +686,16 @@ TclFSEpochOk(
     return (filesystemEpoch == tsdPtr->filesystemEpoch);
 }
 
-static void
-Claim()
-{
 #ifdef TCL_THREADS
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-
-    tsdPtr->claims++;
-#endif
-}
-
 static void
-Disclaim()
+Purge(
+    FilesystemRecord *fsRecPtr)
 {
-#ifdef TCL_THREADS
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-    FilesystemRecord *toRelease, *fsRecPtr = tsdPtr->filesystemList;
+    FilesystemRecord *toRelease;
 
-    if (--tsdPtr->claims > 0) {
-	return;
-    }
     /*
-     * No claims held, Release all out of date FilesystemRecords from the
-     * tsdPtr->filesystemList.  First skip the current list.
+     * Release all out of date FilesystemRecords.
+     * First skip the current list.
      */
     while (fsRecPtr->fsPtr != &tclNativeFilesystem) {
 	fsRecPtr = fsRecPtr->nextPtr;
@@ -719,8 +711,8 @@ Disclaim()
 	}
 	toRelease = fsRecPtr;
     }
-#endif
 }
+#endif
 
 /*
  * If non-NULL, clientData is owned by us and must be freed later.
@@ -1459,6 +1451,9 @@ TclFSNormalizeToUniquePath(
 				 * for a given filesystem, we can optionally
 				 * return an fs-specific clientdata here. */
 {
+#ifdef TCL_THREADS
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+#endif
     FilesystemRecord *fsRecPtr, *firstFsRecPtr;
     /* Ignore this variable */
     (void) clientDataPtr;
@@ -3691,6 +3686,9 @@ Tcl_FSLink(
 Tcl_Obj*
 Tcl_FSListVolumes(void)
 {
+#ifdef TCL_THREADS
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+#endif
     FilesystemRecord *fsRecPtr;
     Tcl_Obj *resultPtr = Tcl_NewObj();
 
@@ -3745,6 +3743,9 @@ FsListMounts(
     Tcl_Obj *pathPtr,		/* Contains path to directory to search. */
     const char *pattern)	/* Pattern to match against. */
 {
+#ifdef TCL_THREADS
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+#endif
     FilesystemRecord *fsRecPtr;
     Tcl_GlobTypeData mountsOnly = { TCL_GLOB_TYPE_MOUNT, 0, NULL, NULL };
     Tcl_Obj *resultPtr = NULL;
@@ -3891,6 +3892,9 @@ TclFSInternalToNormalized(
     ClientData clientData,
     FilesystemRecord **fsRecPtrPtr)
 {
+#ifdef TCL_THREADS
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+#endif
     FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
 
     Claim();
@@ -4008,6 +4012,9 @@ TclFSNonnativePathType(
 				 * path, already with a refCount for the
 				 * caller. */
 {
+#ifdef TCL_THREADS
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+#endif
     FilesystemRecord *fsRecPtr;
     Tcl_PathType type = TCL_PATH_RELATIVE;
 
@@ -4468,6 +4475,9 @@ Tcl_Filesystem *
 Tcl_FSGetFileSystemForPath(
     Tcl_Obj* pathPtr)
 {
+#ifdef TCL_THREADS
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+#endif
     FilesystemRecord *fsRecPtr;
     Tcl_Filesystem* retVal = NULL;
 
