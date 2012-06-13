@@ -98,6 +98,12 @@ typedef struct ThreadSpecificData {
                                  * from these pointers.  You must hold the
                                  * notifierMutex lock before accessing these
                                  * fields. */
+#ifdef __CYGWIN__
+    void *event;     /* Any other thread alerts a notifier
+	 * that an event is ready to be processed
+	 * by sending this event. */
+    void *hwnd;			/* Messaging window. */
+#endif /* __CYGWIN__ */
     Tcl_Condition waitCV;     /* Any other thread alerts a notifier
 				 * that an event is ready to be processed
 				 * by signaling this condition variable. */
@@ -205,6 +211,48 @@ static int	FileHandlerEventProc _ANSI_ARGS_((Tcl_Event *evPtr,
  *----------------------------------------------------------------------
  */
 
+#if defined(TCL_THREADS) && defined(__CYGWIN__)
+
+typedef struct {
+    void *hwnd;
+    unsigned int *message;
+    int wParam;
+    int lParam;
+    int time;
+    int x;
+    int y;
+} MSG;
+
+typedef struct {
+  unsigned int style;
+  void *lpfnWndProc;
+  int cbClsExtra;
+  int cbWndExtra;
+  void *hInstance;
+  void *hIcon;
+  void *hCursor;
+  void *hbrBackground;
+  void *lpszMenuName;
+  void *lpszClassName;
+} WNDCLASS;
+
+extern unsigned char __stdcall PeekMessageW(MSG *, void *, int, int, int);
+extern unsigned char __stdcall GetMessageW(MSG *, void *, int, int);
+extern unsigned char __stdcall TranslateMessage(const MSG *);
+extern int __stdcall DispatchMessageW(const MSG *);
+extern void __stdcall PostQuitMessage(int);
+extern void * __stdcall CreateWindowExW(void *, void *, void *, DWORD, int, int, int, int, void *, void *, void *, void *);
+extern unsigned char __stdcall DestroyWindow(void *);
+extern unsigned char __stdcall PostMessageW(void *, unsigned int, void *, void *);
+extern void *__stdcall RegisterClassW(const WNDCLASS *);
+extern DWORD __stdcall DefWindowProcW(void *, int, void *, void *);
+extern void *__stdcall CreateEventW(void *, unsigned char, unsigned char, void *);
+extern void __stdcall CloseHandle(void *);
+extern void __stdcall MsgWaitForMultipleObjects(DWORD, void *, unsigned char, DWORD, DWORD);
+extern unsigned char __stdcall ResetEvent(void *);
+
+#endif
+
 ClientData
 Tcl_InitNotifier()
 {
@@ -304,6 +352,9 @@ Tcl_FinalizeNotifier(clientData)
      * Clean up any synchronization objects in the thread local storage.
      */
 
+#ifdef __CYGWIN__
+    CloseHandle(tsdPtr->event);
+#endif /* __CYGWIN__ */
     Tcl_ConditionFinalize(&(tsdPtr->waitCV));
 
     Tcl_MutexUnlock(&notifierMutex);
@@ -635,6 +686,31 @@ FileHandlerEventProc(evPtr, flags)
     return 1;
 }
 
+#if defined(TCL_THREADS) && defined(__CYGWIN__)
+
+static DWORD __stdcall
+NotifierProc(
+    void *hwnd,
+    unsigned int message,
+    void *wParam,
+    void *lParam)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (message != 1024) {
+	return DefWindowProcW(hwnd, message, wParam, lParam);
+    }
+
+    /*
+     * Process all of the runnable events.
+     */
+
+	tsdPtr->eventReady = 1;
+    Tcl_ServiceAll();
+    return 0;
+}
+#endif /* __CYGWIN__ */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -663,6 +739,9 @@ Tcl_WaitForEvent(timePtr)
     int mask;
 #ifdef TCL_THREADS
     int waitForFiles;
+# ifdef __CYGWIN__
+    MSG msg;
+# endif
 #else
     /* Impl. notes: timeout & timeoutPtr are used if, and only if
      * threads are not enabled. They are the arguments for the regular
@@ -738,6 +817,31 @@ Tcl_WaitForEvent(timePtr)
 	tsdPtr->pollState = 0;
     }
 
+#ifdef __CYGWIN__
+	if (!tsdPtr->hwnd) {
+		WNDCLASS class;
+
+	    class.style = 0;
+	    class.cbClsExtra = 0;
+	    class.cbWndExtra = 0;
+	    class.hInstance = TclWinGetTclInstance();
+	    class.hbrBackground = NULL;
+	    class.lpszMenuName = NULL;
+	    class.lpszClassName = L"TclNotifier";
+	    class.lpfnWndProc = NotifierProc;
+	    class.hIcon = NULL;
+	    class.hCursor = NULL;
+
+	    if (!RegisterClassW(&class)) {
+		Tcl_Panic("Unable to register TclNotifier window class");
+	    }
+	    tsdPtr->hwnd = CreateWindowExW(NULL, class.lpszClassName, class.lpszClassName,
+		    0, 0, 0, 0, 0, NULL, NULL, TclWinGetTclInstance(), NULL);
+	    tsdPtr->event = CreateEventW(NULL, 1 /* manual */,
+		    0 /* !signaled */, NULL);
+    }
+
+#endif
     if (waitForFiles) {
         /*
          * Add the ThreadSpecificData structure of this thread to the list
@@ -765,6 +869,21 @@ Tcl_WaitForEvent(timePtr)
         Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
     }
     tsdPtr->eventReady = 0;
+
+    while (PeekMessageW(&msg, NULL, 0, 0, 0)) {
+	/*
+	 * Retrieve and dispatch the message.
+	 */
+	DWORD result = GetMessageW(&msg, NULL, 0, 0);
+	if (result == 0) {
+	    PostQuitMessage(msg.wParam);
+	    /* What to do here? */
+	} else if (result != (DWORD)-1) {
+	    TranslateMessage(&msg);
+	    DispatchMessageW(&msg);
+	}
+    }
+    ResetEvent(tsdPtr->event);
 
     if (waitForFiles && tsdPtr->onList) {
 	/*
