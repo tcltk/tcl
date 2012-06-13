@@ -334,6 +334,20 @@ test safe-8.9 {safe source and return} -setup {
     catch {safe::interpDelete $i}
     removeFile $returnScript
 } -result ok
+test safe-8.10 {safe source and return} -setup {
+    set returnScript [makeFile {return -level 2 "ok"} return.tcl]
+    catch {safe::interpDelete $i}
+} -body {
+    safe::interpCreate $i
+    set token [safe::interpAddToAccessPath $i [file dirname $returnScript]]
+    $i eval [list apply {filename {
+	source $filename
+	error boom
+    }} $token/[file tail $returnScript]]
+} -cleanup {
+    catch {safe::interpDelete $i}
+    removeFile $returnScript
+} -result ok
 
 test safe-9.1 {safe interps' deleteHook} -setup {
     set i "a"
