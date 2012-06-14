@@ -48,15 +48,15 @@ if {[testConstraint unix]} {
 	set group [lindex $groupList 0]
 	testConstraint foundGroup 1
     }
+}
 
-    proc dev dir {
-	file stat $dir stat
-	return $stat(dev)
-    }
+proc dev dir {
+    file stat $dir stat
+    return $stat(dev)
+}
 
-    if {[catch {makeDirectory tcl[pid] /tmp} tmpspace] == 0} {
-	testConstraint xdev [expr {([dev .] != [dev $tmpspace])}]
-    }
+if {[catch {makeDirectory tcl[pid] /tmp} tmpspace] == 0} {
+    testConstraint xdev [expr {([dev .] != [dev $tmpspace])}]
 }
 
 # Also used in winFCmd...
