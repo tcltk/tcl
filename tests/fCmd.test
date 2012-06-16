@@ -39,6 +39,7 @@ if {[testConstraint win]} {
     }
 }
 
+set tmpspace /tmp;# default value
 # Find a group that exists on this Unix system, or else skip tests that
 # require Unix groups.
 testConstraint foundGroup [expr {![testConstraint unix]}]
@@ -591,7 +592,7 @@ test fCmd-6.18 {CopyRenameOneFile: errno != EXDEV} -setup {
     [subst {error renaming "td2" to "[file join td1 td2]": file *}]
 test fCmd-6.19 {CopyRenameOneFile: errno == EXDEV} -setup {
     cleanup $tmpspace
-} -constraints {xdev notRoot} -body {
+} -constraints {unix notRoot} -body {
     createfile tf1
     file rename tf1 $tmpspace
     glob -nocomplain tf* [file join $tmpspace tf1]
@@ -610,21 +611,21 @@ test fCmd-6.20 {CopyRenameOneFile: errno == EXDEV} -constraints {win} -setup {
 } -result {d:/tcl8975@}
 test fCmd-6.21 {CopyRenameOneFile: copy/rename: S_ISDIR(source)} -setup {
     cleanup $tmpspace
-} -constraints {xdev notRoot} -body {
+} -constraints {unix notRoot} -body {
     file mkdir td1
     file rename td1 $tmpspace
     glob -nocomplain td* [file join $tmpspace td*]
 } -result [file join $tmpspace td1]
 test fCmd-6.22 {CopyRenameOneFile: copy/rename: !S_ISDIR(source)} -setup {
     cleanup $tmpspace
-} -constraints {xdev notRoot} -body {
+} -constraints {unix notRoot} -body {
     createfile tf1
     file rename tf1 $tmpspace
     glob -nocomplain tf* [file join $tmpspace tf*]
 } -result [file join $tmpspace tf1]
 test fCmd-6.23 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     cleanup $tmpspace
-} -constraints {notRoot xdev} -body {
+} -constraints {xdev notRoot} -body {
     file mkdir td1/td2/td3
     file attributes td1 -permissions 0000
     file rename td1 $tmpspace
@@ -693,7 +694,7 @@ test fCmd-6.29 {CopyRenameOneFile: TclpCopyDirectory passed} -setup {
 } -result [file join $tmpspace td1 td2]
 test fCmd-6.30 {CopyRenameOneFile: TclpRemoveDirectory failed} -setup {
     cleanup $tmpspace
-} -constraints {xdev notRoot} -body {
+} -constraints {unix notRoot} -body {
     file mkdir foo/bar
     file attr foo -perm 040555
     file rename foo/bar $tmpspace
@@ -1353,7 +1354,7 @@ test fCmd-12.8 {renamefile: generic error} -setup {
 } -result {1}
 test fCmd-12.9 {renamefile: moving a file across volumes} -setup {
     cleanup $tmpspace
-} -constraints {xdev notRoot} -body {
+} -constraints {unix notRoot} -body {
     set s [createfile tfa]
     file rename tfa $tmpspace
     list [checkcontent [file join $tmpspace tfa] $s] [file exists tfa]
