@@ -1,3 +1,7 @@
+2012-06-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinReg.c:  Plug memory leak, part of [Bug #3362446]
+
 2012-06-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/configure.in:	Update autogoo for gettimeofday().

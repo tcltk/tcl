@@ -595,6 +595,8 @@ GetKeyNames(
     }
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultPtr);
+    } else {
+	Tcl_DecrRefCount(resultPtr); /* BUGFIX: Don't leak on failure. */
     }
 
     ckfree(buffer);
