@@ -41,6 +41,14 @@
 #endif
 
 /*
+ * The maximum length of a sub-key name.
+ */
+
+#ifndef MAX_KEY_LENGTH
+#define MAX_KEY_LENGTH		256
+#endif
+
+/*
  * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
  * Registry_Init declaration is in the source file itself, which is only
  * accessed when we are building a library.
@@ -164,7 +172,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvide(interp, "registry", "1.3");
+    return Tcl_PkgProvide(interp, "registry", "1.3.0");
 }
 
 /*
@@ -562,6 +570,7 @@ GetKeyNames(
     DWORD subKeyCount;		/* Number of subkeys to list */
     DWORD maxSubKeyLen;		/* Maximum string length of any subkey */
     TCHAR *buffer;		/* Buffer to hold the subkey name */
+    DWORD maxBufSize;		/* Maximum size of the buffer */
     DWORD bufSize;		/* Size of the buffer */
     DWORD index;		/* Position of the current subkey */
     char *name;			/* Subkey name */
@@ -599,7 +608,8 @@ GetKeyNames(
 	RegCloseKey(key);
 	return TCL_ERROR;
     }
-    buffer = ckalloc((maxSubKeyLen+1) * sizeof(TCHAR));
+    maxBufSize = maxSubKeyLen + 1;
+    buffer = ckalloc(maxBufSize * sizeof(TCHAR));
 
     /*
      * Enumerate the subkeys.
@@ -607,9 +617,16 @@ GetKeyNames(
 
     resultPtr = Tcl_NewObj();
     for (index = 0; index < subKeyCount; ++index) {
-	bufSize = maxSubKeyLen+1;
+	bufSize = maxBufSize;
 	result = RegEnumKeyEx(key, index, buffer, &bufSize,
 		NULL, NULL, NULL, NULL);
+	if ((result == ERROR_MORE_DATA) && (maxBufSize < MAX_KEY_LENGTH)) {
+	    maxBufSize = MAX_KEY_LENGTH + 1;
+	    buffer = ckrealloc(buffer, maxBufSize * sizeof(TCHAR));
+	    bufSize = maxBufSize;
+	    result = RegEnumKeyEx(key, index, buffer, &bufSize,
+		    NULL, NULL, NULL, NULL);
+	}
 	if (result != ERROR_SUCCESS) {
 	    Tcl_SetObjResult(interp, Tcl_NewObj());
 	    Tcl_AppendResult(interp, "unable to enumerate subkeys of \"",
@@ -633,6 +650,8 @@ GetKeyNames(
     }
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultPtr);
+    } else {
+	Tcl_DecrRefCount(resultPtr); /* BUGFIX: Don't leak on failure. */
     }
 
     ckfree(buffer);
