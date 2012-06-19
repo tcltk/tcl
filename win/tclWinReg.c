@@ -25,6 +25,14 @@
 #define TCL_STORAGE_CLASS DLLEXPORT
 
 /*
+ * The maximum length of a sub-key name.
+ */
+
+#ifndef MAX_KEY_LENGTH
+#define MAX_KEY_LENGTH		256
+#endif
+
+/*
  * The following macros convert between different endian ints.
  */
 
@@ -90,9 +98,6 @@ typedef struct RegWinProcs {
 	    DWORD *, BYTE *, DWORD *);
     LONG (WINAPI *regOpenKeyExProc)(HKEY, CONST TCHAR *, DWORD, REGSAM,
 	    HKEY *);
-    LONG (WINAPI *regQueryInfoKeyProc)(HKEY, TCHAR *, DWORD *, DWORD *,
-	    DWORD *, DWORD *, DWORD *, DWORD *, DWORD *, DWORD *, DWORD *,
-	    FILETIME *);
     LONG (WINAPI *regQueryValueExProc)(HKEY, CONST TCHAR *, DWORD *, DWORD *,
 	    BYTE *, DWORD *);
     LONG (WINAPI *regSetValueExProc)(HKEY, CONST TCHAR *, DWORD, DWORD,
@@ -117,9 +122,6 @@ static RegWinProcs asciiProcs = {
 	    DWORD *, BYTE *, DWORD *)) RegEnumValueA,
     (LONG (WINAPI *)(HKEY, CONST TCHAR *, DWORD, REGSAM,
 	    HKEY *)) RegOpenKeyExA,
-    (LONG (WINAPI *)(HKEY, TCHAR *, DWORD *, DWORD *,
-	    DWORD *, DWORD *, DWORD *, DWORD *, DWORD *, DWORD *, DWORD *,
-	    FILETIME *)) RegQueryInfoKeyA,
     (LONG (WINAPI *)(HKEY, CONST TCHAR *, DWORD *, DWORD *,
 	    BYTE *, DWORD *)) RegQueryValueExA,
     (LONG (WINAPI *)(HKEY, CONST TCHAR *, DWORD, DWORD,
@@ -142,9 +144,6 @@ static RegWinProcs unicodeProcs = {
 	    DWORD *, BYTE *, DWORD *)) RegEnumValueW,
     (LONG (WINAPI *)(HKEY, CONST TCHAR *, DWORD, REGSAM,
 	    HKEY *)) RegOpenKeyExW,
-    (LONG (WINAPI *)(HKEY, TCHAR *, DWORD *, DWORD *,
-	    DWORD *, DWORD *, DWORD *, DWORD *, DWORD *, DWORD *, DWORD *,
-	    FILETIME *)) RegQueryInfoKeyW,
     (LONG (WINAPI *)(HKEY, CONST TCHAR *, DWORD *, DWORD *,
 	    BYTE *, DWORD *)) RegQueryValueExW,
     (LONG (WINAPI *)(HKEY, CONST TCHAR *, DWORD, DWORD,
@@ -513,9 +512,7 @@ GetKeyNames(
 {
     char *pattern;		/* Pattern being matched against subkeys */
     HKEY key;			/* Handle to the key being examined */
-    DWORD subKeyCount;		/* Number of subkeys to list */
-    DWORD maxSubKeyLen;		/* Maximum string length of any subkey */
-    char *buffer;		/* Buffer to hold the subkey name */
+    TCHAR buffer[MAX_KEY_LENGTH*2];		/* Buffer to hold the subkey name */
     DWORD bufSize;		/* Size of the buffer */
     DWORD index;		/* Position of the current subkey */
     char *name;			/* Subkey name */
@@ -537,14 +534,6 @@ GetKeyNames(
 	return TCL_ERROR;
     }
 
-    /* 
-     * Determine how big a buffer is needed for enumerating subkeys, and
-     * how many subkeys there are
-     */
-
-    result = (*regWinProcs->regQueryInfoKeyProc)
-	(key, NULL, NULL, NULL, &subKeyCount, &maxSubKeyLen, NULL, NULL, 
-	 NULL, NULL, NULL, NULL);
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_NewObj());
 	Tcl_AppendResult(interp, "unable to query key \"", 
@@ -553,27 +542,25 @@ GetKeyNames(
 	RegCloseKey(key);
 	return TCL_ERROR;
     }
-    if (regWinProcs->useWide) {
-	buffer = ckalloc((maxSubKeyLen+1) * sizeof(WCHAR));
-    } else {
-	buffer = ckalloc(maxSubKeyLen+1);
-    }
 
     /* Enumerate the subkeys */
 
     resultPtr = Tcl_NewObj();
-    for (index = 0; index < subKeyCount; ++index) {
-	bufSize = maxSubKeyLen+1;
+    for (index = 0;; ++index) {
+	bufSize = MAX_KEY_LENGTH;
 	result = (*regWinProcs->regEnumKeyExProc)
 	    (key, index, buffer, &bufSize, NULL, NULL, NULL, NULL);
 	if (result != ERROR_SUCCESS) {
-	    Tcl_SetObjResult(interp, Tcl_NewObj());
-	    Tcl_AppendResult(interp,
-			     "unable to enumerate subkeys of \"",
-			     Tcl_GetString(keyNameObj),
-			     "\": ", NULL);
-	    AppendSystemError(interp, result);
-	    result = TCL_ERROR;
+	    if (result == ERROR_NO_MORE_ITEMS) {
+		result = TCL_OK;
+	    } else {
+		Tcl_SetObjResult(interp, Tcl_NewObj());
+		Tcl_AppendResult(interp,
+			"unable to enumerate subkeys of \"",
+			Tcl_GetString(keyNameObj), "\": ", NULL);
+		AppendSystemError(interp, result);
+		result = TCL_ERROR;
+	    }
 	    break;
 	}
 	if (regWinProcs->useWide) {
@@ -595,9 +582,10 @@ GetKeyNames(
     }
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultPtr);
+    } else {
+    	Tcl_DecrRefCount(resultPtr); /* BUGFIX: Don't leak on failure. */
     }
 
-    ckfree(buffer);
     RegCloseKey(key);
     return result;
 }
@@ -839,7 +827,7 @@ GetValueNames(
 {
     HKEY key;
     Tcl_Obj *resultPtr;
-    DWORD index, size, maxSize, result;
+    DWORD index, size, result;
     Tcl_DString buffer, ds;
     char *pattern, *name;
 
@@ -854,27 +842,9 @@ GetValueNames(
 
     resultPtr = Tcl_GetObjResult(interp);
 
-    /*
-     * Query the key to determine the appropriate buffer size to hold the
-     * largest value name plus the terminating null.
-     */
-
-    result = (*regWinProcs->regQueryInfoKeyProc)(key, NULL, NULL, NULL, NULL,
-	    NULL, NULL, &index, &maxSize, NULL, NULL, NULL);
-    if (result != ERROR_SUCCESS) {
-	Tcl_AppendStringsToObj(resultPtr, "unable to query key \"",
-		Tcl_GetString(keyNameObj), "\": ", NULL);
-	AppendSystemError(interp, result);
-	RegCloseKey(key);
-	result = TCL_ERROR;
-	goto done;
-    }
-    maxSize++;
-
-
     Tcl_DStringInit(&buffer);
     Tcl_DStringSetLength(&buffer,
-	    (int) ((regWinProcs->useWide) ? maxSize*2 : maxSize));
+	    (int) ((regWinProcs->useWide) ? MAX_KEY_LENGTH*2 : MAX_KEY_LENGTH));
     index = 0;
     result = TCL_OK;
 
@@ -890,7 +860,7 @@ GetValueNames(
      * after each iteration because RegEnumValue smashes the old value.
      */
 
-    size = maxSize;
+    size = MAX_KEY_LENGTH;
     while ((*regWinProcs->regEnumValueProc)(key, index,
 	    Tcl_DStringValue(&buffer), &size, NULL, NULL, NULL, NULL)
 	    == ERROR_SUCCESS) {
@@ -912,11 +882,10 @@ GetValueNames(
 	Tcl_DStringFree(&ds);
 
 	index++;
-	size = maxSize;
+	size = MAX_KEY_LENGTH;
     }
     Tcl_DStringFree(&buffer);
 
-    done:
     RegCloseKey(key);
     return result;
 }
@@ -1161,7 +1130,7 @@ RecursiveDeleteKey(
     CONST char *keyName)	/* Name of key to be deleted in external
 				 * encoding, not UTF. */
 {
-    DWORD result, size, maxSize;
+    DWORD result, size;
     Tcl_DString subkey;
     HKEY hKey;
 
@@ -1178,23 +1147,20 @@ RecursiveDeleteKey(
     if (result != ERROR_SUCCESS) {
 	return result;
     }
-    result = (*regWinProcs->regQueryInfoKeyProc)(hKey, NULL, NULL, NULL, NULL,
-	    &maxSize, NULL, NULL, NULL, NULL, NULL, NULL);
-    maxSize++;
     if (result != ERROR_SUCCESS) {
 	return result;
     }
 
     Tcl_DStringInit(&subkey);
     Tcl_DStringSetLength(&subkey,
-	    (int) ((regWinProcs->useWide) ? maxSize * 2 : maxSize));
+	    (int) ((regWinProcs->useWide) ? MAX_KEY_LENGTH * 2 : MAX_KEY_LENGTH));
 
     while (result == ERROR_SUCCESS) {
 	/*
 	 * Always get index 0 because key deletion changes ordering.
 	 */
 
-	size = maxSize;
+	size = MAX_KEY_LENGTH;
 	result=(*regWinProcs->regEnumKeyExProc)(hKey, 0,
 		Tcl_DStringValue(&subkey), &size, NULL, NULL, NULL, NULL);
 	if (result == ERROR_NO_MORE_ITEMS) {
