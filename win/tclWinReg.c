@@ -22,6 +22,13 @@
 #endif
 #include <stdlib.h>
 
+#ifndef UNICODE
+#   undef Tcl_WinTCharToUtf
+#   define Tcl_WinTCharToUtf(a,b,c) Tcl_ExternalToUtfDString(NULL,a,b,c)
+#   undef Tcl_WinUtfToTChar
+#   define Tcl_WinUtfToTChar(a,b,c) Tcl_UtfToExternalDString(NULL,a,b,c)
+#endif
+
 /*
  * Ensure that we can say which registry is being accessed.
  */
@@ -611,7 +618,7 @@ GetKeyNames(
 	    result = TCL_ERROR;
 	    break;
 	}
-	Tcl_WinTCharToUtf(buffer, bufSize * sizeof(WCHAR), &ds);
+	Tcl_WinTCharToUtf(buffer, bufSize * sizeof(TCHAR), &ds);
 	name = Tcl_DStringValue(&ds);
 	if (pattern && !Tcl_StringMatch(name, pattern)) {
 	    Tcl_DStringFree(&ds);
@@ -898,7 +905,7 @@ GetValueNames(
     resultPtr = Tcl_NewObj();
     Tcl_DStringInit(&buffer);
     Tcl_DStringSetLength(&buffer,
-	    (int) (maxSize*sizeof(WCHAR)));
+	    (int) (maxSize*sizeof(TCHAR)));
     index = 0;
     result = TCL_OK;
 
@@ -1209,7 +1216,7 @@ RecursiveDeleteKey(
 
     Tcl_DStringInit(&subkey);
     Tcl_DStringSetLength(&subkey,
-	    (int) (maxSize * sizeof(WCHAR)));
+	    (int) (maxSize * sizeof(TCHAR)));
 
     mode = saveMode;
     while (result == ERROR_SUCCESS) {
