@@ -98,8 +98,7 @@ static Tcl_PathType     GetPathType  _ANSI_ARGS_((Tcl_Obj *pathObjPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
 static Tcl_FSPathInFilesystemProc NativePathInFilesystem;
 static Tcl_Obj*  TclFSNormalizeAbsolutePath 
-			    _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj *pathPtr,
-					 ClientData *clientDataPtr));
+			    _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj *pathPtr));
 /*
  * Prototypes for procedures defined later in this file.
  */
@@ -1337,10 +1336,9 @@ Tcl_FSData(fsPtr)
  *---------------------------------------------------------------------------
  */
 static Tcl_Obj *
-TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
+TclFSNormalizeAbsolutePath(interp, pathPtr)
     Tcl_Interp* interp;    /* Interpreter to use */
     Tcl_Obj *pathPtr;      /* Absolute path to normalize */
-    ClientData *clientDataPtr;
 {
     int splen = 0, nplen, eltLen, i;
     char *eltName;
@@ -1396,9 +1394,6 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
 	 * greater efficiency 
 	 */
 	TclFSMakePathFromNormalized(interp, retVal);
-	if (clientDataPtr != NULL) {
-	    *clientDataPtr = NULL;
-	}
     } else {
 	/* Init to an empty string */
 	retVal = Tcl_NewStringObj("",0);
@@ -2538,7 +2533,7 @@ Tcl_FSGetCwd(interp)
 	 * could be problematic.
 	 */
 	if (retVal != NULL) {
-	    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal, NULL);
+	    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal);
 	    if (norm != NULL) {
 		/* 
 		 * We found a cwd, which is now in our global storage.
@@ -2580,7 +2575,7 @@ Tcl_FSGetCwd(interp)
 	    if (proc != NULL) {
 		Tcl_Obj *retVal = (*proc)(interp);
 		if (retVal != NULL) {
-		    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal, NULL);
+		    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal);
 		    /* 
 		     * Check whether cwd has changed from the value
 		     * previously stored in cwdPathPtr.  Really 'norm'
@@ -5665,7 +5660,7 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	     * we avoid [Bug 2385549] ...
 	     */
 
-	    Tcl_Obj *newCopy = TclFSNormalizeAbsolutePath(interp, copy, NULL);
+	    Tcl_Obj *newCopy = TclFSNormalizeAbsolutePath(interp, copy);
 	    Tcl_DecrRefCount(copy);
 	    copy = newCopy;
 	} else {
@@ -5767,7 +5762,6 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	}
     }
     if (fsPathPtr->normPathPtr == NULL) {
-	ClientData clientData = NULL;
 	Tcl_Obj *useThisCwd = NULL;
 	/* 
 	 * Since normPathPtr is NULL, but this is a valid path
@@ -5854,12 +5848,8 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	    }
 	}
 	/* Already has refCount incremented */
-	fsPathPtr->normPathPtr = TclFSNormalizeAbsolutePath(interp, absolutePath, 
-		       (fsPathPtr->nativePathPtr == NULL ? &clientData : NULL));
-	if (0 && (clientData != NULL)) {
-	    fsPathPtr->nativePathPtr = 
-	      (*fsPathPtr->fsRecPtr->fsPtr->dupInternalRepProc)(clientData);
-	}
+	fsPathPtr->normPathPtr
+		= TclFSNormalizeAbsolutePath(interp, absolutePath);
 	if (!strcmp(Tcl_GetString(fsPathPtr->normPathPtr),
 		    Tcl_GetString(pathObjPtr))) {
 	    /* 
