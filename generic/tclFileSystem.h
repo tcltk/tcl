@@ -78,7 +78,7 @@ MODULE_SCOPE void	TclFSSetPathDetails(Tcl_Obj *pathPtr,
 			    FilesystemRecord *fsRecPtr,
 			    ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclFSNormalizeAbsolutePath(Tcl_Interp *interp,
-			    Tcl_Obj *pathPtr, ClientData *clientDataPtr);
+			    Tcl_Obj *pathPtr);
 
 /*
  * Private shared variables for use by tclIOUtil.c and tclPathObj.c
