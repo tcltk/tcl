@@ -68,9 +68,9 @@ typedef struct FilesystemRecord {
 
 int      TclFSCwdPointerEquals _ANSI_ARGS_((Tcl_Obj* objPtr));
 int	 TclFSMakePathFromNormalized _ANSI_ARGS_((Tcl_Interp *interp, 
-		Tcl_Obj *objPtr, ClientData clientData));
+		Tcl_Obj *objPtr));
 int      TclFSNormalizeToUniquePath _ANSI_ARGS_((Tcl_Interp *interp, 
-		Tcl_Obj *pathPtr, int startAt, ClientData *clientDataPtr));
+		Tcl_Obj *pathPtr, int startAt));
 Tcl_Obj* TclFSMakePathRelative _ANSI_ARGS_((Tcl_Interp *interp, 
 		Tcl_Obj *objPtr, Tcl_Obj *cwdPtr));
 Tcl_Obj* TclFSInternalToNormalized _ANSI_ARGS_((
@@ -1376,8 +1376,6 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
 	}
     }
     if (nplen > 0) {
-	ClientData clientData = NULL;
-	
 	retVal = Tcl_FSJoinPath(split, nplen);
 	/* 
 	 * Now we have an absolute path, with no '..', '.' sequences,
@@ -1391,15 +1389,15 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
 	 * other criteria for normalizing a path.
 	 */
 	Tcl_IncrRefCount(retVal);
-	TclFSNormalizeToUniquePath(interp, retVal, 0, &clientData);
+	TclFSNormalizeToUniquePath(interp, retVal, 0);
 	/* 
 	 * Since we know it is a normalized path, we can
 	 * actually convert this object into an "path" object for
 	 * greater efficiency 
 	 */
-	TclFSMakePathFromNormalized(interp, retVal, clientData);
+	TclFSMakePathFromNormalized(interp, retVal);
 	if (clientDataPtr != NULL) {
-	    *clientDataPtr = clientData;
+	    *clientDataPtr = NULL;
 	}
     } else {
 	/* Init to an empty string */
@@ -1456,15 +1454,13 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
  *---------------------------------------------------------------------------
  */
 int
-TclFSNormalizeToUniquePath(interp, pathPtr, startAt, clientDataPtr)
+TclFSNormalizeToUniquePath(interp, pathPtr, startAt)
     Tcl_Interp *interp;
     Tcl_Obj *pathPtr;
     int startAt;
-    ClientData *clientDataPtr;
 {
     FilesystemRecord *fsRecPtr, *firstFsRecPtr;
     /* Ignore this variable */
-    (void)clientDataPtr;
     
     /*
      * Call each of the "normalise path" functions in succession. This is
@@ -5347,11 +5343,9 @@ TclFSMakePathRelative(interp, objPtr, cwdPtr)
  */
 
 int
-TclFSMakePathFromNormalized(interp, objPtr, nativeRep)
+TclFSMakePathFromNormalized(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr;		/* The object to convert. */
-    ClientData nativeRep;	/* The native rep for the object, if known
-				 * else NULL. */
 {
     FsPath *fsPathPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -5383,7 +5377,7 @@ TclFSMakePathFromNormalized(interp, objPtr, nativeRep)
     fsPathPtr->translatedPathPtr = NULL;
     fsPathPtr->normPathPtr = objPtr;
     fsPathPtr->cwdPtr = NULL;
-    fsPathPtr->nativePathPtr = nativeRep;
+    fsPathPtr->nativePathPtr = NULL;
     fsPathPtr->fsRecPtr = NULL;
     fsPathPtr->filesystemEpoch = tsdPtr->filesystemEpoch;
 
@@ -5618,7 +5612,6 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	int cwdLen;
 	int pathType;
 	CONST char *cwdStr;
-	ClientData clientData = NULL;
 	
 	pathType = Tcl_FSGetPathType(fsPathPtr->cwdPtr);
 	dir = Tcl_FSGetNormalizedPath(interp, fsPathPtr->cwdPtr);
@@ -5688,8 +5681,7 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	     * after that separator.
 	     */
 
-	    TclFSNormalizeToUniquePath(interp, copy, cwdLen-1,
-		    (fsPathPtr->nativePathPtr == NULL ? &clientData : NULL));
+	    TclFSNormalizeToUniquePath(interp, copy, cwdLen-1);
 	}
 
 	/* Now we need to construct the new path object */
@@ -5715,14 +5707,6 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	    /* That's our reference to copy used */
 	    Tcl_DecrRefCount(dir);
 	}
-	if (clientData != NULL) {
-	    /*
-	     * This may be unnecessary. It appears that the
-	     * TclFSNormalizeToUniquePath call above should have already
-	     * set this up.  Not changing out of fear of the unknown.
-	     */
-	    fsPathPtr->nativePathPtr = clientData;
-	}
 	PATHFLAGS(pathObjPtr) = 0;
     }
     /* Ensure cwd hasn't changed */
@@ -5742,7 +5726,6 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	    int cwdLen;
 	    Tcl_Obj *copy;
 	    CONST char *cwdStr;
-	    ClientData clientData = NULL;
 	    
 	    copy = Tcl_DuplicateObj(fsPathPtr->cwdPtr);
 	    Tcl_IncrRefCount(copy);
@@ -5780,12 +5763,8 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	     * the end of the previously normalized 'dir'.  This should
 	     * be much faster!
 	     */
-	    TclFSNormalizeToUniquePath(interp, copy, cwdLen-1, 
-	      (fsPathPtr->nativePathPtr == NULL ? &clientData : NULL));
+	    TclFSNormalizeToUniquePath(interp, copy, cwdLen-1);
 	    fsPathPtr->normPathPtr = copy;
-	    if (clientData != NULL) {
-		fsPathPtr->nativePathPtr = clientData;
-	    }
 	}
     }
     if (fsPathPtr->normPathPtr == NULL) {
