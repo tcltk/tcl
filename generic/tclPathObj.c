@@ -152,12 +152,7 @@ typedef struct FsPath {
 Tcl_Obj *
 TclFSNormalizeAbsolutePath(
     Tcl_Interp *interp,		/* Interpreter to use */
-    Tcl_Obj *pathPtr,		/* Absolute path to normalize */
-    ClientData *clientDataPtr)	/* If non-NULL, then may be set to the
-				 * fs-specific clientData for this path. This
-				 * will happen when that extra information can
-				 * be calculated efficiently as a side-effect
-				 * of normalization. */
+    Tcl_Obj *pathPtr)		/* Absolute path to normalize */
 {
     const char *dirSep, *oldDirSep;
     int first = 1;		/* Set to zero once we've passed the first
@@ -439,9 +434,6 @@ TclFSNormalizeAbsolutePath(
      */
 
     TclFSMakePathFromNormalized(interp, retVal);
-    if (clientDataPtr != NULL) {
-	*clientDataPtr = NULL;
-    }
 
     /*
      * This has a refCount of 1 for the caller, unlike many Tcl_Obj APIs.
@@ -1873,7 +1865,7 @@ Tcl_FSGetNormalizedPath(
 	     * we avoid [Bug 2385549] ...
 	     */
 
-	    Tcl_Obj *newCopy = TclFSNormalizeAbsolutePath(interp, copy, NULL);
+	    Tcl_Obj *newCopy = TclFSNormalizeAbsolutePath(interp, copy);
 	    Tcl_DecrRefCount(copy);
 	    copy = newCopy;
 	} else {
@@ -1968,7 +1960,6 @@ Tcl_FSGetNormalizedPath(
 	}
     }
     if (fsPathPtr->normPathPtr == NULL) {
-	ClientData clientData = NULL;
 	Tcl_Obj *useThisCwd = NULL;
 	int pureNormalized = 1;
 
@@ -2050,12 +2041,7 @@ Tcl_FSGetNormalizedPath(
 	 */
 
 	fsPathPtr->normPathPtr = TclFSNormalizeAbsolutePath(interp,
-		absolutePath,
-		(fsPathPtr->nativePathPtr == NULL ? &clientData : NULL));
-	if (0 && (clientData != NULL)) {
-	    fsPathPtr->nativePathPtr =
-		(*fsPathPtr->fsRecPtr->fsPtr->dupInternalRepProc)(clientData);
-	}
+		absolutePath);
 
 	/*
 	 * Check if path is pure normalized (this can only be the case if it
