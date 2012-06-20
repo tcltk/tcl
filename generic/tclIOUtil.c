@@ -2662,7 +2662,7 @@ Tcl_FSGetCwd(
 			retVal = (*fsRecPtr->fsPtr->internalToNormalizedProc)(
 				retCd);
 			Tcl_IncrRefCount(retVal);
-			norm = TclFSNormalizeAbsolutePath(interp,retVal,NULL);
+			norm = TclFSNormalizeAbsolutePath(interp,retVal);
 			if (norm != NULL) {
 			    /*
 			     * We found a cwd, which is now in our global
@@ -2708,7 +2708,7 @@ Tcl_FSGetCwd(
 	 */
 
 	if (retVal != NULL) {
-	    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal, NULL);
+	    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal);
 	    if (norm != NULL) {
 		/*
 		 * We found a cwd, which is now in our global storage. We must
@@ -2776,8 +2776,7 @@ Tcl_FSGetCwd(
 		    retVal = (*proc)(interp);
 		}
 		if (retVal != NULL) {
-		    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp,
-			    retVal, NULL);
+		    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal);
 
 		    /*
 		     * Check whether cwd has changed from the value previously
