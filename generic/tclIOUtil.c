@@ -1460,7 +1460,6 @@ TclFSNormalizeToUniquePath(interp, pathPtr, startAt)
     int startAt;
 {
     FilesystemRecord *fsRecPtr, *firstFsRecPtr;
-    /* Ignore this variable */
     
     /*
      * Call each of the "normalise path" functions in succession. This is
