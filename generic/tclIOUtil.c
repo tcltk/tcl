@@ -1347,14 +1347,9 @@ int
 TclFSNormalizeToUniquePath(
     Tcl_Interp *interp,		/* Used for error messages. */
     Tcl_Obj *pathPtr,		/* The path to normalize in place. */
-    int startAt,		/* Start at this char-offset. */
-    ClientData *clientDataPtr)	/* If we generated a complete normalized path
-				 * for a given filesystem, we can optionally
-				 * return an fs-specific clientdata here. */
+    int startAt)		/* Start at this char-offset. */
 {
     FilesystemRecord *fsRecPtr, *firstFsRecPtr;
-    /* Ignore this variable */
-    (void) clientDataPtr;
 
     /*
      * Call each of the "normalise path" functions in succession. This is a
@@ -2633,7 +2628,7 @@ Tcl_FSGetCwd(
 
 		retVal = fsRecPtr->fsPtr->internalToNormalizedProc(retCd);
 		Tcl_IncrRefCount(retVal);
-		norm = TclFSNormalizeAbsolutePath(interp,retVal,NULL);
+		norm = TclFSNormalizeAbsolutePath(interp,retVal);
 		if (norm != NULL) {
 		    /*
 		     * We found a cwd, which is now in our global storage. We
@@ -2672,7 +2667,7 @@ Tcl_FSGetCwd(
 	 */
 
 	if (retVal != NULL) {
-	    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal, NULL);
+	    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal);
 
 	    if (norm != NULL) {
 		/*
@@ -2762,7 +2757,7 @@ Tcl_FSGetCwd(
 	 * Normalize the path.
 	 */
 
-	norm = TclFSNormalizeAbsolutePath(interp, retVal, NULL);
+	norm = TclFSNormalizeAbsolutePath(interp, retVal);
 
 	/*
 	 * Check whether cwd has changed from the value previously stored in
