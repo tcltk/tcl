@@ -534,15 +534,6 @@ GetKeyNames(
 	return TCL_ERROR;
     }
 
-    if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_NewObj());
-	Tcl_AppendResult(interp, "unable to query key \"", 
-			 Tcl_GetString(keyNameObj), "\": ", NULL);
-	AppendSystemError(interp, result);
-	RegCloseKey(key);
-	return TCL_ERROR;
-    }
-
     /* Enumerate the subkeys */
 
     resultPtr = Tcl_NewObj();
@@ -1147,9 +1138,6 @@ RecursiveDeleteKey(
     if (result != ERROR_SUCCESS) {
 	return result;
     }
-    if (result != ERROR_SUCCESS) {
-	return result;
-    }
 
     Tcl_DStringInit(&subkey);
     Tcl_DStringSetLength(&subkey,
@@ -1496,3 +1484,11 @@ ConvertDWORD(
     localType = (*((char*)(&order)) == 1) ? REG_DWORD : REG_DWORD_BIG_ENDIAN;
     return (type != localType) ? (DWORD)SWAPLONG(value) : value;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
