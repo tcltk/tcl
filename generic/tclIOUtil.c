@@ -1409,14 +1409,9 @@ int
 TclFSNormalizeToUniquePath(
     Tcl_Interp *interp,		/* Used for error messages. */
     Tcl_Obj *pathPtr,		/* The path to normalize in place */
-    int startAt,		/* Start at this char-offset */
-    ClientData *clientDataPtr)	/* If we generated a complete normalized path
-				 * for a given filesystem, we can optionally
-				 * return an fs-specific clientdata here. */
+    int startAt)		/* Start at this char-offset */
 {
     FilesystemRecord *fsRecPtr, *firstFsRecPtr;
-    /* Ignore this variable */
-    (void) clientDataPtr;
 
     /*
      * Call each of the "normalise path" functions in succession. This is a
