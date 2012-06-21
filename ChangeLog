@@ -1,7 +1,7 @@
-2012-06-19  Jan Nijtmans  <nijtmans@users.sf.net>
+2012-06-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinReg.c:          Plug memory leak, part of [Bug #3362446]
-	* library/reg/pkgIndex.tcl: Dde version should be 1.3.0, not 1.3
+	* win/tclWinReg.c:          [Bug #3362446]: registry keys command fails
+	* tests/registry.test:      with 8.5/8.6
 
 2012-06-11  Don Porter  <dgp@users.sourceforge.net>
 
