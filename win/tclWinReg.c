@@ -765,7 +765,7 @@ GetValue(
      */
 
     Tcl_DStringInit(&data);
-    Tcl_DStringSetLength(&data, (int) TCL_DSTRING_STATIC_SIZE - 1);
+    Tcl_DStringSetLength(&data, TCL_DSTRING_STATIC_SIZE - 1);
     length = TCL_DSTRING_STATIC_SIZE/sizeof(TCHAR) - 1;
 
     valueName = Tcl_GetStringFromObj(valueNameObj, &nameLen);
@@ -781,7 +781,7 @@ GetValue(
 	 */
 
 	length *= 2;
-	Tcl_DStringSetLength(&data, (int) length);
+	Tcl_DStringSetLength(&data, (int) length * sizeof(TCHAR));
 	result = RegQueryValueEx(key, nativeValue,
 		NULL, &type, (BYTE *) Tcl_DStringValue(&data), &length);
     }
