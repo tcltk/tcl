@@ -411,7 +411,7 @@ static FilesystemRecord nativeFilesystemRecord = {
  * trigger cache cleanup in all threads.
  */
 
-static int theFilesystemEpoch = 0;
+static int theFilesystemEpoch = 1;
 
 /*
  * Stores the linked list of filesystems. A 1:1 copy of this list is also
@@ -672,7 +672,7 @@ int
 TclFSEpochOk(
     int filesystemEpoch)
 {
-    return (filesystemEpoch == theFilesystemEpoch);
+    return (filesystemEpoch == 0 || filesystemEpoch == theFilesystemEpoch);
 }
 
 static void
