@@ -3814,31 +3814,6 @@ Tcl_FSSplitPath(
     return result;
 }
 
-/* Simple helper function */
-Tcl_Obj *
-TclFSInternalToNormalized(
-    Tcl_Filesystem *fromFilesystem,
-    ClientData clientData,
-    FilesystemRecord **fsRecPtrPtr)
-{
-    FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
-
-    while (fsRecPtr != NULL) {
-	if (fsRecPtr->fsPtr == fromFilesystem) {
-	    *fsRecPtrPtr = fsRecPtr;
-	    break;
-	}
-	fsRecPtr = fsRecPtr->nextPtr;
-    }
-
-    if ((fsRecPtr != NULL)
-	    && (fromFilesystem->internalToNormalizedProc != NULL)) {
-	return (*fromFilesystem->internalToNormalizedProc)(clientData);
-    } else {
-	return NULL;
-    }
-}
-
 /*
  *----------------------------------------------------------------------
  *
@@ -4436,7 +4411,7 @@ Tcl_FSGetFileSystemForPath(
 		 * above call to the pathInFilesystemProc.
 		 */
 
-		TclFSSetPathDetails(pathPtr, fsRecPtr, clientData);
+		TclFSSetPathDetails(pathPtr, fsRecPtr->fsPtr, clientData);
 		retVal = fsRecPtr->fsPtr;
 	    }
 	}
