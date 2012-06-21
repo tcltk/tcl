@@ -64,7 +64,7 @@ package require tcltest 2
 namespace import -force ::tcltest::*
 
 # Some tests require the Thread package or exec command
-testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.6.6}]}]
 testConstraint exec [llength [info commands exec]]
 
 # Produce a random port number in the Dynamic/Private range
@@ -1696,6 +1696,7 @@ test socket_$af-13.1 {Testing use of shared socket between two threads} -body {
         set i 0
         vwait x
         close $f
+	thread::wait
     }]]
     set port [thread::send $serverthread {set listen}]
     set s [socket $localhost $port]

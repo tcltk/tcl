@@ -467,7 +467,8 @@ proc ::safe::InterpInit {
 
     ::interp expose $slave file
     foreach subcommand {dirname extension rootname tail} {
-	::interp alias $slave ::tcl::file::$subcommand {} file $subcommand
+	::interp alias $slave ::tcl::file::$subcommand {} \
+	    ::safe::AliasFileSubcommand $slave $subcommand
     }
     foreach subcommand {
 	atime attributes copy delete executable exists isdirectory isfile
@@ -493,16 +494,16 @@ proc ::safe::InterpInit {
 
     if {[catch {::interp eval $slave {
 	source [file join $tcl_library init.tcl]
-    }} msg]} {
+    }} msg opt]} {
 	Log $slave "can't source init.tcl ($msg)"
-	return -code error "can't source init.tcl into slave $slave ($msg)"
+	return -options $opt "can't source init.tcl into slave $slave ($msg)"
     }
 
     if {[catch {::interp eval $slave {
 	source [file join $tcl_library tm.tcl]
-    }} msg]} {
+    }} msg opt]} {
 	Log $slave "can't source tm.tcl ($msg)"
-	return -code error "can't source tm.tcl into slave $slave ($msg)"
+	return -options $opt "can't source tm.tcl into slave $slave ($msg)"
     }
 
     # Sync the paths used to search for Tcl modules. This can be done only
@@ -675,6 +676,17 @@ proc ::safe::CheckFileName {slave file} {
     }
 }
 
+# AliasFileSubcommand handles selected subcommands of [file] in safe
+# interpreters that are *almost* safe. In particular, it just acts to
+# prevent discovery of what home directories exist.
+
+proc ::safe::AliasFileSubcommand {slave subcommand name} {
+    if {[string match ~* $name]} {
+	set name ./$name
+    }
+    tailcall ::interp invokehidden $slave tcl:file:$subcommand $name
+}
+
 # AliasGlob is the target of the "glob" alias in safe interpreters.
 
 proc ::safe::AliasGlob {slave args} {
@@ -761,6 +773,8 @@ proc ::safe::AliasGlob {slave args} {
     foreach opt [lrange $args $at end] {
 	if {![regexp $dirPartRE $opt -> thedir thefile]} {
 	    set thedir .
+	} elseif {[string match ~* $thedir]} {
+	    set thedir ./$thedir
 	}
 	if {$thedir eq "*" &&
 		($thefile eq "pkgIndex.tcl" || $thefile eq "*.tm")} {
@@ -868,6 +882,7 @@ proc ::safe::AliasSource {slave args} {
     # because we want to control [info script] in the slave so information
     # doesn't leak so much. [Bug 2913625]
     set old [::interp eval $slave {info script}]
+    set replacementMsg "script error"
     set code [catch {
 	set f [open $realfile]
 	fconfigure $f -eofchar \032
@@ -877,14 +892,17 @@ proc ::safe::AliasSource {slave args} {
 	set contents [read $f]
 	close $f
 	::interp eval $slave [list info script $file]
-	::interp eval $slave $contents
     } msg opt]
+    if {$code == 0} {
+	set code [catch {::interp eval $slave $contents} msg opt]
+	set replacementMsg $msg
+    }
     catch {interp eval $slave [list info script $old]}
     # Note that all non-errors are fine result codes from [source], so we must
     # take a little care to do it properly. [Bug 2923613]
     if {$code == 1} {
 	Log $slave $msg
-	return -code error "script error"
+	return -code error $replacementMsg
     }
     return -code $code -options $opt $msg
 }

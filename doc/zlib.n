@@ -200,9 +200,10 @@ data corruption.
 .TP
 \fB\-checksum\fR
 .
-This read-only option, valid for both compressing and decompressing
-transforms, gets the current checksum for the uncompressed data that the
-compression engine has seen so far. The compression algorithm depends on what
+This read-only option gets the current checksum for the uncompressed data
+that the compression engine has seen so far. It is valid for both
+compressing and decompressing transforms, but not for the raw inflate
+and deflate formats. The compression algorithm depends on what
 format is being produced or consumed.
 .TP
 \fB\-header\fR

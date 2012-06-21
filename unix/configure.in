@@ -471,16 +471,13 @@ fi
 #	The code below deals with several issues related to gettimeofday:
 #	1. Some systems don't provide a gettimeofday function at all
 #	   (set NO_GETTOD if this is the case).
-#	2. SGI systems don't use the BSD form of the gettimeofday function,
-#	   but they have a BSDgettimeofday function that can be used instead.
-#	3. See if gettimeofday is declared in the <sys/time.h> header file.
+#	2. See if gettimeofday is declared in the <sys/time.h> header file.
 #	   if not, set the GETTOD_NOT_DECLARED flag so that tclPort.h can
 #	   declare it.
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNC(BSDgettimeofday,
-    [AC_DEFINE(HAVE_BSDGETTIMEOFDAY, 1, [Do we have BSDgettimeofday()?])], [
-    AC_CHECK_FUNC(gettimeofday, , [AC_DEFINE(NO_GETTOD, 1, [Do we have gettimeofday()?])])
+AC_CHECK_FUNC(gettimeofday,[],[
+    AC_DEFINE(NO_GETTOD, 1, [Do we have gettimeofday()?])
 ])
 AC_CACHE_CHECK([for gettimeofday declaration], tcl_cv_grep_gettimeofday, [
     AC_EGREP_HEADER(gettimeofday, sys/time.h,
