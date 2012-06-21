@@ -731,8 +731,8 @@ GetValue(
      */
 
     Tcl_DStringInit(&data);
-    length = TCL_DSTRING_STATIC_SIZE - 1;
-    Tcl_DStringSetLength(&data, (int) length);
+    Tcl_DStringSetLength(&data, TCL_DSTRING_STATIC_SIZE - 1);
+    length = TCL_DSTRING_STATIC_SIZE / (regWinProcs->useWide ? 2 : 1) - 1;
 
     resultPtr = Tcl_GetObjResult(interp);
 
@@ -748,8 +748,8 @@ GetValue(
 	 * Required for HKEY_PERFORMANCE_DATA
 	 */
 	length *= 2;
-        Tcl_DStringSetLength(&data, (int) length);
-        result = (*regWinProcs->regQueryValueExProc)(key, (char *) nativeValue,
+	Tcl_DStringSetLength(&data, (int) length * (regWinProcs->useWide ? 2 : 1));
+	result = (*regWinProcs->regQueryValueExProc)(key, (char *) nativeValue,
 		NULL, &type, (BYTE *) Tcl_DStringValue(&data), &length);
     }
     Tcl_DStringFree(&buf);
