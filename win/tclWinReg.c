@@ -17,7 +17,6 @@
 #   define USE_TCL_STUBS
 #endif
 #include "tclInt.h"
-#include "tclPort.h"
 #ifdef _MSC_VER
 #   pragma comment (lib, "advapi32.lib")
 #endif
@@ -766,8 +765,8 @@ GetValue(
      */
 
     Tcl_DStringInit(&data);
-    length = TCL_DSTRING_STATIC_SIZE - 1;
-    Tcl_DStringSetLength(&data, (int) length);
+    Tcl_DStringSetLength(&data, (int) TCL_DSTRING_STATIC_SIZE - 1);
+    length = TCL_DSTRING_STATIC_SIZE/sizeof(TCHAR) - 1;
 
     valueName = Tcl_GetStringFromObj(valueNameObj, &nameLen);
     nativeValue = Tcl_WinUtfToTChar(valueName, nameLen, &buf);
@@ -910,7 +909,7 @@ GetValueNames(
     size = MAX_KEY_LENGTH;
     while (RegEnumValue(key,index, (TCHAR *)Tcl_DStringValue(&buffer),
 	    &size, NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
-	size *= 2;
+	size *= sizeof(TCHAR);
 
 	Tcl_WinTCharToUtf((TCHAR *) Tcl_DStringValue(&buffer), (int) size,
 		&ds);
