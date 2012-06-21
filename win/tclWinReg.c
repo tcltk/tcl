@@ -17,6 +17,7 @@
 #   define USE_TCL_STUBS
 #endif
 #include "tclInt.h"
+#include "tclPort.h"
 #ifdef _MSC_VER
 #   pragma comment (lib, "advapi32.lib")
 #endif
@@ -56,6 +57,14 @@
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLEXPORT
+
+/*
+ * The maximum length of a sub-key name.
+ */
+
+#ifndef MAX_KEY_LENGTH
+#define MAX_KEY_LENGTH		256
+#endif
 
 /*
  * The following macros convert between different endian ints.
@@ -567,10 +576,7 @@ GetKeyNames(
 {
     const char *pattern;	/* Pattern being matched against subkeys */
     HKEY key;			/* Handle to the key being examined */
-    DWORD subKeyCount;		/* Number of subkeys to list */
-    DWORD maxSubKeyLen;		/* Maximum string length of any subkey */
-    TCHAR *buffer;		/* Buffer to hold the subkey name */
-    DWORD maxBufSize;		/* Maximum size of the buffer */
+    TCHAR buffer[MAX_KEY_LENGTH];		/* Buffer to hold the subkey name */
     DWORD bufSize;		/* Size of the buffer */
     DWORD index;		/* Position of the current subkey */
     char *name;			/* Subkey name */
@@ -594,45 +600,24 @@ GetKeyNames(
     }
 
     /*
-     * Determine how big a buffer is needed for enumerating subkeys, and how
-     * many subkeys there are.
-     */
-
-    result = RegQueryInfoKey(key, NULL, NULL, NULL,
-	    &subKeyCount, &maxSubKeyLen, NULL, NULL, NULL, NULL, NULL, NULL);
-    if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_NewObj());
-	Tcl_AppendResult(interp, "unable to query key \"",
-		Tcl_GetString(keyNameObj), "\": ", NULL);
-	AppendSystemError(interp, result);
-	RegCloseKey(key);
-	return TCL_ERROR;
-    }
-    maxBufSize = maxSubKeyLen + 1;
-    buffer = ckalloc(maxBufSize * sizeof(TCHAR));
-
-    /*
      * Enumerate the subkeys.
      */
 
     resultPtr = Tcl_NewObj();
-    for (index = 0; index < subKeyCount; ++index) {
-	bufSize = maxBufSize;
+    for (index = 0;; ++index) {
+	bufSize = MAX_KEY_LENGTH;
 	result = RegEnumKeyEx(key, index, buffer, &bufSize,
 		NULL, NULL, NULL, NULL);
-	if ((result == ERROR_MORE_DATA) && (maxBufSize < MAX_KEY_LENGTH)) {
-	    maxBufSize = MAX_KEY_LENGTH + 1;
-	    buffer = ckrealloc(buffer, maxBufSize * sizeof(TCHAR));
-	    bufSize = maxBufSize;
-	    result = RegEnumKeyEx(key, index, buffer, &bufSize,
-		    NULL, NULL, NULL, NULL);
-	}
 	if (result != ERROR_SUCCESS) {
-	    Tcl_SetObjResult(interp, Tcl_NewObj());
-	    Tcl_AppendResult(interp, "unable to enumerate subkeys of \"",
-		    Tcl_GetString(keyNameObj), "\": ", NULL);
-	    AppendSystemError(interp, result);
-	    result = TCL_ERROR;
+	    if (result == ERROR_NO_MORE_ITEMS) {
+		result = TCL_OK;
+	    } else {
+		Tcl_SetObjResult(interp, Tcl_NewObj());
+		Tcl_AppendResult(interp, "unable to enumerate subkeys of \"",
+			Tcl_GetString(keyNameObj), "\": ", NULL);
+		AppendSystemError(interp, result);
+		result = TCL_ERROR;
+	    }
 	    break;
 	}
 	Tcl_WinTCharToUtf(buffer, bufSize * sizeof(TCHAR), &ds);
@@ -654,7 +639,6 @@ GetKeyNames(
 	Tcl_DecrRefCount(resultPtr); /* BUGFIX: Don't leak on failure. */
     }
 
-    ckfree(buffer);
     RegCloseKey(key);
     return result;
 }
@@ -891,7 +875,7 @@ GetValueNames(
 {
     HKEY key;
     Tcl_Obj *resultPtr;
-    DWORD index, size, maxSize, result;
+    DWORD index, size, result;
     Tcl_DString buffer, ds;
     const char *pattern, *name;
 
@@ -904,27 +888,10 @@ GetValueNames(
 	return TCL_ERROR;
     }
 
-    /*
-     * Query the key to determine the appropriate buffer size to hold the
-     * largest value name plus the terminating null.
-     */
-
-    result = RegQueryInfoKey(key, NULL, NULL, NULL, NULL,
-	    NULL, NULL, &index, &maxSize, NULL, NULL, NULL);
-    if (result != ERROR_SUCCESS) {
-	Tcl_AppendResult(interp, "unable to query key \"",
-		Tcl_GetString(keyNameObj), "\": ", NULL);
-	AppendSystemError(interp, result);
-	RegCloseKey(key);
-	result = TCL_ERROR;
-	goto done;
-    }
-    maxSize++;
-
     resultPtr = Tcl_NewObj();
     Tcl_DStringInit(&buffer);
     Tcl_DStringSetLength(&buffer,
-	    (int) (maxSize*sizeof(TCHAR)));
+	    (int) (MAX_KEY_LENGTH*sizeof(TCHAR)));
     index = 0;
     result = TCL_OK;
 
@@ -940,7 +907,7 @@ GetValueNames(
      * each iteration because RegEnumValue smashes the old value.
      */
 
-    size = maxSize;
+    size = MAX_KEY_LENGTH;
     while (RegEnumValue(key,index, (TCHAR *)Tcl_DStringValue(&buffer),
 	    &size, NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
 	size *= 2;
@@ -959,12 +926,10 @@ GetValueNames(
 	Tcl_DStringFree(&ds);
 
 	index++;
-	size = maxSize;
+	size = MAX_KEY_LENGTH;
     }
     Tcl_SetObjResult(interp, resultPtr);
     Tcl_DStringFree(&buffer);
-
-  done:
     RegCloseKey(key);
     return result;
 }
@@ -1206,7 +1171,7 @@ RecursiveDeleteKey(
 				 * encoding, not UTF. */
     REGSAM mode)		/* Mode flags to pass. */
 {
-    DWORD result, size, maxSize;
+    DWORD result, size;
     Tcl_DString subkey;
     HKEY hKey;
     REGSAM saveMode = mode;
@@ -1226,16 +1191,10 @@ RecursiveDeleteKey(
     if (result != ERROR_SUCCESS) {
 	return result;
     }
-    result = RegQueryInfoKey(hKey, NULL, NULL, NULL, NULL,
-	    &maxSize, NULL, NULL, NULL, NULL, NULL, NULL);
-    maxSize++;
-    if (result != ERROR_SUCCESS) {
-	return result;
-    }
 
     Tcl_DStringInit(&subkey);
     Tcl_DStringSetLength(&subkey,
-	    (int) (maxSize * sizeof(TCHAR)));
+	    (int) (MAX_KEY_LENGTH * sizeof(TCHAR)));
 
     mode = saveMode;
     while (result == ERROR_SUCCESS) {
@@ -1243,7 +1202,7 @@ RecursiveDeleteKey(
 	 * Always get index 0 because key deletion changes ordering.
 	 */
 
-	size = maxSize;
+	size = MAX_KEY_LENGTH;
 	result = RegEnumKeyEx(hKey, 0, (TCHAR *)Tcl_DStringValue(&subkey),
 		&size, NULL, NULL, NULL, NULL);
 	if (result == ERROR_NO_MORE_ITEMS) {
