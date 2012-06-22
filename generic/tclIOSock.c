@@ -206,7 +206,10 @@ TclCreateSocketAddress(
     }
 
     if (result != 0) {
-	goto error;
+        if (result != EAI_SYSTEM) {
+            *errorMsgPtr = gai_strerror(result);
+        }
+        return 0;
     }
 
     /*
@@ -249,33 +252,6 @@ TclCreateSocketAddress(
     }
     
     return 1;
-	
-    /*
-     * Ought to use gai_strerror() here...
-     */
-
-error:
-    switch (result) {
-    case EAI_NONAME:
-    case EAI_SERVICE:
-#if defined(EAI_ADDRFAMILY) && EAI_ADDRFAMILY != EAI_NONAME
-    case EAI_ADDRFAMILY:
-#endif
-#if defined(EAI_NODATA) && EAI_NODATA != EAI_NONAME
-    case EAI_NODATA:
-#endif
-	*errorMsgPtr = gai_strerror(result);
-	errno = EHOSTUNREACH;
-	return 0;
-#ifdef EAI_SYSTEM
-    case EAI_SYSTEM:
-	return 0;
-#endif
-    default:
-	*errorMsgPtr = gai_strerror(result);
-	errno = ENXIO;
-	return 0;
-    }
 }
 
 /*
