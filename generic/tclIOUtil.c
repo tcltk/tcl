@@ -398,7 +398,6 @@ Tcl_Filesystem tclNativeFilesystem = {
 static FilesystemRecord nativeFilesystemRecord = {
     NULL,
     &tclNativeFilesystem,
-    1,
     NULL,
     NULL
 };
@@ -479,10 +478,8 @@ FsThrExitProc(
     fsRecPtr = tsdPtr->filesystemList;
     while (fsRecPtr != NULL) {
 	tmpFsRecPtr = fsRecPtr->nextPtr;
-	if (--fsRecPtr->fileRefCount <= 0) {
-	    fsRecPtr->fsPtr = NULL;
-	    ckfree((char *)fsRecPtr);
-	}
+	fsRecPtr->fsPtr = NULL;
+	ckfree((char *)fsRecPtr);
 	fsRecPtr = tmpFsRecPtr;
     }
     tsdPtr->initialized = 0;
@@ -598,11 +595,9 @@ FsRecacheFilesystemList(void)
     fsRecPtr = tsdPtr->filesystemList;
     while (fsRecPtr != NULL) {
 	tmpFsRecPtr = fsRecPtr->nextPtr;
-	if (--fsRecPtr->fileRefCount <= 0) {
-	    fsRecPtr->fsPtr = NULL;
-	    fsRecPtr->nextPtr = toFree;
-	    toFree = fsRecPtr;
-	}
+	fsRecPtr->fsPtr = NULL;
+	fsRecPtr->nextPtr = toFree;
+	toFree = fsRecPtr;
 	fsRecPtr = tmpFsRecPtr;
     }
     tsdPtr->filesystemList = NULL;
@@ -796,14 +791,11 @@ TclFinalizeFilesystem(void)
     fsRecPtr = filesystemList;
     while (fsRecPtr != NULL) {
 	FilesystemRecord *tmpFsRecPtr = fsRecPtr->nextPtr;
-	if (fsRecPtr->fileRefCount <= 0) {
-	    /*
-	     * The native filesystem is static, so we don't free it.
-	     */
 
-	    if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
-		ckfree((char *)fsRecPtr);
-	    }
+	/* The native filesystem is static, so we don't free it. */
+
+	if (fsRecPtr != &nativeFilesystemRecord) {
+	    ckfree((char *)fsRecPtr);
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
@@ -844,11 +836,6 @@ void
 TclResetFilesystem(void)
 {
     filesystemList = &nativeFilesystemRecord;
-
-    /*
-     * Note, at this point, I believe nativeFilesystemRecord -> fileRefCount
-     * should equal 1 and if not, we should try to track down the cause.
-     */
 
 #ifdef __WIN32__
     /*
@@ -905,13 +892,6 @@ Tcl_FSRegister(
 
     newFilesystemPtr->clientData = clientData;
     newFilesystemPtr->fsPtr = fsPtr;
-
-    /*
-     * We start with a refCount of 1. If this drops to zero, then anyone is
-     * welcome to ckfree us.
-     */
-
-    newFilesystemPtr->fileRefCount = 1;
 
     /*
      * Is this lock and wait strictly speaking necessary? Since any iterators
@@ -986,7 +966,7 @@ Tcl_FSUnregister(
      */
 
     fsRecPtr = filesystemList;
-    while ((retVal == TCL_ERROR) && (fsRecPtr->fsPtr != &tclNativeFilesystem)) {
+    while ((retVal == TCL_ERROR) && (fsRecPtr != &nativeFilesystemRecord)) {
 	if (fsRecPtr->fsPtr == fsPtr) {
 	    if (fsRecPtr->prevPtr) {
 		fsRecPtr->prevPtr->nextPtr = fsRecPtr->nextPtr;
@@ -1007,10 +987,7 @@ Tcl_FSUnregister(
 
 	    theFilesystemEpoch++;
 
-	    fsRecPtr->fileRefCount--;
-	    if (fsRecPtr->fileRefCount <= 0) {
-		ckfree((char *)fsRecPtr);
-	    }
+	    ckfree((char *)fsRecPtr);
 
 	    retVal = TCL_OK;
 	} else {
