@@ -262,7 +262,6 @@ The stream will be a compressing stream that produces gzip-format output,
 using compression level \fIlevel\fR (if specified) which will be an integer
 from 0 to 9, and the header descriptor dictionary \fIheader\fR (if specified;
 for keys see \fBzlib gzip\fR).
-'\" TODO: Header dictionary!
 .TP
 \fBzlib stream inflate\fR ?\fB\-dictionary \fIbindata\fR?
 .
