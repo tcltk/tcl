@@ -1,3 +1,10 @@
+2012-06-??  Harald Oehlmann <harald.oehlmann@elmicron.de>
+
+	* library/msgcat/msgcat.tcl:	[Bug 3536888] Locale guessing of msgcat
+	* library/msgcat/pkgIndex.tcl:  fails on (some) Windows 7.  Bump to 1.4.5
+	* unix/Makefile.in
+	* win/Makefile.in
+
 2012-06-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinReg.c:          [Bug #3362446]: registry keys command fails
