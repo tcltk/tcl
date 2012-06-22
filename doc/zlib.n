@@ -222,39 +222,54 @@ command works, see \fBSTREAMING INSTANCE COMMAND\fR below. The following modes
 are supported:
 .RS
 .TP
-\fBzlib stream compress\fR ?\fIlevel\fR?
+\fBzlib stream compress\fR ?\fB\-dictionary \fIbindata\fR? ?\fB\-level \fIlevel\fR?
 .
 The stream will be a compressing stream that produces zlib-format output,
 using compression level \fIlevel\fR (if specified) which will be an integer
-from 0 to 9.
+from 0 to 9,
+.VS
+and the compression dictionary \fIbindata\fR (if specified).
+.VE
 .TP
-\fBzlib stream decompress\fR
+\fBzlib stream decompress\fR ?\fB\-dictionary \fIbindata\fR?
 .
 The stream will be a decompressing stream that takes zlib-format input and
 produces uncompressed output.
+.VS
+If \fIbindata\fR is supplied, it is a compression dictionary to use if
+required.
+.VE
 .TP
-\fBzlib stream deflate\fR ?\fIlevel\fR?
+\fBzlib stream deflate\fR ?\fB\-dictionary \fIbindata\fR? ?\fB\-level \fIlevel\fR?
 .
 The stream will be a compressing stream that produces raw output, using
 compression level \fIlevel\fR (if specified) which will be an integer from 0
-to 9.
+to 9,
+.VS
+and the compression dictionary \fIbindata\fR (if specified). Note that
+the raw compressed data includes no metadata about what compression
+dictionary was used, if any; that is a feature of the zlib-format data.
+.VE
 .TP
-\fBzlib stream gunzip\fR
+\fBzlib stream gunzip\fR ?\fIlevel\fR?
 .
 The stream will be a decompressing stream that takes gzip-format input and
 produces uncompressed output.
 .TP
-\fBzlib stream gzip\fR ?\fIlevel\fR?
+\fBzlib stream gzip\fR ?\fB\-header \fIheader\fR? ?\fB\-level \fIlevel\fR?
 .
 The stream will be a compressing stream that produces gzip-format output,
 using compression level \fIlevel\fR (if specified) which will be an integer
-from 0 to 9.
+from 0 to 9, and the header descriptor dictionary \fIheader\fR (if specified;
+for keys see \fBzlib gzip\fR).
 '\" TODO: Header dictionary!
 .TP
-\fBzlib stream inflate\fR
+\fBzlib stream inflate\fR ?\fB\-dictionary \fIbindata\fR?
 .
 The stream will be a decompressing stream that takes raw compressed input and
-produces uncompressed output.
+produces uncompressed output. If \fIbindata\fR is supplied, it is a
+compression dictionary to use. Note that there are no checks in place
+to determine whether the compression dictionary is correct.
 .RE
 .SS "CHECKSUMMING SUBCOMMANDS"
 .TP
@@ -332,10 +347,6 @@ buffers while applying the transformation. The following \fIoption\fRs are
 supported (or an unambiguous prefix of them), which are used to modify the
 way in which the transformation is applied:
 .RS
-.TP
-\fB\-buffer\fI bufferSize\fR
-.
-\fITODO: document this\fR
 .TP
 \fB\-dictionary\fI compressionDictionary\fR
 .VS "TIP 400"
