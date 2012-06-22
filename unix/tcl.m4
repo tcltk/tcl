@@ -1226,6 +1226,12 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    if test "$ac_cv_cygwin" = "no"; then
 		AC_MSG_ERROR([${CC} is not a cygwin compiler.])
 	    fi
+	    if test "x${TCL_THREADS}" = "x0"; then
+		AC_MSG_ERROR([CYGWIN compile is only supported with --enable-threads])
+	    fi
+	    if test ! -f "../win/tcldde12.dll" -a ! -f "../win/tk84.dll"; then
+		AC_MSG_ERROR([Please configure and make the ../win directory first.])
+	    fi
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
