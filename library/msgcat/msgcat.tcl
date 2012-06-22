@@ -13,7 +13,7 @@
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.4.4
+package provide msgcat 1.4.5
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
@@ -464,10 +464,40 @@ proc msgcat::Init {} {
     #
     if {[catch {
 	package require registry
+    }]} {
+	mclocale C
+	return
+    }
+
+    # First check registry value LocalName present from Windows Vista
+    # which contains the local string as RFC5646, composed of:
+    # [a-z]{2,3} : language
+    # -[a-z]{4}  : script (optional, not used)
+    # -[a-z]{2}|[0-9]{3} : territory (optional, numerical region codes not used)
+    # (-.*)* : variant, extension, private use (optional, not used)
+    # Those are translated to local strings.
+    # Examples: de-CH -> de_ch, sr-Latn-CS -> sr_cs, es-419 -> es
+    #
+    if {([registry values $key "LocaleName"] ne "")
+	    && [regexp {^([a-z]{2,3})(?:-[a-z]{4})?(?:-([a-z]{2}))?(?:-.+)?$}\
+	    [string tolower [registry get $key "LocaleName"]] match locale\
+	    territory]} {
+	if {"" ne $territory} {
+	    append locale _ $territory
+	}
+	if {![catch {
+	    mclocale [ConvertLocale $locale]
+	}]} {
+	    return
+	}
+    }
+
+    # then check key locale which contains a numerical language ID
+    if {[catch {
 	set key {HKEY_CURRENT_USER\Control Panel\International}
 	set locale [registry get $key "locale"]
     }]} {
-        mclocale C
+	mclocale C
 	return
     }
     #
