@@ -480,6 +480,7 @@ FsThrExitProc(
     while (fsRecPtr != NULL) {
 	tmpFsRecPtr = fsRecPtr->nextPtr;
 	if (--fsRecPtr->fileRefCount <= 0) {
+	    fsRecPtr->fsPtr = NULL;
 	    ckfree((char *)fsRecPtr);
 	}
 	fsRecPtr = tmpFsRecPtr;
@@ -588,7 +589,7 @@ static void
 FsRecacheFilesystemList(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-    FilesystemRecord *fsRecPtr, *tmpFsRecPtr = NULL;
+    FilesystemRecord *fsRecPtr, *tmpFsRecPtr = NULL, *toFree = NULL;
 
     /*
      * Trash the current cache.
@@ -598,7 +599,9 @@ FsRecacheFilesystemList(void)
     while (fsRecPtr != NULL) {
 	tmpFsRecPtr = fsRecPtr->nextPtr;
 	if (--fsRecPtr->fileRefCount <= 0) {
-	    ckfree((char *)fsRecPtr);
+	    fsRecPtr->fsPtr = NULL;
+	    fsRecPtr->nextPtr = toFree;
+	    toFree = fsRecPtr;
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
@@ -632,6 +635,12 @@ FsRecacheFilesystemList(void)
 	}
 	tsdPtr->filesystemList = tmpFsRecPtr;
 	fsRecPtr = fsRecPtr->prevPtr;
+    }
+
+    while (toFree) {
+	FilesystemRecord *next = toFree->nextPtr;
+	ckfree((char *)toFree);
+	toFree = next;
     }
 
     /*
