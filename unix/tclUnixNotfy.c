@@ -103,10 +103,11 @@ typedef struct ThreadSpecificData {
 	 * that an event is ready to be processed
 	 * by sending this event. */
     void *hwnd;			/* Messaging window. */
-#endif /* __CYGWIN__ */
+#else /* !__CYGWIN__ */
     Tcl_Condition waitCV;     /* Any other thread alerts a notifier
 				 * that an event is ready to be processed
 				 * by signaling this condition variable. */
+#endif /* __CYGWIN__ */
     int eventReady;           /* True if an event is ready to be processed.
                                * Used as condition flag together with
                                * waitCV above. */
@@ -354,8 +355,9 @@ Tcl_FinalizeNotifier(clientData)
 
 #ifdef __CYGWIN__
     CloseHandle(tsdPtr->event);
-#endif /* __CYGWIN__ */
+#else /* __CYGWIN__ */
     Tcl_ConditionFinalize(&(tsdPtr->waitCV));
+#endif /* __CYGWIN__ */
 
     Tcl_MutexUnlock(&notifierMutex);
 #endif
@@ -390,7 +392,11 @@ Tcl_AlertNotifier(clientData)
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
     Tcl_MutexLock(&notifierMutex);
     tsdPtr->eventReady = 1;
+#ifdef __CYGWIN__
+    PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
+#else
     Tcl_ConditionNotify(&tsdPtr->waitCV);
+#endif
     Tcl_MutexUnlock(&notifierMutex);
 #endif
 }
@@ -832,9 +838,7 @@ Tcl_WaitForEvent(timePtr)
 	    class.hIcon = NULL;
 	    class.hCursor = NULL;
 
-	    if (!RegisterClassW(&class)) {
-		Tcl_Panic("Unable to register TclNotifier window class");
-	    }
+	    RegisterClassW(&class);
 	    tsdPtr->hwnd = CreateWindowExW(NULL, class.lpszClassName, class.lpszClassName,
 		    0, 0, 0, 0, 0, NULL, NULL, TclWinGetTclInstance(), NULL);
 	    tsdPtr->event = CreateEventW(NULL, 1 /* manual */,
@@ -866,7 +870,21 @@ Tcl_WaitForEvent(timePtr)
     FD_ZERO( &(tsdPtr->readyMasks.exceptional) );
 
     if (!tsdPtr->eventReady) {
-        Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
+#ifdef __CYGWIN__
+	if (!PeekMessageW(&msg, NULL, 0, 0, 0)) {
+	    DWORD timeout;
+	    if (timePtr) {
+		timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+	    } else {
+		timeout = 0xFFFFFFFF;
+	    }
+		Tcl_MutexUnlock(&notifierMutex);
+	    MsgWaitForMultipleObjects(1, &tsdPtr->event, 0, timeout, 1279);
+		Tcl_MutexLock(&notifierMutex);
+	}
+#else
+	Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
+#endif
     }
     tsdPtr->eventReady = 0;
 
@@ -1159,7 +1177,11 @@ NotifierThreadProc(clientData)
 		    tsdPtr->onList = 0;
 		    tsdPtr->pollState = 0;
 		}
+#ifdef __CYGWIN__
+	    PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
+#else /* __CYGWIN__ */
 		Tcl_ConditionNotify(&tsdPtr->waitCV);
+#endif /* __CYGWIN__ */
             }
         }
 	Tcl_MutexUnlock(&notifierMutex);
