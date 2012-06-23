@@ -1,3 +1,8 @@
+2012-06-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixNotfy.c: [Bug 3508771]: Cygwin notifier for handling
+	win32 events.
+
 2012-06-22  Reinhard Max  <max@suse.de>
 
 	* generic/tclIOSock.c: Rework the error message generation of [socket],
