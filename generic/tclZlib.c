@@ -110,6 +110,8 @@ typedef struct {
     int format;			/* What format of data is going on the wire.
 				 * Needed so that the correct [fconfigure]
 				 * options can be enabled. */
+    int readAheadLimit;		/* The maximum number of bytes to read from
+				 * the underlying stream in one go. */
     z_stream inStream;		/* Structure used by zlib for decompression of
 				 * input. */
     z_stream outStream;		/* Structure used by zlib for compression of
@@ -2958,7 +2960,7 @@ ZlibTransformInput(
 	 * reading over the border.
 	 */
 
-	readBytes = Tcl_ReadRaw(cd->parent, cd->inBuffer, 1);
+	readBytes = Tcl_ReadRaw(cd->parent, cd->inBuffer, cd->readAheadLimit);
 
 	/*
 	 * Three cases here:
@@ -3131,8 +3133,10 @@ ZlibTransformSetOption(			/* not used */
     ZlibChannelData *cd = instanceData;
     Tcl_DriverSetOptionProc *setOptionProc =
 	    Tcl_ChannelSetOptionProc(Tcl_GetChannelType(cd->parent));
-    static const char *chanOptions = "dictionary flush";
+    static const char *compressChanOptions = "dictionary flush";
     static const char *gzipChanOptions = "flush";
+    static const char *decompressChanOptions = "dictionary limit";
+    static const char *gunzipChanOptions = "flush limit";
     int haveFlushOpt = (cd->mode == TCL_ZLIB_STREAM_DEFLATE);
 
     if (optionName && (strcmp(optionName, "-dictionary") == 0)
@@ -3164,56 +3168,75 @@ ZlibTransformSetOption(			/* not used */
 	return TCL_OK;
     }
 
-    if (haveFlushOpt && optionName && strcmp(optionName, "-flush") == 0) {
-	int flushType;
+    if (haveFlushOpt) {
+	if (optionName && strcmp(optionName, "-flush") == 0) {
+	    int flushType;
 
-	if (value[0] == 'f' && strcmp(value, "full") == 0) {
-	    flushType = Z_FULL_FLUSH;
-	} else if (value[0] == 's' && strcmp(value, "sync") == 0) {
-	    flushType = Z_SYNC_FLUSH;
-	} else {
-	    Tcl_AppendResult(interp, "unknown -flush type \"", value,
-		    "\": must be full or sync", NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "FLUSH", NULL);
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Try to actually do the flush now.
-	 */
-
-	cd->outStream.avail_in = 0;
-	while (1) {
-	    int e;
-
-	    cd->outStream.next_out = (Bytef *) cd->outBuffer;
-	    cd->outStream.avail_out = cd->outAllocated;
-
-	    e = deflate(&cd->outStream, flushType);
-	    if (e == Z_BUF_ERROR) {
-		break;
-	    } else if (e != Z_OK) {
-		ConvertError(interp, e, cd->outStream.adler);
-		return TCL_ERROR;
-	    } else if (cd->outStream.avail_out == 0) {
-		break;
-	    }
-
-	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
-		    cd->outStream.next_out - (Bytef *) cd->outBuffer) < 0) {
-		Tcl_AppendResult(interp, "problem flushing channel: ",
-			Tcl_PosixError(interp), NULL);
+	    if (value[0] == 'f' && strcmp(value, "full") == 0) {
+		flushType = Z_FULL_FLUSH;
+	    } else if (value[0] == 's' && strcmp(value, "sync") == 0) {
+		flushType = Z_SYNC_FLUSH;
+	    } else {
+		Tcl_AppendResult(interp, "unknown -flush type \"", value,
+			"\": must be full or sync", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "FLUSH", NULL);
 		return TCL_ERROR;
 	    }
+
+	    /*
+	     * Try to actually do the flush now.
+	     */
+
+	    cd->outStream.avail_in = 0;
+	    while (1) {
+		int e;
+
+		cd->outStream.next_out = (Bytef *) cd->outBuffer;
+		cd->outStream.avail_out = cd->outAllocated;
+
+		e = deflate(&cd->outStream, flushType);
+		if (e == Z_BUF_ERROR) {
+		    break;
+		} else if (e != Z_OK) {
+		    ConvertError(interp, e, cd->outStream.adler);
+		    return TCL_ERROR;
+		} else if (cd->outStream.avail_out == 0) {
+		    break;
+		}
+
+		if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
+			cd->outStream.next_out - (Bytef *) cd->outBuffer)<0) {
+		    Tcl_AppendResult(interp, "problem flushing channel: ",
+			    Tcl_PosixError(interp), NULL);
+		    return TCL_ERROR;
+		}
+	    }
+	    return TCL_OK;
 	}
-	return TCL_OK;
+    } else {
+	if (optionName && strcmp(optionName, "-limit") == 0) {
+	    int newLimit;
+
+	    if (Tcl_GetInt(interp, value, &newLimit) != TCL_OK) {
+		return TCL_ERROR;
+	    } else if (newLimit < 1 || newLimit > 65535) {
+		Tcl_AppendResult(interp, "-limit must be between 1 and 65535",
+			NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "READLIMIT", NULL);
+		return TCL_ERROR;
+	    }
+	}
     }
 
     if (setOptionProc == NULL) {
 	if (cd->format == TCL_ZLIB_FORMAT_GZIP) {
-	    return Tcl_BadChannelOption(interp, optionName, gzipChanOptions);
+	    return Tcl_BadChannelOption(interp, optionName,
+		    (cd->mode == TCL_ZLIB_STREAM_DEFLATE)
+		    ? gzipChanOptions : gunzipChanOptions);
 	} else {
-	    return Tcl_BadChannelOption(interp, optionName, chanOptions);
+	    return Tcl_BadChannelOption(interp, optionName,
+		    (cd->mode == TCL_ZLIB_STREAM_DEFLATE)
+		    ? compressChanOptions : decompressChanOptions);
 	}
     }
 
@@ -3246,7 +3269,10 @@ ZlibTransformGetOption(
     ZlibChannelData *cd = instanceData;
     Tcl_DriverGetOptionProc *getOptionProc =
 	    Tcl_ChannelGetOptionProc(Tcl_GetChannelType(cd->parent));
-    static const char *chanOptions = "checksum dictionary header";
+    static const char *compressChanOptions = "checksum dictionary";
+    static const char *gzipChanOptions = "checksum";
+    static const char *decompressChanOptions = "checksum dictionary limit";
+    static const char *gunzipChanOptions = "checksum header limit";
 
     /*
      * The "crc" option reports the current CRC (calculated with the Adler32
@@ -3331,7 +3357,15 @@ ZlibTransformGetOption(
     if (optionName == NULL) {
 	return TCL_OK;
     }
-    return Tcl_BadChannelOption(interp, optionName, chanOptions);
+    if (cd->format == TCL_ZLIB_FORMAT_GZIP) {
+	return Tcl_BadChannelOption(interp, optionName,
+		(cd->mode == TCL_ZLIB_STREAM_DEFLATE)
+		? gzipChanOptions : gunzipChanOptions);
+    } else {
+	return Tcl_BadChannelOption(interp, optionName,
+		(cd->mode == TCL_ZLIB_STREAM_DEFLATE)
+		? compressChanOptions : decompressChanOptions);
+    }
 }
 
 /*
@@ -3496,6 +3530,7 @@ ZlibStackChannelTransform(
     memset(cd, 0, sizeof(ZlibChannelData));
     cd->mode = mode;
     cd->format = format;
+    cd->readAheadLimit = 1;
 
     if (format == TCL_ZLIB_FORMAT_GZIP || format == TCL_ZLIB_FORMAT_AUTO) {
 	if (mode == TCL_ZLIB_STREAM_DEFLATE) {
