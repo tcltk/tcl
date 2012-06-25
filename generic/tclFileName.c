@@ -424,9 +424,17 @@ TclpGetNativePathType(
 	    }
 #endif
 	    if (path[0] == '/') {
+#ifdef __CYGWIN__
+		/*
+		 * Check for Cygwin // network path prefix
+		 */
+		if (path[1] == '/') {
+		    path++;
+		}
+#endif
 		if (driveNameLengthPtr != NULL) {
 		    /*
-		     * We need this addition in case the QNX code was used.
+		     * We need this addition in case the QNX or Cygwin code was used.
 		     */
 
 		    *driveNameLengthPtr = (1 + path - origPath);
@@ -653,11 +661,20 @@ SplitUnixPath(
     }
 #endif
 
-    if (path[0] == '/') {
-	Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj("/",1));
-	p = path+1;
-    } else {
-	p = path;
+    p = path;
+    if (*p == '/') {
+	Tcl_Obj *rootElt = Tcl_NewStringObj("/", 1);
+	p++;
+#ifdef __CYGWIN__
+	/*
+	 * Check for Cygwin // network path prefix
+	 */
+	if (*p == '/') {
+	    Tcl_AppendToObj(rootElt, "/", 1);
+	    p++;
+	}
+#endif
+	Tcl_ListObjAppendElement(NULL, result, rootElt);
     }
 
     /*
@@ -2400,17 +2417,6 @@ DoGlob(
 		    Tcl_DStringAppend(&append, ".", 1);
 		}
 	    }
-#if defined(__CYGWIN__) && !defined(__WIN32__)
-	    {
-		DLLIMPORT extern int cygwin_conv_to_posix_path(const char *,
-			char *);
-		char winbuf[MAXPATHLEN+1];
-
-		cygwin_conv_to_posix_path(Tcl_DStringValue(&append), winbuf);
-		Tcl_DStringFree(&append);
-		Tcl_DStringAppend(&append, winbuf, -1);
-	    }
-#endif /* __CYGWIN__ && __WIN32__ */
 	    break;
 	}
 
