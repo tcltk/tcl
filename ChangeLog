@@ -1,3 +1,8 @@
+2012-06-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdAH.c (EncodingDirsObjCmd): [Bug 3537605]: Do the right
+	thing when reporting errors with the number of arguments.
+
 2012-06-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclfileName.c: [Patch #1536227]: Cygwin network pathname
