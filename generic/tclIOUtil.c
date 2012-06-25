@@ -39,9 +39,10 @@ static void		FsAddMountsToGlobResult(Tcl_Obj *resultPtr,
 			    Tcl_GlobTypeData *types);
 static void		FsUpdateCwd(Tcl_Obj *cwdObj, ClientData clientData);
 
-#ifdef TCL_THREADS
 static void		FsRecacheFilesystemList(void);
-#endif
+static void		Claim(void);
+static void		Disclaim(void);
+
 
 /*
  * These form part of the native filesystem support. They are needed here
@@ -409,7 +410,7 @@ static FilesystemRecord nativeFilesystemRecord = {
  * trigger cache cleanup in all threads.
  */
 
-static int theFilesystemEpoch = 0;
+static int theFilesystemEpoch = 1;
 
 /*
  * Stores the linked list of filesystems. A 1:1 copy of this list is also
@@ -581,12 +582,11 @@ TclFSCwdPointerEquals(
     }
 }
 
-#ifdef TCL_THREADS
 static void
 FsRecacheFilesystemList(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-    FilesystemRecord *fsRecPtr, *tmpFsRecPtr = NULL, *toFree = NULL;
+    FilesystemRecord *fsRecPtr, *tmpFsRecPtr = NULL, *toFree = NULL, *list;
 
     /*
      * Trash the current cache.
@@ -595,20 +595,16 @@ FsRecacheFilesystemList(void)
     fsRecPtr = tsdPtr->filesystemList;
     while (fsRecPtr != NULL) {
 	tmpFsRecPtr = fsRecPtr->nextPtr;
-	fsRecPtr->fsPtr = NULL;
 	fsRecPtr->nextPtr = toFree;
 	toFree = fsRecPtr;
 	fsRecPtr = tmpFsRecPtr;
     }
-    tsdPtr->filesystemList = NULL;
 
     /*
-     * Code below operates on shared data. We are already called under mutex
-     * lock so we can safely proceed.
-     *
      * Locate tail of the global filesystem list.
      */
 
+    Tcl_MutexLock(&filesystemMutex);
     fsRecPtr = filesystemList;
     while (fsRecPtr != NULL) {
 	tmpFsRecPtr = fsRecPtr;
@@ -619,21 +615,23 @@ FsRecacheFilesystemList(void)
      * Refill the cache honouring the order.
      */
 
+    list = NULL;
     fsRecPtr = tmpFsRecPtr;
     while (fsRecPtr != NULL) {
 	tmpFsRecPtr = (FilesystemRecord *) ckalloc(sizeof(FilesystemRecord));
 	*tmpFsRecPtr = *fsRecPtr;
-	tmpFsRecPtr->nextPtr = tsdPtr->filesystemList;
+	tmpFsRecPtr->nextPtr = list;
 	tmpFsRecPtr->prevPtr = NULL;
-	if (tsdPtr->filesystemList) {
-	    tsdPtr->filesystemList->prevPtr = tmpFsRecPtr;
-	}
-	tsdPtr->filesystemList = tmpFsRecPtr;
+	list = tmpFsRecPtr;
 	fsRecPtr = fsRecPtr->prevPtr;
     }
+    tsdPtr->filesystemList = list;
+    tsdPtr->filesystemEpoch = theFilesystemEpoch;
+    Tcl_MutexUnlock(&filesystemMutex);
 
     while (toFree) {
 	FilesystemRecord *next = toFree->nextPtr;
+	toFree->fsPtr = NULL;
 	ckfree((char *)toFree);
 	toFree = next;
     }
@@ -647,27 +645,16 @@ FsRecacheFilesystemList(void)
 	tsdPtr->initialized = 1;
     }
 }
-#endif /* TCL_THREADS */
 
 static FilesystemRecord *
 FsGetFirstFilesystem(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-    FilesystemRecord *fsRecPtr;
-#ifndef TCL_THREADS
-    tsdPtr->filesystemEpoch = theFilesystemEpoch;
-    fsRecPtr = filesystemList;
-#else
-    Tcl_MutexLock(&filesystemMutex);
-    if (tsdPtr->filesystemList == NULL
-	    || (tsdPtr->filesystemEpoch != theFilesystemEpoch)) {
+    if (tsdPtr->filesystemList == NULL || ((tsdPtr->claims == 0)
+	    && (tsdPtr->filesystemEpoch != theFilesystemEpoch))) {
 	FsRecacheFilesystemList();
-	tsdPtr->filesystemEpoch = theFilesystemEpoch;
     }
-    Tcl_MutexUnlock(&filesystemMutex);
-    fsRecPtr = tsdPtr->filesystemList;
-#endif
-    return fsRecPtr;
+    return tsdPtr->filesystemList;
 }
 
 /*
@@ -679,9 +666,21 @@ int
 TclFSEpochOk(
     int filesystemEpoch)
 {
+    return (filesystemEpoch == 0 || filesystemEpoch == theFilesystemEpoch);
+}
+
+static void
+Claim()
+{
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-    (void) FsGetFirstFilesystem();
-    return (filesystemEpoch == tsdPtr->filesystemEpoch);
+    tsdPtr->claims++;
+}
+
+static void
+Disclaim()
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+    tsdPtr->claims--;
 }
 
 /*
@@ -799,6 +798,7 @@ TclFinalizeFilesystem(void)
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
+    theFilesystemEpoch++;
     filesystemList = NULL;
 
     /*
@@ -836,6 +836,7 @@ void
 TclResetFilesystem(void)
 {
     filesystemList = &nativeFilesystemRecord;
+    theFilesystemEpoch++;
 
 #ifdef __WIN32__
     /*
@@ -1408,6 +1409,7 @@ TclFSNormalizeToUniquePath(
 
     firstFsRecPtr = FsGetFirstFilesystem();
 
+    Claim();
     fsRecPtr = firstFsRecPtr;
     while (fsRecPtr != NULL) {
 	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
@@ -1440,6 +1442,7 @@ TclFSNormalizeToUniquePath(
 	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
+    Disclaim();
 
     return startAt;
 }
@@ -2634,6 +2637,7 @@ Tcl_FSGetCwd(
 	 */
 
 	fsRecPtr = FsGetFirstFilesystem();
+	Claim();
 	while ((retVal == NULL) && (fsRecPtr != NULL)) {
 	    Tcl_FSGetCwdProc *proc = fsRecPtr->fsPtr->getCwdProc;
 	    if (proc != NULL) {
@@ -2671,6 +2675,7 @@ Tcl_FSGetCwd(
 			}
 			Tcl_DecrRefCount(retVal);
 			retVal = NULL;
+			Disclaim();
 			goto cdDidNotChange;
 		    } else if (interp != NULL) {
 			Tcl_AppendResult(interp,
@@ -2683,6 +2688,7 @@ Tcl_FSGetCwd(
 	    }
 	    fsRecPtr = fsRecPtr->nextPtr;
 	}
+	Disclaim();
 
 	/*
 	 * Now the 'cwd' may NOT be normalized, at least on some platforms.
@@ -3628,6 +3634,7 @@ Tcl_FSListVolumes(void)
      */
 
     fsRecPtr = FsGetFirstFilesystem();
+    Claim();
     while (fsRecPtr != NULL) {
 	Tcl_FSListVolumesProc *proc = fsRecPtr->fsPtr->listVolumesProc;
 	if (proc != NULL) {
@@ -3639,6 +3646,7 @@ Tcl_FSListVolumes(void)
 	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
+    Disclaim();
 
     return resultPtr;
 }
@@ -3678,6 +3686,7 @@ FsListMounts(
      */
 
     fsRecPtr = FsGetFirstFilesystem();
+    Claim();
     while (fsRecPtr != NULL) {
 	if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
 	    Tcl_FSMatchInDirectoryProc *proc =
@@ -3691,6 +3700,7 @@ FsListMounts(
 	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
+    Disclaim();
 
     return resultPtr;
 }
@@ -3903,6 +3913,7 @@ TclFSNonnativePathType(
      */
 
     fsRecPtr = FsGetFirstFilesystem();
+    Claim();
     while (fsRecPtr != NULL) {
 	Tcl_FSListVolumesProc *proc = fsRecPtr->fsPtr->listVolumesProc;
 
@@ -3981,6 +3992,7 @@ TclFSNonnativePathType(
 	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
+    Disclaim();
     return type;
 }
 
@@ -4375,6 +4387,7 @@ Tcl_FSGetFileSystemForPath(
      */
 
     fsRecPtr = FsGetFirstFilesystem();
+    Claim();
 
     if (TclFSEnsureEpochOk(pathPtr, &retVal) != TCL_OK) {
 	return NULL;
@@ -4403,6 +4416,7 @@ Tcl_FSGetFileSystemForPath(
 	}
 	fsRecPtr = fsRecPtr->nextPtr;
     }
+    Disclaim();
 
     return retVal;
 }
