@@ -563,8 +563,7 @@ TclPathPart(
     if (pathPtr->typePtr == &tclFsPathType) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
 
-	if (/*TclFSEpochOk(fsPathPtr->filesystemEpoch)
-		&& */(PATHFLAGS(pathPtr) != 0)) {
+	if (PATHFLAGS(pathPtr) != 0) {
 	    switch (portion) {
 	    case TCL_PATH_DIRNAME: {
 		/*
