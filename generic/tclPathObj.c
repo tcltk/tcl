@@ -563,8 +563,7 @@ TclPathPart(
     if (pathPtr->typePtr == &tclFsPathType) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
 
-	if (TclFSEpochOk(fsPathPtr->filesystemEpoch)
-		&& (PATHFLAGS(pathPtr) != 0)) {
+	if (PATHFLAGS(pathPtr) != 0) {
 	    switch (portion) {
 	    case TCL_PATH_DIRNAME: {
 		/*
@@ -1311,7 +1310,7 @@ TclNewFSPathObj(
     Tcl_IncrRefCount(dirPtr);
     fsPathPtr->nativePathPtr = NULL;
     fsPathPtr->fsPtr = NULL;
-    fsPathPtr->filesystemEpoch = tsdPtr->filesystemEpoch;
+    fsPathPtr->filesystemEpoch = 0;
 
     SETPATHOBJ(pathPtr, fsPathPtr);
     PATHFLAGS(pathPtr) = TCLPATH_APPENDED;
@@ -1417,7 +1416,6 @@ TclFSMakePathRelative(
 {
     int cwdLen, len;
     const char *tempStr;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
 
     if (pathPtr->typePtr == &tclFsPathType) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
@@ -1481,7 +1479,7 @@ TclFSMakePathRelative(
 	    Tcl_IncrRefCount(cwdPtr);
 	    fsPathPtr->nativePathPtr = NULL;
 	    fsPathPtr->fsPtr = NULL;
-	    fsPathPtr->filesystemEpoch = tsdPtr->filesystemEpoch;
+	    fsPathPtr->filesystemEpoch = 0;
 
 	    SETPATHOBJ(pathPtr, fsPathPtr);
 	    PATHFLAGS(pathPtr) = 0;
@@ -1591,6 +1589,7 @@ TclFSMakePathFromNormalized(
     fsPathPtr->cwdPtr = NULL;
     fsPathPtr->nativePathPtr = NULL;
     fsPathPtr->fsPtr = NULL;
+    /* Remember the epoch under which we decided pathPtr was normalized */
     fsPathPtr->filesystemEpoch = tsdPtr->filesystemEpoch;
 
     SETPATHOBJ(pathPtr, fsPathPtr);
@@ -1727,6 +1726,12 @@ Tcl_FSGetTranslatedPath(
 	    retObj = Tcl_FSJoinToPath(translatedCwdPtr, 1,
 		    &(srcFsPathPtr->normPathPtr));
 	    srcFsPathPtr->translatedPathPtr = retObj;
+	    if (translatedCwdPtr->typePtr == &tclFsPathType) {
+		srcFsPathPtr->filesystemEpoch
+			= PATHOBJ(translatedCwdPtr)->filesystemEpoch;
+	    } else {
+		srcFsPathPtr->filesystemEpoch = 0;
+	    }
 	    Tcl_IncrRefCount(retObj);
 	    Tcl_DecrRefCount(translatedCwdPtr);
 	} else {
@@ -2527,12 +2532,15 @@ SetFsPathFromAny(
     fsPathPtr->translatedPathPtr = transPtr;
     if (transPtr != pathPtr) {
 	Tcl_IncrRefCount(fsPathPtr->translatedPathPtr);
+	/* Redo translation when $env(HOME) changes */
+	fsPathPtr->filesystemEpoch = tsdPtr->filesystemEpoch;
+    } else {
+	fsPathPtr->filesystemEpoch = 0;
     }
     fsPathPtr->normPathPtr = NULL;
     fsPathPtr->cwdPtr = NULL;
     fsPathPtr->nativePathPtr = NULL;
     fsPathPtr->fsPtr = NULL;
-    fsPathPtr->filesystemEpoch = tsdPtr->filesystemEpoch;
 
     /*
      * Free old representation before installing our new one.
