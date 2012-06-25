@@ -4390,6 +4390,7 @@ Tcl_FSGetFileSystemForPath(
     Claim();
 
     if (TclFSEnsureEpochOk(pathPtr, &retVal) != TCL_OK) {
+	Disclaim();
 	return NULL;
     }
 
