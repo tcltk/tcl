@@ -5,8 +5,8 @@
 
 2012-06-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclfileName.c: [Patch #1536227]: Cygwin network pathname
-	* tests/fileName.test:   support
+	* generic/tclfileName.c: [Patch 1536227]: Cygwin network pathname
+	* tests/fileName.test:   support.
 
 2012-06-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -21,15 +21,15 @@
 
 2012-06-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinReg.c:          [Bug #3362446]: registry keys command fails
-	* tests/registry.test:      with 8.5/8.6
+	* win/tclWinReg.c:	[Bug 3362446]: registry keys command fails
+	* tests/registry.test:	with 8.5/8.6
 
 2012-06-11  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c:	[Bug 3532959] Make sure the lifetime management
-	* generic/tclProc.c:	of entries in the linePBodyPtr hash table can
-	* tests/proc.test:	tolerate either order of teardown, interp first,
-	or Proc first.
+	* generic/tclBasic.c:	[Bug 3532959]: Make sure the lifetime
+	* generic/tclProc.c:	management of entries in the linePBodyPtr hash
+	* tests/proc.test:	table can tolerate either order of teardown,
+	interp first, or Proc first.
 
 2012-06-08  Don Porter  <dgp@users.sourceforge.net>
 
@@ -37,7 +37,7 @@
 	* unix/tclUnixPort.h:	Thanks Joe English.
 	* unix/configure:	autoconf 2.13
 
-	* unix/tclUnixPort.h:	[Bug 3530533] Centralize #include <pthread.h>
+	* unix/tclUnixPort.h:	[Bug 3530533]: Centralize #include <pthread.h>
 	* unix/tclUnixThrd.c:	in the tclUnixPort.h header so that old unix
 	systems that need inclusion in all compilation units are supported.
 
@@ -5062,8 +5062,8 @@
 
 2010-01-21  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompile.h: NRE-enable direct eval on BC spoilage
-	* generic/tclExecute.c: [Bug 2910748]
+	* generic/tclCompile.h: [Bug 2910748]: NRE-enable direct eval on BC
+	* generic/tclExecute.c: spoilage.
 	* tests/nre.test:
 
 2010-01-19  Donal K. Fellows  <dkf@users.sf.net>
@@ -6052,14 +6052,15 @@
 2009-10-05  Andreas Kupries  <andreask@activestate.com>
 
 	* library/safe.tcl (AliasGlob): Fixed conversion of catch to
-	  try/finally, it had an 'on ok msg' branch missing, causing a
-	  silent error immediately, and bogus glob results, breaking
-	  search for Tcl modules.
+	try/finally, it had an 'on ok msg' branch missing, causing a silent
+	error immediately, and bogus glob results, breaking search for Tcl
+	modules.
 
 2009-10-04  Daniel Steffen  <das@users.sourceforge.net>
 
-	* macosx/tclMacOSXBundle.c:	Workaround CF memory managment bug in
-	* unix/tclUnixInit.c:		Mac OS X 10.4 & earlier. [Bug 2569449]
+	* macosx/tclMacOSXBundle.c:	[Bug 2569449]: Workaround CF memory
+	* unix/tclUnixInit.c:		managment bug in Mac OS X 10.4 &
+					earlier.
 
 2009-10-02  Kevin B. Kenny  <kennykb@acm.org>
 
