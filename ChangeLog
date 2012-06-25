@@ -1,3 +1,11 @@
+2012-06-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFileSystem.h:	[Bug 3024359] Make sure that the
+	* generic/tclIOUtil.c:	per-thread cache of the list of file systems
+	* generic/tclPathObj.c:	currently registered is only updated at times
+	when no active loops are traversing it.  Also reduce the amount of
+	epoch storing and checking to where it can make a difference.
+
 2012-06-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdAH.c (EncodingDirsObjCmd): [Bug 3537605]: Do the right
