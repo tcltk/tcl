@@ -586,31 +586,19 @@ static void
 FsRecacheFilesystemList(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-    FilesystemRecord *fsRecPtr, *tmpFsRecPtr = NULL, *toFree = NULL, *chain = NULL;
+    FilesystemRecord *fsRecPtr, *tmpFsRecPtr = NULL, *toFree = NULL, *list;
 
     /*
      * Trash the current cache.
      */
 
     fsRecPtr = tsdPtr->filesystemList;
-    if (tsdPtr->claims <= 0) {
-	while (fsRecPtr != NULL) {
-	    tmpFsRecPtr = fsRecPtr->nextPtr;
-	    fsRecPtr->fsPtr = NULL;
-	    fsRecPtr->nextPtr = toFree;
-	    toFree = fsRecPtr;
-	    fsRecPtr = tmpFsRecPtr;
-	}
-    } else {
-	chain = fsRecPtr;
-	while (fsRecPtr->nextPtr != NULL) {
-	    fsRecPtr->prevPtr = fsRecPtr->nextPtr;
-	    fsRecPtr->nextPtr = NULL;
-	    fsRecPtr = fsRecPtr->prevPtr;
-	}
-	fsRecPtr->prevPtr = fsRecPtr;
+    while (fsRecPtr != NULL) {
+	tmpFsRecPtr = fsRecPtr->nextPtr;
+	fsRecPtr->nextPtr = toFree;
+	toFree = fsRecPtr;
+	fsRecPtr = tmpFsRecPtr;
     }
-    tsdPtr->filesystemList = NULL;
 
     /*
      * Locate tail of the global filesystem list.
@@ -627,24 +615,26 @@ FsRecacheFilesystemList(void)
      * Refill the cache honouring the order.
      */
 
+    list = NULL;
     fsRecPtr = tmpFsRecPtr;
     while (fsRecPtr != NULL) {
 	tmpFsRecPtr = (FilesystemRecord *) ckalloc(sizeof(FilesystemRecord));
 	*tmpFsRecPtr = *fsRecPtr;
-	tmpFsRecPtr->nextPtr = tsdPtr->filesystemList;
-	tmpFsRecPtr->prevPtr = chain;
-	chain = NULL;
-	tsdPtr->filesystemList = tmpFsRecPtr;
+	tmpFsRecPtr->nextPtr = list;
+	tmpFsRecPtr->prevPtr = NULL;
+	list = tmpFsRecPtr;
 	fsRecPtr = fsRecPtr->prevPtr;
     }
+    tsdPtr->filesystemList = list;
+    tsdPtr->filesystemEpoch = theFilesystemEpoch;
+    Tcl_MutexUnlock(&filesystemMutex);
 
     while (toFree) {
 	FilesystemRecord *next = toFree->nextPtr;
+	toFree->fsPtr = NULL;
 	ckfree((char *)toFree);
 	toFree = next;
     }
-    tsdPtr->filesystemEpoch = theFilesystemEpoch;
-    Tcl_MutexUnlock(&filesystemMutex);
 
     /*
      * Make sure the above gets released on thread exit.
@@ -660,8 +650,8 @@ static FilesystemRecord *
 FsGetFirstFilesystem(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-    if (tsdPtr->filesystemList == NULL
-	    || (tsdPtr->filesystemEpoch != theFilesystemEpoch)) {
+    if (tsdPtr->filesystemList == NULL || ((tsdPtr->claims == 0)
+	    && (tsdPtr->filesystemEpoch != theFilesystemEpoch))) {
 	FsRecacheFilesystemList();
     }
     return tsdPtr->filesystemList;
@@ -683,7 +673,6 @@ static void
 Claim()
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-
     tsdPtr->claims++;
 }
 
@@ -691,31 +680,7 @@ static void
 Disclaim()
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-    FilesystemRecord *fsRecPtr, *toRelease, *lastCurrent;
-
-    if (--tsdPtr->claims > 0) {
-	return;
-    }
-    fsRecPtr = tsdPtr->filesystemList;
-
-    /*
-     * Release all out of date FilesystemRecords.
-     * First skip the current list.
-     */
-    while (fsRecPtr->nextPtr != NULL) {
-	fsRecPtr = fsRecPtr->nextPtr;
-    }
-
-    /* Then release everything that comes after. */
-    lastCurrent = fsRecPtr;
-    toRelease = lastCurrent->prevPtr;
-    lastCurrent->prevPtr = NULL;
-    while (toRelease != NULL) {
-	fsRecPtr = (toRelease == toRelease->prevPtr) ? NULL
-						: toRelease->prevPtr;
-	ckfree((char *)toRelease);
-	toRelease = fsRecPtr;
-    }
+    tsdPtr->claims--;
 }
 
 /*
