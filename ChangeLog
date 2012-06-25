@@ -1,3 +1,19 @@
+2012-06-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclfileName.c: [Patch #1536227]: Cygwin network pathname
+	* tests/fileName.test:   support
+
+2012-06-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixNotfy.c: [Bug 3508771]: Cygwin notifier for handling
+	win32 events.
+
+2012-06-22  Reinhard Max  <max@suse.de>
+
+	* generic/tclIOSock.c: Rework the error message generation of [socket],
+	* unix/tclUnixSock.c:  so that the error code of getaddrinfo is used
+	* win/tclWinSock.c:    instead of errno unless it is EAI_SYSTEM.
+
 2012-06-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinReg.c:          [Bug #3362446]: registry keys command fails

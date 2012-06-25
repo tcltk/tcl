@@ -1280,9 +1280,14 @@ CreateSocket(
     }
 
     if (interp != NULL) {
-	Tcl_AppendResult(interp, "couldn't open socket: ",
-		Tcl_PosixError(interp), NULL);
+        Tcl_AppendResult(interp, "couldn't open socket: ", NULL);
+        if (errorMsg == NULL) {
+            Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
+        } else {
+            Tcl_AppendResult(interp, errorMsg, NULL);
+        }
     }
+
     if (sock != INVALID_SOCKET) {
 	closesocket(sock);
     }

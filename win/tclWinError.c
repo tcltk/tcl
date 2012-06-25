@@ -410,6 +410,12 @@ tclWinDebugPanic(
 	fprintf(stderr, "\n");
 	fflush(stderr);
     }
+#   if defined(__GNUC__)
+    __builtin_trap();
+#   else
+    DebugBreak();
+#   endif
+    abort();
 }
 #endif
 /*
