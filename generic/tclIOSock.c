@@ -206,9 +206,12 @@ TclCreateSocketAddress(
     }
 
     if (result != 0) {
-        if (result != EAI_SYSTEM) {
+#ifdef EAI_SYSTEM /* Doesn't exist on Windows */
+        if (result == EAI_SYSTEM)
+            *errorMsgPtr = Tcl_PosixError(interp);
+        else
+#endif
             *errorMsgPtr = gai_strerror(result);
-        }
         return 0;
     }
 

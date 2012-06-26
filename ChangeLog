@@ -1,3 +1,8 @@
+2012-06-26  Reinhard Max  <max@suse.de>
+
+	* generic/tclIOSock.c: Use EAI_SYSTEM only if it exists.
+	* unix/tclUnixSock.c:
+	
 2012-06-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileSystem.h:	[Bug 3024359] Make sure that the
