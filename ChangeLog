@@ -1,3 +1,10 @@
+2012-06-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4:       Let Cygwin shared build link with
+	* unix/configure.in: zlib1.dll, not cygz.dll (two less
+	* unix/configure:    dependencies on cygwin-specific dll's)
+	* unix/Makefile.in:
+
 2012-06-26  Reinhard Max  <max@suse.de>
 
 	* generic/tclIOSock.c: Use EAI_SYSTEM only if it exists.
