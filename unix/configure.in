@@ -160,7 +160,6 @@ AS_IF([test $zlib_ok = yes], [
     zlib_ok=no
   ])])
 AS_IF([test $zlib_ok = no], [
-  AC_SUBST(ZLIB_DIR,[\${COMPAT_DIR}/zlib])
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
   AC_SUBST(ZLIB_SRCS,[\${ZLIB_SRCS}])
   AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
@@ -303,8 +302,10 @@ SC_TIME_HANDLER
 #	lack blkcnt_t.
 #--------------------------------------------------------------------
 
-if test "$ac_cv_cygwin" != "yes"; then
-AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
+if test "$ac_cv_cygwin" = "yes"; then
+    TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS} \${COMPAT_DIR}/zlib/win32/zdll.lib"
+else
+    AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
 fi
 AC_CHECK_TYPES([blkcnt_t])
 AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS, 1, [Do we have fstatfs()?])])
