@@ -26,7 +26,7 @@
 #ifndef _TCLINT
 #   include "tclInt.h"
 #endif
-
+
 /*
  *---------------------------------------------------------------------------
  * The following sets of #includes and #ifdefs are required to get Tcl to
@@ -54,6 +54,12 @@
 #   include <dirent.h>
 #endif
 #endif
+
+/*
+ *---------------------------------------------------------------------------
+ * Parameterize for 64-bit filesystem support.
+ *---------------------------------------------------------------------------
+ */
 
 #ifdef HAVE_STRUCT_DIRENT64
 typedef struct dirent64	Tcl_DirEntry;
@@ -88,7 +94,7 @@ typedef off_t		Tcl_SeekOffset;
     DLLIMPORT extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
 	    const char *, int, const char *, const char *);
 
-    DLLIMPORT extern int cygwin_conv_to_full_posix_path(const char *, char *);
+    DLLIMPORT extern int cygwin_conv_path(int, const void *, void *, int);
     EXTERN int TclOSstat(const char *name, Tcl_StatBuf *statBuf);
     EXTERN int TclOSlstat(const char *name, Tcl_StatBuf *statBuf);
 #   define NO_FSTATFS
