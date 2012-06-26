@@ -2211,20 +2211,20 @@ dnl # preprocessing tests use only CPPFLAGS.
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
         MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
         if test "${SHLIB_SUFFIX}" = ".dll"; then
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(BIN_INSTALL_DIR)/$(LIB_FILE)'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
             DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
         else
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(LIB_INSTALL_DIR)/$(LIB_FILE)'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
         fi
     else
         LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 
         if test "$RANLIB" = "" ; then
             MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS}'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(LIB_INSTALL_DIR)/$(LIB_FILE)'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
         else
             MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(LIB_INSTALL_DIR)/$(LIB_FILE) ; (cd $(LIB_INSTALL_DIR) ; $(RANLIB) $(LIB_FILE))'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)" ; (cd $(LIB_INSTALL_DIR) ; $(RANLIB) $(LIB_FILE))'
         fi
     fi
 
@@ -2232,10 +2232,10 @@ dnl # preprocessing tests use only CPPFLAGS.
     # Stub lib does not depend on shared/static configuration
     if test "$RANLIB" = "" ; then
         MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS}'
-        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) $(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)'
+        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)"'
     else
         MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS} ; ${RANLIB} [$]@'
-        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) $(LIB_INSTALL_DIR)/$(STUB_LIB_FILE) ; (cd $(LIB_INSTALL_DIR) ; $(RANLIB) $(STUB_LIB_FILE))'
+        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(STUB_LIB_FILE))'
     fi
 
 	# See if the compiler supports casting to a union type.
