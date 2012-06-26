@@ -1266,7 +1266,6 @@ TclNewFSPathObj(
 {
     FsPath *fsPathPtr;
     Tcl_Obj *pathPtr;
-    ThreadSpecificData *tsdPtr;
     const char *p;
     int state = 0, count = 0;
 
@@ -1293,8 +1292,6 @@ TclNewFSPathObj(
 	Tcl_DecrRefCount(tail);
 	return pathPtr;
     }
-
-    tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
 
     pathPtr = Tcl_NewObj();
     fsPathPtr = (FsPath *) ckalloc(sizeof(FsPath));
