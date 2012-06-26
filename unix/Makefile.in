@@ -238,7 +238,7 @@ DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
 # Must be absolute to so the corresponding tcltest's tcl_library is absolute.
 TCL_BUILDTIME_LIBRARY	= @TCL_SRC_DIR@/library
 
-ZLIB_DIR		= @ZLIB_DIR@
+ZLIB_DIR		= ${COMPAT_DIR}/zlib
 ZLIB_INCLUDE		= @ZLIB_INCLUDE@
 
 CC			= @CC@
@@ -614,6 +614,10 @@ doc:
 ${LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
 	rm -f $@
 	@MAKE_LIB@
+	if test "x$(DLL_INSTALL_DIR)" = "x$(BIN_INSTALL_DIR)"; then\
+	    cp ${ZLIB_DIR}/win32/zlib1.dll .;\
+	fi
+
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	rm -f $@
@@ -783,16 +787,21 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
+	@if test "x$(DLL_INSTALL_DIR)" = "x$(BIN_INSTALL_DIR)"; then\
+	    echo "Installing zlib1.dll to $(BIN_INSTALL_DIR)/";\
+	    $(INSTALL_LIBRARY) zlib1.dll "$(BIN_INSTALL_DIR)";\
+	    chmod 555 "$(BIN_INSTALL_DIR)/zlib1.dll";\
+	fi
 	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
-	@chmod 555 "$(DLL_INSTALL_DIR)"/$(LIB_FILE)
+	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
 	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
-	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)"/tclsh$(VERSION)${EXE_SUFFIX}
+	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
-	@$(INSTALL_DATA) tclConfig.sh "$(CONFIG_INSTALL_DIR)"/tclConfig.sh
+	@$(INSTALL_DATA) tclConfig.sh "$(CONFIG_INSTALL_DIR)/tclConfig.sh"
 	@echo "Installing tclooConfig.sh to $(CONFIG_INSTALL_DIR)/"
 	@$(INSTALL_DATA) $(UNIX_DIR)/tclooConfig.sh \
-		"$(CONFIG_INSTALL_DIR)"/tclooConfig.sh
+		"$(CONFIG_INSTALL_DIR)/tclooConfig.sh"
 	@if test "$(STUB_LIB_FILE)" != "" ; then \
 	    echo "Installing $(STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
 	    @INSTALL_STUB_LIB@ ; \
