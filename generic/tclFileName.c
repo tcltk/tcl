@@ -424,14 +424,12 @@ TclpGetNativePathType(
 	    }
 #endif
 	    if (path[0] == '/') {
-#ifdef __CYGWIN__
 		/*
-		 * Check for Cygwin // network path prefix
+		 * Check for "//" prefix
 		 */
 		if (path[1] == '/') {
 		    path++;
 		}
-#endif
 		if (driveNameLengthPtr != NULL) {
 		    /*
 		     * We need this addition in case the QNX or Cygwin code was used.
@@ -665,15 +663,13 @@ SplitUnixPath(
     if (*p == '/') {
 	Tcl_Obj *rootElt = Tcl_NewStringObj("/", 1);
 	p++;
-#ifdef __CYGWIN__
 	/*
-	 * Check for Cygwin // network path prefix
+	 * Check for "//" prefix
 	 */
 	if (*p == '/') {
 	    Tcl_AppendToObj(rootElt, "/", 1);
 	    p++;
 	}
-#endif
 	Tcl_ListObjAppendElement(NULL, result, rootElt);
     }
 
