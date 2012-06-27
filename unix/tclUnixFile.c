@@ -51,9 +51,9 @@ TclpFindExecutable(
 	/* Strip '.exe' part. */
 	length -= 4;
     }
-	encoding = Tcl_GetEncoding(NULL, NULL);
-	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(name, length), encoding);
+    encoding = Tcl_GetEncoding(NULL, NULL);
+    TclSetObjNameOfExecutable(
+	    Tcl_NewStringObj(name, length), encoding);
 #else
     const char *name, *p;
     Tcl_StatBuf statBuf;
