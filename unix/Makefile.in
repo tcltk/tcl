@@ -580,7 +580,7 @@ valgrindshell: tclsh
 topDirName:
 	@cd $(TOP_DIR); pwd
 
-# The following target generates the file generic/tclDate.c 
+# The following target generates the file generic/tclDate.c
 # from the yacc grammar found in generic/tclGetDate.y.  This is
 # only run by hand as yacc is not available in all environments.
 # The name of the .c file is different than the name of the .y file
@@ -619,7 +619,7 @@ install-strip:
 # possible (e.g. if installing as root).
 
 install-binaries: binaries
-	@for i in $(LIB_INSTALL_DIR) $(BIN_INSTALL_DIR) ; \
+	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" ; \
 	    do \
 	    if [ ! -d $$i ] ; then \
 		echo "Making directory $$i"; \
@@ -647,10 +647,28 @@ install-binaries: binaries
 	    echo "Installing $(STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
 	    @INSTALL_STUB_LIB@ ; \
 	fi
+	@if test "x$(DLL_INSTALL_DIR)" = "x$(BIN_INSTALL_DIR)"; then\
+	    for i in dde1.2 reg1.1; do \
+		if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
+	 	   echo "Making directory $(LIB_INSTALL_DIR)/$$i";\
+	 	   mkdir -p $(LIB_INSTALL_DIR)/$$i;\
+	 	   chmod 755 $(LIB_INSTALL_DIR)/$$i;\
+	 	   else true;\
+		fi;\
+	    done;\
+	    echo "Installing tcldde12.dll";\
+		$(INSTALL_DATA) "$(TOP_DIR)/library/dde/pkgIndex.tcl" "$(LIB_INSTALL_DIR)/dde1.2";\
+	    $(INSTALL_LIBRARY) "$(TOP_DIR)/win/tcldde12.dll" "$(LIB_INSTALL_DIR)/dde1.2";\
+	    chmod 555 "$(LIB_INSTALL_DIR)/dde1.2/tcldde12.dll";\
+	    echo "Installing tclreg11.dll";\
+		$(INSTALL_DATA) "$(TOP_DIR)/library/reg/pkgIndex.tcl" "$(LIB_INSTALL_DIR)/reg1.1";\
+	    $(INSTALL_LIBRARY) "$(TOP_DIR)/win/tclreg11.dll" "$(LIB_INSTALL_DIR)/reg1.1";\
+	    chmod 555 "$(LIB_INSTALL_DIR)/reg1.1/tclreg11.dll";\
+	fi
 	@EXTRA_INSTALL_BINARIES@
 
 install-libraries: libraries
-	@for i in $(INCLUDE_INSTALL_DIR) $(SCRIPT_INSTALL_DIR); \
+	@for i in "$(INCLUDE_INSTALL_DIR)" "$(SCRIPT_INSTALL_DIR)"; \
 	    do \
 	    if [ ! -d $$i ] ; then \
 		echo "Making directory $$i"; \
@@ -1443,7 +1461,7 @@ machtml:
 #
 # Targets to build Solaris package of the distribution for the current
 # architecture.  To build stream packages for both sun4 and i86pc
-# architectures: 
+# architectures:
 #
 #   On the sun4 machine, execute the following:
 #     make distclean; ./configure
@@ -1497,7 +1515,7 @@ package-common:
 # Build and install the architecture specific files in the dist directory.
 #
 
-package-binaries: 
+package-binaries:
 	cd $(DISTDIR)/unix/`arch`; \
 	$(MAKE); \
 	$(MAKE) install-binaries prefix=$(DISTDIR)/$(PACKAGE)/$(VERSION) \
