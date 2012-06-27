@@ -2224,7 +2224,7 @@ dnl # preprocessing tests use only CPPFLAGS.
             INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
         else
             MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)" ; (cd $(LIB_INSTALL_DIR) ; $(RANLIB) $(LIB_FILE))'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(LIB_FILE))'
         fi
     fi
 

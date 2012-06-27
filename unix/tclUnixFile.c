@@ -70,7 +70,7 @@ TclpFindExecutable(argv0)
     }
     tclNativeExecutableName = (char *) ckalloc(length + 1);
     memcpy(tclNativeExecutableName, name, length);
-    buf[length] = '\0';
+    tclNativeExecutableName[length] = '\0';
 #else
     if (argv0 == NULL) {
 	return NULL;
