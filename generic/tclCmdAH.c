@@ -505,7 +505,7 @@ Tcl_EncodingObjCmd(
 	break;
     }
     case ENC_DIRS:
-	return EncodingDirsObjCmd(dummy, interp, objc-1, objv+1);
+	return EncodingDirsObjCmd(dummy, interp, objc, objv);
     case ENC_NAMES:
 	if (objc > 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -552,20 +552,24 @@ EncodingDirsObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?dirList?");
+    Tcl_Obj *dirListObj;
+
+    if (objc > 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "?dirList?");
 	return TCL_ERROR;
     }
-    if (objc == 1) {
+    if (objc == 2) {
 	Tcl_SetObjResult(interp, Tcl_GetEncodingSearchPath());
 	return TCL_OK;
     }
-    if (Tcl_SetEncodingSearchPath(objv[1]) == TCL_ERROR) {
+
+    dirListObj = objv[2];
+    if (Tcl_SetEncodingSearchPath(dirListObj) == TCL_ERROR) {
 	Tcl_AppendResult(interp, "expected directory list but got \"",
-		TclGetString(objv[1]), "\"", NULL);
+		TclGetString(dirListObj), "\"", NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, objv[1]);
+    Tcl_SetObjResult(interp, dirListObj);
     return TCL_OK;
 }
 

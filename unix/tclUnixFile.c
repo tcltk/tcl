@@ -42,19 +42,18 @@ TclpFindExecutable(
     Tcl_Encoding encoding;
 #ifdef __CYGWIN__
     int length;
-    char buf[PATH_MAX * TCL_UTF_MAX + 1];
+    char buf[PATH_MAX * 2];
     char name[PATH_MAX * TCL_UTF_MAX + 1];
-    GetModuleFileNameW(NULL, name, PATH_MAX);
-    WideCharToMultiByte(CP_UTF8, 0, name, -1, buf, PATH_MAX, NULL, NULL);
-    cygwin_conv_to_full_posix_path(buf, name);
+    GetModuleFileNameW(NULL, buf, PATH_MAX);
+    cygwin_conv_path(3, buf, name, PATH_MAX);
     length = strlen(name);
     if ((length > 4) && !strcasecmp(name + length - 4, ".exe")) {
 	/* Strip '.exe' part. */
 	length -= 4;
     }
-	encoding = Tcl_GetEncoding(NULL, NULL);
-	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(name, length), encoding);
+    encoding = Tcl_GetEncoding(NULL, NULL);
+    TclSetObjNameOfExecutable(
+	    Tcl_NewStringObj(name, length), encoding);
 #else
     const char *name, *p;
     Tcl_StatBuf statBuf;

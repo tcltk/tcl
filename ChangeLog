@@ -5,6 +5,29 @@
 	* unix/Makefile.in
 	* win/Makefile.in
 
+2012-06-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFileSystem.h:	[Bug 3024359] Make sure that the
+	* generic/tclIOUtil.c:	per-thread cache of the list of file systems
+	* generic/tclPathObj.c:	currently registered is only updated at times
+	when no active loops are traversing it.  Also reduce the amount of
+	epoch storing and checking to where it can make a difference.
+
+2012-06-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdAH.c (EncodingDirsObjCmd): [Bug 3537605]: Do the right
+	thing when reporting errors with the number of arguments.
+
+2012-06-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclfileName.c: [Patch #1536227]: Cygwin network pathname
+	* tests/fileName.test:   support
+
+2012-06-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixNotfy.c: [Bug 3508771]: Cygwin notifier for handling
+	win32 events.
+
 2012-06-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinReg.c:          [Bug #3362446]: registry keys command fails
