@@ -1263,7 +1263,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    if test "x${TCL_THREADS}" = "x0"; then
 		AC_MSG_ERROR([CYGWIN compile is only supported with --enable-threads])
 	    fi
-	    if test ! -f "../win/tcldde13.dll" -a ! -f "../win/tk85.dll"; then
+	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/tcldde13.dll" -a ! -f "../win/tk85.dll"; then
 		AC_MSG_ERROR([Please configure and make the ../win directory first.])
 	    fi
 	    ;;
