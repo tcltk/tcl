@@ -26,7 +26,7 @@
 #ifndef MODULE_SCOPE
 #define MODULE_SCOPE extern
 #endif
-
+
 /*
  *---------------------------------------------------------------------------
  * The following sets of #includes and #ifdefs are required to get Tcl to
@@ -54,6 +54,12 @@
 #   include <dirent.h>
 #endif
 #endif
+
+/*
+ *---------------------------------------------------------------------------
+ * Parameterize for 64-bit filesystem support.
+ *---------------------------------------------------------------------------
+ */
 
 #ifdef HAVE_STRUCT_DIRENT64
 typedef struct dirent64	Tcl_DirEntry;
@@ -88,16 +94,14 @@ typedef off_t		Tcl_SeekOffset;
     DLLIMPORT extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
 	    const char *, int, const char *, const char *);
 
-    DLLIMPORT extern int cygwin_conv_to_full_posix_path(const char *, char *);
+    DLLIMPORT extern int cygwin_conv_path(int, const void *, void *, int);
+    DLLIMPORT extern int cygwin_conv_path_list(int, const void *, void *, int);
 #   define USE_PUTENV 1
 #   define USE_PUTENV_FOR_UNSET 1
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
 #   define environ __cygwin_environ
 #   define timezone _timezone
     DLLIMPORT extern char **__cygwin_environ;
-    DLLIMPORT extern int cygwin_conv_to_win32_path(const char *, char *);
-    DLLIMPORT extern int cygwin_posix_to_win32_path_list_buf_size(char *value);
-    DLLIMPORT extern void cygwin_posix_to_win32_path_list(char *buf, char *value);
     MODULE_SCOPE int TclOSstat(const char *name, Tcl_StatBuf *statBuf);
     MODULE_SCOPE int TclOSlstat(const char *name, Tcl_StatBuf *statBuf);
 #elif defined(HAVE_STRUCT_STAT64)

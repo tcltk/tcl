@@ -28,7 +28,6 @@ typedef struct FilesystemRecord {
     ClientData clientData;	/* Client specific data for the new filesystem
 				 * (can be NULL) */
     Tcl_Filesystem *fsPtr;	/* Pointer to filesystem dispatch table. */
-    int fileRefCount;		/* How many Tcl_Obj's use this filesystem. */
     struct FilesystemRecord *nextPtr;
 				/* The next filesystem registered to Tcl, or
 				 * NULL if no more. */
@@ -52,6 +51,7 @@ typedef struct ThreadSpecificData {
     Tcl_Obj *cwdPathPtr;
     ClientData cwdClientData;
     FilesystemRecord *filesystemList;
+    int claims;
 } ThreadSpecificData;
 
 /*
