@@ -1,3 +1,8 @@
+2012-06-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/msgcat/msgcat.tcl:   Add tn, ro_MO and ru_MO to msgcat. Make it
+	* library/msgcat/pkgIndex.tcl: work on cygwin. Bump to 1.3.5
+
 2012-06-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/GetIndex.3: Reinforced the description of the requirement for
