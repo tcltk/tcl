@@ -66,8 +66,8 @@ namespace eval msgcat {
 	    15 pl 0415 pl_PL
 	    16 pt 0416 pt_BR 0816 pt_PT
 	    17 rm 0417 rm_CH
-	    18 ro 0418 ro_RO
-	    19 ru
+	    18 ro 0418 ro_RO 0818 ro_MO
+	    19 ru 0819 ru_MO
 	    1a hr 041a hr_HR 081a sr_YU 0c1a sr_YU@cyrillic
 	    1b sk 041b sk_SK
 	    1c sq 041c sq_AL
@@ -92,6 +92,7 @@ namespace eval msgcat {
 	    2f mk 042f mk_MK
 	    30 bnt 0430 bnt_TZ
 	    31 ts 0431 ts_ZA
+	    32 tn
 	    33 ven 0433 ven_ZA
 	    34 xh 0434 xh_ZA
 	    35 zu 0435 zu_ZA
