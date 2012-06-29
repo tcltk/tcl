@@ -13,7 +13,7 @@
 package require Tcl 8.2
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.3.4
+package provide msgcat 1.3.5
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
@@ -31,7 +31,7 @@ namespace eval msgcat {
     array set Msgs {}
 
     # Map of language codes used in Windows registry to those of ISO-639
-    if { [string equal $::tcl_platform(platform) windows] } {
+    if {[info sharedlibextension] eq ".dll"} {
 	array set WinRegToISO639 {
 	    01 ar 0401 ar_SA 0801 ar_IQ 0c01 ar_EG 1001 ar_LY 1401 ar_DZ
 		  1801 ar_MA 1c01 ar_TN 2001 ar_OM 2401 ar_YE 2801 ar_SY
@@ -65,8 +65,8 @@ namespace eval msgcat {
 	    15 pl 0415 pl_PL
 	    16 pt 0416 pt_BR 0816 pt_PT
 	    17 rm 0417 rm_CH
-	    18 ro 0418 ro_RO
-	    19 ru
+	    18 ro 0418 ro_RO 0818 ro_MO
+	    19 ru 0819 ru_MO
 	    1a hr 041a hr_HR 081a sr_YU 0c1a sr_YU@cyrillic
 	    1b sk 041b sk_SK
 	    1c sq 041c sq_AL
@@ -91,6 +91,7 @@ namespace eval msgcat {
 	    2f mk 042f mk_MK
 	    30 bnt 0430 bnt_TZ
 	    31 ts 0431 ts_ZA
+	    32 tn
 	    33 ven 0433 ven_ZA
 	    34 xh 0434 xh_ZA
 	    35 zu 0435 zu_ZA
@@ -174,7 +175,7 @@ namespace eval msgcat {
 #	args	Args to pass to the format command
 #
 # Results:
-#	Returns the translatd string.  Propagates errors thrown by the 
+#	Returns the translated string.  Propagates errors thrown by the
 #	format command.
 
 proc msgcat::mc {src args} {
@@ -186,7 +187,7 @@ proc msgcat::mc {src args} {
     variable Locale
 
     set ns [uplevel 1 [list ::namespace current]]
-    
+
     while {$ns != ""} {
 	foreach loc $Loclist {
 	    if {[info exists Msgs($loc,$ns,$src)]} {
@@ -278,7 +279,7 @@ proc msgcat::mcload {langdir} {
 	    incr x
 	    set fid [open $langfile "r"]
 	    fconfigure $fid -encoding utf-8
-            uplevel 1 [read $fid]
+	    uplevel 1 [read $fid]
 	    close $fid
 	}
     }
@@ -301,7 +302,7 @@ proc msgcat::mcload {langdir} {
 proc msgcat::mcset {locale src {dest ""}} {
     variable Msgs
     if {[llength [info level 0]] == 3} { ;# dest not specified
-        set dest $src
+	set dest $src
     }
 
     set ns [uplevel 1 [list ::namespace current]]
@@ -328,14 +329,14 @@ proc msgcat::mcmset {locale pairs } {
     if {$length % 2} {
 	error {bad translation list: should be "mcmset locale {src dest ...}"}
     }
-    
+
     set locale [string tolower $locale]
     set ns [uplevel 1 [list ::namespace current]]
-    
+
     foreach {src dest} $pairs {
-        set Msgs($locale,$ns,$src) $dest
+	set Msgs($locale,$ns,$src) $dest
     }
-    
+
     return $length
 }
 
@@ -344,7 +345,7 @@ proc msgcat::mcmset {locale pairs } {
 #	This routine is called by msgcat::mc if a translation cannot
 #	be found for a string.  This routine is intended to be replaced
 #	by an application specific routine for error reporting
-#	purposes.  The default behavior is to return the source string.  
+#	purposes.  The default behavior is to return the source string.
 #	If additional args are specified, the format command will be used
 #	to work them into the traslated string.
 #
@@ -366,7 +367,7 @@ proc msgcat::mcunknown {locale src args} {
 
 # msgcat::mcmax --
 #
-#	Calculates the maximun length of the translated strings of the given 
+#	Calculates the maximum length of the translated strings of the given
 #	list.
 #
 # Arguments:
@@ -379,10 +380,10 @@ proc msgcat::mcmax {args} {
     set max 0
     foreach string $args {
 	set translated [uplevel 1 [list [namespace origin mc] $string]]
-        set len [string length $translated]
-        if {$len>$max} {
-            set max $len
-        }
+	set len [string length $translated]
+	if {$len>$max} {
+	    set max $len
+	}
     }
     return $max
 }
@@ -418,13 +419,15 @@ proc msgcat::ConvertLocale {value} {
 
 # Initialize the default locale
 proc msgcat::Init {} {
+    global env
+
     #
     # set default locale, try to get from environment
     #
     foreach varName {LC_ALL LC_MESSAGES LANG} {
-	if {[info exists ::env($varName)] 
-		&& ![string equal "" $::env($varName)]} {
-	    if {![catch {mclocale [ConvertLocale $::env($varName)]}]} {
+	if {[info exists env($varName)]
+		&& ![string equal "" $env($varName)]} {
+	    if {![catch {mclocale [ConvertLocale $env($varName)]}]} {
 		return
 	    }
 	}
@@ -444,18 +447,18 @@ proc msgcat::Init {} {
     # The rest of this routine is special processing for Windows;
     # all other platforms, get out now.
     #
-    if { ![string equal $::tcl_platform(platform) windows] } {
+    if {![string equal [info sharedlibextension] .dll]} {
 	mclocale C
 	return
     }
     #
-    # On Windows, try to set locale depending on registry settings,
-    # or fall back on locale of "C".  
+    # On Windows or Cygwin, try to set locale depending on registry
+    # settings, or fall back on locale of "C".
     #
     set key {HKEY_CURRENT_USER\Control Panel\International}
     if {[catch {package require registry}] \
 	    || [catch {registry get $key "locale"} locale]} {
-        mclocale C
+	mclocale C
 	return
     }
     #
@@ -470,7 +473,7 @@ proc msgcat::Init {} {
     variable WinRegToISO639
     set locale [string tolower $locale]
     while {[string length $locale]} {
-        if {![catch {mclocale [ConvertLocale $WinRegToISO639($locale)]}]} {
+	if {![catch {mclocale [ConvertLocale $WinRegToISO639($locale)]}]} {
 	    return
 	}
 	set locale [string range $locale 1 end]
