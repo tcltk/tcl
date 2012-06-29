@@ -451,23 +451,18 @@ proc msgcat::Init {} {
 	}
     }
     #
-    # The rest of this routine is special processing for Windows;
-    # all other platforms, get out now.
+    # The rest of this routine is special processing for Windows or
+    # Cygwin. All other platforms, get out now.
     #
-    if {[info sharedlibextension] ne ".dll"} {
+    if {([info sharedlibextension] ne ".dll")
+	    || [catch {package require registry}]} {
 	mclocale C
 	return
     }
     #
-    # On Windows, try to set locale depending on registry settings,
-    # or fall back on locale of "C".
+    # On Windows or Cygwin, try to set locale depending on registry
+    # settings, or fall back on locale of "C".
     #
-    if {[catch {
-	package require registry
-    }]} {
-	mclocale C
-	return
-    }
 
     # First check registry value LocalName present from Windows Vista
     # which contains the local string as RFC5646, composed of:
