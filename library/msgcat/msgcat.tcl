@@ -13,7 +13,7 @@
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.4.4
+package provide msgcat 1.4.5
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
@@ -32,7 +32,7 @@ namespace eval msgcat {
     variable Msgs [dict create]
 
     # Map of language codes used in Windows registry to those of ISO-639
-    if { $::tcl_platform(platform) eq "windows" } {
+    if {[info sharedlibextension] eq ".dll"} {
 	variable WinRegToISO639 [dict create  {*}{
 	    01 ar 0401 ar_SA 0801 ar_IQ 0c01 ar_EG 1001 ar_LY 1401 ar_DZ
 		  1801 ar_MA 1c01 ar_TN 2001 ar_OM 2401 ar_YE 2801 ar_SY
@@ -426,7 +426,7 @@ proc msgcat::ConvertLocale {value} {
 
 # Initialize the default locale
 proc msgcat::Init {} {
-    global env tcl_platform
+    global env
 
     #
     # set default locale, try to get from environment
@@ -451,23 +451,48 @@ proc msgcat::Init {} {
 	}
     }
     #
-    # The rest of this routine is special processing for Windows;
-    # all other platforms, get out now.
+    # The rest of this routine is special processing for Windows or
+    # Cygwin. All other platforms, get out now.
     #
-    if {$tcl_platform(platform) ne "windows"} {
+    if {([info sharedlibextension] ne ".dll")
+	    || [catch {package require registry}]} {
 	mclocale C
 	return
     }
     #
-    # On Windows, try to set locale depending on registry settings,
-    # or fall back on locale of "C".
+    # On Windows or Cygwin, try to set locale depending on registry
+    # settings, or fall back on locale of "C".
     #
+
+    # First check registry value LocalName present from Windows Vista
+    # which contains the local string as RFC5646, composed of:
+    # [a-z]{2,3} : language
+    # -[a-z]{4}  : script (optional, not used)
+    # -[a-z]{2}|[0-9]{3} : territory (optional, numerical region codes not used)
+    # (-.*)* : variant, extension, private use (optional, not used)
+    # Those are translated to local strings.
+    # Examples: de-CH -> de_ch, sr-Latn-CS -> sr_cs, es-419 -> es
+    #
+    set key {HKEY_CURRENT_USER\Control Panel\International}
+    if {([registry values $key "LocaleName"] ne "")
+	    && [regexp {^([a-z]{2,3})(?:-[a-z]{4})?(?:-([a-z]{2}))?(?:-.+)?$}\
+	    [string tolower [registry get $key "LocaleName"]] match locale\
+	    territory]} {
+	if {"" ne $territory} {
+	    append locale _ $territory
+	}
+	if {![catch {
+	    mclocale [ConvertLocale $locale]
+	}]} {
+	    return
+	}
+    }
+
+    # then check key locale which contains a numerical language ID
     if {[catch {
-	package require registry
-	set key {HKEY_CURRENT_USER\Control Panel\International}
 	set locale [registry get $key "locale"]
     }]} {
-        mclocale C
+	mclocale C
 	return
     }
     #
