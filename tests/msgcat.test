@@ -17,8 +17,8 @@ if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
 }
-if {[catch {package require msgcat 1.3.4}]} {
-    puts stderr "Skipping tests in [info script].  No msgcat 1.3.4 found to test."
+if {[catch {package require msgcat 1.3.5}]} {
+    puts stderr "Skipping tests in [info script].  No msgcat 1.3.5 found to test."
     return
 }
 
@@ -49,7 +49,7 @@ namespace eval ::msgcat::test {
     variable body
     variable result
     variable setVars
-    foreach setVars [PowerSet $envVars] { 
+    foreach setVars [PowerSet $envVars] {
 	set result [string tolower [lindex $setVars 0]]
 	if {[string length $result] == 0} {
 	    if {[info exists ::tcl::mac::locale]} {
@@ -83,7 +83,7 @@ namespace eval ::msgcat::test {
 	incr count
     }
     catch {unset result}
-    
+
     # Could add tests of initialization from Windows registry here.
     # Use a fake registry package.
 
@@ -472,7 +472,7 @@ namespace eval ::msgcat::test {
     # Tests msgcat-6.*: [mcset], [mc] namespace inheritance
 #
 # Test mcset and mc, ensuring that resolution for messages
-# proceeds from the current ns to its parent and so on to the 
+# proceeds from the current ns to its parent and so on to the
 # global ns.
 #
 # Do this for the 12 permutations of
@@ -516,7 +516,7 @@ namespace eval ::msgcat::test {
 			    ::msgcat::mcset foo ov3 "ov3_foo_bar_baz"
 			}
 		    }
-		    
+
 		}
 		variable locale [mclocale]
 		mclocale foo
