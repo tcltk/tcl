@@ -1,3 +1,11 @@
+2012-06-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/GetIndex.3: Reinforced the description of the requirement for
+	the tables of names to index over to be static, following posting to
+	tcl-core by Brian Griffin about a bug caused by Tktreectrl not obeying
+	this rule correctly. This does not represent a functionality change,
+	merely a clearer documentation of a long-standing constraint.
+
 2012-06-26  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tcl.m4:       Let Cygwin shared build link with
@@ -9,7 +17,7 @@
 
 	* generic/tclIOSock.c: Use EAI_SYSTEM only if it exists.
 	* unix/tclUnixSock.c:
-	
+
 2012-06-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileSystem.h:	[Bug 3024359] Make sure that the
