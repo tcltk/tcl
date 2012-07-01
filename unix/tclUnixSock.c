@@ -1117,11 +1117,7 @@ Tcl_OpenTcpClient(
             freeaddrinfo(addrlist);
         }
         if (interp != NULL) {
-            Tcl_AppendResult(interp, "couldn't open socket: ",
-                             Tcl_PosixError(interp), NULL);
-            if (errorMsg != NULL) {
-                Tcl_AppendResult(interp, " (", errorMsg, ")", NULL);
-            }
+            Tcl_AppendResult(interp, "couldn't open socket: ", errorMsg, NULL);
         }
         return NULL;
     }
@@ -1261,10 +1257,11 @@ Tcl_OpenTcpServer(
      * Try to record and return the most meaningful error message, i.e. the
      * one from the first socket that went the farthest before it failed.
      */
-    enum { START, SOCKET, BIND, LISTEN } howfar = START;
+    enum { LOOKUP, SOCKET, BIND, LISTEN } howfar = LOOKUP;
     int my_errno = 0;
 
     if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1, &errorMsg)) {
+	my_errno = errno;
 	goto error;
     }
 
@@ -1392,11 +1389,12 @@ Tcl_OpenTcpServer(
 	return statePtr->channel;
     }
     if (interp != NULL) {
-	errno = my_errno;
-	Tcl_AppendResult(interp, "couldn't open socket: ",
-		Tcl_PosixError(interp), NULL);
-	if (errorMsg != NULL) {
-	    Tcl_AppendResult(interp, " (", errorMsg, ")", NULL);
+	Tcl_AppendResult(interp, "couldn't open socket: ", NULL);
+	if (errorMsg == NULL) {
+            errno = my_errno;
+            Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
+        } else {
+	    Tcl_AppendResult(interp, errorMsg, NULL);
 	}
     }
     if (sock != -1) {
