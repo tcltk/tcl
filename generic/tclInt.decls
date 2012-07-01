@@ -1095,6 +1095,11 @@ declare 16 win {
 #  declare 17 win {
 #      char *TclpGetTZName(void)
 #  }
+# new for 8.5.12+ Cygwin only
+declare 17 win {
+    int TclUnixCopyFile(const char *src, const char *dst,
+	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
+}
 declare 18 win {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
