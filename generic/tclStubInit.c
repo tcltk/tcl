@@ -55,6 +55,7 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
+#   define TclUnixCopyFile 0
 #   define TclpReaddir 0
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
@@ -498,7 +499,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpCreatePipe, /* 14 */
     TclpCreateProcess, /* 15 */
     TclpIsAtty, /* 16 */
-    0, /* 17 */
+    TclUnixCopyFile, /* 17 */
     TclpMakeFile, /* 18 */
     TclpOpenFile, /* 19 */
     TclWinAddProcess, /* 20 */
