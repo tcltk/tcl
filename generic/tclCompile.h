@@ -866,8 +866,7 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_NRPostProc	NRCommand;
-MODULE_SCOPE Tcl_ObjCmdProc	NRInterpCoroutine;
+MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
 
 /*
  *----------------------------------------------------------------

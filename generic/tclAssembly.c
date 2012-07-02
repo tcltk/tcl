@@ -265,7 +265,7 @@ static int		CheckStrictlyPositive(Tcl_Interp*, int);
 static ByteCode *	CompileAssembleObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 static void		CompileEmbeddedScript(AssemblyEnv*, Tcl_Token*,
-			    TalInstDesc*);
+			    const TalInstDesc*);
 static int		DefineLabel(AssemblyEnv* envPtr, const char* label);
 static void		DeleteMirrorJumpTable(JumptableInfo* jtPtr);
 static void		DupAssembleCodeInternalRep(Tcl_Obj* src,
@@ -350,7 +350,7 @@ static const Tcl_ObjType assembleCodeType = {
  * Source instructions recognized in the Tcl Assembly Language (TAL)
  */
 
-TalInstDesc TalInstructionTable[] = {
+static const TalInstDesc TalInstructionTable[] = {
     /* PUSH must be first, see the code near the end of TclAssembleCode */
     {"push",		ASSEM_PUSH,	(INST_PUSH1<<8
 					 | INST_PUSH4),		0,	1},
@@ -1768,7 +1768,7 @@ static void
 CompileEmbeddedScript(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Token* tokenPtr,	/* Tcl_Token containing the script */
-    TalInstDesc* instPtr)	/* Instruction that determines whether
+    const TalInstDesc* instPtr)	/* Instruction that determines whether
 				 * the script is 'expr' or 'eval' */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
