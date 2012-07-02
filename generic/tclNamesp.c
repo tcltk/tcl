@@ -24,7 +24,7 @@
  */
 
 #include "tclInt.h"
-#include "tclCompile.h" /* for NRCommand; and TclLogCommandInfo visibility */
+#include "tclCompile.h" /* for TclLogCommandInfo visibility */
 
 /*
  * Thread-local storage used to avoid having a global lock on data that is not
@@ -916,7 +916,7 @@ Tcl_DeleteNamespace(
     for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
 	    entryPtr != NULL;) {
 	cmdPtr = Tcl_GetHashValue(entryPtr);
-	if (cmdPtr->nreProc == NRInterpCoroutine) {
+	if (cmdPtr->nreProc == TclNRInterpCoroutine) {
 	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
 		    (Tcl_Command) cmdPtr);
 	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
