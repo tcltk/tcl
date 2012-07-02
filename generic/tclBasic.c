@@ -134,6 +134,8 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 static Tcl_NRPostProc	NRCoroutineActivateCallback;
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
+static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
+
 static Tcl_NRPostProc	NRRunObjProc;
 static Tcl_NRPostProc	NRTailcallEval;
 static Tcl_ObjCmdProc	OldMathFuncProc;
@@ -4363,7 +4365,7 @@ TclNRRunCallbacks(
     return result;
 }
 
-int
+static int
 NRCommand(
     ClientData data[],
     Tcl_Interp *interp,
@@ -8593,7 +8595,7 @@ RewindCoroutine(
     corPtr->eePtr->rewind = 1;
     TclNRAddCallback(interp, RewindCoroutineCallback, state,
 	    NULL, NULL, NULL);
-    return NRInterpCoroutine(corPtr, interp, 0, NULL);
+    return TclNRInterpCoroutine(corPtr, interp, 0, NULL);
 }
 
 static void
@@ -8820,7 +8822,7 @@ NRCoroInjectObjCmd(
     }
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
-    if ((!cmdPtr) || (cmdPtr->nreProc != NRInterpCoroutine)) {
+    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
         Tcl_AppendResult(interp, "can only inject a command into a coroutine",
                 NULL);
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
@@ -8849,7 +8851,7 @@ NRCoroInjectObjCmd(
 }
 
 int
-NRInterpCoroutine(
+TclNRInterpCoroutine(
     ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -8976,7 +8978,7 @@ TclNRCoroutineObjCmd(
     Tcl_DStringAppend(&ds, procName, -1);
 
     cmdPtr = (Command *) Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
-	    /*objProc*/ NULL, NRInterpCoroutine, corPtr, DeleteCoroutine);
+	    /*objProc*/ NULL, TclNRInterpCoroutine, corPtr, DeleteCoroutine);
     Tcl_DStringFree(&ds);
 
     corPtr->cmdPtr = cmdPtr;
