@@ -803,10 +803,9 @@ Tcl_CreateNamespace(
 	if (ancestorPtr != globalNsPtr) {
 	    register Tcl_DString *tempPtr = namePtr;
 
-	    Tcl_DStringAppend(buffPtr, "::", 2);
+	    TclDStringAppendLiteral(buffPtr, "::");
 	    Tcl_DStringAppend(buffPtr, ancestorPtr->name, -1);
-	    Tcl_DStringAppend(buffPtr, Tcl_DStringValue(namePtr),
-		    Tcl_DStringLength(namePtr));
+	    TclDStringAppendDString(buffPtr, namePtr);
 
 	    /*
 	     * Clear the unwanted buffer or we end up appending to previous
@@ -814,7 +813,7 @@ Tcl_CreateNamespace(
 	     * very wrong (and strange).
 	     */
 
-	    Tcl_DStringSetLength(namePtr, 0);
+	    TclDStringClear(namePtr);
 
 	    /*
 	     * Now swap the buffer pointers so that we build in the other
@@ -1667,7 +1666,7 @@ DoImport(
 	Tcl_DStringInit(&ds);
 	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
 	if (nsPtr != ((Interp *) interp)->globalNsPtr) {
-	    Tcl_DStringAppend(&ds, "::", 2);
+	    TclDStringAppendLiteral(&ds, "::");
 	}
 	Tcl_DStringAppend(&ds, cmdName, -1);
 
@@ -2241,7 +2240,7 @@ TclGetNamespaceForQualName(
 	     * qualName since it may be a string constant.
 	     */
 
-	    Tcl_DStringSetLength(&buffer, 0);
+	    TclDStringClear(&buffer);
 	    Tcl_DStringAppend(&buffer, start, len);
 	    nsName = Tcl_DStringValue(&buffer);
 	}
@@ -2916,7 +2915,7 @@ NamespaceChildrenCmd(
 	} else {
 	    Tcl_DStringAppend(&buffer, nsPtr->fullName, -1);
 	    if (nsPtr != globalNsPtr) {
-		Tcl_DStringAppend(&buffer, "::", 2);
+		TclDStringAppendLiteral(&buffer, "::");
 	    }
 	    Tcl_DStringAppend(&buffer, name, -1);
 	    pattern = Tcl_DStringValue(&buffer);

@@ -967,11 +967,11 @@ TraverseUnixTree(
 	return result;
     }
 
-    Tcl_DStringAppend(sourcePtr, "/", 1);
+    TclDStringAppendLiteral(sourcePtr, "/");
     sourceLen = Tcl_DStringLength(sourcePtr);
 
     if (targetPtr != NULL) {
-	Tcl_DStringAppend(targetPtr, "/", 1);
+	TclDStringAppendLiteral(targetPtr, "/");
 	targetLen = Tcl_DStringLength(targetPtr);
     }
 
@@ -2125,24 +2125,24 @@ TclpOpenTemporaryFile(
 	Tcl_DStringAppend(&template, DefaultTempDir(), -1); /* INTL: native */
     }
 
-    Tcl_DStringAppend(&template, "/", -1);
+    TclDStringAppendLiteral(&template, "/");
 
     if (basenameObj) {
 	string = Tcl_GetStringFromObj(basenameObj, &len);
 	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
-	Tcl_DStringAppend(&template, Tcl_DStringValue(&tmp), -1);
+	TclDStringAppendDString(&template, &tmp);
 	Tcl_DStringFree(&tmp);
     } else {
-	Tcl_DStringAppend(&template, "tcl", -1);
+	TclDStringAppendLiteral(&template, "tcl");
     }
 
-    Tcl_DStringAppend(&template, "_XXXXXX", -1);
+    TclDStringAppendLiteral(&template, "_XXXXXX");
 
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
 	string = Tcl_GetStringFromObj(extensionObj, &len);
 	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
-	Tcl_DStringAppend(&template, Tcl_DStringValue(&tmp), -1);
+	TclDStringAppendDString(&template, &tmp);
 	fd = mkstemps(Tcl_DStringValue(&template), Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);
     } else

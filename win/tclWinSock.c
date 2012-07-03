@@ -2590,11 +2590,11 @@ InitializeHostName(
 	    Tcl_DStringInit(&inDs);
 	    Tcl_DStringSetLength(&inDs, 255);
 	    if (gethostname(Tcl_DStringValue(&inDs),
-			    Tcl_DStringLength(&inDs)) == 0) {
-		Tcl_DStringSetLength(&ds, 0);
+		    Tcl_DStringLength(&inDs)) == 0) {
+		TclDStringClear(&ds);
 	    } else {
-		Tcl_ExternalToUtfDString(NULL,
-			Tcl_DStringValue(&inDs), -1, &ds);
+		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), -1,
+			&ds);
 	    }
 	    Tcl_DStringFree(&inDs);
 	}
