@@ -405,7 +405,7 @@ Tcl_GetCwd(
 	return NULL;
     }
     Tcl_DStringInit(cwdPtr);
-    Tcl_DStringAppend(cwdPtr, Tcl_GetString(cwd), -1);
+    TclDStringAppendObj(cwdPtr, cwd);
     Tcl_DecrRefCount(cwd);
     return Tcl_DStringValue(cwdPtr);
 }

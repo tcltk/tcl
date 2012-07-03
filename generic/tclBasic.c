@@ -2612,7 +2612,7 @@ TclRenameCommand(
     Tcl_DStringInit(&newFullName);
     Tcl_DStringAppend(&newFullName, newNsPtr->fullName, -1);
     if (newNsPtr != iPtr->globalNsPtr) {
-	Tcl_DStringAppend(&newFullName, "::", 2);
+	TclDStringAppendLiteral(&newFullName, "::");
     }
     Tcl_DStringAppend(&newFullName, newTail, -1);
     cmdPtr->refCount++;
@@ -3470,7 +3470,7 @@ Tcl_CreateMathFunc(
     data->clientData = clientData;
 
     Tcl_DStringInit(&bigName);
-    Tcl_DStringAppend(&bigName, "::tcl::mathfunc::", -1);
+    TclDStringAppendLiteral(&bigName, "::tcl::mathfunc::");
     Tcl_DStringAppend(&bigName, name, -1);
 
     Tcl_CreateObjCommand(interp, Tcl_DStringValue(&bigName),
@@ -8973,7 +8973,7 @@ TclNRCoroutineObjCmd(
     Tcl_DStringInit(&ds);
     if (nsPtr != iPtr->globalNsPtr) {
 	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
-	Tcl_DStringAppend(&ds, "::", 2);
+	TclDStringAppendLiteral(&ds, "::");
     }
     Tcl_DStringAppend(&ds, procName, -1);
 
