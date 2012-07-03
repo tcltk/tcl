@@ -287,89 +287,66 @@ Tcl_UniCharToUtfDString(
  *---------------------------------------------------------------------------
  */
 
+#define UTF8_ACCEPT 0
+#define UTF8_REJECT 1
+
+static const unsigned char utf8d[] = {
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 00..1f
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 20..3f
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 40..5f
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 60..7f
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9, // 80..9f
+  7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7, // a0..bf
+  2,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2, // c0..df
+  0xa,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x4,0x3,0x3, // e0..ef
+  0xb,0x6,0x6,0x6,0x5,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8, // f0..ff
+  0x0,0x1,0x2,0x3,0x5,0x8,0x7,0x1,0x1,0x1,0x4,0x6,0x1,0x1,0x1,0x1, // s0..s0
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1, // s1..s2
+  1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1, // s3..s4
+  1,2,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,3,1,1,1,1,1,1, // s5..s6
+  1,3,1,1,1,1,1,3,1,3,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // s7..s8
+};
+
+static unsigned int 
+decode(
+    unsigned int *state,
+    unsigned int *codep,
+    unsigned int byte)
+{
+    unsigned int type = utf8d[byte];
+
+    *codep = (*state != UTF8_ACCEPT) ?
+	    (byte & 0x3fu) | (*codep << 6) :
+	    (0xff >> type) & (byte);
+
+    *state = utf8d[256 + *state*16 + type];
+    return *state;
+}
+
 int
 Tcl_UtfToUniChar(
     register const char *src,	/* The UTF-8 string. */
     register Tcl_UniChar *chPtr)/* Filled with the Tcl_UniChar represented by
 				 * the UTF-8 string. */
 {
-    register int byte;
+    const char *p = src;
+    unsigned int codepoint, state = UTF8_ACCEPT;
+    int count = 1;
 
-    /*
-     * Unroll 1 to 3 byte UTF-8 sequences, use loop to handle longer ones.
-     */
-
-    byte = *((unsigned char *) src);
-    if (byte < 0xC0) {
-	/*
-	 * Handles properly formed UTF-8 characters between 0x01 and 0x7F.
-	 * Also treats \0 and naked trail bytes 0x80 to 0xBF as valid
-	 * characters representing themselves.
-	 */
-
-	*chPtr = (Tcl_UniChar) byte;
-	return 1;
-    } else if (byte < 0xE0) {
-	if ((src[1] & 0xC0) == 0x80) {
-	    /*
-	     * Two-byte-character lead-byte followed by a trail-byte.
-	     */
-
-	    *chPtr = (Tcl_UniChar) (((byte & 0x1F) << 6) | (src[1] & 0x3F));
-	    return 2;
-	}
-
-	/*
-	 * A two-byte-character lead-byte not followed by trail-byte
-	 * represents itself.
-	 */
-
-	*chPtr = (Tcl_UniChar) byte;
-	return 1;
-    } else if (byte < 0xF0) {
-	if (((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)) {
-	    /*
-	     * Three-byte-character lead byte followed by two trail bytes.
-	     */
-
-	    *chPtr = (Tcl_UniChar) (((byte & 0x0F) << 12)
-		    | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F));
-	    return 3;
-	}
-
-	/*
-	 * A three-byte-character lead-byte not followed by two trail-bytes
-	 * represents itself.
-	 */
-
-	*chPtr = (Tcl_UniChar) byte;
-	return 1;
-    }
-#if TCL_UTF_MAX > 3
-    {
-	int ch, total, trail;
-
-	total = totalBytes[byte];
-	trail = total - 1;
-	if (trail > 0) {
-	    ch = byte & (0x3F >> trail);
-	    do {
-		src++;
-		if ((*src & 0xC0) != 0x80) {
-		    *chPtr = byte;
-		    return 1;
-		}
-		ch <<= 6;
-		ch |= (*src & 0x3F);
-		trail--;
-	    } while (trail > 0);
-	    *chPtr = ch;
-	    return total;
+    while (*p && count <= TCL_UTF_MAX) {
+	switch (decode(&state, &codepoint, (unsigned char)*p)) {
+	case UTF8_ACCEPT:
+	    *chPtr = (Tcl_UniChar) codepoint;
+	    return count;
+	case UTF8_REJECT:
+	    *chPtr = (Tcl_UniChar)(*src);
+	    return 1;
+	default:
+	    count++;
+	    p++;
 	}
     }
-#endif
-
-    *chPtr = (Tcl_UniChar) byte;
+    *chPtr = (Tcl_UniChar)(*src);
     return 1;
 }
 
