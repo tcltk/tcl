@@ -1712,11 +1712,11 @@ AddRequirementsToDString(
 	int i;
 
 	for (i = 0; i < reqc; i++) {
-	    Tcl_DStringAppend(dsPtr, " ", 1);
-	    Tcl_DStringAppend(dsPtr, TclGetString(reqv[i]), -1);
+	    TclDStringAppendLiteral(dsPtr, " ");
+	    TclDStringAppendObj(dsPtr, reqv[i]);
 	}
     } else {
-	Tcl_DStringAppend(dsPtr, " 0-", -1);
+	TclDStringAppendLiteral(dsPtr, " 0-");
     }
 }
 

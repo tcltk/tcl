@@ -1045,9 +1045,9 @@ TclMakeFileCommandSafe(
     Tcl_DString oldBuf, newBuf;
 
     Tcl_DStringInit(&oldBuf);
-    Tcl_DStringAppend(&oldBuf, "::tcl::file::", -1);
+    TclDStringAppendLiteral(&oldBuf, "::tcl::file::");
     Tcl_DStringInit(&newBuf);
-    Tcl_DStringAppend(&newBuf, "tcl:file:", -1);
+    TclDStringAppendLiteral(&newBuf, "tcl:file:");
     for (i=0 ; unsafeInfo[i].cmdName != NULL ; i++) {
 	if (unsafeInfo[i].unsafe) {
 	    const char *oldName, *newName;
