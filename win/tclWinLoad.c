@@ -184,7 +184,7 @@ FindSymbol(
 	const char *sym2;
 
 	Tcl_DStringInit(&ds);
-	Tcl_DStringAppend(&ds, "_", 1);
+	TclDStringAppendLiteral(&ds, "_");
 	sym2 = Tcl_DStringAppend(&ds, symbol, -1);
 	proc = (Tcl_PackageInitProc *) GetProcAddress(hInstance, sym2);
 	Tcl_DStringFree(&ds);

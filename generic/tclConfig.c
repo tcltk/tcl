@@ -155,7 +155,7 @@ Tcl_RegisterConfig(
      */
 
     Tcl_DStringInit(&cmdName);
-    Tcl_DStringAppend(&cmdName, "::", -1);
+    TclDStringAppendLiteral(&cmdName, "::");
     Tcl_DStringAppend(&cmdName, pkgName, -1);
 
     /*
@@ -173,7 +173,7 @@ Tcl_RegisterConfig(
 	}
     }
 
-    Tcl_DStringAppend(&cmdName, "::pkgconfig", -1);
+    TclDStringAppendLiteral(&cmdName, "::pkgconfig");
 
     if (Tcl_CreateObjCommand(interp, Tcl_DStringValue(&cmdName),
 	    QueryConfigObjCmd, cdPtr, QueryConfigDelete) == NULL) {
