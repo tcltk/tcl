@@ -1561,8 +1561,7 @@ IssueSwitchJumpTable(
 	     */
 
 	    Tcl_DStringInit(&buffer);
-	    Tcl_DStringAppend(&buffer, bodyToken[i]->start,
-		    bodyToken[i]->size);
+	    TclDStringAppendToken(&buffer, bodyToken[i]);
 	    hPtr = Tcl_CreateHashEntry(&jtPtr->hashTable,
 		    Tcl_DStringValue(&buffer), &isNew);
 	    if (isNew) {

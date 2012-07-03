@@ -1974,7 +1974,7 @@ test oo-18.1 {OO: define command support} {
 } {1 foo {foo
     while executing
 "error foo"
-    (in definition script for object "oo::object" line 1)
+    (in definition script for class "::oo::object" line 1)
     invoked from within
 "oo::define oo::object {error foo}"}}
 test oo-18.2 {OO: define command support} {
@@ -1987,7 +1987,7 @@ test oo-18.3 {OO: define command support} {
 } {1 bar {bar
     while executing
 "error bar"
-    (in definition script for object "::foo" line 1)
+    (in definition script for class "::foo" line 1)
     invoked from within
 "oo::class create foo {error bar}"}}
 test oo-18.3a {OO: define command support} {
@@ -1997,7 +1997,7 @@ test oo-18.3a {OO: define command support} {
 } {1 bar {bar
     while executing
 "error bar"
-    (in definition script for object "::foo" line 2)
+    (in definition script for class "::foo" line 2)
     invoked from within
 "oo::class create foo {
     error bar
@@ -2015,7 +2015,7 @@ test oo-18.3b {OO: define command support} {
     ("eval" body line 1)
     invoked from within
 "eval eval error bar"
-    (in definition script for object "::foo" line 2)
+    (in definition script for class "::foo" line 2)
     invoked from within
 "oo::class create foo {
     eval eval error bar
@@ -2070,6 +2070,106 @@ test oo-18.5 {OO: more error traces from the guts} -setup {
     (class "::cls" method "eval" line 1)
     invoked from within
 "obj eval {error bar}"}}
+test oo-18.6 {class construction reference management and errors} -setup {
+    oo::class create super_abc
+} -body {
+    catch {
+oo::class create abc {
+    superclass super_abc
+    ::rename abc ::def
+    ::error foo
+}
+    } msg opt
+    dict get $opt -errorinfo
+} -cleanup {
+    super_abc destroy
+} -result {foo
+    while executing
+"::error foo"
+    (in definition script for class "::def" line 4)
+    invoked from within
+"oo::class create abc {
+    superclass super_abc
+    ::rename abc ::def
+    ::error foo
+}"}
+test oo-18.7 {OO: objdefine command support} -setup {
+    oo::object create ::inst
+} -body {
+    list [catch {oo::objdefine inst {rename ::inst ::INST;error foo}} msg] $msg $errorInfo
+} -cleanup {
+    catch {::inst destroy}
+    catch {::INST destroy}
+} -result {1 foo {foo
+    while executing
+"error foo"
+    (in definition script for object "::INST" line 1)
+    invoked from within
+"oo::objdefine inst {rename ::inst ::INST;error foo}"}}
+test oo-18.8 {OO: define/self command support} -setup {
+    oo::class create master
+    oo::class create ::foo {superclass master}
+} -body {
+    catch {oo::define foo {rename ::foo ::bar; self {error foobar}}} msg opt
+    dict get $opt -errorinfo
+} -cleanup {
+    master destroy
+} -result {foobar
+    while executing
+"error foobar"
+    (in definition script for class object "::bar" line 1)
+    invoked from within
+"self {error foobar}"
+    (in definition script for class "::bar" line 1)
+    invoked from within
+"oo::define foo {rename ::foo ::bar; self {error foobar}}"}
+test oo-18.9 {OO: define/self command support} -setup {
+    oo::class create master
+    set c [oo::class create now_this_is_a_very_very_long_class_name_indeed {
+        superclass master
+    }]
+} -body {
+    catch {oo::define $c {error err}} msg opt
+    dict get $opt -errorinfo
+} -cleanup {
+    master destroy
+} -result {err
+    while executing
+"error err"
+    (in definition script for class "::now_this_is_a_very_very_long..." line 1)
+    invoked from within
+"oo::define $c {error err}"}
+test oo-18.10 {OO: define/self command support} -setup {
+    oo::class create master
+    oo::class create ::foo {superclass master}
+} -body {
+    catch {oo::define foo {self {rename ::foo {}; error foobar}}} msg opt
+    dict get $opt -errorinfo
+} -cleanup {
+    master destroy
+} -result {foobar
+    while executing
+"error foobar"
+    (in definition script for class object "::foo" line 1)
+    invoked from within
+"self {rename ::foo {}; error foobar}"
+    (in definition script for class "::foo" line 1)
+    invoked from within
+"oo::define foo {self {rename ::foo {}; error foobar}}"}
+test oo-18.11 {OO: define/self command support} -setup {
+    oo::class create master
+    oo::class create ::foo {superclass master}
+} -body {
+    catch {oo::define foo {rename ::foo {}; self {error foobar}}} msg opt
+    dict get $opt -errorinfo
+} -cleanup {
+    master destroy
+} -result {this command cannot be called when the object has been deleted
+    while executing
+"self {error foobar}"
+    (in definition script for class "::foo" line 1)
+    invoked from within
+"oo::define foo {rename ::foo {}; self {error foobar}}"}
 
 test oo-19.1 {OO: varname method} -setup {
     oo::object create inst
@@ -3189,7 +3289,7 @@ test oo-33.2 {TIP 380: slots - defaulting} -setup {
 } -cleanup {
     rename $s {}
 } -result {{} {a b c destroy unknown}}
-test oo-32.3 {TIP 380: slots - defaulting} -setup {
+test oo-33.3 {TIP 380: slots - defaulting} -setup {
     set s [SampleSlot new]
 } -body {
     oo::objdefine $s forward --default-operation  my -set

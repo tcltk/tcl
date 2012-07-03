@@ -4431,14 +4431,12 @@ Tcl_Gets(
 				 * for managing the storage. */
 {
     Tcl_Obj *objPtr;
-    int charsStored, length;
-    const char *string;
+    int charsStored;
 
     TclNewObj(objPtr);
     charsStored = Tcl_GetsObj(chan, objPtr);
     if (charsStored > 0) {
-	string = TclGetStringFromObj(objPtr, &length);
-	Tcl_DStringAppend(lineRead, string, length);
+	TclDStringAppendObj(lineRead, objPtr);
     }
     TclDecrRefCount(objPtr);
     return charsStored;
@@ -7550,7 +7548,7 @@ Tcl_BadChannelOption(
 	Tcl_DStringInit(&ds);
 	Tcl_DStringAppend(&ds, genericopt, -1);
 	if (optionList && (*optionList)) {
-	    Tcl_DStringAppend(&ds, " ", 1);
+	    TclDStringAppendLiteral(&ds, " ");
 	    Tcl_DStringAppend(&ds, optionList, -1);
 	}
 	if (Tcl_SplitList(interp, Tcl_DStringValue(&ds),
@@ -8419,8 +8417,8 @@ UpdateInterest(
 	    mask &= ~TCL_EXCEPTION;
 
 	    if (!statePtr->timer) {
-		statePtr->timer = Tcl_CreateTimerHandler(0, ChannelTimerProc,
-			chanPtr);
+		statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+                        ChannelTimerProc, chanPtr);
 	    }
 	}
     }
@@ -8461,7 +8459,8 @@ ChannelTimerProc(
 	 * before UpdateInterest gets called by Tcl_NotifyChannel.
 	 */
 
-	statePtr->timer = Tcl_CreateTimerHandler(0, ChannelTimerProc,chanPtr);
+	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+                ChannelTimerProc,chanPtr);
 
 #ifdef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
 	/*
@@ -8760,7 +8759,7 @@ CreateScriptRecord(
 
     /*
      * Initialize the structure before calling Tcl_CreateChannelHandler,
-     * because a reflected channel caling 'chan postevent' aka
+     * because a reflected channel calling 'chan postevent' aka
      * 'Tcl_NotifyChannel' in its 'watch'Proc will invoke
      * 'TclChannelEventScriptInvoker' immediately, and we do not wish it to
      * see uninitialized memory and crash. See [Bug 2918110].

@@ -1280,9 +1280,14 @@ CreateSocket(
     }
 
     if (interp != NULL) {
-	Tcl_AppendResult(interp, "couldn't open socket: ",
-		Tcl_PosixError(interp), NULL);
+        Tcl_AppendResult(interp, "couldn't open socket: ", NULL);
+        if (errorMsg == NULL) {
+            Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
+        } else {
+            Tcl_AppendResult(interp, errorMsg, NULL);
+        }
     }
+
     if (sock != INVALID_SOCKET) {
 	closesocket(sock);
     }
@@ -2585,11 +2590,11 @@ InitializeHostName(
 	    Tcl_DStringInit(&inDs);
 	    Tcl_DStringSetLength(&inDs, 255);
 	    if (gethostname(Tcl_DStringValue(&inDs),
-			    Tcl_DStringLength(&inDs)) == 0) {
-		Tcl_DStringSetLength(&ds, 0);
+		    Tcl_DStringLength(&inDs)) == 0) {
+		TclDStringClear(&ds);
 	    } else {
-		Tcl_ExternalToUtfDString(NULL,
-			Tcl_DStringValue(&inDs), -1, &ds);
+		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), -1,
+			&ds);
 	    }
 	    Tcl_DStringFree(&inDs);
 	}
@@ -2663,9 +2668,9 @@ TclWinSetSockOpt(
     return setsockopt(s, level, optname, optval, optlen);
 }
 
-u_short
+unsigned short
 TclWinNToHS(
-    u_short netshort)
+    unsigned short netshort)
 {
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -2674,10 +2679,27 @@ TclWinNToHS(
      */
 
     if (!SocketsEnabled()) {
-	return (u_short) -1;
+	return (unsigned short) -1;
     }
 
     return ntohs(netshort);
+}
+
+char *
+TclpInetNtoa(
+    struct in_addr addr)
+{
+    /*
+     * Check that WinSock is initialized; do not call it if not, to prevent
+     * system crashes. This can happen at exit time if the exit handler for
+     * WinSock ran before other exit handlers that want to use sockets.
+     */
+
+    if (!SocketsEnabled()) {
+        return NULL;
+    }
+
+    return inet_ntoa(addr);
 }
 
 struct servent *

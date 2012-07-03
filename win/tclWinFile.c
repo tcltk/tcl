@@ -819,6 +819,16 @@ tclWinDebugPanic(
 	MessageBoxW(NULL, msgString, L"Fatal Error",
 		MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
     }
+#if defined(__GNUC__)
+    __builtin_trap();
+#elif defined(_WIN64)
+    __debugbreak();
+#elif defined(_MSC_VER)
+    _asm {int 3}
+#else
+    DebugBreak();
+#endif
+    abort();
 }
 
 /*
@@ -986,7 +996,7 @@ TclpMatchInDirectory(
 
 	lastChar = dirName[dirLength -1];
 	if ((lastChar != '\\') && (lastChar != '/') && (lastChar != ':')) {
-	    Tcl_DStringAppend(&dsOrig, "/", 1);
+	    TclDStringAppendLiteral(&dsOrig, "/");
 	    dirLength++;
 	}
 	dirName = Tcl_DStringValue(&dsOrig);
@@ -1006,7 +1016,7 @@ TclpMatchInDirectory(
 
 	    dirName = Tcl_DStringAppend(&dsOrig, pattern, -1);
 	} else {
-	    dirName = Tcl_DStringAppend(&dsOrig, "*.*", 3);
+	    dirName = TclDStringAppendLiteral(&dsOrig, "*.*");
 	}
 
 	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
@@ -1457,7 +1467,7 @@ TclpGetUserHome(
 
 		GetWindowsDirectoryW(buf, MAX_PATH);
 		Tcl_UniCharToUtfDString(buf, 2, bufferPtr);
-		Tcl_DStringAppend(bufferPtr, "/users/default", -1);
+		TclDStringAppendLiteral(bufferPtr, "/users/default");
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
 	    NetApiBufferFree((void *) uiPtr);
@@ -2066,7 +2076,7 @@ NativeDev(
 	     * won't work.
 	     */
 
-	    fullPath = Tcl_DStringAppend(&ds, "\\", 1);
+	    fullPath = TclDStringAppendLiteral(&ds, "\\");
 	    p = fullPath + Tcl_DStringLength(&ds);
 	} else {
 	    p++;
@@ -2526,7 +2536,7 @@ TclpObjNormalizePath(
 			     * string.
 			     */
 
-			    Tcl_DStringAppend(&dsNorm,"/", 1);
+			    TclDStringAppendLiteral(&dsNorm, "/");
 			} else {
 			    char *nativeName;
 
@@ -2536,8 +2546,8 @@ TclpObjNormalizePath(
 				nativeName = fData.cAlternateFileName;
 			    }
 			    FindClose(handle);
-			    Tcl_DStringAppend(&dsNorm,"/", 1);
-			    Tcl_DStringAppend(&dsNorm,nativeName,-1);
+			    TclDStringAppendLiteral(&dsNorm, "/");
+			    Tcl_DStringAppend(&dsNorm, nativeName, -1);
 			}
 		    }
 		}

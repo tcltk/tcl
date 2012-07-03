@@ -43,6 +43,11 @@ if test -r "$cache_file" -a -f "$cache_file"; then
 fi
 
 #------------------------------------------------------------------------
+# Empty slate for bundled packages, to avoid stale configuration
+#------------------------------------------------------------------------
+rm -Rf pkgs
+
+#------------------------------------------------------------------------
 # Handle the --prefix=... option
 #------------------------------------------------------------------------
 
@@ -155,7 +160,6 @@ AS_IF([test $zlib_ok = yes], [
     zlib_ok=no
   ])])
 AS_IF([test $zlib_ok = no], [
-  AC_SUBST(ZLIB_DIR,[\${COMPAT_DIR}/zlib])
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
   AC_SUBST(ZLIB_SRCS,[\${ZLIB_SRCS}])
   AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
@@ -298,8 +302,12 @@ SC_TIME_HANDLER
 #	lack blkcnt_t.
 #--------------------------------------------------------------------
 
-if test "$ac_cv_cygwin" != "yes"; then
-AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
+if test "$ac_cv_cygwin" = "yes"; then
+    if test "x${SHARED_BUILD}" = "x1"; then
+	TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS} \${COMPAT_DIR}/zlib/win32/zdll.lib"
+    fi
+else
+    AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
 fi
 AC_CHECK_TYPES([blkcnt_t])
 AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS, 1, [Do we have fstatfs()?])])
@@ -466,16 +474,13 @@ fi
 #	The code below deals with several issues related to gettimeofday:
 #	1. Some systems don't provide a gettimeofday function at all
 #	   (set NO_GETTOD if this is the case).
-#	2. SGI systems don't use the BSD form of the gettimeofday function,
-#	   but they have a BSDgettimeofday function that can be used instead.
-#	3. See if gettimeofday is declared in the <sys/time.h> header file.
+#	2. See if gettimeofday is declared in the <sys/time.h> header file.
 #	   if not, set the GETTOD_NOT_DECLARED flag so that tclPort.h can
 #	   declare it.
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNC(BSDgettimeofday,
-    [AC_DEFINE(HAVE_BSDGETTIMEOFDAY, 1, [Do we have BSDgettimeofday()?])], [
-    AC_CHECK_FUNC(gettimeofday, , [AC_DEFINE(NO_GETTOD, 1, [Do we have gettimeofday()?])])
+AC_CHECK_FUNC(gettimeofday,[],[
+    AC_DEFINE(NO_GETTOD, 1, [Do we have gettimeofday()?])
 ])
 AC_CACHE_CHECK([for gettimeofday declaration], tcl_cv_grep_gettimeofday, [
     AC_EGREP_HEADER(gettimeofday, sys/time.h,

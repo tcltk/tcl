@@ -81,8 +81,6 @@ TCL_DECLARE_MUTEX(cancelLock)
  * are used to save the evaluation state between NR calls to each coro.
  */
 
-static const CorContext NULL_CONTEXT = {NULL, NULL, NULL, NULL};
-
 #define SAVE_CONTEXT(context)				\
     (context).framePtr = iPtr->framePtr;		\
     (context).varFramePtr = iPtr->varFramePtr;		\
@@ -136,6 +134,8 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 static Tcl_NRPostProc	NRCoroutineActivateCallback;
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
+static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
+
 static Tcl_NRPostProc	NRRunObjProc;
 static Tcl_NRPostProc	NRTailcallEval;
 static Tcl_ObjCmdProc	OldMathFuncProc;
@@ -1557,12 +1557,16 @@ DeleteInterpProc(
 	    hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	CmdFrame *cfPtr = Tcl_GetHashValue(hPtr);
+	Proc *procPtr = (Proc *) Tcl_GetHashKey(iPtr->linePBodyPtr, hPtr);
 
-	if (cfPtr->type == TCL_LOCATION_SOURCE) {
-	    Tcl_DecrRefCount(cfPtr->data.eval.path);
+	procPtr->iPtr = NULL;
+	if (cfPtr) {
+	    if (cfPtr->type == TCL_LOCATION_SOURCE) {
+		Tcl_DecrRefCount(cfPtr->data.eval.path);
+	    }
+	    ckfree(cfPtr->line);
+	    ckfree(cfPtr);
 	}
-	ckfree(cfPtr->line);
-	ckfree(cfPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(iPtr->linePBodyPtr);
@@ -2608,7 +2612,7 @@ TclRenameCommand(
     Tcl_DStringInit(&newFullName);
     Tcl_DStringAppend(&newFullName, newNsPtr->fullName, -1);
     if (newNsPtr != iPtr->globalNsPtr) {
-	Tcl_DStringAppend(&newFullName, "::", 2);
+	TclDStringAppendLiteral(&newFullName, "::");
     }
     Tcl_DStringAppend(&newFullName, newTail, -1);
     cmdPtr->refCount++;
@@ -3466,7 +3470,7 @@ Tcl_CreateMathFunc(
     data->clientData = clientData;
 
     Tcl_DStringInit(&bigName);
-    Tcl_DStringAppend(&bigName, "::tcl::mathfunc::", -1);
+    TclDStringAppendLiteral(&bigName, "::tcl::mathfunc::");
     Tcl_DStringAppend(&bigName, name, -1);
 
     Tcl_CreateObjCommand(interp, Tcl_DStringValue(&bigName),
@@ -4361,7 +4365,7 @@ TclNRRunCallbacks(
     return result;
 }
 
-int
+static int
 NRCommand(
     ClientData data[],
     Tcl_Interp *interp,
@@ -8571,7 +8575,7 @@ RewindCoroutine(
     corPtr->eePtr->rewind = 1;
     TclNRAddCallback(interp, RewindCoroutineCallback, state,
 	    NULL, NULL, NULL);
-    return NRInterpCoroutine(corPtr, interp, 0, NULL);
+    return TclNRInterpCoroutine(corPtr, interp, 0, NULL);
 }
 
 static void
@@ -8798,7 +8802,7 @@ NRCoroInjectObjCmd(
     }
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
-    if ((!cmdPtr) || (cmdPtr->nreProc != NRInterpCoroutine)) {
+    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
         Tcl_AppendResult(interp, "can only inject a command into a coroutine",
                 NULL);
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
@@ -8827,7 +8831,7 @@ NRCoroInjectObjCmd(
 }
 
 int
-NRInterpCoroutine(
+TclNRInterpCoroutine(
     ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -8949,12 +8953,12 @@ TclNRCoroutineObjCmd(
     Tcl_DStringInit(&ds);
     if (nsPtr != iPtr->globalNsPtr) {
 	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
-	Tcl_DStringAppend(&ds, "::", 2);
+	TclDStringAppendLiteral(&ds, "::");
     }
     Tcl_DStringAppend(&ds, procName, -1);
 
     cmdPtr = (Command *) Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
-	    /*objProc*/ NULL, NRInterpCoroutine, corPtr, DeleteCoroutine);
+	    /*objProc*/ NULL, TclNRInterpCoroutine, corPtr, DeleteCoroutine);
     Tcl_DStringFree(&ds);
 
     corPtr->cmdPtr = cmdPtr;
