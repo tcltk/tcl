@@ -573,9 +573,8 @@ Tcl_ZlibStreamInit(
 	    goto error;
 	}
 	Tcl_DStringInit(&cmdname);
-	Tcl_DStringAppend(&cmdname, "::tcl::zlib::streamcmd_", -1);
-	Tcl_DStringAppend(&cmdname, Tcl_GetString(Tcl_GetObjResult(interp)),
-		-1);
+	TclDStringAppendLiteral(&cmdname, "::tcl::zlib::streamcmd_");
+	TclDStringAppendObj(&cmdname, Tcl_GetObjResult(interp));
 	if (Tcl_GetCommandInfo(interp, Tcl_DStringValue(&cmdname),
 		&cmdinfo) == 1) {
 	    Tcl_SetResult(interp,
@@ -2695,10 +2694,7 @@ ZlibTransformGetOption(
 	    Tcl_DStringAppendElement(dsPtr, Tcl_GetString(tmpObj));
 	    Tcl_DecrRefCount(tmpObj);
 	} else {
-	    int len;
-	    const char *str = Tcl_GetStringFromObj(tmpObj, &len);
-
-	    Tcl_DStringAppend(dsPtr, str, len);
+	    TclDStringAppendObj(dsPtr, tmpObj);
 	    Tcl_DecrRefCount(tmpObj);
 	    return TCL_OK;
 	}
@@ -3022,7 +3018,7 @@ ResultCopy(
 	 */
 
 	memcpy(buf, Tcl_DStringValue(&cd->decompressed), have);
-	Tcl_DStringSetLength(&cd->decompressed, 0);
+	TclDStringClear(&cd->decompressed);
 	return have;
     }
 }
