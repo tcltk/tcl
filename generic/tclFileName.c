@@ -1575,8 +1575,7 @@ Tcl_GlobObjCmd(
 	    Tcl_DStringInit(&prefix);
 	}
 	for (i = 0; i < objc; i++) {
-	    string = Tcl_GetStringFromObj(objv[i], &length);
-	    Tcl_DStringAppend(&prefix, string, length);
+	    TclDStringAppendObj(&prefix, objv[i]);
 	    if (i != objc -1) {
 		Tcl_DStringAppend(&prefix, separators, 1);
 	    }
