@@ -629,24 +629,26 @@ EncodingDirsObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    Tcl_Obj *dirListObj;
+
     if (objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?dirList?");
+	Tcl_WrongNumArgs(interp, 2, objv, "?dirList?");
 	return TCL_ERROR;
     }
-    objc -= 1;
-    objv += 1;
-    if (objc == 1) {
+    if (objc == 2) {
 	Tcl_SetObjResult(interp, Tcl_GetEncodingSearchPath());
 	return TCL_OK;
     }
-    if (Tcl_SetEncodingSearchPath(objv[1]) == TCL_ERROR) {
+
+    dirListObj = objv[2];
+    if (Tcl_SetEncodingSearchPath(dirListObj) == TCL_ERROR) {
 	Tcl_AppendResult(interp, "expected directory list but got \"",
-		TclGetString(objv[1]), "\"", NULL);
+		TclGetString(dirListObj), "\"", NULL);
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
 		NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, objv[1]);
+    Tcl_SetObjResult(interp, dirListObj);
     return TCL_OK;
 }
 
@@ -1043,9 +1045,9 @@ TclMakeFileCommandSafe(
     Tcl_DString oldBuf, newBuf;
 
     Tcl_DStringInit(&oldBuf);
-    Tcl_DStringAppend(&oldBuf, "::tcl::file::", -1);
+    TclDStringAppendLiteral(&oldBuf, "::tcl::file::");
     Tcl_DStringInit(&newBuf);
-    Tcl_DStringAppend(&newBuf, "tcl:file:", -1);
+    TclDStringAppendLiteral(&newBuf, "tcl:file:");
     for (i=0 ; unsafeInfo[i].cmdName != NULL ; i++) {
 	if (unsafeInfo[i].unsafe) {
 	    const char *oldName, *newName;
