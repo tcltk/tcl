@@ -1316,16 +1316,15 @@ SetValue(
 
 	Tcl_DStringInit(&data);
 	for (i = 0; i < objc; i++) {
-	    TclDStringAppendObj(&data, objv[i]);
+	    const char *bytes = Tcl_GetStringFromObj(objv[i], &length);
+
+	    Tcl_DStringAppend(&data, bytes, length);
 
 	    /*
-	     * Add a null character to separate this value from the next. We
-	     * accomplish this by growing the string by one byte. Since the
-	     * DString always tacks on an extra null byte, the new byte will
-	     * already be set to null.
+	     * Add a null character to separate this value from the next.
 	     */
 
-	    Tcl_DStringSetLength(&data, Tcl_DStringLength(&data)+1);
+	    Tcl_DStringAppend(&data, "", 1);	/* NUL-terminated string */
 	}
 
 	Tcl_WinUtfToTChar(Tcl_DStringValue(&data), Tcl_DStringLength(&data)+1,
