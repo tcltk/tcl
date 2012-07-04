@@ -889,8 +889,7 @@ GetValueNames(
 
     resultPtr = Tcl_NewObj();
     Tcl_DStringInit(&buffer);
-    Tcl_DStringSetLength(&buffer,
-	    (int) (MAX_KEY_LENGTH*sizeof(TCHAR)));
+    Tcl_DStringSetLength(&buffer, (int) (MAX_KEY_LENGTH * sizeof(TCHAR)));
     index = 0;
     result = TCL_OK;
 
@@ -1192,8 +1191,7 @@ RecursiveDeleteKey(
     }
 
     Tcl_DStringInit(&subkey);
-    Tcl_DStringSetLength(&subkey,
-	    (int) (MAX_KEY_LENGTH * sizeof(TCHAR)));
+    Tcl_DStringSetLength(&subkey, (int) (MAX_KEY_LENGTH * sizeof(TCHAR)));
 
     mode = saveMode;
     while (result == ERROR_SUCCESS) {
@@ -1318,7 +1316,7 @@ SetValue(
 
 	Tcl_DStringInit(&data);
 	for (i = 0; i < objc; i++) {
-	    Tcl_DStringAppend(&data, Tcl_GetString(objv[i]), -1);
+	    TclDStringAppendObj(&data, objv[i]);
 
 	    /*
 	     * Add a null character to separate this value from the next. We
