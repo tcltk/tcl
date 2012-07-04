@@ -1425,9 +1425,9 @@ TclMakeEnsemble(
 
     Tcl_DStringInit(&buf);
     Tcl_DStringInit(&hiddenBuf);
-    Tcl_DStringAppend(&hiddenBuf, "tcl:", -1);
+    TclDStringAppendLiteral(&hiddenBuf, "tcl:");
     Tcl_DStringAppend(&hiddenBuf, name, -1);
-    Tcl_DStringAppend(&hiddenBuf, ":", -1);
+    TclDStringAppendLiteral(&hiddenBuf, ":");
     hiddenLen = Tcl_DStringLength(&hiddenBuf);
     if (name[0] == ':' && name[1] == ':') {
 	/*
@@ -1443,14 +1443,14 @@ TclMakeEnsemble(
 	 * multi-word list differently to a single word.
 	 */
 
-	Tcl_DStringAppend(&buf, "::tcl", -1);
+	TclDStringAppendLiteral(&buf, "::tcl");
 
 	if (Tcl_SplitList(NULL, name, &nameCount, &nameParts) != TCL_OK) {
 	    Tcl_Panic("invalid ensemble name '%s'", name);
 	}
 
 	for (i = 0; i < nameCount; ++i) {
-	    Tcl_DStringAppend(&buf, "::", 2);
+	    TclDStringAppendLiteral(&buf, "::");
 	    Tcl_DStringAppend(&buf, nameParts[i], -1);
 	}
     }
@@ -1485,7 +1485,7 @@ TclMakeEnsemble(
 	Tcl_Obj *mapDict, *fromObj, *toObj;
 	Command *cmdPtr;
 
-	Tcl_DStringAppend(&buf, "::", 2);
+	TclDStringAppendLiteral(&buf, "::");
 	TclNewObj(mapDict);
 	for (i=0 ; map[i].name != NULL ; i++) {
 	    fromObj = Tcl_NewStringObj(map[i].name, -1);
@@ -1615,10 +1615,10 @@ NsEnsembleImplementationCmdNR(
 	    Tcl_Panic("List of ensemble parameters is not a list");
 	}
 	for (; len>0; len--,elemPtrs++) {
-	    Tcl_DStringAppend(&buf, Tcl_GetString(*elemPtrs), -1);
-	    Tcl_DStringAppend(&buf, " ", -1);
+	    TclDStringAppendObj(&buf, *elemPtrs);
+	    TclDStringAppendLiteral(&buf, " ");
 	}
-	Tcl_DStringAppend(&buf, "subcommand ?arg ...?", -1);
+	TclDStringAppendLiteral(&buf, "subcommand ?arg ...?");
 	Tcl_WrongNumArgs(interp, 1, objv, Tcl_DStringValue(&buf));
 	Tcl_DStringFree(&buf);
 

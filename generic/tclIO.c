@@ -4431,14 +4431,12 @@ Tcl_Gets(
 				 * for managing the storage. */
 {
     Tcl_Obj *objPtr;
-    int charsStored, length;
-    const char *string;
+    int charsStored;
 
     TclNewObj(objPtr);
     charsStored = Tcl_GetsObj(chan, objPtr);
     if (charsStored > 0) {
-	string = TclGetStringFromObj(objPtr, &length);
-	Tcl_DStringAppend(lineRead, string, length);
+	TclDStringAppendObj(lineRead, objPtr);
     }
     TclDecrRefCount(objPtr);
     return charsStored;
@@ -7550,7 +7548,7 @@ Tcl_BadChannelOption(
 	Tcl_DStringInit(&ds);
 	Tcl_DStringAppend(&ds, genericopt, -1);
 	if (optionList && (*optionList)) {
-	    Tcl_DStringAppend(&ds, " ", 1);
+	    TclDStringAppendLiteral(&ds, " ");
 	    Tcl_DStringAppend(&ds, optionList, -1);
 	}
 	if (Tcl_SplitList(interp, Tcl_DStringValue(&ds),
