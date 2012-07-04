@@ -198,9 +198,9 @@ Tcl_LoadObjCmd(
 	if (packageName == NULL) {
 	    namesMatch = 0;
 	} else {
-	    Tcl_DStringSetLength(&pkgName, 0);
+	    TclDStringClear(&pkgName);
 	    Tcl_DStringAppend(&pkgName, packageName, -1);
-	    Tcl_DStringSetLength(&tmp, 0);
+	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
 	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
 	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
@@ -211,7 +211,7 @@ Tcl_LoadObjCmd(
 		namesMatch = 0;
 	    }
 	}
-	Tcl_DStringSetLength(&pkgName, 0);
+	TclDStringClear(&pkgName);
 
 	filesMatch = (strcmp(pkgPtr->fileName, fullFileName) == 0);
 	if (filesMatch && (namesMatch || (packageName == NULL))) {
@@ -329,7 +329,7 @@ Tcl_LoadObjCmd(
 		    code = TCL_ERROR;
 		    goto done;
 		}
-		Tcl_DStringAppend(&pkgName, pkgGuess, (p - pkgGuess));
+		Tcl_DStringAppend(&pkgName, pkgGuess, p - pkgGuess);
 		Tcl_DecrRefCount(splitPtr);
 	    }
 	}
@@ -348,14 +348,14 @@ Tcl_LoadObjCmd(
 	 * package name.
 	 */
 
-	Tcl_DStringAppend(&initName, Tcl_DStringValue(&pkgName), -1);
-	Tcl_DStringAppend(&initName, "_Init", 5);
-	Tcl_DStringAppend(&safeInitName, Tcl_DStringValue(&pkgName), -1);
-	Tcl_DStringAppend(&safeInitName, "_SafeInit", 9);
-	Tcl_DStringAppend(&unloadName, Tcl_DStringValue(&pkgName), -1);
-	Tcl_DStringAppend(&unloadName, "_Unload", 7);
-	Tcl_DStringAppend(&safeUnloadName, Tcl_DStringValue(&pkgName), -1);
-	Tcl_DStringAppend(&safeUnloadName, "_SafeUnload", 11);
+	TclDStringAppendDString(&initName, &pkgName);
+	TclDStringAppendLiteral(&initName, "_Init");
+	TclDStringAppendDString(&safeInitName, &pkgName);
+	TclDStringAppendLiteral(&safeInitName, "_SafeInit");
+	TclDStringAppendDString(&unloadName, &pkgName);
+	TclDStringAppendLiteral(&unloadName, "_Unload");
+	TclDStringAppendDString(&safeUnloadName, &pkgName);
+	TclDStringAppendLiteral(&safeUnloadName, "_SafeUnload");
 
 	/*
 	 * Call platform-specific code to load the package and find the two
@@ -623,9 +623,9 @@ Tcl_UnloadObjCmd(
 	if (packageName == NULL) {
 	    namesMatch = 0;
 	} else {
-	    Tcl_DStringSetLength(&pkgName, 0);
+	    TclDStringClear(&pkgName);
 	    Tcl_DStringAppend(&pkgName, packageName, -1);
-	    Tcl_DStringSetLength(&tmp, 0);
+	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
 	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
 	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
@@ -636,7 +636,7 @@ Tcl_UnloadObjCmd(
 		namesMatch = 0;
 	    }
 	}
-	Tcl_DStringSetLength(&pkgName, 0);
+	TclDStringClear(&pkgName);
 
 	filesMatch = (strcmp(pkgPtr->fileName, fullFileName) == 0);
 	if (filesMatch && (namesMatch || (packageName == NULL))) {

@@ -1117,12 +1117,7 @@ Tcl_OpenTcpClient(
             freeaddrinfo(addrlist);
         }
         if (interp != NULL) {
-            Tcl_AppendResult(interp, "couldn't open socket: ", NULL);
-            if (errorMsg == NULL) {
-                Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
-            } else {
-                Tcl_AppendResult(interp, errorMsg, NULL);
-            }
+            Tcl_AppendResult(interp, "couldn't open socket: ", errorMsg, NULL);
         }
         return NULL;
     }
