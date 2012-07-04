@@ -146,7 +146,7 @@ FindSymbol(
     if (shl_findsym(&handle, symbol, (short) TYPE_PROCEDURE,
 	    (void *) &proc) != 0) {
 	Tcl_DStringInit(&newName);
-	Tcl_DStringAppend(&newName, "_", 1);
+	TclDStringAppendLiteral(&newName, "_");
 	Tcl_DStringAppend(&newName, symbol, -1);
 	if (shl_findsym(&handle, Tcl_DStringValue(&newName),
 		(short) TYPE_PROCEDURE, (void *) &proc) != 0) {
@@ -156,8 +156,8 @@ FindSymbol(
     }
     if (proc == NULL && interp != NULL) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "cannot find symbol\"", symbol, 
-			 "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_AppendResult(interp, "cannot find symbol\"", symbol, "\": ",
+		Tcl_PosixError(interp), NULL);
     }
     return proc;
 }

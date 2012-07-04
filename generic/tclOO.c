@@ -356,14 +356,14 @@ InitFoundation(
 
     Tcl_DStringInit(&buffer);
     for (i=0 ; defineCmds[i].name ; i++) {
-	Tcl_DStringAppend(&buffer, "::oo::define::", 14);
+	TclDStringAppendLiteral(&buffer, "::oo::define::");
 	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
     for (i=0 ; objdefCmds[i].name ; i++) {
-	Tcl_DStringAppend(&buffer, "::oo::objdefine::", 17);
+	TclDStringAppendLiteral(&buffer, "::oo::objdefine::");
 	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
@@ -657,7 +657,7 @@ AllocObject(
 	Tcl_DStringInit(&buffer);
 	Tcl_DStringAppend(&buffer,
 		Tcl_GetCurrentNamespace(interp)->fullName, -1);
-	Tcl_DStringAppend(&buffer, "::", 2);
+	TclDStringAppendLiteral(&buffer, "::");
 	Tcl_DStringAppend(&buffer, nameStr, -1);
 	oPtr->command = Tcl_CreateObjCommand(interp,
 		Tcl_DStringValue(&buffer), PublicObjectCmd, oPtr, NULL);
