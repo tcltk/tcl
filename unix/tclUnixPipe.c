@@ -211,7 +211,7 @@ TclpCreateTempFile(
 
     if (contents != NULL) {
 	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
-	if (write(fd, native, strlen(native)) == -1) {
+	if (write(fd, native, Tcl_DStringLength(&dstring)) == -1) {
 	    close(fd);
 	    Tcl_DStringFree(&dstring);
 	    return NULL;
