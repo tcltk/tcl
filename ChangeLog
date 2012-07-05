@@ -1,3 +1,8 @@
+2012-07-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclUnixPipe.c:	[Bug 1189293] Make "<<" binary safe.
+	* win/tclWinPipe.c:
+
 2012-06-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/msgcat/msgcat.tcl:   Add tn, ro_MO and ru_MO to msgcat. Make it
@@ -56,9 +61,9 @@
 
 2012-05-21  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclFileName.c:	When using Tcl_SetObjLength() calls to grow
-	* generic/tclIOUtil.c:	and shrink the objPtr->bytes buffer, care must be
-	taken that the value cannot possibly become pure Unicode.  Calling
+	* generic/tclFileName.c: When using Tcl_SetObjLength() calls to grow
+	* generic/tclIOUtil.c:	 and shrink the objPtr->bytes buffer, care must
+	be taken that the value cannot possibly become pure Unicode.  Calling
 	Tcl_AppendToObj() has the possibility of making such a conversion.  Bug
 	found while valgrinding the trunk.
 
