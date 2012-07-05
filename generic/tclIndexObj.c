@@ -202,6 +202,10 @@ Tcl_GetIndexFromObjStruct(
 	    entryPtr = NEXT_ENTRY(entryPtr, offset), idx++) {
 	for (p1 = key, p2 = *entryPtr; *p1 == *p2; p1++, p2++) {
 	    if (*p1 == '\0') {
+		if (p1 == key) {
+		    /* empty keys never match */
+		    continue;
+		}
 		index = idx;
 		goto done;
 	    }
@@ -256,22 +260,27 @@ Tcl_GetIndexFromObjStruct(
 	 * Produce a fancy error message.
 	 */
 
-	int count;
+	int count = 0;
 
 	TclNewObj(resultPtr);
 	Tcl_SetObjResult(interp, resultPtr);
+	entryPtr = tablePtr;
+	while ((*entryPtr != NULL) && !**entryPtr) {
+	    entryPtr = NEXT_ENTRY(entryPtr, offset);
+	}
 	Tcl_AppendStringsToObj(resultPtr, (numAbbrev > 1) &&
 		!(flags & TCL_EXACT) ? "ambiguous " : "bad ", msg, " \"", key,
-		"\": must be ", STRING_AT(tablePtr, offset, 0), NULL);
-	for (entryPtr = NEXT_ENTRY(tablePtr, offset), count = 0;
-		*entryPtr != NULL;
-		entryPtr = NEXT_ENTRY(entryPtr, offset), count++) {
+		"\": must be ", *entryPtr, NULL);
+	entryPtr = NEXT_ENTRY(entryPtr, offset);
+	while (*entryPtr != NULL) {
 	    if (*NEXT_ENTRY(entryPtr, offset) == NULL) {
 		Tcl_AppendStringsToObj(resultPtr, ((count > 0) ? "," : ""),
 			" or ", *entryPtr, NULL);
-	    } else {
+	    } else if (**entryPtr) {
 		Tcl_AppendStringsToObj(resultPtr, ", ", *entryPtr, NULL);
+		count++;
 	    }
+	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	}
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, NULL);
     }
