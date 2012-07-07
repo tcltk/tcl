@@ -24,6 +24,7 @@ namespace eval http {
 	    -proxyport {}
 	    -proxyfilter http::ProxyRequired
 	    -urlencoding utf-8
+	    -cookiejar {}
 	}
 	# We need a useragent string of this style or various servers will refuse to
 	# send us compressed content even when we ask for it. This follows the
@@ -85,6 +86,9 @@ namespace eval http {
     if {![info exists defaultKeepalive]} {
 	set defaultKeepalive 0
     }
+
+    # Regular expression used to parse cookies
+    variable CookieRE {\s*([^][\u0000- ()<>@,;:\\""/?={}\u0100-\uffff]+)=([!\u0023-+\u002D-:<-\u005B\u005D-~]+)(?:\s*;\s*([^\u0000]+))?}
 
     namespace export geturl config reset wait formatQuery register unregister
     # Useful, but not exported: data size status code
@@ -498,8 +502,12 @@ proc http::geturl {url args} {
 	    }
 	    return -code error "Illegal characters in URL path"
 	}
+	if {![regexp {^[^?#]+} $srvurl state(path)]} {
+	    set state(path) /
+	}
     } else {
 	set srvurl /
+	set state(path) /
     }
     if {$proto eq ""} {
 	set proto http
@@ -717,6 +725,19 @@ proc http::geturl {url args} {
 	    set state(querylength) \
 		    [expr {[tell $state(-querychannel)] - $start}]
 	    seek $state(-querychannel) $start
+	}
+
+	if {$http(-cookiejar) ne ""} {
+	    set cookies ""
+	    set separator ""
+	    foreach {key value} [{*}$http(-cookiejar) \
+		    getCookies $proto $host $port $state(path)] {
+		append cookies $separator $key = $value
+		set separator "; "
+	    }
+	    if {$cookies ne ""} {
+		puts $sock "Cookie: $cookies"
+	    }
 	}
 
 	# Flush the request header and set up the fileevent that will either
@@ -955,6 +976,7 @@ proc http::Write {token} {
 #	Read the socket and handle callbacks.
 
 proc http::Event {sock token} {
+    variable http
     variable $token
     upvar 0 $token state
 
@@ -1058,6 +1080,11 @@ proc http::Event {sock token} {
 			set state(connection) \
 			    [string trim [string tolower $value]]
 		    }
+		    set-cookie {
+			if {$http(-cookiejar) ne ""} {
+			    ParseCookie $token $value
+			}
+		    }
 		}
 		lappend state(meta) $key [string trim $value]
 	    }
@@ -1145,6 +1172,72 @@ proc http::Event {sock token} {
 	}
 	return
     }
+}
+
+proc http::ParseCookie {token value} {
+    variable http
+    variable CookieRE
+    variable $token
+    upvar 0 $token state
+
+    if {![regexp $CookieRE $value -> name val opts]} {
+	# Bad cookie! No biscuit!
+	return
+    }
+
+    # Convert the options into a list before feeding into the cookie store;
+    # ugly, but quite easy.
+    set realopts {persistent 0 hostonly 1}
+    foreach opt [split [regsub -all {;\s+} [string trimright $opts] {\u0000}] \u0000] {
+	switch -glob -- $opt {
+	    Expires=* {
+		set opt [string range $opt 8 end]
+		if {[catch {
+		    #Sun, 06 Nov 1994 08:49:37 GMT
+		    dict set realopts expires \
+			[clock scan $opt -format "%a, %d %b %Y %T %Z"]
+		    dict set realopts persistent 1
+		}] && [catch {
+		    #Sunday, 06-Nov-94 08:49:37 GMT
+		    dict set realopts expires \
+			[clock scan $opt -format "%A, %d-%b-%y %T %Z"]
+		    dict set realopts persistent 1
+		}]} {catch {
+		    #Sun Nov  6 08:49:37 1994
+		    dict set realopts expires \
+			[clock scan $opt -gmt 1 -format "%a %b %d %T %Y"]
+		    dict set realopts persistent 1
+		}}
+	    }
+	    Max-Age=* {
+		# Normalize
+		set opt [string range $opt 8 end]
+		if {[string is integer -strict $opt]} {
+		    dict set realopts expires [expr {[clock seconds] + $opt}]
+		    dict set realopts persistent 1
+		}
+	    }
+	    Domain=* {
+		set opt [string range $opt 7 end]
+		set opt [string trimleft $opt "."]
+		# TODO - Domain safety check!
+		if {$opt ne ""} {
+		    dict set realopts domain $opt
+		}
+	    }
+	    Path=* {
+		set opt [string range $opt 5 end]
+		if {![string match /* $opt]} {
+		    set opt $state(path)
+		}
+		dict set realopts path $opt
+	    }
+	    Secure - HttpOnly {
+		dict set realopts [string tolower $opt] 1
+	    }
+	}
+    }
+    {*}$http(-cookiejar) storeCookie $token $name $val $realopts
 }
 
 # http::getTextLine --

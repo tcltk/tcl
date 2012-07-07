@@ -79,7 +79,7 @@ if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
 test http-1.1 {http::config} {
     http::config -useragent UserAgent
     http::config
-} [list -accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -urlencoding utf-8 -useragent "UserAgent"]
+} [list -accept */* -cookiejar {} -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -urlencoding utf-8 -useragent "UserAgent"]
 test http-1.2 {http::config} {
     http::config -proxyfilter
 } http::ProxyRequired
@@ -94,10 +94,10 @@ test http-1.4 {http::config} {
     set x [http::config]
     http::config {*}$savedconf
     set x
-} {-accept */* -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -urlencoding iso8859-1 -useragent {Tcl Test Suite}}
+} {-accept */* -cookiejar {} -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -urlencoding iso8859-1 -useragent {Tcl Test Suite}}
 test http-1.5 {http::config} -returnCodes error -body {
     http::config -proxyhost {} -junk 8080
-} -result {Unknown option -junk, must be: -accept, -proxyfilter, -proxyhost, -proxyport, -urlencoding, -useragent}
+} -result {Unknown option -junk, must be: -accept, -cookiejar, -proxyfilter, -proxyhost, -proxyport, -urlencoding, -useragent}
 test http-1.6 {http::config} -setup {
     set oldenc [http::config -urlencoding]
 } -body {
