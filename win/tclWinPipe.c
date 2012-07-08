@@ -676,6 +676,7 @@ TclpCreateTempFile(
     if (contents != NULL) {
 	DWORD result, length;
 	const char *p;
+	int toCopy;
 
 	/*
 	 * Convert the contents from UTF to native encoding
@@ -683,7 +684,8 @@ TclpCreateTempFile(
 
 	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
 
-	for (p = native; *p != '\0'; p++) {
+	toCopy = Tcl_DStringLength(&dstring);
+	for (p = native; toCopy > 0; p++, toCopy--) {
 	    if (*p == '\n') {
 		length = p - native;
 		if (length > 0) {
@@ -1115,7 +1117,7 @@ TclpCreateProcess(
 	    startInfo.wShowWindow = SW_HIDE;
 	    startInfo.dwFlags |= STARTF_USESHOWWINDOW;
 	    createFlags = CREATE_NEW_CONSOLE;
-	    Tcl_DStringAppend(&cmdLine, "cmd.exe /c", -1);
+	    TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
 	} else {
 	    createFlags = DETACHED_PROCESS;
 	}
@@ -1465,9 +1467,9 @@ BuildCommandLine(
      * Prime the path. Add a space separator if we were primed with something.
      */
 
-    Tcl_DStringAppend(&ds, Tcl_DStringValue(linePtr), -1);
+    TclDStringAppendDString(&ds, linePtr);
     if (Tcl_DStringLength(linePtr) > 0) {
-	Tcl_DStringAppend(&ds, " ", 1);
+	TclDStringAppendLiteral(&ds, " ");
     }
 
     for (i = 0; i < argc; i++) {
@@ -1475,7 +1477,7 @@ BuildCommandLine(
 	    arg = executable;
 	} else {
 	    arg = argv[i];
-	    Tcl_DStringAppend(&ds, " ", 1);
+	    TclDStringAppendLiteral(&ds, " ");
 	}
 
 	quote = 0;
@@ -1494,7 +1496,7 @@ BuildCommandLine(
 	    }
 	}
 	if (quote) {
-	    Tcl_DStringAppend(&ds, "\"", 1);
+	    TclDStringAppendLiteral(&ds, "\"");
 	}
 	start = arg;
 	for (special = arg; ; ) {
@@ -1523,7 +1525,7 @@ BuildCommandLine(
 	    }
 	    if (*special == '"') {
 		Tcl_DStringAppend(&ds, start, (int) (special - start));
-		Tcl_DStringAppend(&ds, "\\\"", 2);
+		TclDStringAppendLiteral(&ds, "\\\"");
 		start = special + 1;
 	    }
 	    if (*special == '\0') {
@@ -1533,7 +1535,7 @@ BuildCommandLine(
 	}
 	Tcl_DStringAppend(&ds, start, (int) (special - start));
 	if (quote) {
-	    Tcl_DStringAppend(&ds, "\"", 1);
+	    TclDStringAppendLiteral(&ds, "\"");
 	}
     }
     Tcl_DStringFree(linePtr);

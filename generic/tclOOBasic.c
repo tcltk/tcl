@@ -1190,7 +1190,7 @@ TclOOCopyObjectCmd(
 		Tcl_DStringAppend(&buffer,
 			iPtr->varFramePtr->nsPtr->fullName, -1);
 	    }
-	    Tcl_DStringAppend(&buffer, "::", 2);
+	    TclDStringAppendLiteral(&buffer, "::");
 	    Tcl_DStringAppend(&buffer, name, -1);
 	    name = Tcl_DStringValue(&buffer);
 	}
