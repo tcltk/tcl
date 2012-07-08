@@ -88,7 +88,7 @@ namespace eval http {
     }
 
     # Regular expression used to parse cookies
-    variable CookieRE {\s*([^][\u0000- ()<>@,;:\\""/?={}\u0100-\uffff]+)=([!\u0023-+\u002D-:<-\u005B\u005D-~]+)(?:\s*;\s*([^\u0000]+))?}
+    variable CookieRE {\s*([^][\u0000- ()<>@,;:\\""/?={}\u0100-\uffff]+)=([!\u0023-+\u002D-:<-\u005B\u005D-~]*)(?:\s*;\s*([^\u0000]+))?}
 
     namespace export geturl config reset wait formatQuery register unregister
     # Useful, but not exported: data size status code
@@ -1082,7 +1082,7 @@ proc http::Event {sock token} {
 		    }
 		    set-cookie {
 			if {$http(-cookiejar) ne ""} {
-			    ParseCookie $token $value
+			    ParseCookie $token [string trim $value]
 			}
 		    }
 		}
@@ -1180,7 +1180,7 @@ proc http::ParseCookie {token value} {
     variable $token
     upvar 0 $token state
 
-    if {![regexp $CookieRE $value -> name val opts]} {
+    if {![regexp $CookieRE $value -> cookiename cookieval opts]} {
 	# Bad cookie! No biscuit!
 	return
     }
@@ -1188,14 +1188,20 @@ proc http::ParseCookie {token value} {
     # Convert the options into a list before feeding into the cookie store;
     # ugly, but quite easy.
     set realopts {persistent 0 hostonly 1}
-    foreach opt [split [regsub -all {;\s+} [string trimright $opts] {\u0000}] \u0000] {
-	switch -glob -- $opt {
+    foreach opt [split [regsub -all {;\s+} $opts \u0000] \u0000] {
+	switch -glob -nocase -- $opt {
 	    Expires=* {
 		set opt [string range $opt 8 end]
 		if {[catch {
 		    #Sun, 06 Nov 1994 08:49:37 GMT
 		    dict set realopts expires \
 			[clock scan $opt -format "%a, %d %b %Y %T %Z"]
+		    dict set realopts persistent 1
+		}] && [catch {
+		    # Google does this one
+		    #Mon, 01-Jan-1990 00:00:00 GMT
+		    dict set realopts expires \
+			[clock scan $opt -format "%a, %d-%b-%Y %T %Z"]
 		    dict set realopts persistent 1
 		}] && [catch {
 		    #Sunday, 06-Nov-94 08:49:37 GMT
@@ -1237,7 +1243,7 @@ proc http::ParseCookie {token value} {
 	    }
 	}
     }
-    {*}$http(-cookiejar) storeCookie $token $name $val $realopts
+    {*}$http(-cookiejar) storeCookie $token $cookiename $cookieval $realopts
 }
 
 # http::getTextLine --
