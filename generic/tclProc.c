@@ -194,7 +194,7 @@ Tcl_ProcObjCmd(
     Tcl_DStringInit(&ds);
     if (nsPtr != iPtr->globalNsPtr) {
 	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
-	Tcl_DStringAppend(&ds, "::", 2);
+	TclDStringAppendLiteral(&ds, "::");
     }
     Tcl_DStringAppend(&ds, procName, -1);
 

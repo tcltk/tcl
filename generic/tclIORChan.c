@@ -1947,7 +1947,7 @@ ReflectGetOption(
      */
 
     if (optionObj != NULL) {
-	Tcl_DStringAppend(dsPtr, TclGetString(resObj), -1);
+	TclDStringAppendObj(dsPtr, resObj);
         goto ok;
     }
 
@@ -1982,7 +1982,7 @@ ReflectGetOption(
 	const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 	if (len) {
-	    Tcl_DStringAppend(dsPtr, " ", 1);
+	    TclDStringAppendLiteral(dsPtr, " ");
 	    Tcl_DStringAppend(dsPtr, str, len);
 	}
         goto ok;
@@ -3207,8 +3207,7 @@ ForwardProc(
 	if (InvokeTclMethod(rcPtr, "cget", optionObj, NULL, &resObj)!=TCL_OK){
 	    ForwardSetObjError(paramPtr, resObj);
 	} else {
-	    Tcl_DStringAppend(paramPtr->getOpt.value,
-                              TclGetString(resObj), -1);
+	    TclDStringAppendObj(paramPtr->getOpt.value, resObj);
 	}
         Tcl_Release(rcPtr);
         Tcl_DecrRefCount(optionObj);
@@ -3233,7 +3232,7 @@ ForwardProc(
 	    Tcl_Obj **listv;
 
 	    if (Tcl_ListObjGetElements(interp, resObj, &listc,
-                                       &listv) != TCL_OK) {
+                    &listv) != TCL_OK) {
 		Tcl_DecrRefCount(resObj);
 		resObj = MarshallError(interp);
 		ForwardSetObjError(paramPtr, resObj);
@@ -3253,7 +3252,7 @@ ForwardProc(
 		const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 		if (len) {
-		    Tcl_DStringAppend(paramPtr->getOpt.value, " ", 1);
+		    TclDStringAppendLiteral(paramPtr->getOpt.value, " ");
 		    Tcl_DStringAppend(paramPtr->getOpt.value, str, len);
 		}
 	    }

@@ -1298,9 +1298,9 @@ TraceCommandProc(
 	Tcl_DStringAppendElement(&cmd, oldName);
 	Tcl_DStringAppendElement(&cmd, (newName ? newName : ""));
 	if (flags & TCL_TRACE_RENAME) {
-	    Tcl_DStringAppend(&cmd, " rename", 7);
+	    TclDStringAppendLiteral(&cmd, " rename");
 	} else if (flags & TCL_TRACE_DELETE) {
-	    Tcl_DStringAppend(&cmd, " delete", 7);
+	    TclDStringAppendLiteral(&cmd, " delete");
 	}
 
 	/*
@@ -1994,24 +1994,24 @@ TraceVarProc(
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 	    if (tvarPtr->flags & TCL_TRACE_OLD_STYLE) {
 		if (flags & TCL_TRACE_ARRAY) {
-		    Tcl_DStringAppend(&cmd, " a", 2);
+		    TclDStringAppendLiteral(&cmd, " a");
 		} else if (flags & TCL_TRACE_READS) {
-		    Tcl_DStringAppend(&cmd, " r", 2);
+		    TclDStringAppendLiteral(&cmd, " r");
 		} else if (flags & TCL_TRACE_WRITES) {
-		    Tcl_DStringAppend(&cmd, " w", 2);
+		    TclDStringAppendLiteral(&cmd, " w");
 		} else if (flags & TCL_TRACE_UNSETS) {
-		    Tcl_DStringAppend(&cmd, " u", 2);
+		    TclDStringAppendLiteral(&cmd, " u");
 		}
 	    } else {
 #endif
 		if (flags & TCL_TRACE_ARRAY) {
-		    Tcl_DStringAppend(&cmd, " array", 6);
+		    TclDStringAppendLiteral(&cmd, " array");
 		} else if (flags & TCL_TRACE_READS) {
-		    Tcl_DStringAppend(&cmd, " read", 5);
+		    TclDStringAppendLiteral(&cmd, " read");
 		} else if (flags & TCL_TRACE_WRITES) {
-		    Tcl_DStringAppend(&cmd, " write", 6);
+		    TclDStringAppendLiteral(&cmd, " write");
 		} else if (flags & TCL_TRACE_UNSETS) {
-		    Tcl_DStringAppend(&cmd, " unset", 6);
+		    TclDStringAppendLiteral(&cmd, " unset");
 		}
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 	    }
@@ -2577,7 +2577,7 @@ TclCallVarTraces(
 		    char *newPart1;
 
 		    Tcl_DStringInit(&nameCopy);
-		    Tcl_DStringAppend(&nameCopy, part1, (p-part1));
+		    Tcl_DStringAppend(&nameCopy, part1, p-part1);
 		    newPart1 = Tcl_DStringValue(&nameCopy);
 		    newPart1[offset] = 0;
 		    part1 = newPart1;

@@ -1872,9 +1872,9 @@ LoadTableEncoding(
      * Read lines from the encoding until EOF.
      */
 
-    for (Tcl_DStringSetLength(&lineString, 0);
+    for (TclDStringClear(&lineString);
 	    (len = Tcl_Gets(chan, &lineString)) >= 0;
-	    Tcl_DStringSetLength(&lineString, 0)) {
+	    TclDStringClear(&lineString)) {
 	const unsigned char *p;
 	int to, from;
 
