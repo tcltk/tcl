@@ -1,3 +1,8 @@
+2012-07-08  Reinhard Max  <max@suse.de>
+
+	* library/http/http.tcl: Add fix and test for URLs that contain
+	* tests/http.test: 	 literal IPv6 addresses. [Bug 3531209]
+
 2012-07-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/tclUnixPipe.c:	[Bug 1189293] Make "<<" binary safe.
