@@ -342,7 +342,7 @@ proc msgcat::mcmset {locale pairs } {
     set ns [uplevel 1 [list ::namespace current]]
 
     foreach {src dest} $pairs {
-        dict set Msgs $locale $ns $src $dest
+	dict set Msgs $locale $ns $src $dest
     }
 
     return $length
@@ -388,10 +388,10 @@ proc msgcat::mcmax {args} {
     set max 0
     foreach string $args {
 	set translated [uplevel 1 [list [namespace origin mc] $string]]
-        set len [string length $translated]
-        if {$len>$max} {
+	set len [string length $translated]
+	if {$len>$max} {
 	    set max $len
-        }
+	}
     }
     return $max
 }
@@ -468,19 +468,23 @@ proc msgcat::Init {} {
     # First check registry value LocalName present from Windows Vista
     # which contains the local string as RFC5646, composed of:
     # [a-z]{2,3} : language
-    # -[a-z]{4}  : script (optional, not used)
+    # -[a-z]{4}  : script (optional, translated by table Latn->latin)
     # -[a-z]{2}|[0-9]{3} : territory (optional, numerical region codes not used)
     # (-.*)* : variant, extension, private use (optional, not used)
     # Those are translated to local strings.
-    # Examples: de-CH -> de_ch, sr-Latn-CS -> sr_cs, es-419 -> es
+    # Examples: de-CH -> de_ch, sr-Latn-CS -> sr_cs@latin, es-419 -> es
     #
     set key {HKEY_CURRENT_USER\Control Panel\International}
     if {([registry values $key "LocaleName"] ne "")
-	    && [regexp {^([a-z]{2,3})(?:-[a-z]{4})?(?:-([a-z]{2}))?(?:-.+)?$}\
+	    && [regexp {^([a-z]{2,3})(?:-([a-z]{4}))?(?:-([a-z]{2}))?(?:-.+)?$}\
 	    [string tolower [registry get $key "LocaleName"]] match locale\
-	    territory]} {
+	    script territory]} {
 	if {"" ne $territory} {
 	    append locale _ $territory
+	}
+	set modifierDict [dict create latn latin cyrl cyrillic]
+	if {[dict exists $modifierDict $script]} {
+	    append locale @ [dict get $modifierDict $script]
 	}
 	if {![catch {
 	    mclocale [ConvertLocale $locale]
