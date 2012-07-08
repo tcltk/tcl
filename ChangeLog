@@ -1,3 +1,17 @@
+2012-07-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclUnixPipe.c:	[Bug 1189293] Make "<<" binary safe.
+	* win/tclWinPipe.c:
+
+2012-07-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclUtil.c (TclDStringAppendObj, TclDStringAppendDString):
+	* generic/tclInt.h (TclDStringAppendLiteral, TclDStringClear):
+	* generic/tclCompile.h (TclDStringAppendToken): Added wrappers to make
+	common cases of appending to Tcl_DStrings simpler to write. Prompted
+	by looking at [FRQ 1357401] (these are an _internal_ implementation of
+	that FRQ).
+
 2012-06-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/msgcat/msgcat.tcl:   Add tn, ro_MO and ru_MO to msgcat.
