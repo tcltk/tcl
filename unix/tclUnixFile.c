@@ -105,11 +105,11 @@ TclpFindExecutable(
 	while ((*p != ':') && (*p != 0)) {
 	    p++;
 	}
-	Tcl_DStringSetLength(&buffer, 0);
+	TclDStringClear(&buffer);
 	if (p != name) {
 	    Tcl_DStringAppend(&buffer, name, p - name);
 	    if (p[-1] != '/') {
-		Tcl_DStringAppend(&buffer, "/", 1);
+		TclDStringAppendLiteral(&buffer, "/");
 	    }
 	}
 	name = Tcl_DStringAppend(&buffer, argv0, -1);
@@ -174,11 +174,10 @@ TclpFindExecutable(
     Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&cwd),
 	    Tcl_DStringLength(&cwd), &buffer);
     if (Tcl_DStringValue(&cwd)[Tcl_DStringLength(&cwd) -1] != '/') {
-	Tcl_DStringAppend(&buffer, "/", 1);
+	TclDStringAppendLiteral(&buffer, "/");
     }
     Tcl_DStringFree(&cwd);
-    Tcl_DStringAppend(&buffer, Tcl_DStringValue(&nameString),
-	    Tcl_DStringLength(&nameString));
+    TclDStringAppendDString(&buffer, &nameString);
     Tcl_DStringFree(&nameString);
 
     encoding = Tcl_GetEncoding(NULL, NULL);
@@ -288,7 +287,7 @@ TclpMatchInDirectory(
 	     */
 
 	    if (dirName[dirLength-1] != '/') {
-		dirName = Tcl_DStringAppend(&dsOrig, "/", 1);
+		dirName = TclDStringAppendLiteral(&dsOrig, "/");
 		dirLength++;
 	    }
 	}
