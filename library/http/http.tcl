@@ -423,7 +423,6 @@ proc http::geturl {url args} {
     # Note that the RE actually combines the user and password parts, as
     # recommended in RFC 3986. Indeed, that RFC states that putting passwords
     # in URLs is a Really Bad Idea, something with which I would agree utterly.
-    # Also note that we do not currently support IPv6 addresses.
     #
     # From a validation perspective, we need to ensure that the parts of the
     # URL that are going to the server are correctly encoded.  This is only
@@ -438,7 +437,10 @@ proc http::geturl {url args} {
 		    [^@/\#?]+		# <userinfo part of authority>
 		) @
 	    )?
-	    ( [^/:\#?]+ )		# <host part of authority>
+	    (				# <host part of authority>
+		[^/:\#?]+ |		# host name or IPv4 address
+		\[ [^/\#?]+ \]		# IPv6 address in square brackets
+	    )
 	    (?: : (\d+) )?		# <port part of authority>
 	)?
 	( / [^\#]*)?			# <path> (including query)
@@ -452,6 +454,7 @@ proc http::geturl {url args} {
 	return -code error "Unsupported URL: $url"
     }
     # Phase two: validate
+    set host [string trim $host {[]}]; # strip square brackets from IPv6 address
     if {$host eq ""} {
 	# Caller has to provide a host name; we do not have a "default host"
 	# that would enable us to handle relative URLs.
