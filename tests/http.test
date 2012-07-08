@@ -135,6 +135,7 @@ set fullurl http://user:pass@[info hostname]:$port/a/b/c
 set binurl //[info hostname]:$port/binary
 set posturl //[info hostname]:$port/post
 set badposturl //[info hostname]:$port/droppost
+set ipv6url http://\[::1\]:$port/
 test http-3.4 {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token
@@ -390,6 +391,12 @@ Connection close
 Content-Type {text/plain;charset=utf-8}
 Accept-Encoding .*
 Content-Length 5}
+test http-3.29 "http::geturl $ipv6url" -body {
+    set token [http::geturl $ipv6url -validate 1]
+    http::code $token
+} -cleanup {
+    http::cleanup $token
+} -result "HTTP/1.0 200 OK"
 
 test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]
