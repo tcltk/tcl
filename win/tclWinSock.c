@@ -1403,7 +1403,7 @@ Tcl_OpenTcpClient(
 	return NULL;
     }
 
-    sprintf(channelName, "sock%Id", (size_t) infoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    infoPtr, (TCL_READABLE | TCL_WRITABLE));
@@ -1466,7 +1466,7 @@ Tcl_MakeTcpClientChannel(
     infoPtr->selectEvents = FD_READ | FD_CLOSE | FD_WRITE;
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM)SELECT, (LPARAM)infoPtr);
 
-    sprintf(channelName, "sock%Id", (size_t) infoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    infoPtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
@@ -1519,7 +1519,7 @@ Tcl_OpenTcpServer(
     infoPtr->acceptProc = acceptProc;
     infoPtr->acceptProcData = acceptProcData;
 
-    sprintf(channelName, "sock%Id", (size_t) infoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    infoPtr, 0);
@@ -1625,7 +1625,7 @@ TcpAccept(
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 	    (LPARAM) newInfoPtr);
 
-    sprintf(channelName, "sock%Id", (size_t) newInfoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) newInfoPtr->sockets->fd);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
