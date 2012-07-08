@@ -1707,7 +1707,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    wsprintfA(channelName, "file%lx", infoPtr);
+    sprintf(channelName, "file" TCL_I_MODIFIER "x", (size_t)infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    (ClientData) infoPtr, infoPtr->validMask);
 

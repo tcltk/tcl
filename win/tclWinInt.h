@@ -35,6 +35,12 @@
 #define VER_PLATFORM_WIN32_CE 3
 #endif
 
+#ifdef _WIN64
+#         define TCL_I_MODIFIER        "I"
+#else
+#         define TCL_I_MODIFIER        ""
+#endif
+
 /*
  * The following structure keeps track of whether we are using the 
  * multi-byte or the wide-character interfaces to the operating system.
