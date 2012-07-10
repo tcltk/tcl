@@ -1,3 +1,10 @@
+2012-07-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/tclWinSock.c (InitializeHostName): Corrected logic that
+	extracted the name of the computer from the gethostname call so that
+	it would use the name on success, not failure. Also ensured that the
+	buffer size is exactly that recommended by Microsoft.
+
 2012-07-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/tclUnixPipe.c:	[Bug 1189293] Make "<<" binary safe.
