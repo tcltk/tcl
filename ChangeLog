@@ -1,3 +1,14 @@
+2012-07-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixNotfy.c: [Bug 3541646] Don't panic on triggerPipe overrun
+
+2012-07-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/tclWinSock.c (InitializeHostName): Corrected logic that
+	extracted the name of the computer from the gethostname call so that
+	it would use the name on success, not failure. Also ensured that the
+	buffer size is exactly that recommended by Microsoft.
+
 2012-07-08  Reinhard Max  <max@suse.de>
 
 	* library/http/http.tcl: Add fix and test for URLs that contain
@@ -841,9 +852,8 @@
 
 2011-11-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* library/tcltest/tcltest.tcl: [Bug 967195]: Make tcltest work when
-	tclsh is compiled without using the setargv() function on mingw (No
-	need to incr the version, since 2.2.10 is never released).
+	* library/tcltest/tcltest.tcl: [Bug 967195]: Make tcltest work
+	when tclsh is compiled without using the setargv() function on mingw.
 
 2011-11-29  Jan Nijtmans  <nijtmans@users.sf.net>
 

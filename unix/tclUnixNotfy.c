@@ -895,7 +895,7 @@ Tcl_WaitForEvent(
 	    waitingListPtr = tsdPtr;
 	    tsdPtr->onList = 1;
 
-	    if (write(triggerPipe, "", 1) != 1) {
+	    if ((write(triggerPipe, "", 1) == -1) && (errno != EAGAIN)) {
 		Tcl_Panic("Tcl_WaitForEvent: %s",
 			"unable to write to triggerPipe");
 	    }
@@ -958,7 +958,7 @@ Tcl_WaitForEvent(
 	    }
 	    tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
 	    tsdPtr->onList = 0;
-	    if (write(triggerPipe, "", 1) != 1) {
+	    if ((write(triggerPipe, "", 1) == -1) && (errno != EAGAIN)) {
 		Tcl_Panic("Tcl_WaitForEvent: %s",
 			"unable to write to triggerPipe");
 	    }
