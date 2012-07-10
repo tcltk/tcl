@@ -1,3 +1,7 @@
+2012-07-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixNotfy.c: [Bug 3541646] Don't panic on triggerPipe overrun
+
 2012-07-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* win/tclWinSock.c (InitializeHostName): Corrected logic that
