@@ -794,7 +794,7 @@ GetValue(
 	 * HKEY_PERFORMANCE_DATA
 	 */
 
-	length *= 2;
+	length = Tcl_DStringLength(&data) * (regWinProcs->useWide ? 1 : 2);
 	Tcl_DStringSetLength(&data, (int) length * (regWinProcs->useWide ? 2 : 1));
 	result = (*regWinProcs->regQueryValueExProc)(key, (char *) nativeValue,
 		NULL, &type, (BYTE *) Tcl_DStringValue(&data), &length);
