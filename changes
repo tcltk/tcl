@@ -8069,7 +8069,6 @@ problems where [file *able] would return false results on Win/Samba (porter)
 2012-05-10 (bug fix)[2812981] force consistent config of Tcl+pkgs (ferrieux)
 
 2012-05-10 (bug fix)[473946] correct send of special characters (nijtmans)
-=> dde 1.3.3
 
 2012-05-17 (bug fix)[3445787] fix [file] ensemble in Safe Base (fellows)
 
@@ -8079,6 +8078,7 @@ problems where [file *able] would return false results on Win/Samba (porter)
 	*** POTENTIAL INCOMPATIBILITY ***
 
 2012-05-21 (TIP 106) New -binary option to [dde execute|poke] (oehlmann)
+=> dde 1.4.0
 
 2012-05-23 (bug fix)[3525907] [zlib push decompress] & [chan event]
 (fellows,ferrieux,kupries)
@@ -8086,7 +8086,7 @@ problems where [file *able] would return false results on Win/Samba (porter)
 2012-05-28 (bug fix)[3529949] Protect ~ paths in Safe Base (fellows)
 
 2012-06-21 (bug fix)[3362446] [registry keys] failure (nijtmans)
-=> registry 1.2.2
+=> registry 1.3.0
 
 2012-06-25 (bug fix)[3537605] [encoding dirs a b] error message (fellows)
 
