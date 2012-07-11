@@ -673,8 +673,10 @@ proc http::geturl {url args} {
 	puts $sock "$how $srvurl HTTP/$state(-protocol)"
 	puts $sock "Accept: $http(-accept)"
 	array set hdrs $state(-headers)
+	set state(host) $host
 	if {[info exists hdrs(Host)]} {
 	    # Allow Host spoofing. [Bug 928154]
+	    regexp {^[^:]+} $hdrs(Host) state(host)
 	    puts $sock "Host: $hdrs(Host)"
 	} elseif {$port == $defport} {
 	    # Don't add port in this case, to handle broken servers. [Bug
@@ -1191,6 +1193,7 @@ proc http::ParseCookie {token value} {
     # Convert the options into a list before feeding into the cookie store;
     # ugly, but quite easy.
     set realopts {persistent 0 hostonly 1}
+    dict set realopts origin $state(host)
     foreach opt [split [regsub -all {;\s+} $opts \u0000] \u0000] {
 	switch -glob -nocase -- $opt {
 	    Expires=* {
@@ -1227,10 +1230,9 @@ proc http::ParseCookie {token value} {
 		}
 	    }
 	    Domain=* {
-		set opt [string range $opt 7 end]
-		set opt [string trimleft $opt "."]
+		set opt [string trimleft [string range $opt 7 end] "."]
 		# TODO - Domain safety check!
-		if {$opt ne ""} {
+		if {$opt ne "" && ![string match *. $opt]} {
 		    dict set realopts domain $opt
 		}
 	    }
@@ -1246,7 +1248,7 @@ proc http::ParseCookie {token value} {
 	    }
 	}
     }
-    {*}$http(-cookiejar) storeCookie $token $cookiename $cookieval $realopts
+    {*}$http(-cookiejar) storeCookie $cookiename $cookieval $realopts
 }
 
 # http::getTextLine --
