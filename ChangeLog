@@ -1,3 +1,9 @@
+2012-07-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinReg.c: [Bug #3362446]: registry keys command fails
+	with 8.5/8.6. Follow Microsofts example better in order to prevent
+	problems when using HKEY_PERFORMANCE_DATA.
+
 2012-07-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclUnixNotfy.c: [Bug 3541646] Don't panic on triggerPipe overrun
