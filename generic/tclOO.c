@@ -3,7 +3,7 @@
  *
  *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
  *
- * Copyright (c) 2005-2011 by Donal K. Fellows
+ * Copyright (c) 2005-2012 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
