@@ -2438,6 +2438,37 @@ Tcl_DStringAppend(
 /*
  *----------------------------------------------------------------------
  *
+ * TclDStringAppendObj, TclDStringAppendDString --
+ *
+ *	Simple wrappers round Tcl_DStringAppend that make it easier to append
+ *	from particular sources of strings.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+TclDStringAppendObj(
+    Tcl_DString *dsPtr,
+    Tcl_Obj *objPtr)
+{
+    int length;
+    char *bytes = Tcl_GetStringFromObj(objPtr, &length);
+
+    return Tcl_DStringAppend(dsPtr, bytes, length);
+}
+
+char *
+TclDStringAppendDString(
+    Tcl_DString *dsPtr,
+    Tcl_DString *toAppendPtr)
+{
+    return Tcl_DStringAppend(dsPtr, Tcl_DStringValue(toAppendPtr),
+	    Tcl_DStringLength(toAppendPtr));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_DStringAppendElement --
  *
  *	Append a list element to the current value of a dynamic string.
@@ -2793,9 +2824,9 @@ Tcl_DStringStartSublist(
     Tcl_DString *dsPtr)		/* Dynamic string. */
 {
     if (TclNeedSpace(dsPtr->string, dsPtr->string + dsPtr->length)) {
-	Tcl_DStringAppend(dsPtr, " {", -1);
+	TclDStringAppendLiteral(dsPtr, " {");
     } else {
-	Tcl_DStringAppend(dsPtr, "{", -1);
+	TclDStringAppendLiteral(dsPtr, "{");
     }
 }
 
@@ -2821,7 +2852,7 @@ void
 Tcl_DStringEndSublist(
     Tcl_DString *dsPtr)		/* Dynamic string. */
 {
-    Tcl_DStringAppend(dsPtr, "}", -1);
+    TclDStringAppendLiteral(dsPtr, "}");
 }
 
 /*

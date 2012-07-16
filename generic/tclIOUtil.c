@@ -28,6 +28,43 @@
 #include "tclFileSystem.h"
 
 /*
+ * struct FilesystemRecord --
+ *
+ * A filesystem record is used to keep track of each filesystem currently
+ * registered with the core, in a linked list.
+ */
+
+typedef struct FilesystemRecord {
+    ClientData clientData;	/* Client specific data for the new filesystem
+				 * (can be NULL) */
+    const Tcl_Filesystem *fsPtr;/* Pointer to filesystem dispatch table. */
+    struct FilesystemRecord *nextPtr;
+				/* The next filesystem registered to Tcl, or
+				 * NULL if no more. */
+    struct FilesystemRecord *prevPtr;
+				/* The previous filesystem registered to Tcl,
+				 * or NULL if no more. */
+} FilesystemRecord;
+
+/*
+ * This structure holds per-thread private copy of the current directory
+ * maintained by the global cwdPathPtr. This structure holds per-thread
+ * private copies of some global data. This way we avoid most of the
+ * synchronization calls which boosts performance, at cost of having to update
+ * this information each time the corresponding epoch counter changes.
+ */
+
+typedef struct ThreadSpecificData {
+    int initialized;
+    int cwdPathEpoch;
+    int filesystemEpoch;
+    Tcl_Obj *cwdPathPtr;
+    ClientData cwdClientData;
+    FilesystemRecord *filesystemList;
+    int claims;
+} ThreadSpecificData;
+
+/*
  * Prototypes for functions defined later in this file.
  */
 
@@ -195,7 +232,7 @@ static int cwdPathEpoch = 0;
 static ClientData cwdClientData = NULL;
 TCL_DECLARE_MUTEX(cwdMutex)
 
-Tcl_ThreadDataKey tclFsDataKey;
+static Tcl_ThreadDataKey fsDataKey;
 
 /*
  * One of these structures is used each time we successfully load a file from
@@ -368,7 +405,7 @@ Tcl_GetCwd(
 	return NULL;
     }
     Tcl_DStringInit(cwdPtr);
-    Tcl_DStringAppend(cwdPtr, Tcl_GetString(cwd), -1);
+    TclDStringAppendObj(cwdPtr, cwd);
     Tcl_DecrRefCount(cwd);
     return Tcl_DStringValue(cwdPtr);
 }
@@ -429,7 +466,7 @@ FsThrExitProc(
 int
 TclFSCwdIsNative(void)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
     if (tsdPtr->cwdClientData != NULL) {
 	return 1;
@@ -463,7 +500,7 @@ int
 TclFSCwdPointerEquals(
     Tcl_Obj **pathPtrPtr)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
     Tcl_MutexLock(&cwdMutex);
     if (tsdPtr->cwdPathPtr == NULL
@@ -525,7 +562,7 @@ TclFSCwdPointerEquals(
 static void
 FsRecacheFilesystemList(void)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
     FilesystemRecord *fsRecPtr, *tmpFsRecPtr = NULL, *toFree = NULL, *list;
 
     /*
@@ -589,7 +626,7 @@ FsRecacheFilesystemList(void)
 static FilesystemRecord *
 FsGetFirstFilesystem(void)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
     if (tsdPtr->filesystemList == NULL || ((tsdPtr->claims == 0)
 	    && (tsdPtr->filesystemEpoch != theFilesystemEpoch))) {
 	FsRecacheFilesystemList();
@@ -612,16 +649,24 @@ TclFSEpochOk(
 static void
 Claim()
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
     tsdPtr->claims++;
 }
 
 static void
 Disclaim()
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
     tsdPtr->claims--;
 }
+
+int
+TclFSEpoch()
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
+    return tsdPtr->filesystemEpoch;
+}
+
 
 /*
  * If non-NULL, clientData is owned by us and must be freed later.
@@ -634,7 +679,7 @@ FsUpdateCwd(
 {
     int len;
     const char *str = NULL;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
     if (cwdObj != NULL) {
 	str = Tcl_GetStringFromObj(cwdObj, &len);
@@ -2577,7 +2622,7 @@ Tcl_Obj *
 Tcl_FSGetCwd(
     Tcl_Interp *interp)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
     if (TclFSCwdPointerEquals(NULL)) {
 	FilesystemRecord *fsRecPtr;
@@ -2928,7 +2973,7 @@ Tcl_FSChdir(
 	     * instead. This should be examined by someone on Unix.
 	     */
 
-	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 	    ClientData cd;
 	    ClientData oldcd = tsdPtr->cwdClientData;
 

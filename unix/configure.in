@@ -303,7 +303,9 @@ SC_TIME_HANDLER
 #--------------------------------------------------------------------
 
 if test "$ac_cv_cygwin" = "yes"; then
-    TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS} \${COMPAT_DIR}/zlib/win32/zdll.lib"
+    if test "x${SHARED_BUILD}" = "x1"; then
+	TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS} \${COMPAT_DIR}/zlib/win32/zdll.lib"
+    fi
 else
     AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
 fi
