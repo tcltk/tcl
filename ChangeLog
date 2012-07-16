@@ -1,3 +1,12 @@
+2012-07-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixCompat.c (TclpGetPwNam, TclpGetPwUid, TclpGetGrNam)
+	(TclpGetGrGid): [Bug 3544683]: Use the elaborate memory management
+	scheme outlined on http://www.opengroup.org/austin/docs/austin_328.txt
+	to handle Tcl's use of standard reentrant versions of the passwd/group
+	access functions so that everything can work on all BSDs. Problem
+	identified by Stuart Cassoff.
+
 2012-07-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinReg.c: [Bug #3362446]: registry keys command fails
