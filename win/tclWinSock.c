@@ -2579,20 +2579,16 @@ InitializeHostName(
 	Tcl_DStringInit(&ds);
 	if (TclpHasSockets(NULL) == TCL_OK) {
 	    /*
-	     * Buffer length of 255 copied slavishly from previous version of
-	     * this routine. Presumably there's a more "correct" macro value
-	     * for a properly sized buffer for a gethostname() call.
-	     * Maintainers are welcome to supply it.
+	     * The buffer size of 256 is recommended by the MSDN page that
+	     * documents gethostname() as being always adequate.
 	     */
 
 	    Tcl_DString inDs;
 
 	    Tcl_DStringInit(&inDs);
-	    Tcl_DStringSetLength(&inDs, 255);
+	    Tcl_DStringSetLength(&inDs, 256);
 	    if (gethostname(Tcl_DStringValue(&inDs),
 		    Tcl_DStringLength(&inDs)) == 0) {
-		TclDStringClear(&ds);
-	    } else {
 		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), -1,
 			&ds);
 	    }
