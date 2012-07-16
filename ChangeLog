@@ -1,3 +1,9 @@
+2012-07-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclUtil.c (UpdateStringOfEndOffset): [Bug 3544658]: Stop
+	1-byte overrun in memcpy, that object placement rules made harmless
+	but which still caused compiler complaints.
+
 2012-07-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/reg/pkgIndex.tcl:  Make registry 1.3 package dynamically
