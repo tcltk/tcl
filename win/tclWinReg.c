@@ -780,7 +780,7 @@ GetValue(
 	 * HKEY_PERFORMANCE_DATA
 	 */
 
-	length *= 2;
+	length = Tcl_DStringLength(&data) * (2 / sizeof(TCHAR));
 	Tcl_DStringSetLength(&data, (int) length * sizeof(TCHAR));
 	result = RegQueryValueEx(key, nativeValue,
 		NULL, &type, (BYTE *) Tcl_DStringValue(&data), &length);
