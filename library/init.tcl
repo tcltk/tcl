@@ -66,7 +66,7 @@ namespace eval tcl {
 	}
     }
 }
-  
+
 # Windows specific end of initialization
 
 if {(![interp issafe]) && $tcl_platform(platform) eq "windows"} {
@@ -187,7 +187,7 @@ proc unknown args {
     # may get modified if caught errors occur below.  The variables will
     # be restored just before re-executing the missing command.
 
-    # Safety check in case something unsets the variables 
+    # Safety check in case something unsets the variables
     # ::errorInfo or ::errorCode.  [Bug 1063707]
     if {![info exists errorCode]} {
 	set errorCode ""
@@ -222,7 +222,7 @@ proc unknown args {
 	    if {$code ==  1} {
 		#
 		# Compute stack trace contribution from the [uplevel].
-		# Note the dependence on how Tcl_AddErrorInfo, etc. 
+		# Note the dependence on how Tcl_AddErrorInfo, etc.
 		# construct the stack trace.
 		#
 		set cinfo $args
@@ -340,7 +340,7 @@ proc unknown args {
 # library file to create the procedure.  Returns 1 if it successfully
 # loaded the procedure, 0 otherwise.
 #
-# Arguments: 
+# Arguments:
 # cmd -			Name of the command to find and load.
 # namespace (optional)  The namespace where the command is being used - must be
 #                       a canonical namespace as returned [namespace current]
@@ -364,7 +364,7 @@ proc auto_load {cmd {namespace {}}} {
 	    #    info commands $name
 	    # Unfortunately, if the name has glob-magic chars in it like *
 	    # or [], it may not match.  For our purposes here, a better
-	    # route is to use 
+	    # route is to use
 	    #    namespace which -command $name
 	    if {[namespace which -command $name] ne ""} {
 		return 1
@@ -395,7 +395,7 @@ proc auto_load {cmd {namespace {}}} {
 # of available commands.  Returns 1 if the index is loaded, and 0 if
 # the index is already loaded and up to date.
 #
-# Arguments: 
+# Arguments:
 # None.
 
 proc auto_load_index {} {
@@ -424,7 +424,7 @@ proc auto_load_index {} {
 		    eval [read $f]
 		} elseif {$id eq "# Tcl autoload index file: each line identifies a Tcl"} {
 		    while {[gets $f line] >= 0} {
-			if {[string index $line 0] eq "#" 
+			if {[string index $line 0] eq "#"
 				|| ([llength $line] != 2)} {
 			    continue
 			}
@@ -484,7 +484,7 @@ proc auto_qualify {cmd namespace} {
 	    return [list [string range $cmd 2 end]]
 	}
     }
-    
+
     # Potentially returning 2 elements to try  :
     # (if the current namespace is not the global one)
 
@@ -542,13 +542,13 @@ proc auto_import {pattern} {
 
 # auto_execok --
 #
-# Returns string that indicates name of program to execute if 
+# Returns string that indicates name of program to execute if
 # name corresponds to a shell builtin or an executable in the
-# Windows search path, or "" otherwise.  Builds an associative 
-# array auto_execs that caches information about previous checks, 
+# Windows search path, or "" otherwise.  Builds an associative
+# array auto_execs that caches information about previous checks,
 # for speed.
 #
-# Arguments: 
+# Arguments:
 # name -			Name of a command.
 
 if {$tcl_platform(platform) eq "windows"} {
@@ -603,7 +603,7 @@ proc auto_execok name {
 
     set path "[file dirname [info nameof]];.;"
     if {[info exists env(WINDIR)]} {
-	set windir $env(WINDIR) 
+	set windir $env(WINDIR)
     }
     if {[info exists windir]} {
 	if {$tcl_platform(os) eq "Windows NT"} {
@@ -668,13 +668,13 @@ proc auto_execok name {
 # This procedure is called by Tcl's core when attempts to call the
 # filesystem's copydirectory function fail.  The semantics of the call
 # are that 'dest' does not yet exist, i.e. dest should become the exact
-# image of src.  If dest does exist, we throw an error.  
-# 
+# image of src.  If dest does exist, we throw an error.
+#
 # Note that making changes to this procedure can change the results
 # of running Tcl's tests.
 #
-# Arguments: 
-# action -              "renaming" or "copying" 
+# Arguments:
+# action -              "renaming" or "copying"
 # src -			source directory
 # dest -		destination directory
 proc tcl::CopyDirectory {action src dest} {
@@ -729,16 +729,36 @@ proc tcl::CopyDirectory {action src dest} {
     # Have to be careful to capture both visible and hidden files.
     # We will also be more generous to the file system and not
     # assume the hidden and non-hidden lists are non-overlapping.
-    # 
+    #
     # On Unix 'hidden' files begin with '.'.  On other platforms
     # or filesystems hidden files may have other interpretations.
     set filelist [concat [glob -nocomplain -directory $src *] \
       [glob -nocomplain -directory $src -types hidden *]]
-    
+
     foreach s [lsort -unique $filelist] {
 	if {([file tail $s] ne ".") && ([file tail $s] ne "..")} {
 	    file copy $s [file join $dest [file tail $s]]
 	}
     }
     return
+}
+
+# ::tcl::pkgconfig --
+#
+# This procedure is undocumented. It is meant to make the dde
+# and registry packages distributed with Tcl 8.6 and the Thread
+# 2.7 package (and possibly others) dynamically loadable in Tcl 8.4.
+#
+# Arguments:
+# action -              "get"
+# key -			"debug" or "threaded"
+proc tcl::pkgconfig {{action {}} {key {}} args} {
+    if {$action eq "get"} {
+	if {$key eq "debug"} {
+	    return [info exists ::tcl_platform(debug)]
+	} elseif {$key eq "threaded"} {
+	    return [info exists ::tcl_platform(threaded)]
+	}
+    }
+    error {invalid command name "::tcl::pkgconfig"}
 }
