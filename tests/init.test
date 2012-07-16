@@ -117,12 +117,10 @@ test init-2.6 {load setLogCmd from safe:: - stage 1} {
     rename ::safe::setLogCmd {} ; # should not fail
 } {}
 
-test init-2.7 {oad setLogCmd from safe::  - stage 2} {
+test init-2.7 {load setLogCmd from safe::  - stage 2} {
     namespace eval safe setLogCmd 
     rename ::safe::setLogCmd {} ; # should not fail
 } {}
-
-
 
 test init-2.8 {load tcl::HistAdd} -setup {
     auto_reset
@@ -134,6 +132,11 @@ test init-2.8 {load tcl::HistAdd} -setup {
     rename ::tcl::HistAdd {} ; 
 } -result {1 {wrong # args: should be "tcl:::HistAdd command ?exec?"}}
 
+test init-2.9 {undocumented tcl::pkgconfig} -setup {
+} -body {
+    list [catch {::tcl::pkgconfig} error] $error
+    } -cleanup {
+} -result {1 {invalid command name "::tcl::pkgconfig"}}
 
 test init-3.0 {random stuff in the auto_index, should still work} {
     set auto_index(foo:::bar::blah) {
