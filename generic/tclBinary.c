@@ -307,12 +307,8 @@ Tcl_SetByteArrayObj(
     byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
-    if (length) {
-	if (bytes) {
-	    memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
-	} else {
-	    memset(byteArrayPtr->bytes, 0, (size_t) length);
-	}
+    if (length && bytes) {
+	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
     }
 
     objPtr->typePtr = &tclByteArrayType;
