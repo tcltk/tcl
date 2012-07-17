@@ -7649,7 +7649,11 @@ and Tcl_FSMountsChanged(). (porter)
 
 2012-07-05 (bug fix)[1189293] make "<<" redirect binary safe (porter)
 
+2012-07-11 (bug fix)[3362446] [registry keys] failure (nijtmans)
+
+2012-07-16 (bug fix)[3544683] reentrant syscalls on BSD (cassoff,fellows)
+
 Many revisions to better support a Cygwin environment (nijtmans)
 
---- Released 8.5.12, July 16, 2011 --- See ChangeLog for details ---
+--- Released 8.5.12, July 20, 2011 --- See ChangeLog for details ---
 
