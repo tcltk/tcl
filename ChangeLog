@@ -1,3 +1,20 @@
+2012-07-17  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.5.12 TAGGED FOR RELEASE ***
+
+	* generic/tcl.h:	Bump to 8.5.12 for release.
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
+	* changes:	Update for 8.5.12 release.
+
 2012-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/makefile.vc: [Bug 3544932]: Visual studio compiler check fails
