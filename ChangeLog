@@ -1,3 +1,7 @@
+2012-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/makefile.vc: [Bug 3544932]: Visual studio compiler check fails
+
 2012-07-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclUtil.c (UpdateStringOfEndOffset): [Bug 3544658]: Stop
@@ -7,7 +11,7 @@
 2012-07-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/reg/pkgIndex.tcl:  Make registry 1.3 package dynamically
-	loadable in Tcl 8.4.20.
+	loadable when ::tcl::pkgconfig is available.
 
 2012-07-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
