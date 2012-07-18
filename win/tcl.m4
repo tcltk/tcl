@@ -211,7 +211,7 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 AC_DEFUN([SC_ENABLE_SHARED], [
     AC_MSG_CHECKING([how to build libraries])
     AC_ARG_ENABLE(shared,
-	[  --enable-shared         build and link with shared libraries [--enable-shared]],
+	[  --enable-shared         build and link with shared libraries (default: on)],
     [tcl_ok=$enableval], [tcl_ok=yes])
 
     if test "${enable_shared+set}" = set; then
@@ -250,7 +250,7 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 
 AC_DEFUN([SC_ENABLE_THREADS], [
     AC_MSG_CHECKING(for building with threads)
-    AC_ARG_ENABLE(threads, [  --enable-threads        build with threads],
+    AC_ARG_ENABLE(threads, [  --enable-threads        build with threads (default: off)],
 	[tcl_ok=$enableval], [tcl_ok=no])
 
     if test "$tcl_ok" = "yes"; then
@@ -297,7 +297,7 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 
 AC_DEFUN([SC_ENABLE_SYMBOLS], [
     AC_MSG_CHECKING([for build with symbols])
-    AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols [--disable-symbols]],    [tcl_ok=$enableval], [tcl_ok=no])
+    AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols (default: off)],    [tcl_ok=$enableval], [tcl_ok=no])
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
@@ -1059,7 +1059,7 @@ AC_DEFUN([SC_BUILD_TCLSH], [
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_CFG_ENCODING], [
-    AC_ARG_WITH(encoding, [  --with-encoding              encoding for configuration values], with_tcencoding=${withval})
+    AC_ARG_WITH(encoding, [  --with-encoding         encoding for configuration values], with_tcencoding=${withval})
 
     if test x"${with_tcencoding}" != x ; then
 	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}")
