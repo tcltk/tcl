@@ -27,6 +27,7 @@ testConstraint notNetworkFilesystem 0
 testConstraint 95or98 [expr {[testConstraint 95] || [testConstraint 98]}]
 testConstraint 2000orNewer [expr {![testConstraint 95or98]}]
 
+set tmpspace /tmp;# default value
 # Find a group that exists on this Unix system, or else skip tests that
 # require Unix groups.
 testConstraint foundGroup [expr {![testConstraint unix]}]
