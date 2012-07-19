@@ -61,6 +61,7 @@ static Tcl_NRPostProc	ForPostNextCallback;
 static Tcl_NRPostProc	ForeachLoopStep;
 static Tcl_NRPostProc	EvalCmdErrMsg;
 
+static Tcl_ObjCmdProc	BadFileSubcommand;
 static Tcl_ObjCmdProc FileAttrAccessTimeCmd;
 static Tcl_ObjCmdProc FileAttrIsDirectoryCmd;
 static Tcl_ObjCmdProc FileAttrIsExecutableCmd;
@@ -581,7 +582,7 @@ Tcl_EncodingObjCmd(
 	break;
     }
     case ENC_DIRS:
-	return EncodingDirsObjCmd(dummy, interp, objc-1, objv+1);
+	return EncodingDirsObjCmd(dummy, interp, objc, objv);
     case ENC_NAMES:
 	if (objc > 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -628,22 +629,26 @@ EncodingDirsObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?dirList?");
+    Tcl_Obj *dirListObj;
+
+    if (objc > 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "?dirList?");
 	return TCL_ERROR;
     }
-    if (objc == 1) {
+    if (objc == 2) {
 	Tcl_SetObjResult(interp, Tcl_GetEncodingSearchPath());
 	return TCL_OK;
     }
-    if (Tcl_SetEncodingSearchPath(objv[1]) == TCL_ERROR) {
+
+    dirListObj = objv[2];
+    if (Tcl_SetEncodingSearchPath(dirListObj) == TCL_ERROR) {
 	Tcl_AppendResult(interp, "expected directory list but got \"",
-		TclGetString(objv[1]), "\"", NULL);
+		TclGetString(dirListObj), "\"", NULL);
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
 		NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, objv[1]);
+    Tcl_SetObjResult(interp, dirListObj);
     return TCL_OK;
 }
 
@@ -1040,9 +1045,9 @@ TclMakeFileCommandSafe(
     Tcl_DString oldBuf, newBuf;
 
     Tcl_DStringInit(&oldBuf);
-    Tcl_DStringAppend(&oldBuf, "::tcl::file::", -1);
+    TclDStringAppendLiteral(&oldBuf, "::tcl::file::");
     Tcl_DStringInit(&newBuf);
-    Tcl_DStringAppend(&newBuf, "tcl:file:", -1);
+    TclDStringAppendLiteral(&newBuf, "tcl:file:");
     for (i=0 ; unsafeInfo[i].cmdName != NULL ; i++) {
 	if (unsafeInfo[i].unsafe) {
 	    const char *oldName, *newName;
@@ -1057,6 +1062,8 @@ TclMakeFileCommandSafe(
 			unsafeInfo[i].cmdName,
 			Tcl_GetString(Tcl_GetObjResult(interp)));
 	    }
+	    Tcl_CreateObjCommand(interp, oldName, BadFileSubcommand,
+		    (ClientData) unsafeInfo[i].cmdName, NULL);
 	}
     }
     Tcl_DStringFree(&oldBuf);
@@ -1073,6 +1080,39 @@ TclMakeFileCommandSafe(
 		Tcl_GetString(Tcl_GetObjResult(interp)));
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BadFileSubcommand --
+ *
+ *	Command used to act as a backstop implementation when subcommands of
+ *	"file" are unsafe (the real implementations of the subcommands are
+ *	hidden). The clientData is always the full official subcommand name.
+ *
+ * Results:
+ *	A standard Tcl result (always a TCL_ERROR).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BadFileSubcommand(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    const char *subcommandName = (const char *) clientData;
+
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "not allowed to invoke subcommand %s of file", subcommandName));
+    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", NULL);
+    return TCL_ERROR;
 }
 
 /*

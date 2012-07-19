@@ -2086,6 +2086,8 @@ set path(pipe)   [makeFile {} pipe]
 set path(output) [makeFile {} output]
 test io-27.6 {FlushChannel, async flushing, async close} \
 	{stdio asyncPipeClose openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
@@ -2645,6 +2647,8 @@ test io-29.30 {Tcl_WriteChars, crlf mode} {
     file size $path(test1)
 } 25
 test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
@@ -2686,6 +2690,8 @@ test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
 } ok
 test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
 	{stdio asyncPipeClose openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
@@ -2736,6 +2742,26 @@ test io-29.33 {Tcl_Flush, implicit flush on exit} {exec} {
     close $f
     set r
 } "hello\nbye\nstrange\n"
+set path(script2) [makeFile {} script2]
+test io-29.33b {TIP#398, no implicit flush of nonblocking on exit} {exec} {
+    set f [open $path(script) w]
+    puts $f {
+		fconfigure stdout -blocking 0
+		puts -nonewline stdout [string repeat A 655360]
+		flush stdout
+	}
+    close $f
+    set f [open $path(script2) w]
+    puts $f {after 2000}
+    close $f
+	set t1 [clock milliseconds]
+	set ff [open "|[list [interpreter] $path(script2)]" w]
+	catch {unset ::env(TCL_FLUSH_NONBLOCKING_ON_EXIT)}
+	exec [interpreter] $path(script) >@ $ff
+	set t2 [clock milliseconds]
+	close $ff
+	expr {($t2-$t1)/2000 ? $t2-$t1 : 0}
+} 0
 test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMac fileevent} {
     variable c 0
     variable x running
@@ -7761,7 +7787,7 @@ test io-73.2 {channel Tcl_Obj SetChannelFromAny, bug 2407783} -setup {
 # ### ### ### ######### ######### #########
 
 # cleanup
-foreach file [list fooBar longfile script output test1 pipe my_script \
+foreach file [list fooBar longfile script script2 output test1 pipe my_script \
 	test2 test3 cat stdout kyrillic.txt utf8-fcopy.txt utf8-rp.txt] {
     removeFile $file
 }

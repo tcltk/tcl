@@ -22,6 +22,13 @@
 #endif
 #include <stdlib.h>
 
+#ifndef UNICODE
+#   undef Tcl_WinTCharToUtf
+#   define Tcl_WinTCharToUtf(a,b,c) Tcl_ExternalToUtfDString(NULL,a,b,c)
+#   undef Tcl_WinUtfToTChar
+#   define Tcl_WinUtfToTChar(a,b,c) Tcl_UtfToExternalDString(NULL,a,b,c)
+#endif
+
 /*
  * Ensure that we can say which registry is being accessed.
  */
@@ -34,6 +41,14 @@
 #endif
 
 /*
+ * The maximum length of a sub-key name.
+ */
+
+#ifndef MAX_KEY_LENGTH
+#define MAX_KEY_LENGTH		256
+#endif
+
+/*
  * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
  * Registry_Init declaration is in the source file itself, which is only
  * accessed when we are building a library.
@@ -41,6 +56,14 @@
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLEXPORT
+
+/*
+ * The maximum length of a sub-key name.
+ */
+
+#ifndef MAX_KEY_LENGTH
+#define MAX_KEY_LENGTH		256
+#endif
 
 /*
  * The following macros convert between different endian ints.
@@ -157,7 +180,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvide(interp, "registry", "1.3");
+    return Tcl_PkgProvide(interp, "registry", "1.3.0");
 }
 
 /*
@@ -552,9 +575,7 @@ GetKeyNames(
 {
     const char *pattern;	/* Pattern being matched against subkeys */
     HKEY key;			/* Handle to the key being examined */
-    DWORD subKeyCount;		/* Number of subkeys to list */
-    DWORD maxSubKeyLen;		/* Maximum string length of any subkey */
-    TCHAR *buffer;		/* Buffer to hold the subkey name */
+    TCHAR buffer[MAX_KEY_LENGTH];		/* Buffer to hold the subkey name */
     DWORD bufSize;		/* Size of the buffer */
     DWORD index;		/* Position of the current subkey */
     char *name;			/* Subkey name */
@@ -578,40 +599,27 @@ GetKeyNames(
     }
 
     /*
-     * Determine how big a buffer is needed for enumerating subkeys, and how
-     * many subkeys there are.
-     */
-
-    result = RegQueryInfoKey(key, NULL, NULL, NULL,
-	    &subKeyCount, &maxSubKeyLen, NULL, NULL, NULL, NULL, NULL, NULL);
-    if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_NewObj());
-	Tcl_AppendResult(interp, "unable to query key \"",
-		Tcl_GetString(keyNameObj), "\": ", NULL);
-	AppendSystemError(interp, result);
-	RegCloseKey(key);
-	return TCL_ERROR;
-    }
-    buffer = ckalloc((maxSubKeyLen+1) * sizeof(TCHAR));
-
-    /*
      * Enumerate the subkeys.
      */
 
     resultPtr = Tcl_NewObj();
-    for (index = 0; index < subKeyCount; ++index) {
-	bufSize = maxSubKeyLen+1;
+    for (index = 0;; ++index) {
+	bufSize = MAX_KEY_LENGTH;
 	result = RegEnumKeyEx(key, index, buffer, &bufSize,
 		NULL, NULL, NULL, NULL);
 	if (result != ERROR_SUCCESS) {
-	    Tcl_SetObjResult(interp, Tcl_NewObj());
-	    Tcl_AppendResult(interp, "unable to enumerate subkeys of \"",
-		    Tcl_GetString(keyNameObj), "\": ", NULL);
-	    AppendSystemError(interp, result);
-	    result = TCL_ERROR;
+	    if (result == ERROR_NO_MORE_ITEMS) {
+		result = TCL_OK;
+	    } else {
+		Tcl_SetObjResult(interp, Tcl_NewObj());
+		Tcl_AppendResult(interp, "unable to enumerate subkeys of \"",
+			Tcl_GetString(keyNameObj), "\": ", NULL);
+		AppendSystemError(interp, result);
+		result = TCL_ERROR;
+	    }
 	    break;
 	}
-	Tcl_WinTCharToUtf(buffer, bufSize * sizeof(WCHAR), &ds);
+	Tcl_WinTCharToUtf(buffer, bufSize * sizeof(TCHAR), &ds);
 	name = Tcl_DStringValue(&ds);
 	if (pattern && !Tcl_StringMatch(name, pattern)) {
 	    Tcl_DStringFree(&ds);
@@ -626,9 +634,10 @@ GetKeyNames(
     }
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultPtr);
+    } else {
+	Tcl_DecrRefCount(resultPtr); /* BUGFIX: Don't leak on failure. */
     }
 
-    ckfree(buffer);
     RegCloseKey(key);
     return result;
 }
@@ -756,8 +765,8 @@ GetValue(
      */
 
     Tcl_DStringInit(&data);
-    length = TCL_DSTRING_STATIC_SIZE - 1;
-    Tcl_DStringSetLength(&data, (int) length);
+    Tcl_DStringSetLength(&data, TCL_DSTRING_STATIC_SIZE - 1);
+    length = TCL_DSTRING_STATIC_SIZE/sizeof(TCHAR) - 1;
 
     valueName = Tcl_GetStringFromObj(valueNameObj, &nameLen);
     nativeValue = Tcl_WinUtfToTChar(valueName, nameLen, &buf);
@@ -771,8 +780,8 @@ GetValue(
 	 * HKEY_PERFORMANCE_DATA
 	 */
 
-	length *= 2;
-	Tcl_DStringSetLength(&data, (int) length);
+	length = Tcl_DStringLength(&data) * (2 / sizeof(TCHAR));
+	Tcl_DStringSetLength(&data, (int) length * sizeof(TCHAR));
 	result = RegQueryValueEx(key, nativeValue,
 		NULL, &type, (BYTE *) Tcl_DStringValue(&data), &length);
     }
@@ -865,7 +874,7 @@ GetValueNames(
 {
     HKEY key;
     Tcl_Obj *resultPtr;
-    DWORD index, size, maxSize, result;
+    DWORD index, size, result;
     Tcl_DString buffer, ds;
     const char *pattern, *name;
 
@@ -878,27 +887,9 @@ GetValueNames(
 	return TCL_ERROR;
     }
 
-    /*
-     * Query the key to determine the appropriate buffer size to hold the
-     * largest value name plus the terminating null.
-     */
-
-    result = RegQueryInfoKey(key, NULL, NULL, NULL, NULL,
-	    NULL, NULL, &index, &maxSize, NULL, NULL, NULL);
-    if (result != ERROR_SUCCESS) {
-	Tcl_AppendResult(interp, "unable to query key \"",
-		Tcl_GetString(keyNameObj), "\": ", NULL);
-	AppendSystemError(interp, result);
-	RegCloseKey(key);
-	result = TCL_ERROR;
-	goto done;
-    }
-    maxSize++;
-
     resultPtr = Tcl_NewObj();
     Tcl_DStringInit(&buffer);
-    Tcl_DStringSetLength(&buffer,
-	    (int) (maxSize*sizeof(WCHAR)));
+    Tcl_DStringSetLength(&buffer, (int) (MAX_KEY_LENGTH * sizeof(TCHAR)));
     index = 0;
     result = TCL_OK;
 
@@ -914,10 +905,10 @@ GetValueNames(
      * each iteration because RegEnumValue smashes the old value.
      */
 
-    size = maxSize;
+    size = MAX_KEY_LENGTH;
     while (RegEnumValue(key,index, (TCHAR *)Tcl_DStringValue(&buffer),
 	    &size, NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
-	size *= 2;
+	size *= sizeof(TCHAR);
 
 	Tcl_WinTCharToUtf((TCHAR *) Tcl_DStringValue(&buffer), (int) size,
 		&ds);
@@ -933,12 +924,10 @@ GetValueNames(
 	Tcl_DStringFree(&ds);
 
 	index++;
-	size = maxSize;
+	size = MAX_KEY_LENGTH;
     }
     Tcl_SetObjResult(interp, resultPtr);
     Tcl_DStringFree(&buffer);
-
-  done:
     RegCloseKey(key);
     return result;
 }
@@ -1180,7 +1169,7 @@ RecursiveDeleteKey(
 				 * encoding, not UTF. */
     REGSAM mode)		/* Mode flags to pass. */
 {
-    DWORD result, size, maxSize;
+    DWORD result, size;
     Tcl_DString subkey;
     HKEY hKey;
     REGSAM saveMode = mode;
@@ -1200,16 +1189,9 @@ RecursiveDeleteKey(
     if (result != ERROR_SUCCESS) {
 	return result;
     }
-    result = RegQueryInfoKey(hKey, NULL, NULL, NULL, NULL,
-	    &maxSize, NULL, NULL, NULL, NULL, NULL, NULL);
-    maxSize++;
-    if (result != ERROR_SUCCESS) {
-	return result;
-    }
 
     Tcl_DStringInit(&subkey);
-    Tcl_DStringSetLength(&subkey,
-	    (int) (maxSize * sizeof(WCHAR)));
+    Tcl_DStringSetLength(&subkey, (int) (MAX_KEY_LENGTH * sizeof(TCHAR)));
 
     mode = saveMode;
     while (result == ERROR_SUCCESS) {
@@ -1217,7 +1199,7 @@ RecursiveDeleteKey(
 	 * Always get index 0 because key deletion changes ordering.
 	 */
 
-	size = maxSize;
+	size = MAX_KEY_LENGTH;
 	result = RegEnumKeyEx(hKey, 0, (TCHAR *)Tcl_DStringValue(&subkey),
 		&size, NULL, NULL, NULL, NULL);
 	if (result == ERROR_NO_MORE_ITEMS) {
@@ -1334,16 +1316,15 @@ SetValue(
 
 	Tcl_DStringInit(&data);
 	for (i = 0; i < objc; i++) {
-	    Tcl_DStringAppend(&data, Tcl_GetString(objv[i]), -1);
+	    const char *bytes = Tcl_GetStringFromObj(objv[i], &length);
+
+	    Tcl_DStringAppend(&data, bytes, length);
 
 	    /*
-	     * Add a null character to separate this value from the next. We
-	     * accomplish this by growing the string by one byte. Since the
-	     * DString always tacks on an extra null byte, the new byte will
-	     * already be set to null.
+	     * Add a null character to separate this value from the next.
 	     */
 
-	    Tcl_DStringSetLength(&data, Tcl_DStringLength(&data)+1);
+	    Tcl_DStringAppend(&data, "", 1);	/* NUL-terminated string */
 	}
 
 	Tcl_WinUtfToTChar(Tcl_DStringValue(&data), Tcl_DStringLength(&data)+1,

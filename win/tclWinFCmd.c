@@ -1125,9 +1125,9 @@ DoRemoveJustDirectory(
 		len = strlen(path);
 		find = Tcl_DStringAppend(&buffer, path, len);
 		if ((len > 0) && (find[len - 1] != '\\')) {
-		    Tcl_DStringAppend(&buffer, "\\", 1);
+		    TclDStringAppendLiteral(&buffer, "\\");
 		}
-		find = Tcl_DStringAppend(&buffer, "*.*", 3);
+		find = TclDStringAppendLiteral(&buffer, "*.*");
 		handle = FindFirstFileA(find, &data);
 		if (handle != INVALID_HANDLE_VALUE) {
 		    while (1) {
