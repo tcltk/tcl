@@ -1,3 +1,9 @@
+2012-07-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclTest.c: [Bug 3544685]: Missing mutex-lock in
+	TestasyncCmd since 2011-08-19. Unbounded gratitude to Stuart
+	Cassoff for spotting it.
+
 2012-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/makefile.vc: [Bug 3544932]: Visual studio compiler check fails

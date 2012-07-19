@@ -821,6 +821,7 @@ TestasyncCmd(
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
     } else if (strcmp(argv[1], "delete") == 0) {
 	if (argc == 2) {
+            Tcl_MutexLock(&asyncTestMutex);
 	    while (firstHandler != NULL) {
 		asyncPtr = firstHandler;
 		firstHandler = asyncPtr->nextPtr;
@@ -828,6 +829,7 @@ TestasyncCmd(
 		ckfree(asyncPtr->command);
 		ckfree((char *) asyncPtr);
 	    }
+            Tcl_MutexUnlock(&asyncTestMutex);
 	    return TCL_OK;
 	}
 	if (argc != 3) {
@@ -836,6 +838,7 @@ TestasyncCmd(
 	if (Tcl_GetInt(interp, argv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+        Tcl_MutexLock(&asyncTestMutex);
 	for (prevPtr = NULL, asyncPtr = firstHandler; asyncPtr != NULL;
 		prevPtr = asyncPtr, asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id != id) {
