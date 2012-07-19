@@ -1701,7 +1701,7 @@ packages: configure-packages ${STUB_LIB_FILE}
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	      echo "Building package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory; ) || exit $$?; \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
 	    fi; \
 	  fi; \
 	done
@@ -1712,7 +1712,7 @@ install-packages: packages
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	      echo "Installing package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE)  --no-print-directory install \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) install \
 		  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
 	    fi; \
 	  fi; \
@@ -1723,10 +1723,8 @@ test-packages: tcltest packages
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      echo ""; \
-	      echo ""; \
 	      echo "Testing package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) \
 		  "@LD_LIBRARY_PATH_VAR@=../..:$${@LD_LIBRARY_PATH_VAR@}" \
 		  "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" \
 		  "TCLLIBPATH=../../pkgs" test \
@@ -1740,7 +1738,7 @@ clean-packages:
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory clean; ) \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
 	    fi; \
 	  fi; \
 	done
@@ -1750,7 +1748,7 @@ distclean-packages:
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory distclean; ) \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
 	    fi; \
 	    rm -rf $(PKG_DIR)/$$pkg; \
 	  fi; \
@@ -1764,7 +1762,7 @@ dist-packages: configure-packages
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory dist \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) dist \
 		  "DIST_ROOT=$(DISTROOT)/pkgs"; ) || exit $$?; \
 	    fi; \
 	  fi; \
