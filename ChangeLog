@@ -1,3 +1,10 @@
+2012-07-19  Reinhard Max  <max@suse.de>
+
+	* win/tclWinSock.c (TcpAccept): [Bug: 3545363]: Use a large enough
+	buffer for accept()ing IPv6 connections. Fix conversion of host
+	and port for passing to the accept proc to be independent of the
+	IP version.
+
 2012-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/makefile.vc: [Bug 3544932]: Visual studio compiler check fails
