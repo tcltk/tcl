@@ -1556,18 +1556,19 @@ TcpAccept(
     SOCKET newSocket;
     SocketInfo *newInfoPtr;
     SocketInfo *infoPtr = fds->infoPtr;
-    SOCKADDR_IN addr;
+    address addr;
     int len;
     char channelName[16 + TCL_INTEGER_SPACE];
+    char host[NI_MAXHOST], port[NI_MAXSERV];
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     /*
      * Accept the incoming connection request.
      */
 
-    len = sizeof(SOCKADDR_IN);
+    len = sizeof(address);
 
-    newSocket = accept(fds->fd, (SOCKADDR *) &addr, &len);
+    newSocket = accept(fds->fd, &(addr.sa), &len);
 
     /*
      * Protect access to sockets (acceptEventCount, readyEvents) in socketList
@@ -1644,8 +1645,10 @@ TcpAccept(
      */
 
     if (infoPtr->acceptProc != NULL) {
+	getnameinfo(&(addr.sa), len, host, sizeof(host), port, sizeof(port),
+                    NI_NUMERICHOST|NI_NUMERICSERV);
 	infoPtr->acceptProc(infoPtr->acceptProcData, newInfoPtr->channel,
-		inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+                            host, atoi(port));
     }
 }
 
