@@ -305,7 +305,7 @@ test filesystem-1.39 {file normalisation with volume relative} -setup {
     file norm [string range $drv 0 1]
 } -cleanup {
     cd $old
-} -match glob -result {*[^/]}
+} -match regexp -result {.*[^/]}
 test filesystem-1.40 {file normalisation with repeated separators} {
     testPathEqual [file norm foo////bar] [file norm foo/bar]
 } ok

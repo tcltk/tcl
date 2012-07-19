@@ -72,9 +72,9 @@ SetResultLength(
 {
     Tcl_DStringSetLength(resultPtr, offset);
     if (extended == 2) {
-	Tcl_DStringAppend(resultPtr, "//?/UNC/", 8);
+	TclDStringAppendLiteral(resultPtr, "//?/UNC/");
     } else if (extended == 1) {
-	Tcl_DStringAppend(resultPtr, "//?/", 4);
+	TclDStringAppendLiteral(resultPtr, "//?/");
     }
 }
 
@@ -131,7 +131,7 @@ ExtractWinRoot(
 	if (path[1] != '/' && path[1] != '\\') {
 	    SetResultLength(resultPtr, offset, extended);
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
-	    Tcl_DStringAppend(resultPtr, "/", 1);
+	    TclDStringAppendLiteral(resultPtr, "/");
 	    return &path[1];
 	}
 	host = &path[2];
@@ -161,7 +161,7 @@ ExtractWinRoot(
 	     */
 
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
-	    Tcl_DStringAppend(resultPtr, "/", 1);
+	    TclDStringAppendLiteral(resultPtr, "/");
 	    return &path[2];
 	}
 	SetResultLength(resultPtr, offset, extended);
@@ -180,9 +180,9 @@ ExtractWinRoot(
 		break;
 	    }
 	}
-	Tcl_DStringAppend(resultPtr, "//", 2);
+	TclDStringAppendLiteral(resultPtr, "//");
 	Tcl_DStringAppend(resultPtr, host, hlen);
-	Tcl_DStringAppend(resultPtr, "/", 1);
+	TclDStringAppendLiteral(resultPtr, "/");
 	Tcl_DStringAppend(resultPtr, share, slen);
 
 	tail = &share[slen];
@@ -221,7 +221,7 @@ ExtractWinRoot(
 
 	    *typePtr = TCL_PATH_ABSOLUTE;
 	    Tcl_DStringAppend(resultPtr, path, 2);
-	    Tcl_DStringAppend(resultPtr, "/", 1);
+	    TclDStringAppendLiteral(resultPtr, "/");
 
 	    return tail;
 	}
@@ -424,9 +424,17 @@ TclpGetNativePathType(
 	    }
 #endif
 	    if (path[0] == '/') {
+#ifdef __CYGWIN__
+		/*
+		 * Check for Cygwin // network path prefix
+		 */
+		if (path[1] == '/') {
+		    path++;
+		}
+#endif
 		if (driveNameLengthPtr != NULL) {
 		    /*
-		     * We need this addition in case the QNX code was used.
+		     * We need this addition in case the QNX or Cygwin code was used.
 		     */
 
 		    *driveNameLengthPtr = (1 + path - origPath);
@@ -653,11 +661,20 @@ SplitUnixPath(
     }
 #endif
 
-    if (path[0] == '/') {
-	Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj("/",1));
-	p = path+1;
-    } else {
-	p = path;
+    p = path;
+    if (*p == '/') {
+	Tcl_Obj *rootElt = Tcl_NewStringObj("/", 1);
+	p++;
+#ifdef __CYGWIN__
+	/*
+	 * Check for Cygwin // network path prefix
+	 */
+	if (*p == '/') {
+	    Tcl_AppendToObj(rootElt, "/", 1);
+	    p++;
+	}
+#endif
+	Tcl_ListObjAppendElement(NULL, result, rootElt);
     }
 
     /*
@@ -863,7 +880,7 @@ TclpNativeJoinPath(
 
 	if (length > 0 && (start[length-1] != '/')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    length++;
+	    Tcl_GetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -899,7 +916,7 @@ TclpNativeJoinPath(
 	if ((length > 0) &&
 		(start[length-1] != '/') && (start[length-1] != ':')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    length++;
+	    Tcl_GetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -1040,7 +1057,7 @@ Tcl_TranslateFileName(
     }
 
     Tcl_DStringInit(bufferPtr);
-    Tcl_DStringAppend(bufferPtr, Tcl_GetString(transPtr), -1);
+    TclDStringAppendObj(bufferPtr, transPtr);
     Tcl_DecrRefCount(path);
     Tcl_DecrRefCount(transPtr);
 
@@ -1396,7 +1413,7 @@ Tcl_GlobObjCmd(
 	    search = Tcl_DStringValue(&pref);
 	    while ((find = (strpbrk(search, "\\[]*?{}"))) != NULL) {
 		Tcl_DStringAppend(&prefix, search, find-search);
-		Tcl_DStringAppend(&prefix, "\\", 1);
+		TclDStringAppendLiteral(&prefix, "\\");
 		Tcl_DStringAppend(&prefix, find, 1);
 		search = find+1;
 		if (*search == '\0') {
@@ -1558,8 +1575,7 @@ Tcl_GlobObjCmd(
 	    Tcl_DStringInit(&prefix);
 	}
 	for (i = 0; i < objc; i++) {
-	    string = Tcl_GetStringFromObj(objv[i], &length);
-	    Tcl_DStringAppend(&prefix, string, length);
+	    TclDStringAppendObj(&prefix, objv[i]);
 	    if (i != objc -1) {
 		Tcl_DStringAppend(&prefix, separators, 1);
 	    }
@@ -1575,11 +1591,9 @@ Tcl_GlobObjCmd(
 	for (i = 0; i < objc; i++) {
 	    Tcl_DStringInit(&str);
 	    if (dir == PATH_GENERAL) {
-		Tcl_DStringAppend(&str, Tcl_DStringValue(&prefix),
-			Tcl_DStringLength(&prefix));
+		TclDStringAppendDString(&str, &prefix);
 	    }
-	    string = Tcl_GetStringFromObj(objv[i], &length);
-	    Tcl_DStringAppend(&str, string, length);
+	    TclDStringAppendObj(&str, objv[i]);
 	    if (TclGlob(interp, Tcl_DStringValue(&str), pathOrDir, globFlags,
 		    globTypes) != TCL_OK) {
 		result = TCL_ERROR;
@@ -2384,9 +2398,9 @@ DoGlob(
 	    if (length == 0 && (Tcl_DStringLength(&append) == 0)) {
 		if (((*name == '\\') && (name[1] == '/' ||
 			name[1] == '\\')) || (*name == '/')) {
-		    Tcl_DStringAppend(&append, "/", 1);
+		    TclDStringAppendLiteral(&append, "/");
 		} else {
-		    Tcl_DStringAppend(&append, ".", 1);
+		    TclDStringAppendLiteral(&append, ".");
 		}
 	    }
 
@@ -2395,22 +2409,11 @@ DoGlob(
 	case TCL_PLATFORM_UNIX:
 	    if (length == 0 && (Tcl_DStringLength(&append) == 0)) {
 		if ((*name == '\\' && name[1] == '/') || (*name == '/')) {
-		    Tcl_DStringAppend(&append, "/", 1);
+		    TclDStringAppendLiteral(&append, "/");
 		} else {
-		    Tcl_DStringAppend(&append, ".", 1);
+		    TclDStringAppendLiteral(&append, ".");
 		}
 	    }
-#if defined(__CYGWIN__) && !defined(__WIN32__)
-	    {
-		DLLIMPORT extern int cygwin_conv_to_posix_path(const char *,
-			char *);
-		char winbuf[MAXPATHLEN+1];
-
-		cygwin_conv_to_posix_path(Tcl_DStringValue(&append), winbuf);
-		Tcl_DStringFree(&append);
-		Tcl_DStringAppend(&append, winbuf, -1);
-	    }
-#endif /* __CYGWIN__ && __WIN32__ */
 	    break;
 	}
 

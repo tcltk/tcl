@@ -733,7 +733,7 @@ TtySetOptionProc(
 
 	Tcl_UtfToExternalDString(NULL, argv[0], -1, &ds);
 	iostate.c_cc[VSTART] = *(const cc_t *) Tcl_DStringValue(&ds);
-	Tcl_DStringSetLength(&ds, 0);
+	TclDStringClear(&ds);
 
 	Tcl_UtfToExternalDString(NULL, argv[1], -1, &ds);
 	iostate.c_cc[VSTOP] = *(const cc_t *) Tcl_DStringValue(&ds);
@@ -916,7 +916,7 @@ TtyGetOptionProc(
 
 	Tcl_ExternalToUtfDString(NULL, (char *) &iostate.c_cc[VSTART], 1, &ds);
 	Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
-	Tcl_DStringSetLength(&ds, 0);
+	TclDStringClear(&ds);
 
 	Tcl_ExternalToUtfDString(NULL, (char *) &iostate.c_cc[VSTOP], 1, &ds);
 	Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
@@ -981,7 +981,7 @@ TtyGetOptionProc(
 #   define TtyGetBaud(speed)	((int) (speed))
 #else /* !DIRECT_BAUD */
 
-static CONST struct {int baud; unsigned long speed;} speeds[] = {
+static const struct {int baud; unsigned long speed;} speeds[] = {
 #ifdef B0
     {0, B0},
 #endif
