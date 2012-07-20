@@ -1,3 +1,35 @@
+2012-07-19  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclTest.c: Fix several more missing mutex-locks in
+	TestasyncCmd.
+
+2012-07-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclTest.c: [Bug 3544685]: Missing mutex-lock in
+	TestasyncCmd since 2011-08-19. Unbounded gratitude to Stuart
+	Cassoff for spotting it.
+
+2012-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/makefile.vc: [Bug 3544932]: Visual studio compiler check fails
+
+2012-07-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclUtil.c (UpdateStringOfEndOffset): [Bug 3544658]: Stop
+	1-byte overrun in memcpy, that object placement rules made harmless
+	but which still caused compiler complaints.
+
+2012-07-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/reg/pkgIndex.tcl:  Make registry 1.3 package dynamically
+	loadable when ::tcl::pkgconfig is available.
+
+2012-07-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinReg.c: [Bug #3362446]: registry keys command fails
+	with 8.5/8.6. Follow Microsofts example better in order to prevent
+	problems when using HKEY_PERFORMANCE_DATA.
+
 2012-07-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclUnixNotfy.c: [Bug 3541646] Don't panic on triggerPipe overrun

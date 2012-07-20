@@ -129,25 +129,27 @@ namespace eval ::http {
 	## TODO: How to handle prefix matches?
 # From kbk
 #LENGTH(theColumn) <= LENGTH(:queryStr) AND SUBSTR(theColumn, LENGTH(:queryStr)-LENGTH(theColumn)+1) = :queryStr
-	db eval {
-	    SELECT key, value FROM cookies WHERE domain = :host
-	} cookie {
-	    dict set result $key $value
-	}
-	db eval {
-	    SELECT key, value FROM sessionCookies WHERE domain = :host
-	} cookie {
-	    dict set result $key $value
-	}
-	db eval {
-	    SELECT key, value FROM cookies WHERE origin = :host
-	} cookie {
-	    dict set result $key $value
-	}
-	db eval {
-	    SELECT key, value FROM sessionCookies WHERE origin = :host
-	} cookie {
-	    dict set result $key $value
+	db transaction {
+	    db eval {
+		SELECT key, value FROM cookies WHERE domain = :host
+	    } cookie {
+		dict set result $key $value
+	    }
+	    db eval {
+		SELECT key, value FROM sessionCookies WHERE domain = :host
+	    } cookie {
+		dict set result $key $value
+	    }
+	    db eval {
+		SELECT key, value FROM cookies WHERE origin = :host
+	    } cookie {
+		dict set result $key $value
+	    }
+	    db eval {
+		SELECT key, value FROM sessionCookies WHERE origin = :host
+	    } cookie {
+		dict set result $key $value
+	    }
 	}
 	return $result
     }
