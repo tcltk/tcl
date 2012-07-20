@@ -65,6 +65,8 @@ typedef struct TestAsyncHandler {
     struct TestAsyncHandler *nextPtr;	/* Next is list of handlers. */
 } TestAsyncHandler;
 
+TCL_DECLARE_MUTEX(asyncTestMutex);
+
 static TestAsyncHandler *firstHandler = NULL;
 
 /*
@@ -799,18 +801,20 @@ TestasyncCmd(dummy, interp, argc, argv)
 	    goto wrongNumArgs;
 	}
 	asyncPtr = (TestAsyncHandler *) ckalloc(sizeof(TestAsyncHandler));
+	asyncPtr->command = (char *) ckalloc((unsigned) (strlen(argv[2]) + 1));
+	strcpy(asyncPtr->command, argv[2]);
+	Tcl_MutexLock(&asyncTestMutex);
 	asyncPtr->id = nextId;
 	nextId++;
 	asyncPtr->handler = Tcl_AsyncCreate(AsyncHandlerProc,
-		(ClientData) asyncPtr);
-	asyncPtr->command = (char *) ckalloc((unsigned) (strlen(argv[2]) + 1));
-	strcpy(asyncPtr->command, argv[2]);
+		(ClientData) asyncPtr->id);
 	asyncPtr->nextPtr = firstHandler;
 	firstHandler = asyncPtr;
 	TclFormatInt(buf, asyncPtr->id);
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
     } else if (strcmp(argv[1], "delete") == 0) {
 	if (argc == 2) {
+	    Tcl_MutexLock(&asyncTestMutex);
 	    while (firstHandler != NULL) {
 		asyncPtr = firstHandler;
 		firstHandler = asyncPtr->nextPtr;
@@ -818,6 +822,7 @@ TestasyncCmd(dummy, interp, argc, argv)
 		ckfree(asyncPtr->command);
 		ckfree((char *) asyncPtr);
 	    }
+	    Tcl_MutexUnlock(&asyncTestMutex);
 	    return TCL_OK;
 	}
 	if (argc != 3) {
@@ -826,6 +831,7 @@ TestasyncCmd(dummy, interp, argc, argv)
 	if (Tcl_GetInt(interp, argv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	Tcl_MutexLock(&asyncTestMutex);
 	for (prevPtr = NULL, asyncPtr = firstHandler; asyncPtr != NULL;
 		prevPtr = asyncPtr, asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id != id) {
@@ -841,6 +847,7 @@ TestasyncCmd(dummy, interp, argc, argv)
 	    ckfree((char *) asyncPtr);
 	    break;
 	}
+	Tcl_MutexUnlock(&asyncTestMutex);
     } else if (strcmp(argv[1], "mark") == 0) {
 	if (argc != 5) {
 	    goto wrongNumArgs;
@@ -849,6 +856,7 @@ TestasyncCmd(dummy, interp, argc, argv)
 		|| (Tcl_GetInt(interp, argv[4], &code) != TCL_OK)) {
 	    return TCL_ERROR;
 	}
+	Tcl_MutexLock(&asyncTestMutex);
 	for (asyncPtr = firstHandler; asyncPtr != NULL;
 		asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id == id) {
@@ -856,6 +864,7 @@ TestasyncCmd(dummy, interp, argc, argv)
 		break;
 	    }
 	}
+	Tcl_MutexUnlock(&asyncTestMutex);
 	Tcl_SetResult(interp, (char *)argv[3], TCL_VOLATILE);
 	return code;
     } else {
@@ -869,14 +878,28 @@ TestasyncCmd(dummy, interp, argc, argv)
 
 static int
 AsyncHandlerProc(clientData, interp, code)
-    ClientData clientData;	/* Pointer to TestAsyncHandler structure. */
+    ClientData clientData;	/* Id of TestAsyncHandler structure. 
+                                 * in global list. */
     Tcl_Interp *interp;		/* Interpreter in which command was
 				 * executed, or NULL. */
     int code;			/* Current return code from command. */
 {
-    TestAsyncHandler *asyncPtr = (TestAsyncHandler *) clientData;
+    TestAsyncHandler *asyncPtr;
+    int id = (int)clientData;
     CONST char *listArgv[4], *cmd;
     char string[TCL_INTEGER_SPACE];
+
+    Tcl_MutexLock(&asyncTestMutex);
+    for (asyncPtr = firstHandler; asyncPtr != NULL;
+         asyncPtr = asyncPtr->nextPtr) {
+        if (asyncPtr->id == id) break;
+    }
+    Tcl_MutexUnlock(&asyncTestMutex);
+
+    if (!asyncPtr) {
+        /* Woops - this one was deleted between the AsyncMark and now */
+        return TCL_OK;
+    }
 
     TclFormatInt(string, code);
     listArgv[0] = asyncPtr->command;
