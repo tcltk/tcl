@@ -1,3 +1,8 @@
+2012-07-23  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c: [Bug  3545365]: Never try a bg-flush  on a dead
+	channel, just like before 2011-08-17.
+
 2012-07-19  Joe Mistachkin  <joe@mistachkin.com>
 
 	* generic/tclTest.c: Fix several more missing mutex-locks in
