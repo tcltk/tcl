@@ -711,7 +711,7 @@ test winFCmd-7.14 {TraverseWinTree: append \ to target if necessary} -constraint
     cleanup
     file mkdir td1
     list [catch {testfile cpdir td1 /} msg] $msg
-} -match regexp -result {1 {/ EEXIST|EACCES}}
+} -match regexp -result {1 \{/ (EEXIST|EACCES)\}}
 test winFCmd-7.16 {TraverseWinTree: recurse on files: no files} {win testfile} {
     cleanup
     file mkdir td1
