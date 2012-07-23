@@ -427,7 +427,10 @@ TclFinalizeIOSubsystem(void)
 		statePtr != NULL;
 		statePtr = statePtr->nextCSPtr) {
 	    chanPtr = statePtr->topChanPtr;
-	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED | CHANNEL_DEAD)
+            if (GotFlag(statePtr, CHANNEL_DEAD)) {
+                continue;
+            }
+	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED )
                 || GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
                 ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		active = 1;
