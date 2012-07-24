@@ -1,4 +1,4 @@
-2012-07-17  Don Porter  <dgp@users.sourceforge.net>
+2012-07-24  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.12 TAGGED FOR RELEASE ***
 
@@ -14,6 +14,17 @@
 	* win/configure:
 
 	* changes:	Update for 8.5.12 release.
+
+2012-07-19  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclTest.c: Fix several more missing mutex-locks in
+	TestasyncCmd.
+
+2012-07-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclTest.c: [Bug 3544685]: Missing mutex-lock in
+	TestasyncCmd since 2011-08-19. Unbounded gratitude to Stuart
+	Cassoff for spotting it.
 
 2012-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
 

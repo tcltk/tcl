@@ -821,6 +821,7 @@ TestasyncCmd(
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
     } else if (strcmp(argv[1], "delete") == 0) {
 	if (argc == 2) {
+            Tcl_MutexLock(&asyncTestMutex);
 	    while (firstHandler != NULL) {
 		asyncPtr = firstHandler;
 		firstHandler = asyncPtr->nextPtr;
@@ -828,6 +829,7 @@ TestasyncCmd(
 		ckfree(asyncPtr->command);
 		ckfree((char *) asyncPtr);
 	    }
+            Tcl_MutexUnlock(&asyncTestMutex);
 	    return TCL_OK;
 	}
 	if (argc != 3) {
@@ -836,6 +838,7 @@ TestasyncCmd(
 	if (Tcl_GetInt(interp, argv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+        Tcl_MutexLock(&asyncTestMutex);
 	for (prevPtr = NULL, asyncPtr = firstHandler; asyncPtr != NULL;
 		prevPtr = asyncPtr, asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id != id) {
@@ -860,6 +863,7 @@ TestasyncCmd(
 		|| (Tcl_GetInt(interp, argv[4], &code) != TCL_OK)) {
 	    return TCL_ERROR;
 	}
+        Tcl_MutexLock(&asyncTestMutex);
 	for (asyncPtr = firstHandler; asyncPtr != NULL;
 		asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id == id) {
@@ -867,6 +871,7 @@ TestasyncCmd(
 		break;
 	    }
 	}
+        Tcl_MutexUnlock(&asyncTestMutex);
 	Tcl_SetResult(interp, (char *)argv[3], TCL_VOLATILE);
 	return code;
 #ifdef TCL_THREADS
@@ -877,6 +882,7 @@ TestasyncCmd(
 	if (Tcl_GetInt(interp, argv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+        Tcl_MutexLock(&asyncTestMutex);
 	for (asyncPtr = firstHandler; asyncPtr != NULL;
 		asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id == id) {
@@ -885,11 +891,13 @@ TestasyncCmd(
 			(ClientData) INT2PTR(id), TCL_THREAD_STACK_DEFAULT,
 			TCL_THREAD_NOFLAGS) != TCL_OK) {
 		    Tcl_SetResult(interp, "can't create thread", TCL_STATIC);
+		    Tcl_MutexUnlock(&asyncTestMutex);
 		    return TCL_ERROR;
 		}
 		break;
 	    }
 	}
+        Tcl_MutexUnlock(&asyncTestMutex);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
 		"\": must be create, delete, int, mark, or marklater", NULL);
