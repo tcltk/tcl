@@ -220,7 +220,7 @@ static void		SocketExitHandler(ClientData clientData);
 static LRESULT CALLBACK	SocketProc(HWND hwnd, UINT message, WPARAM wParam,
 			    LPARAM lParam);
 static int		SocketsEnabled(void);
-static void		TcpAccept(TcpFdList *fds);
+static void		TcpAccept(TcpFdList *fds, SOCKET newSocket, address addr);
 static int		WaitForSocketEvent(SocketInfo *infoPtr, int events,
 			    int *errorCodePtr);
 static DWORD WINAPI	SocketThread(LPVOID arg);
@@ -692,6 +692,9 @@ SocketEventProc(
     int mask = 0, events;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     TcpFdList *fds;
+    SOCKET newSocket;
+    address addr;
+    int len;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return 0;
@@ -708,13 +711,13 @@ SocketEventProc(
 	    break;
 	}
     }
-    SetEvent(tsdPtr->socketListLock);
 
     /*
      * Discard events that have gone stale.
      */
 
     if (!infoPtr) {
+        SetEvent(tsdPtr->socketListLock);
 	return 1;
     }
 
@@ -726,10 +729,64 @@ SocketEventProc(
 
     if (infoPtr->readyEvents & FD_ACCEPT) {
 	for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
-	    TcpAccept(fds);
+
+	    /*
+	    * Accept the incoming connection request.
+	    */
+	    len = sizeof(address);
+
+	    newSocket = accept(fds->fd, &(addr.sa), &len);
+
+	    /* On Tcl server sockets with multiple OS fds we loop over the fds trying
+	     * an accept() on each, so we expect INVALID_SOCKET.  There are also other
+	     * network stack conditions that can result in FD_ACCEPT but a subsequent
+	     * failure on accept() by the time we get around to it.
+	     * Access to sockets (acceptEventCount, readyEvents) in socketList
+	     * is still protected by the lock (prevents reintroduction of 
+	     * SF Tcl Bug 3056775.
+	     */
+
+	    if (newSocket == INVALID_SOCKET) {
+		/* int err = WSAGetLastError(); */
+		continue;
+	    }
+
+	    /*
+	     * It is possible that more than one FD_ACCEPT has been sent, so an extra
+	     * count must be kept. Decrement the count, and reset the readyEvent bit
+	     * if the count is no longer > 0.
+	     */
+	    infoPtr->acceptEventCount--;
+
+	    if (infoPtr->acceptEventCount <= 0) {
+		infoPtr->readyEvents &= ~(FD_ACCEPT);
+	    }
+
+	    SetEvent(tsdPtr->socketListLock);
+
+	    /* Caution: TcpAccept() has the side-effect of evaluating the server
+	     * accept script (via AcceptCallbackProc() in tclIOCmd.c), which can
+	     * close the server socket and invalidate infoPtr and fds.
+	     * If TcpAccept() accepts a socket we must return immediately and let
+	     * SocketCheckProc queue additional FD_ACCEPT events.
+	     */
+	    TcpAccept(fds, newSocket, addr);
+	    return 1;
 	}
+
+	/* Loop terminated with no sockets accepted; clear the ready mask so 
+	 * we can detect the next connection request. Note that connection 
+	 * requests are level triggered, so if there is a request already 
+	 * pending, a new event will be generated.
+	 */
+	infoPtr->acceptEventCount = 0;
+	infoPtr->readyEvents &= ~(FD_ACCEPT);
+
+	SetEvent(tsdPtr->socketListLock);
 	return 1;
     }
+
+    SetEvent(tsdPtr->socketListLock);
 
     /*
      * Mask off unwanted events and compute the read/write mask so we can
@@ -872,9 +929,15 @@ TcpCloseProc(
 	 * background.
 	 */
 
-	if (closesocket(infoPtr->sockets->fd) == SOCKET_ERROR) {
-	    TclWinConvertError((DWORD) WSAGetLastError());
-	    errorCode = Tcl_GetErrno();
+	while ( infoPtr->sockets != NULL ) {
+	    TcpFdList *thisfd = infoPtr->sockets;
+	    infoPtr->sockets = thisfd->next;
+
+	    if (closesocket(thisfd->fd) == SOCKET_ERROR) {
+		TclWinConvertError((DWORD) WSAGetLastError());
+		errorCode = Tcl_GetErrno();
+	    }
+	    ckfree(thisfd);
 	}
     }
 
@@ -934,6 +997,8 @@ TcpClose2Proc(
 	return TCL_ERROR;
     }
 
+    /* single fd operation: Tcl_OpenTcpServer() does not set TCL_READABLE or
+     * TCL_WRITABLE so this should never be called for a server socket. */
     if (shutdown(infoPtr->sockets->fd, sd) == SOCKET_ERROR) {
 	TclWinConvertError((DWORD) WSAGetLastError());
 	errorCode = Tcl_GetErrno();
@@ -942,6 +1007,51 @@ TcpClose2Proc(
     return errorCode;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddSocketInfoFd --
+ *
+ *	This function adds a SOCKET file descriptor to the 'sockets' linked 
+ *	list of a SocketInfo structure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None, except for allocation of memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AddSocketInfoFd(
+    SocketInfo *infoPtr, 
+    SOCKET socket)
+{
+    TcpFdList *fds = infoPtr->sockets;
+
+    if ( fds == NULL ) {
+	/* Add the first FD */
+	infoPtr->sockets = ckalloc(sizeof(TcpFdList));
+	fds = infoPtr->sockets;
+    } else {
+	/* Find end of list and append FD */
+	while ( fds->next != NULL ) {
+	    fds = fds->next;
+	}
+    
+	fds->next = ckalloc(sizeof(TcpFdList));
+	fds = fds->next;
+    }
+
+    /* Populate new FD */
+    fds->fd = socket;
+    fds->infoPtr = infoPtr;
+    fds->next = NULL;
+}
+
+    
 /*
  *----------------------------------------------------------------------
  *
@@ -963,14 +1073,10 @@ NewSocketInfo(
     SOCKET socket)
 {
     SocketInfo *infoPtr = ckalloc(sizeof(SocketInfo));
-    TcpFdList *fds = ckalloc(sizeof(TcpFdList));
 
-    fds->fd = socket;
-    fds->next = NULL;
-    fds->infoPtr = infoPtr;
     /* ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey); */
     infoPtr->channel = 0;
-    infoPtr->sockets = fds;
+    infoPtr->sockets = NULL;
     infoPtr->flags = 0;
     infoPtr->watchEvents = 0;
     infoPtr->readyEvents = 0;
@@ -987,6 +1093,8 @@ NewSocketInfo(
      */
 
     infoPtr->nextPtr = NULL;
+
+    AddSocketInfoFd(infoPtr, socket);
 
     return infoPtr;
 }
@@ -1057,7 +1165,6 @@ CreateSocket(
     }
 
     if (server) {
-	TcpFdList *fds = NULL, *newfds;
 
 	for (addrPtr = addrlist; addrPtr != NULL; addrPtr = addrPtr->ai_next) {
 	    sock = socket(addrPtr->ai_family, SOCK_STREAM, 0);
@@ -1140,7 +1247,6 @@ CreateSocket(
 		 */
 
 		infoPtr = NewSocketInfo(sock);
-		fds = infoPtr->sockets;
 
 		/*
 		 * Set up the select mask for connection request events.
@@ -1150,13 +1256,7 @@ CreateSocket(
 		infoPtr->watchEvents |= FD_ACCEPT;
 
 	    } else {
-		newfds = ckalloc(sizeof(TcpFdList));
-		memset(newfds, (int) 0, sizeof(TcpFdList));
-		newfds->fd = sock;
-		newfds->infoPtr = infoPtr;
-		newfds->next = NULL;
-		fds->next = newfds;
-		fds = newfds;
+		AddSocketInfoFd( infoPtr, sock );
 	    }
 	}
     } else {
@@ -1537,8 +1637,9 @@ Tcl_OpenTcpServer(
  *
  * TcpAccept --
  *
- *	Accept a TCP socket connection. This is called by SocketEventProc and
- *	it in turns calls the registered accept function.
+ *	Creates a channel for a newly accepted socket connection. This is 
+ *	called by SocketEventProc and it in turns calls the registered 
+ *	accept function.
  *
  * Results:
  *	None.
@@ -1551,59 +1652,16 @@ Tcl_OpenTcpServer(
 
 static void
 TcpAccept(
-    TcpFdList *fds)	/* Socket to accept. */
+    TcpFdList *fds,	/* Server socket that accepted newSocket. */
+    SOCKET newSocket,   /* Newly accepted socket. */
+    address addr)       /* Address of new socket. */
 {
-    SOCKET newSocket;
     SocketInfo *newInfoPtr;
     SocketInfo *infoPtr = fds->infoPtr;
-    address addr;
-    int len;
+    int len = sizeof(addr);
     char channelName[16 + TCL_INTEGER_SPACE];
     char host[NI_MAXHOST], port[NI_MAXSERV];
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
-
-    /*
-     * Accept the incoming connection request.
-     */
-
-    len = sizeof(address);
-
-    newSocket = accept(fds->fd, &(addr.sa), &len);
-
-    /*
-     * Protect access to sockets (acceptEventCount, readyEvents) in socketList
-     * by the lock.  Fix for SF Tcl Bug 3056775.
-     */
-
-    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-
-    /*
-     * Clear the ready mask so we can detect the next connection request. Note
-     * that connection requests are level triggered, so if there is a request
-     * already pending, a new event will be generated.
-     */
-
-    if (newSocket == INVALID_SOCKET) {
-	infoPtr->acceptEventCount = 0;
-	infoPtr->readyEvents &= ~(FD_ACCEPT);
-
-	SetEvent(tsdPtr->socketListLock);
-	return;
-    }
-
-    /*
-     * It is possible that more than one FD_ACCEPT has been sent, so an extra
-     * count must be kept. Decrement the count, and reset the readyEvent bit
-     * if the count is no longer > 0.
-     */
-
-    infoPtr->acceptEventCount--;
-
-    if (infoPtr->acceptEventCount <= 0) {
-	infoPtr->readyEvents &= ~(FD_ACCEPT);
-    }
-
-    SetEvent(tsdPtr->socketListLock);
 
     /*
      * Win-NT has a misfeature that sockets are inherited in child processes
@@ -1648,7 +1706,7 @@ TcpAccept(
 	getnameinfo(&(addr.sa), len, host, sizeof(host), port, sizeof(port),
                     NI_NUMERICHOST|NI_NUMERICSERV);
 	infoPtr->acceptProc(infoPtr->acceptProcData, newInfoPtr->channel,
-                            host, atoi(port));
+			    host, atoi(port));
     }
 }
 
@@ -1723,6 +1781,7 @@ TcpInputProc(
     while (1) {
 	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 		(WPARAM) UNSELECT, (LPARAM) infoPtr);
+	/* single fd operation: this proc is only called for a connected socket. */
 	bytesRead = recv(infoPtr->sockets->fd, buf, toRead, 0);
 	infoPtr->readyEvents &= ~(FD_READ);
 
@@ -1843,6 +1902,7 @@ TcpOutputProc(
 	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 		(WPARAM) UNSELECT, (LPARAM) infoPtr);
 
+	/* single fd operation: this proc is only called for a connected socket. */
 	bytesWritten = send(infoPtr->sockets->fd, buf, toWrite, 0);
 	if (bytesWritten != SOCKET_ERROR) {
 	    /*
@@ -1938,6 +1998,7 @@ TcpSetOptionProc(
     }
 
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
+    #error "TCL_FEATURE_KEEPALIVE_NAGLE not reviewed for whether to treat infoPtr->sockets as single fd or list"
     sock = infoPtr->sockets->fd;
 
     if (!strcasecmp(optionName, "-keepalive")) {
@@ -2401,6 +2462,7 @@ SocketProc(
     int event, error;
     SOCKET socket;
     SocketInfo *infoPtr;
+    TcpFdList *fds = NULL;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 #ifdef _WIN64
 	    GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -2445,58 +2507,60 @@ SocketProc(
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 	for (infoPtr = tsdPtr->socketList; infoPtr != NULL;
 		infoPtr = infoPtr->nextPtr) {
-	    if (infoPtr->sockets->fd == socket) {
-		/*
-		 * Update the socket state.
-		 *
-		 * A count of FD_ACCEPTS is stored, so if an FD_CLOSE event
-		 * happens, then clear the FD_ACCEPT count. Otherwise,
-		 * increment the count if the current event is an FD_ACCEPT.
-		 */
-
-		if (event & FD_CLOSE) {
-		    infoPtr->acceptEventCount = 0;
-		    infoPtr->readyEvents &= ~(FD_WRITE|FD_ACCEPT);
-		} else if (event & FD_ACCEPT) {
-		    infoPtr->acceptEventCount++;
-		}
-
-		if (event & FD_CONNECT) {
+	    for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
+		if (fds->fd == socket) {
 		    /*
-		     * The socket is now connected, clear the async connect
-		     * flag.
+		     * Update the socket state.
+		     *
+		     * A count of FD_ACCEPTS is stored, so if an FD_CLOSE event
+		     * happens, then clear the FD_ACCEPT count. Otherwise,
+		     * increment the count if the current event is an FD_ACCEPT.
 		     */
 
-		    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+		    if (event & FD_CLOSE) {
+			infoPtr->acceptEventCount = 0;
+			infoPtr->readyEvents &= ~(FD_WRITE|FD_ACCEPT);
+		    } else if (event & FD_ACCEPT) {
+			infoPtr->acceptEventCount++;
+		    }
+
+		    if (event & FD_CONNECT) {
+			/*
+			 * The socket is now connected, clear the async connect
+			 * flag.
+			 */
+
+			infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+
+			/*
+			 * Remember any error that occurred so we can report
+			 * connection failures.
+			 */
+
+			if (error != ERROR_SUCCESS) {
+			    TclWinConvertError((DWORD) error);
+			    infoPtr->lastError = Tcl_GetErrno();
+			}
+		    }
+
+		    if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
+			infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+			if (error != ERROR_SUCCESS) {
+			    TclWinConvertError((DWORD) error);
+			    infoPtr->lastError = Tcl_GetErrno();
+			}
+			infoPtr->readyEvents |= FD_WRITE;
+		    }
+		    infoPtr->readyEvents |= event;
 
 		    /*
-		     * Remember any error that occurred so we can report
-		     * connection failures.
+		     * Wake up the Main Thread.
 		     */
 
-		    if (error != ERROR_SUCCESS) {
-			TclWinConvertError((DWORD) error);
-			infoPtr->lastError = Tcl_GetErrno();
-		    }
+		    SetEvent(tsdPtr->readyEvent);
+		    Tcl_ThreadAlert(tsdPtr->threadId);
+		    break;
 		}
-
-		if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
-		    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-		    if (error != ERROR_SUCCESS) {
-			TclWinConvertError((DWORD) error);
-			infoPtr->lastError = Tcl_GetErrno();
-		    }
-		    infoPtr->readyEvents |= FD_WRITE;
-		}
-		infoPtr->readyEvents |= event;
-
-		/*
-		 * Wake up the Main Thread.
-		 */
-
-		SetEvent(tsdPtr->readyEvent);
-		Tcl_ThreadAlert(tsdPtr->threadId);
-		break;
 	    }
 	}
 	SetEvent(tsdPtr->socketListLock);
@@ -2504,15 +2568,18 @@ SocketProc(
 
     case SOCKET_SELECT:
 	infoPtr = (SocketInfo *) lParam;
-	if (wParam == SELECT) {
-	    WSAAsyncSelect(infoPtr->sockets->fd, hwnd,
-		    SOCKET_MESSAGE, infoPtr->selectEvents);
-	} else {
-	    /*
-	     * Clear the selection mask
-	     */
+	for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
+	    infoPtr = (SocketInfo *) lParam;
+	    if (wParam == SELECT) {
+		WSAAsyncSelect(fds->fd, hwnd,
+			SOCKET_MESSAGE, infoPtr->selectEvents);
+	    } else {
+		/*
+		 * Clear the selection mask
+		 */
 
-	    WSAAsyncSelect(infoPtr->sockets->fd, hwnd, 0, 0);
+		WSAAsyncSelect(fds->fd, hwnd, 0, 0);
+	    }
 	}
 	break;
 
