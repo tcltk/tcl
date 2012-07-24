@@ -7540,6 +7540,7 @@ TclChannelEventScriptInvoker(clientData, mask)
      */
     
     Tcl_Preserve((ClientData) interp);
+    Tcl_Preserve((ClientData) chanPtr);
     result = Tcl_EvalObjEx(interp, esPtr->scriptPtr, TCL_EVAL_GLOBAL);
 
     /*
@@ -7556,6 +7557,7 @@ TclChannelEventScriptInvoker(clientData, mask)
 	}
         Tcl_BackgroundError(interp);
     }
+    Tcl_Release((ClientData) chanPtr);
     Tcl_Release((ClientData) interp);
 }
 
