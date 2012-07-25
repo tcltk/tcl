@@ -7636,9 +7636,6 @@ problems where [file *able] would return false results on Win/Samba (porter)
 2012-05-17 (bug fix)[3106532] proper [switch -indexvar] values (fellows)
 	*** POTENTIAL INCOMPATIBILITY ***
 
-2012-06-21 (bug fix)[3362446] [registry keys] failure (nijtmans)
-=> registry 1.2.2
-
 2012-06-25 (bug fix)[3537605] [encoding dirs a b] error message (fellows)
 
 2012-06-25 (bug fix)[3024359] crash when multi-thread concurrent [file system]
@@ -7650,10 +7647,15 @@ and Tcl_FSMountsChanged(). (porter)
 2012-07-05 (bug fix)[1189293] make "<<" redirect binary safe (porter)
 
 2012-07-11 (bug fix)[3362446] [registry keys] failure (nijtmans)
+=> registry 1.2.2
 
 2012-07-16 (bug fix)[3544683] reentrant syscalls on BSD (cassoff,fellows)
 
+2012-07-24 (bug fix) stop mem corruption in stacked channel events (max,porter)
+
+2012-07-25 (bug fix)[3546275] [auto_execok] search match [exec] (danckaert)
+
 Many revisions to better support a Cygwin environment (nijtmans)
 
---- Released 8.5.12, July 20, 2011 --- See ChangeLog for details ---
+--- Released 8.5.12, July 27, 2011 --- See ChangeLog for details ---
 
