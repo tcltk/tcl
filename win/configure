@@ -840,7 +840,7 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-threads        build with threads (default: off)
+  --enable-threads        build with threads (default: on)
   --enable-shared         build and link with shared libraries (default: on)
   --enable-64bit          enable 64bit support (where applicable)
   --enable-wince          enable Win/CE support (where applicable)
@@ -3068,8 +3068,8 @@ else
 fi;
 
     if test "$tcl_ok" = "yes"; then
-	echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+	echo "$as_me:$LINENO: result: yes (default)" >&5
+echo "${ECHO_T}yes (default)" >&6
 	TCL_THREADS=1
 	cat >>confdefs.h <<\_ACEOF
 #define TCL_THREADS 1
@@ -3598,8 +3598,8 @@ echo $ECHO_N "checking compiler flags... $ECHO_C" >&6
 	MAKE_EXE="\${CC} -o \$@"
 	LIBPREFIX="lib"
 
-	extra_ldflags="$extra_ldflags -pipe"
 	extra_cflags="$extra_cflags -pipe"
+	extra_ldflags="$extra_ldflags -pipe"
 
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
