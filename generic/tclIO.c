@@ -8347,6 +8347,7 @@ TclChannelEventScriptInvoker(
      */
 
     Tcl_Preserve(interp);
+    Tcl_Preserve(chanPtr);
     result = Tcl_EvalObjEx(interp, esPtr->scriptPtr, TCL_EVAL_GLOBAL);
 
     /*
@@ -8363,6 +8364,7 @@ TclChannelEventScriptInvoker(
 	}
 	TclBackgroundException(interp, result);
     }
+    Tcl_Release(chanPtr);
     Tcl_Release(interp);
 }
 
