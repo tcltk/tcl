@@ -1875,12 +1875,26 @@ PipeClose2Proc(
 	    && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
 	    /*
-	     * Wait for the writer thread to finish the current buffer, then
-	     * terminate the thread and close the handles. If the channel is
-	     * nonblocking, there should be no pending write operations.
+	     * Wait for the  writer thread to finish the  current buffer, then
+	     * terminate the thread  and close the handles. If  the channel is
+	     * nonblocking but blocked during  exit, bail out since the worker
+	     * thread is not interruptible and we want TIP#398-fast-exit.
 	     */
+	    if (TclInExit()
+		&& (pipePtr->flags & PIPE_ASYNC)) {
 
-	    WaitForSingleObject(pipePtr->writable, INFINITE);
+		/* give it a chance to leave honorably */
+		SetEvent(pipePtr->stopWriter);
+
+		if (WaitForSingleObject(pipePtr->writable, 0) == WAIT_TIMEOUT) {
+		    return EAGAIN;
+		}
+
+	    } else {
+
+		WaitForSingleObject(pipePtr->writable, INFINITE);
+
+	    }
 
 	    /*
 	     * The thread may already have closed on it's own. Check its exit
@@ -2944,6 +2958,10 @@ PipeWriterThread(
 	     * The start event was not signaled. It might be the stop event or
 	     * an error, so exit.
 	     */
+
+	    if (waitResult == WAIT_OBJECT_0) {
+		SetEvent(infoPtr->writable);
+	    }
 
 	    break;
 	}
