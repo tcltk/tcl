@@ -1,3 +1,8 @@
+2012-07-25  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* win/tclWinPipe.c: [Bug 3547994]: Abandon the synchronous Windows
+	pipe driver to its fate when needed to honour TIP#398.
+
 2012-07-23  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclIO.c: [Bug  3545365]: Never try a bg-flush  on a dead
