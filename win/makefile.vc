@@ -564,15 +564,15 @@ install:    install-binaries install-libraries install-docs install-pkgs
 
 test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls $(CAT32)
-	set TCL_LIBRARY=$(ROOT:\=/)/../library
+	set TCL_LIBRARY=$(ROOT:\=/)/library
 !if "$(OS)" == "Windows_NT"  || "$(MSVCDIR)" == "IDE"
-	$(DEBUGGER) $(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
+	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
 		set ::ddelib [file normalize $(TCLDDELIB:\=/)]
 		set ::reglib [file normalize $(TCLREGLIB:\=/)]
 <<
 !else
 	@echo Please wait while the tests are collected...
-	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) -loadfile << > tests.log
+	$(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile << > tests.log
 		set ::ddelib [file normalize $(TCLDDELIB:\=/)]
 		set ::reglib [file normalize $(TCLREGLIB:\=/)]
 <<
@@ -580,11 +580,11 @@ test-core: setup $(TCLTEST) dlls $(CAT32)
 !endif
 
 runtest: setup $(TCLTEST) dlls $(CAT32)
-	set TCL_LIBRARY=$(ROOT)/library
+	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) $(SCRIPT)
 
 runshell: setup $(TCLSH) dlls
-	set TCL_LIBRARY=$(ROOT)/library
+	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLSH) $(SCRIPT)
 
 setup:
@@ -819,7 +819,6 @@ install-docs:
 	@$(CPY) "$(HELPCNT)" "$(DOC_INSTALL_DIR)\"
 !endif
 
-#"
 #---------------------------------------------------------------------
 # Build tclConfig.sh for the TEA build system.
 #---------------------------------------------------------------------
@@ -1158,15 +1157,15 @@ install-libraries: tclConfig install-msgs install-tzdata
 
 install-tzdata:
 	@echo Installing time zone data
-	@set TCL_LIBRARY=$(ROOT)/library
-	@$(TCLSH_NATIVE) "$(ROOT)/tools/installData.tcl" \
-	    "$(ROOT)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
+	@set TCL_LIBRARY=$(ROOT:\=/)/library
+	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
+	    "$(ROOT:\=/)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
 
 install-msgs:
 	@echo Installing message catalogs
-	@set TCL_LIBRARY=$(ROOT)/library
-	@$(TCLSH_NATIVE) "$(ROOT)/tools/installData.tcl" \
-	    "$(ROOT)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
+	@set TCL_LIBRARY=$(ROOT:\=/)/library
+	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
+	    "$(ROOT:\=/)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 
 #---------------------------------------------------------------------
 # Clean up
