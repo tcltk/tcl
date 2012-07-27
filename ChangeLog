@@ -1,3 +1,8 @@
+2012-07-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUniData.c:   Support Unicode 6.2 (Add Turkish lira sign)
+	* generic/regc_locale.c:
+
 2012-07-25  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* win/tclWinPipe.c: [Bug 3547994]: Abandon the synchronous Windows
