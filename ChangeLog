@@ -1,3 +1,8 @@
+2012-07-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUniData.c:   Support Unicode 6.2 (Add Turkish lira sign)
+	* generic/regc_locale.c:
+
 2012-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/makefile.vc: [Bug 3544932]: Visual studio compiler check fails
