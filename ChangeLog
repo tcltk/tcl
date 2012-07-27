@@ -1,3 +1,8 @@
+2012-07-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclUniData.c:   Support Unicode 6.2 (Add Turkish lira sign)
+	* generic/regc_locale.c:
+
 2012-07-24  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.12 TAGGED FOR RELEASE ***
