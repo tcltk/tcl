@@ -17,8 +17,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 if {[testConstraint win]} {
-    if {[catch {package require registry 1.1}] 
-	&& [catch {load {} Registry}]
+    if {[catch {load {} Registry}]
+	&& [catch {package require registry}] 
 	&& [catch {
 	    ::tcltest::loadTestedCommands
 	    load $::reglib Registry
