@@ -17,13 +17,10 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 testConstraint dde 0
 if {[testConstraint win]} {
-    if {![catch {load {} Dde; set ::ddelib {}}]
-	|| ![catch {
-	    package require dde
-	    set ::ddelib [lindex [package ifneeded dde 1.3.3] 1]}] 
-	|| ![catch {
+    if {![catch {
 	    ::tcltest::loadTestedCommands
-	    load $::ddelib Dde}]} {
+	    package require dde
+	    set ::ddelib [lindex [package ifneeded dde 1.3.3] 1]}]} {
 	testConstraint dde 1
     }
 }
@@ -35,16 +32,12 @@ if {[testConstraint win]} {
 
 set scriptName [makeFile {} script1.tcl]
 
-proc createChildProcess { ddeServerName {handler {}}} {
+proc createChildProcess {ddeServerName {handler {}}} {
     file delete -force $::scriptName
 
     set f [open $::scriptName w+]
     puts $f [list set ddeServerName $ddeServerName]
-    if {[info exists ::ddelib]} {
-	puts $f [list load $::ddelib Dde]
-    } else {
-	puts $f [list package require dde]
-    }
+    puts $f [list load $::ddelib dde]
     puts $f {
         # DDE child server -
         #
