@@ -15,16 +15,14 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-if [catch {
-    # Is the dde extension already static to this shell?
-    if [catch {load {} Dde; set ::ddelib {}}] {
-	# try the location given to use on the commandline to tcltest
-	::tcltest::loadTestedCommands
-	load $::ddelib Dde
+testConstraint dde 0
+if {[testConstraint win]} {
+    if {![catch {
+	    ::tcltest::loadTestedCommands
+	    package require dde 1.4.0b1
+	    set ::ddelib [lindex [package ifneeded dde 1.4.0b1] 1]}]} {
+	testConstraint dde 1
     }
-    testConstraint dde 1
-}] {
-    testConstraint dde 0
 }
 
 
@@ -39,9 +37,7 @@ proc createChildProcess {ddeServerName args} {
 
     set f [open $::scriptName w+]
     puts $f [list set ddeServerName $ddeServerName]
-    if {$::ddelib != ""} {
-	puts $f [list load $::ddelib Dde]
-    }
+    puts $f [list load $::ddelib dde]
     puts $f {
         # DDE child server -
         #
