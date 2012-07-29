@@ -121,7 +121,8 @@ the build instructions.
 #		Set the machine type used for the compiler, linker, and
 #		resource compiler.  This hook is needed to tell the tools
 #		when alternate platforms are requested.  IX86 is the default
-#		when not specified.
+#		when not specified. If the CPU environment variable has been
+#		set (ie: recent Platform SDK) then MACHINE is set from CPU.
 #
 #	TMP_DIR=<path>
 #	OUT_DIR=<path>
