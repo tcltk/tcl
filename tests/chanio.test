@@ -29,6 +29,9 @@ namespace eval ::tcl::test::io {
     variable msg
     variable expected
 
+    ::tcltest::loadTestedCommands
+    catch [list package require -exact Tcltest [info patchlevel]]
+    
     testConstraint testchannel      [llength [info commands testchannel]]
     testConstraint exec             [llength [info commands exec]]
     testConstraint openpipe         1

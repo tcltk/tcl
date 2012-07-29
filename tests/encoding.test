@@ -15,6 +15,9 @@ namespace eval ::tcl::test::encoding {
 
 namespace import -force ::tcltest::*
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 proc toutf {args} {
     variable x
     lappend x "toutf $args"

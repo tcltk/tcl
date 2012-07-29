@@ -15,6 +15,9 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testtranslatefilename [llength [info commands testtranslatefilename]]
 testConstraint linkDirectory 1
