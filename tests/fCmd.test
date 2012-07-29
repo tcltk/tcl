@@ -15,6 +15,9 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 cd [temporaryDirectory]
 
 testConstraint testsetplatform [llength [info commands testsetplatform]]
