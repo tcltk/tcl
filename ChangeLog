@@ -1,3 +1,9 @@
+2012-07-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in:  No longer build tcltest.exe to run the tests,
+	but use tclsh86.exe in combination with tcltest86.dll to do that.
+	* tests/*.test:     load tcltest86.dll if necessary.
+
 2012-07-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* tests/clock.test:    [Bug 3549770] Multiple test failures running tcltest
