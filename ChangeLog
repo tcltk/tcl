@@ -1,3 +1,11 @@
+2012-07-24  Trevor Davel  <twylite@crypt.co.za>
+
+	* win/tclWinSock.c: [Bug: 3545363]: Loop over multiple underlying file 
+	descriptors for a socket where required (TcpCloseProc, SocketProc). Refactor 
+  socket/descriptor setup to manage linked list operations in one place.  Fix 
+  memory leak in socket close (TcpCloseProc) and related dangling pointers in 
+  SocketEventProc.
+ 
 2012-07-19  Reinhard Max  <max@suse.de>
 
 	* win/tclWinSock.c (TcpAccept): [Bug: 3545363]: Use a large enough
