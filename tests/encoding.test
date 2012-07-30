@@ -18,7 +18,6 @@ namespace import -force ::tcltest::*
 catch {
     ::tcltest::loadTestedCommands
     package require -exact Tcltest [info patchlevel]
-    set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
 }
 
 proc toutf {args} {
