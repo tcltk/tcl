@@ -200,7 +200,7 @@ test load-9.1 {Tcl_StaticPackage, load already-loaded package into another inter
 	    [child1 eval { info loaded {} }] \
 	    [child2 eval { info loaded {} }]
     } \
-    -result {{{{} Loadninepointone} {{} Tcltest}} {{{} Loadninepointone} {{} Tcltest}}} \
+    -match glob -result {{{{} Loadninepointone} {* Tcltest}} {{{} Loadninepointone} {* Tcltest}}} \
     -cleanup { interp delete child1 ; interp delete child2 }
 
 test load-10.1 {load from vfs} \
