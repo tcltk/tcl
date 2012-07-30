@@ -313,11 +313,6 @@ static int		TestexitmainloopCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestpanicCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-#ifndef _WIN32
-static int		TestfinexitObjCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-#endif /* _WIN32 */
 static int		TestparseargsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		TestparserObjCmd(ClientData dummy,
@@ -640,9 +635,6 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
-#ifndef _WIN32
-    Tcl_CreateObjCommand(interp, "testfinexit", TestfinexitObjCmd, NULL, NULL);
-#endif /* _WIN32 */
     Tcl_CreateObjCommand(interp, "testparseargs", TestparseargsCmd,NULL,NULL);
     Tcl_CreateObjCommand(interp, "testparser", TestparserObjCmd,
 	    NULL, NULL);
@@ -4556,55 +4548,6 @@ TestpanicCmd(
     return TCL_OK;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * TestfinexitObjCmd --
- *
- *	Calls a variant of [exit] including the full finalization path.
- *
- *  On Win32, the test suite is run with all Tcltest funcions in a dll,
- *	but TclpExit cannot be called from inside a dynamically loaded dll.
- *	It would mean that the dll is terminated, while there is still a
- *	function on the stack which belong to the dll.
- *
- * Results:
- *	Error, or doesn't return.
- *
- * Side effects:
- *	Exits application.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef _WIN32
-static int
-TestfinexitObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    int value;
-
-    if ((objc != 1) && (objc != 2)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?returnCode?");
-	return TCL_ERROR;
-    }
-
-    if (objc == 1) {
-	value = 0;
-    } else if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    Tcl_Finalize();
-    TclpExit(value);
-    /*NOTREACHED*/
-    return TCL_ERROR;		/* Better not ever reach this! */
-}
-#endif /* _WIN32 */
-
-
 static int
 TestfileCmd(
     ClientData dummy,		/* Not used. */
