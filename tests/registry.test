@@ -31,6 +31,9 @@ testConstraint english [expr {
     && [string match "English*" [testlocale all ""]]
 }]
 
+test registry-1.0 {check if we are testing the right dll} {win reg} {
+    package versions registry
+} {1.3.0}
 test registry-1.1 {argument parsing for registry command} {win reg} {
     list [catch {registry} msg] $msg
 } {1 {wrong # args: should be "registry ?-32bit|-64bit? option ?arg ...?"}}
