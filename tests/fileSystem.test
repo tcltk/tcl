@@ -19,13 +19,15 @@ namespace eval ::tcl::test::fileSystem {
 	file delete -force [file join dir.dir linkinside.file]
     }
 
+testConstraint loaddll 0
 catch {
     ::tcltest::loadTestedCommands
     package require -exact Tcltest [info patchlevel]
-    set ::ddever [lindex [lsort [package versions dde]] end]
+    set ::ddever [package require dde]
     set ::ddelib [lindex [package ifneeded dde $::ddever] 1]
-    set ::regver [lindex [lsort [package versions registry]] end]
+    set ::regver  [package require registry]
     set ::reglib [lindex [package ifneeded registry $::regver] 1]
+    testConstraint loaddll 0
 }
 
 # Test for commands defined in Tcltest executable
@@ -510,12 +512,12 @@ if {[testConstraint testfilesystem]} {
 
 test filesystem-7.1.1 {load from vfs} -setup {
     set dir [pwd]
-} -constraints {win testsimplefilesystem} -body {
+} -constraints {win testsimplefilesystem loaddll} -body {
     # This may cause a crash on exit
-    cd [file dirname [info nameof]]
+    cd [file dirname $::reglib]
     testsimplefilesystem 1
     # This loads dde via a complex copy-to-temp operation
-    load simplefs:/$::ddelib dde
+    load simplefs:/[file tail $::ddelib] dde
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.
@@ -524,13 +526,13 @@ test filesystem-7.1.1 {load from vfs} -setup {
 } -result ok
 test filesystem-7.1.2 {load from vfs, and then unload again} -setup {
     set dir [pwd]
-} -constraints {win testsimplefilesystem} -body {
+} -constraints {win testsimplefilesystem loaddll} -body {
     # This may cause a crash on exit
-    cd [file dirname [info nameof]]
+    cd [file dirname $::reglib]
     testsimplefilesystem 1
     # This loads reg via a complex copy-to-temp operation
-    load simplefs:/$::reglib Registry
-    unload simplefs:/$::reglib
+    load simplefs:/[file tail $::reglib] Registry
+    unload simplefs:/[file tail $::reglib]
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.
