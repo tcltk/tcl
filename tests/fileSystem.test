@@ -19,8 +19,12 @@ namespace eval ::tcl::test::fileSystem {
 	file delete -force [file join dir.dir linkinside.file]
     }
 
-::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch {
+    ::tcltest::loadTestedCommands
+    package require -exact Tcltest [info patchlevel]
+    set ::ddelib [lindex [package ifneeded dde 1.4.0b1] 1]
+    set ::reglib [lindex [package ifneeded registry 1.3.0] 1]
+}
 
 # Test for commands defined in Tcltest executable
 testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
@@ -507,10 +511,9 @@ test filesystem-7.1.1 {load from vfs} -setup {
 } -constraints {win testsimplefilesystem} -body {
     # This may cause a crash on exit
     cd [file dirname [info nameof]]
-    set dde [lindex [glob *dde*[info sharedlib]] 0]
     testsimplefilesystem 1
     # This loads dde via a complex copy-to-temp operation
-    load simplefs:/$dde dde
+    load simplefs:/$::ddelib dde
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.
@@ -522,11 +525,10 @@ test filesystem-7.1.2 {load from vfs, and then unload again} -setup {
 } -constraints {win testsimplefilesystem} -body {
     # This may cause a crash on exit
     cd [file dirname [info nameof]]
-    set reg [lindex [glob tclreg*[info sharedlib]] 0]
     testsimplefilesystem 1
     # This loads reg via a complex copy-to-temp operation
-    load simplefs:/$reg Registry
-    unload simplefs:/$reg
+    load simplefs:/$::reglib Registry
+    unload simplefs:/$::reglib
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.

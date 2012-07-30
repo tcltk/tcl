@@ -15,8 +15,11 @@ namespace eval ::tcl::test::encoding {
 
 namespace import -force ::tcltest::*
 
-::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch {
+    ::tcltest::loadTestedCommands
+    package require -exact Tcltest [info patchlevel]
+    set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
+}
 
 proc toutf {args} {
     variable x
@@ -406,6 +409,7 @@ cd [workingDirectory]
 # Code to make the next few tests more intelligible; the code being tested
 # should be in the body of the test!
 proc runInSubprocess {contents {filename iso2022.tcl}} {
+    set contents "load $::tcltestlib Tcltest\n$contents"
     set theFile [makeFile $contents $filename]
     try {
 	exec [interpreter] $theFile
