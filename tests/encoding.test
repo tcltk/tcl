@@ -37,7 +37,6 @@ proc runtests {} {
 testConstraint testencoding [llength [info commands testencoding]]
 testConstraint exec [llength [info commands exec]]
 testConstraint testgetdefenc [llength [info commands testgetdefenc]]
-testConstraint testfinexit [llength [info commands testfinexit]]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -409,7 +408,6 @@ cd [workingDirectory]
 # Code to make the next few tests more intelligible; the code being tested
 # should be in the body of the test!
 proc runInSubprocess {contents {filename iso2022.tcl}} {
-    set contents "load $::tcltestlib Tcltest\n$contents"
     set theFile [makeFile $contents $filename]
     try {
 	exec [interpreter] $theFile
@@ -425,13 +423,14 @@ test encoding-24.1 {EscapeFreeProc on open channels} exec {
 	gets $f
     }
 } {}
-test encoding-24.2 {EscapeFreeProc on open channels} {exec testfinexit} {
+test encoding-24.2 {EscapeFreeProc on open channels} {exec} {
     # Bug #524674 output
     viewable [runInSubprocess {
 	encoding system cp1252;	# Bug #2891556 crash revelator
 	fconfigure stdout -encoding iso2022-jp
 	puts ab\u4e4e\u68d9g
-	testfinexit
+	set env(TCL_FINALIZE_ON_EXIT) 1
+	exit
     }]
 } "ab\x1b\$B8C\x1b\$(DD%\x1b(Bg (ab\\u001b\$B8C\\u001b\$(DD%\\u001b(Bg)"
 test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
