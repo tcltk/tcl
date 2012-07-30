@@ -19,7 +19,7 @@ testConstraint reg 0
 if {[testConstraint win]} {
     if {![catch {
 	    ::tcltest::loadTestedCommands
-	    package require registry
+	    package require -exact registry 1.3.0
 	}]} {
 	testConstraint reg 1
     }
