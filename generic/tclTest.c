@@ -313,11 +313,13 @@ static int		TestexitmainloopCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestpanicCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+#ifndef _WIN32
 static int		TestfinexitObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int              TestparseargsCmd(ClientData dummy, Tcl_Interp *interp,
-                            int objc, Tcl_Obj *const objv[]);
+#endif /* _WIN32 */
+static int		TestparseargsCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		TestparserObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -638,7 +640,9 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
+#ifndef _WIN32
     Tcl_CreateObjCommand(interp, "testfinexit", TestfinexitObjCmd, NULL, NULL);
+#endif /* _WIN32 */
     Tcl_CreateObjCommand(interp, "testparseargs", TestparseargsCmd,NULL,NULL);
     Tcl_CreateObjCommand(interp, "testparser", TestparserObjCmd,
 	    NULL, NULL);
@@ -4559,6 +4563,11 @@ TestpanicCmd(
  *
  *	Calls a variant of [exit] including the full finalization path.
  *
+ *  On Win32, the test suite is run with all Tcltest funcions in a dll,
+ *	but TclpExit cannot be called from inside a dynamically loaded dll.
+ *	It would mean that the dll is terminated, while there is still a
+ *	function on the stack which belong to the dll.
+ *
  * Results:
  *	Error, or doesn't return.
  *
@@ -4568,6 +4577,7 @@ TestpanicCmd(
  *----------------------------------------------------------------------
  */
 
+#ifndef _WIN32
 static int
 TestfinexitObjCmd(
     ClientData dummy,		/* Not used. */
@@ -4592,6 +4602,8 @@ TestfinexitObjCmd(
     /*NOTREACHED*/
     return TCL_ERROR;		/* Better not ever reach this! */
 }
+#endif /* _WIN32 */
+
 
 static int
 TestfileCmd(
