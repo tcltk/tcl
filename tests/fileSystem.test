@@ -22,8 +22,10 @@ namespace eval ::tcl::test::fileSystem {
 catch {
     ::tcltest::loadTestedCommands
     package require -exact Tcltest [info patchlevel]
-    set ::ddelib [lindex [package ifneeded dde 1.4.0b1] 1]
-    set ::reglib [lindex [package ifneeded registry 1.3.0] 1]
+    set ::ddever [lindex [lsort [package versions dde]] end]
+    set ::ddelib [lindex [package ifneeded dde $::ddever] 1]
+    set ::regver [lindex [lsort [package versions registry]] end]
+    set ::reglib [lindex [package ifneeded registry $::regver] 1]
 }
 
 # Test for commands defined in Tcltest executable
