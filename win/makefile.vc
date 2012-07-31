@@ -71,53 +71,57 @@ the build instructions.
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=static,msvcrt,staticpkg,nothreads,symbols,profile,loimpact,unchecked,pdbs,none
+#	OPTS=loimpact,msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,tclalloc,unchecked,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
-#		static  =  Builds a static library of the core instead of a
-#			   dll.  The shell will be static (and large), as well.
-#		msvcrt  =  Affects the static option only to switch it from
+#		loimpact = Adds a flag for how NT treats the heap to keep memory
+#			   in use, low.  This is said to impact alloc performance.
+#		msvcrt   = Affects the static option only to switch it from
 #			   using libcmt(d) as the C runtime [by default] to
 #			   msvcrt(d). This is useful for static embedding
 #			   support.
+#		nothreads= Turns off full multithreading support.
+#		pdbs     = Build detached symbols for release builds.
+#		profile  = Adds profiling hooks.  Map file is assumed.
+#		static   = Builds a static library of the core instead of a
+#			   dll.  The static library will contain the dde and reg
+#			   extensions. External applications who want to use
+#			   this, need to link with the stub library as well as
+#			   the static Tcl library.The shell will be static (and
+#			   large), as well.
 #		staticpkg = Affects the static option only to switch
 #			   tclshXX.exe to have the dde and reg extension linked
 #			   inside it.
-#		nothreads = Turns off full multithreading support.
+#		symbols  = Debug build. Links to the debug C runtime, disables
+#			   optimizations and creates pdb symbols files.
 #		thrdalloc = Use the thread allocator (shared global free pool)
 #			   This is the default on threaded builds.
 #		tclalloc = Use the old non-thread allocator
-#		symbols  = Debug build. Links to the debug C runtime, disables
-#			   optimizations and creates pdb symbols files.
-#		pdbs     = Build detached symbols for release builds.
-#		profile  = Adds profiling hooks.  Map file is assumed.
-#		loimpact = Adds a flag for how NT treats the heap to keep memory
-#			   in use, low.  This is said to impact alloc performance.
-#		unchecked = Allows a symbols build to not use the debug
+#		unchecked= Allows a symbols build to not use the debug
 #			   enabled runtime (msvcrt.dll not msvcrtd.dll
 #			   or libcmt.lib not libcmtd.lib).
 #
-#	STATS=memdbg,compdbg,none
+#	STATS=compdbg,memdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
 #		to the core.  The default is for none.  Any combination of the
 #		above may be used (comma separated).  'none' will over-ride
 #		everything to nothing.
 #
-#		memdbg   = Enables the debugging memory allocator.
 #		compdbg  = Enables byte compilation logging.
+#		memdbg   = Enables the debugging memory allocator.
 #
-#	CHECKS=nodep,fullwarn,64bit,none
+#	CHECKS=64bit,fullwarn,nodep,none
 #		Sets special macros for checking compatability.
 #
-#		nodep	 = Turns off compatability macros to ensure the core
-#			    isn't being built with deprecated functions.
+#		64bit    = Enable 64bit portability warnings (if available)
 #		fullwarn = Builds with full compiler and link warnings enabled.
 #			    Very verbose.
-#		64bit    = Enable 64bit portability warnings (if available)
+#		nodep	 = Turns off compatability macros to ensure the core
+#			    isn't being built with deprecated functions.
 #
-#	MACHINE=(IX86|IA64|AMD64|ALPHA)
+#	MACHINE=(ALPHA|AMD64|IA64|IX86)
 #		Set the machine type used for the compiler, linker, and
 #		resource compiler.  This hook is needed to tell the tools
 #		when alternate platforms are requested.  IX86 is the default
@@ -179,7 +183,7 @@ Please `cd` to its location first.
 !error $(MSG)
 !endif
 
-PROJECT	= tcl
+PROJECT = tcl
 !include "rules.vc"
 
 STUBPREFIX      = $(PROJECT)stub
@@ -232,9 +236,11 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
+!if !$(STATIC_BUILD)
 !if $(TCL_USE_STATIC_PACKAGES)
 	$(TMP_DIR)\tclWinReg.obj \
 	$(TMP_DIR)\tclWinDde.obj \
+!endif
 !endif
 	$(TMP_DIR)\tclsh.res
 
@@ -244,9 +250,11 @@ TCLTESTOBJS = \
 	$(TMP_DIR)\tclTestProcBodyObj.obj \
 	$(TMP_DIR)\tclThreadTest.obj \
 	$(TMP_DIR)\tclWinTest.obj \
+!if !$(STATIC_BUILD)
 !if $(TCL_USE_STATIC_PACKAGES)
 	$(TMP_DIR)\tclWinReg.obj \
 	$(TMP_DIR)\tclWinDde.obj \
+!endif
 !endif
 	$(TMP_DIR)\testMain.obj
 
@@ -429,10 +437,12 @@ PLATFORMOBJS = \
 	$(TMP_DIR)\tclWinSock.obj \
 	$(TMP_DIR)\tclWinThrd.obj \
 	$(TMP_DIR)\tclWinTime.obj \
-!if !$(STATIC_BUILD)
+!if $(STATIC_BUILD)
+	$(TMP_DIR)\tclWinReg.obj \
+	$(TMP_DIR)\tclWinDde.obj \
+!else
 	$(TMP_DIR)\tcl.res
 !endif
-
 
 TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 
