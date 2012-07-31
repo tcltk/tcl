@@ -469,16 +469,6 @@ Failed to find tcl.h.  The TCLDIR macro does not appear correct.
 !endif
 !endif
 
-### TODO: add a command to nmakehlp.c to grep for Tcl's version from tcl.h.
-### Because nmake can't return a string, we'll need to play games with return
-### codes.  It might look something like this:
-#!if [nmakehlp -g $(TCL.H)] == 81
-#TCL_DOTVERSION	= 8.1
-#!elseif [nmakehlp -g $(TCL.H)] == 82
-#TCL_DOTVERSION	= 8.2
-#...
-#!endif
-
 TCL_DOTVERSION	= 8.4
 TCL_VERSION	= $(TCL_DOTVERSION:.=)
 
