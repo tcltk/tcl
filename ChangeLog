@@ -1,3 +1,7 @@
+2012-07-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/nmakehlp.c: Add -Q option from sampleextension.
+
 2012-07-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/Makefile.in:  No longer build tcltest.exe to run the tests,
