@@ -81,6 +81,7 @@ static void		ObjectRenamedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
 static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
+static inline void	SquelchCachedName(Object *oPtr);
 static void		SquelchedNsFirst(ClientData clientData);
 
 static int		PublicObjectCmd(ClientData clientData,
@@ -704,6 +705,27 @@ AllocObject(
 /*
  * ----------------------------------------------------------------------
  *
+ * SquelchCachedName --
+ *
+ *	Encapsulates how to throw away a cached object name. Called from
+ *	object rename traces and at object destruction.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline void
+SquelchCachedName(
+    Object *oPtr)
+{
+    if (oPtr->cachedNameObj) {
+	Tcl_DecrRefCount(oPtr->cachedNameObj);
+	oPtr->cachedNameObj = NULL;
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * MyDeleted --
  *
  *	This callback is triggered when the object's [my] command is deleted
@@ -778,10 +800,7 @@ ObjectRenamedTrace(
      */
 
     if (flags & TCL_TRACE_RENAME) {
-	if (oPtr->cachedNameObj) {
-	    TclDecrRefCount(oPtr->cachedNameObj);
-	    oPtr->cachedNameObj = NULL;
-	}
+	SquelchCachedName(oPtr);
 	return;
     }
 
@@ -1138,10 +1157,7 @@ ObjectNamespaceDeleted(
 	TclOODeleteChainCache(oPtr->chainCache);
     }
 
-    if (oPtr->cachedNameObj) {
-	TclDecrRefCount(oPtr->cachedNameObj);
-	oPtr->cachedNameObj = NULL;
-    }
+    SquelchCachedName(oPtr);
 
     if (oPtr->metadataPtr != NULL) {
 	Tcl_ObjectMetadataType *metadataTypePtr;
