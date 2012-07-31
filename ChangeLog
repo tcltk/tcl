@@ -1,6 +1,8 @@
 2012-07-31  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/nmakehlp.c: Add -Q option from sampleextension.
+	* win/nmakehlp.c:  Add -Q option from sampleextension.
+	* win/Makefile.in: [Frq 3544967] Missing objectfiles in static lib
+	* win/makefile.vc: (Thanks to Jos Decoster).
 
 2012-07-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -10,8 +12,8 @@
 
 2012-07-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tests/clock.test:    [Bug 3549770] Multiple test failures running tcltest
-	* tests/registry.test: outside build tree
+	* tests/clock.test:    [Bug 3549770] Multiple test failures running
+	* tests/registry.test: tcltest outside build tree
 	* tests/winDde.test:
 
 2012-07-27  Jan Nijtmans  <nijtmans@users.sf.net>
