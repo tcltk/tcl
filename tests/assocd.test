@@ -16,6 +16,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testgetassocdata [llength [info commands testgetassocdata]]
 testConstraint testsetassocdata [llength [info commands testsetassocdata]]
 testConstraint testdelassocdata [llength [info commands testdelassocdata]]
