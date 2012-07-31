@@ -1,3 +1,8 @@
+2012-07-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/nmakehlp.c: Backport from Tcl 8.6, but add -Q option from
+	sampleextension.
+
 2012-07-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclUniData.c:   Support Unicode 6.2 (Add Turkish lira sign)
