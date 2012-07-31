@@ -42,9 +42,9 @@ namespace eval ::http {
 	db eval {
 	    CREATE TABLE IF NOT EXISTS cookies (
 		id INTEGER PRIMARY KEY,
-		origin TEXT NOT NULL,
+		origin TEXT NOT NULL COLLATE NOCASE,
 		path TEXT NOT NULL,
-		domain TEXT,
+		domain TEXT COLLATE NOCASE,
 		key TEXT NOT NULL,
 		value TEXT NOT NULL,
 		expiry INTEGER NOT NULL);
@@ -53,9 +53,9 @@ namespace eval ::http {
 	}
 	db eval {
 	    CREATE TEMP TABLE IF NOT EXISTS sessionCookies (
-		origin TEXT NOT NULL,
+		origin TEXT NOT NULL COLLATE NOCASE,
 		path TEXT NOT NULL,
-		domain TEXT,
+		domain TEXT COLLATE NOCASE,
 		key TEXT NOT NULL,
 		value TEXT NOT NULL);
 	    CREATE UNIQUE INDEX IF NOT EXISTS sessionUnique
@@ -66,9 +66,11 @@ namespace eval ::http {
 
 	if {$path ne ""} {
 	    db transaction {
-		if {[catch {
-		    db eval {SELECT * FROM forbidden LIMIT 1}
-		}]} {
+		db eval {
+		    SELECT count(*) AS present FROM sqlite_master
+		    WHERE type='table' AND name='forbidden'
+		}
+		if {!$present} {
 		    my InitDomainList
 		}
 	    }
