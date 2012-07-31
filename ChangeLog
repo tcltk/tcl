@@ -1,3 +1,11 @@
+2012-07-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInterp.c (Tcl_GetInterpPath):
+	* unix/tclUnixPipe.c (TclGetAndDetachPids, Tcl_PidObjCmd):
+	* win/tclWinPipe.c (TclGetAndDetachPids, Tcl_PidObjCmd):
+	Purge use of Tcl_AppendElement, and corrected conversion of PIDs to
+	integer objects.
+
 2012-07-31  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/nmakehlp.c:  Add -Q option from sampleextension.

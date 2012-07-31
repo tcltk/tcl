@@ -1711,8 +1711,8 @@ TclGetAndDetachPids(
 {
     PipeInfo *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
+    Tcl_Obj *pidsObj;
     int i;
-    char buf[TCL_INTEGER_SPACE];
 
     /*
      * Punt if the channel is not a command channel.
@@ -1723,12 +1723,15 @@ TclGetAndDetachPids(
 	return;
     }
 
-    pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
+    pipePtr = Tcl_GetChannelInstanceData(chan);
+    TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
-	wsprintfA(buf, "%lu", TclpGetPid(pipePtr->pidPtr[i]));
-	Tcl_AppendElement(interp, buf);
-	Tcl_DetachPids(1, &(pipePtr->pidPtr[i]));
+	Tcl_ListObjAppendElement(NULL, pidsObj,
+		Tcl_NewWideIntObj((unsigned)
+			TclpGetPid(pipePtr->pidPtr[i])));
+	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
     }
+    Tcl_SetObjResult(interp, pidsObj);
     if (pipePtr->numPids > 0) {
 	ckfree(pipePtr->pidPtr);
 	pipePtr->numPids = 0;
@@ -2642,15 +2645,13 @@ Tcl_PidObjCmd(
     PipeInfo *pipePtr;
     int i;
     Tcl_Obj *resultPtr;
-    char buf[TCL_INTEGER_SPACE];
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	wsprintfA(buf, "%lu", (unsigned long) getpid());
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((unsigned) getpid()));
     } else {
 	chan = Tcl_GetChannel(interp, Tcl_GetStringFromObj(objv[1], NULL),
 		NULL);
@@ -2665,9 +2666,9 @@ Tcl_PidObjCmd(
 	pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
 	resultPtr = Tcl_NewObj();
 	for (i = 0; i < pipePtr->numPids; i++) {
-	    wsprintfA(buf, "%lu", TclpGetPid(pipePtr->pidPtr[i]));
 	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr,
-		    Tcl_NewStringObj(buf, -1));
+		    Tcl_NewWideIntObj((unsigned)
+			    TclpGetPid(pipePtr->pidPtr[i])));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
