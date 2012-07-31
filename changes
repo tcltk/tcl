@@ -8101,6 +8101,10 @@ and Tcl_FSMountsChanged(). (porter)
 2012-07-08 (bug fix)[3531209] accept IPv6 URLs (max)
 => http 2.8.4
 
+2012-07-24 (bug fix) stop mem corruption in stacked channel events (max,porter)
+
+2012-07-25 (bug fix)[3546275] [auto_execok] search match [exec] (danckaert)
+
 Many revisions to better support a Cygwin environment (nijtmans)
 
 --- Released 8.6b3, July 30, 2012 --- See ChangeLog for details ---
