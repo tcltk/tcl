@@ -1503,7 +1503,7 @@ DdeObjCmd(
 	} else {
 	    Tcl_Obj *returnObjPtr;
 	    ddeItem = DdeCreateStringHandle(ddeInstance, (void *) itemString,
-		    CP_WINUNICODE);
+		    CP_WINANSI);
 	    if (ddeItem != NULL) {
 		ddeData = DdeClientTransaction(NULL, 0, hConv, ddeItem,
 			CF_TEXT, XTYP_REQUEST, 5000, NULL);
