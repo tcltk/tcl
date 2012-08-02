@@ -689,13 +689,14 @@ proc auto_execok name {
 	}
     }
 
-    foreach dir [split $path {;}] {
-	# Skip already checked directories
-	if {[info exists checked($dir)] || ($dir eq "")} {
-	    continue
-	}
-	set checked($dir) {}
-	foreach ext $execExtensions {
+    foreach ext $execExtensions {
+	unset -nocomplain checked
+	foreach dir [split $path {;}] {
+	    # Skip already checked directories
+	    if {[info exists checked($dir)] || ($dir eq "")} {
+		continue
+	    }
+	    set checked($dir) {}
 	    set file [file join $dir ${name}${ext}]
 	    if {[file exists $file] && ![file isdirectory $file]} {
 		return [set auto_execs($name) [list $file]]

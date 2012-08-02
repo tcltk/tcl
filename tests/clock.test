@@ -17,11 +17,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 if {[testConstraint win]} {
-    if {[catch {package require registry 1.1}] 
-	&& [catch {load {} Registry}]
-	&& [catch {
+    if {[catch {
 	    ::tcltest::loadTestedCommands
-	    load $::reglib Registry
+	    package require registry
 	}]} {
 	namespace eval ::tcl::clock {variable NoRegistry {}}
     }
