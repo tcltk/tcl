@@ -411,28 +411,24 @@ TclpGetNativePathType(
 	     * Paths that begin with / are absolute.
 	     */
 
-#ifdef __QNX__
-	    /*
-	     * Check for QNX //<node id> prefix
-	     */
-	    if (*path && (pathLen > 3) && (path[0] == '/')
-		    && (path[1] == '/') && isdigit(UCHAR(path[2]))) {
-		path += 3;
-		while (isdigit(UCHAR(*path))) {
-		    path++;
-		}
-	    }
-#endif
 	    if (path[0] == '/') {
 		/*
 		 * Check for "//" prefix
 		 */
 		if (path[1] == '/') {
 		    path++;
+#ifdef __QNX__
+		    /*
+		     * Check for QNX //<node id> prefix
+		     */
+		    while (isdigit(UCHAR(path[1]))) {
+			path++;
+		    }
+#endif
 		}
 		if (driveNameLengthPtr != NULL) {
 		    /*
-		     * We need this addition in case the QNX or Cygwin code was used.
+		     * We need this addition in case the QNX or "//" code was used.
 		     */
 
 		    *driveNameLengthPtr = (1 + path - origPath);
@@ -645,20 +641,6 @@ SplitUnixPath(
      * Deal with the root directory as a special case.
      */
 
-#ifdef __QNX__
-    /*
-     * Check for QNX //<node id> prefix
-     */
-
-    if ((path[0] == '/') && (path[1] == '/')
-	    && isdigit(UCHAR(path[2]))) { /* INTL: digit */
-	path += 3;
-	while (isdigit(UCHAR(*path))) { /* INTL: digit */
-	    path++;
-	}
-    }
-#endif
-
     p = path;
     if (*p == '/') {
 	Tcl_Obj *rootElt = Tcl_NewStringObj("/", 1);
@@ -669,6 +651,16 @@ SplitUnixPath(
 	if (*p == '/') {
 	    Tcl_AppendToObj(rootElt, "/", 1);
 	    p++;
+#ifdef __QNX__ */
+	    /*
+	     * Check for QNX //<node id> prefix
+	     */
+
+	    while (isdigit(UCHAR(*p))) { /* INTL: digit */
+		    Tcl_AppendToObj(rootElt, p, 1);
+		    p++;
+	    }
+#endif
 	}
 	Tcl_ListObjAppendElement(NULL, result, rootElt);
     }
