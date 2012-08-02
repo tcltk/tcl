@@ -1483,8 +1483,13 @@ DdeObjCmd(
 	break;
     }
     case DDE_REQUEST: {
-	const char *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
+#ifdef UNICODE
+	const TCHAR *itemString = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 2],
 		&length);
+#else
+	const TCHAR *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
+		&length);
+#endif
 
 	if (length == 0) {
 	    Tcl_SetObjResult(interp,
@@ -1538,8 +1543,13 @@ DdeObjCmd(
 	break;
     }
     case DDE_POKE: {
-	const char *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
+#ifdef UNICODE
+	const TCHAR *itemString = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 2],
 		&length);
+#else
+	const TCHAR *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
+		&length);
+#endif
 	BYTE *dataString;
 
 	if (length == 0) {
