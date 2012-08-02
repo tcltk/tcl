@@ -2154,17 +2154,19 @@ Tcl_GetInterpPath(
     InterpInfo *iiPtr;
 
     if (targetInterp == askingInterp) {
+	Tcl_SetObjResult(askingInterp, Tcl_NewObj());
 	return TCL_OK;
     }
     if (targetInterp == NULL) {
 	return TCL_ERROR;
     }
     iiPtr = (InterpInfo *) ((Interp *) targetInterp)->interpInfo;
-    if (Tcl_GetInterpPath(askingInterp, iiPtr->slave.masterInterp) != TCL_OK) {
+    if (Tcl_GetInterpPath(askingInterp, iiPtr->slave.masterInterp) != TCL_OK){
 	return TCL_ERROR;
     }
-    Tcl_AppendElement(askingInterp, Tcl_GetHashKey(&iiPtr->master.slaveTable,
-	    iiPtr->slave.slaveEntryPtr));
+    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(askingInterp),
+	    Tcl_NewStringObj(Tcl_GetHashKey(&iiPtr->master.slaveTable,
+		    iiPtr->slave.slaveEntryPtr), -1));
     return TCL_OK;
 }
 
