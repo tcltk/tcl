@@ -1492,9 +1492,8 @@ MakePathFromNormalized(
 	if (pathPtr->bytes == NULL) {
 	    if (pathPtr->typePtr->updateStringProc == NULL) {
 		if (interp != NULL) {
-		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, "can't find object"
-			    "string representation", NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "can't find object string representation", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "WTF",
 			    NULL);
 		}
@@ -2368,9 +2367,9 @@ SetFsPathFromAny(
 	    dir = TclGetEnv("HOME", &dirString);
 	    if (dir == NULL) {
 		if (interp) {
-		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, "couldn't find HOME environment "
-			    "variable to expand path", NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "couldn't find HOME environment variable to"
+			    " expand path", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
 			    "HOMELESS", NULL);
 		}
@@ -2387,9 +2386,8 @@ SetFsPathFromAny(
 	    Tcl_DStringInit(&temp);
 	    if (TclpGetUserHome(name+1, &temp) == NULL) {
 		if (interp != NULL) {
-		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, "user \"", name+1,
-			    "\" doesn't exist", NULL);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "user \"%s\" doesn't exist", name+1));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
 			    NULL);
 		}
