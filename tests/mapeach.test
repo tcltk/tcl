@@ -1,0 +1,493 @@
+# Commands covered:  mapeach, continue, break
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 2011 Trevor Davel
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: $
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+catch {unset a}
+catch {unset i}
+catch {unset x}
+
+# ----- Non-compiled operation -------------------------------------------------
+
+
+# Basic "mapeach" operation (non-compiled)
+
+test mapeach-1.1 {basic mapeach tests} {
+    set a {}
+    mapeach i {a b c d} {
+	set a [concat $a $i]
+    }
+} {a {a b} {a b c} {a b c d}}
+test mapeach-1.2 {basic mapeach tests} {
+    mapeach i {a b {{c d} e} {123 {{x}}}} {
+	set i
+    }
+} {a b {{c d} e} {123 {{x}}}}
+test mapeach-1.2a {basic mapeach tests} {
+    mapeach i {a b {{c d} e} {123 {{x}}}} {
+  return -level 0 $i
+    }
+} {a b {{c d} e} {123 {{x}}}}
+test mapeach-1.3 {basic mapeach tests} {catch {mapeach} msg} 1
+test mapeach-1.4 {basic mapeach tests} {
+    catch {mapeach} msg
+    set msg
+} {wrong # args: should be "mapeach varList list ?varList list ...? command"}
+test mapeach-1.5 {basic mapeach tests} {catch {mapeach i} msg} 1
+test mapeach-1.6 {basic mapeach tests} {
+    catch {mapeach i} msg
+    set msg
+} {wrong # args: should be "mapeach varList list ?varList list ...? command"}
+test mapeach-1.7 {basic mapeach tests} {catch {mapeach i j} msg} 1
+test mapeach-1.8 {basic mapeach tests} {
+    catch {mapeach i j} msg
+    set msg
+} {wrong # args: should be "mapeach varList list ?varList list ...? command"}
+test mapeach-1.9 {basic mapeach tests} {catch {mapeach i j k l} msg} 1
+test mapeach-1.10 {basic mapeach tests} {
+    catch {mapeach i j k l} msg
+    set msg
+} {wrong # args: should be "mapeach varList list ?varList list ...? command"}
+test mapeach-1.11 {basic mapeach tests} {
+    mapeach i {} {
+      set i
+    }
+} {}
+test mapeach-1.12 {basic mapeach tests} {
+    mapeach i {} {
+      return -level 0 x
+    }
+} {}
+test mapeach-1.13 {mapeach errors} {
+    list [catch {mapeach {{a}{b}} {1 2 3} {}} msg] $msg
+} {1 {list element in braces followed by "{b}" instead of space}}
+test mapeach-1.14 {mapeach errors} {
+    list [catch {mapeach a {{1 2}3} {}} msg] $msg
+} {1 {list element in braces followed by "3" instead of space}}
+catch {unset a}
+test mapeach-1.15 {mapeach errors} {
+    catch {unset a}
+    set a(0) 44
+    list [catch {mapeach a {1 2 3} {}} msg o] $msg $::errorInfo
+} {1 {can't set "a": variable is array} {can't set "a": variable is array
+    (setting foreach loop variable "a")
+    invoked from within
+"mapeach a {1 2 3} {}"}}
+test mapeach-1.16 {mapeach errors} {
+    list [catch {mapeach {} {} {}} msg] $msg
+} {1 {foreach varlist is empty}}
+catch {unset a}
+
+
+# Parallel "mapeach" operation (non-compiled)
+
+test mapeach-2.1 {parallel mapeach tests} {
+    mapeach {a b} {1 2 3 4} {
+	list $b $a
+    }
+} {{2 1} {4 3}}
+test mapeach-2.2 {parallel mapeach tests} {
+    mapeach {a b} {1 2 3 4 5} {
+	list $b $a
+    }
+} {{2 1} {4 3} {{} 5}}
+test mapeach-2.3 {parallel mapeach tests} {
+    mapeach a {1 2 3} b {4 5 6} {
+	list $b $a
+    }
+} {{4 1} {5 2} {6 3}}
+test mapeach-2.4 {parallel mapeach tests} {
+    mapeach a {1 2 3} b {4 5 6 7 8} {
+	list $b $a
+    }
+} {{4 1} {5 2} {6 3} {7 {}} {8 {}}}
+test mapeach-2.5 {parallel mapeach tests} {
+    mapeach {a b} {a b A B aa bb} c {c C cc CC} {
+	list $a $b $c
+    }
+} {{a b c} {A B C} {aa bb cc} {{} {} CC}}
+test mapeach-2.6 {parallel mapeach tests} {
+    mapeach a {1 2 3} b {1 2 3} c {1 2 3} d {1 2 3} e {1 2 3} {
+	list $a$b$c$d$e
+    }
+} {11111 22222 33333}
+test mapeach-2.7 {parallel mapeach tests} {
+    mapeach a {} b {1 2 3} c {1 2} d {1 2 3 4} e {{1 2}} {
+	set x $a$b$c$d$e
+    }
+} {{1111 2} 222 33 4}
+test mapeach-2.8 {parallel mapeach tests} {
+    mapeach a {} b {1 2 3} c {1 2} d {1 2 3 4} e {{1 2}} {
+	join [list $a $b $c $d $e] .
+    }
+} {{.1.1.1.1 2} .2.2.2. .3..3. ...4.}
+test mapeach-2.9 {mapeach only sets vars if repeating loop} {
+  namespace eval ::mapeach_test {
+    set rgb {65535 0 0}
+    mapeach {r g b} [set rgb] {}
+    set ::x "r=$r, g=$g, b=$b"
+  }
+  namespace delete ::mapeach_test
+  set x
+} {r=65535, g=0, b=0}
+test mapeach-2.10 {mapeach only supports local scalar variables} {
+  catch { unset a }
+  mapeach {a(3)} {1 2 3 4} {set {a(3)}}
+} {1 2 3 4}
+catch { unset a }
+
+
+# "mapeach" with "continue" and "break" (non-compiled)
+
+test mapeach-3.1 {continue tests} {
+    mapeach i {a b c d} {
+	if {[string compare $i "b"] == 0} continue
+	set i
+    }
+} {a c d}
+test mapeach-3.2 {continue tests} {
+    set x 0
+    list [mapeach i {a b c d} {
+    	incr x
+    	if {[string compare $i "b"] != 0} continue
+    	set i
+    }] $x
+} {b 4}
+test mapeach-3.3 {break tests} {
+    set x 0
+    list [mapeach i {a b c d} {
+      incr x
+    	if {[string compare $i "c"] == 0} break
+    	set i
+    }] $x
+} {{a b} 3}
+# Check for bug similar to #406709
+test mapeach-3.4 {break tests} {
+	set a 1
+	mapeach b b {list [concat a; break]; incr a}
+	incr a
+} {2}
+
+
+# ----- Compiled operation ------------------------------------------------------
+
+# Basic "mapeach" operation (compiled)
+
+test mapeach-4.1 {basic mapeach tests} {
+  apply {{} {
+    set a {}
+    mapeach i {a b c d} {
+      set a [concat $a $i]
+    }
+  }}
+} {a {a b} {a b c} {a b c d}}
+test mapeach-4.2 {basic mapeach tests} {
+  apply {{} {
+    mapeach i {a b {{c d} e} {123 {{x}}}} {
+      set i
+    }
+  }}
+} {a b {{c d} e} {123 {{x}}}}
+test mapeach-4.2a {basic mapeach tests} {
+  apply {{} {
+    mapeach i {a b {{c d} e} {123 {{x}}}} {
+      return -level 0 $i
+    }
+  }}
+} {a b {{c d} e} {123 {{x}}}}
+test mapeach-4.3 {basic mapeach tests} {catch { apply {{} { mapeach }} } msg} 1
+test mapeach-4.4 {basic mapeach tests} {
+    catch { apply {{} { mapeach }} } msg
+    set msg
+} {wrong # args: should be "mapeach varList list ?varList list ...? command"}
+test mapeach-4.5 {basic mapeach tests} {catch { apply {{} { mapeach i }} } msg} 1
+test mapeach-4.6 {basic mapeach tests} {
+    catch { apply {{} { mapeach i }} } msg
+    set msg
+} {wrong # args: should be "mapeach varList list ?varList list ...? command"}
+test mapeach-4.7 {basic mapeach tests} {catch { apply {{} { mapeach i j }} } msg} 1
+test mapeach-4.8 {basic mapeach tests} {
+    catch { apply {{} { mapeach i j }} } msg
+    set msg
+} {wrong # args: should be "mapeach varList list ?varList list ...? command"}
+test mapeach-4.9 {basic mapeach tests} {catch { apply {{} { mapeach i j k l }} } msg} 1
+test mapeach-4.10 {basic mapeach tests} {
+    catch { apply {{} { mapeach i j k l }} } msg
+    set msg
+} {wrong # args: should be "mapeach varList list ?varList list ...? command"}
+test mapeach-4.11 {basic mapeach tests} {
+  apply {{} { mapeach i {} { set i } }}
+} {}
+test mapeach-4.12 {basic mapeach tests} {
+  apply {{} { mapeach i {} { return -level 0 x } }}
+} {}
+test mapeach-4.13 {mapeach errors} {
+    list [catch { apply {{} { mapeach {{a}{b}} {1 2 3} {} }} } msg] $msg
+} {1 {list element in braces followed by "{b}" instead of space}}
+test mapeach-4.14 {mapeach errors} {
+    list [catch { apply {{} { mapeach a {{1 2}3} {} }} } msg] $msg
+} {1 {list element in braces followed by "3" instead of space}}
+catch {unset a}
+test mapeach-4.15 {mapeach errors} {
+    apply {{} { 
+      set a(0) 44
+      list [catch {mapeach a {1 2 3} {}} msg o] $msg $::errorInfo 
+    }} 
+} {1 {can't set "a": variable is array} {can't set "a": variable is array
+    while executing
+"mapeach a {1 2 3} {}"}}
+test mapeach-4.16 {mapeach errors} {
+    list [catch { apply {{} { mapeach {} {} {} }} } msg] $msg
+} {1 {foreach varlist is empty}}
+catch {unset a}
+
+
+# Parallel "mapeach" operation (compiled)
+
+test mapeach-5.1 {parallel mapeach tests} {
+  apply {{} {
+    mapeach {a b} {1 2 3 4} {
+      list $b $a
+    }
+  }}
+} {{2 1} {4 3}}
+test mapeach-5.2 {parallel mapeach tests} {
+  apply {{} {
+    mapeach {a b} {1 2 3 4 5} {
+      list $b $a
+    }
+  }}
+} {{2 1} {4 3} {{} 5}}
+test mapeach-5.3 {parallel mapeach tests} {
+  apply {{} {
+    mapeach a {1 2 3} b {4 5 6} {
+      list $b $a
+    }
+  }}
+} {{4 1} {5 2} {6 3}}
+test mapeach-5.4 {parallel mapeach tests} {
+  apply {{} {
+    mapeach a {1 2 3} b {4 5 6 7 8} {
+	list $b $a
+    }
+  }}
+} {{4 1} {5 2} {6 3} {7 {}} {8 {}}}
+test mapeach-5.5 {parallel mapeach tests} {
+  apply {{} {
+    mapeach {a b} {a b A B aa bb} c {c C cc CC} {
+      list $a $b $c
+    }
+  }}
+} {{a b c} {A B C} {aa bb cc} {{} {} CC}}
+test mapeach-5.6 {parallel mapeach tests} {
+  apply {{} {
+    mapeach a {1 2 3} b {1 2 3} c {1 2 3} d {1 2 3} e {1 2 3} {
+      list $a$b$c$d$e
+    }
+  }}
+} {11111 22222 33333}
+test mapeach-5.7 {parallel mapeach tests} {
+  apply {{} {
+    mapeach a {} b {1 2 3} c {1 2} d {1 2 3 4} e {{1 2}} {
+      set x $a$b$c$d$e
+    }
+  }}
+} {{1111 2} 222 33 4}
+test mapeach-5.8 {parallel mapeach tests} {
+  apply {{} {
+    mapeach a {} b {1 2 3} c {1 2} d {1 2 3 4} e {{1 2}} {
+      join [list $a $b $c $d $e] .
+    }
+  }}
+} {{.1.1.1.1 2} .2.2.2. .3..3. ...4.}
+test mapeach-5.9 {mapeach only sets vars if repeating loop} {
+    apply {{} {
+        set rgb {65535 0 0}
+        mapeach {r g b} [set rgb] {}
+        return "r=$r, g=$g, b=$b"
+    }}
+} {r=65535, g=0, b=0}
+test mapeach-5.10 {mapeach only supports local scalar variables} {
+    apply {{} {
+        mapeach {a(3)} {1 2 3 4} {set {a(3)}}
+    }}
+} {1 2 3 4}
+
+
+# "mapeach" with "continue" and "break" (compiled)
+
+test mapeach-6.1 {continue tests} {
+  apply {{} {
+    mapeach i {a b c d} {
+      if {[string compare $i "b"] == 0} continue
+      set i
+    }
+  }}
+} {a c d}
+test mapeach-6.2 {continue tests} {
+  apply {{} {
+    list [mapeach i {a b c d} {
+      incr x
+    	if {[string compare $i "b"] != 0} continue
+    	set i
+    }] $x
+  }}
+} {b 4}
+test mapeach-6.3 {break tests} {
+  apply {{} {
+    list [mapeach i {a b c d} {
+      incr x
+    	if {[string compare $i "c"] == 0} break
+    	set i
+    }] $x
+  }}
+} {{a b} 3}
+# Check for bug similar to #406709
+test mapeach-6.4 {break tests} {
+    apply {{} {
+	set a 1
+	mapeach b b {list [concat a; break]; incr a}
+	incr a
+    }}
+} {2}
+
+
+
+# ----- Special cases and bugs -------------------------------------------------
+
+
+test mapeach-7.1 {compiled mapeach backward jump works correctly} {
+    catch {unset x}
+    array set x {0 zero 1 one 2 two 3 three}
+    lsort [apply {{arrayName} {
+        upvar 1 $arrayName a
+        mapeach member [array names a] {
+            list $member [set a($member)]
+        }
+    }} x]
+} [lsort {{0 zero} {1 one} {2 two} {3 three}}]
+
+test mapeach-7.2 {noncompiled mapeach and shared variable or value list objects that are converted to another type} {
+    catch {unset x}
+    mapeach {12.0} {a b c} {
+        set x 12.0
+        set x [expr $x + 1]
+    }
+} {13.0 13.0 13.0}
+
+# Test for incorrect "double evaluation" semantics
+test mapeach-7.3 {delayed substitution of body} {
+    apply {{} {
+       set a 0
+       mapeach a [list 1 2 3] "
+           set x $a
+       "
+       set x
+    }}
+} {0}
+
+# Related to "foreach" test for [Bug 1189274]; crash on failure
+test mapeach-7.4 {empty list handling} {
+    proc crash {} {
+	rename crash {}
+	set a "x y z"
+	set b ""
+	mapeach aa $a bb $b { set x "aa = $aa bb = $bb" }
+    }
+    crash
+} {{aa = x bb = } {aa = y bb = } {aa = z bb = }}
+
+# Related to [Bug 1671138]; infinite loop with empty var list in bytecompiled version
+test mapeach-7.5 {compiled empty var list} {
+    proc foo {} {
+	mapeach {} x {
+	    error "reached body"
+	}
+    }
+    list [catch { foo } msg] $msg
+} {1 {foreach varlist is empty}}
+
+test mapeach-7.6 {mapeach: related to "foreach" [Bug 1671087]} -setup {
+    proc demo {} {
+	set vals {1 2 3 4}
+	trace add variable x write {string length $vals ;# }
+	mapeach {x y} $vals {format $y}
+    }
+} -body {
+    demo
+} -cleanup {
+    rename demo {}
+} -result {2 4}
+
+# Huge lists must not overflow the bytecode interpreter (development bug)
+test mapeach-7.7 {huge list non-compiled} {
+  set x [mapeach a [lrepeat 1000000 x] { set b y$a }]
+  list $b [llength $x] [string length $x]
+} {yx 1000000 2999999}
+
+test mapeach-7.8 {huge list compiled} {
+  set x [apply {{times} { mapeach a [lrepeat $times x] { set b y$a }}} 1000000]
+  list $b [llength $x] [string length $x]
+} {yx 1000000 2999999}
+
+test mapeach-7.9 {error then dereference loop var (dev bug)} {
+  catch { mapeach a 0 b {1 2 3} { error x } }
+  set a
+} 0
+test mapeach-7.9a {error then dereference loop var (dev bug)} {
+  catch { mapeach a 0 b {1 2 3} { incr a $b; error x } }
+  set a
+} 1
+
+# ----- Coroutines -------------------------------------------------------------
+
+test mapeach-8.1 {mapeach non-compiled with coroutines} {
+  coroutine coro apply {{} {
+    set values [yield [info coroutine]]
+    eval mapeach i [list $values] {{ yield $i }}
+  }} ;# returns 'coro'
+  coro {a b c d e f} ;# -> a
+  coro 1 ;# -> b
+  coro 2 ;# -> c
+  coro 3 ;# -> d
+  coro 4 ;# -> e
+  coro 5 ;# -> f
+  list [coro 6] [info commands coro]
+} {{1 2 3 4 5 6} {}}
+
+test mapeach-8.2 {mapeach compiled with coroutines} {
+  coroutine coro apply {{} {
+    set values [yield [info coroutine]]
+    mapeach i $values { yield $i }
+  }} ;# returns 'coro'
+  coro {a b c d e f} ;# -> a
+  coro 1 ;# -> b
+  coro 2 ;# -> c
+  coro 3 ;# -> d
+  coro 4 ;# -> e
+  coro 5 ;# -> f
+  list [coro 6] [info commands coro]
+} {{1 2 3 4 5 6} {}}
+
+
+# cleanup
+catch {unset a}
+catch {unset x}
+catch {rename foo {}}
+::tcltest::cleanupTests
+return
