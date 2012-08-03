@@ -1842,7 +1842,7 @@ PathFilesystemCmd(
     }
     fsInfo = Tcl_FSFileSystemInfo(objv[1]);
     if (fsInfo == NULL) {
-	Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		Tcl_GetString(objv[1]), NULL);
 	return TCL_ERROR;
@@ -2092,7 +2092,8 @@ FilesystemSeparatorCmd(
 	Tcl_Obj *separatorObj = Tcl_FSPathSeparator(objv[1]);
 
 	if (separatorObj == NULL) {
-	    Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unrecognised path", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		    Tcl_GetString(objv[1]), NULL);
 	    return TCL_ERROR;

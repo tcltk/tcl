@@ -850,7 +850,8 @@ Tcl_PackageObjCmd(
 	    if (res == 0){
 		if (objc == 4) {
 		    ckfree(argv3i);
-		    Tcl_SetResult(interp, availPtr->script, TCL_VOLATILE);
+		    Tcl_SetObjResult(interp,
+			    Tcl_NewStringObj(availPtr->script, -1));
 		    return TCL_OK;
 		}
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
@@ -955,7 +956,8 @@ Tcl_PackageObjCmd(
 	    if (hPtr != NULL) {
 		pkgPtr = Tcl_GetHashValue(hPtr);
 		if (pkgPtr->version != NULL) {
-		    Tcl_SetResult(interp, pkgPtr->version, TCL_VOLATILE);
+		    Tcl_SetObjResult(interp,
+			    Tcl_NewStringObj(pkgPtr->version, -1));
 		}
 	    }
 	    return TCL_OK;
@@ -1017,7 +1019,8 @@ Tcl_PackageObjCmd(
 
 	if (objc == 2) {
 	    if (iPtr->packageUnknown != NULL) {
-		Tcl_SetResult(interp, iPtr->packageUnknown, TCL_VOLATILE);
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj(iPtr->packageUnknown, -1));
 	    }
 	} else if (objc == 3) {
 	    if (iPtr->packageUnknown != NULL) {

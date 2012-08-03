@@ -1174,9 +1174,10 @@ DoTildeSubst(
 	dir = TclGetEnv("HOME", &dirString);
 	if (dir == NULL) {
 	    if (interp) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't find HOME environment "
-			"variable to expand path", NULL);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"couldn't find HOME environment "
+			"variable to expand path", -1));
+		Tcl_SetErrorCode(interp, "TCL", "FILENAME", "NO_HOME", NULL);
 	    }
 	    return NULL;
 	}
@@ -1185,8 +1186,9 @@ DoTildeSubst(
     } else if (TclpGetUserHome(user, resultPtr) == NULL) {
 	if (interp) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "user \"", user, "\" doesn't exist",
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "user \"%s\" doesn't exist", user));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "USER", user, NULL);
 	}
 	return NULL;
     }
@@ -1329,9 +1331,9 @@ Tcl_GlobObjCmd(
 
   endOfForLoop:
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {
-	Tcl_AppendResult(interp,
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"\"-tails\" must be used with either "
-		"\"-directory\" or \"-path\"", NULL);
+		"\"-directory\" or \"-path\"", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 		"BADOPTIONCOMBINATION", NULL);
 	return TCL_ERROR;
@@ -1625,20 +1627,23 @@ Tcl_GlobObjCmd(
 	}
 
 	if (length == 0) {
-	    Tcl_AppendResult(interp, "no files matched glob pattern",
-		    (join || (objc == 1)) ? " \"" : "s \"", NULL);
+	    Tcl_Obj *errorMsg =
+		    Tcl_ObjPrintf("no files matched glob pattern%s \"",
+			    (join || (objc == 1)) ? "" : "s");
+
 	    if (join) {
-		Tcl_AppendResult(interp, Tcl_DStringValue(&prefix), NULL);
+		Tcl_AppendToObj(errorMsg, Tcl_DStringValue(&prefix), -1);
 	    } else {
 		const char *sep = "";
 
 		for (i = 0; i < objc; i++) {
-		    string = Tcl_GetString(objv[i]);
-		    Tcl_AppendResult(interp, sep, string, NULL);
+		    Tcl_AppendPrintfToObj(errorMsg, "%s%s",
+			    sep, Tcl_GetString(objv[i]));
 		    sep = " ";
 		}
 	    }
-	    Tcl_AppendResult(interp, "\"", NULL);
+	    Tcl_AppendToObj(errorMsg, "\"", -1);
+	    Tcl_SetObjResult(interp, errorMsg);
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "NOMATCH",
 		    NULL);
 	    result = TCL_ERROR;
@@ -2206,15 +2211,15 @@ DoGlob(
 		closeBrace = p;
 		break;
 	    }
-	    Tcl_SetResult(interp, "unmatched open-brace in file name",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unmatched open-brace in file name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;
 
 	} else if (*p == '}') {
-	    Tcl_SetResult(interp, "unmatched close-brace in file name",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unmatched close-brace in file name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;
