@@ -1648,9 +1648,9 @@ DdeObjCmd(
 	     */
 
 	    if (Tcl_IsSafe(riPtr->interp) && riPtr->handlerPtr == NULL) {
-		Tcl_SetResult(riPtr->interp, "permission denied: "
-			"a handler procedure must be defined for use in "
-			"a safe interp", TCL_STATIC);
+		Tcl_SetObjResult(riPtr->interp, Tcl_NewStringObj(
+			"permission denied: a handler procedure must be"
+			" defined for use in a safe interp", -1));
 		Tcl_SetErrorCode(interp, "TCL", "DDE", "SECURITY_CHECK",
 			NULL);
 		result = TCL_ERROR;

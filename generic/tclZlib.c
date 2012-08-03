@@ -577,8 +577,8 @@ Tcl_ZlibStreamInit(
 	TclDStringAppendObj(&cmdname, Tcl_GetObjResult(interp));
 	if (Tcl_GetCommandInfo(interp, Tcl_DStringValue(&cmdname),
 		&cmdinfo) == 1) {
-	    Tcl_SetResult(interp,
-		    "BUG: Stream command name already exists", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "BUG: Stream command name already exists", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "BUG", "EXISTING_CMD", NULL);
 	    Tcl_DStringFree(&cmdname);
 	    goto error;
@@ -900,8 +900,8 @@ Tcl_ZlibStreamPut(
 
     if (zshPtr->streamEnd) {
 	if (zshPtr->interp) {
-	    Tcl_SetResult(zshPtr->interp,
-		    "already past compressed stream end", TCL_STATIC);
+	    Tcl_SetObjResult(zshPtr->interp, Tcl_NewStringObj(
+		    "already past compressed stream end", -1));
 	    Tcl_SetErrorCode(zshPtr->interp, "TCL", "ZIP", "CLOSED", NULL);
 	}
 	return TCL_ERROR;
@@ -1085,9 +1085,9 @@ Tcl_ZlibStreamGet(
 
 	    if (zshPtr->stream.avail_in > 0) {
 		if (zshPtr->interp) {
-		    Tcl_SetResult(zshPtr->interp,
-			"Unexpected zlib internal state during decompression",
-			TCL_STATIC);
+		    Tcl_SetObjResult(zshPtr->interp, Tcl_NewStringObj(
+			    "unexpected zlib internal state during"
+			    " decompression", -1));
 		    Tcl_SetErrorCode(zshPtr->interp, "TCL", "ZIP", "STATE",
 			    NULL);
 		}
@@ -2581,8 +2581,9 @@ ZlibTransformSetOption(			/* not used */
 	} else if (value[0] == 's' && strcmp(value, "sync") == 0) {
 	    flushType = Z_SYNC_FLUSH;
 	} else {
-	    Tcl_AppendResult(interp, "unknown -flush type \"", value,
-		    "\": must be full or sync", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "unknown -flush type \"%s\": must be full or sync",
+		    value));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "FLUSH", NULL);
 	    return TCL_ERROR;
 	}
@@ -3152,7 +3153,7 @@ Tcl_ZlibStreamInit(
     Tcl_Obj *dictObj,
     Tcl_ZlibStream *zshandle)
 {
-    Tcl_SetResult(interp, "unimplemented", TCL_STATIC);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
     Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
     return TCL_ERROR;
 }
@@ -3218,7 +3219,7 @@ Tcl_ZlibDeflate(
     int level,
     Tcl_Obj *gzipHeaderDictObj)
 {
-    Tcl_SetResult(interp, "unimplemented", TCL_STATIC);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
     Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
     return TCL_ERROR;
 }
@@ -3231,7 +3232,7 @@ Tcl_ZlibInflate(
     int bufferSize,
     Tcl_Obj *gzipHeaderDictObj)
 {
-    Tcl_SetResult(interp, "unimplemented", TCL_STATIC);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
     Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
     return TCL_ERROR;
 }

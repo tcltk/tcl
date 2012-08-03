@@ -1094,8 +1094,9 @@ Tcl_FSMatchInDirectory(
     cwd = Tcl_FSGetCwd(NULL);
     if (cwd == NULL) {
 	if (interp != NULL) {
-	    Tcl_SetResult(interp, "glob couldn't determine "
-		    "the current working directory", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "glob couldn't determine the current working directory",
+		    -1));
 	}
 	return TCL_ERROR;
     }

@@ -542,8 +542,8 @@ TclCreatePipeline(
 	    }
 	    if (*p == '\0') {
 		if ((i == (lastBar + 1)) || (i == (argc - 1))) {
-		    Tcl_SetResult(interp, "illegal use of | or |& in command",
-			    TCL_STATIC);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "illegal use of | or |& in command", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 			    "PIPESYNTAX", NULL);
 		    goto error;
@@ -722,8 +722,8 @@ TclCreatePipeline(
 	 * We had a bar followed only by redirections.
 	 */
 
-	Tcl_SetResult(interp, "illegal use of | or |& in command",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"illegal use of | or |& in command", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "PIPESYNTAX",
 		NULL);
 	goto error;
