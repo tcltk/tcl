@@ -76,7 +76,11 @@ static int		FinalizeDictWith(ClientData data[],
 			    Tcl_Interp *interp, int result);
 static int		DictForNRCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictForLoopCallback(ClientData data[],
+static int      DictMapNRCmd(ClientData dummy, Tcl_Interp *interp,
+                int objc, Tcl_Obj *const *objv);
+static int      DictEachNRCmd(ClientData dummy, Tcl_Interp *interp,
+                int objc, Tcl_Obj *const *objv, int collect);
+static int		DictEachLoopCallback(ClientData data[],
 			    Tcl_Interp *interp, int result);
 
 
@@ -95,6 +99,7 @@ static const EnsembleImplMap implementationMap[] = {
     {"info",	DictInfoCmd, NULL, NULL, NULL, 0 },
     {"keys",	DictKeysCmd, NULL, NULL, NULL, 0 },
     {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, 0 },
+    {"map", 	NULL,       	TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
     {"merge",	DictMergeCmd, NULL, NULL, NULL, 0 },
     {"remove",	DictRemoveCmd, NULL, NULL, NULL, 0 },
     {"replace",	DictReplaceCmd, NULL, NULL, NULL, 0 },
@@ -2329,11 +2334,11 @@ DictAppendCmd(
 /*
  *----------------------------------------------------------------------
  *
- * DictForNRCmd --
+ * DictForNRCmd, DictMapNRCmd, DictEachNRCmd --
  *
- *	This function implements the "dict for" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
+ *	These functions implement the "dict for" and "dict map" Tcl commands. 
+ *  See the user documentation for details on what it does, and TIP#111 
+ *  and TIP#405 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -2350,6 +2355,27 @@ DictForNRCmd(
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
+{
+    return DictEachNRCmd(dummy, interp, objc, objv, 0);
+}
+
+static int
+DictMapNRCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    return DictEachNRCmd(dummy, interp, objc, objv, 1);
+}
+
+static int
+DictEachNRCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv,
+    int collect)  /* Flag == 1 to collect and return loop body result. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
@@ -2376,6 +2402,7 @@ DictForNRCmd(
 	return TCL_ERROR;
     }
     searchPtr = TclStackAlloc(interp, sizeof(Tcl_DictSearch));
+    searchPtr->resultList = (collect ? Tcl_NewListObj(0, NULL) : NULL );
     if (Tcl_DictObjFirst(interp, objv[2], searchPtr, &keyObj, &valueObj,
 	    &done) != TCL_OK) {
 	TclStackFree(interp, searchPtr);
@@ -2419,7 +2446,7 @@ DictForNRCmd(
      * Run the script.
      */
 
-    TclNRAddCallback(interp, DictForLoopCallback, searchPtr, keyVarObj,
+    TclNRAddCallback(interp, DictEachLoopCallback, searchPtr, keyVarObj,
 	    valueVarObj, scriptObj);
     return TclNREvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 3);
 
@@ -2437,7 +2464,7 @@ DictForNRCmd(
 }
 
 static int
-DictForLoopCallback(
+DictEachLoopCallback(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -2462,10 +2489,20 @@ DictForLoopCallback(
 	    result = TCL_OK;
 	} else if (result == TCL_ERROR) {
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (\"dict for\" body line %d)",
+		    ((searchPtr->resultList == NULL) ? 
+			"\n    (\"dict for\" body line %d)" : 
+			"\n    (\"dict map\" body line %d)"),
 		    Tcl_GetErrorLine(interp)));
 	}
 	goto done;
+    }
+
+    /*
+     * Capture result if collecting.
+     */
+
+    if (searchPtr->resultList != NULL) {
+	Tcl_ListObjAppendElement(interp, searchPtr->resultList, Tcl_GetObjResult(interp));
     }
 
     /*
@@ -2474,7 +2511,12 @@ DictForLoopCallback(
 
     Tcl_DictObjNext(searchPtr, &keyObj, &valueObj, &done);
     if (done) {
-	Tcl_ResetResult(interp);
+    	if (searchPtr->resultList != NULL) {
+	    Tcl_SetObjResult(interp, searchPtr->resultList);
+	    searchPtr->resultList = NULL; /* Don't clean it up */
+	} else {
+	    Tcl_ResetResult(interp);
+	}    	
 	goto done;
     }
 
@@ -2499,7 +2541,7 @@ DictForLoopCallback(
      * Run the script.
      */
 
-    TclNRAddCallback(interp, DictForLoopCallback, searchPtr, keyVarObj,
+    TclNRAddCallback(interp, DictEachLoopCallback, searchPtr, keyVarObj,
 	    valueVarObj, scriptObj);
     return TclNREvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 3);
 
@@ -2507,9 +2549,12 @@ DictForLoopCallback(
      * For unwinding everything once the iterating is done.
      */
 
-  done:
+done:
     TclDecrRefCount(keyVarObj);
     TclDecrRefCount(valueVarObj);
+    if (searchPtr->resultList != NULL) {
+	TclDecrRefCount(searchPtr->resultList);
+    }
     TclDecrRefCount(scriptObj);
     Tcl_DictObjDone(searchPtr);
     TclStackFree(interp, searchPtr);
