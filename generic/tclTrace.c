@@ -366,8 +366,9 @@ Tcl_TraceObjCmd(
     return TCL_OK;
 
   badVarOps:
-    Tcl_AppendResult(interp, "bad operations \"", flagOps,
-	    "\": should be one or more of rwua", NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "bad operations \"%s\": should be one or more of rwua",
+	    flagOps));
     Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "BADOPS", NULL);
     return TCL_ERROR;
 }
