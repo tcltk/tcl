@@ -2773,7 +2773,9 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRCatchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRExprObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRForObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRForeachCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRForeachaCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRIfObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRMapeachCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSourceObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSubstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSwitchObjCmd;
@@ -2853,6 +2855,19 @@ struct Tcl_LoadHandle_ {
 				/* 'Steele&White' after masking */
 #define TCL_DD_SHORTEST0		0x0
 				/* 'Shortest possible' after masking */
+
+/* Modes for collecting or accumulating in TclNREachloopCmd, 
+ * TclCompileEachloopCmd and INST_FOREACH_STEP4. */
+
+#define TCL_EACH_KEEP_NONE		0
+				/* Discard iteration result like [foreach] */
+
+#define TCL_EACH_COLLECT		1
+				/* Collect iteration result like [mapeach] */
+
+#define TCL_EACH_ACCUM			2
+				/* First loop var is accumulator like [foreacha] */
+
 
 /*
  *----------------------------------------------------------------
@@ -3299,6 +3314,9 @@ MODULE_SCOPE int	Tcl_ForObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_ForeachObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_ForeachaObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_FormatObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3364,6 +3382,9 @@ MODULE_SCOPE int	Tcl_LsetObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LsortObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_MapeachObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE Tcl_Command TclInitNamespaceCmd(Tcl_Interp *interp);
@@ -3492,6 +3513,9 @@ MODULE_SCOPE int	TclCompileDictAppendCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileDictForCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictMapCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileDictGetCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
@@ -3523,6 +3547,9 @@ MODULE_SCOPE int	TclCompileForCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileForeachCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileForeachaCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileGlobalCmd(Tcl_Interp *interp,
@@ -3559,6 +3586,9 @@ MODULE_SCOPE int	TclCompileLreplaceCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileLsetCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileMapeachCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileNamespaceUpvarCmd(Tcl_Interp *interp,

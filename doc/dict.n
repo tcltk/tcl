@@ -147,6 +147,24 @@ keys are treated as if they map to an empty list, and it is legal for
 there to be no items to append to the list. It is an error for the
 value that the key maps to to not be representable as a list.
 .TP
+\fBdict map {\fIkeyVar valueVar\fB} \fIdictionaryValue body\fR
+.
+This command takes three arguments, the first a two-element list of
+variable names (for the key and value respectively of each mapping in
+the dictionary), the second the dictionary value to iterate across,
+and the third a script to be evaluated for each mapping with the key
+and value variables set appropriately (in the manner of \fBmapeach\fR.)
+In an iteration where the evaluated script completes normally 
+(\fBTCL_OK\fR) the script result is appended to an accumulator list.
+The result of the \fBdict map\fB command is the accumulator list.
+If any evaluation of the body generates a \fBTCL_BREAK\fR result, no 
+further pairs from the dictionary will be iterated over and the 
+\fBdict map\fR command will terminate successfully immediately. If any
+evaluation of the body generates a \fBTCL_CONTINUE\fR result, the
+current iteration is aborted and the accumulator list is not modified.
+The order of iteration is the order in which the keys were inserted into
+the dictionary.
+.TP
 \fBdict merge \fR?\fIdictionaryValue ...\fR?
 .
 Return a dictionary that contains the contents of each of the
@@ -408,9 +426,9 @@ puts $foo
 #    prints: \fIa b foo {a b} bar 2 baz 3\fR
 .CE
 .SH "SEE ALSO"
-append(n), array(n), foreach(n), incr(n), list(n), lappend(n), set(n)
+append(n), array(n), foreach(n), mapeach(n), incr(n), list(n), lappend(n), set(n)
 .SH KEYWORDS
-dictionary, create, update, lookup, iterate, filter
+dictionary, create, update, lookup, iterate, filter, map
 '\" Local Variables:
 '\" mode: nroff
 '\" End:
