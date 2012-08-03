@@ -157,9 +157,8 @@ Tcl_LoadObjCmd(
 	}
     }
     if ((fullFileName[0] == 0) && (packageName == NULL)) {
-	Tcl_SetResult(interp,
-		"must specify either file name or package name",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"must specify either file name or package name", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOLIBRARY",
 		NULL);
 	code = TCL_ERROR;
@@ -581,9 +580,8 @@ Tcl_UnloadObjCmd(
 	}
     }
     if ((fullFileName[0] == 0) && (packageName == NULL)) {
-	Tcl_SetResult(interp,
-		"must specify either file name or package name",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"must specify either file name or package name", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NOLIBRARY",
 		NULL);
 	code = TCL_ERROR;

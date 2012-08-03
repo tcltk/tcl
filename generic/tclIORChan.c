@@ -739,7 +739,8 @@ TclChanCreateObjCmd(
      * Return handle as result of command.
      */
 
-    Tcl_SetResult(interp, (char *)chanPtr->state->channelName, TCL_VOLATILE);
+    Tcl_SetObjResult(interp,
+            Tcl_NewStringObj(chanPtr->state->channelName, -1));
     return TCL_OK;
 
   error:
