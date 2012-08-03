@@ -1416,7 +1416,7 @@ Tcl_VwaitObjCmd(
 	}
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "limit exceeded", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
 	    break;
 	}
     }
@@ -1426,8 +1426,9 @@ Tcl_VwaitObjCmd(
 
     if (!foundEvent) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "can't wait for variable \"", nameString,
-		"\": would wait forever", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't wait for variable \"%s\": would wait forever",
+		nameString));
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", NULL);
 	return TCL_ERROR;
     }
@@ -1519,7 +1520,7 @@ Tcl_UpdateObjCmd(
 	}
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "limit exceeded", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
 	    return TCL_ERROR;
 	}
     }
