@@ -32,6 +32,7 @@ struct ForeachState {
     int *argcList;		/* Array of value list sizes. */
     Tcl_Obj ***argvList;	/* Array of value lists. */
     Tcl_Obj **aCopyList;	/* Copies of value list arguments. */
+    Tcl_Obj *resultList;	/* List of result values from the loop body. */
 };
 
 /*
@@ -44,7 +45,7 @@ static int		EncodingDirsObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static inline int	ForeachAssignments(Tcl_Interp *interp,
-			    struct ForeachState *statePtr);
+			    struct ForeachState *statePtr, int collect);
 static inline void	ForeachCleanup(Tcl_Interp *interp,
 			    struct ForeachState *statePtr);
 static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -52,6 +53,8 @@ static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 static const char *	GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
+static int		TclNREachloopCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[], int collect);
 static Tcl_NRPostProc	CatchObjCmdCallback;
 static Tcl_NRPostProc	ExprCallback;
 static Tcl_NRPostProc	ForSetupCallback;
@@ -2560,7 +2563,7 @@ ForPostNextCallback(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ForeachObjCmd, TclNRForeachCmd --
+ * Tcl_ForeachObjCmd, TclNRForeachCmd, TclNREachloopCmd --
  *
  *	This object-based procedure is invoked to process the "foreach" Tcl
  *	command. See the user documentation for details on what it does.
@@ -2592,6 +2595,58 @@ TclNRForeachCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    return TclNREachloopCmd(dummy, interp, objc, objv, TCL_EACH_KEEP_NONE);
+}
+
+int
+Tcl_MapeachObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, TclNRMapeachCmd, dummy, objc, objv);
+}
+
+int
+TclNRMapeachCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    return TclNREachloopCmd(dummy, interp, objc, objv, TCL_EACH_COLLECT);
+}
+
+int
+Tcl_ForeachaObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, TclNRForeachaCmd, dummy, objc, objv);
+}
+
+int
+TclNRForeachaCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    return TclNREachloopCmd(dummy, interp, objc, objv, TCL_EACH_ACCUM);
+}
+
+int
+TclNREachloopCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[],
+    int collect)	/* Select collecting or accumulating mode (TCL_EACH_*) */
+{
+
     int numLists = (objc-2) / 2;
     register struct ForeachState *statePtr;
     int i, j, result;
@@ -2635,6 +2690,8 @@ TclNRForeachCmd(
     statePtr->bodyPtr = objv[objc - 1];
     statePtr->bodyIdx = objc - 1;
 
+    statePtr->resultList = Tcl_NewListObj(0, NULL);
+
     /*
      * Break up the value lists and variable lists into elements.
      */
@@ -2663,9 +2720,13 @@ TclNRForeachCmd(
 	TclListObjGetElements(NULL, statePtr->aCopyList[i],
 		&statePtr->argcList[i], &statePtr->argvList[i]);
 
-	j = statePtr->argcList[i] / statePtr->varcList[i];
-	if ((statePtr->argcList[i] % statePtr->varcList[i]) != 0) {
-	    j++;
+	j = (i == 0) && (collect == TCL_EACH_ACCUM); /* Accumulator present? */
+	/* If accumulator is only var in list, then we iterate j=1 times */
+	if (statePtr->varcList[i] > j) {
+	    /* We need listLen/numVars round up = ((listLen+numVars-1)/numVars)
+	     * When accum is present we need (listLen-1)/(numVars-1) round up */
+	    j = (statePtr->argcList[i] - j + statePtr->varcList[i] - j - 1)
+		/ (statePtr->varcList[i] - j);
 	}
 	if (j > statePtr->maxj) {
 	    statePtr->maxj = j;
@@ -2678,12 +2739,12 @@ TclNRForeachCmd(
      */
 
     if (statePtr->maxj > 0) {
-	result = ForeachAssignments(interp, statePtr);
+	result = ForeachAssignments(interp, statePtr, collect);
 	if (result == TCL_ERROR) {
 	    goto done;
 	}
 
-	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, ForeachLoopStep, statePtr, collect, NULL, NULL);
 	return TclNREvalObjEx(interp, objv[objc-1], 0,
 		((Interp *) interp)->cmdFramePtr, objc-1);
     }
@@ -2710,6 +2771,7 @@ ForeachLoopStep(
     int result)
 {
     register struct ForeachState *statePtr = data[0];
+    int collect = (int)data[1]; /* Selected collecting or accumulating mode. */
 
     /*
      * Process the result code from this run of the [foreach] body. Note that
@@ -2719,11 +2781,15 @@ ForeachLoopStep(
     switch (result) {
     case TCL_CONTINUE:
 	result = TCL_OK;
+	break;
     case TCL_OK:
+	if (collect == TCL_EACH_COLLECT) {
+	  Tcl_ListObjAppendElement(interp, statePtr->resultList, Tcl_GetObjResult(interp));
+	}
 	break;
     case TCL_BREAK:
 	result = TCL_OK;
-	goto done;
+	goto finish;
     case TCL_ERROR:
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"foreach\" body line %d)", Tcl_GetErrorLine(interp)));
@@ -2737,12 +2803,12 @@ ForeachLoopStep(
      */
 
     if (statePtr->maxj > ++statePtr->j) {
-	result = ForeachAssignments(interp, statePtr);
+	result = ForeachAssignments(interp, statePtr, collect);
 	if (result == TCL_ERROR) {
 	    goto done;
 	}
 
-	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, ForeachLoopStep, statePtr, collect, NULL, NULL);
 	return TclNREvalObjEx(interp, statePtr->bodyPtr, 0,
 		((Interp *) interp)->cmdFramePtr, statePtr->bodyIdx);
     }
@@ -2750,8 +2816,18 @@ ForeachLoopStep(
     /*
      * We're done. Tidy up our work space and finish off.
      */
-
-    Tcl_ResetResult(interp);
+finish:
+    if (collect == TCL_EACH_ACCUM) {
+	Tcl_Obj* valueObj =  Tcl_ObjGetVar2(interp, statePtr->varvList[0][0], 
+		NULL, TCL_LEAVE_ERR_MSG);
+	if (valueObj == NULL) {
+	    goto done;
+	}
+	Tcl_SetObjResult(interp, valueObj);
+    } else {
+	Tcl_SetObjResult(interp, statePtr->resultList);
+	statePtr->resultList = NULL; /* Don't clean it up */
+    }
   done:
     ForeachCleanup(interp, statePtr);
     return result;
@@ -2764,13 +2840,16 @@ ForeachLoopStep(
 static inline int
 ForeachAssignments(
     Tcl_Interp *interp,
-    struct ForeachState *statePtr)
+    struct ForeachState *statePtr,
+    int collect)	/* Select collecting or accumulating mode (TCL_EACH_*) */
 {
     int i, v, k;
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
-	for (v=0 ; v<statePtr->varcList[i] ; v++) {
+	/* Don't modify the accumulator except on the first iteration */
+	v = ((i == 0) && (collect == TCL_EACH_ACCUM) && (statePtr->index[i] > 0));
+	for (; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 
 	    if (k < statePtr->argcList[i]) {
@@ -2812,6 +2891,9 @@ ForeachCleanup(
 	if (statePtr->aCopyList[i]) {
 	    TclDecrRefCount(statePtr->aCopyList[i]);
 	}
+    }
+    if (statePtr->resultList) {
+	TclDecrRefCount(statePtr->resultList);
     }
     TclStackFree(interp, statePtr);
 }

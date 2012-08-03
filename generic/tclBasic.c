@@ -219,6 +219,7 @@ static const CmdInfo builtInCmds[] = {
     {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	TclNRExprObjCmd,	1},
     {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	TclNRForObjCmd,	1},
     {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	TclNRForeachCmd,	1},
+    {"foreacha",	Tcl_ForeachaObjCmd,	TclCompileForeachaCmd,	TclNRForeachaCmd,	1},
     {"format",		Tcl_FormatObjCmd,	NULL,			NULL,	1},
     {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,	NULL,	1},
     {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	TclNRIfObjCmd,	1},
@@ -237,6 +238,7 @@ static const CmdInfo builtInCmds[] = {
     {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	1},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	1},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	1},
+    {"mapeach",		Tcl_MapeachObjCmd,	TclCompileMapeachCmd,	TclNRMapeachCmd,	1},
     {"package",		Tcl_PackageObjCmd,	NULL,			NULL,	1},
     {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	1},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	1},
@@ -8849,7 +8851,7 @@ NRCoroInjectObjCmd(
 
     return TCL_OK;
 }
-
+
 int
 TclNRInterpCoroutine(
     ClientData clientData,
