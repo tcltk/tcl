@@ -331,11 +331,6 @@ static const unsigned char wsaErrorTable[] = {
     EREMOTE		/* WSAEREMOTE */
 };
 
-#ifdef __CYGWIN__
-#   include <windows.h>
-#   define DWORD unsigned int
-#endif
-
 /*
  *----------------------------------------------------------------------
  *
@@ -415,6 +410,12 @@ tclWinDebugPanic(
 	fprintf(stderr, "\n");
 	fflush(stderr);
     }
+#   if defined(__GNUC__)
+    __builtin_trap();
+#   else
+    DebugBreak();
+#   endif
+    abort();
 }
 #endif
 /*

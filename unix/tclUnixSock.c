@@ -24,6 +24,8 @@
 #define SOCK_CHAN_LENGTH 4 + sizeof(void*) * 2 + 1
 #define SOCK_TEMPLATE "sock%lx"
 
+#undef SOCKET /* Possible conflict with win32 SOCKET */
+
 /*
  * This is needed to comply with the strict aliasing rules of GCC, but it also
  * simplifies casting between the different sockaddr types.
@@ -543,6 +545,9 @@ TcpCloseProc(
      */
     
     for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
+	if (fds->fd < 0) {
+	    continue;
+	}
 	Tcl_DeleteFileHandler(fds->fd);
 	if (close(fds->fd) < 0) {
 	    errorCode = errno;
@@ -1030,7 +1035,8 @@ CreateClientSocket(
                 state->status = status;
             }
 	    if (status == 0) {
-                goto out;
+		CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
+		goto out;
 	    }
 	}
     }
@@ -1041,7 +1047,6 @@ out:
         /*
          * An asynchonous connection has finally succeeded or failed.
          */
-        CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
         TcpWatchProc(state, state->filehandlers);
         TclUnixSetBlockingMode(state->fds.fd, state->cachedBlocking);
 
@@ -1112,11 +1117,7 @@ Tcl_OpenTcpClient(
             freeaddrinfo(addrlist);
         }
         if (interp != NULL) {
-            Tcl_AppendResult(interp, "couldn't open socket: ",
-                             Tcl_PosixError(interp), NULL);
-            if (errorMsg != NULL) {
-                Tcl_AppendResult(interp, " (", errorMsg, ")", NULL);
-            }
+            Tcl_AppendResult(interp, "couldn't open socket: ", errorMsg, NULL);
         }
         return NULL;
     }
@@ -1256,10 +1257,11 @@ Tcl_OpenTcpServer(
      * Try to record and return the most meaningful error message, i.e. the
      * one from the first socket that went the farthest before it failed.
      */
-    enum { START, SOCKET, BIND, LISTEN } howfar = START;
+    enum { LOOKUP, SOCKET, BIND, LISTEN } howfar = LOOKUP;
     int my_errno = 0;
 
     if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1, &errorMsg)) {
+	my_errno = errno;
 	goto error;
     }
 
@@ -1387,11 +1389,12 @@ Tcl_OpenTcpServer(
 	return statePtr->channel;
     }
     if (interp != NULL) {
-	errno = my_errno;
-	Tcl_AppendResult(interp, "couldn't open socket: ",
-		Tcl_PosixError(interp), NULL);
-	if (errorMsg != NULL) {
-	    Tcl_AppendResult(interp, " (", errorMsg, ")", NULL);
+	Tcl_AppendResult(interp, "couldn't open socket: ", NULL);
+	if (errorMsg == NULL) {
+            errno = my_errno;
+            Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
+        } else {
+	    Tcl_AppendResult(interp, errorMsg, NULL);
 	}
     }
     if (sock != -1) {

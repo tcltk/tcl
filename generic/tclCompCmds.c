@@ -820,7 +820,7 @@ TclCompileDictForCmd(
      */
 
     Tcl_DStringInit(&buffer);
-    Tcl_DStringAppend(&buffer, varsTokenPtr[1].start, varsTokenPtr[1].size);
+    TclDStringAppendToken(&buffer, &varsTokenPtr[1]);
     if (Tcl_SplitList(NULL, Tcl_DStringValue(&buffer), &numVars,
 	    &argv) != TCL_OK) {
 	Tcl_DStringFree(&buffer);
@@ -1961,7 +1961,7 @@ TclCompileForeachCmd(
 	 */
 
 	Tcl_DStringInit(&varList);
-	Tcl_DStringAppend(&varList, tokenPtr[1].start, tokenPtr[1].size);
+	TclDStringAppendToken(&varList, &tokenPtr[1]);
 	code = Tcl_SplitList(interp, Tcl_DStringValue(&varList),
 		&varcList[loopIndex], &varvList[loopIndex]);
 	Tcl_DStringFree(&varList);

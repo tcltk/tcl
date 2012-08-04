@@ -7976,17 +7976,135 @@ Many more Tcl built-in command errors now set an -errorcode.
 like "nano()" instead of parsing as "nan o()" with missing op (duquette,porter)
 	*** POTENTIAL INCOMPATIBILITY ***
 
+2011-09-10 (bug fix)[3400658] wrong num args msg with TclOO (rsooltan,fellows)
+
 2011-09-13 (bug fix)[3390638] solaris studio cc workaround (kechel,porter)
 
 2011-09-13 (bug fix)[3405652] DTrace workaround (michelson,porter)
 
 2011-09-16 (bug fix)[3391977] -headers overrides -type (ziegenhagen,fellows)
-=> http 2.7.7
+=> http 2.8.3
 
-2011-09-16 (bug fix)[3400658] wrong num args msg with TclOO (rsooltan,fellows)
+2011-09-16 (TIP 388) New \Uhhhhhhhh syntax (nijtmans)
+
+2011-10-06 (enhancement) bytecode compile [dict with] (fellows)
 
 2011-10-11 (bug fix)[2935503] [file stat] returns bad mode (nadkarni,nijtmans)
 
-2011-10-15 tzdata updated to Olson's tzdata2011l (iyer)
+2011-10-20 (bug fix)[3418547] cmd lits and custom resolvers (soberning,fellows)
 
---- Released 8.6b3, November 20, 2011 --- See ChangeLog for details ---
+2011-10-31 (bug fix)[3414754] EIAS violation in fs paths (porter)
+
+2011-11-22 (bug fix)[2935503] Win: [file mtime] sets wrong time (nijtmans)
+
+2011-11-30 (bug fix)[967195] Simply args passed to child processes (nijtmans)
+=> tcltest 2.3.4
+
+2011-12-07 (bug fix)[3444754] fix [string tolower \u01C5] (nijtmans)
+
+2011-12-11 (update)[3457031] Update [[:print:]] to Unicode 6.0 (nijtmans)
+
+2011-12-24 (bug fix)[3464428] fix [string is graph \u0120] (nijtmans)
+
+2012-01-08 (bug fix)[3470928] zoneinfo trouble with Windhoek data file (kenny)
+
+2012-01-13 (bug fix)[3472316] fix retrieval of socket error (fellows)
+
+2012-01-21 (bug fix)[3475667] [regexp] buffer read overflow (sebres)
+
+2012-01-22 (bug fix)[3475264] [dict exists] return 0, not error (fellows)
+
+2012-01-25 (bug fix)[3474460] [oo::copy] var resolution list (fellows)
+
+2012-01-26 (bug fix)[3475569,3479689] mem corrupt in fs path (sebres,porter)
+
+2012-01-30 (enhancement) improve bytecode compile of [catch] (fellows)
+
+2012-02-02 (bug fix)[2974459,2879351,1951574,1852572,1661378,1613456] Fix
+problems where [file *able] would return false results on Win/Samba (porter)
+
+2012-02-02 (update)[3464401] Support Unicode 6.1 (nijtmans)
+
+2012-02-06 (bug fix)[3484621] bump bytecode epoch on exec traces (kuhn,sofer)
+
+2012-02-15 (bug fix)[3487626] crash compiling [dict for] (fellows)
+
+2012-02-15 (enhancement) bytecode compile [lrange],[lreplace] (fellows)
+
+2012-02-17 (bug fix)[2233954] compile problem on AIX & Android (nijtmans)
+
+2012-02-29 (bug fix)[3466099] BOM in Unicode (nijtmans)
+
+2012-03-07 (bug fix)[3498327] RFC 3986 compliance (kupries)
+
+2012-03-26 (TIP 380) New builtin class [oo::Slot] (fellows)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2012-03-27 (TIP 397) <cloned> method to extend [oo::copy] (fellows)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2012-03-27 (TIP 395) New subcommand [string is entier] (fellows)
+
+2012-04-02 (TIP 396) New command [yieldto] (fellows)
+
+2012-04-04 (bug fix)[3514761] crash combining objects and ensembles (fellows)
+
+2012-04-09 (bug fix)[2712377] [info vars] and oo variables (fellows)
+
+2012-04-09 (bug fix)[3396896] no dups in oo var lists (fellows)
+
+2012-04-11 (bug fix)[3448512] [clock scan 1958-01-01] fail on Win (nijtmans)
+
+2012-04-15 (bug fix)[3517696] fix flush of zlib chan xform (fellows)
+
+2012-04-18 tzdata updated to Olson's tzdata2012c (kenny)
+
+2012-04-28 (TIP 398) exit non-blocking chan without flush (ferrieux)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2012-05-02 (enhancement) Better use of Intel cpuid instruction (nijtmans)
+
+2012-05-03 (bug fix)[3428753] Unbreak synchronous [socket -async] (porter)
+
+2012-05-10 (bug fix)[2812981] force consistent config of Tcl+pkgs (ferrieux)
+
+2012-05-10 (bug fix)[473946] correct send of special characters (nijtmans)
+
+2012-05-17 (bug fix)[3445787] fix [file] ensemble in Safe Base (fellows)
+
+2012-05-17 (bug fix)[2964715] fix [glob] in Safe Base (fellows)
+
+2012-05-17 (bug fix)[3106532] proper [switch -indexvar] values (fellows)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2012-05-21 (TIP 106) New -binary option to [dde execute|poke] (oehlmann)
+=> dde 1.4.0
+
+2012-05-23 (bug fix)[3525907] [zlib push decompress] & [chan event]
+(fellows,ferrieux,kupries)
+
+2012-05-28 (bug fix)[3529949] Protect ~ paths in Safe Base (fellows)
+
+2012-06-21 (bug fix)[3362446] [registry keys] failure (nijtmans)
+=> registry 1.3.0
+
+2012-06-25 (bug fix)[3537605] [encoding dirs a b] error message (fellows)
+
+2012-06-25 (bug fix)[3024359] crash when multi-thread concurrent [file system]
+and Tcl_FSMountsChanged(). (porter)
+
+2012-06-29 (bug fix)[3536888] fix locale guessing (oehlmann,nijtmans)
+=> msgcat 1.4.5
+
+2012-07-05 (bug fix)[1189293] make "<<" redirect binary safe (porter)
+
+2012-07-08 (bug fix)[3531209] accept IPv6 URLs (max)
+=> http 2.8.4
+
+2012-07-24 (bug fix) stop mem corruption in stacked channel events (max,porter)
+
+2012-07-25 (bug fix)[3546275] [auto_execok] search match [exec] (danckaert)
+
+Many revisions to better support a Cygwin environment (nijtmans)
+
+--- Released 8.6b3, July 30, 2012 --- See ChangeLog for details ---

@@ -655,16 +655,16 @@ TclFindElement(
     if (p == limit) {
 	if (openBraces != 0) {
 	    if (interp != NULL) {
-		Tcl_SetResult(interp, "unmatched open brace in list",
-			TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"unmatched open brace in list", -1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "BRACE",
 			NULL);
 	    }
 	    return TCL_ERROR;
 	} else if (inQuotes) {
 	    if (interp != NULL) {
-		Tcl_SetResult(interp, "unmatched open quote in list",
-			TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"unmatched open quote in list", -1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "QUOTE",
 			NULL);
 	    }
@@ -810,8 +810,8 @@ Tcl_SplitList(
 	if (i >= size) {
 	    ckfree(argv);
 	    if (interp != NULL) {
-		Tcl_SetResult(interp, "internal error in Tcl_SplitList",
-			TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"internal error in Tcl_SplitList", -1));
 		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
 			NULL);
 	    }
@@ -2438,6 +2438,37 @@ Tcl_DStringAppend(
 /*
  *----------------------------------------------------------------------
  *
+ * TclDStringAppendObj, TclDStringAppendDString --
+ *
+ *	Simple wrappers round Tcl_DStringAppend that make it easier to append
+ *	from particular sources of strings.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+TclDStringAppendObj(
+    Tcl_DString *dsPtr,
+    Tcl_Obj *objPtr)
+{
+    int length;
+    char *bytes = Tcl_GetStringFromObj(objPtr, &length);
+
+    return Tcl_DStringAppend(dsPtr, bytes, length);
+}
+
+char *
+TclDStringAppendDString(
+    Tcl_DString *dsPtr,
+    Tcl_DString *toAppendPtr)
+{
+    return Tcl_DStringAppend(dsPtr, Tcl_DStringValue(toAppendPtr),
+	    Tcl_DStringLength(toAppendPtr));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_DStringAppendElement --
  *
  *	Append a list element to the current value of a dynamic string.
@@ -2715,6 +2746,64 @@ Tcl_DStringGetResult(
 /*
  *----------------------------------------------------------------------
  *
+ * TclDStringToObj --
+ *
+ *	This function moves a dynamic string's contents to a new Tcl_Obj. Be
+ *	aware that this function does *not* check that the encoding of the
+ *	contents of the dynamic string is correct; this is the caller's
+ *	responsibility to enforce.
+ *
+ * Results:
+ *	The newly-allocated untyped (i.e., typePtr==NULL) Tcl_Obj with a
+ *	reference count of zero.
+ *
+ * Side effects:
+ *	The string is "moved" to the object. dsPtr is reinitialized to an
+ *	empty string; it does not need to be Tcl_DStringFree'd after this if
+ *	not used further.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclDStringToObj(
+    Tcl_DString *dsPtr)
+{
+    Tcl_Obj *result;
+
+    if (dsPtr->length == 0) {
+	TclNewObj(result);
+    } else if (dsPtr->string == dsPtr->staticSpace) {
+	/*
+	 * Static buffer, so must copy.
+	 */
+
+	TclNewStringObj(result, dsPtr->string, dsPtr->length);
+    } else {
+	/*
+	 * Dynamic buffer, so transfer ownership and reset.
+	 */
+
+	TclNewObj(result);
+	result->bytes = dsPtr->string;
+	result->length = dsPtr->length;
+    }
+
+    /*
+     * Re-establish the DString as empty with no buffer allocated.
+     */
+
+    dsPtr->string = dsPtr->staticSpace;
+    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
+    dsPtr->length = 0;
+    dsPtr->staticSpace[0] = '\0';
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_DStringStartSublist --
  *
  *	This function adds the necessary information to a dynamic string
@@ -2735,9 +2824,9 @@ Tcl_DStringStartSublist(
     Tcl_DString *dsPtr)		/* Dynamic string. */
 {
     if (TclNeedSpace(dsPtr->string, dsPtr->string + dsPtr->length)) {
-	Tcl_DStringAppend(dsPtr, " {", -1);
+	TclDStringAppendLiteral(dsPtr, " {");
     } else {
-	Tcl_DStringAppend(dsPtr, "{", -1);
+	TclDStringAppendLiteral(dsPtr, "{");
     }
 }
 
@@ -2763,7 +2852,7 @@ void
 Tcl_DStringEndSublist(
     Tcl_DString *dsPtr)		/* Dynamic string. */
 {
-    Tcl_DStringAppend(dsPtr, "}", -1);
+    TclDStringAppendLiteral(dsPtr, "}");
 }
 
 /*
@@ -3293,16 +3382,10 @@ TclGetIntForIndex(
 
   parseError:
     if (interp != NULL) {
-	/*
-	 * The result might not be empty; this resets it which should be both
-	 * a cheap operation, and of little problem because this is an
-	 * error-generation path anyway.
-	 */
-
 	bytes = Tcl_GetString(objPtr);
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "bad index \"", bytes,
-		"\": must be integer?[+-]integer? or end?[+-]integer?", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad index \"%s\": must be integer?[+-]integer? or"
+		" end?[+-]integer?", bytes));
 	if (!strncmp(bytes, "end-", 4)) {
 	    bytes += 4;
 	}
@@ -3337,10 +3420,10 @@ static void
 UpdateStringOfEndOffset(
     register Tcl_Obj *objPtr)
 {
-    char buffer[TCL_INTEGER_SPACE + sizeof("end") + 1];
+    char buffer[TCL_INTEGER_SPACE + 5];
     register int len;
 
-    memcpy(buffer, "end", sizeof("end") + 1);
+    memcpy(buffer, "end", 4);
     len = sizeof("end") - 1;
     if (objPtr->internalRep.longValue != 0) {
 	buffer[len++] = '-';
@@ -3394,9 +3477,8 @@ SetEndOffsetFromAny(
     if ((*bytes != 'e') || (strncmp(bytes, "end",
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
 	if (interp != NULL) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "bad index \"", bytes,
-		    "\": must be end?[+-]integer?", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad index \"%s\": must be end?[+-]integer?", bytes));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
 	}
 	return TCL_ERROR;
@@ -3430,9 +3512,8 @@ SetEndOffsetFromAny(
 
     badIndexFormat:
 	if (interp != NULL) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "bad index \"", bytes,
-		    "\": must be end?[+-]integer?", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad index \"%s\": must be end?[+-]integer?", bytes));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
 	}
 	return TCL_ERROR;
@@ -3508,8 +3589,8 @@ TclCheckBadOctal(
 		 * be added to an existing error message as extra info.
 		 */
 
-		Tcl_AppendResult(interp, " (looks like invalid octal number)",
-			NULL);
+		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+			" (looks like invalid octal number)", -1);
 	    }
 	    return 1;
 	}
@@ -4125,7 +4206,7 @@ TclReToGlob(
 
   invalidGlob:
     if (interp != NULL) {
-	Tcl_AppendResult(interp, msg, NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
 	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, NULL);
     }
     Tcl_DStringFree(dsPtr);
