@@ -13,6 +13,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 testConstraint testobj [llength [info commands testobj]]
