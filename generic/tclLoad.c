@@ -224,9 +224,9 @@ Tcl_LoadObjCmd(
 	     * Can't have two different packages loaded from the same file.
 	     */
 
-	    Tcl_AppendResult(interp, "file \"", fullFileName,
-		    "\" is already loaded for package \"",
-		    pkgPtr->packageName, "\"", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "file \"%s\" is already loaded for package \"%s\"",
+		    fullFileName, pkgPtr->packageName));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
 		    "SPLITPERSONALITY", NULL);
 	    code = TCL_ERROR;
@@ -262,8 +262,8 @@ Tcl_LoadObjCmd(
 	 */
 
 	if (fullFileName[0] == 0) {
-	    Tcl_AppendResult(interp, "package \"", packageName,
-		    "\" isn't loaded statically", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "package \"%s\" isn't loaded statically", packageName));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOTSTATIC",
 		    NULL);
 	    code = TCL_ERROR;
@@ -320,9 +320,9 @@ Tcl_LoadObjCmd(
 		}
 		if (p == pkgGuess) {
 		    Tcl_DecrRefCount(splitPtr);
-		    Tcl_AppendResult(interp,
-			    "couldn't figure out package name for ",
-			    fullFileName, NULL);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "couldn't figure out package name for %s",
+			    fullFileName));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
 			    "WHATPACKAGE", NULL);
 		    code = TCL_ERROR;
@@ -417,9 +417,9 @@ Tcl_LoadObjCmd(
 
     if (Tcl_IsSafe(target)) {
 	if (pkgPtr->safeInitProc == NULL) {
-	    Tcl_AppendResult(interp,
-		    "can't use package in a safe interpreter: no ",
-		    pkgPtr->packageName, "_SafeInit procedure", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't use package in a safe interpreter: no"
+		    " %s_SafeInit procedure", pkgPtr->packageName));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "UNSAFE",
 		    NULL);
 	    code = TCL_ERROR;
@@ -428,9 +428,9 @@ Tcl_LoadObjCmd(
 	code = pkgPtr->safeInitProc(target);
     } else {
 	if (pkgPtr->initProc == NULL) {
-	    Tcl_AppendResult(interp,
-		    "can't attach package to interpreter: no ",
-		    pkgPtr->packageName, "_Init procedure", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't attach package to interpreter: no %s_Init procedure",
+		    pkgPtr->packageName));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "ENTRYPOINT",
 		    NULL);
 	    code = TCL_ERROR;
@@ -653,8 +653,9 @@ Tcl_UnloadObjCmd(
 	 * It's an error to try unload a static package.
 	 */
 
-	Tcl_AppendResult(interp, "package \"", packageName,
-		"\" is loaded statically and cannot be unloaded", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"package \"%s\" is loaded statically and cannot be unloaded",
+		packageName));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "STATIC",
 		NULL);
 	code = TCL_ERROR;
@@ -665,8 +666,8 @@ Tcl_UnloadObjCmd(
 	 * The DLL pointed by the provided filename has never been loaded.
 	 */
 
-	Tcl_AppendResult(interp, "file \"", fullFileName,
-		"\" has never been loaded", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"file \"%s\" has never been loaded", fullFileName));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
 		NULL);
 	code = TCL_ERROR;
@@ -694,8 +695,9 @@ Tcl_UnloadObjCmd(
 	 * The package has not been loaded in this interpreter.
 	 */
 
-	Tcl_AppendResult(interp, "file \"", fullFileName,
-		"\" has never been loaded in this interpreter", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"file \"%s\" has never been loaded in this interpreter",
+		fullFileName));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
 		NULL);
 	code = TCL_ERROR;
@@ -710,8 +712,9 @@ Tcl_UnloadObjCmd(
 
     if (Tcl_IsSafe(target)) {
 	if (pkgPtr->safeUnloadProc == NULL) {
-	    Tcl_AppendResult(interp, "file \"", fullFileName,
-		    "\" cannot be unloaded under a safe interpreter", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "file \"%s\" cannot be unloaded under a safe interpreter",
+		    fullFileName));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
 		    NULL);
 	    code = TCL_ERROR;
@@ -720,8 +723,9 @@ Tcl_UnloadObjCmd(
 	unloadProc = pkgPtr->safeUnloadProc;
     } else {
 	if (pkgPtr->unloadProc == NULL) {
-	    Tcl_AppendResult(interp, "file \"", fullFileName,
-		    "\" cannot be unloaded under a trusted interpreter", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "file \"%s\" cannot be unloaded under a trusted interpreter",
+		    fullFileName));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
 		    NULL);
 	    code = TCL_ERROR;
@@ -860,8 +864,9 @@ Tcl_UnloadObjCmd(
 	    }
 	}
 #else
-	Tcl_AppendResult(interp, "file \"", fullFileName,
-		"\" cannot be unloaded: unloading disabled", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"file \"%s\" cannot be unloaded: unloading disabled",
+		fullFileName));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "DISABLED",
 		NULL);
 	code = TCL_ERROR;
