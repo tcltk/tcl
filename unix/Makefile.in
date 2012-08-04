@@ -47,6 +47,7 @@ BIN_INSTALL_DIR		= $(INSTALL_ROOT)$(bindir)
 
 # Directory in which to install libtcl.so or libtcl.a:
 LIB_INSTALL_DIR		= $(INSTALL_ROOT)$(libdir)
+DLL_INSTALL_DIR		= @DLL_INSTALL_DIR@
 
 # Path name to use when installing library scripts.
 SCRIPT_INSTALL_DIR	= $(INSTALL_ROOT)$(TCL_LIBRARY)
@@ -237,7 +238,7 @@ DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
 # Must be absolute to so the corresponding tcltest's tcl_library is absolute.
 TCL_BUILDTIME_LIBRARY	= @TCL_SRC_DIR@/library
 
-ZLIB_DIR		= @ZLIB_DIR@
+ZLIB_DIR		= ${COMPAT_DIR}/zlib
 ZLIB_INCLUDE		= @ZLIB_INCLUDE@
 
 CC			= @CC@
@@ -613,6 +614,10 @@ doc:
 ${LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
 	rm -f $@
 	@MAKE_LIB@
+	@if test "x$(DLL_INSTALL_DIR)" = "x$(BIN_INSTALL_DIR)"; then\
+	    cp ${ZLIB_DIR}/win32/zlib1.dll .;\
+	fi
+
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	rm -f $@
@@ -782,16 +787,21 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@echo "Installing $(LIB_FILE) to @DLL_INSTALL_DIR@/"
+	@if test "x$(DLL_INSTALL_DIR)" = "x$(BIN_INSTALL_DIR)"; then\
+	    echo "Installing zlib1.dll to $(BIN_INSTALL_DIR)/";\
+	    $(INSTALL_LIBRARY) zlib1.dll "$(BIN_INSTALL_DIR)";\
+	    chmod 555 "$(BIN_INSTALL_DIR)/zlib1.dll";\
+	fi
+	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
-	@chmod 555 "@DLL_INSTALL_DIR@"/$(LIB_FILE)
+	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
 	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
-	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)"/tclsh$(VERSION)${EXE_SUFFIX}
+	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
-	@$(INSTALL_DATA) tclConfig.sh "$(CONFIG_INSTALL_DIR)"/tclConfig.sh
+	@$(INSTALL_DATA) tclConfig.sh "$(CONFIG_INSTALL_DIR)/tclConfig.sh"
 	@echo "Installing tclooConfig.sh to $(CONFIG_INSTALL_DIR)/"
 	@$(INSTALL_DATA) $(UNIX_DIR)/tclooConfig.sh \
-		"$(CONFIG_INSTALL_DIR)"/tclooConfig.sh
+		"$(CONFIG_INSTALL_DIR)/tclooConfig.sh"
 	@if test "$(STUB_LIB_FILE)" != "" ; then \
 	    echo "Installing $(STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
 	    @INSTALL_STUB_LIB@ ; \
@@ -836,8 +846,8 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/opt0.4; \
 	    done;
-	@echo "Installing package msgcat 1.4.4 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.4.4.tm;
+	@echo "Installing package msgcat 1.4.5 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.4.5.tm;
 	@echo "Installing package tcltest 2.3.4 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.4.tm;
 
@@ -1691,7 +1701,7 @@ packages: configure-packages ${STUB_LIB_FILE}
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	      echo "Building package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory; ) || exit $$?; \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
 	    fi; \
 	  fi; \
 	done
@@ -1702,7 +1712,7 @@ install-packages: packages
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	      echo "Installing package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE)  --no-print-directory install \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) install \
 		  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
 	    fi; \
 	  fi; \
@@ -1713,10 +1723,8 @@ test-packages: tcltest packages
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      echo ""; \
-	      echo ""; \
 	      echo "Testing package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) \
 		  "@LD_LIBRARY_PATH_VAR@=../..:$${@LD_LIBRARY_PATH_VAR@}" \
 		  "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" \
 		  "TCLLIBPATH=../../pkgs" test \
@@ -1730,7 +1738,7 @@ clean-packages:
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory clean; ) \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
 	    fi; \
 	  fi; \
 	done
@@ -1740,7 +1748,7 @@ distclean-packages:
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory distclean; ) \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
 	    fi; \
 	    rm -rf $(PKG_DIR)/$$pkg; \
 	  fi; \
@@ -1754,7 +1762,7 @@ dist-packages: configure-packages
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) --no-print-directory dist \
+	      ( cd $(PKG_DIR)/$$pkg; $(MAKE) dist \
 		  "DIST_ROOT=$(DISTROOT)/pkgs"; ) || exit $$?; \
 	    fi; \
 	  fi; \

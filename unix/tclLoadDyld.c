@@ -393,7 +393,7 @@ FindSymbol(
 	 */
 
 	Tcl_DStringInit(&newName);
-	Tcl_DStringAppend(&newName, "_", 1);
+	TclDStringAppendLiteral(&newName, "_");
 	native = Tcl_DStringAppend(&newName, native, -1);
 	if (dyldLoadHandle->dyldLibHeader) {
 	    nsSymbol = NSLookupSymbolInImage(dyldLoadHandle->dyldLibHeader,
