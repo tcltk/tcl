@@ -1280,9 +1280,14 @@ CreateSocket(
     }
 
     if (interp != NULL) {
-	Tcl_AppendResult(interp, "couldn't open socket: ",
-		Tcl_PosixError(interp), NULL);
+        Tcl_AppendResult(interp, "couldn't open socket: ", NULL);
+        if (errorMsg == NULL) {
+            Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
+        } else {
+            Tcl_AppendResult(interp, errorMsg, NULL);
+        }
     }
+
     if (sock != INVALID_SOCKET) {
 	closesocket(sock);
     }
@@ -1398,7 +1403,7 @@ Tcl_OpenTcpClient(
 	return NULL;
     }
 
-    sprintf(channelName, "sock%Id", (size_t) infoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    infoPtr, (TCL_READABLE | TCL_WRITABLE));
@@ -1461,7 +1466,7 @@ Tcl_MakeTcpClientChannel(
     infoPtr->selectEvents = FD_READ | FD_CLOSE | FD_WRITE;
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM)SELECT, (LPARAM)infoPtr);
 
-    sprintf(channelName, "sock%Id", (size_t) infoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    infoPtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
@@ -1514,7 +1519,7 @@ Tcl_OpenTcpServer(
     infoPtr->acceptProc = acceptProc;
     infoPtr->acceptProcData = acceptProcData;
 
-    sprintf(channelName, "sock%Id", (size_t) infoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    infoPtr, 0);
@@ -1620,7 +1625,7 @@ TcpAccept(
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 	    (LPARAM) newInfoPtr);
 
-    sprintf(channelName, "sock%Id", (size_t) newInfoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) newInfoPtr->sockets->fd);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
@@ -2574,22 +2579,18 @@ InitializeHostName(
 	Tcl_DStringInit(&ds);
 	if (TclpHasSockets(NULL) == TCL_OK) {
 	    /*
-	     * Buffer length of 255 copied slavishly from previous version of
-	     * this routine. Presumably there's a more "correct" macro value
-	     * for a properly sized buffer for a gethostname() call.
-	     * Maintainers are welcome to supply it.
+	     * The buffer size of 256 is recommended by the MSDN page that
+	     * documents gethostname() as being always adequate.
 	     */
 
 	    Tcl_DString inDs;
 
 	    Tcl_DStringInit(&inDs);
-	    Tcl_DStringSetLength(&inDs, 255);
+	    Tcl_DStringSetLength(&inDs, 256);
 	    if (gethostname(Tcl_DStringValue(&inDs),
-			    Tcl_DStringLength(&inDs)) == 0) {
-		Tcl_DStringSetLength(&ds, 0);
-	    } else {
-		Tcl_ExternalToUtfDString(NULL,
-			Tcl_DStringValue(&inDs), -1, &ds);
+		    Tcl_DStringLength(&inDs)) == 0) {
+		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), -1,
+			&ds);
 	    }
 	    Tcl_DStringFree(&inDs);
 	}
@@ -2663,9 +2664,9 @@ TclWinSetSockOpt(
     return setsockopt(s, level, optname, optval, optlen);
 }
 
-u_short
+unsigned short
 TclWinNToHS(
-    u_short netshort)
+    unsigned short netshort)
 {
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -2674,10 +2675,27 @@ TclWinNToHS(
      */
 
     if (!SocketsEnabled()) {
-	return (u_short) -1;
+	return (unsigned short) -1;
     }
 
     return ntohs(netshort);
+}
+
+char *
+TclpInetNtoa(
+    struct in_addr addr)
+{
+    /*
+     * Check that WinSock is initialized; do not call it if not, to prevent
+     * system crashes. This can happen at exit time if the exit handler for
+     * WinSock ran before other exit handlers that want to use sockets.
+     */
+
+    if (!SocketsEnabled()) {
+        return NULL;
+    }
+
+    return inet_ntoa(addr);
 }
 
 struct servent *

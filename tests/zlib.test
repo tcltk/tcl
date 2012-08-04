@@ -103,6 +103,22 @@ test zlib-7.4 {zlib stream} zlib {
     $s close
     lappend result $data
 } {{} 1 abcdeEDCBA}
+test zlib-7.5 {zlib stream} zlib {
+    set s [zlib stream gzip]
+    $s put -finalize abcdeEDCBA..
+    set data [$s get]
+    set result [list [$s get] [format %x [$s checksum]]]
+    $s close
+    lappend result [zlib gunzip $data]
+} {{} 69f34b6a abcdeEDCBA..}
+test zlib-7.6 {zlib stream} zlib {
+    set s [zlib stream gunzip]
+    $s put -finalize [zlib gzip abcdeEDCBA..]
+    set data [$s get]
+    set result [list [$s get] [format %x [$s checksum]]]
+    $s close
+    lappend result $data
+} {{} 69f34b6a abcdeEDCBA..}
 
 test zlib-8.1 {zlib transformation} -constraints zlib -setup {
     set file [makeFile {} test.gz]
@@ -147,6 +163,7 @@ test zlib-8.3 {zlib transformation and fileevent} -constraints zlib -setup {
 	    set ::total [expr {$e eq {} ? $c : $e}]
 	}}}
 	vwait total
+	after cancel {set total timeout}
     } finally {
 	close $sin
     }
@@ -168,6 +185,24 @@ test zlib-8.4 {transformation and flushing: Bug 3517696} -setup {
     catch {close $fd}
     removeFile $file
 } -result {}
+test zlib-8.5 {transformation and flushing and fileevents: Bug 3525907} -setup {
+    foreach {r w} [chan pipe] break
+} -constraints zlib -body {
+    set ::res {}
+    fconfigure $w -buffering none
+    zlib push compress $w
+    puts -nonewline $w qwertyuiop
+    chan configure $w -flush sync
+    after 500 {puts -nonewline $w asdfghjkl;close $w}
+    fconfigure $r -blocking 0 -buffering none
+    zlib push decompress $r
+    fileevent $r readable {set msg [read $r];lappend ::res $msg;if {[eof $r]} {set ::done 1}}
+    after 250 {lappend ::res MIDDLE}
+    vwait ::done
+    set ::res
+} -cleanup {
+    catch {close $r}
+} -result {qwertyuiop MIDDLE asdfghjkl}
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
@@ -226,6 +261,7 @@ test zlib-9.3 "socket fcopy bg (identity)" -constraints {tempNotWin zlib} -setup
         set ::total [expr {$e eq {} ? $c : $e}]
     }}}
     vwait ::total
+    after cancel {set ::total timeout}
     close $sin; close $fout
     list read $::total size [file size $file]
 } -cleanup {
@@ -251,6 +287,7 @@ test zlib-9.4 "socket fcopy bg (gzip)" -constraints zlib -setup {
         set ::total [expr {$e eq {} ? $c : $e}]
     }}}
     vwait ::total
+    after cancel {set ::total timeout}
     close $sin; close $fout
     list read $::total size [file size $file]
 } -cleanup {
@@ -284,6 +321,7 @@ test zlib-9.5 "socket fcopy incremental (gzip)" -constraints zlib -setup {
     after 1000 {set ::total timeout}
     fcopy $sin $fout -size 8192 -command [list zlib95copy $sin $fout 0]
     vwait ::total
+    after cancel {set ::total timeout}
     close $sin; close $fout
     list $::total size [file size $file]
 } -cleanup {
@@ -312,6 +350,7 @@ test zlib-9.6 "bug #2818131 (gzip)" -constraints zlib -setup {
         }
     }} $s]
     vwait ::total
+    after cancel {set ::total timeout}
     close $s
     set ::total
 } -cleanup {
@@ -339,6 +378,7 @@ test zlib-9.7 "bug #2818131 (compress)" -constraints zlib -setup {
         }
     }} $s]
     vwait ::total
+    after cancel {set ::total timeout}
     close $s
     set ::total
 } -cleanup {
@@ -366,6 +406,7 @@ test zlib-9.8 "bug #2818131 (deflate)" -constraints zlib -setup {
         }
     }} $s]
     vwait ::total
+    after cancel {set ::total timeout}
     close $s
     set ::total
 } -cleanup {
@@ -396,6 +437,7 @@ test zlib-9.9 "bug #2818131 (gzip mismatch)" -constraints zlib -setup {
         }} $s]
         vwait ::total
     } finally {
+	after cancel {set ::total timeout}
         close $s
     }
     set ::total
@@ -428,6 +470,7 @@ test zlib-9.10 "bug #2818131 (compress mismatch)" -constraints zlib -setup {
         }} $s]
         vwait ::total
     } finally {
+	after cancel {set ::total timeout}
         close $s
     }
     set ::total
@@ -460,6 +503,7 @@ test zlib-9.11 "bug #2818131 (deflate mismatch)" -constraints zlib -setup {
         }} $s]
         vwait ::total
     } finally {
+	after cancel {set ::total timeout}
         close $s
     }
     set ::total
@@ -502,6 +546,8 @@ test zlib-10.0 "bug #2818131 (close with null interp)" -constraints {
         after 100 {set ::total done}
     }} $s]
     vwait ::total
+    after cancel {set ::total timeout}
+    after cancel {set ::total done}
     set ::total
 } -cleanup {
     close $srv
@@ -538,6 +584,8 @@ test zlib-10.1 "bug #2818131 (mismatch read)" -constraints {
         after 100 {set ::total done}
     }} $s]
     vwait ::total
+    after cancel {set ::total timeout}
+    after cancel {set ::total done}
     set ::total
 } -cleanup {
     close $srv
@@ -576,6 +624,8 @@ test zlib-10.2 "bug #2818131 (mismatch gets)" -constraints {
         after 100 {set ::total done}
     }} $s]
     vwait ::total
+    after cancel {set ::total timeout}
+    after cancel {set ::total done}
     set ::total
 } -cleanup {
     close $srv
