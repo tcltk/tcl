@@ -1896,7 +1896,7 @@ ZlibCmd(
 	    format = TCL_ZLIB_FORMAT_GZIP;
 	    break;
 	default:
-	    Tcl_AppendResult(interp, "IMPOSSIBLE", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("impossible!", -1));
 	    return TCL_ERROR;
 	}
 
@@ -1910,16 +1910,16 @@ ZlibCmd(
 	 */
 
 	if (mode == TCL_ZLIB_STREAM_DEFLATE && !(chanMode & TCL_WRITABLE)) {
-	    Tcl_AppendResult(interp,
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "compression may only be applied to writable channels",
-		    NULL);
+		    -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNWRITABLE", NULL);
 	    return TCL_ERROR;
 	}
 	if (mode == TCL_ZLIB_STREAM_INFLATE && !(chanMode & TCL_READABLE)) {
-	    Tcl_AppendResult(interp,
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "decompression may only be applied to readable channels",
-		    NULL);
+		    -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNREADABLE", NULL);
 	    return TCL_ERROR;
 	}
@@ -1937,8 +1937,8 @@ ZlibCmd(
 	    switch ((enum pushOptions) option) {
 	    case poHeader:
 		if (++i > objc-1) {
-		    Tcl_AppendResult(interp,
-			    "value missing for -header option", NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "value missing for -header option", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		    return TCL_ERROR;
 		}
@@ -1950,8 +1950,8 @@ ZlibCmd(
 		break;
 	    case poLevel:
 		if (++i > objc-1) {
-		    Tcl_AppendResult(interp,
-			    "value missing for -level option", NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "value missing for -level option", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		    return TCL_ERROR;
 		}
@@ -1967,8 +1967,8 @@ ZlibCmd(
 		break;
 	    case poLimit:
 		if (++i > objc-1) {
-		    Tcl_AppendResult(interp,
-			    "value missing for -limit option", NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "value missing for -limit option", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		    return TCL_ERROR;
 		}
@@ -1996,14 +1996,15 @@ ZlibCmd(
     return TCL_ERROR;
 
   badLevel:
-    Tcl_AppendResult(interp, "level must be 0 to 9", NULL);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("level must be 0 to 9", -1));
     Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL", NULL);
     if (extraInfoStr) {
 	Tcl_AddErrorInfo(interp, extraInfoStr);
     }
     return TCL_ERROR;
   badBuffer:
-    Tcl_AppendResult(interp, "buffer size must be 32 to 65536", NULL);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "buffer size must be 32 to 65536", -1));
     Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE", NULL);
     return TCL_ERROR;
 }
@@ -2086,9 +2087,9 @@ ZlibStreamCmd(
 		break;
 	    case ao_buffer: /* -buffer */
 		if (i == objc-2) {
-		    Tcl_AppendResult(interp, "\"-buffer\" option must be "
-			    "followed by integer decompression buffersize",
-			    NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "\"-buffer\" option must be followed by integer"
+			    " decompression buffersize", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		    return TCL_ERROR;
 		}
@@ -2097,8 +2098,8 @@ ZlibStreamCmd(
 		    return TCL_ERROR;
 		}
 		if (buffersize < 1 || buffersize > 65536) {
-		    Tcl_AppendResult(interp,
-			    "buffer size must be 32 to 65536", NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "buffer size must be 32 to 65536", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE",
 			    NULL);
 		    return TCL_ERROR;
@@ -2106,8 +2107,9 @@ ZlibStreamCmd(
 	    }
 
 	    if (flush == -2) {
-		Tcl_AppendResult(interp, "\"-flush\", \"-fullflush\" and "
-			"\"-finalize\" options are mutually exclusive", NULL);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"\"-flush\", \"-fullflush\" and \"-finalize\" options"
+			" are mutually exclusive", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ZIP", "EXCLUSIVE", NULL);
 		return TCL_ERROR;
 	    }
@@ -2158,13 +2160,14 @@ ZlibStreamCmd(
 		}
 		break;
 	    case ao_buffer:
-		Tcl_AppendResult(interp,
-			"\"-buffer\" option not supported here", NULL);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"\"-buffer\" option not supported here", -1));
 		return TCL_ERROR;
 	    }
 	    if (flush == -2) {
-		Tcl_AppendResult(interp, "\"-flush\", \"-fullflush\" and "
-			"\"-finalize\" options are mutually exclusive", NULL);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"\"-flush\", \"-fullflush\" and \"-finalize\" options"
+			" are mutually exclusive", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ZIP", "EXCLUSIVE", NULL);
 		return TCL_ERROR;
 	    }
@@ -2314,9 +2317,9 @@ ZlibTransformClose(
 		     * then interp may be NULL */
 		    if (!TclInThreadExit()) {
 			if (interp) {
-			    Tcl_AppendResult(interp,
-				    "error while finalizing file: ",
-				    Tcl_PosixError(interp), NULL);
+			    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+				    "error while finalizing file: %s",
+				    Tcl_PosixError(interp)));
 			}
 		    }
 		    result = TCL_ERROR;
@@ -2611,8 +2614,9 @@ ZlibTransformSetOption(			/* not used */
 
 	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
 		    cd->outStream.next_out - (Bytef *) cd->outBuffer) < 0) {
-		Tcl_AppendResult(interp, "problem flushing channel: ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"problem flushing channel: %s",
+			Tcl_PosixError(interp)));
 		return TCL_ERROR;
 	    }
 	}
