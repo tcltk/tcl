@@ -1483,8 +1483,13 @@ DdeObjCmd(
 	break;
     }
     case DDE_REQUEST: {
-	const char *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
+#ifdef UNICODE
+	const TCHAR *itemString = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 2],
 		&length);
+#else
+	const TCHAR *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
+		&length);
+#endif
 
 	if (length == 0) {
 	    Tcl_SetObjResult(interp,
@@ -1537,8 +1542,13 @@ DdeObjCmd(
 	break;
     }
     case DDE_POKE: {
-	const char *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
+#ifdef UNICODE
+	const TCHAR *itemString = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 2],
 		&length);
+#else
+	const TCHAR *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
+		&length);
+#endif
 	BYTE *dataString;
 
 	if (length == 0) {
@@ -1638,9 +1648,9 @@ DdeObjCmd(
 	     */
 
 	    if (Tcl_IsSafe(riPtr->interp) && riPtr->handlerPtr == NULL) {
-		Tcl_SetResult(riPtr->interp, "permission denied: "
-			"a handler procedure must be defined for use in "
-			"a safe interp", TCL_STATIC);
+		Tcl_SetObjResult(riPtr->interp, Tcl_NewStringObj(
+			"permission denied: a handler procedure must be"
+			" defined for use in a safe interp", -1));
 		Tcl_SetErrorCode(interp, "TCL", "DDE", "SECURITY_CHECK",
 			NULL);
 		result = TCL_ERROR;
