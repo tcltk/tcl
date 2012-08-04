@@ -1675,8 +1675,8 @@ TclCompileScript(
 		     * have side effects that rely on the unmodified string.
 		     */
 
-		    Tcl_DStringSetLength(&ds, 0);
-		    Tcl_DStringAppend(&ds, tokenPtr[1].start,tokenPtr[1].size);
+		    TclDStringClear(&ds);
+		    TclDStringAppendToken(&ds, &tokenPtr[1]);
 
 		    cmdPtr = (Command *) Tcl_FindCommand(interp,
 			    Tcl_DStringValue(&ds),
@@ -2058,7 +2058,7 @@ TclCompileTokens(
     for ( ;  count > 0;  count--, tokenPtr++) {
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:
-	    Tcl_DStringAppend(&textBuffer, tokenPtr->start, tokenPtr->size);
+	    TclDStringAppendToken(&textBuffer, tokenPtr);
 	    TclAdvanceLines(&envPtr->line, tokenPtr->start,
 		    tokenPtr->start + tokenPtr->size);
 	    break;
@@ -2105,9 +2105,7 @@ TclCompileTokens(
 	     */
 
 	    if (Tcl_DStringLength(&textBuffer) > 0) {
-		int literal = TclRegisterNewLiteral(envPtr,
-			Tcl_DStringValue(&textBuffer),
-			Tcl_DStringLength(&textBuffer));
+		int literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
 
 		TclEmitPush(literal, envPtr);
 		numObjsToConcat++;
@@ -2134,9 +2132,7 @@ TclCompileTokens(
 	    if (Tcl_DStringLength(&textBuffer) > 0) {
 		int literal;
 
-		literal = TclRegisterNewLiteral(envPtr,
-			Tcl_DStringValue(&textBuffer),
-			Tcl_DStringLength(&textBuffer));
+		literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
 		TclEmitPush(literal, envPtr);
 		numObjsToConcat++;
 		Tcl_DStringFree(&textBuffer);
@@ -2159,13 +2155,10 @@ TclCompileTokens(
      */
 
     if (Tcl_DStringLength(&textBuffer) > 0) {
-	int literal;
+	int literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
 
-	literal = TclRegisterNewLiteral(envPtr, Tcl_DStringValue(&textBuffer),
-		Tcl_DStringLength(&textBuffer));
 	TclEmitPush(literal, envPtr);
 	numObjsToConcat++;
-
 	if (numCL) {
 	    TclContinuationsEnter(envPtr->literalArrayPtr[literal].objPtr,
 		    numCL, clPosition);
