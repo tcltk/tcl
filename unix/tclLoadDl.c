@@ -168,7 +168,7 @@ FindSymbol(
     proc = dlsym(handle, native);	/* INTL: Native. */
     if (proc == NULL) {
 	Tcl_DStringInit(&newName);
-	Tcl_DStringAppend(&newName, "_", 1);
+	TclDStringAppendLiteral(&newName, "_");
 	native = Tcl_DStringAppend(&newName, native, -1);
 	proc = dlsym(handle, native);	/* INTL: Native. */
 	Tcl_DStringFree(&newName);
