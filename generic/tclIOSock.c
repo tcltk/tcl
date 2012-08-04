@@ -87,8 +87,8 @@ TclSockGetPort(
  *----------------------------------------------------------------------
  */
 
-#ifndef _WIN32
-#   define SOCKET size_t
+#if !defined(_WIN32) && !defined(__CYGWIN__)
+#   define SOCKET int
 #endif
 
 int
@@ -100,16 +100,16 @@ TclSockMinimumBuffers(
     socklen_t len;
 
     len = sizeof(int);
-    getsockopt((SOCKET)sock, SOL_SOCKET, SO_SNDBUF, (char *)&current, &len);
+    getsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_SNDBUF, (char *)&current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt((SOCKET)sock, SOL_SOCKET, SO_SNDBUF, (char *)&size, len);
+	setsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_SNDBUF, (char *)&size, len);
     }
     len = sizeof(int);
-    getsockopt((SOCKET)sock, SOL_SOCKET, SO_RCVBUF, (char *)&current, &len);
+    getsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_RCVBUF, (char *)&current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt((SOCKET)sock, SOL_SOCKET, SO_RCVBUF, (char *)&size, len);
+	setsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_RCVBUF, (char *)&size, len);
     }
     return TCL_OK;
 }
@@ -206,7 +206,13 @@ TclCreateSocketAddress(
     }
 
     if (result != 0) {
-	goto error;
+#ifdef EAI_SYSTEM /* Doesn't exist on Windows */
+        if (result == EAI_SYSTEM)
+            *errorMsgPtr = Tcl_PosixError(interp);
+        else
+#endif
+            *errorMsgPtr = gai_strerror(result);
+        return 0;
     }
 
     /*
@@ -249,33 +255,6 @@ TclCreateSocketAddress(
     }
     
     return 1;
-	
-    /*
-     * Ought to use gai_strerror() here...
-     */
-
-error:
-    switch (result) {
-    case EAI_NONAME:
-    case EAI_SERVICE:
-#if defined(EAI_ADDRFAMILY) && EAI_ADDRFAMILY != EAI_NONAME
-    case EAI_ADDRFAMILY:
-#endif
-#if defined(EAI_NODATA) && EAI_NODATA != EAI_NONAME
-    case EAI_NODATA:
-#endif
-	*errorMsgPtr = gai_strerror(result);
-	errno = EHOSTUNREACH;
-	return 0;
-#ifdef EAI_SYSTEM
-    case EAI_SYSTEM:
-	return 0;
-#endif
-    default:
-	*errorMsgPtr = gai_strerror(result);
-	errno = ENXIO;
-	return 0;
-    }
 }
 
 /*

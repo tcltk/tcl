@@ -15,6 +15,11 @@ namespace eval ::tcl::test::encoding {
 
 namespace import -force ::tcltest::*
 
+catch {
+    ::tcltest::loadTestedCommands
+    package require -exact Tcltest [info patchlevel]
+}
+
 proc toutf {args} {
     variable x
     lappend x "toutf $args"
@@ -31,7 +36,6 @@ proc runtests {} {
 testConstraint testencoding [llength [info commands testencoding]]
 testConstraint exec [llength [info commands exec]]
 testConstraint testgetdefenc [llength [info commands testgetdefenc]]
-testConstraint testfinexit [llength [info commands testfinexit]]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -418,13 +422,14 @@ test encoding-24.1 {EscapeFreeProc on open channels} exec {
 	gets $f
     }
 } {}
-test encoding-24.2 {EscapeFreeProc on open channels} {exec testfinexit} {
+test encoding-24.2 {EscapeFreeProc on open channels} {exec} {
     # Bug #524674 output
     viewable [runInSubprocess {
 	encoding system cp1252;	# Bug #2891556 crash revelator
 	fconfigure stdout -encoding iso2022-jp
 	puts ab\u4e4e\u68d9g
-	testfinexit
+	set env(TCL_FINALIZE_ON_EXIT) 1
+	exit
     }]
 } "ab\x1b\$B8C\x1b\$(DD%\x1b(Bg (ab\\u001b\$B8C\\u001b\$(DD%\\u001b(Bg)"
 test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
@@ -582,6 +587,14 @@ file delete {*}[glob -directory [temporaryDirectory] *.chars *.tcltestout]
 # EscapeFreeProc, GetTableEncoding, unilen are fully tested by the rest of
 # this file.
 
+
+test encoding-27.1 {encoding dirs basic behavior} -returnCodes error -body {
+    encoding dirs ? ?
+} -result {wrong # args: should be "encoding dirs ?dirList?"}
+test encoding-27.2 {encoding dirs basic behavior} -returnCodes error -body {
+    encoding dirs "\{not a list"
+} -result "expected directory list but got \"\{not a list\""
+
 }
 runtests
 
