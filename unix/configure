@@ -662,7 +662,6 @@ GREP
 EGREP
 TCL_THREADS
 TCLSH_PROG
-ZLIB_DIR
 ZLIB_OBJS
 ZLIB_SRCS
 ZLIB_INCLUDE
@@ -1819,6 +1818,11 @@ if test -r "$cache_file" -a -f "$cache_file"; then
     esac
     PKG_CFG_ARGS="${PKG_CFG_ARGS} --cache-file=$pkg_cache_file"
 fi
+
+#------------------------------------------------------------------------
+# Empty slate for bundled packages, to avoid stale configuration
+#------------------------------------------------------------------------
+rm -Rf pkgs
 
 #------------------------------------------------------------------------
 # Handle the --prefix=... option
@@ -6684,8 +6688,6 @@ fi
 
 if test $zlib_ok = no; then
 
-  ZLIB_DIR=\${COMPAT_DIR}/zlib
-
   ZLIB_OBJS=\${ZLIB_OBJS}
 
   ZLIB_SRCS=\${ZLIB_SRCS}
@@ -7493,6 +7495,16 @@ echo "${ECHO_T}$ac_cv_cygwin" >&6; }
 	    if test "$ac_cv_cygwin" = "no"; then
 		{ { echo "$as_me:$LINENO: error: ${CC} is not a cygwin compiler." >&5
 echo "$as_me: error: ${CC} is not a cygwin compiler." >&2;}
+   { (exit 1); exit 1; }; }
+	    fi
+	    if test "x${TCL_THREADS}" = "x0"; then
+		{ { echo "$as_me:$LINENO: error: CYGWIN compile is only supported with --enable-threads" >&5
+echo "$as_me: error: CYGWIN compile is only supported with --enable-threads" >&2;}
+   { (exit 1); exit 1; }; }
+	    fi
+	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/tcldde14.dll" -a ! -f "../win/tk86.dll"; then
+		{ { echo "$as_me:$LINENO: error: Please configure and make the ../win directory first." >&5
+echo "$as_me: error: Please configure and make the ../win directory first." >&2;}
    { (exit 1); exit 1; }; }
 	    fi
 	    ;;
@@ -9449,20 +9461,20 @@ fi
 	UNSHARED_LIB_SUFFIX='${VERSION}.a'
 fi
 
-	DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
+    DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
 
     if test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""; then
 
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-        MAKE_LIB='${SHLIB_LD} -o $@ ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
+        MAKE_LIB='${SHLIB_LD} -o $@ ${OBJS} ${TCL_SHLIB_LD_EXTRAS} ${SHLIB_LD_LIBS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
         if test "${SHLIB_SUFFIX}" = ".dll"; then
 
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)"/$(LIB_FILE)'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
             DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
 
 else
 
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)"/$(LIB_FILE)'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
 
 fi
 
@@ -9474,12 +9486,12 @@ else
         if test "$RANLIB" = ""; then
 
             MAKE_LIB='$(STLIB_LD) $@ ${OBJS}'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)"/$(LIB_FILE)'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
 
 else
 
             MAKE_LIB='${STLIB_LD} $@ ${OBJS} ; ${RANLIB} $@'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)"/$(LIB_FILE) ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(LIB_FILE))'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(LIB_FILE))'
 
 fi
 
@@ -9496,7 +9508,7 @@ fi
 else
 
         MAKE_STUB_LIB='${STLIB_LD} $@ ${STUB_LIB_OBJS} ; ${RANLIB} $@'
-        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)"/$(STUB_LIB_FILE) ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(STUB_LIB_FILE))'
+        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(STUB_LIB_FILE))'
 
 fi
 
@@ -14476,8 +14488,12 @@ _ACEOF
 #	lack blkcnt_t.
 #--------------------------------------------------------------------
 
-if test "$ac_cv_cygwin" != "yes"; then
-{ echo "$as_me:$LINENO: checking for struct stat.st_blocks" >&5
+if test "$ac_cv_cygwin" = "yes"; then
+    if test "x${SHARED_BUILD}" = "x1"; then
+	TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS} \${COMPAT_DIR}/zlib/win32/zdll.lib"
+    fi
+else
+    { echo "$as_me:$LINENO: checking for struct stat.st_blocks" >&5
 echo $ECHO_N "checking for struct stat.st_blocks... $ECHO_C" >&6; }
 if test "${ac_cv_member_struct_stat_st_blocks+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -16692,103 +16708,12 @@ fi
 #	The code below deals with several issues related to gettimeofday:
 #	1. Some systems don't provide a gettimeofday function at all
 #	   (set NO_GETTOD if this is the case).
-#	2. SGI systems don't use the BSD form of the gettimeofday function,
-#	   but they have a BSDgettimeofday function that can be used instead.
-#	3. See if gettimeofday is declared in the <sys/time.h> header file.
+#	2. See if gettimeofday is declared in the <sys/time.h> header file.
 #	   if not, set the GETTOD_NOT_DECLARED flag so that tclPort.h can
 #	   declare it.
 #--------------------------------------------------------------------
 
-{ echo "$as_me:$LINENO: checking for BSDgettimeofday" >&5
-echo $ECHO_N "checking for BSDgettimeofday... $ECHO_C" >&6; }
-if test "${ac_cv_func_BSDgettimeofday+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-/* Define BSDgettimeofday to an innocuous variant, in case <limits.h> declares BSDgettimeofday.
-   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define BSDgettimeofday innocuous_BSDgettimeofday
-
-/* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char BSDgettimeofday (); below.
-    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
-    <limits.h> exists even on freestanding compilers.  */
-
-#ifdef __STDC__
-# include <limits.h>
-#else
-# include <assert.h>
-#endif
-
-#undef BSDgettimeofday
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char BSDgettimeofday ();
-/* The GNU C library defines this for functions which it implements
-    to always fail with ENOSYS.  Some functions are actually named
-    something starting with __ and the normal name is an alias.  */
-#if defined __stub_BSDgettimeofday || defined __stub___BSDgettimeofday
-choke me
-#endif
-
-int
-main ()
-{
-return BSDgettimeofday ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  ac_cv_func_BSDgettimeofday=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_func_BSDgettimeofday=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_func_BSDgettimeofday" >&5
-echo "${ECHO_T}$ac_cv_func_BSDgettimeofday" >&6; }
-if test $ac_cv_func_BSDgettimeofday = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_BSDGETTIMEOFDAY 1
-_ACEOF
-
-else
-
-    { echo "$as_me:$LINENO: checking for gettimeofday" >&5
+{ echo "$as_me:$LINENO: checking for gettimeofday" >&5
 echo $ECHO_N "checking for gettimeofday... $ECHO_C" >&6; }
 if test "${ac_cv_func_gettimeofday+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -16873,11 +16798,10 @@ if test $ac_cv_func_gettimeofday = yes; then
   :
 else
 
+
 cat >>confdefs.h <<\_ACEOF
 #define NO_GETTOD 1
 _ACEOF
-
-fi
 
 
 fi
@@ -19201,6 +19125,78 @@ fi
 echo "${ECHO_T}$tcl_ok" >&6; }
 
 #--------------------------------------------------------------------
+# The check below checks whether the cpuid instruction is usable.
+#--------------------------------------------------------------------
+
+{ echo "$as_me:$LINENO: checking whether the cpuid instruction is usable" >&5
+echo $ECHO_N "checking whether the cpuid instruction is usable... $ECHO_C" >&6; }
+if test "${tcl_cv_cpuid+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+	int index,regsPtr[4];
+    __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
+                 "cpuid            \n\t"
+                 "mov %%ebx, %%esi   \n\t"
+                 "mov %%edi, %%ebx  \n\t"
+                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+                 : "a"(index) : "edi");
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  tcl_cv_cpuid=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	tcl_cv_cpuid=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $tcl_cv_cpuid" >&5
+echo "${ECHO_T}$tcl_cv_cpuid" >&6; }
+if test $tcl_cv_cpuid = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_CPUID 1
+_ACEOF
+
+fi
+
+#--------------------------------------------------------------------
 #	The statements below define a collection of symbols related to
 #	building libtcl as a shared library instead of a static library.
 #--------------------------------------------------------------------
@@ -20127,7 +20123,6 @@ GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
 TCL_THREADS!$TCL_THREADS$ac_delim
 TCLSH_PROG!$TCLSH_PROG$ac_delim
-ZLIB_DIR!$ZLIB_DIR$ac_delim
 ZLIB_OBJS!$ZLIB_OBJS$ac_delim
 ZLIB_SRCS!$ZLIB_SRCS$ac_delim
 ZLIB_INCLUDE!$ZLIB_INCLUDE$ac_delim
@@ -20174,6 +20169,7 @@ TCL_LIB_SPEC!$TCL_LIB_SPEC$ac_delim
 TCL_STUB_LIB_FILE!$TCL_STUB_LIB_FILE$ac_delim
 TCL_STUB_LIB_FLAG!$TCL_STUB_LIB_FLAG$ac_delim
 TCL_STUB_LIB_SPEC!$TCL_STUB_LIB_SPEC$ac_delim
+TCL_STUB_LIB_PATH!$TCL_STUB_LIB_PATH$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -20215,7 +20211,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-TCL_STUB_LIB_PATH!$TCL_STUB_LIB_PATH$ac_delim
 TCL_INCLUDE_SPEC!$TCL_INCLUDE_SPEC$ac_delim
 TCL_BUILD_STUB_LIB_SPEC!$TCL_BUILD_STUB_LIB_SPEC$ac_delim
 TCL_BUILD_STUB_LIB_PATH!$TCL_BUILD_STUB_LIB_PATH$ac_delim
@@ -20252,7 +20247,7 @@ DLTEST_SUFFIX!$DLTEST_SUFFIX$ac_delim
 NOTIFIER_IMPL!$NOTIFIER_IMPL$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 35; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 34; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

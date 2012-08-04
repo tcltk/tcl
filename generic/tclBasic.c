@@ -81,8 +81,6 @@ TCL_DECLARE_MUTEX(cancelLock)
  * are used to save the evaluation state between NR calls to each coro.
  */
 
-static const CorContext NULL_CONTEXT = {NULL, NULL, NULL, NULL};
-
 #define SAVE_CONTEXT(context)				\
     (context).framePtr = iPtr->framePtr;		\
     (context).varFramePtr = iPtr->varFramePtr;		\
@@ -136,6 +134,8 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 static Tcl_NRPostProc	NRCoroutineActivateCallback;
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
+static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
+
 static Tcl_NRPostProc	NRRunObjProc;
 static Tcl_NRPostProc	NRTailcallEval;
 static Tcl_ObjCmdProc	OldMathFuncProc;
@@ -1557,12 +1557,16 @@ DeleteInterpProc(
 	    hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	CmdFrame *cfPtr = Tcl_GetHashValue(hPtr);
+	Proc *procPtr = (Proc *) Tcl_GetHashKey(iPtr->linePBodyPtr, hPtr);
 
-	if (cfPtr->type == TCL_LOCATION_SOURCE) {
-	    Tcl_DecrRefCount(cfPtr->data.eval.path);
+	procPtr->iPtr = NULL;
+	if (cfPtr) {
+	    if (cfPtr->type == TCL_LOCATION_SOURCE) {
+		Tcl_DecrRefCount(cfPtr->data.eval.path);
+	    }
+	    ckfree(cfPtr->line);
+	    ckfree(cfPtr);
 	}
-	ckfree(cfPtr->line);
-	ckfree(cfPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(iPtr->linePBodyPtr);
@@ -1704,9 +1708,9 @@ Tcl_HideCommand(
      */
 
     if (strstr(hiddenCmdToken, "::") != NULL) {
-	Tcl_AppendResult(interp,
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cannot use namespace qualifiers in hidden command"
-		" token (rename)", NULL);
+		" token (rename)", -1));
         Tcl_SetErrorCode(interp, "TCL", "VALUE", "HIDDENTOKEN", NULL);
 	return TCL_ERROR;
     }
@@ -1729,8 +1733,9 @@ Tcl_HideCommand(
      */
 
     if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
-	Tcl_AppendResult(interp, "can only hide global namespace commands"
-		" (use rename then hide)", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "can only hide global namespace commands (use rename then hide)",
+                -1));
         Tcl_SetErrorCode(interp, "TCL", "HIDE", "NON_GLOBAL", NULL);
 	return TCL_ERROR;
     }
@@ -1754,8 +1759,9 @@ Tcl_HideCommand(
 
     hPtr = Tcl_CreateHashEntry(hiddenCmdTablePtr, hiddenCmdToken, &isNew);
     if (!isNew) {
-	Tcl_AppendResult(interp, "hidden command named \"", hiddenCmdToken,
-		"\" already exists", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "hidden command named \"%s\" already exists",
+                hiddenCmdToken));
         Tcl_SetErrorCode(interp, "TCL", "HIDE", "ALREADY_HIDDEN", NULL);
 	return TCL_ERROR;
     }
@@ -1857,8 +1863,9 @@ Tcl_ExposeCommand(
      */
 
     if (strstr(cmdName, "::") != NULL) {
-	Tcl_AppendResult(interp, "cannot expose to a namespace "
-		"(use expose to toplevel, then rename)", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "cannot expose to a namespace (use expose to toplevel, then rename)",
+                -1));
         Tcl_SetErrorCode(interp, "TCL", "EXPOSE", "NON_GLOBAL", NULL);
 	return TCL_ERROR;
     }
@@ -1873,8 +1880,8 @@ Tcl_ExposeCommand(
 	hPtr = Tcl_FindHashEntry(hiddenCmdTablePtr, hiddenCmdToken);
     }
     if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "unknown hidden command \"", hiddenCmdToken,
-		"\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "unknown hidden command \"%s\"", hiddenCmdToken));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "HIDDENTOKEN",
                 hiddenCmdToken, NULL);
 	return TCL_ERROR;
@@ -1893,9 +1900,9 @@ Tcl_ExposeCommand(
 	 * than 'nicely' erroring out ?
 	 */
 
-	Tcl_AppendResult(interp,
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"trying to expose a non-global command namespace command",
-		NULL);
+		-1));
 	return TCL_ERROR;
     }
 
@@ -1912,8 +1919,8 @@ Tcl_ExposeCommand(
 
     hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, cmdName, &isNew);
     if (!isNew) {
-	Tcl_AppendResult(interp, "exposed command \"", cmdName,
-		"\" already exists", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "exposed command \"%s\" already exists", cmdName));
         Tcl_SetErrorCode(interp, "TCL", "EXPOSE", "COMMAND_EXISTS", NULL);
 	return TCL_ERROR;
     }
@@ -2493,9 +2500,10 @@ TclRenameCommand(
     cmd = Tcl_FindCommand(interp, oldName, NULL, /*flags*/ 0);
     cmdPtr = (Command *) cmd;
     if (cmdPtr == NULL) {
-	Tcl_AppendResult(interp, "can't ",
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "can't %s \"%s\": command doesn't exist",
 		((newName == NULL)||(*newName == '\0'))? "delete":"rename",
-		" \"", oldName, "\": command doesn't exist", NULL);
+		oldName));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", oldName, NULL);
 	return TCL_ERROR;
     }
@@ -2525,15 +2533,15 @@ TclRenameCommand(
 	    TCL_CREATE_NS_IF_UNKNOWN, &newNsPtr, &dummy1, &dummy2, &newTail);
 
     if ((newNsPtr == NULL) || (newTail == NULL)) {
-	Tcl_AppendResult(interp, "can't rename to \"", newName,
-		"\": bad command name", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "can't rename to \"%s\": bad command name", newName));
         Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", NULL);
 	result = TCL_ERROR;
 	goto done;
     }
     if (Tcl_FindHashEntry(&newNsPtr->cmdTable, newTail) != NULL) {
-	Tcl_AppendResult(interp, "can't rename to \"", newName,
-		 "\": command already exists", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "can't rename to \"%s\": command already exists", newName));
         Tcl_SetErrorCode(interp, "TCL", "OPERATION", "RENAME",
                 "TARGET_EXISTS", NULL);
 	result = TCL_ERROR;
@@ -2608,7 +2616,7 @@ TclRenameCommand(
     Tcl_DStringInit(&newFullName);
     Tcl_DStringAppend(&newFullName, newNsPtr->fullName, -1);
     if (newNsPtr != iPtr->globalNsPtr) {
-	Tcl_DStringAppend(&newFullName, "::", 2);
+	TclDStringAppendLiteral(&newFullName, "::");
     }
     Tcl_DStringAppend(&newFullName, newTail, -1);
     cmdPtr->refCount++;
@@ -3466,7 +3474,7 @@ Tcl_CreateMathFunc(
     data->clientData = clientData;
 
     Tcl_DStringInit(&bigName);
-    Tcl_DStringAppend(&bigName, "::tcl::mathfunc::", -1);
+    TclDStringAppendLiteral(&bigName, "::tcl::mathfunc::");
     Tcl_DStringAppend(&bigName, name, -1);
 
     Tcl_CreateObjCommand(interp, Tcl_DStringValue(&bigName),
@@ -3534,9 +3542,9 @@ OldMathFuncProc(
 	     * We have a non-numeric argument.
 	     */
 
-	    Tcl_SetResult(interp,
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument to math function didn't have numeric value",
-		    TCL_STATIC);
+		    -1));
 	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
 	    ckfree(args);
 	    return TCL_ERROR;
@@ -3823,9 +3831,8 @@ TclInterpReady(
      */
 
     if (iPtr->flags & DELETED) {
-	/* JJM - Superfluous Tcl_ResetResult call removed. */
-	Tcl_AppendResult(interp,
-		"attempt to call eval in deleted interpreter", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to call eval in deleted interpreter", -1));
 	Tcl_SetErrorCode(interp, "TCL", "IDELETE",
 		"attempt to call eval in deleted interpreter", NULL);
 	return TCL_ERROR;
@@ -3853,8 +3860,8 @@ TclInterpReady(
 	return TCL_OK;
     }
 
-    Tcl_AppendResult(interp,
-	    "too many nested evaluations (infinite loop?)", NULL);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "too many nested evaluations (infinite loop?)", -1));
     Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", NULL);
     return TCL_ERROR;
 }
@@ -3988,8 +3995,7 @@ Tcl_Canceled(
             }
         }
 
-        Tcl_ResetResult(interp);
-        Tcl_AppendResult(interp, message, NULL);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(message, -1));
         Tcl_SetErrorCode(interp, "TCL", "CANCEL", id, message, NULL);
     }
 
@@ -4361,7 +4367,7 @@ TclNRRunCallbacks(
     return result;
 }
 
-int
+static int
 NRCommand(
     ClientData data[],
     Tcl_Interp *interp,
@@ -4612,8 +4618,8 @@ TEOV_NotFound(
 
     cmdPtr = TEOV_LookupCmdFromObj(interp, newObjv[0], lookupNsPtr);
     if (cmdPtr == NULL) {
-	Tcl_AppendResult(interp, "invalid command name \"",
-		TclGetString(objv[0]), "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "invalid command name \"%s\"", TclGetString(objv[0])));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
                 TclGetString(objv[0]), NULL);
 
@@ -6281,11 +6287,11 @@ ProcessUnexpectedResult(
 
     Tcl_ResetResult(interp);
     if (returnCode == TCL_BREAK) {
-	Tcl_AppendResult(interp,
-		"invoked \"break\" outside of a loop", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"invoked \"break\" outside of a loop", -1));
     } else if (returnCode == TCL_CONTINUE) {
-	Tcl_AppendResult(interp,
-		"invoked \"continue\" outside of a loop", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"invoked \"continue\" outside of a loop", -1));
     } else {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"command returned bad code: %d", returnCode));
@@ -6620,7 +6626,8 @@ TclObjInvoke(
     }
 
     if ((objc < 1) || (objv == NULL)) {
-	Tcl_AppendResult(interp, "illegal argument vector", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "illegal argument vector", -1));
 	return TCL_ERROR;
     }
 
@@ -6638,8 +6645,8 @@ TclObjInvoke(
 	hPtr = Tcl_FindHashEntry(hTblPtr, cmdName);
     }
     if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "invalid hidden command name \"",
-		cmdName, "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "invalid hidden command name \"%s\"", cmdName));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "HIDDENTOKEN", cmdName,
                 NULL);
 	return TCL_ERROR;
@@ -7265,7 +7272,8 @@ ExprIsqrtFunc(
     return TCL_OK;
 
   negarg:
-    Tcl_SetResult(interp, "square root of negative argument", TCL_STATIC);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+            "square root of negative argument", -1));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 	    "domain error: argument not in valid range", NULL);
     return TCL_ERROR;
@@ -8315,9 +8323,8 @@ TclNRTailcallObjCmd(
     }
 
     if (!iPtr->varFramePtr->isProcCallFrame) {	/* or is upleveled */
-        Tcl_SetResult(interp,
-                "tailcall can only be called from a proc or lambda",
-                TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "tailcall can only be called from a proc or lambda", -1));
         Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
 	return TCL_ERROR;
     }
@@ -8476,8 +8483,8 @@ TclNRYieldObjCmd(
     }
 
     if (!corPtr) {
-	Tcl_SetResult(interp, "yield can only be called in a coroutine",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "yield can only be called in a coroutine", -1));
 	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", NULL);
 	return TCL_ERROR;
     }
@@ -8510,8 +8517,8 @@ TclNRYieldToObjCmd(
     }
 
     if (!corPtr) {
-	Tcl_SetResult(interp, "yieldto can only be called in a coroutine",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "yieldto can only be called in a coroutine", -1));
 	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", NULL);
 	return TCL_ERROR;
     }
@@ -8591,7 +8598,7 @@ RewindCoroutine(
     corPtr->eePtr->rewind = 1;
     TclNRAddCallback(interp, RewindCoroutineCallback, state,
 	    NULL, NULL, NULL);
-    return NRInterpCoroutine(corPtr, interp, 0, NULL);
+    return TclNRInterpCoroutine(corPtr, interp, 0, NULL);
 }
 
 static void
@@ -8759,8 +8766,8 @@ NRCoroutineActivateCallback(
          */
 
         if (corPtr->stackLevel != stackLevel) {
-            Tcl_SetResult(interp, "cannot yield: C stack busy",
-                    TCL_STATIC);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                    "cannot yield: C stack busy", -1));
             Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
                     NULL);
             return TCL_ERROR;
@@ -8818,9 +8825,9 @@ NRCoroInjectObjCmd(
     }
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
-    if ((!cmdPtr) || (cmdPtr->nreProc != NRInterpCoroutine)) {
-        Tcl_AppendResult(interp, "can only inject a command into a coroutine",
-                NULL);
+    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "can only inject a command into a coroutine", -1));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
                 TclGetString(objv[1]), NULL);
         return TCL_ERROR;
@@ -8828,8 +8835,8 @@ NRCoroInjectObjCmd(
 
     corPtr = cmdPtr->objClientData;
     if (!COR_IS_SUSPENDED(corPtr)) {
-        Tcl_AppendResult(interp,
-                "can only inject a command into a suspended coroutine", NULL);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                "can only inject a command into a suspended coroutine", -1));
         Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", NULL);
         return TCL_ERROR;
     }
@@ -8847,7 +8854,7 @@ NRCoroInjectObjCmd(
 }
 
 int
-NRInterpCoroutine(
+TclNRInterpCoroutine(
     ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -8856,9 +8863,9 @@ NRInterpCoroutine(
     CoroutineData *corPtr = clientData;
 
     if (!COR_IS_SUSPENDED(corPtr)) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "coroutine \"", Tcl_GetString(objv[0]),
-		"\" is already running", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "coroutine \"%s\" is already running",
+                Tcl_GetString(objv[0])));
 	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "BUSY", NULL);
 	return TCL_ERROR;
     }
@@ -8939,22 +8946,24 @@ TclNRCoroutineObjCmd(
 	    &nsPtr, &altNsPtr, &cxtNsPtr, &procName);
 
     if (nsPtr == NULL) {
-	Tcl_AppendResult(interp, "can't create procedure \"", fullName,
-		"\": unknown namespace", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "can't create procedure \"%s\": unknown namespace",
+                fullName));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", NULL);
 	return TCL_ERROR;
     }
     if (procName == NULL) {
-	Tcl_AppendResult(interp, "can't create procedure \"", fullName,
-		"\": bad procedure name", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "can't create procedure \"%s\": bad procedure name",
+                fullName));
         Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", fullName, NULL);
 	return TCL_ERROR;
     }
     if ((nsPtr != iPtr->globalNsPtr)
 	    && (procName != NULL) && (procName[0] == ':')) {
-	Tcl_AppendResult(interp, "can't create procedure \"", procName,
-		"\" in non-global namespace with name starting with \":\"",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "can't create procedure \"%s\" in non-global namespace with"
+                " name starting with \":\"", procName));
         Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", procName, NULL);
 	return TCL_ERROR;
     }
@@ -8969,12 +8978,12 @@ TclNRCoroutineObjCmd(
     Tcl_DStringInit(&ds);
     if (nsPtr != iPtr->globalNsPtr) {
 	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
-	Tcl_DStringAppend(&ds, "::", 2);
+	TclDStringAppendLiteral(&ds, "::");
     }
     Tcl_DStringAppend(&ds, procName, -1);
 
     cmdPtr = (Command *) Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
-	    /*objProc*/ NULL, NRInterpCoroutine, corPtr, DeleteCoroutine);
+	    /*objProc*/ NULL, TclNRInterpCoroutine, corPtr, DeleteCoroutine);
     Tcl_DStringFree(&ds);
 
     corPtr->cmdPtr = cmdPtr;
