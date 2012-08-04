@@ -44,9 +44,9 @@ TclpDlopen(
 				 * function which should be used for this
 				 * file. */
 {
-    Tcl_SetResult(interp,
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "dynamic loading is not currently available on this system",
-	    TCL_STATIC);
+	    -1));
     return TCL_ERROR;
 }
 
