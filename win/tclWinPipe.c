@@ -676,6 +676,7 @@ TclpCreateTempFile(
     if (contents != NULL) {
 	DWORD result, length;
 	const char *p;
+	int toCopy;
 
 	/*
 	 * Convert the contents from UTF to native encoding
@@ -683,7 +684,8 @@ TclpCreateTempFile(
 
 	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
 
-	for (p = native; *p != '\0'; p++) {
+	toCopy = Tcl_DStringLength(&dstring);
+	for (p = native; toCopy > 0; p++, toCopy--) {
 	    if (*p == '\n') {
 		length = p - native;
 		if (length > 0) {
@@ -860,7 +862,7 @@ TclpCloseFile(
  *--------------------------------------------------------------------------
  */
 
-unsigned long
+int
 TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
@@ -1115,7 +1117,7 @@ TclpCreateProcess(
 	    startInfo.wShowWindow = SW_HIDE;
 	    startInfo.dwFlags |= STARTF_USESHOWWINDOW;
 	    createFlags = CREATE_NEW_CONSOLE;
-	    Tcl_DStringAppend(&cmdLine, "cmd.exe /c", -1);
+	    TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
 	} else {
 	    createFlags = DETACHED_PROCESS;
 	}
@@ -1290,7 +1292,7 @@ ApplicationType(
     Tcl_DString nameBuf, ds;
     const TCHAR *nativeName;
     TCHAR nativeFullPath[MAX_PATH];
-    static char extensions[][5] = {"", ".com", ".exe", ".bat"};
+    static const char extensions[][5] = {"", ".com", ".exe", ".bat"};
 
     /*
      * Look for the program as an external program. First try the name as it
@@ -1465,9 +1467,9 @@ BuildCommandLine(
      * Prime the path. Add a space separator if we were primed with something.
      */
 
-    Tcl_DStringAppend(&ds, Tcl_DStringValue(linePtr), -1);
+    TclDStringAppendDString(&ds, linePtr);
     if (Tcl_DStringLength(linePtr) > 0) {
-	Tcl_DStringAppend(&ds, " ", 1);
+	TclDStringAppendLiteral(&ds, " ");
     }
 
     for (i = 0; i < argc; i++) {
@@ -1475,7 +1477,7 @@ BuildCommandLine(
 	    arg = executable;
 	} else {
 	    arg = argv[i];
-	    Tcl_DStringAppend(&ds, " ", 1);
+	    TclDStringAppendLiteral(&ds, " ");
 	}
 
 	quote = 0;
@@ -1494,7 +1496,7 @@ BuildCommandLine(
 	    }
 	}
 	if (quote) {
-	    Tcl_DStringAppend(&ds, "\"", 1);
+	    TclDStringAppendLiteral(&ds, "\"");
 	}
 	start = arg;
 	for (special = arg; ; ) {
@@ -1523,7 +1525,7 @@ BuildCommandLine(
 	    }
 	    if (*special == '"') {
 		Tcl_DStringAppend(&ds, start, (int) (special - start));
-		Tcl_DStringAppend(&ds, "\\\"", 2);
+		TclDStringAppendLiteral(&ds, "\\\"");
 		start = special + 1;
 	    }
 	    if (*special == '\0') {
@@ -1533,7 +1535,7 @@ BuildCommandLine(
 	}
 	Tcl_DStringAppend(&ds, start, (int) (special - start));
 	if (quote) {
-	    Tcl_DStringAppend(&ds, "\"", 1);
+	    TclDStringAppendLiteral(&ds, "\"");
 	}
     }
     Tcl_DStringFree(linePtr);
@@ -1709,8 +1711,8 @@ TclGetAndDetachPids(
 {
     PipeInfo *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
+    Tcl_Obj *pidsObj;
     int i;
-    char buf[TCL_INTEGER_SPACE];
 
     /*
      * Punt if the channel is not a command channel.
@@ -1721,12 +1723,15 @@ TclGetAndDetachPids(
 	return;
     }
 
-    pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
+    pipePtr = Tcl_GetChannelInstanceData(chan);
+    TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
-	wsprintfA(buf, "%lu", TclpGetPid(pipePtr->pidPtr[i]));
-	Tcl_AppendElement(interp, buf);
-	Tcl_DetachPids(1, &(pipePtr->pidPtr[i]));
+	Tcl_ListObjAppendElement(NULL, pidsObj,
+		Tcl_NewWideIntObj((unsigned)
+			TclpGetPid(pipePtr->pidPtr[i])));
+	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
     }
+    Tcl_SetObjResult(interp, pidsObj);
     if (pipePtr->numPids > 0) {
 	ckfree(pipePtr->pidPtr);
 	pipePtr->numPids = 0;
@@ -1873,12 +1878,26 @@ PipeClose2Proc(
 	    && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
 	    /*
-	     * Wait for the writer thread to finish the current buffer, then
-	     * terminate the thread and close the handles. If the channel is
-	     * nonblocking, there should be no pending write operations.
+	     * Wait for the  writer thread to finish the  current buffer, then
+	     * terminate the thread  and close the handles. If  the channel is
+	     * nonblocking but blocked during  exit, bail out since the worker
+	     * thread is not interruptible and we want TIP#398-fast-exit.
 	     */
+	    if (TclInExit()
+		&& (pipePtr->flags & PIPE_ASYNC)) {
 
-	    WaitForSingleObject(pipePtr->writable, INFINITE);
+		/* give it a chance to leave honorably */
+		SetEvent(pipePtr->stopWriter);
+
+		if (WaitForSingleObject(pipePtr->writable, 0) == WAIT_TIMEOUT) {
+		    return EAGAIN;
+		}
+
+	    } else {
+
+		WaitForSingleObject(pipePtr->writable, INFINITE);
+
+	    }
 
 	    /*
 	     * The thread may already have closed on it's own. Check its exit
@@ -2626,15 +2645,13 @@ Tcl_PidObjCmd(
     PipeInfo *pipePtr;
     int i;
     Tcl_Obj *resultPtr;
-    char buf[TCL_INTEGER_SPACE];
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	wsprintfA(buf, "%lu", (unsigned long) getpid());
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((unsigned) getpid()));
     } else {
 	chan = Tcl_GetChannel(interp, Tcl_GetStringFromObj(objv[1], NULL),
 		NULL);
@@ -2649,9 +2666,9 @@ Tcl_PidObjCmd(
 	pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
 	resultPtr = Tcl_NewObj();
 	for (i = 0; i < pipePtr->numPids; i++) {
-	    wsprintfA(buf, "%lu", TclpGetPid(pipePtr->pidPtr[i]));
 	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr,
-		    Tcl_NewStringObj(buf, -1));
+		    Tcl_NewWideIntObj((unsigned)
+			    TclpGetPid(pipePtr->pidPtr[i])));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
@@ -2942,6 +2959,10 @@ PipeWriterThread(
 	     * The start event was not signaled. It might be the stop event or
 	     * an error, so exit.
 	     */
+
+	    if (waitResult == WAIT_OBJECT_0) {
+		SetEvent(infoPtr->writable);
+	    }
 
 	    break;
 	}

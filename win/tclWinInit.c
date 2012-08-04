@@ -288,8 +288,6 @@ AppendEnvironment(
 	 */
 
 	if ((pathc > 0) && (lstrcmpiA(shortlib, pathv[pathc - 1]) != 0)) {
-	    const char *str;
-
 	    /*
 	     * TCL_LIBRARY is set but refers to a different tcl installation
 	     * than the current version. Try fiddling with the specified
@@ -299,9 +297,8 @@ AppendEnvironment(
 
 	    pathv[pathc - 1] = shortlib;
 	    Tcl_DStringInit(&ds);
-	    str = Tcl_JoinPath(pathc, pathv, &ds);
-	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
-	    Tcl_DStringFree(&ds);
+	    (void) Tcl_JoinPath(pathc, pathv, &ds);
+	    objPtr = TclDStringToObj(&ds);
 	} else {
 	    objPtr = Tcl_NewStringObj(buf, -1);
 	}

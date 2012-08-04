@@ -423,6 +423,13 @@ typedef struct GetsState {
 				 * appended to objPtr so far, just before the
 				 * last call to FilterInputBytes(). */
 } GetsState;
+
+/*
+ * The length of time to wait between synthetic timer events. Must be zero or
+ * bad things tend to happen.
+ */
+
+#define SYNTHETIC_EVENT_TIME	0
 
 /*
  * Local Variables:
