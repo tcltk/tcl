@@ -177,7 +177,7 @@ FindSymbol(
     Tcl_DStringFree(&ds);
     if (proc == NULL && interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot find symbol \"%s\": %s", symbol, dlerror());
+		"cannot find symbol \"%s\": %s", symbol, dlerror()));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
 		NULL);
     }
