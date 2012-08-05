@@ -172,7 +172,7 @@ Registry_Init(
 {
     Tcl_Command cmd;
 
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
 	return TCL_ERROR;
     }
 
@@ -534,9 +534,9 @@ DeleteValue(
     result = RegDeleteValue(key, (const TCHAR *)Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
     if (result != ERROR_SUCCESS) {
-	Tcl_AppendResult(interp, "unable to delete value \"",
-		Tcl_GetString(valueNameObj), "\" from key \"",
-		Tcl_GetString(keyNameObj), "\": ", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"unable to delete value \"%s\" from key \"%s\": ",
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -574,7 +574,8 @@ GetKeyNames(
 {
     const char *pattern;	/* Pattern being matched against subkeys */
     HKEY key;			/* Handle to the key being examined */
-    TCHAR buffer[MAX_KEY_LENGTH];		/* Buffer to hold the subkey name */
+    TCHAR buffer[MAX_KEY_LENGTH];
+				/* Buffer to hold the subkey name */
     DWORD bufSize;		/* Size of the buffer */
     DWORD index;		/* Position of the current subkey */
     char *name;			/* Subkey name */
@@ -610,9 +611,9 @@ GetKeyNames(
 	    if (result == ERROR_NO_MORE_ITEMS) {
 		result = TCL_OK;
 	    } else {
-		Tcl_SetObjResult(interp, Tcl_NewObj());
-		Tcl_AppendResult(interp, "unable to enumerate subkeys of \"",
-			Tcl_GetString(keyNameObj), "\": ", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"unable to enumerate subkeys of \"%s\": ",
+			Tcl_GetString(keyNameObj)));
 		AppendSystemError(interp, result);
 		result = TCL_ERROR;
 	    }
@@ -693,9 +694,9 @@ GetType(
     RegCloseKey(key);
 
     if (result != ERROR_SUCCESS) {
-	Tcl_AppendResult(interp, "unable to get type of value \"",
-		Tcl_GetString(valueNameObj), "\" from key \"",
-		Tcl_GetString(keyNameObj), "\": ", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"unable to get type of value \"%s\" from key \"%s\": ",
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -787,9 +788,9 @@ GetValue(
     Tcl_DStringFree(&buf);
     RegCloseKey(key);
     if (result != ERROR_SUCCESS) {
-	Tcl_AppendResult(interp, "unable to get value \"",
-		Tcl_GetString(valueNameObj), "\" from key \"",
-		Tcl_GetString(keyNameObj), "\": ", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"unable to get value \"%s\" from key \"%s\": ",
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	Tcl_DStringFree(&data);
 	return TCL_ERROR;
@@ -1110,8 +1111,8 @@ ParseKeyName(
 	rootName = name;
     }
     if (!rootName) {
-	Tcl_AppendResult(interp, "bad key \"", name,
-		"\": must start with a valid root", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad key \"%s\": must start with a valid root", name));
 	Tcl_SetErrorCode(interp, "WIN_REG", "NO_ROOT_KEY", NULL);
 	return TCL_ERROR;
     }
