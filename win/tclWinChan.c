@@ -942,7 +942,7 @@ TclpOpenFileChannel(
 	if (interp != (Tcl_Interp *) NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't open \"%s\": %s",
-		    TclGetString(pathPtr),, Tcl_PosixError(interp)));
+		    TclGetString(pathPtr), Tcl_PosixError(interp)));
 	}
 	return NULL;
     }

@@ -1282,7 +1282,7 @@ CreateSocket(
     if (interp != NULL) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't open socket: %s",
-		(errorMsg ? errorMsg : Tcl_PosixError(interp)));
+		(errorMsg ? errorMsg : Tcl_PosixError(interp))));
     }
 
     if (sock != INVALID_SOCKET) {
