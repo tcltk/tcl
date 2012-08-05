@@ -157,7 +157,8 @@ Dde_Init(
 
 #ifdef UNICODE
     if (TclWinGetPlatformId() < VER_PLATFORM_WIN32_NT) {
-	Tcl_AppendResult(interp, "Win32s and Windows 9x are not supported platforms", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"Win32s and Windows 9x are not supported platforms", -1));
 	return TCL_ERROR;
     }
 #endif
@@ -947,8 +948,8 @@ MakeDdeConnection(
 
     if (ddeConv == (HCONV) NULL) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "no registered server named \"",
-		    name, "\"", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "no registered server named \"%s\"", name));
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NO_SERVER", NULL);
 	}
 	return TCL_ERROR;
