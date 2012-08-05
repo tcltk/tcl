@@ -558,8 +558,8 @@ TclpHasSockets(
 	return TCL_OK;
     }
     if (interp != NULL) {
-	Tcl_AppendResult(interp, "sockets are not available on this system",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"sockets are not available on this system", -1));
     }
     return TCL_ERROR;
 }
@@ -928,8 +928,8 @@ TcpClose2Proc(
 	break;
     default:
 	if (interp) {
-	    Tcl_AppendResult(interp,
-		    "Socket close2proc called bidirectionally", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "Socket close2proc called bidirectionally", -1));
 	}
 	return TCL_ERROR;
     }
@@ -1280,12 +1280,9 @@ CreateSocket(
     }
 
     if (interp != NULL) {
-        Tcl_AppendResult(interp, "couldn't open socket: ", NULL);
-        if (errorMsg == NULL) {
-            Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
-        } else {
-            Tcl_AppendResult(interp, errorMsg, NULL);
-        }
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't open socket: %s",
+		(errorMsg ? errorMsg : Tcl_PosixError(interp)));
     }
 
     if (sock != INVALID_SOCKET) {
@@ -1929,7 +1926,8 @@ TcpSetOptionProc(
 
     if (!SocketsEnabled()) {
 	if (interp) {
-	    Tcl_AppendResult(interp, "winsock is not initialized", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "winsock is not initialized", -1));
 	}
 	return TCL_ERROR;
     }
@@ -1952,8 +1950,9 @@ TcpSetOptionProc(
 	if (rtn != 0) {
 	    TclWinConvertError(WSAGetLastError());
 	    if (interp) {
-		Tcl_AppendResult(interp, "couldn't set socket option: ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't set socket option: %s",
+			Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1973,8 +1972,9 @@ TcpSetOptionProc(
 	if (rtn != 0) {
 	    TclWinConvertError(WSAGetLastError());
 	    if (interp) {
-		Tcl_AppendResult(interp, "couldn't set socket option: ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't set socket option: %s",
+			Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
@@ -2032,7 +2032,8 @@ TcpGetOptionProc(
 
     if (!SocketsEnabled()) {
 	if (interp) {
-	    Tcl_AppendResult(interp, "winsock is not initialized", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "winsock is not initialized", -1));
 	}
 	return TCL_ERROR;
     }
@@ -2099,8 +2100,9 @@ TcpGetOptionProc(
 	    if (len) {
 		TclWinConvertError((DWORD) WSAGetLastError());
 		if (interp) {
-		    Tcl_AppendResult(interp, "can't get peername: ",
-			    Tcl_PosixError(interp), NULL);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "can't get peername: %s",
+			    Tcl_PosixError(interp)));
 		}
 		return TCL_ERROR;
 	    }
@@ -2164,8 +2166,8 @@ TcpGetOptionProc(
 	} else {
 	    if (interp) {
 		TclWinConvertError((DWORD) WSAGetLastError());
-		Tcl_AppendResult(interp, "can't get sockname: ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"can't get sockname: %s", Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
