@@ -834,8 +834,13 @@ stored in \fIvar2\fR.
 Moves the cursor to the absolute location in the data string specified
 by \fIcount\fR.  Note that position 0 refers to the first byte in
 \fIstring\fR.  If \fIcount\fR refers to a position beyond the end of
-\fIstring\fR, then the cursor is positioned after the last byte.  If
-\fIcount\fR is omitted, then an error will be generated.  For example,
+\fIstring\fR, then the cursor is positioned after the last byte.
+.VS 8.6
+If \fIcount\fR is omitted, then the cursor position in the data string
+will be stored in the corresponding variable and an argument will be
+consumed.  If count is supplied then no argument is consumed.
+.VE 8.6
+For example,
 .RS
 .CS
 \fBbinary scan\fR \ex01\ex02\ex03\ex04 c2@1H* var1 var2

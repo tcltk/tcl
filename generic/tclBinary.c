@@ -1546,10 +1546,19 @@ BinaryScanCmd(
 	    break;
 	case '@':
 	    if (count == BINARY_NOCOUNT) {
-		DeleteScanNumberCache(numberCachePtr);
-		goto badCount;
-	    }
-	    if ((count == BINARY_ALL) || (count > length)) {
+		if (arg >= objc) {
+		    DeleteScanNumberCache(numberCachePtr);
+		    goto badIndex;
+		}
+		valuePtr = Tcl_NewIntObj(offset);
+		resultPtr = Tcl_ObjSetVar2(interp, objv[arg], NULL,
+			valuePtr, TCL_LEAVE_ERR_MSG);
+		arg++;
+		if (resultPtr == NULL) {
+		    DeleteScanNumberCache(numberCachePtr);
+		    return TCL_ERROR;
+		}
+	    } else if ((count == BINARY_ALL) || (count > length)) {
 		offset = length;
 	    } else {
 		offset = count;
@@ -1571,10 +1580,6 @@ BinaryScanCmd(
     DeleteScanNumberCache(numberCachePtr);
 
     return TCL_OK;
-
- badCount:
-    errorString = "missing count for \"@\" field specifier";
-    goto error;
 
  badIndex:
     errorString = "not enough arguments for all format specifiers";

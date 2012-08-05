@@ -1440,7 +1440,7 @@ test binary-35.1 {Tcl_BinaryObjCmd: scan} -setup {
     unset -nocomplain arg2
 } -returnCodes error -body {
     binary scan abcdefg a2@a3 arg1 arg2
-} -result {missing count for "@" field specifier}
+} -result {not enough arguments for all format specifiers}
 test binary-35.2 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
     unset -nocomplain arg2
@@ -2770,6 +2770,40 @@ test binary-76.2 {binary string appending growth algorithm} win {
     string length [append str [binary format a* foo]]
 } 3
 
+
+test binary-80.1 {Tcl_BinaryObjCmd: scan @} {
+    binary scan abcdefg @ arg1
+    set arg1
+} 0
+test binary-80.2 {Tcl_BinaryObjCmd: scan @} {
+    binary scan abcdefg @@@ arg1 arg2 arg3
+    list $arg1 $arg2 $arg3
+} {0 0 0}
+test binary-80.3 {Tcl_BinaryObjCmd: scan @} {
+    binary scan abcdefg @2@ arg1
+    set arg1
+} 2
+test binary-80.4 {Tcl_BinaryObjCmd: scan @} {
+    binary scan abcdefg c*@ arg1 arg2
+    set arg2
+} 7
+test binary-80.5 {Tcl_BinaryObjCmd: scan @} {
+    binary scan abcdefg I@c@ arg1 arg2 arg3 arg4
+    list $arg2 $arg4
+} {4 5}
+test binary-80.6 {Tcl_BinaryObjCmd: scan @} {
+    binary scan abcdefg I@x@ arg1 arg2 arg3
+    list $arg2 $arg3
+} {4 5}
+test binary-80.7 {Tcl_BinaryObjCmd: scan @} {
+    binary scan abcdefg I@X@ arg1 arg2 arg3
+    list $arg2 $arg3
+} {4 3}
+test binary-80.8 {Tcl_BinaryObjCmd: scan @} {
+    binary scan abcdefg I@x*@ arg1 arg2 arg3
+    list $arg2 $arg3
+} {4 7}
+
 # ----------------------------------------------------------------------
 # cleanup
 
