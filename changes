@@ -7995,7 +7995,7 @@ like "nano()" instead of parsing as "nan o()" with missing op (duquette,porter)
 
 2011-10-31 (bug fix)[3414754] EIAS violation in fs paths (porter)
 
-2011-11-22 (bug fix)[2935503] Win: [file mtime] sets wrong time (nijtmans)
+2011-11-22 (bug fix)[3354324] Win: [file mtime] sets wrong time (nijtmans)
 
 2011-11-30 (bug fix)[967195] Simply args passed to child processes (nijtmans)
 => tcltest 2.3.4
