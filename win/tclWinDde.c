@@ -157,7 +157,8 @@ Dde_Init(
 
 #ifdef UNICODE
     if (TclWinGetPlatformId() < VER_PLATFORM_WIN32_NT) {
-	Tcl_AppendResult(interp, "Win32s and Windows 9x are not supported platforms", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"Win32s and Windows 9x are not supported platforms", -1));
 	return TCL_ERROR;
     }
 #endif
@@ -947,8 +948,12 @@ MakeDdeConnection(
 
     if (ddeConv == (HCONV) NULL) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "no registered server named \"",
-		    name, "\"", NULL);
+	    Tcl_DString dString;
+
+	    Tcl_WinTCharToUtf(name, -1, &dString);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "no registered server named \"%s\"", Tcl_DStringValue(&dString)));
+	    Tcl_DStringFree(&dString);
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NO_SERVER", NULL);
 	}
 	return TCL_ERROR;
@@ -1424,7 +1429,11 @@ DdeObjCmd(
 	serviceName = DdeSetServerName(interp, serviceName, flags,
 		handlerPtr);
 	if (serviceName != NULL) {
+#ifdef UNICODE
 	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj((Tcl_UniChar *) serviceName, -1));
+#else
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(serviceName, -1));
+#endif
 	} else {
 	    Tcl_ResetResult(interp);
 	}
@@ -1649,9 +1658,9 @@ DdeObjCmd(
 	     */
 
 	    if (Tcl_IsSafe(riPtr->interp) && riPtr->handlerPtr == NULL) {
-		Tcl_SetResult(riPtr->interp, "permission denied: "
-			"a handler procedure must be defined for use in "
-			"a safe interp", TCL_STATIC);
+		Tcl_SetObjResult(riPtr->interp, Tcl_NewStringObj(
+			"permission denied: a handler procedure must be"
+			" defined for use in a safe interp", -1));
 		Tcl_SetErrorCode(interp, "TCL", "DDE", "SECURITY_CHECK",
 			NULL);
 		result = TCL_ERROR;
