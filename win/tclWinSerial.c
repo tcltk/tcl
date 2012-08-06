@@ -2002,7 +2002,7 @@ SerialSetOptionProc(
     if (interp != NULL) {
 	TclWinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't get comm state: ", Tcl_PosixError(interp)));
+		"can't get comm state: %s", Tcl_PosixError(interp)));
     }
     return TCL_ERROR;
 
@@ -2010,7 +2010,7 @@ SerialSetOptionProc(
     if (interp != NULL) {
 	TclWinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't set comm state: ", Tcl_PosixError(interp)));
+		"can't set comm state: %s", Tcl_PosixError(interp)));
     }
     return TCL_ERROR;
 }
