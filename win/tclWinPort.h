@@ -14,7 +14,7 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-#ifndef _WIN64
+#if !defined(_WIN64) && defined(BUILD_tcl)
 /* See [Bug 3354324]: file mtime sets wrong time */
 #   define _USE_32BIT_TIME_T
 #endif
