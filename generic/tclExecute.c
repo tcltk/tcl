@@ -4896,8 +4896,8 @@ TEBCresume(
 
 	    case INST_RSHIFT:
 		if (l2 < 0) {
-		    Tcl_SetResult(interp, "negative shift argument",
-			    TCL_STATIC);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "negative shift argument", -1));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -4944,8 +4944,8 @@ TEBCresume(
 
 	    case INST_LSHIFT:
 		if (l2 < 0) {
-		    Tcl_SetResult(interp, "negative shift argument",
-			    TCL_STATIC);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "negative shift argument", -1));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -4967,9 +4967,8 @@ TEBCresume(
 		     * good place to draw the line.
 		     */
 
-		    Tcl_SetResult(interp,
-			    "integer value too large to represent",
-			    TCL_STATIC);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "integer value too large to represent", -1));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
@@ -5671,9 +5670,9 @@ TEBCresume(
 		NEXT_INST_V(5, opnd+1, 1);
 	    }
 	    DECACHE_STACK_INFO();
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "key \"", TclGetString(OBJ_AT_TOS),
-		    "\" not known in dictionary", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "key \"%s\" not known in dictionary",
+		    TclGetString(OBJ_AT_TOS)));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		    TclGetString(OBJ_AT_TOS), NULL);
 	    CACHE_STACK_INFO();
@@ -6304,7 +6303,7 @@ TEBCresume(
 
     divideByZero:
 	DECACHE_STACK_INFO();
-	Tcl_SetResult(interp, "divide by zero", TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
 	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
@@ -6316,8 +6315,8 @@ TEBCresume(
 
     exponOfZero:
 	DECACHE_STACK_INFO();
-	Tcl_SetResult(interp, "exponentiation of zero by negative power",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"exponentiation of zero by negative power", -1));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"exponentiation of zero by negative power", NULL);
 	CACHE_STACK_INFO();
@@ -6693,7 +6692,8 @@ ExecuteExtendedBinaryMathOp(
 	    invalid = 0;
 	}
 	if (invalid) {
-	    Tcl_SetResult(interp, "negative shift argument", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "negative shift argument", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -6723,8 +6723,8 @@ ExecuteExtendedBinaryMathOp(
 		 * place to draw the line.
 		 */
 
-		Tcl_SetResult(interp, "integer value too large to represent",
-			TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"integer value too large to represent", -1));
 		return GENERAL_ARITHMETIC_ERROR;
 	    }
 	    shift = (int)(*((const long *)ptr2));
@@ -7125,7 +7125,8 @@ ExecuteExtendedBinaryMathOp(
 	 */
 
 	if (type2 != TCL_NUMBER_LONG) {
-	    Tcl_SetResult(interp, "exponent too large", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -7363,7 +7364,8 @@ ExecuteExtendedBinaryMathOp(
 	Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	if (big2.used > 1) {
 	    mp_clear(&big2);
-	    Tcl_SetResult(interp, "exponent too large", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);

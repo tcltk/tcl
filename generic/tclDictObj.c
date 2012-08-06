@@ -700,7 +700,8 @@ SetDictFromAny(
 
   missingValue:
     if (interp != NULL) {
-	Tcl_SetResult(interp, "missing value to go with key", TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"missing value to go with key", -1));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
     }
     result = TCL_ERROR;
@@ -779,9 +780,9 @@ TclTraceDictPath(
 	    }
 	    if ((flags & DICT_PATH_CREATE) != DICT_PATH_CREATE) {
 		if (interp != NULL) {
-		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, "key \"", TclGetString(keyv[i]),
-			    "\" not known in dictionary", NULL);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "key \"%s\" not known in dictionary",
+			    TclGetString(keyv[i])));
 		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 			    TclGetString(keyv[i]), NULL);
 		}
@@ -1571,9 +1572,9 @@ DictGetCmd(
 	return result;
     }
     if (valuePtr == NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "key \"", TclGetString(objv[objc-1]),
-		"\" not known in dictionary", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"key \"%s\" not known in dictionary",
+		TclGetString(objv[objc-1])));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		TclGetString(objv[objc-1]), NULL);
 	return TCL_ERROR;
@@ -2027,6 +2028,7 @@ DictInfoCmd(
 {
     Tcl_Obj *dictPtr;
     Dict *dict;
+    char *statsStr;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
@@ -2042,7 +2044,9 @@ DictInfoCmd(
     }
     dict = dictPtr->internalRep.otherValuePtr;
 
-    Tcl_SetResult(interp, Tcl_HashStats(&dict->table), TCL_DYNAMIC);
+    statsStr = Tcl_HashStats(&dict->table);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(statsStr, -1));
+    ckfree(statsStr);
     return TCL_OK;
 }
 
@@ -2371,8 +2375,8 @@ DictForNRCmd(
 	return TCL_ERROR;
     }
     if (varc != 2) {
-	Tcl_SetResult(interp, "must have exactly two variable names",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"must have exactly two variable names", -1));
 	return TCL_ERROR;
     }
     searchPtr = TclStackAlloc(interp, sizeof(Tcl_DictSearch));
@@ -2787,8 +2791,8 @@ DictFilterCmd(
 	    return TCL_ERROR;
 	}
 	if (varc != 2) {
-	    Tcl_SetResult(interp, "must have exactly two variable names",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "must have exactly two variable names", -1));
 	    return TCL_ERROR;
 	}
 	keyVarObj = varv[0];
@@ -2828,16 +2832,19 @@ DictFilterCmd(
 	    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't set key variable: \"",
-			TclGetString(keyVarObj), "\"", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't set key variable: \"%s\"",
+			TclGetString(keyVarObj)));
 		result = TCL_ERROR;
 		goto abnormalResult;
 	    }
 	    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't set value variable: \"",
-			TclGetString(valueVarObj), "\"", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't set value variable: \"%s\"",
+			TclGetString(valueVarObj)));
+		result = TCL_ERROR;
 		goto abnormalResult;
 	    }
 
