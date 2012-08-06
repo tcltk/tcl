@@ -112,8 +112,9 @@ TclpDlopen(
 
 	const char *errorStr = dlerror();
 
-	Tcl_AppendResult(interp, "couldn't load file \"",
-		Tcl_GetString(pathPtr), "\": ", errorStr, NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't load file \"%s\": %s",
+		Tcl_GetString(pathPtr), errorStr));
 	return TCL_ERROR;
     }
     newHandle = ckalloc(sizeof(*newHandle));
@@ -175,9 +176,8 @@ FindSymbol(
     }
     Tcl_DStringFree(&ds);
     if (proc == NULL && interp != NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "cannot find symbol \"", symbol, "\": ",
-		dlerror(), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot find symbol \"%s\": %s", symbol, dlerror()));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
 		NULL);
     }

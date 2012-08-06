@@ -1094,8 +1094,9 @@ Tcl_FSMatchInDirectory(
     cwd = Tcl_FSGetCwd(NULL);
     if (cwd == NULL) {
 	if (interp != NULL) {
-	    Tcl_SetResult(interp, "glob couldn't determine "
-		    "the current working directory", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "glob couldn't determine the current working directory",
+		    -1));
 	}
 	return TCL_ERROR;
     }
@@ -1572,8 +1573,8 @@ TclGetOpenModeEx(
 	*seekFlagPtr = 0;
 	*binaryPtr = 0;
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "illegal access mode \"", modeString,
-		    "\"", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "illegal access mode \"%s\"", modeString));
 	}
 	return -1;
     }
@@ -1622,8 +1623,9 @@ TclGetOpenModeEx(
 	    mode |= O_NOCTTY;
 #else
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "access mode \"", flag,
-			"\" not supported by this system", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"access mode \"%s\" not supported by this system",
+			flag));
 	    }
 	    ckfree(modeArgv);
 	    return -1;
@@ -1634,8 +1636,9 @@ TclGetOpenModeEx(
 	    mode |= O_NONBLOCK;
 #else
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "access mode \"", flag,
-			"\" not supported by this system", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"access mode \"%s\" not supported by this system",
+			flag));
 	    }
 	    ckfree(modeArgv);
 	    return -1;
@@ -1648,9 +1651,10 @@ TclGetOpenModeEx(
 	} else {
 
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "invalid access mode \"", flag,
-			"\": must be RDONLY, WRONLY, RDWR, APPEND, BINARY, "
-			"CREAT, EXCL, NOCTTY, NONBLOCK, or TRUNC", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"invalid access mode \"%s\": must be RDONLY, WRONLY, "
+			"RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK,"
+			" or TRUNC", flag));
 	    }
 	    ckfree(modeArgv);
 	    return -1;
@@ -1661,8 +1665,9 @@ TclGetOpenModeEx(
 
     if (!gotRW) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "access mode must include either"
-		    " RDONLY, WRONLY, or RDWR", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "access mode must include either RDONLY, WRONLY, or RDWR",
+		    -1));
 	}
 	return -1;
     }
@@ -1721,15 +1726,16 @@ Tcl_FSEvalFileEx(
 
     if (Tcl_FSStat(pathPtr, &statBuf) == -1) {
 	Tcl_SetErrno(errno);
-	Tcl_AppendResult(interp, "couldn't read file \"",
-		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't read file \"%s\": %s",
+		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	return result;
     }
     chan = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0644);
     if (chan == NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "couldn't read file \"",
-		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't read file \"%s\": %s",
+		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	return result;
     }
 
@@ -1763,8 +1769,9 @@ Tcl_FSEvalFileEx(
 
     if (Tcl_ReadChars(chan, objPtr, 1, 0) < 0) {
 	Tcl_Close(interp, chan);
-	Tcl_AppendResult(interp, "couldn't read file \"",
-		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't read file \"%s\": %s",
+		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	goto end;
     }
     string = Tcl_GetString(objPtr);
@@ -1777,8 +1784,9 @@ Tcl_FSEvalFileEx(
     if (Tcl_ReadChars(chan, objPtr, -1,
 	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
-	Tcl_AppendResult(interp, "couldn't read file \"",
-		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't read file \"%s\": %s",
+		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	goto end;
     }
 
@@ -1852,15 +1860,16 @@ TclNREvalFile(
 
     if (Tcl_FSStat(pathPtr, &statBuf) == -1) {
 	Tcl_SetErrno(errno);
-	Tcl_AppendResult(interp, "couldn't read file \"",
-		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't read file \"%s\": %s",
+		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
     chan = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0644);
     if (chan == NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "couldn't read file \"",
-		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't read file \"%s\": %s",
+		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
 
@@ -1894,8 +1903,9 @@ TclNREvalFile(
 
     if (Tcl_ReadChars(chan, objPtr, 1, 0) < 0) {
 	Tcl_Close(interp, chan);
-	Tcl_AppendResult(interp, "couldn't read file \"",
-		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't read file \"%s\": %s",
+		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
@@ -1909,8 +1919,9 @@ TclNREvalFile(
     if (Tcl_ReadChars(chan, objPtr, -1,
 	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
-	Tcl_AppendResult(interp, "couldn't read file \"",
-		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't read file \"%s\": %s",
+		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
@@ -2246,9 +2257,9 @@ Tcl_FSOpenFileChannel(
 	if (seekFlag && Tcl_Seek(retVal, (Tcl_WideInt) 0, SEEK_END)
 		< (Tcl_WideInt) 0) {
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "could not seek to end of file "
-			"while opening \"", Tcl_GetString(pathPtr), "\": ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"could not seek to end of file while opening \"%s\": %s",
+			Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	    }
 	    Tcl_Close(NULL, retVal);
 	    return NULL;
@@ -2265,8 +2276,9 @@ Tcl_FSOpenFileChannel(
 
     Tcl_SetErrno(ENOENT);
     if (interp != NULL) {
-	Tcl_AppendResult(interp, "couldn't open \"", Tcl_GetString(pathPtr),
-		"\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't open \"%s\": %s",
+		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
     }
     return NULL;
 }
@@ -2684,9 +2696,9 @@ Tcl_FSGetCwd(
 		Disclaim();
 		goto cdDidNotChange;
 	    } else if (interp != NULL) {
-		Tcl_AppendResult(interp,
-			"error getting working directory name: ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"error getting working directory name: %s",
+			Tcl_PosixError(interp)));
 	    }
 	}
 	Disclaim();
@@ -2760,9 +2772,9 @@ Tcl_FSGetCwd(
 
 	    retCd = proc2(tsdPtr->cwdClientData);
 	    if (retCd == NULL && interp != NULL) {
-		Tcl_AppendResult(interp,
-			"error getting working directory name: ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"error getting working directory name: %s",
+			Tcl_PosixError(interp)));
 	    }
 
 	    if (retCd == tsdPtr->cwdClientData) {
@@ -3152,8 +3164,9 @@ Tcl_LoadFile(
      */
 
     if (Tcl_FSAccess(pathPtr, R_OK) != 0) {
-	Tcl_AppendResult(interp, "couldn't load library \"",
-		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't load library \"%s\": %s",
+		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
 
@@ -3203,7 +3216,7 @@ Tcl_LoadFile(
 
   mustCopyToTempAnyway:
     Tcl_ResetResult(interp);
-#endif
+#endif /* TCL_LOAD_FROM_MEMORY */
 
     /*
      * Get a temporary filename to use, first to copy the file into, and then
@@ -3223,8 +3236,8 @@ Tcl_LoadFile(
 
 	Tcl_FSDeleteFile(copyToPtr);
 	Tcl_DecrRefCount(copyToPtr);
-	Tcl_AppendResult(interp, "couldn't load from current filesystem",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"couldn't load from current filesystem", -1));
 	return TCL_ERROR;
     }
 

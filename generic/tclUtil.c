@@ -655,16 +655,16 @@ TclFindElement(
     if (p == limit) {
 	if (openBraces != 0) {
 	    if (interp != NULL) {
-		Tcl_SetResult(interp, "unmatched open brace in list",
-			TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"unmatched open brace in list", -1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "BRACE",
 			NULL);
 	    }
 	    return TCL_ERROR;
 	} else if (inQuotes) {
 	    if (interp != NULL) {
-		Tcl_SetResult(interp, "unmatched open quote in list",
-			TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"unmatched open quote in list", -1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "QUOTE",
 			NULL);
 	    }
@@ -810,8 +810,8 @@ Tcl_SplitList(
 	if (i >= size) {
 	    ckfree(argv);
 	    if (interp != NULL) {
-		Tcl_SetResult(interp, "internal error in Tcl_SplitList",
-			TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"internal error in Tcl_SplitList", -1));
 		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
 			NULL);
 	    }
@@ -3382,16 +3382,10 @@ TclGetIntForIndex(
 
   parseError:
     if (interp != NULL) {
-	/*
-	 * The result might not be empty; this resets it which should be both
-	 * a cheap operation, and of little problem because this is an
-	 * error-generation path anyway.
-	 */
-
 	bytes = Tcl_GetString(objPtr);
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "bad index \"", bytes,
-		"\": must be integer?[+-]integer? or end?[+-]integer?", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad index \"%s\": must be integer?[+-]integer? or"
+		" end?[+-]integer?", bytes));
 	if (!strncmp(bytes, "end-", 4)) {
 	    bytes += 4;
 	}
@@ -3483,9 +3477,8 @@ SetEndOffsetFromAny(
     if ((*bytes != 'e') || (strncmp(bytes, "end",
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
 	if (interp != NULL) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "bad index \"", bytes,
-		    "\": must be end?[+-]integer?", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad index \"%s\": must be end?[+-]integer?", bytes));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
 	}
 	return TCL_ERROR;
@@ -3519,9 +3512,8 @@ SetEndOffsetFromAny(
 
     badIndexFormat:
 	if (interp != NULL) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "bad index \"", bytes,
-		    "\": must be end?[+-]integer?", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad index \"%s\": must be end?[+-]integer?", bytes));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
 	}
 	return TCL_ERROR;
@@ -3597,8 +3589,8 @@ TclCheckBadOctal(
 		 * be added to an existing error message as extra info.
 		 */
 
-		Tcl_AppendResult(interp, " (looks like invalid octal number)",
-			NULL);
+		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+			" (looks like invalid octal number)", -1);
 	    }
 	    return 1;
 	}
@@ -4214,7 +4206,7 @@ TclReToGlob(
 
   invalidGlob:
     if (interp != NULL) {
-	Tcl_AppendResult(interp, msg, NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
 	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, NULL);
     }
     Tcl_DStringFree(dsPtr);
