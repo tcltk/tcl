@@ -335,7 +335,7 @@
 
 2011-11-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclCmdAH.c:   [Bug 2935503] Windows: file mtime
+	* generic/tclCmdAH.c:   [Bug 3354324] Windows: file mtime
 	* generic/tclIOUtil.c:  sets wrong time
 
 2011-10-11  Jan Nijtmans  <nijtmans@users.sf.net>
