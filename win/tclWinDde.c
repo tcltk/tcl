@@ -948,8 +948,12 @@ MakeDdeConnection(
 
     if (ddeConv == (HCONV) NULL) {
 	if (interp != NULL) {
+	    Tcl_DString dString;
+
+	    Tcl_WinTCharToUtf(name, -1, &dString);
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "no registered server named \"%s\"", name));
+		    "no registered server named \"%s\"", Tcl_DStringValue(&dString)));
+	    Tcl_DStringFree(&dString);
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NO_SERVER", NULL);
 	}
 	return TCL_ERROR;
@@ -1425,7 +1429,11 @@ DdeObjCmd(
 	serviceName = DdeSetServerName(interp, serviceName, flags,
 		handlerPtr);
 	if (serviceName != NULL) {
+#ifdef UNICODE
 	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj((Tcl_UniChar *) serviceName, -1));
+#else
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(serviceName, -1));
+#endif
 	} else {
 	    Tcl_ResetResult(interp);
 	}
