@@ -948,7 +948,7 @@
 
 2011-11-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h: [Bug 2935503]: Windows: [file mtime] sets wrong
+	* win/tclWinPort.h: [Bug 3354324]: Windows: [file mtime] sets wrong
 	* win/tclWinFile.c: time (VS2005+ only).
 	* generic/tclTest.c:
 
