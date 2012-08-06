@@ -856,7 +856,7 @@ install-libraries: libraries
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
 
-	@echo "Installing library encoding files to $(SCRIPT_INSTALL_DIR)/encoding/";
+	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
 		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/encoding; \
 	done;
@@ -867,7 +867,7 @@ install-libraries: libraries
 	fi
 
 install-tzdata: ${NATIVE_TCLSH}
-	@echo "Installing time zone data"
+	@echo "Installing time zone files to $(SCRIPT_INSTALL_DIR)/tzdata/"
 	@${NATIVE_TCLSH} $(TOOL_DIR)/installData.tcl \
 	    $(TOP_DIR)/library/tzdata "$(SCRIPT_INSTALL_DIR)"/tzdata
 
