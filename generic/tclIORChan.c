@@ -1774,7 +1774,9 @@ ReflectBlock(
  */
 
 static void
-ReflectThread(ClientData clientData, int action)
+ReflectThread(
+    ClientData clientData,
+    int action)
 {
     ReflectedChannel *rcPtr = clientData;
 
