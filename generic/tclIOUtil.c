@@ -460,6 +460,7 @@ FsThrExitProc(
 	ckfree(fsRecPtr);
 	fsRecPtr = tmpFsRecPtr;
     }
+    tsdPtr->filesystemList = NULL;
     tsdPtr->initialized = 0;
 }
 
