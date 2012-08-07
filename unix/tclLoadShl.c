@@ -22,14 +22,14 @@
 #endif
 
 #include "tclInt.h"
-
-/* Static functions defined within this file */
 
-static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
-			const char* symbol);
-static void
-UnloadFile(Tcl_LoadHandle handle);
+/*
+ * Static functions defined within this file.
+ */
 
+static void *		FindSymbol(Tcl_Interp *interp,
+			    Tcl_LoadHandle loadHandle, const char *symbol);
+static void		UnloadFile(Tcl_LoadHandle handle);
 
 /*
  *----------------------------------------------------------------------
@@ -137,7 +137,7 @@ FindSymbol(
 {
     Tcl_DString newName;
     Tcl_PackageInitProc *proc = NULL;
-    shl_t handle = (shl_t)(loadHandle->clientData);
+    shl_t handle = (shl_t) loadHandle->clientData;
 
     /*
      * Some versions of the HP system software still use "_" at the beginning
@@ -187,9 +187,8 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    shl_t handle;
+    shl_t handle = (shl_t) loadHandle->clientData;
 
-    handle = (shl_t) (loadHandle -> clientData);
     shl_unload(handle);
     ckfree(loadHandle);
 }
