@@ -17,7 +17,13 @@
 #include <dde.h>
 #include <ddeml.h>
 
-#ifndef UNICODE
+#ifdef UNICODE
+#   if !defined(NDEBUG)
+	/* test POKE server Implemented for UNICODE in debug mode only */
+#	undef CBF_FAIL_POKES
+#	define CBF_FAIL_POKES 0
+#   endif
+#else
 #   undef CP_WINUNICODE
 #   define CP_WINUNICODE CP_WINANSI
 #   undef Tcl_WinTCharToUtf
@@ -786,6 +792,53 @@ DdeServerProc(
 	}
 	return ddeReturn;
 
+#if !CBF_FAIL_POKES
+    case XTYP_POKE:
+	/*
+	 * This is a poke for a Tcl variable, only implemented in
+	 * debug/UNICODE mode.
+	 */
+	ddeReturn = DDE_FNOTPROCESSED;
+
+	if ((uFmt != CF_TEXT) && (uFmt != CF_UNICODETEXT)) {
+	    return ddeReturn;
+	}
+
+	for (convPtr = tsdPtr->currentConversations; (convPtr != NULL)
+		&& (convPtr->hConv != hConv); convPtr = convPtr->nextPtr) {
+	    /*
+	     * Empty loop body.
+	     */
+	}
+
+	if (convPtr && !Tcl_IsSafe(convPtr->riPtr->interp)) {
+	    Tcl_DString ds;
+	    Tcl_Obj *variableObjPtr;
+
+	    len = DdeQueryString(ddeInstance, ddeItem, NULL, 0, CP_WINUNICODE);
+	    Tcl_DStringInit(&dString);
+	    Tcl_DStringSetLength(&dString, (len + 1) * sizeof(TCHAR) - 1);
+	    utilString = (TCHAR *) Tcl_DStringValue(&dString);
+	    DdeQueryString(ddeInstance, ddeItem, utilString, (DWORD) len + 1,
+		    CP_WINUNICODE);
+	    Tcl_WinTCharToUtf(utilString, -1, &ds);
+	    utilString = (TCHAR *) DdeAccessData(hData, &dlen);
+	    if (uFmt == CF_TEXT) {
+		variableObjPtr = Tcl_NewStringObj((char *)utilString, -1);
+	    } else {
+		variableObjPtr = Tcl_NewUnicodeObj(utilString, -1);
+	    }
+
+	    Tcl_SetVar2Ex(convPtr->riPtr->interp, Tcl_DStringValue(&ds), NULL,
+		    variableObjPtr, TCL_GLOBAL_ONLY);
+
+	    Tcl_DStringFree(&ds);
+	    Tcl_DStringFree(&dString);
+		ddeReturn = (HDDEDATA) DDE_FACK;
+	}
+	return ddeReturn;
+
+#endif
     case XTYP_EXECUTE: {
 	/*
 	 * Execute this script. The results will be saved into a list object
