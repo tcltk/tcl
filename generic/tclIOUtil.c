@@ -648,23 +648,26 @@ TclFSEpochOk(
 }
 
 static void
-Claim()
+Claim(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
+
     tsdPtr->claims++;
 }
 
 static void
-Disclaim()
+Disclaim(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
+
     tsdPtr->claims--;
 }
 
 int
-TclFSEpoch()
+TclFSEpoch(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
+
     return tsdPtr->filesystemEpoch;
 }
 
