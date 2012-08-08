@@ -22,14 +22,14 @@
 #endif
 
 #include "tclInt.h"
-
-/* Static functions defined within this file */
 
-static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
-			const char* symbol);
-static void
-UnloadFile(Tcl_LoadHandle handle);
+/*
+ * Static functions defined within this file.
+ */
 
+static void *		FindSymbol(Tcl_Interp *interp,
+			    Tcl_LoadHandle loadHandle, const char *symbol);
+static void		UnloadFile(Tcl_LoadHandle handle);
 
 /*
  *----------------------------------------------------------------------
@@ -100,8 +100,9 @@ TclpDlopen(
     }
 
     if (handle == NULL) {
-	Tcl_AppendResult(interp, "couldn't load file \"", fileName, "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't load file \"%s\": %s",
+		fileName, Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
     newHandle = ckalloc(sizeof(*newHandle));
@@ -136,7 +137,7 @@ FindSymbol(
 {
     Tcl_DString newName;
     Tcl_PackageInitProc *proc = NULL;
-    shl_t handle = (shl_t)(loadHandle->clientData);
+    shl_t handle = (shl_t) loadHandle->clientData;
 
     /*
      * Some versions of the HP system software still use "_" at the beginning
@@ -155,9 +156,9 @@ FindSymbol(
 	Tcl_DStringFree(&newName);
     }
     if (proc == NULL && interp != NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "cannot find symbol\"", symbol, "\": ",
-		Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot find symbol \"%s\": %s",
+		symbol, Tcl_PosixError(interp)));
     }
     return proc;
 }
@@ -186,9 +187,8 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    shl_t handle;
+    shl_t handle = (shl_t) loadHandle->clientData;
 
-    handle = (shl_t) (loadHandle -> clientData);
     shl_unload(handle);
     ckfree(loadHandle);
 }
