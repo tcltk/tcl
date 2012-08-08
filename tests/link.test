@@ -16,6 +16,9 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testlink [llength [info commands testlink]]
 
 foreach i {int real bool string} {

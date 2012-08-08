@@ -17,13 +17,10 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 testConstraint reg 0
 if {[testConstraint win]} {
-    catch {
-	# Is the registry extension already static to this shell?
-	if [catch {load {} Registry; set ::reglib {}}] {
-	    # try the location given to use on the commandline to tcltest
+    if {![catch {
 	    ::tcltest::loadTestedCommands
-	    load $::reglib Registry
-	}
+	    set ::regver [package require registry 1.3.0]
+	}]} {
 	testConstraint reg 1
     }
 }
@@ -34,6 +31,9 @@ testConstraint english [expr {
     && [string match "English*" [testlocale all ""]]
 }]
 
+test registry-1.0 {check if we are testing the right dll} {win reg} {
+    set ::regver
+} {1.3.0}
 test registry-1.1 {argument parsing for registry command} {win reg} {
     list [catch {registry} msg] $msg
 } {1 {wrong # args: should be "registry ?-32bit|-64bit? option ?arg ...?"}}
@@ -505,7 +505,7 @@ test registry-6.20 {GetValue: values with Unicode strings with embedded nulls} {
     registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } "foo ba r baz"
-test registry-6.21 {GetValue: very long value names and values} {pcOnly} {
+test registry-6.21 {GetValue: very long value names and values} {pcOnly reg} {
     registry set HKEY_CURRENT_USER\\TclFoobar [string repeat k 16383] [string repeat x 16383] multi_sz
     set result [registry get HKEY_CURRENT_USER\\TclFoobar [string repeat k 16383]]
     registry delete HKEY_CURRENT_USER\\TclFoobar
