@@ -1329,8 +1329,8 @@ TclOONewForwardInstanceMethod(
 	return NULL;
     }
     if (prefixLen < 1) {
-	Tcl_AppendResult(interp, "method forward prefix must be non-empty",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"method forward prefix must be non-empty", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", NULL);
 	return NULL;
     }
@@ -1371,8 +1371,8 @@ TclOONewForwardMethod(
 	return NULL;
     }
     if (prefixLen < 1) {
-	Tcl_AppendResult(interp, "method forward prefix must be non-empty",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"method forward prefix must be non-empty", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", NULL);
 	return NULL;
     }
