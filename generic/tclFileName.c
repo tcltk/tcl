@@ -411,25 +411,28 @@ TclpGetNativePathType(
 	     * Paths that begin with / are absolute.
 	     */
 
-#ifdef __QNX__
-	    /*
-	     * Check for QNX //<node id> prefix
-	     */
-	    if (*path && (pathLen > 3) && (path[0] == '/')
-		    && (path[1] == '/') && isdigit(UCHAR(path[2]))) {
-		path += 3;
-		while (isdigit(UCHAR(*path))) {
-		    path++;
-		}
-	    }
-#endif
 	    if (path[0] == '/') {
-#ifdef __CYGWIN__
+		++path;
+#if defined(__CYGWIN__) || defined(__QNX__)
 		/*
-		 * Check for Cygwin // network path prefix
+		 * Check for "//" network path prefix
 		 */
-		if (path[1] == '/') {
-		    path++;
+		if ((*path == '/') && path[1] && (path[1] != '/')) {
+		    path += 2;
+		    while (*path && *path != '/') {
+			++path;
+		    }
+#if defined(__CYGWIN__)
+		    /* UNC paths need to be followed by a share name */
+		    if (*path++ && (*path && *path != '/')) {
+			++path;
+			while (*path && *path != '/') {
+			    ++path;
+			}
+		    } else {
+			path = origPath + 1;
+		    }
+#endif
 		}
 #endif
 		if (driveNameLengthPtr != NULL) {
@@ -437,7 +440,7 @@ TclpGetNativePathType(
 		     * We need this addition in case the QNX or Cygwin code was used.
 		     */
 
-		    *driveNameLengthPtr = (1 + path - origPath);
+		    *driveNameLengthPtr = (path - origPath);
 		}
 	    } else {
 		type = TCL_PATH_RELATIVE;
@@ -640,41 +643,43 @@ SplitUnixPath(
     const char *path)		/* Pointer to string containing a path. */
 {
     int length;
-    const char *p, *elementStart;
+    const char *origPath = path, *elementStart;
     Tcl_Obj *result = Tcl_NewObj();
 
     /*
      * Deal with the root directory as a special case.
      */
 
-#ifdef __QNX__
-    /*
-     * Check for QNX //<node id> prefix
-     */
-
-    if ((path[0] == '/') && (path[1] == '/')
-	    && isdigit(UCHAR(path[2]))) { /* INTL: digit */
-	path += 3;
-	while (isdigit(UCHAR(*path))) { /* INTL: digit */
-	    path++;
-	}
-    }
-#endif
-
-    p = path;
-    if (*p == '/') {
-	Tcl_Obj *rootElt = Tcl_NewStringObj("/", 1);
-	p++;
-#ifdef __CYGWIN__
+    if (*path == '/') {
+	Tcl_Obj *rootElt;
+	++path;
+#if defined(__CYGWIN__) || defined(__QNX__)
 	/*
-	 * Check for Cygwin // network path prefix
+	 * Check for "//" network path prefix
 	 */
-	if (*p == '/') {
-	    Tcl_AppendToObj(rootElt, "/", 1);
-	    p++;
+	if ((*path == '/') && path[1] && (path[1] != '/')) {
+	    path += 2;
+	    while (*path && *path != '/') {
+		++path;
+	    }
+#if defined(__CYGWIN__)
+	    /* UNC paths need to be followed by a share name */
+	    if (*path++ && (*path && *path != '/')) {
+		++path;
+		while (*path && *path != '/') {
+		    ++path;
+		}
+	    } else {
+		path = origPath + 1;
+	    }
+#endif
 	}
 #endif
+	rootElt = Tcl_NewStringObj(origPath, path - origPath);
 	Tcl_ListObjAppendElement(NULL, result, rootElt);
+	while (*path == '/') {
+	    ++path;
+	}
     }
 
     /*
@@ -683,14 +688,14 @@ SplitUnixPath(
      */
 
     for (;;) {
-	elementStart = p;
-	while ((*p != '\0') && (*p != '/')) {
-	    p++;
+	elementStart = path;
+	while ((*path != '\0') && (*path != '/')) {
+	    path++;
 	}
-	length = p - elementStart;
+	length = path - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-	    if ((elementStart[0] == '~') && (elementStart != path)) {
+	    if ((elementStart[0] == '~') && (elementStart != origPath)) {
 		TclNewLiteralStringObj(nextElt, "./");
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
@@ -698,7 +703,7 @@ SplitUnixPath(
 	    }
 	    Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
-	if (*p++ == '\0') {
+	if (*path++ == '\0') {
 	    break;
 	}
     }
@@ -1774,6 +1779,7 @@ TclGlob(
 	    if (c != '\0') {
 		tail++;
 	    }
+	    Tcl_DStringFree(&buffer);
 	} else {
 	    tail = pattern;
 	}
