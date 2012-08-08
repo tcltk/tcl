@@ -35,12 +35,14 @@
 #include "tclInt.h"
 #include <sys/types.h>
 #include <loader.h>
-
-/* Static functions defined within this file */
 
-static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
-		       const char* symbol);
-static void UnloadFile(Tcl_LoadHandle handle);
+/*
+ * Static functions defined within this file.
+ */
+
+static void *		FindSymbol(Tcl_Interp *interp,
+			    Tcl_LoadHandle loadHandle, const char* symbol);
+static void		UnloadFile(Tcl_LoadHandle handle);
 
 /*
  *----------------------------------------------------------------------
@@ -105,7 +107,7 @@ TclpDlopen(
     if (lm == LDR_NULL_MODULE) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't load file \"%s\": %s",
-		fileName, Tcl_PosixError(interp));
+		fileName, Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
 
