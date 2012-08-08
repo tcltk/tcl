@@ -1,3 +1,8 @@
+2012-08-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclfileName.c: [Bug #1536227]: Cygwin network pathname
+	* tests/fileName.test:   support
+
 2012-08-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIOUtil.c:	[Bug 3554250] Overlooked one field of
