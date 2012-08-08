@@ -13,8 +13,8 @@
 /* Define to 1 if the system has the type `blkcnt_t'. */
 #undef HAVE_BLKCNT_T
 
-/* Do we have BSDgettimeofday()? */
-#undef HAVE_BSDGETTIMEOFDAY
+/* Defined when compiler supports casting to union type. */
+#undef HAVE_CAST_TO_UNION
 
 /* Define to 1 if you have the `chflags' function. */
 #undef HAVE_CHFLAGS
@@ -27,6 +27,9 @@
 
 /* Do we have access to Darwin CoreFoundation.framework? */
 #undef HAVE_COREFOUNDATION
+
+/* Is the cpuid instruction usable? */
+#undef HAVE_CPUID
 
 /* Define to 1 if you have the `freeaddrinfo' function. */
 #undef HAVE_FREEADDRINFO
@@ -271,6 +274,9 @@
 /* Default libtommath precision. */
 #undef MP_PREC
 
+/* Is no debugging enabled? */
+#undef NDEBUG
+
 /* Use compat implementation of getaddrinfo() and friends */
 #undef NEED_FAKE_RFC2553
 
@@ -360,9 +366,6 @@
 
 /* What encoding should be used for embedded configuration info? */
 #undef TCL_CFGVAL_ENCODING
-
-/* Is debugging enabled? */
-#undef NDEBUG
 
 /* Is this a 64-bit build? */
 #undef TCL_CFG_DO64BIT
