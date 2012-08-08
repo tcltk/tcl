@@ -5492,15 +5492,7 @@ TEBCresume(
 			opnd, i, O2S(listPtr)), Tcl_GetObjResult(interp));
 		goto gotError;
 	    }
-
-	    /* If the accumulator is the only variable then this list gets
-	     * just one iteration.  Otherwise we must keep going until the
-	     * list is exhausted by non-accumulator loop vars */
-	    j = ((i == 0) && (iterNum > 0) 
-		&& (infoPtr->collect == TCL_EACH_ACCUM));
-		/* j is 1 if the accumulator is present but does not consume
-		 * an element, or 0 otherwise (consuming or not-present). */
-	    if ((numVars > j) && (listLen > (iterNum * (numVars - j) + j))) {
+	    if (listLen > iterNum * numVars) {
 		continueLoop = 1;
 	    }
 	    listTmpIndex++;
@@ -5525,11 +5517,8 @@ TEBCresume(
 		listPtr = TclListObjCopy(NULL, listVarPtr->value.objPtr);
 		TclListObjGetElements(interp, listPtr, &listLen, &elements);
 
-		/* Don't modify the accumulator except on the first iteration */
-		j = ((i == 0) && (iterNum > 0) 
-			&& (infoPtr->collect == TCL_EACH_ACCUM));
-		valIndex = (iterNum * (numVars - j) + j);
-		for (;  j < numVars;  j++) {
+		valIndex = (iterNum * numVars);
+		for (j = 0;  j < numVars;  j++) {
 		    if (valIndex >= listLen) {
 			TclNewObj(valuePtr);
 		    } else {

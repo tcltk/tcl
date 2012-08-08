@@ -1911,9 +1911,9 @@ TclCompileForCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileForeachCmd, TclCompileForeachaCmd --
+ * TclCompileForeachCmd --
  *
- *	Procedure called to compile the "foreach" and "foreacha" commands.
+ *	Procedure called to compile the "foreach" command.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
@@ -1936,18 +1936,6 @@ TclCompileForeachCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
   return TclCompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr, 0);
-}
-
-int
-TclCompileForeachaCmd(
-    Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
-				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
-    CompileEnv *envPtr)		/* Holds resulting instructions. */
-{
-  return TclCompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr, 2);
 }
 
 /*
@@ -2136,7 +2124,6 @@ TclCompileEachloopCmd(
     infoPtr->numLists = numLists;
     infoPtr->firstValueTemp = firstValueTemp;
     infoPtr->loopCtTemp = loopCtTemp;
-    infoPtr->collect = collect;
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	ForeachVarList *varListPtr;
 
@@ -2150,9 +2137,6 @@ TclCompileEachloopCmd(
 
 	    varListPtr->varIndexes[j] = TclFindCompiledLocal(varName,
 		    nameChars, /*create*/ 1, envPtr);
-	    if ((collect == TCL_EACH_ACCUM) && ((loopIndex + j) == 0)) {
-		collectTemp = varListPtr->varIndexes[j];
-	    }
 	}
 	infoPtr->varLists[loopIndex] = varListPtr;
     }
@@ -2344,7 +2328,6 @@ DupForeachInfo(
     dupPtr->numLists = numLists;
     dupPtr->firstValueTemp = srcPtr->firstValueTemp;
     dupPtr->loopCtTemp = srcPtr->loopCtTemp;
-    dupPtr->collect = srcPtr->collect;
 
     for (i = 0;  i < numLists;  i++) {
 	srcListPtr = srcPtr->varLists[i];
@@ -2435,8 +2418,6 @@ PrintForeachInfo(
     }
     Tcl_AppendPrintfToObj(appendObj, "], loop=%%v%u",
 	    (unsigned) infoPtr->loopCtTemp);
-    Tcl_AppendPrintfToObj(appendObj, "], collect=%%v%u",
-	    (unsigned) infoPtr->collect);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
 	    Tcl_AppendToObj(appendObj, ",", -1);
