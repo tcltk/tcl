@@ -807,7 +807,6 @@ typedef struct ForeachInfo {
 				 * the loop's iteration count. Used to
 				 * determine next value list element to assign
 				 * each loop var. */
-    int collect;		/* Selected collecting or accumulating mode. */
     ForeachVarList *varLists[1];/* An array of pointers to ForeachVarList
 				 * structures describing each var list. The
 				 * actual size of this field will be large
