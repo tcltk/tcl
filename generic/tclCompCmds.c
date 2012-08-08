@@ -1943,7 +1943,7 @@ TclCompileForeachCmd(
  *
  * TclCompileEachloopCmd --
  *
- *	Procedure called to compile the "foreach" and "mapeach" commands.
+ *	Procedure called to compile the "foreach" and "lmap" commands.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
@@ -3832,23 +3832,23 @@ TclCompileLsetCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileMapeachCmd --
+ * TclCompileLmapCmd --
  *
- *	Procedure called to compile the "mapeach" command.
+ *	Procedure called to compile the "lmap" command.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  *	evaluation to runtime.
  *
  * Side effects:
- *	Instructions are added to envPtr to execute the "mapeach" command at
+ *	Instructions are added to envPtr to execute the "lmap" command at
  *	runtime.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclCompileMapeachCmd(
+TclCompileLmapCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
