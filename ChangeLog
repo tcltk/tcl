@@ -1,3 +1,7 @@
+2012-08-09  Reinhard Max  <max@suse.de>
+
+	* tests/http.test: Fix http-3.29 for machines without IPv6 support.
+
 2010-08-08  Stuart Cassoff  <stwo@users.sourceforge.net>
 
 	* unix/tclUnixCompat.c: Change one '#ifdef' to '#if defined()' for
