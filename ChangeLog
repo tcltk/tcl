@@ -1,3 +1,18 @@
+2010-08-08  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/tclUnixCompat.c: Change one '#ifdef' to '#if defined()' for
+	improved consistency within the file.
+
+2012-08-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclfileName.c: [Bug #1536227]: Cygwin network pathname
+	* tests/fileName.test:   support
+
+2012-08-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIOUtil.c:	[Bug 3554250] Overlooked one field of
+	cleanup in the thread exit handler for the filesystem subsystem.
+
 2012-07-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInterp.c (Tcl_GetInterpPath):
@@ -948,7 +963,7 @@
 
 2011-11-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h: [Bug 2935503]: Windows: [file mtime] sets wrong
+	* win/tclWinPort.h: [Bug 3354324]: Windows: [file mtime] sets wrong
 	* win/tclWinFile.c: time (VS2005+ only).
 	* generic/tclTest.c:
 
