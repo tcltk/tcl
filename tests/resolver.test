@@ -15,6 +15,9 @@ if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testinterpresolver [llength [info commands testinterpresolver]]
 
 test resolver-1.1 {cmdNameObj sharing vs. cmd resolver: namespace import} -setup {
