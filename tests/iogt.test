@@ -14,6 +14,10 @@ if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
     return
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 namespace eval ::tcl::test::iogt {
     namespace import ::tcltest::*
 
