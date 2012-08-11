@@ -16,6 +16,9 @@ package require tcltest 2
 namespace import -force ::tcltest::*
 testConstraint memory [llength [info commands memory]]
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 #
 # REMARK: the tests for 'namespace upvar' are not done here. They are to be
 # found in the file 'upvar.test'.

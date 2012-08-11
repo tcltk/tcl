@@ -940,8 +940,9 @@ TclpOpenFileChannel(
 	}
 	TclWinConvertError(err);
 	if (interp != (Tcl_Interp *) NULL) {
-	    Tcl_AppendResult(interp, "couldn't open \"", TclGetString(pathPtr),
-		    "\": ", Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't open \"%s\": %s",
+		    TclGetString(pathPtr), Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
@@ -959,9 +960,9 @@ TclpOpenFileChannel(
 	if (handle == INVALID_HANDLE_VALUE) {
 	    TclWinConvertError(GetLastError());
 	    if (interp != (Tcl_Interp *) NULL) {
-		Tcl_AppendResult(interp, "couldn't reopen serial \"",
-			TclGetString(pathPtr), "\": ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't reopen serial \"%s\": %s",
+			TclGetString(pathPtr), Tcl_PosixError(interp)));
 	    }
 	    return NULL;
 	}
@@ -995,8 +996,9 @@ TclpOpenFileChannel(
 	 */
 
 	channel = NULL;
-	Tcl_AppendResult(interp, "couldn't open \"", TclGetString(pathPtr),
-		"\": bad file type", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't open \"%s\": bad file type",
+		TclGetString(pathPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE",
 		NULL);
 	break;

@@ -219,7 +219,7 @@ if test "$tcl_cv_intrinsics" = "yes"; then
             [Defined when the compilers supports intrinsics])
 fi
 
-# See if the <wspiapi.h> header file is present    
+# See if the <wspiapi.h> header file is present
 
 AC_CACHE_CHECK(for wspiapi.h,
     tcl_cv_wspiapi_h,
