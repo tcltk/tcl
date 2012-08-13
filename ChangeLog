@@ -1,3 +1,8 @@
+2010-08-13  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/tclUnixCompat.c: [Bug 3555454] Rearrange a bit
+	to quash 'declared but never defined' compiler warnings. 
+
 2012-08-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* compat/zlib/win64/zlib1.dll:   Add 64-bit build of zlib1.dll, and use it
