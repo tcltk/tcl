@@ -6,9 +6,9 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
+#
 # Copyright (c) 2001-2003 David Gravereaux.
-# Copyright (c) 2003-2007 Patrick Thoyts
+# Copyright (c) 2003-2008 Patrick Thoyts
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -217,7 +217,8 @@ TCL_THREADS	= 0
 DEBUG		= 0
 SYMBOLS		= 0
 PROFILE		= 0
-MSVCRT		= 0
+PGO		= 0
+MSVCRT		= 1
 LOIMPACT	= 0
 TCL_USE_STATIC_PACKAGES	= 0
 USE_THREAD_ALLOC = 0
@@ -233,9 +234,13 @@ STATIC_BUILD	= 0
 !message *** Doing msvcrt
 MSVCRT		= 1
 !else
+!if !$(STATIC_BUILD)
+MSVCRT		= 1
+!else
 MSVCRT		= 0
 !endif
-!if [nmakehlp -f $(OPTS) "staticpkg"]
+!endif
+!if [nmakehlp -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
 !message *** Doing staticpkg
 TCL_USE_STATIC_PACKAGES	= 1
 !else
@@ -244,8 +249,10 @@ TCL_USE_STATIC_PACKAGES	= 0
 !if [nmakehlp -f $(OPTS) "threads"]
 !message *** Doing threads
 TCL_THREADS	= 1
+USE_THREAD_ALLOC = 1
 !else
 TCL_THREADS	= 0
+USE_THREAD_ALLOC = 0
 !endif
 !if [nmakehlp -f $(OPTS) "symbols"]
 !message *** Doing symbols
@@ -265,6 +272,15 @@ PROFILE		= 1
 !else
 PROFILE		= 0
 !endif
+!if [nmakehlp -f $(OPTS) "pgi"]
+!message *** Doing profile guided optimization instrumentation
+PGO		= 1
+!elseif [nmakehlp -f $(OPTS) "pgo"]
+!message *** Doing profile guided optimization
+PGO		= 2
+!else
+PGO		= 0
+!endif
 !if [nmakehlp -f $(OPTS) "loimpact"]
 !message *** Doing loimpact
 LOIMPACT	= 1
@@ -274,7 +290,9 @@ LOIMPACT	= 0
 !if [nmakehlp -f $(OPTS) "thrdalloc"]
 !message *** Doing thrdalloc
 USE_THREAD_ALLOC = 1
-!else
+!endif
+!if [nmakehlp -f $(OPTS) "tclalloc"]
+!message *** Doing tclalloc
 USE_THREAD_ALLOC = 0
 !endif
 !if [nmakehlp -f $(OPTS) "unchecked"]
@@ -284,15 +302,6 @@ UNCHECKED = 1
 UNCHECKED = 0
 !endif
 !endif
-
-
-!if !$(STATIC_BUILD)
-# Make sure we don't build overly fat DLLs.
-MSVCRT		= 1
-# We shouldn't statically put the extensions inside the shell when dynamic.
-TCL_USE_STATIC_PACKAGES = 0
-!endif
-
 
 #----------------------------------------------------------
 # Figure-out how to name our intermediate and output directories.
@@ -335,10 +344,8 @@ TMP_DIRFULL = .\$(BUILDDIRTOP)\$(PROJECT)_ThreadedDynamicStaticX
 TMP_DIRFULL = $(TMP_DIRFULL:Static=)
 SUFX	    = $(SUFX:s=)
 EXT	    = dll
-!if $(MSVCRT)
 TMP_DIRFULL = $(TMP_DIRFULL:X=)
 SUFX	    = $(SUFX:x=)
-!endif
 !else
 TMP_DIRFULL = $(TMP_DIRFULL:Dynamic=)
 EXT	    = lib
@@ -414,6 +421,24 @@ WARNINGS		    = -W3
 !if [nmakehlp -f $(CHECKS) "64bit"] && [nmakehlp -c -Wp64]
 !message *** Doing 64bit portability warnings
 WARNINGS		    = $(WARNINGS) -Wp64
+!endif
+!endif
+
+!if $(PGO) > 1
+!if [nmakehlp -l -ltcg:pgoptimize]
+LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pgoptimize
+!else
+MSG=^
+This compiler does not support profile guided optimization.
+!error $(MSG)
+!endif
+!elseif $(PGO) > 0
+!if [nmakehlp -l -ltcg:pginstrument]
+LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pginstrument
+!else
+MSG=^
+This compiler does not support profile guided optimization.
+!error $(MSG)
 !endif
 !endif
 
@@ -551,12 +576,6 @@ Failed to find tcl.h.  The TCLDIR macro does not appear correct.
 !if "$(PROJECT)" != "tcl"
 
 TCL_VERSION	= $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
-
-!if $(TCL_VERSION) < 81
-TCL_DOES_STUBS	= 0
-!else
-TCL_DOES_STUBS	= 1
-!endif
 
 !if $(TCLINSTALL)
 TCLSH		= "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe"
