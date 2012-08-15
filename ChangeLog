@@ -1,3 +1,8 @@
+2012-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/buildall.vc.bat: Only build the threaded builds by default
+	* win/rules.vc:        Some code cleanup
+
 2010-08-13  Stuart Cassoff  <stwo@users.sourceforge.net>
 
 	* unix/tclUnixCompat.c: [Bug 3555454] Rearrange a bit
