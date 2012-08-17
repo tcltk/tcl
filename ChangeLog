@@ -1,3 +1,8 @@
+2012-08-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/nmakehlp.c: Add "-V<num>" option, in order to be able
+	to detect partial version numbers.
+
 2012-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/buildall.vc.bat: Only build the threaded builds by default
