@@ -47,7 +47,7 @@ static int CheckForLinkerFeature(const char *option);
 static int IsIn(const char *string, const char *substring);
 static int SubstituteFile(const char *substs, const char *filename);
 static int QualifyPath(const char *path);
-static const char *GetVersionFromFile(const char *filename, const char *match);
+static const char *GetVersionFromFile(const char *filename, const char *match, int numdots);
 static DWORD WINAPI ReadFromPipe(LPVOID args);
 
 /* globals */
@@ -153,7 +153,7 @@ main(
 		    &dwWritten, NULL);
 		return 0;
 	    }
-	    printf("%s\n", GetVersionFromFile(argv[2], argv[3]));
+	    printf("%s\n", GetVersionFromFile(argv[2], argv[3], *(argv[1]+2) - '0'));
 	    return 0;
 	case 'Q':
 	    if (argc != 3) {
@@ -479,7 +479,8 @@ IsIn(
 static const char *
 GetVersionFromFile(
     const char *filename,
-    const char *match)
+    const char *match,
+    int numdots)
 {
     size_t cbBuffer = 100;
     static char szBuffer[100];
@@ -509,7 +510,8 @@ GetVersionFromFile(
 		 */
 
 		q = p;
-		while (*q && (isalnum(*q) || *q == '.')) {
+		while (*q && (strchr("0123456789.ab", *q)) && ((!strchr(".ab", *q)
+			    && (!strchr("ab", q[-1])) || --numdots))) {
 		    ++q;
 		}
 
