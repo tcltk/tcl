@@ -457,7 +457,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 
 #define getservbyname	TclWinGetServByName
 #define getsockopt	TclWinGetSockOpt
-#define ntohs		TclWinNToHS
 #define setsockopt	TclWinSetSockOpt
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
