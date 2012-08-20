@@ -1831,7 +1831,7 @@ Tcl_FSGetNormalizedPath(
 	 */
 
 	Tcl_Obj *dir, *copy;
-	int cwdLen, pathType;
+	int tailLen, cwdLen, pathType;
 
 	pathType = Tcl_FSGetPathType(fsPathPtr->cwdPtr);
 	dir = Tcl_FSGetNormalizedPath(interp, fsPathPtr->cwdPtr);
@@ -1843,7 +1843,12 @@ Tcl_FSGetNormalizedPath(
 	    UpdateStringOfFsPath(pathPtr);
 	}
 
-	copy = AppendPath(dir, fsPathPtr->normPathPtr);
+	Tcl_GetStringFromObj(fsPathPtr->normPathPtr, &tailLen);
+	if (tailLen) {
+	    copy = AppendPath(dir, fsPathPtr->normPathPtr);
+	} else {
+	    copy = Tcl_DuplicateObj(dir);
+	}
 	Tcl_IncrRefCount(dir);
 	Tcl_IncrRefCount(copy);
 
