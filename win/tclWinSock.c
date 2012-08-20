@@ -163,7 +163,7 @@ struct SocketInfo {
  * socket event occurs.
  */
 
-typedef struct SocketEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     SOCKET socket;		/* Socket descriptor that is ready. Used to
@@ -191,7 +191,7 @@ typedef struct SocketEvent {
 #define SOCKET_PENDING		(1<<3)	/* A message has been sent for this
 					 * socket */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     HWND hwnd;			/* Handle to window for socket messages. */
     HANDLE socketThread;	/* Thread handling the window */
     Tcl_ThreadId threadId;	/* Parent thread. */

@@ -47,7 +47,7 @@ static int		TestobjCmd(ClientData dummy, Tcl_Interp *interp,
 static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 
-typedef struct TestString {
+typedef struct {
     int numChars;
     int allocated;
     int maxChars;

@@ -45,7 +45,7 @@
  * registered with Tcl_CreateMathFunc
  */
 
-typedef struct OldMathFuncData {
+typedef struct {
     Tcl_MathProc *proc;		/* Handler function */
     int numArgs;		/* Number of args expected */
     Tcl_ValueType *argTypes;	/* Types of the args */
