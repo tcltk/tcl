@@ -80,7 +80,7 @@ typedef enum {
 				 * to a catch PC offset. */
 } ExceptionRangeType;
 
-typedef struct ExceptionRange {
+typedef struct {
     ExceptionRangeType type;	/* The kind of ExceptionRange. */
     int nestingLevel;		/* Static depth of the exception range. Used
 				 * to find the most deeply-nested range
@@ -107,7 +107,7 @@ typedef struct ExceptionRange {
  * source offset is not monotonic.
  */
 
-typedef struct CmdLocation {
+typedef struct {
     int codeOffset;		/* Offset of first byte of command code. */
     int numCodeBytes;		/* Number of bytes for command's code. */
     int srcOffset;		/* Offset of first char of the command. */
@@ -125,7 +125,7 @@ typedef struct CmdLocation {
  * frame and associated information, like the path of a sourced file.
  */
 
-typedef struct ECL {
+typedef struct {
     int srcOffset;		/* Command location to find the entry. */
     int nline;			/* Number of words in the command */
     int *line;			/* Line information for all words in the
@@ -135,7 +135,7 @@ typedef struct ECL {
 				 * lines. */
 } ECL;
 
-typedef struct ExtCmdLoc {
+typedef struct {
     int type;			/* Context type. */
     int start;			/* Starting line for compiled script. Needed
 				 * for the extended recompile check in

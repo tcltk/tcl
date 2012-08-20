@@ -34,7 +34,7 @@ static const char procCommand[] = "proc";
  * procs
  */
 
-typedef struct CmdTable {
+typedef struct {
     const char *cmdName;		/* command name */
     Tcl_ObjCmdProc *proc;	/* command proc */
     int exportIt;		/* if 1, export the command */

@@ -35,7 +35,7 @@ static void		SetupAppendBuffer(Interp *iPtr, int newSpace);
  * then back up to the result or the error that was previously in progress.
  */
 
-typedef struct InterpState {
+typedef struct {
     int status;			/* return code status */
     int flags;			/* Each remaining field saves the */
     int returnLevel;		/* corresponding field of the Interp */
