@@ -88,7 +88,7 @@ string is sent.  Combining \fB-binary\fR with the result of
 \fBencoding convertto\fR may be used to send data in arbitrary encodings.
 .VE 8.6
 .TP
-\fBdde poke ?\fB\-binary\fR? \fIservice topic item data\fR
+\fBdde poke\fR ?\fB\-binary\fR? \fIservice topic item data\fR
 .
 \fBdde poke\fR passes the \fIdata\fR to the server indicated by
 \fIservice\fR using the \fItopic\fR and \fIitem\fR specified.  Typically,

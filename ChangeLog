@@ -1,3 +1,43 @@
+2012-08-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h:  Remove wrapper macro for ntohs(): unnecessary,
+	because it doesn't require an initialized winsock_2 library. See:
+	<http://msdn.microsoft.com/en-us/library/windows/desktop/ms740075%28v=vs.85%29.aspx>
+	* win/tclWinSock.c
+	* generic/tclStubInit.c
+
+2012-08-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/nmakehlp.c: Add "-V<num>" option, in order to be able
+	to detect partial version numbers.
+
+2012-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/buildall.vc.bat: Only build the threaded builds by default
+	* win/rules.vc:        Some code cleanup
+
+2010-08-13  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/tclUnixCompat.c: [Bug 3555454] Rearrange a bit
+	to quash 'declared but never defined' compiler warnings. 
+
+2012-08-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/zlib/win64/zlib1.dll:   Add 64-bit build of zlib1.dll, and use it
+	* compat/zlib/win64/zdll.lib:    for the dynamic mingw-w64 build.
+	* win/Makefile.in
+	* win/configure.in
+	* win/configure
+
+2012-08-09  Reinhard Max  <max@suse.de>
+
+	* tests/http.test: Fix http-3.29 for machines without IPv6 support.
+
+2010-08-08  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/tclUnixCompat.c: Change one '#ifdef' to '#if defined()' for
+	improved consistency within the file.
+
 2012-08-08  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclfileName.c: [Bug #1536227]: Cygwin network pathname
@@ -43,6 +83,21 @@
 
 	* win/tclWinPipe.c: [Bug 3547994]: Abandon the synchronous Windows
 	pipe driver to its fate when needed to honour TIP#398.
+
+2012-07-24  Trevor Davel  <twylite@crypt.co.za>
+
+	* win/tclWinSock.c: [Bug: 3545363]: Loop over multiple underlying file
+	descriptors for a socket where required (TcpCloseProc, SocketProc).
+	Refactor socket/descriptor setup to manage linked list operations in
+	one place. Fix memory leak in socket close (TcpCloseProc) and related
+	dangling pointers in SocketEventProc.
+
+2012-07-19  Reinhard Max  <max@suse.de>
+
+	* win/tclWinSock.c (TcpAccept): [Bug: 3545363]: Use a large enough
+	buffer for accept()ing IPv6 connections. Fix conversion of host and
+	port for passing to the accept proc to be independent of the IP
+	version.
 
 2012-07-23  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
