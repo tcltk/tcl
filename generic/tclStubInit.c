@@ -53,6 +53,8 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
+#define TclWinNToHS ntohs
+
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
@@ -87,12 +89,6 @@ void *TclWinGetTclInstance()
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
 	    (const char *)&winTCharEncoding, &hInstance);
     return hInstance;
-}
-
-unsigned short
-TclWinNToHS(unsigned short ns)
-{
-    return ntohs(ns);
 }
 
 int
