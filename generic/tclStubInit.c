@@ -74,6 +74,7 @@ MODULE_SCOPE TclIntPlatStubs tclIntPlatStubs;
 MODULE_SCOPE TclPlatStubs tclPlatStubs;
 MODULE_SCOPE TclStubs tclStubs;
 MODULE_SCOPE TclTomMathStubs tclTomMathStubs;
+#define TclWinNToHS ntohs
 
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
@@ -110,12 +111,6 @@ void *TclWinGetTclInstance()
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
 	    (const char *)&winTCharEncoding, &hInstance);
     return hInstance;
-}
-
-unsigned short
-TclWinNToHS(unsigned short ns)
-{
-    return ntohs(ns);
 }
 
 int
