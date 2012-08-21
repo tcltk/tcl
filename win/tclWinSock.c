@@ -72,7 +72,6 @@
 
 #undef getservbyname
 #undef getsockopt
-#undef ntohs
 #undef setsockopt
 
 /*
@@ -2734,23 +2733,6 @@ TclWinSetSockOpt(
     }
 
     return setsockopt(s, level, optname, optval, optlen);
-}
-
-unsigned short
-TclWinNToHS(
-    unsigned short netshort)
-{
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	return (unsigned short) -1;
-    }
-
-    return ntohs(netshort);
 }
 
 char *

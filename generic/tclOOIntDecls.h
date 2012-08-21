@@ -90,7 +90,7 @@ TCLOOAPI void		TclOOClassSetMixins(Tcl_Interp *interp,
 
 typedef struct TclOOIntStubs {
     int magic;
-    const struct TclOOIntStubHooks *hooks;
+    void *hooks;
 
     Tcl_Object (*tclOOGetDefineCmdContext) (Tcl_Interp *interp); /* 0 */
     Tcl_Method (*tclOOMakeProcInstanceMethod) (Tcl_Interp *interp, Object *oPtr, int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType *typePtr, ClientData clientData, Proc **procPtrPtr); /* 1 */
