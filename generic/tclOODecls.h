@@ -100,13 +100,13 @@ TCLOOAPI void		Tcl_ClassSetDestructor(Tcl_Interp *interp,
 TCLOOAPI Tcl_Obj *	Tcl_GetObjectName(Tcl_Interp *interp,
 				Tcl_Object object);
 
-typedef struct TclOOStubHooks {
+typedef struct {
     const struct TclOOIntStubs *tclOOIntStubs;
 } TclOOStubHooks;
 
 typedef struct TclOOStubs {
     int magic;
-    const struct TclOOStubHooks *hooks;
+    const TclOOStubHooks *hooks;
 
     Tcl_Object (*tcl_CopyObjectInstance) (Tcl_Interp *interp, Tcl_Object sourceObject, const char *targetName, const char *targetNamespaceName); /* 0 */
     Tcl_Object (*tcl_GetClassAsObject) (Tcl_Class clazz); /* 1 */

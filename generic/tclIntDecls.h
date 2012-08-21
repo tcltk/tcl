@@ -604,7 +604,7 @@ EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 
 typedef struct TclIntStubs {
     int magic;
-    const struct TclIntStubHooks *hooks;
+    void *hooks;
 
     void (*reserved0)(void);
     void (*reserved1)(void);

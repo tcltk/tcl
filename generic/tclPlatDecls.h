@@ -69,7 +69,7 @@ EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
 
 typedef struct TclPlatStubs {
     int magic;
-    const struct TclPlatStubHooks *hooks;
+    void *hooks;
 
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     TCHAR * (*tcl_WinUtfToTChar) (const char *str, int len, Tcl_DString *dsPtr); /* 0 */
