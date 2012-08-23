@@ -53,7 +53,13 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
-#define TclWinNToHS ntohs
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define TclWinNToHS winNToHS
+static unsigned short TclWinNToHS(unsigned short ns) {
+	return ntohs(ns);
+}
+#endif
 
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
