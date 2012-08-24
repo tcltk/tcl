@@ -76,6 +76,7 @@ MODULE_SCOPE TclStubs tclStubs;
 MODULE_SCOPE TclTomMathStubs tclTomMathStubs;
 
 #if defined(_WIN32) || defined(__CYGWIN__)
+#undef TclWinNToHS
 unsigned short TclWinNToHS(unsigned short ns) {
 	return ntohs(ns);
 }
