@@ -1,3 +1,8 @@
+2012-08-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/msgs/uk.msg: [Bug 3561330]: Use the correct full name of
+	March in Ukrainian. Thanks to Mikhail Teterin for reporting.
+
 2012-08-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclBinary.c: [Bug 3496014] Unecessary memset() in
