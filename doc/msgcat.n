@@ -13,7 +13,7 @@ msgcat \- Tcl message catalog
 .SH SYNOPSIS
 \fBpackage require Tcl 8.5\fR
 .sp
-\fBpackage require msgcat 1.4.5\fR
+\fBpackage require msgcat 1.5.0\fR
 .sp
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
 .sp
@@ -28,6 +28,12 @@ msgcat \- Tcl message catalog
 \fB::msgcat::mcset \fIlocale src-string \fR?\fItranslate-string\fR?
 .sp
 \fB::msgcat::mcmset \fIlocale src-trans-list\fR
+.sp
+.VS "TIP 404"
+\fB::msgcat::mcflset \fIsrc-string \fR?\fItranslate-string\fR?
+.sp
+\fB::msgcat::mcflmset \fIsrc-trans-list\fR
+.VE "TIP 404"
 .sp
 \fB::msgcat::mcunknown \fIlocale src-string\fR
 .BE
@@ -130,6 +136,26 @@ the form {\fIsrc-string translate-string\fR ?\fIsrc-string
 translate-string ...\fR?} \fB::msgcat::mcmset\fR can be significantly
 faster than multiple invocations of \fB::msgcat::mcset\fR. The function
 returns the number of translations set.
+.TP
+\fB::msgcat::mcflset \fIsrc-string \fR?\fItranslate-string\fR?
+.VS "TIP 404"
+Sets the translation for \fIsrc-string\fR to \fItranslate-string\fR in the the
+current namespace for the locale implied by the name of the message catalog
+being loaded via \fB::msgcat::mcload\fR.  If \fItranslate-string\fR is not
+specified, \fIsrc-string\fR is used for both.  The function returns
+\fItranslate-string\fR.
+.VE "TIP 404"
+.TP
+\fB::msgcat::mcflmset \fIsrc-trans-list\fR
+.VS "TIP 404"
+Sets the translation for multiple source strings in \fIsrc-trans-list\fR in
+the current namespace for the locale implied by the name of the message
+catalog being loaded via \fB::msgcat::mcload\fR. \fIsrc-trans-list\fR must
+have an even number of elements and is in the form {\fIsrc-string
+translate-string\fR ?\fIsrc-string translate-string ...\fR?}
+\fB::msgcat::mcmset\fR can be significantly faster than multiple invocations
+of \fB::msgcat::mcset\fR. The function returns the number of translations set.
+.VE "TIP 404"
 .TP
 \fB::msgcat::mcunknown \fIlocale src-string\fR
 .
