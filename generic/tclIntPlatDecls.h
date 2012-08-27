@@ -525,7 +525,10 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclWinConvertWSAError
 #define TclWinConvertWSAError TclWinConvertError
 
-#if !defined(__WIN32__) && !defined(__CYGWIN__)
+#if defined(__WIN32__) || defined(__CYGWIN__)
+#   undef TclWinNToHS
+#   define TclWinNToHS ntohs
+#else
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
 #endif
