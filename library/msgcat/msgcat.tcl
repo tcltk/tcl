@@ -13,17 +13,23 @@
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.4.5
+package provide msgcat 1.5.0
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
-	    mcunknown
+	    mcunknown mcflset mcflmset
 
     # Records the current locale as passed to mclocale
     variable Locale ""
 
     # Records the list of locales to search
     variable Loclist {}
+
+    # Records the locale of the currently sourced message catalogue file; this
+    # would be problematic if anyone were to recursively load a message
+    # catalog for a different locale from inside a catalog, but that's not a
+    # case that we really need to worry about.
+    variable FileLocale
 
     # Records the mapping between source strings and translated strings.  The
     # dict key is of the form "<locale> <namespace> <src>", where locale and
@@ -277,6 +283,7 @@ proc msgcat::mcpreferences {} {
 #	Returns the number of message catalogs that were loaded.
 
 proc msgcat::mcload {langdir} {
+    variable FileLocale
     set x 0
     foreach p [mcpreferences] {
 	if { $p eq {} } {
@@ -285,7 +292,12 @@ proc msgcat::mcload {langdir} {
 	set langfile [file join $langdir $p.msg]
 	if {[file exists $langfile]} {
 	    incr x
+	    set FileLocale [string tolower [file tail [file rootname $langfile]]]
+	    if {"root" eq $FileLocale} {
+		set FileLocale ""
+	    }
 	    uplevel 1 [list ::source -encoding utf-8 $langfile]
+	    unset FileLocale
 	}
     }
     return $x
@@ -318,6 +330,35 @@ proc msgcat::mcset {locale src {dest ""}} {
     return $dest
 }
 
+# msgcat::mcflset --
+#
+#	Set the translation for a given string in the current file locale.
+#
+# Arguments:
+#	src		The source string.
+#	dest		(Optional) The translated string.  If omitted,
+#			the source string is used.
+#
+# Results:
+#	Returns the new locale.
+
+proc msgcat::mcflset {src {dest ""}} {
+    variable FileLocale
+    variable Msgs
+
+    if {![info exists FileLocale]} {
+	return -code error \
+	    "must only be used inside a message catalog loaded with ::msgcat::mcload"
+    }
+    if {[llength [info level 0]] == 2} { ;# dest not specified
+	set dest $src
+    }
+
+    set ns [uplevel 1 [list ::namespace current]]
+    dict set Msgs $FileLocale $ns $src $dest
+    return $dest
+}
+
 # msgcat::mcmset --
 #
 #	Set the translation for multiple strings in a specified locale.
@@ -345,7 +386,38 @@ proc msgcat::mcmset {locale pairs } {
 	dict set Msgs $locale $ns $src $dest
     }
 
-    return $length
+    return [expr {$length / 2}]
+}
+
+# msgcat::mcflmset --
+#
+#	Set the translation for multiple strings in the mc file locale.
+#
+# Arguments:
+#	pairs		One or more src/dest pairs (must be even length)
+#
+# Results:
+#	Returns the number of pairs processed
+
+proc msgcat::mcflmset {pairs} {
+    variable FileLocale
+    variable Msgs
+
+    if {![info exists FileLocale]} {
+	return -code error \
+	    "must only be used inside a message catalog loaded with ::msgcat::mcload"
+    }
+    set length [llength $pairs]
+    if {$length % 2} {
+	return -code error "bad translation list:\
+		should be \"[lindex [info level 0] 0] locale {src dest ...}\""
+    }
+
+    set ns [uplevel 1 [list ::namespace current]]
+    foreach {src dest} $pairs {
+	dict set Msgs $FileLocale $ns $src $dest
+    }
+    return [expr {$length / 2}]
 }
 
 # msgcat::mcunknown --
