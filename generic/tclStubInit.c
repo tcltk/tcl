@@ -82,6 +82,15 @@ unsigned short TclWinNToHS(unsigned short ns) {
 }
 #endif
 
+#define Tcl_GetErrorLine getErrorLine
+int Tcl_GetErrorLine(Tcl_Interp *interp) {
+	return interp->errorLine;
+}
+#define Tcl_SetErrorLine setErrorLine
+void Tcl_SetErrorLine(Tcl_Interp *interp, int errorline) {
+	interp->errorLine = errorline;
+}
+
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
@@ -1254,6 +1263,33 @@ TclStubs tclStubs = {
     Tcl_AppendFormatToObj, /* 577 */
     Tcl_ObjPrintf, /* 578 */
     Tcl_AppendPrintfToObj, /* 579 */
+    NULL, /* 580 */
+    NULL, /* 581 */
+    NULL, /* 582 */
+    NULL, /* 583 */
+    NULL, /* 584 */
+    NULL, /* 585 */
+    NULL, /* 586 */
+    NULL, /* 587 */
+    NULL, /* 588 */
+    NULL, /* 589 */
+    NULL, /* 590 */
+    NULL, /* 591 */
+    NULL, /* 592 */
+    NULL, /* 593 */
+    NULL, /* 594 */
+    NULL, /* 595 */
+    NULL, /* 596 */
+    NULL, /* 597 */
+    NULL, /* 598 */
+    NULL, /* 599 */
+    NULL, /* 600 */
+    NULL, /* 601 */
+    NULL, /* 602 */
+    NULL, /* 603 */
+    NULL, /* 604 */
+    Tcl_GetErrorLine, /* 605 */
+    Tcl_SetErrorLine, /* 606 */
 };
 
 /* !END!: Do not edit above this line. */

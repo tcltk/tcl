@@ -2109,6 +2109,14 @@ declare 579 {
     void Tcl_AppendPrintfToObj(Tcl_Obj *objPtr, const char *format, ...)
 }
 
+# (Exposed starting with 8.6)
+declare 605 {
+    int Tcl_GetErrorLine(Tcl_Interp *interp)
+}
+declare 606 {
+    void Tcl_SetErrorLine(Tcl_Interp *interp, int lineNum)
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
