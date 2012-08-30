@@ -8023,8 +8023,6 @@ like "nano()" instead of parsing as "nan o()" with missing op (duquette,porter)
 2012-02-02 (bug fix)[2974459,2879351,1951574,1852572,1661378,1613456] Fix
 problems where [file *able] would return false results on Win/Samba (porter)
 
-2012-02-02 (update)[3464401] Support Unicode 6.1 (nijtmans)
-
 2012-02-06 (bug fix)[3484621] bump bytecode epoch on exec traces (kuhn,sofer)
 
 2012-02-15 (bug fix)[3487626] crash compiling [dict for] (fellows)
@@ -8105,6 +8103,14 @@ and Tcl_FSMountsChanged(). (porter)
 
 2012-07-25 (bug fix)[3546275] [auto_execok] search match [exec] (danckaert)
 
+2012-07-27 (update)[3464401] Support Unicode 6.2 (nijtmans)
+
+2012-08-20 (bug fix)[3559678] [file normalize] EIAS failure (phao,dgp)
+
+2012-08-25 (bug fix)[3561330] Ukranian translation of "March" (teterin)
+
 Many revisions to better support a Cygwin environment (nijtmans)
+
+Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
 --- Released 8.6b3, July 30, 2012 --- See ChangeLog for details ---
