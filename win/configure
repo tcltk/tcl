@@ -4344,7 +4344,7 @@ esac
 #	as we just assume that the platform hasn't got a usable z.lib
 #------------------------------------------------------------------------
 
-if test "$do64bit" = "yes"; then
+if test "$do64bit" = "yes" && test "$GCC" != "yes"; then
 
   tcl_ok=no
 
@@ -4368,7 +4368,17 @@ if test "$tcl_ok" = "yes"; then
 
   ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
 
-  ZLIB_LIBS=\${ZLIB_DIR}/win32/zdll.lib
+  if test "$do64bit" = "yes"; then
+
+    ZLIB_LIBS=\${ZLIB_DIR}/win64/zdll.lib
+
+
+else
+
+    ZLIB_LIBS=\${ZLIB_DIR}/win32/zdll.lib
+
+
+fi
 
 
 else

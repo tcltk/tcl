@@ -197,7 +197,8 @@ Tcl_CaseObjCmd(
 
 	if (i == caseObjc-1) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "extra case pattern with no body", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "extra case pattern with no body", -1));
 	    return TCL_ERROR;
 	}
 
@@ -412,8 +413,9 @@ Tcl_CdObjCmd(
     } else {
 	result = Tcl_FSChdir(dir);
 	if (result != TCL_OK) {
-	    Tcl_AppendResult(interp, "couldn't change working directory to \"",
-		    TclGetString(dir), "\": ", Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't change working directory to \"%s\": %s",
+		    TclGetString(dir), Tcl_PosixError(interp)));
 	    result = TCL_ERROR;
 	}
     }
@@ -645,8 +647,9 @@ EncodingDirsObjCmd(
 
     dirListObj = objv[2];
     if (Tcl_SetEncodingSearchPath(dirListObj) == TCL_ERROR) {
-	Tcl_AppendResult(interp, "expected directory list but got \"",
-		TclGetString(dirListObj), "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"expected directory list but got \"%s\"",
+		TclGetString(dirListObj)));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
 		NULL);
 	return TCL_ERROR;
@@ -1168,9 +1171,9 @@ FileAttrAccessTimeCmd(
 	tval.modtime = buf.st_mtime;
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
-	    Tcl_AppendResult(interp, "could not set access time for file \"",
-		    TclGetString(objv[1]), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set access time for file \"%s\": %s",
+		    TclGetString(objv[1]), Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 
@@ -1240,9 +1243,9 @@ FileAttrModifyTimeCmd(
 	tval.modtime = newTime;
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
-	    Tcl_AppendResult(interp, "could not set modification time for "
-		    "file \"", TclGetString(objv[1]), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set modification time for file \"%s\": %s",
+		    TclGetString(objv[1]), Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 
@@ -1845,7 +1848,7 @@ PathFilesystemCmd(
     }
     fsInfo = Tcl_FSFileSystemInfo(objv[1]);
     if (fsInfo == NULL) {
-	Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		Tcl_GetString(objv[1]), NULL);
 	return TCL_ERROR;
@@ -1993,8 +1996,9 @@ PathSplitCmd(
     }
     res = Tcl_FSSplitPath(objv[1], NULL);
     if (res == NULL) {
-	Tcl_AppendResult(interp, "could not read \"", TclGetString(objv[1]),
-		"\": no such file or directory", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"could not read \"%s\": no such file or directory",
+		TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH",
 		NULL);
 	return TCL_ERROR;
@@ -2095,7 +2099,8 @@ FilesystemSeparatorCmd(
 	Tcl_Obj *separatorObj = Tcl_FSPathSeparator(objv[1]);
 
 	if (separatorObj == NULL) {
-	    Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unrecognised path", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		    Tcl_GetString(objv[1]), NULL);
 	    return TCL_ERROR;
@@ -2214,9 +2219,9 @@ GetStatBuf(
 
     if (status < 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(pathPtr), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(pathPtr), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -2685,7 +2690,8 @@ TclNREachloopCmd(
 	TclListObjGetElements(NULL, statePtr->vCopyList[i],
 		&statePtr->varcList[i], &statePtr->varvList[i]);
 	if (statePtr->varcList[i] < 1) {
-	    Tcl_AppendResult(interp, "foreach varlist is empty", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "foreach varlist is empty", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FOREACH",
 		    "NEEDVARS", NULL);
 	    result = TCL_ERROR;
