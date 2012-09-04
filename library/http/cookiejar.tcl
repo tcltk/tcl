@@ -78,6 +78,7 @@ namespace eval ::http {
     }
 
     method InitDomainList {} {
+	variable ::http::CookiejarDomainList
 	db eval {
 	    CREATE TABLE IF NOT EXISTS forbidden (
 		domain TEXT PRIMARY KEY);
@@ -86,7 +87,8 @@ namespace eval ::http {
 	    CREATE TABLE IF NOT EXISTS permitted (
 		domain TEXT PRIMARY KEY);
 	}
-	set tok [http::geturl $::http::CookiejarDomainList]
+	http::Log "Loading domain list from $CookiejarDomainList"
+	set tok [http::geturl $CookiejarDomainList]
 	try {
 	    if {[http::ncode $tok] == 200} {
 		foreach line [split [http::data $tok] \n] {
@@ -96,19 +98,19 @@ namespace eval ::http {
 			set line [string range $line 1 end]
 			db eval {
 			    INSERT INTO permitted (domain)
-				VALUES (:line)
+				VALUES ($line)
 			}
 		    } else {
 			if {[string match {\*.*} $line]} {
 			    set line [string range $line 2 end]
 			    db eval {
 				INSERT INTO forbiddenSuper (domain)
-				    VALUES (:line)
+				    VALUES ($line)
 			    }
 			}
 			db eval {
 			    INSERT INTO forbidden (domain)
-				VALUES (:line)
+				VALUES ($line)
 			}
 		    }
 		}
@@ -125,32 +127,44 @@ namespace eval ::http {
 	db close
     }
 
+    method GetCookiesForHostAndPath {result host path} {
+	upvar 1 $result result
+	db eval {
+	    SELECT key, value FROM cookies
+	    WHERE domain = $host AND path = $path
+	} cookie {
+	    dict set result $cookie(key) $cookie(value)
+	}
+	db eval {
+	    SELECT key, value FROM sessionCookies
+	    WHERE domain = $host AND path = $path
+	} cookie {
+	    dict set result $cookie(key) $cookie(value)
+	}
+    }
     method getCookies {proto host port path} {
 	upvar 1 state state
 	set result {}
-	## TODO: How to handle prefix matches?
-# From kbk
-#LENGTH(theColumn) <= LENGTH(:queryStr) AND SUBSTR(theColumn, LENGTH(:queryStr)-LENGTH(theColumn)+1) = :queryStr
 	db transaction {
-	    db eval {
-		SELECT key, value FROM cookies WHERE domain = :host
-	    } cookie {
-		dict set result $key $value
-	    }
-	    db eval {
-		SELECT key, value FROM sessionCookies WHERE domain = :host
-	    } cookie {
-		dict set result $key $value
-	    }
-	    db eval {
-		SELECT key, value FROM cookies WHERE origin = :host
-	    } cookie {
-		dict set result $key $value
-	    }
-	    db eval {
-		SELECT key, value FROM sessionCookies WHERE origin = :host
-	    } cookie {
-		dict set result $key $value
+	    # Open question: how to move these manipulations into the
+	    # database engine (if that's where they *should* be)
+	    # Suggestion from kbk
+	    #LENGTH(theColumn) <= LENGTH(:queryStr) AND SUBSTR(theColumn, LENGTH(:queryStr) LENGTH(theColumn)+1) = :queryStr
+	    set pathbits [split [string trimleft $path "/"] "/"]
+	    set hostbits [split $host "."]
+	    if {[regexp {[^0-9.]} $host]} {
+		for {set i [llength $hostbits]} {[incr i -1] >= 0} {} {
+		    set domain [join [lrange $hostbits $i end] "."]
+		    for {set j -1} {$j < [llength $pathbits]} {incr j} {
+			set p /[join [lrange $pathbits 0 $j] "/"]
+			my GetCookiesForHostAndPath result $domain $p
+		    }
+		}
+	    } else {
+		for {set j -1} {$j < [llength $pathbits]} {incr j} {
+		    set p /[join [lrange $pathbits 0 $j] "/"]
+		    my GetCookiesForHostAndPath result $host $p
+		}
 	    }
 	}
 	return $result
@@ -162,15 +176,16 @@ namespace eval ::http {
 	}
 	set domain [dict get $options domain]
 	db eval {
-	    SELECT domain FROM permitted WHERE domain == :domain
+	    SELECT domain FROM permitted WHERE domain == $domain
 	} x {return 0}
 	db eval {
-	    SELECT domain FROM forbidden WHERE domain == :domain
+	    SELECT domain FROM forbidden WHERE domain == $domain
 	} x {return 1}
-	if {![regexp {^[^.]+\.(.+)$} $domain -> super]} {return 1}
-	db eval {
-	    SELECT domain FROM forbiddenSuper WHERE domain == :domain
-	} x {return 1}
+	if {[regexp {^[^.]+\.(.+)$} $domain -> super]} {
+	    db eval {
+		SELECT domain FROM forbiddenSuper WHERE domain == $super
+	    } x {return 1}
+	}
 	return 0
     }
 
@@ -188,16 +203,16 @@ namespace eval ::http {
 		db eval {
 		    INSERT OR REPLACE sessionCookies (
 			origin, domain, key, value)
-		    VALUES (:origin, :domain, :key, :value)
+		    VALUES ($origin, $domain, $key, $value)
 		}
 	    } elseif {$expires < $now} {
 		db eval {
 		    DELETE FROM cookies
-		    WHERE domain = :domain AND key = :name AND path = :path
+		    WHERE domain = $domain AND key = $name AND path = $path
 		}
 		db eval {
 		    DELETE FROM sessionCookies
-		    WHERE domain = :domain AND key = :name AND path = :path
+		    WHERE domain = $domain AND key = $name AND path = $path
 		}
 	    } else {
 		### FIXME
