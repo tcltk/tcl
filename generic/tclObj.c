@@ -4462,11 +4462,8 @@ Tcl_RepresentationCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    char refcountBuffer[TCL_INTEGER_SPACE+1];
-    char objPtrBuffer[TCL_INTEGER_SPACE+3];
-    char internalRepBuffer[2*(TCL_INTEGER_SPACE+2)+2];
-#define TCLOBJ_TRUNCATE_STRINGREP 16
-    char stringRepBuffer[TCLOBJ_TRUNCATE_STRINGREP+1];
+    char ptrBuffer[2*TCL_INTEGER_SPACE+6];
+    Tcl_Obj *descObj;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
@@ -4479,27 +4476,30 @@ Tcl_RepresentationCmd(
      * "1872361827361287"
      */
 
-    sprintf(refcountBuffer, "%d", objv[1]->refCount);
-    sprintf(objPtrBuffer, "%p", (void *)objv[1]);
-    Tcl_AppendResult(interp, "value is a ", objv[1]->typePtr ?
-	    objv[1]->typePtr->name : "pure string", " with a refcount of ",
-	    refcountBuffer, ", object pointer at ", objPtrBuffer, NULL);
+    sprintf(ptrBuffer, "%p", (void *) objv[1]);
+    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %d,"
+            " object pointer at %s",
+            objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
+	    objv[1]->refCount, ptrBuffer);
+
     if (objv[1]->typePtr) {
-	sprintf(internalRepBuffer, "%p:%p",
-		(void *)objv[1]->internalRep.twoPtrValue.ptr1,
-		(void *)objv[1]->internalRep.twoPtrValue.ptr2);
-	Tcl_AppendResult(interp, ", internal representation ",
-		internalRepBuffer, NULL);
+	sprintf(ptrBuffer, "%p:%p",
+		(void *) objv[1]->internalRep.twoPtrValue.ptr1,
+		(void *) objv[1]->internalRep.twoPtrValue.ptr2);
+	Tcl_AppendPrintfToObj(descObj, ", internal representation %s",
+		ptrBuffer);
     }
+
     if (objv[1]->bytes) {
-	strncpy(stringRepBuffer, objv[1]->bytes, TCLOBJ_TRUNCATE_STRINGREP);
-	stringRepBuffer[TCLOBJ_TRUNCATE_STRINGREP] = 0;
-	Tcl_AppendResult(interp, ", string representation \"",
-		stringRepBuffer, objv[1]->length > TCLOBJ_TRUNCATE_STRINGREP ?
-		"\"..." : "\".", NULL);
+        Tcl_AppendToObj(descObj, ", string representation \"", -1);
+	Tcl_AppendLimitedToObj(descObj, objv[1]->bytes, objv[1]->length,
+                16, "...");
+	Tcl_AppendToObj(descObj, "\"", -1);
     } else {
-	Tcl_AppendResult(interp, ", no string representation.", NULL);
+	Tcl_AppendToObj(descObj, ", no string representation", -1);
     }
+
+    Tcl_SetObjResult(interp, descObj);
     return TCL_OK;
 }
 

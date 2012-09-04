@@ -1030,8 +1030,9 @@ TclpCreateProcess(
     }
     if (startInfo.hStdInput == INVALID_HANDLE_VALUE) {
 	TclWinConvertError(GetLastError());
-	Tcl_AppendResult(interp, "couldn't duplicate input handle: ",
-		Tcl_PosixError(interp), (char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't duplicate input handle: %s",
+		Tcl_PosixError(interp)));
 	goto end;
     }
 
@@ -1065,8 +1066,9 @@ TclpCreateProcess(
     }
     if (startInfo.hStdOutput == INVALID_HANDLE_VALUE) {
 	TclWinConvertError(GetLastError());
-	Tcl_AppendResult(interp, "couldn't duplicate output handle: ",
-		Tcl_PosixError(interp), (char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't duplicate output handle: %s",
+		Tcl_PosixError(interp)));
 	goto end;
     }
 
@@ -1084,8 +1086,9 @@ TclpCreateProcess(
     }
     if (startInfo.hStdError == INVALID_HANDLE_VALUE) {
 	TclWinConvertError(GetLastError());
-	Tcl_AppendResult(interp, "couldn't duplicate error handle: ",
-		Tcl_PosixError(interp), (char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't duplicate error handle: %s",
+		Tcl_PosixError(interp)));
 	goto end;
     }
 
@@ -1129,9 +1132,9 @@ TclpCreateProcess(
 	}
 
 	if (applType == APPL_DOS) {
-	    Tcl_AppendResult(interp,
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "DOS application process not supported on this platform",
-		    (char *) NULL);
+		    -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "DOS_APP",
 		    NULL);
 	    goto end;
@@ -1158,12 +1161,12 @@ TclpCreateProcess(
 
     BuildCommandLine(execPath, argc, argv, &cmdLine);
 
-    if (CreateProcess(NULL,
-	    (TCHAR *) Tcl_DStringValue(&cmdLine), NULL, NULL, TRUE,
-	    (DWORD) createFlags, NULL, NULL, &startInfo, &procInfo) == 0) {
+    if (CreateProcess(NULL, (TCHAR *) Tcl_DStringValue(&cmdLine),
+	    NULL, NULL, TRUE, (DWORD) createFlags, NULL, NULL, &startInfo,
+	    &procInfo) == 0) {
 	TclWinConvertError(GetLastError());
-	Tcl_AppendResult(interp, "couldn't execute \"", argv[0],
-		"\": ", Tcl_PosixError(interp), (char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't execute \"%s\": %s",
+		argv[0], Tcl_PosixError(interp)));
 	goto end;
     }
 
@@ -1409,8 +1412,8 @@ ApplicationType(
 
     if (applType == APPL_NONE) {
 	TclWinConvertError(GetLastError());
-	Tcl_AppendResult(interp, "couldn't execute \"", originalName,
-		"\": ", Tcl_PosixError(interp), (char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't execute \"%s\": %s",
+		originalName, Tcl_PosixError(interp)));
 	return APPL_NONE;
     }
 
@@ -1673,8 +1676,8 @@ Tcl_CreatePipe(
 
     if (!CreatePipe(&readHandle, &writeHandle, &sec, 0)) {
 	TclWinConvertError(GetLastError());
-	Tcl_AppendResult(interp, "pipe creation failed: ",
-		Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"pipe creation failed: %s", Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
 
@@ -1711,8 +1714,8 @@ TclGetAndDetachPids(
 {
     PipeInfo *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
+    Tcl_Obj *pidsObj;
     int i;
-    char buf[TCL_INTEGER_SPACE];
 
     /*
      * Punt if the channel is not a command channel.
@@ -1723,12 +1726,15 @@ TclGetAndDetachPids(
 	return;
     }
 
-    pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
+    pipePtr = Tcl_GetChannelInstanceData(chan);
+    TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
-	wsprintfA(buf, "%lu", TclpGetPid(pipePtr->pidPtr[i]));
-	Tcl_AppendElement(interp, buf);
-	Tcl_DetachPids(1, &(pipePtr->pidPtr[i]));
+	Tcl_ListObjAppendElement(NULL, pidsObj,
+		Tcl_NewWideIntObj((unsigned)
+			TclpGetPid(pipePtr->pidPtr[i])));
+	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
     }
+    Tcl_SetObjResult(interp, pidsObj);
     if (pipePtr->numPids > 0) {
 	ckfree(pipePtr->pidPtr);
 	pipePtr->numPids = 0;
@@ -2642,15 +2648,13 @@ Tcl_PidObjCmd(
     PipeInfo *pipePtr;
     int i;
     Tcl_Obj *resultPtr;
-    char buf[TCL_INTEGER_SPACE];
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	wsprintfA(buf, "%lu", (unsigned long) getpid());
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((unsigned) getpid()));
     } else {
 	chan = Tcl_GetChannel(interp, Tcl_GetStringFromObj(objv[1], NULL),
 		NULL);
@@ -2665,9 +2669,9 @@ Tcl_PidObjCmd(
 	pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
 	resultPtr = Tcl_NewObj();
 	for (i = 0; i < pipePtr->numPids; i++) {
-	    wsprintfA(buf, "%lu", TclpGetPid(pipePtr->pidPtr[i]));
 	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr,
-		    Tcl_NewStringObj(buf, -1));
+		    Tcl_NewWideIntObj((unsigned)
+			    TclpGetPid(pipePtr->pidPtr[i])));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
