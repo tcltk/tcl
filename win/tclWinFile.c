@@ -1048,10 +1048,9 @@ TclpMatchInDirectory(
 
 	    TclWinConvertError(err);
 	    if (interp != NULL) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't read directory \"",
-			Tcl_DStringValue(&dsOrig), "\": ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't read directory \"%s\": %s",
+			Tcl_DStringValue(&dsOrig), Tcl_PosixError(interp)));
 	    }
 	    Tcl_DStringFree(&dsOrig);
 	    return TCL_ERROR;
@@ -1866,8 +1865,9 @@ TclpGetCwd(
     if (GetCurrentDirectory(MAX_PATH, buffer) == 0) {
 	TclWinConvertError(GetLastError());
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "error getting working directory name: ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error getting working directory name: %s",
+		    Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
