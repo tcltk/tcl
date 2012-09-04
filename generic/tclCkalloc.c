@@ -170,11 +170,15 @@ TclInitDbCkalloc(void)
  */
 
 int
-TclDumpMemoryInfo(ClientData clientData, int flags)
+TclDumpMemoryInfo(
+    ClientData clientData,
+    int flags)
 {
     char buf[1024];
 
-    if (clientData == NULL) { return 0; }
+    if (clientData == NULL) {
+        return 0;
+    }
     sprintf(buf,
 	    "total mallocs             %10d\n"
 	    "total frees               %10d\n"
@@ -815,15 +819,16 @@ MemoryCmd(
     size_t len;
 
     if (argc < 2) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" option [args..]\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "wrong # args: should be \"%s option [args..]\"", argv[0]));
 	return TCL_ERROR;
     }
 
-    if ((strcmp(argv[1],"active") == 0) || (strcmp(argv[1],"display") == 0)) {
+    if (strcmp(argv[1], "active") == 0 || strcmp(argv[1], "display") == 0) {
 	if (argc != 3) {
-	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		    " ", argv[1], " file\"", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                    "wrong # args: should be \"%s %s file\"",
+                    argv[0], argv[1]));
 	    return TCL_ERROR;
 	}
 	fileName = Tcl_TranslateFileName(interp, argv[2], &buffer);
@@ -833,7 +838,8 @@ MemoryCmd(
 	result = Tcl_DumpActiveMemory(fileName);
 	Tcl_DStringFree(&buffer);
 	if (result != TCL_OK) {
-	    Tcl_AppendResult(interp, "error accessing ", argv[2], NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("error accessing %s: %s",
+                    argv[2], Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -857,17 +863,17 @@ MemoryCmd(
 		"maximum bytes allocated", (unsigned long)maximum_bytes_malloced));
 	return TCL_OK;
     }
-    if (strcmp(argv[1],"init") == 0) {
+    if (strcmp(argv[1], "init") == 0) {
 	if (argc != 3) {
 	    goto bad_suboption;
 	}
 	init_malloced_bodies = (strcmp(argv[2],"on") == 0);
 	return TCL_OK;
     }
-    if (strcmp(argv[1],"objs") == 0) {
+    if (strcmp(argv[1], "objs") == 0) {
 	if (argc != 3) {
-	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		    " objs file\"", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                    "wrong # args: should be \"%s objs file\"", argv[0]));
 	    return TCL_ERROR;
 	}
 	fileName = Tcl_TranslateFileName(interp, argv[2], &buffer);
@@ -876,7 +882,9 @@ MemoryCmd(
 	}
 	fileP = fopen(fileName, "w");
 	if (fileP == NULL) {
-	    Tcl_AppendResult(interp, "cannot open output file", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                    "cannot open output file: %s",
+                    Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 	TclDbDumpActiveObjects(fileP);
@@ -886,8 +894,8 @@ MemoryCmd(
     }
     if (strcmp(argv[1],"onexit") == 0) {
 	if (argc != 3) {
-	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		    " onexit file\"", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                    "wrong # args: should be \"%s onexit file\"", argv[0]));
 	    return TCL_ERROR;
 	}
 	fileName = Tcl_TranslateFileName(interp, argv[2], &buffer);
@@ -901,8 +909,8 @@ MemoryCmd(
     }
     if (strcmp(argv[1],"tag") == 0) {
 	if (argc != 3) {
-	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		    " tag string\"", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                    "wrong # args: should be \"%s tag string\"", argv[0]));
 	    return TCL_ERROR;
 	}
 	if ((curTagPtr != NULL) && (curTagPtr->refCount == 0)) {
@@ -939,19 +947,20 @@ MemoryCmd(
 	return TCL_OK;
     }
 
-    Tcl_AppendResult(interp, "bad option \"", argv[1],
-	    "\": should be active, break_on_malloc, info, init, objs, onexit, "
-	    "tag, trace, trace_on_at_malloc, or validate", NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+            "bad option \"%s\": should be active, break_on_malloc, info, "
+            "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
+            argv[1]));
     return TCL_ERROR;
 
   argError:
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-	    " ", argv[1], " count\"", NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+            "wrong # args: should be \"%s %s count\"", argv[0], argv[1]));
     return TCL_ERROR;
 
   bad_suboption:
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-	    " ", argv[1], " on|off\"", NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+            "wrong # args: should be \"%s %s on|off\"", argv[0], argv[1]));
     return TCL_ERROR;
 }
 
@@ -981,8 +990,8 @@ CheckmemCmd(
     const char *argv[])		/* String values of arguments. */
 {
     if (argc != 2) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" fileName\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "wrong # args: should be \"%s fileName\"", argv[0]));
 	return TCL_ERROR;
     }
     tclMemDumpFileName = dumpFile;
@@ -1250,7 +1259,9 @@ Tcl_ValidateAllMemory(
 }
 
 int
-TclDumpMemoryInfo(ClientData clientData, int flags)
+TclDumpMemoryInfo(
+    ClientData clientData,
+    int flags)
 {
     return 1;
 }

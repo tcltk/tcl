@@ -303,16 +303,14 @@ Tcl_SetByteArrayObj(
     TclFreeIntRep(objPtr);
     Tcl_InvalidateStringRep(objPtr);
 
-    length = (length < 0) ? 0 : length;
+    if (length < 0) {
+	length = 0;
+    }
     byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
-    if (length) {
-	if (bytes) {
-	    memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
-	} else {
-	    memset(byteArrayPtr->bytes, 0, (size_t) length);
-	}
+    if (length && bytes) {
+	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
     }
 
     objPtr->typePtr = &tclByteArrayType;
@@ -873,9 +871,9 @@ BinaryFormatCmd(
 		if (count == BINARY_ALL) {
 		    count = listc;
 		} else if (count > listc) {
-		    Tcl_AppendResult(interp,
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "number of elements in list does not match count",
-			    NULL);
+			    -1));
 		    return TCL_ERROR;
 		}
 	    }
@@ -884,9 +882,8 @@ BinaryFormatCmd(
 
 	case 'x':
 	    if (count == BINARY_ALL) {
-		Tcl_AppendResult(interp,
-			"cannot use \"*\" in format string with \"x\"",
-			NULL);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"cannot use \"*\" in format string with \"x\"", -1));
 		return TCL_ERROR;
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
@@ -1198,8 +1195,9 @@ BinaryFormatCmd(
 
  badValue:
     Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, "expected ", errorString,
-	" string but got \"", errorValue, "\" instead", NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "expected %s string but got \"%s\" instead",
+	    errorString, errorValue));
     return TCL_ERROR;
 
  badCount:
@@ -1217,12 +1215,13 @@ BinaryFormatCmd(
 
 	Tcl_UtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-	Tcl_AppendResult(interp, "bad field specifier \"", buf, "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad field specifier \"%s\"", buf));
 	return TCL_ERROR;
     }
 
  error:
-    Tcl_AppendResult(interp, errorString, NULL);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
     return TCL_ERROR;
 }
 
@@ -1586,12 +1585,13 @@ BinaryScanCmd(
 
 	Tcl_UtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-	Tcl_AppendResult(interp, "bad field specifier \"", buf, "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad field specifier \"%s\"", buf));
 	return TCL_ERROR;
     }
 
  error:
-    Tcl_AppendResult(interp, errorString, NULL);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
     return TCL_ERROR;
 }
 

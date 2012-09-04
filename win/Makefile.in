@@ -137,7 +137,7 @@ TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${LIBSUFFIX}
 ZLIB_DLL_FILE		= zlib1.dll
 
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
-STATIC_LIBRARIES	= $(TCL_LIB_FILE) $(REG_LIB_FILE) $(DDE_LIB_FILE)
+STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
 CAT32			= cat32$(EXEEXT)
@@ -434,9 +434,9 @@ ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@
 	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
 	@VC_MANIFEST_EMBED_DLL@
 
-${TCL_LIB_FILE}: ${TCL_OBJS}
+${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
-	@MAKE_LIB@ ${TCL_OBJS}
+	@MAKE_LIB@ ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
 
 # assume GNU make
@@ -445,39 +445,23 @@ ${TCL_LIB_FILE}: ${TCL_OBJS}
 # targets have to depend on tcl<x>.lib, this ensures that linking of tcl<x>.dll
 # does not execute concurrently with the renaming and recompiling of tcl<x>.lib
 
-${DDE_DLL_FILE}: ${DDE_OBJS} ${DDE_LIB_FILE} ${TCL_STUB_LIB_FILE}
-	@-$(RM) ${DDE_DLL_FILE} ${DDE_LIB_FILE}.sav
-	@-$(COPY) ${DDE_LIB_FILE} ${DDE_LIB_FILE}.sav
+${DDE_DLL_FILE}: ${DDE_OBJS} ${TCL_STUB_LIB_FILE}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	@-$(RM) ${DDE_LIB_FILE}
-	@-$(COPY) ${DDE_LIB_FILE}.sav ${DDE_LIB_FILE}
-	@-$(RM) ${DDE_LIB_FILE}.sav
 
-${DDE_LIB_FILE}: ${DDE_OBJS}
-	@$(RM) ${DDE_LIB_FILE}
-	@MAKE_LIB@ ${DDE_OBJS}
-	@POST_MAKE_LIB@
-
-${REG_DLL_FILE}: ${REG_OBJS} ${REG_LIB_FILE} ${TCL_STUB_LIB_FILE}
-	@-$(RM) ${REG_DLL_FILE} ${REG_LIB_FILE}.sav
-	@-$(COPY) ${REG_LIB_FILE} ${REG_LIB_FILE}.sav
+${REG_DLL_FILE}: ${REG_OBJS} ${TCL_STUB_LIB_FILE}
 	@MAKE_DLL@ ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	@-$(RM) ${REG_LIB_FILE}
-	@-$(COPY) ${REG_LIB_FILE}.sav ${REG_LIB_FILE}
-	@-$(RM) ${REG_LIB_FILE}.sav
-
-${REG_LIB_FILE}: ${REG_OBJS}
-	@$(RM) ${REG_LIB_FILE}
-	@MAKE_LIB@ ${REG_OBJS}
-	@POST_MAKE_LIB@
 
 ${TEST_DLL_FILE}: ${TCLTEST_OBJS} ${TCL_STUB_LIB_FILE}
 	@$(RM) ${TEST_DLL_FILE} ${TEST_LIB_FILE}
 	@MAKE_DLL@ ${TCLTEST_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
 # use pre-built zlib1.dll
-${ZLIB_DLL_FILE}: $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE}
-	@$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}
+${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
+	@if test "@ZLIB_LIBS@set" == "${ZLIB_DIR}/win64/zdll.libset" ; then \
+		$(COPY) $(ZLIB_DIR)/win64/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
+	else \
+		$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
+	fi;
 
 # Add the object extension to the implicit rules. By default .obj is not
 # automatically added.
