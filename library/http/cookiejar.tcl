@@ -9,13 +9,14 @@ namespace eval ::http {
 }
 
 ::oo::class create ::http::cookiejar {
-    variable aid
+    variable aid deletions
     constructor {{path ""}} {
 	if {$path eq ""} {
 	    sqlite3 [namespace current]::db :memory:
 	} else {
 	    sqlite3 [namespace current]::db $path
 	}
+	set deletions 0
 	## FIXME
 	## Model from Safari:
 	# * Creation instant
@@ -62,15 +63,21 @@ namespace eval ::http {
 		ON sessionCookies (origin, path, key)
 	}
 
+	db eval {
+	    SELECT COUNT(*) AS cookieCount FROM cookies
+	}
+	if {$cookieCount} {
+	    http::Log "loaded cookie store from $path with $cookieCount entries"
+	}
+
 	set aid [after 60000 [namespace current]::my PurgeCookies]
 
 	if {$path ne ""} {
 	    db transaction {
-		db eval {
-		    SELECT count(*) AS present FROM sqlite_master
+		if {![db exists {
+		    SELECT 1 FROM sqlite_master
 		    WHERE type='table' AND name='forbidden'
-		}
-		if {!$present} {
+		}]} then {
 		    my InitDomainList
 		}
 	    }
@@ -149,7 +156,7 @@ namespace eval ::http {
 	    # Open question: how to move these manipulations into the
 	    # database engine (if that's where they *should* be)
 	    # Suggestion from kbk
-	    #LENGTH(theColumn) <= LENGTH(:queryStr) AND SUBSTR(theColumn, LENGTH(:queryStr) LENGTH(theColumn)+1) = :queryStr
+	    #LENGTH(theColumn) <= LENGTH($queryStr) AND SUBSTR(theColumn, LENGTH($queryStr) LENGTH(theColumn)+1) = $queryStr
 	    set pathbits [split [string trimleft $path "/"] "/"]
 	    set hostbits [split $host "."]
 	    if {[regexp {[^0-9.]} $host]} {
@@ -174,21 +181,37 @@ namespace eval ::http {
 	if {![dict exists $options domain]} {
 	    return 0
 	}
-	set domain [dict get $options domain]
-	db eval {
-	    SELECT domain FROM permitted WHERE domain == $domain
-	} x {return 0}
-	db eval {
-	    SELECT domain FROM forbidden WHERE domain == $domain
-	} x {return 1}
+	dict with options {}
+	if {$domain ne $origin} {
+	    http::Log "cookie domain varies from origin ($domain, $origin)"
+	}
+	if {[db exists {
+	    SELECT 1 FROM permitted WHERE domain = $domain
+	}]} {return 0}
+	if {[db exists {
+	    SELECT 1 FROM forbidden WHERE domain = $domain
+	}]} {return 1}
 	if {[regexp {^[^.]+\.(.+)$} $domain -> super]} {
-	    db eval {
-		SELECT domain FROM forbiddenSuper WHERE domain == $super
-	    } x {return 1}
+	    if {[db exists {
+		SELECT 1 FROM forbiddenSuper WHERE domain = $super
+	    }]} {return 1}
 	}
 	return 0
     }
 
+    method DeleteCookie {domain path key} {
+	db eval {
+	    DELETE FROM cookies
+	    WHERE domain = $domain AND key = $name AND path = $path
+	}
+	incr deletions [db changes]
+	db eval {
+	    DELETE FROM sessionCookies
+	    WHERE domain = $domain AND key = $name AND path = $path
+	}
+	incr deletions [db changes]
+	http::Log "deleted cookies for $domain, $path, $path"
+    }
     method storeCookie {name val options} {
 	upvar 1 state state
 	set now [clock seconds]
@@ -201,26 +224,21 @@ namespace eval ::http {
 	    if {!$persistent} {
 		### FIXME
 		db eval {
-		    INSERT OR REPLACE sessionCookies (
-			origin, domain, key, value)
-		    VALUES ($origin, $domain, $key, $value)
+		    INSERT OR REPLACE INTO sessionCookies (
+			origin, domain, path, key, value)
+		    VALUES ($origin, $domain, $path, $key, $value)
 		}
+		http::Log "defined session cookie for $domain, $path, $key"
 	    } elseif {$expires < $now} {
-		db eval {
-		    DELETE FROM cookies
-		    WHERE domain = $domain AND key = $name AND path = $path
-		}
-		db eval {
-		    DELETE FROM sessionCookies
-		    WHERE domain = $domain AND key = $name AND path = $path
-		}
+		my DeleteCookie $domain $path $key
 	    } else {
 		### FIXME
 		db eval {
-		    INSERT OR REPLACE cookies (
-			origin, domain, key, value, expiry)
-		    VALUES (:origin, :domain, :key, :value, :expiry)
+		    INSERT OR REPLACE INTO cookies (
+			origin, domain, path, key, value, expiry)
+		    VALUES ($origin, $domain, $path, $key, $value, $expires)
 		}
+		http::Log "defined persistent cookie for $domain, $path, $key expires at [clock format $expires]"
 	    }
 	}
     }
@@ -228,7 +246,19 @@ namespace eval ::http {
     method PurgeCookies {} {
 	set aid [after 60000 [namespace current]::my PurgeCookies]
 	set now [clock seconds]
-	db eval {DELETE FROM cookies WHERE expiry < :now}
+	http::Log "purging cookies that expired before [clock format $now]"
+	db transaction {
+	    db eval {
+		DELETE FROM cookies WHERE expiry < $now
+	    }
+	    incr deletions [db changes]
+	    if {$deletions > 100} {
+		set deletions 0
+		db eval {
+		    VACUUM
+		}
+	    }
+	}
 	### TODO: Cap the total number of cookies and session cookies,
 	### purging least frequently used
     }

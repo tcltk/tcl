@@ -1192,8 +1192,9 @@ proc http::ParseCookie {token value} {
 
     # Convert the options into a list before feeding into the cookie store;
     # ugly, but quite easy.
-    set realopts {persistent 0 hostonly 1}
+    set realopts {persistent 0 hostonly 1 path /}
     dict set realopts origin $state(host)
+    dict set realopts domain $state(host)
     foreach opt [split [regsub -all {;\s+} $opts \u0000] \u0000] {
 	switch -glob -nocase -- $opt {
 	    Expires=* {
