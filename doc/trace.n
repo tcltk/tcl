@@ -138,7 +138,7 @@ error will occur.
 .PP
 For \fBleave\fR and \fBleavestep\fR operations:
 .CS
-\fIcommand command-string code result op\fR
+\fIcommandPrefix command-string code result op\fR
 .CE
 \fICommand-string\fR gives the complete current command being
 executed (the traced command for a \fBenter\fR operation, an
