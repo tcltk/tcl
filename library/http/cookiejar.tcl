@@ -1,4 +1,5 @@
 package require Tcl 8.6
+package require http 2.8.4
 package require sqlite3
 package provide cookiejar 0.1
 
@@ -66,7 +67,7 @@ namespace eval ::http {
 	db eval {
 	    SELECT COUNT(*) AS cookieCount FROM cookies
 	}
-	if {$cookieCount} {
+	if {[info exist cookieCount] && $cookieCount} {
 	    http::Log "loaded cookie store from $path with $cookieCount entries"
 	}
 
@@ -134,8 +135,8 @@ namespace eval ::http {
 	db close
     }
 
-    method GetCookiesForHostAndPath {result host path} {
-	upvar 1 $result result
+    method GetCookiesForHostAndPath {*result host path} {
+	upvar 1 ${*result} result
 	db eval {
 	    SELECT key, value FROM cookies
 	    WHERE domain = $host AND path = $path
