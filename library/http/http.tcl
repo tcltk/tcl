@@ -88,7 +88,7 @@ namespace eval http {
     }
 
     # Regular expression used to parse cookies
-    variable CookieRE {\s*([^][\u0000- ()<>@,;:\\""/?={}\u0100-\uffff]+)=([!\u0023-+\u002D-:<-\u005B\u005D-~]*)(?:\s*;\s*([^\u0000]+))?}
+    variable CookieRE {\s*([^][\u0000- ()<>@,;:\\""/?={}\u007f-\uffff]+)=([!\u0023-+\u002D-:<-\u005B\u005D-~]*)(?:\s*;\s*([^\u0000]+))?}
 
     namespace export geturl config reset wait formatQuery register unregister
     # Useful, but not exported: data size status code
@@ -732,11 +732,14 @@ proc http::geturl {url args} {
 	    seek $state(-querychannel) $start
 	}
 
+	# Note that we don't do Cookie2; that's much nastier and not normally
+	# observed in practice either. It also doesn't fix the multitude of
+	# bugs in the basic cookie spec.
 	if {$http(-cookiejar) ne ""} {
 	    set cookies ""
 	    set separator ""
 	    foreach {key value} [{*}$http(-cookiejar) \
-		    getCookies $proto $host $port $state(path)] {
+		    getCookies $proto $host $state(path)] {
 		append cookies $separator $key = $value
 		set separator "; "
 	    }
@@ -1192,7 +1195,7 @@ proc http::ParseCookie {token value} {
 
     # Convert the options into a list before feeding into the cookie store;
     # ugly, but quite easy.
-    set realopts {persistent 0 hostonly 1 path /}
+    set realopts {persistent 0 hostonly 1 path / secure 0}
     dict set realopts origin $state(host)
     dict set realopts domain $state(host)
     foreach opt [split [regsub -all {;\s+} $opts \u0000] \u0000] {
@@ -1211,6 +1214,9 @@ proc http::ParseCookie {token value} {
 			[clock scan $opt -format "%a, %d-%b-%Y %T %Z"]
 		    dict set realopts persistent 1
 		}] && [catch {
+		    # This is in the RFC, but it is also in the original
+		    # Netscape cookie spec, now online at:
+		    # <URL:http://curl.haxx.se/rfc/cookie_spec.html>
 		    #Sunday, 06-Nov-94 08:49:37 GMT
 		    dict set realopts expires \
 			[clock scan $opt -format "%A, %d-%b-%y %T %Z"]
@@ -1232,9 +1238,9 @@ proc http::ParseCookie {token value} {
 	    }
 	    Domain=* {
 		set opt [string trimleft [string range $opt 7 end] "."]
-		# TODO - Domain safety check!
 		if {$opt ne "" && ![string match *. $opt]} {
 		    dict set realopts domain $opt
+		    dict set realopts hostonly 0
 		}
 	    }
 	    Path=* {
