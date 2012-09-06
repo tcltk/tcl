@@ -4636,7 +4636,7 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
  *----------------------------------------------------------------
  */
 
-#define NRE_USE_SMALL_ALLOC	1  /* Only turn off for debugging purposes. */
+#define NRE_USE_SMALL_ALLOC	0  /* Only turn off for debugging purposes. */
 #define NRE_ENABLE_ASSERTS	1
 
 /*
