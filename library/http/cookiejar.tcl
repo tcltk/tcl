@@ -20,13 +20,14 @@ namespace eval ::http {
 		::http::Log [string toupper $level]:cookiejar($origin):${msg}
 	    }
 	}
-	method loglevel {level} {
+	method loglevel {{level "\u0000\u0000"}} {
 	    upvar 0 ::http::cookiejar_loglevel loglevel
 	    if {$level in {debug info warn error}} {
 		set loglevel $level
-	    } else {
+	    } elseif {$level ne "\u0000\u0000"} {
 		return -code error "unknown log level \"$level\": must be debug, info, warn, or error"
 	    }
+	    return $loglevel
 	}
     }
 
@@ -76,6 +77,14 @@ namespace eval ::http {
 	set aid [after 60000 [namespace current]::my PurgeCookies]
 
 	# TODO: domain list refresh policy
+	db eval {
+	    CREATE TABLE IF NOT EXISTS forbidden (
+		domain TEXT PRIMARY KEY);
+	    CREATE TABLE IF NOT EXISTS forbiddenSuper (
+		domain TEXT PRIMARY KEY);
+	    CREATE TABLE IF NOT EXISTS permitted (
+		domain TEXT PRIMARY KEY);
+	}
 	if {$path ne ""} {
 	    if {![db exists {
 		SELECT 1 FROM sqlite_master
@@ -91,14 +100,6 @@ namespace eval ::http {
     method InitDomainList {} {
 	# TODO: Handle IDNs (but Tcl overall gets that wrong at the moment...)
 	variable ::http::cookiejar_domainlist
-	db eval {
-	    CREATE TABLE IF NOT EXISTS forbidden (
-		domain TEXT PRIMARY KEY);
-	    CREATE TABLE IF NOT EXISTS forbiddenSuper (
-		domain TEXT PRIMARY KEY);
-	    CREATE TABLE IF NOT EXISTS permitted (
-		domain TEXT PRIMARY KEY);
-	}
 	log debug "loading domain list from $cookiejar_domainlist"
 	set tok [http::geturl $cookiejar_domainlist]
 	try {
@@ -150,8 +151,8 @@ namespace eval ::http {
 	}
     }
 
-    method GetCookiesForHostAndPath {*result secure host path fullhost} {
-	upvar 1 ${*result} result
+    method GetCookiesForHostAndPath {listVar secure host path fullhost} {
+	upvar 1 $listVar result
 	log debug "check for cookies for [my RenderLocation $secure $host $path]"
 	db eval {
 	    SELECT key, value FROM cookies
@@ -185,7 +186,6 @@ namespace eval ::http {
     }
 
     method getCookies {proto host path} {
-	upvar 1 state state
 	set result {}
 	set paths [my SplitPath $path]
 	set domains [my SplitDomain $host]
@@ -263,7 +263,6 @@ namespace eval ::http {
     }
 
     method storeCookie {name val options} {
-	upvar 1 state state
 	set now [clock seconds]
 	db transaction {
 	    if {[my BadDomain $options]} {
