@@ -17,7 +17,11 @@ namespace eval ::http {
 	    upvar 0 ::http::cookiejar_loglevel loglevel
 	    set map {debug 0 info 1 warn 2 error 3}
 	    if {[string map $map $level] >= [string map $map $loglevel]} {
-		::http::Log [string toupper $level]:cookiejar($origin):${msg}
+		set ms [clock milliseconds]
+		set ts [expr {$ms / 1000}]
+		set ms [format %03d [expr {$ms % 1000}]]
+		set t [clock format $ts -format "%Y%m%dT%H%M%S.${ms}Z" -gmt 1]
+		::http::Log ${t}:[string toupper $level]:cookiejar($origin):${msg}
 	    }
 	}
 	method loglevel {{level "\u0000\u0000"}} {
@@ -39,10 +43,11 @@ namespace eval ::http {
 	    sqlite3 [namespace current]::db $path
 	    db timeout 500
 	}
-	proc log {level msg} "::http::cookiejar log [list [self]] \$level \$msg"
+	proc log {level msg} \
+	    "::http::cookiejar log [list [self]] \$level \$msg"
 	set deletions 0
 	db eval {
-	    CREATE TABLE IF NOT EXISTS cookies (
+	    CREATE TABLE IF NOT EXISTS persistentCookies (
 		id INTEGER PRIMARY KEY,
 		secure INTEGER NOT NULL,
 		domain TEXT NOT NULL COLLATE NOCASE,
@@ -50,10 +55,14 @@ namespace eval ::http {
 		key TEXT NOT NULL,
 		value TEXT NOT NULL,
 		originonly INTEGER NOT NULL,
-		expiry INTEGER NOT NULL);
-	    CREATE UNIQUE INDEX IF NOT EXISTS cookieUnique
-		ON cookies (secure, domain, path, key)
+		expiry INTEGER NOT NULL,
+		creation INTEGER NOT NULL);
+	    CREATE UNIQUE INDEX IF NOT EXISTS persistentUnique
+	    ON persistentCookies (domain, path, key);
+	    CREATE INDEX IF NOT EXISTS persistentLookup
+	    ON persistentCookies (domain, path);
 	}
+	## TODO: Are there "TEMP INDEX"es?
 	db eval {
 	    CREATE TEMP TABLE sessionCookies (
 		id INTEGER PRIMARY KEY,
@@ -62,13 +71,17 @@ namespace eval ::http {
 		path TEXT NOT NULL,
 		key TEXT NOT NULL,
 		originonly INTEGER NOT NULL,
-		value TEXT NOT NULL);
+		value TEXT NOT NULL,
+		lastuse INTEGER NOT NULL,
+		creation INTEGER NOT NULL);
 	    CREATE UNIQUE INDEX sessionUnique
-		ON sessionCookies (secure, domain, path, key)
+	    ON sessionCookies (domain, path, key);
+	    CREATE INDEX sessionLookup ON sessionCookies (domain, path);
 	}
+	## TODO: Consider creating a view
 
 	db eval {
-	    SELECT COUNT(*) AS cookieCount FROM cookies
+	    SELECT COUNT(*) AS cookieCount FROM persistentCookies
 	}
 	if {[info exist cookieCount] && $cookieCount} {
 	    log info "loaded cookie store from $path with $cookieCount entries"
@@ -155,18 +168,23 @@ namespace eval ::http {
 	upvar 1 $listVar result
 	log debug "check for cookies for [my RenderLocation $secure $host $path]"
 	db eval {
-	    SELECT key, value FROM cookies
-	    WHERE secure <= $secure AND domain = $host AND path = $path
+	    SELECT key, value FROM persistentCookies
+	    WHERE domain = $host AND path = $path AND secure <= $secure
 	    AND (NOT originonly OR domain = $fullhost)
-	} cookie {
-	    lappend result $cookie(key) $cookie(value)
+	} {
+	    lappend result $key $value
 	}
+	set now [clock seconds]
 	db eval {
-	    SELECT key, value FROM sessionCookies
-	    WHERE secure <= $secure AND domain = $host AND path = $path
+	    SELECT id, key, value FROM sessionCookies
+	    WHERE domain = $host AND path = $path AND secure <= $secure
 	    AND (NOT originonly OR domain = $fullhost)
-	} cookie {
-	    lappend result $cookie(key) $cookie(value)
+	} {
+	    lappend result $key $value
+	    ## FIXME: check syntax!
+	    db eval {
+		UPDATE sessionCookies SET lastuse = $now WHERE id = $id
+	    }
 	}
     }
 
@@ -250,13 +268,15 @@ namespace eval ::http {
 
     method DeleteCookie {secure domain path key} {
 	db eval {
-	    DELETE FROM cookies
-	    WHERE secure <= $secure AND domain = $domain AND path = $path AND key = $key
+	    DELETE FROM persistentCookies
+	    WHERE domain = $domain AND path = $path AND key = $key
+	    AND secure <= $secure
 	}
 	set del [db changes]
 	db eval {
 	    DELETE FROM sessionCookies
-	    WHERE secure <= $secure AND domain = $domain AND path = $path AND key = $key
+	    WHERE domain = $domain AND path = $path AND key = $key
+	    AND secure <= $secure
 	}
 	incr deletions [incr del [db changes]]
 	log debug "deleted $del cookies for [my RenderLocation $secure $domain $path $key]"
@@ -268,14 +288,15 @@ namespace eval ::http {
 	    if {[my BadDomain $options]} {
 		return
 	    }
+	    set now [clock seconds]
 	    dict with options {}
 	    if {!$persistent} {
 		### FIXME
 		db eval {
 		    INSERT OR REPLACE INTO sessionCookies (
-			secure, domain, path, key, value, originonly)
-		    VALUES ($secure, $domain, $path, $key, $value, $hostonly);
-		    DELETE FROM cookies
+			secure, domain, path, key, value, originonly, creation)
+		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $now);
+		    DELETE FROM persistentCookies
 		    WHERE secure <= $secure AND domain = $domain AND path = $path AND key = $key
 		}
 		log debug "defined session cookie for [my RenderLocation $secure $domain $path $key]"
@@ -284,9 +305,9 @@ namespace eval ::http {
 	    } else {
 		### FIXME
 		db eval {
-		    INSERT OR REPLACE INTO cookies (
-			secure, domain, path, key, value, originonly, expiry)
-		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $expires);
+		    INSERT OR REPLACE INTO persistentCookies (
+			secure, domain, path, key, value, originonly, expiry, creation)
+		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $expires, $now);
 		    DELETE FROM sessionCookies
 		    WHERE secure <= $secure AND domain = $domain AND path = $path AND key = $key
 		}
@@ -301,7 +322,7 @@ namespace eval ::http {
 	log debug "purging cookies that expired before [clock format $now]"
 	db transaction {
 	    db eval {
-		DELETE FROM cookies WHERE expiry < $now
+		DELETE FROM persistentCookies WHERE expiry < $now
 	    }
 	    incr deletions [db changes]
 	    if {$deletions > 100} {
