@@ -139,7 +139,7 @@ returns the number of translations set.
 .TP
 \fB::msgcat::mcflset \fIsrc-string \fR?\fItranslate-string\fR?
 .VS "TIP 404"
-Sets the translation for \fIsrc-string\fR to \fItranslate-string\fR in the the
+Sets the translation for \fIsrc-string\fR to \fItranslate-string\fR in the
 current namespace for the locale implied by the name of the message catalog
 being loaded via \fB::msgcat::mcload\fR.  If \fItranslate-string\fR is not
 specified, \fIsrc-string\fR is used for both.  The function returns
@@ -153,8 +153,8 @@ the current namespace for the locale implied by the name of the message
 catalog being loaded via \fB::msgcat::mcload\fR. \fIsrc-trans-list\fR must
 have an even number of elements and is in the form {\fIsrc-string
 translate-string\fR ?\fIsrc-string translate-string ...\fR?}
-\fB::msgcat::mcmset\fR can be significantly faster than multiple invocations
-of \fB::msgcat::mcset\fR. The function returns the number of translations set.
+\fB::msgcat::mcflmset\fR can be significantly faster than multiple invocations
+of \fB::msgcat::mcflset\fR. The function returns the number of translations set.
 .VE "TIP 404"
 .TP
 \fB::msgcat::mcunknown \fIlocale src-string\fR
@@ -312,15 +312,15 @@ cause peculiar behavior, such as marking the message file as
 .QW hidden
 on Unix file systems.
 .IP [3]
-The file contains a series of calls to \fBmcset\fR and
-\fBmcmset\fR, setting the necessary translation strings
+The file contains a series of calls to \fBmcflset\fR and
+\fBmcflmset\fR, setting the necessary translation strings
 for the language, likely enclosed in a \fBnamespace eval\fR
 so that all source strings are tied to the namespace of
 the package. For example, a short \fBes.msg\fR might contain:
 .PP
 .CS
 namespace eval ::mypackage {
-    \fB::msgcat::mcset\fR es "Free Beer!" "Cerveza Gracias!"
+    \fB::msgcat::mcflset\fR "Free Beer!" "Cerveza Gracias!"
 }
 .CE
 .SH "RECOMMENDED MESSAGE SETUP FOR PACKAGES"
