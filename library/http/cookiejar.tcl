@@ -1,52 +1,97 @@
-package require Tcl 8.5
-package require TclOO
-package require http 2.7;#2.8.4
+# Cookie Jar package.
+
+# Dependencies
+package require Tcl 8.5;# FIXME: JUST DURING DEVELOPMENT
+package require TclOO;# FIXME: JUST DURING DEVELOPMENT
+package require http 2.7;# FIXME: JUST DURING DEVELOPMENT
+#package require Tcl 8.6
+#package require http 2.8.4
 package require sqlite3
 
+# Configuration for the cookiejar package 
 namespace eval ::http {
     # TODO: is this the _right_ list of domains to use?
     variable cookiejar_domainlist \
 	http://mxr.mozilla.org/mozilla-central/source/netwerk/dns/effective_tld_names.dat?raw=1
     variable cookiejar_version 0.1
     variable cookiejar_loglevel info
-}
+    variable cookiejar_vacuumtrigger 200
 
-::oo::class create ::http::cookiejar {
-    self {
-	method log {origin level msg} {
+    # This is the class that we are creating
+    ::oo::class create cookiejar
+
+    # Some support procedures, none particularly useful in general
+    namespace eval cookiejar_support {
+	namespace export *
+	proc locn {secure domain path {key ""}} {
+	    if {$key eq ""} {
+		format "%s://%s%s" [expr {$secure?"https":"http"}] $domain $path
+	    } else {
+		format "%s://%s%s?%s" \
+		    [expr {$secure?"https":"http"}] $domain $path $key
+	    }
+	}
+	proc splitDomain domain {
+	    set pieces [split $domain "."]
+	    for {set i [llength $pieces]} {[incr i -1] >= 0} {} {
+		lappend result [join [lrange $pieces $i end] "."]
+	    }
+	    return $result
+	}
+	proc splitPath path {
+	    set pieces [split [string trimleft $path "/"] "/"]
+	    for {set j -1} {$j < [llength $pieces]} {incr j} {
+		lappend result /[join [lrange $pieces 0 $j] "/"]
+	    }
+	    return $result
+	}
+	proc isoNow {} {
+	    set ms [clock milliseconds]
+	    set ts [expr {$ms / 1000}]
+	    set ms [format %03d [expr {$ms % 1000}]]
+	    clock format $ts -format "%Y%m%dT%H%M%S.${ms}Z" -gmt 1
+	}
+	proc log {level msg} {
 	    upvar 0 ::http::cookiejar_loglevel loglevel
+	    set who [uplevel 1 self]
 	    set map {debug 0 info 1 warn 2 error 3}
 	    if {[string map $map $level] >= [string map $map $loglevel]} {
-		set ms [clock milliseconds]
-		set ts [expr {$ms / 1000}]
-		set ms [format %03d [expr {$ms % 1000}]]
-		set t [clock format $ts -format "%Y%m%dT%H%M%S.${ms}Z" -gmt 1]
-		::http::Log ${t}:[string toupper $level]:cookiejar($origin):${msg}
+		::http::Log "[isoNow] [string toupper $level] cookiejar($who) - ${msg}"
 	    }
 	}
-	method loglevel {{level "\u0000\u0000"}} {
-	    upvar 0 ::http::cookiejar_loglevel loglevel
-	    if {$level in {debug info warn error}} {
-		set loglevel $level
-	    } elseif {$level ne "\u0000\u0000"} {
-		return -code error "unknown log level \"$level\": must be debug, info, warn, or error"
-	    }
-	    return $loglevel
+    }
+}
+
+# Now we have enough information to provide the package.
+package provide cookiejar $::http::cookiejar_version
+
+# The implementation of the cookiejar package
+::oo::define ::http::cookiejar {
+    self method loglevel {{level "\u0000\u0000"}} {
+	upvar 0 ::http::cookiejar_loglevel loglevel
+	if {$level in {debug info warn error}} {
+	    set loglevel $level
+	} elseif {$level ne "\u0000\u0000"} {
+	    return -code error "unknown log level \"$level\": must be debug, info, warn, or error"
 	}
+	return $loglevel
     }
 
     variable aid deletions
     constructor {{path ""}} {
+	namespace import ::http::cookiejar_support::*
+
 	if {$path eq ""} {
 	    sqlite3 [namespace current]::db :memory:
 	} else {
 	    sqlite3 [namespace current]::db $path
 	    db timeout 500
 	}
-	proc log {level msg} \
-	    "::http::cookiejar log [list [self]] \$level \$msg"
+
 	set deletions 0
 	db eval {
+	    --;# Store the persistent cookies in this table.
+	    --;# Deletion policy: once they expire, or if explicitly killed.
 	    CREATE TABLE IF NOT EXISTS persistentCookies (
 		id INTEGER PRIMARY KEY,
 		secure INTEGER NOT NULL,
@@ -58,12 +103,14 @@ namespace eval ::http {
 		expiry INTEGER NOT NULL,
 		creation INTEGER NOT NULL);
 	    CREATE UNIQUE INDEX IF NOT EXISTS persistentUnique
-	    ON persistentCookies (domain, path, key);
+		ON persistentCookies (domain, path, key);
 	    CREATE INDEX IF NOT EXISTS persistentLookup
-	    ON persistentCookies (domain, path);
-	}
-	## TODO: Are there "TEMP INDEX"es?
-	db eval {
+		ON persistentCookies (domain, path);
+
+	    --;# Store the session cookies in this table.
+	    --;# Deletion policy: at cookiejar instance deletion, if
+	    --;# explicitly killed, or if the number of session cookies is too
+	    --;# large and the cookie has not been used recently.
 	    CREATE TEMP TABLE sessionCookies (
 		id INTEGER PRIMARY KEY,
 		secure INTEGER NOT NULL,
@@ -75,10 +122,19 @@ namespace eval ::http {
 		lastuse INTEGER NOT NULL,
 		creation INTEGER NOT NULL);
 	    CREATE UNIQUE INDEX sessionUnique
-	    ON sessionCookies (domain, path, key);
+		ON sessionCookies (domain, path, key);
 	    CREATE INDEX sessionLookup ON sessionCookies (domain, path);
+
+	    --;# View to allow for simple looking up of a cookie.
+	    CREATE TEMP VIEW cookies AS
+		SELECT id, domain, path, key, value, originonly, secure,
+		    1 AS persistent
+		    FROM persistentCookies
+		UNION
+		SELECT id, domain, path, key, value, originonly, secure,
+		    0 AS persistent
+		    FROM sessionCookies;
 	}
-	## TODO: Consider creating a view
 
 	db eval {
 	    SELECT COUNT(*) AS cookieCount FROM persistentCookies
@@ -91,10 +147,17 @@ namespace eval ::http {
 
 	# TODO: domain list refresh policy
 	db eval {
+	    --;# Domains that may not have a cookie defined for them.
 	    CREATE TABLE IF NOT EXISTS forbidden (
 		domain TEXT PRIMARY KEY);
+
+	    --;# Domains that may not have a cookie defined for direct child
+	    --;# domains of them.
 	    CREATE TABLE IF NOT EXISTS forbiddenSuper (
 		domain TEXT PRIMARY KEY);
+
+	    --;# Domains that *may* have a cookie defined for them, used to
+	    --;# define exceptions for the forbiddenSuper table.
 	    CREATE TABLE IF NOT EXISTS permitted (
 		domain TEXT PRIMARY KEY);
 	}
@@ -155,18 +218,9 @@ namespace eval ::http {
 	db close
     }
 
-    method RenderLocation {secure domain path {key ""}} {
-	if {$key eq ""} {
-	    format "%s://%s%s" [expr {$secure?"https":"http"}] $domain $path
-	} else {
-	    format "%s://%s%s?%s" \
-		[expr {$secure?"https":"http"}] $domain $path $key
-	}
-    }
-
     method GetCookiesForHostAndPath {listVar secure host path fullhost} {
 	upvar 1 $listVar result
-	log debug "check for cookies for [my RenderLocation $secure $host $path]"
+	log debug "check for cookies for [locn $secure $host $path]"
 	db eval {
 	    SELECT key, value FROM persistentCookies
 	    WHERE domain = $host AND path = $path AND secure <= $secure
@@ -181,35 +235,19 @@ namespace eval ::http {
 	    AND (NOT originonly OR domain = $fullhost)
 	} {
 	    lappend result $key $value
-	    ## FIXME: check syntax!
 	    db eval {
 		UPDATE sessionCookies SET lastuse = $now WHERE id = $id
 	    }
 	}
     }
 
-    method SplitDomain domain {
-	set pieces [split $domain "."]
-	for {set i [llength $pieces]} {[incr i -1] >= 0} {} {
-	    lappend result [join [lrange $pieces $i end] "."]
-	}
-	return $result
-    }
-    method SplitPath path {
-	set pieces [split [string trimleft $path "/"] "/"]
-	for {set j -1} {$j < [llength $pieces]} {incr j} {
-	    lappend result /[join [lrange $pieces 0 $j] "/"]
-	}
-	return $result
-    }
-
     method getCookies {proto host path} {
 	set result {}
-	set paths [my SplitPath $path]
-	set domains [my SplitDomain $host]
+	set paths [splitPath $path]
+	set domains [splitDomain $host]
 	set secure [string equal -nocase $proto "https"]
 	# Open question: how to move these manipulations into the database
-	# engine (if that's where they *should* be)
+	# engine (if that's where they *should* be).
 	# Suggestion from kbk:
 	#LENGTH(theColumn) <= LENGTH($queryStr) AND SUBSTR(theColumn, LENGTH($queryStr) LENGTH(theColumn)+1) = $queryStr
 	if {[regexp {[^0-9.]} $host]} {
@@ -266,22 +304,6 @@ namespace eval ::http {
 	return 0
     }
 
-    method DeleteCookie {secure domain path key} {
-	db eval {
-	    DELETE FROM persistentCookies
-	    WHERE domain = $domain AND path = $path AND key = $key
-	    AND secure <= $secure
-	}
-	set del [db changes]
-	db eval {
-	    DELETE FROM sessionCookies
-	    WHERE domain = $domain AND path = $path AND key = $key
-	    AND secure <= $secure
-	}
-	incr deletions [incr del [db changes]]
-	log debug "deleted $del cookies for [my RenderLocation $secure $domain $path $key]"
-    }
-
     method storeCookie {name val options} {
 	set now [clock seconds]
 	db transaction {
@@ -291,32 +313,45 @@ namespace eval ::http {
 	    set now [clock seconds]
 	    dict with options {}
 	    if {!$persistent} {
-		### FIXME
 		db eval {
 		    INSERT OR REPLACE INTO sessionCookies (
-			secure, domain, path, key, value, originonly, creation)
-		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $now);
+			secure, domain, path, key, value, originonly, creation, lastuse)
+		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $now, $now);
 		    DELETE FROM persistentCookies
-		    WHERE secure <= $secure AND domain = $domain AND path = $path AND key = $key
+		    WHERE domain = $domain AND path = $path AND key = $key AND secure <= $secure
 		}
-		log debug "defined session cookie for [my RenderLocation $secure $domain $path $key]"
+		incr deletions [db changes]
+		log debug "defined session cookie for [locn $secure $domain $path $key]"
 	    } elseif {$expires < $now} {
-		my DeleteCookie $secure $domain $path $key
+		db eval {
+		    DELETE FROM persistentCookies
+		    WHERE domain = $domain AND path = $path AND key = $key
+			AND secure <= $secure;
+		}
+		set del [db changes]
+		db eval {
+		    DELETE FROM sessionCookies
+		    WHERE domain = $domain AND path = $path AND key = $key
+			AND secure <= $secure;
+		}
+		incr deletions [incr del [db changes]]
+		log debug "deleted $del cookies for [locn $secure $domain $path $key]"
 	    } else {
-		### FIXME
 		db eval {
 		    INSERT OR REPLACE INTO persistentCookies (
 			secure, domain, path, key, value, originonly, expiry, creation)
 		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $expires, $now);
 		    DELETE FROM sessionCookies
-		    WHERE secure <= $secure AND domain = $domain AND path = $path AND key = $key
+		    WHERE domain = $domain AND path = $path AND key = $key AND secure <= $secure
 		}
-		log debug "defined persistent cookie for [my RenderLocation $secure $host $path $key], expires at [clock format $expires]"
+		incr deletions [db changes]
+		log debug "defined persistent cookie for [locn $secure $domain $path $key], expires at [clock format $expires]"
 	    }
 	}
     }
 
     method PurgeCookies {} {
+	upvar 0 ::http::cookiejar_vacuumtrigger vacuumtrigger
 	set aid [after 60000 [namespace current]::my PurgeCookies]
 	set now [clock seconds]
 	log debug "purging cookies that expired before [clock format $now]"
@@ -325,19 +360,22 @@ namespace eval ::http {
 		DELETE FROM persistentCookies WHERE expiry < $now
 	    }
 	    incr deletions [db changes]
-	    if {$deletions > 100} {
-		set deletions 0
-		log debug "vacuuming cookie database"
+	}
+	### TODO: Cap the total number of cookies and session cookies,
+	### purging least frequently used
+
+	# Once we've deleted a fair bit, vacuum the database. Must be done
+	# outside a transaction.
+	if {$deletions > $vacuumtrigger} {
+	    set deletions 0
+	    log debug "vacuuming cookie database"
+	    catch {
 		db eval {
 		    VACUUM
 		}
 	    }
 	}
-	### TODO: Cap the total number of cookies and session cookies,
-	### purging least frequently used
     }
 
     forward Database db
 }
-
-package provide cookiejar $::http::cookiejar_version
