@@ -1,3 +1,8 @@
+2012-09-07  Alexandre Ferrieux <ferrieux@users.sourceforge.net>
+
+	* unix/tclUnixNotfy.c Backport of 2008-12-12 8.6 commit: Fix
+	missing CLOEXEC on internal pipes [2417695]
+
 2012-08-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/msgs/uk.msg: [Bug 3561330]: Use the correct full name of
