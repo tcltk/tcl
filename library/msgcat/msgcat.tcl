@@ -25,10 +25,7 @@ namespace eval msgcat {
     # Records the list of locales to search
     variable Loclist {}
 
-    # Records the locale of the currently sourced message catalogue file; this
-    # would be problematic if anyone were to recursively load a message
-    # catalog for a different locale from inside a catalog, but that's not a
-    # case that we really need to worry about.
+    # Records the locale of the currently sourced message catalogue file
     variable FileLocale
 
     # Records the mapping between source strings and translated strings.  The
@@ -284,6 +281,10 @@ proc msgcat::mcpreferences {} {
 
 proc msgcat::mcload {langdir} {
     variable FileLocale
+    # Save the file locale if we are recursively called
+    if {[info exists FileLocale]} {
+	set nestedFileLocale $FileLocale
+    }
     set x 0
     foreach p [mcpreferences] {
 	if { $p eq {} } {
@@ -299,6 +300,9 @@ proc msgcat::mcload {langdir} {
 	    uplevel 1 [list ::source -encoding utf-8 $langfile]
 	    unset FileLocale
 	}
+    }
+    if {[info exists nestedFileLocale]} {
+	set FileLocale $nestedFileLocale
     }
     return $x
 }
