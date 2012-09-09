@@ -13,6 +13,7 @@ namespace eval ::http {
     # TODO: is this the _right_ list of domains to use?
     variable cookiejar_domainlist \
 	http://mxr.mozilla.org/mozilla-central/source/netwerk/dns/effective_tld_names.dat?raw=1
+    # The list is directed to from http://publicsuffix.org/list/
     variable cookiejar_version 0.1
     variable cookiejar_loglevel info
     variable cookiejar_vacuumtrigger 200
@@ -58,6 +59,17 @@ namespace eval ::http {
 	    if {[string map $map $level] >= [string map $map $loglevel]} {
 		::http::Log "[isoNow] [string toupper $level] cookiejar($who) - ${msg}"
 	    }
+	}
+	proc IDNAencode str {
+	    set parts {}
+	    # Split term from RFC 3490, Sec 3.1
+	    foreach part [split $str "\u002E\u3002\uFF0E\uFF61"] {
+		if {![string is ascii $part]} {
+		    set part xn--[puny::encode $part]
+		}
+		lappend parts $part
+	    }
+	    return [join $parts .]
 	}
     }
 }
@@ -147,26 +159,25 @@ package provide cookiejar $::http::cookiejar_version
 
 	# TODO: domain list refresh policy
 	db eval {
-	    --;# Domains that may not have a cookie defined for them.
-	    CREATE TABLE IF NOT EXISTS forbidden (
-		domain TEXT PRIMARY KEY);
+	    --;# Encoded domain permission policy; if forbidden is 1, no
+	    --;# cookie may be ever set for the domain, and if forbidden is 0,
+	    --;# cookies *may* be created for the domain (overriding the
+	    --;# forbiddenSuper table).
+	    CREATE TABLE IF NOT EXISTS domains (
+		domain TEXT PRIMARY KEY NOT NULL,
+		forbidden INTEGER NOT NULL)
 
 	    --;# Domains that may not have a cookie defined for direct child
 	    --;# domains of them.
 	    CREATE TABLE IF NOT EXISTS forbiddenSuper (
 		domain TEXT PRIMARY KEY);
-
-	    --;# Domains that *may* have a cookie defined for them, used to
-	    --;# define exceptions for the forbiddenSuper table.
-	    CREATE TABLE IF NOT EXISTS permitted (
-		domain TEXT PRIMARY KEY);
 	}
 	if {$path ne ""} {
 	    if {![db exists {
 		SELECT 1 FROM sqlite_master
-		WHERE type='table' AND name='forbidden'
+		WHERE type='table' AND name='domains'
 	    }] && ![db exists {
-		SELECT 1 FROM forbidden
+		SELECT 1 FROM domains
 	    }]} then {
 		my InitDomainList
 	    }
@@ -186,21 +197,29 @@ package provide cookiejar $::http::cookiejar_version
 			if {[string match //* $line]} continue
 			if {[string match !* $line]} {
 			    set line [string range $line 1 end]
+			    set idna [IDNAencode $line]
 			    db eval {
-				INSERT INTO permitted (domain)
-				VALUES ($line)
+				INSERT INTO domains (domain, forbidden)
+				VALUES ($line, 0);
+				INSERT OR REPLACE INTO domains (domain, forbidden)
+				VALUES ($idna, 0);
 			    }
 			} else {
 			    if {[string match {\*.*} $line]} {
 				set line [string range $line 2 end]
 				db eval {
 				    INSERT INTO forbiddenSuper (domain)
-				    VALUES ($line)
+				    VALUES ($line);
+				    INSERT OR REPLACE INTO forbiddenSuper (domain)
+				    VALUES ($idna);
 				}
 			    }
+			    set idna [IDNAencode $line]
 			    db eval {
-				INSERT INTO forbidden (domain)
-				VALUES ($line)
+				INSERT INTO domains (domain, forbidden)
+				VALUES ($line, 1);
+				INSERT OR REPLACE INTO domains (domain, forbidden)
+				VALUES ($idna, 1);
 			    }
 			}
 		    }
@@ -284,22 +303,19 @@ package provide cookiejar $::http::cookiejar_version
 	    log warn "bad cookie: for a numeric address"
 	    return 1
 	}
-	if {[db exists {
-	    SELECT 1 FROM permitted WHERE domain = $domain
-	}]} {return 0}
-	if {[db exists {
-	    SELECT 1 FROM forbidden WHERE domain = $domain
-	}]} {
+	db eval {
+	    SELECT forbidden FROM domains WHERE domain = $domain
+	} {
+	    if {$forbidden} {
+		log warn "bad cookie: for a forbidden address"
+	    }
+	    return $forbidden
+	}
+	if {[regexp {^[^.]+\.(.+)$} $domain -> super] && [db exists {
+	    SELECT 1 FROM forbiddenSuper WHERE domain = $super
+	}]} then {
 	    log warn "bad cookie: for a forbidden address"
 	    return 1
-	}
-	if {[regexp {^[^.]+\.(.+)$} $domain -> super]} {
-	    if {[db exists {
-		SELECT 1 FROM forbiddenSuper WHERE domain = $super
-	    }]} {
-		log warn "bad cookie: for a forbidden address"
-		return 1
-	    }
 	}
 	return 0
     }
@@ -378,4 +394,220 @@ package provide cookiejar $::http::cookiejar_version
     }
 
     forward Database db
+}
+
+# The implementation of the puncode encoder. This is based on the code on
+# http://wiki.tcl.tk/10501 but with extensive modifications to be faster when
+# encoding.
+
+# TODO: This gets some strings wrong!
+
+namespace eval ::http::cookiejar_support::puny {
+    namespace export encode decode
+
+    variable digits [split "abcdefghijklmnopqrstuvwxyz0123456789" ""]
+
+    # 3.2 Insertion unsort coding
+    proc insertionUnsort {splitstr extended} {
+	set oldchar 128
+	set result {}
+	set oldindex -1
+	foreach c $extended {
+	    set index -1
+	    set pos -1
+	    set curlen 0
+	    foreach c2 $splitstr {
+		incr curlen [expr {$c2 < $c}]
+	    }
+	    scan $c "%c" char
+	    set delta [expr {($curlen + 1) * ($char - $oldchar)}]
+	    while true {
+		for {} {[incr pos] < [llength $splitstr]} {} {
+		    set c2 [lindex $splitstr $pos]
+		    if {$c2 eq $c} {
+			incr index
+			break
+		    } elseif {$c2 < $c} {
+			incr index
+		    }
+		}
+		if {$pos == [llength $splitstr]} {
+		    set pos -1
+		    break
+		}
+		lappend result [expr {$delta + $index - $oldindex - 1}]
+		set oldindex $index
+		set delta 0
+	    }
+	    set oldchar $char
+	}
+	return $result
+    }
+
+    # Punycode parameters: tmin = 1, tmax = 26, base = 36
+    proc T {j bias} {
+	return [expr {min(max(36 * ($j + 1) - $bias, 1), 26)}]
+    }
+
+    # 3.3 Generalized variable-length integers
+    proc generateGeneralizedInteger {N bias} {
+	variable digits
+	set result {}
+	set j 0
+	while true {
+	    set t [T $j $bias]
+	    if {$N < $t} {
+		return [lappend result [lindex $digits $N]]
+	    }
+	    lappend result [lindex $digits [expr {$t + (($N-$t) % (36-$t))}]]
+	    set N [expr {int(($N-$t) / (36-$t))}]
+	    incr j
+	}
+    }
+
+    proc adapt {delta first numchars} {
+	if {$first} {
+	    set delta [expr {int($delta / 700)}]
+	} else {
+	    set delta [expr {int($delta / 2)}]
+	}
+	incr delta [expr {int($delta / $numchars)}]
+	set divisions 0
+	while {$delta > 455} {
+	    set delta [expr {int($delta / 35)}]
+	    incr divisions 36
+	}
+	return [expr {$divisions + int(36 * $delta / ($delta + 38))}]
+    }
+
+    proc encode {text} {
+	set base {}
+	set extenders {}
+	set splitstr [split $text ""]
+	foreach c $splitstr {
+	    if {$c < "\u0080"} {
+		append base $c
+	    } else {
+		lappend extenders $c
+	    }
+	}
+	set deltas [insertionUnsort $splitstr [lsort $extenders]]
+
+	set result {}
+	set bias 72
+	set points 0
+	if {$base ne ""} {
+	    set baselen [string length $base]
+	    foreach delta $deltas {
+		lappend result {*}[generateGeneralizedInteger $delta $bias]
+		set bias [adapt $delta [expr {!$points}] \
+			      [expr {$baselen + [incr points]}]]
+	    }
+	    return $base-[join $result ""]
+	} else {
+	    foreach delta $deltas {
+		lappend result {*}[generateGeneralizedInteger $delta $bias]
+		set bias [adapt $delta [expr {!$points}] [incr points]]
+	    }
+	    return [join $result ""]
+	}
+    }
+
+
+    # Decoding
+    proc toNums {text} {
+	set retval {}
+	foreach c [split $text ""] {
+	    scan $c "%c" ch
+	    lappend retval $ch
+	}
+	return $retval
+    }
+
+    proc toChars {nums} {
+	set chars {}
+	foreach char $nums {
+	    append chars [format "%c" $char]
+	}
+	return $chars
+    }
+
+    # 3.3 Generalized variable-length integers
+    proc decodeGeneralizedNumber {extended extpos bias errors} {
+	set result 0
+	set w 1
+	set j 0
+	while true {
+	    set c [lindex $extended $extpos]
+	    incr extpos
+	    if {[string length $c] == 0} {
+		if {$errors eq "strict"} {
+		    error "incomplete punicode string"
+		}
+		return [list $extpos -1]
+	    }
+	    if {[string match {[A-Z]} $c]} {
+		scan $c "%c" char
+		set digit [expr {$char - 65}]
+	    } elseif {[string match {[0-9]} $c]} {
+		scan $c "%c" char
+		# 0x30-26
+		set digit [expr {$char - 22}]
+	    } elseif {$errors eq "strict"} {
+		set pos [lindex $extended $extpos]
+		error "Invalid extended code point '$pos'"
+	    } else {
+		return [list $extpos -1]
+	    }
+	    set t [T $j $bias]
+	    set result [expr {$result + $digit * $w}]
+	    if {$digit < $t} {
+		return [list $extpos $result]
+	    }
+	    set w [expr {$w * (36 - $t)}]
+	    incr j
+	}
+    }
+
+    # 3.2 Insertion unsort coding
+    proc insertionSort {base extended errors} {
+	set char 128
+	set pos -1
+	set bias 72
+	set extpos 0
+	while {$extpos < [llength $extended]} {
+	    lassign [decodeGeneralizedNumber $extended $extpos $bias $errors]\
+		newpos delta
+	    if {$delta < 0} {
+		# There was an error in decoding. We can't continue because
+		# synchronization is lost.
+		return $base
+	    }
+	    set pos [expr {$pos + $delta + 1}]
+	    set char [expr {$char + int($pos / ([llength $base] + 1))}]
+	    if {$char > 1114111} {
+		if {$errors eq "strict"} {
+		    error [format "Invalid character U+%x" $char]
+		}
+		set char 63 ;# "?"
+	    }
+	    set pos [expr {$pos % ([llength $base] + 1)}]
+	    set base [linsert $base $pos $char]
+	    set bias [adapt $delta [expr {$extpos == 0}] [llength $base]]
+	    set extpos $newpos
+	}
+	return $base
+    }
+
+    proc decode {text {errors "lax"}} {
+	set base {}
+	set pos [string last "-" $text]
+	if {$pos == -1} {
+	    set extended [split [string toupper $text] ""]
+	} else {
+	    set base [toNums [string range $text 0 [expr {$pos-1}]]]
+	    set extended [split [string toupper [string range $text [expr {$pos+1}] end]] ""]
+	}
+	return [toChars [insertionSort $base $extended $errors]]
+    }
 }
