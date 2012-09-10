@@ -397,120 +397,132 @@ package provide cookiejar $::http::cookiejar_version
 }
 
 # The implementation of the puncode encoder. This is based on the code on
-# http://wiki.tcl.tk/10501 but with extensive modifications to be faster when
-# encoding.
-
-# TODO: This gets some strings wrong!
+# http://tools.ietf.org/html/rfc3492 (encoder) and http://wiki.tcl.tk/10501
+# (decoder) but with extensive modifications.
 
 namespace eval ::http::cookiejar_support::puny {
     namespace export encode decode
 
     variable digits [split "abcdefghijklmnopqrstuvwxyz0123456789" ""]
-
-    # 3.2 Insertion unsort coding
-    proc insertionUnsort {splitstr extended} {
-	set oldchar 128
-	set result {}
-	set oldindex -1
-	foreach c $extended {
-	    set index -1
-	    set pos -1
-	    set curlen 0
-	    foreach c2 $splitstr {
-		incr curlen [expr {$c2 < $c}]
-	    }
-	    scan $c "%c" char
-	    set delta [expr {($curlen + 1) * ($char - $oldchar)}]
-	    while true {
-		for {} {[incr pos] < [llength $splitstr]} {} {
-		    set c2 [lindex $splitstr $pos]
-		    if {$c2 eq $c} {
-			incr index
-			break
-		    } elseif {$c2 < $c} {
-			incr index
-		    }
-		}
-		if {$pos == [llength $splitstr]} {
-		    set pos -1
-		    break
-		}
-		lappend result [expr {$delta + $index - $oldindex - 1}]
-		set oldindex $index
-		set delta 0
-	    }
-	    set oldchar $char
-	}
-	return $result
-    }
-
-    # Punycode parameters: tmin = 1, tmax = 26, base = 36
-    proc T {j bias} {
-	return [expr {min(max(36 * ($j + 1) - $bias, 1), 26)}]
-    }
-
-    # 3.3 Generalized variable-length integers
-    proc generateGeneralizedInteger {N bias} {
-	variable digits
-	set result {}
-	set j 0
-	while true {
-	    set t [T $j $bias]
-	    if {$N < $t} {
-		return [lappend result [lindex $digits $N]]
-	    }
-	    lappend result [lindex $digits [expr {$t + (($N-$t) % (36-$t))}]]
-	    set N [expr {int(($N-$t) / (36-$t))}]
-	    incr j
-	}
-    }
+    # Bootstring parameters for Punycode
+    variable base 36
+    variable tmin 1
+    variable tmax 26
+    variable skew 38
+    variable damp 700
+    variable initial_bias 72
+    variable initial_n 0x80
 
     proc adapt {delta first numchars} {
-	if {$first} {
-	    set delta [expr {int($delta / 700)}]
-	} else {
-	    set delta [expr {int($delta / 2)}]
+	variable base
+	variable tmin
+	variable tmax
+	variable damp
+	variable skew
+
+	set delta [expr {$delta / ($first ? $damp : 2)}]
+	incr delta [expr {$delta / $numchars}]
+	set k 0
+	while {$delta > ($base - $tmin) * $tmax / 2} {
+	    set delta [expr {$delta / ($base-$tmin)}]
+	    incr k $base
 	}
-	incr delta [expr {int($delta / $numchars)}]
-	set divisions 0
-	while {$delta > 455} {
-	    set delta [expr {int($delta / 35)}]
-	    incr divisions 36
-	}
-	return [expr {$divisions + int(36 * $delta / ($delta + 38))}]
+	return [expr {$k + ($base-$tmin+1) * $delta / ($delta+$skew)}]
     }
 
-    proc encode {text} {
-	set base {}
-	set extenders {}
-	set splitstr [split $text ""]
-	foreach c $splitstr {
-	    if {$c < "\u0080"} {
-		append base $c
-	    } else {
-		lappend extenders $c
-	    }
-	}
-	set deltas [insertionUnsort $splitstr [lsort $extenders]]
+    # Main encode function
+    proc encode {input {case ""}} {
+	variable digits
+	variable tmin
+	variable tmax
+	variable base
+	variable initial_n
+	variable initial_bias
 
-	set result {}
-	set bias 72
-	set points 0
-	if {$base ne ""} {
-	    set baselen [string length $base]
-	    foreach delta $deltas {
-		lappend result {*}[generateGeneralizedInteger $delta $bias]
-		set bias [adapt $delta [expr {!$points}] \
-			      [expr {$baselen + [incr points]}]]
+	set in [split $input ""]
+	set output {}
+
+	# Initialize the state:
+	set n $initial_n
+	set delta 0
+	set bias $initial_bias
+
+	# Handle the basic code points:
+	foreach ch $in {
+	    if {$ch < "\u0080"} {
+		if {$case ne ""} {
+		    if {$case} {
+			append output [string toupper $ch]
+		    } else {
+			append output [string tolower $ch]
+		    }
+		} else {
+		    append output $ch
+		}
 	    }
-	    return $base-[join $result ""]
-	} else {
-	    foreach delta $deltas {
-		lappend result {*}[generateGeneralizedInteger $delta $bias]
-		set bias [adapt $delta [expr {!$points}] [incr points]]
-	    }
-	    return [join $result ""]
 	}
+
+	set h [set b [string length $output]]
+
+	# h is the number of code points that have been handled, b is the
+	# number of basic code points.
+
+	if {$b} {
+	    append output "-"
+	}
+
+	# Main encoding loop:
+
+	while {$h < [llength $in]} {
+	    # All non-basic code points < n have been handled already.  Find
+	    # the next larger one:
+
+	    for {set m inf; set j 0} {$j < [llength $in]} {incr j} {
+		scan [lindex $in $j] "%c" ch
+		if {$ch >= $n && $ch < $m} {
+		    set m $ch
+		}
+	    }
+
+	    # Increase delta enough to advance the decoder's <n,i> state to
+	    # <m,0>, but guard against overflow:
+
+	    if {$m-$n > (0xffffffff-$delta)/($h+1)} {
+		throw {PUNYCODE OVERFLOW} "overflow in delta computation"
+	    }
+	    incr delta [expr {($m-$n) * ($h+1)}]
+	    set n $m
+
+	    for {set j 0} {$j < [llength $in]} {incr j} {
+		scan [lindex $in $j] "%c" ch
+		if {$ch < $n && ([incr delta] & 0xffffffff) == 0} {
+		    throw {PUNYCODE OVERFLOW} "overflow in delta computation"
+		}
+
+		if {$ch == $n} {
+		    # Represent delta as a generalized variable-length
+		    # integer:
+
+		    for {set q $delta; set k $base} true {incr k $base} {
+			set t [expr {min(max($k-$bias,$tmin),$tmax)}]
+			if {$q < $t} break
+			append output \
+			    [lindex $digits [expr {$t + ($q-$t)%($base-$t)}]]
+			set q [expr {($q-$t) / ($base-$t)}]
+		    }
+
+		    append output [lindex $digits $q]
+		    set bias [adapt $delta [expr {$h==$b}] [expr {$h+1}]]
+		    set delta 0
+		    incr h
+		}
+	    }
+
+	    incr delta
+	    incr n
+	}
+
+	return $output
     }
 
 
@@ -533,7 +545,11 @@ namespace eval ::http::cookiejar_support::puny {
     }
 
     # 3.3 Generalized variable-length integers
-    proc decodeGeneralizedNumber {extended extpos bias errors} {
+    proc decodeGeneralizedInteger {extended extpos bias errors} {
+	variable tmin
+	variable tmax
+	variable base
+
 	set result 0
 	set w 1
 	set j 0
@@ -546,68 +562,71 @@ namespace eval ::http::cookiejar_support::puny {
 		}
 		return [list $extpos -1]
 	    }
+	    scan $c "%c" char
 	    if {[string match {[A-Z]} $c]} {
-		scan $c "%c" char
-		set digit [expr {$char - 65}]
+		set digit [expr {$char - 0x41}];	# A=0,Z=25
+	    } elseif {[string match {[a-z]} $c]} {
+		set digit [expr {$char - 0x61}];	# a=0,z=25
 	    } elseif {[string match {[0-9]} $c]} {
-		scan $c "%c" char
-		# 0x30-26
-		set digit [expr {$char - 22}]
+		set digit [expr {$char - 0x30 + 26}];	# 0=26,9=35
 	    } elseif {$errors eq "strict"} {
 		set pos [lindex $extended $extpos]
 		error "Invalid extended code point '$pos'"
 	    } else {
 		return [list $extpos -1]
 	    }
-	    set t [T $j $bias]
+	    set t [expr {min(max($base*($j + 1) - $bias, $tmin), $tmax)}]
 	    set result [expr {$result + $digit * $w}]
 	    if {$digit < $t} {
 		return [list $extpos $result]
 	    }
-	    set w [expr {$w * (36 - $t)}]
+	    set w [expr {$w * ($base - $t)}]
 	    incr j
 	}
     }
 
     # 3.2 Insertion unsort coding
-    proc insertionSort {base extended errors} {
-	set char 128
+    proc insertionSort {buffer extended errors} {
+	variable initial_bias
+	variable initial_n
+
+	set char $initial_n
 	set pos -1
-	set bias 72
+	set bias $initial_bias
 	set extpos 0
 	while {$extpos < [llength $extended]} {
-	    lassign [decodeGeneralizedNumber $extended $extpos $bias $errors]\
+	    lassign [decodeGeneralizedInteger $extended $extpos $bias $errors]\
 		newpos delta
 	    if {$delta < 0} {
 		# There was an error in decoding. We can't continue because
 		# synchronization is lost.
-		return $base
+		return $buffer
 	    }
-	    set pos [expr {$pos + $delta + 1}]
-	    set char [expr {$char + int($pos / ([llength $base] + 1))}]
+	    incr pos [expr {$delta + 1}]
+	    set char [expr {$char + $pos / ([llength $buffer] + 1)}]
 	    if {$char > 1114111} {
 		if {$errors eq "strict"} {
 		    error [format "Invalid character U+%x" $char]
 		}
 		set char 63 ;# "?"
 	    }
-	    set pos [expr {$pos % ([llength $base] + 1)}]
-	    set base [linsert $base $pos $char]
-	    set bias [adapt $delta [expr {$extpos == 0}] [llength $base]]
+	    set pos [expr {$pos % ([llength $buffer] + 1)}]
+	    set buffer [linsert $buffer $pos $char]
+	    set bias [adapt $delta [expr {$extpos == 0}] [llength $buffer]]
 	    set extpos $newpos
 	}
-	return $base
+	return $buffer
     }
 
     proc decode {text {errors "lax"}} {
-	set base {}
+	set baseline {}
 	set pos [string last "-" $text]
 	if {$pos == -1} {
-	    set extended [split [string toupper $text] ""]
+	    set extended $text
 	} else {
-	    set base [toNums [string range $text 0 [expr {$pos-1}]]]
-	    set extended [split [string toupper [string range $text [expr {$pos+1}] end]] ""]
+	    set baseline [toNums [string range $text 0 [expr {$pos-1}]]]
+	    set extended [string range $text [expr {$pos+1}] end]
 	}
-	return [toChars [insertionSort $base $extended $errors]]
+	return [toChars [insertionSort $baseline [split $extended ""] $errors]]
     }
 }
