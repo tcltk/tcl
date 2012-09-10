@@ -7,16 +7,20 @@ package require http 2.7;# FIXME: JUST DURING DEVELOPMENT
 #package require Tcl 8.6
 #package require http 2.8.4
 package require sqlite3
+#package require zlib
 
 # Configuration for the cookiejar package 
 namespace eval ::http {
     # TODO: is this the _right_ list of domains to use?
     variable cookiejar_domainlist \
 	http://mxr.mozilla.org/mozilla-central/source/netwerk/dns/effective_tld_names.dat?raw=1
+    variable cookiejar_domainfile \
+	[file join [file dirname [info script]] effective_tld_names.txt]
     # The list is directed to from http://publicsuffix.org/list/
     variable cookiejar_version 0.1
     variable cookiejar_loglevel info
     variable cookiejar_vacuumtrigger 200
+    variable cookiejar_offline false
 
     # This is the class that we are creating
     ::oo::class create cookiejar
@@ -53,7 +57,7 @@ namespace eval ::http {
 	    clock format $ts -format "%Y%m%dT%H%M%S.${ms}Z" -gmt 1
 	}
 	proc log {level msg} {
-	    upvar 0 ::http::cookiejar_loglevel loglevel
+	    namespace upvar ::http cookiejar_loglevel loglevel
 	    set who [uplevel 1 self]
 	    set map {debug 0 info 1 warn 2 error 3}
 	    if {[string map $map $level] >= [string map $map $loglevel]} {
@@ -71,6 +75,17 @@ namespace eval ::http {
 	    }
 	    return [join $parts .]
 	}
+	proc IDNAdecode str {
+	    set parts {}
+	    # Split term from RFC 3490, Sec 3.1
+	    foreach part [split $str "\u002E\u3002\uFF0E\uFF61"] {
+		if {[string match "xn--*" $part]} {
+		    set part [puny::decode [string range $part 4 end]]
+		}
+		lappend parts $part
+	    }
+	    return [join $parts .]
+	}
     }
 }
 
@@ -80,7 +95,7 @@ package provide cookiejar $::http::cookiejar_version
 # The implementation of the cookiejar package
 ::oo::define ::http::cookiejar {
     self method loglevel {{level "\u0000\u0000"}} {
-	upvar 0 ::http::cookiejar_loglevel loglevel
+	namespace upvar ::http cookiejar_loglevel loglevel
 	if {$level in {debug info warn error}} {
 	    set loglevel $level
 	} elseif {$level ne "\u0000\u0000"} {
@@ -165,70 +180,105 @@ package provide cookiejar $::http::cookiejar_version
 	    --;# forbiddenSuper table).
 	    CREATE TABLE IF NOT EXISTS domains (
 		domain TEXT PRIMARY KEY NOT NULL,
-		forbidden INTEGER NOT NULL)
+		forbidden INTEGER NOT NULL);
 
 	    --;# Domains that may not have a cookie defined for direct child
 	    --;# domains of them.
 	    CREATE TABLE IF NOT EXISTS forbiddenSuper (
 		domain TEXT PRIMARY KEY);
 	}
-	if {$path ne ""} {
-	    if {![db exists {
-		SELECT 1 FROM sqlite_master
-		WHERE type='table' AND name='domains'
-	    }] && ![db exists {
-		SELECT 1 FROM domains
-	    }]} then {
-		my InitDomainList
-	    }
+	if {$path ne "" && ![db exists {
+	    SELECT 1 FROM domains
+	}]} then {
+	    my InitDomainList
 	}
     }
  
     method InitDomainList {} {
-	# TODO: Handle IDNs (but Tcl overall gets that wrong at the moment...)
-	variable ::http::cookiejar_domainlist
-	log debug "loading domain list from $cookiejar_domainlist"
-	set tok [http::geturl $cookiejar_domainlist]
+	namespace upvar ::http \
+	    cookiejar_domainlist url \
+	    cookiejar_domainfile filename \
+	    cookiejar_offline	 offline
+	if {!$offline} {
+	    log debug "loading domain list from $url"
+	    set tok [::http::geturl $url]
+	    try {
+		if {[::http::ncode $tok] == 200} {
+		    my InstallDomainData [::http::data $tok]
+		    return
+		} else {
+		    log error "failed to fetch list of forbidden cookie domains from ${url}: [::http::error $tok]"
+		    log warn "attempting to fall back to built in version"
+		}
+	    } finally {
+		::http::cleanup $tok
+	    }
+	}
+	log debug "loading domain list from $filename"
 	try {
-	    if {[http::ncode $tok] == 200} {
-		db transaction {
-		    foreach line [split [http::data $tok] \n] {
-			if {[string trim $line] eq ""} continue
-			if {[string match //* $line]} continue
-			if {[string match !* $line]} {
-			    set line [string range $line 1 end]
-			    set idna [IDNAencode $line]
-			    db eval {
-				INSERT INTO domains (domain, forbidden)
-				VALUES ($line, 0);
-				INSERT OR REPLACE INTO domains (domain, forbidden)
-				VALUES ($idna, 0);
-			    }
-			} else {
-			    if {[string match {\*.*} $line]} {
-				set line [string range $line 2 end]
-				db eval {
-				    INSERT INTO forbiddenSuper (domain)
-				    VALUES ($line);
-				    INSERT OR REPLACE INTO forbiddenSuper (domain)
-				    VALUES ($idna);
-				}
-			    }
-			    set idna [IDNAencode $line]
-			    db eval {
-				INSERT INTO domains (domain, forbidden)
-				VALUES ($line, 1);
-				INSERT OR REPLACE INTO domains (domain, forbidden)
-				VALUES ($idna, 1);
-			    }
+	    set f [open $filename]
+	    try {
+		if {[string match *.gz $filename]} {
+		    zlib push gunzip $f
+		}
+		fconfigure $f -encoding utf-8
+		my InstallDomainData [read $f]
+	    } finally {
+		close $f
+	    }
+	} on error msg {
+	    log error "failed to read list of forbidden cookie domains from ${filename}: $msg"
+	    return -code error $msg
+	}
+    }
+
+    method InstallDomainData {data} {
+	set n [db total_changes]
+	db transaction {
+	    foreach line [split $data "\n"] {
+		if {[string trim $line] eq ""} continue
+		if {[string match //* $line]} continue
+		if {[string match !* $line]} {
+		    set line [string range $line 1 end]
+		    set idna [IDNAencode $line]
+		    db eval {
+			INSERT INTO domains (domain, forbidden)
+			VALUES ($line, 0);
+			INSERT OR REPLACE INTO domains (domain, forbidden)
+			VALUES ($idna, 0);
+		    }
+		} else {
+		    if {[string match {\*.*} $line]} {
+			set line [string range $line 2 end]
+			db eval {
+			    INSERT INTO forbiddenSuper (domain)
+			    VALUES ($line);
+			    INSERT OR REPLACE INTO forbiddenSuper (domain)
+			    VALUES ($idna);
 			}
 		    }
+		    set idna [IDNAencode $line]
+		    db eval {
+			INSERT INTO domains (domain, forbidden)
+			VALUES ($line, 1);
+			INSERT OR REPLACE INTO domains (domain, forbidden)
+			VALUES ($idna, 1);
+		    }
 		}
-	    } else {
-		log error "failed to fetch list of forbidden cookie domains from $cookiejar_domainlist"
 	    }
-	} finally {
-	    http::cleanup $tok
+	}
+	set n [expr {[db total_changes] - $n}]
+	log debug "processed $n inserts generated from domain list"
+    }
+
+    # This forces the rebuild of the domain data, loading it from 
+    method forceLoadDomainData {} {
+	db transaction {
+	    db eval {
+		DELETE FROM domains;
+		DELETE FROM forbiddenSuper;
+	    }
+	    my InitDomainList
 	}
     }
 
@@ -367,7 +417,7 @@ package provide cookiejar $::http::cookiejar_version
     }
 
     method PurgeCookies {} {
-	upvar 0 ::http::cookiejar_vacuumtrigger vacuumtrigger
+	namespace upvar 0 ::http cookiejar_vacuumtrigger vacuumtrigger
 	set aid [after 60000 [namespace current]::my PurgeCookies]
 	set now [clock seconds]
 	log debug "purging cookies that expired before [clock format $now]"
@@ -488,7 +538,7 @@ namespace eval ::http::cookiejar_support::puny {
 	    # <m,0>, but guard against overflow:
 
 	    if {$m-$n > (0xffffffff-$delta)/($h+1)} {
-		throw {PUNYCODE OVERFLOW} "overflow in delta computation"
+		error "overflow in delta computation"
 	    }
 	    incr delta [expr {($m-$n) * ($h+1)}]
 	    set n $m
@@ -496,7 +546,7 @@ namespace eval ::http::cookiejar_support::puny {
 	    for {set j 0} {$j < [llength $in]} {incr j} {
 		scan [lindex $in $j] "%c" ch
 		if {$ch < $n && ([incr delta] & 0xffffffff) == 0} {
-		    throw {PUNYCODE OVERFLOW} "overflow in delta computation"
+		    error "overflow in delta computation"
 		}
 
 		if {$ch == $n} {
@@ -524,7 +574,6 @@ namespace eval ::http::cookiejar_support::puny {
 
 	return $output
     }
-
 
     # Decoding
     proc toNums {text} {
@@ -590,7 +639,7 @@ namespace eval ::http::cookiejar_support::puny {
 	variable initial_bias
 	variable initial_n
 
-	set char $initial_n
+	set n $initial_n
 	set pos -1
 	set bias $initial_bias
 	set extpos 0
@@ -603,15 +652,15 @@ namespace eval ::http::cookiejar_support::puny {
 		return $buffer
 	    }
 	    incr pos [expr {$delta + 1}]
-	    set char [expr {$char + $pos / ([llength $buffer] + 1)}]
-	    if {$char > 1114111} {
+	    incr n [expr {$pos / ([llength $buffer] + 1)}]
+	    if {$n > 1114111} {
 		if {$errors eq "strict"} {
-		    error [format "Invalid character U+%x" $char]
+		    error [format "Invalid character U+%06x" $n]
 		}
-		set char 63 ;# "?"
+		set n 63 ;# "?"
 	    }
 	    set pos [expr {$pos % ([llength $buffer] + 1)}]
-	    set buffer [linsert $buffer $pos $char]
+	    set buffer [linsert $buffer $pos $n]
 	    set bias [adapt $delta [expr {$extpos == 0}] [llength $buffer]]
 	    set extpos $newpos
 	}
