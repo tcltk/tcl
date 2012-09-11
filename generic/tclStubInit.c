@@ -169,14 +169,6 @@ Tcl_WinTCharToUtf(
 	    string, len, dsPtr);
 }
 
-#define TclMacOSXGetFileAttribute (int (*) (Tcl_Interp *,  \
-		int, Tcl_Obj *, Tcl_Obj **)) TclpCreateProcess
-#define TclMacOSXMatchType (int (*) (Tcl_Interp *, const char *, \
-		const char *, Tcl_StatBuf *, Tcl_GlobTypeData *)) TclpMakeFile
-#define TclMacOSXNotifierAddRunLoopMode (void (*) (const void *)) TclpOpenFile
-#define TclpLocaltime_unix (struct tm *(*) (const time_t *)) TclGetAndDetachPids
-#define TclpGmtime_unix (struct tm *(*) (const time_t *)) TclpCloseFile
-
 #else /* UNIX and MAC */
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
