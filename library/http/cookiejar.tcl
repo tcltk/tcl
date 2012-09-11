@@ -1,5 +1,12 @@
-# Cookie Jar package.
-
+# cookiejar.tcl --
+#
+#	Implementation of an HTTP cookie storage engine using SQLite. The
+#	implementation is done as a TclOO class, and includes a punycode
+#	encoder and decoder (though only the encoder is currently used).
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # Dependencies
 package require Tcl 8.5;# FIXME: JUST DURING DEVELOPMENT
 package require TclOO;# FIXME: JUST DURING DEVELOPMENT
@@ -7,20 +14,26 @@ package require http 2.7;# FIXME: JUST DURING DEVELOPMENT
 #package require Tcl 8.6
 #package require http 2.8.4
 package require sqlite3
-#package require zlib
+
+#
+# Configuration for the cookiejar package, plus basic support procedures.
+#
 
-# Configuration for the cookiejar package 
 namespace eval ::http {
+    # Keep this in sync with pkgIndex.tcl and with the install directories in
+    # Makefiles
+    variable cookiejar_version 0.1
+
     # TODO: is this the _right_ list of domains to use?
     variable cookiejar_domainlist \
 	http://mxr.mozilla.org/mozilla-central/source/netwerk/dns/effective_tld_names.dat?raw=1
     variable cookiejar_domainfile \
 	[file join [file dirname [info script]] effective_tld_names.txt]
     # The list is directed to from http://publicsuffix.org/list/
-    variable cookiejar_version 0.1
     variable cookiejar_loglevel info
     variable cookiejar_vacuumtrigger 200
     variable cookiejar_offline false
+    variable cookiejar_purgeinterval 60000
 
     # This is the class that we are creating
     ::oo::class create cookiejar
@@ -30,10 +43,12 @@ namespace eval ::http {
 	namespace export *
 	proc locn {secure domain path {key ""}} {
 	    if {$key eq ""} {
-		format "%s://%s%s" [expr {$secure?"https":"http"}] $domain $path
+		format "%s://%s%s" [expr {$secure?"https":"http"}] \
+		    [IDNAencode $domain] $path
 	    } else {
 		format "%s://%s%s?%s" \
-		    [expr {$secure?"https":"http"}] $domain $path $key
+		    [expr {$secure?"https":"http"}] [IDNAencode $domain] \
+		    $path $key
 	    }
 	}
 	proc splitDomain domain {
@@ -107,6 +122,7 @@ package provide cookiejar $::http::cookiejar_version
     variable aid deletions
     constructor {{path ""}} {
 	namespace import ::http::cookiejar_support::*
+	namespace upvar ::http cookiejar_purgeinterval purgeinterval
 
 	if {$path eq ""} {
 	    sqlite3 [namespace current]::db :memory:
@@ -161,32 +177,31 @@ package provide cookiejar $::http::cookiejar_version
 		SELECT id, domain, path, key, value, originonly, secure,
 		    0 AS persistent
 		    FROM sessionCookies;
-	}
 
-	db eval {
-	    SELECT COUNT(*) AS cookieCount FROM persistentCookies
-	}
-	if {[info exist cookieCount] && $cookieCount} {
-	    log info "loaded cookie store from $path with $cookieCount entries"
-	}
-
-	set aid [after 60000 [namespace current]::my PurgeCookies]
-
-	# TODO: domain list refresh policy
-	db eval {
 	    --;# Encoded domain permission policy; if forbidden is 1, no
 	    --;# cookie may be ever set for the domain, and if forbidden is 0,
 	    --;# cookies *may* be created for the domain (overriding the
 	    --;# forbiddenSuper table).
+	    --;# Deletion policy: normally not modified.
 	    CREATE TABLE IF NOT EXISTS domains (
 		domain TEXT PRIMARY KEY NOT NULL,
 		forbidden INTEGER NOT NULL);
 
 	    --;# Domains that may not have a cookie defined for direct child
 	    --;# domains of them.
+	    --;# Deletion policy: normally not modified.
 	    CREATE TABLE IF NOT EXISTS forbiddenSuper (
 		domain TEXT PRIMARY KEY);
 	}
+
+	db eval {
+	    SELECT COUNT(*) AS cookieCount FROM persistentCookies
+	}
+	log info "loaded cookie store from $path with $cookieCount entries"
+
+	set aid [after $purgeinterval [namespace current]::my PurgeCookies]
+
+	# TODO: domain list refresh policy
 	if {$path ne "" && ![db exists {
 	    SELECT 1 FROM domains
 	}]} then {
@@ -236,34 +251,56 @@ package provide cookiejar $::http::cookiejar_version
 	set n [db total_changes]
 	db transaction {
 	    foreach line [split $data "\n"] {
-		if {[string trim $line] eq ""} continue
-		if {[string match //* $line]} continue
-		if {[string match !* $line]} {
+		if {[string trim $line] eq ""} {
+		    continue
+		} elseif {[string match //* $line]} {
+		    continue
+		} elseif {[string match !* $line]} {
 		    set line [string range $line 1 end]
 		    set idna [IDNAencode $line]
+		    set utf [IDNAdecode $line]
 		    db eval {
-			INSERT INTO domains (domain, forbidden)
-			VALUES ($line, 0);
 			INSERT OR REPLACE INTO domains (domain, forbidden)
-			VALUES ($idna, 0);
+			VALUES ($utf, 0);
+		    }
+		    if {$idna ne $utf} {
+			db eval {
+			    INSERT OR REPLACE INTO domains (domain, forbidden)
+			    VALUES ($idna, 0);
+			}
 		    }
 		} else {
 		    if {[string match {\*.*} $line]} {
 			set line [string range $line 2 end]
+			set idna [IDNAencode $line]
+			set utf [IDNAdecode $line]
 			db eval {
-			    INSERT INTO forbiddenSuper (domain)
-			    VALUES ($line);
 			    INSERT OR REPLACE INTO forbiddenSuper (domain)
-			    VALUES ($idna);
+			    VALUES ($utf);
+			}
+			if {$idna ne $utf} {
+			    db eval {
+				INSERT OR REPLACE INTO forbiddenSuper (domain)
+				VALUES ($idna);
+			    }
+			}
+		    } else {
+			set idna [IDNAencode $line]
+			set utf [IDNAdecode $line]
+		    }
+		    db eval {
+			INSERT OR REPLACE INTO domains (domain, forbidden)
+			VALUES ($utf, 1);
+		    }
+		    if {$idna ne $utf} {
+			db eval {
+			    INSERT OR REPLACE INTO domains (domain, forbidden)
+			    VALUES ($idna, 1);
 			}
 		    }
-		    set idna [IDNAencode $line]
-		    db eval {
-			INSERT INTO domains (domain, forbidden)
-			VALUES ($line, 1);
-			INSERT OR REPLACE INTO domains (domain, forbidden)
-			VALUES ($idna, 1);
-		    }
+		}
+		if {$utf ne [IDNAdecode $idna]} {
+		    log warn "mismatch in IDNA handling for $idna"
 		}
 	    }
 	}
@@ -313,13 +350,15 @@ package provide cookiejar $::http::cookiejar_version
     method getCookies {proto host path} {
 	set result {}
 	set paths [splitPath $path]
-	set domains [splitDomain $host]
+	set domains [splitDomain [IDNAencode $host]]
 	set secure [string equal -nocase $proto "https"]
 	# Open question: how to move these manipulations into the database
 	# engine (if that's where they *should* be).
 	# Suggestion from kbk:
-	#LENGTH(theColumn) <= LENGTH($queryStr) AND SUBSTR(theColumn, LENGTH($queryStr) LENGTH(theColumn)+1) = $queryStr
+	#LENGTH(theColumn) <= LENGTH($queryStr) AND
+	#SUBSTR(theColumn, LENGTH($queryStr) LENGTH(theColumn)+1) = $queryStr
 	if {[regexp {[^0-9.]} $host]} {
+	    # Ugh, it's a numeric domain! Restrict it...
 	    db transaction {
 		foreach domain $domains {
 		    foreach p $paths {
@@ -417,8 +456,10 @@ package provide cookiejar $::http::cookiejar_version
     }
 
     method PurgeCookies {} {
-	namespace upvar 0 ::http cookiejar_vacuumtrigger vacuumtrigger
-	set aid [after 60000 [namespace current]::my PurgeCookies]
+	namespace upvar ::http \
+	    cookiejar_vacuumtrigger trigger \
+	    cookiejar_purgeinterval interval
+	set aid [after $interval [namespace current]::my PurgeCookies]
 	set now [clock seconds]
 	log debug "purging cookies that expired before [clock format $now]"
 	db transaction {
@@ -432,7 +473,7 @@ package provide cookiejar $::http::cookiejar_version
 
 	# Once we've deleted a fair bit, vacuum the database. Must be done
 	# outside a transaction.
-	if {$deletions > $vacuumtrigger} {
+	if {$deletions > $trigger} {
 	    set deletions 0
 	    log debug "vacuuming cookie database"
 	    catch {
@@ -444,9 +485,44 @@ package provide cookiejar $::http::cookiejar_version
     }
 
     forward Database db
+
+    method lookup {{host ""} {key ""}} {
+	set host [IDNAencode $host]
+	db transaction {
+	    if {$host eq ""} {
+		set result {}
+		db eval {
+		    SELECT DISTINCT domain FROM cookies
+		    ORDER BY domain
+		} {
+		    lappend result [IDNAdecode $domain]
+		}
+		return $result
+	    } elseif {$key eq ""} {
+		set result {}
+		db eval {
+		    SELECT DISTINCT key FROM cookies
+		    WHERE domain = $host
+		    ORDER BY key
+		} {
+		    lappend result $key
+		}
+		return $result
+	    } else {
+		db eval {
+		    SELECT value FROM cookies
+		    WHERE domain = $host AND key = $key
+		    LIMIT 1
+		} {
+		    return $value
+		}
+		return -code error "no such key for that host"
+	    }
+	}
+    }
 }
 
-# The implementation of the puncode encoder. This is based on the code on
+# The implementation of the punycode encoder. This is based on the code on
 # http://tools.ietf.org/html/rfc3492 (encoder) and http://wiki.tcl.tk/10501
 # (decoder) but with extensive modifications.
 
@@ -462,6 +538,10 @@ namespace eval ::http::cookiejar_support::puny {
     variable damp 700
     variable initial_bias 72
     variable initial_n 0x80
+
+    variable maxcodepoint 0xFFFF  ;# 0x10FFFF would be correct, except Tcl
+				   # can't handle non-BMP characters right now
+				   # anyway.
 
     proc adapt {delta first numchars} {
 	variable base
@@ -489,7 +569,11 @@ namespace eval ::http::cookiejar_support::puny {
 	variable initial_n
 	variable initial_bias
 
-	set in [split $input ""]
+	set in {}
+	foreach char [set input [split $input ""]] {
+	    scan $char "%c" ch
+	    lappend in $ch
+	}
 	set output {}
 
 	# Initialize the state:
@@ -498,37 +582,35 @@ namespace eval ::http::cookiejar_support::puny {
 	set bias $initial_bias
 
 	# Handle the basic code points:
-	foreach ch $in {
+	foreach ch $input {
 	    if {$ch < "\u0080"} {
-		if {$case ne ""} {
-		    if {$case} {
-			append output [string toupper $ch]
-		    } else {
-			append output [string tolower $ch]
-		    }
-		} else {
+		if {$case eq ""} {
 		    append output $ch
+		} elseif {$case} {
+		    append output [string toupper $ch]
+		} else {
+		    append output [string tolower $ch]
 		}
 	    }
 	}
 
-	set h [set b [string length $output]]
+	set b [string length $output]
 
 	# h is the number of code points that have been handled, b is the
 	# number of basic code points.
 
-	if {$b} {
+	if {$b > 0} {
 	    append output "-"
 	}
 
 	# Main encoding loop:
 
-	while {$h < [llength $in]} {
+	for {set h $b} {$h < [llength $in]} {incr delta; incr n} {
 	    # All non-basic code points < n have been handled already.  Find
 	    # the next larger one:
 
-	    for {set m inf; set j 0} {$j < [llength $in]} {incr j} {
-		scan [lindex $in $j] "%c" ch
+	    set m inf
+	    foreach ch $in {
 		if {$ch >= $n && $ch < $m} {
 		    set m $ch
 		}
@@ -538,144 +620,122 @@ namespace eval ::http::cookiejar_support::puny {
 	    # <m,0>, but guard against overflow:
 
 	    if {$m-$n > (0xffffffff-$delta)/($h+1)} {
-		error "overflow in delta computation"
+		throw {PUNYCODE OVERFLOW} "overflow in delta computation"
 	    }
 	    incr delta [expr {($m-$n) * ($h+1)}]
 	    set n $m
 
-	    for {set j 0} {$j < [llength $in]} {incr j} {
-		scan [lindex $in $j] "%c" ch
+	    foreach ch $in {
 		if {$ch < $n && ([incr delta] & 0xffffffff) == 0} {
-		    error "overflow in delta computation"
+		    throw {PUNYCODE OVERFLOW} "overflow in delta computation"
 		}
 
-		if {$ch == $n} {
-		    # Represent delta as a generalized variable-length
-		    # integer:
+		if {$ch != $n} {
+		    continue
+		}
 
-		    for {set q $delta; set k $base} true {incr k $base} {
-			set t [expr {min(max($k-$bias,$tmin),$tmax)}]
-			if {$q < $t} break
-			append output \
-			    [lindex $digits [expr {$t + ($q-$t)%($base-$t)}]]
-			set q [expr {($q-$t) / ($base-$t)}]
+		# Represent delta as a generalized variable-length integer:
+
+		for {set q $delta; set k $base} true {incr k $base} {
+		    set t [expr {min(max($k-$bias, $tmin), $tmax)}]
+		    if {$q < $t} {
+			break
 		    }
-
-		    append output [lindex $digits $q]
-		    set bias [adapt $delta [expr {$h==$b}] [expr {$h+1}]]
-		    set delta 0
-		    incr h
+		    append output \
+			[lindex $digits [expr {$t + ($q-$t)%($base-$t)}]]
+		    set q [expr {($q-$t) / ($base-$t)}]
 		}
-	    }
 
-	    incr delta
-	    incr n
+		append output [lindex $digits $q]
+		set bias [adapt $delta [expr {$h==$b}] [expr {$h+1}]]
+		set delta 0
+		incr h
+	    }
 	}
 
 	return $output
     }
 
-    # Decoding
-    proc toNums {text} {
-	set retval {}
-	foreach c [split $text ""] {
-	    scan $c "%c" ch
-	    lappend retval $ch
-	}
-	return $retval
-    }
-
-    proc toChars {nums} {
-	set chars {}
-	foreach char $nums {
-	    append chars [format "%c" $char]
-	}
-	return $chars
-    }
-
-    # 3.3 Generalized variable-length integers
-    proc decodeGeneralizedInteger {extended extpos bias errors} {
-	variable tmin
-	variable tmax
-	variable base
-
-	set result 0
-	set w 1
-	set j 0
-	while true {
-	    set c [lindex $extended $extpos]
-	    incr extpos
-	    if {[string length $c] == 0} {
-		if {$errors eq "strict"} {
-		    error "incomplete punicode string"
-		}
-		return [list $extpos -1]
-	    }
-	    scan $c "%c" char
-	    if {[string match {[A-Z]} $c]} {
-		set digit [expr {$char - 0x41}];	# A=0,Z=25
-	    } elseif {[string match {[a-z]} $c]} {
-		set digit [expr {$char - 0x61}];	# a=0,z=25
-	    } elseif {[string match {[0-9]} $c]} {
-		set digit [expr {$char - 0x30 + 26}];	# 0=26,9=35
-	    } elseif {$errors eq "strict"} {
-		set pos [lindex $extended $extpos]
-		error "Invalid extended code point '$pos'"
-	    } else {
-		return [list $extpos -1]
-	    }
-	    set t [expr {min(max($base*($j + 1) - $bias, $tmin), $tmax)}]
-	    set result [expr {$result + $digit * $w}]
-	    if {$digit < $t} {
-		return [list $extpos $result]
-	    }
-	    set w [expr {$w * ($base - $t)}]
-	    incr j
-	}
-    }
-
-    # 3.2 Insertion unsort coding
-    proc insertionSort {buffer extended errors} {
-	variable initial_bias
-	variable initial_n
+    # Main decode function
+    proc decode {text {errors "lax"}} {
+	namespace upvar ::http::cookiejar_support::puny \
+	    tmin tmin tmax tmax base base initial_bias initial_bias \
+	    initial_n initial_n maxcodepoint maxcodepoint
 
 	set n $initial_n
 	set pos -1
 	set bias $initial_bias
-	set extpos 0
-	while {$extpos < [llength $extended]} {
-	    lassign [decodeGeneralizedInteger $extended $extpos $bias $errors]\
-		newpos delta
-	    if {$delta < 0} {
-		# There was an error in decoding. We can't continue because
-		# synchronization is lost.
-		return $buffer
+	set buffer [set chars {}]
+	set pos [string last "-" $text]
+	if {$pos >= 0} {
+	    set buffer [split [string range $text 0 [expr {$pos-1}]] ""]
+	    set text [string range $text [expr {$pos+1}] end]
+	}
+	set points [split $text ""]
+	set first true
+
+	for {set extpos 0} {$extpos < [llength $points]} {} {
+	    # Extract the delta, which is the encoding of the character and
+	    # where to insert it.
+
+	    set delta 0
+	    set w 1
+	    for {set j 1} true {incr j} {
+		scan [set c [lindex $points $extpos]] "%c" char
+		if {[string match {[A-Z]} $c]} {
+		    set digit [expr {$char - 0x41}];	  # A=0,Z=25
+		} elseif {[string match {[a-z]} $c]} {
+		    set digit [expr {$char - 0x61}];	  # a=0,z=25
+		} elseif {[string match {[0-9]} $c]} {
+		    set digit [expr {$char - 0x30 + 26}]; # 0=26,9=35
+		} else {
+		    if {$errors eq "strict"} {
+			throw {PUNYCODE INVALID} \
+			    "invalid extended code point '$c'"
+		    }
+		    # There was an error in decoding. We can't continue
+		    # because synchronization is lost.
+		    return [join $buffer ""]
+		}
+
+		incr extpos
+		set t [expr {min(max($base*$j - $bias, $tmin), $tmax)}]
+		incr delta [expr {$digit * $w}]
+		if {$digit < $t} {
+		    break
+		}
+		set w [expr {$w * ($base - $t)}]
+
+		if {$extpos >= [llength $points]} {
+		    if {$errors eq "strict"} {
+			throw {PUNYCODE PARTIAL} "incomplete punycode string"
+		    }
+		    # There was an error in decoding. We can't continue
+		    # because synchronization is lost.
+		    return [join $buffer ""]
+		}
 	    }
-	    incr pos [expr {$delta + 1}]
-	    incr n [expr {$pos / ([llength $buffer] + 1)}]
-	    if {$n > 1114111} {
+
+	    # Now we've got the delta, we can generate the character and
+	    # insert it.
+
+	    incr n [expr {[incr pos [expr {$delta+1}]]/([llength $buffer]+1)}]
+	    if {$n > $maxcodepoint} {
 		if {$errors eq "strict"} {
-		    error [format "Invalid character U+%06x" $n]
+		    if {$n < 0x10ffff} {
+			throw {PUNYCODE NON_BMP} \
+			    [format "unsupported character U+%06x" $n]
+		    }
+		    throw {PUNYCODE NON_UNICODE} "bad codepoint $n"
 		}
 		set n 63 ;# "?"
+		set extpos inf; # We're blowing up anyway...
 	    }
 	    set pos [expr {$pos % ([llength $buffer] + 1)}]
-	    set buffer [linsert $buffer $pos $n]
-	    set bias [adapt $delta [expr {$extpos == 0}] [llength $buffer]]
-	    set extpos $newpos
+	    set buffer [linsert $buffer $pos [format "%c" $n]]
+	    set bias [adapt $delta $first [llength $buffer]]
+	    set first false
 	}
-	return $buffer
-    }
-
-    proc decode {text {errors "lax"}} {
-	set baseline {}
-	set pos [string last "-" $text]
-	if {$pos == -1} {
-	    set extended $text
-	} else {
-	    set baseline [toNums [string range $text 0 [expr {$pos-1}]]]
-	    set extended [string range $text [expr {$pos+1}] end]
-	}
-	return [toChars [insertionSort $baseline [split $extended ""] $errors]]
+	return [join $buffer ""]
     }
 }
