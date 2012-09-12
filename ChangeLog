@@ -1,3 +1,11 @@
+2012-09-07  Harald Oehlmann  <oehhar@users.sf.net>
+
+	IMPLEMENTATION OF TIP#404.
+
+	* library/msgcat.tcl: [FRQ 3544988]: add commands
+	[mcflset] and [mcflmset] to set mc entries with implicit message file
+	locale. Package version is now 1.5.0.
+
 2012-08-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/msgs/uk.msg: [Bug 3561330]: Use the correct full name of
@@ -186,7 +194,7 @@
 
 	* library/msgcat/msgcat.tcl:   Add tn, ro_MO and ru_MO to msgcat.
 
-2012-06-29  Harald Oehlmann <harald.oehlmann@elmicron.de>
+2012-06-29  Harald Oehlmann <oehhar@users.sf.net>
 
 	* library/msgcat/msgcat.tcl:	[Bug 3536888]: Locale guessing of
 	* library/msgcat/pkgIndex.tcl:	msgcat fails on (some) Windows 7. Bump
