@@ -8092,7 +8092,6 @@ problems where [file *able] would return false results on Win/Samba (porter)
 and Tcl_FSMountsChanged(). (porter)
 
 2012-06-29 (bug fix)[3536888] fix locale guessing (oehlmann,nijtmans)
-=> msgcat 1.4.5
 
 2012-07-05 (bug fix)[1189293] make "<<" redirect binary safe (porter)
 
@@ -8109,8 +8108,11 @@ and Tcl_FSMountsChanged(). (porter)
 
 2012-08-25 (bug fix)[3561330] Ukranian translation of "March" (teterin)
 
+2012-09-12 (TIP 404) New msgcat commands [mcflset], [mcflmset] (oehlmann)
+=> msgcat 1.5.0
+
 Many revisions to better support a Cygwin environment (nijtmans)
 
 Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
---- Released 8.6b3, September 7, 2012 --- See ChangeLog for details ---
+--- Released 8.6b3, September 18, 2012 --- See ChangeLog for details ---
