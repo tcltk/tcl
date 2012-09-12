@@ -1,3 +1,11 @@
+2012-09-07  Harald Oehlmann  <oehhar@users.sf.net>
+
+	IMPLEMENTATION OF TIP#404.
+
+	* library/msgcat.tcl: [FRQ 3544988] (Backport from tcl8.6): add commands
+	[mcflset] and [mcflmset] to set mc entries with implicit message file
+	locale. Package version is now 1.5.0.
+
 2012-09-07  Alexandre Ferrieux <ferrieux@users.sourceforge.net>
 
 	* unix/tclUnixNotfy.c Backport of 2008-12-12 8.6 commit: Fix
