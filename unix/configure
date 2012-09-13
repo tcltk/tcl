@@ -8757,7 +8757,7 @@ else
 		arch=`isainfo`
 		echo "$as_me:$LINENO: checking whether to use -lsunmath for fp rounding control" >&5
 echo $ECHO_N "checking whether to use -lsunmath for fp rounding control... $ECHO_C" >&6
-		if test "$arch" = "amd64 i386"; then
+		if test "$arch" = "amd64 i386" -o "$arch" = "i386"; then
 
 			echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -8956,7 +8956,7 @@ else
 fi
 
 		case $system in
-		    SunOS-5.[1-9][0-9]*)
+		    SunOS-5.[1-9][0-9]*|SunOS-5.[7-9])
 			SHLIB_LD="\${CC} -G -z $textmode \${LDFLAGS}";;
 		    *)
 			SHLIB_LD="/usr/ccs/bin/ld -G -z $textmode";;
