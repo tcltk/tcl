@@ -161,13 +161,20 @@ TclWinThreadStart(
 {
     WinThread *winThreadPtr = (WinThread *) lpParameter;
     unsigned int fpmask = _MCW_EM | _MCW_RC | _MCW_PC | _MCW_DN;
+    LPTHREAD_START_ROUTINE lpOrigStartAddress;
+    LPVOID lpOrigParameter;
 
     if (!winThreadPtr) {
 	return TCL_ERROR;
     }
 
     _controlfp(winThreadPtr->fpControl, fpmask);
-    return winThreadPtr->lpStartAddress(winThreadPtr->lpParameter);
+
+    lpOrigStartAddress = winThreadPtr->lpStartAddress;
+    lpOrigParameter = winThreadPtr->lpParameter;
+
+    ckfree((char *)winThreadPtr);
+    return lpOrigStartAddress(lpOrigParameter);
 }
 
 /*
