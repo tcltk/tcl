@@ -1355,7 +1355,10 @@ fi
 #------------------------------------------------------------------------
 # Empty slate for bundled packages, to avoid stale configuration
 #------------------------------------------------------------------------
-rm -Rf pkgs
+#rm -Rf pkgs
+if test -f Makefile; then
+    make distclean-packages
+fi
 
 #------------------------------------------------------------------------
 # Handle the --prefix=... option
