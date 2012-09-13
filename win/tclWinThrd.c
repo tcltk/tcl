@@ -160,13 +160,19 @@ TclWinThreadStart(
 				 * from TclpThreadCreate */
 {
     WinThread *winThreadPtr = (WinThread *) lpParameter;
-    unsigned int fpmask = _MCW_EM | _MCW_RC | _MCW_PC | _MCW_DN;
+    unsigned int fpmask;
     LPTHREAD_START_ROUTINE lpOrigStartAddress;
     LPVOID lpOrigParameter;
 
     if (!winThreadPtr) {
 	return TCL_ERROR;
     }
+
+    fpmask = _MCW_EM | _MCW_RC | _MCW_PC;
+
+#if defined(_MSC_VER) && _MSC_VER >= 1200
+    fpmask |= _MCW_DN;
+#endif
 
     _controlfp(winThreadPtr->fpControl, fpmask);
 
@@ -207,7 +213,7 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
     HANDLE tHandle;
 
     winThreadPtr = (WinThread *)ckalloc(sizeof(WinThread));
-    winThreadPtr->lpStartAddress = proc;
+    winThreadPtr->lpStartAddress = (LPTHREAD_START_ROUTINE) proc;
     winThreadPtr->lpParameter = clientData;
     winThreadPtr->fpControl = _controlfp(0, 0);
 
@@ -215,7 +221,8 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
 
 #if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize,
-	    TclWinThreadStart, winThreadPtr, 0, (unsigned *)idPtr);
+	    (Tcl_ThreadCreateProc*) TclWinThreadStart, winThreadPtr,
+	    0, (unsigned *)idPtr);
 #else
     tHandle = CreateThread(NULL, (DWORD) stackSize,
 	    TclWinThreadStart, winThreadPtr, 0, (LPDWORD)idPtr);
