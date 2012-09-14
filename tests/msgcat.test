@@ -655,7 +655,6 @@ namespace eval ::msgcat::test {
 
     removeFile l2.msg $msgdir2
     removeDirectory msgdir2
-    removeFile l3.msg $msgdir3
     removeDirectory msgdir3
 
     cleanupTests
