@@ -7655,6 +7655,9 @@ and Tcl_FSMountsChanged(). (porter)
 
 2012-07-25 (bug fix)[3546275] [auto_execok] search match [exec] (danckaert)
 
+2012-09-12 (TIP 404) New msgcat commands [mcflset], [mcflmset] (oehlmann)
+=> msgcat 1.5.0
+
 Many revisions to better support a Cygwin environment (nijtmans)
 
 --- Released 8.5.12, July 27, 2011 --- See ChangeLog for details ---
