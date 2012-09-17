@@ -280,7 +280,7 @@ Tcl_SetByteArrayObj(
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
 
-    if ((length != NULL) && (bytes > 0)) {
+    if ((bytes != NULL) && (length > 0)) {
 	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
     }
     objPtr->typePtr = &tclByteArrayType;
