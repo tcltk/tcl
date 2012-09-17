@@ -8,11 +8,8 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 # Dependencies
-package require Tcl 8.5;# FIXME: JUST DURING DEVELOPMENT
-package require TclOO;# FIXME: JUST DURING DEVELOPMENT
-package require http 2.7;# FIXME: JUST DURING DEVELOPMENT
-#package require Tcl 8.6
-#package require http 2.8.4
+package require Tcl 8.6
+package require http 2.8.4
 package require sqlite3
 
 #
@@ -40,6 +37,13 @@ namespace eval ::http {
 
     # Some support procedures, none particularly useful in general
     namespace eval cookiejar_support {
+	# Set up a logger if the http package isn't actually loaded yet.
+	if {![llength [info commands ::http::Log]]} {
+	    proc ::http::Log args {
+		# Do nothing by default...
+	    }
+	}
+
 	namespace export *
 	proc locn {secure domain path {key ""}} {
 	    if {$key eq ""} {
@@ -126,9 +130,11 @@ package provide cookiejar $::http::cookiejar_version
 
 	if {$path eq ""} {
 	    sqlite3 [namespace current]::db :memory:
+	    set storeorigin "constructed cookie store in memory"
 	} else {
 	    sqlite3 [namespace current]::db $path
 	    db timeout 500
+	    set storeorigin "loaded cookie store from $path"
 	}
 
 	set deletions 0
@@ -194,10 +200,11 @@ package provide cookiejar $::http::cookiejar_version
 		domain TEXT PRIMARY KEY);
 	}
 
+	set cookieCount "no"
 	db eval {
 	    SELECT COUNT(*) AS cookieCount FROM persistentCookies
 	}
-	log info "loaded cookie store from $path with $cookieCount entries"
+	log info "$storeorigin with $cookieCount entries"
 
 	set aid [after $purgeinterval [namespace current]::my PurgeCookies]
 
@@ -300,7 +307,7 @@ package provide cookiejar $::http::cookiejar_version
 		    }
 		}
 		if {$utf ne [IDNAdecode $idna]} {
-		    log warn "mismatch in IDNA handling for $idna"
+		    log warn "mismatch in IDNA handling for $idna ($line, $utf, [IDNAdecode $idna])"
 		}
 	    }
 	}
