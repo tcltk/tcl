@@ -2,9 +2,11 @@
 
 	IMPLEMENTATION OF TIP#404.
 
-	* library/msgcat.tcl: [FRQ 3544988] (Backport from tcl8.6): add commands
-	[mcflset] and [mcflmset] to set mc entries with implicit message file
-	locale. Package version is now 1.5.0.
+	* library/msgcat/msgcat.tcl:	[FRQ 3544988]: (Backport from Tcl 8.6)
+	* library/msgcat/pkgIndex.tcl:	New commands [mcflset] and [mcflmset]
+	* unix/Makefile.in:		to set mc entries with implicit message
+	* win/Makefile.in:		file locale. Bump to 1.5.0.
+	* tests/msgcat.test:
 
 2012-09-07  Alexandre Ferrieux <ferrieux@users.sourceforge.net>
 
