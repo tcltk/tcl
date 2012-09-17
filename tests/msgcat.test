@@ -56,6 +56,13 @@ namespace eval ::msgcat::test {
 		set result [string tolower \
 			[msgcat::ConvertLocale $::tcl::mac::locale]]
 	    } else {
+		if {([info sharedlibextension] == ".dll")
+			&& ![catch {package require registry}]} {
+		    # Windows and Cygwin have other ways to determine the
+		    # locale when the environment variables are missing
+		    # and the registry package is present
+		    continue
+		}
 		set result c
 	    }
 	}
