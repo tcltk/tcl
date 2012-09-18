@@ -21,11 +21,12 @@ namespace eval ::http {
     # Makefiles
     variable cookiejar_version 0.1
 
-    # TODO: is this the _right_ list of domains to use?
+    # TODO: is this the _right_ list of domains to use? Or is there an alias
+    # for it that will persist longer?
     variable cookiejar_domainlist \
 	http://mxr.mozilla.org/mozilla-central/source/netwerk/dns/effective_tld_names.dat?raw=1
     variable cookiejar_domainfile \
-	[file join [file dirname [info script]] effective_tld_names.txt]
+	[file join [file dirname [info script]] effective_tld_names.txt.gz]
     # The list is directed to from http://publicsuffix.org/list/
     variable cookiejar_loglevel info
     variable cookiejar_vacuumtrigger 200
@@ -664,85 +665,87 @@ namespace eval ::http::cookiejar_support::puny {
     }
 
     # Main decode function
-    proc decode {text {errors "lax"}} {
+    proc decode {input} {
 	namespace upvar ::http::cookiejar_support::puny \
 	    tmin tmin tmax tmax base base initial_bias initial_bias \
 	    initial_n initial_n maxcodepoint maxcodepoint
 
+	# Initialize the state:
+
 	set n $initial_n
-	set pos -1
+	set i 0
+	set first 1
 	set bias $initial_bias
-	set buffer [set chars {}]
-	set pos [string last "-" $text]
-	if {$pos >= 0} {
-	    set buffer [split [string range $text 0 [expr {$pos-1}]] ""]
-	    set text [string range $text [expr {$pos+1}] end]
-	}
-	set points [split $text ""]
-	set first true
 
-	for {set extpos 0} {$extpos < [llength $points]} {} {
-	    # Extract the delta, which is the encoding of the character and
-	    # where to insert it.
+	# Split the string into the "real" ASCII characters and the ones to
+	# feed into the main decoder. Note that we don't need to check the
+	# result of [regexp] because that RE will technically match any string
+	# at all.
 
-	    set delta 0
-	    set w 1
-	    for {set j 1} true {incr j} {
-		scan [set c [lindex $points $extpos]] "%c" char
-		if {[string match {[A-Z]} $c]} {
-		    set digit [expr {$char - 0x41}];	  # A=0,Z=25
-		} elseif {[string match {[a-z]} $c]} {
-		    set digit [expr {$char - 0x61}];	  # a=0,z=25
-		} elseif {[string match {[0-9]} $c]} {
-		    set digit [expr {$char - 0x30 + 26}]; # 0=26,9=35
-		} else {
-		    if {$errors eq "strict"} {
-			throw {PUNYCODE INVALID} \
-			    "invalid extended code point '$c'"
-		    }
-		    # There was an error in decoding. We can't continue
-		    # because synchronization is lost.
-		    return [join $buffer ""]
+	regexp {^(?:(.*)-)?([^-]*)$} $input input pre post
+	set output [split $pre ""]
+	set out [llength $output]
+
+	# Main decoding loop:
+
+	for {set in 0} {$in < [string length $post]} {incr in} {
+	    # Decode a generalized variable-length integer into delta, which
+	    # gets added to i. The overflow checking is easier if we increase
+	    # i as we go, then subtract off its starting value at the end to
+	    # obtain delta.
+
+	    for {set oldi $i; set w 1; set k $base} 1 {incr in} {
+		if {[set ch [string index $post $in]] eq ""} {
+		    throw {PUNYCODE BAD_INPUT} "exceeded input data"
 		}
-
-		incr extpos
-		set t [expr {min(max($base*$j - $bias, $tmin), $tmax)}]
-		incr delta [expr {$digit * $w}]
+		if {[string match -nocase {[a-z]} $ch]} {
+		    scan [string toupper $ch] %c digit
+		    incr digit -65
+		} elseif {[string match {[0-9]} $ch]} {
+		    set digit [expr {$ch + 26}]
+		} else {
+		    throw {PUNYCODE BAD_INPUT} "bad decode character \"$ch\""
+		}
+		incr i [expr {$digit * $w}]
+		set t [expr {min(max($tmin, $k-$bias), $tmax)}]
 		if {$digit < $t} {
+		    set bias [adapt [expr {$i-$oldi}] $first [incr out]]
+		    set first 0
 		    break
 		}
-		set w [expr {$w * ($base - $t)}]
-
-		if {$extpos >= [llength $points]} {
-		    if {$errors eq "strict"} {
-			throw {PUNYCODE PARTIAL} "incomplete punycode string"
-		    }
-		    # There was an error in decoding. We can't continue
-		    # because synchronization is lost.
-		    return [join $buffer ""]
+		if {[set w [expr {$w * ($base - $t)}]] > 0x7fffffff} {
+		    throw {PUNYCODE OVERFLOW} \
+			"excessively large integer computed in digit decode"
 		}
+		incr k $base
 	    }
 
-	    # Now we've got the delta, we can generate the character and
-	    # insert it.
+	    # i was supposed to wrap around from out+1 to 0, incrementing n
+	    # each time, so we'll fix that now:
 
-	    incr n [expr {[incr pos [expr {$delta+1}]]/([llength $buffer]+1)}]
-	    if {$n > $maxcodepoint} {
-		if {$errors eq "strict"} {
-		    if {$n < 0x10ffff} {
-			throw {PUNYCODE NON_BMP} \
-			    [format "unsupported character U+%06x" $n]
-		    }
-		    throw {PUNYCODE NON_UNICODE} "bad codepoint $n"
+	    if {[incr n [expr {$i / $out}]] > 0x7fffffff} {
+		throw {PUNYCODE OVERFLOW} \
+		    "excessively large integer computed in character choice"
+	    } elseif {$n > $maxcodepoint} {
+		if {$n < 0x10ffff} {
+		    throw {PUNYCODE NON_BMP} \
+			[format "unsupported character U+%06x" $n]
 		}
-		set n 63 ;# "?"
-		set extpos inf; # We're blowing up anyway...
+		throw {PUNYCODE NON_UNICODE} "bad codepoint $n"
 	    }
-	    set pos [expr {$pos % ([llength $buffer] + 1)}]
-	    set buffer [linsert $buffer $pos [format "%c" $n]]
-	    set bias [adapt $delta $first [llength $buffer]]
-	    set first false
+	    set i [expr {$i % $out}]
+
+	    # Insert n at position i of the output:
+
+	    set output [linsert $output $i [format "%c" $n]]
+	    incr i
 	}
-	return [join $buffer ""]
+
+	return [join $output ""]
     }
 }
+
+# Local variables:
+# mode: tcl
+# fill-column: 78
+# End:
