@@ -79,7 +79,7 @@ if {[testConstraint thread]} {
 if {[testConstraint testthread]} {
     proc drainEventQueue {} {
 	while {[set x [testthread event]]} {
-	    puts "WARNING: drained $x event(s) on main thread"
+	    #puts "WARNING: drained $x event(s) on main thread"
 	}
     }
 
