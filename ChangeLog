@@ -1,3 +1,8 @@
+2012-09-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h: make Tcl_Interp a fully opaque structure
+	if TCL_NO_DEPRECATED is set (TIP 330 and 336).
+
 2012-09-07  Harald Oehlmann  <oehhar@users.sf.net>
 
 	*** 8.6b3 TAGGED FOR RELEASE ***
