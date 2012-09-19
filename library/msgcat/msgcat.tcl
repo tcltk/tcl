@@ -13,11 +13,11 @@
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.5.0
+package provide msgcat 1.6.0
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
-	    mcunknown mcflset mcflmset
+	    mcunknown mcflset mcflmset mcconfig
 
     # Records the current locale as passed to mclocale
     variable Locale ""
@@ -27,6 +27,9 @@ namespace eval msgcat {
 
     # Records the locale of the currently sourced message catalogue file
     variable FileLocale
+
+    # List of file pattern to load in addition to Loclist.
+    variable Patternlist {}
 
     # Records the mapping between source strings and translated strings.  The
     # dict key is of the form "<locale> <namespace> <src>", where locale and
@@ -166,6 +169,39 @@ namespace eval msgcat {
     }
 }
 
+# msgcat::mcconfig option ?value? ?option? ?value?
+#
+#	Get or set a package option.
+#	To set options, one may specify multiple option-value pairs.
+#	To read an option value, one may specify a single option.
+#	Available options are:
+#	-pattern
+#	    List of file pattern to load in addition to mcpreferences
+#
+# Arguments:
+#	option	The name of the option
+#	value	The new value of the option
+#
+# Results:
+#	The value if options are read
+
+proc msgcat::mcconfig {args} {
+    variable Patternlist
+    variable MCFileLocale
+    if {1 == [llength $args]} {
+	switch -exact -- [lindex $args] {
+	    -pattern { return $Patternlist}
+	    default { return -code error "Unknown option" }
+	}
+    }
+    dict for {option value} $args {
+	switch -exact -- $option {
+	    -pattern { set Patternlist $value }
+	    default { return -code error "Unknown option" }
+	}
+    }
+}
+
 # msgcat::mc --
 #
 #	Find the translation for the given string based on the current
@@ -280,26 +316,29 @@ proc msgcat::mcpreferences {} {
 #	Returns the number of message catalogs that were loaded.
 
 proc msgcat::mcload {langdir} {
+    variable Patternlist
     variable FileLocale
     # Save the file locale if we are recursively called
     if {[info exists FileLocale]} {
 	set nestedFileLocale $FileLocale
     }
     set x 0
-    foreach p [mcpreferences] {
-	if { $p eq {} } {
-	    set p ROOT
+    set filelist {}
+    foreach pattern [lsort -unique [concat [mcpreferences] $Patternlist]] {
+	if { $pattern eq {} } {
+	    set pattern ROOT
 	}
-	set langfile [file join $langdir $p.msg]
-	if {[file exists $langfile]} {
-	    incr x
-	    set FileLocale [string tolower [file tail [file rootname $langfile]]]
-	    if {"root" eq $FileLocale} {
-		set FileLocale ""
-	    }
-	    uplevel 1 [list ::source -encoding utf-8 $langfile]
-	    unset FileLocale
+	lappend filelist {*}[glob -directory $langdir -nocomplain -types {f r}\
+		-- $pattern.msg]
+    }
+    foreach langfile [lsort -unique $filelist] {
+	incr x
+	set FileLocale [string tolower [file tail [file rootname $langfile]]]
+	if {"root" eq $FileLocale} {
+	    set FileLocale ""
 	}
+	uplevel 1 [list ::source -encoding utf-8 $langfile]
+	unset FileLocale
     }
     if {[info exists nestedFileLocale]} {
 	set FileLocale $nestedFileLocale
