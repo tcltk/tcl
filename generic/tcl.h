@@ -500,7 +500,9 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
  * accessed with Tcl_GetObjResult() and Tcl_SetObjResult().
  */
 
-typedef struct Tcl_Interp {
+typedef struct Tcl_Interp
+#ifndef TCL_NO_DEPRECATED
+{
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
 #ifdef USE_INTERP_RESULT
@@ -517,8 +519,8 @@ typedef struct Tcl_Interp {
 				 * Tcl_Eval must free it before executing next
 				 * command. */
 #else
-    char *unused3 TCL_DEPRECATED_API("bad field access");
-    void (*unused4) (char *) TCL_DEPRECATED_API("bad field access");
+    char *resultDontUse; /* Don't use in extensions! */
+    void (*freeProcDontUse) (char *); /* Don't use in extensions! */
 #endif
 #ifdef USE_INTERP_ERRORLINE
     int errorLine TCL_DEPRECATED_API("use Tcl_GetErrorLine/Tcl_SetErrorLine");
@@ -526,9 +528,11 @@ typedef struct Tcl_Interp {
 				 * line number within the command where the
 				 * error occurred (1 if first line). */
 #else
-    int unused5 TCL_DEPRECATED_API("bad field access");
+    int errorLineDontUse; /* Don't use in extensions! */
 #endif
-} Tcl_Interp;
+}
+#endif /* TCL_NO_DEPRECATED */
+Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
