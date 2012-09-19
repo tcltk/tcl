@@ -1,3 +1,12 @@
+2012-09-19  Harald Oehlmann  <oehhar@users.sf.net>
+
+	IMPLEMENTATION OF TIP#399.
+
+	* library/msgcat/msgcat.tcl:	[FRQ 3544988]: New commands [mcconfig]
+	* library/msgcat/pkgIndex.tcl:	to set additional mcload search pattern.
+	* unix/Makefile.in:		Bump to 1.6.0.
+	* win/Makefile.in:
+
 2012-09-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:  make Tcl_Interp a fully opaque structure
