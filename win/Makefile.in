@@ -456,8 +456,12 @@ ${TEST_DLL_FILE}: ${TCLTEST_OBJS} ${TCL_STUB_LIB_FILE}
 	@MAKE_DLL@ ${TCLTEST_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
 # use pre-built zlib1.dll
-${ZLIB_DLL_FILE}: $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE}
-	@$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}
+${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
+	@if test "@ZLIB_LIBS@set" == "${ZLIB_DIR}/win64/zdll.libset" ; then \
+		$(COPY) $(ZLIB_DIR)/win64/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
+	else \
+		$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
+	fi;
 
 # Add the object extension to the implicit rules. By default .obj is not
 # automatically added.
@@ -643,8 +647,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
-	@echo "Installing package msgcat 1.4.5 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.4.5.tm;
+	@echo "Installing package msgcat 1.5.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.5.0.tm;
 	@echo "Installing package tcltest 2.3.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.4.tm;
 	@echo "Installing package platform 1.0.10 as a Tcl Module";
@@ -697,14 +701,14 @@ test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
 	-load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
-	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
+	package ifneeded dde 1.4.0b2 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
 	package ifneeded registry 1.3.0 [list load [file normalize ${REG_DLL_FILE}] registry]" | ./$(CAT32)
 
 # Useful target to launch a built tclsh with the proper path,...
 runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLSH) $(TESTFLAGS) -load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
-	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
+	package ifneeded dde 1.4.0b2 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
 	package ifneeded registry 1.3.0 [list load [file normalize ${REG_DLL_FILE}] registry]" $(SCRIPT)
 
 # This target can be used to run tclsh from the build directory via
@@ -782,7 +786,7 @@ test-packages: tcltest packages
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	        echo "Testing package '$$pkg'"; \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) "LD_LIBRARY_PATH=$$builddir:${LD_LIBRARY_PATH}" "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" "TCLLIBPATH=$$builddir/pkgs" test "TCLSH_PROG=$$builddir/tcltest"; ) \
+	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) "LD_LIBRARY_PATH=$$builddir:${LD_LIBRARY_PATH}" "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" "TCLLIBPATH=$$builddir/pkgs" test "TCLSH_PROG=$$builddir/${TCLSH}"; ) \
 	    fi; \
 	  fi; \
 	done; \
