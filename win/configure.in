@@ -120,15 +120,11 @@ esac
 #	as we just assume that the platform hasn't got a usable z.lib
 #------------------------------------------------------------------------
 
-AS_IF([test "$do64bit" = "yes" && test "$GCC" != "yes"], [
-  tcl_ok=no
-], [
 AS_IF([test "${enable_shared+set}" = "set"], [
   enableval="$enable_shared"
   tcl_ok=$enableval
 ], [
   tcl_ok=yes
-])
 ])
 AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
