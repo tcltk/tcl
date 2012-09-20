@@ -1,5 +1,10 @@
 2012-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* win/configure.in: New import libraries for zlib 1.2.7,
+	* win/configure:    usable for all win32/win64 compilers
+	* compat/zlib/win32/zdll.lib
+	* compat/zlib/win64/zdll.lib
+
 	* win/tclWinDde.c: [Frq 3527238]: Full unicode support
 	for dde. Dde version is now 1.4.0b2.
 	***POTENTIAL INCOMPATIBILITY***

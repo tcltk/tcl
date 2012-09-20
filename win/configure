@@ -4344,12 +4344,6 @@ esac
 #	as we just assume that the platform hasn't got a usable z.lib
 #------------------------------------------------------------------------
 
-if test "$do64bit" = "yes" && test "$GCC" != "yes"; then
-
-  tcl_ok=no
-
-else
-
 if test "${enable_shared+set}" = "set"; then
 
   enableval="$enable_shared"
@@ -4358,9 +4352,6 @@ if test "${enable_shared+set}" = "set"; then
 else
 
   tcl_ok=yes
-
-fi
-
 
 fi
 
