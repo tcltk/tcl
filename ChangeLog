@@ -1,3 +1,9 @@
+2012-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c: [Frq 3527238]: Full unicode support
+	for dde. Dde version is now 1.4.0b2.
+	***POTENTIAL INCOMPATIBILITY***
+
 2012-09-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:  make Tcl_Interp a fully opaque structure
