@@ -1,7 +1,8 @@
 2012-09-19  Harald Oehlmann  <oehhar@users.sf.net>
 
 	* library/msgcat/msgcat.tcl:	dynamic locale change with mc file
-	load on locale change.
+	* library/clock.tcl:            load on locale change.
+	clock uses new msgcat features.
 
 2012-09-19  Jan Nijtmans  <nijtmans@users.sf.net>
 

@@ -202,29 +202,27 @@ proc msgcat::mc {src args} {
 
     variable Msgs
     variable Loclist
-    variable PackageConfig
 
     set ns [uplevel 1 [list ::namespace current]]
     set loclist [PackagePreferences $ns]
 
-    while {$ns != ""} {
+    set nscur $ns
+    while {$nscur != ""} {
 	foreach loc $loclist {
-	    if {[dict exists $Msgs $ns $loc $src]} {
-		if {[llength $args] == 0} {
-		    return [dict get $Msgs $ns $loc $src]
-		} else {
-		    return [format [dict get $Msgs $ns $loc $src] {*}$args]
-		}
+	    if {[dict exists $Msgs $nscur $loc $src]} {
+		return [DefaultUnknown "" [dict get $Msgs $nscur $loc $src]\
+			{*}$args]
 	    }
 	}
-	set ns [namespace parent $ns]
+	set nscur [namespace parent $nscur]
     }
     # call package local or default unknown command
     set args [linsert $args 0 [lindex $loclist 0] $src]
-    if {[Invoke unknowncmd $args $ns result]} {
-	return $result
+    switch -exact -- [Invoke unknowncmd $args $ns result] {
+	0 { return [uplevel 1 [linsert $args 0 [namespace origin mcunknown]]] }
+	1 { return [DefaultUnknown {*}$args] }
+	default { return $result }
     }
-    return [uplevel 1 [linsert $args 0 [namespace origin mcunknown]]]
 }
 
 # msgcat::mcexists --
@@ -423,8 +421,8 @@ proc msgcat::mcloadedlocales {subcommand} {
 #	    Returns true, if a package locale is set
 #	unset
 #	    Unset the package locale and activate the default locale.
-#	    This may clear message catalog data and may load message catalog
-#	    files
+#	    This loads message catalog file which where missing in the package
+#	    locale.
 #	preferences
 #	    Return locale preference list valid for the package.
 #	loaded
@@ -518,18 +516,13 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 	    if { ![dict exists $PackageConfig loclist $ns] } { return }
 	    
 	    # unset package locale
-	    set loadedlocales [dict get $PackageConfig loadedlocales $ns]
+	    set loadLocales [ListComplement\
+		    [dict get $PackageConfig loadedlocales $ns] $LoadedLocales]
 	    dict unset PackageConfig loadedlocales $ns
 	    dict unset PackageConfig loclist $ns
 
-	    # Remove unwanted locales
-	    foreach locale [dict keys [dict get $Msgs $ns]] {
-		if { $locale ni $LoadedLocales } {
-		    dict unset Msgs $ns $locale
-		}
-	    }
 	    # Add missing locales
-	    Load $ns [ListComplement $loadedlocales $LoadedLocales]
+	    Load $ns $loadLocales
 	}
 	default {
 	    return -code error "unknown subcommand \"$subcommand\": must be\
@@ -598,6 +591,9 @@ proc msgcat::mcforgetpackage {} {
 #	unknowncmd
 #	    Use a package locale mcunknown procedure instead the global one.
 #	    The appended arguments are identical to mcunknown.
+#	    A default unknown handler is used if set to the empty string.
+#	    This consists in returning the key if no arguments are given.
+#	    With given arguments, format is used to process the arguments.
 #
 # Arguments:
 #	subcommand		Operation on the package
@@ -855,7 +851,11 @@ proc msgcat::Load {ns locales {callbackonly 0}} {
 #			callback to. May be set to "" to discard the result.
 #
 # Results:
-#	Returns true if at least one command was called
+#	Possible values:
+#	- 0: no valid command registered
+#	- 1: registered command was the empty string
+#	- 2: registered command called, resultname is set
+#	If multiple commands are called, the maximum of all results is returned.
 
 proc msgcat::Invoke {index arglist {ns ""} {resultname ""}} {
     variable PackageConfig
@@ -868,15 +868,19 @@ proc msgcat::Invoke {index arglist {ns ""} {resultname ""}} {
     } else {
 	set packageList [list $ns]
     }
-    set called 0
+    set ret 0
     foreach ns $packageList {
 	if {[dict exists $PackageConfig $index $ns] && [namespace exists $ns]} {
-	    set result [namespace inscope $ns\
-		    [dict get $PackageConfig $index $ns] {*}$arglist]
-	    set called 1
+	    set cmd [dict get $PackageConfig $index $ns]
+	    if {"" eq $cmd} {
+		if {$ret == 0} {set ret 1}
+	    } else {
+		set result [namespace inscope $ns $cmd {*}$arglist]
+		set ret 2
+	    }
 	}
     }
-    return $called
+    return $ret
 }
 
 # msgcat::mcset --
@@ -983,7 +987,8 @@ proc msgcat::mcflmset {pairs} {
 # msgcat::mcunknown --
 #
 #	This routine is called by msgcat::mc if a translation cannot
-#	be found for a string.  This routine is intended to be replaced
+#	be found for a string and no unknowncmd is set for the current
+#	package. This routine is intended to be replaced
 #	by an application specific routine for error reporting
 #	purposes.  The default behavior is to return the source string.
 #	If additional args are specified, the format command will be used
@@ -997,7 +1002,30 @@ proc msgcat::mcflmset {pairs} {
 # Results:
 #	Returns the translated value.
 
-proc msgcat::mcunknown {locale src args} {
+proc msgcat::mcunknown {args} {
+    return [uplevel 1 [list [namespace origin DefaultUnknown] {*}$args]]
+}
+
+# msgcat::DefaultUnknown --
+#
+#	This routine is called by msgcat::mc if a translation cannot
+#	be found for a string in the following circumstances:
+#	- Default global handler, if mcunknown is not redefined.
+#	- Per package handler, if the package sets unknowncmd to the empty
+#	  string.
+#	It returna the source string if the argument list is empty.
+#	If additional args are specified, the format command will be used
+#	to work them into the traslated string.
+#
+# Arguments:
+#	locale		(unused) The current locale.
+#	src		The string to be translated.
+#	args		Args to pass to the format command
+#
+# Results:
+#	Returns the translated value.
+
+proc msgcat::DefaultUnknown {locale src args} {
     if {[llength $args]} {
 	return [format $src {*}$args]
     } else {
