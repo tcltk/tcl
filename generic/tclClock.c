@@ -878,8 +878,8 @@ ConvertLocalToUTCUsingC(
 
     if (localErrno != 0
 	    || (fields->seconds == -1 && timeVal.tm_yday == -1)) {
-	Tcl_SetResult(interp, "time value too large/small to represent",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"time value too large/small to represent", -1));
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1018,17 +1018,17 @@ ConvertUTCToLocalUsingC(
 
     tock = (time_t) fields->seconds;
     if ((Tcl_WideInt) tock != fields->seconds) {
-	Tcl_AppendResult(interp,
-		"number too large to represent as a Posix time", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"number too large to represent as a Posix time", -1));
 	Tcl_SetErrorCode(interp, "CLOCK", "argTooLarge", NULL);
 	return TCL_ERROR;
     }
     TzsetIfNecessary();
     timeVal = ThreadSafeLocalTime(&tock);
     if (timeVal == NULL) {
-	Tcl_AppendResult(interp,
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"localtime failed (clock value may be too "
-		"large/small to represent)", NULL);
+		"large/small to represent)", -1));
 	Tcl_SetErrorCode(interp, "CLOCK", "localtimeFailed", NULL);
 	return TCL_ERROR;
     }

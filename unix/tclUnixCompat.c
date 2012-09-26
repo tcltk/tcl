@@ -99,12 +99,20 @@ static Tcl_Mutex compatLock;
 #undef NEED_COPYPWD
 #undef NEED_COPYSTRING
 
+#if !defined(HAVE_GETGRNAM_R_5) && !defined(HAVE_GETGRNAM_R_4)
+#define NEED_COPYGRP 1
+static int		CopyGrp(struct group *tgtPtr, char *buf, int buflen);
+#endif
+
+#if !defined(HAVE_GETPWNAM_R_5) && !defined(HAVE_GETPWNAM_R_4)
+#define NEED_COPYPWD 1
+static int		CopyPwd(struct passwd *tgtPtr, char *buf, int buflen);
+#endif
+
 static int		CopyArray(char **src, int elsize, char *buf,
 			    int buflen);
-static int		CopyGrp(struct group *tgtPtr, char *buf, int buflen);
 static int		CopyHostent(struct hostent *tgtPtr, char *buf,
 			    int buflen);
-static int		CopyPwd(struct passwd *tgtPtr, char *buf, int buflen);
 static int		CopyString(const char *src, char *buf, int buflen);
 
 #endif
@@ -214,7 +222,6 @@ TclpGetPwNam(
     return getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf));
 
 #else
-#define NEED_COPYPWD 1
     struct passwd *pwPtr;
 
     Tcl_MutexLock(&compatLock);
@@ -295,7 +302,6 @@ TclpGetPwUid(
     return getpwuid_r(uid, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf));
 
 #else
-#define NEED_COPYPWD 1
     struct passwd *pwPtr;
 
     Tcl_MutexLock(&compatLock);
@@ -364,7 +370,7 @@ TclpGetGrNam(
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-#ifdef HAVE_GETGRNAM_R_5
+#if defined(HAVE_GETGRNAM_R_5)
     struct group *grPtr = NULL;
 
     /*
@@ -399,7 +405,6 @@ TclpGetGrNam(
     return getgrnam_r(name, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf));
 
 #else
-#define NEED_COPYGRP 1
     struct group *grPtr;
 
     Tcl_MutexLock(&compatLock);
@@ -480,7 +485,6 @@ TclpGetGrGid(
     return getgrgid_r(gid, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf));
 
 #else
-#define NEED_COPYGRP 1
     struct group *grPtr;
 
     Tcl_MutexLock(&compatLock);
@@ -973,8 +977,7 @@ CopyString(
  *	Get CPU ID information on an Intel box under UNIX (either Linux or Cygwin)
  *
  * Results:
- *	Returns TCL_OK if successful, TCL_ERROR if CPUID is not supported or
- *	fails.
+ *	Returns TCL_OK if successful, TCL_ERROR if CPUID is not supported.
  *
  * Side effects:
  *	If successful, stores EAX, EBX, ECX and EDX registers after the CPUID
@@ -990,7 +993,16 @@ TclWinCPUID(
 {
     int status = TCL_ERROR;
 
-    /* There is no reason this couldn't be implemented on UNIX as well */
+    /* See: <http://en.wikipedia.org/wiki/CPUID> */
+#if defined(HAVE_CPUID)
+    __asm__ __volatile__("mov %%ebx, %%edi     \n\t" /* save %ebx */
+                 "cpuid            \n\t"
+                 "mov %%ebx, %%esi   \n\t" /* save what cpuid just put in %ebx */
+                 "mov %%edi, %%ebx  \n\t" /* restore the old %ebx */
+                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+                 : "a"(index) : "edi");
+    status = TCL_OK;
+#endif
     return status;
 }
 

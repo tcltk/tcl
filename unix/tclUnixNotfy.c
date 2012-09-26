@@ -91,13 +91,20 @@ typedef struct ThreadSpecificData {
 				 * from these pointers. You must hold the
 				 * notifierMutex lock before accessing these
 				 * fields. */
+#ifdef __CYGWIN__
+    void *event;     /* Any other thread alerts a notifier
+	 * that an event is ready to be processed
+	 * by sending this event. */
+    void *hwnd;			/* Messaging window. */
+#else
     Tcl_Condition waitCV;	/* Any other thread alerts a notifier that an
 				 * event is ready to be processed by signaling
 				 * this condition variable. */
+#endif /* __CYGWIN__ */
     int eventReady;		/* True if an event is ready to be processed.
 				 * Used as condition flag together with waitCV
 				 * above. */
-#endif
+#endif /* TCL_THREADS */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -180,6 +187,61 @@ static Tcl_ThreadId notifierThread;
 static void		NotifierThreadProc(ClientData clientData);
 #endif
 static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+
+/*
+ * Import of Windows API when building threaded with Cygwin.
+ */
+
+#if defined(TCL_THREADS) && defined(__CYGWIN__)
+typedef struct {
+    void *hwnd;
+    unsigned int *message;
+    int wParam;
+    int lParam;
+    int time;
+    int x;
+    int y;
+} MSG;
+
+typedef struct {
+    unsigned int style;
+    void *lpfnWndProc;
+    int cbClsExtra;
+    int cbWndExtra;
+    void *hInstance;
+    void *hIcon;
+    void *hCursor;
+    void *hbrBackground;
+    void *lpszMenuName;
+    void *lpszClassName;
+} WNDCLASS;
+
+extern void __stdcall	CloseHandle(void *);
+extern void *__stdcall	CreateEventW(void *, unsigned char, unsigned char,
+			    void *);
+extern void * __stdcall	CreateWindowExW(void *, void *, void *, DWORD, int,
+			    int, int, int, void *, void *, void *, void *);
+extern DWORD __stdcall	DefWindowProcW(void *, int, void *, void *);
+extern unsigned char __stdcall	DestroyWindow(void *);
+extern int __stdcall	DispatchMessageW(const MSG *);
+extern unsigned char __stdcall	GetMessageW(MSG *, void *, int, int);
+extern void __stdcall	MsgWaitForMultipleObjects(DWORD, void *,
+			    unsigned char, DWORD, DWORD);
+extern unsigned char __stdcall	PeekMessageW(MSG *, void *, int, int, int);
+extern unsigned char __stdcall	PostMessageW(void *, unsigned int, void *,
+				    void *);
+extern void __stdcall	PostQuitMessage(int);
+extern void *__stdcall	RegisterClassW(const WNDCLASS *);
+extern unsigned char __stdcall	ResetEvent(void *);
+extern unsigned char __stdcall	TranslateMessage(const MSG *);
+
+/*
+ * Threaded-cygwin specific functions in this file:
+ */
+
+static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
+			    void *wParam, void *lParam);
+#endif /* TCL_THREADS && __CYGWIN__ */
 
 /*
  *----------------------------------------------------------------------
@@ -311,7 +373,11 @@ Tcl_FinalizeNotifier(
 	 * Clean up any synchronization objects in the thread local storage.
 	 */
 
-	Tcl_ConditionFinalize(&tsdPtr->waitCV);
+#ifdef __CYGWIN__
+	CloseHandle(tsdPtr->event);
+#else /* __CYGWIN__ */
+	Tcl_ConditionFinalize(&(tsdPtr->waitCV));
+#endif /* __CYGWIN__ */
 
 	Tcl_MutexUnlock(&notifierMutex);
 #endif /* TCL_THREADS */
@@ -350,7 +416,11 @@ Tcl_AlertNotifier(
 
 	Tcl_MutexLock(&notifierMutex);
 	tsdPtr->eventReady = 1;
+#   ifdef __CYGWIN__
+	PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
+#   else
 	Tcl_ConditionNotify(&tsdPtr->waitCV);
+#   endif /* __CYGWIN__ */
 	Tcl_MutexUnlock(&notifierMutex);
 #endif /* TCL_THREADS */
     }
@@ -656,6 +726,31 @@ FileHandlerEventProc(
     return 1;
 }
 
+#if defined(TCL_THREADS) && defined(__CYGWIN__)
+
+static DWORD __stdcall
+NotifierProc(
+    void *hwnd,
+    unsigned int message,
+    void *wParam,
+    void *lParam)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (message != 1024) {
+	return DefWindowProcW(hwnd, message, wParam, lParam);
+    }
+
+    /*
+     * Process all of the runnable events.
+     */
+
+    tsdPtr->eventReady = 1;
+    Tcl_ServiceAll();
+    return 0;
+}
+#endif /* TCL_THREADS && __CYGWIN__ */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -686,6 +781,9 @@ Tcl_WaitForEvent(
 	Tcl_Time vTime;
 #ifdef TCL_THREADS
 	int waitForFiles;
+#   ifdef __CYGWIN__
+	MSG msg;
+#   endif /* __CYGWIN__ */
 #else
 	/*
 	 * Impl. notes: timeout & timeoutPtr are used if, and only if threads
@@ -707,8 +805,8 @@ Tcl_WaitForEvent(
 	if (timePtr != NULL) {
 	    /*
 	     * TIP #233 (Virtualized Time). Is virtual time in effect? And do
-	     * we actually have something to scale? If yes to both then we call
-	     * the handler to do this scaling.
+	     * we actually have something to scale? If yes to both then we
+	     * call the handler to do this scaling.
 	     */
 
 	    if (timePtr->sec != 0 || timePtr->usec != 0) {
@@ -722,17 +820,17 @@ Tcl_WaitForEvent(
 	    timeoutPtr = &timeout;
 	} else if (tsdPtr->numFdBits == 0) {
 	    /*
-	     * If there are no threads, no timeout, and no fds registered, then
-	     * there are no events possible and we must avoid deadlock. Note
-	     * that this is not entirely correct because there might be a
-	     * signal that could interrupt the select call, but we don't handle
-	     * that case if we aren't using threads.
+	     * If there are no threads, no timeout, and no fds registered,
+	     * then there are no events possible and we must avoid deadlock.
+	     * Note that this is not entirely correct because there might be a
+	     * signal that could interrupt the select call, but we don't
+	     * handle that case if we aren't using threads.
 	     */
 
 	    return -1;
 	} else {
 	    timeoutPtr = NULL;
-#endif /* TCL_THREADS */
+#endif /* !TCL_THREADS */
 	}
 
 #ifdef TCL_THREADS
@@ -741,16 +839,40 @@ Tcl_WaitForEvent(
 	 * notifier thread, and wait for a response or a timeout.
 	 */
 
+#ifdef __CYGWIN__
+	if (!tsdPtr->hwnd) {
+	    WNDCLASS class;
+
+	    class.style = 0;
+	    class.cbClsExtra = 0;
+	    class.cbWndExtra = 0;
+	    class.hInstance = TclWinGetTclInstance();
+	    class.hbrBackground = NULL;
+	    class.lpszMenuName = NULL;
+	    class.lpszClassName = L"TclNotifier";
+	    class.lpfnWndProc = NotifierProc;
+	    class.hIcon = NULL;
+	    class.hCursor = NULL;
+
+	    RegisterClassW(&class);
+	    tsdPtr->hwnd = CreateWindowExW(NULL, class.lpszClassName,
+		    class.lpszClassName, 0, 0, 0, 0, 0, NULL, NULL,
+		    TclWinGetTclInstance(), NULL);
+	    tsdPtr->event = CreateEventW(NULL, 1 /* manual */,
+		    0 /* !signaled */, NULL);
+	}
+#endif /* __CYGWIN */
+
 	Tcl_MutexLock(&notifierMutex);
 
 	if (timePtr != NULL && timePtr->sec == 0 && (timePtr->usec == 0
 #if defined(__APPLE__) && defined(__LP64__)
 		/*
-		 * On 64-bit Darwin, pthread_cond_timedwait() appears to have a
-		 * bug that causes it to wait forever when passed an absolute
-		 * time which has already been exceeded by the system time; as
-		 * a workaround, when given a very brief timeout, just do a
-		 * poll. [Bug 1457797]
+		 * On 64-bit Darwin, pthread_cond_timedwait() appears to have
+		 * a bug that causes it to wait forever when passed an
+		 * absolute time which has already been exceeded by the system
+		 * time; as a workaround, when given a very brief timeout,
+		 * just do a poll. [Bug 1457797]
 		 */
 		|| timePtr->usec < 10
 #endif /* __APPLE__ && __LP64__ */
@@ -774,8 +896,8 @@ Tcl_WaitForEvent(
 	if (waitForFiles) {
 	    /*
 	     * Add the ThreadSpecificData structure of this thread to the list
-	     * of ThreadSpecificData structures of all threads that are waiting
-	     * on file events.
+	     * of ThreadSpecificData structures of all threads that are
+	     * waiting on file events.
 	     */
 
 	    tsdPtr->nextPtr = waitingListPtr;
@@ -786,7 +908,7 @@ Tcl_WaitForEvent(
 	    waitingListPtr = tsdPtr;
 	    tsdPtr->onList = 1;
 
-	    if (write(triggerPipe, "", 1) != 1) {
+	    if ((write(triggerPipe, "", 1) == -1) && (errno != EAGAIN)) {
 		Tcl_Panic("Tcl_WaitForEvent: %s",
 			"unable to write to triggerPipe");
 	    }
@@ -797,9 +919,43 @@ Tcl_WaitForEvent(
 	FD_ZERO(&tsdPtr->readyMasks.exception);
 
 	if (!tsdPtr->eventReady) {
+#ifdef __CYGWIN__
+	    if (!PeekMessageW(&msg, NULL, 0, 0, 0)) {
+		DWORD timeout;
+
+		if (timePtr) {
+		    timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+		} else {
+		    timeout = 0xFFFFFFFF;
+		}
+		Tcl_MutexUnlock(&notifierMutex);
+		MsgWaitForMultipleObjects(1, &tsdPtr->event, 0, timeout, 1279);
+		Tcl_MutexLock(&notifierMutex);
+	    }
+#else
 	    Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
+#endif /* __CYGWIN__ */
 	}
 	tsdPtr->eventReady = 0;
+
+#ifdef __CYGWIN__
+	while (PeekMessageW(&msg, NULL, 0, 0, 0)) {
+	    /*
+	     * Retrieve and dispatch the message.
+	     */
+
+	    DWORD result = GetMessageW(&msg, NULL, 0, 0);
+
+	    if (result == 0) {
+		PostQuitMessage(msg.wParam);
+		/* What to do here? */
+	    } else if (result != (DWORD) -1) {
+		TranslateMessage(&msg);
+		DispatchMessageW(&msg);
+	    }
+	}
+	ResetEvent(tsdPtr->event);
+#endif /* __CYGWIN__ */
 
 	if (waitForFiles && tsdPtr->onList) {
 	    /*
@@ -819,7 +975,7 @@ Tcl_WaitForEvent(
 	    }
 	    tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
 	    tsdPtr->onList = 0;
-	    if (write(triggerPipe, "", 1) != 1) {
+	    if ((write(triggerPipe, "", 1) == -1) && (errno != EAGAIN)) {
 		Tcl_Panic("Tcl_WaitForEvent: %s",
 			"unable to write to triggerPipe");
 	    }
@@ -1071,7 +1227,11 @@ NotifierThreadProc(
 		    tsdPtr->onList = 0;
 		    tsdPtr->pollState = 0;
 		}
+#ifdef __CYGWIN__
+		PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
+#else
 		Tcl_ConditionNotify(&tsdPtr->waitCV);
+#endif /* __CYGWIN__ */
 	    }
 	}
 	Tcl_MutexUnlock(&notifierMutex);
@@ -1112,7 +1272,7 @@ NotifierThreadProc(
 }
 #endif /* TCL_THREADS */
 
-#endif /* HAVE_COREFOUNDATION */
+#endif /* !HAVE_COREFOUNDATION */
 
 /*
  * Local Variables:

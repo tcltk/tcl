@@ -698,6 +698,7 @@ TclFinalizeEnvironment(void)
  * fork) and the Windows environment (in case the application TCL code calls
  * exec, which calls the Windows CreateProcess function).
  */
+DLLIMPORT extern void __stdcall SetEnvironmentVariableA(const char*, const char *);
 
 static void
 TclCygwinPutenv(
@@ -771,9 +772,9 @@ TclCygwinPutenv(
 	} else {
 	    int size;
 
-	    size = cygwin_posix_to_win32_path_list_buf_size(value);
+	    size = cygwin_conv_path_list(0, value, NULL, 0);
 	    buf = alloca(size + 1);
-	    cygwin_posix_to_win32_path_list(value, buf);
+	    cygwin_conv_path_list(0, value, buf, size);
 	}
 
 	SetEnvironmentVariableA(name, buf);

@@ -39,6 +39,7 @@
 #undef Tcl_CreateHashEntry
 #undef Tcl_Panic
 #undef Tcl_FindExecutable
+#undef TclpGetPid
 #undef TclSockMinimumBuffers
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
@@ -46,36 +47,42 @@
 #   define TclSockMinimumBuffersOld 0
 #else
 #define TclSockMinimumBuffersOld sockMinimumBuffersOld
-static int TclSockMinimumBuffersOld(sock, size)
-    int sock;
-    int size;
+static int TclSockMinimumBuffersOld(int sock, int size)
 {
     return TclSockMinimumBuffers(INT2PTR(sock), size);
 }
 #endif
 
-#ifdef __CYGWIN__
 
-/* Trick, so we don't have to include <windows.h> here, which
- * - b.t.w. - lacks this function anyway */
-#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
-int __stdcall GetModuleHandleExW(unsigned int, const char *, void *);
-
-#define TclWinGetPlatformId winGetPlatformId
-#define Tcl_WinUtfToTChar winUtfToTChar
-#define Tcl_WinTCharToUtf winTCharToUtf
-#define TclWinGetTclInstance winGetTclInstance
+#if defined(_WIN32) || defined(__CYGWIN__)
+#undef TclWinNToHS
 #define TclWinNToHS winNToHS
-#define TclWinSetSockOpt winSetSockOpt
-#define TclWinNoBackslash winNoBackslash
-#define TclWinSetInterfaces (void (*) (int)) doNothing
-#define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
-#define TclWinFlushDirtyChannels doNothing
-#define TclWinResetInterfaces doNothing
+static unsigned short TclWinNToHS(unsigned short ns) {
+	return ntohs(ns);
+}
+#endif
+
+#ifdef __WIN32__
+#   define TclUnixWaitForFile 0
+#   define TclUnixCopyFile 0
+#   define TclpReaddir 0
+#   define TclpIsAtty 0
+#elif defined(__CYGWIN__)
+#   define TclpIsAtty TclPlatIsAtty
+#   define TclWinSetInterfaces (void (*) (int)) doNothing
+#   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
+#   define TclWinFlushDirtyChannels doNothing
+#   define TclWinResetInterfaces doNothing
 
 static Tcl_Encoding winTCharEncoding;
 
 static int
+TclpIsAtty(int fd)
+{
+    return isatty(fd);
+}
+
+int
 TclWinGetPlatformId()
 {
     /* Don't bother to determine the real platform on cygwin,
@@ -83,7 +90,7 @@ TclWinGetPlatformId()
     return 2; /* VER_PLATFORM_WIN32_NT */;
 }
 
-static void *TclWinGetTclInstance()
+void *TclWinGetTclInstance()
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
@@ -91,20 +98,27 @@ static void *TclWinGetTclInstance()
     return hInstance;
 }
 
-static unsigned short
-TclWinNToHS(unsigned short ns)
-{
-    return ntohs(ns);
-}
-
-static int
-TclWinSetSockOpt(void *s, int level, int optname,
+int
+TclWinSetSockOpt(SOCKET s, int level, int optname,
 	    const char *optval, int optlen)
 {
     return setsockopt((int) s, level, optname, optval, optlen);
 }
 
-static char *
+int
+TclWinGetSockOpt(SOCKET s, int level, int optname,
+	    char *optval, int *optlen)
+{
+    return getsockopt((int) s, level, optname, optval, optlen);
+}
+
+struct servent *
+TclWinGetServByName(const char *name, const char *proto)
+{
+    return getservbyname(name, proto);
+}
+
+char *
 TclWinNoBackslash(char *path)
 {
     char *p;
@@ -117,17 +131,23 @@ TclWinNoBackslash(char *path)
     return path;
 }
 
+int
+TclpGetPid(Tcl_Pid pid)
+{
+    return (int) (size_t) pid;
+}
+
 static void
 doNothing(void)
 {
     /* dummy implementation, no need to do anything */
 }
 
-static char *
-Tcl_WinUtfToTChar(string, len, dsPtr)
-    const char *string;
-    int len;
-    Tcl_DString *dsPtr;
+char *
+Tcl_WinUtfToTChar(
+    const char *string,
+    int len,
+    Tcl_DString *dsPtr)
 {
     if (!winTCharEncoding) {
 	winTCharEncoding = Tcl_GetEncoding(0, "unicode");
@@ -136,7 +156,7 @@ Tcl_WinUtfToTChar(string, len, dsPtr)
 	    string, len, dsPtr);
 }
 
-static char *
+char *
 Tcl_WinTCharToUtf(
     const char *string,
     int len,
@@ -149,38 +169,7 @@ Tcl_WinTCharToUtf(
 	    string, len, dsPtr);
 }
 
-#define Tcl_MacOSXOpenBundleResources (int (*) _ANSI_ARGS_(( \
-		Tcl_Interp *, const char *, int, int, char *))) Tcl_WinUtfToTChar
-#define Tcl_MacOSXOpenVersionedBundleResources (int (*) _ANSI_ARGS_(( \
-		Tcl_Interp *, const char *, const char *, int, int, char *))) Tcl_WinTCharToUtf
-#define TclMacOSXGetFileAttribute (int (*) _ANSI_ARGS_((Tcl_Interp *,  \
-		int, Tcl_Obj *, Tcl_Obj **))) TclpCreateProcess
-#define TclMacOSXMatchType (int (*) _ANSI_ARGS_((Tcl_Interp *, const char *, \
-		const char *, Tcl_StatBuf *, Tcl_GlobTypeData *))) TclpMakeFile
-#define TclMacOSXNotifierAddRunLoopMode (void (*) _ANSI_ARGS_((const void *))) TclpOpenFile
-#define TclpLocaltime_unix (struct tm *(*) _ANSI_ARGS_((const time_t *))) TclGetAndDetachPids
-#define TclpGmtime_unix (struct tm *(*) _ANSI_ARGS_((const time_t *))) TclpCloseFile
-
-#elif !defined(__WIN32__) /* UNIX and MAC */
-#   define TclWinConvertError (void (*) _ANSI_ARGS_((unsigned int))) TclGetAndDetachPids
-#   undef TclWinConvertWSAError
-#   define TclWinConvertWSAError (void (*) _ANSI_ARGS_((unsigned int))) TclpCloseFile
-#   define TclWinGetPlatformId (int (*)()) TclpCreateTempFile
-#   define TclWinGetTclInstance (void *(*)()) TclpCreateProcess
-#   define TclWinNToHS (unsigned short (*) _ANSI_ARGS_((unsigned short ns))) TclpMakeFile
-#   define TclWinSetSockOpt (int (*) _ANSI_ARGS_((void *, int, int, const char *, int))) TclpOpenFile
-#   define TclWinAddProcess 0
-#   define TclWinNoBackslash 0
-#   define TclWinSetInterfaces 0
-#   define TclWinFlushDirtyChannels 0
-#   define TclWinResetInterfaces 0
-#   define TclMacOSXGetFileAttribute 0 /* Only implemented in Tcl >= 8.5 */
-#   define TclMacOSXMatchType 0 /* Only implemented in Tcl >= 8.5 */
-#   define TclMacOSXNotifierAddRunLoopMode 0 /* Only implemented in Tcl >= 8.5 */
-#   ifndef MAC_OSX_TCL
-#	define Tcl_MacOSXOpenBundleResources 0
-#	define Tcl_MacOSXOpenVersionedBundleResources 0
-#   endif
+#else /* UNIX and MAC */
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
 #endif
@@ -455,63 +444,61 @@ static const TclIntStubs tclIntStubs = {
 static const TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
-    TclWinConvertError, /* 0 */
-    TclWinConvertWSAError, /* 1 */
+#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+    TclGetAndDetachPids, /* 0 */
+    TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
-    TclWinGetTclInstance, /* 4 */
+    TclpCreateProcess, /* 4 */
     0, /* 5 */
-    TclWinNToHS, /* 6 */
-    TclWinSetSockOpt, /* 7 */
+    TclpMakeFile, /* 6 */
+    TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
-    TclWinGetPlatformId, /* 9 */
+    TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
     TclpLocaltime_unix, /* 11 */
     TclpGmtime_unix, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
-    TclMacOSXGetFileAttribute, /* 15 */
+    0, /* 15 */
     0, /* 16 */
     0, /* 17 */
-    TclMacOSXMatchType, /* 18 */
-    TclMacOSXNotifierAddRunLoopMode, /* 19 */
-    TclWinAddProcess, /* 20 */
+    0, /* 18 */
+    0, /* 19 */
+    0, /* 20 */
     0, /* 21 */
-    TclpCreateTempFile, /* 22 */
+    0, /* 22 */
     0, /* 23 */
-    TclWinNoBackslash, /* 24 */
+    0, /* 24 */
     0, /* 25 */
-    TclWinSetInterfaces, /* 26 */
-    TclWinFlushDirtyChannels, /* 27 */
-    TclWinResetInterfaces, /* 28 */
+    0, /* 26 */
+    0, /* 27 */
+    0, /* 28 */
     TclWinCPUID, /* 29 */
-    TclGetAndDetachPids, /* 30 */
-    TclpCloseFile, /* 31 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     TclWinConvertError, /* 0 */
     TclWinConvertWSAError, /* 1 */
     TclWinGetServByName, /* 2 */
     TclWinGetSockOpt, /* 3 */
     TclWinGetTclInstance, /* 4 */
-    0, /* 5 */
+    TclUnixWaitForFile, /* 5 */
     TclWinNToHS, /* 6 */
     TclWinSetSockOpt, /* 7 */
     TclpGetPid, /* 8 */
     TclWinGetPlatformId, /* 9 */
-    0, /* 10 */
+    TclpReaddir, /* 10 */
     TclGetAndDetachPids, /* 11 */
     TclpCloseFile, /* 12 */
     TclpCreateCommandChannel, /* 13 */
     TclpCreatePipe, /* 14 */
     TclpCreateProcess, /* 15 */
-    0, /* 16 */
-    0, /* 17 */
+    TclpIsAtty, /* 16 */
+    TclUnixCopyFile, /* 17 */
     TclpMakeFile, /* 18 */
     TclpOpenFile, /* 19 */
     TclWinAddProcess, /* 20 */
-    0, /* 21 */
+    TclpInetNtoa, /* 21 */
     TclpCreateTempFile, /* 22 */
     0, /* 23 */
     TclWinNoBackslash, /* 24 */
@@ -522,16 +509,16 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinCPUID, /* 29 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-    TclWinConvertError, /* 0 */
-    TclWinConvertWSAError, /* 1 */
+    TclGetAndDetachPids, /* 0 */
+    TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
-    TclWinGetTclInstance, /* 4 */
+    TclpCreateProcess, /* 4 */
     0, /* 5 */
-    TclWinNToHS, /* 6 */
-    TclWinSetSockOpt, /* 7 */
+    TclpMakeFile, /* 6 */
+    TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
-    TclWinGetPlatformId, /* 9 */
+    TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
     TclpLocaltime_unix, /* 11 */
     TclpGmtime_unix, /* 12 */
@@ -542,29 +529,23 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclMacOSXCopyFileAttributes, /* 17 */
     TclMacOSXMatchType, /* 18 */
     TclMacOSXNotifierAddRunLoopMode, /* 19 */
-    TclWinAddProcess, /* 20 */
+    0, /* 20 */
     0, /* 21 */
-    TclpCreateTempFile, /* 22 */
+    0, /* 22 */
     0, /* 23 */
-    TclWinNoBackslash, /* 24 */
+    0, /* 24 */
     0, /* 25 */
-    TclWinSetInterfaces, /* 26 */
-    TclWinFlushDirtyChannels, /* 27 */
-    TclWinResetInterfaces, /* 28 */
+    0, /* 26 */
+    0, /* 27 */
+    0, /* 28 */
     TclWinCPUID, /* 29 */
-    TclGetAndDetachPids, /* 30 */
-    TclpCloseFile, /* 31 */
 #endif /* MACOSX */
 };
 
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
-    Tcl_MacOSXOpenBundleResources, /* 0 */
-    Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
-#endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
 #endif /* WIN */
@@ -664,7 +645,7 @@ const TclStubs tclStubs = {
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_CreateFileHandler, /* 9 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     0, /* 9 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -673,7 +654,7 @@ const TclStubs tclStubs = {
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_DeleteFileHandler, /* 10 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     0, /* 10 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -838,7 +819,7 @@ const TclStubs tclStubs = {
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_GetOpenFile, /* 167 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     0, /* 167 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */

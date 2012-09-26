@@ -19,6 +19,17 @@ namespace eval ::tcl::test::fileSystem {
 	file delete -force [file join dir.dir linkinside.file]
     }
 
+testConstraint loaddll 0
+catch {
+    ::tcltest::loadTestedCommands
+    package require -exact Tcltest [info patchlevel]
+    set ::ddever [package require dde]
+    set ::ddelib [lindex [package ifneeded dde $::ddever] 1]
+    set ::regver  [package require registry]
+    set ::reglib [lindex [package ifneeded registry $::regver] 1]
+    testConstraint loaddll 1
+}
+
 # Test for commands defined in Tcltest executable
 testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
 testConstraint testsetplatform 	    [llength [info commands ::testsetplatform]]
@@ -305,7 +316,7 @@ test filesystem-1.39 {file normalisation with volume relative} -setup {
     file norm [string range $drv 0 1]
 } -cleanup {
     cd $old
-} -match glob -result {*[^/]}
+} -match regexp -result {.*[^/]}
 test filesystem-1.40 {file normalisation with repeated separators} {
     testPathEqual [file norm foo////bar] [file norm foo/bar]
 } ok
@@ -473,7 +484,7 @@ test filesystem-6.22 {empty file name} {file pathtype ""} relative
 test filesystem-6.23 {empty file name} {file readable ""} 0
 test filesystem-6.24 {empty file name} -returnCodes error -body {
     file readlink ""
-} -result {could not readlink "": no such file or directory}
+} -result {could not read link "": no such file or directory}
 test filesystem-6.25 {empty file name} -returnCodes error -body {
     file rename "" ""
 } -result {error renaming "": no such file or directory}
@@ -501,13 +512,12 @@ if {[testConstraint testfilesystem]} {
 
 test filesystem-7.1.1 {load from vfs} -setup {
     set dir [pwd]
-} -constraints {win testsimplefilesystem} -body {
+} -constraints {win testsimplefilesystem loaddll} -body {
     # This may cause a crash on exit
-    cd [file dirname [info nameof]]
-    set dde [lindex [glob *dde*[info sharedlib]] 0]
+    cd [file dirname $::ddelib]
     testsimplefilesystem 1
     # This loads dde via a complex copy-to-temp operation
-    load simplefs:/$dde dde
+    load simplefs:/[file tail $::ddelib] dde
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.
@@ -516,14 +526,13 @@ test filesystem-7.1.1 {load from vfs} -setup {
 } -result ok
 test filesystem-7.1.2 {load from vfs, and then unload again} -setup {
     set dir [pwd]
-} -constraints {win testsimplefilesystem} -body {
+} -constraints {win testsimplefilesystem loaddll} -body {
     # This may cause a crash on exit
-    cd [file dirname [info nameof]]
-    set reg [lindex [glob tclreg*[info sharedlib]] 0]
+    cd [file dirname $::reglib]
     testsimplefilesystem 1
     # This loads reg via a complex copy-to-temp operation
-    load simplefs:/$reg Registry
-    unload simplefs:/$reg
+    load simplefs:/[file tail $::reglib] Registry
+    unload simplefs:/[file tail $::reglib]
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.

@@ -17,6 +17,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 # Some tests require the testobj command
 
 testConstraint testobj [expr {[info commands testobj] != {}}]
@@ -1773,10 +1776,10 @@ test string-26.3.1 {tcl::prefix, bad args} -body {
 } -returnCodes 1 -result {error options must have an even number of elements}
 test string-26.3.2 {tcl::prefix, bad args} -body {
     tcl::prefix match -error str1 str2
-} -returnCodes 1 -result {missing error options}
+} -returnCodes 1 -result {missing value for -error}
 test string-26.4 {tcl::prefix, bad args} -body {
     tcl::prefix match -message str1 str2
-} -returnCodes 1 -result {missing message}
+} -returnCodes 1 -result {missing value for -message}
 test string-26.5 {tcl::prefix} {
     tcl::prefix match {apa bepa cepa depa} cepa
 } cepa
