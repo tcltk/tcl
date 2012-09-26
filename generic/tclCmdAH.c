@@ -61,6 +61,7 @@ static Tcl_NRPostProc	ForPostNextCallback;
 static Tcl_NRPostProc	ForeachLoopStep;
 static Tcl_NRPostProc	EvalCmdErrMsg;
 
+static Tcl_ObjCmdProc	BadFileSubcommand;
 static Tcl_ObjCmdProc FileAttrAccessTimeCmd;
 static Tcl_ObjCmdProc FileAttrIsDirectoryCmd;
 static Tcl_ObjCmdProc FileAttrIsExecutableCmd;
@@ -193,7 +194,8 @@ Tcl_CaseObjCmd(
 
 	if (i == caseObjc-1) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "extra case pattern with no body", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "extra case pattern with no body", -1));
 	    return TCL_ERROR;
 	}
 
@@ -408,8 +410,9 @@ Tcl_CdObjCmd(
     } else {
 	result = Tcl_FSChdir(dir);
 	if (result != TCL_OK) {
-	    Tcl_AppendResult(interp, "couldn't change working directory to \"",
-		    TclGetString(dir), "\": ", Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't change working directory to \"%s\": %s",
+		    TclGetString(dir), Tcl_PosixError(interp)));
 	    result = TCL_ERROR;
 	}
     }
@@ -563,9 +566,7 @@ Tcl_EncodingObjCmd(
 	     * truncate the string at the first null byte.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    Tcl_DStringValue(&ds), Tcl_DStringLength(&ds)));
-	    Tcl_DStringFree(&ds);
+	    Tcl_SetObjResult(interp, TclDStringToObj(&ds));
 	} else {
 	    /*
 	     * Store the result as binary data.
@@ -583,7 +584,7 @@ Tcl_EncodingObjCmd(
 	break;
     }
     case ENC_DIRS:
-	return EncodingDirsObjCmd(dummy, interp, objc-1, objv+1);
+	return EncodingDirsObjCmd(dummy, interp, objc, objv);
     case ENC_NAMES:
 	if (objc > 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -630,22 +631,27 @@ EncodingDirsObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?dirList?");
+    Tcl_Obj *dirListObj;
+
+    if (objc > 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "?dirList?");
 	return TCL_ERROR;
     }
-    if (objc == 1) {
+    if (objc == 2) {
 	Tcl_SetObjResult(interp, Tcl_GetEncodingSearchPath());
 	return TCL_OK;
     }
-    if (Tcl_SetEncodingSearchPath(objv[1]) == TCL_ERROR) {
-	Tcl_AppendResult(interp, "expected directory list but got \"",
-		TclGetString(objv[1]), "\"", NULL);
+
+    dirListObj = objv[2];
+    if (Tcl_SetEncodingSearchPath(dirListObj) == TCL_ERROR) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"expected directory list but got \"%s\"",
+		TclGetString(dirListObj)));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
 		NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, objv[1]);
+    Tcl_SetObjResult(interp, dirListObj);
     return TCL_OK;
 }
 
@@ -1042,9 +1048,9 @@ TclMakeFileCommandSafe(
     Tcl_DString oldBuf, newBuf;
 
     Tcl_DStringInit(&oldBuf);
-    Tcl_DStringAppend(&oldBuf, "::tcl::file::", -1);
+    TclDStringAppendLiteral(&oldBuf, "::tcl::file::");
     Tcl_DStringInit(&newBuf);
-    Tcl_DStringAppend(&newBuf, "tcl:file:", -1);
+    TclDStringAppendLiteral(&newBuf, "tcl:file:");
     for (i=0 ; unsafeInfo[i].cmdName != NULL ; i++) {
 	if (unsafeInfo[i].unsafe) {
 	    const char *oldName, *newName;
@@ -1059,6 +1065,8 @@ TclMakeFileCommandSafe(
 			unsafeInfo[i].cmdName,
 			Tcl_GetString(Tcl_GetObjResult(interp)));
 	    }
+	    Tcl_CreateObjCommand(interp, oldName, BadFileSubcommand,
+		    (ClientData) unsafeInfo[i].cmdName, NULL);
 	}
     }
     Tcl_DStringFree(&oldBuf);
@@ -1075,6 +1083,39 @@ TclMakeFileCommandSafe(
 		Tcl_GetString(Tcl_GetObjResult(interp)));
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BadFileSubcommand --
+ *
+ *	Command used to act as a backstop implementation when subcommands of
+ *	"file" are unsafe (the real implementations of the subcommands are
+ *	hidden). The clientData is always the full official subcommand name.
+ *
+ * Results:
+ *	A standard Tcl result (always a TCL_ERROR).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BadFileSubcommand(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    const char *subcommandName = (const char *) clientData;
+
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "not allowed to invoke subcommand %s of file", subcommandName));
+    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", NULL);
+    return TCL_ERROR;
 }
 
 /*
@@ -1127,9 +1168,9 @@ FileAttrAccessTimeCmd(
 	tval.modtime = buf.st_mtime;
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
-	    Tcl_AppendResult(interp, "could not set access time for file \"",
-		    TclGetString(objv[1]), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set access time for file \"%s\": %s",
+		    TclGetString(objv[1]), Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 
@@ -1199,9 +1240,9 @@ FileAttrModifyTimeCmd(
 	tval.modtime = newTime;
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
-	    Tcl_AppendResult(interp, "could not set modification time for "
-		    "file \"", TclGetString(objv[1]), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set modification time for file \"%s\": %s",
+		    TclGetString(objv[1]), Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 
@@ -1804,7 +1845,7 @@ PathFilesystemCmd(
     }
     fsInfo = Tcl_FSFileSystemInfo(objv[1]);
     if (fsInfo == NULL) {
-	Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		Tcl_GetString(objv[1]), NULL);
 	return TCL_ERROR;
@@ -1869,20 +1910,16 @@ PathNativeNameCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    const char *fileName;
     Tcl_DString ds;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    fileName = Tcl_TranslateFileName(interp, TclGetString(objv[1]), &ds);
-    if (fileName == NULL) {
+    if (Tcl_TranslateFileName(interp, TclGetString(objv[1]), &ds) == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(fileName,
-	    Tcl_DStringLength(&ds)));
-    Tcl_DStringFree(&ds);
+    Tcl_SetObjResult(interp, TclDStringToObj(&ds));
     return TCL_OK;
 }
 
@@ -1956,8 +1993,9 @@ PathSplitCmd(
     }
     res = Tcl_FSSplitPath(objv[1], NULL);
     if (res == NULL) {
-	Tcl_AppendResult(interp, "could not read \"", TclGetString(objv[1]),
-		"\": no such file or directory", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"could not read \"%s\": no such file or directory",
+		TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH",
 		NULL);
 	return TCL_ERROR;
@@ -2058,7 +2096,8 @@ FilesystemSeparatorCmd(
 	Tcl_Obj *separatorObj = Tcl_FSPathSeparator(objv[1]);
 
 	if (separatorObj == NULL) {
-	    Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unrecognised path", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		    Tcl_GetString(objv[1]), NULL);
 	    return TCL_ERROR;
@@ -2177,9 +2216,9 @@ GetStatBuf(
 
     if (status < 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(pathPtr), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(pathPtr), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -2614,7 +2653,8 @@ TclNRForeachCmd(
 	TclListObjGetElements(NULL, statePtr->vCopyList[i],
 		&statePtr->varcList[i], &statePtr->varvList[i]);
 	if (statePtr->varcList[i] < 1) {
-	    Tcl_AppendResult(interp, "foreach varlist is empty", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "foreach varlist is empty", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FOREACH",
 		    "NEEDVARS", NULL);
 	    result = TCL_ERROR;

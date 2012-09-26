@@ -156,8 +156,8 @@ while test $# -ne 0; do
 
     -s) stripcmd=$stripprog;;
 
-      -S) stripcmd="$stripprog $2" 
-         shift;; 
+    -S) stripcmd="$stripprog $2"
+	shift;;
 
     -t) dst_arg=$2
 	shift;;

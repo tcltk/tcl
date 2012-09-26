@@ -16,6 +16,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 # Some tests require the testthread command
 
 testConstraint testthread [expr {[info commands testthread] != {}}]
@@ -76,7 +79,7 @@ if {[testConstraint thread]} {
 if {[testConstraint testthread]} {
     proc drainEventQueue {} {
 	while {[set x [testthread event]]} {
-	    puts "WARNING: drained $x event(s) on main thread"
+	    #puts "WARNING: drained $x event(s) on main thread"
 	}
     }
 

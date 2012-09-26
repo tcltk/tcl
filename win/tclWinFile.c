@@ -819,6 +819,16 @@ tclWinDebugPanic(
 	MessageBoxW(NULL, msgString, L"Fatal Error",
 		MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
     }
+#if defined(__GNUC__)
+    __builtin_trap();
+#elif defined(_WIN64)
+    __debugbreak();
+#elif defined(_MSC_VER)
+    _asm {int 3}
+#else
+    DebugBreak();
+#endif
+    abort();
 }
 
 /*
@@ -986,7 +996,7 @@ TclpMatchInDirectory(
 
 	lastChar = dirName[dirLength -1];
 	if ((lastChar != '\\') && (lastChar != '/') && (lastChar != ':')) {
-	    Tcl_DStringAppend(&dsOrig, "/", 1);
+	    TclDStringAppendLiteral(&dsOrig, "/");
 	    dirLength++;
 	}
 	dirName = Tcl_DStringValue(&dsOrig);
@@ -1006,7 +1016,7 @@ TclpMatchInDirectory(
 
 	    dirName = Tcl_DStringAppend(&dsOrig, pattern, -1);
 	} else {
-	    dirName = Tcl_DStringAppend(&dsOrig, "*.*", 3);
+	    dirName = TclDStringAppendLiteral(&dsOrig, "*.*");
 	}
 
 	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
@@ -1038,10 +1048,9 @@ TclpMatchInDirectory(
 
 	    TclWinConvertError(err);
 	    if (interp != NULL) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't read directory \"",
-			Tcl_DStringValue(&dsOrig), "\": ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't read directory \"%s\": %s",
+			Tcl_DStringValue(&dsOrig), Tcl_PosixError(interp)));
 	    }
 	    Tcl_DStringFree(&dsOrig);
 	    return TCL_ERROR;
@@ -1457,7 +1466,7 @@ TclpGetUserHome(
 
 		GetWindowsDirectoryW(buf, MAX_PATH);
 		Tcl_UniCharToUtfDString(buf, 2, bufferPtr);
-		Tcl_DStringAppend(bufferPtr, "/users/default", -1);
+		TclDStringAppendLiteral(bufferPtr, "/users/default");
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
 	    NetApiBufferFree((void *) uiPtr);
@@ -1775,7 +1784,7 @@ NativeIsExec(
 	return 0;
     }
 
-    if (path[len-4] != TEXT('.')) {
+    if (path[len-4] != '.') {
 	return 0;
     }
 
@@ -1856,8 +1865,9 @@ TclpGetCwd(
     if (GetCurrentDirectory(MAX_PATH, buffer) == 0) {
 	TclWinConvertError(GetLastError());
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "error getting working directory name: ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error getting working directory name: %s",
+		    Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
@@ -2066,7 +2076,7 @@ NativeDev(
 	     * won't work.
 	     */
 
-	    fullPath = Tcl_DStringAppend(&ds, "\\", 1);
+	    fullPath = TclDStringAppendLiteral(&ds, "\\");
 	    p = fullPath + Tcl_DStringLength(&ds);
 	} else {
 	    p++;
@@ -2350,13 +2360,9 @@ TclpFilesystemPathType(
 	return NULL;
     } else {
 	Tcl_DString ds;
-	Tcl_Obj *objPtr;
 
 	Tcl_WinTCharToUtf(volType, -1, &ds);
-	objPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
-		Tcl_DStringLength(&ds));
-	Tcl_DStringFree(&ds);
-	return objPtr;
+	return TclDStringToObj(&ds);
     }
 #undef VOL_BUF_SIZE
 }
@@ -2530,7 +2536,7 @@ TclpObjNormalizePath(
 			     * string.
 			     */
 
-			    Tcl_DStringAppend(&dsNorm,"/", 1);
+			    TclDStringAppendLiteral(&dsNorm, "/");
 			} else {
 			    char *nativeName;
 
@@ -2540,8 +2546,8 @@ TclpObjNormalizePath(
 				nativeName = fData.cAlternateFileName;
 			    }
 			    FindClose(handle);
-			    Tcl_DStringAppend(&dsNorm,"/", 1);
-			    Tcl_DStringAppend(&dsNorm,nativeName,-1);
+			    TclDStringAppendLiteral(&dsNorm, "/");
+			    Tcl_DStringAppend(&dsNorm, nativeName, -1);
 			}
 		    }
 		}

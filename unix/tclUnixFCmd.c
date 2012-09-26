@@ -967,11 +967,11 @@ TraverseUnixTree(
 	return result;
     }
 
-    Tcl_DStringAppend(sourcePtr, "/", 1);
+    TclDStringAppendLiteral(sourcePtr, "/");
     sourceLen = Tcl_DStringLength(sourcePtr);
 
     if (targetPtr != NULL) {
-	Tcl_DStringAppend(targetPtr, "/", 1);
+	TclDStringAppendLiteral(targetPtr, "/");
 	targetLen = Tcl_DStringLength(targetPtr);
     }
 
@@ -1320,9 +1320,9 @@ GetGroupAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(fileName), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -1374,9 +1374,9 @@ GetOwnerAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(fileName), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -1387,11 +1387,9 @@ GetOwnerAttribute(
 	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_uid);
     } else {
 	Tcl_DString ds;
-	const char *utf;
 
-	utf = Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, -1, &ds);
-	*attributePtrPtr = Tcl_NewStringObj(utf, Tcl_DStringLength(&ds));
-	Tcl_DStringFree(&ds);
+	(void) Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, -1, &ds);
+	*attributePtrPtr = TclDStringToObj(&ds);
     }
     return TCL_OK;
 }
@@ -1427,9 +1425,9 @@ GetPermissionsAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(fileName), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -1480,9 +1478,10 @@ SetGroupAttribute(
 
 	if (groupPtr == NULL) {
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "could not set group for file \"",
-			TclGetString(fileName), "\": group \"", string,
-			"\" does not exist", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"could not set group for file \"%s\":"
+			" group \"%s\" does not exist",
+			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETGRP",
 			"NO_GROUP", NULL);
 	    }
@@ -1496,9 +1495,9 @@ SetGroupAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not set group for file \"",
-		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set group for file \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -1546,9 +1545,10 @@ SetOwnerAttribute(
 
 	if (pwPtr == NULL) {
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "could not set owner for file \"",
-			TclGetString(fileName), "\": user \"", string,
-			"\" does not exist", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"could not set owner for file \"%s\":"
+			" user \"%s\" does not exist",
+			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETOWN",
 			"NO_USER", NULL);
 	    }
@@ -1562,9 +1562,9 @@ SetOwnerAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not set owner for file \"",
-		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set owner for file \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -1632,9 +1632,9 @@ SetPermissionsAttribute(
 	result = TclpObjStat(fileName, &buf);
 	if (result != 0) {
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "could not read \"",
-			TclGetString(fileName), "\": ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"could not read \"%s\": %s",
+			TclGetString(fileName), Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1642,8 +1642,9 @@ SetPermissionsAttribute(
 
 	if (GetModeFromPermString(NULL, modeStringPtr, &newMode) != TCL_OK) {
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "unknown permission string format \"",
-			modeStringPtr, "\"", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"unknown permission string format \"%s\"",
+			modeStringPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PERMISSION", NULL);
 	    }
 	    return TCL_ERROR;
@@ -1654,9 +1655,9 @@ SetPermissionsAttribute(
     result = chmod(native, newMode);		/* INTL: Native. */
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not set permissions for file \"",
-		    TclGetString(fileName), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set permissions for file \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -2127,24 +2128,24 @@ TclpOpenTemporaryFile(
 	Tcl_DStringAppend(&template, DefaultTempDir(), -1); /* INTL: native */
     }
 
-    Tcl_DStringAppend(&template, "/", -1);
+    TclDStringAppendLiteral(&template, "/");
 
     if (basenameObj) {
 	string = Tcl_GetStringFromObj(basenameObj, &len);
 	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
-	Tcl_DStringAppend(&template, Tcl_DStringValue(&tmp), -1);
+	TclDStringAppendDString(&template, &tmp);
 	Tcl_DStringFree(&tmp);
     } else {
-	Tcl_DStringAppend(&template, "tcl", -1);
+	TclDStringAppendLiteral(&template, "tcl");
     }
 
-    Tcl_DStringAppend(&template, "_XXXXXX", -1);
+    TclDStringAppendLiteral(&template, "_XXXXXX");
 
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
 	string = Tcl_GetStringFromObj(extensionObj, &len);
 	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
-	Tcl_DStringAppend(&template, Tcl_DStringValue(&tmp), -1);
+	TclDStringAppendDString(&template, &tmp);
 	fd = mkstemps(Tcl_DStringValue(&template), Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);
     } else
@@ -2241,14 +2242,14 @@ GetReadOnlyAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj((statBuf.st_flags&UF_IMMUTABLE) != 0);
+    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags&UF_IMMUTABLE);
 
     return TCL_OK;
 }
@@ -2288,9 +2289,9 @@ SetReadOnlyAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -2305,9 +2306,9 @@ SetReadOnlyAttribute(
     result = chflags(native, statBuf.st_flags);		/* INTL: Native. */
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not set flags for file \"",
-		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set flags for file \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }

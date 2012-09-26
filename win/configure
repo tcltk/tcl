@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP AR ac_ct_AR RANLIB ac_ct_RANLIB RC ac_ct_RC SET_MAKE TCL_THREADS CYGPATH CELIB_DIR DL_LIBS CFLAGS_DEBUG CFLAGS_OPTIMIZE CFLAGS_WARNING ZLIB_DLL_FILE ZLIB_LIBS ZLIB_OBJS CFLAGS_DEFAULT LDFLAGS_DEFAULT VC_MANIFEST_EMBED_DLL VC_MANIFEST_EMBED_EXE TCL_VERSION TCL_MAJOR_VERSION TCL_MINOR_VERSION TCL_PATCH_LEVEL PKG_CFG_ARGS TCL_EXE TCL_LIB_FILE TCL_LIB_FLAG TCL_STATIC_LIB_FILE TCL_STATIC_LIB_FLAG TCL_IMPORT_LIB_FILE TCL_IMPORT_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_STUB_LIB_PATH TCL_INCLUDE_SPEC TCL_BUILD_STUB_LIB_SPEC TCL_BUILD_STUB_LIB_PATH TCL_DLL_FILE TCL_SRC_DIR TCL_BIN_DIR TCL_DBGX CFG_TCL_SHARED_LIB_SUFFIX CFG_TCL_UNSHARED_LIB_SUFFIX CFG_TCL_EXPORT_FILE_SUFFIX EXTRA_CFLAGS DEPARG CC_OBJNAME CC_EXENAME LDFLAGS_DEBUG LDFLAGS_OPTIMIZE LDFLAGS_CONSOLE LDFLAGS_WINDOW STLIB_LD SHLIB_LD SHLIB_LD_LIBS SHLIB_CFLAGS SHLIB_SUFFIX TCL_SHARED_BUILD LIBS_GUI DLLSUFFIX LIBPREFIX LIBSUFFIX EXESUFFIX LIBRARIES MAKE_LIB POST_MAKE_LIB MAKE_DLL MAKE_EXE TCL_BUILD_LIB_SPEC TCL_LD_SEARCH_FLAGS TCL_NEEDS_EXP_FILE TCL_BUILD_EXP_FILE TCL_EXP_FILE TCL_LIB_VERSIONS_OK TCL_PACKAGE_PATH TCL_DDE_VERSION TCL_DDE_MAJOR_VERSION TCL_DDE_MINOR_VERSION TCL_DDE_PATCH_LEVEL TCL_REG_VERSION TCL_REG_MAJOR_VERSION TCL_REG_MINOR_VERSION TCL_REG_PATCH_LEVEL RC_OUT RC_TYPE RC_INCLUDE RC_DEFINE RC_DEFINES RES LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP AR ac_ct_AR RANLIB ac_ct_RANLIB RC ac_ct_RC SET_MAKE TCL_THREADS CYGPATH CELIB_DIR DL_LIBS CFLAGS_DEBUG CFLAGS_OPTIMIZE CFLAGS_WARNING ZLIB_DLL_FILE ZLIB_LIBS ZLIB_OBJS CFLAGS_DEFAULT LDFLAGS_DEFAULT VC_MANIFEST_EMBED_DLL VC_MANIFEST_EMBED_EXE TCL_VERSION TCL_MAJOR_VERSION TCL_MINOR_VERSION TCL_PATCH_LEVEL PKG_CFG_ARGS TCL_EXE TCL_LIB_FILE TCL_LIB_FLAG TCL_STATIC_LIB_FILE TCL_STATIC_LIB_FLAG TCL_IMPORT_LIB_FILE TCL_IMPORT_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_STUB_LIB_PATH TCL_INCLUDE_SPEC TCL_BUILD_STUB_LIB_SPEC TCL_BUILD_STUB_LIB_PATH TCL_DLL_FILE TCL_SRC_DIR TCL_BIN_DIR TCL_DBGX CFG_TCL_SHARED_LIB_SUFFIX CFG_TCL_UNSHARED_LIB_SUFFIX CFG_TCL_EXPORT_FILE_SUFFIX EXTRA_CFLAGS DEPARG CC_OBJNAME CC_EXENAME LDFLAGS_DEBUG LDFLAGS_OPTIMIZE LDFLAGS_CONSOLE LDFLAGS_WINDOW STLIB_LD SHLIB_LD SHLIB_LD_LIBS SHLIB_CFLAGS SHLIB_SUFFIX TCL_SHARED_BUILD LIBS_GUI DLLSUFFIX LIBPREFIX LIBSUFFIX EXESUFFIX LIBRARIES MAKE_LIB POST_MAKE_LIB MAKE_DLL MAKE_EXE TCL_BUILD_LIB_SPEC TCL_LD_SEARCH_FLAGS TCL_NEEDS_EXP_FILE TCL_BUILD_EXP_FILE TCL_EXP_FILE TCL_LIB_VERSIONS_OK TCL_PACKAGE_PATH TCL_DDE_VERSION TCL_DDE_MAJOR_VERSION TCL_DDE_MINOR_VERSION TCL_REG_VERSION TCL_REG_MAJOR_VERSION TCL_REG_MINOR_VERSION RC_OUT RC_TYPE RC_INCLUDE RC_DEFINE RC_DEFINES RES LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -840,18 +840,18 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-threads        build with threads
-  --enable-shared         build and link with shared libraries --enable-shared
+  --enable-threads        build with threads (default: on)
+  --enable-shared         build and link with shared libraries (default: on)
   --enable-64bit          enable 64bit support (where applicable)
   --enable-wince          enable Win/CE support (where applicable)
-  --enable-symbols        build with debugging symbols --disable-symbols
+  --enable-symbols        build with debugging symbols (default: off)
   --enable-embedded-manifest
                           embed manifest if possible (default: yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-encoding              encoding for configuration values
+  --with-encoding         encoding for configuration values
   --with-celib=DIR        use Windows/CE support library from DIR
 
 Some influential environment variables:
@@ -1311,22 +1311,25 @@ SHELL=/bin/sh
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL="b2"
+TCL_PATCH_LEVEL="b3"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
-TCL_DDE_VERSION=1.3
+TCL_DDE_VERSION=1.4
 TCL_DDE_MAJOR_VERSION=1
-TCL_DDE_MINOR_VERSION=3
-TCL_DDE_PATCH_LEVEL="2"
+TCL_DDE_MINOR_VERSION=4
 DDEVER=$TCL_DDE_MAJOR_VERSION$TCL_DDE_MINOR_VERSION
 
 TCL_REG_VERSION=1.3
 TCL_REG_MAJOR_VERSION=1
 TCL_REG_MINOR_VERSION=3
-TCL_REG_PATCH_LEVEL="0"
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
 
 PKG_CFG_ARGS=$@
+
+#------------------------------------------------------------------------
+# Empty slate for bundled packages, to avoid stale configuration
+#------------------------------------------------------------------------
+rm -Rf pkgs
 
 #------------------------------------------------------------------------
 # Handle the --prefix=... option
@@ -3065,8 +3068,8 @@ else
 fi;
 
     if test "$tcl_ok" = "yes"; then
-	echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+	echo "$as_me:$LINENO: result: yes (default)" >&5
+echo "${ECHO_T}yes (default)" >&6
 	TCL_THREADS=1
 	cat >>confdefs.h <<\_ACEOF
 #define TCL_THREADS 1
@@ -3595,8 +3598,8 @@ echo $ECHO_N "checking compiler flags... $ECHO_C" >&6
 	MAKE_EXE="\${CC} -o \$@"
 	LIBPREFIX="lib"
 
-	extra_ldflags="$extra_ldflags -pipe"
 	extra_cflags="$extra_cflags -pipe"
+	extra_ldflags="$extra_ldflags -pipe"
 
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
@@ -4341,12 +4344,6 @@ esac
 #	as we just assume that the platform hasn't got a usable z.lib
 #------------------------------------------------------------------------
 
-if test "$do64bit" = "yes"; then
-
-  tcl_ok=no
-
-else
-
 if test "${enable_shared+set}" = "set"; then
 
   enableval="$enable_shared"
@@ -4358,14 +4355,21 @@ else
 
 fi
 
-
-fi
-
 if test "$tcl_ok" = "yes"; then
 
   ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
 
-  ZLIB_LIBS=\${ZLIB_DIR}/win32/zdll.lib
+  if test "$do64bit" = "yes"; then
+
+    ZLIB_LIBS=\${ZLIB_DIR}/win64/zdll.lib
+
+
+else
+
+    ZLIB_LIBS=\${ZLIB_DIR}/win32/zdll.lib
+
+
+fi
 
 
 else
@@ -5250,8 +5254,6 @@ fi
 
 
 
-
-
                               ac_config_files="$ac_config_files Makefile tclConfig.sh tcl.hpj"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -5980,11 +5982,9 @@ s,@TCL_PACKAGE_PATH@,$TCL_PACKAGE_PATH,;t t
 s,@TCL_DDE_VERSION@,$TCL_DDE_VERSION,;t t
 s,@TCL_DDE_MAJOR_VERSION@,$TCL_DDE_MAJOR_VERSION,;t t
 s,@TCL_DDE_MINOR_VERSION@,$TCL_DDE_MINOR_VERSION,;t t
-s,@TCL_DDE_PATCH_LEVEL@,$TCL_DDE_PATCH_LEVEL,;t t
 s,@TCL_REG_VERSION@,$TCL_REG_VERSION,;t t
 s,@TCL_REG_MAJOR_VERSION@,$TCL_REG_MAJOR_VERSION,;t t
 s,@TCL_REG_MINOR_VERSION@,$TCL_REG_MINOR_VERSION,;t t
-s,@TCL_REG_PATCH_LEVEL@,$TCL_REG_PATCH_LEVEL,;t t
 s,@RC_OUT@,$RC_OUT,;t t
 s,@RC_TYPE@,$RC_TYPE,;t t
 s,@RC_INCLUDE@,$RC_INCLUDE,;t t
