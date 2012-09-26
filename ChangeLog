@@ -1,3 +1,9 @@
+2012-09-26  Reinhard Max  <max@suse.de>
+
+	* generic/tclIOSock.c (TclCreateSocketAddress): Work around a bug
+	in getaddrinfo() on OSX that caused name resolution to fail for
+	[socket -server foo -myaddr localhost 0].
+
 2012-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/configure.in: New import libraries for zlib 1.2.7,
