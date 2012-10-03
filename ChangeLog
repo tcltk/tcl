@@ -1,3 +1,9 @@
+2012-10-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c:	When checking for std channels being closed,
+	compare the channel state, not the channel itself so that stacked
+	channels do not cause trouble.
+
 2012-08-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/nmakehlp.c: Add "-V<num>" option, in order to be able
