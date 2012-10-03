@@ -283,6 +283,8 @@ test iortrans-3.1 {chan finalize, handler destruction has no effect on channel} 
     lappend res [catch {close $c} msg] $msg
     lappend res [file channels file*]
     lappend res [file channels rt*]
+} -cleanup {
+    tempdone
 } -result {{initialize rt* {read write}} file* file* {} 1 {invalid command name "foo"} {} {}}
 test iortrans-3.2 {chan finalize, for close} -setup {
     set res {}
@@ -300,6 +302,7 @@ test iortrans-3.2 {chan finalize, for close} -setup {
     lappend res [info command foo]
 } -cleanup {
     rename foo {}
+    tempdone
 } -result {{initialize rt* {read write}} file* {finalize rt*} {} foo}
 test iortrans-3.3 {chan finalize, for close, error, close error} -setup {
     set res {}
@@ -315,6 +318,7 @@ test iortrans-3.3 {chan finalize, for close, error, close error} -setup {
     lappend res [file channels rt*]
 } -cleanup {
     rename foo {}
+    tempdone
 } -result {{initialize rt* {read write}} file* {finalize rt*} 1 5 {}}
 test iortrans-3.4 {chan finalize, for close, error, close error} -setup {
     set res {}
@@ -328,6 +332,7 @@ test iortrans-3.4 {chan finalize, for close, error, close error} -setup {
     lappend res [catch {close $c} msg] $msg $::errorInfo
 } -cleanup {
     rename foo {}
+    tempdone
 } -result {{initialize rt* {read write}} file* {finalize rt*} 1 FOO {FOO
 *"close $c"}}
 test iortrans-3.5 {chan finalize, for close, arbitrary result, ignored} -setup {
@@ -342,6 +347,7 @@ test iortrans-3.5 {chan finalize, for close, arbitrary result, ignored} -setup {
     lappend res [catch {close $c} msg] $msg
 } -cleanup {
     rename foo {}
+    tempdone
 } -result {{initialize rt* {read write}} file* {finalize rt*} 0 {}}
 test iortrans-3.6 {chan finalize, for close, break, close error} -setup {
     set res {}
@@ -355,6 +361,7 @@ test iortrans-3.6 {chan finalize, for close, break, close error} -setup {
     lappend res [catch {close $c} msg] $msg
 } -cleanup {
     rename foo {}
+    tempdone
 } -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
 test iortrans-3.7 {chan finalize, for close, continue, close error} -setup {
     set res {}
@@ -368,6 +375,7 @@ test iortrans-3.7 {chan finalize, for close, continue, close error} -setup {
     lappend res [catch {close $c} msg] $msg
 } -cleanup {
     rename foo {}
+    tempdone
 } -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
 test iortrans-3.8 {chan finalize, for close, custom code, close error} -setup {
     set res {}
@@ -381,6 +389,7 @@ test iortrans-3.8 {chan finalize, for close, custom code, close error} -setup {
     lappend res [catch {close $c} msg] $msg
 } -cleanup {
     rename foo {}
+    tempdone
 } -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
 test iortrans-3.9 {chan finalize, for close, ignore level, close error} -setup {
     set res {}
@@ -395,6 +404,7 @@ test iortrans-3.9 {chan finalize, for close, ignore level, close error} -setup {
     noteOpts $opt
 } -match glob -cleanup {
     rename foo {}
+    tempdone
 } -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "finalize"*}}
 
 # --- === *** ###########################
@@ -1036,6 +1046,8 @@ test iortrans-11.2 {delete interp of reflected transform} -setup {
 	chan event $c readable no-op
     }
     interp delete slave
+} -cleanup {
+    tempdone
 } -result {}
 
 # ### ### ### ######### ######### #########
