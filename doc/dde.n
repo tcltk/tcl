@@ -83,12 +83,14 @@ asynchronous invocation.  The command returns an error message if the
 script did not run, unless the \fB\-async\fR flag was used, in which case
 the command returns immediately with no error.
 .VS 8.6
-The \fB\-binary\fR option treats \fIdata\fR as binary data, otherwise an utf-8
-string is sent.  Combining \fB-binary\fR with the result of
-\fBencoding convertto\fR may be used to send data in arbitrary encodings.
+Without the \fB\-binary\fR option all data will be sent in unicode. For
+dde clients which don't implement the CF_UNICODE clipboard format, this
+will automatically be translated to the system encoding. You can use 
+the \fB\-binary\fR option in combination with the result of
+\fBencoding convertto\fR to send data in any other encoding.
 .VE 8.6
 .TP
-\fBdde poke ?\fB\-binary\fR? \fIservice topic item data\fR
+\fBdde poke\fR ?\fB\-binary\fR? \fIservice topic item data\fR
 .
 \fBdde poke\fR passes the \fIdata\fR to the server indicated by
 \fIservice\fR using the \fItopic\fR and \fIitem\fR specified.  Typically,
@@ -98,8 +100,11 @@ on.  The \fIitem\fR is also application specific and is often not used, but
 it must always be non-null.  The \fIdata\fR field is given to the remote
 application.
 .VS 8.6
-The \fB\-binary\fR option treats \fIdata\fR as binary data, otherwise an utf-8
-string is sent.
+Without the \fB\-binary\fR option all data will be sent in unicode. For
+dde clients which don't implement the CF_UNICODE clipboard format, this
+will automatically be translated to the system encoding. You can use 
+the \fB\-binary\fR option in combination with the result of
+\fBencoding convertto\fR to send data in any other encoding.
 .VE 8.6
 .TP
 \fBdde request\fR ?\fB\-binary\fR? \fIservice topic item\fR
