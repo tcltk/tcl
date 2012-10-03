@@ -3974,15 +3974,12 @@ Tcl_ZlibAdler32(
     return 0;
 }
 
-int
+void
 Tcl_ZlibStreamSetCompressionDictionary(
-    Tcl_Interp *interp,
-    Tcl_ZlibStream zhandle,
+    Tcl_ZlibStream zshandle,
     Tcl_Obj *compressionDictionaryObj)
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
-    return TCL_ERROR;
+    /* Do nothing. */
 }
 #endif /* HAVE_ZLIB */
 
