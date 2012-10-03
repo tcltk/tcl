@@ -27,7 +27,7 @@ catch {
     set ::ddelib [lindex [package ifneeded dde $::ddever] 1]
     set ::regver  [package require registry]
     set ::reglib [lindex [package ifneeded registry $::regver] 1]
-    testConstraint loaddll 0
+    testConstraint loaddll 1
 }
 
 # Test for commands defined in Tcltest executable
@@ -514,7 +514,7 @@ test filesystem-7.1.1 {load from vfs} -setup {
     set dir [pwd]
 } -constraints {win testsimplefilesystem loaddll} -body {
     # This may cause a crash on exit
-    cd [file dirname $::reglib]
+    cd [file dirname $::ddelib]
     testsimplefilesystem 1
     # This loads dde via a complex copy-to-temp operation
     load simplefs:/[file tail $::ddelib] dde
