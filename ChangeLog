@@ -1,3 +1,9 @@
+2012-10-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c:	When checking for std channels being closed,
+	compare the channel state, not the channel itself so that stacked
+	channels do not cause trouble.
+
 2012-09-07  Harald Oehlmann  <oehhar@users.sf.net>
 
 	IMPLEMENTATION OF TIP#404.
