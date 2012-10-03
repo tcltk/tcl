@@ -697,26 +697,30 @@ CheckForStdChannelsBeingClosed(chan)
     ChannelState *statePtr = ((Channel *) chan)->state;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if ((chan == tsdPtr->stdinChannel) && (tsdPtr->stdinInitialized)) {
-        if (statePtr->refCount < 2) {
-            statePtr->refCount = 0;
-            tsdPtr->stdinChannel = NULL;
-            return;
-        }
-    } else if ((chan == tsdPtr->stdoutChannel)
-	    && (tsdPtr->stdoutInitialized)) {
-        if (statePtr->refCount < 2) {
-            statePtr->refCount = 0;
-            tsdPtr->stdoutChannel = NULL;
-            return;
-        }
-    } else if ((chan == tsdPtr->stderrChannel)
-	    && (tsdPtr->stderrInitialized)) {
-        if (statePtr->refCount < 2) {
-            statePtr->refCount = 0;
-            tsdPtr->stderrChannel = NULL;
-            return;
-        }
+    if (tsdPtr->stdinInitialized
+	    && tsdPtr->stdinChannel != NULL
+	    && statePtr == ((Channel *)tsdPtr->stdinChannel)->state) {
+	if (statePtr->refCount < 2) {
+	    statePtr->refCount = 0;
+	    tsdPtr->stdinChannel = NULL;
+	    return;
+	}
+    } else if (tsdPtr->stdoutInitialized
+	    && tsdPtr->stdoutChannel != NULL
+	    && statePtr == ((Channel *)tsdPtr->stdoutChannel)->state) {
+	if (statePtr->refCount < 2) {
+	    statePtr->refCount = 0;
+	    tsdPtr->stdoutChannel = NULL;
+	    return;
+	}
+    } else if (tsdPtr->stderrInitialized
+	    && tsdPtr->stderrChannel != NULL
+	    && statePtr == ((Channel *)tsdPtr->stderrChannel)->state) {
+	if (statePtr->refCount < 2) {
+	    statePtr->refCount = 0;
+	    tsdPtr->stderrChannel = NULL;
+	    return;
+	}
     }
 }
 
