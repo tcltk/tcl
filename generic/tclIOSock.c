@@ -151,7 +151,7 @@ TclCreateSocketAddress(
     struct addrinfo *p;
     struct addrinfo *v4head = NULL, *v4ptr = NULL;
     struct addrinfo *v6head = NULL, *v6ptr = NULL;
-    char *native = NULL, portstring[TCL_INTEGER_SPACE];
+    char *native = NULL, portbuf[TCL_INTEGER_SPACE], *portstring;
     const char *family = NULL;
     Tcl_DString ds;
     int result, i;
@@ -159,7 +159,18 @@ TclCreateSocketAddress(
     if (host != NULL) {
 	native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
     }
-    TclFormatInt(portstring, port);
+
+    /*
+     * Workaround for OSX's apparent inability to resolve "localhost", "0"
+     * when the loopback device is the only available network interface.
+     */
+    if (host != NULL && port == 0) {
+        portstring = NULL;
+    } else {
+        TclFormatInt(portbuf, port);
+        portstring = portbuf;
+    }
+    
     (void) memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
 
