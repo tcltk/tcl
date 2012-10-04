@@ -288,21 +288,27 @@ ConvertError(
 	codeStr2 = codeStrBuf;
 	sprintf(codeStrBuf, "%lu", adler);
 	break;
-    default:
-	codeStr = "unknown";
-	codeStr2 = codeStrBuf;
-	sprintf(codeStrBuf, "%d", code);
-	break;
 
 	/*
-	 * Finally, these should _not_ happen! This function is for dealing
-	 * with error cases, not non-errors!
+	 * These should _not_ happen! This function is for dealing with error
+	 * cases, not non-errors!
 	 */
 
     case Z_OK:
 	Tcl_Panic("unexpected zlib result in error handler: Z_OK");
     case Z_STREAM_END:
 	Tcl_Panic("unexpected zlib result in error handler: Z_STREAM_END");
+
+	/*
+	 * Anything else is bad news; it's unexpected. Convert to generic
+	 * error.
+	 */
+
+    default:
+	codeStr = "UNKNOWN";
+	codeStr2 = codeStrBuf;
+	sprintf(codeStrBuf, "%d", code);
+	break;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(zError(code), -1));
 
@@ -364,7 +370,7 @@ ConvertErrorToList(
 	 */
 
     default:
-	TclNewLiteralStringObj(objv[2], "unknown");
+	TclNewLiteralStringObj(objv[2], "UNKNOWN");
 	TclNewIntObj(objv[3], code);
 	return Tcl_NewListObj(4, objv);
     }
@@ -1984,12 +1990,27 @@ ZlibCmd(
 		NULL);
     case CMD_GZIP:			/* gzip data ?level?
 					 * -> gzippedCompressedData */
+	headerDictObj = NULL;
+
+	/*
+	 * Legacy argument format support.
+	 */
+
+	if (objc == 4
+		&& Tcl_GetIntFromObj(interp, objv[3], &level) == TCL_OK) {
+	    if (level < 0 || level > 9) {
+		extraInfoStr = "\n    (in -level option)";
+		goto badLevel;
+	    }
+	    return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_GZIP, objv[2],
+		    level, NULL);
+	}
+
 	if (objc < 3 || objc > 7 || ((objc & 1) == 0)) {
 	    Tcl_WrongNumArgs(interp, 2, objv,
 		    "data ?-level level? ?-header header?");
 	    return TCL_ERROR;
 	}
-	headerDictObj = NULL;
 	for (i=3 ; i<objc ; i+=2) {
 	    static const char *const gzipopts[] = {
 		"-header", "-level", NULL
@@ -2155,7 +2176,7 @@ ZlibStreamSubcmd(
 	FMT_COMPRESS, FMT_DECOMPRESS, FMT_DEFLATE, FMT_GUNZIP, FMT_GZIP,
 	FMT_INFLATE
     };
-    int i, format, mode, option, level;
+    int i, format, mode = 0, option, level;
     typedef struct {
 	const char *name;
 	Tcl_Obj **valueVar;
@@ -2180,7 +2201,7 @@ ZlibStreamSubcmd(
     const OptDescriptor gunzipOpts[] = {
 	{ NULL, NULL }
     };
-    const OptDescriptor *desc;
+    const OptDescriptor *desc = NULL;
     Tcl_ZlibStream zh;
 
     if (objc < 3 || !(objc & 1)) {
@@ -2306,10 +2327,14 @@ ZlibPushSubcmd(
 	FMT_INFLATE
     };
     Tcl_Channel chan;
-    int chanMode, format, mode, level, i, option;
-    static const char *const pushOptions[] = {
+    int chanMode, format, mode = 0, level, i, option;
+    static const char *const pushCompressOptions[] = {
+	"-dictionary", "-header", "-level", NULL
+    };
+    static const char *const pushDecompressOptions[] = {
 	"-dictionary", "-header", "-level", "-limit", NULL
     };
+    const char *const *pushOptions = pushDecompressOptions;
     enum pushOptions {poDictionary, poHeader, poLevel, poLimit};
     Tcl_Obj *headerObj = NULL, *compDictObj = NULL;
     int limit = 1, dummy;
@@ -2327,6 +2352,7 @@ ZlibPushSubcmd(
     case FMT_DEFLATE:
 	mode = TCL_ZLIB_STREAM_DEFLATE;
 	format = TCL_ZLIB_FORMAT_RAW;
+	pushOptions = pushCompressOptions;
 	break;
     case FMT_INFLATE:
 	mode = TCL_ZLIB_STREAM_INFLATE;
@@ -2335,6 +2361,7 @@ ZlibPushSubcmd(
     case FMT_COMPRESS:
 	mode = TCL_ZLIB_STREAM_DEFLATE;
 	format = TCL_ZLIB_FORMAT_ZLIB;
+	pushOptions = pushCompressOptions;
 	break;
     case FMT_DECOMPRESS:
 	mode = TCL_ZLIB_STREAM_INFLATE;
@@ -2343,6 +2370,7 @@ ZlibPushSubcmd(
     case FMT_GZIP:
 	mode = TCL_ZLIB_STREAM_DEFLATE;
 	format = TCL_ZLIB_FORMAT_GZIP;
+	pushOptions = pushCompressOptions;
 	break;
     case FMT_GUNZIP:
 	mode = TCL_ZLIB_STREAM_INFLATE;
@@ -3223,9 +3251,9 @@ ZlibTransformSetOption(			/* not used */
 
 	    if (Tcl_GetInt(interp, value, &newLimit) != TCL_OK) {
 		return TCL_ERROR;
-	    } else if (newLimit < 1 || newLimit > 65535) {
+	    } else if (newLimit < 1 || newLimit > MAX_BUFFER_SIZE) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"-limit must be between 1 and 65535", -1));
+			"-limit must be between 1 and 65536", -1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "READLIMIT", NULL);
 		return TCL_ERROR;
 	    }
