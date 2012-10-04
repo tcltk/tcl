@@ -1784,7 +1784,7 @@ NativeIsExec(
 	return 0;
     }
 
-    if (path[len-4] != TEXT('.')) {
+    if (path[len-4] != '.') {
 	return 0;
     }
 
