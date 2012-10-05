@@ -1738,11 +1738,11 @@ ConvertFileNameFormat(
 	    }
 	    nativeName = data.cAlternateFileName;
 	    if (longShort) {
-		if (data.cFileName[0] != TEXT('\0')) {
+		if (data.cFileName[0] != '\0') {
 		    nativeName = data.cFileName;
 		}
 	    } else {
-		if (data.cAlternateFileName[0] == TEXT('\0')) {
+		if (data.cAlternateFileName[0] == '\0') {
 		    nativeName = (TCHAR *) data.cFileName;
 		}
 	    }
