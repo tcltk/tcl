@@ -1,3 +1,44 @@
+2012-10-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c:	When checking for std channels being closed,
+	compare the channel state, not the channel itself so that stacked
+	channels do not cause trouble.
+
+2012-09-26  Reinhard Max  <max@suse.de>
+
+	* generic/tclIOSock.c (TclCreateSocketAddress): Work around a bug
+	in getaddrinfo() on OSX that caused name resolution to fail for
+	[socket -server foo -myaddr localhost 0].
+
+2012-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/configure.in: New import libraries for zlib 1.2.7,
+	* win/configure:    usable for all win32/win64 compilers
+	* compat/zlib/win32/zdll.lib
+	* compat/zlib/win64/zdll.lib
+
+	* win/tclWinDde.c: [Frq 3527238]: Full unicode support
+	for dde. Dde version is now 1.4.0b2.
+	***POTENTIAL INCOMPATIBILITY***
+
+2012-09-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:  make Tcl_Interp a fully opaque structure
+	if TCL_NO_DEPRECATED is set (TIP 330 and 336).
+	* win/nmakehlp.c: Let "nmakehlp -V" start searching digits
+	after the found match (suggested by Harald Oehlmann)
+
+2012-09-07  Harald Oehlmann  <oehhar@users.sf.net>
+
+	*** 8.6b3 TAGGED FOR RELEASE ***
+
+	IMPLEMENTATION OF TIP#404.
+
+	* library/msgcat/msgcat.tcl:	[FRQ 3544988]: New commands [mcflset]
+	* library/msgcat/pkgIndex.tcl:	and [mcflmset] to set mc entries with
+	* unix/Makefile.in:		implicit message file locale.
+	* win/Makefile.in:		Bump to 1.5.0.
+
 2012-08-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/msgs/uk.msg: [Bug 3561330]: Use the correct full name of
@@ -186,7 +227,7 @@
 
 	* library/msgcat/msgcat.tcl:   Add tn, ro_MO and ru_MO to msgcat.
 
-2012-06-29  Harald Oehlmann <harald.oehlmann@elmicron.de>
+2012-06-29  Harald Oehlmann <oehhar@users.sf.net>
 
 	* library/msgcat/msgcat.tcl:	[Bug 3536888]: Locale guessing of
 	* library/msgcat/pkgIndex.tcl:	msgcat fails on (some) Windows 7. Bump
