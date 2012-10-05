@@ -1363,7 +1363,6 @@ typedef struct {
     int epoch;			/* Epoch marker for dictionary being searched,
 				 * or -1 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
-    Tcl_Obj *resultList;	/* List of result values from the loop body. */
 } Tcl_DictSearch;
 
 /*
