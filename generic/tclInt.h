@@ -2487,6 +2487,14 @@ typedef struct List {
     (((listPtr)->typePtr == &tclListType) ? ListObjIsCanonical((listPtr)) : 0)
 
 /*
+ * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
+ * TclNRLmapCmd and their compilations.
+ */
+
+#define TCL_EACH_KEEP_NONE  0	/* Discard iteration result like [foreach] */
+#define TCL_EACH_COLLECT    1	/* Collect iteration result like [lmap] */
+
+/*
  * Macros providing a faster path to integers: Tcl_GetLongFromObj everywhere,
  * Tcl_GetIntFromObj and TclGetIntForIndex on platforms where longs are ints.
  *
@@ -2858,16 +2866,6 @@ struct Tcl_LoadHandle_ {
 				/* 'Steele&White' after masking */
 #define TCL_DD_SHORTEST0		0x0
 				/* 'Shortest possible' after masking */
-
-/* Modes for collecting or accumulating in TclNREachloopCmd, 
- * TclCompileEachloopCmd and INST_FOREACH_STEP4. */
-
-#define TCL_EACH_KEEP_NONE		0
-				/* Discard iteration result like [foreach] */
-
-#define TCL_EACH_COLLECT		1
-				/* Collect iteration result like [lmap] */
-
 
 /*
  *----------------------------------------------------------------
