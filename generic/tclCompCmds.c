@@ -854,6 +854,19 @@ CompileDictEachCmd(
     }
 
     /*
+     * Create temporary variable to capture return values from loop body when
+     * we're collecting results.
+     */
+
+    if (collect == TCL_EACH_COLLECT) {
+	collectVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1,
+		envPtr);
+	if (collectVar < 0) {
+	    return TCL_ERROR;
+	}
+    }
+
+    /*
      * Check we've got a pair of variables and that they are local variables.
      * Then extract their indices in the LVT.
      */
@@ -903,32 +916,10 @@ CompileDictEachCmd(
     }
 
     /*
-     * Create temporary variable to capture return values from loop body.
-     */
-
-    if (collect == TCL_EACH_COLLECT) {
-	collectVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1,
-		envPtr);
-	if (collectVar < 0) {
-	    return TCL_ERROR;
-	}
-    }
-
-    /*
      * Preparation complete; issue instructions. Note that this code issues
      * fixed-sized jumps. That simplifies things a lot!
      *
-     * First up, get the dictionary and start the iteration. No catching of
-     * errors at this point.
-     */
-
-    CompileWord(envPtr, dictTokenPtr, interp, 3);
-    TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,		envPtr);
-    emptyTargetOffset = CurrentOffset(envPtr);
-    TclEmitInstInt4(	INST_JUMP_TRUE4, 0,			envPtr);
-
-    /*
-     * Initialize the accumulator dictionary, if needed.
+     * First up, initialize the accumulator dictionary if needed.
      */
 
     if (collect == TCL_EACH_COLLECT) {
@@ -936,6 +927,16 @@ CompileDictEachCmd(
 	Emit14Inst(	INST_STORE_SCALAR, collectVar,		envPtr);
 	TclEmitOpcode(	INST_POP,				envPtr);
     }
+
+    /*
+     * Get the dictionary and start the iteration. No catching of errors at
+     * this point.
+     */
+
+    CompileWord(envPtr, dictTokenPtr, interp, 3);
+    TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,		envPtr);
+    emptyTargetOffset = CurrentOffset(envPtr);
+    TclEmitInstInt4(	INST_JUMP_TRUE4, 0,			envPtr);
 
     /*
      * Now we catch errors from here on so that we can finalize the search
@@ -973,7 +974,7 @@ CompileDictEachCmd(
 	Emit14Inst(	INST_LOAD_SCALAR, keyVarIndex,		envPtr);
 	TclEmitInstInt4(INST_OVER, 1,				envPtr);
 	TclEmitInstInt4(INST_DICT_SET, 1,			envPtr);
-	TclEmitInt4(	collectVar,				envPtr);
+	TclEmitInt4(		collectVar,			envPtr);
 	TclEmitOpcode(	INST_POP,				envPtr);
     }
     TclEmitOpcode(	INST_POP,				envPtr);
@@ -1024,6 +1025,10 @@ CompileDictEachCmd(
     TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
     TclEmitInt4(	infoIndex,				envPtr);
     TclEmitOpcode(	INST_END_CATCH,				envPtr);
+    if (collect == TCL_EACH_COLLECT) {
+	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
+	TclEmitInt4(		collectVar,			envPtr);
+    }
     TclEmitOpcode(	INST_RETURN_STK,			envPtr);
 
     /*
@@ -1039,7 +1044,7 @@ CompileDictEachCmd(
     TclEmitOpcode(	INST_POP,				envPtr);
     TclEmitOpcode(	INST_POP,				envPtr);
     TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
-    TclEmitInt4(	infoIndex,				envPtr);
+    TclEmitInt4(		infoIndex,			envPtr);
 
     /*
      * Final stage of the command (normal case) is that we push an empty
@@ -1052,6 +1057,8 @@ CompileDictEachCmd(
 	    envPtr->codeStart + endTargetOffset);
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(	INST_LOAD_SCALAR, collectVar,		envPtr);
+	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
+	TclEmitInt4(		collectVar,			envPtr);
     } else {
 	PushLiteral(envPtr, "", 0);
     }
@@ -2279,6 +2286,8 @@ CompileEachloopCmd(
     envPtr->currStackDepth = savedStackDepth;
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(		INST_LOAD_SCALAR, collectVar,	envPtr);
+	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
+	TclEmitInt4(		collectVar,			envPtr);
     } else {
 	PushLiteral(envPtr, "", 0);
     }
