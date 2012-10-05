@@ -40,10 +40,10 @@ static int		PushVarName(Tcl_Interp *interp,
 			    int flags, int *localIndexPtr,
 			    int *simpleVarNamePtr, int *isScalarPtr,
 			    int line, int *clNext);
-static int      TclCompileEachloopCmd(Tcl_Interp *interp,
-                Tcl_Parse *parsePtr, Command *cmdPtr,    CompileEnv *envPtr,
-                int collect);
-static int		TclCompileDictEachCmd(Tcl_Interp *interp,
+static int		CompileEachloopCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    CompileEnv *envPtr, int collect);
+static int		CompileDictEachCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr, int collect);
 
@@ -795,37 +795,42 @@ TclCompileDictForCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    return TclCompileDictEachCmd(interp, parsePtr, cmdPtr, envPtr, 0);
+    return CompileDictEachCmd(interp, parsePtr, cmdPtr, envPtr,
+	    TCL_EACH_KEEP_NONE);
 }
 
 int
 TclCompileDictMapCmd(
-    Tcl_Interp *interp,     /* Used for looking up stuff. */
-    Tcl_Parse *parsePtr,    /* Points to a parse structure for the command
-                 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,        /* Points to defintion of command being
-                 * compiled. */
-    CompileEnv *envPtr)     /* Holds resulting instructions. */
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    return TclCompileDictEachCmd(interp, parsePtr, cmdPtr, envPtr, 1);
+    return CompileDictEachCmd(interp, parsePtr, cmdPtr, envPtr,
+	    TCL_EACH_COLLECT);
 }
 
 int
-TclCompileDictEachCmd(
-    Tcl_Interp *interp,     /* Used for looking up stuff. */
-    Tcl_Parse *parsePtr,    /* Points to a parse structure for the command
-                 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,        /* Points to defintion of command being
-                 * compiled. */
-    CompileEnv *envPtr,     /* Holds resulting instructions. */
-    int collect)	    /* Flag == 1 to collect and return loop body result. */
+CompileDictEachCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    int collect)		/* Flag == TCL_EACH_COLLECT to collect and
+				 * construct a new dictionary with the loop
+				 * body result. */
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
     int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
     int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
     int numVars, endTargetOffset;
-    int collectTemp; /* Index of temp var holding the result list. */
+    int collectVar = -1;	/* Index of temp var holding the result
+				 * dict. */
     int savedStackDepth = envPtr->currStackDepth;
 				/* Needed because jumps confuse the stack
 				 * space calculator. */
@@ -901,16 +906,12 @@ TclCompileDictEachCmd(
      * Create temporary variable to capture return values from loop body.
      */
 
-    if (collect == 1) {
-	collectTemp = TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, envPtr);
-
-	PushLiteral(envPtr, "", 0);
-	if (collectTemp <= 255) {
-	    TclEmitInstInt1(INST_STORE_SCALAR1, collectTemp, envPtr);
-	} else {
-	    TclEmitInstInt4(INST_STORE_SCALAR4, collectTemp, envPtr);
+    if (collect == TCL_EACH_COLLECT) {
+	collectVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1,
+		envPtr);
+	if (collectVar < 0) {
+	    return TCL_ERROR;
 	}
-	TclEmitOpcode(INST_POP, envPtr);
     }
 
     /*
@@ -925,6 +926,16 @@ TclCompileDictEachCmd(
     TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,		envPtr);
     emptyTargetOffset = CurrentOffset(envPtr);
     TclEmitInstInt4(	INST_JUMP_TRUE4, 0,			envPtr);
+
+    /*
+     * Initialize the accumulator dictionary, if needed.
+     */
+
+    if (collect == TCL_EACH_COLLECT) {
+	PushLiteral(envPtr, "", 0);
+	Emit14Inst(	INST_STORE_SCALAR, collectVar,		envPtr);
+	TclEmitOpcode(	INST_POP,				envPtr);
+    }
 
     /*
      * Now we catch errors from here on so that we can finalize the search
@@ -958,12 +969,12 @@ TclCompileDictEachCmd(
 
     SetLineInformation(3);
     CompileBody(envPtr, bodyTokenPtr, interp);
-    if (collect == 1) {
-	if (collectTemp <= 255) {
-	    TclEmitInstInt1(INST_LAPPEND_SCALAR1, collectTemp, envPtr);
-	} else {
-	    TclEmitInstInt4(INST_LAPPEND_SCALAR4, collectTemp, envPtr);
-	}
+    if (collect == TCL_EACH_COLLECT) {
+	Emit14Inst(	INST_LOAD_SCALAR, keyVarIndex,		envPtr);
+	TclEmitInstInt4(INST_OVER, 1,				envPtr);
+	TclEmitInstInt4(INST_DICT_SET, 1,			envPtr);
+	TclEmitInt4(	collectVar,				envPtr);
+	TclEmitOpcode(	INST_POP,				envPtr);
     }
     TclEmitOpcode(	INST_POP,				envPtr);
 
@@ -1039,12 +1050,8 @@ TclCompileDictEachCmd(
     jumpDisplacement = CurrentOffset(envPtr) - endTargetOffset;
     TclUpdateInstInt4AtPc(INST_JUMP4, jumpDisplacement,
 	    envPtr->codeStart + endTargetOffset);
-    if (collect == 1) {
-	if (collectTemp <= 255) {
-	    TclEmitInstInt1(INST_LOAD_SCALAR1, collectTemp, envPtr);
-	} else {
-	    TclEmitInstInt4(INST_LOAD_SCALAR4, collectTemp, envPtr);
-	}
+    if (collect == TCL_EACH_COLLECT) {
+	Emit14Inst(	INST_LOAD_SCALAR, collectVar,		envPtr);
     } else {
 	PushLiteral(envPtr, "", 0);
     }
@@ -1935,13 +1942,14 @@ TclCompileForeachCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-  return TclCompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr, 0);
+    return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr,
+	    TCL_EACH_KEEP_NONE);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileEachloopCmd --
+ * CompileEachloopCmd --
  *
  *	Procedure called to compile the "foreach" and "lmap" commands.
  *
@@ -1957,14 +1965,15 @@ TclCompileForeachCmd(
  */
 
 static int
-TclCompileEachloopCmd(
+CompileEachloopCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
     Command *cmdPtr,		/* Points to defintion of command being
 				 * compiled. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int collect)		/* Select collecting or accumulating mode (TCL_EACH_*) */
+    int collect)		/* Select collecting or accumulating mode
+				 * (TCL_EACH_*) */
 {
     Proc *procPtr = envPtr->procPtr;
     ForeachInfo *infoPtr;	/* Points to the structure describing this
@@ -1974,7 +1983,8 @@ TclCompileEachloopCmd(
 				 * used to point to a value list. */
     int loopCtTemp;		/* Index of temp var holding the loop's
 				 * iteration count. */
-    int collectTemp = -1;	/* Index of temp var holding the result var index. */
+    int collectVar = -1;	/* Index of temp var holding the result var
+				 * index. */
 
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     unsigned char *jumpPc;
@@ -2091,6 +2101,14 @@ TclCompileEachloopCmd(
 	loopIndex++;
     }
 
+    if (collect == TCL_EACH_COLLECT) {
+	collectVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1,
+		envPtr);
+	if (collectVar < 0) {
+	    return TCL_ERROR;
+	}
+    }
+	    
     /*
      * We will compile the foreach command. Reserve (numLists + 1) temporary
      * variables:
@@ -2171,15 +2189,9 @@ TclCompileEachloopCmd(
      */
      
     if (collect == TCL_EACH_COLLECT) {
-	collectTemp = TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, envPtr);
-	    
 	PushLiteral(envPtr, "", 0);
-	if (collectTemp <= 255) {
-	    TclEmitInstInt1(  INST_STORE_SCALAR1, collectTemp, envPtr);
-	} else {
-	    TclEmitInstInt4(  INST_STORE_SCALAR4, collectTemp, envPtr);
-	}
-	TclEmitOpcode(      INST_POP,       envPtr);
+	Emit14Inst(		INST_STORE_SCALAR, collectVar,	envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
     /*
@@ -2208,14 +2220,9 @@ TclCompileEachloopCmd(
     envPtr->currStackDepth = savedStackDepth + 1;
 
     if (collect == TCL_EACH_COLLECT) {
-	if (collectTemp <= 255) {
-	    TclEmitInstInt1(  INST_LAPPEND_SCALAR1, collectTemp, envPtr);
-	} else {
-	    TclEmitInstInt4(  INST_LAPPEND_SCALAR4, collectTemp, envPtr);
-	}
+	Emit14Inst(		INST_LAPPEND_SCALAR, collectVar,envPtr);
     }
-    TclEmitOpcode(        INST_POP,           envPtr);
-
+    TclEmitOpcode(		INST_POP,			envPtr);
 
     /*
      * Jump back to the test at the top of the loop. Generate a 4 byte jump if
@@ -2270,12 +2277,8 @@ TclCompileEachloopCmd(
      */
 
     envPtr->currStackDepth = savedStackDepth;
-    if (collectTemp >= 0) {
-	if (collectTemp <= 255) {
-	    TclEmitInstInt1(  INST_LOAD_SCALAR1, collectTemp, envPtr);
-	} else {
-	    TclEmitInstInt4(  INST_LOAD_SCALAR4, collectTemp, envPtr);
-	}
+    if (collect == TCL_EACH_COLLECT) {
+	Emit14Inst(		INST_LOAD_SCALAR, collectVar,	envPtr);
     } else {
 	PushLiteral(envPtr, "", 0);
     }
@@ -3856,7 +3859,8 @@ TclCompileLmapCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-  return TclCompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr, 1);
+    return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr,
+	    TCL_EACH_COLLECT);
 }
 
 /*
