@@ -1543,15 +1543,17 @@ test dict-24.6 {dict map command: syntax} -returnCodes error -body {
 test dict-24.7 {dict map command: syntax} -returnCodes error -body {
     dict map "\{x" x x
 } -result {unmatched open brace in list}
-test dict-24.8 {dict map command} -body {
+test dict-24.8 {dict map command} -setup {
+    set values {}
+    set keys {}
+} -body {
     # This test confirms that [dict keys], [dict values] and [dict map]
     # all traverse a dictionary in the same order.
     set dictv {a A b B c C}
-    set values {}
-    set keys [dict map {k v} $dictv {
+    dict map {k v} $dictv {
+	lappend keys $k
 	lappend values $v
-	set k
-    }]
+    }
     set result [expr {
 	$keys eq [dict keys $dictv] && $values eq [dict values $dictv]
     }]
@@ -1614,19 +1616,33 @@ test dict-24.13 {dict map command: script results} {
 	error "return didn't go far enough"
     }}
 } ok,a,b
-test dict-24.14 {dict map command: handle representation loss} -body {
-    set dictVar {a b c d e f g h}
+test dict-24.14 {dict map command: handle representation loss} -setup {
+    set keys {}
     set values {}
-    set keys [dict map {k v} $dictVar {
+} -body {
+    set dictVar {a b c d e f g h}
+    list [dict size [dict map {k v} $dictVar {
 	if {[llength $dictVar]} {
+	    lappend keys $k
 	    lappend values $v
 	    return -level 0 $k
 	}
-    }]
-    list [lsort $keys] [lsort $values]
+    }]] [lsort $keys] [lsort $values]
 } -cleanup {
     unset dictVar keys values k v
-} -result {{a c e g} {b d f h}}
+} -result {4 {a c e g} {b d f h}}
+test dict-24.14a {dict map command: handle representation loss} -body {
+    apply {{} {
+	set dictVar {a b c d e f g h}
+	list [dict size [dict map {k v} $dictVar {
+	    if {[llength $dictVar]} {
+		lappend keys $k
+		lappend values $v
+		return -level 0 $k
+	    }
+	}]] [lsort $keys] [lsort $values]
+    }}
+} -result {4 {a c e g} {b d f h}}
 test dict-24.15 {dict map command: keys are unique and iterated over once only} -setup {
     unset -nocomplain accum
     array set accum {}
@@ -1672,7 +1688,7 @@ test dict-24.17a {dict map command in compilation context} {
 	    dict set d $k 0		;# Any modification will do
 	}
     }}
-} {{a 0}}
+} {a {a 0}}
 test dict-24.18 {dict map command in compilation context} {
     # Bug 1382528 (dict for)
     apply {{} {
@@ -1739,33 +1755,33 @@ test dict-24.22 {dict map results (non-compiled)} {
     dict map {k v} [dict map {k v} {a 1 b 2 c 3 d 4} { list $v $k }] {
 	return -level 0 "$k,$v"
     }
-} {{1 a,2 b} {3 c,4 d}}
+} {a {a,1 a} b {b,2 b} c {c,3 c} d {d,4 d}}
 test dict-24.23 {dict map results (compiled)} {
     apply {{} {
 	dict map {k v} [dict map {k v} {a 1 b 2 c 3 d 4} { list $v $k }] {
 	    return -level 0 "$k,$v"
 	}
     }}
-} {{1 a,2 b} {3 c,4 d}}
+} {a {a,1 a} b {b,2 b} c {c,3 c} d {d,4 d}}
 test dict-24.23a {dict map results (compiled)} {
     apply {{list} {
 	dict map {k v} [dict map {k v} $list { list $v $k }] {
 	    return -level 0 "$k,$v"
 	}
     }} {a 1 b 2 c 3 d 4}
-} {{1 a,2 b} {3 c,4 d}}
+} {a {a,1 a} b {b,2 b} c {c,3 c} d {d,4 d}}
 test dict-24.24 {dict map with huge dict (non-compiled)} {
-    tcl::mathop::+ {*}[dict map {k v} [lsearch -all [lrepeat 1000000 x] x] {
+    tcl::mathop::+ {*}[dict map {k v} [lsearch -all [lrepeat 100000 x] x] {
 	expr { $k * $v }
     }]
-} 166666416666500000
+} 166666666600000
 test dict-24.25 {dict map with huge dict (compiled)} {
     apply {{n} {
 	tcl::mathop::+ {*}[dict map {k v} [lsearch -all [lrepeat $n y] y] {
 	    expr { $k * $v }
 	}]
-    }} 1000000
-} 166666416666500000
+    }} 100000
+} 166666666600000
 
 
 # cleanup

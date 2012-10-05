@@ -2619,6 +2619,7 @@ DictMapNRCmd(
      * internally so that updates, shimmering, etc are not a problem.
      */
 
+    Tcl_IncrRefCount(storagePtr->accumulatorObj);
     Tcl_IncrRefCount(storagePtr->keyVarObj);
     Tcl_IncrRefCount(storagePtr->valueVarObj);
     Tcl_IncrRefCount(storagePtr->scriptObj);
@@ -2707,7 +2708,7 @@ DictMapLoopCallback(
 
     Tcl_DictObjNext(&storagePtr->search, &keyObj, &valueObj, &done);
     if (done) {
-	Tcl_ResetResult(interp);
+	Tcl_SetObjResult(interp, storagePtr->accumulatorObj);
 	goto done;
     }
 
