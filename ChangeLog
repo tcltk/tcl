@@ -1,3 +1,8 @@
+2012-10-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in: [Bug 2459774] win/tcl/Makefile.in
+	not compatible with msys 0.8.
+
 2012-10-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIO.c:	When checking for std channels being closed,
