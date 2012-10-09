@@ -1,3 +1,20 @@
+2012-10-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in: [Bug 2459774] win/tcl/Makefile.in
+	not compatible with msys 0.8.
+
+2012-10-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c:	When checking for std channels being closed,
+	compare the channel state, not the channel itself so that stacked
+	channels do not cause trouble.
+
+2012-09-26  Reinhard Max  <max@suse.de>
+
+	* generic/tclIOSock.c (TclCreateSocketAddress): Work around a bug
+	in getaddrinfo() on OSX that caused name resolution to fail for
+	[socket -server foo -myaddr localhost 0].
+
 2012-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/configure.in: New import libraries for zlib 1.2.7,

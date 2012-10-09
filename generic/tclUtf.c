@@ -1516,8 +1516,7 @@ Tcl_UniCharIsSpace(
 
     if (((Tcl_UniChar) ch) < ((Tcl_UniChar) 0x80)) {
 	return isspace(UCHAR(ch)); /* INTL: ISO space */
-    } else if ((Tcl_UniChar) ch == 0x0082 || (Tcl_UniChar) ch == 0x0083
-	    || (Tcl_UniChar) ch == 0x0085 || (Tcl_UniChar) ch == 0x200b
+    } else if ((Tcl_UniChar) ch == 0x0085 || (Tcl_UniChar) ch == 0x200b
 	    || (Tcl_UniChar) ch == 0x2060 || (Tcl_UniChar) ch == 0xfeff) {
 	return 1;
     } else {
