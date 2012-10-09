@@ -40,8 +40,6 @@ static int		UniCharIsHexDigit(int character);
 #define DEFAULT_TRIM_SET \
 	"\x09\x0a\x0b\x0c\x0d " /* ASCII */\
 	"\xc0\x80" /*     nul (U+0000) */\
-	"\xc2\x82" /*     break permitted here (U+0082) */\
-	"\xc2\x83" /*     no break here (U+0083) */\
 	"\xc2\x85" /*     next line (U+0085) */\
 	"\xc2\xa0" /*     non-breaking space (U+00a0) */\
 	"\xe1\x9a\x80" /* ogham space mark (U+1680) */ \
