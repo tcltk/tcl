@@ -84,28 +84,7 @@ namespace eval ::http {
 		::http::Log "[isoNow] [string toupper $level] cookiejar($who) - ${msg}"
 	    }
 	}
-	proc IDNAencode str {
-	    set parts {}
-	    # Split term from RFC 3490, Sec 3.1
-	    foreach part [split $str "\u002E\u3002\uFF0E\uFF61"] {
-		if {![string is ascii $part]} {
-		    set part xn--[puny::encode $part]
-		}
-		lappend parts $part
-	    }
-	    return [join $parts .]
-	}
-	proc IDNAdecode str {
-	    set parts {}
-	    # Split term from RFC 3490, Sec 3.1
-	    foreach part [split $str "\u002E\u3002\uFF0E\uFF61"] {
-		if {[string match "xn--*" $part]} {
-		    set part [puny::decode [string range $part 4 end]]
-		}
-		lappend parts $part
-	    }
-	    return [join $parts .]
-	}
+	namespace import ::http::cookiejar_support::puny::IDNA*
     }
 }
 
@@ -362,11 +341,15 @@ package provide cookiejar $::http::cookiejar_version
 	set secure [string equal -nocase $proto "https"]
 	# Open question: how to move these manipulations into the database
 	# engine (if that's where they *should* be).
+	#
 	# Suggestion from kbk:
 	#LENGTH(theColumn) <= LENGTH($queryStr) AND
 	#SUBSTR(theColumn, LENGTH($queryStr) LENGTH(theColumn)+1) = $queryStr
+	#
+	# However, we instead do most of the work in Tcl because that lets us
+	# do the splitting exactly right, and it's far easier to work with
+	# strings in Tcl than in SQL.
 	if {[regexp {[^0-9.]} $host]} {
-	    # Ugh, it's a numeric domain! Restrict it...
 	    db transaction {
 		foreach domain $domains {
 		    foreach p $paths {
@@ -375,6 +358,7 @@ package provide cookiejar $::http::cookiejar_version
 		}
 	    }
 	} else {
+	    # Ugh, it's a numeric domain! Restrict it...
 	    db transaction {
 		foreach p $paths {
 		    my GetCookiesForHostAndPath result $secure $host $p $host
@@ -530,12 +514,43 @@ package provide cookiejar $::http::cookiejar_version
     }
 }
 
-# The implementation of the punycode encoder. This is based on the code on
-# http://tools.ietf.org/html/rfc3492 (encoder) and http://wiki.tcl.tk/10501
-# (decoder) but with extensive modifications.
+# The implementation of the punycode encoder. This is based on the code in
+# Appendix C of http://tools.ietf.org/html/rfc3492 but with substantial
+# modifications so that it is Tcl code.
 
 namespace eval ::http::cookiejar_support::puny {
-    namespace export encode decode
+    namespace export IDNAencode punyencode IDNAdecode punydecode
+
+    proc IDNAencode str {
+	set parts {}
+	# Split term from RFC 3490, Sec 3.1
+	foreach part [split $str "\u002E\u3002\uFF0E\uFF61"] {
+	    if {[regexp {[^-A-Za-z0-9]} $part]} {
+		if {[regexp {[^-A-Za-z0-9\u0100-\uffff]} $part ch]} {
+		    scan $ch %c c
+		    if {$ch < "!" || $ch > "~"} {
+			set ch [format "\\u%04x" $c]
+		    }
+		    throw [list IDNA INVALID_NAME_CHARACTER $c] \
+			"bad character \"$ch\" in DNS name"
+		}
+		set part xn--[punyencode $part]
+	    }
+	    lappend parts $part
+	}
+	return [join $parts .]
+    }
+    proc IDNAdecode str {
+	set parts {}
+	# Split term from RFC 3490, Sec 3.1
+	foreach part [split $str "\u002E\u3002\uFF0E\uFF61"] {
+	    if {[string match "xn--*" $part]} {
+		set part [punydecode [string range $part 4 end]]
+	    }
+	    lappend parts $part
+	}
+	return [join $parts .]
+    }
 
     variable digits [split "abcdefghijklmnopqrstuvwxyz0123456789" ""]
     # Bootstring parameters for Punycode
@@ -568,8 +583,8 @@ namespace eval ::http::cookiejar_support::puny {
 	return [expr {$k + ($base-$tmin+1) * $delta / ($delta+$skew)}]
     }
 
-    # Main encode function
-    proc encode {input {case ""}} {
+    # Main punycode encoding function
+    proc punyencode {input {case ""}} {
 	variable digits
 	variable tmin
 	variable tmax
@@ -664,8 +679,8 @@ namespace eval ::http::cookiejar_support::puny {
 	return $output
     }
 
-    # Main decode function
-    proc decode {input} {
+    # Main punycode decode function
+    proc punydecode {input} {
 	namespace upvar ::http::cookiejar_support::puny \
 	    tmin tmin tmax tmax base base initial_bias initial_bias \
 	    initial_n initial_n maxcodepoint maxcodepoint
