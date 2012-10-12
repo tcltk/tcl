@@ -11,6 +11,7 @@
 package require Tcl 8.6
 package require http 2.8.4
 package require sqlite3
+package require tcl::idna 1.0
 
 #
 # Configuration for the cookiejar package, plus basic support procedures.
@@ -49,10 +50,10 @@ namespace eval ::http {
 	proc locn {secure domain path {key ""}} {
 	    if {$key eq ""} {
 		format "%s://%s%s" [expr {$secure?"https":"http"}] \
-		    [IDNAencode $domain] $path
+		    [tcl::idna encode $domain] $path
 	    } else {
 		format "%s://%s%s?%s" \
-		    [expr {$secure?"https":"http"}] [IDNAencode $domain] \
+		    [expr {$secure?"https":"http"}] [tcl::idna encode $domain] \
 		    $path $key
 	    }
 	}
@@ -195,27 +196,24 @@ package provide cookiejar $::http::cookiejar_version
 	    my InitDomainList
 	}
     }
- 
-    method InitDomainList {} {
-	namespace upvar ::http \
-	    cookiejar_domainlist url \
-	    cookiejar_domainfile filename \
-	    cookiejar_offline	 offline
-	if {!$offline} {
-	    log debug "loading domain list from $url"
-	    set tok [::http::geturl $url]
-	    try {
-		if {[::http::ncode $tok] == 200} {
-		    my InstallDomainData [::http::data $tok]
-		    return
-		} else {
-		    log error "failed to fetch list of forbidden cookie domains from ${url}: [::http::error $tok]"
-		    log warn "attempting to fall back to built in version"
-		}
-	    } finally {
-		::http::cleanup $tok
+
+    method GetDomainListOnline {} {
+	upvar 0 ::http::cookiejar_domainlist url
+	log debug "loading domain list from $url"
+	set tok [::http::geturl $url]
+	try {
+	    if {[::http::ncode $tok] == 200} {
+		return [::http::data $tok]
+	    } else {
+		log error "failed to fetch list of forbidden cookie domains from ${url}: [::http::error $tok]"
+		return {}
 	    }
+	} finally {
+	    ::http::cleanup $tok
 	}
+    }
+    method GetDomainListOffline {} {
+	upvar 0 ::http::cookiejar_domainfile filename
 	log debug "loading domain list from $filename"
 	try {
 	    set f [open $filename]
@@ -224,14 +222,26 @@ package provide cookiejar $::http::cookiejar_version
 		    zlib push gunzip $f
 		}
 		fconfigure $f -encoding utf-8
-		my InstallDomainData [read $f]
+		return [read $f]
 	    } finally {
 		close $f
 	    }
-	} on error msg {
+	} on error {msg opt} {
 	    log error "failed to read list of forbidden cookie domains from ${filename}: $msg"
-	    return -code error $msg
+	    return -options $opt $msg
 	}
+    }
+    method InitDomainList {} {
+	upvar 0 ::http::cookiejar_offline offline
+	if {!$offline} {
+	    set data [my GetDomainListOnline]
+	    if {[string length $data]} {
+		my InstallDomainData $data
+		return
+	    }
+	    log warn "attempting to fall back to built in version"
+	}
+	my InstallDomainData [my GetDomainListOffline]
     }
 
     method InstallDomainData {data} {
@@ -244,8 +254,8 @@ package provide cookiejar $::http::cookiejar_version
 		    continue
 		} elseif {[string match !* $line]} {
 		    set line [string range $line 1 end]
-		    set idna [IDNAencode $line]
-		    set utf [IDNAdecode $line]
+		    set idna [string tolower [tcl::idna encode $line]]
+		    set utf [tcl::idna decode [string tolower $line]]
 		    db eval {
 			INSERT OR REPLACE INTO domains (domain, forbidden)
 			VALUES ($utf, 0);
@@ -259,8 +269,8 @@ package provide cookiejar $::http::cookiejar_version
 		} else {
 		    if {[string match {\*.*} $line]} {
 			set line [string range $line 2 end]
-			set idna [IDNAencode $line]
-			set utf [IDNAdecode $line]
+			set idna [string tolower [tcl::idna encode $line]]
+			set utf [tcl::idna decode [string tolower $line]]
 			db eval {
 			    INSERT OR REPLACE INTO forbiddenSuper (domain)
 			    VALUES ($utf);
@@ -272,8 +282,8 @@ package provide cookiejar $::http::cookiejar_version
 			    }
 			}
 		    } else {
-			set idna [IDNAencode $line]
-			set utf [IDNAdecode $line]
+			set idna [string tolower [tcl::idna encode $line]]
+			set utf [tcl::idna decode [string tolower $line]]
 		    }
 		    db eval {
 			INSERT OR REPLACE INTO domains (domain, forbidden)
@@ -286,8 +296,8 @@ package provide cookiejar $::http::cookiejar_version
 			}
 		    }
 		}
-		if {$utf ne [IDNAdecode $idna]} {
-		    log warn "mismatch in IDNA handling for $idna ($line, $utf, [IDNAdecode $idna])"
+		if {$utf ne [tcl::idna decode [string tolower $idna]]} {
+		    log warn "mismatch in IDNA handling for $idna ($line, $utf, [tcl::idna decode $idna])"
 		}
 	    }
 	}
@@ -337,7 +347,7 @@ package provide cookiejar $::http::cookiejar_version
     method getCookies {proto host path} {
 	set result {}
 	set paths [splitPath $path]
-	set domains [splitDomain [IDNAencode $host]]
+	set domains [splitDomain [string tolower [tcl::idna encode $host]]]
 	set secure [string equal -nocase $proto "https"]
 	# Open question: how to move these manipulations into the database
 	# engine (if that's where they *should* be).
@@ -349,17 +359,15 @@ package provide cookiejar $::http::cookiejar_version
 	# However, we instead do most of the work in Tcl because that lets us
 	# do the splitting exactly right, and it's far easier to work with
 	# strings in Tcl than in SQL.
-	if {[regexp {[^0-9.]} $host]} {
-	    db transaction {
+	db transaction {
+	    if {[regexp {[^0-9.]} $host]} {
 		foreach domain $domains {
 		    foreach p $paths {
 			my GetCookiesForHostAndPath result $secure $domain $p $host
 		    }
 		}
-	    }
-	} else {
-	    # Ugh, it's a numeric domain! Restrict it...
-	    db transaction {
+	    } else {
+		# Ugh, it's a numeric domain! Restrict it...
 		foreach p $paths {
 		    my GetCookiesForHostAndPath result $secure $host $p $host
 		}
@@ -479,7 +487,7 @@ package provide cookiejar $::http::cookiejar_version
     forward Database db
 
     method lookup {{host ""} {key ""}} {
-	set host [IDNAencode $host]
+	set host [string tolower [tcl::idna encode $host]]
 	db transaction {
 	    if {$host eq ""} {
 		set result {}
@@ -487,7 +495,7 @@ package provide cookiejar $::http::cookiejar_version
 		    SELECT DISTINCT domain FROM cookies
 		    ORDER BY domain
 		} {
-		    lappend result [IDNAdecode $domain]
+		    lappend result [tcl::idna decode [string tolower $domain]]
 		}
 		return $result
 	    } elseif {$key eq ""} {
@@ -511,252 +519,6 @@ package provide cookiejar $::http::cookiejar_version
 		return -code error "no such key for that host"
 	    }
 	}
-    }
-}
-
-# The implementation of the punycode encoder. This is based on the code in
-# Appendix C of http://tools.ietf.org/html/rfc3492 but with substantial
-# modifications so that it is Tcl code.
-
-namespace eval ::http::cookiejar_support::puny {
-    namespace export IDNAencode punyencode IDNAdecode punydecode
-
-    proc IDNAencode str {
-	set parts {}
-	# Split term from RFC 3490, Sec 3.1
-	foreach part [split $str "\u002E\u3002\uFF0E\uFF61"] {
-	    if {[regexp {[^-A-Za-z0-9]} $part]} {
-		if {[regexp {[^-A-Za-z0-9\u0100-\uffff]} $part ch]} {
-		    scan $ch %c c
-		    if {$ch < "!" || $ch > "~"} {
-			set ch [format "\\u%04x" $c]
-		    }
-		    throw [list IDNA INVALID_NAME_CHARACTER $c] \
-			"bad character \"$ch\" in DNS name"
-		}
-		set part xn--[punyencode $part]
-	    }
-	    lappend parts $part
-	}
-	return [join $parts .]
-    }
-    proc IDNAdecode str {
-	set parts {}
-	# Split term from RFC 3490, Sec 3.1
-	foreach part [split $str "\u002E\u3002\uFF0E\uFF61"] {
-	    if {[string match "xn--*" $part]} {
-		set part [punydecode [string range $part 4 end]]
-	    }
-	    lappend parts $part
-	}
-	return [join $parts .]
-    }
-
-    variable digits [split "abcdefghijklmnopqrstuvwxyz0123456789" ""]
-    # Bootstring parameters for Punycode
-    variable base 36
-    variable tmin 1
-    variable tmax 26
-    variable skew 38
-    variable damp 700
-    variable initial_bias 72
-    variable initial_n 0x80
-
-    variable maxcodepoint 0xFFFF  ;# 0x10FFFF would be correct, except Tcl
-				   # can't handle non-BMP characters right now
-				   # anyway.
-
-    proc adapt {delta first numchars} {
-	variable base
-	variable tmin
-	variable tmax
-	variable damp
-	variable skew
-
-	set delta [expr {$delta / ($first ? $damp : 2)}]
-	incr delta [expr {$delta / $numchars}]
-	set k 0
-	while {$delta > ($base - $tmin) * $tmax / 2} {
-	    set delta [expr {$delta / ($base-$tmin)}]
-	    incr k $base
-	}
-	return [expr {$k + ($base-$tmin+1) * $delta / ($delta+$skew)}]
-    }
-
-    # Main punycode encoding function
-    proc punyencode {input {case ""}} {
-	variable digits
-	variable tmin
-	variable tmax
-	variable base
-	variable initial_n
-	variable initial_bias
-
-	set in {}
-	foreach char [set input [split $input ""]] {
-	    scan $char "%c" ch
-	    lappend in $ch
-	}
-	set output {}
-
-	# Initialize the state:
-	set n $initial_n
-	set delta 0
-	set bias $initial_bias
-
-	# Handle the basic code points:
-	foreach ch $input {
-	    if {$ch < "\u0080"} {
-		if {$case eq ""} {
-		    append output $ch
-		} elseif {$case} {
-		    append output [string toupper $ch]
-		} else {
-		    append output [string tolower $ch]
-		}
-	    }
-	}
-
-	set b [string length $output]
-
-	# h is the number of code points that have been handled, b is the
-	# number of basic code points.
-
-	if {$b > 0} {
-	    append output "-"
-	}
-
-	# Main encoding loop:
-
-	for {set h $b} {$h < [llength $in]} {incr delta; incr n} {
-	    # All non-basic code points < n have been handled already.  Find
-	    # the next larger one:
-
-	    set m inf
-	    foreach ch $in {
-		if {$ch >= $n && $ch < $m} {
-		    set m $ch
-		}
-	    }
-
-	    # Increase delta enough to advance the decoder's <n,i> state to
-	    # <m,0>, but guard against overflow:
-
-	    if {$m-$n > (0xffffffff-$delta)/($h+1)} {
-		throw {PUNYCODE OVERFLOW} "overflow in delta computation"
-	    }
-	    incr delta [expr {($m-$n) * ($h+1)}]
-	    set n $m
-
-	    foreach ch $in {
-		if {$ch < $n && ([incr delta] & 0xffffffff) == 0} {
-		    throw {PUNYCODE OVERFLOW} "overflow in delta computation"
-		}
-
-		if {$ch != $n} {
-		    continue
-		}
-
-		# Represent delta as a generalized variable-length integer:
-
-		for {set q $delta; set k $base} true {incr k $base} {
-		    set t [expr {min(max($k-$bias, $tmin), $tmax)}]
-		    if {$q < $t} {
-			break
-		    }
-		    append output \
-			[lindex $digits [expr {$t + ($q-$t)%($base-$t)}]]
-		    set q [expr {($q-$t) / ($base-$t)}]
-		}
-
-		append output [lindex $digits $q]
-		set bias [adapt $delta [expr {$h==$b}] [expr {$h+1}]]
-		set delta 0
-		incr h
-	    }
-	}
-
-	return $output
-    }
-
-    # Main punycode decode function
-    proc punydecode {input} {
-	namespace upvar ::http::cookiejar_support::puny \
-	    tmin tmin tmax tmax base base initial_bias initial_bias \
-	    initial_n initial_n maxcodepoint maxcodepoint
-
-	# Initialize the state:
-
-	set n $initial_n
-	set i 0
-	set first 1
-	set bias $initial_bias
-
-	# Split the string into the "real" ASCII characters and the ones to
-	# feed into the main decoder. Note that we don't need to check the
-	# result of [regexp] because that RE will technically match any string
-	# at all.
-
-	regexp {^(?:(.*)-)?([^-]*)$} $input input pre post
-	set output [split $pre ""]
-	set out [llength $output]
-
-	# Main decoding loop:
-
-	for {set in 0} {$in < [string length $post]} {incr in} {
-	    # Decode a generalized variable-length integer into delta, which
-	    # gets added to i. The overflow checking is easier if we increase
-	    # i as we go, then subtract off its starting value at the end to
-	    # obtain delta.
-
-	    for {set oldi $i; set w 1; set k $base} 1 {incr in} {
-		if {[set ch [string index $post $in]] eq ""} {
-		    throw {PUNYCODE BAD_INPUT} "exceeded input data"
-		}
-		if {[string match -nocase {[a-z]} $ch]} {
-		    scan [string toupper $ch] %c digit
-		    incr digit -65
-		} elseif {[string match {[0-9]} $ch]} {
-		    set digit [expr {$ch + 26}]
-		} else {
-		    throw {PUNYCODE BAD_INPUT} "bad decode character \"$ch\""
-		}
-		incr i [expr {$digit * $w}]
-		set t [expr {min(max($tmin, $k-$bias), $tmax)}]
-		if {$digit < $t} {
-		    set bias [adapt [expr {$i-$oldi}] $first [incr out]]
-		    set first 0
-		    break
-		}
-		if {[set w [expr {$w * ($base - $t)}]] > 0x7fffffff} {
-		    throw {PUNYCODE OVERFLOW} \
-			"excessively large integer computed in digit decode"
-		}
-		incr k $base
-	    }
-
-	    # i was supposed to wrap around from out+1 to 0, incrementing n
-	    # each time, so we'll fix that now:
-
-	    if {[incr n [expr {$i / $out}]] > 0x7fffffff} {
-		throw {PUNYCODE OVERFLOW} \
-		    "excessively large integer computed in character choice"
-	    } elseif {$n > $maxcodepoint} {
-		if {$n < 0x10ffff} {
-		    throw {PUNYCODE NON_BMP} \
-			[format "unsupported character U+%06x" $n]
-		}
-		throw {PUNYCODE NON_UNICODE} "bad codepoint $n"
-	    }
-	    set i [expr {$i % $out}]
-
-	    # Insert n at position i of the output:
-
-	    set output [linsert $output $i [format "%c" $n]]
-	    incr i
-	}
-
-	return [join $output ""]
     }
 }
 
