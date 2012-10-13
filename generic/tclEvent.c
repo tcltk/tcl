@@ -312,7 +312,7 @@ TclDefaultBgErrorHandlerObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *keyPtr, *valuePtr;
+    Tcl_Obj *keyPtr, *valuePtr = NULL;
     Tcl_Obj *tempObjv[2];
     int code, level;
     Tcl_InterpState saved;
