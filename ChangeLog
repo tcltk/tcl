@@ -1,3 +1,8 @@
+2012-10-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclEvent.c: [Bug 3576509]: tcl::Bgerror crashes with invalid
+	arguments
+
 2012-10-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIO.c:	When checking for std channels being closed,
