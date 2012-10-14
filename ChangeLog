@@ -1,3 +1,9 @@
+2012-10-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDictObj.c: [Bug 3576509]: tcl::Bgerror crashes with invalid
+	* generic/tclEvent.c:    arguments. Better fix, which helps for all
+	Tcl_DictObjGet() calls in Tcl's source code.
+
 2012-10-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclEvent.c: [Bug 3576509]: tcl::Bgerror crashes with invalid
