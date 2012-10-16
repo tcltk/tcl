@@ -954,6 +954,7 @@ Tcl_DictObjGet(
     if (dictPtr->typePtr != &tclDictType) {
 	int result = SetDictFromAny(interp, dictPtr);
 	if (result != TCL_OK) {
+	    *valuePtrPtr = NULL;
 	    return result;
 	}
     }
