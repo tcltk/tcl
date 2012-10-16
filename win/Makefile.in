@@ -90,7 +90,7 @@ COMPILE_DEBUG_FLAGS =
 
 SRC_DIR			= @srcdir@
 ROOT_DIR		= @srcdir@/..
-TOP_DIR			= $(shell cd @srcdir@/..; pwd)
+TOP_DIR			= $(shell cd @srcdir@/..; pwd -P)
 GENERIC_DIR		= $(TOP_DIR)/generic
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
 WIN_DIR			= $(TOP_DIR)/win
@@ -112,7 +112,7 @@ ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)' | sed 's!\\!/!g')
 
 # Fully qualify library path so that `make test`
 # does not depend on the current directory.
-LIBRARY_DIR1		= $(shell cd '$(ROOT_DIR_NATIVE)/library' ; pwd)
+LIBRARY_DIR1		= $(shell cd '$(ROOT_DIR_NATIVE)/library' ; pwd -P)
 LIBRARY_DIR             = $(shell $(CYGPATH) '$(LIBRARY_DIR1)' | sed 's!\\!/!g')
 DLLSUFFIX		= @DLLSUFFIX@
 LIBSUFFIX		= @LIBSUFFIX@
@@ -439,12 +439,6 @@ ${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@MAKE_LIB@ ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
 
-# assume GNU make
-
-# To enable concurrent parallel make of tcl<x>.dll and tcl<x>.lib, the tcl<x>.dll
-# targets have to depend on tcl<x>.lib, this ensures that linking of tcl<x>.dll
-# does not execute concurrently with the renaming and recompiling of tcl<x>.lib
-
 ${DDE_DLL_FILE}: ${DDE_OBJS} ${TCL_STUB_LIB_FILE}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
@@ -544,9 +538,9 @@ gendate:
 # run (and the results checked) after updating to a new release of libtommath.
 
 gentommath_h:
-	$(TCL_EXE) "$(ROOT_DIR_NATIVE)\tools\fix_tommath_h.tcl" \
-		"$(TOMMATH_DIR_NATIVE)\tommath.h" \
-		> "$(GENERIC_DIR_NATIVE)\tclTomMath.h"
+	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/fix_tommath_h.tcl" \
+		"$(TOMMATH_DIR_NATIVE)/tommath.h" \
+		> "$(GENERIC_DIR_NATIVE)/tclTomMath.h"
 
 install: all install-binaries install-libraries install-doc install-packages
 
@@ -748,7 +742,7 @@ PKG_CFG_ARGS		= @PKG_CFG_ARGS@
 PKG_DIR			= ./pkgs
 
 packages:
-	@builddir=`pwd`; \
+	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ] ; then \
 	    if [ -x $$i/configure ] ; then \
@@ -756,7 +750,7 @@ packages:
 	      mkdir -p $(PKG_DIR)/$$pkg; \
 	      if [ ! -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	        ( cd $(PKG_DIR)/$$pkg; \
-	          echo "Configuring package '$$i' wd = `pwd`"; \
+	          echo "Configuring package '$$i' wd = `pwd -P`"; \
 	          $$i/configure --with-tcl=$(PWD) --with-tclinclude=$(GENERIC_DIR) $(PKG_CFG_ARGS) --enable-shared --enable-threads; ) \
 	      fi ; \
 	      echo "Building package '$$pkg'"; \
@@ -767,7 +761,7 @@ packages:
 	cd $$builddir
 
 install-packages: packages
-	@builddir=`pwd`; \
+	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
@@ -780,7 +774,7 @@ install-packages: packages
 	cd $$builddir
 
 test-packages: tcltest packages
-	@builddir=`pwd`; \
+	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
@@ -793,7 +787,7 @@ test-packages: tcltest packages
 	cd $$builddir
 
 clean-packages:
-	@builddir=`pwd`; \
+	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
@@ -805,7 +799,7 @@ clean-packages:
 	cd $$builddir
 
 distclean-packages:
-	@builddir=`pwd`; \
+	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
