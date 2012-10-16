@@ -1,5 +1,20 @@
 2012-10-16  Donal K. Fellows  <dkf@users.sf.net>
 
+	IMPLEMENTATION OF TIP#405
+
+	New commands for applying a transformation to the elements of a list
+	to produce another list (the [lmap] command) and to the mappings of a
+	dictionary to produce another dictionary (the [dict map] command). In
+	both cases, a [continue] will cause the skipping of an element/pair,
+	and a [break] will terminate the construction early and successfully.
+
+	* generic/tclCmdAH.c (Tcl_LmapObjCmd, TclNRLmapCmd): Implementation of
+	the new [lmap] command, based on (and sharing much of) [foreach].
+	* generic/tclDictObj.c (DictMapNRCmd): Implementation of the new [dict
+	map] subcommand, based on (and sharing much of) [dict for].
+	* generic/tclCompCmds.c (TclCompileLmapCmd, TclCompileDictMapCmd):
+	Compilation engines for [lmap] and [dict map].
+
 	IMPLEMENTATION OF TIP#400
 
 	* generic/tclZlib.c: Allow the specification of a compression
