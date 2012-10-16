@@ -34,7 +34,7 @@ static int		UniCharIsHexDigit(int character);
 
 /*
  * Default set of characters to trim in [string trim] and friends. This is a
- * UTF-8 literal string containing all Unicode space characters [TIP #318]
+ * UTF-8 literal string containing all Unicode space characters [TIP #413]
  */
 
 #define DEFAULT_TRIM_SET \
@@ -56,8 +56,6 @@ static int		UniCharIsHexDigit(int character);
 	"\xe2\x80\x89" /* thin space (U+2009) */\
 	"\xe2\x80\x8a" /* hair space (U+200a) */\
 	"\xe2\x80\x8b" /* zero width space (U+200b) */\
-	"\xe2\x80\x8c" /* zero width non-joiner (U+200c) */\
-	"\xe2\x80\x8d" /* zero width joiner (U+200d) */\
 	"\xe2\x80\xa8" /* line separator (U+2028) */\
 	"\xe2\x80\xa9" /* paragraph separator (U+2029) */\
 	"\xe2\x80\xaf" /* narrow no-break space (U+202f) */\
