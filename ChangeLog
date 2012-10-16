@@ -1,8 +1,21 @@
+2012-10-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	IMPLEMENTATION OF TIP#400
+
+	* generic/tclZlib.c: Allow the specification of a compression
+	dictionary (a binary blob used to seed the compression engine) in both
+	streams and channel transformations. Also some reorganization to allow
+	for getting gzip header dictionaries and controlling buffering levels
+	in channel transformations (allowing a trade-off between formal
+	correctness and speed).
+	(Tcl_ZlibStreamSetCompressionDictionary): New C API to allow setting
+	the compression dictionary without using a Tcl script.
+
 2012-10-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclDictObj.c: [Bug 3576509]: tcl::Bgerror crashes with invalid
-	* generic/tclEvent.c:    arguments. Better fix, which helps for all
-	Tcl_DictObjGet() calls in Tcl's source code.
+	* generic/tclDictObj.c: [Bug 3576509]: ::tcl::Bgerror crashes with
+	* generic/tclEvent.c:    invalid arguments. Better fix, which helps
+	for all Tcl_DictObjGet() calls in Tcl's source code.
 
 2012-10-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -11,8 +24,8 @@
 
 2012-10-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/Makefile.in: [Bug 2459774] win/tcl/Makefile.in
-	not compatible with msys 0.8.
+	* win/Makefile.in: [Bug 2459774]: tcl/win/Makefile.in not compatible
+	with msys 0.8.
 
 2012-10-03  Don Porter  <dgp@users.sourceforge.net>
 
@@ -22,27 +35,27 @@
 
 2012-09-26  Reinhard Max  <max@suse.de>
 
-	* generic/tclIOSock.c (TclCreateSocketAddress): Work around a bug
-	in getaddrinfo() on OSX that caused name resolution to fail for
-	[socket -server foo -myaddr localhost 0].
+	* generic/tclIOSock.c (TclCreateSocketAddress): Work around a bug in
+	getaddrinfo() on OSX that caused name resolution to fail for [socket
+	-server foo -myaddr localhost 0].
 
 2012-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/configure.in: New import libraries for zlib 1.2.7,
-	* win/configure:    usable for all win32/win64 compilers
-	* compat/zlib/win32/zdll.lib
-	* compat/zlib/win64/zdll.lib
+	* win/configure.in: New import libraries for zlib 1.2.7, usable for
+	* win/configure:    all win32/win64 compilers
+	* compat/zlib/win32/zdll.lib:
+	* compat/zlib/win64/zdll.lib:
 
-	* win/tclWinDde.c: [Frq 3527238]: Full unicode support
-	for dde. Dde version is now 1.4.0b2.
+	* win/tclWinDde.c: [FRQ 3527238]: Full unicode support for dde. Dde
+	version is now 1.4.0b2.
 	***POTENTIAL INCOMPATIBILITY***
 
 2012-09-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h:  make Tcl_Interp a fully opaque structure
-	if TCL_NO_DEPRECATED is set (TIP 330 and 336).
-	* win/nmakehlp.c: Let "nmakehlp -V" start searching digits
-	after the found match (suggested by Harald Oehlmann)
+	* generic/tcl.h:  Make Tcl_Interp a fully opaque structure if
+	TCL_NO_DEPRECATED is set (TIP 330 and 336).
+	* win/nmakehlp.c: Let "nmakehlp -V" start searching digits after the
+	found match (suggested by Harald Oehlmann).
 
 2012-09-07  Harald Oehlmann  <oehhar@users.sf.net>
 
@@ -75,13 +88,13 @@
 	* win/tclWinPort.h:  Remove wrapper macro for ntohs(): unnecessary,
 	because it doesn't require an initialized winsock_2 library. See:
 	<http://msdn.microsoft.com/en-us/library/windows/desktop/ms740075%28v=vs.85%29.aspx>
-	* win/tclWinSock.c
-	* generic/tclStubInit.c
+	* win/tclWinSock.c:
+	* generic/tclStubInit.c:
 
 2012-08-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/nmakehlp.c: Add "-V<num>" option, in order to be able
-	to detect partial version numbers.
+	* win/nmakehlp.c: Add "-V<num>" option, in order to be able to detect
+	partial version numbers.
 
 2012-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -95,11 +108,11 @@
 
 2012-08-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* compat/zlib/win64/zlib1.dll:   Add 64-bit build of zlib1.dll, and use it
-	* compat/zlib/win64/zdll.lib:    for the dynamic mingw-w64 build.
-	* win/Makefile.in
-	* win/configure.in
-	* win/configure
+	* compat/zlib/win64/zlib1.dll:  Add 64-bit build of zlib1.dll, and use
+	* compat/zlib/win64/zdll.lib:   it for the dynamic mingw-w64 build.
+	* win/Makefile.in:
+	* win/configure.in:
+	* win/configure:
 
 2012-08-09  Reinhard Max  <max@suse.de>
 
