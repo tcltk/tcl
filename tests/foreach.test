@@ -266,6 +266,15 @@ test foreach-10.1 {foreach: [Bug 1671087]} -setup {
     rename demo {}
 } -result {}
 
+test foreach-11.1 {error then dereference loop var (dev bug)} {
+  catch { foreach a 0 b {1 2 3} { error x } }
+  set a
+} 0
+test foreach-11.2 {error then dereference loop var (dev bug)} {
+  catch { foreach a 0 b {1 2 3} { incr a $b; error x } }
+  set a
+} 1
+
 # cleanup
 catch {unset a}
 catch {unset x}

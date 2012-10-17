@@ -218,7 +218,7 @@ DEBUG		= 0
 SYMBOLS		= 0
 PROFILE		= 0
 PGO		= 0
-MSVCRT		= 0
+MSVCRT		= 1
 LOIMPACT	= 0
 TCL_USE_STATIC_PACKAGES	= 0
 USE_THREAD_ALLOC = 1
@@ -234,9 +234,13 @@ STATIC_BUILD	= 0
 !message *** Doing msvcrt
 MSVCRT		= 1
 !else
+!if !$(STATIC_BUILD)
+MSVCRT		= 1
+!else
 MSVCRT		= 0
 !endif
-!if [nmakehlp -f $(OPTS) "staticpkg"]
+!endif
+!if [nmakehlp -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
 !message *** Doing staticpkg
 TCL_USE_STATIC_PACKAGES	= 1
 !else
@@ -245,6 +249,7 @@ TCL_USE_STATIC_PACKAGES	= 0
 !if [nmakehlp -f $(OPTS) "nothreads"]
 !message *** Compile explicitly for non-threaded tcl
 TCL_THREADS	= 0
+USE_THREAD_ALLOC= 0
 !else
 TCL_THREADS	= 1
 USE_THREAD_ALLOC= 1
@@ -298,15 +303,6 @@ UNCHECKED = 0
 !endif
 !endif
 
-
-!if !$(STATIC_BUILD)
-# Make sure we don't build overly fat DLLs.
-MSVCRT		= 1
-# We shouldn't statically put the extensions inside the shell when dynamic.
-TCL_USE_STATIC_PACKAGES = 0
-!endif
-
-
 #----------------------------------------------------------
 # Figure-out how to name our intermediate and output directories.
 # We wouldn't want different builds to use the same .obj files
@@ -348,10 +344,8 @@ TMP_DIRFULL = .\$(BUILDDIRTOP)\$(PROJECT)_ThreadedDynamicStaticX
 TMP_DIRFULL = $(TMP_DIRFULL:Static=)
 SUFX	    = $(SUFX:s=)
 EXT	    = dll
-!if $(MSVCRT)
 TMP_DIRFULL = $(TMP_DIRFULL:X=)
 SUFX	    = $(SUFX:x=)
-!endif
 !else
 TMP_DIRFULL = $(TMP_DIRFULL:Dynamic=)
 EXT	    = lib
@@ -582,12 +576,6 @@ Failed to find tcl.h.  The TCLDIR macro does not appear correct.
 !if "$(PROJECT)" != "tcl"
 
 TCL_VERSION	= $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
-
-!if $(TCL_VERSION) < 81
-TCL_DOES_STUBS	= 0
-!else
-TCL_DOES_STUBS	= 1
-!endif
 
 !if $(TCLINSTALL)
 TCLSH		= "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe"

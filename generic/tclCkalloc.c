@@ -170,11 +170,15 @@ TclInitDbCkalloc(void)
  */
 
 int
-TclDumpMemoryInfo(ClientData clientData, int flags)
+TclDumpMemoryInfo(
+    ClientData clientData,
+    int flags)
 {
     char buf[1024];
 
-    if (clientData == NULL) { return 0; }
+    if (clientData == NULL) {
+        return 0;
+    }
     sprintf(buf,
 	    "total mallocs             %10d\n"
 	    "total frees               %10d\n"
@@ -1255,7 +1259,9 @@ Tcl_ValidateAllMemory(
 }
 
 int
-TclDumpMemoryInfo(ClientData clientData, int flags)
+TclDumpMemoryInfo(
+    ClientData clientData,
+    int flags)
 {
     return 1;
 }
