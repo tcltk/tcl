@@ -380,12 +380,10 @@ Tcl_DiscardResult(
 
     if (statePtr->result == statePtr->appendResult) {
 	ckfree(statePtr->appendResult);
+    } else if (statePtr->freeProc == TCL_DYNAMIC) {
+        ckfree(statePtr->result);
     } else if (statePtr->freeProc) {
-	if (statePtr->freeProc == TCL_DYNAMIC) {
-	    ckfree(statePtr->result);
-	} else {
-	    statePtr->freeProc(statePtr->result);
-	}
+        statePtr->freeProc(statePtr->result);
     }
 }
 
@@ -585,7 +583,7 @@ Tcl_GetObjResult(
      * result, then reset the string result.
      */
 
-    if (*(iPtr->result) != 0) {
+    if (iPtr->result[0] != 0) {
 	ResetObjResult(iPtr);
 
 	objResultPtr = iPtr->objResultPtr;
@@ -601,7 +599,7 @@ Tcl_GetObjResult(
 	    iPtr->freeProc = 0;
 	}
 	iPtr->result = iPtr->resultSpace;
-	iPtr->resultSpace[0] = 0;
+	iPtr->result[0] = 0;
     }
     return iPtr->objResultPtr;
 }
@@ -1106,9 +1104,7 @@ Tcl_SetObjErrorCode(
  *
  * Tcl_GetErrorLine --
  *
- * Results:
- *
- * Side effects:
+ *      Returns the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */
@@ -1125,9 +1121,7 @@ Tcl_GetErrorLine(
  *
  * Tcl_SetErrorLine --
  *
- * Results:
- *
- * Side effects:
+ *      Sets the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */
@@ -1274,7 +1268,8 @@ TclProcessReturn(
 	    Tcl_DecrRefCount(iPtr->errorInfo);
 	    iPtr->errorInfo = NULL;
 	}
-	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO], &valuePtr);
+	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO],
+                &valuePtr);
 	if (valuePtr != NULL) {
 	    int infoLen;
 
@@ -1285,7 +1280,8 @@ TclProcessReturn(
 		iPtr->flags |= ERR_ALREADY_LOGGED;
 	    }
 	}
-	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORSTACK], &valuePtr);
+	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORSTACK],
+                &valuePtr);
 	if (valuePtr != NULL) {
             int len, valueObjc;
             Tcl_Obj **valueObjv;
@@ -1298,26 +1294,36 @@ TclProcessReturn(
                 Tcl_IncrRefCount(newObj);
                 iPtr->errorStack = newObj;
             }
+
             /*
              * List extraction done after duplication to avoid moving the rug
              * if someone does [return -errorstack [info errorstack]]
              */
-            if (Tcl_ListObjGetElements(interp, valuePtr, &valueObjc, &valueObjv) == TCL_ERROR) {
+
+            if (Tcl_ListObjGetElements(interp, valuePtr, &valueObjc,
+                    &valueObjv) == TCL_ERROR) {
                 return TCL_ERROR;
             }
             iPtr->resetErrorStack = 0;
             Tcl_ListObjLength(interp, iPtr->errorStack, &len);
-            /* reset while keeping the list intrep as much as possible */
-            Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, valueObjc, valueObjv);
+
+            /*
+             * Reset while keeping the list intrep as much as possible.
+             */
+
+            Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, valueObjc,
+                    valueObjv);
  	}
-	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORCODE], &valuePtr);
+	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORCODE],
+                &valuePtr);
 	if (valuePtr != NULL) {
 	    Tcl_SetObjErrorCode(interp, valuePtr);
 	} else {
 	    Tcl_SetErrorCode(interp, "NONE", NULL);
 	}
 
-	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORLINE], &valuePtr);
+	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORLINE],
+                &valuePtr);
 	if (valuePtr != NULL) {
 	    TclGetIntFromObj(NULL, valuePtr, &iPtr->errorLine);
 	}
@@ -1421,7 +1427,8 @@ TclMergeReturnOptions(
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_CODE], &valuePtr);
     if (valuePtr != NULL) {
-	if (TCL_ERROR == TclGetCompletionCodeFromObj(interp, valuePtr, &code)) {
+	if (TclGetCompletionCodeFromObj(interp, valuePtr,
+                &code) == TCL_ERROR) {
 	    goto error;
 	}
 	Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_CODE]);
@@ -1599,7 +1606,8 @@ Tcl_GetReturnOptions(
  *
  * TclNoErrorStack --
  *
- *	Removes the -errorstack entry from an options dict to avoid reference cycles
+ *	Removes the -errorstack entry from an options dict to avoid reference
+ *	cycles.
  *
  * Results:
  *	The (unshared) argument options dict, modified in -place.
@@ -1608,12 +1616,13 @@ Tcl_GetReturnOptions(
  */
 
 Tcl_Obj *
-TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options)
+TclNoErrorStack(
+    Tcl_Interp *interp,
+    Tcl_Obj *options)
 {
     Tcl_Obj **keys = GetKeys();
     
     Tcl_DictObjRemove(interp, options, keys[KEY_ERRORSTACK]);
-
     return options;
 }
 
