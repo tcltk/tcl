@@ -303,18 +303,16 @@ Tcl_SetByteArrayObj(
     TclFreeIntRep(objPtr);
     Tcl_InvalidateStringRep(objPtr);
 
-    length = (length < 0) ? 0 : length;
+    if (length < 0) {
+	length = 0;
+    }
     byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
-    if (length) {
-	if (bytes) {
-	    memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
-	} else {
-	    memset(byteArrayPtr->bytes, 0, (size_t) length);
-	}
-    }
 
+    if ((bytes != NULL) && (length > 0)) {
+	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
+    }
     objPtr->typePtr = &tclByteArrayType;
     SET_BYTEARRAY(objPtr, byteArrayPtr);
 }
