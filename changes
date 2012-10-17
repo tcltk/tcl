@@ -7995,7 +7995,7 @@ like "nano()" instead of parsing as "nan o()" with missing op (duquette,porter)
 
 2011-10-31 (bug fix)[3414754] EIAS violation in fs paths (porter)
 
-2011-11-22 (bug fix)[2935503] Win: [file mtime] sets wrong time (nijtmans)
+2011-11-22 (bug fix)[3354324] Win: [file mtime] sets wrong time (nijtmans)
 
 2011-11-30 (bug fix)[967195] Simply args passed to child processes (nijtmans)
 => tcltest 2.3.4
@@ -8022,8 +8022,6 @@ like "nano()" instead of parsing as "nan o()" with missing op (duquette,porter)
 
 2012-02-02 (bug fix)[2974459,2879351,1951574,1852572,1661378,1613456] Fix
 problems where [file *able] would return false results on Win/Samba (porter)
-
-2012-02-02 (update)[3464401] Support Unicode 6.1 (nijtmans)
 
 2012-02-06 (bug fix)[3484621] bump bytecode epoch on exec traces (kuhn,sofer)
 
@@ -8094,7 +8092,6 @@ problems where [file *able] would return false results on Win/Samba (porter)
 and Tcl_FSMountsChanged(). (porter)
 
 2012-06-29 (bug fix)[3536888] fix locale guessing (oehlmann,nijtmans)
-=> msgcat 1.4.5
 
 2012-07-05 (bug fix)[1189293] make "<<" redirect binary safe (porter)
 
@@ -8105,6 +8102,17 @@ and Tcl_FSMountsChanged(). (porter)
 
 2012-07-25 (bug fix)[3546275] [auto_execok] search match [exec] (danckaert)
 
+2012-07-27 (update)[3464401] Support Unicode 6.2 (nijtmans)
+
+2012-08-20 (bug fix)[3559678] [file normalize] EIAS failure (phao,dgp)
+
+2012-08-25 (bug fix)[3561330] Ukranian translation of "March" (teterin)
+
+2012-09-12 (TIP 404) New msgcat commands [mcflset], [mcflmset] (oehlmann)
+=> msgcat 1.5.0
+
 Many revisions to better support a Cygwin environment (nijtmans)
 
---- Released 8.6b3, July 30, 2012 --- See ChangeLog for details ---
+Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
+
+--- Released 8.6b3, September 18, 2012 --- See ChangeLog for details ---
