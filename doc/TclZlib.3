@@ -49,9 +49,11 @@ int
 .sp
 int
 \fBTcl_ZlibStreamGet\fR(\fIzshandle, dataObj, count\fR)
+.sp
+\fBTcl_ZlibStreamSetCompressionDictionary\fR(\fIzshandle, compDict\fR)
 .fi
 .SH ARGUMENTS
-.AS Tcl_ZlibStream *zshandlePtr out
+.AS Tcl_ZlibStream zshandle in
 .AP Tcl_Interp *interp in
 The interpreter to store resulting compressed or uncompressed data in. Also
 where any error messages are written. For \fBTcl_ZlibStreamInit\fR, this can
@@ -108,6 +110,13 @@ trailer demanded by the format is written.
 .AP int count in
 The maximum number of bytes to get from the stream, or -1 to get all remaining
 bytes from the stream's buffers.
+.AP Tcl_Obj *compDict in
+A byte array object that is the compression dictionary to use with the stream.
+Note that this is \fInot a Tcl dictionary\fR, and it is recommended that this
+only ever be used with streams that were created with their \fIformat\fR set
+to \fBTCL_ZLIB_FORMAT_ZLIB\fR because the other formats have no mechanism to
+indicate whether a compression dictionary was present other than to fail on
+decompression.
 .BE
 .SH DESCRIPTION
 These functions form the interface from the Tcl library to the Zlib
@@ -171,6 +180,25 @@ stream, data is kept compressed so as to minimize the cost of buffer space.
 uncompressed data according to the format, and \fBTcl_ZlibStreamEof\fR returns
 a boolean value indicating whether the end of the uncompressed data has been
 reached.
+.PP
+\fBTcl_ZlibStreamSetCompressionDictionary\fR is used to control the
+compression dictionary used with the stream, a compression dictionary being an
+array of bytes (such as might be created with \fBTcl_NewByteArrayObj\fR) that
+is used to initialize the compression engine rather than leaving it to create
+it on the fly from the data being compressed. Setting a compression dictionary
+allows for more efficient compression in the case where the start of the data
+is highly regular, but it does require both the compressor and the
+decompressor to agreee on the value to use. Compression dictionaries are only
+fully supported for zlib-format data; on compression, they must be set before
+any data is sent in with \fBTcl_ZlibStreamPut\fR, and on decompression they
+should be set when \fBTcl_ZlibStreamGet\fR produces an \fBerror\fR with its
+\fB\-errorcode\fR set to
+.QW "\fBZLIB NEED_DICT\fI code\fR" ;
+the \fIcode\fR will be the Adler-32 checksum (see \fBTcl_ZlibAdler32\fR) of
+the compression dictionary sought. (Note that this is only true for
+zlib-format streams; gzip streams ignore compression dictionaries as the
+format specification doesn't permit them, and raw streams just produce a data
+error if the compression dictionary is missing or incorrect.)
 .PP
 If you wish to clear a stream and reuse it for a new compression or
 decompression action, \fBTcl_ZlibStreamReset\fR will do this and return a

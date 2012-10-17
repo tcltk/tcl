@@ -1,3 +1,153 @@
+2012-10-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	IMPLEMENTATION OF TIP#405
+
+	New commands for applying a transformation to the elements of a list
+	to produce another list (the [lmap] command) and to the mappings of a
+	dictionary to produce another dictionary (the [dict map] command). In
+	both cases, a [continue] will cause the skipping of an element/pair,
+	and a [break] will terminate the construction early and successfully.
+
+	* generic/tclCmdAH.c (Tcl_LmapObjCmd, TclNRLmapCmd): Implementation of
+	the new [lmap] command, based on (and sharing much of) [foreach].
+	* generic/tclDictObj.c (DictMapNRCmd): Implementation of the new [dict
+	map] subcommand, based on (and sharing much of) [dict for].
+	* generic/tclCompCmds.c (TclCompileLmapCmd, TclCompileDictMapCmd):
+	Compilation engines for [lmap] and [dict map].
+
+	IMPLEMENTATION OF TIP#400
+
+	* generic/tclZlib.c: Allow the specification of a compression
+	dictionary (a binary blob used to seed the compression engine) in both
+	streams and channel transformations. Also some reorganization to allow
+	for getting gzip header dictionaries and controlling buffering levels
+	in channel transformations (allowing a trade-off between formal
+	correctness and speed).
+	(Tcl_ZlibStreamSetCompressionDictionary): New C API to allow setting
+	the compression dictionary without using a Tcl script.
+
+2012-10-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDictObj.c: [Bug 3576509]: ::tcl::Bgerror crashes with
+	* generic/tclEvent.c:    invalid arguments. Better fix, which helps
+	for all Tcl_DictObjGet() calls in Tcl's source code.
+
+2012-10-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclEvent.c: [Bug 3576509]: tcl::Bgerror crashes with invalid
+	arguments
+
+2012-10-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in: [Bug 2459774]: tcl/win/Makefile.in not compatible
+	with msys 0.8.
+
+2012-10-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c:	When checking for std channels being closed,
+	compare the channel state, not the channel itself so that stacked
+	channels do not cause trouble.
+
+2012-09-26  Reinhard Max  <max@suse.de>
+
+	* generic/tclIOSock.c (TclCreateSocketAddress): Work around a bug in
+	getaddrinfo() on OSX that caused name resolution to fail for [socket
+	-server foo -myaddr localhost 0].
+
+2012-09-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/configure.in: New import libraries for zlib 1.2.7, usable for
+	* win/configure:    all win32/win64 compilers
+	* compat/zlib/win32/zdll.lib:
+	* compat/zlib/win64/zdll.lib:
+
+	* win/tclWinDde.c: [FRQ 3527238]: Full unicode support for dde. Dde
+	version is now 1.4.0b2.
+	***POTENTIAL INCOMPATIBILITY***
+
+2012-09-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:  Make Tcl_Interp a fully opaque structure if
+	TCL_NO_DEPRECATED is set (TIP 330 and 336).
+	* win/nmakehlp.c: Let "nmakehlp -V" start searching digits after the
+	found match (suggested by Harald Oehlmann).
+
+2012-09-07  Harald Oehlmann  <oehhar@users.sf.net>
+
+	*** 8.6b3 TAGGED FOR RELEASE ***
+
+	IMPLEMENTATION OF TIP#404.
+
+	* library/msgcat/msgcat.tcl:	[FRQ 3544988]: New commands [mcflset]
+	* library/msgcat/pkgIndex.tcl:	and [mcflmset] to set mc entries with
+	* unix/Makefile.in:		implicit message file locale.
+	* win/Makefile.in:		Bump to 1.5.0.
+
+2012-08-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/msgs/uk.msg: [Bug 3561330]: Use the correct full name of
+	March in Ukrainian. Thanks to Mikhail Teterin for reporting.
+
+2012-08-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBinary.c: [Bug 3496014]: Unecessary memset() in
+	Tcl_SetByteArrayObj().
+
+2012-08-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:	[Bug 3559678]: Fix bad filename normalization
+	when the last component is the empty string.
+
+2012-08-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinPort.h:  Remove wrapper macro for ntohs(): unnecessary,
+	because it doesn't require an initialized winsock_2 library. See:
+	<http://msdn.microsoft.com/en-us/library/windows/desktop/ms740075%28v=vs.85%29.aspx>
+	* win/tclWinSock.c:
+	* generic/tclStubInit.c:
+
+2012-08-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/nmakehlp.c: Add "-V<num>" option, in order to be able to detect
+	partial version numbers.
+
+2012-08-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/buildall.vc.bat: Only build the threaded builds by default
+	* win/rules.vc:        Some code cleanup
+
+2010-08-13  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/tclUnixCompat.c: [Bug 3555454]: Rearrange a bit to quash
+	'declared but never defined' compiler warnings.
+
+2012-08-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/zlib/win64/zlib1.dll:  Add 64-bit build of zlib1.dll, and use
+	* compat/zlib/win64/zdll.lib:   it for the dynamic mingw-w64 build.
+	* win/Makefile.in:
+	* win/configure.in:
+	* win/configure:
+
+2012-08-09  Reinhard Max  <max@suse.de>
+
+	* tests/http.test: Fix http-3.29 for machines without IPv6 support.
+
+2010-08-08  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/tclUnixCompat.c: Change one '#ifdef' to '#if defined()' for
+	improved consistency within the file.
+
+2012-08-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclfileName.c: [Bug #1536227]: Cygwin network pathname
+	* tests/fileName.test:   support
+
+2012-08-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIOUtil.c:	[Bug 3554250]: Overlooked one field of cleanup
+	in the thread exit handler for the filesystem subsystem.
+
 2012-07-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInterp.c (Tcl_GetInterpPath):
@@ -33,6 +183,21 @@
 
 	* win/tclWinPipe.c: [Bug 3547994]: Abandon the synchronous Windows
 	pipe driver to its fate when needed to honour TIP#398.
+
+2012-07-24  Trevor Davel  <twylite@crypt.co.za>
+
+	* win/tclWinSock.c: [Bug: 3545363]: Loop over multiple underlying file
+	descriptors for a socket where required (TcpCloseProc, SocketProc).
+	Refactor socket/descriptor setup to manage linked list operations in
+	one place. Fix memory leak in socket close (TcpCloseProc) and related
+	dangling pointers in SocketEventProc.
+
+2012-07-19  Reinhard Max  <max@suse.de>
+
+	* win/tclWinSock.c (TcpAccept): [Bug: 3545363]: Use a large enough
+	buffer for accept()ing IPv6 connections. Fix conversion of host and
+	port for passing to the accept proc to be independent of the IP
+	version.
 
 2012-07-23  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
@@ -106,7 +271,7 @@
 
 	* library/msgcat/msgcat.tcl:   Add tn, ro_MO and ru_MO to msgcat.
 
-2012-06-29  Harald Oehlmann <harald.oehlmann@elmicron.de>
+2012-06-29  Harald Oehlmann <oehhar@users.sf.net>
 
 	* library/msgcat/msgcat.tcl:	[Bug 3536888]: Locale guessing of
 	* library/msgcat/pkgIndex.tcl:	msgcat fails on (some) Windows 7. Bump
@@ -170,9 +335,9 @@
 2012-06-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	[Bug 3532959]: Make sure the lifetime
-	* generic/tclProc.c:	management of entries in the linePBodyPtr hash
-	* tests/proc.test:	table can tolerate either order of teardown,
-	interp first, or Proc first.
+	* generic/tclProc.c:	management of entries in the linePBodyPtr
+	* tests/proc.test:	hash table can tolerate either order of
+	teardown, interp first, or Proc first.
 
 2012-06-08  Don Porter  <dgp@users.sourceforge.net>
 
@@ -518,8 +683,8 @@
 
 2012-04-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinSock.c: [Bug 510001]: TclSockMinimumBuffers needs plat imp
-	* generic/tclIOSock.c:
+	* win/tclWinSock.c:	[Bug 510001]: TclSockMinimumBuffers needs
+	* generic/tclIOSock.c:	platform implementation.
 	* generic/tclInt.decls:
 	* generic/tclIntDecls.h:
 	* generic/tclStubInit.c:
@@ -948,7 +1113,7 @@
 
 2011-11-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinPort.h: [Bug 2935503]: Windows: [file mtime] sets wrong
+	* win/tclWinPort.h: [Bug 3354324]: Windows: [file mtime] sets wrong
 	* win/tclWinFile.c: time (VS2005+ only).
 	* generic/tclTest.c:
 
