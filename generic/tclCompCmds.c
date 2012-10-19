@@ -4687,6 +4687,40 @@ IndexTailVarIfKnown(
     return localIndex;
 }
 
+int
+TclCompileObjectSelfCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * We only handle [self] and [self object] (which is the same operation).
+     * These are the only very common operations on [self] for which
+     * bytecoding is at all reasonable.
+     */
+
+    if (parsePtr->numWords > 2) {
+	return TCL_ERROR;
+    } else if (parsePtr->numWords == 2) {
+	Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size==0 ||
+		strncmp(tokenPtr[1].start, "object", tokenPtr[1].size) != 0) {
+	    return TCL_ERROR;
+	}
+    }
+
+    /*
+     * This delegates the entire problem to a single opcode.
+     */
+
+    TclEmitOpcode(		INST_TCLOO_SELF,		envPtr);
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
