@@ -17,6 +17,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclOOInt.h"
 #include "tommath.h"
 #include <math.h>
 
@@ -4105,6 +4106,29 @@ TEBCresume(
 	objResultPtr = Tcl_NewListObj(framePtr->objc, framePtr->objv);
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 1, 1);
+    }
+    case INST_TCLOO_SELF: {
+	CallFrame *framePtr = iPtr->varFramePtr;
+	CallContext *contextPtr;
+
+	if (framePtr == NULL ||
+		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	    TRACE(("=> ERROR: no TclOO call context\n"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "self may only be called from inside a method",
+		    -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    goto gotError;
+	}
+	contextPtr = framePtr->clientData;
+
+	/*
+	 * Call out to get the name; it's expensive to compute but cached.
+	 */
+
+	objResultPtr = TclOOObjectName(interp, contextPtr->oPtr);
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
     }
 
     /*

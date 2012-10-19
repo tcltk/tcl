@@ -314,6 +314,7 @@ InitFoundation(
     Foundation *fPtr = ckalloc(sizeof(Foundation));
     Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
     Tcl_DString buffer;
+    Command *cmdPtr;
     int i;
 
     /*
@@ -440,8 +441,9 @@ InitFoundation(
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::Helpers::nextto", TclOONextToObjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::self", TclOOSelfObjCmd, NULL,
-	    NULL);
+    cmdPtr = (Command *) Tcl_CreateObjCommand(interp, "::oo::Helpers::self",
+	    TclOOSelfObjCmd, NULL, NULL);
+    cmdPtr->compileProc = TclCompileObjectSelfCmd;
     Tcl_CreateObjCommand(interp, "::oo::define", TclOODefineObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::objdefine", TclOOObjDefObjCmd, NULL,
