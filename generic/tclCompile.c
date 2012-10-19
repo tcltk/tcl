@@ -448,6 +448,9 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Push the argument words to a stack depth (i.e., [info level <n>])
 	 * of the interpreter as an object on the stack.
 	 * Stack:  ... depth => ... argList */
+    {"tclooSelf",	 1,	+1,	  0,	{OPERAND_NONE}},
+	/* Push the identity of the current TclOO object (i.e., the name of
+	 * its current public access command) on the stack. */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
