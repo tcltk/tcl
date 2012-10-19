@@ -1,3 +1,9 @@
+2012-10-17  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TclNRCoroutineObjCmd): insure that numlevels
+	are properly set, fix bug discovered by dkf and reported at
+	http://code.activestate.com/lists/tcl-core/12213/ 
+
 2012-10-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	IMPLEMENTATION OF TIP#405
