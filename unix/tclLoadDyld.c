@@ -16,7 +16,7 @@
 #include "tclInt.h"
 
 #ifndef MODULE_SCOPE
-#   define MODULE_SCOPE		extern
+#   define MODULE_SCOPE extern
 #endif
 
 /*
@@ -148,10 +148,11 @@ TclpDlopen(
     Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
+    int flags)
 {
     Tcl_DyldLoadHandle *dyldLoadHandle;
     Tcl_LoadHandle newHandle;
@@ -238,7 +239,7 @@ TclpDlopen(
 			&dyldObjFileImage);
 		if (err == NSObjectFileImageSuccess && dyldObjFileImage) {
 		    module = NSLinkModule(dyldObjFileImage, nativePath,
-			    NSLINKMODULE_OPTION_BINDNOW
+			    NSLINKMODULE_OPTION_BINDNOW | NSLINKMODULE_OPTION_PRIVATE
 			    | NSLINKMODULE_OPTION_RETURN_ON_ERROR);
 		    NSDestroyObjectFileImage(dyldObjFileImage);
 		    if (module) {
@@ -552,10 +553,11 @@ TclpLoadMemory(
     Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
+    int flags)
 {
     Tcl_LoadHandle newHandle;
     Tcl_DyldLoadHandle *dyldLoadHandle;
@@ -658,7 +660,8 @@ TclpLoadMemory(
      */
 
     module = NSLinkModule(dyldObjFileImage, "[Memory Based Bundle]",
-	    NSLINKMODULE_OPTION_BINDNOW | NSLINKMODULE_OPTION_RETURN_ON_ERROR);
+	    NSLINKMODULE_OPTION_BINDNOW | NSLINKMODULE_OPTION_PRIVATE
+	    | NSLINKMODULE_OPTION_RETURN_ON_ERROR);
     NSDestroyObjectFileImage(dyldObjFileImage);
     if (!module) {
 	NSLinkEditErrors editError;

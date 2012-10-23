@@ -70,10 +70,11 @@ TclpDlopen(
     Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
+    int flags)
 {
     Tcl_LoadHandle newHandle;
     ldr_module_t lm;
