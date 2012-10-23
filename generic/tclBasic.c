@@ -9028,7 +9028,6 @@ TclNRCoroutineObjCmd(
     corPtr->running.lineLABCPtr = corPtr->lineLABCPtr;
     corPtr->stackLevel = NULL;
     corPtr->auxNumLevels = 0;
-    iPtr->numLevels--;
 
     /*
      * Create the coro's execEnv, switch to it to push the exit and coro
@@ -9047,16 +9046,17 @@ TclNRCoroutineObjCmd(
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
 
+    /* insure that the command is looked up in the correct namespace */
     iPtr->lookupNsPtr = lookupNsPtr;
     Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);
+    iPtr->numLevels--;
 
     SAVE_CONTEXT(corPtr->running);
     RESTORE_CONTEXT(corPtr->caller);
     iPtr->execEnvPtr = corPtr->callerEEPtr;
 
     /*
-     * Now just resume the coroutine. Take care to insure that the command is
-     * looked up in the correct namespace.
+     * Now just resume the coroutine.
      */
 
     TclNRAddCallback(interp, NRCoroutineActivateCallback, corPtr,
