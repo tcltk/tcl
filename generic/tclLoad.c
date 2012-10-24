@@ -132,15 +132,41 @@ Tcl_LoadObjCmd(
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch;
     unsigned len;
+    int index, flags = 0;
+    Tcl_Obj *const *savedobjv = objv;
+    static const char *const options[] = {
+	"-global",		"-lazy",	NULL
+    };
+    enum options {
+	LOAD_GLOBAL,	LOAD_LAZY
+    };
 
+    while (objc > 2) {
+	if (TclGetString(objv[2])[0] != '-') {
+	    break;
+	}
+	if (Tcl_GetIndexFromObj(interp, objv[2], options, "option", 0,
+		&index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	++objv; --objc;
+	switch ((enum options) index) {
+	case LOAD_GLOBAL:
+	    flags |= 1;
+	    break;
+	case LOAD_LAZY:
+	    flags |= 2;
+	    break;
+	}
+    }
     if ((objc < 2) || (objc > 4)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "fileName ?packageName? ?interp?");
+	Tcl_WrongNumArgs(interp, 1, savedobjv, "fileName ?-global? ?-lazy? ?packageName? ?interp?");
 	return TCL_ERROR;
     }
-    if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
+    if (Tcl_FSConvertToPathType(interp, savedobjv[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
-    fullFileName = Tcl_GetString(objv[1]);
+    fullFileName = Tcl_GetString(savedobjv[1]);
 
     Tcl_DStringInit(&pkgName);
     Tcl_DStringInit(&initName);
@@ -297,7 +323,7 @@ Tcl_LoadObjCmd(
 		 * that.
 		 */
 
-		splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
+		splitPtr = Tcl_FSSplitPath(savedobjv[1], &pElements);
 		Tcl_ListObjIndex(NULL, splitPtr, pElements -1, &pkgGuessPtr);
 		pkgGuess = Tcl_GetString(pkgGuessPtr);
 		if ((pkgGuess[0] == 'l') && (pkgGuess[1] == 'i')
@@ -365,7 +391,7 @@ Tcl_LoadObjCmd(
 	symbols[1] = NULL;
 
 	Tcl_MutexLock(&packageMutex);
-	code = Tcl_LoadFile(interp, objv[1], symbols, 0, &initProc,
+	code = Tcl_LoadFile(interp, savedobjv[1], symbols, flags, &initProc,
 		&loadHandle);
 	Tcl_MutexUnlock(&packageMutex);
 	if (code != TCL_OK) {
