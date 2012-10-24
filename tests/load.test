@@ -47,35 +47,35 @@ testConstraint testsimplefilesystem \
 
 test load-1.1 {basic errors} {} {
     list [catch {load} msg] $msg
-} "1 {wrong \# args: should be \"load fileName ?-global? ?-lazy? ?packageName? ?interp?\"}"
+} "1 {wrong \# args: should be \"load ?-global? ?-lazy? ?--? fileName ?packageName? ?interp?\"}"
 test load-1.2 {basic errors} {} {
     list [catch {load a b c d} msg] $msg
-} "1 {wrong \# args: should be \"load fileName ?-global? ?-lazy? ?packageName? ?interp?\"}"
+} "1 {wrong \# args: should be \"load ?-global? ?-lazy? ?--? fileName ?packageName? ?interp?\"}"
 test load-1.3 {basic errors} {} {
     list [catch {load a b foobar} msg] $msg
 } {1 {could not find interpreter "foobar"}}
 test load-1.4 {basic errors} {} {
-    list [catch {load {} -global} msg] $msg
+    list [catch {load -global {}} msg] $msg
 } {1 {must specify either file name or package name}}
 test load-1.5 {basic errors} {} {
-    list [catch {load {} -lazy {}} msg] $msg
+    list [catch {load -lazy {} {}} msg] $msg
 } {1 {must specify either file name or package name}}
 test load-1.6 {basic errors} {} {
     list [catch {load {} Unknown} msg] $msg
 } {1 {package "Unknown" isn't loaded statically}}
 test load-1.7 {basic errors} {} {
-    list [catch {load foo -abc} msg] $msg
-} "1 {bad option \"-abc\": must be -global or -lazy}"
+    list [catch {load -abc foo} msg] $msg
+} "1 {bad option \"-abc\": must be -global, -lazy, or --}"
 
 test load-2.1 {basic loading, with guess for package name} \
 	[list $dll $loaded] {
-    load [file join $testDir pkga$ext] -global
+    load -global [file join $testDir pkga$ext]
     list [pkga_eq abc def] [lsort [info commands pkga_*]]
 } {0 {pkga_eq pkga_quote}}
 interp create -safe child
 test load-2.2 {loading into a safe interpreter, with package name conversion} \
 	[list $dll $loaded] {
-    load [file join $testDir pkgb$ext] -lazy pKgB child
+    load -lazy [file join $testDir pkgb$ext] pKgB child
     list [child eval pkgb_sub 44 13] [catch {child eval pkgb_unsafe} msg] $msg \
 	    [catch {pkgb_sub 12 10} msg2] $msg2
 } {31 1 {invalid command name "pkgb_unsafe"} 1 {invalid command name "pkgb_sub"}}
@@ -129,7 +129,7 @@ test load-5.1 {file name not specified and no static package: pick default} \
 	[list $dll $loaded] {
     catch {interp delete x}
     interp create x
-    load [file join $testDir pkga$ext] -global pkga
+    load -global [file join $testDir pkga$ext] pkga
     load {} pkga x
     set result [info loaded x]
     interp delete x

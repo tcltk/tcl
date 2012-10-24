@@ -134,7 +134,7 @@ FindSymbol(
     const char *symbol)
 {
     Tcl_PackageInitProc *proc = NULL;
- 
+
    if (symbol) {
 	char sym[strlen(symbol) + 2];
 
