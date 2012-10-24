@@ -135,38 +135,37 @@ Tcl_LoadObjCmd(
     int index, flags = 0;
     Tcl_Obj *const *savedobjv = objv;
     static const char *const options[] = {
-	"-global",		"-lazy",	NULL
+	"-global",		"-lazy",		"--",	NULL
     };
     enum options {
-	LOAD_GLOBAL,	LOAD_LAZY
+	LOAD_GLOBAL,	LOAD_LAZY,	LOAD_LAST
     };
 
     while (objc > 2) {
-	if (TclGetString(objv[2])[0] != '-') {
+	if (TclGetString(objv[1])[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[2], options, "option", 0,
+	if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0,
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	++objv; --objc;
-	switch ((enum options) index) {
-	case LOAD_GLOBAL:
+	if (LOAD_GLOBAL == (enum options) index) {
 	    flags |= 1;
-	    break;
-	case LOAD_LAZY:
+	} else if (LOAD_LAZY == (enum options) index) {
 	    flags |= 2;
-	    break;
+	} else {
+		break;
 	}
     }
     if ((objc < 2) || (objc > 4)) {
-	Tcl_WrongNumArgs(interp, 1, savedobjv, "fileName ?-global? ?-lazy? ?packageName? ?interp?");
+	Tcl_WrongNumArgs(interp, 1, savedobjv, "?-global? ?-lazy? ?--? fileName ?packageName? ?interp?");
 	return TCL_ERROR;
     }
-    if (Tcl_FSConvertToPathType(interp, savedobjv[1]) != TCL_OK) {
+    if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
-    fullFileName = Tcl_GetString(savedobjv[1]);
+    fullFileName = Tcl_GetString(objv[1]);
 
     Tcl_DStringInit(&pkgName);
     Tcl_DStringInit(&initName);
@@ -323,7 +322,7 @@ Tcl_LoadObjCmd(
 		 * that.
 		 */
 
-		splitPtr = Tcl_FSSplitPath(savedobjv[1], &pElements);
+		splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
 		Tcl_ListObjIndex(NULL, splitPtr, pElements -1, &pkgGuessPtr);
 		pkgGuess = Tcl_GetString(pkgGuessPtr);
 		if ((pkgGuess[0] == 'l') && (pkgGuess[1] == 'i')
@@ -391,7 +390,7 @@ Tcl_LoadObjCmd(
 	symbols[1] = NULL;
 
 	Tcl_MutexLock(&packageMutex);
-	code = Tcl_LoadFile(interp, savedobjv[1], symbols, flags, &initProc,
+	code = Tcl_LoadFile(interp, objv[1], symbols, flags, &initProc,
 		&loadHandle);
 	Tcl_MutexUnlock(&packageMutex);
 	if (code != TCL_OK) {
@@ -417,7 +416,7 @@ Tcl_LoadObjCmd(
 	pkgPtr->unloadProc	   = (Tcl_PackageUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&unloadName));
-	pkgPtr->safeUnloadProc	   = (Tcl_PackageUnloadProc *) 
+	pkgPtr->safeUnloadProc	   = (Tcl_PackageUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeUnloadName));
 	pkgPtr->interpRefCount	   = 0;
