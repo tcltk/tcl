@@ -787,6 +787,67 @@ TclCompileDictGetCmd(
 }
 
 int
+TclCompileDictUnsetCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    int i, dictVarIndex, nameChars;
+    const char *name;
+
+    /*
+     * There must be at least one argument after the variable name for us to
+     * compile to bytecode.
+     */
+
+    if (parsePtr->numWords < 3) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * The dictionary variable must be a local scalar that is knowable at
+     * compile time; anything else exceeds the complexity of the opcode. So
+     * discover what the index is.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+    name = tokenPtr[1].start;
+    nameChars = tokenPtr[1].size;
+    if (!TclIsLocalScalar(name, nameChars)) {
+	return TCL_ERROR;
+    }
+    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+    if (dictVarIndex < 0) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Remaining words (the key path) can be handled normally.
+     */
+
+    for (i=2 ; i<parsePtr->numWords ; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, i);
+    }
+
+    /*
+     * Now emit the instruction to do the dict manipulation.
+     */
+
+    TclEmitInstInt4( INST_DICT_UNSET, parsePtr->numWords-2,	envPtr);
+    TclEmitInt4(     dictVarIndex,				envPtr);
+    return TCL_OK;
+}
+
+int
 TclCompileDictForCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
