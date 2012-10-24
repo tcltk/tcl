@@ -164,7 +164,7 @@ FindSymbol(
     const char *native;		/* Name of the library to be loaded, in
 				 * system encoding */
     Tcl_DString newName, ds;	/* Buffers for converting the name to
-				 * system encoding and prepending an 
+				 * system encoding and prepending an
 				 * underscore*/
     void *handle = (void *) loadHandle->clientData;
 				/* Native handle to the loaded library */
