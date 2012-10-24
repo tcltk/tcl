@@ -781,6 +781,55 @@ test dict-16.9 {dict unset command: write failure} -setup {
 } -returnCodes error -cleanup {
     unset dictVar
 } -result {can't set "dictVar": variable is array}
+# Now test with an LVT present (i.e., the bytecoded version).
+test dict-16.10 {dict unset command} -body {
+    apply {{} {
+	set dictVar {a b c d}
+	dict unset dictVar a
+    }}
+} -result {c d}
+test dict-16.11 {dict unset command} -body {
+    apply {{} {
+	set dictVar {a b c d}
+	dict unset dictVar c
+    }}
+} -result {a b}
+test dict-16.12 {dict unset command} -body {
+    apply {{} {
+	set dictVar {a b}
+	dict unset dictVar c
+    }}
+} -result {a b}
+test dict-16.13 {dict unset command} -body {
+    apply {{} {
+	set dictVar {a {b c d e}}
+	dict unset dictVar a b
+    }}
+} -result {a {d e}}
+test dict-16.14 {dict unset command} -returnCodes error -body {
+    apply {{} {
+	set dictVar a
+	dict unset dictVar a
+    }}
+} -result {missing value to go with key}
+test dict-16.15 {dict unset command} -returnCodes error -body {
+    apply {{} {
+	set dictVar {a b}
+	dict unset dictVar c d
+    }}
+} -result {key "c" not known in dictionary}
+test dict-16.16 {dict unset command} -body {
+    apply {{} {list [info exists dictVar] [dict unset dictVar a] [info exists dictVar]}}
+} -result {0 {} 1}
+test dict-16.17 {dict unset command} -returnCodes error -body {
+    apply {{} {dict unset dictVar}}
+} -result {wrong # args: should be "dict unset varName key ?key ...?"}
+test dict-16.18 {dict unset command: write failure} -body {
+    apply {{} {
+	set dictVar(block) {}
+	dict unset dictVar a
+    }}
+} -returnCodes error -result {can't set "dictVar": variable is array}
 
 test dict-17.1 {dict filter command: key} -body {
     set dictVar {a1 a a2 b b1 c b2 d foo bar bar foo}

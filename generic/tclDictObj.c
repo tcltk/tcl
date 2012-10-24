@@ -104,7 +104,7 @@ static const EnsembleImplMap implementationMap[] = {
     {"replace",	DictReplaceCmd, NULL, NULL, NULL, 0 },
     {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, 0 },
     {"size",	DictSizeCmd, NULL, NULL, NULL, 0 },
-    {"unset",	DictUnsetCmd, NULL, NULL, NULL, 0 },
+    {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, NULL, 0 },
     {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL, 0 },
     {"values",	DictValuesCmd, NULL, NULL, NULL, 0 },
     {"with",	DictWithCmd,	TclCompileDictWithCmd, NULL, NULL, 0 },
