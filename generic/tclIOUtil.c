@@ -2774,6 +2774,9 @@ Tcl_FSChdir(pathPtr)
  *----------------------------------------------------------------------
  */
 
+typedef int (Tcl_FSLoadFileProc2) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
+	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
+
 int
 Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, 
 	       handlePtr, unloadProcPtr)
@@ -2797,7 +2800,8 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     if (fsPtr != NULL) {
 	Tcl_FSLoadFileProc *proc = fsPtr->loadFileProc;
 	if (proc != NULL) {
-	    int retVal = (*proc)(interp, pathPtr, handlePtr, unloadProcPtr);
+	    int retVal = ((Tcl_FSLoadFileProc2 *)proc)
+		    (interp, pathPtr, handlePtr, unloadProcPtr, 0);
 	    if (retVal != TCL_OK) {
 		return retVal;
 	    }

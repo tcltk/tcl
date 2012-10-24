@@ -468,7 +468,7 @@ static Tcl_Filesystem testReportingFilesystem = {
     &TestReportRenameFile,
     &TestReportCopyDirectory, 
     &TestReportLstat,
-    &TestReportLoadFile,
+    (Tcl_FSLoadFileProc *) &TestReportLoadFile,
     NULL /* cwd */,
     &TestReportChdir
 };
