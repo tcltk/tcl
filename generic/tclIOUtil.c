@@ -3149,6 +3149,9 @@ Tcl_FSLoadFile(
  *----------------------------------------------------------------------
  */
 
+typedef int (Tcl_FSLoadFileProc2) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
+	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
+
 int
 TclLoadFile(
     Tcl_Interp *interp,		/* Used for error reporting. */
@@ -3189,7 +3192,8 @@ TclLoadFile(
 
     proc = fsPtr->loadFileProc;
     if (proc != NULL) {
-	int retVal = (*proc)(interp, pathPtr, handlePtr, unloadProcPtr);
+	int retVal = ((Tcl_FSLoadFileProc2 *)proc)
+		(interp, pathPtr, handlePtr, unloadProcPtr, 0);
 	if (retVal == TCL_OK) {
 	    if (*handlePtr == NULL) {
 		return TCL_ERROR;
