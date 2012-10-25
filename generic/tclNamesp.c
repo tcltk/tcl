@@ -161,7 +161,7 @@ static const Tcl_ObjType nsNameType = {
 
 static const EnsembleImplMap defaultNamespaceMap[] = {
     {"children",	NamespaceChildrenCmd, NULL, NULL, NULL, 0},
-    {"code",		NamespaceCodeCmd, NULL, NULL, NULL, 0},
+    {"code",		NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, NULL, 0},
     {"current",		NamespaceCurrentCmd,	TclCompileNamespaceCurrentCmd, NULL, NULL, 0},
     {"delete",		NamespaceDeleteCmd, NULL, NULL, NULL, 0},
     {"ensemble",	TclNamespaceEnsembleCmd, NULL, NULL, NULL, 0},
