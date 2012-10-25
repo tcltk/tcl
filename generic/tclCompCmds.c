@@ -4040,6 +4040,56 @@ TclCompileNamespaceCurrentCmd(
 }
 
 int
+TclCompileNamespaceCodeCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    /*
+     * The specification of [namespace code] is rather shocking, in that it is
+     * supposed to check if the argument is itself the result of [namespace
+     * code] and not apply itself in that case. Which is excessively cautious,
+     * but what the test suite checks for.
+     */
+
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || (tokenPtr[1].size > 20
+	    && strncmp(tokenPtr[1].start, "::namespace inscope ", 20) == 0)) {
+	/*
+	 * Technically, we could just pass a literal '::namespace inscope '
+	 * term through, but that's something which really shouldn't be
+	 * occurring as something that the user writes so we'll just punt it.
+	 */
+
+	return TCL_ERROR;
+    }
+
+    /*
+     * Now we can compile using the same strategy as [namespace code]'s normal
+     * implementation does internally. Note that we can't bind the namespace
+     * name directly here, because TclOO plays complex games with namespaces;
+     * the value needs to be determined at runtime for safety.
+     */
+
+    PushLiteral(envPtr,		"::namespace",		11);
+    PushLiteral(envPtr,		"inscope",		7);
+    TclEmitOpcode(		INST_NS_CURRENT,	envPtr);
+    CompileWord(envPtr,		tokenPtr,		interp, 1);
+    TclEmitInstInt4(		INST_LIST, 4,		envPtr);
+    return TCL_OK;
+}
+
+int
 TclCompileNamespaceUpvarCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
