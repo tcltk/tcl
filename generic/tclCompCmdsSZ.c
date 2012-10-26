@@ -2752,6 +2752,49 @@ TclCompileWhileCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileYieldCmd --
+ *
+ *	Procedure called to compile the "yield" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "yield" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileYieldCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    if (parsePtr->numWords < 1 || parsePtr->numWords > 2) {
+	return TCL_ERROR;
+    }
+
+    if (parsePtr->numWords == 1) {
+	PushLiteral(envPtr, "", 0);
+    } else {
+	DefineLineInformation;	/* TIP #280 */
+	Tcl_Token *valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+	CompileWord(envPtr, valueTokenPtr, interp, 1);
+    }
+    TclEmitOpcode(INST_YIELD, envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * PushVarName --
  *
  *	Procedure used in the compiling where pushing a variable name is
