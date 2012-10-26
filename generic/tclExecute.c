@@ -4107,6 +4107,16 @@ TEBCresume(
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 1, 1);
     }
+    case INST_RESOLVE_COMMAND: {
+	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, OBJ_AT_TOS);
+
+	TclNewObj(objResultPtr);
+	if (cmd != NULL) {
+	    Tcl_GetCommandFullName(interp, cmd, objResultPtr);
+	}
+	TRACE_WITH_OBJ(("\"%.20s\" => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	NEXT_INST_F(1, 1, 1);
+    }
     case INST_TCLOO_SELF: {
 	CallFrame *framePtr = iPtr->varFramePtr;
 	CallContext *contextPtr;
