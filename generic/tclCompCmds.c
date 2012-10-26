@@ -4151,6 +4151,52 @@ TclCompileNamespaceUpvarCmd(
     PushLiteral(envPtr, "", 0);
     return TCL_OK;
 }
+
+int
+TclCompileNamespaceWhichCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr, *opt;
+    int idx;
+
+    if (parsePtr->numWords < 2 || parsePtr->numWords > 3) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    idx = 1;
+
+    /*
+     * If there's an option, check that it's "-command". We don't handle
+     * "-variable" (currently) and anything else is an error.
+     */
+
+    if (parsePtr->numWords == 3) {
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    return TCL_ERROR;
+	}
+	opt = tokenPtr + 1;
+	if (opt->size < 2 || opt->size > 8
+		|| strncmp(opt->start, "-command", opt->size) != 0) {
+	    return TCL_ERROR;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+	idx++;
+    }
+
+    /*
+     * Issue the bytecode.
+     */
+
+    CompileWord(envPtr,		tokenPtr,		interp, idx);
+    TclEmitOpcode(		INST_RESOLVE_COMMAND,	envPtr);
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------

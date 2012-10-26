@@ -448,6 +448,11 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Push the argument words to a stack depth (i.e., [info level <n>])
 	 * of the interpreter as an object on the stack.
 	 * Stack:  ... depth => ... argList */
+    {"resolveCmd",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Resolves the command named on the top of the stack to its fully
+	 * qualified version, or produces the empty string if no such command
+	 * exists. Never generates errors.
+	 * Stack:  ... cmdName => ... fullCmdName */
     {"tclooSelf",	 1,	+1,	  0,	{OPERAND_NONE}},
 	/* Push the identity of the current TclOO object (i.e., the name of
 	 * its current public access command) on the stack. */

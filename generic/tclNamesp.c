@@ -178,7 +178,7 @@ static const EnsembleImplMap defaultNamespaceMap[] = {
     {"tail",		NamespaceTailCmd, NULL, NULL, NULL, 0},
     {"unknown",		NamespaceUnknownCmd, NULL, NULL, NULL, 0},
     {"upvar",		NamespaceUpvarCmd,	TclCompileNamespaceUpvarCmd, NULL, NULL, 0},
-    {"which",		NamespaceWhichCmd, NULL, NULL, NULL, 0},
+    {"which",		NamespaceWhichCmd,	TclCompileNamespaceWhichCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
