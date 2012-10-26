@@ -131,7 +131,6 @@ static Tcl_Obj *	GetCommandSource(Interp *iPtr, int objc,
 			    Tcl_Obj *const objv[], int lookup);
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
-static Tcl_NRPostProc	NRCoroutineActivateCallback;
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
@@ -258,7 +257,7 @@ static const CmdInfo builtInCmds[] = {
     {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	NULL,	1},
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	1},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	1},
-    {"yield",		NULL,			NULL,			TclNRYieldObjCmd,	1},
+    {"yield",		NULL,			TclCompileYieldCmd,	TclNRYieldObjCmd,	1},
     {"yieldto",		NULL,			NULL,			TclNRYieldToObjCmd,	1},
 
     /*
@@ -8495,7 +8494,7 @@ TclNRYieldObjCmd(
     }
 
     NRE_ASSERT(!COR_IS_SUSPENDED(corPtr));
-    TclNRAddCallback(interp, NRCoroutineActivateCallback, corPtr,
+    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
             clientData, NULL, NULL);
     return TCL_OK;
 }
@@ -8712,7 +8711,7 @@ NRCoroutineExitCallback(
 /*
  *----------------------------------------------------------------------
  *
- * NRCoroutineActivateCallback --
+ * TclNRCoroutineActivateCallback --
  *
  *      This is the workhorse for coroutines: it implements both yield and
  *      resume.
@@ -8726,8 +8725,8 @@ NRCoroutineExitCallback(
  *----------------------------------------------------------------------
  */
 
-static int
-NRCoroutineActivateCallback(
+int
+TclNRCoroutineActivateCallback(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -8902,7 +8901,7 @@ TclNRInterpCoroutine(
         break;
     }
 
-    TclNRAddCallback(interp, NRCoroutineActivateCallback, corPtr,
+    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
             NULL, NULL, NULL);
     return TCL_OK;
 }
@@ -9059,7 +9058,7 @@ TclNRCoroutineObjCmd(
      * Now just resume the coroutine.
      */
 
-    TclNRAddCallback(interp, NRCoroutineActivateCallback, corPtr,
+    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
             NULL, NULL, NULL);
     return TCL_OK;
 }

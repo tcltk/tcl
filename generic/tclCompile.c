@@ -435,11 +435,17 @@ InstructionDesc const tclInstructionTable[] = {
          * indicated by the LVT index. Part of [dict with].
 	 * Stack:  ... path keyList => ... */
 
-    {"nscurrent",	 1,    +1,	  0,	{OPERAND_NONE}},
-	/* Push the name of the interpreter's current namespace as an object
-	 * on the stack. */
+    {"yield",		 1,	0,	  0,	{OPERAND_NONE}},
+	/* Makes the current coroutine yield the value at the top of the
+	 * stack, and places the response back on top of the stack when it
+	 * resumes.
+	 * Stack:  ... valueToYield => ... resumeValue */
     {"coroName",         1,    +1,	  0,	{OPERAND_NONE}},
 	/* Push the name of the interpreter's current coroutine as an object
+	 * on the stack. */
+
+    {"currentNamespace", 1,    +1,	  0,	{OPERAND_NONE}},
+	/* Push the name of the interpreter's current namespace as an object
 	 * on the stack. */
     {"infoLevelNumber",  1,    +1,	  0,	{OPERAND_NONE}},
 	/* Push the stack depth (i.e., [info level]) of the interpreter as an
