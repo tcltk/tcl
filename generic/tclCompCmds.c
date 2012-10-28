@@ -4859,22 +4859,51 @@ TclCompileObjectSelfCmd(
      * bytecoding is at all reasonable.
      */
 
-    if (parsePtr->numWords > 2) {
-	return TCL_ERROR;
+    if (parsePtr->numWords == 1) {
+	goto compileSelfObject;
     } else if (parsePtr->numWords == 2) {
-	Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr), *subcmd;
 
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size==0 ||
-		strncmp(tokenPtr[1].start, "object", tokenPtr[1].size) != 0) {
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size==0) {
 	    return TCL_ERROR;
 	}
+
+	subcmd = tokenPtr + 1;
+	if (strncmp(subcmd->start, "object", subcmd->size) == 0) {
+	    goto compileSelfObject;
+	} else if (strncmp(subcmd->start, "namespace", subcmd->size) == 0) {
+	    goto compileSelfNamespace;
+	}
     }
+
+    /*
+     * Can't compile; handle with runtime call.
+     */
+
+    return TCL_ERROR;
+
+  compileSelfObject:
 
     /*
      * This delegates the entire problem to a single opcode.
      */
 
     TclEmitOpcode(		INST_TCLOO_SELF,		envPtr);
+    return TCL_OK;
+
+  compileSelfNamespace:
+
+    /*
+     * This is formally only correct with TclOO methods as they are currently
+     * implemented; it assumes that the current namespace is invariably when a
+     * TclOO context is present is the object's namespace, and that's
+     * technically only something that's a matter of current policy. But it
+     * avoids creating another opcode, so that's all good!
+     */
+
+    TclEmitOpcode(		INST_TCLOO_SELF,		envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
+    TclEmitOpcode(		INST_NS_CURRENT,		envPtr);
     return TCL_OK;
 }
 
