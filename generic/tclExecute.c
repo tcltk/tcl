@@ -2345,17 +2345,33 @@ TEBCresume(
 	    goto gotError;
 	}
 
-	Tcl_SetObjResult(interp, OBJ_AT_TOS);
-	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-		INT2PTR(0), NULL, NULL);
-
 #ifdef TCL_COMPILE_DEBUG
 	TRACE_WITH_OBJ(("yield, result="), iPtr->objResultPtr);
 	if (traceInstructions) {
 	    fprintf(stdout, "\n");
 	}
 #endif
-	goto checkForCatch;
+	/* TIP #280: Record the last piece of info needed by
+	 * 'TclGetSrcInfoForPc', and push the frame.
+	 */
+	
+	bcFramePtr->data.tebc.pc = (char *) pc;
+	iPtr->cmdFramePtr = bcFramePtr;
+
+	if (iPtr->flags & INTERP_DEBUG_FRAME) {
+	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	}
+
+	pc++;
+	cleanup = 1;
+	TEBC_YIELD();
+	
+	Tcl_SetObjResult(interp, OBJ_AT_TOS);
+	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
+		INT2PTR(0), NULL, NULL);
+
+	return TCL_OK;
     }
 
     case INST_DONE:
