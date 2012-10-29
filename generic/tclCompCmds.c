@@ -2514,6 +2514,225 @@ PrintForeachInfo(
  *
  * TclCompileGlobalCmd --
  *
+ *	Procedure called to compile the "format" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "format" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileFormatCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr = parsePtr->tokenPtr;
+    Tcl_Obj **objv, *formatObj, *tmpObj;
+    char *bytes, *start;
+    int i, j, len;
+
+    /*
+     * Don't handle any guaranteed-error cases.
+     */
+
+    if (parsePtr->numWords < 2) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Check if the argument words are all compile-time-known literals; that's
+     * a case we can handle by compiling to a constant.
+     */
+
+    formatObj = Tcl_NewObj();
+    Tcl_IncrRefCount(formatObj);
+    tokenPtr = TokenAfter(tokenPtr);
+    if (!TclWordKnownAtCompileTime(tokenPtr, formatObj)) {
+	Tcl_DecrRefCount(formatObj);
+	return TCL_ERROR;
+    }
+
+    objv = ckalloc((parsePtr->numWords-2) * sizeof(Tcl_Obj *));
+    for (i=0 ; i+2 < parsePtr->numWords ; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	objv[i] = Tcl_NewObj();
+	Tcl_IncrRefCount(objv[i]);
+	if (!TclWordKnownAtCompileTime(tokenPtr, objv[i])) {
+	    goto checkForStringConcatCase;
+	}
+    }
+
+    /*
+     * Everything is a literal, so the result is constant too (or an error if
+     * the format is broken). Do the format now.
+     */
+
+    tmpObj = Tcl_Format(interp, Tcl_GetString(formatObj),
+	    parsePtr->numWords-2, objv);
+    for (; --i>=0 ;) {
+	Tcl_DecrRefCount(objv[i]);
+    }
+    ckfree(objv);
+    Tcl_DecrRefCount(formatObj);
+    if (tmpObj == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Not an error, always a constant result, so just push the result as a
+     * literal. Job done.
+     */
+
+    bytes = Tcl_GetStringFromObj(tmpObj, &len);
+    PushLiteral(envPtr, bytes, len);
+    Tcl_DecrRefCount(tmpObj);
+    return TCL_OK;
+
+  checkForStringConcatCase:
+    /*
+     * See if we can generate a sequence of things to concatenate. This
+     * requires that all the % sequences be %s or %%, as everything else is
+     * sufficiently complex that we don't bother.
+     *
+     * First, get the state of the system relatively sensible (cleaning up
+     * after our attempt to spot a literal).
+     */
+
+    for (; --i>=0 ;) {
+	Tcl_DecrRefCount(objv[i]);
+    }
+    ckfree(objv);
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    tokenPtr = TokenAfter(tokenPtr);
+    i = 0;
+
+    /*
+     * Now scan through and check for non-%s and non-%% substitutions.
+     */
+
+    for (bytes = Tcl_GetString(formatObj) ; *bytes ; bytes++) {
+	if (*bytes == '%') {
+	    bytes++;
+	    if (*bytes == 's') {
+		i++;
+		continue;
+	    } else if (*bytes == '%') {
+		continue;
+	    }
+	    Tcl_DecrRefCount(formatObj);
+	    return TCL_ERROR;
+	}
+    }
+
+    /*
+     * Check if the number of things to concatenate will fit in a byte.
+     */
+
+    if (i+2 != parsePtr->numWords || i > 125) {
+	Tcl_DecrRefCount(formatObj);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Generate the pushes of the things to concatenate, a sequence of
+     * literals and compiled tokens (of which at least one is non-literal or
+     * we'd have the case in the first half of this function) which we will
+     * concatenate.
+     */
+
+    i = 0;			/* The count of things to concat. */
+    j = 2;			/* The index into the argument tokens, for
+				 * TIP#280 handling. */
+    start = Tcl_GetString(formatObj);
+				/* The start of the currently-scanned literal
+				 * in the format string. */
+    tmpObj = Tcl_NewObj();	/* The buffer used to accumulate the literal
+				 * being built. */
+    for (bytes = start ; *bytes ; bytes++) {
+	if (*bytes == '%') {
+	    Tcl_AppendToObj(tmpObj, start, bytes - start);
+	    if (*++bytes == '%') {
+		Tcl_AppendToObj(tmpObj, "%", 1);
+	    } else {
+		char *b = Tcl_GetStringFromObj(tmpObj, &len);
+
+		/*
+		 * If there is a non-empty literal from the format string,
+		 * push it and reset.
+		 */
+
+		if (len > 0) {
+		    PushLiteral(envPtr, b, len);
+		    Tcl_DecrRefCount(tmpObj);
+		    tmpObj = Tcl_NewObj();
+		    i++;
+		}
+
+		/*
+		 * Push the code to produce the string that would be
+		 * substituted with %s, except we'll be concatenating
+		 * directly.
+		 */
+
+		CompileWord(envPtr, tokenPtr, interp, j);
+		tokenPtr = TokenAfter(tokenPtr);
+		j++;
+		i++;
+	    }
+	    start = bytes + 1;
+	}
+    }
+
+    /*
+     * Handle the case of a trailing literal.
+     */
+
+    Tcl_AppendToObj(tmpObj, start, bytes - start);
+    bytes = Tcl_GetStringFromObj(tmpObj, &len);
+    if (len > 0) {
+	PushLiteral(envPtr, bytes, len);
+	i++;
+    }
+    Tcl_DecrRefCount(tmpObj);
+    Tcl_DecrRefCount(formatObj);
+
+    if (i > 1) {
+	/*
+	 * Do the concatenation, which produces the result.
+	 */
+
+	TclEmitInstInt1(INST_CONCAT1, i, envPtr);
+    } else {
+	/*
+	 * EVIL HACK! Force there to be a string representation in the case
+	 * where there's just a "%s" in the format; case covered by the test
+	 * format-20.1 (and it is horrible...)
+	 */
+
+	TclEmitOpcode(INST_DUP, envPtr);
+	PushLiteral(envPtr, "", 0);
+	TclEmitOpcode(INST_STR_EQ, envPtr);
+	TclEmitOpcode(INST_POP, envPtr);
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileGlobalCmd --
+ *
  *	Procedure called to compile the "global" command.
  *
  * Results:
