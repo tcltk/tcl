@@ -435,6 +435,11 @@ InstructionDesc const tclInstructionTable[] = {
          * indicated by the LVT index. Part of [dict with].
 	 * Stack:  ... path keyList => ... */
 
+    {"strmap",		 1,    -2,	  0,	{OPERAND_NONE}},
+	/* Simplified version of [string map] that only applies one change
+	 * string, and only case-sensitively.
+	 * Stack:  ... from to string => changedString */
+
     {"yield",		 1,	0,	  0,	{OPERAND_NONE}},
 	/* Makes the current coroutine yield the value at the top of the
 	 * stack, and places the response back on top of the stack when it
