@@ -2332,6 +2332,48 @@ TEBCresume(
 	cleanup = 1;
 	goto processExceptionReturn;
 
+    case INST_YIELD: {
+	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+
+	TRACE(("%.30s => ", O2S(OBJ_AT_TOS)));
+	if (!corPtr) {
+	    TRACE_APPEND(("ERROR: yield outside coroutine\n"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "yield can only be called in a coroutine", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
+		    NULL);
+	    goto gotError;
+	}
+
+#ifdef TCL_COMPILE_DEBUG
+	TRACE_WITH_OBJ(("yield, result="), iPtr->objResultPtr);
+	if (traceInstructions) {
+	    fprintf(stdout, "\n");
+	}
+#endif
+	/* TIP #280: Record the last piece of info needed by
+	 * 'TclGetSrcInfoForPc', and push the frame.
+	 */
+	
+	bcFramePtr->data.tebc.pc = (char *) pc;
+	iPtr->cmdFramePtr = bcFramePtr;
+
+	if (iPtr->flags & INTERP_DEBUG_FRAME) {
+	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	}
+
+	pc++;
+	cleanup = 1;
+	TEBC_YIELD();
+	
+	Tcl_SetObjResult(interp, OBJ_AT_TOS);
+	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
+		INT2PTR(0), NULL, NULL);
+
+	return TCL_OK;
+    }
+
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
 	    /*
