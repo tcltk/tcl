@@ -557,6 +557,88 @@ TclCompileStringLenCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileStringMapCmd --
+ *
+ *	Procedure called to compile the simplest and most common form of the
+ *	"string map" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "string map" command
+ *	at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileStringMapCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *mapTokenPtr, *stringTokenPtr;
+    Tcl_Obj *mapObj, **objv;
+    char *bytes;
+    int len;
+
+    /*
+     * We only handle the case:
+     *
+     *    string map {foo bar} $thing
+     *
+     * That is, a literal two-element list (doesn't need to be brace-quoted,
+     * but does need to be compile-time knowable) and any old argument (the
+     * thing to map).
+     */
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+    mapTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    stringTokenPtr = TokenAfter(mapTokenPtr);
+    mapObj = Tcl_NewObj();
+    Tcl_IncrRefCount(mapObj);
+    if (!TclWordKnownAtCompileTime(mapTokenPtr, mapObj)) {
+	Tcl_DecrRefCount(mapObj);
+	return TCL_ERROR;
+    } else if (Tcl_ListObjGetElements(NULL, mapObj, &len, &objv) != TCL_OK) {
+	Tcl_DecrRefCount(mapObj);
+	return TCL_ERROR;
+    } else if (len != 2) {
+	Tcl_DecrRefCount(mapObj);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Now issue the opcodes. Note that in the case that we know that the
+     * first word is an empty word, we don't issue the map at all. That is the
+     * correct semantics for mapping.
+     */
+
+    bytes = Tcl_GetStringFromObj(objv[0], &len);
+    if (len == 0) {
+	CompileWord(envPtr, stringTokenPtr, interp, 2);
+    } else {
+	PushLiteral(envPtr, bytes, len);
+	bytes = Tcl_GetStringFromObj(objv[1], &len);
+	PushLiteral(envPtr, bytes, len);
+	CompileWord(envPtr, stringTokenPtr, interp, 2);
+	TclEmitOpcode(INST_STR_MAP, envPtr);
+    }
+    Tcl_DecrRefCount(mapObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileSubstCmd --
  *
  *	Procedure called to compile the "subst" command.

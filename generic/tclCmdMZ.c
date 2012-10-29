@@ -3309,7 +3309,7 @@ TclInitStringCmd(
 	{"is",		StringIsCmd,	NULL, NULL, NULL, 0},
 	{"last",	StringLastCmd,	NULL, NULL, NULL, 0},
 	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, 0},
-	{"map",		StringMapCmd,	NULL, NULL, NULL, 0},
+	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, 0},
 	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
 	{"range",	StringRangeCmd,	NULL, NULL, NULL, 0},
 	{"repeat",	StringReptCmd,	NULL, NULL, NULL, 0},
