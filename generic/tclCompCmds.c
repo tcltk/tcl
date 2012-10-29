@@ -3038,6 +3038,64 @@ TclCompileIncrCmd(
  */
 
 int
+TclCompileInfoCommandsCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+    Tcl_Obj *objPtr;
+    char *bytes;
+
+    /*
+     * We require one compile-time known argument for the case we can compile.
+     */
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    objPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(objPtr);
+    if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
+	goto notCompilable;
+    }
+    bytes = Tcl_GetString(objPtr);
+
+    /*
+     * We require that the argument start with "::" and not have any of "*\[?"
+     * in it. (Theoretically, we should look in only the final component, but
+     * the difference is so slight given current naming practices.)
+     */
+
+    if (bytes[0] != ':' || bytes[1] != ':' || !TclMatchIsTrivial(bytes)) {
+	goto notCompilable;
+    }
+    Tcl_DecrRefCount(objPtr);
+
+    /*
+     * Confirmed as a literal that will not frighten the horses. Compile. Note
+     * that the result needs to be list-ified.
+     */
+
+    CompileWord(envPtr, tokenPtr,		interp, 1);
+    TclEmitOpcode(	INST_RESOLVE_COMMAND,	envPtr);
+    TclEmitOpcode(	INST_DUP,		envPtr);
+    TclEmitOpcode(	INST_STR_LEN,		envPtr);
+    TclEmitInstInt1(	INST_JUMP_FALSE1, 7,	envPtr);
+    TclEmitInstInt4(	INST_LIST, 1,		envPtr);
+    return TCL_OK;
+
+  notCompilable:
+    Tcl_DecrRefCount(objPtr);
+    return TCL_ERROR;
+}
+
+int
 TclCompileInfoCoroutineCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
