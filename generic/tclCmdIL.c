@@ -164,7 +164,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"args",		   InfoArgsCmd,		    NULL, NULL, NULL, 0},
     {"body",		   InfoBodyCmd,		    NULL, NULL, NULL, 0},
     {"cmdcount",	   InfoCmdCountCmd,	    NULL, NULL, NULL, 0},
-    {"commands",	   InfoCommandsCmd,	    NULL, NULL, NULL, 0},
+    {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, 0},
     {"complete",	   InfoCompleteCmd,	    NULL, NULL, NULL, 0},
     {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
     {"default",		   InfoDefaultCmd,	    NULL, NULL, NULL, 0},
