@@ -2512,9 +2512,10 @@ PrintForeachInfo(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileGlobalCmd --
+ * TclCompileFormatCmd --
  *
- *	Procedure called to compile the "format" command.
+ *	Procedure called to compile the "format" command. Handles cases that
+ *	can be done as constants or simple string concatenation only.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
