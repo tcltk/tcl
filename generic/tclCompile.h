@@ -681,16 +681,19 @@ typedef struct ByteCode {
 #define INST_DICT_RECOMBINE_STK		139
 #define INST_DICT_RECOMBINE_IMM		140
 
-/* For compilation of basic information operations */
-#define INST_NS_CURRENT			141
+/* For operations to do with coroutines */
+#define INST_YIELD			141
 #define INST_COROUTINE_NAME		142
-#define INST_INFO_LEVEL_NUM		143
-#define INST_INFO_LEVEL_ARGS		144
-#define INST_RESOLVE_COMMAND		145
-#define INST_TCLOO_SELF			146
+
+/* For compilation of basic information operations */
+#define INST_NS_CURRENT			143
+#define INST_INFO_LEVEL_NUM		144
+#define INST_INFO_LEVEL_ARGS		145
+#define INST_RESOLVE_COMMAND		146
+#define INST_TCLOO_SELF			147
 
 /* The last opcode */
-#define LAST_INST_OPCODE		146
+#define LAST_INST_OPCODE		147
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
