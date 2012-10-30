@@ -372,6 +372,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"coroName",	ASSEM_1BYTE,	INST_COROUTINE_NAME,	0,	1},
     {"currentNamespace",ASSEM_1BYTE,	INST_NS_CURRENT,	0,	1},
     {"dictAppend",	ASSEM_LVT4,	INST_DICT_APPEND,	2,	1},
+    {"dictExists",	ASSEM_DICT_GET, INST_DICT_EXISTS,	INT_MIN,1},
     {"dictExpand",	ASSEM_1BYTE,	INST_DICT_EXPAND,	3,	1},
     {"dictGet",		ASSEM_DICT_GET, INST_DICT_GET,		INT_MIN,1},
     {"dictIncrImm",	ASSEM_SINT4_LVT4,

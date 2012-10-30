@@ -434,6 +434,12 @@ InstructionDesc const tclInstructionTable[] = {
         /* Map variable contents back into a dictionary in the local variable
          * indicated by the LVT index. Part of [dict with].
 	 * Stack:  ... path keyList => ... */
+    {"dictExists",	 5,	INT_MIN,  1,	{OPERAND_UINT4}},
+	/* The top op4 words (min 1) are a key path into the dictionary just
+	 * below the keys on the stack, and all those values are replaced by a
+	 * boolean indicating whether it is possible to read out a value from
+	 * that key-path (like [dict exists]).
+	 * Stack:  ... dict key1 ... keyN => ... boolean */
 
     {"strmap",		 1,    -2,	  0,	{OPERAND_NONE}},
 	/* Simplified version of [string map] that only applies one change
