@@ -472,6 +472,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"storeStk",	ASSEM_1BYTE,	INST_STORE_SCALAR_STK,	2,	1},
     {"strcmp",		ASSEM_1BYTE,	INST_STR_CMP,		2,	1},
     {"streq",		ASSEM_1BYTE,	INST_STR_EQ,		2,	1},
+    {"strfind",		ASSEM_1BYTE,	INST_STR_FIND,		2,	1},
     {"strindex",	ASSEM_1BYTE,	INST_STR_INDEX,		2,	1},
     {"strlen",		ASSEM_1BYTE,	INST_STR_LEN,		1,	1},
     {"strmap",		ASSEM_1BYTE,	INST_STR_MAP,		3,	1},
@@ -509,10 +510,11 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_REVERSE,						/* 126 */
     INST_NOP,							/* 132 */
     INST_STR_MAP,						/* 141 */
-    INST_COROUTINE_NAME,					/* 143 */
-    INST_NS_CURRENT,						/* 144 */
-    INST_INFO_LEVEL_NUM,					/* 145 */
-    INST_RESOLVE_COMMAND					/* 147 */
+    INST_STR_FIND,						/* 142 */
+    INST_COROUTINE_NAME,					/* 145 */
+    INST_NS_CURRENT,						/* 146 */
+    INST_INFO_LEVEL_NUM,					/* 147 */
+    INST_RESOLVE_COMMAND					/* 149 */
 };
 
 /*
