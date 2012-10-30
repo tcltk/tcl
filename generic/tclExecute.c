@@ -4732,82 +4732,6 @@ TEBCresume(
 		O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
-    {
-	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
-	int length3;
-	Tcl_Obj *value3Ptr;
-
-    case INST_STR_MAP:
-	valuePtr = OBJ_AT_TOS;		/* "Main" string. */
-	value3Ptr = OBJ_UNDER_TOS;	/* "Target" string. */
-	value2Ptr = OBJ_AT_DEPTH(2);	/* "Source" string. */
-	if (value3Ptr == value2Ptr || valuePtr == value2Ptr) {
-	    objResultPtr = valuePtr;
-	    NEXT_INST_V(1, 3, 1);
-	}
-	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
-	if (length == 0) {
-	    objResultPtr = valuePtr;
-	    NEXT_INST_V(1, 3, 1);
-	}
-	ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
-	if (length2 > length || length2 == 0) {
-	    objResultPtr = valuePtr;
-	    NEXT_INST_V(1, 3, 1);
-	}
-	ustring3 = Tcl_GetUnicodeFromObj(value3Ptr, &length3);
-
-	objResultPtr = Tcl_NewUnicodeObj(ustring1, 0);
-	p = ustring1;
-	end = ustring1 + length;
-	for (; ustring1 < end; ustring1++) {
-	    if ((*ustring1 == *ustring2) &&
-		    (length2==1 || Tcl_UniCharNcmp(ustring1, ustring2,
-				(unsigned long) length2) == 0)) {
-		if (p != ustring1) {
-		    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1-p);
-		    p = ustring1 + length2;
-		} else {
-		    p += length2;
-		}
-		ustring1 = p - 1;
-
-		Tcl_AppendUnicodeToObj(objResultPtr, ustring3, length3);
-	    }
-	}
-	if (p != ustring1) {
-	    /*
-	     * Put the rest of the unmapped chars onto result.
-	     */
-
-	    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1 - p);
-	}
-	TRACE_WITH_OBJ(("%.20s %.20s %.20s => ",
-		O2S(value2Ptr), O2S(value3Ptr), O2S(valuePtr)), objResultPtr);
-	NEXT_INST_V(1, 3, 1);
-
-    case INST_STR_FIND:
-	ustring1 = Tcl_GetUnicodeFromObj(OBJ_AT_TOS, &length);	/* Haystack */
-	ustring2 = Tcl_GetUnicodeFromObj(OBJ_UNDER_TOS, &length2);/* Needle */
-
-	match = -1;
-	if (length2 > 0 && length2 <= length) {
-	    end = ustring1 + length - length2 + 1;
-	    for (p=ustring1 ; p<end ; p++) {
-		if ((*p == *ustring2) && TclUniCharNcmp(ustring2, p,
-			(unsigned long) length2) == 0) {
-		    match = p - ustring1;
-		    break;
-		}
-	    }
-	}
-
-	TRACE(("%.20s %.20s => %d\n",
-		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
-
-	TclNewIntObj(objResultPtr, match);
-	NEXT_INST_F(1, 2, 1);
-
     case INST_STR_RANGE_IMM:
 	valuePtr = OBJ_AT_TOS;
 	fromIdx = TclGetInt4AtPtr(pc+1);
@@ -4847,6 +4771,92 @@ TEBCresume(
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
+
+    {
+	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
+	int length3;
+	Tcl_Obj *value3Ptr;
+
+    case INST_STR_MAP:
+	valuePtr = OBJ_AT_TOS;		/* "Main" string. */
+	value3Ptr = OBJ_UNDER_TOS;	/* "Target" string. */
+	value2Ptr = OBJ_AT_DEPTH(2);	/* "Source" string. */
+	if (value3Ptr == value2Ptr) {
+	    objResultPtr = valuePtr;
+	    NEXT_INST_V(1, 3, 1);
+	} else if (valuePtr == value2Ptr) {
+	    objResultPtr = value3Ptr;
+	    NEXT_INST_V(1, 3, 1);
+	}
+	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
+	if (length == 0) {
+	    objResultPtr = valuePtr;
+	    NEXT_INST_V(1, 3, 1);
+	}
+	ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
+	if (length2 > length || length2 == 0) {
+	    objResultPtr = valuePtr;
+	    NEXT_INST_V(1, 3, 1);
+	} else if (length2 == length) {
+	    if (memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length)) {
+		objResultPtr = valuePtr;
+	    } else {
+		objResultPtr = value3Ptr;
+	    }
+	    NEXT_INST_V(1, 3, 1);
+	}
+	ustring3 = Tcl_GetUnicodeFromObj(value3Ptr, &length3);
+
+	objResultPtr = Tcl_NewUnicodeObj(ustring1, 0);
+	p = ustring1;
+	end = ustring1 + length;
+	for (; ustring1 < end; ustring1++) {
+	    if ((*ustring1 == *ustring2) && (length2==1 ||
+		    memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length2)
+			    == 0)) {
+		if (p != ustring1) {
+		    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1-p);
+		    p = ustring1 + length2;
+		} else {
+		    p += length2;
+		}
+		ustring1 = p - 1;
+
+		Tcl_AppendUnicodeToObj(objResultPtr, ustring3, length3);
+	    }
+	}
+	if (p != ustring1) {
+	    /*
+	     * Put the rest of the unmapped chars onto result.
+	     */
+
+	    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1 - p);
+	}
+	TRACE_WITH_OBJ(("%.20s %.20s %.20s => ",
+		O2S(value2Ptr), O2S(value3Ptr), O2S(valuePtr)), objResultPtr);
+	NEXT_INST_V(1, 3, 1);
+
+    case INST_STR_FIND:
+	ustring1 = Tcl_GetUnicodeFromObj(OBJ_AT_TOS, &length);	/* Haystack */
+	ustring2 = Tcl_GetUnicodeFromObj(OBJ_UNDER_TOS, &length2);/* Needle */
+
+	match = -1;
+	if (length2 > 0 && length2 <= length) {
+	    end = ustring1 + length - length2 + 1;
+	    for (p=ustring1 ; p<end ; p++) {
+		if ((*p == *ustring2) &&
+			memcmp(ustring2,p,sizeof(Tcl_UniChar)*length2) == 0) {
+		    match = p - ustring1;
+		    break;
+		}
+	    }
+	}
+
+	TRACE(("%.20s %.20s => %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
+
+	TclNewIntObj(objResultPtr, match);
+	NEXT_INST_F(1, 2, 1);
     }
 
     case INST_STR_MATCH:
