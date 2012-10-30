@@ -4732,11 +4732,12 @@ TEBCresume(
 		O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
-    case INST_STR_MAP: {
+    {
 	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
 	int length3;
 	Tcl_Obj *value3Ptr;
 
+    case INST_STR_MAP:
 	valuePtr = OBJ_AT_TOS;		/* "Main" string. */
 	value3Ptr = OBJ_UNDER_TOS;	/* "Target" string. */
 	value2Ptr = OBJ_AT_DEPTH(2);	/* "Source" string. */
@@ -4781,7 +4782,71 @@ TEBCresume(
 
 	    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1 - p);
 	}
+	TRACE_WITH_OBJ(("%.20s %.20s %.20s => ",
+		O2S(value2Ptr), O2S(value3Ptr), O2S(valuePtr)), objResultPtr);
 	NEXT_INST_V(1, 3, 1);
+
+    case INST_STR_FIND:
+	ustring1 = Tcl_GetUnicodeFromObj(OBJ_AT_TOS, &length);	/* Haystack */
+	ustring2 = Tcl_GetUnicodeFromObj(OBJ_UNDER_TOS, &length2);/* Needle */
+
+	match = -1;
+	if (length2 > 0 && length2 <= length) {
+	    end = ustring1 + length - length2 + 1;
+	    for (p=ustring1 ; p<end ; p++) {
+		if ((*p == *ustring2) && TclUniCharNcmp(ustring2, p,
+			(unsigned long) length2) == 0) {
+		    match = p - ustring1;
+		    break;
+		}
+	    }
+	}
+
+	TRACE(("%.20s %.20s => %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
+
+	TclNewIntObj(objResultPtr, match);
+	NEXT_INST_F(1, 2, 1);
+
+    case INST_STR_RANGE_IMM:
+	valuePtr = OBJ_AT_TOS;
+	fromIdx = TclGetInt4AtPtr(pc+1);
+	toIdx = TclGetInt4AtPtr(pc+5);
+	length = Tcl_GetCharLength(valuePtr);
+	TRACE(("\"%.20s\" %d %d", O2S(valuePtr), fromIdx, toIdx));
+
+	/*
+	 * Adjust indices for end-based indexing.
+	 */
+
+	if (fromIdx < -1) {
+	    fromIdx += 1 + length;
+	    if (fromIdx < 0) {
+		fromIdx = 0;
+	    }
+	} else if (fromIdx >= length) {
+	    fromIdx = length;
+	}
+	if (toIdx < -1) {
+	    toIdx += 1 + length;
+	    if (toIdx < 0) {
+		toIdx = 0;
+	    }
+	} else if (toIdx >= length) {
+	    toIdx = length - 1;
+	}
+
+	/*
+	 * Check if we can do a sane substring.
+	 */
+
+	if (fromIdx <= toIdx) {
+	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+	} else {
+	    TclNewObj(objResultPtr);
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(9, 1, 1);
     }
 
     case INST_STR_MATCH:
