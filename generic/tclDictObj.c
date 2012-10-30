@@ -87,16 +87,33 @@ static int		DictMapLoopCallback(ClientData data[],
  * Table of dict subcommand names and implementations.
  */
 
+#define NORMAL(name, term) \
+    {name, Dict##term##Cmd, NULL, NULL, NULL, 0}
+#define COMPILED(name, term) \
+    {name, Dict##term##Cmd, TclCompileDict##term##Cmd, NULL, NULL, 0}
+#define NR(name, term) \
+    {name, NULL, TclCompileDict##term##Cmd, Dict##term##NRCmd, NULL, 0}
 static const EnsembleImplMap implementationMap[] = {
+    COMPILED(	"append",	Append),
+    NORMAL(	"create",	Create),
+    COMPILED(	"exists",	Exists),
+    NORMAL(	"filter",	Filter),
+    NR(		"for",		For),
+    COMPILED(	"get",		Get),
+    COMPILED(	"incr",		Incr),
+    NORMAL(	"info",		Info),
+    NORMAL(	"keys",		Keys),
+    /*
     {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL, 0 },
     {"create",	DictCreateCmd, NULL, NULL, NULL, 0 },
-    {"exists",	DictExistsCmd, NULL, NULL, NULL, 0 },
+    {"exists",	DictExistsCmd,	TclCompileDictExistsCmd, NULL, NULL, 0 },
     {"filter",	DictFilterCmd, NULL, NULL, NULL, 0 },
     {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL, 0 },
     {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, NULL, 0 },
     {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL, 0 },
     {"info",	DictInfoCmd, NULL, NULL, NULL, 0 },
     {"keys",	DictKeysCmd, NULL, NULL, NULL, 0 },
+    */
     {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, 0 },
     {"map", 	NULL,       	TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
     {"merge",	DictMergeCmd, NULL, NULL, NULL, 0 },
