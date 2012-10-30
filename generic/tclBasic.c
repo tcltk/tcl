@@ -240,7 +240,7 @@ static const CmdInfo builtInCmds[] = {
     {"package",		Tcl_PackageObjCmd,	NULL,			NULL,	1},
     {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	1},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	1},
-    {"regsub",		Tcl_RegsubObjCmd,	NULL,			NULL,	1},
+    {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	1},
     {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	1},
     {"return",		Tcl_ReturnObjCmd,	TclCompileReturnCmd,	NULL,	1},
     {"scan",		Tcl_ScanObjCmd,		NULL,			NULL,	1},
