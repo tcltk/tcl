@@ -787,6 +787,42 @@ TclCompileDictGetCmd(
 }
 
 int
+TclCompileDictExistsCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    int numWords, i;
+    DefineLineInformation;	/* TIP #280 */
+
+    /*
+     * There must be at least two arguments after the command (the single-arg
+     * case is legal, but too special and magic for us to deal with here).
+     */
+
+    if (parsePtr->numWords < 3) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    numWords = parsePtr->numWords-1;
+
+    /*
+     * Now we do the code generation.
+     */
+
+    for (i=0 ; i<numWords ; i++) {
+	CompileWord(envPtr, tokenPtr, interp, i);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    TclEmitInstInt4(INST_DICT_EXISTS, numWords-1, envPtr);
+    return TCL_OK;
+}
+
+int
 TclCompileDictUnsetCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
