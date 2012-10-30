@@ -4644,6 +4644,180 @@ TclCompileRegexpCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileRegsubCmd --
+ *
+ *	Procedure called to compile the "regsub" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "regsub" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileRegsubCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    /*
+     * We only compile the case with [regsub -all] where the pattern is both
+     * known at compile time and simple (i.e., no RE metacharacters). That is,
+     * the pattern must be translatable into a glob like "*foo*" with no other
+     * glob metacharacters inside it; there must be some "foo" in there too.
+     * The substitution string must also be known at compile time and free of
+     * metacharacters ("\digit" and "&"). Finally, there must not be a
+     * variable mentioned in the [regsub] to write the result back to (because
+     * we can't get the count of substitutions that would be the result in
+     * that case). The key is that these are the conditions under which a
+     * [string map] could be used instead, in particular a [string map] of the
+     * form we can compile to bytecode.
+     *
+     * In short, we look for:
+     *
+     *   regsub -all [--] simpleRE string simpleReplacement
+     *
+     * The only optional part is the "--", and no other options are handled.
+     */
+
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr, *stringTokenPtr;
+    Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
+    Tcl_DString pattern;
+    const char *bytes;
+    int len, exact, result = TCL_ERROR;
+
+    if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse the "-all", which must be the first argument (other options not
+     * supported, non-"-all" substitution we can't compile).
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size != 4
+	    || strncmp(tokenPtr[1].start, "-all", 4)) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Get the pattern into patternObj, checking for "--" in the process.
+     */
+
+    Tcl_DStringInit(&pattern);
+    tokenPtr = TokenAfter(tokenPtr);
+    patternObj = Tcl_NewObj();
+    if (!TclWordKnownAtCompileTime(tokenPtr, patternObj)) {
+	goto done;
+    }
+    if (Tcl_GetString(patternObj)[0] == '-') {
+	if (strcmp(Tcl_GetString(patternObj), "--") != 0
+		|| parsePtr->numWords == 5) {
+	    goto done;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+	Tcl_DecrRefCount(patternObj);
+	patternObj = Tcl_NewObj();
+	if (!TclWordKnownAtCompileTime(tokenPtr, patternObj)) {
+	    goto done;
+	}
+    } else if (parsePtr->numWords == 6) {
+	goto done;
+    }
+
+    /*
+     * Identify the code which produces the string to apply the substitution
+     * to (stringTokenPtr), and the replacement string (into replacementObj).
+     */
+
+    stringTokenPtr = TokenAfter(tokenPtr);
+    tokenPtr = TokenAfter(stringTokenPtr);
+    replacementObj = Tcl_NewObj();
+    if (!TclWordKnownAtCompileTime(tokenPtr, replacementObj)) {
+	goto done;
+    }
+
+    /*
+     * Next, higher-level checks. Is the RE a very simple glob? Is the
+     * replacement "simple"?
+     */
+
+    bytes = Tcl_GetStringFromObj(patternObj, &len);
+    if (TclReToGlob(NULL, bytes, len, &pattern, &exact) != TCL_OK || exact) {
+	goto done;
+    }
+    bytes = Tcl_DStringValue(&pattern);
+    if (*bytes++ != '*') {
+	goto done;
+    }
+    while (1) {
+	switch (*bytes) {
+	case '*':
+	    if (bytes[1] == '\0') {
+		/*
+		 * OK, we've proved there are no metacharacters except for the
+		 * '*' at each end.
+		 */
+
+		len = Tcl_DStringLength(&pattern) - 2;
+		if (len > 0) {
+		    goto isSimpleGlob;
+		}
+
+		/*
+		 * The pattern is "**"! I believe that should be impossible,
+		 * but we definitely can't handle that at all.
+		 */
+	    }
+	case '\0': case '?': case '[': case '\\':
+	    goto done;
+	}
+	bytes++;
+    }
+  isSimpleGlob:
+    for (bytes = Tcl_GetString(replacementObj); *bytes; bytes++) {
+	switch (*bytes) {
+	case '\\': case '&':
+	    goto done;
+	}
+    }
+
+    /*
+     * Proved the simplicity constraints! Time to issue the code.
+     */
+
+    result = TCL_OK;
+    bytes = Tcl_DStringValue(&pattern) + 1;
+    PushLiteral(envPtr,	bytes, len);
+    bytes = Tcl_GetStringFromObj(replacementObj, &len);
+    PushLiteral(envPtr,	bytes, len);
+    CompileWord(envPtr,	stringTokenPtr, interp, parsePtr->numWords-2);
+    TclEmitOpcode(	INST_STR_MAP,	envPtr);
+
+  done:
+    Tcl_DStringFree(&pattern);
+    if (patternObj) {
+	Tcl_DecrRefCount(patternObj);
+    }
+    if (replacementObj) {
+	Tcl_DecrRefCount(replacementObj);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileReturnCmd --
  *
  *	Procedure called to compile the "return" command.
