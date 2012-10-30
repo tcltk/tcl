@@ -683,20 +683,22 @@ typedef struct ByteCode {
 
 /* For [string map] and [regsub] compilation */
 #define INST_STR_MAP			141
+#define INST_STR_FIND			142
+#define INST_STR_RANGE_IMM		143
 
 /* For operations to do with coroutines */
-#define INST_YIELD			142
-#define INST_COROUTINE_NAME		143
+#define INST_YIELD			144
+#define INST_COROUTINE_NAME		145
 
 /* For compilation of basic information operations */
-#define INST_NS_CURRENT			144
-#define INST_INFO_LEVEL_NUM		145
-#define INST_INFO_LEVEL_ARGS		146
-#define INST_RESOLVE_COMMAND		147
-#define INST_TCLOO_SELF			148
+#define INST_NS_CURRENT			146
+#define INST_INFO_LEVEL_NUM		147
+#define INST_INFO_LEVEL_ARGS		148
+#define INST_RESOLVE_COMMAND		149
+#define INST_TCLOO_SELF			150
 
 /* The last opcode */
-#define LAST_INST_OPCODE		148
+#define LAST_INST_OPCODE		150
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
