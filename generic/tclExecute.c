@@ -5916,13 +5916,22 @@ TEBCresume(
 	DictUpdateInfo *duiPtr;
 
     case INST_DICT_GET:
+    case INST_DICT_EXISTS: {
+	register Tcl_Interp *interp2 = interp;
+
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
 	dictPtr = OBJ_AT_DEPTH(opnd);
+	if (*pc == INST_DICT_EXISTS) {
+	    interp2 = NULL;
+	}
 	if (opnd > 1) {
-	    dictPtr = TclTraceDictPath(interp, dictPtr, opnd-1,
+	    dictPtr = TclTraceDictPath(interp2, dictPtr, opnd-1,
 		    &OBJ_AT_DEPTH(opnd-1), DICT_PATH_READ);
 	    if (dictPtr == NULL) {
+		if (*pc == INST_DICT_EXISTS) {
+		    goto dictNotExists;
+		}
 		TRACE_WITH_OBJ((
 			"%u => ERROR tracing dictionary path into \"%s\": ",
 			opnd, O2S(OBJ_AT_DEPTH(opnd))),
@@ -5930,8 +5939,13 @@ TEBCresume(
 		goto gotError;
 	    }
 	}
-	if (Tcl_DictObjGet(interp, dictPtr, OBJ_AT_TOS,
+	if (Tcl_DictObjGet(interp2, dictPtr, OBJ_AT_TOS,
 		&objResultPtr) == TCL_OK) {
+	    if (*pc == INST_DICT_EXISTS) {
+		objResultPtr = TCONST(objResultPtr ? 1 : 0);
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_V(5, opnd+1, 1);
+	    }
 	    if (objResultPtr) {
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		NEXT_INST_V(5, opnd+1, 1);
@@ -5945,11 +5959,18 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
 	} else {
+	    if (*pc == INST_DICT_EXISTS) {
+	    dictNotExists:
+		objResultPtr = TCONST(0);
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_V(5, opnd+1, 1);
+	    }
 	    TRACE_WITH_OBJ((
 		    "%u => ERROR reading leaf dictionary key \"%s\": ",
 		    opnd, O2S(dictPtr)), Tcl_GetObjResult(interp));
 	}
 	goto gotError;
+    }
 
     case INST_DICT_SET:
     case INST_DICT_UNSET:
