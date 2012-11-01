@@ -440,6 +440,10 @@ InstructionDesc const tclInstructionTable[] = {
 	 * boolean indicating whether it is possible to read out a value from
 	 * that key-path (like [dict exists]).
 	 * Stack:  ... dict key1 ... keyN => ... boolean */
+    {"verifyDict",	 1,    -1,	  0,	{OPERAND_NONE}},
+	/* Verifies that the word on the top of the stack is a dictionary,
+	 * popping it if it is and throwing an error if it is not.
+	 * Stack:  ... value => ... */
 
     {"strmap",		 1,    -2,	  0,	{OPERAND_NONE}},
 	/* Simplified version of [string map] that only applies one change
