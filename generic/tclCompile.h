@@ -688,19 +688,20 @@ typedef struct ByteCode {
 #define INST_STR_FIND			144
 #define INST_STR_RANGE_IMM		145
 
-/* For operations to do with coroutines */
+/* For operations to do with coroutines and other NRE-manipulators */
 #define INST_YIELD			146
 #define INST_COROUTINE_NAME		147
+#define INST_TAILCALL			148
 
 /* For compilation of basic information operations */
-#define INST_NS_CURRENT			148
-#define INST_INFO_LEVEL_NUM		149
-#define INST_INFO_LEVEL_ARGS		150
-#define INST_RESOLVE_COMMAND		151
-#define INST_TCLOO_SELF			152
+#define INST_NS_CURRENT			149
+#define INST_INFO_LEVEL_NUM		150
+#define INST_INFO_LEVEL_ARGS		151
+#define INST_RESOLVE_COMMAND		152
+#define INST_TCLOO_SELF			153
 
 /* The last opcode */
-#define LAST_INST_OPCODE		152
+#define LAST_INST_OPCODE		153
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
