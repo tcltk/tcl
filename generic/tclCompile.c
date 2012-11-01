@@ -464,6 +464,10 @@ InstructionDesc const tclInstructionTable[] = {
     {"coroName",         1,    +1,	  0,	{OPERAND_NONE}},
 	/* Push the name of the interpreter's current coroutine as an object
 	 * on the stack. */
+    {"tailcall",	 2,    INT_MIN,	  1,	{OPERAND_UINT1}},
+	/* Do a tailcall with the opnd items on the stack as the thing to
+	 * tailcall to; opnd must be greater than 0 for the semantics to work
+	 * right. */
 
     {"currentNamespace", 1,    +1,	  0,	{OPERAND_NONE}},
 	/* Push the name of the interpreter's current namespace as an object
