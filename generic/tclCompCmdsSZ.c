@@ -1987,6 +1987,50 @@ PrintJumptableInfo(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileTailcallCmd --
+ *
+ *	Procedure called to compile the "tailcall" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "tailcall" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileTailcallCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr = parsePtr->tokenPtr;
+    int i;
+
+    if (parsePtr->numWords < 2 || parsePtr->numWords > 256
+	    || envPtr->procPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    for (i=1 ; i<parsePtr->numWords ; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, i);
+    }
+    TclEmitInstInt1(	INST_TAILCALL, parsePtr->numWords-1,	envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileThrowCmd --
  *
  *	Procedure called to compile the "throw" command.
