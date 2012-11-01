@@ -676,30 +676,31 @@ typedef struct ByteCode {
 #define INST_UNSET_ARRAY_STK		136
 #define INST_UNSET_STK			137
 
-/* For [dict with] and [dict exists] compilation */
+/* For [dict with], [dict exists], [dict create] and [dict merge] */
 #define INST_DICT_EXPAND		138
 #define INST_DICT_RECOMBINE_STK		139
 #define INST_DICT_RECOMBINE_IMM		140
 #define INST_DICT_EXISTS		141
+#define INST_DICT_VERIFY		142
 
 /* For [string map] and [regsub] compilation */
-#define INST_STR_MAP			142
-#define INST_STR_FIND			143
-#define INST_STR_RANGE_IMM		144
+#define INST_STR_MAP			143
+#define INST_STR_FIND			144
+#define INST_STR_RANGE_IMM		145
 
 /* For operations to do with coroutines */
-#define INST_YIELD			145
-#define INST_COROUTINE_NAME		146
+#define INST_YIELD			146
+#define INST_COROUTINE_NAME		147
 
 /* For compilation of basic information operations */
-#define INST_NS_CURRENT			147
-#define INST_INFO_LEVEL_NUM		148
-#define INST_INFO_LEVEL_ARGS		149
-#define INST_RESOLVE_COMMAND		150
-#define INST_TCLOO_SELF			151
+#define INST_NS_CURRENT			148
+#define INST_INFO_LEVEL_NUM		149
+#define INST_INFO_LEVEL_ARGS		150
+#define INST_RESOLVE_COMMAND		151
+#define INST_TCLOO_SELF			152
 
 /* The last opcode */
-#define LAST_INST_OPCODE		151
+#define LAST_INST_OPCODE		152
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
