@@ -2799,6 +2799,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
 MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
 MODULE_SCOPE Tcl_NRPostProc TclNRCoroutineActivateCallback;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRTailcallObjCmd;
+MODULE_SCOPE Tcl_NRPostProc TclNRTailcallEval;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
@@ -3662,6 +3663,9 @@ MODULE_SCOPE int	TclCompileSubstCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileSwitchCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileTailcallCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileThrowCmd(Tcl_Interp *interp,

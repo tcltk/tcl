@@ -136,7 +136,6 @@ static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
 
 static Tcl_NRPostProc	NRRunObjProc;
-static Tcl_NRPostProc	NRTailcallEval;
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
@@ -248,7 +247,7 @@ static const CmdInfo builtInCmds[] = {
     {"split",		Tcl_SplitObjCmd,	NULL,			NULL,	1},
     {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,	TclNRSubstObjCmd,	1},
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, 1},
-    {"tailcall",	NULL,			NULL,			TclNRTailcallObjCmd,	1},
+    {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	1},
     {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,	NULL,	1},
     {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	1},
     {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	TclNRTryObjCmd,	1},
@@ -8322,7 +8321,7 @@ TclNRTailcallObjCmd(
 	return TCL_ERROR;
     }
 
-    if (!iPtr->varFramePtr->isProcCallFrame) {	/* or is upleveled */
+    if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {	/* or is upleveled */
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "tailcall can only be called from a proc or lambda", -1));
         Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
@@ -8362,7 +8361,7 @@ TclNRTailcallObjCmd(
         }
         Tcl_IncrRefCount(nsObjPtr);
 
-        TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr,
+        TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
                 NULL, NULL);
         tailcallPtr = TOP_CB(interp);
         TOP_CB(interp) = tailcallPtr->nextPtr;
@@ -8372,7 +8371,7 @@ TclNRTailcallObjCmd(
 }
 
 int
-NRTailcallEval(
+TclNRTailcallEval(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -8566,7 +8565,7 @@ YieldToCallback(
      * yieldTo: invoke the command using tailcall tech.
      */
 
-    TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr, NULL, NULL);
+    TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsPtr, NULL, NULL);
     cbPtr = TOP_CB(interp);
     TOP_CB(interp) = cbPtr->nextPtr;
 

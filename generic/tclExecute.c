@@ -2374,6 +2374,55 @@ TEBCresume(
 	return TCL_OK;
     }
 
+    case INST_TAILCALL: {
+	Tcl_Obj *listPtr, *nsObjPtr;
+        NRE_callback *tailcallPtr;
+
+	opnd = TclGetUInt1AtPtr(pc+1);
+
+	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
+	    TRACE(("%d => ERROR: tailcall in non-proc context\n", opnd));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "tailcall can only be called from a proc or lambda", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
+	    goto gotError;
+	}
+
+#ifdef TCL_COMPILE_DEBUG
+	TRACE(("%d [", opnd));
+	for (i=opnd-1 ; i>=0 ; i++) {
+	    TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_DEPTH(i))));
+	    if (i > 0) {
+		TRACE_APPEND((" "));
+	    }
+	}
+	TRACE_APPEND(("] => RETURN..."));
+#endif
+
+	/*
+	 * Push the evaluation of the called command into the NR callback
+	 * stack.
+	 */
+
+	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
+	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
+	Tcl_IncrRefCount(listPtr);
+	Tcl_IncrRefCount(nsObjPtr);
+	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
+		NULL, NULL);
+
+	/*
+	 * Unstitch ourselves and do a [return].
+	 */
+
+	tailcallPtr = TOP_CB(interp);
+	TOP_CB(interp) = tailcallPtr->nextPtr;
+	iPtr->varFramePtr->tailcallPtr = tailcallPtr;
+	result = TCL_RETURN;
+	cleanup = opnd;
+	goto processExceptionReturn;
+    }
+
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
 	    /*
