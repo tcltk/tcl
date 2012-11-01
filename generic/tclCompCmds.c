@@ -884,6 +884,209 @@ TclCompileDictUnsetCmd(
 }
 
 int
+TclCompileDictCreateCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    int worker;			/* Temp var for building the value in. */
+    Tcl_Token *tokenPtr;
+    Tcl_Obj *keyObj, *valueObj, *dictObj;
+    const char *bytes;
+    int i, len;
+
+    if ((parsePtr->numWords & 1) == 0) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * See if we can build the value at compile time...
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    dictObj = Tcl_NewObj();
+    Tcl_IncrRefCount(dictObj);
+    for (i=1 ; i<parsePtr->numWords ; i+=2) {
+	keyObj = Tcl_NewObj();
+	Tcl_IncrRefCount(keyObj);
+	if (!TclWordKnownAtCompileTime(tokenPtr, keyObj)) {
+	    Tcl_DecrRefCount(keyObj);
+	    Tcl_DecrRefCount(dictObj);
+	    goto nonConstant;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+	valueObj = Tcl_NewObj();
+	Tcl_IncrRefCount(valueObj);
+	if (!TclWordKnownAtCompileTime(tokenPtr, valueObj)) {
+	    Tcl_DecrRefCount(keyObj);
+	    Tcl_DecrRefCount(valueObj);
+	    Tcl_DecrRefCount(dictObj);
+	    goto nonConstant;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+	Tcl_DictObjPut(NULL, dictObj, keyObj, valueObj);
+	Tcl_DecrRefCount(keyObj);
+	Tcl_DecrRefCount(valueObj);
+    }
+
+    /*
+     * We did! Excellent. The "verifyDict" is to do type forcing.
+     */
+
+    bytes = Tcl_GetStringFromObj(dictObj, &len);
+    PushLiteral(envPtr, bytes, len);
+    TclEmitOpcode(		INST_DUP,			envPtr);
+    TclEmitOpcode(		INST_DICT_VERIFY,		envPtr);
+    Tcl_DecrRefCount(dictObj);
+    return TCL_OK;
+
+    /*
+     * Otherwise, we've got to issue runtime code to do the building, which we
+     * do by [dict set]ting into an unnamed local variable. This requires that
+     * we are in a context with an LVT.
+     */
+
+  nonConstant:
+    worker = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    if (worker < 0) {
+	return TCL_ERROR;
+    }
+
+    PushLiteral(envPtr,		"", 0);
+    Emit14Inst(			INST_STORE_SCALAR, worker,	envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    for (i=1 ; i<parsePtr->numWords ; i+=2) {
+	CompileWord(envPtr, tokenPtr, interp, i);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, i+1);
+	tokenPtr = TokenAfter(tokenPtr);
+	TclEmitInstInt4(	INST_DICT_SET, 1,		envPtr);
+	TclEmitInt4(			worker,			envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+    }
+    Emit14Inst(			INST_LOAD_SCALAR, worker,	envPtr);
+    TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
+    TclEmitInt4(			worker,			envPtr);
+    return TCL_OK;
+}
+
+int
+TclCompileDictMergeCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+    int i, workerIndex, infoIndex, outLoop;
+
+    /*
+     * Deal with some special edge cases. Note that in the case with one
+     * argument, the only thing to do is to verify the dict-ness.
+     */
+
+    if (parsePtr->numWords < 2) {
+	PushLiteral(envPtr, "", 0);
+	return TCL_OK;
+    } else if (parsePtr->numWords == 2) {
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, 1);
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_DICT_VERIFY,		envPtr);
+	return TCL_OK;
+    }
+
+    /*
+     * There's real merging work to do.
+     *
+     * Allocate some working space. This means we'll only ever compile this
+     * command when there's an LVT present.
+     */
+
+    workerIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    if (workerIndex < 0) {
+	return TCL_ERROR;
+    }
+    infoIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+
+    /*
+     * Get the first dictionary and verify that it is so.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+    TclEmitOpcode(		INST_DUP,			envPtr);
+    TclEmitOpcode(		INST_DICT_VERIFY,		envPtr);
+    Emit14Inst(			INST_STORE_SCALAR, workerIndex,	envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
+
+    /*
+     * For each of the remaining dictionaries...
+     */
+
+    outLoop = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    TclEmitInstInt4(		INST_BEGIN_CATCH4, outLoop,	envPtr);
+    ExceptionRangeStarts(envPtr, outLoop);
+    for (i=2 ; i<parsePtr->numWords ; i++) {
+	/*
+	 * Get the dictionary, and merge its pairs into the first dict (using
+	 * a small loop).
+	 */
+
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, i);
+	TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,	envPtr);
+	TclEmitInstInt1(	INST_JUMP_TRUE1, 24,		envPtr);
+	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
+	TclEmitInstInt4(	INST_DICT_SET, 1,		envPtr);
+	TclEmitInt4(			workerIndex,		envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+	TclEmitInstInt4(	INST_DICT_NEXT, infoIndex,	envPtr);
+	TclEmitInstInt1(	INST_JUMP_FALSE1, -20,		envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+	TclEmitInstInt1(	INST_UNSET_SCALAR, 0,		envPtr);
+	TclEmitInt4(			infoIndex,		envPtr);
+    }
+    ExceptionRangeEnds(envPtr, outLoop);
+    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+
+    /*
+     * Clean up any state left over.
+     */
+
+    Emit14Inst(			INST_LOAD_SCALAR, workerIndex,	envPtr);
+    TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
+    TclEmitInt4(			workerIndex,		envPtr);
+    TclEmitInstInt1(		INST_JUMP1, 18,			envPtr);
+
+    /*
+     * If an exception happens when starting to iterate over the second (and
+     * subsequent) dicts. This is strictly not necessary, but it is nice.
+     */
+
+    ExceptionRangeTarget(envPtr, outLoop, catchOffset);
+    TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
+    TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
+    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
+    TclEmitInt4(			workerIndex,		envPtr);
+    TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
+    TclEmitInt4(			infoIndex,		envPtr);
+    TclEmitOpcode(		INST_RETURN_STK,		envPtr);
+
+    return TCL_OK;
+}
+
+int
 TclCompileDictForCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
@@ -1106,7 +1309,7 @@ CompileDictEachCmd(
 
     ExceptionRangeTarget(envPtr, loopRange, breakOffset);
     TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
-    TclEmitInt4(	infoIndex,				envPtr);
+    TclEmitInt4(		infoIndex,			envPtr);
     TclEmitOpcode(	INST_END_CATCH,				envPtr);
     endTargetOffset = CurrentOffset(envPtr);
     TclEmitInstInt4(	INST_JUMP4, 0,				envPtr);
@@ -1120,7 +1323,7 @@ CompileDictEachCmd(
     TclEmitOpcode(	INST_PUSH_RETURN_OPTIONS,		envPtr);
     TclEmitOpcode(	INST_PUSH_RESULT,			envPtr);
     TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
-    TclEmitInt4(	infoIndex,				envPtr);
+    TclEmitInt4(		infoIndex,			envPtr);
     TclEmitOpcode(	INST_END_CATCH,				envPtr);
     if (collect == TCL_EACH_COLLECT) {
 	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
