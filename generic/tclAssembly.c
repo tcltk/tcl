@@ -514,9 +514,9 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_STR_MAP,						/* 143 */
     INST_STR_FIND,						/* 144 */
     INST_COROUTINE_NAME,					/* 147 */
-    INST_NS_CURRENT,						/* 148 */
-    INST_INFO_LEVEL_NUM,					/* 149 */
-    INST_RESOLVE_COMMAND					/* 151 */
+    INST_NS_CURRENT,						/* 149 */
+    INST_INFO_LEVEL_NUM,					/* 150 */
+    INST_RESOLVE_COMMAND					/* 152 */
 };
 
 /*
