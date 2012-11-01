@@ -4208,10 +4208,18 @@ TEBCresume(
 	TRACE_WITH_OBJ(("\"%.20s\" => ", O2S(OBJ_AT_TOS)), objResultPtr);
 	NEXT_INST_F(1, 1, 1);
     }
-    case INST_TCLOO_SELF: {
-	CallFrame *framePtr = iPtr->varFramePtr;
+
+    /*
+     * -----------------------------------------------------------------
+     *	   Start of TclOO support instructions.
+     */
+
+    {
+	CallFrame *framePtr;
 	CallContext *contextPtr;
 
+    case INST_TCLOO_SELF:
+	framePtr = iPtr->varFramePtr;
 	if (framePtr == NULL ||
 		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
 	    TRACE(("=> ERROR: no TclOO call context\n"));
@@ -4230,9 +4238,56 @@ TEBCresume(
 	objResultPtr = TclOOObjectName(interp, contextPtr->oPtr);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
+
+    case INST_TCLOO_NEXT:
+	opnd = TclGetUInt1AtPtr(pc+1);
+	framePtr = iPtr->varFramePtr;
+	if (framePtr == NULL ||
+		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	    TRACE(("%d => ERROR: no TclOO call context\n", opnd));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "next may only be called from inside a method",
+		    -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    goto gotError;
+	}
+	contextPtr = framePtr->clientData;
+
+	bcFramePtr->data.tebc.pc = (char *) pc;
+	iPtr->cmdFramePtr = bcFramePtr;
+
+	if (iPtr->flags & INTERP_DEBUG_FRAME) {
+	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	}
+
+	pcAdjustment = 2;
+	cleanup = opnd;
+	DECACHE_STACK_INFO();
+
+	/*
+	 * BUG BUG BUG BUG BUG BUG BUG BUG BUG BUG BUG BUG BUG BUG
+	 *
+	 * Bug somewhere near here. The iPtr->varFramePtr must be updated as
+	 * below, but TclOONextRestoreFrame (in tclOOBasic.c) seems to be
+	 * unable to restore the frame upon return...
+	 *
+	 * If TclOONextRestoreFrame is wrong for use here (and it might be!)
+	 * it should be copied to this file and adjusted afterwards. It is
+	 * *correct* for its other uses.
+	 */
+
+	iPtr->varFramePtr = framePtr->callerVarPtr;
+	TclNRAddCallback(interp, TclOONextRestoreFrame, framePtr,
+		NULL, NULL, NULL);
+	pc += pcAdjustment;
+	TEBC_YIELD();
+	return TclNRObjectContextInvokeNext(interp,
+		(Tcl_ObjectContext) contextPtr, opnd, &OBJ_AT_DEPTH(opnd-1), 1);
     }
 
     /*
+     *     End of TclOO support instructions.
      * -----------------------------------------------------------------
      *	   Start of INST_LIST and related instructions.
      */
