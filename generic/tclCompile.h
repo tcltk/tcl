@@ -701,9 +701,9 @@ typedef struct ByteCode {
 
 /* For compilation relating to TclOO */
 #define INST_TCLOO_SELF			153
-#define INST_TCLOO_NEXT			154
-#define INST_TCLOO_CLASS		155
-#define INST_TCLOO_NS			156
+#define INST_TCLOO_CLASS		154
+#define INST_TCLOO_NS			155
+#define INST_TCLOO_NEXT			156
 
 /* The last opcode */
 #define LAST_INST_OPCODE		156
