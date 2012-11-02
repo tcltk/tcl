@@ -3666,6 +3666,46 @@ TclCompileInfoLevelCmd(
     }
     return TCL_OK;
 }
+
+int
+TclCompileInfoObjectClassCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    CompileWord(envPtr,		tokenPtr,		interp, 1);
+    TclEmitOpcode(		INST_TCLOO_CLASS,	envPtr);
+    return TCL_OK;
+}
+
+int
+TclCompileInfoObjectNamespaceCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    CompileWord(envPtr,		tokenPtr,		interp, 1);
+    TclEmitOpcode(		INST_TCLOO_NS,		envPtr);
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
