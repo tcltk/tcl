@@ -43,47 +43,45 @@ static Tcl_ObjCmdProc InfoClassSubsCmd;
 static Tcl_ObjCmdProc InfoClassSupersCmd;
 static Tcl_ObjCmdProc InfoClassVariablesCmd;
 
-struct NameProcMap { const char *name; Tcl_ObjCmdProc *proc; };
-
 /*
  * List of commands that are used to implement the [info object] subcommands.
  */
 
-static const struct NameProcMap infoObjectCmds[] = {
-    {"::oo::InfoObject::call",		InfoObjectCallCmd},
-    {"::oo::InfoObject::class",		InfoObjectClassCmd},
-    {"::oo::InfoObject::definition",	InfoObjectDefnCmd},
-    {"::oo::InfoObject::filters",	InfoObjectFiltersCmd},
-    {"::oo::InfoObject::forward",	InfoObjectForwardCmd},
-    {"::oo::InfoObject::isa",		InfoObjectIsACmd},
-    {"::oo::InfoObject::methods",	InfoObjectMethodsCmd},
-    {"::oo::InfoObject::methodtype",	InfoObjectMethodTypeCmd},
-    {"::oo::InfoObject::mixins",	InfoObjectMixinsCmd},
-    {"::oo::InfoObject::namespace",	InfoObjectNsCmd},
-    {"::oo::InfoObject::variables",	InfoObjectVariablesCmd},
-    {"::oo::InfoObject::vars",		InfoObjectVarsCmd},
-    {NULL, NULL}
+static const EnsembleImplMap infoObjectCmds[] = {
+    {"call",	   InfoObjectCallCmd,	    NULL, NULL, NULL, 0},
+    {"class",	   InfoObjectClassCmd,	    TclCompileInfoObjectClassCmd, NULL, NULL, 0},
+    {"definition", InfoObjectDefnCmd,	    NULL, NULL, NULL, 0},
+    {"filters",	   InfoObjectFiltersCmd,    NULL, NULL, NULL, 0},
+    {"forward",	   InfoObjectForwardCmd,    NULL, NULL, NULL, 0},
+    {"isa",	   InfoObjectIsACmd,	    NULL, NULL, NULL, 0},
+    {"methods",	   InfoObjectMethodsCmd,    NULL, NULL, NULL, 0},
+    {"methodtype", InfoObjectMethodTypeCmd, NULL, NULL, NULL, 0},
+    {"mixins",	   InfoObjectMixinsCmd,	    NULL, NULL, NULL, 0},
+    {"namespace",  InfoObjectNsCmd,	    TclCompileInfoObjectNamespaceCmd, NULL, NULL, 0},
+    {"variables",  InfoObjectVariablesCmd,  NULL, NULL, NULL, 0},
+    {"vars",	   InfoObjectVarsCmd,	    NULL, NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /*
  * List of commands that are used to implement the [info class] subcommands.
  */
 
-static const struct NameProcMap infoClassCmds[] = {
-    {"::oo::InfoClass::call",		InfoClassCallCmd},
-    {"::oo::InfoClass::constructor",	InfoClassConstrCmd},
-    {"::oo::InfoClass::definition",	InfoClassDefnCmd},
-    {"::oo::InfoClass::destructor",	InfoClassDestrCmd},
-    {"::oo::InfoClass::filters",	InfoClassFiltersCmd},
-    {"::oo::InfoClass::forward",	InfoClassForwardCmd},
-    {"::oo::InfoClass::instances",	InfoClassInstancesCmd},
-    {"::oo::InfoClass::methods",	InfoClassMethodsCmd},
-    {"::oo::InfoClass::methodtype",	InfoClassMethodTypeCmd},
-    {"::oo::InfoClass::mixins",		InfoClassMixinsCmd},
-    {"::oo::InfoClass::subclasses",	InfoClassSubsCmd},
-    {"::oo::InfoClass::superclasses",	InfoClassSupersCmd},
-    {"::oo::InfoClass::variables",	InfoClassVariablesCmd},
-    {NULL, NULL}
+static const EnsembleImplMap infoClassCmds[] = {
+    {"call",	     InfoClassCallCmd,		NULL, NULL, NULL, 0},
+    {"constructor",  InfoClassConstrCmd,	NULL, NULL, NULL, 0},
+    {"definition",   InfoClassDefnCmd,		NULL, NULL, NULL, 0},
+    {"destructor",   InfoClassDestrCmd,		NULL, NULL, NULL, 0},
+    {"filters",	     InfoClassFiltersCmd,	NULL, NULL, NULL, 0},
+    {"forward",	     InfoClassForwardCmd,	NULL, NULL, NULL, 0},
+    {"instances",    InfoClassInstancesCmd,	NULL, NULL, NULL, 0},
+    {"methods",	     InfoClassMethodsCmd,	NULL, NULL, NULL, 0},
+    {"methodtype",   InfoClassMethodTypeCmd,	NULL, NULL, NULL, 0},
+    {"mixins",	     InfoClassMixinsCmd,	NULL, NULL, NULL, 0},
+    {"subclasses",   InfoClassSubsCmd,		NULL, NULL, NULL, 0},
+    {"superclasses", InfoClassSupersCmd,	NULL, NULL, NULL, 0},
+    {"variables",    InfoClassVariablesCmd,	NULL, NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /*
@@ -101,33 +99,14 @@ void
 TclOOInitInfo(
     Tcl_Interp *interp)
 {
-    Tcl_Namespace *nsPtr;
     Tcl_Command infoCmd;
-    int i;
 
     /*
-     * Build the ensemble used to implement [info object].
+     * Build the ensembles used to implement [info object] and [info class].
      */
 
-    nsPtr = Tcl_CreateNamespace(interp, "::oo::InfoObject", NULL, NULL);
-    Tcl_CreateEnsemble(interp, nsPtr->fullName, nsPtr, TCL_ENSEMBLE_PREFIX);
-    Tcl_Export(interp, nsPtr, "[a-z]*", 1);
-    for (i=0 ; infoObjectCmds[i].name!=NULL ; i++) {
-	Tcl_CreateObjCommand(interp, infoObjectCmds[i].name,
-		infoObjectCmds[i].proc, NULL, NULL);
-    }
-
-    /*
-     * Build the ensemble used to implement [info class].
-     */
-
-    nsPtr = Tcl_CreateNamespace(interp, "::oo::InfoClass", NULL, NULL);
-    Tcl_CreateEnsemble(interp, nsPtr->fullName, nsPtr, TCL_ENSEMBLE_PREFIX);
-    Tcl_Export(interp, nsPtr, "[a-z]*", 1);
-    for (i=0 ; infoClassCmds[i].name!=NULL ; i++) {
-	Tcl_CreateObjCommand(interp, infoClassCmds[i].name,
-		infoClassCmds[i].proc, NULL, NULL);
-    }
+    TclMakeEnsemble(interp, "::oo::InfoObject", infoObjectCmds);
+    TclMakeEnsemble(interp, "::oo::InfoClass", infoClassCmds);
 
     /*
      * Install into the master [info] ensemble.
