@@ -480,6 +480,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"strmatch",	ASSEM_BOOL,	INST_STR_MATCH,		2,	1},
     {"strneq",		ASSEM_1BYTE,	INST_STR_NEQ,		2,	1},
     {"sub",		ASSEM_1BYTE,	INST_SUB,		2,	1},
+    {"tclooClass",	ASSEM_1BYTE,	INST_TCLOO_CLASS,	1,	1},
+    {"tclooNamespace",	ASSEM_1BYTE,	INST_TCLOO_NS,		1,	1},
     {"tclooSelf",	ASSEM_1BYTE,	INST_TCLOO_SELF,	0,	1},
     {"tryCvtToNumeric",	ASSEM_1BYTE,	INST_TRY_CVT_TO_NUMERIC,1,	1},
     {"uminus",		ASSEM_1BYTE,	INST_UMINUS,		1,	1},
