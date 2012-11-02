@@ -491,6 +491,14 @@ InstructionDesc const tclInstructionTable[] = {
     {"tclooNext",	 2,	INT_MIN,  1,	{OPERAND_UINT1}},
 	/* Push the identity of the current TclOO object (i.e., the name of
 	 * its current public access command) on the stack. */
+   {"tclooClass",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Push the class of the TclOO object named at the top of the stack
+	 * onto the stack.
+	 * Stack:  ... object => ... class */
+   {"tclooNamespace",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Push the namespace of the TclOO object named at the top of the
+	 * stack onto the stack.
+	 * Stack:  ... object => ... namespace */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
