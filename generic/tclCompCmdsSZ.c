@@ -451,6 +451,196 @@ TclCompileStringIndexCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileStringIsCmd --
+ *
+ *	Procedure called to compile the simplest and most common form of the
+ *	"string is" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "string is" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileStringIsCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    int numWords = parsePtr->numWords;
+    enum IsType {
+	TypeBool, TypeBoolFalse, TypeBoolTrue,
+	TypeFloat,
+	TypeInteger, TypeNarrowInt, TypeWideInt,
+	TypeList /*, TypeDict */
+    };
+    enum IsType t;
+    JumpFixup jumpFixup;
+    int start, range;
+    int allowEmpty = 0;
+
+    if (numWords < 2 || tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+#define GotLiteral(tokenPtr,word) \
+    ((tokenPtr)[1].size > 1 && (tokenPtr)[1].start[0] == word[0] &&	\
+	    strncmp((tokenPtr)[1].start, (word), (tokenPtr)[1].size) == 0)
+
+    if (GotLiteral(tokenPtr, "boolean")) {
+	t = TypeBool;
+    } else if (GotLiteral(tokenPtr, "double")) {
+	t = TypeFloat;
+    } else if (GotLiteral(tokenPtr, "entier")) {
+	t = TypeInteger;
+    } else if (GotLiteral(tokenPtr, "false")) {
+	t = TypeBoolFalse;
+    } else if (GotLiteral(tokenPtr, "integer")) {
+	t = TypeNarrowInt;
+	return TCL_ERROR; // Not yet implemented
+    } else if (GotLiteral(tokenPtr, "list")) {
+	t = TypeList;
+    } else if (GotLiteral(tokenPtr, "true")) {
+	t = TypeBoolTrue;
+    } else if (GotLiteral(tokenPtr, "wideinteger")) {
+	t = TypeWideInt;
+	return TCL_ERROR; // Not yet implemented
+    } else {
+	/*
+	 * We don't handle character class checks in bytecode currently.
+	 */
+
+	return TCL_ERROR;
+    }
+    if (numWords != 3 && numWords != 4) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(tokenPtr);
+    if (numWords == 3) {
+	allowEmpty = (t != TypeList);
+    } else {
+	if (!GotLiteral(tokenPtr, "-strict")) {
+	    return TCL_ERROR;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+#undef GotLiteral
+
+    /*
+     * Push the word to check.
+     */
+
+    CompileWord(envPtr, tokenPtr, interp, numWords-1);
+
+    /*
+     * Next, do the type check. First, we push a catch range; most of the
+     * type-check operations throw an exception on failure.
+     */
+
+    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    start = 0;
+    TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
+    ExceptionRangeStarts(envPtr, range);
+
+    /*
+     * Issue the type-check itself for the specific type.
+     */
+
+    switch (t) {
+    case TypeBool:
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_LNOT,			envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+	break;
+    case TypeBoolFalse:
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	start = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	break;
+    case TypeBoolTrue:
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	start = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
+	break;
+    case TypeFloat:
+	/*
+	 * Careful! Preserve behavior of NaN which is a double (that is, true
+	 * for the purposes of a type check) but most math ops fail on it. The
+	 * key is that it is not == to itself (and is the only value which
+	 * this is true for).
+	 */
+
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_NEQ,			envPtr);
+	TclEmitInstInt1(	INST_JUMP_TRUE1, 5,		envPtr);
+
+	/*
+	 * Type check for all other double values.
+	 */
+
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_UMINUS,			envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+	break;
+    case TypeInteger:
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_BITNOT,			envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+	break;
+    case TypeNarrowInt:
+	Tcl_Panic("not yet implemented");
+    case TypeWideInt:
+	Tcl_Panic("not yet implemented");
+    case TypeList:
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+	break;
+    }
+
+    /*
+     * Based on whether the exception was thrown (or conditional branch taken,
+     * in the case of true/false checks), push the correct boolean value. This
+     * is also where we deal with what happens with empty values in non-strict
+     * mode.
+     */
+
+    ExceptionRangeEnds(envPtr, range);
+    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
+    PushLiteral(envPtr, "1", 1);
+    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
+    ExceptionRangeTarget(envPtr, range, catchOffset);
+    if (start != 0) {
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - start,
+		envPtr->codeStart + start + 1);
+    }
+    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    if (allowEmpty) {
+	PushLiteral(envPtr, "", 0);
+	TclEmitOpcode(		INST_STR_EQ,			envPtr);
+    } else {
+	TclEmitOpcode(		INST_POP,			envPtr);
+	PushLiteral(envPtr, "0", 1);
+    }
+    TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileStringMatchCmd --
  *
  *	Procedure called to compile the simplest and most common form of the
