@@ -3688,6 +3688,42 @@ TclCompileInfoObjectClassCmd(
 }
 
 int
+TclCompileInfoObjectIsACmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    /*
+     * We only handle [info object isa object <somevalue>]. The first three
+     * words are compressed to a single token by the ensemble compilation
+     * engine.
+     */
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size < 1
+	    || strncmp(tokenPtr[1].start, "object", tokenPtr[1].size)) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(tokenPtr);
+
+    /*
+     * Issue the code.
+     */
+
+    CompileWord(envPtr,		tokenPtr,		interp, 2);
+    TclEmitOpcode(		INST_TCLOO_IS_OBJECT,	envPtr);
+    return TCL_OK;
+}
+
+int
 TclCompileInfoObjectNamespaceCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
