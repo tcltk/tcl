@@ -4683,6 +4683,79 @@ TclCompileNamespaceCodeCmd(
 }
 
 int
+TclCompileNamespaceQualifiersCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    DefineLineInformation;	/* TIP #280 */
+    int off;
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+
+    CompileWord(envPtr, tokenPtr, interp, 1);
+    PushLiteral(envPtr, "0", 1);
+    PushLiteral(envPtr, "::", 2);
+    TclEmitInstInt4(	INST_OVER, 2,			envPtr);
+    TclEmitOpcode(	INST_STR_FIND_LAST,		envPtr);
+    off = CurrentOffset(envPtr);
+    PushLiteral(envPtr, "1", 1);
+    TclEmitOpcode(	INST_SUB,			envPtr);
+    TclEmitInstInt4(	INST_OVER, 2,			envPtr);
+    TclEmitInstInt4(	INST_OVER, 1,			envPtr);
+    TclEmitOpcode(	INST_STR_INDEX,			envPtr);
+    PushLiteral(envPtr, ":", 1);
+    TclEmitOpcode(	INST_STR_EQ,			envPtr);
+    off = off - CurrentOffset(envPtr);
+    TclEmitInstInt1(	INST_JUMP_TRUE1, off,		envPtr);
+    TclEmitOpcode(	INST_STR_RANGE,			envPtr);
+    return TCL_OK;
+}
+
+int
+TclCompileNamespaceTailCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    DefineLineInformation;	/* TIP #280 */
+    JumpFixup jumpFixup;
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Take care; only add 2 to found index if the string was actually found.
+     */
+
+    CompileWord(envPtr, tokenPtr, interp, 1);
+    PushLiteral(envPtr, "::", 2);
+    TclEmitInstInt4(	INST_OVER, 1,			envPtr);
+    TclEmitOpcode(	INST_STR_FIND_LAST,		envPtr);
+    TclEmitOpcode(	INST_DUP,			envPtr);
+    PushLiteral(envPtr, "0", 1);
+    TclEmitOpcode(	INST_GE,			envPtr);
+    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFixup);
+    PushLiteral(envPtr, "2", 1);
+    TclEmitOpcode(	INST_ADD,			envPtr);
+    TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127);
+    PushLiteral(envPtr, "end", 3);
+    TclEmitOpcode(	INST_STR_RANGE,			envPtr);
+    return TCL_OK;
+}
+
+int
 TclCompileNamespaceUpvarCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
