@@ -453,8 +453,15 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Find the first index of a needle string in a haystack string,
 	 * producing the index (integer) or -1 if nothing found.
 	 * Stack:  ... needle haystack => ... index */
+    {"strrfind",	 1,    -1,	  0,	{OPERAND_NONE}},
+	/* Find the last index of a needle string in a haystack string,
+	 * producing the index (integer) or -1 if nothing found.
+	 * Stack:  ... needle haystack => ... index */
     {"strrangeImm",	 9,	0,	  2,	{OPERAND_IDX4, OPERAND_IDX4}},
 	/* String Range: push (string range stktop op4 op4) */
+    {"strrange",	 1,    -2,	  0,	{OPERAND_NONE}},
+	/* String Range with non-constant arguments.
+	 * Stack:  ... string idxA idxB => ... substring */
 
     {"yield",		 1,	0,	  0,	{OPERAND_NONE}},
 	/* Makes the current coroutine yield the value at the top of the
