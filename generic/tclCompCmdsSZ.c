@@ -251,18 +251,18 @@ TclCompileSetCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileStringCmpCmd --
+ * TclCompileString*Cmd --
  *
- *	Procedure called to compile the simplest and most common form of the
- *	"string compare" command.
+ *	Procedures called to compile various subcommands of the "string"
+ *	command.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  *	evaluation to runtime.
  *
  * Side effects:
- *	Instructions are added to envPtr to execute the "string compare"
- *	command at runtime.
+ *	Instructions are added to envPtr to execute the "string" command at
+ *	runtime.
  *
  *----------------------------------------------------------------------
  */
@@ -298,25 +298,6 @@ TclCompileStringCmpCmd(
     TclEmitOpcode(INST_STR_CMP, envPtr);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringEqualCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string equal" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string equal" command
- *	at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringEqualCmd(
@@ -349,25 +330,6 @@ TclCompileStringEqualCmd(
     TclEmitOpcode(INST_STR_EQ, envPtr);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringFirstCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string first" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string first"
- *	command at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringFirstCmd(
@@ -400,25 +362,38 @@ TclCompileStringFirstCmd(
     OP(STR_FIND);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringIndexCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string index" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string index" command
- *	at runtime.
- *
- *----------------------------------------------------------------------
- */
+
+int
+TclCompileStringLastCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    /*
+     * We don't support any flags; the bytecode isn't that sophisticated.
+     */
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Push the two operands onto the stack and then the test.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 2);
+    OP(STR_FIND_LAST);
+    return TCL_OK;
+}
 
 int
 TclCompileStringIndexCmd(
@@ -447,25 +422,6 @@ TclCompileStringIndexCmd(
     TclEmitOpcode(INST_STR_INDEX, envPtr);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringMatchCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string match" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string match" command
- *	at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringMatchCmd(
@@ -547,25 +503,6 @@ TclCompileStringMatchCmd(
     }
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringLenCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string length" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string length"
- *	command at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringLenCmd(
@@ -606,25 +543,6 @@ TclCompileStringLenCmd(
     TclDecrRefCount(objPtr);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringMapCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string map" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string map" command
- *	at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringMapCmd(
@@ -688,25 +606,6 @@ TclCompileStringMapCmd(
     Tcl_DecrRefCount(mapObj);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringRangeCmd --
- *
- *	Procedure called to compile the "string range" command (with constant
- *	indices).
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string compare"
- *	command at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringRangeCmd(
@@ -718,18 +617,16 @@ TclCompileStringRangeCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *stringTokenPtr, *tokenPtr;
+    Tcl_Token *stringTokenPtr, *fromTokenPtr, *toTokenPtr;
     Tcl_Obj *tmpObj;
     int idx1, idx2, result;
-
-    /*
-     * We don't support any flags; the bytecode isn't that sophisticated.
-     */
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
     stringTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    fromTokenPtr = TokenAfter(stringTokenPtr);
+    toTokenPtr = TokenAfter(fromTokenPtr);
 
     /*
      * Parse the first index. Will only compile if it is constant and not an
@@ -737,26 +634,22 @@ TclCompileStringRangeCmd(
      * end-relative indexing).
      */
 
-    tokenPtr = TokenAfter(stringTokenPtr);
     tmpObj = Tcl_NewObj();
-    if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
-	Tcl_DecrRefCount(tmpObj);
-	return TCL_ERROR;
-    }
-    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
-    if (result == TCL_OK) {
-	if (idx1 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
-	if (result == TCL_OK && idx1 > -2) {
-	    result = TCL_ERROR;
+    result = TCL_ERROR;
+    if (TclWordKnownAtCompileTime(fromTokenPtr, tmpObj)) {
+	if (TclGetIntFromObj(NULL, tmpObj, &idx1) == TCL_OK) {
+	    if (idx1 >= 0) {
+		result = TCL_OK;
+	    }
+	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx1) == TCL_OK) {
+	    if (idx1 <= -2) {
+		result = TCL_OK;
+	    }
 	}
     }
     TclDecrRefCount(tmpObj);
     if (result != TCL_OK) {
-	return TCL_ERROR;
+	goto nonConstantIndices;
     }
 
     /*
@@ -765,34 +658,41 @@ TclCompileStringRangeCmd(
      * end-relative indexing).
      */
 
-    tokenPtr = TokenAfter(tokenPtr);
     tmpObj = Tcl_NewObj();
-    if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
-	Tcl_DecrRefCount(tmpObj);
-	return TCL_ERROR;
-    }
-    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
-    if (result == TCL_OK) {
-	if (idx2 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
-	if (result == TCL_OK && idx2 > -2) {
-	    result = TCL_ERROR;
+    result = TCL_ERROR;
+    if (TclWordKnownAtCompileTime(toTokenPtr, tmpObj)) {
+	if (TclGetIntFromObj(NULL, tmpObj, &idx2) == TCL_OK) {
+	    if (idx2 >= 0) {
+		result = TCL_OK;
+	    }
+	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx2) == TCL_OK) {
+	    if (idx2 <= -2) {
+		result = TCL_OK;
+	    }
 	}
     }
     TclDecrRefCount(tmpObj);
     if (result != TCL_OK) {
-	return TCL_ERROR;
+	goto nonConstantIndices;
     }
 
     /*
-     * Push the two operands onto the stack and then the test.
+     * Push the operand onto the stack and then the substring operation.
      */
 
-    CompileWord(envPtr, stringTokenPtr, interp, 1);
-    OP44(	STR_RANGE_IMM, idx1, idx2);
+    CompileWord(envPtr, stringTokenPtr,			interp, 1);
+    OP44(		STR_RANGE_IMM, idx1, idx2);
+    return TCL_OK;
+
+    /*
+     * Push the operands onto the stack and then the substring operation.
+     */    
+
+  nonConstantIndices:
+    CompileWord(envPtr, stringTokenPtr,			interp, 1);
+    CompileWord(envPtr, fromTokenPtr,			interp, 2);
+    CompileWord(envPtr, toTokenPtr,			interp, 3);
+    OP(			STR_RANGE);
     return TCL_OK;
 }
 
