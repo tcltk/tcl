@@ -53,7 +53,7 @@ static const EnsembleImplMap infoObjectCmds[] = {
     {"definition", InfoObjectDefnCmd,	    NULL, NULL, NULL, 0},
     {"filters",	   InfoObjectFiltersCmd,    NULL, NULL, NULL, 0},
     {"forward",	   InfoObjectForwardCmd,    NULL, NULL, NULL, 0},
-    {"isa",	   InfoObjectIsACmd,	    NULL, NULL, NULL, 0},
+    {"isa",	   InfoObjectIsACmd,	    TclCompileInfoObjectIsACmd, NULL, NULL, 0},
     {"methods",	   InfoObjectMethodsCmd,    NULL, NULL, NULL, 0},
     {"methodtype", InfoObjectMethodTypeCmd, NULL, NULL, NULL, 0},
     {"mixins",	   InfoObjectMixinsCmd,	    NULL, NULL, NULL, 0},
