@@ -686,27 +686,36 @@ typedef struct ByteCode {
 /* For [string map] and [regsub] compilation */
 #define INST_STR_MAP			143
 #define INST_STR_FIND			144
-#define INST_STR_RANGE_IMM		145
+#define INST_STR_FIND_LAST		145
+#define INST_STR_RANGE_IMM		146
+#define INST_STR_RANGE			147
 
 /* For operations to do with coroutines and other NRE-manipulators */
-#define INST_YIELD			146
-#define INST_COROUTINE_NAME		147
-#define INST_TAILCALL			148
+#define INST_YIELD			148
+#define INST_COROUTINE_NAME		149
+#define INST_TAILCALL			150
 
 /* For compilation of basic information operations */
-#define INST_NS_CURRENT			149
-#define INST_INFO_LEVEL_NUM		150
-#define INST_INFO_LEVEL_ARGS		151
-#define INST_RESOLVE_COMMAND		152
+#define INST_NS_CURRENT			151
+#define INST_INFO_LEVEL_NUM		152
+#define INST_INFO_LEVEL_ARGS		153
+#define INST_RESOLVE_COMMAND		154
 
 /* For compilation relating to TclOO */
-#define INST_TCLOO_SELF			153
-#define INST_TCLOO_CLASS		154
-#define INST_TCLOO_NS			155
-#define INST_TCLOO_NEXT			156
+#define INST_TCLOO_SELF			155
+#define INST_TCLOO_CLASS		156
+#define INST_TCLOO_NS			157
+#define INST_TCLOO_IS_OBJECT		158
+
+/* For compilation of [array] subcommands */
+#define INST_ARRAY_EXISTS_STK		159
+#define INST_ARRAY_EXISTS_IMM		160
+#define INST_ARRAY_MAKE_STK		161
+#define INST_ARRAY_MAKE_IMM		162
+#define INST_TCLOO_NEXT			163
 
 /* The last opcode */
-#define LAST_INST_OPCODE		156
+#define LAST_INST_OPCODE		163
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
