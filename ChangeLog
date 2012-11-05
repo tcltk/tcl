@@ -1,3 +1,18 @@
+2012-11-05  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	IMPLEMENTATION OF TIP#413
+
+	Align the [string trim] and [string is space] commands, such that
+	[string trim] by default trims all characters for which [string is
+	space] returns 1, augmented with the NUL character.
+
+	* generic/tclUtf.c: Add NEL, BOM and two more characters to [string is
+	space]
+	* generic/tclCmdMZ.c: Modify [string trim] for Unicode modifications.
+	* generic/regc_locale.c: Regexp engine must match [string is space]
+	* doc/string.n
+	* tests/string.test
+
 2012-10-31  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/Makefile.in:   Dde version number to 1.4.0, ready for Tcl 8.6.0rc1
