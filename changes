@@ -7657,7 +7657,7 @@ and Tcl_FSMountsChanged(). (porter)
 
 Many revisions to better support a Cygwin environment (nijtmans)
 
---- Released 8.5.12, July 27, 2011 --- See ChangeLog for details ---
+--- Released 8.5.12, July 27, 2012 --- See ChangeLog for details ---
 
 2012-07-27 (update)[3464401] Support Unicode 6.2 (nijtmans)
 
@@ -7678,4 +7678,4 @@ Many revisions to better support a Cygwin environment (nijtmans)
 
 2012-10-14 (bug fix) [tcl::Bgerror] crash on non-dict options (nijtmans)
 
---- Released 8.5.13, November 12, 2011 --- See ChangeLog for details ---
+--- Released 8.5.13, November 12, 2012 --- See ChangeLog for details ---
