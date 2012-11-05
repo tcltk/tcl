@@ -362,6 +362,10 @@ static const TalInstDesc TalInstructionTable[] = {
 					 | INST_APPEND_ARRAY4),	2,	1},
     {"appendArrayStk",	ASSEM_1BYTE,	INST_APPEND_ARRAY_STK,	3,	1},
     {"appendStk",	ASSEM_1BYTE,	INST_APPEND_STK,	2,	1},
+    {"arrayExistsImm",	ASSEM_LVT4,	INST_ARRAY_EXISTS_IMM,	0,	1},
+    {"arrayExistsStk",	ASSEM_1BYTE,	INST_ARRAY_EXISTS_STK,	1,	1},
+    {"arrayMakeImm",	ASSEM_LVT4,	INST_ARRAY_MAKE_IMM,	0,	0},
+    {"arrayMakeStk",	ASSEM_1BYTE,	INST_ARRAY_MAKE_STK,	1,	0},
     {"beginCatch",	ASSEM_BEGIN_CATCH,
 					INST_BEGIN_CATCH4,	0,	0},
     {"bitand",		ASSEM_1BYTE,	INST_BITAND,		2,	1},
@@ -479,8 +483,11 @@ static const TalInstDesc TalInstructionTable[] = {
     {"strmap",		ASSEM_1BYTE,	INST_STR_MAP,		3,	1},
     {"strmatch",	ASSEM_BOOL,	INST_STR_MATCH,		2,	1},
     {"strneq",		ASSEM_1BYTE,	INST_STR_NEQ,		2,	1},
+    {"strrange",	ASSEM_1BYTE,	INST_STR_RANGE,		3,	1},
+    {"strrfind",	ASSEM_1BYTE,	INST_STR_FIND_LAST,	2,	1},
     {"sub",		ASSEM_1BYTE,	INST_SUB,		2,	1},
     {"tclooClass",	ASSEM_1BYTE,	INST_TCLOO_CLASS,	1,	1},
+    {"tclooIsObject",	ASSEM_1BYTE,	INST_TCLOO_IS_OBJECT,	1,	1},
     {"tclooNamespace",	ASSEM_1BYTE,	INST_TCLOO_NS,		1,	1},
     {"tclooSelf",	ASSEM_1BYTE,	INST_TCLOO_SELF,	0,	1},
     {"tryCvtToNumeric",	ASSEM_1BYTE,	INST_TRY_CVT_TO_NUMERIC,1,	1},
@@ -515,10 +522,10 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_NOP,							/* 132 */
     INST_STR_MAP,						/* 143 */
     INST_STR_FIND,						/* 144 */
-    INST_COROUTINE_NAME,					/* 147 */
-    INST_NS_CURRENT,						/* 149 */
-    INST_INFO_LEVEL_NUM,					/* 150 */
-    INST_RESOLVE_COMMAND					/* 152 */
+    INST_COROUTINE_NAME,					/* 149 */
+    INST_NS_CURRENT,						/* 151 */
+    INST_INFO_LEVEL_NUM,					/* 152 */
+    INST_RESOLVE_COMMAND					/* 154 */
 };
 
 /*
