@@ -1,3 +1,50 @@
+2012-11-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	Added bytecode compilation of many Tcl commands. Some of these are
+	total compilations and some are only partial (i.e., only compile in
+	some cases). The (sub-)commands affected are:
+	* array: exists, set, unset
+	* dict: create, exists, merge
+	* format: (simple cases only)
+	* info: commands, coroutine, level, object
+	* info object: class, isa object, namespace
+	* namespace: current, code, qualifiers, tail, which
+	* regsub: (only cases convertable to simple [string map])
+	* self: (only no-argument and [self object] cases)
+	* string: first, last, map, range
+	* tailcall:
+	* yield:
+
+	[This was work originally done on the 'dkf-compile-misc-info' branch.]
+
+2012-11-05  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	IMPLEMENTATION OF TIP#413
+
+	Align the [string trim] and [string is space] commands, such that
+	[string trim] by default trims all characters for which [string is
+	space] returns 1, augmented with the NUL character.
+
+	* generic/tclUtf.c: Add NEL, BOM and two more characters to [string is
+	space]
+	* generic/tclCmdMZ.c: Modify [string trim] for Unicode modifications.
+	* generic/regc_locale.c: Regexp engine must match [string is space]
+	* doc/string.n
+	* tests/string.test
+	***POTENTIAL INCOMPATIBILITY***
+	Code that relied on characters not previously trimmed being not
+	removed will notice a difference; it is believed that this is rare,
+	but a workaround to get the behavior in Tcl 8.5 is to use " \t\n\r" as
+	an explicit trim set.
+
+2012-10-31  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in:   Dde version number to 1.4.0, ready for Tcl 8.6.0rc1
+	* win/makefile.vc
+	* win/tclWinDde.c
+	* library/dde/pkgIndex.tcl
+	* tests/winDde.test
+
 2012-10-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileDictUnsetCmd): Added compilation of
