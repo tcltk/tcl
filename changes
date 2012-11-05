@@ -7655,10 +7655,27 @@ and Tcl_FSMountsChanged(). (porter)
 
 2012-07-25 (bug fix)[3546275] [auto_execok] search match [exec] (danckaert)
 
-2012-09-12 (TIP 404) New msgcat commands [mcflset], [mcflmset] (oehlmann)
-=> msgcat 1.5.0
-
 Many revisions to better support a Cygwin environment (nijtmans)
 
 --- Released 8.5.12, July 27, 2011 --- See ChangeLog for details ---
 
+2012-07-27 (update)[3464401] Support Unicode 6.2 (nijtmans)
+
+2012-08-07 (bug fix)[3554250] fs segfault in thread exit handler (porter)
+
+2012-08-08 (update)[1536227] Cygwin network pathname support (nijtmans)
+
+2012-08-20 (bug fix)[3559678] [file normalize] EIAS failure (phao,dgp)
+
+2012-08-25 (bug fix)[3561330] Ukranian translation of "March" (teterin)
+
+2012-09-11 (bug fix)[3564735] mem corruption w/ Itcl's [variable] (porter)
+
+2012-09-25 (TIP 404) New msgcat commands [mcflset], [mcflmset] (oehlmann)
+=> msgcat 1.5.0
+
+2012-10-03 (bug fix) exit panic on stacked std channel (griffin,porter)
+
+2012-10-14 (bug fix) [tcl::Bgerror] crash on non-dict options (nijtmans)
+
+--- Released 8.5.13, November 12, 2011 --- See ChangeLog for details ---
