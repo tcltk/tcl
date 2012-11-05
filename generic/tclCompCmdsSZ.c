@@ -251,18 +251,18 @@ TclCompileSetCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileStringCmpCmd --
+ * TclCompileString*Cmd --
  *
- *	Procedure called to compile the simplest and most common form of the
- *	"string compare" command.
+ *	Procedures called to compile various subcommands of the "string"
+ *	command.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  *	evaluation to runtime.
  *
  * Side effects:
- *	Instructions are added to envPtr to execute the "string compare"
- *	command at runtime.
+ *	Instructions are added to envPtr to execute the "string" command at
+ *	runtime.
  *
  *----------------------------------------------------------------------
  */
@@ -298,25 +298,6 @@ TclCompileStringCmpCmd(
     TclEmitOpcode(INST_STR_CMP, envPtr);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringEqualCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string equal" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string equal" command
- *	at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringEqualCmd(
@@ -349,25 +330,6 @@ TclCompileStringEqualCmd(
     TclEmitOpcode(INST_STR_EQ, envPtr);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringFirstCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string first" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string first"
- *	command at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringFirstCmd(
@@ -400,25 +362,38 @@ TclCompileStringFirstCmd(
     OP(STR_FIND);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringIndexCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string index" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string index" command
- *	at runtime.
- *
- *----------------------------------------------------------------------
- */
+
+int
+TclCompileStringLastCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    /*
+     * We don't support any flags; the bytecode isn't that sophisticated.
+     */
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Push the two operands onto the stack and then the test.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 2);
+    OP(STR_FIND_LAST);
+    return TCL_OK;
+}
 
 int
 TclCompileStringIndexCmd(
@@ -447,25 +422,6 @@ TclCompileStringIndexCmd(
     TclEmitOpcode(INST_STR_INDEX, envPtr);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringIsCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string is" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string is" command at
- *	runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringIsCmd(
@@ -637,25 +593,6 @@ TclCompileStringIsCmd(
     TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringMatchCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string match" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string match" command
- *	at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringMatchCmd(
@@ -737,25 +674,6 @@ TclCompileStringMatchCmd(
     }
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringLenCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string length" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string length"
- *	command at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringLenCmd(
@@ -796,25 +714,6 @@ TclCompileStringLenCmd(
     TclDecrRefCount(objPtr);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringMapCmd --
- *
- *	Procedure called to compile the simplest and most common form of the
- *	"string map" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string map" command
- *	at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringMapCmd(
@@ -878,25 +777,6 @@ TclCompileStringMapCmd(
     Tcl_DecrRefCount(mapObj);
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileStringRangeCmd --
- *
- *	Procedure called to compile the "string range" command (with constant
- *	indices).
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "string compare"
- *	command at runtime.
- *
- *----------------------------------------------------------------------
- */
 
 int
 TclCompileStringRangeCmd(
@@ -908,18 +788,16 @@ TclCompileStringRangeCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *stringTokenPtr, *tokenPtr;
+    Tcl_Token *stringTokenPtr, *fromTokenPtr, *toTokenPtr;
     Tcl_Obj *tmpObj;
     int idx1, idx2, result;
-
-    /*
-     * We don't support any flags; the bytecode isn't that sophisticated.
-     */
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
     stringTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    fromTokenPtr = TokenAfter(stringTokenPtr);
+    toTokenPtr = TokenAfter(fromTokenPtr);
 
     /*
      * Parse the first index. Will only compile if it is constant and not an
@@ -927,26 +805,22 @@ TclCompileStringRangeCmd(
      * end-relative indexing).
      */
 
-    tokenPtr = TokenAfter(stringTokenPtr);
     tmpObj = Tcl_NewObj();
-    if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
-	Tcl_DecrRefCount(tmpObj);
-	return TCL_ERROR;
-    }
-    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
-    if (result == TCL_OK) {
-	if (idx1 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
-	if (result == TCL_OK && idx1 > -2) {
-	    result = TCL_ERROR;
+    result = TCL_ERROR;
+    if (TclWordKnownAtCompileTime(fromTokenPtr, tmpObj)) {
+	if (TclGetIntFromObj(NULL, tmpObj, &idx1) == TCL_OK) {
+	    if (idx1 >= 0) {
+		result = TCL_OK;
+	    }
+	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx1) == TCL_OK) {
+	    if (idx1 <= -2) {
+		result = TCL_OK;
+	    }
 	}
     }
     TclDecrRefCount(tmpObj);
     if (result != TCL_OK) {
-	return TCL_ERROR;
+	goto nonConstantIndices;
     }
 
     /*
@@ -955,34 +829,41 @@ TclCompileStringRangeCmd(
      * end-relative indexing).
      */
 
-    tokenPtr = TokenAfter(tokenPtr);
     tmpObj = Tcl_NewObj();
-    if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
-	Tcl_DecrRefCount(tmpObj);
-	return TCL_ERROR;
-    }
-    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
-    if (result == TCL_OK) {
-	if (idx2 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
-	if (result == TCL_OK && idx2 > -2) {
-	    result = TCL_ERROR;
+    result = TCL_ERROR;
+    if (TclWordKnownAtCompileTime(toTokenPtr, tmpObj)) {
+	if (TclGetIntFromObj(NULL, tmpObj, &idx2) == TCL_OK) {
+	    if (idx2 >= 0) {
+		result = TCL_OK;
+	    }
+	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx2) == TCL_OK) {
+	    if (idx2 <= -2) {
+		result = TCL_OK;
+	    }
 	}
     }
     TclDecrRefCount(tmpObj);
     if (result != TCL_OK) {
-	return TCL_ERROR;
+	goto nonConstantIndices;
     }
 
     /*
-     * Push the two operands onto the stack and then the test.
+     * Push the operand onto the stack and then the substring operation.
      */
 
-    CompileWord(envPtr, stringTokenPtr, interp, 1);
-    OP44(	STR_RANGE_IMM, idx1, idx2);
+    CompileWord(envPtr, stringTokenPtr,			interp, 1);
+    OP44(		STR_RANGE_IMM, idx1, idx2);
+    return TCL_OK;
+
+    /*
+     * Push the operands onto the stack and then the substring operation.
+     */    
+
+  nonConstantIndices:
+    CompileWord(envPtr, stringTokenPtr,			interp, 1);
+    CompileWord(envPtr, fromTokenPtr,			interp, 2);
+    CompileWord(envPtr, toTokenPtr,			interp, 3);
+    OP(			STR_RANGE);
     return TCL_OK;
 }
 
@@ -1285,6 +1166,7 @@ TclSubstCompile(
     if (state != NULL) {
 	Tcl_RestoreInterpState(interp, state);
 	TclCompileSyntaxError(interp, envPtr);
+	TclAdjustStackDepth(-1, envPtr);
     }
 
     /* Final target of the multi-jump from all BREAKs */
@@ -1929,6 +1811,7 @@ IssueSwitchJumpTable(
     int **bodyContLines)	/* Array of continuation line info. */
 {
     JumptableInfo *jtPtr;
+    int savedStackDepth = envPtr->currStackDepth;
     int infoIndex, isNew, *finalFixups, numRealBodies = 0, jumpLocation;
     int mustGenerate, foundDefault, jumpToDefault, i;
     Tcl_DString buffer;
@@ -2041,6 +1924,7 @@ IssueSwitchJumpTable(
 	 * Compile the body of the arm.
 	 */
 
+	envPtr->currStackDepth = savedStackDepth;
 	envPtr->line = bodyLines[i+1];		/* TIP #280 */
 	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
 	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
@@ -2072,6 +1956,7 @@ IssueSwitchJumpTable(
      */
 
     if (!foundDefault) {
+	envPtr->currStackDepth = savedStackDepth;
 	TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
 		envPtr->codeStart+jumpToDefault+1);
 	PushLiteral(envPtr, "", 0);
@@ -2092,6 +1977,7 @@ IssueSwitchJumpTable(
      */
 
     TclStackFree(interp, finalFixups);
+    envPtr->currStackDepth = savedStackDepth + 1;
 }
 
 /*
@@ -2247,6 +2133,7 @@ TclCompileThrowCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     int numWords = parsePtr->numWords;
+    int savedStackDepth = envPtr->currStackDepth;
     Tcl_Token *codeToken, *msgToken;
     Tcl_Obj *objPtr;
 
@@ -2277,6 +2164,7 @@ TclCompileThrowCmd(
 	    CompileWord(envPtr, msgToken, interp, 2);
 	    TclCompileSyntaxError(interp, envPtr);
 	    Tcl_DecrRefCount(objPtr);
+	    envPtr->currStackDepth = savedStackDepth + 1;
 	    return TCL_OK;
 	}
 	if (len == 0) {
@@ -2297,6 +2185,7 @@ TclCompileThrowCmd(
 	PushLiteral(envPtr, string, len);
 	TclDecrRefCount(dictPtr);
 	OP44(				RETURN_IMM, 1, 0);
+	envPtr->currStackDepth = savedStackDepth + 1;
     } else {
 	/*
 	 * When the code token is not known at compilation time, we need to do
@@ -2325,6 +2214,7 @@ TclCompileThrowCmd(
 	PUSH(				"");
 	OP44(				RETURN_IMM, 1, 0);
     }
+    envPtr->currStackDepth = savedStackDepth + 1;
     TclDecrRefCount(objPtr);
     return TCL_OK;
 }
@@ -2592,6 +2482,7 @@ IssueTryInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     int range, resultVar, optionsVar;
+    int savedStackDepth = envPtr->currStackDepth;
     int i, j, len, forwardsNeedFixing = 0;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
@@ -2653,6 +2544,7 @@ IssueTryInstructions(
 	    LOAD(			optionsVar);
 	    PUSH(			"-errorcode");
 	    OP4(			DICT_GET, 1);
+	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
 	    PUSH(			TclGetString(matchClauses[i]));
 	    OP(				STR_EQ);
@@ -2693,6 +2585,7 @@ IssueTryInstructions(
 		    forwardsToFix[j] = -1;
 		}
 	    }
+	    envPtr->currStackDepth = savedStackDepth;
 	    BODY(			handlerTokens[i], 5+i*4);
 	}
 
@@ -2724,6 +2617,7 @@ IssueTryInstructions(
     }
     TclStackFree(interp, forwardsToFix);
     TclStackFree(interp, addrsToFix);
+    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 
@@ -2760,6 +2654,7 @@ IssueTryFinallyInstructions(
     range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
     OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
+    envPtr->currStackDepth = savedStackDepth;
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
     PUSH(				"0");
@@ -2804,6 +2699,7 @@ IssueTryFinallyInstructions(
 		LOAD(			optionsVar);
 		PUSH(			"-errorcode");
 		OP4(			DICT_GET, 1);
+		TclAdjustStackDepth(-1, envPtr);
 		OP44(			LIST_RANGE_IMM, 0, len-1);
 		PUSH(			TclGetString(matchClauses[i]));
 		OP(			STR_EQ);
@@ -2876,6 +2772,7 @@ IssueTryFinallyInstructions(
 		}
 		OP4(			BEGIN_CATCH4, range);
 	    }
+	    envPtr->currStackDepth = savedStackDepth;
 	    BODY(			handlerTokens[i], 5+i*4);
 	    ExceptionRangeEnds(envPtr, range);
 	    OP(				PUSH_RETURN_OPTIONS);
@@ -2927,7 +2824,6 @@ IssueTryFinallyInstructions(
      */
 
     OP(					POP);
-    envPtr->currStackDepth = savedStackDepth;
 
     /*
      * Process the finally clause (at last!) Note that we do not wrap this in
@@ -2937,11 +2833,13 @@ IssueTryFinallyInstructions(
      * next command (or some inter-command manipulation).
      */
 
+    envPtr->currStackDepth = savedStackDepth;
     BODY(				finallyToken, 3 + 4*numHandlers);
     OP(					POP);
     LOAD(				optionsVar);
     LOAD(				resultVar);
     OP(					RETURN_STK);
+    envPtr->currStackDepth = savedStackDepth + 1;
 
     return TCL_OK;
 }
