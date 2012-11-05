@@ -78,6 +78,24 @@ test dict-2.7 {dict create command - #-quoting in string rep} {
 test dict-2.8 {dict create command - #-quoting in string rep} -body {
     dict create #a x #b x
 } -match glob -result {{#?} x #? x}
+test dict-2.9 {dict create command: compilation} {
+    apply {{} {dict create [format a] b}}
+} {a b}
+test dict-2.10 {dict create command: compilation} {
+    apply {{} {dict create [format a] b c d}}
+} {a b c d}
+test dict-2.11 {dict create command: compilation} {
+    apply {{} {dict create [format a] b c d a x}}
+} {a x c d}
+test dict-2.12 {dict create command: non-compilation} {
+    dict create [format a] b
+} {a b}
+test dict-2.13 {dict create command: non-compilation} {
+    dict create [format a] b c d
+} {a b c d}
+test dict-2.14 {dict create command: non-compilation} {
+    dict create [format a] b c d a x
+} {a x c d}
 
 test dict-3.1 {dict get command} {dict get {a b} a} b
 test dict-3.2 {dict get command} {dict get {a b c d} a} b
@@ -1159,6 +1177,36 @@ test dict-20.9 {dict merge command} {
 } {a x c y}
 test dict-20.10 {dict merge command} {
     dict merge {a b c d e f} {a x 1 2 3 4} {a - 1 -}
+} {a - c d e f 1 - 3 4}
+test dict-20.11 {dict merge command} {
+    apply {{} {dict merge}}
+} {}
+test dict-20.12 {dict merge command} {
+    apply {{} {dict merge {a b c d e f}}}
+} {a b c d e f}
+test dict-20.13 {dict merge command} -body {
+    apply {{} {dict merge {a b c d e}}}
+} -result {missing value to go with key} -returnCodes error
+test dict-20.14 {dict merge command} {
+    apply {{} {dict merge {a b c d} {e f g h}}}
+} {a b c d e f g h}
+test dict-20.15 {dict merge command} -body {
+    apply {{} {dict merge {a b c d e} {e f g h}}}
+} -result {missing value to go with key} -returnCodes error
+test dict-20.16 {dict merge command} -body {
+    apply {{} {dict merge {a b c d} {e f g h i}}}
+} -result {missing value to go with key} -returnCodes error
+test dict-20.17 {dict merge command} {
+    apply {{} {dict merge {a b c d e f} {e x g h}}}
+} {a b c d e x g h}
+test dict-20.18 {dict merge command} {
+    apply {{} {dict merge {a b c d} {a x c y}}}
+} {a x c y}
+test dict-20.19 {dict merge command} {
+    apply {{} {dict merge {a b c d} {c y a x}}}
+} {a x c y}
+test dict-20.20 {dict merge command} {
+    apply {{} {dict merge {a b c d e f} {a x 1 2 3 4} {a - 1 -}}}
 } {a - c d e f 1 - 3 4}
 
 test dict-21.1 {dict update command} -returnCodes 1 -body {
