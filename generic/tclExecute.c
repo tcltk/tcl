@@ -2389,14 +2389,18 @@ TEBCresume(
 	}
 
 #ifdef TCL_COMPILE_DEBUG
-	TRACE(("%d [", opnd));
-	for (i=opnd-1 ; i>=0 ; i++) {
-	    TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_DEPTH(i))));
-	    if (i > 0) {
-		TRACE_APPEND((" "));
+	{
+	    register int i;
+
+	    TRACE(("%d [", opnd));
+	    for (i=opnd-1 ; i>=0 ; i++) {
+		TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_DEPTH(i))));
+		if (i > 0) {
+		    TRACE_APPEND((" "));
+		}
 	    }
+	    TRACE_APPEND(("] => RETURN..."));
 	}
-	TRACE_APPEND(("] => RETURN..."));
 #endif
 
 	/*
@@ -3876,6 +3880,104 @@ TEBCresume(
 
     /*
      *	   End of INST_UNSET instructions.
+     * -----------------------------------------------------------------
+     *	   Start of INST_ARRAY instructions.
+     */
+
+    case INST_ARRAY_EXISTS_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	pcAdjustment = 5;
+	cleanup = 0;
+	part1Ptr = NULL;
+	arrayPtr = NULL;
+	TRACE(("%u => ", opnd));
+	varPtr = LOCAL(opnd);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	goto doArrayExists;
+    case INST_ARRAY_EXISTS_STK:
+	opnd = -1;
+	pcAdjustment = 1;
+	cleanup = 1;
+	part1Ptr = OBJ_AT_TOS;
+	TRACE(("\"%.30s\" => ", O2S(part1Ptr)));
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
+		/*createPart1*/0, /*createPart2*/0, &arrayPtr);
+    doArrayExists:
+	if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
+		&& (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
+	    DECACHE_STACK_INFO();
+	    result = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr,
+		    NULL, (TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|
+		    TCL_GLOBAL_ONLY|TCL_TRACE_ARRAY), 1, opnd);
+	    CACHE_STACK_INFO();
+	    if (result == TCL_ERROR) {
+		TRACE_APPEND(("ERROR: %.30s\n",
+			O2S(Tcl_GetObjResult(interp))));
+		goto gotError;
+	    }
+	}
+	if (varPtr && TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
+	    objResultPtr = TCONST(1);
+	} else {
+	    objResultPtr = TCONST(0);
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_V(pcAdjustment, cleanup, 1);
+
+    case INST_ARRAY_MAKE_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	pcAdjustment = 5;
+	cleanup = 0;
+	part1Ptr = NULL;
+	arrayPtr = NULL;
+	TRACE(("%u => ", opnd));
+	varPtr = LOCAL(opnd);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	goto doArrayMake;
+    case INST_ARRAY_MAKE_STK:
+	opnd = -1;
+	pcAdjustment = 1;
+	cleanup = 1;
+	part1Ptr = OBJ_AT_TOS;
+	TRACE(("\"%.30s\" => ", O2S(part1Ptr)));
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG,
+		"set", /*createPart1*/1, /*createPart2*/0, &arrayPtr);
+	if (varPtr == NULL) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    goto gotError;
+	}
+    doArrayMake:
+	if (varPtr && !TclIsVarArray(varPtr)) {
+	    if (TclIsVarArrayElement(varPtr) || !TclIsVarUndefined(varPtr)) {
+		/*
+		 * Either an array element, or a scalar: lose!
+		 */
+
+		TclObjVarErrMsg(interp, part1Ptr, NULL, "array set",
+			"variable isn't array", opnd);
+		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
+		TRACE_APPEND(("ERROR: bad array ref: %.30s\n",
+			O2S(Tcl_GetObjResult(interp))));
+		goto gotError;
+	    }
+	    TclSetVarArray(varPtr);
+	    varPtr->value.tablePtr = ckalloc(sizeof(TclVarHashTable));
+	    TclInitVarHashTable(varPtr->value.tablePtr,
+		    TclGetVarNsPtr(varPtr));
+#ifdef TCL_COMPILE_DEBUG
+	    TRACE_APPEND(("done\n"));
+	} else {
+	    TRACE_APPEND(("nothing to do\n"));
+#endif
+	}
+	NEXT_INST_V(pcAdjustment, cleanup, 0);
+
+    /*
+     *	   End of INST_ARRAY instructions.
      * -----------------------------------------------------------------
      *	   Start of variable linking instructions.
      */

@@ -995,6 +995,7 @@ TclSubstCompile(
     if (state != NULL) {
 	Tcl_RestoreInterpState(interp, state);
 	TclCompileSyntaxError(interp, envPtr);
+	TclAdjustStackDepth(-1, envPtr);
     }
 
     /* Final target of the multi-jump from all BREAKs */
@@ -1639,6 +1640,7 @@ IssueSwitchJumpTable(
     int **bodyContLines)	/* Array of continuation line info. */
 {
     JumptableInfo *jtPtr;
+    int savedStackDepth = envPtr->currStackDepth;
     int infoIndex, isNew, *finalFixups, numRealBodies = 0, jumpLocation;
     int mustGenerate, foundDefault, jumpToDefault, i;
     Tcl_DString buffer;
@@ -1751,6 +1753,7 @@ IssueSwitchJumpTable(
 	 * Compile the body of the arm.
 	 */
 
+	envPtr->currStackDepth = savedStackDepth;
 	envPtr->line = bodyLines[i+1];		/* TIP #280 */
 	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
 	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
@@ -1782,6 +1785,7 @@ IssueSwitchJumpTable(
      */
 
     if (!foundDefault) {
+	envPtr->currStackDepth = savedStackDepth;
 	TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
 		envPtr->codeStart+jumpToDefault+1);
 	PushLiteral(envPtr, "", 0);
@@ -1802,6 +1806,7 @@ IssueSwitchJumpTable(
      */
 
     TclStackFree(interp, finalFixups);
+    envPtr->currStackDepth = savedStackDepth + 1;
 }
 
 /*
@@ -1957,6 +1962,7 @@ TclCompileThrowCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     int numWords = parsePtr->numWords;
+    int savedStackDepth = envPtr->currStackDepth;
     Tcl_Token *codeToken, *msgToken;
     Tcl_Obj *objPtr;
 
@@ -1987,6 +1993,7 @@ TclCompileThrowCmd(
 	    CompileWord(envPtr, msgToken, interp, 2);
 	    TclCompileSyntaxError(interp, envPtr);
 	    Tcl_DecrRefCount(objPtr);
+	    envPtr->currStackDepth = savedStackDepth + 1;
 	    return TCL_OK;
 	}
 	if (len == 0) {
@@ -2007,6 +2014,7 @@ TclCompileThrowCmd(
 	PushLiteral(envPtr, string, len);
 	TclDecrRefCount(dictPtr);
 	OP44(				RETURN_IMM, 1, 0);
+	envPtr->currStackDepth = savedStackDepth + 1;
     } else {
 	/*
 	 * When the code token is not known at compilation time, we need to do
@@ -2035,6 +2043,7 @@ TclCompileThrowCmd(
 	PUSH(				"");
 	OP44(				RETURN_IMM, 1, 0);
     }
+    envPtr->currStackDepth = savedStackDepth + 1;
     TclDecrRefCount(objPtr);
     return TCL_OK;
 }
@@ -2302,6 +2311,7 @@ IssueTryInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     int range, resultVar, optionsVar;
+    int savedStackDepth = envPtr->currStackDepth;
     int i, j, len, forwardsNeedFixing = 0;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
@@ -2363,6 +2373,7 @@ IssueTryInstructions(
 	    LOAD(			optionsVar);
 	    PUSH(			"-errorcode");
 	    OP4(			DICT_GET, 1);
+	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
 	    PUSH(			TclGetString(matchClauses[i]));
 	    OP(				STR_EQ);
@@ -2403,6 +2414,7 @@ IssueTryInstructions(
 		    forwardsToFix[j] = -1;
 		}
 	    }
+	    envPtr->currStackDepth = savedStackDepth;
 	    BODY(			handlerTokens[i], 5+i*4);
 	}
 
@@ -2434,6 +2446,7 @@ IssueTryInstructions(
     }
     TclStackFree(interp, forwardsToFix);
     TclStackFree(interp, addrsToFix);
+    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 
@@ -2470,6 +2483,7 @@ IssueTryFinallyInstructions(
     range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
     OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
+    envPtr->currStackDepth = savedStackDepth;
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
     PUSH(				"0");
@@ -2514,6 +2528,7 @@ IssueTryFinallyInstructions(
 		LOAD(			optionsVar);
 		PUSH(			"-errorcode");
 		OP4(			DICT_GET, 1);
+		TclAdjustStackDepth(-1, envPtr);
 		OP44(			LIST_RANGE_IMM, 0, len-1);
 		PUSH(			TclGetString(matchClauses[i]));
 		OP(			STR_EQ);
@@ -2586,6 +2601,7 @@ IssueTryFinallyInstructions(
 		}
 		OP4(			BEGIN_CATCH4, range);
 	    }
+	    envPtr->currStackDepth = savedStackDepth;
 	    BODY(			handlerTokens[i], 5+i*4);
 	    ExceptionRangeEnds(envPtr, range);
 	    OP(				PUSH_RETURN_OPTIONS);
@@ -2637,7 +2653,6 @@ IssueTryFinallyInstructions(
      */
 
     OP(					POP);
-    envPtr->currStackDepth = savedStackDepth;
 
     /*
      * Process the finally clause (at last!) Note that we do not wrap this in
@@ -2647,11 +2662,13 @@ IssueTryFinallyInstructions(
      * next command (or some inter-command manipulation).
      */
 
+    envPtr->currStackDepth = savedStackDepth;
     BODY(				finallyToken, 3 + 4*numHandlers);
     OP(					POP);
     LOAD(				optionsVar);
     LOAD(				resultVar);
     OP(					RETURN_STK);
+    envPtr->currStackDepth = savedStackDepth + 1;
 
     return TCL_OK;
 }
