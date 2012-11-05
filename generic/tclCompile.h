@@ -705,8 +705,14 @@ typedef struct ByteCode {
 #define INST_TCLOO_NS			157
 #define INST_TCLOO_IS_OBJECT		158
 
+/* For compilation of [array] subcommands */
+#define INST_ARRAY_EXISTS_STK		159
+#define INST_ARRAY_EXISTS_IMM		160
+#define INST_ARRAY_MAKE_STK		161
+#define INST_ARRAY_MAKE_IMM		162
+
 /* The last opcode */
-#define LAST_INST_OPCODE		158
+#define LAST_INST_OPCODE		162
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
