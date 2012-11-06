@@ -1,3 +1,12 @@
+2012-11-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/http/http.tcl (http::Finish): [Bug 3581754]: Ensure that
+	callbacks are done at most once to prevent problems with timeouts on a
+	keep-alive connection (combined with reentrant http package use)
+	causing excessive stack growth. Not a fix for the underlying problem,
+	but ensures that pain will be mostly kept away from users.
+	Bump http package to 2.7.10.
+
 2012-10-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.h:    Remove unused TclpLoadFile function.
