@@ -34,12 +34,35 @@ static int		UniCharIsHexDigit(int character);
 
 /*
  * Default set of characters to trim in [string trim] and friends. This is a
- * UTF-8 literal string containing space, tab, newline, carriage return,
- * ethiopic wordspace (U+1361), ogham space mark (U+1680), and ideographic
- * space (U+3000). [TIP #318]
+ * UTF-8 literal string containing all Unicode space characters [TIP #413]
  */
 
-#define DEFAULT_TRIM_SET " \t\n\r\xe1\x8d\xa1\xe1\x9a\x80\xe3\x80\x80"
+#define DEFAULT_TRIM_SET \
+	"\x09\x0a\x0b\x0c\x0d " /* ASCII */\
+	"\xc0\x80" /*     nul (U+0000) */\
+	"\xc2\x85" /*     next line (U+0085) */\
+	"\xc2\xa0" /*     non-breaking space (U+00a0) */\
+	"\xe1\x9a\x80" /* ogham space mark (U+1680) */ \
+	"\xe1\xa0\x8e" /* mongolian vowel separator (U+180e) */\
+	"\xe2\x80\x80" /* en quad (U+2000) */\
+	"\xe2\x80\x81" /* em quad (U+2001) */\
+	"\xe2\x80\x82" /* en space (U+2002) */\
+	"\xe2\x80\x83" /* em space (U+2003) */\
+	"\xe2\x80\x84" /* three-per-em space (U+2004) */\
+	"\xe2\x80\x85" /* four-per-em space (U+2005) */\
+	"\xe2\x80\x86" /* six-per-em space (U+2006) */\
+	"\xe2\x80\x87" /* figure space (U+2007) */\
+	"\xe2\x80\x88" /* punctuation space (U+2008) */\
+	"\xe2\x80\x89" /* thin space (U+2009) */\
+	"\xe2\x80\x8a" /* hair space (U+200a) */\
+	"\xe2\x80\x8b" /* zero width space (U+200b) */\
+	"\xe2\x80\xa8" /* line separator (U+2028) */\
+	"\xe2\x80\xa9" /* paragraph separator (U+2029) */\
+	"\xe2\x80\xaf" /* narrow no-break space (U+202f) */\
+	"\xe2\x81\x9f" /* medium mathematical space (U+205f) */\
+	"\xe2\x81\xa0" /* word joiner (U+2060) */\
+	"\xe3\x80\x80" /* ideographic space (U+3000) */\
+	"\xef\xbb\xbf" /* zero width no-break space (U+feff) */
 
 /*
  *----------------------------------------------------------------------
@@ -3304,14 +3327,14 @@ TclInitStringCmd(
 	{"bytelength",	StringBytesCmd,	NULL, NULL, NULL, 0},
 	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
 	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
-	{"first",	StringFirstCmd,	NULL, NULL, NULL, 0},
+	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},
 	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL, 0},
 	{"is",		StringIsCmd,	NULL, NULL, NULL, 0},
-	{"last",	StringLastCmd,	NULL, NULL, NULL, 0},
+	{"last",	StringLastCmd,	TclCompileStringLastCmd, NULL, NULL, 0},
 	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, 0},
-	{"map",		StringMapCmd,	NULL, NULL, NULL, 0},
+	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, 0},
 	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
-	{"range",	StringRangeCmd,	NULL, NULL, NULL, 0},
+	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, 0},
 	{"repeat",	StringReptCmd,	NULL, NULL, NULL, 0},
 	{"replace",	StringRplcCmd,	NULL, NULL, NULL, 0},
 	{"reverse",	StringRevCmd,	NULL, NULL, NULL, 0},
