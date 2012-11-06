@@ -11,7 +11,7 @@
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.7.9
+package provide http 2.7.10
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -199,15 +199,13 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     if {[info exists state(after)]} {
 	after cancel $state(after)
     }
-    if {[info exists state(-command)] && !$skipCB} {
-	if {[catch {eval $state(-command) {$token}} err]} {
-	    if {$errormsg eq ""} {
-		set state(error) [list $err $errorInfo $errorCode]
-		set state(status) error
-	    }
+    if {[info exists state(-command)] && !$skipCB
+	    && ![info exists state(done-command-cb)]} {
+	set state(done-command-cb) yes
+	if {[catch {eval $state(-command) {$token}} err] && $errormsg eq ""} {
+	    set state(error) [list $err $errorInfo $errorCode]
+	    set state(status) error
 	}
-	# Command callback may already have unset our state
-	unset -nocomplain state(-command)
     }
 }
 
