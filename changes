@@ -8108,7 +8108,7 @@ and Tcl_FSMountsChanged(). (porter)
 
 2012-08-25 (bug fix)[3561330] Ukranian translation of "March" (teterin)
 
-2012-09-12 (TIP 404) New msgcat commands [mcflset], [mcflmset] (oehlmann)
+2012-09-07 (TIP 404) New msgcat commands [mcflset], [mcflmset] (oehlmann)
 => msgcat 1.5.0
 
 Many revisions to better support a Cygwin environment (nijtmans)
@@ -8116,3 +8116,12 @@ Many revisions to better support a Cygwin environment (nijtmans)
 Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
 --- Released 8.6b3, September 18, 2012 --- See ChangeLog for details ---
+
+2012-10-03 (bug fix) exit panic on stacked std channel (griffin,porter)
+
+2012-10-14 (bug fix) [tcl::Bgerror] crash on non-dict options (nijtmans)
+
+2012-11-06 (bug fix)[3581754] avoid multiple callback on keep-alive (fellows) 
+=> http 2.8.5
+
+--- Released 8.6.0, ??? ??, 2012 --- See ChangeLog for details ---

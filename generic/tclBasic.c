@@ -131,13 +131,11 @@ static Tcl_Obj *	GetCommandSource(Interp *iPtr, int objc,
 			    Tcl_Obj *const objv[], int lookup);
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
-static Tcl_NRPostProc	NRCoroutineActivateCallback;
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
 
 static Tcl_NRPostProc	NRRunObjProc;
-static Tcl_NRPostProc	NRTailcallEval;
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
@@ -219,7 +217,7 @@ static const CmdInfo builtInCmds[] = {
     {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	TclNRExprObjCmd,	1},
     {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	TclNRForObjCmd,	1},
     {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	TclNRForeachCmd,	1},
-    {"format",		Tcl_FormatObjCmd,	NULL,			NULL,	1},
+    {"format",		Tcl_FormatObjCmd,	TclCompileFormatCmd,	NULL,	1},
     {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,	NULL,	1},
     {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	TclNRIfObjCmd,	1},
     {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	NULL,	1},
@@ -241,7 +239,7 @@ static const CmdInfo builtInCmds[] = {
     {"package",		Tcl_PackageObjCmd,	NULL,			NULL,	1},
     {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	1},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	1},
-    {"regsub",		Tcl_RegsubObjCmd,	NULL,			NULL,	1},
+    {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	1},
     {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	1},
     {"return",		Tcl_ReturnObjCmd,	TclCompileReturnCmd,	NULL,	1},
     {"scan",		Tcl_ScanObjCmd,		NULL,			NULL,	1},
@@ -249,7 +247,7 @@ static const CmdInfo builtInCmds[] = {
     {"split",		Tcl_SplitObjCmd,	NULL,			NULL,	1},
     {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,	TclNRSubstObjCmd,	1},
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, 1},
-    {"tailcall",	NULL,			NULL,			TclNRTailcallObjCmd,	1},
+    {"tailcall",	NULL,			NULL,	TclNRTailcallObjCmd,	1},
     {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,	NULL,	1},
     {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	1},
     {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	TclNRTryObjCmd,	1},
@@ -258,7 +256,7 @@ static const CmdInfo builtInCmds[] = {
     {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	NULL,	1},
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	1},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	1},
-    {"yield",		NULL,			NULL,			TclNRYieldObjCmd,	1},
+    {"yield",		NULL,			TclCompileYieldCmd,	TclNRYieldObjCmd,	1},
     {"yieldto",		NULL,			NULL,			TclNRYieldToObjCmd,	1},
 
     /*
@@ -8323,7 +8321,7 @@ TclNRTailcallObjCmd(
 	return TCL_ERROR;
     }
 
-    if (!iPtr->varFramePtr->isProcCallFrame) {	/* or is upleveled */
+    if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {	/* or is upleveled */
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "tailcall can only be called from a proc or lambda", -1));
         Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
@@ -8363,7 +8361,7 @@ TclNRTailcallObjCmd(
         }
         Tcl_IncrRefCount(nsObjPtr);
 
-        TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr,
+        TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
                 NULL, NULL);
         tailcallPtr = TOP_CB(interp);
         TOP_CB(interp) = tailcallPtr->nextPtr;
@@ -8373,7 +8371,7 @@ TclNRTailcallObjCmd(
 }
 
 int
-NRTailcallEval(
+TclNRTailcallEval(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -8495,7 +8493,7 @@ TclNRYieldObjCmd(
     }
 
     NRE_ASSERT(!COR_IS_SUSPENDED(corPtr));
-    TclNRAddCallback(interp, NRCoroutineActivateCallback, corPtr,
+    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
             clientData, NULL, NULL);
     return TCL_OK;
 }
@@ -8567,7 +8565,7 @@ YieldToCallback(
      * yieldTo: invoke the command using tailcall tech.
      */
 
-    TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr, NULL, NULL);
+    TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsPtr, NULL, NULL);
     cbPtr = TOP_CB(interp);
     TOP_CB(interp) = cbPtr->nextPtr;
 
@@ -8712,7 +8710,7 @@ NRCoroutineExitCallback(
 /*
  *----------------------------------------------------------------------
  *
- * NRCoroutineActivateCallback --
+ * TclNRCoroutineActivateCallback --
  *
  *      This is the workhorse for coroutines: it implements both yield and
  *      resume.
@@ -8726,8 +8724,8 @@ NRCoroutineExitCallback(
  *----------------------------------------------------------------------
  */
 
-static int
-NRCoroutineActivateCallback(
+int
+TclNRCoroutineActivateCallback(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -8902,7 +8900,7 @@ TclNRInterpCoroutine(
         break;
     }
 
-    TclNRAddCallback(interp, NRCoroutineActivateCallback, corPtr,
+    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
             NULL, NULL, NULL);
     return TCL_OK;
 }
@@ -9059,7 +9057,7 @@ TclNRCoroutineObjCmd(
      * Now just resume the coroutine.
      */
 
-    TclNRAddCallback(interp, NRCoroutineActivateCallback, corPtr,
+    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
             NULL, NULL, NULL);
     return TCL_OK;
 }
