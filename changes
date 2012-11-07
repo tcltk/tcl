@@ -7683,4 +7683,6 @@ Many revisions to better support a Cygwin environment (nijtmans)
 
 2012-11-07 (bug fix)[3574493] hang in Windows socket finalization (fassel)
 
+2012-11-07 tzdata updated to Olson's tzdata2012i (kenny)
+
 --- Released 8.5.13, November 12, 2012 --- See ChangeLog for details ---
