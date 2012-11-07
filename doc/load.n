@@ -110,9 +110,16 @@ found in the shared library are exported for global use by other
 libraries. The option \fB\-lazy\fR delays the actual loading of
 symbols until their first actual use. The options may be abbreviated.
 The option \fB\-\-\fR indicates the end of the options, and should
-be used if you wish to use a filename which starts with \fB\-\fR.
+be used if you wish to use a filename which starts with \fB\-\fR
+and you provide a packageName to the \fBload\fR command.
+.PP
 On platforms which do not support the \fB\-global\fR or \fB\-lazy\fR
-options, the options still exist but have no effect.
+options, the options still exist but have no effect. Note that use
+of the \fB\-global\fR or \fB\-lazy\fR option may lead to crashes
+in your application later (in case of symbol conflicts resp. missing
+symbols), which cannot be detected during the \fBload\fR. So, only
+use this when you know what you are doing, you will not get a nice
+error message when something is wrong with the loaded library.
 .SH "PORTABILITY ISSUES"
 .TP
 \fBWindows\fR\0\0\0\0\0

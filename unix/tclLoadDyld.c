@@ -189,12 +189,12 @@ TclpDlopen(
      * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
      */
 
-    if (flags & 1) {
+    if (flags & TCL_LOAD_GLOBAL) {
     	dlopenflags |= RTLD_GLOBAL;
     } else {
     	dlopenflags |= RTLD_LOCAL;
     }
-    if (flags & 2) {
+    if (flags & TCL_LOAD_LAZY) {
     	dlopenflags |= RTLD_LAZY;
     } else {
     	dlopenflags |= RTLD_NOW;
