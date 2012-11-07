@@ -1,3 +1,17 @@
+2012-11-07  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/America/Araguaina:
+	* library/tzdata/America/Bahia:
+	* library/tzdata/America/Havana:
+	* library/tzdata/Asia/Amman:
+	* library/tzdata/Asia/Gaza:
+	* library/tzdata/Asia/Hebron:
+	* library/tzdata/Asia/Jerusalem:
+	* library/tzdata/Pacific/Apia:
+	* library/tzdata/Pacific/Fakaofo:
+	* library/tzdata/Pacific/Fiji:		Import tzdata2012i.
+
 2012-11-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* win/tclWinSock.c:	[Bug 3574493] Avoid hanging on exit due to
