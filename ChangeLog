@@ -1,3 +1,17 @@
+2012-11-07  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/America/Araguaina:
+	* library/tzdata/America/Bahia:
+	* library/tzdata/America/Havana:
+	* library/tzdata/Asia/Amman:
+	* library/tzdata/Asia/Gaza:
+	* library/tzdata/Asia/Hebron:
+	* library/tzdata/Asia/Jerusalem:
+	* library/tzdata/Pacific/Apia:
+	* library/tzdata/Pacific/Fakaofo:
+	* library/tzdata/Pacific/Fiji:		Import tzdata2012i.
+
 2012-11-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/http/http.tcl (http::Finish): [Bug 3581754]: Ensure that
