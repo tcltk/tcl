@@ -66,6 +66,9 @@ test load-1.6 {basic errors} {} {
 test load-1.7 {basic errors} {} {
     list [catch {load -abc foo} msg] $msg
 } "1 {bad option \"-abc\": must be -global, -lazy, or --}"
+test load-1.8 {basic errors} {} {
+    list [catch {load -global} msg] $msg
+} "1 {couldn't figure out package name for -global}"
 
 test load-2.1 {basic loading, with guess for package name} \
 	[list $dll $loaded] {

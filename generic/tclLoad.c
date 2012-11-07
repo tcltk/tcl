@@ -151,9 +151,9 @@ Tcl_LoadObjCmd(
 	}
 	++objv; --objc;
 	if (LOAD_GLOBAL == (enum options) index) {
-	    flags |= 1;
+	    flags |= TCL_LOAD_GLOBAL;
 	} else if (LOAD_LAZY == (enum options) index) {
-	    flags |= 2;
+	    flags |= TCL_LOAD_LAZY;
 	} else {
 		break;
 	}
