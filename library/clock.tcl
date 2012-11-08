@@ -19,7 +19,7 @@
 # we need access to the Registry on Windows systems.
 
 uplevel \#0 {
-    package require msgcat 1.4
+    package require msgcat 1.5
     if { $::tcl_platform(platform) eq {windows} } {
 	if { [catch { package require registry 1.1 }] } {
 	    namespace eval ::tcl::clock [list variable NoRegistry {}]
