@@ -5,7 +5,7 @@
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
 .so man.macros
-.TH "msgcat" n 1.4 msgcat "Tcl Bundled Packages"
+.TH "msgcat" n 1.5 msgcat "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
