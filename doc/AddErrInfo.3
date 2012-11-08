@@ -107,7 +107,7 @@ with the value of \fIcode\fR.  The \fB(Tcl_Obj *)\fR returned
 by \fBTcl_GetReturnOptions\fR points to an unshared
 \fBTcl_Obj\fR with reference count of zero.  The dictionary
 may be written to, either adding, removing, or overwriting
-any entries in it, without the need to check for a shared object.
+any entries in it, without the need to check for a shared value.
 As with any \fBTcl_Obj\fR with reference count of zero, it is up to
 the caller to arrange for its disposal with \fBTcl_DecrRefCount\fR or
 to a reference to it via \fBTcl_IncrRefCount\fR (or one of the many
@@ -232,7 +232,7 @@ the need for a null byte.  If the \fBTcl_AddObjErrorInfo\fR
 interface is used at all, it should be with a negative \fIlength\fR value.
 .PP
 The procedure \fBTcl_SetObjErrorCode\fR is used to set the
-\fB\-errorcode\fR return option to the list object \fIerrorObjPtr\fR 
+\fB\-errorcode\fR return option to the list value \fIerrorObjPtr\fR 
 built up by the caller. 
 \fBTcl_SetObjErrorCode\fR is typically invoked just 
 before returning an error. If an error is
@@ -242,7 +242,7 @@ the \fB\-errorcode\fR return option to \fBNONE\fR.
 .PP
 The procedure \fBTcl_SetErrorCode\fR is also used to set the
 \fB\-errorcode\fR return option. However, it takes one or more strings to
-record instead of an object. Otherwise, it is similar to
+record instead of a value. Otherwise, it is similar to
 \fBTcl_SetObjErrorCode\fR in behavior.
 .PP
 \fBTcl_SetErrorCodeVA\fR is the same as \fBTcl_SetErrorCode\fR except that
@@ -309,4 +309,4 @@ most recent error seen in an interpreter.
 Tcl_DecrRefCount(3), Tcl_IncrRefCount(3), Tcl_Interp(3), Tcl_ResetResult(3),
 Tcl_SetErrno(3), tclvars(n)
 .SH KEYWORDS
-error, object, object result, stack, trace, variable
+error, value, value result, stack, trace, variable
