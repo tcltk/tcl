@@ -32,6 +32,9 @@ struct ForeachState {
     int *argcList;		/* Array of value list sizes. */
     Tcl_Obj ***argvList;	/* Array of value lists. */
     Tcl_Obj **aCopyList;	/* Copies of value list arguments. */
+    Tcl_Obj *resultList;	/* List of result values from the loop body,
+				 * or NULL if we're not collecting them
+				 * ([lmap] vs [foreach]). */
 };
 
 /*
@@ -52,6 +55,8 @@ static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 static const char *	GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
+static inline int	EachloopCmd(Tcl_Interp *interp, int collect,
+			    int objc, Tcl_Obj *const objv[]);
 static Tcl_NRPostProc	CatchObjCmdCallback;
 static Tcl_NRPostProc	ExprCallback;
 static Tcl_NRPostProc	ForSetupCallback;
@@ -194,7 +199,8 @@ Tcl_CaseObjCmd(
 
 	if (i == caseObjc-1) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "extra case pattern with no body", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "extra case pattern with no body", -1));
 	    return TCL_ERROR;
 	}
 
@@ -409,8 +415,9 @@ Tcl_CdObjCmd(
     } else {
 	result = Tcl_FSChdir(dir);
 	if (result != TCL_OK) {
-	    Tcl_AppendResult(interp, "couldn't change working directory to \"",
-		    TclGetString(dir), "\": ", Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't change working directory to \"%s\": %s",
+		    TclGetString(dir), Tcl_PosixError(interp)));
 	    result = TCL_ERROR;
 	}
     }
@@ -642,8 +649,9 @@ EncodingDirsObjCmd(
 
     dirListObj = objv[2];
     if (Tcl_SetEncodingSearchPath(dirListObj) == TCL_ERROR) {
-	Tcl_AppendResult(interp, "expected directory list but got \"",
-		TclGetString(dirListObj), "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"expected directory list but got \"%s\"",
+		TclGetString(dirListObj)));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
 		NULL);
 	return TCL_ERROR;
@@ -1165,9 +1173,9 @@ FileAttrAccessTimeCmd(
 	tval.modtime = buf.st_mtime;
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
-	    Tcl_AppendResult(interp, "could not set access time for file \"",
-		    TclGetString(objv[1]), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set access time for file \"%s\": %s",
+		    TclGetString(objv[1]), Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 
@@ -1237,9 +1245,9 @@ FileAttrModifyTimeCmd(
 	tval.modtime = newTime;
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
-	    Tcl_AppendResult(interp, "could not set modification time for "
-		    "file \"", TclGetString(objv[1]), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set modification time for file \"%s\": %s",
+		    TclGetString(objv[1]), Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 
@@ -1842,7 +1850,7 @@ PathFilesystemCmd(
     }
     fsInfo = Tcl_FSFileSystemInfo(objv[1]);
     if (fsInfo == NULL) {
-	Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		Tcl_GetString(objv[1]), NULL);
 	return TCL_ERROR;
@@ -1990,8 +1998,9 @@ PathSplitCmd(
     }
     res = Tcl_FSSplitPath(objv[1], NULL);
     if (res == NULL) {
-	Tcl_AppendResult(interp, "could not read \"", TclGetString(objv[1]),
-		"\": no such file or directory", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"could not read \"%s\": no such file or directory",
+		TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH",
 		NULL);
 	return TCL_ERROR;
@@ -2092,7 +2101,8 @@ FilesystemSeparatorCmd(
 	Tcl_Obj *separatorObj = Tcl_FSPathSeparator(objv[1]);
 
 	if (separatorObj == NULL) {
-	    Tcl_SetResult(interp, "unrecognised path", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unrecognised path", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		    Tcl_GetString(objv[1]), NULL);
 	    return TCL_ERROR;
@@ -2211,9 +2221,9 @@ GetStatBuf(
 
     if (status < 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(pathPtr), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(pathPtr), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -2560,7 +2570,7 @@ ForPostNextCallback(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ForeachObjCmd, TclNRForeachCmd --
+ * Tcl_ForeachObjCmd, TclNRForeachCmd, EachloopCmd --
  *
  *	This object-based procedure is invoked to process the "foreach" Tcl
  *	command. See the user documentation for details on what it does.
@@ -2590,6 +2600,38 @@ TclNRForeachCmd(
     ClientData dummy,
     Tcl_Interp *interp,
     int objc,
+    Tcl_Obj *const objv[])
+{
+    return EachloopCmd(interp, TCL_EACH_KEEP_NONE, objc, objv);
+}
+
+int
+Tcl_LmapObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, TclNRLmapCmd, dummy, objc, objv);
+}
+
+int
+TclNRLmapCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    return EachloopCmd(interp, TCL_EACH_COLLECT, objc, objv);
+}
+
+static inline int
+EachloopCmd(
+    Tcl_Interp *interp,		/* Our context for variables and script
+				 * evaluation. */
+    int collect,		/* Select collecting or accumulating mode
+				 * (TCL_EACH_*) */
+    int objc,			/* The arguments being passed in... */
     Tcl_Obj *const objv[])
 {
     int numLists = (objc-2) / 2;
@@ -2635,6 +2677,12 @@ TclNRForeachCmd(
     statePtr->bodyPtr = objv[objc - 1];
     statePtr->bodyIdx = objc - 1;
 
+    if (collect == TCL_EACH_COLLECT) {
+	statePtr->resultList = Tcl_NewListObj(0, NULL);
+    } else {
+	statePtr->resultList = NULL;
+    }
+
     /*
      * Break up the value lists and variable lists into elements.
      */
@@ -2648,8 +2696,11 @@ TclNRForeachCmd(
 	TclListObjGetElements(NULL, statePtr->vCopyList[i],
 		&statePtr->varcList[i], &statePtr->varvList[i]);
 	if (statePtr->varcList[i] < 1) {
-	    Tcl_AppendResult(interp, "foreach varlist is empty", NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FOREACH",
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "%s varlist is empty",
+		    (statePtr->resultList != NULL ? "lmap" : "foreach")));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
+		    (statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
 		    "NEEDVARS", NULL);
 	    result = TCL_ERROR;
 	    goto done;
@@ -2719,14 +2770,21 @@ ForeachLoopStep(
     switch (result) {
     case TCL_CONTINUE:
 	result = TCL_OK;
+	break;
     case TCL_OK:
+	if (statePtr->resultList != NULL) {
+	    Tcl_ListObjAppendElement(interp, statePtr->resultList,
+		    Tcl_GetObjResult(interp));
+	}
 	break;
     case TCL_BREAK:
 	result = TCL_OK;
-	goto done;
+	goto finish;
     case TCL_ERROR:
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"foreach\" body line %d)", Tcl_GetErrorLine(interp)));
+		"\n    (\"%s\" body line %d)",
+		(statePtr->resultList != NULL ? "lmap" : "foreach"),
+		Tcl_GetErrorLine(interp)));
     default:
 	goto done;
     }
@@ -2751,7 +2809,14 @@ ForeachLoopStep(
      * We're done. Tidy up our work space and finish off.
      */
 
-    Tcl_ResetResult(interp);
+  finish:
+    if (statePtr->resultList == NULL) {
+	Tcl_ResetResult(interp);
+    } else {
+	Tcl_SetObjResult(interp, statePtr->resultList);
+	statePtr->resultList = NULL;	/* Don't clean it up */
+    }
+
   done:
     ForeachCleanup(interp, statePtr);
     return result;
@@ -2784,7 +2849,8 @@ ForeachAssignments(
 
 	    if (varValuePtr == NULL) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (setting foreach loop variable \"%s\")",
+			"\n    (setting %s loop variable \"%s\")",
+			(statePtr->resultList != NULL ? "lmap" : "foreach"),
 			TclGetString(statePtr->varvList[i][v])));
 		return TCL_ERROR;
 	    }
@@ -2812,6 +2878,9 @@ ForeachCleanup(
 	if (statePtr->aCopyList[i]) {
 	    TclDecrRefCount(statePtr->aCopyList[i]);
 	}
+    }
+    if (statePtr->resultList != NULL) {
+	TclDecrRefCount(statePtr->resultList);
     }
     TclStackFree(interp, statePtr);
 }

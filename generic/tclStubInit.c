@@ -53,6 +53,15 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#undef TclWinNToHS
+#define TclWinNToHS winNToHS
+static unsigned short TclWinNToHS(unsigned short ns) {
+	return ntohs(ns);
+}
+#endif
+
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
@@ -87,12 +96,6 @@ void *TclWinGetTclInstance()
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
 	    (const char *)&winTCharEncoding, &hInstance);
     return hInstance;
-}
-
-unsigned short
-TclWinNToHS(unsigned short ns)
-{
-    return ntohs(ns);
 }
 
 int
@@ -165,14 +168,6 @@ Tcl_WinTCharToUtf(
     return Tcl_ExternalToUtfDString(winTCharEncoding,
 	    string, len, dsPtr);
 }
-
-#define TclMacOSXGetFileAttribute (int (*) (Tcl_Interp *,  \
-		int, Tcl_Obj *, Tcl_Obj **)) TclpCreateProcess
-#define TclMacOSXMatchType (int (*) (Tcl_Interp *, const char *, \
-		const char *, Tcl_StatBuf *, Tcl_GlobTypeData *)) TclpMakeFile
-#define TclMacOSXNotifierAddRunLoopMode (void (*) (const void *)) TclpOpenFile
-#define TclpLocaltime_unix (struct tm *(*) (const time_t *)) TclGetAndDetachPids
-#define TclpGmtime_unix (struct tm *(*) (const time_t *)) TclpCloseFile
 
 #else /* UNIX and MAC */
 #   define TclpLocaltime_unix TclpLocaltime
@@ -1292,6 +1287,7 @@ const TclStubs tclStubs = {
     Tcl_LoadFile, /* 627 */
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */
+    Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
 };
 
 /* !END!: Do not edit above this line. */

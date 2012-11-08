@@ -66,10 +66,11 @@ TclpDlopen(
     Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
+    int flags)
 {
     void *handle;
     Tcl_LoadHandle newHandle;
@@ -112,8 +113,9 @@ TclpDlopen(
 
 	const char *errorStr = dlerror();
 
-	Tcl_AppendResult(interp, "couldn't load file \"",
-		Tcl_GetString(pathPtr), "\": ", errorStr, NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't load file \"%s\": %s",
+		Tcl_GetString(pathPtr), errorStr));
 	return TCL_ERROR;
     }
     newHandle = ckalloc(sizeof(*newHandle));
@@ -175,9 +177,14 @@ FindSymbol(
     }
     Tcl_DStringFree(&ds);
     if (proc == NULL && interp != NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "cannot find symbol \"", symbol, "\": ",
-		dlerror(), NULL);
+	const char *errorStr = dlerror();
+
+	if (!errorStr) {
+	    errorStr = "unknown";
+	}
+
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot find symbol \"%s\": %s", symbol, errorStr));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
 		NULL);
     }

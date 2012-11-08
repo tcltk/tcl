@@ -328,7 +328,15 @@ proc make-man-pages {html args} {
 	    foreach man $manual(keyword-$k) {
 		set name [lindex $man 0]
 		set file [lindex $man 1]
-		lappend refs "<A HREF=\"../$file\">$name</A>"
+		if {[info exists manual(tooltip-$file)]} {
+		    set tooltip $manual(tooltip-$file)
+		    if {[string match {*[<>""]*} $tooltip]} {
+			manerror "bad tooltip for $file: \"$tooltip\""
+		    }
+		    lappend refs "<A HREF=\"../$file\" TITLE=\"$tooltip\">$name</A>"
+		} else {
+		    lappend refs "<A HREF=\"../$file\">$name</A>"
+		}
 	    }
 	    puts $afp "[join $refs {, }]</DD>"
 	}
@@ -420,9 +428,18 @@ proc make-man-pages {html args} {
 ##
 ## Helper for assembling the descriptions of base packages (i.e., Tcl and Tk).
 ##
-proc plus-base {var glob name dir desc} {
+proc plus-base {var root glob name dir desc} {
     global tcltkdir
     if {$var} {
+	if {[file exists $tcltkdir/$root/README]} {
+	    set f [open $tcltkdir/$root/README]
+	    set d [read $f]
+	    close $f
+	    if {[regexp {This is the \w+ (\S+) source distribution} $d -> version]} {
+	       append name ", version $version"
+	    }
+	}
+	set glob $root/$glob
 	return [list $tcltkdir/$glob $name $dir $desc]
     }
 }
@@ -655,14 +672,14 @@ try {
     make-man-pages $webdir \
 	[list $tcltkdir/{$appdir}/doc/*.1 "$tcltkdesc Applications" UserCmd \
 	     "The interpreters which implement $cmdesc."] \
-	[plus-base $build_tcl $tcldir/doc/*.n {Tcl Commands} TclCmd \
+	[plus-base $build_tcl $tcldir doc/*.n {Tcl Commands} TclCmd \
 	     "The commands which the <B>tclsh</B> interpreter implements."] \
-	[plus-base $build_tk $tkdir/doc/*.n {Tk Commands} TkCmd \
+	[plus-base $build_tk $tkdir doc/*.n {Tk Commands} TkCmd \
 	     "The additional commands which the <B>wish</B> interpreter implements."] \
 	{*}[plus-pkgs n {*}$packageDirNameMap] \
-	[plus-base $build_tcl $tcldir/doc/*.3 {Tcl C API} TclLib \
+	[plus-base $build_tcl $tcldir doc/*.3 {Tcl C API} TclLib \
 	     "The C functions which a Tcl extended C program may use."] \
-	[plus-base $build_tk $tkdir/doc/*.3 {Tk C API} TkLib \
+	[plus-base $build_tk $tkdir doc/*.3 {Tk C API} TkLib \
 	     "The additional C functions which a Tk extended C program may use."] \
 	{*}[plus-pkgs 3 {*}$packageDirNameMap]
 } on error {msg opts} {

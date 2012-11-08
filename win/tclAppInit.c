@@ -109,9 +109,9 @@ _tmain(
      * Forward slashes substituted for backslashes.
      */
 
-    for (p = argv[0]; *p != TEXT('\0'); p++) {
-	if (*p == TEXT('\\')) {
-	    *p = TEXT('/');
+    for (p = argv[0]; *p != '\0'; p++) {
+	if (*p == '\\') {
+	    *p = '/';
 	}
     }
 
@@ -242,13 +242,13 @@ setargv(
      */
 
     size = 2;
-    for (p = cmdLine; *p != TEXT('\0'); p++) {
-	if ((*p == TEXT(' ')) || (*p == TEXT('\t'))) {	/* INTL: ISO space. */
+    for (p = cmdLine; *p != '\0'; p++) {
+	if ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
 	    size++;
-	    while ((*p == TEXT(' ')) || (*p == TEXT('\t'))) { /* INTL: ISO space. */
+	    while ((*p == ' ') || (*p == '\t')) { /* INTL: ISO space. */
 		p++;
 	    }
-	    if (*p == TEXT('\0')) {
+	    if (*p == '\0') {
 		break;
 	    }
 	}
@@ -267,10 +267,10 @@ setargv(
     p = cmdLine;
     for (argc = 0; argc < size; argc++) {
 	argv[argc] = arg = argSpace;
-	while ((*p == TEXT(' ')) || (*p == TEXT('\t'))) {	/* INTL: ISO space. */
+	while ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
 	    p++;
 	}
-	if (*p == TEXT('\0')) {
+	if (*p == '\0') {
 	    break;
 	}
 
@@ -278,14 +278,14 @@ setargv(
 	slashes = 0;
 	while (1) {
 	    copy = 1;
-	    while (*p == TEXT('\\')) {
+	    while (*p == '\\') {
 		slashes++;
 		p++;
 	    }
-	    if (*p == TEXT('"')) {
+	    if (*p == '"') {
 		if ((slashes & 1) == 0) {
 		    copy = 0;
-		    if ((inquote) && (p[1] == TEXT('"'))) {
+		    if ((inquote) && (p[1] == '"')) {
 			p++;
 			copy = 1;
 		    } else {
@@ -296,13 +296,13 @@ setargv(
 	    }
 
 	    while (slashes) {
-		*arg = TEXT('\\');
+		*arg = '\\';
 		arg++;
 		slashes--;
 	    }
 
-	    if ((*p == TEXT('\0')) || (!inquote &&
-		    ((*p == TEXT(' ')) || (*p == TEXT('\t'))))) {	/* INTL: ISO space. */
+	    if ((*p == '\0') || (!inquote &&
+		    ((*p == ' ') || (*p == '\t')))) {	/* INTL: ISO space. */
 		break;
 	    }
 	    if (copy != 0) {

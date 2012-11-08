@@ -1968,7 +1968,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test "$GCC" = yes],[use_sunmath=no],[
 		arch=`isainfo`
 		AC_MSG_CHECKING([whether to use -lsunmath for fp rounding control])
-		AS_IF([test "$arch" = "amd64 i386"], [
+		AS_IF([test "$arch" = "amd64 i386" -o "$arch" = "i386"], [
 			AC_MSG_RESULT([yes])
 			MATH_LIBS="-lsunmath $MATH_LIBS"
 			AC_CHECK_HEADER(sunmath.h)
@@ -2001,7 +2001,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ], [
 		AS_IF([test "$use_sunmath" = yes], [textmode=textoff],[textmode=text])
 		case $system in
-		    SunOS-5.[[1-9]][[0-9]]*)
+		    SunOS-5.[[1-9]][[0-9]]*|SunOS-5.[[7-9]])
 			SHLIB_LD="\${CC} -G -z $textmode \${LDFLAGS}";;
 		    *)
 			SHLIB_LD="/usr/ccs/bin/ld -G -z $textmode";;

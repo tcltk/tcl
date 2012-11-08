@@ -53,8 +53,9 @@ TclOOInitializeStubs(
 
     if (clientData == NULL) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "Error loading ", packageName, " package; ",
-		"package not present or incomplete", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"error loading %s package; package not present or incomplete",
+		packageName));
 	return NULL;
     } else {
 	const TclOOStubs * const stubsPtr = clientData;
@@ -76,9 +77,9 @@ TclOOInitializeStubs(
 
     error:
 	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "Error loading ", packageName, " package",
-		" (requested version '", version, "', loaded version '",
-		actualVersion, "'): ", errMsg, NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("Error loading %s package"
+		" (requested version '%s', loaded version '%s'): %s",
+		packageName, version, actualVersion, errMsg));
 	return NULL;
     }
 }
