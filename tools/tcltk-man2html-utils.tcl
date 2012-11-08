@@ -943,7 +943,9 @@ proc output-directive {line} {
 			set line [next-text]
 			if {[is-a-directive $line]} {
 			    backup-text 1
-			    output-name [join $names { }]
+			    if {[llength $names]} {
+				output-name [join $names { }]
+			    }
 			    return
 			}
 			lappend names [string trim $line]
