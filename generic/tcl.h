@@ -51,8 +51,6 @@ extern "C" {
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(1 LOC patch)
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
- * tools/tcl.wse.in	(for windows installer)
- * tools/tclSplash.bmp	(not patchlevel)
  */
 
 #define TCL_MAJOR_VERSION   8
