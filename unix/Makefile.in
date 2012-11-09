@@ -2012,11 +2012,9 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	cp -p $(TOOL_DIR)/Makefile.in $(TOOL_DIR)/README \
 		$(TOOL_DIR)/configure $(TOOL_DIR)/configure.in \
 		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/man2tcl.c \
-		$(TOOL_DIR)/tcl.wse.in $(TOOL_DIR)/*.bmp \
-		$(TOOL_DIR)/tcl.hpj.in \
+		$(TOOL_DIR)/*.bmp $(TOOL_DIR)/tcl.hpj.in \
 		$(DISTDIR)/tools
-	$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/tools/tcl.hpj.in \
-		$(DISTDIR)/tools/tcl.wse.in
+	$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/tools/tcl.hpj.in
 	mkdir $(DISTDIR)/libtommath
 	cp -p $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h \
 		$(DISTDIR)/libtommath
