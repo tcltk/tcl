@@ -2393,7 +2393,7 @@ TEBCresume(
 	    register int i;
 
 	    TRACE(("%d [", opnd));
-	    for (i=opnd-1 ; i>=0 ; i++) {
+	    for (i=opnd-1 ; i>=0 ; i--) {
 		TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_DEPTH(i))));
 		if (i > 0) {
 		    TRACE_APPEND((" "));
