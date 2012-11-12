@@ -1,3 +1,9 @@
+2012-11-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:   re-enable bcc-tailcall, after fixing an
+	* generic/tclExecute.c: infinite loop in the TCL_COMPILE_DEBUG mode
+
+
 2012-11-07  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Africa/Casablanca:
