@@ -1,3 +1,18 @@
+2012-11-09  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.5.13 TAGGED FOR RELEASE ***
+
+	* generic/tcl.h:	Bump to 8.5.13 for release.
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 2012-11-07  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Africa/Casablanca:
