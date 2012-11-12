@@ -13,9 +13,9 @@ load \- Load machine code and initialize new commands
 .SH SYNOPSIS
 \fBload\fR ?\fB\-global\fR? ?\fB\-lazy\fR? ?\fB\-\-\fR? \fIfileName\fR
 .br
-\fBload ?\fB\-global\fR? ?\fB\-lazy\fR? ?\fB\-\-\fR? \fIfileName packageName\fR
+\fBload\fR ?\fB\-global\fR? ?\fB\-lazy\fR? ?\fB\-\-\fR? \fIfileName packageName\fR
 .br
-\fBload ?\fB\-global\fR? ?\fB\-lazy\fR? ?\fB\-\-\fR? \fIfileName packageName interp\fR
+\fBload\fR ?\fB\-global\fR? ?\fB\-lazy\fR? ?\fB\-\-\fR? \fIfileName packageName interp\fR
 .BE
 .SH DESCRIPTION
 .PP
