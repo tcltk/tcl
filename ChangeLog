@@ -1,3 +1,9 @@
+2012-11-13  Joe Mistachkin  <joe@mistachkin.com>
+
+	* win/tclWinInit.c: also search for the library directory (init.tcl,
+	encodings, etc) relative to the build directory associated with the
+	source checkout.
+
 2012-11-09  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.13 TAGGED FOR RELEASE ***
