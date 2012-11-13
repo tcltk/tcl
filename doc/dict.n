@@ -158,7 +158,7 @@ variables set appropriately (in the manner of \fBlmap\fR). In an iteration
 where the evaluated script completes normally (\fBTCL_OK\fR, as opposed to an
 \fBerror\fR, etc.) the result of the script is put into an accumulator
 dictionary using the key that is the current contents of the \fIkeyVar\fR
-variable at that point. The result of the \fBdict map\fB command is the
+variable at that point. The result of the \fBdict map\fR command is the
 accumulator dictionary after all keys have been iterated over.
 .RS
 .PP
