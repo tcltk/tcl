@@ -659,12 +659,13 @@ TclpFinalizeSockets()
     if (tsdPtr != NULL) {
 	if (tsdPtr->socketThread != NULL) {
 	    if (tsdPtr->hwnd != NULL) {
-		PostMessage(tsdPtr->hwnd, SOCKET_TERMINATE, 0, 0);
-		/*
-		 * Wait for the thread to exit. This ensures that we are
-		 * completely cleaned up before we leave this function.
-		 */
-		WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
+		if (PostMessage(tsdPtr->hwnd, SOCKET_TERMINATE, 0, 0)) {
+		    /*
+		     * Wait for the thread to exit. This ensures that we are
+		     * completely cleaned up before we leave this function.
+		     */
+		    WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
+		}
 		tsdPtr->hwnd = NULL;
 	    }
 	    CloseHandle(tsdPtr->socketThread);

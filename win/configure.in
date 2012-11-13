@@ -119,6 +119,7 @@ AC_CACHE_CHECK(for LPFN_ACCEPT support in winsock2.h,
     tcl_cv_lpfn_decls,
 AC_TRY_COMPILE([
 #define WIN32_LEAN_AND_MEAN
+#define INCL_WINSOCK_API_TYPEDEFS 1
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
