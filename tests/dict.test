@@ -1805,7 +1805,7 @@ test dict-24.20 {dict map stack space compilation: 'dict for' bug 1903325} {
 proc linenumber {} {
     dict get [info frame -1] line
 }
-test dict-24.20 {dict compilation crash: 'dict for' bug 3487626} {
+test dict-24.20.1 {dict compilation crash: 'dict for' bug 3487626} {
     apply {{} {apply {n {
 	set e {}
 	set k {}
