@@ -12,6 +12,7 @@
 
 #include "tclWinInt.h"
 
+#include <float.h>
 #include <sys/stat.h>
 
 /*
@@ -123,6 +124,66 @@ typedef struct allocMutex {
 #endif /* USE_THREAD_ALLOC */
 
 /*
+ * The per thread data passed from TclpThreadCreate
+ * to TclWinThreadStart.
+ */
+
+typedef struct WinThread {
+  LPTHREAD_START_ROUTINE lpStartAddress; /* Original startup routine */
+  LPVOID lpParameter;		/* Original startup data */
+  unsigned int fpControl;	/* Floating point control word from the
+				 * main thread */
+} WinThread;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinThreadStart --
+ *
+ *	This procedure is the entry point for all new threads created
+ *	by Tcl on Windows.
+ *
+ * Results:
+ *	Various, depending on the result of the wrapped thread start
+ *	routine.
+ *
+ * Side effects:
+ *	Arbitrary, since user code is executed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static DWORD WINAPI
+TclWinThreadStart(
+    LPVOID lpParameter)		/* The WinThread structure pointer passed
+				 * from TclpThreadCreate */
+{
+    WinThread *winThreadPtr = (WinThread *) lpParameter;
+    unsigned int fpmask;
+    LPTHREAD_START_ROUTINE lpOrigStartAddress;
+    LPVOID lpOrigParameter;
+
+    if (!winThreadPtr) {
+	return TCL_ERROR;
+    }
+
+    fpmask = _MCW_EM | _MCW_RC | _MCW_PC;
+
+#if defined(_MSC_VER) && _MSC_VER >= 1200
+    fpmask |= _MCW_DN;
+#endif
+
+    _controlfp(winThreadPtr->fpControl, fpmask);
+
+    lpOrigStartAddress = winThreadPtr->lpStartAddress;
+    lpOrigParameter = winThreadPtr->lpParameter;
+
+    ckfree((char *)winThreadPtr);
+    return lpOrigStartAddress(lpOrigParameter);
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * TclpThreadCreate --
@@ -148,7 +209,13 @@ TclpThreadCreate(
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
+    WinThread *winThreadPtr;		/* Per-thread startup info */
     HANDLE tHandle;
+
+    winThreadPtr = (WinThread *)ckalloc(sizeof(WinThread));
+    winThreadPtr->lpStartAddress = (LPTHREAD_START_ROUTINE) proc;
+    winThreadPtr->lpParameter = clientData;
+    winThreadPtr->fpControl = _controlfp(0, 0);
 
     EnterCriticalSection(&joinLock);
 
@@ -157,12 +224,12 @@ TclpThreadCreate(
 		 */
 
 #if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
-    tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize, proc,
-	    clientData, 0, (unsigned *)idPtr);
+    tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize,
+	    (Tcl_ThreadCreateProc*) TclWinThreadStart, winThreadPtr,
+	    0, (unsigned *)idPtr);
 #else
     tHandle = CreateThread(NULL, (DWORD) stackSize,
-	    (LPTHREAD_START_ROUTINE) proc, (LPVOID) clientData,
-	    (DWORD) 0, (LPDWORD)idPtr);
+	    TclWinThreadStart, winThreadPtr, 0, (LPDWORD)idPtr);
 #endif
 
     if (tHandle == NULL) {
