@@ -465,7 +465,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 17 */
     0, /* 18 */
     0, /* 19 */
-    0, /* 20 */
+    TclUnixOpenTemporaryFile, /* 20 */
     0, /* 21 */
     0, /* 22 */
     0, /* 23 */
@@ -529,7 +529,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclMacOSXCopyFileAttributes, /* 17 */
     TclMacOSXMatchType, /* 18 */
     TclMacOSXNotifierAddRunLoopMode, /* 19 */
-    0, /* 20 */
+    TclUnixOpenTemporaryFile, /* 20 */
     0, /* 21 */
     0, /* 22 */
     0, /* 23 */
