@@ -84,7 +84,10 @@ EXTERN int		TclUnixCopyFile(const char *src, const char *dst,
 /* Slot 17 is reserved */
 /* Slot 18 is reserved */
 /* Slot 19 is reserved */
-/* Slot 20 is reserved */
+/* 20 */
+EXTERN int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
+				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
+				Tcl_Obj *resultingNameObj);
 /* Slot 21 is reserved */
 /* Slot 22 is reserved */
 /* Slot 23 is reserved */
@@ -225,7 +228,10 @@ EXTERN int		TclMacOSXMatchType(Tcl_Interp *interp,
 /* 19 */
 EXTERN void		TclMacOSXNotifierAddRunLoopMode(
 				const void *runLoopMode);
-/* Slot 20 is reserved */
+/* 20 */
+EXTERN int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
+				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
+				Tcl_Obj *resultingNameObj);
 /* Slot 21 is reserved */
 /* Slot 22 is reserved */
 /* Slot 23 is reserved */
@@ -263,7 +269,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved17)(void);
     void (*reserved18)(void);
     void (*reserved19)(void);
-    void (*reserved20)(void);
+    int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 20 */
     void (*reserved21)(void);
     void (*reserved22)(void);
     void (*reserved23)(void);
@@ -327,7 +333,7 @@ typedef struct TclIntPlatStubs {
     int (*tclMacOSXCopyFileAttributes) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr); /* 17 */
     int (*tclMacOSXMatchType) (Tcl_Interp *interp, const char *pathName, const char *fileName, Tcl_StatBuf *statBufPtr, Tcl_GlobTypeData *types); /* 18 */
     void (*tclMacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 19 */
-    void (*reserved20)(void);
+    int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 20 */
     void (*reserved21)(void);
     void (*reserved22)(void);
     void (*reserved23)(void);
@@ -389,7 +395,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 /* Slot 17 is reserved */
 /* Slot 18 is reserved */
 /* Slot 19 is reserved */
-/* Slot 20 is reserved */
+#define TclUnixOpenTemporaryFile \
+	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 20 */
 /* Slot 21 is reserved */
 /* Slot 22 is reserved */
 /* Slot 23 is reserved */
@@ -501,7 +508,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclMacOSXMatchType) /* 18 */
 #define TclMacOSXNotifierAddRunLoopMode \
 	(tclIntPlatStubsPtr->tclMacOSXNotifierAddRunLoopMode) /* 19 */
-/* Slot 20 is reserved */
+#define TclUnixOpenTemporaryFile \
+	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 20 */
 /* Slot 21 is reserved */
 /* Slot 22 is reserved */
 /* Slot 23 is reserved */
