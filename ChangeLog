@@ -1,3 +1,12 @@
+2012-11-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixFCmd.c (TclUnixOpenTemporaryFile): [Bug 2933003]: Factor
+	out all the code to do temporary file creation so that it is possible
+	to make it correct in one place. Allow overriding of the back-stop
+	default temporary file location at compile time by setting the
+	TCL_TEMPORARY_FILE_DIRECTORY #def to a string containing the directory
+	name (defaults to "/tmp" as that is the most common default).
+
 2012-11-13  Joe Mistachkin  <joe@mistachkin.com>
 
 	* win/tclWinInit.c: also search for the library directory (init.tcl,
