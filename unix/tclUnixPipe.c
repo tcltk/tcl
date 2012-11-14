@@ -19,6 +19,16 @@
 #endif
 
 /*
+ * Fallback temporary file location the temporary file generation code. Can be
+ * overridden at compile time for when it is known that temp files can't be
+ * written to /tmp (hello, iOS!).
+ */
+
+#ifndef TCL_TEMPORARY_FILE_DIRECTORY
+#define TCL_TEMPORARY_FILE_DIRECTORY	"/tmp"
+#endif
+
+/*
  * The following macros convert between TclFile's and fd's.  The conversion
  * simple involves shifting fd's up by one to ensure that no valid fd is ever
  * the same as NULL.
@@ -62,6 +72,7 @@ static int	PipeOutputProc _ANSI_ARGS_((
 static void	PipeWatchProc _ANSI_ARGS_((ClientData instanceData, int mask));
 static void	RestoreSignals _ANSI_ARGS_((void));
 static int	SetupStdFile _ANSI_ARGS_((TclFile file, int type));
+static CONST char * DefaultTempDir _ANSI_ARGS_((void));
 
 /*
  * This structure describes the channel type structure for command pipe
@@ -278,10 +289,10 @@ TclpTempFileName()
  *----------------------------------------------------------------------
  */
 
-static const char *
+static CONST char *
 DefaultTempDir(void)
 {
-    const char *dir;
+    CONST char *dir;
     struct stat buf;
 
     dir = getenv("TMPDIR");
