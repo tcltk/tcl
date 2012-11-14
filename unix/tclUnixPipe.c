@@ -199,7 +199,7 @@ TclpCreateTempFile(contents)
      * We should also check against making more then TMP_MAX of these.
      */
 
-    strcpy(fileName, P_tmpdir);				/* INTL: Native. */
+    strcpy(fileName, DefaultTempDir());			/* INTL: Native. */
     if (fileName[strlen(fileName) - 1] != '/') {
 	strcat(fileName, "/");				/* INTL: Native. */
     }
@@ -251,7 +251,7 @@ TclpTempFileName()
      * We should also check against making more then TMP_MAX of these.
      */
 
-    strcpy(fileName, P_tmpdir);		/* INTL: Native. */
+    strcpy(fileName, DefaultTempDir());	/* INTL: Native. */
     if (fileName[strlen(fileName) - 1] != '/') {
 	strcat(fileName, "/");		/* INTL: Native. */
     }
@@ -266,6 +266,44 @@ TclpTempFileName()
     result = TclpNativeToNormalized((ClientData) fileName);
     close (fd);
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DefaultTempDir --
+ *
+ *	Helper that does *part* of what tempnam() does.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static const char *
+DefaultTempDir(void)
+{
+    const char *dir;
+    struct stat buf;
+
+    dir = getenv("TMPDIR");
+    if (dir && dir[0] && stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode)
+	    && access(dir, W_OK)) {
+	return dir;
+    }
+
+#ifdef P_tmpdir
+    dir = P_tmpdir;
+    if (stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode) && access(dir, W_OK)) {
+	return dir;
+    }
+#endif
+
+    /*
+     * Assume that the default location ("/tmp" if not overridden) is always
+     * an existing writable directory; we've no recovery mechanism if it
+     * isn't.
+     */
+
+    return TCL_TEMPORARY_FILE_DIRECTORY;
 }
 
 /*
