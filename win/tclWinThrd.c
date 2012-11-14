@@ -16,6 +16,14 @@
 #include <float.h>
 #include <sys/stat.h>
 
+/* Workaround for mingw versions which don't provide this in float.h */
+#ifndef _MCW_EM
+#   define	_MCW_EM		0x0008001F	/* Error masks */
+#   define	_MCW_RC		0x00000300	/* Rounding */
+#   define	_MCW_PC		0x00030000	/* Precision */
+_CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask);
+#endif
+
 /*
  * This is the master lock used to serialize access to other serialization
  * data structures.
