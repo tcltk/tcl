@@ -19,6 +19,16 @@
 #endif
 
 /*
+ * Fallback temporary file location the temporary file generation code. Can be
+ * overridden at compile time for when it is known that temp files can't be
+ * written to /tmp (hello, iOS!).
+ */
+
+#ifndef TCL_TEMPORARY_FILE_DIRECTORY
+#define TCL_TEMPORARY_FILE_DIRECTORY	"/tmp"
+#endif
+
+/*
  * The following macros convert between TclFile's and fd's.  The conversion
  * simple involves shifting fd's up by one to ensure that no valid fd is ever
  * the same as NULL.
@@ -62,6 +72,7 @@ static int	PipeOutputProc _ANSI_ARGS_((
 static void	PipeWatchProc _ANSI_ARGS_((ClientData instanceData, int mask));
 static void	RestoreSignals _ANSI_ARGS_((void));
 static int	SetupStdFile _ANSI_ARGS_((TclFile file, int type));
+static CONST char * DefaultTempDir _ANSI_ARGS_((void));
 
 /*
  * This structure describes the channel type structure for command pipe
@@ -199,7 +210,7 @@ TclpCreateTempFile(contents)
      * We should also check against making more then TMP_MAX of these.
      */
 
-    strcpy(fileName, P_tmpdir);				/* INTL: Native. */
+    strcpy(fileName, DefaultTempDir());			/* INTL: Native. */
     if (fileName[strlen(fileName) - 1] != '/') {
 	strcat(fileName, "/");				/* INTL: Native. */
     }
@@ -251,7 +262,7 @@ TclpTempFileName()
      * We should also check against making more then TMP_MAX of these.
      */
 
-    strcpy(fileName, P_tmpdir);		/* INTL: Native. */
+    strcpy(fileName, DefaultTempDir());	/* INTL: Native. */
     if (fileName[strlen(fileName) - 1] != '/') {
 	strcat(fileName, "/");		/* INTL: Native. */
     }
@@ -266,6 +277,44 @@ TclpTempFileName()
     result = TclpNativeToNormalized((ClientData) fileName);
     close (fd);
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DefaultTempDir --
+ *
+ *	Helper that does *part* of what tempnam() does.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static CONST char *
+DefaultTempDir(void)
+{
+    CONST char *dir;
+    struct stat buf;
+
+    dir = getenv("TMPDIR");
+    if (dir && dir[0] && stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode)
+	    && access(dir, W_OK)) {
+	return dir;
+    }
+
+#ifdef P_tmpdir
+    dir = P_tmpdir;
+    if (stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode) && access(dir, W_OK)) {
+	return dir;
+    }
+#endif
+
+    /*
+     * Assume that the default location ("/tmp" if not overridden) is always
+     * an existing writable directory; we've no recovery mechanism if it
+     * isn't.
+     */
+
+    return TCL_TEMPORARY_FILE_DIRECTORY;
 }
 
 /*
