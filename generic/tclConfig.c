@@ -105,7 +105,7 @@ Tcl_RegisterConfig(
      */
 
     if (venc == NULL) {
-	venc = Tcl_GetEncoding("iso8859-1", valEncoding);;
+    	venc = Tcl_GetEncoding(NULL, "iso8859-1");;
     }
 
     pDB = GetConfigDict(interp);
