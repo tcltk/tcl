@@ -811,6 +811,7 @@ TestasyncCmd(dummy, interp, argc, argv)
 	asyncPtr->nextPtr = firstHandler;
 	firstHandler = asyncPtr;
 	TclFormatInt(buf, asyncPtr->id);
+	Tcl_MutexUnlock(&asyncTestMutex);
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
     } else if (strcmp(argv[1], "delete") == 0) {
 	if (argc == 2) {
