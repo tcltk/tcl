@@ -83,13 +83,7 @@ a directory will be returned if \fB\-types d\fR was specified.
 .PP
 The second form specifies types where all the types given must match.
 These are \fIr\fR, \fIw\fR, \fIx\fR as file permissions, and
-\fIreadonly\fR, \fIhidden\fR as special permission cases.  On the
-Macintosh, MacOS types and creators are also supported, where any item
-which is four characters long is assumed to be a MacOS type
-(e.g. \fBTEXT\fR).  Items which are of the form \fI{macintosh type XXXX}\fR
-or \fI{macintosh creator XXXX}\fR will match types or creators
-respectively.  Unrecognized types, or specifications of multiple MacOS
-types/creators will signal an error.
+\fIreadonly\fR, \fIhidden\fR as special permission cases.  
 .PP
 The two forms may be mixed, so \fB\-types {d f r w}\fR will find all
 regular files OR directories that have both read AND write permissions.
@@ -184,13 +178,6 @@ interpreted as a wildcard character. One solution to this problem is
 to use the Unix style forward slash as a path separator. Windows style 
 paths can be converted to Unix style paths with the command \fBfile
 join $path\fR (or \fBfile normalize $path\fR in Tcl 8.4). 
-.TP 
-\fBMacintosh\fR 
-. 
-When using the options, \fB\-directory\fR, \fB\-join\fR or \fB\-path\fR, glob
-assumes the directory separator for the entire pattern is the standard
-``:''.  When not using these options, glob examines each pattern argument
-and uses ``/'' unless the pattern contains a ``:''.
 .SH EXAMPLES
 Find all the Tcl files in the current directory:
 .CS

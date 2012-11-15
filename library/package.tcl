@@ -460,8 +460,7 @@ proc tclPkgSetup {dir pkg version files} {
 # It is invoked when a package that's needed can't be found.  It scans
 # the auto_path directories and their immediate children looking for
 # pkgIndex.tcl files and sources any such files that are found to setup
-# the package database.  (On the Macintosh we also search for pkgIndex
-# TEXT resources in all files.)  As it searches, it will recognize changes
+# the package database.  As it searches, it will recognize changes
 # to the auto_path and scan any new directories.
 #
 # Arguments:

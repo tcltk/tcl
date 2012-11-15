@@ -90,23 +90,6 @@ extern "C" {
 #endif /* __WIN32__ */
 
 /*
- * The following definitions set up the proper options for Macintosh
- * compilers.  We use this method because there is no autoconf equivalent.
- */
-
-#ifdef MAC_TCL
-#include <ConditionalMacros.h>
-#   ifndef USE_TCLALLOC
-#	define USE_TCLALLOC 1
-#   endif
-#   ifndef NO_STRERROR
-#	define NO_STRERROR 1
-#   endif
-#   define INLINE 
-#endif
-
-
-/*
  * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
  * quotation marks), JOIN joins two arguments.
  */
@@ -121,9 +104,8 @@ extern "C" {
 
 /* 
  * A special definition used to allow this header file to be included
- * from windows or mac resource files so that they can obtain version
- * information.  RC_INVOKED is defined by default by the windows RC tool
- * and manually set for macintosh.
+ * from windows resource files so that they can obtain version
+ * information.  RC_INVOKED is defined by default by the windows RC tool.
  *
  * Resource compilers don't like all the C stuff, like typedefs and
  * procedure declarations, that occur below, so block them out.
@@ -538,9 +520,7 @@ typedef struct Tcl_LoadHandle_ *Tcl_LoadHandle;
  * 'Tcl_CreateThread' and will be called as the main fuction of
  * the new thread created by that call.
  */
-#ifdef MAC_TCL
-typedef pascal void *(Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
-#elif defined __WIN32__
+#if defined __WIN32__
 typedef unsigned (__stdcall Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
 #else
 typedef void (Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
@@ -551,10 +531,7 @@ typedef void (Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
  * differences when writing a Tcl_ThreadCreateProc.  See the NewThread
  * function in generic/tclThreadTest.c for it's usage.
  */
-#ifdef MAC_TCL
-#   define Tcl_ThreadCreateType		pascal void *
-#   define TCL_THREAD_CREATE_RETURN	return NULL
-#elif defined __WIN32__
+#ifdef __WIN32__
 #   define Tcl_ThreadCreateType		unsigned __stdcall
 #   define TCL_THREAD_CREATE_RETURN	return 0
 #else
@@ -1433,7 +1410,6 @@ typedef enum {
  * The following structure keeps is used to hold a time value, either as
  * an absolute time (the number of seconds from the epoch) or as an
  * elapsed time. On Unix systems the epoch is Midnight Jan 1, 1970 GMT.
- * On Macintosh systems the epoch is Midnight Jan 1, 1904 GMT.
  */
 
 typedef struct Tcl_Time {
@@ -2366,20 +2342,7 @@ EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
  * accessible via the stubs table.
  */
 
-/*
- * tclPlatDecls.h can't be included here on the Mac, as we need
- * Mac specific headers to define the Mac types used in this file,
- * but these Mac haders conflict with a number of tk types
- * and thus can't be included in the globally read tcl.h
- * This header was originally added here as a fix for bug 5241
- * (stub link error for symbols in TclPlatStubs table), as a work-
- * around for the bug on the mac, tclMac.h is included immediately 
- * after tcl.h in the tcl precompiled header (with DLLEXPORT set).
- */
-
-#if !defined(MAC_TCL)
 #include "tclPlatDecls.h"
-#endif
 
 /*
  * Public functions that are not accessible via the stubs table.

@@ -67,13 +67,6 @@ attribute of the file. \fB-shortname\fR gives a string where every
 path element is replaced with its short (8.3) version of the
 name. This attribute cannot be set. \fB-system\fR gives or sets or
 clears the value of the system attribute of the file.
-.PP
-On Macintosh, \fB-creator\fR gives or sets the Finder creator type of
-the file. \fB-hidden\fR gives or sets or clears the hidden attribute
-of the file. \fB-readonly\fR gives or sets or clears the readonly
-attribute of the file. Note that directories can only be locked if
-File Sharing is turned on. \fB-type\fR gives or sets the Finder file
-type for the file.
 .RE
 .VS
 .TP
@@ -126,8 +119,8 @@ a \fB\-\fR.
 \fBfile dirname \fIname\fR
 Returns a name comprised of all of the path components in \fIname\fR
 excluding the last element.  If \fIname\fR is a relative file name and
-only contains one path element, then returns ``\fB.\fR'' (or ``\fB:\fR''
-on the Macintosh).  If \fIname\fR refers to a root directory, then the
+only contains one path element, then returns ``\fB.\fR''.
+If \fIname\fR refers to a root directory, then the
 root directory is returned.  For example,
 .RS
 .CS
@@ -186,7 +179,7 @@ returns \fB/foo/bar\fR.
 .PP
 Note that any of the names can contain separators, and that the result
 is always canonical for the current platform: \fB/\fR for Unix and
-Windows, and \fB:\fR for Macintosh.
+Windows.
 .RE
 .TP
 \fBfile link ?\fI-linktype\fR? \fIlinkName\fR ?\fItarget\fR?
@@ -251,7 +244,7 @@ or set then an error is generated.
 .
 Returns the platform-specific name of the file. This is useful if the
 filename is needed to pass to a platform-specific call, such as exec
-under Windows or AppleScript on the Macintosh.
+under Windows.
 .TP
 \fBfile normalize \fIname\fR
 .
@@ -398,10 +391,7 @@ Returns a string giving the type of file \fIname\fR, which will be one of
 \fBfile volumes\fR
 . 
 Returns the absolute paths to the volumes mounted on the system, as a
-proper Tcl list.  On the Macintosh, this will be a list of the mounted
-drives, both local and network.  N.B. if two drives have the same name,
-they will both appear on the volume list, but there is currently no way,
-from Tcl, to access any but the first of these drives.  On UNIX, the
+proper Tcl list.  On UNIX, the
 command will always return "/", since all filesystems are locally mounted.
 On Windows, it will return a list of the available local drives
 (e.g. {a:/ c:/}).
