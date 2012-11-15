@@ -44,7 +44,7 @@
 Tcl_NotifierProcs tclOriginalNotifier = {
     Tcl_SetTimer,
     Tcl_WaitForEvent,
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !defined(__WIN32__) /* UNIX */
     Tcl_CreateFileHandler,
     Tcl_DeleteFileHandler,
 #else
@@ -192,16 +192,6 @@ Tcl_WinTCharToUtf(
 #   define TclpGetPid 0
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
-#endif
-
-#ifdef MAC_TCL
-#define Tcl_DetachPids 0
-#define Tcl_OpenCommandChannel 0
-#define Tcl_ReapDetachedProcs 0
-#define TclCleanupChildren 0
-#define TclCreatePipeline 0
-#define TclSockMinimumBuffersOld 0
-#define TclSockMinimumBuffers 0
 #endif
 
 /*

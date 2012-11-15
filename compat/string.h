@@ -22,9 +22,7 @@
  * it exists everywhere)
  */
 
-#ifndef MAC_TCL
 #include <sys/types.h>
-#endif
 
 #ifdef __APPLE__
 extern VOID *		memchr _ANSI_ARGS_((CONST VOID *s, int c, size_t n));

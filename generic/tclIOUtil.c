@@ -26,9 +26,6 @@
 #include <sys/stat.h>
 #include "tclInt.h"
 #include "tclPort.h"
-#ifdef MAC_TCL
-#include "tclMacInt.h"
-#endif
 #ifdef __WIN32__
 /* for tclWinProcs->useWide */
 #include "tclWinInt.h"
@@ -2907,7 +2904,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		FsDivertLoad *tvdlPtr;
 		int retVal;
 
-#if !defined(__WIN32__) && !defined(MAC_TCL)
+#if !defined(__WIN32__)
 		/* 
 		 * Do we need to set appropriate permissions 
 		 * on the file?  This may be required on some
@@ -4292,9 +4289,6 @@ NativeFilesystemSeparator(pathObjPtr)
 	case TCL_PLATFORM_WINDOWS:
 	    separator = "\\";
 	    break;
-	case TCL_PLATFORM_MAC:
-	    separator = ":";
-	    break;
     }
     return Tcl_NewStringObj(separator,1);
 }
@@ -4912,11 +4906,6 @@ Tcl_FSJoinPath(listObj, elements)
 			    Tcl_DecrRefCount(res);
 			    return tail;
 			}
-		    } else if (tclPlatform == TCL_PLATFORM_MAC) {
-			if (strchr(str, '/') == NULL) {
-			    Tcl_DecrRefCount(res);
-			    return tail;
-			}
 		    }
 		}
 	    }
@@ -5066,7 +5055,6 @@ FindSplitPos(path, separator)
     int count = 0;
     switch (tclPlatform) {
 	case TCL_PLATFORM_UNIX:
-	case TCL_PLATFORM_MAC:
 	    while (path[count] != 0) {
 		if (path[count] == *separator) {
 		    return count;
@@ -5121,18 +5109,6 @@ TclNewFSPathObj(Tcl_Obj *dirPtr, CONST char *addStrRep, int len)
     objPtr = Tcl_NewObj();
     fsPathPtr = (FsPath*)ckalloc((unsigned)sizeof(FsPath));
     
-    if (tclPlatform == TCL_PLATFORM_MAC) { 
-	/* 
-	 * Mac relative paths may begin with a directory separator ':'. 
-	 * If present, we need to skip this ':' because we assume that 
-	 * we can join dirPtr and addStrRep by concatenating them as 
-	 * strings (and we ensure that dirPtr is terminated by a ':'). 
-	 */ 
-	if (addStrRep[0] == ':') { 
-	    addStrRep++; 
-	    len--; 
-	} 
-    } 
     /* Setup the path */
     fsPathPtr->translatedPathPtr = NULL;
     fsPathPtr->normPathPtr = Tcl_NewStringObj(addStrRep, len);
@@ -5309,11 +5285,6 @@ TclFSMakePathRelative(interp, objPtr, cwdPtr)
 	case TCL_PLATFORM_WINDOWS:
 	    if (tempStr[cwdLen-1] != '/' 
 		    && tempStr[cwdLen-1] != '\\') {
-		cwdLen++;
-	    }
-	    break;
-	case TCL_PLATFORM_MAC:
-	    if (tempStr[cwdLen-1] != ':') {
 		cwdLen++;
 	    }
 	    break;
@@ -5645,12 +5616,6 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 		    cwdLen++;
 		}
 		break;
-	    case TCL_PLATFORM_MAC:
-		if (cwdStr[cwdLen-1] != ':') {
-		    Tcl_AppendToObj(copy, ":", 1);
-		    cwdLen++;
-		}
-		break;
 	}
 	Tcl_AppendObjToObj(copy, fsPathPtr->normPathPtr);
 
@@ -5745,12 +5710,6 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 		    if (cwdStr[cwdLen-1] != '/' 
 			    && cwdStr[cwdLen-1] != '\\') {
 			Tcl_AppendToObj(copy, "/", 1);
-			cwdLen++;
-		    }
-		    break;
-		case TCL_PLATFORM_MAC:
-		    if (cwdStr[cwdLen-1] != ':') {
-			Tcl_AppendToObj(copy, ":", 1);
 			cwdLen++;
 		    }
 		    break;
@@ -6184,10 +6143,6 @@ SetFsPathFromAny(interp, objPtr)
 	int split;
 	char separator='/';
 	
-	if (tclPlatform==TCL_PLATFORM_MAC) {
-	    if (strchr(name, ':') != NULL) separator = ':';
-	}
-	
 	split = FindSplitPos(name, &separator);
 	if (split != len) {
 	    /* We have multiple pieces '~user/foo/bar...' */
@@ -6451,12 +6406,6 @@ UpdateStringOfFsPath(objPtr)
 		    Tcl_AppendToObj(copy, "/", 1);
 		    cwdLen++;
 		}
-	    }
-	    break;
-	case TCL_PLATFORM_MAC:
-	    if (cwdStr[cwdLen-1] != ':') {
-		Tcl_AppendToObj(copy, ":", 1);
-		cwdLen++;
 	    }
 	    break;
     }
