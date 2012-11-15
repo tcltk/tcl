@@ -903,7 +903,7 @@ declare 12 unix {
 declare 13 unix {
     char *TclpInetNtoa(struct in_addr addr)
 }
-declare 29 unix {
+declare 29 {macosx unix} {
     int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
 
