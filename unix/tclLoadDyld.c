@@ -205,6 +205,7 @@ TclpDlopen(
 	 * Let the OS loader examine the binary search path for whatever string
 	 * the user gave us which hopefully refers to a file on the binary
 	 * path.
+	 */
 
 	dlHandle = dlopen(nativeFileName, dlopenflags);
 	if (!dlHandle) {
@@ -661,7 +662,7 @@ TclpLoadMemory(
 	vm_deallocate(mach_task_self(), (vm_address_t) buffer, size);
 	if (objFileImageErrMsg != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "NSCreateObjectFileImageFromMemory() error: ",
+		    "NSCreateObjectFileImageFromMemory() error: %s",
 		    objFileImageErrMsg));
 	}
 	return TCL_ERROR;
