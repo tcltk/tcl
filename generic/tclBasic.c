@@ -205,9 +205,6 @@ static const CmdInfo builtInCmds[] = {
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	1},
     {"apply",		Tcl_ApplyObjCmd,	NULL,			TclNRApplyObjCmd,	1},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	1},
-#ifndef EXCLUDE_OBSOLETE_COMMANDS
-    {"case",		Tcl_CaseObjCmd,		NULL,			NULL,	1},
-#endif
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	1},
     {"concat",		Tcl_ConcatObjCmd,	NULL,			NULL,	1},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	1},
