@@ -1818,55 +1818,6 @@ declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
 }
 
-##################
-# Mac declarations
-
-# This is needed by the shells to handle Macintosh events.
-
-declare 0 mac {
-    void Tcl_MacSetEventProc(Tcl_MacConvertEventPtr procPtr)
-}
-
-# These routines are useful for handling using scripts from resources
-# in the application shell
-
-declare 1 mac {
-    char *Tcl_MacConvertTextResource(Handle resource)
-}
-declare 2 mac {
-    int Tcl_MacEvalResource(Tcl_Interp *interp, const char *resourceName,
-	    int resourceNumber, const char *fileName)
-}
-declare 3 mac {
-    Handle Tcl_MacFindResource(Tcl_Interp *interp, long resourceType,
-	    const char *resourceName, int resourceNumber,
-	    const char *resFileRef, int *releaseIt)
-}
-
-# These routines support the new OSType object type (i.e. the packed 4
-# character type and creator codes).
-
-declare 4 mac {
-    int Tcl_GetOSTypeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    OSType *osTypePtr)
-}
-declare 5 mac {
-    void Tcl_SetOSTypeObj(Tcl_Obj *objPtr, OSType osType)
-}
-declare 6 mac {
-    Tcl_Obj *Tcl_NewOSTypeObj(OSType osType)
-}
-
-# These are not in MSL 2.1.2, so we need to export them from the
-# Tcl shared library.  They are found in the compat directory.
-
-declare 7 mac {
-    int strncasecmp(const char *s1, const char *s2, size_t n)
-}
-declare 8 mac {
-    int strcasecmp(const char *s1, const char *s2)
-}
-
 ################################
 # Mac OS X specific functions
 
