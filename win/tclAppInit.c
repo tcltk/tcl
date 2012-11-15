@@ -1,4 +1,4 @@
-/*
+
  * tclAppInit.c --
  *
  *	Provides a default version of the main program and Tcl_AppInit

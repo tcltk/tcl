@@ -1,6 +1,6 @@
 #!/usr/bin/env tclsh
 
-package require Tcl 8.6
+package require Tcl 8.6-
 
 # Convert Ousterhout format man pages into highly crosslinked hypertext.
 #
