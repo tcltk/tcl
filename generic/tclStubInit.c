@@ -484,6 +484,38 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclWinResetInterfaces, /* 28 */
     TclWinCPUID, /* 29 */
 #endif /* WIN */
+#ifdef MAC_OSX_TCL /* MACOSX */
+    TclGetAndDetachPids, /* 0 */
+    TclpCloseFile, /* 1 */
+    TclpCreateCommandChannel, /* 2 */
+    TclpCreatePipe, /* 3 */
+    TclpCreateProcess, /* 4 */
+    NULL, /* 5 */
+    TclpMakeFile, /* 6 */
+    TclpOpenFile, /* 7 */
+    TclUnixWaitForFile, /* 8 */
+    TclpCreateTempFile, /* 9 */
+    TclpReaddir, /* 10 */
+    TclpLocaltime_unix, /* 11 */
+    TclpGmtime_unix, /* 12 */
+    TclpInetNtoa, /* 13 */
+    NULL, /* 14 */
+    NULL, /* 15 */
+    NULL, /* 16 */
+    NULL, /* 17 */
+    NULL, /* 18 */
+    NULL, /* 19 */
+    NULL, /* 20 */
+    NULL, /* 21 */
+    NULL, /* 22 */
+    NULL, /* 23 */
+    NULL, /* 24 */
+    NULL, /* 25 */
+    NULL, /* 26 */
+    NULL, /* 27 */
+    NULL, /* 28 */
+    TclWinCPUID, /* 29 */
+#endif /* MACOSX */
 };
 
 TclPlatStubs tclPlatStubs = {
