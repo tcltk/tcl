@@ -46,10 +46,7 @@ Where possible, operands are interpreted as integer values.
 Integer values may be specified in decimal (the normal case), in binary
 (if the first two characters of the operand are \fB0b\fR), in octal
 (if the first two characters of the operand are \fB0o\fR), or in hexadecimal
-(if the first two characters of the operand are \fB0x\fR).  For
-compatibility with older Tcl releases, an octal integer value is also
-indicated simply when the first character of the operand is \fB0\fR,
-whether or not the second character is also \fBo\fR.
+(if the first two characters of the operand are \fB0x\fR).
 If an operand does not have one of the integer formats given
 above, then it is treated as a floating-point number if that is
 possible.  Floating-point numbers may be specified in any of several
