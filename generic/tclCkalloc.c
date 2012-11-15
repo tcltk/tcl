@@ -1048,11 +1048,9 @@ Tcl_InitMemory(
 
 char *
 Tcl_Alloc(
-    unsigned int size)
+    size_t size)
 {
-    char *result;
-
-    result = TclpAlloc(size);
+    char *result = TclpAlloc(size);
 
     /*
      * Most systems will not alloc(0), instead bumping it to one so that NULL
@@ -1065,24 +1063,22 @@ Tcl_Alloc(
      */
 
     if ((result == NULL) && size) {
-	Tcl_Panic("unable to alloc %u bytes", size);
+	Tcl_Panic("unable to alloc %lu bytes", size);
     }
     return result;
 }
 
 char *
 Tcl_DbCkalloc(
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
-    char *result;
-
-    result = (char *) TclpAlloc(size);
+    char *result = (char *) TclpAlloc(size);
 
     if ((result == NULL) && size) {
 	fflush(stdout);
-	Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
+	Tcl_Panic("unable to alloc %lu bytes, %s line %d", size, file, line);
     }
     return result;
 }
@@ -1100,23 +1096,21 @@ Tcl_DbCkalloc(
 
 char *
 Tcl_AttemptAlloc(
-    unsigned int size)
+    size_t size)
 {
-    char *result;
+    char *result = TclpAlloc(size);
 
-    result = TclpAlloc(size);
     return result;
 }
 
 char *
 Tcl_AttemptDbCkalloc(
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
-    char *result;
+    char *result = (char *) TclpAlloc(size);
 
-    result = (char *) TclpAlloc(size);
     return result;
 }
 
@@ -1134,14 +1128,12 @@ Tcl_AttemptDbCkalloc(
 char *
 Tcl_Realloc(
     char *ptr,
-    unsigned int size)
+    size_t size)
 {
-    char *result;
-
-    result = TclpRealloc(ptr, size);
+    char *result = TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
-	Tcl_Panic("unable to realloc %u bytes", size);
+	Tcl_Panic("unable to realloc %lu bytes", size);
     }
     return result;
 }
@@ -1149,7 +1141,7 @@ Tcl_Realloc(
 char *
 Tcl_DbCkrealloc(
     char *ptr,
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
@@ -1159,7 +1151,7 @@ Tcl_DbCkrealloc(
 
     if ((result == NULL) && size) {
 	fflush(stdout);
-	Tcl_Panic("unable to realloc %u bytes, %s line %d", size, file, line);
+	Tcl_Panic("unable to realloc %lu bytes, %s line %d", size, file, line);
     }
     return result;
 }
@@ -1178,24 +1170,22 @@ Tcl_DbCkrealloc(
 char *
 Tcl_AttemptRealloc(
     char *ptr,
-    unsigned int size)
+    size_t size)
 {
-    char *result;
+    char *result = TclpRealloc(ptr, size);
 
-    result = TclpRealloc(ptr, size);
     return result;
 }
 
 char *
 Tcl_AttemptDbCkrealloc(
     char *ptr,
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
-    char *result;
+    char *result = (char *) TclpRealloc(ptr, size);
 
-    result = (char *) TclpRealloc(ptr, size);
     return result;
 }
 

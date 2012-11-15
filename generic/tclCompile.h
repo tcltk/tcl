@@ -919,12 +919,12 @@ MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
-			    int numBytes, CompileEnv *envPtr, int optimize);
+			    size_t numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
-			    const char *script, int numBytes,
+			    const char *script, size_t numBytes,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
@@ -939,7 +939,7 @@ MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes,
-			    int length, unsigned int hash, int *newPtr,
+			    size_t length, unsigned int hash, int *newPtr,
 			    Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
@@ -953,7 +953,7 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
-MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
+MODULE_SCOPE int	TclFindCompiledLocal(const char *name, size_t nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE LiteralEntry * TclLookupLiteralEntry(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -968,7 +968,8 @@ MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
 MODULE_SCOPE void	TclInitCompilation(void);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
-			    int numBytes, const CmdFrame *invoker, int word);
+			    size_t numBytes, const CmdFrame *invoker,
+			    int word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 #ifdef TCL_COMPILE_STATS
@@ -991,18 +992,10 @@ MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp, 
 			    const char *name, Namespace *nsPtr);
-MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclSortingOpCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclVariadicOpCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclNoIdentOpCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_ObjCmdProc TclSingleOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclSortingOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclVariadicOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNoIdentOpCmd;
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
@@ -1010,9 +1003,9 @@ MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
-					  const char *script,
-					  const char *command, int length,
-					  const unsigned char *pc, Tcl_Obj **tosPtr); 
+			    const char *script, const char *command,
+			    size_t length, const unsigned char *pc,
+			    Tcl_Obj **tosPtr); 
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 					    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
@@ -1033,7 +1026,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  * cast away constness, and it is cleanest to do that here, all in one place.
  *
  * int TclRegisterNewLiteral(CompileEnv *envPtr, const char *bytes,
- *			     int length);
+ *			     size_t length);
  */
 
 #define TclRegisterNewLiteral(envPtr, bytes, length) \
@@ -1045,7 +1038,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  * one place.
  *
  * int TclRegisterNewNSLiteral(CompileEnv *envPtr, const char *bytes,
- *			       int length);
+ *			       size_t length);
  */
 
 #define TclRegisterNewCmdLiteral(envPtr, bytes, length) \

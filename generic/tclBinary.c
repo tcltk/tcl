@@ -60,7 +60,7 @@ static int		FormatNumber(Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr);
 static void		FreeByteArrayInternalRep(Tcl_Obj *objPtr);
 static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
-			    int *countPtr, int *flagsPtr);
+			    size_t *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
 			    int flags, Tcl_HashTable **numberCachePtr);
 static int		SetByteArrayFromAny(Tcl_Interp *interp,
@@ -69,30 +69,16 @@ static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
 static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
 static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
-			    unsigned length, int type);
+			    size_t length, int type);
 /* Binary ensemble commands */
-static int		BinaryFormatCmd(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryScanCmd(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	BinaryFormatCmd;
+static Tcl_ObjCmdProc	BinaryScanCmd;
 /* Binary encoding sub-ensemble commands */
-static int		BinaryEncodeHex(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecodeHex(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryEncode64(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecodeUu(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecode64(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	BinaryEncodeHex;
+static Tcl_ObjCmdProc	BinaryDecodeHex;
+static Tcl_ObjCmdProc	BinaryEncode64;
+static Tcl_ObjCmdProc	BinaryDecodeUu;
+static Tcl_ObjCmdProc	BinaryDecode64;
 
 /*
  * The following tables are used by the binary encoders
@@ -168,9 +154,9 @@ const Tcl_ObjType tclByteArrayType = {
  */
 
 typedef struct ByteArray {
-    int used;			/* The number of bytes used in the byte
+    size_t used;		/* The number of bytes used in the byte
 				 * array. */
-    int allocated;		/* The amount of space actually allocated
+    size_t allocated;		/* The amount of space actually allocated
 				 * minus 1 byte. */
     unsigned char bytes[1];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
@@ -208,7 +194,7 @@ Tcl_Obj *
 Tcl_NewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    int length)			/* Length of the array of bytes, which must be
+    size_t length)		/* Length of the array of bytes, which must be
 				 * >= 0. */
 {
 #ifdef TCL_MEM_DEBUG
@@ -251,7 +237,7 @@ Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    int length,			/* Length of the array of bytes, which must be
+    size_t length,		/* Length of the array of bytes, which must be
 				 * >= 0. */
     const char *file,		/* The name of the source file calling this
 				 * procedure; used for debugging. */
@@ -291,9 +277,9 @@ void
 Tcl_SetByteArrayObj(
     Tcl_Obj *objPtr,		/* Object to initialize as a ByteArray. */
     const unsigned char *bytes,	/* The array of bytes to use as the new
-				   value. May be NULL even if length > 0. */
-    int length)			/* Length of the array of bytes, which must
-				   be >= 0. */
+				 * value. May be NULL even if length > 0. */
+    size_t length)		/* Length of the array of bytes, which must
+				 * be >= 0. */
 {
     ByteArray *byteArrayPtr;
 
@@ -338,7 +324,7 @@ Tcl_SetByteArrayObj(
 unsigned char *
 Tcl_GetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    int *lengthPtr)		/* If non-NULL, filled with length of the
+    size_t *lengthPtr)		/* If non-NULL, filled with length of the
 				 * array of bytes in the ByteArray object. */
 {
     ByteArray *baPtr;
@@ -379,7 +365,7 @@ Tcl_GetByteArrayFromObj(
 unsigned char *
 Tcl_SetByteArrayLength(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    int length)			/* New length for internal byte array. */
+    size_t length)		/* New length for internal byte array. */
 {
     ByteArray *byteArrayPtr;
 
@@ -422,7 +408,7 @@ SetByteArrayFromAny(
     Tcl_Interp *interp,		/* Not used. */
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
-    int length;
+    size_t length;
     const char *src, *srcEnd;
     unsigned char *dst;
     ByteArray *byteArrayPtr;
@@ -600,7 +586,7 @@ void
 TclAppendBytesToByteArray(
     Tcl_Obj *objPtr,
     const unsigned char *bytes,
-    int len)
+    size_t len)
 {
     ByteArray *byteArrayPtr;
 
@@ -621,7 +607,7 @@ TclAppendBytesToByteArray(
      */
 
     if (byteArrayPtr->used + len > byteArrayPtr->allocated) {
-	unsigned int attempt, used = byteArrayPtr->used;
+	size_t attempt, used = byteArrayPtr->used;
 	ByteArray *tmpByteArrayPtr = NULL;
 
 	attempt = byteArrayPtr->allocated;
@@ -689,23 +675,23 @@ TclAppendBytesToByteArray(
  */
 
 static const EnsembleImplMap binaryMap[] = {
-{ "format", BinaryFormatCmd, NULL, NULL, NULL, 0 },
-{ "scan",   BinaryScanCmd, NULL, NULL, NULL, 0 },
-{ "encode", NULL, NULL, NULL, NULL, 0 },
-{ "decode", NULL, NULL, NULL, NULL, 0 },
-{ NULL, NULL, NULL, NULL, NULL, 0 }
+    { "format", BinaryFormatCmd, NULL, NULL, NULL, 0 },
+    { "scan",   BinaryScanCmd, NULL, NULL, NULL, 0 },
+    { "encode", NULL, NULL, NULL, NULL, 0 },
+    { "decode", NULL, NULL, NULL, NULL, 0 },
+    { NULL, NULL, NULL, NULL, NULL, 0 }
 };
 static const EnsembleImplMap encodeMap[] = {
-{ "hex",      BinaryEncodeHex, NULL, NULL, (ClientData)HexDigits, 0 },
-{ "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits, 0 },
-{ "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits, 0 },
-{ NULL, NULL, NULL, NULL, NULL, 0 }
+    { "hex",      BinaryEncodeHex, NULL, NULL, (ClientData)HexDigits, 0 },
+    { "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits, 0 },
+    { "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits, 0 },
+    { NULL, NULL, NULL, NULL, NULL, 0 }
 };
 static const EnsembleImplMap decodeMap[] = {
-{ "hex",      BinaryDecodeHex, NULL, NULL, NULL, 0 },
-{ "uuencode", BinaryDecodeUu,  NULL, NULL, NULL, 0 },
-{ "base64",   BinaryDecode64,  NULL, NULL, NULL, 0 },
-{ NULL, NULL, NULL, NULL, NULL, 0 }
+    { "hex",      BinaryDecodeHex, NULL, NULL, NULL, 0 },
+    { "uuencode", BinaryDecodeUu,  NULL, NULL, NULL, 0 },
+    { "base64",   BinaryDecode64,  NULL, NULL, NULL, 0 },
+    { NULL, NULL, NULL, NULL, NULL, 0 }
 };
 
 Tcl_Command
@@ -740,14 +726,14 @@ static int
 BinaryFormatCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int arg;			/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
-    int count;			/* Count associated with current format
+    size_t count;		/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
     const char *format;	/* Pointer to current position in format
@@ -759,7 +745,8 @@ BinaryFormatCmd(
 				 * cursor has visited.*/
     const char *errorString;
     const char *errorValue, *str;
-    int offset, size, length;
+    int offset, size;
+    size_t length;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg ...?");
@@ -855,7 +842,7 @@ BinaryFormatCmd(
 		arg++;
 		count = 1;
 	    } else {
-		int listc;
+		size_t listc;
 		Tcl_Obj **listv;
 
 		/*
@@ -1131,7 +1118,7 @@ BinaryFormatCmd(
 	case 'q':
 	case 'Q':
 	case 'f': {
-	    int listc, i;
+	    size_t listc, i;
 	    Tcl_Obj **listv;
 
 	    if (count == BINARY_NOCOUNT) {
@@ -1245,14 +1232,14 @@ int
 BinaryScanCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int arg;			/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
-    int count;			/* Count associated with current format
+    size_t count;		/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
     const char *format;	/* Pointer to current position in format
@@ -1261,7 +1248,8 @@ BinaryScanCmd(
     unsigned char *buffer;	/* Start of result buffer. */
     const char *errorString;
     const char *str;
-    int offset, size, length;
+    int offset, size;
+    size_t length;
 
     int i;
     Tcl_Obj *valuePtr, *elementPtr;
@@ -1620,7 +1608,7 @@ static int
 GetFormatSpec(
     const char **formatPtr,	/* Pointer to format string. */
     char *cmdPtr,		/* Pointer to location of command char. */
-    int *countPtr,		/* Pointer to repeat count value. */
+    size_t *countPtr,		/* Pointer to repeat count value. */
     int *flagsPtr)		/* Pointer to field flags */
 {
     /*
@@ -1778,7 +1766,7 @@ static void
 CopyNumber(
     const void *from,		/* source */
     void *to,			/* destination */
-    unsigned length,		/* Number of bytes to copy */
+    size_t length,		/* Number of bytes to copy */
     int type)			/* What type of thing are we copying? */
 {
     switch (NeedReversing(type)) {
@@ -2301,14 +2289,14 @@ static int
 BinaryEncodeHex(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data = NULL;
     unsigned char *cursor = NULL;
     const char *digits = clientData;
-    int offset = 0, count = 0;
+    size_t offset = 0, count = 0;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "data");
@@ -2346,13 +2334,14 @@ static int
 BinaryDecodeHex(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor, c;
-    int i, index, value, size, count = 0, cut = 0, strict = 0;
+    int index, value, size, cut = 0, strict = 0;
+    size_t i, count = 0;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2462,7 +2451,7 @@ static int
 BinaryEncode64(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj;
@@ -2470,8 +2459,8 @@ BinaryEncode64(
     const char *digits = clientData;
     int maxlen = 0;
     const char *wrapchar = "\n";
-    int wrapcharlen = 1;
-    int offset, i, index, size, outindex = 0, count = 0;
+    size_t wrapcharlen = 1, count = 0;
+    int offset, i, index, size, outindex = 0;
     enum {OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2559,13 +2548,14 @@ static int
 BinaryDecodeUu(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor;
-    int i, index, size, count = 0, cut = 0, strict = 0;
+    int index, size, cut = 0, strict = 0;
+    size_t i, count = 0;
     char c;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
@@ -2654,7 +2644,7 @@ static int
 BinaryDecode64(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
@@ -2662,7 +2652,8 @@ BinaryDecode64(
     unsigned char *begin = NULL;
     unsigned char *cursor = NULL;
     int strict = 0;
-    int i, index, size, cut = 0, count = 0;
+    int index, size, cut = 0;
+    size_t i, count = 0;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
