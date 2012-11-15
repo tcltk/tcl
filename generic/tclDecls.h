@@ -1812,7 +1812,7 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_ZlibStream zhandle,
 				Tcl_Obj *compressionDictionaryObj);
 
-typedef struct TclStubHooks {
+typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
     const struct TclIntStubs *tclIntStubs;
     const struct TclIntPlatStubs *tclIntPlatStubs;
@@ -1820,7 +1820,7 @@ typedef struct TclStubHooks {
 
 typedef struct TclStubs {
     int magic;
-    const struct TclStubHooks *hooks;
+    const TclStubHooks *hooks;
 
     int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, const void *clientData); /* 0 */
     CONST84_RETURN char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
