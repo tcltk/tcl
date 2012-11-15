@@ -1,3 +1,17 @@
+2012-11-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	IMPLEMENTATION OF TIP#416
+
+	New Options for 'load': -global and -lazy
+
+	* generic/tcl.h:
+	* generic/tclLoad.c
+	* unix/tclLoadDl.c
+	* unix/tclLoadDyld.c
+	* tests/load.test
+	* doc/Load.3
+	* doc/load.n
+
 2012-11-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclUnixFCmd.c (TclUnixOpenTemporaryFile): [Bug 2933003]: Factor
