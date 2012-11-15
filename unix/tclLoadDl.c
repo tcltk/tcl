@@ -75,6 +75,7 @@ TclpDlopen(
     void *handle;
     Tcl_LoadHandle newHandle;
     const char *native;
+    int dlopenflags = 0;
 
     /*
      * First try the full path the user gave us. This is particularly
@@ -84,9 +85,19 @@ TclpDlopen(
 
     native = Tcl_FSGetNativePath(pathPtr);
     /*
-     * Use (RTLD_NOW|RTLD_LOCAL) always, see [Bug #3216070]
+     * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
      */
-    handle = dlopen(native, RTLD_NOW | RTLD_LOCAL);
+    if (flags & TCL_LOAD_GLOBAL) {
+    	dlopenflags |= RTLD_GLOBAL;
+    } else {
+    	dlopenflags |= RTLD_LOCAL;
+    }
+    if (flags & TCL_LOAD_LAZY) {
+    	dlopenflags |= RTLD_LAZY;
+    } else {
+    	dlopenflags |= RTLD_NOW;
+    }
+    handle = dlopen(native, dlopenflags);
     if (handle == NULL) {
 	/*
 	 * Let the OS loader examine the binary search path for whatever
@@ -99,9 +110,9 @@ TclpDlopen(
 
 	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
 	/*
-	 * Use (RTLD_NOW|RTLD_LOCAL) always, see [Bug #3216070]
+	 * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
 	 */
-	handle = dlopen(native, RTLD_NOW | RTLD_LOCAL);
+	handle = dlopen(native, dlopenflags);
 	Tcl_DStringFree(&ds);
     }
 
@@ -153,7 +164,7 @@ FindSymbol(
     const char *native;		/* Name of the library to be loaded, in
 				 * system encoding */
     Tcl_DString newName, ds;	/* Buffers for converting the name to
-				 * system encoding and prepending an 
+				 * system encoding and prepending an
 				 * underscore*/
     void *handle = (void *) loadHandle->clientData;
 				/* Native handle to the loaded library */
