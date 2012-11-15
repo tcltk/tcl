@@ -16,10 +16,6 @@
 #ifndef _TCLMATH
 #define _TCLMATH
 
-#if defined(MAC_TCL)
-#   include "tclMacMath.h"
-#else
-#   include <math.h>
-#endif
+#include <math.h>
 
 #endif /* _TCLMATH */

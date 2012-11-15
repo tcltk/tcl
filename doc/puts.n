@@ -37,8 +37,7 @@ Newline characters in the output are translated by \fBputs\fR to
 platform-specific end-of-line sequences according to the current
 value of the \fB\-translation\fR option for the channel (for example,
 on PCs newlines are normally replaced with carriage-return-linefeed
-sequences;  on Macintoshes newlines are normally replaced with
-carriage-returns).
+sequences).
 See the \fBfconfigure\fR manual entry for a discussion on ways in
 which \fBfconfigure\fR will alter output.
 .PP

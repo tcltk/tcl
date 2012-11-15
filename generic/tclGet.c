@@ -14,7 +14,7 @@
 
 #include "tclInt.h"
 #include "tclPort.h"
-#include "tclMath.h"
+#include <math.h>
 
 
 /*

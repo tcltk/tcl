@@ -19,11 +19,7 @@
 #if defined(__WIN32__)
 #   include "tclWinPort.h"
 #else
-#   if defined(MAC_TCL)
-#      include "tclMacPort.h"
-#   else
-#      include "tclUnixPort.h"
-#   endif
+#   include "tclUnixPort.h"
 #endif
 
 #if !defined(LLONG_MIN)
