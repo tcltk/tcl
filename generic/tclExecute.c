@@ -16,7 +16,7 @@
 #include "tclCompile.h"
 
 #ifndef TCL_NO_MATH
-#   include "tclMath.h"
+#   include <math.h>
 #endif
 
 /*

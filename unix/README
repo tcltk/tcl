@@ -20,8 +20,7 @@ changes on any UNIX-like system that approximates POSIX, BSD, or System
 V.  We know that it runs on workstations from Sun, H-P, DEC, IBM, and
 SGI, as well as PCs running Linux, BSDI, and SCO UNIX.  To compile for
 a PC running Windows, see the README file in the directory ../win.  To
-compile for Max OS X, see the README in the directory ../macosx.  To
-compile for a classic Macintosh, see the README file in the directory ../mac.
+compile for Max OS X, see the README in the directory ../macosx.
 
 How To Compile And Install Tcl:
 -------------------------------

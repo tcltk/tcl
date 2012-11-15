@@ -18,12 +18,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # Figure out what extension is used for shared libraries on this
 # platform.
 
-if {$tcl_platform(platform) == "macintosh"} {
-    puts "can't run dynamic library tests on macintosh machines"
-    ::tcltest::cleanupTests
-    return
-}
-
 # Tests require the existence of one of the DLLs in the dltest directory.
 set ext [info sharedlibextension]
 set testDir [file join [file dirname [info nameofexecutable]] dltest]

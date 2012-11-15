@@ -35,7 +35,6 @@ package require -exact Tcl 8.4
 # tcl_pkgPath, which is set by the platform-specific initialization routines
 #	On UNIX it is compiled in
 #       On Windows, it is not used
-#	On Macintosh it is "Tool Command Language" in the Extensions folder
 
 if {![info exists auto_path]} {
     if {[info exists env(TCLLIBPATH)]} {
@@ -117,18 +116,11 @@ if {![interp issafe]} {
 	    && $::tcl_platform(os) eq "Darwin"} {
 	package unknown [list tcl::MacOSXPkgUnknown [package unknown]]
     }
-    if {$::tcl_platform(platform) eq "macintosh"} {
-	package unknown [list tcl::MacPkgUnknown [package unknown]]
-    }
 }
 
 # Conditionalize for presence of exec.
 
 if {[namespace which -command exec] eq ""} {
-
-    # Some machines, such as the Macintosh, do not have exec. Also, on all
-    # platforms, safe interpreters do not have exec.
-
     set auto_noexec 1
 }
 set errorCode ""
