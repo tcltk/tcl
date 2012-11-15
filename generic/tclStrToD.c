@@ -22,7 +22,7 @@
  * as octal. (Ceterum censeo: numeros octonarios delendos esse.)
  */
 
-#undef	KILL_OCTAL
+#define KILL_OCTAL
 
 /*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
