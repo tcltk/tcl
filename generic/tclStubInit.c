@@ -420,7 +420,7 @@ TclIntStubs tclIntStubs = {
 TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_TCL) /* UNIX */
+#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
     TclGetAndDetachPids, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
@@ -484,35 +484,6 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclWinResetInterfaces, /* 28 */
     TclWinCPUID, /* 29 */
 #endif /* WIN */
-#ifdef MAC_TCL
-    TclpSysAlloc, /* 0 */
-    TclpSysFree, /* 1 */
-    TclpSysRealloc, /* 2 */
-    TclpExit, /* 3 */
-    FSpGetDefaultDir, /* 4 */
-    FSpSetDefaultDir, /* 5 */
-    FSpFindFolder, /* 6 */
-    GetGlobalMouseTcl, /* 7 */
-    FSpGetDirectoryIDTcl, /* 8 */
-    FSpOpenResFileCompatTcl, /* 9 */
-    FSpCreateResFileCompatTcl, /* 10 */
-    FSpLocationFromPath, /* 11 */
-    FSpPathFromLocation, /* 12 */
-    TclMacExitHandler, /* 13 */
-    TclMacInitExitToShell, /* 14 */
-    TclMacInstallExitToShellPatch, /* 15 */
-    TclMacOSErrorToPosixError, /* 16 */
-    TclMacRemoveTimer, /* 17 */
-    TclMacStartTimer, /* 18 */
-    TclMacTimerExpired, /* 19 */
-    TclMacRegisterResourceFork, /* 20 */
-    TclMacUnRegisterResourceFork, /* 21 */
-    TclMacCreateEnv, /* 22 */
-    TclMacFOpenHack, /* 23 */
-    TclpGetTZName, /* 24 */
-    TclMacChmod, /* 25 */
-    FSpLLocationFromPath, /* 26 */
-#endif /* MAC_TCL */
 };
 
 TclPlatStubs tclPlatStubs = {
@@ -522,17 +493,6 @@ TclPlatStubs tclPlatStubs = {
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
 #endif /* WIN */
-#ifdef MAC_TCL
-    Tcl_MacSetEventProc, /* 0 */
-    Tcl_MacConvertTextResource, /* 1 */
-    Tcl_MacEvalResource, /* 2 */
-    Tcl_MacFindResource, /* 3 */
-    Tcl_GetOSTypeFromObj, /* 4 */
-    Tcl_SetOSTypeObj, /* 5 */
-    Tcl_NewOSTypeObj, /* 6 */
-    strncasecmp, /* 7 */
-    strcasecmp, /* 8 */
-#endif /* MAC_TCL */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
@@ -557,24 +517,24 @@ TclStubs tclStubs = {
     Tcl_DbCkalloc, /* 6 */
     Tcl_DbCkfree, /* 7 */
     Tcl_DbCkrealloc, /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_CreateFileHandler, /* 9 */
 #endif /* UNIX */
 #if defined(__WIN32__) /* WIN */
     NULL, /* 9 */
 #endif /* WIN */
-#ifdef MAC_TCL
-    NULL, /* 9 */
-#endif /* MAC_TCL */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#ifdef MAC_OSX_TCL /* MACOSX */
+    Tcl_CreateFileHandler, /* 9 */
+#endif /* MACOSX */
+#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_DeleteFileHandler, /* 10 */
 #endif /* UNIX */
 #if defined(__WIN32__) /* WIN */
     NULL, /* 10 */
 #endif /* WIN */
-#ifdef MAC_TCL
-    NULL, /* 10 */
-#endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL /* MACOSX */
+    Tcl_DeleteFileHandler, /* 10 */
+#endif /* MACOSX */
     Tcl_SetTimer, /* 11 */
     Tcl_Sleep, /* 12 */
     Tcl_WaitForEvent, /* 13 */
@@ -731,15 +691,15 @@ TclStubs tclStubs = {
     Tcl_GetMaster, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_GetOpenFile, /* 167 */
 #endif /* UNIX */
 #if defined(__WIN32__) /* WIN */
     NULL, /* 167 */
 #endif /* WIN */
-#ifdef MAC_TCL
-    NULL, /* 167 */
-#endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL /* MACOSX */
+    Tcl_GetOpenFile, /* 167 */
+#endif /* MACOSX */
     Tcl_GetPathType, /* 168 */
     Tcl_Gets, /* 169 */
     Tcl_GetsObj, /* 170 */
