@@ -246,7 +246,7 @@ EXTERN int		TclWinCPUID(unsigned int index, unsigned int *regs);
 
 typedef struct TclIntPlatStubs {
     int magic;
-    const struct TclIntPlatStubHooks *hooks;
+    void *hooks;
 
 #if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 0 */
