@@ -1168,11 +1168,11 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    value = 0;
 	    if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
 		/*
-		 * For Windows and Macintosh, there are no user ids 
+		 * For Windows there are no user ids 
 		 * associated with a file, so we always return 1.
 		 */
 
-#if defined(__WIN32__) || defined(MAC_TCL) || defined(__CYGWIN__)
+#if defined(__WIN32__) || defined(__CYGWIN__)
 		value = 1;
 #else
 		value = (geteuid() == buf.st_uid);
@@ -1261,9 +1261,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 			break;
 		    case TCL_PLATFORM_WINDOWS:
 			separator = "\\";
-			break;
-		    case TCL_PLATFORM_MAC:
-			separator = ":";
 			break;
 		}
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(separator,1));

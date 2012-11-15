@@ -1445,20 +1445,6 @@ BUILD_HTML = \
 		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
 
 #
-# Target to create a Macintosh version of the distribution.  This will
-# do a normal distribution and then massage the output to prepare it
-# for moving to the Mac platform.  This requires a few scripts and
-# programs found only in the Tcl group's tool workspace.
-#
-
-macdist: dist machtml
-
-machtml:
-	rm -f $(DISTDIR)/mac/tclMacProjects.sea.hqx
-	rm -rf $(DISTDIR)/doc
-	$(TCL_EXE) $(TOOL_DIR)/cvtEOL.tcl $(DISTDIR)
-
-#
 # Targets to build Solaris package of the distribution for the current
 # architecture.  To build stream packages for both sun4 and i86pc
 # architectures:
