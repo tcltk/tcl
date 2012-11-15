@@ -166,6 +166,65 @@ EXTERN void		TclWinResetInterfaces _ANSI_ARGS_((void));
 EXTERN int		TclWinCPUID _ANSI_ARGS_((unsigned int index,
 				unsigned int *regs));
 #endif /* WIN */
+#ifdef MAC_OSX_TCL /* MACOSX */
+/* 0 */
+EXTERN void		TclGetAndDetachPids _ANSI_ARGS_((Tcl_Interp *interp,
+				Tcl_Channel chan));
+/* 1 */
+EXTERN int		TclpCloseFile _ANSI_ARGS_((TclFile file));
+/* 2 */
+EXTERN Tcl_Channel	TclpCreateCommandChannel _ANSI_ARGS_((
+				TclFile readFile, TclFile writeFile,
+				TclFile errorFile, int numPids,
+				Tcl_Pid *pidPtr));
+/* 3 */
+EXTERN int		TclpCreatePipe _ANSI_ARGS_((TclFile *readPipe,
+				TclFile *writePipe));
+/* 4 */
+EXTERN int		TclpCreateProcess _ANSI_ARGS_((Tcl_Interp *interp,
+				int argc, CONST char **argv,
+				TclFile inputFile, TclFile outputFile,
+				TclFile errorFile, Tcl_Pid *pidPtr));
+/* Slot 5 is reserved */
+/* 6 */
+EXTERN TclFile		TclpMakeFile _ANSI_ARGS_((Tcl_Channel channel,
+				int direction));
+/* 7 */
+EXTERN TclFile		TclpOpenFile _ANSI_ARGS_((CONST char *fname,
+				int mode));
+/* 8 */
+EXTERN int		TclUnixWaitForFile _ANSI_ARGS_((int fd, int mask,
+				int timeout));
+/* 9 */
+EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((CONST char *contents));
+/* 10 */
+EXTERN Tcl_DirEntry *	TclpReaddir _ANSI_ARGS_((DIR *dir));
+/* 11 */
+EXTERN struct tm *	TclpLocaltime_unix _ANSI_ARGS_((
+				TclpTime_t_CONST clock));
+/* 12 */
+EXTERN struct tm *	TclpGmtime_unix _ANSI_ARGS_((TclpTime_t_CONST clock));
+/* 13 */
+EXTERN char *		TclpInetNtoa _ANSI_ARGS_((struct in_addr addr));
+/* Slot 14 is reserved */
+/* Slot 15 is reserved */
+/* Slot 16 is reserved */
+/* Slot 17 is reserved */
+/* Slot 18 is reserved */
+/* Slot 19 is reserved */
+/* Slot 20 is reserved */
+/* Slot 21 is reserved */
+/* Slot 22 is reserved */
+/* Slot 23 is reserved */
+/* Slot 24 is reserved */
+/* Slot 25 is reserved */
+/* Slot 26 is reserved */
+/* Slot 27 is reserved */
+/* Slot 28 is reserved */
+/* 29 */
+EXTERN int		TclWinCPUID _ANSI_ARGS_((unsigned int index,
+				unsigned int *regs));
+#endif /* MACOSX */
 
 typedef struct TclIntPlatStubs {
     int magic;
@@ -235,6 +294,38 @@ typedef struct TclIntPlatStubs {
     void (*tclWinResetInterfaces) _ANSI_ARGS_((void)); /* 28 */
     int (*tclWinCPUID) _ANSI_ARGS_((unsigned int index, unsigned int *regs)); /* 29 */
 #endif /* WIN */
+#ifdef MAC_OSX_TCL /* MACOSX */
+    void (*tclGetAndDetachPids) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Channel chan)); /* 0 */
+    int (*tclpCloseFile) _ANSI_ARGS_((TclFile file)); /* 1 */
+    Tcl_Channel (*tclpCreateCommandChannel) _ANSI_ARGS_((TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)); /* 2 */
+    int (*tclpCreatePipe) _ANSI_ARGS_((TclFile *readPipe, TclFile *writePipe)); /* 3 */
+    int (*tclpCreateProcess) _ANSI_ARGS_((Tcl_Interp *interp, int argc, CONST char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr)); /* 4 */
+    VOID *reserved5;
+    TclFile (*tclpMakeFile) _ANSI_ARGS_((Tcl_Channel channel, int direction)); /* 6 */
+    TclFile (*tclpOpenFile) _ANSI_ARGS_((CONST char *fname, int mode)); /* 7 */
+    int (*tclUnixWaitForFile) _ANSI_ARGS_((int fd, int mask, int timeout)); /* 8 */
+    TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char *contents)); /* 9 */
+    Tcl_DirEntry * (*tclpReaddir) _ANSI_ARGS_((DIR *dir)); /* 10 */
+    struct tm * (*tclpLocaltime_unix) _ANSI_ARGS_((TclpTime_t_CONST clock)); /* 11 */
+    struct tm * (*tclpGmtime_unix) _ANSI_ARGS_((TclpTime_t_CONST clock)); /* 12 */
+    char * (*tclpInetNtoa) _ANSI_ARGS_((struct in_addr addr)); /* 13 */
+    VOID *reserved14;
+    VOID *reserved15;
+    VOID *reserved16;
+    VOID *reserved17;
+    VOID *reserved18;
+    VOID *reserved19;
+    VOID *reserved20;
+    VOID *reserved21;
+    VOID *reserved22;
+    VOID *reserved23;
+    VOID *reserved24;
+    VOID *reserved25;
+    VOID *reserved26;
+    VOID *reserved27;
+    VOID *reserved28;
+    int (*tclWinCPUID) _ANSI_ARGS_((unsigned int index, unsigned int *regs)); /* 29 */
+#endif /* MACOSX */
 } TclIntPlatStubs;
 
 #ifdef __cplusplus
@@ -444,6 +535,80 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
 #endif
 #endif /* WIN */
+#ifdef MAC_OSX_TCL /* MACOSX */
+#ifndef TclGetAndDetachPids
+#define TclGetAndDetachPids \
+	(tclIntPlatStubsPtr->tclGetAndDetachPids) /* 0 */
+#endif
+#ifndef TclpCloseFile
+#define TclpCloseFile \
+	(tclIntPlatStubsPtr->tclpCloseFile) /* 1 */
+#endif
+#ifndef TclpCreateCommandChannel
+#define TclpCreateCommandChannel \
+	(tclIntPlatStubsPtr->tclpCreateCommandChannel) /* 2 */
+#endif
+#ifndef TclpCreatePipe
+#define TclpCreatePipe \
+	(tclIntPlatStubsPtr->tclpCreatePipe) /* 3 */
+#endif
+#ifndef TclpCreateProcess
+#define TclpCreateProcess \
+	(tclIntPlatStubsPtr->tclpCreateProcess) /* 4 */
+#endif
+/* Slot 5 is reserved */
+#ifndef TclpMakeFile
+#define TclpMakeFile \
+	(tclIntPlatStubsPtr->tclpMakeFile) /* 6 */
+#endif
+#ifndef TclpOpenFile
+#define TclpOpenFile \
+	(tclIntPlatStubsPtr->tclpOpenFile) /* 7 */
+#endif
+#ifndef TclUnixWaitForFile
+#define TclUnixWaitForFile \
+	(tclIntPlatStubsPtr->tclUnixWaitForFile) /* 8 */
+#endif
+#ifndef TclpCreateTempFile
+#define TclpCreateTempFile \
+	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 9 */
+#endif
+#ifndef TclpReaddir
+#define TclpReaddir \
+	(tclIntPlatStubsPtr->tclpReaddir) /* 10 */
+#endif
+#ifndef TclpLocaltime_unix
+#define TclpLocaltime_unix \
+	(tclIntPlatStubsPtr->tclpLocaltime_unix) /* 11 */
+#endif
+#ifndef TclpGmtime_unix
+#define TclpGmtime_unix \
+	(tclIntPlatStubsPtr->tclpGmtime_unix) /* 12 */
+#endif
+#ifndef TclpInetNtoa
+#define TclpInetNtoa \
+	(tclIntPlatStubsPtr->tclpInetNtoa) /* 13 */
+#endif
+/* Slot 14 is reserved */
+/* Slot 15 is reserved */
+/* Slot 16 is reserved */
+/* Slot 17 is reserved */
+/* Slot 18 is reserved */
+/* Slot 19 is reserved */
+/* Slot 20 is reserved */
+/* Slot 21 is reserved */
+/* Slot 22 is reserved */
+/* Slot 23 is reserved */
+/* Slot 24 is reserved */
+/* Slot 25 is reserved */
+/* Slot 26 is reserved */
+/* Slot 27 is reserved */
+/* Slot 28 is reserved */
+#ifndef TclWinCPUID
+#define TclWinCPUID \
+	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
+#endif
+#endif /* MACOSX */
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
