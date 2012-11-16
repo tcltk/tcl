@@ -51,7 +51,7 @@ if {![file exists $httpdFile]} {
     set removeHttpd 1
 }
 
-catch {package require Thread 2.6}
+catch {package require Thread 2.7-}
 if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
     set httpthread [thread::create -preserved]
     thread::send $httpthread [list source $httpdFile]

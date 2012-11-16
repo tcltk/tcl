@@ -169,9 +169,6 @@ Tcl_WinTCharToUtf(
 	    string, len, dsPtr);
 }
 
-#else /* UNIX and MAC */
-#   define TclpLocaltime_unix TclpLocaltime
-#   define TclpGmtime_unix TclpGmtime
 #endif
 
 /*
@@ -265,7 +262,7 @@ static const TclIntStubs tclIntStubs = {
     TclpFree, /* 74 */
     TclpGetClicks, /* 75 */
     TclpGetSeconds, /* 76 */
-    TclpGetTime, /* 77 */
+    0, /* 77 */
     0, /* 78 */
     0, /* 79 */
     0, /* 80 */
@@ -456,8 +453,8 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
-    TclpLocaltime_unix, /* 11 */
-    TclpGmtime_unix, /* 12 */
+    0, /* 11 */
+    0, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
     0, /* 15 */
@@ -520,8 +517,8 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
-    TclpLocaltime_unix, /* 11 */
-    TclpGmtime_unix, /* 12 */
+    0, /* 11 */
+    0, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
     TclMacOSXGetFileAttribute, /* 15 */

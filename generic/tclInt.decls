@@ -315,10 +315,10 @@ declare 76 {
     unsigned long TclpGetSeconds(void)
 }
 
-# deprecated
-declare 77 {
-    void TclpGetTime(Tcl_Time *time)
-}
+# Removed in 9.0:
+#declare 77 {
+#    void TclpGetTime(Tcl_Time *time)
+#}
 # Removed in 8.6:
 #declare 78 {
 #    int TclpGetTimeZone(unsigned long time)
@@ -1200,14 +1200,13 @@ declare 9 unix {
 declare 10 unix {
     Tcl_DirEntry *TclpReaddir(DIR *dir)
 }
-# Slots 11 and 12 are forwarders for functions that were promoted to
-# generic Stubs
-declare 11 unix {
-    struct tm *TclpLocaltime_unix(const time_t *clock)
-}
-declare 12 unix {
-    struct tm *TclpGmtime_unix(const time_t *clock)
-}
+# Removed in Tcl 9.0
+#declare 11 unix {
+#    struct tm *TclpLocaltime_unix(const time_t *clock)
+#}
+#declare 12 unix {
+#    struct tm *TclpGmtime_unix(const time_t *clock)
+#}
 declare 13 unix {
     char *TclpInetNtoa(struct in_addr addr)
 }

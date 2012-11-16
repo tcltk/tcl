@@ -212,8 +212,7 @@ EXTERN void		TclpFree(char *ptr);
 EXTERN unsigned long	TclpGetClicks(void);
 /* 76 */
 EXTERN unsigned long	TclpGetSeconds(void);
-/* 77 */
-EXTERN void		TclpGetTime(Tcl_Time *time);
+/* Slot 77 is reserved */
 /* Slot 78 is reserved */
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
@@ -604,7 +603,7 @@ EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 
 typedef struct TclIntStubs {
     int magic;
-    const struct TclIntStubHooks *hooks;
+    void *hooks;
 
     void (*reserved0)(void);
     void (*reserved1)(void);
@@ -683,7 +682,7 @@ typedef struct TclIntStubs {
     void (*tclpFree) (char *ptr); /* 74 */
     unsigned long (*tclpGetClicks) (void); /* 75 */
     unsigned long (*tclpGetSeconds) (void); /* 76 */
-    void (*tclpGetTime) (Tcl_Time *time); /* 77 */
+    void (*reserved77)(void);
     void (*reserved78)(void);
     void (*reserved79)(void);
     void (*reserved80)(void);
@@ -993,8 +992,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclpGetClicks) /* 75 */
 #define TclpGetSeconds \
 	(tclIntStubsPtr->tclpGetSeconds) /* 76 */
-#define TclpGetTime \
-	(tclIntStubsPtr->tclpGetTime) /* 77 */
+/* Slot 77 is reserved */
 /* Slot 78 is reserved */
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
