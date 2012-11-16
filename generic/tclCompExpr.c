@@ -2120,7 +2120,7 @@ void
 TclCompileExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *script,		/* The source script to compile. */
-    int numBytes,		/* Number of bytes in script. */
+    size_t numBytes,		/* Number of bytes in script. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int optimize)		/* 0 for one-off expressions. */
 {
@@ -2138,7 +2138,7 @@ TclCompileExpr(
 	 * Valid parse; compile the tree.
 	 */
 
-	int objc;
+	size_t objc;
 	Tcl_Obj *const *litObjv;
 	Tcl_Obj **funcObjv;
 
@@ -2293,7 +2293,7 @@ CompileExprTree(
 	    case FUNCTION: {
 		Tcl_DString cmdName;
 		const char *p;
-		int length;
+		size_t length;
 
 		Tcl_DStringInit(&cmdName);
 		TclDStringAppendLiteral(&cmdName, "tcl::mathfunc::");
@@ -2445,7 +2445,8 @@ CompileExprTree(
 	    Tcl_Obj *literal = *litObjv;
 
 	    if (optimize) {
-		int length, index;
+		int index;
+		size_t length;
 		const char *bytes = TclGetStringFromObj(literal, &length);
 		LiteralEntry *lePtr;
 		Tcl_Obj *objPtr;
@@ -2561,7 +2562,7 @@ int
 TclSingleOpCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = clientData;
@@ -2614,7 +2615,7 @@ int
 TclSortingOpCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     int code = TCL_OK;
@@ -2694,7 +2695,7 @@ int
 TclVariadicOpCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = clientData;
@@ -2813,7 +2814,7 @@ int
 TclNoIdentOpCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = clientData;

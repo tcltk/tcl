@@ -557,7 +557,7 @@ TclCompileStringMapCmd(
     Tcl_Token *mapTokenPtr, *stringTokenPtr;
     Tcl_Obj *mapObj, **objv;
     char *bytes;
-    int len;
+    size_t len;
 
     /*
      * We only handle the case:
@@ -787,7 +787,7 @@ void
 TclSubstCompile(
     Tcl_Interp *interp,
     const char *bytes,
-    int numBytes,
+    size_t numBytes,
     int flags,
     int line,
     CompileEnv *envPtr)
@@ -1977,7 +1977,7 @@ TclCompileThrowCmd(
     if (TclWordKnownAtCompileTime(codeToken, objPtr)) {
 	Tcl_Obj *errPtr, *dictPtr;
 	const char *string;
-	int len;
+	size_t len;
 
 	/*
 	 * The code is known at compilation time. This allows us to issue a
@@ -2118,7 +2118,7 @@ TclCompileTryCmd(
 
 	for (i=0 ; i<numHandlers ; i++) {
 	    Tcl_Obj *tmpObj, **objv;
-	    int objc;
+	    size_t objc;
 
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		goto failedToCompile;
@@ -2183,7 +2183,7 @@ TclCompileTryCmd(
 		goto failedToCompile;
 	    }
 	    if (objc > 0) {
-		int len;
+		size_t len;
 		const char *varname = Tcl_GetStringFromObj(objv[0], &len);
 
 		if (!TclIsLocalScalar(varname, len)) {
@@ -2196,7 +2196,7 @@ TclCompileTryCmd(
 		resultVarIndices[i] = -1;
 	    }
 	    if (objc == 2) {
-		int len;
+		size_t len;
 		const char *varname = Tcl_GetStringFromObj(objv[1], &len);
 
 		if (!TclIsLocalScalar(varname, len)) {
@@ -2312,9 +2312,10 @@ IssueTryInstructions(
     DefineLineInformation;	/* TIP #280 */
     int range, resultVar, optionsVar;
     int savedStackDepth = envPtr->currStackDepth;
-    int i, j, len, forwardsNeedFixing = 0;
+    int i, j, forwardsNeedFixing = 0;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
+    size_t len;
 
     resultVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     optionsVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
@@ -2465,9 +2466,10 @@ IssueTryFinallyInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     int savedStackDepth = envPtr->currStackDepth;
-    int range, resultVar, optionsVar, i, j, len, forwardsNeedFixing = 0;
+    int range, resultVar, optionsVar, i, j, forwardsNeedFixing = 0;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
+    size_t len;
 
     resultVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     optionsVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
@@ -2710,7 +2712,7 @@ TclCompileUnsetCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     leadingWord = Tcl_NewObj();
     if (TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
-	int len;
+	size_t len;
 	const char *bytes = Tcl_GetStringFromObj(leadingWord, &len);
 
 	if (len == 11 && !strncmp("-nocomplain", bytes, 11)) {

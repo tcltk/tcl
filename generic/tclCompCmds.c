@@ -1122,7 +1122,8 @@ TclCompileDictCreateCmd(
     Tcl_Token *tokenPtr;
     Tcl_Obj *keyObj, *valueObj, *dictObj;
     const char *bytes;
-    int i, len;
+    int i;
+    size_t len;
 
     if ((parsePtr->numWords & 1) == 0) {
 	return TCL_ERROR;
@@ -1355,7 +1356,8 @@ CompileDictEachCmd(
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
     int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
     int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
-    int numVars, endTargetOffset;
+    int endTargetOffset;
+    size_t numVars;
     int collectVar = -1;	/* Index of temp var holding the result
 				 * dict. */
     int savedStackDepth = envPtr->currStackDepth;
@@ -2540,7 +2542,7 @@ CompileEachloopCmd(
      *    varvList[i] points to array of var names in i-th var list.
      */
 
-    int *varcList;
+    size_t *varcList;
     const char ***varvList;
 
     /*
@@ -2577,8 +2579,8 @@ CompileEachloopCmd(
      */
 
     numLists = (numWords - 2)/2;
-    varcList = TclStackAlloc(interp, numLists * sizeof(int));
-    memset(varcList, 0, numLists * sizeof(int));
+    varcList = TclStackAlloc(interp, numLists * sizeof(size_t));
+    memset(varcList, 0, numLists * sizeof(size_t));
     varvList = (const char ***) TclStackAlloc(interp,
 	    numLists * sizeof(const char **));
     memset((char*) varvList, 0, numLists * sizeof(const char **));
@@ -3013,7 +3015,7 @@ TclCompileFormatCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Obj **objv, *formatObj, *tmpObj;
     char *bytes, *start;
-    int i, j, len;
+    size_t i, j, len;
 
     /*
      * Don't handle any guaranteed-error cases.
@@ -4235,14 +4237,16 @@ TclCompileLindexCmd(
     idxTokenPtr = TokenAfter(valTokenPtr);
     if (idxTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	Tcl_Obj *tmpObj;
-	int idx, result;
+	int result, intIdx;
+	ptrdiff_t idx;
 
 	tmpObj = Tcl_NewStringObj(idxTokenPtr[1].start, idxTokenPtr[1].size);
-	result = TclGetIntFromObj(NULL, tmpObj, &idx);
+	result = TclGetIntFromObj(NULL, tmpObj, &intIdx);
 	if (result == TCL_OK) {
-	    if (idx < 0) {
+	    if (intIdx < 0) {
 		result = TCL_ERROR;
 	    }
+	    idx = (size_t) intIdx;
 	} else {
 	    result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx);
 	    if (result == TCL_OK && idx > -2) {
@@ -4421,7 +4425,8 @@ TclCompileLrangeCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *tmpObj;
-    int idx1, idx2, result;
+    ptrdiff_t idx1, idx2;
+    int result, intIdx1, intIdx2;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
@@ -4439,11 +4444,12 @@ TclCompileLrangeCmd(
 	return TCL_ERROR;
     }
     tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
+    result = TclGetIntFromObj(NULL, tmpObj, &intIdx1);
     if (result == TCL_OK) {
-	if (idx1 < 0) {
+	if (intIdx1 < 0) {
 	    result = TCL_ERROR;
 	}
+	idx1 = (size_t) intIdx1;
     } else {
 	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
 	if (result == TCL_OK && idx1 > -2) {
@@ -4466,11 +4472,12 @@ TclCompileLrangeCmd(
 	return TCL_ERROR;
     }
     tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
+    result = TclGetIntFromObj(NULL, tmpObj, &intIdx2);
     if (result == TCL_OK) {
-	if (idx2 < 0) {
+	if (intIdx2 < 0) {
 	    result = TCL_ERROR;
 	}
+	idx2 = (size_t) intIdx2;
     } else {
 	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
 	if (result == TCL_OK && idx2 > -2) {
@@ -4520,7 +4527,8 @@ TclCompileLreplaceCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *tmpObj;
-    int idx1, idx2, result, guaranteedDropAll = 0;
+    int intIdx1, intIdx2, result, guaranteedDropAll = 0;
+    ptrdiff_t idx1, idx2;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
@@ -4538,11 +4546,12 @@ TclCompileLreplaceCmd(
 	return TCL_ERROR;
     }
     tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
+    result = TclGetIntFromObj(NULL, tmpObj, &intIdx1);
     if (result == TCL_OK) {
-	if (idx1 < 0) {
+	if (intIdx1 < 0) {
 	    result = TCL_ERROR;
 	}
+	idx1 = (ptrdiff_t) intIdx1;
     } else {
 	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
 	if (result == TCL_OK && idx1 > -2) {
@@ -4565,11 +4574,12 @@ TclCompileLreplaceCmd(
 	return TCL_ERROR;
     }
     tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
+    result = TclGetIntFromObj(NULL, tmpObj, &intIdx2);
     if (result == TCL_OK) {
-	if (idx2 < 0) {
+	if (intIdx2 < 0) {
 	    result = TCL_ERROR;
 	}
+	idx2 = (size_t) intIdx2;
     } else {
 	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
 	if (result == TCL_OK && idx2 > -2) {
@@ -5314,7 +5324,8 @@ TclCompileRegsubCmd(
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
     const char *bytes;
-    int len, exact, result = TCL_ERROR;
+    size_t len;
+    int exact, result = TCL_ERROR;
 
     if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -5467,7 +5478,8 @@ TclCompileReturnCmd(
      * General syntax: [return ?-option value ...? ?result?]
      * An even number of words means an explicit result argument is present.
      */
-    int level, code, objc, size, status = TCL_OK;
+    int level, code, status = TCL_OK;
+    size_t objc, size;
     int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
@@ -5624,7 +5636,7 @@ TclCompileSyntaxError(
     CompileEnv *envPtr)
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
-    int numBytes;
+    size_t numBytes;
     const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);
@@ -5850,9 +5862,9 @@ IndexTailVarIfKnown(
 {
     Tcl_Obj *tailPtr;
     const char *tailName, *p;
-    int len, n = varTokenPtr->numComponents;
+    size_t len;
     Tcl_Token *lastTokenPtr;
-    int full, localIndex;
+    int full, localIndex, n = varTokenPtr->numComponents;
 
     /*
      * Determine if the tail is (a) known at compile time, and (b) not an

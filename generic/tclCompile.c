@@ -648,7 +648,8 @@ TclSetByteCodeFromAny(
     register const AuxData *auxDataPtr;
     LiteralEntry *entryPtr;
     register int i;
-    int length, result = TCL_OK;
+    size_t length;
+    int result = TCL_OK;
     const char *stringPtr;
     ContLineLoc *clLocPtr;
 
@@ -1126,7 +1127,7 @@ CompileSubstObj(
     }
     if (objPtr->typePtr != &substCodeType) {
 	CompileEnv compEnv;
-	int numBytes;
+	size_t numBytes;
 	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
 
 	/* TODO: Check for more TIP 280 */
@@ -1209,7 +1210,7 @@ TclInitCompileEnv(
     register CompileEnv *envPtr,/* Points to the CompileEnv structure to
 				 * initialize. */
     const char *stringPtr,	/* The source string to be compiled. */
-    int numBytes,		/* Number of bytes in source string. */
+    size_t numBytes,		/* Number of bytes in source string. */
     const CmdFrame *invoker,	/* Location context invoking the bcc */
     int word)			/* Index of the word in that context getting
 				 * compiled */
@@ -1551,7 +1552,7 @@ TclCompileScript(
 				 * serves as context for finding and compiling
 				 * commands. May not be NULL. */
     const char *script,		/* The source script to compile. */
-    int numBytes,		/* Number of bytes in script. If < 0, the
+    size_t numBytes,		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
@@ -2248,7 +2249,7 @@ TclCompileTokens(
 
 	default:
 	    Tcl_Panic("Unexpected token type in TclCompileTokens: %d; %.*s",
-		    tokenPtr->type, tokenPtr->size, tokenPtr->start);
+		      tokenPtr->type, (int) tokenPtr->size, tokenPtr->start);
 	}
     }
 
@@ -2578,7 +2579,7 @@ TclInitByteCodeObj(
              * can be sure we do not have any lingering cycles hiding in
 	     * the intrep.
 	     */
-	    int numBytes;
+	    size_t numBytes;
 	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
 
 	    codePtr->objArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
@@ -2679,7 +2680,7 @@ TclFindCompiledLocal(
     register const char *name,	/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
-    int nameBytes,		/* Number of bytes in the name. */
+    size_t nameBytes,		/* Number of bytes in the name. */
     int create,			/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
     CompileEnv *envPtr)		/* Points to the current compile environment*/
@@ -2705,7 +2706,7 @@ TclFindCompiledLocal(
 	LocalCache *cachePtr = envPtr->iPtr->varFramePtr->localCachePtr;
 	const char *localName;
 	Tcl_Obj **varNamePtr;
-	int len;
+	size_t len;
 
 	if (!cachePtr || !name) {
 	    return -1;
@@ -4119,7 +4120,7 @@ TclDisassembleByteCodeObj(
 
 	sprintf(ptrBuf1, "%p", procPtr);
 	Tcl_AppendPrintfToObj(bufferObj,
-		"  Proc 0x%s, refCt %d, args %d, compiled locals %d\n",
+		"  Proc 0x%s, refCt %d, args %lu, compiled locals %d\n",
 		ptrBuf1, procPtr->refCount, procPtr->numArgs,
 		numCompiledLocals);
 	if (numCompiledLocals > 0) {
@@ -4433,7 +4434,7 @@ FormatInstruction(
     }
     if (suffixObj) {
 	const char *bytes;
-	int length;
+	size_t length;
 
 	Tcl_AppendToObj(bufferObj, "\t# ", -1);
 	bytes = Tcl_GetStringFromObj(codePtr->objArrayPtr[opnd], &length);
@@ -4540,7 +4541,7 @@ TclGetInnerContext(
         iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
         Tcl_IncrRefCount(result);
     } else {
-        int len;
+        size_t len;
 
         /*
          * Reset while keeping the list intrep as much as possible.

@@ -40,9 +40,7 @@ typedef struct QCCD {
  * Static functions in this file:
  */
 
-static int		QueryConfigObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    struct Tcl_Obj *const *objv);
+static Tcl_ObjCmdProc	QueryConfigObjCmd;
 static void		QueryConfigDelete(ClientData clientData);
 static Tcl_Obj *	GetConfigDict(Tcl_Interp *interp);
 static void		ConfigDictDeleteProc(ClientData clientData,
@@ -205,13 +203,14 @@ static int
 QueryConfigObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     struct Tcl_Obj *const *objv)
 {
     QCCD *cdPtr = clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    int n, index;
+    int index;
+    size_t n;
     static const char *const subcmdStrings[] = {
 	"get", "list", NULL
     };

@@ -188,7 +188,7 @@ declare 45 {
 	    size_t *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 46 {
-    int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, int index,
+    int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, size_t index,
 	    Tcl_Obj **objPtrPtr)
 }
 declare 47 {
@@ -1785,7 +1785,8 @@ declare 496 {
 	    Tcl_Obj *keyPtr)
 }
 declare 497 {
-    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr)
+    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+	    size_t *sizePtr)
 }
 declare 498 {
     int Tcl_DictObjFirst(Tcl_Interp *interp, Tcl_Obj *dictPtr,
@@ -1801,11 +1802,11 @@ declare 500 {
 }
 declare 501 {
     int Tcl_DictObjPutKeyList(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	    int keyc, Tcl_Obj *const *keyv, Tcl_Obj *valuePtr)
+	    size_t keyc, Tcl_Obj *const *keyv, Tcl_Obj *valuePtr)
 }
 declare 502 {
     int Tcl_DictObjRemoveKeyList(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	    int keyc, Tcl_Obj *const *keyv)
+	    size_t keyc, Tcl_Obj *const *keyv)
 }
 declare 503 {
     Tcl_Obj *Tcl_NewDictObj(void)
