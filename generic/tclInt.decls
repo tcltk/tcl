@@ -184,11 +184,11 @@ declare 41 {
     Tcl_Command TclGetOriginalCommand(Tcl_Command command)
 }
 declare 42 {
-    CONST86 char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
+    const char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
 # Removed in Tcl 8.5a2
 #declare 43 {
-#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
+#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, const char **argv,
 #	    int flags)
 #}
 declare 44 {
@@ -223,12 +223,12 @@ declare 51 {
 }
 # Removed in Tcl 8.5a2
 #declare 52 {
-#    int TclInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
+#    int TclInvoke(Tcl_Interp *interp, int argc, const char **argv,
 #	    int flags)
 #}
 declare 53 {
     int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp,
-	    int argc, CONST84 char **argv)
+	    int argc, const char **argv)
 }
 declare 54 {
     int TclInvokeStringCommand(ClientData clientData, Tcl_Interp *interp,
@@ -411,7 +411,7 @@ declare 98 {
 #	    Tcl_Obj *objPtr, int flags)
 #}
 declare 101 {
-    CONST86 char *TclSetPreInitScript(const char *string)
+    const char *TclSetPreInitScript(const char *string)
 }
 declare 102 {
     void TclSetupEnv(Tcl_Interp *interp)
@@ -551,7 +551,7 @@ declare 133 {
 #   int TclpChdir(const char *dirName)
 #}
 declare 138 {
-    CONST84_RETURN char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
+    const char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
 }
 #declare 139 {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
@@ -563,7 +563,7 @@ declare 138 {
 #}
 # This is used by TclX, but should otherwise be considered private
 declare 141 {
-    CONST84_RETURN char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+    const char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 142 {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,

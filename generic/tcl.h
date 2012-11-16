@@ -247,35 +247,6 @@ extern "C" {
 #   define INLINE
 #endif
 
-#ifdef NO_CONST
-#   ifndef const
-#      define const
-#   endif
-#endif
-#ifndef CONST
-#   define CONST const
-#endif
-
-#ifdef USE_NON_CONST
-#   ifdef USE_COMPAT_CONST
-#      error define at most one of USE_NON_CONST and USE_COMPAT_CONST
-#   endif
-#   define CONST84
-#   define CONST84_RETURN
-#else
-#   ifdef USE_COMPAT_CONST
-#      define CONST84
-#      define CONST84_RETURN const
-#   else
-#      define CONST84 const
-#      define CONST84_RETURN const
-#   endif
-#endif
-
-#ifndef CONST86
-#      define CONST86 CONST84
-#endif
-
 /*
  * Make sure EXTERN isn't defined elsewhere.
  */
@@ -676,10 +647,10 @@ typedef void (Tcl_ChannelProc) (ClientData clientData, int mask);
 typedef void (Tcl_CloseProc) (ClientData data);
 typedef void (Tcl_CmdDeleteProc) (ClientData clientData);
 typedef int (Tcl_CmdProc) (ClientData clientData, Tcl_Interp *interp,
-	int argc, CONST84 char *argv[]);
+	int argc, const char *argv[]);
 typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
-	ClientData cmdClientData, int argc, CONST84 char *argv[]);
+	ClientData cmdClientData, int argc, const char *argv[]);
 typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
@@ -716,7 +687,7 @@ typedef void (Tcl_TimerProc) (ClientData clientData);
 typedef int (Tcl_SetFromAnyProc) (Tcl_Interp *interp, struct Tcl_Obj *objPtr);
 typedef void (Tcl_UpdateStringProc) (struct Tcl_Obj *objPtr);
 typedef char * (Tcl_VarTraceProc) (ClientData clientData, Tcl_Interp *interp,
-	CONST84 char *part1, CONST84 char *part2, int flags);
+	const char *part1, const char *part2, int flags);
 typedef void (Tcl_CommandTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	const char *oldName, const char *newName, int flags);
 typedef void (Tcl_CreateFileHandlerProc) (int fd, int mask, Tcl_FileProc *proc,
@@ -1356,8 +1327,8 @@ typedef struct Tcl_Time {
     long usec;			/* Microseconds. */
 } Tcl_Time;
 
-typedef void (Tcl_SetTimerProc) (CONST86 Tcl_Time *timePtr);
-typedef int (Tcl_WaitForEventProc) (CONST86 Tcl_Time *timePtr);
+typedef void (Tcl_SetTimerProc) (const Tcl_Time *timePtr);
+typedef int (Tcl_WaitForEventProc) (const Tcl_Time *timePtr);
 
 /*
  * TIP #233 (Virtualized Time)
@@ -1431,14 +1402,14 @@ typedef int	(Tcl_DriverClose2Proc) (ClientData instanceData,
 typedef int	(Tcl_DriverInputProc) (ClientData instanceData, char *buf,
 			int toRead, int *errorCodePtr);
 typedef int	(Tcl_DriverOutputProc) (ClientData instanceData,
-			CONST84 char *buf, int toWrite, int *errorCodePtr);
+			const char *buf, int toWrite, int *errorCodePtr);
 typedef int	(Tcl_DriverSeekProc) (ClientData instanceData, long offset,
 			int mode, int *errorCodePtr);
 typedef int	(Tcl_DriverSetOptionProc) (ClientData instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			const char *value);
 typedef int	(Tcl_DriverGetOptionProc) (ClientData instanceData,
-			Tcl_Interp *interp, CONST84 char *optionName,
+			Tcl_Interp *interp, const char *optionName,
 			Tcl_DString *dsPtr);
 typedef void	(Tcl_DriverWatchProc) (ClientData instanceData, int mask);
 typedef int	(Tcl_DriverGetHandleProc) (ClientData instanceData,
@@ -1629,7 +1600,7 @@ typedef int (Tcl_FSNormalizePathProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	int nextCheckpoint);
 typedef int (Tcl_FSFileAttrsGetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef);
-typedef const char *CONST86 * (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
+typedef const char *const * (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
 	Tcl_Obj **objPtrRef);
 typedef int (Tcl_FSFileAttrsSetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj *objPtr);
