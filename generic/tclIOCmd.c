@@ -139,19 +139,6 @@ Tcl_PutsObjCmd(
 	    chanObjPtr = objv[2];
 	    string = objv[3];
 	    break;
-#if TCL_MAJOR_VERSION < 9
-	} else if (strcmp(TclGetString(objv[3]), "nonewline") == 0) {
-	    /*
-	     * The code below provides backwards compatibility with an old
-	     * form of the command that is no longer recommended or
-	     * documented. See also [Bug #3151675]. Will be removed in Tcl 9,
-	     * maybe even earlier.
-	     */
-
-	    chanObjPtr = objv[1];
-	    string = objv[2];
-	    break;
-#endif
 	}
 	/* Fall through */
     default:			/* [puts] or
