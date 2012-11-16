@@ -16,9 +16,6 @@
 #include <X11/Intrinsic.h>
 #include "tclInt.h"
 
-#ifndef CONST86
-#   define CONST86
-#endif
 /*
  * This structure is used to keep track of the notifier info for a a
  * registered file.
@@ -87,8 +84,8 @@ static void		TimerProc(ClientData clientData, XtIntervalId *id);
 static void		CreateFileHandler(int fd, int mask,
 			    Tcl_FileProc *proc, ClientData clientData);
 static void		DeleteFileHandler(int fd);
-static void		SetTimer(CONST86 Tcl_Time * timePtr);
-static int		WaitForEvent(CONST86 Tcl_Time * timePtr);
+static void		SetTimer(const Tcl_Time * timePtr);
+static int		WaitForEvent(const Tcl_Time * timePtr);
 
 /*
  * Functions defined in this file for use by users of the Xt Notifier:
@@ -265,7 +262,7 @@ NotifierExitHandler(
 
 static void
 SetTimer(
-    CONST86 Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
+    const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
 {
     long timeout;
 
@@ -629,7 +626,7 @@ FileHandlerEventProc(
 
 static int
 WaitForEvent(
-    CONST86 Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
 {
     int timeout;
 
