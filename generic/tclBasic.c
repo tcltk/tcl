@@ -2353,7 +2353,7 @@ int
 TclInvokeStringCommand(
     ClientData clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    register size_t objc,	/* Number of arguments. */
+    register int objc,	/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Command *cmdPtr = clientData;
@@ -2401,7 +2401,7 @@ int
 TclInvokeObjectCommand(
     ClientData clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t argc,		/* Number of arguments. */
+    int argc,		/* Number of arguments. */
     register const char **argv)	/* Argument strings. */
 {
     Command *cmdPtr = clientData;
@@ -3499,7 +3499,7 @@ OldMathFuncProc(
     ClientData clientData,	/* Ponter to OldMathFuncData describing the
 				 * function being called */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    size_t objc,		/* Actual parameter count */
+    int objc,		/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     Tcl_Obj *valuePtr;
@@ -4137,7 +4137,7 @@ int
 Tcl_EvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    size_t objc,		/* Number of words in command. */
+    int objc,		/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags)			/* Collection of OR-ed bits that control the
@@ -4156,7 +4156,7 @@ int
 TclNREvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    size_t objc,		/* Number of words in command. */
+    int objc,		/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags,			/* Collection of OR-ed bits that control the
@@ -5486,7 +5486,7 @@ void
 TclArgumentEnter(
     Tcl_Interp *interp,
     Tcl_Obj **objv,
-    size_t objc,
+    int objc,
     CmdFrame *cfPtr)
 {
     Interp *iPtr = (Interp *) interp;
@@ -5555,7 +5555,7 @@ void
 TclArgumentRelease(
     Tcl_Interp *interp,
     Tcl_Obj **objv,
-    size_t objc)
+    int objc)
 {
     Interp *iPtr = (Interp *) interp;
     int i;
@@ -5604,7 +5604,7 @@ void
 TclArgumentBCEnter(
     Tcl_Interp *interp,
     Tcl_Obj *objv[],
-    size_t objc,
+    int objc,
     void *codePtr,
     CmdFrame *cfPtr,
     int pc)
@@ -6555,7 +6555,7 @@ int
 TclObjInvokeNamespace(
     Tcl_Interp *interp,		/* Interpreter in which command is to be
 				 * invoked. */
-    size_t objc,		/* Count of arguments. */
+    int objc,		/* Count of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
     Tcl_Namespace *nsPtr,	/* The namespace to use. */
@@ -6603,7 +6603,7 @@ int
 TclObjInvoke(
     Tcl_Interp *interp,		/* Interpreter in which command is to be
 				 * invoked. */
-    size_t objc,		/* Count of arguments. */
+    int objc,		/* Count of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
     int flags)			/* Combination of flags controlling the call:
@@ -7108,7 +7108,7 @@ ExprCeilFunc(
     ClientData clientData,	/* Ignored */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter list. */
 {
     int code;
@@ -7144,7 +7144,7 @@ ExprFloorFunc(
     ClientData clientData,	/* Ignored */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter list. */
 {
     int code;
@@ -7179,7 +7179,7 @@ static int
 ExprIsqrtFunc(
     ClientData clientData,	/* Ignored */
     Tcl_Interp *interp,		/* The interpreter in which to execute. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter list. */
 {
     ClientData ptr;
@@ -7280,7 +7280,7 @@ ExprSqrtFunc(
     ClientData clientData,	/* Ignored */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter list. */
 {
     int code;
@@ -7323,7 +7323,7 @@ ExprUnaryFunc(
 				 * double result. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count */
+    int objc,		/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
     int code;
@@ -7383,7 +7383,7 @@ ExprBinaryFunc(
 				 * double result. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Parameter vector. */
 {
     int code;
@@ -7425,7 +7425,7 @@ ExprAbsFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Parameter vector. */
 {
     ClientData ptr;
@@ -7534,7 +7534,7 @@ ExprBoolFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     int value;
@@ -7555,7 +7555,7 @@ ExprDoubleFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     double dResult;
@@ -7582,7 +7582,7 @@ ExprEntierFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     double d;
@@ -7638,7 +7638,7 @@ ExprIntFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     long iResult;
@@ -7670,7 +7670,7 @@ ExprWideFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     Tcl_WideInt wResult;
@@ -7703,7 +7703,7 @@ ExprRandFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -7796,7 +7796,7 @@ ExprRoundFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Parameter vector. */
 {
     double d;
@@ -7871,7 +7871,7 @@ ExprSrandFunc(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    size_t objc,		/* Actual parameter count. */
+    int objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Parameter vector. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -8123,7 +8123,7 @@ Tcl_NRCallObjProc(
     Tcl_Interp *interp,
     Tcl_ObjCmdProc *objProc,
     ClientData clientData,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     int result = TCL_OK;
@@ -8232,7 +8232,7 @@ int
 Tcl_NREvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    size_t objc,		/* Number of words in command. */
+    int objc,		/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags)			/* Collection of OR-ed bits that control the
@@ -8247,7 +8247,7 @@ int
 Tcl_NRCmdSwap(
     Tcl_Interp *interp,
     Tcl_Command cmd,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[],
     int flags)
 {
@@ -8308,7 +8308,7 @@ int
 TclNRTailcallObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
@@ -8377,7 +8377,7 @@ TclNRTailcallEval(
     Tcl_Obj *listPtr = data[0];
     Tcl_Obj *nsObjPtr = data[1];
     Tcl_Namespace *nsPtr;
-    size_t objc;
+    int objc;
     Tcl_Obj **objv;
 
     if (result == TCL_OK) {
@@ -8468,7 +8468,7 @@ int
 TclNRYieldObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
@@ -8499,7 +8499,7 @@ int
 TclNRYieldToObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
@@ -8803,7 +8803,7 @@ static int
 NRCoroInjectObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     Command *cmdPtr;
@@ -8853,7 +8853,7 @@ int
 TclNRInterpCoroutine(
     ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,		/* Number of arguments. */
+    int objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     CoroutineData *corPtr = clientData;
@@ -8917,7 +8917,7 @@ int
 TclNRCoroutineObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,		/* Number of arguments. */
+    int objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Command *cmdPtr;
@@ -9067,7 +9067,7 @@ int
 TclInfoCoroutineCmd(
     ClientData dummy,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;

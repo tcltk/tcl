@@ -650,7 +650,7 @@ typedef int (Tcl_CmdProc) (ClientData clientData, Tcl_Interp *interp,
 	int argc, const char *argv[]);
 typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
-	ClientData cmdClientData, size_t argc, const char *argv[]);
+	ClientData cmdClientData, int argc, const char *argv[]);
 typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, size_t objc,
 	struct Tcl_Obj *const *objv);

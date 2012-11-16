@@ -726,7 +726,7 @@ static int
 BinaryFormatCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,		/* Number of arguments. */
+    int objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int arg;			/* Index of next argument to consume. */
@@ -1232,7 +1232,7 @@ int
 BinaryScanCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,		/* Number of arguments. */
+    int objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int arg;			/* Index of next argument to consume. */
@@ -2289,7 +2289,7 @@ static int
 BinaryEncodeHex(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
@@ -2334,7 +2334,7 @@ static int
 BinaryDecodeHex(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
@@ -2451,7 +2451,7 @@ static int
 BinaryEncode64(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj;
@@ -2548,7 +2548,7 @@ static int
 BinaryDecodeUu(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
@@ -2644,7 +2644,7 @@ static int
 BinaryDecode64(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;

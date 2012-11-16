@@ -89,7 +89,7 @@ declare 16 {
     void Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes, size_t length)
 }
 declare 17 {
-    Tcl_Obj *Tcl_ConcatObj(size_t objc, Tcl_Obj *const objv[])
+    Tcl_Obj *Tcl_ConcatObj(int objc, Tcl_Obj *const objv[])
 }
 declare 18 {
     int Tcl_ConvertToType(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -287,7 +287,7 @@ declare 76 {
     void Tcl_BackgroundError(Tcl_Interp *interp)
 }
 declare 77 {
-    char Tcl_Backslash(const char *src, unsigned int *readPtr)
+    char Tcl_Backslash(const char *src, size_t *readPtr)
 }
 declare 78 {
     int Tcl_BadChannelOption(Tcl_Interp *interp, const char *optionName,
@@ -307,7 +307,7 @@ declare 82 {
     int Tcl_CommandComplete(const char *cmd)
 }
 declare 83 {
-    char *Tcl_Concat(size_t argc, const char *const *argv)
+    char *Tcl_Concat(int argc, const char *const *argv)
 }
 declare 84 {
     int Tcl_ConvertElement(const char *src, char *dst, int flags)
@@ -318,7 +318,7 @@ declare 85 {
 }
 declare 86 {
     int Tcl_CreateAlias(Tcl_Interp *slave, const char *slaveCmd,
-	    Tcl_Interp *target, const char *targetCmd, size_t argc,
+	    Tcl_Interp *target, const char *targetCmd, int argc,
 	    const char *const *argv)
 }
 declare 87 {
@@ -532,12 +532,12 @@ declare 147 {
 declare 148 {
     int Tcl_GetAlias(Tcl_Interp *interp, const char *slaveCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	    size_t *argcPtr, const char ***argvPtr)
+	    int *argcPtr, const char ***argvPtr)
 }
 declare 149 {
     int Tcl_GetAliasObj(Tcl_Interp *interp, const char *slaveCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	    size_t *objcPtr, Tcl_Obj ***objv)
+	    int *objcPtr, Tcl_Obj ***objv)
 }
 declare 150 {
     ClientData Tcl_GetAssocData(Tcl_Interp *interp, const char *name,
@@ -688,7 +688,7 @@ declare 191 {
     Tcl_Channel Tcl_MakeTcpClientChannel(ClientData tcpSocket)
 }
 declare 192 {
-    char *Tcl_Merge(size_t argc, const char *const *argv)
+    char *Tcl_Merge(int argc, const char *const *argv)
 }
 declare 193 {
     Tcl_HashEntry *Tcl_NextHashEntry(Tcl_HashSearch *searchPtr)
@@ -705,7 +705,7 @@ declare 196 {
 	    Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags)
 }
 declare 197 {
-    Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, size_t argc,
+    Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, int argc,
 	    const char **argv, int flags)
 }
 # This is obsolete, use Tcl_FSOpenFileChannel
@@ -856,13 +856,12 @@ declare 241 {
     void Tcl_SourceRCFile(Tcl_Interp *interp)
 }
 declare 242 {
-    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr,
-	    size_t *argcPtr, const char ***argvPtr)
+    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
+	    const char ***argvPtr)
 }
 # Obsolete, use Tcl_FSSplitPath
 declare 243 {
-    void Tcl_SplitPath(const char *path, size_t *argcPtr,
-	    const char ***argvPtr)
+    void Tcl_SplitPath(const char *path, int *argcPtr, const char ***argvPtr)
 }
 declare 244 {
     void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
@@ -1172,7 +1171,7 @@ declare 326 {
     int Tcl_UtfCharComplete(const char *src, size_t length)
 }
 declare 327 {
-    int Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
+    int Tcl_UtfBackslash(const char *src, size_t *readPtr, char *dst)
 }
 declare 328 {
     const char *Tcl_UtfFindFirst(const char *src, int ch)

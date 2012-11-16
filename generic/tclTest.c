@@ -190,9 +190,9 @@ static int		DelCmdProc(ClientData clientData,
 static void		DelDeleteProc(ClientData clientData);
 static void		EncodingFreeProc(ClientData clientData);
 static int		EncodingToUtfProc(ClientData clientData,
-			    const char *src, int srcLen, int flags,
+			    const char *src, size_t srcLen, int flags,
 			    Tcl_EncodingState *statePtr, char *dst,
-			    int dstLen, int *srcReadPtr, int *dstWrotePtr,
+			    size_t dstLen, int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr);
 static int		EncodingFromUtfProc(ClientData clientData,
 			    const char *src, int srcLen, int flags,
@@ -415,7 +415,7 @@ static int		TestInterpResolverCmd(ClientData clientData,
 #if defined(HAVE_CPUID) || defined(__WIN32__)
 static int		TestcpuidCmd(ClientData dummy,
 			    Tcl_Interp* interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 #endif
 
 static const Tcl_Filesystem testReportingFilesystem = {
@@ -1959,11 +1959,11 @@ static int
 EncodingToUtfProc(
     ClientData clientData,	/* TclEncoding structure. */
     const char *src,		/* Source string in specified encoding. */
-    int srcLen,			/* Source string length in bytes. */
+    size_t srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Current state. */
     char *dst,			/* Output buffer. */
-    int dstLen,			/* The maximum length of output buffer. */
+    size_t dstLen,			/* The maximum length of output buffer. */
     int *srcReadPtr,		/* Filled with number of bytes read. */
     int *dstWrotePtr,		/* Filled with number of bytes stored. */
     int *dstCharsPtr)		/* Filled with number of chars stored. */

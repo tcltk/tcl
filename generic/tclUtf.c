@@ -232,7 +232,7 @@ Tcl_UniCharToUtf(
 char *
 Tcl_UniCharToUtfDString(
     const Tcl_UniChar *uniStr,	/* Unicode string to convert to UTF-8. */
-    int uniLength,		/* Length of Unicode string in Tcl_UniChars
+    size_t uniLength,		/* Length of Unicode string in Tcl_UniChars
 				 * (must be >= 0). */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
@@ -394,7 +394,7 @@ Tcl_UtfToUniChar(
 Tcl_UniChar *
 Tcl_UtfToUniCharDString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
-    int length,			/* Length of UTF-8 string in bytes, or -1 for
+    size_t length,			/* Length of UTF-8 string in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Unicode representation of string is
 				 * appended to this previously initialized
@@ -455,7 +455,7 @@ int
 Tcl_UtfCharComplete(
     const char *src,		/* String to check if first few bytes contain
 				 * a complete UTF-8 character. */
-    int length)			/* Length of above string in bytes. */
+    size_t length)			/* Length of above string in bytes. */
 {
     int ch;
 
@@ -481,10 +481,10 @@ Tcl_UtfCharComplete(
  *---------------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_NumUtfChars(
     register const char *src,	/* The UTF-8 string to measure. */
-    int length)			/* The length of the string in bytes, or -1
+    size_t length)			/* The length of the string in bytes, or (size_t)-1
 				 * for strlen(string). */
 {
     Tcl_UniChar ch;
@@ -499,7 +499,7 @@ Tcl_NumUtfChars(
      */
 
     i = 0;
-    if (length < 0) {
+    if (length == (size_t)-1) {
 	while (*src != '\0') {
 	    src += TclUtfToUniChar(src, chPtr);
 	    i++;
@@ -774,7 +774,7 @@ int
 Tcl_UtfBackslash(
     const char *src,		/* Points to the backslash character of a
 				 * backslash sequence. */
-    int *readPtr,		/* Fill in with number of characters read from
+    size_t *readPtr,		/* Fill in with number of characters read from
 				 * src, unless NULL. */
     char *dst)			/* Filled with the bytes represented by the
 				 * backslash sequence. */
@@ -1784,10 +1784,10 @@ Tcl_UniCharCaseMatch(
 int
 TclUniCharMatch(
     const Tcl_UniChar *string,	/* Unicode String. */
-    int strLen,			/* Length of String */
+    size_t strLen,			/* Length of String */
     const Tcl_UniChar *pattern,	/* Pattern, which may contain special
 				 * characters. */
-    int ptnLen,			/* Length of Pattern */
+    size_t ptnLen,			/* Length of Pattern */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
     const Tcl_UniChar *stringEnd, *patternEnd;
