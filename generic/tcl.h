@@ -613,22 +613,6 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_SUBST_ALL		007
 
 /*
- * Argument descriptors for math function callbacks in expressions:
- */
-
-typedef enum {
-    TCL_INT, TCL_DOUBLE, TCL_EITHER, TCL_WIDE_INT
-} Tcl_ValueType;
-
-typedef struct Tcl_Value {
-    Tcl_ValueType type;		/* Indicates intValue or doubleValue is valid,
-				 * or both. */
-    long intValue;		/* Integer value. */
-    double doubleValue;		/* Double-precision floating value. */
-    Tcl_WideInt wideValue;	/* Wide (min. 64-bit) integer value. */
-} Tcl_Value;
-
-/*
  * Forward declaration of Tcl_Obj to prevent an error when the forward
  * reference to Tcl_Obj is encountered in the function types declared below.
  */
@@ -673,8 +657,6 @@ typedef void (Tcl_FreeProc) (char *blockPtr);
 typedef void (Tcl_IdleProc) (ClientData clientData);
 typedef void (Tcl_InterpDeleteProc) (ClientData clientData,
 	Tcl_Interp *interp);
-typedef int (Tcl_MathProc) (ClientData clientData, Tcl_Interp *interp,
-	Tcl_Value *args, Tcl_Value *resultPtr);
 typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
 typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
