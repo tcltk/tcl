@@ -619,6 +619,8 @@ typedef struct stat *Tcl_OldStat_;
 
 struct Tcl_Obj;
 
+typedef struct Tcl_Obj Tcl_Value;
+
 /*
  *----------------------------------------------------------------------------
  * Function types defined by Tcl:
