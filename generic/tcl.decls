@@ -352,11 +352,11 @@ declare 93 {
 declare 94 {
     Tcl_Interp *Tcl_CreateInterp(void)
 }
-declare 95 {
-    void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
-	    int numArgs, Tcl_ValueType *argTypes,
-	    Tcl_MathProc *proc, ClientData clientData)
-}
+#declare 95 {
+#    void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
+#	    int numArgs, Tcl_ValueType *argTypes,
+#	    Tcl_MathProc *proc, ClientData clientData)
+#}
 declare 96 {
     Tcl_Command Tcl_CreateObjCommand(Tcl_Interp *interp,
 	    const char *cmdName,
@@ -1548,14 +1548,14 @@ declare 434 {
 }
 
 # TIP#15 (math function introspection) dkf
-declare 435 {
-    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
-	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
-	    Tcl_MathProc **procPtr, ClientData *clientDataPtr)
-}
-declare 436 {
-    Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
-}
+#declare 435 {
+#    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
+#	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
+#	    Tcl_MathProc **procPtr, ClientData *clientDataPtr)
+#}
+#declare 436 {
+#    Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
+#}
 
 # TIP#36 (better access to 'subst') dkf
 declare 437 {
