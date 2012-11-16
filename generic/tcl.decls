@@ -185,7 +185,7 @@ declare 44 {
 }
 declare 45 {
     int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    size_t *objcPtr, Tcl_Obj ***objvPtr)
+	    int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 46 {
     int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, int index,
@@ -193,7 +193,7 @@ declare 46 {
 }
 declare 47 {
     int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    size_t *lengthPtr)
+	    int *lengthPtr)
 }
 declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr,
@@ -665,7 +665,7 @@ declare 185 {
 }
 # Obsolete, use Tcl_FSJoinPath
 declare 186 {
-    char *Tcl_JoinPath(size_t argc, const char *const *argv,
+    char *Tcl_JoinPath(int argc, const char *const *argv,
 	    Tcl_DString *resultPtr)
 }
 declare 187 {
@@ -1055,7 +1055,7 @@ declare 291 {
 	    int flags)
 }
 declare 292 {
-    int Tcl_EvalObjv(Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[],
+    int Tcl_EvalObjv(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
 	    int flags)
 }
 declare 293 {
@@ -1384,7 +1384,7 @@ declare 389 {
 }
 declare 390 {
     int Tcl_ProcObjCmd(ClientData clientData, Tcl_Interp *interp,
-	    size_t objc, Tcl_Obj *const objv[])
+	    int objc, Tcl_Obj *const objv[])
 }
 declare 391 {
     void Tcl_ConditionFinalize(Tcl_Condition *condPtr)
@@ -2141,11 +2141,11 @@ declare 584 {
     int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 585 {
-    int Tcl_NREvalObjv(Tcl_Interp *interp, size_t objc,
+    int Tcl_NREvalObjv(Tcl_Interp *interp, int objc,
 	    Tcl_Obj *const objv[], int flags)
 }
 declare 586 {
-    int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, size_t objc,
+    int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc,
 	    Tcl_Obj *const objv[], int flags)
 }
 declare 587 {
@@ -2157,7 +2157,7 @@ declare 587 {
 # classic objProc
 declare 588 {
     int Tcl_NRCallObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
-	    ClientData clientData, size_t objc, Tcl_Obj *const objv[])
+	    ClientData clientData, int objc, Tcl_Obj *const objv[])
 }
 
 # TIP#316 (Tcl_StatBuf reader functions) dkf

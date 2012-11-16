@@ -107,8 +107,8 @@ declare 16 {
 #}
 declare 22 {
     int TclFindElement(Tcl_Interp *interp, const char *listStr,
-	    size_t listLength, const char **elementPtr, const char **nextPtr,
-	    size_t *sizePtr, int *bracePtr)
+	    int listLength, const char **elementPtr, const char **nextPtr,
+	    int *sizePtr, int *bracePtr)
 }
 declare 23 {
     Proc *TclFindProc(Interp *iPtr, const char *procName)
@@ -154,7 +154,7 @@ declare 32 {
 #}
 declare 34 {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int endValue, size_t *indexPtr)
+	    int endValue, int *indexPtr)
 }
 # Removed in 8.4b2:
 #declare 35 {
@@ -228,11 +228,11 @@ declare 51 {
 #}
 declare 53 {
     int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp,
-	    size_t argc, const char **argv)
+	    int argc, const char **argv)
 }
 declare 54 {
     int TclInvokeStringCommand(ClientData clientData, Tcl_Interp *interp,
-	    size_t objc, Tcl_Obj *const objv[])
+	    int objc, Tcl_Obj *const objv[])
 }
 declare 55 {
     Proc *TclIsProc(Command *cmdPtr)
@@ -271,7 +271,7 @@ declare 63 {
 	    size_t objc, Tcl_Obj *const objv[])
 }
 declare 64 {
-    int TclObjInvoke(Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[],
+    int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
 	    int flags)
 }
 # Removed in Tcl 8.5a2
@@ -315,10 +315,10 @@ declare 76 {
     unsigned long TclpGetSeconds(void)
 }
 
-# deprecated
-declare 77 {
-    void TclpGetTime(Tcl_Time *time)
-}
+# Removed in 9.0:
+#declare 77 {
+#    void TclpGetTime(Tcl_Time *time)
+#}
 # Removed in 8.6:
 #declare 78 {
 #    int TclpGetTimeZone(unsigned long time)
@@ -892,7 +892,7 @@ declare 224 {
 #
 declare 225 {
     Tcl_Obj *TclTraceDictPath(Tcl_Interp *interp, Tcl_Obj *rootPtr,
-	    size_t keyc, Tcl_Obj *const keyv[], int flags)
+	    int keyc, Tcl_Obj *const keyv[], int flags)
 }
 declare 226 {
     int TclObjBeingDeleted(Tcl_Obj *objPtr)
@@ -969,7 +969,7 @@ declare 241 {
 	    const CmdFrame *invoker, int word)
 }
 declare 242 {
-    int TclNREvalObjv(Tcl_Interp *interp, size_t objc,
+    int TclNREvalObjv(Tcl_Interp *interp, int objc,
 	      Tcl_Obj *const objv[], int flags, Command *cmdPtr)
 }
 
@@ -1200,14 +1200,13 @@ declare 9 unix {
 declare 10 unix {
     Tcl_DirEntry *TclpReaddir(DIR *dir)
 }
-# Slots 11 and 12 are forwarders for functions that were promoted to
-# generic Stubs
-declare 11 unix {
-    struct tm *TclpLocaltime_unix(const time_t *clock)
-}
-declare 12 unix {
-    struct tm *TclpGmtime_unix(const time_t *clock)
-}
+# Removed in Tcl 9.0
+#declare 11 unix {
+#    struct tm *TclpLocaltime_unix(const time_t *clock)
+#}
+#declare 12 unix {
+#    struct tm *TclpGmtime_unix(const time_t *clock)
+#}
 declare 13 unix {
     char *TclpInetNtoa(struct in_addr addr)
 }

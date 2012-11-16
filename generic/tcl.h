@@ -149,11 +149,6 @@ extern "C" {
  */
 
 #include <stdarg.h>
-#ifndef TCL_NO_DEPRECATED
-#    define TCL_VARARGS(type, name) (type name, ...)
-#    define TCL_VARARGS_DEF(type, name) (type name, ...)
-#    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
-#endif
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #else
@@ -241,19 +236,6 @@ extern "C" {
 #   else
 #      define TCL_STORAGE_CLASS DLLIMPORT
 #   endif
-#endif
-
-/*
- * The following _ANSI_ARGS_ macro is to support old extensions
- * written for older versions of Tcl where it permitted support
- * for compilers written in the pre-prototype era of C.
- *
- * New code should use prototypes.
- */
-
-#ifndef TCL_NO_DEPRECATED
-#   undef _ANSI_ARGS_
-#   define _ANSI_ARGS_(x)	x
 #endif
 
 /*
@@ -469,39 +451,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
  * accessed with Tcl_GetObjResult() and Tcl_SetObjResult().
  */
 
-typedef struct Tcl_Interp
-#ifndef TCL_NO_DEPRECATED
-{
-    /* TIP #330: Strongly discourage extensions from using the string
-     * result. */
-#ifdef USE_INTERP_RESULT
-    char *result TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
-				/* If the last command returned a string
-				 * result, this points to it. */
-    void (*freeProc) (char *blockPtr)
-	    TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
-				/* Zero means the string result is statically
-				 * allocated. TCL_DYNAMIC means it was
-				 * allocated with ckalloc and should be freed
-				 * with ckfree. Other values give the address
-				 * of function to invoke to free the result.
-				 * Tcl_Eval must free it before executing next
-				 * command. */
-#else
-    char *resultDontUse; /* Don't use in extensions! */
-    void (*freeProcDontUse) (char *); /* Don't use in extensions! */
-#endif
-#ifdef USE_INTERP_ERRORLINE
-    int errorLine TCL_DEPRECATED_API("use Tcl_GetErrorLine/Tcl_SetErrorLine");
-				/* When TCL_ERROR is returned, this gives the
-				 * line number within the command where the
-				 * error occurred (1 if first line). */
-#else
-    int errorLineDontUse; /* Don't use in extensions! */
-#endif
-}
-#endif /* TCL_NO_DEPRECATED */
-Tcl_Interp;
+typedef struct Tcl_Interp Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
@@ -697,7 +647,7 @@ typedef void (Tcl_ChannelProc) (ClientData clientData, int mask);
 typedef void (Tcl_CloseProc) (ClientData data);
 typedef void (Tcl_CmdDeleteProc) (ClientData clientData);
 typedef int (Tcl_CmdProc) (ClientData clientData, Tcl_Interp *interp,
-	size_t argc, const char *argv[]);
+	int argc, const char *argv[]);
 typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
 	ClientData cmdClientData, size_t argc, const char *argv[]);
@@ -728,7 +678,7 @@ typedef int (Tcl_MathProc) (ClientData clientData, Tcl_Interp *interp,
 	Tcl_Value *args, Tcl_Value *resultPtr);
 typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
 typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
-	size_t objc, struct Tcl_Obj *const *objv);
+	int objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_PackageInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_PackageUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -1102,17 +1052,6 @@ typedef struct Tcl_DString {
 #define TCL_TRACE_DELETE	0x4000
 
 #define TCL_ALLOW_INLINE_COMPILATION 0x20000
-
-/*
- * The TCL_PARSE_PART1 flag is deprecated and has no effect. The part1 is now
- * always parsed whenever the part2 is NULL. (This is to avoid a common error
- * when converting code to use the new object based APIs and forgetting to
- * give the flag)
- */
-
-#ifndef TCL_NO_DEPRECATED
-#   define TCL_PARSE_PART1	0x400
-#endif
 
 /*
  * Types for linked variables:
@@ -2587,18 +2526,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define Tcl_GlobalEvalObj(interp,objPtr) \
 	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
 
-/*
- * These function have been renamed. The old names are deprecated, but we
- * define these macros for backwards compatibilty.
- */
-
-#   define Tcl_Ckalloc		Tcl_Alloc
-#   define Tcl_Ckfree		Tcl_Free
-#   define Tcl_Ckrealloc	Tcl_Realloc
-#   define Tcl_Return		Tcl_SetResult
-#   define Tcl_TildeSubst	Tcl_TranslateFileName
-#   define panic		Tcl_Panic
-#   define panicVA		Tcl_PanicVA
 #endif /* !TCL_NO_DEPRECATED */
 
 /*
