@@ -874,13 +874,13 @@ EXTERN void		Tcl_ExitThread(int status);
 /* 295 */
 EXTERN int		Tcl_ExternalToUtf(Tcl_Interp *interp,
 				Tcl_Encoding encoding, const char *src,
-				int srcLen, int flags,
+				size_t srcLen, int flags,
 				Tcl_EncodingState *statePtr, char *dst,
-				int dstLen, int *srcReadPtr,
-				int *dstWrotePtr, int *dstCharsPtr);
+				size_t dstLen, size_t *srcReadPtr,
+				size_t *dstWrotePtr, size_t *dstCharsPtr);
 /* 296 */
 EXTERN char *		Tcl_ExternalToUtfDString(Tcl_Encoding encoding,
-				const char *src, int srcLen,
+				const char *src, size_t srcLen,
 				Tcl_DString *dsPtr);
 /* 297 */
 EXTERN void		Tcl_FinalizeThread(void);
@@ -969,13 +969,13 @@ EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
 /* 332 */
 EXTERN int		Tcl_UtfToExternal(Tcl_Interp *interp,
 				Tcl_Encoding encoding, const char *src,
-				int srcLen, int flags,
+				size_t srcLen, int flags,
 				Tcl_EncodingState *statePtr, char *dst,
-				int dstLen, int *srcReadPtr,
-				int *dstWrotePtr, int *dstCharsPtr);
+				size_t dstLen, size_t *srcReadPtr,
+				size_t *dstWrotePtr, size_t *dstCharsPtr);
 /* 333 */
 EXTERN char *		Tcl_UtfToExternalDString(Tcl_Encoding encoding,
-				const char *src, int srcLen,
+				const char *src, size_t srcLen,
 				Tcl_DString *dsPtr);
 /* 334 */
 EXTERN int		Tcl_UtfToLower(char *src);
@@ -2140,8 +2140,8 @@ typedef struct TclStubs {
     int (*tcl_EvalObjv) (Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[], int flags); /* 292 */
     int (*tcl_EvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 293 */
     void (*tcl_ExitThread) (int status); /* 294 */
-    int (*tcl_ExternalToUtf) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr); /* 295 */
-    char * (*tcl_ExternalToUtfDString) (Tcl_Encoding encoding, const char *src, int srcLen, Tcl_DString *dsPtr); /* 296 */
+    int (*tcl_ExternalToUtf) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, size_t srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, size_t dstLen, size_t *srcReadPtr, size_t *dstWrotePtr, size_t *dstCharsPtr); /* 295 */
+    char * (*tcl_ExternalToUtfDString) (Tcl_Encoding encoding, const char *src, size_t srcLen, Tcl_DString *dsPtr); /* 296 */
     void (*tcl_FinalizeThread) (void); /* 297 */
     void (*tcl_FinalizeNotifier) (ClientData clientData); /* 298 */
     void (*tcl_FreeEncoding) (Tcl_Encoding encoding); /* 299 */
@@ -2177,8 +2177,8 @@ typedef struct TclStubs {
     const char * (*tcl_UtfFindLast) (const char *src, int ch); /* 329 */
     const char * (*tcl_UtfNext) (const char *src); /* 330 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 331 */
-    int (*tcl_UtfToExternal) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr); /* 332 */
-    char * (*tcl_UtfToExternalDString) (Tcl_Encoding encoding, const char *src, int srcLen, Tcl_DString *dsPtr); /* 333 */
+    int (*tcl_UtfToExternal) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, size_t srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, size_t dstLen, size_t *srcReadPtr, size_t *dstWrotePtr, size_t *dstCharsPtr); /* 332 */
+    char * (*tcl_UtfToExternalDString) (Tcl_Encoding encoding, const char *src, size_t srcLen, Tcl_DString *dsPtr); /* 333 */
     int (*tcl_UtfToLower) (char *src); /* 334 */
     int (*tcl_UtfToTitle) (char *src); /* 335 */
     int (*tcl_UtfToUniChar) (const char *src, Tcl_UniChar *chPtr); /* 336 */

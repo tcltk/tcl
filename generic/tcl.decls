@@ -1066,13 +1066,13 @@ declare 294 {
 }
 declare 295 {
     int Tcl_ExternalToUtf(Tcl_Interp *interp, Tcl_Encoding encoding,
-	    const char *src, int srcLen, int flags,
-	    Tcl_EncodingState *statePtr, char *dst, int dstLen,
-	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
+	    const char *src, size_t srcLen, int flags,
+	    Tcl_EncodingState *statePtr, char *dst, size_t dstLen,
+	    size_t *srcReadPtr, size_t *dstWrotePtr, size_t *dstCharsPtr)
 }
 declare 296 {
     char *Tcl_ExternalToUtfDString(Tcl_Encoding encoding,
-	    const char *src, int srcLen, Tcl_DString *dsPtr)
+	    const char *src, size_t srcLen, Tcl_DString *dsPtr)
 }
 declare 297 {
     void Tcl_FinalizeThread(void)
@@ -1188,13 +1188,13 @@ declare 331 {
 }
 declare 332 {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding,
-	    const char *src, int srcLen, int flags,
-	    Tcl_EncodingState *statePtr, char *dst, int dstLen,
-	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
+	    const char *src, size_t srcLen, int flags,
+	    Tcl_EncodingState *statePtr, char *dst, size_t dstLen,
+	    size_t *srcReadPtr, size_t *dstWrotePtr, size_t *dstCharsPtr)
 }
 declare 333 {
     char *Tcl_UtfToExternalDString(Tcl_Encoding encoding,
-	    const char *src, int srcLen, Tcl_DString *dsPtr)
+	    const char *src, size_t srcLen, Tcl_DString *dsPtr)
 }
 declare 334 {
     int Tcl_UtfToLower(char *src)

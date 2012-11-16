@@ -19,12 +19,10 @@
 
 static inline Tcl_Obj *	NewNsObj(Tcl_Namespace *namespacePtr);
 static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
-			    EnsembleConfig *ensemblePtr, int objc,
+			    EnsembleConfig *ensemblePtr, size_t objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
-static int		NsEnsembleImplementationCmd(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
-static int		NsEnsembleImplementationCmdNR(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	NsEnsembleImplementationCmd;
+static Tcl_ObjCmdProc	NsEnsembleImplementationCmdNR;
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
 static int		NsEnsembleStringOrder(const void *strPtr1,
 			    const void *strPtr2);
@@ -118,7 +116,7 @@ int
 TclNamespaceEnsembleCmd(
     ClientData dummy,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Namespace *namespacePtr;
@@ -150,7 +148,8 @@ TclNamespaceEnsembleCmd(
     switch ((enum EnsSubcmds) index) {
     case ENS_CREATE: {
 	const char *name;
-	int len, allocatedMapFlag = 0;
+	int allocatedMapFlag = 0;
+	size_t len;
 	/*
 	 * Defaults
 	 */
@@ -459,7 +458,8 @@ TclNamespaceEnsembleCmd(
 
 	    Tcl_SetObjResult(interp, resultObj);
 	} else {
-	    int len, allocatedMapFlag = 0;
+	    size_t len;
+	    int allocatedMapFlag = 0;
 	    Tcl_Obj *subcmdObj = NULL, *mapObj = NULL, *paramObj = NULL,
 		    *unknownObj = NULL; /* Defaults, silence gcc 4 warnings */
 	    int permitPrefix, flags = 0;	/* silence gcc 4 warning */
@@ -725,7 +725,7 @@ Tcl_SetEnsembleSubcommandList(
 	return TCL_ERROR;
     }
     if (subcmdList != NULL) {
-	int length;
+	size_t length;
 
 	if (TclListObjLength(interp, subcmdList, &length) != TCL_OK) {
 	    return TCL_ERROR;
@@ -792,7 +792,7 @@ Tcl_SetEnsembleParameterList(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
     Tcl_Obj *oldList;
-    int length;
+    size_t length;
 
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -877,7 +877,8 @@ Tcl_SetEnsembleMappingDict(
 	return TCL_ERROR;
     }
     if (mapDict != NULL) {
-	int size, done;
+	size_t size;
+	int done;
 	Tcl_DictSearch search;
 	Tcl_Obj *valuePtr;
 
@@ -976,7 +977,7 @@ Tcl_SetEnsembleUnknownHandler(
 	return TCL_ERROR;
     }
     if (unknownList != NULL) {
-	int length;
+	size_t length;
 
 	if (TclListObjLength(interp, unknownList, &length) != TCL_OK) {
 	    return TCL_ERROR;
@@ -1459,7 +1460,8 @@ TclMakeEnsemble(
     Tcl_DString buf, hiddenBuf;
     const char **nameParts = NULL;
     const char *cmdName = NULL;
-    int i, nameCount = 0, ensembleFlags = 0, hiddenLen;
+    int i, ensembleFlags = 0;
+    size_t hiddenLen, nameCount = 0;
 
     /*
      * Construct the path for the ensemble namespace and create it.
@@ -1610,7 +1612,7 @@ static int
 NsEnsembleImplementationCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     return Tcl_NRCallObjProc(interp, NsEnsembleImplementationCmdNR,
@@ -1621,7 +1623,7 @@ static int
 NsEnsembleImplementationCmdNR(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     EnsembleConfig *ensemblePtr = clientData;
@@ -1648,7 +1650,7 @@ NsEnsembleImplementationCmdNR(
 
 	Tcl_DString buf;	/* Message being built */
 	Tcl_Obj **elemPtrs;	/* Parameter names */
-	int len;		/* Number of parameters to append */
+	size_t len;		/* Number of parameters to append */
 
 	Tcl_DStringInit(&buf);
 	if (ensemblePtr->parameterList == NULL) {
@@ -1746,8 +1748,8 @@ NsEnsembleImplementationCmdNR(
 				 * it (will be an error for a non-unique
 				 * prefix). */
 	char *fullName = NULL;	/* Full name of the subcommand. */
-	int stringLength, i;
-	int tableLength = ensemblePtr->subcommandTable.numEntries;
+	size_t stringLength, i;
+	size_t tableLength = ensemblePtr->subcommandTable.numEntries;
 
 	subcmdName = TclGetString(objv[1 + ensemblePtr->numParameters]);
 	stringLength = objv[1 + ensemblePtr->numParameters]->length;
@@ -1822,7 +1824,7 @@ NsEnsembleImplementationCmdNR(
 				 * target command prefix. */
 	Tcl_Obj *copyPtr;	/* The actual list of words to dispatch to.
 				 * Will be freed by the dispatch engine. */
-	int prefixObjc, copyObjc;
+	size_t prefixObjc, copyObjc;
 	Interp *iPtr = (Interp *) interp;
 
 	/*
@@ -1844,7 +1846,7 @@ NsEnsembleImplementationCmdNR(
 				 * arguments to pass to the command that
 				 * implements the ensemble subcommand. */
 	    register List *listRepPtr = copyPtr->internalRep.twoPtrValue.ptr1;
-	    register int i;
+	    register size_t i;
 
 	    listRepPtr->elemCount = copyObjc;
 	    copyObjv = &listRepPtr->elements;
@@ -1876,7 +1878,7 @@ NsEnsembleImplementationCmdNR(
 	    TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL,
 		    NULL);
 	} else {
-	    register int ni = 2 + ensemblePtr->numParameters
+	    register ssize_t ni = 2 + ensemblePtr->numParameters
 		    - iPtr->ensembleRewrite.numInsertedObjs;
 				/* Position in objv of new front of insertion
 				 * relative to old one. */
@@ -1942,7 +1944,7 @@ NsEnsembleImplementationCmdNR(
     if (ensemblePtr->subcommandTable.numEntries == 1) {
 	Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[0], -1);
     } else {
-	int i;
+	size_t i;
 
 	for (i=0 ; i<ensemblePtr->subcommandTable.numEntries-1 ; i++) {
 	    Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[i], -1);
@@ -2000,7 +2002,7 @@ TclInitRewriteEnsemble(
 	iPtr->ensembleRewrite.numRemovedObjs = numRemoved;
 	iPtr->ensembleRewrite.numInsertedObjs = numInserted;
     } else {
-	int numIns = iPtr->ensembleRewrite.numInsertedObjs;
+	size_t numIns = iPtr->ensembleRewrite.numInsertedObjs;
 
 	if (numIns < numRemoved) {
 	    iPtr->ensembleRewrite.numRemovedObjs += numRemoved - numIns;
@@ -2071,12 +2073,13 @@ static inline int
 EnsembleUnknownCallback(
     Tcl_Interp *interp,
     EnsembleConfig *ensemblePtr,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[],
     Tcl_Obj **prefixObjPtr)
 {
-    int paramc, i, result, prefixObjc;
+    size_t paramc, i, prefixObjc;
     Tcl_Obj **paramv, *unknownCmd, *ensObj;
+    int result;
 
     /*
      * Create the unknown command callback to determine what to do.
@@ -2213,7 +2216,7 @@ MakeCachedEnsembleCommand(
     Tcl_Obj *prefixObjPtr)
 {
     register EnsembleCmdRep *ensembleCmd;
-    int length;
+    size_t length;
 
     if (objPtr->typePtr == &tclEnsembleCmdType) {
 	ensembleCmd = objPtr->internalRep.otherValuePtr;
@@ -2400,7 +2403,7 @@ BuildEnsembleConfig(
 
     if (ensemblePtr->subcmdList != NULL) {
 	Tcl_Obj **subcmdv, *target, *cmdObj, *cmdPrefixObj;
-	int subcmdc;
+	size_t subcmdc;
 
 	TclListObjGetElements(NULL, ensemblePtr->subcmdList, &subcmdc,
 		&subcmdv);
@@ -2657,7 +2660,7 @@ DupEnsembleCmdRep(
 {
     EnsembleCmdRep *ensembleCmd = objPtr->internalRep.otherValuePtr;
     EnsembleCmdRep *ensembleCopy = ckalloc(sizeof(EnsembleCmdRep));
-    int length = strlen(ensembleCmd->fullSubcmdName);
+    size_t length = strlen(ensembleCmd->fullSubcmdName);
 
     copyPtr->typePtr = &tclEnsembleCmdType;
     copyPtr->internalRep.otherValuePtr = ensembleCopy;
@@ -2694,7 +2697,7 @@ StringOfEnsembleCmdRep(
     Tcl_Obj *objPtr)
 {
     EnsembleCmdRep *ensembleCmd = objPtr->internalRep.otherValuePtr;
-    int length = strlen(ensembleCmd->fullSubcmdName);
+    size_t length = strlen(ensembleCmd->fullSubcmdName);
 
     objPtr->length = length;
     objPtr->bytes = ckalloc(length + 1);
@@ -2735,8 +2738,8 @@ TclCompileEnsemble(
     Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
     Tcl_Parse synthetic;
-    int len, result, flags = 0, i;
-    unsigned numBytes;
+    size_t len, result, i, numBytes;
+    int flags = 0;
     const char *word;
 
     if (parsePtr->numWords < 2) {
@@ -2800,7 +2803,7 @@ TclCompileEnsemble(
 
     (void) Tcl_GetEnsembleSubcommandList(NULL, ensemble, &listObj);
     if (listObj != NULL) {
-	int sclen;
+	size_t sclen;
 	const char *str;
 	Tcl_Obj *matchObj = NULL;
 
@@ -2959,7 +2962,7 @@ TclCompileEnsemble(
      */
 
     for (i=0 ; i<len ; i++) {
-	int sclen;
+	size_t sclen;
 	const char *str = Tcl_GetStringFromObj(elems[i], &sclen);
 
 	synthetic.tokenPtr[2*i].type = TCL_TOKEN_SIMPLE_WORD;

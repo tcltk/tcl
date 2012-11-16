@@ -213,7 +213,8 @@ HandleBgErrors(
     Tcl_Preserve(assocPtr);
     Tcl_Preserve(interp);
     while (assocPtr->firstBgPtr != NULL) {
-	int code, prefixObjc;
+	int code;
+	size_t prefixObjc;
 	Tcl_Obj **prefixObjv, **tempObjv;
 
 	/*
@@ -309,7 +310,7 @@ int
 TclDefaultBgErrorHandlerObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *keyPtr, *valuePtr;
@@ -1391,7 +1392,7 @@ int
 Tcl_VwaitObjCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int done, foundEvent;
@@ -1487,7 +1488,7 @@ int
 Tcl_UpdateObjCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int optionIndex;
