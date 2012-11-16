@@ -1328,7 +1328,7 @@ EXTERN int		Tcl_FSConvertToPathType(Tcl_Interp *interp,
 /* 460 */
 EXTERN Tcl_Obj *	Tcl_FSJoinPath(Tcl_Obj *listObj, int elements);
 /* 461 */
-EXTERN Tcl_Obj *	Tcl_FSSplitPath(Tcl_Obj *pathPtr, int *lenPtr);
+EXTERN Tcl_Obj *	Tcl_FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr);
 /* 462 */
 EXTERN int		Tcl_FSEqualPaths(Tcl_Obj *firstPtr,
 				Tcl_Obj *secondPtr);
@@ -2306,7 +2306,7 @@ typedef struct TclStubs {
     int (*tcl_FSChdir) (Tcl_Obj *pathPtr); /* 458 */
     int (*tcl_FSConvertToPathType) (Tcl_Interp *interp, Tcl_Obj *pathPtr); /* 459 */
     Tcl_Obj * (*tcl_FSJoinPath) (Tcl_Obj *listObj, int elements); /* 460 */
-    Tcl_Obj * (*tcl_FSSplitPath) (Tcl_Obj *pathPtr, int *lenPtr); /* 461 */
+    Tcl_Obj * (*tcl_FSSplitPath) (Tcl_Obj *pathPtr, size_t *lenPtr); /* 461 */
     int (*tcl_FSEqualPaths) (Tcl_Obj *firstPtr, Tcl_Obj *secondPtr); /* 462 */
     Tcl_Obj * (*tcl_FSGetNormalizedPath) (Tcl_Interp *interp, Tcl_Obj *pathPtr); /* 463 */
     Tcl_Obj * (*tcl_FSJoinToPath) (Tcl_Obj *pathPtr, size_t objc, Tcl_Obj *const objv[]); /* 464 */

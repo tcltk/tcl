@@ -1481,7 +1481,7 @@ CompileExprObj(
 	 * TIP #280: No invoker (yet) - Expression compilation.
 	 */
 
-	int length;
+	size_t length;
 	const char *string = TclGetStringFromObj(objPtr, &length);
 
 	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
@@ -2077,8 +2077,9 @@ TEBCresume(
 
     Tcl_Obj *objPtr, *valuePtr, *value2Ptr, *part1Ptr, *part2Ptr, *tmpPtr;
     Tcl_Obj **objv;
-    int objc = 0;
-    int opnd, length, pcAdjustment;
+    size_t objc = 0;
+    int opnd, pcAdjustment;
+    size_t length;
     Var *varPtr, *arrayPtr;
 #ifdef TCL_COMPILE_DEBUG
     char cmdNameBuf[21];
@@ -4374,7 +4375,8 @@ TEBCresume(
 
     {
 	int index, numIndices, fromIdx, toIdx;
-	int nocase, match, length2, cflags, s1len, s2len;
+	int nocase, match, cflags;
+	size_t length2, s1len, s2len;
 	const char *s1, *s2;
 
     case INST_LIST:
@@ -4983,7 +4985,7 @@ TEBCresume(
 
     {
 	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
-	int length3;
+	size_t length3;
 	Tcl_Obj *value3Ptr;
 
     case INST_STR_MAP:
@@ -5914,9 +5916,10 @@ TEBCresume(
 	Var *iterVarPtr, *listVarPtr;
 	Tcl_Obj *oldValuePtr, *listPtr, **elements;
 	ForeachVarList *varListPtr;
-	int numLists, iterNum, listTmpIndex, listLen, numVars;
+	int numLists, iterNum, listTmpIndex, numVars;
 	int varIndex, valIndex, continueLoop, j, iterTmpIndex;
 	long i;
+	size_t listLen;
 
     case INST_FOREACH_START4:
 	/*
@@ -6144,11 +6147,12 @@ TEBCresume(
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
 	Tcl_DictSearch *searchPtr;
 	DictUpdateInfo *duiPtr;
+	size_t size;
 
     case INST_DICT_VERIFY:
 	dictPtr = OBJ_AT_TOS;
 	TRACE(("=> "));
-	if (Tcl_DictObjSize(interp, dictPtr, &done) != TCL_OK) {
+	if (Tcl_DictObjSize(interp, dictPtr, &size) != TCL_OK) {
 	    TRACE_APPEND(("ERROR verifying dictionary nature of \"%s\": %s\n",
 		    O2S(OBJ_AT_DEPTH(opnd)), O2S(Tcl_GetObjResult(interp))));
 	    goto gotError;
@@ -8570,7 +8574,7 @@ IllegalExprOperandType(
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
-	int numBytes;
+	size_t numBytes;
 	const char *bytes = Tcl_GetStringFromObj(opndPtr, &numBytes);
 
 	if (numBytes == 0) {

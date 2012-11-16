@@ -675,7 +675,7 @@ Tcl_HashStats(
      */
 
     result = ckalloc((NUM_COUNTERS * 60) + 300);
-    sprintf(result, "%d entries in table, %d buckets\n",
+    sprintf(result, "%lu entries in table, %lu buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i = 0; i < NUM_COUNTERS; i++) {

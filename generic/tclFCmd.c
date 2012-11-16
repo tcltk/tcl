@@ -22,9 +22,9 @@ static int		CopyRenameOneFile(Tcl_Interp *interp,
 			    int copyFlag, int force);
 static Tcl_Obj *	FileBasename(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static int		FileCopyRename(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[], int copyFlag);
+			    size_t objc, Tcl_Obj *const objv[], int copyFlag);
 static int		FileForceOption(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[], int *forcePtr);
+			    size_t objc, Tcl_Obj *const objv[], int*forcePtr);
 
 /*
  *---------------------------------------------------------------------------
@@ -50,7 +50,7 @@ TclFileRenameCmd(
     ClientData clientData,	/* Unused */
     Tcl_Interp *interp,		/* Interp for error reporting or recursive
 				 * calls in the case of a tricky rename. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 0);
@@ -79,7 +79,7 @@ TclFileCopyCmd(
     ClientData clientData,	/* Unused */
     Tcl_Interp *interp,		/* Used for error reporting or recursive calls
 				 * in the case of a tricky copy. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 1);
@@ -105,7 +105,7 @@ TclFileCopyCmd(
 static int
 FileCopyRename(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument strings passed to Tcl_FileCmd. */
     int copyFlag)		/* If non-zero, copy source(s). Otherwise,
 				 * rename them. */
@@ -216,14 +216,15 @@ int
 TclFileMakeDirsCmd(
     ClientData clientData,	/* Unused */
     Tcl_Interp *interp,		/* Used for error reporting. */
-    int objc,			/* Number of arguments */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile = NULL;
-    int result, i, j, pobjc;
+    int result, i, j;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
+    size_t pobjc;
 
     result = TCL_OK;
     for (i = 1; i < objc; i++) {
@@ -334,7 +335,7 @@ int
 TclFileDeleteCmd(
     ClientData clientData,	/* Unused */
     Tcl_Interp *interp,		/* Used for error reporting */
-    int objc,			/* Number of arguments */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     int i, force, result;
@@ -815,7 +816,7 @@ CopyRenameOneFile(
 static int
 FileForceOption(
     Tcl_Interp *interp,		/* Interp, for error return. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument strings.  First command line
 				 * option, if it exists, begins at 0. */
     int *forcePtr)		/* If the "-force" was specified, *forcePtr is
@@ -870,7 +871,7 @@ FileBasename(
     Tcl_Interp *interp,		/* Interp, for error return. */
     Tcl_Obj *pathPtr)		/* Path whose basename to extract. */
 {
-    int objc;
+    size_t objc;
     Tcl_Obj *splitPtr;
     Tcl_Obj *resultPtr = NULL;
 
@@ -945,14 +946,14 @@ int
 TclFileAttrsCmd(
     ClientData clientData,	/* Unused */
     Tcl_Interp *interp,		/* The interpreter for error reporting. */
-    int objc,			/* Number of command line arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The command line objects. */
 {
     int result;
     const char *const *attributeStrings;
     const char **attributeStringsAllocated = NULL;
     Tcl_Obj *objStrings = NULL;
-    int numObjStrings = -1;
+    size_t numObjStrings = TCL_STRLEN;
     Tcl_Obj *filePtr;
 
     if (objc < 2) {
@@ -1167,7 +1168,7 @@ int
 TclFileLinkCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *contents;
@@ -1318,7 +1319,7 @@ int
 TclFileReadLinkCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *contents;
@@ -1369,7 +1370,7 @@ int
 TclFileTemporaryCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *nameVarObj = NULL;	/* Variable to store the name of the temporary
@@ -1392,7 +1393,7 @@ TclFileTemporaryCmd(
 	TclNewObj(nameObj);
     }
     if (objc > 2) {
-	int length;
+	size_t length;
 	Tcl_Obj *templateObj = objv[2];
 	const char *string = TclGetStringFromObj(templateObj, &length);
 

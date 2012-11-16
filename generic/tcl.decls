@@ -1646,7 +1646,7 @@ declare 460 {
     Tcl_Obj *Tcl_FSJoinPath(Tcl_Obj *listObj, int elements)
 }
 declare 461 {
-    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, int *lenPtr)
+    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr)
 }
 declare 462 {
     int Tcl_FSEqualPaths(Tcl_Obj *firstPtr, Tcl_Obj *secondPtr)
