@@ -18,13 +18,6 @@
 #include <math.h>
 
 /*
- * Define KILL_OCTAL to suppress interpretation of numbers with leading zero
- * as octal. (Ceterum censeo: numeros octonarios delendos esse.)
- */
-
-#define KILL_OCTAL
-
-/*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
  * floating point; of these, only IEEE-754 can represent NaN. IEEE-754 can be
  * uniquely determined by radix and by the widths of significand and exponent.
@@ -487,7 +480,7 @@ TclParseNumber(
     enum State {
 	INITIAL, SIGNUM, ZERO, ZERO_X,
 	ZERO_O, ZERO_B, BINARY,
-	HEXADECIMAL, OCTAL, BAD_OCTAL, DECIMAL,
+	HEXADECIMAL, OCTAL, DECIMAL,
 	LEADING_RADIX_POINT, FRACTION,
 	EXPONENT_START, EXPONENT_SIGNUM, EXPONENT,
 	sI, sIN, sINF, sINFI, sINFIN, sINFINI, sINFINIT, sINFINITY
@@ -648,10 +641,7 @@ TclParseNumber(
 		state = ZERO_O;
 		break;
 	    }
-#ifdef KILL_OCTAL
 	    goto decimal;
-#endif
-	    /* FALLTHROUGH */
 
 	case OCTAL:
 	    /*
@@ -714,58 +704,6 @@ TclParseNumber(
 		state = OCTAL;
 		break;
 	    }
-	    /* FALLTHROUGH */
-
-	case BAD_OCTAL:
-	    if (explicitOctal) {
-		/*
-		 * No forgiveness for bad digits in explicitly octal numbers.
-		 */
-
-		goto endgame;
-	    }
-	    if (flags & TCL_PARSE_INTEGER_ONLY) {
-		/*
-		 * No seeking floating point when parsing only integer.
-		 */
-
-		goto endgame;
-	    }
-#ifndef KILL_OCTAL
-
-	    /*
-	     * Scanned a number with a leading zero that contains an 8, 9,
-	     * radix point or E. This is an invalid octal number, but might
-	     * still be floating point.
-	     */
-
-	    if (c == '0') {
-		numTrailZeros++;
-		state = BAD_OCTAL;
-		break;
-	    } else if (isdigit(UCHAR(c))) {
-		if (objPtr != NULL) {
-		    significandOverflow = AccumulateDecimalDigit(
-			    (unsigned)(c-'0'), numTrailZeros,
-			    &significandWide, &significandBig,
-			    significandOverflow);
-		}
-		if (numSigDigs != 0) {
-		    numSigDigs += (numTrailZeros + 1);
-		} else {
-		    numSigDigs = 1;
-		}
-		numTrailZeros = 0;
-		state = BAD_OCTAL;
-		break;
-	    } else if (c == '.') {
-		state = FRACTION;
-		break;
-	    } else if (c == 'E' || c == 'e') {
-		state = EXPONENT_START;
-		break;
-	    }
-#endif
 	    goto endgame;
 
 	    /*
@@ -870,9 +808,7 @@ TclParseNumber(
 	     * digits.
 	     */
 
-#ifdef KILL_OCTAL
 	decimal:
-#endif
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
@@ -1156,7 +1092,6 @@ TclParseNumber(
 	TclFreeIntRep(objPtr);
 	switch (acceptState) {
 	case SIGNUM:
-	case BAD_OCTAL:
 	case ZERO_X:
 	case ZERO_O:
 	case ZERO_B:
@@ -1381,9 +1316,6 @@ TclParseNumber(
 
 	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
 	    Tcl_AppendToObj(msg, "\"", -1);
-	    if (state == BAD_OCTAL) {
-		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
-	    }
 	    Tcl_SetObjResult(interp, msg);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 	}
