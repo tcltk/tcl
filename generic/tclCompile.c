@@ -1209,7 +1209,7 @@ TclInitCompileEnv(
     register CompileEnv *envPtr,/* Points to the CompileEnv structure to
 				 * initialize. */
     const char *stringPtr,	/* The source string to be compiled. */
-    int numBytes,		/* Number of bytes in source string. */
+    size_t numBytes,		/* Number of bytes in source string. */
     const CmdFrame *invoker,	/* Location context invoking the bcc */
     int word)			/* Index of the word in that context getting
 				 * compiled */
@@ -1551,7 +1551,7 @@ TclCompileScript(
 				 * serves as context for finding and compiling
 				 * commands. May not be NULL. */
     const char *script,		/* The source script to compile. */
-    int numBytes,		/* Number of bytes in script. If < 0, the
+    size_t numBytes,		/* Number of bytes in script. If (size_t)-1, the
 				 * script consists of all bytes up to the
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
@@ -1577,7 +1577,7 @@ TclCompileScript(
 
     Tcl_DStringInit(&ds);
 
-    if (numBytes < 0) {
+    if (numBytes == (size_t)-1) {
 	numBytes = strlen(script);
     }
     Tcl_ResetResult(interp);
@@ -2679,7 +2679,7 @@ TclFindCompiledLocal(
     register const char *name,	/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
-    int nameBytes,		/* Number of bytes in the name. */
+    size_t nameBytes,		/* Number of bytes in the name. */
     int create,			/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
     CompileEnv *envPtr)		/* Points to the current compile environment*/

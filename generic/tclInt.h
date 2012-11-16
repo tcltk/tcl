@@ -1110,7 +1110,7 @@ typedef struct CallFrame {
 				 * If FRAME_IS_PROC is set, the frame was
 				 * pushed to execute a Tcl procedure and may
 				 * have local vars. */
-    size_t objc;		/* This and objv below describe the arguments
+    int objc;		/* This and objv below describe the arguments
 				 * for this procedure call. */
     Tcl_Obj *const *objv;	/* Array of argument objects. */
     struct CallFrame *callerPtr;
@@ -3020,7 +3020,7 @@ MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsLocalScalar(const char *src, size_t len);
 MODULE_SCOPE int	TclIsSpaceProc(char byte);
-MODULE_SCOPE Tcl_Obj *	TclJoinPath(size_t elements, Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
@@ -3040,7 +3040,7 @@ MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
 MODULE_SCOPE int	TclMaxListLength(const char *bytes, int numBytes,
 			    const char **endPtr);
-MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, size_t objc,
+MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
 MODULE_SCOPE Tcl_Obj *  TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
@@ -3161,7 +3161,7 @@ MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    size_t numBytes, int flags, Tcl_Parse *parsePtr,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    size_t count, size_t *tokensLeftPtr, int line,
+			    int count, int *tokensLeftPtr, int line,
 			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE int	TclTrimLeft(const char *bytes, size_t numBytes,
 			    const char *trim, size_t numTrim);

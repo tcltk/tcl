@@ -172,7 +172,7 @@ TclCreateLiteral(
     Interp *iPtr,
     char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    int length,			/* Number of bytes in the string. */
+    size_t length,			/* Number of bytes in the string. */
     unsigned hash,		/* The string's hash. If -1, it will be
 				 * computed here. */
     int *newPtr,

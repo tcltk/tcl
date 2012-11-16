@@ -42,14 +42,14 @@ declare 3 {
 #      int TclChdir(Tcl_Interp *interp, char *dirName)
 #  }
 declare 5 {
-    int TclCleanupChildren(Tcl_Interp *interp, size_t numPids,
+    int TclCleanupChildren(Tcl_Interp *interp, int numPids,
 	    Tcl_Pid *pidPtr, Tcl_Channel errorChan)
 }
 declare 6 {
     void TclCleanupCommand(Command *cmdPtr)
 }
 declare 7 {
-    int TclCopyAndCollapse(int count, const char *src, char *dst)
+    int TclCopyAndCollapse(size_t count, const char *src, char *dst)
 }
 declare 8 {
     int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
@@ -59,7 +59,7 @@ declare 8 {
 # TclCreatePipeline unofficially exported for use by BLT.
 
 declare 9 {
-    int TclCreatePipeline(Tcl_Interp *interp, size_t argc, const char **argv,
+    int TclCreatePipeline(Tcl_Interp *interp, int argc, const char **argv,
 	    Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr,
 	    TclFile *errFilePtr)
 }
@@ -268,7 +268,7 @@ declare 62 {
 }
 declare 63 {
     int TclObjInterpProc(ClientData clientData, Tcl_Interp *interp,
-	    size_t objc, Tcl_Obj *const objv[])
+	    int objc, Tcl_Obj *const objv[])
 }
 declare 64 {
     int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
@@ -674,7 +674,7 @@ declare 165 {
 # New function due to TIP #33
 declare 166 {
     int TclListObjSetElement(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    size_t index, Tcl_Obj *valuePtr)
+	    int index, Tcl_Obj *valuePtr)
 }
 
 # VFS-aware versions of Tcl*StartupScriptFileName (158 and 159 above)
@@ -693,12 +693,12 @@ declare 169 {
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
 	    int numChars, Command *cmdPtr, int result, int traceFlags,
-	    size_t objc, Tcl_Obj *const objv[])
+	    int objc, Tcl_Obj *const objv[])
 }
 declare 171 {
     int TclCheckExecutionTraces(Tcl_Interp *interp, const char *command,
 	    int numChars, Command *cmdPtr, int result, int traceFlags,
-	    size_t objc, Tcl_Obj *const objv[])
+	    int objc, Tcl_Obj *const objv[])
 }
 declare 172 {
     int TclInThreadExit(void)
@@ -954,7 +954,7 @@ declare 237 {
 # include NRE.h too.
 declare 238 {
     int TclNRInterpProc(ClientData clientData, Tcl_Interp *interp,
-	    size_t objc, Tcl_Obj *const objv[])
+	    int objc, Tcl_Obj *const objv[])
 }
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
@@ -1029,7 +1029,7 @@ declare 2 win {
 }
 declare 3 win {
     int TclWinGetSockOpt(SOCKET s, int level, int optname,
-	    char *optval, size_t *optlen)
+	    char *optval, int *optlen)
 }
 declare 4 win {
     HINSTANCE TclWinGetTclInstance(void)
@@ -1047,7 +1047,7 @@ declare 6 win {
 }
 declare 7 win {
     int TclWinSetSockOpt(SOCKET s, int level, int optname,
-	    const char *optval, size_t optlen)
+	    const char *optval, int optlen)
 }
 declare 8 win {
     int TclpGetPid(Tcl_Pid pid)
@@ -1080,7 +1080,7 @@ declare 14 win {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
 declare 15 win {
-    int TclpCreateProcess(Tcl_Interp *interp, size_t argc,
+    int TclpCreateProcess(Tcl_Interp *interp, int argc,
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
@@ -1171,7 +1171,7 @@ declare 3 unix {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
 declare 4 unix {
-    int TclpCreateProcess(Tcl_Interp *interp, size_t argc,
+    int TclpCreateProcess(Tcl_Interp *interp, int argc,
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }

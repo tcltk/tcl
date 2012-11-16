@@ -81,9 +81,9 @@ static void		DiscardInputQueued(ChannelState *statePtr,
 static void		DiscardOutputQueued(ChannelState *chanPtr);
 static int		DoRead(Channel *chanPtr, char *srcPtr, int slen, int allowShortReads);
 static int		DoWrite(Channel *chanPtr, const char *src, int srcLen);
-static int		DoReadChars(Channel *chan, Tcl_Obj *objPtr, int toRead,
+static size_t	DoReadChars(Channel *chan, Tcl_Obj *objPtr, size_t toRead,
 			    int appendFlag);
-static int		DoWriteChars(Channel *chan, const char *src, int len);
+static size_t	DoWriteChars(Channel *chan, const char *src, size_t len);
 static int		FilterInputBytes(Channel *chanPtr,
 			    GetsState *statePtr);
 static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
@@ -3679,7 +3679,7 @@ Tcl_Write(
  *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
- *	The number of bytes written or -1 in case of error. If -1,
+ *	The number of bytes written or (size_t)-1 in case of error. If (size_t)-1,
  *	Tcl_GetErrno will return the error code.
  *
  * Side effects:
@@ -3689,11 +3689,11 @@ Tcl_Write(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_WriteRaw(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* Data to queue in output buffer. */
-    int srcLen)			/* Length of data in bytes, or < 0 for
+    size_t srcLen)			/* Length of data in bytes, or (size_t)-1 for
 				 * strlen(). */
 {
     Channel *chanPtr = ((Channel *) chan);
@@ -3702,7 +3702,7 @@ Tcl_WriteRaw(
     int errorCode, written;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | CHANNEL_RAW_MODE) != 0) {
-	return -1;
+	return (size_t)-1;
     }
 
     if (srcLen < 0) {
@@ -3787,12 +3787,12 @@ Tcl_WriteChars(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 DoWriteChars(
     Channel *chanPtr,		/* The channel to buffer output for. */
     const char *src,		/* UTF-8 characters to queue in output
 				 * buffer. */
-    int len)			/* Length of string in bytes, or < 0 for
+    size_t len)			/* Length of string in bytes, or < 0 for
 				 * strlen(). */
 {
     /*
@@ -3804,7 +3804,7 @@ DoWriteChars(
     statePtr = chanPtr->state;
     chanPtr = statePtr->topChanPtr;
 
-    if (len < 0) {
+    if (len != (size_t)-1) {
 	len = strlen(src);
     }
     if (statePtr->encoding == NULL) {
@@ -5511,16 +5511,16 @@ Tcl_Read(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ReadRaw(
     Tcl_Channel chan,		/* The channel from which to read. */
     char *bufPtr,		/* Where to store input read. */
-    int bytesToRead)		/* Maximum number of bytes to read. */
+    size_t bytesToRead)		/* Maximum number of bytes to read. */
 {
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    int nread, result, copied, copiedNow;
+    size_t nread, result, copied, copiedNow;
 
     /*
      * The check below does too much because it will reject a call to this
@@ -5535,7 +5535,7 @@ Tcl_ReadRaw(
      */
 
     if (CheckChannelErrors(statePtr, TCL_READABLE | CHANNEL_RAW_MODE) != 0) {
-	return -1;
+	return (size_t)-1;
     }
 
     /*
@@ -5574,7 +5574,7 @@ Tcl_ReadRaw(
 		 * available.
 		 */
 
-		nread = -1;
+		nread = (size_t)-1;
 		result = EWOULDBLOCK;
 	    } else
 #endif /* TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING */
@@ -5634,7 +5634,7 @@ Tcl_ReadRaw(
 		}
 
 		Tcl_SetErrno(result);
-		return -1;
+		return (size_t)-1;
 	    }
 
 	    return copied + nread;
@@ -5667,12 +5667,12 @@ Tcl_ReadRaw(
  *---------------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ReadChars(
     Tcl_Channel chan,		/* The channel to read. */
     Tcl_Obj *objPtr,		/* Input data is stored in this object. */
-    int toRead,			/* Maximum number of characters to store, or
-				 * -1 to read all available data (up to EOF or
+    size_t toRead,			/* Maximum number of characters to store, or
+				 * (size_t)-1 to read all available data (up to EOF or
 				 * when channel blocks). */
     int appendFlag)		/* If non-zero, data read from the channel
 				 * will be appended to the object. Otherwise,
@@ -5696,7 +5696,7 @@ Tcl_ReadChars(
 	 */
 
 	UpdateInterest(chanPtr);
-	return -1;
+	return (size_t)-1;
     }
 
     return DoReadChars(chanPtr, objPtr, toRead, appendFlag);
@@ -5714,7 +5714,7 @@ Tcl_ReadChars(
  *	object.
  *
  * Results:
- *	The number of characters read, or -1 on error. Use Tcl_GetErrno() to
+ *	The number of characters read, or (size_t)-1 on error. Use Tcl_GetErrno() to
  *	retrieve the error code for the error that occurred.
  *
  * Side effects:
@@ -5723,11 +5723,11 @@ Tcl_ReadChars(
  *---------------------------------------------------------------------------
  */
 
-static int
+static size_t
 DoReadChars(
     Channel *chanPtr,		/* The channel to read. */
     Tcl_Obj *objPtr,		/* Input data is stored in this object. */
-    int toRead,			/* Maximum number of characters to store, or
+    size_t toRead,			/* Maximum number of characters to store, or
 				 * -1 to read all available data (up to EOF or
 				 * when channel blocks). */
     int appendFlag)		/* If non-zero, data read from the channel
@@ -5738,7 +5738,8 @@ DoReadChars(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    int offset, factor, copied, copiedNow, result;
+    size_t offset, copied, copiedNow;
+    int result, factor;
     Tcl_Encoding encoding;
 #define UTF_EXPANSION_FACTOR	1024
 
@@ -5773,8 +5774,8 @@ DoReadChars(
 	}
     }
 
-    for (copied = 0; (unsigned) toRead > 0; ) {
-	copiedNow = -1;
+    for (copied = 0; toRead > 0; ) {
+	copiedNow = (size_t)-1;
 	if (statePtr->inQueueHead != NULL) {
 	    if (encoding == NULL) {
 		copiedNow = ReadBytes(statePtr, objPtr, toRead, &offset);
@@ -5799,7 +5800,7 @@ DoReadChars(
 	    }
 	}
 
-	if (copiedNow < 0) {
+	if (copiedNow == (size_t)-1) {
 	    if (GotFlag(statePtr, CHANNEL_EOF)) {
 		break;
 	    }

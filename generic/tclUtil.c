@@ -723,7 +723,7 @@ TclFindElement(
 
 int
 TclCopyAndCollapse(
-    int count,			/* Number of byte to copy from src. */
+    size_t count,			/* Number of byte to copy from src. */
     const char *src,		/* Copy from here... */
     char *dst)			/* ... to here. */
 {

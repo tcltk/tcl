@@ -3985,7 +3985,7 @@ TclGetPathType(
 				/* If absolute path and this is not NULL, then
 				 * set to the filesystem which claims this
 				 * path. */
-    int *driveNameLengthPtr,	/* If the path is absolute, and this is
+    size_t *driveNameLengthPtr,	/* If the path is absolute, and this is
 				 * non-NULL, then set to the length of the
 				 * driveName. */
     Tcl_Obj **driveNameRef)	/* If the path is absolute, and this is
@@ -4036,12 +4036,12 @@ TclGetPathType(
 Tcl_PathType
 TclFSNonnativePathType(
     const char *path,		/* Path to determine type for. */
-    int pathLen,		/* Length of the path. */
+    size_t pathLen,		/* Length of the path. */
     const Tcl_Filesystem **filesystemPtrPtr,
 				/* If absolute path and this is not NULL, then
 				 * set to the filesystem which claims this
 				 * path. */
-    int *driveNameLengthPtr,	/* If the path is absolute, and this is
+    size_t *driveNameLengthPtr,	/* If the path is absolute, and this is
 				 * non-NULL, then set to the length of the
 				 * driveName. */
     Tcl_Obj **driveNameRef)	/* If the path is absolute, and this is

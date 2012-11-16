@@ -652,7 +652,7 @@ typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
 	ClientData cmdClientData, int argc, const char *argv[]);
 typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
-	int level, const char *command, Tcl_Command commandInfo, size_t objc,
+	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (ClientData clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
@@ -1408,9 +1408,9 @@ typedef int	(Tcl_DriverCloseProc) (ClientData instanceData,
 			Tcl_Interp *interp);
 typedef int	(Tcl_DriverClose2Proc) (ClientData instanceData,
 			Tcl_Interp *interp, int flags);
-typedef int	(Tcl_DriverInputProc) (ClientData instanceData, char *buf,
+typedef size_t	(Tcl_DriverInputProc) (ClientData instanceData, char *buf,
 			size_t toRead, int *errorCodePtr);
-typedef int	(Tcl_DriverOutputProc) (ClientData instanceData,
+typedef size_t	(Tcl_DriverOutputProc) (ClientData instanceData,
 			const char *buf, size_t toWrite, int *errorCodePtr);
 typedef int	(Tcl_DriverSeekProc) (ClientData instanceData, long offset,
 			int mode, int *errorCodePtr);
@@ -2223,7 +2223,7 @@ typedef struct {
 typedef int (Tcl_ArgvFuncProc)(ClientData clientData, Tcl_Obj *objPtr,
 	void *dstPtr);
 typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
-	size_t objc, Tcl_Obj *const *objv, void *dstPtr);
+	int objc, Tcl_Obj *const *objv, void *dstPtr);
 
 /*
  * Shorthand for commonly used argTable entries.
