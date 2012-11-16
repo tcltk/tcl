@@ -15,11 +15,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#ifndef _WIN64
-/* See [Bug 2935503]: file mtime sets wrong time */
-#   define _USE_32BIT_TIME_T
-#endif
-
 #undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
@@ -306,11 +301,8 @@ static int		TestexitmainloopCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestpanicCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestfinexitObjCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int              TestparseargsCmd(ClientData dummy, Tcl_Interp *interp,
-                            int objc, Tcl_Obj *const objv[]);
+static int		TestparseargsCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		TestparserObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -382,7 +374,8 @@ static Tcl_FSRenameFileProc TestReportRenameFile;
 static Tcl_FSCreateDirectoryProc TestReportCreateDirectory;
 static Tcl_FSCopyDirectoryProc TestReportCopyDirectory;
 static Tcl_FSRemoveDirectoryProc TestReportRemoveDirectory;
-static Tcl_FSLoadFileProc TestReportLoadFile;
+static int TestReportLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr);
 static Tcl_FSLinkProc TestReportLink;
 static Tcl_FSFileAttrStringsProc TestReportFileAttrStrings;
 static Tcl_FSFileAttrsGetProc TestReportFileAttrsGet;
@@ -415,7 +408,7 @@ static int		TestInterpResolverCmd(ClientData clientData,
 #if defined(HAVE_CPUID) || defined(__WIN32__)
 static int		TestcpuidCmd(ClientData dummy,
 			    Tcl_Interp* interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 #endif
 
 static const Tcl_Filesystem testReportingFilesystem = {
@@ -447,7 +440,7 @@ static const Tcl_Filesystem testReportingFilesystem = {
     TestReportRenameFile,
     TestReportCopyDirectory,
     TestReportLstat,
-    TestReportLoadFile,
+    (Tcl_FSLoadFileProc *) TestReportLoadFile,
     NULL /* cwd */,
     TestReportChdir
 };
@@ -631,7 +624,6 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testfinexit", TestfinexitObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparseargs", TestparseargsCmd,NULL,NULL);
     Tcl_CreateObjCommand(interp, "testparser", TestparserObjCmd,
 	    NULL, NULL);
@@ -863,6 +855,7 @@ TestasyncCmd(
 		|| (Tcl_GetInt(interp, argv[4], &code) != TCL_OK)) {
 	    return TCL_ERROR;
 	}
+	Tcl_MutexLock(&asyncTestMutex);
 	for (asyncPtr = firstHandler; asyncPtr != NULL;
 		asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id == id) {
@@ -871,6 +864,7 @@ TestasyncCmd(
 	    }
 	}
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(argv[3], -1));
+	Tcl_MutexUnlock(&asyncTestMutex);
 	return code;
 #ifdef TCL_THREADS
     } else if (strcmp(argv[1], "marklater") == 0) {
@@ -880,6 +874,7 @@ TestasyncCmd(
 	if (Tcl_GetInt(interp, argv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+        Tcl_MutexLock(&asyncTestMutex);
 	for (asyncPtr = firstHandler; asyncPtr != NULL;
 		asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id == id) {
@@ -888,11 +883,13 @@ TestasyncCmd(
 			INT2PTR(id), TCL_THREAD_STACK_DEFAULT,
 			TCL_THREAD_NOFLAGS) != TCL_OK) {
 		    Tcl_SetResult(interp, "can't create thread", TCL_STATIC);
+		    Tcl_MutexUnlock(&asyncTestMutex);
 		    return TCL_ERROR;
 		}
 		break;
 	    }
 	}
+        Tcl_MutexUnlock(&asyncTestMutex);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
 		"\": must be create, delete, int, mark, or marklater", NULL);
@@ -4540,47 +4537,6 @@ TestpanicCmd(
     return TCL_OK;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * TestfinexitObjCmd --
- *
- *	Calls a variant of [exit] including the full finalization path.
- *
- * Results:
- *	Error, or doesn't return.
- *
- * Side effects:
- *	Exits application.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestfinexitObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    int value;
-
-    if ((objc != 1) && (objc != 2)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?returnCode?");
-	return TCL_ERROR;
-    }
-
-    if (objc == 1) {
-	value = 0;
-    } else if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    Tcl_Finalize();
-    TclpExit(value);
-    /*NOTREACHED*/
-    return TCL_ERROR;		/* Better not ever reach this! */
-}
-
 static int
 TestfileCmd(
     ClientData dummy,		/* Not used. */

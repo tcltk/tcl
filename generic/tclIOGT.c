@@ -284,8 +284,8 @@ TclChannelTransform(
     dataPtr->self = Tcl_StackChannel(interp, &transformChannelType, dataPtr,
 	    mode, chan);
     if (dataPtr->self == NULL) {
-	Tcl_AppendResult(interp, "\nfailed to stack channel \"",
-		Tcl_GetChannelName(chan), "\"", NULL);
+	Tcl_AppendPrintfToObj(Tcl_GetObjResult(interp),
+		"\nfailed to stack channel \"%s\"", Tcl_GetChannelName(chan));
 	Tcl_DecrRefCount(dataPtr->command);
 	ResultClear(&dataPtr->result);
 	ckfree(dataPtr);

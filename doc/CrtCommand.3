@@ -41,18 +41,18 @@ will call \fIproc\fR to process the command.
 It differs from \fBTcl_CreateObjCommand\fR in that a new string-based
 command is defined;
 that is, a command procedure is defined that takes an array of
-argument strings instead of objects.
-The object-based command procedures registered by \fBTcl_CreateObjCommand\fR
+argument strings instead of values.
+The value-based command procedures registered by \fBTcl_CreateObjCommand\fR
 can execute significantly faster than the string-based command procedures
 defined by \fBTcl_CreateCommand\fR.
-This is because they take Tcl objects as arguments
-and those objects can retain an internal representation that
+This is because they take Tcl values as arguments
+and those values can retain an internal representation that
 can be manipulated more efficiently.
-Also, Tcl's interpreter now uses objects internally.
+Also, Tcl's interpreter now uses values internally.
 In order to invoke a string-based command procedure
 registered by \fBTcl_CreateCommand\fR,
 it must generate and fetch a string representation
-from each argument object before the call.
+from each argument value before the call.
 New commands should be defined using \fBTcl_CreateObjCommand\fR.
 We support \fBTcl_CreateCommand\fR for backwards compatibility.
 .PP

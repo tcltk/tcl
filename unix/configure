@@ -1335,7 +1335,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL="b2"
+TCL_PATCH_LEVEL="b3"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
@@ -1355,7 +1355,10 @@ fi
 #------------------------------------------------------------------------
 # Empty slate for bundled packages, to avoid stale configuration
 #------------------------------------------------------------------------
-rm -Rf pkgs
+#rm -Rf pkgs
+if test -f Makefile; then
+    make distclean-packages
+fi
 
 #------------------------------------------------------------------------
 # Handle the --prefix=... option
@@ -8757,7 +8760,7 @@ else
 		arch=`isainfo`
 		echo "$as_me:$LINENO: checking whether to use -lsunmath for fp rounding control" >&5
 echo $ECHO_N "checking whether to use -lsunmath for fp rounding control... $ECHO_C" >&6
-		if test "$arch" = "amd64 i386"; then
+		if test "$arch" = "amd64 i386" -o "$arch" = "i386"; then
 
 			echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -8956,7 +8959,7 @@ else
 fi
 
 		case $system in
-		    SunOS-5.[1-9][0-9]*)
+		    SunOS-5.[1-9][0-9]*|SunOS-5.[7-9])
 			SHLIB_LD="\${CC} -G -z $textmode \${LDFLAGS}";;
 		    *)
 			SHLIB_LD="/usr/ccs/bin/ld -G -z $textmode";;
@@ -19437,8 +19440,8 @@ _ACEOF
     HTML_DIR="${libdir}/Resources/Documentation/Reference/Tcl"
     EXTRA_INSTALL="install-private-headers html-tcl"
     EXTRA_BUILD_HTML='@ln -fs contents.htm "$(HTML_INSTALL_DIR)"/TclTOC.html'
-    EXTRA_INSTALL_BINARIES='@echo "Installing Info.plist to $(LIB_INSTALL_DIR)/Resources" && mkdir -p "$(LIB_INSTALL_DIR)/Resources" && $(INSTALL_DATA) Tcl-Info.plist "$(LIB_INSTALL_DIR)/Resources/Info.plist"'
-    EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Installing license.terms to $(LIB_INSTALL_DIR)/Resources" && $(INSTALL_DATA) "$(TOP_DIR)/license.terms" "$(LIB_INSTALL_DIR)/Resources"'
+    EXTRA_INSTALL_BINARIES='@echo "Installing Info.plist to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/Resources" && $(INSTALL_DATA) Tcl-Info.plist "$(LIB_INSTALL_DIR)/Resources/Info.plist"'
+    EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Installing license.terms to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA) "$(TOP_DIR)/license.terms" "$(LIB_INSTALL_DIR)/Resources"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Finalizing Tcl.framework" && rm -f "$(LIB_INSTALL_DIR)/../Current" && ln -s "$(VERSION)" "$(LIB_INSTALL_DIR)/../Current" && for f in "$(LIB_FILE)" tclConfig.sh Resources Headers PrivateHeaders; do rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/Current/$$f" "$(LIB_INSTALL_DIR)/../.."; done && f="$(STUB_LIB_FILE)" && rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/$(VERSION)/$$f" "$(LIB_INSTALL_DIR)/../.."'
     # Don't use AC_DEFINE for the following as the framework version define
     # needs to go into the Makefile even when using autoheader, so that we

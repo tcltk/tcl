@@ -16,6 +16,9 @@ if {[catch {package require tcltest 2.0.2}]} {
 }
 namespace import -force ::tcltest::*
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testvolumetype [llength [info commands testvolumetype]]
 testConstraint notNTFS 0
 testConstraint win2000 0

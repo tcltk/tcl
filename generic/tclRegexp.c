@@ -714,14 +714,14 @@ TclRegError(
     int status)			/* Status code to report. */
 {
     char buf[100];		/* ample in practice */
-    char cbuf[100];		/* lots in practice */
+    char cbuf[TCL_INTEGER_SPACE];
     size_t n;
     const char *p;
 
     Tcl_ResetResult(interp);
     n = TclReError(status, NULL, buf, sizeof(buf));
     p = (n > sizeof(buf)) ? "..." : "";
-    Tcl_AppendResult(interp, msg, buf, p, NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s%s%s", msg, buf, p));
 
     sprintf(cbuf, "%d", status);
     (void) TclReError(REG_ITOA, NULL, cbuf, sizeof(cbuf));

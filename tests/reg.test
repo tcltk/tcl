@@ -13,6 +13,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 # All tests require the testregexp command, return if this
 # command doesn't exist
 

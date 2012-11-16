@@ -17,6 +17,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclOOInt.h"
 #include "tommath.h"
 #include <math.h>
 
@@ -2331,6 +2332,101 @@ TEBCresume(
 	cleanup = 1;
 	goto processExceptionReturn;
 
+    case INST_YIELD: {
+	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+
+	TRACE(("%.30s => ", O2S(OBJ_AT_TOS)));
+	if (!corPtr) {
+	    TRACE_APPEND(("ERROR: yield outside coroutine\n"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "yield can only be called in a coroutine", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
+		    NULL);
+	    goto gotError;
+	}
+
+#ifdef TCL_COMPILE_DEBUG
+	TRACE_WITH_OBJ(("yield, result="), iPtr->objResultPtr);
+	if (traceInstructions) {
+	    fprintf(stdout, "\n");
+	}
+#endif
+	/* TIP #280: Record the last piece of info needed by
+	 * 'TclGetSrcInfoForPc', and push the frame.
+	 */
+	
+	bcFramePtr->data.tebc.pc = (char *) pc;
+	iPtr->cmdFramePtr = bcFramePtr;
+
+	if (iPtr->flags & INTERP_DEBUG_FRAME) {
+	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	}
+
+	pc++;
+	cleanup = 1;
+	TEBC_YIELD();
+	
+	Tcl_SetObjResult(interp, OBJ_AT_TOS);
+	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
+		INT2PTR(0), NULL, NULL);
+
+	return TCL_OK;
+    }
+
+    case INST_TAILCALL: {
+	Tcl_Obj *listPtr, *nsObjPtr;
+        NRE_callback *tailcallPtr;
+
+	opnd = TclGetUInt1AtPtr(pc+1);
+
+	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
+	    TRACE(("%d => ERROR: tailcall in non-proc context\n", opnd));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "tailcall can only be called from a proc or lambda", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
+	    goto gotError;
+	}
+
+#ifdef TCL_COMPILE_DEBUG
+	{
+	    register int i;
+
+	    TRACE(("%d [", opnd));
+	    for (i=opnd-1 ; i>=0 ; i--) {
+		TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_DEPTH(i))));
+		if (i > 0) {
+		    TRACE_APPEND((" "));
+		}
+	    }
+	    TRACE_APPEND(("] => RETURN..."));
+	}
+#endif
+
+	/*
+	 * Push the evaluation of the called command into the NR callback
+	 * stack.
+	 */
+
+	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
+	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
+	Tcl_IncrRefCount(listPtr);
+	Tcl_IncrRefCount(nsObjPtr);
+	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
+		NULL, NULL);
+
+	/*
+	 * Unstitch ourselves and do a [return].
+	 */
+
+	tailcallPtr = TOP_CB(interp);
+	TOP_CB(interp) = tailcallPtr->nextPtr;
+	iPtr->varFramePtr->tailcallPtr = tailcallPtr;
+	result = TCL_RETURN;
+	cleanup = opnd;
+	goto processExceptionReturn;
+    }
+
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
 	    /*
@@ -3785,6 +3881,104 @@ TEBCresume(
     /*
      *	   End of INST_UNSET instructions.
      * -----------------------------------------------------------------
+     *	   Start of INST_ARRAY instructions.
+     */
+
+    case INST_ARRAY_EXISTS_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	pcAdjustment = 5;
+	cleanup = 0;
+	part1Ptr = NULL;
+	arrayPtr = NULL;
+	TRACE(("%u => ", opnd));
+	varPtr = LOCAL(opnd);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	goto doArrayExists;
+    case INST_ARRAY_EXISTS_STK:
+	opnd = -1;
+	pcAdjustment = 1;
+	cleanup = 1;
+	part1Ptr = OBJ_AT_TOS;
+	TRACE(("\"%.30s\" => ", O2S(part1Ptr)));
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
+		/*createPart1*/0, /*createPart2*/0, &arrayPtr);
+    doArrayExists:
+	if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
+		&& (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
+	    DECACHE_STACK_INFO();
+	    result = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr,
+		    NULL, (TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|
+		    TCL_GLOBAL_ONLY|TCL_TRACE_ARRAY), 1, opnd);
+	    CACHE_STACK_INFO();
+	    if (result == TCL_ERROR) {
+		TRACE_APPEND(("ERROR: %.30s\n",
+			O2S(Tcl_GetObjResult(interp))));
+		goto gotError;
+	    }
+	}
+	if (varPtr && TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
+	    objResultPtr = TCONST(1);
+	} else {
+	    objResultPtr = TCONST(0);
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_V(pcAdjustment, cleanup, 1);
+
+    case INST_ARRAY_MAKE_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	pcAdjustment = 5;
+	cleanup = 0;
+	part1Ptr = NULL;
+	arrayPtr = NULL;
+	TRACE(("%u => ", opnd));
+	varPtr = LOCAL(opnd);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	goto doArrayMake;
+    case INST_ARRAY_MAKE_STK:
+	opnd = -1;
+	pcAdjustment = 1;
+	cleanup = 1;
+	part1Ptr = OBJ_AT_TOS;
+	TRACE(("\"%.30s\" => ", O2S(part1Ptr)));
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG,
+		"set", /*createPart1*/1, /*createPart2*/0, &arrayPtr);
+	if (varPtr == NULL) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    goto gotError;
+	}
+    doArrayMake:
+	if (varPtr && !TclIsVarArray(varPtr)) {
+	    if (TclIsVarArrayElement(varPtr) || !TclIsVarUndefined(varPtr)) {
+		/*
+		 * Either an array element, or a scalar: lose!
+		 */
+
+		TclObjVarErrMsg(interp, part1Ptr, NULL, "array set",
+			"variable isn't array", opnd);
+		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
+		TRACE_APPEND(("ERROR: bad array ref: %.30s\n",
+			O2S(Tcl_GetObjResult(interp))));
+		goto gotError;
+	    }
+	    TclSetVarArray(varPtr);
+	    varPtr->value.tablePtr = ckalloc(sizeof(TclVarHashTable));
+	    TclInitVarHashTable(varPtr->value.tablePtr,
+		    TclGetVarNsPtr(varPtr));
+#ifdef TCL_COMPILE_DEBUG
+	    TRACE_APPEND(("done\n"));
+	} else {
+	    TRACE_APPEND(("nothing to do\n"));
+#endif
+	}
+	NEXT_INST_V(pcAdjustment, cleanup, 0);
+
+    /*
+     *	   End of INST_ARRAY instructions.
+     * -----------------------------------------------------------------
      *	   Start of variable linking instructions.
      */
 
@@ -4041,6 +4235,136 @@ TEBCresume(
 	objResultPtr = TCONST(iResult);
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr),O2S(value2Ptr),iResult));
 	NEXT_INST_F(1, 2, 1);
+    }
+
+    /*
+     * -----------------------------------------------------------------
+     *	   Start of general introspector instructions.
+     */
+
+    case INST_NS_CURRENT: {
+	Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+
+	if (currNsPtr == (Namespace *) TclGetGlobalNamespace(interp)) {
+	    TclNewLiteralStringObj(objResultPtr, "::");
+	} else {
+	    TclNewStringObj(objResultPtr, currNsPtr->fullName,
+		    strlen(currNsPtr->fullName));
+	}
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
+    }
+    case INST_COROUTINE_NAME: {
+	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+
+	TclNewObj(objResultPtr);
+	if (corPtr && !(corPtr->cmdPtr->flags & CMD_IS_DELETED)) {
+	    Tcl_GetCommandFullName(interp, (Tcl_Command) corPtr->cmdPtr,
+		    objResultPtr);
+	}
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
+    }
+    case INST_INFO_LEVEL_NUM:
+	TclNewIntObj(objResultPtr, iPtr->varFramePtr->level);
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
+    case INST_INFO_LEVEL_ARGS: {
+	int level;
+	register CallFrame *framePtr = iPtr->varFramePtr;
+	register CallFrame *rootFramePtr = iPtr->rootFramePtr;
+
+	valuePtr = OBJ_AT_TOS;
+	if (TclGetIntFromObj(interp, valuePtr, &level) != TCL_OK) {
+	    TRACE_WITH_OBJ(("%.30s => ERROR: ", O2S(valuePtr)),
+		    Tcl_GetObjResult(interp));
+	    goto gotError;
+	}
+	TRACE(("%d => ", level));
+	if (level <= 0) {
+	    level += framePtr->level;
+	}
+	for (; (framePtr->level!=level) && (framePtr!=rootFramePtr) ;
+		framePtr = framePtr->callerVarPtr) {
+	    /* Empty loop body */
+	}
+	if (framePtr == rootFramePtr) {
+	    Tcl_AppendResult(interp, "bad level \"", TclGetString(valuePtr),
+		    "\"", NULL);
+	    TRACE_APPEND(("ERROR: bad level\n"));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
+		    TclGetString(valuePtr), NULL);
+	    goto gotError;
+	}
+	objResultPtr = Tcl_NewListObj(framePtr->objc, framePtr->objv);
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(1, 1, 1);
+    }
+    case INST_RESOLVE_COMMAND: {
+	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, OBJ_AT_TOS);
+
+	TclNewObj(objResultPtr);
+	if (cmd != NULL) {
+	    Tcl_GetCommandFullName(interp, cmd, objResultPtr);
+	}
+	TRACE_WITH_OBJ(("\"%.20s\" => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	NEXT_INST_F(1, 1, 1);
+    }
+    case INST_TCLOO_SELF: {
+	CallFrame *framePtr = iPtr->varFramePtr;
+	CallContext *contextPtr;
+
+	if (framePtr == NULL ||
+		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	    TRACE(("=> ERROR: no TclOO call context\n"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "self may only be called from inside a method",
+		    -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    goto gotError;
+	}
+	contextPtr = framePtr->clientData;
+
+	/*
+	 * Call out to get the name; it's expensive to compute but cached.
+	 */
+
+	objResultPtr = TclOOObjectName(interp, contextPtr->oPtr);
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
+    }
+    {
+	Object *oPtr;
+
+    case INST_TCLOO_IS_OBJECT:
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
+	objResultPtr = TCONST(oPtr != NULL ? 1 : 0);
+	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	NEXT_INST_F(1, 1, 1);
+    case INST_TCLOO_CLASS:
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
+	if (oPtr == NULL) {
+	    TRACE(("%.30s => ERROR: not object\n", O2S(OBJ_AT_TOS)));
+	    goto gotError;
+	}
+	objResultPtr = TclOOObjectName(interp, oPtr->selfCls->thisPtr);
+	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	NEXT_INST_F(1, 1, 1);
+    case INST_TCLOO_NS:
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
+	if (oPtr == NULL) {
+	    TRACE(("%.30s => ERROR: not object\n", O2S(OBJ_AT_TOS)));
+	    goto gotError;
+	}
+
+	/*
+	 * TclOO objects *never* have the global namespace as their NS.
+	 */
+
+	TclNewStringObj(objResultPtr, oPtr->namespacePtr->fullName,
+		strlen(oPtr->namespacePtr->fullName));
+	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	NEXT_INST_F(1, 1, 1);
     }
 
     /*
@@ -4592,6 +4916,179 @@ TEBCresume(
 		O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
+    case INST_STR_RANGE:
+	TRACE(("\"%.20s\" %s %s =>",
+		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
+	length = Tcl_GetCharLength(OBJ_AT_DEPTH(2)) - 1;
+	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
+		    &fromIdx) != TCL_OK
+	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, length,
+		    &toIdx) != TCL_OK) {
+	    goto gotError;
+	}
+
+	if (fromIdx < 0) {
+	    fromIdx = 0;
+	}
+	if (toIdx >= length) {
+	    toIdx = length;
+	}
+	if (toIdx >= fromIdx) {
+	    objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
+	} else {
+	    TclNewObj(objResultPtr);
+	}
+	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
+	NEXT_INST_V(1, 3, 1);
+
+    case INST_STR_RANGE_IMM:
+	valuePtr = OBJ_AT_TOS;
+	fromIdx = TclGetInt4AtPtr(pc+1);
+	toIdx = TclGetInt4AtPtr(pc+5);
+	length = Tcl_GetCharLength(valuePtr);
+	TRACE(("\"%.20s\" %d %d => ", O2S(valuePtr), fromIdx, toIdx));
+
+	/*
+	 * Adjust indices for end-based indexing.
+	 */
+
+	if (fromIdx < -1) {
+	    fromIdx += 1 + length;
+	    if (fromIdx < 0) {
+		fromIdx = 0;
+	    }
+	} else if (fromIdx >= length) {
+	    fromIdx = length;
+	}
+	if (toIdx < -1) {
+	    toIdx += 1 + length;
+	    if (toIdx < 0) {
+		toIdx = 0;
+	    }
+	} else if (toIdx >= length) {
+	    toIdx = length - 1;
+	}
+
+	/*
+	 * Check if we can do a sane substring.
+	 */
+
+	if (fromIdx <= toIdx) {
+	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+	} else {
+	    TclNewObj(objResultPtr);
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(9, 1, 1);
+
+    {
+	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
+	int length3;
+	Tcl_Obj *value3Ptr;
+
+    case INST_STR_MAP:
+	valuePtr = OBJ_AT_TOS;		/* "Main" string. */
+	value3Ptr = OBJ_UNDER_TOS;	/* "Target" string. */
+	value2Ptr = OBJ_AT_DEPTH(2);	/* "Source" string. */
+	if (value3Ptr == value2Ptr) {
+	    objResultPtr = valuePtr;
+	    NEXT_INST_V(1, 3, 1);
+	} else if (valuePtr == value2Ptr) {
+	    objResultPtr = value3Ptr;
+	    NEXT_INST_V(1, 3, 1);
+	}
+	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
+	if (length == 0) {
+	    objResultPtr = valuePtr;
+	    NEXT_INST_V(1, 3, 1);
+	}
+	ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
+	if (length2 > length || length2 == 0) {
+	    objResultPtr = valuePtr;
+	    NEXT_INST_V(1, 3, 1);
+	} else if (length2 == length) {
+	    if (memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length)) {
+		objResultPtr = valuePtr;
+	    } else {
+		objResultPtr = value3Ptr;
+	    }
+	    NEXT_INST_V(1, 3, 1);
+	}
+	ustring3 = Tcl_GetUnicodeFromObj(value3Ptr, &length3);
+
+	objResultPtr = Tcl_NewUnicodeObj(ustring1, 0);
+	p = ustring1;
+	end = ustring1 + length;
+	for (; ustring1 < end; ustring1++) {
+	    if ((*ustring1 == *ustring2) && (length2==1 ||
+		    memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length2)
+			    == 0)) {
+		if (p != ustring1) {
+		    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1-p);
+		    p = ustring1 + length2;
+		} else {
+		    p += length2;
+		}
+		ustring1 = p - 1;
+
+		Tcl_AppendUnicodeToObj(objResultPtr, ustring3, length3);
+	    }
+	}
+	if (p != ustring1) {
+	    /*
+	     * Put the rest of the unmapped chars onto result.
+	     */
+
+	    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1 - p);
+	}
+	TRACE_WITH_OBJ(("%.20s %.20s %.20s => ",
+		O2S(value2Ptr), O2S(value3Ptr), O2S(valuePtr)), objResultPtr);
+	NEXT_INST_V(1, 3, 1);
+
+    case INST_STR_FIND:
+	ustring1 = Tcl_GetUnicodeFromObj(OBJ_AT_TOS, &length);	/* Haystack */
+	ustring2 = Tcl_GetUnicodeFromObj(OBJ_UNDER_TOS, &length2);/* Needle */
+
+	match = -1;
+	if (length2 > 0 && length2 <= length) {
+	    end = ustring1 + length - length2 + 1;
+	    for (p=ustring1 ; p<end ; p++) {
+		if ((*p == *ustring2) &&
+			memcmp(ustring2,p,sizeof(Tcl_UniChar)*length2) == 0) {
+		    match = p - ustring1;
+		    break;
+		}
+	    }
+	}
+
+	TRACE(("%.20s %.20s => %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
+
+	TclNewIntObj(objResultPtr, match);
+	NEXT_INST_F(1, 2, 1);
+
+    case INST_STR_FIND_LAST:
+	ustring1 = Tcl_GetUnicodeFromObj(OBJ_AT_TOS, &length);	/* Haystack */
+	ustring2 = Tcl_GetUnicodeFromObj(OBJ_UNDER_TOS, &length2);/* Needle */
+
+	match = -1;
+	if (length2 > 0 && length2 <= length) {
+	    for (p=ustring1+length-length2 ; p>=ustring1 ; p--) {
+		if ((*p == *ustring2) &&
+			memcmp(ustring2,p,sizeof(Tcl_UniChar)*length2) == 0) {
+		    match = p - ustring1;
+		    break;
+		}
+	    }
+	}
+
+	TRACE(("%.20s %.20s => %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
+
+	TclNewIntObj(objResultPtr, match);
+	NEXT_INST_F(1, 2, 1);
+    }
+
     case INST_STR_MATCH:
 	nocase = TclGetInt1AtPtr(pc+1);
 	valuePtr = OBJ_AT_TOS;		/* String */
@@ -4896,8 +5393,8 @@ TEBCresume(
 
 	    case INST_RSHIFT:
 		if (l2 < 0) {
-		    Tcl_SetResult(interp, "negative shift argument",
-			    TCL_STATIC);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "negative shift argument", -1));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -4944,8 +5441,8 @@ TEBCresume(
 
 	    case INST_LSHIFT:
 		if (l2 < 0) {
-		    Tcl_SetResult(interp, "negative shift argument",
-			    TCL_STATIC);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "negative shift argument", -1));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -4967,9 +5464,8 @@ TEBCresume(
 		     * good place to draw the line.
 		     */
 
-		    Tcl_SetResult(interp,
-			    "integer value too large to represent",
-			    TCL_STATIC);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "integer value too large to represent", -1));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
@@ -5649,41 +6145,73 @@ TEBCresume(
 	Tcl_DictSearch *searchPtr;
 	DictUpdateInfo *duiPtr;
 
+    case INST_DICT_VERIFY:
+	dictPtr = OBJ_AT_TOS;
+	TRACE(("=> "));
+	if (Tcl_DictObjSize(interp, dictPtr, &done) != TCL_OK) {
+	    TRACE_APPEND(("ERROR verifying dictionary nature of \"%s\": %s\n",
+		    O2S(OBJ_AT_DEPTH(opnd)), O2S(Tcl_GetObjResult(interp))));
+	    goto gotError;
+	}
+	TRACE_APPEND(("OK\n"));
+	NEXT_INST_F(1, 1, 0);
+
     case INST_DICT_GET:
+    case INST_DICT_EXISTS: {
+	register Tcl_Interp *interp2 = interp;
+
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
 	dictPtr = OBJ_AT_DEPTH(opnd);
+	if (*pc == INST_DICT_EXISTS) {
+	    interp2 = NULL;
+	}
 	if (opnd > 1) {
-	    dictPtr = TclTraceDictPath(interp, dictPtr, opnd-1,
+	    dictPtr = TclTraceDictPath(interp2, dictPtr, opnd-1,
 		    &OBJ_AT_DEPTH(opnd-1), DICT_PATH_READ);
 	    if (dictPtr == NULL) {
+		if (*pc == INST_DICT_EXISTS) {
+		    goto dictNotExists;
+		}
 		TRACE_WITH_OBJ((
-			"%u => ERROR tracing dictionary path into \"%s\": ",
-			opnd, O2S(OBJ_AT_DEPTH(opnd))),
+			"ERROR tracing dictionary path into \"%s\": ",
+			O2S(OBJ_AT_DEPTH(opnd))),
 			Tcl_GetObjResult(interp));
 		goto gotError;
 	    }
 	}
-	if (Tcl_DictObjGet(interp, dictPtr, OBJ_AT_TOS,
+	if (Tcl_DictObjGet(interp2, dictPtr, OBJ_AT_TOS,
 		&objResultPtr) == TCL_OK) {
+	    if (*pc == INST_DICT_EXISTS) {
+		objResultPtr = TCONST(objResultPtr ? 1 : 0);
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_V(5, opnd+1, 1);
+	    }
 	    if (objResultPtr) {
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		NEXT_INST_V(5, opnd+1, 1);
 	    }
 	    DECACHE_STACK_INFO();
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "key \"", TclGetString(OBJ_AT_TOS),
-		    "\" not known in dictionary", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "key \"%s\" not known in dictionary",
+		    TclGetString(OBJ_AT_TOS)));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		    TclGetString(OBJ_AT_TOS), NULL);
 	    CACHE_STACK_INFO();
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
 	} else {
+	    if (*pc == INST_DICT_EXISTS) {
+	    dictNotExists:
+		objResultPtr = TCONST(0);
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_V(5, opnd+1, 1);
+	    }
 	    TRACE_WITH_OBJ((
 		    "%u => ERROR reading leaf dictionary key \"%s\": ",
 		    opnd, O2S(dictPtr)), Tcl_GetObjResult(interp));
 	}
 	goto gotError;
+    }
 
     case INST_DICT_SET:
     case INST_DICT_UNSET:
@@ -6304,7 +6832,7 @@ TEBCresume(
 
     divideByZero:
 	DECACHE_STACK_INFO();
-	Tcl_SetResult(interp, "divide by zero", TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
 	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
@@ -6316,8 +6844,8 @@ TEBCresume(
 
     exponOfZero:
 	DECACHE_STACK_INFO();
-	Tcl_SetResult(interp, "exponentiation of zero by negative power",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"exponentiation of zero by negative power", -1));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"exponentiation of zero by negative power", NULL);
 	CACHE_STACK_INFO();
@@ -6693,7 +7221,8 @@ ExecuteExtendedBinaryMathOp(
 	    invalid = 0;
 	}
 	if (invalid) {
-	    Tcl_SetResult(interp, "negative shift argument", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "negative shift argument", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -6723,8 +7252,8 @@ ExecuteExtendedBinaryMathOp(
 		 * place to draw the line.
 		 */
 
-		Tcl_SetResult(interp, "integer value too large to represent",
-			TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"integer value too large to represent", -1));
 		return GENERAL_ARITHMETIC_ERROR;
 	    }
 	    shift = (int)(*((const long *)ptr2));
@@ -7125,7 +7654,8 @@ ExecuteExtendedBinaryMathOp(
 	 */
 
 	if (type2 != TCL_NUMBER_LONG) {
-	    Tcl_SetResult(interp, "exponent too large", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -7363,7 +7893,8 @@ ExecuteExtendedBinaryMathOp(
 	Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	if (big2.used > 1) {
 	    mp_clear(&big2);
-	    Tcl_SetResult(interp, "exponent too large", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);

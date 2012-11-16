@@ -4,7 +4,7 @@
  *	This file contains the structure definitions and some of the function
  *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006-2011 by Donal K. Fellows
+ * Copyright (c) 2006-2012 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

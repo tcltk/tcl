@@ -19,6 +19,9 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 catch {namespace delete {*}[namespace children :: test_ns_*]}
 catch {rename foo ""}
 catch {unset x}

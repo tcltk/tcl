@@ -1219,6 +1219,12 @@ declare 14 unix {
 	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
 }
 
+# Added in 8.6; core of TclpOpenTemporaryFile
+declare 20 unix {
+    int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
+	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
+}
+
 ################################
 # Mac OS X specific functions
 
