@@ -151,8 +151,8 @@ newline (\fBcrlf\fP) as the end of line representation.  The end of line
 representation can even change from line-to-line, and all cases are
 translated to a newline.  As the output translation mode, \fBauto\fR
 chooses a platform specific representation; for sockets on all platforms
-Tcl chooses \fBcrlf\fR, for all Unix flavors, it chooses \fBlf\fR, for the
-Macintosh platform it chooses \fBcr\fR and for the various flavors of
+Tcl chooses \fBcrlf\fR, for all Unix flavors, it chooses \fBlf\fR and for
+the various flavors of
 Windows it chooses \fBcrlf\fR.  The default setting for
 \fB\-translation\fR is \fBauto\fR for both input and output.
 .TP

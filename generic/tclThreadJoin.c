@@ -14,7 +14,7 @@
 
 #include "tclInt.h"
 
-#if defined(WIN32) || defined(MAC_TCL)
+#if defined(WIN32)
 
 /* The information about each joinable thread is remembered in a
  * structure as defined below.
@@ -306,4 +306,4 @@ TclSignalExitThread(id,result)
     Tcl_MutexUnlock (&threadPtr->threadMutex);
 }
 
-#endif /* WIN32 || MAC_TCL */
+#endif /* WIN32 */

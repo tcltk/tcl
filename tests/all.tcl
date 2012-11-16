@@ -13,10 +13,6 @@
 set tcltestVersion [package require tcltest]
 namespace import -force tcltest::*
 
-if {$tcl_platform(platform) == "macintosh"} {
-	tcltest::singleProcess 1
-}
-
 tcltest::testsDirectory [file dir [info script]]
 tcltest::runAllTests
 

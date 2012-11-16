@@ -315,9 +315,6 @@ output may fail, hang Tcl, or even hang the system if their own private
 console window is not available to them.
 .RE
 .TP
-\fBMacintosh\fR
-The \fBexec\fR command is not implemented and does not exist under Macintosh.
-.TP
 \fBUnix\fR\0\0\0\0\0\0\0
 The \fBexec\fR command is fully functional and works as described.
 

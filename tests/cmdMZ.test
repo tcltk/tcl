@@ -70,12 +70,6 @@ test cmdMZ-2.4 {Tcl_RenameObjCmd: success} {
 
 # Tcl_SourceObjCmd
 
-test cmdMZ-3.1 {Tcl_SourceObjCmd: error conditions} {macOnly} {
-    list [catch {source} msg] $msg
-} {1 {wrong # args: should be "source fileName" or "source -rsrc name ?fileName?" or "source -rsrcid id ?fileName?"}}
-test cmdMZ-3.2 {Tcl_SourceObjCmd: error conditions} {macOnly} {
-    list [catch {source a b} msg] $msg
-} {1 {bad argument: should be "source fileName" or "source -rsrc name ?fileName?" or "source -rsrcid id ?fileName?"}}
 test cmdMZ-3.3 {Tcl_SourceObjCmd: error conditions} {unixOrPc} {
     list [catch {source} msg] $msg
 } {1 {wrong # args: should be "source fileName"}}

@@ -23,11 +23,7 @@
  * the Tcl source directory to make their own modified versions).
  */
 
-#if !defined(MAC_TCL)
 extern int		isatty _ANSI_ARGS_((int fd));
-#else
-#include <unistd.h>
-#endif
 
 static Tcl_Obj *tclStartupScriptPath = NULL;
 

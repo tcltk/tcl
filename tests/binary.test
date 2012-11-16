@@ -512,9 +512,6 @@ test binary-14.11 {Tcl_BinaryObjCmd: format} {nonPortable pcOnly} {
 test binary-14.12 {Tcl_BinaryObjCmd: float overflow} {nonPortable unixOnly} {
     binary format d NaN
 } \x7f\xff\xff\xff\xff\xff\xff\xff
-test binary-14.13 {Tcl_BinaryObjCmd: float overflow} {nonPortable macOnly} {
-    binary format d NaN
-} \x7f\xf8\x02\xa0\x00\x00\x00\x00
 test binary-14.14 {Tcl_BinaryObjCmd: format} {
     list [catch {binary format d2 {1.6}} msg] $msg
 } {1 {number of elements in list does not match count}}
@@ -1403,10 +1400,6 @@ test binary-40.1 {ScanNumber: floating point overflow} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \xff\xff\xff\xff f1 arg1] $arg1
 } {1 -NaN}
-test binary-40.2 {ScanNumber: floating point overflow} {nonPortable macOnly} {
-    catch {unset arg1}
-    list [binary scan \xff\xff\xff\xff f1 arg1] $arg1
-} {1 -NAN(255)}
 test binary-40.3 {ScanNumber: floating point overflow} {nonPortable pcOnly} {
     catch {unset arg1}
     set result [binary scan \xff\xff\xff\xff f1 arg1]
@@ -1421,10 +1414,6 @@ test binary-40.4 {ScanNumber: floating point overflow} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1] $arg1
 } {1 -NaN}
-test binary-40.5 {ScanNumber: floating point overflow} {nonPortable macOnly} {
-    catch {unset arg1}
-    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1] $arg1
-} {1 -NAN(255)}
 test binary-40.6 {ScanNumber: floating point overflow} {nonPortable pcOnly} {
     catch {unset arg1}
     set result [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1]

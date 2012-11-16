@@ -213,7 +213,7 @@ void
 Tcl_SetNotifier(notifierProcPtr)
     Tcl_NotifierProcs *notifierProcPtr;
 {
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !defined(__WIN32__) /* UNIX */
     tclStubs.tcl_CreateFileHandler = notifierProcPtr->createFileHandlerProc;
     tclStubs.tcl_DeleteFileHandler = notifierProcPtr->deleteFileHandlerProc;
 #endif
