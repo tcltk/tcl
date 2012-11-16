@@ -62,13 +62,12 @@
 EXTERN void		TclAllocateFreeObjects(void);
 /* Slot 4 is reserved */
 /* 5 */
-EXTERN int		TclCleanupChildren(Tcl_Interp *interp,
-				size_t numPids, Tcl_Pid *pidPtr,
-				Tcl_Channel errorChan);
+EXTERN int		TclCleanupChildren(Tcl_Interp *interp, int numPids,
+				Tcl_Pid *pidPtr, Tcl_Channel errorChan);
 /* 6 */
 EXTERN void		TclCleanupCommand(Command *cmdPtr);
 /* 7 */
-EXTERN int		TclCopyAndCollapse(int count, const char *src,
+EXTERN int		TclCopyAndCollapse(size_t count, const char *src,
 				char *dst);
 /* 8 */
 EXTERN int		TclCopyChannelOld(Tcl_Interp *interp,
@@ -214,8 +213,7 @@ EXTERN void		TclpFree(char *ptr);
 EXTERN unsigned long	TclpGetClicks(void);
 /* 76 */
 EXTERN unsigned long	TclpGetSeconds(void);
-/* 77 */
-EXTERN void		TclpGetTime(Tcl_Time *time);
+/* Slot 77 is reserved */
 /* Slot 78 is reserved */
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
@@ -604,16 +602,16 @@ EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 
 typedef struct TclIntStubs {
     int magic;
-    const struct TclIntStubHooks *hooks;
+    void *hooks;
 
     void (*reserved0)(void);
     void (*reserved1)(void);
     void (*reserved2)(void);
     void (*tclAllocateFreeObjects) (void); /* 3 */
     void (*reserved4)(void);
-    int (*tclCleanupChildren) (Tcl_Interp *interp, size_t numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
+    int (*tclCleanupChildren) (Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
     void (*tclCleanupCommand) (Command *cmdPtr); /* 6 */
-    int (*tclCopyAndCollapse) (int count, const char *src, char *dst); /* 7 */
+    int (*tclCopyAndCollapse) (size_t count, const char *src, char *dst); /* 7 */
     int (*tclCopyChannelOld) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr); /* 8 */
     int (*tclCreatePipeline) (Tcl_Interp *interp, size_t argc, const char **argv, Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr, TclFile *errFilePtr); /* 9 */
     int (*tclCreateProc) (Tcl_Interp *interp, Namespace *nsPtr, const char *procName, Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr, Proc **procPtrPtr); /* 10 */
@@ -683,7 +681,7 @@ typedef struct TclIntStubs {
     void (*tclpFree) (char *ptr); /* 74 */
     unsigned long (*tclpGetClicks) (void); /* 75 */
     unsigned long (*tclpGetSeconds) (void); /* 76 */
-    void (*tclpGetTime) (Tcl_Time *time); /* 77 */
+    void (*reserved77)(void);
     void (*reserved78)(void);
     void (*reserved79)(void);
     void (*reserved80)(void);
@@ -993,8 +991,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclpGetClicks) /* 75 */
 #define TclpGetSeconds \
 	(tclIntStubsPtr->tclpGetSeconds) /* 76 */
-#define TclpGetTime \
-	(tclIntStubsPtr->tclpGetTime) /* 77 */
+/* Slot 77 is reserved */
 /* Slot 78 is reserved */
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */

@@ -702,7 +702,7 @@ static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
-			    ByteCode *codePtr, int *lengthPtr,
+			    ByteCode *codePtr, size_t *lengthPtr,
 			    const unsigned char **pcBeg);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
 			    int move);
@@ -1282,7 +1282,7 @@ void *
 TclStackRealloc(
     Tcl_Interp *interp,
     void *ptr,
-    int numBytes)
+    size_t numBytes)
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr;
@@ -8621,7 +8621,7 @@ IllegalExprOperandType(
 const char *
 TclGetSrcInfoForCmd(
     Interp *iPtr,
-    int *lenPtr)
+    size_t *lenPtr)
 {
     CmdFrame *cfPtr = iPtr->cmdFramePtr;
     ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
@@ -8696,7 +8696,7 @@ GetSrcInfoForPc(
 				 * in codePtr's code. */
     ByteCode *codePtr,		/* The bytecode sequence in which to look up
 				 * the command source for the pc. */
-    int *lengthPtr,		/* If non-NULL, the location where the length
+    size_t *lengthPtr,		/* If non-NULL, the location where the length
 				 * of the command's source should be stored.
 				 * If NULL, no length is stored. */
     const unsigned char **pcBeg)/* If non-NULL, the bytecode location

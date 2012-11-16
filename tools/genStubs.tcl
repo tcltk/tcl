@@ -828,7 +828,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 	    append text [addPlatformGuard $plat $temp {} true]
 	}
 	## macosx ##
-	if {$block(macosx) && !$block(aqua) && !$block(x11)} {
+	if {($block(unix) || $block(macosx)) && !$block(aqua) && !$block(x11)} {
 	    set temp {}
 	    set lastNum -1
 	    foreach plat {unix macosx} {
@@ -986,7 +986,7 @@ proc genStubs::emitHeader {name} {
     emitDeclarations $name text
 
     if {[info exists hooks($name)]} {
-	append text "\ntypedef struct ${capName}StubHooks {\n"
+	append text "\ntypedef struct {\n"
 	foreach hook $hooks($name) {
 	    set capHook [string toupper [string index $hook 0]]
 	    append capHook [string range $hook 1 end]
@@ -1000,7 +1000,11 @@ proc genStubs::emitHeader {name} {
 	append text "    int epoch;\n"
 	append text "    int revision;\n"
     }
-    append text "    const struct ${capName}StubHooks *hooks;\n\n"
+    if {[info exists hooks($name)]} {
+	append text "    const ${capName}StubHooks *hooks;\n\n"
+    } else {
+	append text "    void *hooks;\n\n"
+    }
 
     emitSlots $name text
 

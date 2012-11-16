@@ -381,7 +381,7 @@ Tcl_GetPathType(
 Tcl_PathType
 TclpGetNativePathType(
     Tcl_Obj *pathPtr,		/* Native path of interest */
-    int *driveNameLengthPtr,	/* Returns length of drive, if non-NULL and
+    size_t *driveNameLengthPtr,	/* Returns length of drive, if non-NULL and
 				 * path was absolute */
     Tcl_Obj **driveNameRef)
 {
@@ -494,7 +494,7 @@ TclpGetNativePathType(
 Tcl_Obj *
 TclpNativeSplitPath(
     Tcl_Obj *pathPtr,		/* Path to split. */
-    int *lenPtr)		/* int to store number of path elements. */
+    size_t *lenPtr)		/* int to store number of path elements. */
 {
     Tcl_Obj *resultPtr = NULL;	/* Needed only to prevent gcc warnings. */
 
@@ -1895,7 +1895,7 @@ TclGlob(
     if (pathPrefix == NULL) {
 	int driveNameLen;
 	Tcl_Obj *driveName;
-	if (TclFSNonnativePathType(tail, (int) strlen(tail), NULL,
+	if (TclFSNonnativePathType(tail, strlen(tail), NULL,
 		&driveNameLen, &driveName) == TCL_PATH_ABSOLUTE) {
 	    pathPrefix = driveName;
 	    tail += driveNameLen;

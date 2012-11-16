@@ -123,8 +123,8 @@ static int		TcpGetHandleProc(ClientData instanceData,
 static int		TcpGetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
-static int		TcpInputProc(ClientData instanceData, char *buf,
-			    int toRead, int *errorCode);
+static size_t	TcpInputProc(ClientData instanceData, char *buf,
+			    size_t toRead, int *errorCode);
 static int		TcpOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCode);
 static void		TcpWatchProc(ClientData instanceData, int mask);
@@ -437,11 +437,11 @@ WaitForConnect(
  */
 
 	/* ARGSUSED */
-static int
+static size_t
 TcpInputProc(
     ClientData instanceData,	/* Socket state. */
     char *buf,			/* Where to store data read. */
-    int bufSize,		/* How much space is available in the
+    size_t bufSize,		/* How much space is available in the
 				 * buffer? */
     int *errorCodePtr)		/* Where to store error code. */
 {

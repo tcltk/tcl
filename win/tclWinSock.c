@@ -1723,15 +1723,15 @@ TcpAccept(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 TcpInputProc(
     ClientData instanceData,	/* The socket state. */
     char *buf,			/* Where to store data. */
-    int toRead,			/* Maximum number of bytes to read. */
+    size_t toRead,			/* Maximum number of bytes to read. */
     int *errorCodePtr)		/* Where to store error codes. */
 {
     SocketInfo *infoPtr = instanceData;
-    int bytesRead;
+    size_t bytesRead;
     DWORD error;
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
@@ -1745,7 +1745,7 @@ TcpInputProc(
 
     if (!SocketsEnabled()) {
 	*errorCodePtr = EFAULT;
-	return -1;
+	return (size_t)-1;
     }
 
     /*
@@ -1763,7 +1763,7 @@ TcpInputProc(
 
     if ((infoPtr->flags & SOCKET_ASYNC_CONNECT)
 	    && !WaitForSocketEvent(infoPtr, FD_CONNECT, errorCodePtr)) {
-	return -1;
+	return (size_t)-1;
     }
 
     /*
@@ -1823,7 +1823,7 @@ TcpInputProc(
 	if ((infoPtr->flags & SOCKET_ASYNC) || (error != WSAEWOULDBLOCK)) {
 	    TclWinConvertError(error);
 	    *errorCodePtr = Tcl_GetErrno();
-	    bytesRead = -1;
+	    bytesRead = (size_t)-1;
 	    break;
 	}
 
@@ -1833,7 +1833,7 @@ TcpInputProc(
 	 */
 
 	if (!WaitForSocketEvent(infoPtr, FD_READ|FD_CLOSE, errorCodePtr)) {
-	    bytesRead = -1;
+	    bytesRead = (size_t)-1;
 	    break;
 	}
     }
@@ -1860,15 +1860,15 @@ TcpInputProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 TcpOutputProc(
     ClientData instanceData,	/* The socket state. */
     const char *buf,		/* Where to get data. */
-    int toWrite,		/* Maximum number of bytes to write. */
+    size_t toWrite,		/* Maximum number of bytes to write. */
     int *errorCodePtr)		/* Where to store error codes. */
 {
     SocketInfo *infoPtr = instanceData;
-    int bytesWritten;
+    size_t bytesWritten;
     DWORD error;
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
@@ -1882,7 +1882,7 @@ TcpOutputProc(
 
     if (!SocketsEnabled()) {
 	*errorCodePtr = EFAULT;
-	return -1;
+	return (size_t)-1;
     }
 
     /*
@@ -1891,7 +1891,7 @@ TcpOutputProc(
 
     if ((infoPtr->flags & SOCKET_ASYNC_CONNECT)
 	    && !WaitForSocketEvent(infoPtr, FD_CONNECT, errorCodePtr)) {
-	return -1;
+	return (size_t)-1;
     }
 
     while (1) {
@@ -1926,13 +1926,13 @@ TcpOutputProc(
 	    infoPtr->readyEvents &= ~(FD_WRITE);
 	    if (infoPtr->flags & SOCKET_ASYNC) {
 		*errorCodePtr = EAGAIN;
-		bytesWritten = -1;
+		bytesWritten = (size_t)-1;
 		break;
 	    }
 	} else {
 	    TclWinConvertError(error);
 	    *errorCodePtr = Tcl_GetErrno();
-	    bytesWritten = -1;
+	    bytesWritten = (size_t)-1;
 	    break;
 	}
 
@@ -1942,7 +1942,7 @@ TcpOutputProc(
 	 */
 
 	if (!WaitForSocketEvent(infoPtr, FD_WRITE|FD_CLOSE, errorCodePtr)) {
-	    bytesWritten = -1;
+	    bytesWritten = (size_t)-1;
 	    break;
 	}
     }

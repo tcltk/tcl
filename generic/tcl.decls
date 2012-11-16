@@ -287,7 +287,7 @@ declare 76 {
     void Tcl_BackgroundError(Tcl_Interp *interp)
 }
 declare 77 {
-    char Tcl_Backslash(const char *src, unsigned int *readPtr)
+    char Tcl_Backslash(const char *src, size_t *readPtr)
 }
 declare 78 {
     int Tcl_BadChannelOption(Tcl_Interp *interp, const char *optionName,
@@ -1127,7 +1127,7 @@ declare 312 {
     size_t Tcl_NumUtfChars(const char *src, size_t length)
 }
 declare 313 {
-    int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead,
+    size_t Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, size_t charsToRead,
 	    int appendFlag)
 }
 declare 314 {
@@ -1172,7 +1172,7 @@ declare 326 {
     int Tcl_UtfCharComplete(const char *src, size_t length)
 }
 declare 327 {
-    int Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
+    int Tcl_UtfBackslash(const char *src, size_t *readPtr, char *dst)
 }
 declare 328 {
     const char *Tcl_UtfFindFirst(const char *src, int ch)
@@ -1285,7 +1285,7 @@ declare 360 {
 	    Tcl_Parse *parsePtr, int append, const char **termPtr)
 }
 declare 361 {
-    int Tcl_ParseCommand(Tcl_Interp *interp, const char *start, int numBytes,
+    int Tcl_ParseCommand(Tcl_Interp *interp, const char *start, size_t numBytes,
 	    int nested, Tcl_Parse *parsePtr)
 }
 declare 362 {
@@ -1344,23 +1344,23 @@ declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
 declare 378 {
-    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, int numChars)
+    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, size_t numChars)
 }
 declare 379 {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
-	    int numChars)
+	    size_t numChars)
 }
 declare 380 {
     size_t Tcl_GetCharLength(Tcl_Obj *objPtr)
 }
 declare 381 {
-    Tcl_UniChar Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
+    Tcl_UniChar Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index)
 }
 declare 382 {
     Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
 }
 declare 383 {
-    Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
+    Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, size_t first, size_t last)
 }
 declare 384 {
     void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
@@ -1394,15 +1394,15 @@ declare 392 {
 }
 declare 393 {
     int Tcl_CreateThread(Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc,
-	    ClientData clientData, int stackSize, int flags)
+	    ClientData clientData, size_t stackSize, int flags)
 }
 
 # Introduced in 8.3.2
 declare 394 {
-    int Tcl_ReadRaw(Tcl_Channel chan, char *dst, int bytesToRead)
+    size_t Tcl_ReadRaw(Tcl_Channel chan, char *dst, size_t bytesToRead)
 }
 declare 395 {
-    int Tcl_WriteRaw(Tcl_Channel chan, const char *src, int srcLen)
+    size_t Tcl_WriteRaw(Tcl_Channel chan, const char *src, size_t srcLen)
 }
 declare 396 {
     Tcl_Channel Tcl_GetTopChannel(Tcl_Channel chan)
@@ -1490,7 +1490,7 @@ declare 418 {
 }
 declare 419 {
     int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    unsigned long numChars)
+	    size_t numChars)
 }
 declare 420 {
     int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
@@ -2097,7 +2097,7 @@ declare 574 {
 }
 declare 575 {
     void Tcl_AppendLimitedToObj(Tcl_Obj *objPtr, const char *bytes,
-	    size_t length, int limit, const char *ellipsis)
+	    size_t length, size_t limit, const char *ellipsis)
 }
 declare 576 {
     Tcl_Obj *Tcl_Format(Tcl_Interp *interp, const char *format, size_t objc,

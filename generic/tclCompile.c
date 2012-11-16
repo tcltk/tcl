@@ -1552,9 +1552,9 @@ TclCompileScript(
 				 * serves as context for finding and compiling
 				 * commands. May not be NULL. */
     const char *script,		/* The source script to compile. */
-    size_t numBytes,		/* Number of bytes in script. If < 0, the
-				 * script consists of all bytes up to the
-				 * first null character. */
+    size_t numBytes,		/* Number of bytes in script. If this is equal
+				 * to TCL_STRLEN, the script consists of all
+				 * bytes up to the first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1578,7 +1578,7 @@ TclCompileScript(
 
     Tcl_DStringInit(&ds);
 
-    if (numBytes < 0) {
+    if (numBytes == TCL_STRLEN) {
 	numBytes = strlen(script);
     }
     Tcl_ResetResult(interp);

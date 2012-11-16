@@ -2944,17 +2944,17 @@ ZlibTransformClose(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 ZlibTransformInput(
     ClientData instanceData,
     char *buf,
-    int toRead,
+    size_t toRead,
     int *errorCodePtr)
 {
     ZlibChannelData *cd = instanceData;
     Tcl_DriverInputProc *inProc =
 	    Tcl_ChannelInputProc(Tcl_GetChannelType(cd->parent));
-    int readBytes, gotBytes, copied;
+    size_t readBytes, gotBytes, copied;
 
     if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	return inProc(Tcl_GetChannelInstanceData(cd->parent), buf, toRead,
@@ -3002,7 +3002,7 @@ ZlibTransformInput(
 	 *	it is EOF, try flushing the data out of the decompressor.
 	 */
 
-	if (readBytes < 0) {
+	if (readBytes != (size_t)-1) {
 	    /*
 	     * Report errors to caller. The state of the seek system is
 	     * unchanged!
@@ -3093,11 +3093,11 @@ ZlibTransformInput(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 ZlibTransformOutput(
     ClientData instanceData,
     const char *buf,
-    int toWrite,
+    size_t toWrite,
     int *errorCodePtr)
 {
     ZlibChannelData *cd = instanceData;

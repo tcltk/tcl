@@ -495,7 +495,7 @@ Tcl_PathType
 TclFSGetPathType(
     Tcl_Obj *pathPtr,
     const Tcl_Filesystem **filesystemPtrPtr,
-    int *driveNameLengthPtr)
+    size_t *driveNameLengthPtr)
 {
     FsPath *fsPathPtr;
 
@@ -1260,7 +1260,7 @@ Tcl_Obj *
 TclNewFSPathObj(
     Tcl_Obj *dirPtr,
     const char *addStrRep,
-    int len)
+    size_t len)
 {
     FsPath *fsPathPtr;
     Tcl_Obj *pathPtr;

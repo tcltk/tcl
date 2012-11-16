@@ -160,11 +160,11 @@ const char charTypeTable[] = {
  */
 
 static inline int	CommandComplete(const char *script, int numBytes);
-static int		ParseComment(const char *src, int numBytes,
+static int		ParseComment(const char *src, size_t numBytes,
 			    Tcl_Parse *parsePtr);
-static int		ParseTokens(const char *src, int numBytes, int mask,
+static int		ParseTokens(const char *src, size_t numBytes, int mask,
 			    int flags, Tcl_Parse *parsePtr);
-static int		ParseWhiteSpace(const char *src, int numBytes,
+static int		ParseWhiteSpace(const char *src, size_t numBytes,
 			    int *incompletePtr, char *typePtr);
 
 /*
@@ -187,7 +187,7 @@ void
 TclParseInit(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting */
     const char *start,		/* Start of string to be parsed. */
-    int numBytes,		/* Total number of bytes in string. If < 0,
+    size_t numBytes,		/* Total number of bytes in string. If (size_t)-1,
 				 * the script consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr)	/* Points to struct to initialize */
@@ -233,7 +233,7 @@ Tcl_ParseCommand(
 				 * NULL, then no error message is provided. */
     const char *start,		/* First character of string containing one or
 				 * more Tcl commands. */
-    register int numBytes,	/* Total number of bytes in string. If < 0,
+    register size_t numBytes,	/* Total number of bytes in string. If (size_t)-1,
 				 * the script consists of all bytes up to the
 				 * first null character. */
     int nested,			/* Non-zero means this is a nested command:
@@ -263,7 +263,7 @@ Tcl_ParseCommand(
 	}
 	return TCL_ERROR;
     }
-    if (numBytes < 0) {
+    if (numBytes == (size_t)-1) {
 	numBytes = strlen(start);
     }
     TclParseInit(interp, start, numBytes, parsePtr);
@@ -640,7 +640,7 @@ TclIsSpaceProc(
 static int
 ParseWhiteSpace(
     const char *src,		/* First character to parse. */
-    register int numBytes,	/* Max number of bytes to scan. */
+    register size_t numBytes,	/* Max number of bytes to scan. */
     int *incompletePtr,		/* Set this boolean memory to true if parsing
 				 * indicates an incomplete command. */
     char *typePtr)		/* Points to location to store character type
@@ -694,7 +694,7 @@ ParseWhiteSpace(
 int
 TclParseAllWhiteSpace(
     const char *src,		/* First character to parse. */
-    int numBytes)		/* Max number of byes to scan */
+    size_t numBytes)		/* Max number of byes to scan */
 {
     int dummy;
     char type;
@@ -734,7 +734,7 @@ TclParseAllWhiteSpace(
 int
 TclParseHex(
     const char *src,		/* First character to parse. */
-    int numBytes,		/* Max number of byes to scan */
+    size_t numBytes,		/* Max number of byes to scan */
     int *resultPtr)	/* Points to storage provided by caller where
 				 * the character resulting from the
 				 * conversion is to be written. */
@@ -790,7 +790,7 @@ int
 TclParseBackslash(
     const char *src,		/* Points to the backslash character of a a
 				 * backslash sequence. */
-    int numBytes,		/* Max number of bytes to scan. */
+    size_t numBytes,		/* Max number of bytes to scan. */
     int *readPtr,		/* NULL, or points to storage where the number
 				 * of bytes scanned should be written. */
     char *dst)			/* NULL, or points to buffer where the UTF-8
@@ -973,7 +973,7 @@ TclParseBackslash(
 static int
 ParseComment(
     const char *src,		/* First character to parse. */
-    register int numBytes,	/* Max number of bytes to scan. */
+    register size_t numBytes,	/* Max number of bytes to scan. */
     Tcl_Parse *parsePtr)	/* Information about parse in progress.
 				 * Updated if parsing indicates an incomplete
 				 * command. */
@@ -1058,7 +1058,7 @@ ParseComment(
 static int
 ParseTokens(
     register const char *src,	/* First character to parse. */
-    register int numBytes,	/* Max number of bytes to scan. */
+    register size_t numBytes,	/* Max number of bytes to scan. */
     int mask,			/* Specifies when to stop parsing. The parse
 				 * stops at the first unquoted character whose
 				 * CHAR_TYPE contains any of the bits in
@@ -1909,12 +1909,12 @@ void
 TclSubstParse(
     Tcl_Interp *interp,
     const char *bytes,
-    int numBytes,
+    size_t numBytes,
     int flags,
     Tcl_Parse *parsePtr,
     Tcl_InterpState *statePtr)
 {
-    int length = numBytes;
+    size_t length = numBytes;
     const char *p = bytes;
 
     TclParseInit(interp, p, length, parsePtr);
@@ -2517,7 +2517,7 @@ TclObjCommandComplete(
 int
 TclIsLocalScalar(
     const char *src,
-    int len)
+    size_t len)
 {
     const char *p;
     const char *lastChar = src + (len - 1);

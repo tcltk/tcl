@@ -1668,7 +1668,7 @@ char *
 Tcl_GetStringFromObj(
     register Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
 				 * be returned. */
-    register int *lengthPtr)	/* If non-NULL, the location where the string
+    register size_t *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {

@@ -723,7 +723,7 @@ TclFindElement(
 
 int
 TclCopyAndCollapse(
-    int count,			/* Number of byte to copy from src. */
+    size_t count,			/* Number of byte to copy from src. */
     const char *src,		/* Copy from here... */
     char *dst)			/* ... to here. */
 {
@@ -904,7 +904,7 @@ Tcl_ScanElement(
 int
 Tcl_ScanCountedElement(
     const char *src,		/* String to convert to Tcl list element. */
-    int length,			/* Number of bytes in src, or -1. */
+    size_t length,			/* Number of bytes in src, or -1. */
     int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
@@ -948,7 +948,7 @@ Tcl_ScanCountedElement(
 int
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
-    int length,			/* Number of bytes in src, or -1. */
+    size_t length,			/* Number of bytes in src, or (size_t)-1. */
     int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
@@ -969,7 +969,7 @@ TclScanElement(
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
 #endif /* COMPAT */
     
-    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == -1))) {
+    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == (size_t)-1))) {
 	/*
 	 * Empty string element must be brace quoted.
 	 */
@@ -1072,7 +1072,7 @@ TclScanElement(
 #endif /* COMPAT */
 	    break;
 	case '\0':	/* TYPE_SUBS */
-	    if (length == -1) {
+	    if (length == (size_t)-1) {
 		goto endOfString;
 	    }
 	    /* TODO: Panic on improper encoding? */
@@ -1265,7 +1265,7 @@ Tcl_ConvertElement(
 int
 Tcl_ConvertCountedElement(
     register const char *src,	/* Source information for list element. */
-    int length,			/* Number of bytes in src, or -1. */
+    size_t length,			/* Number of bytes in src, or (size_t)-1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
@@ -1298,7 +1298,7 @@ Tcl_ConvertCountedElement(
 int
 TclConvertElement(
     register const char *src,	/* Source information for list element. */
-    int length,			/* Number of bytes in src, or -1. */
+    size_t length,			/* Number of bytes in src, or (size_t)-1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
@@ -1317,7 +1317,7 @@ TclConvertElement(
      * No matter what the caller demands, empty string must be braced!
      */
 
-    if ((src == NULL) || (length == 0) || (*src == '\0' && length == -1)) {
+    if ((src == NULL) || (length == 0) || (*src == '\0' && length == (size_t)-1)) {
 	src = tclEmptyStringRep;
 	length = 0;
 	conversion = CONVERT_BRACE;
@@ -1344,7 +1344,7 @@ TclConvertElement(
      */
 
     if (conversion == CONVERT_NONE) {
-	if (length == -1) {
+	if (length == (size_t)-1) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1363,7 +1363,7 @@ TclConvertElement(
     if (conversion == CONVERT_BRACE) {
 	*p = '{';
 	p++;
-	if (length == -1) {
+	if (length == (size_t)-1) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1436,7 +1436,7 @@ TclConvertElement(
 	    p++;
 	    continue;
 	case '\0':
-	    if (length == -1) {
+	    if (length == (size_t)-1) {
 		return p - dst;
 	    }
 
@@ -1576,7 +1576,7 @@ char
 Tcl_Backslash(
     const char *src,		/* Points to the backslash character of a
 				 * backslash sequence. */
-    int *readPtr)		/* Fill in with number of characters read from
+    size_t *readPtr)		/* Fill in with number of characters read from
 				 * src, unless NULL. */
 {
     char buf[TCL_UTF_MAX];
@@ -1608,9 +1608,9 @@ Tcl_Backslash(
 int
 TclTrimRight(
     const char *bytes,		/* String to be trimmed... */
-    int numBytes,		/* ...and its length in bytes */
+    size_t numBytes,		/* ...and its length in bytes */
     const char *trim,		/* String of trim characters... */
-    int numTrim)		/* ...and its length in bytes */
+    size_t numTrim)		/* ...and its length in bytes */
 {
     const char *p = bytes + numBytes;
     int pInc;
@@ -1689,9 +1689,9 @@ TclTrimRight(
 int
 TclTrimLeft(
     const char *bytes,		/* String to be trimmed... */
-    int numBytes,		/* ...and its length in bytes */
+    size_t numBytes,		/* ...and its length in bytes */
     const char *trim,		/* String of trim characters... */
-    int numTrim)		/* ...and its length in bytes */
+    size_t numTrim)		/* ...and its length in bytes */
 {
     const char *p = bytes;
 
@@ -2275,11 +2275,11 @@ Tcl_StringCaseMatch(
 int
 TclByteArrayMatch(
     const unsigned char *string,/* String. */
-    int strLen,			/* Length of String */
+    size_t strLen,			/* Length of String */
     const unsigned char *pattern,
 				/* Pattern, which may contain special
 				 * characters. */
-    int ptnLen,			/* Length of Pattern */
+    size_t ptnLen,			/* Length of Pattern */
     int flags)
 {
     const unsigned char *stringEnd, *patternEnd;
@@ -2535,13 +2535,13 @@ Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
     const char *bytes,		/* String to append. If length is -1 then this
 				 * must be null-terminated. */
-    int length)			/* Number of bytes from "bytes" to append. If
-				 * < 0, then append all of bytes, up to null
+    size_t length)			/* Number of bytes from "bytes" to append. If
+				 * (size_t) -1, then append all of bytes, up to null
 				 * at end. */
 {
     int newSize;
 
-    if (length < 0) {
+    if (length == (size_t)-1) {
 	length = strlen(bytes);
     }
     newSize = length + dsPtr->length;
@@ -2701,11 +2701,11 @@ Tcl_DStringAppendElement(
 void
 Tcl_DStringSetLength(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    int length)			/* New length for dynamic string. */
+    size_t length)			/* New length for dynamic string. */
 {
     int newsize;
 
-    if (length < 0) {
+    if (length == (size_t)-1) {
 	length = 0;
     }
     if (length >= dsPtr->spaceAvl) {
@@ -4177,7 +4177,7 @@ int
 TclReToGlob(
     Tcl_Interp *interp,
     const char *reStr,
-    int reStrLen,
+    size_t reStrLen,
     Tcl_DString *dsPtr,
     int *exactPtr)
 {

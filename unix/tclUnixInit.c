@@ -458,7 +458,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
@@ -983,7 +983,7 @@ int
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (native). */
-    int *lengthPtr)		/* Used to return length of name (for
+    size_t *lengthPtr)		/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */

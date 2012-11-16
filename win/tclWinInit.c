@@ -176,7 +176,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    64
@@ -220,7 +220,7 @@ TclpInitLibraryPath(
     *encodingPtr = NULL;
     bytes = Tcl_GetStringFromObj(pathPtr, lengthPtr);
     *valuePtr = ckalloc((*lengthPtr) + 1);
-    memcpy(*valuePtr, bytes, (size_t)(*lengthPtr)+1);
+    memcpy(*valuePtr, bytes, (*lengthPtr)+1);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -650,12 +650,13 @@ int
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (UTF-8). */
-    int *lengthPtr)		/* Used to return length of name (for
+    size_t *lengthPtr)		/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    int i, length, result = -1;
+    int i, result = -1;
+    size_t length;
     register const char *env, *p1, *p2;
     char *envUpper, *nameUpper;
     Tcl_DString envString;
