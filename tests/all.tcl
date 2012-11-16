@@ -12,6 +12,7 @@
 
 package prefer latest
 package require Tcl 8.5
+proc tcl::info::hostname {} {return localhost}
 package require tcltest 2.2
 namespace import tcltest::*
 configure {*}$argv -testdir [file dir [info script]]

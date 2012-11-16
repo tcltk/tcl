@@ -16,13 +16,16 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 # Some tests require the testthread command
 
 testConstraint testthread [expr {[info commands testthread] != {}}]
 
 # Some tests require the Thread package
 
-testConstraint thread [expr {0 == [catch {package require Thread 2.7}]}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
 # Some tests may not work under valgrind
 
@@ -76,7 +79,7 @@ if {[testConstraint thread]} {
 if {[testConstraint testthread]} {
     proc drainEventQueue {} {
 	while {[set x [testthread event]]} {
-	    puts "WARNING: drained $x event(s) on main thread"
+	    #puts "WARNING: drained $x event(s) on main thread"
 	}
     }
 

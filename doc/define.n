@@ -152,7 +152,7 @@ and
 operates identically to
 .QW "\fBoo::objdefine \fIcls subcommand ...\fR" .
 .TP
-\fBsuperclass\fI ?\fI\-slotOperation\fR? \fR?\fIclassName ...\fR?
+\fBsuperclass\fR ?\fI\-slotOperation\fR? ?\fIclassName ...\fR?
 .VS
 This slot (see \fBSLOTTED DEFINITIONS\fR below)
 .VE

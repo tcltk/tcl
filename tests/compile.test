@@ -14,6 +14,9 @@
 package require tcltest 2
 namespace import -force ::tcltest::*
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint exec       [llength [info commands exec]]
 testConstraint memory     [llength [info commands memory]]
 testConstraint testevalex [llength [info commands testevalex]]

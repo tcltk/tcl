@@ -16,6 +16,9 @@ if {[catch {package require tcltest 2.0.2}]} {
 namespace eval ::tcl::test::parse {
     namespace import ::tcltest::*
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testparser [llength [info commands testparser]]
 testConstraint testevalobjv [llength [info commands testevalobjv]]
 testConstraint testevalex [llength [info commands testevalex]]

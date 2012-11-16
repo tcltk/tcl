@@ -17,6 +17,10 @@ if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
 
@@ -37,7 +41,7 @@ testConstraint fcopy            [llength [info commands fcopy]]
 testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
-testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
