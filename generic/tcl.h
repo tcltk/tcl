@@ -777,13 +777,7 @@ int		Tcl_IsShared(Tcl_Obj *objPtr);
  */
 
 typedef struct Tcl_SavedResult {
-    char *result;
-    Tcl_FreeProc *freeProc;
     Tcl_Obj *objResultPtr;
-    char *appendResult;
-    int appendAvl;
-    int appendUsed;
-    char resultSpace[TCL_RESULT_SIZE+1];
 } Tcl_SavedResult;
 
 /*
