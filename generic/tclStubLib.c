@@ -41,10 +41,9 @@ HasStubSupport(
     if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
 	return iPtr->stubTable;
     }
-
-    iPtr->result =
-	    (char *)"This interpreter does not support stubs-enabled extensions.";
-    iPtr->freeProc = TCL_STATIC;
+    iPtr->unused3
+	    = "This interpreter does not support stubs-enabled extensions.";
+    iPtr->unused4 = TCL_STATIC;
     return NULL;
 }
 
