@@ -63,14 +63,14 @@ typedef struct SortInfo {
     Tcl_Obj *compareCmdPtr;	/* The Tcl comparison command when sortMode is
 				 * SORTMODE_COMMAND. Pre-initialized to hold
 				 * base of command. */
-    ptrdiff_t *indexv;		/* If the -index option was specified, this
+    ssize_t *indexv;		/* If the -index option was specified, this
 				 * holds the indexes contained in the list
 				 * supplied as an argument to that option.
 				 * NULL if no indexes supplied, and points to
 				 * singleIndex field when only one
 				 * supplied. */
     size_t indexc;		/* Number of indexes in indexv array. */
-    ptrdiff_t singleIndex;	/* Static space for common index case. */
+    ssize_t singleIndex;	/* Static space for common index case. */
     int unique;
     size_t numElements;
     Tcl_Interp *interp;		/* The interpreter in which the sort is being
@@ -2308,7 +2308,7 @@ Tcl_LinsertObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
-    ptrdiff_t index;
+    ssize_t index;
     size_t len, result;
 
     if (objc < 3) {
@@ -2470,7 +2470,7 @@ Tcl_LrangeObjCmd(
 {
     Tcl_Obj **elemPtrs;
     size_t listLen;
-    ptrdiff_t first, last;
+    ssize_t first, last;
     int result;
 
     if (objc != 4) {
@@ -2673,7 +2673,7 @@ Tcl_LreplaceObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register Tcl_Obj *listPtr;
-    ptrdiff_t first, last;
+    ssize_t first, last;
     size_t listLen, numToDelete;
     int result;
 
@@ -2867,7 +2867,7 @@ Tcl_LsearchObjCmd(
     int dataType, isIncreasing, lower, upper, patInt, objInt;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     size_t listc, length, elemLen;
-    ptrdiff_t offset;
+    ssize_t offset;
     double patDouble, objDouble;
     SortInfo sortInfo;
     Tcl_Obj *patObj, **listv, *listPtr, *startPtr, *itemPtr;
@@ -3054,7 +3054,7 @@ Tcl_LsearchObjCmd(
 		break;
 	    default:
 		sortInfo.indexv =
-			TclStackAlloc(interp, sizeof(ptrdiff_t) * sortInfo.indexc);
+			TclStackAlloc(interp, sizeof(ssize_t) * sortInfo.indexc);
 	    }
 
 	    /*
@@ -3683,7 +3683,7 @@ Tcl_LsortObjCmd(
 	    sortInfo.isIncreasing = 1;
 	    break;
 	case LSORT_INDEX: {
-	    ptrdiff_t dummy;
+	    ssize_t dummy;
 	    Tcl_Obj **indexv;
 
 	    if (i == objc-2) {
@@ -3785,7 +3785,7 @@ Tcl_LsortObjCmd(
 	    break;
 	default:
 	    sortInfo.indexv =
-		    TclStackAlloc(interp, sizeof(ptrdiff_t) * sortInfo.indexc);
+		    TclStackAlloc(interp, sizeof(ssize_t) * sortInfo.indexc);
 	    allocatedIndexVector = 1;	/* Cannot use indexc field, as it
 					 * might be decreased by 1 later. */
 	}

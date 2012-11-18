@@ -258,7 +258,8 @@ LinkTraceProc(
     int flags)			/* Miscellaneous additional information. */
 {
     Link *linkPtr = clientData;
-    int changed, valueLength;
+    int changed;
+    size_t valueLength;
     const char *value;
     char **pp;
     Tcl_Obj *valueObj;

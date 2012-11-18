@@ -56,11 +56,11 @@ typedef struct CopyState {
  */
 
 typedef struct ChannelBuffer {
-    int nextAdded;		/* The next position into which a character
+    size_t nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
-    int nextRemoved;		/* Position of next byte to be removed from
+    size_t nextRemoved;		/* Position of next byte to be removed from
 				 * the buffer. */
-    int bufLength;		/* How big is the buffer? */
+    size_t bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
     				/* Next buffer in chain. */
     char buf[1];		/* Placeholder for real buffer. The real
@@ -217,8 +217,10 @@ typedef struct ChannelState {
 				 * handlers ("fileevent") on this channel. */
     int bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
-    CopyState *csPtrR;		/* State of background copy for which channel is input, or NULL. */
-    CopyState *csPtrW;		/* State of background copy for which channel is output, or NULL. */
+    CopyState *csPtrR;		/* State of background copy for which channel
+				 * is input, or NULL. */
+    CopyState *csPtrW;		/* State of background copy for which channel
+				 * is output, or NULL. */
     Channel *topChanPtr;	/* Refers to topmost channel in a stack. Never
 				 * NULL. */
     Channel *bottomChanPtr;	/* Refers to bottommost channel in a stack.
@@ -236,8 +238,8 @@ typedef struct ChannelState {
      * precedence over a posix error code returned by a channel operation.
      */
 
-    Tcl_Obj* chanMsg;
-    Tcl_Obj* unreportedMsg;     /* Non-NULL if an error report was deferred
+    Tcl_Obj *chanMsg;
+    Tcl_Obj *unreportedMsg;     /* Non-NULL if an error report was deferred
 				 * because it happened in the background. The
 				 * value is the chanMg, if any. #219's
 				 * companion to 'unreportedError'. */
@@ -411,15 +413,15 @@ typedef struct GetsState {
     Tcl_EncodingState state;	/* The encoding state just before the last
 				 * external to UTF-8 conversion in
 				 * FilterInputBytes(). */
-    int rawRead;		/* The number of bytes removed from bufPtr in
+    size_t rawRead;		/* The number of bytes removed from bufPtr in
 				 * the last call to FilterInputBytes(). */
-    int bytesWrote;		/* The number of bytes of UTF-8 data appended
+    size_t bytesWrote;		/* The number of bytes of UTF-8 data appended
 				 * to objPtr during the last call to
 				 * FilterInputBytes(). */
-    int charsWrote;		/* The corresponding number of UTF-8
+    size_t charsWrote;		/* The corresponding number of UTF-8
 				 * characters appended to objPtr during the
 				 * last call to FilterInputBytes(). */
-    int totalChars;		/* The total number of UTF-8 characters
+    size_t totalChars;		/* The total number of UTF-8 characters
 				 * appended to objPtr so far, just before the
 				 * last call to FilterInputBytes(). */
 } GetsState;

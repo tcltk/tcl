@@ -31,27 +31,18 @@
  * Signatures of all functions used in the C layer of the reflection.
  */
 
-static int		ReflectClose(ClientData clientData,
-			    Tcl_Interp *interp);
-static int		ReflectInput(ClientData clientData, char *buf,
-			    int toRead, int *errorCodePtr);
-static int		ReflectOutput(ClientData clientData, const char *buf,
-			    int toWrite, int *errorCodePtr);
-static void		ReflectWatch(ClientData clientData, int mask);
-static int		ReflectBlock(ClientData clientData, int mode);
+static Tcl_DriverCloseProc      ReflectClose;
+static Tcl_DriverInputProc      ReflectInput;
+static Tcl_DriverOutputProc     ReflectOutput;
+static Tcl_DriverWatchProc      ReflectWatch;
+static Tcl_DriverBlockModeProc  ReflectBlock;
 #ifdef TCL_THREADS
-static void		ReflectThread(ClientData clientData, int action);
+static Tcl_DriverThreadActionProc ReflectThread;
 #endif
-static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
-			    Tcl_WideInt offset, int mode, int *errorCodePtr);
-static int		ReflectSeek(ClientData clientData, long offset,
-			    int mode, int *errorCodePtr);
-static int		ReflectGetOption(ClientData clientData,
-			    Tcl_Interp *interp, const char *optionName,
-			    Tcl_DString *dsPtr);
-static int		ReflectSetOption(ClientData clientData,
-			    Tcl_Interp *interp, const char *optionName,
-			    const char *newValue);
+static Tcl_DriverWideSeekProc   ReflectSeekWide;
+static Tcl_DriverSeekProc       ReflectSeek;
+static Tcl_DriverGetOptionProc  ReflectGetOption;
+static Tcl_DriverSetOptionProc  ReflectSetOption;
 
 /*
  * The C layer channel type/driver definition used by the reflection. This is
@@ -93,11 +84,12 @@ typedef struct {
 				 * Tcl level part of the channel. NULL here
 				 * signals the channel is dead because the
 				 * interpreter/thread containing its Tcl
-				 * command is gone.
-				 */
+				 * command is gone. */
 #ifdef TCL_THREADS
-    Tcl_ThreadId thread;	/* Thread the 'interp' belongs to. == Handler thread */
-    Tcl_ThreadId owner;         /* Thread owning the structure.    == Channel thread */
+    Tcl_ThreadId thread;	/* Thread the 'interp' belongs to.
+                                 * == Handler thread */
+    Tcl_ThreadId owner;         /* Thread owning the structure.
+                                 * == Channel thread */
 #endif
 
     /* See [==] as well.
@@ -111,7 +103,7 @@ typedef struct {
      * CT = Belongs to the 'Command handler Thread'.
      */
 
-    int argc;			/* Number of preallocated words - 2 */
+    size_t argc;		/* Number of preallocated words - 2 */
     Tcl_Obj **argv;		/* Preallocated array for calling the handler.
 				 * args[0] is placeholder for cmd word.
 				 * Followed by the arguments in the prefix,
@@ -272,13 +264,13 @@ typedef struct ForwardParamBase {
 struct ForwardParamInput {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     char *buf;			/* O: Where to store the read bytes */
-    int toRead;			/* I: #bytes to read,
+    ssize_t toRead;		/* I: #bytes to read,
 				 * O: #bytes actually read */
 };
 struct ForwardParamOutput {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     const char *buf;		/* I: Where the bytes to write come from */
-    int toWrite;		/* I: #bytes to write,
+    ssize_t toWrite;		/* I: #bytes to write,
 				 * O: #bytes actually written */
 };
 struct ForwardParamSeek {
@@ -404,26 +396,35 @@ static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(ClientData clientData);
 
 #define FreeReceivedError(p) \
-	if ((p)->base.mustFree) {                               \
-	    ckfree((p)->base.msgStr);                           \
-	}
+    if ((p)->base.mustFree) {                                   \
+        ckfree((p)->base.msgStr);                               \
+    }
 #define PassReceivedErrorInterp(i,p) \
-	if ((i) != NULL) {                                      \
-	    Tcl_SetChannelErrorInterp((i),                      \
-		    Tcl_NewStringObj((p)->base.msgStr, -1));    \
-	}                                                       \
-	FreeReceivedError(p)
+    do {                                                        \
+        if ((i) != NULL) {                                      \
+            Tcl_SetChannelErrorInterp((i),                      \
+                    Tcl_NewStringObj((p)->base.msgStr, TCL_STRLEN)); \
+        }                                                       \
+        FreeReceivedError(p);                                   \
+    } while (0)
 #define PassReceivedError(c,p) \
-	Tcl_SetChannelError((c), Tcl_NewStringObj((p)->base.msgStr, -1)); \
-	FreeReceivedError(p)
+    do {                                                        \
+        Tcl_SetChannelError((c),                                \
+                Tcl_NewStringObj((p)->base.msgStr, TCL_STRLEN)); \
+        FreeReceivedError(p);                                   \
+    } while (0)
 #define ForwardSetStaticError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 0;                                 \
-	(p)->base.msgStr = (char *) (emsg)
+    do {                                                        \
+        (p)->base.code = TCL_ERROR;                             \
+        (p)->base.mustFree = 0;                                 \
+        (p)->base.msgStr = (char *) (emsg);                     \
+    } while (0)
 #define ForwardSetDynamicError(p,emsg) \
+    do {                                                        \
 	(p)->base.code = TCL_ERROR;                             \
 	(p)->base.mustFree = 1;                                 \
-	(p)->base.msgStr = (char *) (emsg)
+        (p)->base.msgStr = (char *) (emsg);                     \
+    } while (0)
 
 static void		ForwardSetObjError(ForwardParam *p, Tcl_Obj *objPtr);
 
@@ -433,7 +434,7 @@ static void		DeleteThreadReflectedChannelMap(ClientData clientData);
 #endif /* TCL_THREADS */
 
 #define SetChannelErrorStr(c,msgStr) \
-	Tcl_SetChannelError((c), Tcl_NewStringObj((msgStr), -1))
+	Tcl_SetChannelError((c), Tcl_NewStringObj((msgStr), TCL_STRLEN))
 
 static Tcl_Obj *	MarshallError(Tcl_Interp *interp);
 static void		UnmarshallErrorResult(Tcl_Interp *interp,
@@ -505,7 +506,7 @@ int
 TclChanCreateObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     ReflectedChannel *rcPtr;	/* Instance data of the new channel */
@@ -516,7 +517,7 @@ TclChanCreateObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Channel chan;		/* Token for the new channel */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    int listc;			/* Result of 'initialize', and of */
+    size_t listc;		/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -630,7 +631,7 @@ TclChanCreateObjCmd(
 		"method", TCL_EXACT, &methIndex) != TCL_OK) {
 	    TclNewLiteralStringObj(err, "chan handler \"");
 	    Tcl_AppendObjToObj(err, cmdObj);
-	    Tcl_AppendToObj(err, " initialize\" returned ", -1);
+	    Tcl_AppendToObj(err, " initialize\" returned ", TCL_STRLEN);
 	    Tcl_AppendObjToObj(err, Tcl_GetObjResult(interp));
 	    Tcl_SetObjResult(interp, err);
 	    Tcl_DecrRefCount(resObj);
@@ -740,7 +741,7 @@ TclChanCreateObjCmd(
      */
 
     Tcl_SetObjResult(interp,
-            Tcl_NewStringObj(chanPtr->state->channelName, -1));
+            Tcl_NewStringObj(chanPtr->state->channelName, TCL_STRLEN));
     return TCL_OK;
 
   error:
@@ -822,7 +823,7 @@ int
 TclChanPostEventObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     /*
@@ -1017,10 +1018,8 @@ UnmarshallErrorResult(
     Tcl_Interp *interp,
     Tcl_Obj *msgObj)
 {
-    int lc;
+    size_t explicitResult, lc, numOptions;
     Tcl_Obj **lv;
-    int explicitResult;
-    int numOptions;
 
     /*
      * Process the caught message.
@@ -1276,16 +1275,16 @@ ReflectClose(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 ReflectInput(
     ClientData clientData,
     char *buf,
-    int toRead,
+    size_t toRead,
     int *errorCodePtr)
 {
     ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *toReadObj;
-    int bytec;			/* Number of returned bytes */
+    size_t bytec;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     Tcl_Obj *resObj;		/* Result data for 'read' */
 
@@ -1392,11 +1391,11 @@ ReflectInput(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 ReflectOutput(
     ClientData clientData,
     const char *buf,
-    int toWrite,
+    size_t toWrite,
     int *errorCodePtr)
 {
     ReflectedChannel *rcPtr = clientData;
@@ -1564,7 +1563,7 @@ ReflectSeekWide(
     offObj  = Tcl_NewWideIntObj(offset);
     baseObj = Tcl_NewStringObj(
             (seekMode == SEEK_SET) ? "start" :
-            (seekMode == SEEK_CUR) ? "current" : "end", -1);
+            (seekMode == SEEK_CUR) ? "current" : "end", TCL_STRLEN);
     Tcl_IncrRefCount(offObj);
     Tcl_IncrRefCount(baseObj);
 
@@ -1836,7 +1835,7 @@ ReflectSetOption(
 	ForwardOpToHandlerThread(rcPtr, ForwardedSetOpt, &p);
 
 	if (p.base.code != TCL_OK) {
-	    Tcl_Obj *err = Tcl_NewStringObj(p.base.msgStr, -1);
+	    Tcl_Obj *err = Tcl_NewStringObj(p.base.msgStr, TCL_STRLEN);
 
 	    UnmarshallErrorResult(interp, err);
 	    Tcl_DecrRefCount(err);
@@ -1848,8 +1847,8 @@ ReflectSetOption(
 #endif
     Tcl_Preserve(rcPtr);
 
-    optionObj = Tcl_NewStringObj(optionName, -1);
-    valueObj = Tcl_NewStringObj(newValue, -1);
+    optionObj = Tcl_NewStringObj(optionName, TCL_STRLEN);
+    valueObj = Tcl_NewStringObj(newValue, TCL_STRLEN);
 
     Tcl_IncrRefCount(optionObj);
     Tcl_IncrRefCount(valueObj);
@@ -1897,7 +1896,8 @@ ReflectGetOption(
     ReflectedChannel *rcPtr = clientData;
     Tcl_Obj *optionObj;
     Tcl_Obj *resObj;		/* Result data for 'configure' */
-    int listc, result = TCL_OK;
+    int result = TCL_OK;
+    size_t listc;
     Tcl_Obj **listv;
     const char *method;
 
@@ -1922,7 +1922,7 @@ ReflectGetOption(
 	ForwardOpToHandlerThread(rcPtr, opcode, &p);
 
 	if (p.base.code != TCL_OK) {
-	    Tcl_Obj *err = Tcl_NewStringObj(p.base.msgStr, -1);
+	    Tcl_Obj *err = Tcl_NewStringObj(p.base.msgStr, TCL_STRLEN);
 
 	    UnmarshallErrorResult(interp, err);
 	    Tcl_DecrRefCount(err);
@@ -1946,7 +1946,7 @@ ReflectGetOption(
 	 */
 
 	method = "cget";
-	optionObj = Tcl_NewStringObj(optionName, -1);
+	optionObj = Tcl_NewStringObj(optionName, TCL_STRLEN);
         Tcl_IncrRefCount(optionObj);
     }
 
@@ -1990,11 +1990,11 @@ ReflectGetOption(
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Expected list with even number of "
-		"elements, got %d element%s instead", listc,
+		"elements, got %lu element%s instead", listc,
 		(listc == 1 ? "" : "s")));
         goto error;
     } else {
-	int len;
+	size_t len;
 	const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 	if (len) {
@@ -2052,7 +2052,7 @@ EncodeEventMask(
     int *mask)
 {
     int events;			/* Mask of events to post */
-    int listc;			/* #elements in eventspec list */
+    size_t listc;		/* #elements in eventspec list */
     Tcl_Obj **listv;		/* Elements of eventspec list */
     int evIndex;		/* Id of event for an element of the eventspec
 				 * list. */
@@ -2081,7 +2081,7 @@ EncodeEventMask(
 	    events |= TCL_WRITABLE;
 	    break;
 	}
-	listc --;
+	listc--;
     }
 
     *mask = events;
@@ -2128,7 +2128,7 @@ DecodeEventMask(
 	break;
     }
 
-    evObj = Tcl_NewStringObj(eventStr, -1);
+    evObj = Tcl_NewStringObj(eventStr, TCL_STRLEN);
     Tcl_IncrRefCount(evObj);
     /* assert evObj.refCount == 1 */
     return evObj;
@@ -2159,7 +2159,7 @@ NewReflectedChannel(
     Tcl_Obj *handleObj)
 {
     ReflectedChannel *rcPtr;
-    int i, listc;
+    size_t i, listc;
     Tcl_Obj **listv;
 
     rcPtr = ckalloc(sizeof(ReflectedChannel));
@@ -2358,7 +2358,7 @@ InvokeTclMethod(
 	 */
 
 	if (resultObjPtr != NULL) {
-	    resObj = Tcl_NewStringObj(msg_dstlost,-1);
+	    resObj = Tcl_NewStringObj(msg_dstlost, TCL_STRLEN);
 	    *resultObjPtr = resObj;
 	    Tcl_IncrRefCount(resObj);
 	}
@@ -2382,7 +2382,7 @@ InvokeTclMethod(
      * before the channel id.
      */
 
-    methObj = Tcl_NewStringObj(method, -1);
+    methObj = Tcl_NewStringObj(method, TCL_STRLEN);
     Tcl_IncrRefCount(methObj);
     rcPtr->argv[rcPtr->argc - 2] = methObj;
 
@@ -2438,7 +2438,7 @@ InvokeTclMethod(
 
 	    if (result != TCL_ERROR) {
 		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rcPtr->argv);
-		int cmdLen;
+		size_t cmdLen;
 		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
@@ -3069,7 +3069,7 @@ ForwardProc(
 	     * Process a regular result.
 	     */
 
-	    int bytec;			/* Number of returned bytes */
+	    size_t bytec;		/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
 	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
@@ -3132,7 +3132,8 @@ ForwardProc(
 	Tcl_Obj *offObj = Tcl_NewWideIntObj(paramPtr->seek.offset);
 	Tcl_Obj *baseObj = Tcl_NewStringObj(
                 (paramPtr->seek.seekMode==SEEK_SET) ? "start" :
-                (paramPtr->seek.seekMode==SEEK_CUR) ? "current" : "end", -1);
+                (paramPtr->seek.seekMode==SEEK_CUR) ? "current" : "end",
+                TCL_STRLEN);
 
         Tcl_IncrRefCount(offObj);
         Tcl_IncrRefCount(baseObj);
@@ -3195,8 +3196,10 @@ ForwardProc(
     }
 
     case ForwardedSetOpt: {
-	Tcl_Obj *optionObj = Tcl_NewStringObj(paramPtr->setOpt.name, -1);
-	Tcl_Obj *valueObj  = Tcl_NewStringObj(paramPtr->setOpt.value, -1);
+	Tcl_Obj *optionObj = Tcl_NewStringObj(paramPtr->setOpt.name,
+                TCL_STRLEN);
+	Tcl_Obj *valueObj = Tcl_NewStringObj(paramPtr->setOpt.value,
+                TCL_STRLEN);
 
         Tcl_IncrRefCount(optionObj);
         Tcl_IncrRefCount(valueObj);
@@ -3216,7 +3219,8 @@ ForwardProc(
 	 * Retrieve the value of one option.
 	 */
 
-	Tcl_Obj *optionObj = Tcl_NewStringObj(paramPtr->getOpt.name, -1);
+	Tcl_Obj *optionObj = Tcl_NewStringObj(paramPtr->getOpt.name,
+                TCL_STRLEN);
 
         Tcl_IncrRefCount(optionObj);
         Tcl_Preserve(rcPtr);
@@ -3244,7 +3248,7 @@ ForwardProc(
 	     * NOTE (4) as well.
 	     */
 
-	    int listc;
+	    size_t listc;
 	    Tcl_Obj **listv;
 
 	    if (Tcl_ListObjGetElements(interp, resObj, &listc,
@@ -3258,13 +3262,14 @@ ForwardProc(
 		 */
 
 		char *buf = ckalloc(200);
+
 		sprintf(buf,
-			"{Expected list with even number of elements, got %d %s instead}",
+			"{Expected list with even number of elements, got %lu %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 
 		ForwardSetDynamicError(paramPtr, buf);
 	    } else {
-		int len;
+		size_t len;
 		const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 		if (len) {
@@ -3363,7 +3368,7 @@ ForwardSetObjError(
     ForwardParam *paramPtr,
     Tcl_Obj *obj)
 {
-    int len;
+    size_t len;
     const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;

@@ -610,10 +610,10 @@ declare 168 {
     Tcl_PathType Tcl_GetPathType(const char *path)
 }
 declare 169 {
-    int Tcl_Gets(Tcl_Channel chan, Tcl_DString *dsPtr)
+    ssize_t Tcl_Gets(Tcl_Channel chan, Tcl_DString *dsPtr)
 }
 declare 170 {
-    int Tcl_GetsObj(Tcl_Channel chan, Tcl_Obj *objPtr)
+    ssize_t Tcl_GetsObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 declare 171 {
     int Tcl_GetServiceMode(void)
@@ -738,7 +738,7 @@ declare 205 {
     void Tcl_QueueEvent(Tcl_Event *evPtr, Tcl_QueuePosition position)
 }
 declare 206 {
-    int Tcl_Read(Tcl_Channel chan, char *bufPtr, int toRead)
+    ssize_t Tcl_Read(Tcl_Channel chan, char *bufPtr, size_t toRead)
 }
 declare 207 {
     void Tcl_ReapDetachedProcs(void)
@@ -888,7 +888,7 @@ declare 249 {
 	    Tcl_DString *bufferPtr)
 }
 declare 250 {
-    int Tcl_Ungets(Tcl_Channel chan, const char *str, int len, int atHead)
+    ssize_t Tcl_Ungets(Tcl_Channel chan, const char *str, size_t len, int atHead)
 }
 declare 251 {
     void Tcl_UnlinkVar(Tcl_Interp *interp, const char *varName)
@@ -936,7 +936,7 @@ declare 262 {
 	    ClientData prevClientData)
 }
 declare 263 {
-    int Tcl_Write(Tcl_Channel chan, const char *s, int slen)
+    ssize_t Tcl_Write(Tcl_Channel chan, const char *s, size_t slen)
 }
 declare 264 {
     void Tcl_WrongNumArgs(Tcl_Interp *interp, size_t objc,
@@ -1127,8 +1127,8 @@ declare 312 {
     size_t Tcl_NumUtfChars(const char *src, size_t length)
 }
 declare 313 {
-    size_t Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, size_t charsToRead,
-	    int appendFlag)
+    ssize_t Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
+	    size_t charsToRead, int appendFlag)
 }
 declare 314 {
     void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
@@ -1209,10 +1209,10 @@ declare 337 {
     int Tcl_UtfToUpper(char *src)
 }
 declare 338 {
-    int Tcl_WriteChars(Tcl_Channel chan, const char *src, int srcLen)
+    ssize_t Tcl_WriteChars(Tcl_Channel chan, const char *src, size_t srcLen)
 }
 declare 339 {
-    int Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
+    ssize_t Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 declare 340 {
     char *Tcl_GetString(Tcl_Obj *objPtr)
@@ -1399,10 +1399,10 @@ declare 393 {
 
 # Introduced in 8.3.2
 declare 394 {
-    size_t Tcl_ReadRaw(Tcl_Channel chan, char *dst, size_t bytesToRead)
+    ssize_t Tcl_ReadRaw(Tcl_Channel chan, char *dst, size_t bytesToRead)
 }
 declare 395 {
-    size_t Tcl_WriteRaw(Tcl_Channel chan, const char *src, size_t srcLen)
+    ssize_t Tcl_WriteRaw(Tcl_Channel chan, const char *src, size_t srcLen)
 }
 declare 396 {
     Tcl_Channel Tcl_GetTopChannel(Tcl_Channel chan)
@@ -2253,11 +2253,11 @@ declare 611 {
 }
 declare 612 {
     unsigned int Tcl_ZlibCRC32(unsigned int crc, const unsigned char *buf,
-	    int len)
+	    size_t len)
 }
 declare 613 {
     unsigned int Tcl_ZlibAdler32(unsigned int adler, const unsigned char *buf,
-	    int len)
+	    size_t len)
 }
 declare 614 {
     int Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode, int format,
@@ -2347,10 +2347,10 @@ interface tclPlat
 # Added in Tcl 8.1
 
 declare 0 win {
-    TCHAR *Tcl_WinUtfToTChar(const char *str, int len, Tcl_DString *dsPtr)
+    TCHAR *Tcl_WinUtfToTChar(const char *str, size_t len, Tcl_DString *dsPtr)
 }
 declare 1 win {
-    char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
+    char *Tcl_WinTCharToUtf(const TCHAR *str, size_t len, Tcl_DString *dsPtr)
 }
 
 ################################
@@ -2359,12 +2359,12 @@ declare 1 win {
 declare 0 macosx {
     int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, int hasResourceFile,
-	    int maxPathLen, char *libraryPath)
+	    size_t maxPathLen, char *libraryPath)
 }
 declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
-	    int hasResourceFile, int maxPathLen, char *libraryPath)
+	    int hasResourceFile, size_t maxPathLen, char *libraryPath)
 }
 
 ##############################################################################

@@ -19,28 +19,17 @@
  * the transformation.
  */
 
-static int		TransformBlockModeProc(ClientData instanceData,
-			    int mode);
-static int		TransformCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
-static int		TransformInputProc(ClientData instanceData, char *buf,
-			    int toRead, int *errorCodePtr);
-static int		TransformOutputProc(ClientData instanceData,
-			    const char *buf, int toWrite, int *errorCodePtr);
-static int		TransformSeekProc(ClientData instanceData, long offset,
-			    int mode, int *errorCodePtr);
-static int		TransformSetOptionProc(ClientData instanceData,
-			    Tcl_Interp *interp, const char *optionName,
-			    const char *value);
-static int		TransformGetOptionProc(ClientData instanceData,
-			    Tcl_Interp *interp, const char *optionName,
-			    Tcl_DString *dsPtr);
-static void		TransformWatchProc(ClientData instanceData, int mask);
-static int		TransformGetFileHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		TransformNotifyProc(ClientData instanceData, int mask);
-static Tcl_WideInt	TransformWideSeekProc(ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+static Tcl_DriverBlockModeProc	TransformBlockModeProc;
+static Tcl_DriverCloseProc	TransformCloseProc;
+static Tcl_DriverInputProc	TransformInputProc;
+static Tcl_DriverOutputProc	TransformOutputProc;
+static Tcl_DriverSeekProc	TransformSeekProc;
+static Tcl_DriverSetOptionProc	TransformSetOptionProc;
+static Tcl_DriverGetOptionProc	TransformGetOptionProc;
+static Tcl_DriverWatchProc	TransformWatchProc;
+static Tcl_DriverGetHandleProc	TransformGetFileHandleProc;
+static Tcl_DriverHandlerProc	TransformNotifyProc;
+static Tcl_DriverWideSeekProc	TransformWideSeekProc;
 
 /*
  * Forward declarations of internal procedures. Secondly the procedures for
@@ -58,7 +47,7 @@ typedef struct TransformChannelData TransformChannelData;
 
 static int		ExecuteCallback(TransformChannelData *ctrl,
 			    Tcl_Interp *interp, unsigned char *op,
-			    unsigned char *buf, int bufLen, int transmit,
+			    unsigned char *buf, size_t bufLen, int transmit,
 			    int preserve);
 
 /*
@@ -199,7 +188,7 @@ struct TransformChannelData {
      * Transformation specific data.
      */
 
-    int maxRead;		/* Maximum allowed number of bytes to read, as
+    size_t maxRead;		/* Maximum allowed number of bytes to read, as
 				 * given to us by the Tcl script implementing
 				 * the transformation. */
     Tcl_Interp *interp;		/* Reference to the interpreter which created
@@ -337,7 +326,7 @@ ExecuteCallback(
     Tcl_Interp *interp,		/* Current interpreter, possibly NULL. */
     unsigned char *op,		/* Operation invoking the callback. */
     unsigned char *buf,		/* Buffer to give to the script. */
-    int bufLen,			/* And its length. */
+    size_t bufLen,		/* And its length. */
     int transmit,		/* Flag, determines whether the result of the
 				 * callback is sent to the underlying channel
 				 * or not. */
@@ -346,7 +335,8 @@ ExecuteCallback(
 				 * interpreters. */
 {
     Tcl_Obj *resObj;		/* See below, switch (transmit). */
-    int resLen;
+    size_t resLen;
+    int maxRead;
     unsigned char *resBuf;
     Tcl_InterpState state = NULL;
     int res = TCL_OK;
@@ -366,7 +356,7 @@ ExecuteCallback(
 
     Tcl_IncrRefCount(command);
     res = Tcl_ListObjAppendElement(dataPtr->interp, command,
-	    Tcl_NewStringObj((char *) op, -1));
+	    Tcl_NewStringObj((char *) op, TCL_STRLEN));
     if (res != TCL_OK) {
 	goto cleanup;
     }
@@ -435,7 +425,8 @@ ExecuteCallback(
 	 */
 
 	resObj = Tcl_GetObjResult(dataPtr->interp);
-	TclGetIntFromObj(dataPtr->interp, resObj, &dataPtr->maxRead);
+	TclGetIntFromObj(dataPtr->interp, resObj, &maxRead);
+	dataPtr->maxRead = (size_t) maxRead;
 	break;
     }
 
@@ -581,15 +572,15 @@ TransformCloseProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 TransformInputProc(
     ClientData instanceData,
     char *buf,
-    int toRead,
+    size_t toRead,
     int *errorCodePtr)
 {
     TransformChannelData *dataPtr = instanceData;
-    int gotBytes, read, copied;
+    ssize_t gotBytes, read, copied;
     Tcl_Channel downChan;
 
     /*
@@ -741,11 +732,11 @@ TransformInputProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 TransformOutputProc(
     ClientData instanceData,
     const char *buf,
-    int toWrite,
+    size_t toWrite,
     int *errorCodePtr)
 {
     TransformChannelData *dataPtr = instanceData;

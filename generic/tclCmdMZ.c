@@ -131,7 +131,7 @@ Tcl_RegexpObjCmd(
     int i, indices, match, about, all, doinline, numMatchesSaved;
     int cflags, eflags, matchLength;
     size_t stringLength;
-    ptrdiff_t offset;
+    ssize_t offset;
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
@@ -194,7 +194,7 @@ Tcl_RegexpObjCmd(
 	    cflags |= TCL_REG_NLANCH;
 	    break;
 	case REGEXP_START: {
-	    ptrdiff_t temp;
+	    ssize_t temp;
 
 	    if (++i >= objc) {
 		goto endOfForLoop;
@@ -491,7 +491,7 @@ Tcl_RegsubObjCmd(
 {
     int idx, result, cflags, all, numMatches;
     int start, end, subStart, subEnd, match;
-    ptrdiff_t offset;
+    ssize_t offset;
     size_t wlen, wsublen;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
@@ -546,7 +546,7 @@ Tcl_RegsubObjCmd(
 	    cflags |= TCL_REG_NLANCH;
 	    break;
 	case REGSUB_START: {
-	    ptrdiff_t temp;
+	    ssize_t temp;
 
 	    if (++idx >= objc) {
 		goto endOfForLoop;
@@ -1183,7 +1183,7 @@ StringFirstCmd(
 {
     Tcl_UniChar *needleStr, *haystackStr;
     size_t needleLen, haystackLen;
-    ptrdiff_t match, start;
+    ssize_t match, start;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1296,7 +1296,7 @@ StringLastCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_UniChar *needleStr, *haystackStr, *p;
-    ptrdiff_t match, start;
+    ssize_t match, start;
     size_t needleLen, haystackLen;
 
     if (objc < 3 || objc > 4) {
@@ -1395,7 +1395,7 @@ StringIndexCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     size_t length;
-    ptrdiff_t index;
+    ssize_t index;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string charIndex");
@@ -2176,7 +2176,7 @@ StringRangeCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     size_t length;
-    ptrdiff_t first, last;
+    ssize_t first, last;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string first last");
@@ -2346,7 +2346,7 @@ StringRplcCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_UniChar *ustring;
-    ptrdiff_t first, last;
+    ssize_t first, last;
     size_t length;
 
     if (objc < 4 || objc > 5) {
@@ -2450,7 +2450,7 @@ StringStartCmd(
     Tcl_UniChar ch;
     const char *p, *string;
     size_t cur, length, numChars;
-    ptrdiff_t index;
+    ssize_t index;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string index");
@@ -2512,7 +2512,7 @@ StringEndCmd(
     Tcl_UniChar ch;
     const char *p, *end, *string;
     size_t cur, length, numChars;
-    ptrdiff_t index;
+    ssize_t index;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string index");
@@ -2961,7 +2961,7 @@ StringLowerCmd(
 	Tcl_SetObjLength(resultPtr, length1);
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
-	ptrdiff_t first, last;
+	ssize_t first, last;
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 
@@ -3046,7 +3046,7 @@ StringUpperCmd(
 	Tcl_SetObjLength(resultPtr, length1);
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
-	ptrdiff_t first, last;
+	ssize_t first, last;
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 
@@ -3131,7 +3131,7 @@ StringTitleCmd(
 	Tcl_SetObjLength(resultPtr, length1);
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
-	ptrdiff_t first, last;
+	ssize_t first, last;
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 

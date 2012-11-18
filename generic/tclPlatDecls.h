@@ -48,22 +48,22 @@
 
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
 /* 0 */
-EXTERN TCHAR *		Tcl_WinUtfToTChar(const char *str, int len,
+EXTERN TCHAR *		Tcl_WinUtfToTChar(const char *str, size_t len,
 				Tcl_DString *dsPtr);
 /* 1 */
-EXTERN char *		Tcl_WinTCharToUtf(const TCHAR *str, int len,
+EXTERN char *		Tcl_WinTCharToUtf(const TCHAR *str, size_t len,
 				Tcl_DString *dsPtr);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 /* 0 */
 EXTERN int		Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
 				const char *bundleName, int hasResourceFile,
-				int maxPathLen, char *libraryPath);
+				size_t maxPathLen, char *libraryPath);
 /* 1 */
 EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
 				Tcl_Interp *interp, const char *bundleName,
 				const char *bundleVersion,
-				int hasResourceFile, int maxPathLen,
+				int hasResourceFile, size_t maxPathLen,
 				char *libraryPath);
 #endif /* MACOSX */
 
@@ -72,12 +72,12 @@ typedef struct TclPlatStubs {
     void *hooks;
 
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
-    TCHAR * (*tcl_WinUtfToTChar) (const char *str, int len, Tcl_DString *dsPtr); /* 0 */
-    char * (*tcl_WinTCharToUtf) (const TCHAR *str, int len, Tcl_DString *dsPtr); /* 1 */
+    TCHAR * (*tcl_WinUtfToTChar) (const char *str, size_t len, Tcl_DString *dsPtr); /* 0 */
+    char * (*tcl_WinTCharToUtf) (const TCHAR *str, size_t len, Tcl_DString *dsPtr); /* 1 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-    int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp *interp, const char *bundleName, int hasResourceFile, int maxPathLen, char *libraryPath); /* 0 */
-    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, int maxPathLen, char *libraryPath); /* 1 */
+    int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp *interp, const char *bundleName, int hasResourceFile, size_t maxPathLen, char *libraryPath); /* 0 */
+    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, size_t maxPathLen, char *libraryPath); /* 1 */
 #endif /* MACOSX */
 } TclPlatStubs;
 

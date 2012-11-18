@@ -619,7 +619,8 @@ TclCompileStringRangeCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *stringTokenPtr, *fromTokenPtr, *toTokenPtr;
     Tcl_Obj *tmpObj;
-    int idx1, idx2, result;
+    ssize_t idx1, idx2;
+    int intIdx1, intIdx2, result;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
@@ -637,10 +638,11 @@ TclCompileStringRangeCmd(
     tmpObj = Tcl_NewObj();
     result = TCL_ERROR;
     if (TclWordKnownAtCompileTime(fromTokenPtr, tmpObj)) {
-	if (TclGetIntFromObj(NULL, tmpObj, &idx1) == TCL_OK) {
-	    if (idx1 >= 0) {
+	if (TclGetIntFromObj(NULL, tmpObj, &intIdx1) == TCL_OK) {
+	    if (intIdx1 >= 0) {
 		result = TCL_OK;
 	    }
+	    idx1 = (ssize_t) intIdx1;
 	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx1) == TCL_OK) {
 	    if (idx1 <= -2) {
 		result = TCL_OK;
@@ -648,7 +650,7 @@ TclCompileStringRangeCmd(
 	}
     }
     TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (result != TCL_OK || idx1 < INT_MIN || idx1 > INT_MAX) {
 	goto nonConstantIndices;
     }
 
@@ -661,10 +663,11 @@ TclCompileStringRangeCmd(
     tmpObj = Tcl_NewObj();
     result = TCL_ERROR;
     if (TclWordKnownAtCompileTime(toTokenPtr, tmpObj)) {
-	if (TclGetIntFromObj(NULL, tmpObj, &idx2) == TCL_OK) {
-	    if (idx2 >= 0) {
+	if (TclGetIntFromObj(NULL, tmpObj, &intIdx2) == TCL_OK) {
+	    if (intIdx2 >= 0) {
 		result = TCL_OK;
 	    }
+	    idx1 = (ssize_t) intIdx2;
 	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx2) == TCL_OK) {
 	    if (idx2 <= -2) {
 		result = TCL_OK;
@@ -672,7 +675,7 @@ TclCompileStringRangeCmd(
 	}
     }
     TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (result != TCL_OK || idx2 < INT_MIN || idx2 > INT_MAX) {
 	goto nonConstantIndices;
     }
 

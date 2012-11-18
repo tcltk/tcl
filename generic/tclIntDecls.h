@@ -125,8 +125,8 @@ EXTERN int		TclGetFrame(Tcl_Interp *interp, const char *str,
 /* Slot 33 is reserved */
 /* 34 */
 EXTERN int		TclGetIntForIndex(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, int endValue,
-				ptrdiff_t *indexPtr);
+				Tcl_Obj *objPtr, ssize_t endValue,
+				ssize_t *indexPtr);
 /* Slot 35 is reserved */
 /* Slot 36 is reserved */
 /* 37 */
@@ -529,7 +529,7 @@ EXTERN Tcl_Obj *	TclTraceDictPath(Tcl_Interp *interp,
 /* 226 */
 EXTERN int		TclObjBeingDeleted(Tcl_Obj *objPtr);
 /* 227 */
-EXTERN void		TclSetNsPath(Namespace *nsPtr, int pathLength,
+EXTERN void		TclSetNsPath(Namespace *nsPtr, size_t pathLength,
 				Tcl_Namespace *pathAry[]);
 /* Slot 228 is reserved */
 /* 229 */
@@ -638,7 +638,7 @@ typedef struct TclIntStubs {
     const char * (*tclGetExtension) (const char *name); /* 31 */
     int (*tclGetFrame) (Tcl_Interp *interp, const char *str, CallFrame **framePtrPtr); /* 32 */
     void (*reserved33)(void);
-    int (*tclGetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, int endValue, ptrdiff_t *indexPtr); /* 34 */
+    int (*tclGetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, ssize_t endValue, ssize_t *indexPtr); /* 34 */
     void (*reserved35)(void);
     void (*reserved36)(void);
     int (*tclGetLoadedPackages) (Tcl_Interp *interp, const char *targetName); /* 37 */
@@ -831,7 +831,7 @@ typedef struct TclIntStubs {
     TclPlatformType * (*tclGetPlatform) (void); /* 224 */
     Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp *interp, Tcl_Obj *rootPtr, size_t keyc, Tcl_Obj *const keyv[], int flags); /* 225 */
     int (*tclObjBeingDeleted) (Tcl_Obj *objPtr); /* 226 */
-    void (*tclSetNsPath) (Namespace *nsPtr, int pathLength, Tcl_Namespace *pathAry[]); /* 227 */
+    void (*tclSetNsPath) (Namespace *nsPtr, size_t pathLength, Tcl_Namespace *pathAry[]); /* 227 */
     void (*reserved228)(void);
     int (*tclPtrMakeUpvar) (Tcl_Interp *interp, Var *otherP1Ptr, const char *myName, int myFlags, int index); /* 229 */
     Var * (*tclObjLookupVar) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, const char *part2, int flags, const char *msg, const int createPart1, const int createPart2, Var **arrayPtrPtr); /* 230 */

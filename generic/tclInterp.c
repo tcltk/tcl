@@ -51,7 +51,7 @@ typedef struct Alias {
 				 * used in the master interpreter to map back
 				 * from the target command to aliases
 				 * redirecting to it. */
-    int objc;			/* Count of Tcl_Obj in the prefix of the
+    size_t objc;		/* Count of Tcl_Obj in the prefix of the
 				 * target command to be invoked in the target
 				 * interpreter. Additional arguments specified
 				 * when calling the alias in the slave interp
@@ -184,60 +184,55 @@ typedef struct ScriptLimitCallbackKey {
 
 static int		AliasCreate(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, Tcl_Interp *masterInterp,
-			    Tcl_Obj *namePtr, Tcl_Obj *targetPtr, int objc,
+			    Tcl_Obj *namePtr, Tcl_Obj *targetPtr, size_t objc,
 			    Tcl_Obj *const objv[]);
 static int		AliasDelete(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, Tcl_Obj *namePtr);
 static int		AliasDescribe(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, Tcl_Obj *objPtr);
 static int		AliasList(Tcl_Interp *interp, Tcl_Interp *slaveInterp);
-static int		AliasObjCmd(ClientData dummy,
-			    Tcl_Interp *currentInterp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		AliasNRCmd(ClientData dummy,
-			    Tcl_Interp *currentInterp, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	AliasObjCmd;
+static Tcl_ObjCmdProc	AliasNRCmd;
 static void		AliasObjCmdDeleteProc(ClientData clientData);
 static Tcl_Interp *	GetInterp(Tcl_Interp *interp, Tcl_Obj *pathPtr);
-static Tcl_Interp *	GetInterp2(Tcl_Interp *interp, int objc,
+static Tcl_Interp *	GetInterp2(Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static void		InterpInfoDeleteProc(ClientData clientData,
 			    Tcl_Interp *interp);
 static int		SlaveBgerror(Tcl_Interp *interp,
-			    Tcl_Interp *slaveInterp, int objc,
+			    Tcl_Interp *slaveInterp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static Tcl_Interp *	SlaveCreate(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int safe);
 static int		SlaveDebugCmd(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp,
-			    int objc, Tcl_Obj *const objv[]);
+			    size_t objc, Tcl_Obj *const objv[]);
 static int		SlaveEval(Tcl_Interp *interp, Tcl_Interp *slaveInterp,
-			    int objc, Tcl_Obj *const objv[]);
+			    size_t objc, Tcl_Obj *const objv[]);
 static int		SlaveExpose(Tcl_Interp *interp,
-			    Tcl_Interp *slaveInterp, int objc,
+			    Tcl_Interp *slaveInterp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static int		SlaveHide(Tcl_Interp *interp, Tcl_Interp *slaveInterp,
-			    int objc, Tcl_Obj *const objv[]);
+			    size_t objc, Tcl_Obj *const objv[]);
 static int		SlaveHidden(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp);
 static int		SlaveInvokeHidden(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp,
 			    const char *namespaceName,
-			    int objc, Tcl_Obj *const objv[]);
+			    size_t objc, Tcl_Obj *const objv[]);
 static int		SlaveMarkTrusted(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp);
-static int		SlaveObjCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	SlaveObjCmd;
 static void		SlaveObjCmdDeleteProc(ClientData clientData);
 static int		SlaveRecursionLimit(Tcl_Interp *interp,
-			    Tcl_Interp *slaveInterp, int objc,
+			    Tcl_Interp *slaveInterp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static int		SlaveCommandLimitCmd(Tcl_Interp *interp,
-			    Tcl_Interp *slaveInterp, int consumedObjc,
-			    int objc, Tcl_Obj *const objv[]);
+			    Tcl_Interp *slaveInterp, size_t consumedObjc,
+			    size_t objc, Tcl_Obj *const objv[]);
 static int		SlaveTimeLimitCmd(Tcl_Interp *interp,
-			    Tcl_Interp *slaveInterp, int consumedObjc,
-			    int objc, Tcl_Obj *const objv[]);
+			    Tcl_Interp *slaveInterp, size_t consumedObjc,
+			    size_t objc, Tcl_Obj *const objv[]);
 static void		InheritLimitsFromMaster(Tcl_Interp *slaveInterp,
 			    Tcl_Interp *masterInterp);
 static void		SetScriptLimitCallback(Tcl_Interp *interp, int type,
@@ -554,10 +549,10 @@ InterpInfoDeleteProc(
 	/* ARGSUSED */
 int
 Tcl_InterpObjCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
+    ClientData clientData,	/* Unused. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    size_t objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *slaveInterp;
     int index;
@@ -1090,7 +1085,7 @@ static Tcl_Interp *
 GetInterp2(
     Tcl_Interp *interp,		/* Default interp if no interp was specified
 				 * on the command line. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc == 2) {
@@ -1125,12 +1120,12 @@ Tcl_CreateAlias(
     const char *slaveCmd,	/* Command to install in slave. */
     Tcl_Interp *targetInterp,	/* Interpreter for target command. */
     const char *targetCmd,	/* Name of target command. */
-    int argc,			/* How many additional arguments? */
+    size_t argc,		/* How many additional arguments? */
     const char *const *argv)	/* These are the additional args. */
 {
     Tcl_Obj *slaveObjPtr, *targetObjPtr;
     Tcl_Obj **objv;
-    int i;
+    size_t i;
     int result;
 
     objv = TclStackAlloc(slaveInterp, (unsigned) sizeof(Tcl_Obj *) * argc);
@@ -1180,7 +1175,7 @@ Tcl_CreateAliasObj(
     const char *slaveCmd,	/* Command to install in slave. */
     Tcl_Interp *targetInterp,	/* Interpreter for target command. */
     const char *targetCmd,	/* Name of target command. */
-    int objc,			/* How many additional arguments? */
+    size_t objc,		/* How many additional arguments? */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     Tcl_Obj *slaveObjPtr, *targetObjPtr;
@@ -1223,13 +1218,13 @@ Tcl_GetAlias(
     Tcl_Interp **targetInterpPtr,
 				/* (Return) target interpreter. */
     const char **targetNamePtr,	/* (Return) name of target command. */
-    int *argcPtr,		/* (Return) count of addnl args. */
+    size_t *argcPtr,		/* (Return) count of addnl args. */
     const char ***argvPtr)	/* (Return) additional arguments. */
 {
     InterpInfo *iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
     Tcl_HashEntry *hPtr;
     Alias *aliasPtr;
-    int i, objc;
+    size_t i, objc;
     Tcl_Obj **objv;
 
     hPtr = Tcl_FindHashEntry(&iiPtr->slave.aliasTable, aliasName);
@@ -1285,13 +1280,13 @@ Tcl_GetAliasObj(
     Tcl_Interp **targetInterpPtr,
 				/* (Return) target interpreter. */
     const char **targetNamePtr,	/* (Return) name of target command. */
-    int *objcPtr,		/* (Return) count of addnl args. */
+    size_t *objcPtr,		/* (Return) count of addnl args. */
     Tcl_Obj ***objvPtr)		/* (Return) additional args. */
 {
     InterpInfo *iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
     Tcl_HashEntry *hPtr;
     Alias *aliasPtr;
-    int objc;
+    size_t objc;
     Tcl_Obj **objv;
 
     hPtr = Tcl_FindHashEntry(&iiPtr->slave.aliasTable, aliasName);
@@ -1449,7 +1444,7 @@ AliasCreate(
 				 * invoked. */
     Tcl_Obj *namePtr,		/* Name of alias cmd. */
     Tcl_Obj *targetNamePtr,	/* Name of target cmd. */
-    int objc,			/* Additional arguments to store */
+    size_t objc,		/* Additional arguments to store */
     Tcl_Obj *const objv[])	/* with alias. */
 {
     Alias *aliasPtr;
@@ -1744,7 +1739,7 @@ static int
 AliasNRCmd(
     ClientData clientData,	/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1808,7 +1803,7 @@ static int
 AliasObjCmd(
     ClientData clientData,	/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
 #define ALIAS_CMDV_PREALLOC 10
@@ -2198,7 +2193,7 @@ GetInterp(
     Tcl_HashEntry *hPtr;	/* Search element. */
     Slave *slavePtr;		/* Interim slave record. */
     Tcl_Obj **objv;
-    int objc, i;
+    size_t objc, i;
     Tcl_Interp *searchInterp;	/* Interim storage for interp. to find. */
     InterpInfo *masterInfoPtr;
 
@@ -2252,11 +2247,11 @@ static int
 SlaveBgerror(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *slaveInterp,	/* Interp in which limit is set/queried. */
-    int objc,			/* Set or Query. */
+    size_t objc,		/* Set or Query. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     if (objc) {
-	int length;
+	size_t length;
 
 	if (TCL_ERROR == TclListObjLength(NULL, objv[0], &length)
 		|| (length < 1)) {
@@ -2302,7 +2297,8 @@ SlaveCreate(
     InterpInfo *masterInfoPtr;
     Tcl_HashEntry *hPtr;
     const char *path;
-    int isNew, objc;
+    int isNew;
+    size_t objc;
     Tcl_Obj **objv;
 
     if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
@@ -2428,7 +2424,7 @@ static int
 SlaveObjCmd(
     ClientData clientData,	/* Slave interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *slaveInterp = clientData;
@@ -2679,7 +2675,7 @@ SlaveDebugCmd(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *slaveInterp,	/* The slave interpreter in which command
 				 * will be evaluated. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const debugTypes[] = {
@@ -2750,7 +2746,7 @@ SlaveEval(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *slaveInterp,	/* The slave interpreter in which command
 				 * will be evaluated. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -2813,7 +2809,7 @@ static int
 SlaveExpose(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *slaveInterp,	/* Interp in which command will be exposed. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     const char *name;
@@ -2857,7 +2853,7 @@ static int
 SlaveRecursionLimit(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *slaveInterp,	/* Interp in which limit is set/queried. */
-    int objc,			/* Set or Query. */
+    size_t objc,		/* Set or Query. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     Interp *iPtr;
@@ -2919,7 +2915,7 @@ static int
 SlaveHide(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *slaveInterp,	/* Interp in which command will be exposed. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     const char *name;
@@ -3003,7 +2999,7 @@ SlaveInvokeHidden(
     Tcl_Interp *slaveInterp,	/* The slave interpreter in which command will
 				 * be invoked. */
     const char *namespaceName,	/* The namespace to use, if any. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -4334,8 +4330,8 @@ static int
 SlaveCommandLimitCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Interp *slaveInterp,	/* Interpreter being adjusted. */
-    int consumedObjc,		/* Number of args already parsed. */
-    int objc,			/* Total number of arguments. */
+    size_t consumedObjc,	/* Number of args already parsed. */
+    size_t objc,		/* Total number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const options[] = {
@@ -4436,7 +4432,7 @@ SlaveCommandLimitCmd(
 	Tcl_WrongNumArgs(interp, consumedObjc, objv, "?-option value ...?");
 	return TCL_ERROR;
     } else {
-	int i, scriptLen = 0, limitLen = 0;
+	size_t i, scriptLen = 0, limitLen = 0;
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL, *limitObj = NULL;
 	int gran = 0, limit = 0;
 
@@ -4520,11 +4516,11 @@ SlaveCommandLimitCmd(
 
 static int
 SlaveTimeLimitCmd(
-    Tcl_Interp *interp,			/* Current interpreter. */
-    Tcl_Interp *slaveInterp,		/* Interpreter being adjusted. */
-    int consumedObjc,			/* Number of args already parsed. */
-    int objc,				/* Total number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Interp *slaveInterp,	/* Interpreter being adjusted. */
+    size_t consumedObjc,	/* Number of args already parsed. */
+    size_t objc,		/* Total number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const options[] = {
 	"-command", "-granularity", "-milliseconds", "-seconds", NULL
@@ -4641,7 +4637,7 @@ SlaveTimeLimitCmd(
 	Tcl_WrongNumArgs(interp, consumedObjc, objv, "?-option value ...?");
 	return TCL_ERROR;
     } else {
-	int i, scriptLen = 0, milliLen = 0, secLen = 0;
+	size_t i, scriptLen = 0, milliLen = 0, secLen = 0;
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL;
 	Tcl_Obj *milliObj = NULL, *secObj = NULL;
 	int gran = 0;

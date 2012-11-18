@@ -39,12 +39,8 @@ static Tcl_ThreadDataKey dataKey;
 static void		FinalizeIOCmdTSD(ClientData clientData);
 static void		AcceptCallbackProc(ClientData callbackData,
 			    Tcl_Channel chan, char *address, int port);
-static int		ChanPendingObjCmd(ClientData unused,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		ChanTruncateObjCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	ChanPendingObjCmd;
+static Tcl_ObjCmdProc	ChanTruncateObjCmd;
 static void		RegisterTcpServerInterpCleanup(Tcl_Interp *interp,
 			    AcceptCallback *acceptCallbackPtr);
 static void		TcpAcceptCallbacksDeleteProc(ClientData clientData,
@@ -105,14 +101,13 @@ int
 Tcl_PutsObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to puts on. */
     Tcl_Obj *string;		/* String to write. */
     Tcl_Obj *chanObjPtr = NULL;	/* channel object. */
     int newline;		/* Add a newline at end? */
-    int result;			/* Result of puts operation. */
     int mode;			/* Mode in which channel is opened. */
     ThreadSpecificData *tsdPtr;
 
@@ -139,19 +134,6 @@ Tcl_PutsObjCmd(
 	    chanObjPtr = objv[2];
 	    string = objv[3];
 	    break;
-#if TCL_MAJOR_VERSION < 9
-	} else if (strcmp(TclGetString(objv[3]), "nonewline") == 0) {
-	    /*
-	     * The code below provides backwards compatibility with an old
-	     * form of the command that is no longer recommended or
-	     * documented. See also [Bug #3151675]. Will be removed in Tcl 9,
-	     * maybe even earlier.
-	     */
-
-	    chanObjPtr = objv[1];
-	    string = objv[2];
-	    break;
-#endif
 	}
 	/* Fall through */
     default:			/* [puts] or
@@ -181,13 +163,11 @@ Tcl_PutsObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_WriteObj(chan, string);
-    if (result < 0) {
+    if (Tcl_WriteObj(chan, string) < 0) {
 	goto error;
     }
     if (newline != 0) {
-	result = Tcl_WriteChars(chan, "\n", 1);
-	if (result < 0) {
+	if (Tcl_WriteChars(chan, "\n", 1) < 0) {
 	    goto error;
 	}
     }
@@ -230,7 +210,7 @@ int
 Tcl_FlushObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *chanObjPtr;
@@ -292,7 +272,7 @@ int
 Tcl_GetsObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
@@ -371,7 +351,7 @@ int
 Tcl_ReadObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
@@ -477,7 +457,7 @@ Tcl_ReadObjCmd(
 
     if ((charactersRead > 0) && (newline != 0)) {
 	const char *result;
-	int length;
+	size_t length;
 
 	result = TclGetStringFromObj(resultPtr, &length);
 	if (result[length - 1] == '\n') {
@@ -512,7 +492,7 @@ int
 Tcl_SeekObjCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to tell on. */
@@ -585,7 +565,7 @@ int
 Tcl_TellObjCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to tell on. */
@@ -643,7 +623,7 @@ int
 Tcl_CloseObjCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to close. */
@@ -714,7 +694,7 @@ Tcl_CloseObjCmd(
 
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 	const char *string;
-	int len;
+	size_t len;
 
 	if (Tcl_IsShared(resultPtr)) {
 	    resultPtr = Tcl_DuplicateObj(resultPtr);
@@ -752,7 +732,7 @@ int
 Tcl_FconfigureObjCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *optionName, *valueName;
@@ -828,7 +808,7 @@ int
 Tcl_EofObjCmd(
     ClientData unused,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
@@ -868,7 +848,7 @@ int
 Tcl_ExecObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *resultPtr;
@@ -876,8 +856,8 @@ Tcl_ExecObjCmd(
 				 * on the _Tcl_ stack. */
     const char *string;
     Tcl_Channel chan;
-    int argc, background, i, index, keepNewline, result, skip, length;
-    int ignoreStderr;
+    int background, index, keepNewline, result, ignoreStderr;
+    size_t argc, i, length, skip;
     static const char *const options[] = {
 	"-ignorestderr", "-keepnewline", "--", NULL
     };
@@ -1036,7 +1016,7 @@ int
 Tcl_FblockedObjCmd(
     ClientData unused,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
@@ -1083,7 +1063,7 @@ int
 Tcl_OpenObjCmd(
     ClientData notUsed,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int pipeline, prot;
@@ -1139,7 +1119,8 @@ Tcl_OpenObjCmd(
     if (!pipeline) {
 	chan = Tcl_FSOpenFileChannel(interp, objv[1], modeString, prot);
     } else {
-	int mode, seekFlag, cmdObjc, binary;
+	int mode, seekFlag, binary;
+	size_t cmdObjc;
 	const char **cmdArgv;
 
 	if (Tcl_SplitList(interp, what+1, &cmdObjc, &cmdArgv) != TCL_OK) {
@@ -1452,7 +1433,7 @@ int
 Tcl_SocketObjCmd(
     ClientData notUsed,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const socketOptions[] = {
@@ -1564,8 +1545,7 @@ Tcl_SocketObjCmd(
     }
 
     if (server) {
-	AcceptCallback *acceptCallbackPtr =
-		ckalloc(sizeof(AcceptCallback));
+	AcceptCallback *acceptCallbackPtr = ckalloc(sizeof(AcceptCallback));
 	unsigned len = strlen(script) + 1;
 	char *copyScript = ckalloc(len);
 
@@ -1630,7 +1610,7 @@ int
 Tcl_FcopyObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel inChan, outChan;
@@ -1726,7 +1706,7 @@ static int
 ChanPendingObjCmd(
     ClientData unused,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
@@ -1788,7 +1768,7 @@ static int
 ChanTruncateObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
@@ -1861,7 +1841,7 @@ static int
 ChanPipeObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel rchan, wchan;
@@ -1912,8 +1892,8 @@ int
 TclChannelNamesCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    size_t objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc < 1 || objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
@@ -1955,22 +1935,22 @@ TclInitChanCmd(
 	{"blocked",	Tcl_FblockedObjCmd, NULL, NULL, NULL, 0},
 	{"close",	Tcl_CloseObjCmd, NULL, NULL, NULL, 0},
 	{"copy",	Tcl_FcopyObjCmd, NULL, NULL, NULL, 0},
-	{"create",	TclChanCreateObjCmd, NULL, NULL, NULL, 0},		/* TIP #219 */
+	{"create",	TclChanCreateObjCmd, NULL, NULL, NULL, 0},	/* TIP #219 */
 	{"eof",		Tcl_EofObjCmd, NULL, NULL, NULL, 0},
 	{"event",	Tcl_FileEventObjCmd, NULL, NULL, NULL, 0},
 	{"flush",	Tcl_FlushObjCmd, NULL, NULL, NULL, 0},
 	{"gets",	Tcl_GetsObjCmd, NULL, NULL, NULL, 0},
 	{"names",	TclChannelNamesCmd, NULL, NULL, NULL, 0},
-	{"pending",	ChanPendingObjCmd, NULL, NULL, NULL, 0},		/* TIP #287 */
+	{"pending",	ChanPendingObjCmd, NULL, NULL, NULL, 0},	/* TIP #287 */
 	{"pop",		TclChanPopObjCmd, NULL, NULL, NULL, 0},		/* TIP #230 */
 	{"postevent",	TclChanPostEventObjCmd, NULL, NULL, NULL, 0},	/* TIP #219 */
-	{"push",	TclChanPushObjCmd, NULL, NULL, NULL, 0},		/* TIP #230 */
+	{"push",	TclChanPushObjCmd, NULL, NULL, NULL, 0},	/* TIP #230 */
 	{"puts",	Tcl_PutsObjCmd, NULL, NULL, NULL, 0},
 	{"read",	Tcl_ReadObjCmd, NULL, NULL, NULL, 0},
 	{"seek",	Tcl_SeekObjCmd, NULL, NULL, NULL, 0},
 	{"pipe",	ChanPipeObjCmd, NULL, NULL, NULL, 0},		/* TIP #304 */
 	{"tell",	Tcl_TellObjCmd, NULL, NULL, NULL, 0},
-	{"truncate",	ChanTruncateObjCmd, NULL, NULL, NULL, 0},		/* TIP #208 */
+	{"truncate",	ChanTruncateObjCmd, NULL, NULL, NULL, 0},	/* TIP #208 */
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     static const char *const extras[] = {

@@ -4238,7 +4238,7 @@ TclCompileLindexCmd(
     if (idxTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	Tcl_Obj *tmpObj;
 	int result, intIdx;
-	ptrdiff_t idx;
+	ssize_t idx;
 
 	tmpObj = Tcl_NewStringObj(idxTokenPtr[1].start, idxTokenPtr[1].size);
 	result = TclGetIntFromObj(NULL, tmpObj, &intIdx);
@@ -4425,7 +4425,7 @@ TclCompileLrangeCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *tmpObj;
-    ptrdiff_t idx1, idx2;
+    ssize_t idx1, idx2;
     int result, intIdx1, intIdx2;
 
     if (parsePtr->numWords != 4) {
@@ -4528,7 +4528,7 @@ TclCompileLreplaceCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *tmpObj;
     int intIdx1, intIdx2, result, guaranteedDropAll = 0;
-    ptrdiff_t idx1, idx2;
+    ssize_t idx1, idx2;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
@@ -4551,7 +4551,7 @@ TclCompileLreplaceCmd(
 	if (intIdx1 < 0) {
 	    result = TCL_ERROR;
 	}
-	idx1 = (ptrdiff_t) intIdx1;
+	idx1 = (ssize_t) intIdx1;
     } else {
 	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
 	if (result == TCL_OK && idx1 > -2) {
