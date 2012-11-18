@@ -38,14 +38,25 @@ HasStubSupport(
 {
     Interp *iPtr = (Interp *) interp;
 
-    if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
-	return iPtr->stubTable;
+    if (!iPtr->stubTable) {
+	/* No stub table at all? Nothing we can do. */
+	return NULL;
     }
-
-    iPtr->result =
-	    (char *)"This interpreter does not support stubs-enabled extensions.";
-    iPtr->freeProc = TCL_STATIC;
-    return NULL;
+    if (iPtr->stubTable->magic != TCL_STUB_MAGIC) {
+	/*
+	 * The iPtr->stubTable entry from Tcl_Interp and the
+	 * Tcl_NewStringObj() and Tcl_SetObjResult() entries
+	 * in the stub table cannot change in Tcl 9 compared
+	 * to Tcl 8.x. Otherwise the lines below won't work.
+	 * TODO: add a test case for that.
+	 */
+	iPtr->stubTable->tcl_SetObjResult(interp,
+		iPtr->stubTable->tcl_NewStringObj(
+			"This extension is compiled for Tcl 9.x",
+			TCL_NOSIZE));
+	return NULL;
+    }
+    return iPtr->stubTable;
 }
 
 /*
