@@ -42,6 +42,12 @@
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 
+#ifdef TCL_NO_DEPRECATED
+#   define Tcl_CreateMathFunc NULL
+#   define Tcl_GetMathFuncInfo NULL
+#   define Tcl_ListMathFuncs NULL
+#endif
+
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
 #   define TclSockMinimumBuffersOld 0

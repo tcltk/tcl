@@ -45,12 +45,14 @@
  * registered with Tcl_CreateMathFunc
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct OldMathFuncData {
     Tcl_MathProc *proc;		/* Handler function */
     int numArgs;		/* Number of args expected */
     Tcl_ValueType *argTypes;	/* Types of the args */
     ClientData clientData;	/* Client data for the handler function */
 } OldMathFuncData;
+#endif
 
 /*
  * This is the script cancellation struct and hash table. The hash table is
@@ -136,8 +138,10 @@ static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
 
 static Tcl_NRPostProc	NRRunObjProc;
+#ifndef TCL_NO_DEPRECATED
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
+#endif
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
 static int		RewindCoroutine(CoroutineData *corPtr, int result);
@@ -3448,7 +3452,7 @@ TclCleanupCommand(
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_CreateMathFunc(
     Tcl_Interp *interp,		/* Interpreter in which function is to be
@@ -3780,6 +3784,7 @@ Tcl_ListMathFuncs(
 
     return result;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
