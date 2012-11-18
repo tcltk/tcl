@@ -49,7 +49,7 @@ declare 6 {
     void TclCleanupCommand(Command *cmdPtr)
 }
 declare 7 {
-    int TclCopyAndCollapse(size_t count, const char *src, char *dst)
+    size_t TclCopyAndCollapse(size_t count, const char *src, char *dst)
 }
 declare 8 {
     int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
@@ -115,7 +115,7 @@ declare 23 {
 }
 # Replaced with macro (see tclInt.h) in Tcl 8.5.0, restored in 8.5.10
 declare 24 {
-    int TclFormatInt(char *buffer, long n)
+    size_t TclFormatInt(char *buffer, long n)
 }
 declare 25 {
     void TclFreePackageInfo(Interp *iPtr)
@@ -692,12 +692,12 @@ declare 169 {
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
-	    int numChars, Command *cmdPtr, int result, int traceFlags,
+	    size_t numChars, Command *cmdPtr, int result, int traceFlags,
 	    size_t objc, Tcl_Obj *const objv[])
 }
 declare 171 {
     int TclCheckExecutionTraces(Tcl_Interp *interp, const char *command,
-	    int numChars, Command *cmdPtr, int result, int traceFlags,
+	    size_t numChars, Command *cmdPtr, int result, int traceFlags,
 	    size_t objc, Tcl_Obj *const objv[])
 }
 declare 172 {

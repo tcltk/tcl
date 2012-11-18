@@ -155,7 +155,8 @@ declare 35 {
 }
 declare 36 {
     int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    const char *const *tablePtr, const char *msg, int flags, int *indexPtr)
+	    const char *const *tablePtr, const char *msg, int flags,
+	    int *indexPtr)
 }
 declare 37 {
     int Tcl_GetInt(Tcl_Interp *interp, const char *src, int *intPtr)
@@ -1151,7 +1152,7 @@ declare 319 {
 	    Tcl_QueuePosition position)
 }
 declare 320 {
-    Tcl_UniChar Tcl_UniCharAtIndex(const char *src, int index)
+    Tcl_UniChar Tcl_UniCharAtIndex(const char *src, size_t index)
 }
 declare 321 {
     Tcl_UniChar Tcl_UniCharToLower(int ch)
@@ -1166,13 +1167,13 @@ declare 324 {
     int Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 {
-    const char *Tcl_UtfAtIndex(const char *src, int index)
+    const char *Tcl_UtfAtIndex(const char *src, size_t index)
 }
 declare 326 {
     int Tcl_UtfCharComplete(const char *src, size_t length)
 }
 declare 327 {
-    int Tcl_UtfBackslash(const char *src, size_t *readPtr, char *dst)
+    size_t Tcl_UtfBackslash(const char *src, size_t *readPtr, char *dst)
 }
 declare 328 {
     const char *Tcl_UtfFindFirst(const char *src, int ch)
@@ -2277,7 +2278,8 @@ declare 618 {
     int Tcl_ZlibStreamPut(Tcl_ZlibStream zshandle, Tcl_Obj *data, int flush)
 }
 declare 619 {
-    int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data, int count)
+    int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data,
+	    size_t count)
 }
 declare 620 {
     int Tcl_ZlibStreamClose(Tcl_ZlibStream zshandle)

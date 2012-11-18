@@ -218,7 +218,7 @@ typedef struct AssemblyEnv {
 				 * offsets of the labels. */
     int cmdLine;		/* Current line number within the assembly
 				 * code */
-    int* clNext;		/* Invisible continuation line for
+    ssize_t* clNext;		/* Invisible continuation line for
 				 * [info frame] */
     BasicBlock* head_bb;	/* First basic block in the code */
     BasicBlock* curr_bb;	/* Current basic block */
@@ -279,7 +279,8 @@ static int		FinishAssembly(AssemblyEnv*);
 static void		FreeAssembleCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeAssemblyEnv(AssemblyEnv*);
 static int		GetBooleanOperand(AssemblyEnv*, Tcl_Token**, int*);
-static int		GetListIndexOperand(AssemblyEnv*, Tcl_Token**, int*);
+static int		GetListIndexOperand(AssemblyEnv*, Tcl_Token**,
+			    ssize_t*listIdx);
 static int		GetIntegerOperand(AssemblyEnv*, Tcl_Token**, int*);
 static int		GetNextOperand(AssemblyEnv*, Tcl_Token**, Tcl_Obj**);
 static void		LookForFreshCatches(BasicBlock*, BasicBlock**);
@@ -759,7 +760,7 @@ int
 Tcl_AssembleObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     /*
@@ -774,7 +775,7 @@ int
 TclNRAssembleObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ByteCode *codePtr;		/* Pointer to the bytecode to execute */
@@ -849,7 +850,7 @@ CompileAssembleObj(
 				 * names in the bytecode resolve */
     int status;			/* Status return from Tcl_AssembleCode */
     const char* source;		/* String representation of the source code */
-    int sourceLen;		/* Length of the source code in bytes */
+    size_t sourceLen;		/* Length of the source code in bytes */
     int i;
 
 
@@ -1286,7 +1287,7 @@ AssembleOneLine(
     Tcl_Obj* operand1Obj = NULL;
 				/* First operand to the instruction */
     const char* operand1;	/* String rep of the operand */
-    int operand1Len;		/* String length of the operand */
+    size_t operand1Len;		/* String length of the operand */
     int opnd;			/* Integer representation of an operand */
     int litIndex;		/* Literal pool index of a constant */
     int localVar;		/* LVT index of a local variable */
@@ -1606,9 +1607,15 @@ AssembleOneLine(
 	if (parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;
-	}
-	if (GetListIndexOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
-	    goto cleanup;
+	} else {
+	    ssize_t idxOpnd;
+	    if (GetListIndexOperand(assemEnvPtr, &tokenPtr, &idxOpnd) != TCL_OK) {
+		goto cleanup;
+	    }
+	    if (idxOpnd < INT_MIN || idxOpnd > INT_MAX) {
+		goto cleanup;
+	    }
+	    opnd = (int) idxOpnd;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd);
 	break;
@@ -1973,7 +1980,7 @@ CreateMirrorJumpTable(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Obj* jumps)		/* List of alternating keywords and labels */
 {
-    int objc;			/* Number of elements in the 'jumps' list */
+    size_t objc;		/* Number of elements in the 'jumps' list */
     Tcl_Obj** objv;		/* Pointers to the elements in the list */
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
@@ -2247,7 +2254,7 @@ static int
 GetListIndexOperand(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Token** tokenPtrPtr,	/* Current token from the parser */
-    int* result)		/* OUTPUT: Integer extracted from the token */
+    ssize_t* result)		/* OUTPUT: Integer extracted from the token */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
@@ -2312,7 +2319,7 @@ FindLocalVar(
 				 * source code. */
     Tcl_Obj* varNameObj;	/* Name of the variable */
     const char* varNameStr;
-    int varNameLen;
+    size_t varNameLen;
     int localVar;		/* Index of the variable in the LVT */
 
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {

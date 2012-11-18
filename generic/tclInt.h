@@ -3039,7 +3039,7 @@ MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
-MODULE_SCOPE int	TclMaxListLength(const char *bytes, int numBytes,
+MODULE_SCOPE size_t	TclMaxListLength(const char *bytes, size_t numBytes,
 			    const char **endPtr);
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,

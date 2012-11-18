@@ -944,7 +944,7 @@ EXTERN void		Tcl_ThreadAlert(Tcl_ThreadId threadId);
 EXTERN void		Tcl_ThreadQueueEvent(Tcl_ThreadId threadId,
 				Tcl_Event *evPtr, Tcl_QueuePosition position);
 /* 320 */
-EXTERN Tcl_UniChar	Tcl_UniCharAtIndex(const char *src, int index);
+EXTERN Tcl_UniChar	Tcl_UniCharAtIndex(const char *src, size_t index);
 /* 321 */
 EXTERN Tcl_UniChar	Tcl_UniCharToLower(int ch);
 /* 322 */
@@ -954,11 +954,11 @@ EXTERN Tcl_UniChar	Tcl_UniCharToUpper(int ch);
 /* 324 */
 EXTERN int		Tcl_UniCharToUtf(int ch, char *buf);
 /* 325 */
-EXTERN const char *	Tcl_UtfAtIndex(const char *src, int index);
+EXTERN const char *	Tcl_UtfAtIndex(const char *src, size_t index);
 /* 326 */
 EXTERN int		Tcl_UtfCharComplete(const char *src, size_t length);
 /* 327 */
-EXTERN int		Tcl_UtfBackslash(const char *src, size_t *readPtr,
+EXTERN size_t		Tcl_UtfBackslash(const char *src, size_t *readPtr,
 				char *dst);
 /* 328 */
 EXTERN const char *	Tcl_UtfFindFirst(const char *src, int ch);
@@ -1779,7 +1779,7 @@ EXTERN int		Tcl_ZlibStreamPut(Tcl_ZlibStream zshandle,
 				Tcl_Obj *data, int flush);
 /* 619 */
 EXTERN int		Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle,
-				Tcl_Obj *data, int count);
+				Tcl_Obj *data, size_t count);
 /* 620 */
 EXTERN int		Tcl_ZlibStreamClose(Tcl_ZlibStream zshandle);
 /* 621 */
@@ -2167,14 +2167,14 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_SetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, Tcl_Obj *newValuePtr, int flags); /* 317 */
     void (*tcl_ThreadAlert) (Tcl_ThreadId threadId); /* 318 */
     void (*tcl_ThreadQueueEvent) (Tcl_ThreadId threadId, Tcl_Event *evPtr, Tcl_QueuePosition position); /* 319 */
-    Tcl_UniChar (*tcl_UniCharAtIndex) (const char *src, int index); /* 320 */
+    Tcl_UniChar (*tcl_UniCharAtIndex) (const char *src, size_t index); /* 320 */
     Tcl_UniChar (*tcl_UniCharToLower) (int ch); /* 321 */
     Tcl_UniChar (*tcl_UniCharToTitle) (int ch); /* 322 */
     Tcl_UniChar (*tcl_UniCharToUpper) (int ch); /* 323 */
     int (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
-    const char * (*tcl_UtfAtIndex) (const char *src, int index); /* 325 */
+    const char * (*tcl_UtfAtIndex) (const char *src, size_t index); /* 325 */
     int (*tcl_UtfCharComplete) (const char *src, size_t length); /* 326 */
-    int (*tcl_UtfBackslash) (const char *src, size_t *readPtr, char *dst); /* 327 */
+    size_t (*tcl_UtfBackslash) (const char *src, size_t *readPtr, char *dst); /* 327 */
     const char * (*tcl_UtfFindFirst) (const char *src, int ch); /* 328 */
     const char * (*tcl_UtfFindLast) (const char *src, int ch); /* 329 */
     const char * (*tcl_UtfNext) (const char *src); /* 330 */
@@ -2466,7 +2466,7 @@ typedef struct TclStubs {
     int (*tcl_ZlibStreamEof) (Tcl_ZlibStream zshandle); /* 616 */
     int (*tcl_ZlibStreamChecksum) (Tcl_ZlibStream zshandle); /* 617 */
     int (*tcl_ZlibStreamPut) (Tcl_ZlibStream zshandle, Tcl_Obj *data, int flush); /* 618 */
-    int (*tcl_ZlibStreamGet) (Tcl_ZlibStream zshandle, Tcl_Obj *data, int count); /* 619 */
+    int (*tcl_ZlibStreamGet) (Tcl_ZlibStream zshandle, Tcl_Obj *data, size_t count); /* 619 */
     int (*tcl_ZlibStreamClose) (Tcl_ZlibStream zshandle); /* 620 */
     int (*tcl_ZlibStreamReset) (Tcl_ZlibStream zshandle); /* 621 */
     void (*tcl_SetStartupScript) (Tcl_Obj *path, const char *encoding); /* 622 */

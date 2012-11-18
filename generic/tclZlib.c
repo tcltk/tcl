@@ -179,11 +179,11 @@ static void		ConvertError(Tcl_Interp *interp, int code,
 static Tcl_Obj *	ConvertErrorToList(int code, uLong adler);
 static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
 static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
-			    GzipHeader *headerPtr, int *extraSizePtr);
-static int		ZlibPushSubcmd(Tcl_Interp *interp, int objc,
+			    GzipHeader *headerPtr, size_t *extraSizePtr);
+static int		ZlibPushSubcmd(Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
-static inline int	ResultCopy(ZlibChannelData *cd, char *buf,
-			    int toRead);
+static inline size_t	ResultCopy(ZlibChannelData *cd, char *buf,
+			    size_t toRead);
 static int		ResultGenerate(ZlibChannelData *cd, int n, int flush,
 			    int *errorCodePtr);
 static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
@@ -191,7 +191,7 @@ static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
 			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr,
 			    Tcl_Obj *compDictObj);
 static void		ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
-static int		ZlibStreamSubcmd(Tcl_Interp *interp, int objc,
+static int		ZlibStreamSubcmd(Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static inline void	ZlibTransformEventTimerKill(ZlibChannelData *cd);
 static void		ZlibTransformTimerRun(ClientData clientData);
@@ -415,11 +415,12 @@ GenerateHeader(
     Tcl_Obj *dictObj,		/* The dictionary whose contents are to be
 				 * parsed. */
     GzipHeader *headerPtr,	/* Where to store the parsed-out values. */
-    int *extraSizePtr)		/* Variable to add the length of header
+    size_t *extraSizePtr)	/* Variable to add the length of header
 				 * strings (filename, comment) to. */
 {
     Tcl_Obj *value;
-    int len, result = TCL_ERROR;
+    size_t len;
+    int result = TCL_ERROR;
     const char *valueStr;
     Tcl_Encoding latin1enc;
     static const char *const types[] = {
@@ -594,7 +595,7 @@ SetInflateDictionary(
     Tcl_Obj *compDictObj)
 {
     if (compDictObj != NULL) {
-	int length;
+	size_t length;
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
 
 	return inflateSetDictionary(strm, bytes, (unsigned) length);
@@ -608,7 +609,7 @@ SetDeflateDictionary(
     Tcl_Obj *compDictObj)
 {
     if (compDictObj != NULL) {
-	int length;
+	size_t length;
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
 
 	return deflateSetDictionary(strm, bytes, (unsigned) length);
@@ -1159,7 +1160,8 @@ Tcl_ZlibStreamPut(
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
     char *dataTmp = NULL;
-    int e, size, outSize;
+    int e;
+    size_t size, outSize;
     Tcl_Obj *obj;
 
     if (zshPtr->streamEnd) {
@@ -1280,14 +1282,14 @@ int
 Tcl_ZlibStreamGet(
     Tcl_ZlibStream zshandle,	/* As obtained from Tcl_ZlibStreamInit */
     Tcl_Obj *data,		/* A place to append the data. */
-    int count)			/* Number of bytes to grab as a maximum, you
+    size_t count)		/* Number of bytes to grab as a maximum, you
 				 * may get less! */
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
-    int e, i, listLen, itemLen, dataPos = 0;
+    int e;
     Tcl_Obj *itemObj;
     unsigned char *dataPtr, *itemPtr;
-    int existing;
+    size_t i, listLen, itemLen, existing, dataPos = 0;
 
     /*
      * Getting beyond the of stream, just return empty string.
@@ -1535,7 +1537,8 @@ Tcl_ZlibDeflate(
     int level,
     Tcl_Obj *gzipHeaderDictObj)
 {
-    int wbits = 0, inLen = 0, e = 0, extraSize = 0;
+    int wbits = 0, e = 0;
+    size_t inLen = 0, extraSize = 0;
     Byte *inData = NULL;
     z_stream stream;
     GzipHeader header;
@@ -1685,7 +1688,8 @@ Tcl_ZlibInflate(
     int bufferSize,
     Tcl_Obj *gzipHeaderDictObj)
 {
-    int wbits = 0, inLen = 0, e = 0, newBufferSize;
+    int wbits = 0, e = 0;
+    size_t inLen = 0, newBufferSize;
     Byte *inData = NULL, *outData = NULL, *newOutData = NULL;
     z_stream stream;
     gz_header header, *headerPtr = NULL;
@@ -1865,8 +1869,9 @@ unsigned int
 Tcl_ZlibCRC32(
     unsigned int crc,
     const unsigned char *buf,
-    int len)
+    size_t len)
 {
+    // TODO handle data where it is longer than UINT_MAX
     /* Nothing much to do, just wrap the crc32(). */
     return crc32(crc, (Bytef *) buf, (unsigned) len);
 }
@@ -1875,8 +1880,9 @@ unsigned int
 Tcl_ZlibAdler32(
     unsigned int adler,
     const unsigned char *buf,
-    int len)
+    size_t len)
 {
+    // TODO handle data where it is longer than UINT_MAX
     return adler32(adler, (Bytef *) buf, (unsigned) len);
 }
 
@@ -1894,10 +1900,11 @@ static int
 ZlibCmd(
     ClientData notUsed,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
-    int command, dlen, i, option, level = -1;
+    int command, i, option, level = -1;
+    size_t dlen;
     unsigned start, buffersize = 0;
     Byte *data;
     Tcl_Obj *headerDictObj;
@@ -2165,7 +2172,7 @@ ZlibCmd(
 static int
 ZlibStreamSubcmd(
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     static const char *const stream_formats[] = {
@@ -2315,7 +2322,7 @@ ZlibStreamSubcmd(
 static int
 ZlibPushSubcmd(
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     static const char *const stream_formats[] = {
@@ -2337,7 +2344,8 @@ ZlibPushSubcmd(
     const char *const *pushOptions = pushDecompressOptions;
     enum pushOptions {poDictionary, poHeader, poLevel, poLimit};
     Tcl_Obj *headerObj = NULL, *compDictObj = NULL;
-    int limit = 1, dummy;
+    int limit = 1;
+    size_t dummy;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "mode channel ?options...?");
@@ -2489,7 +2497,7 @@ static int
 ZlibStreamCmd(
     ClientData cd,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = cd;
@@ -2615,7 +2623,7 @@ static int
 ZlibStreamAddCmd(
     ClientData cd,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = cd;
@@ -2704,7 +2712,7 @@ ZlibStreamAddCmd(
      */
 
     if (compDictObj != NULL) {
-	int len;
+	size_t len;
 
 	(void) Tcl_GetByteArrayFromObj(compDictObj, &len);
 	if (len == 0) {
@@ -2739,7 +2747,7 @@ static int
 ZlibStreamPutCmd(
     ClientData cd,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = cd;
@@ -2808,7 +2816,7 @@ ZlibStreamPutCmd(
      */
 
     if (compDictObj != NULL) {
-	int len;
+	size_t len;
 
 	(void) Tcl_GetByteArrayFromObj(compDictObj, &len);
 	if (len == 0) {
@@ -2828,7 +2836,7 @@ static int
 ZlibStreamHeaderCmd(
     ClientData cd,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     ZlibStreamHandle *zshPtr = cd;
@@ -2944,7 +2952,7 @@ ZlibTransformClose(
  *----------------------------------------------------------------------
  */
 
-static size_t
+static ssize_t
 ZlibTransformInput(
     ClientData instanceData,
     char *buf,
@@ -2954,7 +2962,8 @@ ZlibTransformInput(
     ZlibChannelData *cd = instanceData;
     Tcl_DriverInputProc *inProc =
 	    Tcl_ChannelInputProc(Tcl_GetChannelType(cd->parent));
-    size_t readBytes, gotBytes, copied;
+    size_t readBytes, copied;
+    ssize_t gotBytes;
 
     if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	return inProc(Tcl_GetChannelInstanceData(cd->parent), buf, toRead,
@@ -3093,7 +3102,7 @@ ZlibTransformInput(
  *----------------------------------------------------------------------
  */
 
-static size_t
+static ssize_t
 ZlibTransformOutput(
     ClientData instanceData,
     const char *buf,
@@ -3103,7 +3112,8 @@ ZlibTransformOutput(
     ZlibChannelData *cd = instanceData;
     Tcl_DriverOutputProc *outProc =
 	    Tcl_ChannelOutputProc(Tcl_GetChannelType(cd->parent));
-    int e, produced;
+    int e;
+    size_t produced;
     Tcl_Obj *errObj;
 
     if (cd->mode == TCL_ZLIB_STREAM_INFLATE) {
@@ -3347,7 +3357,7 @@ ZlibTransformGetOption(
 		Tcl_DStringAppendElement(dsPtr, "");
 	    }
 	} else {
-	    int len;
+	    size_t len;
 	    const char *str = Tcl_GetStringFromObj(cd->compDictObj, &len);
 
 	    Tcl_DStringAppend(dsPtr, str, len);
@@ -3694,13 +3704,13 @@ ZlibStackChannelTransform(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline size_t
 ResultCopy(
     ZlibChannelData *cd,	/* The location of the buffer to read from. */
     char *buf,			/* The buffer to copy into */
-    int toRead)			/* Number of requested bytes */
+    size_t toRead)		/* Number of requested bytes */
 {
-    int have = Tcl_DStringLength(&cd->decompressed);
+    size_t have = Tcl_DStringLength(&cd->decompressed);
 
     if (have == 0) {
 	/*
