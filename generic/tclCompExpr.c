@@ -1824,8 +1824,8 @@ int
 Tcl_ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *start,		/* Start of source string to parse. */
-    int numBytes,		/* Number of bytes in string. If < 0, the
-				 * string consists of all bytes up to the
+    size_t numBytes,		/* Number of bytes in string. If ==TCL_STRLEN,
+				 * the string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr)	/* Structure to fill with information about
 				 * the parsed expression; any previous
@@ -1838,7 +1838,7 @@ Tcl_ParseExpr(
     Tcl_Parse *exprParsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions. */
 
-    if (numBytes < 0) {
+    if (numBytes == TCL_STRLEN) {
 	numBytes = (start ? strlen(start) : 0);
     }
 

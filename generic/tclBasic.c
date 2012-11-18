@@ -4905,7 +4905,7 @@ Tcl_EvalEx(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * script. Also used for error reporting. */
     const char *script,		/* First character of script to evaluate. */
-    int numBytes,		/* Number of bytes in script. If < 0, the
+    size_t numBytes,		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
 				 * first null character. */
     int flags)			/* Collection of OR-ed bits that control the
@@ -4927,7 +4927,7 @@ TclEvalEx(
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
     int line,			/* The line the script starts on. */
-    int *clNextOuter,		/* Information about an outer context for */
+    ssize_t *clNextOuter,	/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle
 				 * [...]-nested commands. The 'outerScript'
@@ -4969,7 +4969,7 @@ TclEvalEx(
     int *linesStack = TclStackAlloc(interp, minObjs * sizeof(int));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
-    int *clNext = NULL;		/* Pointer for the tracking of invisible
+    ssize_t *clNext = NULL;	/* Pointer for the tracking of invisible
 				 * continuation lines. Initialized only if the
 				 * caller gave us a table of locations to
 				 * track, via scriptCLLocPtr. It always refers
@@ -5100,7 +5100,7 @@ TclEvalEx(
 
 	    int wordLine = line;
 	    const char *wordStart = parsePtr->commandStart;
-	    int *wordCLNext = clNext;
+	    ssize_t *wordCLNext = clNext;
 	    unsigned int objectsNeeded = 0;
 	    unsigned int numWords = parsePtr->numWords;
 
@@ -5427,7 +5427,7 @@ TclAdvanceLines(
 void
 TclAdvanceContinuations(
     int *line,
-    int **clNextPtrPtr,
+    ssize_t **clNextPtrPtr,
     int loc)
 {
     /*

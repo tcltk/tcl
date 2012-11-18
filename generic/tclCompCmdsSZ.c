@@ -31,7 +31,7 @@ static int		PushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
 			    int *simpleVarNamePtr, int *isScalarPtr,
-			    int line, int *clNext);
+			    int line, ssize_t *clNext);
 static int		CompileAssociativeBinaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, const char *identity,
 			    int instruction, CompileEnv *envPtr);
@@ -49,13 +49,13 @@ static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    int eclIndex, int mode, int noCase,
 			    int valueIndex, Tcl_Token *valueTokenPtr,
 			    int numWords, Tcl_Token **bodyToken,
-			    int *bodyLines, int **bodyNext);
+			    int *bodyLines, ssize_t **bodyContLines);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
 			    CompileEnv *envPtr, ExtCmdLoc *mapPtr,
 			    int eclIndex, int valueIndex,
 			    Tcl_Token *valueTokenPtr, int numWords,
 			    Tcl_Token **bodyToken, int *bodyLines,
-			    int **bodyContLines);
+			    ssize_t **bodyContLines);
 static int		IssueTryFinallyInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,
@@ -1051,13 +1051,13 @@ TclCompileSwitchCmd(
     Tcl_Token **bodyToken;	/* Array of pointers to pattern list items. */
     int *bodyLines;		/* Array of line numbers for body list
 				 * items. */
-    int **bodyContLines;	/* Array of continuation line info. */
+    ssize_t **bodyContLines;	/* Array of continuation line info. */
     int noCase;			/* Has the -nocase flag been given? */
     int foundMode = 0;		/* Have we seen a mode flag yet? */
     int i, valueIndex;
     int result = TCL_ERROR;
     DefineLineInformation;	/* TIP #280 */
-    int *clNext = envPtr->clNext;
+    ssize_t *clNext = envPtr->clNext;
 
     /*
      * Only handle the following versions:
@@ -1215,7 +1215,7 @@ TclCompileSwitchCmd(
 	bodyTokenArray = ckalloc(sizeof(Tcl_Token) * maxLen);
 	bodyToken = ckalloc(sizeof(Tcl_Token *) * maxLen);
 	bodyLines = ckalloc(sizeof(int) * maxLen);
-	bodyContLines = ckalloc(sizeof(int*) * maxLen);
+	bodyContLines = ckalloc(sizeof(ssize_t*) * maxLen);
 
 	bline = mapPtr->loc[eclIndex].line[valueIndex+1];
 	numWords = 0;
@@ -1375,7 +1375,7 @@ IssueSwitchChainedTests(
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
     int *bodyLines,		/* Array of line numbers for body list
 				 * items. */
-    int **bodyContLines)	/* Array of continuation line info. */
+    ssize_t **bodyContLines)	/* Array of continuation line info. */
 {
     enum {Switch_Exact, Switch_Glob, Switch_Regexp};
     int savedStackDepth = envPtr->currStackDepth;
@@ -1640,7 +1640,7 @@ IssueSwitchJumpTable(
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
     int *bodyLines,		/* Array of line numbers for body list
 				 * items. */
-    int **bodyContLines)	/* Array of continuation line info. */
+    ssize_t **bodyContLines)	/* Array of continuation line info. */
 {
     JumptableInfo *jtPtr;
     int savedStackDepth = envPtr->currStackDepth;
@@ -3026,7 +3026,7 @@ PushVarName(
     int *simpleVarNamePtr,	/* Must not be NULL. */
     int *isScalarPtr,		/* Must not be NULL. */
     int line,			/* Line the token starts on. */
-    int *clNext)		/* Reference to offset of next hidden cont.
+    ssize_t *clNext)		/* Reference to offset of next hidden cont.
 				 * line. */
 {
     register const char *p;

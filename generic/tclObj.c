@@ -147,13 +147,18 @@ typedef struct PendingObjData {
 #define ObjDeletePending(contextPtr)	((contextPtr)->deletionCount > 0)
 #define ObjOnStack(contextPtr)		((contextPtr)->deletionStack != NULL)
 #define PushObjToDelete(contextPtr,objPtr) \
-    /* The string rep is already invalidated so we can use the bytes value \
-     * for our pointer chain: push onto the head of the stack. */       \
-    (objPtr)->bytes = (char *) ((contextPtr)->deletionStack);           \
-    (contextPtr)->deletionStack = (objPtr)
+    do {                                                                \
+        /* The string rep is already invalidated so we can use the bytes \
+         * value for our pointer chain: push onto the head of the stack. \
+         */                                                             \
+        (objPtr)->bytes = (char *) ((contextPtr)->deletionStack);       \
+        (contextPtr)->deletionStack = (objPtr);                         \
+    } while (0)
 #define PopObjToDelete(contextPtr,objPtrVar) \
-    (objPtrVar) = (contextPtr)->deletionStack;                          \
-    (contextPtr)->deletionStack = (Tcl_Obj *) (objPtrVar)->bytes
+    do {                                                                \
+        (objPtrVar) = (contextPtr)->deletionStack;                      \
+        (contextPtr)->deletionStack = (Tcl_Obj *) (objPtrVar)->bytes;   \
+    } while (0)
 
 /*
  * Macro to set up the local reference to the deletion context.
@@ -572,13 +577,13 @@ ContLineLoc *
 TclContinuationsEnter(
     Tcl_Obj *objPtr,
     int num,
-    int *loc)
+    ssize_t *loc)
 {
     int newEntry;
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
+    ContLineLoc *clLocPtr = ckalloc(sizeof(ContLineLoc) + num*sizeof(size_t));
 
     if (!newEntry) {
 	/*
@@ -606,7 +611,7 @@ TclContinuationsEnter(
     }
 
     clLocPtr->num = num;
-    memcpy(&clLocPtr->loc, loc, num*sizeof(int));
+    memcpy(&clLocPtr->loc, loc, num*sizeof(size_t));
     clLocPtr->loc[num] = CLL_END;       /* Sentinel */
     Tcl_SetHashValue(hPtr, clLocPtr);
 
@@ -635,11 +640,11 @@ TclContinuationsEnter(
 void
 TclContinuationsEnterDerived(
     Tcl_Obj *objPtr,
-    int start,
-    int *clNext)
+    size_t start,
+    ssize_t *clNext)
 {
-    int length, end, num;
-    int *wordCLLast = clNext;
+    size_t length, end, num;
+    ssize_t *wordCLLast = clNext;
 
     /*
      * We have to handle invisible continuations lines here as well, despite
@@ -682,7 +687,7 @@ TclContinuationsEnterDerived(
 
     num = wordCLLast - clNext;
     if (num) {
-	int i;
+	size_t i;
 	ContLineLoc *clLocPtr = TclContinuationsEnter(objPtr, num, clNext);
 
 	/*
@@ -911,7 +916,7 @@ Tcl_AppendAllObjTypes(
 {
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int numElems;
+    size_t numElems;
 
     /*
      * Get the test for a valid list out of the way first.
@@ -1969,7 +1974,7 @@ SetBooleanFromAny(
 
   badBoolean:
     if (interp != NULL) {
-	int length;
+	size_t length;
 	const char *str = Tcl_GetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
@@ -1986,7 +1991,8 @@ static int
 ParseBoolean(
     register Tcl_Obj *objPtr)	/* The object to parse/convert. */
 {
-    int i, length, newBool;
+    int i, newBool;
+    size_t length;
     char lowerCase[6];
     const char *str = TclGetStringFromObj(objPtr, &length);
 
@@ -4049,7 +4055,7 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = keyPtr;
-    int length;
+    size_t length;
     const char *string = TclGetStringFromObj(objPtr, &length);
     unsigned int result = 0;
 
@@ -4459,7 +4465,7 @@ int
 Tcl_RepresentationCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     char ptrBuffer[2*TCL_INTEGER_SPACE+6];

@@ -566,8 +566,8 @@ static void		UpdateStringOfInstName(Tcl_Obj *objPtr);
  */
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd, int len,
-			    int numWords, int line, int *clNext, int **lines,
-			    CompileEnv *envPtr);
+			    int numWords, int line, ssize_t *clNext,
+			    int **lines, CompileEnv *envPtr);
 
 /*
  * The structure below defines the bytecode Tcl object type by means of
@@ -1573,7 +1573,8 @@ TclCompileScript(
     Tcl_DString ds;
     /* TIP #280 */
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
-    int *wlines, wlineat, cmdLine, *clNext;
+    int *wlines, wlineat, cmdLine;
+    ssize_t *clNext;
     Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
 
     Tcl_DStringInit(&ds);
@@ -2123,7 +2124,7 @@ TclCompileTokens(
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
     int isLiteral, maxNumCL, numCL;
-    int *clPosition = NULL;
+    ssize_t *clPosition = NULL;
 
     /*
      * For the handling of continuation lines in literals we first check if
@@ -2187,17 +2188,16 @@ TclCompileTokens(
 	     */
 
 	    if ((length == 1) && (buffer[0] == ' ') &&
-		(tokenPtr->start[1] == '\n')) {
+		    (tokenPtr->start[1] == '\n')) {
 		if (isLiteral) {
-		    int clPos = Tcl_DStringLength(&textBuffer);
+		    ssize_t clPos = (ssize_t) Tcl_DStringLength(&textBuffer);
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
 			clPosition = ckrealloc(clPosition,
                                 maxNumCL * sizeof(int));
 		    }
-		    clPosition[numCL] = clPos;
-		    numCL ++;
+		    clPosition[numCL++] = clPos;
 		}
 	    }
 	    break;
@@ -2985,13 +2985,14 @@ EnterCmdWordData(
     int len,
     int numWords,
     int line,
-    int *clNext,
+    ssize_t *clNext,
     int **wlines,
     CompileEnv *envPtr)
 {
     ECL *ePtr;
     const char *last;
-    int wordIdx, wordLine, *wwlines, *wordNext;
+    int wordIdx, wordLine, *wwlines;
+    ssize_t *wordNext;
 
     if (eclPtr->nuloc >= eclPtr->nloc) {
 	/*

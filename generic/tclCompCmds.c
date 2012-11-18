@@ -40,7 +40,7 @@ static int		PushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
 			    int *simpleVarNamePtr, int *isScalarPtr,
-			    int line, int *clNext);
+			    int line, ssize_t *clNext);
 static int		CompileEachloopCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    CompileEnv *envPtr, int collect);
@@ -82,8 +82,10 @@ static int		CompileDictEachCmd(Tcl_Interp *interp,
     int eclIndex = mapPtr->nuloc - 1
 
 #define SetLineInformation(word) \
-    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
-    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
+    do {								\
+	envPtr->line = mapPtr->loc[eclIndex].line[(word)];		\
+	envPtr->clNext = mapPtr->loc[eclIndex].next[(word)];		\
+    } while (0)
 
 #define PushVarNameWord(i,v,e,f,l,s,sc,word) \
     PushVarName(i,v,e,f,l,s,sc,						\
@@ -6023,7 +6025,7 @@ PushVarName(
     int *simpleVarNamePtr,	/* Must not be NULL. */
     int *isScalarPtr,		/* Must not be NULL. */
     int line,			/* Line the token starts on. */
-    int *clNext)		/* Reference to offset of next hidden cont.
+    ssize_t *clNext)		/* Reference to offset of next hidden cont.
 				 * line. */
 {
     register const char *p;

@@ -130,7 +130,7 @@ typedef struct ECL {
     int nline;			/* Number of words in the command */
     int *line;			/* Line information for all words in the
 				 * command. */
-    int **next;			/* Transient information used by the compiler
+    ssize_t **next;		/* Transient information used by the compiler
 				 * for tracking of hidden continuation
 				 * lines. */
 } ECL;
@@ -314,7 +314,7 @@ typedef struct CompileEnv {
 				 * locations of the invisible continuation
 				 * lines in the input script, to adjust the
 				 * line counter. */
-    int *clNext;		/* If not NULL, it refers to the next slot in
+    ssize_t *clNext;		/* If not NULL, it refers to the next slot in
 				 * clLoc to check for an invisible
 				 * continuation line. */
 } CompileEnv;

@@ -4784,7 +4784,8 @@ TclNRWhileObjCmd(
  *
  * TclListLines --
  *
- *	???
+ *	Compute line information for sub-subelements. Used in some types of
+ *	[switch]es and in the processing of lambdas by [apply].
  *
  * Results:
  *	Filled in array of line numbers?
@@ -4801,19 +4802,19 @@ TclListLines(
 				 * structure. Assumed to be valid. Assumed to
 				 * contain n elements. */
     int line,			/* Line the list as a whole starts on. */
-    int n,			/* #elements in lines */
+    size_t numLines,		/* #elements in lines */
     int *lines,			/* Array of line numbers, to fill. */
     Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
     const char *listStr = Tcl_GetString(listObj);
     const char *listHead = listStr;
-    int i, length = strlen(listStr);
+    size_t i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;
     ContLineLoc *clLocPtr = TclContinuationsGet(listObj);
-    int *clNext = (clLocPtr ? &clLocPtr->loc[0] : NULL);
+    ssize_t *clNext = (clLocPtr ? &clLocPtr->loc[0] : NULL);
 
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < numLines; i++) {
 	TclFindElement(NULL, listStr, length, &element, &next, NULL, NULL);
 
 	TclAdvanceLines(&line, listStr, element);
