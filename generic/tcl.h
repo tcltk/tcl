@@ -136,6 +136,7 @@ extern "C" {
  */
 
 #include <stdio.h>
+#include <stddef.h>
 
 /*
  *----------------------------------------------------------------------------
@@ -2274,12 +2275,9 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
  * stubs tables.
- *
- * Jan Nijtman's plus patch uses 0xFCA1BACF, so we need to pick a different
- * value since the stubs tables don't match.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + sizeof(size_t))
 
 /*
  * The following function is required to be defined in all stubs aware
