@@ -58,7 +58,7 @@ typedef struct Tcl_ObjectContext_ *Tcl_ObjectContext;
  */
 
 typedef int (Tcl_MethodCallProc)(ClientData clientData, Tcl_Interp *interp,
-	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
+	Tcl_ObjectContext objectContext, size_t objc, Tcl_Obj *const *objv);
 typedef void (Tcl_MethodDeleteProc)(ClientData clientData);
 typedef int (Tcl_CloneProc)(Tcl_Interp *interp, ClientData oldClientData,
 	ClientData *newClientData);

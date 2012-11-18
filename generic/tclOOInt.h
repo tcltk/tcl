@@ -143,9 +143,9 @@ typedef struct ForwardMethod {
  */
 
 #define LIST_STATIC(listType_t) \
-    struct { int num; listType_t *list; }
+    struct { size_t num; listType_t *list; }
 #define LIST_DYNAMIC(listType_t) \
-    struct { int num, size; listType_t *list; }
+    struct { size_t num, size; listType_t *list; }
 
 /*
  * Now, the definition of what an object actually is.
@@ -352,7 +352,7 @@ typedef struct CallChain {
 				 * snapshot. */
     int flags;			/* Assorted flags, see below. */
     int refCount;		/* Reference count. */
-    int numChain;		/* Size of the call chain. */
+    size_t numChain;		/* Size of the call chain. */
     struct MInvoke *chain;	/* Array of call chain entries. May point to
 				 * staticChain if the number of entries is
 				 * small. */
@@ -363,7 +363,7 @@ typedef struct CallContext {
     Object *oPtr;		/* The object associated with this call. */
     int index;			/* Index into the call chain of the currently
 				 * executing method implementation. */
-    int skip;			/* Current number of arguments to skip; can
+    size_t skip;		/* Current number of arguments to skip; can
 				 * vary depending on whether it is a direct
 				 * method call or a continuation via the
 				 * [next] command. */
@@ -398,89 +398,37 @@ typedef struct {
  */
 
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
-MODULE_SCOPE int	TclOODefineObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOOObjDefObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineConstructorObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineDeleteMethodObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineDestructorObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineExportObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineForwardObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineMethodObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineRenameMethodObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineUnexportObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineClassObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineSelfObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOOUnknownDefinition(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOOCopyObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOONextObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOONextToObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOOSelfObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOObjDefObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineConstructorObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDeleteMethodObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDestructorObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineExportObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineForwardObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineMethodObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineRenameMethodObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineUnexportObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineClassObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineSelfObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOUnknownDefinition;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOCopyObjectCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOONextObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOONextToObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOSelfObjCmd;
 
 /*
  * Method implementations (in tclOOBasic.c).
  */
 
-MODULE_SCOPE int	TclOO_Class_Constructor(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Class_Create(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Class_CreateNs(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Class_New(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Object_Destroy(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Object_Eval(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Object_LinkVar(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Object_Unknown(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Object_VarName(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Constructor;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Create;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_CreateNs;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_New;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Destroy;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Eval;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_LinkVar;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Unknown;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_VarName;
 
 /*
  * Private definitions, some of which perhaps ought to be exposed properly or
@@ -492,8 +440,8 @@ MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    Tcl_Class cls, const char *nameStr,
-			    const char *nsNameStr, int objc,
-			    Tcl_Obj *const *objv, int skip,
+			    const char *nsNameStr, size_t objc,
+			    Tcl_Obj *const *objv, size_t skip,
 			    Tcl_Object *objectPtr);
 MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
@@ -515,12 +463,10 @@ MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
 			    const char ***stringsPtr);
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
-MODULE_SCOPE int	TclOOInvokeContext(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOInvokeContext;
 MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
-			    Tcl_ObjectContext context, int objc,
-			    Tcl_Obj *const *objv, int skip);
+			    Tcl_ObjectContext context, size_t objc,
+			    Tcl_Obj *const *objv, size_t skip);
 MODULE_SCOPE void	TclOONewBasicMethod(Tcl_Interp *interp, Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);

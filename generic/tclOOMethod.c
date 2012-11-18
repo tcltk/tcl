@@ -63,20 +63,20 @@ typedef struct {
  * Function declarations for things defined in this file.
  */
 
-static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv, int toRewrite,
-			    int rewriteLength, Tcl_Obj *const *rewriteObjs,
-			    int *lengthPtr);
+static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, size_t objc,
+			    Tcl_Obj *const *objv, size_t toRewrite,
+			    size_t rewriteLength, Tcl_Obj *const *rewriteObjs,
+			    size_t *lengthPtr);
 static int		InvokeProcedureMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+			    size_t objc, Tcl_Obj *const *objv);
 static int		FinalizeForwardCall(ClientData data[], Tcl_Interp *interp,
 			    int result);
 static int		FinalizePMCall(ClientData data[], Tcl_Interp *interp,
 			    int result);
 static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    CallContext *contextPtr, ProcedureMethod *pmPtr,
-			    int objc, Tcl_Obj *const *objv,
+			    size_t objc, Tcl_Obj *const *objv,
 			    PMFrameData *fdPtr);
 static void		DeleteProcedureMethodRecord(ProcedureMethod *pmPtr);
 static void		DeleteProcedureMethod(ClientData clientData);
@@ -91,7 +91,7 @@ static void		DestructorErrorHandler(Tcl_Interp *interp,
 static Tcl_Obj *	RenderDeclarerName(ClientData clientData);
 static int		InvokeForwardMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+			    size_t objc, Tcl_Obj *const *objv);
 static void		DeleteForwardMethod(ClientData clientData);
 static int		CloneForwardMethod(Tcl_Interp *interp,
 			    ClientData clientData, ClientData *newClientData);
@@ -99,7 +99,7 @@ static int		ProcedureMethodVarResolver(Tcl_Interp *interp,
 			    const char *varName, Tcl_Namespace *contextNs,
 			    int flags, Tcl_Var *varPtr);
 static int		ProcedureMethodCompiledVarResolver(Tcl_Interp *interp,
-			    const char *varName, int length,
+			    const char *varName, size_t length,
 			    Tcl_Namespace *contextNs,
 			    Tcl_ResolvedVarInfo **rPtrPtr);
 
@@ -303,7 +303,7 @@ TclOONewBasicMethod(
 				/* Name of the method, whether it is public,
 				 * and the function to implement it. */
 {
-    Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, -1);
+    Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, TCL_STRLEN);
 
     Tcl_IncrRefCount(namePtr);
     Tcl_NewMethod(interp, (Tcl_Class) clsPtr, namePtr,
@@ -337,7 +337,7 @@ TclOONewProcInstanceMethod(
 				 * structure's contents. NULL if caller is not
 				 * interested. */
 {
-    int argsLen;
+    size_t argsLen;
     register ProcedureMethod *pmPtr;
     Tcl_Method method;
 
@@ -389,13 +389,13 @@ TclOONewProcMethod(
 				 * structure's contents. NULL if caller is not
 				 * interested. */
 {
-    int argsLen;		/* -1 => delete argsObj before exit */
+    size_t argsLen;		/* TCL_STRLEN => delete argsObj before exit */
     register ProcedureMethod *pmPtr;
     const char *procName;
     Tcl_Method method;
 
     if (argsObj == NULL) {
-	argsLen = -1;
+	argsLen = TCL_STRLEN;
 	argsObj = Tcl_NewObj();
 	Tcl_IncrRefCount(argsObj);
 	procName = "<destructor>";
@@ -414,7 +414,7 @@ TclOONewProcMethod(
     method = TclOOMakeProcMethod(interp, clsPtr, flags, nameObj, procName,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
 
-    if (argsLen == -1) {
+    if (argsLen == TCL_STRLEN) {
 	Tcl_DecrRefCount(argsObj);
     }
     if (method == NULL) {
@@ -663,7 +663,7 @@ InvokeProcedureMethod(
     ClientData clientData,	/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     ProcedureMethod *pmPtr = clientData;
@@ -784,7 +784,7 @@ PushMethodCallFrame(
     CallContext *contextPtr,	/* Current method call context. */
     ProcedureMethod *pmPtr,	/* Information about this procedure-like
 				 * method. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv,	/* Array of arguments. */
     PMFrameData *fdPtr)		/* Place to store information about the call
 				 * frame. */
@@ -992,7 +992,8 @@ ProcedureMethodCompiledVarConnect(
     CallContext *contextPtr;
     Tcl_Obj *variableObj;
     Tcl_HashEntry *hPtr;
-    int i, isNew, cacheIt, varLen, len;
+    int i, isNew, cacheIt;
+    size_t varLen, len;
     const char *match, *varName;
 
     /*
@@ -1089,7 +1090,7 @@ static int
 ProcedureMethodCompiledVarResolver(
     Tcl_Interp *interp,
     const char *varName,
-    int length,
+    size_t length,
     Tcl_Namespace *contextNs,
     Tcl_ResolvedVarInfo **rPtrPtr)
 {
@@ -1160,14 +1161,14 @@ RenderDeclarerName(
 
 #define LIMIT 60
 #define ELLIPSIFY(str,len) \
-	((len) > LIMIT ? LIMIT : (len)), (str), ((len) > LIMIT ? "..." : "")
+    ((len) > LIMIT ? LIMIT : (int)(len)), (str), ((len) > LIMIT ? "..." : "")
 
 static void
 MethodErrorHandler(
     Tcl_Interp *interp,
     Tcl_Obj *methodNameObj)
 {
-    int nameLen, objectNameLen;
+    size_t nameLen, objectNameLen;
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     const char *objectName, *kindName, *methodName =
@@ -1202,7 +1203,7 @@ ConstructorErrorHandler(
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     Object *declarerPtr;
     const char *objectName, *kindName;
-    int objectNameLen;
+    size_t objectNameLen;
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
@@ -1231,7 +1232,7 @@ DestructorErrorHandler(
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     Object *declarerPtr;
     const char *objectName, *kindName;
-    int objectNameLen;
+    size_t objectNameLen;
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
@@ -1321,7 +1322,7 @@ TclOONewForwardInstanceMethod(
     Tcl_Obj *prefixObj)		/* List of arguments that form the command
 				 * prefix to forward to. */
 {
-    int prefixLen;
+    size_t prefixLen;
     register ForwardMethod *fmPtr;
     Tcl_Obj *cmdObj;
 
@@ -1330,7 +1331,7 @@ TclOONewForwardInstanceMethod(
     }
     if (prefixLen < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"method forward prefix must be non-empty", -1));
+		"method forward prefix must be non-empty", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", NULL);
 	return NULL;
     }
@@ -1363,7 +1364,7 @@ TclOONewForwardMethod(
     Tcl_Obj *prefixObj)		/* List of arguments that form the command
 				 * prefix to forward to. */
 {
-    int prefixLen;
+    size_t prefixLen;
     register ForwardMethod *fmPtr;
     Tcl_Obj *cmdObj;
 
@@ -1372,7 +1373,7 @@ TclOONewForwardMethod(
     }
     if (prefixLen < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"method forward prefix must be non-empty", -1));
+		"method forward prefix must be non-empty", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", NULL);
 	return NULL;
     }
@@ -1402,13 +1403,13 @@ InvokeForwardMethod(
     ClientData clientData,	/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     CallContext *contextPtr = (CallContext *) context;
     ForwardMethod *fmPtr = clientData;
     Tcl_Obj **argObjs, **prefixObjs;
-    int numPrefixes, len, skip = contextPtr->skip;
+    size_t numPrefixes, len, skip = contextPtr->skip;
     Command *cmdPtr;
 
     /*
@@ -1556,18 +1557,18 @@ TclOOGetFwdFromMethod(
 static Tcl_Obj **
 InitEnsembleRewrite(
     Tcl_Interp *interp,		/* Place to log the rewrite info. */
-    int objc,			/* Number of real arguments. */
+    size_t objc,		/* Number of real arguments. */
     Tcl_Obj *const *objv,	/* The real arguments. */
-    int toRewrite,		/* Number of real arguments to replace. */
-    int rewriteLength,		/* Number of arguments to insert instead. */
+    size_t toRewrite,		/* Number of real arguments to replace. */
+    size_t rewriteLength,	/* Number of arguments to insert instead. */
     Tcl_Obj *const *rewriteObjs,/* Arguments to insert instead. */
-    int *lengthPtr)		/* Where to write the resulting length of the
+    size_t *lengthPtr)		/* Where to write the resulting length of the
 				 * array of rewritten arguments. */
 {
     Interp *iPtr = (Interp *) interp;
     int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
     Tcl_Obj **argObjs;
-    unsigned len = rewriteLength + objc - toRewrite;
+    size_t len = rewriteLength + objc - toRewrite;
 
     argObjs = TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
     memcpy(argObjs, rewriteObjs, rewriteLength * sizeof(Tcl_Obj *));
@@ -1588,7 +1589,7 @@ InitEnsembleRewrite(
 	iPtr->ensembleRewrite.numRemovedObjs = toRewrite;
 	iPtr->ensembleRewrite.numInsertedObjs = rewriteLength;
     } else {
-	int numIns = iPtr->ensembleRewrite.numInsertedObjs;
+	size_t numIns = iPtr->ensembleRewrite.numInsertedObjs;
 
 	if (numIns < toRewrite) {
 	    iPtr->ensembleRewrite.numRemovedObjs += toRewrite - numIns;

@@ -85,16 +85,16 @@ static inline void	SquelchCachedName(Object *oPtr);
 static void		SquelchedNsFirst(ClientData clientData);
 
 static int		PublicObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const *objv);
 static int		PublicNRObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const *objv);
 static int		PrivateObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const *objv);
 static int		PrivateNRObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const *objv);
 
 /*
@@ -1567,10 +1567,10 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    int objc,			/* Number of arguments. Negative value means
-				 * do not call constructor. */
+    size_t objc,		/* Number of arguments. TCL_STRLEN means do
+				 * not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    int skip)			/* Number of arguments to _not_ pass to the
+    size_t skip)		/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
     register Class *classPtr = (Class *) cls;
@@ -1618,11 +1618,11 @@ Tcl_NewObjectInstance(
     }
 
     /*
-     * Run constructors, except when objc < 0 (a special flag case used for
-     * object cloning only).
+     * Run constructors, except when objc == TCL_STRLEN (a special flag case
+     * used for object cloning only).
      */
 
-    if (objc >= 0) {
+    if (objc != TCL_STRLEN) {
 	CallContext *contextPtr =
 		TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL);
 
@@ -1687,10 +1687,10 @@ TclNRNewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    int objc,			/* Number of arguments. Negative value means
-				 * do not call constructor. */
+    size_t objc,		/* Number of arguments. TCL_STRLEN means do
+				 * not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    int skip,			/* Number of arguments to _not_ pass to the
+    size_t skip,		/* Number of arguments to _not_ pass to the
 				 * constructor. */
     Tcl_Object *objectPtr)	/* Place to write the object reference upon
 				 * successful allocation. */
@@ -1742,11 +1742,12 @@ TclNRNewObjectInstance(
     }
 
     /*
-     * Run constructors, except when objc < 0 (a special flag case used for
-     * object cloning only). If there aren't any constructors, we do nothing.
+     * Run constructors, except when objc == TCL_STRLEN (a special flag case
+     * used for object cloning only). If there aren't any constructors, we do
+     * nothing.
      */
 
-    if (objc < 0) {
+    if (objc == TCL_STRLEN) {
 	*objectPtr = (Tcl_Object) oPtr;
 	return TCL_OK;
     }
@@ -2382,7 +2383,7 @@ static int
 PublicObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     return Tcl_NRCallObjProc(interp, PublicNRObjectCmd, clientData,objc,objv);
@@ -2392,7 +2393,7 @@ static int
 PublicNRObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     return TclOOObjectCmdCore(clientData, interp, objc, objv, PUBLIC_METHOD,
@@ -2403,7 +2404,7 @@ static int
 PrivateObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     return Tcl_NRCallObjProc(interp, PrivateNRObjectCmd,clientData,objc,objv);
@@ -2413,7 +2414,7 @@ static int
 PrivateNRObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     return TclOOObjectCmdCore(clientData, interp, objc, objv, 0, NULL);
@@ -2432,7 +2433,7 @@ TclOOInvokeObject(
 				 * (PRIVATE_METHOD), or a *really* private
 				 * context (any other value; conventionally
 				 * 0). */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Array of argument objects. It is assumed
 				 * that the name of the method to invoke will
 				 * be at index 1. */
@@ -2466,7 +2467,7 @@ int
 TclOOObjectCmdCore(
     Object *oPtr,		/* The object being invoked. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
-    int objc,			/* How many arguments are being passed in. */
+    size_t objc,		/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invokation through the
 				 * public or the private command interface. */
@@ -2615,9 +2616,9 @@ int
 Tcl_ObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv,
-    int skip)
+    size_t skip)
 {
     CallContext *contextPtr = (CallContext *) context;
     int savedIndex = contextPtr->index;
@@ -2687,9 +2688,9 @@ int
 TclNRObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv,
-    int skip)
+    size_t skip)
 {
     register CallContext *contextPtr = (CallContext *) context;
 
@@ -2909,7 +2910,7 @@ Tcl_ObjectContextObject(
     return (Tcl_Object) ((CallContext *)context)->oPtr;
 }
 
-int
+size_t
 Tcl_ObjectContextSkippedArgs(
     Tcl_ObjectContext context)
 {
