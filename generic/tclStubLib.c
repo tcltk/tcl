@@ -38,19 +38,40 @@ TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
 static TclStubs *	HasStubSupport _ANSI_ARGS_((Tcl_Interp *interp));
 
+typedef Tcl_Obj *(NewStringObjProc) _ANSI_ARGS_((CONST char *bytes,
+				size_t length));
+
+
 static TclStubs *
 HasStubSupport (interp)
     Tcl_Interp *interp;
 {
     Interp *iPtr = (Interp *) interp;
 
-    if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
-	return iPtr->stubTable;
+    if (!iPtr->stubTable) {
+	/* No stub table at all? Nothing we can do. */
+	return NULL;
     }
-    interp->result = "This interpreter does not support stubs-enabled extensions.";
-    interp->freeProc = TCL_STATIC;
-
-    return NULL;
+    if (iPtr->stubTable->magic != TCL_STUB_MAGIC) {
+	/*
+	 * We cannot acces interp->result and interp->freeProc
+	 * any more: They will be gone in Tcl 9. In stead,
+	 * assume that the iPtr->stubTable entry from Tcl_Interp
+	 * and the Tcl_NewStringObj() and Tcl_SetObjResult() entries
+	 * in the stub table don't change in Tcl 9. Need to add
+	 * a test-case in Tcl 9 to assure that.
+	 * 
+	 * The signature of Tcl_NewStringObj will change: the length
+	 * parameter will be of type size_t. But passing the value
+	 * (size_t)-1 will work, whatever the signature will be.
+	 */
+	NewStringObjProc *newStringObj = (NewStringObjProc *)
+		iPtr->stubTable->tcl_NewStringObj;
+	iPtr->stubTable->tcl_SetObjResult(interp, newStringObj(
+		"This extension is compiled for Tcl 8.x", (size_t)-1));
+	return NULL;
+    }
+    return iPtr->stubTable;
 }
 
 /*
