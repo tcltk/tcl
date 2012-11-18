@@ -1127,7 +1127,7 @@ TclLindexList(
 	listPtr = TclLindexFlat(interp, listPtr, listRepPtr->elemCount,
 		&listRepPtr->elements);
     } else {
-	size_t indexCount;	/* Size of the array of list indices. */
+	size_t indexCount = 0;	/* Size of the array of list indices. */
 	Tcl_Obj **indices = NULL;
 				/* Array of list indices. */
 

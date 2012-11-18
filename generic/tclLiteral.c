@@ -31,7 +31,7 @@
 static int		AddLocalLiteralEntry(CompileEnv *envPtr,
 			    Tcl_Obj *objPtr, int localHash);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
-static unsigned		HashString(const char *string, int length);
+static unsigned		HashString(const char *string, size_t length);
 static void		RebuildLiteralTable(LiteralTable *tablePtr);
 
 /*
@@ -172,9 +172,9 @@ TclCreateLiteral(
     Interp *iPtr,
     char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    size_t length,			/* Number of bytes in the string. */
-    unsigned hash,		/* The string's hash. If -1, it will be
-				 * computed here. */
+    size_t length,		/* Number of bytes in the string. */
+    unsigned hash,		/* The string's hash. If ((unsigned)-1), it
+				 * will be computed here. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,
@@ -443,7 +443,8 @@ TclLookupLiteralEntry(
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     register LiteralEntry *entryPtr;
     const char *bytes;
-    int length, globalHash;
+    size_t length;
+    int globalHash;
 
     bytes = TclGetStringFromObj(objPtr, &length);
     globalHash = (HashString(bytes, length) & globalTablePtr->mask);
@@ -487,7 +488,8 @@ TclHideLiteral(
 {
     LiteralEntry **nextPtrPtr, *entryPtr, *lPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
-    int localHash, length;
+    int localHash;
+    size_t length;
     const char *bytes;
     Tcl_Obj *newObjPtr;
 
@@ -624,7 +626,8 @@ AddLocalLiteralEntry(
     TclVerifyLocalLiteralTable(envPtr);
     {
 	char *bytes;
-	int length, found, i;
+	size_t length;
+	int found, i;
 
 	found = 0;
 	for (i=0 ; i<localTablePtr->numBuckets ; i++) {
@@ -753,7 +756,8 @@ TclReleaseLiteral(
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     register LiteralEntry *entryPtr, *prevPtr;
     const char *bytes;
-    int length, index;
+    size_t length;
+    int index;
 
     bytes = TclGetStringFromObj(objPtr, &length);
     index = (HashString(bytes, length) & globalTablePtr->mask);
@@ -766,32 +770,33 @@ TclReleaseLiteral(
 
     for (prevPtr=NULL, entryPtr=globalTablePtr->buckets[index];
 	    entryPtr!=NULL ; prevPtr=entryPtr, entryPtr=entryPtr->nextPtr) {
-	if (entryPtr->objPtr == objPtr) {
-	    entryPtr->refCount--;
+	if (entryPtr->objPtr != objPtr) {
+	    continue;
+	}
+	entryPtr->refCount--;
 
-	    /*
-	     * If the literal is no longer being used by any ByteCode, delete
-	     * the entry then remove the reference corresponding to the global
-	     * literal table entry (decrement the ref count of the object).
-	     */
+	/*
+	 * If the literal is no longer being used by any ByteCode, delete the
+	 * entry then remove the reference corresponding to the global literal
+	 * table entry (decrement the ref count of the object).
+	 */
 
-	    if (entryPtr->refCount == 0) {
-		if (prevPtr == NULL) {
-		    globalTablePtr->buckets[index] = entryPtr->nextPtr;
-		} else {
-		    prevPtr->nextPtr = entryPtr->nextPtr;
-		}
-		ckfree(entryPtr);
-		globalTablePtr->numEntries--;
+	if (entryPtr->refCount == 0) {
+	    if (prevPtr == NULL) {
+		globalTablePtr->buckets[index] = entryPtr->nextPtr;
+	    } else {
+		prevPtr->nextPtr = entryPtr->nextPtr;
+	    }
+	    ckfree(entryPtr);
+	    globalTablePtr->numEntries--;
 
-		TclDecrRefCount(objPtr);
+	    TclDecrRefCount(objPtr);
 
 #ifdef TCL_COMPILE_STATS
-		iPtr->stats.currentLitStringBytes -= (double) (length + 1);
+	    iPtr->stats.currentLitStringBytes -= (double) (length + 1);
 #endif /*TCL_COMPILE_STATS*/
-	    }
-	    break;
 	}
+	break;
     }
 
     /*
@@ -820,8 +825,8 @@ TclReleaseLiteral(
 
 static unsigned
 HashString(
-    register const char *string,	/* String for which to compute hash value. */
-    int length)			/* Number of bytes in the string. */
+    register const char *string,/* String for which to compute hash value. */
+    size_t length)		/* Number of bytes in the string. */
 {
     register unsigned int result = 0;
 
@@ -892,7 +897,8 @@ RebuildLiteralTable(
     register LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    int oldSize, count, index, length;
+    int oldSize, count, index;
+    size_t length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;

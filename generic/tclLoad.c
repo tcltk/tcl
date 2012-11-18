@@ -117,7 +117,7 @@ int
 Tcl_LoadObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *target;
@@ -311,7 +311,7 @@ Tcl_LoadObjCmd(
 	    retc = TclGuessPackageName(fullFileName, &pkgName);
 	    if (!retc) {
 		Tcl_Obj *splitPtr, *pkgGuessPtr;
-		int pElements;
+		size_t pElements;
 		const char *pkgGuess;
 
 		/*
@@ -323,7 +323,7 @@ Tcl_LoadObjCmd(
 		 */
 
 		splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
-		Tcl_ListObjIndex(NULL, splitPtr, pElements -1, &pkgGuessPtr);
+		Tcl_ListObjIndex(NULL, splitPtr, pElements-1, &pkgGuessPtr);
 		pkgGuess = Tcl_GetString(pkgGuessPtr);
 		if ((pkgGuess[0] == 'l') && (pkgGuess[1] == 'i')
 			&& (pkgGuess[2] == 'b')) {
@@ -531,7 +531,7 @@ int
 Tcl_UnloadObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *target;		/* Which interpreter to unload from. */

@@ -461,7 +461,8 @@ Tcl_MainEx(
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
-	    int length;
+	    ssize_t inputLength;
+	    size_t cmdLength;
 
 	    if (is.tty) {
 		Prompt(interp, &is);
@@ -481,8 +482,8 @@ Tcl_MainEx(
 		is.commandPtr = Tcl_DuplicateObj(is.commandPtr);
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
-	    length = Tcl_GetsObj(is.input, is.commandPtr);
-	    if (length < 0) {
+	    inputLength = Tcl_GetsObj(is.input, is.commandPtr);
+	    if (inputLength < 0) {
 		if (Tcl_InputBlocked(is.input)) {
 		    /*
 		     * This can only happen if stdin has been set to
@@ -526,8 +527,8 @@ Tcl_MainEx(
 	     * error messages troubles deeper in, so lop it back off.
 	     */
 
-	    Tcl_GetStringFromObj(is.commandPtr, &length);
-	    Tcl_SetObjLength(is.commandPtr, --length);
+	    Tcl_GetStringFromObj(is.commandPtr, &cmdLength);
+	    Tcl_SetObjLength(is.commandPtr, --cmdLength);
 	    code = Tcl_RecordAndEvalObj(interp, is.commandPtr,
 		    TCL_EVAL_GLOBAL);
 	    is.input = Tcl_GetStdChannel(TCL_STDIN);
@@ -543,9 +544,9 @@ Tcl_MainEx(
 	    } else if (is.tty) {
 		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(resultPtr);
-		Tcl_GetStringFromObj(resultPtr, &length);
+		Tcl_GetStringFromObj(resultPtr, &cmdLength);
 		chan = Tcl_GetStdChannel(TCL_STDOUT);
-		if ((length > 0) && chan) {
+		if ((cmdLength > 0) && chan) {
 		    Tcl_WriteObj(chan, resultPtr);
 		    Tcl_WriteChars(chan, "\n", 1);
 		}
@@ -763,7 +764,9 @@ StdinProc(
     ClientData clientData,	/* The state of interactive cmd line */
     int mask)			/* Not used. */
 {
-    int code, length;
+    int code;
+    ssize_t inputLength;
+    size_t cmdLength;
     InteractiveState *isPtr = clientData;
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
@@ -774,8 +777,8 @@ StdinProc(
 	commandPtr = Tcl_DuplicateObj(commandPtr);
 	Tcl_IncrRefCount(commandPtr);
     }
-    length = Tcl_GetsObj(chan, commandPtr);
-    if (length < 0) {
+    inputLength = Tcl_GetsObj(chan, commandPtr);
+    if (inputLength < 0) {
 	if (Tcl_InputBlocked(chan)) {
 	    return;
 	}
@@ -803,8 +806,8 @@ StdinProc(
 	goto prompt;
     }
     isPtr->prompt = PROMPT_START;
-    Tcl_GetStringFromObj(commandPtr, &length);
-    Tcl_SetObjLength(commandPtr, --length);
+    Tcl_GetStringFromObj(commandPtr, &cmdLength);
+    Tcl_SetObjLength(commandPtr, --cmdLength);
 
     /*
      * Disable the stdin channel handler while evaluating the command;
@@ -834,8 +837,8 @@ StdinProc(
 	chan = Tcl_GetStdChannel(TCL_STDOUT);
 
 	Tcl_IncrRefCount(resultPtr);
-	Tcl_GetStringFromObj(resultPtr, &length);
-	if ((length > 0) && (chan != NULL)) {
+	Tcl_GetStringFromObj(resultPtr, &cmdLength);
+	if ((cmdLength > 0) && (chan != NULL)) {
 	    Tcl_WriteObj(chan, resultPtr);
 	    Tcl_WriteChars(chan, "\n", 1);
 	}
