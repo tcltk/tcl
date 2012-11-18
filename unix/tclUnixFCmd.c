@@ -760,7 +760,7 @@ TclpObjCopyDirectory(
     Tcl_DStringFree(&dstString);
 
     if (ret != TCL_OK) {
-	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_NOSIZE);
 	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
     }
@@ -814,7 +814,7 @@ TclpObjRemoveDirectory(
     Tcl_DStringFree(&pathString);
 
     if (ret != TCL_OK) {
-	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_NOSIZE);
 	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
     }
@@ -864,7 +864,7 @@ DoRemoveDirectory(
     result = TCL_OK;
     if ((errno != EEXIST) || (recursive == 0)) {
 	if (errorPtr != NULL) {
-	    Tcl_ExternalToUtfDString(NULL, path, -1, errorPtr);
+	    Tcl_ExternalToUtfDString(NULL, path, TCL_NOSIZE, errorPtr);
 	}
 	result = TCL_ERROR;
     }
@@ -996,9 +996,9 @@ TraverseUnixTree(
 	 * Append name after slash, and recurse on the file.
 	 */
 
-	Tcl_DStringAppend(sourcePtr, dirEntPtr->d_name, -1);
+	Tcl_DStringAppend(sourcePtr, dirEntPtr->d_name, TCL_NOSIZE);
 	if (targetPtr != NULL) {
-	    Tcl_DStringAppend(targetPtr, dirEntPtr->d_name, -1);
+	    Tcl_DStringAppend(targetPtr, dirEntPtr->d_name, TCL_NOSIZE);
 	}
 	result = TraverseUnixTree(traverseProc, sourcePtr, targetPtr,
 		errorPtr, doRewind);
@@ -1113,7 +1113,7 @@ TraverseUnixTree(
   end:
     if (errfile != NULL) {
 	if (errorPtr != NULL) {
-	    Tcl_ExternalToUtfDString(NULL, errfile, -1, errorPtr);
+	    Tcl_ExternalToUtfDString(NULL, errfile, TCL_NOSIZE, errorPtr);
 	}
 	result = TCL_ERROR;
     }
@@ -1345,8 +1345,8 @@ GetGroupAttribute(
 	Tcl_DString ds;
 	const char *utf;
 
-	utf = Tcl_ExternalToUtfDString(NULL, groupPtr->gr_name, -1, &ds);
-	*attributePtrPtr = Tcl_NewStringObj(utf, -1);
+	utf = Tcl_ExternalToUtfDString(NULL, groupPtr->gr_name, TCL_NOSIZE, &ds);
+	*attributePtrPtr = Tcl_NewStringObj(utf, TCL_NOSIZE);
 	Tcl_DStringFree(&ds);
     }
     return TCL_OK;
@@ -1398,7 +1398,7 @@ GetOwnerAttribute(
     } else {
 	Tcl_DString ds;
 
-	(void) Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, -1, &ds);
+	(void) Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, TCL_NOSIZE, &ds);
 	*attributePtrPtr = TclDStringToObj(&ds);
     }
     return TCL_OK;
@@ -1622,7 +1622,7 @@ SetPermissionsAttribute(
 	Tcl_Obj *modeObj;
 
 	TclNewLiteralStringObj(modeObj, "0o");
-	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, -1);
+	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, TCL_NOSIZE);
 	result = Tcl_GetLongFromObj(NULL, modeObj, &mode);
 	Tcl_DecrRefCount(modeObj);
     }
@@ -2159,7 +2159,7 @@ TclUnixOpenTemporaryFile(
 	Tcl_UtfToExternalDString(NULL, string, len, &template);
     } else {
 	Tcl_DStringInit(&template);
-	Tcl_DStringAppend(&template, DefaultTempDir(), -1); /* INTL: native */
+	Tcl_DStringAppend(&template, DefaultTempDir(), TCL_NOSIZE); /* INTL: native */
     }
 
     TclDStringAppendLiteral(&template, "/");

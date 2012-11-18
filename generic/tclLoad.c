@@ -183,7 +183,7 @@ Tcl_LoadObjCmd(
     }
     if ((fullFileName[0] == 0) && (packageName == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must specify either file name or package name", -1));
+		"must specify either file name or package name", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOLIBRARY",
 		NULL);
 	code = TCL_ERROR;
@@ -223,9 +223,9 @@ Tcl_LoadObjCmd(
 	    namesMatch = 0;
 	} else {
 	    TclDStringClear(&pkgName);
-	    Tcl_DStringAppend(&pkgName, packageName, -1);
+	    Tcl_DStringAppend(&pkgName, packageName, TCL_NOSIZE);
 	    TclDStringClear(&tmp);
-	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
+	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, TCL_NOSIZE);
 	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
 	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),
@@ -300,7 +300,7 @@ Tcl_LoadObjCmd(
 	 */
 
 	if (packageName != NULL) {
-	    Tcl_DStringAppend(&pkgName, packageName, -1);
+	    Tcl_DStringAppend(&pkgName, packageName, TCL_NOSIZE);
 	} else {
 	    int retc;
 
@@ -606,7 +606,7 @@ Tcl_UnloadObjCmd(
     }
     if ((fullFileName[0] == 0) && (packageName == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must specify either file name or package name", -1));
+		"must specify either file name or package name", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NOLIBRARY",
 		NULL);
 	code = TCL_ERROR;
@@ -647,9 +647,9 @@ Tcl_UnloadObjCmd(
 	    namesMatch = 0;
 	} else {
 	    TclDStringClear(&pkgName);
-	    Tcl_DStringAppend(&pkgName, packageName, -1);
+	    Tcl_DStringAppend(&pkgName, packageName, TCL_NOSIZE);
 	    TclDStringClear(&tmp);
-	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
+	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, TCL_NOSIZE);
 	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
 	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),
@@ -1053,8 +1053,8 @@ TclGetLoadedPackages(
 	Tcl_MutexLock(&packageMutex);
 	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
 		pkgPtr = pkgPtr->nextPtr) {
-	    pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);
-	    pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, -1);
+	    pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, TCL_NOSIZE);
+	    pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, TCL_NOSIZE);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewListObj(2, pkgDesc));
 	}
@@ -1076,8 +1076,8 @@ TclGetLoadedPackages(
     resultObj = Tcl_NewObj();
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	pkgPtr = ipPtr->pkgPtr;
-	pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);
-	pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, -1);
+	pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, TCL_NOSIZE);
+	pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, TCL_NOSIZE);
 	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewListObj(2, pkgDesc));
     }
     Tcl_SetObjResult(interp, resultObj);

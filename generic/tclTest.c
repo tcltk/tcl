@@ -857,7 +857,7 @@ TestasyncCmd(
 		break;
 	    }
 	}
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(argv[3], -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(argv[3], TCL_NOSIZE));
 	Tcl_MutexUnlock(&asyncTestMutex);
 	return code;
 #ifdef TCL_THREADS
@@ -1099,8 +1099,8 @@ CmdDelProc1(
     ClientData clientData)	/* String to save. */
 {
     Tcl_DStringInit(&delString);
-    Tcl_DStringAppend(&delString, "CmdDelProc1 ", -1);
-    Tcl_DStringAppend(&delString, (char *) clientData, -1);
+    Tcl_DStringAppend(&delString, "CmdDelProc1 ", TCL_NOSIZE);
+    Tcl_DStringAppend(&delString, (char *) clientData, TCL_NOSIZE);
 }
 
 static void
@@ -1108,8 +1108,8 @@ CmdDelProc2(
     ClientData clientData)	/* String to save. */
 {
     Tcl_DStringInit(&delString);
-    Tcl_DStringAppend(&delString, "CmdDelProc2 ", -1);
-    Tcl_DStringAppend(&delString, (char *) clientData, -1);
+    Tcl_DStringAppend(&delString, "CmdDelProc2 ", TCL_NOSIZE);
+    Tcl_DStringAppend(&delString, (char *) clientData, TCL_NOSIZE);
 }
 
 /*
@@ -1345,7 +1345,7 @@ ObjTraceProc(
     const char *word = Tcl_GetString(objv[0]);
 
     if (!strcmp(word, "Error")) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(command, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(command, TCL_NOSIZE));
 	return TCL_ERROR;
     } else if (!strcmp(word, "Break")) {
 	return TCL_BREAK;
@@ -1716,7 +1716,7 @@ TestdoubledigitsObjCmd(ClientData unused,
     type = types[type];
     if (objc > 4) {
 	if (strcmp(Tcl_GetString(objv[4]), "shorten")) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("bad flag", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("bad flag", TCL_NOSIZE));
 	    return TCL_ERROR;
 	}
 	type |= TCL_DD_SHORTEN_FLAG;
@@ -1726,7 +1726,7 @@ TestdoubledigitsObjCmd(ClientData unused,
     ckfree(str);
     retval = Tcl_NewListObj(1, &strObj);
     Tcl_ListObjAppendElement(NULL, retval, Tcl_NewIntObj(decpt));
-    strObj = Tcl_NewStringObj(signum ? "-" : "+", 1);
+    strObj = Tcl_NewStringObj(signum ? "-" : "+", TCL_NOSIZE);
     Tcl_ListObjAppendElement(NULL, retval, strObj);
     Tcl_SetObjResult(interp, retval);
     return TCL_OK;
@@ -3032,7 +3032,7 @@ TestlinkCmd(
 	    }
 	}
 	if (argv[6][0] != 0) {
-	    tmp = Tcl_NewStringObj(argv[6], -1);
+	    tmp = Tcl_NewStringObj(argv[6], TCL_NOSIZE);
 	    if (Tcl_GetWideIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
 		Tcl_DecrRefCount(tmp);
 		return TCL_ERROR;
@@ -3090,7 +3090,7 @@ TestlinkCmd(
 	}
 	if (argv[15][0]) {
 	    Tcl_WideInt w;
-	    tmp = Tcl_NewStringObj(argv[15], -1);
+	    tmp = Tcl_NewStringObj(argv[15], TCL_NOSIZE);
 	    if (Tcl_GetWideIntFromObj(interp, tmp, &w) != TCL_OK) {
 		Tcl_DecrRefCount(tmp);
 		return TCL_ERROR;
@@ -3140,7 +3140,7 @@ TestlinkCmd(
 	    Tcl_UpdateLinkedVar(interp, "string");
 	}
 	if (argv[6][0] != 0) {
-	    tmp = Tcl_NewStringObj(argv[6], -1);
+	    tmp = Tcl_NewStringObj(argv[6], TCL_NOSIZE);
 	    if (Tcl_GetWideIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
 		Tcl_DecrRefCount(tmp);
 		return TCL_ERROR;
@@ -3207,7 +3207,7 @@ TestlinkCmd(
 	}
 	if (argv[15][0]) {
 	    Tcl_WideInt w;
-	    tmp = Tcl_NewStringObj(argv[15], -1);
+	    tmp = Tcl_NewStringObj(argv[15], TCL_NOSIZE);
 	    if (Tcl_GetWideIntFromObj(interp, tmp, &w) != TCL_OK) {
 		Tcl_DecrRefCount(tmp);
 		return TCL_ERROR;
@@ -3281,7 +3281,7 @@ TestlocaleCmd(
     }
     locale = setlocale(lcTypes[index], locale);
     if (locale) {
-	Tcl_SetStringObj(Tcl_GetObjResult(interp), locale, -1);
+	Tcl_SetStringObj(Tcl_GetObjResult(interp), locale, TCL_NOSIZE);
     }
     return TCL_OK;
 }
@@ -3503,7 +3503,7 @@ PrintParse(
 	    break;
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr,
-		Tcl_NewStringObj(typeString, -1));
+		Tcl_NewStringObj(typeString, TCL_NOSIZE));
 	Tcl_ListObjAppendElement(NULL, objPtr,
 		Tcl_NewStringObj(tokenPtr->start, tokenPtr->size));
 	Tcl_ListObjAppendElement(NULL, objPtr,
@@ -3511,7 +3511,7 @@ PrintParse(
     }
     Tcl_ListObjAppendElement(NULL, objPtr,
 	    Tcl_NewStringObj(parsePtr->commandStart + parsePtr->commandSize,
-	    -1));
+	    TCL_NOSIZE));
 }
 
 /*
@@ -4624,7 +4624,7 @@ GetTimesCmd(
 
     /* TclGetString 100000 times */
     fprintf(stderr, "TclGetStringFromObj of \"12345\" 100000 times\n");
-    objPtr = Tcl_NewStringObj("12345", -1);
+    objPtr = Tcl_NewStringObj("12345", TCL_NOSIZE);
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
 	(void) TclGetString(objPtr);
@@ -4923,7 +4923,7 @@ TestsaveresultCmd(
 	Tcl_SetResult(interp, (char *)"dynamic result", TestsaveresultFree);
 	break;
     case RESULT_OBJECT:
-	objPtr = Tcl_NewStringObj("object result", -1);
+	objPtr = Tcl_NewStringObj("object result", TCL_NOSIZE);
 	Tcl_SetObjResult(interp, objPtr);
 	break;
     }
@@ -5190,7 +5190,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 's') && (strncmp(cmdName, "setchannelerror", len) == 0)) {
 
-	Tcl_Obj *msg = Tcl_NewStringObj(argv[3],-1);
+	Tcl_Obj *msg = Tcl_NewStringObj(argv[3], TCL_NOSIZE);
 
 	Tcl_IncrRefCount(msg);
 	Tcl_SetChannelError(chan, msg);
@@ -5203,7 +5203,7 @@ TestChannelCmd(
     }
     if ((cmdName[0] == 's') && (strncmp(cmdName, "setchannelerrorinterp", len) == 0)) {
 
-	Tcl_Obj *msg = Tcl_NewStringObj(argv[3],-1);
+	Tcl_Obj *msg = Tcl_NewStringObj(argv[3], TCL_NOSIZE);
 
 	Tcl_IncrRefCount(msg);
 	Tcl_SetChannelErrorInterp(interp, msg);
@@ -5551,7 +5551,7 @@ TestChannelCmd(
 	}
 
 	return TclChannelTransform(interp, chan,
-		Tcl_NewStringObj(argv[4], -1));
+		Tcl_NewStringObj(argv[4], TCL_NOSIZE));
     }
 
     if ((cmdName[0] == 'u') && (strncmp(cmdName, "unstack", len) == 0)) {
@@ -5643,7 +5643,7 @@ TestChannelEventCmd(
 	esPtr->chanPtr = chanPtr;
 	esPtr->interp = interp;
 	esPtr->mask = mask;
-	esPtr->scriptPtr = Tcl_NewStringObj(argv[4], -1);
+	esPtr->scriptPtr = Tcl_NewStringObj(argv[4], TCL_NOSIZE);
 	Tcl_IncrRefCount(esPtr->scriptPtr);
 
 	Tcl_CreateChannelHandler((Tcl_Channel) chanPtr, mask,
@@ -5710,10 +5710,10 @@ TestChannelEventCmd(
 	     esPtr = esPtr->nextPtr) {
 	    if (esPtr->mask) {
 		Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
-		    (esPtr->mask == TCL_READABLE) ? "readable" : "writable", -1));
+		    (esPtr->mask == TCL_READABLE) ? "readable" : "writable", TCL_NOSIZE));
 	    } else {
 		Tcl_ListObjAppendElement(interp, resultListPtr,
-			Tcl_NewStringObj("none", -1));
+			Tcl_NewStringObj("none", TCL_NOSIZE));
 	    }
 	    Tcl_ListObjAppendElement(interp, resultListPtr, esPtr->scriptPtr);
 	}
@@ -5936,7 +5936,7 @@ TestFilesystemObjCmd(
 	res = Tcl_FSUnregister(&testReportingFilesystem);
 	msg = (res == TCL_OK) ? "unregistered" : "failed";
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(msg , -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(msg , TCL_NOSIZE));
     return res;
 }
 
@@ -6023,7 +6023,7 @@ TestReport(
 	Tcl_DString ds;
 
 	Tcl_DStringInit(&ds);
-	Tcl_DStringAppend(&ds, "lappend filesystemReport ", -1);
+	Tcl_DStringAppend(&ds, "lappend filesystemReport ", TCL_NOSIZE);
 	Tcl_DStringStartSublist(&ds);
 	Tcl_DStringAppendElement(&ds, cmd);
 	if (path != NULL) {
@@ -6308,7 +6308,7 @@ TestSimpleFilesystemObjCmd(
 	res = Tcl_FSUnregister(&simpleFilesystem);
 	msg = (res == TCL_OK) ? "unregistered" : "failed";
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(msg , -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(msg , TCL_NOSIZE));
     return res;
 }
 
@@ -6335,7 +6335,7 @@ SimpleRedirect(
 	Tcl_IncrRefCount(pathPtr);
 	return pathPtr;
     }
-    origPtr = Tcl_NewStringObj(str+10,-1);
+    origPtr = Tcl_NewStringObj(str+10, TCL_NOSIZE);
     Tcl_IncrRefCount(origPtr);
     return origPtr;
 }
@@ -6372,7 +6372,7 @@ SimpleMatchInDirectory(
 	for (j = 0; j < gLength; j++) {
 	    Tcl_Obj *gElt, *nElt;
 	    Tcl_ListObjIndex(NULL, resPtr, j, &gElt);
-	    nElt = Tcl_NewStringObj("simplefs:/",10);
+	    nElt = Tcl_NewStringObj("simplefs:/", TCL_NOSIZE);
 	    Tcl_AppendObjToObj(nElt, gElt);
 	    Tcl_ListObjAppendElement(NULL, resultPtr, nElt);
 	}
@@ -6435,7 +6435,7 @@ SimpleListVolumes(void)
     /* Add one new volume */
     Tcl_Obj *retVal;
 
-    retVal = Tcl_NewStringObj("simplefs:/", -1);
+    retVal = Tcl_NewStringObj("simplefs:/", TCL_NOSIZE);
     Tcl_IncrRefCount(retVal);
     return retVal;
 }
@@ -6508,7 +6508,7 @@ TestcpuidCmd(
     status = TclWinCPUID((unsigned) index, regs);
     if (status != TCL_OK) {
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("operation not available", -1));
+		Tcl_NewStringObj("operation not available", TCL_NOSIZE));
 	return status;
     }
     for (i=0 ; i<4 ; ++i) {
@@ -6554,7 +6554,7 @@ TestHashSystemHashCmd(
 	hPtr = Tcl_CreateHashEntry(&hash, INT2PTR(i), &isNew);
 	if (!isNew) {
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," creation problem",-1);
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," creation problem", TCL_NOSIZE);
 	    Tcl_DeleteHashTable(&hash);
 	    return TCL_ERROR;
 	}
@@ -6571,13 +6571,13 @@ TestHashSystemHashCmd(
 	hPtr = Tcl_FindHashEntry(&hash, (char *) INT2PTR(i));
 	if (hPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," lookup problem",-1);
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," lookup problem", TCL_NOSIZE);
 	    Tcl_DeleteHashTable(&hash);
 	    return TCL_ERROR;
 	}
 	if (PTR2INT(Tcl_GetHashValue(hPtr)) != i+42) {
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," value problem",-1);
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," value problem", TCL_NOSIZE);
 	    Tcl_DeleteHashTable(&hash);
 	    return TCL_ERROR;
 	}
@@ -6696,18 +6696,18 @@ TestconcatobjCmd(
      */
 
     Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj("Tcl_ConcatObj is unsafe:", -1));
+	    Tcl_NewStringObj("Tcl_ConcatObj is unsafe:", TCL_NOSIZE));
 
     emptyPtr = Tcl_NewObj();
 
-    list1Ptr = Tcl_NewStringObj("foo bar sum", -1);
+    list1Ptr = Tcl_NewStringObj("foo bar sum", TCL_NOSIZE);
     Tcl_ListObjLength(NULL, list1Ptr, &len);
     if (list1Ptr->bytes != NULL) {
 	ckfree(list1Ptr->bytes);
 	list1Ptr->bytes = NULL;
     }
 
-    list2Ptr = Tcl_NewStringObj("eeny meeny", -1);
+    list2Ptr = Tcl_NewStringObj("eeny meeny", TCL_NOSIZE);
     Tcl_ListObjLength(NULL, list2Ptr, &len);
     if (list2Ptr->bytes != NULL) {
 	ckfree(list2Ptr->bytes);
@@ -7154,7 +7154,7 @@ InterpCompiledVarResolver(
  	resVarInfo->vInfo.fetchProc = MyCompiledVarFetch;
  	resVarInfo->vInfo.deleteProc = MyCompiledVarFree;
  	resVarInfo->var = NULL;
- 	resVarInfo->nameObj = Tcl_NewStringObj(name, -1);
+ 	resVarInfo->nameObj = Tcl_NewStringObj(name, TCL_NOSIZE);
  	Tcl_IncrRefCount(resVarInfo->nameObj);
  	*rPtr = &resVarInfo->vInfo;
  	return TCL_OK;

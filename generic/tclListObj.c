@@ -1434,7 +1434,7 @@ TclLsetFlat(
 	    /* ...the index points outside the sublist. */
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("list index out of range", -1));
+			Tcl_NewStringObj("list index out of range", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET",
 			"BADINDEX", NULL);
 	    }
@@ -1612,7 +1612,7 @@ TclListObjSetElement(
 	if (listPtr->bytes == tclEmptyStringRep) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("list index out of range", -1));
+			Tcl_NewStringObj("list index out of range", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET",
 			"BADINDEX", NULL);
 	    }
@@ -1634,7 +1634,7 @@ TclListObjSetElement(
     if (index<0 || index>=elemCount) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("list index out of range", -1));
+		    Tcl_NewStringObj("list index out of range", TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET", "BADINDEX",
 		    NULL);
 	}

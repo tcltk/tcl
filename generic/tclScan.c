@@ -334,7 +334,7 @@ ValidateFormat(
 	mixedXPG:
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot mix \"%\" and \"%n$\" conversion specifiers",
-		    -1));
+		    TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES", NULL);
 	    goto error;
 	}
@@ -381,7 +381,7 @@ ValidateFormat(
 	    if (flags & SCAN_WIDTH) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"field width may not be specified in %c conversion",
-			-1));
+			TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", NULL);
 		goto error;
 	    }
@@ -394,9 +394,9 @@ ValidateFormat(
 	    invalidFieldSize:
 		buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 		errorMsg = Tcl_NewStringObj(
-			"field size modifier may not be specified in %", -1);
-		Tcl_AppendToObj(errorMsg, buf, -1);
-		Tcl_AppendToObj(errorMsg, " conversion", -1);
+			"field size modifier may not be specified in %", TCL_NOSIZE);
+		Tcl_AppendToObj(errorMsg, buf, TCL_NOSIZE);
+		Tcl_AppendToObj(errorMsg, " conversion", TCL_NOSIZE);
 		Tcl_SetObjResult(interp, errorMsg);
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", NULL);
 		goto error;
@@ -416,7 +416,7 @@ ValidateFormat(
 	case 'u':
 	    if (flags & SCAN_BIG) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"unsigned bignum scans are invalid", -1));
+			"unsigned bignum scans are invalid", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADUNSIGNED",NULL);
 		goto error;
 	    }
@@ -453,15 +453,15 @@ ValidateFormat(
 	    break;
 	badSet:
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched [ in format string", -1));
+		    "unmatched [ in format string", TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", NULL);
 	    goto error;
 	default:
 	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 	    errorMsg = Tcl_NewStringObj(
-		    "bad scan conversion character \"", -1);
-	    Tcl_AppendToObj(errorMsg, buf, -1);
-	    Tcl_AppendToObj(errorMsg, "\"", -1);
+		    "bad scan conversion character \"", TCL_NOSIZE);
+	    Tcl_AppendToObj(errorMsg, buf, TCL_NOSIZE);
+	    Tcl_AppendToObj(errorMsg, "\"", TCL_NOSIZE);
 	    Tcl_SetObjResult(interp, errorMsg);
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", NULL);
 	    goto error;
@@ -509,7 +509,7 @@ ValidateFormat(
 	if (nassign[i] > 1) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is assigned by multiple \"%n$\" conversion specifiers",
-		    -1));
+		    TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED", NULL);
 	    goto error;
 	} else if (!xpgSize && (nassign[i] == 0)) {
@@ -520,7 +520,7 @@ ValidateFormat(
 
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is not assigned by any conversion specifiers",
-		    -1));
+		    TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED", NULL);
 	    goto error;
 	}
@@ -532,12 +532,12 @@ ValidateFormat(
   badIndex:
     if (gotXpg) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"\"%n$\" argument index out of range", -1));
+		"\"%n$\" argument index out of range", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", NULL);
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"different numbers of variable names and field specifiers",
-		-1));
+		TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH", NULL);
     }
 
@@ -926,7 +926,7 @@ Tcl_ScanObjCmd(
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
 		    sprintf(buf, "%" TCL_LL_MODIFIER "u",
 			    (Tcl_WideUInt)wideValue);
-		    Tcl_SetStringObj(objPtr, buf, -1);
+		    Tcl_SetStringObj(objPtr, buf, TCL_NOSIZE);
 		} else {
 		    Tcl_SetWideIntObj(objPtr, wideValue);
 		}
@@ -940,7 +940,7 @@ Tcl_ScanObjCmd(
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
 		    sprintf(buf, "%lu", value);	/* INTL: ISO digit */
-		    Tcl_SetStringObj(objPtr, buf, -1);
+		    Tcl_SetStringObj(objPtr, buf, TCL_NOSIZE);
 		} else {
 		    Tcl_SetLongObj(objPtr, value);
 		}

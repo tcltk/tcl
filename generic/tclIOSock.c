@@ -52,7 +52,7 @@ TclSockGetPort(
 	 * Don't bother translating 'proto' to native.
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, string, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, string, TCL_NOSIZE, &ds);
 	sp = getservbyname(native, proto);		/* INTL: Native. */
 	Tcl_DStringFree(&ds);
 	if (sp != NULL) {
@@ -65,7 +65,7 @@ TclSockGetPort(
     }
     if (*portPtr > 0xFFFF) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"couldn't open socket: port number too high", -1));
+		"couldn't open socket: port number too high", TCL_NOSIZE));
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -157,7 +157,7 @@ TclCreateSocketAddress(
     int result, i;
 
     if (host != NULL) {
-	native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, host, TCL_NOSIZE, &ds);
     }
 
     /*

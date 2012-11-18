@@ -1035,7 +1035,7 @@ Tcl_UnregisterChannel(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "illegal recursive call to close through close-handler"
-                    " of channel", -1));
+                    " of channel", TCL_NOSIZE));
 	}
 	return TCL_ERROR;
     }
@@ -2328,7 +2328,7 @@ CheckForDeadChannel(
     Tcl_SetErrno(EINVAL);
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                "unable to access channel: invalid channel", -1));
+                "unable to access channel: invalid channel", TCL_NOSIZE));
     }
     return 1;
 }
@@ -2523,7 +2523,7 @@ FlushChannel(
 		if (interp != NULL && !TclChanCaughtErrorBypass(interp,
 			(Tcl_Channel) chanPtr)) {
 		    Tcl_SetObjResult(interp,
-			    Tcl_NewStringObj(Tcl_PosixError(interp), -1));
+			    Tcl_NewStringObj(Tcl_PosixError(interp), TCL_NOSIZE));
 		}
 
 		/*
@@ -3062,7 +3062,7 @@ Tcl_Close(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "illegal recursive call to close through close-handler"
-                    " of channel", -1));
+                    " of channel", TCL_NOSIZE));
 	}
 	return TCL_ERROR;
     }
@@ -3163,7 +3163,7 @@ Tcl_Close(
 	Tcl_SetErrno(stickyError);
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp,
-			     Tcl_NewStringObj(Tcl_PosixError(interp), -1));
+			     Tcl_NewStringObj(Tcl_PosixError(interp), TCL_NOSIZE));
 	}
 	flushcode = -1;
     }
@@ -3232,7 +3232,7 @@ Tcl_CloseEx(
 
     if (chanPtr != statePtr->topChanPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"half-close not applicable to stack of transformations", -1));
+		"half-close not applicable to stack of transformations", TCL_NOSIZE));
 	return TCL_ERROR;
     }
 
@@ -3265,7 +3265,7 @@ Tcl_CloseEx(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "illegal recursive call to close through close-handler"
-                    " of channel", -1));
+                    " of channel", TCL_NOSIZE));
 	}
 	return TCL_ERROR;
     }
@@ -5672,7 +5672,7 @@ Tcl_ReadChars(
     Tcl_Channel chan,		/* The channel to read. */
     Tcl_Obj *objPtr,		/* Input data is stored in this object. */
     int toRead,			/* Maximum number of characters to store, or
-				 * -1 to read all available data (up to EOF or
+				 * TCL_NOSIZE to read all available data (up to EOF or
 				 * when channel blocks). */
     int appendFlag)		/* If non-zero, data read from the channel
 				 * will be appended to the object. Otherwise,
@@ -6976,7 +6976,7 @@ Tcl_Seek(
  *	channel.
  *
  * Results:
- *	A nonnegative integer on success, -1 on failure. If failed, use
+ *	A nonnegative integer on success, TCL_NOSIZE on failure. If failed, use
  *	Tcl_GetErrno() to retrieve the POSIX error code for the error that
  *	occurred.
  *
@@ -7561,10 +7561,10 @@ Tcl_BadChannelOption(
         Tcl_Obj *errObj;
 
 	Tcl_DStringInit(&ds);
-	Tcl_DStringAppend(&ds, genericopt, -1);
+	Tcl_DStringAppend(&ds, genericopt, TCL_NOSIZE);
 	if (optionList && (*optionList)) {
 	    TclDStringAppendLiteral(&ds, " ");
-	    Tcl_DStringAppend(&ds, optionList, -1);
+	    Tcl_DStringAppend(&ds, optionList, TCL_NOSIZE);
 	}
 	if (Tcl_SplitList(interp, Tcl_DStringValue(&ds),
 		&argc, &argv) != TCL_OK) {
@@ -7858,7 +7858,7 @@ Tcl_SetChannelOption(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "unable to set channel options: background copy in"
-                    " progress", -1));
+                    " progress", TCL_NOSIZE));
 	}
 	return TCL_ERROR;
     }
@@ -7909,7 +7909,7 @@ Tcl_SetChannelOption(
 	} else if (interp) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "bad value for -buffering: must be one of"
-                    " full, line, or none", -1));
+                    " full, line, or none", TCL_NOSIZE));
             return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -7966,7 +7966,7 @@ Tcl_SetChannelOption(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                             "bad value for -eofchar: must be non-NUL ASCII"
-                            " character", -1));
+                            " character", TCL_NOSIZE));
 		}
 		ckfree(argv);
 		return TCL_ERROR;
@@ -7981,7 +7981,7 @@ Tcl_SetChannelOption(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -eofchar: should be a list of zero,"
-			" one, or two elements", -1));
+			" one, or two elements", TCL_NOSIZE));
 	    }
 	    ckfree(argv);
 	    return TCL_ERROR;
@@ -8015,7 +8015,7 @@ Tcl_SetChannelOption(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -translation: must be a one or two"
-			" element list", -1));
+			" element list", TCL_NOSIZE));
 	    }
 	    ckfree(argv);
 	    return TCL_ERROR;
@@ -8045,7 +8045,7 @@ Tcl_SetChannelOption(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "bad value for -translation: must be one of "
-                            "auto, binary, cr, lf, crlf, or platform", -1));
+                            "auto, binary, cr, lf, crlf, or platform", TCL_NOSIZE));
 		}
 		ckfree(argv);
 		return TCL_ERROR;
@@ -8095,7 +8095,7 @@ Tcl_SetChannelOption(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "bad value for -translation: must be one of "
-                            "auto, binary, cr, lf, crlf, or platform", -1));
+                            "auto, binary, cr, lf, crlf, or platform", TCL_NOSIZE));
 		}
 		ckfree(argv);
 		return TCL_ERROR;
@@ -10265,7 +10265,7 @@ Tcl_GetChannelNamesEx(
 	    && (pattern[2] == 'd'))) {
 	if ((Tcl_FindHashEntry(hTblPtr, pattern) != NULL)
 		&& (Tcl_ListObjAppendElement(interp, resultPtr,
-		Tcl_NewStringObj(pattern, -1)) != TCL_OK)) {
+		Tcl_NewStringObj(pattern, TCL_NOSIZE)) != TCL_OK)) {
 	    goto error;
 	}
 	goto done;
@@ -10292,7 +10292,7 @@ Tcl_GetChannelNamesEx(
 
 	if (((pattern == NULL) || Tcl_StringMatch(name, pattern)) &&
 		(Tcl_ListObjAppendElement(interp, resultPtr,
-			Tcl_NewStringObj(name, -1)) != TCL_OK)) {
+			Tcl_NewStringObj(name, TCL_NOSIZE)) != TCL_OK)) {
 	error:
 	    TclDecrRefCount(resultPtr);
 	    return TCL_ERROR;

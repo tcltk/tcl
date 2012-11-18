@@ -200,7 +200,7 @@ Tcl_RegExpExec(
      */
 
     Tcl_DStringInit(&ds);
-    ustr = Tcl_UtfToUniCharDString(text, -1, &ds);
+    ustr = Tcl_UtfToUniCharDString(text, TCL_NOSIZE, &ds);
     numChars = Tcl_DStringLength(&ds) / sizeof(Tcl_UniChar);
     result = RegExpExecUniChar(interp, re, ustr, numChars, -1 /* nmatches */,
 	    flags);
@@ -682,7 +682,7 @@ TclRegAbout(
     for (inf=infonames ; inf->bit != 0 ; inf++) {
 	if (regexpPtr->re.re_info & inf->bit) {
 	    Tcl_ListObjAppendElement(NULL, infoObj,
-		    Tcl_NewStringObj(inf->text, -1));
+		    Tcl_NewStringObj(inf->text, TCL_NOSIZE));
 	}
     }
     Tcl_ListObjAppendElement(NULL, resultObj, infoObj);

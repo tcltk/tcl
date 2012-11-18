@@ -366,7 +366,7 @@ ExecuteCallback(
 
     Tcl_IncrRefCount(command);
     res = Tcl_ListObjAppendElement(dataPtr->interp, command,
-	    Tcl_NewStringObj((char *) op, -1));
+	    Tcl_NewStringObj((char *) op, TCL_NOSIZE));
     if (res != TCL_OK) {
 	goto cleanup;
     }

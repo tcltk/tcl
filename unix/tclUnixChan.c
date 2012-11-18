@@ -699,7 +699,7 @@ TtySetOptionProc(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -handshake: must be one of"
-			" xonxoff, rtscts, dtrdsr or none", -1));
+			" xonxoff, rtscts, dtrdsr or none", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", NULL);
 	    }
@@ -722,7 +722,7 @@ TtySetOptionProc(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -xchar: should be a list of"
-			" two elements", -1));
+			" two elements", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", NULL);
 	    }
@@ -732,11 +732,11 @@ TtySetOptionProc(
 
 	GETIOSTATE(fsPtr->fd, &iostate);
 
-	Tcl_UtfToExternalDString(NULL, argv[0], -1, &ds);
+	Tcl_UtfToExternalDString(NULL, argv[0], TCL_NOSIZE, &ds);
 	iostate.c_cc[VSTART] = *(const cc_t *) Tcl_DStringValue(&ds);
 	TclDStringClear(&ds);
 
-	Tcl_UtfToExternalDString(NULL, argv[1], -1, &ds);
+	Tcl_UtfToExternalDString(NULL, argv[1], TCL_NOSIZE, &ds);
 	iostate.c_cc[VSTOP] = *(const cc_t *) Tcl_DStringValue(&ds);
 	Tcl_DStringFree(&ds);
 	ckfree(argv);
@@ -776,7 +776,7 @@ TtySetOptionProc(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -ttycontrol: should be a list of"
-			" signal,value pairs", -1));
+			" signal,value pairs", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", NULL);
 	    }

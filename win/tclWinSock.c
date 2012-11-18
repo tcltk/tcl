@@ -558,7 +558,7 @@ TclpHasSockets(
     }
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"sockets are not available on this system", -1));
+		"sockets are not available on this system", TCL_NOSIZE));
     }
     return TCL_ERROR;
 }
@@ -991,7 +991,7 @@ TcpClose2Proc(
     default:
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "Socket close2proc called bidirectionally", -1));
+		    "Socket close2proc called bidirectionally", TCL_NOSIZE));
 	}
 	return TCL_ERROR;
     }
@@ -1989,7 +1989,7 @@ TcpSetOptionProc(
     if (!SocketsEnabled()) {
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "winsock is not initialized", -1));
+		    "winsock is not initialized", TCL_NOSIZE));
 	}
 	return TCL_ERROR;
     }
@@ -2096,7 +2096,7 @@ TcpGetOptionProc(
     if (!SocketsEnabled()) {
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "winsock is not initialized", -1));
+		    "winsock is not initialized", TCL_NOSIZE));
 	}
 	return TCL_ERROR;
     }
@@ -2120,7 +2120,7 @@ TcpGetOptionProc(
 	}
 	if (err) {
 	    TclWinConvertError(err);
-	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
+	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), TCL_NOSIZE);
 	}
 	return TCL_OK;
     }
@@ -2644,7 +2644,7 @@ InitializeHostName(
 	 * Convert string from native to UTF then change to lowercase.
 	 */
 
-	Tcl_UtfToLower(Tcl_WinTCharToUtf(tbuf, -1, &ds));
+	Tcl_UtfToLower(Tcl_WinTCharToUtf(tbuf, TCL_NOSIZE, &ds));
 
     } else {
 	Tcl_DStringInit(&ds);
@@ -2660,7 +2660,7 @@ InitializeHostName(
 	    Tcl_DStringSetLength(&inDs, 256);
 	    if (gethostname(Tcl_DStringValue(&inDs),
 		    Tcl_DStringLength(&inDs)) == 0) {
-		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), -1,
+		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), TCL_NOSIZE,
 			&ds);
 	    }
 	    Tcl_DStringFree(&inDs);

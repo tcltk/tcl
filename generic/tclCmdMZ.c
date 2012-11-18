@@ -228,7 +228,7 @@ Tcl_RegexpObjCmd(
 
     if (doinline && ((objc - 2) != 0)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"regexp match variables not allowed when using -inline", -1));
+		"regexp match variables not allowed when using -inline", TCL_NOSIZE));
 	goto optionError;
     }
 
@@ -1578,7 +1578,7 @@ StringIsCmd(
 	    goto str_is_done;
 	}
 	end = string1 + length1;
-	if (TclParseNumber(NULL, objPtr, NULL, NULL, -1,
+	if (TclParseNumber(NULL, objPtr, NULL, NULL, TCL_NOSIZE,
 		(const char **) &stop, 0) != TCL_OK) {
 	    result = 0;
 	    failat = 0;
@@ -1615,7 +1615,7 @@ StringIsCmd(
 	    goto str_is_done;
 	}
 	end = string1 + length1;
-	if (TclParseNumber(NULL, objPtr, NULL, NULL, -1,
+	if (TclParseNumber(NULL, objPtr, NULL, NULL, TCL_NOSIZE,
 		(const char **) &stop, TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
 	    if (stop == end) {
 		/*
@@ -1667,7 +1667,7 @@ StringIsCmd(
 	    break;
 	}
 	end = string1 + length1;
-	if (TclParseNumber(NULL, objPtr, NULL, NULL, -1,
+	if (TclParseNumber(NULL, objPtr, NULL, NULL, TCL_NOSIZE,
 		(const char **) &stop, TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
 	    if (stop == end) {
 		/*
@@ -1927,7 +1927,7 @@ StringMapCmd(
 	     */
 
 	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("char map list unbalanced", -1));
+		    Tcl_NewStringObj("char map list unbalanced", TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "MAP",
 		    "UNBALANCED", NULL);
 	    return TCL_ERROR;
@@ -2980,7 +2980,7 @@ StringLowerCmd(
 	length2 = Tcl_UtfToLower(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_NOSIZE);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3065,7 +3065,7 @@ StringUpperCmd(
 	length2 = Tcl_UtfToUpper(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_NOSIZE);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3150,7 +3150,7 @@ StringTitleCmd(
 	length2 = Tcl_UtfToTitle(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_NOSIZE);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3650,7 +3650,7 @@ TclNRSwitchObjCmd(
     if (objc % 2) {
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"extra switch pattern with no body", -1));
+		"extra switch pattern with no body", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH", "BADARM",
 		NULL);
 
@@ -3668,7 +3668,7 @@ TclNRSwitchObjCmd(
 		    Tcl_AppendToObj(Tcl_GetObjResult(interp),
 			    ", this may be due to a comment incorrectly"
 			    " placed outside of a switch body - see the"
-			    " \"switch\" documentation", -1);
+			    " \"switch\" documentation", TCL_NOSIZE);
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			    "BADARM", "COMMENT?", NULL);
 		    break;
@@ -4014,7 +4014,7 @@ Tcl_ThrowObjCmd(
 	return TCL_ERROR;
     } else if (len < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"type must be non-empty list", -1));
+		"type must be non-empty list", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "THROW", "BADEXCEPTION",
 		NULL);
 	return TCL_ERROR;
@@ -4199,7 +4199,7 @@ TclNRTryObjCmd(
 	case TryFinally:	/* finally script */
 	    if (i < objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"finally clause must be last", -1));
+			"finally clause must be last", TCL_NOSIZE));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "FINALLY",
 			"NONTERMINAL", NULL);
@@ -4207,7 +4207,7 @@ TclNRTryObjCmd(
 	    } else if (i == objc-1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong # args to finally clause: must be"
-			" \"... finally script\"", -1));
+			" \"... finally script\"", TCL_NOSIZE));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "FINALLY",
 			"ARGUMENT", NULL);
@@ -4220,7 +4220,7 @@ TclNRTryObjCmd(
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong # args to on clause: must be \"... on code"
-			" variableList script\"", -1));
+			" variableList script\"", TCL_NOSIZE));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "ON",
 			"ARGUMENT", NULL);
@@ -4239,7 +4239,7 @@ TclNRTryObjCmd(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong # args to trap clause: "
 			"must be \"... trap pattern variableList script\"",
-			-1));
+			TCL_NOSIZE));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",
 			"ARGUMENT", NULL);
@@ -4281,7 +4281,7 @@ TclNRTryObjCmd(
     }
     if (bodyShared) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"last non-finally clause must not have a body of \"-\"", -1));
+		"last non-finally clause must not have a body of \"-\"", TCL_NOSIZE));
 	Tcl_DecrRefCount(handlersObj);
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "BADFALLTHROUGH",
 		NULL);

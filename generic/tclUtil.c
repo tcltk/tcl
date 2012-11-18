@@ -670,7 +670,7 @@ TclFindElement(
 	if (openBraces != 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"unmatched open brace in list", -1));
+			"unmatched open brace in list", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "BRACE",
 			NULL);
 	    }
@@ -678,7 +678,7 @@ TclFindElement(
 	} else if (inQuotes) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"unmatched open quote in list", -1));
+			"unmatched open quote in list", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "QUOTE",
 			NULL);
 	    }
@@ -825,7 +825,7 @@ Tcl_SplitList(
 	    ckfree(argv);
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"internal error in Tcl_SplitList", -1));
+			"internal error in Tcl_SplitList", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
 			NULL);
 	    }
@@ -2523,7 +2523,7 @@ Tcl_DStringInit(
  *	The return value is a pointer to the dynamic string's new value.
  *
  * Side effects:
- *	Length bytes from "bytes" (or all of "bytes" if length is less than
+ *	Length bytes from "bytes" (or all of "bytes" if length is TCL_NOSIZE than
  *	zero) are added to the current value of the string. Memory gets
  *	reallocated if needed to accomodate the string's new size.
  *
@@ -2541,7 +2541,7 @@ Tcl_DStringAppend(
 {
     int newSize;
 
-    if (length < 0) {
+    if (length == TCL_NOSIZE) {
 	length = strlen(bytes);
     }
     newSize = length + dsPtr->length;
@@ -4270,7 +4270,7 @@ TclReToGlob(
 
   invalidGlob:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, NULL);
     }
     Tcl_DStringFree(dsPtr);

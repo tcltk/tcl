@@ -372,14 +372,14 @@ static void		SrcExitProc(ClientData clientData);
 	do {								\
 	    if ((i) != NULL) {						\
 		Tcl_SetChannelErrorInterp((i),				\
-			Tcl_NewStringObj((p)->base.msgStr, -1));	\
+			Tcl_NewStringObj((p)->base.msgStr, TCL_NOSIZE));	\
 	    }								\
 	    FreeReceivedError(p);					\
 	} while (0)
 #define PassReceivedError(c,p) \
 	do {								\
 	    Tcl_SetChannelError((c),					\
-		    Tcl_NewStringObj((p)->base.msgStr, -1));		\
+		    Tcl_NewStringObj((p)->base.msgStr, TCL_NOSIZE));		\
 	    FreeReceivedError(p);					\
 	} while (0)
 #define ForwardSetStaticError(p,emsg) \
@@ -403,7 +403,7 @@ static void		DeleteThreadReflectedTransformMap(
 #endif /* TCL_THREADS */
 
 #define SetChannelErrorStr(c,msgStr) \
-	Tcl_SetChannelError((c), Tcl_NewStringObj((msgStr), -1))
+	Tcl_SetChannelError((c), Tcl_NewStringObj((msgStr), TCL_NOSIZE))
 
 static Tcl_Obj *	MarshallError(Tcl_Interp *interp);
 static void		UnmarshallErrorResult(Tcl_Interp *interp,
@@ -710,7 +710,7 @@ TclChanPushObjCmd(
      */
 
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    Tcl_GetChannelName(rtPtr->chan), -1));
+	    Tcl_GetChannelName(rtPtr->chan), TCL_NOSIZE));
     return TCL_OK;
 
   error:
@@ -1721,7 +1721,7 @@ DecodeEventMask(
 	break;
     }
 
-    evObj = Tcl_NewStringObj(eventStr, -1);
+    evObj = Tcl_NewStringObj(eventStr, TCL_NOSIZE);
     Tcl_IncrRefCount(evObj);
     return evObj;
 }
@@ -1962,7 +1962,7 @@ InvokeTclMethod(
 	 */
 
 	if (resultObjPtr != NULL) {
-	    resObj = Tcl_NewStringObj(msg_dstlost,-1);
+	    resObj = Tcl_NewStringObj(msg_dstlost, TCL_NOSIZE);
 	    *resultObjPtr = resObj;
 	    Tcl_IncrRefCount(resObj);
 	}
@@ -1981,7 +1981,7 @@ InvokeTclMethod(
      * before the channel id.
      */
 
-    methObj = Tcl_NewStringObj(method, -1);
+    methObj = Tcl_NewStringObj(method, TCL_NOSIZE);
     Tcl_IncrRefCount(methObj);
     rtPtr->argv[rtPtr->argc - 2] = methObj;
 

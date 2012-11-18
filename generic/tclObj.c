@@ -930,7 +930,7 @@ Tcl_AppendAllObjTypes(
     for (hPtr = Tcl_FirstHashEntry(&typeTable, &search);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	Tcl_ListObjAppendElement(NULL, objPtr,
-		Tcl_NewStringObj(Tcl_GetHashKey(&typeTable, hPtr), -1));
+		Tcl_NewStringObj(Tcl_GetHashKey(&typeTable, hPtr), TCL_NOSIZE));
     }
     Tcl_MutexUnlock(&tableMutex);
     return TCL_OK;
@@ -1904,7 +1904,7 @@ Tcl_GetBooleanFromObj(
 	}
 #endif
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
-	    TclParseNumber(interp, objPtr, "boolean value", NULL,-1,NULL,0)));
+	    TclParseNumber(interp, objPtr, "boolean value", NULL, TCL_NOSIZE,NULL,0)));
     return TCL_ERROR;
 }
 
@@ -1975,7 +1975,7 @@ SetBooleanFromAny(
 
 	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
 	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
-	Tcl_AppendToObj(msg, "\"", -1);
+	Tcl_AppendToObj(msg, "\"", TCL_NOSIZE);
 	Tcl_SetObjResult(interp, msg);
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", NULL);
     }
@@ -2264,7 +2264,7 @@ Tcl_GetDoubleFromObj(
 	    if (TclIsNaN(objPtr->internalRep.doubleValue)) {
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "floating point value is Not a Number", -1));
+			    "floating point value is Not a Number", TCL_NOSIZE));
                     Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
                             NULL);
 		}
@@ -2319,7 +2319,7 @@ SetDoubleFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
-    return TclParseNumber(interp, objPtr, "floating-point number", NULL, -1,
+    return TclParseNumber(interp, objPtr, "floating-point number", NULL, TCL_NOSIZE,
 	    NULL, 0);
 }
 
@@ -2486,7 +2486,7 @@ Tcl_GetIntFromObj(
 	if (interp != NULL) {
 	    const char *s =
 		    "integer value too large to represent as non-long integer";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}
 	return TCL_ERROR;
@@ -2804,14 +2804,14 @@ Tcl_GetLongFromObj(
 #endif
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
-		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
+		Tcl_Obj *msg = Tcl_NewStringObj(s, TCL_NOSIZE);
 
 		Tcl_SetObjResult(interp, msg);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	    }
 	    return TCL_ERROR;
 	}
-    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, TCL_NOSIZE, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
@@ -3101,14 +3101,14 @@ Tcl_GetWideIntFromObj(
 	    }
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
-		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
+		Tcl_Obj *msg = Tcl_NewStringObj(s, TCL_NOSIZE);
 
 		Tcl_SetObjResult(interp, msg);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	    }
 	    return TCL_ERROR;
 	}
-    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, TCL_NOSIZE, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
@@ -3402,7 +3402,7 @@ GetBignumFromObj(
 	    }
 	    return TCL_ERROR;
 	}
-    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, TCL_NOSIZE, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
@@ -3655,7 +3655,7 @@ TclGetNumberFromObj(
 	    return TCL_OK;
 	}
     } while (TCL_OK ==
-	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
+	    TclParseNumber(interp, objPtr, "number", NULL, TCL_NOSIZE, NULL, 0));
     return TCL_ERROR;
 }
 
@@ -4491,12 +4491,12 @@ Tcl_RepresentationCmd(
     }
 
     if (objv[1]->bytes) {
-        Tcl_AppendToObj(descObj, ", string representation \"", -1);
+        Tcl_AppendToObj(descObj, ", string representation \"", TCL_NOSIZE);
 	Tcl_AppendLimitedToObj(descObj, objv[1]->bytes, objv[1]->length,
                 16, "...");
-	Tcl_AppendToObj(descObj, "\"", -1);
+	Tcl_AppendToObj(descObj, "\"", TCL_NOSIZE);
     } else {
-	Tcl_AppendToObj(descObj, ", no string representation", -1);
+	Tcl_AppendToObj(descObj, ", no string representation", TCL_NOSIZE);
     }
 
     Tcl_SetObjResult(interp, descObj);

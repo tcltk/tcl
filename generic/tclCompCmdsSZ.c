@@ -1879,9 +1879,9 @@ PrintJumptableInfo(
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_NOSIZE);
 	    if (i%4==0) {
-		Tcl_AppendToObj(appendObj, "\n\t\t", -1);
+		Tcl_AppendToObj(appendObj, "\n\t\t", TCL_NOSIZE);
 	    }
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %d",
@@ -3308,7 +3308,7 @@ CompileAssociativeBinaryOpCmd(
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
     if (parsePtr->numWords <= 2) {
-	PushLiteral(envPtr, identity, -1);
+	PushLiteral(envPtr, identity, TCL_NOSIZE);
 	words++;
     }
     if (words > 3) {

@@ -2503,19 +2503,19 @@ TclDateerror(
     const char *s)
 {
     Tcl_Obj* t;
-    Tcl_AppendToObj(infoPtr->messages, infoPtr->separatrix, -1);
-    Tcl_AppendToObj(infoPtr->messages, s, -1);
-    Tcl_AppendToObj(infoPtr->messages, " (characters ", -1);
+    Tcl_AppendToObj(infoPtr->messages, infoPtr->separatrix, TCL_NOSIZE);
+    Tcl_AppendToObj(infoPtr->messages, s, TCL_NOSIZE);
+    Tcl_AppendToObj(infoPtr->messages, " (characters ", TCL_NOSIZE);
     t = Tcl_NewIntObj(location->first_column);
     Tcl_IncrRefCount(t);
     Tcl_AppendObjToObj(infoPtr->messages, t);
     Tcl_DecrRefCount(t);
-    Tcl_AppendToObj(infoPtr->messages, "-", -1);
+    Tcl_AppendToObj(infoPtr->messages, "-", TCL_NOSIZE);
     t = Tcl_NewIntObj(location->last_column);
     Tcl_IncrRefCount(t);
     Tcl_AppendObjToObj(infoPtr->messages, t);
     Tcl_DecrRefCount(t);
-    Tcl_AppendToObj(infoPtr->messages, ")", -1);
+    Tcl_AppendToObj(infoPtr->messages, ")", TCL_NOSIZE);
     infoPtr->separatrix = "\n";
 }
 
@@ -2803,7 +2803,7 @@ TclClockOldscanObjCmd(
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "PARSE", NULL);
 	return TCL_ERROR;
     } else if (status == 2) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("memory exhausted", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("memory exhausted", TCL_NOSIZE));
 	Tcl_DecrRefCount(dateInfo.messages);
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	return TCL_ERROR;
@@ -2811,7 +2811,7 @@ TclClockOldscanObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("Unknown status returned "
 						  "from date parser. Please "
 						  "report this error as a "
-						  "bug in Tcl.", -1));
+						  "bug in Tcl.", TCL_NOSIZE));
 	Tcl_DecrRefCount(dateInfo.messages);
 	Tcl_SetErrorCode(interp, "TCL", "BUG", NULL);
 	return TCL_ERROR;
@@ -2820,31 +2820,31 @@ TclClockOldscanObjCmd(
 
     if (yyHaveDate > 1) {
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one date in string", -1));
+		Tcl_NewStringObj("more than one date in string", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
 	return TCL_ERROR;
     }
     if (yyHaveTime > 1) {
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one time of day in string", -1));
+		Tcl_NewStringObj("more than one time of day in string", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
 	return TCL_ERROR;
     }
     if (yyHaveZone > 1) {
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one time zone in string", -1));
+		Tcl_NewStringObj("more than one time zone in string", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
 	return TCL_ERROR;
     }
     if (yyHaveDay > 1) {
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one weekday in string", -1));
+		Tcl_NewStringObj("more than one weekday in string", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
 	return TCL_ERROR;
     }
     if (yyHaveOrdinalMonth > 1) {
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one ordinal month in string", -1));
+		Tcl_NewStringObj("more than one ordinal month in string", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
 	return TCL_ERROR;
     }

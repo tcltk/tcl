@@ -467,7 +467,7 @@ Tcl_EncodingObjCmd(
 	}
 	if (objc == 2) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    Tcl_GetEncodingName(NULL), -1));
+		    Tcl_GetEncodingName(NULL), TCL_NOSIZE));
 	} else {
 	    return Tcl_SetSystemEncoding(interp, TclGetString(objv[2]));
 	}
@@ -924,9 +924,9 @@ TclMakeFileCommandSafe(
 	    const char *oldName, *newName;
 
 	    Tcl_DStringSetLength(&oldBuf, 13);
-	    oldName = Tcl_DStringAppend(&oldBuf, unsafeInfo[i].cmdName, -1);
+	    oldName = Tcl_DStringAppend(&oldBuf, unsafeInfo[i].cmdName, TCL_NOSIZE);
 	    Tcl_DStringSetLength(&newBuf, 9);
-	    newName = Tcl_DStringAppend(&newBuf, unsafeInfo[i].cmdName, -1);
+	    newName = Tcl_DStringAppend(&newBuf, unsafeInfo[i].cmdName, TCL_NOSIZE);
 	    if (TclRenameCommand(interp, oldName, "___tmp") != TCL_OK
 		    || Tcl_HideCommand(interp, "___tmp", newName) != TCL_OK) {
 		Tcl_Panic("problem making 'file %s' safe: %s",
@@ -1234,7 +1234,7 @@ FileAttrTypeCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    GetTypeFromMode((unsigned short) buf.st_mode), -1));
+	    GetTypeFromMode((unsigned short) buf.st_mode), TCL_NOSIZE));
     return TCL_OK;
 }
 
@@ -1713,7 +1713,7 @@ PathFilesystemCmd(
     }
     fsInfo = Tcl_FSFileSystemInfo(objv[1]);
     if (fsInfo == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		Tcl_GetString(objv[1]), NULL);
 	return TCL_ERROR;
@@ -1965,7 +1965,7 @@ FilesystemSeparatorCmd(
 
 	if (separatorObj == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unrecognised path", -1));
+		    "unrecognised path", TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		    Tcl_GetString(objv[1]), NULL);
 	    return TCL_ERROR;
@@ -2163,7 +2163,7 @@ StoreStatData(
     STORE_ARY("ctime",	Tcl_NewLongObj((long)statPtr->st_ctime));
     mode = (unsigned short) statPtr->st_mode;
     STORE_ARY("mode",	Tcl_NewIntObj(mode));
-    STORE_ARY("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+    STORE_ARY("type",	Tcl_NewStringObj(GetTypeFromMode(mode), TCL_NOSIZE));
 #undef STORE_ARY
 
     return TCL_OK;

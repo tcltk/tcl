@@ -254,7 +254,7 @@ TclVarHashCreateVar(
     Tcl_Obj *keyPtr;
     Var *varPtr;
 
-    keyPtr = Tcl_NewStringObj(key, -1);
+    keyPtr = Tcl_NewStringObj(key, TCL_NOSIZE);
     Tcl_IncrRefCount(keyPtr);
     varPtr = VarHashCreateVar(tablePtr, keyPtr, newPtr);
     Tcl_DecrRefCount(keyPtr);
@@ -386,7 +386,7 @@ TclLookupVar(
     Tcl_Obj *part1Ptr;
     Var *varPtr;
 
-    part1Ptr = Tcl_NewStringObj(part1, -1);
+    part1Ptr = Tcl_NewStringObj(part1, TCL_NOSIZE);
     Tcl_IncrRefCount(part1Ptr);
 
     varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, msg,
@@ -464,7 +464,7 @@ TclObjLookupVar(
     Var *resPtr;
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_NOSIZE);
 	Tcl_IncrRefCount(part2Ptr);
     } else {
 	part2Ptr = NULL;
@@ -619,7 +619,7 @@ TclObjLookupVarEx(
 	    }
 	    part2 = newPart2 = part1Ptr->internalRep.twoPtrValue.ptr2;
 	    if (newPart2) {
-		part2Ptr = Tcl_NewStringObj(newPart2, -1);
+		part2Ptr = Tcl_NewStringObj(newPart2, TCL_NOSIZE);
 		Tcl_IncrRefCount(part2Ptr);
 	    }
 	    part1Ptr = part1Ptr->internalRep.twoPtrValue.ptr1;
@@ -665,7 +665,7 @@ TclObjLookupVarEx(
 		memcpy(newPart2, part2, (unsigned) len2);
 		*(newPart2+len2) = '\0';
 		part2 = newPart2;
-		part2Ptr = Tcl_NewStringObj(newPart2, -1);
+		part2Ptr = Tcl_NewStringObj(newPart2, TCL_NOSIZE);
 		Tcl_IncrRefCount(part2Ptr);
 
 		/*
@@ -981,7 +981,7 @@ TclLookupSimpleVar(
 		    return NULL;
 		}
 		if (tail != varName) {
-		    tailPtr = Tcl_NewStringObj(tail, -1);
+		    tailPtr = Tcl_NewStringObj(tail, TCL_NOSIZE);
 		} else {
 		    tailPtr = varNamePtr;
 		}
@@ -1211,7 +1211,7 @@ Tcl_GetVar(
 {
     Tcl_Obj *varNamePtr, *resultPtr;
 
-    varNamePtr = Tcl_NewStringObj(varName, -1);
+    varNamePtr = Tcl_NewStringObj(varName, TCL_NOSIZE);
     Tcl_IncrRefCount(varNamePtr);
     resultPtr = Tcl_ObjGetVar2(interp, varNamePtr, NULL, flags);
     TclDecrRefCount(varNamePtr);
@@ -1259,10 +1259,10 @@ Tcl_GetVar2(
 {
     Tcl_Obj *resultPtr, *part1Ptr, *part2Ptr;
 
-    part1Ptr = Tcl_NewStringObj(part1, -1);
+    part1Ptr = Tcl_NewStringObj(part1, TCL_NOSIZE);
     Tcl_IncrRefCount(part1Ptr);
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_NOSIZE);
 	Tcl_IncrRefCount(part2Ptr);
     } else {
 	part2Ptr = NULL;
@@ -1316,10 +1316,10 @@ Tcl_GetVar2Ex(
 {
     Tcl_Obj *part1Ptr, *part2Ptr, *resPtr;
 
-    part1Ptr = Tcl_NewStringObj(part1, -1);
+    part1Ptr = Tcl_NewStringObj(part1, TCL_NOSIZE);
     Tcl_IncrRefCount(part1Ptr);
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_NOSIZE);
 	Tcl_IncrRefCount(part2Ptr);
     } else {
 	part2Ptr = NULL;
@@ -1562,9 +1562,9 @@ Tcl_SetVar(
 {
     Tcl_Obj *valuePtr, *varNamePtr, *varValuePtr;
 
-    varNamePtr = Tcl_NewStringObj(varName, -1);
+    varNamePtr = Tcl_NewStringObj(varName, TCL_NOSIZE);
     Tcl_IncrRefCount(varNamePtr);
-    valuePtr = Tcl_NewStringObj(newValue, -1);
+    valuePtr = Tcl_NewStringObj(newValue, TCL_NOSIZE);
     Tcl_IncrRefCount(valuePtr);
 
     varValuePtr = Tcl_ObjSetVar2(interp, varNamePtr, NULL, valuePtr, flags);
@@ -1621,15 +1621,15 @@ Tcl_SetVar2(
     Tcl_Obj *valuePtr, *part1Ptr, *part2Ptr;
     Tcl_Obj *varValuePtr;
 
-    part1Ptr = Tcl_NewStringObj(part1, -1);
+    part1Ptr = Tcl_NewStringObj(part1, TCL_NOSIZE);
     Tcl_IncrRefCount(part1Ptr);
     if (part2 != NULL) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_NOSIZE);
 	Tcl_IncrRefCount(part2Ptr);
     } else {
 	part2Ptr = NULL;
     }
-    valuePtr = Tcl_NewStringObj(newValue, -1);
+    valuePtr = Tcl_NewStringObj(newValue, TCL_NOSIZE);
     Tcl_IncrRefCount(valuePtr);
 
     varValuePtr = Tcl_ObjSetVar2(interp, part1Ptr, part2Ptr, valuePtr, flags);
@@ -1699,10 +1699,10 @@ Tcl_SetVar2Ex(
 {
     Tcl_Obj *part1Ptr, *part2Ptr, *resPtr;
 
-    part1Ptr = Tcl_NewStringObj(part1, -1);
+    part1Ptr = Tcl_NewStringObj(part1, TCL_NOSIZE);
     Tcl_IncrRefCount(part1Ptr);
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_NOSIZE);
 	Tcl_IncrRefCount(part2Ptr);
     } else {
 	part2Ptr = NULL;
@@ -2053,7 +2053,7 @@ TclIncrObjVar2(
 	    1, 1, &arrayPtr);
     if (varPtr == NULL) {
 	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
+		"\n    (reading value of variable to increment)", TCL_NOSIZE);
 	return NULL;
     }
     return TclPtrIncrObjVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
@@ -2173,7 +2173,7 @@ Tcl_UnsetVar(
     int result;
     Tcl_Obj *varNamePtr;
 
-    varNamePtr = Tcl_NewStringObj(varName, -1);
+    varNamePtr = Tcl_NewStringObj(varName, TCL_NOSIZE);
     Tcl_IncrRefCount(varNamePtr);
 
     /*
@@ -2221,10 +2221,10 @@ Tcl_UnsetVar2(
     int result;
     Tcl_Obj *part1Ptr, *part2Ptr = NULL;
 
-    part1Ptr = Tcl_NewStringObj(part1, -1);
+    part1Ptr = Tcl_NewStringObj(part1, TCL_NOSIZE);
     Tcl_IncrRefCount(part1Ptr);
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_NOSIZE);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -2934,7 +2934,7 @@ TclArraySet(
 	}
 	if (elemLen & 1) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "list must have an even number of elements", -1));
+		    "list must have an even number of elements", TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "FORMAT", NULL);
 	    return TCL_ERROR;
 	}
@@ -4030,10 +4030,10 @@ ArrayStatsCmd(
     stats = Tcl_HashStats((Tcl_HashTable *) varPtr->value.tablePtr);
     if (stats == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"error reading array statistics", -1));
+		"error reading array statistics", TCL_NOSIZE));
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, TCL_NOSIZE));
     ckfree(stats);
     return TCL_OK;
 }
@@ -4367,7 +4367,7 @@ TclPtrMakeUpvar(
     int result;
 
     if (myName) {
-	myNamePtr = Tcl_NewStringObj(myName, -1);
+	myNamePtr = Tcl_NewStringObj(myName, TCL_NOSIZE);
 	Tcl_IncrRefCount(myNamePtr);
     } else {
 	myNamePtr = NULL;
@@ -4451,7 +4451,7 @@ TclPtrObjMakeUpvar(
 
     if (varPtr == otherPtr) {
 	Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_NewStringObj(
-		"can't upvar from variable to itself", -1));
+		"can't upvar from variable to itself", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "UPVAR", "SELF", NULL);
 	return TCL_ERROR;
     }
@@ -4539,9 +4539,9 @@ Tcl_UpVar(
 	return TCL_ERROR;
     }
 
-    varNamePtr = Tcl_NewStringObj(varName, -1);
+    varNamePtr = Tcl_NewStringObj(varName, TCL_NOSIZE);
     Tcl_IncrRefCount(varNamePtr);
-    localNamePtr = Tcl_NewStringObj(localNameStr, -1);
+    localNamePtr = Tcl_NewStringObj(localNameStr, TCL_NOSIZE);
     Tcl_IncrRefCount(localNamePtr);
 
     result = ObjMakeUpvar(interp, framePtr, varNamePtr, NULL, 0,
@@ -4593,9 +4593,9 @@ Tcl_UpVar2(
 	return TCL_ERROR;
     }
 
-    part1Ptr = Tcl_NewStringObj(part1, -1);
+    part1Ptr = Tcl_NewStringObj(part1, TCL_NOSIZE);
     Tcl_IncrRefCount(part1Ptr);
-    localNamePtr = Tcl_NewStringObj(localNameStr, -1);
+    localNamePtr = Tcl_NewStringObj(localNameStr, TCL_NOSIZE);
     Tcl_IncrRefCount(localNamePtr);
 
     result = ObjMakeUpvar(interp, framePtr, part1Ptr, part2, 0,
@@ -4648,7 +4648,7 @@ Tcl_GetVariableFullName(
 
     nsPtr = TclGetVarNsPtr(varPtr);
     if (nsPtr) {
-	Tcl_AppendToObj(objPtr, nsPtr->fullName, -1);
+	Tcl_AppendToObj(objPtr, nsPtr->fullName, TCL_NOSIZE);
 	if (nsPtr != iPtr->globalNsPtr) {
 	    Tcl_AppendToObj(objPtr, "::", 2);
 	}
@@ -4733,7 +4733,7 @@ Tcl_GlobalObjCmd(
 	if (tail == varName) {
 	    tailPtr = objPtr;
 	} else {
-	    tailPtr = Tcl_NewStringObj(tail, -1);
+	    tailPtr = Tcl_NewStringObj(tail, TCL_NOSIZE);
 	    Tcl_IncrRefCount(tailPtr);
 	}
 
@@ -4884,7 +4884,7 @@ Tcl_VariableObjCmd(
 	    if (tail == varName) {
 		tailPtr = varNamePtr;
 	    } else {
-		tailPtr = Tcl_NewStringObj(tail, -1);
+		tailPtr = Tcl_NewStringObj(tail, TCL_NOSIZE);
 		Tcl_IncrRefCount(tailPtr);
 	    }
 
@@ -5509,10 +5509,10 @@ TclVarErrMsg(
 {
     Tcl_Obj *part1Ptr = NULL, *part2Ptr = NULL;
 
-    part1Ptr = Tcl_NewStringObj(part1, -1);
+    part1Ptr = Tcl_NewStringObj(part1, TCL_NOSIZE);
     Tcl_IncrRefCount(part1Ptr);
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_NOSIZE);
 	Tcl_IncrRefCount(part2Ptr);
     } else {
 	part2 = NULL;
@@ -5785,7 +5785,7 @@ Tcl_FindNamespaceVar(
 				 * and TCL_NAMESPACE_ONLY are given,
 				 * TCL_GLOBAL_ONLY is ignored. */
 {
-    Tcl_Obj *namePtr = Tcl_NewStringObj(name, -1);
+    Tcl_Obj *namePtr = Tcl_NewStringObj(name, TCL_NOSIZE);
     Tcl_Var var;
 
     Tcl_IncrRefCount(namePtr);
@@ -5882,7 +5882,7 @@ ObjFindNamespaceVar(
 
     varPtr = NULL;
     if (simpleName != name) {
-	simpleNamePtr = Tcl_NewStringObj(simpleName, -1);
+	simpleNamePtr = Tcl_NewStringObj(simpleName, TCL_NOSIZE);
 	Tcl_IncrRefCount(simpleNamePtr);
     } else {
 	simpleNamePtr = namePtr;
@@ -5976,7 +5976,7 @@ TclInfoVarsCmd(
 	    if (simplePattern == pattern) {
 		simplePatternPtr = objv[1];
 	    } else {
-		simplePatternPtr = Tcl_NewStringObj(simplePattern, -1);
+		simplePatternPtr = Tcl_NewStringObj(simplePattern, TCL_NOSIZE);
 	    }
 	    Tcl_IncrRefCount(simplePatternPtr);
 	}
@@ -6161,7 +6161,7 @@ TclInfoGlobalsCmd(
 	if (pattern == TclGetString(objv[1])) {
 	    patternPtr = objv[1];
 	} else {
-	    patternPtr = Tcl_NewStringObj(pattern, -1);
+	    patternPtr = Tcl_NewStringObj(pattern, TCL_NOSIZE);
 	}
 	Tcl_IncrRefCount(patternPtr);
 

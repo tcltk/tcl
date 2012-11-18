@@ -287,7 +287,7 @@ AppendEnvironment(
     }
 
     if (buf[0] != '\0') {
-	objPtr = Tcl_NewStringObj(buf, -1);
+	objPtr = Tcl_NewStringObj(buf, TCL_NOSIZE);
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 
 	TclWinNoBackslash(buf);
@@ -311,7 +311,7 @@ AppendEnvironment(
 	    (void) Tcl_JoinPath(pathc, pathv, &ds);
 	    objPtr = TclDStringToObj(&ds);
 	} else {
-	    objPtr = Tcl_NewStringObj(buf, -1);
+	    objPtr = Tcl_NewStringObj(buf, TCL_NOSIZE);
 	}
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	ckfree(pathv);
@@ -587,11 +587,11 @@ TclpSetVariables(
     if (ptr == NULL) {
 	ptr = Tcl_GetVar2(interp, "env", "HOMEDRIVE", TCL_GLOBAL_ONLY);
 	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, -1);
+	    Tcl_DStringAppend(&ds, ptr, TCL_NOSIZE);
 	}
 	ptr = Tcl_GetVar2(interp, "env", "HOMEPATH", TCL_GLOBAL_ONLY);
 	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, -1);
+	    Tcl_DStringAppend(&ds, ptr, TCL_NOSIZE);
 	}
 	if (Tcl_DStringLength(&ds) > 0) {
 	    Tcl_SetVar2(interp, "env", "HOME", Tcl_DStringValue(&ds),
@@ -677,7 +677,7 @@ TclpFindVariable(
 	 * after the equal sign.
 	 */
 
-	envUpper = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	envUpper = Tcl_ExternalToUtfDString(NULL, env, TCL_NOSIZE, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;

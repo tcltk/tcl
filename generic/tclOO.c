@@ -359,14 +359,14 @@ InitFoundation(
     Tcl_DStringInit(&buffer);
     for (i=0 ; defineCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::define::");
-	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
+	Tcl_DStringAppend(&buffer, defineCmds[i].name, TCL_NOSIZE);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
     for (i=0 ; objdefCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::objdefine::");
-	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
+	Tcl_DStringAppend(&buffer, objdefCmds[i].name, TCL_NOSIZE);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
@@ -415,7 +415,7 @@ InitFoundation(
 
     TclNewLiteralStringObj(argsPtr, "originObject");
     Tcl_IncrRefCount(argsPtr);
-    bodyPtr = Tcl_NewStringObj(clonedBody, -1);
+    bodyPtr = Tcl_NewStringObj(clonedBody, TCL_NOSIZE);
     TclOONewProcMethod(interp, fPtr->objectCls, 0, fPtr->clonedName, argsPtr,
 	    bodyPtr, NULL);
     TclDecrRefCount(argsPtr);
@@ -659,9 +659,9 @@ AllocObject(
 
 	Tcl_DStringInit(&buffer);
 	Tcl_DStringAppend(&buffer,
-		Tcl_GetCurrentNamespace(interp)->fullName, -1);
+		Tcl_GetCurrentNamespace(interp)->fullName, TCL_NOSIZE);
 	TclDStringAppendLiteral(&buffer, "::");
-	Tcl_DStringAppend(&buffer, nameStr, -1);
+	Tcl_DStringAppend(&buffer, nameStr, TCL_NOSIZE);
 	oPtr->command = Tcl_CreateObjCommand(interp,
 		Tcl_DStringValue(&buffer), PublicObjectCmd, oPtr, NULL);
 	Tcl_DStringFree(&buffer);
@@ -1653,7 +1653,7 @@ Tcl_NewObjectInstance(
 
 	    if (result != TCL_ERROR && Deleted(oPtr)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"object deleted in constructor", -1));
+			"object deleted in constructor", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
 		result = TCL_ERROR;
 	    }
@@ -1799,7 +1799,7 @@ FinalizeAlloc(
 
     if (result != TCL_ERROR && Deleted(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"object deleted in constructor", -1));
+		"object deleted in constructor", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
 	result = TCL_ERROR;
     }
@@ -1857,7 +1857,7 @@ Tcl_CopyObjectInstance(
 
     if (IsRootClass(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not clone the class of classes", -1));
+		"may not clone the class of classes", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "CLONING_CLASS", NULL);
 	return NULL;
     }
@@ -2565,7 +2565,7 @@ TclOOObjectCmdCore(
 	}
 	if (contextPtr->index >= contextPtr->callPtr->numChain) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "no valid method implementation", -1));
+		    "no valid method implementation", TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(methodNamePtr), NULL);
 	    TclOODeleteContext(contextPtr);

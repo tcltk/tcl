@@ -2191,7 +2191,7 @@ PrintDictUpdateInfo(
 
     for (i=0 ; i<duiPtr->length ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_NOSIZE);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%u", duiPtr->varIndices[i]);
     }
@@ -2952,11 +2952,11 @@ PrintForeachInfo(
     register ForeachVarList *varsPtr;
     int i, j;
 
-    Tcl_AppendToObj(appendObj, "data=[", -1);
+    Tcl_AppendToObj(appendObj, "data=[", TCL_NOSIZE);
 
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_NOSIZE);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%u",
 		(unsigned) (infoPtr->firstValueTemp + i));
@@ -2965,19 +2965,19 @@ PrintForeachInfo(
 	    (unsigned) infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ",", -1);
+	    Tcl_AppendToObj(appendObj, ",", TCL_NOSIZE);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\n\t\t it%%v%u\t[",
 		(unsigned) (infoPtr->firstValueTemp + i));
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
-		Tcl_AppendToObj(appendObj, ", ", -1);
+		Tcl_AppendToObj(appendObj, ", ", TCL_NOSIZE);
 	    }
 	    Tcl_AppendPrintfToObj(appendObj, "%%v%u",
 		    (unsigned) varsPtr->varIndexes[j]);
 	}
-	Tcl_AppendToObj(appendObj, "]", -1);
+	Tcl_AppendToObj(appendObj, "]", TCL_NOSIZE);
     }
 }
 

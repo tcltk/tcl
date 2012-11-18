@@ -421,7 +421,7 @@ SetIndexFromAny(
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "can't convert value to index except via Tcl_GetIndexFromObj API",
-	    -1));
+	    TCL_NOSIZE));
     }
     return TCL_ERROR;
 }
@@ -602,7 +602,7 @@ PrefixMatchObjCmd(
 	case PRFMATCH_MESSAGE:
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -message", -1));
+			"missing value for -message", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", NULL);
 		return TCL_ERROR;
 	    }
@@ -612,7 +612,7 @@ PrefixMatchObjCmd(
 	case PRFMATCH_ERROR:
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -error", -1));
+			"missing value for -error", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", NULL);
 		return TCL_ERROR;
 	    }
@@ -624,7 +624,7 @@ PrefixMatchObjCmd(
 	    if ((errorLength % 2) != 0) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"error options must have an even number of elements",
-			-1));
+			TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
 		return TCL_ERROR;
 	    }
@@ -908,9 +908,9 @@ Tcl_WrongNumArgs(
     if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
 	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_AppendObjToObj(objPtr, Tcl_GetObjResult(interp));
-	Tcl_AppendToObj(objPtr, " or \"", -1);
+	Tcl_AppendToObj(objPtr, " or \"", TCL_NOSIZE);
     } else {
-	Tcl_AppendToObj(objPtr, "wrong # args: should be \"", -1);
+	Tcl_AppendToObj(objPtr, "wrong # args: should be \"", TCL_NOSIZE);
     }
 
     /*
@@ -1388,7 +1388,7 @@ PrintUsage(
      * Now add the option information, with pretty-printing.
      */
 
-    msg = Tcl_NewStringObj("Command-specific options:", -1);
+    msg = Tcl_NewStringObj("Command-specific options:", TCL_NOSIZE);
     for (infoPtr = argTable; infoPtr->type != TCL_ARGV_END; infoPtr++) {
 	if ((infoPtr->type == TCL_ARGV_HELP) && (infoPtr->keyStr == NULL)) {
 	    Tcl_AppendPrintfToObj(msg, "\n%s", infoPtr->helpStr);
@@ -1404,7 +1404,7 @@ PrintUsage(
 	    }
 	    numSpaces -= NUM_SPACES;
 	}
-	Tcl_AppendToObj(msg, infoPtr->helpStr, -1);
+	Tcl_AppendToObj(msg, infoPtr->helpStr, TCL_NOSIZE);
 	switch (infoPtr->type) {
 	case TCL_ARGV_INT:
 	    Tcl_AppendPrintfToObj(msg, "\n\t\tDefault value: %d",

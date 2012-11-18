@@ -1427,11 +1427,11 @@ TclOORenderCallChain(
      * Allocate the literals (potentially) used in our description.
      */
 
-    filterLiteral = Tcl_NewStringObj("filter", -1);
+    filterLiteral = Tcl_NewStringObj("filter", TCL_NOSIZE);
     Tcl_IncrRefCount(filterLiteral);
-    methodLiteral = Tcl_NewStringObj("method", -1);
+    methodLiteral = Tcl_NewStringObj("method", TCL_NOSIZE);
     Tcl_IncrRefCount(methodLiteral);
-    objectLiteral = Tcl_NewStringObj("object", -1);
+    objectLiteral = Tcl_NewStringObj("object", TCL_NOSIZE);
     Tcl_IncrRefCount(objectLiteral);
 
     /*
@@ -1464,7 +1464,7 @@ TclOORenderCallChain(
 		? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
 		: objectLiteral;
-	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name, -1);
+	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name, TCL_NOSIZE);
 
 	objv[i] = Tcl_NewListObj(4, descObjs);
     }

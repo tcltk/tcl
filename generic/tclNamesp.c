@@ -688,7 +688,7 @@ Tcl_CreateNamespace(
 	simpleName = "";
     } else if (*name == '\0') {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("can't create namespace"
-                " \"\": only global namespace can have empty name", -1));
+                " \"\": only global namespace can have empty name", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
 		"CREATEGLOBAL", NULL);
 	return NULL;
@@ -803,7 +803,7 @@ Tcl_CreateNamespace(
 	    register Tcl_DString *tempPtr = namePtr;
 
 	    TclDStringAppendLiteral(buffPtr, "::");
-	    Tcl_DStringAppend(buffPtr, ancestorPtr->name, -1);
+	    Tcl_DStringAppend(buffPtr, ancestorPtr->name, TCL_NOSIZE);
 	    TclDStringAppendDString(buffPtr, namePtr);
 
 	    /*
@@ -1442,7 +1442,7 @@ Tcl_AppendExportList(
 
     for (i = 0;  i < nsPtr->numExportPatterns;  i++) {
 	result = Tcl_ListObjAppendElement(interp, objPtr,
-		Tcl_NewStringObj(nsPtr->exportArrayPtr[i], -1));
+		Tcl_NewStringObj(nsPtr->exportArrayPtr[i], TCL_NOSIZE));
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -1521,7 +1521,7 @@ Tcl_Import(
 	int result;
 
 	TclNewLiteralStringObj(objv[0], "auto_import");
-	objv[1] = Tcl_NewStringObj(pattern, -1);
+	objv[1] = Tcl_NewStringObj(pattern, TCL_NOSIZE);
 
 	Tcl_IncrRefCount(objv[0]);
 	Tcl_IncrRefCount(objv[1]);
@@ -1541,7 +1541,7 @@ Tcl_Import(
      */
 
     if (strlen(pattern) == 0) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty import pattern",-1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty import pattern", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "IMPORT", "EMPTY", NULL);
 	return TCL_ERROR;
     }
@@ -1663,11 +1663,11 @@ DoImport(
 	ImportRef *refPtr;
 
 	Tcl_DStringInit(&ds);
-	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
+	Tcl_DStringAppend(&ds, nsPtr->fullName, TCL_NOSIZE);
 	if (nsPtr != ((Interp *) interp)->globalNsPtr) {
 	    TclDStringAppendLiteral(&ds, "::");
 	}
-	Tcl_DStringAppend(&ds, cmdName, -1);
+	Tcl_DStringAppend(&ds, cmdName, TCL_NOSIZE);
 
 	/*
 	 * Check whether creating the new imported command in the current
@@ -2913,11 +2913,11 @@ NamespaceChildrenCmd(
 	if ((*name == ':') && (*(name+1) == ':')) {
 	    pattern = name;
 	} else {
-	    Tcl_DStringAppend(&buffer, nsPtr->fullName, -1);
+	    Tcl_DStringAppend(&buffer, nsPtr->fullName, TCL_NOSIZE);
 	    if (nsPtr != globalNsPtr) {
 		TclDStringAppendLiteral(&buffer, "::");
 	    }
-	    Tcl_DStringAppend(&buffer, name, -1);
+	    Tcl_DStringAppend(&buffer, name, TCL_NOSIZE);
 	    pattern = Tcl_DStringValue(&buffer);
 	}
     }
@@ -2943,7 +2943,7 @@ NamespaceChildrenCmd(
 #endif
 	) {
 	    Tcl_ListObjAppendElement(interp, listPtr,
-		    Tcl_NewStringObj(pattern, -1));
+		    Tcl_NewStringObj(pattern, TCL_NOSIZE));
 	}
 	goto searchDone;
     }
@@ -2959,7 +2959,7 @@ NamespaceChildrenCmd(
 	childNsPtr = Tcl_GetHashValue(entryPtr);
 	if ((pattern == NULL)
 		|| Tcl_StringMatch(childNsPtr->fullName, pattern)) {
-	    elemPtr = Tcl_NewStringObj(childNsPtr->fullName, -1);
+	    elemPtr = Tcl_NewStringObj(childNsPtr->fullName, TCL_NOSIZE);
 	    Tcl_ListObjAppendElement(interp, listPtr, elemPtr);
 	}
 	entryPtr = Tcl_NextHashEntry(&search);
@@ -3049,7 +3049,7 @@ NamespaceCodeCmd(
     if (currNsPtr == (Namespace *) TclGetGlobalNamespace(interp)) {
 	TclNewLiteralStringObj(objPtr, "::");
     } else {
-	objPtr = Tcl_NewStringObj(currNsPtr->fullName, -1);
+	objPtr = Tcl_NewStringObj(currNsPtr->fullName, TCL_NOSIZE);
     }
     Tcl_ListObjAppendElement(interp, listPtr, objPtr);
 
@@ -3107,7 +3107,7 @@ NamespaceCurrentCmd(
     if (currNsPtr == (Namespace *) TclGetGlobalNamespace(interp)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("::", 2));
     } else {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(currNsPtr->fullName, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(currNsPtr->fullName, TCL_NOSIZE));
     }
     return TCL_OK;
 }
@@ -3640,7 +3640,7 @@ NamespaceImportCmd(
 
 	    if (cmdPtr->deleteProc == DeleteImportedCmd) {
 		Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(
-			Tcl_GetHashKey(&nsPtr->cmdTable, hPtr) ,-1));
+			Tcl_GetHashKey(&nsPtr->cmdTable, hPtr), TCL_NOSIZE));
 	    }
 	}
 	Tcl_SetObjResult(interp, listPtr);
@@ -3904,7 +3904,7 @@ NamespaceParentCmd(
 
     if (nsPtr->parentPtr != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		nsPtr->parentPtr->fullName, -1));
+		nsPtr->parentPtr->fullName, TCL_NOSIZE));
     }
     return TCL_OK;
 }
@@ -3963,7 +3963,7 @@ NamespacePathCmd(
 	for (i=0 ; i<nsPtr->commandPathLength ; i++) {
 	    if (nsPtr->commandPathArray[i].nsPtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
-			nsPtr->commandPathArray[i].nsPtr->fullName, -1));
+			nsPtr->commandPathArray[i].nsPtr->fullName, TCL_NOSIZE));
 	    }
 	}
 	Tcl_SetObjResult(interp, resultObj);
@@ -4447,7 +4447,7 @@ NamespaceTailCmd(
     }
 
     if (p >= name) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(p, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(p, TCL_NOSIZE));
     }
     return TCL_OK;
 }

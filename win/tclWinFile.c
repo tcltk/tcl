@@ -878,7 +878,7 @@ TclpFindExecutable(
 #endif
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
-    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, -1), NULL);
+    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, TCL_NOSIZE), NULL);
 }
 
 /*
@@ -1014,12 +1014,12 @@ TclpMatchInDirectory(
 	     * pattern.
 	     */
 
-	    dirName = Tcl_DStringAppend(&dsOrig, pattern, -1);
+	    dirName = Tcl_DStringAppend(&dsOrig, pattern, TCL_NOSIZE);
 	} else {
 	    dirName = TclDStringAppendLiteral(&dsOrig, "*.*");
 	}
 
-	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
+	native = Tcl_WinUtfToTChar(dirName, TCL_NOSIZE, &ds);
 	if ((types == NULL) || (types->type != TCL_GLOB_TYPE_DIR)) {
 	    handle = FindFirstFile(native, &data);
 	} else {
@@ -1092,7 +1092,7 @@ TclpMatchInDirectory(
 
 	    native = data.cFileName;
 	    attr = data.dwFileAttributes;
-	    utfname = Tcl_WinTCharToUtf(native, -1, &ds);
+	    utfname = Tcl_WinTCharToUtf(native, TCL_NOSIZE, &ds);
 
 	    if (!matchSpecialDots) {
 		/*
@@ -1445,7 +1445,7 @@ TclpGetUserHome(
     domain = strchr(name, '@');
     if (domain != NULL) {
 	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
+	wName = Tcl_UtfToUniCharDString(domain + 1, TCL_NOSIZE, &ds);
 	badDomain = NetGetDCName(NULL, wName, (LPBYTE *) wDomainPtr);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
@@ -1881,7 +1881,7 @@ TclpGetCwd(
 	    && (native[2] == '\\') && (native[3] == '\\')) {
 	native += 2;
     }
-    Tcl_WinTCharToUtf((TCHAR *) native, -1, bufferPtr);
+    Tcl_WinTCharToUtf((TCHAR *) native, TCL_NOSIZE, bufferPtr);
 
     /*
      * Convert to forward slashes for easier use in scripts.
@@ -2060,7 +2060,7 @@ NativeDev(
     const char *fullPath;
 
     GetFullPathName(nativePath, MAX_PATH, nativeFullPath, &nativePart);
-    fullPath = Tcl_WinTCharToUtf(nativeFullPath, -1, &ds);
+    fullPath = Tcl_WinTCharToUtf(nativeFullPath, TCL_NOSIZE, &ds);
 
     if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
 	const char *p;
@@ -2361,7 +2361,7 @@ TclpFilesystemPathType(
     } else {
 	Tcl_DString ds;
 
-	Tcl_WinTCharToUtf(volType, -1, &ds);
+	Tcl_WinTCharToUtf(volType, TCL_NOSIZE, &ds);
 	return TclDStringToObj(&ds);
     }
 #undef VOL_BUF_SIZE
@@ -2547,7 +2547,7 @@ TclpObjNormalizePath(
 			    }
 			    FindClose(handle);
 			    TclDStringAppendLiteral(&dsNorm, "/");
-			    Tcl_DStringAppend(&dsNorm, nativeName, -1);
+			    Tcl_DStringAppend(&dsNorm, nativeName, TCL_NOSIZE);
 			}
 		    }
 		}
@@ -2651,7 +2651,7 @@ TclpObjNormalizePath(
 			 */
 
 			nextCheckpoint = 0;
-			Tcl_AppendToObj(to, currentPathEndPosition, -1);
+			Tcl_AppendToObj(to, currentPathEndPosition, TCL_NOSIZE);
 
 			/*
 			 * Convert link to forward slashes.
@@ -2826,7 +2826,7 @@ TclpObjNormalizePath(
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
-	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
+	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, TCL_NOSIZE);
 	    path = Tcl_GetStringFromObj(tmpPathPtr, &len);
 	    Tcl_SetStringObj(pathPtr, path, len);
 	    Tcl_DecrRefCount(tmpPathPtr);
@@ -2899,7 +2899,7 @@ TclWinVolumeRelativeNormalize(
 	const char *drive = Tcl_GetString(useThisCwd);
 
 	absolutePath = Tcl_NewStringObj(drive,2);
-	Tcl_AppendToObj(absolutePath, path, -1);
+	Tcl_AppendToObj(absolutePath, path, TCL_NOSIZE);
 	Tcl_IncrRefCount(absolutePath);
 
 	/*
@@ -2953,7 +2953,7 @@ TclWinVolumeRelativeNormalize(
 	    Tcl_AppendToObj(absolutePath, "/", 1);
 	}
 	Tcl_IncrRefCount(absolutePath);
-	Tcl_AppendToObj(absolutePath, path+2, -1);
+	Tcl_AppendToObj(absolutePath, path+2, TCL_NOSIZE);
     }
     *useThisCwdPtr = useThisCwd;
     return absolutePath;
@@ -2989,7 +2989,7 @@ TclpNativeToNormalized(
     int len;
     char *copy, *p;
 
-    Tcl_WinTCharToUtf((const TCHAR *) clientData, -1, &ds);
+    Tcl_WinTCharToUtf((const TCHAR *) clientData, TCL_NOSIZE, &ds);
     copy = Tcl_DStringValue(&ds);
     len = Tcl_DStringLength(&ds);
 

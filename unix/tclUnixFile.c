@@ -148,9 +148,9 @@ TclpFindExecutable(
 #endif
     {
 	encoding = Tcl_GetEncoding(NULL, NULL);
-	Tcl_ExternalToUtfDString(encoding, name, -1, &utfName);
+	Tcl_ExternalToUtfDString(encoding, name, TCL_NOSIZE, &utfName);
 	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(Tcl_DStringValue(&utfName), -1), encoding);
+		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_NOSIZE), encoding);
 	Tcl_DStringFree(&utfName);
 	goto done;
     }
@@ -166,7 +166,7 @@ TclpFindExecutable(
     }
 
     Tcl_DStringInit(&nameString);
-    Tcl_DStringAppend(&nameString, name, -1);
+    Tcl_DStringAppend(&nameString, name, TCL_NOSIZE);
 
     TclpGetCwd(NULL, &cwd);
 
@@ -181,10 +181,10 @@ TclpFindExecutable(
     Tcl_DStringFree(&nameString);
 
     encoding = Tcl_GetEncoding(NULL, NULL);
-    Tcl_ExternalToUtfDString(encoding, Tcl_DStringValue(&buffer), -1,
+    Tcl_ExternalToUtfDString(encoding, Tcl_DStringValue(&buffer), TCL_NOSIZE,
 	    &utfName);
     TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), -1), encoding);
+	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_NOSIZE), encoding);
     Tcl_DStringFree(&utfName);
 
   done:
@@ -296,7 +296,7 @@ TclpMatchInDirectory(
 	 * Now open the directory for reading and iterate over the contents.
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, dirName, TCL_NOSIZE, &ds);
 
 	if ((TclOSstat(native, &statBuf) != 0)		/* INTL: Native. */
 		|| !S_ISDIR(statBuf.st_mode)) {
@@ -360,14 +360,14 @@ TclpMatchInDirectory(
 	     * and pattern. If so, add the file to the result.
 	     */
 
-	    utfname = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, -1,
+	    utfname = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, TCL_NOSIZE,
 		    &utfDs);
 	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
 		int typeOk = 1;
 
 		if (types != NULL) {
 		    Tcl_DStringSetLength(&ds, nativeDirLen);
-		    native = Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
+		    native = Tcl_DStringAppend(&ds, entryPtr->d_name, TCL_NOSIZE);
 		    matchResult = NativeMatchType(interp, native,
 			    entryPtr->d_name, types);
 		    typeOk = (matchResult == 1);
@@ -585,7 +585,7 @@ TclpGetUserHome(
 {
     struct passwd *pwPtr;
     Tcl_DString ds;
-    const char *native = Tcl_UtfToExternalDString(NULL, name, -1, &ds);
+    const char *native = Tcl_UtfToExternalDString(NULL, name, TCL_NOSIZE, &ds);
 
     pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
@@ -593,7 +593,7 @@ TclpGetUserHome(
     if (pwPtr == NULL) {
 	return NULL;
     }
-    Tcl_ExternalToUtfDString(NULL, pwPtr->pw_dir, -1, bufferPtr);
+    Tcl_ExternalToUtfDString(NULL, pwPtr->pw_dir, TCL_NOSIZE, bufferPtr);
     return Tcl_DStringValue(bufferPtr);
 }
 
@@ -772,7 +772,7 @@ TclpGetCwd(
 	}
 	return NULL;
     }
-    return Tcl_ExternalToUtfDString(NULL, buffer, -1, bufferPtr);
+    return Tcl_ExternalToUtfDString(NULL, buffer, TCL_NOSIZE, bufferPtr);
 }
 
 /*
@@ -807,7 +807,7 @@ TclpReadlink(
     const char *native;
     Tcl_DString ds;
 
-    native = Tcl_UtfToExternalDString(NULL, path, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, path, TCL_NOSIZE, &ds);
     length = readlink(native, link, sizeof(link));	/* INTL: Native. */
     Tcl_DStringFree(&ds);
 
@@ -1049,7 +1049,7 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDString(NULL, (const char *) clientData, -1, &ds);
+    Tcl_ExternalToUtfDString(NULL, (const char *) clientData, TCL_NOSIZE, &ds);
     return TclDStringToObj(&ds);
 }
 

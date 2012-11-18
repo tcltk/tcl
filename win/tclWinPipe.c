@@ -581,7 +581,7 @@ TclpOpenFile(
 	break;
     }
 
-    nativePath = Tcl_WinUtfToTChar(path, -1, &ds);
+    nativePath = Tcl_WinUtfToTChar(path, TCL_NOSIZE, &ds);
 
     /*
      * If the file is not being created, use the existing file attributes.
@@ -682,7 +682,7 @@ TclpCreateTempFile(
 	 * Convert the contents from UTF to native encoding
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
+	native = Tcl_UtfToExternalDString(NULL, contents, TCL_NOSIZE, &dstring);
 
 	toCopy = Tcl_DStringLength(&dstring);
 	for (p = native; toCopy > 0; p++, toCopy--) {
@@ -1312,12 +1312,12 @@ ApplicationType(
 
     applType = APPL_NONE;
     Tcl_DStringInit(&nameBuf);
-    Tcl_DStringAppend(&nameBuf, originalName, -1);
+    Tcl_DStringAppend(&nameBuf, originalName, TCL_NOSIZE);
     nameLen = Tcl_DStringLength(&nameBuf);
 
     for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
 	Tcl_DStringSetLength(&nameBuf, nameLen);
-	Tcl_DStringAppend(&nameBuf, extensions[i], -1);
+	Tcl_DStringAppend(&nameBuf, extensions[i], TCL_NOSIZE);
 	nativeName = Tcl_WinUtfToTChar(Tcl_DStringValue(&nameBuf),
 		Tcl_DStringLength(&nameBuf), &ds);
 	found = SearchPath(NULL, nativeName, NULL, MAX_PATH,
@@ -1336,7 +1336,7 @@ ApplicationType(
 	if ((attr == 0xffffffff) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	    continue;
 	}
-	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, -1, &ds));
+	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, TCL_NOSIZE, &ds));
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
@@ -1426,7 +1426,7 @@ ApplicationType(
 	 */
 
 	GetShortPathName(nativeFullPath, nativeFullPath, MAX_PATH);
-	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, -1, &ds));
+	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, TCL_NOSIZE, &ds));
 	Tcl_DStringFree(&ds);
     }
     return applType;

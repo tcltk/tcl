@@ -1027,7 +1027,7 @@ Tcl_SetErrorCodeVA(
 	if (elem == NULL) {
 	    break;
 	}
-	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, -1));
+	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, TCL_NOSIZE));
     }
     Tcl_SetObjErrorCode(interp, errorObj);
 }
@@ -1587,7 +1587,7 @@ Tcl_GetReturnOptions(
     }
 
     if (result == TCL_ERROR) {
-	Tcl_AddObjErrorInfo(interp, "", -1);
+	Tcl_AddObjErrorInfo(interp, "", TCL_NOSIZE);
         Tcl_DictObjPut(NULL, options, keys[KEY_ERRORSTACK], iPtr->errorStack);
     }
     if (iPtr->errorCode) {

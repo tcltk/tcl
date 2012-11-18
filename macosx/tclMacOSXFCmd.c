@@ -202,7 +202,7 @@ TclMacOSXGetFileAttribute(
     return TCL_OK;
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "Mac OS X file attributes not supported", -1));
+	    "Mac OS X file attributes not supported", TCL_NOSIZE));
     Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
     return TCL_ERROR;
 #endif /* HAVE_GETATTRLIST */
@@ -334,7 +334,7 @@ TclMacOSXSetFileAttribute(
 
 	    if (newRsrcForkSize != 0) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"setting nonzero rsrclength not supported", -1));
+			"setting nonzero rsrclength not supported", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
 		return TCL_ERROR;
 	    }
@@ -344,8 +344,8 @@ TclMacOSXSetFileAttribute(
 	     */
 
 	    Tcl_DStringInit(&ds);
-	    Tcl_DStringAppend(&ds, native, -1);
-	    Tcl_DStringAppend(&ds, _PATH_RSRCFORKSPEC, -1);
+	    Tcl_DStringAppend(&ds, native, TCL_NOSIZE);
+	    Tcl_DStringAppend(&ds, _PATH_RSRCFORKSPEC, TCL_NOSIZE);
 
 	    result = truncate(Tcl_DStringValue(&ds), (off_t)0);
 	    if (result != 0) {
@@ -375,7 +375,7 @@ TclMacOSXSetFileAttribute(
     return TCL_OK;
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "Mac OS X file attributes not supported", -1));
+	    "Mac OS X file attributes not supported", TCL_NOSIZE));
     Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
     return TCL_ERROR;
 #endif
@@ -459,11 +459,11 @@ TclMacOSXCopyFileAttributes(
 	 */
 
 	Tcl_DStringInit(&srcBuf);
-	Tcl_DStringAppend(&srcBuf, src, -1);
-	Tcl_DStringAppend(&srcBuf, _PATH_RSRCFORKSPEC, -1);
+	Tcl_DStringAppend(&srcBuf, src, TCL_NOSIZE);
+	Tcl_DStringAppend(&srcBuf, _PATH_RSRCFORKSPEC, TCL_NOSIZE);
 	Tcl_DStringInit(&dstBuf);
-	Tcl_DStringAppend(&dstBuf, dst, -1);
-	Tcl_DStringAppend(&dstBuf, _PATH_RSRCFORKSPEC, -1);
+	Tcl_DStringAppend(&dstBuf, dst, TCL_NOSIZE);
+	Tcl_DStringAppend(&dstBuf, _PATH_RSRCFORKSPEC, TCL_NOSIZE);
 
 	/*
 	 * Do the copy.
@@ -703,7 +703,7 @@ UpdateStringOfOSType(
     string[2] = (char) (osType >>  8);
     string[3] = (char) (osType);
     string[4] = '\0';
-    Tcl_ExternalToUtfDString(encoding, string, -1, &ds);
+    Tcl_ExternalToUtfDString(encoding, string, TCL_NOSIZE, &ds);
     len = (unsigned) Tcl_DStringLength(&ds) + 1;
     objPtr->bytes = ckalloc(len);
     memcpy(objPtr->bytes, Tcl_DStringValue(&ds), len);

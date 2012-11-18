@@ -264,7 +264,7 @@ Tcl_Stat(
 {
     int ret;
     Tcl_StatBuf buf;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(path, TCL_NOSIZE);
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSStat(pathPtr, &buf);
@@ -350,7 +350,7 @@ Tcl_Access(
     int mode)			/* Permission setting. */
 {
     int ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(path, TCL_NOSIZE);
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSAccess(pathPtr,mode);
@@ -371,7 +371,7 @@ Tcl_OpenFileChannel(
 				 * what modes to create it? */
 {
     Tcl_Channel ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(path, TCL_NOSIZE);
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions);
@@ -386,7 +386,7 @@ Tcl_Chdir(
     const char *dirName)
 {
     int ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(dirName,-1);
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(dirName, TCL_NOSIZE);
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSChdir(pathPtr);
     Tcl_DecrRefCount(pathPtr);
@@ -418,7 +418,7 @@ Tcl_EvalFile(
 				 * will be performed on this name. */
 {
     int ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName,-1);
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName, TCL_NOSIZE);
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSEvalFile(interp, pathPtr);
@@ -1100,7 +1100,7 @@ Tcl_FSMatchInDirectory(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "glob couldn't determine the current working directory",
-		    -1));
+		    TCL_NOSIZE));
 	}
 	return TCL_ERROR;
     }
@@ -1671,7 +1671,7 @@ TclGetOpenModeEx(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "access mode must include either RDONLY, WRONLY, or RDWR",
-		    -1));
+		    TCL_NOSIZE));
 	}
 	return -1;
     }
@@ -1785,7 +1785,7 @@ Tcl_FSEvalFileEx(
      * otherwise replace them. [Bug 3466099]
      */
 
-    if (Tcl_ReadChars(chan, objPtr, -1,
+    if (Tcl_ReadChars(chan, objPtr, TCL_NOSIZE,
 	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1920,7 +1920,7 @@ TclNREvalFile(
      * otherwise replace them. [Bug 3466099]
      */
 
-    if (Tcl_ReadChars(chan, objPtr, -1,
+    if (Tcl_ReadChars(chan, objPtr, TCL_NOSIZE,
 	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2488,7 +2488,7 @@ TclFSFileAttrIndex(
 	 * It's a constant attribute table, so use T_GIFO.
 	 */
 
-	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, -1);
+	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, TCL_NOSIZE);
 	int result;
 
 	result = Tcl_GetIndexFromObj(NULL, tmpObj, attrTable, NULL, TCL_EXACT,
@@ -3241,7 +3241,7 @@ Tcl_LoadFile(
 	Tcl_FSDeleteFile(copyToPtr);
 	Tcl_DecrRefCount(copyToPtr);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"couldn't load from current filesystem", -1));
+		"couldn't load from current filesystem", TCL_NOSIZE));
 	return TCL_ERROR;
     }
 
@@ -3560,7 +3560,7 @@ Tcl_FSUnloadFile(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot unload: filesystem does not support unloading",
-		    -1));
+		    TCL_NOSIZE));
 	}
 	return TCL_ERROR;
     }
@@ -4655,7 +4655,7 @@ Tcl_FSFileSystemInfo(
 
     resPtr = Tcl_NewListObj(0, NULL);
     Tcl_ListObjAppendElement(NULL, resPtr,
-	    Tcl_NewStringObj(fsPtr->typeName, -1));
+	    Tcl_NewStringObj(fsPtr->typeName, TCL_NOSIZE));
 
     if (fsPtr->filesystemPathTypeProc != NULL) {
 	Tcl_Obj *typePtr = fsPtr->filesystemPathTypeProc(pathPtr);

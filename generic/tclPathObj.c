@@ -782,7 +782,7 @@ GetExtension(
     if (extension == NULL) {
 	ret = Tcl_NewObj();
     } else {
-	ret = Tcl_NewStringObj(extension, -1);
+	ret = Tcl_NewStringObj(extension, TCL_NOSIZE);
     }
     Tcl_IncrRefCount(ret);
     return ret;
@@ -1493,7 +1493,7 @@ MakePathFromNormalized(
 	    if (pathPtr->typePtr->updateStringProc == NULL) {
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "can't find object string representation", -1));
+			    "can't find object string representation", TCL_NOSIZE));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "WTF",
 			    NULL);
 		}
@@ -2374,7 +2374,7 @@ SetFsPathFromAny(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "couldn't find HOME environment variable to"
-			    " expand path", -1));
+			    " expand path", TCL_NOSIZE));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
 			    "HOMELESS", NULL);
 		}
@@ -2444,7 +2444,7 @@ SetFsPathFromAny(
 		 */
 
 		Tcl_Obj *joined;
-		Tcl_Obj *rest = Tcl_NewStringObj(name+split+1, -1);
+		Tcl_Obj *rest = Tcl_NewStringObj(name+split+1, TCL_NOSIZE);
 
 		Tcl_IncrRefCount(transPtr);
 		joined = Tcl_FSJoinToPath(transPtr, 1, &rest);

@@ -292,7 +292,7 @@ TclpDlopen(
 	Tcl_Obj *errObj = Tcl_NewObj();
 
 	if (errMsg != NULL) {
-	    Tcl_AppendToObj(errObj, errMsg, -1);
+	    Tcl_AppendToObj(errObj, errMsg, TCL_NOSIZE);
 	}
 #if TCL_DYLD_USE_NSMODULE
 	if (objFileImageErrMsg) {
@@ -337,7 +337,7 @@ FindSymbol(
     Tcl_DString ds;
     const char *native;
 
-    native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, symbol, TCL_NOSIZE, &ds);
     if (dyldLoadHandle->dlHandle) {
 #if TCL_DYLD_USE_DLFCN
 	proc = dlsym(dyldLoadHandle->dlHandle, native);
@@ -356,7 +356,7 @@ FindSymbol(
 
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	native = Tcl_DStringAppend(&newName, native, -1);
+	native = Tcl_DStringAppend(&newName, native, TCL_NOSIZE);
 	if (dyldLoadHandle->dyldLibHeader) {
 	    nsSymbol = NSLookupSymbolInImage(dyldLoadHandle->dyldLibHeader,
 		    native, NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW |
@@ -682,7 +682,7 @@ TclpLoadMemory(
 	const char *errorName, *errMsg;
 
 	NSLinkEditError(&editError, &errorNumber, &errorName, &errMsg);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, TCL_NOSIZE));
 	return TCL_ERROR;
     }
 

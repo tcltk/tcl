@@ -613,7 +613,7 @@ TcpClose2Proc(
     default:
         if (interp) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                    "socket close2proc called bidirectionally", -1));
+                    "socket close2proc called bidirectionally", TCL_NOSIZE));
         }
         return TCL_ERROR;
     }
@@ -681,7 +681,7 @@ TcpGetOptionProc(
             statePtr->status = 0;
         }
 	if (err != 0) {
-	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(err), -1);
+	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(err), TCL_NOSIZE);
 	}
 	return TCL_OK;
     }
@@ -1397,13 +1397,13 @@ Tcl_OpenTcpServer(
 	return statePtr->channel;
     }
     if (interp != NULL) {
-        Tcl_Obj *errorObj = Tcl_NewStringObj("couldn't open socket: ", -1);
+        Tcl_Obj *errorObj = Tcl_NewStringObj("couldn't open socket: ", TCL_NOSIZE);
 
 	if (errorMsg == NULL) {
             errno = my_errno;
-            Tcl_AppendToObj(errorObj, Tcl_PosixError(interp), -1);
+            Tcl_AppendToObj(errorObj, Tcl_PosixError(interp), TCL_NOSIZE);
         } else {
-	    Tcl_AppendToObj(errorObj, errorMsg, -1);
+	    Tcl_AppendToObj(errorObj, errorMsg, TCL_NOSIZE);
 	}
         Tcl_SetObjResult(interp, errorObj);
     }

@@ -303,7 +303,7 @@ Tcl_PkgRequireEx(
 		!= CheckVersionAndConvert(interp, version, NULL, NULL)) {
 	    return NULL;
 	}
-	ov = Tcl_NewStringObj(version, -1);
+	ov = Tcl_NewStringObj(version, TCL_NOSIZE);
 	if (exact) {
 	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
 	}
@@ -332,7 +332,7 @@ Tcl_PkgRequireProc(
     if (result == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(result, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(result, TCL_NOSIZE));
     return TCL_OK;
 }
 
@@ -488,7 +488,7 @@ PkgRequireCore(
 	    pkgPtr->clientData = versionToProvide;
 	    Tcl_Preserve(script);
 	    Tcl_Preserve(versionToProvide);
-	    code = Tcl_EvalEx(interp, script, -1, TCL_EVAL_GLOBAL);
+	    code = Tcl_EvalEx(interp, script, TCL_NOSIZE, TCL_EVAL_GLOBAL);
 	    Tcl_Release(script);
 
 	    pkgPtr = FindPackage(interp, name);
@@ -584,7 +584,7 @@ PkgRequireCore(
 	script = ((Interp *) interp)->packageUnknown;
 	if (script != NULL) {
 	    Tcl_DStringInit(&command);
-	    Tcl_DStringAppend(&command, script, -1);
+	    Tcl_DStringAppend(&command, script, TCL_NOSIZE);
 	    Tcl_DStringAppendElement(&command, name);
 	    AddRequirementsToDString(&command, reqc, reqv);
 
@@ -852,7 +852,7 @@ Tcl_PackageObjCmd(
 		if (objc == 4) {
 		    ckfree(argv3i);
 		    Tcl_SetObjResult(interp,
-			    Tcl_NewStringObj(availPtr->script, -1));
+			    Tcl_NewStringObj(availPtr->script, TCL_NOSIZE));
 		    return TCL_OK;
 		}
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
@@ -894,7 +894,7 @@ Tcl_PackageObjCmd(
 		pkgPtr = Tcl_GetHashValue(hPtr);
 		if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
 		    Tcl_ListObjAppendElement(NULL,resultObj, Tcl_NewStringObj(
-			    Tcl_GetHashKey(tablePtr, hPtr), -1));
+			    Tcl_GetHashKey(tablePtr, hPtr), TCL_NOSIZE));
 		}
 	    }
 	    Tcl_SetObjResult(interp, resultObj);
@@ -958,7 +958,7 @@ Tcl_PackageObjCmd(
 		pkgPtr = Tcl_GetHashValue(hPtr);
 		if (pkgPtr->version != NULL) {
 		    Tcl_SetObjResult(interp,
-			    Tcl_NewStringObj(pkgPtr->version, -1));
+			    Tcl_NewStringObj(pkgPtr->version, TCL_NOSIZE));
 		}
 	    }
 	    return TCL_OK;
@@ -998,7 +998,7 @@ Tcl_PackageObjCmd(
 	     * Create a new-style requirement for the exact version.
 	     */
 
-	    ov = Tcl_NewStringObj(version, -1);
+	    ov = Tcl_NewStringObj(version, TCL_NOSIZE);
 	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
 	    version = NULL;
 	    argv3 = TclGetString(objv[3]);
@@ -1021,7 +1021,7 @@ Tcl_PackageObjCmd(
 	if (objc == 2) {
 	    if (iPtr->packageUnknown != NULL) {
 		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj(iPtr->packageUnknown, -1));
+			Tcl_NewStringObj(iPtr->packageUnknown, TCL_NOSIZE));
 	    }
 	} else if (objc == 3) {
 	    if (iPtr->packageUnknown != NULL) {
@@ -1073,7 +1073,7 @@ Tcl_PackageObjCmd(
 	 */
 
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj(pkgPreferOptions[iPtr->packagePrefer], -1));
+		Tcl_NewStringObj(pkgPreferOptions[iPtr->packagePrefer], TCL_NOSIZE));
 	break;
     }
     case PKG_VCOMPARE:
@@ -1119,7 +1119,7 @@ Tcl_PackageObjCmd(
 		for (availPtr = pkgPtr->availPtr; availPtr != NULL;
 			availPtr = availPtr->nextPtr) {
 		    Tcl_ListObjAppendElement(NULL, resultObj,
-			    Tcl_NewStringObj(availPtr->version, -1));
+			    Tcl_NewStringObj(availPtr->version, TCL_NOSIZE));
 		}
 	    }
 	    Tcl_SetObjResult(interp, resultObj);

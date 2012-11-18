@@ -122,7 +122,7 @@ Tcl_LinkVar(
 
     linkPtr = ckalloc(sizeof(Link));
     linkPtr->interp = interp;
-    linkPtr->varName = Tcl_NewStringObj(varName, -1);
+    linkPtr->varName = Tcl_NewStringObj(varName, TCL_NOSIZE);
     Tcl_IncrRefCount(linkPtr->varName);
     linkPtr->addr = addr;
     linkPtr->type = type & ~TCL_LINK_READ_ONLY;
@@ -613,7 +613,7 @@ ObjValue(
 	    TclNewLiteralStringObj(resultObj, "NULL");
 	    return resultObj;
 	}
-	return Tcl_NewStringObj(p, -1);
+	return Tcl_NewStringObj(p, TCL_NOSIZE);
 
     /*
      * This code only gets executed if the link type is unknown (shouldn't

@@ -347,8 +347,8 @@ DoRenameFile(
 	    CharLower(nativeSrcPath);
 	    CharLower(nativeDstPath);
 
-	    src = Tcl_WinTCharToUtf(nativeSrcPath, -1, &srcString);
-	    dst = Tcl_WinTCharToUtf(nativeDstPath, -1, &dstString);
+	    src = Tcl_WinTCharToUtf(nativeSrcPath, TCL_NOSIZE, &srcString);
+	    dst = Tcl_WinTCharToUtf(nativeDstPath, TCL_NOSIZE, &dstString);
 
 	    /*
 	     * Check whether the destination path is actually inside the
@@ -930,8 +930,8 @@ TclpObjCopyDirectory(
 	return TCL_ERROR;
     }
 
-    Tcl_WinUtfToTChar(Tcl_GetString(normSrcPtr), -1, &srcString);
-    Tcl_WinUtfToTChar(Tcl_GetString(normDestPtr), -1, &dstString);
+    Tcl_WinUtfToTChar(Tcl_GetString(normSrcPtr), TCL_NOSIZE, &srcString);
+    Tcl_WinUtfToTChar(Tcl_GetString(normDestPtr), TCL_NOSIZE, &dstString);
 
     ret = TraverseWinTree(TraversalCopy, &srcString, &dstString, &ds);
 
@@ -944,7 +944,7 @@ TclpObjCopyDirectory(
 	} else if (!strcmp(Tcl_DStringValue(&ds), TclGetString(normDestPtr))) {
 	    *errorPtr = destPathPtr;
 	} else {
-	    *errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	    *errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_NOSIZE);
 	}
 	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
@@ -1003,7 +1003,7 @@ TclpObjRemoveDirectory(
 	if (normPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_WinUtfToTChar(Tcl_GetString(normPtr), -1, &native);
+	Tcl_WinUtfToTChar(Tcl_GetString(normPtr), TCL_NOSIZE, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
@@ -1170,7 +1170,7 @@ DoRemoveJustDirectory(
 
   end:
     if (errorPtr != NULL) {
-	Tcl_WinTCharToUtf(nativePath, -1, errorPtr);
+	Tcl_WinTCharToUtf(nativePath, TCL_NOSIZE, errorPtr);
     }
     return TCL_ERROR;
 
@@ -1381,7 +1381,7 @@ TraverseWinTree(
     if (nativeErrfile != NULL) {
 	TclWinConvertError(GetLastError());
 	if (errorPtr != NULL) {
-	    Tcl_WinTCharToUtf(nativeErrfile, -1, errorPtr);
+	    Tcl_WinTCharToUtf(nativeErrfile, TCL_NOSIZE, errorPtr);
 	}
 	result = TCL_ERROR;
     }
@@ -1446,7 +1446,7 @@ TraversalCopy(
      */
 
     if (errorPtr != NULL) {
-	Tcl_WinTCharToUtf(nativeDst, -1, errorPtr);
+	Tcl_WinTCharToUtf(nativeDst, TCL_NOSIZE, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1501,7 +1501,7 @@ TraversalDelete(
     }
 
     if (errorPtr != NULL) {
-	Tcl_WinTCharToUtf(nativeSrc, -1, errorPtr);
+	Tcl_WinTCharToUtf(nativeSrc, TCL_NOSIZE, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1760,7 +1760,7 @@ ConvertFileNameFormat(
 	     */
 
 	    Tcl_DStringInit(&dsTemp);
-	    Tcl_WinTCharToUtf(nativeName, -1, &dsTemp);
+	    Tcl_WinTCharToUtf(nativeName, TCL_NOSIZE, &dsTemp);
 	    Tcl_DStringFree(&ds);
 
 	    /*
@@ -1999,14 +1999,14 @@ TclpObjListVolumes(void)
 	    buf[0] = (char) ('a' + i);
 	    if (GetVolumeInformationA(buf, NULL, 0, NULL, NULL, NULL, NULL, 0)
 		    || (GetLastError() == ERROR_NOT_READY)) {
-		elemPtr = Tcl_NewStringObj(buf, -1);
+		elemPtr = Tcl_NewStringObj(buf, TCL_NOSIZE);
 		Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
 	    }
 	}
     } else {
 	for (p = buf; *p != '\0'; p += 4) {
 	    p[2] = '/';
-	    elemPtr = Tcl_NewStringObj(p, -1);
+	    elemPtr = Tcl_NewStringObj(p, TCL_NOSIZE);
 	    Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
 	}
     }

@@ -2282,7 +2282,7 @@ TEBCresume(
 	if (!corPtr) {
 	    TRACE_APPEND(("ERROR: yield outside coroutine\n"));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yield can only be called in a coroutine", -1));
+		    "yield can only be called in a coroutine", TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
 		    NULL);
 	    goto gotError;
@@ -2326,7 +2326,7 @@ TEBCresume(
 	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
 	    TRACE(("%d => ERROR: tailcall in non-proc context\n", opnd));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "tailcall can only be called from a proc or lambda", -1));
+		    "tailcall can only be called from a proc or lambda", TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
 	    goto gotError;
 	}
@@ -2352,7 +2352,7 @@ TEBCresume(
 	 */
 
 	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
-	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
+	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, TCL_NOSIZE);
 	Tcl_IncrRefCount(listPtr);
 	Tcl_IncrRefCount(nsObjPtr);
 	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
@@ -3302,7 +3302,7 @@ TEBCresume(
 		TCL_LEAVE_ERR_MSG, "read", 1, 1, &arrayPtr);
 	if (!varPtr) {
 	    Tcl_AddObjErrorInfo(interp,
-		    "\n    (reading value of variable to increment)", -1);
+		    "\n    (reading value of variable to increment)", TCL_NOSIZE);
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    Tcl_DecrRefCount(incrPtr);
 	    goto gotError;
@@ -4187,7 +4187,7 @@ TEBCresume(
 	    TRACE(("=> ERROR: no TclOO call context\n"));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "self may only be called from inside a method",
-		    -1));
+		    TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
 	    goto gotError;
 	}
@@ -5262,7 +5262,7 @@ TEBCresume(
 	    case INST_RSHIFT:
 		if (l2 < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "negative shift argument", -1));
+			    "negative shift argument", TCL_NOSIZE));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -5310,7 +5310,7 @@ TEBCresume(
 	    case INST_LSHIFT:
 		if (l2 < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "negative shift argument", -1));
+			    "negative shift argument", TCL_NOSIZE));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -5333,7 +5333,7 @@ TEBCresume(
 		     */
 
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "integer value too large to represent", -1));
+			    "integer value too large to represent", TCL_NOSIZE));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
@@ -6700,7 +6700,7 @@ TEBCresume(
 
     divideByZero:
 	DECACHE_STACK_INFO();
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
@@ -6713,7 +6713,7 @@ TEBCresume(
     exponOfZero:
 	DECACHE_STACK_INFO();
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"exponentiation of zero by negative power", -1));
+		"exponentiation of zero by negative power", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"exponentiation of zero by negative power", NULL);
 	CACHE_STACK_INFO();
@@ -7090,7 +7090,7 @@ ExecuteExtendedBinaryMathOp(
 	}
 	if (invalid) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "negative shift argument", -1));
+		    "negative shift argument", TCL_NOSIZE));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -7121,7 +7121,7 @@ ExecuteExtendedBinaryMathOp(
 		 */
 
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"integer value too large to represent", -1));
+			"integer value too large to represent", TCL_NOSIZE));
 		return GENERAL_ARITHMETIC_ERROR;
 	    }
 	    shift = (int)(*((const long *)ptr2));
@@ -7523,7 +7523,7 @@ ExecuteExtendedBinaryMathOp(
 
 	if (type2 != TCL_NUMBER_LONG) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "exponent too large", -1));
+		    "exponent too large", TCL_NOSIZE));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -7762,7 +7762,7 @@ ExecuteExtendedBinaryMathOp(
 	if (big2.used > 1) {
 	    mp_clear(&big2);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "exponent too large", -1));
+		    "exponent too large", TCL_NOSIZE));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
@@ -8795,16 +8795,16 @@ TclExprFloatError(
 
     if ((errno == EDOM) || TclIsNaN(value)) {
 	s = "domain error: argument not in valid range";
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, NULL);
     } else if ((errno == ERANGE) || TclIsInfinite(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, NULL);
 	} else {
 	    s = "floating-point value too large to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, NULL);
 	}
     } else {

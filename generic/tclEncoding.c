@@ -724,7 +724,7 @@ Tcl_SetDefaultEncodingDir(
     const char *path)
 {
     Tcl_Obj *searchPath = Tcl_GetEncodingSearchPath();
-    Tcl_Obj *directory = Tcl_NewStringObj(path, -1);
+    Tcl_Obj *directory = Tcl_NewStringObj(path, TCL_NOSIZE);
 
     searchPath = Tcl_DuplicateObj(searchPath);
     Tcl_ListObjReplace(NULL, searchPath, 0, 0, 1, &directory);
@@ -923,7 +923,7 @@ Tcl_GetEncodingNames(
 	Encoding *encodingPtr = Tcl_GetHashValue(hPtr);
 
 	Tcl_CreateHashEntry(&table,
-		Tcl_NewStringObj(encodingPtr->name, -1), &dummy);
+		Tcl_NewStringObj(encodingPtr->name, TCL_NOSIZE), &dummy);
     }
     Tcl_MutexUnlock(&encodingMutex);
 
@@ -1461,7 +1461,7 @@ OpenEncodingFileChannel(
     const char *name)		/* The name of the encoding file on disk and
 				 * also the name for new encoding. */
 {
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
+    Tcl_Obj *nameObj = Tcl_NewStringObj(name, TCL_NOSIZE);
     Tcl_Obj *fileNameObj = Tcl_DuplicateObj(nameObj);
     Tcl_Obj *searchPath = Tcl_DuplicateObj(Tcl_GetEncodingSearchPath());
     Tcl_Obj *map = TclGetProcessGlobalValue(&encodingFileMap);
@@ -1471,7 +1471,7 @@ OpenEncodingFileChannel(
 
     Tcl_ListObjGetElements(NULL, searchPath, &numDirs, &dir);
     Tcl_IncrRefCount(nameObj);
-    Tcl_AppendToObj(fileNameObj, ".enc", -1);
+    Tcl_AppendToObj(fileNameObj, ".enc", TCL_NOSIZE);
     Tcl_IncrRefCount(fileNameObj);
     Tcl_DictObjGet(NULL, map, nameObj, &directory);
 

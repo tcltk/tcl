@@ -195,10 +195,10 @@ Tcl_ProcObjCmd(
 
     Tcl_DStringInit(&ds);
     if (nsPtr != iPtr->globalNsPtr) {
-	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
+	Tcl_DStringAppend(&ds, nsPtr->fullName, TCL_NOSIZE);
 	TclDStringAppendLiteral(&ds, "::");
     }
-    Tcl_DStringAppend(&ds, procName, -1);
+    Tcl_DStringAppend(&ds, procName, TCL_NOSIZE);
 
     cmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds), TclObjInterpProc,
 	    TclNRInterpProc, procPtr, TclProcDeleteProc);
@@ -530,7 +530,7 @@ TclCreateProc(
 	if ((fieldCount == 0) || (*fieldValues[0] == 0)) {
 	    ckfree(fieldValues);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "argument with no name", -1));
+		    "argument with no name", TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 		    "FORMALARGUMENTFORMAT", NULL);
 	    goto procError;
@@ -1121,7 +1121,7 @@ ProcWrongNumArgs(
 	    (int) sizeof(Tcl_Obj *) * (numArgs+1));
 
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
-	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
+	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", TCL_NOSIZE);
     } else {
 	((Interp *) interp)->ensembleRewrite.numInsertedObjs -= skip - 1;
 
@@ -2002,7 +2002,7 @@ TclProcCompileProc(
 	if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 	    if ((Interp *) *codePtr->interpHandle != iPtr) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"a precompiled script jumped interps", -1));
+			"a precompiled script jumped interps", TCL_NOSIZE));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			"CROSSINTERPBYTECODE", NULL);
 		return TCL_ERROR;
@@ -3028,7 +3028,7 @@ Tcl_DisassembleObjCmd(
 	procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
 	if (procPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "body not available for this kind of method", -1));
+		    "body not available for this kind of method", TCL_NOSIZE));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "METHODTYPE", NULL);
 	    return TCL_ERROR;
@@ -3064,7 +3064,7 @@ Tcl_DisassembleObjCmd(
     if (((ByteCode *) codeObjPtr->internalRep.otherValuePtr)->flags
 	    & TCL_BYTECODE_PRECOMPILED) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not disassemble prebuilt bytecode", -1));
+		"may not disassemble prebuilt bytecode", TCL_NOSIZE));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		"BYTECODE", NULL);
 	return TCL_ERROR;
