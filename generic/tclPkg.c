@@ -59,18 +59,18 @@ static int		CompareVersions(char *v1i, char *v2i,
 			    int *isMajorPtr);
 static int		CheckRequirement(Tcl_Interp *interp,
 			    const char *string);
-static int		CheckAllRequirements(Tcl_Interp *interp, int reqc,
+static int		CheckAllRequirements(Tcl_Interp *interp, size_t reqc,
 			    Tcl_Obj *const reqv[]);
 static int		RequirementSatisfied(char *havei, const char *req);
-static int		SomeRequirementSatisfied(char *havei, int reqc,
+static int		SomeRequirementSatisfied(char *havei, size_t reqc,
 			    Tcl_Obj *const reqv[]);
-static void		AddRequirementsToResult(Tcl_Interp *interp, int reqc,
-			    Tcl_Obj *const reqv[]);
+static void		AddRequirementsToResult(Tcl_Interp *interp,
+			    size_t reqc, Tcl_Obj *const reqv[]);
 static void		AddRequirementsToDString(Tcl_DString *dstring,
-			    int reqc, Tcl_Obj *const reqv[]);
+			    size_t reqc, Tcl_Obj *const reqv[]);
 static Package *	FindPackage(Tcl_Interp *interp, const char *name);
 static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
-			    int reqc, Tcl_Obj *const reqv[],
+			    size_t reqc, Tcl_Obj *const reqv[],
 			    void *clientDataPtr);
 
 /*
@@ -81,7 +81,7 @@ static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
     ((v) = ckalloc(len), memcpy((v),(s),(len)))
 #define DupString(v,s) \
     do { \
-	unsigned local__len = (unsigned) (strlen(s) + 1); \
+	size_t local__len = (strlen(s) + 1); \
 	DupBlock((v),(s),local__len); \
     } while (0)
 
@@ -320,7 +320,7 @@ Tcl_PkgRequireProc(
     Tcl_Interp *interp,		/* Interpreter in which package is now
 				 * available. */
     const char *name,		/* Name of desired package. */
-    int reqc,			/* Requirements constraining the desired
+    size_t reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[],	/* 0 means to use the latest version
 				 * available. */
@@ -341,7 +341,7 @@ PkgRequireCore(
     Tcl_Interp *interp,		/* Interpreter in which package is now
 				 * available. */
     const char *name,		/* Name of desired package. */
-    int reqc,			/* Requirements constraining the desired
+    size_t reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[],	/* 0 means to use the latest version
 				 * available. */
@@ -748,12 +748,14 @@ Tcl_PkgPresentEx(
  *----------------------------------------------------------------------
  */
 
+// TODO - Turn into an ensemble...
+
 	/* ARGSUSED */
 int
 Tcl_PackageObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const pkgOptions[] = {
@@ -767,7 +769,7 @@ Tcl_PackageObjCmd(
 	PKG_VSATISFIES
     };
     Interp *iPtr = (Interp *) interp;
-    int optionIndex, exact, i, satisfies;
+    int optionIndex, exact, satisfies;
     PkgAvail *availPtr, *prevPtr;
     Package *pkgPtr;
     Tcl_HashEntry *hPtr;
@@ -776,6 +778,7 @@ Tcl_PackageObjCmd(
     const char *version;
     const char *argv2, *argv3, *argv4;
     char *iva = NULL, *ivb = NULL;
+    size_t i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -813,7 +816,8 @@ Tcl_PackageObjCmd(
 	break;
     }
     case PKG_IFNEEDED: {
-	int length, res;
+	size_t length;
+	int res;
 	char *argv3i, *avi;
 
 	if ((objc != 4) && (objc != 5)) {
@@ -1016,7 +1020,7 @@ Tcl_PackageObjCmd(
 	}
 	break;
     case PKG_UNKNOWN: {
-	int length;
+	size_t length;
 
 	if (objc == 2) {
 	    if (iPtr->packageUnknown != NULL) {
@@ -1560,10 +1564,10 @@ CompareVersions(
 static int
 CheckAllRequirements(
     Tcl_Interp *interp,
-    int reqc,			/* Requirements to check. */
+    size_t reqc,		/* Requirements to check. */
     Tcl_Obj *const reqv[])
 {
-    int i;
+    size_t i;
 
     for (i = 0; i < reqc; i++) {
 	if ((CheckRequirement(interp, TclGetString(reqv[i])) != TCL_OK)) {
@@ -1666,13 +1670,13 @@ CheckRequirement(
 static void
 AddRequirementsToResult(
     Tcl_Interp *interp,
-    int reqc,			/* Requirements constraining the desired
+    size_t reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
 {
     Tcl_Obj *result = Tcl_GetObjResult(interp);
-    int i, length;
+    size_t i, length;
 
     for (i = 0; i < reqc; i++) {
 	const char *v = Tcl_GetStringFromObj(reqv[i], &length);
@@ -1705,12 +1709,12 @@ AddRequirementsToResult(
 static void
 AddRequirementsToDString(
     Tcl_DString *dsPtr,
-    int reqc,			/* Requirements constraining the desired
+    size_t reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
 {
-    int i;
+    size_t i;
 
     if (reqc > 0) {
 	for (i = 0; i < reqc; i++) {
@@ -1745,12 +1749,12 @@ static int
 SomeRequirementSatisfied(
     char *availVersionI,	/* Candidate version to check against the
 				 * requirements. */
-    int reqc,			/* Requirements constraining the desired
+    size_t reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
 {
-    int i;
+    size_t i;
 
     for (i = 0; i < reqc; i++) {
 	if (RequirementSatisfied(availVersionI, TclGetString(reqv[i]))) {
@@ -1883,7 +1887,7 @@ RequirementSatisfied(
 const char *
 Tcl_PkgInitStubsCheck(
     Tcl_Interp *interp,
-    const char * version,
+    const char *version,
     int exact)
 {
     const char *actualVersion = Tcl_PkgPresent(interp, "Tcl", version, 0);

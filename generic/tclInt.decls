@@ -290,7 +290,7 @@ declare 64 {
 #    int TclpAccess(const char *path, int mode)
 #}
 declare 69 {
-    char *TclpAlloc(unsigned int size)
+    char *TclpAlloc(size_t size)
 }
 #declare 70 {
 #    int TclpCopyFile(const char *source, const char *dest)

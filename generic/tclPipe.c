@@ -34,7 +34,7 @@ TCL_DECLARE_MUTEX(pipeMutex)	/* Guard access to detList. */
 
 static TclFile		FileForRedirect(Tcl_Interp *interp, const char *spec,
 			    int atOk, const char *arg, const char *nextArg,
-			    int flags, int *skipPtr, int *closePtr,
+			    int flags, size_t *skipPtr, int *closePtr,
 			    int *releasePtr);
 
 /*
@@ -73,7 +73,7 @@ FileForRedirect(
 				 * NULL. */
     int flags,			/* Flags to use for opening file or to specify
 				 * mode for channel. */
-    int *skipPtr,		/* Filled with 1 if redirection target was in
+    size_t *skipPtr,		/* Filled with 1 if redirection target was in
 				 * spec, 2 if it was in nextArg. */
     int *closePtr,		/* Filled with one if the caller should close
 				 * the file when done with it, zero
@@ -435,7 +435,7 @@ TclCleanupChildren(
 int
 TclCreatePipeline(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
-    int argc,			/* Number of entries in argv. */
+    size_t argc,		/* Number of entries in argv. */
     const char **argv,		/* Array of strings describing commands in
 				 * pipeline plus I/O redirection with <, <<,
 				 * >, etc. Argv[argc] must be NULL. */
@@ -470,7 +470,7 @@ TclCreatePipeline(
 				 * pids of child processes. */
     int numPids;		/* Actual number of processes that exist at
 				 * *pidPtr right now. */
-    int cmdCount;		/* Count of number of distinct commands found
+    size_t cmdCount;		/* Count of number of distinct commands found
 				 * in argc/argv. */
     const char *inputLiteral = NULL;
 				/* If non-null, then this points to a string
@@ -497,11 +497,12 @@ TclCreatePipeline(
     int errorRelease = 0;
     const char *p;
     const char *nextArg;
-    int skip, lastBar, lastArg, i, j, atOK, flags, needCmd, errorToOutput = 0;
+    int lastBar, lastArg, atOK, flags, needCmd, errorToOutput = 0;
     Tcl_DString execBuffer;
     TclFile pipeIn;
     TclFile curInFile, curOutFile, curErrFile;
     Tcl_Channel channel;
+    size_t i, j, skip;
 
     if (inPipePtr != NULL) {
 	*inPipePtr = NULL;
@@ -1050,7 +1051,7 @@ Tcl_Channel
 Tcl_OpenCommandChannel(
     Tcl_Interp *interp,		/* Interpreter for error reporting. Can NOT be
 				 * NULL. */
-    int argc,			/* How many arguments. */
+    size_t argc,		/* How many arguments. */
     const char **argv,		/* Array of arguments for command pipe. */
     int flags)			/* Or'ed combination of TCL_STDIN, TCL_STDOUT,
 				 * TCL_STDERR, and TCL_ENFORCE_MODE. */

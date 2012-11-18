@@ -200,7 +200,7 @@ Tcl_RegExpExec(
      */
 
     Tcl_DStringInit(&ds);
-    ustr = Tcl_UtfToUniCharDString(text, -1, &ds);
+    ustr = Tcl_UtfToUniCharDString(text, TCL_STRLEN, &ds);
     numChars = Tcl_DStringLength(&ds) / sizeof(Tcl_UniChar);
     result = RegExpExecUniChar(interp, re, ustr, numChars, -1 /* nmatches */,
 	    flags);
@@ -433,7 +433,7 @@ Tcl_RegExpExecObj(
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
     Tcl_UniChar *udata;
-    int length;
+    size_t length;
     int reflags = regexpPtr->flags;
 #define TCL_REG_GLOBOK_FLAGS \
 	(TCL_REG_ADVANCED | TCL_REG_NOSUB | TCL_REG_NOCASE)
@@ -569,7 +569,7 @@ Tcl_GetRegExpFromObj(
 				 * expression. */
     int flags)			/* Regular expression compilation flags. */
 {
-    int length;
+    size_t length;
     TclRegexp *regexpPtr;
     const char *pattern;
 

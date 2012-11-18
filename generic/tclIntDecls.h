@@ -202,7 +202,7 @@ EXTERN int		TclObjInvoke(Tcl_Interp *interp, size_t objc,
 /* Slot 67 is reserved */
 /* Slot 68 is reserved */
 /* 69 */
-EXTERN char *		TclpAlloc(unsigned int size);
+EXTERN char *		TclpAlloc(size_t size);
 /* Slot 70 is reserved */
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
@@ -673,7 +673,7 @@ typedef struct TclIntStubs {
     void (*reserved66)(void);
     void (*reserved67)(void);
     void (*reserved68)(void);
-    char * (*tclpAlloc) (unsigned int size); /* 69 */
+    char * (*tclpAlloc) (size_t size); /* 69 */
     void (*reserved70)(void);
     void (*reserved71)(void);
     void (*reserved72)(void);

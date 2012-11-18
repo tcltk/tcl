@@ -133,7 +133,7 @@ static void	UnlockBucket(Cache *cachePtr, int bucket);
 static void	PutBlocks(Cache *cachePtr, int bucket, int numMove);
 static int	GetBlocks(Cache *cachePtr, int bucket);
 static Block *	Ptr2Block(char *ptr);
-static char *	Block2Ptr(Block *blockPtr, int bucket, unsigned int reqSize);
+static char *	Block2Ptr(Block *blockPtr, int bucket, size_t reqSize);
 static void	MoveObjs(Cache *fromPtr, Cache *toPtr, int numMove);
 
 /*
@@ -308,7 +308,7 @@ TclFreeAllocCache(
 
 char *
 TclpAlloc(
-    unsigned int reqSize)
+    size_t reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -442,7 +442,7 @@ TclpFree(
 char *
 TclpRealloc(
     char *ptr,
-    unsigned int reqSize)
+    size_t reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -755,7 +755,7 @@ static char *
 Block2Ptr(
     Block *blockPtr,
     int bucket,
-    unsigned int reqSize)
+    size_t reqSize)
 {
     register void *ptr;
 

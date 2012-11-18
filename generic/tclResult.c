@@ -1271,7 +1271,7 @@ TclProcessReturn(
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO],
                 &valuePtr);
 	if (valuePtr != NULL) {
-	    int infoLen;
+	    size_t infoLen;
 
 	    (void) TclGetStringFromObj(valuePtr, &infoLen);
 	    if (infoLen) {
@@ -1283,7 +1283,7 @@ TclProcessReturn(
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORSTACK],
                 &valuePtr);
 	if (valuePtr != NULL) {
-            int len, valueObjc;
+            size_t len, valueObjc;
             Tcl_Obj **valueObjv;
 
             if (Tcl_IsShared(iPtr->errorStack)) {
@@ -1360,7 +1360,7 @@ TclProcessReturn(
 int
 TclMergeReturnOptions(
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects. */
     Tcl_Obj **optionsPtrPtr,	/* If not NULL, points to space for a (Tcl_Obj
 				 * *) where the pointer to the merged return
@@ -1377,9 +1377,8 @@ TclMergeReturnOptions(
     Tcl_Obj **keys = GetKeys();
 
     for (;  objc > 1;  objv += 2, objc -= 2) {
-	int optLen;
+	size_t optLen, compareLen;
 	const char *opt = TclGetStringFromObj(objv[0], &optLen);
-	int compareLen;
 	const char *compare =
 		TclGetStringFromObj(keys[KEY_OPTIONS], &compareLen);
 
@@ -1461,9 +1460,9 @@ TclMergeReturnOptions(
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORCODE], &valuePtr);
     if (valuePtr != NULL) {
-	int length;
+	size_t length;
 
-	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length)) {
 	    /*
 	     * Value is not a list, which is illegal for -errorcode.
 	     */
@@ -1483,9 +1482,9 @@ TclMergeReturnOptions(
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORSTACK], &valuePtr);
     if (valuePtr != NULL) {
-	int length;
+	size_t length;
 
-	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length)) {
 	    /*
 	     * Value is not a list, which is illegal for -errorstack.
 	     */
@@ -1651,7 +1650,8 @@ Tcl_SetReturnOptions(
     Tcl_Interp *interp,
     Tcl_Obj *options)
 {
-    int objc, level, code;
+    int level, code;
+    size_t objc;
     Tcl_Obj **objv, *mergedOpts;
 
     Tcl_IncrRefCount(options);

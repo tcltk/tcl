@@ -105,15 +105,16 @@ const Tcl_ObjType tclStringType = {
  */
 
 typedef struct String {
-    int numChars;		/* The number of chars in the string. -1 means
-				 * this value has not been calculated. >= 0
-				 * means that there is a valid Unicode rep, or
-				 * that the number of UTF bytes == the number
-				 * of chars. */
-    int allocated;		/* The amount of space actually allocated for
+    size_t numChars;		/* The number of chars in the string.
+				 * TCL_STRLEN means this value has not been
+				 * calculated, and anything else means that
+				 * there is a valid Unicode rep, or that the
+				 * number of UTF bytes == the number of
+				 * chars. */
+    size_t allocated;		/* The amount of space actually allocated for
 				 * the UTF string (minus 1 byte for the
 				 * termination char). */
-    int maxChars;		/* Max number of chars that can fit in the
+    size_t maxChars;		/* Max number of chars that can fit in the
 				 * space allocated for the unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
 				 * a Unicode representation. */
@@ -123,26 +124,26 @@ typedef struct String {
 } String;
 
 #define STRING_MAXCHARS \
-	(int)(((size_t)UINT_MAX - sizeof(String))/sizeof(Tcl_UniChar))
+    (((size_t)ULONG_MAX - sizeof(String))/sizeof(Tcl_UniChar))
 #define STRING_SIZE(numChars) \
-	(sizeof(String) + ((numChars) * sizeof(Tcl_UniChar)))
+    (sizeof(String) + ((numChars) * sizeof(Tcl_UniChar)))
 #define stringCheckLimits(numChars) \
-    if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) { \
-	Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
+    if ((numChars) > STRING_MAXCHARS) { \
+	Tcl_Panic("max length for a Tcl unicode value (%lu chars) exceeded", \
 		STRING_MAXCHARS); \
     }
 #define stringAttemptAlloc(numChars) \
-	(String *) attemptckalloc((unsigned) STRING_SIZE(numChars) )
+    (String *) attemptckalloc(STRING_SIZE(numChars))
 #define stringAlloc(numChars) \
-	(String *) ckalloc((unsigned) STRING_SIZE(numChars) )
+    (String *) ckalloc(STRING_SIZE(numChars))
 #define stringRealloc(ptr, numChars) \
-    (String *) ckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
+    (String *) ckrealloc((ptr), STRING_SIZE(numChars))
 #define stringAttemptRealloc(ptr, numChars) \
-    (String *) attemptckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
+    (String *) attemptckrealloc((ptr), STRING_SIZE(numChars))
 #define GET_STRING(objPtr) \
-	((String *) (objPtr)->internalRep.otherValuePtr)
+    ((String *) (objPtr)->internalRep.otherValuePtr)
 #define SET_STRING(objPtr, stringPtr) \
-	((objPtr)->internalRep.otherValuePtr = (void *) (stringPtr))
+    ((objPtr)->internalRep.otherValuePtr = (void *) (stringPtr))
 
 /*
  * TCL STRING GROWTH ALGORITHM
@@ -315,9 +316,9 @@ Tcl_Obj *
 Tcl_NewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    size_t length)			/* The number of bytes to copy from "bytes"
+    size_t length)		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
-				 * (size_t)-1, use bytes up to the first NUL
+				 * TCL_STRLEN, use bytes up to the first NUL
 				 * byte. */
 {
     return Tcl_DbNewStringObj(bytes, length, "unknown", 0);
@@ -327,14 +328,14 @@ Tcl_Obj *
 Tcl_NewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    size_t length)			/* The number of bytes to copy from "bytes"
+    size_t length)		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
-				 * negative, use bytes up to the first NUL
+				 * TCL_STRLEN, use bytes up to the first NUL
 				 * byte. */
 {
     Tcl_Obj *objPtr;
 
-    if (length == (size_t)-1) {
+    if (length == TCL_STRLEN) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclNewStringObj(objPtr, bytes, length);
@@ -376,9 +377,9 @@ Tcl_Obj *
 Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    size_t length,			/* The number of bytes to copy from "bytes"
+    size_t length,		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
-				 * negative, use bytes up to the first NUL
+				 * TCL_STRLEN, use bytes up to the first NUL
 				 * byte. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
@@ -387,7 +388,7 @@ Tcl_DbNewStringObj(
 {
     Tcl_Obj *objPtr;
 
-    if (length == (size_t)-1) {
+    if (length == TCL_STRLEN) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclDbNewObj(objPtr, file, line);
@@ -399,9 +400,9 @@ Tcl_Obj *
 Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    size_t length,			/* The number of bytes to copy from "bytes"
+    size_t length,		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
-				 * negative, use bytes up to the first NUL
+				 * TCL_STRLEN, use bytes up to the first NUL
 				 * byte. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
@@ -495,7 +496,7 @@ Tcl_GetCharLength(
      * If numChars is unknown, compute it.
      */
 
-    if (numChars == (size_t)-1) {
+    if (numChars == TCL_STRLEN) {
 	TclNumUtfChars(numChars, objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
 
@@ -535,7 +536,7 @@ Tcl_UniChar
 Tcl_GetUniChar(
     Tcl_Obj *objPtr,		/* The object to get the Unicode charater
 				 * from. */
-    size_t index)			/* Get the index'th Unicode character. */
+    size_t index)		/* Get the index'th Unicode character. */
 {
     String *stringPtr;
 
@@ -563,7 +564,7 @@ Tcl_GetUniChar(
 	 * If numChars is unknown, compute it.
 	 */
 
-	if (stringPtr->numChars == -1) {
+	if (stringPtr->numChars == TCL_STRLEN) {
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
@@ -667,8 +668,8 @@ Tcl_GetUnicodeFromObj(
 Tcl_Obj *
 Tcl_GetRange(
     Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
-    size_t first,			/* First index of the range. */
-    size_t last)			/* Last index of the range. */
+    size_t first,		/* First index of the range. */
+    size_t last)		/* Last index of the range. */
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
@@ -697,7 +698,7 @@ Tcl_GetRange(
 	 * If numChars is unknown, compute it.
 	 */
 
-	if (stringPtr->numChars == (size_t)-1) {
+	if (stringPtr->numChars == TCL_STRLEN) {
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
@@ -745,7 +746,7 @@ Tcl_SetStringObj(
     Tcl_Obj *objPtr,		/* Object whose internal rep to init. */
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the object. */
-    size_t length)			/* The number of bytes to copy from "bytes"
+    size_t length)		/* The number of bytes to copy from "bytes"
 				 * when initializing the object. If negative,
 				 * use bytes up to the first NUL byte.*/
 {
@@ -765,7 +766,7 @@ Tcl_SetStringObj(
      */
 
     TclInvalidateStringRep(objPtr);
-    if (length == (size_t)-1) {
+    if (length == TCL_STRLEN) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclInitStringRep(objPtr, bytes, length);
@@ -798,20 +799,20 @@ void
 Tcl_SetObjLength(
     Tcl_Obj *objPtr,		/* Pointer to object. This object must not
 				 * currently be shared. */
-    size_t length)			/* Number of bytes desired for string
+    size_t length)		/* Number of bytes desired for string
 				 * representation of object, not including
 				 * terminating null byte. */
 {
     String *stringPtr;
 
-    if (length == (size_t)-1) {
+    if (length == TCL_STRLEN) {
 	/*
 	 * Setting to a negative length is nonsense. This is probably the
 	 * result of overflowing the signed integer range.
 	 */
 
 	Tcl_Panic("Tcl_SetObjLength: negative length requested: "
-		"%d (integer overflow?)", length);
+		"%lu (integer overflow?)", length);
     }
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetObjLength");
@@ -847,7 +848,7 @@ Tcl_SetObjLength(
 	 * Invalidate the unicode data.
 	 */
 
-	stringPtr->numChars = (size_t)-1;
+	stringPtr->numChars = TCL_STRLEN;
 	stringPtr->hasUnicode = 0;
     } else {
 	/*
@@ -903,13 +904,13 @@ int
 Tcl_AttemptSetObjLength(
     Tcl_Obj *objPtr,		/* Pointer to object. This object must not
 				 * currently be shared. */
-    size_t length)			/* Number of bytes desired for string
+    size_t length)		/* Number of bytes desired for string
 				 * representation of object, not including
 				 * terminating null byte. */
 {
     String *stringPtr;
 
-    if (length == (size_t)-1) {
+    if (length == TCL_STRLEN) {
 	/*
 	 * Setting to a negative length is nonsense. This is probably the
 	 * result of overflowing the signed integer range.
@@ -957,7 +958,7 @@ Tcl_AttemptSetObjLength(
 	 * Invalidate the unicode data.
 	 */
 
-	stringPtr->numChars = (size_t)-1;
+	stringPtr->numChars = TCL_STRLEN;
 	stringPtr->hasUnicode = 0;
     } else {
 	/*
@@ -1048,7 +1049,7 @@ SetUnicodeObj(
 {
     String *stringPtr;
 
-    if (numChars == (size_t)-1) {
+    if (numChars == TCL_STRLEN) {
 	numChars = UnicodeLength(unicode);
     }
 
@@ -1175,10 +1176,11 @@ Tcl_AppendToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const char *bytes,		/* Points to the bytes to append to the
 				 * object. */
-    size_t length)			/* The number of bytes to append from "bytes".
-				 * If (size_t)-1, then append all bytes up to NUL
-				 * byte. */
+    size_t length)		/* The number of bytes to append from "bytes".
+				 * If TCL_STRLEN, then append all bytes up to
+				 * NUL byte. */
 {
+    // TODO Handle appending more than INT_MAX bytes
     Tcl_AppendLimitedToObj(objPtr, bytes, length, INT_MAX, NULL);
 }
 
@@ -1204,7 +1206,7 @@ Tcl_AppendUnicodeToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const Tcl_UniChar *unicode,	/* The unicode string to append to the
 				 * object. */
-    size_t length)			/* Number of chars in "unicode". */
+    size_t length)		/* Number of chars in "unicode". */
 {
     String *stringPtr;
 
@@ -1260,7 +1262,7 @@ Tcl_AppendObjToObj(
     Tcl_Obj *appendObjPtr)	/* Object to append. */
 {
     String *stringPtr;
-    size_t length, numChars, appendNumChars = (size_t)-1;
+    size_t length, numChars, appendNumChars = TCL_STRLEN;
     const char *bytes;
 
     /*
@@ -1282,7 +1284,7 @@ Tcl_AppendObjToObj(
     if ((TclIsPureByteArray(objPtr) || objPtr->bytes == tclEmptyStringRep)
 	    && TclIsPureByteArray(appendObjPtr)) {
 	unsigned char *bytesSrc;
-	int lengthSrc, lengthTotal;
+	size_t lengthSrc, lengthTotal;
 
 	/*
 	 * We do not assume that objPtr and appendObjPtr must be distinct!
@@ -1345,12 +1347,13 @@ Tcl_AppendObjToObj(
     numChars = stringPtr->numChars;
     if ((numChars >= 0) && (appendObjPtr->typePtr == &tclStringType)) {
 	String *appendStringPtr = GET_STRING(appendObjPtr);
+
 	appendNumChars = appendStringPtr->numChars;
     }
 
     AppendUtfToUtfRep(objPtr, bytes, length);
 
-    if (numChars != (size_t)-1 && appendNumChars  != (size_t)-1
+    if (numChars != TCL_STRLEN && appendNumChars != TCL_STRLEN
 #if COMPAT
 		&& appendNumChars == length
 #endif
@@ -1407,7 +1410,7 @@ AppendUnicodeToUnicodeRep(
     stringCheckLimits(numChars);
 
     if (numChars > stringPtr->maxChars) {
-	int offset = -1;
+	ptrdiff_t offset = -1;
 
 	/*
 	 * Protect against case where unicode points into the existing
@@ -1473,7 +1476,7 @@ AppendUnicodeToUtfRep(
 
     numChars = ExtendStringRepWithUnicode(objPtr, unicode, numChars);
 
-    if (stringPtr->numChars != -1) {
+    if (stringPtr->numChars != TCL_STRLEN) {
 	stringPtr->numChars += numChars;
     }
 
@@ -1516,7 +1519,7 @@ AppendUtfToUnicodeRep(
 	return;
     }
 
-    ExtendUnicodeRepWithString(objPtr, bytes, numBytes, -1);
+    ExtendUnicodeRepWithString(objPtr, bytes, numBytes, TCL_STRLEN);
     TclInvalidateStringRep(objPtr);
     stringPtr = GET_STRING(objPtr);
     stringPtr->allocated = 0;
@@ -1569,7 +1572,7 @@ AppendUtfToUtfRep(
 
     stringPtr = GET_STRING(objPtr);
     if (newLength > stringPtr->allocated) {
-	int offset = -1;
+	ptrdiff_t offset = -1;
 
 	/*
 	 * Protect against case where unicode points into the existing
@@ -1602,7 +1605,7 @@ AppendUtfToUtfRep(
      * Invalidate the unicode data.
      */
 
-    stringPtr->numChars = -1;
+    stringPtr->numChars = TCL_STRLEN;
     stringPtr->hasUnicode = 0;
 
     memmove(objPtr->bytes + oldLength, bytes, numBytes);
@@ -1643,7 +1646,7 @@ Tcl_AppendStringsToObjVA(
 	if (bytes == NULL) {
 	    break;
 	}
-	Tcl_AppendToObj(objPtr, bytes, -1);
+	Tcl_AppendToObj(objPtr, bytes, TCL_STRLEN);
     }
 }
 
@@ -1702,12 +1705,12 @@ Tcl_AppendFormatToObj(
     Tcl_Interp *interp,
     Tcl_Obj *appendObj,
     const char *format,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     const char *span = format, *msg, *errCode;
     int numBytes = 0, objIndex = 0, gotXpg = 0, gotSequential = 0;
-    int originalLength, limit;
+    size_t originalLength, limit;
     static const char *mixedXPG =
 	    "cannot mix \"%\" and \"%n$\" conversion specifiers";
     static const char *const badIndex[2] = {
@@ -1730,7 +1733,8 @@ Tcl_AppendFormatToObj(
 	char *end;
 	int gotMinus, gotHash, gotZero, gotSpace, gotPlus, sawFlag;
 	int width, gotPrecision, precision, useShort, useWide, useBig;
-	int newXpg, numChars, allocSegment = 0, segmentLimit, segmentNumBytes;
+	int newXpg, numChars, allocSegment = 0, segmentLimit;
+	size_t segmentNumBytes;
 	Tcl_Obj *segment;
 	Tcl_UniChar ch;
 	int step = Tcl_UtfToUniChar(format, &ch);
@@ -1933,7 +1937,7 @@ Tcl_AppendFormatToObj(
 	 */
 
 	segment = objv[objIndex];
-	numChars = -1;
+	numChars = TCL_STRLEN;
 	if (ch == 'i') {
 	    ch = 'd';
 	}
@@ -2064,7 +2068,7 @@ Tcl_AppendFormatToObj(
 
 	    switch (ch) {
 	    case 'd': {
-		int length;
+		size_t length;
 		Tcl_Obj *pure;
 		const char *bytes;
 
@@ -2395,7 +2399,7 @@ Tcl_AppendFormatToObj(
 
   errorMsg:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", errCode, NULL);
     }
   error:
@@ -2421,7 +2425,7 @@ Tcl_Obj *
 Tcl_Format(
     Tcl_Interp *interp,
     const char *format,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     int result;
@@ -2453,7 +2457,8 @@ AppendPrintfToObjVA(
     const char *format,
     va_list argList)
 {
-    int code, objc;
+    int code;
+    size_t objc;
     Tcl_Obj **objv, *list = Tcl_NewObj();
     const char *p;
 
@@ -2657,7 +2662,7 @@ static void
 ReverseBytes(
     unsigned char *to,		/* Copy bytes into here... */
     unsigned char *from,	/* ...from here... */
-    int count)		/* Until this many are copied, */
+    size_t count)		/* Until this many are copied, */
 				/* reversing as you go. */
 {
     unsigned char *src = from + count;
@@ -2683,7 +2688,7 @@ TclStringObjReverse(
     Tcl_UniChar ch;
 
     if (TclIsPureByteArray(objPtr)) {
-	int numBytes;
+	size_t numBytes;
 	unsigned char *from = Tcl_GetByteArrayFromObj(objPtr, &numBytes);
 
 	if (Tcl_IsShared(objPtr)) {
@@ -2736,12 +2741,12 @@ TclStringObjReverse(
 	}
 	to = objPtr->bytes;
 
-	if (numChars < numBytes) {
+	if (numChars == TCL_STRLEN || numChars < numBytes) {
 	    /*
-	     * Either numChars == -1 and we don't know how many chars are
-	     * represented by objPtr->bytes and we need Pass 1 just in case,
-	     * or numChars >= 0 and we know we have fewer chars than bytes,
-	     * so we know there's a multibyte character needing Pass 1.
+	     * Either numChars == TCL_STRLEN and we don't know how many chars
+	     * are represented by objPtr->bytes and we need Pass 1 just in
+	     * case, or numChars >= 0 and we know we have fewer chars than
+	     * bytes, so we know there's a multibyte character needing Pass 1.
 	     *
 	     * Pass 1. Reverse the bytes of each multi-byte character.
 	     */
@@ -2816,7 +2821,7 @@ ExtendUnicodeRepWithString(
     if (stringPtr->hasUnicode) {
 	numOrigChars = stringPtr->numChars;
     }
-    if (numAppendChars == -1) {
+    if (numAppendChars == TCL_STRLEN) {
 	TclNumUtfChars(numAppendChars, bytes, numBytes);
     }
     needed = numOrigChars + numAppendChars;
@@ -2864,7 +2869,7 @@ DupStringInternalRep(
     String *copyStringPtr = NULL;
 
 #if COMPAT==0
-    if (srcStringPtr->numChars == -1) {
+    if (srcStringPtr->numChars == TCL_STRLEN) {
 	/*
 	 * The String struct in the source value holds zero useful data. Don't
 	 * bother copying it. Don't even bother allocating space in which to
@@ -2983,7 +2988,7 @@ SetStringFromAny(
 	 * already in place at objPtr->bytes.
 	 */
 
-	stringPtr->numChars = -1;
+	stringPtr->numChars = TCL_STRLEN;
 	stringPtr->allocated = objPtr->length;
 	stringPtr->maxChars = 0;
 	stringPtr->hasUnicode = 0;

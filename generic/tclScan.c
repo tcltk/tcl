@@ -47,7 +47,7 @@ static const char *	BuildCharSet(CharSet *cset, const char *format);
 static int		CharInSet(CharSet *cset, int ch);
 static void		ReleaseCharSet(CharSet *cset);
 static int		ValidateFormat(Tcl_Interp *interp, const char *format,
-			    int numVars, int *totalVars);
+			    size_t numVars, size_t *totalVars);
 
 /*
  *----------------------------------------------------------------------
@@ -250,9 +250,9 @@ static int
 ValidateFormat(
     Tcl_Interp *interp,		/* Current interpreter. */
     const char *format,		/* The format string. */
-    int numVars,		/* The number of variables passed to the scan
+    size_t numVars,		/* The number of variables passed to the scan
 				 * command. */
-    int *totalSubs)		/* The number of variables that will be
+    size_t *totalSubs)		/* The number of variables that will be
 				 * required. */
 {
     int gotXpg, gotSequential, value, i, flags;
@@ -568,12 +568,12 @@ int
 Tcl_ScanObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *format;
-    int numVars, nconversions, totalVars = -1;
-    int objIndex, offset, i, result, code;
+    size_t numVars, nconversions, totalVars = 0, i;
+    int objIndex, offset, result, code;
     long value;
     const char *string, *end, *baseString;
     char op = 0;

@@ -776,19 +776,20 @@ TclServiceIdle(void)
  *----------------------------------------------------------------------
  */
 
+// TODO Can this become an ensemble?
 	/* ARGSUSED */
 int
 Tcl_AfterObjCmd(
     ClientData clientData,	/* Unused */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_WideInt ms = 0;		/* Number of milliseconds to wait */
     Tcl_Time wakeup;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr;
-    int length;
+    size_t length;
     int index;
     static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
@@ -889,7 +890,7 @@ Tcl_AfterObjCmd(
     case AFTER_CANCEL: {
 	Tcl_Obj *commandPtr;
 	const char *command, *tempCommand;
-	int tempLength;
+	size_t tempLength;
 
 	if (objc < 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "id|command");
