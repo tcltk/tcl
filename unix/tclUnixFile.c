@@ -259,7 +259,7 @@ TclpMatchInDirectory(
 	DIR *d;
 	Tcl_DirEntry *entryPtr;
 	const char *dirName;
-	int dirLength, nativeDirLen;
+	size_t dirLength, nativeDirLen;
 	int matchHidden, matchHiddenPat;
 	Tcl_StatBuf statBuf;
 	Tcl_DString ds;		/* native encoding of dir */
@@ -934,7 +934,7 @@ TclpObjLink(
 	 */
 
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
-	    int targetLen;
+	    size_t targetLen;
 	    Tcl_DString ds;
 	    Tcl_Obj *transPtr;
 
@@ -1077,7 +1077,7 @@ TclNativeCreateNativeRep(
     const char *str;
     Tcl_DString ds;
     Tcl_Obj *validPathPtr;
-    int len;
+    size_t len;
 
     if (TclFSCwdIsNative()) {
 	/*
@@ -1107,7 +1107,7 @@ TclNativeCreateNativeRep(
     len = Tcl_DStringLength(&ds) + sizeof(char);
     Tcl_DecrRefCount(validPathPtr);
     nativePathPtr = ckalloc(len);
-    memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
+    memcpy(nativePathPtr, Tcl_DStringValue(&ds), len);
 
     Tcl_DStringFree(&ds);
     return nativePathPtr;

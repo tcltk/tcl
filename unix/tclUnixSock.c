@@ -113,21 +113,14 @@ struct TcpState {
 static int		CreateClientSocket(Tcl_Interp *interp,
                                            TcpState *state);
 static void		TcpAccept(ClientData data, int mask);
-static int		TcpBlockModeProc(ClientData data, int mode);
-static int		TcpCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
-static int		TcpClose2Proc(ClientData instanceData,
-			    Tcl_Interp *interp, int flags);
-static int		TcpGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		TcpGetOptionProc(ClientData instanceData,
-			    Tcl_Interp *interp, const char *optionName,
-			    Tcl_DString *dsPtr);
-static size_t	TcpInputProc(ClientData instanceData, char *buf,
-			    size_t toRead, int *errorCode);
-static int		TcpOutputProc(ClientData instanceData,
-			    const char *buf, int toWrite, int *errorCode);
-static void		TcpWatchProc(ClientData instanceData, int mask);
+static Tcl_DriverBlockModeProc	TcpBlockModeProc;
+static Tcl_DriverCloseProc	TcpCloseProc;
+static Tcl_DriverClose2Proc	TcpClose2Proc;
+static Tcl_DriverGetHandleProc	TcpGetHandleProc;
+static Tcl_DriverGetOptionProc	TcpGetOptionProc;
+static Tcl_DriverInputProc	TcpInputProc;
+static Tcl_DriverOutputProc	TcpOutputProc;
+static Tcl_DriverWatchProc	TcpWatchProc;
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
 
 /*
@@ -180,7 +173,7 @@ static ProcessGlobalValue hostName =
 static void
 InitializeHostName(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *native = NULL;
@@ -437,7 +430,7 @@ WaitForConnect(
  */
 
 	/* ARGSUSED */
-static size_t
+static ssize_t
 TcpInputProc(
     ClientData instanceData,	/* Socket state. */
     char *buf,			/* Where to store data read. */
@@ -446,13 +439,13 @@ TcpInputProc(
     int *errorCodePtr)		/* Where to store error code. */
 {
     TcpState *statePtr = instanceData;
-    int bytesRead;
+    ssize_t bytesRead;
 
     *errorCodePtr = 0;
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    bytesRead = recv(statePtr->fds.fd, buf, (size_t) bufSize, 0);
+    bytesRead = recv(statePtr->fds.fd, buf, bufSize, 0);
     if (bytesRead > -1) {
 	return bytesRead;
     }
@@ -488,21 +481,21 @@ TcpInputProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 TcpOutputProc(
     ClientData instanceData,	/* Socket state. */
     const char *buf,		/* The data buffer. */
-    int toWrite,		/* How many bytes to write? */
+    size_t toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
 {
     TcpState *statePtr = instanceData;
-    int written;
+    ssize_t written;
 
     *errorCodePtr = 0;
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    written = send(statePtr->fds.fd, buf, (size_t) toWrite, 0);
+    written = send(statePtr->fds.fd, buf, toWrite, 0);
     if (written > -1) {
 	return written;
     }

@@ -48,16 +48,12 @@ typedef struct PipeState {
  * Declarations for local functions defined in this file:
  */
 
-static int		PipeBlockModeProc(ClientData instanceData, int mode);
-static int		PipeClose2Proc(ClientData instanceData,
-			    Tcl_Interp *interp, int flags);
-static int		PipeGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		PipeInputProc(ClientData instanceData, char *buf,
-			    int toRead, int *errorCode);
-static int		PipeOutputProc(ClientData instanceData,
-			    const char *buf, int toWrite, int *errorCode);
-static void		PipeWatchProc(ClientData instanceData, int mask);
+static Tcl_DriverBlockModeProc	PipeBlockModeProc;
+static Tcl_DriverClose2Proc	PipeClose2Proc;
+static Tcl_DriverGetHandleProc	PipeGetHandleProc;
+static Tcl_DriverInputProc	PipeInputProc;
+static Tcl_DriverOutputProc	PipeOutputProc;
+static Tcl_DriverWatchProc	PipeWatchProc;
 static void		RestoreSignals(void);
 static int		SetupStdFile(TclFile file, int type);
 
@@ -379,7 +375,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    int argc,			/* Number of arguments in following array. */
+    size_t argc,		/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings in UTF-8.
 				 * argv[0] contains the name of the executable
 				 * translated using Tcl_TranslateFileName
@@ -1034,16 +1030,16 @@ PipeClose2Proc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 PipeInputProc(
     ClientData instanceData,	/* Pipe state. */
     char *buf,			/* Where to store data read. */
-    int toRead,			/* How much space is available in the
+    size_t toRead,		/* How much space is available in the
 				 * buffer? */
     int *errorCodePtr)		/* Where to store error code. */
 {
     PipeState *psPtr = instanceData;
-    int bytesRead;		/* How many bytes were actually read from the
+    size_t bytesRead;		/* How many bytes were actually read from the
 				 * input device? */
 
     *errorCodePtr = 0;
@@ -1057,7 +1053,7 @@ PipeInputProc(
      */
 
     do {
-	bytesRead = read(GetFd(psPtr->inFile), buf, (size_t) toRead);
+	bytesRead = read(GetFd(psPtr->inFile), buf, toRead);
     } while ((bytesRead < 0) && (errno == EINTR));
 
     if (bytesRead < 0) {
@@ -1085,15 +1081,15 @@ PipeInputProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 PipeOutputProc(
     ClientData instanceData,	/* Pipe state. */
     const char *buf,		/* The data buffer. */
-    int toWrite,		/* How many bytes to write? */
+    size_t toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
 {
     PipeState *psPtr = instanceData;
-    int written;
+    ssize_t written;
 
     *errorCodePtr = 0;
 
@@ -1103,7 +1099,7 @@ PipeOutputProc(
      */
 
     do {
-	written = write(GetFd(psPtr->outFile), buf, (size_t) toWrite);
+	written = write(GetFd(psPtr->outFile), buf, toWrite);
     } while ((written < 0) && (errno == EINTR));
 
     if (written < 0) {
@@ -1252,7 +1248,7 @@ int
 Tcl_PidObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Channel chan;

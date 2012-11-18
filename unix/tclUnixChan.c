@@ -146,27 +146,19 @@ typedef struct TtyAttrs {
  * Static routines for this file:
  */
 
-static int		FileBlockModeProc(ClientData instanceData, int mode);
-static int		FileCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
-static int		FileGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		FileInputProc(ClientData instanceData, char *buf,
-			    int toRead, int *errorCode);
-static int		FileOutputProc(ClientData instanceData,
-			    const char *buf, int toWrite, int *errorCode);
-static int		FileSeekProc(ClientData instanceData, long offset,
-			    int mode, int *errorCode);
-static int		FileTruncateProc(ClientData instanceData,
-			    Tcl_WideInt length);
-static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCode);
-static void		FileWatchProc(ClientData instanceData, int mask);
+static Tcl_DriverBlockModeProc	FileBlockModeProc;
+static Tcl_DriverCloseProc	FileCloseProc;
+static Tcl_DriverGetHandleProc	FileGetHandleProc;
+static Tcl_DriverInputProc	FileInputProc;
+static Tcl_DriverOutputProc	FileOutputProc;
+static Tcl_DriverSeekProc	FileSeekProc;
+static Tcl_DriverTruncateProc	FileTruncateProc;
+static Tcl_DriverWideSeekProc	FileWideSeekProc;
+static Tcl_DriverWatchProc	FileWatchProc;
 #ifdef SUPPORTS_TTY
+static Tcl_DriverGetOptionProc	TtyGetOptionProc;
+static Tcl_DriverSetOptionProc	TtySetOptionProc;
 static void		TtyGetAttributes(int fd, TtyAttrs *ttyPtr);
-static int		TtyGetOptionProc(ClientData instanceData,
-			    Tcl_Interp *interp, const char *optionName,
-			    Tcl_DString *dsPtr);
 #ifndef DIRECT_BAUD
 static int		TtyGetBaud(unsigned long speed);
 static unsigned long	TtyGetSpeed(int baud);
@@ -177,9 +169,6 @@ static int		TtyParseMode(Tcl_Interp *interp, const char *mode,
 			    int *speedPtr, int *parityPtr, int *dataPtr,
 			    int *stopPtr);
 static void		TtySetAttributes(int fd, TtyAttrs *ttyPtr);
-static int		TtySetOptionProc(ClientData instanceData,
-			    Tcl_Interp *interp, const char *optionName,
-			    const char *value);
 #endif	/* SUPPORTS_TTY */
 
 /*
@@ -284,16 +273,16 @@ FileBlockModeProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 FileInputProc(
     ClientData instanceData,	/* File state. */
     char *buf,			/* Where to store data read. */
-    int toRead,			/* How much space is available in the
+    size_t toRead,		/* How much space is available in the
 				 * buffer? */
     int *errorCodePtr)		/* Where to store error code. */
 {
     FileState *fsPtr = instanceData;
-    int bytesRead;		/* How many bytes were actually read from the
+    ssize_t bytesRead;		/* How many bytes were actually read from the
 				 * input device? */
 
     *errorCodePtr = 0;
@@ -305,8 +294,8 @@ FileInputProc(
      * nonblocking, the read will never block.
      */
 
-    bytesRead = read(fsPtr->fd, buf, (size_t) toRead);
-    if (bytesRead > -1) {
+    bytesRead = read(fsPtr->fd, buf, toRead);
+    if (bytesRead != -1) {
 	return bytesRead;
     }
     *errorCodePtr = errno;
@@ -331,29 +320,29 @@ FileInputProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 FileOutputProc(
     ClientData instanceData,	/* File state. */
     const char *buf,		/* The data buffer. */
-    int toWrite,		/* How many bytes to write? */
+    size_t toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
 {
     FileState *fsPtr = instanceData;
-    int written;
+    ssize_t written;
 
     *errorCodePtr = 0;
 
     if (toWrite == 0) {
 	/*
-	 * SF Tcl Bug 465765. Do not try to write nothing into a file. STREAM
-	 * based implementations will considers this as EOF (if there is a
-	 * pipe behind the file).
+	 * Do not try to write nothing into a file. STREAM based
+	 * implementations will considers this as EOF (if there is a pipe
+	 * behind the file). [Bug 465765]
 	 */
 
 	return 0;
     }
-    written = write(fsPtr->fd, buf, (size_t) toWrite);
-    if (written > -1) {
+    written = write(fsPtr->fd, buf, toWrite);
+    if (written != -1) {
 	return written;
     }
     *errorCodePtr = errno;
@@ -637,7 +626,8 @@ TtySetOptionProc(
     unsigned int len, vlen;
     TtyAttrs tty;
 #ifdef USE_TERMIOS
-    int flag, control, argc;
+    int flag, control;
+    size_t argc;
     const char **argv;
     IOSTATE iostate;
 #endif /* USE_TERMIOS */

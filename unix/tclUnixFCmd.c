@@ -527,7 +527,7 @@ TclUnixCopyFile(
     int srcFd, dstFd;
     unsigned blockSize;		/* Optimal I/O blocksize for filesystem */
     char *buffer;		/* Data buffer for copy */
-    size_t nread;
+    ssize_t nread;
 
 #ifdef DJGPP
 #define BINMODE |O_BINARY
@@ -583,19 +583,19 @@ TclUnixCopyFile(
     }
     buffer = ckalloc(blockSize);
     while (1) {
-	nread = (size_t) read(srcFd, buffer, blockSize);
-	if ((nread == (size_t) -1) || (nread == 0)) {
+	nread = read(srcFd, buffer, blockSize);
+	if ((nread == -1) || (nread == 0)) {
 	    break;
 	}
-	if ((size_t) write(dstFd, buffer, nread) != nread) {
-	    nread = (size_t) -1;
+	if (write(dstFd, buffer, nread) != nread) {
+	    nread = -1;
 	    break;
 	}
     }
 
     ckfree(buffer);
     close(srcFd);
-    if ((close(dstFd) != 0) || (nread == (size_t) -1)) {
+    if ((close(dstFd) != 0) || (nread == -1)) {
 	unlink(dst);					/* INTL: Native. */
 	return TCL_ERROR;
     }
@@ -1478,7 +1478,7 @@ SetGroupAttribute(
 	Tcl_DString ds;
 	struct group *groupPtr = NULL;
 	const char *string;
-	int length;
+	size_t length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
@@ -1545,7 +1545,7 @@ SetOwnerAttribute(
 	Tcl_DString ds;
 	struct passwd *pwPtr = NULL;
 	const char *string;
-	int length;
+	size_t length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
@@ -1917,7 +1917,7 @@ TclpObjNormalizePath(
     int nextCheckpoint)
 {
     const char *currentPathEndPosition;
-    int pathLen;
+    size_t pathLen;
     char cur;
     const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
     Tcl_DString ds;
@@ -2148,7 +2148,8 @@ TclUnixOpenTemporaryFile(
 {
     Tcl_DString template, tmp;
     const char *string;
-    int len, fd;
+    int fd;
+    size_t len;
 
     /*
      * We should also check against making more then TMP_MAX of these.
