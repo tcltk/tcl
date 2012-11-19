@@ -34,7 +34,8 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
 static const TclStubs *
 HasStubSupport(
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+    int magic)
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -42,7 +43,7 @@ HasStubSupport(
 	/* No stub table at all? Nothing we can do. */
 	return NULL;
     }
-    if (iPtr->stubTable->magic != TCL_STUB_MAGIC) {
+    if (iPtr->stubTable->magic != magic) {
 	/*
 	 * The iPtr->stubTable entry from Tcl_Interp and the
 	 * Tcl_NewStringObj() and Tcl_SetObjResult() entries
@@ -70,7 +71,7 @@ static int isDigit(const int c)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InitStubs --
+ * TclInitStubs --
  *
  *	Tries to initialise the stub table pointers and ensures that the
  *	correct version of Tcl is loaded.
@@ -86,10 +87,11 @@ static int isDigit(const int c)
  */
 
 MODULE_SCOPE const char *
-Tcl_InitStubs(
+TclInitStubs(
     Tcl_Interp *interp,
     const char *version,
-    int exact)
+    int exact,
+    int magic)
 {
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
@@ -100,7 +102,7 @@ Tcl_InitStubs(
      * times. [Bug 615304]
      */
 
-    tclStubsPtr = HasStubSupport(interp);
+    tclStubsPtr = HasStubSupport(interp, magic);
     if (!tclStubsPtr) {
 	return NULL;
     }
