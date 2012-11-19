@@ -3756,41 +3756,28 @@ Tcl_ListMathFuncs(
     Tcl_Interp *interp,
     const char *pattern)
 {
-    Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
-    Namespace *nsPtr;
-    Namespace *dummy1NsPtr;
-    Namespace *dummy2NsPtr;
-    const char *dummyNamePtr;
-    Tcl_Obj *result = Tcl_NewObj();
+    Tcl_Obj *script = Tcl_NewStringObj("::info functions ", -1);
+    Tcl_Obj *result;
+    Tcl_InterpState state;
 
-    TclGetNamespaceForQualName(interp, "::tcl::mathfunc",
-	    globalNsPtr, TCL_FIND_ONLY_NS | TCL_GLOBAL_ONLY,
-	    &nsPtr, &dummy1NsPtr, &dummy2NsPtr, &dummyNamePtr);
-    if (nsPtr == NULL) {
-	return result;
+    if (pattern) {
+	Tcl_Obj *patternObj = Tcl_NewStringObj(pattern, -1);
+	Tcl_Obj *arg = Tcl_NewListObj(1, &patternObj);
+
+	Tcl_AppendObjToObj(script, arg);
+	Tcl_DecrRefCount(arg);	/* Should tear down patternObj too */
     }
 
-    if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
-	if (Tcl_FindHashEntry(&nsPtr->cmdTable, pattern) != NULL) {
-	    Tcl_ListObjAppendElement(NULL, result,
-		    Tcl_NewStringObj(pattern, -1));
-	}
+    state = Tcl_SaveInterpState(interp, TCL_OK);
+    Tcl_IncrRefCount(script);
+    if (TCL_OK == Tcl_EvalObjEx(interp, script, 0)) {
+	result = Tcl_DuplicateObj(Tcl_GetObjResult(interp));
     } else {
-	Tcl_HashSearch cmdHashSearch;
-	Tcl_HashEntry *cmdHashEntry =
-		Tcl_FirstHashEntry(&nsPtr->cmdTable,&cmdHashSearch);
-
-	for (; cmdHashEntry != NULL;
-		cmdHashEntry = Tcl_NextHashEntry(&cmdHashSearch)) {
-	    const char *cmdNamePtr =
-		    Tcl_GetHashKey(&nsPtr->cmdTable, cmdHashEntry);
-
-	    if (pattern == NULL || Tcl_StringMatch(cmdNamePtr, pattern)) {
-		Tcl_ListObjAppendElement(NULL, result,
-			Tcl_NewStringObj(cmdNamePtr, -1));
-	    }
-	}
+	result = Tcl_NewObj();
     }
+    Tcl_DecrRefCount(script);
+    Tcl_RestoreInterpState(interp, state);
+
     return result;
 }
 
