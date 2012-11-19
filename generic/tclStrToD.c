@@ -525,7 +525,6 @@ TclParseNumber(
     char d = 0;			/* Last hexadecimal digit scanned; initialized
 				 * to avoid a compiler warning. */
     int shift = 0;		/* Amount to shift when accumulating binary */
-    int explicitOctal = 0;
 
 #define ALL_BITS	(~(Tcl_WideUInt)0)
 #define MOST_BITS	(ALL_BITS >> 1)
@@ -637,7 +636,6 @@ TclParseNumber(
 		goto zerob;
 	    }
 	    if (c == 'o' || c == 'O') {
-		explicitOctal = 1;
 		state = ZERO_O;
 		break;
 	    }
