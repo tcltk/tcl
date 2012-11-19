@@ -9021,7 +9021,7 @@ ZeroTransferTimerProc(
  *----------------------------------------------------------------------
  */
 
-#ifdef DO_WE_NEED_THIS
+// TODO Do we need this? It's in the stub table but is just a type thunk
 int
 TclCopyChannelOld(
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -9033,7 +9033,6 @@ TclCopyChannelOld(
     return TclCopyChannel(interp, inChan, outChan, (Tcl_WideInt) toRead,
             cmdPtr);
 }
-#endif
 
 int
 TclCopyChannel(

@@ -44,8 +44,8 @@ typedef struct CmdTable {
  * Declarations for functions defined in this file.
  */
 
-static int	ProcBodyTestProcObjCmd(ClientData dummy,
-			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int	ProcBodyTestProcObjCmd(ClientData dummy, Tcl_Interp *interp,
+			size_t objc, Tcl_Obj *const objv[]);
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
 			const char *namespace, const CmdTable *cmdTablePtr);
@@ -134,7 +134,7 @@ static int
 RegisterCommand(
     Tcl_Interp* interp,		/* the Tcl interpreter for which the operation
 				 * is performed */
-    const char *namespace,		/* the namespace in which the command is
+    const char *namespace,	/* the namespace in which the command is
 				 * registered */
     const CmdTable *cmdTablePtr)/* the command to register */
 {
@@ -225,7 +225,7 @@ static int
 ProcBodyTestProcObjCmd(
     ClientData dummy,		/* context; not used */
     Tcl_Interp *interp,		/* the current interpreter */
-    int objc,			/* argument count */
+    size_t objc,		/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
 {
     const char *fullName;

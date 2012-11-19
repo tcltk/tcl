@@ -636,7 +636,8 @@ SetOSTypeFromAny(
     Tcl_Obj *objPtr)		/* Pointer to the object to convert */
 {
     const char *string;
-    int length, result = TCL_OK;
+    size_t length;
+    int result = TCL_OK;
     Tcl_DString ds;
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
 

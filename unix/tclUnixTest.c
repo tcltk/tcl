@@ -137,7 +137,7 @@ static int
 TestfilehandlerCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
     Pipe *pipePtr;
@@ -359,7 +359,7 @@ static int
 TestfilewaitCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
     int mask, result, timeout;
@@ -428,7 +428,7 @@ static int
 TestfindexecutableCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
     Tcl_Obj *saveName;
@@ -471,7 +471,7 @@ static int
 TestgetopenfileCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
     ClientData filePtr;
@@ -514,7 +514,7 @@ static int
 TestsetdefencdirCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
     if (argc != 2) {
@@ -548,7 +548,7 @@ static int
 TestgetdefencdirCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
     if (argc != 1) {
@@ -582,7 +582,7 @@ static int
 TestalarmCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
 #ifdef SA_RESTART
@@ -661,7 +661,7 @@ static int
 TestgotsigCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
     Tcl_AppendResult(interp, gotsig, NULL);
@@ -692,10 +692,11 @@ static int
 TestchmodCmd(
     ClientData dummy,			/* Not used. */
     Tcl_Interp *interp,			/* Current interpreter. */
-    int argc,				/* Number of arguments. */
+    size_t argc,			/* Number of arguments. */
     const char **argv)			/* Argument strings. */
 {
-    int i, mode;
+    size_t i;
+    int mode;
     char *rest;
 
     if (argc < 2) {
