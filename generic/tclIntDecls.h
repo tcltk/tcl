@@ -69,10 +69,7 @@ EXTERN void		TclCleanupCommand(Command *cmdPtr);
 /* 7 */
 EXTERN int		TclCopyAndCollapse(int count, const char *src,
 				char *dst);
-/* 8 */
-EXTERN int		TclCopyChannelOld(Tcl_Interp *interp,
-				Tcl_Channel inChan, Tcl_Channel outChan,
-				int toRead, Tcl_Obj *cmdPtr);
+/* Slot 8 is reserved */
 /* 9 */
 EXTERN int		TclCreatePipeline(Tcl_Interp *interp, int argc,
 				const char **argv, Tcl_Pid **pidArrayPtr,
@@ -260,8 +257,7 @@ EXTERN void		TclSetupEnv(Tcl_Interp *interp);
 /* 103 */
 EXTERN int		TclSockGetPort(Tcl_Interp *interp, const char *str,
 				const char *proto, int *portPtr);
-/* 104 */
-EXTERN int		TclSockMinimumBuffersOld(int sock, int size);
+/* Slot 104 is reserved */
 /* Slot 105 is reserved */
 /* Slot 106 is reserved */
 /* Slot 107 is reserved */
@@ -611,7 +607,7 @@ typedef struct TclIntStubs {
     int (*tclCleanupChildren) (Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
     void (*tclCleanupCommand) (Command *cmdPtr); /* 6 */
     int (*tclCopyAndCollapse) (int count, const char *src, char *dst); /* 7 */
-    int (*tclCopyChannelOld) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr); /* 8 */
+    void (*reserved8)(void);
     int (*tclCreatePipeline) (Tcl_Interp *interp, int argc, const char **argv, Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr, TclFile *errFilePtr); /* 9 */
     int (*tclCreateProc) (Tcl_Interp *interp, Namespace *nsPtr, const char *procName, Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr, Proc **procPtrPtr); /* 10 */
     void (*tclDeleteCompiledLocalVars) (Interp *iPtr, CallFrame *framePtr); /* 11 */
@@ -707,7 +703,7 @@ typedef struct TclIntStubs {
     const char * (*tclSetPreInitScript) (const char *string); /* 101 */
     void (*tclSetupEnv) (Tcl_Interp *interp); /* 102 */
     int (*tclSockGetPort) (Tcl_Interp *interp, const char *str, const char *proto, int *portPtr); /* 103 */
-    int (*tclSockMinimumBuffersOld) (int sock, int size); /* 104 */
+    void (*reserved104)(void);
     void (*reserved105)(void);
     void (*reserved106)(void);
     void (*reserved107)(void);
@@ -882,8 +878,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclCleanupCommand) /* 6 */
 #define TclCopyAndCollapse \
 	(tclIntStubsPtr->tclCopyAndCollapse) /* 7 */
-#define TclCopyChannelOld \
-	(tclIntStubsPtr->tclCopyChannelOld) /* 8 */
+/* Slot 8 is reserved */
 #define TclCreatePipeline \
 	(tclIntStubsPtr->tclCreatePipeline) /* 9 */
 #define TclCreateProc \
@@ -1029,8 +1024,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclSetupEnv) /* 102 */
 #define TclSockGetPort \
 	(tclIntStubsPtr->tclSockGetPort) /* 103 */
-#define TclSockMinimumBuffersOld \
-	(tclIntStubsPtr->tclSockMinimumBuffersOld) /* 104 */
+/* Slot 104 is reserved */
 /* Slot 105 is reserved */
 /* Slot 106 is reserved */
 /* Slot 107 is reserved */
