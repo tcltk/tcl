@@ -43,22 +43,63 @@
 #undef TclSockMinimumBuffers
 
 #ifdef TCL_NO_DEPRECATED
-#   define Tcl_CreateMathFunc NULL
-#   define Tcl_GetMathFuncInfo NULL
-#   define Tcl_ListMathFuncs NULL
-#endif
+#   define Tcl_CreateMathFunc 0
+#   define Tcl_GetMathFuncInfo 0
+#   define Tcl_ListMathFuncs 0
+#   define TclCopyChannelOld 0
+#   define TclSockMinimumBuffersOld 0
+#   define Tcl_SeekOld 0
+#   define Tcl_TellOld 0
+#else
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
-#ifdef _WIN64
-#   define TclSockMinimumBuffersOld 0
-#else
-#define TclSockMinimumBuffersOld sockMinimumBuffersOld
+#   ifdef _WIN64
+#       define TclSockMinimumBuffersOld 0
+#   else
+#       define TclSockMinimumBuffersOld sockMinimumBuffersOld
 static int TclSockMinimumBuffersOld(int sock, int size)
 {
     return TclSockMinimumBuffers(INT2PTR(sock), size);
 }
-#endif
+#   endif
 
+
+#       define TclCopyChannelOld copyChannelOld
+static int
+TclCopyChannelOld(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Channel inChan,		/* Channel to read from. */
+    Tcl_Channel outChan,	/* Channel to write to. */
+    int toRead,			/* Amount of data to copy, or -1 for all. */
+    Tcl_Obj *cmdPtr)		/* Pointer to script to execute or NULL. */
+{
+    return TclCopyChannel(interp, inChan, outChan, (Tcl_WideInt) toRead,
+            cmdPtr);
+}
+
+#define Tcl_SeekOld seekOld
+static int
+Tcl_SeekOld(
+    Tcl_Channel chan,		/* The channel on which to seek. */
+    int offset,			/* Offset to seek to. */
+    int mode)			/* Relative to which location to seek? */
+{
+    Tcl_WideInt wOffset, wResult;
+    wOffset = Tcl_LongAsWide((long) offset);
+    wResult = Tcl_Seek(chan, wOffset, mode);
+    return (int) Tcl_WideAsLong(wResult);
+}
+
+#define Tcl_TellOld tellOld
+static int
+Tcl_TellOld(
+    Tcl_Channel chan)		/* The channel to return pos for. */
+{
+    Tcl_WideInt wResult = Tcl_Tell(chan);
+    return (int) Tcl_WideAsLong(wResult);
+}
+
+#endif /* TCL_NO_DEPRECATED */
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS

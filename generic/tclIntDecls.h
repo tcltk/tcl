@@ -1289,4 +1289,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
+#undef TclCopyChannelOld
+#undef TclSockMinimumBuffersOld
+
 #endif /* _TCLINTDECLS */

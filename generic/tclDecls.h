@@ -3803,6 +3803,9 @@ extern const TclStubs *tclStubsPtr;
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
+#undef Tcl_SeekOld
+#undef Tcl_TellOld
+
 #ifdef TCL_NO_DEPRECATED
 #   undef Tcl_CreateMathFunc
 #   undef Tcl_GetMathFuncInfo

@@ -444,7 +444,7 @@ Tcl_ReadObjCmd(
 			TclGetString(objv[i])));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 		return TCL_ERROR;
-#if TCL_MAJOR_VERSION < 9
+#ifndef TCL_NO_DEPRECATED
 	    }
 	    newline = 1;
 #endif
