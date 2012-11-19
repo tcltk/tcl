@@ -6813,10 +6813,10 @@ GetInput(
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+TCL_SIZE_T
 Tcl_Seek(
     Tcl_Channel chan,		/* The channel on which to seek. */
-    Tcl_WideInt offset,		/* Offset to seek to. */
+    TCL_SIZE_T offset,			/* Offset to seek to. */
     int mode)			/* Relative to which location to seek? */
 {
     Channel *chanPtr = (Channel *) chan;
@@ -6826,13 +6826,13 @@ Tcl_Seek(
     int inputBuffered, outputBuffered;
 				/* # bytes held in buffers. */
     int result;			/* Of device driver operations. */
-    Tcl_WideInt curPos;		/* Position on the device. */
+    TCL_SIZE_T curPos;		/* Position on the device. */
     int wasAsync;		/* Was the channel nonblocking before the seek
 				 * operation? If so, must restore to
 				 * non-blocking mode after the seek. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
-	return Tcl_LongAsWide(-1);
+	return TCL_NOSIZE;
     }
 
     /*
@@ -6843,7 +6843,7 @@ Tcl_Seek(
      */
 
     if (CheckForDeadChannel(NULL, statePtr)) {
-	return Tcl_LongAsWide(-1);
+	return TCL_NOSIZE;
     }
 
     /*
@@ -6859,7 +6859,7 @@ Tcl_Seek(
 
     if (chanPtr->typePtr->seekProc == NULL) {
 	Tcl_SetErrno(EINVAL);
-	return Tcl_LongAsWide(-1);
+	return TCL_NOSIZE;
     }
 
     /*
@@ -6872,7 +6872,7 @@ Tcl_Seek(
 
     if ((inputBuffered != 0) && (outputBuffered != 0)) {
 	Tcl_SetErrno(EFAULT);
-	return Tcl_LongAsWide(-1);
+	return TCL_NOSIZE;
     }
 
     /*
@@ -6987,7 +6987,7 @@ Tcl_Seek(
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+TCL_SIZE_T
 Tcl_Tell(
     Tcl_Channel chan)		/* The channel to return pos for. */
 {
@@ -6995,13 +6995,13 @@ Tcl_Tell(
 				/* The real IO channel. */
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    int inputBuffered, outputBuffered;
+    TCL_SIZE_T inputBuffered, outputBuffered;
 				/* # bytes held in buffers. */
     int result;			/* Of calling device driver. */
-    Tcl_WideInt curPos;		/* Position on device. */
+    TCL_SIZE_T curPos;		/* Position on device. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
-	return Tcl_LongAsWide(-1);
+	return TCL_NOSIZE;
     }
 
     /*
@@ -7012,7 +7012,7 @@ Tcl_Tell(
      */
 
     if (CheckForDeadChannel(NULL, statePtr)) {
-	return Tcl_LongAsWide(-1);
+	return TCL_NOSIZE;
     }
 
     /*
@@ -7028,7 +7028,7 @@ Tcl_Tell(
 
     if (chanPtr->typePtr->seekProc == NULL) {
 	Tcl_SetErrno(EINVAL);
-	return Tcl_LongAsWide(-1);
+	return TCL_NOSIZE;
     }
 
     /*
@@ -7045,10 +7045,10 @@ Tcl_Tell(
      * wideSeekProc if that is available and non-NULL...
      */
 
-    curPos = ChanSeek(chanPtr, Tcl_LongAsWide(0), SEEK_CUR, &result);
-    if (curPos == Tcl_LongAsWide(-1)) {
+    curPos = ChanSeek(chanPtr, 0, SEEK_CUR, &result);
+    if (curPos == TCL_NOSIZE) {
 	Tcl_SetErrno(result);
-	return Tcl_LongAsWide(-1);
+	return TCL_NOSIZE;
     }
 
     if (inputBuffered != 0) {
@@ -7062,13 +7062,13 @@ Tcl_Tell(
  *
  * Tcl_SeekOld, Tcl_TellOld --
  *
- *	Backward-compatability versions of the seek/tell interface that do not
- *	support 64-bit offsets. This interface is not documented or expected
+ *	Backward-compatability versions of the seek/tell interface which used
+ *	64-bit offsets. This interface is not documented or expected
  *	to be supported indefinitely.
  *
  * Results:
- *	As for Tcl_Seek and Tcl_Tell respectively, except truncated to
- *	whatever value will fit in an 'int'.
+ *	As for Tcl_Seek and Tcl_Tell respectively, except expanded to
+ *	64-bits even on platforms which support only 32-bits.
  *
  * Side effects:
  *	As for Tcl_Seek and Tcl_Tell respectively.
@@ -7076,26 +7076,31 @@ Tcl_Tell(
  *---------------------------------------------------------------------------
  */
 
-int
+Tcl_WideInt
 Tcl_SeekOld(
     Tcl_Channel chan,		/* The channel on which to seek. */
-    int offset,			/* Offset to seek to. */
+    Tcl_WideInt offset,		/* Offset to seek to. */
     int mode)			/* Relative to which location to seek? */
 {
-    Tcl_WideInt wOffset, wResult;
+	TCL_SIZE_T wResult;
 
-    wOffset = Tcl_LongAsWide((long) offset);
-    wResult = Tcl_Seek(chan, wOffset, mode);
-    return (int) Tcl_WideAsLong(wResult);
+    wResult = Tcl_Seek(chan, (TCL_SIZE_T) offset, mode);
+    if (wResult == TCL_NOSIZE) {
+    	return -1;
+    }
+    return (Tcl_WideInt) wResult;
 }
 
-int
+Tcl_WideInt
 Tcl_TellOld(
     Tcl_Channel chan)		/* The channel to return pos for. */
 {
-    Tcl_WideInt wResult = Tcl_Tell(chan);
+    TCL_SIZE_T wResult = Tcl_Tell(chan);
 
-    return (int) Tcl_WideAsLong(wResult);
+    if (wResult == TCL_NOSIZE) {
+    	return -1;
+    }
+    return (Tcl_WideInt) wResult;
 }
 
 /*

@@ -42,18 +42,6 @@
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 
-/* See bug 510001: TclSockMinimumBuffers needs plat imp */
-#ifdef _WIN64
-#   define TclSockMinimumBuffersOld 0
-#else
-#define TclSockMinimumBuffersOld sockMinimumBuffersOld
-static int TclSockMinimumBuffersOld(int sock, int size)
-{
-    return TclSockMinimumBuffers(INT2PTR(sock), size);
-}
-#endif
-
-
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
 #define TclWinNToHS winNToHS
@@ -289,7 +277,7 @@ static const TclIntStubs tclIntStubs = {
     TclSetPreInitScript, /* 101 */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
-    TclSockMinimumBuffersOld, /* 104 */
+    0, /* 104 */
     0, /* 105 */
     0, /* 106 */
     0, /* 107 */
@@ -874,7 +862,7 @@ const TclStubs tclStubs = {
     Tcl_ResetResult, /* 217 */
     Tcl_ScanElement, /* 218 */
     Tcl_ScanCountedElement, /* 219 */
-    Tcl_SeekOld, /* 220 */
+    Tcl_Seek, /* 220 */
     Tcl_ServiceAll, /* 221 */
     Tcl_ServiceEvent, /* 222 */
     Tcl_SetAssocData, /* 223 */
@@ -900,7 +888,7 @@ const TclStubs tclStubs = {
     Tcl_SplitPath, /* 243 */
     Tcl_StaticPackage, /* 244 */
     Tcl_StringMatch, /* 245 */
-    Tcl_TellOld, /* 246 */
+    Tcl_Tell, /* 246 */
     Tcl_TraceVar, /* 247 */
     Tcl_TraceVar2, /* 248 */
     Tcl_TranslateFileName, /* 249 */
@@ -1145,8 +1133,8 @@ const TclStubs tclStubs = {
     Tcl_NewWideIntObj, /* 488 */
     Tcl_SetWideIntObj, /* 489 */
     Tcl_AllocStatBuf, /* 490 */
-    Tcl_Seek, /* 491 */
-    Tcl_Tell, /* 492 */
+    Tcl_SeekOld, /* 491 */
+    Tcl_TellOld, /* 492 */
     Tcl_ChannelWideSeekProc, /* 493 */
     Tcl_DictObjPut, /* 494 */
     Tcl_DictObjGet, /* 495 */

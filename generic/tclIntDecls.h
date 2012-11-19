@@ -260,8 +260,7 @@ EXTERN void		TclSetupEnv(Tcl_Interp *interp);
 /* 103 */
 EXTERN int		TclSockGetPort(Tcl_Interp *interp, const char *str,
 				const char *proto, int *portPtr);
-/* 104 */
-EXTERN int		TclSockMinimumBuffersOld(int sock, int size);
+/* Slot 104 is reserved */
 /* Slot 105 is reserved */
 /* Slot 106 is reserved */
 /* Slot 107 is reserved */
@@ -707,7 +706,7 @@ typedef struct TclIntStubs {
     const char * (*tclSetPreInitScript) (const char *string); /* 101 */
     void (*tclSetupEnv) (Tcl_Interp *interp); /* 102 */
     int (*tclSockGetPort) (Tcl_Interp *interp, const char *str, const char *proto, int *portPtr); /* 103 */
-    int (*tclSockMinimumBuffersOld) (int sock, int size); /* 104 */
+    void (*reserved104)(void);
     void (*reserved105)(void);
     void (*reserved106)(void);
     void (*reserved107)(void);
@@ -1029,8 +1028,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclSetupEnv) /* 102 */
 #define TclSockGetPort \
 	(tclIntStubsPtr->tclSockGetPort) /* 103 */
-#define TclSockMinimumBuffersOld \
-	(tclIntStubsPtr->tclSockMinimumBuffersOld) /* 104 */
+/* Slot 104 is reserved */
 /* Slot 105 is reserved */
 /* Slot 106 is reserved */
 /* Slot 107 is reserved */

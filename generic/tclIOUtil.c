@@ -2258,7 +2258,7 @@ Tcl_FSOpenFileChannel(
 	 * Apply appropriate flags parsed out above.
 	 */
 
-	if (seekFlag && Tcl_Seek(retVal, (Tcl_WideInt) 0, SEEK_END)
+	if (seekFlag && Tcl_Seek(retVal, 0, SEEK_END)
 		< (Tcl_WideInt) 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(

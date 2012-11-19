@@ -780,9 +780,8 @@ declare 218 {
 declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
-# Obsolete
 declare 220 {
-    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
+    TCL_SIZE_T Tcl_Seek(Tcl_Channel chan, TCL_SIZE_T offset, int mode)
 }
 declare 221 {
     int Tcl_ServiceAll(void)
@@ -868,9 +867,8 @@ declare 244 {
 declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
-# Obsolete
 declare 246 {
-    int Tcl_TellOld(Tcl_Channel chan)
+    TCL_SIZE_T Tcl_Tell(Tcl_Channel chan)
 }
 declare 247 {
     int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
@@ -1753,11 +1751,13 @@ declare 489 {
 declare 490 {
     Tcl_StatBuf *Tcl_AllocStatBuf(void)
 }
+# Kept on Tcl9, for binary compatibility with Tcl8
 declare 491 {
-    Tcl_WideInt Tcl_Seek(Tcl_Channel chan, Tcl_WideInt offset, int mode)
+    Tcl_WideInt Tcl_SeekOld(Tcl_Channel chan, Tcl_WideInt offset, int mode)
 }
+# Kept on Tcl9, for binary compatibility with Tcl8
 declare 492 {
-    Tcl_WideInt Tcl_Tell(Tcl_Channel chan)
+    Tcl_WideInt Tcl_TellOld(Tcl_Channel chan)
 }
 
 # TIP#91 (back-compat enhancements for channels) dkf

@@ -420,9 +420,10 @@ declare 103 {
     int TclSockGetPort(Tcl_Interp *interp, const char *str, const char *proto,
 	    int *portPtr)
 }
-declare 104 {
-    int TclSockMinimumBuffersOld(int sock, int size)
-}
+# Removed in Tcl 9
+#declare 104 {
+#    int TclSockMinimumBuffersOld(int sock, int size)
+#}
 # Replaced by Tcl_FSStat in 8.4:
 #declare 105 {
 #    int TclStat(const char *path, Tcl_StatBuf *buf)
@@ -993,6 +994,7 @@ declare 247 {
     void TclResetRewriteEnsemble(Tcl_Interp *interp, int isRootEnsemble)
 }
 
+# Kept on Tcl9, for binary compatibility with Tcl8
 declare 248 {
     int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
 	    Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr)

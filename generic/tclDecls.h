@@ -649,7 +649,8 @@ EXTERN int		Tcl_ScanElement(const char *src, int *flagPtr);
 EXTERN int		Tcl_ScanCountedElement(const char *src, int length,
 				int *flagPtr);
 /* 220 */
-EXTERN int		Tcl_SeekOld(Tcl_Channel chan, int offset, int mode);
+EXTERN TCL_SIZE_T	Tcl_Seek(Tcl_Channel chan, TCL_SIZE_T offset,
+				int mode);
 /* 221 */
 EXTERN int		Tcl_ServiceAll(void);
 /* 222 */
@@ -719,7 +720,7 @@ EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
 /* 245 */
 EXTERN int		Tcl_StringMatch(const char *str, const char *pattern);
 /* 246 */
-EXTERN int		Tcl_TellOld(Tcl_Channel chan);
+EXTERN TCL_SIZE_T	Tcl_Tell(Tcl_Channel chan);
 /* 247 */
 EXTERN int		Tcl_TraceVar(Tcl_Interp *interp, const char *varName,
 				int flags, Tcl_VarTraceProc *proc,
@@ -1391,10 +1392,10 @@ EXTERN void		Tcl_SetWideIntObj(Tcl_Obj *objPtr,
 /* 490 */
 EXTERN Tcl_StatBuf *	Tcl_AllocStatBuf(void);
 /* 491 */
-EXTERN Tcl_WideInt	Tcl_Seek(Tcl_Channel chan, Tcl_WideInt offset,
+EXTERN Tcl_WideInt	Tcl_SeekOld(Tcl_Channel chan, Tcl_WideInt offset,
 				int mode);
 /* 492 */
-EXTERN Tcl_WideInt	Tcl_Tell(Tcl_Channel chan);
+EXTERN Tcl_WideInt	Tcl_TellOld(Tcl_Channel chan);
 /* 493 */
 EXTERN Tcl_DriverWideSeekProc * Tcl_ChannelWideSeekProc(
 				const Tcl_ChannelType *chanTypePtr);
@@ -2048,7 +2049,7 @@ typedef struct TclStubs {
     void (*tcl_ResetResult) (Tcl_Interp *interp); /* 217 */
     int (*tcl_ScanElement) (const char *src, int *flagPtr); /* 218 */
     int (*tcl_ScanCountedElement) (const char *src, int length, int *flagPtr); /* 219 */
-    int (*tcl_SeekOld) (Tcl_Channel chan, int offset, int mode); /* 220 */
+    TCL_SIZE_T (*tcl_Seek) (Tcl_Channel chan, TCL_SIZE_T offset, int mode); /* 220 */
     int (*tcl_ServiceAll) (void); /* 221 */
     int (*tcl_ServiceEvent) (int flags); /* 222 */
     void (*tcl_SetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 223 */
@@ -2074,7 +2075,7 @@ typedef struct TclStubs {
     void (*tcl_SplitPath) (const char *path, int *argcPtr, const char ***argvPtr); /* 243 */
     void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
     int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
-    int (*tcl_TellOld) (Tcl_Channel chan); /* 246 */
+    TCL_SIZE_T (*tcl_Tell) (Tcl_Channel chan); /* 246 */
     int (*tcl_TraceVar) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 247 */
     int (*tcl_TraceVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 248 */
     char * (*tcl_TranslateFileName) (Tcl_Interp *interp, const char *name, Tcl_DString *bufferPtr); /* 249 */
@@ -2319,8 +2320,8 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_NewWideIntObj) (Tcl_WideInt wideValue); /* 488 */
     void (*tcl_SetWideIntObj) (Tcl_Obj *objPtr, Tcl_WideInt wideValue); /* 489 */
     Tcl_StatBuf * (*tcl_AllocStatBuf) (void); /* 490 */
-    Tcl_WideInt (*tcl_Seek) (Tcl_Channel chan, Tcl_WideInt offset, int mode); /* 491 */
-    Tcl_WideInt (*tcl_Tell) (Tcl_Channel chan); /* 492 */
+    Tcl_WideInt (*tcl_SeekOld) (Tcl_Channel chan, Tcl_WideInt offset, int mode); /* 491 */
+    Tcl_WideInt (*tcl_TellOld) (Tcl_Channel chan); /* 492 */
     Tcl_DriverWideSeekProc * (*tcl_ChannelWideSeekProc) (const Tcl_ChannelType *chanTypePtr); /* 493 */
     int (*tcl_DictObjPut) (Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Obj *keyPtr, Tcl_Obj *valuePtr); /* 494 */
     int (*tcl_DictObjGet) (Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Obj *keyPtr, Tcl_Obj **valuePtrPtr); /* 495 */
@@ -2931,8 +2932,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ScanElement) /* 218 */
 #define Tcl_ScanCountedElement \
 	(tclStubsPtr->tcl_ScanCountedElement) /* 219 */
-#define Tcl_SeekOld \
-	(tclStubsPtr->tcl_SeekOld) /* 220 */
+#define Tcl_Seek \
+	(tclStubsPtr->tcl_Seek) /* 220 */
 #define Tcl_ServiceAll \
 	(tclStubsPtr->tcl_ServiceAll) /* 221 */
 #define Tcl_ServiceEvent \
@@ -2983,8 +2984,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_StaticPackage) /* 244 */
 #define Tcl_StringMatch \
 	(tclStubsPtr->tcl_StringMatch) /* 245 */
-#define Tcl_TellOld \
-	(tclStubsPtr->tcl_TellOld) /* 246 */
+#define Tcl_Tell \
+	(tclStubsPtr->tcl_Tell) /* 246 */
 #define Tcl_TraceVar \
 	(tclStubsPtr->tcl_TraceVar) /* 247 */
 #define Tcl_TraceVar2 \
@@ -3470,10 +3471,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SetWideIntObj) /* 489 */
 #define Tcl_AllocStatBuf \
 	(tclStubsPtr->tcl_AllocStatBuf) /* 490 */
-#define Tcl_Seek \
-	(tclStubsPtr->tcl_Seek) /* 491 */
-#define Tcl_Tell \
-	(tclStubsPtr->tcl_Tell) /* 492 */
+#define Tcl_SeekOld \
+	(tclStubsPtr->tcl_SeekOld) /* 491 */
+#define Tcl_TellOld \
+	(tclStubsPtr->tcl_TellOld) /* 492 */
 #define Tcl_ChannelWideSeekProc \
 	(tclStubsPtr->tcl_ChannelWideSeekProc) /* 493 */
 #define Tcl_DictObjPut \

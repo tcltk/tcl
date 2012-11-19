@@ -531,7 +531,7 @@ Tcl_SeekObjCmd(
 	mode = modeArray[optionIndex];
     }
 
-    result = Tcl_Seek(chan, offset, mode);
+    result = Tcl_SeekOld(chan, offset, mode);
     if (result == Tcl_LongAsWide(-1)) {
 	/*
 	 * TIP #219.
@@ -592,7 +592,7 @@ Tcl_TellObjCmd(
 	return TCL_ERROR;
     }
 
-    newLoc = Tcl_Tell(chan);
+    newLoc = Tcl_TellOld(chan);
 
     /*
      * TIP #219.
@@ -1807,7 +1807,7 @@ ChanTruncateObjCmd(
 	 * User wants to truncate to the current file position.
 	 */
 
-	length = Tcl_Tell(chan);
+	length = Tcl_TellOld(chan);
 	if (length == Tcl_WideAsLong(-1)) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "could not determine current location in \"%s\": %s",

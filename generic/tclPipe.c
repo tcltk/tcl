@@ -370,7 +370,7 @@ TclCleanupChildren(
 	    int count;
 	    Tcl_Obj *objPtr;
 
-	    Tcl_Seek(errorChan, (Tcl_WideInt)0, SEEK_SET);
+	    Tcl_Seek(errorChan, 0, SEEK_SET);
 	    objPtr = Tcl_NewObj();
 	    count = Tcl_ReadChars(errorChan, objPtr, TCL_NOSIZE, 0);
 	    if (count < 0) {
