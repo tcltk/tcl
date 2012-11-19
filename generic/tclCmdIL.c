@@ -1492,19 +1492,42 @@ InfoFunctionsCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *pattern;
+    Tcl_Obj *script;
+    int code;
 
-    if (objc == 1) {
-	pattern = NULL;
-    } else if (objc == 2) {
-	pattern = TclGetString(objv[1]);
-    } else {
+    if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_ListMathFuncs(interp, pattern));
-    return TCL_OK;
+    script = Tcl_NewStringObj(
+"	    ::apply [::list {{pattern *}} {\n"
+"		::set cmds {}\n"
+"		::foreach cmd [::info commands ::tcl::mathfunc::$pattern] {\n"
+"		    ::lappend cmds [::namespace tail $cmd]\n"
+"		}\n"
+"		::foreach cmd [::info commands tcl::mathfunc::$pattern] {\n"
+"		    ::set cmd [::namespace tail $cmd]\n"
+"		    ::if {$cmd ni $cmds} {\n"
+"			::lappend cmds $cmd\n"
+"		    }\n"
+"		}\n"
+"		::return $cmds\n"
+"	    } [::namespace current]] ", -1);
+
+    if (objc == 2) {
+	Tcl_Obj *arg = Tcl_NewListObj(1, &(objv[1]));
+
+	Tcl_AppendObjToObj(script, arg);
+	Tcl_DecrRefCount(arg);
+    }
+
+    Tcl_IncrRefCount(script);
+    code = Tcl_EvalObjEx(interp, script, 0);
+
+    Tcl_DecrRefCount(script);
+
+    return code;
 }
 
 /*
