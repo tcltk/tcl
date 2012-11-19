@@ -52,8 +52,7 @@ HasStubSupport(
 	 */
 	iPtr->stubTable->tcl_SetObjResult(interp,
 		iPtr->stubTable->tcl_NewStringObj(
-			"This extension is compiled for Tcl 9.x",
-			TCL_NOSIZE));
+			"This extension is compiled for Tcl 9.x", -1));
 	return NULL;
     }
     return iPtr->stubTable;
