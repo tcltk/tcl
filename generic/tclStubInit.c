@@ -193,7 +193,7 @@ static const TclIntStubs tclIntStubs = {
     TclCleanupChildren, /* 5 */
     TclCleanupCommand, /* 6 */
     TclCopyAndCollapse, /* 7 */
-    TclCopyChannelOld, /* 8 */
+    TclCopyChannel, /* 8 */
     TclCreatePipeline, /* 9 */
     TclCreateProc, /* 10 */
     TclDeleteCompiledLocalVars, /* 11 */
@@ -433,7 +433,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetNamespaceCommandTable, /* 245 */
     TclInitRewriteEnsemble, /* 246 */
     TclResetRewriteEnsemble, /* 247 */
-    TclCopyChannel, /* 248 */
+    TclCopyChannelOld, /* 248 */
     TclDoubleDigits, /* 249 */
     TclSetSlaveCancelFlags, /* 250 */
 };

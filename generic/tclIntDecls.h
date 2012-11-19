@@ -70,7 +70,7 @@ EXTERN void		TclCleanupCommand(Command *cmdPtr);
 EXTERN int		TclCopyAndCollapse(int count, const char *src,
 				char *dst);
 /* 8 */
-EXTERN int		TclCopyChannelOld(Tcl_Interp *interp,
+EXTERN int		TclCopyChannel(Tcl_Interp *interp,
 				Tcl_Channel inChan, Tcl_Channel outChan,
 				int toRead, Tcl_Obj *cmdPtr);
 /* 9 */
@@ -589,7 +589,7 @@ EXTERN int		TclInitRewriteEnsemble(Tcl_Interp *interp,
 EXTERN void		TclResetRewriteEnsemble(Tcl_Interp *interp,
 				int isRootEnsemble);
 /* 248 */
-EXTERN int		TclCopyChannel(Tcl_Interp *interp,
+EXTERN int		TclCopyChannelOld(Tcl_Interp *interp,
 				Tcl_Channel inChan, Tcl_Channel outChan,
 				Tcl_WideInt toRead, Tcl_Obj *cmdPtr);
 /* 249 */
@@ -611,7 +611,7 @@ typedef struct TclIntStubs {
     int (*tclCleanupChildren) (Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
     void (*tclCleanupCommand) (Command *cmdPtr); /* 6 */
     int (*tclCopyAndCollapse) (int count, const char *src, char *dst); /* 7 */
-    int (*tclCopyChannelOld) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr); /* 8 */
+    int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr); /* 8 */
     int (*tclCreatePipeline) (Tcl_Interp *interp, int argc, const char **argv, Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr, TclFile *errFilePtr); /* 9 */
     int (*tclCreateProc) (Tcl_Interp *interp, Namespace *nsPtr, const char *procName, Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr, Proc **procPtrPtr); /* 10 */
     void (*tclDeleteCompiledLocalVars) (Interp *iPtr, CallFrame *framePtr); /* 11 */
@@ -851,7 +851,7 @@ typedef struct TclIntStubs {
     Tcl_HashTable * (*tclGetNamespaceCommandTable) (Tcl_Namespace *nsPtr); /* 245 */
     int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, int numRemoved, int numInserted, Tcl_Obj *const *objv); /* 246 */
     void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
-    int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
+    int (*tclCopyChannelOld) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
 } TclIntStubs;
@@ -882,8 +882,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclCleanupCommand) /* 6 */
 #define TclCopyAndCollapse \
 	(tclIntStubsPtr->tclCopyAndCollapse) /* 7 */
-#define TclCopyChannelOld \
-	(tclIntStubsPtr->tclCopyChannelOld) /* 8 */
+#define TclCopyChannel \
+	(tclIntStubsPtr->tclCopyChannel) /* 8 */
 #define TclCreatePipeline \
 	(tclIntStubsPtr->tclCreatePipeline) /* 9 */
 #define TclCreateProc \
@@ -1271,8 +1271,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclInitRewriteEnsemble) /* 246 */
 #define TclResetRewriteEnsemble \
 	(tclIntStubsPtr->tclResetRewriteEnsemble) /* 247 */
-#define TclCopyChannel \
-	(tclIntStubsPtr->tclCopyChannel) /* 248 */
+#define TclCopyChannelOld \
+	(tclIntStubsPtr->tclCopyChannelOld) /* 248 */
 #define TclDoubleDigits \
 	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
 #define TclSetSlaveCancelFlags \

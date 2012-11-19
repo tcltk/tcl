@@ -64,9 +64,9 @@ static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode, int flags);
 static int		CloseWrite(Tcl_Interp *interp, Channel *chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
-static int		CopyAndTranslateBuffer(ChannelState *statePtr,
-			    char *result, int space);
-static int		CopyBuffer(Channel *chanPtr, char *result, int space);
+static TCL_SIZE_T CopyAndTranslateBuffer(ChannelState *statePtr,
+			    char *result, TCL_SIZE_T space);
+static TCL_SIZE_T CopyBuffer(Channel *chanPtr, char *result, TCL_SIZE_T space);
 static int		CopyData(CopyState *csPtr, int mask);
 static void		CopyEventProc(ClientData clientData, int mask);
 static void		CreateScriptRecord(Tcl_Interp *interp,
@@ -79,9 +79,9 @@ static int		DetachChannel(Tcl_Interp *interp, Tcl_Channel chan);
 static void		DiscardInputQueued(ChannelState *statePtr,
 			    int discardSavedBuffers);
 static void		DiscardOutputQueued(ChannelState *chanPtr);
-static int		DoRead(Channel *chanPtr, char *srcPtr, int slen, int allowShortReads);
-static int		DoWrite(Channel *chanPtr, const char *src, int srcLen);
-static int		DoReadChars(Channel *chan, Tcl_Obj *objPtr, int toRead,
+static TCL_SIZE_T DoRead(Channel *chanPtr, char *srcPtr, TCL_SIZE_T slen, int allowShortReads);
+static TCL_SIZE_T DoWrite(Channel *chanPtr, const char *src, TCL_SIZE_T srcLen);
+static TCL_SIZE_T DoReadChars(Channel *chan, Tcl_Obj *objPtr, TCL_SIZE_T toRead,
 			    int appendFlag);
 static int		DoWriteChars(Channel *chan, const char *src, int len);
 static int		FilterInputBytes(Channel *chanPtr,
@@ -5520,7 +5520,7 @@ Tcl_ReadRaw(
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    int nread, result, copied, copiedNow;
+    TCL_SIZE_T nread, result, copied, copiedNow;
 
     /*
      * The check below does too much because it will reject a call to this
@@ -5699,7 +5699,7 @@ Tcl_ReadChars(
 	return -1;
     }
 
-    return DoReadChars(chanPtr, objPtr, toRead, appendFlag);
+    return (int) DoReadChars(chanPtr, objPtr, toRead, appendFlag);
 }
 /*
  *---------------------------------------------------------------------------
@@ -5714,7 +5714,7 @@ Tcl_ReadChars(
  *	object.
  *
  * Results:
- *	The number of characters read, or -1 on error. Use Tcl_GetErrno() to
+ *	The number of characters read, or TCL_NOSIZE on error. Use Tcl_GetErrno() to
  *	retrieve the error code for the error that occurred.
  *
  * Side effects:
@@ -5723,11 +5723,11 @@ Tcl_ReadChars(
  *---------------------------------------------------------------------------
  */
 
-static int
+static TCL_SIZE_T
 DoReadChars(
     Channel *chanPtr,		/* The channel to read. */
     Tcl_Obj *objPtr,		/* Input data is stored in this object. */
-    int toRead,			/* Maximum number of characters to store, or
+    TCL_SIZE_T toRead,			/* Maximum number of characters to store, or
 				 * -1 to read all available data (up to EOF or
 				 * when channel blocks). */
     int appendFlag)		/* If non-zero, data read from the channel
@@ -5738,7 +5738,8 @@ DoReadChars(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    int offset, factor, copied, copiedNow, result;
+    TCL_SIZE_T offset, factor, copied, copiedNow;
+    int result;
     Tcl_Encoding encoding;
 #define UTF_EXPANSION_FACTOR	1024
 
@@ -9010,10 +9011,10 @@ TclCopyChannelOld(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Channel inChan,		/* Channel to read from. */
     Tcl_Channel outChan,	/* Channel to write to. */
-    int toRead,			/* Amount of data to copy, or -1 for all. */
+    Tcl_WideInt toRead,		/* Amount of data to copy, or -1 for all. */
     Tcl_Obj *cmdPtr)		/* Pointer to script to execute or NULL. */
 {
-    return TclCopyChannel(interp, inChan, outChan, (Tcl_WideInt) toRead,
+    return TclCopyChannelOld(interp, inChan, outChan, (TCL_SIZE_T) toRead,
             cmdPtr);
 }
 
@@ -9022,7 +9023,7 @@ TclCopyChannel(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Channel inChan,		/* Channel to read from. */
     Tcl_Channel outChan,	/* Channel to write to. */
-    Tcl_WideInt toRead,		/* Amount of data to copy, or -1 for all. */
+    TCL_SIZE_T toRead,		/* Amount of data to copy, or TCL_NO_SIZE for all. */
     Tcl_Obj *cmdPtr)		/* Pointer to script to execute or NULL. */
 {
     Channel *inPtr = (Channel *) inChan;
@@ -9094,7 +9095,7 @@ TclCopyChannel(
     csPtr->readFlags = readFlags;
     csPtr->writeFlags = writeFlags;
     csPtr->toRead = toRead;
-    csPtr->total = (Tcl_WideInt) 0;
+    csPtr->total = 0;
     csPtr->interp = interp;
     if (cmdPtr) {
 	Tcl_IncrRefCount(cmdPtr);
@@ -9147,8 +9148,8 @@ CopyData(
     Tcl_Obj *cmdPtr, *errObj = NULL, *bufObj = NULL, *msg = NULL;
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
-    int result = TCL_OK, size, sizeb;
-    Tcl_WideInt total;
+    int result = TCL_OK;
+    TCL_SIZE_T size, sizeb, total;
     const char *buffer;
     int inBinary, outBinary, sameEncoding;
 				/* Encoding control */
@@ -9178,7 +9179,7 @@ CopyData(
 	Tcl_IncrRefCount(bufObj);
     }
 
-    while (csPtr->toRead != (Tcl_WideInt) 0) {
+    while (csPtr->toRead != 0) {
 	/*
 	 * Check for unreported background errors.
 	 */
@@ -9209,11 +9210,11 @@ CopyData(
 	     * Read up to bufSize bytes.
 	     */
 
-	    if ((csPtr->toRead == (Tcl_WideInt) -1)
-                    || (csPtr->toRead > (Tcl_WideInt) csPtr->bufSize)) {
+	    if ((csPtr->toRead == TCL_NOSIZE)
+                    || (csPtr->toRead > csPtr->bufSize)) {
 		sizeb = csPtr->bufSize;
 	    } else {
-		sizeb = (int) csPtr->toRead;
+		sizeb = csPtr->toRead;
 	    }
 
 	    if (inBinary || sameEncoding) {
@@ -9326,7 +9327,7 @@ CopyData(
 	 * of bytes left to copy.
 	 */
 
-	if (csPtr->toRead != -1) {
+	if (csPtr->toRead != TCL_NOSIZE) {
 	    csPtr->toRead -= size;
 	}
 	csPtr->total += size;
@@ -9444,7 +9445,7 @@ CopyData(
  *	are applied to the bytes being read.
  *
  * Results:
- *	The number of characters read, or -1 on error. Use Tcl_GetErrno() to
+ *	The number of characters read, or TCL_NOSIZE on error. Use Tcl_GetErrno() to
  *	retrieve the error code for the error that occurred.
  *
  * Side effects:
@@ -9453,18 +9454,18 @@ CopyData(
  *----------------------------------------------------------------------
  */
 
-static int
+static TCL_SIZE_T
 DoRead(
     Channel *chanPtr,		/* The channel from which to read. */
     char *bufPtr,		/* Where to store input read. */
-    int toRead,			/* Maximum number of bytes to read. */
+    TCL_SIZE_T toRead,			/* Maximum number of bytes to read. */
     int allowShortReads)	/* Allow half-blocking (pipes,sockets) */
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    int copied;			/* How many characters were copied into the
+    TCL_SIZE_T copied;			/* How many characters were copied into the
 				 * result string? */
-    int copiedNow;		/* How many characters were copied from the
+    TCL_SIZE_T copiedNow;		/* How many characters were copied from the
 				 * current input buffer? */
     int result;			/* Of calling GetInput. */
 
@@ -9495,7 +9496,7 @@ DoRead(
 	    result = GetInput(chanPtr);
 	    if (result != 0) {
 		if (result != EAGAIN) {
-		    copied = -1;
+		    copied = TCL_NOSIZE;
 		}
 		goto done;
 	    }
@@ -9536,19 +9537,19 @@ DoRead(
  *----------------------------------------------------------------------
  */
 
-static int
+static TCL_SIZE_T
 CopyAndTranslateBuffer(
     ChannelState *statePtr,	/* Channel state from which to read input. */
     char *result,		/* Where to store the copied input. */
-    int space)			/* How many bytes are available in result to
+    TCL_SIZE_T space)			/* How many bytes are available in result to
 				 * store the copied input? */
 {
     ChannelBuffer *bufPtr;	/* The buffer from which to copy bytes. */
-    int bytesInBuffer;		/* How many bytes are available to be copied
+    TCL_SIZE_T bytesInBuffer;		/* How many bytes are available to be copied
 				 * in the current input buffer? */
-    int copied;			/* How many characters were already copied
+    TCL_SIZE_T copied;			/* How many characters were already copied
 				 * into the destination space? */
-    int i;			/* Iterates over the copied input looking for
+    TCL_SIZE_T i;			/* Iterates over the copied input looking for
 				 * the input eofChar. */
 
     /*
@@ -9578,7 +9579,7 @@ CopyAndTranslateBuffer(
 	if (bytesInBuffer < space) {
 	    space = bytesInBuffer;
 	}
-	memcpy(result, RemovePoint(bufPtr), (size_t) space);
+	memcpy(result, RemovePoint(bufPtr), space);
 	bufPtr->nextRemoved += space;
 	copied = space;
 	break;
@@ -9761,17 +9762,17 @@ CopyAndTranslateBuffer(
  *----------------------------------------------------------------------
  */
 
-static int
+static TCL_SIZE_T
 CopyBuffer(
     Channel *chanPtr,		/* Channel from which to read input. */
     char *result,		/* Where to store the copied input. */
-    int space)			/* How many bytes are available in result to
+    TCL_SIZE_T space)			/* How many bytes are available in result to
 				 * store the copied input? */
 {
     ChannelBuffer *bufPtr;	/* The buffer from which to copy bytes. */
-    int bytesInBuffer;		/* How many bytes are available to be copied
+    TCL_SIZE_T bytesInBuffer;		/* How many bytes are available to be copied
 				 * in the current input buffer? */
-    int copied;			/* How many characters were already copied
+    TCL_SIZE_T copied;			/* How many characters were already copied
 				 * into the destination space? */
 
     /*
@@ -9805,7 +9806,7 @@ CopyBuffer(
 	space = bytesInBuffer;
     }
 
-    memcpy(result, RemovePoint(bufPtr), (size_t) space);
+    memcpy(result, RemovePoint(bufPtr), space);
     bufPtr->nextRemoved += space;
     copied = space;
 

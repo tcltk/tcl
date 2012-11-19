@@ -52,7 +52,7 @@ declare 7 {
     int TclCopyAndCollapse(int count, const char *src, char *dst)
 }
 declare 8 {
-    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
+    int TclCopyChannel(Tcl_Interp *interp, Tcl_Channel inChan,
 	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
 }
 
@@ -994,7 +994,7 @@ declare 247 {
 }
 
 declare 248 {
-    int TclCopyChannel(Tcl_Interp *interp, Tcl_Channel inChan,
+    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
 	    Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr)
 }
 

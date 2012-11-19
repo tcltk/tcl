@@ -1376,6 +1376,27 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, ClientData clientData);
 #define TCL_CHANNEL_THREAD_REMOVE (1)
 
 /*
+ * Still to be TIPped.
+ *
+ * Actual definition could be size_t, ssize_t, int,
+ * unsigned int, __int64, __uint64. Still to be
+ * decided. Can be overridden with -DTCL_SIZE_T=<whatever>.
+ *
+ * However, anything different than size_t, ssize_t or
+ * ptrdiff_t will result in stub tables incompatible with
+ * Tcl 9. Anything different than int or unsigned int will
+ * result in stub tables incompatible with Tcl 8. So, on
+ * platforms where sizeof(int) != sizeof(size_t) it is
+ * impossible to create an extensions which is compatible
+ * with both Tcl8 and Tcl9.
+ */
+
+#ifndef TCL_SIZE_T
+#   define TCL_SIZE_T int /* should be size_t or ssize_t */
+#endif
+#define TCL_NOSIZE ((TCL_SIZE_T)-1)
+
+/*
  * Typedefs for the various operations in a channel type:
  */
 
@@ -2277,7 +2298,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + sizeof(size_t))
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + sizeof(TCL_SIZE_T))
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2286,8 +2307,8 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * main library in case an extension is statically linked into an application.
  */
 
-const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
-			    int exact);
+const char *		TclInitStubs(Tcl_Interp *interp, const char *version,
+			    int exact, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
@@ -2295,7 +2316,10 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  * When not using stubs, make it a macro.
  */
 
-#ifndef USE_TCL_STUBS
+#ifdef USE_TCL_STUBS
+#define Tcl_InitStubs(interp, version, exact) \
+    TclInitStubs(interp, version, exact, TCL_STUB_MAGIC)
+#else
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)
 #endif

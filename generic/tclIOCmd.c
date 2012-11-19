@@ -1686,7 +1686,7 @@ Tcl_FcopyObjCmd(
 	}
     }
 
-    return TclCopyChannel(interp, inChan, outChan, toRead, cmdPtr);
+    return TclCopyChannelOld(interp, inChan, outChan, toRead, cmdPtr);
 }
 
 /*

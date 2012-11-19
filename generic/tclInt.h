@@ -4727,13 +4727,6 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
 #endif /* PURIFY && __clang__ */
 
 /*
- * Still to be TIPped, for now internal.
- */
-
-#define TCL_LASTARG ((void *)0)
-#define TCL_NOSIZE (-1)
-
-/*
  *----------------------------------------------------------------
  * Parameters, structs and macros for the non-recursive engine (NRE)
  *----------------------------------------------------------------

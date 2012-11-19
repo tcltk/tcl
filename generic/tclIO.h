@@ -40,11 +40,11 @@ typedef struct CopyState {
     struct Channel *writePtr;	/* Pointer to output channel. */
     int readFlags;		/* Original read channel flags. */
     int writeFlags;		/* Original write channel flags. */
-    Tcl_WideInt toRead;		/* Number of bytes to copy, or -1. */
-    Tcl_WideInt total;		/* Total bytes transferred (written). */
+    TCL_SIZE_T toRead;		/* Number of bytes to copy, or TCL_NOSIZE. */
+    TCL_SIZE_T total;		/* Total bytes transferred (written). */
     Tcl_Interp *interp;		/* Interp that started the copy. */
     Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
-    int bufSize;		/* Size of appended buffer. */
+    TCL_SIZE_T bufSize;		/* Size of appended buffer. */
     char buffer[1];		/* Copy buffer, this must be the last
 				 * field. */
 } CopyState;

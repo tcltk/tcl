@@ -4278,7 +4278,7 @@ TclCrossFilesystemCopy(
      * support vfs's which are slow (e.g. network sockets).
      */
 
-    if (TclCopyChannel(interp, in, out, -1, NULL) == TCL_OK) {
+    if (TclCopyChannel(interp, in, out, TCL_NOSIZE, NULL) == TCL_OK) {
 	result = TCL_OK;
     }
 
