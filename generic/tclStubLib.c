@@ -34,7 +34,8 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
 static const TclStubs *
 HasStubSupport(
-    Tcl_Interp *interp, int magic)
+    Tcl_Interp *interp,
+    int magic)
 {
     Interp *iPtr = (Interp *) interp;
 

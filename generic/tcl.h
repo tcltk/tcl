@@ -2298,7 +2298,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + sizeof(TCL_SIZE_T))
+#define TCL_STUB_MAGIC		((int) (0xFCA3BACB + sizeof(size_t)))
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2323,10 +2323,6 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)
 #endif
-
-/*
- * TODO - tommath stubs export goes here!
- */
 
 /*
  * Public functions that are not accessible via the stubs table.
