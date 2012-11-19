@@ -53,24 +53,25 @@
 static void		AppendPrintfToObjVA(Tcl_Obj *objPtr,
 			    const char *format, va_list argList);
 static void		AppendUnicodeToUnicodeRep(Tcl_Obj *objPtr,
-			    const Tcl_UniChar *unicode, int appendNumChars);
+			    const Tcl_UniChar *unicode,
+			    size_t appendNumChars);
 static void		AppendUnicodeToUtfRep(Tcl_Obj *objPtr,
-			    const Tcl_UniChar *unicode, int numChars);
+			    const Tcl_UniChar *unicode, size_t numChars);
 static void		AppendUtfToUnicodeRep(Tcl_Obj *objPtr,
-			    const char *bytes, int numBytes);
+			    const char *bytes, size_t numBytes);
 static void		AppendUtfToUtfRep(Tcl_Obj *objPtr,
-			    const char *bytes, int numBytes);
+			    const char *bytes, size_t numBytes);
 static void		DupStringInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static int		ExtendStringRepWithUnicode(Tcl_Obj *objPtr,
-			    const Tcl_UniChar *unicode, int numChars);
+			    const Tcl_UniChar *unicode, size_t numChars);
 static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
-			    const char *bytes, int numBytes,
-			    int numAppendChars);
+			    const char *bytes, size_t numBytes,
+			    size_t numAppendChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
-static void		GrowStringBuffer(Tcl_Obj *objPtr, int needed, int flag);
-static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, int needed);
+static void		GrowStringBuffer(Tcl_Obj *objPtr, size_t needed, int flag);
+static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, size_t needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, size_t numChars);
@@ -185,7 +186,7 @@ typedef struct String {
 static void
 GrowStringBuffer(
     Tcl_Obj *objPtr,
-    int needed,
+    size_t needed,
     int flag)
 {
     /*
@@ -197,14 +198,14 @@ GrowStringBuffer(
 
     String *stringPtr = GET_STRING(objPtr);
     char *ptr = NULL;
-    int attempt;
+    size_t attempt;
 
     if (objPtr->bytes == tclEmptyStringRep) {
 	objPtr->bytes = NULL;
     }
     if (flag == 0 || stringPtr->allocated > 0) {
 	attempt = 2 * needed;
-	if (attempt >= 0) {
+	if (attempt+1 > needed) {
 	    ptr = attemptckrealloc(objPtr->bytes, attempt + 1);
 	}
 	if (ptr == NULL) {
@@ -213,12 +214,14 @@ GrowStringBuffer(
 	     * overflow into invalid argument values for attempt.
 	     */
 
-	    unsigned int limit = INT_MAX - needed;
-	    unsigned int extra = needed - objPtr->length + TCL_MIN_GROWTH;
+	    size_t limit = INT_MAX - needed; // TODO FIXME
+	    size_t extra = needed - objPtr->length + TCL_MIN_GROWTH;
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    attempt = needed + growth;
-	    ptr = attemptckrealloc(objPtr->bytes, attempt + 1);
+	    if (attempt+1 > needed) {
+		ptr = attemptckrealloc(objPtr->bytes, attempt + 1);
+	    }
 	}
     }
     if (ptr == NULL) {
@@ -227,6 +230,7 @@ GrowStringBuffer(
 	 */
 
 	attempt = needed;
+	// TODO Beware the case right at the limit (which should fail...)
 	ptr = ckrealloc(objPtr->bytes, attempt + 1);
     }
     objPtr->bytes = ptr;
@@ -236,7 +240,7 @@ GrowStringBuffer(
 static void
 GrowUnicodeBuffer(
     Tcl_Obj *objPtr,
-    int needed)
+    size_t needed)
 {
     /*
      * Pre-conditions: 
@@ -246,7 +250,7 @@ GrowUnicodeBuffer(
      */
 
     String *ptr = NULL, *stringPtr = GET_STRING(objPtr);
-    int attempt;
+    size_t attempt;
 
     if (stringPtr->maxChars > 0) {
 	/*
@@ -254,7 +258,7 @@ GrowUnicodeBuffer(
 	 */
 
 	attempt = 2 * needed;
-	if (attempt >= 0 && attempt <= STRING_MAXCHARS) {
+	if (attempt > needed && attempt <= STRING_MAXCHARS) {
 	    ptr = stringAttemptRealloc(stringPtr, attempt);
 	}
 	if (ptr == NULL) {
@@ -269,7 +273,9 @@ GrowUnicodeBuffer(
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    attempt = needed + growth;
-	    ptr = stringAttemptRealloc(stringPtr, attempt);
+	    if (attempt > needed) {
+		ptr = stringAttemptRealloc(stringPtr, attempt);
+	    }
 	}
     }
     if (ptr == NULL) {
@@ -1031,8 +1037,12 @@ UnicodeLength(
     size_t numChars = 0;
 
     if (unicode) {
-	while (numChars >= 0 && unicode[numChars] != 0) {
-	    numChars++;
+	while (unicode[numChars] != 0) {
+	    size_t oldNumChars = numChars++;
+	    if (oldNumChars > numChars) {
+		// TODO Handle overflow better?
+		break;
+	    }
 	}
     }
     stringCheckLimits(numChars);
@@ -1095,10 +1105,11 @@ Tcl_AppendLimitedToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const char *bytes,		/* Points to the bytes to append to the
 				 * object. */
-    size_t length,			/* The number of bytes available to be
-				 * appended from "bytes". If < 0, then all
-				 * bytes up to a NUL byte are available. */
-    size_t limit,			/* The maximum number of bytes to append to
+    size_t length,		/* The number of bytes available to be
+				 * appended from "bytes". If TCL_STRLEN, then
+				 * all bytes up to a NUL byte are
+				 * available. */
+    size_t limit,		/* The maximum number of bytes to append to
 				 * the object. */
     const char *ellipsis)	/* Ellipsis marker string, appended to the
 				 * object to indicate not all available bytes
@@ -1111,14 +1122,14 @@ Tcl_AppendLimitedToObj(
 	Tcl_Panic("%s called with shared object", "Tcl_AppendLimitedToObj");
     }
 
-    if (length < 0) {
+    if (length == TCL_STRLEN) {
 	length = (bytes ? strlen(bytes) : 0);
     }
     if (length == 0) {
 	return;
     }
 
-    if (length <= limit) {
+    if (length <= limit || limit == INT_MAX) {
 	toCopy = length;
     } else {
 	if (ellipsis == NULL) {
@@ -1190,7 +1201,7 @@ Tcl_AppendToObj(
  * Tcl_AppendUnicodeToObj --
  *
  *	This function appends a Unicode string to an object in the most
- *	efficient manner possible. Length must be >= 0.
+ *	efficient manner possible. Length must *not* be TCL_STRLEN.
  *
  * Results:
  *	None.
@@ -1345,7 +1356,7 @@ Tcl_AppendObjToObj(
     bytes = TclGetStringFromObj(appendObjPtr, &length);
 
     numChars = stringPtr->numChars;
-    if ((numChars >= 0) && (appendObjPtr->typePtr == &tclStringType)) {
+    if (numChars != TCL_STRLEN && appendObjPtr->typePtr == &tclStringType) {
 	String *appendStringPtr = GET_STRING(appendObjPtr);
 
 	appendNumChars = appendStringPtr->numChars;
@@ -1383,12 +1394,12 @@ static void
 AppendUnicodeToUnicodeRep(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const Tcl_UniChar *unicode,	/* String to append. */
-    int appendNumChars)		/* Number of chars of "unicode" to append. */
+    size_t appendNumChars)	/* Number of chars of "unicode" to append. */
 {
     String *stringPtr;
     int numChars;
 
-    if (appendNumChars < 0) {
+    if (appendNumChars == TCL_STRLEN) {
 	appendNumChars = UnicodeLength(unicode);
     }
     if (appendNumChars == 0) {
@@ -1470,7 +1481,7 @@ static void
 AppendUnicodeToUtfRep(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const Tcl_UniChar *unicode,	/* String to convert to UTF. */
-    int numChars)		/* Number of chars of "unicode" to convert. */
+    size_t numChars)		/* Number of chars of "unicode" to convert. */
 {
     String *stringPtr = GET_STRING(objPtr);
 
@@ -1511,7 +1522,7 @@ static void
 AppendUtfToUnicodeRep(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const char *bytes,		/* String to convert to Unicode. */
-    int numBytes)		/* Number of bytes of "bytes" to convert. */
+    size_t numBytes)		/* Number of bytes of "bytes" to convert. */
 {
     String *stringPtr;
 
@@ -1547,10 +1558,10 @@ static void
 AppendUtfToUtfRep(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const char *bytes,		/* String to append. */
-    int numBytes)		/* Number of bytes of "bytes" to append. */
+    size_t numBytes)		/* Number of bytes of "bytes" to append. */
 {
     String *stringPtr;
-    int newLength, oldLength;
+    size_t newLength, oldLength;
 
     if (numBytes == 0) {
 	return;
@@ -1566,7 +1577,7 @@ AppendUtfToUtfRep(
     }
     oldLength = objPtr->length;
     newLength = numBytes + oldLength;
-    if (newLength < 0) {
+    if (newLength < oldLength) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
@@ -1709,7 +1720,8 @@ Tcl_AppendFormatToObj(
     Tcl_Obj *const objv[])
 {
     const char *span = format, *msg, *errCode;
-    int numBytes = 0, objIndex = 0, gotXpg = 0, gotSequential = 0;
+    size_t numBytes = 0, objIndex = 0;
+    int gotXpg = 0, gotSequential = 0;
     size_t originalLength, limit;
     static const char *mixedXPG =
 	    "cannot mix \"%\" and \"%n$\" conversion specifiers";
@@ -1779,6 +1791,9 @@ Tcl_AppendFormatToObj(
 
 	    if (*end == '$') {
 		newXpg = 1;
+		if (position == 0) {
+		    goto badXpgIndex;
+		}
 		objIndex = position - 1;
 		format = end + 1;
 		step = Tcl_UtfToUniChar(format, &ch);
@@ -1799,7 +1814,8 @@ Tcl_AppendFormatToObj(
 	    }
 	    gotSequential = 1;
 	}
-	if ((objIndex < 0) || (objIndex >= objc)) {
+	if (objIndex >= objc) {
+	badXpgIndex:
 	    msg = badIndex[gotXpg];
 	    errCode = gotXpg ? "INDEXRANGE" : "FIELDVARMISMATCH";
 	    goto errorMsg;
@@ -2811,8 +2827,8 @@ static void
 ExtendUnicodeRepWithString(
     Tcl_Obj *objPtr,
     const char *bytes,
-    int numBytes,
-    int numAppendChars)
+    size_t numBytes,
+    size_t numAppendChars)
 {
     String *stringPtr = GET_STRING(objPtr);
     int needed, numOrigChars = 0;
@@ -3034,17 +3050,17 @@ static int
 ExtendStringRepWithUnicode(
     Tcl_Obj *objPtr,
     const Tcl_UniChar *unicode,
-    int numChars)
+    size_t numChars)
 {
     /*
      * Pre-condition: this is the "string" Tcl_ObjType.
      */
 
-    int i, origLength, size = 0;	
+    size_t i, origLength, size = 0;	
     char *dst, buf[TCL_UTF_MAX];
     String *stringPtr = GET_STRING(objPtr);
 
-    if (numChars < 0) {
+    if (numChars == TCL_STRLEN) {
 	numChars = UnicodeLength(unicode);
     }
 
@@ -3066,11 +3082,13 @@ ExtendStringRepWithUnicode(
 	goto copyBytes;
     }
 
-    for (i = 0; i < numChars && size >= 0; i++) {
+    for (i = 0; i < numChars; i++) {
+	size_t oldSize = size;
+
 	size += Tcl_UniCharToUtf((int) unicode[i], buf);
-    }
-    if (size < 0) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+	if (oldSize < size) {
+	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+	}
     }
 
     /*

@@ -2921,7 +2921,7 @@ MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
 MODULE_SCOPE ContLineLoc *TclContinuationsGet(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 			    Tcl_Obj *originObjPtr);
-MODULE_SCOPE int	TclConvertElement(const char *src, size_t length,
+MODULE_SCOPE size_t	TclConvertElement(const char *src, size_t length,
 			    char *dst, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 /* TIP #280 - Modified token based evulation, with line information. */
@@ -3134,7 +3134,7 @@ MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
 			    size_t reStrLen, Tcl_DString *dsPtr,
 			    int *flagsPtr);
-MODULE_SCOPE int	TclScanElement(const char *string, size_t length,
+MODULE_SCOPE size_t	TclScanElement(const char *string, size_t length,
 			    int *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);

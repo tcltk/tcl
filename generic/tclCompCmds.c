@@ -2956,11 +2956,11 @@ PrintForeachInfo(
     register ForeachVarList *varsPtr;
     int i, j;
 
-    Tcl_AppendToObj(appendObj, "data=[", -1);
+    Tcl_AppendToObj(appendObj, "data=[", TCL_STRLEN);
 
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_STRLEN);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%u",
 		(unsigned) (infoPtr->firstValueTemp + i));
@@ -2969,19 +2969,19 @@ PrintForeachInfo(
 	    (unsigned) infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ",", -1);
+	    Tcl_AppendToObj(appendObj, ",", TCL_STRLEN);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\n\t\t it%%v%u\t[",
 		(unsigned) (infoPtr->firstValueTemp + i));
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
-		Tcl_AppendToObj(appendObj, ", ", -1);
+		Tcl_AppendToObj(appendObj, ", ", TCL_STRLEN);
 	    }
 	    Tcl_AppendPrintfToObj(appendObj, "%%v%u",
 		    (unsigned) varsPtr->varIndexes[j]);
 	}
-	Tcl_AppendToObj(appendObj, "]", -1);
+	Tcl_AppendToObj(appendObj, "]", TCL_STRLEN);
     }
 }
 
@@ -5482,9 +5482,9 @@ TclCompileReturnCmd(
      */
     int level, code, status = TCL_OK;
     size_t objc, size;
-    int numWords = parsePtr->numWords;
-    int explicitResult = (0 == (numWords % 2));
-    int numOptionWords = numWords - 1 - explicitResult;
+    size_t numWords = parsePtr->numWords;
+    size_t explicitResult = (0 == (numWords % 2));
+    size_t numOptionWords = numWords - 1 - explicitResult;
     int savedStackDepth = envPtr->currStackDepth;
     Tcl_Obj *returnOpts, **objv;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -5537,7 +5537,8 @@ TclCompileReturnCmd(
     status = TclMergeReturnOptions(interp, objc, objv,
 	    &returnOpts, &code, &level);
   cleanup:
-    while (--objc >= 0) {
+    while (objc > 0) {
+	objc--;
 	TclDecrRefCount(objv[objc]);
     }
     TclStackFree(interp, objv);

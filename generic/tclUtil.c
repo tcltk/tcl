@@ -872,7 +872,7 @@ Tcl_SplitList(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ScanElement(
     register const char *src,	/* String to convert to list element. */
     register int *flagPtr)	/* Where to store information to guide
@@ -904,7 +904,7 @@ Tcl_ScanElement(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ScanCountedElement(
     const char *src,		/* String to convert to Tcl list element. */
     size_t length,		/* Number of bytes in src, or TCL_STRLEN. */
@@ -912,7 +912,7 @@ Tcl_ScanCountedElement(
 				 * Tcl_ConvertElement. */
 {
     int flags = CONVERT_ANY;
-    int numBytes = TclScanElement(src, length, &flags);
+    size_t numBytes = TclScanElement(src, length, &flags);
 
     *flagPtr = flags;
     return numBytes;
@@ -926,10 +926,10 @@ Tcl_ScanCountedElement(
  *	This function is a companion function to TclConvertElement. It scans a
  *	string to see what needs to be done to it (e.g. add backslashes or
  *	enclosing braces) to make the string into a valid Tcl list element. If
- *	length is -1, then the string is scanned from src up to the first null
- *	byte. A NULL value for src is treated as an empty string. The incoming
- *	value of *flagPtr is a report from the caller what additional flags it
- *	will pass to TclConvertElement().
+ *	length is TCL_STRLEN, then the string is scanned from src up to the
+ *	first null byte. A NULL value for src is treated as an empty string.
+ *	The incoming value of *flagPtr is a report from the caller what
+ *	additional flags it will pass to TclConvertElement().
  *
  * Results:
  *	The recommended formatting mode for the element is determined and a
@@ -948,7 +948,7 @@ Tcl_ScanCountedElement(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
     size_t length,		/* Number of bytes in src, or TCL_STRLEN. */
@@ -964,7 +964,7 @@ TclScanElement(
     int extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    int bytesNeeded;		/* Buffer length computed to complete the
+    size_t bytesNeeded;		/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
@@ -1236,7 +1236,7 @@ TclScanElement(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ConvertElement(
     register const char *src,	/* Source information for list element. */
     register char *dst,		/* Place to put list-ified element. */
@@ -1266,14 +1266,14 @@ Tcl_ConvertElement(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_ConvertCountedElement(
     register const char *src,	/* Source information for list element. */
     size_t length,		/* Number of bytes in src, or TCL_STRLEN. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
-    int numBytes = TclConvertElement(src, length, dst, flags);
+    size_t numBytes = TclConvertElement(src, length, dst, flags);
 
     dst[numBytes] = '\0';
     return numBytes;
@@ -1300,7 +1300,7 @@ Tcl_ConvertCountedElement(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclConvertElement(
     register const char *src,	/* Source information for list element. */
     size_t length,		/* Number of bytes in src, or TCL_STRLEN. */
