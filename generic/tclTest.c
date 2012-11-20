@@ -415,7 +415,7 @@ static int		TestInterpResolverCmd(ClientData clientData,
 #if defined(HAVE_CPUID) || defined(__WIN32__)
 static int		TestcpuidCmd(ClientData dummy,
 			    Tcl_Interp* interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 #endif
 
 static const Tcl_Filesystem testReportingFilesystem = {

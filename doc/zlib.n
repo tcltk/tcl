@@ -454,7 +454,7 @@ $\fIstrm \fBclose\fR
 .SH "SEE ALSO"
 binary(n), chan(n), encoding(n), Tcl_ZlibDeflate(3), RFC1950 \- RFC1952
 .SH "KEYWORDS"
-compress, decompress, deflate, gzip, inflate
+compress, decompress, deflate, gzip, inflate, zlib
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

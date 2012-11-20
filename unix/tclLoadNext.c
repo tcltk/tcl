@@ -134,8 +134,8 @@ FindSymbol(
     const char *symbol)
 {
     Tcl_PackageInitProc *proc = NULL;
- 
-   if (symbol) {
+
+    if (symbol) {
 	char sym[strlen(symbol) + 2];
 
 	sym[0] = '_';
