@@ -2663,7 +2663,7 @@ BinaryDecode64(
     unsigned char *cursor = NULL;
     int strict = 0;
     int i, index, size, cut = 0, count = 0;
-    enum {OPT_STRICT };
+    enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
     if (objc < 2 || objc > 3) {
@@ -2698,12 +2698,14 @@ BinaryDecode64(
 	 * length. The final block can be shorter by one or two bytes, denoted
 	 * by the input ending with one or two ='s, respectively.
 	 */
+
 	for (i = 0; i < 4; i++) {
 	    /*
 	     * Get the next input character. At end of input, pad with at most
 	     * two ='s. If more than two ='s would be needed, instead discard
 	     * the block read thus far.
 	     */
+
 	    if (data < dataend) {
 		c = *data++;
 	    } else if (i > 1) {
@@ -2719,6 +2721,7 @@ BinaryDecode64(
 	     * final block of input. Unless strict mode is enabled, skip any
 	     * input whitespace characters.
 	     */
+
 	    if (cut) {
 		if (c == '=' && i > 1) {
 		     value <<= 6;
@@ -2756,14 +2759,14 @@ BinaryDecode64(
 	 * but there are still more input characters, confirm that strict mode
 	 * is off and all subsequent characters are whitespace.
 	 */
+
 	if (cut && data < dataend) {
 	    if (strict) {
 		goto bad64;
-	    } else {
-		for (; data < dataend; data++) {
-		    if (!isspace(*data)) {
-			goto bad64;
-		    }
+	    }
+	    for (; data < dataend; data++) {
+		if (!isspace(*data)) {
+		    goto bad64;
 		}
 	    }
 	}
