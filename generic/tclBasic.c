@@ -484,8 +484,8 @@ Tcl_CreateInterp(void)
 	/*NOTREACHED*/
 	Tcl_Panic("Tcl_NewStringObj entry in the stub table must be kept");
     }
-    if (offsetof(InterpTemplate, stubTable)
-		    != offsetof(Interp, stubTable)) {
+    if (TclOffset(InterpTemplate, stubTable)
+		    != TclOffset(Interp, stubTable)) {
 	/*NOTREACHED*/
 	Tcl_Panic("stubsTable entry in the Interp structure must be kept");
     }
