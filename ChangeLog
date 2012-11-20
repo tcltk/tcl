@@ -1,3 +1,9 @@
+2012-11-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (INST_STR_RANGE_IMM): [Bug 3588366]: Corrected
+	implementation of bounds restriction for end-indexed compiled [string
+	range]. Thanks to Emiliano Gavilan for diagnosis and fix.
+
 2012-11-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	IMPLEMENTATION OF TIP#416
