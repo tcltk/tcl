@@ -37,7 +37,7 @@ typedef struct Encoding {
 				 * end-of-string in this encoding. This number
 				 * is used to determine the source string
 				 * length when the srcLen argument is
-				 * negative. This number can be 1 or 2. */
+				 * TCL_STRLEN. This number can be 1 or 2. */
     ClientData clientData;	/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
     LengthProc *lengthProc;	/* Function to compute length of
@@ -1084,7 +1084,7 @@ Tcl_ExternalToUtfDString(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen < 0) {
+    } else if (srcLen == TCL_STRLEN) {
 	srcLen = encodingPtr->lengthProc(src);
     }
 
@@ -1173,7 +1173,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen < 0) {
+    } else if (srcLen == TCL_STRLEN) {
 	srcLen = encodingPtr->lengthProc(src);
     }
     if (statePtr == NULL) {
@@ -2074,7 +2074,7 @@ BinaryProc(
     *srcReadPtr = srcLen;
     *dstWrotePtr = srcLen;
     *dstCharsPtr = srcLen;
-    memcpy(dst, src, (size_t) srcLen);
+    memcpy(dst, src, srcLen);
     return result;
 }
 

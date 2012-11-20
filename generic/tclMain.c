@@ -65,7 +65,7 @@
 static inline Tcl_Obj *
 NewNativeObj(
     char *string,
-    int length)
+    size_t length)
 {
     Tcl_DString ds;
 
@@ -159,7 +159,7 @@ Tcl_SetStartupScript(
     Tcl_Obj *newEncoding = NULL;
 
     if (encoding != NULL) {
-	newEncoding = Tcl_NewStringObj(encoding, -1);
+	newEncoding = Tcl_NewStringObj(encoding, TCL_STRLEN);
     }
 
     if (tsdPtr->path != NULL) {
@@ -335,14 +335,14 @@ Tcl_MainEx(
 
 	if ((argc > 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
 		&& ('-' != argv[3][0])) {
-	    Tcl_Obj *value = NewNativeObj(argv[2], -1);
-	    Tcl_SetStartupScript(NewNativeObj(argv[3], -1),
+	    Tcl_Obj *value = NewNativeObj(argv[2], TCL_STRLEN);
+	    Tcl_SetStartupScript(NewNativeObj(argv[3], TCL_STRLEN),
 		    Tcl_GetString(value));
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    argv += 3;
 	} else if ((argc > 1) && ('-' != argv[1][0])) {
-	    Tcl_SetStartupScript(NewNativeObj(argv[1], -1), NULL);
+	    Tcl_SetStartupScript(NewNativeObj(argv[1], TCL_STRLEN), NULL);
 	    argc--;
 	    argv++;
 	}
@@ -350,7 +350,7 @@ Tcl_MainEx(
 
     path = Tcl_GetStartupScript(&encodingName);
     if (path == NULL) {
-	appName = NewNativeObj(argv[0], -1);
+	appName = NewNativeObj(argv[0], TCL_STRLEN);
     } else {
 	appName = path;
     }
@@ -362,7 +362,8 @@ Tcl_MainEx(
 
     argvPtr = Tcl_NewListObj(0, NULL);
     while (argc--) {
-	Tcl_ListObjAppendElement(NULL, argvPtr, NewNativeObj(*argv++, -1));
+	Tcl_ListObjAppendElement(NULL, argvPtr,
+		NewNativeObj(*argv++, TCL_STRLEN));
     }
     Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
 
@@ -383,7 +384,8 @@ Tcl_MainEx(
 	chan = Tcl_GetStdChannel(TCL_STDERR);
 	if (chan) {
 	    Tcl_WriteChars(chan,
-		    "application-specific initialization failed: ", -1);
+		    "application-specific initialization failed: ",
+		    TCL_STRLEN);
 	    Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
 	    Tcl_WriteChars(chan, "\n", 1);
 	}

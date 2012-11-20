@@ -1140,7 +1140,7 @@ TclParseNumber(
 	    }
 	}
 	if (endPtrPtr == NULL) {
-	    if ((len != 0) && ((numBytes > 0) || (*p != '\0'))) {
+	    if ((len != 0) && ((numBytes != TCL_STRLEN) || (*p != '\0'))) {
 		status = TCL_ERROR;
 	    }
 	} else {
@@ -1380,7 +1380,7 @@ TclParseNumber(
 		    expected);
 
 	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
-	    Tcl_AppendToObj(msg, "\"", -1);
+	    Tcl_AppendToObj(msg, "\"", TCL_STRLEN);
 	    if (state == BAD_OCTAL) {
 		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
 	    }
