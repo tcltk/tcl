@@ -2393,7 +2393,7 @@ TEBCresume(
 	    register int i;
 
 	    TRACE(("%d [", opnd));
-	    for (i=opnd-1 ; i>=0 ; i++) {
+	    for (i=opnd-1 ; i>=0 ; i--) {
 		TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_DEPTH(i))));
 		if (i > 0) {
 		    TRACE_APPEND((" "));
@@ -4962,9 +4962,6 @@ TEBCresume(
 	}
 	if (toIdx < -1) {
 	    toIdx += 1 + length;
-	    if (toIdx < 0) {
-		toIdx = 0;
-	    }
 	} else if (toIdx >= length) {
 	    toIdx = length - 1;
 	}
