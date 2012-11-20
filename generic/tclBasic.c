@@ -431,6 +431,14 @@ TclFinalizeEvaluation(void)
  *----------------------------------------------------------------------
  */
 
+/* Template for internal Interp structure: the stubTable entry cannot move! */
+typedef struct {
+    char *dumm1;
+    Tcl_FreeProc *dummy2;
+    int dummy3;
+    const struct TclStubs *stubTable;
+} InterpTemplate;
+
 Tcl_Interp *
 Tcl_CreateInterp(void)
 {
@@ -465,6 +473,21 @@ Tcl_CreateInterp(void)
     if (sizeof(Tcl_CallFrame) < sizeof(CallFrame)) {
 	/*NOTREACHED*/
 	Tcl_Panic("Tcl_CallFrame must not be smaller than CallFrame");
+    }
+    if ((void *) tclStubs.tcl_SetObjResult
+		    != (void *)((&(tclStubs.tcl_PkgProvideEx))[235])) {
+	/*NOTREACHED*/
+	Tcl_Panic("Tcl_SetObjResult entry in the stub table must be kept");
+    }
+    if ((void *) tclStubs.tcl_NewStringObj
+		    != (void *)((&(tclStubs.tcl_PkgProvideEx))[56])) {
+	/*NOTREACHED*/
+	Tcl_Panic("Tcl_NewStringObj entry in the stub table must be kept");
+    }
+    if (TclOffset(InterpTemplate, stubTable)
+		    != TclOffset(Interp, stubTable)) {
+	/*NOTREACHED*/
+	Tcl_Panic("stubsTable entry in the Interp structure must be kept");
     }
 
     if (cancelTableInitialized == 0) {
