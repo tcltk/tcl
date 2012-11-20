@@ -33,6 +33,7 @@
 #undef Tcl_CreateHashEntry
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
+#undef Tcl_VarTraceInfo
 
 /*
  * Keep a record of the original Notifier procedures, created in the

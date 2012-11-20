@@ -2966,6 +2966,8 @@ Tcl_UntraceVar2(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_VarTraceInfo
+
 ClientData
 Tcl_VarTraceInfo(
     Tcl_Interp *interp,		/* Interpreter containing variable. */
