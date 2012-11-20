@@ -995,95 +995,96 @@ TclScanElement(
     }
 
     while (length) {
-      if (CHAR_TYPE(*p) != TYPE_NORMAL) {
-	switch (*p) {
-	case '{':	/* TYPE_BRACE */
+	if (CHAR_TYPE(*p) != TYPE_NORMAL) {
+	    switch (*p) {
+	    case '{':	/* TYPE_BRACE */
 #if COMPAT
-	    braceCount++;
+		braceCount++;
 #endif /* COMPAT */
-	    extra++;				/* Escape '{' => '\{' */
-	    nestingLevel++;
-	    break;
-	case '}':	/* TYPE_BRACE */
+		extra++;			/* Escape '{' => '\{' */
+		nestingLevel++;
+		break;
+	    case '}':	/* TYPE_BRACE */
 #if COMPAT
-	    braceCount++;
+		braceCount++;
 #endif /* COMPAT */
-	    extra++;				/* Escape '}' => '\}' */
-	    nestingLevel--;
-	    if (nestingLevel < 0) {
-		/*
-		 * Unbalanced braces!  Cannot format with brace quoting.
-		 */
+		extra++;			/* Escape '}' => '\}' */
+		nestingLevel--;
+		if (nestingLevel < 0) {
+		    /*
+		     * Unbalanced braces!  Cannot format with brace quoting.
+		     */
 
-		requireEscape = 1;
-	    }
-	    break;
-	case ']':	/* TYPE_CLOSE_BRACK */
-	case '"':	/* TYPE_SPACE */
+		    requireEscape = 1;
+		}
+		break;
+	    case ']':	/* TYPE_CLOSE_BRACK */
+	    case '"':	/* TYPE_SPACE */
 #if COMPAT
-	    forbidNone = 1;
-	    extra++;		/* Escapes all just prepend a backslash */
-	    preferEscape = 1;
-	    break;
+		forbidNone = 1;
+		extra++;	/* Escapes all just prepend a backslash */
+		preferEscape = 1;
+		break;
 #else
-	    /* FLOW THROUGH */
+		/* FLOW THROUGH */
 #endif /* COMPAT */
-	case '[':	/* TYPE_SUBS */
-	case '$':	/* TYPE_SUBS */
-	case ';':	/* TYPE_COMMAND_END */
-	case ' ':	/* TYPE_SPACE */
-	case '\f':	/* TYPE_SPACE */
-	case '\n':	/* TYPE_COMMAND_END */
-	case '\r':	/* TYPE_SPACE */
-	case '\t':	/* TYPE_SPACE */
-	case '\v':	/* TYPE_SPACE */
-	    forbidNone = 1;
-	    extra++;		/* Escape sequences all one byte longer. */
-#if COMPAT
-	    preferBrace = 1;
-#endif /* COMPAT */
-	    break;
-	case '\\':	/* TYPE_SUBS */
-	    extra++;				/* Escape '\' => '\\' */
-	    if ((length == 1) || ((length == TCL_STRLEN) && (p[1] == '\0'))) {
-		/*
-		 * Final backslash. Cannot format with brace quoting.
-		 */
-
-		requireEscape = 1;		
-		break;
-	    }
-	    if (p[1] == '\n') {
-		extra++;	/* Escape newline => '\n', one byte longer */
-
-		/*
-		 * Backslash newline sequence.  Brace quoting not permitted.
-		 */
-
-		requireEscape = 1;
-		length -= (length > 0);
-		p++;
-		break;
-	    }
-	    if ((p[1] == '{') || (p[1] == '}') || (p[1] == '\\')) {
+	    case '[':	/* TYPE_SUBS */
+	    case '$':	/* TYPE_SUBS */
+	    case ';':	/* TYPE_COMMAND_END */
+	    case ' ':	/* TYPE_SPACE */
+	    case '\f':	/* TYPE_SPACE */
+	    case '\n':	/* TYPE_COMMAND_END */
+	    case '\r':	/* TYPE_SPACE */
+	    case '\t':	/* TYPE_SPACE */
+	    case '\v':	/* TYPE_SPACE */
+		forbidNone = 1;
 		extra++;	/* Escape sequences all one byte longer. */
-		length -= (length > 0);
-		p++;
-	    }
-	    forbidNone = 1;
 #if COMPAT
-	    preferBrace = 1;
+		preferBrace = 1;
 #endif /* COMPAT */
-	    break;
-	case '\0':	/* TYPE_SUBS */
-	    if (length == TCL_STRLEN) {
-		goto endOfString;
+		break;
+	    case '\\':	/* TYPE_SUBS */
+		extra++;			/* Escape '\' => '\\' */
+		if ((length == 1) || (length == TCL_STRLEN && p[1] == '\0')) {
+		    /*
+		     * Final backslash. Cannot format with brace quoting.
+		     */
+
+		    requireEscape = 1;
+		    break;
+		}
+		if (p[1] == '\n') {
+		    extra++;	/* Escape newline => '\n', one byte longer */
+
+		    /*
+		     * Backslash newline sequence.  Brace quoting not
+		     * permitted.
+		     */
+
+		    requireEscape = 1;
+		    length -= (length != TCL_STRLEN);
+		    p++;
+		    break;
+		}
+		if ((p[1] == '{') || (p[1] == '}') || (p[1] == '\\')) {
+		    extra++;	/* Escape sequences all one byte longer. */
+		    length -= (length != TCL_STRLEN);
+		    p++;
+		}
+		forbidNone = 1;
+#if COMPAT
+		preferBrace = 1;
+#endif /* COMPAT */
+		break;
+	    case '\0':	/* TYPE_SUBS */
+		if (length == TCL_STRLEN) {
+		    goto endOfString;
+		}
+		/* TODO: Panic on improper encoding? */
+		break;
 	    }
-	    /* TODO: Panic on improper encoding? */
-	    break;
 	}
-      }
-	length -= (length > 0);
+	length -= (length != TCL_STRLEN);
 	p++;
     }
 
@@ -1118,7 +1119,7 @@ TclScanElement(
 	    bytesNeeded++;
 	}
 	*flagPtr = CONVERT_ESCAPE;
-	goto overflowCheck;
+	return bytesNeeded;
     }
     if (*flagPtr & CONVERT_ANY) {
 	/*
@@ -1166,7 +1167,7 @@ TclScanElement(
 		bytesNeeded += braceCount;
 	    }
 	    *flagPtr = CONVERT_MASK;
-	    goto overflowCheck;
+	    return bytesNeeded;
 	}
 #endif /* COMPAT */
 	if (*flagPtr & TCL_DONT_USE_BRACES) {
@@ -1192,7 +1193,7 @@ TclScanElement(
 	    bytesNeeded += 2;
 	}
 	*flagPtr = CONVERT_BRACE;
-	goto overflowCheck;
+	return bytesNeeded;
     }
 
     /*
@@ -1207,11 +1208,6 @@ TclScanElement(
 	bytesNeeded += 2;
     }
     *flagPtr = CONVERT_NONE;
-
-  overflowCheck:
-    if (bytesNeeded < 0) {
-	Tcl_Panic("TclScanElement: string length overflow");
-    }
     return bytesNeeded;
 }
 
@@ -1339,7 +1335,7 @@ TclConvertElement(
 	    p[1] = '#';
 	    p += 2;
 	    src++;
-	    length -= (length > 0);
+	    length -= (length != TCL_STRLEN);
 	} else {
 	    conversion = CONVERT_BRACE;
 	}
@@ -1389,7 +1385,7 @@ TclConvertElement(
      * Formatted string is original string converted to escape sequences.
      */
 
-    for ( ; length; src++, length -= (length > 0)) {
+    for ( ; length; src++, length -= (length != TCL_STRLEN)) {
 	switch (*src) {
 	case ']':
 	case '[':
@@ -1530,10 +1526,8 @@ Tcl_Merge(
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	bytesNeeded += TclScanElement(argv[i], TCL_STRLEN, &flagPtr[i]);
-	if (bytesNeeded < 0) {
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
     }
+    // TODO Is this check sensible any more?
     if (bytesNeeded > INT_MAX - argc + 1) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
@@ -1801,10 +1795,8 @@ Tcl_Concat(
 
     for (i = 0;  i < argc;  i++) {
 	bytesNeeded += strlen(argv[i]);
-	if (bytesNeeded < 0) {
-	    Tcl_Panic("Tcl_Concat: max size of Tcl value exceeded");
-	}
     }
+    // TODO Is this check sensible any more?
     if (bytesNeeded + argc - 1 < 0) {
 	/*
 	 * Panic test could be tighter, but not going to bother for this
@@ -1941,9 +1933,6 @@ Tcl_ConcatObj(
     for (i = 0;  i < objc;  i++) {
 	element = TclGetStringFromObj(objv[i], &elemLength);
 	bytesNeeded += elemLength;
-	if (bytesNeeded < 0) {
-	    break;
-	}
     }
 
     /*

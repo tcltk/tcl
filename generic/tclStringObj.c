@@ -1745,8 +1745,8 @@ Tcl_AppendFormatToObj(
 	char *end;
 	int gotMinus, gotHash, gotZero, gotSpace, gotPlus, sawFlag;
 	int width, gotPrecision, precision, useShort, useWide, useBig;
-	int newXpg, numChars, allocSegment = 0, segmentLimit;
-	size_t segmentNumBytes;
+	int newXpg, allocSegment = 0, segmentLimit;
+	size_t numChars, segmentNumBytes;
 	Tcl_Obj *segment;
 	Tcl_UniChar ch;
 	int step = Tcl_UtfToUniChar(format, &ch);
@@ -2361,7 +2361,7 @@ Tcl_AppendFormatToObj(
 	}
 	}
 
-	if (width>0 && numChars<0) {
+	if (width>0 && numChars==TCL_STRLEN) {
 	    numChars = Tcl_GetCharLength(segment);
 	}
 	if (!gotMinus && width>0) {
@@ -3086,7 +3086,7 @@ ExtendStringRepWithUnicode(
 	size_t oldSize = size;
 
 	size += Tcl_UniCharToUtf((int) unicode[i], buf);
-	if (oldSize < size) {
+	if (oldSize > size) {
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
     }
