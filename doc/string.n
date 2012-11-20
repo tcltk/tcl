@@ -25,11 +25,13 @@ Returns a decimal string giving the number of bytes used to represent
 \fIstring\fR in memory.  Because UTF\-8 uses one to three bytes to
 represent Unicode characters, the byte length will not be the same as
 the character length in general.  The cases where a script cares about
-the byte length are rare.  In almost all cases, you should use the
-\fBstring length\fR operation (including determining the length of a
-Tcl ByteArray object).  Refer to the \fBTcl_NumUtfChars\fR manual
-entry for more details on the UTF\-8 representation.
+the byte length are rare.
 .RS
+.PP
+In almost all cases, you should use the
+\fBstring length\fR operation (including determining the length of a
+Tcl byte array value).  Refer to the \fBTcl_NumUtfChars\fR manual
+entry for more details on the UTF\-8 representation.
 .PP
 \fICompatibility note:\fR it is likely that this subcommand will be
 withdrawn in a future version of Tcl. It is better to use the
@@ -199,9 +201,9 @@ will return \fB1\fR.
 .
 Returns a decimal string giving the number of characters in
 \fIstring\fR.  Note that this is not necessarily the same as the
-number of bytes used to store the string.  If the object is a
-ByteArray object (such as those returned from reading a binary encoded
-channel), then this will return the actual byte length of the object.
+number of bytes used to store the string.  If the value is a
+byte array value (such as those returned from reading a binary encoded
+channel), then this will return the actual byte length of the value.
 .TP
 \fBstring map\fR ?\fB\-nocase\fR? \fImapping string\fR
 .
