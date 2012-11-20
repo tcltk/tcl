@@ -1,3 +1,67 @@
+2012-11-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (INST_STR_RANGE_IMM): [Bug 3588366]: Corrected
+	implementation of bounds restriction for end-indexed compiled [string
+	range]. Thanks to Emiliano Gavilan for diagnosis and fix.
+
+2012-11-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	IMPLEMENTATION OF TIP#416
+
+	New Options for 'load': -global and -lazy
+
+	* generic/tcl.h:
+	* generic/tclLoad.c
+	* unix/tclLoadDl.c
+	* unix/tclLoadDyld.c
+	* tests/load.test
+	* doc/Load.3
+	* doc/load.n
+
+2012-11-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixFCmd.c (TclUnixOpenTemporaryFile): [Bug 2933003]: Factor
+	out all the code to do temporary file creation so that it is possible
+	to make it correct in one place. Allow overriding of the back-stop
+	default temporary file location at compile time by setting the
+	TCL_TEMPORARY_FILE_DIRECTORY #def to a string containing the directory
+	name (defaults to "/tmp" as that is the most common default).
+
+2012-11-13  Joe Mistachkin  <joe@mistachkin.com>
+
+	* win/tclWinInit.c: also search for the library directory (init.tcl,
+	encodings, etc) relative to the build directory associated with the
+	source checkout.
+
+2012-11-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:   re-enable bcc-tailcall, after fixing an
+	* generic/tclExecute.c: infinite loop in the TCL_COMPILE_DEBUG mode
+
+
+2012-11-07  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/America/Araguaina:
+	* library/tzdata/America/Bahia:
+	* library/tzdata/America/Havana:
+	* library/tzdata/Asia/Amman:
+	* library/tzdata/Asia/Gaza:
+	* library/tzdata/Asia/Hebron:
+	* library/tzdata/Asia/Jerusalem:
+	* library/tzdata/Pacific/Apia:
+	* library/tzdata/Pacific/Fakaofo:
+	* library/tzdata/Pacific/Fiji:		Import tzdata2012i.
+
+2012-11-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/http/http.tcl (http::Finish): [Bug 3581754]: Ensure that
+	callbacks are done at most once to prevent problems with timeouts on a
+	keep-alive connection (combined with reentrant http package use)
+	causing excessive stack growth. Not a fix for the underlying problem,
+	but ensures that pain will be mostly kept away from users.
+	Bump http package to 2.8.5.
+
 2012-11-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	Added bytecode compilation of many Tcl commands. Some of these are

@@ -636,6 +636,7 @@ proc output-name {line} {
 	lappend manual(wing-toc) $name
 	lappend manual(name-$name) $manual(wing-file)/$manual(name)
     }
+    set manual(tooltip-$manual(wing-file)/$manual(name).htm) $line
 }
 
 ##
@@ -943,7 +944,9 @@ proc output-directive {line} {
 			set line [next-text]
 			if {[is-a-directive $line]} {
 			    backup-text 1
-			    output-name [join $names { }]
+			    if {[llength $names]} {
+				output-name [join $names { }]
+			    }
 			    return
 			}
 			lappend names [string trim $line]
@@ -1254,7 +1257,11 @@ proc make-manpage-section {outputDir sectionDescriptor} {
     # whistle
     puts stderr "scanning section $manual(wing-name)"
     # put the entry for this section into the short table of contents
-    puts $manual(short-toc-fp) "<DT><A HREF=\"$manual(wing-file)/[indexfile]\">$manual(wing-name)</A></DT><DD>$manual(wing-description)</DD>"
+    if {[regexp {^(.+), version (.+)$} $manual(wing-name) -> name version]} {
+	puts $manual(short-toc-fp) "<DT><A HREF=\"$manual(wing-file)/[indexfile]\" TITLE=\"version $version\">$name</A></DT><DD>$manual(wing-description)</DD>"
+    } else {
+	puts $manual(short-toc-fp) "<DT><A HREF=\"$manual(wing-file)/[indexfile]\">$manual(wing-name)</A></DT><DD>$manual(wing-description)</DD>"
+    }
     # initialize the wing table of contents
     puts $manual(wing-toc-fp) [htmlhead $manual(wing-name) \
 	    $manual(wing-name) $overall_title "../[indexfile]"]
@@ -1329,7 +1336,7 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	    }
 	    switch -exact -- $code {
 		.if - .nr - .ti - .in - .ie - .el -
-		.ad - .na - .so - .ne - .AS - .VE - .VS - . {
+		.ad - .na - .so - .ne - .AS - .HS - .VE - .VS - . {
 		    # ignore
 		    continue
 		}
@@ -1565,8 +1572,16 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	    set tail [lindex $tail [expr {[llength $tail]-1}]]
 	}
 	set tail [file tail $tail]
-	append rows([expr {$n%$nrows}]) \
-	    "<td> <a href=\"$tail.htm\">$name</a> </td>"
+	if {[info exists manual(tooltip-$manual(wing-file)/$tail.htm)]} {
+	    set tooltip $manual(tooltip-$manual(wing-file)/$tail.htm)
+	    set tooltip [string map {[ {\[} ] {\]} $ {\$} \\ \\\\} $tooltip]
+	    regsub {^[^-]+-\s*(.)} $tooltip {[string totitle \1]} tooltip
+	    append rows([expr {$n%$nrows}]) \
+		"<td> <a href=\"$tail.htm\" title=\"[subst $tooltip]\">$name</a> </td>"
+	} else {
+	    append rows([expr {$n%$nrows}]) \
+		"<td> <a href=\"$tail.htm\">$name</a> </td>"
+	}
 	incr n
     }
     puts $manual(wing-toc-fp) <table>
