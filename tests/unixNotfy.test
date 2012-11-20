@@ -17,7 +17,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 # When run in a Tk shell, these tests hang.
 testConstraint noTk [expr {0 != [catch {package present Tk}]}]
-testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 # Darwin always uses a threaded notifier
 testConstraint unthreaded [expr {
     ![::tcl::pkgconfig get threaded]
