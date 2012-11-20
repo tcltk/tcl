@@ -194,9 +194,9 @@ result; it can be retrieved using \fBTcl_GetObjResult\fR.
 .PP
 \fBTcl_EvalTokens\fR differs from \fBTcl_EvalTokensStandard\fR only in
 the return convention used: it returns the result in a new Tcl_Obj.
-The reference count of the object returned as result has been
+The reference count of the value returned as result has been
 incremented, so the caller must
-invoke \fBTcl_DecrRefCount\fR when it is finished with the object.
+invoke \fBTcl_DecrRefCount\fR when it is finished with the value.
 If an error or other exception occurs while evaluating the tokens
 (such as a reference to a non-existent variable) then the return value
 is NULL and an error message is left in \fIinterp\fR's result. The use

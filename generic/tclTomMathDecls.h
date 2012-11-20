@@ -278,7 +278,7 @@ EXTERN int		TclBN_mp_cnt_lsb(const mp_int *a);
 
 typedef struct TclTomMathStubs {
     int magic;
-    const struct TclTomMathStubHooks *hooks;
+    void *hooks;
 
     int (*tclBN_epoch) (void); /* 0 */
     int (*tclBN_revision) (void); /* 1 */
