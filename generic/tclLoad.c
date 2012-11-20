@@ -470,7 +470,7 @@ Tcl_LoadObjCmd(
 
     if (code != TCL_OK) {
 	Interp *iPtr = (Interp *) target;
-	if (iPtr->result != NULL) {
+	if (iPtr->result != NULL && iPtr->result[0] != '\0') {
 	    /* We have an Tcl 8.x extension with incompatible stub table. */
 	    Tcl_Obj *obj = Tcl_NewStringObj(iPtr->result, -1);
 	    Tcl_SetObjResult(interp, obj);
