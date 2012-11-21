@@ -1176,7 +1176,7 @@ TeststringobjCmd(
 		SetVarToObj(varPtr, varIndex, Tcl_DuplicateObj(varPtr[varIndex]));
 	    }
 	    string = Tcl_GetString(objv[3]);
-	    Tcl_AppendToObj(varPtr[varIndex], string, length);
+	    Tcl_AppendToObj(varPtr[varIndex], string, (size_t) length);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 1:				/* appendstrings */

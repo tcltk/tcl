@@ -3474,7 +3474,8 @@ StackCheckBasicBlock(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "code pops stack below level of enclosing catch",
 		    TCL_STRLEN));
-	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACKINCATCH", -1);
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACKINCATCH",
+		    NULL);
 	    AddBasicBlockRangeToErrorInfo(assemEnvPtr, blockPtr);
 	    Tcl_SetErrorLine(interp, blockPtr->startLine);
 	}

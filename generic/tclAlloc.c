@@ -694,7 +694,7 @@ mstats(
 
 char *
 TclpAlloc(
-    unsigned int numBytes)	/* Number of bytes to allocate. */
+    size_t numBytes)		/* Number of bytes to allocate. */
 {
     return (char *) malloc(numBytes);
 }
@@ -742,7 +742,7 @@ TclpFree(
 char *
 TclpRealloc(
     char *oldPtr,		/* Pointer to alloced block. */
-    unsigned int numBytes)	/* New size of memory. */
+    size_t numBytes)		/* New size of memory. */
 {
     return (char *) realloc(oldPtr, numBytes);
 }

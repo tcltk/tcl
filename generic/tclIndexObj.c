@@ -904,9 +904,9 @@ Tcl_WrongNumArgs(
     if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
 	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_AppendObjToObj(objPtr, Tcl_GetObjResult(interp));
-	Tcl_AppendToObj(objPtr, " or \"", -1);
+	Tcl_AppendToObj(objPtr, " or \"", TCL_STRLEN);
     } else {
-	Tcl_AppendToObj(objPtr, "wrong # args: should be \"", -1);
+	Tcl_AppendToObj(objPtr, "wrong # args: should be \"", TCL_STRLEN);
     }
 
     /*

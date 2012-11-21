@@ -1790,7 +1790,7 @@ Tcl_FSEvalFileEx(
      * otherwise replace them. [Bug 3466099]
      */
 
-    if (Tcl_ReadChars(chan, objPtr, -1,
+    if (Tcl_ReadChars(chan, objPtr, TCL_STRLEN,
 	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1925,7 +1925,7 @@ TclNREvalFile(
      * otherwise replace them. [Bug 3466099]
      */
 
-    if (Tcl_ReadChars(chan, objPtr, -1,
+    if (Tcl_ReadChars(chan, objPtr, TCL_STRLEN,
 	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(

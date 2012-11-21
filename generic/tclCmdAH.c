@@ -922,9 +922,11 @@ TclMakeFileCommandSafe(
 	    const char *oldName, *newName;
 
 	    Tcl_DStringSetLength(&oldBuf, 13);
-	    oldName = Tcl_DStringAppend(&oldBuf, unsafeInfo[i].cmdName, -1);
+	    oldName = Tcl_DStringAppend(&oldBuf, unsafeInfo[i].cmdName,
+		    TCL_STRLEN);
 	    Tcl_DStringSetLength(&newBuf, 9);
-	    newName = Tcl_DStringAppend(&newBuf, unsafeInfo[i].cmdName, -1);
+	    newName = Tcl_DStringAppend(&newBuf, unsafeInfo[i].cmdName,
+		    TCL_STRLEN);
 	    if (TclRenameCommand(interp, oldName, "___tmp") != TCL_OK
 		    || Tcl_HideCommand(interp, "___tmp", newName) != TCL_OK) {
 		Tcl_Panic("problem making 'file %s' safe: %s",

@@ -464,17 +464,20 @@ TclDefaultBgErrorHandlerObjCmd(
 		    Tcl_RestoreInterpState(interp, saved);
 		    Tcl_WriteObj(errChannel, Tcl_GetVar2Ex(interp,
 			    "errorInfo", NULL, TCL_GLOBAL_ONLY));
-		    Tcl_WriteChars(errChannel, "\n", -1);
+		    Tcl_WriteChars(errChannel, "\n", TCL_STRLEN);
 		} else {
 		    Tcl_DiscardInterpState(saved);
 		    Tcl_WriteChars(errChannel,
-			    "bgerror failed to handle background error.\n",-1);
-		    Tcl_WriteChars(errChannel, "    Original error: ", -1);
+			    "bgerror failed to handle background error.\n",
+			    TCL_STRLEN);
+		    Tcl_WriteChars(errChannel, "    Original error: ",
+			    TCL_STRLEN);
 		    Tcl_WriteObj(errChannel, tempObjv[1]);
-		    Tcl_WriteChars(errChannel, "\n", -1);
-		    Tcl_WriteChars(errChannel, "    Error in bgerror: ", -1);
+		    Tcl_WriteChars(errChannel, "\n", TCL_STRLEN);
+		    Tcl_WriteChars(errChannel, "    Error in bgerror: ",
+			    TCL_STRLEN);
 		    Tcl_WriteObj(errChannel, resultPtr);
-		    Tcl_WriteChars(errChannel, "\n", -1);
+		    Tcl_WriteChars(errChannel, "\n", TCL_STRLEN);
 		}
 		Tcl_DecrRefCount(resultPtr);
 		Tcl_Flush(errChannel);

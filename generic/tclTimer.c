@@ -980,7 +980,8 @@ Tcl_AfterObjCmd(
             Tcl_ListObjAppendElement(interp, resultListPtr,
                     afterPtr->commandPtr);
             Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
-		    (afterPtr->token == NULL) ? "idle" : "timer", -1));
+		    (afterPtr->token == NULL) ? "idle" : "timer",
+                    TCL_STRLEN));
             Tcl_SetObjResult(interp, resultListPtr);
         }
 	break;

@@ -663,10 +663,10 @@ ThreadErrorProc(
     errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
     if (errorProcString == NULL) {
 	errChannel = Tcl_GetStdChannel(TCL_STDERR);
-	Tcl_WriteChars(errChannel, "Error from thread ", -1);
-	Tcl_WriteChars(errChannel, buf, -1);
+	Tcl_WriteChars(errChannel, "Error from thread ", TCL_STRLEN);
+	Tcl_WriteChars(errChannel, buf, TCL_STRLEN);
 	Tcl_WriteChars(errChannel, "\n", 1);
-	Tcl_WriteChars(errChannel, errorInfo, -1);
+	Tcl_WriteChars(errChannel, errorInfo, TCL_STRLEN);
 	Tcl_WriteChars(errChannel, "\n", 1);
     } else {
 	argv[0] = errorProcString;
@@ -991,7 +991,8 @@ ThreadCancel(
     Tcl_MutexUnlock(&threadMutex);
     Tcl_ResetResult(interp);
     return Tcl_CancelEval(tsdPtr->interp,
-    	(result != NULL) ? Tcl_NewStringObj(result, -1) : NULL, 0, flags);
+	    (result != NULL) ? Tcl_NewStringObj(result, TCL_STRLEN) : NULL,
+	    0, flags);
 }
 
 /*

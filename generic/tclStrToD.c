@@ -383,9 +383,9 @@ static Tcl_WideUInt	Nokia770Twiddle(Tcl_WideUInt w);
  *	the first byte to be scanned. If bytes is NULL, then objPtr must be
  *	non-NULL, and the string representation of objPtr will be scanned
  *	(generated first, if necessary). The numBytes argument determines the
- *	number of bytes to be scanned. If numBytes is negative, the first NUL
- *	byte encountered will terminate the scan. If numBytes is non-negative,
- *	then no more than numBytes bytes will be scanned.
+ *	number of bytes to be scanned. If numBytes is TCL_STRLEN, the first
+ *	NUL byte encountered will terminate the scan. If numBytes is
+ *	non-negative, then no more than numBytes bytes will be scanned.
  *
  *	The argument flags is an input that controls the numeric formats
  *	recognized by the parser. The flag bits are:
@@ -1382,7 +1382,8 @@ TclParseNumber(
 	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
 	    Tcl_AppendToObj(msg, "\"", TCL_STRLEN);
 	    if (state == BAD_OCTAL) {
-		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
+		Tcl_AppendToObj(msg, " (looks like invalid octal number)",
+			TCL_STRLEN);
 	    }
 	    Tcl_SetObjResult(interp, msg);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
@@ -4508,9 +4509,9 @@ Tcl_InitBignumFromDouble(
 
     if (TclIsInfinite(d)) {
 	if (interp != NULL) {
-	    const char *s = "integer value too large to represent";
+	    static const char *s = "integer value too large to represent";
 
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}
 	return TCL_ERROR;

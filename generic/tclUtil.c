@@ -3964,12 +3964,12 @@ TclGetProcessGlobalValue(
 	    Tcl_UtfToExternalDString(pgvPtr->encoding, pgvPtr->value,
 		    pgvPtr->numBytes, &native);
 	    Tcl_ExternalToUtfDString(current, Tcl_DStringValue(&native),
-	    Tcl_DStringLength(&native), &newValue);
+		    Tcl_DStringLength(&native), &newValue);
 	    Tcl_DStringFree(&native);
 	    ckfree(pgvPtr->value);
 	    pgvPtr->value = ckalloc(Tcl_DStringLength(&newValue) + 1);
 	    memcpy(pgvPtr->value, Tcl_DStringValue(&newValue),
-		    (size_t) Tcl_DStringLength(&newValue) + 1);
+		    Tcl_DStringLength(&newValue) + 1);
 	    Tcl_DStringFree(&newValue);
 	    Tcl_FreeEncoding(pgvPtr->encoding);
 	    pgvPtr->encoding = current;

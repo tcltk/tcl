@@ -1394,7 +1394,7 @@ Tcl_GlobObjCmd(
 		 * in TclGlob requires a non-NULL pathOrDir.
 		 */
 
-		Tcl_DStringAppend(&pref, first, -1);
+		Tcl_DStringAppend(&pref, first, TCL_STRLEN);
 		globFlags &= ~TCL_GLOBMODE_TAILS;
 		pathOrDir = NULL;
 	    } else {
@@ -1433,7 +1433,7 @@ Tcl_GlobObjCmd(
 		}
 	    }
 	    if (*search != '\0') {
-		Tcl_DStringAppend(&prefix, search, -1);
+		Tcl_DStringAppend(&prefix, search, TCL_STRLEN);
 	    }
 	    Tcl_DStringFree(&pref);
 	}
@@ -1588,7 +1588,7 @@ Tcl_GlobObjCmd(
 	}
 	for (i = 0; i < objc; i++) {
 	    TclDStringAppendObj(&prefix, objv[i]);
-	    if (i != objc -1) {
+	    if (i != objc-1) {
 		Tcl_DStringAppend(&prefix, separators, 1);
 	    }
 	}
@@ -1642,7 +1642,8 @@ Tcl_GlobObjCmd(
 			    (join || (objc == 1)) ? "" : "s");
 
 	    if (join) {
-		Tcl_AppendToObj(errorMsg, Tcl_DStringValue(&prefix), -1);
+		Tcl_AppendToObj(errorMsg, Tcl_DStringValue(&prefix),
+			TCL_STRLEN);
 	    } else {
 		const char *sep = "";
 
@@ -1652,7 +1653,7 @@ Tcl_GlobObjCmd(
 		    sep = " ";
 		}
 	    }
-	    Tcl_AppendToObj(errorMsg, "\"", -1);
+	    Tcl_AppendToObj(errorMsg, "\"", TCL_STRLEN);
 	    Tcl_SetObjResult(interp, errorMsg);
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "NOMATCH",
 		    NULL);
@@ -1776,7 +1777,7 @@ TclGlob(
 		return TCL_ERROR;
 	    }
 	    if (head != Tcl_DStringValue(&buffer)) {
-		Tcl_DStringAppend(&buffer, head, -1);
+		Tcl_DStringAppend(&buffer, head, TCL_STRLEN);
 	    }
 	    pathPrefix = TclDStringToObj(&buffer);
 	    Tcl_IncrRefCount(pathPrefix);
@@ -2262,7 +2263,7 @@ DoGlob(
 	    SkipToChar(&p, ',');
 	    Tcl_DStringSetLength(&newName, baseLength);
 	    Tcl_DStringAppend(&newName, element, p-element);
-	    Tcl_DStringAppend(&newName, closeBrace+1, -1);
+	    Tcl_DStringAppend(&newName, closeBrace+1, TCL_STRLEN);
 	    result = DoGlob(interp, matchesObj, separators, pathPtr, flags,
 		    Tcl_DStringValue(&newName), types);
 	    if (result != TCL_OK) {

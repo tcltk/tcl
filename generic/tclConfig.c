@@ -122,7 +122,8 @@ Tcl_RegisterConfig(
 	for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
 	    Tcl_DString conv;
 	    const char *convValue =
-		    Tcl_ExternalToUtfDString(venc, cfg->value, -1, &conv);
+		    Tcl_ExternalToUtfDString(venc, cfg->value, TCL_STRLEN,
+			    &conv);
 
 	    /*
 	     * We know that the keys are in ASCII/UTF-8, so for them is no
@@ -155,7 +156,7 @@ Tcl_RegisterConfig(
 
     Tcl_DStringInit(&cmdName);
     TclDStringAppendLiteral(&cmdName, "::");
-    Tcl_DStringAppend(&cmdName, pkgName, -1);
+    Tcl_DStringAppend(&cmdName, pkgName, TCL_STRLEN);
 
     /*
      * The incomplete command name is the name of the namespace to place it

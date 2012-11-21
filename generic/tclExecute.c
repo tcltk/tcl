@@ -2906,7 +2906,7 @@ TEBCresume(
 	}
 
 	TclNewLiteralStringObj(objPtr, "::tcl::mathfunc::");
-	Tcl_AppendToObj(objPtr, tclBuiltinFuncTable[opnd].name, -1);
+	Tcl_AppendToObj(objPtr, tclBuiltinFuncTable[opnd].name, TCL_STRLEN);
 
 	/*
 	 * Only 0, 1 or 2 args.

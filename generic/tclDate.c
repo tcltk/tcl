@@ -2503,19 +2503,19 @@ TclDateerror(
     const char *s)
 {
     Tcl_Obj* t;
-    Tcl_AppendToObj(infoPtr->messages, infoPtr->separatrix, -1);
-    Tcl_AppendToObj(infoPtr->messages, s, -1);
-    Tcl_AppendToObj(infoPtr->messages, " (characters ", -1);
+    Tcl_AppendToObj(infoPtr->messages, infoPtr->separatrix, TCL_STRLEN);
+    Tcl_AppendToObj(infoPtr->messages, s, TCL_STRLEN);
+    Tcl_AppendToObj(infoPtr->messages, " (characters ", TCL_STRLEN);
     t = Tcl_NewIntObj(location->first_column);
     Tcl_IncrRefCount(t);
     Tcl_AppendObjToObj(infoPtr->messages, t);
     Tcl_DecrRefCount(t);
-    Tcl_AppendToObj(infoPtr->messages, "-", -1);
+    Tcl_AppendToObj(infoPtr->messages, "-", TCL_STRLEN);
     t = Tcl_NewIntObj(location->last_column);
     Tcl_IncrRefCount(t);
     Tcl_AppendObjToObj(infoPtr->messages, t);
     Tcl_DecrRefCount(t);
-    Tcl_AppendToObj(infoPtr->messages, ")", -1);
+    Tcl_AppendToObj(infoPtr->messages, ")", TCL_STRLEN);
     infoPtr->separatrix = "\n";
 }
 

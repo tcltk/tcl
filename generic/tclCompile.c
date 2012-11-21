@@ -4084,7 +4084,7 @@ TclDisassembleByteCodeObj(
 	    "ByteCode 0x%s, refCt %u, epoch %u, interp 0x%s (epoch %u)\n",
 	    ptrBuf1, codePtr->refCount, codePtr->compileEpoch, ptrBuf2,
 	    iPtr->compileEpoch);
-    Tcl_AppendToObj(bufferObj, "  Source ", -1);
+    Tcl_AppendToObj(bufferObj, "  Source ", TCL_STRLEN);
     PrintSourceToObj(bufferObj, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));
     Tcl_AppendPrintfToObj(bufferObj,
@@ -4138,7 +4138,7 @@ TclDisassembleByteCodeObj(
 			(localPtr->flags & VAR_TEMPORARY) ? ", temp" : "",
 			(localPtr->flags & VAR_RESOLVED) ? ", resolved" : "");
 		if (TclIsVarTemporary(localPtr)) {
-		    Tcl_AppendToObj(bufferObj, "\n", -1);
+		    Tcl_AppendToObj(bufferObj, "\n", TCL_STRLEN);
 		} else {
 		    Tcl_AppendPrintfToObj(bufferObj, ", \"%s\"\n",
 			    localPtr->name);
@@ -4188,7 +4188,7 @@ TclDisassembleByteCodeObj(
     if (numCmds == 0) {
 	pc = codeStart;
 	while (pc < codeLimit) {
-	    Tcl_AppendToObj(bufferObj, "    ", -1);
+	    Tcl_AppendToObj(bufferObj, "    ", TCL_STRLEN);
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
 	return bufferObj;
@@ -4250,7 +4250,7 @@ TclDisassembleByteCodeObj(
 		srcOffset, (srcOffset + srcLen - 1));
     }
     if (numCmds > 0) {
-	Tcl_AppendToObj(bufferObj, "\n", -1);
+	Tcl_AppendToObj(bufferObj, "\n", TCL_STRLEN);
     }
 
     /*
@@ -4299,14 +4299,14 @@ TclDisassembleByteCodeObj(
 	 */
 
 	while ((pc-codeStart) < codeOffset) {
-	    Tcl_AppendToObj(bufferObj, "    ", -1);
+	    Tcl_AppendToObj(bufferObj, "    ", TCL_STRLEN);
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
 
 	Tcl_AppendPrintfToObj(bufferObj, "  Command %d: ", i+1);
 	PrintSourceToObj(bufferObj, (codePtr->source + srcOffset),
 		TclMin(srcLen, 55));
-	Tcl_AppendToObj(bufferObj, "\n", -1);
+	Tcl_AppendToObj(bufferObj, "\n", TCL_STRLEN);
     }
     if (pc < codeLimit) {
 	/*
@@ -4314,7 +4314,7 @@ TclDisassembleByteCodeObj(
 	 */
 
 	while (pc < codeLimit) {
-	    Tcl_AppendToObj(bufferObj, "    ", -1);
+	    Tcl_AppendToObj(bufferObj, "    ", TCL_STRLEN);
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
     }
@@ -4438,7 +4438,7 @@ FormatInstruction(
 	const char *bytes;
 	size_t length;
 
-	Tcl_AppendToObj(bufferObj, "\t# ", -1);
+	Tcl_AppendToObj(bufferObj, "\t# ", TCL_STRLEN);
 	bytes = Tcl_GetStringFromObj(codePtr->objArrayPtr[opnd], &length);
 	PrintSourceToObj(bufferObj, bytes, TclMin(length, 40));
     } else if (suffixBuffer[0]) {
@@ -4447,12 +4447,12 @@ FormatInstruction(
 	    PrintSourceToObj(bufferObj, suffixSrc, 40);
 	}
     }
-    Tcl_AppendToObj(bufferObj, "\n", -1);
+    Tcl_AppendToObj(bufferObj, "\n", TCL_STRLEN);
     if (auxPtr && auxPtr->type->printProc) {
-	Tcl_AppendToObj(bufferObj, "\t\t[", -1);
+	Tcl_AppendToObj(bufferObj, "\t\t[", TCL_STRLEN);
 	auxPtr->type->printProc(auxPtr->clientData, bufferObj, codePtr,
 		pcOffset);
-	Tcl_AppendToObj(bufferObj, "]\n", -1);
+	Tcl_AppendToObj(bufferObj, "]\n", TCL_STRLEN);
     }
     return numBytes;
 }
@@ -4644,38 +4644,38 @@ PrintSourceToObj(
     register int i = 0;
 
     if (stringPtr == NULL) {
-	Tcl_AppendToObj(appendObj, "\"\"", -1);
+	Tcl_AppendToObj(appendObj, "\"\"", TCL_STRLEN);
 	return;
     }
 
-    Tcl_AppendToObj(appendObj, "\"", -1);
+    Tcl_AppendToObj(appendObj, "\"", TCL_STRLEN);
     p = stringPtr;
     for (;  (*p != '\0') && (i < maxChars);  p++, i++) {
 	switch (*p) {
 	case '"':
-	    Tcl_AppendToObj(appendObj, "\\\"", -1);
+	    Tcl_AppendToObj(appendObj, "\\\"", TCL_STRLEN);
 	    continue;
 	case '\f':
-	    Tcl_AppendToObj(appendObj, "\\f", -1);
+	    Tcl_AppendToObj(appendObj, "\\f", TCL_STRLEN);
 	    continue;
 	case '\n':
-	    Tcl_AppendToObj(appendObj, "\\n", -1);
+	    Tcl_AppendToObj(appendObj, "\\n", TCL_STRLEN);
 	    continue;
 	case '\r':
-	    Tcl_AppendToObj(appendObj, "\\r", -1);
+	    Tcl_AppendToObj(appendObj, "\\r", TCL_STRLEN);
 	    continue;
 	case '\t':
-	    Tcl_AppendToObj(appendObj, "\\t", -1);
+	    Tcl_AppendToObj(appendObj, "\\t", TCL_STRLEN);
 	    continue;
 	case '\v':
-	    Tcl_AppendToObj(appendObj, "\\v", -1);
+	    Tcl_AppendToObj(appendObj, "\\v", TCL_STRLEN);
 	    continue;
 	default:
 	    Tcl_AppendPrintfToObj(appendObj, "%c", *p);
 	    continue;
 	}
     }
-    Tcl_AppendToObj(appendObj, "\"", -1);
+    Tcl_AppendToObj(appendObj, "\"", TCL_STRLEN);
 }
 
 #ifdef TCL_COMPILE_STATS

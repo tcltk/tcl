@@ -106,7 +106,8 @@ TclSetupEnv(
     } else {
 	Tcl_MutexLock(&envMutex);
 	for (i = 0; environ[i] != NULL; i++) {
-	    p1 = Tcl_ExternalToUtfDString(NULL, environ[i], -1, &envString);
+	    p1 = Tcl_ExternalToUtfDString(NULL, environ[i], TCL_STRLEN,
+		    &envString);
 	    p2 = strchr(p1, '=');
 	    if (p2 == NULL) {
 		/*
@@ -207,7 +208,8 @@ TclSetEnv(
 	 * interpreters.
 	 */
 
-	env = Tcl_ExternalToUtfDString(NULL, environ[index], -1, &envString);
+	env = Tcl_ExternalToUtfDString(NULL, environ[index], TCL_STRLEN,
+		&envString);
 	if (strcmp(value, env + (length + 1)) == 0) {
 	    Tcl_DStringFree(&envString);
 	    Tcl_MutexUnlock(&envMutex);
@@ -230,7 +232,7 @@ TclSetEnv(
     memcpy(p, name, nameLength);
     p[nameLength] = '=';
     memcpy(p+nameLength+1, value, valueLength+1);
-    p2 = Tcl_UtfToExternalDString(NULL, p, -1, &envString);
+    p2 = Tcl_UtfToExternalDString(NULL, p, TCL_STRLEN, &envString);
 
     /*
      * Copy the native string to heap memory.
@@ -321,7 +323,8 @@ Tcl_PutEnv(
      * name and value parts, and call TclSetEnv to do all of the real work.
      */
 
-    name = Tcl_ExternalToUtfDString(NULL, assignment, -1, &nameString);
+    name = Tcl_ExternalToUtfDString(NULL, assignment, TCL_STRLEN,
+	    &nameString);
     value = strchr(name, '=');
 
     if ((value != NULL) && (value != name)) {
@@ -407,7 +410,7 @@ TclUnsetEnv(
     string[length] = '\0';
 #endif /* WIN32 */
 
-    Tcl_UtfToExternalDString(NULL, string, -1, &envString);
+    Tcl_UtfToExternalDString(NULL, string, TCL_STRLEN, &envString);
     string = ckrealloc(string, Tcl_DStringLength(&envString) + 1);
     memcpy(string, Tcl_DStringValue(&envString),
 	    (unsigned) Tcl_DStringLength(&envString)+1);
@@ -483,12 +486,13 @@ TclGetEnv(
     if (index != -1) {
 	Tcl_DString envStr;
 
-	result = Tcl_ExternalToUtfDString(NULL, environ[index], -1, &envStr);
+	result = Tcl_ExternalToUtfDString(NULL, environ[index], TCL_STRLEN,
+		&envStr);
 	result += length;
 	if (*result == '=') {
 	    result++;
 	    Tcl_DStringInit(valuePtr);
-	    Tcl_DStringAppend(valuePtr, result, -1);
+	    Tcl_DStringAppend(valuePtr, result, TCL_STRLEN);
 	    result = Tcl_DStringValue(valuePtr);
 	} else {
 	    result = NULL;

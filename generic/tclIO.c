@@ -64,9 +64,10 @@ static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode, int flags);
 static int		CloseWrite(Tcl_Interp *interp, Channel *chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
-static int		CopyAndTranslateBuffer(ChannelState *statePtr,
-			    char *result, int space);
-static int		CopyBuffer(Channel *chanPtr, char *result, int space);
+static size_t		CopyAndTranslateBuffer(ChannelState *statePtr,
+			    char *result, size_t space);
+static size_t		CopyBuffer(Channel *chanPtr, char *result,
+			    size_t space);
 static int		CopyData(CopyState *csPtr, int mask);
 static void		CopyEventProc(ClientData clientData, int mask);
 static void		CreateScriptRecord(Tcl_Interp *interp,
@@ -404,11 +405,11 @@ TclFinalizeIOSubsystem(void)
     int active = 1;		/* Flag == 1 while there's still work to do */
     int doflushnb;
 
-    /* Fetch the pre-TIP#398 compatibility flag */ 
+    /* Fetch the pre-TIP#398 compatibility flag */
     {
         const char *s;
         Tcl_DString ds;
-        
+
         s = TclGetEnv("TCL_FLUSH_NONBLOCKING_ON_EXIT", &ds);
         doflushnb = ((s != NULL) && strcmp(s, "0"));
         if (s != NULL) {
@@ -437,7 +438,7 @@ TclFinalizeIOSubsystem(void)
                 continue;
             }
 	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED )
-                || GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+                    || GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
                 ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		active = 1;
 		break;
@@ -449,20 +450,21 @@ TclFinalizeIOSubsystem(void)
 	 */
 
 	if (active) {
-
 	    /*
-	     * TIP #398:  by default, we no  longer set the  channel back into
-             * blocking  mode.  To  restore  the old  blocking  behavior,  the
-             * environment variable  TCL_FLUSH_NONBLOCKING_ON_EXIT must be set
+	     * TIP #398: by default, we no longer set the channel back into
+             * blocking mode.  To restore the old blocking behavior, the
+             * environment variable TCL_FLUSH_NONBLOCKING_ON_EXIT must be set
              * and not be "0".
 	     */
+
             if (doflushnb) {
-                    /* Set the channel back into blocking mode to ensure that we wait
-                     * for all data to flush out.
-                     */
-                
+		/*
+		 * Set the channel back into blocking mode to ensure that we
+		 * wait for all data to flush out.
+		 */
+
                 (void) Tcl_SetChannelOption(NULL, (Tcl_Channel) chanPtr,
-                                            "-blocking", "on");                    
+                        "-blocking", "on");
             }
 
 	    if ((chanPtr == (Channel *) tsdPtr->stdinChannel) ||
@@ -5749,7 +5751,8 @@ DoReadChars(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    size_t offset, copied, copiedNow, factor;
+    size_t offset, factor;
+    ssize_t copied, copiedNow;
     int result;
     Tcl_Encoding encoding;
 #define UTF_EXPANSION_FACTOR	1024
@@ -9237,7 +9240,7 @@ CopyData(
 
 	    if (inBinary || sameEncoding) {
 		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb,
-                              !GotFlag(inStatePtr, CHANNEL_NONBLOCKING));
+                        !GotFlag(inStatePtr, CHANNEL_NONBLOCKING));
 	    } else {
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
 			0 /* No append */);
@@ -9274,7 +9277,7 @@ CopyData(
 		break;
 	    }
 	    if (cmdPtr && (!Tcl_Eof(inChan) || (mask == 0)) &&
-                !(mask & TCL_READABLE)) {
+                    !(mask & TCL_READABLE)) {
 		if (mask & TCL_WRITABLE) {
 		    Tcl_DeleteChannelHandler(outChan, CopyEventProc, csPtr);
 		}
@@ -9555,19 +9558,19 @@ DoRead(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 CopyAndTranslateBuffer(
     ChannelState *statePtr,	/* Channel state from which to read input. */
     char *result,		/* Where to store the copied input. */
-    int space)			/* How many bytes are available in result to
+    size_t space)		/* How many bytes are available in result to
 				 * store the copied input? */
 {
     ChannelBuffer *bufPtr;	/* The buffer from which to copy bytes. */
-    int bytesInBuffer;		/* How many bytes are available to be copied
+    size_t bytesInBuffer;	/* How many bytes are available to be copied
 				 * in the current input buffer? */
-    int copied;			/* How many characters were already copied
+    size_t copied;		/* How many characters were already copied
 				 * into the destination space? */
-    int i;			/* Iterates over the copied input looking for
+    size_t i;			/* Iterates over the copied input looking for
 				 * the input eofChar. */
 
     /*
@@ -9780,17 +9783,17 @@ CopyAndTranslateBuffer(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 CopyBuffer(
     Channel *chanPtr,		/* Channel from which to read input. */
     char *result,		/* Where to store the copied input. */
-    int space)			/* How many bytes are available in result to
+    size_t space)		/* How many bytes are available in result to
 				 * store the copied input? */
 {
     ChannelBuffer *bufPtr;	/* The buffer from which to copy bytes. */
-    int bytesInBuffer;		/* How many bytes are available to be copied
+    size_t bytesInBuffer;	/* How many bytes are available to be copied
 				 * in the current input buffer? */
-    int copied;			/* How many characters were already copied
+    size_t copied;		/* How many characters were already copied
 				 * into the destination space? */
 
     /*
@@ -9824,7 +9827,7 @@ CopyBuffer(
 	space = bytesInBuffer;
     }
 
-    memcpy(result, RemovePoint(bufPtr), (size_t) space);
+    memcpy(result, RemovePoint(bufPtr), space);
     bufPtr->nextRemoved += space;
     copied = space;
 
@@ -9933,11 +9936,11 @@ DoWrite(
 	switch (statePtr->outputTranslation) {
 	case TCL_TRANSLATE_LF:
 	    srcCopied = destCopied;
-	    memcpy(destPtr, src, (size_t) destCopied);
+	    memcpy(destPtr, src, destCopied);
 	    break;
 	case TCL_TRANSLATE_CR:
 	    srcCopied = destCopied;
-	    memcpy(destPtr, src, (size_t) destCopied);
+	    memcpy(destPtr, src, destCopied);
 	    for (dPtr = destPtr; dPtr < destPtr + destCopied; dPtr++) {
 		if (*dPtr == '\n') {
 		    *dPtr = '\r';

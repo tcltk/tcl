@@ -950,7 +950,7 @@ Tcl_ExecObjCmd(
 
     resultPtr = Tcl_NewObj();
     if (Tcl_GetChannelHandle(chan, TCL_READABLE, NULL) == TCL_OK) {
-	if (Tcl_ReadChars(chan, resultPtr, -1, 0) < 0) {
+	if (Tcl_ReadChars(chan, resultPtr, TCL_STRLEN, 0) < 0) {
 	    /*
 	     * TIP #219.
 	     * Capture error messages put by the driver into the bypass area
@@ -1094,7 +1094,7 @@ Tcl_OpenObjCmd(
 		Tcl_Obj *permObj;
 
 		TclNewLiteralStringObj(permObj, "0o");
-		Tcl_AppendToObj(permObj, permString+scanned+1, -1);
+		Tcl_AppendToObj(permObj, permString+scanned+1, TCL_STRLEN);
 		code = TclGetIntFromObj(NULL, permObj, &prot);
 		Tcl_DecrRefCount(permObj);
 	    }

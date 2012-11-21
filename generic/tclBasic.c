@@ -2610,11 +2610,11 @@ TclRenameCommand(
      */
 
     Tcl_DStringInit(&newFullName);
-    Tcl_DStringAppend(&newFullName, newNsPtr->fullName, -1);
+    Tcl_DStringAppend(&newFullName, newNsPtr->fullName, TCL_STRLEN);
     if (newNsPtr != iPtr->globalNsPtr) {
 	TclDStringAppendLiteral(&newFullName, "::");
     }
-    Tcl_DStringAppend(&newFullName, newTail, -1);
+    Tcl_DStringAppend(&newFullName, newTail, TCL_STRLEN);
     cmdPtr->refCount++;
     CallCommandTraces(iPtr, cmdPtr, Tcl_GetString(oldFullName),
 	    Tcl_DStringValue(&newFullName), TCL_TRACE_RENAME);
@@ -2903,14 +2903,14 @@ Tcl_GetCommandFullName(
 
     if (cmdPtr != NULL) {
 	if (cmdPtr->nsPtr != NULL) {
-	    Tcl_AppendToObj(objPtr, cmdPtr->nsPtr->fullName, -1);
+	    Tcl_AppendToObj(objPtr, cmdPtr->nsPtr->fullName, TCL_STRLEN);
 	    if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
 		Tcl_AppendToObj(objPtr, "::", 2);
 	    }
 	}
 	if (cmdPtr->hPtr != NULL) {
 	    name = Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr);
-	    Tcl_AppendToObj(objPtr, name, -1);
+	    Tcl_AppendToObj(objPtr, name, TCL_STRLEN);
 	}
     }
 }
@@ -3471,7 +3471,7 @@ Tcl_CreateMathFunc(
 
     Tcl_DStringInit(&bigName);
     TclDStringAppendLiteral(&bigName, "::tcl::mathfunc::");
-    Tcl_DStringAppend(&bigName, name, -1);
+    Tcl_DStringAppend(&bigName, name, TCL_STRLEN);
 
     Tcl_CreateObjCommand(interp, Tcl_DStringValue(&bigName),
 	    OldMathFuncProc, data, OldMathFuncDeleteProc);
@@ -3687,7 +3687,7 @@ Tcl_GetMathFuncInfo(
      */
 
     TclNewLiteralStringObj(cmdNameObj, "tcl::mathfunc::");
-    Tcl_AppendToObj(cmdNameObj, name, -1);
+    Tcl_AppendToObj(cmdNameObj, name, TCL_STRLEN);
     Tcl_IncrRefCount(cmdNameObj);
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdNameObj);
     Tcl_DecrRefCount(cmdNameObj);
@@ -5830,7 +5830,7 @@ Tcl_Eval(
 				 * previous call to Tcl_CreateInterp). */
     const char *script)		/* Pointer to TCL command to execute. */
 {
-    int code = Tcl_EvalEx(interp, script, -1, 0);
+    int code = Tcl_EvalEx(interp, script, TCL_STRLEN, 0);
 
     /*
      * For backwards compatibility with old C code that predates the object
@@ -6794,7 +6794,7 @@ Tcl_AddErrorInfo(
 				 * pertains. */
     const char *message)	/* Message to record. */
 {
-    Tcl_AddObjErrorInfo(interp, message, -1);
+    Tcl_AddObjErrorInfo(interp, message, TCL_STRLEN);
 }
 
 /*
@@ -6824,8 +6824,9 @@ Tcl_AddObjErrorInfo(
 				 * pertains. */
     const char *message,	/* Points to the first byte of an array of
 				 * bytes of the message. */
-    size_t length)		/* The number of bytes in the message. If < 0,
-				 * then append all bytes up to a NULL byte. */
+    size_t length)		/* The number of bytes in the message. If
+				 * TCL_STRLEN, then append all bytes up to a
+				 * NULL byte. */
 {
     register Interp *iPtr = (Interp *) interp;
 
@@ -6908,7 +6909,7 @@ Tcl_VarEvalVA(
 	if (string == NULL) {
 	    break;
 	}
-	Tcl_DStringAppend(&buf, string, -1);
+	Tcl_DStringAppend(&buf, string, TCL_STRLEN);
     }
 
     result = Tcl_Eval(interp, Tcl_DStringValue(&buf));
@@ -8975,10 +8976,10 @@ TclNRCoroutineObjCmd(
 
     Tcl_DStringInit(&ds);
     if (nsPtr != iPtr->globalNsPtr) {
-	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
+	Tcl_DStringAppend(&ds, nsPtr->fullName, TCL_STRLEN);
 	TclDStringAppendLiteral(&ds, "::");
     }
-    Tcl_DStringAppend(&ds, procName, -1);
+    Tcl_DStringAppend(&ds, procName, TCL_STRLEN);
 
     cmdPtr = (Command *) Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
 	    /*objProc*/ NULL, TclNRInterpCoroutine, corPtr, DeleteCoroutine);

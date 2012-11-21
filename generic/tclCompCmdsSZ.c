@@ -1883,9 +1883,9 @@ PrintJumptableInfo(
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_STRLEN);
 	    if (i%4==0) {
-		Tcl_AppendToObj(appendObj, "\n\t\t", -1);
+		Tcl_AppendToObj(appendObj, "\n\t\t", TCL_STRLEN);
 	    }
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %d",

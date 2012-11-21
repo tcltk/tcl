@@ -223,9 +223,9 @@ Tcl_LoadObjCmd(
 	    namesMatch = 0;
 	} else {
 	    TclDStringClear(&pkgName);
-	    Tcl_DStringAppend(&pkgName, packageName, -1);
+	    Tcl_DStringAppend(&pkgName, packageName, TCL_STRLEN);
 	    TclDStringClear(&tmp);
-	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
+	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, TCL_STRLEN);
 	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
 	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),
@@ -300,7 +300,7 @@ Tcl_LoadObjCmd(
 	 */
 
 	if (packageName != NULL) {
-	    Tcl_DStringAppend(&pkgName, packageName, -1);
+	    Tcl_DStringAppend(&pkgName, packageName, TCL_STRLEN);
 	} else {
 	    int retc;
 
@@ -647,9 +647,9 @@ Tcl_UnloadObjCmd(
 	    namesMatch = 0;
 	} else {
 	    TclDStringClear(&pkgName);
-	    Tcl_DStringAppend(&pkgName, packageName, -1);
+	    Tcl_DStringAppend(&pkgName, packageName, TCL_STRLEN);
 	    TclDStringClear(&tmp);
-	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
+	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, TCL_STRLEN);
 	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
 	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),

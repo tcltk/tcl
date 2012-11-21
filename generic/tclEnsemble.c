@@ -1469,7 +1469,7 @@ TclMakeEnsemble(
     Tcl_DStringInit(&buf);
     Tcl_DStringInit(&hiddenBuf);
     TclDStringAppendLiteral(&hiddenBuf, "tcl:");
-    Tcl_DStringAppend(&hiddenBuf, name, -1);
+    Tcl_DStringAppend(&hiddenBuf, name, TCL_STRLEN);
     TclDStringAppendLiteral(&hiddenBuf, ":");
     hiddenLen = Tcl_DStringLength(&hiddenBuf);
     if (name[0] == ':' && name[1] == ':') {
@@ -1478,7 +1478,7 @@ TclMakeEnsemble(
 	 */
 
 	cmdName = name;
-	Tcl_DStringAppend(&buf, name, -1);
+	Tcl_DStringAppend(&buf, name, TCL_STRLEN);
 	ensembleFlags = TCL_ENSEMBLE_PREFIX;
     } else {
 	/*
@@ -1494,7 +1494,7 @@ TclMakeEnsemble(
 
 	for (i = 0; i < nameCount; ++i) {
 	    TclDStringAppendLiteral(&buf, "::");
-	    Tcl_DStringAppend(&buf, nameParts[i], -1);
+	    Tcl_DStringAppend(&buf, nameParts[i], TCL_STRLEN);
 	}
     }
 
@@ -1534,7 +1534,7 @@ TclMakeEnsemble(
 	    fromObj = Tcl_NewStringObj(map[i].name, TCL_STRLEN);
 	    TclNewStringObj(toObj, Tcl_DStringValue(&buf),
 		    Tcl_DStringLength(&buf));
-	    Tcl_AppendToObj(toObj, map[i].name, -1);
+	    Tcl_AppendToObj(toObj, map[i].name, TCL_STRLEN);
 	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
 
 	    if (map[i].proc || map[i].nreProc) {
@@ -1552,7 +1552,8 @@ TclMakeEnsemble(
 			    map[i].nreProc, map[i].clientData, NULL);
 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
 		    if (Tcl_HideCommand(interp, "___tmp",
-			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
+			    Tcl_DStringAppend(&hiddenBuf, map[i].name,
+				    TCL_STRLEN))) {
 			Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
 		    }
 		} else {
@@ -1941,12 +1942,14 @@ NsEnsembleImplementationCmdNR(
 	    (ensemblePtr->flags & TCL_ENSEMBLE_PREFIX ? " or ambiguous" : ""),
 	    TclGetString(objv[1+ensemblePtr->numParameters]));
     if (ensemblePtr->subcommandTable.numEntries == 1) {
-	Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[0], -1);
+	Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[0],
+		TCL_STRLEN);
     } else {
 	size_t i;
 
 	for (i=0 ; i<ensemblePtr->subcommandTable.numEntries-1 ; i++) {
-	    Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[i], -1);
+	    Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[i],
+		    TCL_STRLEN);
 	    Tcl_AppendToObj(errorObj, ", ", 2);
 	}
 	Tcl_AppendPrintfToObj(errorObj, "or %s",

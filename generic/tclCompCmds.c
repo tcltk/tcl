@@ -2196,7 +2196,7 @@ PrintDictUpdateInfo(
 
     for (i=0 ; i<duiPtr->length ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_STRLEN);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%u", duiPtr->varIndices[i]);
     }

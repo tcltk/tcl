@@ -753,8 +753,9 @@ Tcl_SetStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the object. */
     size_t length)		/* The number of bytes to copy from "bytes"
-				 * when initializing the object. If negative,
-				 * use bytes up to the first NUL byte.*/
+				 * when initializing the object. If
+				 * TCL_STRLEN, use bytes up to the first NUL
+				 * byte.*/
 {
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetStringObj");
@@ -2529,7 +2530,7 @@ AppendPrintfToObjVA(
 		}
 
 		Tcl_ListObjAppendElement(NULL, list,
-			Tcl_NewStringObj(bytes , (int)(end - bytes)));
+			Tcl_NewStringObj(bytes, (size_t)(end - bytes)));
 
 		break;
 	    }

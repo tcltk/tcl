@@ -1993,7 +1993,7 @@ TraceVarProc(
 	     */
 
 	    Tcl_DStringInit(&cmd);
-	    Tcl_DStringAppend(&cmd, tvarPtr->command, (int) tvarPtr->length);
+	    Tcl_DStringAppend(&cmd, tvarPtr->command, tvarPtr->length);
 	    Tcl_DStringAppendElement(&cmd, name1);
 	    Tcl_DStringAppendElement(&cmd, (name2 ? name2 : ""));
 #ifndef TCL_REMOVE_OBSOLETE_TRACES

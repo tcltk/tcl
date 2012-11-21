@@ -2997,7 +2997,7 @@ StringLowerCmd(
 	length2 = Tcl_UtfToLower(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_STRLEN);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3082,7 +3082,7 @@ StringUpperCmd(
 	length2 = Tcl_UtfToUpper(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_STRLEN);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3167,7 +3167,7 @@ StringTitleCmd(
 	length2 = Tcl_UtfToTitle(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_STRLEN);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3686,7 +3686,7 @@ TclNRSwitchObjCmd(
 		    Tcl_AppendToObj(Tcl_GetObjResult(interp),
 			    ", this may be due to a comment incorrectly"
 			    " placed outside of a switch body - see the"
-			    " \"switch\" documentation", -1);
+			    " \"switch\" documentation", TCL_STRLEN);
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			    "BADARM", "COMMENT?", NULL);
 		    break;

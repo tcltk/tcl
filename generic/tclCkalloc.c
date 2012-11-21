@@ -132,9 +132,9 @@ static int ckallocInit = 0;
  */
 
 static int		CheckmemCmd(ClientData clientData, Tcl_Interp *interp,
-			    int argc, const char *argv[]);
+			    size_t argc, const char *argv[]);
 static int		MemoryCmd(ClientData clientData, Tcl_Interp *interp,
-			    int argc, const char *argv[]);
+			    size_t argc, const char *argv[]);
 static void		ValidateMemory(struct mem_header *memHeaderP,
 			    const char *file, int line, int nukeGuards);
 
@@ -196,7 +196,7 @@ TclDumpMemoryInfo(
 	fprintf((FILE *)clientData, "%s", buf);
     } else {
 	/* Assume objPtr to append to */
-	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, -1);
+	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, TCL_STRLEN);
     }
     return 1;
 }
@@ -390,7 +390,7 @@ Tcl_DumpActiveMemory(
 
 char *
 Tcl_DbCkalloc(
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
@@ -408,7 +408,7 @@ Tcl_DbCkalloc(
     if (result == NULL) {
 	fflush(stdout);
 	TclDumpMemoryInfo((ClientData) stderr, 0);
-	Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
+	Tcl_Panic("unable to alloc %lu bytes, %s line %d", size, file, line);
     }
 
     /*
@@ -454,7 +454,7 @@ Tcl_DbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"ckalloc %lx %u %s %d\n",
+	fprintf(stderr,"ckalloc %lx %lu %s %d\n",
 		(long unsigned int) result->body, size, file, line);
     }
 
@@ -480,7 +480,7 @@ Tcl_DbCkalloc(
 
 char *
 Tcl_AttemptDbCkalloc(
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
@@ -543,7 +543,7 @@ Tcl_AttemptDbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"ckalloc %lx %u %s %d\n",
+	fprintf(stderr,"ckalloc %lx %lu %s %d\n",
 		(long unsigned int) result->body, size, file, line);
     }
 
@@ -666,7 +666,7 @@ Tcl_DbCkfree(
 char *
 Tcl_DbCkrealloc(
     char *ptr,
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
@@ -697,7 +697,7 @@ Tcl_DbCkrealloc(
 char *
 Tcl_AttemptDbCkrealloc(
     char *ptr,
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
@@ -748,14 +748,14 @@ Tcl_AttemptDbCkrealloc(
 
 char *
 Tcl_Alloc(
-    unsigned int size)
+    size_t size)
 {
     return Tcl_DbCkalloc(size, "unknown", 0);
 }
 
 char *
 Tcl_AttemptAlloc(
-    unsigned int size)
+    size_t size)
 {
     return Tcl_AttemptDbCkalloc(size, "unknown", 0);
 }
@@ -770,14 +770,15 @@ Tcl_Free(
 char *
 Tcl_Realloc(
     char *ptr,
-    unsigned int size)
+    size_t size)
 {
     return Tcl_DbCkrealloc(ptr, size, "unknown", 0);
 }
+
 char *
 Tcl_AttemptRealloc(
     char *ptr,
-    unsigned int size)
+    size_t size)
 {
     return Tcl_AttemptDbCkrealloc(ptr, size, "unknown", 0);
 }
@@ -809,7 +810,7 @@ static int
 MemoryCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int argc,
+    size_t argc,
     const char *argv[])
 {
     const char *fileName;
@@ -986,7 +987,7 @@ static int
 CheckmemCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
-    int argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char *argv[])		/* String values of arguments. */
 {
     if (argc != 2) {

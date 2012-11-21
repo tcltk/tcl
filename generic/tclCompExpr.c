@@ -762,14 +762,16 @@ ParseExpr(
 			    switch (start[1]) {
 			    case 'b':
 				Tcl_AppendToObj(post,
-					" (invalid binary number?)", -1);
+					" (invalid binary number?)",
+					TCL_STRLEN);
 				parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				errCode = "BADNUMBER";
 				subErrCode = "BINARY";
 				break;
 			    case 'o':
 				Tcl_AppendToObj(post,
-					" (invalid octal number?)", -1);
+					" (invalid octal number?)",
+					TCL_STRLEN);
 				parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				errCode = "BADNUMBER";
 				subErrCode = "OCTAL";
@@ -777,7 +779,8 @@ ParseExpr(
 			    default:
 				if (isdigit(UCHAR(start[1]))) {
 				    Tcl_AppendToObj(post,
-					    " (invalid octal number?)", -1);
+					    " (invalid octal number?)",
+					    TCL_STRLEN);
 				    parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				    errCode = "BADNUMBER";
 				    subErrCode = "OCTAL";
@@ -1426,7 +1429,7 @@ ParseExpr(
 	 */
 
 	if (post != NULL) {
-	    Tcl_AppendToObj(msg, ";\n", -1);
+	    Tcl_AppendToObj(msg, ";\n", TCL_STRLEN);
 	    Tcl_AppendObjToObj(msg, post);
 	    Tcl_DecrRefCount(post);
 	}
