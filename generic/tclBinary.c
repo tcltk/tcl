@@ -860,7 +860,7 @@ BinaryFormatCmd(
 		} else if (count > listc) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "number of elements in list does not match count",
-			    -1));
+			    TCL_STRLEN));
 		    return TCL_ERROR;
 		}
 	    }
@@ -870,7 +870,8 @@ BinaryFormatCmd(
 	case 'x':
 	    if (count == BINARY_ALL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"cannot use \"*\" in format string with \"x\"", -1));
+			"cannot use \"*\" in format string with \"x\"",
+			TCL_STRLEN));
 		return TCL_ERROR;
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
@@ -1208,7 +1209,7 @@ BinaryFormatCmd(
     }
 
  error:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, TCL_STRLEN));
     return TCL_ERROR;
 }
 
@@ -1579,7 +1580,7 @@ BinaryScanCmd(
     }
 
  error:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, TCL_STRLEN));
     return TCL_ERROR;
 }
 

@@ -2803,15 +2803,15 @@ TclClockOldscanObjCmd(
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "PARSE", NULL);
 	return TCL_ERROR;
     } else if (status == 2) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("memory exhausted", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("memory exhausted",
+		TCL_STRLEN));
 	Tcl_DecrRefCount(dateInfo.messages);
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	return TCL_ERROR;
     } else if (status != 0) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("Unknown status returned "
-						  "from date parser. Please "
-						  "report this error as a "
-						  "bug in Tcl.", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"unknown status returned from date parser. Please "
+		"report this error as a bug in Tcl.", TCL_STRLEN));
 	Tcl_DecrRefCount(dateInfo.messages);
 	Tcl_SetErrorCode(interp, "TCL", "BUG", NULL);
 	return TCL_ERROR;
@@ -2819,32 +2819,32 @@ TclClockOldscanObjCmd(
     Tcl_DecrRefCount(dateInfo.messages);
 
     if (yyHaveDate > 1) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one date in string", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"more than one date in string", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
 	return TCL_ERROR;
     }
     if (yyHaveTime > 1) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one time of day in string", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"more than one time of day in string", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
 	return TCL_ERROR;
     }
     if (yyHaveZone > 1) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one time zone in string", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"more than one time zone in string", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
 	return TCL_ERROR;
     }
     if (yyHaveDay > 1) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one weekday in string", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"more than one weekday in string", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
 	return TCL_ERROR;
     }
     if (yyHaveOrdinalMonth > 1) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("more than one ordinal month in string", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"more than one ordinal month in string", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
 	return TCL_ERROR;
     }

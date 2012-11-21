@@ -327,7 +327,7 @@ IfConditionCallback(
     if (i < objc - 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"wrong # args: extra words after \"else\" clause in \"if\" command",
-		-1));
+		TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
 	return TCL_ERROR;
     }
@@ -487,7 +487,7 @@ InfoArgsCmd(
 	    localPtr = localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
 	    Tcl_ListObjAppendElement(interp, listObjPtr,
-		    Tcl_NewStringObj(localPtr->name, -1));
+		    Tcl_NewStringObj(localPtr->name, TCL_STRLEN));
 	}
     }
     Tcl_SetObjResult(interp, listObjPtr);
@@ -709,7 +709,7 @@ InfoCommandsCmd(
 		Tcl_GetCommandFullName(interp, cmd, elemObjPtr);
 	    } else {
 		cmdName = Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
-		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		elemObjPtr = Tcl_NewStringObj(cmdName, TCL_STRLEN);
 	    }
 	    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 	    Tcl_SetObjResult(interp, listPtr);
@@ -737,7 +737,7 @@ InfoCommandsCmd(
 	    if (entryPtr != NULL) {
 		cmdName = Tcl_GetHashKey(tablePtr, entryPtr);
 		Tcl_ListObjAppendElement(interp, listPtr,
-			Tcl_NewStringObj(cmdName, -1));
+			Tcl_NewStringObj(cmdName, TCL_STRLEN));
 		Tcl_SetObjResult(interp, listPtr);
 		return TCL_OK;
 	    }
@@ -759,7 +759,7 @@ InfoCommandsCmd(
 		    elemObjPtr = Tcl_NewObj();
 		    Tcl_GetCommandFullName(interp, cmd, elemObjPtr);
 		} else {
-		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		    elemObjPtr = Tcl_NewStringObj(cmdName, TCL_STRLEN);
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 	    }
@@ -782,7 +782,7 @@ InfoCommandsCmd(
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
 		    if (Tcl_FindHashEntry(&nsPtr->cmdTable,cmdName) == NULL) {
 			Tcl_ListObjAppendElement(interp, listPtr,
-				Tcl_NewStringObj(cmdName, -1));
+				Tcl_NewStringObj(cmdName, TCL_STRLEN));
 		    }
 		}
 		entryPtr = Tcl_NextHashEntry(&search);
@@ -811,7 +811,7 @@ InfoCommandsCmd(
 	    cmdName = Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
 	    if ((simplePattern == NULL)
 		    || Tcl_StringMatch(cmdName, simplePattern)) {
-		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		elemObjPtr = Tcl_NewStringObj(cmdName, TCL_STRLEN);
 		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		(void) Tcl_CreateHashEntry(&addedCommandsTable,
 			elemObjPtr, &isNew);
@@ -837,7 +837,7 @@ InfoCommandsCmd(
 		cmdName = Tcl_GetHashKey(&pathNsPtr->cmdTable, entryPtr);
 		if ((simplePattern == NULL)
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
-		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		    elemObjPtr = Tcl_NewStringObj(cmdName, TCL_STRLEN);
 		    (void) Tcl_CreateHashEntry(&addedCommandsTable,
 			    elemObjPtr, &isNew);
 		    if (isNew) {
@@ -864,7 +864,7 @@ InfoCommandsCmd(
 		cmdName = Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
 		if ((simplePattern == NULL)
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
-		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		    elemObjPtr = Tcl_NewStringObj(cmdName, TCL_STRLEN);
 		    if (Tcl_FindHashEntry(&addedCommandsTable,
 			    (char *) elemObjPtr) == NULL) {
 			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
@@ -1279,7 +1279,8 @@ TclInfoFrame(
 	 * str.
 	 */
 
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type],
+		TCL_STRLEN));
 	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
 	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd.str.cmd,
 		framePtr->cmd.str.len));
@@ -1291,7 +1292,8 @@ TclInfoFrame(
 	 * listPtr, possibly a frame.
 	 */
 
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type],
+		TCL_STRLEN));
 	ADD_PAIR("line", Tcl_NewIntObj(1));
 
 	/*
@@ -1309,7 +1311,8 @@ TclInfoFrame(
 	 * Precompiled. Result contains the type as signal, nothing else.
 	 */
 
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type],
+		TCL_STRLEN));
 	break;
 
     case TCL_LOCATION_BC: {
@@ -1334,7 +1337,8 @@ TclInfoFrame(
 	 * Possibly modified: type, path!
 	 */
 
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[fPtr->type], -1));
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[fPtr->type],
+		TCL_STRLEN));
 	if (fPtr->line) {
 	    ADD_PAIR("line", Tcl_NewIntObj(fPtr->line[0]));
 	}
@@ -1360,7 +1364,8 @@ TclInfoFrame(
 	 * Evaluation of a script file.
 	 */
 
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type],
+		TCL_STRLEN));
 	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
 	ADD_PAIR("file", framePtr->data.eval.path);
 
@@ -1407,7 +1412,8 @@ TclInfoFrame(
 	     */
 
 	    for (i=0 ; i<efiPtr->length ; i++) {
-		lv[lc++] = Tcl_NewStringObj(efiPtr->fields[i].name, -1);
+		lv[lc++] = Tcl_NewStringObj(efiPtr->fields[i].name,
+			TCL_STRLEN);
 		if (efiPtr->fields[i].proc) {
 		    lv[lc++] =
 			efiPtr->fields[i].proc(efiPtr->fields[i].clientData);
@@ -1521,12 +1527,12 @@ InfoHostnameCmd(
 
     name = Tcl_GetHostName();
     if (name) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(name, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(name, TCL_STRLEN));
 	return TCL_OK;
     }
 
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "unable to determine name of host", -1));
+	    "unable to determine name of host", TCL_STRLEN));
     Tcl_SetErrorCode(interp, "TCL", "OPERATION", "HOSTNAME", "UNKNOWN", NULL);
     return TCL_ERROR;
 }
@@ -1641,12 +1647,12 @@ InfoLibraryCmd(
 
     libDirName = Tcl_GetVar(interp, "tcl_library", TCL_GLOBAL_ONLY);
     if (libDirName != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(libDirName, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(libDirName, TCL_STRLEN));
 	return TCL_OK;
     }
 
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "no library has been specified for Tcl", -1));
+	    "no library has been specified for Tcl", TCL_STRLEN));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", "tcl_library",NULL);
     return TCL_ERROR;
 }
@@ -1768,7 +1774,7 @@ InfoPatchLevelCmd(
     patchlevel = Tcl_GetVar(interp, "tcl_patchLevel",
 	    (TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG));
     if (patchlevel != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(patchlevel, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(patchlevel, TCL_STRLEN));
 	return TCL_OK;
     }
     return TCL_ERROR;
@@ -1881,7 +1887,7 @@ InfoProcsCmd(
 		    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
 			    elemObjPtr);
 		} else {
-		    elemObjPtr = Tcl_NewStringObj(simplePattern, -1);
+		    elemObjPtr = Tcl_NewStringObj(simplePattern, TCL_STRLEN);
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 	    }
@@ -1909,7 +1915,7 @@ InfoProcsCmd(
 			Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
 				elemObjPtr);
 		    } else {
-			elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+			elemObjPtr = Tcl_NewStringObj(cmdName, TCL_STRLEN);
 		    }
 		    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		}
@@ -1948,7 +1954,7 @@ InfoProcsCmd(
 			if (TclIsProc(cmdPtr) || ((realCmdPtr != NULL)
 				&& TclIsProc(realCmdPtr))) {
 			    Tcl_ListObjAppendElement(interp, listPtr,
-				    Tcl_NewStringObj(cmdName, -1));
+				    Tcl_NewStringObj(cmdName, TCL_STRLEN));
 			}
 		    }
 		}
@@ -2045,7 +2051,7 @@ InfoSharedlibCmd(
     }
 
 #ifdef TCL_SHLIB_EXT
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(TCL_SHLIB_EXT, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(TCL_SHLIB_EXT, TCL_STRLEN));
 #endif
     return TCL_OK;
 }
@@ -2993,7 +2999,7 @@ Tcl_LsearchObjCmd(
 	    }
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing starting index", -1));
+			"missing starting index", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -3026,7 +3032,7 @@ Tcl_LsearchObjCmd(
 		}
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"\"-index\" option must be followed by list index",
-			-1));
+			TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		return TCL_ERROR;
 	    }
@@ -3086,7 +3092,8 @@ Tcl_LsearchObjCmd(
 	    Tcl_DecrRefCount(startPtr);
 	}
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"-subindices cannot be used without -index option", -1));
+		"-subindices cannot be used without -index option",
+		TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 		"BAD_OPTION_MIX", NULL);
 	return TCL_ERROR;
@@ -3094,7 +3101,7 @@ Tcl_LsearchObjCmd(
 
     if (bisect && (allMatches || negatedMatch)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"-bisect is not compatible with -all or -not", -1));
+		"-bisect is not compatible with -all or -not", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 		"BAD_OPTION_MIX", NULL);
 	return TCL_ERROR;
@@ -3664,7 +3671,7 @@ Tcl_LsortObjCmd(
 	    if (i == objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"\"-command\" option must be followed "
-			"by comparison command", -1));
+			"by comparison command", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
 		goto done2;
@@ -3689,7 +3696,7 @@ Tcl_LsortObjCmd(
 	    if (i == objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"\"-index\" option must be followed by list index",
-			-1));
+			TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
 		goto done2;
@@ -3740,7 +3747,7 @@ Tcl_LsortObjCmd(
 	    if (i == objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"\"-stride\" option must be "
-			"followed by stride length", -1));
+			"followed by stride length", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
 		goto done2;
@@ -3751,7 +3758,7 @@ Tcl_LsortObjCmd(
 	    }
 	    if (groupSize < 2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"stride length must be at least 2", -1));
+			"stride length must be at least 2", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
 			"BADSTRIDE", NULL);
 		sortInfo.resultCode = TCL_ERROR;
@@ -3849,7 +3856,7 @@ Tcl_LsortObjCmd(
 	if (length % groupSize) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "list size must be a multiple of the stride length",
-		    -1));
+		    TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT", "BADSTRIDE",
 		    NULL);
 	    sortInfo.resultCode = TCL_ERROR;
@@ -3869,7 +3876,7 @@ Tcl_LsortObjCmd(
 	    if (groupOffset < 0 || groupOffset >= groupSize) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"when used with \"-stride\", the leading \"-index\""
-			" value must be within the group", -1));
+			" value must be within the group", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
 			"BADINDEX", NULL);
 		sortInfo.resultCode = TCL_ERROR;
@@ -4256,7 +4263,8 @@ SortCompare(
 	if (TclGetIntFromObj(infoPtr->interp,
 		Tcl_GetObjResult(infoPtr->interp), &order) != TCL_OK) {
 	    Tcl_SetObjResult(infoPtr->interp, Tcl_NewStringObj(
-		    "-compare command returned non-integer result", -1));
+		    "-compare command returned non-integer result",
+		    TCL_STRLEN));
 	    Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
 		    "COMPARISONFAILED", NULL);
 	    infoPtr->resultCode = TCL_ERROR;

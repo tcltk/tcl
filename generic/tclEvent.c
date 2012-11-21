@@ -333,7 +333,7 @@ TclDefaultBgErrorHandlerObjCmd(
     Tcl_DecrRefCount(keyPtr);
     if (valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"missing return option \"-level\"", -1));
+		"missing return option \"-level\"", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 	return TCL_ERROR;
     }
@@ -346,7 +346,7 @@ TclDefaultBgErrorHandlerObjCmd(
     Tcl_DecrRefCount(keyPtr);
     if (valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"missing return option \"-code\"", -1));
+		"missing return option \"-code\"", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 	return TCL_ERROR;
     }
@@ -1417,7 +1417,8 @@ Tcl_VwaitObjCmd(
 	}
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "limit exceeded", TCL_STRLEN));
 	    break;
 	}
     }
@@ -1521,7 +1522,8 @@ Tcl_UpdateObjCmd(
 	}
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "limit exceeded", TCL_STRLEN));
 	    return TCL_ERROR;
 	}
     }

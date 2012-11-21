@@ -699,7 +699,7 @@ TclChanPushObjCmd(
      */
 
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    Tcl_GetChannelName(rtPtr->chan), -1));
+	    Tcl_GetChannelName(rtPtr->chan), TCL_STRLEN));
     return TCL_OK;
 
   error:
@@ -1710,7 +1710,7 @@ DecodeEventMask(
 	break;
     }
 
-    evObj = Tcl_NewStringObj(eventStr, -1);
+    evObj = Tcl_NewStringObj(eventStr, TCL_STRLEN);
     Tcl_IncrRefCount(evObj);
     return evObj;
 }
@@ -1951,7 +1951,7 @@ InvokeTclMethod(
 	 */
 
 	if (resultObjPtr != NULL) {
-	    resObj = Tcl_NewStringObj(msg_dstlost,-1);
+	    resObj = Tcl_NewStringObj(msg_dstlost, TCL_STRLEN);
 	    *resultObjPtr = resObj;
 	    Tcl_IncrRefCount(resObj);
 	}
@@ -1970,7 +1970,7 @@ InvokeTclMethod(
      * before the channel id.
      */
 
-    methObj = Tcl_NewStringObj(method, -1);
+    methObj = Tcl_NewStringObj(method, TCL_STRLEN);
     Tcl_IncrRefCount(methObj);
     rtPtr->argv[rtPtr->argc - 2] = methObj;
 

@@ -415,7 +415,7 @@ SetIndexFromAny(
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "can't convert value to index except via Tcl_GetIndexFromObj API",
-	    -1));
+	    TCL_STRLEN));
     }
     return TCL_ERROR;
 }
@@ -596,7 +596,7 @@ PrefixMatchObjCmd(
 	case PRFMATCH_MESSAGE:
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -message", -1));
+			"missing value for -message", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", NULL);
 		return TCL_ERROR;
 	    }
@@ -606,7 +606,7 @@ PrefixMatchObjCmd(
 	case PRFMATCH_ERROR:
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -error", -1));
+			"missing value for -error", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", NULL);
 		return TCL_ERROR;
 	    }
@@ -618,7 +618,7 @@ PrefixMatchObjCmd(
 	    if ((errorLength % 2) != 0) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"error options must have an even number of elements",
-			-1));
+			TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
 		return TCL_ERROR;
 	    }
@@ -1384,7 +1384,7 @@ PrintUsage(
      * Now add the option information, with pretty-printing.
      */
 
-    msg = Tcl_NewStringObj("Command-specific options:", -1);
+    msg = Tcl_NewStringObj("Command-specific options:", TCL_STRLEN);
     for (infoPtr = argTable; infoPtr->type != TCL_ARGV_END; infoPtr++) {
 	if ((infoPtr->type == TCL_ARGV_HELP) && (infoPtr->keyStr == NULL)) {
 	    Tcl_AppendPrintfToObj(msg, "\n%s", infoPtr->helpStr);
@@ -1400,7 +1400,7 @@ PrintUsage(
 	    }
 	    numSpaces -= NUM_SPACES;
 	}
-	Tcl_AppendToObj(msg, infoPtr->helpStr, -1);
+	Tcl_AppendToObj(msg, infoPtr->helpStr, TCL_STRLEN);
 	switch (infoPtr->type) {
 	case TCL_ARGV_INT:
 	    Tcl_AppendPrintfToObj(msg, "\n\t\tDefault value: %d",

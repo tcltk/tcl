@@ -86,7 +86,7 @@ NewNsObj(
     if (namespacePtr == TclGetGlobalNamespace(nsPtr->interp)) {
 	return Tcl_NewStringObj("::", 2);
     } else {
-	return Tcl_NewStringObj(nsPtr->fullName, -1);
+	return Tcl_NewStringObj(nsPtr->fullName, TCL_STRLEN);
     }
 }
 
@@ -130,7 +130,7 @@ TclNamespaceEnsembleCmd(
 	if (!Tcl_InterpDeleted(interp)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "tried to manipulate ensemble of deleted namespace",
-		    -1));
+		    TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "DEAD", NULL);
 	}
 	return TCL_ERROR;
@@ -251,7 +251,7 @@ TclNamespaceEnsembleCmd(
 		    if (len < 1) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"ensemble subcommand implementations "
-				"must be non-empty lists", -1));
+				"must be non-empty lists", TCL_STRLEN));
 			Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE",
 				"EMPTY_TARGET", NULL);
 			Tcl_DictObjDone(&search);
@@ -414,44 +414,43 @@ TclNamespaceEnsembleCmd(
 	    TclNewObj(resultObj);
 
 	    /* -map option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_MAP], -1));
+	    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
+		    ensembleConfigOptions[CONF_MAP], TCL_STRLEN));
 	    Tcl_GetEnsembleMappingDict(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -namespace option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_NAMESPACE],
-			    -1));
+	    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
+		    ensembleConfigOptions[CONF_NAMESPACE], TCL_STRLEN));
 	    namespacePtr = NULL;		/* silence gcc 4 warning */
 	    Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
 	    Tcl_ListObjAppendElement(NULL, resultObj, NewNsObj(namespacePtr));
 
 	    /* -parameters option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_PARAM], -1));
+	    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
+		    ensembleConfigOptions[CONF_PARAM], TCL_STRLEN));
 	    Tcl_GetEnsembleParameterList(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -prefix option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_PREFIX], -1));
+	    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
+		    ensembleConfigOptions[CONF_PREFIX], TCL_STRLEN));
 	    Tcl_GetEnsembleFlags(NULL, token, &flags);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewBooleanObj(flags & TCL_ENSEMBLE_PREFIX));
 
 	    /* -subcommands option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_SUBCMDS],-1));
+	    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
+		    ensembleConfigOptions[CONF_SUBCMDS], TCL_STRLEN));
 	    Tcl_GetEnsembleSubcommandList(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -unknown option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_UNKNOWN],-1));
+	    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
+		    ensembleConfigOptions[CONF_UNKNOWN], TCL_STRLEN));
 	    Tcl_GetEnsembleUnknownHandler(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
@@ -531,7 +530,7 @@ TclNamespaceEnsembleCmd(
 			if (len < 1) {
 			    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				    "ensemble subcommand implementations "
-				    "must be non-empty lists", -1));
+				    "must be non-empty lists", TCL_STRLEN));
 			    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE",
 				    "EMPTY_TARGET", NULL);
 			    Tcl_DictObjDone(&search);
@@ -570,7 +569,7 @@ TclNamespaceEnsembleCmd(
 		}
 		case CONF_NAMESPACE:
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "option -namespace is read-only", -1));
+			    "option -namespace is read-only", TCL_STRLEN));
 		    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "READ_ONLY",
 			    NULL);
 		    goto freeMapAndError;
@@ -720,7 +719,7 @@ Tcl_SetEnsembleSubcommandList(
 
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"command is not an ensemble", -1));
+		"command is not an ensemble", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
 	return TCL_ERROR;
     }
@@ -796,7 +795,7 @@ Tcl_SetEnsembleParameterList(
 
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"command is not an ensemble", -1));
+		"command is not an ensemble", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
 	return TCL_ERROR;
     }
@@ -872,7 +871,7 @@ Tcl_SetEnsembleMappingDict(
 
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"command is not an ensemble", -1));
+		"command is not an ensemble", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
 	return TCL_ERROR;
     }
@@ -899,7 +898,7 @@ Tcl_SetEnsembleMappingDict(
 	    if (bytes[0] != ':' || bytes[1] != ':') {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"ensemble target is not a fully-qualified command",
-			-1));
+			TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE",
 			"UNQUALIFIED_TARGET", NULL);
 		Tcl_DictObjDone(&search);
@@ -972,7 +971,7 @@ Tcl_SetEnsembleUnknownHandler(
 
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"command is not an ensemble", -1));
+		"command is not an ensemble", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
 	return TCL_ERROR;
     }
@@ -1038,7 +1037,7 @@ Tcl_SetEnsembleFlags(
 
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"command is not an ensemble", -1));
+		"command is not an ensemble", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
 	return TCL_ERROR;
     }
@@ -1115,7 +1114,7 @@ Tcl_GetEnsembleSubcommandList(
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "command is not an ensemble", -1));
+		    "command is not an ensemble", TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
 	}
 	return TCL_ERROR;
@@ -1157,7 +1156,7 @@ Tcl_GetEnsembleParameterList(
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "command is not an ensemble", -1));
+		    "command is not an ensemble", TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
 	}
 	return TCL_ERROR;
@@ -1199,7 +1198,7 @@ Tcl_GetEnsembleMappingDict(
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "command is not an ensemble", -1));
+		    "command is not an ensemble", TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
 	}
 	return TCL_ERROR;
@@ -1240,7 +1239,7 @@ Tcl_GetEnsembleUnknownHandler(
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "command is not an ensemble", -1));
+		    "command is not an ensemble", TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
 	}
 	return TCL_ERROR;
@@ -1281,7 +1280,7 @@ Tcl_GetEnsembleFlags(
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "command is not an ensemble", -1));
+		    "command is not an ensemble", TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
 	}
 	return TCL_ERROR;
@@ -1322,7 +1321,7 @@ Tcl_GetEnsembleNamespace(
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "command is not an ensemble", -1));
+		    "command is not an ensemble", TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
 	}
 	return TCL_ERROR;
@@ -1532,7 +1531,7 @@ TclMakeEnsemble(
 	TclDStringAppendLiteral(&buf, "::");
 	TclNewObj(mapDict);
 	for (i=0 ; map[i].name != NULL ; i++) {
-	    fromObj = Tcl_NewStringObj(map[i].name, -1);
+	    fromObj = Tcl_NewStringObj(map[i].name, TCL_STRLEN);
 	    TclNewStringObj(toObj, Tcl_DStringValue(&buf),
 		    Tcl_DStringLength(&buf));
 	    Tcl_AppendToObj(toObj, map[i].name, -1);
@@ -1677,7 +1676,7 @@ NsEnsembleImplementationCmdNR(
 
 	if (!Tcl_InterpDeleted(interp)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "ensemble activated for deleted namespace", -1));
+		    "ensemble activated for deleted namespace", TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "DEAD", NULL);
 	}
 	return TCL_ERROR;
@@ -2108,7 +2107,8 @@ EnsembleUnknownCallback(
     if ((result == TCL_OK) && (ensemblePtr->flags & ENSEMBLE_DEAD)) {
 	if (!Tcl_InterpDeleted(interp)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unknown subcommand handler deleted its ensemble", -1));
+		    "unknown subcommand handler deleted its ensemble",
+		    TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "UNKNOWN_DELETED",
 		    NULL);
 	}
@@ -2161,16 +2161,20 @@ EnsembleUnknownCallback(
 	if (result != TCL_ERROR) {
 	    Tcl_ResetResult(interp);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unknown subcommand handler returned bad code: ", -1));
+		    "unknown subcommand handler returned bad code: ",
+		    TCL_STRLEN));
 	    switch (result) {
 	    case TCL_RETURN:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "return", -1);
+		Tcl_AppendToObj(Tcl_GetObjResult(interp), "return",
+			TCL_STRLEN);
 		break;
 	    case TCL_BREAK:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "break", -1);
+		Tcl_AppendToObj(Tcl_GetObjResult(interp), "break",
+			TCL_STRLEN);
 		break;
 	    case TCL_CONTINUE:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "continue", -1);
+		Tcl_AppendToObj(Tcl_GetObjResult(interp), "continue",
+			TCL_STRLEN);
 		break;
 	    default:
 		Tcl_AppendPrintfToObj(Tcl_GetObjResult(interp), "%d", result);

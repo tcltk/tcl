@@ -79,7 +79,7 @@ Tcl_RegisterConfig(
     QCCD *cdPtr = ckalloc(sizeof(QCCD));
 
     cdPtr->interp = interp;
-    cdPtr->pkg = Tcl_NewStringObj(pkgName, -1);
+    cdPtr->pkg = Tcl_NewStringObj(pkgName, TCL_STRLEN);
 
     /*
      * Phase I: Adding the provided information to the internal database of
@@ -129,8 +129,9 @@ Tcl_RegisterConfig(
 	     * conversion required.
 	     */
 
-	    Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
-		    Tcl_NewStringObj(convValue, -1));
+	    Tcl_DictObjPut(interp, pkgDict,
+		    Tcl_NewStringObj(cfg->key, TCL_STRLEN),
+		    Tcl_NewStringObj(convValue, TCL_STRLEN));
 	    Tcl_DStringFree(&conv);
 	}
 
@@ -235,7 +236,8 @@ QueryConfigObjCmd(
 	 * present.
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known",
+		TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "FATAL", "PKGCFG_BASE",
 		Tcl_GetString(pkgName), NULL);
 	return TCL_ERROR;
@@ -250,7 +252,8 @@ QueryConfigObjCmd(
 
 	if (Tcl_DictObjGet(interp, pkgDict, objv[2], &val) != TCL_OK
 		|| val == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known",
+		    TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONFIG",
 		    Tcl_GetString(objv[2]), NULL);
 	    return TCL_ERROR;
@@ -270,7 +273,7 @@ QueryConfigObjCmd(
 
 	if (!listPtr) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "insufficient memory to create list", -1));
+		    "insufficient memory to create list", TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    return TCL_ERROR;
 	}

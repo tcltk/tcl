@@ -47,7 +47,7 @@ TclpDlopen(
 {
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "dynamic loading is not currently available on this system",
-	    -1));
+	    TCL_STRLEN));
     return TCL_ERROR;
 }
 

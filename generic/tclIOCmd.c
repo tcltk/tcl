@@ -1158,7 +1158,8 @@ Tcl_OpenObjCmd(
 	return TCL_ERROR;
     }
     Tcl_RegisterChannel(interp, chan);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan),
+	    TCL_STRLEN));
     return TCL_OK;
 }
 
@@ -1464,7 +1465,8 @@ Tcl_SocketObjCmd(
 	case SKT_ASYNC:
 	    if (server == 1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"cannot set -async option for server sockets", -1));
+			"cannot set -async option for server sockets",
+			TCL_STRLEN));
 		return TCL_ERROR;
 	    }
 	    async = 1;
@@ -1473,7 +1475,7 @@ Tcl_SocketObjCmd(
 	    a++;
 	    if (a >= objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"no argument given for -myaddr option", -1));
+			"no argument given for -myaddr option", TCL_STRLEN));
 		return TCL_ERROR;
 	    }
 	    myaddr = TclGetString(objv[a]);
@@ -1484,7 +1486,7 @@ Tcl_SocketObjCmd(
 	    a++;
 	    if (a >= objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"no argument given for -myport option", -1));
+			"no argument given for -myport option", TCL_STRLEN));
 		return TCL_ERROR;
 	    }
 	    myPortName = TclGetString(objv[a]);
@@ -1496,14 +1498,15 @@ Tcl_SocketObjCmd(
 	case SKT_SERVER:
 	    if (async == 1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"cannot set -async option for server sockets", -1));
+			"cannot set -async option for server sockets",
+			TCL_STRLEN));
 		return TCL_ERROR;
 	    }
 	    server = 1;
 	    a++;
 	    if (a >= objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"no argument given for -server option", -1));
+			"no argument given for -server option", TCL_STRLEN));
 		return TCL_ERROR;
 	    }
 	    script = TclGetString(objv[a]);
@@ -1516,7 +1519,7 @@ Tcl_SocketObjCmd(
 	host = myaddr;		/* NULL implies INADDR_ANY */
 	if (myport != 0) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "option -myport is not valid for servers", -1));
+		    "option -myport is not valid for servers", TCL_STRLEN));
 	    return TCL_ERROR;
 	}
     } else if (a < objc) {
@@ -1584,7 +1587,8 @@ Tcl_SocketObjCmd(
     }
 
     Tcl_RegisterChannel(interp, chan);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan),
+	    TCL_STRLEN));
     return TCL_OK;
 }
 
@@ -1792,7 +1796,8 @@ ChanTruncateObjCmd(
 	}
 	if (length < 0) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot truncate to negative length of file", -1));
+		    "cannot truncate to negative length of file",
+		    TCL_STRLEN));
 	    return TCL_ERROR;
 	}
     } else {
@@ -1862,9 +1867,9 @@ ChanPipeObjCmd(
 
     resultPtr = Tcl_NewObj();
     Tcl_ListObjAppendElement(NULL, resultPtr,
-	    Tcl_NewStringObj(channelNames[0], -1));
+	    Tcl_NewStringObj(channelNames[0], TCL_STRLEN));
     Tcl_ListObjAppendElement(NULL, resultPtr,
-	    Tcl_NewStringObj(channelNames[1], -1));
+	    Tcl_NewStringObj(channelNames[1], TCL_STRLEN));
     Tcl_SetObjResult(interp, resultPtr);
 
     return TCL_OK;
@@ -1968,8 +1973,8 @@ TclInitChanCmd(
 	 * Can assume that reference counts are all incremented.
 	 */
 
-	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj(extras[i], -1),
-		Tcl_NewStringObj(extras[i+1], -1));
+	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj(extras[i], TCL_STRLEN),
+		Tcl_NewStringObj(extras[i+1], TCL_STRLEN));
     }
     Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
     return ensemble;

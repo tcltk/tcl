@@ -924,7 +924,8 @@ TclCompileDictIncrCmd(
 
     if (parsePtr->numWords == 4) {
 	const char *word;
-	int numBytes, code;
+	size_t numBytes;
+	int code;
 	Tcl_Token *incrTokenPtr;
 	Tcl_Obj *intObj;
 
@@ -3649,7 +3650,7 @@ TclCompileIncrCmd(
 	incrTokenPtr = TokenAfter(varTokenPtr);
 	if (incrTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    const char *word = incrTokenPtr[1].start;
-	    int numBytes = incrTokenPtr[1].size;
+	    size_t numBytes = incrTokenPtr[1].size;
 	    int code;
 	    Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
 

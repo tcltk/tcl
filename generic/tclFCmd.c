@@ -1047,8 +1047,8 @@ TclFileAttrsCmd(
 
 	    res = Tcl_FSFileAttrsGet(interp, index, filePtr, &objPtrAttr);
 	    if (res == TCL_OK) {
-		Tcl_Obj *objPtr =
-			Tcl_NewStringObj(attributeStrings[index], -1);
+		Tcl_Obj *objPtr = Tcl_NewStringObj(
+			attributeStrings[index], TCL_STRLEN);
 
 		Tcl_ListObjAppendElement(interp, listPtr, objPtr);
 		Tcl_ListObjAppendElement(interp, listPtr, objPtrAttr);
@@ -1504,7 +1504,8 @@ TclFileTemporaryCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    Tcl_GetChannelName(chan), TCL_STRLEN));
     return TCL_OK;
 }
 

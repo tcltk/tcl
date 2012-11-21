@@ -250,7 +250,7 @@ TclClockInit(
     data->refCount = 0;
     data->literals = ckalloc(LIT__END * sizeof(Tcl_Obj*));
     for (i = 0; i < LIT__END; ++i) {
-	data->literals[i] = Tcl_NewStringObj(literals[i], -1);
+	data->literals[i] = Tcl_NewStringObj(literals[i], TCL_STRLEN);
 	Tcl_IncrRefCount(data->literals[i]);
     }
 
@@ -326,7 +326,7 @@ ClockConvertlocaltoutcObjCmd(
     }
     if (secondsObj == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("key \"localseconds\" not "
-		"found in dictionary", -1));
+		"found in dictionary", TCL_STRLEN));
 	return TCL_ERROR;
     }
     if ((Tcl_GetWideIntFromObj(interp, secondsObj,
@@ -859,7 +859,7 @@ ConvertLocalToUTCUsingC(
     if (localErrno != 0
 	    || (fields->seconds == -1 && timeVal.tm_yday == -1)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"time value too large/small to represent", -1));
+		"time value too large/small to represent", TCL_STRLEN));
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -999,7 +999,8 @@ ConvertUTCToLocalUsingC(
     tock = (time_t) fields->seconds;
     if ((Tcl_WideInt) tock != fields->seconds) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"number too large to represent as a Posix time", -1));
+		"number too large to represent as a Posix time",
+		TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "CLOCK", "argTooLarge", NULL);
 	return TCL_ERROR;
     }
@@ -1008,7 +1009,7 @@ ConvertUTCToLocalUsingC(
     if (timeVal == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"localtime failed (clock value may be too "
-		"large/small to represent)", -1));
+		"large/small to represent)", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "CLOCK", "localtimeFailed", NULL);
 	return TCL_ERROR;
     }
@@ -1050,7 +1051,7 @@ ConvertUTCToLocalUsingC(
     if (diff > 0) {
 	sprintf(buffer+5, "%02d", diff);
     }
-    fields->tzName = Tcl_NewStringObj(buffer, -1);
+    fields->tzName = Tcl_NewStringObj(buffer, TCL_STRLEN);
     Tcl_IncrRefCount(fields->tzName);
     return TCL_OK;
 }
@@ -1590,7 +1591,7 @@ ClockGetenvObjCmd(
     if (varValue == NULL) {
 	varValue = "";
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, TCL_STRLEN));
     return TCL_OK;
 }
 

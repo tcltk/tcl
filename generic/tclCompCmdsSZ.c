@@ -434,8 +434,9 @@ TclCompileStringMatchCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, length, exactMatch = 0, nocase = 0;
+    int i, exactMatch = 0, nocase = 0;
     const char *str;
+    size_t length;
 
     if (parsePtr->numWords < 3 || parsePtr->numWords > 4) {
 	return TCL_ERROR;

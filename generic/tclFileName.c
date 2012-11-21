@@ -342,7 +342,7 @@ Tcl_GetPathType(
     const char *path)
 {
     Tcl_PathType type;
-    Tcl_Obj *tempObj = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *tempObj = Tcl_NewStringObj(path, TCL_STRLEN);
 
     Tcl_IncrRefCount(tempObj);
     type = Tcl_FSGetPathType(tempObj);
@@ -565,7 +565,7 @@ Tcl_SplitPath(
      * Perform the splitting, using objectified, vfs-aware code.
      */
 
-    tmpPtr = Tcl_NewStringObj(path, -1);
+    tmpPtr = Tcl_NewStringObj(path, TCL_STRLEN);
     Tcl_IncrRefCount(tmpPtr);
     resultPtr = Tcl_FSSplitPath(tmpPtr, argcPtr);
     Tcl_IncrRefCount(resultPtr);
@@ -763,6 +763,7 @@ SplitWinPath(
 	length = p - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
+
 	    if ((elementStart != path) && ((elementStart[0] == '~')
 		    || (isalpha(UCHAR(elementStart[0]))
 			&& elementStart[1] == ':'))) {
@@ -988,7 +989,7 @@ Tcl_JoinPath(
 
     for (i = 0; i < argc; i++) {
 	Tcl_ListObjAppendElement(NULL, listObj,
-		Tcl_NewStringObj(argv[i], -1));
+		Tcl_NewStringObj(argv[i], TCL_STRLEN));
     }
 
     /*
@@ -1052,7 +1053,7 @@ Tcl_TranslateFileName(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name after tilde substitution. */
 {
-    Tcl_Obj *path = Tcl_NewStringObj(name, -1);
+    Tcl_Obj *path = Tcl_NewStringObj(name, TCL_STRLEN);
     Tcl_Obj *transPtr;
 
     Tcl_IncrRefCount(path);
@@ -1182,7 +1183,7 @@ DoTildeSubst(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"couldn't find HOME environment "
-			"variable to expand path", -1));
+			"variable to expand path", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "FILENAME", "NO_HOME", NULL);
 	    }
 	    return NULL;
@@ -1277,13 +1278,14 @@ Tcl_GlobObjCmd(
 	case GLOB_DIR:				/* -dir */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-directory\"", -1));
+			"missing argument to \"-directory\"", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		return TCL_ERROR;
 	    }
 	    if (dir != PATH_NONE) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-directory\" cannot be used with \"-path\"", -1));
+			"\"-directory\" cannot be used with \"-path\"",
+			TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 			"BADOPTIONCOMBINATION", NULL);
 		return TCL_ERROR;
@@ -1302,13 +1304,14 @@ Tcl_GlobObjCmd(
 	case GLOB_PATH:				/* -path */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-path\"", -1));
+			"missing argument to \"-path\"", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		return TCL_ERROR;
 	    }
 	    if (dir != PATH_NONE) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-path\" cannot be used with \"-directory\"", -1));
+			"\"-path\" cannot be used with \"-directory\"",
+			TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 			"BADOPTIONCOMBINATION", NULL);
 		return TCL_ERROR;
@@ -1320,7 +1323,7 @@ Tcl_GlobObjCmd(
 	case GLOB_TYPE:				/* -types */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-types\"", -1));
+			"missing argument to \"-types\"", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		return TCL_ERROR;
 	    }
@@ -1340,7 +1343,7 @@ Tcl_GlobObjCmd(
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"\"-tails\" must be used with either "
-		"\"-directory\" or \"-path\"", -1));
+		"\"-directory\" or \"-path\"", TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 		"BADOPTIONCOMBINATION", NULL);
 	return TCL_ERROR;
@@ -1559,7 +1562,7 @@ Tcl_GlobObjCmd(
 	    badMacTypesArg:
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"only one MacOS type or creator argument"
-			" to \"-types\" allowed", -1));
+			" to \"-types\" allowed", TCL_STRLEN));
 		result = TCL_ERROR;
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", NULL);
 		join = 0;
@@ -1829,7 +1832,7 @@ TclGlob(
 		|| (tail[0] == '\\' && tail[1] == '\\'))) {
 	    size_t driveNameLen;
 	    Tcl_Obj *driveName;
-	    Tcl_Obj *temp = Tcl_NewStringObj(tail, -1);
+	    Tcl_Obj *temp = Tcl_NewStringObj(tail, TCL_STRLEN);
 	    Tcl_IncrRefCount(temp);
 
 	    switch (TclGetPathType(temp, NULL, &driveNameLen, &driveName)) {
@@ -2220,14 +2223,14 @@ DoGlob(
 		break;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched open-brace in file name", -1));
+		    "unmatched open-brace in file name", TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;
 
 	} else if (*p == '}') {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched close-brace in file name", -1));
+		    "unmatched close-brace in file name", TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;

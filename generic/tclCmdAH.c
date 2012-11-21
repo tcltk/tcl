@@ -465,7 +465,7 @@ Tcl_EncodingObjCmd(
 	}
 	if (objc == 2) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    Tcl_GetEncodingName(NULL), -1));
+		    Tcl_GetEncodingName(NULL), TCL_STRLEN));
 	} else {
 	    return Tcl_SetSystemEncoding(interp, TclGetString(objv[2]));
 	}
@@ -1232,7 +1232,7 @@ FileAttrTypeCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    GetTypeFromMode((unsigned short) buf.st_mode), -1));
+	    GetTypeFromMode((unsigned short) buf.st_mode), TCL_STRLEN));
     return TCL_OK;
 }
 
@@ -1711,7 +1711,8 @@ PathFilesystemCmd(
     }
     fsInfo = Tcl_FSFileSystemInfo(objv[1]);
     if (fsInfo == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path",
+		TCL_STRLEN));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		Tcl_GetString(objv[1]), NULL);
 	return TCL_ERROR;
@@ -1963,7 +1964,7 @@ FilesystemSeparatorCmd(
 
 	if (separatorObj == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unrecognised path", -1));
+		    "unrecognised path", TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
 		    Tcl_GetString(objv[1]), NULL);
 	    return TCL_ERROR;
@@ -2161,7 +2162,8 @@ StoreStatData(
     STORE_ARY("ctime",	Tcl_NewLongObj((long)statPtr->st_ctime));
     mode = (unsigned short) statPtr->st_mode;
     STORE_ARY("mode",	Tcl_NewIntObj(mode));
-    STORE_ARY("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+    STORE_ARY("type",	Tcl_NewStringObj(GetTypeFromMode(mode),
+	    TCL_STRLEN));
 #undef STORE_ARY
 
     return TCL_OK;
