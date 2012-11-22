@@ -2642,6 +2642,27 @@ test binary-73.23 {binary decode base64} -body {
 test binary-73.24 {binary decode base64} -body {
     string length [binary decode base64 " "]
 } -result 0
+test binary-73.25 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WA==\n]]] $r
+} -result {1 X}
+test binary-73.26 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WFk=\n]]] $r
+} -result {2 XY}
+test binary-73.27 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WFla\n]]] $r
+} -result {3 XYZ}
+test binary-73.28 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 -strict WA==\n]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.29 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 -strict WFk=\n]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.30 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 -strict WFla\n]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.31 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WA==WFla]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
 
 test binary-74.1 {binary encode uuencode} -body {
     binary encode uuencode
