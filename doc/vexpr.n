@@ -1,0 +1,400 @@
+
+.\"
+.\" Copyright (c) 2012 Sean Woods
+.\"
+.\" See the file "license.terms" for information on usage and redistribution
+.\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.\"
+.so man.macros
+.TH vexpr n 8.7 Tcl "Tcl Built-In Commands"
+.BS
+.\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+vexpr \- Vector Expression Evaluator
+.SH SYNOPSIS
+\fBvexpr \fIarg arg opcode \fR?\fIarg opcode...?\fR
+.BE
+.SH DESCRIPTION
+.PP
+Performs one of several vector operations, depending on the \fIopcode\fR.
+Opcodes and arguments are evaluated using reverse-polish notation.
+.
+Example:
+.CS
+\fBvexpr {1 1 1} {2 2 2} +\fR
+.CE
+.PP
+Will return \fB\{3.0 3.0 3.0}\fR.
+.PP
+.RE
+The legal \fIopcode\fRs:
+
+.TP
+\fBaffine_identity\fR
+.RS 1
+Usage: \fBaffine_identity\fR
+.RE
+.RS 1
+Result: AFFINE
+.RE
+.PP
+.RS 1
+Pushes an affine identity matrix onto the stack
+.RE
+.TP
+\fBaffine_multiply\fR
+.RS 1
+Usage: \fIAFFINE AFFINE\fR \fBaffine_multiply\fR
+.RE
+.RS 1
+Result: AFFINE
+.RE
+.PP
+.RS 1
+Muliply 2 4x4 matrices. Used to combine 2 affine transformations. Note: Some affine transformations need to be performed in a particular order to make sense.
+.RE
+.TP
+\fBaffine_rotate\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBaffine_rotate\fR
+.RE
+.RS 1
+Result: AFFINE
+.RE
+.PP
+.RS 1
+Convert a rotation vector (X Y Z) into an affine transformation
+.RE
+.TP
+\fBaffine_scale\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBaffine_scale\fR
+.RE
+.RS 1
+Result: AFFINE
+.RE
+.PP
+.RS 1
+Convert a scale vector (X Y Z) into an affine transformation
+.RE
+.TP
+\fBaffine_translate\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBaffine_translate\fR
+.RE
+.RS 1
+Result: AFFINE
+.RE
+.PP
+.RS 1
+Convert a displacement vector (X Y Z) into an affine transformation
+.RE
+.TP
+\fBcartesian_to_cylindrical\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBcartesian_to_cylindrical\fR
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Convert a cartesian vector to cylindrical coordinates
+.RE
+.TP
+\fBcartesian_to_spherical\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBcartesian_to_spherical\fR
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Convert a cartesian vector to spherical vector
+.RE
+.TP
+\fBcopy\fR
+.RS 1
+Usage: \fIANY\fR \fBcopy\fR
+.RE
+.RS 1
+Result: ANY ANY
+.RE
+.PP
+.RS 1
+Place an additional copy of the top of the stack on the top of the stack
+.RE
+.TP
+\fBcylindrical_to_cartesian\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBcylindrical_to_cartesian\fR
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Convert a cylindrical vector to a cartesian vector
+.RE
+.TP
+\fBcylindrical_to_degrees\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBcylindrical_to_degrees\fR
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Convert a cylindrical vector in radians to a cylindrical vector in degrees
+.RE
+.TP
+\fBcylindrical_to_radians\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBcylindrical_to_radians\fR
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Convert a cylindrical vector in degrees to a cylindrical vector in radians
+.RE
+.TP
+\fBdt_get\fR
+.RS 1
+Usage: \fBdt_get\fR
+.RE
+.RS 1
+Result: SCALER
+.RE
+.PP
+.RS 1
+Pushes the stored value of dT into the stack
+.RE
+.TP
+\fBdt_set\fR
+.RS 1
+Usage: \fISCALER\fR \fBdt_set\fR
+.RE
+.RS 1
+Result: (None)
+.RE
+.PP
+.RS 1
+Stores a new value for dT
+.RE
+.TP
+\fBdump\fR
+.RS 1
+Usage: \fIANY\fR \fBdump\fR
+.RE
+.RS 1
+Result: (None)
+.RE
+.PP
+.RS 1
+Output the contents of the top of the stack to stdout
+.RE
+.TP
+\fBload\fR
+.RS 1
+Usage: \fBload\fR
+.RE
+.RS 1
+Result: ANY
+.RE
+.PP
+.RS 1
+Push a previosly stored value the top of the stack
+.RE
+.TP
+\fBpi\fR
+.RS 1
+Usage: \fBpi\fR
+.RE
+.RS 1
+Result: SCALER
+.RE
+.PP
+.RS 1
+Pushes the value of PI into the stack
+.RE
+.TP
+\fBspherical_to_cartesian\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBspherical_to_cartesian\fR
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Convert a spherical vector to a cartesian vector
+.RE
+.TP
+\fBspherical_to_degrees\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBspherical_to_degrees\fR
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Convert a spherical vector in radians to a spherical vector in degrees
+.RE
+.TP
+\fBspherical_to_radians\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBspherical_to_radians\fR
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Convert a spherical vector in degrees to a spherical vector in radians
+.RE
+.TP
+\fBstore\fR
+.RS 1
+Usage: \fIANY\fR \fBstore\fR
+.RE
+.RS 1
+Result: ANY
+.RE
+.PP
+.RS 1
+Store the top of the stack internally for later use. The value stored remains at the top of the stack.
+.RE
+.TP
+\fBto_degrees\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBto_degrees\fR
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Convert Radians to Degress
+.RE
+.TP
+\fBto_radians\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBto_radians\fR
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Convert Degrees to Radians
+.RE
+.TP
+\fBvector_add\fR
+.RS 1
+Usage: \fIVECTOR VECTOR\fR \fBvector_add\fR
+.RE
+.RS 1
+Aliases: +
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Add Two Vectors
+.RE
+.TP
+\fBvector_cross_product\fR
+.RS 1
+Usage: \fIVECTOR VECTOR\fR \fBvector_cross_product\fR
+.RE
+.RS 1
+Aliases: *X
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Push the cross product of two vectors on the stack
+.RE
+.TP
+\fBvector_dot_product\fR
+.RS 1
+Usage: \fIVECTOR VECTOR\fR \fBvector_dot_product\fR
+.RE
+.RS 1
+Aliases: *.
+.RE
+.RS 1
+Result: SCALER
+.RE
+.PP
+.RS 1
+Push the dot product of two vectors on the stack
+.RE
+.TP
+\fBvector_length\fR
+.RS 1
+Usage: \fIVECTOR\fR \fBvector_length\fR
+.RE
+.RS 1
+Result: SCALER
+.RE
+.PP
+.RS 1
+Convert a vector to it's length
+.RE
+.TP
+\fBvector_scale\fR
+.RS 1
+Usage: \fIVECTOR SCALER\fR \fBvector_scale\fR
+.RE
+.RS 1
+Aliases: *
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Scale a vector by a scaler
+.RE
+.TP
+\fBvector_subtract\fR
+.RS 1
+Usage: \fIVECTOR VECTOR\fR \fBvector_subtract\fR
+.RE
+.RS 1
+Aliases: -
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Subtract Two Vectors
+.RE
+.TP
+\fBvector_transform_affine\fR
+.RS 1
+Usage: \fIAFFINE VECTOR\fR \fBvector_transform_affine\fR
+.RE
+.RS 1
+Result: VECTOR
+.RE
+.PP
+.RS 1
+Transform a vector using an affine matrix
+.RE
+
+.SH "SEE ALSO"
+expr(n)
+.SH KEYWORDS
+vector
+

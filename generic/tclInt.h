@@ -3475,6 +3475,9 @@ MODULE_SCOPE int	Tcl_UpvarObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_VariableObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_VexprObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_VwaitObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);

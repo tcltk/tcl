@@ -1,3 +1,8 @@
+2012-11-21  Sean Woods <yoda@etoyoc.com>
+	* Added generic/tclVexpr.c - Vector expression stack
+	* Added generic/tclVexpr.tcl - Script to regenerate generic/tclVexpr.c
+	* Added doc/vexpr.n - Manual for vexpr
+
 2012-11-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBinary.c (BinaryDecode64): [Bug 3033307]: Corrected

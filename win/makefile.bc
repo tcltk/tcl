@@ -259,6 +259,7 @@ TCLOBJS	= \
 	$(TMPDIR)\tclUtf.obj \
 	$(TMPDIR)\tclUtil.obj \
 	$(TMPDIR)\tclVar.obj \
+	$(TMPDIR)\tclVexpr.obj \
 	$(TMPDIR)\tclWin32Dll.obj \
 	$(TMPDIR)\tclWinChan.obj \
 	$(TMPDIR)\tclWinConsole.obj \

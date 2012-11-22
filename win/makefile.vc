@@ -341,6 +341,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclUtf.obj \
 	$(TMP_DIR)\tclUtil.obj \
 	$(TMP_DIR)\tclVar.obj \
+	$(TMP_DIR)\tclVexpr.obj \
 	$(TMP_DIR)\tclZlib.obj
 
 ZLIBOBJS = \
