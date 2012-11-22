@@ -207,10 +207,6 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 	    entryPtr = NEXT_ENTRY(entryPtr, offset), i++) {
 	for (p1 = key, p2 = *entryPtr; *p1 == *p2; p1++, p2++) {
 	    if (*p1 == '\0') {
-		if (p1 == key) {
-		    /* empty keys never match */
-		    continue;
-		}
 		index = i;
 		goto done;
 	    }
