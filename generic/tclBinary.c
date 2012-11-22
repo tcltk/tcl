@@ -164,7 +164,7 @@ typedef struct ByteArray {
 } ByteArray;
 
 #define BYTEARRAY_SIZE(len) \
-		((unsigned) (TclOffset(ByteArray, bytes) + (len)))
+		((size_t) (TclOffset(ByteArray, bytes) + (len)))
 #define GET_BYTEARRAY(objPtr) \
 		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
 #define SET_BYTEARRAY(objPtr, baPtr) \
@@ -289,15 +289,12 @@ Tcl_SetByteArrayObj(
     TclFreeIntRep(objPtr);
     Tcl_InvalidateStringRep(objPtr);
 
-    if (length < 0) {
-	length = 0;
-    }
     byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
 
     if ((bytes != NULL) && (length > 0)) {
-	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
+	memcpy(byteArrayPtr->bytes, bytes, length);
     }
     objPtr->typePtr = &tclByteArrayType;
     SET_BYTEARRAY(objPtr, byteArrayPtr);
@@ -490,7 +487,7 @@ DupByteArrayInternalRep(
     copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
     SET_BYTEARRAY(copyPtr, copyArrayPtr);
 
     copyPtr->typePtr = &tclByteArrayType;
@@ -523,7 +520,7 @@ UpdateStringOfByteArray(
     Tcl_Obj *objPtr)		/* ByteArray object whose string rep to
 				 * update. */
 {
-    int i, length, size;
+    size_t i, length, size;
     unsigned char *src;
     char *dst;
     ByteArray *byteArrayPtr;
@@ -551,7 +548,7 @@ UpdateStringOfByteArray(
     objPtr->length = size;
 
     if (size == length) {
-	memcpy(dst, src, (size_t) size);
+	memcpy(dst, src, size);
 	dst[size] = '\0';
     } else {
 	for (i = 0; i < length; i++) {
@@ -921,7 +918,7 @@ BinaryFormatCmd(
 
     resultPtr = Tcl_NewObj();
     buffer = Tcl_SetByteArrayLength(resultPtr, length);
-    memset(buffer, 0, (size_t) length);
+    memset(buffer, 0, length);
 
     /*
      * Pack the data into the result object. Note that we can skip the
@@ -958,9 +955,9 @@ BinaryFormatCmd(
 		count = 1;
 	    }
 	    if (length >= count) {
-		memcpy(cursor, bytes, (size_t) count);
+		memcpy(cursor, bytes, count);
 	    } else {
-		memcpy(cursor, bytes, (size_t) length);
+		memcpy(cursor, bytes, length);
 		memset(cursor + length, pad, (size_t) (count - length));
 	    }
 	    cursor += count;
@@ -970,7 +967,7 @@ BinaryFormatCmd(
 	case 'B': {
 	    unsigned char *last;
 
-	    str = TclGetStringFromObj(objv[arg], &length);
+	    str = Tcl_GetStringFromObj(objv[arg], &length);
 	    arg++;
 	    if (count == BINARY_ALL) {
 		count = length;
@@ -1032,7 +1029,7 @@ BinaryFormatCmd(
 	    unsigned char *last;
 	    int c;
 
-	    str = TclGetStringFromObj(objv[arg], &length);
+	    str = Tcl_GetStringFromObj(objv[arg], &length);
 	    arg++;
 	    if (count == BINARY_ALL) {
 		count = length;
@@ -1139,7 +1136,7 @@ BinaryFormatCmd(
 	    }
 	    arg++;
 	    for (i = 0; i < count; i++) {
-		if (FormatNumber(interp, cmd, listv[i], &cursor)!=TCL_OK) {
+		if (FormatNumber(interp, cmd, listv[i], &cursor) != TCL_OK) {
 		    Tcl_DecrRefCount(resultPtr);
 		    return TCL_ERROR;
 		}
@@ -2364,7 +2361,7 @@ BinaryDecodeHex(
 
     TclNewObj(resultObj);
     datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc-1], &count);
+	    Tcl_GetStringFromObj(objv[objc-1], &count);
     dataend = data + count;
     size = (count + 1) / 2;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -2579,7 +2576,7 @@ BinaryDecodeUu(
 
     TclNewObj(resultObj);
     datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc-1], &count);
+	    Tcl_GetStringFromObj(objv[objc-1], &count);
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -2650,8 +2647,7 @@ BinaryDecode64(
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend, c;
-    unsigned char *begin = NULL;
-    unsigned char *cursor = NULL;
+    unsigned char *begin = NULL, *cursor = NULL;
     int strict = 0;
     int index, size, cut = 0;
     size_t i, count = 0;
@@ -2676,7 +2672,7 @@ BinaryDecode64(
 
     TclNewObj(resultObj);
     datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc-1], &count);
+	    Tcl_GetStringFromObj(objv[objc-1], &count);
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -2728,7 +2724,7 @@ BinaryDecode64(
   bad64:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid base64 character \"%c\" at position %d",
-	    (char) c, (int) (data - datastart - 1)));
+	    (char) c, data - datastart - 1));
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 }
@@ -2740,4 +2736,3 @@ BinaryDecode64(
  * fill-column: 78
  * End:
  */
-

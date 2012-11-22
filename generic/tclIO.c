@@ -137,7 +137,7 @@ static int              WillRead(Channel *chanPtr);
  *
  *	Returns the number of bytes of data remaining in the buffer.
  *
- * size_t SpaceLeft(ChannelBuffer *bufPtr)
+ * ssize_t SpaceLeft(ChannelBuffer *bufPtr)
  *
  *	Returns the number of bytes of space remaining at the end of the
  *	buffer.
@@ -4060,8 +4060,8 @@ WriteChars(
 				/* State info for channel */
     ChannelBuffer *bufPtr;
     char *dst, *stage;
-    int saved, savedLF, sawLF, endEncoding, result, consumedSomething;
-    int translate;
+    int savedLF, sawLF, endEncoding, result, consumedSomething, translate;
+    size_t saved;
     size_t total, dstLen, dstWrote, stageLen, stageMax, stageRead, toWrite;
     Tcl_Encoding encoding;
     char safe[BUFFER_PADDING];
@@ -4155,7 +4155,7 @@ WriteChars(
 		 * that we need to stick at the beginning of this buffer.
 		 */
 
-		memcpy(dst, safe, (size_t) saved);
+		memcpy(dst, safe, saved);
 		bufPtr->nextAdded += saved;
 		dst += saved;
 		dstLen -= saved;
@@ -4213,7 +4213,7 @@ WriteChars(
 		 */
 
 		saved = -SpaceLeft(bufPtr);
-		memcpy(safe, dst + dstLen, (size_t) saved);
+		memcpy(safe, dst + dstLen, saved);
 		bufPtr->nextAdded = bufPtr->bufLength;
 	    }
 	    if (CheckFlush(chanPtr, bufPtr, sawLF) != 0) {
@@ -5019,7 +5019,7 @@ TclGetsObjBinary(
 
 	rawLen = dstEnd - dst;
 	byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-	memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+	memcpy(byteArray + byteLen, dst, rawLen);
 	byteLen += rawLen;
     }
 
@@ -5036,7 +5036,7 @@ TclGetsObjBinary(
 
     rawLen = eol - dst;
     byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-    memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+    memcpy(byteArray + byteLen, dst, rawLen);
     byteLen += rawLen;
     bufPtr->nextRemoved += rawLen + skip;
 
@@ -5265,7 +5265,7 @@ FilterInputBytes(
 	 */
 
 	ChannelBuffer *nextPtr;
-	int extra;
+	size_t extra;
 
 	nextPtr = bufPtr->nextPtr;
 	if (!IsBufferFull(bufPtr)) {
@@ -5298,7 +5298,7 @@ FilterInputBytes(
 	    }
 	    extra = rawLen - gsPtr->rawRead;
 	    memcpy(nextPtr->buf + (BUFFER_PADDING - extra),
-		    raw + gsPtr->rawRead, (size_t) extra);
+		    raw + gsPtr->rawRead, extra);
 	    nextPtr->nextRemoved -= extra;
 	    bufPtr->nextAdded -= extra;
 	}
@@ -5441,13 +5441,12 @@ CommonGetsCleanup(
 
 	nextPtr = bufPtr->nextPtr;
 	for ( ; nextPtr != NULL; nextPtr = bufPtr->nextPtr) {
-	    int extra;
+	    size_t extra;
 
 	    extra = SpaceLeft(bufPtr);
 	    if (extra > 0) {
 		memcpy(InsertPoint(bufPtr),
-			nextPtr->buf + (BUFFER_PADDING - extra),
-			(size_t) extra);
+			nextPtr->buf + (BUFFER_PADDING - extra), extra);
 		bufPtr->nextAdded += extra;
 		nextPtr->nextRemoved = BUFFER_PADDING;
 	    }
@@ -5895,13 +5894,13 @@ ReadBytes(
 				 * been allocated to hold data, not how many
 				 * bytes of data have been stored in the
 				 * object. */
-    size_t bytesToRead,		/* Maximum number of bytes to store, or < 0 to
-				 * get all available bytes. Bytes are obtained
-				 * from the first buffer in the queue - even
-				 * if this number is larger than the number of
-				 * bytes available in the first buffer, only
-				 * the bytes from the first buffer are
-				 * returned. */
+    size_t bytesToRead,		/* Maximum number of bytes to store, or
+				 * TCL_STRLEN to get all available bytes.
+				 * Bytes are obtained from the first buffer in
+				 * the queue - even if this number is larger
+				 * than the number of bytes available in the
+				 * first buffer, only the bytes from the first
+				 * buffer are returned. */
     size_t *offsetPtr)		/* On input, contains how many bytes of objPtr
 				 * have been used to hold data. On output,
 				 * filled with how many bytes are now being
@@ -5918,12 +5917,12 @@ ReadBytes(
     srcLen = BytesLeft(bufPtr);
 
     toRead = bytesToRead;
-    if ((unsigned) toRead > (unsigned) srcLen) {
+    if (toRead == TCL_STRLEN || toRead > srcLen) {
 	toRead = srcLen;
     }
 
     dst = (char *) Tcl_GetByteArrayFromObj(objPtr, &length);
-    if (toRead > length - offset - 1) {
+    if (offset + toRead + 1 > length) {
 	/*
 	 * Double the existing size of the object or make enough room to hold
 	 * all the characters we may get from the source buffer, whichever is
@@ -5953,7 +5952,7 @@ ReadBytes(
 
     srcRead = srcLen;
     dstWrote = toRead;
-    if (TranslateInputEOL(statePtr, dst, src, &dstWrote, &srcRead) != 0) {
+    if (TranslateInputEOL(statePtr, dst, src, &dstWrote, &srcRead)) {
 	if (dstWrote == 0) {
 	    return -1;
 	}
@@ -5998,7 +5997,7 @@ ReadChars(
 				 * allocated to hold data, not how many bytes
 				 * of data have been stored in the object. */
     size_t charsToRead,		/* Maximum number of characters to store, or
-				 * -1 to get all available characters.
+				 * TCL_STRLEN to get all available characters.
 				 * Characters are obtained from the first
 				 * buffer in the queue -- even if this number
 				 * is larger than the number of characters
@@ -6030,7 +6029,7 @@ ReadChars(
     srcLen = BytesLeft(bufPtr);
 
     toRead = charsToRead;
-    if ((unsigned) toRead > (unsigned) srcLen) {
+    if (toRead == TCL_STRLEN || toRead > srcLen) {
 	toRead = srcLen;
     }
 
@@ -6199,19 +6198,19 @@ ReadChars(
 	 * precautions.
 	 */
 
-	if (nextPtr->nextRemoved - srcLen < 0) {
+	if (nextPtr->nextRemoved < srcLen) {
 	    Tcl_Panic("Buffer Underflow, BUFFER_PADDING not enough");
 	}
 
 	nextPtr->nextRemoved -= srcLen;
-	memcpy(RemovePoint(nextPtr), src, (size_t) srcLen);
+	memcpy(RemovePoint(nextPtr), src, srcLen);
 	RecycleBuffer(statePtr, bufPtr, 0);
 	statePtr->inQueueHead = nextPtr;
 	return ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr);
     }
 
     dstRead = dstWrote;
-    if (TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead) != 0) {
+    if (TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead)) {
 	/*
 	 * Hit EOF char. How many bytes of src correspond to where the EOF was
 	 * located in dst? Run the conversion again with an output buffer just
@@ -6237,7 +6236,7 @@ ReadChars(
 
     numChars -= dstRead - dstWrote;
 
-    if ((unsigned) numChars > (unsigned) toRead) {
+    if (numChars > toRead) {
 	/*
 	 * Got too many chars.
 	 */
@@ -6296,7 +6295,7 @@ TranslateInputEOL(
 				 * exit, the number of bytes read from the
 				 * source buffer. */
 {
-    int dstLen, srcLen, inEofChar;
+    size_t dstLen, srcLen, inEofChar;
     const char *eof;
 
     dstLen = *dstLenPtr;
@@ -6328,7 +6327,7 @@ TranslateInputEOL(
     switch (statePtr->inputTranslation) {
     case TCL_TRANSLATE_LF:
 	if (dstStart != srcStart) {
-	    memcpy(dstStart, srcStart, (size_t) dstLen);
+	    memcpy(dstStart, srcStart, dstLen);
 	}
 	srcLen = dstLen;
 	break;
@@ -6336,7 +6335,7 @@ TranslateInputEOL(
 	char *dst, *dstEnd;
 
 	if (dstStart != srcStart) {
-	    memcpy(dstStart, srcStart, (size_t) dstLen);
+	    memcpy(dstStart, srcStart, dstLen);
 	}
 	dstEnd = dstStart + dstLen;
 	for (dst = dstStart; dst < dstEnd; dst++) {
@@ -9600,7 +9599,7 @@ CopyAndTranslateBuffer(
 	if (bytesInBuffer < space) {
 	    space = bytesInBuffer;
 	}
-	memcpy(result, RemovePoint(bufPtr), (size_t) space);
+	memcpy(result, RemovePoint(bufPtr), space);
 	bufPtr->nextRemoved += space;
 	copied = space;
 	break;
@@ -9619,7 +9618,7 @@ CopyAndTranslateBuffer(
 	if (bytesInBuffer < space) {
 	    space = bytesInBuffer;
 	}
-	memcpy(result, RemovePoint(bufPtr), (size_t) space);
+	memcpy(result, RemovePoint(bufPtr), space);
 	bufPtr->nextRemoved += space;
 	copied = space;
 
@@ -9656,7 +9655,7 @@ CopyAndTranslateBuffer(
 	if (bytesInBuffer < space) {
 	    space = bytesInBuffer;
 	}
-	memcpy(result, RemovePoint(bufPtr), (size_t) space);
+	memcpy(result, RemovePoint(bufPtr), space);
 	bufPtr->nextRemoved += space;
 	copied = space;
 
@@ -9696,7 +9695,7 @@ CopyAndTranslateBuffer(
 	if (bytesInBuffer < space) {
 	    space = bytesInBuffer;
 	}
-	memcpy(result, RemovePoint(bufPtr), (size_t) space);
+	memcpy(result, RemovePoint(bufPtr), space);
 	bufPtr->nextRemoved += space;
 	copied = space;
 

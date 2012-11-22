@@ -1460,7 +1460,7 @@ Tcl_GlobObjCmd(
 	globTypes->macType = NULL;
 	globTypes->macCreator = NULL;
 
-	while (--length >= 0) {
+	while (length-->0) {
 	    size_t len;
 	    const char *str;
 

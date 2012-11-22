@@ -356,8 +356,10 @@ Tcl_ReadObjCmd(
 {
     Tcl_Channel chan;		/* The channel to read from. */
     int newline, i;		/* Discard newline at end? */
+    // TODO Allow larger reads on 64-bit
     int toRead;			/* How many bytes to read? */
-    int charactersRead;		/* How many characters were read? */
+    size_t realToRead;
+    ssize_t charactersRead;	/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *resultPtr, *chanObjPtr;
 
@@ -405,35 +407,22 @@ Tcl_ReadObjCmd(
      * Compute how many bytes to read.
      */
 
-    toRead = -1;
+    realToRead = -1;
     if (i < objc) {
-	if ((TclGetIntFromObj(interp, objv[i], &toRead) != TCL_OK)
+	if ((Tcl_GetIntFromObj(interp, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
-#if TCL_MAJOR_VERSION < 9
-	    /*
-	     * The code below provides backwards compatibility with an old
-	     * form of the command that is no longer recommended or
-	     * documented. See also [Bug #3151675]. Will be removed in Tcl 9,
-	     * maybe even earlier.
-	     */
-
-	    if (strcmp(TclGetString(objv[i]), "nonewline") != 0) {
-#endif
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected non-negative integer but got \"%s\"",
-			TclGetString(objv[i])));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
-		return TCL_ERROR;
-#if TCL_MAJOR_VERSION < 9
-	    }
-	    newline = 1;
-#endif
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected non-negative integer but got \"%s\"",
+		    TclGetString(objv[i])));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
+	    return TCL_ERROR;
 	}
+	realToRead = (size_t) toRead;
     }
 
     resultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(resultPtr);
-    charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
+    charactersRead = Tcl_ReadChars(chan, resultPtr, realToRead, 0);
     if (charactersRead < 0) {
 	/*
 	 * TIP #219.
