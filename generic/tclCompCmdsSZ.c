@@ -771,7 +771,7 @@ TclCompileSubstCmd(
     }
 
   cleanup:
-    while (--objc >= 0) {
+    while (objc --> 0) {
 	TclDecrRefCount(objv[objc]);
     }
     TclStackFree(interp, objv);

@@ -1530,8 +1530,19 @@ InitArgsAndLocals(
 
     varPtr->flags = 0;
     if (defPtr && defPtr->flags & VAR_IS_ARGS) {
-	Tcl_Obj *listPtr = Tcl_NewListObj(argCt-i, argObjs+i);
+	Tcl_Obj *listPtr;
 
+	/*
+	 * Note that we can get the number of actual arguments (argCt) less
+	 * than the current formal argument index (i) if there is a defaulted
+	 * argument before 'args' that uses the default.
+	 */
+
+	if (argCt <= i) {
+	    TclNewObj(listPtr);
+	} else {
+	    listPtr = Tcl_NewListObj(argCt-i, argObjs+i);
+	}
 	varPtr->value.objPtr = listPtr;
 	Tcl_IncrRefCount(listPtr);	/* Local var is a reference. */
     } else if (argCt == numArgs) {

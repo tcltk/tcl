@@ -3058,7 +3058,7 @@ TclCompileFormatCmd(
 
     tmpObj = Tcl_Format(interp, Tcl_GetString(formatObj),
 	    parsePtr->numWords-2, objv);
-    for (; --i>=0 ;) {
+    while (i --> 0) {
 	Tcl_DecrRefCount(objv[i]);
     }
     ckfree(objv);
@@ -3087,7 +3087,7 @@ TclCompileFormatCmd(
      * after our attempt to spot a literal).
      */
 
-    for (; i-->0 ;) {
+    for (; i --> 0 ;) {
 	Tcl_DecrRefCount(objv[i]);
     }
     ckfree(objv);
