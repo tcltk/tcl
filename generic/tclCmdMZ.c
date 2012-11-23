@@ -2731,8 +2731,8 @@ StringCmpCmd(
      */
 
     const char *string1, *string2;
-    size_t length1, length2, i, match, length;
-    int nocase = 0, reqlength = -1;
+    size_t length1, length2, i, length;
+    int nocase = 0, reqlength = -1, match;
     typedef int (*strCmpFn_t)(const char *, const char *, size_t);
     strCmpFn_t strCmpFn;
 

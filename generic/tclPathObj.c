@@ -1332,7 +1332,7 @@ TclNewFSPathObj(
 	    case ':':
 		if (count) {
 		    PATHFLAGS(pathPtr) |= TCLPATH_NEEDNORM;
-		    len = 0;
+		    len = 1;
 		}
 		break;
 	    default:
