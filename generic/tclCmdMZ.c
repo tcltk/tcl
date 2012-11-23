@@ -2470,7 +2470,7 @@ StringStartCmd(
     cur = 0;
     if (index > 0) {
 	p = Tcl_UtfAtIndex(string, index);
-	for (cur = index; cur >= 0; cur--) {
+	for (cur = index; cur --> 0 ;) {
 	    TclUtfToUniChar(p, &ch);
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
