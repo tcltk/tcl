@@ -2997,7 +2997,7 @@ Tcl_LsearchObjCmd(
 	    if (startPtr != NULL) {
 		Tcl_DecrRefCount(startPtr);
 	    }
-	    if (i > objc-4) {
+	    if (i+4 > objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"missing starting index", TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
@@ -3026,7 +3026,7 @@ Tcl_LsearchObjCmd(
 	    if (sortInfo.indexc > 1) {
 		TclStackFree(interp, sortInfo.indexv);
 	    }
-	    if (i > objc-4) {
+	    if (i+4 > objc) {
 		if (startPtr != NULL) {
 		    Tcl_DecrRefCount(startPtr);
 		}
@@ -4454,7 +4454,8 @@ SelectObjFromSublist(
      */
 
     for (i=0 ; i<infoPtr->indexc ; i++) {
-	size_t listLen, index;
+	size_t listLen;
+	ssize_t index;
 	Tcl_Obj *currentObj;
 
 	if (TclListObjLength(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
