@@ -888,7 +888,7 @@ TclOONextToObjCmd(
      * is on the chain but unreachable, or not on the chain at all.
      */
 
-    for (i=contextPtr->index ; i>=0 ; i--) {
+    for (i=contextPtr->index ; i-->0 ;) {
 	struct MInvoke *miPtr = contextPtr->callPtr->chain + i;
 
 	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {

@@ -3527,7 +3527,7 @@ TclNRSwitchObjCmd(
     matchVarObj = NULL;
     numMatchesSaved = 0;
     noCase = 0;
-    for (i = 1; i < objc-2; i++) {
+    for (i = 1; i+2 < objc; i++) {
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
 	}
