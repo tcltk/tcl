@@ -125,7 +125,7 @@ static ssize_t		WriteChars(Channel *chanPtr, const char *src,
 static Tcl_Obj *	FixLevelCode(Tcl_Obj *msg);
 static void		SpliceChannel(Tcl_Channel chan);
 static void		CutChannel(Tcl_Channel chan);
-static int              WillRead(Channel *chanPtr);
+static inline int       WillRead(Channel *chanPtr);
 
 /*
  * Simplifying helper macros. All may use their argument(s) multiple times.
@@ -282,7 +282,7 @@ ChanRead(
     size_t dstSize,
     int *errnoPtr)
 {
-    if (WillRead(chanPtr) < 0) {
+    if (WillRead(chanPtr)) {
         return -1;
     }
 
@@ -3910,7 +3910,7 @@ WillWrite(
     }
 }
 
-static int
+static inline int
 WillRead(
     Channel *chanPtr)
 {
@@ -3921,7 +3921,7 @@ WillRead(
             SetFlag(chanPtr->state, BUFFER_READY);
         }
         if (FlushChannel(NULL, chanPtr, 0) != 0) {
-            return -1;
+            return 1;
         }
     }
     return 0;
@@ -5161,7 +5161,8 @@ FilterInputBytes(
 				/* State info for channel */
     ChannelBuffer *bufPtr;
     char *raw, *rawStart, *dst;
-    int offset, toRead, dstNeeded, spaceLeft, result, rawLen;
+    int result;
+    size_t offset, toRead, dstNeeded, spaceLeft, rawLen;
     Tcl_Obj *objPtr;
 #define ENCODING_LINESIZE 20	/* Lower bound on how many bytes to convert at
 				 * a time. Since we don't know a priori how
@@ -5230,7 +5231,7 @@ FilterInputBytes(
     dstNeeded = toRead * TCL_UTF_MAX;
     spaceLeft = objPtr->length - offset;
     if (dstNeeded > spaceLeft) {
-	int length = offset + ((offset < dstNeeded) ? dstNeeded : offset);
+	size_t length = offset + ((offset < dstNeeded) ? dstNeeded : offset);
 
 	if (Tcl_AttemptSetObjLength(objPtr, length) == 0) {
 	    length = offset + dstNeeded;
@@ -5531,7 +5532,8 @@ Tcl_ReadRaw(
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    size_t nread, copied, copiedNow;
+    ssize_t nread;
+    size_t copied, copiedNow;
     int result;
 
     /*
@@ -5612,7 +5614,7 @@ Tcl_ReadRaw(
 		 * though the channel is set into nonblocking mode.
 		 */
 
-		if (nread < (bytesToRead - copied)) {
+		if (nread < ((ssize_t) bytesToRead - (ssize_t) copied)) {
 		    SetFlag(statePtr, CHANNEL_BLOCKED);
 		}
 
@@ -5833,7 +5835,9 @@ DoReadChars(
 	    }
 	} else {
 	    copied += copiedNow;
-	    toRead -= copiedNow;
+	    if (toRead != TCL_STRLEN) {
+		toRead -= copiedNow;
+	    }
 	}
     }
 
@@ -6640,9 +6644,9 @@ static int
 GetInput(
     Channel *chanPtr)		/* Channel to read input from. */
 {
-    int toRead;			/* How much to read? */
+    size_t toRead;		/* How much to read? */
     int result;			/* Of calling driver. */
-    int nread;			/* How much was read from channel? */
+    ssize_t nread;		/* How much was read from channel? */
     ChannelBuffer *bufPtr;	/* New buffer to add to input queue. */
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
@@ -7167,7 +7171,7 @@ Tcl_TruncateChannel(
 
     WillWrite(chanPtr);
 
-    if (WillRead(chanPtr) < 0) {
+    if (WillRead(chanPtr)) {
         return TCL_ERROR;
     }
 

@@ -1039,7 +1039,7 @@ PipeInputProc(
     int *errorCodePtr)		/* Where to store error code. */
 {
     PipeState *psPtr = instanceData;
-    size_t bytesRead;		/* How many bytes were actually read from the
+    ssize_t bytesRead;		/* How many bytes were actually read from the
 				 * input device? */
 
     *errorCodePtr = 0;
