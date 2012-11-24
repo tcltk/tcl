@@ -4934,7 +4934,7 @@ TEBCresume(
 	if (fromIdx < 0) {
 	    fromIdx = 0;
 	}
-	if (toIdx >= length) {
+	if (toIdx >= length && toIdx > 0) {
 	    toIdx = length;
 	}
 	if (toIdx >= fromIdx) {

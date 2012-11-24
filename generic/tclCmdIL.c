@@ -2503,7 +2503,7 @@ Tcl_LrangeObjCmd(
     if (result != TCL_OK) {
 	return result;
     }
-    if (last >= listLen) {
+    if (last >= listLen && last >= 0) {
 	last = listLen - 1;
     }
 
@@ -2728,7 +2728,7 @@ Tcl_LreplaceObjCmd(
 		NULL);
 	return TCL_ERROR;
     }
-    if (last >= listLen) {
+    if (last >= listLen && (last > 0)) {
 	last = listLen - 1;
     }
     if (first <= last) {

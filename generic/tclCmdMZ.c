@@ -1221,17 +1221,17 @@ StringFirstCmd(
 	needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
 	haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
 
-	if (start >= haystackLen) {
-	    goto str_first_done;
-	} else if (start > 0) {
-	    haystackStr += start;
-	    haystackLen -= start;
-	} else if (start < 0) {
+	if (start < 0) {
 	    /*
 	     * Invalid start index mapped to string start; Bug #423581
 	     */
 
 	    start = 0;
+	} else if (start >= haystackLen) {
+	    goto str_first_done;
+	} else if (start > 0) {
+	    haystackStr += start;
+	    haystackLen -= start;
 	}
     }
 
@@ -2199,7 +2199,7 @@ StringRangeCmd(
     if (first < 0) {
 	first = 0;
     }
-    if (last >= length) {
+    if (last >= length && last > 0) {
 	last = length;
     }
     if (last >= first) {
@@ -2363,6 +2363,10 @@ StringRplcCmd(
 	return TCL_ERROR;
     }
 
+    if (first < 0) {
+	first = 0;
+    }
+
     if ((last < first) || (last < 0) || (first > length)) {
 	Tcl_SetObjResult(interp, objv[1]);
     } else {
@@ -2370,10 +2374,6 @@ StringRplcCmd(
 
 	ustring = Tcl_GetUnicodeFromObj(objv[1], &length);
 	length--;
-
-	if (first < 0) {
-	    first = 0;
-	}
 
 	resultPtr = Tcl_NewUnicodeObj(ustring, first);
 	if (objc == 5) {
@@ -2464,13 +2464,13 @@ StringStartCmd(
 	return TCL_ERROR;
     }
     string = TclGetStringFromObj(objv[1], &length);
-    if (index >= numChars) {
+    if (index >= numChars && index >= 0) {
 	index = numChars - 1;
     }
     cur = 0;
     if (index > 0) {
 	p = Tcl_UtfAtIndex(string, index);
-	for (cur = index; cur --> 0 ;) {
+	for (cur = index+1; cur --> 0 ;) {
 	    TclUtfToUniChar(p, &ch);
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;

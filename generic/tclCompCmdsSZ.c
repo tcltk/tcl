@@ -668,7 +668,7 @@ TclCompileStringRangeCmd(
 	    if (intIdx2 >= 0) {
 		result = TCL_OK;
 	    }
-	    idx1 = (ssize_t) intIdx2;
+	    idx2 = (ssize_t) intIdx2;
 	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx2) == TCL_OK) {
 	    if (idx2 <= -2) {
 		result = TCL_OK;
