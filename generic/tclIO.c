@@ -9171,8 +9171,8 @@ CopyData(
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
     int result = TCL_OK;
-    ssize_t size;
-    size_t sizeb;
+    ssize_t size, sizeb;
+    size_t sizeout;
     Tcl_WideInt total;
     const char *buffer;
     int inBinary, outBinary, sameEncoding;
@@ -9238,7 +9238,7 @@ CopyData(
                     || (csPtr->toRead > (Tcl_WideInt) csPtr->bufSize)) {
 		sizeb = csPtr->bufSize;
 	    } else {
-		sizeb = (int) csPtr->toRead;
+		sizeb = (size_t) csPtr->toRead;
 	    }
 
 	    if (inBinary || sameEncoding) {
@@ -9302,15 +9302,15 @@ CopyData(
 
 	if (inBinary || sameEncoding) {
 	    buffer = csPtr->buffer;
-	    sizeb = size;
+	    sizeout = size;
 	} else {
-	    buffer = TclGetStringFromObj(bufObj, &sizeb);
+	    buffer = TclGetStringFromObj(bufObj, &sizeout);
 	}
 
 	if (outBinary || sameEncoding) {
-	    sizeb = DoWrite(outStatePtr->topChanPtr, buffer, sizeb);
+	    sizeb = DoWrite(outStatePtr->topChanPtr, buffer, sizeout);
 	} else {
-	    sizeb = DoWriteChars(outStatePtr->topChanPtr, buffer, sizeb);
+	    sizeb = DoWriteChars(outStatePtr->topChanPtr, buffer, sizeout);
 	}
 
 	/*

@@ -1479,7 +1479,7 @@ ReflectOutput(
 	SetChannelErrorStr(rcPtr->chan, msg_write_nothing);
         goto invalid;
     }
-    if (toWrite < written) {
+    if (written >= 0 && toWrite < written) {
 	/*
 	 * The handler claims to have written more than it was given. That is
 	 * bad. Note that the I/O core would crash if we were to return this
