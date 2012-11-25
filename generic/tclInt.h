@@ -2907,8 +2907,6 @@ MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    size_t strLen, const unsigned char *pattern,
 			    size_t ptnLen, int flags);
 MODULE_SCOPE double	TclCeil(const mp_int *a);
-MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,
-			    const char *value);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;

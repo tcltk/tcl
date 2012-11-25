@@ -42,18 +42,6 @@
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 
-/* See bug 510001: TclSockMinimumBuffers needs plat imp */
-#ifdef _WIN64
-#   define TclSockMinimumBuffersOld 0
-#else
-#define TclSockMinimumBuffersOld sockMinimumBuffersOld
-static int TclSockMinimumBuffersOld(int sock, int size)
-{
-    return TclSockMinimumBuffers(INT2PTR(sock), size);
-}
-#endif
-
-
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
 #define TclWinNToHS winNToHS
@@ -196,7 +184,7 @@ static const TclIntStubs tclIntStubs = {
     TclCleanupChildren, /* 5 */
     TclCleanupCommand, /* 6 */
     TclCopyAndCollapse, /* 7 */
-    TclCopyChannelOld, /* 8 */
+    0, /* 8 */
     TclCreatePipeline, /* 9 */
     TclCreateProc, /* 10 */
     TclDeleteCompiledLocalVars, /* 11 */
@@ -292,7 +280,7 @@ static const TclIntStubs tclIntStubs = {
     TclSetPreInitScript, /* 101 */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
-    TclSockMinimumBuffersOld, /* 104 */
+    0, /* 104 */
     0, /* 105 */
     0, /* 106 */
     0, /* 107 */
@@ -744,7 +732,7 @@ const TclStubs tclStubs = {
     Tcl_CreateEventSource, /* 92 */
     Tcl_CreateExitHandler, /* 93 */
     Tcl_CreateInterp, /* 94 */
-    Tcl_CreateMathFunc, /* 95 */
+    0, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
     Tcl_CreateSlave, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
@@ -877,7 +865,7 @@ const TclStubs tclStubs = {
     Tcl_ResetResult, /* 217 */
     Tcl_ScanElement, /* 218 */
     Tcl_ScanCountedElement, /* 219 */
-    Tcl_SeekOld, /* 220 */
+    0, /* 220 */
     Tcl_ServiceAll, /* 221 */
     Tcl_ServiceEvent, /* 222 */
     Tcl_SetAssocData, /* 223 */
@@ -903,7 +891,7 @@ const TclStubs tclStubs = {
     Tcl_SplitPath, /* 243 */
     Tcl_StaticPackage, /* 244 */
     Tcl_StringMatch, /* 245 */
-    Tcl_TellOld, /* 246 */
+    0, /* 246 */
     Tcl_TraceVar, /* 247 */
     Tcl_TraceVar2, /* 248 */
     Tcl_TranslateFileName, /* 249 */
@@ -1092,8 +1080,8 @@ const TclStubs tclStubs = {
     Tcl_AttemptSetObjLength, /* 432 */
     Tcl_GetChannelThread, /* 433 */
     Tcl_GetUnicodeFromObj, /* 434 */
-    Tcl_GetMathFuncInfo, /* 435 */
-    Tcl_ListMathFuncs, /* 436 */
+    0, /* 435 */
+    0, /* 436 */
     Tcl_SubstObj, /* 437 */
     Tcl_DetachChannel, /* 438 */
     Tcl_IsStandardChannel, /* 439 */

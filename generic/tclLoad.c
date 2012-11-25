@@ -463,14 +463,20 @@ Tcl_LoadObjCmd(
 	}
 	code = pkgPtr->initProc(target);
     }
-
     /*
      * Test for whether the initialization failed. If so, transfer the error
      * from the target interpreter to the originating one.
      */
 
     if (code != TCL_OK) {
-	Tcl_TransferResult(target, code, interp);
+	Interp *iPtr = (Interp *) target;
+	if (iPtr->result != NULL && iPtr->result[0] != '\0') {
+	    /* We have an Tcl 8.x extension with incompatible stub table. */
+	    Tcl_Obj *obj = Tcl_NewStringObj(iPtr->result, -1);
+	    Tcl_SetObjResult(interp, obj);
+	} else {
+	    Tcl_TransferResult(target, code, interp);
+	}
 	goto done;
     }
 

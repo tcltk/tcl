@@ -34,18 +34,29 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
 static const TclStubs *
 HasStubSupport(
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+    int magic)
 {
     Interp *iPtr = (Interp *) interp;
 
-    if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
-	return iPtr->stubTable;
+    if (!iPtr->stubTable) {
+	/* No stub table at all? Nothing we can do. */
+	return NULL;
     }
-
-    iPtr->result =
-	    (char *)"This interpreter does not support stubs-enabled extensions.";
-    iPtr->freeProc = TCL_STATIC;
-    return NULL;
+    if (iPtr->stubTable->magic != magic) {
+	/*
+	 * The iPtr->stubTable entry from Tcl_Interp and the
+	 * Tcl_NewStringObj() and Tcl_SetObjResult() entries
+	 * in the stub table cannot change in Tcl 9 compared
+	 * to Tcl 8.x. Otherwise the lines below won't work.
+	 * TODO: add a test case for that.
+	 */
+	iPtr->stubTable->tcl_SetObjResult(interp,
+		iPtr->stubTable->tcl_NewStringObj(
+			"This extension is compiled for Tcl 9.x", -1));
+	return NULL;
+    }
+    return iPtr->stubTable;
 }
 
 /*
@@ -60,7 +71,7 @@ static int isDigit(const int c)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InitStubs --
+ * TclInitStubs --
  *
  *	Tries to initialise the stub table pointers and ensures that the
  *	correct version of Tcl is loaded.
@@ -76,10 +87,11 @@ static int isDigit(const int c)
  */
 
 MODULE_SCOPE const char *
-Tcl_InitStubs(
+TclInitStubs(
     Tcl_Interp *interp,
     const char *version,
-    int exact)
+    int exact,
+    int magic)
 {
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
@@ -90,7 +102,7 @@ Tcl_InitStubs(
      * times. [Bug 615304]
      */
 
-    tclStubsPtr = HasStubSupport(interp);
+    tclStubsPtr = HasStubSupport(interp, magic);
     if (!tclStubsPtr) {
 	return NULL;
     }

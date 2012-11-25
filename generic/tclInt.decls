@@ -51,10 +51,11 @@ declare 6 {
 declare 7 {
     size_t TclCopyAndCollapse(size_t count, const char *src, char *dst)
 }
-declare 8 {
-    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
-	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
-}
+# Removed in Tcl 9
+#declare 8 {
+#    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
+#	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
+#}
 
 # TclCreatePipeline unofficially exported for use by BLT.
 
@@ -420,9 +421,10 @@ declare 103 {
     int TclSockGetPort(Tcl_Interp *interp, const char *str, const char *proto,
 	    int *portPtr)
 }
-declare 104 {
-    int TclSockMinimumBuffersOld(int sock, int size)
-}
+# Removed in Tcl 9
+#declare 104 {
+#    int TclSockMinimumBuffersOld(int sock, int size)
+#}
 # Replaced by Tcl_FSStat in 8.4:
 #declare 105 {
 #    int TclStat(const char *path, Tcl_StatBuf *buf)

@@ -7078,47 +7078,6 @@ Tcl_Tell(
 /*
  *---------------------------------------------------------------------------
  *
- * Tcl_SeekOld, Tcl_TellOld --
- *
- *	Backward-compatability versions of the seek/tell interface that do not
- *	support 64-bit offsets. This interface is not documented or expected
- *	to be supported indefinitely.
- *
- * Results:
- *	As for Tcl_Seek and Tcl_Tell respectively, except truncated to
- *	whatever value will fit in an 'int'.
- *
- * Side effects:
- *	As for Tcl_Seek and Tcl_Tell respectively.
- *
- *---------------------------------------------------------------------------
- */
-
-int
-Tcl_SeekOld(
-    Tcl_Channel chan,		/* The channel on which to seek. */
-    int offset,			/* Offset to seek to. */
-    int mode)			/* Relative to which location to seek? */
-{
-    Tcl_WideInt wOffset, wResult;
-
-    wOffset = Tcl_LongAsWide((long) offset);
-    wResult = Tcl_Seek(chan, wOffset, mode);
-    return (int) Tcl_WideAsLong(wResult);
-}
-
-int
-Tcl_TellOld(
-    Tcl_Channel chan)		/* The channel to return pos for. */
-{
-    Tcl_WideInt wResult = Tcl_Tell(chan);
-
-    return (int) Tcl_WideAsLong(wResult);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
  * Tcl_TruncateChannel --
  *
  *	Truncate a channel to the given length.
@@ -9026,19 +8985,6 @@ ZeroTransferTimerProc(
  *
  *----------------------------------------------------------------------
  */
-
-// TODO Do we need this? It's in the stub table but is just a type thunk
-int
-TclCopyChannelOld(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Channel inChan,		/* Channel to read from. */
-    Tcl_Channel outChan,	/* Channel to write to. */
-    int toRead,			/* Amount of data to copy, or -1 for all. */
-    Tcl_Obj *cmdPtr)		/* Pointer to script to execute or NULL. */
-{
-    return TclCopyChannel(interp, inChan, outChan, (Tcl_WideInt) toRead,
-            cmdPtr);
-}
 
 int
 TclCopyChannel(

@@ -309,11 +309,7 @@ EXTERN void		Tcl_CreateExitHandler(Tcl_ExitProc *proc,
 				ClientData clientData);
 /* 94 */
 EXTERN Tcl_Interp *	Tcl_CreateInterp(void);
-/* 95 */
-EXTERN void		Tcl_CreateMathFunc(Tcl_Interp *interp,
-				const char *name, int numArgs,
-				Tcl_ValueType *argTypes, Tcl_MathProc *proc,
-				ClientData clientData);
+/* Slot 95 is reserved */
 /* 96 */
 EXTERN Tcl_Command	Tcl_CreateObjCommand(Tcl_Interp *interp,
 				const char *cmdName, Tcl_ObjCmdProc *proc,
@@ -656,8 +652,7 @@ EXTERN size_t		Tcl_ScanElement(const char *src, int *flagPtr);
 /* 219 */
 EXTERN size_t		Tcl_ScanCountedElement(const char *src,
 				size_t length, int *flagPtr);
-/* 220 */
-EXTERN int		Tcl_SeekOld(Tcl_Channel chan, int offset, int mode);
+/* Slot 220 is reserved */
 /* 221 */
 EXTERN int		Tcl_ServiceAll(void);
 /* 222 */
@@ -726,8 +721,7 @@ EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
 				Tcl_PackageInitProc *safeInitProc);
 /* 245 */
 EXTERN int		Tcl_StringMatch(const char *str, const char *pattern);
-/* 246 */
-EXTERN int		Tcl_TellOld(Tcl_Channel chan);
+/* Slot 246 is reserved */
 /* 247 */
 EXTERN int		Tcl_TraceVar(Tcl_Interp *interp, const char *varName,
 				int flags, Tcl_VarTraceProc *proc,
@@ -1252,15 +1246,8 @@ EXTERN Tcl_ThreadId	Tcl_GetChannelThread(Tcl_Channel channel);
 /* 434 */
 EXTERN Tcl_UniChar *	Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr,
 				size_t *lengthPtr);
-/* 435 */
-EXTERN int		Tcl_GetMathFuncInfo(Tcl_Interp *interp,
-				const char *name, int *numArgsPtr,
-				Tcl_ValueType **argTypesPtr,
-				Tcl_MathProc **procPtr,
-				ClientData *clientDataPtr);
-/* 436 */
-EXTERN Tcl_Obj *	Tcl_ListMathFuncs(Tcl_Interp *interp,
-				const char *pattern);
+/* Slot 435 is reserved */
+/* Slot 436 is reserved */
 /* 437 */
 EXTERN Tcl_Obj *	Tcl_SubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags);
@@ -1934,7 +1921,7 @@ typedef struct TclStubs {
     void (*tcl_CreateEventSource) (Tcl_EventSetupProc *setupProc, Tcl_EventCheckProc *checkProc, ClientData clientData); /* 92 */
     void (*tcl_CreateExitHandler) (Tcl_ExitProc *proc, ClientData clientData); /* 93 */
     Tcl_Interp * (*tcl_CreateInterp) (void); /* 94 */
-    void (*tcl_CreateMathFunc) (Tcl_Interp *interp, const char *name, int numArgs, Tcl_ValueType *argTypes, Tcl_MathProc *proc, ClientData clientData); /* 95 */
+    void (*reserved95)(void);
     Tcl_Command (*tcl_CreateObjCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc *proc, ClientData clientData, Tcl_CmdDeleteProc *deleteProc); /* 96 */
     Tcl_Interp * (*tcl_CreateSlave) (Tcl_Interp *interp, const char *slaveName, int isSafe); /* 97 */
     Tcl_TimerToken (*tcl_CreateTimerHandler) (int milliseconds, Tcl_TimerProc *proc, ClientData clientData); /* 98 */
@@ -2067,7 +2054,7 @@ typedef struct TclStubs {
     void (*tcl_ResetResult) (Tcl_Interp *interp); /* 217 */
     size_t (*tcl_ScanElement) (const char *src, int *flagPtr); /* 218 */
     size_t (*tcl_ScanCountedElement) (const char *src, size_t length, int *flagPtr); /* 219 */
-    int (*tcl_SeekOld) (Tcl_Channel chan, int offset, int mode); /* 220 */
+    void (*reserved220)(void);
     int (*tcl_ServiceAll) (void); /* 221 */
     int (*tcl_ServiceEvent) (int flags); /* 222 */
     void (*tcl_SetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 223 */
@@ -2093,7 +2080,7 @@ typedef struct TclStubs {
     void (*tcl_SplitPath) (const char *path, size_t *argcPtr, const char ***argvPtr); /* 243 */
     void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
     int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
-    int (*tcl_TellOld) (Tcl_Channel chan); /* 246 */
+    void (*reserved246)(void);
     int (*tcl_TraceVar) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 247 */
     int (*tcl_TraceVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 248 */
     char * (*tcl_TranslateFileName) (Tcl_Interp *interp, const char *name, Tcl_DString *bufferPtr); /* 249 */
@@ -2282,8 +2269,8 @@ typedef struct TclStubs {
     int (*tcl_AttemptSetObjLength) (Tcl_Obj *objPtr, size_t length); /* 432 */
     Tcl_ThreadId (*tcl_GetChannelThread) (Tcl_Channel channel); /* 433 */
     Tcl_UniChar * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 434 */
-    int (*tcl_GetMathFuncInfo) (Tcl_Interp *interp, const char *name, int *numArgsPtr, Tcl_ValueType **argTypesPtr, Tcl_MathProc **procPtr, ClientData *clientDataPtr); /* 435 */
-    Tcl_Obj * (*tcl_ListMathFuncs) (Tcl_Interp *interp, const char *pattern); /* 436 */
+    void (*reserved435)(void);
+    void (*reserved436)(void);
     Tcl_Obj * (*tcl_SubstObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 437 */
     int (*tcl_DetachChannel) (Tcl_Interp *interp, Tcl_Channel channel); /* 438 */
     int (*tcl_IsStandardChannel) (Tcl_Channel channel); /* 439 */
@@ -2696,8 +2683,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_CreateExitHandler) /* 93 */
 #define Tcl_CreateInterp \
 	(tclStubsPtr->tcl_CreateInterp) /* 94 */
-#define Tcl_CreateMathFunc \
-	(tclStubsPtr->tcl_CreateMathFunc) /* 95 */
+/* Slot 95 is reserved */
 #define Tcl_CreateObjCommand \
 	(tclStubsPtr->tcl_CreateObjCommand) /* 96 */
 #define Tcl_CreateSlave \
@@ -2951,8 +2937,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ScanElement) /* 218 */
 #define Tcl_ScanCountedElement \
 	(tclStubsPtr->tcl_ScanCountedElement) /* 219 */
-#define Tcl_SeekOld \
-	(tclStubsPtr->tcl_SeekOld) /* 220 */
+/* Slot 220 is reserved */
 #define Tcl_ServiceAll \
 	(tclStubsPtr->tcl_ServiceAll) /* 221 */
 #define Tcl_ServiceEvent \
@@ -3003,8 +2988,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_StaticPackage) /* 244 */
 #define Tcl_StringMatch \
 	(tclStubsPtr->tcl_StringMatch) /* 245 */
-#define Tcl_TellOld \
-	(tclStubsPtr->tcl_TellOld) /* 246 */
+/* Slot 246 is reserved */
 #define Tcl_TraceVar \
 	(tclStubsPtr->tcl_TraceVar) /* 247 */
 #define Tcl_TraceVar2 \
@@ -3380,10 +3364,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetChannelThread) /* 433 */
 #define Tcl_GetUnicodeFromObj \
 	(tclStubsPtr->tcl_GetUnicodeFromObj) /* 434 */
-#define Tcl_GetMathFuncInfo \
-	(tclStubsPtr->tcl_GetMathFuncInfo) /* 435 */
-#define Tcl_ListMathFuncs \
-	(tclStubsPtr->tcl_ListMathFuncs) /* 436 */
+/* Slot 435 is reserved */
+/* Slot 436 is reserved */
 #define Tcl_SubstObj \
 	(tclStubsPtr->tcl_SubstObj) /* 437 */
 #define Tcl_DetachChannel \

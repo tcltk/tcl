@@ -138,6 +138,7 @@ extern "C" {
 #include <stdio.h>
 // TODO: AUTOCONFERY
 #include <sys/types.h>
+#include <stddef.h>
 
 /*
  *----------------------------------------------------------------------------
@@ -615,27 +616,13 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_SUBST_ALL		007
 
 /*
- * Argument descriptors for math function callbacks in expressions:
- */
-
-typedef enum {
-    TCL_INT, TCL_DOUBLE, TCL_EITHER, TCL_WIDE_INT
-} Tcl_ValueType;
-
-typedef struct Tcl_Value {
-    Tcl_ValueType type;		/* Indicates intValue or doubleValue is valid,
-				 * or both. */
-    long intValue;		/* Integer value. */
-    double doubleValue;		/* Double-precision floating value. */
-    Tcl_WideInt wideValue;	/* Wide (min. 64-bit) integer value. */
-} Tcl_Value;
-
-/*
  * Forward declaration of Tcl_Obj to prevent an error when the forward
  * reference to Tcl_Obj is encountered in the function types declared below.
  */
 
 struct Tcl_Obj;
+
+typedef struct Tcl_Obj Tcl_Value;
 
 /*
  *----------------------------------------------------------------------------
@@ -676,8 +663,6 @@ typedef void (Tcl_FreeProc) (char *blockPtr);
 typedef void (Tcl_IdleProc) (ClientData clientData);
 typedef void (Tcl_InterpDeleteProc) (ClientData clientData,
 	Tcl_Interp *interp);
-typedef int (Tcl_MathProc) (ClientData clientData, Tcl_Interp *interp,
-	Tcl_Value *args, Tcl_Value *resultPtr);
 typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
 typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
 	size_t objc, struct Tcl_Obj *const *objv);
@@ -2301,12 +2286,9 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
  * stubs tables.
- *
- * Jan Nijtman's plus patch uses 0xFCA1BACF, so we need to pick a different
- * value since the stubs tables don't match.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#define TCL_STUB_MAGIC		((int) (0xFCA3BACB + sizeof(size_t)))
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2315,8 +2297,8 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * main library in case an extension is statically linked into an application.
  */
 
-const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
-			    int exact);
+const char *		TclInitStubs(Tcl_Interp *interp, const char *version,
+			    int exact, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
@@ -2324,14 +2306,13 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  * When not using stubs, make it a macro.
  */
 
-#ifndef USE_TCL_STUBS
+#ifdef USE_TCL_STUBS
+#define Tcl_InitStubs(interp, version, exact) \
+    TclInitStubs(interp, version, exact, TCL_STUB_MAGIC)
+#else
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)
 #endif
-
-/*
- * TODO - tommath stubs export goes here!
- */
 
 /*
  * Public functions that are not accessible via the stubs table.

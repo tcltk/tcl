@@ -2646,12 +2646,12 @@ BinaryDecode64(
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
-    unsigned char *data, *datastart, *dataend, c;
+    unsigned char *data, *datastart, *dataend, c = '\0';
     unsigned char *begin = NULL, *cursor = NULL;
     int strict = 0;
     int index, size, cut = 0;
     size_t i, count = 0;
-    enum {OPT_STRICT };
+    enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
     if (objc < 2 || objc > 3) {
@@ -2679,43 +2679,85 @@ BinaryDecode64(
     while (data < dataend) {
 	unsigned long value = 0;
 
-	for (i=0 ; i<4 ; i++) {
+	/*
+	 * Decode the current block. Each base64 block consists of four input
+	 * characters A-Z, a-z, 0-9, +, or /. Each character supplies six bits
+	 * of output data, so each block's output is 24 bits (three bytes) in
+	 * length. The final block can be shorter by one or two bytes, denoted
+	 * by the input ending with one or two ='s, respectively.
+	 */
+
+	for (i = 0; i < 4; i++) {
+	    /*
+	     * Get the next input character. At end of input, pad with at most
+	     * two ='s. If more than two ='s would be needed, instead discard
+	     * the block read thus far.
+	     */
+
 	    if (data < dataend) {
 		c = *data++;
-
-		if (c >= 'A' && c <= 'Z') {
-		    value = (value << 6) | ((c - 'A') & 0x3f);
-		} else if (c >= 'a' && c <= 'z') {
-		    value = (value << 6) | ((c - 'a' + 26) & 0x3f);
-		} else if (c >= '0' && c <= '9') {
-		    value = (value << 6) | ((c - '0' + 52) & 0x3f);
-		} else if (c == '+') {
-		    value = (value << 6) | 0x3e;
-		} else if (c == '/') {
-		    value = (value << 6) | 0x3f;
-		} else if (c == '=') {
-		    value <<= 6;
-		    if (cut < 2) {
-			cut++;
-		    }
-		} else {
-		    if (strict || !isspace(c)) {
-			goto bad64;
-		    }
-		    i--;
-		    continue;
-		}
+	    } else if (i > 1) {
+		c = '=';
 	    } else {
+		cut += 3;
+		break;
+	    }
+
+	    /*
+	     * Load the character into the block value. Handle ='s specially
+	     * because they're only valid as the last character or two of the
+	     * final block of input. Unless strict mode is enabled, skip any
+	     * input whitespace characters.
+	     */
+
+	    if (cut) {
+		if (c == '=' && i > 1) {
+		     value <<= 6;
+		     cut++;
+		} else if (!strict && isspace(c)) {
+		     i--;
+		} else {
+		    goto bad64;
+		}
+	    } else if (c >= 'A' && c <= 'Z') {
+		value = (value << 6) | ((c - 'A') & 0x3f);
+	    } else if (c >= 'a' && c <= 'z') {
+		value = (value << 6) | ((c - 'a' + 26) & 0x3f);
+	    } else if (c >= '0' && c <= '9') {
+		value = (value << 6) | ((c - '0' + 52) & 0x3f);
+	    } else if (c == '+') {
+		value = (value << 6) | 0x3e;
+	    } else if (c == '/') {
+		value = (value << 6) | 0x3f;
+	    } else if (c == '=') {
 		value <<= 6;
 		cut++;
+	    } else if (strict || !isspace(c)) {
+		goto bad64;
+	    } else {
+		i--;
 	    }
 	}
 	*cursor++ = UCHAR((value >> 16) & 0xff);
 	*cursor++ = UCHAR((value >> 8) & 0xff);
 	*cursor++ = UCHAR(value & 0xff);
-    }
-    if (cut > size) {
-	cut = size;
+
+	/*
+	 * Since = is only valid within the final block, if it was encountered
+	 * but there are still more input characters, confirm that strict mode
+	 * is off and all subsequent characters are whitespace.
+	 */
+
+	if (cut && data < dataend) {
+	    if (strict) {
+		goto bad64;
+	    }
+	    for (; data < dataend; data++) {
+		if (!isspace(*data)) {
+		    goto bad64;
+		}
+	    }
+	}
     }
     Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
     Tcl_SetObjResult(interp, resultObj);

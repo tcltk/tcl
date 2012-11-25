@@ -354,11 +354,11 @@ declare 93 {
 declare 94 {
     Tcl_Interp *Tcl_CreateInterp(void)
 }
-declare 95 {
-    void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
-	    int numArgs, Tcl_ValueType *argTypes,
-	    Tcl_MathProc *proc, ClientData clientData)
-}
+#declare 95 {
+#    void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
+#	    int numArgs, Tcl_ValueType *argTypes,
+#	    Tcl_MathProc *proc, ClientData clientData)
+#}
 declare 96 {
     Tcl_Command Tcl_CreateObjCommand(Tcl_Interp *interp,
 	    const char *cmdName,
@@ -783,10 +783,10 @@ declare 218 {
 declare 219 {
     size_t Tcl_ScanCountedElement(const char *src, size_t length, int *flagPtr)
 }
-# Obsolete
-declare 220 {
-    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
-}
+# Removed in Tcl 9
+#declare 220 {
+#    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
+#}
 declare 221 {
     int Tcl_ServiceAll(void)
 }
@@ -872,10 +872,10 @@ declare 244 {
 declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
-# Obsolete
-declare 246 {
-    int Tcl_TellOld(Tcl_Channel chan)
-}
+# Removed in Tcl 9
+#declare 246 {
+#    int Tcl_TellOld(Tcl_Channel chan)
+#}
 declare 247 {
     int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
 	    Tcl_VarTraceProc *proc, ClientData clientData)
@@ -1553,14 +1553,14 @@ declare 434 {
 }
 
 # TIP#15 (math function introspection) dkf
-declare 435 {
-    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
-	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
-	    Tcl_MathProc **procPtr, ClientData *clientDataPtr)
-}
-declare 436 {
-    Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
-}
+#declare 435 {
+#    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
+#	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
+#	    Tcl_MathProc **procPtr, ClientData *clientDataPtr)
+#}
+#declare 436 {
+#    Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
+#}
 
 # TIP#36 (better access to 'subst') dkf
 declare 437 {
