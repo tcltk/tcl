@@ -595,38 +595,6 @@ Tcl_ListObjAppendElement(
     numElems = listRepPtr->elemCount;
     numRequired = numElems + 1 ;
 
- #if 0
-    <<<<<<< BEGIN MERGE CONFLICT: original content first <<<<<<<
-
-    /*
-     * If there is no room in the current array of element pointers, allocate
-     * a new, larger array and copy the pointers to it. If the List struct is
-     * shared, allocate a new one.
-     */
-
-    if (numRequired > listRepPtr->maxElemCount){
-	unsigned int allocSize = TclAllocMaximize(listRepPtr);
-	if (allocSize != UINT_MAX) {
-	    listRepPtr->maxElemCount = Size2Elems(allocSize);
-	}
-    }
-	
-    if (numRequired > listRepPtr->maxElemCount){
-	newMax = 2 * numRequired;
-	newSize = Elems2Size(newMax);
-    } else {
-	newMax = listRepPtr->maxElemCount;
-	newSize = 0;
-    }
-
-    if (listRepPtr->refCount > 1) {
-	List *oldListRepPtr = listRepPtr;
-	Tcl_Obj **oldElems;
-
-	listRepPtr = AttemptNewList(interp, newMax, NULL);
-	if (listRepPtr == NULL) {
-======= original content above; conflict below =============
-#endif
     needGrow = (numRequired > listRepPtr->maxElemCount);
     isShared = (listRepPtr->refCount > 1);
 
@@ -692,7 +660,6 @@ Tcl_ListObjAppendElement(
 	     * All growth attempts failed; throw the error.
 	     */
 
-//>>>>>>> END MERGE CONFLICT: conflict last >>>>>>>>>>>>>>>>>>
 	    return TCL_ERROR;
 	}
 
