@@ -100,8 +100,7 @@ EXTERN int		TclWinCPUID(unsigned int index, unsigned int *regs);
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
 /* 0 */
 EXTERN void		TclWinConvertError(DWORD errCode);
-/* 1 */
-EXTERN void		TclWinConvertWSAError(DWORD errCode);
+/* Slot 1 is reserved */
 /* 2 */
 EXTERN struct servent *	 TclWinGetServByName(const char *nm,
 				const char *proto);
@@ -278,7 +277,7 @@ typedef struct TclIntPlatStubs {
 #endif /* UNIX */
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     void (*tclWinConvertError) (DWORD errCode); /* 0 */
-    void (*tclWinConvertWSAError) (DWORD errCode); /* 1 */
+    void (*reserved1)(void);
     struct servent * (*tclWinGetServByName) (const char *nm, const char *proto); /* 2 */
     int (*tclWinGetSockOpt) (SOCKET s, int level, int optname, char *optval, int *optlen); /* 3 */
     HINSTANCE (*tclWinGetTclInstance) (void); /* 4 */
@@ -405,8 +404,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
 #define TclWinConvertError \
 	(tclIntPlatStubsPtr->tclWinConvertError) /* 0 */
-#define TclWinConvertWSAError \
-	(tclIntPlatStubsPtr->tclWinConvertWSAError) /* 1 */
+/* Slot 1 is reserved */
 #define TclWinGetServByName \
 	(tclIntPlatStubsPtr->tclWinGetServByName) /* 2 */
 #define TclWinGetSockOpt \
@@ -520,10 +518,6 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
-#undef TclpLocaltime_unix
-#undef TclpGmtime_unix
-#undef TclWinConvertWSAError
-#define TclWinConvertWSAError TclWinConvertError
 
 #if defined(__WIN32__) || defined(__CYGWIN__)
 #   undef TclWinNToHS
