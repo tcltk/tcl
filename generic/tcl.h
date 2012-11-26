@@ -910,7 +910,6 @@ typedef struct Tcl_DString {
 
 #define Tcl_DStringLength(dsPtr) ((dsPtr)->length)
 #define Tcl_DStringValue(dsPtr) ((dsPtr)->string)
-#define Tcl_DStringTrunc Tcl_DStringSetLength
 
 /*
  * Definitions for the maximum number of digits of precision that may be
@@ -2310,6 +2309,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
+EXTERN void		Tcl_FindExecutable(const char *argv0);
 EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
@@ -2494,20 +2494,8 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   undef  Tcl_EvalObj
 #   define Tcl_EvalObj(interp,objPtr) \
 	Tcl_EvalObjEx((interp),(objPtr),0)
-#   undef  Tcl_GlobalEvalObj
-#   define Tcl_GlobalEvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
 
 #endif /* !TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------------
- * Convenience declaration of Tcl_AppInit for backwards compatibility. This
- * function is not *implemented* by the tcl library, so the storage class is
- * neither DLLEXPORT nor DLLIMPORT.
- */
-
-extern Tcl_AppInitProc Tcl_AppInit;
 
 #endif /* RC_INVOKED */
 
