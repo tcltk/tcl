@@ -49,28 +49,31 @@
 
 #ifdef TCL_THREADS
 
+#define STANDARD_BUFFER_SIZE		2048
+#define INITIAL_PWGR_BUFFER_SIZE	1024
+
 typedef struct ThreadSpecificData {
     struct passwd pwd;
 #if defined(HAVE_GETPWNAM_R_5) || defined(HAVE_GETPWUID_R_5)
 #define NEED_PW_CLEANER 1
     char *pbuf;
-    int pbuflen;
+    size_t pbuflen;
 #else
-    char pbuf[2048];
+    char pbuf[STANDARD_BUFFER_SIZE];
 #endif
 
     struct group grp;
 #if defined(HAVE_GETGRNAM_R_5) || defined(HAVE_GETGRGID_R_5)
 #define NEED_GR_CLEANER 1
     char *gbuf;
-    int gbuflen;
+    size_t gbuflen;
 #else
-    char gbuf[2048];
+    char gbuf[STANDARD_BUFFER_SIZE];
 #endif
 
 #if !defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR)
     struct hostent hent;
-    char hbuf[2048];
+    char hbuf[STANDARD_BUFFER_SIZE];
 #endif
 }  ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
@@ -101,19 +104,21 @@ static Tcl_Mutex compatLock;
 
 #if !defined(HAVE_GETGRNAM_R_5) && !defined(HAVE_GETGRNAM_R_4)
 #define NEED_COPYGRP 1
-static int		CopyGrp(struct group *tgtPtr, char *buf, int buflen);
+static int		CopyGrp(struct group *tgtPtr, char *buf,
+			    size_t buflen);
 #endif
 
 #if !defined(HAVE_GETPWNAM_R_5) && !defined(HAVE_GETPWNAM_R_4)
 #define NEED_COPYPWD 1
-static int		CopyPwd(struct passwd *tgtPtr, char *buf, int buflen);
+static int		CopyPwd(struct passwd *tgtPtr, char *buf,
+			    size_t buflen);
 #endif
 
-static int		CopyArray(char **src, int elsize, char *buf,
-			    int buflen);
+static ssize_t		CopyArray(char **src, int elsize, char *buf,
+			    size_t buflen);
 static int		CopyHostent(struct hostent *tgtPtr, char *buf,
-			    int buflen);
-static int		CopyString(const char *src, char *buf, int buflen);
+			    size_t buflen);
+static ssize_t		CopyString(const char *src, char *buf, size_t buflen);
 
 #endif
 
@@ -197,9 +202,12 @@ TclpGetPwNam(
      */
 
     if (tsdPtr->pbuf == NULL) {
-	tsdPtr->pbuflen = (int) sysconf(_SC_GETPW_R_SIZE_MAX);
-	if (tsdPtr->pbuflen < 1) {
-	    tsdPtr->pbuflen = 1024;
+	long sizeMax = sysconf(_SC_GETPW_R_SIZE_MAX);
+
+	if (sizeMax < 1) {
+	    tsdPtr->pbuflen = INITIAL_PWGR_BUFFER_SIZE;
+	} else {
+	    tsdPtr->pbuflen = (size_t) sizeMax;
 	}
 	tsdPtr->pbuf = ckalloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
@@ -277,9 +285,12 @@ TclpGetPwUid(
      */
 
     if (tsdPtr->pbuf == NULL) {
-	tsdPtr->pbuflen = (int) sysconf(_SC_GETPW_R_SIZE_MAX);
-	if (tsdPtr->pbuflen < 1) {
-	    tsdPtr->pbuflen = 1024;
+	long sizeMax = sysconf(_SC_GETPW_R_SIZE_MAX);
+
+	if (sizeMax < 1) {
+	    tsdPtr->pbuflen = INITIAL_PWGR_BUFFER_SIZE;
+	} else {
+	    tsdPtr->pbuflen = (size_t) sizeMax;
 	}
 	tsdPtr->pbuf = ckalloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
@@ -380,9 +391,12 @@ TclpGetGrNam(
      */
 
     if (tsdPtr->gbuf == NULL) {
-	tsdPtr->gbuflen = (int) sysconf(_SC_GETGR_R_SIZE_MAX);
-	if (tsdPtr->gbuflen < 1) {
-	    tsdPtr->gbuflen = 1024;
+	long sizeMax = sysconf(_SC_GETGR_R_SIZE_MAX);
+
+	if (sizeMax < 1) {
+	    tsdPtr->gbuflen = INITIAL_PWGR_BUFFER_SIZE;
+	} else {
+	    tsdPtr->gbuflen = (size_t) sizeMax;
 	}
 	tsdPtr->gbuf = ckalloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
@@ -460,9 +474,12 @@ TclpGetGrGid(
      */
 
     if (tsdPtr->gbuf == NULL) {
-	tsdPtr->gbuflen = (int) sysconf(_SC_GETGR_R_SIZE_MAX);
-	if (tsdPtr->gbuflen < 1) {
-	    tsdPtr->gbuflen = 1024;
+	long sizeMax = sysconf(_SC_GETGR_R_SIZE_MAX);
+
+	if (sizeMax < 1) {
+	    tsdPtr->gbuflen = INITIAL_PWGR_BUFFER_SIZE;
+	} else {
+	    tsdPtr->gbuflen = (size_t) sizeMax;
 	}
 	tsdPtr->gbuf = ckalloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
@@ -683,10 +700,10 @@ static int
 CopyGrp(
     struct group *tgtPtr,
     char *buf,
-    int buflen)
+    size_t buflen)
 {
     register char *p = buf;
-    register int copied, len = 0;
+    register ssize_t copied, len = 0;
 
     /*
      * Copy username.
@@ -717,7 +734,7 @@ CopyGrp(
      */
 
     PadBuffer(p, len, sizeof(char *));
-    copied = CopyArray((char **)tgtPtr->gr_mem, -1, p, buflen - len);
+    copied = CopyArray((char **)tgtPtr->gr_mem, TCL_STRLEN, p, buflen - len);
     if (copied == -1) {
 	goto range;
     }
@@ -756,10 +773,10 @@ static int
 CopyHostent(
     struct hostent *tgtPtr,
     char *buf,
-    int buflen)
+    size_t buflen)
 {
     char *p = buf;
-    int copied, len = 0;
+    ssize_t copied, len = 0;
 
     copied = CopyString(tgtPtr->h_name, p, buflen - len);
     if (copied == -1) {
@@ -770,7 +787,7 @@ CopyHostent(
     p = buf + len;
 
     PadBuffer(p, len, sizeof(char *));
-    copied = CopyArray(tgtPtr->h_aliases, -1, p, buflen - len);
+    copied = CopyArray(tgtPtr->h_aliases, TCL_STRLEN, p, buflen - len);
     if (copied == -1) {
 	goto range;
     }
@@ -818,10 +835,10 @@ static int
 CopyPwd(
     struct passwd *tgtPtr,
     char *buf,
-    int buflen)
+    size_t buflen)
 {
     char *p = buf;
-    int copied, len = 0;
+    ssize_t copied, len = 0;
 
     copied = CopyString(tgtPtr->pw_name, p, buflen - len);
     if (copied == -1) {
@@ -877,16 +894,17 @@ CopyPwd(
  */
 
 #ifdef NEED_COPYARRAY
-static int
+
+static ssize_t
 CopyArray(
     char **src,			/* Array of elements to copy. */
-    int elsize,			/* Size of each element, or -1 to indicate
-				 * that they are C strings of dynamic
+    size_t elsize,		/* Size of each element, or TCL_STRLEN to
+				 * indicate that they are C strings of dynamic
 				 * length. */
     char *buf,			/* Buffer to copy into. */
-    int buflen)			/* Size of buffer. */
+    size_t buflen)		/* Size of buffer. */
 {
-    int i, j, len = 0;
+    size_t i, j, len = 0;
     char *p, **new;
 
     if (src == NULL) {
@@ -907,7 +925,7 @@ CopyArray(
     p = buf + len;
 
     for (j = 0; j < i; j++) {
-	int sz = (elsize<0 ? (int) strlen(src[j]) + 1 : elsize);
+	size_t sz = (elsize==TCL_STRLEN ? (int) strlen(src[j]) + 1 : elsize);
 
 	len += sz;
 	if (len > buflen) {
@@ -919,7 +937,7 @@ CopyArray(
     }
     new[j] = NULL;
 
-    return len;
+    return (ssize_t) len;
 }
 #endif /* NEED_COPYARRAY */
 
@@ -941,13 +959,13 @@ CopyArray(
  */
 
 #ifdef NEED_COPYSTRING
-static int
+static ssize_t
 CopyString(
     const char *src,		/* String to copy. */
     char *buf,			/* Buffer to copy into. */
-    int buflen)			/* Size of buffer. */
+    size_t buflen)		/* Size of buffer. */
 {
-    int len = 0;
+    size_t len = 0;
 
     if (src != NULL) {
 	len = strlen(src) + 1;
@@ -957,24 +975,17 @@ CopyString(
 	memcpy(buf, src, len);
     }
 
-    return len;
+    return (ssize_t) len;
 }
 #endif /* NEED_COPYSTRING */
 
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 4
- * fill-column: 78
- * End:
- */
-
 /*
  *------------------------------------------------------------------------
  *
  * TclWinCPUID --
  *
- *	Get CPU ID information on an Intel box under UNIX (either Linux or Cygwin)
+ *	Get CPU ID information on an Intel box under UNIX (either Linux or
+ *	Cygwin).
  *
  * Results:
  *	Returns TCL_OK if successful, TCL_ERROR if CPUID is not supported.
@@ -995,17 +1006,18 @@ TclWinCPUID(
 
     /* See: <http://en.wikipedia.org/wiki/CPUID> */
 #if defined(HAVE_CPUID)
-    __asm__ __volatile__("mov %%ebx, %%edi     \n\t" /* save %ebx */
-                 "cpuid            \n\t"
-                 "mov %%ebx, %%esi   \n\t" /* save what cpuid just put in %ebx */
-                 "mov %%edi, %%ebx  \n\t" /* restore the old %ebx */
-                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
-                 : "a"(index) : "edi");
+    __asm__ __volatile__(
+	    "mov %%ebx, %%edi  \n\t"	/* save %ebx */
+	    "cpuid             \n\t"
+	    "mov %%ebx, %%esi  \n\t"	/* save what cpuid just put in %ebx */
+	    "mov %%edi, %%ebx  \n\t"	/* restore the old %ebx */
+	: "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+	: "a"(index) : "edi");
     status = TCL_OK;
 #endif
     return status;
 }
-
+
 /*
  * Local Variables:
  * mode: c

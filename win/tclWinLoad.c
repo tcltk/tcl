@@ -84,7 +84,8 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
-	nativeName = Tcl_WinUtfToTChar(Tcl_GetString(pathPtr), -1, &ds);
+	nativeName = Tcl_WinUtfToTChar(Tcl_GetString(pathPtr), TCL_STRLEN,
+		&ds);
 	hInstance = LoadLibraryEx(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);
@@ -110,27 +111,27 @@ TclpDlopen(
 	    Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_NOT_FOUND", NULL);
 	notFoundMsg:
 	    Tcl_AppendToObj(errMsg, "this library or a dependent library"
-		    " could not be found in library path", -1);
+		    " could not be found in library path", TCL_STRLEN);
 	    break;
 	case ERROR_PROC_NOT_FOUND:
 	    Tcl_SetErrorCode(interp, "WIN_LOAD", "PROC_NOT_FOUND", NULL);
 	    Tcl_AppendToObj(errMsg, "A function specified in the import"
 		    " table could not be resolved by the system. Windows"
-		    " is not telling which one, I'm sorry.", -1);
+		    " is not telling which one, I'm sorry.", TCL_STRLEN);
 	    break;
 	case ERROR_INVALID_DLL:
 	    Tcl_SetErrorCode(interp, "WIN_LOAD", "INVALID_DLL", NULL);
 	    Tcl_AppendToObj(errMsg, "this library or a dependent library"
-		    " is damaged", -1);
+		    " is damaged", TCL_STRLEN);
 	    break;
 	case ERROR_DLL_INIT_FAILED:
 	    Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_INIT_FAILED", NULL);
 	    Tcl_AppendToObj(errMsg, "the library initialization"
-		    " routine failed", -1);
+		    " routine failed", TCL_STRLEN);
 	    break;
 	default:
 	    TclWinConvertError(lastError);
-	    Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), -1);
+	    Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), TCL_STRLEN);
 	}
 	Tcl_SetObjResult(interp, errMsg);
 	return TCL_ERROR;
@@ -186,7 +187,7 @@ FindSymbol(
 
 	Tcl_DStringInit(&ds);
 	TclDStringAppendLiteral(&ds, "_");
-	sym2 = Tcl_DStringAppend(&ds, symbol, -1);
+	sym2 = Tcl_DStringAppend(&ds, symbol, TCL_STRLEN);
 	proc = (Tcl_PackageInitProc *) GetProcAddress(hInstance, sym2);
 	Tcl_DStringFree(&ds);
     }

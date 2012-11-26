@@ -84,9 +84,11 @@ TclpDlopen(
      */
 
     native = Tcl_FSGetNativePath(pathPtr);
+
     /*
      * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
      */
+
     if (flags & TCL_LOAD_GLOBAL) {
     	dlopenflags |= RTLD_GLOBAL;
     } else {
@@ -108,10 +110,12 @@ TclpDlopen(
 	Tcl_DString ds;
 	const char *fileName = Tcl_GetString(pathPtr);
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_STRLEN, &ds);
+
 	/*
 	 * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
 	 */
+
 	handle = dlopen(native, dlopenflags);
 	Tcl_DStringFree(&ds);
     }
@@ -177,12 +181,12 @@ FindSymbol(
      * the underscore.
      */
 
-    native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, symbol, TCL_STRLEN, &ds);
     proc = dlsym(handle, native);	/* INTL: Native. */
     if (proc == NULL) {
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	native = Tcl_DStringAppend(&newName, native, -1);
+	native = Tcl_DStringAppend(&newName, native, TCL_STRLEN);
 	proc = dlsym(handle, native);	/* INTL: Native. */
 	Tcl_DStringFree(&newName);
     }

@@ -22,7 +22,7 @@ extern DLLEXPORT Tcl_PackageInitProc Tclxttest_Init;
  * Functions defined in tclXtNotify.c for use by users of the Xt Notifier:
  */
 
-extern void	InitNotifier(void);
+extern void		InitNotifier(void);
 extern XtAppContext	TclSetAppContext(XtAppContext ctx);
 
 /*
@@ -80,7 +80,7 @@ static int
 TesteventloopCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
