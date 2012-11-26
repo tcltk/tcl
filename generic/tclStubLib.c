@@ -61,7 +61,10 @@ HasStubSupport(
      * value is changed only when absolutely necessary.  So long as the first
      * slot in the stub table holds (some function compatible with) the routine
      * Tcl_PkgRequireEx(), that routine can take care of verifying the version
-     * compatibility testing with all deployed
+     * compatibility testing with all deployed stubs-enabled extensions.  That is,
+     * there is no need to change the value of TCL_STUB_MAGIC when transitioning
+     * from the Tcl 8 stubs table to the Tcl 9 stubs table, so long as they 
+     * share just their first slot in common.
      */
 
     iPtr->legacyResult
