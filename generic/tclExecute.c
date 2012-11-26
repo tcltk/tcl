@@ -1259,7 +1259,9 @@ Tcl_ExprObj(
      */
 
     codePtr->refCount++;
+    iPtr->numLevels++;
     result = TclExecuteByteCode(interp, codePtr);
+    iPtr->numLevels--;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
@@ -2679,8 +2681,11 @@ TclExecuteByteCode(
 	 */
 
 	DECACHE_STACK_INFO();
+	iPtr->numLevels--;	/* Decrement here because path through
+				 * TclEvalEx will increment */
 	objResultPtr = TclPtrGetVar(interp, varPtr, arrayPtr,
 		part1Ptr, part2Ptr, TCL_LEAVE_ERR_MSG, opnd);
+	iPtr->numLevels++;
 	CACHE_STACK_INFO();
 	if (objResultPtr) {
 	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
@@ -2939,8 +2944,11 @@ TclExecuteByteCode(
 
     doCallPtrSetVar:
 	DECACHE_STACK_INFO();
+	iPtr->numLevels--;	/* Decrement here because path through
+				 * TclEvalEx will increment */
 	objResultPtr = TclPtrSetVar(interp, varPtr, arrayPtr,
 		part1Ptr, part2Ptr, valuePtr, storeFlags, opnd);
+	iPtr->numLevels++;
 	CACHE_STACK_INFO();
 	if (objResultPtr) {
 #ifndef TCL_COMPILE_DEBUG

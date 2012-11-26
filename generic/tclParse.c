@@ -2264,7 +2264,6 @@ TclSubstTokens(
 	case TCL_TOKEN_COMMAND: {
 	    Interp *iPtr = (Interp *) interp;
 
-	    iPtr->numLevels++;
 	    code = TclInterpReady(interp);
 	    if (code == TCL_OK) {
 		/*
@@ -2286,7 +2285,6 @@ TclSubstTokens(
 		    iPtr->evalFlags |= TCL_EVAL_FILE;
 		}
 	    }
-	    iPtr->numLevels--;
 	    appendObj = Tcl_GetObjResult(interp);
 	    break;
 	}
