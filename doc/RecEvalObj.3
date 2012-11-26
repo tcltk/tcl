@@ -31,9 +31,7 @@ the command at global level instead of the current stack level.
 .SH DESCRIPTION
 .PP
 \fBTcl_RecordAndEvalObj\fR is invoked to record a command as an event
-on the history list and then execute it using \fBTcl_EvalObjEx\fR
-(or \fBTcl_GlobalEvalObj\fR if the \fBTCL_EVAL_GLOBAL\fR bit is set
-in \fIflags\fR).
+on the history list and then execute it using \fBTcl_EvalObjEx\fR.
 It returns a completion code such as \fBTCL_OK\fR just like \fBTcl_EvalObjEx\fR,
 as well as a result value containing additional information
 (a result value or error message)
