@@ -41,9 +41,32 @@ HasStubSupport(
     if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
 	return iPtr->stubTable;
     }
-    iPtr->unused3
+
+    /*
+     * Either interp has no stubTable field, or its magic number has been
+     * changed, indicating a release of Tcl that no longer supports the
+     * stubs mechanism with which the extension has been prepared.  This
+     * either means interp comes from Tcl releases 7.5 - 8.0, when [load]
+     * of extensions was possible, but stubs were not yet in use, or it means
+     * interp come from some future release of Tcl where it has been necessary
+     * to stop supporting this particular stubs mechanism.  In either case,
+     * we can count on the fields legacyResult and legacyFreeProc existing
+     * (since they persist to maintain the struct offset fo stubTable; see
+     * tclInt.h comments.), and we can hope that [load] or any sensible
+     * successor will be able to reach into them to report the mismatch error
+     * message sensibly.
+     *
+     * For maximum compat support, even if only for the sake of reporting
+     * clean errors, rather than crashing, we assume the TCL_STUB_MAGIC
+     * value is changed only when absolutely necessary.  So long as the first
+     * slot in the stub table holds (some function compatible with) the routine
+     * Tcl_PkgRequireEx(), that routine can take care of verifying the version
+     * compatibility testing with all deployed
+     */
+
+    iPtr->legacyResult
 	    = "This interpreter does not support stubs-enabled extensions.";
-    iPtr->unused4 = TCL_STATIC;
+    iPtr->legacyFreeProc = TCL_STATIC;
     return NULL;
 }
 

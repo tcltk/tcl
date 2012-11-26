@@ -1799,31 +1799,33 @@ typedef struct AllocCache {
  */
 
 typedef struct Interp {
+
     /*
-     * Note: the first three fields must match exactly the fields in a
-     * Tcl_Interp struct (see tcl.h). If you change one, be sure to change the
-     * other.
-     *
-     * The interpreter's result is held in the objResultPtr field. This field
-     * holds the result's object value. The interpreter's result is always in
-     * objResultPtr. Programs should not access objResultPtr directly;
-     * instead, they should always get and set the result using procedures
-     * such as Tcl_SetObjResult, Tcl_GetObjResult, and Tcl_GetStringResult.
-     * See the SetResult man page for details.
+     * The first two fields were named "result" and "freeProc" in earlier
+     * versions of Tcl.  They are no longer used within Tcl, and are no
+     * longer available to be accessed by extensions.  However, they cannot
+     * be removed.  Why?  There is a deployed base of stub-enabled extensions
+     * that query the value of iPtr->stubTable.  For them to continue to work,
+     * the location of the field "stubTable" within the Interp struct cannot
+     * change.  The most robust way to assure that is to leave all fields up to
+     * that one undisturbed.
      */
 
-    char *unused3;
-    Tcl_FreeProc *unused4;
+    char *legacyResult;
+    Tcl_FreeProc *legacyFreeProc;
     int errorLine;		/* When TCL_ERROR is returned, this gives the
 				 * line number in the command where the error
 				 * occurred (1 means first line). */
     const struct TclStubs *stubTable;
-				/* Pointer to the exported Tcl stub table. On
-				 * previous versions of Tcl this is a pointer
-				 * to the objResultPtr or a pointer to a
-				 * buckets array in a hash table. We therefore
-				 * have to do some careful checking before we
-				 * can use this. */
+				/* Pointer to the exported Tcl stub table.  In
+				 * ancient pre-8.1 versions of Tcl this was a
+				 * pointer to the objResultPtr or a pointer to a
+				 * buckets array in a hash table. Deployed stubs
+				 * enabled extensions check for a NULL pointer value
+				 * and for a TCL_STUBS_MAGIC value to verify they
+				 * are not [load]ing into one of those pre-stubs
+				 * interps.
+				 */
 
     TclHandle handle;		/* Handle used to keep track of when this
 				 * interp is deleted. */
