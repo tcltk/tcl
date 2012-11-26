@@ -703,13 +703,23 @@ TclParseAllWhiteSpace(
     char type;
     const char *p = src;
 
-    do {
-	int scanned = ParseWhiteSpace(p, numBytes, &dummy, &type);
+    if (numBytes == TCL_STRLEN) {
+	while (1) {
+	    p += ParseWhiteSpace(p, TCL_STRLEN, &dummy, &type);
+	    if (*p != '\n') {
+		break;
+	    }
+	    p++;
+	}
+    } else {
+	do {
+	    int scanned = ParseWhiteSpace(p, numBytes, &dummy, &type);
 
-	p += scanned;
-	numBytes -= scanned;
-    } while (numBytes && (*p == '\n') && (p++, --numBytes));
-    return (p-src);
+	    p += scanned;
+	    numBytes -= scanned;
+	} while (numBytes && (*p == '\n') && (p++, --numBytes));
+    }
+    return p - src;
 }
 
 /*

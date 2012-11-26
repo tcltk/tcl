@@ -1027,7 +1027,7 @@ EXTERN Tcl_RegExp	Tcl_GetRegExpFromObj(Tcl_Interp *interp,
 				Tcl_Obj *patObj, int flags);
 /* 357 */
 EXTERN Tcl_Obj *	Tcl_EvalTokens(Tcl_Interp *interp,
-				Tcl_Token *tokenPtr, int count);
+				Tcl_Token *tokenPtr, size_t count);
 /* 358 */
 EXTERN void		Tcl_FreeParse(Tcl_Parse *parsePtr);
 /* 359 */
@@ -1367,7 +1367,7 @@ EXTERN int		Tcl_OutputBuffered(Tcl_Channel chan);
 EXTERN void		Tcl_FSMountsChanged(const Tcl_Filesystem *fsPtr);
 /* 481 */
 EXTERN int		Tcl_EvalTokensStandard(Tcl_Interp *interp,
-				Tcl_Token *tokenPtr, int count);
+				Tcl_Token *tokenPtr, size_t count);
 /* 482 */
 EXTERN void		Tcl_GetTime(Tcl_Time *timeBuf);
 /* 483 */
@@ -2191,7 +2191,7 @@ typedef struct TclStubs {
     char * (*tcl_UniCharToUtfDString) (const Tcl_UniChar *uniStr, size_t uniLength, Tcl_DString *dsPtr); /* 354 */
     Tcl_UniChar * (*tcl_UtfToUniCharDString) (const char *src, size_t length, Tcl_DString *dsPtr); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) (Tcl_Interp *interp, Tcl_Obj *patObj, int flags); /* 356 */
-    Tcl_Obj * (*tcl_EvalTokens) (Tcl_Interp *interp, Tcl_Token *tokenPtr, int count); /* 357 */
+    Tcl_Obj * (*tcl_EvalTokens) (Tcl_Interp *interp, Tcl_Token *tokenPtr, size_t count); /* 357 */
     void (*tcl_FreeParse) (Tcl_Parse *parsePtr); /* 358 */
     void (*tcl_LogCommandInfo) (Tcl_Interp *interp, const char *script, const char *command, size_t length); /* 359 */
     int (*tcl_ParseBraces) (Tcl_Interp *interp, const char *start, size_t numBytes, Tcl_Parse *parsePtr, int append, const char **termPtr); /* 360 */
@@ -2315,7 +2315,7 @@ typedef struct TclStubs {
     Tcl_PathType (*tcl_FSGetPathType) (Tcl_Obj *pathPtr); /* 478 */
     int (*tcl_OutputBuffered) (Tcl_Channel chan); /* 479 */
     void (*tcl_FSMountsChanged) (const Tcl_Filesystem *fsPtr); /* 480 */
-    int (*tcl_EvalTokensStandard) (Tcl_Interp *interp, Tcl_Token *tokenPtr, int count); /* 481 */
+    int (*tcl_EvalTokensStandard) (Tcl_Interp *interp, Tcl_Token *tokenPtr, size_t count); /* 481 */
     void (*tcl_GetTime) (Tcl_Time *timeBuf); /* 482 */
     Tcl_Trace (*tcl_CreateObjTrace) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc *objProc, ClientData clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 483 */
     int (*tcl_GetCommandInfoFromToken) (Tcl_Command token, Tcl_CmdInfo *infoPtr); /* 484 */

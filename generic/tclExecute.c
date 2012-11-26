@@ -704,7 +704,7 @@ static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, size_t *lengthPtr,
 			    const unsigned char **pcBeg);
-static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
+static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, size_t growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj *opndPtr);
@@ -712,8 +712,9 @@ static void		InitByteCodeExecution(Tcl_Interp *interp);
 static inline int	OFFSET(void *ptr);
 static void		ReleaseDictIterator(Tcl_Obj *objPtr);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
-static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
-static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
+static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, size_t numWords);
+static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp,
+			    size_t numWords);
 static Tcl_NRPostProc	CopyCallback;
 static Tcl_NRPostProc	ExprObjCallback;
 
@@ -1030,15 +1031,15 @@ static Tcl_Obj **
 GrowEvaluationStack(
     ExecEnv *eePtr,		/* Points to the ExecEnv with an evaluation
 				 * stack to enlarge. */
-    int growth,			/* How much larger than the current used
+    size_t growth,		/* How much larger than the current used
 				 * size. */
     int move)			/* 1 if move words since last marker. */
 {
     ExecStack *esPtr = eePtr->execStackPtr, *oldPtr = NULL;
-    int newBytes, newElems, currElems;
-    int needed = growth - (esPtr->endPtr - esPtr->tosPtr);
+    size_t newBytes, newElems, currElems;
+    ssize_t needed = growth - (esPtr->endPtr - esPtr->tosPtr);
     Tcl_Obj **markerPtr = esPtr->markerPtr, **memStart;
-    int moveWords = 0;
+    size_t moveWords = 0;
 
     if (move) {
 	if (!markerPtr) {
@@ -1173,7 +1174,7 @@ GrowEvaluationStack(
 static Tcl_Obj **
 StackAllocWords(
     Tcl_Interp *interp,
-    int numWords)
+    size_t numWords)
 {
     /*
      * Note that GrowEvaluationStack sets a marker in the stack. This marker
@@ -1191,7 +1192,7 @@ StackAllocWords(
 static Tcl_Obj **
 StackReallocWords(
     Tcl_Interp *interp,
-    int numWords)
+    size_t numWords)
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
@@ -1266,10 +1267,10 @@ TclStackFree(
 void *
 TclStackAlloc(
     Tcl_Interp *interp,
-    int numBytes)
+    size_t numBytes)
 {
     Interp *iPtr = (Interp *) interp;
-    int numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
+    size_t numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return (void *) Tcl_Alloc(numBytes);
@@ -3437,7 +3438,8 @@ TEBCresume(
 		TCL_LEAVE_ERR_MSG, "read", 1, 1, &arrayPtr);
 	if (!varPtr) {
 	    Tcl_AddObjErrorInfo(interp,
-		    "\n    (reading value of variable to increment)", -1);
+		    "\n    (reading value of variable to increment)",
+		    TCL_STRLEN);
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    Tcl_DecrRefCount(incrPtr);
 	    goto gotError;

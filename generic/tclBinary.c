@@ -21,8 +21,9 @@
  * special conditions in the parsing of a format specifier.
  */
 
-#define BINARY_ALL -1		/* Use all elements in the argument. */
-#define BINARY_NOCOUNT -2	/* No count was specified in format. */
+#define BINARY_ALL ((size_t)-1)	/* Use all elements in the argument. */
+#define BINARY_NOCOUNT ((size_t)-2)
+				/* No count was specified in format. */
 
 /*
  * The following flags may be ORed together and returned by GetFormatSpec
@@ -478,7 +479,7 @@ DupByteArrayInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
-    int length;
+    size_t length;
     ByteArray *srcArrayPtr, *copyArrayPtr;
 
     srcArrayPtr = GET_BYTEARRAY(srcPtr);
@@ -534,12 +535,12 @@ UpdateStringOfByteArray(
      */
 
     size = length;
-    for (i = 0; i < length && size >= 0; i++) {
+    for (i = 0; i < length; i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
 	    size++;
 	}
     }
-    if (size < 0) {
+    if (size < length) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
@@ -590,7 +591,7 @@ TclAppendBytesToByteArray(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
     }
-    if (len < 0) {
+    if (len == TCL_STRLEN) {
 	Tcl_Panic("%s must be called with definite number of bytes to append",
 		"TclAppendBytesToByteArray");
     }
@@ -726,7 +727,7 @@ BinaryFormatCmd(
     size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int arg;			/* Index of next argument to consume. */
+    size_t arg;			/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
@@ -742,8 +743,8 @@ BinaryFormatCmd(
 				 * cursor has visited.*/
     const char *errorString;
     const char *errorValue, *str;
-    int offset, size;
-    size_t length;
+    int size;
+    size_t length, offset;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg ...?");
@@ -1157,7 +1158,8 @@ BinaryFormatCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    if ((count == BINARY_ALL) || (count > (cursor - buffer))) {
+	    if ((count == BINARY_ALL)
+		    || (count > (size_t) (cursor - buffer))) {
 		cursor = buffer;
 	    } else {
 		cursor -= count;
@@ -1233,7 +1235,7 @@ BinaryScanCmd(
     size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int arg;			/* Index of next argument to consume. */
+    size_t arg;			/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
@@ -1246,10 +1248,7 @@ BinaryScanCmd(
     unsigned char *buffer;	/* Start of result buffer. */
     const char *errorString;
     const char *str;
-    int offset, size;
-    size_t length;
-
-    int i;
+    size_t length, offset, size, i;
     Tcl_Obj *valuePtr, *elementPtr;
     Tcl_HashTable numberCacheHash;
     Tcl_HashTable *numberCachePtr;
@@ -1551,7 +1550,7 @@ BinaryScanCmd(
      */
 
  done:
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(arg - 3));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) arg - 3));
     DeleteScanNumberCache(numberCachePtr);
 
     return TCL_OK;
@@ -2338,8 +2337,8 @@ BinaryDecodeHex(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor, c;
-    int index, value, size, cut = 0, strict = 0;
-    size_t i, count = 0;
+    int index, value, strict = 0;
+    size_t i, size, count = 0, cut = 0;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2398,7 +2397,7 @@ BinaryDecodeHex(
     if (cut > size) {
 	cut = size;
     }
-    Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
+    Tcl_SetByteArrayLength(resultObj, (size_t) (cursor - begin - cut));
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 
@@ -2455,10 +2454,10 @@ BinaryEncode64(
     Tcl_Obj *resultObj;
     unsigned char *data, *cursor, *limit;
     const char *digits = clientData;
-    int maxlen = 0;
+    size_t maxlen = 0, wrapcharlen = 1, count = 0, outindex = 0;
+    size_t i, size, offset;
     const char *wrapchar = "\n";
-    size_t wrapcharlen = 1, count = 0;
-    int offset, i, index, size, outindex = 0;
+    int index, len;
     enum {OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2474,9 +2473,15 @@ BinaryEncode64(
 	}
 	switch (index) {
 	case OPT_MAXLEN:
-	    if (Tcl_GetIntFromObj(interp, objv[i+1], &maxlen) != TCL_OK) {
+	    if (Tcl_GetIntFromObj(interp, objv[i+1], &len) != TCL_OK) {
 		return TCL_ERROR;
 	    }
+	    if (len < 1) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"maximum length must be positive", TCL_STRLEN));
+		return TCL_ERROR;
+	    }
+	    maxlen = (size_t) len;
 	    break;
 	case OPT_WRAPCHAR:
 	    wrapchar = Tcl_GetStringFromObj(objv[i+1], &wrapcharlen);
@@ -2552,8 +2557,8 @@ BinaryDecodeUu(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor;
-    int index, size, cut = 0, strict = 0;
-    size_t i, count = 0;
+    int index, strict = 0;
+    size_t i, count = 0, size, cut = 0;
     char c;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
@@ -2610,7 +2615,7 @@ BinaryDecodeUu(
     if (cut > size) {
 	cut = size;
     }
-    Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
+    Tcl_SetByteArrayLength(resultObj, (size_t)(cursor - begin - cut));
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 
@@ -2648,9 +2653,8 @@ BinaryDecode64(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend, c = '\0';
     unsigned char *begin = NULL, *cursor = NULL;
-    int strict = 0;
-    int index, size, cut = 0;
-    size_t i, count = 0;
+    int strict = 0, index;
+    size_t i, count = 0, size, cut = 0;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 

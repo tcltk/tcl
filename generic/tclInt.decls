@@ -754,10 +754,10 @@ declare 177 {
 # TclpGmtime and TclpLocaltime promoted to the generic interface from unix
 
 declare 182 {
-     struct tm *TclpLocaltime(const time_t *clock)
+    struct tm *TclpLocaltime(const time_t *clock)
 }
 declare 183 {
-     struct tm *TclpGmtime(const time_t *clock)
+    struct tm *TclpGmtime(const time_t *clock)
 }
 
 # For the new "Thread Storage" subsystem.
@@ -873,7 +873,7 @@ declare 214 {
     void TclSetObjNameOfExecutable(Tcl_Obj *name, Tcl_Encoding encoding)
 }
 declare 215 {
-    void *TclStackAlloc(Tcl_Interp *interp, int numBytes)
+    void *TclStackAlloc(Tcl_Interp *interp, size_t numBytes)
 }
 declare 216 {
     void TclStackFree(Tcl_Interp *interp, void *freePtr)
@@ -960,11 +960,11 @@ declare 238 {
 }
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
-			    int skip, ProcErrorProc *errorProc)
+	    int skip, ProcErrorProc *errorProc)
 }
 declare 240 {
     int TclNRRunCallbacks(Tcl_Interp *interp, int result,
-	      struct NRE_callback *rootPtr)
+	    struct NRE_callback *rootPtr)
 }
 declare 241 {
     int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
@@ -972,7 +972,7 @@ declare 241 {
 }
 declare 242 {
     int TclNREvalObjv(Tcl_Interp *interp, size_t objc,
-	      Tcl_Obj *const objv[], int flags, Command *cmdPtr)
+	    Tcl_Obj *const objv[], int flags, Command *cmdPtr)
 }
 
 # Tcl_Obj leak detection support.
@@ -1002,7 +1002,7 @@ declare 248 {
 
 declare 249 {
     char *TclDoubleDigits(double dv, int ndigits, int flags,
-			  int *decpt, int *signum, char **endPtr)
+	    int *decpt, int *signum, char **endPtr)
 }
 # TIP #285: Script cancellation support.
 declare 250 {

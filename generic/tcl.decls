@@ -1272,7 +1272,7 @@ declare 356 {
 }
 declare 357 {
     Tcl_Obj *Tcl_EvalTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-	    int count)
+	    size_t count)
 }
 declare 358 {
     void Tcl_FreeParse(Tcl_Parse *parsePtr)
@@ -1717,7 +1717,7 @@ declare 480 {
 # TIP#56 (evaluate a parsed script) msofer
 declare 481 {
     int Tcl_EvalTokensStandard(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-	    int count)
+	    size_t count)
 }
 
 # TIP#73 (access to current time) kbk

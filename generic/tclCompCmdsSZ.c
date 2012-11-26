@@ -3314,7 +3314,7 @@ CompileAssociativeBinaryOpCmd(
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
     if (parsePtr->numWords <= 2) {
-	PushLiteral(envPtr, identity, -1);
+	PushLiteral(envPtr, identity, strlen(identity));
 	words++;
     }
     if (words > 3) {

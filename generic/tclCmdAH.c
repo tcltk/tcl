@@ -22,7 +22,7 @@
 
 struct ForeachState {
     Tcl_Obj *bodyPtr;		/* The script body of the command. */
-    size_t bodyIdx;		/* The argument index of the body. */
+    int bodyIdx;		/* The argument index of the body. */
     size_t j, maxj;		/* Number of loop iterations. */
     size_t numLists;		/* Count of value lists. */
     size_t *index;		/* Array of value list indices. */
@@ -609,7 +609,7 @@ Tcl_EvalObjCmd(
     size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNREvalObjCmd, dummy, objc, objv);    
+    return Tcl_NRCallObjProc(interp, TclNREvalObjCmd, dummy, objc, objv);
 }
 
 int
@@ -2499,9 +2499,9 @@ EachloopCmd(
     size_t objc,		/* The arguments being passed in... */
     Tcl_Obj *const objv[])
 {
-    int numLists = (objc-2) / 2;
+    size_t numLists = (objc-2) / 2, i, j;
     register struct ForeachState *statePtr;
-    int i, j, result;
+    int result;
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2540,7 +2540,7 @@ EachloopCmd(
 
     statePtr->numLists = numLists;
     statePtr->bodyPtr = objv[objc - 1];
-    statePtr->bodyIdx = objc - 1;
+    statePtr->bodyIdx = (int) objc - 1;
 
     if (collect == TCL_EACH_COLLECT) {
 	statePtr->resultList = Tcl_NewListObj(0, NULL);
@@ -2601,7 +2601,7 @@ EachloopCmd(
 
 	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
 	return TclNREvalObjEx(interp, objv[objc-1], 0,
-		((Interp *) interp)->cmdFramePtr, objc-1);
+		((Interp *) interp)->cmdFramePtr, (int) objc-1);
     }
 
     /*
@@ -2696,7 +2696,7 @@ ForeachAssignments(
     Tcl_Interp *interp,
     struct ForeachState *statePtr)
 {
-    int i, v, k;
+    size_t i, v, k;
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
@@ -2734,7 +2734,7 @@ ForeachCleanup(
     Tcl_Interp *interp,
     struct ForeachState *statePtr)
 {
-    int i;
+    size_t i;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
 	if (statePtr->vCopyList[i]) {

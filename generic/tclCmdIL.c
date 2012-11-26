@@ -644,7 +644,7 @@ InfoCommandsCmd(
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
     Tcl_Command cmd;
-    int i;
+    size_t i;
 
     /*
      * Get the pattern and find the "effective namespace" in which to list
@@ -1252,7 +1252,7 @@ TclInfoFrame(
     Tcl_Obj *tmpObj;
     Tcl_Obj *lv[20];		/* Keep uptodate when more keys are added to
 				 * the dict. */
-    int lc = 0;
+    size_t lc = 0;
     /*
      * This array is indexed by the TCL_LOCATION_... values, except
      * for _LAST.
@@ -1404,7 +1404,7 @@ TclInfoFrame(
 	    ADD_PAIR("proc", procNameObj);
 	} else if (procPtr->cmdPtr->clientData) {
 	    ExtraFrameInfo *efiPtr = procPtr->cmdPtr->clientData;
-	    int i;
+	    size_t i;
 
 	    /*
 	     * This is a non-standard command. Luckily, it's told us how to
@@ -1497,7 +1497,7 @@ InfoFunctionsCmd(
 "		    }\n"
 "		}\n"
 "		::return $cmds\n"
-"	    } [::namespace current]] ", -1);
+"	    } [::namespace current]] ", TCL_STRLEN);
 
     if (objc == 2) {
 	Tcl_Obj *arg = Tcl_NewListObj(1, &(objv[1]));
@@ -2356,12 +2356,12 @@ Tcl_LinsertObjCmd(
      * appended to the list.
      */
 
-    result = TclGetIntForIndexM(interp, objv[2], /*end*/ len, &index);
+    result = TclGetIntForIndexM(interp, objv[2], (int) len, &index);
     if (result != TCL_OK) {
 	return result;
     }
-    if (index > len) {
-	index = len;
+    if (index > (ssize_t) len) {
+	index = (ssize_t) len;
     }
 
     /*
@@ -2374,14 +2374,15 @@ Tcl_LinsertObjCmd(
 	listPtr = TclListObjCopy(NULL, listPtr);
     }
 
-    if ((objc == 4) && (index == len)) {
+    if ((objc == 4) && (index == (ssize_t) len)) {
 	/*
 	 * Special case: insert one element at the end of the list.
 	 */
 
 	Tcl_ListObjAppendElement(NULL, listPtr, objv[3]);
     } else {
-	Tcl_ListObjReplace(NULL, listPtr, index, 0, (objc-3), &(objv[3]));
+	Tcl_ListObjReplace(NULL, listPtr, (size_t) index, 0,
+		objc-3, &(objv[3]));
     }
 
     /*
@@ -2469,7 +2470,8 @@ Tcl_LlengthObjCmd(
      * length.
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(listLen));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+	    (Tcl_WideInt) ((Tcl_WideUInt) listLen)));
     return TCL_OK;
 }
 
@@ -2512,8 +2514,7 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
-	    &first);
+    result = TclGetIntForIndexM(interp, objv[2], (int) listLen - 1, &first);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2521,12 +2522,11 @@ Tcl_LrangeObjCmd(
 	first = 0;
     }
 
-    result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
-	    &last);
+    result = TclGetIntForIndexM(interp, objv[3], (int) listLen - 1, &last);
     if (result != TCL_OK) {
 	return result;
     }
-    if (last >= listLen && last >= 0) {
+    if (last >= (ssize_t) listLen && last >= 0) {
 	last = listLen - 1;
     }
 
@@ -2543,18 +2543,17 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    if (Tcl_IsShared(objv[1]) ||
-	    ((ListRepPtr(objv[1])->refCount > 1))) {
-	Tcl_SetObjResult(interp, Tcl_NewListObj(last - first + 1,
+    if (Tcl_IsShared(objv[1]) || ListRepPtr(objv[1])->refCount > 1) {
+	Tcl_SetObjResult(interp, Tcl_NewListObj((size_t)(last - first + 1),
 		&elemPtrs[first]));
     } else {
 	/*
 	 * In-place is possible.
 	 */
 
-	if (last < (listLen - 1)) {
-	    Tcl_ListObjReplace(interp, objv[1], last + 1, listLen - 1 - last,
-		    0, NULL);
+	if (last + 1 < (ssize_t) listLen) {
+	    Tcl_ListObjReplace(interp, objv[1], (size_t) last + 1,
+		    (size_t) (listLen - 1 - last), 0, NULL);
 	}
 
 	/*
@@ -2562,7 +2561,7 @@ Tcl_LrangeObjCmd(
 	 * string-canonizing effect of [lrange 0 end].
 	 */
 
-	Tcl_ListObjReplace(interp, objv[1], 0, first, 0, NULL);
+	Tcl_ListObjReplace(interp, objv[1], 0, (size_t) first, 0, NULL);
 	Tcl_SetObjResult(interp, objv[1]);
     }
 
@@ -2593,7 +2592,8 @@ Tcl_LrepeatObjCmd(
     size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int elementCount, i, totalElems;
+    int elementCount, i;
+    size_t totalElems;
     Tcl_Obj *listPtr, **dataArray = NULL;
 
     /*
@@ -2625,7 +2625,7 @@ Tcl_LrepeatObjCmd(
 
     /* Final sanity check. Do not exceed limits on max list length. */
 
-    if (elementCount && objc > LIST_MAX/elementCount) {
+    if (elementCount && objc > (size_t) (LIST_MAX/elementCount)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"max length of a Tcl list (%d elements) exceeded", LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
@@ -2662,7 +2662,7 @@ Tcl_LrepeatObjCmd(
 	    dataArray[i] = tmpPtr;
 	}
     } else {
-	int j, k = 0;
+	size_t j, k = 0;
 
 	for (i=0 ; i<elementCount ; i++) {
 	    for (j=0 ; j<objc ; j++) {

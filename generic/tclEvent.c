@@ -271,7 +271,7 @@ HandleBgErrors(
 		Tcl_DecrRefCount(keyPtr);
 
 		Tcl_WriteChars(errChannel,
-			"error in background error handler:\n", -1);
+			"error in background error handler:\n", TCL_STRLEN);
 		if (valuePtr) {
 		    Tcl_WriteObj(errChannel, valuePtr);
 		} else {

@@ -2055,7 +2055,7 @@ TclIncrObjVar2(
 	    1, 1, &arrayPtr);
     if (varPtr == NULL) {
 	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
+		"\n    (reading value of variable to increment)", TCL_STRLEN);
 	return NULL;
     }
     return TclPtrIncrObjVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,

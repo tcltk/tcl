@@ -1544,7 +1544,7 @@ TclLsetFlat(
      * proper list - or something convertible to one - above).
      */
 
-    len = -1;
+    len = TCL_STRLEN;
     TclListObjLength(NULL, subListPtr, &len);
     if (index == len) {
 	Tcl_ListObjAppendElement(NULL, subListPtr, valuePtr);

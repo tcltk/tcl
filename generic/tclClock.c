@@ -1826,7 +1826,7 @@ ClockParseformatargsObjCmd(
     int optionIndex;		/* Index of an option. */
     int saw = 0;		/* Flag == 1 if option was seen already. */
     Tcl_WideInt clockVal;	/* Clock value - just used to parse. */
-    int i;
+    size_t i;
 
     /*
      * Args consist of a time followed by keyword-value pairs.

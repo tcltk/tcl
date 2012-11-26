@@ -1486,7 +1486,7 @@ typedef struct CoroutineData {
 				 * numLevels of the create/resume command is
 				 * stored here; for suspended coroutines it
 				 * holds the nesting numLevels at yield. */
-    int nargs;                  /* Number of args required for resuming this
+    ssize_t nargs;              /* Number of args required for resuming this
 				 * coroutine; -2 means "0 or 1" (default), -1
 				 * means "any" */
 } CoroutineData;
@@ -3546,43 +3546,47 @@ typedef const char *TclDTraceStr;
 #endif /* TCL_COMPILE_STATS */
 
 #  define TclAllocObjStorage(objPtr)		\
-	TclAllocObjStorageEx(NULL, (objPtr))
+    TclAllocObjStorageEx(NULL, (objPtr))
 
 #  define TclFreeObjStorage(objPtr)		\
-	TclFreeObjStorageEx(NULL, (objPtr))
+    TclFreeObjStorageEx(NULL, (objPtr))
 
 #ifndef TCL_MEM_DEBUG
 # define TclNewObj(objPtr) \
-    TclIncrObjsAllocated(); \
-    TclAllocObjStorage(objPtr); \
-    (objPtr)->refCount = 0; \
-    (objPtr)->bytes    = tclEmptyStringRep; \
-    (objPtr)->length   = 0; \
-    (objPtr)->typePtr  = NULL; \
-    TCL_DTRACE_OBJ_CREATE(objPtr)
+    do {					\
+	TclIncrObjsAllocated();			\
+	TclAllocObjStorage(objPtr);		\
+	(objPtr)->refCount = 0;			\
+	(objPtr)->bytes    = tclEmptyStringRep; \
+	(objPtr)->length   = 0;			\
+	(objPtr)->typePtr  = NULL;		\
+	TCL_DTRACE_OBJ_CREATE(objPtr);		\
+    } while (0)
 
 /*
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
- * 'length == -1'.
- * Use empty 'if ; else' to handle use in unbraced outer if/else conditions.
+ * 'length == TCL_STRLEN'.
  */
 
 # define TclDecrRefCount(objPtr) \
-    if (--(objPtr)->refCount > 0) ; else { \
+    do {								\
+	if (--(objPtr)->refCount > 0) {					\
+	    break;							\
+	}								\
 	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) { \
-	    TCL_DTRACE_OBJ_FREE(objPtr); \
-	    if ((objPtr)->bytes \
-		    && ((objPtr)->bytes != tclEmptyStringRep)) { \
-		ckfree((char *) (objPtr)->bytes); \
-	    } \
-	    (objPtr)->length = -1; \
-	    TclFreeObjStorage(objPtr); \
-	    TclIncrObjsFreed(); \
-	} else { \
-	    TclFreeObj(objPtr); \
-	} \
-    }
+	    TCL_DTRACE_OBJ_FREE(objPtr);				\
+	    if ((objPtr)->bytes						\
+		    && ((objPtr)->bytes != tclEmptyStringRep)) {	\
+		ckfree((char *) (objPtr)->bytes);			\
+	    }								\
+	    (objPtr)->length = TCL_STRLEN;				\
+	    TclFreeObjStorage(objPtr);					\
+	    TclIncrObjsFreed();						\
+	} else {							\
+	    TclFreeObj(objPtr);						\
+	}								\
+    } while (0)
 
 #if defined(PURIFY)
 
@@ -3681,11 +3685,11 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
     } while (0)
 
 #  define TclFreeObjStorageEx(interp, objPtr) \
-    do {							       \
-	Tcl_MutexLock(&tclObjMutex);				       \
-	(objPtr)->internalRep.otherValuePtr = (void *) tclFreeObjList; \
-	tclFreeObjList = (objPtr);				       \
-	Tcl_MutexUnlock(&tclObjMutex);				       \
+    do {								\
+	Tcl_MutexLock(&tclObjMutex);					\
+	(objPtr)->internalRep.otherValuePtr = (void *) tclFreeObjList;	\
+	tclFreeObjList = (objPtr);					\
+	Tcl_MutexUnlock(&tclObjMutex);					\
     } while (0)
 #endif
 
@@ -3694,7 +3698,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 			    int line);
 
 # define TclDbNewObj(objPtr, file, line) \
-    do { \
+    do {								\
 	TclIncrObjsAllocated();						\
 	(objPtr) = (Tcl_Obj *)						\
 		Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line));		\
@@ -3730,14 +3734,14 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInitStringRep(objPtr, bytePtr, len) \
-    if ((len) == 0) { \
-	(objPtr)->bytes	 = tclEmptyStringRep; \
-	(objPtr)->length = 0; \
-    } else { \
-	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
-	memcpy((objPtr)->bytes, (bytePtr), (unsigned) (len)); \
-	(objPtr)->bytes[len] = '\0'; \
-	(objPtr)->length = (len); \
+    if ((len) == 0) {							\
+	(objPtr)->bytes	 = tclEmptyStringRep;				\
+	(objPtr)->length = 0;						\
+    } else {								\
+	(objPtr)->bytes = ckalloc((unsigned) ((len) + 1));		\
+	memcpy((objPtr)->bytes, (bytePtr), (len));			\
+	(objPtr)->bytes[len] = '\0';					\
+	(objPtr)->length = (len);					\
     }
 
 /*
@@ -3756,8 +3760,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString((objPtr)))
 
 #define TclGetStringFromObj(objPtr, lenPtr) \
-    ((objPtr)->bytes \
-	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)	\
+    ((objPtr)->bytes							\
+	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)		\
 	    : Tcl_GetStringFromObj((objPtr), (lenPtr)))
 
 /*
@@ -3771,11 +3775,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclFreeIntRep(objPtr) \
-    if ((objPtr)->typePtr != NULL) { \
-	if ((objPtr)->typePtr->freeIntRepProc != NULL) { \
-	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
-	} \
-	(objPtr)->typePtr = NULL; \
+    if ((objPtr)->typePtr == NULL) ; else {				\
+	if ((objPtr)->typePtr->freeIntRepProc != NULL) {		\
+	    (objPtr)->typePtr->freeIntRepProc(objPtr);			\
+	}								\
+	(objPtr)->typePtr = NULL;					\
     }
 
 /*
@@ -3788,11 +3792,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateStringRep(objPtr) \
-    if (objPtr->bytes != NULL) { \
-	if (objPtr->bytes != tclEmptyStringRep) { \
-	    ckfree((char *) objPtr->bytes); \
-	} \
-	objPtr->bytes = NULL; \
+    if ((objPtr)->bytes == NULL) ; else {				\
+	if ((objPtr)->bytes != tclEmptyStringRep) {			\
+	    ckfree((char *) (objPtr)->bytes);				\
+	}								\
+	(objPtr)->bytes = NULL;						\
     }
 
 /*
@@ -3879,7 +3883,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclUtfToUniChar(str, chPtr) \
-	((((unsigned char) *(str)) < 0xC0) ?		\
+    ((((unsigned char) *(str)) < 0xC0) ?		\
 	    ((*(chPtr) = (Tcl_UniChar) *(str)), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
 
@@ -3896,16 +3900,19 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclNumUtfChars(numChars, bytes, numBytes) \
-    do { \
-	size_t count, i = (numBytes); \
-	unsigned char *str = (unsigned char *) (bytes); \
-	while (i && (*str < 0xC0)) { i--; str++; } \
-	count = (numBytes) - i; \
-	if (i) { \
-	    count += Tcl_NumUtfChars((bytes) + count, i); \
-	} \
-	(numChars) = count; \
-    } while (0);
+    do {								\
+	size_t count, i = (numBytes);					\
+	unsigned char *str = (unsigned char *) (bytes);			\
+	while (i && (*str < 0xC0)) {					\
+	    i--;							\
+	    str++;							\
+	}								\
+	count = (numBytes) - i;						\
+	if (i) {							\
+	    count += Tcl_NumUtfChars((bytes) + count, i);		\
+	}								\
+	(numChars) = count;						\
+    } while (0)
 
 /*
  *----------------------------------------------------------------
@@ -3923,7 +3930,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclIsPureByteArray(objPtr) \
-	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
+    (((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
 
 /*
  *----------------------------------------------------------------
@@ -3953,12 +3960,14 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateNsCmdLookup(nsPtr) \
-    if ((nsPtr)->numExportPatterns) {		\
-	(nsPtr)->exportLookupEpoch++;		\
-    }						\
-    if ((nsPtr)->commandPathLength) {		\
-	(nsPtr)->cmdRefEpoch++;			\
-    }
+    do {								\
+	if ((nsPtr)->numExportPatterns) {				\
+	    (nsPtr)->exportLookupEpoch++;				\
+	}								\
+	if ((nsPtr)->commandPathLength) {				\
+	    (nsPtr)->cmdRefEpoch++;					\
+	}								\
+    } while (0)
 
 /*
  *----------------------------------------------------------------------
@@ -4019,11 +4028,11 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  */
 
 #define TclSetIntObj(objPtr, i) \
-    do {						\
-	TclInvalidateStringRep(objPtr);			\
-	TclFreeIntRep(objPtr);				\
-	(objPtr)->internalRep.longValue = (long)(i);	\
-	(objPtr)->typePtr = &tclIntType;		\
+    do {								\
+	TclInvalidateStringRep(objPtr);					\
+	TclFreeIntRep(objPtr);						\
+	(objPtr)->internalRep.longValue = (long)(i);			\
+	(objPtr)->typePtr = &tclIntType;				\
     } while (0)
 
 #define TclSetLongObj(objPtr, l) \
@@ -4041,20 +4050,20 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #ifndef NO_WIDE_TYPE
 #define TclSetWideIntObj(objPtr, w) \
-    do {							\
-	TclInvalidateStringRep(objPtr);				\
-	TclFreeIntRep(objPtr);					\
-	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(w);	\
-	(objPtr)->typePtr = &tclWideIntType;			\
+    do {								\
+	TclInvalidateStringRep(objPtr);					\
+	TclFreeIntRep(objPtr);						\
+	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(w);		\
+	(objPtr)->typePtr = &tclWideIntType;				\
     } while (0)
 #endif
 
 #define TclSetDoubleObj(objPtr, d) \
-    do {							\
-	TclInvalidateStringRep(objPtr);				\
-	TclFreeIntRep(objPtr);					\
-	(objPtr)->internalRep.doubleValue = (double)(d);	\
-	(objPtr)->typePtr = &tclDoubleType;			\
+    do {								\
+	TclInvalidateStringRep(objPtr);					\
+	TclFreeIntRep(objPtr);						\
+	(objPtr)->internalRep.doubleValue = (double)(d);		\
+	(objPtr)->typePtr = &tclDoubleType;				\
     } while (0)
 
 /*
@@ -4076,14 +4085,14 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #ifndef TCL_MEM_DEBUG
 #define TclNewIntObj(objPtr, i) \
-    do {						\
-	TclIncrObjsAllocated();				\
-	TclAllocObjStorage(objPtr);			\
-	(objPtr)->refCount = 0;				\
-	(objPtr)->bytes = NULL;				\
-	(objPtr)->internalRep.longValue = (long)(i);	\
-	(objPtr)->typePtr = &tclIntType;		\
-	TCL_DTRACE_OBJ_CREATE(objPtr);			\
+    do {								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	(objPtr)->refCount = 0;						\
+	(objPtr)->bytes = NULL;						\
+	(objPtr)->internalRep.longValue = (long)(i);			\
+	(objPtr)->typePtr = &tclIntType;				\
+	TCL_DTRACE_OBJ_CREATE(objPtr);					\
     } while (0)
 
 #define TclNewLongObj(objPtr, l) \
@@ -4097,24 +4106,24 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     TclNewIntObj((objPtr), ((b)? 1 : 0))
 
 #define TclNewDoubleObj(objPtr, d) \
-    do {							\
-	TclIncrObjsAllocated();					\
-	TclAllocObjStorage(objPtr);				\
-	(objPtr)->refCount = 0;					\
-	(objPtr)->bytes = NULL;					\
-	(objPtr)->internalRep.doubleValue = (double)(d);	\
-	(objPtr)->typePtr = &tclDoubleType;			\
-	TCL_DTRACE_OBJ_CREATE(objPtr);				\
+    do {								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	(objPtr)->refCount = 0;						\
+	(objPtr)->bytes = NULL;						\
+	(objPtr)->internalRep.doubleValue = (double)(d);		\
+	(objPtr)->typePtr = &tclDoubleType;				\
+	TCL_DTRACE_OBJ_CREATE(objPtr);					\
     } while (0)
 
 #define TclNewStringObj(objPtr, s, len) \
-    do {							\
-	TclIncrObjsAllocated();					\
-	TclAllocObjStorage(objPtr);				\
-	(objPtr)->refCount = 0;					\
-	TclInitStringRep((objPtr), (s), (len));			\
-	(objPtr)->typePtr = NULL;				\
-	TCL_DTRACE_OBJ_CREATE(objPtr);				\
+    do {								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	(objPtr)->refCount = 0;						\
+	TclInitStringRep((objPtr), (s), (len));				\
+	(objPtr)->typePtr = NULL;					\
+	TCL_DTRACE_OBJ_CREATE(objPtr);					\
     } while (0)
 
 #else /* TCL_MEM_DEBUG */
@@ -4207,8 +4216,8 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  */
 
 #define TclCleanupCommandMacro(cmdPtr) \
-    if (--(cmdPtr)->refCount <= 0) { \
-	ckfree((char *) (cmdPtr));\
+    if (--(cmdPtr)->refCount <= 0) {					\
+	ckfree((char *) (cmdPtr));					\
     }
 
 /*

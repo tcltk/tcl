@@ -1588,7 +1588,7 @@ StringIsCmd(
 	    goto str_is_done;
 	}
 	end = string1 + length1;
-	if (TclParseNumber(NULL, objPtr, NULL, NULL, -1,
+	if (TclParseNumber(NULL, objPtr, NULL, NULL, TCL_STRLEN,
 		(const char **) &stop, 0) != TCL_OK) {
 	    result = 0;
 	    failat = 0;
@@ -1625,7 +1625,7 @@ StringIsCmd(
 	    goto str_is_done;
 	}
 	end = string1 + length1;
-	if (TclParseNumber(NULL, objPtr, NULL, NULL, -1,
+	if (TclParseNumber(NULL, objPtr, NULL, NULL, TCL_STRLEN,
 		(const char **) &stop, TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
 	    if (stop == end) {
 		/*
@@ -1677,7 +1677,7 @@ StringIsCmd(
 	    break;
 	}
 	end = string1 + length1;
-	if (TclParseNumber(NULL, objPtr, NULL, NULL, -1,
+	if (TclParseNumber(NULL, objPtr, NULL, NULL, TCL_STRLEN,
 		(const char **) &stop, TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
 	    if (stop == end) {
 		/*

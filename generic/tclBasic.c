@@ -115,10 +115,11 @@ static Tcl_ObjCmdProc	ExprSqrtFunc;
 static Tcl_ObjCmdProc	ExprSrandFunc;
 static Tcl_ObjCmdProc	ExprUnaryFunc;
 static Tcl_ObjCmdProc	ExprWideFunc;
-static Tcl_Obj *	GetCommandSource(Interp *iPtr, int objc,
+static Tcl_Obj *	GetCommandSource(Interp *iPtr, size_t objc,
 			    Tcl_Obj *const objv[], int lookup);
-static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
-			    int actual, Tcl_Obj *const *objv);
+static void		MathFuncWrongNumArgs(Tcl_Interp *interp,
+                            size_t expected, size_t actual,
+                            Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
@@ -129,13 +130,13 @@ static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 static int		RewindCoroutine(CoroutineData *corPtr, int result);
 static void		TEOV_SwitchVarFrame(Tcl_Interp *interp);
 static void		TEOV_PushExceptionHandlers(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[], int flags);
+			    size_t objc, Tcl_Obj *const objv[], int flags);
 static inline Command *	TEOV_LookupCmdFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *namePtr, Namespace *lookupNsPtr);
-static int		TEOV_NotFound(Tcl_Interp *interp, int objc,
+static int		TEOV_NotFound(Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
 static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
-			    Command **cmdPtrPtr, int objc,
+			    Command **cmdPtrPtr, size_t objc,
 			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
 static Tcl_NRPostProc	RewindCoroutineCallback;
 static Tcl_NRPostProc	TailcallCleanup;
@@ -2415,8 +2416,8 @@ TclInvokeObjectCommand(
 {
     Command *cmdPtr = clientData;
     Tcl_Obj *objPtr;
-    int length, result;
-    size_t i;
+    int result;
+    size_t i, length;
     Tcl_Obj **objv = TclStackAlloc(interp, argc * sizeof(Tcl_Obj *));
 
     for (i = 0; i < argc; i++) {
@@ -3364,7 +3365,7 @@ CancelEvalProc(
 static Tcl_Obj *
 GetCommandSource(
     Interp *iPtr,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[],
     int lookup)
 {
@@ -4047,7 +4048,7 @@ NRRunObjProc(
     /* OPT: do not call? */
 
     Command* cmdPtr = data[0];
-    int objc = PTR2INT(data[1]);
+    size_t objc = PTR2INT(data[1]);
     Tcl_Obj **objv = data[2];
 
     return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
@@ -4071,7 +4072,7 @@ NRRunObjProc(
 static void
 TEOV_PushExceptionHandlers(
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[],
     int flags)
 {
@@ -4188,7 +4189,7 @@ TEOV_Error(
 static int
 TEOV_NotFound(
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[],
     Namespace *lookupNsPtr)
 {
@@ -4289,11 +4290,10 @@ TEOV_NotFoundCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    int objc = PTR2INT(data[0]);
+    size_t objc = PTR2INT(data[0]);
     Tcl_Obj **objv = data[1];
     Namespace *savedNsPtr = data[2];
-
-    int i;
+    size_t i;
 
     if (savedNsPtr) {
 	iPtr->varFramePtr->nsPtr = savedNsPtr;
@@ -4315,7 +4315,7 @@ static int
 TEOV_RunEnterTraces(
     Tcl_Interp *interp,
     Command **cmdPtrPtr,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[],
     Namespace *lookupNsPtr)
 {
@@ -4466,7 +4466,7 @@ Tcl_EvalTokensStandard(
 				 * errors. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    int count)			/* Number of tokens to consider at tokenPtr.
+    size_t count)		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
 {
     return TclSubstTokens(interp, tokenPtr, count, /* numLeftPtr */ NULL, 1,
@@ -4507,7 +4507,7 @@ Tcl_EvalTokens(
 				 * errors. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    int count)			/* Number of tokens to consider at tokenPtr.
+    size_t count)		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
 {
     Tcl_Obj *resPtr;
@@ -4593,7 +4593,8 @@ TclEvalEx(
     Tcl_Obj **objv, **objvSpace;
     int *expand, *lines, *lineSpace;
     Tcl_Token *tokenPtr;
-    int commandLength, bytesLeft, expandRequested, code = TCL_OK;
+    size_t commandLength, bytesLeft, expandRequested;
+    int code = TCL_OK;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
@@ -4820,7 +4821,7 @@ TclEvalEx(
 
 		if (wordCLNext) {
 		    TclContinuationsEnterDerived(objv[objectsUsed],
-			    wordStart - outerScript, wordCLNext);
+                            (size_t) (wordStart - outerScript), wordCLNext);
 		}
 	    } /* for loop */
 	    iPtr->cmdFramePtr = eeFramePtr;
@@ -5200,7 +5201,7 @@ TclArgumentRelease(
     size_t objc)
 {
     Interp *iPtr = (Interp *) interp;
-    int i;
+    size_t i;
 
     for (i = 1; i < objc; i++) {
 	CFWord *cfwPtr;
@@ -5262,7 +5263,7 @@ TclArgumentBCEnter(
     eclPtr = Tcl_GetHashValue(hePtr);
     hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, INT2PTR(pc));
     if (hePtr) {
-	int word;
+	size_t word;
 	int cmd = PTR2INT(Tcl_GetHashValue(hePtr));
 	ECL *ePtr = &eclPtr->loc[cmd];
 	CFWordBC *lastPtr = NULL;
@@ -5564,7 +5565,7 @@ TclEvalObjEx(
 				 * evaluation of the script. Supported values
 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
     const CmdFrame *invoker,	/* Frame of the command doing the eval. */
-    int word)			/* Index of the word which is in objPtr. */
+    int word)   		/* Index of the word which is in objPtr. */
 {
     int result = TCL_OK;
     NRE_callback *rootPtr = TOP_CB(interp);
@@ -5583,7 +5584,7 @@ TclNREvalObjEx(
 				 * evaluation of the script. Supported values
 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
     const CmdFrame *invoker,	/* Frame of the command doing the eval. */
-    int word)			/* Index of the word which is in objPtr. */
+    int word)   		/* Index of the word which is in objPtr. */
 {
     Interp *iPtr = (Interp *) interp;
     int result;
@@ -5597,7 +5598,7 @@ TclNREvalObjEx(
     if (TclListObjIsCanonical(objPtr)) {
 	Tcl_Obj *listPtr = objPtr;
 	CmdFrame *eoFramePtr = NULL;
-	int objc;
+	size_t objc;
 	Tcl_Obj **objv;
 
 	/*
@@ -5693,7 +5694,7 @@ TclNREvalObjEx(
 	    iPtr->varFramePtr = iPtr->rootFramePtr;
 	}
 	Tcl_IncrRefCount(objPtr);
-	codePtr = TclCompileObj(interp, objPtr, invoker, word);
+	codePtr = TclCompileObj(interp, objPtr, invoker, (int) word);
 
 	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
 		objPtr, INT2PTR(allowExceptions), NULL);
@@ -5783,7 +5784,7 @@ TclNREvalObjEx(
 
 	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 
-	    if ((invoker->nline <= word) ||
+	    if ((invoker->nline <= (int) word) ||
 		    (invoker->line[word] < 0) ||
 		    (ctxPtr->type != TCL_LOCATION_SOURCE)) {
 		/*
@@ -7586,8 +7587,8 @@ ExprSrandFunc(
 static void
 MathFuncWrongNumArgs(
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int expected,		/* Formal parameter count. */
-    int found,			/* Actual parameter count. */
+    size_t expected,		/* Formal parameter count. */
+    size_t found,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     const char *name = Tcl_GetString(objv[0]);
@@ -8527,7 +8528,7 @@ TclNRInterpCoroutine(
         }
         break;
     default:
-        if (corPtr->nargs != objc-1) {
+        if (corPtr->nargs != 1 + (ssize_t) objc) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "wrong coro nargs; how did we get here? "
                     "not implemented!", TCL_STRLEN));
