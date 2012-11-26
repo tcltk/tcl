@@ -1160,8 +1160,10 @@ tclLoadDl2.o: $(UNIX_DIR)/tclLoadDl2.c
 tclLoadDld.o: $(UNIX_DIR)/tclLoadDld.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDld.c
 
+# Can explicitly list this: we know we'll only ever compile this file with
+# something that understands deprecated declarations as it is OSX-specific.
 tclLoadDyld.o: $(UNIX_DIR)/tclLoadDyld.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDyld.c
+	$(CC) -c $(CC_SWITCHES) -Wno-deprecated-declarations $(UNIX_DIR)/tclLoadDyld.c
 
 tclLoadNone.o: $(GENERIC_DIR)/tclLoadNone.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLoadNone.c
