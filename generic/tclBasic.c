@@ -485,6 +485,7 @@ Tcl_CreateInterp(void)
     iPtr = ckalloc(sizeof(Interp));
     interp = (Tcl_Interp *) iPtr;
 
+    iPtr->legacyResult = NULL;
     iPtr->errorLine = 0;
     iPtr->objResultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(iPtr->objResultPtr);
