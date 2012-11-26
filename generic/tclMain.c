@@ -460,13 +460,16 @@ Tcl_Main(
     }
 
     /*
-     * We're running interactively. Source a user-specific startup file if the
-     * application specified one and if the file exists.
+     * No script file was specified on the command line.
+     * If we're running interactively, source a user-specific
+     * startup file if the application specified one and if the file exists.
      */
 
-    Tcl_SourceRCFile(interp);
-    if (Tcl_LimitExceeded(interp)) {
-	goto done;
+    if (tty) {
+	Tcl_SourceRCFile(interp);
+	if (Tcl_LimitExceeded(interp)) {
+	    goto done;
+	}
     }
 
     /*
