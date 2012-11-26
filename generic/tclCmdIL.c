@@ -4495,7 +4495,7 @@ SelectObjFromSublist(
 	    index += listLen + 1;
 	}
 
-	if (Tcl_ListObjIndex(infoPtr->interp, objPtr, index,
+	if (Tcl_ListObjIndex(infoPtr->interp, objPtr, (size_t) index,
 		&currentObj) != TCL_OK) {
 	    infoPtr->resultCode = TCL_ERROR;
 	    return NULL;
