@@ -15,8 +15,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclVar.c,v 1.160.2.6 2009/10/17 22:35:58 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -67,19 +65,8 @@ VarHashCreateVar(
 
 #define VarHashFindVar(tablePtr, key) \
     VarHashCreateVar((tablePtr), (key), NULL)
-#ifdef _AIX
-/* Work around AIX cc problem causing crash in TclDeleteVars. Possible
- * optimizer bug. Do _NOT_ inline this function, this re-activates the
- * problem.
- */
-static void
-VarHashInvalidateEntry(Var* varPtr) {
-    varPtr->flags |= VAR_DEAD_HASH;
-}
-#else
 #define VarHashInvalidateEntry(varPtr) \
     ((varPtr)->flags |= VAR_DEAD_HASH)
-#endif
 #define VarHashDeleteEntry(varPtr) \
     Tcl_DeleteHashEntry(&(((VarInHash *) varPtr)->entry))
 
@@ -1815,8 +1802,10 @@ TclPtrSetVar(
 
     /*
      * Invoke any read traces that have been set for the variable if it is
-     * requested; this is only done in the core by the INST_LAPPEND_*
-     * instructions.
+     * requested. This was done for INST_LAPPEND_* but that was inconsistent
+     * with the non-bc instruction, and would cause failures trying to
+     * lappend to any non-existing ::env var, which is inconsistent with
+     * documented behavior.  [Bug #3057639]
      */
 
     if ((flags & TCL_TRACE_READS) && ((varPtr->flags & VAR_TRACED_READ)
@@ -2565,13 +2554,14 @@ Tcl_AppendObjCmd(
 	    /*
 	     * Note that we do not need to increase the refCount of the Var
 	     * pointers: should a trace delete the variable, the return value
-	     * of TclPtrSetVar will be NULL, and we will not access the
-	     * variable again.
+	     * of TclPtrSetVar will be NULL or emptyObjPtr, and we will not
+	     * access the variable again.
 	     */
 
 	    varValuePtr = TclPtrSetVar(interp, varPtr, arrayPtr, objv[1],
 		    NULL, objv[i], TCL_APPEND_VALUE|TCL_LEAVE_ERR_MSG, -1);
-	    if (varValuePtr == NULL) {
+	    if ((varValuePtr == NULL) ||
+		    (varValuePtr == ((Interp *) interp)->emptyObjPtr)) {
 		return TCL_ERROR;
 	    }
 	}
@@ -3170,11 +3160,7 @@ Tcl_ArrayObjCmd(
 	    return TCL_ERROR;
 	}
 	return TclArraySet(interp, objv[2], objv[3]);
-    case ARRAY_UNSET: {
-	Tcl_HashSearch search;
-	Var *varPtr2;
-	char *pattern = NULL;
-
+    case ARRAY_UNSET:
 	if ((objc != 3) && (objc != 4)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "arrayName ?pattern?");
 	    return TCL_ERROR;
@@ -3187,11 +3173,16 @@ Tcl_ArrayObjCmd(
 	     * When no pattern is given, just unset the whole array.
 	     */
 
-	    if (TclObjUnsetVar2(interp, varNamePtr, NULL, 0) != TCL_OK) {
-		return TCL_ERROR;
-	    }
+	    return TclObjUnsetVar2(interp, varNamePtr, NULL, 0);
 	} else {
-	    pattern = TclGetString(objv[3]);
+	    Tcl_HashSearch search;
+	    Var *varPtr2, *protectedVarPtr;
+	    const char *pattern = TclGetString(objv[3]);
+
+	    /*
+	     * With a trivial pattern, we can just unset.
+	     */
+
 	    if (TclMatchIsTrivial(pattern)) {
 		varPtr2 = VarHashFindVar(varPtr->value.tablePtr, objv[3]);
 		if (varPtr2 != NULL && !TclIsVarUndefined(varPtr2)) {
@@ -3199,23 +3190,64 @@ Tcl_ArrayObjCmd(
 		}
 		return TCL_OK;
 	    }
+
+	    /*
+	     * Non-trivial case (well, deeply tricky really). We peek inside
+	     * the hash iterator in order to allow us to guarantee that the
+	     * following element in the array will not be scrubbed until we
+	     * have dealt with it. This stops the overall iterator from ending
+	     * up pointing into deallocated memory. [Bug 2939073]
+	     */
+
+	    protectedVarPtr = NULL;
 	    for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
 		    varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
-		Tcl_Obj *namePtr;
+		/*
+		 * Drop the extra ref immediately. We don't need to free it at
+		 * this point though; we'll be unsetting it if necessary soon.
+		 */
 
-		if (TclIsVarUndefined(varPtr2)) {
-		    continue;
+		if (varPtr2 == protectedVarPtr) {
+		    VarHashRefCount(varPtr2)--;
 		}
-		namePtr = VarHashGetKey(varPtr2);
-		if (Tcl_StringMatch(TclGetString(namePtr), pattern) &&
-			TclObjUnsetVar2(interp, varNamePtr, namePtr,
-				0) != TCL_OK) {
-		    return TCL_ERROR;
+
+		/*
+		 * Guard the next item in the search chain by incrementing its
+		 * refcount. This guarantees that the hash table iterator
+		 * won't be dangling on the next time through the loop.
+		 */
+
+		if (search.nextEntryPtr != NULL) {
+		    protectedVarPtr = VarHashGetValue(search.nextEntryPtr);
+		    VarHashRefCount(protectedVarPtr)++;
+		} else {
+		    protectedVarPtr = NULL;
+		}
+
+		if (!TclIsVarUndefined(varPtr2)) {
+		    Tcl_Obj *namePtr = VarHashGetKey(varPtr2);
+
+		    if (Tcl_StringMatch(TclGetString(namePtr), pattern)
+			    && TclObjUnsetVar2(interp, varNamePtr, namePtr,
+				    0) != TCL_OK) {
+			/*
+			 * If we incremented a refcount, we must decrement it
+			 * here as we will not be coming back properly due to
+			 * the error.
+			 */
+
+			if (protectedVarPtr) {
+			    VarHashRefCount(protectedVarPtr)--;
+			    CleanupVar(protectedVarPtr, varPtr);
+			}
+			return TCL_ERROR;
+		    }
+		} else {
+		    CleanupVar(varPtr2, varPtr);
 		}
 	    }
+	    break;
 	}
-	break;
-    }
 
     case ARRAY_SIZE: {
 	Tcl_HashSearch search;
@@ -4479,14 +4511,10 @@ TclDeleteVars(
     }
 
     for (varPtr = VarHashFirstVar(tablePtr, &search); varPtr != NULL;
-	    varPtr = VarHashNextVar(&search)) {
-	/*
-	 * Lie about the validity of the hashtable entry. In this way the
-	 * variables will be deleted by VarHashDeleteTable.
-	 */
+	     varPtr = VarHashFirstVar(tablePtr, &search)) {
 
-	VarHashInvalidateEntry(varPtr);
 	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr), NULL, flags);
+	VarHashDeleteEntry(varPtr);
     }
     VarHashDeleteTable(tablePtr);
 }
@@ -4748,6 +4776,7 @@ FreeLocalVarName(
     if (namePtr) {
 	Tcl_DecrRefCount(namePtr);
     }
+    objPtr->typePtr = NULL;
 }
 
 static void
@@ -4789,6 +4818,7 @@ FreeNsVarName(
 	    CleanupVar(varPtr, NULL);
 	}
     }
+    objPtr->typePtr = NULL;
 }
 
 static void
@@ -4828,6 +4858,7 @@ FreeParsedVarName(
 	TclDecrRefCount(arrayPtr);
 	ckfree(elem);
     }
+    objPtr->typePtr = NULL;
 }
 
 static void

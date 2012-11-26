@@ -7,9 +7,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: fix_tommath_h.tcl,v 1.6 2007/02/14 17:59:22 kennykb Exp $
-#
 #----------------------------------------------------------------------
 
 set f [open [lindex $argv 0] r]

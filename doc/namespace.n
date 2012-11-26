@@ -7,8 +7,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: namespace.n,v 1.30.2.1 2008/09/07 14:01:10 msofer Exp $
-'\"
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -632,12 +630,14 @@ may be imported by other namespaces.
 If a \fBnamespace import\fR command specifies a command
 that is not exported, the command is not imported.
 .SH "SCOPED SCRIPTS"
+.PP
 The \fBnamespace code\fR command is the means by which a script may be
 packaged for evaluation in a namespace other than the one in which it
 was created.  It is used most often to create event handlers, Tk bindings,
 and traces for evaluation in the global context.  For instance, the following
-code indicates how to direct a variable trace callback into the current
+code indicates how to direct a variable \fBtrace\fR callback into the current
 namespace:
+.PP
 .CS
 \fBnamespace eval\fR a {
    variable b
@@ -646,11 +646,13 @@ namespace:
       puts "the value of $n1 has changed to $var"
       return
    }
-   trace variable b w [\fBnamespace code\fR theTraceCallback]
+   trace add variable b write [\fBnamespace code\fR theTraceCallback]
 }
 set a::b c
 .CE
+.PP
 When executed, it prints the message:
+.PP
 .CS
 the value of a::b has changed to c
 .CE
@@ -712,7 +714,10 @@ When non-empty, this option supplies a dictionary that provides a
 mapping from subcommand names to a list of prefix words to substitute
 in place of the ensemble command and subcommand words (in a manner
 similar to an alias created with \fBinterp alias\fR; the words are not
-reparsed after substitution).  When this option is empty, the mapping
+reparsed after substitution); if the first word of any target is not
+fully qualified when set, it is assumed to be relative to the
+\fIcurrent\fR namespace and changed to be exactly that (that is, it is
+always fully qualified when read). When this option is empty, the mapping
 will be from the local name of the subcommand to its fully-qualified
 name.  Note that when this option is non-empty and the
 \fB\-subcommands\fR option is empty, the ensemble subcommand names

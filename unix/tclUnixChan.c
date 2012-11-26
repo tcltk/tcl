@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.93.2.3 2009/07/16 20:50:54 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1065,7 +1063,7 @@ TtyGetOptionProc(
 #   define TtyGetBaud(speed)	((int) (speed))
 #else /* !DIRECT_BAUD */
 
-static struct {int baud; unsigned long speed;} speeds[] = {
+static CONST struct {int baud; unsigned long speed;} speeds[] = {
 #ifdef B0
     {0, B0},
 #endif
@@ -2132,15 +2130,24 @@ TcpGetOptionProc(
 	    ((len > 1) && (optionName[1] == 's') &&
 	    (strncmp(optionName, "-sockname", len) == 0))) {
 	if (getsockname(statePtr->fd, (struct sockaddr *) &sockname,
-		&size) >= 0) {
+                        &size) >= 0) {
 	    if (len == 0) {
 		Tcl_DStringAppendElement(dsPtr, "-sockname");
 		Tcl_DStringStartSublist(dsPtr);
 	    }
 	    Tcl_DStringAppendElement(dsPtr, inet_ntoa(sockname.sin_addr));
-	    hostEntPtr = TclpGetHostByAddr(			/* INTL: Native. */
-		    (char *) &sockname.sin_addr,
-		    sizeof(sockname.sin_addr), AF_INET);
+            if (sockname.sin_addr.s_addr == INADDR_ANY) {
+		/*
+		 * We don't want to resolve INADDR_ANY; it can sometimes cause
+		 * problems (and never has a name).
+		 */
+                
+                hostEntPtr = NULL;
+            } else {
+                hostEntPtr = TclpGetHostByAddr(		/* INTL: Native. */
+                                               (char *) &sockname.sin_addr,
+                                               sizeof(sockname.sin_addr), AF_INET);
+            }
 	    if (hostEntPtr != NULL) {
 		Tcl_DString ds;
 
@@ -3192,5 +3199,7 @@ FileTruncateProc(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */

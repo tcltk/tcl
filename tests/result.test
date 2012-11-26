@@ -9,8 +9,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# SCCS: @(#) result.test 1.4 97/12/08 15:07:49
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -132,8 +130,10 @@ test result-6.2 {Bug 1649062} -setup {
 } -cleanup {
     rename foo {}
 } -result {foo {} {}}
-
-
+test result-6.3 {Bug 2383005} {
+    catch {return -code error -errorcode {{}a} eek} m
+    set m
+} {bad -errorcode value: expected a list but got "{}a"}
 # cleanup
 cleanupTests
 return

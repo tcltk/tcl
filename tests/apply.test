@@ -11,8 +11,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: apply.test,v 1.12.2.1 2009/10/29 17:21:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.2
@@ -104,12 +102,12 @@ test apply-4.1 {error in arguments to lambda expression} {
     set lambda [list x {set x 1}]
     set res [catch {apply $lambda} msg]
     list $res $msg
-} {1 {wrong # args: should be "apply {x {set x 1}} x"}}
+} {1 {wrong # args: should be "apply lambdaExpr x"}}
 test apply-4.2 {error in arguments to lambda expression} {
     set lambda [list x {set x 1}]
     set res [catch {apply $lambda a b} msg]
     list $res $msg
-} {1 {wrong # args: should be "apply {x {set x 1}} x"}}
+} {1 {wrong # args: should be "apply lambdaExpr x"}}
 test apply-4.3 {error in arguments to lambda expression} {
     set lambda [list x {set x 1}]
     interp alias {} foo {} ::apply $lambda

@@ -8,9 +8,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
-# RCS: @(#) $Id: man2help2.tcl,v 1.17.2.1 2008/10/02 18:56:30 mistachkin Exp $
-# 
 
 # Global variables used by these scripts:
 #

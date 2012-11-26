@@ -55,7 +55,3 @@ const mp_digit ltm_prime_tab[] = {
 #endif
 };
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_prime_tab.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2006/12/01 00:08:11 $ */

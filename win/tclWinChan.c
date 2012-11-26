@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinChan.c,v 1.49.4.1 2008/05/23 21:10:45 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -491,7 +489,7 @@ FileSeekProc(
 
     oldPosHigh = 0;
     oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
-    if (oldPos == INVALID_SET_FILE_POINTER) {
+    if (oldPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
@@ -503,7 +501,7 @@ FileSeekProc(
 
     newPosHigh = (offset < 0 ? -1 : 0);
     newPos = SetFilePointer(infoPtr->handle, offset, &newPosHigh, moveMethod);
-    if (newPos == INVALID_SET_FILE_POINTER) {
+    if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
@@ -566,7 +564,7 @@ FileWideSeekProc(
     newPosHigh = Tcl_WideAsLong(offset >> 32);
     newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(offset),
 	    &newPosHigh, moveMethod);
-    if (newPos == INVALID_SET_FILE_POINTER) {
+    if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
@@ -608,7 +606,7 @@ FileTruncateProc(
 
     oldPosHigh = 0;
     oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
-    if (oldPos == INVALID_SET_FILE_POINTER) {
+    if (oldPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 	if (winError != NO_ERROR) {
 	    TclWinConvertError(winError);
@@ -623,7 +621,7 @@ FileTruncateProc(
     newPosHigh = Tcl_WideAsLong(length >> 32);
     newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(length),
 	    &newPosHigh, FILE_BEGIN);
-    if (newPos == INVALID_SET_FILE_POINTER) {
+    if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 	if (winError != NO_ERROR) {
 	    TclWinConvertError(winError);
@@ -1028,7 +1026,7 @@ Tcl_MakeFileChannel(
     int mode)			/* ORed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -1094,12 +1092,7 @@ Tcl_MakeFileChannel(
 	 */
 
 	result = 0;
-#ifndef HAVE_NO_SEH
-	__try {
-	    CloseHandle(dupedHandle);
-	    result = 1;
-	} __except (EXCEPTION_EXECUTE_HANDLER) {}
-#else
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
 	/*
 	 * Don't have SEH available, do things the hard way. Note that this
 	 * needs to be one block of asm, to avoid stack imbalance; also, it is
@@ -1179,7 +1172,15 @@ Tcl_MakeFileChannel(
 	    "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory"
 	    );
 	result = registration.status;
-
+#else
+#ifndef HAVE_NO_SEH
+	__try {
+#endif
+	    CloseHandle(dupedHandle);
+	    result = 1;
+#ifndef HAVE_NO_SEH
+	} __except (EXCEPTION_EXECUTE_HANDLER) {}
+#endif
 #endif
 	if (result == FALSE) {
 	    return NULL;
@@ -1223,7 +1224,7 @@ TclpGetDefaultStdChannel(
     HANDLE handle;
     int mode = -1;
     char *bufMode = NULL;
-    DWORD handleId = (DWORD)INVALID_HANDLE_VALUE;
+    DWORD handleId = (DWORD)-1;
 				/* Standard handle to retrieve. */
 
     switch (type) {
@@ -1336,7 +1337,7 @@ TclWinOpenFileChannel(
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    wsprintfA(channelName, "file%lx", (int) infoPtr);
+    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t)infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    (ClientData) infoPtr, permissions);

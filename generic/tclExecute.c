@@ -12,8 +12,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclExecute.c,v 1.369.2.12 2009/07/14 16:33:12 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -118,7 +116,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  */
 
 typedef struct {
-    char *name;		/* Name of function. */
+    const char *name;		/* Name of function. */
     int numArgs;	/* Number of arguments for function. */
 } BuiltinFunc;
 
@@ -128,7 +126,7 @@ typedef struct {
  * operand byte.
  */
 
-static BuiltinFunc tclBuiltinFuncTable[] = {
+static const BuiltinFunc tclBuiltinFuncTable[] = {
     {"acos", 1},
     {"asin", 1},
     {"atan", 1},
@@ -155,7 +153,7 @@ static BuiltinFunc tclBuiltinFuncTable[] = {
     {"round", 1},
     {"srand", 1},
     {"wide", 1},
-    {0},
+    {NULL, 0},
 };
 
 #define LAST_BUILTIN_FUNC	25
@@ -921,14 +919,14 @@ GrowEvaluationStack(
 
     /*
      * Reset move to hold the number of words to be moved to new stack (if
-     * any) and growth to hold the complete stack requirements: add the marker
-     * and maximal possible offset. 
+     * any) and growth to hold the complete stack requirements: add one for
+     * the marker, (WALLOCALIGN-1) for the maximal possible offset.
      */
 
     if (move) {
 	moveWords = esPtr->tosPtr - MEMSTART(markerPtr) + 1;
     }
-    needed = growth + moveWords + WALLOCALIGN - 1;
+    needed = growth + moveWords + WALLOCALIGN;
 
     /*
      * Check if there is enough room in the next stack (if there is one, it
@@ -1443,6 +1441,96 @@ TclCompEvalObj(
 	}
 
 	/*
+	 * #280.
+	 * Literal sharing fix. This part of the fix is not required by 8.4
+	 * because it eval-directs any literals, so just saving the argument
+	 * locations per command in bytecode is enough, embedded 'eval'
+	 * commands, etc. get the correct information.
+	 *
+	 * It had be backported for 8.5 because we can force the separate
+	 * compiling of a literal (in a proc body) by putting it into a control
+	 * command with dynamic pieces, and then such literal may be shared
+	 * and require their line-information to be reset, as for 8.6, as
+	 * described below.
+	 *
+	 * In 8.6 all the embedded script are compiled, and the resulting
+	 * bytecode stored in the literal. Now the shared literal has bytecode
+	 * with location data for _one_ particular location this literal is
+	 * found at. If we get executed from a different location the bytecode
+	 * has to be recompiled to get the correct locations. Not doing this
+	 * will execute the saved bytecode with data for a different location,
+	 * causing 'info frame' to point to the wrong place in the sources.
+	 *
+	 * Future optimizations ...
+	 * (1) Save the location data (ExtCmdLoc) keyed by start line. In that
+	 *     case we recompile once per location of the literal, but not
+	 *     continously, because the moment we have all locations we do not
+	 *     need to recompile any longer.
+	 *
+	 * (2) Alternative: Do not recompile, tell the execution engine the
+	 *     offset between saved starting line and actual one. Then modify
+	 *     the users to adjust the locations they have by this offset.
+	 *
+	 * (3) Alternative 2: Do not fully recompile, adjust just the location
+	 *     information.
+	 */
+
+	if (invoker) {
+	    Tcl_HashEntry *hePtr =
+		    Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
+
+	    if (hePtr) {
+		ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
+		int redo = 0;
+		CmdFrame *ctxPtr = TclStackAlloc(interp,sizeof(CmdFrame));
+
+		*ctxPtr = *invoker;
+
+		if (invoker->type == TCL_LOCATION_BC) {
+		    /*
+		     * Note: Type BC => ctx.data.eval.path    is not used.
+		     *		    ctx.data.tebc.codePtr used instead
+		     */
+		    
+		    TclGetSrcInfoForPc(ctxPtr);
+		    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
+			/*
+			 * The reference made by 'TclGetSrcInfoForPc' is
+			 * dead.
+			 */
+			
+			Tcl_DecrRefCount(ctxPtr->data.eval.path);
+			ctxPtr->data.eval.path = NULL;
+		    }
+		}
+		
+		if (word < ctxPtr->nline) {
+		    /*
+		     * Note: We do not care if the line[word] is -1. This
+		     * is a difference and requires a recompile (location
+		     * changed from absolute to relative, literal is used
+		     * fixed and through variable)
+		     *
+		     * Example:
+		     * test info-32.0 using literal of info-24.8
+		     *     (dict with ... vs           set body ...).
+		     */
+		    
+		    redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
+			    && (eclPtr->start != ctxPtr->line[word]))
+			|| ((eclPtr->type == TCL_LOCATION_BC)
+				&& (ctxPtr->type == TCL_LOCATION_SOURCE));
+		}
+		
+		TclStackFree(interp, ctxPtr);
+	    
+		if (redo) {
+		    goto recompileObj;
+		}
+	    }
+	}
+
+	/*
 	 * Increment the code's ref count while it is being executed. If
 	 * afterwards no references to it remain, free the code.
 	 */
@@ -1709,8 +1797,8 @@ TclExecuteByteCode(
 
     catchTop = initCatchTop = (ptrdiff_t *) (
 	GrowEvaluationStack(iPtr->execEnvPtr,
-		codePtr->maxExceptDepth + sizeof(CmdFrame) +
-		    codePtr->maxStackDepth, 0) - 1);
+		(sizeof(CmdFrame) + sizeof(Tcl_Obj *) - 1)/sizeof(Tcl_Obj *) +
+		codePtr->maxExceptDepth + codePtr->maxStackDepth, 0) - 1);
     bcFramePtr = (CmdFrame *) (initCatchTop + codePtr->maxExceptDepth + 1);
     tosPtr = initTosPtr = ((Tcl_Obj **) (bcFramePtr + 1)) - 1;
     esPtr = iPtr->execEnvPtr->execStackPtr;
@@ -1735,7 +1823,7 @@ TclExecuteByteCode(
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceExec >= 2) {
 	PrintByteCodeInfo(codePtr);
-	fprintf(stdout, "  Starting stack top=%d\n", CURR_DEPTH);
+	fprintf(stdout, "  Starting stack top=%d\n", (int) CURR_DEPTH);
 	fflush(stdout);
     }
 #endif
@@ -2322,16 +2410,18 @@ TclExecuteByteCode(
 
 	    bcFramePtr->data.tebc.pc = (char *) pc;
 	    iPtr->cmdFramePtr = bcFramePtr;
-	    TclArgumentBCEnter((Tcl_Interp*) iPtr, objv, objc,
-			       codePtr, bcFramePtr,
-			       pc - codePtr->codeStart);
+	    if (iPtr->flags & INTERP_DEBUG_FRAME) {
+		TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+			codePtr, bcFramePtr, pc - codePtr->codeStart);
+	    }
 	    DECACHE_STACK_INFO();
 	    result = TclEvalObjvInternal(interp, objc, objv,
 		    /* call from TEBC */(char *) -1, -1, 0);
 	    CACHE_STACK_INFO();
-	    TclArgumentBCRelease((Tcl_Interp*) iPtr, objv, objc,
-				 codePtr,
-				 pc - codePtr->codeStart);
+	    if (iPtr->flags & INTERP_DEBUG_FRAME) {
+		TclArgumentBCRelease((Tcl_Interp *) iPtr, objv, objc,
+			codePtr, pc - codePtr->codeStart);
+	    }
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 
 	    if (result == TCL_OK) {
@@ -2798,14 +2888,14 @@ TclExecuteByteCode(
 	valuePtr = OBJ_AT_TOS; /* value to append */
 	part2Ptr = NULL;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreStk;
 
     case INST_LAPPEND_ARRAY_STK:
 	valuePtr = OBJ_AT_TOS; /* value to append */
 	part2Ptr = OBJ_UNDER_TOS;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreStk;
 
     case INST_APPEND_STK:
@@ -2860,14 +2950,14 @@ TclExecuteByteCode(
 	opnd = TclGetUInt4AtPtr(pc+1);
 	pcAdjustment = 5;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreArray;
 
     case INST_LAPPEND_ARRAY1:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreArray;
 
     case INST_APPEND_ARRAY4:
@@ -2909,14 +2999,14 @@ TclExecuteByteCode(
 	opnd = TclGetUInt4AtPtr(pc+1);
 	pcAdjustment = 5;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreScalar;
 
     case INST_LAPPEND_SCALAR1:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
+		| TCL_LIST_ELEMENT);
 	goto doStoreScalar;
 
     case INST_APPEND_SCALAR4:
@@ -3609,7 +3699,9 @@ TclExecuteByteCode(
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto checkForCatch;
 	}
 
@@ -3617,7 +3709,9 @@ TclExecuteByteCode(
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    CACHE_STACK_INFO();
 	    goto checkForCatch;
 	}
 
@@ -4725,7 +4819,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (valuePtr->typePtr?
 		    valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto checkForCatch;
 	}
 
@@ -4736,7 +4832,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (value2Ptr->typePtr?
 		    value2Ptr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    CACHE_STACK_INFO();
 	    goto checkForCatch;
 	}
 
@@ -5184,7 +5282,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (valuePtr->typePtr?
 		    valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto checkForCatch;
 	}
 	result = GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
@@ -5194,7 +5294,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (value2Ptr->typePtr?
 		    value2Ptr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    CACHE_STACK_INFO();
 	    goto checkForCatch;
 	}
 
@@ -5432,7 +5534,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name: "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto checkForCatch;
 	}
 
@@ -5456,7 +5560,9 @@ TclExecuteByteCode(
 	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name: "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    CACHE_STACK_INFO();
 	    goto checkForCatch;
 	}
 
@@ -5527,7 +5633,9 @@ TclExecuteByteCode(
 	    if (TclIsNaN(dResult)) {
 		TRACE(("%.20s %.20s => IEEE FLOATING PT ERROR\n",
 			O2S(valuePtr), O2S(value2Ptr)));
+		DECACHE_STACK_INFO();
 		TclExprFloatError(interp, dResult);
+		CACHE_STACK_INFO();
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
@@ -6181,7 +6289,9 @@ TclExecuteByteCode(
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto checkForCatch;
 	}
 	/* TODO: Consider peephole opt. */
@@ -6205,7 +6315,9 @@ TclExecuteByteCode(
 	    result = TCL_ERROR;
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto checkForCatch;
 	}
 	if (type == TCL_NUMBER_LONG) {
@@ -6256,7 +6368,9 @@ TclExecuteByteCode(
 	    result = TCL_ERROR;
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
+	    CACHE_STACK_INFO();
 	    goto checkForCatch;
 	}
 	switch (type) {
@@ -6355,7 +6469,9 @@ TclExecuteByteCode(
 		result = TCL_ERROR;
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 			(valuePtr->typePtr? valuePtr->typePtr->name:"null")));
+		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
+		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    } else {
 		/* ... TryConvertToNumeric($NonNumeric) is acceptable */
@@ -6373,7 +6489,9 @@ TclExecuteByteCode(
 
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 			(valuePtr->typePtr? valuePtr->typePtr->name:"null")));
+		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
+		CACHE_STACK_INFO();
 	    } else {
 		/*
 		 * Numeric conversion of NaN -> error.
@@ -6381,7 +6499,9 @@ TclExecuteByteCode(
 
 		TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
 			O2S(objResultPtr)));
+		DECACHE_STACK_INFO();
 		TclExprFloatError(interp, *((const double *)ptr));
+		CACHE_STACK_INFO();
 	    }
 	    goto checkForCatch;
 	}
@@ -6619,15 +6739,17 @@ TclExecuteByteCode(
 
 	*(++catchTop) = CURR_DEPTH;
 	TRACE(("%u => catchTop=%d, stackTop=%d\n",
-		TclGetUInt4AtPtr(pc+1), (catchTop - initCatchTop - 1),
+		TclGetUInt4AtPtr(pc+1), (int) (catchTop - initCatchTop - 1),
 		(int) CURR_DEPTH));
 	NEXT_INST_F(5, 0, 0);
 
     case INST_END_CATCH:
 	catchTop--;
+	DECACHE_STACK_INFO();
 	Tcl_ResetResult(interp);
+	CACHE_STACK_INFO();
 	result = TCL_OK;
-	TRACE(("=> catchTop=%d\n", (catchTop - initCatchTop - 1)));
+	TRACE(("=> catchTop=%d\n", (int) (catchTop - initCatchTop - 1)));
 	NEXT_INST_F(1, 0, 0);
 
     case INST_PUSH_RESULT:
@@ -6689,9 +6811,11 @@ TclExecuteByteCode(
 		    "%u => ERROR reading leaf dictionary key \"%s\": ",
 		    opnd, O2S(dictPtr)), Tcl_GetObjResult(interp));
 	} else {
+	    DECACHE_STACK_INFO();
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "key \"", TclGetString(OBJ_AT_TOS),
 		    "\" not known in dictionary", NULL);
+	    CACHE_STACK_INFO();
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
 	    result = TCL_ERROR;
 	}
@@ -7162,8 +7286,10 @@ TclExecuteByteCode(
      */
 
  divideByZero:
+    DECACHE_STACK_INFO();
     Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
     Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+    CACHE_STACK_INFO();
 
     result = TCL_ERROR;
     goto checkForCatch;
@@ -7174,10 +7300,12 @@ TclExecuteByteCode(
      */
 
  exponOfZero:
+    DECACHE_STACK_INFO();
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "exponentiation of zero by negative power", -1));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 	    "exponentiation of zero by negative power", NULL);
+    CACHE_STACK_INFO();
     result = TCL_ERROR;
     goto checkForCatch;
 
@@ -7368,7 +7496,7 @@ TclExecuteByteCode(
 	if (traceInstructions) {
 	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
 		    "unwound to %ld, new pc %u\n",
-		    rangePtr->codeOffset, catchTop - initCatchTop - 1,
+		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
 		    (long) *catchTop, (unsigned) rangePtr->catchOffset);
 	}
 #endif
@@ -7617,6 +7745,7 @@ IllegalExprOperandType(
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "can't use %s as operand of \"%s\"", description, operator));
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, NULL);
 }
 
 /*
@@ -8032,8 +8161,12 @@ EvalStatsCmd(
     int decadeHigh, minSizeDecade, maxSizeDecade, length, i;
     char *litTableStats;
     LiteralEntry *entryPtr;
+    Tcl_Obj *objPtr;
 
 #define Percent(a,b) ((a) * 100.0 / (b))
+
+    objPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(objPtr);
 
     numInstructions = 0.0;
     for (i = 0;  i < 256;  i++) {
@@ -8065,65 +8198,65 @@ EvalStatsCmd(
      * Summary statistics, total and current source and ByteCode sizes.
      */
 
-    fprintf(stdout, "\n----------------------------------------------------------------\n");
-    fprintf(stdout,
-	    "Compilation and execution statistics for interpreter 0x%p\n",
+    Tcl_AppendPrintfToObj(objPtr, "\n----------------------------------------------------------------\n");
+    Tcl_AppendPrintfToObj(objPtr,
+	    "Compilation and execution statistics for interpreter %#lx\n",
 	    iPtr);
 
-    fprintf(stdout, "\nNumber ByteCodes executed	%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nNumber ByteCodes executed	%ld\n",
 	    statsPtr->numExecutions);
-    fprintf(stdout, "Number ByteCodes compiled	%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "Number ByteCodes compiled	%ld\n",
 	    statsPtr->numCompilations);
-    fprintf(stdout, "  Mean executions/compile	%.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean executions/compile	%.1f\n",
 	    statsPtr->numExecutions / (float)statsPtr->numCompilations);
 
-    fprintf(stdout, "\nInstructions executed		%.0f\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nInstructions executed		%.0f\n",
 	    numInstructions);
-    fprintf(stdout, "  Mean inst/compile		%.0f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean inst/compile		%.0f\n",
 	    numInstructions / statsPtr->numCompilations);
-    fprintf(stdout, "  Mean inst/execution		%.0f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean inst/execution		%.0f\n",
 	    numInstructions / statsPtr->numExecutions);
 
-    fprintf(stdout, "\nTotal ByteCodes			%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nTotal ByteCodes			%ld\n",
 	    statsPtr->numCompilations);
-    fprintf(stdout, "  Source bytes			%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Source bytes			%.6g\n",
 	    statsPtr->totalSrcBytes);
-    fprintf(stdout, "  Code bytes			%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Code bytes			%.6g\n",
 	    totalCodeBytes);
-    fprintf(stdout, "    ByteCode bytes		%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    ByteCode bytes		%.6g\n",
 	    statsPtr->totalByteCodeBytes);
-    fprintf(stdout, "    Literal bytes		%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    Literal bytes		%.6g\n",
 	    totalLiteralBytes);
-    fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
 	    (unsigned long) (statsPtr->numLiteralsCreated * sizeof(LiteralEntry)),
 	    (unsigned long) (statsPtr->numLiteralsCreated * sizeof(Tcl_Obj)),
 	    statsPtr->totalLitStringBytes);
-    fprintf(stdout, "  Mean code/compile		%.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean code/compile		%.1f\n",
 	    totalCodeBytes / statsPtr->numCompilations);
-    fprintf(stdout, "  Mean code/source		%.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean code/source		%.1f\n",
 	    totalCodeBytes / statsPtr->totalSrcBytes);
 
-    fprintf(stdout, "\nCurrent (active) ByteCodes	%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nCurrent (active) ByteCodes	%ld\n",
 	    numCurrentByteCodes);
-    fprintf(stdout, "  Source bytes			%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Source bytes			%.6g\n",
 	    statsPtr->currentSrcBytes);
-    fprintf(stdout, "  Code bytes			%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Code bytes			%.6g\n",
 	    currentCodeBytes);
-    fprintf(stdout, "    ByteCode bytes		%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    ByteCode bytes		%.6g\n",
 	    statsPtr->currentByteCodeBytes);
-    fprintf(stdout, "    Literal bytes		%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    Literal bytes		%.6g\n",
 	    currentLiteralBytes);
-    fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(Tcl_Obj)),
 	    statsPtr->currentLitStringBytes);
-    fprintf(stdout, "  Mean code/source		%.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean code/source		%.1f\n",
 	    currentCodeBytes / statsPtr->currentSrcBytes);
-    fprintf(stdout, "  Code + source bytes		%.6g (%0.1f mean code/src)\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Code + source bytes		%.6g (%0.1f mean code/src)\n",
 	    (currentCodeBytes + statsPtr->currentSrcBytes),
 	    (currentCodeBytes / statsPtr->currentSrcBytes) + 1.0);
 
@@ -8135,18 +8268,18 @@ EvalStatsCmd(
      */
 
     numSharedMultX = 0;
-    fprintf(stdout, "\nTcl_IsShared object check (all objects):\n");
-    fprintf(stdout, "  Object had refcount <=1 (not shared)	%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nTcl_IsShared object check (all objects):\n");
+    Tcl_AppendPrintfToObj(objPtr, "  Object had refcount <=1 (not shared)	%ld\n",
 	    tclObjsShared[1]);
     for (i = 2;  i < TCL_MAX_SHARED_OBJ_STATS;  i++) {
-	fprintf(stdout, "  refcount ==%d		%ld\n",
+	Tcl_AppendPrintfToObj(objPtr, "  refcount ==%d		%ld\n",
 		i, tclObjsShared[i]);
 	numSharedMultX += tclObjsShared[i];
     }
-    fprintf(stdout, "  refcount >=%d		%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "  refcount >=%d		%ld\n",
 	    i, tclObjsShared[0]);
     numSharedMultX += tclObjsShared[0];
-    fprintf(stdout, "  Total shared objects			%d\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Total shared objects			%d\n",
 	    numSharedMultX);
 
     /*
@@ -8183,48 +8316,48 @@ EvalStatsCmd(
     sharingBytesSaved = (objBytesIfUnshared + strBytesIfUnshared)
 	    - currentLiteralBytes;
 
-    fprintf(stdout, "\nTotal objects (all interps)	%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nTotal objects (all interps)	%ld\n",
 	    tclObjsAlloced);
-    fprintf(stdout, "Current objects			%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "Current objects			%ld\n",
 	    (tclObjsAlloced - tclObjsFreed));
-    fprintf(stdout, "Total literal objects		%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "Total literal objects		%ld\n",
 	    statsPtr->numLiteralsCreated);
 
-    fprintf(stdout, "\nCurrent literal objects		%d (%0.1f%% of current objects)\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nCurrent literal objects		%d (%0.1f%% of current objects)\n",
 	    globalTablePtr->numEntries,
 	    Percent(globalTablePtr->numEntries, tclObjsAlloced-tclObjsFreed));
-    fprintf(stdout, "  ByteCode literals	 	%ld (%0.1f%% of current literals)\n",
+    Tcl_AppendPrintfToObj(objPtr, "  ByteCode literals	 	%ld (%0.1f%% of current literals)\n",
 	    numByteCodeLits,
 	    Percent(numByteCodeLits, globalTablePtr->numEntries));
-    fprintf(stdout, "  Literals reused > 1x	 	%d\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Literals reused > 1x	 	%d\n",
 	    numSharedMultX);
-    fprintf(stdout, "  Mean reference count	 	%.2f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean reference count	 	%.2f\n",
 	    ((double) refCountSum) / globalTablePtr->numEntries);
-    fprintf(stdout, "  Mean len, str reused >1x 	%.2f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean len, str reused >1x 	%.2f\n",
 	    (numSharedMultX ? strBytesSharedMultX/numSharedMultX : 0.0));
-    fprintf(stdout, "  Mean len, str used 1x	 	%.2f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean len, str used 1x	 	%.2f\n",
 	    (numSharedOnce ? strBytesSharedOnce/numSharedOnce : 0.0));
-    fprintf(stdout, "  Total sharing savings	 	%.6g (%0.1f%% of bytes if no sharing)\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Total sharing savings	 	%.6g (%0.1f%% of bytes if no sharing)\n",
 	    sharingBytesSaved,
 	    Percent(sharingBytesSaved, objBytesIfUnshared+strBytesIfUnshared));
-    fprintf(stdout, "    Bytes with sharing		%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    Bytes with sharing		%.6g\n",
 	    currentLiteralBytes);
-    fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(Tcl_Obj)),
 	    statsPtr->currentLitStringBytes);
-    fprintf(stdout, "    Bytes if no sharing		%.6g = objects %.6g + strings %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    Bytes if no sharing		%.6g = objects %.6g + strings %.6g\n",
 	    (objBytesIfUnshared + strBytesIfUnshared),
 	    objBytesIfUnshared, strBytesIfUnshared);
-    fprintf(stdout, "  String sharing savings 	%.6g = unshared %.6g - shared %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "  String sharing savings 	%.6g = unshared %.6g - shared %.6g\n",
 	    (strBytesIfUnshared - statsPtr->currentLitStringBytes),
 	    strBytesIfUnshared, statsPtr->currentLitStringBytes);
-    fprintf(stdout, "  Literal mgmt overhead	 	%ld (%0.1f%% of bytes with sharing)\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Literal mgmt overhead	 	%ld (%0.1f%% of bytes with sharing)\n",
 	    literalMgmtBytes,
 	    Percent(literalMgmtBytes, currentLiteralBytes));
-    fprintf(stdout, "    table %lu + buckets %lu + entries %lu\n",
+    Tcl_AppendPrintfToObj(objPtr, "    table %lu + buckets %lu + entries %lu\n",
 	    (unsigned long) sizeof(LiteralTable),
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)));
@@ -8233,33 +8366,33 @@ EvalStatsCmd(
      * Breakdown of current ByteCode space requirements.
      */
 
-    fprintf(stdout, "\nBreakdown of current ByteCode requirements:\n");
-    fprintf(stdout, "                         Bytes      Pct of    Avg per\n");
-    fprintf(stdout, "                                     total    ByteCode\n");
-    fprintf(stdout, "Total             %12.6g     100.00%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nBreakdown of current ByteCode requirements:\n");
+    Tcl_AppendPrintfToObj(objPtr, "                         Bytes      Pct of    Avg per\n");
+    Tcl_AppendPrintfToObj(objPtr, "                                     total    ByteCode\n");
+    Tcl_AppendPrintfToObj(objPtr, "Total             %12.6g     100.00%%   %8.1f\n",
 	    statsPtr->currentByteCodeBytes,
 	    statsPtr->currentByteCodeBytes / numCurrentByteCodes);
-    fprintf(stdout, "Header            %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Header            %12.6g   %8.1f%%   %8.1f\n",
 	    currentHeaderBytes,
 	    Percent(currentHeaderBytes, statsPtr->currentByteCodeBytes),
 	    currentHeaderBytes / numCurrentByteCodes);
-    fprintf(stdout, "Instructions      %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Instructions      %12.6g   %8.1f%%   %8.1f\n",
 	    statsPtr->currentInstBytes,
 	    Percent(statsPtr->currentInstBytes,statsPtr->currentByteCodeBytes),
 	    statsPtr->currentInstBytes / numCurrentByteCodes);
-    fprintf(stdout, "Literal ptr array %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Literal ptr array %12.6g   %8.1f%%   %8.1f\n",
 	    statsPtr->currentLitBytes,
 	    Percent(statsPtr->currentLitBytes,statsPtr->currentByteCodeBytes),
 	    statsPtr->currentLitBytes / numCurrentByteCodes);
-    fprintf(stdout, "Exception table   %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Exception table   %12.6g   %8.1f%%   %8.1f\n",
 	    statsPtr->currentExceptBytes,
 	    Percent(statsPtr->currentExceptBytes,statsPtr->currentByteCodeBytes),
 	    statsPtr->currentExceptBytes / numCurrentByteCodes);
-    fprintf(stdout, "Auxiliary data    %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Auxiliary data    %12.6g   %8.1f%%   %8.1f\n",
 	    statsPtr->currentAuxBytes,
 	    Percent(statsPtr->currentAuxBytes,statsPtr->currentByteCodeBytes),
 	    statsPtr->currentAuxBytes / numCurrentByteCodes);
-    fprintf(stdout, "Command map       %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Command map       %12.6g   %8.1f%%   %8.1f\n",
 	    statsPtr->currentCmdMapBytes,
 	    Percent(statsPtr->currentCmdMapBytes,statsPtr->currentByteCodeBytes),
 	    statsPtr->currentCmdMapBytes / numCurrentByteCodes);
@@ -8268,8 +8401,8 @@ EvalStatsCmd(
      * Detailed literal statistics.
      */
 
-    fprintf(stdout, "\nLiteral string sizes:\n");
-    fprintf(stdout, "	 Up to length		Percentage\n");
+    Tcl_AppendPrintfToObj(objPtr, "\nLiteral string sizes:\n");
+    Tcl_AppendPrintfToObj(objPtr, "	 Up to length		Percentage\n");
     maxSizeDecade = 0;
     for (i = 31;  i >= 0;  i--) {
 	if (statsPtr->literalCount[i] > 0) {
@@ -8281,12 +8414,12 @@ EvalStatsCmd(
     for (i = 0;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->literalCount[i];
-	fprintf(stdout, "	%10d		%8.0f%%\n",
+	Tcl_AppendPrintfToObj(objPtr, "	%10d		%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numLiteralsCreated));
     }
 
     litTableStats = TclLiteralStats(globalTablePtr);
-    fprintf(stdout, "\nCurrent literal table statistics:\n%s\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nCurrent literal table statistics:\n%s\n",
 	    litTableStats);
     ckfree((char *) litTableStats);
 
@@ -8294,8 +8427,8 @@ EvalStatsCmd(
      * Source and ByteCode size distributions.
      */
 
-    fprintf(stdout, "\nSource sizes:\n");
-    fprintf(stdout, "	 Up to size		Percentage\n");
+    Tcl_AppendPrintfToObj(objPtr, "\nSource sizes:\n");
+    Tcl_AppendPrintfToObj(objPtr, "	 Up to size		Percentage\n");
     minSizeDecade = maxSizeDecade = 0;
     for (i = 0;  i < 31;  i++) {
 	if (statsPtr->srcCount[i] > 0) {
@@ -8313,12 +8446,12 @@ EvalStatsCmd(
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->srcCount[i];
-	fprintf(stdout, "	%10d		%8.0f%%\n",
+	Tcl_AppendPrintfToObj(objPtr, "	%10d		%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
 
-    fprintf(stdout, "\nByteCode sizes:\n");
-    fprintf(stdout, "	 Up to size		Percentage\n");
+    Tcl_AppendPrintfToObj(objPtr, "\nByteCode sizes:\n");
+    Tcl_AppendPrintfToObj(objPtr, "	 Up to size		Percentage\n");
     minSizeDecade = maxSizeDecade = 0;
     for (i = 0;  i < 31;  i++) {
 	if (statsPtr->byteCodeCount[i] > 0) {
@@ -8336,12 +8469,12 @@ EvalStatsCmd(
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->byteCodeCount[i];
-	fprintf(stdout, "	%10d		%8.0f%%\n",
+	Tcl_AppendPrintfToObj(objPtr, "	%10d		%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
 
-    fprintf(stdout, "\nByteCode longevity (excludes Current ByteCodes):\n");
-    fprintf(stdout, "	       Up to ms		Percentage\n");
+    Tcl_AppendPrintfToObj(objPtr, "\nByteCode longevity (excludes Current ByteCodes):\n");
+    Tcl_AppendPrintfToObj(objPtr, "	       Up to ms		Percentage\n");
     minSizeDecade = maxSizeDecade = 0;
     for (i = 0;  i < 31;  i++) {
 	if (statsPtr->lifetimeCount[i] > 0) {
@@ -8359,7 +8492,7 @@ EvalStatsCmd(
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->lifetimeCount[i];
-	fprintf(stdout, "	%12.3f		%8.0f%%\n",
+	Tcl_AppendPrintfToObj(objPtr, "	%12.3f		%8.0f%%\n",
 		decadeHigh/1000.0, Percent(sum, statsPtr->numByteCodesFreed));
     }
 
@@ -8367,28 +8500,46 @@ EvalStatsCmd(
      * Instruction counts.
      */
 
-    fprintf(stdout, "\nInstruction counts:\n");
+    Tcl_AppendPrintfToObj(objPtr, "\nInstruction counts:\n");
     for (i = 0;  i <= LAST_INST_OPCODE;  i++) {
-	if (statsPtr->instructionCount[i] == 0) {
-	    fprintf(stdout, "%20s %8ld %6.1f%%\n",
-		    tclInstructionTable[i].name,
-		    statsPtr->instructionCount[i],
+	Tcl_AppendPrintfToObj(objPtr, "%20s %8ld ",
+		tclInstructionTable[i].name, statsPtr->instructionCount[i]);
+	if (statsPtr->instructionCount[i]) {
+	    Tcl_AppendPrintfToObj(objPtr, "%6.1f%%\n",
 		    Percent(statsPtr->instructionCount[i], numInstructions));
-	}
-    }
-
-    fprintf(stdout, "\nInstructions NEVER executed:\n");
-    for (i = 0;  i <= LAST_INST_OPCODE;  i++) {
-	if (statsPtr->instructionCount[i] == 0) {
-	    fprintf(stdout, "%20s\n", tclInstructionTable[i].name);
+	} else {
+	    Tcl_AppendPrintfToObj(objPtr, "0\n");
 	}
     }
 
 #ifdef TCL_MEM_DEBUG
-    fprintf(stdout, "\nHeap Statistics:\n");
-    TclDumpMemoryInfo(stdout);
+    Tcl_AppendPrintfToObj(objPtr, "\nHeap Statistics:\n");
+    TclDumpMemoryInfo((ClientData) objPtr, 1);
 #endif
-    fprintf(stdout, "\n----------------------------------------------------------------\n");
+    Tcl_AppendPrintfToObj(objPtr, "\n----------------------------------------------------------------\n");
+
+    if (objc == 1) {
+	Tcl_SetObjResult(interp, objPtr);
+    } else {
+	Tcl_Channel outChan;
+	char *str = Tcl_GetStringFromObj(objv[1], &length);
+
+	if (length) {
+	    if (strcmp(str, "stdout") == 0) {
+		outChan = Tcl_GetStdChannel(TCL_STDOUT);
+	    } else if (strcmp(str, "stderr") == 0) {
+		outChan = Tcl_GetStdChannel(TCL_STDERR);
+	    } else {
+		outChan = Tcl_OpenFileChannel(NULL, str, "w", 0664);
+	    }
+	} else {
+	    outChan = Tcl_GetStdChannel(TCL_STDOUT);
+	}
+	if (outChan != NULL) {
+	    Tcl_WriteObj(outChan, objPtr);
+	}
+    }
+    Tcl_DecrRefCount(objPtr);
     return TCL_OK;
 }
 #endif /* TCL_COMPILE_STATS */

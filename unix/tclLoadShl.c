@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclLoadShl.c,v 1.16 2005/11/11 23:46:34 dkf Exp $
  */
 
 #include <dl.h>

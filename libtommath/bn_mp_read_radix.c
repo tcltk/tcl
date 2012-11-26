@@ -48,7 +48,7 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
      * this allows numbers like 1AB and 1ab to represent the same  value
      * [e.g. in hex]
      */
-    ch = (char) ((radix < 36) ? toupper (*str) : *str);
+    ch = (char) ((radix < 36) ? toupper ((unsigned char) *str) : *str);
     for (y = 0; y < 64; y++) {
       if (ch == mp_s_rmap[y]) {
          break;
@@ -86,9 +86,3 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_read_radix.c,v $ */
-/* Tom's revision is 1.4. */
-/* $Revision: 1.5 $ */
-/* $Date: 2006/12/01 00:31:32 $ */
-

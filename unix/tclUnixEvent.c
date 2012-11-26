@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclUnixEvent.c,v 1.9.10.1 2009/04/10 18:02:42 das Exp $
  */
 
 #include "tclInt.h"

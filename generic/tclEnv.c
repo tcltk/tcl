@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclEnv.c,v 1.37 2007/12/13 15:23:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -45,8 +43,10 @@ static char *		EnvTraceProc(ClientData clientData, Tcl_Interp *interp,
 static void		ReplaceString(const char *oldStr, char *newStr);
 MODULE_SCOPE void	TclSetEnv(const char *name, const char *value);
 MODULE_SCOPE void	TclUnsetEnv(const char *name);
-#if defined(__CYGWIN__) && defined(__WIN32__)
-static void		TclCygwinPutenv(const char *string);
+
+#if defined(__CYGWIN__)
+    static void TclCygwinPutenv(char *string);
+#   define putenv TclCygwinPutenv
 #endif
 
 /*
@@ -111,7 +111,8 @@ TclSetupEnv(
 	    if (p2 == NULL) {
 		/*
 		 * This condition seem to happen occasionally under some
-		 * versions of Solaris; ignore the entry.
+		 * versions of Solaris, or when encoding accidents swallow the
+		 * '='; ignore the entry.
 		 */
 
 		continue;
@@ -393,7 +394,7 @@ TclUnsetEnv(
      * that no = should be included, and Windows requires it.
      */
 
-#ifdef WIN32
+#if defined(__WIN32__) || defined(__CYGWIN__)
     string = ckalloc((unsigned) length+2);
     memcpy(string, name, (size_t) length);
     string[length] = '=';
@@ -687,9 +688,7 @@ TclFinalizeEnvironment(void)
     }
 }
 
-#if defined(__CYGWIN__) && defined(__WIN32__)
-
-#include <windows.h>
+#if defined(__CYGWIN__)
 
 /*
  * When using cygwin, when an environment variable changes, we need to synch
@@ -697,10 +696,11 @@ TclFinalizeEnvironment(void)
  * fork) and the Windows environment (in case the application TCL code calls
  * exec, which calls the Windows CreateProcess function).
  */
+DLLIMPORT extern void __stdcall SetEnvironmentVariableA(const char*, const char *);
 
 static void
 TclCygwinPutenv(
-    const char *str)
+    char *str)
 {
     char *name, *value;
 
@@ -751,11 +751,11 @@ TclCygwinPutenv(
 	 */
 
 	if (strcmp(name, "Path") == 0) {
-	    SetEnvironmentVariable("PATH", NULL);
+	    SetEnvironmentVariableA("PATH", NULL);
 	    unsetenv("PATH");
 	}
 
-	SetEnvironmentVariable(name, value);
+	SetEnvironmentVariableA(name, value);
     } else {
 	char *buf;
 
@@ -763,7 +763,7 @@ TclCygwinPutenv(
 	 * Eliminate any Path variable, to prevent any confusion.
 	 */
 
-	SetEnvironmentVariable("Path", NULL);
+	SetEnvironmentVariableA("Path", NULL);
 	unsetenv("Path");
 
 	if (value == NULL) {
@@ -771,15 +771,15 @@ TclCygwinPutenv(
 	} else {
 	    int size;
 
-	    size = cygwin_posix_to_win32_path_list_buf_size(value);
+	    size = cygwin_conv_path_list(0, value, NULL, 0);
 	    buf = alloca(size + 1);
-	    cygwin_posix_to_win32_path_list(value, buf);
+	    cygwin_conv_path_list(0, value, buf, size);
 	}
 
-	SetEnvironmentVariable(name, buf);
+	SetEnvironmentVariableA(name, buf);
     }
 }
-#endif /* __CYGWIN__ && __WIN32__ */
+#endif /* __CYGWIN__ */
 
 /*
  * Local Variables:

@@ -138,7 +138,3 @@ main (void)
   }
   return 0;
 }
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/etc/mersenne.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2006/12/01 00:08:28 $ */

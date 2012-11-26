@@ -27,7 +27,3 @@ int mp_to_signed_bin (mp_int * a, unsigned char *b)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_to_signed_bin.c,v $ */
-/* $Revision: 1.1.1.4 $ */
-/* $Date: 2006/12/01 00:08:11 $ */

@@ -107,8 +107,3 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_add_d.c,v $ */
-/* Tom's revision is 1.2 */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/01 00:31:32 $ */

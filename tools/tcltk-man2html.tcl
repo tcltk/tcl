@@ -1,6 +1,6 @@
 #!/bin/sh
 # The next line is executed by /bin/sh, but not tcl \
-exec tclsh8.4 "$0" ${1+"$@"}
+exec tclsh "$0" ${1+"$@"}
 
 package require Tcl 8.5
 
@@ -516,7 +516,10 @@ proc long-toc {text} {
 proc option-toc {name class switch} {
     global manual
     if {[string match "*OPTIONS" $manual(section)]} {
-	if {$manual(name) ne "ttk_widget"} {
+	if {
+	    $manual(name) ne "ttk_widget"
+	    && $manual(section) ne "WIDGET-SPECIFIC OPTIONS"
+	} then {
 	    # link the defined option into the long table of contents
 	    set link [long-toc "$switch, $name, $class"]
 	    regsub -- "$switch, $name, $class" $link "$switch" link
@@ -941,6 +944,11 @@ proc cross-reference {ref} {
 	}
 	scrollbar.n {
 	    if {$lref in {set}} {
+		return $ref
+	    }
+	}
+	safe.n {
+	    if {$lref in {options}} {
 		return $ref
 	    }
 	}

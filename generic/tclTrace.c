@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclTrace.c,v 1.47.2.2 2009/10/17 22:35:58 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -112,10 +110,10 @@ static Tcl_TraceTypeObjCmd TraceExecutionObjCmd;
 static const char *traceTypeOptions[] = {
     "execution", "command", "variable", NULL
 };
-static Tcl_TraceTypeObjCmd *traceSubCmds[] = {
+static Tcl_TraceTypeObjCmd *const traceSubCmds[] = {
     TraceExecutionObjCmd,
     TraceCommandObjCmd,
-    TraceVariableObjCmd,
+    TraceVariableObjCmd
 };
 
 /*
@@ -466,7 +464,7 @@ TraceExecutionObjCmd(
 		    TCL_TRACE_LEAVE_DURING_EXEC)) {
 		flags |= (TCL_TRACE_ENTER_EXEC | TCL_TRACE_LEAVE_EXEC);
 	    }
-	    strcpy(tcmdPtr->command, command);
+	    memcpy(tcmdPtr->command, command, length+1);
 	    name = Tcl_GetString(objv[3]);
 	    if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 		    (ClientData) tcmdPtr) != TCL_OK) {
@@ -704,7 +702,7 @@ TraceCommandObjCmd(
 	    tcmdPtr->length = length;
 	    tcmdPtr->refCount = 1;
 	    flags |= TCL_TRACE_DELETE;
-	    strcpy(tcmdPtr->command, command);
+	    memcpy(tcmdPtr->command, command, length+1);
 	    name = Tcl_GetString(objv[3]);
 	    if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 		    (ClientData) tcmdPtr) != TCL_OK) {
@@ -909,7 +907,7 @@ TraceVariableObjCmd(
 	    }
 	    ctvarPtr->traceCmdInfo.length = length;
 	    flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
-	    strcpy(ctvarPtr->traceCmdInfo.command, command);
+	    memcpy(ctvarPtr->traceCmdInfo.command, command, length+1);
 	    ctvarPtr->traceInfo.traceProc = TraceVarProc;
 	    ctvarPtr->traceInfo.clientData = (ClientData)
 		    &ctvarPtr->traceCmdInfo;
@@ -1124,8 +1122,18 @@ Tcl_TraceCommand(
     tracePtr->refCount = 1;
     cmdPtr->tracePtr = tracePtr;
     if (tracePtr->flags & TCL_TRACE_ANY_EXEC) {
+	/*
+	 * Bug 3484621: up the interp's epoch if this is a BC'ed command
+	 */
+	
+	if ((cmdPtr->compileProc != NULL) && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)){
+	    Interp *iPtr = (Interp *) interp;
+	    iPtr->compileEpoch++;
+	}
 	cmdPtr->flags |= CMD_HAS_EXEC_TRACES;
     }
+
+    
     return TCL_OK;
 }
 
@@ -1228,6 +1236,15 @@ Tcl_UntraceCommand(
 	 */
 
 	cmdPtr->flags &= ~CMD_HAS_EXEC_TRACES;
+
+        /*
+	 * Bug 3484621: up the interp's epoch if this is a BC'ed command
+	 */
+	
+	if (cmdPtr->compileProc != NULL) {
+	    Interp *iPtr = (Interp *) interp;
+	    iPtr->compileEpoch++;
+	}
     }
 }
 
@@ -2876,6 +2893,16 @@ Tcl_UntraceVar2(
      * The code below makes it possible to delete traces while traces are
      * active: it makes sure that the deleted trace won't be processed by
      * TclCallVarTraces.
+     *
+     * Caveat (Bug 3062331): When an unset trace handler on a variable
+     * tries to delete a different unset trace handler on the same variable,
+     * the results may be surprising.  When variable unset traces fire, the
+     * traced variable is already gone.  So the TclLookupVar() call above
+     * will not find that variable, and not finding it will never reach here
+     * to perform the deletion.  This means callers of Tcl_UntraceVar*()
+     * attempting to delete unset traces from within the handler of another
+     * unset trace have to account for the possibility that their call to
+     * Tcl_UntraceVar*() is a no-op.
      */
 
     for (activePtr = iPtr->activeVarTracePtr;  activePtr != NULL;

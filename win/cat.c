@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: cat.c,v 1.3 2005/11/04 00:06:49 dkf Exp $
  */
 
 #include <stdio.h>
@@ -20,7 +18,7 @@ main(void)
 {
     char buf[1024];
     int n;
-    char *err;
+    const char *err;
 
     while (1) {
 	n = read(0, buf, sizeof(buf));

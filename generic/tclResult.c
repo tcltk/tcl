@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclResult.c,v 1.47 2008/03/07 22:42:49 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -961,12 +959,14 @@ ResetObjResult(
 	TclNewObj(objResultPtr);
 	Tcl_IncrRefCount(objResultPtr);
 	iPtr->objResultPtr = objResultPtr;
-    } else if (objResultPtr->bytes != tclEmptyStringRep) {
-	if (objResultPtr->bytes != NULL) {
-	    ckfree((char *) objResultPtr->bytes);
+    } else {
+	if (objResultPtr->bytes != tclEmptyStringRep) {
+	    if (objResultPtr->bytes) {
+		ckfree((char *) objResultPtr->bytes);
+	    }
+	    objResultPtr->bytes = tclEmptyStringRep;
+	    objResultPtr->length = 0;
 	}
-	objResultPtr->bytes = tclEmptyStringRep;
-	objResultPtr->length = 0;
 	TclFreeIntRep(objResultPtr);
 	objResultPtr->typePtr = NULL;
     }
@@ -1376,6 +1376,26 @@ TclMergeReturnOptions(
 	    goto error;
 	}
 	Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_LEVEL]);
+    }
+
+    /*
+     * Check for bogus -errorcode value.
+     */
+
+    Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORCODE], &valuePtr);
+    if (valuePtr != NULL) {
+	int length;
+
+	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length )) {
+	    /*
+	     * Value is not a list, which is illegal for -errorcode.
+	     */
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "bad -errorcode value: "
+			     "expected a list but got \"",
+			     TclGetString(valuePtr), "\"", NULL);
+	    goto error;
+	}
     }
 
     /*

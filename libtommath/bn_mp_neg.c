@@ -34,7 +34,3 @@ int mp_neg (mp_int * a, mp_int * b)
   return MP_OKAY;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_neg.c,v $ */
-/* $Revision: 1.1.1.4 $ */
-/* $Date: 2006/12/01 00:08:11 $ */

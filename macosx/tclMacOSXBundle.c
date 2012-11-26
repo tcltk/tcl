@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.11.4.4 2009/10/05 02:41:13 das Exp $
  */
 
 #include "tclPort.h"

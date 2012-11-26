@@ -143,7 +143,7 @@ int mp_prime_next_prime(mp_int *a, int t, int bbs_style)
 
       /* is this prime? */
       for (x = 0; x < t; x++) {
-          mp_set(&b, ltm_prime_tab[t]);
+          mp_set(&b, ltm_prime_tab[x]);
           if ((err = mp_prime_miller_rabin(a, &b, &res)) != MP_OKAY) {
              goto LBL_ERR;
           }
@@ -164,7 +164,3 @@ LBL_ERR:
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_prime_next_prime.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2006/12/01 00:08:11 $ */

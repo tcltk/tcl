@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.54.2.1 2009/07/01 14:05:19 patthoyts Exp $
  */
 
 #include "tclWinInt.h"
@@ -106,7 +104,7 @@ static TclWinProcs asciiProcs = {
     (DWORD (WINAPI *)(DWORD, WCHAR *)) GetTempPathA,
     (BOOL (WINAPI *)(CONST TCHAR *, WCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
 	    WCHAR *, DWORD)) GetVolumeInformationA,
-    (HINSTANCE (WINAPI *)(CONST TCHAR *)) LoadLibraryA,
+    (HINSTANCE (WINAPI *)(CONST TCHAR *, HANDLE, DWORD)) LoadLibraryExA,
     (TCHAR (WINAPI *)(WCHAR *, CONST TCHAR *)) lstrcpyA,
     (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR *)) MoveFileA,
     (BOOL (WINAPI *)(CONST TCHAR *)) RemoveDirectoryA,
@@ -165,7 +163,7 @@ static TclWinProcs unicodeProcs = {
     (DWORD (WINAPI *)(DWORD, WCHAR *)) GetTempPathW,
     (BOOL (WINAPI *)(CONST TCHAR *, WCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
 	    WCHAR *, DWORD)) GetVolumeInformationW,
-    (HINSTANCE (WINAPI *)(CONST TCHAR *)) LoadLibraryW,
+    (HINSTANCE (WINAPI *)(CONST TCHAR *, HANDLE, DWORD)) LoadLibraryExW,
     (TCHAR (WINAPI *)(WCHAR *, CONST TCHAR *)) lstrcpyW,
     (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR *)) MoveFileW,
     (BOOL (WINAPI *)(CONST TCHAR *)) RemoveDirectoryW,
@@ -303,7 +301,7 @@ DllMain(
     DWORD reason,		/* Reason this function is being called. */
     LPVOID reserved)		/* Not used. */
 {
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
 
@@ -319,7 +317,7 @@ DllMain(
 	 * an exception handler and the state of the stack might be unstable.
 	 */
 
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
 	__asm__ __volatile__ (
 
 	    /*
@@ -389,12 +387,16 @@ DllMain(
 	    "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory"
 	    );
 
-#else /* HAVE_NO_SEH */
+#else
+#ifndef HAVE_NO_SEH
 	__try {
+#endif
 	    Tcl_Finalize();
+#ifndef HAVE_NO_SEH
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 	    /* empty handler body. */
 	}
+#endif
 #endif
 
 	break;
@@ -1050,12 +1052,42 @@ TclWinCPUID(
     unsigned int index,		/* Which CPUID value to retrieve. */
     unsigned int *regsPtr)	/* Registers after the CPUID. */
 {
-#ifdef HAVE_NO_SEH
-    EXCEPTION_REGISTRATION registration;
-#endif
     int status = TCL_ERROR;
 
-#if defined(__GNUC__) && !defined(_WIN64)
+#if defined(__GNUC__)
+#   if defined(_WIN64)
+    /*
+     * Execute the CPUID instruction with the given index, and store results
+     * off 'regsPtr'.
+     */
+
+    __asm__ __volatile__(
+	/*
+	 * Do the CPUID instruction, and save the results in the 'regsPtr'
+	 * area.
+	 */
+
+	"movl	%[rptr],	%%edi"		"\n\t"
+	"movl	%[index],	%%eax"		"\n\t"
+	"cpuid"					"\n\t"
+	"movl	%%eax,		0x0(%%edi)"	"\n\t"
+	"movl	%%ebx,		0x4(%%edi)"	"\n\t"
+	"movl	%%ecx,		0x8(%%edi)"	"\n\t"
+	"movl	%%edx,		0xc(%%edi)"	"\n\t"
+
+	:
+	/* No outputs */
+	:
+	[index]		"m"	(index),
+	[rptr]		"m"	(regsPtr)
+	:
+	"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory");
+    status = TCL_OK;
+
+#   else
+
+    EXCEPTION_REGISTRATION registration;
+
     /*
      * Execute the CPUID instruction with the given index, and store results
      * off 'regPtr'.
@@ -1137,7 +1169,14 @@ TclWinCPUID(
 	"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory");
     status = registration.status;
 
-#elif defined(_MSC_VER) && !defined(_WIN64)
+#   endif /* !_WIN64 */
+#elif defined(_MSC_VER)
+#   if defined(_WIN64)
+
+    __cpuid(regsPtr, index);
+    status = TCL_OK;
+
+#   else
     /*
      * Define a structure in the stack frame to hold the registers.
      */
@@ -1184,6 +1223,7 @@ TclWinCPUID(
 	/* do nothing */
     }
 
+#   endif
 #else
     /*
      * Don't know how to do assembly code for this compiler and/or

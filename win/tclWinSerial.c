@@ -10,14 +10,10 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
- *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.36 2008/01/14 00:11:44 hobbs Exp $
  */
 
 #include "tclWinInt.h"
 
-#include <fcntl.h>
-#include <io.h>
 #include <sys/stat.h>
 
 /*
@@ -1437,9 +1433,7 @@ TclWinSerialReopen(
     CONST TCHAR *name,
     DWORD access)
 {
-    ThreadSpecificData *tsdPtr;
-
-    tsdPtr = SerialInit();
+    SerialInit();
 
     /*
      * Multithreaded I/O needs the overlapped flag set otherwise
@@ -1505,7 +1499,7 @@ TclWinOpenSerialChannel(
      * are shared between multiple channels (stdin/stdout).
      */
 
-    wsprintfA(channelName, "file%lx", (int) infoPtr);
+    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t)infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    (ClientData) infoPtr, permissions);
@@ -1744,16 +1738,16 @@ SerialSetOptionProc(
 	dcb.XonLim = (WORD) (infoPtr->sysBufRead*1/2);
 	dcb.XoffLim = (WORD) (infoPtr->sysBufRead*1/4);
 
-	if (strnicmp(value, "NONE", vlen) == 0) {
+	if (strncasecmp(value, "NONE", vlen) == 0) {
 	    /*
 	     * Leave all handshake options disabled.
 	     */
-	} else if (strnicmp(value, "XONXOFF", vlen) == 0) {
+	} else if (strncasecmp(value, "XONXOFF", vlen) == 0) {
 	    dcb.fOutX = dcb.fInX = TRUE;
-	} else if (strnicmp(value, "RTSCTS", vlen) == 0) {
+	} else if (strncasecmp(value, "RTSCTS", vlen) == 0) {
 	    dcb.fOutxCtsFlow = TRUE;
 	    dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
-	} else if (strnicmp(value, "DTRDSR", vlen) == 0) {
+	} else if (strncasecmp(value, "DTRDSR", vlen) == 0) {
 	    dcb.fOutxDsrFlow = TRUE;
 	    dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
 	} else {
@@ -1863,7 +1857,7 @@ SerialSetOptionProc(
 		result = TCL_ERROR;
 		break;
 	    }
-	    if (strnicmp(argv[i], "DTR", strlen(argv[i])) == 0) {
+	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
 		if (!EscapeCommFunction(infoPtr->handle,
 			(DWORD) (flag ? SETDTR : CLRDTR))) {
 		    if (interp != NULL) {
@@ -1872,7 +1866,7 @@ SerialSetOptionProc(
 		    result = TCL_ERROR;
 		    break;
 		}
-	    } else if (strnicmp(argv[i], "RTS", strlen(argv[i])) == 0) {
+	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
 		if (!EscapeCommFunction(infoPtr->handle,
 			(DWORD) (flag ? SETRTS : CLRRTS))) {
 		    if (interp != NULL) {
@@ -1881,7 +1875,7 @@ SerialSetOptionProc(
 		    result = TCL_ERROR;
 		    break;
 		}
-	    } else if (strnicmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
+	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
 		if (!EscapeCommFunction(infoPtr->handle,
 			(DWORD) (flag ? SETBREAK : CLRBREAK))) {
 		    if (interp != NULL) {

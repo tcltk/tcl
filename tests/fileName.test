@@ -9,8 +9,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: fileName.test,v 1.51.8.10 2009/10/28 16:45:54 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -191,7 +189,7 @@ test filename-4.12 {Tcl_SplitPath: unix} {testsetplatform} {
 test filename-4.13 {Tcl_SplitPath: unix} {testsetplatform} {
     testsetplatform unix
     file split //foo
-} {/ foo}
+} "/ foo"
 test filename-4.14 {Tcl_SplitPath: unix} {testsetplatform} {
     testsetplatform unix
     file split foo//bar
@@ -431,11 +429,11 @@ test filename-7.16 {Tcl_JoinPath: unix} {testsetplatform} {
 test filename-7.17 {Tcl_JoinPath: unix} {testsetplatform} {
     testsetplatform unix
     file join //a b
-} {/a/b}
+} "/a/b"
 test filename-7.18 {Tcl_JoinPath: unix} {testsetplatform} {
     testsetplatform unix
     file join /// a b
-} {/a/b}
+} "/a/b"
 
 
 test filename-9.1 {Tcl_JoinPath: win} {testsetplatform} {
@@ -1348,6 +1346,20 @@ test filename-14.30 {Bug 2710920} {unixOrPc} {
     file rootname [lindex [lsort [glob globTest/*/]] 0]
 } globTest/a1/
 
+test filename-14.31 {Bug 2918610} -setup {
+    set d [makeDirectory foo]
+    makeFile {} bar.soom $d
+} -body {
+    foreach fn [glob $d/bar.soom] {
+	set root [file rootname $fn]
+	close [open $root {WRONLY CREAT}]
+    }
+    llength [glob -directory $d *]
+} -cleanup {
+    file delete -force $d/bar
+    removeFile bar.soom $d
+    removeDirectory foo
+} -result 2
 
 unset globname
 

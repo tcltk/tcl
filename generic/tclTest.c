@@ -13,12 +13,17 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclTest.c,v 1.114.2.2 2008/08/20 11:45:34 das Exp $
  */
+
+#ifndef _WIN64
+/* See [Bug 3354324]: file mtime sets wrong time */
+#   define _USE_32BIT_TIME_T
+#endif
 
 #define TCL_TEST
 #include "tclInt.h"
+
+#include <math.h>
 
 /*
  * Required for Testregexp*Cmd
@@ -60,6 +65,8 @@ typedef struct TestAsyncHandler {
     struct TestAsyncHandler *nextPtr;
 				/* Next is list of handlers. */
 } TestAsyncHandler;
+
+TCL_DECLARE_MUTEX(asyncTestMutex);
 
 static TestAsyncHandler *firstHandler = NULL;
 
@@ -250,6 +257,9 @@ static int		TestdelCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestdelassocdataCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestdoubledigitsObjCmd(ClientData dummy,
+					       Tcl_Interp* interp,
+					       int objc, Tcl_Obj* const objv[]);
 static int		TestdstringCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestencodingObjCmd(ClientData dummy,
@@ -434,6 +444,11 @@ static int		TestNumUtfCharsCmd(ClientData clientData,
 static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+#if defined(HAVE_CPUID) || defined(__WIN32__)
+static int		TestcpuidCmd (ClientData dummy,
+			    Tcl_Interp* interp, int objc,
+			    Tcl_Obj *CONST objv[]);
+#endif
 
 static Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -464,7 +479,7 @@ static Tcl_Filesystem testReportingFilesystem = {
     &TestReportRenameFile,
     &TestReportCopyDirectory,
     &TestReportLstat,
-    &TestReportLoadFile,
+    (Tcl_FSLoadFileProc *) &TestReportLoadFile,
     NULL /* cwd */,
     &TestReportChdir
 };
@@ -607,6 +622,8 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testdel", TestdelCmd, (ClientData) 0, NULL);
     Tcl_CreateCommand(interp, "testdelassocdata", TestdelassocdataCmd,
 	    (ClientData) 0, NULL);
+    Tcl_CreateObjCommand(interp, "testdoubledigits", TestdoubledigitsObjCmd,
+			 NULL, NULL);
     Tcl_DStringInit(&dstring);
     Tcl_CreateCommand(interp, "testdstring", TestdstringCmd, (ClientData) 0,
 	    NULL);
@@ -695,6 +712,10 @@ Tcltest_Init(
 	    (ClientData) NULL, NULL);
     Tcl_CreateCommand(interp, "testexitmainloop", TestexitmainloopCmd,
 	    (ClientData) NULL, NULL);
+#if defined(HAVE_CPUID) || defined(__WIN32__)
+    Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
+	    (ClientData) 0, NULL);
+#endif
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
@@ -786,18 +807,21 @@ TestasyncCmd(
 	    goto wrongNumArgs;
 	}
 	asyncPtr = (TestAsyncHandler *) ckalloc(sizeof(TestAsyncHandler));
+	asyncPtr->command = ckalloc(strlen(argv[2]) + 1);
+	strcpy(asyncPtr->command, argv[2]);
+        Tcl_MutexLock(&asyncTestMutex);
 	asyncPtr->id = nextId;
 	nextId++;
 	asyncPtr->handler = Tcl_AsyncCreate(AsyncHandlerProc,
-		(ClientData) asyncPtr);
-	asyncPtr->command = (char *) ckalloc((unsigned) (strlen(argv[2]) + 1));
-	strcpy(asyncPtr->command, argv[2]);
+                                            INT2PTR(asyncPtr->id));
 	asyncPtr->nextPtr = firstHandler;
 	firstHandler = asyncPtr;
+        Tcl_MutexUnlock(&asyncTestMutex);
 	TclFormatInt(buf, asyncPtr->id);
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
     } else if (strcmp(argv[1], "delete") == 0) {
 	if (argc == 2) {
+            Tcl_MutexLock(&asyncTestMutex);
 	    while (firstHandler != NULL) {
 		asyncPtr = firstHandler;
 		firstHandler = asyncPtr->nextPtr;
@@ -805,6 +829,7 @@ TestasyncCmd(
 		ckfree(asyncPtr->command);
 		ckfree((char *) asyncPtr);
 	    }
+            Tcl_MutexUnlock(&asyncTestMutex);
 	    return TCL_OK;
 	}
 	if (argc != 3) {
@@ -813,6 +838,7 @@ TestasyncCmd(
 	if (Tcl_GetInt(interp, argv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+        Tcl_MutexLock(&asyncTestMutex);
 	for (prevPtr = NULL, asyncPtr = firstHandler; asyncPtr != NULL;
 		prevPtr = asyncPtr, asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id != id) {
@@ -828,6 +854,7 @@ TestasyncCmd(
 	    ckfree((char *) asyncPtr);
 	    break;
 	}
+        Tcl_MutexUnlock(&asyncTestMutex);
     } else if (strcmp(argv[1], "mark") == 0) {
 	if (argc != 5) {
 	    goto wrongNumArgs;
@@ -836,6 +863,7 @@ TestasyncCmd(
 		|| (Tcl_GetInt(interp, argv[4], &code) != TCL_OK)) {
 	    return TCL_ERROR;
 	}
+        Tcl_MutexLock(&asyncTestMutex);
 	for (asyncPtr = firstHandler; asyncPtr != NULL;
 		asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id == id) {
@@ -843,6 +871,7 @@ TestasyncCmd(
 		break;
 	    }
 	}
+        Tcl_MutexUnlock(&asyncTestMutex);
 	Tcl_SetResult(interp, (char *)argv[3], TCL_VOLATILE);
 	return code;
 #ifdef TCL_THREADS
@@ -853,19 +882,22 @@ TestasyncCmd(
 	if (Tcl_GetInt(interp, argv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+        Tcl_MutexLock(&asyncTestMutex);
 	for (asyncPtr = firstHandler; asyncPtr != NULL;
 		asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id == id) {
 		Tcl_ThreadId threadID;
 		if (Tcl_CreateThread(&threadID, AsyncThreadProc,
-			(ClientData) asyncPtr, TCL_THREAD_STACK_DEFAULT,
+			(ClientData) INT2PTR(id), TCL_THREAD_STACK_DEFAULT,
 			TCL_THREAD_NOFLAGS) != TCL_OK) {
 		    Tcl_SetResult(interp, "can't create thread", TCL_STATIC);
+		    Tcl_MutexUnlock(&asyncTestMutex);
 		    return TCL_ERROR;
 		}
 		break;
 	    }
 	}
+        Tcl_MutexUnlock(&asyncTestMutex);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
 		"\": must be create, delete, int, mark, or marklater", NULL);
@@ -882,14 +914,28 @@ TestasyncCmd(
 
 static int
 AsyncHandlerProc(
-    ClientData clientData,	/* Pointer to TestAsyncHandler structure. */
+    ClientData clientData,	/* If of TestAsyncHandler structure. 
+                                 * in global list. */
     Tcl_Interp *interp,		/* Interpreter in which command was
 				 * executed, or NULL. */
     int code)			/* Current return code from command. */
 {
-    TestAsyncHandler *asyncPtr = (TestAsyncHandler *) clientData;
+    TestAsyncHandler *asyncPtr;
+    int id = PTR2INT(clientData);
     const char *listArgv[4], *cmd;
     char string[TCL_INTEGER_SPACE];
+
+    Tcl_MutexLock(&asyncTestMutex);
+    for (asyncPtr = firstHandler; asyncPtr != NULL;
+         asyncPtr = asyncPtr->nextPtr) {
+        if (asyncPtr->id == id) break;
+    }
+    Tcl_MutexUnlock(&asyncTestMutex);
+
+    if (!asyncPtr) {
+        /* Woops - this one was deleted between the AsyncMark and now */
+        return TCL_OK;
+    }
 
     TclFormatInt(string, code);
     listArgv[0] = asyncPtr->command;
@@ -928,12 +974,22 @@ AsyncHandlerProc(
 #ifdef TCL_THREADS
 static Tcl_ThreadCreateType
 AsyncThreadProc(
-    ClientData clientData)	/* Parameter is a pointer to a
+    ClientData clientData)	/* Parameter is the id of a
 				 * TestAsyncHandler, defined above. */
 {
-    TestAsyncHandler *asyncPtr = clientData;
+    TestAsyncHandler *asyncPtr;
+    int id = PTR2INT(clientData);
+
     Tcl_Sleep(1);
-    Tcl_AsyncMark(asyncPtr->handler);
+    Tcl_MutexLock(&asyncTestMutex);
+    for (asyncPtr = firstHandler; asyncPtr != NULL;
+         asyncPtr = asyncPtr->nextPtr) {
+        if (asyncPtr->id == id) {
+            Tcl_AsyncMark(asyncPtr->handler);
+            break;
+        }
+    }
+    Tcl_MutexUnlock(&asyncTestMutex);
     Tcl_ExitThread(TCL_OK);
     TCL_THREAD_CREATE_RETURN;
 }
@@ -1221,7 +1277,7 @@ TestcmdtraceCmd(
 	} else {
 	    return result;
 	}
-    } else if ( strcmp(argv[1], "doubletest" ) == 0 ) {
+    } else if (strcmp(argv[1], "doubletest") == 0) {
 	Tcl_Trace t1, t2;
 
 	Tcl_DStringInit(&buffer);
@@ -1595,6 +1651,102 @@ TestdelassocdataCmd(
 	return TCL_ERROR;
     }
     Tcl_DeleteAssocData(interp, argv[1]);
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * TestdoubledigitsCmd --
+ *
+ *	This procedure implements the 'testdoubledigits' command. It is
+ *	used to test the low-level floating-point formatting primitives
+ *	in Tcl.
+ *
+ * Usage:
+ *	testdoubledigits fpval ndigits type ?shorten"
+ *
+ * Parameters:
+ *	fpval - Floating-point value to format.
+ *	ndigits - Digit count to request from Tcl_DoubleDigits
+ *	type - One of 'shortest', 'Steele', 'e', 'f'
+ *	shorten - Indicates that the 'shorten' flag should be passed in.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+TestdoubledigitsObjCmd(ClientData unused,
+				/* NULL */
+		       Tcl_Interp* interp,
+				/* Tcl interpreter */
+		       int objc,
+				/* Parameter count */
+		       Tcl_Obj* const objv[])
+				/* Parameter vector */
+{
+    static const char* options[] = {
+	"shortest",
+	"Steele",
+	"e",
+	"f",
+	NULL
+    };
+    static const int types[] = {
+	TCL_DD_SHORTEST,
+	TCL_DD_STEELE,
+	TCL_DD_E_FORMAT,
+	TCL_DD_F_FORMAT
+    };
+
+    const Tcl_ObjType* doubleType;
+    double d;
+    int status;
+    int ndigits;
+    int type;
+    int decpt;
+    int signum;
+    char* str;
+    char* endPtr;
+    Tcl_Obj* strObj;
+    Tcl_Obj* retval;
+
+    if (objc < 4 || objc > 5) {
+	Tcl_WrongNumArgs(interp, 1, objv, "fpval ndigits type ?shorten?");
+	return TCL_ERROR;
+    }
+    status = Tcl_GetDoubleFromObj(interp, objv[1], &d);
+    if (status != TCL_OK) {
+	doubleType = Tcl_GetObjType("double");
+	if (objv[1]->typePtr == doubleType
+	    || TclIsNaN(objv[1]->internalRep.doubleValue)) {
+	    status = TCL_OK;
+	    memcpy(&d, &(objv[1]->internalRep.doubleValue), sizeof(double));
+	}
+    }
+    if (status != TCL_OK
+	|| Tcl_GetIntFromObj(interp, objv[2], &ndigits) != TCL_OK
+	|| Tcl_GetIndexFromObj(interp, objv[3], options, "conversion type",
+			       TCL_EXACT, &type) != TCL_OK) {
+	fprintf(stderr, "bad value? %g\n", d);
+	return TCL_ERROR;
+    }
+    type = types[type];
+    if (objc > 4) {
+	if (strcmp(Tcl_GetString(objv[4]), "shorten")) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("bad flag", -1));
+	    return TCL_ERROR;
+	}
+	type |= TCL_DD_SHORTEN_FLAG;
+    }
+    str = TclDoubleDigits(d, ndigits, type, &decpt, &signum, &endPtr);
+    strObj = Tcl_NewStringObj(str, endPtr-str);
+    ckfree(str);
+    retval = Tcl_NewListObj(1, &strObj);
+    Tcl_ListObjAppendElement(NULL, retval, Tcl_NewIntObj(decpt));
+    strObj = Tcl_NewStringObj(signum ? "-" : "+", 1);
+    Tcl_ListObjAppendElement(NULL, retval, strObj);
+    Tcl_SetObjResult(interp, retval);
     return TCL_OK;
 }
 
@@ -2212,9 +2364,13 @@ ExitProcOdd(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
+    size_t len;
 
     sprintf(buf, "odd %d\n", PTR2INT(clientData));
-    (void)write(1, buf, strlen(buf));
+    len = strlen(buf);
+    if (len != (size_t) write(1, buf, len)) {
+	Tcl_Panic("ExitProcOdd: unable to write to stdout");
+    }
 }
 
 static void
@@ -2222,9 +2378,13 @@ ExitProcEven(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
+    size_t len;
 
     sprintf(buf, "even %d\n", PTR2INT(clientData));
-    (void)write(1, buf, strlen(buf));
+    len = strlen(buf);
+    if (len != (size_t) write(1, buf, len)) {
+	Tcl_Panic("ExitProcEven: unable to write to stdout");
+    }
 }
 
 /*
@@ -3116,7 +3276,7 @@ TestlocaleCmd(
     	"ctype", "numeric", "time", "collate", "monetary",
 	"all",	NULL
     };
-    static int lcTypes[] = {
+    static CONST int lcTypes[] = {
 	LC_CTYPE, LC_NUMERIC, LC_TIME, LC_COLLATE, LC_MONETARY,
 	LC_ALL
     };
@@ -4365,7 +4525,7 @@ TestfeventCmd(
  *	Calls the panic routine.
  *
  * Results:
- *      Always returns TCL_OK.
+ *	Always returns TCL_OK.
  *
  * Side effects:
  *	May exit application.
@@ -4388,7 +4548,7 @@ TestpanicCmd(
      */
 
     argString = Tcl_Merge(argc-1, argv+1);
-    Tcl_Panic(argString);
+    Tcl_Panic("%s", argString);
     ckfree((char *)argString);
 
     return TCL_OK;
@@ -5101,7 +5261,7 @@ PretendTclpStat(
 	 */
 
 	if (OUT_OF_URANGE(realBuf.st_ino) || OUT_OF_RANGE(realBuf.st_size)
-#   ifdef HAVE_ST_BLOCKS
+#   ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 		|| OUT_OF_RANGE(realBuf.st_blocks)
 #   endif
 	    ) {
@@ -5139,8 +5299,10 @@ PretendTclpStat(
 	buf->st_atime   = realBuf.st_atime;
 	buf->st_mtime   = realBuf.st_mtime;
 	buf->st_ctime   = realBuf.st_ctime;
-#   ifdef HAVE_ST_BLOCKS
+#   ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	buf->st_blksize = realBuf.st_blksize;
+#   endif
+#   ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 	buf->st_blocks  = (blkcnt_t) realBuf.st_blocks;
 #   endif
     }
@@ -5204,7 +5366,7 @@ TestmainthreadCmd(
     const char **argv)		/* Argument strings. */
 {
   if (argc == 1) {
-      Tcl_Obj *idObj = Tcl_NewLongObj((long)Tcl_GetCurrentThread());
+      Tcl_Obj *idObj = Tcl_NewLongObj((long)(size_t)Tcl_GetCurrentThread());
       Tcl_SetObjResult(interp, idObj);
       return TCL_OK;
   } else {
@@ -5903,7 +6065,7 @@ TestChannelCmd(
 	    return TCL_ERROR;
 	}
 
-	TclFormatInt(buf, (long) Tcl_GetChannelThread(chan));
+	TclFormatInt(buf, (long)(size_t)Tcl_GetChannelThread(chan));
 	Tcl_AppendResult(interp, buf, NULL);
 	return TCL_OK;
     }
@@ -6958,6 +7120,62 @@ TestNumUtfCharsCmd(
     }
     return TCL_OK;
 }
+
+#if defined(HAVE_CPUID) || defined(__WIN32__)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestcpuidCmd --
+ *
+ *	Retrieves CPU ID information.
+ *
+ * Usage:
+ *	testwincpuid <eax>
+ *
+ * Parameters:
+ *	eax - The value to pass in the EAX register to a CPUID instruction.
+ *
+ * Results:
+ *	Returns a four-element list containing the values from the EAX, EBX,
+ *	ECX and EDX registers returned from the CPUID instruction.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestcpuidCmd(
+    ClientData dummy,
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj *const * objv)	/* Parameter vector */
+{
+    int status, index, i;
+    unsigned int regs[4];
+    Tcl_Obj *regsObjs[4];
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "eax");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIntFromObj(interp, objv[1], &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    status = TclWinCPUID((unsigned) index, regs);
+    if (status != TCL_OK) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("operation not available", -1));
+	return status;
+    }
+    for (i=0 ; i<4 ; ++i) {
+	regsObjs[i] = Tcl_NewIntObj((int) regs[i]);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewListObj(4, regsObjs));
+    return TCL_OK;
+}
+#endif
 
 /*
  * Used to do basic checks of the TCL_HASH_KEY_SYSTEM_HASH flag
@@ -7099,19 +7317,19 @@ TestconcatobjCmd(
      * Set the start of the error message as obj result; it will be cleared at
      * the end if no errors were found.
      */
-    
+
     Tcl_SetObjResult(interp,
 	    Tcl_NewStringObj("Tcl_ConcatObj is unsafe:", -1));
-    
+
     emptyPtr = Tcl_NewObj();
-    
+
     list1Ptr = Tcl_NewStringObj("foo bar sum", -1);
     Tcl_ListObjLength(NULL, list1Ptr, &len);
     if (list1Ptr->bytes != NULL) {
 	ckfree((char *) list1Ptr->bytes);
 	list1Ptr->bytes = NULL;
     }
-    
+
     list2Ptr = Tcl_NewStringObj("eeny meeny", -1);
     Tcl_ListObjLength(NULL, list2Ptr, &len);
     if (list2Ptr->bytes != NULL) {
@@ -7125,27 +7343,29 @@ TestconcatobjCmd(
      */
 
     tmpPtr = Tcl_DuplicateObj(list1Ptr);
-    
+
     objv[0] = tmpPtr;
     objv[1] = emptyPtr;
     concatPtr = Tcl_ConcatObj(2, objv);
     if (concatPtr->refCount != 0) {
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (a) concatObj does not have refCount 0", NULL);
+	Tcl_AppendResult(interp,
+		"\n\t* (a) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (a) concatObj is not a new obj ", NULL);
+	Tcl_AppendResult(interp, "\n\t* (a) concatObj is not a new obj ",
+		NULL);
 	switch (tmpPtr->refCount) {
-	    case 0:
-		Tcl_AppendResult(interp, "(no new refCount)", NULL);
-		break;
-	    case 1:
-		Tcl_AppendResult(interp, "(refCount added)", NULL);
-		break;
-	    default:
-		Tcl_AppendResult(interp, "(more than one refCount added!)", NULL);
-		Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
+	case 0:
+	    Tcl_AppendResult(interp, "(no new refCount)", NULL);
+	    break;
+	case 1:
+	    Tcl_AppendResult(interp, "(refCount added)", NULL);
+	    break;
+	default:
+	    Tcl_AppendResult(interp, "(more than one refCount added!)", NULL);
+	    Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
 	}
 	tmpPtr = Tcl_DuplicateObj(list1Ptr);
 	objv[0] = tmpPtr;
@@ -7156,32 +7376,33 @@ TestconcatobjCmd(
     concatPtr = Tcl_ConcatObj(2, objv);
     if (concatPtr->refCount != 0) {
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (b) concatObj does not have refCount 0", NULL);
+	Tcl_AppendResult(interp,
+		"\n\t* (b) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (b) concatObj is not a new obj ", NULL);
+	Tcl_AppendResult(interp, "\n\t* (b) concatObj is not a new obj ",
+		NULL);
 	switch (tmpPtr->refCount) {
-	    case 0:
-		Tcl_AppendResult(interp, "(refCount removed?)", NULL);
-		Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
-		break;
-	    case 1:
-		Tcl_AppendResult(interp, "(no new refCount)", NULL);
-		break;
-	    case 2:
-		Tcl_AppendResult(interp, "(refCount added)", NULL);
-		Tcl_DecrRefCount(tmpPtr);
-		break;
-	    default:
-		Tcl_AppendResult(interp, "(more than one refCount added!)", NULL);
-		Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
+	case 0:
+	    Tcl_AppendResult(interp, "(refCount removed?)", NULL);
+	    Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
+	    break;
+	case 1:
+	    Tcl_AppendResult(interp, "(no new refCount)", NULL);
+	    break;
+	case 2:
+	    Tcl_AppendResult(interp, "(refCount added)", NULL);
+	    Tcl_DecrRefCount(tmpPtr);
+	    break;
+	default:
+	    Tcl_AppendResult(interp, "(more than one refCount added!)", NULL);
+	    Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
 	}
 	tmpPtr = Tcl_DuplicateObj(list1Ptr);
 	objv[0] = tmpPtr;
     }
     Tcl_DecrRefCount(concatPtr);
-
 
     objv[0] = emptyPtr;
     objv[1] = tmpPtr;
@@ -7189,51 +7410,55 @@ TestconcatobjCmd(
     concatPtr = Tcl_ConcatObj(3, objv);
     if (concatPtr->refCount != 0) {
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (c) concatObj does not have refCount 0", NULL);
+	Tcl_AppendResult(interp,
+		"\n\t* (c) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (c) concatObj is not a new obj ", NULL);
+	Tcl_AppendResult(interp, "\n\t* (c) concatObj is not a new obj ",
+		NULL);
 	switch (tmpPtr->refCount) {
-	    case 0:
-		Tcl_AppendResult(interp, "(no new refCount)", NULL);
-		break;
-	    case 1:
-		Tcl_AppendResult(interp, "(refCount added)", NULL);
-		break;
-	    default:
-		Tcl_AppendResult(interp, "(more than one refCount added!)", NULL);
-		Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
+	case 0:
+	    Tcl_AppendResult(interp, "(no new refCount)", NULL);
+	    break;
+	case 1:
+	    Tcl_AppendResult(interp, "(refCount added)", NULL);
+	    break;
+	default:
+	    Tcl_AppendResult(interp, "(more than one refCount added!)", NULL);
+	    Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
 	}
 	tmpPtr = Tcl_DuplicateObj(list1Ptr);
 	objv[1] = tmpPtr;
     }
     Tcl_DecrRefCount(concatPtr);
-	
+
     Tcl_IncrRefCount(tmpPtr);
     concatPtr = Tcl_ConcatObj(3, objv);
     if (concatPtr->refCount != 0) {
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (d) concatObj does not have refCount 0", NULL);
+	Tcl_AppendResult(interp,
+		"\n\t* (d) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (d) concatObj is not a new obj ", NULL);
+	Tcl_AppendResult(interp, "\n\t* (d) concatObj is not a new obj ",
+		NULL);
 	switch (tmpPtr->refCount) {
-	    case 0:
-		Tcl_AppendResult(interp, "(refCount removed?)", NULL);
-		Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
-		break;
-	    case 1:
-		Tcl_AppendResult(interp, "(no new refCount)", NULL);
-		break;
-	    case 2:
-		Tcl_AppendResult(interp, "(refCount added)", NULL);
-		Tcl_DecrRefCount(tmpPtr);
-		break;
-	    default:
-		Tcl_AppendResult(interp, "(more than one refCount added!)", NULL);
-		Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
+	case 0:
+	    Tcl_AppendResult(interp, "(refCount removed?)", NULL);
+	    Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
+	    break;
+	case 1:
+	    Tcl_AppendResult(interp, "(no new refCount)", NULL);
+	    break;
+	case 2:
+	    Tcl_AppendResult(interp, "(refCount added)", NULL);
+	    Tcl_DecrRefCount(tmpPtr);
+	    break;
+	default:
+	    Tcl_AppendResult(interp, "(more than one refCount added!)", NULL);
+	    Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
 	}
 	tmpPtr = Tcl_DuplicateObj(list1Ptr);
 	objv[1] = tmpPtr;
@@ -7250,26 +7475,28 @@ TestconcatobjCmd(
     concatPtr = Tcl_ConcatObj(2, objv);
     if (concatPtr->refCount != 0) {
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (e) concatObj does not have refCount 0", NULL);
+	Tcl_AppendResult(interp,
+		"\n\t* (e) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
 	int len;
-	
+
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (e) concatObj is not a new obj ", NULL);
+	Tcl_AppendResult(interp, "\n\t* (e) concatObj is not a new obj ",
+		NULL);
 
 	(void) Tcl_ListObjLength(NULL, concatPtr, &len);
 	switch (tmpPtr->refCount) {
-	    case 3:
-		Tcl_AppendResult(interp, "(failed to concat)", NULL);
-		break;
-	    default:
-		Tcl_AppendResult(interp, "(corrupted input!)", NULL);
+	case 3:
+	    Tcl_AppendResult(interp, "(failed to concat)", NULL);
+	    break;
+	default:
+	    Tcl_AppendResult(interp, "(corrupted input!)", NULL);
 	}
 	if (Tcl_IsShared(tmpPtr)) {
 	    Tcl_DecrRefCount(tmpPtr);
 	}
-	tmpPtr = Tcl_DuplicateObj(list1Ptr);    
+	tmpPtr = Tcl_DuplicateObj(list1Ptr);
 	objv[0] = tmpPtr;
     }
     Tcl_DecrRefCount(concatPtr);
@@ -7280,26 +7507,28 @@ TestconcatobjCmd(
     concatPtr = Tcl_ConcatObj(2, objv);
     if (concatPtr->refCount != 0) {
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (f) concatObj does not have refCount 0", NULL);
+	Tcl_AppendResult(interp,
+		"\n\t* (f) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
 	int len;
-	
+
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (f) concatObj is not a new obj ", NULL);
+	Tcl_AppendResult(interp, "\n\t* (f) concatObj is not a new obj ",
+		NULL);
 
 	(void) Tcl_ListObjLength(NULL, concatPtr, &len);
 	switch (tmpPtr->refCount) {
-	    case 3:
-		Tcl_AppendResult(interp, "(failed to concat)", NULL);
-		break;
-	    default:
-		Tcl_AppendResult(interp, "(corrupted input!)", NULL);
+	case 3:
+	    Tcl_AppendResult(interp, "(failed to concat)", NULL);
+	    break;
+	default:
+	    Tcl_AppendResult(interp, "(corrupted input!)", NULL);
 	}
 	if (Tcl_IsShared(tmpPtr)) {
 	    Tcl_DecrRefCount(tmpPtr);
 	}
-	tmpPtr = Tcl_DuplicateObj(list1Ptr);    
+	tmpPtr = Tcl_DuplicateObj(list1Ptr);
 	objv[0] = tmpPtr;
     }
     Tcl_DecrRefCount(concatPtr);
@@ -7311,35 +7540,45 @@ TestconcatobjCmd(
     concatPtr = Tcl_ConcatObj(2, objv);
     if (concatPtr->refCount != 0) {
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (g) concatObj does not have refCount 0", NULL);
+	Tcl_AppendResult(interp,
+		"\n\t* (g) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
 	int len;
-	
+
 	result = TCL_ERROR;
-	Tcl_AppendResult(interp, "\n\t* (g) concatObj is not a new obj ", NULL);
+	Tcl_AppendResult(interp, "\n\t* (g) concatObj is not a new obj ",
+		NULL);
 
 	(void) Tcl_ListObjLength(NULL, concatPtr, &len);
 	switch (tmpPtr->refCount) {
-	    case 3:
-		Tcl_AppendResult(interp, "(failed to concat)", NULL);
-		break;
-	    default:
-		Tcl_AppendResult(interp, "(corrupted input!)", NULL);
+	case 3:
+	    Tcl_AppendResult(interp, "(failed to concat)", NULL);
+	    break;
+	default:
+	    Tcl_AppendResult(interp, "(corrupted input!)", NULL);
 	}
 	Tcl_DecrRefCount(tmpPtr);
 	if (Tcl_IsShared(tmpPtr)) {
 	    Tcl_DecrRefCount(tmpPtr);
 	}
-	tmpPtr = Tcl_DuplicateObj(list1Ptr);    
+	tmpPtr = Tcl_DuplicateObj(list1Ptr);
 	objv[0] = tmpPtr;
     }
     Tcl_DecrRefCount(concatPtr);
 
+    /*
+     * Clean everything up. Note that we don't actually know how many
+     * references there are to tmpPtr here; in the no-error case, it should be
+     * five... [Bug 2895367]
+     */
 
     Tcl_DecrRefCount(list1Ptr);
     Tcl_DecrRefCount(list2Ptr);
     Tcl_DecrRefCount(emptyPtr);
+    while (tmpPtr->refCount > 1) {
+	Tcl_DecrRefCount(tmpPtr);
+    }
     Tcl_DecrRefCount(tmpPtr);
 
     if (result == TCL_OK) {
@@ -7353,5 +7592,7 @@ TestconcatobjCmd(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */

@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclXtNotify.c,v 1.9 2007/04/16 13:36:36 dkf Exp $
  */
 
 #include <X11/Intrinsic.h>

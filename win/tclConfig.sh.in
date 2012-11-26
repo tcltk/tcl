@@ -8,8 +8,6 @@
 # out for themselves.
 #
 # The information in this file is specific to a single platform.
-#
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.8 2001/11/08 03:07:22 mdejong Exp $
 
 TCL_DLL_FILE="@TCL_DLL_FILE@"
 

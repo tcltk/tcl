@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclLink.c,v 1.24 2007/12/13 15:23:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -113,6 +111,14 @@ Tcl_LinkVar(
     Tcl_Obj *objPtr;
     Link *linkPtr;
     int code;
+
+    linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName, TCL_GLOBAL_ONLY,
+	    LinkTraceProc, (ClientData) NULL);
+    if (linkPtr != NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"variable '%s' is already linked", varName));
+	return TCL_ERROR;
+    }
 
     linkPtr = (Link *) ckalloc(sizeof(Link));
     linkPtr->interp = interp;

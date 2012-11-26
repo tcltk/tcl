@@ -8,14 +8,10 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.65 2007/02/20 23:24:07 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
 
-#include <fcntl.h>
-#include <io.h>
 #include <sys/stat.h>
 
 /*
@@ -324,7 +320,6 @@ PipeSetupProc(
     PipeInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
     int block = 1;
-    WinFile *filePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!(flags & TCL_FILE_EVENTS)) {
@@ -338,13 +333,11 @@ PipeSetupProc(
     for (infoPtr = tsdPtr->firstPipePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask & TCL_WRITABLE) {
-	    filePtr = (WinFile*) infoPtr->writeFile;
 	    if (WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT) {
 		block = 0;
 	    }
 	}
 	if (infoPtr->watchMask & TCL_READABLE) {
-	    filePtr = (WinFile*) infoPtr->readFile;
 	    if (WaitForRead(infoPtr, 0) >= 0) {
 		block = 0;
 	    }
@@ -379,7 +372,6 @@ PipeCheckProc(
 {
     PipeInfo *infoPtr;
     PipeEvent *evPtr;
-    WinFile *filePtr;
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -402,13 +394,11 @@ PipeCheckProc(
 	 */
 
 	needEvent = 0;
-	filePtr = (WinFile*) infoPtr->writeFile;
 	if ((infoPtr->watchMask & TCL_WRITABLE) &&
 		(WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT)) {
 	    needEvent = 1;
 	}
 
-	filePtr = (WinFile*) infoPtr->readFile;
 	if ((infoPtr->watchMask & TCL_READABLE) &&
 		(WaitForRead(infoPtr, 0) >= 0)) {
 	    needEvent = 1;
@@ -695,6 +685,7 @@ TclpCreateTempFile(
     if (contents != NULL) {
 	DWORD result, length;
 	const char *p;
+	int toCopy;
 
 	/*
 	 * Convert the contents from UTF to native encoding
@@ -702,7 +693,8 @@ TclpCreateTempFile(
 
 	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
 
-	for (p = native; *p != '\0'; p++) {
+	toCopy = Tcl_DStringLength(&dstring);
+	for (p = native; toCopy > 0; p++, toCopy--) {
 	    if (*p == '\n') {
 		length = p - native;
 		if (length > 0) {
@@ -879,7 +871,7 @@ TclpCloseFile(
  *--------------------------------------------------------------------------
  */
 
-unsigned long
+int
 TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
@@ -1379,7 +1371,7 @@ ApplicationType(
     Tcl_DString nameBuf, ds;
     const TCHAR *nativeName;
     WCHAR nativeFullPath[MAX_PATH];
-    static char extensions[][5] = {"", ".com", ".exe", ".bat"};
+    static const char extensions[][5] = {"", ".com", ".exe", ".bat"};
 
     /*
      * Look for the program as an external program. First try the name as it
@@ -1424,7 +1416,7 @@ ApplicationType(
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
-	if ((ext != NULL) && (stricmp(ext, ".bat") == 0)) {
+	if ((ext != NULL) && (strcasecmp(ext, ".bat") == 0)) {
 	    applType = APPL_DOS;
 	    break;
 	}
@@ -1448,7 +1440,7 @@ ApplicationType(
 	     */
 
 	    CloseHandle(hFile);
-	    if ((ext != NULL) && (stricmp(ext, ".com") == 0)) {
+	    if ((ext != NULL) && (strcasecmp(ext, ".com") == 0)) {
 		applType = APPL_DOS;
 		break;
 	    }
@@ -1657,7 +1649,6 @@ TclpCreateCommandChannel(
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    int channelId;
     DWORD id;
     PipeInfo *infoPtr = (PipeInfo *) ckalloc((unsigned) sizeof(PipeInfo));
 
@@ -1675,20 +1666,6 @@ TclpCreateCommandChannel(
     infoPtr->writeBufLen = 0;
     infoPtr->writeError = 0;
     infoPtr->channel = (Tcl_Channel) NULL;
-
-    /*
-     * Use one of the fds associated with the channel as the channel id.
-     */
-
-    if (readFile) {
-	channelId = (int) ((WinFile*)readFile)->handle;
-    } else if (writeFile) {
-	channelId = (int) ((WinFile*)writeFile)->handle;
-    } else if (errorFile) {
-	channelId = (int) ((WinFile*)errorFile)->handle;
-    } else {
-	channelId = 0;
-    }
 
     infoPtr->validMask = 0;
 
@@ -1730,7 +1707,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    wsprintfA(channelName, "file%lx", infoPtr);
+    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t)infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    (ClientData) infoPtr, infoPtr->validMask);
 
@@ -2296,7 +2273,6 @@ PipeEventProc(
 {
     PipeEvent *pipeEvPtr = (PipeEvent *)evPtr;
     PipeInfo *infoPtr;
-    WinFile *filePtr;
     int mask;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -2333,14 +2309,12 @@ PipeEventProc(
      * detected EOF.
      */
 
-    filePtr = (WinFile*) ((PipeInfo*)infoPtr)->writeFile;
     mask = 0;
     if ((infoPtr->watchMask & TCL_WRITABLE) &&
 	    (WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT)) {
 	mask = TCL_WRITABLE;
     }
 
-    filePtr = (WinFile*) ((PipeInfo*)infoPtr)->readFile;
     if ((infoPtr->watchMask & TCL_READABLE) && (WaitForRead(infoPtr,0) >= 0)) {
 	if (infoPtr->readFlags & PIPE_EOF) {
 	    mask = TCL_READABLE;
@@ -2647,8 +2621,8 @@ Tcl_WaitPid(
 
 void
 TclWinAddProcess(
-    HANDLE hProcess,		/* Handle to process */
-    DWORD id)			/* Global process identifier */
+    void *hProcess,		/* Handle to process */
+    unsigned long id)	/* Global process identifier */
 {
     ProcInfo *procPtr = (ProcInfo *) ckalloc(sizeof(ProcInfo));
 

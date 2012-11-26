@@ -1,5 +1,5 @@
 # tclConfig.sh --
-# 
+#
 # This shell script (for sh) is generated automatically by Tcl's
 # configure script.  It will create shell variables for most of
 # the configuration options discovered by the configure script.
@@ -8,8 +8,6 @@
 # out for themselves.
 #
 # The information in this file is specific to a single platform.
-#
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.21 2005/05/10 18:35:27 kennykb Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -40,15 +38,6 @@ TCL_SHARED_BUILD=@TCL_SHARED_BUILD@
 
 # The name of the Tcl library (may be either a .a file or a shared library):
 TCL_LIB_FILE='@TCL_LIB_FILE@'
-
-# Flag to indicate whether shared libraries need export files.
-TCL_NEEDS_EXP_FILE=@TCL_NEEDS_EXP_FILE@
-
-# String that can be evaluated to generate the part of the export file
-# name that comes after the "libxxx" (includes version number, if any,
-# extension, and anything else needed).  May depend on the variables
-# VERSION.  On most UNIX systems this is ${VERSION}.exp.
-TCL_EXPORT_FILE_SUFFIX='@CFG_TCL_EXPORT_FILE_SUFFIX@'
 
 # Additional libraries to use when linking Tcl.
 TCL_LIBS='@TCL_LIBS@'

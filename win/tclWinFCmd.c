@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.52 2006/08/29 00:36:57 coldstore Exp $
  */
 
 #include "tclWinInt.h"
@@ -52,7 +50,7 @@ enum {
     WIN_SYSTEM_ATTRIBUTE
 };
 
-static int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
+static const int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
 	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM};
 
 
@@ -177,7 +175,7 @@ DoRenameFile(
     CONST TCHAR *nativeDst)	/* New pathname for file or directory
 				 * (native). */
 {
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
     DWORD srcAttr, dstAttr;
@@ -199,14 +197,7 @@ DoRenameFile(
      * arguments is a char block device.
      */
 
-#ifndef HAVE_NO_SEH
-    __try {
-	if ((*tclWinProcs->moveFileProc)(nativeSrc, nativeDst) != FALSE) {
-	    retval = TCL_OK;
-	}
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
-#else
-
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     /*
      * Don't have SEH available, do things the hard way. Note that this needs
      * to be one block of asm, to avoid stack imbalance; also, it is illegal
@@ -291,6 +282,16 @@ DoRenameFile(
     if (registration.status != FALSE) {
 	retval = TCL_OK;
     }
+#else
+#ifndef HAVE_NO_SEH
+    __try {
+#endif
+	if ((*tclWinProcs->moveFileProc)(nativeSrc, nativeDst) != FALSE) {
+	    retval = TCL_OK;
+	}
+#ifndef HAVE_NO_SEH
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+#endif
 #endif
 
     if (retval != -1) {
@@ -566,7 +567,7 @@ DoCopyFile(
     CONST TCHAR *nativeSrc,	/* Pathname of file to be copied (native). */
     CONST TCHAR *nativeDst)	/* Pathname of file to copy to (native). */
 {
-#ifdef HAVE_NO_SEH
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     EXCEPTION_REGISTRATION registration;
 #endif
     int retval = -1;
@@ -587,14 +588,7 @@ DoCopyFile(
      * arguments is a char block device.
      */
 
-#ifndef HAVE_NO_SEH
-    __try {
-	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
-	    retval = TCL_OK;
-	}
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
-#else
-
+#if defined(HAVE_NO_SEH) && !defined(_WIN64)
     /*
      * Don't have SEH available, do things the hard way. Note that this needs
      * to be one block of asm, to avoid stack imbalance; also, it is illegal
@@ -681,6 +675,16 @@ DoCopyFile(
     if (registration.status != FALSE) {
 	retval = TCL_OK;
     }
+#else
+#ifndef HAVE_NO_SEH
+    __try {
+#endif
+	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
+	    retval = TCL_OK;
+	}
+#ifndef HAVE_NO_SEH
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+#endif
 #endif
 
     if (retval != -1) {

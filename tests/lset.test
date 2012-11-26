@@ -10,8 +10,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id$
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -31,7 +29,7 @@ trace add variable noWrite write failTrace
 
 test lset-1.1 {lset, not compiled, arg count} testevalex {
     list [catch {testevalex lset} msg] $msg
-} "1 {wrong \# args: should be \"lset listVar index ?index...? value\"}"
+} "1 {wrong \# args: should be \"lset listVar ?index? ?index...? value\"}"
 test lset-1.2 {lset, not compiled, no such var} testevalex {
     list [catch {testevalex {lset noSuchVar 0 {}}} msg] $msg
 } "1 {can't read \"noSuchVar\": no such variable}"

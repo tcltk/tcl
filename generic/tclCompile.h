@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclCompile.h,v 1.90.2.7 2009/08/25 21:01:05 andreas_kupries Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -139,6 +137,10 @@ typedef struct ECL {
 
 typedef struct ExtCmdLoc {
     int type;			/* Context type. */
+    int start;                  /* Starting line for compiled script. Needed
+				 * for the extended recompile check in
+				 * TclCompEvalObj. */
+
     Tcl_Obj *path;		/* Path of the sourced file the command is
 				 * in. */
     ECL *loc;			/* Command word locations (lines). */

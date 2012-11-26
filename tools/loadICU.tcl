@@ -25,9 +25,6 @@
 # Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: loadICU.tcl,v 1.3 2007/04/20 02:23:35 kennykb Exp $
-#
 #----------------------------------------------------------------------
 
 # Calculate the Chinese numerals from zero to ninety-nine.
@@ -591,7 +588,7 @@ proc backslashify { string } {
     set retval {}
     foreach char [split $string {}] {
 	scan $char %c ccode
-	if { $ccode >= 0x0020 && $ccode < 0x007f
+	if { $ccode >= 0x0020 && $ccode < 0x007f && $char ne "\"" 
 	     && $char ne "\{" && $char ne "\}" && $char ne "\["
 	     && $char ne "\]" && $char ne "\\" && $char ne "\$" } {
 	    append retval $char

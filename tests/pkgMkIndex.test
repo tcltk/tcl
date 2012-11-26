@@ -7,8 +7,6 @@
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
-#
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.29 2006/11/03 00:34:53 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
