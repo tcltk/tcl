@@ -77,7 +77,7 @@ the corresponding level; or it may be
 .QW \fBUP\fR ,
 in which case the parameter is
 the relative level (as in \fBuplevel\fR) of the previous \fBCALL\fR. The
-salient differences wrt \fB\-errorinfo\fR are that:
+salient differences with respect to \fB\-errorinfo\fR are that:
 .IP [1]
 it is a machine-readable form that is amenable to processing with
 [\fBforeach\fR {tok prm} ...],

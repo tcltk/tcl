@@ -91,7 +91,7 @@ method call chain; the first element is the name of the class or object that
 declares the next part of the call chain, and the second element is the name
 of the method (with the strings \fB<constructor>\fR and \fB<destructor>\fR
 indicating constructors and destructors respectively). If invoked from a
-method that is at the end of a call chain, this subcommand returns the emtpy
+method that is at the end of a call chain, this subcommand returns the empty
 string.
 .TP
 \fBself object\fR

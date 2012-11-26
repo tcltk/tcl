@@ -1437,7 +1437,7 @@ AppendUnicodeToUnicodeRep(
      * trailing null.
      */
 
-    memcpy(stringPtr->unicode + stringPtr->numChars, unicode,
+    memmove(stringPtr->unicode + stringPtr->numChars, unicode,
 	    appendNumChars * sizeof(Tcl_UniChar));
     stringPtr->unicode[numChars] = 0;
     stringPtr->numChars = numChars;
@@ -1605,7 +1605,7 @@ AppendUtfToUtfRep(
     stringPtr->numChars = -1;
     stringPtr->hasUnicode = 0;
 
-    memcpy(objPtr->bytes + oldLength, bytes, numBytes);
+    memmove(objPtr->bytes + oldLength, bytes, numBytes);
     objPtr->bytes[newLength] = 0;
     objPtr->length = newLength;
 }

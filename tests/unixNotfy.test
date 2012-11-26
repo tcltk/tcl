@@ -10,10 +10,6 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-# The tests should not be run if you have a notifier which is unable to
-# detect infinite vwaits, as the tests below will hang. The presence of
-# the "testthread" command indicates that this is the case.
-
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
@@ -21,11 +17,10 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 # When run in a Tk shell, these tests hang.
 testConstraint noTk [expr {0 != [catch {package present Tk}]}]
-testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
-testConstraint testthread [expr {[info commands testthread] != {}}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 # Darwin always uses a threaded notifier
 testConstraint unthreaded [expr {
-    (![info exist tcl_platform(threaded)] || !$tcl_platform(threaded))
+    ![::tcl::pkgconfig get threaded]
     && $tcl_platform(os) ne "Darwin"
 }]
 

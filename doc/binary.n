@@ -92,7 +92,7 @@ Instructs the decoder to throw an error if it encounters whitespace characters. 
 .
 The \fBuuencode\fR binary encoding used to be common for transfer of data
 between Unix systems and on USENET, but is less common these days, having been
-largely superceded by the \fBbase64\fR binary encoding.
+largely superseded by the \fBbase64\fR binary encoding.
 .RS
 .PP
 During encoding, the following options are supported:
@@ -135,7 +135,7 @@ is a non-negative decimal integer or \fB*\fR, which normally indicates
 that all of the items in the value are to be used.  If the number of
 arguments does not match the number of fields in the format string
 that consume arguments, then an error is generated. The flag character
-is ignored for for \fBbinary format\fR.
+is ignored for \fBbinary format\fR.
 .PP
 Here is a small example to clarify the relation between the field
 specifiers and the arguments:

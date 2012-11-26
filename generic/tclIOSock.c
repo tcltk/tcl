@@ -64,8 +64,8 @@ TclSockGetPort(
 	return TCL_ERROR;
     }
     if (*portPtr > 0xFFFF) {
-	Tcl_AppendResult(interp, "couldn't open socket: port number too high",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"couldn't open socket: port number too high", -1));
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -87,30 +87,33 @@ TclSockGetPort(
  *----------------------------------------------------------------------
  */
 
-#ifdef _WIN32
-#   define PTR2SOCK(a) (SOCKET)a
-#else
-#   define PTR2SOCK(a) PTR2INT(a)
+#if !defined(_WIN32) && !defined(__CYGWIN__)
+#   define SOCKET int
 #endif
+
 int
 TclSockMinimumBuffers(
-    ClientData sock,			/* Socket file descriptor */
+    void *sock,			/* Socket file descriptor */
     int size)			/* Minimum buffer size */
 {
     int current;
     socklen_t len;
 
     len = sizeof(int);
-    getsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_SNDBUF, (char *)&current, &len);
+    getsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_SNDBUF,
+	    (char *) &current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_SNDBUF, (char *)&size, len);
+	setsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_SNDBUF,
+		(char *) &size, len);
     }
     len = sizeof(int);
-    getsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_RCVBUF, (char *)&current, &len);
+    getsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_RCVBUF,
+		(char *) &current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt(PTR2SOCK(sock), SOL_SOCKET, SO_RCVBUF, (char *)&size, len);
+	setsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_RCVBUF,
+		(char *) &size, len);
     }
     return TCL_OK;
 }
@@ -148,24 +151,34 @@ TclCreateSocketAddress(
     struct addrinfo *p;
     struct addrinfo *v4head = NULL, *v4ptr = NULL;
     struct addrinfo *v6head = NULL, *v6ptr = NULL;
-    char *native = NULL, portstring[TCL_INTEGER_SPACE];
+    char *native = NULL, portbuf[TCL_INTEGER_SPACE], *portstring;
     const char *family = NULL;
     Tcl_DString ds;
     int result, i;
 
-    TclFormatInt(portstring, port);
-
     if (host != NULL) {
 	native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
     }
+
+    /*
+     * Workaround for OSX's apparent inability to resolve "localhost", "0"
+     * when the loopback device is the only available network interface.
+     */
+    if (host != NULL && port == 0) {
+        portstring = NULL;
+    } else {
+        TclFormatInt(portbuf, port);
+        portstring = portbuf;
+    }
     
     (void) memset(&hints, 0, sizeof(hints));
-    
     hints.ai_family = AF_UNSPEC;
+
     /* 
      * Magic variable to enforce a certain address family - to be superseded
      * by a TIP that adds explicit switches to [socket]
      */
+
     if (interp != NULL) {
         family = Tcl_GetVar(interp, "::tcl::unsupported::socketAF", 0);
         if (family != NULL) {
@@ -178,22 +191,24 @@ TclCreateSocketAddress(
     }
 
     hints.ai_socktype = SOCK_STREAM;
+
 #if 0
     /*
      * We found some problems when using AI_ADDRCONFIG, e.g. on systems that
      * have no networking besides the loopback interface and want to resolve
-     * localhost. See bugs 3385024, 3382419, 3382431. As the advantage of
+     * localhost. See [Bugs 3385024, 3382419, 3382431]. As the advantage of
      * using AI_ADDRCONFIG in situations where it works, is probably low,
      * we'll leave it out for now. After all, it is just an optimisation.
-     */
-#if defined(AI_ADDRCONFIG) && !defined(_AIX) && !defined(__hpux)
-    /*
+     *
      * Missing on: OpenBSD, NetBSD.
      * Causes failure when used on AIX 5.1 and HP-UX
      */
+
+#if defined(AI_ADDRCONFIG) && !defined(_AIX) && !defined(__hpux)
     hints.ai_flags |= AI_ADDRCONFIG;
-#endif
-#endif
+#endif /* AI_ADDRCONFIG && !_AIX && !__hpux */
+#endif /* 0 */
+
     if (willBind) {
 	hints.ai_flags |= AI_PASSIVE;
     } 
@@ -205,7 +220,12 @@ TclCreateSocketAddress(
     }
 
     if (result != 0) {
-	goto error;
+	*errorMsgPtr =
+#ifdef EAI_SYSTEM	/* Doesn't exist on Windows */
+		(result == EAI_SYSTEM) ? Tcl_PosixError(interp) :
+#endif /* EAI_SYSTEM */
+		gai_strerror(result);
+        return 0;
     }
 
     /*
@@ -248,33 +268,6 @@ TclCreateSocketAddress(
     }
     
     return 1;
-	
-    /*
-     * Ought to use gai_strerror() here...
-     */
-
-error:
-    switch (result) {
-    case EAI_NONAME:
-    case EAI_SERVICE:
-#if defined(EAI_ADDRFAMILY) && EAI_ADDRFAMILY != EAI_NONAME
-    case EAI_ADDRFAMILY:
-#endif
-#if defined(EAI_NODATA) && EAI_NODATA != EAI_NONAME
-    case EAI_NODATA:
-#endif
-	*errorMsgPtr = gai_strerror(result);
-	errno = EHOSTUNREACH;
-	return 0;
-#ifdef EAI_SYSTEM
-    case EAI_SYSTEM:
-	return 0;
-#endif
-    default:
-	*errorMsgPtr = gai_strerror(result);
-	errno = ENXIO;
-	return 0;
-    }
 }
 
 /*

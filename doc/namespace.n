@@ -778,7 +778,10 @@ When non-empty, this option supplies a dictionary that provides a
 mapping from subcommand names to a list of prefix words to substitute
 in place of the ensemble command and subcommand words (in a manner
 similar to an alias created with \fBinterp alias\fR; the words are not
-reparsed after substitution).  When this option is empty, the mapping
+reparsed after substitution); if the first word of any target is not
+fully qualified when set, it is assumed to be relative to the
+\fIcurrent\fR namespace and changed to be exactly that (that is, it is
+always fully qualified when read). When this option is empty, the mapping
 will be from the local name of the subcommand to its fully-qualified
 name.  Note that when this option is non-empty and the
 \fB\-subcommands\fR option is empty, the ensemble subcommand names

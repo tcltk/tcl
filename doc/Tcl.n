@@ -214,7 +214,7 @@ inserted.  The upper bits of the Unicode character will be 0.
 \e\fBU\fIhhhhhhhh\fR 
 .
 The hexadecimal digits \fIhhhhhhhh\fR (one up to eight of them) give a
-twentiy-one-bit hexadecimal value for the Unicode character that will be
+twenty-one-bit hexadecimal value for the Unicode character that will be
 inserted, in the range U+0000..U+10FFFF.  The parser will stop just
 before this range overflows, or when the maximum of eight digits
 is reached.  The upper bits of the Unicode character will be 0.

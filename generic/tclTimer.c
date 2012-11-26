@@ -182,8 +182,7 @@ static void		TimerSetupProc(ClientData clientData, int flags);
 static ThreadSpecificData *
 InitTimer(void)
 {
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
-	    TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     if (tsdPtr == NULL) {
 	tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -214,8 +213,7 @@ static void
 TimerExitProc(
     ClientData clientData)	/* Not used. */
 {
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
-	    TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     Tcl_DeleteEventSource(TimerSetupProc, TimerCheckProc, NULL);
     if (tsdPtr != NULL) {
@@ -297,9 +295,8 @@ TclCreateAbsoluteTimerHandler(
     ClientData clientData)
 {
     register TimerHandler *timerHandlerPtr, *tPtr2, *prevPtr;
-    ThreadSpecificData *tsdPtr;
+    ThreadSpecificData *tsdPtr = InitTimer();
 
-    tsdPtr = InitTimer();
     timerHandlerPtr = ckalloc(sizeof(TimerHandler));
 
     /*
@@ -832,8 +829,9 @@ Tcl_AfterObjCmd(
 	if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
             const char *arg = Tcl_GetString(objv[1]);
 
-	    Tcl_AppendResult(interp, "bad argument \"", arg,
-		    "\": must be cancel, idle, info, or an integer", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                    "bad argument \"%s\": must be"
+                    " cancel, idle, info, or an integer", arg));
             Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument",
                     arg, NULL);
 	    return TCL_ERROR;
@@ -971,8 +969,8 @@ Tcl_AfterObjCmd(
 	if (afterPtr == NULL) {
             const char *eventStr = TclGetString(objv[2]);
 
-	    Tcl_AppendResult(interp, "event \"", eventStr, "\" doesn't exist",
-                    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                    "event \"%s\" doesn't exist", eventStr));
             Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, NULL);
 	    return TCL_ERROR;
 	} else {

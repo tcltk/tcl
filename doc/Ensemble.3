@@ -95,7 +95,7 @@ Pointer to a variable into which to write the current ensemble mapping
 dictionary.
 .AP Tcl_Obj *listObj in
 A list value to use for the list of formal pre-subcommand parameters, the
-defined list of subcommands in the dictionary or the unknown subcommmand
+defined list of subcommands in the dictionary or the unknown subcommand
 handler command prefix. May be NULL if the subcommand list or unknown handler
 are to be removed.
 .AP Tcl_Obj **listObjPtr out
@@ -159,6 +159,8 @@ code (\fBTCL_OK\fR, or \fBTCL_ERROR\fR if the token does not refer to an
 ensemble) and the dictionary obtained from
 \fBTcl_GetEnsembleMappingDict\fR should always be treated as immutable
 even if it is unshared.
+All command names in prefixes set via \fBTcl_SetEnsembleMappingDict\fR
+must be fully qualified.
 .TP
 \fBformal pre-subcommand parameter list\fR (read-write)
 .VS 8.6

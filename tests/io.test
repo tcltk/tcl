@@ -17,6 +17,10 @@ if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
 
@@ -37,7 +41,7 @@ testConstraint fcopy            [llength [info commands fcopy]]
 testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
-testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -2086,6 +2090,8 @@ set path(pipe)   [makeFile {} pipe]
 set path(output) [makeFile {} output]
 test io-27.6 {FlushChannel, async flushing, async close} \
 	{stdio asyncPipeClose openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
@@ -2645,6 +2651,8 @@ test io-29.30 {Tcl_WriteChars, crlf mode} {
     file size $path(test1)
 } 25
 test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
@@ -2686,6 +2694,8 @@ test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
 } ok
 test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
 	{stdio asyncPipeClose openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
@@ -2736,6 +2746,26 @@ test io-29.33 {Tcl_Flush, implicit flush on exit} {exec} {
     close $f
     set r
 } "hello\nbye\nstrange\n"
+set path(script2) [makeFile {} script2]
+test io-29.33b {TIP#398, no implicit flush of nonblocking on exit} {exec} {
+    set f [open $path(script) w]
+    puts $f {
+		fconfigure stdout -blocking 0
+		puts -nonewline stdout [string repeat A 655360]
+		flush stdout
+	}
+    close $f
+    set f [open $path(script2) w]
+    puts $f {after 2000}
+    close $f
+	set t1 [clock milliseconds]
+	set ff [open "|[list [interpreter] $path(script2)]" w]
+	catch {unset ::env(TCL_FLUSH_NONBLOCKING_ON_EXIT)}
+	exec [interpreter] $path(script) >@ $ff
+	set t2 [clock milliseconds]
+	close $ff
+	expr {($t2-$t1)/2000 ? $t2-$t1 : 0}
+} 0
 test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMac fileevent} {
     variable c 0
     variable x running
@@ -5205,16 +5235,16 @@ test io-40.1 {POSIX open access modes: RDWR} {
 } {zzy abzzy}
 test io-40.2 {POSIX open access modes: CREAT} {unix} {
     file delete $path(test3)
-    set f [open $path(test3) {WRONLY CREAT} 0600]
+    set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
-    set x [format "0%o" [expr $stats(mode)&0o777]]
+    set x [format "0o%o" [expr $stats(mode)&0o777]]
     puts $f "line 1"
     close $f
     set f [open $path(test3) r]
     lappend x [gets $f]
     close $f
     set x
-} {0600 {line 1}}
+} {0o600 {line 1}}
 test io-40.3 {POSIX open access modes: CREAT} {unix umask} {
     # This test only works if your umask is 2, like ouster's.
     file delete $path(test3)
@@ -7761,7 +7791,7 @@ test io-73.2 {channel Tcl_Obj SetChannelFromAny, bug 2407783} -setup {
 # ### ### ### ######### ######### #########
 
 # cleanup
-foreach file [list fooBar longfile script output test1 pipe my_script \
+foreach file [list fooBar longfile script script2 output test1 pipe my_script \
 	test2 test3 cat stdout kyrillic.txt utf8-fcopy.txt utf8-rp.txt] {
     removeFile $file
 }

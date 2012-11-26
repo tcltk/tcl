@@ -13,6 +13,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 testConstraint testobj [llength [info commands testobj]]
@@ -713,6 +716,16 @@ test cmdIL-7.8 {lreverse command - shared intrep [Bug 1675044]} -setup {
     unset -nocomplain x y
     rename K {}
 } -result 1
+
+# This belongs in info test, but adding tests there breaks tests
+# that compute source file line numbers.
+test info-20.6 {Bug 3587651} -setup {
+    namespace eval my {namespace eval tcl {namespace eval mathfunc {
+        proc demo x {return 42}
+    }}}} -body {    namespace eval my {expr {"demo" in [info functions]}}} -cleanup {
+    namespace delete my
+} -result 1
+
 
 # cleanup
 ::tcltest::cleanupTests
