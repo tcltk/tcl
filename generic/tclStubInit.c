@@ -309,7 +309,7 @@ static const TclIntStubs tclIntStubs = {
     Tcl_RemoveInterpResolvers, /* 130 */
     Tcl_SetNamespaceResolvers, /* 131 */
     TclpHasSockets, /* 132 */
-    TclpGetDate, /* 133 */
+    0, /* 133 */
     0, /* 134 */
     0, /* 135 */
     0, /* 136 */
@@ -358,8 +358,8 @@ static const TclIntStubs tclIntStubs = {
     0, /* 179 */
     0, /* 180 */
     0, /* 181 */
-    TclpLocaltime, /* 182 */
-    TclpGmtime, /* 183 */
+    0, /* 182 */
+    0, /* 183 */
     0, /* 184 */
     0, /* 185 */
     0, /* 186 */
@@ -466,7 +466,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 #endif /* UNIX */
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     TclWinConvertError, /* 0 */
-    TclWinConvertWSAError, /* 1 */
+    0, /* 1 */
     TclWinGetServByName, /* 2 */
     TclWinGetSockOpt, /* 3 */
     TclWinGetTclInstance, /* 4 */
@@ -714,7 +714,7 @@ const TclStubs tclStubs = {
     Tcl_AsyncMark, /* 74 */
     Tcl_AsyncReady, /* 75 */
     Tcl_BackgroundError, /* 76 */
-    Tcl_Backslash, /* 77 */
+    0, /* 77 */
     Tcl_BadChannelOption, /* 78 */
     Tcl_CallWhenDeleted, /* 79 */
     Tcl_CancelIdleCall, /* 80 */
@@ -767,7 +767,7 @@ const TclStubs tclStubs = {
     Tcl_ErrnoId, /* 127 */
     Tcl_ErrnoMsg, /* 128 */
     Tcl_Eval, /* 129 */
-    Tcl_EvalFile, /* 130 */
+    0, /* 130 */
     Tcl_EvalObj, /* 131 */
     Tcl_EventuallyFree, /* 132 */
     Tcl_Exit, /* 133 */
@@ -781,7 +781,7 @@ const TclStubs tclStubs = {
     Tcl_ExprObj, /* 141 */
     Tcl_ExprString, /* 142 */
     Tcl_Finalize, /* 143 */
-    Tcl_FindExecutable, /* 144 */
+    0, /* 144 */
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
     Tcl_FreeResult, /* 147 */
@@ -822,8 +822,8 @@ const TclStubs tclStubs = {
     Tcl_GetStringResult, /* 174 */
     Tcl_GetVar, /* 175 */
     Tcl_GetVar2, /* 176 */
-    Tcl_GlobalEval, /* 177 */
-    Tcl_GlobalEvalObj, /* 178 */
+    0, /* 177 */
+    0, /* 178 */
     Tcl_HideCommand, /* 179 */
     Tcl_Init, /* 180 */
     Tcl_InitHashTable, /* 181 */
@@ -1002,7 +1002,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharToUtfDString, /* 354 */
     Tcl_UtfToUniCharDString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
-    Tcl_EvalTokens, /* 357 */
+    0, /* 357 */
     Tcl_FreeParse, /* 358 */
     Tcl_LogCommandInfo, /* 359 */
     Tcl_ParseBraces, /* 360 */

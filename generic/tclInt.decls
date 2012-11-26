@@ -535,9 +535,10 @@ declare 131 {
 declare 132 {
     int TclpHasSockets(Tcl_Interp *interp)
 }
-declare 133 {
-    struct tm *TclpGetDate(const time_t *time, int useGMT)
-}
+# Removed in 9.0
+#declare 133 {
+#    struct tm *TclpGetDate(const time_t *time, int useGMT)
+#}
 # Removed in 8.5
 #declare 134 {
 #    size_t TclpStrftime(char *s, size_t maxsize, const char *format,
@@ -751,14 +752,14 @@ declare 177 {
 #	    const char *file, int line)
 #}
 
-# TclpGmtime and TclpLocaltime promoted to the generic interface from unix
-
-declare 182 {
-    struct tm *TclpLocaltime(const time_t *clock)
-}
-declare 183 {
-    struct tm *TclpGmtime(const time_t *clock)
-}
+# Removed in 9.0
+#declare 182 {
+#     struct tm *TclpLocaltime(const time_t *clock)
+#}
+# Removed in 9.0
+#declare 183 {
+#     struct tm *TclpGmtime(const time_t *clock)
+#}
 
 # For the new "Thread Storage" subsystem.
 
@@ -1022,9 +1023,10 @@ interface tclIntPlat
 declare 0 win {
     void TclWinConvertError(DWORD errCode)
 }
-declare 1 win {
-    void TclWinConvertWSAError(DWORD errCode)
-}
+# Removed in Tcl 9.0
+#declare 1 win {
+#    void TclWinConvertWSAError(DWORD errCode)
+#}
 declare 2 win {
     struct servent *TclWinGetServByName(const char *nm,
 	    const char *proto)

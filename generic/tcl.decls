@@ -287,9 +287,10 @@ declare 75 {
 declare 76 {
     void Tcl_BackgroundError(Tcl_Interp *interp)
 }
-declare 77 {
-    char Tcl_Backslash(const char *src, size_t *readPtr)
-}
+# Removed in 9.0
+#declare 77 {
+#    char Tcl_Backslash(const char *src, int *readPtr)
+#}
 declare 78 {
     int Tcl_BadChannelOption(Tcl_Interp *interp, const char *optionName,
 	    const char *optionList)
@@ -472,10 +473,10 @@ declare 128 {
 declare 129 {
     int Tcl_Eval(Tcl_Interp *interp, const char *script)
 }
-# This is obsolete, use Tcl_FSEvalFile
-declare 130 {
-    int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
-}
+# Removed in 9.0:
+#declare 130 {
+#    int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
+#}
 declare 131 {
     int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
@@ -517,9 +518,10 @@ declare 142 {
 declare 143 {
     void Tcl_Finalize(void)
 }
-declare 144 {
-    void Tcl_FindExecutable(const char *argv0)
-}
+# Removed in 9.0:
+#declare 144 {
+#    void Tcl_FindExecutable(const char *argv0)
+#}
 declare 145 {
     Tcl_HashEntry *Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
 	    Tcl_HashSearch *searchPtr)
@@ -636,12 +638,13 @@ declare 176 {
     const char *Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags)
 }
-declare 177 {
-    int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
-}
-declare 178 {
-    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
-}
+# Removed in Tcl 9.0
+#declare 177 {
+#    int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
+#}
+#declare 178 {
+#    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+#}
 declare 179 {
     int Tcl_HideCommand(Tcl_Interp *interp, const char *cmdName,
 	    const char *hiddenCmdToken)
@@ -1270,10 +1273,11 @@ declare 356 {
     Tcl_RegExp Tcl_GetRegExpFromObj(Tcl_Interp *interp, Tcl_Obj *patObj,
 	    int flags)
 }
-declare 357 {
-    Tcl_Obj *Tcl_EvalTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-	    size_t count)
-}
+# Removed in 9.0:
+#declare 357 {
+#    Tcl_Obj *Tcl_EvalTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
+#	    int count)
+#}
 declare 358 {
     void Tcl_FreeParse(Tcl_Parse *parsePtr)
 }

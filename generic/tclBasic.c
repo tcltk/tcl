@@ -4476,54 +4476,6 @@ Tcl_EvalTokensStandard(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_EvalTokens --
- *
- *	Given an array of tokens parsed from a Tcl command (e.g., the tokens
- *	that make up a word or the index for an array variable) this function
- *	evaluates the tokens and concatenates their values to form a single
- *	result value.
- *
- * Results:
- *	The return value is a pointer to a newly allocated Tcl_Obj containing
- *	the value of the array of tokens. The reference count of the returned
- *	object has been incremented. If an error occurs in evaluating the
- *	tokens then a NULL value is returned and an error message is left in
- *	interp's result.
- *
- * Side effects:
- *	A new object is allocated to hold the result.
- *
- *----------------------------------------------------------------------
- *
- * This uses a non-standard return convention; its use is now deprecated. It
- * is a wrapper for the new function Tcl_EvalTokensStandard, and is not used
- * in the core any longer. It is only kept for backward compatibility.
- */
-
-Tcl_Obj *
-Tcl_EvalTokens(
-    Tcl_Interp *interp,		/* Interpreter in which to lookup variables,
-				 * execute nested commands, and report
-				 * errors. */
-    Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
-				 * evaluate and concatenate. */
-    size_t count)		/* Number of tokens to consider at tokenPtr.
-				 * Must be at least 1. */
-{
-    Tcl_Obj *resPtr;
-
-    if (Tcl_EvalTokensStandard(interp, tokenPtr, count) != TCL_OK) {
-	return NULL;
-    }
-    resPtr = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(resPtr);
-    Tcl_ResetResult(interp);
-    return resPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_EvalEx, TclEvalEx --
  *
  *	This function evaluates a Tcl script without using the compiler or
@@ -5488,7 +5440,7 @@ Tcl_Eval(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_EvalObj, Tcl_GlobalEvalObj --
+ * Tcl_EvalObj --
  *
  *	These functions are deprecated but we keep them around for backwards
  *	compatibility reasons.
@@ -5509,14 +5461,6 @@ Tcl_EvalObj(
     Tcl_Obj *objPtr)
 {
     return Tcl_EvalObjEx(interp, objPtr, 0);
-}
-#undef Tcl_GlobalEvalObj
-int
-Tcl_GlobalEvalObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr)
-{
-    return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
 }
 
 /*
@@ -6590,42 +6534,6 @@ Tcl_VarEval(
     result = Tcl_VarEvalVA(interp, argList);
     va_end(argList);
 
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GlobalEval --
- *
- *	Evaluate a command at global level in an interpreter.
- *
- * Results:
- *	A standard Tcl result is returned, and the interp's result is modified
- *	accordingly.
- *
- * Side effects:
- *	The command string is executed in interp, and the execution is carried
- *	out in the variable context of global level (no functions active),
- *	just as if an "uplevel #0" command were being executed.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_GlobalEval(
-    Tcl_Interp *interp,		/* Interpreter in which to evaluate
-				 * command. */
-    const char *command)	/* Command to evaluate. */
-{
-    register Interp *iPtr = (Interp *) interp;
-    int result;
-    CallFrame *savedVarFramePtr;
-
-    savedVarFramePtr = iPtr->varFramePtr;
-    iPtr->varFramePtr = iPtr->rootFramePtr;
-    result = Tcl_Eval(interp, command);
-    iPtr->varFramePtr = savedVarFramePtr;
     return result;
 }
 

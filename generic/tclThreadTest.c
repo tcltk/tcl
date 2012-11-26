@@ -837,7 +837,7 @@ ThreadSend(
 
     if (threadId == Tcl_GetCurrentThread()) {
 	Tcl_MutexUnlock(&threadMutex);
-	return Tcl_GlobalEval(interp, script);
+	return Tcl_EvalEx(interp, script, -1, TCL_EVAL_GLOBAL);
     }
 
     /*
@@ -1032,7 +1032,7 @@ ThreadEventProc(
 	Tcl_Preserve(interp);
 	Tcl_ResetResult(interp);
 	Tcl_CreateThreadExitHandler(ThreadFreeProc, threadEventPtr->script);
-	code = Tcl_GlobalEval(interp, threadEventPtr->script);
+	code = Tcl_EvalEx(interp, threadEventPtr->script, -1, TCL_EVAL_GLOBAL);
 	Tcl_DeleteThreadExitHandler(ThreadFreeProc, threadEventPtr->script);
 	if (code != TCL_OK) {
 	    errorCode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
