@@ -76,13 +76,52 @@ static int isDigit(const int c)
  */
 
 MODULE_SCOPE const char *
-Tcl_InitStubs(
+TclInitStubs(
     Tcl_Interp *interp,
     const char *version,
-    int exact)
+    int exact,
+    int major)
 {
+    Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
+    const char *p, *q;
+
+    /*
+     * Detect whether the extension and the stubs library were built
+     * against Tcl header files from different major versions.  That's
+     * seriously broken.
+     */
+
+    if (major != TCL_MAJOR_VERSION) {
+	iPtr->result =
+	    (char *)"extension linked to incompatible stubs library";
+	iPtr->freeProc = TCL_STATIC;
+	return NULL;
+    }
+
+    /*
+     * Detect whether an extension compiled against a Tcl header file
+     * of one major version is requesting to use a stubs table of a
+     * different major version.  According to our compat rules, that's
+     * a request that cannot succeed.  Different major versions imply
+     * incompatible stub tables.
+     */
+
+    p = version;
+    q = TCL_VERSION;
+    while (isDigit(*p)) {
+	if (*p++ != *q++) {
+	    goto badVersion;
+	}
+    }
+    if (isDigit(*q)) {
+    badVersion:
+	iPtr->result =
+	    (char *)"extension passed bad version argument to stubs library";
+	iPtr->freeProc = TCL_STATIC;
+	return NULL;
+    }
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -100,14 +139,14 @@ Tcl_InitStubs(
 	return NULL;
     }
     if (exact) {
-	const char *p = version;
 	int count = 0;
 
+	p = version;
 	while (*p) {
 	    count += !isDigit(*p++);
 	}
 	if (count == 1) {
-	    const char *q = actualVersion;
+	    q = actualVersion;
 
 	    p = version;
 	    while (*p && (*p == *q)) {
@@ -138,6 +177,16 @@ Tcl_InitStubs(
     }
 
     return actualVersion;
+}
+
+#undef Tcl_InitStubs
+MODULE_SCOPE const char *
+Tcl_InitStubs(
+    Tcl_Interp *interp,
+    const char *version,
+    int exact)
+{
+    return TclInitStubs(interp, version, exact, TCL_MAJOR_VERSION);
 }
 
 /*
