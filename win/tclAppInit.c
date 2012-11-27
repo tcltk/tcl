@@ -3,7 +3,8 @@
  *
  *	Provides a default version of the main program and Tcl_AppInit
  *	procedure for tclsh and other Tcl-based applications (without Tk).
- *	Note that this program must be built in Win32 console mode to work properly.
+ *	Note that this program must be built in Win32 console mode to work
+ *	properly.
  *
  * Copyright (c) 1993 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
@@ -34,7 +35,7 @@ extern Tcl_PackageInitProc Dde_SafeInit;
 
 #ifdef TCL_BROKEN_MAINARGS
 static void setargv(int *argcPtr, TCHAR ***argvPtr);
-#endif
+#endif /* TCL_BROKEN_MAINARGS */
 
 /*
  * The following #if block allows you to change the AppInit function by using
@@ -74,21 +75,22 @@ extern int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_BROKEN_MAINARGS
 int
+#ifdef TCL_BROKEN_MAINARGS
 main(
     int argc,
     char *dummy[])
-{
-    TCHAR **argv;
 #else
-int
 _tmain(
     int argc,
     TCHAR *argv[])
+#endif /* TCL_BROKEN_MAINARGS */
 {
-#endif
+#ifdef TCL_BROKEN_MAINARGS
+    TCHAR **argv;
+#else
     TCHAR *p;
+#endif /* TCL_BROKEN_MAINARGS */
 
     /*
      * Set up the default locale to be standard "C" locale so parsing is
@@ -97,13 +99,13 @@ _tmain(
 
     setlocale(LC_ALL, "C");
 
-#ifdef TCL_BROKEN_MAINARGS
     /*
      * Get our args from the c-runtime. Ignore lpszCmdLine.
      */
 
+#ifdef TCL_BROKEN_MAINARGS
     setargv(&argc, &argv);
-#endif
+#endif /* TCL_BROKEN_MAINARGS */
 
     /*
      * Forward slashes substituted for backslashes.
@@ -193,7 +195,8 @@ Tcl_AppInit(
      * specific startup file will be run under any conditions.
      */
 
-    (Tcl_SetVar2)(interp, "tcl_rcFileName", NULL, "~/tclshrc.tcl", TCL_GLOBAL_ONLY);
+    (Tcl_SetVar2)(interp, "tcl_rcFileName", NULL, "~/tclshrc.tcl",
+	    TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 
@@ -254,9 +257,13 @@ setargv(
 	}
     }
 
-    /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
-    #undef Tcl_Alloc
-    #undef Tcl_DbCkalloc
+    /*
+     * Make sure we don't call ckalloc through the (not yet initialized) stub
+     * table.
+     */
+
+#undef Tcl_Alloc
+#undef Tcl_DbCkalloc
 
     argSpace = ckalloc(size * sizeof(char *)
 	    + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));

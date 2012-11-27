@@ -113,11 +113,11 @@ typedef struct SerialInfo {
 				 * synchronized with the evWritable object. */
     char *writeBuf;		/* Current background output buffer. Access is
 				 * synchronized with the evWritable object. */
-    int writeBufLen;		/* Size of write buffer. Access is
+    size_t writeBufLen;		/* Size of write buffer. Access is
 				 * synchronized with the evWritable object. */
-    int toWrite;		/* Current amount to be written. Access is
+    size_t toWrite;		/* Current amount to be written. Access is
 				 * synchronized with the evWritable object. */
-    int writeQueue;		/* Number of bytes pending in output queue.
+    size_t writeQueue;		/* Number of bytes pending in output queue.
 				 * Offset to DCB.cbInQue. Used to query
 				 * [fconfigure -queue] */
 } SerialInfo;
@@ -163,31 +163,25 @@ static COMMTIMEOUTS no_timeout = {
  * Declarations for functions used only in this file.
  */
 
-static int		SerialBlockProc(ClientData instanceData, int mode);
-static void		SerialCheckProc(ClientData clientData, int flags);
-static int		SerialCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
-static int		SerialEventProc(Tcl_Event *evPtr, int flags);
-static void		SerialExitHandler(ClientData clientData);
-static int		SerialGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
+static Tcl_DriverBlockModeProc	SerialBlockProc;
+static Tcl_DriverCloseProc	SerialCloseProc;
+static Tcl_DriverGetHandleProc	SerialGetHandleProc;
+static Tcl_DriverGetOptionProc	SerialGetOptionProc;
+static Tcl_DriverInputProc	SerialInputProc;
+static Tcl_DriverOutputProc	SerialOutputProc;
+static Tcl_DriverSetOptionProc	SerialSetOptionProc;
+static Tcl_DriverThreadActionProc SerialThreadActionProc;
+static Tcl_DriverWatchProc	SerialWatchProc;
+
+static Tcl_EventCheckProc	SerialCheckProc;
+static Tcl_EventProc		SerialEventProc;
+static Tcl_EventSetupProc	SerialSetupProc;
+
+static Tcl_ExitProc		SerialExitHandler;
+static Tcl_ExitProc		ProcExitHandler;
+
 static ThreadSpecificData *SerialInit(void);
-static int		SerialInputProc(ClientData instanceData, char *buf,
-			    int toRead, int *errorCode);
-static int		SerialOutputProc(ClientData instanceData,
-			    const char *buf, int toWrite, int *errorCode);
-static void		SerialSetupProc(ClientData clientData, int flags);
-static void		SerialWatchProc(ClientData instanceData, int mask);
-static void		ProcExitHandler(ClientData clientData);
-static int		SerialGetOptionProc(ClientData instanceData,
-			    Tcl_Interp *interp, const char *optionName,
-			    Tcl_DString *dsPtr);
-static int		SerialSetOptionProc(ClientData instanceData,
-			    Tcl_Interp *interp, const char *optionName,
-			    const char *value);
 static DWORD WINAPI	SerialWriterThread(LPVOID arg);
-static void		SerialThreadActionProc(ClientData instanceData,
-			    int action);
 static int		SerialBlockingRead(SerialInfo *infoPtr, LPVOID buf,
 			    DWORD bufSize, LPDWORD lpRead, LPOVERLAPPED osPtr);
 static int		SerialBlockingWrite(SerialInfo *infoPtr, LPVOID buf,
@@ -888,11 +882,11 @@ SerialBlockingWrite(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 SerialInputProc(
     ClientData instanceData,	/* Serial state. */
     char *buf,			/* Where to store data read. */
-    int bufSize,		/* How much space is available in the
+    size_t bufSize,		/* How much space is available in the
 				 * buffer? */
     int *errorCode)		/* Where to store error code. */
 {
@@ -995,11 +989,11 @@ SerialInputProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 SerialOutputProc(
     ClientData instanceData,	/* Serial state. */
     const char *buf,		/* The data buffer. */
-    int toWrite,		/* How many bytes to write? */
+    size_t toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
@@ -1648,16 +1642,14 @@ SerialSetOptionProc(
     const char *optionName,	/* Which option to set? */
     const char *value)		/* New value for option. */
 {
-    SerialInfo *infoPtr;
+    SerialInfo *infoPtr = (SerialInfo *) instanceData;
     DCB dcb;
     BOOL result, flag;
     size_t len, vlen;
     Tcl_DString ds;
     const TCHAR *native;
-    int argc;
+    size_t argc;
     const char **argv;
-
-    infoPtr = (SerialInfo *) instanceData;
 
     /*
      * Parse options. This would be far easier if we had Tcl_Objs to work with
@@ -1675,7 +1667,7 @@ SerialSetOptionProc(
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    goto getStateFailed;
 	}
-	native = Tcl_WinUtfToTChar(value, -1, &ds);
+	native = Tcl_WinUtfToTChar(value, TCL_STRLEN, &ds);
 	result = BuildCommDCB(native, &dcb);
 	Tcl_DStringFree(&ds);
 
@@ -1776,7 +1768,8 @@ SerialSetOptionProc(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -xchar: should be a list of"
-			" two elements with each a single character", -1));
+			" two elements with each a single character",
+			TCL_STRLEN));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", NULL);
 	    }
 	    ckfree(argv);
@@ -1849,7 +1842,7 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETDTR : CLRDTR))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set DTR signal", -1));
+				"can't set DTR signal", TCL_STRLEN));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }
@@ -1861,7 +1854,7 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETRTS : CLRRTS))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set RTS signal", -1));
+				"can't set RTS signal", TCL_STRLEN));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }
@@ -1873,7 +1866,7 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETBREAK : CLRBREAK))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set BREAK signal", -1));
+				"can't set BREAK signal", TCL_STRLEN));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }

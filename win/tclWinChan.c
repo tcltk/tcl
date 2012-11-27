@@ -71,30 +71,25 @@ typedef struct FileEvent {
  * Static routines for this file:
  */
 
-static int		FileBlockProc(ClientData instanceData, int mode);
-static void		FileChannelExitHandler(ClientData clientData);
-static void		FileCheckProc(ClientData clientData, int flags);
-static int		FileCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
-static int		FileEventProc(Tcl_Event *evPtr, int flags);
-static int		FileGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static ThreadSpecificData *FileInit(void);
-static int		FileInputProc(ClientData instanceData, char *buf,
-			    int toRead, int *errorCode);
-static int		FileOutputProc(ClientData instanceData,
-			    const char *buf, int toWrite, int *errorCode);
-static int		FileSeekProc(ClientData instanceData, long offset,
-			    int mode, int *errorCode);
-static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCode);
-static void		FileSetupProc(ClientData clientData, int flags);
-static void		FileWatchProc(ClientData instanceData, int mask);
-static void		FileThreadActionProc(ClientData instanceData,
-			    int action);
-static int		FileTruncateProc(ClientData instanceData,
-			    Tcl_WideInt length);
-static DWORD		FileGetType(HANDLE handle);
+static Tcl_DriverBlockModeProc	FileBlockProc;
+static Tcl_DriverCloseProc	FileCloseProc;
+static Tcl_DriverGetHandleProc	FileGetHandleProc;
+static Tcl_DriverInputProc	FileInputProc;
+static Tcl_DriverOutputProc	FileOutputProc;
+static Tcl_DriverSeekProc	FileSeekProc;
+static Tcl_DriverThreadActionProc FileThreadActionProc;
+static Tcl_DriverTruncateProc	FileTruncateProc;
+static Tcl_DriverWideSeekProc	FileWideSeekProc;
+static Tcl_DriverWatchProc	FileWatchProc;
+
+static Tcl_EventCheckProc	FileCheckProc;
+static Tcl_EventProc		FileEventProc;
+static Tcl_EventSetupProc	FileSetupProc;
+
+static Tcl_ExitProc		FileChannelExitHandler;
+
+static ThreadSpecificData *	FileInit(void);
+static DWORD			FileGetType(HANDLE handle);
 
 /*
  * This structure describes the channel type structure for file based IO.
@@ -666,11 +661,11 @@ FileTruncateProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 FileInputProc(
     ClientData instanceData,	/* File state. */
     char *buf,			/* Where to store data read. */
-    int bufSize,		/* Num bytes available in buffer. */
+    size_t bufSize,		/* Num bytes available in buffer. */
     int *errorCode)		/* Where to store error code. */
 {
     FileInfo *infoPtr = instanceData;
@@ -688,7 +683,7 @@ FileInputProc(
 
     if (ReadFile(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &bytesRead,
 	    (LPOVERLAPPED) NULL) != FALSE) {
-	return bytesRead;
+	return (ssize_t) bytesRead;
     }
 
     TclWinConvertError(GetLastError());
@@ -717,11 +712,11 @@ FileInputProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 FileOutputProc(
     ClientData instanceData,	/* File state. */
     const char *buf,		/* The data buffer. */
-    int toWrite,		/* How many bytes to write? */
+    size_t toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
 {
     FileInfo *infoPtr = instanceData;
@@ -745,7 +740,7 @@ FileOutputProc(
 	return -1;
     }
     infoPtr->dirty = 1;
-    return bytesWritten;
+    return (ssize_t) bytesWritten;
 }
 
 /*

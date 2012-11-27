@@ -165,7 +165,7 @@ static int		NativeWriteReparse(const TCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer);
 static int		NativeMatchType(int isDrive, DWORD attr,
 			    const TCHAR *nativeName, Tcl_GlobTypeData *types);
-static int		WinIsDrive(const char *name, int nameLen);
+static int		WinIsDrive(const char *name, size_t nameLen);
 static int		WinIsReserved(const char *path);
 static Tcl_Obj *	WinReadLink(const TCHAR *LinkSource);
 static Tcl_Obj *	WinReadLinkDirectory(const TCHAR *LinkDirectory);
@@ -878,7 +878,7 @@ TclpFindExecutable(
 #endif
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
-    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, -1), NULL);
+    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, TCL_STRLEN), NULL);
 }
 
 /*
@@ -928,10 +928,10 @@ TclpMatchInDirectory(
 	     * Match a single file directly.
 	     */
 
-	    int len;
+	    size_t len;
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    const char *str = Tcl_GetStringFromObj(norm,&len);
+	    const char *str = Tcl_GetStringFromObj(norm, &len);
 
 	    native = Tcl_FSGetNativePath(pathPtr);
 
@@ -1014,12 +1014,12 @@ TclpMatchInDirectory(
 	     * pattern.
 	     */
 
-	    dirName = Tcl_DStringAppend(&dsOrig, pattern, -1);
+	    dirName = Tcl_DStringAppend(&dsOrig, pattern, TCL_STRLEN);
 	} else {
 	    dirName = TclDStringAppendLiteral(&dsOrig, "*.*");
 	}
 
-	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
+	native = Tcl_WinUtfToTChar(dirName, TCL_STRLEN, &ds);
 	if ((types == NULL) || (types->type != TCL_GLOB_TYPE_DIR)) {
 	    handle = FindFirstFile(native, &data);
 	} else {
@@ -1092,7 +1092,7 @@ TclpMatchInDirectory(
 
 	    native = data.cFileName;
 	    attr = data.dwFileAttributes;
-	    utfname = Tcl_WinTCharToUtf(native, -1, &ds);
+	    utfname = Tcl_WinTCharToUtf(native, TCL_STRLEN, &ds);
 
 	    if (!matchSpecialDots) {
 		/*
@@ -1169,7 +1169,7 @@ TclpMatchInDirectory(
 static int
 WinIsDrive(
     const char *name,		/* Name (UTF-8) */
-    int len)			/* Length of name */
+    size_t len)			/* Length of name */
 {
     int remove = 0;
 
@@ -1445,7 +1445,7 @@ TclpGetUserHome(
     domain = strchr(name, '@');
     if (domain != NULL) {
 	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
+	wName = Tcl_UtfToUniCharDString(domain + 1, TCL_STRLEN, &ds);
 	badDomain = NetGetDCName(NULL, wName, (LPBYTE *) wDomainPtr);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
@@ -1528,9 +1528,7 @@ NativeAccess(
     const TCHAR *nativePath,	/* Path of file to access, native encoding. */
     int mode)			/* Permission setting. */
 {
-    DWORD attr;
-
-    attr = GetFileAttributes(nativePath);
+    DWORD attr = GetFileAttributes(nativePath);
 
     if (attr == INVALID_FILE_ATTRIBUTES) {
 	/*
@@ -1538,15 +1536,14 @@ NativeAccess(
 	 */
 
 	WIN32_FIND_DATA ffd;
-	HANDLE hFind;
-	hFind = FindFirstFile(nativePath, &ffd);
-	if (hFind != INVALID_HANDLE_VALUE) {
-	    attr = ffd.dwFileAttributes;
-	    FindClose(hFind);
-	} else {
+	HANDLE hFind = FindFirstFile(nativePath, &ffd);
+
+	if (hFind == INVALID_HANDLE_VALUE) {
 	    TclWinConvertError(GetLastError());
 	    return -1;
 	}
+	attr = ffd.dwFileAttributes;
+	FindClose(hFind);
     }
 
     if (mode == F_OK) {
@@ -1557,9 +1554,8 @@ NativeAccess(
 	return 0;
     }
 
-    if ((mode & W_OK)
-	&& (attr & FILE_ATTRIBUTE_READONLY)
-	&& !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+    if ((mode & W_OK) && (attr & FILE_ATTRIBUTE_READONLY)
+	    && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	/*
 	 * The attributes say the file is not writable.	 If the file is a
 	 * regular file (i.e., not a directory), then the file is not
@@ -1881,7 +1877,7 @@ TclpGetCwd(
 	    && (native[2] == '\\') && (native[3] == '\\')) {
 	native += 2;
     }
-    Tcl_WinTCharToUtf((TCHAR *) native, -1, bufferPtr);
+    Tcl_WinTCharToUtf((TCHAR *) native, TCL_STRLEN, bufferPtr);
 
     /*
      * Convert to forward slashes for easier use in scripts.
@@ -2060,7 +2056,7 @@ NativeDev(
     const char *fullPath;
 
     GetFullPathName(nativePath, MAX_PATH, nativeFullPath, &nativePart);
-    fullPath = Tcl_WinTCharToUtf(nativeFullPath, -1, &ds);
+    fullPath = Tcl_WinTCharToUtf(nativeFullPath, TCL_STRLEN, &ds);
 
     if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
 	const char *p;
@@ -2361,7 +2357,7 @@ TclpFilesystemPathType(
     } else {
 	Tcl_DString ds;
 
-	Tcl_WinTCharToUtf(volType, -1, &ds);
+	Tcl_WinTCharToUtf(volType, TCL_STRLEN, &ds);
 	return TclDStringToObj(&ds);
     }
 #undef VOL_BUF_SIZE
@@ -2547,7 +2543,7 @@ TclpObjNormalizePath(
 			    }
 			    FindClose(handle);
 			    TclDStringAppendLiteral(&dsNorm, "/");
-			    Tcl_DStringAppend(&dsNorm, nativeName, -1);
+			    Tcl_DStringAppend(&dsNorm, nativeName,TCL_STRLEN);
 			}
 		    }
 		}
@@ -2651,7 +2647,8 @@ TclpObjNormalizePath(
 			 */
 
 			nextCheckpoint = 0;
-			Tcl_AppendToObj(to, currentPathEndPosition, -1);
+			Tcl_AppendToObj(to, currentPathEndPosition,
+				TCL_STRLEN);
 
 			/*
 			 * Convert link to forward slashes.
@@ -2826,7 +2823,7 @@ TclpObjNormalizePath(
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
-	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
+	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, TCL_STRLEN);
 	    path = Tcl_GetStringFromObj(tmpPathPtr, &len);
 	    Tcl_SetStringObj(pathPtr, path, len);
 	    Tcl_DecrRefCount(tmpPathPtr);
@@ -2899,7 +2896,7 @@ TclWinVolumeRelativeNormalize(
 	const char *drive = Tcl_GetString(useThisCwd);
 
 	absolutePath = Tcl_NewStringObj(drive,2);
-	Tcl_AppendToObj(absolutePath, path, -1);
+	Tcl_AppendToObj(absolutePath, path, TCL_STRLEN);
 	Tcl_IncrRefCount(absolutePath);
 
 	/*
@@ -2953,7 +2950,7 @@ TclWinVolumeRelativeNormalize(
 	    Tcl_AppendToObj(absolutePath, "/", 1);
 	}
 	Tcl_IncrRefCount(absolutePath);
-	Tcl_AppendToObj(absolutePath, path+2, -1);
+	Tcl_AppendToObj(absolutePath, path+2, TCL_STRLEN);
     }
     *useThisCwdPtr = useThisCwd;
     return absolutePath;
@@ -2986,10 +2983,10 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
     Tcl_Obj *objPtr;
-    int len;
+    size_t len;
     char *copy, *p;
 
-    Tcl_WinTCharToUtf((const TCHAR *) clientData, -1, &ds);
+    Tcl_WinTCharToUtf((const TCHAR *) clientData, TCL_STRLEN, &ds);
     copy = Tcl_DStringValue(&ds);
     len = Tcl_DStringLength(&ds);
 
@@ -3019,7 +3016,7 @@ TclpNativeToNormalized(
 	}
     }
 
-    objPtr = Tcl_NewStringObj(copy,len);
+    objPtr = Tcl_NewStringObj(copy, len);
     Tcl_DStringFree(&ds);
 
     return objPtr;
@@ -3048,7 +3045,7 @@ TclNativeCreateNativeRep(
     char *nativePathPtr, *str;
     Tcl_DString ds;
     Tcl_Obj *validPathPtr;
-    int len;
+    size_t len;
 
     if (TclFSCwdIsNative()) {
 	/*

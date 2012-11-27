@@ -131,9 +131,9 @@ typedef struct PipeInfo {
 				 */
     char *writeBuf;		/* Current background output buffer. Access is
 				 * synchronized with the writable object. */
-    int writeBufLen;		/* Size of write buffer. Access is
+    size_t writeBufLen;		/* Size of write buffer. Access is
 				 * synchronized with the writable object. */
-    int toWrite;		/* Current amount to be written. Access is
+    size_t toWrite;		/* Current amount to be written. Access is
 				 * synchronized with the writable object. */
     int readFlags;		/* Flags that are shared with the reader
 				 * thread. Access is synchronized with the
@@ -173,31 +173,28 @@ typedef struct PipeEvent {
  * Declarations for functions used only in this file.
  */
 
+static Tcl_DriverBlockModeProc	PipeBlockModeProc;
+static Tcl_DriverClose2Proc	PipeClose2Proc;
+static Tcl_DriverGetHandleProc	PipeGetHandleProc;
+static Tcl_DriverInputProc	PipeInputProc;
+static Tcl_DriverOutputProc	PipeOutputProc;
+static Tcl_DriverThreadActionProc PipeThreadActionProc;
+static Tcl_DriverWatchProc	PipeWatchProc;
+
+static Tcl_EventCheckProc	PipeCheckProc;
+static Tcl_EventProc		PipeEventProc;
+static Tcl_EventSetupProc	PipeSetupProc;
+
 static int		ApplicationType(Tcl_Interp *interp,
 			    const char *fileName, char *fullName);
-static void		BuildCommandLine(const char *executable, int argc,
+static void		BuildCommandLine(const char *executable, size_t argc,
 			    const char **argv, Tcl_DString *linePtr);
 static BOOL		HasConsole(void);
-static int		PipeBlockModeProc(ClientData instanceData, int mode);
-static void		PipeCheckProc(ClientData clientData, int flags);
-static int		PipeClose2Proc(ClientData instanceData,
-			    Tcl_Interp *interp, int flags);
-static int		PipeEventProc(Tcl_Event *evPtr, int flags);
-static int		PipeGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
 static void		PipeInit(void);
-static int		PipeInputProc(ClientData instanceData, char *buf,
-			    int toRead, int *errorCode);
-static int		PipeOutputProc(ClientData instanceData,
-			    const char *buf, int toWrite, int *errorCode);
 static DWORD WINAPI	PipeReaderThread(LPVOID arg);
-static void		PipeSetupProc(ClientData clientData, int flags);
-static void		PipeWatchProc(ClientData instanceData, int mask);
 static DWORD WINAPI	PipeWriterThread(LPVOID arg);
 static int		TempFileName(TCHAR name[MAX_PATH]);
 static int		WaitForRead(PipeInfo *infoPtr, int blocking);
-static void		PipeThreadActionProc(ClientData instanceData,
-			    int action);
 
 /*
  * This structure describes the channel type structure for command pipe based
@@ -581,7 +578,7 @@ TclpOpenFile(
 	break;
     }
 
-    nativePath = Tcl_WinUtfToTChar(path, -1, &ds);
+    nativePath = Tcl_WinUtfToTChar(path, TCL_STRLEN, &ds);
 
     /*
      * If the file is not being created, use the existing file attributes.
@@ -676,13 +673,13 @@ TclpCreateTempFile(
     if (contents != NULL) {
 	DWORD result, length;
 	const char *p;
-	int toCopy;
+	size_t toCopy;
 
 	/*
 	 * Convert the contents from UTF to native encoding
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
+	native = Tcl_UtfToExternalDString(NULL,contents,TCL_STRLEN, &dstring);
 
 	toCopy = Tcl_DStringLength(&dstring);
 	for (p = native; toCopy > 0; p++, toCopy--) {
@@ -914,7 +911,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    int argc,			/* Number of arguments in following array. */
+    size_t argc,		/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings. argv[0] contains
 				 * the name of the executable converted to
 				 * native format (using the
@@ -1134,7 +1131,7 @@ TclpCreateProcess(
 	if (applType == APPL_DOS) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "DOS application process not supported on this platform",
-		    -1));
+		    TCL_STRLEN));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "DOS_APP",
 		    NULL);
 	    goto end;
@@ -1312,12 +1309,12 @@ ApplicationType(
 
     applType = APPL_NONE;
     Tcl_DStringInit(&nameBuf);
-    Tcl_DStringAppend(&nameBuf, originalName, -1);
+    Tcl_DStringAppend(&nameBuf, originalName, TCL_STRLEN);
     nameLen = Tcl_DStringLength(&nameBuf);
 
     for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
 	Tcl_DStringSetLength(&nameBuf, nameLen);
-	Tcl_DStringAppend(&nameBuf, extensions[i], -1);
+	Tcl_DStringAppend(&nameBuf, extensions[i], TCL_STRLEN);
 	nativeName = Tcl_WinUtfToTChar(Tcl_DStringValue(&nameBuf),
 		Tcl_DStringLength(&nameBuf), &ds);
 	found = SearchPath(NULL, nativeName, NULL, MAX_PATH,
@@ -1336,7 +1333,7 @@ ApplicationType(
 	if ((attr == 0xffffffff) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	    continue;
 	}
-	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, -1, &ds));
+	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, TCL_STRLEN, &ds));
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
@@ -1426,7 +1423,7 @@ ApplicationType(
 	 */
 
 	GetShortPathName(nativeFullPath, nativeFullPath, MAX_PATH);
-	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, -1, &ds));
+	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, TCL_STRLEN, &ds));
 	Tcl_DStringFree(&ds);
     }
     return applType;
@@ -1455,7 +1452,7 @@ static void
 BuildCommandLine(
     const char *executable,	/* Full path of executable (including
 				 * extension). Replacement for argv[0]. */
-    int argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv,		/* Argument strings in UTF. */
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
 				 * command line (TCHAR). */
@@ -2057,11 +2054,11 @@ PipeClose2Proc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 PipeInputProc(
     ClientData instanceData,	/* Pipe state. */
     char *buf,			/* Where to store data read. */
-    int bufSize,		/* How much space is available in the
+    size_t bufSize,		/* How much space is available in the
 				 * buffer? */
     int *errorCode)		/* Where to store error code. */
 {
@@ -2151,11 +2148,11 @@ PipeInputProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 PipeOutputProc(
     ClientData instanceData,	/* Pipe state. */
     const char *buf,		/* The data buffer. */
-    int toWrite,		/* How many bytes to write? */
+    size_t toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
@@ -2640,7 +2637,7 @@ int
 Tcl_PidObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Channel chan;

@@ -100,15 +100,15 @@ typedef struct ConsoleInfo {
 				 * synchronized with the writable object. */
     char *writeBuf;		/* Current background output buffer. Access is
 				 * synchronized with the writable object. */
-    int writeBufLen;		/* Size of write buffer. Access is
+    size_t writeBufLen;		/* Size of write buffer. Access is
 				 * synchronized with the writable object. */
-    int toWrite;		/* Current amount to be written. Access is
+    size_t toWrite;		/* Current amount to be written. Access is
 				 * synchronized with the writable object. */
     int readFlags;		/* Flags that are shared with the reader
 				 * thread. Access is synchronized with the
 				 * readable object. */
-    int bytesRead;		/* Number of bytes in the buffer. */
-    int offset;			/* Number of bytes read out of the buffer. */
+    size_t bytesRead;		/* Number of bytes in the buffer. */
+    size_t offset;		/* Number of bytes read out of the buffer. */
     char buffer[CONSOLE_BUFFER_SIZE];
 				/* Data consumed by reader thread. */
 } ConsoleInfo;
@@ -142,28 +142,25 @@ typedef struct ConsoleEvent {
  * Declarations for functions used only in this file.
  */
 
-static int		ConsoleBlockModeProc(ClientData instanceData,
-			    int mode);
-static void		ConsoleCheckProc(ClientData clientData, int flags);
-static int		ConsoleCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
-static int		ConsoleEventProc(Tcl_Event *evPtr, int flags);
-static void		ConsoleExitHandler(ClientData clientData);
-static int		ConsoleGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
+static Tcl_DriverBlockModeProc	ConsoleBlockModeProc;
+static Tcl_DriverCloseProc	ConsoleCloseProc;
+static Tcl_DriverGetHandleProc	ConsoleGetHandleProc;
+static Tcl_DriverInputProc	ConsoleInputProc;
+static Tcl_DriverOutputProc	ConsoleOutputProc;
+static Tcl_DriverThreadActionProc ConsoleThreadActionProc;
+static Tcl_DriverWatchProc	ConsoleWatchProc;
+
+static Tcl_EventCheckProc	ConsoleCheckProc;
+static Tcl_EventProc		ConsoleEventProc;
+static Tcl_EventSetupProc	ConsoleSetupProc;
+
+static Tcl_ExitProc		ConsoleExitHandler;
+static Tcl_ExitProc		ProcExitHandler;
+
 static void		ConsoleInit(void);
-static int		ConsoleInputProc(ClientData instanceData, char *buf,
-			    int toRead, int *errorCode);
-static int		ConsoleOutputProc(ClientData instanceData,
-			    const char *buf, int toWrite, int *errorCode);
 static DWORD WINAPI	ConsoleReaderThread(LPVOID arg);
-static void		ConsoleSetupProc(ClientData clientData, int flags);
-static void		ConsoleWatchProc(ClientData instanceData, int mask);
 static DWORD WINAPI	ConsoleWriterThread(LPVOID arg);
-static void		ProcExitHandler(ClientData clientData);
 static int		WaitForRead(ConsoleInfo *infoPtr, int blocking);
-static void		ConsoleThreadActionProc(ClientData instanceData,
-			    int action);
 static BOOL		ReadConsoleBytes(HANDLE hConsole, LPVOID lpBuffer,
 			    DWORD nbytes, LPDWORD nbytesread);
 static BOOL		WriteConsoleBytes(HANDLE hConsole,
@@ -696,11 +693,11 @@ ConsoleCloseProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 ConsoleInputProc(
     ClientData instanceData,	/* Console state. */
     char *buf,			/* Where to store data read. */
-    int bufSize,		/* How much space is available in the
+    size_t bufSize,		/* How much space is available in the
 				 * buffer? */
     int *errorCode)		/* Where to store error code. */
 {
@@ -782,11 +779,11 @@ ConsoleInputProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 ConsoleOutputProc(
     ClientData instanceData,	/* Console state. */
     const char *buf,		/* The data buffer. */
-    int toWrite,		/* How many bytes to write? */
+    size_t toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
 {
     ConsoleInfo *infoPtr = instanceData;

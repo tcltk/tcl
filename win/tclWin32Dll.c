@@ -86,8 +86,7 @@ TCL_DECLARE_MUTEX(mountPointMap)
  * We will need this below.
  */
 
-#ifdef __WIN32__
-#ifndef STATIC_BUILD
+#if defined(__WIN32__) && !defined(STATIC_BUILD)
 
 /*
  *----------------------------------------------------------------------
@@ -153,8 +152,7 @@ DllMain(
 
     return TRUE;
 }
-#endif /* !STATIC_BUILD */
-#endif /* __WIN32__ */
+#endif /* __WIN32__ && !STATIC_BUILD */
 
 /*
  *----------------------------------------------------------------------
@@ -374,6 +372,7 @@ TclWinEncodingsCleanup(void)
  *
  *---------------------------------------------------------------------------
  */
+
 void
 TclWinResetInterfaces(void)
 {
@@ -594,8 +593,8 @@ TclWinDriveLetterForVolMountPoint(
 TCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
-    int len,			/* Source string length in bytes, or < 0 for
-				 * strlen(). */
+    size_t len,			/* Source string length in bytes, or
+				 * TCL_STRLEN for strlen(). */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
@@ -607,8 +606,9 @@ char *
 Tcl_WinTCharToUtf(
     const TCHAR *string,	/* Source string in Unicode when running NT,
 				 * ANSI when running 95. */
-    int len,			/* Source string length in bytes, or < 0 for
-				 * platform-specific string length. */
+    size_t len,			/* Source string length in bytes, or
+				 * TCL_STRLEN for platform-specific string
+				 * length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
