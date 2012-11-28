@@ -2180,7 +2180,8 @@ ZlibStreamSubcmd(
     enum objIndices {
 	OPT_COMPRESSION_DICTIONARY = 0,
 	OPT_GZIP_HEADER = 1,
-	OPT_COMPRESSION_LEVEL = 2
+	OPT_COMPRESSION_LEVEL = 2,
+	OPT_END = -1
     };
     Tcl_Obj *obj[3] = { NULL, NULL, NULL };
 #define compDictObj	obj[OPT_COMPRESSION_DICTIONARY]
@@ -2193,19 +2194,19 @@ ZlibStreamSubcmd(
     static const OptDescriptor compressionOpts[] = {
 	{ "-dictionary", OPT_COMPRESSION_DICTIONARY },
 	{ "-level",	 OPT_COMPRESSION_LEVEL },
-	{ NULL, 0 }
+	{ NULL, OPT_END }
     };
     static const OptDescriptor gzipOpts[] = {
 	{ "-header",	 OPT_GZIP_HEADER },
 	{ "-level",	 OPT_COMPRESSION_LEVEL },
-	{ NULL, 0 }
+	{ NULL, OPT_END }
     };
     static const OptDescriptor expansionOpts[] = {
 	{ "-dictionary", OPT_COMPRESSION_DICTIONARY },
-	{ NULL, 0 }
+	{ NULL, OPT_END }
     };
     static const OptDescriptor gunzipOpts[] = {
-	{ NULL, 0 }
+	{ NULL, OPT_END }
     };
     const OptDescriptor *desc = NULL;
     Tcl_ZlibStream zh;
