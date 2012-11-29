@@ -21,7 +21,7 @@ library tcl
 
 interface tcl
 hooks {tclPlat tclInt tclIntPlat}
-scspec EXTERN
+scspec TCLAPI
 
 # Declare each of the functions in the public Tcl interface.  Note that
 # the an index should never be reused for a different function in order
