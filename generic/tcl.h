@@ -2281,8 +2281,8 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * main library in case an extension is statically linked into an application.
  */
 
-const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
-			    int exact);
+const char *		TclInitStubs(Tcl_Interp *interp, const char *version,
+			    int exact, int major, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
@@ -2290,7 +2290,10 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  * When not using stubs, make it a macro.
  */
 
-#ifndef USE_TCL_STUBS
+#ifdef USE_TCL_STUBS
+#define Tcl_InitStubs(interp, version, exact) \
+    TclInitStubs(interp, version, exact, TCL_MAJOR_VERSION, TCL_STUB_MAGIC)
+#else
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)
 #endif
