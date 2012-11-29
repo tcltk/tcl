@@ -68,7 +68,7 @@ HasStubSupport(
      */
 
     iPtr->legacyResult
-	    = "This interpreter does not support stubs-enabled extensions.";
+	    = (char *) "interpreter uses an incompatible stubs mechanism";
     iPtr->legacyFreeProc = TCL_STATIC;
     return NULL;
 }
