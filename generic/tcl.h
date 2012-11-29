@@ -90,20 +90,6 @@ extern "C" {
 #endif /* __WIN32__ */
 
 /*
- * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
- * quotation marks), JOIN joins two arguments.
- */
-
-#ifndef STRINGIFY
-#  define STRINGIFY(x) STRINGIFY1(x)
-#  define STRINGIFY1(x) #x
-#endif
-#ifndef JOIN
-#  define JOIN(a,b) JOIN1(a,b)
-#  define JOIN1(a,b) a##b
-#endif
-
-/*
  * A special definition used to allow this header file to be included from
  * windows resource files so that they can obtain version information.
  * RC_INVOKED is defined by default by the windows RC tool.
