@@ -163,10 +163,6 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Bitwise not:	push ~stktop */
     {"not",		  1,   0,          0,	{OPERAND_NONE}},
 	/* Logical not:	push !stktop */
-    {"callBuiltinFunc",	  2,   1,          1,	{OPERAND_UINT1}},
-	/* Call builtin math function with index op1; any args are on stk */
-    {"callFunc",	  2,   INT_MIN,    1,	{OPERAND_UINT1}},
-	/* Call non-builtin func objv[0]; <objc,objv>=<op1,top op1> */
     {"tryCvtToNumeric",	  1,   0,          0,	{OPERAND_NONE}},
 	/* Try converting stktop to first int then double if possible. */
     {"expon",		  1,   -1,	   0,	{OPERAND_NONE}},

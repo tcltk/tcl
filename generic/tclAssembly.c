@@ -493,13 +493,13 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_JUMP,							/* 28 */
     INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 64- */
     INST_PUSH_RETURN_OPTIONS,					/* -67 */
-    INST_OVER,							/* 117 */
-    INST_REVERSE, INST_NOP,					/* 119-120 */
-    INST_STR_MAP, INST_STR_FIND,				/* 130-131 */
-    INST_COROUTINE_NAME,					/* 136 */
-    INST_NS_CURRENT,						/* 138 */
-    INST_INFO_LEVEL_NUM,					/* 139 */
-    INST_RESOLVE_COMMAND					/* 141 */
+    INST_OVER,							/* 115 */
+    INST_REVERSE, INST_NOP,					/* 117-118 */
+    INST_STR_MAP, INST_STR_FIND,				/* 128-129 */
+    INST_COROUTINE_NAME,					/* 134 */
+    INST_NS_CURRENT,						/* 136 */
+    INST_INFO_LEVEL_NUM,					/* 137 */
+    INST_RESOLVE_COMMAND					/* 139 */
 };
 
 /*

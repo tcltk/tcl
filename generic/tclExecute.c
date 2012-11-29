@@ -2820,16 +2820,6 @@ TEBCresume(
 		TCL_EVAL_NOERR, NULL);
 
     /*
-     * INST_CALL_BUILTIN_FUNC1 and INST_CALL_FUNC1 were made obsolete by the
-     * changes to add a ::tcl::mathfunc namespace in 8.5.
-     */
-
-    case INST_CALL_BUILTIN_FUNC:
-	Tcl_Panic("TclNRExecuteByteCode: obsolete INST_CALL_BUILTIN_FUNC found");
-    case INST_CALL_FUNC:
-	Tcl_Panic("TclNRExecuteByteCode: obsolete INST_CALL_FUNC found");
-
-    /*
      * -----------------------------------------------------------------
      *	   Start of INST_LOAD instructions.
      *
