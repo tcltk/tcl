@@ -221,15 +221,6 @@ extern "C" {
 #endif
 
 /*
- * Definitions that allow this header file to be used either with or without
- * ANSI C features.
- */
-
-#ifndef INLINE
-#   define INLINE
-#endif
-
-/*
  * Miscellaneous declarations.
  */
 
