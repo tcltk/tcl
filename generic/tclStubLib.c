@@ -85,7 +85,7 @@ static int isDigit(const int c)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InitStubs --
+ * TclInitStubs --
  *
  *	Tries to initialise the stub table pointers and ensures that the
  *	correct version of Tcl is loaded.
