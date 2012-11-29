@@ -113,8 +113,6 @@ enum BasicBlockFlags {
 				 * traversal */
     BB_FALLTHRU = (1 << 1),	/* Control may pass from this block to a
 				 * successor */
-    BB_JUMP1 = (1 << 2),	/* Basic block ends with a 1-byte-offset jump
-				 * and may need expansion */
     BB_JUMPTABLE = (1 << 3),	/* Basic block ends with a jump table */
     BB_BEGINCATCH = (1 << 4),	/* Block ends with a 'beginCatch' instruction,
 				 * marking it as the start of a 'catch'
@@ -151,11 +149,9 @@ typedef enum TalInstType {
 				 * compiling it in line with the assembly
 				 * code! I love Tcl!) */
     ASSEM_INDEX,		/* 4 byte operand, integer or end-integer */
-    ASSEM_INVOKE,		/* 1- or 4-byte operand count, must be
-				 * strictly positive, consumes N, produces
-				 * 1. */
+    ASSEM_INVOKE,		/* 4-byte operand count, must be strictly
+				 * positive, consumes N, produces 1. */
     ASSEM_JUMP,			/* Jump instructions */
-    ASSEM_JUMP4,		/* Jump instructions forcing a 4-byte offset */
     ASSEM_JUMPTABLE,		/* Jumptable (switch -exact) */
     ASSEM_LABEL,		/* The assembly directive that defines a
 				 * label */
@@ -165,11 +161,7 @@ typedef enum TalInstType {
 				 * consumses N, produces 1 */
     ASSEM_LSET_FLAT,		/* 4-byte operand count, must be >= 3,
 				 * consumes N, produces 1 */
-    ASSEM_LVT,			/* One operand that references a local
-				 * variable */
-    ASSEM_LVT1,			/* One 1-byte operand that references a local
-				 * variable */
-    ASSEM_LVT1_SINT1,		/* One 1-byte operand that references a local
+    ASSEM_LVT4_SINT1,		/* One 4-byte operand that references a local
 				 * variable, one signed-integer 1-byte
 				 * operand */
     ASSEM_LVT4,			/* One 4-byte operand that references a local
@@ -244,8 +236,6 @@ static void		BBEmitInstInt1(AssemblyEnv* assemEnvPtr, int tblIdx,
 			    int opnd, int count);
 static void		BBEmitInstInt4(AssemblyEnv* assemEnvPtr, int tblIdx,
 			    int opnd, int count);
-static void		BBEmitInst1or4(AssemblyEnv* assemEnvPtr, int tblIdx,
-			    int param, int count);
 static void		BBEmitOpcode(AssemblyEnv* assemEnvPtr, int tblIdx,
 			    int count);
 static int		BuildExceptionRanges(AssemblyEnv* assemEnvPtr);
@@ -352,14 +342,11 @@ static const Tcl_ObjType assembleCodeType = {
 
 static const TalInstDesc TalInstructionTable[] = {
     /* PUSH must be first, see the code near the end of TclAssembleCode */
-    {"push",		ASSEM_PUSH,	(INST_PUSH1<<8
-					 | INST_PUSH4),		0,	1},
+    {"push",		ASSEM_PUSH,	INST_PUSH,		0,	1},
 
     {"add",		ASSEM_1BYTE,	INST_ADD,		2,	1},
-    {"append",		ASSEM_LVT,	(INST_APPEND_SCALAR1<<8
-					 | INST_APPEND_SCALAR4),1,	1},
-    {"appendArray",	ASSEM_LVT,	(INST_APPEND_ARRAY1<<8
-					 | INST_APPEND_ARRAY4),	2,	1},
+    {"append",		ASSEM_LVT4,	INST_APPEND_SCALAR,	1,	1},
+    {"appendArray",	ASSEM_LVT4,	INST_APPEND_ARRAY,	2,	1},
     {"appendArrayStk",	ASSEM_1BYTE,	INST_APPEND_ARRAY_STK,	3,	1},
     {"appendStk",	ASSEM_1BYTE,	INST_APPEND_STK,	2,	1},
     {"arrayExistsImm",	ASSEM_LVT4,	INST_ARRAY_EXISTS_IMM,	0,	1},
@@ -367,12 +354,12 @@ static const TalInstDesc TalInstructionTable[] = {
     {"arrayMakeImm",	ASSEM_LVT4,	INST_ARRAY_MAKE_IMM,	0,	0},
     {"arrayMakeStk",	ASSEM_1BYTE,	INST_ARRAY_MAKE_STK,	1,	0},
     {"beginCatch",	ASSEM_BEGIN_CATCH,
-					INST_BEGIN_CATCH4,	0,	0},
+					INST_BEGIN_CATCH,	0,	0},
     {"bitand",		ASSEM_1BYTE,	INST_BITAND,		2,	1},
     {"bitnot",		ASSEM_1BYTE,	INST_BITNOT,		1,	1},
     {"bitor",		ASSEM_1BYTE,	INST_BITOR,		2,	1},
     {"bitxor",		ASSEM_1BYTE,	INST_BITXOR,		2,	1},
-    {"concat",		ASSEM_CONCAT1,	INST_CONCAT1,		INT_MIN,1},
+    {"concat",		ASSEM_CONCAT1,	INST_CONCAT,		INT_MIN,1},
     {"coroName",	ASSEM_1BYTE,	INST_COROUTINE_NAME,	0,	1},
     {"currentNamespace",ASSEM_1BYTE,	INST_NS_CURRENT,	0,	1},
     {"dictAppend",	ASSEM_LVT4,	INST_DICT_APPEND,	2,	1},
@@ -402,35 +389,28 @@ static const TalInstDesc TalInstructionTable[] = {
     {"exprStk",		ASSEM_1BYTE,	INST_EXPR_STK,		1,	1},
     {"ge",		ASSEM_1BYTE,	INST_GE,		2,	1},
     {"gt",		ASSEM_1BYTE,	INST_GT,		2,	1},
-    {"incr",		ASSEM_LVT1,	INST_INCR_SCALAR1,	1,	1},
-    {"incrArray",	ASSEM_LVT1,	INST_INCR_ARRAY1,	2,	1},
-    {"incrArrayImm",	ASSEM_LVT1_SINT1,
-					INST_INCR_ARRAY1_IMM,	1,	1},
+    {"incr",		ASSEM_LVT4,	INST_INCR_SCALAR,	1,	1},
+    {"incrArray",	ASSEM_LVT4,	INST_INCR_ARRAY,	2,	1},
+    {"incrArrayImm",	ASSEM_LVT4_SINT1,
+					INST_INCR_ARRAY_IMM,	1,	1},
     {"incrArrayStk",	ASSEM_1BYTE,	INST_INCR_ARRAY_STK,	3,	1},
     {"incrArrayStkImm", ASSEM_SINT1,	INST_INCR_ARRAY_STK_IMM,2,	1},
-    {"incrImm",		ASSEM_LVT1_SINT1,
-					INST_INCR_SCALAR1_IMM,	0,	1},
+    {"incrImm",		ASSEM_LVT4_SINT1,
+					INST_INCR_SCALAR_IMM,	0,	1},
     {"incrStk",		ASSEM_1BYTE,	INST_INCR_SCALAR_STK,	2,	1},
     {"incrStkImm",	ASSEM_SINT1,	INST_INCR_SCALAR_STK_IMM,
 								1,	1},
     {"infoLevelArgs",	ASSEM_1BYTE,	INST_INFO_LEVEL_ARGS,	1,	1},
     {"infoLevelNumber",	ASSEM_1BYTE,	INST_INFO_LEVEL_NUM,	0,	1},
-    {"invokeStk",	ASSEM_INVOKE,	(INST_INVOKE_STK1 << 8
-					 | INST_INVOKE_STK4),	INT_MIN,1},
-    {"jump",		ASSEM_JUMP,	INST_JUMP1,		0,	0},
-    {"jump4",		ASSEM_JUMP4,	INST_JUMP4,		0,	0},
-    {"jumpFalse",	ASSEM_JUMP,	INST_JUMP_FALSE1,	1,	0},
-    {"jumpFalse4",	ASSEM_JUMP4,	INST_JUMP_FALSE4,	1,	0},
+    {"invokeStk",	ASSEM_INVOKE,	INST_INVOKE_STK,	INT_MIN,1},
+    {"jump",		ASSEM_JUMP,	INST_JUMP,		0,	0},
+    {"jumpFalse",	ASSEM_JUMP,	INST_JUMP_FALSE,	1,	0},
     {"jumpTable",	ASSEM_JUMPTABLE,INST_JUMP_TABLE,	1,	0},
-    {"jumpTrue",	ASSEM_JUMP,	INST_JUMP_TRUE1,	1,	0},
-    {"jumpTrue4",	ASSEM_JUMP4,	INST_JUMP_TRUE4,	1,	0},
+    {"jumpTrue",	ASSEM_JUMP,	INST_JUMP_TRUE,		1,	0},
     {"label",		ASSEM_LABEL,	0,			0,	0},
     {"land",		ASSEM_1BYTE,	INST_LAND,		2,	1},
-    {"lappend",		ASSEM_LVT,	(INST_LAPPEND_SCALAR1<<8
-					 | INST_LAPPEND_SCALAR4),
-								1,	1},
-    {"lappendArray",	ASSEM_LVT,	(INST_LAPPEND_ARRAY1<<8
-					 | INST_LAPPEND_ARRAY4),2,	1},
+    {"lappend",		ASSEM_LVT4,	INST_LAPPEND_SCALAR,	1,	1},
+    {"lappendArray",	ASSEM_LVT4,	INST_LAPPEND_ARRAY,	2,	1},
     {"lappendArrayStk", ASSEM_1BYTE,	INST_LAPPEND_ARRAY_STK,	3,	1},
     {"lappendStk",	ASSEM_1BYTE,	INST_LAPPEND_STK,	2,	1},
     {"le",		ASSEM_1BYTE,	INST_LE,		2,	1},
@@ -442,10 +422,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"listIndexImm",	ASSEM_INDEX,	INST_LIST_INDEX_IMM,	1,	1},
     {"listLength",	ASSEM_1BYTE,	INST_LIST_LENGTH,	1,	1},
     {"listNotIn",	ASSEM_1BYTE,	INST_LIST_NOT_IN,	2,	1},
-    {"load",		ASSEM_LVT,	(INST_LOAD_SCALAR1 << 8
-					 | INST_LOAD_SCALAR4),	0,	1},
-    {"loadArray",	ASSEM_LVT,	(INST_LOAD_ARRAY1<<8
-					 | INST_LOAD_ARRAY4),	1,	1},
+    {"load",		ASSEM_LVT4,	INST_LOAD_SCALAR,	0,	1},
+    {"loadArray",	ASSEM_LVT4,	INST_LOAD_ARRAY,	1,	1},
     {"loadArrayStk",	ASSEM_1BYTE,	INST_LOAD_ARRAY_STK,	2,	1},
     {"loadStk",		ASSEM_1BYTE,	INST_LOAD_SCALAR_STK,	1,	1},
     {"lor",		ASSEM_1BYTE,	INST_LOR,		2,	1},
@@ -469,10 +447,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"resolveCmd",	ASSEM_1BYTE,	INST_RESOLVE_COMMAND,	1,	1},
     {"reverse",		ASSEM_REVERSE,	INST_REVERSE,		INT_MIN,-1-0},
     {"rshift",		ASSEM_1BYTE,	INST_RSHIFT,		2,	1},
-    {"store",		ASSEM_LVT,	(INST_STORE_SCALAR1<<8
-					 | INST_STORE_SCALAR4),	1,	1},
-    {"storeArray",	ASSEM_LVT,	(INST_STORE_ARRAY1<<8
-					 | INST_STORE_ARRAY4),	2,	1},
+    {"store",		ASSEM_LVT4,	INST_STORE_SCALAR,	1,	1},
+    {"storeArray",	ASSEM_LVT4,	INST_STORE_ARRAY,	2,	1},
     {"storeArrayStk",	ASSEM_1BYTE,	INST_STORE_ARRAY_STK,	3,	1},
     {"storeStk",	ASSEM_1BYTE,	INST_STORE_SCALAR_STK,	2,	1},
     {"strcmp",		ASSEM_1BYTE,	INST_STR_CMP,		2,	1},
@@ -513,19 +489,17 @@ static const TalInstDesc TalInstructionTable[] = {
  */
 
 static const unsigned char NonThrowingByteCodes[] = {
-    INST_PUSH1, INST_PUSH4, INST_POP, INST_DUP,			/* 1-4 */
-    INST_JUMP1, INST_JUMP4,					/* 34-35 */
-    INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 70-72 */
-    INST_OVER,							/* 95 */
-    INST_PUSH_RETURN_OPTIONS,					/* 108 */
-    INST_REVERSE,						/* 126 */
-    INST_NOP,							/* 132 */
-    INST_STR_MAP,						/* 143 */
-    INST_STR_FIND,						/* 144 */
-    INST_COROUTINE_NAME,					/* 149 */
-    INST_NS_CURRENT,						/* 151 */
-    INST_INFO_LEVEL_NUM,					/* 152 */
-    INST_RESOLVE_COMMAND					/* 154 */
+    INST_PUSH, INST_POP, INST_DUP,				/* 1-3 */
+    INST_JUMP,							/* 28 */
+    INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 64- */
+    INST_PUSH_RETURN_OPTIONS,					/* -67 */
+    INST_OVER,							/* 117 */
+    INST_REVERSE, INST_NOP,					/* 119-120 */
+    INST_STR_MAP, INST_STR_FIND,				/* 130-131 */
+    INST_COROUTINE_NAME,					/* 136 */
+    INST_NS_CURRENT,						/* 138 */
+    INST_INFO_LEVEL_NUM,					/* 139 */
+    INST_RESOLVE_COMMAND					/* 141 */
 };
 
 /*
@@ -697,45 +671,6 @@ BBEmitInstInt4(
 {
     BBEmitOpcode(assemEnvPtr, tblIdx, count);
     TclEmitInt4(opnd, assemEnvPtr->envPtr);
-}
-
-/*
- *-----------------------------------------------------------------------------
- *
- * BBEmitInst1or4 --
- *
- *	Emits a 1- or 4-byte operation according to the magnitude of the
- *	operand
- *
- *-----------------------------------------------------------------------------
- */
-
-static void
-BBEmitInst1or4(
-    AssemblyEnv* assemEnvPtr,	/* Assembly environment */
-    int tblIdx,			/* Index in TalInstructionTable of op */
-    int param,			/* Variable-length parameter */
-    int count)			/* Arity if variadic */
-{
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
-				/* Compilation environment */
-    BasicBlock* bbPtr = assemEnvPtr->curr_bb;
-				/* Current basic block */
-    int op = TalInstructionTable[tblIdx].tclInstCode;
-
-    if (param <= 0xff) {
-	op >>= 8;
-    } else {
-	op &= 0xff;
-    }
-    TclEmitInt1(op, envPtr);
-    if (param <= 0xff) {
-	TclEmitInt1(param, envPtr);
-    } else {
-	TclEmitInt4(param, envPtr);
-    }
-    envPtr->atCmdStart = ((op) == INST_START_CMD);
-    BBUpdateStackReqs(bbPtr, tblIdx, count);
 }
 
 /*
@@ -1331,7 +1266,7 @@ AssembleOneLine(
 	}
 	operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
 	litIndex = TclRegisterNewLiteral(envPtr, operand1, operand1Len);
-	BBEmitInst1or4(assemEnvPtr, tblIdx, litIndex, 0);
+	BBEmitInstInt4(assemEnvPtr, tblIdx, litIndex, 0);
 	break;
 
     case ASSEM_1BYTE:
@@ -1485,7 +1420,7 @@ AssembleOneLine(
 	     * Assumes that PUSH is the first slot!
 	     */
 
-	    BBEmitInst1or4(assemEnvPtr, 0, litIndex, 0);
+	    BBEmitInstInt4(assemEnvPtr, 0, litIndex, 0);
 	    BBEmitOpcode(assemEnvPtr, tblIdx, 0);
 	}
 	break;
@@ -1500,11 +1435,10 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 
-	BBEmitInst1or4(assemEnvPtr, tblIdx, opnd, opnd);
+	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd);
 	break;
 
     case ASSEM_JUMP:
-    case ASSEM_JUMP4:
 	if (parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "label");
 	    goto cleanup;
@@ -1513,13 +1447,8 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	assemEnvPtr->curr_bb->jumpOffset = envPtr->codeNext-envPtr->codeStart;
-	if (instType == ASSEM_JUMP) {
-	    flags = BB_JUMP1;
-	    BBEmitInstInt1(assemEnvPtr, tblIdx, 0, 0);
-	} else {
-	    flags = 0;
-	    BBEmitInstInt4(assemEnvPtr, tblIdx, 0, 0);
-	}
+	flags = 0;
+	BBEmitInstInt4(assemEnvPtr, tblIdx, 0, 0);
 
 	/*
 	 * Start a new basic block at the instruction following the jump.
@@ -1632,42 +1561,18 @@ AssembleOneLine(
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd);
 	break;
 
-    case ASSEM_LVT:
-	if (parsePtr->numWords != 2) {
-	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
-	    goto cleanup;
-	}
-	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0) {
-	    goto cleanup;
-	}
-	BBEmitInst1or4(assemEnvPtr, tblIdx, localVar, 0);
-	break;
-
-    case ASSEM_LVT1:
-	if (parsePtr->numWords != 2) {
-	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
-	    goto cleanup;
-	}
-	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0 || CheckOneByte(interp, localVar)) {
-	    goto cleanup;
-	}
-	BBEmitInstInt1(assemEnvPtr, tblIdx, localVar, 0);
-	break;
-
-    case ASSEM_LVT1_SINT1:
+    case ASSEM_LVT4_SINT1:
 	if (parsePtr->numWords != 3) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varName imm8");
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0 || CheckOneByte(interp, localVar)
+	if (localVar < 0
 		|| GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
 		|| CheckSignedOneByte(interp, opnd)) {
 	    goto cleanup;
 	}
-	BBEmitInstInt1(assemEnvPtr, tblIdx, localVar, 0);
+	BBEmitInstInt4(assemEnvPtr, tblIdx, localVar, 0);
 	TclEmitInt1(opnd, envPtr);
 	break;
 
@@ -2794,15 +2699,9 @@ CalculateJumpRelocations(
     int* mustMove)		/* OUTPUT: Number of bytes that have been
 				 * added to the code */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
-				/* Compilation environment */
     BasicBlock* bbPtr;		/* Pointer to a basic block being checked */
     Tcl_HashEntry* entry;	/* Exit label's entry in the symbol table */
-    BasicBlock* jumpTarget;	/* Basic block where the jump goes */
     int motion;			/* Amount by which the code has expanded */
-    int offset;			/* Offset in the bytecode from a jump
-				 * instruction to its target */
-    unsigned opcode;		/* Opcode in the bytecode being adjusted */
 
     /*
      * Iterate through basic blocks as long as a change results in code
@@ -2835,26 +2734,6 @@ CalculateJumpRelocations(
 		    ReportUndefinedLabel(assemEnvPtr, bbPtr,
 			    bbPtr->jumpTarget);
 		    return TCL_ERROR;
-		}
-
-		/*
-		 * If the instruction is a JUMP1, turn it into a JUMP4 if its
-		 * target is out of range.
-		 */
-
-		jumpTarget = Tcl_GetHashValue(entry);
-		if (bbPtr->flags & BB_JUMP1) {
-		    offset = jumpTarget->startOffset
-			    - (bbPtr->jumpOffset + motion);
-		    if (offset < -0x80 || offset > 0x7f) {
-			opcode = TclGetUInt1AtPtr(envPtr->codeStart
-				+ bbPtr->jumpOffset);
-			++opcode;
-			TclStoreInt1AtPtr(opcode,
-				envPtr->codeStart + bbPtr->jumpOffset);
-			motion += 3;
-			bbPtr->flags &= ~BB_JUMP1;
-		    }
 		}
 	    }
 
@@ -3041,13 +2920,8 @@ FillInJumpOffsets(
 	    jumpTarget = Tcl_GetHashValue(entry);
 	    fromOffset = bbPtr->jumpOffset;
 	    targetOffset = jumpTarget->startOffset;
-	    if (bbPtr->flags & BB_JUMP1) {
-		TclStoreInt1AtPtr(targetOffset - fromOffset,
-			envPtr->codeStart + fromOffset + 1);
-	    } else {
-		TclStoreInt4AtPtr(targetOffset - fromOffset,
-			envPtr->codeStart + fromOffset + 1);
-	    }
+	    TclStoreInt4AtPtr(targetOffset - fromOffset,
+		    envPtr->codeStart + fromOffset + 1);
 	}
 	if (bbPtr->flags & BB_JUMPTABLE) {
 	    ResolveJumpTableTargets(assemEnvPtr, bbPtr);
@@ -3576,7 +3450,7 @@ StackCheckExit(
 	     * Assumes that 'push' is at slot 0 in TalInstructionTable.
 	     */
 
-	    BBEmitInst1or4(assemEnvPtr, 0, litIndex, 0);
+	    BBEmitInstInt4(assemEnvPtr, 0, litIndex, 0);
 	    ++depth;
 	}
 
@@ -4197,13 +4071,13 @@ RestoreEmbeddedExceptionRanges(
 
 	    /*
 	     * Walk through the bytecode of the basic block, and relocate
-	     * INST_BEGIN_CATCH4 instructions to the new locations
+	     * INST_BEGIN_CATCH instructions to the new locations
 	     */
 
 	    i = bbPtr->startOffset;
 	    while (i < bbPtr->successor1->startOffset) {
 		opcode = envPtr->codeStart[i];
-		if (opcode == INST_BEGIN_CATCH4) {
+		if (opcode == INST_BEGIN_CATCH) {
 		    catchIndex = TclGetUInt4AtPtr(envPtr->codeStart + i + 1);
 		    if (catchIndex >= bbPtr->foreignExceptionBase
 			    && catchIndex < (bbPtr->foreignExceptionBase +

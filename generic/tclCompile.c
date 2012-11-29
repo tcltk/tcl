@@ -54,69 +54,57 @@ InstructionDesc const tclInstructionTable[] = {
     /* Name	      Bytes stackEffect #Opnds  Operand types */
     {"done",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Finish ByteCode execution and return stktop (top stack item) */
-    {"push1",		  2,   +1,         1,	{OPERAND_UINT1}},
-	/* Push object at ByteCode objArray[op1] */
-    {"push4",		  5,   +1,         1,	{OPERAND_UINT4}},
+    {"push",		  5,   +1,         1,	{OPERAND_UINT4}},
 	/* Push object at ByteCode objArray[op4] */
     {"pop",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Pop the topmost stack object */
     {"dup",		  1,   +1,         0,	{OPERAND_NONE}},
 	/* Duplicate the topmost stack object and push the result */
-    {"concat1",		  2,   INT_MIN,    1,	{OPERAND_UINT1}},
+    {"concat",		  2,   INT_MIN,    1,	{OPERAND_UINT1}},
 	/* Concatenate the top op1 items and push result */
-    {"invokeStk1",	  2,   INT_MIN,    1,	{OPERAND_UINT1}},
-	/* Invoke command named objv[0]; <objc,objv> = <op1,top op1> */
-    {"invokeStk4",	  5,   INT_MIN,    1,	{OPERAND_UINT4}},
+    {"invokeStk",	  5,   INT_MIN,    1,	{OPERAND_UINT4}},
 	/* Invoke command named objv[0]; <objc,objv> = <op4,top op4> */
     {"evalStk",		  1,   0,          0,	{OPERAND_NONE}},
 	/* Evaluate command in stktop using Tcl_EvalObj. */
     {"exprStk",		  1,   0,          0,	{OPERAND_NONE}},
 	/* Execute expression in stktop using Tcl_ExprStringObj. */
 
-    {"loadScalar1",	  2,   1,          1,	{OPERAND_LVT1}},
-	/* Load scalar variable at index op1 <= 255 in call frame */
-    {"loadScalar4",	  5,   1,          1,	{OPERAND_LVT4}},
-	/* Load scalar variable at index op1 >= 256 in call frame */
+    {"loadScalar",	  5,   1,          1,	{OPERAND_LVT4}},
+	/* Load scalar variable at index op1 in call frame */
     {"loadScalarStk",	  1,   0,          0,	{OPERAND_NONE}},
 	/* Load scalar variable; scalar's name is stktop */
-    {"loadArray1",	  2,   0,          1,	{OPERAND_LVT1}},
-	/* Load array element; array at slot op1<=255, element is stktop */
-    {"loadArray4",	  5,   0,          1,	{OPERAND_LVT4}},
+    {"loadArray",	  5,   0,          1,	{OPERAND_LVT4}},
 	/* Load array element; array at slot op1 > 255, element is stktop */
     {"loadArrayStk",	  1,   -1,         0,	{OPERAND_NONE}},
 	/* Load array element; element is stktop, array name is stknext */
     {"loadStk",		  1,   0,          0,	{OPERAND_NONE}},
 	/* Load general variable; unparsed variable name is stktop */
-    {"storeScalar1",	  2,   0,          1,	{OPERAND_LVT1}},
-	/* Store scalar variable at op1<=255 in frame; value is stktop */
-    {"storeScalar4",	  5,   0,          1,	{OPERAND_LVT4}},
-	/* Store scalar variable at op1 > 255 in frame; value is stktop */
+    {"storeScalar",	  5,   0,          1,	{OPERAND_LVT4}},
+	/* Store scalar variable at op1 in frame; value is stktop */
     {"storeScalarStk",	  1,   -1,         0,	{OPERAND_NONE}},
 	/* Store scalar; value is stktop, scalar name is stknext */
-    {"storeArray1",	  2,   -1,         1,	{OPERAND_LVT1}},
-	/* Store array element; array at op1<=255, value is top then elem */
-    {"storeArray4",	  5,   -1,         1,	{OPERAND_LVT4}},
+    {"storeArray",	  5,   -1,         1,	{OPERAND_LVT4}},
 	/* Store array element; array at op1>=256, value is top then elem */
     {"storeArrayStk",	  1,   -2,         0,	{OPERAND_NONE}},
 	/* Store array element; value is stktop, then elem, array names */
     {"storeStk",	  1,   -1,         0,	{OPERAND_NONE}},
 	/* Store general variable; value is stktop, then unparsed name */
 
-    {"incrScalar1",	  2,   0,          1,	{OPERAND_LVT1}},
-	/* Incr scalar at index op1<=255 in frame; incr amount is stktop */
+    {"incrScalar",	  5,   0,          1,	{OPERAND_LVT4}},
+	/* Incr scalar at index op1 in frame; incr amount is stktop */
     {"incrScalarStk",	  1,   -1,         0,	{OPERAND_NONE}},
 	/* Incr scalar; incr amount is stktop, scalar's name is stknext */
-    {"incrArray1",	  2,   -1,         1,	{OPERAND_LVT1}},
-	/* Incr array elem; arr at slot op1<=255, amount is top then elem */
+    {"incrArray",	  5,   -1,         1,	{OPERAND_LVT4}},
+	/* Incr array elem; arr at slot op1, amount is top then elem */
     {"incrArrayStk",	  1,   -2,         0,	{OPERAND_NONE}},
 	/* Incr array element; amount is top then elem then array names */
     {"incrStk",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Incr general variable; amount is stktop then unparsed var name */
-    {"incrScalar1Imm",	  3,   +1,         2,	{OPERAND_LVT1, OPERAND_INT1}},
+    {"incrScalarImm",	  6,   +1,         2,	{OPERAND_LVT4, OPERAND_INT1}},
 	/* Incr scalar at slot op1 <= 255; amount is 2nd operand byte */
     {"incrScalarStkImm",  2,   0,          1,	{OPERAND_INT1}},
 	/* Incr scalar; scalar name is stktop; incr amount is op1 */
-    {"incrArray1Imm",	  3,   0,          2,	{OPERAND_LVT1, OPERAND_INT1}},
+    {"incrArrayImm",	  6,   0,          2,	{OPERAND_LVT4, OPERAND_INT1}},
 	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
 	 * amount is 2nd operand byte */
     {"incrArrayStkImm",	  2,   -1,         1,	{OPERAND_INT1}},
@@ -124,17 +112,11 @@ InstructionDesc const tclInstructionTable[] = {
     {"incrStkImm",	  2,   0,	   1,	{OPERAND_INT1}},
 	/* Incr general variable; unparsed name is top, amount is op1 */
 
-    {"jump1",		  2,   0,          1,	{OPERAND_INT1}},
-	/* Jump relative to (pc + op1) */
-    {"jump4",		  5,   0,          1,	{OPERAND_INT4}},
+    {"jump",		  5,   0,          1,	{OPERAND_INT4}},
 	/* Jump relative to (pc + op4) */
-    {"jumpTrue1",	  2,   -1,         1,	{OPERAND_INT1}},
-	/* Jump relative to (pc + op1) if stktop expr object is true */
-    {"jumpTrue4",	  5,   -1,         1,	{OPERAND_INT4}},
+    {"jumpTrue",	  5,   -1,         1,	{OPERAND_INT4}},
 	/* Jump relative to (pc + op4) if stktop expr object is true */
-    {"jumpFalse1",	  2,   -1,         1,	{OPERAND_INT1}},
-	/* Jump relative to (pc + op1) if stktop expr object is false */
-    {"jumpFalse4",	  5,   -1,         1,	{OPERAND_INT4}},
+    {"jumpFalse",	  5,   -1,         1,	{OPERAND_INT4}},
 	/* Jump relative to (pc + op4) if stktop expr object is false */
 
     {"lor",		  1,   -1,         0,	{OPERAND_NONE}},
@@ -181,27 +163,32 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Bitwise not:	push ~stktop */
     {"not",		  1,   0,          0,	{OPERAND_NONE}},
 	/* Logical not:	push !stktop */
-    {"callBuiltinFunc1",  2,   1,          1,	{OPERAND_UINT1}},
+    {"callBuiltinFunc",	  2,   1,          1,	{OPERAND_UINT1}},
 	/* Call builtin math function with index op1; any args are on stk */
-    {"callFunc1",	  2,   INT_MIN,    1,	{OPERAND_UINT1}},
+    {"callFunc",	  2,   INT_MIN,    1,	{OPERAND_UINT1}},
 	/* Call non-builtin func objv[0]; <objc,objv>=<op1,top op1> */
     {"tryCvtToNumeric",	  1,   0,          0,	{OPERAND_NONE}},
 	/* Try converting stktop to first int then double if possible. */
+    {"expon",		  1,   -1,	   0,	{OPERAND_NONE}},
+	/* Binary exponentiation operator: push (stknext ** stktop) */
+    {"listIn",		  1,	-1,	   0,	{OPERAND_NONE}},
+	/* List containment: push [lsearch stktop stknext]>=0) */
+    {"listNotIn",	  1,	-1,	   0,	{OPERAND_NONE}},
+	/* List negated containment: push [lsearch stktop stknext]<0) */
+
+    {"foreach_start",	  5,   0,          1,	{OPERAND_AUX4}},
+	/* Initialize execution of a foreach loop. Operand is aux data index
+	 * of the ForeachInfo structure for the foreach command. */
+    {"foreach_step",	  5,   +1,         1,	{OPERAND_AUX4}},
+	/* "Step" or begin next iteration of foreach loop. Push 0 if to
+	 * terminate loop, else push 1. */
 
     {"break",		  1,   0,          0,	{OPERAND_NONE}},
 	/* Abort closest enclosing loop; if none, return TCL_BREAK code. */
     {"continue",	  1,   0,          0,	{OPERAND_NONE}},
 	/* Skip to next iteration of closest enclosing loop; if none, return
 	 * TCL_CONTINUE code. */
-
-    {"foreach_start4",	  5,   0,          1,	{OPERAND_AUX4}},
-	/* Initialize execution of a foreach loop. Operand is aux data index
-	 * of the ForeachInfo structure for the foreach command. */
-    {"foreach_step4",	  5,   +1,         1,	{OPERAND_AUX4}},
-	/* "Step" or begin next iteration of foreach loop. Push 0 if to
-	 * terminate loop, else push 1. */
-
-    {"beginCatch4",	  5,   0,          1,	{OPERAND_UINT4}},
+    {"beginCatch",	  5,   0,          1,	{OPERAND_UINT4}},
 	/* Record start of catch with the operand's exception index. Push the
 	 * current stack depth onto a special catch stack. */
     {"endCatch",	  1,   0,          0,	{OPERAND_NONE}},
@@ -211,6 +198,19 @@ InstructionDesc const tclInstructionTable[] = {
     {"pushReturnCode",	  1,   +1,         0,	{OPERAND_NONE}},
 	/* Push interpreter's return code (e.g. TCL_OK or TCL_ERROR) as a new
 	 * object onto the stack. */
+    {"pushReturnOpts",	  1,	+1,	   0,	{OPERAND_NONE}},
+	/* Push the interpreter's return option dictionary as an object on the
+	 * stack. */
+    {"returnStk",	  1,	-2,	   0,	{OPERAND_NONE}},
+	/* Compiled [return]; options and result are on the stack, code and
+	 * level are in the options. */
+    {"returnImm",	  9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
+	/* Compiled [return], code, level are operands; options and result
+	 * are on the stack. */
+    {"returnCodeBranch", 1,   -1,	  0,	{OPERAND_NONE}},
+	/* Jump to next instruction based on the return code on top of stack
+	 * ERROR: +1;	RETURN: +6;	BREAK: +11;	CONTINUE: +16;
+	 * Other non-OK: +21 */
 
     {"streq",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Str Equal:	push (stknext eq stktop) */
@@ -232,25 +232,18 @@ InstructionDesc const tclInstructionTable[] = {
     {"listLength",	  1,   0,          0,	{OPERAND_NONE}},
 	/* List Len:	push (listlength stktop) */
 
-    {"appendScalar1",	  2,   0,          1,	{OPERAND_LVT1}},
-	/* Append scalar variable at op1<=255 in frame; value is stktop */
-    {"appendScalar4",	  5,   0,          1,	{OPERAND_LVT4}},
+    {"appendScalar",	  5,   0,          1,	{OPERAND_LVT4}},
 	/* Append scalar variable at op1 > 255 in frame; value is stktop */
-    {"appendArray1",	  2,   -1,         1,	{OPERAND_LVT1}},
-	/* Append array element; array at op1<=255, value is top then elem */
-    {"appendArray4",	  5,   -1,         1,	{OPERAND_LVT4}},
+    {"appendArray",	  5,   -1,         1,	{OPERAND_LVT4}},
 	/* Append array element; array at op1>=256, value is top then elem */
     {"appendArrayStk",	  1,   -2,         0,	{OPERAND_NONE}},
 	/* Append array element; value is stktop, then elem, array names */
     {"appendStk",	  1,   -1,         0,	{OPERAND_NONE}},
 	/* Append general variable; value is stktop, then unparsed name */
-    {"lappendScalar1",	  2,   0,          1,	{OPERAND_LVT1}},
-	/* Lappend scalar variable at op1<=255 in frame; value is stktop */
-    {"lappendScalar4",	  5,   0,          1,	{OPERAND_LVT4}},
+
+    {"lappendScalar",	  5,   0,          1,	{OPERAND_LVT4}},
 	/* Lappend scalar variable at op1 > 255 in frame; value is stktop */
-    {"lappendArray1",	  2,   -1,         1,	{OPERAND_LVT1}},
-	/* Lappend array element; array at op1<=255, value is top then elem */
-    {"lappendArray4",	  5,   -1,         1,	{OPERAND_LVT4}},
+    {"lappendArray",	  5,   -1,         1,	{OPERAND_LVT4}},
 	/* Lappend array element; array at op1>=256, value is top then elem */
     {"lappendArrayStk",	  1,   -2,         0,	{OPERAND_NONE}},
 	/* Lappend array element; value is stktop, then elem, array names */
@@ -261,8 +254,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Lindex with generalized args, operand is number of stacked objs
 	 * used: (operand-1) entries from stktop are the indices; then list to
 	 * process. */
-    {"over",		  5,   +1,         1,	{OPERAND_UINT4}},
-	/* Duplicate the arg-th element from top of stack (TOS=0) */
+
     {"lsetList",          1,   -2,         0,	{OPERAND_NONE}},
 	/* Four-arg version of 'lset'. stktop is old value; next is new
 	 * element value, next is the index list; pushes new value */
@@ -271,12 +263,6 @@ InstructionDesc const tclInstructionTable[] = {
 	 * objs: stktop is old value, next is new element value, next come
 	 * (operand-2) indices; pushes the new value.
 	 */
-
-    {"returnImm",	  9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
-	/* Compiled [return], code, level are operands; options and result
-	 * are on the stack. */
-    {"expon",		  1,   -1,	   0,	{OPERAND_NONE}},
-	/* Binary exponentiation operator: push (stknext ** stktop) */
 
     /*
      * NOTE: the stack effects of expandStkTop and invokeExpanded are wrong -
@@ -297,21 +283,10 @@ InstructionDesc const tclInstructionTable[] = {
 	/* List Index:	push (lindex stktop op4) */
     {"listRangeImm",	  9,	0,	   2,	{OPERAND_IDX4, OPERAND_IDX4}},
 	/* List Range:	push (lrange stktop op4 op4) */
+
     {"startCommand",	  9,	0,	   2,	{OPERAND_INT4,OPERAND_UINT4}},
 	/* Start of bytecoded command: op is the length of the cmd's code, op2
 	 * is number of commands here */
-
-    {"listIn",		  1,	-1,	   0,	{OPERAND_NONE}},
-	/* List containment: push [lsearch stktop stknext]>=0) */
-    {"listNotIn",	  1,	-1,	   0,	{OPERAND_NONE}},
-	/* List negated containment: push [lsearch stktop stknext]<0) */
-
-    {"pushReturnOpts",	  1,	+1,	   0,	{OPERAND_NONE}},
-	/* Push the interpreter's return option dictionary as an object on the
-	 * stack. */
-    {"returnStk",	  1,	-2,	   0,	{OPERAND_NONE}},
-	/* Compiled [return]; options and result are on the stack, code and
-	 * level are in the options. */
 
     {"dictGet",		  5,	INT_MIN,   1,	{OPERAND_UINT4}},
 	/* The top op4 words (min 1) are a key path into the dictionary just
@@ -365,62 +340,6 @@ InstructionDesc const tclInstructionTable[] = {
 	 * argument. The list of keys (popped from the stack) must be the same
 	 * length as the list of variables.
 	 * Stack:  ... keyList => ... */
-    {"jumpTable",	 5,	-1,	   1,	{OPERAND_AUX4}},
-	/* Jump according to the jump-table (in AuxData as indicated by the
-	 * operand) and the argument popped from the list. Always executes the
-	 * next instruction if no match against the table's entries was found.
-	 * Stack:  ... value => ...
-	 * Note that the jump table contains offsets relative to the PC when
-	 * it points to this instruction; the code is relocatable. */
-    {"upvar",            5,    -1,        1,   {OPERAND_LVT4}},
-	/* finds level and otherName in stack, links to local variable at
-	 * index op1. Leaves the level on stack. */
-    {"nsupvar",          5,    -1,        1,   {OPERAND_LVT4}},
-	/* finds namespace and otherName in stack, links to local variable at
-	 * index op1. Leaves the namespace on stack. */
-    {"variable",         5,    -1,        1,   {OPERAND_LVT4}},
-	/* finds namespace and otherName in stack, links to local variable at
-	 * index op1. Leaves the namespace on stack. */
-    {"syntax",		 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
-	/* Compiled bytecodes to signal syntax error. */
-    {"reverse",		 5,    0,         1,	{OPERAND_UINT4}},
-	/* Reverse the order of the arg elements at the top of stack */
-
-    {"regexp",		 2,   -1,         1,	{OPERAND_INT1}},
-	/* Regexp:	push (regexp stknext stktop) opnd == nocase */
-
-    {"existScalar",	 5,    1,         1,	{OPERAND_LVT4}},
-	/* Test if scalar variable at index op1 in call frame exists */
-    {"existArray",	 5,    0,         1,	{OPERAND_LVT4}},
-	/* Test if array element exists; array at slot op1, element is
-	 * stktop */
-    {"existArrayStk",	 1,    -1,        0,	{OPERAND_NONE}},
-	/* Test if array element exists; element is stktop, array name is
-	 * stknext */
-    {"existStk",	 1,    0,         0,	{OPERAND_NONE}},
-	/* Test if general variable exists; unparsed variable name is stktop*/
-
-    {"nop",		 1,    0,         0,	{OPERAND_NONE}},
-	/* Do nothing */
-    {"returnCodeBranch", 1,   -1,	  0,	{OPERAND_NONE}},
-	/* Jump to next instruction based on the return code on top of stack
-	 * ERROR: +1;	RETURN: +3;	BREAK: +5;	CONTINUE: +7;
-	 * Other non-OK: +9
-	 */
-
-    {"unsetScalar",	 6,    0,         2,	{OPERAND_UINT1, OPERAND_LVT4}},
-	/* Make scalar variable at index op2 in call frame cease to exist;
-	 * op1 is 1 for errors on problems, 0 otherwise */
-    {"unsetArray",	 6,    -1,        2,	{OPERAND_UINT1, OPERAND_LVT4}},
-	/* Make array element cease to exist; array at slot op2, element is
-	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
-    {"unsetArrayStk",	 2,    -2,        1,	{OPERAND_UINT1}},
-	/* Make array element cease to exist; element is stktop, array name is
-	 * stknext; op1 is 1 for errors on problems, 0 otherwise */
-    {"unsetStk",	 2,    -1,        1,	{OPERAND_UINT1}},
-	/* Make general variable cease to exist; unparsed variable name is
-	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
-
     {"dictExpand",       1,    -1,        0,    {OPERAND_NONE}},
         /* Probe into a dict and extract it (or a subdict of it) into
          * variables with matched names. Produces list of keys bound as
@@ -444,6 +363,61 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Verifies that the word on the top of the stack is a dictionary,
 	 * popping it if it is and throwing an error if it is not.
 	 * Stack:  ... value => ... */
+
+    {"jumpTable",	 5,	-1,	   1,	{OPERAND_AUX4}},
+	/* Jump according to the jump-table (in AuxData as indicated by the
+	 * operand) and the argument popped from the list. Always executes the
+	 * next instruction if no match against the table's entries was found.
+	 * Stack:  ... value => ...
+	 * Note that the jump table contains offsets relative to the PC when
+	 * it points to this instruction; the code is relocatable. */
+
+    {"upvar",            5,    -1,        1,   {OPERAND_LVT4}},
+	/* finds level and otherName in stack, links to local variable at
+	 * index op1. Leaves the level on stack. */
+    {"nsupvar",          5,    -1,        1,   {OPERAND_LVT4}},
+	/* finds namespace and otherName in stack, links to local variable at
+	 * index op1. Leaves the namespace on stack. */
+    {"variable",         5,    -1,        1,   {OPERAND_LVT4}},
+	/* finds namespace and otherName in stack, links to local variable at
+	 * index op1. Leaves the namespace on stack. */
+
+    {"over",		  5,   +1,         1,	{OPERAND_UINT4}},
+	/* Duplicate the arg-th element from top of stack (TOS=0) */
+    {"syntax",		 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
+	/* Compiled bytecodes to signal syntax error. */
+    {"reverse",		 5,    0,         1,	{OPERAND_UINT4}},
+	/* Reverse the order of the arg elements at the top of stack */
+    {"nop",		 1,    0,         0,	{OPERAND_NONE}},
+	/* Do nothing */
+
+    {"regexp",		 2,   -1,         1,	{OPERAND_INT1}},
+	/* Regexp:	push (regexp stknext stktop) opnd == nocase */
+
+    {"existScalar",	 5,    1,         1,	{OPERAND_LVT4}},
+	/* Test if scalar variable at index op1 in call frame exists */
+    {"existArray",	 5,    0,         1,	{OPERAND_LVT4}},
+	/* Test if array element exists; array at slot op1, element is
+	 * stktop */
+    {"existArrayStk",	 1,    -1,        0,	{OPERAND_NONE}},
+	/* Test if array element exists; element is stktop, array name is
+	 * stknext */
+    {"existStk",	 1,    0,         0,	{OPERAND_NONE}},
+	/* Test if general variable exists; unparsed variable name is stktop*/
+
+
+    {"unsetScalar",	 6,    0,         2,	{OPERAND_UINT1, OPERAND_LVT4}},
+	/* Make scalar variable at index op2 in call frame cease to exist;
+	 * op1 is 1 for errors on problems, 0 otherwise */
+    {"unsetArray",	 6,    -1,        2,	{OPERAND_UINT1, OPERAND_LVT4}},
+	/* Make array element cease to exist; array at slot op2, element is
+	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
+    {"unsetArrayStk",	 2,    -2,        1,	{OPERAND_UINT1}},
+	/* Make array element cease to exist; element is stktop, array name is
+	 * stknext; op1 is 1 for errors on problems, 0 otherwise */
+    {"unsetStk",	 2,    -1,        1,	{OPERAND_UINT1}},
+	/* Make general variable cease to exist; unparsed variable name is
+	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
 
     {"strmap",		 1,    -2,	  0,	{OPERAND_NONE}},
 	/* Simplified version of [string map] that only applies one change
@@ -1948,11 +1922,7 @@ TclCompileScript(
 			&isnew);
 
 		Tcl_SetHashValue(hePtr, INT2PTR(wlineat));
-		if (wordIdx <= 255) {
-		    TclEmitInstInt1(INST_INVOKE_STK1, wordIdx, envPtr);
-		} else {
-		    TclEmitInstInt4(INST_INVOKE_STK4, wordIdx, envPtr);
-		}
+		TclEmitInstInt4(INST_INVOKE_STK, wordIdx, envPtr);
 	    }
 
 	    /*
@@ -2089,19 +2059,15 @@ TclCompileVarSubst(
     if (tokenPtr->numComponents == 1) {
 	if (localVar < 0) {
 	    TclEmitOpcode(INST_LOAD_SCALAR_STK, envPtr);
-	} else if (localVar <= 255) {
-	    TclEmitInstInt1(INST_LOAD_SCALAR1, localVar, envPtr);
 	} else {
-	    TclEmitInstInt4(INST_LOAD_SCALAR4, localVar, envPtr);
+	    TclEmitInstInt4(INST_LOAD_SCALAR, localVar, envPtr);
 	}
     } else {
 	TclCompileTokens(interp, tokenPtr+2, tokenPtr->numComponents-1, envPtr);
 	if (localVar < 0) {
 	    TclEmitOpcode(INST_LOAD_ARRAY_STK, envPtr);
-	} else if (localVar <= 255) {
-	    TclEmitInstInt1(INST_LOAD_ARRAY1, localVar, envPtr);
 	} else {
-	    TclEmitInstInt4(INST_LOAD_ARRAY4, localVar, envPtr);
+	    TclEmitInstInt4(INST_LOAD_ARRAY, localVar, envPtr);
 	}
     }
 }
@@ -2273,11 +2239,11 @@ TclCompileTokens(
      */
 
     while (numObjsToConcat > 255) {
-	TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
+	TclEmitInstInt1(INST_CONCAT, 255, envPtr);
 	numObjsToConcat -= 254;	/* concat pushes 1 obj, the result */
     }
     if (numObjsToConcat > 1) {
-	TclEmitInstInt1(INST_CONCAT1, numObjsToConcat, envPtr);
+	TclEmitInstInt1(INST_CONCAT, numObjsToConcat, envPtr);
     }
 
     /*
@@ -2408,11 +2374,11 @@ TclCompileExprWords(
     }
     concatItems = 2*numWords - 1;
     while (concatItems > 255) {
-	TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
+	TclEmitInstInt1(INST_CONCAT, 255, envPtr);
 	concatItems -= 254;
     }
     if (concatItems > 1) {
-	TclEmitInstInt1(INST_CONCAT1, concatItems, envPtr);
+	TclEmitInstInt1(INST_CONCAT, concatItems, envPtr);
     }
     TclEmitOpcode(INST_EXPR_STK, envPtr);
 }
@@ -3333,13 +3299,13 @@ TclEmitForwardJump(
 
     switch (jumpType) {
     case TCL_UNCONDITIONAL_JUMP:
-	TclEmitInstInt1(INST_JUMP1, 0, envPtr);
+	TclEmitInstInt4(INST_JUMP, 0, envPtr);
 	break;
     case TCL_TRUE_JUMP:
-	TclEmitInstInt1(INST_JUMP_TRUE1, 0, envPtr);
+	TclEmitInstInt4(INST_JUMP_TRUE, 0, envPtr);
 	break;
     default:
-	TclEmitInstInt1(INST_JUMP_FALSE1, 0, envPtr);
+	TclEmitInstInt4(INST_JUMP_FALSE, 0, envPtr);
 	break;
     }
 }
@@ -3377,157 +3343,23 @@ TclFixupForwardJump(
     JumpFixup *jumpFixupPtr,	/* Points to the JumpFixup structure that
 				 * describes the forward jump. */
     int jumpDist,		/* Jump distance to set in jump instr. */
-    int distThreshold)		/* Maximum distance before the two byte jump
+    int ignored)		/* Maximum distance before the two byte jump
 				 * is grown to five bytes. */
 {
-    unsigned char *jumpPc, *p;
-    int firstCmd, lastCmd, firstRange, lastRange, k;
-    unsigned numBytes;
+    unsigned char *jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
 
-    if (jumpDist <= distThreshold) {
-	jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
-	switch (jumpFixupPtr->jumpType) {
-	case TCL_UNCONDITIONAL_JUMP:
-	    TclUpdateInstInt1AtPc(INST_JUMP1, jumpDist, jumpPc);
-	    break;
-	case TCL_TRUE_JUMP:
-	    TclUpdateInstInt1AtPc(INST_JUMP_TRUE1, jumpDist, jumpPc);
-	    break;
-	default:
-	    TclUpdateInstInt1AtPc(INST_JUMP_FALSE1, jumpDist, jumpPc);
-	    break;
-	}
-	return 0;
-    }
-
-    /*
-     * We must grow the jump then move subsequent instructions down. Note that
-     * if we expand the space for generated instructions, code addresses might
-     * change; be careful about updating any of these addresses held in
-     * variables.
-     */
-
-    if ((envPtr->codeNext + 3) > envPtr->codeEnd) {
-	TclExpandCodeArray(envPtr);
-    }
-    jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
-    numBytes = envPtr->codeNext-jumpPc-2;
-    p = jumpPc+2;
-    memmove(p+3, p, numBytes);
-
-    envPtr->codeNext += 3;
-    jumpDist += 3;
     switch (jumpFixupPtr->jumpType) {
     case TCL_UNCONDITIONAL_JUMP:
-	TclUpdateInstInt4AtPc(INST_JUMP4, jumpDist, jumpPc);
+	TclUpdateInstInt4AtPc(INST_JUMP, jumpDist, jumpPc);
 	break;
     case TCL_TRUE_JUMP:
-	TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDist, jumpPc);
+	TclUpdateInstInt4AtPc(INST_JUMP_TRUE, jumpDist, jumpPc);
 	break;
     default:
-	TclUpdateInstInt4AtPc(INST_JUMP_FALSE4, jumpDist, jumpPc);
+	TclUpdateInstInt4AtPc(INST_JUMP_FALSE, jumpDist, jumpPc);
 	break;
     }
-
-    /*
-     * Adjust the code offsets for any commands and any ExceptionRange records
-     * between the jump and the current code address.
-     */
-
-    firstCmd = jumpFixupPtr->cmdIndex;
-    lastCmd = envPtr->numCommands - 1;
-    if (firstCmd < lastCmd) {
-	for (k = firstCmd;  k <= lastCmd;  k++) {
-	    envPtr->cmdMapPtr[k].codeOffset += 3;
-	}
-    }
-
-    firstRange = jumpFixupPtr->exceptIndex;
-    lastRange = envPtr->exceptArrayNext - 1;
-    for (k = firstRange;  k <= lastRange;  k++) {
-	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[k];
-
-	rangePtr->codeOffset += 3;
-	switch (rangePtr->type) {
-	case LOOP_EXCEPTION_RANGE:
-	    rangePtr->breakOffset += 3;
-	    if (rangePtr->continueOffset != -1) {
-		rangePtr->continueOffset += 3;
-	    }
-	    break;
-	case CATCH_EXCEPTION_RANGE:
-	    rangePtr->catchOffset += 3;
-	    break;
-	default:
-	    Tcl_Panic("TclFixupForwardJump: bad ExceptionRange type %d",
-		    rangePtr->type);
-	}
-    }
-
-    /*
-     * TIP #280: Adjust the mapping from PC values to the per-command
-     * information about arguments and their line numbers.
-     *
-     * Note: We cannot simply remove an out-of-date entry and then reinsert
-     * with the proper PC, because then we might overwrite another entry which
-     * was at that location. Therefore we pull (copy + delete) all effected
-     * entries (beyond the fixed PC) into an array, update them there, and at
-     * last reinsert them all.
-     */
-
-    {
-	ExtCmdLoc* eclPtr = envPtr->extCmdMapPtr;
-
-	/* A helper structure */
-
-	typedef struct {
-	    int pc;
-	    int cmd;
-	} MAP;
-
-	/*
-	 * And the helper array. At most the whole hashtable is placed into
-	 * this.
-	 */
-
-	MAP *map = (MAP*) ckalloc (sizeof(MAP) * eclPtr->litInfo.numEntries);
-
-	Tcl_HashSearch hSearch;
-	Tcl_HashEntry* hPtr;
-	int n, k, isnew;
-
-	/*
-	 * Phase I: Locate the affected entries, and save them in adjusted
-	 * form to the array. This removes them from the hash.
-	 */
-
-	for (n = 0, hPtr = Tcl_FirstHashEntry(&eclPtr->litInfo, &hSearch);
-	     hPtr != NULL;
-	     hPtr = Tcl_NextHashEntry(&hSearch)) {
-
-	    map [n].cmd = PTR2INT(Tcl_GetHashValue(hPtr));
-	    map [n].pc  = PTR2INT(Tcl_GetHashKey (&eclPtr->litInfo,hPtr));
-
-	    if (map[n].pc >= (jumpFixupPtr->codeOffset + 2)) {
-		Tcl_DeleteHashEntry(hPtr);
-		map [n].pc += 3;
-		n++;
-	    }
-	}
-
-	/*
-	 * Phase II: Re-insert the modified entries into the hash.
-	 */
-
-	for (k=0;k<n;k++) {
-	    hPtr = Tcl_CreateHashEntry(&eclPtr->litInfo, INT2PTR(map[k].pc), &isnew);
-	    Tcl_SetHashValue(hPtr, INT2PTR(map[k].cmd));
-	}
-
-	ckfree (map);
-    }
-
-    return 1;			/* the jump was grown */
+    return 0;
 }
 
 /*
@@ -4354,16 +4186,12 @@ FormatInstruction(
 	switch (instDesc->opTypes[i]) {
 	case OPERAND_INT1:
 	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
-	    if (opCode == INST_JUMP1 || opCode == INST_JUMP_TRUE1
-		    || opCode == INST_JUMP_FALSE1) {
-		sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
-	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_INT4:
 	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
-	    if (opCode == INST_JUMP4 || opCode == INST_JUMP_TRUE4
-		    || opCode == INST_JUMP_FALSE4) {
+	    if (opCode == INST_JUMP || opCode == INST_JUMP_TRUE
+		    || opCode == INST_JUMP_FALSE) {
 		sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
 	    } else if (opCode == INST_START_CMD) {
 		sprintf(suffixBuffer, "next cmd at pc %u", pcOffset+opnd);
@@ -4372,15 +4200,12 @@ FormatInstruction(
 	    break;
 	case OPERAND_UINT1:
 	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
-	    if (opCode == INST_PUSH1) {
-		suffixObj = codePtr->objArrayPtr[opnd];
-	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
 	    break;
 	case OPERAND_AUX4:
 	case OPERAND_UINT4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
-	    if (opCode == INST_PUSH4) {
+	    if (opCode == INST_PUSH) {
 		suffixObj = codePtr->objArrayPtr[opnd];
 	    } else if (opCode == INST_START_CMD && opnd != 1) {
 		sprintf(suffixBuffer+strlen(suffixBuffer),
@@ -4401,14 +4226,9 @@ FormatInstruction(
 		Tcl_AppendPrintfToObj(bufferObj, "end-%d ", -2-opnd);
 	    }
 	    break;
-	case OPERAND_LVT1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes);
-	    numBytes++;
-	    goto printLVTindex;
 	case OPERAND_LVT4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes);
 	    numBytes += 4;
-	printLVTindex:
 	    if (localPtr != NULL) {
 		if (opnd >= localCt) {
 		    Tcl_Panic("FormatInstruction: bad local var index %u (%u locals)",
@@ -4525,13 +4345,9 @@ TclGetInnerContext(
         objc = 2;
         break;
 
-    case INST_INVOKE_STK4:
+    case INST_INVOKE_STK:
 	objc = TclGetUInt4AtPtr(pc+1);
         break;
-
-    case INST_INVOKE_STK1:
-	objc = TclGetUInt1AtPtr(pc+1);
-	break;
     }
 
     result = iPtr->innerContext;

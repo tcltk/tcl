@@ -1364,10 +1364,10 @@ test assemble-12.6 {incr, stupid stack restriction} {
             set y 5
             assemble {push 3; incr y}
         "
-	list [catch {x} result] $result $errorCode
+	x
     }
-    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
-    -cleanup {unset result; rename x {}}
+    -result 8
+    -cleanup {rename x {}}
 }
 
 # assemble-13 -- ASSEM_LVT1_SINT1 - incrImm and incrArrayImm
@@ -1455,10 +1455,10 @@ test assemble-13.9 {incrImm, stupid stack restriction} {
             set y 5
             assemble {incrImm y 3}
         "
-	list [catch {x} result] $result $errorCode
+	x
     }
-    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
-    -cleanup {unset result; rename x {}}
+    -result 8
+    -cleanup {rename x {}}
 }
 
 # assemble-14 -- ASSEM_SINT1 (incrArrayStkImm and incrStkImm)
