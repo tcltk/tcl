@@ -41,9 +41,7 @@ HasStubSupport(
     if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
 	return iPtr->stubTable;
     }
-
-    iPtr->result =
-	    (char *)"This interpreter does not support stubs-enabled extensions.";
+    iPtr->result = (char *) "interpreter uses an incompatible stubs mechanism";
     iPtr->freeProc = TCL_STATIC;
     return NULL;
 }
@@ -80,7 +78,8 @@ TclInitStubs(
     Tcl_Interp *interp,
     const char *version,
     int exact,
-    int major)
+    int major,
+    int magic)
 {
     Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
@@ -89,13 +88,16 @@ TclInitStubs(
 
     /*
      * Detect whether the extension and the stubs library were built
-     * against Tcl header files from different major versions.  That's
-     * seriously broken.
+     * against Tcl header files declaring use of incompatible stubs
+     * mechanisms.  Even within the same mechanism, also detect if
+     * the header files are from different major versions.  Either
+     * is seriously broken.  An extension and its stubs library ought
+     * to share compatible headers, if not the same one.
      */
 
-    if (major != TCL_MAJOR_VERSION) {
+    if (magic != TCL_STUB_MAGIC || major != TCL_MAJOR_VERSION) {
 	iPtr->result =
-	    (char *)"extension linked to incompatible stubs library";
+	    (char *) "extension linked to incompatible stubs library";
 	iPtr->freeProc = TCL_STATIC;
 	return NULL;
     }
@@ -118,7 +120,7 @@ TclInitStubs(
     if (isDigit(*q)) {
     badVersion:
 	iPtr->result =
-	    (char *)"extension passed bad version argument to stubs library";
+	    (char *) "extension passed bad version argument to stubs library";
 	iPtr->freeProc = TCL_STATIC;
 	return NULL;
     }
@@ -179,6 +181,16 @@ TclInitStubs(
     return actualVersion;
 }
 
+/*
+ * This routine is included only so that extensions compiled against
+ * 8.5 and earlier headers (which do not define Tcl_InitStubs() as a macro)
+ * can successfully link to libtclstubs8.6.a.  This leaves them suffering
+ * from the formerly broken design.  (See Tcl Bug 3588687).
+ *
+ * This routine should not merge forward to Tcl 9 work.  Extensions
+ * compiled against 8.5 and earlier headers that try to link to 
+ * libtclstubs9*.a should suffer the link failure.
+ */
 #undef Tcl_InitStubs
 MODULE_SCOPE const char *
 Tcl_InitStubs(
@@ -186,7 +198,7 @@ Tcl_InitStubs(
     const char *version,
     int exact)
 {
-    return TclInitStubs(interp, version, exact, TCL_MAJOR_VERSION);
+    return TclInitStubs(interp, version, exact, 8, TCL_STUB_MAGIC);
 }
 
 /*
