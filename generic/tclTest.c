@@ -42,16 +42,8 @@
  * Declare external functions used in Windows tests.
  */
 
-/*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Tcltest_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-EXTERN int		Tcltest_Init(Tcl_Interp *interp);
-EXTERN int		Tcltest_SafeInit(Tcl_Interp *interp);
+DLLEXPORT int		Tcltest_Init(Tcl_Interp *interp);
+DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc; used to collect

@@ -11,16 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
 #include "tcl.h"
-
-/*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Pkgc_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -114,7 +105,7 @@ Pkgc_UnsafeObjCmd(
  *----------------------------------------------------------------------
  */
 
-EXTERN int
+DLLEXPORT int
 Pkgc_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
@@ -151,7 +142,7 @@ Pkgc_Init(
  *----------------------------------------------------------------------
  */
 
-EXTERN int
+DLLEXPORT int
 Pkgc_SafeInit(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */

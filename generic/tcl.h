@@ -214,15 +214,10 @@ extern "C" {
  * be reset to DLLIMPORT.
  */
 
-#undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
-#   define TCL_STORAGE_CLASS DLLEXPORT
+#   define TCLAPI DLLEXPORT
 #else
-#   ifdef USE_TCL_STUBS
-#      define TCL_STORAGE_CLASS
-#   else
-#      define TCL_STORAGE_CLASS DLLIMPORT
-#   endif
+#   define TCLAPI DLLIMPORT
 #endif
 
 /*
@@ -235,58 +230,10 @@ extern "C" {
 #endif
 
 /*
- * Make sure EXTERN isn't defined elsewhere.
- */
-
-#ifdef EXTERN
-#   undef EXTERN
-#endif /* EXTERN */
-
-#ifdef __cplusplus
-#   define EXTERN extern "C" TCL_STORAGE_CLASS
-#else
-#   define EXTERN extern TCL_STORAGE_CLASS
-#endif
-
-/*
- *----------------------------------------------------------------------------
- * The following code is copied from winnt.h. If we don't replicate it here,
- * then <windows.h> can't be included after tcl.h, since tcl.h also defines
- * VOID. This block is skipped under Cygwin and Mingw.
- */
-
-#if defined(__WIN32__) && !defined(HAVE_WINNT_IGNORE_VOID)
-#ifndef VOID
-#define VOID void
-typedef char CHAR;
-typedef short SHORT;
-typedef long LONG;
-#endif
-#endif /* __WIN32__ && !HAVE_WINNT_IGNORE_VOID */
-
-/*
- * Macro to use instead of "void" for arguments that must have type "void *"
- * in ANSI C; maps them to type "char *" in non-ANSI systems.
- */
-
-#ifndef NO_VOID
-#   define VOID void
-#else
-#   define VOID char
-#endif
-
-/*
  * Miscellaneous declarations.
  */
 
-#ifndef _CLIENTDATA
-#   ifndef NO_VOID
-	typedef void *ClientData;
-#   else
-	typedef int *ClientData;
-#   endif
-#   define _CLIENTDATA
-#endif
+typedef void *ClientData;
 
 /*
  * Darwin specific configure overrides (to support fat compiles, where
@@ -2295,13 +2242,13 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
-EXTERN void		Tcl_FindExecutable(const char *argv0);
-EXTERN void		Tcl_MainEx(int argc, char **argv,
+TCLAPI void		Tcl_FindExecutable(const char *argv0);
+TCLAPI void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
+TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #endif
 
 /*
@@ -2329,15 +2276,15 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #ifdef TCL_MEM_DEBUG
 
 #   define ckalloc(x) \
-    ((VOID *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    ((void *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
 #   define ckfree(x) \
     Tcl_DbCkfree((char *)(x), __FILE__, __LINE__)
 #   define ckrealloc(x,y) \
-    ((VOID *) Tcl_DbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    ((void *) Tcl_DbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
 #   define attemptckalloc(x) \
-    ((VOID *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    ((void *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
 #   define attemptckrealloc(x,y) \
-    ((VOID *) Tcl_AttemptDbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    ((void *) Tcl_AttemptDbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
 
 #else /* !TCL_MEM_DEBUG */
 
@@ -2348,15 +2295,15 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 #   define ckalloc(x) \
-    ((VOID *) Tcl_Alloc((unsigned)(x)))
+    ((void *) Tcl_Alloc((unsigned)(x)))
 #   define ckfree(x) \
     Tcl_Free((char *)(x))
 #   define ckrealloc(x,y) \
-    ((VOID *) Tcl_Realloc((char *)(x), (unsigned)(y)))
+    ((void *) Tcl_Realloc((char *)(x), (unsigned)(y)))
 #   define attemptckalloc(x) \
-    ((VOID *) Tcl_AttemptAlloc((unsigned)(x)))
+    ((void *) Tcl_AttemptAlloc((unsigned)(x)))
 #   define attemptckrealloc(x,y) \
-    ((VOID *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
+    ((void *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
 #   undef  Tcl_InitMemory
 #   define Tcl_InitMemory(x)
 #   undef  Tcl_DumpActiveMemory
