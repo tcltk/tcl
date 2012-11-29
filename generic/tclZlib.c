@@ -2177,29 +2177,36 @@ ZlibStreamSubcmd(
 	FMT_INFLATE
     };
     int i, format, mode = 0, option, level;
+    enum objIndices {
+	OPT_COMPRESSION_DICTIONARY = 0,
+	OPT_GZIP_HEADER = 1,
+	OPT_COMPRESSION_LEVEL = 2,
+	OPT_END = -1
+    };
+    Tcl_Obj *obj[3] = { NULL, NULL, NULL };
+#define compDictObj	obj[OPT_COMPRESSION_DICTIONARY]
+#define gzipHeaderObj	obj[OPT_GZIP_HEADER]
+#define levelObj	obj[OPT_COMPRESSION_LEVEL]
     typedef struct {
 	const char *name;
-	Tcl_Obj **valueVar;
+	enum objIndices offset;
     } OptDescriptor;
-    Tcl_Obj *compDictObj = NULL;
-    Tcl_Obj *gzipHeaderObj = NULL;
-    Tcl_Obj *levelObj = NULL;
-    const OptDescriptor compressionOpts[] = {
-	{ "-dictionary", &compDictObj },
-	{ "-level", &levelObj },
-	{ NULL, NULL }
+    static const OptDescriptor compressionOpts[] = {
+	{ "-dictionary", OPT_COMPRESSION_DICTIONARY },
+	{ "-level",	 OPT_COMPRESSION_LEVEL },
+	{ NULL, OPT_END }
     };
-    const OptDescriptor gzipOpts[] = {
-	{ "-header", &gzipHeaderObj },
-	{ "-level", &levelObj },
-	{ NULL, NULL }
+    static const OptDescriptor gzipOpts[] = {
+	{ "-header",	 OPT_GZIP_HEADER },
+	{ "-level",	 OPT_COMPRESSION_LEVEL },
+	{ NULL, OPT_END }
     };
-    const OptDescriptor expansionOpts[] = {
-	{ "-dictionary", &compDictObj },
-	{ NULL, NULL }
+    static const OptDescriptor expansionOpts[] = {
+	{ "-dictionary", OPT_COMPRESSION_DICTIONARY },
+	{ NULL, OPT_END }
     };
-    const OptDescriptor gunzipOpts[] = {
-	{ NULL, NULL }
+    static const OptDescriptor gunzipOpts[] = {
+	{ NULL, OPT_END }
     };
     const OptDescriptor *desc = NULL;
     Tcl_ZlibStream zh;
@@ -2262,13 +2269,7 @@ ZlibStreamSubcmd(
 		sizeof(OptDescriptor), "option", 0, &option) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	*desc[option].valueVar = objv[i+1];
-
-	/*
-	 * Drop the cache on the option name; table address not constant.
-	 */
-
-	TclFreeIntRep(objv[i]);
+	obj[desc[option].offset] = objv[i+1];
     }
 
     /*
@@ -2300,6 +2301,9 @@ ZlibStreamSubcmd(
     }
     Tcl_SetObjResult(interp, Tcl_ZlibStreamGetCommandName(zh));
     return TCL_OK;
+#undef compDictObj
+#undef gzipHeaderObj
+#undef levelObj
 }
 
 /*

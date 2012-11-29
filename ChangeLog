@@ -1,3 +1,17 @@
+2012-11-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ZlibStreamSubcmd): [Bug 3590483]: Use a mechanism
+	for complex option resolution that has fewer problems with more
+	finicky compilers.
+
+2012-11-26  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c: Factor out creation of the -sockname and
+	-peername lists from TcpGetOptionProc() to TcpHostPortList().
+	Make it robust against implementations of getnameinfo() that error
+	out if reverse mapping fails instead of falling back to the
+	numeric representation.
+
 2012-11-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBinary.c (BinaryDecode64): [Bug 3033307]: Corrected
