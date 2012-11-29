@@ -34,29 +34,17 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
 static const TclStubs *
 HasStubSupport(
-    Tcl_Interp *interp,
-    int magic)
+    Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
 
-    if (!iPtr->stubTable) {
-	/* No stub table at all? Nothing we can do. */
-	return NULL;
+    if (iPtr->stubTable && iPtr->stubTable->magic == TCL_STUB_MAGIC) {
+	return iPtr->stubTable;
     }
-    if (iPtr->stubTable->magic != magic) {
-	/*
-	 * The iPtr->stubTable entry from Tcl_Interp and the
-	 * Tcl_NewStringObj() and Tcl_SetObjResult() entries
-	 * in the stub table cannot change in Tcl 9 compared
-	 * to Tcl 8.x. Otherwise the lines below won't work.
-	 * TODO: add a test case for that.
-	 */
-	iPtr->stubTable->tcl_SetObjResult(interp,
-		iPtr->stubTable->tcl_NewStringObj(
-			"This extension is compiled for Tcl 9.x", -1));
-	return NULL;
-    }
-    return iPtr->stubTable;
+    iPtr->result =
+	    (char *) "interpreter uses an incompatible stubs mechanism";
+    iPtr->freeProc = TCL_STATIC;
+    return NULL;
 }
 
 /*
@@ -91,10 +79,52 @@ TclInitStubs(
     Tcl_Interp *interp,
     const char *version,
     int exact,
+    int major,
     int magic)
 {
+    Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
+    const char *p, *q;
+
+    /*
+     * Detect whether the extension and the stubs library were built
+     * against Tcl header files declaring use of incompatible stubs
+     * mechanisms.  Even within the same mechanism, also detect if
+     * the header files are from different major versions.  Either
+     * is seriously broken.  An extension and its stubs library ought
+     * to share compatible headers, if not the same one.
+     */
+
+    if (magic != TCL_STUB_MAGIC || major != TCL_MAJOR_VERSION) {
+	iPtr->result =
+		(char *) "extension linked to incompatible stubs library";
+	iPtr->freeProc = TCL_STATIC;
+	return NULL;
+    }
+
+    /*
+     * Detect whether an extension compiled against a Tcl header file
+     * of one major version is requesting to use a stubs table of a
+     * different major version.  According to our compat rules, that's
+     * a request that cannot succeed.  Different major versions imply
+     * incompatible stub tables.
+     */
+
+    p = version;
+    q = TCL_VERSION;
+    while (isDigit(*p)) {
+	if (*p++ != *q++) {
+	    goto badVersion;
+	}
+    }
+    if (isDigit(*q)) {
+    badVersion:
+	iPtr->result = (char *)
+		"extension passed bad version argument to stubs library";
+	iPtr->freeProc = TCL_STATIC;
+	return NULL;
+    }
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -102,7 +132,7 @@ TclInitStubs(
      * times. [Bug 615304]
      */
 
-    tclStubsPtr = HasStubSupport(interp, magic);
+    tclStubsPtr = HasStubSupport(interp);
     if (!tclStubsPtr) {
 	return NULL;
     }
@@ -112,14 +142,14 @@ TclInitStubs(
 	return NULL;
     }
     if (exact) {
-	const char *p = version;
+	p = version;
 	int count = 0;
 
 	while (*p) {
 	    count += !isDigit(*p++);
 	}
 	if (count == 1) {
-	    const char *q = actualVersion;
+	    q = actualVersion;
 
 	    p = version;
 	    while (*p && (*p == *q)) {
