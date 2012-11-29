@@ -474,9 +474,8 @@ Tcl_LoadObjCmd(
 	    /* We have an Tcl 8.x extension with incompatible stub table. */
 	    Tcl_Obj *obj = Tcl_NewStringObj(iPtr->result, -1);
 	    Tcl_SetObjResult(interp, obj);
-	} else {
-	    Tcl_TransferResult(target, code, interp);
 	}
+	Tcl_TransferResult(target, code, interp);
 	goto done;
     }
 
