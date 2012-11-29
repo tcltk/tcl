@@ -1224,12 +1224,7 @@ TclCompileSwitchCmd(
 	    if (TCL_OK != TclFindElement(NULL, bytes, numBytes,
 		    &(bodyTokenArray[numWords].start), &bytes,
 		    &(bodyTokenArray[numWords].size), &literal) || !literal) {
-	    abort:
-		ckfree((char *) bodyToken);
-		ckfree((char *) bodyTokenArray);
-		ckfree((char *) bodyLines);
-		ckfree((char *) bodyContLines);
-		return TCL_ERROR;
+		goto abort;
 	    }
 
 	    bodyTokenArray[numWords].type = TCL_TOKEN_TEXT;
@@ -1254,7 +1249,12 @@ TclCompileSwitchCmd(
 	    numWords++;
 	}
 	if (numWords % 2) {
-	    goto abort;
+	abort:
+	    ckfree((char *) bodyToken);
+	    ckfree((char *) bodyTokenArray);
+	    ckfree((char *) bodyLines);
+	    ckfree((char *) bodyContLines);
+	    return TCL_ERROR;
 	}
     } else if (numWords % 2 || numWords == 0) {
 	/*
