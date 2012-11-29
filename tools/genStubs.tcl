@@ -1135,6 +1135,7 @@ proc genStubs::init {} {
     variable outDir
     variable interfaces
 
+variable scspec
     if {[llength $argv] < 2} {
 	puts stderr "usage: $argv0 outDir declFile ?declFile...?"
 	exit 1

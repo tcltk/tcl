@@ -49,15 +49,6 @@
 #endif
 
 /*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Registry_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
-/*
  * The following macros convert between different endian ints.
  */
 
@@ -140,8 +131,8 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
 
-EXTERN int		Registry_Init(Tcl_Interp *interp);
-EXTERN int		Registry_Unload(Tcl_Interp *interp, int flags);
+DLLEXPORT int		Registry_Init(Tcl_Interp *interp);
+DLLEXPORT int		Registry_Unload(Tcl_Interp *interp, int flags);
 
 /*
  *----------------------------------------------------------------------

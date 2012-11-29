@@ -214,15 +214,10 @@ extern "C" {
  * be reset to DLLIMPORT.
  */
 
-#undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
-#   define TCL_STORAGE_CLASS DLLEXPORT
+#   define TCLAPI DLLEXPORT
 #else
-#   ifdef USE_TCL_STUBS
-#      define TCL_STORAGE_CLASS
-#   else
-#      define TCL_STORAGE_CLASS DLLIMPORT
-#   endif
+#   define TCLAPI DLLIMPORT
 #endif
 
 /*
@@ -232,20 +227,6 @@ extern "C" {
 
 #ifndef INLINE
 #   define INLINE
-#endif
-
-/*
- * Make sure EXTERN isn't defined elsewhere.
- */
-
-#ifdef EXTERN
-#   undef EXTERN
-#endif /* EXTERN */
-
-#ifdef __cplusplus
-#   define EXTERN extern "C" TCL_STORAGE_CLASS
-#else
-#   define EXTERN extern TCL_STORAGE_CLASS
 #endif
 
 /*
@@ -2295,13 +2276,13 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
-EXTERN void		Tcl_FindExecutable(const char *argv0);
-EXTERN void		Tcl_MainEx(int argc, char **argv,
+TCLAPI void		Tcl_FindExecutable(const char *argv0);
+TCLAPI void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
+TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #endif
 
 /*
