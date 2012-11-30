@@ -106,7 +106,7 @@ typedef struct Cache {
     struct Cache *nextPtr;	/* Linked list of cache entries */
     Tcl_ThreadId owner;		/* Which thread's cache is this? */
     Tcl_Obj *firstObjPtr;	/* List of free objects for thread */
-    int numObjects;		/* Number of objects for thread */
+    size_t numObjects;		/* Number of objects for thread */
     int totalAssigned;		/* Total space assigned to thread */
     Bucket buckets[NBUCKETS];	/* The buckets for this thread */
 } Cache;
