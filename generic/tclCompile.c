@@ -1740,6 +1740,7 @@ TclCompileScript(
 			int code, savedNumCmds = envPtr->numCommands;
 			unsigned savedCodeNext =
 				envPtr->codeNext - envPtr->codeStart;
+			int savedExceptArrayNext = envPtr->exceptArrayNext;
 			int update = 0;
 #ifdef TCL_COMPILE_DEBUG
 			int startStackDepth = envPtr->currStackDepth;
@@ -1844,6 +1845,14 @@ TclCompileScript(
 
 			envPtr->numCommands = savedNumCmds;
 			envPtr->codeNext = envPtr->codeStart + savedCodeNext;
+
+			/*
+			 * Must also restore the number of exception ranges;
+			 * cannot guarantee that none were issued before the
+			 * failure.
+			 */
+
+			envPtr->exceptArrayNext = savedExceptArrayNext;
 		    }
 
 		    /*

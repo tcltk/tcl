@@ -839,7 +839,7 @@ CompileAssembleObj(
 	for (i = 0; i < compEnv.auxDataArrayNext; i++) {
 	    auxDataPtr = compEnv.auxDataArrayPtr + i;
 	    if (auxDataPtr->type->freeProc != NULL) {
-		(auxDataPtr->type->freeProc)(auxDataPtr->clientData);
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
 	    }
 	}
 
@@ -3101,7 +3101,7 @@ CheckNonThrowingBlock(
 	 * Determine whether an instruction is nonthrowing.
 	 */
 
-	opcode = (envPtr->codeStart)[offset];
+	opcode = envPtr->codeStart[offset];
 	if (BytecodeMightThrow(opcode)) {
 	    /*
 	     * Report an error for a throw in the wrong context.
