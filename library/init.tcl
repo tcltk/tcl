@@ -243,6 +243,10 @@ proc unknown args {
 	set savedErrorCode $::errorCode
     }
 
+    if {[catch {set retry [dict get [info frame -1] cmd]}]} {
+	set retry $args
+    }
+
     set name [lindex $args 0]
     if {![info exists auto_noload]} {
 	#
@@ -275,63 +279,7 @@ proc unknown args {
 	    } else {
 		unset -nocomplain ::errorInfo
 	    }
-	    set code [catch {uplevel 1 $args} msg opts]
-	    if {$code ==  1} {
-		#
-		# Compute stack trace contribution from the [uplevel].
-		# Note the dependence on how Tcl_AddErrorInfo, etc.
-		# construct the stack trace.
-		#
-		set errorInfo [dict get $opts -errorinfo]
-		set errorCode [dict get $opts -errorcode]
-		set cinfo $args
-		if {[string bytelength $cinfo] > 150} {
-		    set cinfo [string range $cinfo 0 150]
-		    while {[string bytelength $cinfo] > 150} {
-			set cinfo [string range $cinfo 0 end-1]
-		    }
-		    append cinfo ...
-		}
-		append cinfo "\"\n    (\"uplevel\" body line 1)"
-		append cinfo "\n    invoked from within"
-		append cinfo "\n\"uplevel 1 \$args\""
-		#
-		# Try each possible form of the stack trace
-		# and trim the extra contribution from the matching case
-		#
-		set expect "$msg\n    while executing\n\"$cinfo"
-		if {$errorInfo eq $expect} {
-		    #
-		    # The stack has only the eval from the expanded command
-		    # Do not generate any stack trace here.
-		    #
-		    dict unset opts -errorinfo
-		    dict incr opts -level
-		    return -options $opts $msg
-		}
-		#
-		# Stack trace is nested, trim off just the contribution
-		# from the extra "eval" of $args due to the "catch" above.
-		#
-		set expect "\n    invoked from within\n\"$cinfo"
-		set exlen [string length $expect]
-		set eilen [string length $errorInfo]
-		set i [expr {$eilen - $exlen - 1}]
-		set einfo [string range $errorInfo 0 $i]
-		#
-		# For now verify that $errorInfo consists of what we are about
-		# to return plus what we expected to trim off.
-		#
-		if {$errorInfo ne "$einfo$expect"} {
-		    error "Tcl bug: unexpected stack trace in \"unknown\"" {} \
-			[list CORE UNKNOWN BADTRACE $einfo $expect $errorInfo]
-		}
-		return -code error -errorcode $errorCode \
-			-errorinfo $einfo $msg
-	    } else {
-		dict incr opts -level
-		return -options $opts $msg
-	    }
+	    tailcall try $retry
 	}
     }
 
