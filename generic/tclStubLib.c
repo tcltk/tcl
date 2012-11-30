@@ -46,9 +46,9 @@ HasStubSupport(
     if (iPtr->stubTable && iPtr->stubTable->magic == magic) {
 	return iPtr->stubTable;
     }
-    iPtr->result =
-	    (char *) "interpreter uses an incompatible stubs mechanism";
-    iPtr->freeProc = TCL_STATIC;
+    iPtr->legacyResult
+	    = (char *) "interpreter uses an incompatible stubs mechanism";
+    iPtr->legacyFreeProc = TCL_STATIC;
     return NULL;
 }
 
