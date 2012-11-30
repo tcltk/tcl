@@ -48,10 +48,9 @@ static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
 			    size_t objc, Tcl_Obj *const objv[]);
 
 typedef struct TestString {
-    int numChars;
-    int allocated;
-    int maxChars;
-    Tcl_UniChar unicode[2];
+    size_t numChars;
+    size_t allocated;
+    size_t maxChars;
 } TestString;
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
