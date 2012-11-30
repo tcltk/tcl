@@ -2154,7 +2154,7 @@ TclCompileTokens(
 
     if (isLiteral) {
 	maxNumCL = NUM_STATIC_POS;
-	clPosition = ckalloc(maxNumCL * sizeof(int));
+	clPosition = ckalloc(maxNumCL * sizeof(ssize_t));
     }
 
     Tcl_DStringInit(&textBuffer);
@@ -2195,7 +2195,7 @@ TclCompileTokens(
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
 			clPosition = ckrealloc(clPosition,
-                                maxNumCL * sizeof(int));
+                                maxNumCL * sizeof(ssize_t));
 		    }
 		    clPosition[numCL++] = clPos;
 		}

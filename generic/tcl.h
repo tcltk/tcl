@@ -849,14 +849,14 @@ typedef struct Tcl_Namespace {
 typedef struct Tcl_CallFrame {
     Tcl_Namespace *nsPtr;
     int dummy1;
-    int dummy2;
+    size_t dummy2;
     void *dummy3;
     void *dummy4;
     void *dummy5;
     int dummy6;
     void *dummy7;
     void *dummy8;
-    int dummy9;
+    size_t dummy9;
     void *dummy10;
     void *dummy11;
     void *dummy12;
