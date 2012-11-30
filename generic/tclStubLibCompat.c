@@ -44,7 +44,7 @@ Tcl_InitStubs(
     int exact)
 {
     /* Use the hardcoded Tcl8 magic value here. */
-    return TclInitStubs(interp, version, exact, (int) 0xFCA3BACF);
+    return TclInitStubs(interp, version, exact, "8.x", (int) 0xFCA3BACF);
 }
 
 /*
