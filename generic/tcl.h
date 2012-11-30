@@ -122,7 +122,6 @@ extern "C" {
  */
 
 #include <stdio.h>
-#include <stddef.h>
 
 /*
  *----------------------------------------------------------------------------
@@ -2200,7 +2199,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) (0xFCA3BACB + sizeof(size_t)))
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2210,7 +2209,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  */
 
 const char *		TclInitStubs(Tcl_Interp *interp, const char *version,
-			    int exact, int magic);
+			    int exact, const char *tclversion, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
@@ -2220,7 +2219,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 #ifdef USE_TCL_STUBS
 #define Tcl_InitStubs(interp, version, exact) \
-    TclInitStubs(interp, version, exact, TCL_STUB_MAGIC)
+    TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
 #else
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)
