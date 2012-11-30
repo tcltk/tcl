@@ -42,16 +42,8 @@
  * Declare external functions used in Windows tests.
  */
 
-/*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Tcltest_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-EXTERN int		Tcltest_Init(Tcl_Interp *interp);
-EXTERN int		Tcltest_SafeInit(Tcl_Interp *interp);
+DLLEXPORT int		Tcltest_Init(Tcl_Interp *interp);
+DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc; used to collect
@@ -114,13 +106,6 @@ typedef struct TclEncoding {
     char *toUtfCmd;
     char *fromUtfCmd;
 } TclEncoding;
-
-/*
- * The counter below is used to determine if the TestsaveresultFree routine
- * was called for a result.
- */
-
-static int freeCount;
 
 /*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
@@ -1833,7 +1818,7 @@ TestdstringCmd(
 	if (Tcl_GetInt(interp, argv[2], &count) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	Tcl_DStringTrunc(&dstring, count);
+	Tcl_DStringSetLength(&dstring, count);
     } else if (strcmp(argv[1], "start") == 0) {
 	if (argc != 2) {
 	    goto wrongNumArgs;
@@ -1959,7 +1944,7 @@ EncodingToUtfProc(
     TclEncoding *encodingPtr;
 
     encodingPtr = (TclEncoding *) clientData;
-    Tcl_GlobalEval(encodingPtr->interp, encodingPtr->toUtfCmd);
+    Tcl_EvalEx(encodingPtr->interp, encodingPtr->toUtfCmd, -1, TCL_EVAL_GLOBAL);
 
     len = strlen(Tcl_GetStringResult(encodingPtr->interp));
     if (len > dstLen) {
@@ -1991,7 +1976,7 @@ EncodingFromUtfProc(
     TclEncoding *encodingPtr;
 
     encodingPtr = (TclEncoding *) clientData;
-    Tcl_GlobalEval(encodingPtr->interp, encodingPtr->fromUtfCmd);
+    Tcl_EvalEx(encodingPtr->interp, encodingPtr->fromUtfCmd, -1, TCL_EVAL_GLOBAL);
 
     len = strlen(Tcl_GetStringResult(encodingPtr->interp));
     if (len > dstLen) {
@@ -4323,7 +4308,7 @@ TestfeventCmd(
 	    return TCL_ERROR;
 	}
 	if (interp2 != NULL) {
-	    code = Tcl_GlobalEval(interp2, argv[2]);
+	    code = Tcl_EvalEx(interp2, argv[2], -1, TCL_EVAL_GLOBAL);
 	    Tcl_SetObjResult(interp, Tcl_GetObjResult(interp2));
 	    return code;
 	} else {
@@ -4877,7 +4862,6 @@ TestsaveresultCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    Interp* iPtr = (Interp*) interp;
     int discard, result, index;
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
@@ -4928,7 +4912,6 @@ TestsaveresultCmd(
 	break;
     }
 
-    freeCount = 0;
     Tcl_SaveResult(interp, &state);
 
     if (((enum options) index) == RESULT_OBJECT) {
@@ -4945,14 +4928,10 @@ TestsaveresultCmd(
     }
 
     switch ((enum options) index) {
-    case RESULT_DYNAMIC: {
-	int present = iPtr->freeProc == TestsaveresultFree;
-	int called = freeCount;
-
-	Tcl_AppendElement(interp, called ? "called" : "notCalled");
-	Tcl_AppendElement(interp, present ? "present" : "missing");
+    case RESULT_DYNAMIC:
+	Tcl_AppendElement(interp, discard ? "called" : "notCalled");
+	Tcl_AppendElement(interp, !discard ? "present" : "missing");
 	break;
-    }
     case RESULT_OBJECT:
 	Tcl_AppendElement(interp, Tcl_GetObjResult(interp) == objPtr
 		? "same" : "different");
@@ -4983,7 +4962,7 @@ static void
 TestsaveresultFree(
     char *blockPtr)
 {
-    freeCount++;
+    /* empty... */
 }
 
 /*

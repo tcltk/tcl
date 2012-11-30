@@ -431,14 +431,6 @@ TclFinalizeEvaluation(void)
  *----------------------------------------------------------------------
  */
 
-/* Template for internal Interp structure: the stubTable entry cannot move! */
-typedef struct {
-    char *dumm1;
-    Tcl_FreeProc *dummy2;
-    int dummy3;
-    const struct TclStubs *stubTable;
-} InterpTemplate;
-
 Tcl_Interp *
 Tcl_CreateInterp(void)
 {
@@ -474,21 +466,6 @@ Tcl_CreateInterp(void)
 	/*NOTREACHED*/
 	Tcl_Panic("Tcl_CallFrame must not be smaller than CallFrame");
     }
-    if ((void *) tclStubs.tcl_SetObjResult
-		    != (void *)((&(tclStubs.tcl_PkgProvideEx))[235])) {
-	/*NOTREACHED*/
-	Tcl_Panic("Tcl_SetObjResult entry in the stub table must be kept");
-    }
-    if ((void *) tclStubs.tcl_NewStringObj
-		    != (void *)((&(tclStubs.tcl_PkgProvideEx))[56])) {
-	/*NOTREACHED*/
-	Tcl_Panic("Tcl_NewStringObj entry in the stub table must be kept");
-    }
-    if (TclOffset(InterpTemplate, stubTable)
-		    != TclOffset(Interp, stubTable)) {
-	/*NOTREACHED*/
-	Tcl_Panic("stubsTable entry in the Interp structure must be kept");
-    }
 
     if (cancelTableInitialized == 0) {
 	Tcl_MutexLock(&cancelLock);
@@ -508,8 +485,7 @@ Tcl_CreateInterp(void)
     iPtr = ckalloc(sizeof(Interp));
     interp = (Tcl_Interp *) iPtr;
 
-    iPtr->result = iPtr->resultSpace;
-    iPtr->freeProc = NULL;
+    iPtr->legacyResult = NULL;
     iPtr->errorLine = 0;
     iPtr->objResultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(iPtr->objResultPtr);
@@ -565,10 +541,6 @@ Tcl_CreateInterp(void)
     iPtr->rootFramePtr = NULL;	/* Initialise as soon as :: is available */
     iPtr->lookupNsPtr = NULL;
 
-    iPtr->appendResult = NULL;
-    iPtr->appendAvl = 0;
-    iPtr->appendUsed = 0;
-
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
 
@@ -596,7 +568,6 @@ Tcl_CreateInterp(void)
     iPtr->emptyObjPtr = Tcl_NewObj();
 				/* Another empty object. */
     Tcl_IncrRefCount(iPtr->emptyObjPtr);
-    iPtr->resultSpace[0] = 0;
     iPtr->threadId = Tcl_GetCurrentThread();
 
     /* TIP #378 */
@@ -1498,7 +1469,6 @@ DeleteInterpProc(
      */
 
     Tcl_FreeResult(interp);
-    iPtr->result = NULL;
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
     Tcl_DecrRefCount(iPtr->ecVar);
@@ -1519,10 +1489,6 @@ DeleteInterpProc(
     Tcl_DecrRefCount(iPtr->innerContext);
     if (iPtr->returnOpts) {
 	Tcl_DecrRefCount(iPtr->returnOpts);
-    }
-    if (iPtr->appendResult != NULL) {
-	ckfree(iPtr->appendResult);
-	iPtr->appendResult = NULL;
     }
     TclFreePackageInfo(iPtr);
     while (iPtr->tracePtr != NULL) {
@@ -2397,7 +2363,7 @@ TclInvokeStringCommand(
  *	in the Command structure.
  *
  * Results:
- *	A standard Tcl string result value.
+ *	A standard Tcl result value.
  *
  * Side effects:
  *	Besides those side effects of the called Tcl_CmdProc,
@@ -2436,13 +2402,6 @@ TclInvokeObjectCommand(
 	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
 		cmdPtr->objClientData, argc, objv);
     }
-
-    /*
-     * Move the interpreter's object result to the string result, then reset
-     * the object result.
-     */
-
-    (void) Tcl_GetStringResult(interp);
 
     /*
      * Decrement the ref counts for the argument objects created above, then
@@ -3446,7 +3405,7 @@ TclCleanupCommand(
  *	otherwise.
  *
  * Side effects:
- *	The interpreters object and string results are cleared.
+ *	The interpreter's result is cleared.
  *
  *----------------------------------------------------------------------
  */
@@ -3458,8 +3417,8 @@ TclInterpReady(
     register Interp *iPtr = (Interp *) interp;
 
     /*
-     * Reset both the interpreter's string and object results and clear out
-     * any previous error information.
+     * Reset the interpreter's result and clear out any previous error
+     * information.
      */
 
     Tcl_ResetResult(interp);
@@ -3977,23 +3936,8 @@ TclNRRunCallbacks(
 				/* All callbacks down to rootPtr not inclusive
 				 * are to be run. */
 {
-    Interp *iPtr = (Interp *) interp;
     NRE_callback *callbackPtr;
     Tcl_NRPostProc *procPtr;
-
-    /*
-     * If the interpreter has a non-empty string result, the result object is
-     * either empty or stale because some function set interp->result
-     * directly. If so, move the string result to the result object, then
-     * reset the string result.
-     *
-     * This only needs to be done for the first item in the list: all other
-     * are for NR function calls, and those are Tcl_Obj based.
-     */
-
-    if (*(iPtr->result) != 0) {
-	(void) Tcl_GetObjResult(interp);
-    }
 
     while (TOP_CB(interp) != rootPtr) {
 	callbackPtr = TOP_CB(interp);
@@ -4472,54 +4416,6 @@ Tcl_EvalTokensStandard(
 {
     return TclSubstTokens(interp, tokenPtr, count, /* numLeftPtr */ NULL, 1,
 	    NULL, NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_EvalTokens --
- *
- *	Given an array of tokens parsed from a Tcl command (e.g., the tokens
- *	that make up a word or the index for an array variable) this function
- *	evaluates the tokens and concatenates their values to form a single
- *	result value.
- *
- * Results:
- *	The return value is a pointer to a newly allocated Tcl_Obj containing
- *	the value of the array of tokens. The reference count of the returned
- *	object has been incremented. If an error occurs in evaluating the
- *	tokens then a NULL value is returned and an error message is left in
- *	interp's result.
- *
- * Side effects:
- *	A new object is allocated to hold the result.
- *
- *----------------------------------------------------------------------
- *
- * This uses a non-standard return convention; its use is now deprecated. It
- * is a wrapper for the new function Tcl_EvalTokensStandard, and is not used
- * in the core any longer. It is only kept for backward compatibility.
- */
-
-Tcl_Obj *
-Tcl_EvalTokens(
-    Tcl_Interp *interp,		/* Interpreter in which to lookup variables,
-				 * execute nested commands, and report
-				 * errors. */
-    Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
-				 * evaluate and concatenate. */
-    int count)			/* Number of tokens to consider at tokenPtr.
-				 * Must be at least 1. */
-{
-    Tcl_Obj *resPtr;
-
-    if (Tcl_EvalTokensStandard(interp, tokenPtr, count) != TCL_OK) {
-	return NULL;
-    }
-    resPtr = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(resPtr);
-    Tcl_ResetResult(interp);
-    return resPtr;
 }
 
 /*
@@ -5472,22 +5368,13 @@ Tcl_Eval(
 				 * previous call to Tcl_CreateInterp). */
     const char *script)		/* Pointer to TCL command to execute. */
 {
-    int code = Tcl_EvalEx(interp, script, -1, 0);
-
-    /*
-     * For backwards compatibility with old C code that predates the object
-     * system in Tcl 8.0, we have to mirror the object result back into the
-     * string result (some callers may expect it there).
-     */
-
-    (void) Tcl_GetStringResult(interp);
-    return code;
+    return Tcl_EvalEx(interp, script, -1, 0);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_EvalObj, Tcl_GlobalEvalObj --
+ * Tcl_EvalObj --
  *
  *	These functions are deprecated but we keep them around for backwards
  *	compatibility reasons.
@@ -5508,14 +5395,6 @@ Tcl_EvalObj(
     Tcl_Obj *objPtr)
 {
     return Tcl_EvalObjEx(interp, objPtr, 0);
-}
-#undef Tcl_GlobalEvalObj
-int
-Tcl_GlobalEvalObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr)
-{
-    return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
 }
 
 /*
@@ -5979,9 +5858,6 @@ Tcl_ExprLong(
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprLongObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
-	if (result != TCL_OK) {
-	    (void) Tcl_GetStringResult(interp);
-	}
     }
     return result;
 }
@@ -6008,9 +5884,6 @@ Tcl_ExprDouble(
 	result = Tcl_ExprDoubleObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
 				/* Discard the expression object. */
-	if (result != TCL_OK) {
-	    (void) Tcl_GetStringResult(interp);
-	}
     }
     return result;
 }
@@ -6036,14 +5909,6 @@ Tcl_ExprBoolean(
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprBooleanObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
-	if (result != TCL_OK) {
-	    /*
-	     * Move the interpreter's object result to the string result, then
-	     * reset the object result.
-	     */
-
-	    (void) Tcl_GetStringResult(interp);
-	}
 	return result;
     }
 }
@@ -6369,12 +6234,6 @@ Tcl_ExprString(
 	    Tcl_DecrRefCount(resultPtr);
 	}
     }
-
-    /*
-     * Force the string rep of the interp result.
-     */
-
-    (void) Tcl_GetStringResult(interp);
     return code;
 }
 
@@ -6478,19 +6337,7 @@ Tcl_AddObjErrorInfo(
 
     iPtr->flags |= ERR_LEGACY_COPY;
     if (iPtr->errorInfo == NULL) {
-	if (iPtr->result[0] != 0) {
-	    /*
-	     * The interp's string result is set, apparently by some extension
-	     * making a deprecated direct write to it. That extension may
-	     * expect interp->result to continue to be set, so we'll take
-	     * special pains to avoid clearing it, until we drop support for
-	     * interp->result completely.
-	     */
-
-	    iPtr->errorInfo = Tcl_NewStringObj(iPtr->result, -1);
-	} else {
-	    iPtr->errorInfo = iPtr->objResultPtr;
-	}
+        iPtr->errorInfo = iPtr->objResultPtr;
 	Tcl_IncrRefCount(iPtr->errorInfo);
 	if (!iPtr->errorCode) {
 	    Tcl_SetErrorCode(interp, "NONE", NULL);
@@ -6568,7 +6415,7 @@ Tcl_VarEvalVA(
  *
  * Results:
  *	A standard Tcl return result. An error message or other result may be
- *	left in interp->result.
+ *	left in the interp.
  *
  * Side effects:
  *	Depends on what was done by the command.
@@ -6588,42 +6435,6 @@ Tcl_VarEval(
     result = Tcl_VarEvalVA(interp, argList);
     va_end(argList);
 
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GlobalEval --
- *
- *	Evaluate a command at global level in an interpreter.
- *
- * Results:
- *	A standard Tcl result is returned, and the interp's result is modified
- *	accordingly.
- *
- * Side effects:
- *	The command string is executed in interp, and the execution is carried
- *	out in the variable context of global level (no functions active),
- *	just as if an "uplevel #0" command were being executed.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_GlobalEval(
-    Tcl_Interp *interp,		/* Interpreter in which to evaluate
-				 * command. */
-    const char *command)	/* Command to evaluate. */
-{
-    register Interp *iPtr = (Interp *) interp;
-    int result;
-    CallFrame *savedVarFramePtr;
-
-    savedVarFramePtr = iPtr->varFramePtr;
-    iPtr->varFramePtr = iPtr->rootFramePtr;
-    result = Tcl_Eval(interp, command);
-    iPtr->varFramePtr = savedVarFramePtr;
     return result;
 }
 

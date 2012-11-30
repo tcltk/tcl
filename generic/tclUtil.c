@@ -1556,40 +1556,6 @@ Tcl_Merge(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Backslash --
- *
- *	Figure out how to handle a backslash sequence.
- *
- * Results:
- *	The return value is the character that should be substituted in place
- *	of the backslash sequence that starts at src. If readPtr isn't NULL
- *	then it is filled in with a count of the number of characters in the
- *	backslash sequence.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-char
-Tcl_Backslash(
-    const char *src,		/* Points to the backslash character of a
-				 * backslash sequence. */
-    int *readPtr)		/* Fill in with number of characters read from
-				 * src, unless NULL. */
-{
-    char buf[TCL_UTF_MAX];
-    Tcl_UniChar ch;
-
-    Tcl_UtfBackslash(src, readPtr, buf);
-    TclUtfToUniChar(buf, &ch);
-    return (char) ch;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclTrimRight --
  *
  *	Takes two counted strings in the Tcl encoding which must both be null
@@ -2796,7 +2762,6 @@ Tcl_DStringResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the
 				 * result of interp. */
 {
-    Tcl_ResetResult(interp);
     Tcl_SetObjResult(interp, TclDStringToObj(dsPtr));
 }
 
@@ -2826,77 +2791,12 @@ Tcl_DStringGetResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the result
 				 * of interp. */
 {
-    Interp *iPtr = (Interp *) interp;
+    int length;
+    char *bytes = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length);
 
-    if (dsPtr->string != dsPtr->staticSpace) {
-	ckfree(dsPtr->string);
-    }
-
-    /*
-     * Do more efficient transfer when we know the result is a Tcl_Obj. When
-     * there's no st`ring result, we only have to deal with two cases:
-     *
-     *  1. When the string rep is the empty string, when we don't copy but
-     *     instead use the staticSpace in the DString to hold an empty string.
-
-     *  2. When the string rep is not there or there's a real string rep, when
-     *     we use Tcl_GetString to fetch (or generate) the string rep - which
-     *     we know to have been allocated with ckalloc() - and use it to
-     *     populate the DString space. Then, we free the internal rep. and set
-     *     the object's string representation back to the canonical empty
-     *     string.
-     */
-
-    if (!iPtr->result[0] && iPtr->objResultPtr
-	    && !Tcl_IsShared(iPtr->objResultPtr)) {
-	if (iPtr->objResultPtr->bytes == tclEmptyStringRep) {
-	    dsPtr->string = dsPtr->staticSpace;
-	    dsPtr->string[0] = 0;
-	    dsPtr->length = 0;
-	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
-	} else {
-	    dsPtr->string = Tcl_GetString(iPtr->objResultPtr);
-	    dsPtr->length = iPtr->objResultPtr->length;
-	    dsPtr->spaceAvl = dsPtr->length + 1;
-	    TclFreeIntRep(iPtr->objResultPtr);
-	    iPtr->objResultPtr->bytes = tclEmptyStringRep;
-	    iPtr->objResultPtr->length = 0;
-	}
-	return;
-    }
-
-    /*
-     * If the string result is empty, move the object result to the string
-     * result, then reset the object result.
-     */
-
-    (void) Tcl_GetStringResult(interp);
-
-    dsPtr->length = strlen(iPtr->result);
-    if (iPtr->freeProc != NULL) {
-	if (iPtr->freeProc == TCL_DYNAMIC) {
-	    dsPtr->string = iPtr->result;
-	    dsPtr->spaceAvl = dsPtr->length+1;
-	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
-	    memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
-	    iPtr->freeProc(iPtr->result);
-	}
-	dsPtr->spaceAvl = dsPtr->length+1;
-	iPtr->freeProc = NULL;
-    } else {
-	if (dsPtr->length < TCL_DSTRING_STATIC_SIZE) {
-	    dsPtr->string = dsPtr->staticSpace;
-	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
-	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
-	    dsPtr->spaceAvl = dsPtr->length + 1;
-	}
-	memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
-    }
-
-    iPtr->result = iPtr->resultSpace;
-    iPtr->resultSpace[0] = 0;
+    Tcl_DStringFree(dsPtr);
+    Tcl_DStringAppend(dsPtr, bytes, length);
+    Tcl_ResetResult(interp);
 }
 
 /*
