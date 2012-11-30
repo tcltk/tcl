@@ -2476,9 +2476,9 @@ BinaryEncode64(
 	    if (Tcl_GetIntFromObj(interp, objv[i+1], &len) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (len < 1) {
+	    if (len < 0) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"maximum length must be positive", TCL_STRLEN));
+			"maximum length must be non-negative", TCL_STRLEN));
 		return TCL_ERROR;
 	    }
 	    maxlen = (size_t) len;
