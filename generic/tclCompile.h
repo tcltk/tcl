@@ -594,82 +594,81 @@ typedef struct ByteCode {
 #define INST_DICT_LAPPEND		100
 #define INST_DICT_FIRST			101
 #define INST_DICT_NEXT			102
-#define INST_DICT_DONE			103
-#define INST_DICT_UPDATE_START		104
-#define INST_DICT_UPDATE_END		105
-#define INST_DICT_EXPAND		106
-#define INST_DICT_RECOMBINE_STK		107
-#define INST_DICT_RECOMBINE_IMM		108
-#define INST_DICT_EXISTS		109
-#define INST_DICT_VERIFY		110
+#define INST_DICT_UPDATE_START		103
+#define INST_DICT_UPDATE_END		104
+#define INST_DICT_EXPAND		105
+#define INST_DICT_RECOMBINE_STK		106
+#define INST_DICT_RECOMBINE_IMM		107
+#define INST_DICT_EXISTS		108
+#define INST_DICT_VERIFY		109
 
 /*
  * Instruction to support jumps defined by tables (instead of the classic
  * [switch] technique of chained comparisons).
  */
 
-#define INST_JUMP_TABLE			111
+#define INST_JUMP_TABLE			110
 
 /*
  * Instructions to support compilation of global, variable, upvar and
  * [namespace upvar].
  */
 
-#define INST_UPVAR			112
-#define INST_NSUPVAR			113
-#define INST_VARIABLE			114
+#define INST_UPVAR			111
+#define INST_NSUPVAR			112
+#define INST_VARIABLE			113
 
 /* Utilities */
-#define INST_OVER			115
-#define INST_SYNTAX			116
-#define INST_REVERSE			117
-#define INST_NOP			118
+#define INST_OVER			114
+#define INST_SYNTAX			115
+#define INST_REVERSE			116
+#define INST_NOP			117
 
 /* regexp instruction */
-#define INST_REGEXP			119
+#define INST_REGEXP			118
 
 /* For [info exists] compilation */
-#define INST_EXIST_SCALAR		120
-#define INST_EXIST_ARRAY		121
-#define INST_EXIST_ARRAY_STK		122
-#define INST_EXIST_STK			123
+#define INST_EXIST_SCALAR		119
+#define INST_EXIST_ARRAY		120
+#define INST_EXIST_ARRAY_STK		121
+#define INST_EXIST_STK			122
 
 /* For [unset] compilation */
-#define INST_UNSET_SCALAR		124
-#define INST_UNSET_ARRAY		125
-#define INST_UNSET_ARRAY_STK		126
-#define INST_UNSET_STK			127
+#define INST_UNSET_SCALAR		123
+#define INST_UNSET_ARRAY		124
+#define INST_UNSET_ARRAY_STK		125
+#define INST_UNSET_STK			126
 
 /* For [string map] and [regsub] compilation */
-#define INST_STR_MAP			128
-#define INST_STR_FIND			129
-#define INST_STR_FIND_LAST		130
-#define INST_STR_RANGE_IMM		131
-#define INST_STR_RANGE			132
+#define INST_STR_MAP			127
+#define INST_STR_FIND			128
+#define INST_STR_FIND_LAST		129
+#define INST_STR_RANGE_IMM		130
+#define INST_STR_RANGE			131
 
 /* For operations to do with coroutines and other NRE-manipulators */
-#define INST_YIELD			133
-#define INST_COROUTINE_NAME		134
-#define INST_TAILCALL			135
+#define INST_YIELD			132
+#define INST_COROUTINE_NAME		133
+#define INST_TAILCALL			134
 
 /* For compilation of basic information operations */
-#define INST_NS_CURRENT			136
-#define INST_INFO_LEVEL_NUM		137
-#define INST_INFO_LEVEL_ARGS		138
-#define INST_RESOLVE_COMMAND		139
-#define INST_TCLOO_SELF			140
-#define INST_TCLOO_CLASS		141
-#define INST_TCLOO_NS			142
-#define INST_TCLOO_IS_OBJECT		143
+#define INST_NS_CURRENT			135
+#define INST_INFO_LEVEL_NUM		136
+#define INST_INFO_LEVEL_ARGS		137
+#define INST_RESOLVE_COMMAND		138
+#define INST_TCLOO_SELF			139
+#define INST_TCLOO_CLASS		140
+#define INST_TCLOO_NS			141
+#define INST_TCLOO_IS_OBJECT		142
 
 /* For compilation of [array] subcommands */
-#define INST_ARRAY_EXISTS_STK		144
-#define INST_ARRAY_EXISTS_IMM		145
-#define INST_ARRAY_MAKE_STK		146
-#define INST_ARRAY_MAKE_IMM		147
+#define INST_ARRAY_EXISTS_STK		143
+#define INST_ARRAY_EXISTS_IMM		144
+#define INST_ARRAY_MAKE_STK		145
+#define INST_ARRAY_MAKE_IMM		146
 
 /* The last opcode */
-#define LAST_INST_OPCODE		147
+#define LAST_INST_OPCODE		146
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying

@@ -18,10 +18,10 @@
  *- More instructions:
  *-   done - alternate exit point (affects stack and exception range checking)
  *-   break and continue - if exception ranges can be sorted out.
- *-   foreach_start4, foreach_step4
+ *-   foreach_start, foreach_step
  *-   returnImm, returnStk
  *-   expandStart, expandStkTop, invokeExpanded
- *-   dictFirst, dictNext, dictDone
+ *-   dictFirst, dictNext
  *-   dictUpdateStart, dictUpdateEnd
  *-   jumpTable testing
  *-   syntax (?)
@@ -49,14 +49,14 @@ typedef enum BasicBlockCatchState {
     BBCS_UNKNOWN = 0,		/* Catch context has not yet been identified */
     BBCS_NONE,			/* Block is outside of any catch */
     BBCS_INCATCH,		/* Block is within a catch context */
-    BBCS_CAUGHT,		/* Block is within a catch context and
-				 * may be executed after an exception fires */
+    BBCS_CAUGHT,		/* Block is within a catch context and may be
+				 * executed after an exception fires */
 } BasicBlockCatchState;
 
 /*
  * Structure that defines a basic block - a linear sequence of bytecode
- * instructions with no jumps in or out (including not changing the
- * state of any exception range).
+ * instructions with no jumps in or out (including not changing the state of
+ * any exception range).
  */
 
 typedef struct BasicBlock {
@@ -133,7 +133,7 @@ typedef enum TalInstType {
 				 * converted to appropriate exception
 				 * ranges */
     ASSEM_BOOL,			/* One Boolean operand */
-    ASSEM_BOOL_LVT4,		/* One Boolean, one 4-byte LVT ref. */
+    ASSEM_BOOL_LVT,		/* One Boolean, one 4-byte LVT ref. */
     ASSEM_CONCAT1,		/* 1-byte unsigned-integer operand count, must
 				 * be strictly positive, consumes N, produces
 				 * 1 */
@@ -161,10 +161,10 @@ typedef enum TalInstType {
 				 * consumses N, produces 1 */
     ASSEM_LSET_FLAT,		/* 4-byte operand count, must be >= 3,
 				 * consumes N, produces 1 */
-    ASSEM_LVT4_SINT1,		/* One 4-byte operand that references a local
+    ASSEM_LVT_SINT1,		/* One 4-byte operand that references a local
 				 * variable, one signed-integer 1-byte
 				 * operand */
-    ASSEM_LVT4,			/* One 4-byte operand that references a local
+    ASSEM_LVT,			/* One 4-byte operand that references a local
 				 * variable */
     ASSEM_OVER,			/* OVER: 4-byte operand count, consumes N+1,
 				 * produces N+2 */
@@ -175,7 +175,7 @@ typedef enum TalInstType {
 				 * produces N */
     ASSEM_SINT1,		/* One 1-byte signed-integer operand
 				 * (INCR_STK_IMM) */
-    ASSEM_SINT4_LVT4,		/* Signed 4-byte integer operand followed by
+    ASSEM_SINT4_LVT,		/* Signed 4-byte integer operand followed by
 				 * LVT entry.  Fixed arity */
 } TalInstType;
 
@@ -345,13 +345,13 @@ static const TalInstDesc TalInstructionTable[] = {
     {"push",		ASSEM_PUSH,	INST_PUSH,		0,	1},
 
     {"add",		ASSEM_1BYTE,	INST_ADD,		2,	1},
-    {"append",		ASSEM_LVT4,	INST_APPEND_SCALAR,	1,	1},
-    {"appendArray",	ASSEM_LVT4,	INST_APPEND_ARRAY,	2,	1},
+    {"append",		ASSEM_LVT,	INST_APPEND_SCALAR,	1,	1},
+    {"appendArray",	ASSEM_LVT,	INST_APPEND_ARRAY,	2,	1},
     {"appendArrayStk",	ASSEM_1BYTE,	INST_APPEND_ARRAY_STK,	3,	1},
     {"appendStk",	ASSEM_1BYTE,	INST_APPEND_STK,	2,	1},
-    {"arrayExistsImm",	ASSEM_LVT4,	INST_ARRAY_EXISTS_IMM,	0,	1},
+    {"arrayExistsImm",	ASSEM_LVT,	INST_ARRAY_EXISTS_IMM,	0,	1},
     {"arrayExistsStk",	ASSEM_1BYTE,	INST_ARRAY_EXISTS_STK,	1,	1},
-    {"arrayMakeImm",	ASSEM_LVT4,	INST_ARRAY_MAKE_IMM,	0,	0},
+    {"arrayMakeImm",	ASSEM_LVT,	INST_ARRAY_MAKE_IMM,	0,	0},
     {"arrayMakeStk",	ASSEM_1BYTE,	INST_ARRAY_MAKE_STK,	1,	0},
     {"beginCatch",	ASSEM_BEGIN_CATCH,
 					INST_BEGIN_CATCH,	0,	0},
@@ -362,15 +362,14 @@ static const TalInstDesc TalInstructionTable[] = {
     {"concat",		ASSEM_CONCAT1,	INST_CONCAT,		INT_MIN,1},
     {"coroName",	ASSEM_1BYTE,	INST_COROUTINE_NAME,	0,	1},
     {"currentNamespace",ASSEM_1BYTE,	INST_NS_CURRENT,	0,	1},
-    {"dictAppend",	ASSEM_LVT4,	INST_DICT_APPEND,	2,	1},
+    {"dictAppend",	ASSEM_LVT,	INST_DICT_APPEND,	2,	1},
     {"dictExists",	ASSEM_DICT_GET, INST_DICT_EXISTS,	INT_MIN,1},
     {"dictExpand",	ASSEM_1BYTE,	INST_DICT_EXPAND,	3,	1},
     {"dictGet",		ASSEM_DICT_GET, INST_DICT_GET,		INT_MIN,1},
-    {"dictIncrImm",	ASSEM_SINT4_LVT4,
-					INST_DICT_INCR_IMM,	1,	1},
-    {"dictLappend",	ASSEM_LVT4,	INST_DICT_LAPPEND,	2,	1},
+    {"dictIncrImm",	ASSEM_SINT4_LVT,INST_DICT_INCR_IMM,	1,	1},
+    {"dictLappend",	ASSEM_LVT,	INST_DICT_LAPPEND,	2,	1},
     {"dictRecombineStk",ASSEM_1BYTE,	INST_DICT_RECOMBINE_STK,3,	0},
-    {"dictRecombineImm",ASSEM_LVT4,	INST_DICT_RECOMBINE_IMM,2,	0},
+    {"dictRecombineImm",ASSEM_LVT,	INST_DICT_RECOMBINE_IMM,2,	0},
     {"dictSet",		ASSEM_DICT_SET, INST_DICT_SET,		INT_MIN,1},
     {"dictUnset",	ASSEM_DICT_UNSET,
 					INST_DICT_UNSET,	INT_MIN,1},
@@ -380,8 +379,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"eq",		ASSEM_1BYTE,	INST_EQ,		2,	1},
     {"eval",		ASSEM_EVAL,	INST_EVAL_STK,		1,	1},
     {"evalStk",		ASSEM_1BYTE,	INST_EVAL_STK,		1,	1},
-    {"exist",		ASSEM_LVT4,	INST_EXIST_SCALAR,	0,	1},
-    {"existArray",	ASSEM_LVT4,	INST_EXIST_ARRAY,	1,	1},
+    {"exist",		ASSEM_LVT,	INST_EXIST_SCALAR,	0,	1},
+    {"existArray",	ASSEM_LVT,	INST_EXIST_ARRAY,	1,	1},
     {"existArrayStk",	ASSEM_1BYTE,	INST_EXIST_ARRAY_STK,	2,	1},
     {"existStk",	ASSEM_1BYTE,	INST_EXIST_STK,		1,	1},
     {"expon",		ASSEM_1BYTE,	INST_EXPON,		2,	1},
@@ -389,14 +388,12 @@ static const TalInstDesc TalInstructionTable[] = {
     {"exprStk",		ASSEM_1BYTE,	INST_EXPR_STK,		1,	1},
     {"ge",		ASSEM_1BYTE,	INST_GE,		2,	1},
     {"gt",		ASSEM_1BYTE,	INST_GT,		2,	1},
-    {"incr",		ASSEM_LVT4,	INST_INCR_SCALAR,	1,	1},
-    {"incrArray",	ASSEM_LVT4,	INST_INCR_ARRAY,	2,	1},
-    {"incrArrayImm",	ASSEM_LVT4_SINT1,
-					INST_INCR_ARRAY_IMM,	1,	1},
+    {"incr",		ASSEM_LVT,	INST_INCR_SCALAR,	1,	1},
+    {"incrArray",	ASSEM_LVT,	INST_INCR_ARRAY,	2,	1},
+    {"incrArrayImm",	ASSEM_LVT_SINT1,INST_INCR_ARRAY_IMM,	1,	1},
     {"incrArrayStk",	ASSEM_1BYTE,	INST_INCR_ARRAY_STK,	3,	1},
     {"incrArrayStkImm", ASSEM_SINT1,	INST_INCR_ARRAY_STK_IMM,2,	1},
-    {"incrImm",		ASSEM_LVT4_SINT1,
-					INST_INCR_SCALAR_IMM,	0,	1},
+    {"incrImm",		ASSEM_LVT_SINT1,INST_INCR_SCALAR_IMM,	0,	1},
     {"incrStk",		ASSEM_1BYTE,	INST_INCR_SCALAR_STK,	2,	1},
     {"incrStkImm",	ASSEM_SINT1,	INST_INCR_SCALAR_STK_IMM,
 								1,	1},
@@ -409,8 +406,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"jumpTrue",	ASSEM_JUMP,	INST_JUMP_TRUE,		1,	0},
     {"label",		ASSEM_LABEL,	0,			0,	0},
     {"land",		ASSEM_1BYTE,	INST_LAND,		2,	1},
-    {"lappend",		ASSEM_LVT4,	INST_LAPPEND_SCALAR,	1,	1},
-    {"lappendArray",	ASSEM_LVT4,	INST_LAPPEND_ARRAY,	2,	1},
+    {"lappend",		ASSEM_LVT,	INST_LAPPEND_SCALAR,	1,	1},
+    {"lappendArray",	ASSEM_LVT,	INST_LAPPEND_ARRAY,	2,	1},
     {"lappendArrayStk", ASSEM_1BYTE,	INST_LAPPEND_ARRAY_STK,	3,	1},
     {"lappendStk",	ASSEM_1BYTE,	INST_LAPPEND_STK,	2,	1},
     {"le",		ASSEM_1BYTE,	INST_LE,		2,	1},
@@ -422,8 +419,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"listIndexImm",	ASSEM_INDEX,	INST_LIST_INDEX_IMM,	1,	1},
     {"listLength",	ASSEM_1BYTE,	INST_LIST_LENGTH,	1,	1},
     {"listNotIn",	ASSEM_1BYTE,	INST_LIST_NOT_IN,	2,	1},
-    {"load",		ASSEM_LVT4,	INST_LOAD_SCALAR,	0,	1},
-    {"loadArray",	ASSEM_LVT4,	INST_LOAD_ARRAY,	1,	1},
+    {"load",		ASSEM_LVT,	INST_LOAD_SCALAR,	0,	1},
+    {"loadArray",	ASSEM_LVT,	INST_LOAD_ARRAY,	1,	1},
     {"loadArrayStk",	ASSEM_1BYTE,	INST_LOAD_ARRAY_STK,	2,	1},
     {"loadStk",		ASSEM_1BYTE,	INST_LOAD_SCALAR_STK,	1,	1},
     {"lor",		ASSEM_1BYTE,	INST_LOR,		2,	1},
@@ -436,7 +433,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"neq",		ASSEM_1BYTE,	INST_NEQ,		2,	1},
     {"nop",		ASSEM_1BYTE,	INST_NOP,		0,	0},
     {"not",		ASSEM_1BYTE,	INST_LNOT,		1,	1},
-    {"nsupvar",		ASSEM_LVT4,	INST_NSUPVAR,		2,	1},
+    {"nsupvar",		ASSEM_LVT,	INST_NSUPVAR,		2,	1},
     {"over",		ASSEM_OVER,	INST_OVER,		INT_MIN,-1-1},
     {"pop",		ASSEM_1BYTE,	INST_POP,		1,	0},
     {"pushReturnCode",	ASSEM_1BYTE,	INST_PUSH_RETURN_CODE,	0,	1},
@@ -447,8 +444,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"resolveCmd",	ASSEM_1BYTE,	INST_RESOLVE_COMMAND,	1,	1},
     {"reverse",		ASSEM_REVERSE,	INST_REVERSE,		INT_MIN,-1-0},
     {"rshift",		ASSEM_1BYTE,	INST_RSHIFT,		2,	1},
-    {"store",		ASSEM_LVT4,	INST_STORE_SCALAR,	1,	1},
-    {"storeArray",	ASSEM_LVT4,	INST_STORE_ARRAY,	2,	1},
+    {"store",		ASSEM_LVT,	INST_STORE_SCALAR,	1,	1},
+    {"storeArray",	ASSEM_LVT,	INST_STORE_ARRAY,	2,	1},
     {"storeArrayStk",	ASSEM_1BYTE,	INST_STORE_ARRAY_STK,	3,	1},
     {"storeStk",	ASSEM_1BYTE,	INST_STORE_SCALAR_STK,	2,	1},
     {"strcmp",		ASSEM_1BYTE,	INST_STR_CMP,		2,	1},
@@ -468,13 +465,13 @@ static const TalInstDesc TalInstructionTable[] = {
     {"tclooSelf",	ASSEM_1BYTE,	INST_TCLOO_SELF,	0,	1},
     {"tryCvtToNumeric",	ASSEM_1BYTE,	INST_TRY_CVT_TO_NUMERIC,1,	1},
     {"uminus",		ASSEM_1BYTE,	INST_UMINUS,		1,	1},
-    {"unset",		ASSEM_BOOL_LVT4,INST_UNSET_SCALAR,	0,	0},
-    {"unsetArray",	ASSEM_BOOL_LVT4,INST_UNSET_ARRAY,	1,	0},
+    {"unset",		ASSEM_BOOL_LVT,	INST_UNSET_SCALAR,	0,	0},
+    {"unsetArray",	ASSEM_BOOL_LVT,	INST_UNSET_ARRAY,	1,	0},
     {"unsetArrayStk",	ASSEM_BOOL,	INST_UNSET_ARRAY_STK,	2,	0},
     {"unsetStk",	ASSEM_BOOL,	INST_UNSET_STK,		1,	0},
     {"uplus",		ASSEM_1BYTE,	INST_UPLUS,		1,	1},
-    {"upvar",		ASSEM_LVT4,	INST_UPVAR,		2,	1},
-    {"variable",	ASSEM_LVT4,	INST_VARIABLE,		1,	0},
+    {"upvar",		ASSEM_LVT,	INST_UPVAR,		2,	1},
+    {"variable",	ASSEM_LVT,	INST_VARIABLE,		1,	0},
     {"verifyDict",	ASSEM_1BYTE,	INST_DICT_VERIFY,	1,	0},
     {"yield",		ASSEM_1BYTE,	INST_YIELD,		1,	1},
     {NULL,		0,		0,			0,	0}
@@ -485,6 +482,7 @@ static const TalInstDesc TalInstructionTable[] = {
  * circumstances.  These instructions are the ones that are permissible after
  * an exception is caught but before the corresponding exception range is
  * popped from the stack.
+ *
  * The instructions must be in ascending order by numeric operation code.
  */
 
@@ -493,13 +491,13 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_JUMP,							/* 28 */
     INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 64- */
     INST_PUSH_RETURN_OPTIONS,					/* -67 */
-    INST_OVER,							/* 115 */
-    INST_REVERSE, INST_NOP,					/* 117-118 */
-    INST_STR_MAP, INST_STR_FIND,				/* 128-129 */
-    INST_COROUTINE_NAME,					/* 134 */
-    INST_NS_CURRENT,						/* 136 */
-    INST_INFO_LEVEL_NUM,					/* 137 */
-    INST_RESOLVE_COMMAND					/* 139 */
+    INST_OVER,							/* 114 */
+    INST_REVERSE, INST_NOP,					/* 116-117 */
+    INST_STR_MAP, INST_STR_FIND,				/* 127-128 */
+    INST_COROUTINE_NAME,					/* 133 */
+    INST_NS_CURRENT,						/* 135 */
+    INST_INFO_LEVEL_NUM,					/* 136 */
+    INST_RESOLVE_COMMAND					/* 138 */
 };
 
 /*
@@ -1310,7 +1308,7 @@ AssembleOneLine(
 	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, 0);
 	break;
 
-    case ASSEM_BOOL_LVT4:
+    case ASSEM_BOOL_LVT:
 	if (parsePtr->numWords != 3) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "boolean varName");
 	    goto cleanup;
@@ -1561,7 +1559,7 @@ AssembleOneLine(
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd);
 	break;
 
-    case ASSEM_LVT4_SINT1:
+    case ASSEM_LVT_SINT1:
 	if (parsePtr->numWords != 3) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varName imm8");
 	    goto cleanup;
@@ -1576,7 +1574,7 @@ AssembleOneLine(
 	TclEmitInt1(opnd, envPtr);
 	break;
 
-    case ASSEM_LVT4:
+    case ASSEM_LVT:
 	if (parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
 	    goto cleanup;
@@ -1639,7 +1637,7 @@ AssembleOneLine(
 	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, 0);
 	break;
 
-    case ASSEM_SINT4_LVT4:
+    case ASSEM_SINT4_LVT:
 	if (parsePtr->numWords != 3) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count varName");
 	    goto cleanup;

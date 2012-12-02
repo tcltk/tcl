@@ -319,9 +319,6 @@ InstructionDesc const tclInstructionTable[] = {
     {"dictNext",	  5,	+3,	   1,	{OPERAND_LVT4}},
 	/* Get the next iteration from the iterator in op4's local scalar.
 	 * Stack:  ... => ... value key doneBool */
-    {"dictDone",	  5,	0,	   1,	{OPERAND_LVT4}},
-	/* Terminate the iterator in op4's local scalar. Use unsetScalar
-	 * instead (with 0 for flags). */
     {"dictUpdateStart",   9,    0,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
 	/* Create the variables (described in the aux data referred to by the
 	 * second immediate argument) to mirror the state of the dictionary in
@@ -1544,6 +1541,8 @@ TclCompileScript(
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     int *wlines, wlineat, cmdLine, *clNext;
     Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    int generateStartCmds = Tcl_IsSafe(interp) ||
+	    Tcl_LimitTypeEnabled(interp, TCL_LIMIT_COMMANDS|TCL_LIMIT_TIME);
 
     Tcl_DStringInit(&ds);
 
@@ -1764,24 +1763,29 @@ TclCompileScript(
 			 * command.
 			 */
 
-			if (envPtr->atCmdStart) {
-			    if (savedCodeNext != 0) {
-				/*
-				 * Increase the number of commands being
-				 * started at the current point. Note that
-				 * this depends on the exact layout of the
-				 * INST_START_CMD's operands, so be careful!
-				 */
+			if (generateStartCmds) {
+			    if (envPtr->atCmdStart) {
+				if (savedCodeNext != 0) {
+				    /*
+				     * Increase the number of commands being
+				     * started at the current point. Note that
+				     * this depends on the exact layout of the
+				     * INST_START_CMD's operands, so be
+				     * careful!
+				     */
 
-				unsigned char *fixPtr = envPtr->codeNext - 4;
+				    unsigned char *fixPtr =
+					    envPtr->codeNext - 4;
 
-				TclStoreInt4AtPtr(TclGetUInt4AtPtr(fixPtr)+1,
-					fixPtr);
+				    TclStoreInt4AtPtr(
+					    TclGetUInt4AtPtr(fixPtr) + 1,
+					    fixPtr);
+				}
+			    } else {
+				TclEmitInstInt4(INST_START_CMD, 0, envPtr);
+				TclEmitInt4(1, envPtr);
+				update = 1;
 			    }
-			} else {
-			    TclEmitInstInt4(INST_START_CMD, 0, envPtr);
-			    TclEmitInt4(1, envPtr);
-			    update = 1;
 			}
 
 			code = cmdPtr->compileProc(interp, parsePtr, cmdPtr,
@@ -1807,7 +1811,7 @@ TclCompileScript(
 					parsePtr->tokenPtr->start, diff);
 			    }
 #endif
-			    if (update) {
+			    if (generateStartCmds && update) {
 				/*
 				 * Fix the bytecode length.
 				 */
@@ -1822,7 +1826,8 @@ TclCompileScript(
 			    goto finishCommand;
 			}
 
-			if (envPtr->atCmdStart && savedCodeNext != 0) {
+			if (generateStartCmds && envPtr->atCmdStart
+				&& savedCodeNext != 0) {
 			    /*
 			     * Decrease the number of commands being started
 			     * at the current point. Note that this depends on
