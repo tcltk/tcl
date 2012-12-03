@@ -1195,8 +1195,8 @@ typedef struct CmdFrame {
     int type;			/* Values see below. */
     int level;			/* Number of frames in stack, prevent O(n)
 				 * scan of list. */
-    int *line;			/* Lines the words of the command start on. */
-    int nline;
+    size_t *line1;			/* Lines the words of the command start on. */
+    size_t nline1;
     CallFrame *framePtr;	/* Procedure activation record, may be
 				 * NULL. */
     struct CmdFrame *nextPtr;	/* Link to calling frame. */
@@ -1258,7 +1258,7 @@ typedef struct CmdFrame {
 
 typedef struct CFWord {
     CmdFrame *framePtr;		/* CmdFrame to access. */
-    size_t word;		/* Index of the word in the command. */
+    size_t word1;		/* Index of the word in the command. */
     int refCount;		/* Number of times the word is on the
 				 * stack. */
 } CFWord;
@@ -1267,7 +1267,7 @@ typedef struct CFWordBC {
     CmdFrame *framePtr;		/* CmdFrame to access. */
     int pc;			/* Instruction pointer of a command in
 				 * ExtCmdLoc.loc[.] */
-    int word;			/* Index of word in
+    size_t word1;			/* Index of word in
 				 * ExtCmdLoc.loc[cmd]->line[.] */
     struct CFWordBC *prevPtr;	/* Previous entry in stack for same Tcl_Obj. */
     struct CFWordBC *nextPtr;	/* Next entry for same command call. See
@@ -2885,9 +2885,9 @@ MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
 MODULE_SCOPE void	TclPushTailcallPoint(Tcl_Interp *interp);
-MODULE_SCOPE void	TclAdvanceContinuations(int *line, ssize_t **next,
+MODULE_SCOPE void	TclAdvanceContinuations(size_t *line, size_t **next,
 			    int loc);
-MODULE_SCOPE void	TclAdvanceLines(int *line, const char *start,
+MODULE_SCOPE void	TclAdvanceLines(size_t *line, const char *start,
 			    const char *end);
 MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], size_t objc, CmdFrame *cf);
@@ -2899,7 +2899,7 @@ MODULE_SCOPE void	TclArgumentBCEnter(Tcl_Interp *interp,
 MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
-			    CmdFrame **cfPtrPtr, int *wordPtr);
+			    CmdFrame **cfPtrPtr, size_t *wordPtr);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
 MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
@@ -2924,7 +2924,7 @@ MODULE_SCOPE size_t	TclConvertElement(const char *src, size_t length,
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 /* TIP #280 - Modified token based evulation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
-			    size_t numBytes, int flags, int line,
+			    size_t numBytes, int flags, size_t line,
 			    ssize_t *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
@@ -3026,8 +3026,8 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    size_t indexCount, Tcl_Obj *const indexArray[]);
 /* TIP #280 */
-MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line,
-			    size_t numLines, int *lines,
+MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, size_t line,
+			    size_t numLines, size_t *lines,
 			    Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
@@ -3160,7 +3160,7 @@ MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    size_t numBytes, int flags, Tcl_Parse *parsePtr,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    size_t count, size_t *tokensLeftPtr, int line,
+			    size_t count, size_t *tokensLeftPtr, size_t line,
 			    ssize_t *clNextOuter, const char *outerScript);
 MODULE_SCOPE int	TclTrimLeft(const char *bytes, size_t numBytes,
 			    const char *trim, size_t numTrim);

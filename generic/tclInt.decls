@@ -155,7 +155,7 @@ declare 32 {
 #}
 declare 34 {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    ssize_t endValue, ssize_t *indexPtr)
+	    size_t endValue, size_t *indexPtr)
 }
 # Removed in 8.4b2:
 #declare 35 {
@@ -442,7 +442,7 @@ declare 109 {
     int TclUpdateReturnInfo(Interp *iPtr)
 }
 declare 110 {
-    int TclSockMinimumBuffers(void *sock, int size)
+    int TclSockMinimumBuffers(void *sock, size_t size)
 }
 # Removed in 8.1:
 #  declare 110 {
@@ -578,7 +578,7 @@ declare 143 {
 }
 declare 144 {
     void TclHideLiteral(Tcl_Interp *interp, struct CompileEnv *envPtr,
-	    int index)
+	    size_t index)
 }
 declare 145 {
     const struct AuxDataType *TclGetAuxDataType(const char *typeName)
@@ -602,8 +602,8 @@ declare 150 {
     int TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re)
 }
 declare 151 {
-    void TclRegExpRangeUniChar(Tcl_RegExp re, int index, int *startPtr,
-	    int *endPtr)
+    void TclRegExpRangeUniChar(Tcl_RegExp re, size_t index, size_t *startPtr,
+	    size_t *endPtr)
 }
 declare 152 {
     void TclSetLibraryPath(Tcl_Obj *pathPtr)
@@ -691,7 +691,7 @@ declare 166 {
 #}
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
 declare 169 {
-    int TclpUtfNcmp2(const char *s1, const char *s2, unsigned long n)
+    int TclpUtfNcmp2(const char *s1, const char *s2, size_t n)
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
@@ -912,12 +912,12 @@ declare 227 {
 #  }
 declare 229 {
     int	TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
-	    const char *myName, int myFlags, int index)
+	    const char *myName, int myFlags, size_t index)
 }
 declare 230 {
     Var *TclObjLookupVar(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    const char *part2, int flags, const char *msg,
-	    const int createPart1, const int createPart2, Var **arrayPtrPtr)
+	    int createPart1, int createPart2, Var **arrayPtrPtr)
 }
 declare 231 {
     int	TclGetNamespaceFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -969,7 +969,7 @@ declare 240 {
 }
 declare 241 {
     int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
-	    const CmdFrame *invoker, int word)
+	    const CmdFrame *invoker, size_t word)
 }
 declare 242 {
     int TclNREvalObjv(Tcl_Interp *interp, size_t objc,
@@ -989,8 +989,8 @@ declare 245 {
     Tcl_HashTable *TclGetNamespaceCommandTable(Tcl_Namespace *nsPtr)
 }
 declare 246 {
-    int TclInitRewriteEnsemble(Tcl_Interp *interp, int numRemoved,
-	    int numInserted, Tcl_Obj *const *objv)
+    int TclInitRewriteEnsemble(Tcl_Interp *interp, size_t numRemoved,
+	    size_t numInserted, Tcl_Obj *const *objv)
 }
 declare 247 {
     void TclResetRewriteEnsemble(Tcl_Interp *interp, int isRootEnsemble)
@@ -1232,11 +1232,11 @@ declare 20 unix {
 # Mac OS X specific functions
 
 declare 15 macosx {
-    int TclMacOSXGetFileAttribute(Tcl_Interp *interp, int objIndex,
+    int TclMacOSXGetFileAttribute(Tcl_Interp *interp, size_t objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)
 }
 declare 16 macosx {
-    int TclMacOSXSetFileAttribute(Tcl_Interp *interp, int objIndex,
+    int TclMacOSXSetFileAttribute(Tcl_Interp *interp, size_t objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj *attributePtr)
 }
 declare 17 macosx {

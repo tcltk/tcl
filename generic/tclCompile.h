@@ -232,13 +232,13 @@ typedef struct CompileEnv {
 				 * SetByteCodeFromAny. This pointer is not
 				 * owned by the CompileEnv and must not be
 				 * freed or changed by it. */
-    int numSrcBytes;		/* Number of bytes in source. */
+    size_t numSrcBytes1;		/* Number of bytes in source. */
     Proc *procPtr;		/* If a procedure is being compiled, a pointer
 				 * to its Proc structure; otherwise NULL. Used
 				 * to compile local variables. Set from
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
-    int numCommands;		/* Number of commands compiled. */
+    size_t numCommands1;		/* Number of commands compiled. */
     int exceptDepth;		/* Current exception range nesting level; -1
 				 * if not in any range currently. */
     int maxExceptDepth;		/* Max nesting level of exception ranges; -1
@@ -303,7 +303,7 @@ typedef struct CompileEnv {
     /* TIP #280 */
     ExtCmdLoc *extCmdMapPtr;	/* Extended command location information for
 				 * 'info frame'. */
-    int line;			/* First line of the script, based on the
+    size_t line1;			/* First line of the script, based on the
 				 * invoking context, then the line of the
 				 * command currently compiled. */
     int atCmdStart;		/* Flag to say whether an INST_START_CMD
@@ -314,7 +314,7 @@ typedef struct CompileEnv {
 				 * locations of the invisible continuation
 				 * lines in the input script, to adjust the
 				 * line counter. */
-    ssize_t *clNext;		/* If not NULL, it refers to the next slot in
+    size_t *clNext;		/* If not NULL, it refers to the next slot in
 				 * clLoc to check for an invisible
 				 * continuation line. */
 } CompileEnv;
@@ -381,9 +381,9 @@ typedef struct ByteCode {
 				 * itself. Does not include heap space for
 				 * literal Tcl objects or storage referenced
 				 * by AuxData entries. */
-    int numCommands;		/* Number of commands compiled. */
-    int numSrcBytes;		/* Number of source bytes compiled. */
-    int numCodeBytes;		/* Number of code bytes. */
+    size_t numCommands;		/* Number of commands compiled. */
+    size_t numSrcBytes;		/* Number of source bytes compiled. */
+    size_t numCodeBytes;		/* Number of code bytes. */
     int numLitObjects;		/* Number of objects in literal array. */
     int numExceptRanges;	/* Number of ExceptionRange array elems. */
     int numAuxDataItems;	/* Number of AuxData items. */
@@ -905,7 +905,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
  */
 
 MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    const CmdFrame *invoker, int word);
+			    const CmdFrame *invoker, size_t word);
 
 /*
  *----------------------------------------------------------------
@@ -969,7 +969,7 @@ MODULE_SCOPE void	TclInitCompilation(void);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
 			    size_t numBytes, const CmdFrame *invoker,
-			    int word);
+			    size_t word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 #ifdef TCL_COMPILE_STATS

@@ -551,7 +551,7 @@ declare 151 {
 	    int *modePtr)
 }
 declare 152 {
-    int Tcl_GetChannelBufferSize(Tcl_Channel chan)
+    size_t Tcl_GetChannelBufferSize(Tcl_Channel chan)
 }
 declare 153 {
     int Tcl_GetChannelHandle(Tcl_Channel chan, int direction,
@@ -613,10 +613,10 @@ declare 168 {
     Tcl_PathType Tcl_GetPathType(const char *path)
 }
 declare 169 {
-    ssize_t Tcl_Gets(Tcl_Channel chan, Tcl_DString *dsPtr)
+    size_t Tcl_Gets(Tcl_Channel chan, Tcl_DString *dsPtr)
 }
 declare 170 {
-    ssize_t Tcl_GetsObj(Tcl_Channel chan, Tcl_Obj *objPtr)
+    size_t Tcl_GetsObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 declare 171 {
     int Tcl_GetServiceMode(void)
@@ -742,7 +742,7 @@ declare 205 {
     void Tcl_QueueEvent(Tcl_Event *evPtr, Tcl_QueuePosition position)
 }
 declare 206 {
-    ssize_t Tcl_Read(Tcl_Channel chan, char *bufPtr, size_t toRead)
+    size_t Tcl_Read(Tcl_Channel chan, char *bufPtr, size_t toRead)
 }
 declare 207 {
     void Tcl_ReapDetachedProcs(void)
@@ -771,7 +771,7 @@ declare 214 {
 	    const char *pattern)
 }
 declare 215 {
-    void Tcl_RegExpRange(Tcl_RegExp regexp, int index,
+    void Tcl_RegExpRange(Tcl_RegExp regexp, size_t index,
 	    const char **startPtr, const char **endPtr)
 }
 declare 216 {
@@ -801,7 +801,7 @@ declare 223 {
 	    Tcl_InterpDeleteProc *proc, ClientData clientData)
 }
 declare 224 {
-    void Tcl_SetChannelBufferSize(Tcl_Channel chan, int sz)
+    void Tcl_SetChannelBufferSize(Tcl_Channel chan, size_t sz)
 }
 declare 225 {
     int Tcl_SetChannelOption(Tcl_Interp *interp, Tcl_Channel chan,
@@ -892,7 +892,7 @@ declare 249 {
 	    Tcl_DString *bufferPtr)
 }
 declare 250 {
-    ssize_t Tcl_Ungets(Tcl_Channel chan, const char *str, size_t len, int atHead)
+    size_t Tcl_Ungets(Tcl_Channel chan, const char *str, size_t len, int atHead)
 }
 declare 251 {
     void Tcl_UnlinkVar(Tcl_Interp *interp, const char *varName)
@@ -940,7 +940,7 @@ declare 262 {
 	    ClientData prevClientData)
 }
 declare 263 {
-    ssize_t Tcl_Write(Tcl_Channel chan, const char *s, size_t slen)
+    size_t Tcl_Write(Tcl_Channel chan, const char *s, size_t slen)
 }
 declare 264 {
     void Tcl_WrongNumArgs(Tcl_Interp *interp, size_t objc,
@@ -1101,7 +1101,7 @@ declare 303 {
 }
 declare 304 {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    const void *tablePtr, int offset, const char *msg, int flags,
+	    const void *tablePtr, size_t offset, const char *msg, int flags,
 	    int *indexPtr)
 }
 declare 305 {
@@ -1131,7 +1131,7 @@ declare 312 {
     size_t Tcl_NumUtfChars(const char *src, size_t length)
 }
 declare 313 {
-    ssize_t Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
+    size_t Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
 	    size_t charsToRead, int appendFlag)
 }
 declare 314 {
@@ -1213,10 +1213,10 @@ declare 337 {
     int Tcl_UtfToUpper(char *src)
 }
 declare 338 {
-    ssize_t Tcl_WriteChars(Tcl_Channel chan, const char *src, size_t srcLen)
+    size_t Tcl_WriteChars(Tcl_Channel chan, const char *src, size_t srcLen)
 }
 declare 339 {
-    ssize_t Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
+    size_t Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 declare 340 {
     char *Tcl_GetString(Tcl_Obj *objPtr)
@@ -1344,7 +1344,7 @@ declare 375 {
 }
 declare 376 {
     int Tcl_RegExpExecObj(Tcl_Interp *interp, Tcl_RegExp regexp,
-	    Tcl_Obj *textObj, int offset, int nmatches, int flags)
+	    Tcl_Obj *textObj, size_t offset, int nmatches, int flags)
 }
 declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
@@ -1405,10 +1405,10 @@ declare 393 {
 
 # Introduced in 8.3.2
 declare 394 {
-    ssize_t Tcl_ReadRaw(Tcl_Channel chan, char *dst, size_t bytesToRead)
+    size_t Tcl_ReadRaw(Tcl_Channel chan, char *dst, size_t bytesToRead)
 }
 declare 395 {
-    ssize_t Tcl_WriteRaw(Tcl_Channel chan, const char *src, size_t srcLen)
+    size_t Tcl_WriteRaw(Tcl_Channel chan, const char *src, size_t srcLen)
 }
 declare 396 {
     Tcl_Channel Tcl_GetTopChannel(Tcl_Channel chan)
@@ -1619,11 +1619,11 @@ declare 450 {
 }
 declare 451 {
     int Tcl_FSFileAttrsGet(Tcl_Interp *interp,
-	    int index, Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
+	    size_t index, Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
 }
 declare 452 {
     int Tcl_FSFileAttrsSet(Tcl_Interp *interp,
-	    int index, Tcl_Obj *pathPtr, Tcl_Obj *objPtr)
+	    size_t index, Tcl_Obj *pathPtr, Tcl_Obj *objPtr)
 }
 declare 453 {
     const char *const *Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr,
@@ -1649,7 +1649,7 @@ declare 459 {
     int Tcl_FSConvertToPathType(Tcl_Interp *interp, Tcl_Obj *pathPtr)
 }
 declare 460 {
-    Tcl_Obj *Tcl_FSJoinPath(Tcl_Obj *listObj, int elements)
+    Tcl_Obj *Tcl_FSJoinPath(Tcl_Obj *listObj, size_t elements)
 }
 declare 461 {
     Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr)
@@ -2255,7 +2255,7 @@ declare 610 {
 }
 declare 611 {
     int Tcl_ZlibInflate(Tcl_Interp *interp, int format, Tcl_Obj *data,
-	    int buffersize, Tcl_Obj *gzipHeaderDictObj)
+	    size_t buffersize, Tcl_Obj *gzipHeaderDictObj)
 }
 declare 612 {
     unsigned int Tcl_ZlibCRC32(unsigned int crc, const unsigned char *buf,
@@ -2379,7 +2379,7 @@ declare 1 macosx {
 # Public functions that are not accessible via the stubs table.
 
 export {
-    void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)
+    void Tcl_Main(size_t argc, char **argv, Tcl_AppInitProc *appInitProc)
 }
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,
