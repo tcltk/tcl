@@ -515,7 +515,7 @@ declare 142 {
 declare 143 {
     void Tcl_Finalize(void)
 }
-# Removed in 9.0:
+# Removed (from stubtable only) in 9.0:
 #declare 144 {
 #    void Tcl_FindExecutable(const char *argv0)
 #}
@@ -1217,12 +1217,14 @@ declare 339 {
 declare 340 {
     char *Tcl_GetString(Tcl_Obj *objPtr)
 }
-declare 341 {
-    const char *Tcl_GetDefaultEncodingDir(void)
-}
-declare 342 {
-    void Tcl_SetDefaultEncodingDir(const char *path)
-}
+# Removed in 9.0
+#declare 341 {
+#    const char *Tcl_GetDefaultEncodingDir(void)
+#}
+# Removed in 9.0
+#declare 342 {
+#    void Tcl_SetDefaultEncodingDir(const char *path)
+#}
 declare 343 {
     void Tcl_AlertNotifier(ClientData clientData)
 }
