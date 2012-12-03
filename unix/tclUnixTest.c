@@ -67,10 +67,10 @@ static Tcl_CmdProc TestchmodCmd;
 static Tcl_CmdProc TestfilehandlerCmd;
 static Tcl_CmdProc TestfilewaitCmd;
 static Tcl_CmdProc TestfindexecutableCmd;
-static Tcl_CmdProc TestgetdefencdirCmd;
+static Tcl_ObjCmdProc TestgetdefencdirCmd;
 static Tcl_CmdProc TestgetopenfileCmd;
 static Tcl_CmdProc TestgotsigCmd;
-static Tcl_CmdProc TestsetdefencdirCmd;
+static Tcl_ObjCmdProc TestsetdefencdirCmd;
 static Tcl_FileProc TestFileHandlerProc;
 static void AlarmHandler(int signum);
 
@@ -105,9 +105,9 @@ TclplatformtestInit(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
 	    NULL, NULL);
-    Tcl_CreateCommand(interp, "testgetdefenc", TestgetdefencdirCmd,
+    Tcl_CreateObjCommand(interp, "testgetdefenc", TestgetdefencdirCmd,
 	    NULL, NULL);
-    Tcl_CreateCommand(interp, "testsetdefenc", TestsetdefencdirCmd,
+    Tcl_CreateObjCommand(interp, "testsetdefenc", TestsetdefencdirCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testalarm", TestalarmCmd,
 	    NULL, NULL);
@@ -514,16 +514,22 @@ static int
 TestsetdefencdirCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)		/* Argument strings. */
 {
-    if (argc != 2) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" defaultDir\"", NULL);
+    Tcl_Obj *searchPath;
+
+    if (objc != 2) {
+    	Tcl_WrongNumArgs(interp, 1, objv, "defaultDir");
         return TCL_ERROR;
     }
 
-    Tcl_SetDefaultEncodingDir(argv[1]);
+    searchPath = Tcl_GetEncodingSearchPath();
+
+    searchPath = Tcl_DuplicateObj(searchPath);
+    Tcl_ListObjReplace(NULL, searchPath, 0, 0, 1, &objv[1]);
+    Tcl_SetEncodingSearchPath(searchPath);
+
     return TCL_OK;
 }
 
@@ -548,15 +554,25 @@ static int
 TestgetdefencdirCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)		/* Argument strings. */
 {
-    if (argc != 1) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], NULL);
-        return TCL_ERROR;
+    int numDirs;
+    Tcl_Obj *first, *searchPath;
+
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
     }
 
-    Tcl_AppendResult(interp, Tcl_GetDefaultEncodingDir(), NULL);
+    searchPath = Tcl_GetEncodingSearchPath();
+    Tcl_ListObjLength(interp, searchPath, &numDirs);
+    if (numDirs == 0) {
+       return TCL_ERROR;
+    }
+    Tcl_ListObjIndex(NULL, searchPath, 0, &first);
+
+    Tcl_SetObjResult(interp, first);
     return TCL_OK;
 }
 

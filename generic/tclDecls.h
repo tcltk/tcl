@@ -964,10 +964,8 @@ TCLAPI int		Tcl_WriteChars(Tcl_Channel chan, const char *src,
 TCLAPI int		Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr);
 /* 340 */
 TCLAPI char *		Tcl_GetString(Tcl_Obj *objPtr);
-/* 341 */
-TCLAPI const char *	Tcl_GetDefaultEncodingDir(void);
-/* 342 */
-TCLAPI void		Tcl_SetDefaultEncodingDir(const char *path);
+/* Slot 341 is reserved */
+/* Slot 342 is reserved */
 /* 343 */
 TCLAPI void		Tcl_AlertNotifier(ClientData clientData);
 /* 344 */
@@ -2146,8 +2144,8 @@ typedef struct TclStubs {
     int (*tcl_WriteChars) (Tcl_Channel chan, const char *src, int srcLen); /* 338 */
     int (*tcl_WriteObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 339 */
     char * (*tcl_GetString) (Tcl_Obj *objPtr); /* 340 */
-    const char * (*tcl_GetDefaultEncodingDir) (void); /* 341 */
-    void (*tcl_SetDefaultEncodingDir) (const char *path); /* 342 */
+    void (*reserved341)(void);
+    void (*reserved342)(void);
     void (*tcl_AlertNotifier) (ClientData clientData); /* 343 */
     void (*tcl_ServiceModeHook) (int mode); /* 344 */
     int (*tcl_UniCharIsAlnum) (int ch); /* 345 */
@@ -3142,10 +3140,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_WriteObj) /* 339 */
 #define Tcl_GetString \
 	(tclStubsPtr->tcl_GetString) /* 340 */
-#define Tcl_GetDefaultEncodingDir \
-	(tclStubsPtr->tcl_GetDefaultEncodingDir) /* 341 */
-#define Tcl_SetDefaultEncodingDir \
-	(tclStubsPtr->tcl_SetDefaultEncodingDir) /* 342 */
+/* Slot 341 is reserved */
+/* Slot 342 is reserved */
 #define Tcl_AlertNotifier \
 	(tclStubsPtr->tcl_AlertNotifier) /* 343 */
 #define Tcl_ServiceModeHook \
