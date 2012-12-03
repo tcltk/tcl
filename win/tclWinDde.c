@@ -145,7 +145,7 @@ Dde_Init(
 
     Tcl_CreateObjCommand(interp, "dde", DdeObjCmd, NULL, NULL);
     Tcl_CreateExitHandler(DdeExitProc, NULL);
-    return Tcl_PkgProvide(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION);
+    return Tcl_PkgProvideEx(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION, NULL);
 }
 
 /*
@@ -1205,16 +1205,16 @@ DdeObjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], ddeCommands, "command", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], ddeCommands, sizeof(char *),
+	    "command", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     switch ((enum DdeSubcommands) index) {
     case DDE_SERVERNAME:
 	for (i = 2; i < objc; i++) {
-	    if (Tcl_GetIndexFromObj(interp, objv[i], ddeSrvOptions,
-		    "option", 0, &argIndex) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], ddeSrvOptions,
+		    sizeof(char *), "option", 0, &argIndex) != TCL_OK) {
 		/*
 		 * If it is the last argument, it might be a server name
 		 * instead of a bad argument.
@@ -1260,8 +1260,8 @@ DdeObjCmd(
 	    firstArg = 2;
 	    break;
 	} else if (objc == 6) {
-	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeExecOptions, "option", 0,
-		    &argIndex) == TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(NULL, objv[2], ddeExecOptions,
+		    sizeof(char *), "option", 0, &argIndex) == TCL_OK) {
 		flags |= DDE_FLAG_ASYNC;
 		firstArg = 3;
 		break;
@@ -1285,8 +1285,8 @@ DdeObjCmd(
 	    break;
 	} else if (objc == 6) {
 	    int dummy;
-	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeReqOptions, "option", 0,
-		    &dummy) == TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(NULL, objv[2], ddeReqOptions,
+		    sizeof(char *), "option", 0, &dummy) == TCL_OK) {
 		flags |= DDE_FLAG_BINARY;
 		firstArg = 3;
 		break;
@@ -1314,8 +1314,8 @@ DdeObjCmd(
 	    return TCL_ERROR;
 	} else {
 	    firstArg = 2;
-	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeExecOptions, "option",
-		    0, &argIndex) == TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(NULL, objv[2], ddeExecOptions,
+		    sizeof(char *), "option", 0, &argIndex) == TCL_OK) {
 		if (objc < 5) {
 		    goto wrongDdeEvalArgs;
 		}

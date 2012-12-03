@@ -6385,5 +6385,61 @@ extern TclStubs *tclStubsPtr;
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
+/*
+ * Deprecated Tcl functions:
+ */
+
+#undef  Tcl_PkgProvide
+#define Tcl_PkgProvide(interp, name, version) \
+	Tcl_PkgProvideEx((interp), (name), (version), NULL)
+#undef Tcl_PkgRequire
+#define Tcl_PkgRequire(interp, name, version, exact) \
+	Tcl_PkgRequireEx((interp), (name), (version), (exact), NULL);
+#undef Tcl_PkgPresent
+#define Tcl_PkgPresent(interp, name, version, exact) \
+    Tcl_PkgPresentEx((interp), (name), (version), (exact), NULL);
+#undef  Tcl_Eval
+#define Tcl_Eval(interp,command) \
+	Tcl_EvalEx((interp),(command),-1,0)
+#undef  Tcl_GlobalEval
+#define Tcl_GlobalEval(interp,command) \
+	Tcl_EvalEx((interp),(command),-1,TCL_EVAL_GLOBAL)
+#undef  Tcl_EvalObj
+#define Tcl_EvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),0)
+#undef  Tcl_GlobalEvalObj
+#define Tcl_GlobalEvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+#undef  Tcl_VarTraceInfo
+#define Tcl_VarTraceInfo(interp, varName, flags, proc, prevClientData) \
+	Tcl_VarTraceInfo2((interp), (varName), NULL, (flags), (proc), (prevClientData))
+#undef Tcl_GetVar
+#define Tcl_GetVar(interp, varName, flags) \
+	Tcl_GetVar2((interp), (varName), (NULL), (flags))
+#undef Tcl_SetVar
+#define Tcl_SetVar(interp, varName, newValue, flags) \
+	Tcl_SetVar2((interp), (varName), NULL, (newValue), (flags))
+#undef Tcl_GetChannelNames
+#define Tcl_GetChannelNames(interp) \
+	Tcl_GetChannelNamesEx((interp), NULL)
+#undef Tcl_FSEvalFile
+#define Tcl_FSEvalFile(interp, pathPtr) \
+	Tcl_FSEvalFileEx((interp), (pathPtr), NULL)
+#undef Tcl_TraceVar
+#define Tcl_TraceVar(interp, varName, flags, proc, clientData) \
+	Tcl_TraceVar2((interp), (varName), NULL, (flags), (proc), (clientData))
+#undef Tcl_UnsetVar
+#define Tcl_UnsetVar(interp, varName, flags) \
+	Tcl_UnsetVar2((interp), (varName), NULL, (flags))
+#undef Tcl_UntraceVar
+#define Tcl_UntraceVar(interp, varName, flags, proc, clientData) \
+	Tcl_UntraceVar2((interp), (varName), NULL, (flags), (proc), (clientData))
+#undef Tcl_UpVar
+#define Tcl_UpVar(interp, frameName, varName, localName, flags) \
+	Tcl_UpVar2((interp), (frameName), (varName), NULL, (localName), (flags))
+#undef Tcl_GetIndexFromObj
+#define Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr) \
+	Tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), \
+		sizeof(char *), (msg), (flags), (indexPtr))
 #endif /* _TCLDECLS */
 

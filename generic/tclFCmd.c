@@ -1073,8 +1073,8 @@ TclFileAttrsCmd(
 	    goto end;
 	}
 
-	if (Tcl_GetIndexFromObj(interp, objv[0], attributeStrings,
-		"option", 0, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[0], attributeStrings,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    goto end;
 	}
 	if (didAlloc) {
@@ -1101,8 +1101,8 @@ TclFileAttrsCmd(
 	}
 
     	for (i = 0; i < objc ; i += 2) {
-    	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
-		    "option", 0, &index) != TCL_OK) {
+    	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], attributeStrings,
+    		    sizeof(char *), "option", 0, &index) != TCL_OK) {
 		goto end;
     	    }
 	    if (didAlloc) {

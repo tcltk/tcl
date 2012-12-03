@@ -1734,6 +1734,7 @@ TclGetOpenModeEx(
  * Tcl_FSEvalFile is Tcl_FSEvalFileEx without encoding argument.
  */
 
+#undef Tcl_FSEvalFile
 int
 Tcl_FSEvalFile(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */

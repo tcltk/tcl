@@ -521,8 +521,8 @@ Tcl_UnloadObjCmd(
     };
 
     for (i = 1; i < objc; i++) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    fullFileName = Tcl_GetString(objv[i]);
 	    if (fullFileName[0] == '-') {
 		/*

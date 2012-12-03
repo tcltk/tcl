@@ -2405,22 +2405,8 @@ EXTERN void		Tcl_GetMemoryInfo _ANSI_ARGS_((Tcl_DString *dsPtr));
 
 #ifndef TCL_NO_DEPRECATED
     /*
-     * Deprecated Tcl functions:
-     */
-
-#   undef  Tcl_EvalObj
-#   define Tcl_EvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),0)
-#   undef  Tcl_GlobalEvalObj
-#   define Tcl_GlobalEvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
-#   undef  Tcl_VarTraceInfo
-#   define Tcl_VarTraceInfo(interp, varName, flags, proc, prevClientData) \
-	Tcl_VarTraceInfo2(interp, varName, NULL, flags, proc, prevClientData)
-
-    /*
      * These function have been renamed. The old names are deprecated, but we
-     * define these macros for backwards compatibilty.
+     * define these macros for backwards compatibility.
      */
 
 #   define Tcl_Ckalloc		Tcl_Alloc

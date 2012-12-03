@@ -236,7 +236,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	(ClientData)interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, (ClientData)cmd);
-    return Tcl_PkgProvide(interp, "registry", "1.2.2");
+    return Tcl_PkgProvideEx(interp, "registry", "1.2.2", NULL);
 }
 
 /*
@@ -347,8 +347,8 @@ RegistryObjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "option", 0, &index)
-	    != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], subcommands,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 

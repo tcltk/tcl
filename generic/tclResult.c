@@ -1339,8 +1339,8 @@ TclMergeReturnOptions(
 	    "ok", "error", "return", "break", "continue", NULL
 	};
 
-	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, valuePtr, returnCodes,
-		NULL, TCL_EXACT, &code)) {
+	if (TCL_ERROR == Tcl_GetIndexFromObjStruct(NULL, valuePtr, returnCodes,
+		sizeof(char *), NULL, TCL_EXACT, &code)) {
 	    /*
 	     * Value is not a legal return code.
 	     */

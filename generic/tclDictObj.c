@@ -2604,8 +2604,8 @@ DictFilterCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary filterType ...");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[2], filters, "filterType",
-	     0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[2], filters,
+	    sizeof(char *), "filterType", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 

@@ -271,9 +271,9 @@ Tcl_SourceRCFile(
 {
     Tcl_DString temp;
     CONST char *fileName;
-    Tcl_Channel errChannel;
+    Tcl_Channel chan;
 
-    fileName = Tcl_GetVar(interp, "tcl_rcFileName", TCL_GLOBAL_ONLY);
+    fileName = Tcl_GetVar2(interp, "tcl_rcFileName", NULL, TCL_GLOBAL_ONLY);
     if (fileName != NULL) {
 	Tcl_Channel c;
 	CONST char *fullName;
@@ -291,17 +291,21 @@ Tcl_SourceRCFile(
 	     * Test for the existence of the rc file before trying to read it.
 	     */
 
-	    c = Tcl_OpenFileChannel(NULL, fullName, "r", 0);
+	    Tcl_Obj *fullNameObj = Tcl_NewStringObj(fullName, -1);
+	    Tcl_IncrRefCount(fullNameObj);
+	    c = Tcl_FSOpenFileChannel(NULL, fullNameObj, "r", 0);
 	    if (c != (Tcl_Channel) NULL) {
+
 		Tcl_Close(NULL, c);
-		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
-		    errChannel = Tcl_GetStdChannel(TCL_STDERR);
-		    if (errChannel) {
-			Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
-			Tcl_WriteChars(errChannel, "\n", 1);
- 		    }
- 		}
- 	    }
+		if (Tcl_FSEvalFileEx(interp, fullNameObj, NULL) != TCL_OK) {
+		    chan = Tcl_GetStdChannel(TCL_STDERR);
+		    if (chan) {
+			Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
+			Tcl_WriteChars(chan, "\n", 1);
+		    }
+		}
+		Tcl_DecrRefCount(fullNameObj);
+	    }
 	}
 	Tcl_DStringFree(&temp);
     }

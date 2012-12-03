@@ -9703,6 +9703,7 @@ SetBlockMode(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetChannelNames
 int
 Tcl_GetChannelNames(
     Tcl_Interp *interp)		/* Interp for error reporting. */

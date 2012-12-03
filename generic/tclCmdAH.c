@@ -445,8 +445,8 @@ Tcl_EncodingObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], optionStrings,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -855,8 +855,8 @@ Tcl_FileObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], fileOptions, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], fileOptions,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1045,8 +1045,8 @@ Tcl_FileObjCmd(
 		static const char *linkTypes[] = {
 		    "-symbolic", "-hard", NULL
 		};
-		if (Tcl_GetIndexFromObj(interp, objv[2], linkTypes, "switch",
-			0, &linkAction) != TCL_OK) {
+		if (Tcl_GetIndexFromObjStruct(interp, objv[2], linkTypes,
+			sizeof(char *), "switch", 0, &linkAction) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (linkAction == 0) {

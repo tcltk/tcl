@@ -106,6 +106,7 @@ static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_PkgProvide
 int
 Tcl_PkgProvide(
     Tcl_Interp *interp,		/* Interpreter in which package is now
@@ -186,6 +187,7 @@ Tcl_PkgProvideEx(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_PkgRequire
 const char *
 Tcl_PkgRequire(
     Tcl_Interp *interp,		/* Interpreter in which package is now
@@ -651,6 +653,7 @@ PkgRequireCore(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_PkgPresent
 const char *
 Tcl_PkgPresent(
     Tcl_Interp *interp,		/* Interpreter in which package is now
@@ -765,8 +768,8 @@ Tcl_PackageObjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], pkgOptions, "option", 0,
-	    &optionIndex) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], pkgOptions,
+	    sizeof(char *), "option", 0, &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch ((enum pkgOptions) optionIndex) {
@@ -941,7 +944,7 @@ Tcl_PackageObjCmd(
 	if (CheckVersionAndConvert(interp, argv3, NULL, NULL) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	return Tcl_PkgProvide(interp, argv2, argv3);
+	return Tcl_PkgProvideEx(interp, argv2, argv3, NULL);
     case PKG_REQUIRE:
     require:
 	if (objc < 3) {
@@ -1031,8 +1034,8 @@ Tcl_PackageObjCmd(
 
 	    int newPref;
 
-	    if (Tcl_GetIndexFromObj(interp, objv[2], pkgPreferOptions,
-		    "preference", 0, &newPref) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[2], pkgPreferOptions,
+		    sizeof(char *), "preference", 0, &newPref) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 

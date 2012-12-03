@@ -85,6 +85,7 @@ typedef struct {
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetIndexFromObj
 int
 Tcl_GetIndexFromObj(
     Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
@@ -169,6 +170,11 @@ Tcl_GetIndexFromObjStruct(
     const char *const *entryPtr;
     Tcl_Obj *resultPtr;
     IndexRep *indexRep;
+
+    /* Protect against invalid offset value, such as -1 or 0. */
+    if (offset < sizeof(char *)) {
+    	offset = sizeof(char *);
+    }
 
     /*
      * See if there is a valid cached result from a previous lookup.

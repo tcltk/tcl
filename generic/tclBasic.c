@@ -4955,6 +4955,7 @@ TclArgumentGet(interp,obj,cfPtrPtr,wordPtr)
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_Eval
 int
 Tcl_Eval(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
@@ -5988,6 +5989,7 @@ Tcl_VarEval(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GlobalEval
 int
 Tcl_GlobalEval(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate command. */

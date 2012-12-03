@@ -34,6 +34,18 @@
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef Tcl_VarTraceInfo
+#undef Tcl_PkgProvide
+#undef Tcl_PkgRequire
+#undef Tcl_PkgPresent
+#undef Tcl_GetVar
+#undef Tcl_SetVar
+#undef Tcl_GetChannelNames
+#undef Tcl_FSEvalFile
+#undef Tcl_TraceVar
+#undef Tcl_UnsetVar
+#undef Tcl_UntraceVar
+#undef Tcl_UpVar
+#undef Tcl_GetIndexFromObj
 
 /*
  * Keep a record of the original Notifier procedures, created in the

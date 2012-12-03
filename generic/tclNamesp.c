@@ -2794,8 +2794,8 @@ Tcl_NamespaceObjCmd(
      * Return an index reflecting the particular subcommand.
      */
 
-    result = Tcl_GetIndexFromObj((Tcl_Interp *) interp, objv[1], subCmds,
-	    "option", /*flags*/ 0, (int *) &index);
+    result = Tcl_GetIndexFromObjStruct((Tcl_Interp *) interp, objv[1],
+	    subCmds, sizeof(char *), "option", /*flags*/ 0, (int *) &index);
     if (result != TCL_OK) {
 	return result;
     }
@@ -4531,8 +4531,8 @@ NamespaceWhichCmd(
 	 * Look for a flag controlling the lookup.
 	 */
 
-	if (Tcl_GetIndexFromObj(interp, objv[2], opts, "option", 0,
-		&lookupType) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[2], opts, sizeof(char *),
+		"option", 0, &lookupType) != TCL_OK) {
 	    /*
 	     * Preserve old style of error message!
 	     */
@@ -4790,8 +4790,8 @@ NamespaceEnsembleCmd(
 	Tcl_WrongNumArgs(interp, 2, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[2], subcommands, "subcommand", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[2], subcommands,
+	    sizeof(char *), "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -4828,8 +4828,8 @@ NamespaceEnsembleCmd(
 	 */
 
 	for (; objc>1 ; objc-=2,objv+=2 ) {
-	    if (Tcl_GetIndexFromObj(interp, objv[0], createOptions, "option",
-		    0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[0], createOptions,
+		    sizeof(char *), "option", 0, &index) != TCL_OK) {
 		if (allocatedMapFlag) {
 		    Tcl_DecrRefCount(mapObj);
 		}
@@ -4988,8 +4988,8 @@ NamespaceEnsembleCmd(
 	if (objc == 5) {
 	    Tcl_Obj *resultObj = NULL;		/* silence gcc 4 warning */
 
-	    if (Tcl_GetIndexFromObj(interp, objv[4], configOptions, "option",
-		    0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[4], configOptions,
+		    sizeof(char *), "option", 0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum EnsConfigOpts) index) {
@@ -5104,8 +5104,8 @@ NamespaceEnsembleCmd(
 	     */
 
 	    for (; objc>0 ; objc-=2,objv+=2 ) {
-		if (Tcl_GetIndexFromObj(interp, objv[0], configOptions,
-			"option", 0, &index) != TCL_OK) {
+		if (Tcl_GetIndexFromObjStruct(interp, objv[0], configOptions,
+			sizeof(char *), "option", 0, &index) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }

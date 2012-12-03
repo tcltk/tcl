@@ -576,7 +576,7 @@ Tcltest_Init(
 
     /* TIP #268: Full patchlevel instead of just major.minor */
 
-    if (Tcl_PkgProvide(interp, "Tcltest", TCL_PATCH_LEVEL) == TCL_ERROR) {
+    if (Tcl_PkgProvideEx(interp, "Tcltest", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -736,8 +736,8 @@ Tcltest_Init(
 	if (Tcl_ListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (objc && (Tcl_GetIndexFromObj(NULL, objv[0], specialOptions, NULL,
-		TCL_EXACT, &index) == TCL_OK)) {
+	if (objc && (Tcl_GetIndexFromObjStruct(NULL, objv[0], specialOptions,
+		sizeof(char *), NULL, TCL_EXACT, &index) == TCL_OK)) {
 	    switch (index) {
 	    case 0:
 		return TCL_ERROR;
