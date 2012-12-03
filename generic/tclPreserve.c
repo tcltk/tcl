@@ -10,6 +10,18 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ *
+ *
+ * === NOVEM EXPERIMENT ===
+ *   Replace the dynamic var-sized array of References with a
+ *   hashtable. Faster lookup, no linear search.
+ *
+ *   Current disadvantage - Possible higher memory churn as individual
+ *   Reference structures get allocated and freed.
+ *
+ *   Could be fixable by using a list-based stack of free/reusable Reference
+ *   structures.
+ * === NOVEM EXPERIMENT ===
  */
 
 #include "tclInt.h"
@@ -36,14 +48,9 @@ typedef struct {
  * These variables are protected by "preserveMutex".
  */
 
-static Reference *refArray = NULL;	/* First in array of references. */
-static int spaceAvl = 0;	/* Total number of structures available at
-				 * *firstRefPtr. */
-static int inUse = 0;		/* Count of structures currently in use in
-				 * refArray. */
-TCL_DECLARE_MUTEX(preserveMutex)/* To protect the above statics */
+static Tcl_HashTable* refTable;
 
-#define INITIAL_SIZE	2	/* Initial number of reference slots to make */
+TCL_DECLARE_MUTEX(preserveMutex)/* To protect the above statics */
 
 /*
  * The following data structure is used to keep track of whether an arbitrary
@@ -88,11 +95,19 @@ void
 TclFinalizePreserve(void)
 {
     Tcl_MutexLock(&preserveMutex);
-    if (spaceAvl != 0) {
-	ckfree(refArray);
-	refArray = NULL;
-	inUse = 0;
-	spaceAvl = 0;
+    if (refTable) {
+	for (;;) {
+	    Reference* refPtr;
+	    Tcl_HashSearch s;
+	    Tcl_HashEntry* hEntry;
+	    hEntry = Tcl_FirstHashEntry (refTable, &s);
+	    if (!hEntry) break;
+	    refPtr = Tcl_GetHashValue (hEntry);
+	    Tcl_DeleteHashEntry (hEntry);
+	    ckfree (refPtr);
+	}
+	Tcl_DeleteHashTable (refTable);
+	refTable = 0;
     }
     Tcl_MutexUnlock(&preserveMutex);
 }
@@ -121,7 +136,8 @@ Tcl_Preserve(
     ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
-    int i;
+    int isnew;
+    Tcl_HashEntry* hEntry;
 
     /*
      * See if there is already a reference for this pointer. If so, just
@@ -129,34 +145,34 @@ Tcl_Preserve(
      */
 
     Tcl_MutexLock(&preserveMutex);
-    for (i=0, refPtr=refArray ; i<inUse ; i++, refPtr++) {
-	if (refPtr->clientData == clientData) {
-	    refPtr->refCount++;
-	    Tcl_MutexUnlock(&preserveMutex);
-	    return;
-	}
+
+    if (!refTable) {
+	refTable = ckalloc (sizeof (Tcl_HashTable));
+	Tcl_InitHashTable (refTable, TCL_ONE_WORD_KEYS);
     }
 
-    /*
-     * Make a reference array if it doesn't already exist, or make it bigger
-     * if it is full.
-     */
+    hEntry = Tcl_FindHashEntry (refTable, clientData);
+    if (hEntry) {
+	refPtr = Tcl_GetHashValue (hEntry);
+	refPtr->refCount++;
 
-    if (inUse == spaceAvl) {
-	spaceAvl = spaceAvl ? 2*spaceAvl : INITIAL_SIZE;
-	refArray = ckrealloc(refArray, spaceAvl * sizeof(Reference));
+	Tcl_MutexUnlock(&preserveMutex);
+	return;
     }
 
     /*
      * Make a new entry for the new reference.
      */
 
-    refPtr = &refArray[inUse];
+    refPtr = ckalloc (sizeof (Reference));
     refPtr->clientData = clientData;
     refPtr->refCount = 1;
     refPtr->mustFree = 0;
     refPtr->freeProc = TCL_STATIC;
-    inUse += 1;
+
+    hEntry = Tcl_CreateHashEntry (refTable, clientData, &isnew);
+    Tcl_SetHashValue (hEntry, refPtr);
+
     Tcl_MutexUnlock(&preserveMutex);
 }
 
@@ -184,60 +200,64 @@ Tcl_Release(
     ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
-    int i;
+    Tcl_HashEntry* hEntry;
+    int mustFree;
+    Tcl_FreeProc *freeProc;
 
     Tcl_MutexLock(&preserveMutex);
-    for (i=0, refPtr=refArray ; i<inUse ; i++, refPtr++) {
-	int mustFree;
-	Tcl_FreeProc *freeProc;
 
-	if (refPtr->clientData != clientData) {
-	    continue;
-	}
+    if (!refTable) {
+	refTable = ckalloc (sizeof (Tcl_HashTable));
+	Tcl_InitHashTable (refTable, TCL_ONE_WORD_KEYS);
+    }
 
-	if (--refPtr->refCount != 0) {
-	    Tcl_MutexUnlock(&preserveMutex);
-	    return;
-	}
-
-	/*
-	 * Must remove information from the slot before calling freeProc to
-	 * avoid reentrancy problems if the freeProc calls Tcl_Preserve on the
-	 * same clientData. Copy down the last reference in the array to
-	 * overwrite the current slot.
-	 */
-
-	freeProc = refPtr->freeProc;
-	mustFree = refPtr->mustFree;
-	inUse--;
-	if (i < inUse) {
-	    refArray[i] = refArray[inUse];
-	}
-
-	/*
-	 * Now committed to disposing the data. But first, we've patched up
-	 * all the global data structures so we should release the mutex now.
-	 * Only then should we dabble around with potentially-slow memory
-	 * managers...
-	 */
-
+    hEntry = Tcl_FindHashEntry (refTable, clientData);
+    if (!hEntry) {
 	Tcl_MutexUnlock(&preserveMutex);
-	if (mustFree) {
-	    if (freeProc == TCL_DYNAMIC) {
-		ckfree(clientData);
-	    } else {
-		freeProc(clientData);
-	    }
-	}
+
+	/*
+	 * Reference not found. This is a bug in the caller.
+	 */
+
+	Tcl_Panic("Tcl_Release couldn't find reference for %p", clientData);
+    }
+
+    refPtr = Tcl_GetHashValue (hEntry);
+
+    if (--refPtr->refCount != 0) {
+	Tcl_MutexUnlock(&preserveMutex);
 	return;
     }
-    Tcl_MutexUnlock(&preserveMutex);
 
     /*
-     * Reference not found. This is a bug in the caller.
+     * Must remove information from the slot before calling freeProc to
+     * avoid reentrancy problems if the freeProc calls Tcl_Preserve on the
+     * same clientData.
      */
 
-    Tcl_Panic("Tcl_Release couldn't find reference for %p", clientData);
+    freeProc = refPtr->freeProc;
+    mustFree = refPtr->mustFree;
+
+    Tcl_DeleteHashEntry (hEntry);
+    ckfree (refPtr);
+
+    /*
+     * Now committed to disposing the data. But first, we've patched up
+     * all the global data structures so we should release the mutex now.
+     * Only then should we dabble around with potentially-slow memory
+     * managers...
+     */
+
+    Tcl_MutexUnlock(&preserveMutex);
+
+    if (mustFree) {
+	if (freeProc == TCL_DYNAMIC) {
+	    ckfree(clientData);
+	} else {
+	    freeProc(clientData);
+	}
+    }
+    return;
 }
 
 /*
@@ -264,7 +284,6 @@ Tcl_EventuallyFree(
     Tcl_FreeProc *freeProc)	/* Function to actually do free. */
 {
     Reference *refPtr;
-    int i;
 
     /*
      * See if there is a reference for this pointer. If so, set its "mustFree"
@@ -272,18 +291,25 @@ Tcl_EventuallyFree(
      */
 
     Tcl_MutexLock(&preserveMutex);
-    for (i = 0, refPtr = refArray; i < inUse; i++, refPtr++) {
-	if (refPtr->clientData != clientData) {
-	    continue;
+
+    if (refTable) {
+	Tcl_HashEntry* hEntry;
+
+	hEntry = Tcl_FindHashEntry (refTable, clientData);
+	if (hEntry) {
+	    refPtr = Tcl_GetHashValue (hEntry);
+
+	    if (refPtr->mustFree) {
+		Tcl_Panic("Tcl_EventuallyFree called twice for %p", clientData);
+	    }
+	    refPtr->mustFree = 1;
+	    refPtr->freeProc = freeProc;
+
+	    Tcl_MutexUnlock(&preserveMutex);
+	    return;
 	}
-	if (refPtr->mustFree) {
-	    Tcl_Panic("Tcl_EventuallyFree called twice for %p", clientData);
-	}
-	refPtr->mustFree = 1;
-	refPtr->freeProc = freeProc;
-	Tcl_MutexUnlock(&preserveMutex);
-	return;
     }
+
     Tcl_MutexUnlock(&preserveMutex);
 
     /*
