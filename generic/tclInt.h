@@ -1811,8 +1811,8 @@ typedef struct Interp {
      * that one undisturbed.
      */
 
-    char *legacyResult;
-    Tcl_FreeProc *legacyFreeProc;
+    const char *legacyResult;
+    void (*legacyFreeProc) (void);
     int errorLine;		/* When TCL_ERROR is returned, this gives the
 				 * line number in the command where the error
 				 * occurred (1 means first line). */

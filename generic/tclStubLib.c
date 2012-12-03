@@ -47,8 +47,8 @@ HasStubSupport(
 	return iPtr->stubTable;
     }
     iPtr->legacyResult
-	    = (char *) "interpreter uses an incompatible stubs mechanism";
-    iPtr->legacyFreeProc = TCL_STATIC;
+	    = "interpreter uses an incompatible stubs mechanism";
+    iPtr->legacyFreeProc = 0; /* TCL_STATIC */
     return NULL;
 }
 
