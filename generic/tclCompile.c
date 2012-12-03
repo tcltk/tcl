@@ -92,8 +92,6 @@ InstructionDesc const tclInstructionTable[] = {
 
     {"incrScalar",	  5,   0,          1,	{OPERAND_LVT4}},
 	/* Incr scalar at index op1 in frame; incr amount is stktop */
-    {"incrScalarStk",	  1,   -1,         0,	{OPERAND_NONE}},
-	/* Incr scalar; incr amount is stktop, scalar's name is stknext */
     {"incrArray",	  5,   -1,         1,	{OPERAND_LVT4}},
 	/* Incr array elem; arr at slot op1, amount is top then elem */
     {"incrArrayStk",	  1,   -2,         0,	{OPERAND_NONE}},
@@ -102,8 +100,6 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Incr general variable; amount is stktop then unparsed var name */
     {"incrScalarImm",	  6,   +1,         2,	{OPERAND_LVT4, OPERAND_INT1}},
 	/* Incr scalar at slot op1 <= 255; amount is 2nd operand byte */
-    {"incrScalarStkImm",  2,   0,          1,	{OPERAND_INT1}},
-	/* Incr scalar; scalar name is stktop; incr amount is op1 */
     {"incrArrayImm",	  6,   0,          2,	{OPERAND_LVT4, OPERAND_INT1}},
 	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
 	 * amount is 2nd operand byte */

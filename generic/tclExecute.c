@@ -3168,7 +3168,6 @@ TEBCresume(
 	long increment;
 
     case INST_INCR_ARRAY_STK:
-    case INST_INCR_SCALAR_STK:
     case INST_INCR_STK:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	incrPtr = POP_OBJECT();
@@ -3176,7 +3175,6 @@ TEBCresume(
 	goto doIncrStk;
 
     case INST_INCR_ARRAY_STK_IMM:
-    case INST_INCR_SCALAR_STK_IMM:
     case INST_INCR_STK_IMM:
 	increment = TclGetInt1AtPtr(pc+1);
 	TclNewIntObj(incrPtr, increment);
@@ -5335,11 +5333,11 @@ TEBCresume(
 	    wideResultOfArithmetic:
 		TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 		if (Tcl_IsShared(valuePtr)) {
-		    TclNewWideIntObj(objResultPtr, wResult);
+		    objResultPtr = Tcl_NewWideIntObj(wResult);
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
 		}
-		TclSetWideIntObj(valuePtr, wResult);
+		Tcl_SetWideIntObj(valuePtr, wResult);
 		TRACE(("%s\n", O2S(valuePtr)));
 		NEXT_INST_F(1, 1, 0);
 

@@ -3666,9 +3666,9 @@ TclCompileIncrCmd(
 	    }
 	} else {
 	    if (haveImmValue) {
-		TclEmitInstInt1(INST_INCR_SCALAR_STK_IMM, immValue, envPtr);
+		TclEmitInstInt1(INST_INCR_STK_IMM, immValue,	envPtr);
 	    } else {
-		TclEmitOpcode(	INST_INCR_SCALAR_STK,		envPtr);
+		TclEmitOpcode(	INST_INCR_STK,			envPtr);
 	    }
 	}
     } else {			/* Simple array variable. */
