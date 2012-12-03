@@ -50,6 +50,9 @@
 #   define TclSockMinimumBuffersOld 0
 #   define Tcl_SeekOld 0
 #   define Tcl_TellOld 0
+#   define Tcl_Backslash 0
+#   define Tcl_GetDefaultEncodingDir 0
+#   define Tcl_SetDefaultEncodingDir 0
 #else
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */

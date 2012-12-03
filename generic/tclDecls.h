@@ -3810,6 +3810,9 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_CreateMathFunc
 #   undef Tcl_GetMathFuncInfo
 #   undef Tcl_ListMathFuncs
+#   undef Tcl_Backslash
+#	undef Tcl_GetDefaultEncodingDir
+#   undef Tcl_SetDefaultEncodingDir
 #endif
 
 #endif /* _TCLDECLS */

@@ -1571,7 +1571,7 @@ Tcl_Merge(
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_DEPRECATED
 char
 Tcl_Backslash(
     const char *src,		/* Points to the backslash character of a
@@ -1586,6 +1586,7 @@ Tcl_Backslash(
     TclUtfToUniChar(buf, &ch);
     return (char) ch;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

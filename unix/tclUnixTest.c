@@ -67,10 +67,8 @@ static Tcl_CmdProc TestchmodCmd;
 static Tcl_CmdProc TestfilehandlerCmd;
 static Tcl_CmdProc TestfilewaitCmd;
 static Tcl_CmdProc TestfindexecutableCmd;
-static Tcl_CmdProc TestgetdefencdirCmd;
 static Tcl_CmdProc TestgetopenfileCmd;
 static Tcl_CmdProc TestgotsigCmd;
-static Tcl_CmdProc TestsetdefencdirCmd;
 static Tcl_FileProc TestFileHandlerProc;
 static void AlarmHandler(int signum);
 
@@ -104,10 +102,6 @@ TclplatformtestInit(
     Tcl_CreateCommand(interp, "testfindexecutable", TestfindexecutableCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
-	    NULL, NULL);
-    Tcl_CreateCommand(interp, "testgetdefenc", TestgetdefencdirCmd,
-	    NULL, NULL);
-    Tcl_CreateCommand(interp, "testsetdefenc", TestsetdefencdirCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testalarm", TestalarmCmd,
 	    NULL, NULL);
@@ -490,73 +484,6 @@ TestgetopenfileCmd(
 		"Tcl_GetOpenFile succeeded but FILE * NULL!", NULL);
         return TCL_ERROR;
     }
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestsetdefencdirCmd --
- *
- *	This function implements the "testsetdefenc" command. It is used to
- *	test Tcl_SetDefaultEncodingDir().
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestsetdefencdirCmd(
-    ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
-{
-    if (argc != 2) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" defaultDir\"", NULL);
-        return TCL_ERROR;
-    }
-
-    Tcl_SetDefaultEncodingDir(argv[1]);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestgetdefencdirCmd --
- *
- *	This function implements the "testgetdefenc" command. It is used to
- *	test Tcl_GetDefaultEncodingDir().
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestgetdefencdirCmd(
-    ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
-{
-    if (argc != 1) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], NULL);
-        return TCL_ERROR;
-    }
-
-    Tcl_AppendResult(interp, Tcl_GetDefaultEncodingDir(), NULL);
     return TCL_OK;
 }
 

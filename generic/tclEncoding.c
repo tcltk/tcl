@@ -686,7 +686,7 @@ TclFinalizeEncodingSubsystem(void)
  *
  *-------------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_DEPRECATED
 const char *
 Tcl_GetDefaultEncodingDir(void)
 {
@@ -701,6 +701,7 @@ Tcl_GetDefaultEncodingDir(void)
 
     return Tcl_GetString(first);
 }
+#endif /*  TCL_NO_DEPRECATED */
 
 /*
  *-------------------------------------------------------------------------
@@ -719,6 +720,7 @@ Tcl_GetDefaultEncodingDir(void)
  *-------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_SetDefaultEncodingDir(
     const char *path)
@@ -730,6 +732,7 @@ Tcl_SetDefaultEncodingDir(
     Tcl_ListObjReplace(NULL, searchPath, 0, 0, 1, &directory);
     Tcl_SetEncodingSearchPath(searchPath);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *-------------------------------------------------------------------------
