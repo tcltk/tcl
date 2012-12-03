@@ -1493,7 +1493,8 @@ typedef struct CoroutineData {
 typedef struct ExecEnv {
     ExecStack *execStackPtr;	/* Points to the first item in the evaluation
 				 * stack on the heap. */
-    Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
+    Tcl_Obj *constants[2];	/* Pointers to constant "-1", "0" and "1"
+				 * objs. */
     struct Tcl_Interp *interp;
     struct NRE_callback *callbackPtr;
 				/* Top callback in NRE's stack. */
@@ -4498,6 +4499,19 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #define TclNewLongObj(objPtr, l) \
     TclNewIntObj((objPtr), (l))
 
+#ifndef NO_WIDE_TYPE
+#define TclNewWideIntObj(objPtr, w) \
+    do {							\
+	TclIncrObjsAllocated();					\
+	TclAllocObjStorage(objPtr);				\
+	(objPtr)->refCount = 0;					\
+	(objPtr)->bytes = NULL;					\
+	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(w);	\
+	(objPtr)->typePtr = &tclWideIntType;			\
+	TCL_DTRACE_OBJ_CREATE(objPtr);				\
+    } while (0)
+#endif /*!NO_WIDE_TYPE*/
+
 /*
  * NOTE: There is to be no such thing as a "pure" boolean.
  * See comment above TclSetBooleanObj macro above.
@@ -4532,6 +4546,11 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TclNewLongObj(objPtr, l) \
     (objPtr) = Tcl_NewLongObj(l)
+
+#ifndef NO_WIDE_TYPE
+#define TclNewWideIntObj(objPtr, w) \
+    (objPtr) = Tcl_NewWideIntObj(w)
+#endif /*!NO_WIDE_TYPE*/
 
 #define TclNewBooleanObj(objPtr, b) \
     (objPtr) = Tcl_NewBooleanObj(b)

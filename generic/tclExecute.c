@@ -3167,30 +3167,19 @@ TEBCresume(
 #endif
 	long increment;
 
-    case INST_INCR_SCALAR:
-    case INST_INCR_ARRAY:
     case INST_INCR_ARRAY_STK:
     case INST_INCR_SCALAR_STK:
     case INST_INCR_STK:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	incrPtr = POP_OBJECT();
-	switch (*pc) {
-	case INST_INCR_SCALAR:
-	    pcAdjustment = 5;
-	    goto doIncrScalar;
-	case INST_INCR_ARRAY:
-	    pcAdjustment = 5;
-	    goto doIncrArray;
-	default:
-	    pcAdjustment = 1;
-	    goto doIncrStk;
-	}
+	pcAdjustment = 1;
+	goto doIncrStk;
 
     case INST_INCR_ARRAY_STK_IMM:
     case INST_INCR_SCALAR_STK_IMM:
     case INST_INCR_STK_IMM:
 	increment = TclGetInt1AtPtr(pc+1);
-	incrPtr = Tcl_NewIntObj(increment);
+	TclNewIntObj(incrPtr, increment);
 	Tcl_IncrRefCount(incrPtr);
 	pcAdjustment = 2;
 
@@ -3223,10 +3212,15 @@ TEBCresume(
     case INST_INCR_ARRAY_IMM:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	increment = TclGetInt1AtPtr(pc+5);
-	incrPtr = Tcl_NewIntObj(increment);
+	TclNewIntObj(incrPtr, increment);
 	Tcl_IncrRefCount(incrPtr);
 	pcAdjustment = 6;
+	goto doIncrArray;
 
+    case INST_INCR_ARRAY:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	incrPtr = POP_OBJECT();
+	pcAdjustment = 5;
     doIncrArray:
 	part1Ptr = NULL;
 	part2Ptr = OBJ_AT_TOS;
@@ -3245,11 +3239,16 @@ TEBCresume(
 	}
 	goto doIncrVar;
 
+	/*
+	 * This is the most common type of INST_INCR_* as it is the one that
+	 * [incr foo] (of a local variable) is compiled into, where 'foo'
+	 * holds a small integer. Thus we take special effort to make sure
+	 * that it goes faster than many other instructions.
+	 */
+
     case INST_INCR_SCALAR_IMM:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	increment = TclGetInt1AtPtr(pc+5);
-	pcAdjustment = 6;
-	cleanup = 0;
 	varPtr = LOCAL(opnd);
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
@@ -3260,117 +3259,94 @@ TEBCresume(
 	    int type;
 
 	    objPtr = varPtr->value.objPtr;
-	    if (GetNumberFromObj(NULL, objPtr, &ptr, &type) == TCL_OK) {
-		if (type == TCL_NUMBER_LONG) {
-		    long augend = *((const long *)ptr);
-		    long sum = augend + increment;
+	    if (GetNumberFromObj(NULL, objPtr, &ptr, &type) == TCL_OK
+		    && type == TCL_NUMBER_LONG) {
+		long augend = *((const long *)ptr);
+		long sum = augend + increment;
 
-		    /*
-		     * Overflow when (augend and sum have different sign) and
-		     * (augend and increment have the same sign). This is
-		     * encapsulated in the Overflowing macro.
-		     */
+		/*
+		 * Overflow when (augend and sum have different sign) and
+		 * (augend and increment have the same sign). This is
+		 * encapsulated in the Overflowing macro.
+		 */
 
-		    if (!Overflowing(augend, increment, sum)) {
-			TRACE(("%u %ld => ", opnd, increment));
-			if (Tcl_IsShared(objPtr)) {
-			    objPtr->refCount--;	/* We know it's shared. */
-			    TclNewLongObj(objResultPtr, sum);
-			    Tcl_IncrRefCount(objResultPtr);
-			    varPtr->value.objPtr = objResultPtr;
-			} else {
-			    objResultPtr = objPtr;
-			    TclSetLongObj(objPtr, sum);
-			}
-			goto doneIncr;
-		    }
-#ifndef NO_WIDE_TYPE
-		    w = (Tcl_WideInt)augend;
-
+		if (!Overflowing(augend, increment, sum)) {
 		    TRACE(("%u %ld => ", opnd, increment));
 		    if (Tcl_IsShared(objPtr)) {
 			objPtr->refCount--;	/* We know it's shared. */
-			objResultPtr = Tcl_NewWideIntObj(w+increment);
+			TclNewLongObj(objResultPtr, sum);
 			Tcl_IncrRefCount(objResultPtr);
 			varPtr->value.objPtr = objResultPtr;
 		    } else {
 			objResultPtr = objPtr;
-
-			/*
-			 * We know the sum value is outside the long range;
-			 * use macro form that doesn't range test again.
-			 */
-
-			TclSetWideIntObj(objPtr, w+increment);
+			TclSetLongObj(objPtr, sum);
 		    }
-		    goto doneIncr;
-#endif
-		}	/* end if (type == TCL_NUMBER_LONG) */
-#ifndef NO_WIDE_TYPE
-		if (type == TCL_NUMBER_WIDE) {
-		    Tcl_WideInt sum;
+		    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+#ifndef TCL_COMPILE_DEBUG
+		    if (*(pc+6) == INST_POP) {
+			NEXT_INST_F(7, 0, 0);
+		    }
+#endif /*!TCL_COMPILE_DEBUG*/
+		    NEXT_INST_F(6, 0, 1);
+		}
 
-		    w = *((const Tcl_WideInt *) ptr);
-		    sum = w + increment;
+		/*
+		 * If adding a byte to a long won't fit but we've got a
+		 * functional wide integer type defined, we *know* that we'll
+		 * be able to fit in that. (That is, long is 32 bits and wide
+		 * is 64 bits, and our increment is only 8 bits.)
+		 */
+
+#ifndef NO_WIDE_TYPE
+		w = (Tcl_WideInt)augend;
+
+		TRACE(("%u %ld => ", opnd, increment));
+		if (Tcl_IsShared(objPtr)) {
+		    objPtr->refCount--;		/* We know it's shared. */
+		    TclNewWideIntObj(objResultPtr, w+increment);
+		    Tcl_IncrRefCount(objResultPtr);
+		    varPtr->value.objPtr = objResultPtr;
+		} else {
+		    objResultPtr = objPtr;
 
 		    /*
-		     * Check for overflow.
+		     * We know the sum value is outside the long range; use
+		     * macro form that doesn't range test again.
 		     */
 
-		    if (!Overflowing(w, increment, sum)) {
-			TRACE(("%u %ld => ", opnd, increment));
-			if (Tcl_IsShared(objPtr)) {
-			    objPtr->refCount--;	/* We know it's shared. */
-			    objResultPtr = Tcl_NewWideIntObj(sum);
-			    Tcl_IncrRefCount(objResultPtr);
-			    varPtr->value.objPtr = objResultPtr;
-			} else {
-			    objResultPtr = objPtr;
-
-			    /*
-			     * We *do not* know the sum value is outside the
-			     * long range (wide + long can yield long); use
-			     * the function call that checks range.
-			     */
-
-			    Tcl_SetWideIntObj(objPtr, sum);
-			}
-			goto doneIncr;
-		    }
+		    TclSetWideIntObj(objPtr, w+increment);
 		}
-#endif
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+#ifndef TCL_COMPILE_DEBUG
+		if (*(pc+6) == INST_POP) {
+		    NEXT_INST_F(7, 0, 0);
+		}
+#endif /*!TCL_COMPILE_DEBUG*/
+		NEXT_INST_F(6, 0, 1);
+#endif /*!NO_WIDE_TYPE*/
 	    }
-	    if (Tcl_IsShared(objPtr)) {
-		objPtr->refCount--;	/* We know it's shared */
-		objResultPtr = Tcl_DuplicateObj(objPtr);
-		Tcl_IncrRefCount(objResultPtr);
-		varPtr->value.objPtr = objResultPtr;
-	    } else {
-		objResultPtr = objPtr;
-	    }
-	    TclNewLongObj(incrPtr, increment);
-	    if (TclIncrObj(interp, objResultPtr, incrPtr) != TCL_OK) {
-		Tcl_DecrRefCount(incrPtr);
-		TRACE_APPEND(("ERROR: %.30s\n",
-			O2S(Tcl_GetObjResult(interp))));
-		goto gotError;
-	    }
-	    Tcl_DecrRefCount(incrPtr);
-	    goto doneIncr;
 	}
 
 	/*
-	 * All other cases, flow through to generic handling.
+	 * All other cases, flow through to generic handling. Note that we've
+	 * already followed the linked-var chain so we can skip that.
 	 */
 
 	TclNewLongObj(incrPtr, increment);
 	Tcl_IncrRefCount(incrPtr);
+	pcAdjustment = 6;
+	cleanup = 0;
+	goto doIncrScalar;
 
-    doIncrScalar:
+    case INST_INCR_SCALAR:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	incrPtr = POP_OBJECT();
+	pcAdjustment = 5;
 	varPtr = LOCAL(opnd);
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
+    doIncrScalar:
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
 	cleanup = 0;
@@ -3406,7 +3382,6 @@ TEBCresume(
 		goto gotError;
 	    }
 	}
-    doneIncr:
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 #ifndef TCL_COMPILE_DEBUG
 	if (*(pc+pcAdjustment) == INST_POP) {
@@ -5360,11 +5335,11 @@ TEBCresume(
 	    wideResultOfArithmetic:
 		TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 		if (Tcl_IsShared(valuePtr)) {
-		    objResultPtr = Tcl_NewWideIntObj(wResult);
+		    TclNewWideIntObj(objResultPtr, wResult);
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
 		}
-		Tcl_SetWideIntObj(valuePtr, wResult);
+		TclSetWideIntObj(valuePtr, wResult);
 		TRACE(("%s\n", O2S(valuePtr)));
 		NEXT_INST_F(1, 1, 0);
 
@@ -5970,10 +5945,10 @@ TEBCresume(
 	    if (result != TCL_OK) {
 		break;
 	    }
+	    TclNewIntObj(value2Ptr, opnd);
 	    if (valuePtr == NULL) {
-		Tcl_DictObjPut(NULL, dictPtr, OBJ_AT_TOS,Tcl_NewIntObj(opnd));
+		Tcl_DictObjPut(NULL, dictPtr, OBJ_AT_TOS, value2Ptr);
 	    } else {
-		value2Ptr = Tcl_NewIntObj(opnd);
 		Tcl_IncrRefCount(value2Ptr);
 		if (Tcl_IsShared(valuePtr)) {
 		    valuePtr = Tcl_DuplicateObj(valuePtr);
