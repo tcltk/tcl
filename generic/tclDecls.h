@@ -3731,7 +3731,7 @@ extern const TclStubs *tclStubsPtr;
 #   undef TclFSGetNativePath
 #   define Tcl_CreateInterp() (tclStubsPtr->tclCreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
-#   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
+#   define Tcl_Init(interp) (Tcl_InitStubs(interp, TCL_VERSION, 0)?tclStubsPtr->tcl_Init(interp):TCL_ERROR)
 #   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
 #   define Tcl_SetVar2(interp, part1, part2, newValue, flags) \
 	    (tclStubsPtr->tcl_SetVar2(interp, part1, part2, newValue, flags))
