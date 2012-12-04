@@ -12,6 +12,6 @@
 #define TYPE_CLOSE_BRACK	0x20
 #define TYPE_BRACE		0x40
 
-#define CHAR_TYPE(c) (charTypeTable+128)[(int)(c)]
+#define CHAR_TYPE(c) (tclCharTypeTable+128)[(int)(c)]
 
-MODULE_SCOPE const char charTypeTable[];
+MODULE_SCOPE const char tclCharTypeTable[];
