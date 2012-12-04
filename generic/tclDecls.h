@@ -294,7 +294,7 @@ TCLAPI void		Tcl_CreateEventSource(Tcl_EventSetupProc *setupProc,
 TCLAPI void		Tcl_CreateExitHandler(Tcl_ExitProc *proc,
 				ClientData clientData);
 /* 94 */
-TCLAPI Tcl_Interp *	Tcl_CreateInterp(void);
+TCLAPI Tcl_Interp *	TclCreateInterp(void);
 /* Slot 95 is reserved */
 /* 96 */
 TCLAPI Tcl_Command	Tcl_CreateObjCommand(Tcl_Interp *interp,
@@ -1889,7 +1889,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_CreateCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_CmdProc *proc, ClientData clientData, Tcl_CmdDeleteProc *deleteProc); /* 91 */
     void (*tcl_CreateEventSource) (Tcl_EventSetupProc *setupProc, Tcl_EventCheckProc *checkProc, ClientData clientData); /* 92 */
     void (*tcl_CreateExitHandler) (Tcl_ExitProc *proc, ClientData clientData); /* 93 */
-    Tcl_Interp * (*tcl_CreateInterp) (void); /* 94 */
+    Tcl_Interp * (*tclCreateInterp) (void); /* 94 */
     void (*reserved95)(void);
     Tcl_Command (*tcl_CreateObjCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc *proc, ClientData clientData, Tcl_CmdDeleteProc *deleteProc); /* 96 */
     Tcl_Interp * (*tcl_CreateSlave) (Tcl_Interp *interp, const char *slaveName, int isSafe); /* 97 */
@@ -2649,8 +2649,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_CreateEventSource) /* 92 */
 #define Tcl_CreateExitHandler \
 	(tclStubsPtr->tcl_CreateExitHandler) /* 93 */
-#define Tcl_CreateInterp \
-	(tclStubsPtr->tcl_CreateInterp) /* 94 */
+#define TclCreateInterp \
+	(tclStubsPtr->tclCreateInterp) /* 94 */
 /* Slot 95 is reserved */
 #define Tcl_CreateObjCommand \
 	(tclStubsPtr->tcl_CreateObjCommand) /* 96 */
@@ -3721,7 +3721,7 @@ extern const TclStubs *tclStubsPtr;
 /* !END!: Do not edit above this line. */
 
 #if defined(USE_TCL_STUBS)
-#   undef Tcl_CreateInterp
+#   undef TclCreateInterp
 #   undef Tcl_FindExecutable
 #   undef Tcl_GetStringResult
 #   undef Tcl_Init
@@ -3729,7 +3729,7 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_SetVar2
 #   undef Tcl_StaticPackage
 #   undef TclFSGetNativePath
-#   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
+#   define Tcl_CreateInterp() (tclStubsPtr->tclCreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
 #   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
@@ -3740,7 +3740,7 @@ extern const TclStubs *tclStubsPtr;
 #if defined(_WIN32) && defined(UNICODE)
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #   define Tcl_MainEx Tcl_MainExW
-TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
+TCLSOAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 

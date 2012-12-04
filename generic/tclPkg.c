@@ -1860,53 +1860,6 @@ RequirementSatisfied(
     ckfree(buf);
     return satisfied;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_PkgInitStubsCheck --
- *
- *	This is a replacement routine for Tcl_InitStubs() that is called
- *	from code where -DUSE_TCL_STUBS has not been enabled.
- *
- * Results:
- *	Returns the version of a conforming stubs table, or NULL, if
- *	the table version doesn't satisfy the requested requirements,
- *	according to historical practice.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-const char *
-Tcl_PkgInitStubsCheck(
-    Tcl_Interp *interp,
-    const char * version,
-    int exact)
-{
-    const char *actualVersion = Tcl_PkgPresent(interp, "Tcl", version, 0);
-
-    if (exact && actualVersion) {
-	const char *p = version;
-	int count = 0;
-
-	while (*p) {
-	    count += !isdigit(UCHAR(*p++));
-	}
-	if (count == 1) {
-	    if (0 != strncmp(version, actualVersion, strlen(version))) {
-		/* Construct error message */
-		Tcl_PkgPresent(interp, "Tcl", version, 1);
-		return NULL;
-	    }
-	} else {
-	    return Tcl_PkgPresent(interp, "Tcl", version, 1);
-	}
-    }
-    return actualVersion;
-}
 /*
  * Local Variables:
  * mode: c

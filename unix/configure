@@ -7050,12 +7050,11 @@ fi
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	BSD/OS-4.*)
-	    SHLIB_CFLAGS="-export-dynamic -fPIC"
+	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -export-dynamic"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
@@ -7155,10 +7154,9 @@ echo "$as_me: error: Please configure and make the ../win directory first." >&2;
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	Haiku*)
-	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_SUFFIX=".so"
-	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
+	    SHLIB_LD='${CC} -shared ${CFLAGS}'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-lroot"
 	    echo "$as_me:$LINENO: checking for inet_ntoa in -lnetwork" >&5
@@ -7587,10 +7585,9 @@ fi
 	    # get rid of the warnings.
 	    #CFLAGS_OPTIMIZE="${CFLAGS_OPTIMIZE} -D__NO_STRING_INLINES -D__NO_MATH_INLINES"
 
-	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
+	    SHLIB_LD='${CC} -shared ${CFLAGS}'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -7690,7 +7687,6 @@ fi
 	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS=""
 	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    if test "`uname -m`" = "alpha"; then
@@ -7705,7 +7701,6 @@ fi
 	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-mshared -ldl"
-	    LD_FLAGS="-Wl,--export-dynamic"
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -7730,7 +7725,6 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -Wl,-Bexport"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
@@ -7855,14 +7849,6 @@ rm -f conftest*
 fi
 echo "$as_me:$LINENO: result: $tcl_cv_ld_elf" >&5
 echo "${ECHO_T}$tcl_cv_ld_elf" >&6
-	    if test $tcl_cv_ld_elf = yes; then
-
-		LDFLAGS=-Wl,-export-dynamic
-
-else
-  LDFLAGS=""
-fi
-
 	    if test "${TCL_THREADS}" = "1"; then
 
 		# On OpenBSD:	Compile with -pthread
@@ -7884,7 +7870,6 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -export-dynamic"
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -7896,7 +7881,7 @@ fi
 		# The -pthread needs to go in the CFLAGS, not LIBS
 		LIBS=`echo $LIBS | sed s/-pthread//`
 		CFLAGS="$CFLAGS -pthread"
-	    	LDFLAGS="$LDFLAGS -pthread"
+		LDFLAGS="$LDFLAGS -pthread"
 
 fi
 
@@ -7917,7 +7902,6 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LDFLAGS=""
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -8565,12 +8549,12 @@ fi
 	    if test "$GCC" = yes; then
 
 	    	SHLIB_CFLAGS="-fPIC -melf"
-	    	LDFLAGS="$LDFLAGS -melf -Wl,-Bexport"
+	    	LDFLAGS="$LDFLAGS -melf"
 
 else
 
 	    	SHLIB_CFLAGS="-Kpic -belf"
-	    	LDFLAGS="$LDFLAGS -belf -Wl,-Bexport"
+	    	LDFLAGS="$LDFLAGS -belf"
 
 fi
 
@@ -8977,72 +8961,6 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    # Some UNIX_SV* systems (unixware 1.1.2 for example) have linkers
-	    # that don't grok the -Bexport option.  Test that it does.
-	    echo "$as_me:$LINENO: checking for ld accepts -Bexport flag" >&5
-echo $ECHO_N "checking for ld accepts -Bexport flag... $ECHO_C" >&6
-if test "${tcl_cv_ld_Bexport+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
-		hold_ldflags=$LDFLAGS
-		LDFLAGS="$LDFLAGS -Wl,-Bexport"
-		cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-int i;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  tcl_cv_ld_Bexport=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-tcl_cv_ld_Bexport=no
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-	        LDFLAGS=$hold_ldflags
-fi
-echo "$as_me:$LINENO: result: $tcl_cv_ld_Bexport" >&5
-echo "${ECHO_T}$tcl_cv_ld_Bexport" >&6
-	    if test $tcl_cv_ld_Bexport = yes; then
-
-		LDFLAGS="$LDFLAGS -Wl,-Bexport"
-
-fi
-
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;

@@ -14,16 +14,6 @@
 #define TCLOO_H_INCLUDED
 #include "tcl.h"
 
-#ifndef TCLOOAPI
-#   if defined(BUILD_tcl) || defined(BUILD_TclOO)
-#	define TCLOOAPI MODULE_SCOPE
-#   else
-#	define TCLOOAPI extern
-#	undef USE_TCLOO_STUBS
-#	define USE_TCLOO_STUBS 1
-#   endif
-#endif
-
 extern const char *TclOOInitializeStubs(
 	Tcl_Interp *, const char *version);
 #define Tcl_OOInitStubs(interp) TclOOInitializeStubs((interp), TCLOO_VERSION)

@@ -351,7 +351,7 @@ declare 93 {
     void Tcl_CreateExitHandler(Tcl_ExitProc *proc, ClientData clientData)
 }
 declare 94 {
-    Tcl_Interp *Tcl_CreateInterp(void)
+    Tcl_Interp *TclCreateInterp(void)
 }
 #declare 95 {
 #    void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
@@ -2383,10 +2383,6 @@ export {
 export {
     const char *TclTomMathInitializeStubs(Tcl_Interp* interp,
 	const char* version, int epoch, int revision)
-}
-export {
-    const char *Tcl_PkgInitStubsCheck(Tcl_Interp *interp, const char *version,
-	int exact)
 }
 export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)

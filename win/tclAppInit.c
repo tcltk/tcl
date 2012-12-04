@@ -13,6 +13,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef BUILD_tcl
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -146,7 +147,8 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if ((Tcl_Init)(interp) == TCL_ERROR) {
+    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL
+	    || Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -193,7 +195,7 @@ Tcl_AppInit(
      * specific startup file will be run under any conditions.
      */
 
-    (Tcl_SetVar2)(interp, "tcl_rcFileName", NULL, "~/tclshrc.tcl", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_rcFileName", NULL, "~/tclshrc.tcl", TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 

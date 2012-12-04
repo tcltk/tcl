@@ -214,10 +214,21 @@ extern "C" {
  */
 
 #ifdef BUILD_tcl
-#   define TCLAPI DLLEXPORT
+#   define TCLSOAPI DLLEXPORT
 #else
-#   define TCLAPI DLLIMPORT
+#   define TCLSOAPI DLLIMPORT
 #endif
+#ifndef TCLAPI
+#   if defined(BUILD_tcl)
+#	define TCLAPI MODULE_SCOPE
+#   else
+#	define TCLAPI extern
+#	undef USE_TCL_STUBS
+#	define USE_TCL_STUBS 1
+#   endif
+#endif
+#define TCLOOAPI TCLAPI
+
 
 /*
  * Miscellaneous declarations.
@@ -2209,13 +2220,8 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  * When not using stubs, make it a macro.
  */
 
-#ifdef USE_TCL_STUBS
 #define Tcl_InitStubs(interp, version, exact) \
     TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
-#else
-#define Tcl_InitStubs(interp, version, exact) \
-    Tcl_PkgInitStubsCheck(interp, version, exact)
-#endif
 
 /*
  * Public functions that are not accessible via the stubs table.
@@ -2224,13 +2230,12 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
-TCLAPI void		Tcl_FindExecutable(const char *argv0);
-TCLAPI void		Tcl_MainEx(int argc, char **argv,
+TCLSOAPI void		Tcl_FindExecutable(const char *argv0);
+TCLSOAPI void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
-			    const char *version, int exact);
+TCLSOAPI Tcl_Interp *Tcl_CreateInterp(void);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+TCLSOAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #endif
 
 /*

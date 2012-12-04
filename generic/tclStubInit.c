@@ -41,6 +41,7 @@
 #undef Tcl_FindExecutable
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
+#define TclCreateInterp Tcl_CreateInterp
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
@@ -728,7 +729,7 @@ const TclStubs tclStubs = {
     Tcl_CreateCommand, /* 91 */
     Tcl_CreateEventSource, /* 92 */
     Tcl_CreateExitHandler, /* 93 */
-    Tcl_CreateInterp, /* 94 */
+    TclCreateInterp, /* 94 */
     0, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
     Tcl_CreateSlave, /* 97 */

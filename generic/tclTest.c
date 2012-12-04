@@ -15,10 +15,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
-#ifndef USE_TCL_STUBS
-#   define USE_TCL_STUBS
-#endif
+#undef BUILD_tcl
 #include "tclInt.h"
 #include "tclOO.h"
 #include <math.h>

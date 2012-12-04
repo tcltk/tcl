@@ -18,8 +18,7 @@
  * including the rest of the stub functions.
  */
 
-#define USE_TCL_STUBS
-
+#undef BUILD_tcl
 #include "tclInt.h"
 
 MODULE_SCOPE const TclTomMathStubs *tclTomMathStubsPtr;

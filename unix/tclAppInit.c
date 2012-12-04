@@ -108,7 +108,8 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if ((Tcl_Init)(interp) == TCL_ERROR) {
+    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL
+	    || Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -150,9 +151,9 @@ Tcl_AppInit(
      */
 
 #ifdef DJGPP
-    (Tcl_SetVar2)(interp, "tcl_rcFileName", NULL, "~/tclsh.rc", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_rcFileName", NULL, "~/tclsh.rc", TCL_GLOBAL_ONLY);
 #else
-    (Tcl_SetVar2)(interp, "tcl_rcFileName", NULL, "~/.tclshrc", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_rcFileName", NULL, "~/.tclshrc", TCL_GLOBAL_ONLY);
 #endif
 
     return TCL_OK;
