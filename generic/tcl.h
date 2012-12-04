@@ -122,7 +122,6 @@ extern "C" {
  */
 
 #include <stdio.h>
-#include <stddef.h>
 
 /*
  *----------------------------------------------------------------------------
@@ -525,8 +524,6 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
 
-#define TCL_RESULT_SIZE		200
-
 /*
  *----------------------------------------------------------------------------
  * Flags to control what substitutions are performed by Tcl_SubstObj():
@@ -702,13 +699,7 @@ int		Tcl_IsShared(Tcl_Obj *objPtr);
  */
 
 typedef struct Tcl_SavedResult {
-    char *result;
-    Tcl_FreeProc *freeProc;
     Tcl_Obj *objResultPtr;
-    char *appendResult;
-    int appendAvl;
-    int appendUsed;
-    char resultSpace[TCL_RESULT_SIZE+1];
 } Tcl_SavedResult;
 
 /*
@@ -2200,7 +2191,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) (0xFCA3BACB + sizeof(size_t)))
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2210,7 +2201,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  */
 
 const char *		TclInitStubs(Tcl_Interp *interp, const char *version,
-			    int exact, int magic);
+			    int exact, const char *tclversion, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
@@ -2220,7 +2211,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 #ifdef USE_TCL_STUBS
 #define Tcl_InitStubs(interp, version, exact) \
-    TclInitStubs(interp, version, exact, TCL_STUB_MAGIC)
+    TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
 #else
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)

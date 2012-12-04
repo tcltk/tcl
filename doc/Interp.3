@@ -33,19 +33,6 @@ the pointer as described below is no longer supported.  The supported
 public routines \fBTcl_SetResult\fR, \fBTcl_GetResult\fR,
 \fBTcl_SetErrorLine\fR, \fBTcl_GetErrorLine\fR must be used instead.
 .PP
-For legacy programs and extensions no longer being maintained, compiles
-against the Tcl 8.6 header files are only possible with the compiler
-directives
-.CS
-#define USE_INTERP_RESULT
-.CE
-and/or
-.CS
-#define USE_INTERP_ERRORLINE
-.CE
-depending on which fields of the \fBTcl_Interp\fR struct are accessed.
-These directives may be embedded in code or supplied via compiler options.
-.PP
 The \fIresult\fR and \fIfreeProc\fR fields are used to return
 results or error messages from commands.
 This information is returned by command procedures back to \fBTcl_Eval\fR,
