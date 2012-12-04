@@ -160,9 +160,9 @@ Tcl_AppInit(
      */
 
 #ifdef DJGPP
-    Tcl_SetVar(interp, "tcl_rcFileName", "~/tclsh.rc", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL, Tcl_NewStringObj("~/tclsh.rc", -1), TCL_GLOBAL_ONLY);
 #else
-    Tcl_SetVar(interp, "tcl_rcFileName", "~/.tclshrc", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL, Tcl_NewStringObj("~/.tclshrc", -1), TCL_GLOBAL_ONLY);
 #endif
 
     return TCL_OK;

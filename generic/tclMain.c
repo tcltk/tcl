@@ -270,16 +270,16 @@ Tcl_SourceRCFile(
     Tcl_Interp *interp)		/* Interpreter to source rc file into. */
 {
     Tcl_DString temp;
-    CONST char *fileName;
+    Tcl_Obj *fileName;
     Tcl_Channel chan;
 
-    fileName = Tcl_GetVar2(interp, "tcl_rcFileName", NULL, TCL_GLOBAL_ONLY);
+    fileName = Tcl_GetVar2Ex(interp, "tcl_rcFileName", NULL, TCL_GLOBAL_ONLY);
     if (fileName != NULL) {
 	Tcl_Channel c;
 	CONST char *fullName;
 
 	Tcl_DStringInit(&temp);
-	fullName = Tcl_TranslateFileName(interp, fileName, &temp);
+	fullName = Tcl_TranslateFileName(interp, Tcl_GetString(fileName), &temp);
 	if (fullName == NULL) {
 	    /*
 	     * Couldn't translate the file name (e.g. it referred to a bogus
@@ -387,7 +387,7 @@ Tcl_Main(
 	path = Tcl_NewStringObj(Tcl_DStringValue(&appName), -1);
 	Tcl_SetStartupScript(path, encodingName);
     }
-    Tcl_SetVar(interp, "argv0", Tcl_DStringValue(&appName), TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "argv0", NULL, Tcl_NewStringObj(Tcl_DStringValue(&appName), -1), TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&appName);
     argc--;
     argv++;
@@ -409,7 +409,7 @@ Tcl_Main(
      */
 
     tty = isatty(0);
-    Tcl_SetVar(interp, "tcl_interactive", ((path == NULL) && tty) ? "1" : "0",
+    Tcl_SetVar2Ex(interp, "tcl_interactive", NULL, Tcl_NewIntObj((path == NULL) && tty),
 	    TCL_GLOBAL_ONLY);
 
     /*

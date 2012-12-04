@@ -782,8 +782,8 @@ Tcl_CreateInterp(void)
      */
 
     order.s = 1;
-    Tcl_SetVar2(interp, "tcl_platform", "byteOrder",
-	    ((order.c[0] == 1) ? "littleEndian" : "bigEndian"),
+    Tcl_SetVar2Ex(interp, "tcl_platform", "byteOrder",
+	    Tcl_NewStringObj((order.c[0] == 1) ? "littleEndian" : "bigEndian", -1),
 	    TCL_GLOBAL_ONLY);
 
     Tcl_SetVar2Ex(interp, "tcl_platform", "wordSize",
@@ -797,23 +797,12 @@ Tcl_CreateInterp(void)
      * Set up other variables such as tcl_version and tcl_library
      */
 
-    Tcl_SetVar(interp, "tcl_patchLevel", TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
-    Tcl_SetVar(interp, "tcl_version", TCL_VERSION, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "tcl_patchLevel", NULL, Tcl_NewStringObj(TCL_PATCH_LEVEL, -1), TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "tcl_version", NULL, Tcl_NewStringObj(TCL_VERSION, -1), TCL_GLOBAL_ONLY);
     Tcl_TraceVar2(interp, "tcl_precision", NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    TclPrecTraceProc, NULL);
     TclpSetVariables(interp);
-
-#ifdef TCL_THREADS
-    /*
-     * The existence of the "threaded" element of the tcl_platform array
-     * indicates that this particular Tcl shell has been compiled with threads
-     * turned on. Using "info exists tcl_platform(threaded)" a Tcl script can
-     * introspect on the interpreter level of thread safety.
-     */
-
-    Tcl_SetVar2(interp, "tcl_platform", "threaded", "1", TCL_GLOBAL_ONLY);
-#endif
 
     /*
      * Register Tcl's version number.
@@ -822,9 +811,7 @@ Tcl_CreateInterp(void)
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
 
-#ifdef Tcl_InitStubs
 #undef Tcl_InitStubs
-#endif
     Tcl_InitStubs(interp, TCL_VERSION, 1);
 
     if (TclTommath_Init(interp) != TCL_OK) {

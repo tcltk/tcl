@@ -3915,14 +3915,14 @@ TestregexpObjCmd(
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
 	if (objc > 2 && (cflags&REG_EXPECT) && indices) {
 	    char *varName;
-	    const char *value;
+	    Tcl_Obj *value;
 	    int start, end;
 	    char resinfo[TCL_INTEGER_SPACE * 2];
 
 	    varName = Tcl_GetString(objv[2]);
 	    TclRegExpRangeUniChar(regExpr, -1, &start, &end);
 	    sprintf(resinfo, "%d %d", start, end-1);
-	    value = Tcl_SetVar(interp, varName, resinfo, 0);
+	    value = Tcl_SetVar2Ex(interp, varName, NULL, Tcl_NewStringObj(resinfo, -1), 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", NULL);
@@ -3930,13 +3930,13 @@ TestregexpObjCmd(
 	    }
 	} else if (cflags & TCL_REG_CANMATCH) {
 	    char *varName;
-	    const char *value;
+	    Tcl_Obj *value;
 	    char resinfo[TCL_INTEGER_SPACE * 2];
 
 	    Tcl_RegExpGetInfo(regExpr, &info);
 	    varName = Tcl_GetString(objv[2]);
 	    sprintf(resinfo, "%ld", info.extendStart);
-	    value = Tcl_SetVar(interp, varName, resinfo, 0);
+	    value = Tcl_SetVar2Ex(interp, varName, NULL, Tcl_NewStringObj(resinfo, -1), 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", NULL);
@@ -4281,7 +4281,7 @@ StaticInitProc(
     Tcl_Interp *interp)		/* Interpreter in which package is supposedly
 				 * being loaded. */
 {
-    Tcl_SetVar(interp, "x", "loaded", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "x", NULL, Tcl_NewStringObj("loaded", -1), TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 
@@ -4726,7 +4726,7 @@ GetTimesCmd(
     double timePer;
     Tcl_Time start, stop;
     Tcl_Obj *objPtr, **objv;
-    const char *s;
+    Tcl_Obj *s;
     char newString[TCL_INTEGER_SPACE];
 
     /* alloc & free 100000 times */
@@ -4848,7 +4848,7 @@ GetTimesCmd(
     fprintf(stderr, "Tcl_SetVar of \"12345\" 100000 times\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	s = Tcl_SetVar(interp, "a", "12345", TCL_LEAVE_ERR_MSG);
+	s = Tcl_SetVar2Ex(interp, "a", NULL, Tcl_NewStringObj("12345", -1), TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
@@ -4862,7 +4862,7 @@ GetTimesCmd(
     fprintf(stderr, "Tcl_GetVar of a==\"12345\" 100000 times\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	s = Tcl_GetVar(interp, "a", TCL_LEAVE_ERR_MSG);
+	s = Tcl_GetVar2Ex(interp, "a", NULL, TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
@@ -4956,23 +4956,23 @@ TestsetCmd(
     const char **argv)		/* Argument strings. */
 {
     int flags = PTR2INT(data);
-    const char *value;
+    Tcl_Obj *value;
 
     if (argc == 2) {
 	Tcl_SetResult(interp, "before get", TCL_STATIC);
-	value = Tcl_GetVar2(interp, argv[1], NULL, flags);
+	value = Tcl_GetVar2Ex(interp, argv[1], NULL, flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_AppendElement(interp, value);
+	Tcl_AppendElement(interp, Tcl_GetString(value));
 	return TCL_OK;
     } else if (argc == 3) {
 	Tcl_SetResult(interp, "before set", TCL_STATIC);
-	value = Tcl_SetVar2(interp, argv[1], NULL, argv[2], flags);
+	value = Tcl_SetVar2Ex(interp, argv[1], NULL, Tcl_NewStringObj(argv[2], -1), flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_AppendElement(interp, value);
+	Tcl_AppendElement(interp, Tcl_GetString(value));
 	return TCL_OK;
     } else {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -4988,23 +4988,23 @@ Testset2Cmd(
     const char **argv)		/* Argument strings. */
 {
     int flags = PTR2INT(data);
-    const char *value;
+    Tcl_Obj *value;
 
     if (argc == 3) {
 	Tcl_SetResult(interp, "before get", TCL_STATIC);
-	value = Tcl_GetVar2(interp, argv[1], argv[2], flags);
+	value = Tcl_GetVar2Ex(interp, argv[1], argv[2], flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_AppendElement(interp, value);
+	Tcl_AppendElement(interp, Tcl_GetString(value));
 	return TCL_OK;
     } else if (argc == 4) {
 	Tcl_SetResult(interp, "before set", TCL_STATIC);
-	value = Tcl_SetVar2(interp, argv[1], argv[2], argv[3], flags);
+	value = Tcl_SetVar2Ex(interp, argv[1], argv[2], Tcl_NewStringObj(argv[3], -1), flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_AppendElement(interp, value);
+	Tcl_AppendElement(interp, Tcl_GetString(value));
 	return TCL_OK;
     } else {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",

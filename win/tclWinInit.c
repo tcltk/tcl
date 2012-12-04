@@ -557,7 +557,7 @@ void
 TclpSetVariables(
     Tcl_Interp *interp)		/* Interp to initialize. */
 {
-    CONST char *ptr;
+    Tcl_Obj *ptr;
     char buffer[TCL_INTEGER_SPACE * 2];
     union {
 	SYSTEM_INFO info;
@@ -580,17 +580,17 @@ TclpSetVariables(
      * Define the tcl_platform array.
      */
 
-    Tcl_SetVar2(interp, "tcl_platform", "platform", "windows",
+    Tcl_SetVar2Ex(interp, "tcl_platform", "platform", Tcl_NewStringObj("windows", -1),
 	    TCL_GLOBAL_ONLY);
     if (osInfo.dwPlatformId < NUMPLATFORMS) {
-	Tcl_SetVar2(interp, "tcl_platform", "os",
-		platforms[osInfo.dwPlatformId], TCL_GLOBAL_ONLY);
+	Tcl_SetVar2Ex(interp, "tcl_platform", "os",
+		Tcl_NewStringObj(platforms[osInfo.dwPlatformId], -1), TCL_GLOBAL_ONLY);
     }
     wsprintfA(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
-    Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "tcl_platform", "osVersion", Tcl_NewStringObj(buffer, -1), TCL_GLOBAL_ONLY);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
-	Tcl_SetVar2(interp, "tcl_platform", "machine",
-		processors[sys.oemId.wProcessorArchitecture],
+	Tcl_SetVar2Ex(interp, "tcl_platform", "machine",
+		Tcl_NewStringObj(processors[sys.oemId.wProcessorArchitecture], -1),
 		TCL_GLOBAL_ONLY);
     }
 
@@ -603,7 +603,7 @@ TclpSetVariables(
      * command.
      */
 
-    Tcl_SetVar2(interp, "tcl_platform", "debug", "1",
+    Tcl_SetVar2Ex(interp, "tcl_platform", "debug", Tcl_NewIntObj(1),
 	    TCL_GLOBAL_ONLY);
 #endif
 
@@ -613,21 +613,21 @@ TclpSetVariables(
      */
 
     Tcl_DStringInit(&ds);
-    ptr = Tcl_GetVar2(interp, "env", "HOME", TCL_GLOBAL_ONLY);
+    ptr = Tcl_GetVar2Ex(interp, "env", "HOME", TCL_GLOBAL_ONLY);
     if (ptr == NULL) {
-	ptr = Tcl_GetVar2(interp, "env", "HOMEDRIVE", TCL_GLOBAL_ONLY);
+	ptr = Tcl_GetVar2Ex(interp, "env", "HOMEDRIVE", TCL_GLOBAL_ONLY);
 	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, -1);
+	    Tcl_DStringAppend(&ds, Tcl_GetString(ptr), -1);
 	}
-	ptr = Tcl_GetVar2(interp, "env", "HOMEPATH", TCL_GLOBAL_ONLY);
+	ptr = Tcl_GetVar2Ex(interp, "env", "HOMEPATH", TCL_GLOBAL_ONLY);
 	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, -1);
+	    Tcl_DStringAppend(&ds, Tcl_GetString(ptr), -1);
 	}
 	if (Tcl_DStringLength(&ds) > 0) {
-	    Tcl_SetVar2(interp, "env", "HOME", Tcl_DStringValue(&ds),
+	    Tcl_SetVar2Ex(interp, "env", "HOME", Tcl_NewStringObj(Tcl_DStringValue(&ds), -1),
 		    TCL_GLOBAL_ONLY);
 	} else {
-	    Tcl_SetVar2(interp, "env", "HOME", "c:\\", TCL_GLOBAL_ONLY);
+	    Tcl_SetVar2Ex(interp, "env", "HOME", Tcl_NewStringObj("c:\\", -1), TCL_GLOBAL_ONLY);
 	}
     }
 
@@ -645,7 +645,7 @@ TclpSetVariables(
 	    Tcl_WinTCharToUtf((LPTSTR)szUserName, cbUserNameLen, &ds);
 	}
     }
-    Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
+    Tcl_SetVar2Ex(interp, "tcl_platform", "user", Tcl_NewStringObj(Tcl_DStringValue(&ds), -1),
 	    TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&ds);
 }

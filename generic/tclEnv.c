@@ -119,7 +119,7 @@ TclSetupEnv(
 	    }
 	    p2++;
 	    p2[-1] = '\0';
-	    Tcl_SetVar2(interp, "env", p1, p2, TCL_GLOBAL_ONLY);
+	    Tcl_SetVar2Ex(interp, "env", p1, Tcl_NewStringObj(p2, -1), TCL_GLOBAL_ONLY);
 	    Tcl_DStringFree(&envString);
 	}
 	Tcl_MutexUnlock(&envMutex);
@@ -548,10 +548,10 @@ EnvTraceProc(
      */
 
     if (flags & TCL_TRACE_WRITES) {
-	const char *value;
+	Tcl_Obj *value;
 
-	value = Tcl_GetVar2(interp, "env", name2, TCL_GLOBAL_ONLY);
-	TclSetEnv(name2, value);
+	value = Tcl_GetVar2Ex(interp, "env", name2, TCL_GLOBAL_ONLY);
+	TclSetEnv(name2, Tcl_GetString(value));
     }
 
     /*
@@ -565,7 +565,7 @@ EnvTraceProc(
 	if (value == NULL) {
 	    return "no such variable";
 	}
-	Tcl_SetVar2(interp, name1, name2, value, 0);
+	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewStringObj(value, -1), 0);
 	Tcl_DStringFree(&valueString);
     }
 

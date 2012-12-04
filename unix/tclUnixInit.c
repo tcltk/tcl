@@ -840,7 +840,7 @@ TclpSetVariables(
 		if (!Tcl_CreateNamespace(interp, "::tcl::mac", NULL, NULL)) {
 		    Tcl_ResetResult(interp);
 		}
-		Tcl_SetVar(interp, "::tcl::mac::locale", loc, TCL_GLOBAL_ONLY);
+		Tcl_SetVar2Ex(interp, "::tcl::mac::locale", NULL, Tcl_NewStringObj(loc, -1), TCL_GLOBAL_ONLY);
 	    }
 	}
 	CFRelease(localeRef);
@@ -851,9 +851,9 @@ TclpSetVariables(
 	CONST char *str;
 	CFBundleRef bundleRef;
 
-	Tcl_SetVar(interp, "tclDefaultLibrary", tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar(interp, "tcl_pkgPath", " ",
+	Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL, Tcl_NewStringObj(tclLibPath, -1), TCL_GLOBAL_ONLY);
+	Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, Tcl_NewStringObj(tclLibPath, -1), TCL_GLOBAL_ONLY);
+	Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, Tcl_NewStringObj(" ", -1),
 		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 
 	str = TclGetEnv("DYLD_FRAMEWORK_PATH", &ds);
@@ -869,9 +869,9 @@ TclpSetVariables(
 		    *p = ' ';
 		}
 	    } while (*p++);
-	    Tcl_SetVar(interp, "tcl_pkgPath", Tcl_DStringValue(&ds),
+	    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, Tcl_NewStringObj(Tcl_DStringValue(&ds), -1),
 		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-	    Tcl_SetVar(interp, "tcl_pkgPath", " ",
+	    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, Tcl_NewStringObj(" ", -1),
 		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
 	    Tcl_DStringFree(&ds);
 	}
@@ -916,9 +916,9 @@ TclpSetVariables(
     }
 
 #ifdef DJGPP
-    Tcl_SetVar2(interp, "tcl_platform", "platform", "dos", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "tcl_platform", "platform", Tcl_NewStringObj("dos", -1), TCL_GLOBAL_ONLY);
 #else
-    Tcl_SetVar2(interp, "tcl_platform", "platform", "unix", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "tcl_platform", "platform", Tcl_NewStringObj("unix", -1), TCL_GLOBAL_ONLY);
 #endif
 
     unameOK = 0;
@@ -929,8 +929,8 @@ TclpSetVariables(
     GetSystemInfo(&sysInfo);
 
     if (osInfo.dwPlatformId < NUMPLATFORMS) {
-	Tcl_SetVar2(interp, "tcl_platform", "os",
-		platforms[osInfo.dwPlatformId], TCL_GLOBAL_ONLY);
+	Tcl_SetVar2Ex(interp, "tcl_platform", "os",
+		Tcl_NewStringObj(platforms[osInfo.dwPlatformId], -1), TCL_GLOBAL_ONLY);
     }
     sprintf(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
