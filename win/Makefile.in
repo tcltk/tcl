@@ -378,7 +378,6 @@ REG_OBJS = tclWinReg.$(OBJEXT)
 
 STUB_OBJS = \
 	tclStubLib.$(OBJEXT) \
-	tclStubLibCompat.$(OBJEXT) \
 	tclTomMathStubLib.$(OBJEXT) \
 	tclOOStubLib.$(OBJEXT)
 
@@ -505,9 +504,6 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 
 # The following objects are part of the stub library and should not be built
 # as DLL objects but none of the symbols should be exported
-
-tclStubLibCompat.${OBJEXT}: tclStubLibCompat.c
-	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
 
 tclStubLib.${OBJEXT}: tclStubLib.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
@@ -647,8 +643,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.5.0 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.5.0.tm;
-	@echo "Installing package tcltest 2.3.4 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.4.tm;
+	@echo "Installing package tcltest 2.3.5 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.5.tm;
 	@echo "Installing package platform 1.0.10 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.10.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
