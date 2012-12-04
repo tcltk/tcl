@@ -498,9 +498,7 @@ TclOOMakeProcInstanceMethod(
 
 	    if (context.line
 		    && (context.nline >= 4) && (context.line[3] >= 0)) {
-		int isNew;
 		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
-		Tcl_HashEntry *hPtr;
 
 		cfPtr->level = -1;
 		cfPtr->type = context.type;
@@ -516,9 +514,7 @@ TclOOMakeProcInstanceMethod(
 		cfPtr->cmd.str.cmd = NULL;
 		cfPtr->cmd.str.len = 0;
 
-		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew);
-		Tcl_SetHashValue(hPtr, cfPtr);
+		procPtr->loc = cfPtr;
 	    }
 
 	    /*
@@ -611,9 +607,7 @@ TclOOMakeProcMethod(
 
 	    if (context.line
 		    && (context.nline >= 4) && (context.line[3] >= 0)) {
-		int isNew;
 		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
-		Tcl_HashEntry *hPtr;
 
 		cfPtr->level = -1;
 		cfPtr->type = context.type;
@@ -629,9 +623,7 @@ TclOOMakeProcMethod(
 		cfPtr->cmd.str.cmd = NULL;
 		cfPtr->cmd.str.len = 0;
 
-		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew);
-		Tcl_SetHashValue(hPtr, cfPtr);
+		procPtr->loc = cfPtr;
 	    }
 
 	    /*

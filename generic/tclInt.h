@@ -969,6 +969,8 @@ typedef struct CompiledLocal {
  * variables recognized at compile time.
  */
 
+struct CmdFrame; /* Forward declaration for Proc. */
+
 typedef struct Proc {
     struct Interp *iPtr;	/* Interpreter for which this command is
 				 * defined. */
@@ -996,6 +998,8 @@ typedef struct Proc {
     CompiledLocal *lastLocalPtr;/* Pointer to the last allocated local
 				 * variable or NULL if none. This has frame
 				 * index (numCompiledLocals-1). */
+
+    struct CmdFrame* loc; /* #280 location data */
 } Proc;
 
 /*
@@ -1251,7 +1255,7 @@ typedef struct CmdFrame {
 				 * was pushed. */
     const struct CFWordBC *litarg;
 				/* Link to set of literal arguments which have
-				 * ben pushed on the lineLABCPtr stack by
+				 * been pushed on the lineLABCPtr stack by
 				 * TclArgumentBCEnter(). These will be removed
 				 * by TclArgumentBCRelease. */
 } CmdFrame;
@@ -2033,17 +2037,10 @@ typedef struct Interp {
 				 * active. */
     int invokeWord;		/* Index of the word in the command which
 				 * is getting compiled. */
-    Tcl_HashTable *linePBodyPtr;/* This table remembers for each statically
-				 * defined procedure the location information
-				 * for its body. It is keyed by the address of
-				 * the Proc structure for a procedure. The
-				 * values are "struct CmdFrame*". */
-    Tcl_HashTable *lineBCPtr;	/* This table remembers for each ByteCode
-				 * object the location information for its
-				 * body. It is keyed by the address of the
-				 * Proc structure for a procedure. The values
-				 * are "struct ExtCmdLoc*". (See
-				 * tclCompile.h) */
+
+    /* XXX: Adding the line information to Tcl_Obj will blow up the memory used by the system.
+     * XXX: But might be faster. Any other way getting both?
+     */
     Tcl_HashTable *lineLABCPtr;
     Tcl_HashTable *lineLAPtr;	/* This table remembers for each argument of a
 				 * command on the execution stack the index of
@@ -2856,6 +2853,9 @@ MODULE_SCOPE void	TclArgumentRelease(Tcl_Interp *interp,
 MODULE_SCOPE void	TclArgumentBCEnter(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc,
 			    void *codePtr, CmdFrame *cfPtr, int pc);
+/* XXX (void* codePtr) breaks cyclic dependency on tclCompile.h.
+ * XXX Proper type is (ByteCode* codePtr)
+ */
 MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,

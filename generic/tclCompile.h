@@ -119,10 +119,9 @@ typedef struct CmdLocation {
  * Structure to record additional location information for byte code. This
  * information is internal and not saved. i.e. tbcload'ed code will not have
  * this information. It records the lines for all words of all commands found
- * in the byte code. The association with a ByteCode structure BC is done
- * through the 'lineBCPtr' HashTable in Interp, keyed by the address of BC.
- * Also recorded is information coming from the context, i.e. type of the
- * frame and associated information, like the path of a sourced file.
+ * in the byte code. See the ByteCode->loc field. Also recorded is information
+ * coming from the context, i.e. type of the frame and associated information,
+ * like the path of a sourced file.
  */
 
 typedef struct ECL {
@@ -131,8 +130,7 @@ typedef struct ECL {
     int *line;			/* Line information for all words in the
 				 * command. */
     int **next;			/* Transient information used by the compiler
-				 * for tracking of hidden continuation
-				 * lines. */
+				 * to track hidden continuation lines. */
 } ECL;
 
 typedef struct ExtCmdLoc {
@@ -441,6 +439,9 @@ typedef struct ByteCode {
     LocalCache *localCachePtr;	/* Pointer to the start of the cached variable
 				 * names and initialisation data for local
 				 * variables. */
+
+    struct ExtCmdLoc* loc; /* #280 location data */
+
 #ifdef TCL_COMPILE_STATS
     Tcl_Time createTime;	/* Absolute time when the ByteCode was
 				 * created. */

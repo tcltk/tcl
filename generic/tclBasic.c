@@ -504,17 +504,12 @@ Tcl_CreateInterp(void)
     iPtr->varFramePtr = NULL;	/* Initialise as soon as :: is available */
 
     /*
-     * TIP #280 - Initialize the arrays used to extend the ByteCode and Proc
-     * structures.
+     * TIP #280 - Initialize the arrays used to track argument locations.
      */
 
     iPtr->cmdFramePtr = NULL;
-    iPtr->linePBodyPtr = ckalloc(sizeof(Tcl_HashTable));
-    iPtr->lineBCPtr = ckalloc(sizeof(Tcl_HashTable));
     iPtr->lineLAPtr = ckalloc(sizeof(Tcl_HashTable));
     iPtr->lineLABCPtr = ckalloc(sizeof(Tcl_HashTable));
-    Tcl_InitHashTable(iPtr->linePBodyPtr, TCL_ONE_WORD_KEYS);
-    Tcl_InitHashTable(iPtr->lineBCPtr, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(iPtr->lineLAPtr, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(iPtr->lineLABCPtr, TCL_ONE_WORD_KEYS);
     iPtr->scriptCLLocPtr = NULL;
@@ -1323,7 +1318,6 @@ DeleteInterpProc(
     Tcl_HashSearch search;
     Tcl_HashTable *hTablePtr;
     ResolverScheme *resPtr, *nextResPtr;
-    int i;
 
     /*
      * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup,
@@ -1518,60 +1512,7 @@ DeleteInterpProc(
     TclDeleteLiteralTable(interp, &iPtr->literalTable);
 
     /*
-     * TIP #280 - Release the arrays for ByteCode/Proc extension, and
-     * contents.
-     */
-
-    for (hPtr = Tcl_FirstHashEntry(iPtr->linePBodyPtr, &search);
-	    hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&search)) {
-	CmdFrame *cfPtr = Tcl_GetHashValue(hPtr);
-	Proc *procPtr = (Proc *) Tcl_GetHashKey(iPtr->linePBodyPtr, hPtr);
-
-	procPtr->iPtr = NULL;
-	if (cfPtr) {
-	    if (cfPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(cfPtr->data.eval.path);
-	    }
-	    ckfree(cfPtr->line);
-	    ckfree(cfPtr);
-	}
-	Tcl_DeleteHashEntry(hPtr);
-    }
-    Tcl_DeleteHashTable(iPtr->linePBodyPtr);
-    ckfree(iPtr->linePBodyPtr);
-    iPtr->linePBodyPtr = NULL;
-
-    /*
-     * See also tclCompile.c, TclCleanupByteCode
-     */
-
-    for (hPtr = Tcl_FirstHashEntry(iPtr->lineBCPtr, &search);
-	    hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&search)) {
-	ExtCmdLoc *eclPtr = Tcl_GetHashValue(hPtr);
-
-	if (eclPtr->type == TCL_LOCATION_SOURCE) {
-	    Tcl_DecrRefCount(eclPtr->path);
-	}
-	for (i=0; i< eclPtr->nuloc; i++) {
-	    ckfree(eclPtr->loc[i].line);
-	}
-
-	if (eclPtr->loc != NULL) {
-	    ckfree(eclPtr->loc);
-	}
-
-	Tcl_DeleteHashTable(&eclPtr->litInfo);
-
-	ckfree(eclPtr);
-	Tcl_DeleteHashEntry(hPtr);
-    }
-    Tcl_DeleteHashTable(iPtr->lineBCPtr);
-    ckfree(iPtr->lineBCPtr);
-    iPtr->lineBCPtr = NULL;
-
-    /*
+     * TIP #280.
      * Location stack for uplevel/eval/... scripts which were passed through
      * proc arguments. Actually we track all arguments as we do not and cannot
      * know which arguments will be used as scripts and which will not.
@@ -5141,19 +5082,20 @@ TclArgumentBCEnter(
     Tcl_Interp *interp,
     Tcl_Obj *objv[],
     int objc,
-    void *codePtr,
+    void *codePtr, /* XXX Should be ByteCode*, would invoke cyclic dependency
+                    * XXX on tclCompile.h in tclInt.h
+                    */
     CmdFrame *cfPtr,
     int pc)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_HashEntry *hePtr =
-	    Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
+    Tcl_HashEntry* hePtr;
     ExtCmdLoc *eclPtr;
 
-    if (!hePtr) {
-	return;
+    eclPtr = ((ByteCode*) codePtr)->loc;
+    if (!eclPtr) {
+        return;
     }
-    eclPtr = Tcl_GetHashValue(hePtr);
     hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, INT2PTR(pc));
     if (hePtr) {
 	int word;

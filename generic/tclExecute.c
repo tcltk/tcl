@@ -1640,17 +1640,14 @@ TclCompileObj(
 	if (invoker == NULL) {
 	    return codePtr;
 	} else {
-	    Tcl_HashEntry *hePtr =
-		    Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
-	    ExtCmdLoc *eclPtr;
+	    ExtCmdLoc *eclPtr = codePtr->loc;
 	    CmdFrame *ctxCopyPtr;
 	    int redo;
 
-	    if (!hePtr) {
+	    if (!eclPtr) {
 		return codePtr;
 	    }
 
-	    eclPtr = Tcl_GetHashValue(hePtr);
 	    redo = 0;
 	    ctxCopyPtr = TclStackAlloc(interp, sizeof(CmdFrame));
 	    *ctxCopyPtr = *invoker;
@@ -8505,19 +8502,15 @@ TclGetSrcInfoForPc(
 	 * there find the list of word locations for this command.
 	 */
 
-	ExtCmdLoc *eclPtr;
+	ExtCmdLoc *eclPtr = codePtr->loc;
 	ECL *locPtr = NULL;
 	int srcOffset, i;
-	Interp *iPtr = (Interp *) *codePtr->interpHandle;
-	Tcl_HashEntry *hePtr =
-		Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
 
-	if (!hePtr) {
+	if (!eclPtr) {
 	    return;
 	}
 
 	srcOffset = cfPtr->cmd.str.cmd - codePtr->source;
-	eclPtr = Tcl_GetHashValue(hePtr);
 
 	for (i=0; i < eclPtr->nuloc; i++) {
 	    if (eclPtr->loc[i].srcOffset == srcOffset) {

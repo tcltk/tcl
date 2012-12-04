@@ -256,8 +256,6 @@ Tcl_ProcObjCmd(
 
 	    if (contextPtr->line
 		    && (contextPtr->nline >= 4) && (contextPtr->line[3] >= 0)) {
-		int isNew;
-		Tcl_HashEntry *hePtr;
 		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
 
 		cfPtr->level = -1;
@@ -274,9 +272,7 @@ Tcl_ProcObjCmd(
 		cfPtr->cmd.str.cmd = NULL;
 		cfPtr->cmd.str.len = 0;
 
-		hePtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			procPtr, &isNew);
-		if (!isNew) {
+		if (procPtr->loc) {
 		    /*
 		     * Get the old command frame and release it. See also
 		     * TclProcCleanupProc in this file. Currently it seems as
@@ -284,8 +280,7 @@ Tcl_ProcObjCmd(
 		     * is able to trigger this situation.
 		     */
 
-		    CmdFrame *cfOldPtr = Tcl_GetHashValue(hePtr);
-
+		    CmdFrame *cfOldPtr = procPtr->loc;
 		    if (cfOldPtr->type == TCL_LOCATION_SOURCE) {
 			Tcl_DecrRefCount(cfOldPtr->data.eval.path);
 			cfOldPtr->data.eval.path = NULL;
@@ -294,7 +289,7 @@ Tcl_ProcObjCmd(
 		    cfOldPtr->line = NULL;
 		    ckfree(cfOldPtr);
 		}
-		Tcl_SetHashValue(hePtr, cfPtr);
+		procPtr->loc = cfPtr;
 	    }
 
 	    /*
@@ -472,6 +467,7 @@ TclCreateProc(
 	procPtr->numCompiledLocals = 0;
 	procPtr->firstLocalPtr = NULL;
 	procPtr->lastLocalPtr = NULL;
+	procPtr->loc = 0;
     }
 
     /*
@@ -2015,8 +2011,6 @@ TclProcCompileProc(
     }
 
     if (bodyPtr->typePtr != &tclByteCodeType) {
-	Tcl_HashEntry *hePtr;
-
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceCompile >= 1) {
 	    /*
@@ -2084,17 +2078,15 @@ TclProcCompileProc(
 
 	/*
 	 * TIP #280: We get the invoking context from the cmdFrame which
-	 * was saved by 'Tcl_ProcObjCmd' (using linePBodyPtr).
+	 * was saved by 'Tcl_ProcObjCmd'
 	 */
-
-	hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, (char *) procPtr);
 
 	/*
 	 * Constructed saved frame has body as word 0. See Tcl_ProcObjCmd.
 	 */
 
 	iPtr->invokeWord = 0;
-	iPtr->invokeCmdFramePtr = (hePtr ? Tcl_GetHashValue(hePtr) : NULL);
+	iPtr->invokeCmdFramePtr = (procPtr->loc ? procPtr->loc : NULL);
 	tclByteCodeType.setFromAnyProc(interp, bodyPtr);
 	iPtr->invokeCmdFramePtr = NULL;
 	TclPopStackFrame(interp);
@@ -2202,9 +2194,7 @@ TclProcCleanupProc(
     Tcl_Obj *bodyPtr = procPtr->bodyPtr;
     Tcl_Obj *defPtr;
     Tcl_ResolvedVarInfo *resVarInfo;
-    Tcl_HashEntry *hePtr = NULL;
     CmdFrame *cfPtr = NULL;
-    Interp *iPtr = procPtr->iPtr;
 
     if (bodyPtr != NULL) {
 	Tcl_DecrRefCount(bodyPtr);
@@ -2228,25 +2218,14 @@ TclProcCleanupProc(
 	ckfree(localPtr);
 	localPtr = nextPtr;
     }
-    ckfree(procPtr);
 
     /*
      * TIP #280: Release the location data associated with this Proc
-     * structure, if any. The interpreter may not exist (For example for
-     * procbody structures created by tbcload.
+     * structure, if any. The data may not exist (For example for procbody
+     * structures created by tbcload.
      */
 
-    if (iPtr == NULL) {
-	return;
-    }
-
-    hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, (char *) procPtr);
-    if (!hePtr) {
-	return;
-    }
-
-    cfPtr = Tcl_GetHashValue(hePtr);
-
+    cfPtr = procPtr->loc;
     if (cfPtr) {
 	if (cfPtr->type == TCL_LOCATION_SOURCE) {
 	    Tcl_DecrRefCount(cfPtr->data.eval.path);
@@ -2256,7 +2235,8 @@ TclProcCleanupProc(
 	cfPtr->line = NULL;
 	ckfree(cfPtr);
     }
-    Tcl_DeleteHashEntry(hePtr);
+
+    ckfree(procPtr);
 }
 
 /*
@@ -2487,7 +2467,7 @@ SetLambdaFromAny(
     Interp *iPtr = (Interp *) interp;
     const char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv;
-    int isNew, objc, result;
+    int objc, result;
     CmdFrame *cfPtr = NULL;
     Proc *procPtr;
 
@@ -2617,8 +2597,8 @@ SetLambdaFromAny(
 	}
 	TclStackFree(interp, contextPtr);
     }
-    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr, procPtr,
-	    &isNew), cfPtr);
+
+    procPtr->loc = cfPtr;
 
     /*
      * Set the namespace for this lambda: given by objv[2] understood as a

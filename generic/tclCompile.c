@@ -982,29 +982,24 @@ TclCleanupByteCode(
      * See also tclBasic.c, DeleteInterpProc
      */
 
-    if (iPtr) {
-	Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->lineBCPtr,
-		(char *) codePtr);
+    if (codePtr->loc) {
+	ExtCmdLoc *eclPtr = codePtr->loc;
 
-	if (hePtr) {
-	    ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
-
-	    if (eclPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(eclPtr->path);
-	    }
-	    for (i=0 ; i<eclPtr->nuloc ; i++) {
-		ckfree(eclPtr->loc[i].line);
-	    }
-
-	    if (eclPtr->loc != NULL) {
-		ckfree(eclPtr->loc);
-	    }
-
-	    Tcl_DeleteHashTable(&eclPtr->litInfo);
-
-	    ckfree(eclPtr);
-	    Tcl_DeleteHashEntry(hePtr);
+	if (eclPtr->type == TCL_LOCATION_SOURCE) {
+	    Tcl_DecrRefCount(eclPtr->path);
 	}
+	for (i=0 ; i<eclPtr->nuloc ; i++) {
+	    ckfree(eclPtr->loc[i].line);
+	}
+	
+	if (eclPtr->loc != NULL) {
+	    ckfree(eclPtr->loc);
+	}
+
+	Tcl_DeleteHashTable(&eclPtr->litInfo);
+
+	ckfree(eclPtr);
+	codePtr->loc = 0;
     }
 
     if (codePtr->localCachePtr && (--codePtr->localCachePtr->refCount == 0)) {
@@ -2506,7 +2501,7 @@ TclInitByteCodeObj(
 #endif
     int numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
-    int i, isNew;
+    int i;
     Interp *iPtr;
 
     iPtr = envPtr->iPtr;
@@ -2642,8 +2637,7 @@ TclInitByteCodeObj(
      * byte code object (internal rep), for use with the bc compiler.
      */
 
-    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, codePtr,
-	    &isNew), envPtr->extCmdMapPtr);
+    codePtr->loc = envPtr->extCmdMapPtr;
     envPtr->extCmdMapPtr = NULL;
 
     codePtr->localCachePtr = NULL;
