@@ -71,10 +71,7 @@ TCLAPI int		TclUnixCopyFile(const char *src, const char *dst,
 /* Slot 17 is reserved */
 /* Slot 18 is reserved */
 /* Slot 19 is reserved */
-/* 20 */
-TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
-				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
-				Tcl_Obj *resultingNameObj);
+/* Slot 20 is reserved */
 /* Slot 21 is reserved */
 /* Slot 22 is reserved */
 /* Slot 23 is reserved */
@@ -85,6 +82,10 @@ TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 /* Slot 28 is reserved */
 /* 29 */
 TCLAPI int		TclWinCPUID(unsigned int index, unsigned int *regs);
+/* 30 */
+TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
+				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
+				Tcl_Obj *resultingNameObj);
 #endif /* UNIX */
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
 /* 0 */
@@ -155,6 +156,10 @@ TCLAPI void		TclWinFlushDirtyChannels(void);
 TCLAPI void		TclWinResetInterfaces(void);
 /* 29 */
 TCLAPI int		TclWinCPUID(unsigned int index, unsigned int *regs);
+/* 30 */
+TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
+				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
+				Tcl_Obj *resultingNameObj);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 /* 0 */
@@ -212,10 +217,7 @@ TCLAPI int		TclMacOSXMatchType(Tcl_Interp *interp,
 /* 19 */
 TCLAPI void		TclMacOSXNotifierAddRunLoopMode(
 				const void *runLoopMode);
-/* 20 */
-TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
-				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
-				Tcl_Obj *resultingNameObj);
+/* Slot 20 is reserved */
 /* Slot 21 is reserved */
 /* Slot 22 is reserved */
 /* Slot 23 is reserved */
@@ -226,6 +228,10 @@ TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 /* Slot 28 is reserved */
 /* 29 */
 TCLAPI int		TclWinCPUID(unsigned int index, unsigned int *regs);
+/* 30 */
+TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
+				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
+				Tcl_Obj *resultingNameObj);
 #endif /* MACOSX */
 
 typedef struct TclIntPlatStubs {
@@ -253,7 +259,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved17)(void);
     void (*reserved18)(void);
     void (*reserved19)(void);
-    int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 20 */
+    void (*reserved20)(void);
     void (*reserved21)(void);
     void (*reserved22)(void);
     void (*reserved23)(void);
@@ -263,6 +269,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved27)(void);
     void (*reserved28)(void);
     int (*tclWinCPUID) (unsigned int index, unsigned int *regs); /* 29 */
+    int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* UNIX */
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     void (*tclWinConvertError) (DWORD errCode); /* 0 */
@@ -295,6 +302,7 @@ typedef struct TclIntPlatStubs {
     void (*tclWinFlushDirtyChannels) (void); /* 27 */
     void (*tclWinResetInterfaces) (void); /* 28 */
     int (*tclWinCPUID) (unsigned int index, unsigned int *regs); /* 29 */
+    int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 0 */
@@ -317,7 +325,7 @@ typedef struct TclIntPlatStubs {
     int (*tclMacOSXCopyFileAttributes) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr); /* 17 */
     int (*tclMacOSXMatchType) (Tcl_Interp *interp, const char *pathName, const char *fileName, Tcl_StatBuf *statBufPtr, Tcl_GlobTypeData *types); /* 18 */
     void (*tclMacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 19 */
-    int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 20 */
+    void (*reserved20)(void);
     void (*reserved21)(void);
     void (*reserved22)(void);
     void (*reserved23)(void);
@@ -327,6 +335,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved27)(void);
     void (*reserved28)(void);
     int (*tclWinCPUID) (unsigned int index, unsigned int *regs); /* 29 */
+    int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* MACOSX */
 } TclIntPlatStubs;
 
@@ -377,8 +386,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 /* Slot 17 is reserved */
 /* Slot 18 is reserved */
 /* Slot 19 is reserved */
-#define TclUnixOpenTemporaryFile \
-	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 20 */
+/* Slot 20 is reserved */
 /* Slot 21 is reserved */
 /* Slot 22 is reserved */
 /* Slot 23 is reserved */
@@ -389,6 +397,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 /* Slot 28 is reserved */
 #define TclWinCPUID \
 	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
+#define TclUnixOpenTemporaryFile \
+	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 30 */
 #endif /* UNIX */
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
 #define TclWinConvertError \
@@ -448,6 +458,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclWinResetInterfaces) /* 28 */
 #define TclWinCPUID \
 	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
+#define TclUnixOpenTemporaryFile \
+	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 30 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 #define TclGetAndDetachPids \
@@ -487,8 +499,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclMacOSXMatchType) /* 18 */
 #define TclMacOSXNotifierAddRunLoopMode \
 	(tclIntPlatStubsPtr->tclMacOSXNotifierAddRunLoopMode) /* 19 */
-#define TclUnixOpenTemporaryFile \
-	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 20 */
+/* Slot 20 is reserved */
 /* Slot 21 is reserved */
 /* Slot 22 is reserved */
 /* Slot 23 is reserved */
@@ -499,6 +510,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 /* Slot 28 is reserved */
 #define TclWinCPUID \
 	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
+#define TclUnixOpenTemporaryFile \
+	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 30 */
 #endif /* MACOSX */
 
 #endif /* defined(USE_TCL_STUBS) */
