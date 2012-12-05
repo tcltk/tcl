@@ -35,12 +35,8 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 static const TclStubs *
 HasStubSupport(
     Tcl_Interp *interp,
-    const char *tclversion,
     int magic)
 {
-    /* TODO: Whatever additional checks using tclversion
-     * and/or magic should be done here. */
-
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr->stubTable && iPtr->stubTable->magic == magic) {
@@ -96,7 +92,7 @@ TclInitStubs(
      * times. [Bug 615304]
      */
 
-    tclStubsPtr = HasStubSupport(interp, tclversion, magic);
+    tclStubsPtr = HasStubSupport(interp, magic);
     if (!tclStubsPtr) {
 	return NULL;
     }
