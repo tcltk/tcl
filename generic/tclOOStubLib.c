@@ -12,7 +12,6 @@
 #include "config.h"
 #endif
 
-#define USE_TCLOO_STUBS 1
 #include "tclOOInt.h"
 
 MODULE_SCOPE const TclOOStubs *tclOOStubsPtr;

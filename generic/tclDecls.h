@@ -2444,7 +2444,7 @@ extern const TclStubs *tclStubsPtr;
 }
 #endif
 
-#if defined(USE_TCL_STUBS)
+#if !defined(BUILD_tcl)
 
 /*
  * Inline function declarations:
@@ -3716,25 +3716,15 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_ZlibStreamSetCompressionDictionary \
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
 
-#endif /* defined(USE_TCL_STUBS) */
+#endif /* !defined(BUILD_tcl) */
 
 /* !END!: Do not edit above this line. */
 
-#if defined(USE_TCL_STUBS)
+#if !defined(BUILD_tcl)
 #   undef TclCreateInterp
-#   undef Tcl_FindExecutable
-#   undef Tcl_GetStringResult
 #   undef Tcl_Init
-#   undef Tcl_SetPanicProc
-#   undef Tcl_SetVar2
-#   undef Tcl_StaticPackage
-#   undef TclFSGetNativePath
 #   define Tcl_CreateInterp() (tclStubsPtr->tclCreateInterp())
-#   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (Tcl_InitStubs(interp, TCL_VERSION, 0)?tclStubsPtr->tcl_Init(interp):TCL_ERROR)
-#   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
-#   define Tcl_SetVar2(interp, part1, part2, newValue, flags) \
-	    (tclStubsPtr->tcl_SetVar2(interp, part1, part2, newValue, flags))
 #endif
 
 #if defined(_WIN32) && defined(UNICODE)

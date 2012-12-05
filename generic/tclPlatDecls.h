@@ -78,7 +78,7 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 }
 #endif
 
-#if defined(USE_TCL_STUBS)
+#if !defined(BUILD_tcl)
 
 /*
  * Inline function declarations:
@@ -97,7 +97,7 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 	(tclPlatStubsPtr->tcl_MacOSXOpenVersionedBundleResources) /* 1 */
 #endif /* MACOSX */
 
-#endif /* defined(USE_TCL_STUBS) */
+#endif /* !defined(BUILD_tcl) */
 
 /* !END!: Do not edit above this line. */
 

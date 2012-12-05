@@ -223,8 +223,6 @@ extern "C" {
 #	define TCLAPI MODULE_SCOPE
 #   else
 #	define TCLAPI extern
-#	undef USE_TCL_STUBS
-#	define USE_TCL_STUBS 1
 #   endif
 #endif
 #define TCLOOAPI TCLAPI

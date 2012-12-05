@@ -846,7 +846,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 }
 #endif
 
-#if defined(USE_TCL_STUBS)
+#if !defined(BUILD_tcl)
 
 /*
  * Inline function declarations:
@@ -1255,7 +1255,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclSetSlaveCancelFlags \
 	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
 
-#endif /* defined(USE_TCL_STUBS) */
+#endif /* !defined(BUILD_tcl) */
 
 /* !END!: Do not edit above this line. */
 

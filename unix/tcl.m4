@@ -1781,9 +1781,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # Digital OSF/1
 	    SHLIB_CFLAGS=""
 	    AS_IF([test "$SHARED_BUILD" = 1], [
-	        SHLIB_LD='ld -shared -expect_unresolved "*"'
+	        SHLIB_LD='ld -shared'
 	    ], [
-	        SHLIB_LD='ld -non_shared -expect_unresolved "*"'
+	        SHLIB_LD='ld -non_shared'
 	    ])
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
