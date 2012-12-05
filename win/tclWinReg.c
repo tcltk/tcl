@@ -165,7 +165,7 @@ Registry_Init(
 {
     Tcl_Command cmd;
 
-    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.6-", 0) == NULL) {
 	return TCL_ERROR;
     }
 
