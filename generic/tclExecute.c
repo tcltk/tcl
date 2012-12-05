@@ -3610,11 +3610,8 @@ ExecuteByteCode(
 		goto gotError;
 	    }
 	}
-	if (varPtr && TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
-	    objResultPtr = TCONST(1);
-	} else {
-	    objResultPtr = TCONST(0);
-	}
+	objResultPtr = TCONST((varPtr && TclIsVarArray(varPtr)
+		&& !TclIsVarUndefined(varPtr)) ? 1 : 0);
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_V(pcAdjustment, cleanup, 1);
 
@@ -3627,7 +3624,6 @@ ExecuteByteCode(
 	TRACE(("%u => ", opnd));
 	LOCALVAR(varPtr, opnd);
 	goto doArrayMake;
-
     case INST_ARRAY_MAKE_STK:
 	opnd = -1;
 	pcAdjustment = 1;
@@ -4504,43 +4500,40 @@ ExecuteByteCode(
 	}
 
 	/*
-	 * Make sure only -1,0,1 is returned
+	 * Make sure only -1,0,1 is returned.
 	 * TODO: consider peephole opt.
 	 */
 
-	if (*pc != INST_STR_CMP) {
-	    /*
-	     * Take care of the opcodes that goto'ed into here.
-	     */
-
-	    switch (*pc) {
-	    case INST_STR_EQ:
-	    case INST_EQ:
-		match = (match == 0);
-		break;
-	    case INST_STR_NEQ:
-	    case INST_NEQ:
-		match = (match != 0);
-		break;
-	    case INST_LT:
-		match = (match < 0);
-		break;
-	    case INST_GT:
-		match = (match > 0);
-		break;
-	    case INST_LE:
-		match = (match <= 0);
-		break;
-	    case INST_GE:
-		match = (match >= 0);
-		break;
+	switch (*pc) {
+	case INST_STR_CMP:
+	    if (match < 0) {
+		TclNewIntObj(objResultPtr, -1);
+	    } else {
+		objResultPtr = TCONST(match > 0);
 	    }
-	}
-	if (match < 0) {
-	    TclNewIntObj(objResultPtr, -1);
-	} else {
+	    break;
+	case INST_STR_EQ:
+	case INST_EQ:
+	    objResultPtr = TCONST(match == 0);
+	    break;
+	case INST_STR_NEQ:
+	case INST_NEQ:
+	    objResultPtr = TCONST(match != 0);
+	    break;
+	case INST_LT:
+	    objResultPtr = TCONST(match < 0);
+	    break;
+	case INST_GT:
 	    objResultPtr = TCONST(match > 0);
+	    break;
+	case INST_LE:
+	    objResultPtr = TCONST(match <= 0);
+	    break;
+	case INST_GE:
+	    objResultPtr = TCONST(match >= 0);
+	    break;
 	}
+
 	TRACE(("%.20s %.20s => %s\n", O2S(valuePtr), O2S(value2Ptr),
 		O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
@@ -5831,11 +5824,12 @@ ExecuteByteCode(
 		&objResultPtr) == TCL_OK) {
 	    if (*pc == INST_DICT_EXISTS) {
 		objResultPtr = TCONST(objResultPtr ? 1 : 0);
-		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-		NEXT_INST_V(5, opnd+1, 1);
 	    }
 	    if (objResultPtr) {
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		if (opnd == 1) {
+		    NEXT_INST_F(5, 2, 1);
+		}
 		NEXT_INST_V(5, opnd+1, 1);
 	    }
 	    DECACHE_STACK_INFO();
@@ -5851,6 +5845,9 @@ ExecuteByteCode(
 	    dictNotExists:
 		objResultPtr = TCONST(0);
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		if (opnd == 1) {
+		    NEXT_INST_F(5, 2, 1);
+		}
 		NEXT_INST_V(5, opnd+1, 1);
 	    }
 	    TRACE_WITH_OBJ((
@@ -5956,12 +5953,18 @@ ExecuteByteCode(
 		goto gotError;
 	    }
 	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 #ifndef TCL_COMPILE_DEBUG
 	if (*(pc+9) == INST_POP) {
+	    if (cleanup == 2) {
+		NEXT_INST_F(10, 2, 0);
+	    }
 	    NEXT_INST_V(10, cleanup, 0);
 	}
 #endif
-	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	if (cleanup == 2) {
+	    NEXT_INST_F(9, 2, 1);
+	}
 	NEXT_INST_V(9, cleanup, 1);
 
     case INST_DICT_APPEND:
