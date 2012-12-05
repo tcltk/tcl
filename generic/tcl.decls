@@ -1051,7 +1051,7 @@ declare 290 {
     void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
 }
 declare 291 {
-    int Tcl_EvalEx(Tcl_Interp *interp, const char *script, int numBytes,
+    int Tcl_EvalEx(Tcl_Interp *interp, const char *script, Tcl_WideInt numBytes,
 	    int flags)
 }
 declare 292 {
