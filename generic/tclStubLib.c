@@ -34,15 +34,21 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
 static const TclStubs *
 HasStubSupport(
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+    const char *tclversion,
+    int magic)
 {
     Interp *iPtr = (Interp *) interp;
-
-    if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
+    if (tclversion[0] != ('0' + TCL_MAJOR_VERSION)) {
+	iPtr->result = (char *) "extension linked to incompatible stubs library";
+	iPtr->freeProc = 0; /* TCL_STATIC */
+	return NULL;
+    }
+    if (iPtr->stubTable && iPtr->stubTable->magic == magic) {
 	return iPtr->stubTable;
     }
     iPtr->result = (char *) "interpreter uses an incompatible stubs mechanism";
-    iPtr->freeProc = TCL_STATIC;
+    iPtr->freeProc = 0; /* TCL_STATIC */
     return NULL;
 }
 
@@ -58,7 +64,7 @@ static int isDigit(const int c)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InitStubs --
+ * TclInitStubs --
  *
  *	Tries to initialise the stub table pointers and ensures that the
  *	correct version of Tcl is loaded.
@@ -78,29 +84,12 @@ TclInitStubs(
     Tcl_Interp *interp,
     const char *version,
     int exact,
-    int major,
+    const char *tclversion,
     int magic)
 {
-    Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
-    const char *p, *q;
-
-    /*
-     * Detect whether the extension and the stubs library were built
-     * against Tcl header files declaring use of incompatible stubs
-     * mechanisms.  Even within the same mechanism, also detect if
-     * the header files are from different major versions.  Either
-     * is seriously broken.  An extension and its stubs library ought
-     * to share compatible headers, if not the same one.
-     */
-
-    if (magic != TCL_STUB_MAGIC || major != TCL_MAJOR_VERSION) {
-	iPtr->result =
-	    (char *) "extension linked to incompatible stubs library";
-	iPtr->freeProc = TCL_STATIC;
-	return NULL;
-    }
+    Interp *iPtr = (Interp *) interp;
 
     /*
      * Detect whether an extension compiled against a Tcl header file
@@ -110,8 +99,8 @@ TclInitStubs(
      * incompatible stub tables.
      */
 
-    p = version;
-    q = TCL_VERSION;
+    const char *p = version;
+    const char *q = TCL_VERSION;
     while (isDigit(*p)) {
 	if (*p++ != *q++) {
 	    goto badVersion;
@@ -131,7 +120,7 @@ TclInitStubs(
      * times. [Bug 615304]
      */
 
-    tclStubsPtr = HasStubSupport(interp);
+    tclStubsPtr = HasStubSupport(interp, tclversion, magic);
     if (!tclStubsPtr) {
 	return NULL;
     }
@@ -179,26 +168,6 @@ TclInitStubs(
     }
 
     return actualVersion;
-}
-
-/*
- * This routine is included only so that extensions compiled against
- * 8.5 and earlier headers (which do not define Tcl_InitStubs() as a macro)
- * can successfully link to libtclstubs8.6.a.  This leaves them suffering
- * from the formerly broken design.  (See Tcl Bug 3588687).
- *
- * This routine should not merge forward to Tcl 9 work.  Extensions
- * compiled against 8.5 and earlier headers that try to link to 
- * libtclstubs9*.a should suffer the link failure.
- */
-#undef Tcl_InitStubs
-MODULE_SCOPE const char *
-Tcl_InitStubs(
-    Tcl_Interp *interp,
-    const char *version,
-    int exact)
-{
-    return TclInitStubs(interp, version, exact, 8, TCL_STUB_MAGIC);
 }
 
 /*

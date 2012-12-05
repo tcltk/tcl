@@ -3859,6 +3859,8 @@ MODULE_SCOPE int	TclCompileStreqOpCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE const char *TclInitStubs(Tcl_Interp *interp, const char *version,
+			    int exact, const char *tclversion, int magic);
 
 /*
  * Functions defined in generic/tclVar.c and currenttly exported only for use

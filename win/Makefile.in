@@ -378,6 +378,7 @@ REG_OBJS = tclWinReg.$(OBJEXT)
 
 STUB_OBJS = \
 	tclStubLib.$(OBJEXT) \
+	tclStubLibCompat.$(OBJEXT) \
 	tclTomMathStubLib.$(OBJEXT) \
 	tclOOStubLib.$(OBJEXT)
 
@@ -506,6 +507,9 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 # as DLL objects but none of the symbols should be exported
 
 tclStubLib.${OBJEXT}: tclStubLib.c
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
+
+tclStubLibCompat.${OBJEXT}: tclStubLibCompat.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
 
 tclTomMathStubLib.${OBJEXT}: tclTomMathStubLib.c
