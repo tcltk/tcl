@@ -1152,9 +1152,6 @@ declare 27 win {
 declare 28 win {
     void TclWinResetInterfaces(void)
 }
-declare 29 win {
-    int TclWinCPUID(unsigned int index, unsigned int *regs)
-}
 
 ################################
 # Unix specific functions
@@ -1222,12 +1219,6 @@ declare 14 unix {
 	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
 }
 
-# Added in 8.6; core of TclpOpenTemporaryFile
-declare 20 unix {
-    int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
-	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
-}
-
 ################################
 # Mac OS X specific functions
 
@@ -1251,9 +1242,17 @@ declare 18 macosx {
 declare 19 macosx {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
-declare 29 unix {
+
+declare 29 {win unix} {
     int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
+# Added in 8.6; core of TclpOpenTemporaryFile
+declare 30 {win unix} {
+    int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
+	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
+}
+
+
 
 # Local Variables:
 # mode: tcl
