@@ -2200,7 +2200,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#define TCL_STUB_MAGIC		((int) (0xFCA3BACB + sizeof(size_t)))
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2222,10 +2222,11 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 #define Tcl_InitStubs(interp, version, exact) \
     TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
 #else
-/* During alpha/beta phase we need to use the full patchlevel, regardless
- * on what the real minimum required version was. */
+/* During alpha/beta phase we require extensions only to run with
+ * that specific Tcl version. Extensions compiled against alpha/beta
+ * Tcl headers should never be distributed separate from Tcl. */
 #define Tcl_InitStubs(interp, version, exact) \
-    TclInitStubs(interp, TCL_PATCH_LEVEL, exact, TCL_VERSION, TCL_STUB_MAGIC)
+    TclInitStubs(interp, TCL_PATCH_LEVEL, 1, TCL_VERSION, TCL_STUB_MAGIC)
 #endif
 
 /*
