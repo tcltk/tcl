@@ -118,7 +118,7 @@ Tcl_InitStubs(
 	    while (*p && (*p == *q)) {
 		p++; q++;
 	    }
-	    if (*p) {
+	    if (*p || isDigit(*q)) {
 		/* Construct error message */
 		Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 		return NULL;
