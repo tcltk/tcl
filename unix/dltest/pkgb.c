@@ -84,8 +84,7 @@ Pkgb_UnsafeObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unsafe command invoked", -1));
-    return TCL_OK;
+    return Tcl_EvalEx(interp, "list unsafe command invoked", -1, TCL_EVAL_GLOBAL);
 }
 
 /*

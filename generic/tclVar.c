@@ -2766,8 +2766,8 @@ Tcl_ArrayObjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], arrayOptions, "option",
-	    0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], arrayOptions,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3097,8 +3097,8 @@ Tcl_ArrayObjCmd(
 	} else if (objc == 5) {
 	    patternPtr = objv[4];
 	    pattern = TclGetString(patternPtr);
-	    if (Tcl_GetIndexFromObj(interp, objv[3], options, "option", 0,
-		    &mode) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[3], options,
+		    sizeof(char *), "option", 0, &mode) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	} else {

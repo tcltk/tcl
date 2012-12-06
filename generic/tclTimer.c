@@ -810,8 +810,8 @@ Tcl_AfterObjCmd(
 	|| objv[1]->typePtr == &tclWideIntType
 #endif
 	|| objv[1]->typePtr == &tclBignumType
-	|| ( Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, 
-				 &index) != TCL_OK )) {
+	|| ( Tcl_GetIndexFromObjStruct(NULL, objv[1], afterSubCmds,
+				sizeof(char *), NULL, 0, &index) != TCL_OK )) {
 	index = -1;
 	if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
 	    Tcl_AppendResult(interp, "bad argument \"",

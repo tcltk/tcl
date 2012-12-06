@@ -612,8 +612,8 @@ TclChanCreateObjCmd(
 
     methods = 0;
     while (listc > 0) {
-	if (Tcl_GetIndexFromObj(interp, listv[listc-1], methodNames,
-		"method", TCL_EXACT, &methIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, listv[listc-1], methodNames,
+		sizeof(char *), "method", TCL_EXACT, &methIndex) != TCL_OK) {
 	    TclNewLiteralStringObj(err, "chan handler \"");
 	    Tcl_AppendObjToObj(err, cmdObj);
 	    Tcl_AppendToObj(err, " initialize\" returned ", -1);
@@ -1932,8 +1932,8 @@ EncodeEventMask(
 
     events = 0;
     while (listc > 0) {
-	if (Tcl_GetIndexFromObj(interp, listv[listc-1], eventOptions,
-		objName, 0, &evIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, listv[listc-1], eventOptions,
+		sizeof(char *), objName, 0, &evIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (evIndex) {

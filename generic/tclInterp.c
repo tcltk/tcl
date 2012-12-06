@@ -296,7 +296,7 @@ Tcl_Init(
     Tcl_Interp *interp)		/* Interpreter to initialize. */
 {
     if (tclPreInitScript != NULL) {
-	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
+	if (Tcl_EvalEx(interp, tclPreInitScript, -1, 0) == TCL_ERROR) {
 	    return (TCL_ERROR);
 	};
     }
@@ -342,7 +342,7 @@ Tcl_Init(
      * alternate tclInit command before calling Tcl_Init().
      */
 
-    return Tcl_Eval(interp,
+    return Tcl_EvalEx(interp,
 "if {[namespace which -command tclInit] eq \"\"} {\n"
 "  proc tclInit {} {\n"
 "    global tcl_libPath tcl_library env tclDefaultLibrary\n"
@@ -404,7 +404,7 @@ Tcl_Init(
 "    error $msg\n"
 "  }\n"
 "}\n"
-"tclInit");
+"tclInit", -1, 0);
 }
 
 /*
@@ -577,8 +577,8 @@ Tcl_InterpObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], options, sizeof(char *),
+	    "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch ((enum option) index) {
@@ -660,8 +660,8 @@ Tcl_InterpObjCmd(
 	last = 0;
 	for (i = 2; i < objc; i++) {
 	    if ((last == 0) && (Tcl_GetString(objv[i])[0] == '-')) {
-		if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-			&index) != TCL_OK) {
+		if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+			sizeof(char *), "option", 0, &index) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (index == OPT_SAFE) {
@@ -834,8 +834,8 @@ Tcl_InterpObjCmd(
 	    if (TclGetString(objv[i])[0] != '-') {
 		break;
 	    }
-	    if (Tcl_GetIndexFromObj(interp, objv[i], hiddenOptions, "option",
-		    0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], hiddenOptions,
+		    sizeof(char *), "option", 0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (index == OPT_GLOBAL) {
@@ -881,8 +881,8 @@ Tcl_InterpObjCmd(
 	if (slaveInterp == NULL) {
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[3], limitTypes, "limit type", 0,
-		&limitType) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[3], limitTypes,
+		sizeof(char *), "limit type", 0, &limitType) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum LimitTypes) limitType) {
@@ -2264,8 +2264,8 @@ SlaveObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], options, sizeof(char *),
+	    "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2354,8 +2354,8 @@ SlaveObjCmd(
 	    if (TclGetString(objv[i])[0] != '-') {
 		break;
 	    }
-	    if (Tcl_GetIndexFromObj(interp, objv[i], hiddenOptions, "option",
-		    0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], hiddenOptions,
+		    sizeof(char *), "option", 0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (index == OPT_GLOBAL) {
@@ -2392,8 +2392,8 @@ SlaveObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "limitType ?options?");
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[2], limitTypes, "limit type", 0,
-		&limitType) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[2], limitTypes,
+		sizeof(char *), "limit type", 0, &limitType) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum LimitTypes) limitType) {
@@ -2511,8 +2511,8 @@ SlaveDebugCmd(
 		Tcl_NewBooleanObj(iPtr->flags & INTERP_DEBUG_FRAME));
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
-	if (Tcl_GetIndexFromObj(interp, objv[0], debugTypes,
-			"debug option", 0, &debugType) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[0], debugTypes,
+			sizeof(char *), "debug option", 0, &debugType) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (debugType == DEBUG_TYPE_FRAME) {
@@ -2926,8 +2926,8 @@ Tcl_MakeSafe(
 	 * Assume these functions all work. [Bug 2895741]
 	 */
 
-	(void) Tcl_Eval(interp,
-		"namespace eval ::tcl {namespace eval mathfunc {}}");
+	(void) Tcl_EvalEx(interp,
+		"namespace eval ::tcl {namespace eval mathfunc {}}", -1, 0);
 	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::min", master,
 		"::tcl::mathfunc::min", 0, NULL);
 	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::max", master,
@@ -2945,7 +2945,7 @@ Tcl_MakeSafe(
      * No env array in a safe slave.
      */
 
-    Tcl_UnsetVar(interp, "env", TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "env", NULL, TCL_GLOBAL_ONLY);
 
     /*
      * Remove unsafe parts of tcl_platform
@@ -2961,9 +2961,9 @@ Tcl_MakeSafe(
      * nameofexecutable])
      */
 
-    Tcl_UnsetVar(interp, "tclDefaultLibrary", TCL_GLOBAL_ONLY);
-    Tcl_UnsetVar(interp, "tcl_library", TCL_GLOBAL_ONLY);
-    Tcl_UnsetVar(interp, "tcl_pkgPath", TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "tclDefaultLibrary", NULL, TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
 
     /*
      * Remove the standard channels from the interpreter; safe interpreters do
@@ -4186,8 +4186,8 @@ SlaveCommandLimitCmd(
 	Tcl_SetObjResult(interp, dictPtr);
 	return TCL_OK;
     } else if (objc == consumedObjc+1) {
-	if (Tcl_GetIndexFromObj(interp, objv[consumedObjc], options, "option",
-		0, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[consumedObjc], options,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum Options) index) {
@@ -4224,8 +4224,8 @@ SlaveCommandLimitCmd(
 	int gran = 0, limit = 0;
 
 	for (i=consumedObjc ; i<objc ; i+=2) {
-	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-		    &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		    sizeof(char *), "option", 0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum Options) index) {
@@ -4376,8 +4376,8 @@ SlaveTimeLimitCmd(
 	Tcl_SetObjResult(interp, dictPtr);
 	return TCL_OK;
     } else if (objc == consumedObjc+1) {
-	if (Tcl_GetIndexFromObj(interp, objv[consumedObjc], options, "option",
-		0, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[consumedObjc], options,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum Options) index) {
@@ -4429,8 +4429,8 @@ SlaveTimeLimitCmd(
 
 	Tcl_LimitGetTime(slaveInterp, &limitMoment);
 	for (i=consumedObjc ; i<objc ; i+=2) {
-	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-		    &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], options, sizeof(char *),
+		    "option", 0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum Options) index) {

@@ -261,7 +261,7 @@ Tcl_EvalFile(
     int ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName,-1);
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSEvalFile(interp, pathPtr);
+    ret = Tcl_FSEvalFileEx(interp, pathPtr, NULL);
     Tcl_DecrRefCount(pathPtr);
     return ret;
 }
@@ -2518,8 +2518,8 @@ TclFSFileAttrIndex(
 	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, -1);
 	int result;
 
-	result = Tcl_GetIndexFromObj(NULL, tmpObj, attrTable, NULL, TCL_EXACT,
-		indexPtr);
+	result = Tcl_GetIndexFromObjStruct(NULL, tmpObj, attrTable,
+		sizeof(char *), NULL, TCL_EXACT, indexPtr);
 	TclDecrRefCount(tmpObj);
 	if (listObj != NULL) {
 	    TclDecrRefCount(listObj);

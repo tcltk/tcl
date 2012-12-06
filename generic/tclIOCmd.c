@@ -532,8 +532,8 @@ Tcl_SeekObjCmd(
     }
     mode = SEEK_SET;
     if (objc == 4) {
-	if (Tcl_GetIndexFromObj(interp, objv[3], originOptions, "origin", 0,
-		&optionIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[3], originOptions,
+		sizeof(char *), "origin", 0, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	mode = modeArray[optionIndex];
@@ -853,8 +853,8 @@ Tcl_ExecObjCmd(
 	if (string[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[skip], options, "switch",
-		TCL_EXACT, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[skip], options,
+		sizeof(char *), "switch", TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (index == EXEC_KEEPNEWLINE) {
@@ -1432,8 +1432,8 @@ Tcl_SocketObjCmd(
 	if (arg[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[a], socketOptions, "option",
-		TCL_EXACT, &optionIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[a], socketOptions,
+		sizeof(char*), "option", TCL_EXACT, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum socketOptions) optionIndex) {
@@ -1628,8 +1628,8 @@ Tcl_FcopyObjCmd(
     toRead = -1;
     cmdPtr = NULL;
     for (i = 3; i < objc; i += 2) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "switch", 0,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], switches,
+		sizeof(char *), "switch", 0, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
@@ -1693,8 +1693,8 @@ ChanPendingObjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], options, "mode", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], options,
+	    sizeof(char *), "mode", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 

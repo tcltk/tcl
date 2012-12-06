@@ -6394,10 +6394,10 @@ extern TclStubs *tclStubsPtr;
 	Tcl_PkgProvideEx((interp), (name), (version), NULL)
 #undef Tcl_PkgRequire
 #define Tcl_PkgRequire(interp, name, version, exact) \
-	Tcl_PkgRequireEx((interp), (name), (version), (exact), NULL);
+	Tcl_PkgRequireEx((interp), (name), (version), (exact), NULL)
 #undef Tcl_PkgPresent
 #define Tcl_PkgPresent(interp, name, version, exact) \
-    Tcl_PkgPresentEx((interp), (name), (version), (exact), NULL);
+    Tcl_PkgPresentEx((interp), (name), (version), (exact), NULL)
 #undef  Tcl_Eval
 #define Tcl_Eval(interp,command) \
 	Tcl_EvalEx((interp),(command),-1,0)

@@ -20,15 +20,6 @@
 #include <stdlib.h>
 
 /*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Registry_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
-/*
  * The maximum length of a sub-key name.
  */
 
@@ -193,8 +184,8 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj);
 
-EXTERN int		Registry_Init(Tcl_Interp *interp);
-EXTERN int		Registry_Unload(Tcl_Interp *interp, int flags);
+DLLEXPORT int	Registry_Init(Tcl_Interp *interp);
+DLLEXPORT int	Registry_Unload(Tcl_Interp *interp, int flags);
 
 /*
  *----------------------------------------------------------------------
@@ -1151,8 +1142,8 @@ ParseKeyName(
      */
 
     rootObj = Tcl_NewStringObj(rootName, -1);
-    result = Tcl_GetIndexFromObj(interp, rootObj, rootKeyNames, "root name",
-	    TCL_EXACT, &index);
+    result = Tcl_GetIndexFromObjStruct(interp, rootObj, rootKeyNames,
+	    sizeof(char *), "root name", TCL_EXACT, &index);
     Tcl_DecrRefCount(rootObj);
     if (result != TCL_OK) {
 	return TCL_ERROR;
@@ -1262,8 +1253,8 @@ SetValue(
 
     if (typeObj == NULL) {
 	type = REG_SZ;
-    } else if (Tcl_GetIndexFromObj(interp, typeObj, typeNames, "type",
-	    0, (int *) &type) != TCL_OK) {
+    } else if (Tcl_GetIndexFromObjStruct(interp, typeObj, typeNames,
+	    sizeof(char *), "type", 0, (int *) &type) != TCL_OK) {
 	if (Tcl_GetIntFromObj(NULL, typeObj, (int*) &type) != TCL_OK) {
 	    return TCL_ERROR;
 	}

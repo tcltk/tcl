@@ -532,14 +532,8 @@ static Tcl_Filesystem simpleFilesystem = {
 };
 
 
-/*
- * External (platform specific) initialization routine, these declarations
- * explicitly don't use EXTERN since this code does not get compiled into the
- * library:
- */
-
-extern int		TclplatformtestInit(Tcl_Interp *interp);
-extern int		TclThread_Init(Tcl_Interp *interp);
+MODULE_SCOPE int	TclplatformtestInit(Tcl_Interp *interp);
+MODULE_SCOPE int	TclThread_Init(Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------

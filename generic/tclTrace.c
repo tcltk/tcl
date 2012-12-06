@@ -198,8 +198,8 @@ Tcl_TraceObjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], traceOptions,
-		"option", 0, &optionIndex) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], traceOptions,
+		sizeof(char *), "option", 0, &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch ((enum traceOptions) optionIndex) {
@@ -217,8 +217,8 @@ Tcl_TraceObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "type ?arg arg ...?");
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[2], traceTypeOptions, "option",
-		0, &typeIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[2], traceTypeOptions,
+		sizeof(char *), "option", 0, &typeIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	return (traceSubCmds[typeIndex])(interp, optionIndex, objc, objv);
@@ -240,8 +240,8 @@ Tcl_TraceObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "type name");
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[2], traceTypeOptions, "option",
-		0, &typeIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[2], traceTypeOptions,
+		sizeof(char *), "option", 0, &typeIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	return (traceSubCmds[typeIndex])(interp, optionIndex, objc, objv);
@@ -307,7 +307,7 @@ Tcl_TraceObjCmd(
 	resultListPtr = Tcl_NewObj();
 	clientData = 0;
 	name = Tcl_GetString(objv[2]);
-	while ((clientData = Tcl_VarTraceInfo(interp, name, 0,
+	while ((clientData = Tcl_VarTraceInfo2(interp, name, NULL, 0,
 		TraceVarProc, clientData)) != 0) {
 
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *) clientData;
@@ -426,8 +426,8 @@ TraceExecutionObjCmd(
 	    return TCL_ERROR;
 	}
 	for (i = 0; i < listLen; i++) {
-	    if (Tcl_GetIndexFromObj(interp, elemPtrs[i], opStrings,
-		    "operation", TCL_EXACT, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, elemPtrs[i], opStrings,
+		    sizeof(char *), "operation", TCL_EXACT, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum operations) index) {
@@ -673,8 +673,8 @@ TraceCommandObjCmd(
 	}
 
 	for (i = 0; i < listLen; i++) {
-	    if (Tcl_GetIndexFromObj(interp, elemPtrs[i], opStrings,
-		    "operation", TCL_EXACT, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, elemPtrs[i], opStrings,
+		    sizeof(char *), "operation", TCL_EXACT, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum operations) index) {
@@ -874,8 +874,8 @@ TraceVariableObjCmd(
 	    return TCL_ERROR;
 	}
 	for (i = 0; i < listLen ; i++) {
-	    if (Tcl_GetIndexFromObj(interp, elemPtrs[i], opStrings,
-		    "operation", TCL_EXACT, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, elemPtrs[i], opStrings,
+		    sizeof(char *), "operation", TCL_EXACT, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum operations) index) {
@@ -927,7 +927,7 @@ TraceVariableObjCmd(
 	    TraceVarInfo *tvarPtr;
 	    ClientData clientData = 0;
 	    name = Tcl_GetString(objv[3]);
-	    while ((clientData = Tcl_VarTraceInfo(interp, name, 0,
+	    while ((clientData = Tcl_VarTraceInfo2(interp, name, NULL, 0,
 		    TraceVarProc, clientData)) != 0) {
 		tvarPtr = (TraceVarInfo *) clientData;
 		if ((tvarPtr->length == length)
@@ -955,8 +955,8 @@ TraceVariableObjCmd(
 	resultListPtr = Tcl_NewObj();
 	clientData = 0;
 	name = Tcl_GetString(objv[3]);
-	while ((clientData = Tcl_VarTraceInfo(interp, name, 0, TraceVarProc,
-		clientData)) != 0) {
+	while ((clientData = Tcl_VarTraceInfo2(interp, name, NULL, 0,
+		TraceVarProc, clientData)) != 0) {
 	    Tcl_Obj *opObj;
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *) clientData;
 
@@ -1883,7 +1883,7 @@ TraceExecutionProc(
 	     * interpreter.
 	     */
 
-	    traceCode = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
+	    traceCode = Tcl_EvalEx(interp, Tcl_DStringValue(&cmd), -1, 0);
 	    tcmdPtr->flags &= ~TCL_TRACE_EXEC_IN_PROGRESS;
 
 	    /*

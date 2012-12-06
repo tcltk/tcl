@@ -15,16 +15,6 @@
 #include <ddeml.h>
 
 /*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the Dde_Init
- * declaration is in the source file itself, which is only accessed when we
- * are building a library. DO NOT MOVE BEFORE ANY #include LINES. ONLY USE
- * EXTERN TO INDICATE EXPORTED FUNCTIONS FROM NOW ON.
- */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
-/*
  * The following structure is used to keep track of the interpreters
  * registered by this process.
  */
@@ -116,8 +106,8 @@ static int		DdeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
-EXTERN int		Dde_Init(Tcl_Interp *interp);
-EXTERN int		Dde_SafeInit(Tcl_Interp *interp);
+DLLEXPORT int	Dde_Init(Tcl_Interp *interp);
+DLLEXPORT int	Dde_SafeInit(Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------

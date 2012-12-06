@@ -13,9 +13,6 @@
 
 #include "tclInt.h"
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
 /*
  * The default prompt used when the user has not overridden it.
  */

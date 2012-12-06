@@ -113,21 +113,15 @@ static char *errorProcString;
 
 TCL_DECLARE_MUTEX(threadMutex)
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
-EXTERN int		TclThread_Init(Tcl_Interp *interp);
-EXTERN int		Tcl_ThreadObjCmd(ClientData clientData,
+DLLEXPORT int	TclThread_Init(Tcl_Interp *interp);
+DLLEXPORT int	Tcl_ThreadObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-EXTERN int		TclCreateThread(Tcl_Interp *interp, char *script,
+DLLEXPORT int	TclCreateThread(Tcl_Interp *interp, char *script,
 			    int joinable);
-EXTERN int		TclThreadList(Tcl_Interp *interp);
-EXTERN int		TclThreadSend(Tcl_Interp *interp, Tcl_ThreadId id,
+DLLEXPORT int	TclThreadList(Tcl_Interp *interp);
+DLLEXPORT int	TclThreadSend(Tcl_Interp *interp, Tcl_ThreadId id,
 			    char *script, int wait);
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLIMPORT
 
 Tcl_ThreadCreateType	NewTestThread(ClientData clientData);
 static void		ListRemove(ThreadSpecificData *tsdPtr);
