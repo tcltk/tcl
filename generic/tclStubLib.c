@@ -35,20 +35,15 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 static const TclStubs *
 HasStubSupport(
     Tcl_Interp *interp,
-    const char *tclversion,
     int magic)
 {
     Interp *iPtr = (Interp *) interp;
-    if (tclversion[0] != ('0' + TCL_MAJOR_VERSION)) {
-	iPtr->result = (char *) "extension linked to incompatible stubs library";
-	iPtr->freeProc = 0; /* TCL_STATIC */
-	return NULL;
-    }
-    if (iPtr->stubTable && iPtr->stubTable->magic == magic) {
+    if (iPtr->stubTable && iPtr->stubTable->magic == magic
+	    && iPtr->stubTable->magic == TCL_STUB_MAGIC) {
 	return iPtr->stubTable;
     }
     iPtr->result = (char *) "interpreter uses an incompatible stubs mechanism";
-    iPtr->freeProc = 0; /* TCL_STATIC */
+    iPtr->freeProc = TCL_STATIC;
     return NULL;
 }
 
@@ -87,32 +82,12 @@ TclInitStubs(
     const char *tclversion,
     int magic)
 {
+    const char *p;
+    char *q;
+    char major[TCL_INTEGER_SPACE];
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
     Interp *iPtr = (Interp *) interp;
-
-    /*
-     * Detect whether an extension compiled against a Tcl header file
-     * of one major version is requesting to use a stubs table of a
-     * different major version.  According to our compat rules, that's
-     * a request that cannot succeed.  Different major versions imply
-     * incompatible stub tables.
-     */
-
-    const char *p = version;
-    const char *q = TCL_VERSION;
-    while (isDigit(*p)) {
-	if (*p++ != *q++) {
-	    goto badVersion;
-	}
-    }
-    if (isDigit(*q)) {
-    badVersion:
-	iPtr->result =
-	    (char *) "extension passed bad version argument to stubs library";
-	iPtr->freeProc = TCL_STATIC;
-	return NULL;
-    }
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -120,10 +95,37 @@ TclInitStubs(
      * times. [Bug 615304]
      */
 
-    tclStubsPtr = HasStubSupport(interp, tclversion, magic);
+    tclStubsPtr = HasStubSupport(interp, magic);
     if (!tclStubsPtr) {
 	return NULL;
     }
+
+    /*
+     * Check that the [load]ing interp and [load]ed extension were compiled
+     * against headers from the same major version of Tcl.  If not, they
+     * will not agree on the layout of the stubs and will crash.  Report
+     * the error instead of crashing.
+     */
+
+    p = tclversion;
+    q = major;
+    while (isDigit(*p)) {
+	*q++ = *p++;
+	if (q-major > TCL_INTEGER_SPACE) {
+	    iPtr->result = (char *) "major version overflow";
+	    iPtr->freeProc = TCL_STATIC;
+	    return NULL;
+	}
+    }
+    *q = '\0';
+
+    if (NULL == Tcl_PkgRequireEx(interp, "Tcl", major, 0, NULL)) {
+	return NULL;
+    }
+
+    /*
+     * Check satisfaction of the requirement requested by the caller.
+     */
 
     actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
     if (actualVersion == NULL) {
