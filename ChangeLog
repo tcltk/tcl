@@ -1,3 +1,8 @@
+2012-12-05  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:   Fix [tailcall] and [yieldto] to not panic
+	* generic/tclExecute.c: in dying namespaces: [Bug 3592747]
+
 2012-11-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (ZlibStreamSubcmd): [Bug 3590483]: Use a mechanism

@@ -2375,7 +2375,8 @@ TEBCresume(
     }
 
     case INST_TAILCALL: {
-	Tcl_Obj *listPtr, *nsObjPtr;
+	Tcl_Obj *listPtr;
+	Namespace *nsPtr;
         NRE_callback *tailcallPtr;
 
 	opnd = TclGetUInt1AtPtr(pc+1);
@@ -2409,10 +2410,10 @@ TEBCresume(
 	 */
 
 	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
-	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
+	nsPtr = iPtr->varFramePtr->nsPtr;
 	Tcl_IncrRefCount(listPtr);
-	Tcl_IncrRefCount(nsObjPtr);
-	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
+	nsPtr->refCount++;
+	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsPtr,
 		NULL, NULL);
 
 	/*
