@@ -2218,8 +2218,15 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  * When not using stubs, make it a macro.
  */
 
+#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #define Tcl_InitStubs(interp, version, exact) \
     TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
+#else
+/* During alpha/beta phase we need to use the full patchlevel, regardless
+ * on what the real minimum required version was. */
+#define Tcl_InitStubs(interp, version, exact) \
+    TclInitStubs(interp, TCL_PATCH_LEVEL, exact, TCL_VERSION, TCL_STUB_MAGIC)
+#endif
 
 /*
  * Public functions that are not accessible via the stubs table.

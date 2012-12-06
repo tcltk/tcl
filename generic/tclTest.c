@@ -507,10 +507,10 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
 	return TCL_ERROR;
     }
-    if (Tcl_TomMath_InitStubs(interp, TCL_VERSION) == NULL) {
+    if (Tcl_TomMath_InitStubs(interp, "9.0") == NULL) {
 	return TCL_ERROR;
     }
     if (Tcl_OOInitStubs(interp) == NULL) {
@@ -518,7 +518,7 @@ Tcltest_Init(
     }
     /* TIP #268: Full patchlevel instead of just major.minor */
 
-    if (Tcl_PkgProvide(interp, "Tcltest", TCL_PATCH_LEVEL) == TCL_ERROR) {
+    if (Tcl_PkgProvideEx(interp, "Tcltest", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -731,7 +731,7 @@ int
 Tcltest_SafeInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
 	return TCL_ERROR;
     }
     return Procbodytest_SafeInit(interp);
