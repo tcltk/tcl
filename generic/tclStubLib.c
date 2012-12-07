@@ -11,15 +11,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-/*
- * We need to ensure that we use the stub macros so that this file contains no
- * references to any of the stub functions. This will make it possible to
- * build an extension that references Tcl_InitStubs but doesn't end up
- * including the rest of the stub functions.
- */
-
-#define USE_TCL_STUBS
-
 #include "tclInt.h"
 
 MODULE_SCOPE const TclStubs *tclStubsPtr;
@@ -78,7 +69,7 @@ static int isDigit(const int c)
  *
  *----------------------------------------------------------------------
  */
-
+#undef Tcl_InitStubs
 MODULE_SCOPE const char *
 TclInitStubs(
     Tcl_Interp *interp,
@@ -88,7 +79,7 @@ TclInitStubs(
     int magic)
 {
     const char *actualVersion = NULL;
-    ClientData pkgData = NULL;
+    const TclStubs *stubsPtr;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -96,12 +87,12 @@ TclInitStubs(
      * times. [Bug 615304]
      */
 
-    tclStubsPtr = HasStubSupport(interp, tclversion, magic);
-    if (!tclStubsPtr) {
+    stubsPtr = HasStubSupport(interp, tclversion, magic);
+    if (!stubsPtr) {
 	return NULL;
     }
 
-    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
+    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, NULL);
     if (actualVersion == NULL) {
 	return NULL;
     }
@@ -121,17 +112,17 @@ TclInitStubs(
 	    }
 	    if (*p || isDigit(*q)) {
 		/* Construct error message */
-		Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 		return NULL;
 	    }
 	} else {
-	    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+	    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 	    if (actualVersion == NULL) {
 		return NULL;
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs *) pkgData;
+    tclStubsPtr = stubsPtr;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
