@@ -64,7 +64,7 @@ static int isDigit(const int c)
  *----------------------------------------------------------------------
  */
 #undef Tcl_InitStubs
-const char *
+MODULE_SCOPE const char *
 Tcl_InitStubs(
     Tcl_Interp *interp,
     const char *version,
