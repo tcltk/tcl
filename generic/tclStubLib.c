@@ -84,7 +84,7 @@ TclInitStubs(
     int magic)
 {
     const char *actualVersion = NULL;
-    ClientData pkgData = NULL;
+    const TclStubs *stubsPtr;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -92,12 +92,12 @@ TclInitStubs(
      * times. [Bug 615304]
      */
 
-    tclStubsPtr = HasStubSupport(interp, magic);
-    if (!tclStubsPtr) {
+    stubsPtr = HasStubSupport(interp, magic);
+    if (!stubsPtr) {
 	return NULL;
     }
 
-    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
+    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, NULL);
     if (actualVersion == NULL) {
 	return NULL;
     }
@@ -115,19 +115,19 @@ TclInitStubs(
 	    while (*p && (*p == *q)) {
 		p++; q++;
 	    }
-	    if (*p) {
+	    if (*p || isDigit(*q)) {
 		/* Construct error message */
-		Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 		return NULL;
 	    }
 	} else {
-	    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+	    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 	    if (actualVersion == NULL) {
 		return NULL;
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs *) pkgData;
+    tclStubsPtr = stubsPtr;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
