@@ -98,6 +98,11 @@ Pkgb_UnsafeObjCmd(
     return Tcl_EvalEx(interp, "list unsafe command invoked", -1, TCL_EVAL_GLOBAL);
 }
 
+#if (TCL_MAJOR_VERSION > 8)
+#  define Tcl_GetDefaultEncodingDir ((const char *(*)(void)) \
+     ((&(tclStubsPtr->tcl_PkgProvideEx))[341]))
+#endif
+
 static int
 Pkgb_DemoObjCmd(
     ClientData dummy,		/* Not used. */
@@ -105,7 +110,11 @@ Pkgb_DemoObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *foo = Tcl_GetDefaultEncodingDir();
+    if(!Tcl_GetDefaultEncodingDir) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("not supported", -1));
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetDefaultEncodingDir(), -1));
     return TCL_OK;
 }
 
