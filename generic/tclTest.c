@@ -938,7 +938,7 @@ AsyncHandlerProc(
     listArgv[3] = NULL;
     cmd = Tcl_Merge(3, listArgv);
     if (interp != NULL) {
-	code = Tcl_Eval(interp, cmd);
+	code = Tcl_EvalEx(interp, cmd, -1, 0);
     } else {
 	/*
 	 * this should not happen, but by definition of how async handlers are
@@ -1222,7 +1222,7 @@ TestcmdtraceCmd(
 	Tcl_DStringInit(&buffer);
 	cmdTrace = Tcl_CreateTrace(interp, 50000,
 		(Tcl_CmdTraceProc *) CmdTraceProc, (ClientData) &buffer);
-	result = Tcl_Eval(interp, argv[2]);
+	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), NULL);
@@ -1239,13 +1239,13 @@ TestcmdtraceCmd(
 
 	cmdTrace = Tcl_CreateTrace(interp, 50000,
 		(Tcl_CmdTraceProc *) CmdTraceDeleteProc, (ClientData) NULL);
-	Tcl_Eval(interp, argv[2]);
+	Tcl_EvalEx(interp, argv[2], -1, 0);
     } else if (strcmp(argv[1], "leveltest") == 0) {
 	Interp *iPtr = (Interp *) interp;
 	Tcl_DStringInit(&buffer);
 	cmdTrace = Tcl_CreateTrace(interp, iPtr->numLevels + 4,
 		(Tcl_CmdTraceProc *) CmdTraceProc, (ClientData) &buffer);
-	result = Tcl_Eval(interp, argv[2]);
+	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), NULL);
@@ -1263,7 +1263,7 @@ TestcmdtraceCmd(
 	cmdTrace = Tcl_CreateObjTrace(interp, 50000,
 		TCL_ALLOW_INLINE_COMPILATION, ObjTraceProc,
 		(ClientData) &deleteCalled, ObjTraceDeleteProc);
-	result = Tcl_Eval(interp, argv[2]);
+	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	Tcl_DeleteTrace(interp, cmdTrace);
 	if (!deleteCalled) {
 	    Tcl_SetResult(interp, "Delete wasn't called", TCL_STATIC);
@@ -1279,7 +1279,7 @@ TestcmdtraceCmd(
 		(Tcl_CmdTraceProc *) CmdTraceProc, (ClientData) &buffer);
 	t2 = Tcl_CreateTrace(interp, 50000,
 		(Tcl_CmdTraceProc *) CmdTraceProc, (ClientData) &buffer);
-	result = Tcl_Eval(interp, argv[2]);
+	result = Tcl_EvalEx(interp, argv[2], -1, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), NULL);
@@ -1608,7 +1608,7 @@ DelDeleteProc(
 {
     DelCmd *dPtr = (DelCmd *) clientData;
 
-    Tcl_Eval(dPtr->interp, dPtr->deleteCmd);
+    Tcl_EvalEx(dPtr->interp, dPtr->deleteCmd, -1, 0);
     Tcl_ResetResult(dPtr->interp);
     ckfree(dPtr->deleteCmd);
     ckfree((char *) dPtr);
@@ -1720,8 +1720,8 @@ TestdoubledigitsObjCmd(ClientData unused,
     }
     if (status != TCL_OK
 	|| Tcl_GetIntFromObj(interp, objv[2], &ndigits) != TCL_OK
-	|| Tcl_GetIndexFromObj(interp, objv[3], options, "conversion type",
-			       TCL_EXACT, &type) != TCL_OK) {
+	|| Tcl_GetIndexFromObjStruct(interp, objv[3], options,
+		sizeof(char *), "conversion type", TCL_EXACT, &type) != TCL_OK) {
 	fprintf(stderr, "bad value? %g\n", d);
 	return TCL_ERROR;
     }
@@ -1909,8 +1909,8 @@ TestencodingObjCmd(
 	ENC_CREATE,	ENC_DELETE
     };
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], optionStrings,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1973,7 +1973,7 @@ EncodingToUtfProc(
     TclEncoding *encodingPtr;
 
     encodingPtr = (TclEncoding *) clientData;
-    Tcl_GlobalEval(encodingPtr->interp, encodingPtr->toUtfCmd);
+    Tcl_EvalEx(encodingPtr->interp, encodingPtr->toUtfCmd, -1, TCL_EVAL_GLOBAL);
 
     len = strlen(Tcl_GetStringResult(encodingPtr->interp));
     if (len > dstLen) {
@@ -2005,7 +2005,7 @@ EncodingFromUtfProc(
     TclEncoding *encodingPtr;
 
     encodingPtr = (TclEncoding *) clientData;
-    Tcl_GlobalEval(encodingPtr->interp, encodingPtr->fromUtfCmd);
+    Tcl_EvalEx(encodingPtr->interp, encodingPtr->fromUtfCmd, -1, TCL_EVAL_GLOBAL);
 
     len = strlen(Tcl_GetStringResult(encodingPtr->interp));
     if (len > dstLen) {
@@ -2170,8 +2170,8 @@ TesteventObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?args?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "subcommand",
-	    TCL_EXACT, &subCmdIndex) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], subcommands,
+	    sizeof(char *), "subcommand", TCL_EXACT, &subCmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch (subCmdIndex) {
@@ -2180,8 +2180,8 @@ TesteventObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "name position script");
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[3], positions,
-		"position specifier", TCL_EXACT, &posIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[3], positions,
+		sizeof(char *), "position specifier", TCL_EXACT, &posIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	ev = (TestEvent *) ckalloc(sizeof(TestEvent));
@@ -3284,8 +3284,8 @@ TestlocaleCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], optionStrings,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3830,8 +3830,8 @@ TestregexpObjCmd(
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "switch", TCL_EXACT,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "switch", TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum options) index) {
@@ -4359,7 +4359,7 @@ TestupvarCmd(
 	} else if (strcmp(argv[4], "namespace") == 0) {
 	    flags = TCL_NAMESPACE_ONLY;
 	}
-	return Tcl_UpVar(interp, argv[1], argv[2], argv[3], flags);
+	return Tcl_UpVar2(interp, argv[1], argv[2], NULL, argv[3], flags);
     } else {
 	if (strcmp(argv[5], "global") == 0) {
 	    flags = TCL_GLOBAL_ONLY;
@@ -4478,7 +4478,7 @@ TestfeventCmd(
 	    return TCL_ERROR;
 	}
 	if (interp2 != NULL) {
-	    code = Tcl_GlobalEval(interp2, argv[2]);
+	    code = Tcl_EvalEx(interp2, argv[2], -1, TCL_EVAL_GLOBAL);
 	    Tcl_SetObjResult(interp, Tcl_GetObjResult(interp2));
 	    return code;
 	} else {
@@ -5050,8 +5050,8 @@ TestsaveresultCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "type script discard");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], optionStrings,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (Tcl_GetBooleanFromObj(interp, objv[3], &discard) != TCL_OK) {
@@ -5088,7 +5088,7 @@ TestsaveresultCmd(
     if (((enum options) index) == RESULT_OBJECT) {
 	result = Tcl_EvalObjEx(interp, objv[2], 0);
     } else {
-	result = Tcl_Eval(interp, Tcl_GetString(objv[2]));
+	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), -1, 0);
     }
 
     if (discard) {
@@ -6686,7 +6686,7 @@ TestReport(
 	}
 	Tcl_DStringEndSublist(&ds);
 	Tcl_SaveResult(interp, &savedResult);
-	Tcl_Eval(interp, Tcl_DStringValue(&ds));
+	Tcl_EvalEx(interp, Tcl_DStringValue(&ds), -1, 0);
 	Tcl_DStringFree(&ds);
 	Tcl_RestoreResult(interp, &savedResult);
    }

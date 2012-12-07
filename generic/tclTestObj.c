@@ -146,8 +146,8 @@ TestbignumobjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg?...");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], subcmds,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
     string = Tcl_GetString(objv[2]);
@@ -521,11 +521,11 @@ TestindexobjCmd(
 	    return TCL_ERROR;
 	}
 
-	Tcl_GetIndexFromObj(NULL, objv[1], tablePtr, "token", 0, &index);
+	Tcl_GetIndexFromObjStruct(NULL, objv[1], tablePtr, sizeof(char *), "token", 0, &index);
 	indexRep = (struct IndexRep *) objv[1]->internalRep.otherValuePtr;
 	indexRep->index = index2;
-	result = Tcl_GetIndexFromObj(NULL, objv[1],
-		tablePtr, "token", 0, &index);
+	result = Tcl_GetIndexFromObjStruct(NULL, objv[1],
+		tablePtr, sizeof(char *), "token", 0, &index);
 	if (result == TCL_OK) {
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
 	}
@@ -566,8 +566,8 @@ TestindexobjCmd(
 	}
     }
 
-    result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],
-	    argv, "token", (allowAbbrev? 0 : TCL_EXACT), &index);
+    result = Tcl_GetIndexFromObjStruct((setError? interp : NULL), objv[3],
+	    argv, sizeof(char *), "token", (allowAbbrev? 0 : TCL_EXACT), &index);
     ckfree((char *) argv);
     if (result == TCL_OK) {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
@@ -828,8 +828,8 @@ TestlistobjCmd(
     if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command",
-			    0, &cmdIndex) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], subcommands,
+	    sizeof(char *), "command", 0, &cmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch(cmdIndex) {
@@ -1112,8 +1112,8 @@ TeststringobjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0, &option)
-	    != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], options,
+	    sizeof(char *), "option", 0, &option) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch (option) {

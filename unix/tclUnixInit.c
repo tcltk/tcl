@@ -912,7 +912,7 @@ TclpSetVariables(
     } else
 #endif /* HAVE_COREFOUNDATION */
     {
-	Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
+	Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, Tcl_NewStringObj(pkgPath, -1), TCL_GLOBAL_ONLY);
     }
 
 #ifdef DJGPP

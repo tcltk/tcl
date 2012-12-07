@@ -209,8 +209,8 @@ Tcl_ThreadObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?args?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], threadOptions, "option", 0,
-	    &option) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], threadOptions,
+	    sizeof(char *), "option", 0, &option) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -514,7 +514,7 @@ NewTestThread(
      */
 
     Tcl_Preserve((ClientData) tsdPtr->interp);
-    result = Tcl_Eval(tsdPtr->interp, threadEvalScript);
+    result = Tcl_EvalEx(tsdPtr->interp, threadEvalScript, -1, 0);
     if (result != TCL_OK) {
 	ThreadErrorProc(tsdPtr->interp);
     }
@@ -557,7 +557,7 @@ ThreadErrorProc(
     char buf[TCL_DOUBLE_SPACE+1];
     sprintf(buf, "%ld", (long) Tcl_GetCurrentThread());
 
-    errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
+    errorInfo = Tcl_GetVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
     if (errorProcString == NULL) {
 	errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	Tcl_WriteChars(errChannel, "Error from thread ", -1);
@@ -733,7 +733,7 @@ TclThreadSend(
 
     if (threadId == Tcl_GetCurrentThread()) {
         Tcl_MutexUnlock(&threadMutex);
-	return Tcl_GlobalEval(interp, script);
+	return Tcl_EvalEx(interp, script, -1, TCL_EVAL_GLOBAL);
     }
 
     /*
@@ -872,12 +872,12 @@ ThreadEventProc(
 	Tcl_ResetResult(interp);
 	Tcl_CreateThreadExitHandler(ThreadFreeProc,
 		(ClientData) threadEventPtr->script);
-	code = Tcl_GlobalEval(interp, threadEventPtr->script);
+	code = Tcl_EvalEx(interp, threadEventPtr->script, -1, TCL_EVAL_GLOBAL);
 	Tcl_DeleteThreadExitHandler(ThreadFreeProc,
 		(ClientData) threadEventPtr->script);
 	if (code != TCL_OK) {
-	    errorCode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
-	    errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
+	    errorCode = Tcl_GetVar2(interp, "errorCode", NULL, TCL_GLOBAL_ONLY);
+	    errorInfo = Tcl_GetVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
 	} else {
 	    errorCode = errorInfo = NULL;
 	}
