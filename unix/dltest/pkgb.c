@@ -93,8 +93,7 @@ Pkgb_UnsafeObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unsafe command invoked", -1));
-    return TCL_OK;
+    return Tcl_EvalEx(interp, "list unsafe command invoked", -1, TCL_EVAL_GLOBAL);
 }
 
 /*
@@ -121,10 +120,10 @@ Pkgb_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-9.1", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgb", "2.3");
+    code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);
     if (code != TCL_OK) {
 	return code;
     }
@@ -158,10 +157,10 @@ Pkgb_SafeInit(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-9.1", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgb", "2.3");
+    code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);
     if (code != TCL_OK) {
 	return code;
     }
