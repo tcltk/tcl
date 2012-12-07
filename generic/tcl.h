@@ -2191,7 +2191,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACB)
 
 /*
  * The following function is required to be defined in all stubs aware
