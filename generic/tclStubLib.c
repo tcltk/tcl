@@ -11,15 +11,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-/*
- * We need to ensure that we use the stub macros so that this file contains no
- * references to any of the stub functions. This will make it possible to
- * build an extension that references Tcl_InitStubs but doesn't end up
- * including the rest of the stub functions.
- */
-
-#define USE_TCL_STUBS
-
 #include "tclInt.h"
 
 MODULE_SCOPE const TclStubs *tclStubsPtr;
@@ -35,6 +26,7 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 static const TclStubs *
 HasStubSupport(
     Tcl_Interp *interp,
+    const char *tclversion,
     int magic)
 {
     Interp *iPtr = (Interp *) interp;
@@ -74,7 +66,7 @@ static int isDigit(const int c)
  *
  *----------------------------------------------------------------------
  */
-
+#undef Tcl_InitStubs
 MODULE_SCOPE const char *
 TclInitStubs(
     Tcl_Interp *interp,
@@ -92,7 +84,7 @@ TclInitStubs(
      * times. [Bug 615304]
      */
 
-    stubsPtr = HasStubSupport(interp, magic);
+    stubsPtr = HasStubSupport(interp, tclversion, magic);
     if (!stubsPtr) {
 	return NULL;
     }

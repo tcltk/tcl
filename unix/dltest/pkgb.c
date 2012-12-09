@@ -21,6 +21,8 @@ static int    Pkgb_SubObjCmd(ClientData clientData,
 		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int    Pkgb_UnsafeObjCmd(ClientData clientData,
 		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int    Pkgb_DemoObjCmd(ClientData clientData,
+		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 /*
  *----------------------------------------------------------------------
@@ -86,6 +88,17 @@ Pkgb_UnsafeObjCmd(
 {
     return Tcl_EvalEx(interp, "list unsafe command invoked", -1, TCL_EVAL_GLOBAL);
 }
+
+static int
+Pkgb_DemoObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetDefaultEncodingDir(), -1));
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -119,8 +132,8 @@ Pkgb_Init(
 	return code;
     }
     Tcl_CreateObjCommand(interp, "pkgb_sub", Pkgb_SubObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "pkgb_unsafe", Pkgb_UnsafeObjCmd, NULL,
-	    NULL);
+    Tcl_CreateObjCommand(interp, "pkgb_unsafe", Pkgb_UnsafeObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "pkgb_demo", Pkgb_DemoObjCmd, NULL, NULL);
     return TCL_OK;
 }
 

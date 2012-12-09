@@ -3737,6 +3737,11 @@ extern const TclStubs *tclStubsPtr;
 	    (tclStubsPtr->tcl_SetVar2(interp, part1, part2, newValue, flags))
 #endif
 
+#ifdef TCL_8_COMPAT
+#define Tcl_GetDefaultEncodingDir TclGetDefaultEncodingDir
+#endif
+MODULE_SCOPE const char *TclGetDefaultEncodingDir(void);
+
 #if defined(_WIN32) && defined(UNICODE)
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #   define Tcl_MainEx Tcl_MainExW
