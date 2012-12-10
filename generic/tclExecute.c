@@ -4501,7 +4501,6 @@ ExecuteByteCode(
 
 	/*
 	 * Make sure only -1,0,1 is returned.
-	 * TODO: consider peephole opt.
 	 */
 
 	switch (*pc) {
