@@ -140,7 +140,7 @@ Pkgb_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-9.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);
@@ -177,7 +177,7 @@ Pkgb_SafeInit(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-9.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);

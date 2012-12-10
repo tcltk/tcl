@@ -87,8 +87,8 @@ TclInitStubs(
     int magic)
 {
     const char *actualVersion = NULL;
+    ClientData pkgData = NULL;
     const TclStubs *stubsPtr;
-    ClientData *pkgData;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
