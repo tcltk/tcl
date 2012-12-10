@@ -69,6 +69,15 @@ int TclSockMinimumBuffersOld(sock, size)
 }
 #endif
 
+#define TclGetErrorLine getErrorLine
+static int TclGetErrorLine(Tcl_Interp *interp) {
+	return interp->errorLine;
+}
+#define TclSetErrorLine setErrorLine
+static void TclSetErrorLine(Tcl_Interp *interp, int errorline) {
+	interp->errorLine = errorline;
+}
+
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
 #   define TclpReaddir 0
@@ -1128,6 +1137,39 @@ TclStubs tclStubs = {
     NULL, /* 571 */
     NULL, /* 572 */
     Tcl_PkgRequireProc, /* 573 */
+    NULL, /* 574 */
+    NULL, /* 575 */
+    NULL, /* 576 */
+    NULL, /* 577 */
+    NULL, /* 578 */
+    NULL, /* 579 */
+    NULL, /* 580 */
+    NULL, /* 581 */
+    NULL, /* 582 */
+    NULL, /* 583 */
+    NULL, /* 584 */
+    NULL, /* 585 */
+    NULL, /* 586 */
+    NULL, /* 587 */
+    NULL, /* 588 */
+    NULL, /* 589 */
+    NULL, /* 590 */
+    NULL, /* 591 */
+    NULL, /* 592 */
+    NULL, /* 593 */
+    NULL, /* 594 */
+    NULL, /* 595 */
+    NULL, /* 596 */
+    NULL, /* 597 */
+    NULL, /* 598 */
+    NULL, /* 599 */
+    NULL, /* 600 */
+    NULL, /* 601 */
+    NULL, /* 602 */
+    NULL, /* 603 */
+    NULL, /* 604 */
+    TclGetErrorLine, /* 605 */
+    TclSetErrorLine, /* 606 */
 };
 
 /* !END!: Do not edit above this line. */

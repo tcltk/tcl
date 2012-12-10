@@ -1629,6 +1629,42 @@ EXTERN int		Tcl_PkgRequireProc _ANSI_ARGS_((Tcl_Interp *interp,
 				CONST char *name, int objc,
 				Tcl_Obj *CONST objv[],
 				ClientData *clientDataPtr));
+/* Slot 574 is reserved */
+/* Slot 575 is reserved */
+/* Slot 576 is reserved */
+/* Slot 577 is reserved */
+/* Slot 578 is reserved */
+/* Slot 579 is reserved */
+/* Slot 580 is reserved */
+/* Slot 581 is reserved */
+/* Slot 582 is reserved */
+/* Slot 583 is reserved */
+/* Slot 584 is reserved */
+/* Slot 585 is reserved */
+/* Slot 586 is reserved */
+/* Slot 587 is reserved */
+/* Slot 588 is reserved */
+/* Slot 589 is reserved */
+/* Slot 590 is reserved */
+/* Slot 591 is reserved */
+/* Slot 592 is reserved */
+/* Slot 593 is reserved */
+/* Slot 594 is reserved */
+/* Slot 595 is reserved */
+/* Slot 596 is reserved */
+/* Slot 597 is reserved */
+/* Slot 598 is reserved */
+/* Slot 599 is reserved */
+/* Slot 600 is reserved */
+/* Slot 601 is reserved */
+/* Slot 602 is reserved */
+/* Slot 603 is reserved */
+/* Slot 604 is reserved */
+/* 605 */
+EXTERN int		TclGetErrorLine _ANSI_ARGS_((Tcl_Interp *interp));
+/* 606 */
+EXTERN void		TclSetErrorLine _ANSI_ARGS_((Tcl_Interp *interp,
+				int lineNum));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -2238,6 +2274,39 @@ typedef struct TclStubs {
     VOID *reserved571;
     VOID *reserved572;
     int (*tcl_PkgRequireProc) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *name, int objc, Tcl_Obj *CONST objv[], ClientData *clientDataPtr)); /* 573 */
+    VOID *reserved574;
+    VOID *reserved575;
+    VOID *reserved576;
+    VOID *reserved577;
+    VOID *reserved578;
+    VOID *reserved579;
+    VOID *reserved580;
+    VOID *reserved581;
+    VOID *reserved582;
+    VOID *reserved583;
+    VOID *reserved584;
+    VOID *reserved585;
+    VOID *reserved586;
+    VOID *reserved587;
+    VOID *reserved588;
+    VOID *reserved589;
+    VOID *reserved590;
+    VOID *reserved591;
+    VOID *reserved592;
+    VOID *reserved593;
+    VOID *reserved594;
+    VOID *reserved595;
+    VOID *reserved596;
+    VOID *reserved597;
+    VOID *reserved598;
+    VOID *reserved599;
+    VOID *reserved600;
+    VOID *reserved601;
+    VOID *reserved602;
+    VOID *reserved603;
+    VOID *reserved604;
+    int (*tclGetErrorLine) _ANSI_ARGS_((Tcl_Interp *interp)); /* 605 */
+    void (*tclSetErrorLine) _ANSI_ARGS_((Tcl_Interp *interp, int lineNum)); /* 606 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -4334,10 +4403,52 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_PkgRequireProc \
 	(tclStubsPtr->tcl_PkgRequireProc) /* 573 */
 #endif
+/* Slot 574 is reserved */
+/* Slot 575 is reserved */
+/* Slot 576 is reserved */
+/* Slot 577 is reserved */
+/* Slot 578 is reserved */
+/* Slot 579 is reserved */
+/* Slot 580 is reserved */
+/* Slot 581 is reserved */
+/* Slot 582 is reserved */
+/* Slot 583 is reserved */
+/* Slot 584 is reserved */
+/* Slot 585 is reserved */
+/* Slot 586 is reserved */
+/* Slot 587 is reserved */
+/* Slot 588 is reserved */
+/* Slot 589 is reserved */
+/* Slot 590 is reserved */
+/* Slot 591 is reserved */
+/* Slot 592 is reserved */
+/* Slot 593 is reserved */
+/* Slot 594 is reserved */
+/* Slot 595 is reserved */
+/* Slot 596 is reserved */
+/* Slot 597 is reserved */
+/* Slot 598 is reserved */
+/* Slot 599 is reserved */
+/* Slot 600 is reserved */
+/* Slot 601 is reserved */
+/* Slot 602 is reserved */
+/* Slot 603 is reserved */
+/* Slot 604 is reserved */
+#ifndef TclGetErrorLine
+#define TclGetErrorLine \
+	(tclStubsPtr->tclGetErrorLine) /* 605 */
+#endif
+#ifndef TclSetErrorLine
+#define TclSetErrorLine \
+	(tclStubsPtr->tclSetErrorLine) /* 606 */
+#endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 /* !END!: Do not edit above this line. */
+
+#undef TclGetErrorLine
+#undef TclSetErrorLine
 
 #endif /* _TCLDECLS */
 

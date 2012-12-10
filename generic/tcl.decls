@@ -1795,6 +1795,14 @@ declare 573 {
 	    int objc, Tcl_Obj *const objv[], ClientData *clientDataPtr)
 }
 
+# (Exposed starting with 8.6)
+declare 605 {
+    int TclGetErrorLine(Tcl_Interp *interp)
+}
+declare 606 {
+    void TclSetErrorLine(Tcl_Interp *interp, int lineNum)
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
