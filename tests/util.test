@@ -383,6 +383,7 @@ test util-5.51 {Tcl_StringMatch} {
     Wrapper_Tcl_StringMatch "" ""
 } 1
 
+if 0 {
 test util-6.1 {Tcl_PrintDouble - using tcl_precision} -setup {
     set old_precision $::tcl_precision
     set ::tcl_precision 12
@@ -415,6 +416,7 @@ test util-6.4 {Tcl_PrintDouble - using tcl_precision} -setup {
 } -cleanup {
     set tcl_precision $old_precision
 } -result {x1.1234}
+}
 test util-6.5 {Tcl_PrintDouble - make sure there's a decimal point} {
     concat x[expr 2.0]
 } {x2.0}
@@ -422,6 +424,7 @@ test util-6.6 {Tcl_PrintDouble - make sure there's a decimal point} {
     concat x[expr 3.0e98]
 } {x3e+98}
 
+if 0 {
 test util-7.1 {TclPrecTraceProc - unset callbacks} -setup {
     set old_precision $::tcl_precision
 } -body {
@@ -465,6 +468,7 @@ test util-7.4 {TclPrecTraceProc - write traces, bogus values} -setup {
 } -cleanup {
     set ::tcl_precision $old_precision
 } -result {1 {can't set "tcl_precision": improper value for precision} 12}
+}
 
 # This test always succeeded in the C locale anyway...
 test util-8.1 {TclNeedSpace - correct UTF8 handling} {
@@ -2118,6 +2122,7 @@ test util-15.8 {smallest normal} {*}{
     }
 }
 
+if 0 {
 set saved_precision $::tcl_precision
 foreach ::tcl_precision {0 12} {
     for {set e -312} {$e < -9} {incr e} {
@@ -3986,6 +3991,8 @@ test util-16.1.17.306 {8.4 compatible formatting of doubles} \
 test util-16.1.17.307 {8.4 compatible formatting of doubles} \
     {expr 1e307} \
     9.9999999999999999e+306
+set ::tcl_precision $saved_precision
+}
 
 test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
     set r {}
@@ -4016,7 +4023,6 @@ test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
     0x4400000000000000 0xc400000000000000
 }]
 
-set ::tcl_precision $saved_precision
 
 # cleanup
 ::tcltest::cleanupTests

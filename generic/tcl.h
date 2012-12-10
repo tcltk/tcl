@@ -827,9 +827,9 @@ typedef struct Tcl_DString {
 #define Tcl_DStringValue(dsPtr) ((dsPtr)->string)
 
 /*
- * Definitions for the maximum number of digits of precision that may be
- * specified in the "tcl_precision" variable, and the number of bytes of
- * buffer space required by Tcl_PrintDouble.
+ * Definitions for the maximum number of decimal digits of precision that may
+ * stored in a double, and the number of bytes of buffer space required by
+ * Tcl_PrintDouble.
  */
 
 #define TCL_MAX_PREC		17

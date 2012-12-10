@@ -2339,10 +2339,12 @@ CompileExprTree(
 	    switch (nodePtr->lexeme) {
 	    case START:
 	    case QUESTION:
+#if 1
 		if (convert && (nodePtr == rootPtr)) {
 		    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
 		}
 		break;
+#endif
 	    case OPEN_PAREN:
 
 		/* do nothing */

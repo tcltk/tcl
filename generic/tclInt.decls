@@ -359,10 +359,10 @@ declare 81 {
 #  declare 87 {
 #      void TclPlatformInit(Tcl_Interp *interp)
 #  }
-declare 88 {
-    char *TclPrecTraceProc(ClientData clientData, Tcl_Interp *interp,
-	    const char *name1, const char *name2, int flags)
-}
+#declare 88 {
+#    char *TclPrecTraceProc(ClientData clientData, Tcl_Interp *interp,
+#	    const char *name1, const char *name2, int flags)
+#}
 declare 89 {
     int TclPreventAliasLoop(Tcl_Interp *interp, Tcl_Interp *cmdInterp,
 	    Tcl_Command cmd)

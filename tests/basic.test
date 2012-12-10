@@ -868,6 +868,7 @@ test basic-48.16.$noComp {expansion: testing for leaks} -setup {
 	rename stress {}
 } -result 0
 
+set ::tcl_precision 0
 test basic-48.17.$noComp {expansion: object safety} -setup {
         set old_precision $::tcl_precision
         set ::tcl_precision 4
