@@ -79,6 +79,7 @@ TclInitStubs(
     int magic)
 {
     const char *actualVersion = NULL;
+    ClientData pkgData = NULL;
     const TclStubs *stubsPtr;
 
     /*
@@ -92,7 +93,7 @@ TclInitStubs(
 	return NULL;
     }
 
-    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, NULL);
+    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
     if (actualVersion == NULL) {
 	return NULL;
     }
@@ -122,7 +123,7 @@ TclInitStubs(
 	    }
 	}
     }
-    tclStubsPtr = stubsPtr;
+    tclStubsPtr = (TclStubs *)pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
