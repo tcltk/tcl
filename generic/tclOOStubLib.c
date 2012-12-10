@@ -7,7 +7,7 @@
  * contains no references to any of the tcl stub functions.
  */
 
-#undef BUILD_tcl
+#define USE_TCL_STUBS
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif

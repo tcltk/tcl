@@ -15,7 +15,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef BUILD_tcl
+#define USE_TCL_STUBS
 #include "tclInt.h"
 #include "tclOO.h"
 #include <math.h>

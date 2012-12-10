@@ -2444,7 +2444,7 @@ extern const TclStubs *tclStubsPtr;
 }
 #endif
 
-#if !defined(BUILD_tcl)
+#if !defined(BUILD_tcl) || defined(USE_TCL_STUBS)
 
 /*
  * Inline function declarations:
@@ -3716,11 +3716,11 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_ZlibStreamSetCompressionDictionary \
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
 
-#endif /* !defined(BUILD_tcl) */
+#endif /* !BUILD_tcl || USE_TCL_STUBS */
 
 /* !END!: Do not edit above this line. */
 
-#if !defined(BUILD_tcl)
+#if !defined(BUILD_tcl) || defined(USE_TCL_STUBS)
 #   undef TclCreateInterp
 #   undef Tcl_Init
 #   define Tcl_CreateInterp() (tclStubsPtr->tclCreateInterp())

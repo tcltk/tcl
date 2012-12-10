@@ -13,7 +13,7 @@
  */
 
 #undef STATIC_BUILD
-#undef BUILD_tcl
+#define USE_TCL_STUBS
 #include "tclInt.h"
 #ifdef _MSC_VER
 #   pragma comment (lib, "advapi32.lib")

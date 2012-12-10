@@ -151,7 +151,7 @@ extern const TclOOStubs *tclOOStubsPtr;
 }
 #endif
 
-#if !defined(BUILD_tcloo)
+#if !defined(BUILD_tcloo) || defined(USE_TCLOO_STUBS)
 
 /*
  * Inline function declarations:
@@ -216,7 +216,7 @@ extern const TclOOStubs *tclOOStubsPtr;
 #define Tcl_GetObjectName \
 	(tclOOStubsPtr->tcl_GetObjectName) /* 28 */
 
-#endif /* !defined(BUILD_tcloo) */
+#endif /* !BUILD_tcloo || USE_TCLOO_STUBS */
 
 /* !END!: Do not edit above this line. */
 #endif /* _TCLOODECLS */

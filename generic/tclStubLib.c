@@ -18,7 +18,7 @@
  * including the rest of the stub functions.
  */
 
-#undef BUILD_tcl
+#define USE_TCL_STUBS
 #include "tclInt.h"
 
 MODULE_SCOPE const TclStubs *tclStubsPtr;
@@ -77,7 +77,7 @@ static int isDigit(const int c)
  *
  *----------------------------------------------------------------------
  */
-
+#undef Tcl_InitStubs
 MODULE_SCOPE const char *
 TclInitStubs(
     Tcl_Interp *interp,
@@ -88,6 +88,7 @@ TclInitStubs(
 {
     const char *actualVersion = NULL;
     const TclStubs *stubsPtr;
+    ClientData *pkgData;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -100,7 +101,7 @@ TclInitStubs(
 	return NULL;
     }
 
-    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, NULL);
+    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
     if (actualVersion == NULL) {
 	return NULL;
     }
@@ -118,7 +119,7 @@ TclInitStubs(
 	    while (*p && (*p == *q)) {
 		p++; q++;
 	    }
-	    if (*p) {
+	    if (*p || isDigit(*q)) {
 		/* Construct error message */
 		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 		return NULL;
@@ -130,7 +131,7 @@ TclInitStubs(
 	    }
 	}
     }
-    tclStubsPtr = stubsPtr;
+    tclStubsPtr = (TclStubs *) pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;

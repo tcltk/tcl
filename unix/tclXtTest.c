@@ -9,7 +9,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef BUILD_tcl
+#define USE_TCL_STUBS
 #include <X11/Intrinsic.h>
 #include "tcl.h"
 

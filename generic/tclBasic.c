@@ -431,8 +431,6 @@ TclFinalizeEvaluation(void)
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_CreateInterp
-
 Tcl_Interp *
 Tcl_CreateInterp(void)
 {

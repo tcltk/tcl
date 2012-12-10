@@ -13,7 +13,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef BUILD_tcl
+#define USE_TCL_STUBS
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -255,11 +255,7 @@ setargv(
 	}
     }
 
-    /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
-    #undef Tcl_Alloc
-    #undef Tcl_DbCkalloc
-
-    argSpace = ckalloc(size * sizeof(char *)
+    argSpace = malloc(size * sizeof(char *)
 	    + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));
     argv = (TCHAR **) argSpace;
     argSpace += size * (sizeof(char *)/sizeof(TCHAR));
