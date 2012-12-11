@@ -126,9 +126,9 @@ TclInitStubs(
     if ((exact & TCL_STUB_COMPAT_MASK) != ((major!=8)?TCL_STUB_COMPAT:0)) {
 	char *msg = malloc(64 + strlen(tclversion) + strlen(version));
 
-	strcpy(msg, "incompatible stub library. got ");
+	strcpy(msg, "incompatible stub library: have ");
 	strcat(msg, tclversion);
-	strcat(msg, ", needed ");
+	strcat(msg, ", need ");
 	if (major != 8) {
 	    /* Apparently we have 9.x running. */
 	    strcat(msg, "9.0");
@@ -140,8 +140,8 @@ TclInitStubs(
 	    }
 	    *p = '\0';
 	}
-	iPtr->legacyResult = msg;
-	iPtr->legacyFreeProc = (Tcl_FreeProc *) free;
+	stubsPtr->tcl_AppendResult(interp, msg, NULL);
+	free(msg);
 	return NULL;
     }
 
