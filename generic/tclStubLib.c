@@ -83,10 +83,12 @@ TclInitStubs(
     if ((exact & TCL_STUB_COMPAT_MASK) != TCL_STUB_COMPAT) {
 	char *msg = malloc(64 + strlen(tclversion) + strlen(version));
 
-    strcpy(msg, "incompatible stub library. got ");
+	strcpy(msg, "incompatible stub library. got ");
 	strcat(msg, tclversion);
 	strcat(msg, ", needed ");
 	if (tclversion[0] == '8') {
+	    /* Apparently we have 9.x running, but all 9.x versions
+	     * have the same stub library. */
 	    strcat(msg, "9.0");
 	} else {
 	    /* Take "version", but strip off everything after '-' */
