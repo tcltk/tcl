@@ -66,7 +66,6 @@ static int isDigit(const int c)
  *
  *----------------------------------------------------------------------
  */
-#undef Tcl_InitStubs
 MODULE_SCOPE const char *
 TclInitStubs(
     Tcl_Interp *interp,
@@ -79,29 +78,7 @@ TclInitStubs(
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
     const TclStubs *stubsPtr;
-
-    if ((exact & TCL_STUB_COMPAT_MASK) != TCL_STUB_COMPAT) {
-	char *msg = malloc(64 + strlen(tclversion) + strlen(version));
-
-	strcpy(msg, "incompatible stub library. got ");
-	strcat(msg, tclversion);
-	strcat(msg, ", needed ");
-	if (tclversion[0] == '8') {
-	    /* Apparently we have 9.x running, but all 9.x versions
-	     * have the same stub library. */
-	    strcat(msg, "9.0");
-	} else {
-	    /* Take "version", but strip off everything after '-' */
-	    char *p = msg + strlen(msg);
-	    while (*version && *version != '-') {
-		*p++ = *version++;
-	    }
-	    *p = '\0';
-	}
-	iPtr->legacyResult = msg;
-	iPtr->legacyFreeProc = (Tcl_FreeProc *) free;
-	return NULL;
-    }
+    int major, minor;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -144,6 +121,30 @@ TclInitStubs(
 	    }
 	}
     }
+
+    stubsPtr->tcl_GetVersion(&major, &minor, NULL, NULL);
+    if ((exact & TCL_STUB_COMPAT_MASK) != ((major!=8)?TCL_STUB_COMPAT:0)) {
+	char *msg = malloc(64 + strlen(tclversion) + strlen(version));
+
+	strcpy(msg, "incompatible stub library. got ");
+	strcat(msg, tclversion);
+	strcat(msg, ", needed ");
+	if (major != 8) {
+	    /* Apparently we have 9.x running. */
+	    strcat(msg, "9.0");
+	} else {
+	    /* Take "version", but strip off everything after '-' */
+	    char *p = msg + strlen(msg);
+	    while (*version && *version != '-') {
+		*p++ = *version++;
+	    }
+	    *p = '\0';
+	}
+	iPtr->legacyResult = msg;
+	iPtr->legacyFreeProc = (Tcl_FreeProc *) free;
+	return NULL;
+    }
+
     tclStubsPtr = (TclStubs *)pkgData;
 
     if (tclStubsPtr->hooks) {

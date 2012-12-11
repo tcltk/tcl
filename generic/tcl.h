@@ -2224,12 +2224,16 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 #define TCL_STUB_COMPAT ((sizeof(size_t) != sizeof(int))?TCL_STUB_COMPAT_MASK:0)
 
 #ifdef USE_TCL_STUBS
+    /* TODO: when merging to "novem", change != to == in the next line. */
 #   if TCL_RELEASE_LEVEL != TCL_FINAL_RELEASE
 #	define Tcl_InitStubs(interp, version, exact) \
-		TclInitStubs(interp, version, (exact | TCL_STUB_COMPAT), TCL_VERSION, TCL_STUB_MAGIC)
+		TclInitStubs(interp, version, (exact | TCL_STUB_COMPAT), \
+		TCL_VERSION, TCL_STUB_MAGIC)
 #   else
+	/* during alpha/beta, compiled extensions only match exact */
 #	define Tcl_InitStubs(interp, version, exact) \
-		TclInitStubs(interp, TCL_PATCH_LEVEL, (1 | TCL_STUB_COMPAT), TCL_VERSION, TCL_STUB_MAGIC)
+		TclInitStubs(interp, TCL_PATCH_LEVEL, (1 | TCL_STUB_COMPAT), \
+		TCL_VERSION, TCL_STUB_MAGIC)
 #   endif
 #else
 #define Tcl_InitStubs(interp, version, exact) \
