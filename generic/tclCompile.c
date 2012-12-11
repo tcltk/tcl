@@ -2392,6 +2392,246 @@ TclCompileExprWords(
 /*
  *----------------------------------------------------------------------
  *
+ * PushVarName --
+ *
+ *	Procedure used in the compiling where pushing a variable name is
+ *	necessary (append, lappend, set).
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "set" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclPushVarName(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Token *varTokenPtr,	/* Points to a variable token. */
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    int flags,			/* TCL_NO_LARGE_INDEX. */
+    int *localIndexPtr,		/* Must not be NULL. */
+    int *simpleVarNamePtr,	/* Must not be NULL. */
+    int *isScalarPtr,		/* Must not be NULL. */
+    int line,			/* Line the token starts on. */
+    int *clNext)		/* Reference to offset of next hidden cont.
+				 * line. */
+{
+    register const char *p;
+    const char *name, *elName;
+    register int i, n;
+    Tcl_Token *elemTokenPtr = NULL;
+    int nameChars, elNameChars, simpleVarName, localIndex;
+    int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;
+
+    /*
+     * Decide if we can use a frame slot for the var/array name or if we need
+     * to emit code to compute and push the name at runtime. We use a frame
+     * slot (entry in the array of local vars) if we are compiling a procedure
+     * body and if the name is simple text that does not include namespace
+     * qualifiers.
+     */
+
+    simpleVarName = 0;
+    name = elName = NULL;
+    nameChars = elNameChars = 0;
+    localIndex = -1;
+
+    /*
+     * Check not only that the type is TCL_TOKEN_SIMPLE_WORD, but whether
+     * curly braces surround the variable name. This really matters for array
+     * elements to handle things like
+     *    set {x($foo)} 5
+     * which raises an undefined var error if we are not careful here.
+     */
+
+    if ((varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) &&
+	    (varTokenPtr->start[0] != '{')) {
+	/*
+	 * A simple variable name. Divide it up into "name" and "elName"
+	 * strings. If it is not a local variable, look it up at runtime.
+	 */
+
+	simpleVarName = 1;
+
+	name = varTokenPtr[1].start;
+	nameChars = varTokenPtr[1].size;
+	if (name[nameChars-1] == ')') {
+	    /*
+	     * last char is ')' => potential array reference.
+	     */
+
+	    for (i=0,p=name ; i<nameChars ; i++,p++) {
+		if (*p == '(') {
+		    elName = p + 1;
+		    elNameChars = nameChars - i - 2;
+		    nameChars = i;
+		    break;
+		}
+	    }
+
+	    if ((elName != NULL) && elNameChars) {
+		/*
+		 * An array element, the element name is a simple string:
+		 * assemble the corresponding token.
+		 */
+
+		elemTokenPtr = TclStackAlloc(interp, sizeof(Tcl_Token));
+		allocedTokens = 1;
+		elemTokenPtr->type = TCL_TOKEN_TEXT;
+		elemTokenPtr->start = elName;
+		elemTokenPtr->size = elNameChars;
+		elemTokenPtr->numComponents = 0;
+		elemTokenCount = 1;
+	    }
+	}
+    } else if (((n = varTokenPtr->numComponents) > 1)
+	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
+	    && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
+	    && (varTokenPtr[n].start[varTokenPtr[n].size - 1] == ')')) {
+	/*
+	 * Check for parentheses inside first token.
+	 */
+
+	simpleVarName = 0;
+	for (i = 0, p = varTokenPtr[1].start;
+		i < varTokenPtr[1].size; i++, p++) {
+	    if (*p == '(') {
+		simpleVarName = 1;
+		break;
+	    }
+	}
+	if (simpleVarName) {
+	    int remainingChars;
+
+	    /*
+	     * Check the last token: if it is just ')', do not count it.
+	     * Otherwise, remove the ')' and flag so that it is restored at
+	     * the end.
+	     */
+
+	    if (varTokenPtr[n].size == 1) {
+		n--;
+	    } else {
+		varTokenPtr[n].size--;
+		removedParen = n;
+	    }
+
+	    name = varTokenPtr[1].start;
+	    nameChars = p - varTokenPtr[1].start;
+	    elName = p + 1;
+	    remainingChars = (varTokenPtr[2].start - p) - 1;
+	    elNameChars = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 2;
+
+	    if (remainingChars) {
+		/*
+		 * Make a first token with the extra characters in the first
+		 * token.
+		 */
+
+		elemTokenPtr = TclStackAlloc(interp, n * sizeof(Tcl_Token));
+		allocedTokens = 1;
+		elemTokenPtr->type = TCL_TOKEN_TEXT;
+		elemTokenPtr->start = elName;
+		elemTokenPtr->size = remainingChars;
+		elemTokenPtr->numComponents = 0;
+		elemTokenCount = n;
+
+		/*
+		 * Copy the remaining tokens.
+		 */
+
+		memcpy(elemTokenPtr+1, varTokenPtr+2,
+			(n-1) * sizeof(Tcl_Token));
+	    } else {
+		/*
+		 * Use the already available tokens.
+		 */
+
+		elemTokenPtr = &varTokenPtr[2];
+		elemTokenCount = n - 1;
+	    }
+	}
+    }
+
+    if (simpleVarName) {
+	/*
+	 * See whether name has any namespace separators (::'s).
+	 */
+
+	int hasNsQualifiers = 0;
+
+	for (i = 0, p = name;  i < nameChars;  i++, p++) {
+	    if ((*p == ':') && ((i+1) < nameChars) && (*(p+1) == ':')) {
+		hasNsQualifiers = 1;
+		break;
+	    }
+	}
+
+	/*
+	 * Look up the var name's index in the array of local vars in the proc
+	 * frame. If retrieving the var's value and it doesn't already exist,
+	 * push its name and look it up at runtime.
+	 */
+
+	if (!hasNsQualifiers) {
+	    localIndex = TclFindCompiledLocal(name, nameChars,
+		    1, envPtr);
+	    if ((flags & TCL_NO_LARGE_INDEX) && (localIndex > 255)) {
+		/*
+		 * We'll push the name.
+		 */
+
+		localIndex = -1;
+	    }
+	}
+	if (localIndex < 0) {
+	    PushLiteral(envPtr, name, nameChars);
+	}
+
+	/*
+	 * Compile the element script, if any.
+	 */
+
+	if (elName != NULL) {
+	    if (elNameChars) {
+		envPtr->line = line;
+		envPtr->clNext = clNext;
+		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
+			envPtr);
+	    } else {
+		PUSH("");
+	    }
+	}
+    } else {
+	/*
+	 * The var name isn't simple: compile and push it.
+	 */
+
+	envPtr->line = line;
+	envPtr->clNext = clNext;
+	CompileTokens(envPtr, varTokenPtr, interp);
+    }
+
+    if (removedParen) {
+	varTokenPtr[removedParen].size++;
+    }
+    if (allocedTokens) {
+	TclStackFree(interp, elemTokenPtr);
+    }
+    *localIndexPtr = localIndex;
+    *simpleVarNamePtr = simpleVarName;
+    *isScalarPtr = (elName == NULL);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileNoOp --
  *
  *	Function called to compile no-op's

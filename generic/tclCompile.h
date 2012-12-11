@@ -937,6 +937,11 @@ MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    const char *string, int maxChars);
+MODULE_SCOPE int	TclPushVarName(Tcl_Interp *interp,
+			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
+			    int flags, int *localIndexPtr,
+			    int *simpleVarNamePtr, int *isScalarPtr,
+			    int line, int *clNext);
 MODULE_SCOPE void	TclRegisterAuxDataType(const AuxDataType *typePtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
@@ -962,11 +967,11 @@ MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
-					  const char *script,
-					  const char *command, int length,
-					  const unsigned char *pc, Tcl_Obj **tosPtr); 
+			    const char *script, const char *command,
+			    int length, const unsigned char *pc,
+			    Tcl_Obj **tosPtr); 
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
-					    const unsigned char *pc, Tcl_Obj **tosPtr);
+			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 
 
@@ -1276,6 +1281,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 #define CompileTokens(envPtr, tokenPtr, interp) \
     TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
 	    (envPtr));
+
 /*
  * Convenience macro for use when pushing literals. The ANSI C "prototype" for
  * this macro is:
@@ -1308,11 +1314,10 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     ((envPtr)->codeNext - (envPtr)->codeStart)
 
 /*
- * Note: the exceptDepth is a bit of a misnomer: TEBC only needs the
- * maximal depth of nested CATCH ranges in order to alloc runtime
- * memory. These macros should compute precisely that? OTOH, the nesting depth
- * of LOOP ranges is an interesting datum for debugging purposes, and that is
- * what we compute now.
+ * Note: the exceptDepth is a bit of a misnomer: TEBC only needs the maximal
+ * depth of nested CATCH ranges in order to alloc runtime memory. These macros
+ * should compute precisely that? OTOH, the nesting depth of LOOP ranges is an
+ * interesting datum for debugging purposes, and that is what we compute now.
  *
  * static int	DeclareExceptionRange(CompileEnv *envPtr, int type);
  * static int	ExceptionRangeStarts(CompileEnv *envPtr, int index);
@@ -1335,11 +1340,15 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     ((envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr))
 
 /*
- * Check if there is an LVT for compiled locals
+ * Check if there is an LVT for compiled locals, and issuing a new private
+ * variable.
  */
 
 #define EnvHasLVT(envPtr) \
     (envPtr->procPtr || envPtr->iPtr->varFramePtr->localCachePtr)
+
+#define NewUnnamedLocal(envPtr) \
+    TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr))
 
 /*
  * Macros for making it easier to deal with tokens and DStrings.
@@ -1351,6 +1360,118 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     TclRegisterLiteral(envPtr, Tcl_DStringValue(dsPtr), \
 	    Tcl_DStringLength(dsPtr), /*flags*/ 0)
 
+/*
+ * Macro that encapsulates an efficiency trick that avoids a function call for
+ * the simplest of compiles. The ANSI C "prototype" for this macro is:
+ *
+ * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
+ *			    Tcl_Interp *interp, int word);
+ */
+
+#define CompileWord(envPtr, tokenPtr, interp, word) \
+    if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) {			\
+	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
+		(tokenPtr)[1].size), (envPtr));				\
+    } else {								\
+	envPtr->line = mapPtr->loc[eclIndex].line[word];		\
+	envPtr->clNext = mapPtr->loc[eclIndex].next[word];		\
+	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
+		(envPtr));						\
+    }
+
+/*
+ * TIP #280: Remember the per-word line information of the current command. An
+ * index is used instead of a pointer as recursive compilation may reallocate,
+ * i.e. move, the array. This is also the reason to save the nuloc now, it may
+ * change during the course of the function.
+ *
+ * Macro to encapsulate the variable definition and setup.
+ */
+
+#define DefineLineInformation \
+    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
+    int eclIndex = mapPtr->nuloc - 1
+
+#define SetLineInformation(word) \
+    do {								\
+	envPtr->line = mapPtr->loc[eclIndex].line[(word)];		\
+	envPtr->clNext = mapPtr->loc[eclIndex].next[(word)];		\
+    } while (0)
+
+#define PushVarNameWord(i,v,e,f,l,s,sc,word) \
+    TclPushVarName(i,v,e,f,l,s,sc,					\
+	    mapPtr->loc[eclIndex].line[(word)],				\
+	    mapPtr->loc[eclIndex].next[(word)])
+
+/*
+ * Flags bits used by TclPushVarName.
+ */
+
+#define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
+
+/*
+ * Shorthand macros for instruction issuing. Note that these assume that there
+ * are variables in the current environment called 'envPtr' and 'interp', and
+ * also that there are no side effects in the arguments given.
+ */
+
+#define OP(name)	TclEmitOpcode(INST_##name, envPtr)
+#define OP1(name,val)	TclEmitInstInt1(INST_##name, (val), envPtr)
+#define OP4(name,val)	TclEmitInstInt4(INST_##name, (val), envPtr)
+#define OP14(name,val1,val2) \
+    do {						\
+	TclEmitInstInt1(INST_##name, (val1), envPtr);	\
+	TclEmitInt4((val2), envPtr);			\
+    } while (0)
+#define OP41(name,val1,val2) \
+    do {						\
+	TclEmitInstInt4(INST_##name, (val1), envPtr);	\
+	TclEmitInt1((val2), envPtr);			\
+    } while (0)
+#define OP44(name,val1,val2) \
+    do {						\
+	TclEmitInstInt4(INST_##name, (val1), envPtr);	\
+	TclEmitInt4((val2), envPtr);			\
+    } while (0)
+#define BODY(token,index) \
+    do {						\
+	SetLineInformation((index));			\
+	CompileBody(envPtr, (token), interp);		\
+    } while (0)
+#define PUSH(str) \
+    PushLiteral(envPtr, (str), strlen(str))
+#define PUSH_SUBST_WORD(token,index) \
+    do {								\
+	Tcl_Token *theTokenToCompile = (token);				\
+	int theIndex = (index);						\
+	CompileWord(envPtr, theTokenToCompile, interp, theIndex);	\
+    } while (0)
+#define PUSH_EXPR_WORD(token,index) \
+    do {								\
+	Tcl_Token *theTokenToCompile = (token);				\
+	int theIndex = (index);						\
+	SetLineInformation(theIndex);					\
+	TclCompileExprWords(interp, theTokenToCompile, 1, envPtr);	\
+    } while (0)
+#define PUSH_VAR(v,word,l,s,sc) \
+    TclPushVarName(interp,(v),envPtr,0,(l),(s),(sc),			\
+	    mapPtr->loc[eclIndex].line[(word)],				\
+	    mapPtr->loc[eclIndex].next[(word)])
+#define LABEL(var) \
+    ((var) = CurrentOffset(envPtr))
+#define BACKJUMP(var,name) \
+    do {							\
+	int theOffset = (var) - CurrentOffset(envPtr);		\
+	TclEmitInstInt4(INST_##name, theOffset, envPtr);	\
+    } while (0)
+#define JUMP(var,name) \
+    do {						\
+	(var) = CurrentOffset(envPtr);			\
+	TclEmitInstInt4(INST_##name, 0, envPtr);	\
+    } while (0)
+#define FIXJUMP(var) \
+    TclStoreInt4AtPtr(CurrentOffset(envPtr)-(var),envPtr->codeStart+(var)+1)
+
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).
  */

@@ -2393,16 +2393,14 @@ CompileExprTree(
 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
 			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP,
 			&jumpPtr->next->jump);
-		TclEmitPush(TclRegisterNewLiteral(envPtr,
-			(nodePtr->lexeme == AND) ? "1" : "0", 1), envPtr);
+		PUSH((nodePtr->lexeme == AND) ? "1" : "0");
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
 			&jumpPtr->next->next->jump);
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->next->jump, 127);
 		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
 		    jumpPtr->next->next->jump.codeOffset += 3;
 		}
-		TclEmitPush(TclRegisterNewLiteral(envPtr,
-			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
+		PUSH((nodePtr->lexeme == AND) ? "0" : "1");
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->next->next->jump,
 			127);
 		convert = 0;
