@@ -113,6 +113,10 @@ static void		LoadCleanupProc(ClientData clientData,
  *----------------------------------------------------------------------
  */
 
+void TclPanicWhenFreed(char *ptr) {
+    Tcl_Panic("This extension still uses interp->result");
+}
+
 int
 Tcl_LoadObjCmd(
     ClientData dummy,		/* Not used. */
@@ -470,15 +474,22 @@ Tcl_LoadObjCmd(
 
     if (code != TCL_OK) {
 	Interp *iPtr = (Interp *) target;
-	if (iPtr->legacyResult && !iPtr->legacyFreeProc) {
+	if (iPtr->legacyFreeProc != TclPanicWhenFreed) {
 	    /*
 	     * A call to Tcl_InitStubs() determined the caller extension and
 	     * this interp are incompatible in their stubs mechanisms, and
 	     * recorded the error in the oldest legacy place we have to do so.
 	     */
 	    Tcl_SetObjResult(target, Tcl_NewStringObj(iPtr->legacyResult, -1));
+
+	    /* Properly clean up legacyResult according to the legacy rules. */
+	    if (iPtr->legacyFreeProc == TCL_DYNAMIC) {
+		Tcl_Free((void *)iPtr->legacyResult);
+	    } else if (iPtr->legacyFreeProc != TCL_STATIC) {
+		iPtr->legacyFreeProc((void *)iPtr->legacyResult);
+	    }
 	    iPtr->legacyResult = NULL;
-	    iPtr->legacyFreeProc = (void (*) (void))-1;
+	    iPtr->legacyFreeProc = TclPanicWhenFreed;
 	}
 	Tcl_TransferResult(target, code, interp);
 	goto done;

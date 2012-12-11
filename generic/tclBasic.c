@@ -486,9 +486,8 @@ Tcl_CreateInterp(void)
     interp = (Tcl_Interp *) iPtr;
 
     iPtr->legacyResult = NULL;
-    /* Special invalid value: Any attempt to free the legacy result
-     * will cause a crash. */
-    iPtr->legacyFreeProc = (void (*) (void))-1;
+    /* Any attempt to free the legacy result will cause a panic. */
+    iPtr->legacyFreeProc = TclPanicWhenFreed;
     iPtr->errorLine = 0;
     iPtr->stubTable = &tclStubs;
     iPtr->objResultPtr = Tcl_NewObj();

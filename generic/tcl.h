@@ -2207,15 +2207,29 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 /*
  * When not using stubs, make it a macro.
+ *
+ * On platforms where sizeof(size_t) == sizeof(int) we assume
+ * that the stub tables, at least the public common subset of
+ * the 8.6 and 9.0 API, is compatible. We set the TCL_STUB_COMPAT_MASK
+ * flag if the sizes are not equal, which means that on this
+ * platform we cannot load 8.x extensions into 9.x and reverse.
+ *
+ * If - later - is decided that the 9.0 stub tables will be
+ * incompatible with the 8.6 stub tables on any platforms, there
+ * still are two ways to signal that. Either change the MAGIC
+ * value, or set the TCL_STUB_COMPAT_MASK flag always.
  */
 
+#define TCL_STUB_COMPAT_MASK 0x10000
+#define TCL_STUB_COMPAT ((sizeof(size_t) != sizeof(int))?TCL_STUB_COMPAT_MASK:0)
+
 #ifdef USE_TCL_STUBS
-#   if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#   if TCL_RELEASE_LEVEL != TCL_FINAL_RELEASE
 #	define Tcl_InitStubs(interp, version, exact) \
-		TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
+		TclInitStubs(interp, version, (exact | TCL_STUB_COMPAT), TCL_VERSION, TCL_STUB_MAGIC)
 #   else
 #	define Tcl_InitStubs(interp, version, exact) \
-		TclInitStubs(interp, TCL_PATCH_LEVEL, 1, TCL_VERSION, TCL_STUB_MAGIC)
+		TclInitStubs(interp, TCL_PATCH_LEVEL, (1 | TCL_STUB_COMPAT), TCL_VERSION, TCL_STUB_MAGIC)
 #   endif
 #else
 #define Tcl_InitStubs(interp, version, exact) \

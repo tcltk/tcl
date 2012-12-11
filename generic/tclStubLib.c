@@ -75,8 +75,31 @@ TclInitStubs(
     const char *tclversion,
     int magic)
 {
+    Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
+    ClientData pkgData = NULL;
     const TclStubs *stubsPtr;
+
+    if ((exact & TCL_STUB_COMPAT_MASK) != TCL_STUB_COMPAT) {
+	char *msg = malloc(64 + strlen(tclversion) + strlen(version));
+
+    strcpy(msg, "incompatible stub library. got ");
+	strcat(msg, tclversion);
+	strcat(msg, ", needed ");
+	if (tclversion[0] == '8') {
+	    strcat(msg, "9.0");
+	} else {
+	    /* Take "version", but strip off everything after '-' */
+	    char *p = msg + strlen(msg);
+	    while (*version && *version != '-') {
+		*p++ = *version++;
+	    }
+	    *p = '\0';
+	}
+	iPtr->legacyResult = msg;
+	iPtr->legacyFreeProc = (Tcl_FreeProc *) free;
+	return NULL;
+    }
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -89,11 +112,11 @@ TclInitStubs(
 	return NULL;
     }
 
-    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, NULL);
+    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
     if (actualVersion == NULL) {
 	return NULL;
     }
-    if (exact) {
+    if (exact&1) {
 	const char *p = version;
 	int count = 0;
 
@@ -119,7 +142,7 @@ TclInitStubs(
 	    }
 	}
     }
-    tclStubsPtr = stubsPtr;
+    tclStubsPtr = (TclStubs *)pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;

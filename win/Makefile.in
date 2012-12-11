@@ -379,7 +379,7 @@ REG_OBJS = tclWinReg.$(OBJEXT)
 STUB_OBJS = \
 	tclStubLib.$(OBJEXT) \
 	tclStubLibCompat.$(OBJEXT) \
-	tcltclGetDefEncDir.$(OBJEXT) \
+	tclGetDefEncDir.$(OBJEXT) \
 	tclTomMathStubLib.$(OBJEXT) \
 	tclOOStubLib.$(OBJEXT)
 

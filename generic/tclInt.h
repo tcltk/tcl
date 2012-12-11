@@ -1812,7 +1812,7 @@ typedef struct Interp {
      */
 
     const char *legacyResult;
-    void (*legacyFreeProc) (void);
+    Tcl_FreeProc *legacyFreeProc;
     int errorLine;		/* When TCL_ERROR is returned, this gives the
 				 * line number in the command where the error
 				 * occurred (1 means first line). */
@@ -2736,6 +2736,7 @@ MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 
 MODULE_SCOPE char *	tclEmptyStringRep;
 MODULE_SCOPE char	tclEmptyString;
+MODULE_SCOPE Tcl_FreeProc TclPanicWhenFreed;
 
 /*
  *----------------------------------------------------------------

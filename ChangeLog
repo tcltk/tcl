@@ -1,3 +1,14 @@
+2012-12-09  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+	* tests/chan.test: Clean up unwanted eofchar side-effect of
+	chan-4.6 leading to a spurious "'" at end of chan.test under
+	certain conditions (see [Bug 3389289] and [Bug 3389251]).
+	* doc/expr.n: [Bug 3594188] Clarifications about commas.
+
+2012-12-08  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+	* generic/tclIO.c: Fix busyloop at exit under TCL_FINALIZE_ON_EXIT
+	when there  are unflushed nonblocking channels.  Thanks Miguel for
+	spotting.
+
 2012-12-07  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/dltest/pkgb.c:  Turn pkgb.so into a Tcl8 interoperability test
