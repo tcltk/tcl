@@ -2374,9 +2374,6 @@ declare 1 macosx {
 # Public functions that are not accessible via the stubs table.
 
 export {
-    void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)
-}
-export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 	int exact)
 }
