@@ -178,7 +178,7 @@ typedef struct ByteArray {
 } ByteArray;
 
 #define BYTEARRAY_SIZE(len) \
-		((unsigned) (TclOffset(ByteArray, bytes) + (len)))
+		((TclOffset(ByteArray, bytes) + (len)))
 #define GET_BYTEARRAY(objPtr) \
 		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
 #define SET_BYTEARRAY(objPtr, baPtr) \

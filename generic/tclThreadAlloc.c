@@ -306,9 +306,9 @@ TclFreeAllocCache(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpAlloc(
-    unsigned int reqSize)
+    size_t reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -321,7 +321,7 @@ TclpAlloc(
 	const size_t zero = 0;
 	const size_t max = ~zero;
 
-	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
+	if (reqSize > max - sizeof(Block) - RCHECK) {
 	    /* Requested allocation exceeds memory */
 	    return NULL;
 	}
@@ -385,7 +385,7 @@ TclpAlloc(
 
 void
 TclpFree(
-    char *ptr)
+    void *ptr)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -439,10 +439,10 @@ TclpFree(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 TclpRealloc(
-    char *ptr,
-    unsigned int reqSize)
+    void *ptr,
+    size_t reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -460,7 +460,7 @@ TclpRealloc(
 	const size_t zero = 0;
 	const size_t max = ~zero;
 
-	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
+	if ((reqSize) > max - sizeof(Block) - RCHECK) {
 	    /* Requested allocation exceeds memory */
 	    return NULL;
 	}

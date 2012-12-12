@@ -2303,7 +2303,7 @@ FreeReflectedChannel(
 	 * Delete a cloned ChannelType structure.
 	 */
 
-	ckfree(chanPtr->typePtr);
+	ckfree((void *) chanPtr->typePtr);
 	chanPtr->typePtr = NULL;
     }
 

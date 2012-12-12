@@ -35,18 +35,18 @@ TCLAPI const char *	Tcl_PkgRequireEx(Tcl_Interp *interp,
 /* 2 */
 TCLAPI void		Tcl_Panic(const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
 /* 3 */
-TCLAPI char *		Tcl_MemAlloc(unsigned int size);
+TCLAPI void *		Tcl_MemAlloc(size_t size);
 /* 4 */
-TCLAPI void		Tcl_MemFree(char *ptr);
+TCLAPI void		Tcl_MemFree(void *ptr);
 /* 5 */
-TCLAPI char *		Tcl_MemRealloc(char *ptr, unsigned int size);
+TCLAPI void *		Tcl_MemRealloc(void *ptr, size_t size);
 /* 6 */
-TCLAPI char *		Tcl_DbCkalloc(unsigned int size, const char *file,
+TCLAPI void *		Tcl_DbCkalloc(size_t size, const char *file,
 				int line);
 /* 7 */
-TCLAPI void		Tcl_DbCkfree(char *ptr, const char *file, int line);
+TCLAPI void		Tcl_DbCkfree(void *ptr, const char *file, int line);
 /* 8 */
-TCLAPI char *		Tcl_DbCkrealloc(char *ptr, unsigned int size,
+TCLAPI void *		Tcl_DbCkrealloc(void *ptr, size_t size,
 				const char *file, int line);
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 9 */
@@ -1201,14 +1201,14 @@ TCLAPI void		Tcl_UntraceCommand(Tcl_Interp *interp,
 				Tcl_CommandTraceProc *proc,
 				ClientData clientData);
 /* 428 */
-TCLAPI char *		Tcl_AttemptMemAlloc(unsigned int size);
+TCLAPI void *		Tcl_AttemptMemAlloc(size_t size);
 /* 429 */
-TCLAPI char *		Tcl_AttemptDbCkalloc(unsigned int size,
-				const char *file, int line);
+TCLAPI void *		Tcl_AttemptDbCkalloc(size_t size, const char *file,
+				int line);
 /* 430 */
-TCLAPI char *		Tcl_AttemptMemRealloc(char *ptr, unsigned int size);
+TCLAPI void *		Tcl_AttemptMemRealloc(void *ptr, size_t size);
 /* 431 */
-TCLAPI char *		Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,
+TCLAPI void *		Tcl_AttemptDbCkrealloc(void *ptr, size_t size,
 				const char *file, int line);
 /* 432 */
 TCLAPI int		Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length);
@@ -1782,12 +1782,12 @@ typedef struct TclStubs {
     int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, const void *clientData); /* 0 */
     const char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
     void (*tcl_Panic) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 2 */
-    char * (*tcl_MemAlloc) (unsigned int size); /* 3 */
-    void (*tcl_MemFree) (char *ptr); /* 4 */
-    char * (*tcl_MemRealloc) (char *ptr, unsigned int size); /* 5 */
-    char * (*tcl_DbCkalloc) (unsigned int size, const char *file, int line); /* 6 */
-    void (*tcl_DbCkfree) (char *ptr, const char *file, int line); /* 7 */
-    char * (*tcl_DbCkrealloc) (char *ptr, unsigned int size, const char *file, int line); /* 8 */
+    void * (*tcl_MemAlloc) (size_t size); /* 3 */
+    void (*tcl_MemFree) (void *ptr); /* 4 */
+    void * (*tcl_MemRealloc) (void *ptr, size_t size); /* 5 */
+    void * (*tcl_DbCkalloc) (size_t size, const char *file, int line); /* 6 */
+    void (*tcl_DbCkfree) (void *ptr, const char *file, int line); /* 7 */
+    void * (*tcl_DbCkrealloc) (void *ptr, size_t size, const char *file, int line); /* 8 */
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, ClientData clientData); /* 9 */
 #endif /* UNIX */
@@ -2231,10 +2231,10 @@ typedef struct TclStubs {
     ClientData (*tcl_CommandTraceInfo) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *procPtr, ClientData prevClientData); /* 425 */
     int (*tcl_TraceCommand) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *proc, ClientData clientData); /* 426 */
     void (*tcl_UntraceCommand) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *proc, ClientData clientData); /* 427 */
-    char * (*tcl_AttemptMemAlloc) (unsigned int size); /* 428 */
-    char * (*tcl_AttemptDbCkalloc) (unsigned int size, const char *file, int line); /* 429 */
-    char * (*tcl_AttemptMemRealloc) (char *ptr, unsigned int size); /* 430 */
-    char * (*tcl_AttemptDbCkrealloc) (char *ptr, unsigned int size, const char *file, int line); /* 431 */
+    void * (*tcl_AttemptMemAlloc) (size_t size); /* 428 */
+    void * (*tcl_AttemptDbCkalloc) (size_t size, const char *file, int line); /* 429 */
+    void * (*tcl_AttemptMemRealloc) (void *ptr, size_t size); /* 430 */
+    void * (*tcl_AttemptDbCkrealloc) (void *ptr, size_t size, const char *file, int line); /* 431 */
     int (*tcl_AttemptSetObjLength) (Tcl_Obj *objPtr, int length); /* 432 */
     Tcl_ThreadId (*tcl_GetChannelThread) (Tcl_Channel channel); /* 433 */
     Tcl_UniChar * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 434 */

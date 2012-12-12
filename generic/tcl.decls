@@ -40,22 +40,22 @@ declare 2 {
     void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
-    char *Tcl_MemAlloc(unsigned int size)
+    void *Tcl_MemAlloc(size_t size)
 }
 declare 4 {
-    void Tcl_MemFree(char *ptr)
+    void Tcl_MemFree(void *ptr)
 }
 declare 5 {
-    char *Tcl_MemRealloc(char *ptr, unsigned int size)
+    void *Tcl_MemRealloc(void *ptr, size_t size)
 }
 declare 6 {
-    char *Tcl_DbCkalloc(unsigned int size, const char *file, int line)
+    void *Tcl_DbCkalloc(size_t size, const char *file, int line)
 }
 declare 7 {
-    void Tcl_DbCkfree(char *ptr, const char *file, int line)
+    void Tcl_DbCkfree(void *ptr, const char *file, int line)
 }
 declare 8 {
-    char *Tcl_DbCkrealloc(char *ptr, unsigned int size,
+    void *Tcl_DbCkrealloc(void *ptr, size_t size,
 	    const char *file, int line)
 }
 
@@ -1527,16 +1527,16 @@ declare 427 {
 	    int flags, Tcl_CommandTraceProc *proc, ClientData clientData)
 }
 declare 428 {
-    char *Tcl_AttemptMemAlloc(unsigned int size)
+    void *Tcl_AttemptMemAlloc(size_t size)
 }
 declare 429 {
-    char *Tcl_AttemptDbCkalloc(unsigned int size, const char *file, int line)
+    void *Tcl_AttemptDbCkalloc(size_t size, const char *file, int line)
 }
 declare 430 {
-    char *Tcl_AttemptMemRealloc(char *ptr, unsigned int size)
+    void *Tcl_AttemptMemRealloc(void *ptr, size_t size)
 }
 declare 431 {
-    char *Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,
+    void *Tcl_AttemptDbCkrealloc(void *ptr, size_t size,
 	    const char *file, int line)
 }
 declare 432 {

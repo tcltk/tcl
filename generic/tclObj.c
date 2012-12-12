@@ -97,7 +97,7 @@ typedef struct ThreadSpecificData {
 
 static Tcl_ThreadDataKey dataKey;
 
-static void             ContLineLocFree(char *clientData);
+static void             ContLineLocFree(void *clientData);
 static void             TclThreadFinalizeContLines(ClientData clientData);
 static ThreadSpecificData *TclGetContLineTable(void);
 
@@ -840,7 +840,7 @@ TclThreadFinalizeContLines(
 
 static void
 ContLineLocFree(
-    char *clientData)
+    void *clientData)
 {
     ckfree(clientData);
 }

@@ -4103,7 +4103,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = tclEmptyStringRep; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
+	(objPtr)->bytes = ckalloc((unsigned) ((len) + 1)); \
 	memcpy((objPtr)->bytes, (bytePtr), (unsigned) (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
@@ -4553,9 +4553,9 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  */
 
 #ifdef offsetof
-#define TclOffset(type, field) ((int) offsetof(type, field))
+#define TclOffset(type, field) (offsetof(type, field))
 #else
-#define TclOffset(type, field) ((int) ((char *) &((type *) 0)->field))
+#define TclOffset(type, field) (((char *) &((type *) 0)->field))
 #endif
 
 /*
@@ -4761,8 +4761,8 @@ typedef struct NRE_callback {
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
-#define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
+    (ptr = (ckalloc(sizeof(NRE_callback))))
+#define TCLNR_FREE(interp, ptr)  ckfree(ptr)
 #endif
 
 #if NRE_ENABLE_ASSERTS
