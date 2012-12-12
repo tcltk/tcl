@@ -11,23 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-/*
- * We need to ensure that we use the stub macros so that this file contains no
- * references to any of the stub functions. This will make it possible to
- * build an extension that references Tcl_InitStubs but doesn't end up
- * including the rest of the stub functions.
- */
-
-#ifndef USE_TCL_STUBS
-#define USE_TCL_STUBS
-#endif
-#undef USE_TCL_STUB_PROCS
-
 #include "tclInt.h"
-
-/*
- * Tcl_InitStubs and stub table pointers are built as exported symbols.
- */
 
 TclStubs *tclStubsPtr = NULL;
 TclPlatStubs *tclPlatStubsPtr = NULL;
@@ -44,9 +28,7 @@ HasStubSupport(
     if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
 	return iPtr->stubTable;
     }
-
-    interp->result =
-	    "This interpreter does not support stubs-enabled extensions.";
+    interp->result = "interpreter uses an incompatible stubs mechanism";
     interp->freeProc = TCL_STATIC;
     return NULL;
 }
@@ -77,11 +59,7 @@ static int isDigit(const int c)
  *
  *----------------------------------------------------------------------
  */
-
-#ifdef Tcl_InitStubs
 #undef Tcl_InitStubs
-#endif
-
 CONST char *
 Tcl_InitStubs(
     Tcl_Interp *interp,
@@ -90,6 +68,7 @@ Tcl_InitStubs(
 {
     CONST char *actualVersion = NULL;
     ClientData pkgData = NULL;
+    TclStubs *stubsPtr;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -97,12 +76,12 @@ Tcl_InitStubs(
      * times. [Bug 615304]
      */
 
-    tclStubsPtr = HasStubSupport(interp);
-    if (!tclStubsPtr) {
+    stubsPtr = HasStubSupport(interp);
+    if (!stubsPtr) {
 	return NULL;
     }
 
-    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
+    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
     if (actualVersion == NULL) {
 	return NULL;
     }
@@ -120,19 +99,19 @@ Tcl_InitStubs(
 	    while (*p && (*p == *q)) {
 		p++; q++;
 	    }
-	    if (*p) {
+	    if (*p || isDigit(*q)) {
 		/* Construct error message */
-		Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 		return NULL;
 	    }
 	} else {
-	    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+	    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 	    if (actualVersion == NULL) {
 		return NULL;
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs*)pkgData;
+    tclStubsPtr = (TclStubs *)pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
@@ -164,9 +143,7 @@ Tcl_InitStubs(
  *----------------------------------------------------------------------
  */
 
-#ifdef TclTomMathInitializeStubs
 #undef TclTomMathInitializeStubs
-#endif
 
 CONST char*
 TclTomMathInitializeStubs(
@@ -181,7 +158,7 @@ TclTomMathInitializeStubs(
     const char* errMsg = NULL;
     ClientData pkgClientData = NULL;
     const char* actualVersion = 
-	Tcl_PkgRequireEx(interp, packageName, version, exact, &pkgClientData);
+	tclStubsPtr->tcl_PkgRequireEx(interp, packageName, version, exact, &pkgClientData);
     TclTomMathStubs* stubsPtr = (TclTomMathStubs*) pkgClientData;
     if (actualVersion == NULL) {
 	return NULL;
@@ -196,10 +173,18 @@ TclTomMathInitializeStubs(
 	tclTomMathStubsPtr = stubsPtr;
 	return actualVersion;
     }
-    Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, "error loading ", packageName,
+    tclStubsPtr->tcl_ResetResult(interp);
+    tclStubsPtr->tcl_AppendResult(interp, "error loading ", packageName,
 		     " (requested version ", version,
 		     ", actual version ", actualVersion,
 		     "): ", errMsg, NULL);
     return NULL;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
