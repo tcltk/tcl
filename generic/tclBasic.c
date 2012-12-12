@@ -4452,7 +4452,7 @@ Tcl_EvalEx(
     if ((numBytes + 1) >= INT_MAX) {
     	Tcl_Panic("Tcl_EvalEx: overflow in numBytes");
     }
-    return TclEvalEx(interp, script, numBytes, flags, 1, NULL, script);
+    return TclEvalEx(interp, script, (int)numBytes, flags, 1, NULL, script);
 }
 
 int
