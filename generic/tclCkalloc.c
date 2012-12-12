@@ -20,11 +20,9 @@
 #define FALSE	0
 #define TRUE	1
 
-#undef Tcl_Alloc
-#undef Tcl_Free
-#undef Tcl_Realloc
-#undef Tcl_AttemptAlloc
-#undef Tcl_AttemptRealloc
+#undef Tcl_MemFree
+#undef Tcl_AttemptMemAlloc
+#undef Tcl_AttemptMemRealloc
 
 #ifdef TCL_MEM_DEBUG
 
@@ -747,35 +745,35 @@ Tcl_AttemptDbCkrealloc(
  */
 
 char *
-Tcl_Alloc(
+Tcl_MemAlloc(
     unsigned int size)
 {
     return Tcl_DbCkalloc(size, "unknown", 0);
 }
 
 char *
-Tcl_AttemptAlloc(
+Tcl_AttemptMemAlloc(
     unsigned int size)
 {
     return Tcl_AttemptDbCkalloc(size, "unknown", 0);
 }
 
 void
-Tcl_Free(
+Tcl_MemFree(
     char *ptr)
 {
     Tcl_DbCkfree(ptr, "unknown", 0);
 }
 
 char *
-Tcl_Realloc(
+Tcl_MemRealloc(
     char *ptr,
     unsigned int size)
 {
     return Tcl_DbCkrealloc(ptr, size, "unknown", 0);
 }
 char *
-Tcl_AttemptRealloc(
+Tcl_AttemptMemRealloc(
     char *ptr,
     unsigned int size)
 {
@@ -1038,7 +1036,7 @@ Tcl_InitMemory(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Alloc --
+ * Tcl_MemAlloc --
  *
  *	Interface to TclpAlloc when TCL_MEM_DEBUG is disabled. It does check
  *	that memory was actually allocated.
@@ -1047,7 +1045,7 @@ Tcl_InitMemory(
  */
 
 char *
-Tcl_Alloc(
+Tcl_MemAlloc(
     unsigned int size)
 {
     char *result;
@@ -1099,7 +1097,7 @@ Tcl_DbCkalloc(
  */
 
 char *
-Tcl_AttemptAlloc(
+Tcl_AttemptMemAlloc(
     unsigned int size)
 {
     char *result;
@@ -1132,7 +1130,7 @@ Tcl_AttemptDbCkalloc(
  */
 
 char *
-Tcl_Realloc(
+Tcl_MemRealloc(
     char *ptr,
     unsigned int size)
 {
@@ -1176,7 +1174,7 @@ Tcl_DbCkrealloc(
  */
 
 char *
-Tcl_AttemptRealloc(
+Tcl_AttemptMemRealloc(
     char *ptr,
     unsigned int size)
 {
@@ -1212,7 +1210,7 @@ Tcl_AttemptDbCkrealloc(
  */
 
 void
-Tcl_Free(
+Tcl_MemFree(
     char *ptr)
 {
     TclpFree(ptr);

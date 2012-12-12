@@ -40,13 +40,13 @@ declare 2 {
     void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
-    char *Tcl_Alloc(unsigned int size)
+    char *Tcl_MemAlloc(unsigned int size)
 }
 declare 4 {
-    void Tcl_Free(char *ptr)
+    void Tcl_MemFree(char *ptr)
 }
 declare 5 {
-    char *Tcl_Realloc(char *ptr, unsigned int size)
+    char *Tcl_MemRealloc(char *ptr, unsigned int size)
 }
 declare 6 {
     char *Tcl_DbCkalloc(unsigned int size, const char *file, int line)
@@ -1527,13 +1527,13 @@ declare 427 {
 	    int flags, Tcl_CommandTraceProc *proc, ClientData clientData)
 }
 declare 428 {
-    char *Tcl_AttemptAlloc(unsigned int size)
+    char *Tcl_AttemptMemAlloc(unsigned int size)
 }
 declare 429 {
     char *Tcl_AttemptDbCkalloc(unsigned int size, const char *file, int line)
 }
 declare 430 {
-    char *Tcl_AttemptRealloc(char *ptr, unsigned int size)
+    char *Tcl_AttemptMemRealloc(char *ptr, unsigned int size)
 }
 declare 431 {
     char *Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,

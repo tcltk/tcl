@@ -35,11 +35,11 @@ TCLAPI const char *	Tcl_PkgRequireEx(Tcl_Interp *interp,
 /* 2 */
 TCLAPI void		Tcl_Panic(const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
 /* 3 */
-TCLAPI char *		Tcl_Alloc(unsigned int size);
+TCLAPI char *		Tcl_MemAlloc(unsigned int size);
 /* 4 */
-TCLAPI void		Tcl_Free(char *ptr);
+TCLAPI void		Tcl_MemFree(char *ptr);
 /* 5 */
-TCLAPI char *		Tcl_Realloc(char *ptr, unsigned int size);
+TCLAPI char *		Tcl_MemRealloc(char *ptr, unsigned int size);
 /* 6 */
 TCLAPI char *		Tcl_DbCkalloc(unsigned int size, const char *file,
 				int line);
@@ -1201,12 +1201,12 @@ TCLAPI void		Tcl_UntraceCommand(Tcl_Interp *interp,
 				Tcl_CommandTraceProc *proc,
 				ClientData clientData);
 /* 428 */
-TCLAPI char *		Tcl_AttemptAlloc(unsigned int size);
+TCLAPI char *		Tcl_AttemptMemAlloc(unsigned int size);
 /* 429 */
 TCLAPI char *		Tcl_AttemptDbCkalloc(unsigned int size,
 				const char *file, int line);
 /* 430 */
-TCLAPI char *		Tcl_AttemptRealloc(char *ptr, unsigned int size);
+TCLAPI char *		Tcl_AttemptMemRealloc(char *ptr, unsigned int size);
 /* 431 */
 TCLAPI char *		Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,
 				const char *file, int line);
@@ -1782,9 +1782,9 @@ typedef struct TclStubs {
     int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, const void *clientData); /* 0 */
     const char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
     void (*tcl_Panic) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 2 */
-    char * (*tcl_Alloc) (unsigned int size); /* 3 */
-    void (*tcl_Free) (char *ptr); /* 4 */
-    char * (*tcl_Realloc) (char *ptr, unsigned int size); /* 5 */
+    char * (*tcl_MemAlloc) (unsigned int size); /* 3 */
+    void (*tcl_MemFree) (char *ptr); /* 4 */
+    char * (*tcl_MemRealloc) (char *ptr, unsigned int size); /* 5 */
     char * (*tcl_DbCkalloc) (unsigned int size, const char *file, int line); /* 6 */
     void (*tcl_DbCkfree) (char *ptr, const char *file, int line); /* 7 */
     char * (*tcl_DbCkrealloc) (char *ptr, unsigned int size, const char *file, int line); /* 8 */
@@ -2231,9 +2231,9 @@ typedef struct TclStubs {
     ClientData (*tcl_CommandTraceInfo) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *procPtr, ClientData prevClientData); /* 425 */
     int (*tcl_TraceCommand) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *proc, ClientData clientData); /* 426 */
     void (*tcl_UntraceCommand) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *proc, ClientData clientData); /* 427 */
-    char * (*tcl_AttemptAlloc) (unsigned int size); /* 428 */
+    char * (*tcl_AttemptMemAlloc) (unsigned int size); /* 428 */
     char * (*tcl_AttemptDbCkalloc) (unsigned int size, const char *file, int line); /* 429 */
-    char * (*tcl_AttemptRealloc) (char *ptr, unsigned int size); /* 430 */
+    char * (*tcl_AttemptMemRealloc) (char *ptr, unsigned int size); /* 430 */
     char * (*tcl_AttemptDbCkrealloc) (char *ptr, unsigned int size, const char *file, int line); /* 431 */
     int (*tcl_AttemptSetObjLength) (Tcl_Obj *objPtr, int length); /* 432 */
     Tcl_ThreadId (*tcl_GetChannelThread) (Tcl_Channel channel); /* 433 */
@@ -2456,12 +2456,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_PkgRequireEx) /* 1 */
 #define Tcl_Panic \
 	(tclStubsPtr->tcl_Panic) /* 2 */
-#define Tcl_Alloc \
-	(tclStubsPtr->tcl_Alloc) /* 3 */
-#define Tcl_Free \
-	(tclStubsPtr->tcl_Free) /* 4 */
-#define Tcl_Realloc \
-	(tclStubsPtr->tcl_Realloc) /* 5 */
+#define Tcl_MemAlloc \
+	(tclStubsPtr->tcl_MemAlloc) /* 3 */
+#define Tcl_MemFree \
+	(tclStubsPtr->tcl_MemFree) /* 4 */
+#define Tcl_MemRealloc \
+	(tclStubsPtr->tcl_MemRealloc) /* 5 */
 #define Tcl_DbCkalloc \
 	(tclStubsPtr->tcl_DbCkalloc) /* 6 */
 #define Tcl_DbCkfree \
@@ -3311,12 +3311,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_TraceCommand) /* 426 */
 #define Tcl_UntraceCommand \
 	(tclStubsPtr->tcl_UntraceCommand) /* 427 */
-#define Tcl_AttemptAlloc \
-	(tclStubsPtr->tcl_AttemptAlloc) /* 428 */
+#define Tcl_AttemptMemAlloc \
+	(tclStubsPtr->tcl_AttemptMemAlloc) /* 428 */
 #define Tcl_AttemptDbCkalloc \
 	(tclStubsPtr->tcl_AttemptDbCkalloc) /* 429 */
-#define Tcl_AttemptRealloc \
-	(tclStubsPtr->tcl_AttemptRealloc) /* 430 */
+#define Tcl_AttemptMemRealloc \
+	(tclStubsPtr->tcl_AttemptMemRealloc) /* 430 */
 #define Tcl_AttemptDbCkrealloc \
 	(tclStubsPtr->tcl_AttemptDbCkrealloc) /* 431 */
 #define Tcl_AttemptSetObjLength \

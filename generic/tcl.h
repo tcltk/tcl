@@ -2255,6 +2255,12 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * defined in tclCkalloc.c.
  */
 
+#define Tcl_Alloc(x) ckalloc(x)
+#define Tcl_Free(x) ckfree(x)
+#define Tcl_Realloc(x, y) ckrealloc(x, y)
+#define Tcl_AttemptAlloc(x) attemptckalloc(x)
+#define Tcl_AttemptRealloc(x, y) attemptckrealloc(x, y)
+
 #ifdef TCL_MEM_DEBUG
 
 #   define ckalloc(x) \
@@ -2271,21 +2277,21 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #else /* !TCL_MEM_DEBUG */
 
 /*
- * If we are not using the debugging allocator, we should call the Tcl_Alloc,
+ * If we are not using the debugging allocator, we should call the Tcl_MemAlloc,
  * et al. routines in order to guarantee that every module is using the same
  * memory allocator both inside and outside of the Tcl library.
  */
 
 #   define ckalloc(x) \
-    ((void *) Tcl_Alloc((unsigned)(x)))
+    ((void *) Tcl_MemAlloc((unsigned)(x)))
 #   define ckfree(x) \
-    Tcl_Free((char *)(x))
+    Tcl_MemFree((char *)(x))
 #   define ckrealloc(x,y) \
-    ((void *) Tcl_Realloc((char *)(x), (unsigned)(y)))
+    ((void *) Tcl_MemRealloc((char *)(x), (unsigned)(y)))
 #   define attemptckalloc(x) \
-    ((void *) Tcl_AttemptAlloc((unsigned)(x)))
+    ((void *) Tcl_AttemptMemAlloc((unsigned)(x)))
 #   define attemptckrealloc(x,y) \
-    ((void *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
+    ((void *) Tcl_AttemptMemRealloc((char *)(x), (unsigned)(y)))
 #   undef  Tcl_InitMemory
 #   define Tcl_InitMemory(x)
 #   undef  Tcl_DumpActiveMemory
