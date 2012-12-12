@@ -637,7 +637,7 @@ typedef struct Tcl_ObjType {
  */
 
 typedef struct Tcl_Obj {
-    int refCount;		/* When 0 the object will be freed. */
+    size_t refCount;	/* When 0 the object will be freed. */
     char *bytes;		/* This points to the first byte of the
 				 * object's string representation. The array
 				 * must be followed by a null byte (i.e., at
@@ -649,7 +649,7 @@ typedef struct Tcl_Obj {
 				 * should use Tcl_GetStringFromObj or
 				 * Tcl_GetString to get a pointer to the byte
 				 * array as a readonly value. */
-    int length;			/* The number of bytes at *bytes, not
+    size_t length;		/* The number of bytes at *bytes, not
 				 * including the terminating null. */
     const Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
 				 * corresponds to the type of the object's
@@ -2331,11 +2331,14 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
     /*
      * Use do/while0 idiom for optimum correctness without compiler warnings.
      * http://c2.com/cgi/wiki?TrivialDoWhileLoop
+     *
+     * Be careful: if refCount underflows (-1), this should not be mistaken
+     * for a shared object.
      */
 #   define Tcl_DecrRefCount(objPtr) \
-	do { if (--(objPtr)->refCount <= 0) TclFreeObj(objPtr); } while(0)
+	do { if (((objPtr)->refCount-- + 1) < 3) TclFreeObj(objPtr); } while(0)
 #   define Tcl_IsShared(objPtr) \
-	((objPtr)->refCount > 1)
+	(((objPtr)->refCount + 1) > 2)
 #endif
 
 /*

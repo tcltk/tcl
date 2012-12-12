@@ -112,7 +112,7 @@ TCLAPI Tcl_Obj *	Tcl_DbNewLongObj(long longValue, const char *file,
 /* 27 */
 TCLAPI Tcl_Obj *	Tcl_DbNewObj(const char *file, int line);
 /* 28 */
-TCLAPI Tcl_Obj *	Tcl_DbNewStringObj(const char *bytes, int length,
+TCLAPI Tcl_Obj *	Tcl_DbNewStringObj(const char *bytes, size_t length,
 				const char *file, int line);
 /* 29 */
 TCLAPI Tcl_Obj *	Tcl_DuplicateObj(Tcl_Obj *objPtr);
@@ -189,7 +189,7 @@ TCLAPI Tcl_Obj *	Tcl_NewLongObj(long longValue);
 /* 55 */
 TCLAPI Tcl_Obj *	Tcl_NewObj(void);
 /* 56 */
-TCLAPI Tcl_Obj *	Tcl_NewStringObj(const char *bytes, int length);
+TCLAPI Tcl_Obj *	Tcl_NewStringObj(const char *bytes, size_t length);
 /* 57 */
 TCLAPI void		Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue);
 /* 58 */
@@ -834,7 +834,7 @@ TCLAPI void		Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc,
 TCLAPI void		Tcl_DiscardResult(Tcl_SavedResult *statePtr);
 /* 291 */
 TCLAPI int		Tcl_EvalEx(Tcl_Interp *interp, const char *script,
-				int numBytes, int flags);
+				size_t numBytes, int flags);
 /* 292 */
 TCLAPI int		Tcl_EvalObjv(Tcl_Interp *interp, int objc,
 				Tcl_Obj *const objv[], int flags);
@@ -1823,7 +1823,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DbNewListObj) (int objc, Tcl_Obj *const *objv, const char *file, int line); /* 25 */
     Tcl_Obj * (*tcl_DbNewLongObj) (long longValue, const char *file, int line); /* 26 */
     Tcl_Obj * (*tcl_DbNewObj) (const char *file, int line); /* 27 */
-    Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, int length, const char *file, int line); /* 28 */
+    Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, size_t length, const char *file, int line); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) (Tcl_Obj *objPtr); /* 29 */
     void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
     int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *boolPtr); /* 31 */
@@ -1851,7 +1851,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_NewListObj) (int objc, Tcl_Obj *const objv[]); /* 53 */
     Tcl_Obj * (*tcl_NewLongObj) (long longValue); /* 54 */
     Tcl_Obj * (*tcl_NewObj) (void); /* 55 */
-    Tcl_Obj * (*tcl_NewStringObj) (const char *bytes, int length); /* 56 */
+    Tcl_Obj * (*tcl_NewStringObj) (const char *bytes, size_t length); /* 56 */
     void (*tcl_SetBooleanObj) (Tcl_Obj *objPtr, int boolValue); /* 57 */
     unsigned char * (*tcl_SetByteArrayLength) (Tcl_Obj *objPtr, int length); /* 58 */
     void (*tcl_SetByteArrayObj) (Tcl_Obj *objPtr, const unsigned char *bytes, int length); /* 59 */
@@ -2094,7 +2094,7 @@ typedef struct TclStubs {
     void (*tcl_CreateThreadExitHandler) (Tcl_ExitProc *proc, ClientData clientData); /* 288 */
     void (*tcl_DeleteThreadExitHandler) (Tcl_ExitProc *proc, ClientData clientData); /* 289 */
     void (*tcl_DiscardResult) (Tcl_SavedResult *statePtr); /* 290 */
-    int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, int numBytes, int flags); /* 291 */
+    int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, size_t numBytes, int flags); /* 291 */
     int (*tcl_EvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 292 */
     int (*tcl_EvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 293 */
     void (*tcl_ExitThread) (int status); /* 294 */

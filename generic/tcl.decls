@@ -126,7 +126,7 @@ declare 27 {
     Tcl_Obj *Tcl_DbNewObj(const char *file, int line)
 }
 declare 28 {
-    Tcl_Obj *Tcl_DbNewStringObj(const char *bytes, int length,
+    Tcl_Obj *Tcl_DbNewStringObj(const char *bytes, size_t length,
 	    const char *file, int line)
 }
 declare 29 {
@@ -220,7 +220,7 @@ declare 55 {
     Tcl_Obj *Tcl_NewObj(void)
 }
 declare 56 {
-    Tcl_Obj *Tcl_NewStringObj(const char *bytes, int length)
+    Tcl_Obj *Tcl_NewStringObj(const char *bytes, size_t length)
 }
 declare 57 {
     void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
@@ -1051,7 +1051,7 @@ declare 290 {
     void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
 }
 declare 291 {
-    int Tcl_EvalEx(Tcl_Interp *interp, const char *script, int numBytes,
+    int Tcl_EvalEx(Tcl_Interp *interp, const char *script, size_t numBytes,
 	    int flags)
 }
 declare 292 {
@@ -2373,9 +2373,6 @@ declare 1 macosx {
 
 # Public functions that are not accessible via the stubs table.
 
-export {
-    void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)
-}
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 	int exact)

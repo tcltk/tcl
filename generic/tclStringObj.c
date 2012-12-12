@@ -327,17 +327,21 @@ Tcl_Obj *
 Tcl_NewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    int length)			/* The number of bytes to copy from "bytes"
+    size_t length)			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
 				 * negative, use bytes up to the first NUL
 				 * byte. */
 {
     Tcl_Obj *objPtr;
 
-    if (length < 0) {
+    /* TODO: remove in final implementation */
+    if ((length + 1) >= INT_MAX) {
+    	Tcl_Panic("Tcl_NewStringObj: overflow in length");
+    }
+    if (length == (size_t)-1) {
 	length = (bytes? strlen(bytes) : 0);
     }
-    TclNewStringObj(objPtr, bytes, length);
+    TclNewStringObj(objPtr, bytes, (int)length);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -376,7 +380,7 @@ Tcl_Obj *
 Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    int length,			/* The number of bytes to copy from "bytes"
+    size_t length,			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
 				 * negative, use bytes up to the first NUL
 				 * byte. */
@@ -387,11 +391,15 @@ Tcl_DbNewStringObj(
 {
     Tcl_Obj *objPtr;
 
-    if (length < 0) {
+    /* TODO: remove in final implementation */
+    if ((length + 1) >= INT_MAX) {
+    	Tcl_Panic("Tcl_NewStringObj: overflow in length");
+    }
+    if (length == (size_t)-1) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclDbNewObj(objPtr, file, line);
-    TclInitStringRep(objPtr, bytes, length);
+    TclInitStringRep(objPtr, bytes, (int)length);
     return objPtr;
 }
 #else /* if not TCL_MEM_DEBUG */
@@ -399,7 +407,7 @@ Tcl_Obj *
 Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    int length,			/* The number of bytes to copy from "bytes"
+    size_t length,			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
 				 * negative, use bytes up to the first NUL
 				 * byte. */

@@ -74,7 +74,6 @@ TclInitStubs(
     const char *tclversion,
     int magic)
 {
-    Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
     const TclStubs *stubsPtr;
@@ -140,7 +139,7 @@ TclInitStubs(
 	    }
 	    *p = '\0';
 	}
-	stubsPtr->tcl_AppendResult(interp, msg, NULL);
+	stubsPtr->tcl_SetObjResult(interp, stubsPtr->tcl_NewStringObj(msg, -1));
 	free(msg);
 	return NULL;
     }
