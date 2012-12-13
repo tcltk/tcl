@@ -833,7 +833,7 @@ int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
 #   define Tcl_DecrRefCount(objPtr) \
 	do { \
 	    Tcl_Obj *_objPtr = (objPtr); \
-	    if (_objPtr->refCount-- < 2) { \
+	    if (--(_objPtr)->refCount <= 0) { \
 		TclFreeObj(_objPtr); \
 	    } \
 	} while(0)
