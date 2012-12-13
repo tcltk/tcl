@@ -1,12 +1,28 @@
+2012-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h: Fix Tcl_DecrRefCount macro such that it
+	doesn't access its objPtr parameter twice any more.
+
+2012-12-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (plus-pkgs): Increased robustness of
+	version number detection code to deal with packages whose names are
+	prefixes of other packages.
+	* unix/Makefile.in (dist): Added pkgs/package.list.txt to distribution
+	builds to ensure that 'make html' will work better.
+
 2012-12-09  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
-	* tests/chan.test: Clean up unwanted eofchar side-effect of
-	chan-4.6 leading to a spurious "'" at end of chan.test under
-	certain conditions (see [Bug 3389289] and [Bug 3389251]).
-	* doc/expr.n: [Bug 3594188] Clarifications about commas.
+
+	* tests/chan.test: Clean up unwanted eofchar side-effect of chan-4.6
+	leading to a spurious "'" at end of chan.test under certain conditions
+	(see [Bug 3389289] and [Bug 3389251]).
+
+	* doc/expr.n: [Bug 3594188]: Clarifications about commas.
 
 2012-12-08  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
 	* generic/tclIO.c: Fix busyloop at exit under TCL_FINALIZE_ON_EXIT
-	when there  are unflushed nonblocking channels.  Thanks Miguel for
+	when there are unflushed nonblocking channels.  Thanks Miguel for
 	spotting.
 
 2012-12-07  Jan Nijtmans  <nijtmans@users.sf.net>
@@ -24,10 +40,10 @@
 2012-11-26  Reinhard Max  <max@suse.de>
 
 	* unix/tclUnixSock.c: Factor out creation of the -sockname and
-	-peername lists from TcpGetOptionProc() to TcpHostPortList().
-	Make it robust against implementations of getnameinfo() that error
-	out if reverse mapping fails instead of falling back to the
-	numeric representation.
+	-peername lists from TcpGetOptionProc() to TcpHostPortList().  Make it
+	robust against implementations of getnameinfo() that error out if
+	reverse mapping fails instead of falling back to the numeric
+	representation.
 
 2012-11-20  Donal K. Fellows  <dkf@users.sf.net>
 

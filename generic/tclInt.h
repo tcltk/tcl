@@ -3934,24 +3934,26 @@ typedef const char *TclDTraceStr;
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
  * 'length == -1'.
- * Use empty 'if ; else' to handle use in unbraced outer if/else conditions.
  */
 
 # define TclDecrRefCount(objPtr) \
-    if (--(objPtr)->refCount > 0) ; else { \
-	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) { \
-	    TCL_DTRACE_OBJ_FREE(objPtr); \
-	    if ((objPtr)->bytes \
-		    && ((objPtr)->bytes != tclEmptyStringRep)) { \
-		ckfree((char *) (objPtr)->bytes); \
+    do { \
+	Tcl_Obj *_objPtr = (objPtr); \
+	if (_objPtr->refCount-- < 2) { \
+	    if (!_objPtr->typePtr || !_objPtr->typePtr->freeIntRepProc) { \
+		TCL_DTRACE_OBJ_FREE(_objPtr); \
+		if (_objPtr->bytes \
+			&& (_objPtr->bytes != tclEmptyStringRep)) { \
+		    ckfree((char *) _objPtr->bytes); \
+		} \
+		_objPtr->length = -1; \
+		TclFreeObjStorage(_objPtr); \
+		TclIncrObjsFreed(); \
+	    } else { \
+		TclFreeObj(_objPtr); \
 	    } \
-	    (objPtr)->length = -1; \
-	    TclFreeObjStorage(objPtr); \
-	    TclIncrObjsFreed(); \
-	} else { \
-	    TclFreeObj(objPtr); \
 	} \
-    }
+    } while(0)
 
 #if defined(PURIFY)
 
