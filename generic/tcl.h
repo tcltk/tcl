@@ -2502,9 +2502,9 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
      */
 #   define Tcl_DecrRefCount(objPtr) \
 	do { \
-	    Tcl_Obj *obj = (objPtr); \
-	    if ((obj)->refCount-- < 2) { \
-		TclFreeObj(obj); \
+	    Tcl_Obj *_objPtr = (objPtr); \
+	    if (_objPtr->refCount-- < 2) { \
+		TclFreeObj(_objPtr); \
 	    } \
 	} while(0)
 #   define Tcl_IsShared(objPtr) \
