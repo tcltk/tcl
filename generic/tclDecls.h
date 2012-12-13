@@ -3720,15 +3720,14 @@ extern const TclStubs *tclStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#undef TclCreateInterp
 #if !defined(BUILD_tcl) || defined(USE_TCL_STUBS)
-#   undef TclCreateInterp
 #   undef Tcl_Init
 #   define Tcl_CreateInterp() (tclStubsPtr->tclCreateInterp())
 #   define Tcl_Init(interp) (Tcl_InitStubs(interp, TCL_VERSION, 0)?tclStubsPtr->tcl_Init(interp):TCL_ERROR)
 #endif
 
 #if defined(_WIN32) && defined(UNICODE)
-#   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #   define Tcl_MainEx Tcl_MainExW
 TCLSOAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);

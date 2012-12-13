@@ -284,7 +284,7 @@ Tcl_SourceRCFile(
 
 /*----------------------------------------------------------------------
  *
- * Tcl_Main, Tcl_MainEx --
+ * Tcl_MainEx --
  *
  *	Main program for tclsh and most other Tcl-based applications.
  *
@@ -632,22 +632,6 @@ Tcl_MainEx(
 
     Tcl_Exit(exitCode);
 }
-
-#if (TCL_MAJOR_VERSION == 8) && !defined(UNICODE)
-#undef Tcl_Main
-extern DLLEXPORT void
-Tcl_Main(
-    int argc,			/* Number of arguments. */
-    char **argv,		/* Array of argument strings. */
-    Tcl_AppInitProc *appInitProc)
-				/* Application-specific initialization
-				 * function to call after most initialization
-				 * but before starting to execute commands. */
-{
-    Tcl_FindExecutable(argv[0]);
-    Tcl_MainEx(argc, argv, appInitProc, Tcl_CreateInterp());
-}
-#endif /* TCL_MAJOR_VERSION == 8 && !UNICODE */
 
 #ifndef TCL_ASCII_MAIN
 
