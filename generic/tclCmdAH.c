@@ -273,7 +273,6 @@ Tcl_CatchObjCmd(
 	Tcl_Obj *options = Tcl_GetReturnOptions(interp, result);
 	if (NULL == Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL,
 		options, 0)) {
-	    Tcl_DecrRefCount(options);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp,
 		    "couldn't save return options in variable", NULL);
