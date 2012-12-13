@@ -1,3 +1,8 @@
+2012-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h: Fix Tcl_DecrRefCount macro such that it
+	doesn't access its objPtr parameter twice any more.
+
 2012-11-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclUnixPipe.c (DefaultTempDir): [Bug 2933003]: Allow overriding
