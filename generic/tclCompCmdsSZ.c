@@ -860,7 +860,7 @@ TclSubstCompile(
 	 * Pull the result to top of stack, discard options dict.
 	 */
 
-	OP4(			REVERSE, 2);
+	OP(			EXCH);
 	OP(			POP);
 
 	/*
@@ -1333,7 +1333,7 @@ IssueSwitchChainedTests(
 		break;
 	    case Switch_Glob:
 		TclCompileTokens(interp, bodyToken[i], 1,	envPtr);
-		OP4(	OVER, 1);
+		OP(	UNDER);
 		OP1(	STR_MATCH, noCase);
 		break;
 	    case Switch_Regexp:
@@ -1373,7 +1373,6 @@ IssueSwitchChainedTests(
 		    TclCompileTokens(interp, bodyToken[i], 1, envPtr);
 		}
 
-		OP4(	OVER, 1);
 		if (!simple) {
 		    /*
 		     * Pass correct RE compile flags. We use only Int1
@@ -1385,10 +1384,12 @@ IssueSwitchChainedTests(
 		    int cflags = TCL_REG_ADVANCED
 			    | (noCase ? TCL_REG_NOCASE : 0);
 
+		    OP(	UNDER);
 		    OP1(REGEXP, cflags);
 		} else if (exact && !noCase) {
 		    OP(	STR_EQ);
 		} else {
+		    OP(	UNDER);
 		    OP1(STR_MATCH, noCase);
 		}
 		break;
@@ -2230,7 +2231,7 @@ IssueTryInstructions(
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
     PUSH(				"0");
-    OP4(				REVERSE, 2);
+    OP(					EXCH);
     OP4(				JUMP, 7);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
@@ -2383,7 +2384,7 @@ IssueTryFinallyInstructions(
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
     PUSH(				"0");
-    OP4(				REVERSE, 2);
+    OP(					EXCH);
     OP4(				JUMP, 7);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
@@ -2501,7 +2502,7 @@ IssueTryFinallyInstructions(
 	    BODY(			handlerTokens[i], 5+i*4);
 	    ExceptionRangeEnds(envPtr, range);
 	    OP(				PUSH_RETURN_OPTIONS);
-	    OP4(			REVERSE, 2);
+	    OP(				EXCH);
 	    OP4(			JUMP, 7);
 	    forwardsToFix[i] = -1;
 
@@ -3394,7 +3395,7 @@ TclCompileMinusOpCmd(
 
     OP4(	REVERSE, words-1);
     while (--words > 1) {
-	OP4(	REVERSE, 2);
+	OP(	EXCH);
 	OP(	SUB);
     }
     return TCL_OK;
@@ -3438,7 +3439,7 @@ TclCompileDivOpCmd(
 
     OP4(	REVERSE, words-1);
     while (--words > 1) {
-	OP4(	REVERSE, 2);
+	OP(	EXCH);
 	OP(	DIV);
     }
     return TCL_OK;

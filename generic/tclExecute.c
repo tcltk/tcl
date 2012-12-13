@@ -2486,17 +2486,32 @@ ExecuteByteCode(
 	objResultPtr = OBJ_AT_TOS;
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
-
+    case INST_UNDER:
+	objResultPtr = OBJ_UNDER_TOS;
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
     case INST_OVER:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	objResultPtr = OBJ_AT_DEPTH(opnd);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(5, 0, 1);
 
-    case INST_REVERSE: {
+    {
 	Tcl_Obj **a, **b;
 
+    case INST_EXCH:
+	TRACE(("\"%.20s\" \"%.20s\" => ",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
+	tmpPtr = OBJ_AT_TOS;
+	OBJ_AT_TOS = OBJ_UNDER_TOS;
+	OBJ_UNDER_TOS = tmpPtr;
+	TRACE_APPEND(("\"%.20s\" \"%.20s\"",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
+	NEXT_INST_F(1, 0, 0);
+
+    case INST_REVERSE:
 	opnd = TclGetUInt4AtPtr(pc+1);
+	TRACE(("%u\n", opnd));
 	a = tosPtr-(opnd-1);
 	b = tosPtr;
 	while (a<b) {
@@ -4315,7 +4330,7 @@ ExecuteByteCode(
 		 * list type.
 		 */
 
-		List *listPtr = valuePtr->internalRep.twoPtrValue.ptr1;
+		List *listPtr = ListRepPtr(valuePtr);
 
 		if (listPtr->refCount == 1) {
 		    TRACE(("\"%.30s\" %d %d => ", O2S(valuePtr),

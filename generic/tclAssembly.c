@@ -356,6 +356,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"eq",		ASSEM_1BYTE,	INST_EQ,		2,	1},
     {"eval",		ASSEM_EVAL,	INST_EVAL_STK,		1,	1},
     {"evalStk",		ASSEM_1BYTE,	INST_EVAL_STK,		1,	1},
+    {"exch",		ASSEM_1BYTE,	INST_EXCH,		2,	2},
     {"exist",		ASSEM_LVT,	INST_EXIST_SCALAR,	0,	1},
     {"existArray",	ASSEM_LVT,	INST_EXIST_ARRAY,	1,	1},
     {"existArrayStk",	ASSEM_1BYTE,	INST_EXIST_ARRAY_STK,	2,	1},
@@ -441,6 +442,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"tclooSelf",	ASSEM_1BYTE,	INST_TCLOO_SELF,	0,	1},
     {"tryCvtToNumeric",	ASSEM_1BYTE,	INST_TRY_CVT_TO_NUMERIC,1,	1},
     {"uminus",		ASSEM_1BYTE,	INST_UMINUS,		1,	1},
+    {"under",		ASSEM_1BYTE,	INST_UNDER,		2,	3},
     {"unset",		ASSEM_BOOL_LVT,	INST_UNSET_SCALAR,	0,	0},
     {"unsetArray",	ASSEM_BOOL_LVT,	INST_UNSET_ARRAY,	1,	0},
     {"unsetArrayStk",	ASSEM_BOOL,	INST_UNSET_ARRAY_STK,	2,	0},
@@ -463,17 +465,11 @@ static const TalInstDesc TalInstructionTable[] = {
  */
 
 static const unsigned char NonThrowingByteCodes[] = {
-    INST_PUSH, INST_POP, INST_DUP,				/* 1-3 */
-    INST_JUMP,							/* 28 */
-    INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 64- */
-    INST_PUSH_RETURN_OPTIONS,					/* -67 */
-    INST_OVER,							/* 114 */
-    INST_REVERSE, INST_NOP,					/* 116-117 */
-    INST_STR_MAP, INST_STR_FIND,				/* 127-128 */
-    INST_COROUTINE_NAME,					/* 133 */
-    INST_NS_CURRENT,						/* 135 */
-    INST_INFO_LEVEL_NUM,					/* 136 */
-    INST_RESOLVE_COMMAND					/* 138 */
+    INST_PUSH, INST_POP, INST_DUP, INST_JUMP,
+    INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,
+    INST_PUSH_RETURN_OPTIONS, INST_OVER, INST_REVERSE, INST_NOP,
+    INST_STR_MAP, INST_STR_FIND, INST_COROUTINE_NAME, INST_NS_CURRENT,
+    INST_INFO_LEVEL_NUM, INST_RESOLVE_COMMAND, INST_EXCH, INST_UNDER
 };
 
 /*

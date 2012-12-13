@@ -492,6 +492,13 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Forces the variable indexed by opnd to be an array. Does not touch
 	 * the stack. */
 
+    {"exch",		1,	0,	  0,	{OPERAND_NONE}},
+	/* Swap the two items on the top of the stack.
+	 * Stack:  ... a b => ... b a */
+    {"under",		1,	+1,	  0,	{OPERAND_NONE}},
+	/* Duplicates the item under the top of the stack.
+	 * Stack:  ... a b => ... a b a */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 

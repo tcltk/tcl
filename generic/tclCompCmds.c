@@ -638,7 +638,7 @@ TclCompileCatchCmd(
     if (optsIndex != -1) {
 	OP4(	REVERSE, 3);
     } else {
-	OP4(	REVERSE, 2);
+	OP(	EXCH);
     }
 
     /*
@@ -656,7 +656,7 @@ TclCompileCatchCmd(
      */
 
     if (optsIndex != -1) {
-	OP4(	REVERSE, 2);
+	OP(	EXCH);
 	OP4(	STORE_SCALAR, optsIndex);
 	OP(	POP);
     }
@@ -669,7 +669,7 @@ TclCompileCatchCmd(
      */
 
     if (cmdTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	OP4(	REVERSE, 2);
+	OP(	EXCH);
 	OP(	POP);
     }
 
@@ -1177,6 +1177,8 @@ TclCompileDictMergeCmd(
     OP4(	BEGIN_CATCH, outLoop);
     ExceptionRangeStarts(envPtr, outLoop);
     for (i=2 ; i<parsePtr->numWords ; i++) {
+	int endloop, loop;
+
 	/*
 	 * Get the dictionary, and merge its pairs into the first dict (using
 	 * a small loop).
@@ -1185,13 +1187,15 @@ TclCompileDictMergeCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_SUBST_WORD(tokenPtr, i);
 	OP4(	DICT_FIRST, infoIndex);
-	OP4(	JUMP_TRUE, 30);
-	OP4(	REVERSE, 2);
+	JUMP(endloop, JUMP_TRUE);
+	LABEL(loop);
+	OP(	EXCH);
 	OP44(	DICT_SET, 1, workerIndex);
 	TclAdjustStackDepth(-1, envPtr);
 	OP(	POP);
 	OP4(	DICT_NEXT, infoIndex);
-	OP4(	JUMP_FALSE, -20);
+	BACKJUMP(loop, JUMP_FALSE);
+	FIXJUMP(endloop);
 	OP(	POP);
 	OP(	POP);
 	OP14(	UNSET_SCALAR, 0, infoIndex);
@@ -1405,7 +1409,7 @@ CompileDictEachCmd(
     BODY(	bodyTokenPtr, 3);
     if (collect == TCL_EACH_COLLECT) {
 	OP4(	LOAD_SCALAR, keyVarIndex);
-	OP4(	OVER, 1);
+	OP(	UNDER);
 	OP44(	DICT_SET, 1, collectVar);
 	TclAdjustStackDepth(-1, envPtr);
 	OP(	POP);
@@ -1622,7 +1626,7 @@ TclCompileDictUpdateCmd(
      */
 
     OP(		END_CATCH);
-    OP4(	REVERSE, 2);
+    OP(		EXCH);
     OP44(	DICT_UPDATE_END, dictIndex, infoIndex);
 
     /*
@@ -1850,7 +1854,7 @@ TclCompileDictWithCmd(
 		}
 		OP4(	LIST, parsePtr->numWords-3);
 		OP4(	LOAD_SCALAR, dictVar);
-		OP4(	OVER, 1);
+		OP(	UNDER);
 		OP(	DICT_EXPAND);
 		OP4(	DICT_RECOMBINE_IMM, dictVar);
 		PUSH(	"");
@@ -1878,9 +1882,9 @@ TclCompileDictWithCmd(
 		    tokenPtr = TokenAfter(tokenPtr);
 		}
 		OP4(	LIST, parsePtr->numWords-3);
-		OP4(	OVER, 1);
+		OP(	UNDER);
 		OP(	LOAD_STK);
-		OP4(	OVER, 1);
+		OP(	UNDER);
 		OP(	DICT_EXPAND);
 		OP(	DICT_RECOMBINE_STK);
 		PUSH(	"");
@@ -1895,7 +1899,7 @@ TclCompileDictWithCmd(
 		PUSH(	"");
 		OP(	DICT_EXPAND);
 		PUSH(	"");
-		OP4(	REVERSE, 2);
+		OP(	EXCH);
 		OP(	DICT_RECOMBINE_STK);
 		PUSH(	"");
 	    }
@@ -3985,7 +3989,7 @@ TclCompileLassignCmd(
 	 */
 
 	if (!simpleVarName) {
-	    OP4(	OVER, 1);
+	    OP(		UNDER);
 	    OP4(	LIST_INDEX_IMM, idx);
 	    OP(		STORE_STK);
 	    OP(		POP);
@@ -3996,14 +4000,14 @@ TclCompileLassignCmd(
 		OP4(	STORE_SCALAR, localIndex);
 		OP(	POP);
 	    } else {
-		OP4(	OVER, 1);
+		OP(	UNDER);
 		OP4(	LIST_INDEX_IMM, idx);
 		OP(	STORE_SCALAR_STK);
 		OP(	POP);
 	    }
 	} else {
 	    if (localIndex >= 0) {
-		OP4(	OVER, 1);
+		OP(	UNDER);
 		OP4(	LIST_INDEX_IMM, idx);
 		OP4(	STORE_ARRAY, localIndex);
 		OP(	POP);
@@ -4775,7 +4779,7 @@ TclCompileNamespaceQualifiersCmd(
     PUSH(	"1");
     OP(		SUB);
     OP4(	OVER, 2);
-    OP4(	OVER, 1);
+    OP(		UNDER);
     OP(		STR_INDEX);
     PUSH(	":");
     OP(		STR_EQ);
@@ -4807,7 +4811,7 @@ TclCompileNamespaceTailCmd(
 
     PUSH_SUBST_WORD(tokenPtr, 1);
     PUSH(	"::");
-    OP4(	OVER, 1);
+    OP(		UNDER);
     OP(		STR_FIND_LAST);
     OP(		DUP);
     PUSH(	"0");
