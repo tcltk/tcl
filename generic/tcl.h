@@ -681,10 +681,7 @@ typedef struct Tcl_Obj {
  * whether an object is shared (i.e. has reference count > 1). Note: clients
  * should use Tcl_DecrRefCount() when they are finished using an object, and
  * should never call TclFreeObj() directly. TclFreeObj() is only defined and
- * made public in tcl.h to support Tcl_DecrRefCount's macro definition. Note
- * also that Tcl_DecrRefCount() refers to the parameter "obj" twice. This
- * means that you should avoid calling it with an expression that is expensive
- * to compute or has side effects.
+ * made public in tcl.h to support Tcl_DecrRefCount's macro definition.
  */
 
 void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
@@ -2310,7 +2307,12 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
      * http://c2.com/cgi/wiki?TrivialDoWhileLoop
      */
 #   define Tcl_DecrRefCount(objPtr) \
-	do { if (--(objPtr)->refCount <= 0) TclFreeObj(objPtr); } while(0)
+	do { \
+	    Tcl_Obj *_objPtr = (objPtr); \
+	    if (_objPtr->refCount-- < 2) { \
+		TclFreeObj(_objPtr); \
+	    } \
+	} while(0)
 #   define Tcl_IsShared(objPtr) \
 	((objPtr)->refCount > 1)
 #endif
