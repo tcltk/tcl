@@ -2332,7 +2332,7 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #   define Tcl_DecrRefCount(objPtr) \
 	do { \
 	    Tcl_Obj *_objPtr = (objPtr); \
-	    if (_objPtr->refCount-- < 2) { \
+	    if (--(_objPtr)->refCount <= 0) { \
 		TclFreeObj(_objPtr); \
 	    } \
 	} while(0)

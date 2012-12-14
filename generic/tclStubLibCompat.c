@@ -43,9 +43,7 @@ Tcl_InitStubs(
     const char *version,
     int exact)
 {
-    /* Use the hardcoded Tcl 8.6 values here. Still to be decided.
-     * It isn't used in Tcl 9 anyway. */
-    return TclInitStubs(interp, version, exact, "8.6", (int) 0xFCA3BACF);
+    return TclInitStubs(interp, version, exact, "8", (int) 0xFCA3BACF);
 }
 
 /*
