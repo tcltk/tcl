@@ -3934,6 +3934,13 @@ typedef const char *TclDTraceStr;
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
  * 'length == -1'.
+ *
+ * Use do/while0 idiom for optimum correctness without compiler warnings.
+ * http://c2.com/cgi/wiki?TrivialDoWhileLoop
+ *
+ * Decrement refCount AFTER checking it for 0 or 1 (<2), because
+ * we cannot assume anymore that refCount is a signed type; In
+ * Tcl8 it was but in Tcl9 it is subject to change.
  */
 
 # define TclDecrRefCount(objPtr) \
