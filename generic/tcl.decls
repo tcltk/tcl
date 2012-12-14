@@ -971,7 +971,7 @@ declare 272 {
 	    void *clientDataPtr)
 }
 declare 273 {
-    int Tcl_PkgProvide(Tcl_Interp *interp, const char *name,
+    int TclPkgProvide(Tcl_Interp *interp, const char *name,
 	    const char *version)
 }
 # TIP #268: The internally used new Require function is in slot 573.

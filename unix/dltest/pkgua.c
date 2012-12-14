@@ -199,7 +199,7 @@ Pkgua_Init(
     int code, cmdIndex = 0;
     Tcl_Command *cmdTokens;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
 

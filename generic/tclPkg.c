@@ -88,7 +88,7 @@ static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_PkgProvide / Tcl_PkgProvideEx --
+ * Tcl_PkgProvideEx --
  *
  *	This function is invoked to declare that a particular version of a
  *	particular package is now present in an interpreter. There must not be
@@ -105,16 +105,6 @@ static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
  *
  *----------------------------------------------------------------------
  */
-
-int
-Tcl_PkgProvide(
-    Tcl_Interp *interp,		/* Interpreter in which package is now
-				 * available. */
-    const char *name,		/* Name of package. */
-    const char *version)	/* Version string for package. */
-{
-    return Tcl_PkgProvideEx(interp, name, version, NULL);
-}
 
 int
 Tcl_PkgProvideEx(

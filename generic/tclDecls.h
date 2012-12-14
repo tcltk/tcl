@@ -787,7 +787,7 @@ TCLAPI const char *	Tcl_PkgPresentEx(Tcl_Interp *interp,
 				const char *name, const char *version,
 				int exact, void *clientDataPtr);
 /* 273 */
-TCLAPI int		Tcl_PkgProvide(Tcl_Interp *interp, const char *name,
+TCLAPI int		TclPkgProvide(Tcl_Interp *interp, const char *name,
 				const char *version);
 /* 274 */
 TCLAPI const char *	Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
@@ -2076,7 +2076,7 @@ typedef struct TclStubs {
     const char * (*tcl_ParseVar) (Tcl_Interp *interp, const char *start, const char **termPtr); /* 270 */
     const char * (*tcl_PkgPresent) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 271 */
     const char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 272 */
-    int (*tcl_PkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
+    int (*tclPkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
     const char * (*tcl_PkgRequire) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 274 */
     void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
     int (*tcl_VarEvalVA) (Tcl_Interp *interp, va_list argList); /* 276 */
@@ -3005,8 +3005,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_PkgPresent) /* 271 */
 #define Tcl_PkgPresentEx \
 	(tclStubsPtr->tcl_PkgPresentEx) /* 272 */
-#define Tcl_PkgProvide \
-	(tclStubsPtr->tcl_PkgProvide) /* 273 */
+#define TclPkgProvide \
+	(tclStubsPtr->tclPkgProvide) /* 273 */
 #define Tcl_PkgRequire \
 	(tclStubsPtr->tcl_PkgRequire) /* 274 */
 #define Tcl_SetErrorCodeVA \
@@ -3748,5 +3748,8 @@ MODULE_SCOPE const char *TclGetDefaultEncodingDir(void);
 TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
+
+#define Tcl_PkgProvide(interp, name, version) \
+	Tcl_PkgProvideEx(interp, name, version, NULL)
 
 #endif /* _TCLDECLS */
