@@ -431,6 +431,11 @@ TclFinalizeEvaluation(void)
  *----------------------------------------------------------------------
  */
 
+static void panicWhenFreed(char *ptr) {
+    Tcl_Panic("This extension still uses interp->result");
+}
+
+
 Tcl_Interp *
 Tcl_CreateInterp(void)
 {
@@ -485,12 +490,11 @@ Tcl_CreateInterp(void)
     iPtr = ckalloc(sizeof(Interp));
     interp = (Tcl_Interp *) iPtr;
 
-    iPtr->legacyResult = NULL;
+    iPtr->objResultPtr = Tcl_NewObj();
     /* Any attempt to free the legacy result will cause a panic. */
-    iPtr->legacyFreeProc = TclPanicWhenFreed;
+    iPtr->legacyFreeProc = panicWhenFreed;
     iPtr->errorLine = 0;
     iPtr->stubTable = &tclStubs;
-    iPtr->objResultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(iPtr->objResultPtr);
     iPtr->handle = TclHandleCreate(iPtr);
     iPtr->globalNsPtr = NULL;

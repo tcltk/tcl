@@ -34,8 +34,10 @@ HasStubSupport(
     if (iPtr->stubTable && iPtr->stubTable->magic == magic) {
 	return iPtr->stubTable;
     }
-    iPtr->legacyResult
-	    = "interpreter uses an incompatible stubs mechanism";
+    /* This can never be executed in a Tcl > 8 interpreter, because
+     * the magic values are kept the same among versions. */
+    iPtr->objResultPtr = (Tcl_Obj *)
+	    "interpreter uses an incompatible stubs mechanism";
     iPtr->legacyFreeProc = 0; /* TCL_STATIC */
     return NULL;
 }

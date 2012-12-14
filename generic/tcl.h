@@ -2328,11 +2328,15 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
     /*
      * Use do/while0 idiom for optimum correctness without compiler warnings.
      * http://c2.com/cgi/wiki?TrivialDoWhileLoop
+     *
+     * Decrement refCount AFTER checking it for 0 or 1 (<2), because
+     * we cannot assume anymore that refCount is a signed type; In
+     * Tcl8 it was but in Tcl9 it is subject to change.
      */
 #   define Tcl_DecrRefCount(objPtr) \
 	do { \
 	    Tcl_Obj *_objPtr = (objPtr); \
-	    if (--(_objPtr)->refCount <= 0) { \
+	    if (_objPtr->refCount-- < 2) { \
 		TclFreeObj(_objPtr); \
 	    } \
 	} while(0)
