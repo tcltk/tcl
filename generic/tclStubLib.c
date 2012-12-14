@@ -77,7 +77,7 @@ TclInitStubs(
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
     const TclStubs *stubsPtr;
-    int major, minor;
+    int major;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -121,16 +121,15 @@ TclInitStubs(
 	}
     }
 
-    stubsPtr->tcl_GetVersion(&major, &minor, NULL, NULL);
-    if ((exact & TCL_STUB_COMPAT_MASK) != ((major!=8)?TCL_STUB_COMPAT:0)) {
-	char *msg = malloc(64 + strlen(tclversion) + strlen(version));
+    stubsPtr->tcl_GetVersion(&major, NULL, NULL, NULL);
+    if ((exact & TCL_STUB_COMPAT_MASK) != ((major>8)?TCL_STUB_COMPAT:0)) {
+	char *msg = stubsPtr->tcl_Alloc(64 + strlen(tclversion) + strlen(version));
 
 	strcpy(msg, "incompatible stub library: have ");
 	strcat(msg, tclversion);
 	strcat(msg, ", need ");
-	if (major != 8) {
-	    /* Apparently we have 9.x running. */
-	    strcat(msg, "9.0");
+	if (major > 8) {
+	    strcat(msg, "9");
 	} else {
 	    /* Take "version", but strip off everything after '-' */
 	    char *p = msg + strlen(msg);
@@ -140,7 +139,7 @@ TclInitStubs(
 	    *p = '\0';
 	}
 	stubsPtr->tcl_SetObjResult(interp, stubsPtr->tcl_NewStringObj(msg, -1));
-	free(msg);
+	stubsPtr->tcl_Free(msg);
 	return NULL;
     }
 
