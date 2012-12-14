@@ -107,16 +107,6 @@ static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
  */
 
 int
-Tcl_PkgProvide(
-    Tcl_Interp *interp,		/* Interpreter in which package is now
-				 * available. */
-    const char *name,		/* Name of package. */
-    const char *version)	/* Version string for package. */
-{
-    return Tcl_PkgProvideEx(interp, name, version, NULL);
-}
-
-int
 Tcl_PkgProvideEx(
     Tcl_Interp *interp,		/* Interpreter in which package is now
 				 * available. */

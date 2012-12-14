@@ -507,7 +507,7 @@ GenerateHeader(
  * ExtractHeader --
  *
  *	Take the values out of a gzip header and store them in a dictionary.
- *	SetValue is a helper function.
+ *	SetValue is a helper macro.
  *
  * Results:
  *	None.
@@ -518,18 +518,8 @@ GenerateHeader(
  *----------------------------------------------------------------------
  */
 
-static inline void
-SetValue(
-    Tcl_Obj *dictObj,
-    const char *key,
-    Tcl_Obj *value)
-{
-    Tcl_Obj *keyObj = Tcl_NewStringObj(key, -1);
-
-    Tcl_IncrRefCount(keyObj);
-    Tcl_DictObjPut(NULL, dictObj, keyObj, value);
-    TclDecrRefCount(keyObj);
-}
+#define SetValue(dictObj, key, value) \
+	Tcl_DictObjPut(NULL, (dictObj), Tcl_NewStringObj((key), -1), (value))
 
 static void
 ExtractHeader(
@@ -2119,9 +2109,6 @@ ZlibCmd(
 	}
 	if (headerVarObj != NULL && Tcl_ObjSetVar2(interp, headerVarObj, NULL,
 		headerDictObj, TCL_LEAVE_ERR_MSG) == NULL) {
-	    if (headerDictObj) {
-		TclDecrRefCount(headerDictObj);
-	    }
 	    return TCL_ERROR;
 	}
 	return TCL_OK;

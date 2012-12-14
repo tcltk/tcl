@@ -1,6 +1,12 @@
 #!/usr/bin/env tclsh
 
-package require Tcl 8.6-
+if {[catch {package require Tcl 8.6-} msg]} {
+    puts stderr "ERROR: $msg"
+    puts stderr "If running this script from 'make html', set the\
+	NATIVE_TCLSH environment\nvariable to point to an installed\
+	tclsh8.6 (or the equivalent tclsh86.exe\non Windows)."
+    exit 1
+}
 
 # Convert Ousterhout format man pages into highly crosslinked hypertext.
 #
@@ -16,7 +22,7 @@ package require Tcl 8.6-
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 
-regexp {\d+\.\d+} {$Revision: 1.49 $} ::Version
+set ::Version "50/8.6"
 set ::CSSFILE "docs.css"
 
 ##
@@ -454,16 +460,18 @@ proc plus-pkgs {type args} {
     }
     if {!$build_tcl} return
     set result {}
+    set pkgsdir $tcltkdir/$tcldir/pkgs
     foreach {dir name} $args {
-	set globpat $tcltkdir/$tcldir/pkgs/$dir*/doc/*.$type
-	if {![llength [glob -nocomplain $globpat]]} {
+	set globpat $pkgsdir/{$dir,$dir\[0-9\]*}/doc/*.$type
+	if {![llength [glob -type f -nocomplain $globpat]]} {
 	    # Fallback for manpages generated using doctools
-	    set globpat $tcltkdir/$tcldir/pkgs/$dir*/doc/man/*.$type
-	    if {![llength [glob -nocomplain $globpat]]} {
+	    set globpat $pkgsdir/{$dir,$dir\[0-9\]*}/doc/man/*.$type
+	    if {![llength [glob -type f -nocomplain $globpat]]} {
 		continue
 	    }
 	}
-	regexp "pkgs/${dir}(.*)/doc$" [glob $tcltkdir/$tcldir/pkgs/$dir*/doc] \
+	regexp "pkgs/${dir}(.*)/doc$" \
+	    [lindex [glob -type d $pkgsdir/{$dir,$dir\[0-9\]*}/doc] 0] \
 	    -> version
 	switch $type {
 	    n {
