@@ -930,7 +930,7 @@ const TclStubs tclStubs = {
     Tcl_UpdateLinkedVar, /* 257 */
     Tcl_UpVar, /* 258 */
     Tcl_UpVar2, /* 259 */
-    Tcl_VarEval, /* 260 */
+    0, /* 260 */
     Tcl_VarTraceInfo, /* 261 */
     Tcl_VarTraceInfo2, /* 262 */
     Tcl_Write, /* 263 */
@@ -946,7 +946,7 @@ const TclStubs tclStubs = {
     TclPkgProvide, /* 273 */
     Tcl_PkgRequire, /* 274 */
     Tcl_SetErrorCodeVA, /* 275 */
-    Tcl_VarEvalVA, /* 276 */
+    0, /* 276 */
     Tcl_WaitPid, /* 277 */
     Tcl_PanicVA, /* 278 */
     Tcl_GetVersion, /* 279 */
