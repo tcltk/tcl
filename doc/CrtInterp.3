@@ -107,7 +107,7 @@ uses.
 \fBInterpreter Creation And Deletion\fR
 .
 When a new interpreter is created and used in a call to \fBTcl_Eval\fR,
-\fBTcl_VarEval\fR, \fBTcl_SetVar\fR, or \fBTcl_GetVar\fR, a pair of calls
+\fBTcl_SetVar\fR, or \fBTcl_GetVar\fR, a pair of calls
 to \fBTcl_Preserve\fR and \fBTcl_Release\fR should be wrapped around all
 uses of the interpreter. Remember that it is unsafe to use the interpreter
 once \fBTcl_Release\fR has been called. To ensure that the interpreter is
@@ -120,7 +120,7 @@ code.
 .
 When an interpreter is retrieved from a data structure (e.g. the client
 data of a callback) for use in one of the evaluation functions
-(\fBTcl_Eval\fR, \fBTcl_VarEval\fR, \fBTcl_EvalObjv\fR etc.) or variable
+(\fBTcl_Eval\fR, \fBTcl_EvalObjv\fR etc.) or variable
 access functions (\fBTcl_SetVar\fR, \fBTcl_GetVar\fR, \fBTcl_SetVar2Ex\fR,
 etc.), a pair of calls to \fBTcl_Preserve\fR and \fBTcl_Release\fR should
 be wrapped around all uses of the interpreter; it is unsafe to reuse the
