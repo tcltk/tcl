@@ -123,18 +123,6 @@ extern "C" {
 
 #include <stdio.h>
 
-/*
- *----------------------------------------------------------------------------
- * Support for functions with a variable number of arguments.
- *
- * The following TCL_VARARGS* macros are to support old extensions
- * written for older versions of Tcl where the macros permitted
- * support for the varargs.h system as well as stdarg.h .
- *
- * New code should just directly be written to use stdarg.h conventions.
- */
-
-#include <stdarg.h>
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #else

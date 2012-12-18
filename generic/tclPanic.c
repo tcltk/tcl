@@ -59,7 +59,7 @@ Tcl_SetPanicProc(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_PanicVA --
+ * Tcl_Panic --
  *
  *	Print an error message and kill the process.
  *
@@ -72,16 +72,19 @@ Tcl_SetPanicProc(
  *----------------------------------------------------------------------
  */
 
+	/* ARGSUSED */
 void
-Tcl_PanicVA(
-    const char *format,		/* Format string, suitable for passing to
-				 * fprintf. */
-    va_list argList)		/* Variable argument list. */
+Tcl_Panic(
+    const char *format,
+    ...)
 {
+    va_list argList;
     char *arg1, *arg2, *arg3;	/* Additional arguments (variable in number)
 				 * to pass to fprintf. */
     char *arg4, *arg5, *arg6, *arg7, *arg8;
 
+
+    va_start(argList, format);
     arg1 = va_arg(argList, char *);
     arg2 = va_arg(argList, char *);
     arg3 = va_arg(argList, char *);
@@ -90,6 +93,7 @@ Tcl_PanicVA(
     arg6 = va_arg(argList, char *);
     arg7 = va_arg(argList, char *);
     arg8 = va_arg(argList, char *);
+    va_end (argList);
 
     if (panicProc != NULL) {
 	panicProc(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
@@ -119,35 +123,6 @@ Tcl_PanicVA(
 	abort();
 #endif
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_Panic --
- *
- *	Print an error message and kill the process.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The process dies, entering the debugger if possible.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-void
-Tcl_Panic(
-    const char *format,
-    ...)
-{
-    va_list argList;
-
-    va_start(argList, format);
-    Tcl_PanicVA(format, argList);
-    va_end (argList);
 }
 
 /*
