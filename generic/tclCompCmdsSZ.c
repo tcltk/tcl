@@ -838,19 +838,32 @@ TclSubstCompile(
 	    continue;
 	case TCL_TOKEN_VARIABLE:
 	    /*
-	     * Simple variable access; can only generate TCL_OK or TCL_ERROR
-	     * so no need to generate elaborate exception-management code.
+	     * Check for simple variable access; see if we can only generate
+	     * TCL_OK or TCL_ERROR from the substituted variable read; if so,
+	     * there is no need to generate elaborate exception-management
+	     * code. Note that the first component of TCL_TOKEN_VARIABLE is
+	     * always TCL_TOKEN_TEXT...
 	     */
 
-	    if (tokenPtr->numComponents == 1 || (tokenPtr->numComponents == 2
-		    && tokenPtr[2].type == TCL_TOKEN_TEXT)) {
-		envPtr->line = bline;
-		TclCompileVarSubst(interp, tokenPtr, envPtr);
-		bline = envPtr->line;
-		count++;
-		continue;
+	    if (tokenPtr->numComponents > 1) {
+		int i, foundCommand = 0;
+
+		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
+		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND) {
+			foundCommand = 1;
+			break;
+		    }
+		}
+		if (foundCommand) {
+		    break;
+		}
 	    }
-	    break;
+
+	    envPtr->line = bline;
+	    TclCompileVarSubst(interp, tokenPtr, envPtr);
+	    bline = envPtr->line;
+	    count++;
+	    continue;
 	}
 
 	while (count > 255) {
