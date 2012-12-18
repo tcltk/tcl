@@ -836,6 +836,21 @@ TclSubstCompile(
 	    TclEmitPush(literal, envPtr);
 	    count++;
 	    continue;
+	case TCL_TOKEN_VARIABLE:
+	    /*
+	     * Simple variable access; can only generate TCL_OK or TCL_ERROR
+	     * so no need to generate elaborate exception-management code.
+	     */
+
+	    if (tokenPtr->numComponents == 1 || (tokenPtr->numComponents == 2
+		    && tokenPtr[2].type == TCL_TOKEN_TEXT)) {
+		envPtr->line = bline;
+		TclCompileVarSubst(interp, tokenPtr, envPtr);
+		bline = envPtr->line;
+		count++;
+		continue;
+	    }
+	    break;
 	}
 
 	while (count > 255) {
