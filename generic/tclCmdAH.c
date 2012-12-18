@@ -361,7 +361,8 @@ CatchObjCmdCallback(
 
 	if (NULL == Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL,
 		options, TCL_LEAVE_ERR_MSG)) {
-	    Tcl_DecrRefCount(options);
+	    /* Do not decrRefCount 'options', it was already done by
+	     * Tcl_ObjSetVar2 */
 	    return TCL_ERROR;
 	}
     }
