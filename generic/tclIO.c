@@ -2472,7 +2472,7 @@ FlushChannel(
 		 * it's a tty channel (dup'ed underneath)
 		 */
 
-		if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+		if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED) && !TclInExit()) {
 		    SetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		    UpdateInterest(chanPtr);
 		}

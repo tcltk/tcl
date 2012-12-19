@@ -826,6 +826,20 @@ test zlib-11.2 "Bug #3390073: mis-appled gzip filtering" -setup {
 } -cleanup {
     removeFile $file
 } -result {1000 /foo/bar 0}
+test zlib-11.3 {Bug 3595576 variant} -setup {
+    set file [makeFile {} test.input]
+} -constraints zlib -body {
+    set f [open $file wb]
+    puts -nonewline [zlib push gzip $f -header {filename /foo/bar}] \
+	[string repeat "hello" 1000]
+    close $f
+    set f [open $file rb]
+    set d [read $f]
+    close $f
+    zlib gunzip $d -header noSuchNs::foo
+} -cleanup {
+    removeFile $file
+} -returnCodes error -result {can't set "noSuchNs::foo": parent namespace doesn't exist}
 
 ::tcltest::cleanupTests
 return
