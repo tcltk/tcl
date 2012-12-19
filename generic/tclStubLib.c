@@ -38,7 +38,7 @@ HasStubSupport(
      * the magic values are kept the same among versions. */
     iPtr->objResultPtr = (Tcl_Obj *)
 	    "interpreter uses an incompatible stubs mechanism";
-    iPtr->legacyFreeProc = 0; /* TCL_STATIC */
+    iPtr->emptyObjPtr = 0; /* TCL_STATIC */
     return NULL;
 }
 

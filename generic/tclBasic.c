@@ -431,11 +431,6 @@ TclFinalizeEvaluation(void)
  *----------------------------------------------------------------------
  */
 
-static void panicWhenFreed(char *ptr) {
-    Tcl_Panic("This extension still uses interp->result");
-}
-
-
 Tcl_Interp *
 Tcl_CreateInterp(void)
 {
@@ -491,8 +486,6 @@ Tcl_CreateInterp(void)
     interp = (Tcl_Interp *) iPtr;
 
     iPtr->objResultPtr = Tcl_NewObj();
-    /* Any attempt to free the legacy result will cause a panic. */
-    iPtr->legacyFreeProc = panicWhenFreed;
     iPtr->errorLine = 0;
     iPtr->stubTable = &tclStubs;
     Tcl_IncrRefCount(iPtr->objResultPtr);
@@ -6361,86 +6354,6 @@ Tcl_AddObjErrorInfo(
 	}
 	Tcl_AppendToObj(iPtr->errorInfo, message, length);
     }
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * Tcl_VarEvalVA --
- *
- *	Given a variable number of string arguments, concatenate them all
- *	together and execute the result as a Tcl command.
- *
- * Results:
- *	A standard Tcl return result. An error message or other result may be
- *	left in the interp's result.
- *
- * Side effects:
- *	Depends on what was done by the command.
- *
- *---------------------------------------------------------------------------
- */
-
-int
-Tcl_VarEvalVA(
-    Tcl_Interp *interp,		/* Interpreter in which to evaluate command */
-    va_list argList)		/* Variable argument list. */
-{
-    Tcl_DString buf;
-    char *string;
-    int result;
-
-    /*
-     * Copy the strings one after the other into a single larger string. Use
-     * stack-allocated space for small commands, but if the command gets too
-     * large than call ckalloc to create the space.
-     */
-
-    Tcl_DStringInit(&buf);
-    while (1) {
-	string = va_arg(argList, char *);
-	if (string == NULL) {
-	    break;
-	}
-	Tcl_DStringAppend(&buf, string, -1);
-    }
-
-    result = Tcl_Eval(interp, Tcl_DStringValue(&buf));
-    Tcl_DStringFree(&buf);
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_VarEval --
- *
- *	Given a variable number of string arguments, concatenate them all
- *	together and execute the result as a Tcl command.
- *
- * Results:
- *	A standard Tcl return result. An error message or other result may be
- *	left in the interp.
- *
- * Side effects:
- *	Depends on what was done by the command.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-int
-Tcl_VarEval(
-    Tcl_Interp *interp,
-    ...)
-{
-    va_list argList;
-    int result;
-
-    va_start(argList, interp);
-    result = Tcl_VarEvalVA(interp, argList);
-    va_end(argList);
-
-    return result;
 }
 
 /*

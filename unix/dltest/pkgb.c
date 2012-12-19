@@ -96,7 +96,12 @@ Pkgb_DemoObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetDefaultEncodingDir(), -1));
+    Tcl_Obj *first;
+
+    if (Tcl_ListObjIndex(NULL, Tcl_GetEncodingSearchPath(), 0, &first)
+	    == TCL_OK) {
+	Tcl_SetObjResult(interp, first);
+    }
     return TCL_OK;
 }
 
@@ -124,7 +129,7 @@ Pkgb_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-9.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);
@@ -161,7 +166,7 @@ Pkgb_SafeInit(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-9.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);

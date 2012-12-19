@@ -635,7 +635,7 @@ declare 176 {
     const char *Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags)
 }
-# Removed in Tcl 9.0
+# Removed in 9.0
 #declare 177 {
 #    int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
 #}
@@ -923,9 +923,10 @@ declare 259 {
     int Tcl_UpVar2(Tcl_Interp *interp, const char *frameName, const char *part1,
 	    const char *part2, const char *localName, int flags)
 }
-declare 260 {
-    int Tcl_VarEval(Tcl_Interp *interp, ...)
-}
+# Removed in 9.0
+#declare 260 {
+#    int Tcl_VarEval(Tcl_Interp *interp, ...)
+#}
 declare 261 {
     ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
 	    int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)
@@ -982,9 +983,10 @@ declare 274 {
 declare 275 {
     void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
 }
-declare 276 {
-    int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
-}
+# Removed in 9.0
+#declare 276 {
+#    int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
+#}
 declare 277 {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }

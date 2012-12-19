@@ -1802,18 +1802,15 @@ typedef struct Interp {
 
     /*
      * The first two fields were named "result" and "freeProc" in earlier
-     * versions of Tcl.  They are no longer used within Tcl, and are no
-     * longer available to be accessed by extensions.  However, they cannot
-     * be removed.  Why?  There is a deployed base of stub-enabled extensions
-     * that query the value of iPtr->stubTable.  For them to continue to work,
-     * the location of the field "stubTable" within the Interp struct cannot
-     * change.  The most robust way to assure that is to leave all fields up to
-     * that one undisturbed.
+     * versions of Tcl.  They are re-used for another purpose now, but
+     * the offset of the "errorLine" and "stubTable" fields is maintained.
      */
 
     Tcl_Obj *objResultPtr;	/* Interpreter result object. */
-    Tcl_FreeProc *legacyFreeProc; /* Not used, except as safeguard for
-				 * legacy extensions trying to access interp->result. */
+    Tcl_Obj *emptyObjPtr;	/* Points to an object holding an empty
+				 * string. Returned by Tcl_ObjSetVar2 when
+				 * variable traces change a variable in a
+				 * gross way. */
     int errorLine;		/* When TCL_ERROR is returned, this gives the
 				 * line number in the command where the error
 				 * occurred (1 means first line). */
@@ -1922,10 +1919,6 @@ typedef struct Interp {
     struct ExecEnv *execEnvPtr;	/* Execution environment for Tcl bytecode
 				 * execution. Contains a pointer to the Tcl
 				 * evaluation stack. */
-    Tcl_Obj *emptyObjPtr;	/* Points to an object holding an empty
-				 * string. Returned by Tcl_ObjSetVar2 when
-				 * variable traces change a variable in a
-				 * gross way. */
     Tcl_ThreadId threadId;	/* ID of thread that owns the interpreter. */
 
     ActiveCommandTrace *activeCmdTracePtr;
