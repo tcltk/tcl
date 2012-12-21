@@ -461,18 +461,15 @@ proc plus-pkgs {type args} {
     if {!$build_tcl} return
     set result {}
     set pkgsdir $tcltkdir/$tcldir/pkgs
-    foreach {dir name} $args {
-	set globpat $pkgsdir/{$dir,$dir\[0-9\]*}/doc/*.$type
+    foreach {dir name version} $args {
+	set globpat $pkgsdir/$dir/doc/*.$type
 	if {![llength [glob -type f -nocomplain $globpat]]} {
 	    # Fallback for manpages generated using doctools
-	    set globpat $pkgsdir/{$dir,$dir\[0-9\]*}/doc/man/*.$type
+	    set globpat $pkgsdir/$dir/doc/man/*.$type
 	    if {![llength [glob -type f -nocomplain $globpat]]} {
 		continue
 	    }
 	}
-	regexp "pkgs/${dir}(.*)/doc$" \
-	    [lindex [glob -type d $pkgsdir/{$dir,$dir\[0-9\]*}/doc] 0] \
-	    -> version
 	switch $type {
 	    n {
 		set title "$name Package Commands"
@@ -650,6 +647,42 @@ try {
 	append appdir "$tkdir"
     }
 
+
+    # When building docs for Tcl, try to build docs for bundled packages too
+    set packageBuildList {}
+    if  {$build_tcl} {
+	set pkgsDir [file join $tcltkdir $tcldir pkgs]
+	set subdirs [glob -nocomplain -types d -tails -directory $pkgsDir *]
+
+	foreach dir [lsort $subdirs] {
+	    # Parse the subdir name into (name, version) as fallback...
+	    set description [split $dir -]
+	    if {2 != [llength $description]} {
+		regexp {([^0-9]*)(.*)} $dir -> n v
+		set description [list $n $v]
+	    }
+
+	    # ... but try to extract (name, version) from subdir contents
+	    try {
+		set f [open [file join $pkgsDir $dir configure.in]]
+		foreach line [split [read $f] \n] {
+		    if {2 == [scan $line \
+			    { AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {
+			set description [list $n $v]
+			break
+		    }
+		}
+	    } finally {
+		catch {close $f; unset f}
+	    }
+
+	    if {[file exists [file join $pkgsDir $dir configure]]} {
+		# Looks like a package, record our best extraction attempt
+		lappend packageBuildList $dir {*}$description
+	    }
+	}
+    }
+
     # Get the list of packages to try, and what their human-readable names
     # are. Note that the package directory list should be version-less.
     try {
@@ -674,6 +707,14 @@ try {
 	}
     }
 
+    # Convert to human readable names, if applicable
+    for {set idx 0} {$idx < [llength $packageBuildList]} {incr idx 3} {
+	lassign [lrange $packageBuildList $idx $idx+2] d n v
+	if {[dict exists $packageDirNameMap $n]} {
+	    lset packageBuildList $idx+1 [dict get $packageDirNameMap $n]
+	}
+    }
+
     #
     # Invoke the scraper/converter engine.
     #
@@ -684,12 +725,12 @@ try {
 	     "The commands which the <B>tclsh</B> interpreter implements."] \
 	[plus-base $build_tk $tkdir doc/*.n {Tk Commands} TkCmd \
 	     "The additional commands which the <B>wish</B> interpreter implements."] \
-	{*}[plus-pkgs n {*}$packageDirNameMap] \
+	{*}[plus-pkgs n {*}$packageBuildList] \
 	[plus-base $build_tcl $tcldir doc/*.3 {Tcl C API} TclLib \
 	     "The C functions which a Tcl extended C program may use."] \
 	[plus-base $build_tk $tkdir doc/*.3 {Tk C API} TkLib \
 	     "The additional C functions which a Tk extended C program may use."] \
-	{*}[plus-pkgs 3 {*}$packageDirNameMap]
+	{*}[plus-pkgs 3 {*}$packageBuildList]
 } on error {msg opts} {
     # On failure make sure we show what went wrong. We're not supposed
     # to get here though; it represents a bug in the script.

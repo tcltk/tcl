@@ -96,12 +96,16 @@ Pkgb_DemoObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+#if (TCL_MAJOR_VERSION > 8) || (TCL_MINOR_VERSION > 4)
     Tcl_Obj *first;
 
     if (Tcl_ListObjIndex(NULL, Tcl_GetEncodingSearchPath(), 0, &first)
 	    == TCL_OK) {
 	Tcl_SetObjResult(interp, first);
     }
+#else
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetDefaultEncodingDir(), -1));
+#endif
     return TCL_OK;
 }
 
