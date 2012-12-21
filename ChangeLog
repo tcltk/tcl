@@ -1,3 +1,9 @@
+2012-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/dltest/pkgb.c:  Inline compat Tcl_GetDefaultEncodingDir.
+	* generic/tclStubLib.c: Eliminate unnecessary static HasStubSupport() and
+	isDigit() functions, just do the same inline.
+
 2012-12-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmdsSZ.c (TclSubstCompile): Improved the sequence of
