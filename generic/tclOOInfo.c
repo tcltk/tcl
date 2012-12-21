@@ -100,6 +100,7 @@ TclOOInitInfo(
     Tcl_Interp *interp)
 {
     Tcl_Command infoCmd;
+    Tcl_Obj *mapDict;
 
     /*
      * Build the ensembles used to implement [info object] and [info class].
@@ -113,25 +114,12 @@ TclOOInitInfo(
      */
 
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
-    if (infoCmd != NULL && Tcl_IsEnsemble(infoCmd)) {
-	Tcl_Obj *mapDict, *objectObj, *classObj;
-
-	Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
-	if (mapDict != NULL) {
-	    objectObj = Tcl_NewStringObj("object", -1);
-	    classObj = Tcl_NewStringObj("class", -1);
-
-	    Tcl_IncrRefCount(objectObj);
-	    Tcl_IncrRefCount(classObj);
-	    Tcl_DictObjPut(NULL, mapDict, objectObj,
-		    Tcl_NewStringObj("::oo::InfoObject", -1));
-	    Tcl_DictObjPut(NULL, mapDict, classObj,
-		    Tcl_NewStringObj("::oo::InfoClass", -1));
-	    Tcl_DecrRefCount(objectObj);
-	    Tcl_DecrRefCount(classObj);
-	    Tcl_SetEnsembleMappingDict(interp, infoCmd, mapDict);
-	}
-    }
+    Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
+    Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("object", -1),
+	    Tcl_NewStringObj("::oo::InfoObject", -1));
+    Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("class", -1),
+	    Tcl_NewStringObj("::oo::InfoClass", -1));
+    Tcl_SetEnsembleMappingDict(interp, infoCmd, mapDict);
 }
 
 /*
