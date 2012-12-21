@@ -1,3 +1,11 @@
+2012-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/dltest/pkgb.c:  Turn pkgb.so into a Tcl9 interoperability test
+    library: Whatever Tcl9 looks like, loading pkgb.so in Tcl 9 should
+    either result in an error-message, either succeed, but never crash.
+	* generic/tclStubLib.c: Eliminate unnessarcy static HasStubSupport() and
+	isDigit() functions, just do the same inline.
+
 2012-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h: Fix Tcl_DecrRefCount macro such that it
