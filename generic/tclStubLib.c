@@ -23,28 +23,11 @@ const TclPlatStubs *tclPlatStubsPtr = NULL;
 const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
-static const TclStubs *
-HasStubSupport(
-    Tcl_Interp *interp)
-{
-    Interp *iPtr = (Interp *) interp;
-
-    if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
-	return iPtr->stubTable;
-    }
-    iPtr->result = (char *) "interpreter uses an incompatible stubs mechanism";
-    iPtr->freeProc = TCL_STATIC;
-    return NULL;
-}
-
 /*
- * Use our own isdigit to avoid linking to libc on windows
+ * Use our own ISDIGIT to avoid linking to libc on windows
  */
 
-static int isDigit(const int c)
-{
-    return (c >= '0' && c <= '9');
-}
+#define ISDIGIT(c) (((unsigned)((c)-'0')) <= 9)
 
 /*
  *----------------------------------------------------------------------
@@ -70,9 +53,10 @@ Tcl_InitStubs(
     const char *version,
     int exact)
 {
+    Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
-    const TclStubs *stubsPtr;
+    const TclStubs *stubsPtr = iPtr->stubTable;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -80,8 +64,9 @@ Tcl_InitStubs(
      * times. [Bug 615304]
      */
 
-    stubsPtr = HasStubSupport(interp);
-    if (!stubsPtr) {
+    if (!stubsPtr || (stubsPtr->magic != TCL_STUB_MAGIC)) {
+	iPtr->result = "interpreter uses an incompatible stubs mechanism";
+	iPtr->freeProc = TCL_STATIC;
 	return NULL;
     }
 
@@ -94,7 +79,7 @@ Tcl_InitStubs(
 	int count = 0;
 
 	while (*p) {
-	    count += !isDigit(*p++);
+	    count += !ISDIGIT(*p++);
 	}
 	if (count == 1) {
 	    const char *q = actualVersion;
@@ -103,7 +88,7 @@ Tcl_InitStubs(
 	    while (*p && (*p == *q)) {
 		p++; q++;
 	    }
-	    if (*p || isDigit(*q)) {
+	    if (*p || ISDIGIT(*q)) {
 		/* Construct error message */
 		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 		return NULL;
