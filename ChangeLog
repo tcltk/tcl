@@ -1,3 +1,9 @@
+2012-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/dltest/pkgb.c:  Make pkgb.so loadable in Tcl 8.4 as well.
+	* generic/tclStubLib.c: Eliminate unnessarcy static HasStubSupport() and
+	isDigit() functions, just do the same inline.
+
 2012-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h: Fix Tcl_DecrRefCount macro such that it
