@@ -104,15 +104,18 @@ Pkgb_UnsafeObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
+DLLEXPORT int
 Pkgb_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-9.1", 0) == NULL) {
-	return TCL_ERROR;
+    if (Tcl_InitStubs(interp, "8.4", 0) == NULL) {
+	if (Tcl_InitStubs(interp, "8.4-", 0) == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_ResetResult(interp);
     }
     code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);
     if (code != TCL_OK) {
@@ -142,15 +145,18 @@ Pkgb_Init(
  *----------------------------------------------------------------------
  */
 
-int
+DLLEXPORT int
 Pkgb_SafeInit(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-9.1", 0) == NULL) {
-	return TCL_ERROR;
+    if (Tcl_InitStubs(interp, "8.4", 0) == NULL) {
+	if (Tcl_InitStubs(interp, "8.4-", 0) == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_ResetResult(interp);
     }
     code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);
     if (code != TCL_OK) {
