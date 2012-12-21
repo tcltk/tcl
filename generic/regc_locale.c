@@ -118,7 +118,7 @@ static const struct cname {
  * Unicode character-class tables.
  */
 
-typedef struct crange {
+typedef struct {
     chr start;
     chr end;
 } crange;

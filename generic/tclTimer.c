@@ -91,7 +91,7 @@ typedef struct IdleHandler {
  * The structure defined below is used in this file only.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     TimerHandler *firstTimerHandlerPtr;	/* First event in queue. */
     int lastTimerId;		/* Timer identifier of most recently created
 				 * timer. */

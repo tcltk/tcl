@@ -15,7 +15,7 @@
  * Callback structure for accept callback in a TCP server.
  */
 
-typedef struct AcceptCallback {
+typedef struct {
     char *script;		/* Script to invoke. */
     Tcl_Interp *interp;		/* Interpreter in which to run it. */
 } AcceptCallback;
@@ -25,7 +25,7 @@ typedef struct AcceptCallback {
  * It must be per-thread because of std channel limitations.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int initialized;		/* Set to 1 when the module is initialized. */
     Tcl_Obj *stdoutObjPtr;	/* Cached stdout channel Tcl_Obj */
 } ThreadSpecificData;
