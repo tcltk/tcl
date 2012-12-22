@@ -311,15 +311,12 @@ UNCHECKED = 0
 
 #----------------------------------------
 # Naming convention:
-#   t = full thread support.
 #   s = static library (as opposed to an
 #	import library)
 #   g = linked to the debug enabled C
 #	run-time.
-#   x = special static build when it
-#	links to the dynamic C run-time.
 #----------------------------------------
-SUFX	    = tsgx
+SUFX	    = sg
 
 !if $(DEBUG)
 BUILDDIRTOP = Debug
@@ -338,26 +335,15 @@ BUILDDIRTOP =$(BUILDDIRTOP)_VC$(VCVER)
 SUFX	    = $(SUFX:g=)
 !endif
 
-TMP_DIRFULL = .\$(BUILDDIRTOP)\$(PROJECT)_ThreadedDynamicStaticX
+TMP_DIRFULL = .\$(BUILDDIRTOP)\$(PROJECT)_DynamicStatic
 
 !if !$(STATIC_BUILD)
 TMP_DIRFULL = $(TMP_DIRFULL:Static=)
 SUFX	    = $(SUFX:s=)
 EXT	    = dll
-TMP_DIRFULL = $(TMP_DIRFULL:X=)
-SUFX	    = $(SUFX:x=)
 !else
 TMP_DIRFULL = $(TMP_DIRFULL:Dynamic=)
 EXT	    = lib
-!if !$(MSVCRT)
-TMP_DIRFULL = $(TMP_DIRFULL:X=)
-SUFX	    = $(SUFX:x=)
-!endif
-!endif
-
-!if !$(TCL_THREADS)
-TMP_DIRFULL = $(TMP_DIRFULL:Threaded=)
-SUFX	    = $(SUFX:t=)
 !endif
 
 !ifndef TMP_DIR
@@ -585,8 +571,8 @@ TCLSH           = "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX).exe"
 TCLSTUBLIB	= "$(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib"
 TCLIMPLIB	= "$(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX).lib"
 TCL_LIBRARY	= $(_TCLDIR)\lib
-TCLREGLIB	= "$(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib"
-TCLDDELIB	= "$(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib"
+TCLREGLIB	= "$(_TCLDIR)\lib\reg.lib"
+TCLDDELIB	= "$(_TCLDIR)\lib\dde.lib"
 COFFBASE	= \must\have\tcl\sources\to\build\this\target
 TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
 TCL_INCLUDES    = -I"$(_TCLDIR)\include"
@@ -598,8 +584,8 @@ TCLSH		= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX).exe"
 TCLSTUBLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib"
 TCLIMPLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX).lib"
 TCL_LIBRARY	= $(_TCLDIR)\library
-TCLREGLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib"
-TCLDDELIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib"
+TCLREGLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\reg.lib"
+TCLDDELIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\dde.lib"
 COFFBASE	= "$(_TCLDIR)\win\coffbase.txt"
 TCLTOOLSDIR	= $(_TCLDIR)\tools
 TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
