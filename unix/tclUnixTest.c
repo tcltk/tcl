@@ -37,7 +37,7 @@
  * exercised by the "testfilehandler" command.
  */
 
-typedef struct Pipe {
+typedef struct {
     TclFile readFile;		/* File handle for reading from the pipe. NULL
 				 * means pipe doesn't exist yet. */
     TclFile writeFile;		/* File handle for writing from the pipe. */

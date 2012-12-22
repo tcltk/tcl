@@ -285,7 +285,7 @@ declare 75 {
 declare 76 {
     void Tcl_BackgroundError(Tcl_Interp *interp)
 }
-# Removed in 9.0
+# Removed in 9.0:
 #declare 77 {
 #    char Tcl_Backslash(const char *src, int *readPtr)
 #}
@@ -353,6 +353,7 @@ declare 93 {
 declare 94 {
     Tcl_Interp *Tcl_CreateInterp(void)
 }
+# Removed in 9.0:
 #declare 95 {
 #    void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
 #	    int numArgs, Tcl_ValueType *argTypes,
@@ -635,10 +636,11 @@ declare 176 {
     const char *Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags)
 }
-# Removed in 9.0
+# Removed in 9.0:
 #declare 177 {
 #    int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
 #}
+# Removed in 9.0:
 #declare 178 {
 #    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 #}
@@ -783,7 +785,7 @@ declare 218 {
 declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
-# Removed in Tcl 9
+# Removed in 9.0:
 #declare 220 {
 #    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
 #}
@@ -871,7 +873,7 @@ declare 244 {
 declare 245 {
     int Tcl_StringMatch(const char *str, const char *pattern)
 }
-# Removed in Tcl 9
+# Removed in 9.0:
 #declare 246 {
 #    int Tcl_TellOld(Tcl_Channel chan)
 #}
@@ -923,7 +925,7 @@ declare 259 {
     int Tcl_UpVar2(Tcl_Interp *interp, const char *frameName, const char *part1,
 	    const char *part2, const char *localName, int flags)
 }
-# Removed in 9.0
+# Removed in 9.0:
 #declare 260 {
 #    int Tcl_VarEval(Tcl_Interp *interp, ...)
 #}
@@ -983,7 +985,7 @@ declare 274 {
 declare 275 {
     void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
 }
-# Removed in 9.0
+# Removed in 9.0:
 #declare 276 {
 #    int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
 #}
@@ -1219,11 +1221,11 @@ declare 339 {
 declare 340 {
     char *Tcl_GetString(Tcl_Obj *objPtr)
 }
-# Removed in 9.0
+# Removed in 9.0:
 #declare 341 {
 #    const char *Tcl_GetDefaultEncodingDir(void)
 #}
-# Removed in 9.0
+# Removed in 9.0:
 #declare 342 {
 #    void Tcl_SetDefaultEncodingDir(const char *path)
 #}
@@ -1555,12 +1557,14 @@ declare 434 {
     Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 
+# Removed in 9.0:
 # TIP#15 (math function introspection) dkf
 #declare 435 {
 #    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
 #	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
 #	    Tcl_MathProc **procPtr, ClientData *clientDataPtr)
 #}
+# Removed in 9.0:
 #declare 436 {
 #    Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
 #}
