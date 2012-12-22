@@ -143,7 +143,7 @@ static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
  * trace procs
  */
 
-typedef struct StringTraceData {
+typedef struct {
     ClientData clientData;	/* Client data from Tcl_CreateTrace */
     Tcl_CmdTraceProc *proc;	/* Trace function from Tcl_CreateTrace */
 } StringTraceData;

@@ -89,22 +89,6 @@ Pkgb_UnsafeObjCmd(
     return Tcl_EvalEx(interp, "list unsafe command invoked", -1, TCL_EVAL_GLOBAL);
 }
 
-#if (TCL_MAJOR_VERSION > 8)
-const char *Tcl_GetDefaultEncodingDir(void)
-{
-    int numDirs;
-    Tcl_Obj *first, *searchPath = Tcl_GetEncodingSearchPath();
-
-    Tcl_ListObjLength(NULL, searchPath, &numDirs);
-    if (numDirs == 0) {
-        return NULL;
-    }
-    Tcl_ListObjIndex(NULL, searchPath, 0, &first);
-
-    return Tcl_GetString(first);
-}
-#endif
-
 static int
 Pkgb_DemoObjCmd(
     ClientData dummy,		/* Not used. */
@@ -112,7 +96,16 @@ Pkgb_DemoObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+#if (TCL_MAJOR_VERSION > 8) || (TCL_MINOR_VERSION > 4)
+    Tcl_Obj *first;
+
+    if (Tcl_ListObjIndex(NULL, Tcl_GetEncodingSearchPath(), 0, &first)
+	    == TCL_OK) {
+	Tcl_SetObjResult(interp, first);
+    }
+#else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetDefaultEncodingDir(), -1));
+#endif
     return TCL_OK;
 }
 

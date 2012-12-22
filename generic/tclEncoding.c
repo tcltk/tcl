@@ -18,7 +18,7 @@ typedef size_t (LengthProc)(const char *src);
  * convert between various character sets and UTF-8.
  */
 
-typedef struct Encoding {
+typedef struct {
     char *name;			/* Name of encoding. Malloced because (1) hash
 				 * table entry that owns this encoding may be
 				 * freed prior to this encoding being freed,
@@ -57,7 +57,7 @@ typedef struct Encoding {
  * encoding.
  */
 
-typedef struct TableEncodingData {
+typedef struct {
     int fallback;		/* Character (in this encoding) to substitute
 				 * when this encoding cannot represent a UTF-8
 				 * character. */
@@ -91,7 +91,7 @@ typedef struct TableEncodingData {
  * for switching character sets.
  */
 
-typedef struct EscapeSubTable {
+typedef struct {
     unsigned sequenceLen;	/* Length of following string. */
     char sequence[16];		/* Escape code that marks this encoding. */
     char name[32];		/* Name for encoding. */
@@ -100,7 +100,7 @@ typedef struct EscapeSubTable {
 				 * yet. */
 } EscapeSubTable;
 
-typedef struct EscapeEncodingData {
+typedef struct {
     int fallback;		/* Character (in this encoding) to substitute
 				 * when this encoding cannot represent a UTF-8
 				 * character. */

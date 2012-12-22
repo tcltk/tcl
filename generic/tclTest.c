@@ -87,7 +87,7 @@ static Tcl_Trace cmdTrace;
  * TestdelCmd:
  */
 
-typedef struct DelCmd {
+typedef struct {
     Tcl_Interp *interp;		/* Interpreter in which command exists. */
     char *deleteCmd;		/* Script to execute when command is deleted.
 				 * Malloc'ed. */
@@ -98,7 +98,7 @@ typedef struct DelCmd {
  * command.
  */
 
-typedef struct TclEncoding {
+typedef struct {
     Tcl_Interp *interp;
     char *toUtfCmd;
     char *fromUtfCmd;
@@ -114,7 +114,7 @@ static int exitMainLoop = 0;
  * Event structure used in testing the event queue management procedures.
  */
 
-typedef struct TestEvent {
+typedef struct {
     Tcl_Event header;		/* Header common to all events */
     Tcl_Interp *interp;		/* Interpreter that will handle the event */
     Tcl_Obj *command;		/* Command to evaluate when the event occurs */

@@ -15,6 +15,8 @@
 #define USE_TCL_STUBS
 #undef STATIC_BUILD
 #include "tcl.h"
+#include "tclOO.h"
+#include "tclTomMathDecls.h"
 
 #ifdef TCL_TEST
 extern Tcl_PackageInitProc Tcltest_Init;
@@ -111,6 +113,8 @@ Tcl_AppInit(
     if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
+    Tcl_TomMath_InitStubs(interp, TCL_VERSION);
+    Tcl_OOInitStubs(interp);
 
 #ifdef TCL_XT_TEST
     if (Tclxttest_Init(interp) == TCL_ERROR) {

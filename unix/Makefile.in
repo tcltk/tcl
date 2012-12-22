@@ -2019,8 +2019,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	cp -p $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h \
 		$(DISTDIR)/libtommath
 	mkdir $(DISTDIR)/pkgs
-	cp $(TOP_DIR)/pkgs/README $(TOP_DIR)/pkgs/package.list.txt \
-		$(DISTDIR)/pkgs
+	cp $(TOP_DIR)/pkgs/README $(DISTDIR)/pkgs
 	for i in `ls $(DISTROOT)/pkgs/*.tar.gz 2> /dev/null`; do \
 	    tar -C $(DISTDIR)/pkgs -xzf "$$i"; \
 	done

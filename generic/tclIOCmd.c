@@ -15,7 +15,7 @@
  * Callback structure for accept callback in a TCP server.
  */
 
-typedef struct AcceptCallback {
+typedef struct {
     char *script;		/* Script to invoke. */
     Tcl_Interp *interp;		/* Interpreter in which to run it. */
 } AcceptCallback;
@@ -25,7 +25,7 @@ typedef struct AcceptCallback {
  * It must be per-thread because of std channel limitations.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int initialized;		/* Set to 1 when the module is initialized. */
     Tcl_Obj *stdoutObjPtr;	/* Cached stdout channel Tcl_Obj */
 } ThreadSpecificData;
@@ -1324,11 +1324,11 @@ AcceptCallbackProc(
 
     if (acceptCallbackPtr->interp != NULL) {
 	char portBuf[TCL_INTEGER_SPACE];
-	char *script = acceptCallbackPtr->script;
+	Tcl_Obj *script = Tcl_NewStringObj(acceptCallbackPtr->script, -1);
 	Tcl_Interp *interp = acceptCallbackPtr->interp;
 	int result;
 
-	Tcl_Preserve(script);
+	Tcl_IncrRefCount(script);
 	Tcl_Preserve(interp);
 
 	TclFormatInt(portBuf, port);
@@ -1341,8 +1341,12 @@ AcceptCallbackProc(
 
 	Tcl_RegisterChannel(NULL, chan);
 
-	result = Tcl_VarEval(interp, script, " ", Tcl_GetChannelName(chan),
-		" ", address, " ", portBuf, NULL);
+	result = Tcl_ListObjAppendElement(interp, script, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
+	if (result == TCL_OK) {
+	    Tcl_ListObjAppendElement(NULL, script, Tcl_NewStringObj(address, -1));
+	    Tcl_ListObjAppendElement(NULL, script, Tcl_NewStringObj(portBuf, -1));
+	    result = Tcl_EvalObjEx(interp, script, 0);
+	}
 	if (result != TCL_OK) {
 	    Tcl_BackgroundException(interp, result);
 	    Tcl_UnregisterChannel(interp, chan);
@@ -1356,7 +1360,7 @@ AcceptCallbackProc(
 	Tcl_UnregisterChannel(NULL, chan);
 
 	Tcl_Release(interp);
-	Tcl_Release(script);
+	Tcl_DecrRefCount(script);
     } else {
 	/*
 	 * The interpreter has been deleted, so there is no useful way to use
