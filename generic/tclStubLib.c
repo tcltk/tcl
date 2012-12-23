@@ -24,10 +24,13 @@ const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
 /*
- * Use our own ISDIGIT to avoid linking to libc on windows
+ * Use our own isDigit to avoid linking to libc on windows
  */
 
-#define ISDIGIT(c) (((unsigned)((c)-'0')) <= 9)
+static int isDigit(const int c)
+{
+    return (c >= '0' && c <= '9');
+}
 
 /*
  *----------------------------------------------------------------------
@@ -79,7 +82,7 @@ Tcl_InitStubs(
 	int count = 0;
 
 	while (*p) {
-	    count += !ISDIGIT(*p++);
+	    count += !isDigit(*p++);
 	}
 	if (count == 1) {
 	    const char *q = actualVersion;
@@ -88,7 +91,7 @@ Tcl_InitStubs(
 	    while (*p && (*p == *q)) {
 		p++; q++;
 	    }
-	    if (*p || ISDIGIT(*q)) {
+	    if (*p || isDigit(*q)) {
 		/* Construct error message */
 		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 		return NULL;
