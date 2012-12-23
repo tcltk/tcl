@@ -15,14 +15,6 @@
 #include "tcl.h"
 
 /*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Pkgb_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
-/*
  * Prototypes for procedures defined later in this file:
  */
 
@@ -98,22 +90,6 @@ Pkgb_UnsafeObjCmd(
     return Tcl_EvalEx(interp, "list unsafe command invoked", -1, TCL_EVAL_GLOBAL);
 }
 
-#if (TCL_MAJOR_VERSION > 8)
-const char *Tcl_GetDefaultEncodingDir(void)
-{
-    int numDirs;
-    Tcl_Obj *first, *searchPath = Tcl_GetEncodingSearchPath();
-
-    Tcl_ListObjLength(NULL, searchPath, &numDirs);
-    if (numDirs == 0) {
-        return NULL;
-    }
-    Tcl_ListObjIndex(NULL, searchPath, 0, &first);
-
-    return Tcl_GetString(first);
-}
-#endif
-
 static int
 Pkgb_DemoObjCmd(
     ClientData dummy,		/* Not used. */
@@ -121,7 +97,16 @@ Pkgb_DemoObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+#if (TCL_MAJOR_VERSION > 8) || (TCL_MINOR_VERSION > 4)
+    Tcl_Obj *first;
+
+    if (Tcl_ListObjIndex(NULL, Tcl_GetEncodingSearchPath(), 0, &first)
+	    == TCL_OK) {
+	Tcl_SetObjResult(interp, first);
+    }
+#else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetDefaultEncodingDir(), -1));
+#endif
     return TCL_OK;
 }
 
@@ -142,14 +127,14 @@ Pkgb_DemoObjCmd(
  *----------------------------------------------------------------------
  */
 
-EXTERN int
+DLLEXPORT int
 Pkgb_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-9.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);
@@ -179,14 +164,14 @@ Pkgb_Init(
  *----------------------------------------------------------------------
  */
 
-EXTERN int
+DLLEXPORT int
 Pkgb_SafeInit(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-9.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);
