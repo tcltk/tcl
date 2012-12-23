@@ -58,7 +58,6 @@ TclInitStubs(
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
     const TclStubs *stubsPtr = iPtr->stubTable;
-    int major;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -106,28 +105,31 @@ TclInitStubs(
 	}
     }
 
-    if (sizeof(size_t) != sizeof(int)) {
-	stubsPtr->tcl_GetVersion(&major, NULL, NULL, NULL);
-	if ((exact & TCL_STUB_COMPAT_MASK) != ((major>8)?TCL_STUB_COMPAT:0)) {
-	    char *msg = stubsPtr->tcl_Alloc(64 + strlen(tclversion) + strlen(version));
+#define MASK (4+8+16) /* possible values of sizeof(size_t) */
 
-	    strcpy(msg, "incompatible stub library: have ");
-	    strcat(msg, tclversion);
-	    strcat(msg, ", need ");
-	    if (major > 8) {
-		strcat(msg, "9");
-	    } else {
-		/* Take "version", but strip off everything after '-' */
-		char *p = msg + strlen(msg);
-		while (*version && *version != '-') {
-		    *p++ = *version++;
-		}
-		*p = '\0';
+    /* reserved77 is the location of Tcl_Backslash, which was removed
+     * in Tcl 9.0. If this value is NULL, we know that we have Tcl > 8
+     */
+    if ((exact & MASK) != (int)
+	    ((stubsPtr->reserved77)?sizeof(int):sizeof(size_t))) {
+	char *msg = stubsPtr->tcl_Alloc(64 + strlen(tclversion) + strlen(version));
+
+	strcpy(msg, "incompatible stub library: have ");
+	strcat(msg, tclversion);
+	strcat(msg, ", need ");
+	if (stubsPtr->reserved77) {
+	    /* Take "version", but strip off everything after '-' */
+	    char *p = msg + strlen(msg);
+	    while (*version && *version != '-') {
+		*p++ = *version++;
 	    }
-	    stubsPtr->tcl_SetObjResult(interp, stubsPtr->tcl_NewStringObj(msg, -1));
-	    stubsPtr->tcl_Free(msg);
-	    return NULL;
+	    *p = '\0';
+	} else {
+	    strcat(msg, "9");
 	}
+	stubsPtr->tcl_SetObjResult(interp, stubsPtr->tcl_NewStringObj(msg, -1));
+	stubsPtr->tcl_Free(msg);
+	return NULL;
     }
     tclStubsPtr = (TclStubs *)pkgData;
 

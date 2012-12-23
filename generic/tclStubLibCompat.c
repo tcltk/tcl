@@ -43,7 +43,8 @@ Tcl_InitStubs(
     const char *version,
     int exact)
 {
-    return TclInitStubs(interp, version, exact, "8", (int) 0xFCA3BACF);
+    return TclInitStubs(interp, version, (exact | (int)sizeof(int)), "8",
+	    (int) 0xFCA3BACF);
 }
 
 /*
