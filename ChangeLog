@@ -1,3 +1,14 @@
+2012-12-22  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclUtil.c: Stop leaking allocated space when objifying a
+	zero-length DString. [Bug 3598150] spotted by afredd.
+
+2012-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/dltest/pkgb.c:  Inline compat Tcl_GetDefaultEncodingDir.
+	* generic/tclStubLib.c: Eliminate unnecessary static HasStubSupport() and
+	isDigit() functions, just do the same inline.
+
 2012-12-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmdsSZ.c (TclSubstCompile): Improved the sequence of
