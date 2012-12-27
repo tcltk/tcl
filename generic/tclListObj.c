@@ -857,6 +857,10 @@ Tcl_ListObjReplace(
     isShared = (listRepPtr->refCount > 1);
     numRequired = numElems - count + objc;
 
+    for (i = 0;  i < objc;  i++) {
+	Tcl_IncrRefCount(objv[i]);
+    }
+
     if ((numRequired <= listRepPtr->maxElemCount) && !isShared) {
 	int shift;
 
@@ -964,14 +968,11 @@ Tcl_ListObjReplace(
     }
 
     /*
-     * Insert the new elements into elemPtrs before "first". We don't do a
-     * memcpy here because we must increment the reference counts for the
-     * added elements, so we must explicitly loop anyway.
+     * Insert the new elements into elemPtrs before "first".
      */
 
     for (i=0,j=first ; i<objc ; i++,j++) {
 	elemPtrs[j] = objv[i];
-	Tcl_IncrRefCount(objv[i]);
     }
 
     /*
