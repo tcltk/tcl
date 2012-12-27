@@ -2827,14 +2827,16 @@ TclDStringToObj(
 {
     Tcl_Obj *result;
 
-    if (dsPtr->length == 0) {
-	TclNewObj(result);
-    } else if (dsPtr->string == dsPtr->staticSpace) {
-	/*
-	 * Static buffer, so must copy.
-	 */
-
-	TclNewStringObj(result, dsPtr->string, dsPtr->length);
+    if (dsPtr->string == dsPtr->staticSpace) {
+	if (dsPtr->length == 0) {
+	    TclNewObj(result);
+	} else {
+	    /*
+	     * Static buffer, so must copy.
+	     */
+	    
+	    TclNewStringObj(result, dsPtr->string, dsPtr->length);
+	}
     } else {
 	/*
 	 * Dynamic buffer, so transfer ownership and reset.
