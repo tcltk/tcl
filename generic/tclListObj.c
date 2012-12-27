@@ -906,6 +906,9 @@ Tcl_ListObjReplace(
 
 	listRepPtr = AttemptNewList(interp, newMax, NULL);
 	if (listRepPtr == NULL) {
+	    for (i = 0;  i < objc;  i++) {
+		objv[i]->refCount--;
+	    }
 	    return TCL_ERROR;
 	}
 
