@@ -967,6 +967,10 @@ Tcl_ListObjReplace(
 	    if (listRepPtr == NULL) {
 		listRepPtr = AttemptNewList(interp, numRequired, NULL);
 		if (listRepPtr == NULL) {
+		    for (i = 0;  i < objc;  i++) {
+			/* See bug 3598580 */
+			Tcl_DecrRefCount(objv[i]);
+		    }
 		    return TCL_ERROR;
 		}
 	    }
