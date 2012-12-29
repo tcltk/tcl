@@ -3784,7 +3784,7 @@ Tcl_DbDecrRefCount(
 	 * If the Tcl_Obj is going to be deleted, remove the entry.
 	 */
 
-	if ((objPtr->refCount - 1) <= 0) {
+	if (objPtr->refCount < 2) {
 	    ObjData *objData = Tcl_GetHashValue(hPtr);
 
 	    if (objData != NULL) {
@@ -3797,7 +3797,7 @@ Tcl_DbDecrRefCount(
 # endif /* TCL_THREADS */
 #endif /* TCL_MEM_DEBUG */
 
-    if (--(objPtr)->refCount <= 0) {
+    if ((objPtr)->refCount-- < 2) {
 	TclFreeObj(objPtr);
     }
 }
