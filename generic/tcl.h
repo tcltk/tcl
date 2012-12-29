@@ -690,14 +690,25 @@ int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------------------
- * The following structure contains the state needed by Tcl_SaveResult. No-one
- * outside of Tcl should access any of these fields. This structure is
- * typically allocated on the stack.
+ * The following macros and defines contain the Tcl8 implementations of
+ * Tcl_SaveResult/Tcl_DiscardResult/Tcl_RestoreResult. They should not
+ * be used for new code, but the equivalence is easy enough to keep them.
  */
 
-typedef struct Tcl_SavedResult {
-    Tcl_Obj *objResultPtr;
-} Tcl_SavedResult;
+#define Tcl_SavedResult Tcl_Obj *
+#define Tcl_SaveResult(interp, statePtr) \
+    do { \
+	Tcl_IncrRefCount((*(statePtr) = Tcl_GetObjResult(interp))); \
+	Tcl_SetObjResult((interp), Tcl_NewObj()); \
+    } while(0)
+#define Tcl_DiscardResult(statePtr) Tcl_DecrRefCount(*statePtr)
+#define Tcl_RestoreResult(interp, statePtr) \
+    do { \
+	Tcl_Obj *_statePtr = *(statePtr); \
+	Tcl_ResetResult(interp); \
+	Tcl_SetObjResult(interp, _statePtr); \
+	Tcl_DecrRefCount(_statePtr); \
+    } while(0)
 
 /*
  *----------------------------------------------------------------------------
