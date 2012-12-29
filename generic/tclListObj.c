@@ -581,6 +581,7 @@ Tcl_ListObjAppendElement(
 	}
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
+	    TclFreeIfRefCountZero(objPtr);
 	    return result;
 	}
     }
@@ -872,6 +873,9 @@ Tcl_ListObjReplace(
 	    int result = SetListFromAny(interp, listPtr);
 
 	    if (result != TCL_OK) {
+		for (i = 0;  i < objc;  i++) {
+		    TclFreeIfRefCountZero(objv[i]);
+		}
 		return result;
 	    }
 	}

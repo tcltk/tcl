@@ -1766,9 +1766,7 @@ Tcl_ObjSetVar2(
     varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, flags, "set",
 	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
-	if (newValuePtr->refCount == 0) {
-	    Tcl_DecrRefCount(newValuePtr);
-	}
+	TclFreeIfRefCountZero(newValuePtr);
 	return NULL;
     }
 

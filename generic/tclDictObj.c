@@ -2187,8 +2187,8 @@ DictIncrCmd(
 	} else {
 	    Tcl_SetObjResult(interp, valuePtr);
 	}
-    } else if (dictPtr->refCount == 0) {
-	Tcl_DecrRefCount(dictPtr);
+    } else {
+	TclFreeIfRefCountZero(dictPtr);
     }
     return code;
 }

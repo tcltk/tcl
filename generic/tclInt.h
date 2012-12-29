@@ -3962,6 +3962,14 @@ typedef const char *TclDTraceStr;
 	} \
     } while(0)
 
+#define TclFreeIfRefCountZero(objPtr) \
+    do { \
+	Tcl_Obj *_objPtr = (objPtr); \
+	if (!_objPtr->refCount) { \
+	    TclFreeObj(_objPtr); \
+	} \
+    } while(0)
+
 #if defined(PURIFY)
 
 /*
