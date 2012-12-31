@@ -35,6 +35,14 @@ static void		MakeCachedEnsembleCommand(Tcl_Obj *objPtr,
 static void		FreeEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		StringOfEnsembleCmdRep(Tcl_Obj *objPtr);
+static int		CompileToCompiledCommand(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Tcl_Token *tokenPtr,
+			    int len, Tcl_Obj **elems, Command *cmdPtr,
+			    CompileEnv *envPtr);
+static int		CompileToInvokedCommand(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Tcl_Token *tokenPtr,
+			    int len, Tcl_Obj **elems, Command *cmdPtr,
+			    CompileEnv *envPtr);
 
 /*
  * The lists of subcommands and options for the [namespace ensemble] command.
@@ -2734,7 +2742,6 @@ TclCompileEnsemble(
     Tcl_Token *tokenPtr;
     Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
-    Tcl_Parse synthetic;
     int len, result, flags = 0, i;
     unsigned numBytes;
     const char *word;
@@ -2920,7 +2927,7 @@ TclCompileEnsemble(
     if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (len > 1 && Tcl_IsSafe(interp)) {
+    if (len > 1 || Tcl_IsSafe(interp)) {
 	return TCL_ERROR;
     }
     targetCmdObj = elems[0];
@@ -2928,7 +2935,7 @@ TclCompileEnsemble(
     Tcl_IncrRefCount(targetCmdObj);
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, targetCmdObj);
     TclDecrRefCount(targetCmdObj);
-    if (cmdPtr == NULL || cmdPtr->compileProc == NULL
+    if (cmdPtr == NULL
 	    || cmdPtr->nsPtr->flags & NS_SUPPRESS_COMPILATION
 	    || cmdPtr->flags * CMD_HAS_EXEC_TRACES
 	    || ((Interp *)interp)->flags & DONT_COMPILE_CMDS_INLINE) {
@@ -2942,9 +2949,38 @@ TclCompileEnsemble(
 
     /*
      * Now we've done the mapping process, can now actually try to compile.
-     * We do this by handing off to the subcommand's actual compiler. But to
-     * do that, we have to perform some trickery to rewrite the arguments.
+     * If there is a subcommand compiler and that successfully produces code,
+     * we'll use that. Otherwise, we fall back to generating opcodes to do the
+     * invoke at runtime.
      */
+
+    if (cmdPtr->compileProc != NULL &&
+	    CompileToCompiledCommand(interp, parsePtr, tokenPtr,
+		    len, elems, cmdPtr, envPtr) == TCL_OK) {
+	return TCL_OK;
+    }
+    return CompileToInvokedCommand(interp, parsePtr, tokenPtr,
+	    len, elems, cmdPtr, envPtr);
+}
+
+/*
+ * How to compile a subcommand using its own command compiler. To do that, we
+ * have to perform some trickery to rewrite the arguments, as compilers *must*
+ * have parse tokens that refer to addresses in the original script.
+ */
+
+static int
+CompileToCompiledCommand(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    Tcl_Token *tokenPtr,
+    int len,
+    Tcl_Obj **elems,
+    Command *cmdPtr,
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Parse synthetic;
+    int result, i;
 
     TclParseInit(interp, NULL, 0, &synthetic);
     synthetic.numWords = parsePtr->numWords - 2 + len;
@@ -3000,6 +3036,41 @@ TclCompileEnsemble(
 
     Tcl_FreeParse(&synthetic);
     return result;
+}
+
+static int
+CompileToInvokedCommand(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    Tcl_Token *tokenPtr,
+    int len,
+    Tcl_Obj **elems,
+    Command *cmdPtr,
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Obj *objPtr = Tcl_NewObj();
+    char *bytes;
+    int length, i, literal;
+
+    if (len != 1) {
+	return TCL_ERROR;
+    }
+
+    // TODO: Generate magic (with new instruction) for setting up the ensemble
+    // rewriting...
+
+    for (i=0,tokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
+	TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents, envPtr);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
+    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    literal = TclRegisterNewCmdLiteral(envPtr, bytes, length);
+    TclDecrRefCount(objPtr);
+    TclEmitPush(literal, envPtr);
+    TclEmitInstInt4(INST_INVOKE_REPLACE, parsePtr->numWords, envPtr);
+    TclAdjustStackDepth(-1, envPtr);
+    return TCL_OK;
 }
 
 /*
