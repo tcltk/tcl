@@ -227,18 +227,46 @@ test dict-8.6 {dict size command} -returnCodes error -body {
     dict size a
 } -result {missing value to go with key}
 
-test dict-9.1 {dict exists command} {dict exists {a b} a} 1
-test dict-9.2 {dict exists command} {dict exists {a b} b} 0
-test dict-9.3 {dict exists command} {dict exists {a {b c}} a b} 1
-test dict-9.4 {dict exists command} {dict exists {a {b c}} a c} 0
-test dict-9.5 {dict exists command} {dict exists {a {b c}} b c} 0
-test dict-9.6 {dict exists command} {dict exists {a {b c d}} a c} 0
-test dict-9.7 {dict exists command} -returnCodes error -body {
+test dict-9.1  {dict exists command} {dict exists {a b} a} 1
+test dict-9.2  {dict exists command} {dict exists {a b} b} 0
+test dict-9.3  {dict exists command} {dict exists {a {b c}} a b} 1
+test dict-9.4  {dict exists command} {dict exists {a {b c}} a c} 0
+test dict-9.5  {dict exists command} {dict exists {a {b c}} b c} 0
+test dict-9.6  {dict exists command} -returnCodes error -body {
+  dict exists {a {b c d}} a c
+} -result {missing value to go with key}
+test dict-9.7  {dict exists command} -returnCodes error -body {
     dict exists
 } -result {wrong # args: should be "dict exists dictionary key ?key ...?"}
-test dict-9.8 {dict exists command} -returnCodes error -body {
+test dict-9.8  {dict exists command} -returnCodes error -body {
     dict exists {}
 } -result {wrong # args: should be "dict exists dictionary key ?key ...?"}
+test dict-9.9  {dict exists command} {dict exists {} any} 0
+test dict-9.10 {dict exists command} -returnCodes error  -body {
+  dict exists any any
+} -result {missing value to go with key}
+
+# Repeat for non-bytecode compiled implementation
+set cmd dict
+test dict-9.1n  {dict exists command (non-compiled)} {$cmd exists {a b} a} 1
+test dict-9.2n  {dict exists command (non-compiled)} {$cmd exists {a b} b} 0
+test dict-9.3n  {dict exists command (non-compiled)} {$cmd exists {a {b c}} a b} 1
+test dict-9.4n  {dict exists command (non-compiled)} {$cmd exists {a {b c}} a c} 0
+test dict-9.5n  {dict exists command (non-compiled)} {$cmd exists {a {b c}} b c} 0
+test dict-9.6n  {dict exists command (non-compiled)} -returnCodes error -body {
+  $cmd exists {a {b c d}} a c
+} -result {missing value to go with key}  
+test dict-9.7n  {dict exists command (non-compiled)} -returnCodes error -body {
+    $cmd exists
+} -result {wrong # args: should be "dict exists dictionary key ?key ...?"}
+test dict-9.8n  {dict exists command (non-compiled)} -returnCodes error -body {
+    $cmd exists {}
+} -result {wrong # args: should be "dict exists dictionary key ?key ...?"}
+test dict-9.9n  {dict exists command (non-compiled)} {$cmd exists {} any} 0
+test dict-9.10n {dict exists command (non-compiled)} -returnCodes error  -body {
+  $cmd exists any any
+} -result {missing value to go with key}
+
 
 test dict-10.1 {dict info command} -body {
     # Actual string returned by this command is undefined; it is

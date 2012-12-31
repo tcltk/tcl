@@ -6153,23 +6153,16 @@ TEBCresume(
 	TRACE_APPEND(("OK\n"));
 	NEXT_INST_F(1, 1, 0);
 
-    case INST_DICT_GET:
-    case INST_DICT_EXISTS: {
+    case INST_DICT_GET:  {
 	register Tcl_Interp *interp2 = interp;
 
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
 	dictPtr = OBJ_AT_DEPTH(opnd);
-	if (*pc == INST_DICT_EXISTS) {
-	    interp2 = NULL;
-	}
 	if (opnd > 1) {
 	    dictPtr = TclTraceDictPath(interp2, dictPtr, opnd-1,
 		    &OBJ_AT_DEPTH(opnd-1), DICT_PATH_READ);
 	    if (dictPtr == NULL) {
-		if (*pc == INST_DICT_EXISTS) {
-		    goto dictNotExists;
-		}
 		TRACE_WITH_OBJ((
 			"ERROR tracing dictionary path into \"%s\": ",
 			O2S(OBJ_AT_DEPTH(opnd))),
@@ -6179,11 +6172,6 @@ TEBCresume(
 	}
 	if (Tcl_DictObjGet(interp2, dictPtr, OBJ_AT_TOS,
 		&objResultPtr) == TCL_OK) {
-	    if (*pc == INST_DICT_EXISTS) {
-		objResultPtr = TCONST(objResultPtr ? 1 : 0);
-		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-		NEXT_INST_V(5, opnd+1, 1);
-	    }
 	    if (objResultPtr) {
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		NEXT_INST_V(5, opnd+1, 1);
@@ -6197,21 +6185,181 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
 	} else {
-	    if (*pc == INST_DICT_EXISTS) {
-	    dictNotExists:
-		objResultPtr = TCONST(0);
-		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-		NEXT_INST_V(5, opnd+1, 1);
-	    }
 	    TRACE_WITH_OBJ((
 		    "%u => ERROR reading leaf dictionary key \"%s\": ",
 		    opnd, O2S(dictPtr)), Tcl_GetObjResult(interp));
 	}
 	goto gotError;
     }
-
+    case INST_DICT_EXISTS: {
+        register Tcl_Interp *interp2 = interp;
+        opnd = TclGetUInt4AtPtr(pc+1);
+        TRACE(("%u => ", opnd));
+	dictPtr = OBJ_AT_DEPTH(opnd);
+	if (opnd > 1) {
+	    dictPtr = TclTraceDictPath(interp2, dictPtr, opnd-1,
+		    &OBJ_AT_DEPTH(opnd-1), DICT_PATH_EXISTS);
+            if (dictPtr == DICT_PATH_NON_EXISTENT) {
+              objResultPtr = TCONST(0);
+              TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+              NEXT_INST_V(5, opnd+1, 1);
+            }
+	    if (dictPtr == NULL) {
+		TRACE_WITH_OBJ((
+			"ERROR tracing dictionary path into \"%s\": ",
+			O2S(OBJ_AT_DEPTH(opnd))),
+			Tcl_GetObjResult(interp));
+		goto gotError;
+	    }
+	}
+	if (Tcl_DictObjGet(interp2, dictPtr, OBJ_AT_TOS,
+		&objResultPtr) == TCL_OK) {
+          objResultPtr = TCONST(objResultPtr ? 1 : 0);
+          TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+          NEXT_INST_V(5, opnd+1, 1);
+	} else {
+	    TRACE_WITH_OBJ((
+		    "%u => ERROR reading leaf dictionary key \"%s\": ",
+		    opnd, O2S(dictPtr)), Tcl_GetObjResult(interp));
+	}
+	goto gotError;
+    }
     case INST_DICT_SET:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	opnd2 = TclGetUInt4AtPtr(pc+5);
+
+	varPtr = LOCAL(opnd2);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	TRACE(("%u %u => ", opnd, opnd2));
+	if (TclIsVarDirectReadable(varPtr)) {
+	    dictPtr = varPtr->value.objPtr;
+	} else {
+	    DECACHE_STACK_INFO();
+	    dictPtr = TclPtrGetVar(interp, varPtr, NULL,NULL,NULL, 0, opnd2);
+	    CACHE_STACK_INFO();
+	}
+	if (dictPtr == NULL) {
+	    TclNewObj(dictPtr);
+	    allocateDict = 1;
+	} else {
+	    allocateDict = Tcl_IsShared(dictPtr);
+	    if (allocateDict) {
+		dictPtr = Tcl_DuplicateObj(dictPtr);
+	    }
+	}
+
+        cleanup = opnd + 1;
+        result = Tcl_DictObjPutKeyList(interp, dictPtr, opnd,
+                &OBJ_AT_DEPTH(opnd), OBJ_AT_TOS);
+	
+	if (result != TCL_OK) {
+	    if (allocateDict) {
+		TclDecrRefCount(dictPtr);
+	    }
+	    TRACE_WITH_OBJ(("%u %u => ERROR updating dictionary: ",
+		    opnd, opnd2), Tcl_GetObjResult(interp));
+	    goto checkForCatch;
+	}
+
+	if (TclIsVarDirectWritable(varPtr)) {
+	    if (allocateDict) {
+		value2Ptr = varPtr->value.objPtr;
+		Tcl_IncrRefCount(dictPtr);
+		if (value2Ptr != NULL) {
+		    TclDecrRefCount(value2Ptr);
+		}
+		varPtr->value.objPtr = dictPtr;
+	    }
+	    objResultPtr = dictPtr;
+	} else {
+	    Tcl_IncrRefCount(dictPtr);
+	    DECACHE_STACK_INFO();
+	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+		    dictPtr, TCL_LEAVE_ERR_MSG, opnd2);
+	    CACHE_STACK_INFO();
+	    TclDecrRefCount(dictPtr);
+	    if (objResultPtr == NULL) {
+		TRACE_APPEND(("ERROR: %.30s\n",
+			O2S(Tcl_GetObjResult(interp))));
+		goto gotError;
+	    }
+	}
+#ifndef TCL_COMPILE_DEBUG
+	if (*(pc+9) == INST_POP) {
+	    NEXT_INST_V(10, cleanup, 0);
+	}
+#endif
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_V(9, cleanup, 1);
     case INST_DICT_UNSET:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	opnd2 = TclGetUInt4AtPtr(pc+5);
+
+	varPtr = LOCAL(opnd2);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	TRACE(("%u %u => ", opnd, opnd2));
+	if (TclIsVarDirectReadable(varPtr)) {
+	    dictPtr = varPtr->value.objPtr;
+	} else {
+	    DECACHE_STACK_INFO();
+	    dictPtr = TclPtrGetVar(interp, varPtr, NULL,NULL,NULL, 0, opnd2);
+	    CACHE_STACK_INFO();
+	}
+	if (dictPtr == NULL) {
+	    TclNewObj(dictPtr);
+	    allocateDict = 1;
+	} else {
+	    allocateDict = Tcl_IsShared(dictPtr);
+	    if (allocateDict) {
+		dictPtr = Tcl_DuplicateObj(dictPtr);
+	    }
+	}
+        cleanup = opnd;
+        result = Tcl_DictObjRemoveKeyList(interp, dictPtr, opnd,
+                &OBJ_AT_DEPTH(opnd-1));
+	if (result != TCL_OK) {
+	    if (allocateDict) {
+		TclDecrRefCount(dictPtr);
+	    }
+	    TRACE_WITH_OBJ(("%u %u => ERROR updating dictionary: ",
+		    opnd, opnd2), Tcl_GetObjResult(interp));
+	    goto checkForCatch;
+	}
+
+	if (TclIsVarDirectWritable(varPtr)) {
+	    if (allocateDict) {
+		value2Ptr = varPtr->value.objPtr;
+		Tcl_IncrRefCount(dictPtr);
+		if (value2Ptr != NULL) {
+		    TclDecrRefCount(value2Ptr);
+		}
+		varPtr->value.objPtr = dictPtr;
+	    }
+	    objResultPtr = dictPtr;
+	} else {
+	    Tcl_IncrRefCount(dictPtr);
+	    DECACHE_STACK_INFO();
+	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+		    dictPtr, TCL_LEAVE_ERR_MSG, opnd2);
+	    CACHE_STACK_INFO();
+	    TclDecrRefCount(dictPtr);
+	    if (objResultPtr == NULL) {
+		TRACE_APPEND(("ERROR: %.30s\n",
+			O2S(Tcl_GetObjResult(interp))));
+		goto gotError;
+	    }
+	}
+#ifndef TCL_COMPILE_DEBUG
+	if (*(pc+9) == INST_POP) {
+	    NEXT_INST_V(10, cleanup, 0);
+	}
+#endif
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_V(9, cleanup, 1);
     case INST_DICT_INCR_IMM:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	opnd2 = TclGetUInt4AtPtr(pc+5);
@@ -6238,45 +6386,28 @@ TEBCresume(
 	    }
 	}
 
-	switch (*pc) {
-	case INST_DICT_SET:
-	    cleanup = opnd + 1;
-	    result = Tcl_DictObjPutKeyList(interp, dictPtr, opnd,
-		    &OBJ_AT_DEPTH(opnd), OBJ_AT_TOS);
-	    break;
-	case INST_DICT_INCR_IMM:
-	    cleanup = 1;
-	    opnd = TclGetInt4AtPtr(pc+1);
-	    result = Tcl_DictObjGet(interp, dictPtr, OBJ_AT_TOS, &valuePtr);
-	    if (result != TCL_OK) {
-		break;
-	    }
-	    if (valuePtr == NULL) {
-		Tcl_DictObjPut(NULL, dictPtr, OBJ_AT_TOS,Tcl_NewIntObj(opnd));
-	    } else {
-		value2Ptr = Tcl_NewIntObj(opnd);
-		Tcl_IncrRefCount(value2Ptr);
-		if (Tcl_IsShared(valuePtr)) {
-		    valuePtr = Tcl_DuplicateObj(valuePtr);
-		    Tcl_DictObjPut(NULL, dictPtr, OBJ_AT_TOS, valuePtr);
-		}
-		result = TclIncrObj(interp, valuePtr, value2Ptr);
-		if (result == TCL_OK) {
-		    TclInvalidateStringRep(dictPtr);
-		}
-		TclDecrRefCount(value2Ptr);
-	    }
-	    break;
-	case INST_DICT_UNSET:
-	    cleanup = opnd;
-	    result = Tcl_DictObjRemoveKeyList(interp, dictPtr, opnd,
-		    &OBJ_AT_DEPTH(opnd-1));
-	    break;
-	default:
-	    cleanup = 0; /* stop compiler warning */
-	    Tcl_Panic("Should not happen!");
-	}
-
+        cleanup = 1;
+        opnd = TclGetInt4AtPtr(pc+1);
+        result = Tcl_DictObjGet(interp, dictPtr, OBJ_AT_TOS, &valuePtr);
+        if (result != TCL_OK) {
+            break;
+        }
+        if (valuePtr == NULL) {
+            Tcl_DictObjPut(NULL, dictPtr, OBJ_AT_TOS,Tcl_NewIntObj(opnd));
+        } else {
+            value2Ptr = Tcl_NewIntObj(opnd);
+            Tcl_IncrRefCount(value2Ptr);
+            if (Tcl_IsShared(valuePtr)) {
+                valuePtr = Tcl_DuplicateObj(valuePtr);
+                Tcl_DictObjPut(NULL, dictPtr, OBJ_AT_TOS, valuePtr);
+            }
+            result = TclIncrObj(interp, valuePtr, value2Ptr);
+            if (result == TCL_OK) {
+                TclInvalidateStringRep(dictPtr);
+            }
+            TclDecrRefCount(value2Ptr);
+        }
+	   
 	if (result != TCL_OK) {
 	    if (allocateDict) {
 		TclDecrRefCount(dictPtr);
