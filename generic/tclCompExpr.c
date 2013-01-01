@@ -917,7 +917,7 @@ ParseExpr(
 
 	    case SCRIPT: {
 		Tcl_Parse *nestedPtr =
-			TclStackAlloc(interp, sizeof(Tcl_Parse));
+			ckalloc(sizeof(Tcl_Parse));
 
 		tokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 		tokenPtr->type = TCL_TOKEN_COMMAND;
@@ -952,7 +952,7 @@ ParseExpr(
 			break;
 		    }
 		}
-		TclStackFree(interp, nestedPtr);
+		ckfree(nestedPtr);
 		end = start;
 		start = tokenPtr->start;
 		scanned = end - start;
@@ -1835,7 +1835,7 @@ Tcl_ParseExpr(
     OpNode *opTree = NULL;	/* Will point to the tree of operators. */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals. */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names. */
-    Tcl_Parse *exprParsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *exprParsePtr = ckalloc(sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions. */
 
     if (numBytes < 0) {
@@ -1857,7 +1857,7 @@ Tcl_ParseExpr(
     }
 
     Tcl_FreeParse(exprParsePtr);
-    TclStackFree(interp, exprParsePtr);
+    ckfree(exprParsePtr);
     ckfree(opTree);
     return code;
 }
@@ -2127,7 +2127,7 @@ TclCompileExpr(
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names*/
-    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr = ckalloc(sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions */
 
     int code = ParseExpr(interp, script, numBytes, &opTree, litList,
@@ -2151,7 +2151,7 @@ TclCompileExpr(
     }
 
     Tcl_FreeParse(parsePtr);
-    TclStackFree(interp, parsePtr);
+    ckfree(parsePtr);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
     ckfree(opTree);
@@ -2194,7 +2194,7 @@ ExecConstantExprTree(
      * bytecode, so there's no need to tend to TIP 280 issues.
      */
 
-    envPtr = TclStackAlloc(interp, sizeof(CompileEnv));
+    envPtr = ckalloc(sizeof(CompileEnv));
     TclInitCompileEnv(interp, envPtr, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
 	    0 /* optimize */);
@@ -2202,7 +2202,7 @@ ExecConstantExprTree(
     Tcl_IncrRefCount(byteCodeObj);
     TclInitByteCodeObj(byteCodeObj, envPtr);
     TclFreeCompileEnv(envPtr);
-    TclStackFree(interp, envPtr);
+    ckfree(envPtr);
     byteCodePtr = byteCodeObj->internalRep.otherValuePtr;
     TclNRExecuteByteCode(interp, byteCodePtr);
     code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
@@ -2259,10 +2259,10 @@ CompileExprTree(
 
 	    switch (nodePtr->lexeme) {
 	    case QUESTION:
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		newJump = ckalloc(sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		newJump = ckalloc(sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
 		jumpPtr->depth = envPtr->currStackDepth;
@@ -2270,13 +2270,13 @@ CompileExprTree(
 		break;
 	    case AND:
 	    case OR:
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		newJump = ckalloc(sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		newJump = ckalloc(sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		newJump = ckalloc(sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
 		jumpPtr->depth = envPtr->currStackDepth;
@@ -2382,10 +2382,10 @@ CompileExprTree(
 		envPtr->currStackDepth = jumpPtr->depth + 1;
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
+		ckfree(freePtr);
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
+		ckfree(freePtr);
 		break;
 	    case AND:
 	    case OR:
@@ -2409,13 +2409,13 @@ CompileExprTree(
 		envPtr->currStackDepth = jumpPtr->depth + 1;
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
+		ckfree(freePtr);
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
+		ckfree(freePtr);
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
+		ckfree(freePtr);
 		break;
 	    default:
 		TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
@@ -2619,9 +2619,8 @@ TclSortingOpCmd(
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
     } else {
 	TclOpCmdClientData *occdPtr = clientData;
-	Tcl_Obj **litObjv = TclStackAlloc(interp,
-		2 * (objc-2) * sizeof(Tcl_Obj *));
-	OpNode *nodes = TclStackAlloc(interp, 2 * (objc-2) * sizeof(OpNode));
+	Tcl_Obj **litObjv = ckalloc(2 * (objc-2) * sizeof(Tcl_Obj *));
+	OpNode *nodes = ckalloc(2 * (objc-2) * sizeof(OpNode));
 	unsigned char lexeme;
 	int i, lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
@@ -2661,8 +2660,8 @@ TclSortingOpCmd(
 
 	code = ExecConstantExprTree(interp, nodes, 0, &litObjPtrPtr);
 
-	TclStackFree(interp, nodes);
-	TclStackFree(interp, litObjv);
+	ckfree(nodes);
+	ckfree(litObjv);
     }
     return code;
 }
@@ -2748,7 +2747,7 @@ TclVariadicOpCmd(
 	return code;
     } else {
 	Tcl_Obj *const *litObjv = objv + 1;
-	OpNode *nodes = TclStackAlloc(interp, (objc-1) * sizeof(OpNode));
+	OpNode *nodes = ckalloc((objc-1) * sizeof(OpNode));
 	int i, lastOp = OT_LITERAL;
 
 	nodes[0].lexeme = START;
@@ -2781,7 +2780,7 @@ TclVariadicOpCmd(
 
 	code = ExecConstantExprTree(interp, nodes, 0, &litObjv);
 
-	TclStackFree(interp, nodes);
+	ckfree(nodes);
 	return code;
     }
 }

@@ -174,11 +174,13 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
 typedef struct TEBCdata {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
+    Tcl_Obj **tosPtr;
     const unsigned char *pc;	/* These fields are used on return TO this */
-    ptrdiff_t *catchTop;	/* this level: they record the state when a */
+    unsigned long catchDepth;	        /* this level: they record the state when a */
     int cleanup;		/* new codePtr was received for NR */
     Tcl_Obj *auxObjList;	/* execution. */
     int checkInterp;
+    unsigned int capacity;
     void *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */
@@ -186,7 +188,7 @@ typedef struct TEBCdata {
 
 #define TEBC_YIELD() \
     do {								\
-	esPtr->tosPtr = tosPtr;						\
+	TD->tosPtr = tosPtr;						\
 	TD->pc = pc;							\
 	TD->cleanup = cleanup;						\
 	TclNRAddCallback(interp, TEBCresume, TD, INT2PTR(1), NULL, NULL); \
@@ -196,7 +198,7 @@ typedef struct TEBCdata {
     do {					\
 	pc = TD->pc;				\
 	cleanup = TD->cleanup;			\
-	tosPtr = esPtr->tosPtr;			\
+	tosPtr = TD->tosPtr;			\
     } while (0)
 
 #define PUSH_TAUX_OBJ(objPtr) \
@@ -298,20 +300,6 @@ VarHashCreateVar(
 	    goto cleanupV;					\
 	}							\
     } while (0)
-
-/*
- * Macros used to cache often-referenced Tcl evaluation stack information
- * in local variables. Note that a DECACHE_STACK_INFO()-CACHE_STACK_INFO()
- * pair must surround any call inside TclNRExecuteByteCode (and a few other
- * procedures that use this scheme) that could result in a recursive call
- * to TclNRExecuteByteCode.
- */
-
-#define CACHE_STACK_INFO() \
-    checkInterp = 1
-
-#define DECACHE_STACK_INFO() \
-    esPtr->tosPtr = tosPtr
 
 /*
  * Macros used to access items on the Tcl evaluation stack. PUSH_OBJECT
@@ -687,7 +675,6 @@ static void		ValidatePcAndStackTop(ByteCode *codePtr,
 			    int stackLowerBound, int checkStack);
 #endif /* TCL_COMPILE_DEBUG */
 static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void		DeleteExecStack(ExecStack *esPtr);
 static void		DupExprCodeInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
 MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
@@ -703,16 +690,10 @@ static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, int *lengthPtr,
 			    const unsigned char **pcBeg);
-static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
-			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
-static inline int	OFFSET(void *ptr);
 static void		ReleaseDictIterator(Tcl_Obj *objPtr);
-/* Useful elsewhere, make available in tclInt.h or stubs? */
-static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
-static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
 static Tcl_NRPostProc	CopyCallback;
 static Tcl_NRPostProc	ExprObjCallback;
 
@@ -878,10 +859,7 @@ TclCreateExecEnv(
 				 * [sizeof(Tcl_Obj*)] */
 {
     ExecEnv *eePtr = ckalloc(sizeof(ExecEnv));
-    ExecStack *esPtr = ckalloc(sizeof(ExecStack)
-	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
-    eePtr->execStackPtr = esPtr;
     TclNewBooleanObj(eePtr->constants[0], 0);
     Tcl_IncrRefCount(eePtr->constants[0]);
     TclNewBooleanObj(eePtr->constants[1], 1);
@@ -890,12 +868,6 @@ TclCreateExecEnv(
     eePtr->callbackPtr = NULL;
     eePtr->corPtr = NULL;
     eePtr->rewind = 0;
-
-    esPtr->prevPtr = NULL;
-    esPtr->nextPtr = NULL;
-    esPtr->markerPtr = NULL;
-    esPtr->endPtr = &esPtr->stackWords[size-1];
-    esPtr->tosPtr = &esPtr->stackWords[-1];
 
     Tcl_MutexLock(&execMutex);
     if (!execInitialized) {
@@ -925,43 +897,15 @@ TclCreateExecEnv(
  *----------------------------------------------------------------------
  */
 
-static void
-DeleteExecStack(
-    ExecStack *esPtr)
-{
-    if (esPtr->markerPtr && !cachedInExit) {
-	Tcl_Panic("freeing an execStack which is still in use");
-    }
-
-    if (esPtr->prevPtr) {
-	esPtr->prevPtr->nextPtr = esPtr->nextPtr;
-    }
-    if (esPtr->nextPtr) {
-	esPtr->nextPtr->prevPtr = esPtr->prevPtr;
-    }
-    ckfree(esPtr);
-}
-
 void
 TclDeleteExecEnv(
     ExecEnv *eePtr)		/* Execution environment to free. */
 {
-    ExecStack *esPtr = eePtr->execStackPtr, *tmpPtr;
-
 	cachedInExit = TclInExit();
 
     /*
      * Delete all stacks in this exec env.
      */
-
-    while (esPtr->nextPtr) {
-	esPtr = esPtr->nextPtr;
-    }
-    while (esPtr) {
-	tmpPtr = esPtr;
-	esPtr = tmpPtr->prevPtr;
-	DeleteExecStack(tmpPtr);
-    }
 
     TclDecrRefCount(eePtr->constants[0]);
     TclDecrRefCount(eePtr->constants[1]);
@@ -999,339 +943,6 @@ TclFinalizeExecution(void)
     execInitialized = 0;
     Tcl_MutexUnlock(&execMutex);
     TclFinalizeAuxDataTypeTable();
-}
-
-/*
- * Auxiliary code to insure that GrowEvaluationStack always returns correctly
- * aligned memory.
- *
- * WALLOCALIGN represents the alignment reqs in words, just as TCL_ALLOCALIGN
- * represents the reqs in bytes. This assumes that TCL_ALLOCALIGN is a
- * multiple of the wordsize 'sizeof(Tcl_Obj *)'.
- */
-
-#define WALLOCALIGN \
-    (TCL_ALLOCALIGN/sizeof(Tcl_Obj *))
-
-/*
- * OFFSET computes how many words have to be skipped until the next aligned
- * word. Note that we are only interested in the low order bits of ptr, so
- * that any possible information loss in PTR2INT is of no consequence.
- */
-
-static inline int
-OFFSET(
-    void *ptr)
-{
-    int mask = TCL_ALLOCALIGN-1;
-    int base = PTR2INT(ptr) & mask;
-    return (TCL_ALLOCALIGN - base)/sizeof(Tcl_Obj *);
-}
-
-/*
- * Given a marker, compute where the following aligned memory starts.
- */
-
-#define MEMSTART(markerPtr) \
-    ((markerPtr) + OFFSET(markerPtr))
-
-/*
- *----------------------------------------------------------------------
- *
- * GrowEvaluationStack --
- *
- *	This procedure grows a Tcl evaluation stack stored in an ExecEnv,
- *	copying over the words since the last mark if so requested. A mark is
- *	set at the beginning of the new area when no copying is requested.
- *
- * Results:
- *	Returns a pointer to the first usable word in the (possibly) grown
- *	stack.
- *
- * Side effects:
- *	The size of the evaluation stack may be grown, a marker is set
- *
- *----------------------------------------------------------------------
- */
-
-static Tcl_Obj **
-GrowEvaluationStack(
-    ExecEnv *eePtr,		/* Points to the ExecEnv with an evaluation
-				 * stack to enlarge. */
-    int growth,			/* How much larger than the current used
-				 * size. */
-    int move)			/* 1 if move words since last marker. */
-{
-    ExecStack *esPtr = eePtr->execStackPtr, *oldPtr = NULL;
-    int newBytes, newElems, currElems;
-    int needed = growth - (esPtr->endPtr - esPtr->tosPtr);
-    Tcl_Obj **markerPtr = esPtr->markerPtr, **memStart;
-    int moveWords = 0;
-
-    if (move) {
-	if (!markerPtr) {
-	    Tcl_Panic("STACK: Reallocating with no previous alloc");
-	}
-	if (needed <= 0) {
-	    return MEMSTART(markerPtr);
-	}
-    } else {
-	Tcl_Obj **tmpMarkerPtr = esPtr->tosPtr + 1;
-	int offset = OFFSET(tmpMarkerPtr);
-
-	if (needed + offset < 0) {
-	    /*
-	     * Put a marker pointing to the previous marker in this stack, and
-	     * store it in esPtr as the current marker. Return a pointer to
-	     * the start of aligned memory.
-	     */
-
-	    esPtr->markerPtr = tmpMarkerPtr;
-	    memStart = tmpMarkerPtr + offset;
-	    esPtr->tosPtr = memStart - 1;
-	    *esPtr->markerPtr = (Tcl_Obj *) markerPtr;
-	    return memStart;
-	}
-    }
-
-    /*
-     * Reset move to hold the number of words to be moved to new stack (if
-     * any) and growth to hold the complete stack requirements: add one for
-     * the marker, (WALLOCALIGN-1) for the maximal possible offset.
-     */
-
-    if (move) {
-	moveWords = esPtr->tosPtr - MEMSTART(markerPtr) + 1;
-    }
-    needed = growth + moveWords + WALLOCALIGN;
-
-    /*
-     * Check if there is enough room in the next stack (if there is one, it
-     * should be both empty and the last one!)
-     */
-
-    if (esPtr->nextPtr) {
-	oldPtr = esPtr;
-	esPtr = oldPtr->nextPtr;
-	currElems = esPtr->endPtr - &esPtr->stackWords[-1];
-	if (esPtr->markerPtr || (esPtr->tosPtr != &esPtr->stackWords[-1])) {
-	    Tcl_Panic("STACK: Stack after current is in use");
-	}
-	if (esPtr->nextPtr) {
-	    Tcl_Panic("STACK: Stack after current is not last");
-	}
-	if (needed <= currElems) {
-	    goto newStackReady;
-	}
-	DeleteExecStack(esPtr);
-	esPtr = oldPtr;
-    } else {
-	currElems = esPtr->endPtr - &esPtr->stackWords[-1];
-    }
-
-    /*
-     * We need to allocate a new stack! It needs to store 'growth' words,
-     * including the elements to be copied over and the new marker.
-     */
-
-    newElems = 2*currElems;
-    while (needed > newElems) {
-	newElems *= 2;
-    }
-    newBytes = sizeof(ExecStack) + (newElems-1) * sizeof(Tcl_Obj *);
-
-    oldPtr = esPtr;
-    esPtr = ckalloc(newBytes);
-
-    oldPtr->nextPtr = esPtr;
-    esPtr->prevPtr = oldPtr;
-    esPtr->nextPtr = NULL;
-    esPtr->endPtr = &esPtr->stackWords[newElems-1];
-
-  newStackReady:
-    eePtr->execStackPtr = esPtr;
-
-    /*
-     * Store a NULL marker at the beginning of the stack, to indicate that
-     * this is the first marker in this stack and that rewinding to here
-     * should actually be a return to the previous stack.
-     */
-
-    esPtr->stackWords[0] = NULL;
-    esPtr->markerPtr = &esPtr->stackWords[0];
-    memStart = MEMSTART(esPtr->markerPtr);
-    esPtr->tosPtr = memStart - 1;
-
-    if (move) {
-	memcpy(memStart, MEMSTART(markerPtr), moveWords*sizeof(Tcl_Obj *));
-	esPtr->tosPtr += moveWords;
-	oldPtr->markerPtr = (Tcl_Obj **) *markerPtr;
-	oldPtr->tosPtr = markerPtr-1;
-    }
-
-    /*
-     * Free the old stack if it is now unused.
-     */
-
-    if (!oldPtr->markerPtr) {
-	DeleteExecStack(oldPtr);
-    }
-
-    return memStart;
-}
-
-/*
- *--------------------------------------------------------------
- *
- * TclStackAlloc, TclStackRealloc, TclStackFree --
- *
- *	Allocate memory from the execution stack; it has to be returned later
- *	with a call to TclStackFree.
- *
- * Results:
- *	A pointer to the first byte allocated, or panics if the allocation did
- *	not succeed.
- *
- * Side effects:
- *	The execution stack may be grown.
- *
- *--------------------------------------------------------------
- */
-
-static Tcl_Obj **
-StackAllocWords(
-    Tcl_Interp *interp,
-    int numWords)
-{
-    /*
-     * Note that GrowEvaluationStack sets a marker in the stack. This marker
-     * is read when rewinding, e.g., by TclStackFree.
-     */
-
-    Interp *iPtr = (Interp *) interp;
-    ExecEnv *eePtr = iPtr->execEnvPtr;
-    Tcl_Obj **resPtr = GrowEvaluationStack(eePtr, numWords, 0);
-
-    eePtr->execStackPtr->tosPtr += numWords;
-    return resPtr;
-}
-
-static Tcl_Obj **
-StackReallocWords(
-    Tcl_Interp *interp,
-    int numWords)
-{
-    Interp *iPtr = (Interp *) interp;
-    ExecEnv *eePtr = iPtr->execEnvPtr;
-    Tcl_Obj **resPtr = GrowEvaluationStack(eePtr, numWords, 1);
-
-    eePtr->execStackPtr->tosPtr += numWords;
-    return resPtr;
-}
-
-void
-TclStackFree(
-    Tcl_Interp *interp,
-    void *freePtr)
-{
-    Interp *iPtr = (Interp *) interp;
-    ExecEnv *eePtr;
-    ExecStack *esPtr;
-    Tcl_Obj **markerPtr, *marker;
-
-    if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
-	Tcl_Free((char *) freePtr);
-	return;
-    }
-
-    /*
-     * Rewind the stack to the previous marker position. The current marker,
-     * as set in the last call to GrowEvaluationStack, contains a pointer to
-     * the previous marker.
-     */
-
-    eePtr = iPtr->execEnvPtr;
-    esPtr = eePtr->execStackPtr;
-    markerPtr = esPtr->markerPtr;
-    marker = *markerPtr;
-
-    if ((freePtr != NULL) && (MEMSTART(markerPtr) != (Tcl_Obj **)freePtr)) {
-	Tcl_Panic("TclStackFree: incorrect freePtr (%p != %p). Call out of sequence?",
-		freePtr, MEMSTART(markerPtr));
-    }
-
-    esPtr->tosPtr = markerPtr - 1;
-    esPtr->markerPtr = (Tcl_Obj **) marker;
-    if (marker) {
-	return;
-    }
-
-    /*
-     * Return to previous active stack. Note that repeated expansions or
-     * reallocs could have generated several unused intervening stacks: free
-     * them too.
-     */
-
-    while (esPtr->nextPtr) {
-	esPtr = esPtr->nextPtr;
-    }
-    esPtr->tosPtr = &esPtr->stackWords[-1];
-    while (esPtr->prevPtr) {
-	ExecStack *tmpPtr = esPtr->prevPtr;
-	if (tmpPtr->tosPtr == &tmpPtr->stackWords[-1]) {
-	    DeleteExecStack(tmpPtr);
-	} else {
-	    break;
-	}
-    }
-    if (esPtr->prevPtr) {
-	eePtr->execStackPtr = esPtr->prevPtr;
-    } else {
-	eePtr->execStackPtr = esPtr;
-    }
-}
-
-void *
-TclStackAlloc(
-    Tcl_Interp *interp,
-    int numBytes)
-{
-    Interp *iPtr = (Interp *) interp;
-    int numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
-
-    if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
-	return (void *) Tcl_Alloc(numBytes);
-    }
-
-    return (void *) StackAllocWords(interp, numWords);
-}
-
-void *
-TclStackRealloc(
-    Tcl_Interp *interp,
-    void *ptr,
-    int numBytes)
-{
-    Interp *iPtr = (Interp *) interp;
-    ExecEnv *eePtr;
-    ExecStack *esPtr;
-    Tcl_Obj **markerPtr;
-    int numWords;
-
-    if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
-	return (void *) Tcl_Realloc((char *) ptr, numBytes);
-    }
-
-    eePtr = iPtr->execEnvPtr;
-    esPtr = eePtr->execStackPtr;
-    markerPtr = esPtr->markerPtr;
-
-    if (MEMSTART(markerPtr) != (Tcl_Obj **)ptr) {
-	Tcl_Panic("TclStackRealloc: incorrect ptr. Call out of sequence?");
-    }
-
-    numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
-    return (void *) StackReallocWords(interp, numWords);
 }
 
 /*
@@ -1686,7 +1297,6 @@ TclCompileObj(
 		(codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)){
 	    goto recompileObj;
 	}
-
 	return codePtr;
     }
 
@@ -1846,9 +1456,14 @@ TclIncrObj(
  *
  *----------------------------------------------------------------------
  */
-#define	initCatchTop	((ptrdiff_t *) (&TD->stack[-1]))
-#define	initTosPtr	((Tcl_Obj **) (initCatchTop+codePtr->maxExceptDepth))
-#define esPtr		(iPtr->execEnvPtr->execStackPtr)
+#define	catchStack	(TD->stack)
+#define	initTosPtr	((Tcl_Obj **) &TD->stack[codePtr->maxExceptDepth - 1])
+
+#define capacity2size(cap)						\
+    (sizeof(TEBCdata) + sizeof(void *)*(cap + codePtr->maxExceptDepth - 1))
+
+#define size2capacity(s) \
+    (((s - sizeof(TEBCdata))/sizeof(void *)) - codePtr->maxExceptDepth + 1)
 
 int
 TclNRExecuteByteCode(
@@ -1857,11 +1472,8 @@ TclNRExecuteByteCode(
 {
     Interp *iPtr = (Interp *) interp;
     TEBCdata *TD;
-    int size = sizeof(TEBCdata) - 1
-	    + (codePtr->maxStackDepth + codePtr->maxExceptDepth)
-		* sizeof(void *);
-    int numWords = (size + sizeof(Tcl_Obj *) - 1) / sizeof(Tcl_Obj *);
-
+    unsigned int size = capacity2size(codePtr->maxStackDepth);
+    
     if (iPtr->execEnvPtr->rewind) {
 	return TCL_ERROR;
     }
@@ -1880,15 +1492,16 @@ TclNRExecuteByteCode(
      * execution stack is large enough to execute this ByteCode.
      */
 
-    TD = (TEBCdata *) GrowEvaluationStack(iPtr->execEnvPtr, numWords, 0);
-    esPtr->tosPtr = initTosPtr;
+    TD = ckalloc(size);
 
     TD->codePtr     = codePtr;
-    TD->pc	    = codePtr->codeStart;
-    TD->catchTop    = initCatchTop;
+    TD->tosPtr = initTosPtr;
+    TD->pc          = codePtr->codeStart;
+    TD->catchDepth  = -1;
     TD->cleanup     = 0;
     TD->auxObjList  = NULL;
     TD->checkInterp = 0;
+    TD->capacity = codePtr->maxStackDepth;
 
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.numExecutions++;
@@ -1953,11 +1566,11 @@ TEBCresume(
 
     TEBCdata *TD = data[0];
 #define auxObjList	(TD->auxObjList)
-#define catchTop	(TD->catchTop)
+#define catchDepth	(TD->catchDepth)
 #define codePtr		(TD->codePtr)
 #define checkInterp	(TD->checkInterp)
-			/* Indicates when a check of interp readyness is
-			 * necessary. Set by CACHE_STACK_INFO() */
+                        /* Indicates when a check of interp readyness
+			 * is necessary. Set by checkInterp = 1 */
 
     /*
      * Globals: variables that store state, must remain valid at all times.
@@ -2016,7 +1629,7 @@ TEBCresume(
 	    codePtr->flags &= ~TCL_BYTECODE_RECOMPILE;
 	}
 
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	if (result == TCL_OK) {
 #ifndef TCL_COMPILE_DEBUG
 	    if (*pc == INST_POP) {
@@ -2154,29 +1767,28 @@ TEBCresume(
      */
 
     if ((instructionCount++ & ASYNC_CHECK_COUNT_MASK) == 0) {
-	DECACHE_STACK_INFO();
 	if (TclAsyncReady(iPtr)) {
 	    result = Tcl_AsyncInvoke(interp, result);
 	    if (result == TCL_ERROR) {
-		CACHE_STACK_INFO();
+		checkInterp = 1;
 		goto gotError;
 	    }
 	}
 
 	if (TclCanceled(iPtr)) {
 	    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
-		CACHE_STACK_INFO();
+		checkInterp = 1;
 		goto gotError;
 	    }
 	}
 
 	if (TclLimitReady(iPtr->limit)) {
 	    if (Tcl_LimitCheck(interp) == TCL_ERROR) {
-		CACHE_STACK_INFO();
+		checkInterp = 1;
 		goto gotError;
 	    }
 	}
-	CACHE_STACK_INFO();
+	checkInterp = 1;
     }
 
     TCL_DTRACE_INST_NEXT();
@@ -2627,7 +2239,7 @@ TEBCresume(
 
     case INST_EXPAND_STKTOP: {
 	int i;
-	ptrdiff_t moved;
+	unsigned int reqWords;
 
 	/*
 	 * Make sure that the element at stackTop is a list; if not, just
@@ -2641,7 +2253,6 @@ TEBCresume(
 		    Tcl_GetObjResult(interp));
 	    goto gotError;
 	}
-	(void) POP_OBJECT();
 
 	/*
 	 * Make sure there is enough room in the stack to expand this list
@@ -2650,22 +2261,28 @@ TEBCresume(
 	 * stack depth, as seen by the compiler.
 	 */
 
-	length = objc + (codePtr->maxStackDepth - TclGetInt4AtPtr(pc+1));
-	DECACHE_STACK_INFO();
-	moved = GrowEvaluationStack(iPtr->execEnvPtr, length, 1)
-		- (Tcl_Obj **) TD;
-	if (moved) {
-	    /*
-	     * Change the global data to point to the new stack: move the
-	     * TEBCdataPtr TD, recompute the position of every other
-	     * stack-allocated parameter, update the stack pointers.
-	     */
+	reqWords =
+	    /* how many were needed originally */
+	    codePtr->maxStackDepth
+	    /* plus how many we already consumed in previous expansions */
+	    + (CURR_DEPTH - TclGetInt4AtPtr(pc+1))
+	    /* plus how many are needed for this expansion */
+	    + objc - 1;
 
-	    esPtr = iPtr->execEnvPtr->execStackPtr;
-	    TD = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
+	(void) POP_OBJECT();
+	if (reqWords > TD->capacity) {
+	    ptrdiff_t depth;
+	    unsigned int size = capacity2size(reqWords);
 
-	    catchTop += moved;
-	    tosPtr += moved;
+	    depth = tosPtr - initTosPtr;
+	    TD = ckrealloc(TD, size);
+	    size = TclAllocMaximize(TD);
+	    if (size == UINT_MAX) {
+		TD->capacity = reqWords;
+	    } else {
+		TD->capacity = size2capacity(size);
+	    }
+	    tosPtr = initTosPtr + depth;
 	}
 
 	/*
@@ -2684,9 +2301,8 @@ TEBCresume(
     case INST_EXPR_STK: {
 	ByteCode *newCodePtr;
 
-	DECACHE_STACK_INFO();
 	newCodePtr = CompileExprObj(interp, OBJ_AT_TOS);
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	cleanup = 1;
 	pc++;
 	TEBC_YIELD();
@@ -2987,10 +2603,9 @@ TEBCresume(
 	 * TclPtrGetVar to process fully.
 	 */
 
-	DECACHE_STACK_INFO();
 	objResultPtr = TclPtrGetVar(interp, varPtr, arrayPtr,
 		part1Ptr, part2Ptr, TCL_LEAVE_ERR_MSG, opnd);
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	if (!objResultPtr) {
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    goto gotError;
@@ -3234,10 +2849,9 @@ TEBCresume(
 	part1Ptr = part2Ptr = NULL;
 
     doCallPtrSetVar:
-	DECACHE_STACK_INFO();
 	objResultPtr = TclPtrSetVar(interp, varPtr, arrayPtr,
 		part1Ptr, part2Ptr, valuePtr, storeFlags, opnd);
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	if (!objResultPtr) {
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    goto gotError;
@@ -3498,10 +3112,9 @@ TEBCresume(
 	    }
 	    Tcl_DecrRefCount(incrPtr);
 	} else {
-	    DECACHE_STACK_INFO();
 	    objResultPtr = TclPtrIncrObjVar(interp, varPtr, arrayPtr,
 		    part1Ptr, part2Ptr, incrPtr, TCL_LEAVE_ERR_MSG, opnd);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    Tcl_DecrRefCount(incrPtr);
 	    if (objResultPtr == NULL) {
 		TRACE_APPEND(("ERROR: %.30s\n",
@@ -3533,10 +3146,9 @@ TEBCresume(
 	}
 	TRACE(("%u => ", opnd));
 	if (ReadTraced(varPtr)) {
-	    DECACHE_STACK_INFO();
 	    TclObjCallVarTraces(iPtr, NULL, varPtr, NULL, NULL,
 		    TCL_TRACE_READS, 0, opnd);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    if (TclIsVarUndefined(varPtr)) {
 		TclCleanupVar(varPtr, NULL);
 		varPtr = NULL;
@@ -3569,10 +3181,9 @@ TEBCresume(
 		0, 1, arrayPtr, opnd);
 	if (varPtr) {
 	    if (ReadTraced(varPtr) || (arrayPtr && ReadTraced(arrayPtr))) {
-		DECACHE_STACK_INFO();
 		TclObjCallVarTraces(iPtr, arrayPtr, varPtr, NULL, part2Ptr,
 			TCL_TRACE_READS, 0, opnd);
-		CACHE_STACK_INFO();
+		checkInterp = 1;
 	    }
 	    if (TclIsVarUndefined(varPtr)) {
 		TclCleanupVar(varPtr, arrayPtr);
@@ -3602,10 +3213,9 @@ TEBCresume(
 		/*createPart1*/0, /*createPart2*/1, &arrayPtr);
 	if (varPtr) {
 	    if (ReadTraced(varPtr) || (arrayPtr && ReadTraced(arrayPtr))) {
-		DECACHE_STACK_INFO();
 		TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr,part2Ptr,
 			TCL_TRACE_READS, 0, -1);
-		CACHE_STACK_INFO();
+		checkInterp = 1;
 	    }
 	    if (TclIsVarUndefined(varPtr)) {
 		TclCleanupVar(varPtr, arrayPtr);
@@ -3649,12 +3259,11 @@ TEBCresume(
 	}
 
     slowUnsetScalar:
-	DECACHE_STACK_INFO();
 	if (TclPtrUnsetVar(interp, varPtr, NULL, NULL, NULL, flags,
 		opnd) != TCL_OK && flags) {
 	    goto errorInUnset;
 	}
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	NEXT_INST_F(6, 0, 0);
 
     case INST_UNSET_ARRAY:
@@ -3691,7 +3300,6 @@ TEBCresume(
 	    }
 	}
     slowUnsetArray:
-	DECACHE_STACK_INFO();
 	varPtr = TclLookupArrayElement(interp, NULL, part2Ptr, flags, "unset",
 		0, 0, arrayPtr, opnd);
 	if (!varPtr) {
@@ -3702,7 +3310,7 @@ TEBCresume(
 		flags, opnd) != TCL_OK && (flags & TCL_LEAVE_ERR_MSG)) {
 	    goto errorInUnset;
 	}
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	NEXT_INST_F(6, 1, 0);
 
     case INST_UNSET_ARRAY_STK:
@@ -3722,16 +3330,15 @@ TEBCresume(
 	TRACE(("%s \"%.30s\"\n", (flags?"normal":"noerr"), O2S(part1Ptr)));
 
     doUnsetStk:
-	DECACHE_STACK_INFO();
 	if (TclObjUnsetVar2(interp, part1Ptr, part2Ptr, flags) != TCL_OK
 		&& (flags & TCL_LEAVE_ERR_MSG)) {
 	    goto errorInUnset;
 	}
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	NEXT_INST_V(2, cleanup, 0);
 
     errorInUnset:
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	goto gotError;
 
@@ -3752,9 +3359,8 @@ TEBCresume(
 	    }
 	    varPtr->value.objPtr = NULL;
 	} else {
-	    DECACHE_STACK_INFO();
 	    TclPtrUnsetVar(interp, varPtr, NULL, NULL, NULL, 0, opnd);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	}
 	NEXT_INST_F(5, 0, 0);
     }
@@ -3788,11 +3394,9 @@ TEBCresume(
     doArrayExists:
 	if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
 		&& (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
-	    DECACHE_STACK_INFO();
 	    result = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr,
 		    NULL, (TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|
 		    TCL_GLOBAL_ONLY|TCL_TRACE_ARRAY), 1, opnd);
-	    CACHE_STACK_INFO();
 	    if (result == TCL_ERROR) {
 		TRACE_APPEND(("ERROR: %.30s\n",
 			O2S(Tcl_GetObjResult(interp))));
@@ -4093,18 +3697,16 @@ TEBCresume(
 	if (TclGetBooleanFromObj(NULL, valuePtr, &i1) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
-	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;	    
 	    goto gotError;
 	}
 
 	if (TclGetBooleanFromObj(NULL, value2Ptr, &i2) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name : "null")));
-	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;	    
 	    goto gotError;
 	}
 
@@ -5203,9 +4805,8 @@ TEBCresume(
 	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (valuePtr->typePtr?
 		    valuePtr->typePtr->name : "null")));
-	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    goto gotError;
 	}
 
@@ -5214,9 +4815,8 @@ TEBCresume(
 	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (value2Ptr->typePtr?
 		    value2Ptr->typePtr->name : "null")));
-	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    goto gotError;
 	}
 
@@ -5274,11 +4874,10 @@ TEBCresume(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "negative shift argument", -1));
 #if 0
-		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
 			    NULL);
-		    CACHE_STACK_INFO();
+		    checkInterp = 1;
 #endif
 		    goto gotError;
 		} else if (l1 == 0) {
@@ -5322,11 +4921,10 @@ TEBCresume(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "negative shift argument", -1));
 #if 0
-		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
 			    NULL);
-		    CACHE_STACK_INFO();
+		    checkInterp = 1;
 #endif
 		    goto gotError;
 		} else if (l1 == 0) {
@@ -5345,10 +4943,9 @@ TEBCresume(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "integer value too large to represent", -1));
 #if 0
-		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			    "integer value too large to represent", NULL);
-		    CACHE_STACK_INFO();
+		    checkInterp = 1;
 #endif
 		    goto gotError;
 		} else {
@@ -5431,9 +5028,8 @@ TEBCresume(
 	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name: "null")));
-	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    goto gotError;
 	}
 
@@ -5452,9 +5048,8 @@ TEBCresume(
 	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name: "null")));
-	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    goto gotError;
 	}
 
@@ -5601,9 +5196,8 @@ TEBCresume(
 	if (TclGetBooleanFromObj(NULL, valuePtr, &b) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
-	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    goto gotError;
 	}
 	/* TODO: Consider peephole opt. */
@@ -5621,9 +5215,8 @@ TEBCresume(
 
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
-	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    goto gotError;
 	}
 	if (type1 == TCL_NUMBER_LONG) {
@@ -5648,9 +5241,8 @@ TEBCresume(
 		|| IsErroringNaNType(type1)) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
-	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    goto gotError;
 	}
 	switch (type1) {
@@ -5694,9 +5286,8 @@ TEBCresume(
 
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 			(valuePtr->typePtr? valuePtr->typePtr->name:"null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
+		checkInterp = 1;
 		goto gotError;
 	    }
 
@@ -5712,9 +5303,8 @@ TEBCresume(
 
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 			(valuePtr->typePtr? valuePtr->typePtr->name:"null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
+		checkInterp = 1;
 	    } else {
 		/*
 		 * Numeric conversion of NaN -> error.
@@ -5722,9 +5312,8 @@ TEBCresume(
 
 		TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
 			O2S(objResultPtr)));
-		DECACHE_STACK_INFO();
 		TclExprFloatError(interp, *((const double *) ptr1));
-		CACHE_STACK_INFO();
+		checkInterp = 1;
 	    }
 	    goto gotError;
 	}
@@ -5769,9 +5358,8 @@ TEBCresume(
 
     case INST_BREAK:
 	/*
-	DECACHE_STACK_INFO();
 	Tcl_ResetResult(interp);
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	*/
 	result = TCL_BREAK;
 	cleanup = 0;
@@ -5779,9 +5367,8 @@ TEBCresume(
 
     case INST_CONTINUE:
 	/*
-	DECACHE_STACK_INFO();
 	Tcl_ResetResult(interp);
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	*/
 	result = TCL_CONTINUE;
 	cleanup = 0;
@@ -5914,17 +5501,16 @@ TEBCresume(
 			    Tcl_IncrRefCount(valuePtr);
 			}
 		    } else {
-			DECACHE_STACK_INFO();
 			if (TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
 				valuePtr, TCL_LEAVE_ERR_MSG, varIndex)==NULL){
-			    CACHE_STACK_INFO();
+			    checkInterp = 1;
 			    TRACE_WITH_OBJ((
 				    "%u => ERROR init. index temp %d: ",
 				    opnd,varIndex), Tcl_GetObjResult(interp));
 			    TclDecrRefCount(listPtr);
 			    goto gotError;
 			}
-			CACHE_STACK_INFO();
+			checkInterp = 1;
 		    }
 		    valIndex++;
 		}
@@ -5956,19 +5542,18 @@ TEBCresume(
 	 * stack.
 	 */
 
-	*(++catchTop) = CURR_DEPTH;
-	TRACE(("%u => catchTop=%d, stackTop=%d\n",
-		TclGetUInt4AtPtr(pc+1), (int) (catchTop - initCatchTop - 1),
+	catchStack[++catchDepth] = INT2PTR(CURR_DEPTH);
+	TRACE(("%u => catchDepth=%d, stackTop=%d\n",
+		TclGetUInt4AtPtr(pc+1), (int) (catchDepth),
 		(int) CURR_DEPTH));
 	NEXT_INST_F(5, 0, 0);
 
     case INST_END_CATCH:
-	catchTop--;
-	DECACHE_STACK_INFO();
+	catchDepth--;
 	Tcl_ResetResult(interp);
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	result = TCL_OK;
-	TRACE(("=> catchTop=%d\n", (int) (catchTop - initCatchTop - 1)));
+	TRACE(("=> catchDepth=%d\n", (int) (catchDepth)));
 	NEXT_INST_F(1, 0, 0);
 
     case INST_PUSH_RESULT:
@@ -5990,9 +5575,8 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
 
     case INST_PUSH_RETURN_OPTIONS:
-	DECACHE_STACK_INFO();
 	objResultPtr = Tcl_GetReturnOptions(interp, result);
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
 
@@ -6069,13 +5653,12 @@ TEBCresume(
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		NEXT_INST_V(5, opnd+1, 1);
 	    }
-	    DECACHE_STACK_INFO();
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "key \"%s\" not known in dictionary",
 		    TclGetString(OBJ_AT_TOS)));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		    TclGetString(OBJ_AT_TOS), NULL);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
 	} else {
 	    if (*pc == INST_DICT_EXISTS) {
@@ -6105,9 +5688,8 @@ TEBCresume(
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
 	} else {
-	    DECACHE_STACK_INFO();
 	    dictPtr = TclPtrGetVar(interp, varPtr, NULL,NULL,NULL, 0, opnd2);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	}
 	if (dictPtr == NULL) {
 	    TclNewObj(dictPtr);
@@ -6179,10 +5761,9 @@ TEBCresume(
 	    objResultPtr = dictPtr;
 	} else {
 	    Tcl_IncrRefCount(dictPtr);
-	    DECACHE_STACK_INFO();
 	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
 		    dictPtr, TCL_LEAVE_ERR_MSG, opnd2);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    TclDecrRefCount(dictPtr);
 	    if (objResultPtr == NULL) {
 		TRACE_APPEND(("ERROR: %.30s\n",
@@ -6209,9 +5790,8 @@ TEBCresume(
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
 	} else {
-	    DECACHE_STACK_INFO();
 	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, NULL, NULL, 0, opnd);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	}
 	if (dictPtr == NULL) {
 	    TclNewObj(dictPtr);
@@ -6315,10 +5895,9 @@ TEBCresume(
 	    objResultPtr = dictPtr;
 	} else {
 	    Tcl_IncrRefCount(dictPtr);
-	    DECACHE_STACK_INFO();
 	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
 		    dictPtr, TCL_LEAVE_ERR_MSG, opnd);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    TclDecrRefCount(dictPtr);
 	    if (objResultPtr == NULL) {
 		TRACE_APPEND(("ERROR: %.30s\n",
@@ -6420,10 +5999,9 @@ TEBCresume(
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
 	} else {
-	    DECACHE_STACK_INFO();
 	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, NULL, NULL,
 		    TCL_LEAVE_ERR_MSG, opnd);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    if (dictPtr == NULL) {
 		goto gotError;
 	    }
@@ -6444,7 +6022,6 @@ TEBCresume(
 	    while (TclIsVarLink(varPtr)) {
 		varPtr = varPtr->value.linkPtr;
 	    }
-	    DECACHE_STACK_INFO();
 	    if (valuePtr == NULL) {
 		TclObjUnsetVar2(interp,
 			localName(iPtr->varFramePtr, duiPtr->varIndices[i]),
@@ -6452,10 +6029,10 @@ TEBCresume(
 	    } else if (TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
 		    valuePtr, TCL_LEAVE_ERR_MSG,
 		    duiPtr->varIndices[i]) == NULL) {
-		CACHE_STACK_INFO();
+		checkInterp = 1;
 		goto gotError;
 	    }
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	}
 	NEXT_INST_F(9, 0, 0);
 
@@ -6471,9 +6048,8 @@ TEBCresume(
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
 	} else {
-	    DECACHE_STACK_INFO();
 	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, NULL, NULL, 0, opnd);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	}
 	if (dictPtr == NULL) {
 	    NEXT_INST_F(9, 1, 0);
@@ -6499,10 +6075,9 @@ TEBCresume(
 	    if (TclIsVarDirectReadable(var2Ptr)) {
 		valuePtr = var2Ptr->value.objPtr;
 	    } else {
-		DECACHE_STACK_INFO();
 		valuePtr = TclPtrGetVar(interp, var2Ptr, NULL, NULL, NULL, 0,
 			duiPtr->varIndices[i]);
-		CACHE_STACK_INFO();
+		checkInterp = 1;
 	    }
 	    if (valuePtr == NULL) {
 		Tcl_DictObjRemove(interp, dictPtr, keyPtrPtr[i]);
@@ -6518,10 +6093,9 @@ TEBCresume(
 	    TclDecrRefCount(varPtr->value.objPtr);
 	    varPtr->value.objPtr = dictPtr;
 	} else {
-	    DECACHE_STACK_INFO();
 	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
 		    dictPtr, TCL_LEAVE_ERR_MSG, opnd);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	    if (objResultPtr == NULL) {
 		if (allocdict) {
 		    TclDecrRefCount(dictPtr);
@@ -6566,10 +6140,8 @@ TEBCresume(
 	    TclDecrRefCount(keysPtr);
 	    goto gotError;
 	}
-	DECACHE_STACK_INFO();
 	result = TclDictWithFinish(interp, varPtr,arrayPtr,varNamePtr,NULL,-1,
 		objc, objv, keysPtr);
-	CACHE_STACK_INFO();
 	TclDecrRefCount(keysPtr);
 	if (result != TCL_OK) {
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
@@ -6592,10 +6164,8 @@ TEBCresume(
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
-	DECACHE_STACK_INFO();
 	result = TclDictWithFinish(interp, varPtr, NULL, NULL, NULL, opnd,
 		objc, objv, keysPtr);
-	CACHE_STACK_INFO();
 	if (result != TCL_OK) {
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    goto gotError;
@@ -6709,10 +6279,9 @@ TEBCresume(
 	 */
 
     divideByZero:
-	DECACHE_STACK_INFO();
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
+	Tcl_SetResult(interp, "divide by zero", TCL_STATIC);
 	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
-	CACHE_STACK_INFO();
+	checkInterp = 1;	
 	goto gotError;
 
 	/*
@@ -6721,12 +6290,11 @@ TEBCresume(
 	 */
 
     exponOfZero:
-	DECACHE_STACK_INFO();
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"exponentiation of zero by negative power", -1));
+	Tcl_SetResult(interp, "exponentiation of zero by negative power",
+		TCL_STATIC);
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"exponentiation of zero by negative power", NULL);
-	CACHE_STACK_INFO();
+	checkInterp = 1;
 
 	/*
 	 * Almost all error paths feed through here rather than assigning to
@@ -6752,10 +6320,9 @@ TEBCresume(
 	    const unsigned char *pcBeg;
 
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length, &pcBeg);
-	    DECACHE_STACK_INFO();
 	    TclLogCommandInfo(interp, codePtr->source, bytes,
 		    bytes ? length : 0, pcBeg, tosPtr);
-	    CACHE_STACK_INFO();
+	    checkInterp = 1;
 	}
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
@@ -6765,9 +6332,8 @@ TEBCresume(
 	 */
 
 	while (auxObjList) {
-	    if ((catchTop != initCatchTop)
-		    && (*catchTop > (ptrdiff_t)
-			auxObjList->internalRep.ptrAndLongRep.value)) {
+	    if ((catchDepth >=0) && (PTR2INT(catchStack[catchDepth]) >
+		        PTR2INT(auxObjList->internalRep.twoPtrValue.ptr1))) {
 		break;
 	    }
 	    POP_TAUX_OBJ();
@@ -6807,7 +6373,7 @@ TEBCresume(
 #endif
 	    goto abnormalReturn;
 	}
-	if (catchTop == initCatchTop) {
+	if (catchDepth == -1) {
 #ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
 		fprintf(stdout, "   ... no enclosing catch, returning %s\n",
@@ -6842,16 +6408,16 @@ TEBCresume(
 	 */
 
     processCatch:
-	while (CURR_DEPTH > *catchTop) {
+	while (CURR_DEPTH > PTR2INT(catchStack[catchDepth])) {
 	    valuePtr = POP_OBJECT();
 	    TclDecrRefCount(valuePtr);
 	}
 #ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
-	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
+	    fprintf(stdout, "  ... found catch at %d, catchDepth=%d, "
 		    "unwound to %ld, new pc %u\n",
-		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
-		    (long) *catchTop, (unsigned) rangePtr->catchOffset);
+		    rangePtr->codeOffset, (int) catchDepth,
+		    PTR2INT(catchStack[catchDepth]), (unsigned) rangePtr->catchOffset);
 	}
 #endif
 	pc = (codePtr->codeStart + rangePtr->catchOffset);
@@ -6899,7 +6465,7 @@ TEBCresume(
     if (--codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
-    TclStackFree(interp, TD);	/* free my stack */
+    ckfree(TD);	/* free my stack */
 
     return result;
 }
@@ -6908,7 +6474,7 @@ TEBCresume(
 #undef iPtr
 #undef initTosPtr
 #undef auxObjList
-#undef catchTop
+#undef catchDepth
 #undef TCONST
 
 /*

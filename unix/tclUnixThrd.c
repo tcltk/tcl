@@ -674,12 +674,11 @@ TclpInetNtoa(
 #endif
 }
 
-#ifdef TCL_THREADS
+#if defined(TCL_THREADS)
 /*
  * Additions by AOL for specialized thread memory allocator.
  */
 
-#ifdef USE_THREAD_ALLOC
 static volatile int initialized = 0;
 static pthread_key_t key;
 
@@ -715,6 +714,7 @@ TclpFreeAllocMutex(
     pthread_mutex_destroy(&lockPtr->plock);
     free(lockPtr);
 }
+
 
 void
 TclpFreeAllocCache(
@@ -758,8 +758,9 @@ TclpSetAllocCache(
 {
     pthread_setspecific(key, arg);
 }
-#endif /* USE_THREAD_ALLOC */
+#endif
 
+#ifdef TCL_THREADS
 void *
 TclpThreadCreateKey(void)
 {

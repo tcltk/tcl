@@ -1142,11 +1142,9 @@ NewAssemblyEnv(
 				 * generation*/
     int flags)			/* Compilation flags (TCL_EVAL_DIRECT) */
 {
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
-				/* Tcl interpreter */
-    AssemblyEnv* assemEnvPtr = TclStackAlloc(interp, sizeof(AssemblyEnv));
+    AssemblyEnv* assemEnvPtr = ckalloc(sizeof(AssemblyEnv));
 				/* Assembler environment under construction */
-    Tcl_Parse* parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse* parsePtr = ckalloc(sizeof(Tcl_Parse));
 				/* Parse of one line of assembly code */
 
     assemEnvPtr->envPtr = envPtr;
@@ -1190,11 +1188,6 @@ static void
 FreeAssemblyEnv(
     AssemblyEnv* assemEnvPtr)	/* Environment to free */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
-				/* Compilation environment being used for code
-				 * generation */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
-				/* Tcl interpreter */
     BasicBlock* thisBB;		/* Pointer to a basic block being deleted */
     BasicBlock* nextBB;		/* Pointer to a deleted basic block's
 				 * successor */
@@ -1223,8 +1216,8 @@ FreeAssemblyEnv(
      */
 
     Tcl_DeleteHashTable(&assemEnvPtr->labelHash);
-    TclStackFree(interp, assemEnvPtr->parsePtr);
-    TclStackFree(interp, assemEnvPtr);
+    ckfree(assemEnvPtr->parsePtr);
+    ckfree(assemEnvPtr);
 }
 
 /*

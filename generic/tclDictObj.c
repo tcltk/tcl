@@ -2400,14 +2400,14 @@ DictForNRCmd(
 		"must have exactly two variable names", -1));
 	return TCL_ERROR;
     }
-    searchPtr = TclStackAlloc(interp, sizeof(Tcl_DictSearch));
+    searchPtr = ckalloc(sizeof(Tcl_DictSearch));
     if (Tcl_DictObjFirst(interp, objv[2], searchPtr, &keyObj, &valueObj,
 	    &done) != TCL_OK) {
-	TclStackFree(interp, searchPtr);
+	ckfree(searchPtr);
 	return TCL_ERROR;
     }
     if (done) {
-	TclStackFree(interp, searchPtr);
+	ckfree(searchPtr);
 	return TCL_OK;
     }
     TclListObjGetElements(NULL, objv[1], &varc, &varv);
@@ -2457,7 +2457,7 @@ DictForNRCmd(
     TclDecrRefCount(valueVarObj);
     TclDecrRefCount(scriptObj);
     Tcl_DictObjDone(searchPtr);
-    TclStackFree(interp, searchPtr);
+    ckfree(searchPtr);
     return TCL_ERROR;
 }
 
@@ -2538,7 +2538,7 @@ DictForLoopCallback(
     TclDecrRefCount(valueVarObj);
     TclDecrRefCount(scriptObj);
     Tcl_DictObjDone(searchPtr);
-    TclStackFree(interp, searchPtr);
+    ckfree(searchPtr);
     return result;
 }
 
@@ -2589,10 +2589,10 @@ DictMapNRCmd(
 		"must have exactly two variable names", -1));
 	return TCL_ERROR;
     }
-    storagePtr = TclStackAlloc(interp, sizeof(DictMapStorage));
+    storagePtr = ckalloc(sizeof(DictMapStorage));
     if (Tcl_DictObjFirst(interp, objv[2], &storagePtr->search, &keyObj,
 	    &valueObj, &done) != TCL_OK) {
-	TclStackFree(interp, storagePtr);
+	ckfree(storagePtr);
 	return TCL_ERROR;
     }
     if (done) {
@@ -2602,7 +2602,7 @@ DictMapNRCmd(
 	 * an empty dictionary.
 	 */
 
-	TclStackFree(interp, storagePtr);
+	ckfree(storagePtr);
 	return TCL_OK;
     }
     TclNewObj(storagePtr->accumulatorObj);
@@ -2657,7 +2657,7 @@ DictMapNRCmd(
     TclDecrRefCount(storagePtr->scriptObj);
     TclDecrRefCount(storagePtr->accumulatorObj);
     Tcl_DictObjDone(&storagePtr->search);
-    TclStackFree(interp, storagePtr);
+    ckfree(storagePtr);
     return TCL_ERROR;
 }
 
@@ -2745,7 +2745,7 @@ DictMapLoopCallback(
     TclDecrRefCount(storagePtr->scriptObj);
     TclDecrRefCount(storagePtr->accumulatorObj);
     Tcl_DictObjDone(&storagePtr->search);
-    TclStackFree(interp, storagePtr);
+    ckfree(storagePtr);
     return result;
 }
 

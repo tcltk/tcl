@@ -34,9 +34,9 @@ interface tclInt
 #declare 2 {
 #    int TclAccessInsertProc(TclAccessProc_ *proc)
 #}
-declare 3 {
-    void TclAllocateFreeObjects(void)
-}
+#declare 3 {
+#    void TclAllocateFreeObjects(void)
+#}
 # Replaced by TclpChdir in 8.1:
 #  declare 4 {
 #      int TclChdir(Tcl_Interp *interp, char *dirName)
@@ -289,9 +289,9 @@ declare 64 {
 #declare 68 {
 #    int TclpAccess(const char *path, int mode)
 #}
-declare 69 {
-    char *TclpAlloc(unsigned int size)
-}
+#declare 69 {
+#    char *TclpAlloc(unsigned int size)
+#}
 #declare 70 {
 #    int TclpCopyFile(const char *source, const char *dest)
 #}
@@ -305,9 +305,9 @@ declare 69 {
 #declare 73 {
 #    int TclpDeleteFile(const char *path)
 #}
-declare 74 {
-    void TclpFree(char *ptr)
-}
+#declare 74 {
+#    void TclpFree(char *ptr)
+#}
 declare 75 {
     unsigned long TclpGetClicks(void)
 }
@@ -332,9 +332,9 @@ declare 77 {
 #    Tcl_Channel TclpOpenFileChannel(Tcl_Interp *interp, char *fileName,
 #	    char *modeString, int permissions)
 #}
-declare 81 {
-    char *TclpRealloc(char *ptr, unsigned int size)
-}
+#declare 81 {
+#    char *TclpRealloc(char *ptr, unsigned int size)
+#}
 #declare 82 {
 #    int TclpRemoveDirectory(const char *path, int recursive,
 #	    Tcl_DString *errorPtr)
@@ -870,12 +870,12 @@ declare 213 {
 declare 214 {
     void TclSetObjNameOfExecutable(Tcl_Obj *name, Tcl_Encoding encoding)
 }
-declare 215 {
-    void *TclStackAlloc(Tcl_Interp *interp, int numBytes)
-}
-declare 216 {
-    void TclStackFree(Tcl_Interp *interp, void *freePtr)
-}
+#declare 215 {
+#    void *TclStackAlloc(Tcl_Interp *interp, unsigned int numBytes)
+#}
+#declare 216 {
+#    void TclStackFree(Tcl_Interp *interp, void *freePtr)
+#}
 declare 217 {
     int TclPushStackFrame(Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr,
             Tcl_Namespace *namespacePtr, int isProcCallFrame)
@@ -894,9 +894,9 @@ declare 225 {
     Tcl_Obj *TclTraceDictPath(Tcl_Interp *interp, Tcl_Obj *rootPtr,
 	    int keyc, Tcl_Obj *const keyv[], int flags)
 }
-declare 226 {
-    int TclObjBeingDeleted(Tcl_Obj *objPtr)
-}
+#declare 226 {
+#    int TclObjBeingDeleted(Tcl_Obj *objPtr)
+#}
 declare 227 {
     void TclSetNsPath(Namespace *nsPtr, int pathLength,
             Tcl_Namespace *pathAry[])

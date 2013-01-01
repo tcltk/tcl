@@ -192,7 +192,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 0 */
     0, /* 1 */
     0, /* 2 */
-    TclAllocateFreeObjects, /* 3 */
+    0, /* 3 */
     0, /* 4 */
     TclCleanupChildren, /* 5 */
     TclCleanupCommand, /* 6 */
@@ -258,19 +258,19 @@ static const TclIntStubs tclIntStubs = {
     0, /* 66 */
     0, /* 67 */
     0, /* 68 */
-    TclpAlloc, /* 69 */
+    0, /* 69 */
     0, /* 70 */
     0, /* 71 */
     0, /* 72 */
     0, /* 73 */
-    TclpFree, /* 74 */
+    0, /* 74 */
     TclpGetClicks, /* 75 */
     TclpGetSeconds, /* 76 */
     TclpGetTime, /* 77 */
     0, /* 78 */
     0, /* 79 */
     0, /* 80 */
-    TclpRealloc, /* 81 */
+    0, /* 81 */
     0, /* 82 */
     0, /* 83 */
     0, /* 84 */
@@ -404,8 +404,8 @@ static const TclIntStubs tclIntStubs = {
     TclpFindExecutable, /* 212 */
     TclGetObjNameOfExecutable, /* 213 */
     TclSetObjNameOfExecutable, /* 214 */
-    TclStackAlloc, /* 215 */
-    TclStackFree, /* 216 */
+    0, /* 215 */
+    0, /* 216 */
     TclPushStackFrame, /* 217 */
     TclPopStackFrame, /* 218 */
     0, /* 219 */
@@ -415,7 +415,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 223 */
     TclGetPlatform, /* 224 */
     TclTraceDictPath, /* 225 */
-    TclObjBeingDeleted, /* 226 */
+    0, /* 226 */
     TclSetNsPath, /* 227 */
     0, /* 228 */
     TclPtrMakeUpvar, /* 229 */

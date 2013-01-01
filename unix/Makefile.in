@@ -305,7 +305,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
 	tclStrToD.o tclThread.o \
-	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
+	tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
 	tclTomMathInterface.o \
 	tclAssembly.o
@@ -447,7 +447,6 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclTestObj.c \
 	$(GENERIC_DIR)/tclTestProcBodyObj.c \
 	$(GENERIC_DIR)/tclThread.c \
-	$(GENERIC_DIR)/tclThreadAlloc.c \
 	$(GENERIC_DIR)/tclThreadJoin.c \
 	$(GENERIC_DIR)/tclThreadStorage.c \
 	$(GENERIC_DIR)/tclTimer.c \
@@ -1295,9 +1294,6 @@ tclTimer.o: $(GENERIC_DIR)/tclTimer.c
 
 tclThread.o: $(GENERIC_DIR)/tclThread.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThread.c
-
-tclThreadAlloc.o: $(GENERIC_DIR)/tclThreadAlloc.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadAlloc.c
 
 tclThreadJoin.o: $(GENERIC_DIR)/tclThreadJoin.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadJoin.c

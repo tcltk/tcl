@@ -1,154 +1,328 @@
 /*
  * tclAlloc.c --
  *
- *	This is a very fast storage allocator. It allocates blocks of a small
- *	number of different sizes, and keeps free lists of each size. Blocks
- *	that don't exactly fit are passed up to the next larger size. Blocks
- *	over a certain size are directly allocated from the system.
+ *      This is a very flexible storage allocator for Tcl, for use with or
+ *      without threads. Depending on the value of TCL_ALLOCATOR it compiles
+ *      as: 
  *
- * Copyright (c) 1983 Regents of the University of California.
- * Copyright (c) 1996-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ *      (1) aPURIFY
+ *          A purify build, use the native malloc for all allocs including
+ *          Tcl_Objs  
  *
- * Portions contributed by Chris Kingsley, Jack Jansen and Ray Johnson.
+ *      (2) aNATIVE
+ *          Use the native malloc and a per-thread Tcl_Obj pool, with 
+ *          inter-thread recycling of objects. 
+ *          TODO: in this case build ZIPPY as a preloadable malloc-replacement?           
+ *
+ *      (3) aZIPPY
+ *          use the ex-tclThreadAlloc, essentially aolserver's fast threaded
+ *          allocator. Mods with respect to the original: 
+ *            - split blocks in the shared pool before mallocing again for
+ *              improved cache usage
+ *            - stats and Tcl_GetMemoryInfo disabled per default, enable with
+ *              -DZIPPY_STATS
+ *            - adapt for unthreaded usage as replacement of the ex tclAlloc
+ *            - -DHAVE_FAST_TSD: use fast TSD via __thread where available
+ *            - (TODO!) build zippy as a pre-loadable library to use with a
+ *              native build as a malloc replacement. Difficulty is to make it
+ *              portable (easy enough on modern elf/unix, to be researched on
+ *              win and mac . This would be the best option, instead of
+ *              MULTI. It could be built in two versions (perf, debug/stats)
+ *
+ *      (4) aMULTI
+ *          all of the above, selectable at startup with an env var. This
+ *          build will be slightly slower than the specific builds above.
+ *
+ * All variants can be built for both threaded and unthreaded Tcl.
+ *
+ * The Initial Developer of the Original Code is America Online, Inc.
+ * Portions created by AOL are Copyright (C) 1999 America Online, Inc.
+ *
+ * Copyright (c) 2008-2011 by Miguel Sofer. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-/*
- * Windows and Unix use an alternative allocator when building with threads
- * that has significantly reduced lock contention.
- */
-
 #include "tclInt.h"
-#if !defined(TCL_THREADS) || !defined(USE_THREAD_ALLOC)
 
-#if USE_TCLALLOC
+#undef TclpAlloc
+#undef TclpRealloc
+#undef TclpFree
+#undef TclSmallAlloc
+#undef TclSmallFree
+
+#if !USE_ZIPPY
+/*
+ * Not much of this file is needed, most things are dealt with in the
+ * macros. Just shunt the allocators for use by the library, the core
+ * never calls this.
+ *
+ * This is all that is needed for a TCL_ALLOC_PURIFY build, a native build
+ * needs the Tcl_Obj pools too.
+ */
+   
+char *
+TclpAlloc(
+    unsigned int reqSize)
+{
+    return malloc(reqSize);
+}
+
+char *
+TclpRealloc(  
+    char *ptr,
+    unsigned int reqSize)
+{
+    return realloc(ptr, reqSize);
+}
+
+void
+TclpFree(
+    char *ptr)
+{
+    free(ptr);
+}
+
+#endif /* !USE_ZIPPY, this is end of code for aPURIFY */
+
+
+#if USE_OBJQ
 
 /*
- * We should really make use of AC_CHECK_TYPE(caddr_t) here, but it can wait
- * until Tcl uses config.h properly.
+ * Parameters for the per-thread Tcl_Obj cache
+ * Actual definition of NOBJHIGH moved to tclInt.h to be used in macros
  */
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__BORLANDC__)
-typedef unsigned long caddr_t;
-#endif
+#define NOBJHIGH	ALLOC_NOBJHIGH
+#define NOBJALLOC	((NOBJHIGH*2)/3)
+
 
 /*
- * The overhead on a block is at least 8 bytes. When free, this space contains
- * a pointer to the next free block, and the bottom two bits must be zero.
- * When in use, the first byte is set to MAGIC, and the second byte is the
- * size index. The remaining bytes are for alignment. If range checking is
- * enabled then a second word holds the size of the requested block, less 1,
- * rounded up to a multiple of sizeof(RMAGIC). The order of elements is
- * critical: ov.magic must overlay the low order bits of ov.next, and ov.magic
- * can not be a valid ov.next bit pattern.
+ * Advance some defs that are relevant for ZIPPY an MULTI, in order to use
+ * them in macro and struct definitions
  */
 
-union overhead {
-    union overhead *next;		/* when free */
-    unsigned char padding[TCL_ALLOCALIGN];	/* align struct to TCL_ALLOCALIGN bytes */
-    struct {
-	unsigned char magic0;		/* magic number */
-	unsigned char index;		/* bucket # */
-	unsigned char unused;		/* unused */
-	unsigned char magic1;		/* other magic number */
-#ifndef NDEBUG
-	unsigned short rmagic;		/* range magic number */
-	unsigned long size;		/* actual block size */
-	unsigned short unused2;		/* padding to 8-byte align */
-#endif
-    } ovu;
-#define overMagic0	ovu.magic0
-#define overMagic1	ovu.magic1
-#define bucketIndex	ovu.index
-#define rangeCheckMagic	ovu.rmagic
-#define realBlockSize	ovu.size
-};
+#if USE_ZIPPY
+/*
+ * This macro is used to properly align the memory allocated by Tcl, giving
+ * the same alignment as the native malloc.
+ */
 
-
-#define MAGIC		0xef	/* magic # on accounting info */
-#define RMAGIC		0x5555	/* magic # on range info */
-
-#ifndef NDEBUG
-#define	RSLOP		sizeof(unsigned short)
+#if defined(__APPLE__)
+#define TCL_ALLOCALIGN	16
 #else
-#define	RSLOP		0
+#define TCL_ALLOCALIGN	(2*sizeof(void *))
 #endif
 
-#define OVERHEAD (sizeof(union overhead) + RSLOP)
+#define ALIGN(x)    (((x) + TCL_ALLOCALIGN - 1) & ~(TCL_ALLOCALIGN - 1))
 
 /*
- * Macro to make it easier to refer to the end-of-block guard magic.
+ * The following struct stores accounting information for each block including
+ * two small magic numbers and a bucket number when in use or a next pointer
+ * when free. The original requested size (not including the Block overhead)
+ * is also maintained.
  */
 
-#define BLOCK_END(overPtr) \
-    (*(unsigned short *)((caddr_t)((overPtr) + 1) + (overPtr)->realBlockSize))
+typedef struct Block {
+    union {
+	struct Block *next;		/* Next in free list. */
+	struct {
+	    unsigned char magic1;	/* First magic number. */
+	    unsigned char bucket;	/* Bucket block allocated from. */
+	    unsigned char inUse;	/* Block memory currently in use, see
+					 * details in TclpAlloc/Realloc. */
+	    unsigned char magic2;	/* Second magic number. */
+	} s;
+    } u;
+    long refCount;
+} Block;
+
+#define OFFSET      ALIGN(sizeof(Block))
+
+#define nextBlock	u.next
+#define sourceBucket	u.s.bucket
+#define magicNum1	u.s.magic1
+#define magicNum2	u.s.magic2
+#define used	        u.s.inUse
+#define MAGIC		0xEF
 
 /*
- * nextf[i] is the pointer to the next free block of size 2^(i+3). The
- * smallest allocatable block is MINBLOCK bytes. The overhead information
- * precedes the data area returned to the user.
+ * The following defines the minimum and maximum block sizes and the number
+ * of buckets in the bucket cache.
+ *                        32b    64b    Apple-32b(?)
+ *     TCL_ALLOCALIGN       8     16       16
+ *     sizeof(Block)        8     16       16
+ *     OFFSET               8     16       16
+ *     MINALLOC            16     32       32
+ *     NBUCKETS            11     10       10
+ *     MAXALLOC         16384  16384    16384
+ *     small allocs      1024    512     1024
+ *        at a time
  */
 
-#define MINBLOCK	((sizeof(union overhead) + (TCL_ALLOCALIGN-1)) & ~(TCL_ALLOCALIGN-1))
-#define NBUCKETS	(13 - (MINBLOCK >> 4))
-#define MAXMALLOC	(1<<(NBUCKETS+2))
-static union overhead *nextf[NBUCKETS];
+#define MINALLOC    ALIGN(OFFSET+8)
+#define NBUCKETS    (11 - (MINALLOC >> 5))
+#define MAXALLOC    (MINALLOC << (NBUCKETS - 1))
 
 /*
- * The following structure is used to keep track of all system memory
- * currently owned by Tcl. When finalizing, all this memory will be returned
- * to the system.
+ * The following structure defines a bucket of blocks, optionally with various
+ * accounting and statistics information.
  */
 
-struct block {
-    struct block *nextPtr;	/* Linked list. */
-    struct block *prevPtr;	/* Linked list for big blocks, ensures 8-byte
-				 * alignment for suballocated blocks. */
-};
+typedef struct Bucket {
+    Block *firstPtr;		/* First block available */
+    long numFree;		/* Number of blocks available */
+#ifdef ZIPPY_STATS
+    /* All fields below for accounting only */
 
-static struct block *blockList;	/* Tracks the suballocated blocks. */
-static struct block bigBlocks={	/* Big blocks aren't suballocated. */
-    &bigBlocks, &bigBlocks
-};
-
-/*
- * The allocator is protected by a special mutex that must be explicitly
- * initialized. Futhermore, because Tcl_Alloc may be used before anything else
- * in Tcl, we make this module self-initializing after all with the allocInit
- * variable.
- */
-
-#ifdef TCL_THREADS
-static Tcl_Mutex *allocMutexPtr;
+    long numRemoves;		/* Number of removes from bucket */
+    long numInserts;		/* Number of inserts into bucket */
+    long numWaits;		/* Number of waits to acquire a lock */
+    long numLocks;		/* Number of locks acquired */
 #endif
-static int allocInit = 0;
-
-#ifdef MSTATS
+} Bucket;
 
 /*
- * numMallocs[i] is the difference between the number of mallocs and frees for
- * a given block size.
+ * The following array specifies various per-bucket limits and locks. The
+ * values are statically initialized to avoid calculating them repeatedly.
  */
 
-static	unsigned int numMallocs[NBUCKETS+1];
+static struct {
+    size_t blockSize;		/* Bucket blocksize. */
+    int shift;
+#if defined(TCL_THREADS)
+    int maxBlocks;		/* Max blocks before move to share. */
+    int numMove;		/* Num blocks to move to share. */
+    Tcl_Mutex *lockPtr;		/* Share bucket lock. */
 #endif
+} bucketInfo[NBUCKETS];
 
-#if !defined(NDEBUG)
-#define	ASSERT(p)	if (!(p)) Tcl_Panic(# p)
-#define RANGE_ASSERT(p) if (!(p)) Tcl_Panic(# p)
+#endif /* Advanced USE_ZIPPY definitions, back to common code */
+
+
+/*
+ * The Tcl_Obj per-thread cache, used by aNATIVE, aZIPPY and aMULTI.
+ */
+
+typedef struct Cache {
+    Tcl_Obj *firstObjPtr;	/* List of free objects for thread */
+    int numObjects;		/* Number of objects for thread */
+#if defined(TCL_THREADS)
+    struct Cache *nextPtr;	/* Linked list of cache entries */
+#endif
+#if USE_ZIPPY
+#if defined(TCL_THREADS)
+    Tcl_ThreadId owner;		/* Which thread's cache is this? */
+#endif
+    Bucket buckets[NBUCKETS];	/* The buckets for this thread */
+#endif /* USE_ZIPPY, ie TCL_ALLOCATOR != aNATIVE */
+} Cache;
+
+static Cache sharedCache;
+#define sharedPtr (&sharedCache)
+
+#if defined(TCL_THREADS)
+static Tcl_Mutex *objLockPtr;
+static Tcl_Mutex *listLockPtr;
+static Cache *firstCachePtr = &sharedCache;
+
+static Cache *	GetCache(void);
+static void	MoveObjs(Cache *fromPtr, Cache *toPtr, int numMove);
+
+#if defined(HAVE_FAST_TSD)
+static __thread Cache *tcachePtr;
+
+# define GETCACHE(cachePtr)			\
+    do {					\
+	if (!tcachePtr) {			\
+	    tcachePtr = GetCache();		\
+	}					\
+	(cachePtr) = tcachePtr;			\
+    } while (0)
+
+#else /* THREADS, not HAVE_FAST_TSD */
+# define GETCACHE(cachePtr)			\
+    do {					\
+	(cachePtr) = TclpGetAllocCache();	\
+	if ((cachePtr) == NULL) {		\
+	    (cachePtr) = GetCache();		\
+	}					\
+    } while (0)
+#endif /* FAST TSD */
+
+#else /* NOT THREADS */
+#define GETCACHE(cachePtr)			\
+    (cachePtr) = (&sharedCache)
+#endif /* THREADS */
+
+#if USE_ZIPPY
+static void InitBucketInfo(void);
+static inline char * Block2Ptr(Block *blockPtr,
+	int bucket, unsigned int reqSize);
+static inline Block * Ptr2Block(char *ptr);
+
+static int  GetBlocks(Cache *cachePtr, int bucket);
+
+#if (TCL_THREADS)
+static void PutBlocks(Cache *cachePtr, int bucket, int numMove);
+static void LockBucket(Cache *cachePtr, int bucket);
+static void UnlockBucket(Cache *cachePtr, int bucket);
 #else
-#define	ASSERT(p)
-#define RANGE_ASSERT(p)
+#define PutBlocks(cachePtr, bucket, numMove)
 #endif
 
+#if TCL_ALLOCATOR == aMULTI
+static int allocator;
+static void ChooseAllocator();
+#endif
+
+#endif /* USE_ZIPPY */
+
 /*
- * Prototypes for functions used only in this file.
+ *----------------------------------------------------------------------
+ *
+ * GetCache ---
+ *
+ *	Gets per-thread memory cache, allocating it if necessary.
+ *
+ * Results:
+ *	Pointer to cache.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
  */
 
-static void		MoreCore(int bucket);
+#if defined(TCL_THREADS)
+static Cache *
+GetCache(void)
+{
+    Cache *cachePtr;
+
+    /*
+     * Get this thread's cache, allocating if necessary.
+     */
+
+    cachePtr = TclpGetAllocCache();
+    if (cachePtr == NULL) {
+	cachePtr = calloc(1, sizeof(Cache));
+	if (cachePtr == NULL) {
+	    Tcl_Panic("alloc: could not allocate new cache");
+	}
+	Tcl_MutexLock(listLockPtr);
+	cachePtr->nextPtr = firstCachePtr;
+	firstCachePtr = cachePtr;
+	Tcl_MutexUnlock(listLockPtr);
+#if  USE_ZIPPY && defined(ZIPPY_STATS)
+	cachePtr->owner = Tcl_GetCurrentThread();
+#endif
+	TclpSetAllocCache(cachePtr);
+    }
+    return cachePtr;
+}
+#endif
 
 /*
  *-------------------------------------------------------------------------
@@ -166,71 +340,410 @@ static void		MoreCore(int bucket);
  *-------------------------------------------------------------------------
  */
 
-void
-TclInitAlloc(void)
+#if USE_ZIPPY
+static void
+InitBucketInfo ()
 {
-    if (!allocInit) {
-	allocInit = 1;
-#ifdef TCL_THREADS
-	allocMutexPtr = Tcl_GetAllocMutex();
+    int i;
+    int shift = 0;
+    
+    for (i = 0; i < NBUCKETS; ++i) {
+	bucketInfo[i].blockSize = MINALLOC << i;
+	while (((bucketInfo[i].blockSize -OFFSET) >> shift) > 255) {
+	    ++shift;
+	}
+	bucketInfo[i].shift = shift;
+#if defined(TCL_THREADS)
+	/* TODO: clearer logic? Change move to keep? */
+	bucketInfo[i].maxBlocks = 1 << (NBUCKETS - 1 - i);
+	bucketInfo[i].numMove = i < NBUCKETS - 1 ?
+	    1 << (NBUCKETS - 2 - i) : 1;
+	bucketInfo[i].lockPtr = TclpNewAllocMutex();
 #endif
     }
 }
+#endif
+
+void
+TclInitAlloc(void)
+{
+    /*
+     * Set the params for the correct allocator
+     */
+
+#if defined(TCL_THREADS)
+    if (listLockPtr == NULL) {
+	Tcl_Mutex *initLockPtr;
+	initLockPtr = Tcl_GetAllocMutex();
+	Tcl_MutexLock(initLockPtr);
+	if (listLockPtr == NULL) {
+	    listLockPtr = TclpNewAllocMutex();
+	    objLockPtr = TclpNewAllocMutex();
+#if USE_ZIPPY
+	    InitBucketInfo();
+#endif
+	}
+	Tcl_MutexUnlock(initLockPtr);
+    }
+#elif USE_ZIPPY
+    InitBucketInfo();
+#endif /* THREADS */
+
+#if TCL_ALLOCATOR == aMULTI
+    ChooseAllocator();
+#endif
+}
 
 /*
- *-------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
- * TclFinalizeAllocSubsystem --
+ * TclFinalizeAlloc --
  *
- *	Release all resources being used by this subsystem, including
- *	aggressively freeing all memory allocated by TclpAlloc() that has not
- *	yet been released with TclpFree().
- *
- *	After this function is called, all memory allocated with TclpAlloc()
- *	should be considered unusable.
+ *	This procedure is used to destroy all private resources used in this
+ *	file.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	This subsystem is self-initializing, since memory can be allocated
- *	before Tcl is formally initialized. After this call, this subsystem
- *	has been reset to its initial state and is usable again.
+ *	None.
  *
- *-------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
 void
-TclFinalizeAllocSubsystem(void)
+TclFinalizeAlloc(void)
 {
+#if defined(TCL_THREADS)
+
+#if USE_ZIPPY
     unsigned int i;
-    struct block *blockPtr, *nextPtr;
 
-    Tcl_MutexLock(allocMutexPtr);
-    for (blockPtr = blockList; blockPtr != NULL; blockPtr = nextPtr) {
-	nextPtr = blockPtr->nextPtr;
-	TclpSysFree(blockPtr);
+    for (i = 0; i < NBUCKETS; ++i) {
+	TclpFreeAllocMutex(bucketInfo[i].lockPtr);
+	bucketInfo[i].lockPtr = NULL;
     }
-    blockList = NULL;
-
-    for (blockPtr = bigBlocks.nextPtr; blockPtr != &bigBlocks; ) {
-	nextPtr = blockPtr->nextPtr;
-	TclpSysFree(blockPtr);
-	blockPtr = nextPtr;
-    }
-    bigBlocks.nextPtr = &bigBlocks;
-    bigBlocks.prevPtr = &bigBlocks;
-
-    for (i=0 ; i<NBUCKETS ; i++) {
-	nextf[i] = NULL;
-#ifdef MSTATS
-	numMallocs[i] = 0;
 #endif
-    }
-#ifdef MSTATS
-    numMallocs[i] = 0;
+    
+    TclpFreeAllocMutex(objLockPtr);
+    objLockPtr = NULL;
+
+    TclpFreeAllocMutex(listLockPtr);
+    listLockPtr = NULL;
+
+    TclpFreeAllocCache(NULL);
 #endif
-    Tcl_MutexUnlock(allocMutexPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFreeAllocCache --
+ *
+ *	Flush and delete a cache, removing from list of caches.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#if defined(TCL_THREADS)
+void
+TclFreeAllocCache(
+    void *arg)
+{
+    Cache *cachePtr = arg;
+    Cache **nextPtrPtr;
+#if USE_ZIPPY
+    register unsigned int bucket;
+
+    /*
+     * Flush blocks.
+     */
+
+    for (bucket = 0; bucket < NBUCKETS; ++bucket) {
+	if (cachePtr->buckets[bucket].numFree > 0) {
+	    PutBlocks(cachePtr, bucket, cachePtr->buckets[bucket].numFree);
+	}
+    }
+#endif
+    
+    /*
+     * Flush objs.
+     */
+
+    if (cachePtr->numObjects > 0) {
+	Tcl_MutexLock(objLockPtr);
+	MoveObjs(cachePtr, sharedPtr, cachePtr->numObjects);
+	Tcl_MutexUnlock(objLockPtr);
+    }
+
+    /*
+     * Remove from pool list.
+     */
+
+    Tcl_MutexLock(listLockPtr);
+    nextPtrPtr = &firstCachePtr;
+    while (*nextPtrPtr != cachePtr) {
+	nextPtrPtr = &(*nextPtrPtr)->nextPtr;
+    }
+    *nextPtrPtr = cachePtr->nextPtr;
+    cachePtr->nextPtr = NULL;
+    Tcl_MutexUnlock(listLockPtr);
+    free(cachePtr);
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSmallAlloc --
+ *
+ *	Allocate a Tcl_Obj sized block from the per-thread cache.
+ *
+ * Results:
+ *	Pointer to uninitialized memory.
+ *
+ * Side effects:
+ *	May move blocks from shared cached or allocate new blocks if
+ *	list is empty.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void *
+TclSmallAlloc(void)
+{
+    register Cache *cachePtr;
+    register Tcl_Obj *objPtr;
+    int numMove;
+    Tcl_Obj *newObjsPtr;
+   
+    GETCACHE(cachePtr);
+
+    /*
+     * Pop the first object.
+     */
+
+    if(cachePtr->firstObjPtr) {
+	haveObj:
+	objPtr = cachePtr->firstObjPtr;
+	cachePtr->firstObjPtr = objPtr->internalRep.otherValuePtr;
+	cachePtr->numObjects--;
+	return objPtr;
+    }
+
+#if TCL_ALLOCATOR == aMULTI
+    /*
+     * Do it AFTER looking at the queue, so that it doesn't slow down
+     * non-purify small allocs.
+     */
+    
+    if (allocator == aPURIFY) {
+	return (Tcl_Obj *) malloc(sizeof(Tcl_Obj));
+    }
+#endif
+    
+    /*
+     * Get this thread's obj list structure and move or allocate new objs if
+     * necessary.
+     */
+
+#if defined(TCL_THREADS)
+    Tcl_MutexLock(objLockPtr);
+    numMove = sharedPtr->numObjects;
+    if (numMove > 0) {
+	if (numMove > NOBJALLOC) {
+	    numMove = NOBJALLOC;
+	}
+	MoveObjs(sharedPtr, cachePtr, numMove);
+    }
+    Tcl_MutexUnlock(objLockPtr);
+    if (cachePtr->firstObjPtr) {
+	goto haveObj;
+    }
+#endif	
+    cachePtr->numObjects = numMove = NOBJALLOC;
+    newObjsPtr = malloc(sizeof(Tcl_Obj) * numMove);
+    if (newObjsPtr == NULL) {
+	Tcl_Panic("alloc: could not allocate %d new objects", numMove);
+    }
+    while (--numMove >= 0) {
+	objPtr = &newObjsPtr[numMove];
+	objPtr->internalRep.otherValuePtr = cachePtr->firstObjPtr;
+	cachePtr->firstObjPtr = objPtr;
+    }
+    goto haveObj;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSmallFree --
+ *
+ *	Return a free Tcl_Obj-sized block to the per-thread cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May move free blocks to shared list upon hitting high water mark.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclSmallFree(
+    void *ptr)
+{
+    Cache *cachePtr;
+    Tcl_Obj *objPtr = ptr;
+    
+#if TCL_ALLOCATOR == aMULTI
+    if (allocator == aPURIFY) {
+	free((char *) ptr);
+	return;
+    }
+#endif
+    
+    GETCACHE(cachePtr);
+
+    /*
+     * Get this thread's list and push on the free Tcl_Obj.
+     */
+
+    objPtr->internalRep.otherValuePtr = cachePtr->firstObjPtr;
+    cachePtr->firstObjPtr = objPtr;
+    cachePtr->numObjects++;
+
+#if defined(TCL_THREADS)
+    /*
+     * If the number of free objects has exceeded the high water mark, move
+     * some blocks to the shared list.
+     */
+
+    if (cachePtr->numObjects > NOBJHIGH) {
+	Tcl_MutexLock(objLockPtr);
+	MoveObjs(cachePtr, sharedPtr, NOBJALLOC);
+	Tcl_MutexUnlock(objLockPtr);
+    }
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MoveObjs --
+ *
+ *	Move Tcl_Obj's between caches.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#if defined(TCL_THREADS)
+static void
+MoveObjs(
+    Cache *fromPtr,
+    Cache *toPtr,
+    int numMove)
+{
+    register Tcl_Obj *objPtr = fromPtr->firstObjPtr;
+    Tcl_Obj *fromFirstObjPtr = objPtr;
+
+    toPtr->numObjects += numMove;
+    fromPtr->numObjects -= numMove;
+
+    /*
+     * Find the last object to be moved; set the next one (the first one not
+     * to be moved) as the first object in the 'from' cache.
+     */
+
+    while (--numMove) {
+	objPtr = objPtr->internalRep.otherValuePtr;
+    }
+    fromPtr->firstObjPtr = objPtr->internalRep.otherValuePtr;
+
+    /*
+     * Move all objects as a block - they are already linked to each other, we
+     * just have to update the first and last.
+     */
+
+    objPtr->internalRep.otherValuePtr = toPtr->firstObjPtr;
+    toPtr->firstObjPtr = fromFirstObjPtr;
+}
+#endif
+#endif /* end of code for aNATIVE */
+
+#if USE_ZIPPY
+/*
+ * The rest of this file deals with aZIPPY and aMULTI builds
+ */
+
+/*
+ * If range checking is enabled, an additional byte will be allocated to store
+ * the magic number at the end of the requested memory.
+ */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Block2Ptr, Ptr2Block --
+ *
+ *	Convert between internal blocks and user pointers.
+ *
+ * Results:
+ *	User pointer or internal block.
+ *
+ * Side effects:
+ *	Invalid blocks will abort the server.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline char *
+Block2Ptr(
+    Block *blockPtr,
+    int bucket,
+    unsigned int reqSize)
+{
+    register void *ptr;
+    
+    blockPtr->magicNum1 = blockPtr->magicNum2 = MAGIC;
+    if (bucket == NBUCKETS) {
+	blockPtr->used = 255;
+    } else {
+	blockPtr->used = (reqSize >> bucketInfo[bucket].shift);
+    }
+    blockPtr->sourceBucket = bucket;
+    ptr = (void *) (((char *)blockPtr) + OFFSET);
+    blockPtr->refCount = 0;
+    return (char *) ptr;
+}
+
+static inline Block *
+Ptr2Block(
+    char *ptr)
+{
+    register Block *blockPtr;
+
+    blockPtr = (Block *) (((char *) ptr) - OFFSET);
+    if (blockPtr->magicNum1 != MAGIC || blockPtr->magicNum2 != MAGIC) {
+	Tcl_Panic("alloc: invalid block: %p: %x %x",
+		blockPtr, blockPtr->magicNum1, blockPtr->magicNum2);
+    }
+    return blockPtr;
 }
 
 /*
@@ -238,202 +751,402 @@ TclFinalizeAllocSubsystem(void)
  *
  * TclpAlloc --
  *
- *	Allocate more memory.
+ *	Allocate memory.
  *
  * Results:
- *	None.
+ *	Pointer to memory just beyond Block pointer.
  *
  * Side effects:
- *	None.
+ *	May allocate more blocks for a bucket.
  *
  *----------------------------------------------------------------------
  */
 
 char *
 TclpAlloc(
-    unsigned int numBytes)	/* Number of bytes to allocate. */
+    unsigned int reqSize)
 {
-    register union overhead *overPtr;
-    register long bucket;
-    register unsigned amount;
-    struct block *bigBlockPtr = NULL;
+    Cache *cachePtr;
+    Block *blockPtr;
+    register int bucket;
+    size_t size;
 
-    if (!allocInit) {
-	/*
-	 * We have to make the "self initializing" because Tcl_Alloc may be
-	 * used before any other part of Tcl. E.g., see main() for tclsh!
-	 */
-
-	TclInitAlloc();
+#if TCL_ALLOCATOR == aMULTI
+    if (allocator < aNONE) {
+	return (void *) malloc(reqSize);
     }
-    Tcl_MutexLock(allocMutexPtr);
-
-    /*
-     * First the simple case: we simple allocate big blocks directly.
-     */
-
-    if (numBytes >= MAXMALLOC - OVERHEAD) {
-	if (numBytes <= UINT_MAX - OVERHEAD -sizeof(struct block)) {
-	    bigBlockPtr = (struct block *) TclpSysAlloc((unsigned)
-		    (sizeof(struct block) + OVERHEAD + numBytes), 0);
-	}
-	if (bigBlockPtr == NULL) {
-	    Tcl_MutexUnlock(allocMutexPtr);
-	    return NULL;
-	}
-	bigBlockPtr->nextPtr = bigBlocks.nextPtr;
-	bigBlocks.nextPtr = bigBlockPtr;
-	bigBlockPtr->prevPtr = &bigBlocks;
-	bigBlockPtr->nextPtr->prevPtr = bigBlockPtr;
-
-	overPtr = (union overhead *) (bigBlockPtr + 1);
-	overPtr->overMagic0 = overPtr->overMagic1 = MAGIC;
-	overPtr->bucketIndex = 0xff;
-#ifdef MSTATS
-	numMallocs[NBUCKETS]++;
 #endif
+    
+    GETCACHE(cachePtr);
 
-#ifndef NDEBUG
-	/*
-	 * Record allocated size of block and bound space with magic numbers.
-	 */
+#ifndef __LP64__
+    if (sizeof(int) >= sizeof(size_t)) {
+	/* An unsigned int overflow can also be a size_t overflow */
+	const size_t zero = 0;
+	const size_t max = ~zero;
 
-	overPtr->realBlockSize = (numBytes + RSLOP - 1) & ~(RSLOP - 1);
-	overPtr->rangeCheckMagic = RMAGIC;
-	BLOCK_END(overPtr) = RMAGIC;
-#endif
-
-	Tcl_MutexUnlock(allocMutexPtr);
-	return (void *)(overPtr+1);
-    }
-
-    /*
-     * Convert amount of memory requested into closest block size stored in
-     * hash buckets which satisfies request. Account for space used per block
-     * for accounting.
-     */
-
-    amount = MINBLOCK;		/* size of first bucket */
-    bucket = MINBLOCK >> 4;
-
-    while (numBytes + OVERHEAD > amount) {
-	amount <<= 1;
-	if (amount == 0) {
-	    Tcl_MutexUnlock(allocMutexPtr);
-	    return NULL;
-	}
-	bucket++;
-    }
-    ASSERT(bucket < NBUCKETS);
-
-    /*
-     * If nothing in hash bucket right now, request more memory from the
-     * system.
-     */
-
-    if ((overPtr = nextf[bucket]) == NULL) {
-	MoreCore(bucket);
-	if ((overPtr = nextf[bucket]) == NULL) {
-	    Tcl_MutexUnlock(allocMutexPtr);
+	if (((size_t) reqSize) > max - OFFSET) {
+	    /* Requested allocation exceeds memory */
 	    return NULL;
 	}
     }
-
-    /*
-     * Remove from linked list
-     */
-
-    nextf[bucket] = overPtr->next;
-    overPtr->overMagic0 = overPtr->overMagic1 = MAGIC;
-    overPtr->bucketIndex = (unsigned char) bucket;
-
-#ifdef MSTATS
-    numMallocs[bucket]++;
 #endif
 
-#ifndef NDEBUG
     /*
-     * Record allocated size of block and bound space with magic numbers.
+     * Increment the requested size to include room for the Block structure.
+     * Call malloc() directly if the required amount is greater than the
+     * largest block, otherwise pop the smallest block large enough,
+     * allocating more blocks if necessary.
      */
 
-    overPtr->realBlockSize = (numBytes + RSLOP - 1) & ~(RSLOP - 1);
-    overPtr->rangeCheckMagic = RMAGIC;
-    BLOCK_END(overPtr) = RMAGIC;
+    size = reqSize + OFFSET;
+    if (size > MAXALLOC) {
+	bucket = NBUCKETS;
+	blockPtr = malloc(size);
+    } else {
+	blockPtr = NULL;
+	bucket = 0;
+	while (bucketInfo[bucket].blockSize < size) {
+	    bucket++;
+	}
+	if (cachePtr->buckets[bucket].numFree || GetBlocks(cachePtr, bucket)) {
+	    blockPtr = cachePtr->buckets[bucket].firstPtr;
+	    cachePtr->buckets[bucket].firstPtr = blockPtr->nextBlock;
+	    cachePtr->buckets[bucket].numFree--;
+#ifdef ZIPPY_STATS
+	    cachePtr->buckets[bucket].numRemoves++;
 #endif
-
-    Tcl_MutexUnlock(allocMutexPtr);
-    return ((char *)(overPtr + 1));
+	}
+	if (blockPtr == NULL) {
+	    return NULL;
+	}
+    }
+    return Block2Ptr(blockPtr, bucket, reqSize);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * MoreCore --
+ * TclpFree --
  *
- *	Allocate more memory to the indicated bucket.
- *
- *	Assumes Mutex is already held.
+ *	Return blocks to the thread block cache.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Attempts to get more memory from the system.
+ *	May move blocks to shared cache.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpFree(
+    char *ptr)
+{
+    Cache *cachePtr;
+    Block *blockPtr;
+    int bucket;
+
+#if TCL_ALLOCATOR == aMULTI
+    if (allocator < aNONE) {
+	return free((char *) ptr);
+    }
+#endif
+    
+    if (ptr == NULL) {
+	return;
+    }
+
+    blockPtr = Ptr2Block(ptr);
+    if (blockPtr->refCount != 0) {
+	/* Tcl_Panic("trying to free a preserved pointer");*/
+    }
+    
+    /*
+     * Get the block back from the user pointer and call system free directly
+     * for large blocks. Otherwise, push the block back on the bucket and move
+     * blocks to the shared cache if there are now too many free.
+     */
+
+    bucket = blockPtr->sourceBucket;
+    if (bucket == NBUCKETS) {
+	free(blockPtr);
+	return;
+    }
+
+    GETCACHE(cachePtr);
+
+    blockPtr->nextBlock = cachePtr->buckets[bucket].firstPtr;
+    cachePtr->buckets[bucket].firstPtr = blockPtr;
+    cachePtr->buckets[bucket].numFree++;
+#ifdef ZIPPY_STATS
+    cachePtr->buckets[bucket].numInserts++;
+#endif
+#if defined(TCL_THREADS)
+    if (cachePtr != sharedPtr &&
+	    cachePtr->buckets[bucket].numFree > bucketInfo[bucket].maxBlocks) {
+	PutBlocks(cachePtr, bucket, bucketInfo[bucket].numMove);
+    }
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpRealloc --
+ *
+ *	Re-allocate memory to a larger or smaller size.
+ *
+ * Results:
+ *	Pointer to memory just beyond Block pointer.
+ *
+ * Side effects:
+ *	Previous memory, if any, may be freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+TclpRealloc(  
+    char *ptr,
+    unsigned int reqSize)
+{
+    Block *blockPtr;
+    void *newPtr;
+    size_t size, min;
+    int bucket;
+
+#if TCL_ALLOCATOR == aMULTI
+    if (allocator < aNONE) {
+	return (void *) realloc((char *) ptr, reqSize);
+    }
+#endif
+    
+    if (ptr == NULL) {
+	return TclpAlloc(reqSize);
+    }
+
+#ifndef __LP64__
+    if (sizeof(int) >= sizeof(size_t)) {
+	/* An unsigned int overflow can also be a size_t overflow */
+	const size_t zero = 0;
+	const size_t max = ~zero;
+
+	if (((size_t) reqSize) > max - OFFSET) {
+	    /* Requested allocation exceeds memory */
+	    return NULL;
+	}
+    }
+#endif
+
+    /*
+     * If the block is not a system block and belongs in the same block,
+     * simply return the existing pointer. Otherwise, if the block is a system
+     * block and the new size would also require a system block, call
+     * realloc() directly. 
+     */
+
+    blockPtr = Ptr2Block(ptr);
+    if (blockPtr->refCount != 0) {
+	Tcl_Panic("trying to realloc a preserved pointer");
+    }
+    
+    size = reqSize + OFFSET;
+    bucket = blockPtr->sourceBucket;
+    if (bucket != NBUCKETS) {
+	if (bucket > 0) {
+	    min = bucketInfo[bucket-1].blockSize;
+	} else {
+	    min = 0;
+	}
+	if (size > min && size <= bucketInfo[bucket].blockSize) {
+	    return Block2Ptr(blockPtr, bucket, reqSize);
+	}
+    } else if (size > MAXALLOC) {
+	blockPtr = realloc(blockPtr, size);
+	if (blockPtr == NULL) {
+	    return NULL;
+	}
+	return Block2Ptr(blockPtr, NBUCKETS, reqSize);
+    }
+
+    /*
+     * Finally, perform an expensive malloc/copy/free.
+     */
+
+    newPtr = TclpAlloc(reqSize);
+    if (newPtr != NULL) {
+	size_t maxSize = bucketInfo[bucket].blockSize - OFFSET;
+	size_t toCopy = ((blockPtr->used + 1) << bucketInfo[bucket].shift);
+
+	if (toCopy > maxSize) {
+	    toCopy = maxSize;
+	}
+	if (toCopy > reqSize) {
+	    toCopy = reqSize;
+	}
+	
+	memcpy(newPtr, ptr, toCopy);
+	TclpFree(ptr);
+    }
+    return newPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAllocMaximize --
+ *
+ * Given a TclpAlloc'ed pointer, it returns the maximal size that can be used
+ * by the allocated memory. This is almost always larger than the requested
+ * size, as it corresponds to the bucket's size.
+ *
+ * Results:
+ *	New size.
+ *
+ *----------------------------------------------------------------------
+ */
+ unsigned int
+ TclAllocMaximize(
+     void *ptr)
+{
+    Block *blockPtr;
+    int bucket;
+    size_t size;
+
+	return UINT_MAX;
+#if TCL_ALLOCATOR == aMULTI
+    if (allocator < aNONE) {
+	/*
+	 * No info, return UINT_MAX as a signal.
+	 */
+	
+	return UINT_MAX;
+    }
+#endif
+    
+    blockPtr = Ptr2Block(ptr);
+    bucket = blockPtr->sourceBucket;
+    
+    if (bucket == NBUCKETS) {
+	/*
+	 * System malloc'ed: no info
+	 */
+	
+	return UINT_MAX;
+    }
+
+    size = bucketInfo[bucket].blockSize - OFFSET;
+    blockPtr->used = 255;
+    return size;
+}
+
+#ifdef ZIPPY_STATS
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetMemoryInfo --
+ *
+ *	Return a list-of-lists of memory stats.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	List appended to given dstring.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_GetMemoryInfo(
+    Tcl_DString *dsPtr)
+{
+    Cache *cachePtr;
+    char buf[200];
+    unsigned int n;
+
+    Tcl_MutexLock(listLockPtr);
+    cachePtr = firstCachePtr;
+    while (cachePtr != NULL) {
+	Tcl_DStringStartSublist(dsPtr);
+#if defined(TCL_THREADS)
+	if (cachePtr == sharedPtr) {
+	    Tcl_DStringAppendElement(dsPtr, "shared");
+	} else {
+	    sprintf(buf, "thread%p", cachePtr->owner);
+	    Tcl_DStringAppendElement(dsPtr, buf);
+	}
+#else
+	Tcl_DStringAppendElement(dsPtr, "unthreaded");	    
+#endif
+	for (n = 0; n < NBUCKETS; ++n) {
+	    sprintf(buf, "%lu %ld %ld %ld %ld %ld %ld",
+		    (unsigned long) bucketInfo[n].blockSize,
+		    cachePtr->buckets[n].numFree,
+		    cachePtr->buckets[n].numRemoves,
+		    cachePtr->buckets[n].numInserts,
+		    cachePtr->buckets[n].numLocks,
+		    cachePtr->buckets[n].numWaits);
+	    Tcl_DStringAppendElement(dsPtr, buf);
+	}
+	Tcl_DStringEndSublist(dsPtr);
+#if defined(TCL_THREADS)
+	cachePtr = cachePtr->nextPtr;
+#else
+	cachePtr = NULL;
+#endif
+    }
+    Tcl_MutexUnlock(listLockPtr);
+}
+#endif /* ZIPPY_STATS */
+
+#if defined(TCL_THREADS)
+/*
+ *----------------------------------------------------------------------
+ *
+ * LockBucket, UnlockBucket --
+ *
+ *	Set/unset the lock to access a bucket in the shared cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Lock activity and contention are monitored globally and on a per-cache
+ *	basis.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-MoreCore(
-    int bucket)			/* What bucket to allocat to. */
+LockBucket(
+    Cache *cachePtr,
+    int bucket)
 {
-    register union overhead *overPtr;
-    register long size;		/* size of desired block */
-    long amount;		/* amount to allocate */
-    int numBlocks;		/* how many blocks we get */
-    struct block *blockPtr;
+    Tcl_MutexLock(bucketInfo[bucket].lockPtr);
+#ifdef ZIPPY_STATS
+    cachePtr->buckets[bucket].numLocks++;
+    sharedPtr->buckets[bucket].numLocks++;
+#endif
+}
 
-    /*
-     * sbrk_size <= 0 only for big, FLUFFY, requests (about 2^30 bytes on a
-     * VAX, I think) or for a negative arg.
-     */
-
-    size = 1 << (bucket + 3);
-    ASSERT(size > 0);
-
-    amount = MAXMALLOC;
-    numBlocks = amount / size;
-    ASSERT(numBlocks*size == amount);
-
-    blockPtr = (struct block *) TclpSysAlloc((unsigned)
-	    (sizeof(struct block) + amount), 1);
-    /* no more room! */
-    if (blockPtr == NULL) {
-	return;
-    }
-    blockPtr->nextPtr = blockList;
-    blockList = blockPtr;
-
-    overPtr = (union overhead *) (blockPtr + 1);
-
-    /*
-     * Add new memory allocated to that on free list for this hash bucket.
-     */
-
-    nextf[bucket] = overPtr;
-    while (--numBlocks > 0) {
-	overPtr->next = (union overhead *)((caddr_t)overPtr + size);
-	overPtr = (union overhead *)((caddr_t)overPtr + size);
-    }
-    overPtr->next = NULL;
+static void
+UnlockBucket(
+    Cache *cachePtr,
+    int bucket)
+{
+    Tcl_MutexUnlock(bucketInfo[bucket].lockPtr);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpFree --
+ * PutBlocks --
  *
- *	Free memory.
+ *	Return unused blocks to the shared cache.
  *
  * Results:
  *	None.
@@ -444,311 +1157,423 @@ MoreCore(
  *----------------------------------------------------------------------
  */
 
-void
-TclpFree(
-    char *oldPtr)		/* Pointer to memory to free. */
+static void
+PutBlocks(
+    Cache *cachePtr,
+    int bucket,
+    int numMove)
 {
-    register long size;
-    register union overhead *overPtr;
-    struct block *bigBlockPtr;
+    register Block *lastPtr, *firstPtr;
+    register int n = numMove;
 
-    if (oldPtr == NULL) {
-	return;
+    /*
+     * Before acquiring the lock, walk the block list to find the last block
+     * to be moved.
+     */
+
+    firstPtr = lastPtr = cachePtr->buckets[bucket].firstPtr;
+    while (--n > 0) {
+	lastPtr = lastPtr->nextBlock;
     }
+    cachePtr->buckets[bucket].firstPtr = lastPtr->nextBlock;
+    cachePtr->buckets[bucket].numFree -= numMove;
 
-    Tcl_MutexLock(allocMutexPtr);
-    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof(union overhead));
+    /*
+     * Aquire the lock and place the list of blocks at the front of the shared
+     * cache bucket.
+     */
 
-    ASSERT(overPtr->overMagic0 == MAGIC);	/* make sure it was in use */
-    ASSERT(overPtr->overMagic1 == MAGIC);
-    if (overPtr->overMagic0 != MAGIC || overPtr->overMagic1 != MAGIC) {
-	Tcl_MutexUnlock(allocMutexPtr);
-	return;
-    }
-
-    RANGE_ASSERT(overPtr->rangeCheckMagic == RMAGIC);
-    RANGE_ASSERT(BLOCK_END(overPtr) == RMAGIC);
-    size = overPtr->bucketIndex;
-    if (size == 0xff) {
-#ifdef MSTATS
-	numMallocs[NBUCKETS]--;
-#endif
-
-	bigBlockPtr = (struct block *) overPtr - 1;
-	bigBlockPtr->prevPtr->nextPtr = bigBlockPtr->nextPtr;
-	bigBlockPtr->nextPtr->prevPtr = bigBlockPtr->prevPtr;
-	TclpSysFree(bigBlockPtr);
-
-	Tcl_MutexUnlock(allocMutexPtr);
-	return;
-    }
-    ASSERT(size < NBUCKETS);
-    overPtr->next = nextf[size];	/* also clobbers overMagic */
-    nextf[size] = overPtr;
-
-#ifdef MSTATS
-    numMallocs[size]--;
-#endif
-
-    Tcl_MutexUnlock(allocMutexPtr);
+    LockBucket(cachePtr, bucket);
+    lastPtr->nextBlock = sharedPtr->buckets[bucket].firstPtr;
+    sharedPtr->buckets[bucket].firstPtr = firstPtr;
+    sharedPtr->buckets[bucket].numFree += numMove;
+    UnlockBucket(cachePtr, bucket);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpRealloc --
+ * GetBlocks --
  *
- *	Reallocate memory.
+ *	Get more blocks for a bucket.
  *
  * Results:
- *	None.
+ *	1 if blocks where allocated, 0 otherwise.
  *
  * Side effects:
- *	None.
+ *	Cache may be filled with available blocks.
  *
  *----------------------------------------------------------------------
  */
 
-char *
-TclpRealloc(
-    char *oldPtr,		/* Pointer to alloced block. */
-    unsigned int numBytes)	/* New size of memory. */
+static int
+GetBlocks(
+    Cache *cachePtr,
+    int bucket)
 {
-    int i;
-    union overhead *overPtr;
-    struct block *bigBlockPtr;
-    int expensive;
-    unsigned long maxSize;
+    register Block *blockPtr = NULL;
+    register int n;
 
-    if (oldPtr == NULL) {
-	return TclpAlloc(numBytes);
-    }
-
-    Tcl_MutexLock(allocMutexPtr);
-
-    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof(union overhead));
-
-    ASSERT(overPtr->overMagic0 == MAGIC);	/* make sure it was in use */
-    ASSERT(overPtr->overMagic1 == MAGIC);
-    if (overPtr->overMagic0 != MAGIC || overPtr->overMagic1 != MAGIC) {
-	Tcl_MutexUnlock(allocMutexPtr);
-	return NULL;
-    }
-
-    RANGE_ASSERT(overPtr->rangeCheckMagic == RMAGIC);
-    RANGE_ASSERT(BLOCK_END(overPtr) == RMAGIC);
-    i = overPtr->bucketIndex;
-
+#if defined(TCL_THREADS)
     /*
-     * If the block isn't in a bin, just realloc it.
+     * First, atttempt to move blocks from the shared cache. Note the
+     * potentially dirty read of numFree before acquiring the lock which is a
+     * slight performance enhancement. The value is verified after the lock is
+     * actually acquired.
      */
 
-    if (i == 0xff) {
-	struct block *prevPtr, *nextPtr;
-	bigBlockPtr = (struct block *) overPtr - 1;
-	prevPtr = bigBlockPtr->prevPtr;
-	nextPtr = bigBlockPtr->nextPtr;
-	bigBlockPtr = (struct block *) TclpSysRealloc(bigBlockPtr,
-		sizeof(struct block) + OVERHEAD + numBytes);
-	if (bigBlockPtr == NULL) {
-	    Tcl_MutexUnlock(allocMutexPtr);
-	    return NULL;
-	}
+    if (cachePtr != sharedPtr && sharedPtr->buckets[bucket].numFree > 0) {
+	LockBucket(cachePtr, bucket);
+	if (sharedPtr->buckets[bucket].numFree > 0) {
 
-	if (prevPtr->nextPtr != bigBlockPtr) {
 	    /*
-	     * If the block has moved, splice the new block into the list
-	     * where the old block used to be.
+	     * Either move the entire list or walk the list to find the last
+	     * block to move.
 	     */
 
-	    prevPtr->nextPtr = bigBlockPtr;
-	    nextPtr->prevPtr = bigBlockPtr;
+	    n = bucketInfo[bucket].numMove;
+	    if (n >= sharedPtr->buckets[bucket].numFree) {
+		cachePtr->buckets[bucket].firstPtr =
+			sharedPtr->buckets[bucket].firstPtr;
+		cachePtr->buckets[bucket].numFree =
+			sharedPtr->buckets[bucket].numFree;
+		sharedPtr->buckets[bucket].firstPtr = NULL;
+		sharedPtr->buckets[bucket].numFree = 0;
+	    } else {
+		blockPtr = sharedPtr->buckets[bucket].firstPtr;
+		cachePtr->buckets[bucket].firstPtr = blockPtr;
+		sharedPtr->buckets[bucket].numFree -= n;
+		cachePtr->buckets[bucket].numFree = n;
+		while (--n > 0) {
+		    blockPtr = blockPtr->nextBlock;
+		}
+		sharedPtr->buckets[bucket].firstPtr = blockPtr->nextBlock;
+		blockPtr->nextBlock = NULL;
+	    }
 	}
-
-	overPtr = (union overhead *) (bigBlockPtr + 1);
-
-#ifdef MSTATS
-	numMallocs[NBUCKETS]++;
+	UnlockBucket(cachePtr, bucket);
+    }
 #endif
+    
+    if (cachePtr->buckets[bucket].numFree == 0) {
+	register size_t size;
 
-#ifndef NDEBUG
 	/*
-	 * Record allocated size of block and update magic number bounds.
+	 * If no blocks could be moved from shared, first look for a larger
+	 * block in this cache OR the shared cache to split up.
+	 */
+	
+	n = NBUCKETS;
+	size = 0; /* lint */
+	while (--n > bucket) {
+	    if (cachePtr->buckets[n].numFree > 0) {
+		size = bucketInfo[n].blockSize;
+		blockPtr = cachePtr->buckets[n].firstPtr;
+		cachePtr->buckets[n].firstPtr = blockPtr->nextBlock;
+		cachePtr->buckets[n].numFree--;
+		break;
+	    }
+	}
+#if defined(TCL_THREADS)
+	if (blockPtr == NULL) {
+	    n = NBUCKETS;
+	    size = 0; /* lint */
+	    while (--n > bucket) {
+		if (sharedPtr->buckets[n].numFree > 0) {
+		    size = bucketInfo[n].blockSize;
+		    LockBucket(cachePtr, n);
+		    if (sharedPtr->buckets[n].numFree > 0) {
+			blockPtr = sharedPtr->buckets[n].firstPtr;
+			sharedPtr->buckets[n].firstPtr = blockPtr->nextBlock;
+			sharedPtr->buckets[n].numFree--;
+			UnlockBucket(cachePtr, n);
+			break;		
+		    }
+		    UnlockBucket(cachePtr, n);
+		}
+	    }
+	}
+#endif
+	/*
+	 * Otherwise, allocate a big new block directly.
 	 */
 
-	overPtr->realBlockSize = (numBytes + RSLOP - 1) & ~(RSLOP - 1);
-	BLOCK_END(overPtr) = RMAGIC;
-#endif
-
-	Tcl_MutexUnlock(allocMutexPtr);
-	return (char *)(overPtr+1);
-    }
-    maxSize = 1 << (i+3);
-    expensive = 0;
-    if (numBytes+OVERHEAD > maxSize) {
-	expensive = 1;
-    } else if (i>0 && numBytes+OVERHEAD < maxSize/2) {
-	expensive = 1;
-    }
-
-    if (expensive) {
-	void *newPtr;
-
-	Tcl_MutexUnlock(allocMutexPtr);
-
-	newPtr = TclpAlloc(numBytes);
-	if (newPtr == NULL) {
-	    return NULL;
+	if (blockPtr == NULL) {
+	    size = MAXALLOC;
+	    blockPtr = malloc(size);
+	    if (blockPtr == NULL) {
+		return 0;
+	    }
 	}
-	maxSize -= OVERHEAD;
-	if (maxSize < numBytes) {
-	    numBytes = maxSize;
+
+	/*
+	 * Split the larger block into smaller blocks for this bucket.
+	 */
+
+	n = size / bucketInfo[bucket].blockSize;
+	cachePtr->buckets[bucket].numFree = n;
+	cachePtr->buckets[bucket].firstPtr = blockPtr;
+	while (--n > 0) {
+	    blockPtr->nextBlock = (Block *)
+		((char *) blockPtr + bucketInfo[bucket].blockSize);
+	    blockPtr = blockPtr->nextBlock;
 	}
-	memcpy(newPtr, oldPtr, (size_t) numBytes);
-	TclpFree(oldPtr);
-	return newPtr;
+	blockPtr->nextBlock = NULL;
     }
+    return 1;
+}
+
+#if TCL_ALLOCATOR == aMULTI
+static void
+ChooseAllocator()
+{
+    char *choice = getenv("TCL_ALLOCATOR");
 
     /*
-     * Ok, we don't have to copy, it fits as-is
+     * This is only called when compiled with aMULTI
      */
+    
+    allocator = aZIPPY;
 
-#ifndef NDEBUG
-    overPtr->realBlockSize = (numBytes + RSLOP - 1) & ~(RSLOP - 1);
-    BLOCK_END(overPtr) = RMAGIC;
-#endif
-
-    Tcl_MutexUnlock(allocMutexPtr);
-    return(oldPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * mstats --
- *
- *	Prints two lines of numbers, one showing the length of the free list
- *	for each size category, the second showing the number of mallocs -
- *	frees for each size category.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifdef MSTATS
-void
-mstats(
-    char *s)			/* Where to write info. */
-{
-    register int i, j;
-    register union overhead *overPtr;
-    int totalFree = 0, totalUsed = 0;
-
-    Tcl_MutexLock(allocMutexPtr);
-
-    fprintf(stderr, "Memory allocation statistics %s\nTclpFree:\t", s);
-    for (i = 0; i < NBUCKETS; i++) {
-	for (j=0, overPtr=nextf[i]; overPtr; overPtr=overPtr->next, j++) {
-	    fprintf(stderr, " %d", j);
+    if (choice) {
+	/*
+	 * Only override the base when requesting native or purify
+	 */
+	
+	if (!strcmp(choice, "aNATIVE")) {
+	    allocator = aNATIVE;
+	} else if (!strcmp(choice, "aPURIFY")) {
+	    allocator = aPURIFY;
 	}
-	totalFree += j * (1 << (i + 3));
     }
-
-    fprintf(stderr, "\nused:\t");
-    for (i = 0; i < NBUCKETS; i++) {
-	fprintf(stderr, " %d", numMallocs[i]);
-	totalUsed += numMallocs[i] * (1 << (i + 3));
-    }
-
-    fprintf(stderr, "\n\tTotal small in use: %d, total free: %d\n",
-	    totalUsed, totalFree);
-    fprintf(stderr, "\n\tNumber of big (>%d) blocks in use: %d\n",
-	    MAXMALLOC, numMallocs[NBUCKETS]);
-
-    Tcl_MutexUnlock(allocMutexPtr);
 }
 #endif
+
+#if USE_NEW_PRESERVE
 
-#else	/* !USE_TCLALLOC */
+typedef struct PreserveData {
+    struct PreserveData *nextPtr;
+    char *ptr;
+    Tcl_FreeProc *freeProc;	/* Function to call to free. */
+} PreserveData;
+
+static PreserveData *pdataPtr = NULL;
+TCL_DECLARE_MUTEX(preserveMutex) /* To protect the above statics */
+
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpAlloc --
+ * TclFinalizePreserve --
  *
- *	Allocate more memory.
+ *	Called during exit processing to clean up the reference array.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Frees the storage of the reference array.
  *
  *----------------------------------------------------------------------
  */
 
-char *
-TclpAlloc(
-    unsigned int numBytes)	/* Number of bytes to allocate. */
+	/* ARGSUSED */
+void
+TclFinalizePreserve(void)
 {
-    return (char *) malloc(numBytes);
+    PreserveData *thisPtr;
+    
+    while (pdataPtr) {
+	Tcl_MutexLock(&preserveMutex);
+	if (!pdataPtr) {
+	    Tcl_MutexUnlock(&preserveMutex);
+	    break;
+	}   
+	thisPtr = pdataPtr;
+	pdataPtr = pdataPtr->nextPtr;
+	Tcl_MutexUnlock(&preserveMutex);
+	
+	thisPtr->freeProc(thisPtr->ptr);
+	TclSmallFree(thisPtr);
+    }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpFree --
+ * Tcl_Preserve --
  *
- *	Free memory.
+ *	This function is used by a function to declare its interest in a
+ *	particular block of memory, so that the block will not be reallocated
+ *	until a matching call to Tcl_Release has been made.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Information is retained so that the block of memory will not be freed
+ *	until at least the matching call to Tcl_Release.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclpFree(
-    char *oldPtr)		/* Pointer to memory to free. */
+Tcl_Preserve(
+    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
-    free(oldPtr);
-    return;
+    char *ptr = (char *) clientData;
+    Block *blockPtr;
+    long refCount;
+
+    blockPtr = Ptr2Block(ptr);
+    refCount = blockPtr->refCount;
+    
+    if (refCount > 0) {
+	++blockPtr->refCount;
+    } else if (refCount < 0) {
+	/*
+	 * TclEventuallyFree has already been called on this with
+	 * (freeProc != TCL_DYNAMIC)
+	 */
+	
+	--blockPtr->refCount;
+    } else {
+	/*
+	 * First preserve call: add one refcount to signal that EventuallyFree
+	 * has not yet been called (role of the old '!mustFree')
+	 */
+  
+	blockPtr->refCount = 2;
+    }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpRealloc --
+ * Tcl_Release --
  *
- *	Reallocate memory.
+ *	This function is called to cancel a previous call to Tcl_Preserve,
+ *	thereby allowing a block of memory to be freed (if no one else cares
+ *	about it).
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	If Tcl_EventuallyFree has been called for clientData, and if no other
+ *	call to Tcl_Preserve is still in effect, the block of memory is freed.
  *
  *----------------------------------------------------------------------
  */
 
-char *
-TclpRealloc(
-    char *oldPtr,		/* Pointer to alloced block. */
-    unsigned int numBytes)	/* New size of memory. */
+void
+Tcl_Release(
+    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
-    return (char *) realloc(oldPtr, numBytes);
+    char *ptr = (char *) clientData;
+    Block *blockPtr = Ptr2Block(ptr);
+    long refCount = blockPtr->refCount;
+    int hasFreeProc = (refCount < 0);
+    
+    if (refCount > 0) {
+	refCount = --blockPtr->refCount;
+    } else if (refCount < 0) {
+	refCount = ++blockPtr->refCount;
+    } else {
+	Tcl_Panic("Tcl_Release couldn't find reference for %p", clientData);
+    }
+    
+    if (refCount == 0) {
+	if (!hasFreeProc) {
+	    TclpFree(ptr);
+	} else {
+	    PreserveData *thisPtr = pdataPtr, *lastPtr = NULL;
+	    Tcl_MutexLock(&preserveMutex);
+	    while (thisPtr && (thisPtr->ptr != ptr)) {
+		lastPtr = thisPtr;
+		thisPtr = thisPtr->nextPtr;
+	    }
+	    if (!thisPtr) {
+		Tcl_Panic("Tcl_Release couldn't find reference for %p", clientData);
+	    }
+	    if (lastPtr) {
+		lastPtr->nextPtr = thisPtr->nextPtr;
+	    } else {
+		pdataPtr = thisPtr->nextPtr;
+	    }
+	    Tcl_MutexUnlock(&preserveMutex);
+	    
+	    thisPtr->freeProc(clientData);
+	    TclSmallFree(thisPtr);
+	}
+    }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_EventuallyFree --
+ *
+ *	Free up a block of memory, unless a call to Tcl_Preserve is in effect
+ *	for that block. In this case, defer the free until all calls to
+ *	Tcl_Preserve have been undone by matching calls to Tcl_Release.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Ptr may be released by calling free().
+ *
+ *----------------------------------------------------------------------
+ */
 
-#endif /* !USE_TCLALLOC */
-#endif /* !TCL_THREADS */
+void
+Tcl_EventuallyFree(
+    ClientData clientData,	/* Pointer to malloc'ed block of memory. */
+    Tcl_FreeProc *freeProc)	/* Function to actually do free. */
+{
+    char *ptr = (char *) clientData;
+    Block *blockPtr = Ptr2Block(ptr);
+    PreserveData *thisPtr;
+    long refCount = blockPtr->refCount;
+    int hasFreeProc = (refCount < 0);
+
+    if (hasFreeProc) {
+	Tcl_Panic("Tcl_EventuallyFree called twice for %p", clientData);
+    }
+
+    if (refCount < 2) {
+	/*
+	 * No other reference for this block.  Free it now.
+	 */
+
+	blockPtr->refCount = 0;
+	if (freeProc == TCL_DYNAMIC) {
+	    ckfree(clientData);
+	} else {
+	    freeProc(clientData);
+	}
+	return;
+    }
+
+    --blockPtr->refCount;
+    
+    if (freeProc != TCL_DYNAMIC) {	
+	blockPtr->refCount = -blockPtr->refCount;
+	TclCkSmallAlloc(sizeof(PreserveData), thisPtr);
+
+	thisPtr->ptr = ptr;
+	thisPtr->freeProc = freeProc;	
+	Tcl_MutexLock(&preserveMutex);
+	thisPtr->nextPtr = pdataPtr;
+	pdataPtr = thisPtr;
+	Tcl_MutexUnlock(&preserveMutex);
+    }
+}
+#endif /* USE_NEW_PRESERVE */
+
+#endif /* USE_ZIPPY */
 
 /*
  * Local Variables:

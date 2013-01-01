@@ -58,8 +58,7 @@
 /* Slot 0 is reserved */
 /* Slot 1 is reserved */
 /* Slot 2 is reserved */
-/* 3 */
-EXTERN void		TclAllocateFreeObjects(void);
+/* Slot 3 is reserved */
 /* Slot 4 is reserved */
 /* 5 */
 EXTERN int		TclCleanupChildren(Tcl_Interp *interp, int numPids,
@@ -200,14 +199,12 @@ EXTERN int		TclObjInvoke(Tcl_Interp *interp, int objc,
 /* Slot 66 is reserved */
 /* Slot 67 is reserved */
 /* Slot 68 is reserved */
-/* 69 */
-EXTERN char *		TclpAlloc(unsigned int size);
+/* Slot 69 is reserved */
 /* Slot 70 is reserved */
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
 /* Slot 73 is reserved */
-/* 74 */
-EXTERN void		TclpFree(char *ptr);
+/* Slot 74 is reserved */
 /* 75 */
 EXTERN unsigned long	TclpGetClicks(void);
 /* 76 */
@@ -217,8 +214,7 @@ EXTERN void		TclpGetTime(Tcl_Time *time);
 /* Slot 78 is reserved */
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
-/* 81 */
-EXTERN char *		TclpRealloc(char *ptr, unsigned int size);
+/* Slot 81 is reserved */
 /* Slot 82 is reserved */
 /* Slot 83 is reserved */
 /* Slot 84 is reserved */
@@ -506,10 +502,8 @@ EXTERN Tcl_Obj *	TclGetObjNameOfExecutable(void);
 /* 214 */
 EXTERN void		TclSetObjNameOfExecutable(Tcl_Obj *name,
 				Tcl_Encoding encoding);
-/* 215 */
-EXTERN void *		TclStackAlloc(Tcl_Interp *interp, int numBytes);
-/* 216 */
-EXTERN void		TclStackFree(Tcl_Interp *interp, void *freePtr);
+/* Slot 215 is reserved */
+/* Slot 216 is reserved */
 /* 217 */
 EXTERN int		TclPushStackFrame(Tcl_Interp *interp,
 				Tcl_CallFrame **framePtrPtr,
@@ -528,8 +522,7 @@ EXTERN TclPlatformType * TclGetPlatform(void);
 EXTERN Tcl_Obj *	TclTraceDictPath(Tcl_Interp *interp,
 				Tcl_Obj *rootPtr, int keyc,
 				Tcl_Obj *const keyv[], int flags);
-/* 226 */
-EXTERN int		TclObjBeingDeleted(Tcl_Obj *objPtr);
+/* Slot 226 is reserved */
 /* 227 */
 EXTERN void		TclSetNsPath(Namespace *nsPtr, int pathLength,
 				Tcl_Namespace *pathAry[]);
@@ -606,7 +599,7 @@ typedef struct TclIntStubs {
     void (*reserved0)(void);
     void (*reserved1)(void);
     void (*reserved2)(void);
-    void (*tclAllocateFreeObjects) (void); /* 3 */
+    void (*reserved3)(void);
     void (*reserved4)(void);
     int (*tclCleanupChildren) (Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
     void (*tclCleanupCommand) (Command *cmdPtr); /* 6 */
@@ -672,19 +665,19 @@ typedef struct TclIntStubs {
     void (*reserved66)(void);
     void (*reserved67)(void);
     void (*reserved68)(void);
-    char * (*tclpAlloc) (unsigned int size); /* 69 */
+    void (*reserved69)(void);
     void (*reserved70)(void);
     void (*reserved71)(void);
     void (*reserved72)(void);
     void (*reserved73)(void);
-    void (*tclpFree) (char *ptr); /* 74 */
+    void (*reserved74)(void);
     unsigned long (*tclpGetClicks) (void); /* 75 */
     unsigned long (*tclpGetSeconds) (void); /* 76 */
     void (*tclpGetTime) (Tcl_Time *time); /* 77 */
     void (*reserved78)(void);
     void (*reserved79)(void);
     void (*reserved80)(void);
-    char * (*tclpRealloc) (char *ptr, unsigned int size); /* 81 */
+    void (*reserved81)(void);
     void (*reserved82)(void);
     void (*reserved83)(void);
     void (*reserved84)(void);
@@ -818,8 +811,8 @@ typedef struct TclIntStubs {
     void (*tclpFindExecutable) (const char *argv0); /* 212 */
     Tcl_Obj * (*tclGetObjNameOfExecutable) (void); /* 213 */
     void (*tclSetObjNameOfExecutable) (Tcl_Obj *name, Tcl_Encoding encoding); /* 214 */
-    void * (*tclStackAlloc) (Tcl_Interp *interp, int numBytes); /* 215 */
-    void (*tclStackFree) (Tcl_Interp *interp, void *freePtr); /* 216 */
+    void (*reserved215)(void);
+    void (*reserved216)(void);
     int (*tclPushStackFrame) (Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
     void (*tclPopStackFrame) (Tcl_Interp *interp); /* 218 */
     void (*reserved219)(void);
@@ -829,7 +822,7 @@ typedef struct TclIntStubs {
     void (*reserved223)(void);
     TclPlatformType * (*tclGetPlatform) (void); /* 224 */
     Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp *interp, Tcl_Obj *rootPtr, int keyc, Tcl_Obj *const keyv[], int flags); /* 225 */
-    int (*tclObjBeingDeleted) (Tcl_Obj *objPtr); /* 226 */
+    void (*reserved226)(void);
     void (*tclSetNsPath) (Namespace *nsPtr, int pathLength, Tcl_Namespace *pathAry[]); /* 227 */
     void (*reserved228)(void);
     int (*tclPtrMakeUpvar) (Tcl_Interp *interp, Var *otherP1Ptr, const char *myName, int myFlags, int index); /* 229 */
@@ -873,8 +866,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 0 is reserved */
 /* Slot 1 is reserved */
 /* Slot 2 is reserved */
-#define TclAllocateFreeObjects \
-	(tclIntStubsPtr->tclAllocateFreeObjects) /* 3 */
+/* Slot 3 is reserved */
 /* Slot 4 is reserved */
 #define TclCleanupChildren \
 	(tclIntStubsPtr->tclCleanupChildren) /* 5 */
@@ -978,14 +970,12 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 66 is reserved */
 /* Slot 67 is reserved */
 /* Slot 68 is reserved */
-#define TclpAlloc \
-	(tclIntStubsPtr->tclpAlloc) /* 69 */
+/* Slot 69 is reserved */
 /* Slot 70 is reserved */
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
 /* Slot 73 is reserved */
-#define TclpFree \
-	(tclIntStubsPtr->tclpFree) /* 74 */
+/* Slot 74 is reserved */
 #define TclpGetClicks \
 	(tclIntStubsPtr->tclpGetClicks) /* 75 */
 #define TclpGetSeconds \
@@ -995,8 +985,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 78 is reserved */
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
-#define TclpRealloc \
-	(tclIntStubsPtr->tclpRealloc) /* 81 */
+/* Slot 81 is reserved */
 /* Slot 82 is reserved */
 /* Slot 83 is reserved */
 /* Slot 84 is reserved */
@@ -1213,10 +1202,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetObjNameOfExecutable) /* 213 */
 #define TclSetObjNameOfExecutable \
 	(tclIntStubsPtr->tclSetObjNameOfExecutable) /* 214 */
-#define TclStackAlloc \
-	(tclIntStubsPtr->tclStackAlloc) /* 215 */
-#define TclStackFree \
-	(tclIntStubsPtr->tclStackFree) /* 216 */
+/* Slot 215 is reserved */
+/* Slot 216 is reserved */
 #define TclPushStackFrame \
 	(tclIntStubsPtr->tclPushStackFrame) /* 217 */
 #define TclPopStackFrame \
@@ -1230,8 +1217,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetPlatform) /* 224 */
 #define TclTraceDictPath \
 	(tclIntStubsPtr->tclTraceDictPath) /* 225 */
-#define TclObjBeingDeleted \
-	(tclIntStubsPtr->tclObjBeingDeleted) /* 226 */
+/* Slot 226 is reserved */
 #define TclSetNsPath \
 	(tclIntStubsPtr->tclSetNsPath) /* 227 */
 /* Slot 228 is reserved */

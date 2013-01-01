@@ -6797,16 +6797,15 @@ TestNRELevels(
     levels[0] = Tcl_NewIntObj(depth);
     levels[1] = Tcl_NewIntObj(iPtr->numLevels);
     levels[2] = Tcl_NewIntObj(iPtr->varFramePtr->level);
-    levels[3] = Tcl_NewIntObj(iPtr->execEnvPtr->execStackPtr->tosPtr
-	    - iPtr->execEnvPtr->execStackPtr->stackWords);
+
 
     while (cbPtr) {
 	i++;
 	cbPtr = cbPtr->nextPtr;
     }
-    levels[4] = Tcl_NewIntObj(i);
+    levels[3] = Tcl_NewIntObj(i);
 
-    Tcl_SetObjResult(interp, Tcl_NewListObj(5, levels));
+    Tcl_SetObjResult(interp, Tcl_NewListObj(4, levels));
     return TCL_OK;
 }
 

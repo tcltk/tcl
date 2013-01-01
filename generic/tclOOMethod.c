@@ -543,7 +543,7 @@ InvokeProcedureMethod(
      * Allocate the special frame data.
      */
 
-    fdPtr = TclStackAlloc(interp, sizeof(PMFrameData));
+    fdPtr = ckalloc(sizeof(PMFrameData));
 
     /*
      * Create a call frame for this method.
@@ -552,7 +552,7 @@ InvokeProcedureMethod(
     result = PushMethodCallFrame(interp, (CallContext *) context, pmPtr,
 	    objc, objv, fdPtr);
     if (result != TCL_OK) {
-	TclStackFree(interp, fdPtr);
+	ckfree(fdPtr);
 	return result;
     }
     pmPtr->refCount++;
@@ -576,11 +576,11 @@ InvokeProcedureMethod(
 	    pmPtr->procPtr->cmdPtr = fdPtr->oldCmdPtr;
 
 	    Tcl_PopCallFrame(interp);
-	    TclStackFree(interp, fdPtr->framePtr);
+	    ckfree(fdPtr->framePtr);
 	    if (--pmPtr->refCount < 1) {
 		DeleteProcedureMethodRecord(pmPtr);
 	    }
-	    TclStackFree(interp, fdPtr);
+	    ckfree(fdPtr);
 	    return result;
 	}
     }
@@ -631,7 +631,7 @@ FinalizePMCall(
     if (--pmPtr->refCount < 1) {
 	DeleteProcedureMethodRecord(pmPtr);
     }
-    TclStackFree(interp, fdPtr);
+    ckfree(fdPtr);
     return result;
 }
 
@@ -1243,7 +1243,7 @@ FinalizeForwardCall(
 {
     Tcl_Obj **argObjs = data[0];
     
-    TclStackFree(interp, argObjs);
+    ckfree(argObjs);
     return result;
 }
 
@@ -1372,7 +1372,7 @@ InitEnsembleRewrite(
     Tcl_Obj **argObjs;
     unsigned len = rewriteLength + objc - toRewrite;
 
-    argObjs = TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
+    argObjs = ckalloc(sizeof(Tcl_Obj *) * len);
     memcpy(argObjs, rewriteObjs, rewriteLength * sizeof(Tcl_Obj *));
     memcpy(argObjs + rewriteLength, objv + toRewrite,
 	    sizeof(Tcl_Obj *) * (objc - toRewrite));

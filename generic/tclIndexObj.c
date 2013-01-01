@@ -965,13 +965,12 @@ Tcl_WrongNumArgs(
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp,
-			(unsigned)len + 1);
+		char *quotedElementStr = ckalloc((unsigned)len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
 		Tcl_AppendToObj(objPtr, quotedElementStr, len);
-		TclStackFree(interp, quotedElementStr);
+		ckfree(quotedElementStr);
 	    } else {
 		Tcl_AppendToObj(objPtr, elementStr, elemLen);
 	    }
@@ -1021,13 +1020,12 @@ Tcl_WrongNumArgs(
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp,
-			(unsigned) len + 1);
+		char *quotedElementStr = ckalloc((unsigned) len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
 		Tcl_AppendToObj(objPtr, quotedElementStr, len);
-		TclStackFree(interp, quotedElementStr);
+		ckfree(quotedElementStr);
 	    } else {
 		Tcl_AppendToObj(objPtr, elementStr, elemLen);
 	    }

@@ -2397,7 +2397,7 @@ TclNRForObjCmd(
         return TCL_ERROR;
     }
 
-    TclSmallAllocEx(interp, sizeof(ForIterData), iterPtr);
+    TclCkSmallAlloc(sizeof(ForIterData), iterPtr);
     iterPtr->cond = objv[2];
     iterPtr->body = objv[4];
     iterPtr->next = objv[3];
@@ -2419,7 +2419,7 @@ ForSetupCallback(
 	if (result == TCL_ERROR) {
 	    Tcl_AddErrorInfo(interp, "\n    (\"for\" initial command)");
 	}
-	TclSmallFreeEx(interp, iterPtr);
+	TclSmallFree(iterPtr);
 	return result;
     }
     TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
@@ -2457,7 +2457,7 @@ TclNRForIterCallback(
 	Tcl_AppendObjToErrorInfo(interp,
 		Tcl_ObjPrintf(iterPtr->msg, Tcl_GetErrorLine(interp)));
     }
-    TclSmallFreeEx(interp, iterPtr);
+    TclSmallFree(iterPtr);
     return result;
 }
 
@@ -2473,11 +2473,11 @@ ForCondCallback(
 
     if (result != TCL_OK) {
 	Tcl_DecrRefCount(boolObj);
-	TclSmallFreeEx(interp, iterPtr);
+	TclSmallFree(iterPtr);
 	return result;
     } else if (Tcl_GetBooleanFromObj(interp, boolObj, &value) != TCL_OK) {
 	Tcl_DecrRefCount(boolObj);
-	TclSmallFreeEx(interp, iterPtr);
+	TclSmallFree(iterPtr);
 	return TCL_ERROR;
     }
     Tcl_DecrRefCount(boolObj);
@@ -2492,7 +2492,7 @@ ForCondCallback(
 	}
 	return TclNREvalObjEx(interp, iterPtr->body, 0);
     }
-    TclSmallFreeEx(interp, iterPtr);
+    TclSmallFree(iterPtr);
     return result;
 }
 
@@ -2526,7 +2526,7 @@ ForPostNextCallback(
     if ((result != TCL_BREAK) && (result != TCL_OK)) {
 	if (result == TCL_ERROR) {
 	    Tcl_AddErrorInfo(interp, "\n    (\"for\" loop-end command)");
-	    TclSmallFreeEx(interp, iterPtr);
+	    TclSmallFree(iterPtr);
 	}
 	return result;
     }
@@ -2626,7 +2626,7 @@ EachloopCmd(
      * allocation for better performance.
      */
 
-    statePtr = TclStackAlloc(interp,
+    statePtr = ckalloc(
 	    sizeof(struct ForeachState) + 3 * numLists * sizeof(int)
 	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
     memset(statePtr, 0,
@@ -2847,7 +2847,7 @@ ForeachCleanup(
     if (statePtr->resultList != NULL) {
 	TclDecrRefCount(statePtr->resultList);
     }
-    TclStackFree(interp, statePtr);
+    ckfree(statePtr);
 }
 
 /*

@@ -1679,7 +1679,7 @@ CallTraceFunction(
      * Copy the command characters into a new string.
      */
 
-    commandCopy = TclStackAlloc(interp, (unsigned) numChars + 1);
+    commandCopy = ckalloc((unsigned) numChars + 1);
     memcpy(commandCopy, command, (size_t) numChars);
     commandCopy[numChars] = '\0';
 
@@ -1690,7 +1690,7 @@ CallTraceFunction(
     traceCode = tracePtr->proc(tracePtr->clientData, (Tcl_Interp *) iPtr,
 	    iPtr->numLevels, commandCopy, (Tcl_Command) cmdPtr, objc, objv);
 
-    TclStackFree(interp, commandCopy);
+    ckfree(commandCopy);
     return traceCode;
 }
 
@@ -2267,7 +2267,7 @@ StringTraceProc(
      * which uses strings for everything.
      */
 
-    argv = (const char **) TclStackAlloc(interp,
+    argv = (const char **) ckalloc(
 	    (unsigned) ((objc + 1) * sizeof(const char *)));
     for (i = 0; i < objc; i++) {
 	argv[i] = Tcl_GetString(objv[i]);
@@ -2282,7 +2282,7 @@ StringTraceProc(
 
     data->proc(data->clientData, interp, level, (char *) command,
 	    cmdPtr->proc, cmdPtr->clientData, objc, argv);
-    TclStackFree(interp, (void *) argv);
+    ckfree((void *) argv);
 
     return TCL_OK;
 }

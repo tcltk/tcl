@@ -931,7 +931,7 @@ Tcl_ExecObjCmd(
      */
 
     argc = objc - skip;
-    argv = TclStackAlloc(interp, (unsigned)(argc + 1) * sizeof(char *));
+    argv = ckalloc((unsigned)(argc + 1) * sizeof(char *));
 
     /*
      * Copy the string conversions of each (post option) object into the
@@ -949,7 +949,7 @@ Tcl_ExecObjCmd(
      * Free the argv array.
      */
 
-    TclStackFree(interp, (void *) argv);
+    ckfree((void *) argv);
 
     if (chan == NULL) {
 	return TCL_ERROR;

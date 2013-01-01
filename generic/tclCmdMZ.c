@@ -1902,7 +1902,7 @@ StringMapCmd(
 	 * adapt this code...
 	 */
 
-	mapElemv = TclStackAlloc(interp, sizeof(Tcl_Obj *) * mapElemc);
+	mapElemv = ckalloc(sizeof(Tcl_Obj *) * mapElemc);
 	Tcl_DictObjFirst(interp, objv[objc-2], &search, mapElemv+0,
 		mapElemv+1, &done);
 	for (i=2 ; i<mapElemc ; i+=2) {
@@ -2013,10 +2013,10 @@ StringMapCmd(
 	 * case.
 	 */
 
-	mapStrings = TclStackAlloc(interp, mapElemc*2*sizeof(Tcl_UniChar *));
-	mapLens = TclStackAlloc(interp, mapElemc * 2 * sizeof(int));
+	mapStrings = ckalloc(mapElemc*2*sizeof(Tcl_UniChar *));
+	mapLens = ckalloc(mapElemc * 2 * sizeof(int));
 	if (nocase) {
-	    u2lc = TclStackAlloc(interp, mapElemc * sizeof(Tcl_UniChar));
+	    u2lc = ckalloc(mapElemc * sizeof(Tcl_UniChar));
 	}
 	for (index = 0; index < mapElemc; index++) {
 	    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
@@ -2066,10 +2066,10 @@ StringMapCmd(
 	    }
 	}
 	if (nocase) {
-	    TclStackFree(interp, u2lc);
+	    ckfree(u2lc);
 	}
-	TclStackFree(interp, mapLens);
-	TclStackFree(interp, mapStrings);
+	ckfree(mapLens);
+	ckfree(mapStrings);
     }
     if (p != ustring1) {
 	/*
@@ -2081,7 +2081,7 @@ StringMapCmd(
     Tcl_SetObjResult(interp, resultPtr);
   done:
     if (mapWithDict) {
-	TclStackFree(interp, mapElemv);
+	ckfree(mapElemv);
     }
     if (copySource) {
 	Tcl_DecrRefCount(sourceObj);
@@ -4655,7 +4655,7 @@ TclNRWhileObjCmd(
      * We reuse [for]'s callback, passing a NULL for the 'next' script.
      */
 
-    TclSmallAllocEx(interp, sizeof(ForIterData), iterPtr);
+    TclCkSmallAlloc(sizeof(ForIterData), iterPtr);
     iterPtr->cond = objv[1];
     iterPtr->body = objv[2];
     iterPtr->next = NULL;

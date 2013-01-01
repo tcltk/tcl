@@ -259,7 +259,7 @@ ValidateFormat(
     char *end;
     Tcl_UniChar ch;
     int objIndex, xpgSize, nspace = numVars;
-    int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
+    int *nassign = ckalloc(nspace * sizeof(int));
     char buf[TCL_UTF_MAX+1];
     Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
 				 * these are messy operations because we do
@@ -480,8 +480,7 @@ ValidateFormat(
 		} else {
 		    nspace += 16;	/* formerly STATIC_LIST_SIZE */
 		}
-		nassign = TclStackRealloc(interp, nassign,
-			nspace * sizeof(int));
+		nassign = ckrealloc(nassign, nspace * sizeof(int));
 		for (i = value; i < nspace; i++) {
 		    nassign[i] = 0;
 		}
@@ -526,7 +525,7 @@ ValidateFormat(
 	}
     }
 
-    TclStackFree(interp, nassign);
+    ckfree(nassign);
     return TCL_OK;
 
   badIndex:
@@ -542,7 +541,7 @@ ValidateFormat(
     }
 
   error:
-    TclStackFree(interp, nassign);
+    ckfree(nassign);
     return TCL_ERROR;
 }
 

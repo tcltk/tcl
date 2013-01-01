@@ -10,7 +10,7 @@
  * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
- * Copyright (c) 2008 by Miguel Sofer. All rights reserved.
+ * Copyright (c) 2008-2011 by Miguel Sofer. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1208,13 +1208,6 @@ MODULE_SCOPE void	TclThreadDataKeySet(Tcl_ThreadDataKey *keyPtr,
   (ThreadSpecificData *)Tcl_GetThreadData((keyPtr), sizeof(ThreadSpecificData))
 
 /*
- *----------------------------------------------------------------
- * Data structures related to bytecode compilation and execution. These are
- * used primarily in tclCompile.c, tclExecute.c, and tclBasic.c.
- *----------------------------------------------------------------
- */
-
-/*
  * Forward declaration to prevent errors when the forward references to
  * Tcl_Parse and CompileEnv are encountered in the procedure type CompileProc
  * declared below.
@@ -1256,19 +1249,6 @@ typedef int (CompileHookProc)(Tcl_Interp *interp,
 	struct CompileEnv *compEnvPtr, ClientData clientData);
 
 /*
- * The data structure for a (linked list of) execution stacks.
- */
-
-typedef struct ExecStack {
-    struct ExecStack *prevPtr;
-    struct ExecStack *nextPtr;
-    Tcl_Obj **markerPtr;
-    Tcl_Obj **endPtr;
-    Tcl_Obj **tosPtr;
-    Tcl_Obj *stackWords[1];
-} ExecStack;
-
-/*
  * The data structure defining the execution environment for ByteCode's.
  * There is one ExecEnv structure per Tcl interpreter. It holds the evaluation
  * stack that holds command operands and results. The stack grows towards
@@ -1303,8 +1283,6 @@ typedef struct CoroutineData {
 } CoroutineData;
 
 typedef struct ExecEnv {
-    ExecStack *execStackPtr;	/* Points to the first item in the evaluation
-				 * stack on the heap. */
     Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
     struct Tcl_Interp *interp;
     struct NRE_callback *callbackPtr;
@@ -1582,24 +1560,6 @@ typedef struct LimitHandler LimitHandler;
 enum PkgPreferOptions {
     PKG_PREFER_LATEST, PKG_PREFER_STABLE
 };
-
-/*
- *----------------------------------------------------------------
- * This structure shadows the first few fields of the memory cache for the
- * allocator defined in tclThreadAlloc.c; it has to be kept in sync with the
- * definition there.
- * Some macros require knowledge of some fields in the struct in order to
- * avoid hitting the TSD unnecessarily. In order to facilitate this, a pointer
- * to the relevant fields is kept in the objCache field in struct Interp.
- *----------------------------------------------------------------
- */
-
-typedef struct AllocCache {
-    struct Cache *nextPtr;	/* Linked list of cache entries. */
-    Tcl_ThreadId owner;		/* Which thread's cache is this? */
-    Tcl_Obj *firstObjPtr;	/* List of free objects for thread. */
-    int numObjects;		/* Number of objects for thread. */
-} AllocCache;
 
 /*
  *----------------------------------------------------------------
@@ -1886,7 +1846,6 @@ typedef struct Interp {
      * They are used by the macros defined below.
      */
 
-    AllocCache *allocCache;
     void *pendingObjDataPtr;	/* Pointer to the Cache and PendingObjData
 				 * structs for this interp's thread; see
 				 * tclObj.c and tclThreadAlloc.c */
@@ -2118,17 +2077,6 @@ struct LimitHandler {
  */
 
 #define UCHAR(c) ((unsigned char) (c))
-
-/*
- * This macro is used to properly align the memory allocated by Tcl, giving
- * the same alignment as the native malloc.
- */
-
-#if defined(__APPLE__)
-#define TCL_ALLOCALIGN	16
-#else
-#define TCL_ALLOCALIGN	(2*sizeof(void *))
-#endif
 
 /*
  * This macro is used to determine the offset needed to safely allocate any
@@ -2516,13 +2464,6 @@ MODULE_SCOPE const Tcl_HashKeyType tclOneWordHashKeyType;
 MODULE_SCOPE const Tcl_HashKeyType tclStringHashKeyType;
 MODULE_SCOPE const Tcl_HashKeyType tclObjHashKeyType;
 
-/*
- * The head of the list of free Tcl objects, and the total number of Tcl
- * objects ever allocated and freed.
- */
-
-MODULE_SCOPE Tcl_Obj *	tclFreeObjList;
-
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE long	tclObjsAlloced;
 MODULE_SCOPE long	tclObjsFreed;
@@ -2680,7 +2621,6 @@ MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
 MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 			    Tcl_DString *toAppendPtr);
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
-MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
 MODULE_SCOPE void	TclFinalizeAsync(void);
 MODULE_SCOPE void	TclFinalizeDoubleConversion(void);
 MODULE_SCOPE void	TclFinalizeEncodingSubsystem(void);
@@ -2697,7 +2637,6 @@ MODULE_SCOPE void	TclFinalizeNotifier(void);
 MODULE_SCOPE void	TclFinalizeObjects(void);
 MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
-MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
 MODULE_SCOPE void	TclFinalizeThreadObjects(void);
 MODULE_SCOPE double	TclFloor(const mp_int *a);
@@ -2738,7 +2677,6 @@ MODULE_SCOPE int	TclInfoLocalsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclInfoVarsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE void	TclInitAlloc(void);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
@@ -2874,8 +2812,6 @@ MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 			    Tcl_Obj *newValue, Tcl_Encoding encoding);
 MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
-MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
-			    int numBytes);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
@@ -3694,10 +3630,10 @@ typedef const char *TclDTraceStr;
 #endif /* TCL_COMPILE_STATS */
 
 #  define TclAllocObjStorage(objPtr)		\
-	TclAllocObjStorageEx(NULL, (objPtr))
+    (objPtr) = TclSmallAlloc()
 
 #  define TclFreeObjStorage(objPtr)		\
-	TclFreeObjStorageEx(NULL, (objPtr))
+    TclSmallFree(objPtr)
 
 #ifndef TCL_MEM_DEBUG
 # define TclNewObj(objPtr) \
@@ -3732,111 +3668,6 @@ typedef const char *TclDTraceStr;
 	} \
     }
 
-#if defined(PURIFY)
-
-/*
- * The PURIFY mode is like the regular mode, but instead of doing block
- * Tcl_Obj allocation and keeping a freed list for efficiency, it always
- * allocates and frees a single Tcl_Obj so that tools like Purify can better
- * track memory leaks.
- */
-
-#  define TclAllocObjStorageEx(interp, objPtr) \
-	(objPtr) = (Tcl_Obj *) Tcl_Alloc(sizeof(Tcl_Obj))
-
-#  define TclFreeObjStorageEx(interp, objPtr) \
-	ckfree((char *) (objPtr))
-
-#undef USE_THREAD_ALLOC
-#elif defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-
-/*
- * The TCL_THREADS mode is like the regular mode but allocates Tcl_Obj's from
- * per-thread caches.
- */
-
-MODULE_SCOPE Tcl_Obj *	TclThreadAllocObj(void);
-MODULE_SCOPE void	TclThreadFreeObj(Tcl_Obj *);
-MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
-MODULE_SCOPE void	TclFreeAllocCache(void *);
-MODULE_SCOPE void *	TclpGetAllocCache(void);
-MODULE_SCOPE void	TclpSetAllocCache(void *);
-MODULE_SCOPE void	TclpFreeAllocMutex(Tcl_Mutex *mutex);
-MODULE_SCOPE void	TclpFreeAllocCache(void *);
-
-/*
- * These macros need to be kept in sync with the code of TclThreadAllocObj()
- * and TclThreadFreeObj().
- *
- * Note that the optimiser should resolve the case (interp==NULL) at compile
- * time.
- */
-
-#  define ALLOC_NOBJHIGH 1200
-
-#  define TclAllocObjStorageEx(interp, objPtr)				\
-    do {								\
-	AllocCache *cachePtr;						\
-	if (((interp) == NULL) ||					\
-		((cachePtr = ((Interp *)(interp))->allocCache),		\
-			(cachePtr->numObjects == 0))) {			\
-	    (objPtr) = TclThreadAllocObj();				\
-	} else {							\
-	    (objPtr) = cachePtr->firstObjPtr;				\
-	    cachePtr->firstObjPtr = (objPtr)->internalRep.otherValuePtr; \
-	    --cachePtr->numObjects;					\
-	}								\
-    } while (0)
-
-#  define TclFreeObjStorageEx(interp, objPtr)				\
-    do {								\
-	AllocCache *cachePtr;						\
-	if (((interp) == NULL) ||					\
-		((cachePtr = ((Interp *)(interp))->allocCache),		\
-			(cachePtr->numObjects >= ALLOC_NOBJHIGH))) {	\
-	    TclThreadFreeObj(objPtr);					\
-	} else {							\
-	    (objPtr)->internalRep.otherValuePtr = cachePtr->firstObjPtr; \
-	    cachePtr->firstObjPtr = objPtr;				\
-	    ++cachePtr->numObjects;					\
-	}								\
-    } while (0)
-
-#else /* not PURIFY or USE_THREAD_ALLOC */
-
-#if defined(USE_TCLALLOC) && USE_TCLALLOC
-    MODULE_SCOPE void TclFinalizeAllocSubsystem();
-    MODULE_SCOPE void TclInitAlloc();
-#else
-#   define USE_TCLALLOC 0
-#endif
-
-#ifdef TCL_THREADS
-/* declared in tclObj.c */
-MODULE_SCOPE Tcl_Mutex	tclObjMutex;
-#endif
-
-#  define TclAllocObjStorageEx(interp, objPtr) \
-    do {								\
-	Tcl_MutexLock(&tclObjMutex);					\
-	if (tclFreeObjList == NULL) {					\
-	    TclAllocateFreeObjects();					\
-	}								\
-	(objPtr) = tclFreeObjList;					\
-	tclFreeObjList = (Tcl_Obj *)					\
-		tclFreeObjList->internalRep.otherValuePtr;		\
-	Tcl_MutexUnlock(&tclObjMutex);					\
-    } while (0)
-
-#  define TclFreeObjStorageEx(interp, objPtr) \
-    do {							       \
-	Tcl_MutexLock(&tclObjMutex);				       \
-	(objPtr)->internalRep.otherValuePtr = (void *) tclFreeObjList; \
-	tclFreeObjList = (objPtr);				       \
-	Tcl_MutexUnlock(&tclObjMutex);				       \
-    } while (0)
-#endif
-
 #else /* TCL_MEM_DEBUG */
 MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 			    int line);
@@ -3859,8 +3690,112 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 # define TclNewListObjDirect(objc, objv) \
     TclDbNewListObjDirect(objc, objv, __FILE__, __LINE__)
 
-#undef USE_THREAD_ALLOC
 #endif /* TCL_MEM_DEBUG */
+
+/*
+ * Macros that drive the allocator behaviour
+ */
+
+#if defined(TCL_THREADS)
+/*
+ * The TCL_THREADS mode is like the regular mode but allocates Tcl_Obj's from
+ * per-thread caches.
+ */
+MODULE_SCOPE void	TclpFreeAllocCache(void *);
+MODULE_SCOPE void *	TclpGetAllocCache(void);
+MODULE_SCOPE void	TclpSetAllocCache(void *);
+MODULE_SCOPE void	TclFreeAllocCache(void *);
+MODULE_SCOPE void	TclpFreeAllocMutex(Tcl_Mutex *mutex);
+MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
+#endif
+
+/*
+ * List of valid allocators. Have to respect the following convention:
+ *  - allocators that shunt TclpAlloc to malloc are below aNONE
+ *  - allocators that use zippy are above aNONE
+ */
+
+#define aNATIVE    0
+#define aPURIFY    1
+#define aNONE      2 
+#define aZIPPY     3
+#define aMULTI     4
+
+#if defined(TCL_ALLOCATOR) && (TCL_ALLOCATOR == aNONE)
+#undef TCL_ALLOCATOR
+#endif
+
+#if defined(TCL_ALLOCATOR) && ((TCL_ALLOCATOR < 0) || (TCL_ALLOCATOR > aMULTI))
+#undef TCL_ALLOCATOR
+#endif
+
+#ifdef PURIFY
+#  undef TCL_ALLOCATOR
+#  define TCL_ALLOCATOR aPURIFY
+#endif
+
+#if !defined(TCL_ALLOCATOR)
+#  if defined(USE_THREAD_ALLOC) || defined(USE_TCLALLOC)
+#    define TCL_ALLOCATOR aZIPPY
+#  else
+#    define TCL_ALLOCATOR aNATIVE
+#  endif
+#endif
+
+#define USE_ZIPPY ((TCL_ALLOCATOR != aNATIVE) && (TCL_ALLOCATOR != aPURIFY))
+#define USE_OBJQ   (TCL_ALLOCATOR != aPURIFY)
+#define USE_NEW_PRESERVE (TCL_ALLOCATOR == aZIPPY)
+
+#if !USE_ZIPPY /* native or purify */
+#    define TclpAlloc(size) malloc(size)
+#    define TclpRealloc(ptr, size) realloc((ptr),(size))
+#    define TclpFree(size) free(size)
+#    define TclAllocMaximize(ptr) UINT_MAX
+#else
+   MODULE_SCOPE char * TclpAlloc(unsigned int size);
+   MODULE_SCOPE char * TclpRealloc(char * ptr, unsigned int size);
+   MODULE_SCOPE void   TclpFree(char * ptr);
+   MODULE_SCOPE unsigned int TclAllocMaximize(void *ptr);
+#endif
+
+#if !USE_OBJQ
+#  define TclSmallAlloc() ckalloc(sizeof(Tcl_Obj))
+#  define TclSmallFree(ptr) ckfree(ptr)
+#  define TclInitAlloc()
+#  define TclFinalizeAlloc()
+#  define TclFreeAllocCache(ptr)
+#else
+#define ALLOC_NOBJHIGH 1200
+   MODULE_SCOPE void * TclSmallAlloc();
+   MODULE_SCOPE void   TclSmallFree(void *ptr);
+   MODULE_SCOPE void   TclInitAlloc(void);
+   MODULE_SCOPE void   TclFinalizeAlloc(void);
+#endif
+
+#define TclCkSmallAlloc(nbytes, memPtr)					\
+    do {								\
+	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
+	memPtr = TclSmallAlloc();					\
+    } while (0)
+
+/*
+ * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
+ */
+
+#if (TCL_ALLOCATOR == aPURIFY) && defined(__clang__)
+#if __has_feature(attribute_analyzer_noreturn) && \
+       !defined(Tcl_Panic) && defined(Tcl_Panic_TCL_DECLARED)
+void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
+#endif
+#if !defined(CLANG_ASSERT)
+#include <assert.h>
+#define CLANG_ASSERT(x) assert(x)
+#endif
+#elif !defined(CLANG_ASSERT)
+ #define CLANG_ASSERT(x)
+#endif /* PURIFY && __clang__ */
+
+
 
 /*
  *----------------------------------------------------------------
@@ -4397,73 +4332,11 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     {enum { ct_assert_value = 1/(!!(e)) };}
 
 /*
- *----------------------------------------------------------------
- * Allocator for small structs (<=sizeof(Tcl_Obj)) using the Tcl_Obj pool.
- * Only checked at compile time.
- *
- * ONLY USE FOR CONSTANT nBytes.
- *
- * DO NOT LET THEM CROSS THREAD BOUNDARIES
- *----------------------------------------------------------------
- */
-
-#define TclSmallAlloc(nbytes, memPtr) \
-    TclSmallAllocEx(NULL, (nbytes), (memPtr))
-
-#define TclSmallFree(memPtr) \
-    TclSmallFreeEx(NULL, (memPtr))
-
-#ifndef TCL_MEM_DEBUG
-#define TclSmallAllocEx(interp, nbytes, memPtr) \
-    do {								\
-	Tcl_Obj *objPtr;						\
-	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
-	TclIncrObjsAllocated();						\
-	TclAllocObjStorageEx((interp), (objPtr));			\
-	memPtr = (ClientData) (objPtr);					\
-    } while (0)
-
-#define TclSmallFreeEx(interp, memPtr) \
-    do {								\
-	TclFreeObjStorageEx((interp), (Tcl_Obj *) (memPtr));		\
-	TclIncrObjsFreed();						\
-    } while (0)
-
-#else    /* TCL_MEM_DEBUG */
-#define TclSmallAllocEx(interp, nbytes, memPtr) \
-    do {								\
-	Tcl_Obj *objPtr;						\
-	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
-	TclNewObj(objPtr);						\
-	memPtr = (ClientData) objPtr;					\
-    } while (0)
-
-#define TclSmallFreeEx(interp, memPtr) \
-    do {								\
-	Tcl_Obj *objPtr = (Tcl_Obj *) memPtr;				\
-	objPtr->bytes = NULL;						\
-	objPtr->typePtr = NULL;						\
-	objPtr->refCount = 1;						\
-	TclDecrRefCount(objPtr);					\
-    } while (0)
-#endif   /* TCL_MEM_DEBUG */
-
-/*
  * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
  */
 
-#if defined(PURIFY) && defined(__clang__)
-#if __has_feature(attribute_analyzer_noreturn) && \
-	!defined(Tcl_Panic) && defined(Tcl_Panic_TCL_DECLARED)
-void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
-#endif
-#if !defined(CLANG_ASSERT)
-#include <assert.h>
-#define CLANG_ASSERT(x) assert(x)
-#endif
-#elif !defined(CLANG_ASSERT)
 #define CLANG_ASSERT(x)
-#endif /* PURIFY && __clang__ */
+
 
 /*
  *----------------------------------------------------------------
@@ -4536,8 +4409,8 @@ typedef struct NRE_callback {
 
 #if NRE_USE_SMALL_ALLOC
 #define TCLNR_ALLOC(interp, ptr) \
-    TclSmallAllocEx(interp, sizeof(NRE_callback), (ptr))
-#define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
+    TclCkSmallAlloc(sizeof(NRE_callback), (ptr))
+#define TCLNR_FREE(interp, ptr)  TclSmallFree(ptr)
 #else
 #define TCLNR_ALLOC(interp, ptr) \
     (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))

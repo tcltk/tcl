@@ -1362,7 +1362,7 @@ TclCompileScript(
     Tcl_Token *tokenPtr;
     int bytesLeft, isFirstCmd, wordIdx, currCmdIndex, commandLength, objIndex;
     Tcl_DString ds;
-    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr = ckalloc(sizeof(Tcl_Parse));
 
     Tcl_DStringInit(&ds);
 
@@ -1729,7 +1729,7 @@ TclCompileScript(
     }
 
     envPtr->numSrcBytes = p - script;
-    TclStackFree(interp, parsePtr);
+    ckfree(parsePtr);
     Tcl_DStringFree(&ds);
 }
 

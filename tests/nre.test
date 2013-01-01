@@ -28,9 +28,10 @@ if {[testConstraint testnrelevels]} {
     namespace eval testnre {
 	namespace path ::tcl::mathop
 	#
-	# [testnrelevels] returns a 5-list with: C-stack depth, iPtr->numlevels,
-	# callFrame level, tosPtr and callback depth 
+	# [testnrelevels] returns a 4-list with: C-stack depth, iPtr->numlevels,
+	# callFrame level and callback depth 
 	#
+
 	variable last [testnrelevels] 
 	proc depthDiff {} {
 	    variable last

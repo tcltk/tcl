@@ -695,7 +695,7 @@ TclCompileSubstCmd(
 	return TCL_ERROR;
     }
 
-    objv = TclStackAlloc(interp, /*numArgs*/ numOpts * sizeof(Tcl_Obj *));
+    objv = ckalloc(/*numArgs*/ numOpts * sizeof(Tcl_Obj *));
 
     for (objc = 0; objc < /*numArgs*/ numOpts; objc++) {
 	objv[objc] = Tcl_NewObj();
@@ -728,7 +728,7 @@ TclCompileSubstCmd(
     while (--objc >= 0) {
 	TclDecrRefCount(objv[objc]);
     }
-    TclStackFree(interp, objv);
+    ckfree(objv);
     if (/*toSubst == NULL*/ code != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1335,8 +1335,8 @@ IssueSwitchChainedTests(
 
     contFixIndex = -1;
     contFixCount = 0;
-    fixupArray = TclStackAlloc(interp, sizeof(JumpFixup) * numBodyTokens);
-    fixupTargetArray = TclStackAlloc(interp, sizeof(int) * numBodyTokens);
+    fixupArray = ckalloc(sizeof(JumpFixup) * numBodyTokens);
+    fixupTargetArray = ckalloc(sizeof(int) * numBodyTokens);
     memset(fixupTargetArray, 0, numBodyTokens * sizeof(int));
     fixupCount = 0;
     foundDefault = 0;
@@ -1533,8 +1533,8 @@ IssueSwitchChainedTests(
 	    }
 	}
     }
-    TclStackFree(interp, fixupTargetArray);
-    TclStackFree(interp, fixupArray);
+    ckfree(fixupTargetArray);
+    ckfree(fixupArray);
 
     envPtr->currStackDepth = savedStackDepth + 1;
 }
@@ -1589,7 +1589,7 @@ IssueSwitchJumpTable(
     jtPtr = ckalloc(sizeof(JumptableInfo));
     Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
     infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
-    finalFixups = TclStackAlloc(interp, sizeof(int) * (numBodyTokens/2));
+    finalFixups = ckalloc(sizeof(int) * (numBodyTokens/2));
     foundDefault = 0;
     mustGenerate = 1;
 
@@ -1726,7 +1726,7 @@ IssueSwitchJumpTable(
      * Clean up all our temporary space and return.
      */
 
-    TclStackFree(interp, finalFixups);
+    ckfree(finalFixups);
     envPtr->currStackDepth = savedStackDepth + 1;
 }
 
@@ -2026,12 +2026,12 @@ TclCompileTryCmd(
     numHandlers = numWords >> 2;
     numWords -= numHandlers * 4;
     if (numHandlers > 0) {
-	handlerTokens = TclStackAlloc(interp, sizeof(Tcl_Token*)*numHandlers);
-	matchClauses = TclStackAlloc(interp, sizeof(Tcl_Obj *) * numHandlers);
+	handlerTokens = ckalloc(sizeof(Tcl_Token*)*numHandlers);
+	matchClauses = ckalloc(sizeof(Tcl_Obj *) * numHandlers);
 	memset(matchClauses, 0, sizeof(Tcl_Obj *) * numHandlers);
-	matchCodes = TclStackAlloc(interp, sizeof(int) * numHandlers);
-	resultVarIndices = TclStackAlloc(interp, sizeof(int) * numHandlers);
-	optionVarIndices = TclStackAlloc(interp, sizeof(int) * numHandlers);
+	matchCodes = ckalloc(sizeof(int) * numHandlers);
+	resultVarIndices = ckalloc(sizeof(int) * numHandlers);
+	optionVarIndices = ckalloc(sizeof(int) * numHandlers);
 
 	for (i=0 ; i<numHandlers ; i++) {
 	    Tcl_Obj *tmpObj, **objv;
@@ -2190,11 +2190,11 @@ TclCompileTryCmd(
 		TclDecrRefCount(matchClauses[i]);
 	    }
 	}
-	TclStackFree(interp, optionVarIndices);
-	TclStackFree(interp, resultVarIndices);
-	TclStackFree(interp, matchCodes);
-	TclStackFree(interp, matchClauses);
-	TclStackFree(interp, handlerTokens);
+	ckfree(optionVarIndices);
+	ckfree(resultVarIndices);
+	ckfree(matchCodes);
+	ckfree(matchClauses);
+	ckfree(handlerTokens);
     }
     return result;
 }
@@ -2270,8 +2270,8 @@ IssueTryInstructions(
      * Slight overallocation, but reduces size of this function.
      */
 
-    addrsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
-    forwardsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
+    addrsToFix = ckalloc(sizeof(int)*numHandlers);
+    forwardsToFix = ckalloc(sizeof(int)*numHandlers);
 
     for (i=0 ; i<numHandlers ; i++) {
 	sprintf(buf, "%d", matchCodes[i]);
@@ -2360,8 +2360,8 @@ IssueTryInstructions(
     for (i=0 ; i<numHandlers ; i++) {
 	FIXJUMP(addrsToFix[i]);
     }
-    TclStackFree(interp, forwardsToFix);
-    TclStackFree(interp, addrsToFix);
+    ckfree(forwardsToFix);
+    ckfree(addrsToFix);
     envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
@@ -2424,8 +2424,8 @@ IssueTryFinallyInstructions(
 	 * Slight overallocation, but reduces size of this function.
 	 */
 
-	addrsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
-	forwardsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
+	addrsToFix = ckalloc(sizeof(int)*numHandlers);
+	forwardsToFix = ckalloc(sizeof(int)*numHandlers);
 
 	for (i=0 ; i<numHandlers ; i++) {
 	    sprintf(buf, "%d", matchCodes[i]);
@@ -2559,8 +2559,8 @@ IssueTryFinallyInstructions(
 	for (i=0 ; i<numHandlers-1 ; i++) {
 	    FIXJUMP(addrsToFix[i]);
 	}
-	TclStackFree(interp, forwardsToFix);
-	TclStackFree(interp, addrsToFix);
+	ckfree(forwardsToFix);
+	ckfree(addrsToFix);
     }
 
     /*
@@ -2990,7 +2990,7 @@ PushVarName(
 		 * assemble the corresponding token.
 		 */
 
-		elemTokenPtr = TclStackAlloc(interp, sizeof(Tcl_Token));
+		elemTokenPtr = ckalloc(sizeof(Tcl_Token));
 		allocedTokens = 1;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
@@ -3043,7 +3043,7 @@ PushVarName(
 		 * token.
 		 */
 
-		elemTokenPtr = TclStackAlloc(interp, n * sizeof(Tcl_Token));
+		elemTokenPtr = ckalloc(n * sizeof(Tcl_Token));
 		allocedTokens = 1;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
@@ -3127,7 +3127,7 @@ PushVarName(
 	varTokenPtr[removedParen].size++;
     }
     if (allocedTokens) {
-	TclStackFree(interp, elemTokenPtr);
+	ckfree(elemTokenPtr);
     }
     *localIndexPtr = localIndex;
     *simpleVarNamePtr = simpleVarName;

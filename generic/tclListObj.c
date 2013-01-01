@@ -73,6 +73,12 @@ const Tcl_ObjType tclListType = {
  *----------------------------------------------------------------------
  */
 
+#define Elems2Size(n)				\
+    (sizeof(List) - sizeof(Tcl_Obj *) + n*sizeof(Tcl_Obj *))
+
+#define Size2Elems(s)							\
+    (s - (sizeof(List) - sizeof(Tcl_Obj *)))/sizeof(Tcl_Obj *)
+
 static List *
 NewListIntRep(
     int objc,
@@ -588,6 +594,7 @@ Tcl_ListObjAppendElement(
     listRepPtr = ListRepPtr(listPtr);
     numElems = listRepPtr->elemCount;
     numRequired = numElems + 1 ;
+
     needGrow = (numRequired > listRepPtr->maxElemCount);
     isShared = (listRepPtr->refCount > 1);
 
@@ -908,6 +915,14 @@ Tcl_ListObjReplace(
 
     isShared = (listRepPtr->refCount > 1);
     numRequired = numElems - count + objc;
+
+    if (numRequired > listRepPtr->maxElemCount){
+	unsigned int allocSize = TclAllocMaximize(listRepPtr);
+	if (allocSize != UINT_MAX) {
+	    listRepPtr->maxElemCount = Size2Elems(allocSize);
+	}
+    }
+
 
     for (i = 0;  i < objc;  i++) {
 	Tcl_IncrRefCount(objv[i]);

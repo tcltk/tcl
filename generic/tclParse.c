@@ -1149,14 +1149,14 @@ ParseTokens(
 
 	    src++;
 	    numBytes--;
-	    nestedPtr = TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
+	    nestedPtr = ckalloc(sizeof(Tcl_Parse));
 	    while (1) {
 		if (Tcl_ParseCommand(parsePtr->interp, src, numBytes, 1,
 			nestedPtr) != TCL_OK) {
 		    parsePtr->errorType = nestedPtr->errorType;
 		    parsePtr->term = nestedPtr->term;
 		    parsePtr->incomplete = nestedPtr->incomplete;
-		    TclStackFree(parsePtr->interp, nestedPtr);
+		    ckfree(nestedPtr);
 		    return TCL_ERROR;
 		}
 		src = nestedPtr->commandStart + nestedPtr->commandSize;
@@ -1182,11 +1182,11 @@ ParseTokens(
 		    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		    parsePtr->term = tokenPtr->start;
 		    parsePtr->incomplete = 1;
-		    TclStackFree(parsePtr->interp, nestedPtr);
+		    ckfree(nestedPtr);
 		    return TCL_ERROR;
 		}
 	    }
-	    TclStackFree(parsePtr->interp, nestedPtr);
+	    ckfree(nestedPtr);
 	    tokenPtr->type = TCL_TOKEN_COMMAND;
 	    tokenPtr->size = src - tokenPtr->start;
 	    parsePtr->numTokens++;
@@ -1546,10 +1546,10 @@ Tcl_ParseVar(
 {
     register Tcl_Obj *objPtr;
     int code;
-    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse *parsePtr = ckalloc(sizeof(Tcl_Parse));
 
     if (Tcl_ParseVarName(interp, start, -1, parsePtr, 0) != TCL_OK) {
-	TclStackFree(interp, parsePtr);
+	ckfree(parsePtr);
 	return NULL;
     }
 
@@ -1561,13 +1561,13 @@ Tcl_ParseVar(
 	 * There isn't a variable name after all: the $ is just a $.
 	 */
 
-	TclStackFree(interp, parsePtr);
+	ckfree(parsePtr);
 	return "$";
     }
 
     code = TclSubstTokens(interp, parsePtr->tokenPtr, parsePtr->numTokens,
 	    NULL);
-    TclStackFree(interp, parsePtr);
+    ckfree(parsePtr);
     if (code != TCL_OK) {
 	return NULL;
     }
@@ -2030,7 +2030,7 @@ TclSubstParse(
 		Tcl_Token *tokenPtr;
 		const char *lastTerm = parsePtr->term;
 		Tcl_Parse *nestedPtr =
-			TclStackAlloc(interp, sizeof(Tcl_Parse));
+			ckalloc(sizeof(Tcl_Parse));
 
 		while (TCL_OK ==
 			Tcl_ParseCommand(NULL, p, length, 0, nestedPtr)) {
@@ -2048,7 +2048,7 @@ TclSubstParse(
 		    }
 		    lastTerm = nestedPtr->term;
 		}
-		TclStackFree(interp, nestedPtr);
+		ckfree(nestedPtr);
 
 		if (lastTerm == parsePtr->term) {
 		    /*

@@ -1007,7 +1007,7 @@ TclFileAttrsCmd(
 	    goto end;
 	}
 	attributeStringsAllocated = (const char **)
-		TclStackAlloc(interp, (1+numObjStrings) * sizeof(char *));
+		ckalloc((1+numObjStrings) * sizeof(char *));
 	for (index = 0; index < numObjStrings; index++) {
 	    Tcl_ListObjIndex(interp, objStrings, index, &objPtr);
 	    attributeStringsAllocated[index] = TclGetString(objPtr);
@@ -1138,7 +1138,7 @@ TclFileAttrsCmd(
 
   end:
     if (attributeStringsAllocated != NULL) {
-	TclStackFree(interp, (void *) attributeStringsAllocated);
+	ckfree((void *) attributeStringsAllocated);
     }
     if (objStrings != NULL) {
 	Tcl_DecrRefCount(objStrings);

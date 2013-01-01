@@ -1003,8 +1003,7 @@ ProcWrongNumArgs(
      */
 
     numArgs = framePtr->procPtr->numArgs;
-    desiredObjs = TclStackAlloc(interp,
-	    (int) sizeof(Tcl_Obj *) * (numArgs+1));
+    desiredObjs = ckalloc((int) sizeof(Tcl_Obj *) * (numArgs+1));
 
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
@@ -1044,7 +1043,7 @@ ProcWrongNumArgs(
     for (i=0 ; i<=numArgs ; i++) {
 	Tcl_DecrRefCount(desiredObjs[i]);
     }
-    TclStackFree(interp, desiredObjs);
+    ckfree(desiredObjs);
     return TCL_ERROR;
 }
 
@@ -1358,7 +1357,7 @@ InitArgsAndLocals(
      * parameters.
      */
 
-    varPtr = TclStackAlloc(interp, (int)(localCt * sizeof(Var)));
+    varPtr = ckalloc((int)(localCt * sizeof(Var)));
     framePtr->compiledLocals = varPtr;
     framePtr->numCompiledLocals = localCt;
 
@@ -1649,9 +1648,9 @@ TclNRInterpProcCore(
     if (result != TCL_OK) {
 	freePtr = iPtr->framePtr;
 	Tcl_PopCallFrame(interp);	/* Pop but do not free. */
-	TclStackFree(interp, freePtr->compiledLocals);
+	ckfree(freePtr->compiledLocals);
 					/* Free compiledLocals. */
-	TclStackFree(interp, freePtr);	/* Free CallFrame. */
+	ckfree(freePtr);	/* Free CallFrame. */
 	return TCL_ERROR;
     }
 
@@ -1813,9 +1812,9 @@ InterpProcNR2(
 
     freePtr = iPtr->framePtr;
     Tcl_PopCallFrame(interp);		/* Pop but do not free. */
-    TclStackFree(interp, freePtr->compiledLocals);
+    ckfree(freePtr->compiledLocals);
 					/* Free compiledLocals. */
-    TclStackFree(interp, freePtr);	/* Free CallFrame. */
+    ckfree(freePtr);	/* Free CallFrame. */
 
     return result;
 }
@@ -2496,7 +2495,7 @@ TclNRApplyObjCmd(
 	return TCL_ERROR;
     }
 
-    extraPtr = TclStackAlloc(interp, sizeof(ApplyExtraData));
+    extraPtr = ckalloc(sizeof(ApplyExtraData));
     memset(&extraPtr->cmd, 0, sizeof(Command));
     procPtr->cmdPtr = &extraPtr->cmd;
     extraPtr->cmd.nsPtr = (Namespace *) nsPtr;
@@ -2531,7 +2530,7 @@ ApplyNR2(
 	((Interp *) interp)->ensembleRewrite.sourceObjs = NULL;
     }
 
-    TclStackFree(interp, extraPtr);
+    ckfree(extraPtr);
     return result;
 }
 

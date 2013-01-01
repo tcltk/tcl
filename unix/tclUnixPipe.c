@@ -430,8 +430,8 @@ TclpCreateProcess(
      * deallocated later
      */
 
-    dsArray = TclStackAlloc(interp, argc * sizeof(Tcl_DString));
-    newArgv = TclStackAlloc(interp, (argc+1) * sizeof(char *));
+    dsArray = ckalloc(argc * sizeof(Tcl_DString));
+    newArgv = ckalloc((argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
 	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
@@ -503,8 +503,8 @@ TclpCreateProcess(
     for (i = 0; i < argc; i++) {
 	Tcl_DStringFree(&dsArray[i]);
     }
-    TclStackFree(interp, newArgv);
-    TclStackFree(interp, dsArray);
+    ckfree(newArgv);
+    ckfree(dsArray);
 
     if (pid == -1) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(

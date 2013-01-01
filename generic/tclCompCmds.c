@@ -1615,8 +1615,7 @@ TclCompileDictUpdateCmd(
 
     duiPtr = ckalloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
     duiPtr->length = numVars;
-    keyTokenPtrs = TclStackAlloc(interp,
-	    sizeof(Tcl_Token *) * numVars);
+    keyTokenPtrs = ckalloc(sizeof(Tcl_Token *) * numVars);
     tokenPtr = TokenAfter(dictVarTokenPtr);
 
     for (i=0 ; i<numVars ; i++) {
@@ -1654,7 +1653,7 @@ TclCompileDictUpdateCmd(
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
     failedUpdateInfoAssembly:
 	ckfree(duiPtr);
-	TclStackFree(interp, keyTokenPtrs);
+	ckfree(keyTokenPtrs);
 	return TCL_ERROR;
     }
     bodyTokenPtr = tokenPtr;
@@ -1718,7 +1717,7 @@ TclCompileDictUpdateCmd(
 	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
 		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
-    TclStackFree(interp, keyTokenPtrs);
+    ckfree(keyTokenPtrs);
     envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
@@ -2515,10 +2514,9 @@ CompileEachloopCmd(
      */
 
     numLists = (numWords - 2)/2;
-    varcList = TclStackAlloc(interp, numLists * sizeof(int));
+    varcList = ckalloc(numLists * sizeof(int));
     memset(varcList, 0, numLists * sizeof(int));
-    varvList = (const char ***) TclStackAlloc(interp,
-	    numLists * sizeof(const char **));
+    varvList = (const char ***) ckalloc(numLists * sizeof(const char **));
     memset((char*) varvList, 0, numLists * sizeof(const char **));
 
     /*
@@ -2768,8 +2766,8 @@ CompileEachloopCmd(
 	    ckfree(varvList[loopIndex]);
 	}
     }
-    TclStackFree(interp, (void *)varvList);
-    TclStackFree(interp, varcList);
+    ckfree((void *)varvList);
+    ckfree(varcList);
     return code;
 }
 
@@ -5407,7 +5405,7 @@ TclCompileReturnCmd(
      * Allocate some working space.
      */
 
-    objv = TclStackAlloc(interp, numOptionWords * sizeof(Tcl_Obj *));
+    objv = ckalloc(numOptionWords * sizeof(Tcl_Obj *));
 
     /*
      * Scan through the return options. If any are unknown at compile time,
@@ -5431,7 +5429,7 @@ TclCompileReturnCmd(
     while (--objc >= 0) {
 	TclDecrRefCount(objv[objc]);
     }
-    TclStackFree(interp, objv);
+    ckfree(objv);
     if (TCL_ERROR == status) {
 	/*
 	 * Something was bogus in the return options. Clear the error message,
@@ -5973,7 +5971,7 @@ PushVarName(
 		 * assemble the corresponding token.
 		 */
 
-		elemTokenPtr = TclStackAlloc(interp, sizeof(Tcl_Token));
+		elemTokenPtr = ckalloc(sizeof(Tcl_Token));
 		allocedTokens = 1;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
@@ -6026,7 +6024,7 @@ PushVarName(
 		 * token.
 		 */
 
-		elemTokenPtr = TclStackAlloc(interp, n * sizeof(Tcl_Token));
+		elemTokenPtr = ckalloc(n * sizeof(Tcl_Token));
 		allocedTokens = 1;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
@@ -6110,7 +6108,7 @@ PushVarName(
 	varTokenPtr[removedParen].size++;
     }
     if (allocedTokens) {
-	TclStackFree(interp, elemTokenPtr);
+	ckfree(elemTokenPtr);
     }
     *localIndexPtr = localIndex;
     *simpleVarNamePtr = simpleVarName;

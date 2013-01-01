@@ -2697,7 +2697,7 @@ Tcl_LsearchObjCmd(
 	    int j;
 
 	    if (sortInfo.indexc > 1) {
-		TclStackFree(interp, sortInfo.indexv);
+		ckfree(sortInfo.indexv);
 	    }
 	    if (i > objc-4) {
 		if (startPtr != NULL) {
@@ -2733,7 +2733,7 @@ Tcl_LsearchObjCmd(
 		break;
 	    default:
 		sortInfo.indexv =
-			TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
+			ckalloc(sizeof(int) * sortInfo.indexc);
 	    }
 
 	    /*
@@ -2844,7 +2844,7 @@ Tcl_LsearchObjCmd(
 
 	if (offset > listc-1) {
 	    if (sortInfo.indexc > 1) {
-		TclStackFree(interp, sortInfo.indexv);
+		ckfree(sortInfo.indexv);
 	    }
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
@@ -3169,7 +3169,7 @@ Tcl_LsearchObjCmd(
 
   done:
     if (sortInfo.indexc > 1) {
-	TclStackFree(interp, sortInfo.indexv);
+	ckfree(sortInfo.indexv);
     }
     return result;
 }
@@ -3463,7 +3463,7 @@ Tcl_LsortObjCmd(
 	    break;
 	default:
 	    sortInfo.indexv =
-		    TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
+		    ckalloc(sizeof(int) * sortInfo.indexc);
 	    allocatedIndexVector = 1;	/* Cannot use indexc field, as it
 					 * might be decreased by 1 later. */
 	}
@@ -3562,6 +3562,7 @@ Tcl_LsortObjCmd(
 		/*
 		 * Do not shrink the actual memory block used; that doesn't
 		 * work with TclStackAlloc-allocated memory. [Bug 2918962]
+                 * FIXME: TclStackAlloc is now retired, we could shrink it.
 		 */
 
 		for (i = 0; i < sortInfo.indexc; i++) {
@@ -3599,7 +3600,7 @@ Tcl_LsortObjCmd(
      * begins sorting it into the sublists as it appears.
      */
 
-    elementArray = TclStackAlloc(interp, length * sizeof(SortElement));
+    elementArray = ckalloc(length * sizeof(SortElement));
 
     for (i=0; i < length; i++){
 	idx = groupSize * i + groupOffset;
@@ -3723,7 +3724,7 @@ Tcl_LsortObjCmd(
     }
 
   done1:
-    TclStackFree(interp, elementArray);
+    ckfree(elementArray);
 
   done:
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
@@ -3733,7 +3734,7 @@ Tcl_LsortObjCmd(
     }
   done2:
     if (allocatedIndexVector) {
-	TclStackFree(interp, sortInfo.indexv);
+	ckfree(sortInfo.indexv);
     }
     return sortInfo.resultCode;
 }

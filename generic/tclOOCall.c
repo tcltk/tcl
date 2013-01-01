@@ -105,7 +105,7 @@ TclOODeleteContext(
 
     TclOODeleteChain(contextPtr->callPtr);
     if (oPtr != NULL) {
-	TclStackFree(oPtr->fPtr->interp, contextPtr);
+	ckfree(contextPtr);
 	DelRef(oPtr);
     }
 }
@@ -1105,7 +1105,7 @@ TclOOGetCallContext(
     }
 
   returnContext:
-    contextPtr = TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
+    contextPtr = ckalloc(sizeof(CallContext));
     contextPtr->oPtr = oPtr;
     AddRef(oPtr);
     contextPtr->callPtr = callPtr;
@@ -1446,7 +1446,7 @@ TclOORenderCallChain(
      * method (or "object" if it is declared on the instance).
      */
 
-    objv = TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
+    objv = ckalloc(callPtr->numChain * sizeof(Tcl_Obj *));
     for (i=0 ; i<callPtr->numChain ; i++) {
 	struct MInvoke *miPtr = &callPtr->chain[i];
 
@@ -1483,7 +1483,7 @@ TclOORenderCallChain(
      */
 
     resultObj = Tcl_NewListObj(callPtr->numChain, objv);
-    TclStackFree(interp, objv);
+    ckfree(objv);
     return resultObj;
 }
 
